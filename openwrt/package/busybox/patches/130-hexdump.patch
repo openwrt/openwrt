@@ -1,0 +1,32 @@
+--- busybox-1.00/include/usage.h	2005-03-08 01:10:55.885302128 -0500
++++ busybox-1.00/include/usage.h	2005-03-08 01:10:39.226834600 -0500
+@@ -956,6 +956,7 @@
+ 	"\t-b\t\tOne-byte octal display\n" \
+ 	"\t-c\t\tOne-byte character display\n" \
+ 	"\t-d\t\tTwo-byte decimal display\n" \
++	"\t-C\t\tCanonical hex+ASCII display\n" \
+ 	"\t-e FORMAT STRING\n" \
+ 	"\t-f FORMAT FILE\n" \
+ 	"\t-n LENGTH\tInterpret only length bytes of input\n" \
+--- busybox-1.00/util-linux/hexdump.c	2003-03-19 04:13:01.000000000 -0500
++++ busybox-1.00/util-linux/hexdump.c	2005-03-08 01:02:42.509306680 -0500
+@@ -57,7 +57,7 @@
+ 
+ static const char add_first[] = "\"%07.7_Ax\n\"";
+ 
+-static const char hexdump_opts[] = "bcdoxe:f:n:s:v";
++static const char hexdump_opts[] = "bcdoxCe:f:n:s:v";
+ 
+ static const struct suffix_mult suffixes[] = {
+ 	{"b",  512 },
+@@ -82,6 +82,10 @@
+ 				bb_dump_add(add_strings[(int)(p - hexdump_opts)]);
+ 			} else {
+ 				/* Sae a little bit of space below by omitting the 'else's. */
++				if (ch == 'C') {
++					bb_dump_add("\"%08.8_ax  \" 8/1 \"%02x \" \"  \" 8/1 \"%02x \" ");
++					bb_dump_add("\"  |\" 16/1 \"%_p\" \"|\\n\"");
++				} /* else */
+ 				if (ch == 'e') {
+ 					bb_dump_add(optarg);
+ 				} /* else */
