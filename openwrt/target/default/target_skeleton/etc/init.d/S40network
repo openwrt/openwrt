@@ -1,35 +1,15 @@
 #!/bin/sh
-#
-# Start the network....
-#
-
-start() {
- 	echo "Starting network..."
-	/sbin/ifup -a
-}	
-stop() {
-	echo -n "Stopping network..."
-	/sbin/ifdown -a
-}
-restart() {
-	stop
-	start
-}	
-
+. /etc/functions.sh
 case "$1" in
-  start)
-  	start
-	;;
-  stop)
-  	stop
-	;;
-  restart|reload)
-  	restart
-	;;
-  *)
-	echo $"Usage: $0 {start|stop|restart}"
-	exit 1
+  start|restart)
+    ifup lan
+    ifup wan
+    ifup wifi
+    wifi up
+
+    for route in $(nvram get static_route); do {
+      eval "set $(echo $route | sed 's/:/ /g')"
+      $DEBUG route add -net $1 netmask $2 gw $3 metric $4 dev $5
+    } done
+    ;;
 esac
-
-exit $?
-
