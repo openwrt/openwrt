@@ -9,7 +9,7 @@ ifeq ($(strip $(BR2_PACKAGE_BUSYBOX_SNAPSHOT)),y)
 # Be aware that this changes daily....
 PKG_VERSION:=0.${shell date +"%G%m%d"}
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
-PKG_SOURCE:=$(PKG_NAME)-.tar.bz2
+PKG_SOURCE:=$(PKG_NAME)-snapshot.tar.bz2
 PKG_SOURCE_URL:=http://www.busybox.net/downloads/snapshots
 PKG_MD5SUM:=x
 else
