@@ -36,7 +36,7 @@ squashfs-dirclean:
 
 squashfsroot: squashfs
 	#-@find $(TARGET_DIR)/lib -type f -name \*.so\* | xargs $(STRIP) --strip-unneeded 2>/dev/null || true;
-	-@find $(TARGET_DIR) -type f -perm +111 | xargs $(STRIP) 2>/dev/null || true;
+	-@find $(TARGET_DIR) -type f -perm +111 | xargs $(STAGING_DIR)/bin/sstrip 2>/dev/null || true;
 	@rm -rf $(TARGET_DIR)/usr/man
 	@rm -rf $(TARGET_DIR)/usr/info
 	#$(SQUASHFS_DIR)/squashfs-tools/mksquashfs -q -D $(SOURCE_DIR)/device_table.txt $(TARGET_DIR) $(IMAGE)
