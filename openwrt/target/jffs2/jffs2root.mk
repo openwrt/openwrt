@@ -54,6 +54,6 @@ openwrt-gs-code.bin.jffs2: openwrt-linux.trx.jffs2
 openwrt-g-code.bin.jffs2: openwrt-gs-code.bin.jffs2
 	sed -e "1s,^W54S,W54G," < openwrt-gs-code.bin.jffs2 > openwrt-g-code.bin.jffs2
 
-openwrt-image:	openwrt-g-code.bin.jffs2
+openwrt-image-jffs2:	openwrt-g-code.bin.jffs2
 
 
