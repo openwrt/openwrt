@@ -41,6 +41,7 @@ package-$(BR2_PACKAGE_SER) += ser
 package-$(BR2_PACKAGE_SETSERIAL) += setserial
 package-$(BR2_PACKAGE_STRACE) += strace
 package-$(BR2_PACKAGE_TCPDUMP) += tcpdump
+package-$(BR2_PACKAGE_WIRELESS_TOOLS) += wireless-tools
 package-$(BR2_PACKAGE_WOL) += wol
 package-$(BR2_PACKAGE_ZLIB) += zlib
 package-$(BR2_PACKAGE_DHCPFWD) += dhcp-forwarder
