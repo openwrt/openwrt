@@ -3,8 +3,8 @@
 # mksquashfs to build to target squashfs filesystems
 #
 #############################################################
-SQUASHFS_DIR=$(BUILD_DIR)/squashfs2.0
-SQUASHFS_SOURCE=squashfs2.0.tar.gz
+SQUASHFS_DIR=$(BUILD_DIR)/squashfs2.0r2
+SQUASHFS_SOURCE=squashfs2.0-r2.tar.gz
 SQUASHFS_SITE=http://dl.sourceforge.net/sourceforge/squashfs
 
 $(DL_DIR)/$(SQUASHFS_SOURCE):
