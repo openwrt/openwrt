@@ -10,7 +10,7 @@ MTD_SITE=http://ftp.debian.org/debian/pool/main/m/mtd
 MKFS_JFFS2=$(shell which mkfs.jffs2 2>/dev/null || echo $(MTD_DIR)/util/mkfs.jffs2)
 
 $(DL_DIR)/$(MTD_SOURCE):
-	$(WGET) -P $(DL_DIR) $(MTD_SITE)/$(MTD_SOURCE)
+	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(MTD_SOURCE) x $(MTD_SITE)
 
 $(MTD_DIR)/.unpacked: $(DL_DIR)/$(MTD_SOURCE)
 	zcat $(DL_DIR)/$(MTD_SOURCE) | tar -C $(BUILD_DIR) -xvf -

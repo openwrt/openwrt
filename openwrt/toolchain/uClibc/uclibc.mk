@@ -33,7 +33,7 @@ UCLIBC_TARGET_ARCH:=$(shell echo $(ARCH) | sed -e s'/-.*//' \
 
 $(DL_DIR)/$(UCLIBC_SOURCE):
 	mkdir -p $(DL_DIR)
-	$(WGET) -P $(DL_DIR) $(UCLIBC_SITE)/$(UCLIBC_SOURCE)
+	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(UCLIBC_SOURCE) x $(UCLIBC_SITE)
 
 $(UCLIBC_DIR)/.unpacked: $(DL_DIR)/$(UCLIBC_SOURCE)
 	mkdir -p $(TOOL_BUILD_DIR)

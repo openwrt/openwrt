@@ -1,6 +1,7 @@
 # linux kernel headers for toolchain
 
 LINUX_HEADERS_VERSION=2.4.29
+LINUX_KERNEL_MD5SUM:=fcf8b6bb620467f27b657c1c4a60bbff
 LINUX_HEADERS_SITE=http://www.kernel.org/pub/linux/kernel/v2.4
 LINUX_HEADERS_SOURCE=linux-$(LINUX_HEADERS_VERSION).tar.bz2
 LINUX_HEADERS_CONFIG=./linux.config
@@ -12,7 +13,7 @@ LINUX_HEADERS_ARCH:=$(shell echo $(ARCH) | sed -e 's/i[3-9]86/i386/' \
 
 $(DL_DIR)/$(LINUX_HEADERS_SOURCE):
 	-mkdir -p $(DL_DIR)
-	$(WGET) -P $(DL_DIR) $(LINUX_HEADERS_SITE)/$(LINUX_HEADERS_SOURCE)
+	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(LINUX_HEADERS_SOURCE) $(LINUX_KERNEL_MD5SUM) $(LINUX_HEADERS_SITE)
 
 $(LINUX_HEADERS_DIR)/.unpacked: $(DL_DIR)/$(LINUX_HEADERS_SOURCE)
 	mkdir -p $(TOOL_BUILD_DIR)
