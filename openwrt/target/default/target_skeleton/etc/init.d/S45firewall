@@ -12,7 +12,8 @@ done
 
 $IPT -t filter -A INPUT -m state --state INVALID -j DROP
 $IPT -t filter -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT 
-$IPT -t filter -A INPUT -p icmp -j ACCEPT 
+$IPT -t filter -A INPUT -p icmp -j ACCEPT
+$IPT -t filter -A INPUT -p 47 -j ACCEPT 	# allow GRE
 $IPT -t filter -A INPUT -i $WAN -p tcp -j REJECT --reject-with tcp-reset 
 $IPT -t filter -A INPUT -i $WAN -j REJECT --reject-with icmp-port-unreachable 
 $IPT -t filter -A FORWARD -m state --state INVALID -j DROP 
