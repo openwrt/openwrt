@@ -208,7 +208,28 @@ typedef struct wl_rm_rep {
 #define WL_RM_REP_FIXED_LEN	8
 
 
-#if defined(WPAPSK)
+#define WLC_MAX_KEY_SIZE	32	/* max size of any key */
+#define WLC_MAX_IV_SIZE		16	/* max size of any IV */
+#define WLC_EXT_IV_FLAG		(1<<5)	/* flag to indicate IV is > 4 bytes */
+#define WLC_MAX_DEFAULT_KEYS	4	/* # of default WEP keys */
+#define WLC_MAX_KEYS		16	/* # of WEP keys */
+#define WLC_WEP1_KEY_SIZE	5	/* max size of any WEP key */
+#define WLC_WEP1_KEY_HEX_SIZE	10	/* size of WEP key in hex. */
+#define WLC_WEP128_KEY_SIZE	13	/* max size of any WEP key */
+#define WLC_WEP128_KEY_HEX_SIZE	26	/* size of WEP key in hex. */
+#define WLC_TKIP_MIC_SIZE	8	/* size of TKIP MIC */
+#define WLC_TKIP_EOM_SIZE	7	/* max size of TKIP EOM */
+#define WLC_TKIP_EOM_FLAG	0x5a	/* TKIP EOM flag byte */
+#define WLC_TKIP_KEY_SIZE	32	/* size of any TKIP key */
+#define WLC_TKIP_MIC_AUTH_TX	16	/* offset to Authenticator MIC TX key */
+#define WLC_TKIP_MIC_AUTH_RX	24	/* offset to Authenticator MIC RX key */
+#define WLC_TKIP_MIC_SUP_RX	16	/* offset to Supplicant MIC RX key */
+#define WLC_TKIP_MIC_SUP_TX	24	/* offset to Supplicant MIC TX key */
+#define WLC_TKIP_P1_KEY_SIZE	10	/* size of TKHash Phase1 output, in bytes */
+#define WLC_TKIP_P2_KEY_SIZE	16	/* size of TKHash Phase2 output */
+#define WLC_AES_KEY_SIZE	16	/* size of AES key */
+
+
 typedef enum sup_auth_status {
 	WLC_SUP_DISCONNECTED = 0,
 	WLC_SUP_CONNECTING,
@@ -218,7 +239,6 @@ typedef enum sup_auth_status {
 	WLC_SUP_KEYXCHANGE,
 	WLC_SUP_KEYED
 } sup_auth_status_t;
-#endif	/* CCX | WPAPSK */
 
 /* Enumerate crypto algorithms */
 #define	CRYPTO_ALGO_OFF			0
@@ -237,6 +257,39 @@ typedef enum sup_auth_status {
 #define WL_PRIMARY_KEY	(1 << 1)	/* Indicates this key is the primary (ie tx) key */
 #define WL_KF_RES_4	(1 << 4)	/* Reserved for backward compat */
 #define WL_KF_RES_5	(1 << 5)	/* Reserved for backward compat */
+
+
+typedef struct wlc_tkip_info {
+	uint16		phase1[WLC_TKIP_P1_KEY_SIZE/sizeof(uint16)];	/* tkhash phase1 result */
+	uint8		phase2[WLC_TKIP_P2_KEY_SIZE];	/* tkhash phase2 result */
+	uint32		micl;
+	uint32		micr;
+} tkip_info_t;
+
+typedef struct _wsec_iv {
+	uint32		hi;	/* upper 32 bits of IV */
+	uint16		lo;	/* lower 16 bits of IV */
+} wsec_iv_t;
+
+typedef struct wsec_key {
+	uint32		index;		/* key index */
+	uint32		len;		/* key length */
+	uint8		data[WLC_MAX_KEY_SIZE];	/* key data */
+	tkip_info_t	tkip_tx;	/* tkip transmit state */
+	tkip_info_t	tkip_rx;	/* tkip receive state */
+	uint32		algo;		/* CRYPTO_ALGO_AES_CCM, CRYPTO_ALGO_WEP128, etc */
+	uint32		flags;		/* misc flags */
+	uint32 		algo_hw;	/* cache for hw register*/
+	uint32 		aes_mode;	/* cache for hw register*/
+	int		iv_len;		/* IV length */		
+	int		iv_initialized;	/* has IV been initialized already? */		
+	int		icv_len;	/* ICV length */
+	wsec_iv_t	rxiv;		/* Rx IV */
+	wsec_iv_t	txiv;		/* Tx IV */
+	struct ether_addr ea;		/* per station */
+} wsec_key_t;
+
+
 
 typedef struct wl_wsec_key {
 	uint32		index;		/* key index */
@@ -258,6 +311,9 @@ typedef struct wl_wsec_key {
 	struct ether_addr ea;		/* per station */
 } wl_wsec_key_t;
 
+/* For use with wlc_wep_key.flags */
+#define WSEC_PRIMARY_KEY	(1 << 1)	/* Indicates this key is the primary (ie tx) key */
+#define WSEC_TKIP_ERROR		(1 << 2)	/* Provoke deliberate error */
 
 #define WSEC_MIN_PSK_LEN	8
 #define WSEC_MAX_PSK_LEN	64
@@ -284,6 +340,21 @@ typedef struct {
 #define WSEC_TKIP_ENABLED(wsec)	((wsec) & TKIP_ENABLED)
 #define WSEC_AES_ENABLED(wsec)	((wsec) & AES_ENABLED)
 #define WSEC_ENABLED(wsec)	((wsec) & (WEP_ENABLED | TKIP_ENABLED | AES_ENABLED))
+
+
+/* wireless authentication bit vector */
+#define WPA_ENABLED	1
+#define PSK_ENABLED	2
+
+#define WAUTH_WPA_ENABLED(wauth)	((wauth) & WPA_ENABLED)
+#define WAUTH_PSK_ENABLED(wauth)	((wauth) & PSK_ENABLED)
+#define WAUTH_ENABLED(wauth)		((wauth) & (WPA_ENABLED | PSK_ENABLED))
+
+/* group/mcast cipher */
+#define WPA_MCAST_CIPHER(wsec)	(((wsec) & TKIP_ENABLED) ? WPA_CIPHER_TKIP : \
+				((wsec) & AES_ENABLED) ? WPA_CIPHER_AES_CCM : \
+				WPA_CIPHER_NONE)
+
 
 typedef struct wl_led_info {
 	uint32		index;		/* led index */
@@ -312,6 +383,14 @@ typedef struct wl_wpa_header {
 	/* uint8 data[1]; */
 } wl_wpa_header_t PACKED;
 
+/*
+ * definitions for 802.2 messages passed from WL to NAS.
+ */
+/* This seems not to be defined outside the kernel on linux. */
+#ifndef ETH_P_802_2
+#define ETH_P_802_2		4
+#endif
+
 #define WL_WPA_HEADER_LEN	(ETHER_HDR_LEN + DOT11_LLC_SNAP_HDR_LEN + 2 + WL_WPA_MSG_IFNAME_MAX)
 
 /* WPA driver message ethertype - private between wlc and nas */
@@ -325,6 +404,11 @@ typedef struct wl_wpa_header {
 #define WLC_DISASSOC_MSG	2
 #define WLC_PTK_MIC_MSG		3
 #define WLC_GTK_MIC_MSG		4
+
+/* Use this to recognize 802.2 driver messages. */
+static const uint8 wpa_snap_template[] =
+	{ 0xaa, 0xaa, 0x03, 0x00, 0x90, 0x4c };
+
 
 /* 802.1x driver message */
 typedef struct wl_eapol_header {
@@ -526,11 +610,14 @@ typedef struct wlc_rev_info {
 #define WLC_GET_VERSION				1
 #define WLC_UP					2
 #define WLC_DOWN				3
+#define WLC_GET_LOOP				4
+#define WLC_SET_LOOP				5
 #define WLC_DUMP				6
 #define WLC_GET_MSGLEVEL			7
 #define WLC_SET_MSGLEVEL			8
 #define WLC_GET_PROMISC				9
 #define WLC_SET_PROMISC				10
+#define WLC_OBSOLETE				11 
 #define WLC_GET_RATE				12
 #define WLC_SET_RATE				13
 #define WLC_GET_INSTANCE			14
@@ -547,6 +634,7 @@ typedef struct wlc_rev_info {
 #define WLC_GET_SSID				25
 #define WLC_SET_SSID				26
 #define WLC_RESTART				27
+#define WLC_DUMP_SCB				28 
 #define WLC_GET_CHANNEL				29
 #define WLC_SET_CHANNEL				30
 #define WLC_GET_SRL				31
@@ -558,10 +646,14 @@ typedef struct wlc_rev_info {
 #define WLC_GET_RADIO				37
 #define WLC_SET_RADIO				38
 #define WLC_GET_PHYTYPE				39
+#define WLC_DUMP_RATE				40
+#define WLC_SET_RATE_PARAMS			41
 #define WLC_GET_WEP				42
 #define WLC_SET_WEP				43
 #define WLC_GET_KEY				44
 #define WLC_SET_KEY				45
+#define WLC_GET_REGULATORY			46
+#define WLC_SET_REGULATORY			47
 #define WLC_GET_PASSIVE				48	/* added by nbd */
 #define WLC_SET_PASSIVE				49	/* added by nbd */
 #define WLC_SCAN				50
@@ -570,6 +662,11 @@ typedef struct wlc_rev_info {
 #define WLC_REASSOC				53
 #define WLC_GET_ROAM_TRIGGER			54
 #define WLC_SET_ROAM_TRIGGER			55
+#define WLC_GET_ROAM_DELTA			56
+#define WLC_SET_ROAM_DELTA			57
+#define WLC_GET_ROAM_SCAN_PERIOD		58
+#define WLC_SET_ROAM_SCAN_PERIOD		59
+#define WLC_EVM					60
 #define WLC_GET_TXANT				61
 #define WLC_SET_TXANT				62
 #define WLC_GET_ANTDIV				63
@@ -594,13 +691,35 @@ typedef struct wlc_rev_info {
 #define WLC_SET_WEP_RESTRICT			82
 #define WLC_GET_COUNTRY				83
 #define WLC_SET_COUNTRY				84
+#define WLC_GET_PM				85
+#define WLC_SET_PM				86
+#define WLC_GET_WAKE				87
+#define WLC_SET_WAKE				88
+#define	WLC_GET_D11CNTS				89
+#define WLC_GET_FORCELINK			90	/* ndis only */
+#define WLC_SET_FORCELINK			91	/* ndis only */
+#define WLC_FREQ_ACCURACY			92
+#define WLC_CARRIER_SUPPRESS			93
+#define WLC_GET_PHYREG				94
+#define WLC_SET_PHYREG				95
+#define WLC_GET_RADIOREG			96
+#define WLC_SET_RADIOREG			97
 #define WLC_GET_REVINFO				98
+#define WLC_GET_UCANTDIV			99
+#define WLC_SET_UCANTDIV			100
+#define WLC_R_REG				101
+#define WLC_W_REG				102
+#define WLC_DIAG_LOOPBACK			103
+#define WLC_RESET_D11CNTS			104
 #define WLC_GET_MACMODE				105
 #define WLC_SET_MACMODE				106
 #define WLC_GET_MONITOR				107     /* added by nbd */
 #define WLC_SET_MONITOR				108     /* added by nbd */
 #define WLC_GET_GMODE				109
 #define WLC_SET_GMODE				110
+#define WLC_GET_LEGACY_ERP			111
+#define WLC_SET_LEGACY_ERP			112
+#define WLC_GET_RX_ANT				113
 #define WLC_GET_CURR_RATESET			114	/* current rateset */
 #define WLC_GET_SCANSUPPRESS			115
 #define WLC_SET_SCANSUPPRESS			116
@@ -608,17 +727,29 @@ typedef struct wlc_rev_info {
 #define WLC_SET_AP				118
 #define WLC_GET_EAP_RESTRICT			119
 #define WLC_SET_EAP_RESTRICT			120
+#define WLC_SCB_AUTHORIZE			121
+#define WLC_SCB_DEAUTHORIZE			122
 #define WLC_GET_WDSLIST				123
 #define WLC_SET_WDSLIST				124
+#define WLC_GET_ATIM				125
+#define WLC_SET_ATIM				126
 #define WLC_GET_RSSI				127
+#define WLC_GET_PHYANTDIV			128
+#define WLC_SET_PHYANTDIV			129
+#define WLC_AP_RX_ONLY				130
+#define WLC_GET_TX_PATH_PWR			131
+#define WLC_SET_TX_PATH_PWR			132
 #define WLC_GET_WSEC				133
 #define WLC_SET_WSEC				134
+#define WLC_GET_PHY_NOISE			135
 #define WLC_GET_BSS_INFO			136
+#define WLC_GET_PKTCNTS				137
 #define WLC_GET_LAZYWDS				138
 #define WLC_SET_LAZYWDS				139
 #define WLC_GET_BANDLIST			140
 #define WLC_GET_BAND				141
 #define WLC_SET_BAND				142
+#define WLC_SCB_DEAUTHENTICATE			143
 #define WLC_GET_SHORTSLOT			144
 #define WLC_GET_SHORTSLOT_OVERRIDE		145
 #define WLC_SET_SHORTSLOT_OVERRIDE		146
@@ -630,6 +761,10 @@ typedef struct wlc_rev_info {
 #define WLC_UPGRADE				152
 #define WLC_GET_MRATE				153
 #define WLC_SET_MRATE				154
+#define WLC_GET_IGNORE_BCNS			155
+#define WLC_SET_IGNORE_BCNS			156
+#define WLC_GET_SCB_TIMEOUT			157
+#define WLC_SET_SCB_TIMEOUT			158
 #define WLC_GET_ASSOCLIST			159
 #define WLC_GET_CLK				160
 #define WLC_SET_CLK				161
@@ -637,21 +772,66 @@ typedef struct wlc_rev_info {
 #define WLC_OUT					163
 #define WLC_GET_WPA_AUTH			164
 #define WLC_SET_WPA_AUTH			165
+#define WLC_GET_UCFLAGS				166
+#define WLC_SET_UCFLAGS				167
+#define WLC_GET_PWRIDX				168
+#define WLC_SET_PWRIDX				169
+#define WLC_GET_TSSI				170
+#define WLC_GET_SUP_RATESET_OVERRIDE		171
+#define WLC_SET_SUP_RATESET_OVERRIDE		172
+#define WLC_SET_FAST_TIMER			173
+#define WLC_GET_FAST_TIMER			174
+#define WLC_SET_SLOW_TIMER			175
+#define WLC_GET_SLOW_TIMER			176
+#define WLC_DUMP_PHYREGS			177
 #define WLC_GET_GMODE_PROTECTION_CONTROL	178
 #define WLC_SET_GMODE_PROTECTION_CONTROL	179
 #define WLC_GET_PHYLIST				180
+#define WLC_ENCRYPT_STRENGTH			181	/* ndis only */
+#define WLC_DECRYPT_STATUS			182	/* ndis only */
 #define WLC_GET_KEY_SEQ				183
+#define WLC_GET_SCAN_CHANNEL_TIME		184
+#define WLC_SET_SCAN_CHANNEL_TIME		185
+#define WLC_GET_SCAN_UNASSOC_TIME		186
+#define WLC_SET_SCAN_UNASSOC_TIME		187
+#define WLC_GET_SCAN_HOME_TIME			188
+#define WLC_SET_SCAN_HOME_TIME			189
+#define WLC_GET_SCAN_PASSES			190
+#define WLC_SET_SCAN_PASSES			191
+#define WLC_GET_PRB_RESP_TIMEOUT		192
+#define WLC_SET_PRB_RESP_TIMEOUT		193
+#define WLC_GET_ATTEN				194
+#define WLC_SET_ATTEN				195
+#define WLC_GET_SHMEM				196	/* diag */
+#define WLC_SET_SHMEM				197	/* diag */
 #define WLC_GET_GMODE_PROTECTION_CTS		198
 #define WLC_SET_GMODE_PROTECTION_CTS		199
+#define WLC_SET_TKIP_MIC_FLAG			200
+#define WLC_SCB_DEAUTHENTICATE_FOR_REASON	201
+#define WLC_TKIP_COUNTERMEASURES		202
 #define WLC_GET_PIOMODE				203
 #define WLC_SET_PIOMODE				204
 #define WLC_SET_LED				209
 #define WLC_GET_LED				210
+#define WLC_GET_INTERFERENCE_MODE		211
+#define WLC_SET_INTERFERENCE_MODE		212
+#define WLC_GET_CHANNEL_QA			213
+#define WLC_START_CHANNEL_QA			214
 #define WLC_GET_CHANNEL_SEL			215
 #define WLC_START_CHANNEL_SEL			216
 #define WLC_GET_VALID_CHANNELS			217
 #define WLC_GET_FAKEFRAG			218
 #define WLC_SET_FAKEFRAG			219
+#define WLC_GET_PWROUT_PERCENTAGE		220
+#define WLC_SET_PWROUT_PERCENTAGE		221
+#define WLC_SET_BAD_FRAME_PREEMPT		222
+#define WLC_GET_BAD_FRAME_PREEMPT		223
+#define WLC_SET_LEAP_LIST			224
+#define WLC_GET_LEAP_LIST			225
+#define WLC_GET_CWMIN				226
+#define WLC_SET_CWMIN				227
+#define WLC_GET_CWMAX				228
+#define WLC_SET_CWMAX				229
 #define WLC_GET_WET				230
 #define WLC_SET_WET				231
 #define WLC_GET_KEY_PRIMARY			235
@@ -699,6 +879,10 @@ typedef struct wlc_rev_info {
 
 /* NDIS overrides */
 #define OID_WL_GETINSTANCE	(WL_OID_BASE + WLC_GET_INSTANCE)
+#define OID_WL_GET_FORCELINK	(WL_OID_BASE + WLC_GET_FORCELINK)
+#define OID_WL_SET_FORCELINK	(WL_OID_BASE + WLC_SET_FORCELINK)
+#define	OID_WL_ENCRYPT_STRENGTH	(WL_OID_BASE + WLC_ENCRYPT_STRENGTH)
+#define OID_WL_DECRYPT_STATUS	(WL_OID_BASE + WLC_DECRYPT_STATUS)
 
 #define WL_DECRYPT_STATUS_SUCCESS	1
 #define WL_DECRYPT_STATUS_FAILURE	2
@@ -731,16 +915,32 @@ typedef struct wlc_rev_info {
 #define WLC_MACMODE_DENY	1	/* Deny specified (i.e. allow unspecified) */
 #define WLC_MACMODE_ALLOW	2	/* Allow specified (i.e. deny unspecified) */	
 
-/* 
- *
- */
-#define GMODE_LEGACY_B		0
-#define GMODE_AUTO		1
-#define GMODE_ONLY		2
-#define GMODE_B_DEFERRED	3
-#define GMODE_PERFORMANCE	4
-#define GMODE_LRS		5
+
+/* 54g modes (basic bits may still be overridden) */
+#define GMODE_LEGACY_B		0	/* Rateset: 1b, 2b, 5.5, 11 */
+					/* Preamble: Long */
+					/* Shortslot: Off */
+#define GMODE_AUTO		1	/* Rateset: 1b, 2b, 5.5b, 11b, 18, 24, 36, 54 */
+					/* Extended Rateset: 6, 9, 12, 48 */
+					/* Preamble: Long */
+					/* Shortslot: Auto */
+#define GMODE_ONLY		2	/* Rateset: 1b, 2b, 5.5b, 11b, 18, 24b, 36, 54 */
+					/* Extended Rateset: 6b, 9, 12b, 48 */
+					/* Preamble: Short required */
+					/* Shortslot: Auto */
+#define GMODE_B_DEFERRED	3	/* Rateset: 1b, 2b, 5.5b, 11b, 18, 24, 36, 54 */
+					/* Extended Rateset: 6, 9, 12, 48 */
+					/* Preamble: Long */
+					/* Shortslot: On */
+#define GMODE_PERFORMANCE	4	/* Rateset: 1b, 2b, 5.5b, 6b, 9, 11b, 12b, 18, 24b, 36, 48, 54 */
+					/* Preamble: Short required */
+					/* Shortslot: On and required */
+#define GMODE_LRS		5	/* Rateset: 1b, 2b, 5.5b, 11b */
+					/* Extended Rateset: 6, 9, 12, 18, 24, 36, 48, 54 */
+					/* Preamble: Long */
+					/* Shortslot: Auto */
 #define GMODE_MAX		6
+
 
 /* values for PLCPHdr_override */
 #define WLC_PLCP_AUTO	-1
@@ -762,8 +962,34 @@ typedef struct wlc_rev_info {
 #define PM_MAX	1
 #define PM_FAST 2
 
+/* interference mitigation options */
+#define	INTERFERE_NONE	0	/* off */
+#define	NON_WLAN        1	/* foreign/non 802.11 interference, no auto detect */
+#define	WLAN_MANUAL     2	/* ACI: no auto detection */
+#define	WLAN_AUTO       3	/* ACI: auto - detact */
 
-
+/* Message levels */
+#define WL_ERROR_VAL		0x0001
+#define WL_TRACE_VAL		0x0002
+#define WL_PRHDRS_VAL		0x0004
+#define WL_PRPKT_VAL		0x0008
+#define WL_INFORM_VAL		0x0010
+#define WL_TMP_VAL		0x0020
+#define WL_OID_VAL		0x0040
+#define WL_RATE_VAL		0x0080
+#define WL_ASSOC_VAL		0x0100
+#define WL_PRUSR_VAL		0x0200
+#define WL_PS_VAL		0x0400
+#define WL_TXPWR_VAL		0x0800
+#define WL_GMODE_VAL		0x1000
+#define WL_DUAL_VAL		0x2000
+#define WL_WSEC_VAL		0x4000
+#define WL_WSEC_DUMP_VAL	0x8000
+#define WL_LOG_VAL		0x10000
+#define WL_NRSSI_VAL		0x20000
+#define WL_LOFT_VAL		0x40000
+#define WL_REGULATORY_VAL	0x80000
+#define WL_ACI_VAL		0x100000
 
 
 /* 802.11h enforcement levels */
@@ -796,6 +1022,15 @@ typedef struct wlc_rev_info {
 #define	WL_LED_BEH_MASK		0x7f		/* behavior mask */
 #define	WL_LED_AL_MASK		0x80		/* activelow (polarity) bit */
 
+
+/* maximum channels */
+#define WL_NUMCHANNELS	64	/* max # of channels in the band */
+
+/* rate check */
+#define WL_RATE_OFDM(r)		(((r) & 0x7f) == 12 || ((r) & 0x7f) == 18 || \
+				 ((r) & 0x7f) == 24 || ((r) & 0x7f) == 36 || \
+				 ((r) & 0x7f) == 48 || ((r) & 0x7f) == 72 || \
+				 ((r) & 0x7f) == 96 || ((r) & 0x7f) == 108)
 
 /* WDS link local endpoint WPA role */
 #define WL_WDS_WPA_ROLE_AUTH	0	/* authenticator */
