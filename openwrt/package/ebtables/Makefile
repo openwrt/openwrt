@@ -19,6 +19,7 @@ $(DL_DIR)/$(PKG_SOURCE):
 
 $(PKG_BUILD_DIR)/.unpacked: $(DL_DIR)/$(PKG_SOURCE)
 	$(PKG_CAT) $(DL_DIR)/$(PKG_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
+	$(PATCH) $(PKG_BUILD_DIR) ./patches
 	touch $(PKG_BUILD_DIR)/.unpacked
 
 $(PKG_BUILD_DIR)/ebtables: $(PKG_BUILD_DIR)/.unpacked
