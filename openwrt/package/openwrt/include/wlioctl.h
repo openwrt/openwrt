@@ -595,6 +595,8 @@ typedef struct wlc_rev_info {
 #define WLC_GET_REVINFO				98
 #define WLC_GET_MACMODE				105
 #define WLC_SET_MACMODE				106
+#define WLC_GET_MONITOR				107     /* added by nbd */
+#define WLC_SET_MONITOR				108     /* added by nbd */
 #define WLC_GET_GMODE				109
 #define WLC_SET_GMODE				110
 #define WLC_GET_CURR_RATESET			114	/* current rateset */
