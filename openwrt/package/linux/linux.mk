@@ -76,7 +76,6 @@ $(LINUX_DIR)/.depend_done:  $(LINUX_DIR)/.configured
 
 $(LINUX_DIR)/$(LINUX_BINLOC): $(LINUX_DIR)/.depend_done
 	$(MAKE) -C $(LINUX_DIR) ARCH=$(LINUX_KARCH) PATH=$(TARGET_PATH) $(LINUX_FORMAT)
-	$(MAKE) -C $(LINUX_DIR) ARCH=$(LINUX_KARCH) PATH=$(TARGET_PATH) modules
 
 $(LINUX_KERNEL): $(LINUX_DIR)/$(LINUX_BINLOC)
 	cp -fa $(LINUX_DIR)/$(LINUX_BINLOC) $(LINUX_KERNEL)
@@ -84,6 +83,7 @@ $(LINUX_KERNEL): $(LINUX_DIR)/$(LINUX_BINLOC)
 
 $(LINUX_DIR)/.modules_done: $(LINUX_KERNEL)
 	rm -rf $(BUILD_DIR)/modules
+	$(MAKE) -C $(LINUX_DIR) ARCH=$(LINUX_KARCH) PATH=$(TARGET_PATH) modules
 	$(MAKE) -C $(LINUX_DIR) DEPMOD=true INSTALL_MOD_PATH=$(BUILD_DIR)/modules modules_install
 	touch $(LINUX_DIR)/.modules_done
 
