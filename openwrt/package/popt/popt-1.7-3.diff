@@ -1,31 +1,31 @@
-diff -ruN popt-1.7-orig/ipkg/libpopt/CONTROL/control popt-1.7-2/ipkg/libpopt/CONTROL/control
+diff -ruN popt-1.7-orig/ipkg/libpopt/CONTROL/control popt-1.7-3/ipkg/libpopt/CONTROL/control
 --- popt-1.7-orig/ipkg/libpopt/CONTROL/control	1970-01-01 01:00:00.000000000 +0100
-+++ popt-1.7-2/ipkg/libpopt/CONTROL/control	2005-02-27 16:29:21.000000000 +0100
++++ popt-1.7-3/ipkg/libpopt/CONTROL/control	2005-03-08 03:24:11.000000000 +0100
 @@ -0,0 +1,8 @@
 +Package: libpopt
 +Priority: optional
 +Section: libs
-+Version: 1.7-2
-+Architecture: mipsel
++Version: [TBDL]
++Architecture: [TBDL]
 +Maintainer: Nico <nthill@free.fr>
 +Source: http://nthill.free.fr/openwrt/sources/popt/
 +Description: a command line option parsing library
-diff -ruN popt-1.7-orig/ipkg/libpopt-dev/CONTROL/control popt-1.7-2/ipkg/libpopt-dev/CONTROL/control
---- popt-1.7-orig/ipkg/libpopt-dev/CONTROL/control	1970-01-01 01:00:00.000000000 +0100
-+++ popt-1.7-2/ipkg/libpopt-dev/CONTROL/control	2005-02-27 16:29:29.000000000 +0100
+diff -ruN popt-1.7-orig/ipkg/popt-dev/CONTROL/control popt-1.7-3/ipkg/popt-dev/CONTROL/control
+--- popt-1.7-orig/ipkg/popt-dev/CONTROL/control	1970-01-01 01:00:00.000000000 +0100
++++ popt-1.7-3/ipkg/popt-dev/CONTROL/control	2005-03-08 03:26:21.000000000 +0100
 @@ -0,0 +1,8 @@
-+Package: libpopt-dev
++Package: popt-dev
 +Priority: optional
 +Section: devel
-+Version: 1.7-2
-+Architecture: mipsel
++Version: [TBDL]
++Architecture: [TBDL]
 +Maintainer: Nico <nthill@free.fr>
 +Source: http://nthill.free.fr/openwrt/sources/popt/
 +Description: a command line option parsing library (development)
-diff -ruN popt-1.7-orig/ipkg/rules popt-1.7-2/ipkg/rules
+diff -ruN popt-1.7-orig/ipkg/rules popt-1.7-3/ipkg/rules
 --- popt-1.7-orig/ipkg/rules	1970-01-01 01:00:00.000000000 +0100
-+++ popt-1.7-2/ipkg/rules	2005-02-27 16:31:03.000000000 +0100
-@@ -0,0 +1,118 @@
++++ popt-1.7-3/ipkg/rules	2005-03-08 03:50:49.000000000 +0100
+@@ -0,0 +1,126 @@
 +#!/usr/bin/make -f
 +
 +ifneq ($(strip ${IPKG_RULES_INC}),)
@@ -34,18 +34,23 @@ diff -ruN popt-1.7-orig/ipkg/rules popt-1.7-2/ipkg/rules
 +
 +##
 +
++PKG_VERSION := $(shell cat ./ipkg/version)
 +CURRENT_DIR := $(shell pwd)
-+
 +INSTALL_DIR = $(CURRENT_DIR)/ipkg-install
 +
 +I_LIBPOPT := ipkg/libpopt
-+I_LIBPOPT_DEV := ipkg/libpopt-dev
++I_POPT_DEV := ipkg/popt-dev
 +
 +BUILD_DEPS := \
++
++CONFIGURE_OPTS = \
++	--enable-shared \
++	--enable-static \
 +
 +##
 +
 +all: package
++
 +
 +.stamp-configured: $(BUILD_DEPS)
 +
@@ -70,8 +75,7 @@ diff -ruN popt-1.7-orig/ipkg/rules popt-1.7-2/ipkg/rules
 +	  --sbindir=/usr/sbin \
 +	  --sysconfdir=/etc \
 +	  $(DISABLE_NLS) \
-+	  --enable-shared \
-+	  --enable-static \
++	  $(CONFIGURE_OPTS) \
 +
 +	touch .stamp-configured
 +
@@ -91,7 +95,7 @@ diff -ruN popt-1.7-orig/ipkg/rules popt-1.7-2/ipkg/rules
 +
 +	$(MAKE) \
 +	  DESTDIR="$(INSTALL_DIR)" \
-+	  program_transform_name="s,x,x," \
++	  transform="s,x,x," \
 +	 install
 +
 +
@@ -110,37 +114,46 @@ diff -ruN popt-1.7-orig/ipkg/rules popt-1.7-2/ipkg/rules
 +	cp -fpR $(INSTALL_DIR)/usr/lib/libpopt*.so.* $(I_LIBPOPT)/usr/lib/
 +	$(STRIP) $(I_LIBPOPT)/usr/lib/lib*.so.*
 +
-+	mkdir -p $(I_LIBPOPT_DEV)/usr/include
-+	cp -fpR $(INSTALL_DIR)/usr/include/popt.h $(I_LIBPOPT_DEV)/usr/include/
-+	mkdir -p $(I_LIBPOPT_DEV)/usr/lib
-+	cp -fpR $(INSTALL_DIR)/usr/lib/libpopt*.a $(I_LIBPOPT_DEV)/usr/lib/
-+	cp -fpR $(INSTALL_DIR)/usr/lib/libpopt*.so* $(I_LIBPOPT_DEV)/usr/lib/
++	mkdir -p $(I_POPT_DEV)/usr/include
++	cp -fpR $(INSTALL_DIR)/usr/include/popt.h $(I_POPT_DEV)/usr/include/
++	mkdir -p $(I_POPT_DEV)/usr/lib
++	cp -fpR $(INSTALL_DIR)/usr/lib/libpopt*.a $(I_POPT_DEV)/usr/lib/
++	cp -fpR $(INSTALL_DIR)/usr/lib/libpopt*.so* $(I_POPT_DEV)/usr/lib/
 +
-+	chmod 0755 $(I_LIBPOPT)/CONTROL/
-+	chmod 0644 $(I_LIBPOPT)/CONTROL/control
-+
-+	chmod 0755 $(I_LIBPOPT_DEV)/CONTROL/
-+	chmod 0644 $(I_LIBPOPT_DEV)/CONTROL/control
++	chmod 0755 ipkg/*/CONTROL/
++	chmod 0644 ipkg/*/CONTROL/control
++	
++	perl -pi -e "s/^Arch.*:.*/Architecture: $(TARGET_ARCH)/g" ipkg/*/CONTROL/control
++ifneq ($(strip $(PKG_VERSION)),)
++	perl -pi -e "s/^Vers.*:.*/Version: $(PKG_VERSION)/g" ipkg/*/CONTROL/control
++endif
 +
 +	$(IPKG_BUILD) $(I_LIBPOPT) $(IPKG_TARGET_DIR)
-+	$(IPKG_BUILD) $(I_LIBPOPT_DEV) $(IPKG_TARGET_DIR)
++	$(IPKG_BUILD) $(I_POPT_DEV) $(IPKG_TARGET_DIR)
 +
 +
 +clean:
 +
 +	-$(MAKE) clean
 +	rm -rf .stamp-*
-+	rm -rf $(INSTALL_DIR)
++	rm -rf $(INSTALL_DIR)/usr/include/popt*
++	rm -rf $(INSTALL_DIR)/usr/include/libpopt*
++	rm -rf $(INSTALL_DIR)/usr/share/man/man*/popt*
 +	rm -rf $(I_LIBPOPT)/usr
-+	rm -rf $(I_LIBPOPT_DEV)/usr
++	rm -rf $(I_POPT_DEV)/usr
 +
 +
 +control:
 +
 +	@cat $(I_LIBPOPT)/CONTROL/control
 +	@echo
-+	@cat $(I_LIBPOPT_DEV)/CONTROL/control
++	@cat $(I_POPT_DEV)/CONTROL/control
 +	@echo
 +	
 +
 +.PHONY: configure build install package clean control
+diff -ruN popt-1.7-orig/ipkg/version popt-1.7-3/ipkg/version
+--- popt-1.7-orig/ipkg/version	1970-01-01 01:00:00.000000000 +0100
++++ popt-1.7-3/ipkg/version	2005-03-08 03:23:49.000000000 +0100
+@@ -0,0 +1 @@
++1.7-3
