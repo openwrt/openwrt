@@ -2,7 +2,7 @@
 mount none /proc -t proc
 insmod diag
 echo 0x01 > /proc/sys/diag
-sleep 1
+mtd unlock mtd4
 if /sbin/resetmon ; then
   mount -t jffs2 /dev/mtdblock/4 /jffs
   pivot_root /jffs /jffs/rom
