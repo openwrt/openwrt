@@ -17,7 +17,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-ifneq ($(findstring 2.95,$(GCC_VERSION)),2.95)
 GCC_VERSION:=$(strip $(GCC_VERSION))
 
 #GCC_SITE:=ftp://ftp.gnu.org/gnu/gcc/releases/gcc-$(GCC_VERSION)
@@ -67,7 +66,7 @@ $(GCC_DIR)/.unpacked: $(DL_DIR)/$(GCC_SOURCE)
 
 $(GCC_DIR)/.patched: $(GCC_DIR)/.unpacked
 	# Apply any files named gcc-*.patch from the source directory to gcc
-	toolchain/patch-kernel.sh $(GCC_DIR) toolchain/gcc/$(GCC_VERSION) \*.patch
+	$(SCRIPT_DIR)/patch-kernel.sh $(GCC_DIR) ./$(GCC_VERSION) \*.patch
 	# Note: The soft float situation has improved considerably with gcc 3.4.x.
 	# We can dispense with the custom spec files, as well as libfloat for the arm case.
 	# However, we still need a patch for arm.  There's a similar patch for gcc 3.3.x
@@ -75,10 +74,10 @@ $(GCC_DIR)/.patched: $(GCC_DIR)/.unpacked
 	# anyone (?) who might still be using gcc 2.95.  mjn3
 ifeq ($(BR2_SOFT_FLOAT),y)
 ifeq ("$(strip $(ARCH))","arm")
-	toolchain/patch-kernel.sh $(GCC_DIR) toolchain/gcc/$(GCC_VERSION) arm-softfloat.patch.conditional
+	$(SCRIPT_DIR)/patch-kernel.sh $(GCC_DIR) ./$(GCC_VERSION) arm-softfloat.patch.conditional
 endif
 ifeq ("$(strip $(ARCH))","armeb")
-	toolchain/patch-kernel.sh $(GCC_DIR) toolchain/gcc/$(GCC_VERSION) arm-softfloat.patch.conditional
+	$(SCRIPT_DIR)/patch-kernel.sh $(GCC_DIR) ./$(GCC_VERSION) arm-softfloat.patch.conditional
 endif
 	# Not yet updated to 3.4.1.
 	#ifeq ("$(strip $(ARCH))","i386")
@@ -121,11 +120,10 @@ $(STAGING_DIR)/bin/$(REAL_GNU_TARGET_NAME)-gcc: $(GCC_BUILD_DIR1)/.compiled
 	#rm -f $(STAGING_DIR)/bin/gccbug $(STAGING_DIR)/bin/gcov
 	#rm -rf $(STAGING_DIR)/info $(STAGING_DIR)/man $(STAGING_DIR)/share/doc $(STAGING_DIR)/share/locale
 
-gcc_initial: uclibc-configured binutils $(STAGING_DIR)/bin/$(REAL_GNU_TARGET_NAME)-gcc
+gcc_initial: $(STAGING_DIR)/bin/$(REAL_GNU_TARGET_NAME)-gcc
 
 gcc_initial-clean:
 	rm -rf $(GCC_BUILD_DIR1)
-	rm -f $(STAGING_DIR)/bin/$(REAL_GNU_TARGET_NAME)*
 
 gcc_initial-toolclean:
 	rm -rf $(GCC_BUILD_DIR1)
@@ -171,7 +169,7 @@ $(GCC_BUILD_DIR2)/.compiled: $(GCC_BUILD_DIR2)/.configured
 	PATH=$(TARGET_PATH) $(MAKE) -C $(GCC_BUILD_DIR2) all
 	touch $(GCC_BUILD_DIR2)/.compiled
 
-$(GCC_BUILD_DIR2)/.installed: $(GCC_BUILD_DIR2)/.compiled
+gcc-install: $(GCC_BUILD_DIR2)/.compiled
 	PATH=$(TARGET_PATH) $(MAKE) -C $(GCC_BUILD_DIR2) install
 	# Strip the host binaries
 ifeq ($(GCC_STRIP_HOST_BINARIES),true)
@@ -193,7 +191,7 @@ endif
 ifeq ($(BR2_SOFT_FLOAT),y)
 ifeq ($(findstring 3.3.,$(GCC_VERSION)),3.3.)
 	# Make sure we have a soft float specs file for this arch
-	if [ ! -f toolchain/gcc/$(GCC_VERSION)/specs-$(ARCH)-soft-float ] ; then \
+	if [ ! -f ./$(GCC_VERSION)/specs-$(ARCH)-soft-float ] ; then \
 		echo soft float configured but no specs file for this arch ; \
 		/bin/false ; \
 	fi;
@@ -202,28 +200,24 @@ ifeq ($(findstring 3.3.,$(GCC_VERSION)),3.3.)
 		echo staging dir specs file is missing ; \
 		/bin/false ; \
 	fi;
-	cp toolchain/gcc/$(GCC_VERSION)/specs-$(ARCH)-soft-float $(STAGING_DIR)/lib/gcc-lib/$(REAL_GNU_TARGET_NAME)/$(GCC_VERSION)/specs
+	cp ./$(GCC_VERSION)/specs-$(ARCH)-soft-float $(STAGING_DIR)/lib/gcc-lib/$(REAL_GNU_TARGET_NAME)/$(GCC_VERSION)/specs
 endif
 endif
-	#
-	# Ok... that's enough of that.
-	#
-	touch $(GCC_BUILD_DIR2)/.installed
-
-$(TARGET_DIR)/lib/libgcc_s.so.1: $(GCC_BUILD_DIR2)/.installed
 	# These are in /lib, so...
 	rm -rf $(TARGET_DIR)/usr/lib/libgcc_s.so*
 	-$(STRIP) $(STAGING_DIR)/$(REAL_GNU_TARGET_NAME)/lib/libgcc_s.so.1
 	-cp -a $(STAGING_DIR)/$(REAL_GNU_TARGET_NAME)/lib/libgcc_s* $(TARGET_DIR)/lib/
 
-gcc: uclibc-configured binutils gcc_initial $(LIBFLOAT_TARGET) uclibc \
-	$(TARGET_DIR)/lib/libgcc_s.so.1 $(GCC_BUILD_DIR2)/.installed $(GCC_TARGETS)
+gcc: gcc_initial $(LIBFLOAT_TARGET) \
+	gcc-install $(GCC_TARGETS)
 
 gcc-source: $(DL_DIR)/$(GCC_SOURCE)
 
 gcc-clean:
+	rm -rf $(GCC_DIR)
 	rm -rf $(GCC_BUILD_DIR2)
-	rm -f $(STAGING_DIR)/bin/$(REAL_GNU_TARGET_NAME)*
+	rm -f $(STAGING_DIR)/bin/$(REAL_GNU_TARGET_NAME)-gc*
+	rm -f $(STAGING_DIR)/bin/$(REAL_GNU_TARGET_NAME)-c*
 
 gcc-toolclean:
 	rm -rf $(GCC_BUILD_DIR2)
@@ -235,7 +229,7 @@ gcc-toolclean:
 #############################################################
 GCC_BUILD_DIR3:=$(BUILD_DIR)/gcc-$(GCC_VERSION)-target
 
-$(GCC_BUILD_DIR3)/.configured: $(GCC_BUILD_DIR2)/.installed
+$(GCC_BUILD_DIR3)/.configured: gcc-install
 	mkdir -p $(GCC_BUILD_DIR3)
 	(cd $(GCC_BUILD_DIR3); PATH=$(TARGET_PATH) \
 		$(GCC_DIR)/configure \
@@ -282,7 +276,7 @@ $(TARGET_DIR)/usr/bin/gcc: $(GCC_BUILD_DIR3)/.compiled
 ifeq ($(BR2_SOFT_FLOAT),y)
 ifeq ($(findstring 3.3.,$(GCC_VERSION)),3.3.)
 	# Add a specs file that defaults to soft float mode.
-	cp toolchain/gcc/$(GCC_VERSION)/specs-$(ARCH)-soft-float $(TARGET_DIR)/usr/lib/gcc-lib/$(REAL_GNU_TARGET_NAME)/$(GCC_VERSION)/specs
+	cp ./$(GCC_VERSION)/specs-$(ARCH)-soft-float $(TARGET_DIR)/usr/lib/gcc-lib/$(REAL_GNU_TARGET_NAME)/$(GCC_VERSION)/specs
 	# Make sure gcc does not think we are cross compiling
 	$(SED) "s/^1/0/;" $(TARGET_DIR)/usr/lib/gcc-lib/$(REAL_GNU_TARGET_NAME)/$(GCC_VERSION)/specs
 endif
@@ -318,4 +312,3 @@ gcc_target-clean:
 gcc_target-toolclean:
 	rm -rf $(GCC_BUILD_DIR3)
 
-endif

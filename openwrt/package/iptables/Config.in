@@ -1,7 +1,24 @@
 config BR2_PACKAGE_IPTABLES
-	bool "iptables"
+	tristate "iptables"
 	default y
 	help
 	  Linux kernel (2.4+) firewall, NAT, and packet mangling tools.
 
 	  http://www.iptables.org/
+
+config BR2_PACKAGE_IPTABLES_EXTRA
+	tristate "extra modules"
+	default m
+	depends BR2_PACKAGE_IPTABLES
+	help
+	  Extra modules for iptables (kernel and user space)
+
+config BR2_PACKAGE_IP6TABLES
+	tristate "ip6tables"
+	default m
+	depends BR2_PACKAGE_IPTABLES
+	select BR2_PACKAGE_KMOD_IPV6
+	help
+	  IPv6 firewalling
+
+

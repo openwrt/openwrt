@@ -97,11 +97,13 @@ linksys-wlconf-dirclean:
 	rm -rf $(LINKSYS_WLCONF_DIR)
 
 # mtd tool
-OPENWRT_MTD_SOURCE=package/openwrt/mtd.c
+OPENWRT_MTD_SOURCE=./mtd.c
 OPENWRT_MTD_TARGET_BINARY:=sbin/mtd
 
 $(TARGET_DIR)/$(OPENWRT_MTD_TARGET_BINARY): 
-		$(TARGET_CC) -o $(TARGET_DIR)/$(OPENWRT_MTD_TARGET_BINARY) $(OPENWRT_MTD_SOURCE)
+	$(TARGET_CC) -o $@ $(OPENWRT_MTD_SOURCE)
+	$(STRIP) $@
+
 
 openwrt-mtd: $(TARGET_DIR)/$(OPENWRT_MTD_TARGET_BINARY)
 
@@ -109,58 +111,22 @@ openwrt-mtd-clean:
 	rm $(TARGET_DIR)/$(OPENWRT_MTD_TARGET_BINARY)
 
 # jffs2root tool
-OPENWRT_JFFS2ROOT_SOURCE=package/openwrt/jffs2root.c
+OPENWRT_JFFS2ROOT_SOURCE=./jffs2root.c
 OPENWRT_JFFS2ROOT_TARGET_BINARY:=sbin/jffs2root
 
-$(TARGET_DIR)/$(OPENWRT_JFFS2ROOT_TARGET_BINARY): openwrt
-		$(TARGET_CC) -o $(TARGET_DIR)/$(OPENWRT_JFFS2ROOT_TARGET_BINARY) $(OPENWRT_JFFS2ROOT_SOURCE)
+$(TARGET_DIR)/$(OPENWRT_JFFS2ROOT_TARGET_BINARY): 
+	$(TARGET_CC) -o $@ $(OPENWRT_JFFS2ROOT_SOURCE)
+	$(STRIP) $@
 
 openwrt-jffs2root: $(TARGET_DIR)/$(OPENWRT_JFFS2ROOT_TARGET_BINARY)
 
 openwrt-jffs2root-clean:
 	rm $(TARGET_DIR)/$(OPENWRT_JFFS2ROOT_TARGET_BINARY)
 
-# trx tool
-OPENWRT_TRX_SOURCE=package/openwrt/trx.c
-OPENWRT_TRX_TARGET=$(STAGING_DIR)/bin/trx
-
-$(OPENWRT_TRX_TARGET): 
-		$(CC) -o $(OPENWRT_TRX_TARGET) $(OPENWRT_TRX_SOURCE)
-
-openwrt-trx: $(OPENWRT_TRX_TARGET)
-
-openwrt-trx-clean: 
-	rm $(OPENWRT_TRX_TARGET)
-
-# addpattern tool
-OPENWRT_ADDPATTERN_SOURCE=package/openwrt/addpattern.c
-OPENWRT_ADDPATTERN_TARGET=$(STAGING_DIR)/bin/addpattern
-
-$(OPENWRT_ADDPATTERN_TARGET): 
-		$(CC) -o $(OPENWRT_ADDPATTERN_TARGET) $(OPENWRT_ADDPATTERN_SOURCE)
-
-openwrt-addpattern: $(OPENWRT_ADDPATTERN_TARGET)
-
-openwrt-addpattern-clean: 
-	rm $(OPENWRT_ADDPATTERN_TARGET)
-
-# sstrip tool
-OPENWRT_SSTRIP_SOURCE=package/openwrt/sstrip.c
-OPENWRT_SSTRIP_TARGET=$(STAGING_DIR)/bin/sstrip
-
-$(OPENWRT_SSTRIP_TARGET):
-		$(CC) -o $(OPENWRT_SSTRIP_TARGET) $(OPENWRT_SSTRIP_SOURCE)
-
-openwrt-sstrip: $(OPENWRT_SSTRIP_TARGET)
-
-openwrt-sstrip-clean:
-	rm $(OPENWRT_SSTRIP_TARGET)
-
-SSTRIP=$(OPENWRT_SSTRIP_TARGET)
 
 linksys:	linksys-shared linksys-nvram linksys-wlconf
 
-openwrt:	linksys openwrt-mtd openwrt-trx openwrt-addpattern openwrt-sstrip
+openwrt:	linksys openwrt-mtd openwrt-jffs2root
 
 openwrt-dirclean: linksys-shared-dirclean linksys-nvram-dirclean linksys-wlconf-dirclean
 

@@ -5,6 +5,13 @@
  Changes between official and experimental
 
   *) new buildroot (based on uClib buildroot2)
+     *) makefiles are no longer included but executed instead 
+        => easier to create packages
+
+  *) enhanced configuration system
+     *) busybox fully configurable from menuconfig
+     *) enabled tristate for some packages
+        => < > disabled, <M> compile as .ipk, <*> compile as .ipk and embed
 
   *) new kernel (updated to 2.4.29)
 
@@ -18,4 +25,4 @@
 
   *) better support for Asus WL-500g 
 	(kernel modules for usb,scsi,vfat build)
-
+  

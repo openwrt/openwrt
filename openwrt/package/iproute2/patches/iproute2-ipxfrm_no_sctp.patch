@@ -1,0 +1,18 @@
+--- iproute2-2.6.9.old/ip/ipxfrm.c	2005-01-30 19:09:32.000000000 +0100
++++ iproute2-2.6.9/ip/ipxfrm.c	2005-01-30 19:10:31.000000000 +0100
+@@ -392,7 +392,6 @@
+ 	switch (sel->proto) {
+ 	case IPPROTO_TCP:
+ 	case IPPROTO_UDP:
+-	case IPPROTO_SCTP:
+ 	default: /* XXX */
+ 		if (sel->sport_mask)
+ 			fprintf(fp, "sport %u ", ntohs(sel->sport));
+@@ -787,7 +786,6 @@
+ 		switch (sel->proto) {
+ 		case IPPROTO_TCP:
+ 		case IPPROTO_UDP:
+-		case IPPROTO_SCTP:
+ 			break;
+ 		default:
+ 			fprintf(stderr, "\"sport\" and \"dport\" are invalid with proto=%s\n", strxf_proto(sel->proto));

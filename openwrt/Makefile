@@ -1,5 +1,6 @@
-# Makefile for buildroot2
+# Makefile for OpenWRT
 #
+# Copyright (C) 2005 by Felix Fietkau <nbd@vd-s.ath.cx>
 # Copyright (C) 1999-2004 by Erik Andersen <andersen@codepoet.org>
 #
 # This program is free software; you can redistribute it and/or modify
@@ -21,7 +22,8 @@
 # Just run 'make menuconfig', configure stuff, then run 'make'.
 # You shouldn't need to mess with anything beyond this point...
 #--------------------------------------------------------------
-TOPDIR=./
+TOPDIR=${shell pwd}
+export TOPDIR
 CONFIG_CONFIG_IN = Config.in
 CONFIG_DEFCONFIG = .defconfig
 CONFIG = package/config
@@ -31,27 +33,30 @@ noconfig_targets := menuconfig config oldconfig randconfig \
 
 # Pull in the user's configuration file
 ifeq ($(filter $(noconfig_targets),$(MAKECMDGOALS)),)
--include $(TOPDIR).config
-endif
-
-ifeq ($(BR2_TAR_VERBOSITY),y)
-TAR_OPTIONS=-xvf
-else
-TAR_OPTIONS=-xf
+-include $(TOPDIR)/.config
 endif
 
 ifeq ($(strip $(BR2_HAVE_DOT_CONFIG)),y)
+include $(TOPDIR)/rules.mk
 
-#############################################################
+all: world
+
+##############################################################
 #
-# The list of stuff to build for the target toolchain
-# along with the packages to build for the target.
+# Build the toolchain
 #
 ##############################################################
-TARGETS:=host-sed kernel-headers uclibc-configured binutils gcc uclibc-target-utils linux openwrt
+toolchain_install:
+	$(MAKE) -C toolchain install
 
-include toolchain/Makefile.in
-include package/Makefile.in
+##############################################################
+#
+# Make all packages
+#
+##############################################################
+
+package_install: toolchain
+	$(MAKE) -C package compile install
 
 #############################################################
 #
@@ -61,32 +66,12 @@ include package/Makefile.in
 #############################################################
 
 
-
-all:   world
-
 # In this section, we need .config
 include .config.cmd
 
-# We also need the various per-package makefiles, which also add
-# each selected package to TARGETS if that package was selected
-# in the .config file.
-include toolchain/*/*.mk
-include package/*/*.mk
-include target/*/*.mk
+world: $(DL_DIR) $(BUILD_DIR) target_prepare $(TARGET_DIR) toolchain_install package_install target_install
 
-# target stuff is last so it can override anything else
-include target/Makefile.in
-
-TARGETS_CLEAN:=$(patsubst %,%-clean,$(TARGETS))
-TARGETS_SOURCE:=$(patsubst %,%-source,$(TARGETS))
-TARGETS_DIRCLEAN:=$(patsubst %,%-dirclean,$(TARGETS))
-
-world: $(DL_DIR) $(BUILD_DIR) $(STAGING_DIR) $(TARGET_DIR) $(TARGETS)
-	@echo DONE.
-
-.PHONY: all world clean dirclean distclean source $(TARGETS) \
-	$(TARGETS_CLEAN) $(TARGETS_DIRCLEAN) $(TARGETS_SOURCE) \
-	$(DL_DIR) $(BUILD_DIR) $(TOOL_BUILD_DIR) $(STAGING_DIR)
+.PHONY: all world clean dirclean distclean image_clean target_clean source target_prepare target_install toolchain_install package_install
 
 #############################################################
 #
@@ -94,32 +79,17 @@ world: $(DL_DIR) $(BUILD_DIR) $(STAGING_DIR) $(TARGET_DIR) $(TARGETS)
 # dependancies anywhere else
 #
 #############################################################
+target_prepare:
+	$(MAKE) -C target prepare
+
+target_install:
+	$(MAKE) -C target install
+
 $(DL_DIR):
 	@mkdir -p $(DL_DIR)
 
 $(BUILD_DIR):
 	@mkdir -p $(BUILD_DIR)
-
-$(TOOL_BUILD_DIR):
-	@mkdir -p $(TOOL_BUILD_DIR)
-
-$(STAGING_DIR):
-	@mkdir -p $(STAGING_DIR)/lib
-	@mkdir -p $(STAGING_DIR)/include
-	@mkdir -p $(STAGING_DIR)/$(REAL_GNU_TARGET_NAME)
-	@ln -sf ../lib $(STAGING_DIR)/$(REAL_GNU_TARGET_NAME)/lib
-
-$(TARGET_DIR):
-	if [ -f "$(TARGET_SKELETON)" ] ; then \
-		zcat $(TARGET_SKELETON) | tar -C $(BUILD_DIR) -xf -; \
-	fi;
-	if [ -d "$(TARGET_SKEL_DIR)" ] ; then \
-		cp -a $(TARGET_SKEL_DIR)/* $(TARGET_DIR)/; \
-	fi;
-	-find $(TARGET_DIR) -type d -name CVS | xargs rm -rf
-	-find $(TARGET_DIR) -type d -name .svn | xargs rm -rf
-	-ln -sf /tmp/resolv.conf $(TARGET_DIR)/etc
-	-mkdir -p $(TARGET_DIR)/jffs
 
 source: $(TARGETS_SOURCE)
 
@@ -128,26 +98,33 @@ source: $(TARGETS_SOURCE)
 # Cleanup and misc junk
 #
 #############################################################
-clean: 
-	rm -rf $(TARGET_DIR) $(IMAGE).*
-	$(MAKE) openwrt-image-clean
+image_clean:
+	rm -f $(STAMP_DIR)/.*-compile
+	rm -f $(STAMP_DIR)/.*-install
+	rm -rf $(BIN_DIR)
+	
+target_clean: image_clean
+	rm -rf $(TARGET_DIR)
 
-dirclean: $(TARGETS_DIRCLEAN)
-	rm -rf $(TARGET_DIR) $(IMAGE).*
-	$(MAKE) openwrt-image-dirclean
+clean: target_clean
+	@$(MAKE) -C $(CONFIG) clean
+
+dirclean: clean
+	rm -rf $(STAMP_DIR)
+	$(MAKE) -C package clean
+	$(MAKE) -C target clean
+	rm -rf $(BUILD_DIR)
 
 distclean: clean
-	rm -rf $(DL_DIR) $(BUILD_DIR) $(TOOL_BUILD_DIR) 
-	rm .config* .tmpconfig.h
+	rm -rf $(STAMP_DIR) $(DL_DIR) $(BUILD_DIR) $(TOOL_BUILD_DIR)
+	rm -f .config* .tmpconfig.h
 
-sourceball:
-	rm -rf $(BUILD_DIR)
+sourceball: distclean
 	set -e; \
 	cd ..; \
 	rm -f buildroot.tar.bz2; \
 	tar -cvf buildroot.tar buildroot; \
 	bzip2 -9 buildroot.tar; \
-
 
 else # ifeq ($(strip $(BR2_HAVE_DOT_CONFIG)),y)
 
@@ -162,7 +139,7 @@ $(CONFIG)/conf:
 		cp $(CONFIG_DEFCONFIG) .config; \
 	fi
 $(CONFIG)/mconf:
-	$(MAKE) -C $(CONFIG) ncurses conf mconf
+	$(MAKE) -C $(CONFIG) 
 	-@if [ ! -f .config ] ; then \
 		cp $(CONFIG_DEFCONFIG) .config; \
 	fi
@@ -171,21 +148,25 @@ menuconfig: $(CONFIG)/mconf
 	-touch .config
 	-cp .config .config.test
 	@$(CONFIG)/mconf $(CONFIG_CONFIG_IN)
+	-./scripts/configtest.pl
 
 config: $(CONFIG)/conf
 	-touch .config
 	-cp .config .config.test
 	@$(CONFIG)/conf $(CONFIG_CONFIG_IN)
+	-./scripts/configtest.pl
 
 oldconfig: $(CONFIG)/conf
 	-touch .config
 	-cp .config .config.test
 	@$(CONFIG)/conf -o $(CONFIG_CONFIG_IN)
+	-./scripts/configtest.pl
 
 randconfig: $(CONFIG)/conf
 	-touch .config
 	-cp .config .config.test
 	@$(CONFIG)/conf -r $(CONFIG_CONFIG_IN)
+	-./scripts/configtest.pl
 
 allyesconfig: $(CONFIG)/conf
 	#@$(CONFIG)/conf -y $(CONFIG_CONFIG_IN)
@@ -193,31 +174,22 @@ allyesconfig: $(CONFIG)/conf
 	-touch .config
 	-cp .config .config.test
 	@$(CONFIG)/conf -o $(CONFIG_CONFIG_IN)
+	-./scripts/configtest.pl
 
 allnoconfig: $(CONFIG)/conf
 	-touch .config
 	-cp .config .config.test
 	@$(CONFIG)/conf -n $(CONFIG_CONFIG_IN)
+	-./scripts/configtest.pl
 
 defconfig: $(CONFIG)/conf
 	-touch .config
 	-cp .config .config.test
 	@$(CONFIG)/conf -d $(CONFIG_CONFIG_IN)
-
-#############################################################
-#
-# Cleanup and misc junk
-#
-#############################################################
-clean:
-	@$(MAKE) -C $(CONFIG) clean
-
-distclean: clean
+	-./scripts/configtest.pl
 
 endif # ifeq ($(strip $(BR2_HAVE_DOT_CONFIG)),y)
 
 .PHONY: dummy subdirs release distclean clean config oldconfig \
 	menuconfig tags check test depend
 
-targets:
-	@echo $(TARGETS)

@@ -1,7 +1,63 @@
-config BR2_PACKAGE_LINUX
-	bool "linux"
-	default y
+config BR2_PACKAGE_KMOD_ARPT
+	tristate "ARP firewalling support"
+	default m
 	help
-	  The Linux kernel.
+	  Kernel modules for ARP firewalling
 
-	  http://www.kernel.org/
+config BR2_PACKAGE_KMOD_EBT
+	tristate "Ethernet Bridge firewalling support"
+	default m
+	help
+	  Kernel modules for bridge firewalling
+
+config BR2_PACKAGE_KMOD_IPT4
+	tristate "Extra modules for iptables"
+	default m
+	help
+	  Extra kernel modules for IPv4 firewalling
+
+config BR2_PACKAGE_KMOD_IPV6
+	tristate "IPv6 support"
+	default m
+	help
+	  Kernel modules for IPv6 protocol support
+	  
+config BR2_PACKAGE_KMOD_IPT6
+	tristate "Kernel modules for ip6tables"
+	default m
+	depends BR2_PACKAGE_KMOD_IPV6
+	help
+	  IPv6 firewalling support
+
+config BR2_PACKAGE_KMOD_USB
+	tristate "USB/SCSI support"
+	default m
+	help
+	  Kernel modules for USB/SCSI support
+	  Includes usb-storage and printer
+
+config BR2_PACKAGE_KMOD_CRYPTO
+	tristate "CryptoAPI modules"
+	default m
+	help
+	  Kernel modules for cryptographic algorithms
+
+config BR2_PACKAGE_KMOD_MPPE
+	tristate "PPP MPPE/MPPC module"
+	default m
+	select BR2_PACKAGE_KMOD_CRYPTO
+	help
+	  Support for Microsoft PPP Encryption/Compression
+
+config BR2_PACKAGE_KMOD_TUN
+	tristate "Universal TUN/TAP driver"
+	default m
+	help
+	  Kernel support for the TUN/TAP tunneling device
+	  
+config BR2_PACKAGE_KMOD_SCHED
+	tristate "Traffic schedulers"
+	default m
+	help
+	  Kernel schedulers for IP traffic
+

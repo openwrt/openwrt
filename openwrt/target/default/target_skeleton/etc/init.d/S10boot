@@ -4,7 +4,12 @@ syslogd -C 16
 sysctl -p
 echo "S" > /proc/jffs2_bbc
 
+rm -rf /var
+ln -sf /tmp /var
 mkdir -p /var/run
+mkdir -p /var/log
+touch /var/log/wtmp
+touch /var/log/lastlog
 
 [ "$(nvram get il0macaddr)" = "00:90:4c:5f:00:2a" ] && {
   # if default wifi mac, set two higher than the lan mac

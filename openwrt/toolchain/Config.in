@@ -38,7 +38,7 @@ config BR2_SOFT_FLOAT
 
 config BR2_TARGET_OPTIMIZATION
 	string "Target Optimizations"
-	default "-Os -pipe -mips2"
+	default "-Os -pipe -mips32 -mtune=mips32"
 	help
 	  Optimizations to use when building for the target host.
 
