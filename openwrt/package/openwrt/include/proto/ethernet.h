@@ -26,37 +26,51 @@
 /*
  * The number of bytes in an ethernet (MAC) address.
  */
+#ifndef ETHER_ADDR_LEN
 #define	ETHER_ADDR_LEN		6
+#endif
 
 /*
  * The number of bytes in the type field.
  */
+#ifndef	ETHER_TYPE_LEN
 #define	ETHER_TYPE_LEN		2
+#endif
 
 /*
  * The number of bytes in the trailing CRC field.
  */
+#ifndef	ETHER_CRC_LEN
 #define	ETHER_CRC_LEN		4
+#endif
 
 /*
  * The length of the combined header.
  */
+#ifndef	ETHER_HDR_LEN
 #define	ETHER_HDR_LEN		(ETHER_ADDR_LEN*2+ETHER_TYPE_LEN)
+#endif
 
 /*
  * The minimum packet length.
  */
+#ifndef ETHER_MIN_LEN
 #define	ETHER_MIN_LEN		64
+#endif
 
 /*
  * The minimum packet user data length.
  */
+#ifndef ETHER_MIN_DATA
 #define	ETHER_MIN_DATA		46
+#endif
 
 /*
  * The maximum packet length.
  */
+#ifndef ETHER_MAX_LEN
 #define	ETHER_MAX_LEN		1518
+#endif
 
 /*
  * The maximum packet user data length.
@@ -107,7 +121,7 @@ struct  vlan_tags {
 #define	ETHER_IS_VALID_LEN(foo)	\
 	((foo) >= ETHER_MIN_LEN && (foo) <= ETHER_MAX_LEN)
 
-
+#ifndef __NET_ETHERNET_H
 #ifndef __INCif_etherh     /* Quick and ugly hack for VxWorks */
 /*
  * Structure of a 10Mb/s Ethernet header.
@@ -124,6 +138,7 @@ struct	ether_header {
 struct	ether_addr {
 	uint8 octet[ETHER_ADDR_LEN];
 } PACKED ;
+#endif
 #endif
 
 /*
