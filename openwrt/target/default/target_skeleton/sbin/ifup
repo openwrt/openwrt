@@ -58,10 +58,11 @@
       idletime=$(nvram get ppp_idletime)
       mtu=$(nvram get wan_mtu)
 
-      $DEBUG ifconfig $if 0.0.0.0 up
+#      handled by /etc/init.d/S50pppoe
+#      $DEBUG ifconfig $if 0.0.0.0 up
 
-      $DEBUG /sbin/pppoecd $if -u $username -p $password \
-        -i 0 -I $redial -T $idletime -t $mtu -k
+#      $DEBUG /sbin/pppoecd $if -u $username -p $password \
+#        -i 0 -I $redial -T $idletime -t $mtu -k
     ;;
     none)
     ;;
