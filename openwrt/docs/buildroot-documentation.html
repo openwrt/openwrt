@@ -460,7 +460,7 @@ foo-compile: bar-compile
     31          );
     32          touch $(PKG_DIR)/.configured;
     33
-    34  $(PKG_DIR)/$(PKG_NAME) $(PKG_DIR)/.configured
+    34  $(PKG_DIR)/$(PKG_NAME): $(PKG_DIR)/.configured
     35          $(MAKE) CC=$(TARGET_CC) -C $(PKG_DIR)
     36
     37  $(PKG_IPK): $(PKG_DIR)/$(PKG_NAME)
