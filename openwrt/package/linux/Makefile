@@ -54,6 +54,9 @@ $(eval $(call KMOD_template,MPPE,mppe,\
 $(eval $(call KMOD_template,TUN,tun,\
 	$(MODULES_DIR)/kernel/drivers/net/tun.o \
 ))
+$(eval $(call KMOD_template,GRE,gre,\
+	$(MODULES_DIR)/kernel/net/ipv4/ip_gre.o \
+))
 $(eval $(call KMOD_template,SCHED,sched,\
 	$(MODULES_DIR)/kernel/net/sched/*.o \
 ))

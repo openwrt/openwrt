@@ -54,7 +54,13 @@ config BR2_PACKAGE_KMOD_TUN
 	default m
 	help
 	  Kernel support for the TUN/TAP tunneling device
-	  
+
+config BR2_PACKAGE_KMOD_GRE
+	tristate "GRE tunneling driver"
+	default m
+	help
+	  Kernel support for GRE tunnels
+
 config BR2_PACKAGE_KMOD_SCHED
 	tristate "Traffic schedulers"
 	default m

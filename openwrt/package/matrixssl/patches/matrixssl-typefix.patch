@@ -1,0 +1,12 @@
+diff -urN matrixssl.old/src/os/linux/linux.c matrixssl/src/os/linux/linux.c
+--- matrixssl.old/src/os/linux/linux.c	2005-02-23 22:43:10.000000000 +0100
++++ matrixssl/src/os/linux/linux.c	2005-03-06 01:52:51.000000000 +0100
+@@ -51,7 +51,7 @@
+ static sslTime_t	hiresStart; 	/* zero-time */
+ static sslTime_t	hiresFreq; 		/* tics per second */
+ #else /* __i386__ */
+-static unsigned	int32 prevTicks; 		/* Check wrap */
++static uint32		prevTicks; 		/* Check wrap */
+ static sslTime_t	elapsedTime; 	/* Last elapsed time */
+ #endif
+ 
