@@ -53,6 +53,9 @@ static void v1_set_dmz(u8 state) {
 }
 
 // - - - - -
+static void ignore(u8 ignored) {};
+
+// - - - - -
 #define BIT_DMZ         0x01
 #define BIT_DIAG        0x04
 
@@ -114,6 +117,12 @@ static int __init diag_init()
 		board_type=1;
 		set_diag=v1_set_diag;
 		set_dmz=v1_set_dmz;
+
+		if (board_type==0x41d) {
+			printk(KERN_INFO "buffalo hack.\n");
+			set_diag=ignore;
+			set_dmz=v2_set_dmz;
+		}
 	} else {
 		board_type=2;
 		set_diag=v2_set_diag;
