@@ -7,7 +7,8 @@ PKG_VERSION := 5.0
 PKG_RELEASE := 3
 PKG_MD5SUM := 53976b62032fd5c76678274e5fd196b4
 
-PKG_SOURCE_SITE := ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/
+PKG_SOURCE_SITE := ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/ \
+	http://nthill.free.fr/openwrt/sources/$(PKG_NAME)/
 PKG_SOURCE_FILE := $(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_CAT := zcat
 PKG_SOURCE_DIR := $(PKG_NAME)-$(PKG_VERSION)
@@ -25,12 +26,13 @@ $(PKG_BUILD_DIR)/ipkg/rules: $(DL_DIR)/$(PKG_SOURCE_FILE)
 #	$(PATCH) $(PKG_BUILD_DIR) ./patches
 	cp -fpR ./ipkg $(PKG_BUILD_DIR)/
 	chmod a+x $(PKG_BUILD_DIR)/ipkg/rules
+	touch $(PKG_BUILD_DIR)/ipkg/rules
 
 $(PKG_IPK): $(PKG_BUILD_DIR)/ipkg/rules
 	cd $(PKG_BUILD_DIR); \
 	TOPDIR="$(TOPDIR)" IPKG_RULES_INC="$(TOPDIR)/rules.mk" \
 	INSTALL_DIR="$(STAGING_DIR)" \
-	ipkg/rules package
+	./ipkg/rules package
 
 $(IPKG_STATE_DIR)/info/lib$(PKG_NAME).list: $(PKG_IPK)
 	$(IPKG) install $(PKG_IPK)
@@ -44,6 +46,6 @@ clean:
 	-cd $(PKG_BUILD_DIR); \
 	TOPDIR="$(TOPDIR)" IPKG_RULES_INC="$(TOPDIR)/rules.mk" \
 	INSTALL_DIR="$(STAGING_DIR)" \
-	ipkg/rules clean
+	./ipkg/rules clean
 	rm -rf $(PKG_BUILD_DIR)
 	rm -r $(PKG_IPK)
