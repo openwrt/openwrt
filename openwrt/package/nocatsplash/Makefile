@@ -44,10 +44,13 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.unpacked
 	);
 	touch $(PKG_BUILD_DIR)/.configured
 
+GLIB_CFLAGS :=-I$(STAGING_DIR)/usr/include/glib-1.2 -I$(STAGING_DIR)/usr/lib/glib/include
+
 $(PKG_BUILD_DIR)/src/splashd: $(PKG_BUILD_DIR)/.configured
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CC=$(TARGET_CC) \
-		GLIB_CFLAGS="-I$(STAGING_DIR)/usr/include/glib-1.2 -I$(STAGING_DIR)/usr/lib/glib/include" \
+		GLIB_CFLAGS="$(GLIB_CFLAGS)" \
+		AM_CFLAGS="$(TARGET_CFLAGS) $(GLIB_CFLAGS)" \
 		GLIB_LIBS="-L$(STAGING_DIR)/usr/lib -lglib" \
 		LIBS="-L$(STAGING_DIR)/usr/lib -lglib"
 
