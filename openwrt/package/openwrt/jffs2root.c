@@ -48,7 +48,10 @@ void init_crc32()
     unsigned long crc;
     unsigned long poly = 0xEDB88320L;
     int n, bit;
-    crc32 = (unsigned long *) malloc(256 * sizeof(unsigned long));
+    if ((crc32 = (unsigned long *) malloc(256 * sizeof(unsigned long))) == (void *)-1) {
+	    perror("malloc");
+	    exit(1);
+    }
     for (n = 0; n < 256; n++) {
 	crc = (unsigned long) n;
 	for (bit = 0; bit < 8; bit++)

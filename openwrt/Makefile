@@ -118,6 +118,8 @@ $(TARGET_DIR):
 	fi;
 	-find $(TARGET_DIR) -type d -name CVS | xargs rm -rf
 	-find $(TARGET_DIR) -type d -name .svn | xargs rm -rf
+	-ln -sf /tmp/resolv.conf $(TARGET_DIR)
+	-mkdir -p $(TARGET_DIR)/jffs
 
 source: $(TARGETS_SOURCE)
 
