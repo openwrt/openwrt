@@ -13,6 +13,7 @@ package-$(BR2_PACKAGE_PPP) += ppp
 package-$(BR2_PACKAGE_LZO) += lzo
 package-$(BR2_PACKAGE_ZLIB) += zlib
 package-$(BR2_PACKAGE_MATRIXSSL) += matrixssl
+package-$(BR2_PACKAGE_NCURSES) += ncurses
 package-$(BR2_PACKAGE_OPENSSL) += openssl
 package-$(BR2_PACKAGE_OPENVPN) += openvpn
 package-$(BR2_PACKAGE_PCRE) += pcre
