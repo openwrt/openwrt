@@ -882,7 +882,8 @@ diff -u $dest/$conffile $IPKG_TMP/$pkg/data/$conffile"
 	if [ -n "$new_conffiles" ]; then
 		new_conffiles='Conffiles: '`echo $new_conffiles | ipkg_protect_slashes`
 	fi
-	local sed_safe_root="`echo $dest | sed -e "s/^${IPKG_OFFLINE_ROOT}//" | ipkg_protect_slashes`"
+	local sed_safe_offline_root="`echo ${IPKG_OFFLINE_ROOT} | ipkg_protect_slashes`"
+	local sed_safe_root="`echo $dest | sed -e "s/^${sed_safe_offline_root}//" | ipkg_protect_slashes`"
 	sed -e "s/\(Package:.*\)/\1\\
 Status: install ok installed\\
 Root: ${sed_safe_root}\\
