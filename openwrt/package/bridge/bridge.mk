@@ -7,6 +7,7 @@
 BRIDGE_SOURCE_URL=http://umn.dl.sourceforge.net/sourceforge/bridge/
 BRIDGE_SOURCE=bridge-utils-1.0.4.tar.gz
 BRIDGE_BUILD_DIR=$(BUILD_DIR)/bridge-utils-1.0.4
+BRIDGE_PATCHES=$(PACKAGE_DIR)/bridge/patches
 BRIDGE_TARGET_BINARY:=usr/sbin/brctl
 
 $(DL_DIR)/$(BRIDGE_SOURCE):
@@ -14,10 +15,13 @@ $(DL_DIR)/$(BRIDGE_SOURCE):
 
 $(BRIDGE_BUILD_DIR)/.unpacked: $(DL_DIR)/$(BRIDGE_SOURCE)
 	zcat $(DL_DIR)/$(BRIDGE_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
-	patch -p1 -d $(BRIDGE_BUILD_DIR) < package/bridge/bridge.patch
 	touch $(BRIDGE_BUILD_DIR)/.unpacked
 
-$(BRIDGE_BUILD_DIR)/.configured: $(BRIDGE_BUILD_DIR)/.unpacked
+$(BRIDGE_BUILD_DIR)/.patched: $(BRIDGE_BUILD_DIR)/.unpacked
+	$(PATCH) $(BRIDGE_BUILD_DIR) $(BRIDGE_PATCHES)
+	touch $(BRIDGE_BUILD_DIR)/.patched
+
+$(BRIDGE_BUILD_DIR)/.configured: $(BRIDGE_BUILD_DIR)/.patched
 	(cd $(BRIDGE_BUILD_DIR); rm -rf config.cache; \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
@@ -44,12 +48,11 @@ $(BRIDGE_BUILD_DIR)/brctl/brctl: $(BRIDGE_BUILD_DIR)/.configured
 	$(MAKE) -C $(BRIDGE_BUILD_DIR)
 
 $(TARGET_DIR)/$(BRIDGE_TARGET_BINARY): $(BRIDGE_BUILD_DIR)/brctl/brctl
+	mkdir -p $(TARGET_DIR)/usr/sbin
 	cp -af $(BRIDGE_BUILD_DIR)/brctl/brctl $(TARGET_DIR)/$(BRIDGE_TARGET_BINARY)
 	$(STRIP) $(TARGET_DIR)/$(BRIDGE_TARGET_BINARY)
-	#cp -af $(BRIDGE_BUILD_DIR)/brctl/brctld $(TARGET_DIR)/usr/sbin/
-	#$(STRIP) $(TARGET_DIR)/usr/sbin/brctld
 
-bridge: linux $(TARGET_DIR)/$(BRIDGE_TARGET_BINARY)
+bridge: uclibc $(TARGET_DIR)/$(BRIDGE_TARGET_BINARY)
 
 bridge-source: $(DL_DIR)/$(BRIDGE_SOURCE)
 
@@ -59,3 +62,12 @@ bridge-clean:
 
 bridge-dirclean:
 	rm -rf $(BRIDGE_BUILD_DIR)
+
+#############################################################
+#
+# Toplevel Makefile options
+#
+#############################################################
+ifeq ($(strip $(BR2_PACKAGE_BRIDGE)),y)
+TARGETS+=bridge
+endif
