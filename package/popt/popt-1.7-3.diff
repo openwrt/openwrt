@@ -123,7 +123,7 @@ diff -ruN popt-1.7-orig/ipkg/rules popt-1.7-3/ipkg/rules
 +	chmod 0755 ipkg/*/CONTROL/
 +	chmod 0644 ipkg/*/CONTROL/control
 +	
-+	perl -pi -e "s/^Arch.*:.*/Architecture: $(TARGET_ARCH)/g" ipkg/*/CONTROL/control
++	perl -pi -e "s/^Arch.*:.*/Architecture: $(ARCH)/g" ipkg/*/CONTROL/control
 +ifneq ($(strip $(PKG_VERSION)),)
 +	perl -pi -e "s/^Vers.*:.*/Version: $(PKG_VERSION)/g" ipkg/*/CONTROL/control
 +endif
