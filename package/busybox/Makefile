@@ -11,7 +11,7 @@ PKG_VERSION:=0.${shell date +"%G%m%d"}
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
 PKG_SOURCE:=$(PKG_NAME)-.tar.bz2
 PKG_SOURCE_URL:=http://www.busybox.net/downloads/snapshots
-PKG_MD5SUM:=5c7ea9b5d3b3677dfcdcec38b281a756
+PKG_MD5SUM:=x
 else
 PKG_VERSION:=1.00
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
