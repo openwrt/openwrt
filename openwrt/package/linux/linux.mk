@@ -1,22 +1,14 @@
 #############################################################
 #
-# Linux kernel targets
+# Linux kernel target for the OpenWRT project
 #
-# Note:  If you have any patches to apply, create the directory
-# sources/kernel-patches and put your patches in there and number
-# them in the order you wish to apply them...  i.e.
-#
-#   sources/kernel-patches/001-my-special-stuff.bz2
-#   sources/kernel-patches/003-gcc-Os.bz2
-#   sources/kernel-patches/004_no-warnings.bz2
-#   sources/kernel-patches/030-lowlatency-mini.bz2
-#   sources/kernel-patches/031-lowlatency-fixes-5.bz2
-#   sources/kernel-patches/099-shutup.bz2
-#   etc...
-#
-# these patches will all be applied by the patch-kernel.sh
-# script (which will also abort the build if it finds rejects)
-#  -Erik
+# patches are sorted by numbers
+# 000	patch between linux-2.4.29 and linux-mips-cvs
+# 0xx	linksys patches
+# 1xx	OpenWRT patches (diag,compressed,..)
+# 2xx	fixes for 2.4.29 integration (wl driver)
+# 3xx	kernel feature patches (squashfs,jffs2 compression,..)
+# 4xx	patches needed to integrate feature patches
 #
 #############################################################
 ifneq ($(filter $(TARGETS),linux),)
@@ -29,10 +21,9 @@ LINUX_KARCH:=$(shell echo $(ARCH) | sed -e 's/i[3-9]86/i386/' \
 	)
 
 LINUX_VERSION=2.4.29
-LINUX_CVS_DATE="2005-01-30"
-LINUX_CVS_BRANCH=linux_2_4
-LINUX_DIR=$(BUILD_DIR)/linux
-LINUX_SITE=ftp.linux-mips.org
+LINUX_DIR=$(BUILD_DIR)/linux-$(LINUX_VERSION)
+LINUX_SITE=http://www.kernel.org/pub/linux/kernel/v2.4
+LINUX_SOURCE=linux-$(LINUX_VERSION).tar.bz2
 LINUX_KCONFIG=package/linux/linux.config
 LINUX_KERNEL=$(BUILD_DIR)/buildroot-kernel
 LINUX_BINLOC=arch/$(LINUX_KARCH)/brcm-boards/bcm947xx/compressed/vmlinuz
@@ -45,20 +36,18 @@ LINKSYS_KERNEL_TGZ=linksys-kernel.tar.gz
 
 TARGET_MODULES_DIR=$(TARGET_DIR)/lib/modules/$(LINUX_VERSION)
 
-$(DL_DIR)/linux.tar.bz2:
+$(DL_DIR)/$(LINUX_SOURCE):
 	-mkdir -p $(DL_DIR)
-	(cd $(DL_DIR); cvs -d :pserver:cvs:cvs@$(LINUX_SITE):/home/cvs login)
-	(cd $(DL_DIR); cvs -z3 -d :pserver:cvs:cvs@$(LINUX_SITE):/home/cvs co -D $(LINUX_CVS_DATE) -r$(LINUX_CVS_BRANCH) linux)
-	(cd $(DL_DIR); tar jcvf linux.tar.bz2 linux && rm -rf linux)
+	$(WGET) -P $(DL_DIR) $(LINUX_SITE)/$(LINUX_SOURCE)
 
 $(DL_DIR)/$(LINKSYS_KERNEL_TGZ):
 	$(WGET) -P $(DL_DIR) $(LINKSYS_TGZ_SITE)/$(LINKSYS_KERNEL_TGZ)
 
-$(LINUX_DIR)/.unpacked: $(DL_DIR)/linux.tar.bz2 $(DL_DIR)/$(LINKSYS_KERNEL_TGZ)
+$(LINUX_DIR)/.unpacked: $(DL_DIR)/$(LINUX_SOURCE) $(DL_DIR)/$(LINKSYS_KERNEL_TGZ)
 	-mkdir -p $(BUILD_DIR)
-	(cd $(BUILD_DIR); tar jxvf $(DL_DIR)/linux.tar.bz2)
+	(cd $(BUILD_DIR); tar jxvf $(DL_DIR)/$(LINUX_SOURCE))
 	-mkdir -p $(TOOL_BUILD_DIR)
-	-(cd $(TOOL_BUILD_DIR); ln -sf $(BUILD_DIR)/linux linux)
+	-(cd $(TOOL_BUILD_DIR); ln -sf $(LINUX_DIR) linux)
 	toolchain/patch-kernel.sh $(LINUX_DIR) package/linux/kernel-patches
 	-cp $(LINUX_KCONFIG) $(LINUX_DIR)/.config
 	# extract linksys binary kernel stuff and include/shared files
