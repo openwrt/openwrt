@@ -85,6 +85,7 @@ $(PKG_IPK): $(PKG_IPK_DIR)/usr/sbin/cupsd
 	$(STRIP) $(PKG_IPK_DIR)/usr/lib/cups/cgi-bin/*
 	$(STRIP) $(PKG_IPK_DIR)/usr/lib/cups/daemon/*
 	cp -a ./files/* $(PKG_IPK_DIR)/
+	find $(PKG_IPK_DIR) -name CVS | xargs rm -rf
 	$(IPKG_BUILD) $(PKG_IPK_DIR) $(PACKAGE_DIR)
 
 source: $(DL_DIR)/$(PKG_SOURCE)
