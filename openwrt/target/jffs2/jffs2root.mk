@@ -4,8 +4,8 @@
 #
 #############################################################
 
-MTD_DIR:=$(BUILD_DIR)/mtd-20011217
-MTD_SOURCE=mtd_20011217.orig.tar.gz
+MTD_DIR:=$(BUILD_DIR)/mtd-20050122.orig
+MTD_SOURCE=mtd_20050122.orig.tar.gz
 MTD_SITE=http://ftp.debian.org/debian/pool/main/m/mtd
 MKFS_JFFS2=$(shell which mkfs.jffs2 2>/dev/null || echo $(MTD_DIR)/util/mkfs.jffs2)
 
@@ -17,7 +17,6 @@ $(MTD_DIR)/.unpacked: $(DL_DIR)/$(MTD_SOURCE)
 	touch $(MTD_DIR)/.unpacked
 
 $(MTD_DIR)/util/mkfs.jffs2: $(MTD_DIR)/.unpacked
-#	CFLAGS=-I$(LINUX_HEADERS_DIR)/include $(MAKE) LINUXDIR=$(LINUX_DIR) -C $(MTD_DIR)/util
 	$(MAKE) LINUXDIR=$(LINUX_DIR) -C $(MTD_DIR)/util
 
 mtd: $(MKFS_JFFS2)
