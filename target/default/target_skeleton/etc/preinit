@@ -1,6 +1,5 @@
 #!/bin/sh
 mount none /proc -t proc
-mount none /tmp -t ramfs
 insmod diag
 echo 0x01 > /proc/sys/diag
 sleep 1
@@ -17,7 +16,8 @@ else
     pivot_root /jffs /jffs/rom
     mount none /dev -t devfs
     mount none /proc -t proc
-    umount rom/proc
+    umount rom/proc rom/dev
   fi
 fi
+mount none /tmp -t ramfs
 exec /sbin/init
