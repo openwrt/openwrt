@@ -57,7 +57,7 @@ GCC_BUILD_DIR1:=$(TOOL_BUILD_DIR)/gcc-$(GCC_VERSION)-initial
 
 $(DL_DIR)/$(GCC_SOURCE):
 	mkdir -p $(DL_DIR)
-	$(WGET) -P $(DL_DIR) $(GCC_SITE)/$(GCC_SOURCE)
+	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(GCC_SOURCE) x $(GCC_SITE)
 
 $(GCC_DIR)/.unpacked: $(DL_DIR)/$(GCC_SOURCE)
 	mkdir -p $(TOOL_BUILD_DIR)
