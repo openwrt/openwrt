@@ -137,7 +137,7 @@ uclibc-clean:
 	-$(MAKE1) -C $(UCLIBC_DIR) clean
 	rm -f $(UCLIBC_DIR)/.config
 
-uclibc-dirclean:
+uclibc-toolclean:
 	rm -rf $(UCLIBC_DIR)
 
 uclibc-target-utils: $(TARGET_DIR)/usr/bin/ldd

@@ -83,7 +83,7 @@ ccache-clean:
 	$(MAKE) -C $(CCACHE_DIR1) uninstall
 	-$(MAKE) -C $(CCACHE_DIR1) clean
 
-ccache-dirclean:
+ccache-toolclean:
 	rm -rf $(CCACHE_DIR1)
 
 
@@ -147,5 +147,5 @@ ccache_target-clean:
 	rm -f $(TARGET_DIR)/$(CCACHE_TARGET_BINARY)
 	-$(MAKE) -C $(CCACHE_DIR2) clean
 
-ccache_target-dirclean:
+ccache_target-toolclean:
 	rm -rf $(CCACHE_DIR2)

@@ -57,6 +57,12 @@ endif
 
 $(LINUX_DIR)/.configured:  $(LINUX_DIR)/.patched
 	-cp $(LINUX_KCONFIG) $(LINUX_DIR)/.config
+ifeq ($(BR2_TARGET_ROOTFS_SQUASHFS_LZMA),y)
+	$(SED) "s,rootfstype=jffs2,rootfstype=squashfs," $(LINUX_DIR)/.config
+endif
+ifeq ($(BR2_TARGET_ROOTFS_SQUASHFS),y)
+	$(SED) "s,rootfstype=jffs2,rootfstype=squashfs," $(LINUX_DIR)/.config
+endif
 	$(SED) "s,^CROSS_COMPILE.*,CROSS_COMPILE=$(KERNEL_CROSS),g;" $(LINUX_DIR)/Makefile
 	$(SED) "s,^CROSS_COMPILE.*,CROSS_COMPILE=$(KERNEL_CROSS),g;" $(LINUX_DIR)/arch/mips/Makefile
 	$(SED) "s,\-mcpu=,\-mtune=,g;" $(LINUX_DIR)/arch/mips/Makefile

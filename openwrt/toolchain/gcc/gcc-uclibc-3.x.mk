@@ -127,7 +127,7 @@ gcc_initial-clean:
 	rm -rf $(GCC_BUILD_DIR1)
 	rm -f $(STAGING_DIR)/bin/$(REAL_GNU_TARGET_NAME)*
 
-gcc_initial-dirclean:
+gcc_initial-toolclean:
 	rm -rf $(GCC_BUILD_DIR1)
 
 #############################################################
@@ -225,7 +225,7 @@ gcc-clean:
 	rm -rf $(GCC_BUILD_DIR2)
 	rm -f $(STAGING_DIR)/bin/$(REAL_GNU_TARGET_NAME)*
 
-gcc-dirclean:
+gcc-toolclean:
 	rm -rf $(GCC_BUILD_DIR2)
 
 #############################################################
@@ -315,7 +315,7 @@ gcc_target-clean:
 	rm -rf $(GCC_BUILD_DIR3)
 	rm -f $(TARGET_DIR)/usr/bin/$(REAL_GNU_TARGET_NAME)*
 
-gcc_target-dirclean:
+gcc_target-toolclean:
 	rm -rf $(GCC_BUILD_DIR3)
 
 endif
