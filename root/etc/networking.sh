@@ -31,7 +31,6 @@ if_valid () {
     echo "# vlan${i}: $hwname $hwaddr => $vif"
 
     $DEBUG ifconfig $vif up
-    #$DEBUG vconfig rem vlan${i}
     $DEBUG vconfig add $vif $i
   }
   ifconfig "$1" >/dev/null 2>&1 || [ "${1%[0-9]}" = "br" ] 
@@ -57,10 +56,12 @@ configure () {
   if_valid $if || return
   
   if [ "${if%[0-9]}" = "br" ]; then
+    stp=$(nvram get ${type}_stp)
     $DEBUG ifconfig $if down
     $DEBUG brctl delbr $if
     $DEBUG brctl addbr $if
     $DEBUG brctl setfd $if 0
+    $DEBUG brctl stp $if $stp
     if_list=$(nvram_get ${type}_ifnames)
     for sif in $if_list; do {
       if_valid $sif || continue
@@ -101,7 +102,9 @@ configure () {
       
       $DEBUG ifconfig $if 0.0.0.0 up
       
-      $DEBUG pppd user "$if_username" password "$if_password" defaultroute  
+      $DEBUG /sbin/pppoecd $if -u $if_username -p $if_password -i 0 -I $if_redial -T $if_idletime -k
+      sleep 5
+      $DEBUG /sbin/route add default $if
     ;;
     *)
       echo "$if: $if_proto is not supported"
