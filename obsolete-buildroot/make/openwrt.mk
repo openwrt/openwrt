@@ -202,8 +202,7 @@ openwrt-rootprep:
 
 ######################################################################
 
-openwrt-prune: $(STAGING_DIR)/bin/sstrip openwrt-base
-#	-find $(TARGET_DIR) -type f -perm +111 -exec $(STAGING_DIR)/bin/sstrip {} \;
+openwrt-prune: openwrt-base $(STAGING_DIR)/bin/sstrip
 	# remove unneeded uClibc libs
 	rm -rf $(TARGET_DIR)/lib/libthread_db*
 	rm -rf $(TARGET_DIR)/lib/libpthread*
@@ -214,6 +213,7 @@ openwrt-prune: $(STAGING_DIR)/bin/sstrip openwrt-base
 	rm -f $(TARGET_DIR)/usr/sbin/iptables-save
 	rm -f $(TARGET_DIR)/usr/sbin/iptables-restore
 	rm -f $(TARGET_DIR)/usr/sbin/ip6tables
+	-@find $(TARGET_DIR) -type f -perm +111 | xargs $(STAGING_DIR)/bin/sstrip 2>/dev/null || true;
 
 ######################################################################
 
