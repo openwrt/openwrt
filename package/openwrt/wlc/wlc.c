@@ -24,6 +24,29 @@
 #include <typedefs.h>
 #include <wlutils.h>
 
+int _argc;
+char **_argv;
+
+void qtxpwr() {
+	int i = 0;
+		
+	if (_argc > 3) {
+		if (_argv[3][0] == '@') {
+			i = atoi(_argv[3] + 1);
+			i |= 0x80000000;
+		} else {
+			i = atoi(_argv[3]);
+		}
+		wl_set_val(_argv[1], "qtxpower", &i, sizeof(i));
+	} else {
+		wl_get_val(_argv[1], "qtxpower", &i, sizeof(i));
+		if ((i & 0x80000000) == 0x80000000)
+			printf("@");
+		printf("%d\n", i & 0x7ffffff);
+	}
+}
+
+
 struct wl_config {
 	char *name, *desc;
 	enum {
@@ -33,11 +56,12 @@ struct wl_config {
 	} type;
 	int get, set;
 	int r1, r2;
-	char *data;
+	void *handler;
 };
 
 struct wl_config commands[] = {
 	{"txpwr", "transmit power (in mW)", INT, WLC_GET_TXPWR, WLC_SET_TXPWR, 0, 255, NULL},
+	{"qtxpwr", "\ttransmit power (in qdbm)\n\t\t\t\"@\" before value means regulatory override", OTHER, 0, 0, 0, 0, qtxpwr},
 	{"promisc", "promiscuous mode", BOOL, WLC_GET_PROMISC, WLC_SET_PROMISC, 0, 0, NULL},
 	{"monitor", "monitor mode", BOOL, WLC_GET_MONITOR, WLC_SET_MONITOR, 0, 0, NULL},
 	{"passive", "passive mode", BOOL, WLC_GET_PASSIVE, WLC_SET_PASSIVE, 0, 0, NULL},
@@ -45,6 +69,7 @@ struct wl_config commands[] = {
 	{"infra", "infrastructure mode (0 = IBSS, 1 = Infra BSS)", BOOL, WLC_GET_INFRA, WLC_SET_INFRA, 0, 0, NULL},
 	{"antdiv", "rx antenna diversity (0 = antenna 0, 1 = antenna 1, 3 = auto select)", INT, WLC_GET_ANTDIV, WLC_SET_ANTDIV, 0, 3, NULL},
 	{"txant", "set tx antenna (0 = antenna 0, 1 = antenna 1, 3 = rx antenna)", INT, WLC_GET_TXANT, WLC_SET_TXANT, 0, 3, NULL},
+	{"wet", "wireless ethernet bridging mode", BOOL, WLC_GET_WET, WLC_SET_WET, 0, 0, NULL},
 	{"channel", "set channel", INT, WLC_GET_CHANNEL, WLC_SET_CHANNEL, 1, 14, NULL},
 	{NULL, NULL, 0, 0, 0, 0, 0, NULL}
 };
@@ -68,7 +93,10 @@ int main(int argc, char **argv)
 {
 	struct wl_config *cmd; 
 	int i;
-	
+
+	_argc = argc;
+	_argv = argv;
+
 	if (argc < 3) {
 		fprintf(stderr, "Usage: %s <interface> <command> [...]\n\n", argv[0]);
 		fprintf(stderr, "Commands:\n\n");
@@ -109,6 +137,16 @@ int main(int argc, char **argv)
 			fprintf(stderr, "ioctl = 0x%x (%d)\nold value = 0x%x (%d)\n", ioctl, ioctl, i, i);
 			wl_ioctl(argv[1], ioctl, &i, sizeof(i));
 			fprintf(stderr, "new value = 0x%x (%d)\n", i, i);
+		} else if (strcmp(argv[3], "intval") == 0) {
+			i = 0;
+			fprintf(stderr, "var = \"%s\"\nold value = 0x%x (%d)\n", argv[4], i, i);
+			if (argc > 5) {
+				i = atoi(argv[5]);
+				wl_set_val(argv[1], argv[4], &i, sizeof(i));
+			} else {
+				wl_get_val(argv[1], argv[4], &i, sizeof(i));
+			}
+			fprintf(stderr, "new value = 0x%x (%d)\n", i, i);
 		}
 		return 0;
 	}
@@ -123,6 +161,11 @@ int main(int argc, char **argv)
 					} else {
 						set_int(argv[1], cmd->set, atoi(argv[3]), cmd->r1, cmd->r2);
 					}
+				break;
+				case OTHER: {
+					void (*handler)(void) = cmd->handler;
+					handler();
+				}
 				break;
 			}
 		}
