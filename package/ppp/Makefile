@@ -95,6 +95,8 @@ $(PKG_PPP): $(PKG_BUILD_DIR)/pppd/pppd
 	mkdir -p $(I_PPP)
 	cp -af ./ipkg/ppp/* $(I_PPP)
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(I_PPP) control/ppp.control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH) 
+	mkdir -p $(I_PPP)/etc/ppp
+	ln -s /tmp/resolv.conf $(I_PPP)/etc/ppp/resolv.conf
 	mkdir -p $(I_PPP)/usr/sbin
 	cp -af $(PKG_BUILD_DIR)/pppd/pppd $(I_PPP)/usr/sbin/
 	$(STRIP) $(I_PPP)/usr/sbin/*
@@ -113,6 +115,7 @@ $(IPKG_STATE_DIR)/info/ppp.list: $(PKG_PPP)
 
 $(PKG_PPP_PPPOE_PLUGIN): $(PKG_PPP)
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(I_PPP_PPPOE_PLUGIN) control/ppp-pppoe-plugin.control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
+	cp -af ./ipkg/ppp-pppoe-plugin/* $(I_PPP_PPPOE_PLUGIN)
 	mkdir -p $(I_PPP_PPPOE_PLUGIN)/usr/lib/pppd/rp-pppoe
 	cp -af $(PKG_BUILD_DIR)/pppd/plugins/rp-pppoe/rp-pppoe.so \
 		$(I_PPP_PPPOE_PLUGIN)/usr/lib/pppd/rp-pppoe
