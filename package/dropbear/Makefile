@@ -1,11 +1,10 @@
-#############################################################
-#
-# dropbear
-#
-#############################################################
+# $Id$
+
 include $(TOPDIR)/rules.mk
 
 DROPBEAR_VERSION:=0.45
+DROPBEAR_MD5SUM:=2bcc46e4c239aec982bf36a723dd0b0e
+
 DROPBEAR_SOURCE:=dropbear-$(DROPBEAR_VERSION).tar.bz2
 DROPBEAR_SITE:=http://matt.ucc.asn.au/dropbear/releases/
 DROPBEAR_DIR:=$(BUILD_DIR)/dropbear-$(DROPBEAR_VERSION)
@@ -16,7 +15,7 @@ DROPBEAR_IPK:=dropbear_$(DROPBEAR_VERSION)-1_$(ARCH).ipk
 DROPBEAR_IPK_DIR:=$(DROPBEAR_DIR)/ipkg
 
 $(DL_DIR)/$(DROPBEAR_SOURCE):
-	 $(SCRIPT_DIR)/download.pl $(DL_DIR) $(DROPBEAR_SOURCE) x $(DROPBEAR_SITE)
+	 $(SCRIPT_DIR)/download.pl $(DL_DIR) $(DROPBEAR_SOURCE) $(DROPBEAR_MD5SUM) $(DROPBEAR_SITE)
 
 $(DROPBEAR_DIR)/.patched: $(DL_DIR)/$(DROPBEAR_SOURCE)
 	$(DROPBEAR_CAT) $(DL_DIR)/$(DROPBEAR_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -

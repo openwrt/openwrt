@@ -1,20 +1,23 @@
+# $Id$
+
 include $(TOPDIR)/rules.mk
 
 PKG_NAME := matrixssl
 PKG_VERSION := 1.2.4
 PKG_RELEASE := 1
+PKG_MD5SUM := 771c1489488e62668d673478311d63ca
 
-PKG_SOURCE_SITE := http://nbd.vd-s.ath.cx/openwrt
+PKG_SOURCE_SITE := http://nbd.vd-s.ath.cx/openwrt \
+		   http://openwrt.openbsd-geek.de/
 PKG_SOURCE_FILE := $(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_CAT := zcat
 PKG_SOURCE_DIR := $(PKG_NAME)
 PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_SOURCE_DIR)
 PKG_IPK := $(PACKAGE_DIR)/lib$(PKG_NAME)_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
 
-
 $(DL_DIR)/$(PKG_SOURCE_FILE):
 	mkdir -p $(DL_DIR)
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE_FILE) x $(PKG_SOURCE_SITE)
+	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE_FILE) $(PKG_MD5SUM) $(PKG_SOURCE_SITE)
 
 $(PKG_BUILD_DIR)/.patched: $(DL_DIR)/$(PKG_SOURCE_FILE)
 	mkdir -p $(TOOL_BUILD_DIR)

@@ -1,13 +1,12 @@
-#############################################################
-#
-# ebtables
-#
-#############################################################
+# $Id$
+
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=microperl
 PKG_VERSION:=5.8.6
 PKG_RELEASE:=1
+PKG_MD5SUM:=8d4aa4e061fd5bc0c39e4f0a63267880
+
 PKG_SOURCE_URL:=ftp://ftp.cpan.org/pub/CPAN/src/5.0
 PKG_SOURCE:=perl-$(PKG_VERSION).tar.gz
 PKG_BUILD_DIR:=$(BUILD_DIR)/perl-$(PKG_VERSION)
@@ -16,7 +15,7 @@ PKG_IPK:=$(PACKAGE_DIR)/$(PKG_NAME)_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
 PKG_IPK_DIR:=$(PKG_BUILD_DIR)/ipkg
 
 $(DL_DIR)/$(PKG_SOURCE):
-	 $(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE) x $(PKG_SOURCE_URL)
+	 $(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE) $(PKG_MD5SUM) $(PKG_SOURCE_URL)
 
 $(PKG_BUILD_DIR)/.unpacked: $(DL_DIR)/$(PKG_SOURCE)
 	$(PKG_CAT) $(DL_DIR)/$(PKG_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -

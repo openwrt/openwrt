@@ -1,13 +1,12 @@
-#############################################################
-#
-# iproute2
-#
-#############################################################
+# $Id$
+
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=iproute2
 PKG_VERSION:=2.6.9
 PKG_RELEASE:=1
+PKG_MD5SUM:=4b3f335b0139cb909c6a2ae8bf72e548
+
 PKG_SOURCE_URL:=http://developer.osdl.org/dev/iproute2/download/
 PKG_SOURCE:=$(PKG_NAME)-2.6.9-041019.tar.gz
 PKG_BUILD_DIR:=$(BUILD_DIR)/iproute2-2.6.9
@@ -20,7 +19,7 @@ PKG_TC:=$(PACKAGE_DIR)/tc_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
 PKG_TC_DIR:=$(PKG_BUILD_DIR)/ipkg/tc
 
 $(DL_DIR)/$(PKG_SOURCE):
-	 $(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE) x $(PKG_SOURCE_URL)
+	 $(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE) $(PKG_MD5SUM) $(PKG_SOURCE_URL)
 
 $(PKG_BUILD_DIR)/.patched: $(DL_DIR)/$(PKG_SOURCE)
 	$(PKG_CAT) $(DL_DIR)/$(PKG_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -

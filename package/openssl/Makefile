@@ -1,8 +1,11 @@
+# $Id$
+
 include $(TOPDIR)/rules.mk
 
 PKG_NAME := openssl
 PKG_VERSION := 0.9.7e
 PKG_RELEASE := 1
+PKG_MD5SUM := a8777164bca38d84e5eb2b1535223474
 
 PKG_SOURCE_SITE := http://www.openssl.org/source
 PKG_SOURCE_FILE := $(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -15,7 +18,7 @@ OPENSSL_NO_CIPHERS:=no-idea no-mdc2 no-rc5 no-rc2 no-md2 no-md4
 
 $(DL_DIR)/$(PKG_SOURCE_FILE):
 	mkdir -p $(DL_DIR)
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE_FILE) x $(PKG_SOURCE_SITE)
+	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE_FILE) $(PKG_MD5SUM) $(PKG_SOURCE_SITE)
 
 $(PKG_BUILD_DIR)/.patched: $(DL_DIR)/$(PKG_SOURCE_FILE)
 	mkdir -p $(TOOL_BUILD_DIR)
