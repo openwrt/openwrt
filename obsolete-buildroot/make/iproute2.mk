@@ -15,11 +15,20 @@ IPROUTE2_SOURCE=iproute_20010824.orig.tar.gz
 IPROUTE2_PATCH:=iproute_20010824-8.diff.gz
 IPROUTE2_PATCH_2:=iproute2-cross-ar-20010824.patch
 
+IPROUTE2_IPKTARGET=iproute.ipk
+IPROUTE2_IPKSRC:=iproute-pkg.tgz
+IPROUTE2_IPKSITE:=http://openwrt.rozeware.bc.ca/ipkg-dev
+
+
 $(DL_DIR)/$(IPROUTE2_SOURCE):
 	 $(WGET) -P $(DL_DIR) $(IPROUTE2_SOURCE_URL)$(IPROUTE2_SOURCE)
 
 $(DL_DIR)/$(IPROUTE2_PATCH):
 	$(WGET) -P $(DL_DIR) $(IPROUTE2_SOURCE_URL)/$(IPROUTE2_PATCH)
+
+$(DL_DIR)/$(IPROUTE2_IPKSRC):
+	$(WGET) -P $(DL_DIR) $(IPROUTE2_IPKSITE)/$(IPROUTE2_IPKSRC)
+
 
 iproute2-source: $(DL_DIR)/$(IPROUTE2_SOURCE) #$(DL_DIR)/$(IPROUTE2_PATCH)
 
@@ -49,6 +58,7 @@ $(IPROUTE2_DIR)/.configured: $(IPROUTE2_DIR)/.unpacked
 
 $(IPROUTE2_DIR)/tc/tc: $(IPROUTE2_DIR)/.configured
 	$(MAKE) -C $(IPROUTE2_DIR) $(TARGET_CONFIGURE_OPTS) KERNEL_INCLUDE=$(LINUX_DIR)/include
+	$(STRIP) $(IPROUTE2_DIR)/tc/tc
 
 $(TARGET_DIR)/usr/sbin/tc: $(IPROUTE2_DIR)/tc/tc
 	@# Make sure our $(TARGET_DIR)/usr/sbin/ exists.
@@ -65,3 +75,12 @@ iproute2-clean:
 
 iproute2-dirclean:
 	rm -rf $(IPROUTE2_DIR)
+	
+iproute2-ipk:	$(IPROUTE2_IPKTARGET)
+
+$(IPROUTE2_IPKTARGET):	$(IPROUTE2_DIR)/ipkg/rules
+	(cd $(IPROUTE2_DIR); ipkg-buildpackage )
+	
+$(IPROUTE2_DIR)/ipkg/rules:	$(IPROUTE2_DIR)/tc/tc $(DL_DIR)/$(IPROUTE2_IPKSRC)
+	tar -C $(IPROUTE2_DIR) -zxf $(DL_DIR)/$(IPROUTE2_IPKSRC)
+	
