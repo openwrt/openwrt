@@ -48,5 +48,5 @@ echo Please wait until leds stops flashing.
 elif [ "$2" == "linksys" ]; then
 echo Flashing 192.168.1.1 using $1...
 echo -en "rexmt 1\ntrace\nbinary\nput $1\nquit\n" | tftp 192.168.1.1
-echo Please wait until power led stops flashing. Then you can login via telnet 192.168.1.1
+echo Please wait until power led stops flashing. Do not poweroff! Then you can login via telnet 192.168.1.1.
 fi
