@@ -1,0 +1,22 @@
+#!/bin/sh
+
+case "$1" in
+    start)
+	echo 1 > /proc/sys/net/ipv6/conf/all/forwarding
+	/usr/sbin/radvd
+	;;
+
+    stop)
+	killall radvd
+	echo 0 > /proc/sys/net/ipv6/conf/all/forwarding
+	;;
+
+    restart)
+	$0 stop
+	$0 start
+	;;
+    *)
+	echo "Usage: $0 {start|stop|restart}"
+	exit 1
+	;;
+esac
