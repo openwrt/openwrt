@@ -34,7 +34,7 @@ $(PKG_BUILD_DIR)/.patched: $(DL_DIR)/$(PKG_SOURCE)
 
 $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.patched
 	$(SCRIPT_DIR)/gen_busybox_config.pl $(TOPDIR)/.config > $(PKG_BUILD_DIR)/.config
-	$(MAKE) CC=$(TARGET_CC) CROSS="$(TARGET_CROSS)" -C $(PKG_BUILD_DIR) oldconfig
+	yes '' | $(MAKE) CC=$(TARGET_CC) CROSS="$(TARGET_CROSS)" -C $(PKG_BUILD_DIR) oldconfig
 	touch $(PKG_BUILD_DIR)/.configured
 
 $(PKG_BUILD_DIR)/$(PKG_NAME): $(PKG_BUILD_DIR)/.configured
