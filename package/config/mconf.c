@@ -705,7 +705,6 @@ int main(int ac, char **av)
 		conf_write(NULL);
 		printf("\n\n"
 			"*** End of Buildroot configuration.\n"
-			"*** After changing root fs, use make linux-dirclean.\n"
 			"*** Check the top-level Makefile for additional configuration options.\n\n");
 	} else
 		printf("\n\nYour Buildroot configuration changes were NOT saved.\n\n");

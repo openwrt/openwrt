@@ -166,27 +166,48 @@ $(CONFIG)/mconf:
 	fi
 
 menuconfig: $(CONFIG)/mconf
+	-touch .config
+	-cp .config .config.test
 	@$(CONFIG)/mconf $(CONFIG_CONFIG_IN)
+	-./scripts/configtest.pl
 
 config: $(CONFIG)/conf
+	-touch .config
+	-cp .config .config.test
 	@$(CONFIG)/conf $(CONFIG_CONFIG_IN)
+	-./scripts/configtest.pl
 
 oldconfig: $(CONFIG)/conf
+	-touch .config
+	-cp .config .config.test
 	@$(CONFIG)/conf -o $(CONFIG_CONFIG_IN)
+	-./scripts/configtest.pl
 
 randconfig: $(CONFIG)/conf
+	-touch .config
+	-cp .config .config.test
 	@$(CONFIG)/conf -r $(CONFIG_CONFIG_IN)
+	-./scripts/configtest.pl
 
 allyesconfig: $(CONFIG)/conf
 	#@$(CONFIG)/conf -y $(CONFIG_CONFIG_IN)
 	#sed -i -e "s/^CONFIG_DEBUG.*/# CONFIG_DEBUG is not set/" .config
+	-touch .config
+	-cp .config .config.test
 	@$(CONFIG)/conf -o $(CONFIG_CONFIG_IN)
+	-./scripts/configtest.pl
 
 allnoconfig: $(CONFIG)/conf
+	-touch .config
+	-cp .config .config.test
 	@$(CONFIG)/conf -n $(CONFIG_CONFIG_IN)
+	-./scripts/configtest.pl
 
 defconfig: $(CONFIG)/conf
+	-touch .config
+	-cp .config .config.test
 	@$(CONFIG)/conf -d $(CONFIG_CONFIG_IN)
+	-./scripts/configtest.pl
 
 #############################################################
 #
