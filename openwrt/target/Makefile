@@ -29,6 +29,20 @@ IMAGE_TARGETS += $(BIN_DIR)/openwrt-motorola-$(1).bin
 endif
 endef
 
+#  Enable loader and prepare kernel
+ifeq ($(strip $(BR2_PACKAGE_LOADER)),y)
+export LINUX_LOADER=$(BUILD_DIR)/lzmaldr
+export LINUX_IMAGE=$(BUILD_DIR)/piggy.lzma
+else
+export LINUX_IMAGE=$(BUILD_DIR)/piggy.gz
+endif
+
+$(BUILD_DIR)/piggy.lzma: $(LINUX_KERNEL)
+	cat $^ | $(BUILD_DIR)/lzma/lzma e -si -so -eos > $@ || (rm -f $@ && false)
+
+$(BUILD_DIR)/piggy.gz: $(LINUX_KERNEL)
+	cat $^ | gzip -c9 $^ > $@ || (rm -f $@ && false)
+
 TARGET_DIRS:=
 TARGET_FS:=
 IMAGE_TARGETS:=
@@ -70,7 +84,7 @@ $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
 
 compile: $(patsubst %,%-compile,$(TARGET_DIRS))
-install: utils-install $(patsubst %,%-install,$(TARGET_DIRS)) $(IMAGE_TARGETS)
+install: utils-install lzma-install $(LINUX_IMAGE) $(patsubst %,%-install,$(TARGET_DIRS)) $(IMAGE_TARGETS)
 clean: $(patsubst %,%-clean,$(TARGET_DIRS)) image_clean
 
 image_clean:

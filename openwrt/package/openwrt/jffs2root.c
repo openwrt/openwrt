@@ -73,6 +73,8 @@ int main(int argc, char **argv)
     int fd;
     unsigned long len;
     struct trx_header *ptr;
+    unsigned offset;
+	
     if (((fd = open(FILENAME, O_RDWR))  < 0)
     || ((len = lseek(fd, 0, SEEK_END)) < 0)
     || ((ptr = (struct trx_header *) mmap(0, len, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0)) == (void *) (-1))
@@ -81,17 +83,20 @@ int main(int argc, char **argv)
 	exit(-1);
     }
 
+    /* treat last partition as rootfs offset */
+    offset = ptr->offsets[2] ? : ptr->offsets[1];
+	
     if (argc > 1 && !strcmp(argv[1],"--move")) {
-      if (ptr->offsets[1] >= ptr->len) {
+      if (offset >= ptr->len) {
         printf("Partition already moved outside trx\n");
 #if 0
-      } else if (ptr->offsets[1] & 0x0001ffff) {
+      } else if (offset & 0x0001ffff) {
         printf("Partition does not start on a block boundary\n");
 #endif
       } else {
 	init_crc32();
 	//bzero((void *)((int)ptr + ptr->len), (size_t)(len - ptr->len));
-        ptr->len = ptr->offsets[1];
+        ptr->len = offset;
         ptr->crc32 = crc32buf((void *) &(ptr->flag_version), ptr->len - offsetof(struct trx_header, flag_version));
 	msync(ptr,len,MS_SYNC|MS_INVALIDATE);
 	printf("Partition moved; please reboot\n");

@@ -19,6 +19,7 @@ package-$(BR2_PACKAGE_IPTABLES) += iptables
 package-$(BR2_PACKAGE_IPROUTE2) += iproute2
 package-$(BR2_PACKAGE_LCD4LINUX) += lcd4linux
 package-$(BR2_PACKAGE_LIBELF) += libelf
+package-$(BR2_PACKAGE_LOADER) += loader
 package-$(BR2_PACKAGE_LZO) += lzo
 package-$(BR2_PACKAGE_MATRIXSSL) += matrixssl
 package-$(BR2_PACKAGE_MICROPERL) += microperl
