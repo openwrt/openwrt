@@ -1,39 +1,38 @@
 #!/bin/sh
-
 # udhcpc script edited by Tim Riker <Tim@Rikers.org>
+# (slightly modified)
 
-[ -z "$1" ] && echo "Error: should be called from udhcpc" && exit 1
+[ -z "$1" ] && echo "Error: should be run by udhcpc" && exit 1
 
-RESOLV_CONF="/etc/resolv.conf"
-[ -n "$broadcast" ] && BROADCAST="broadcast $broadcast"
-[ -n "$subnet" ] && NETMASK="netmask $subnet"
+RESOLV_CONF="/tmp/resolv.conf"
 
 case "$1" in
-	deconfig)
-		/sbin/ifconfig $interface 0.0.0.0
-		;;
+        deconfig)
+                ifconfig $interface 0.0.0.0
+                ;;
 
-	renew|bound)
-		/sbin/ifconfig $interface $ip $BROADCAST $NETMASK
+        renew|bound)
+                ifconfig $interface $ip \
+                ${broadcast:+broadcast $broadcast} \
+                ${subnet:+netmask $subnet}
 
-		if [ -n "$router" ] ; then
-			echo "deleting routers"
-			while route del default gw 0.0.0.0 dev $interface ; do
-				:
-			done
+                if [ -n "$router" ] ; then
+                        echo "deleting routers"
+                        while route del default gw 0.0.0.0 dev $interface ; do
+                                :
+                        done
 
-			for i in $router ; do
-				route add default gw $i dev $interface
-			done
-		fi
+                        for i in $router ; do
+                                route add default gw $i dev $interface
+                        done
+                fi
 
-		echo -n > $RESOLV_CONF
-		[ -n "$domain" ] && echo search $domain >> $RESOLV_CONF
-		for i in $dns ; do
-			echo adding dns $i
-			echo nameserver $i >> $RESOLV_CONF
-		done
-		;;
+                echo -n > $RESOLV_CONF
+                ${domain:+echo search $domain >> $RESOLV_CONF}
+                for i in $dns ; do
+                        echo adding dns $i
+                        echo nameserver $i >> $RESOLV_CONF
+                done
+                ;;
 esac
-
 exit 0
