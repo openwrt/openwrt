@@ -36,21 +36,9 @@ openwrt-base: $(OPENWRT_TARGETS)
 
 ifneq ($(filter $(TARGETS),openwrt-base),)
 
-# WRT54G_SOURCE=wrt54gv2.2.02.2.tgz
-# WRT54G_SITE=http://www.linksys.com/support/opensourcecode/wrt54gv2/2.02.2
-
-# WRT54G_SOURCE=wrt54g.2.02.7.tgz
-# WRT54G_SITE=http://www.linksys.com/support/opensourcecode/wrt54gv2/2.02.7
-# WRT54G_DIR=$(BUILD_DIR)/WRT54G
-
 WRT54G_SOURCE=wrt54gs.2.07.1.tgz
 WRT54G_SITE=http://www.linksys.com/support/opensourcecode/wrt54gs/2.07.1
-
 WRT54G_DIR=$(BUILD_DIR)/WRT54GS
-
-# OPENWRT_ROOT=openwrt-root.tar.bz2
-# OPENWRT_SITE=http://127.0.0.1
-# OPENWRT_DIR=$(BUILD_DIR)/openwrt
 
 LINUX_DIR=$(WRT54G_DIR)/release/src/linux/linux
 LINUX_FORMAT=zImage
@@ -63,17 +51,14 @@ $(LINUX_DIR)/.unpacked: $(WRT54G_DIR)/.prepared
 	touch $(LINUX_DIR)/.unpacked
 
 $(LINUX_DIR)/.patched: $(WRT54G_DIR)/.prepared
-	$(SOURCE_DIR)/patch-kernel.sh $(LINUX_DIR)/../.. $(SOURCE_DIR) openwrt-linux-netfilter.patch
-	$(SOURCE_DIR)/patch-kernel.sh $(LINUX_DIR)/../.. $(SOURCE_DIR) openwrt-linux-sch_htb.patch
-	$(SOURCE_DIR)/patch-kernel.sh $(LINUX_DIR)/../.. $(SOURCE_DIR) openwrt-wrt54g-linux.patch
-	$(SOURCE_DIR)/patch-kernel.sh $(LINUX_DIR)/../.. $(SOURCE_DIR) openwrt-wrt54g-nfsswap.patch
+	$(SOURCE_DIR)/patch-kernel.sh $(LINUX_DIR)/../.. $(SOURCE_DIR)/openwrt/kernel/patches
 	# use replacement diag module code
-	cp -f $(SOURCE_DIR)/openwrt-diag.c $(LINUX_DIR)/drivers/net/diag/diag_led.c
-	cp -f $(SOURCE_DIR)/openwrt-wrt54g-linux.config $(LINUX_DIR)/.config
+	cp -f $(SOURCE_DIR)/openwrt/kernel/diag.c $(LINUX_DIR)/drivers/net/diag/diag_led.c
+	cp -f $(SOURCE_DIR)/openwrt/kernel/linux.config $(LINUX_DIR)/.config
 	-(cd $(BUILD_DIR); ln -sf $(LINUX_DIR) linux)
 	-(cd $(LINUX_DIR)/arch/mips/brcm-boards/bcm947xx/; \
 	rm -rf compressed; \
-	tar jxvf $(SOURCE_DIR)/compressed-20040531.tar.bz2; \
+	tar jxvf $(SOURCE_DIR)/openwrt/kernel/compressed-20040531.tar.bz2; \
 	)
 	touch $(LINUX_DIR)/.patched
 
@@ -107,8 +92,7 @@ $(WRT54G_DIR)/.source: $(DL_DIR)/$(WRT54G_SOURCE)
 	touch $(WRT54G_DIR)/.source
 
 $(WRT54G_DIR)/.prepared: $(WRT54G_DIR)/.source
-	$(SOURCE_DIR)/patch-kernel.sh $(WRT54G_DIR) $(SOURCE_DIR) openwrt-wrt54g-router.patch
-	$(SOURCE_DIR)/patch-kernel.sh $(WRT54G_DIR) $(SOURCE_DIR) openwrt-wrt54g-shared.patch
+	$(SOURCE_DIR)/patch-kernel.sh $(WRT54G_DIR) $(SOURCE_DIR)/openwrt/patches
 	touch $(WRT54G_DIR)/.prepared
 
 ######################################################################
@@ -236,8 +220,8 @@ openwrt-prune:
 ######################################################################
 
 wrt-tools:
-	$(CC) -o $(WRT54G_DIR)/release/tools/trx $(SOURCE_DIR)/trx.c
-	$(CC) -o $(WRT54G_DIR)/release/tools/addpattern $(SOURCE_DIR)/addpattern.c
+	$(CC) -o $(WRT54G_DIR)/release/tools/trx $(SOURCE_DIR)/openwrt/tools/trx.c
+	$(CC) -o $(WRT54G_DIR)/release/tools/addpattern $(SOURCE_DIR)/openwrt/tools/addpattern.c
 
 openwrt-linux.trx:  openwrt-prune squashfsroot wrt-tools
 	$(WRT54G_DIR)/release/tools/trx -o openwrt-linux.trx \
@@ -253,24 +237,4 @@ openwrt-g-code.bin: openwrt-gs-code.bin
 openwrt-code.bin: openwrt-gs-code.bin openwrt-g-code.bin
 
 ######################################################################
-
-openwrt-sourceball:
-	tar cjf buildroot-openwrt.tar.bz2 \
-		README.openwrt \
-		Makefile \
-		Makefile-openwrt \
-		make/openwrt.mk \
-		make/uclibc.mk \
-		make/busybox.mk \
-		sources/uClibc.config \
-		sources/uClibc.config-openwrt \
-		sources/busybox-openwrt-*.patch \
-		sources/busybox.config \
-		sources/busybox.config-openwrt \
-		sources/dnsmasq1-openwrt.patch \
-		sources/iptables-openwrt-extensions.patch \
-		sources/openwrt-wrt54g-linux.config \
-		sources/openwrt-wrt54g-*.patch \
-		sources/openwrt-diag.c
-
 endif

@@ -93,15 +93,15 @@ $(OPENSSH_IPK_DIR)/usr/bin/ssh: $(OPENSSH_DIR)/ssh
 $(OPENSSH_SERVER_IPK): $(OPENSSH_IPK_DIR)/usr/bin/ssh
 	rm -rf $(OPENSSH_IPK_DIR)/build
 	mkdir -p $(OPENSSH_IPK_DIR)/build/CONTROL
-	cp $(SOURCE_DIR)/openssh.server.control $(OPENSSH_IPK_DIR)/build/CONTROL/control
-	cp $(SOURCE_DIR)/openssh.server.conffiles $(OPENSSH_IPK_DIR)/build/CONTROL/conffiles
-	cp $(SOURCE_DIR)/openssh.server.preinst $(OPENSSH_IPK_DIR)/build/CONTROL/preinst
+	cp $(SOURCE_DIR)/openwrt/ipkg/openssh/openssh.server.control $(OPENSSH_IPK_DIR)/build/CONTROL/control
+	cp $(SOURCE_DIR)/openwrt/ipkg/openssh/openssh.server.conffiles $(OPENSSH_IPK_DIR)/build/CONTROL/conffiles
+	cp $(SOURCE_DIR)/openwrt/ipkg/openssh/openssh.server.preinst $(OPENSSH_IPK_DIR)/build/CONTROL/preinst
 	chmod a+x $(OPENSSH_IPK_DIR)/build/CONTROL/preinst
-	cp $(SOURCE_DIR)/openssh.server.postinst $(OPENSSH_IPK_DIR)/build/CONTROL/postinst
+	cp $(SOURCE_DIR)/openwrt/ipkg/openssh/openssh.server.postinst $(OPENSSH_IPK_DIR)/build/CONTROL/postinst
 	chmod a+x $(OPENSSH_IPK_DIR)/build/CONTROL/postinst
 	mkdir -p $(OPENSSH_IPK_DIR)/build/etc/init.d
-	cp $(SOURCE_DIR)/openssh.server.sshd_config $(OPENSSH_IPK_DIR)/build/etc/sshd_config
-	cp $(SOURCE_DIR)/openssh.server.S50sshd-ipk $(OPENSSH_IPK_DIR)/build/etc/init.d/S50sshd
+	cp $(SOURCE_DIR)/openwrt/ipkg/openssh/openssh.server.sshd_config $(OPENSSH_IPK_DIR)/build/etc/sshd_config
+	cp $(SOURCE_DIR)/openwrt/ipkg/openssh/openssh.server.S50sshd-ipk $(OPENSSH_IPK_DIR)/build/etc/init.d/S50sshd
 	chmod a+x $(OPENSSH_IPK_DIR)/build/etc/init.d/S50sshd
 	mkdir -p $(OPENSSH_IPK_DIR)/build/usr/sbin
 	cp $(OPENSSH_IPK_DIR)/usr/sbin/sshd $(OPENSSH_IPK_DIR)/build/usr/sbin
@@ -113,12 +113,12 @@ $(OPENSSH_SERVER_IPK): $(OPENSSH_IPK_DIR)/usr/bin/ssh
 $(OPENSSH_CLIENT_IPK): $(OPENSSH_IPK_DIR)/usr/bin/ssh
 	rm -rf $(OPENSSH_IPK_DIR)/build
 	mkdir -p $(OPENSSH_IPK_DIR)/build/CONTROL
-	cp $(SOURCE_DIR)/openssh.client.control $(OPENSSH_IPK_DIR)/build/CONTROL/control
-	cp $(SOURCE_DIR)/openssh.client.conffiles $(OPENSSH_IPK_DIR)/build/CONTROL/conffiles
-	cp $(SOURCE_DIR)/openssh.client.preinst $(OPENSSH_IPK_DIR)/build/CONTROL/preinst
+	cp $(SOURCE_DIR)/openwrt/ipkg/openssh/openssh.client.control $(OPENSSH_IPK_DIR)/build/CONTROL/control
+	cp $(SOURCE_DIR)/openwrt/ipkg/openssh/openssh.client.conffiles $(OPENSSH_IPK_DIR)/build/CONTROL/conffiles
+	cp $(SOURCE_DIR)/openwrt/ipkg/openssh/openssh.client.preinst $(OPENSSH_IPK_DIR)/build/CONTROL/preinst
 	chmod a+x $(OPENSSH_IPK_DIR)/build/CONTROL/preinst
 	mkdir -p $(OPENSSH_IPK_DIR)/build/etc
-	cp $(SOURCE_DIR)/openssh.client.ssh_config $(OPENSSH_IPK_DIR)/build/etc/ssh_config
+	cp $(SOURCE_DIR)/openwrt/ipkg/openssh/openssh.client.ssh_config $(OPENSSH_IPK_DIR)/build/etc/ssh_config
 	mkdir -p $(OPENSSH_IPK_DIR)/build/usr/bin
 	cp $(OPENSSH_IPK_DIR)/usr/bin/ssh $(OPENSSH_IPK_DIR)/build/usr/bin
 	cp $(OPENSSH_IPK_DIR)/usr/bin/scp $(OPENSSH_IPK_DIR)/build/usr/bin
@@ -128,7 +128,7 @@ $(OPENSSH_CLIENT_IPK): $(OPENSSH_IPK_DIR)/usr/bin/ssh
 $(OPENSSH_SFTP_SERVER_IPK): $(OPENSSH_IPK_DIR)/usr/bin/ssh
 	rm -rf $(OPENSSH_IPK_DIR)/build
 	mkdir -p $(OPENSSH_IPK_DIR)/build/CONTROL
-	cp $(SOURCE_DIR)/openssh.sftp-server.control $(OPENSSH_IPK_DIR)/build/CONTROL/control
+	cp $(SOURCE_DIR)/openwrt/ipkg/openssh/openssh.sftp-server.control $(OPENSSH_IPK_DIR)/build/CONTROL/control
 	mkdir -p $(OPENSSH_IPK_DIR)/build/usr/sbin
 	cp $(OPENSSH_IPK_DIR)/usr/sbin/sftp-server $(OPENSSH_IPK_DIR)/build/usr/sbin
 	cd $(BUILD_DIR); $(STAGING_DIR)/bin/ipkg-build -c -o root -g root $(OPENSSH_IPK_DIR)/build
@@ -137,7 +137,7 @@ $(OPENSSH_SFTP_SERVER_IPK): $(OPENSSH_IPK_DIR)/usr/bin/ssh
 $(OPENSSH_SFTP_CLIENT_IPK): $(OPENSSH_IPK_DIR)/usr/bin/ssh
 	rm -rf $(OPENSSH_IPK_DIR)/build
 	mkdir -p $(OPENSSH_IPK_DIR)/build/CONTROL
-	cp $(SOURCE_DIR)/openssh.sftp-client.control $(OPENSSH_IPK_DIR)/build/CONTROL/control
+	cp $(SOURCE_DIR)/openwrt/ipkg/openssh/openssh.sftp-client.control $(OPENSSH_IPK_DIR)/build/CONTROL/control
 	mkdir -p $(OPENSSH_IPK_DIR)/build/usr/bin
 	cp $(OPENSSH_IPK_DIR)/usr/bin/sftp $(OPENSSH_IPK_DIR)/build/usr/bin
 	cd $(BUILD_DIR); $(STAGING_DIR)/bin/ipkg-build -c -o root -g root $(OPENSSH_IPK_DIR)/build
@@ -146,7 +146,7 @@ $(OPENSSH_SFTP_CLIENT_IPK): $(OPENSSH_IPK_DIR)/usr/bin/ssh
 $(OPENSSH_CLIENT_EX_IPK): $(OPENSSH_IPK_DIR)/usr/bin/ssh
 	rm -rf $(OPENSSH_IPK_DIR)/build
 	mkdir -p $(OPENSSH_IPK_DIR)/build/CONTROL
-	cp $(SOURCE_DIR)/openssh.client.ex.control $(OPENSSH_IPK_DIR)/build/CONTROL/control
+	cp $(SOURCE_DIR)/openwrt/ipkg/openssh/openssh.client.ex.control $(OPENSSH_IPK_DIR)/build/CONTROL/control
 	mkdir -p $(OPENSSH_IPK_DIR)/build/usr/bin
 	cp $(OPENSSH_IPK_DIR)/usr/bin/ssh-add $(OPENSSH_IPK_DIR)/build/usr/bin
 	cp $(OPENSSH_IPK_DIR)/usr/bin/ssh-agent $(OPENSSH_IPK_DIR)/build/usr/bin
