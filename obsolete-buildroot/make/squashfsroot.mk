@@ -10,11 +10,12 @@ SQUASHFS_SITE=http://dl.sourceforge.net/sourceforge/squashfs
 $(DL_DIR)/$(SQUASHFS_SOURCE):
 	 $(WGET) -P $(DL_DIR) $(SQUASHFS_SITE)/$(SQUASHFS_SOURCE)
 
-$(SQUASHFS_DIR): $(DL_DIR)/$(SQUASHFS_SOURCE) #$(SQUASHFS_PATCH)
+$(SQUASHFS_DIR)/.unpacked: $(DL_DIR)/$(SQUASHFS_SOURCE) #$(SQUASHFS_PATCH)
 	zcat $(DL_DIR)/$(SQUASHFS_SOURCE) | tar -C $(BUILD_DIR) -xvf -
 	$(SOURCE_DIR)/patch-kernel.sh $(SQUASHFS_DIR) $(SOURCE_DIR) squashfs.patch
+	touch $(SQUASHFS_DIR)/.unpacked
 
-$(SQUASHFS_DIR)/squashfs-tools/mksquashfs: $(SQUASHFS_DIR)
+$(SQUASHFS_DIR)/squashfs-tools/mksquashfs: $(SQUASHFS_DIR)/.unpacked
 	$(MAKE) -C $(SQUASHFS_DIR)/squashfs-tools;
 
 squashfs: $(SQUASHFS_DIR)/squashfs-tools/mksquashfs
