@@ -1,0 +1,128 @@
+#!/usr/bin/make -f
+
+ifneq ($(strip ${IPKG_RULES_INC}),)
+ include $(IPKG_RULES_INC)
+endif
+
+##
+
+PKG_VERSION := $(shell cat ./ipkg/version)
+CURRENT_DIR := $(shell pwd)
+INSTALL_DIR ?= $(CURRENT_DIR)/ipkg-install
+
+unexport INSTALL_DIR
+
+I_LIBPOPT := ipkg/libpopt
+I_LIBPOPT_DEV := ipkg/libpopt-dev
+
+BUILD_DEPS := \
+
+CONFIGURE_OPTS = \
+	--enable-shared \
+	--enable-static \
+
+##
+
+all: package
+
+
+.stamp-configured: $(BUILD_DEPS)
+
+	rm -rf config.cache
+	$(TARGET_CONFIGURE_OPTS) \
+	CFLAGS="$(TARGET_CFLAGS)" \
+	am_cv_func_iconv=no \
+	./configure \
+	  --target=$(GNU_TARGET_NAME) \
+	  --host=$(GNU_TARGET_NAME) \
+	  --build=$(GNU_HOST_NAME) \
+	  --program-prefix="" \
+	  --program-suffix="" \
+	  --prefix=/usr \
+	  --exec-prefix=/usr \
+	  --bindir=/usr/bin \
+	  --datadir=/usr/share \
+	  --includedir=/usr/include \
+	  --infodir=/usr/share/info \
+	  --libdir=/usr/lib \
+	  --libexecdir=/usr/lib \
+	  --localstatedir=/var \
+	  --mandir=/usr/share/man \
+	  --sbindir=/usr/sbin \
+	  --sysconfdir=/etc \
+	  $(DISABLE_LARGEFILE) \
+	  $(DISABLE_NLS) \
+	  $(CONFIGURE_OPTS) \
+
+	touch .stamp-configured
+
+
+.stamp-built: .stamp-configured
+
+	$(MAKE)
+	  
+	touch .stamp-built
+
+
+$(INSTALL_DIR)/usr/include/popt.h: .stamp-built
+
+	mkdir -p $(INSTALL_DIR)
+
+	$(MAKE) \
+	  DESTDIR="$(INSTALL_DIR)" \
+	 install
+
+
+configure: .stamp-configured
+
+
+build: .stamp-built
+
+
+install: $(INSTALL_DIR)/usr/include/popt.h
+
+
+package: $(INSTALL_DIR)/usr/include/popt.h
+
+	mkdir -p $(I_LIBPOPT)/usr/lib
+	cp -fpR $(INSTALL_DIR)/usr/lib/libpopt*.so.* $(I_LIBPOPT)/usr/lib/
+	$(STRIP) $(I_LIBPOPT)/usr/lib/lib*.so.*
+
+	mkdir -p $(I_LIBPOPT_DEV)/usr/include
+	cp -fpR $(INSTALL_DIR)/usr/include/popt.h $(I_LIBPOPT_DEV)/usr/include/
+	mkdir -p $(I_LIBPOPT_DEV)/usr/lib
+	cp -fpR $(INSTALL_DIR)/usr/lib/libpopt*.a $(I_LIBPOPT_DEV)/usr/lib/
+	cp -fpR $(INSTALL_DIR)/usr/lib/libpopt*.so* $(I_LIBPOPT_DEV)/usr/lib/
+
+	chmod 0755 ipkg/*/CONTROL/
+	chmod 0644 ipkg/*/CONTROL/control
+	
+	perl -pi -e "s/^Arch.*:.*/Architecture: $(ARCH)/g" ipkg/*/CONTROL/control
+ifneq ($(strip $(PKG_VERSION)),)
+	perl -pi -e "s/^Vers.*:.*/Version: $(PKG_VERSION)/g" ipkg/*/CONTROL/control
+endif
+
+	$(IPKG_BUILD) $(I_LIBPOPT) $(IPKG_TARGET_DIR)
+	$(IPKG_BUILD) $(I_LIBPOPT_DEV) $(IPKG_TARGET_DIR)
+
+
+clean:
+
+	-$(MAKE) \
+	  DESTDIR="$(INSTALL_DIR)" \
+	 uninstall clean
+
+	rm -rf .stamp-* \
+	  $(I_LIBPOPT)/usr \
+	  $(I_LIBPOPT_DEV)/usr \
+
+
+control:
+
+	@cat $(I_LIBPOPT)/CONTROL/control
+	@echo
+	@cat $(I_LIBPOPT_DEV)/CONTROL/control
+	@echo
+	
+
+.PHONY: configure build install package clean control
