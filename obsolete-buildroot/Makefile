@@ -40,6 +40,8 @@ BUILD_WITH_LARGEFILE:=true
 
 OPTIMIZE_FOR_CPU=$(ARCH)
 
+PUB_DIR:=/var/www/html/testsite/ipkg
+
 # Command used to download source code
 WGET:=wget --passive-ftp
 
@@ -96,6 +98,8 @@ INSTALL_LIBGCJ:=false
 #
 #############################################################
 TARGETS:=host-sed gcc3_3 openwrt-base openwrt-code.bin
+
+PACKAGES:=oidentd iproute2 sched-modules wshaper
 
 #############################################################
 #
@@ -183,7 +187,14 @@ TARGETS_CLEAN:=$(patsubst %,%-clean,$(TARGETS))
 TARGETS_SOURCE:=$(patsubst %,%-source,$(TARGETS))
 TARGETS_DIRCLEAN:=$(patsubst %,%-dirclean,$(TARGETS))
 
-world: $(DL_DIR) $(BUILD_DIR) $(STAGING_DIR) $(TARGET_DIR) $(TARGETS)
+
+PACKAGES_IPK:=$(patsubst %,%-ipk,$(PACKAGES))
+
+
+$(BUILD_DIR)/Packages : $(PACKAGES_IPK)
+	(cd $(BUILD_DIR) ; ipkg-make-index . > Packages)
+
+world: $(DL_DIR) $(BUILD_DIR) $(STAGING_DIR) $(TARGET_DIR) $(TARGETS) $(PACKAGES_IPK) $(BUILD_DIR)/Packages
 	@echo "ALL DONE."
 
 .PHONY: all world clean dirclean distclean source $(TARGETS) \
@@ -240,6 +251,17 @@ distclean:
 	rm -rf $(DL_DIR) $(BUILD_DIR) $(LINUX_KERNEL) $(IMAGE) \
 		openwrt-linux.trx openwrt-g-code.bin openwrt-gs-code.bin \
 		openwrt-kmodules.tar.bz2
+		
+
+publish:	
+	chmod 644 $(BUILD_DIR)/Packages
+	chmod 644 $(BUILD_DIR)/Packages.filelist
+	chmod 644 $(BUILD_DIR)/*.ipk
+	cp $(BUILD_DIR)/Packages $(PUB_DIR)
+	cp $(BUILD_DIR)/Packages.filelist $(PUB_DIR)
+	cp $(BUILD_DIR)/*.ipk $(PUB_DIR)
+		
+
 
 sourceball: 
 	rm -rf $(BUILD_DIR)
