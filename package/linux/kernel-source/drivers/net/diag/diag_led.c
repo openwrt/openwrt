@@ -5,6 +5,7 @@
 // initial release 2004/03/28
 //
 // 2004/08/26 asus & buffalo support added
+// 2005/03/14 asus wl-500g deluxe and buffalo v2 support added
 
 #include <linux/module.h>
 #include <linux/init.h>
@@ -187,10 +188,25 @@ static int __init diag_init()
 		reset_polarity=0;
 		buf=nvram_get("boardnum")?:"";
 		if (!strcmp(buf,"44")) {
+			//motorola
 			set_diag=ignore;
 			set_dmz=ignore;
 			reset_gpio=(1<<5);
 			reset_polarity=0;
+		}
+		if (!strcmp(buf,"00")) {
+			//buffalo
+			set_diag=ignore;
+			set_dmz=ignore;
+			reset_gpio=(1<<7);
+			reset_polarity=1;
+		}
+		if (!strcmp(buf,"45")) {
+			//wl-500g deluxe
+			set_diag=ignore;
+			set_dmz=ignore;
+			reset_gpio=(1<<6);
+			reset_polarity=1;
 		}
 	}
 	printk(KERN_INFO "using v%d hardware\n",board_type);

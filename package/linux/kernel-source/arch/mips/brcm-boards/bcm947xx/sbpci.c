@@ -275,7 +275,7 @@ sbpci_init(void *sbh)
 	sb_core_reset(sbh, 0);
 
 	/* In some board, */ 
-	if(nvram_match("boardtype", "bcm94710dev"))
+	if(nvram_match("boardtype", "bcm94710dev") || nvram_match("boardtype", "bcm94710ap")|| nvram_match("boardtype", "bcm94710r4")|| nvram_match("boardtype", "bcm94710r4")|| nvram_match("boardtype", "bcm95365r"))
 		CT4712_WR = 0;
 	else
 		CT4712_WR = 1;
