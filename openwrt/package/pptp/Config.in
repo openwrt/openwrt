@@ -1,0 +1,7 @@
+config BR2_PACKAGE_PPTP
+	tristate "PPTP Client"
+	default m
+	select BR2_PACKAGE_KMOD_GRE
+	select BR2_PACKAGE_PPP
+	help
+	  A Point-to-Point Tunneling Protocol Client 
