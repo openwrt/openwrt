@@ -180,11 +180,12 @@ int main(int argc, char **argv)
 			case 'b':
 				n = atoi(optarg);
 				if (n < cur_len) {
-					fprintf(stderr, "WARNING: current length exceeds -b %d offset",n);
+					fprintf(stderr, "WARNING: current length exceeds -b %d offset\n",n);
 				} else {
 					memset(buf + cur_len, 0, n - cur_len);
 					cur_len = n;
 				}
+				break;
 			default:
 				usage();
 		}
