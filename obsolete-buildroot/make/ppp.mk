@@ -38,6 +38,7 @@ $(PPP_DIR)/.stamp-patched: $(PPP_DIR)/.stamp-unpacked
 $(PPP_DIR)/.stamp-configured: $(PPP_DIR)/.stamp-patched
 	cd $(PPP_DIR)/pppd/plugins/radius/radiusclient ; \
 	rm -rf config.cache ; \
+	echo > aclocal.m4; \
 	$(TARGET_CONFIGURE_OPTS) \
 	ac_cv_func_setvbuf_reversed=no \
 	ac_cv_func_uname=no \

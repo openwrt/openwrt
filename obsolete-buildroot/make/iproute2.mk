@@ -5,6 +5,8 @@
 #############################################################
 
 IPROUTE2_DIR=$(BUILD_DIR)/iproute2
+IP_IPK_DIR=$(BUILD_DIR)/ip-2.0-ipk
+TC_IPK_DIR=$(BUILD_DIR)/tc-2.0-ipk
 
 #IPROUTE2_SOURCE_URL=ftp://ftp.inr.ac.ru/ip-routing/
 #IPROUTE2_SOURCE=iproute2-2.4.7-now-ss020116-try.tar.gz
@@ -15,19 +17,12 @@ IPROUTE2_SOURCE=iproute_20010824.orig.tar.gz
 IPROUTE2_PATCH:=iproute_20010824-8.diff.gz
 IPROUTE2_PATCH_2:=iproute2-*.patch
 
-IPROUTE2_IPKTARGET=iproute.ipk
-IPROUTE2_IPKSRC:=iproute-pkg.tgz
-IPROUTE2_IPKSITE:=http://openwrt.rozeware.bc.ca/ipkg-dev
-
 
 $(DL_DIR)/$(IPROUTE2_SOURCE):
 	 $(WGET) -P $(DL_DIR) $(IPROUTE2_SOURCE_URL)$(IPROUTE2_SOURCE)
 
 $(DL_DIR)/$(IPROUTE2_PATCH):
 	$(WGET) -P $(DL_DIR) $(IPROUTE2_SOURCE_URL)/$(IPROUTE2_PATCH)
-
-$(DL_DIR)/$(IPROUTE2_IPKSRC):
-	$(WGET) -P $(DL_DIR) $(IPROUTE2_IPKSITE)/$(IPROUTE2_IPKSRC)
 
 
 iproute2-source: $(DL_DIR)/$(IPROUTE2_SOURCE) #$(DL_DIR)/$(IPROUTE2_PATCH)
@@ -58,7 +53,6 @@ $(IPROUTE2_DIR)/.configured: $(IPROUTE2_DIR)/.unpacked
 
 $(IPROUTE2_DIR)/tc/tc: $(IPROUTE2_DIR)/.configured
 	$(MAKE) -C $(IPROUTE2_DIR) $(TARGET_CONFIGURE_OPTS) KERNEL_INCLUDE=$(LINUX_DIR)/include
-	$(STRIP) $(IPROUTE2_DIR)/tc/tc
 
 $(TARGET_DIR)/usr/sbin/tc: $(IPROUTE2_DIR)/tc/tc
 	@# Make sure our $(TARGET_DIR)/usr/sbin/ exists.
@@ -74,13 +68,19 @@ iproute2-clean:
 	-$(MAKE) -C $(IPROUTE2_DIR) clean
 
 iproute2-dirclean:
-	rm -rf $(IPROUTE2_DIR)
+	rm -rf $(IPROUTE2_DIR) $(IP_IPK_DIR) $(TC_IPK_DIR)
 	
-iproute2-ipk:	$(IPROUTE2_IPKTARGET)
 
-$(IPROUTE2_IPKTARGET):	$(IPROUTE2_DIR)/ipkg/rules
-	(cd $(IPROUTE2_DIR); $(IPKG_BUILDPACKAGE) )
-	
-$(IPROUTE2_DIR)/ipkg/rules:	$(IPROUTE2_DIR)/tc/tc $(DL_DIR)/$(IPROUTE2_IPKSRC)
-	tar -C $(IPROUTE2_DIR) -zxf $(DL_DIR)/$(IPROUTE2_IPKSRC)
-	
+iproute2-ipk:	$(IPROUTE2_DIR)/tc/tc
+	mkdir -p $(IP_IPK_DIR)
+	mkdir -p $(TC_IPK_DIR)
+	cp -a $(OPENWRT_IPK_DIR)/iproute/ip/CONTROL $(IP_IPK_DIR)/CONTROL
+	cp -a $(OPENWRT_IPK_DIR)/iproute/tc/CONTROL $(TC_IPK_DIR)/CONTROL
+	mkdir -p $(IP_IPK_DIR)/usr/sbin
+	mkdir -p $(TC_IPK_DIR)/usr/sbin
+	install -m 755 $(IPROUTE2_DIR)/ip/ip $(IP_IPK_DIR)/usr/sbin/
+	install -m 755 $(IPROUTE2_DIR)/tc/tc $(TC_IPK_DIR)/usr/sbin/
+	$(STRIP) $(IP_IPK_DIR)/usr/sbin/ip
+	$(STRIP) $(TC_IPK_DIR)/usr/sbin/tc
+	cd $(BUILD_DIR); $(IPKG_BUILD) $(IP_IPK_DIR)
+	cd $(BUILD_DIR); $(IPKG_BUILD) $(TC_IPK_DIR)
