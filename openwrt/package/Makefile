@@ -13,6 +13,7 @@ package-$(BR2_PACKAGE_DNSMASQ) += dnsmasq
 package-$(BR2_PACKAGE_EBTABLES) += ebtables
 package-$(BR2_PACKAGE_EZIPUPDATE) += ez-ipupdate
 package-$(BR2_PACKAGE_FPING) += fping
+package-$(BR2_PACKAGE_GLIB) += glib
 package-$(BR2_PACKAGE_GMP) += gmp
 package-$(BR2_PACKAGE_HASERL) += haserl
 package-$(BR2_PACKAGE_IPTABLES) += iptables
