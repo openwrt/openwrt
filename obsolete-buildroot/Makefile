@@ -97,7 +97,7 @@ INSTALL_LIBGCJ:=false
 # The list of stuff to build for the target filesystem
 #
 #############################################################
-TARGETS:=host-sed gcc3_3 openwrt-base openwrt-code.bin
+TARGETS:=host-sed gcc3_3 ipkg-utils openwrt-base openwrt-code.bin
 
 PACKAGES:=oidentd iproute2 sched-modules wshaper
 
@@ -192,7 +192,7 @@ PACKAGES_IPK:=$(patsubst %,%-ipk,$(PACKAGES))
 
 
 $(BUILD_DIR)/Packages : $(PACKAGES_IPK)
-	(cd $(BUILD_DIR) ; ipkg-make-index . > Packages)
+	(cd $(BUILD_DIR) ; $(IPKG_MAKE_INDEX) . > Packages)
 
 world: $(DL_DIR) $(BUILD_DIR) $(STAGING_DIR) $(TARGET_DIR) $(TARGETS) $(PACKAGES_IPK) $(BUILD_DIR)/Packages
 	@echo "ALL DONE."

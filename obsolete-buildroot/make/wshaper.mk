@@ -43,7 +43,7 @@ $(BUILD_DIR)/$(WSHAPER)/ipkg/control  :	$(BUILD_DIR)/$(WSHAPER)/.unpacked $(DL_D
 	
 # now that we have it all in place, just build it
 $(BUILD_DIR)/$(WSHAPER_TARGET):	$(BUILD_DIR)/$(WSHAPER)/ipkg/control
-	cd $(BUILD_DIR)/$(WSHAPER); ipkg-buildpackage -c
+	cd $(BUILD_DIR)/$(WSHAPER); $(IPKG_BUILDPACKAGE)
 	
 		
 	

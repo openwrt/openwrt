@@ -37,7 +37,7 @@ $(BUILD_DIR)/$(SCHEDM)/ipkg/control : $(DL_DIR)/$(SCHEDMIPK_SRC) $(BUILD_DIR)/$(
 
 # now that we have it all in place, just build it
 $(BUILD_DIR)/$(SCHEDM_TARGET):	$(BUILD_DIR)/$(SCHEDM)/ipkg/control $(BUILD_DIR)/$(SCHEDM)/modules/2.4.20/net/sched/cls_fw.o
-	cd $(BUILD_DIR)/$(SCHEDM); ipkg-buildpackage -c
+	cd $(BUILD_DIR)/$(SCHEDM); $(IPKG_BUILDPACKAGE)
  		
 
 

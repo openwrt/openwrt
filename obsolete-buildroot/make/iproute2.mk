@@ -79,7 +79,7 @@ iproute2-dirclean:
 iproute2-ipk:	$(IPROUTE2_IPKTARGET)
 
 $(IPROUTE2_IPKTARGET):	$(IPROUTE2_DIR)/ipkg/rules
-	(cd $(IPROUTE2_DIR); ipkg-buildpackage )
+	(cd $(IPROUTE2_DIR); $(IPKG_BUILDPACKAGE) )
 	
 $(IPROUTE2_DIR)/ipkg/rules:	$(IPROUTE2_DIR)/tc/tc $(DL_DIR)/$(IPROUTE2_IPKSRC)
 	tar -C $(IPROUTE2_DIR) -zxf $(DL_DIR)/$(IPROUTE2_IPKSRC)
