@@ -48,3 +48,7 @@ dnsmasq-clean:
 
 dnsmasq-dirclean:
 	rm -rf $(DNSMASQ_DIR)
+
+ifeq ($(strip $(BR2_PACKAGE_DNSMASQ)),y)
+TARGETS+=dnsmasq
+endif
