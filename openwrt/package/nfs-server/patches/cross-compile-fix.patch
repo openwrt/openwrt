@@ -1,0 +1,149 @@
+diff -urN nfs-server-2.2beta47.old/configure nfs-server-2.2beta47/configure
+--- nfs-server-2.2beta47.old/configure	1999-06-11 12:06:04.000000000 +0200
++++ nfs-server-2.2beta47/configure	2005-03-24 22:24:39.000000000 +0100
+@@ -1960,7 +1960,7 @@
+   echo $ac_n "(cached) $ac_c" 1>&6
+ else
+   if test "$cross_compiling" = yes; then
+-    { echo "configure: error: can not run test program while cross compiling" 1>&2; exit 1; }
++    { echo "configure: error: can not run test program while cross compiling" 1>&2; }
+ else
+ cat > conftest.$ac_ext <<EOF
+ #line 1967 "configure"
+@@ -1996,7 +1996,7 @@
+   echo $ac_n "(cached) $ac_c" 1>&6
+ else
+   if test "$cross_compiling" = yes; then
+-    { echo "configure: error: can not run test program while cross compiling" 1>&2; exit 1; }
++    { echo "configure: error: can not run test program while cross compiling" 1>&2; }
+ else
+ cat > conftest.$ac_ext <<EOF
+ #line 2003 "configure"
+@@ -2032,7 +2032,7 @@
+   echo $ac_n "(cached) $ac_c" 1>&6
+ else
+   if test "$cross_compiling" = yes; then
+-    { echo "configure: error: can not run test program while cross compiling" 1>&2; exit 1; }
++    { echo "configure: error: can not run test program while cross compiling" 1>&2; }
+ else
+ cat > conftest.$ac_ext <<EOF
+ #line 2039 "configure"
+@@ -2130,7 +2130,7 @@
+   echo $ac_n "(cached) $ac_c" 1>&6
+ else
+   if test "$cross_compiling" = yes; then
+-    { echo "configure: error: can not run test program while cross compiling" 1>&2; exit 1; }
++    { echo "configure: error: can not run test program while cross compiling" 1>&2; }
+ else
+ cat > conftest.$ac_ext <<EOF
+ #line 2137 "configure"
+@@ -2166,7 +2166,7 @@
+   echo $ac_n "(cached) $ac_c" 1>&6
+ else
+   if test "$cross_compiling" = yes; then
+-    { echo "configure: error: can not run test program while cross compiling" 1>&2; exit 1; }
++    { echo "configure: error: can not run test program while cross compiling" 1>&2; }
+ else
+ cat > conftest.$ac_ext <<EOF
+ #line 2173 "configure"
+@@ -2202,7 +2202,7 @@
+   echo $ac_n "(cached) $ac_c" 1>&6
+ else
+   if test "$cross_compiling" = yes; then
+-    { echo "configure: error: can not run test program while cross compiling" 1>&2; exit 1; }
++    { echo "configure: error: can not run test program while cross compiling" 1>&2; }
+ else
+ cat > conftest.$ac_ext <<EOF
+ #line 2209 "configure"
+@@ -2238,7 +2238,7 @@
+   echo $ac_n "(cached) $ac_c" 1>&6
+ else
+   if test "$cross_compiling" = yes; then
+-    { echo "configure: error: can not run test program while cross compiling" 1>&2; exit 1; }
++    { echo "configure: error: can not run test program while cross compiling" 1>&2; }
+ else
+ cat > conftest.$ac_ext <<EOF
+ #line 2245 "configure"
+@@ -2862,7 +2862,7 @@
+   echo $ac_n "(cached) $ac_c" 1>&6
+ else
+   if test "$cross_compiling" = yes; then
+-    { echo "configure: error: can not run test program while cross compiling" 1>&2; exit 1; }
++    { echo "configure: error: can not run test program while cross compiling" 1>&2; }
+ else
+ cat > conftest.$ac_ext <<EOF
+ #line 2869 "configure"
+@@ -3089,7 +3089,7 @@
+     
+     # DEC Alpha running OSF/1
+     if test "$cross_compiling" = yes; then
+-    { echo "configure: error: can not run test program while cross compiling" 1>&2; exit 1; }
++    { echo "configure: error: can not run test program while cross compiling" 1>&2; }
+ else
+ cat > conftest.$ac_ext <<EOF
+ #line 3096 "configure"
+@@ -3149,7 +3149,7 @@
+     # SVR3
+     if test -z "$space"; then
+       if test "$cross_compiling" = yes; then
+-    { echo "configure: error: can not run test program while cross compiling" 1>&2; exit 1; }
++    { echo "configure: error: can not run test program while cross compiling" 1>&2; }
+ else
+ cat > conftest.$ac_ext <<EOF
+ #line 3156 "configure"
+@@ -3348,7 +3348,7 @@
+   echo $ac_n "(cached) $ac_c" 1>&6
+ else
+   if test "$cross_compiling" = yes; then
+-    { echo "configure: error: can not run test program while cross compiling" 1>&2; exit 1; }
++    { echo "configure: error: can not run test program while cross compiling" 1>&2; }
+ else
+ cat > conftest.$ac_ext <<EOF
+ #line 3355 "configure"
+--- nfs-server-2.2beta47.old/logging.c	1998-10-30 17:11:22.000000000 +0100
++++ nfs-server-2.2beta47/logging.c	2005-03-24 22:47:44.000000000 +0100
+@@ -14,6 +14,7 @@
+  */
+ 
+ #include "nfsd.h"
++#include <time.h>
+ 
+ #ifdef HAVE_SYSLOG_H
+ #include <syslog.h>
+--- nfs-server-2.2beta47.old/fh.c	1999-11-10 10:41:14.000000000 +0100
++++ nfs-server-2.2beta47/fh.c	2005-03-24 22:50:50.000000000 +0100
+@@ -50,6 +50,7 @@
+  */
+ 
+ #include <assert.h>
++#include <time.h>
+ #include "nfsd.h"
+ #include "rpcmisc.h"
+ #include "signals.h"
+@@ -350,7 +351,7 @@
+ #ifndef ENABLE_DEVTAB
+ 	psi_t		dmajor, dminor;
+ 
+-#if SIZEOF_DEV_T == 4
++#if (SIZEOF_DEV_T == 4)
+ 	/* This folds the upper 16 bits into bits 8..15, and
+ 	 * the lower 16 bits into bits 0..7
+ 	 */
+--- nfs-server-2.2beta47.old/ugid_map.c	2005-03-24 22:34:56.000000000 +0100
++++ nfs-server-2.2beta47/ugid_map.c	2005-03-24 22:54:00.000000000 +0100
+@@ -34,14 +34,8 @@
+ #define UGID_CHUNK0_BYTES	(UGID_CHUNK * sizeof(idmap_t))
+ #define UGID_EXPIRE		300		/* 5 minutes */
+ 
+-/*
+- * Make sure we get the right size for ugid_t
+- */
+-#if SIZEOF_UID_T != SIZEOF_GID_T
+-#error Sorry, this code relies on sizeof(uid_t) == sizeof(gid_t)
+-#endif
+ 
+-#define UGID_BITS		(SIZEOF_UID_T * BITSPERBYTE)
++#define UGID_BITS		(sizeof(uid_t) * BITSPERBYTE)
+ #define BITSTOLEVEL(b)		((UGID_BITS - (b)) / UGID_CHUNK_BITS - 1)
+ #define UGID_LOWER(id, b)	((id) & ~((1 << (b)) - 1))
+ #define UGID_UPPER(id, b)	(((id + (1 << (b))) & ~((1 << (b)) - 1))-1)
