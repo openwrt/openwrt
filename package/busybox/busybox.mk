@@ -60,3 +60,12 @@ busybox-clean:
 
 busybox-dirclean:
 	rm -rf $(BUSYBOX_DIR)
+
+#############################################################
+#
+# Toplevel Makefile options
+#
+#############################################################
+ifeq ($(strip $(BR2_PACKAGE_BUSYBOX)),y)
+TARGETS+=busybox
+endif
