@@ -59,6 +59,7 @@
 #include	<unistd.h>
 #include	<fcntl.h>
 #include	<elf.h>
+
 #ifdef __FreeBSD__
 /**
  * This seems to work on FreeBSD 5.3, should
@@ -71,10 +72,18 @@
 #define bswap_64 __bswap64
 #define bswap_32 __bswap32
 #define bswap_16 __bswap16
+#elif defined(__APPLE__)
+#include	<machine/endian.h>
+#include	<machine/byte_order.h>
+#define __BYTE_ORDER BYTE_ORDER
+#define __BIG_ENDIAN BIG_ENDIAN
+#define bswap_16(x) NXSwapShort(x)
+#define bswap_32(x) NXSwapInt(x)
+#define bswap_64(x) NXSwapLongLong(x)
 #else
 #include	<endian.h>
 #include	<byteswap.h>
-#endif /* defined(__FreeBSD__) */
+#endif 
 
 
 #ifndef TRUE

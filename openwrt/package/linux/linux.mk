@@ -59,6 +59,7 @@ $(LINUX_DIR)/.patched: $(LINUX_DIR)/.unpacked
 	# copy binary drivers
 	cp -a $(BUILD_DIR)/wl/*.o $(LINUX_DIR)/drivers/net/wl
 	cp -a $(BUILD_DIR)/et/*.o $(LINUX_DIR)/drivers/net/et
+	$(SED) 's/@expr length/@-expr length/' $(LINUX_DIR)/Makefile 
 	touch $(LINUX_DIR)/.patched
 
 $(LINUX_DIR)/.configured: $(LINUX_DIR)/.patched
