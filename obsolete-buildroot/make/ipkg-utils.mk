@@ -10,6 +10,7 @@ IPKG_UTILS_SOURCE:=ipkg-utils-$(IPKG_UTILS_VERSION).tar.gz
 IPKG_UTILS_DIR:=$(TOOL_BUILD_DIR)/ipkg-utils-$(IPKG_UTILS_VERSION)
 
 IPKG_UTILS_PATCHES += ipkg-utils-1.7-ipkg_buildpackage.patch
+IPKG_UTILS_PATCHES += ipkg-utils-1.7-ipkg_build_clean.patch
 
 $(DL_DIR)/$(IPKG_UTILS_SOURCE):
 	$(WGET) -P $(DL_DIR) $(IPKG_UTILS_SITE)/$(IPKG_UTILS_SOURCE)
@@ -30,7 +31,7 @@ $(STAGING_DIR)/bin/ipkg-build: $(IPKG_UTILS_DIR)/.unpacked
 ipkg-utils: $(STAGING_DIR)/bin/ipkg-build
 
 ipkg-utils-clean:
-	rm -f $(STAGING_DIR)/bin/ipkg-build*
+	rm -f $(STAGING_DIR)/bin/ipkg*
 
 ipkg-utils-dirclean:
 	rm -rf $(IPKG_UTILS_DIR)

@@ -13,7 +13,7 @@ IPROUTE2_DIR=$(BUILD_DIR)/iproute2
 IPROUTE2_SOURCE_URL=http://ftp.debian.org/debian/pool/main/i/iproute/
 IPROUTE2_SOURCE=iproute_20010824.orig.tar.gz
 IPROUTE2_PATCH:=iproute_20010824-8.diff.gz
-IPROUTE2_PATCH_2:=iproute2-cross-ar-20010824.patch
+IPROUTE2_PATCH_2:=iproute2-*.patch
 
 IPROUTE2_IPKTARGET=iproute.ipk
 IPROUTE2_IPKSRC:=iproute-pkg.tgz
@@ -36,7 +36,7 @@ $(IPROUTE2_DIR)/.unpacked: $(DL_DIR)/$(IPROUTE2_SOURCE) #$(DL_DIR)/$(IPROUTE2_PA
 	rm -rf $(IPROUTE2_DIR).orig $(IPROUTE2_DIR)
 	zcat $(DL_DIR)/$(IPROUTE2_SOURCE) | tar -C $(BUILD_DIR) -xvf -
 	#zcat $(DL_DIR)/$(IPROUTE2_PATCH) | patch -p1 -d $(IPROUTE2_DIR)
-	cat $(SOURCE_DIR)/$(IPROUTE2_PATCH_2) | patch -p1 -d $(IPROUTE2_DIR)
+	$(SOURCE_DIR)/patch-kernel.sh $(IPROUTE2_DIR) $(SOURCE_DIR) $(IPROUTE2_PATCH_2)
 	# fun sed hacks.
 	$(SED) "s:-O2:${TARGET_CFLAGS}:g" $(IPROUTE2_DIR)/Makefile
 ifeq ($(ARCH),i386)
