@@ -1,5 +1,5 @@
 #!/bin/ash
 alias debug=${DEBUG:-:}
 debug "### wifi $1 ###"
-if=$(awk 'sub(":","") {print $1}' /proc/net/wireless)
+if=$(cat /proc/net/dev | awk -F: '/eth/ {wifi=$1;} END { print wifi}')
 $DEBUG wlconf $if $1
