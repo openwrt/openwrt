@@ -40,6 +40,7 @@ BUILD_WITH_LARGEFILE:=true
 
 OPTIMIZE_FOR_CPU=$(ARCH)
 
+# directory used by 'make publish'
 PUB_DIR:=/var/www/html/testsite/ipkg
 
 # Command used to download source code
@@ -180,7 +181,6 @@ else
 DISABLE_NLS:=--disable-nls
 endif
 
-
 all:   world
 
 TARGETS_CLEAN:=$(patsubst %,%-clean,$(TARGETS))
@@ -189,7 +189,7 @@ TARGETS_DIRCLEAN:=$(patsubst %,%-dirclean,$(TARGETS))
 
 
 PACKAGES_IPK:=$(patsubst %,%-ipk,$(PACKAGES))
-
+OPENWRT_IPK_DIR=$(SOURCE_DIR)/openwrt/ipkg
 
 $(BUILD_DIR)/Packages : $(PACKAGES_IPK)
 	(cd $(BUILD_DIR) ; $(IPKG_MAKE_INDEX) . > Packages)
@@ -225,9 +225,7 @@ $(STAGING_DIR):
 
 $(TARGET_DIR): $(DL_DIR)/$(OPENWRT_ROOT_SKEL)
 	rm -rf $(TARGET_DIR)
-	#zcat $(SOURCE_DIR)/skel.tar.gz | tar -C $(BUILD_DIR) -xf -
 	zcat $(DL_DIR)/$(OPENWRT_ROOT_SKEL) | tar -C $(BUILD_DIR) -xf -
-	#cp -a $(SOURCE_DIR)/target_skeleton/* $(TARGET_DIR)/
 	-find $(TARGET_DIR) -type d -name CVS -exec rm -rf {} \; > /dev/null 2>&1
 
 source: $(TARGETS_SOURCE)
@@ -251,7 +249,6 @@ distclean:
 	rm -rf $(DL_DIR) $(BUILD_DIR) $(LINUX_KERNEL) $(IMAGE) \
 		openwrt-linux.trx openwrt-g-code.bin openwrt-gs-code.bin \
 		openwrt-kmodules.tar.bz2
-		
 
 publish:	
 	chmod 644 $(BUILD_DIR)/Packages
@@ -260,8 +257,6 @@ publish:
 	cp $(BUILD_DIR)/Packages $(PUB_DIR)
 	cp $(BUILD_DIR)/Packages.filelist $(PUB_DIR)
 	cp $(BUILD_DIR)/*.ipk $(PUB_DIR)
-		
-
 
 sourceball: 
 	rm -rf $(BUILD_DIR)
