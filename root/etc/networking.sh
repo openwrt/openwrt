@@ -84,8 +84,15 @@ configure () {
       ipcalc -s "$if_netmask" || return 
       $DEBUG ifconfig $if $if_ip netmask $if_netmask up
 
-      ipcalc -s "$ip_gateway" || return 
-      $DEBUG route add default gw $ip_gateway
+      ipcalc -s "$if_gateway" || return 
+      $DEBUG route add default gw $if_gateway
+
+      [ -f /etc/resolv.conf ] && return
+
+      echo "# --- creating /etc/resolv.conf ---"
+      for dns in $(nvram_get ${if}_dns); do {
+	echo "nameserver $dns" >> /etc/resolv.conf
+      }; done
     ;;
     dhcp)
       pidfile=/tmp/dhcp-${type}.pid
