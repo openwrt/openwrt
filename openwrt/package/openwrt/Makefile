@@ -10,10 +10,10 @@ PKG_IPK_DIR:=$(PKG_BUILD_DIR)/ipkg
 
 SHARED_INCLUDE:=${shell pwd}/include
 
-libshared-compile libnvram-compile wlc-compile:
+libshared-compile libnvram-compile:
 	@$(MAKE) -C $(patsubst %-compile,%,$@) compile
 	
-libshared-install libnvram-install wlc-install:
+libshared-install libnvram-install: libshared-compile libnvram-compile
 	@$(MAKE) -C $(patsubst %-install,%,$@) install
 
 libshared-clean libnvram-clean wlc-clean:
@@ -27,7 +27,7 @@ $(PKG_IPK_DIR)/sbin/jffs2root: jffs2root.c
 	mkdir -p $(PKG_IPK_DIR)/sbin
 	$(TARGET_CC) -o $@ $<
 
-$(PKG_IPK_DIR)/usr/sbin/wlc: wlc.c libshared-compile
+$(PKG_IPK_DIR)/usr/sbin/wlc: wlc.c libshared-install
 	mkdir -p $(PKG_IPK_DIR)/usr/sbin
 	$(TARGET_CC) -o $@ $< -lshared -L./libshared -I$(SHARED_INCLUDE)
 
