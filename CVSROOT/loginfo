@@ -24,3 +24,6 @@
 #DEFAULT (echo ""; id; echo %s; date; cat) >> $CVSROOT/CVSROOT/commitlog
 # or
 #DEFAULT (echo ""; id; echo %{sVv}; date; cat) >> $CVSROOT/CVSROOT/commitlog
+
+#^buildroot     ( $CVSROOT/CVSROOT/ciabot.pl %s $USER openwrt cvs-commits@openwrt.ksilebo.net cia@navi.cx )
+#^root	( $CVSROOT/CVSROOT/ciabot.pl %s $USER openwrt cvs-commits@openwrt.ksilebo.net cia@navi.cx )
