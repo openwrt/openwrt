@@ -18,7 +18,7 @@ HOST_SED_TARGET=$(shell ./sedcheck.sh)
 
 $(DL_DIR)/$(SED_SOURCE):
 	mkdir -p $(DL_DIR)
-	$(WGET) -P $(DL_DIR) $(SED_SITE)/$(SED_SOURCE)
+	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(SED_SOURCE) x $(SED_SITE)
 
 sed-source: $(DL_DIR)/$(SED_SOURCE)
 
