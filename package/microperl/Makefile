@@ -7,7 +7,10 @@ PKG_VERSION:=5.8.6
 PKG_RELEASE:=1
 PKG_MD5SUM:=8d4aa4e061fd5bc0c39e4f0a63267880
 
-PKG_SOURCE_URL:=ftp://ftp.cpan.org/pub/CPAN/src/5.0
+PKG_SOURCE_URL:=ftp://ftp.cpan.org/pub/CPAN/src/5.0 \
+	        ftp://ftp.mpi-sb.mpg.de/pub/perl/CPAN/src/5.0 \
+	   	ftp://ftp.gmd.de/mirrors/CPAN/src/5.0 \
+		ftp://ftp.funet.fi/pub/languages/perl/CPAN/src/5.0
 PKG_SOURCE:=perl-$(PKG_VERSION).tar.gz
 PKG_BUILD_DIR:=$(BUILD_DIR)/perl-$(PKG_VERSION)
 PKG_CAT:=zcat
