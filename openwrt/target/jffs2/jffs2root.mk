@@ -43,3 +43,8 @@ jffs2root-clean:
 
 jffs2root-dirclean:
 	rm -rf $(MTD_DIR)
+
+ifeq ($(strip $(BR2_TARGET_ROOTFS_JFFS2)),y)
+TARGETS+=jffs2root openwrt-image
+ROOTFS=jffs2
+endif
