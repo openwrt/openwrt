@@ -61,11 +61,25 @@ $(eval $(call KMOD_template,NFS,nfs,\
 	$(MODULES_DIR)/kernel/fs/nfs/*.o \
 	$(MODULES_DIR)/kernel/net/sunrpc/*.o \
 ,CONFIG_NFS_FS))
-$(eval $(call KMOD_template,USB,usb,\
-	$(MODULES_DIR)/kernel/drivers/scsi/*.o \
-	$(MODULES_DIR)/kernel/drivers/usb/*.o \
-	$(MODULES_DIR)/kernel/drivers/usb/*/*.o \
+$(eval $(call KMOD_template,USB,usb-core,\
+	$(MODULES_DIR)/kernel/drivers/usb/usbcore.o \
 ,CONFIG_USB))
+$(eval $(call KMOD_template,USB_UHCI,usb-uhci,\
+	$(MODULES_DIR)/kernel/drivers/usb/host/uhci.o \
+,CONFIG_USB_UHCI_ALT))
+$(eval $(call KMOD_template,USB_OHCI,usb-ohci,\
+	$(MODULES_DIR)/kernel/drivers/usb/host/usb-ohci.o \
+,CONFIG_USB_OHCI))
+$(eval $(call KMOD_template,USB2,usb2,\
+	$(MODULES_DIR)/kernel/drivers/usb/host/ehci-hcd.o \
+,CONFIG_USB_EHCI_HCD))
+$(eval $(call KMOD_template,USB_STORAGE,usb-storage,\
+	$(MODULES_DIR)/kernel/drivers/scsi/*.o \
+	$(MODULES_DIR)/kernel/drivers/usb/storage/*.o \
+,CONFIG_USB_STORAGE))
+$(eval $(call KMOD_template,USB_PRINTER,usb-printer,\
+	$(MODULES_DIR)/kernel/drivers/usb/printer.o \
+,CONFIG_USB_PRINTER))
 $(eval $(call KMOD_template,LP,lp,\
 	$(MODULES_DIR)/kernel/drivers/parport/parport.o \
 	$(MODULES_DIR)/kernel/drivers/parport/parport_splink.o \
