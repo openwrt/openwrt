@@ -213,12 +213,13 @@ openwrt-prune: openwrt-base $(STAGING_DIR)/bin/sstrip
 	rm -f $(TARGET_DIR)/usr/sbin/iptables-save
 	rm -f $(TARGET_DIR)/usr/sbin/iptables-restore
 	rm -f $(TARGET_DIR)/usr/sbin/ip6tables
+	rm -f $(TARGET_DIR)/usr/lib/iptables/libip6*
 	-@find $(TARGET_DIR) -type f -perm +111 | xargs $(STAGING_DIR)/bin/sstrip 2>/dev/null || true;
 
 ######################################################################
 
 $(STAGING_DIR)/bin/sstrip:
-	$(CC) -o $(STAGING_DIR)/bin/sstrip -I$(STAGING_DIR)/mipsel-linux-uclibc/include $(SOURCE_DIR)/openwrt/tools/sstrip.c
+	$(CC) -o $(STAGING_DIR)/bin/sstrip $(SOURCE_DIR)/openwrt/tools/sstrip.c
 
 wrt-tools:
 	$(CC) -o $(WRT54G_DIR)/release/tools/trx $(SOURCE_DIR)/openwrt/tools/trx.c
