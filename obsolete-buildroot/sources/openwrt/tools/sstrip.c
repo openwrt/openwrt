@@ -59,8 +59,23 @@
 #include	<unistd.h>
 #include	<fcntl.h>
 #include	<elf.h>
+#ifdef __FreeBSD__
+/**
+ * This seems to work on FreeBSD 5.3, should
+ * work on all newer versions as well. I have
+ * no idea if it will work on versions < 5.3
+ *
+ * Joe Estock (guru) <jestock at nutextonline.com>
+ */
+#include <sys/endian.h>
+#define bswap_64 __bswap64
+#define bswap_32 __bswap32
+#define bswap_16 __bswap16
+#else
 #include	<endian.h>
 #include	<byteswap.h>
+#endif /* defined(__FreeBSD__) */
+
 
 #ifndef TRUE
 #define	TRUE		1
