@@ -1,0 +1,20 @@
+revision 1.12
+date: 2004/07/16 15:13:40;  author: segher;  state: Exp;  lines: +1 -1
+        * config/rs6000/eabi.asm (__eabi_convert): Fix typo (cmpi vs. cmpwi).
+Index: gcc/config/rs6000/eabi.asm
+===================================================================
+RCS file: /cvs/gcc/gcc/gcc/config/rs6000/eabi.asm,v
+retrieving revision 1.11
+retrieving revision 1.12
+diff -u -b -B -w -p -r1.11 -r1.12
+--- gcc/gcc/config/rs6000/eabi.asm	20 Sep 2002 23:46:58 -0000	1.11
++++ gcc/gcc/config/rs6000/eabi.asm	16 Jul 2004 15:13:40 -0000	1.12
+@@ -252,7 +252,7 @@ FUNC_START(__eabi_convert)
+ 
+ .Lcvt:
+ 	lwzu	6,4(3)				/* pointer to convert */
+-	cmpi	0,6,0
++	cmpwi	0,6,0
+ 	beq-	.Lcvt2				/* if pointer is null, don't convert */
+ 
+         add	6,6,12				/* convert pointer */

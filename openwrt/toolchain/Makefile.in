@@ -1,0 +1,7 @@
+ifeq ($(BR2_ENABLE_MULTILIB),y)
+MULTILIB:=--enable-multilib
+endif
+
+
+# FIXME -- this is temporary
+OPTIMIZE_FOR_CPU=$(ARCH)

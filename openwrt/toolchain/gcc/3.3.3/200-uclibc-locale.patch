@@ -1,0 +1,3021 @@
+Warning!  This patch is not finished.  The wide char time-related stuff
+is broken or non-functional.  But it serves as a starting point to get
+things building while I continue to work on the uClibc locale internals.
+diff -urN gcc-3.3.2/libstdc++-v3/config/locale/uclibc/c++locale_internal.h gcc-3.3.2-uClibc/libstdc++-v3/config/locale/uclibc/c++locale_internal.h
+--- gcc-3.3.2/libstdc++-v3/config/locale/uclibc/c++locale_internal.h	1969-12-31 18:00:00.000000000 -0600
++++ gcc-3.3.2-uClibc/libstdc++-v3/config/locale/uclibc/c++locale_internal.h	2004-01-09 07:55:02.000000000 -0600
+@@ -0,0 +1,63 @@
++// Prototypes for GLIBC thread locale __-prefixed functions -*- C++ -*-
++
++// Copyright (C) 2002 Free Software Foundation, Inc.
++//
++// This file is part of the GNU ISO C++ Library.  This library is free
++// software; you can redistribute it and/or modify it under the
++// terms of the GNU General Public License as published by the
++// Free Software Foundation; either version 2, or (at your option)
++// any later version.
++
++// This library is distributed in the hope that it will be useful,
++// but WITHOUT ANY WARRANTY; without even the implied warranty of
++// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++// GNU General Public License for more details.
++
++// You should have received a copy of the GNU General Public License along
++// with this library; see the file COPYING.  If not, write to the Free
++// Software Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307,
++// USA.
++
++// As a special exception, you may use this file as part of a free software
++// library without restriction.  Specifically, if other files instantiate
++// templates or use macros or inline functions from this file, or you compile
++// this file and link it with other files to produce an executable, this
++// file does not by itself cause the resulting executable to be covered by
++// the GNU General Public License.  This exception does not however
++// invalidate any other reasons why the executable file might be covered by
++// the GNU General Public License.
++
++// Written by Jakub Jelinek <jakub@redhat.com>
++
++#include <clocale>
++
++#ifdef __UCLIBC_MJN3_ONLY__
++#warning clean this up
++#endif
++
++#ifdef __UCLIBC_HAS_XLOCALE__
++                                                  
++extern "C" __typeof(iswctype_l) __iswctype_l;
++extern "C" __typeof(nl_langinfo_l) __nl_langinfo_l;
++extern "C" __typeof(strcoll_l) __strcoll_l;
++extern "C" __typeof(strftime_l) __strftime_l;
++extern "C" __typeof(strtod_l) __strtod_l;
++extern "C" __typeof(strtof_l) __strtof_l;
++extern "C" __typeof(strtold_l) __strtold_l;
++extern "C" __typeof(strtol_l) __strtol_l;
++extern "C" __typeof(strtoll_l) __strtoll_l;
++extern "C" __typeof(strtoul_l) __strtoul_l;
++extern "C" __typeof(strtoull_l) __strtoull_l;
++extern "C" __typeof(strxfrm_l) __strxfrm_l;
++extern "C" __typeof(towlower_l) __towlower_l;
++extern "C" __typeof(towupper_l) __towupper_l;
++extern "C" __typeof(wcscoll_l) __wcscoll_l;
++extern "C" __typeof(wcsftime_l) __wcsftime_l;
++extern "C" __typeof(wcsxfrm_l) __wcsxfrm_l;
++extern "C" __typeof(wctype_l) __wctype_l;
++extern "C" __typeof(newlocale) __newlocale;
++extern "C" __typeof(freelocale) __freelocale;
++extern "C" __typeof(duplocale) __duplocale;
++extern "C" __typeof(uselocale) __uselocale;
++
++#endif // GLIBC 2.3 and later
+diff -urN gcc-3.3.2/libstdc++-v3/config/locale/uclibc/c_locale.cc gcc-3.3.2-uClibc/libstdc++-v3/config/locale/uclibc/c_locale.cc
+--- gcc-3.3.2/libstdc++-v3/config/locale/uclibc/c_locale.cc	1969-12-31 18:00:00.000000000 -0600
++++ gcc-3.3.2-uClibc/libstdc++-v3/config/locale/uclibc/c_locale.cc	2004-01-09 08:37:55.000000000 -0600
+@@ -0,0 +1,231 @@
++// Wrapper for underlying C-language localization -*- C++ -*-
++
++// Copyright (C) 2001, 2002, 2003 Free Software Foundation, Inc.
++//
++// This file is part of the GNU ISO C++ Library.  This library is free
++// software; you can redistribute it and/or modify it under the
++// terms of the GNU General Public License as published by the
++// Free Software Foundation; either version 2, or (at your option)
++// any later version.
++
++// This library is distributed in the hope that it will be useful,
++// but WITHOUT ANY WARRANTY; without even the implied warranty of
++// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++// GNU General Public License for more details.
++
++// You should have received a copy of the GNU General Public License along
++// with this library; see the file COPYING.  If not, write to the Free
++// Software Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307,
++// USA.
++
++// As a special exception, you may use this file as part of a free software
++// library without restriction.  Specifically, if other files instantiate
++// templates or use macros or inline functions from this file, or you compile
++// this file and link it with other files to produce an executable, this
++// file does not by itself cause the resulting executable to be covered by
++// the GNU General Public License.  This exception does not however
++// invalidate any other reasons why the executable file might be covered by
++// the GNU General Public License.
++
++//
++// ISO C++ 14882: 22.8  Standard locale categories.
++//
++
++// Written by Benjamin Kosnik <bkoz@redhat.com>
++
++#include <locale>
++#include <stdexcept>
++#include <langinfo.h>
++#include <bits/c++locale_internal.h>
++
++#ifndef __UCLIBC_HAS_XLOCALE__
++#define __strtol_l(S, E, B, L)      strtol((S), (E), (B))
++#define __strtoul_l(S, E, B, L)     strtoul((S), (E), (B))
++#define __strtoll_l(S, E, B, L)     strtoll((S), (E), (B))
++#define __strtoull_l(S, E, B, L)    strtoull((S), (E), (B))
++#define __strtof_l(S, E, L)         strtof((S), (E))
++#define __strtod_l(S, E, L)         strtod((S), (E))
++#define __strtold_l(S, E, L)        strtold((S), (E))
++#endif
++
++namespace std 
++{
++  template<>
++    void
++    __convert_to_v(const char* __s, long& __v, ios_base::iostate& __err, 
++		   const __c_locale& __cloc, int __base)
++    {
++      if (!(__err & ios_base::failbit))
++      {
++	char* __sanity;
++	errno = 0;
++	long __l = __strtol_l(__s, &__sanity, __base, __cloc);
++	if (__sanity != __s && *__sanity == '\0' && errno != ERANGE)
++	  __v = __l;
++	else
++	  __err |= ios_base::failbit;
++      }
++    }
++
++  template<>
++    void
++    __convert_to_v(const char* __s, unsigned long& __v, 
++		   ios_base::iostate& __err, const __c_locale& __cloc, 
++		   int __base)
++    {
++      if (!(__err & ios_base::failbit))
++	{
++	  char* __sanity;
++	  errno = 0;
++	  unsigned long __ul = __strtoul_l(__s, &__sanity, __base, __cloc);
++          if (__sanity != __s && *__sanity == '\0' && errno != ERANGE)
++	    __v = __ul;
++	  else
++	    __err |= ios_base::failbit;
++	}
++    }
++
++#ifdef _GLIBCPP_USE_LONG_LONG
++  template<>
++    void
++    __convert_to_v(const char* __s, long long& __v, ios_base::iostate& __err, 
++		   const __c_locale& __cloc, int __base)
++    {
++      if (!(__err & ios_base::failbit))
++	{
++	  char* __sanity;
++	  errno = 0;
++	  long long __ll = __strtoll_l(__s, &__sanity, __base, __cloc);
++          if (__sanity != __s && *__sanity == '\0' && errno != ERANGE)
++	    __v = __ll;
++	  else
++	    __err |= ios_base::failbit;
++	}
++    }
++
++  template<>
++    void
++    __convert_to_v(const char* __s, unsigned long long& __v, 
++		   ios_base::iostate& __err, const __c_locale& __cloc, 
++		   int __base)
++    {
++      if (!(__err & ios_base::failbit))
++	{      
++	  char* __sanity;
++	  errno = 0;
++	  unsigned long long __ull = __strtoull_l(__s, &__sanity, __base, 
++						  __cloc);
++          if (__sanity != __s && *__sanity == '\0' && errno != ERANGE)
++	    __v = __ull;
++	  else
++	    __err |= ios_base::failbit;
++	}  
++    }
++#endif
++
++  template<>
++    void
++    __convert_to_v(const char* __s, float& __v, ios_base::iostate& __err, 
++		   const __c_locale& __cloc, int)
++    {
++      if (!(__err & ios_base::failbit))
++	{
++	  char* __sanity;
++	  errno = 0;
++	  float __f = __strtof_l(__s, &__sanity, __cloc);
++          if (__sanity != __s && *__sanity == '\0' && errno != ERANGE)
++	    __v = __f;
++	  else
++	    __err |= ios_base::failbit;
++	}
++    }
++
++  template<>
++    void
++    __convert_to_v(const char* __s, double& __v, ios_base::iostate& __err, 
++		   const __c_locale& __cloc, int)
++    {
++      if (!(__err & ios_base::failbit))
++	{
++	  char* __sanity;
++	  errno = 0;
++	  double __d = __strtod_l(__s, &__sanity, __cloc);
++          if (__sanity != __s && *__sanity == '\0' && errno != ERANGE)
++	    __v = __d;
++	  else
++	    __err |= ios_base::failbit;
++	}
++    }
++
++  template<>
++    void
++    __convert_to_v(const char* __s, long double& __v, ios_base::iostate& __err,
++		   const __c_locale& __cloc, int)
++    {
++      if (!(__err & ios_base::failbit))
++	{
++	  char* __sanity;
++	  errno = 0;
++	  long double __ld = __strtold_l(__s, &__sanity, __cloc);
++          if (__sanity != __s && *__sanity == '\0' && errno != ERANGE)
++	    __v = __ld;
++	  else
++	    __err |= ios_base::failbit;
++	}
++    }
++
++  void
++  locale::facet::_S_create_c_locale(__c_locale& __cloc, const char* __s, 
++				    __c_locale __old)
++  {
++#ifdef __UCLIBC_HAS_XLOCALE__
++    __cloc = __newlocale(1 << LC_ALL, __s, __old);
++    if (!__cloc)
++      {
++	// This named locale is not supported by the underlying OS.
++	__throw_runtime_error("attempt to create locale from unknown name");
++      }
++#else
++    __cloc = NULL;
++#endif
++  }
++  
++  void
++  locale::facet::_S_destroy_c_locale(__c_locale& __cloc)
++  {
++#ifdef __UCLIBC_HAS_XLOCALE__
++    if (_S_c_locale != __cloc)
++      __freelocale(__cloc); 
++#else
++    __cloc = NULL;
++#endif
++  }
++
++  __c_locale
++  locale::facet::_S_clone_c_locale(__c_locale& __cloc)
++#ifdef __UCLIBC_HAS_XLOCALE__
++  { return __duplocale(__cloc); }
++#else
++  { return __c_locale(); }
++#endif
++
++  const char* locale::_S_categories[_S_categories_size 
++				    + _S_extra_categories_size] =
++    {
++      "LC_CTYPE", 
++      "LC_NUMERIC",
++      "LC_TIME", 
++      "LC_COLLATE", 
++      "LC_MONETARY",
++      "LC_MESSAGES"
++#if _GLIBCPP_NUM_CATEGORIES != 0
++      , 
++      "LC_PAPER", 
++      "LC_NAME", 
++      "LC_ADDRESS",
++      "LC_TELEPHONE", 
++      "LC_MEASUREMENT", 
++      "LC_IDENTIFICATION" 
++#endif
++    };
++}  // namespace std
+diff -urN gcc-3.3.2/libstdc++-v3/config/locale/uclibc/c_locale.h gcc-3.3.2-uClibc/libstdc++-v3/config/locale/uclibc/c_locale.h
+--- gcc-3.3.2/libstdc++-v3/config/locale/uclibc/c_locale.h	1969-12-31 18:00:00.000000000 -0600
++++ gcc-3.3.2-uClibc/libstdc++-v3/config/locale/uclibc/c_locale.h	2004-01-09 07:51:06.000000000 -0600
+@@ -0,0 +1,118 @@
++// Wrapper for underlying C-language localization -*- C++ -*-
++
++// Copyright (C) 2001, 2002, 2003 Free Software Foundation, Inc.
++//
++// This file is part of the GNU ISO C++ Library.  This library is free
++// software; you can redistribute it and/or modify it under the
++// terms of the GNU General Public License as published by the
++// Free Software Foundation; either version 2, or (at your option)
++// any later version.
++
++// This library is distributed in the hope that it will be useful,
++// but WITHOUT ANY WARRANTY; without even the implied warranty of
++// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++// GNU General Public License for more details.
++
++// You should have received a copy of the GNU General Public License along
++// with this library; see the file COPYING.  If not, write to the Free
++// Software Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307,
++// USA.
++
++// As a special exception, you may use this file as part of a free software
++// library without restriction.  Specifically, if other files instantiate
++// templates or use macros or inline functions from this file, or you compile
++// this file and link it with other files to produce an executable, this
++// file does not by itself cause the resulting executable to be covered by
++// the GNU General Public License.  This exception does not however
++// invalidate any other reasons why the executable file might be covered by
++// the GNU General Public License.
++
++//
++// ISO C++ 14882: 22.8  Standard locale categories.
++//
++
++// Written by Benjamin Kosnik <bkoz@redhat.com>
++
++#ifndef _CPP_BITS_C_LOCALE_H
++#define _CPP_BITS_C_LOCALE_H 1
++
++#pragma GCC system_header
++
++#include <clocale>
++#include <langinfo.h>		// For codecvt
++#ifdef __UCLIBC_MJN3_ONLY__
++#warning fix this
++#endif
++#ifdef __UCLIBC_HAS_LOCALE__
++#include <iconv.h>		// For codecvt using iconv, iconv_t
++#endif
++#ifdef __UCLIBC_HAS_GETTEXT_AWARENESS__
++#include <libintl.h> 		// For messages
++#endif
++
++#ifdef __UCLIBC_MJN3_ONLY__
++#warning what is _GLIBCPP_C_LOCALE_GNU for
++#endif
++#define _GLIBCPP_C_LOCALE_GNU 1
++
++#ifdef __UCLIBC_MJN3_ONLY__
++#warning fix categories
++#endif
++// #define _GLIBCPP_NUM_CATEGORIES 6
++#define _GLIBCPP_NUM_CATEGORIES 0
++
++#ifdef __UCLIBC_HAS_XLOCALE__
++namespace __gnu_cxx
++{
++  extern "C" __typeof(uselocale) __uselocale;
++}
++#endif
++
++namespace std
++{
++#ifdef __UCLIBC_HAS_XLOCALE__
++  typedef __locale_t		__c_locale;
++#else
++  typedef int*			__c_locale;
++#endif
++
++  // Convert numeric value of type _Tv to string and return length of
++  // string.  If snprintf is available use it, otherwise fall back to
++  // the unsafe sprintf which, in general, can be dangerous and should
++  // be avoided.
++  template<typename _Tv>
++    int
++    __convert_from_v(char* __out, const int __size, const char* __fmt,
++#ifdef __UCLIBC_HAS_XLOCALE__
++		     _Tv __v, const __c_locale& __cloc, int __prec = -1)
++    {
++      __c_locale __old = __gnu_cxx::__uselocale(__cloc);
++#else
++		     _Tv __v, const __c_locale&, int __prec = -1)
++    {
++# ifdef __UCLIBC_HAS_LOCALE__
++      char* __old = setlocale(LC_ALL, NULL);
++      char* __sav = static_cast<char*>(malloc(strlen(__old) + 1));
++      if (__sav)
++        strcpy(__sav, __old);
++      setlocale(LC_ALL, "C");
++# endif
++#endif
++
++      int __ret;
++      if (__prec >= 0)
++        __ret = snprintf(__out, __size, __fmt, __prec, __v);
++      else
++        __ret = snprintf(__out, __size, __fmt, __v);
++
++#ifdef __UCLIBC_HAS_XLOCALE__
++      __gnu_cxx::__uselocale(__old);
++#elif defined __UCLIBC_HAS_LOCALE__
++      setlocale(LC_ALL, __sav);
++      free(__sav);
++#endif
++      return __ret;
++    }
++}
++
++#endif
+diff -urN gcc-3.3.2/libstdc++-v3/config/locale/uclibc/codecvt_members.cc gcc-3.3.2-uClibc/libstdc++-v3/config/locale/uclibc/codecvt_members.cc
+--- gcc-3.3.2/libstdc++-v3/config/locale/uclibc/codecvt_members.cc	1969-12-31 18:00:00.000000000 -0600
++++ gcc-3.3.2-uClibc/libstdc++-v3/config/locale/uclibc/codecvt_members.cc	2004-01-09 04:04:34.000000000 -0600
+@@ -0,0 +1,113 @@
++// std::codecvt implementation details, GNU version -*- C++ -*-
++
++// Copyright (C) 2002, 2003 Free Software Foundation, Inc.
++//
++// This file is part of the GNU ISO C++ Library.  This library is free
++// software; you can redistribute it and/or modify it under the
++// terms of the GNU General Public License as published by the
++// Free Software Foundation; either version 2, or (at your option)
++// any later version.
++
++// This library is distributed in the hope that it will be useful,
++// but WITHOUT ANY WARRANTY; without even the implied warranty of
++// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++// GNU General Public License for more details.
++
++// You should have received a copy of the GNU General Public License along
++// with this library; see the file COPYING.  If not, write to the Free
++// Software Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307,
++// USA.
++
++// As a special exception, you may use this file as part of a free software
++// library without restriction.  Specifically, if other files instantiate
++// templates or use macros or inline functions from this file, or you compile
++// this file and link it with other files to produce an executable, this
++// file does not by itself cause the resulting executable to be covered by
++// the GNU General Public License.  This exception does not however
++// invalidate any other reasons why the executable file might be covered by
++// the GNU General Public License.
++
++//
++// ISO C++ 14882: 22.2.1.5 - Template class codecvt
++//
++
++// Written by Benjamin Kosnik <bkoz@redhat.com>
++
++#include <locale>
++#include <bits/c++locale_internal.h>
++
++namespace std
++{
++  // Specializations.
++#ifdef _GLIBCPP_USE_WCHAR_T
++  codecvt_base::result
++  codecvt<wchar_t, char, mbstate_t>::
++  do_out(state_type& __state, const intern_type* __from, 
++	 const intern_type* __from_end, const intern_type*& __from_next,
++	 extern_type* __to, extern_type* __to_end,
++	 extern_type*& __to_next) const
++  {
++    result __ret = error;
++    size_t __len = min(__from_end - __from, __to_end - __to);
++#ifdef __UCLIBC_HAS_XLOCALE__
++    __c_locale __old = __uselocale(_S_c_locale);
++#endif
++    size_t __conv = wcsrtombs(__to, &__from, __len, &__state);
++#ifdef __UCLIBC_HAS_XLOCALE__
++    __uselocale(__old);
++#endif
++
++    if (__conv == __len)
++      {
++	__from_next = __from;
++	__to_next = __to + __conv;
++	__ret = ok;
++      }
++    else if (__conv > 0 && __conv < __len)
++      {
++	__from_next = __from;
++	__to_next = __to + __conv;
++	__ret = partial;
++      }
++    else
++      __ret = error;
++	
++    return __ret; 
++  }
++  
++  codecvt_base::result
++  codecvt<wchar_t, char, mbstate_t>::
++  do_in(state_type& __state, const extern_type* __from, 
++	const extern_type* __from_end, const extern_type*& __from_next,
++	intern_type* __to, intern_type* __to_end,
++	intern_type*& __to_next) const
++  {
++    result __ret = error;
++    size_t __len = min(__from_end - __from, __to_end - __to);
++#ifdef __UCLIBC_HAS_XLOCALE__
++    __c_locale __old = __uselocale(_S_c_locale);
++#endif
++    size_t __conv = mbsrtowcs(__to, &__from, __len, &__state);
++#ifdef __UCLIBC_HAS_XLOCALE__
++    __uselocale(__old);
++#endif
++
++    if (__conv == __len)
++      {
++	__from_next = __from;
++	__to_next = __to + __conv;
++	__ret = ok;
++      }
++    else if (__conv > 0 && __conv < __len)
++      {
++	__from_next = __from;
++	__to_next = __to + __conv;
++	__ret = partial;
++      }
++    else
++      __ret = error;
++	
++    return __ret; 
++  }
++#endif
++}
+diff -urN gcc-3.3.2/libstdc++-v3/config/locale/uclibc/codecvt_specializations.h gcc-3.3.2-uClibc/libstdc++-v3/config/locale/uclibc/codecvt_specializations.h
+--- gcc-3.3.2/libstdc++-v3/config/locale/uclibc/codecvt_specializations.h	1969-12-31 18:00:00.000000000 -0600
++++ gcc-3.3.2-uClibc/libstdc++-v3/config/locale/uclibc/codecvt_specializations.h	2004-01-09 01:53:51.000000000 -0600
+@@ -0,0 +1,461 @@
++// Locale support (codecvt) -*- C++ -*-
++
++// Copyright (C) 2000, 2001, 2002 Free Software Foundation, Inc.
++//
++// This file is part of the GNU ISO C++ Library.  This library is free
++// software; you can redistribute it and/or modify it under the
++// terms of the GNU General Public License as published by the
++// Free Software Foundation; either version 2, or (at your option)
++// any later version.
++
++// This library is distributed in the hope that it will be useful,
++// but WITHOUT ANY WARRANTY; without even the implied warranty of
++// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++// GNU General Public License for more details.
++
++// You should have received a copy of the GNU General Public License along
++// with this library; see the file COPYING.  If not, write to the Free
++// Software Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307,
++// USA.
++
++// As a special exception, you may use this file as part of a free software
++// library without restriction.  Specifically, if other files instantiate
++// templates or use macros or inline functions from this file, or you compile
++// this file and link it with other files to produce an executable, this
++// file does not by itself cause the resulting executable to be covered by
++// the GNU General Public License.  This exception does not however
++// invalidate any other reasons why the executable file might be covered by
++// the GNU General Public License.
++
++//
++// ISO C++ 14882: 22.2.1.5 Template class codecvt
++//
++
++// Warning: this file is not meant for user inclusion.  Use <locale>.
++
++// Written by Benjamin Kosnik <bkoz@cygnus.com>
++
++  // XXX
++  // Define this here to codecvt.cc can have _S_max_size definition.
++#define _GLIBCPP_USE___ENC_TRAITS 1
++
++  // Extension to use icov for dealing with character encodings,
++  // including conversions and comparisons between various character
++  // sets.  This object encapsulates data that may need to be shared between
++  // char_traits, codecvt and ctype.
++  class __enc_traits
++  {
++  public:
++    // Types: 
++    // NB: A conversion descriptor subsumes and enhances the
++    // functionality of a simple state type such as mbstate_t.
++    typedef iconv_t	__desc_type;
++    
++  protected:
++    // Data Members:
++    // Max size of charset encoding name
++    static const int 	_S_max_size = 32;
++    // Name of internal character set encoding.
++    char	       	_M_int_enc[_S_max_size];
++    // Name of external character set encoding.
++    char  	       	_M_ext_enc[_S_max_size];
++
++    // Conversion descriptor between external encoding to internal encoding.
++    __desc_type		_M_in_desc;
++    // Conversion descriptor between internal encoding to external encoding.
++    __desc_type		_M_out_desc;
++
++    // Details the byte-order marker for the external encoding, if necessary.
++    int			_M_ext_bom;
++
++    // Details the byte-order marker for the internal encoding, if necessary.
++    int			_M_int_bom;
++
++  public:
++    explicit __enc_traits() 
++    : _M_in_desc(0), _M_out_desc(0), _M_ext_bom(0), _M_int_bom(0) 
++    {
++      memset(_M_int_enc, 0, _S_max_size);
++      memset(_M_ext_enc, 0, _S_max_size);
++    }
++
++    explicit __enc_traits(const char* __int, const char* __ext, 
++			  int __ibom = 0, int __ebom = 0)
++    : _M_in_desc(0), _M_out_desc(0), _M_ext_bom(0), _M_int_bom(0)
++    {
++      strncpy(_M_int_enc, __int, _S_max_size);
++      strncpy(_M_ext_enc, __ext, _S_max_size);
++    }
++
++    // 21.1.2 traits typedefs
++    // p4
++    // typedef STATE_T state_type
++    // requires: state_type shall meet the requirements of
++    // CopyConstructible types (20.1.3)
++    __enc_traits(const __enc_traits& __obj): _M_in_desc(0), _M_out_desc(0)
++    {
++      strncpy(_M_int_enc, __obj._M_int_enc, _S_max_size);
++      strncpy(_M_ext_enc, __obj._M_ext_enc, _S_max_size);
++      _M_ext_bom = __obj._M_ext_bom;
++      _M_int_bom = __obj._M_int_bom;
++    }
++
++    // Need assignment operator as well.
++    __enc_traits&
++    operator=(const __enc_traits& __obj)
++    {
++      strncpy(_M_int_enc, __obj._M_int_enc, _S_max_size);
++      strncpy(_M_ext_enc, __obj._M_ext_enc, _S_max_size);
++      _M_in_desc = 0;
++      _M_out_desc = 0;
++      _M_ext_bom = __obj._M_ext_bom;
++      _M_int_bom = __obj._M_int_bom;
++      return *this;
++    }
++
++    ~__enc_traits()
++    {
++      __desc_type __err = reinterpret_cast<iconv_t>(-1);
++      if (_M_in_desc && _M_in_desc != __err) 
++	iconv_close(_M_in_desc);
++      if (_M_out_desc && _M_out_desc != __err) 
++	iconv_close(_M_out_desc);
++    } 
++
++    void
++    _M_init()
++    {
++      const __desc_type __err = reinterpret_cast<iconv_t>(-1);
++      if (!_M_in_desc)
++	{
++	  _M_in_desc = iconv_open(_M_int_enc, _M_ext_enc);
++	  if (_M_in_desc == __err)
++	    __throw_runtime_error("creating iconv input descriptor failed.");
++	}
++      if (!_M_out_desc)
++	{
++	  _M_out_desc = iconv_open(_M_ext_enc, _M_int_enc);
++	  if (_M_out_desc == __err)
++	    __throw_runtime_error("creating iconv output descriptor failed.");
++	}
++    }
++
++    bool
++    _M_good()
++    { 
++      const __desc_type __err = reinterpret_cast<iconv_t>(-1);
++      bool __test = _M_in_desc && _M_in_desc != __err; 
++      __test &=  _M_out_desc && _M_out_desc != __err;
++      return __test;
++    }
++
++    const __desc_type* 
++    _M_get_in_descriptor()
++    { return &_M_in_desc; }
++
++    const __desc_type* 
++    _M_get_out_descriptor()
++    { return &_M_out_desc; }
++
++    int 
++    _M_get_external_bom()
++    { return _M_ext_bom; }
++
++    int 
++    _M_get_internal_bom()
++    { return _M_int_bom; }
++
++    const char* 
++    _M_get_internal_enc()
++    { return _M_int_enc; }
++
++    const char* 
++    _M_get_external_enc()
++    { return _M_ext_enc; }
++  };
++
++  // Partial specialization
++  // This specialization takes advantage of iconv to provide code
++  // conversions between a large number of character encodings.
++  template<typename _InternT, typename _ExternT>
++    class codecvt<_InternT, _ExternT, __enc_traits>
++    : public __codecvt_abstract_base<_InternT, _ExternT, __enc_traits>
++    {
++    public:      
++      // Types:
++      typedef codecvt_base::result			result;
++      typedef _InternT 					intern_type;
++      typedef _ExternT 					extern_type;
++      typedef __enc_traits 				state_type;
++      typedef __enc_traits::__desc_type 		__desc_type;
++      typedef __enc_traits				__enc_type;
++
++      // Data Members:
++      static locale::id 		id;
++
++      explicit 
++      codecvt(size_t __refs = 0)
++      : __codecvt_abstract_base<intern_type, extern_type, state_type>(__refs)
++      { }
++
++      explicit 
++      codecvt(__enc_type* __enc, size_t __refs = 0)
++      : __codecvt_abstract_base<intern_type, extern_type, state_type>(__refs)
++      { }
++
++    protected:
++      virtual 
++      ~codecvt() { }
++
++      virtual result
++      do_out(state_type& __state, const intern_type* __from, 
++	     const intern_type* __from_end, const intern_type*& __from_next,
++	     extern_type* __to, extern_type* __to_end,
++	     extern_type*& __to_next) const;
++
++      virtual result
++      do_unshift(state_type& __state, extern_type* __to, 
++		 extern_type* __to_end, extern_type*& __to_next) const;
++
++      virtual result
++      do_in(state_type& __state, const extern_type* __from, 
++	    const extern_type* __from_end, const extern_type*& __from_next,
++	    intern_type* __to, intern_type* __to_end, 
++	    intern_type*& __to_next) const;
++
++      virtual int 
++      do_encoding() const throw();
++
++      virtual bool 
++      do_always_noconv() const throw();
++
++      virtual int 
++      do_length(const state_type&, const extern_type* __from, 
++		const extern_type* __end, size_t __max) const;
++
++      virtual int 
++      do_max_length() const throw();
++    };
++
++  template<typename _InternT, typename _ExternT>
++    locale::id 
++    codecvt<_InternT, _ExternT, __enc_traits>::id;
++
++  // This adaptor works around the signature problems of the second
++  // argument to iconv():  SUSv2 and others use 'const char**', but glibc 2.2
++  // uses 'char**', which matches the POSIX 1003.1-2001 standard.
++  // Using this adaptor, g++ will do the work for us.
++  template<typename _T>
++    inline size_t
++    __iconv_adaptor(size_t(*__func)(iconv_t, _T, size_t*, char**, size_t*),
++                    iconv_t __cd, char** __inbuf, size_t* __inbytes,
++                    char** __outbuf, size_t* __outbytes)
++    { return __func(__cd, (_T)__inbuf, __inbytes, __outbuf, __outbytes); }
++
++  template<typename _InternT, typename _ExternT>
++    codecvt_base::result
++    codecvt<_InternT, _ExternT, __enc_traits>::
++    do_out(state_type& __state, const intern_type* __from, 
++	   const intern_type* __from_end, const intern_type*& __from_next,
++	   extern_type* __to, extern_type* __to_end,
++	   extern_type*& __to_next) const
++    {
++      result __ret = codecvt_base::error;
++      if (__state._M_good())
++	{
++	  typedef state_type::__desc_type	__desc_type;
++	  const __desc_type* __desc = __state._M_get_out_descriptor();
++	  const size_t __fmultiple = sizeof(intern_type);
++	  size_t __fbytes = __fmultiple * (__from_end - __from);
++	  const size_t __tmultiple = sizeof(extern_type);
++	  size_t __tbytes = __tmultiple * (__to_end - __to); 
++	  
++	  // Argument list for iconv specifies a byte sequence. Thus,
++	  // all to/from arrays must be brutally casted to char*.
++	  char* __cto = reinterpret_cast<char*>(__to);
++	  char* __cfrom;
++	  size_t __conv;
++
++	  // Some encodings need a byte order marker as the first item
++	  // in the byte stream, to designate endian-ness. The default
++	  // value for the byte order marker is NULL, so if this is
++	  // the case, it's not necessary and we can just go on our
++	  // merry way.
++	  int __int_bom = __state._M_get_internal_bom();
++	  if (__int_bom)
++	    {	  
++	      size_t __size = __from_end - __from;
++	      intern_type* __cfixed = static_cast<intern_type*>(__builtin_alloca(sizeof(intern_type) * (__size + 1)));
++	      __cfixed[0] = static_cast<intern_type>(__int_bom);
++	      char_traits<intern_type>::copy(__cfixed + 1, __from, __size);
++	      __cfrom = reinterpret_cast<char*>(__cfixed);
++	      __conv = __iconv_adaptor(iconv, *__desc, &__cfrom,
++                                        &__fbytes, &__cto, &__tbytes); 
++	    }
++	  else
++	    {
++	      intern_type* __cfixed = const_cast<intern_type*>(__from);
++	      __cfrom = reinterpret_cast<char*>(__cfixed);
++	      __conv = __iconv_adaptor(iconv, *__desc, &__cfrom, &__fbytes, 
++				       &__cto, &__tbytes); 
++	    }
++
++	  if (__conv != size_t(-1))
++	    {
++	      __from_next = reinterpret_cast<const intern_type*>(__cfrom);
++	      __to_next = reinterpret_cast<extern_type*>(__cto);
++	      __ret = codecvt_base::ok;
++	    }
++	  else 
++	    {
++	      if (__fbytes < __fmultiple * (__from_end - __from))
++		{
++		  __from_next = reinterpret_cast<const intern_type*>(__cfrom);
++		  __to_next = reinterpret_cast<extern_type*>(__cto);
++		  __ret = codecvt_base::partial;
++		}
++	      else
++		__ret = codecvt_base::error;
++	    }
++	}
++      return __ret; 
++    }
++
++  template<typename _InternT, typename _ExternT>
++    codecvt_base::result
++    codecvt<_InternT, _ExternT, __enc_traits>::
++    do_unshift(state_type& __state, extern_type* __to, 
++	       extern_type* __to_end, extern_type*& __to_next) const
++    {
++      result __ret = codecvt_base::error;
++      if (__state._M_good())
++	{
++	  typedef state_type::__desc_type	__desc_type;
++	  const __desc_type* __desc = __state._M_get_in_descriptor();
++	  const size_t __tmultiple = sizeof(intern_type);
++	  size_t __tlen = __tmultiple * (__to_end - __to); 
++	  
++	  // Argument list for iconv specifies a byte sequence. Thus,
++	  // all to/from arrays must be brutally casted to char*.
++	  char* __cto = reinterpret_cast<char*>(__to);
++	  size_t __conv = __iconv_adaptor(iconv,*__desc, NULL, NULL,
++                                          &__cto, &__tlen); 
++	  
++	  if (__conv != size_t(-1))
++	    {
++	      __to_next = reinterpret_cast<extern_type*>(__cto);
++	      if (__tlen == __tmultiple * (__to_end - __to))
++		__ret = codecvt_base::noconv;
++	      else if (__tlen == 0)
++		__ret = codecvt_base::ok;
++	      else
++		__ret = codecvt_base::partial;
++	    }
++	  else 
++	    __ret = codecvt_base::error;
++	}
++      return __ret; 
++    }
++   
++  template<typename _InternT, typename _ExternT>
++    codecvt_base::result
++    codecvt<_InternT, _ExternT, __enc_traits>::
++    do_in(state_type& __state, const extern_type* __from, 
++	  const extern_type* __from_end, const extern_type*& __from_next,
++	  intern_type* __to, intern_type* __to_end, 
++	  intern_type*& __to_next) const
++    { 
++      result __ret = codecvt_base::error;
++      if (__state._M_good())
++	{
++	  typedef state_type::__desc_type	__desc_type;
++	  const __desc_type* __desc = __state._M_get_in_descriptor();
++	  const size_t __fmultiple = sizeof(extern_type);
++	  size_t __flen = __fmultiple * (__from_end - __from);
++	  const size_t __tmultiple = sizeof(intern_type);
++	  size_t __tlen = __tmultiple * (__to_end - __to); 
++	  
++	  // Argument list for iconv specifies a byte sequence. Thus,
++	  // all to/from arrays must be brutally casted to char*.
++	  char* __cto = reinterpret_cast<char*>(__to);
++	  char* __cfrom;
++	  size_t __conv;
++
++	  // Some encodings need a byte order marker as the first item
++	  // in the byte stream, to designate endian-ness. The default
++	  // value for the byte order marker is NULL, so if this is
++	  // the case, it's not necessary and we can just go on our
++	  // merry way.
++	  int __ext_bom = __state._M_get_external_bom();
++	  if (__ext_bom)
++	    {	  
++	      size_t __size = __from_end - __from;
++	      extern_type* __cfixed =  static_cast<extern_type*>(__builtin_alloca(sizeof(extern_type) * (__size + 1)));
++	      __cfixed[0] = static_cast<extern_type>(__ext_bom);
++	      char_traits<extern_type>::copy(__cfixed + 1, __from, __size);
++	      __cfrom = reinterpret_cast<char*>(__cfixed);
++	      __conv = __iconv_adaptor(iconv, *__desc, &__cfrom,
++                                       &__flen, &__cto, &__tlen); 
++	    }
++	  else
++	    {
++	      extern_type* __cfixed = const_cast<extern_type*>(__from);
++	      __cfrom = reinterpret_cast<char*>(__cfixed);
++	      __conv = __iconv_adaptor(iconv, *__desc, &__cfrom,
++                                       &__flen, &__cto, &__tlen); 
++	    }
++
++	  
++	  if (__conv != size_t(-1))
++	    {
++	      __from_next = reinterpret_cast<const extern_type*>(__cfrom);
++	      __to_next = reinterpret_cast<intern_type*>(__cto);
++	      __ret = codecvt_base::ok;
++	    }
++	  else 
++	    {
++	      if (__flen < static_cast<size_t>(__from_end - __from))
++		{
++		  __from_next = reinterpret_cast<const extern_type*>(__cfrom);
++		  __to_next = reinterpret_cast<intern_type*>(__cto);
++		  __ret = codecvt_base::partial;
++		}
++	      else
++		__ret = codecvt_base::error;
++	    }
++	}
++      return __ret; 
++    }
++  
++  template<typename _InternT, typename _ExternT>
++    int 
++    codecvt<_InternT, _ExternT, __enc_traits>::
++    do_encoding() const throw()
++    {
++      int __ret = 0;
++      if (sizeof(_ExternT) <= sizeof(_InternT))
++	__ret = sizeof(_InternT)/sizeof(_ExternT);
++      return __ret; 
++    }
++  
++  template<typename _InternT, typename _ExternT>
++    bool 
++    codecvt<_InternT, _ExternT, __enc_traits>::
++    do_always_noconv() const throw()
++    { return false; }
++  
++  template<typename _InternT, typename _ExternT>
++    int 
++    codecvt<_InternT, _ExternT, __enc_traits>::
++    do_length(const state_type&, const extern_type* __from, 
++	      const extern_type* __end, size_t __max) const
++    { return min(__max, static_cast<size_t>(__end - __from)); }
++
++#ifdef _GLIBCPP_RESOLVE_LIB_DEFECTS
++// 74.  Garbled text for codecvt::do_max_length
++  template<typename _InternT, typename _ExternT>
++    int 
++    codecvt<_InternT, _ExternT, __enc_traits>::
++    do_max_length() const throw()
++    { return 1; }
++#endif
+diff -urN gcc-3.3.2/libstdc++-v3/config/locale/uclibc/collate_members.cc gcc-3.3.2-uClibc/libstdc++-v3/config/locale/uclibc/collate_members.cc
+--- gcc-3.3.2/libstdc++-v3/config/locale/uclibc/collate_members.cc	1969-12-31 18:00:00.000000000 -0600
++++ gcc-3.3.2-uClibc/libstdc++-v3/config/locale/uclibc/collate_members.cc	2004-01-09 08:06:24.000000000 -0600
+@@ -0,0 +1,80 @@
++// std::collate implementation details, GNU version -*- C++ -*-
++
++// Copyright (C) 2001, 2002 Free Software Foundation, Inc.
++//
++// This file is part of the GNU ISO C++ Library.  This library is free
++// software; you can redistribute it and/or modify it under the
++// terms of the GNU General Public License as published by the
++// Free Software Foundation; either version 2, or (at your option)
++// any later version.
++
++// This library is distributed in the hope that it will be useful,
++// but WITHOUT ANY WARRANTY; without even the implied warranty of
++// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++// GNU General Public License for more details.
++
++// You should have received a copy of the GNU General Public License along
++// with this library; see the file COPYING.  If not, write to the Free
++// Software Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307,
++// USA.
++
++// As a special exception, you may use this file as part of a free software
++// library without restriction.  Specifically, if other files instantiate
++// templates or use macros or inline functions from this file, or you compile
++// this file and link it with other files to produce an executable, this
++// file does not by itself cause the resulting executable to be covered by
++// the GNU General Public License.  This exception does not however
++// invalidate any other reasons why the executable file might be covered by
++// the GNU General Public License.
++
++//
++// ISO C++ 14882: 22.2.4.1.2  collate virtual functions
++//
++
++// Written by Benjamin Kosnik <bkoz@redhat.com>
++
++#include <locale>
++#include <bits/c++locale_internal.h>
++
++#ifndef __UCLIBC_HAS_XLOCALE__
++#define __strcoll_l(S1, S2, L)      strcoll((S1), (S2))
++#define __strxfrm_l(S1, S2, N, L)   strxfrm((S1), (S2), (N))
++#define __wcscoll_l(S1, S2, L)      wcscoll((S1), (S2))
++#define __wcsxfrm_l(S1, S2, N, L)   wcsxfrm((S1), (S2), (N))
++#endif
++
++namespace std
++{
++  // These are basically extensions to char_traits, and perhaps should
++  // be put there instead of here.
++  template<>
++    int 
++    collate<char>::_M_compare(const char* __one, const char* __two) const
++    { 
++      int __cmp = __strcoll_l(__one, __two, _M_c_locale_collate);
++      return (__cmp >> (8 * sizeof (int) - 2)) | (__cmp != 0);
++    }
++  
++  template<>
++    size_t
++    collate<char>::_M_transform(char* __to, const char* __from, 
++				size_t __n) const 
++    { return __strxfrm_l(__to, __from, __n, _M_c_locale_collate); }
++
++#ifdef _GLIBCPP_USE_WCHAR_T
++  template<>
++    int 
++    collate<wchar_t>::_M_compare(const wchar_t* __one, 
++				 const wchar_t* __two) const
++    {
++      int __cmp = __wcscoll_l(__one, __two, _M_c_locale_collate);
++      return (__cmp >> (8 * sizeof (int) - 2)) | (__cmp != 0);
++    }
++  
++  template<>
++    size_t
++    collate<wchar_t>::_M_transform(wchar_t* __to, const wchar_t* __from,
++				   size_t __n) const
++    { return __wcsxfrm_l(__to, __from, __n, _M_c_locale_collate); }
++#endif
++}
+diff -urN gcc-3.3.2/libstdc++-v3/config/locale/uclibc/ctype_members.cc gcc-3.3.2-uClibc/libstdc++-v3/config/locale/uclibc/ctype_members.cc
+--- gcc-3.3.2/libstdc++-v3/config/locale/uclibc/ctype_members.cc	1969-12-31 18:00:00.000000000 -0600
++++ gcc-3.3.2-uClibc/libstdc++-v3/config/locale/uclibc/ctype_members.cc	2004-01-09 08:15:41.000000000 -0600
+@@ -0,0 +1,274 @@
++// std::ctype implementation details, GNU version -*- C++ -*-
++
++// Copyright (C) 2001, 2002, 2003 Free Software Foundation, Inc.
++//
++// This file is part of the GNU ISO C++ Library.  This library is free
++// software; you can redistribute it and/or modify it under the
++// terms of the GNU General Public License as published by the
++// Free Software Foundation; either version 2, or (at your option)
++// any later version.
++
++// This library is distributed in the hope that it will be useful,
++// but WITHOUT ANY WARRANTY; without even the implied warranty of
++// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++// GNU General Public License for more details.
++
++// You should have received a copy of the GNU General Public License along
++// with this library; see the file COPYING.  If not, write to the Free
++// Software Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307,
++// USA.
++
++// As a special exception, you may use this file as part of a free software
++// library without restriction.  Specifically, if other files instantiate
++// templates or use macros or inline functions from this file, or you compile
++// this file and link it with other files to produce an executable, this
++// file does not by itself cause the resulting executable to be covered by
++// the GNU General Public License.  This exception does not however
++// invalidate any other reasons why the executable file might be covered by
++// the GNU General Public License.
++
++//
++// ISO C++ 14882: 22.2.1.1.2  ctype virtual functions.
++//
++
++// Written by Benjamin Kosnik <bkoz@redhat.com>
++
++#define _LIBC
++#include <locale>
++#undef _LIBC
++#include <bits/c++locale_internal.h>
++
++#ifndef __UCLIBC_HAS_XLOCALE__
++#define __wctype_l(S, L)           wctype((S))
++#define __towupper_l(C, L)         towupper((C))
++#define __towlower_l(C, L)         towlower((C))
++#define __iswctype_l(C, M, L)      iswctype((C), (M))
++#endif
++
++namespace std
++{
++  // NB: The other ctype<char> specializations are in src/locale.cc and
++  // various /config/os/* files.
++  template<>
++    ctype_byname<char>::ctype_byname(const char* __s, size_t __refs)
++    : ctype<char>(0, false, __refs) 
++    { 	
++      _S_destroy_c_locale(_M_c_locale_ctype);
++      _S_create_c_locale(_M_c_locale_ctype, __s); 
++#ifdef __UCLIBC_HAS_XLOCALE__
++      _M_toupper = _M_c_locale_ctype->__ctype_toupper;
++      _M_tolower = _M_c_locale_ctype->__ctype_tolower;
++      _M_table = _M_c_locale_ctype->__ctype_b;
++#endif
++    }
++
++#ifdef _GLIBCPP_USE_WCHAR_T  
++  ctype<wchar_t>::__wmask_type
++  ctype<wchar_t>::_M_convert_to_wmask(const mask __m) const
++  {
++    __wmask_type __ret;
++    switch (__m)
++      {
++      case space:
++	__ret = __wctype_l("space", _M_c_locale_ctype);
++	break;
++      case print:
++	__ret = __wctype_l("print", _M_c_locale_ctype);
++	break;
++      case cntrl:
++	__ret = __wctype_l("cntrl", _M_c_locale_ctype);
++	break;
++      case upper:
++	__ret = __wctype_l("upper", _M_c_locale_ctype);
++	break;
++      case lower:
++	__ret = __wctype_l("lower", _M_c_locale_ctype);
++	break;
++      case alpha:
++	__ret = __wctype_l("alpha", _M_c_locale_ctype);
++	break;
++      case digit:
++	__ret = __wctype_l("digit", _M_c_locale_ctype);
++	break;
++      case punct:
++	__ret = __wctype_l("punct", _M_c_locale_ctype);
++	break;
++      case xdigit:
++	__ret = __wctype_l("xdigit", _M_c_locale_ctype);
++	break;
++      case alnum:
++	__ret = __wctype_l("alnum", _M_c_locale_ctype);
++	break;
++      case graph:
++	__ret = __wctype_l("graph", _M_c_locale_ctype);
++	break;
++      default:
++	__ret = 0;
++      }
++    return __ret;
++  };
++  
++  wchar_t
++  ctype<wchar_t>::do_toupper(wchar_t __c) const
++  { return __towupper_l(__c, _M_c_locale_ctype); }
++
++  const wchar_t*
++  ctype<wchar_t>::do_toupper(wchar_t* __lo, const wchar_t* __hi) const
++  {
++    while (__lo < __hi)
++      {
++        *__lo = __towupper_l(*__lo, _M_c_locale_ctype);
++        ++__lo;
++      }
++    return __hi;
++  }
++  
++  wchar_t
++  ctype<wchar_t>::do_tolower(wchar_t __c) const
++  { return __towlower_l(__c, _M_c_locale_ctype); }
++  
++  const wchar_t*
++  ctype<wchar_t>::do_tolower(wchar_t* __lo, const wchar_t* __hi) const
++  {
++    while (__lo < __hi)
++      {
++        *__lo = __towlower_l(*__lo, _M_c_locale_ctype);
++        ++__lo;
++      }
++    return __hi;
++  }
++
++  bool
++  ctype<wchar_t>::
++  do_is(mask __m, wchar_t __c) const
++  { 
++    // Highest bitmask in ctype_base == 10, but extra in "C"
++    // library for blank.
++    bool __ret = false;
++    const size_t __bitmasksize = 11; 
++    for (size_t __bitcur = 0; __bitcur <= __bitmasksize; ++__bitcur)
++      {
++	const mask __bit = static_cast<mask>(_ISbit(__bitcur));
++	if (__m & __bit)
++	  __ret |= __iswctype_l(__c, _M_convert_to_wmask(__bit), 
++				_M_c_locale_ctype); 
++      }
++    return __ret;    
++  }
++  
++  const wchar_t* 
++  ctype<wchar_t>::
++  do_is(const wchar_t* __lo, const wchar_t* __hi, mask* __vec) const
++  {
++    for (;__lo < __hi; ++__vec, ++__lo)
++      {
++	// Highest bitmask in ctype_base == 10, but extra in "C"
++	// library for blank.
++	const size_t __bitmasksize = 11; 
++	mask __m = 0;
++	for (size_t __bitcur = 0; __bitcur <= __bitmasksize; ++__bitcur)
++	  { 
++	    const mask __bit = static_cast<mask>(_ISbit(__bitcur));
++	    if (__iswctype_l(*__lo, _M_convert_to_wmask(__bit), 
++			     _M_c_locale_ctype))
++	      __m |= __bit;
++	  }
++	*__vec = __m;
++      }
++    return __hi;
++  }
++  
++  const wchar_t* 
++  ctype<wchar_t>::
++  do_scan_is(mask __m, const wchar_t* __lo, const wchar_t* __hi) const
++  {
++    while (__lo < __hi && !this->do_is(__m, *__lo))
++      ++__lo;
++    return __lo;
++  }
++
++  const wchar_t*
++  ctype<wchar_t>::
++  do_scan_not(mask __m, const char_type* __lo, const char_type* __hi) const
++  {
++    while (__lo < __hi && this->do_is(__m, *__lo) != 0)
++      ++__lo;
++    return __lo;
++  }
++
++  wchar_t
++  ctype<wchar_t>::
++  do_widen(char __c) const
++  {
++#ifdef __UCLIBC_HAS_XLOCALE__
++    __c_locale __old = __uselocale(_M_c_locale_ctype);
++#endif
++    wchar_t __ret = btowc(__c);
++#ifdef __UCLIBC_HAS_XLOCALE__
++    __uselocale(__old);
++#endif
++    return __ret;
++  }
++
++  const char* 
++  ctype<wchar_t>::
++  do_widen(const char* __lo, const char* __hi, wchar_t* __dest) const
++  {
++#ifdef __UCLIBC_HAS_XLOCALE__
++    __c_locale __old = __uselocale(_M_c_locale_ctype);
++#endif
++    mbstate_t __state;
++    memset(static_cast<void*>(&__state), 0, sizeof(mbstate_t));
++    mbsrtowcs(__dest, &__lo, __hi - __lo, &__state);
++#ifdef __UCLIBC_HAS_XLOCALE__
++    __uselocale(__old);
++#endif
++    return __hi;
++  }
++
++  char
++  ctype<wchar_t>::
++  do_narrow(wchar_t __wc, char __dfault) const
++  { 
++#ifdef __UCLIBC_HAS_XLOCALE__
++    __c_locale __old = __uselocale(_M_c_locale_ctype);
++#endif
++    int __c = wctob(__wc);
++#ifdef __UCLIBC_HAS_XLOCALE__
++    __uselocale(__old);
++#endif
++    return (__c == EOF ? __dfault : static_cast<char>(__c)); 
++  }
++
++  const wchar_t*
++  ctype<wchar_t>::
++  do_narrow(const wchar_t* __lo, const wchar_t* __hi, char __dfault, 
++	    char* __dest) const
++  {
++#ifdef __UCLIBC_HAS_XLOCALE__
++    __c_locale __old = __uselocale(_M_c_locale_ctype);
++#endif
++    size_t __offset = 0;
++    while (true)
++      {
++	const wchar_t* __start = __lo + __offset;        
++	size_t __len = __hi - __start;
++	
++	mbstate_t __state;
++	memset(static_cast<void*>(&__state), 0, sizeof(mbstate_t));
++	size_t __con = wcsrtombs(__dest + __offset, &__start, __len, &__state);
++	if (__con != __len && __start != 0)
++	  {
++	    __offset = __start - __lo;          
++	    __dest[__offset++] = __dfault;
++	  }
++	else
++	  break;
++      }
++#ifdef __UCLIBC_HAS_XLOCALE__
++    __uselocale(__old);
++#endif
++    return __hi;
++  }
++#endif //  _GLIBCPP_USE_WCHAR_T
++}
+diff -urN gcc-3.3.2/libstdc++-v3/config/locale/uclibc/messages_members.cc gcc-3.3.2-uClibc/libstdc++-v3/config/locale/uclibc/messages_members.cc
+--- gcc-3.3.2/libstdc++-v3/config/locale/uclibc/messages_members.cc	1969-12-31 18:00:00.000000000 -0600
++++ gcc-3.3.2-uClibc/libstdc++-v3/config/locale/uclibc/messages_members.cc	2004-01-09 08:46:16.000000000 -0600
+@@ -0,0 +1,100 @@
++// std::messages implementation details, GNU version -*- C++ -*-
++
++// Copyright (C) 2001, 2002 Free Software Foundation, Inc.
++//
++// This file is part of the GNU ISO C++ Library.  This library is free
++// software; you can redistribute it and/or modify it under the
++// terms of the GNU General Public License as published by the
++// Free Software Foundation; either version 2, or (at your option)
++// any later version.
++
++// This library is distributed in the hope that it will be useful,
++// but WITHOUT ANY WARRANTY; without even the implied warranty of
++// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++// GNU General Public License for more details.
++
++// You should have received a copy of the GNU General Public License along
++// with this library; see the file COPYING.  If not, write to the Free
++// Software Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307,
++// USA.
++
++// As a special exception, you may use this file as part of a free software
++// library without restriction.  Specifically, if other files instantiate
++// templates or use macros or inline functions from this file, or you compile
++// this file and link it with other files to produce an executable, this
++// file does not by itself cause the resulting executable to be covered by
++// the GNU General Public License.  This exception does not however
++// invalidate any other reasons why the executable file might be covered by
++// the GNU General Public License.
++
++//
++// ISO C++ 14882: 22.2.7.1.2  messages virtual functions
++//
++
++// Written by Benjamin Kosnik <bkoz@redhat.com>
++
++#include <locale>
++#include <bits/c++locale_internal.h>
++
++#ifdef __UCLIBC_MJN3_ONLY__
++#warning fix gettext stuff
++#endif
++#ifdef __UCLIBC_HAS_GETTEXT_AWARENESS__
++extern "C" char *__dcgettext(const char *domainname,
++			     const char *msgid, int category);
++#undef gettext
++#define gettext(msgid) __dcgettext(NULL, msgid, LC_MESSAGES)
++#else
++#undef gettext
++#define gettext(msgid) (msgid)
++#endif
++
++namespace std
++{
++  // Specializations.
++  template<>
++    string
++    messages<char>::do_get(catalog, int, int, const string& __dfault) const
++    {
++#ifdef __UCLIBC_HAS_XLOCALE__
++      __c_locale __old = __uselocale(_M_c_locale_messages);
++      const char* __msg = const_cast<const char*>(gettext(__dfault.c_str()));
++      __uselocale(__old);
++      return string(__msg);
++#elif defined __UCLIBC_HAS_LOCALE__
++      char* __old = strdup(setlocale(LC_ALL, NULL));
++      setlocale(LC_ALL, _M_name_messages);
++      const char* __msg = gettext(__dfault.c_str());
++      setlocale(LC_ALL, __old);
++      free(__old);
++      return string(__msg);
++#else
++      const char* __msg = gettext(__dfault.c_str());
++      return string(__msg);
++#endif
++    }
++
++#ifdef _GLIBCPP_USE_WCHAR_T
++  template<>
++    wstring
++    messages<wchar_t>::do_get(catalog, int, int, const wstring& __dfault) const
++    {
++#ifdef __UCLIBC_HAS_XLOCALE__
++      __c_locale __old = __uselocale(_M_c_locale_messages);
++      char* __msg = gettext(_M_convert_to_char(__dfault));
++      __uselocale(__old);
++      return _M_convert_from_char(__msg);
++#elif defined __UCLIBC_HAS_LOCALE__
++      char* __old = strdup(setlocale(LC_ALL, NULL));
++      setlocale(LC_ALL, _M_name_messages);
++      char* __msg = gettext(_M_convert_to_char(__dfault));
++      setlocale(LC_ALL, __old);
++      free(__old);
++      return _M_convert_from_char(__msg);
++# else
++      char* __msg = gettext(_M_convert_to_char(__dfault));
++      return _M_convert_from_char(__msg);
++# endif
++    }
++#endif
++}
+diff -urN gcc-3.3.2/libstdc++-v3/config/locale/uclibc/messages_members.h gcc-3.3.2-uClibc/libstdc++-v3/config/locale/uclibc/messages_members.h
+--- gcc-3.3.2/libstdc++-v3/config/locale/uclibc/messages_members.h	1969-12-31 18:00:00.000000000 -0600
++++ gcc-3.3.2-uClibc/libstdc++-v3/config/locale/uclibc/messages_members.h	2004-01-09 08:52:48.000000000 -0600
+@@ -0,0 +1,122 @@
++// std::messages implementation details, GNU version -*- C++ -*-
++
++// Copyright (C) 2001, 2002, 2003 Free Software Foundation, Inc.
++//
++// This file is part of the GNU ISO C++ Library.  This library is free
++// software; you can redistribute it and/or modify it under the
++// terms of the GNU General Public License as published by the
++// Free Software Foundation; either version 2, or (at your option)
++// any later version.
++
++// This library is distributed in the hope that it will be useful,
++// but WITHOUT ANY WARRANTY; without even the implied warranty of
++// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++// GNU General Public License for more details.
++
++// You should have received a copy of the GNU General Public License along
++// with this library; see the file COPYING.  If not, write to the Free
++// Software Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307,
++// USA.
++
++// As a special exception, you may use this file as part of a free software
++// library without restriction.  Specifically, if other files instantiate
++// templates or use macros or inline functions from this file, or you compile
++// this file and link it with other files to produce an executable, this
++// file does not by itself cause the resulting executable to be covered by
++// the GNU General Public License.  This exception does not however
++// invalidate any other reasons why the executable file might be covered by
++// the GNU General Public License.
++
++//
++// ISO C++ 14882: 22.2.7.1.2  messages functions
++//
++
++// Written by Benjamin Kosnik <bkoz@redhat.com>
++
++#ifdef __UCLIBC_MJN3_ONLY__
++#warning fix prototypes for *textdomain funcs
++#endif
++#ifdef __UCLIBC_HAS_GETTEXT_AWARENESS__
++extern "C" char *__textdomain(const char *domainname);
++extern "C" char *__bindtextdomain(const char *domainname,
++				  const char *dirname);
++#else
++#undef __textdomain
++#undef __bindtextdomain
++#define __textdomain(D)           ((void)0)
++#define __bindtextdomain(D,P)     ((void)0)
++#endif
++
++  // Non-virtual member functions.
++  template<typename _CharT>
++     messages<_CharT>::messages(size_t __refs)
++     : locale::facet(__refs)
++     {  
++#ifndef __UCLIBC_HAS_XLOCALE__
++       _M_name_messages = _S_c_name;
++#endif
++       _M_c_locale_messages = _S_c_locale; 
++     }
++
++  template<typename _CharT>
++     messages<_CharT>::messages(__c_locale __cloc, 
++				const char* __s, size_t __refs) 
++     : locale::facet(__refs)
++     {
++#ifndef __UCLIBC_HAS_XLOCALE__
++       _M_name_messages = new char[strlen(__s) + 1];
++       strcpy(_M_name_messages, __s);
++#endif
++       _M_c_locale_messages = _S_clone_c_locale(__cloc); 
++     }
++
++  template<typename _CharT>
++    typename messages<_CharT>::catalog 
++    messages<_CharT>::open(const basic_string<char>& __s, const locale& __loc, 
++			   const char* __dir) const
++    { 
++      __bindtextdomain(__s.c_str(), __dir);
++      return this->do_open(__s, __loc); 
++    }
++
++  // Virtual member functions.
++  template<typename _CharT>
++    messages<_CharT>::~messages()
++    { 
++#ifndef __UCLIBC_HAS_XLOCALE__
++      if (_S_c_name != _M_name_messages)
++	delete [] _M_name_messages;
++#endif
++      _S_destroy_c_locale(_M_c_locale_messages); 
++    }
++
++  template<typename _CharT>
++    typename messages<_CharT>::catalog 
++    messages<_CharT>::do_open(const basic_string<char>& __s, 
++			      const locale&) const
++    { 
++      // No error checking is done, assume the catalog exists and can
++      // be used.
++      __textdomain(__s.c_str());
++      return 0;
++    }
++
++  template<typename _CharT>
++    void    
++    messages<_CharT>::do_close(catalog) const 
++    { }
++
++   // messages_byname
++   template<typename _CharT>
++     messages_byname<_CharT>::messages_byname(const char* __s, size_t __refs)
++     : messages<_CharT>(__refs) 
++     { 
++#ifndef __UCLIBC_HAS_XLOCALE__
++       if (_S_c_name != _M_name_messages)
++	 delete [] _M_name_messages;
++       _M_name_messages = new char[strlen(__s) + 1];
++       strcpy(_M_name_messages, __s);
++#endif
++       _S_destroy_c_locale(_M_c_locale_messages);
++       _S_create_c_locale(_M_c_locale_messages, __s); 
++     }
+diff -urN gcc-3.3.2/libstdc++-v3/config/locale/uclibc/monetary_members.cc gcc-3.3.2-uClibc/libstdc++-v3/config/locale/uclibc/monetary_members.cc
+--- gcc-3.3.2/libstdc++-v3/config/locale/uclibc/monetary_members.cc	1969-12-31 18:00:00.000000000 -0600
++++ gcc-3.3.2-uClibc/libstdc++-v3/config/locale/uclibc/monetary_members.cc	2004-01-09 18:20:23.000000000 -0600
+@@ -0,0 +1,578 @@
++// std::moneypunct implementation details, GNU version -*- C++ -*-
++
++// Copyright (C) 2001, 2002 Free Software Foundation, Inc.
++//
++// This file is part of the GNU ISO C++ Library.  This library is free
++// software; you can redistribute it and/or modify it under the
++// terms of the GNU General Public License as published by the
++// Free Software Foundation; either version 2, or (at your option)
++// any later version.
++
++// This library is distributed in the hope that it will be useful,
++// but WITHOUT ANY WARRANTY; without even the implied warranty of
++// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++// GNU General Public License for more details.
++
++// You should have received a copy of the GNU General Public License along
++// with this library; see the file COPYING.  If not, write to the Free
++// Software Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307,
++// USA.
++
++// As a special exception, you may use this file as part of a free software
++// library without restriction.  Specifically, if other files instantiate
++// templates or use macros or inline functions from this file, or you compile
++// this file and link it with other files to produce an executable, this
++// file does not by itself cause the resulting executable to be covered by
++// the GNU General Public License.  This exception does not however
++// invalidate any other reasons why the executable file might be covered by
++// the GNU General Public License.
++
++//
++// ISO C++ 14882: 22.2.6.3.2  moneypunct virtual functions
++//
++
++// Written by Benjamin Kosnik <bkoz@redhat.com>
++
++#define _LIBC
++#include <locale>
++#undef _LIBC
++#include <bits/c++locale_internal.h>
++
++#ifdef __UCLIBC_MJN3_ONLY__
++#warning optimize this for uclibc
++#warning tailor for stub locale support
++#endif
++
++#ifndef __UCLIBC_HAS_XLOCALE__
++#define __nl_langinfo_l(N, L)         nl_langinfo((N))
++#endif
++
++namespace std
++{
++  // Construct and return valid pattern consisting of some combination of:
++  // space none symbol sign value
++  money_base::pattern
++  money_base::_S_construct_pattern(char __precedes, char __space, char __posn)
++  { 
++    pattern __ret;
++
++    // This insanely complicated routine attempts to construct a valid
++    // pattern for use with monyepunct. A couple of invariants:
++
++    // if (__precedes) symbol -> value
++    // else value -> symbol
++    
++    // if (__space) space
++    // else none
++
++    // none == never first
++    // space never first or last
++
++    // Any elegant implementations of this are welcome.
++    switch (__posn)
++      {
++      case 0:
++      case 1:
++	// 1 The sign precedes the value and symbol.
++	if (__space)
++	  {
++	    // Pattern starts with sign.
++	    if (__precedes)
++	      {
++		__ret.field[1] = symbol;
++		__ret.field[2] = space;
++		__ret.field[3] = value;
++	      }
++	    else
++	      {
++		__ret.field[1] = value;
++		__ret.field[2] = space;
++		__ret.field[3] = symbol;
++	      }
++	    __ret.field[0] = sign;
++	  }
++	else
++	  {
++	    // Pattern starts with sign and ends with none.
++	    if (__precedes)
++	      {
++		__ret.field[1] = symbol;
++		__ret.field[2] = value;
++	      }
++	    else
++	      {
++		__ret.field[1] = value;
++		__ret.field[2] = symbol;
++	      }
++	    __ret.field[0] = sign;
++	    __ret.field[3] = none;
++	  }
++	break;
++      case 2:
++	// 2 The sign follows the value and symbol.
++	if (__space)
++	  {
++	    // Pattern either ends with sign.
++	    if (__precedes)
++	      {
++		__ret.field[0] = symbol;
++		__ret.field[1] = space;
++		__ret.field[2] = value;
++	      }
++	    else
++	      {
++		__ret.field[0] = value;
++		__ret.field[1] = space;
++		__ret.field[2] = symbol;
++	      }
++	    __ret.field[3] = sign;
++	  }
++	else
++	  {
++	    // Pattern ends with sign then none.
++	    if (__precedes)
++	      {
++		__ret.field[0] = symbol;
++		__ret.field[1] = value;
++	      }
++	    else
++	      {
++		__ret.field[0] = value;
++		__ret.field[1] = symbol;
++	      }
++	    __ret.field[2] = sign;
++	    __ret.field[3] = none;
++	  }
++	break;
++      case 3:
++	// 3 The sign immediately precedes the symbol.
++	if (__space)
++	  {
++	    // Have space.
++	    if (__precedes)
++	      {
++		__ret.field[0] = sign;
++		__ret.field[1] = symbol;
++		__ret.field[2] = space;
++		__ret.field[3] = value;
++	      }
++	    else
++	      {
++		__ret.field[0] = value;
++		__ret.field[1] = space;
++		__ret.field[2] = sign;
++		__ret.field[3] = symbol;
++	      }
++	  }
++	else
++	  {
++	    // Have none.
++	    if (__precedes)
++	      {
++		__ret.field[0] = sign;
++		__ret.field[1] = symbol;
++		__ret.field[2] = value;
++	      }
++	    else
++	      {
++		__ret.field[0] = value;
++		__ret.field[1] = sign;
++		__ret.field[2] = symbol;
++	      }
++	    __ret.field[3] = none;
++	  }
++	break;
++      case 4:
++	// 4 The sign immediately follows the symbol. 
++	if (__space)
++	  {
++	    // Have space.
++	    if (__precedes)
++	      {
++		__ret.field[0] = symbol;
++		__ret.field[1] = sign;
++		__ret.field[2] = space;
++		__ret.field[3] = value;
++	      }
++	    else
++	      {
++		__ret.field[0] = value;
++		__ret.field[1] = space;
++		__ret.field[2] = symbol;
++		__ret.field[3] = sign;
++	      }
++	  }
++	else
++	  {
++	    // Have none.
++	    if (__precedes)
++	      {
++		__ret.field[0] = symbol;
++		__ret.field[1] = sign;
++		__ret.field[2] = value;
++	      }
++	    else
++	      {
++		__ret.field[0] = value;
++		__ret.field[1] = symbol;
++		__ret.field[2] = sign;
++	      }
++	    __ret.field[3] = none;
++	  }
++	break;
++      default:
++	;
++      }
++    return __ret;
++  }
++
++  template<> 
++    void
++    moneypunct<char, true>::_M_initialize_moneypunct(__c_locale __cloc, 
++						     const char*)
++    {
++      if (!__cloc)
++	{
++	  // "C" locale
++	  _M_decimal_point = '.';
++	  _M_thousands_sep = ',';
++	  _M_grouping = "";
++	  _M_curr_symbol = "";
++	  _M_positive_sign = "";
++	  _M_negative_sign = "";
++	  _M_frac_digits = 0;
++	  _M_pos_format = money_base::_S_default_pattern;
++	  _M_neg_format = money_base::_S_default_pattern;
++	}
++      else
++	{
++	  // Named locale.
++	  _M_decimal_point = *(__nl_langinfo_l(__MON_DECIMAL_POINT, __cloc));
++	  _M_thousands_sep = *(__nl_langinfo_l(__MON_THOUSANDS_SEP, __cloc));
++	  _M_grouping = __nl_langinfo_l(__MON_GROUPING, __cloc);
++	  _M_positive_sign = __nl_langinfo_l(__POSITIVE_SIGN, __cloc);
++
++	  char __nposn = *(__nl_langinfo_l(__INT_N_SIGN_POSN, __cloc));
++	  if (!__nposn)
++	    _M_negative_sign = "()";
++	  else
++	    _M_negative_sign = __nl_langinfo_l(__NEGATIVE_SIGN, __cloc);
++
++	  // _Intl == true
++	  _M_curr_symbol = __nl_langinfo_l(__INT_CURR_SYMBOL, __cloc);
++	  _M_frac_digits = *(__nl_langinfo_l(__INT_FRAC_DIGITS, __cloc));
++	  char __pprecedes = *(__nl_langinfo_l(__INT_P_CS_PRECEDES, __cloc));
++	  char __pspace = *(__nl_langinfo_l(__INT_P_SEP_BY_SPACE, __cloc));
++	  char __pposn = *(__nl_langinfo_l(__INT_P_SIGN_POSN, __cloc));
++	  _M_pos_format = _S_construct_pattern(__pprecedes, __pspace, __pposn);
++	  char __nprecedes = *(__nl_langinfo_l(__INT_N_CS_PRECEDES, __cloc));
++	  char __nspace = *(__nl_langinfo_l(__INT_N_SEP_BY_SPACE, __cloc));
++	  _M_neg_format = _S_construct_pattern(__nprecedes, __nspace, __nposn);
++	}
++    }
++
++  template<> 
++    void
++    moneypunct<char, false>::_M_initialize_moneypunct(__c_locale __cloc, 
++						      const char*)
++    {
++      if (!__cloc)
++	{
++	  // "C" locale
++	  _M_decimal_point = '.';
++	  _M_thousands_sep = ',';
++	  _M_grouping = "";
++	  _M_curr_symbol = "";
++	  _M_positive_sign = "";
++	  _M_negative_sign = "";
++	  _M_frac_digits = 0;
++	  _M_pos_format = money_base::_S_default_pattern;
++	  _M_neg_format = money_base::_S_default_pattern;
++	}
++      else
++	{
++	  // Named locale.
++	  _M_decimal_point = *(__nl_langinfo_l(__MON_DECIMAL_POINT, __cloc));
++	  _M_thousands_sep = *(__nl_langinfo_l(__MON_THOUSANDS_SEP, __cloc));
++	  _M_grouping = __nl_langinfo_l(__MON_GROUPING, __cloc);
++	  _M_positive_sign = __nl_langinfo_l(__POSITIVE_SIGN, __cloc);
++
++	  char __nposn = *(__nl_langinfo_l(__N_SIGN_POSN, __cloc));
++	  if (!__nposn)
++	    _M_negative_sign = "()";
++	  else
++	    _M_negative_sign = __nl_langinfo_l(__NEGATIVE_SIGN, __cloc);
++
++	  // _Intl == false
++	  _M_curr_symbol = __nl_langinfo_l(__CURRENCY_SYMBOL, __cloc);
++	  _M_frac_digits = *(__nl_langinfo_l(__FRAC_DIGITS, __cloc));
++	  char __pprecedes = *(__nl_langinfo_l(__P_CS_PRECEDES, __cloc));
++	  char __pspace = *(__nl_langinfo_l(__P_SEP_BY_SPACE, __cloc));
++	  char __pposn = *(__nl_langinfo_l(__P_SIGN_POSN, __cloc));
++	  _M_pos_format = _S_construct_pattern(__pprecedes, __pspace, __pposn);
++	  char __nprecedes = *(__nl_langinfo_l(__N_CS_PRECEDES, __cloc));
++	  char __nspace = *(__nl_langinfo_l(__N_SEP_BY_SPACE, __cloc));
++	  _M_neg_format = _S_construct_pattern(__nprecedes, __nspace, __nposn);
++	}
++    }
++
++  template<> 
++    moneypunct<char, true>::~moneypunct()
++    { }
++
++  template<> 
++    moneypunct<char, false>::~moneypunct()
++    { }
++
++#ifdef _GLIBCPP_USE_WCHAR_T
++  template<> 
++    void
++    moneypunct<wchar_t, true>::_M_initialize_moneypunct(__c_locale __cloc, 
++#ifdef __UCLIBC_HAS_XLOCALE__
++							const char*)
++#else
++							const char* __name)
++#endif
++    {
++      if (!__cloc)
++	{
++	  // "C" locale
++	  _M_decimal_point = L'.';
++	  _M_thousands_sep = L',';
++	  _M_grouping = "";
++	  _M_curr_symbol = L"";
++	  _M_positive_sign = L"";
++	  _M_negative_sign = L"";
++	  _M_frac_digits = 0;
++	  _M_pos_format = money_base::_S_default_pattern;
++	  _M_neg_format = money_base::_S_default_pattern;
++	}
++      else
++	{
++	  // Named locale.
++#ifdef __UCLIBC_HAS_XLOCALE__
++	  __c_locale __old = __uselocale(__cloc);
++#else
++	  // Switch to named locale so that mbsrtowcs will work.
++	  char* __old = strdup(setlocale(LC_ALL, NULL));
++	  setlocale(LC_ALL, __name);
++#endif
++
++#ifdef __UCLIBC_MJN3_ONLY__
++#warning fix this
++#endif
++#ifdef __UCLIBC__
++# ifdef __UCLIBC_HAS_XLOCALE__
++	  _M_decimal_point = __cloc->decimal_point_wc;
++	  _M_thousands_sep = __cloc->thousands_sep_wc;
++# else
++	  _M_decimal_point = __global_locale->decimal_point_wc;
++	  _M_thousands_sep = __global_locale->thousands_sep_wc;
++# endif
++#else
++	  _M_decimal_point = static_cast<wchar_t>(((union { const char *__s; unsigned int __w; }){ __s: __nl_langinfo_l(_NL_NUMERIC_DECIMAL_POINT_WC, __cloc)}).__w);
++
++	  _M_thousands_sep = static_cast<wchar_t>(((union { const char *__s; unsigned int __w; }){ __s: __nl_langinfo_l(_NL_NUMERIC_THOUSANDS_SEP_WC, __cloc)}).__w);
++#endif
++	  _M_grouping = __nl_langinfo_l(GROUPING, __cloc);
++
++	  const char* __cpossign = __nl_langinfo_l(__POSITIVE_SIGN, __cloc);
++	  const char* __cnegsign = __nl_langinfo_l(__NEGATIVE_SIGN, __cloc);
++	  const char* __ccurr = __nl_langinfo_l(__INT_CURR_SYMBOL, __cloc);
++
++	  mbstate_t __state;
++	  size_t __len = strlen(__cpossign);
++	  if (__len)
++	    {
++	      ++__len;
++	      memset(&__state, 0, sizeof(mbstate_t));
++	      wchar_t* __wcs = new wchar_t[__len];
++	      mbsrtowcs(__wcs, &__cpossign, __len, &__state);
++	      _M_positive_sign = __wcs;
++	    }
++	  else
++	    _M_positive_sign = L"";
++
++	  char __nposn = *(__nl_langinfo_l(__INT_N_SIGN_POSN, __cloc));
++	  __len = strlen(__cnegsign);
++	  if (!__nposn)
++	    _M_negative_sign = L"()";
++	  else if (__len)
++	    { 
++	      ++__len;
++	      memset(&__state, 0, sizeof(mbstate_t));
++	      wchar_t* __wcs = new wchar_t[__len];
++	      mbsrtowcs(__wcs, &__cnegsign, __len, &__state);
++	      _M_negative_sign = __wcs;
++	    }
++	  else
++	    _M_negative_sign = L"";
++
++	  // _Intl == true.
++	  __len = strlen(__ccurr);
++	  if (__len)
++	    {
++	      ++__len;
++	      memset(&__state, 0, sizeof(mbstate_t));
++	      wchar_t* __wcs = new wchar_t[__len];
++	      mbsrtowcs(__wcs, &__ccurr, __len, &__state);
++	      _M_curr_symbol = __wcs;
++	    }
++	  else
++	    _M_curr_symbol = L"";
++
++	  _M_frac_digits = *(__nl_langinfo_l(__INT_FRAC_DIGITS, __cloc));
++	  char __pprecedes = *(__nl_langinfo_l(__INT_P_CS_PRECEDES, __cloc));
++	  char __pspace = *(__nl_langinfo_l(__INT_P_SEP_BY_SPACE, __cloc));
++	  char __pposn = *(__nl_langinfo_l(__INT_P_SIGN_POSN, __cloc));
++	  _M_pos_format = _S_construct_pattern(__pprecedes, __pspace, __pposn);
++	  char __nprecedes = *(__nl_langinfo_l(__INT_N_CS_PRECEDES, __cloc));
++	  char __nspace = *(__nl_langinfo_l(__INT_N_SEP_BY_SPACE, __cloc));
++	  _M_neg_format = _S_construct_pattern(__nprecedes, __nspace, __nposn);
++
++#ifdef __UCLIBC_HAS_XLOCALE__
++	  __uselocale(__old);
++#else
++	  setlocale(LC_ALL, __old);
++	  free(__old);
++#endif
++	}
++    }
++
++  template<> 
++    void
++    moneypunct<wchar_t, false>::_M_initialize_moneypunct(__c_locale __cloc,
++#ifdef __UCLIBC_HAS_XLOCALE__
++							 const char*)
++#else
++							 const char* __name)
++#endif
++    {
++      if (!__cloc)
++	{
++	  // "C" locale
++	  _M_decimal_point = L'.';
++	  _M_thousands_sep = L',';
++	  _M_grouping = "";
++	  _M_curr_symbol = L"";
++	  _M_positive_sign = L"";
++	  _M_negative_sign = L"";
++	  _M_frac_digits = 0;
++	  _M_pos_format = money_base::_S_default_pattern;
++	  _M_neg_format = money_base::_S_default_pattern;
++	}
++      else
++	{
++	  // Named locale.
++#ifdef __UCLIBC_HAS_XLOCALE__
++	  __c_locale __old = __uselocale(__cloc);
++#else
++	  // Switch to named locale so that mbsrtowcs will work.
++	  char* __old = strdup(setlocale(LC_ALL, NULL));
++	  setlocale(LC_ALL, __name);
++#endif
++
++#ifdef __UCLIBC_MJN3_ONLY__
++#warning fix this
++#endif
++#ifdef __UCLIBC__
++# ifdef __UCLIBC_HAS_XLOCALE__
++	  _M_decimal_point = __cloc->decimal_point_wc;
++	  _M_thousands_sep = __cloc->thousands_sep_wc;
++# else
++	  _M_decimal_point = __global_locale->decimal_point_wc;
++	  _M_thousands_sep = __global_locale->thousands_sep_wc;
++# endif
++#else
++	  _M_decimal_point = static_cast<wchar_t>(((union { const char *__s; unsigned int __w; }){ __s: __nl_langinfo_l(_NL_NUMERIC_DECIMAL_POINT_WC, __cloc)}).__w);
++	  _M_thousands_sep = static_cast<wchar_t>(((union { const char *__s; unsigned int __w; }){ __s: __nl_langinfo_l(_NL_NUMERIC_THOUSANDS_SEP_WC, __cloc)}).__w);
++#endif
++	  _M_grouping = __nl_langinfo_l(GROUPING, __cloc);
++
++	  const char* __cpossign = __nl_langinfo_l(__POSITIVE_SIGN, __cloc);
++	  const char* __cnegsign = __nl_langinfo_l(__NEGATIVE_SIGN, __cloc);
++	  const char* __ccurr = __nl_langinfo_l(__CURRENCY_SYMBOL, __cloc);
++
++	  mbstate_t __state;
++	  size_t __len;
++	  __len = strlen(__cpossign);
++	  if (__len)
++	    {
++	      ++__len;
++	      memset(&__state, 0, sizeof(mbstate_t));
++	      wchar_t* __wcs = new wchar_t[__len];
++	      mbsrtowcs(__wcs, &__cpossign, __len, &__state);
++	      _M_positive_sign = __wcs;
++	    }
++	  else
++	    _M_positive_sign = L"";
++
++	  char __nposn = *(__nl_langinfo_l(__N_SIGN_POSN, __cloc));
++	  __len = strlen(__cnegsign);
++	  if (!__nposn)
++	    _M_negative_sign = L"()";
++	  else if (__len)
++	    { 
++	      ++__len;
++	      memset(&__state, 0, sizeof(mbstate_t));
++	      wchar_t* __wcs = new wchar_t[__len];
++	      mbsrtowcs(__wcs, &__cnegsign, __len, &__state);
++	      _M_negative_sign = __wcs;
++	    }
++	  else
++	    _M_negative_sign = L"";
++
++	  // _Intl == true.
++	  __len = strlen(__ccurr);
++	  if (__len)
++	    {
++	      ++__len;
++	      memset(&__state, 0, sizeof(mbstate_t));
++	      wchar_t* __wcs = new wchar_t[__len];
++	      mbsrtowcs(__wcs, &__ccurr, __len, &__state);
++	      _M_curr_symbol = __wcs;
++	    }
++	  else
++	    _M_curr_symbol = L"";
++
++	  _M_frac_digits = *(__nl_langinfo_l(__FRAC_DIGITS, __cloc));
++	  char __pprecedes = *(__nl_langinfo_l(__P_CS_PRECEDES, __cloc));
++	  char __pspace = *(__nl_langinfo_l(__P_SEP_BY_SPACE, __cloc));
++	  char __pposn = *(__nl_langinfo_l(__P_SIGN_POSN, __cloc));
++	  _M_pos_format = _S_construct_pattern(__pprecedes, __pspace, __pposn);
++	  char __nprecedes = *(__nl_langinfo_l(__N_CS_PRECEDES, __cloc));
++	  char __nspace = *(__nl_langinfo_l(__N_SEP_BY_SPACE, __cloc));
++	  _M_neg_format = _S_construct_pattern(__nprecedes, __nspace, __nposn);
++
++#ifdef __UCLIBC_HAS_XLOCALE__
++	  __uselocale(__old);
++#else
++	  setlocale(LC_ALL, __old);
++	  free(__old);
++#endif
++	}
++    }
++
++  template<> 
++    moneypunct<wchar_t, true>::~moneypunct()
++    {
++      if (wcslen(_M_positive_sign))
++	delete [] _M_positive_sign;
++      if (wcslen(_M_negative_sign) && (wcscmp(_M_negative_sign, L"()") != 0))
++	delete [] _M_negative_sign;
++      if (wcslen(_M_curr_symbol))
++	delete [] _M_curr_symbol;
++    }
++
++  template<> 
++    moneypunct<wchar_t, false>::~moneypunct()
++    {
++      if (wcslen(_M_positive_sign))
++	delete [] _M_positive_sign;
++      if (wcslen(_M_negative_sign) && (wcscmp(_M_negative_sign, L"()") != 0))
++	delete [] _M_negative_sign;
++      if (wcslen(_M_curr_symbol))
++	delete [] _M_curr_symbol;
++    }
++#endif
++}
+diff -urN gcc-3.3.2/libstdc++-v3/config/locale/uclibc/numeric_members.cc gcc-3.3.2-uClibc/libstdc++-v3/config/locale/uclibc/numeric_members.cc
+--- gcc-3.3.2/libstdc++-v3/config/locale/uclibc/numeric_members.cc	1969-12-31 18:00:00.000000000 -0600
++++ gcc-3.3.2-uClibc/libstdc++-v3/config/locale/uclibc/numeric_members.cc	2004-01-09 18:20:59.000000000 -0600
+@@ -0,0 +1,129 @@
++// std::numpunct implementation details, GNU version -*- C++ -*-
++
++// Copyright (C) 2001, 2002 Free Software Foundation, Inc.
++//
++// This file is part of the GNU ISO C++ Library.  This library is free
++// software; you can redistribute it and/or modify it under the
++// terms of the GNU General Public License as published by the
++// Free Software Foundation; either version 2, or (at your option)
++// any later version.
++
++// This library is distributed in the hope that it will be useful,
++// but WITHOUT ANY WARRANTY; without even the implied warranty of
++// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++// GNU General Public License for more details.
++
++// You should have received a copy of the GNU General Public License along
++// with this library; see the file COPYING.  If not, write to the Free
++// Software Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307,
++// USA.
++
++// As a special exception, you may use this file as part of a free software
++// library without restriction.  Specifically, if other files instantiate
++// templates or use macros or inline functions from this file, or you compile
++// this file and link it with other files to produce an executable, this
++// file does not by itself cause the resulting executable to be covered by
++// the GNU General Public License.  This exception does not however
++// invalidate any other reasons why the executable file might be covered by
++// the GNU General Public License.
++
++//
++// ISO C++ 14882: 22.2.3.1.2  numpunct virtual functions
++//
++
++// Written by Benjamin Kosnik <bkoz@redhat.com>
++
++#define _LIBC
++#include <locale>
++#undef _LIBC
++#include <bits/c++locale_internal.h>
++
++#ifdef __UCLIBC_MJN3_ONLY__
++#warning tailor for stub locale support
++#endif
++#ifndef __UCLIBC_HAS_XLOCALE__
++#define __nl_langinfo_l(N, L)         nl_langinfo((N))
++#endif
++
++namespace std
++{
++  template<> 
++    void
++    numpunct<char>::_M_initialize_numpunct(__c_locale __cloc)
++    {
++      if (!__cloc)
++	{
++	  // "C" locale
++	  _M_decimal_point = '.';
++	  _M_thousands_sep = ',';
++	  _M_grouping = "";
++	}
++      else
++	{
++	  // Named locale.
++	  _M_decimal_point = *(__nl_langinfo_l(RADIXCHAR, __cloc));
++	  _M_thousands_sep = *(__nl_langinfo_l(THOUSEP, __cloc));
++	  // Check for NUL, which implies no grouping.
++	  if (_M_thousands_sep == '\0')
++	    _M_grouping = "";
++	  else
++	    _M_grouping = __nl_langinfo_l(GROUPING, __cloc);
++	}
++      // NB: There is no way to extact this info from posix locales.
++      // _M_truename = __nl_langinfo_l(YESSTR, __cloc);
++      _M_truename = "true";
++      // _M_falsename = __nl_langinfo_l(NOSTR, __cloc);
++      _M_falsename = "false";
++    }
++ 
++  template<> 
++    numpunct<char>::~numpunct()
++    { }
++   
++#ifdef _GLIBCPP_USE_WCHAR_T
++  template<> 
++    void
++    numpunct<wchar_t>::_M_initialize_numpunct(__c_locale __cloc)
++    {
++      if (!__cloc)
++	{
++	  // "C" locale
++	  _M_decimal_point = L'.';
++	  _M_thousands_sep = L',';
++	  _M_grouping = "";
++	}
++      else
++	{
++	  // Named locale.
++#ifdef __UCLIBC_MJN3_ONLY__
++#warning fix this
++#endif
++#ifdef __UCLIBC__
++# ifdef __UCLIBC_HAS_XLOCALE__
++	  _M_decimal_point = __cloc->decimal_point_wc;
++	  _M_thousands_sep = __cloc->thousands_sep_wc;
++# else
++	  _M_decimal_point = __global_locale->decimal_point_wc;
++	  _M_thousands_sep = __global_locale->thousands_sep_wc;
++# endif
++#else
++	  _M_decimal_point = static_cast<wchar_t>(((union { const char *__s; unsigned int __w; }){ __s: __nl_langinfo_l(_NL_NUMERIC_DECIMAL_POINT_WC, __cloc)}).__w);
++	  _M_thousands_sep = static_cast<wchar_t>(((union { const char *__s; unsigned int __w; }){ __s: __nl_langinfo_l(_NL_NUMERIC_THOUSANDS_SEP_WC, __cloc)}).__w);
++#endif
++	  if (_M_thousands_sep == L'\0')
++	    _M_grouping = "";
++	  else
++	    _M_grouping = __nl_langinfo_l(GROUPING, __cloc);
++	}
++      // NB: There is no way to extact this info from posix locales.
++      // _M_truename = __nl_langinfo_l(YESSTR, __cloc);
++      _M_truename = L"true";
++      // _M_falsename = __nl_langinfo_l(NOSTR, __cloc);
++      _M_falsename = L"false";
++    }
++
++  template<> 
++    numpunct<wchar_t>::~numpunct()
++    { }
++ #endif
++}
+diff -urN gcc-3.3.2/libstdc++-v3/config/locale/uclibc/time_members.cc gcc-3.3.2-uClibc/libstdc++-v3/config/locale/uclibc/time_members.cc
+--- gcc-3.3.2/libstdc++-v3/config/locale/uclibc/time_members.cc	1969-12-31 18:00:00.000000000 -0600
++++ gcc-3.3.2-uClibc/libstdc++-v3/config/locale/uclibc/time_members.cc	2004-01-09 08:25:03.000000000 -0600
+@@ -0,0 +1,341 @@
++// std::time_get, std::time_put implementation, GNU version -*- C++ -*-
++
++// Copyright (C) 2001, 2002 Free Software Foundation, Inc.
++//
++// This file is part of the GNU ISO C++ Library.  This library is free
++// software; you can redistribute it and/or modify it under the
++// terms of the GNU General Public License as published by the
++// Free Software Foundation; either version 2, or (at your option)
++// any later version.
++
++// This library is distributed in the hope that it will be useful,
++// but WITHOUT ANY WARRANTY; without even the implied warranty of
++// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++// GNU General Public License for more details.
++
++// You should have received a copy of the GNU General Public License along
++// with this library; see the file COPYING.  If not, write to the Free
++// Software Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307,
++// USA.
++
++// As a special exception, you may use this file as part of a free software
++// library without restriction.  Specifically, if other files instantiate
++// templates or use macros or inline functions from this file, or you compile
++// this file and link it with other files to produce an executable, this
++// file does not by itself cause the resulting executable to be covered by
++// the GNU General Public License.  This exception does not however
++// invalidate any other reasons why the executable file might be covered by
++// the GNU General Public License.
++
++//
++// ISO C++ 14882: 22.2.5.1.2 - time_get virtual functions
++// ISO C++ 14882: 22.2.5.3.2 - time_put virtual functions
++//
++
++// Written by Benjamin Kosnik <bkoz@redhat.com>
++
++#include <locale>
++#include <bits/c++locale_internal.h>
++
++#ifdef __UCLIBC_MJN3_ONLY__
++#warning tailor for stub locale support
++#endif
++#ifndef __UCLIBC_HAS_XLOCALE__
++#define __nl_langinfo_l(N, L)         nl_langinfo((N))
++#endif
++
++namespace std
++{
++  template<>
++    void
++    __timepunct<char>::
++    _M_put(char* __s, size_t __maxlen, const char* __format, 
++	   const tm* __tm) const
++    {
++#ifdef __UCLIBC_HAS_XLOCALE__
++      __strftime_l(__s, __maxlen, __format, __tm, _M_c_locale_timepunct);
++#else
++      char* __old = strdup(setlocale(LC_ALL, NULL));
++      setlocale(LC_ALL, _M_name_timepunct);
++      strftime(__s, __maxlen, __format, __tm);
++      setlocale(LC_ALL, __old);
++      free(__old);
++#endif
++    }
++
++  template<> 
++    void
++    __timepunct<char>::_M_initialize_timepunct(__c_locale __cloc)
++    {
++      if (!__cloc)
++	{
++	  // "C" locale
++	  _M_c_locale_timepunct = _S_c_locale;
++
++	  _M_date_format = "%m/%d/%y";
++	  _M_date_era_format = "%m/%d/%y";
++	  _M_time_format = "%H:%M:%S";
++	  _M_time_era_format = "%H:%M:%S";
++	  _M_date_time_format = "";
++	  _M_date_time_era_format = "";
++	  _M_am = "AM";
++	  _M_pm = "PM";
++	  _M_am_pm_format = "";
++
++	  // Day names, starting with "C"'s Sunday.
++	  _M_day1 = "Sunday";
++	  _M_day2 = "Monday";
++	  _M_day3 = "Tuesday";
++	  _M_day4 = "Wednesday";
++	  _M_day5 = "Thursday";
++	  _M_day6 = "Friday";
++	  _M_day7 = "Saturday";
++
++	  // Abbreviated day names, starting with "C"'s Sun.
++	  _M_day_a1 = "Sun";
++	  _M_day_a2 = "Mon";
++	  _M_day_a3 = "Tue";
++	  _M_day_a4 = "Wed";
++	  _M_day_a5 = "Thu";
++	  _M_day_a6 = "Fri";
++	  _M_day_a7 = "Sat";
++
++	  // Month names, starting with "C"'s January.
++	  _M_month01 = "January";
++	  _M_month02 = "February";
++	  _M_month03 = "March";
++	  _M_month04 = "April";
++	  _M_month05 = "May";
++	  _M_month06 = "June";
++	  _M_month07 = "July";
++	  _M_month08 = "August";
++	  _M_month09 = "September";
++	  _M_month10 = "October";
++	  _M_month11 = "November";
++	  _M_month12 = "December";
++
++	  // Abbreviated month names, starting with "C"'s Jan.
++	  _M_month_a01 = "Jan";
++	  _M_month_a02 = "Feb";
++	  _M_month_a03 = "Mar";
++	  _M_month_a04 = "Apr";
++	  _M_month_a05 = "May";
++	  _M_month_a06 = "Jun";
++	  _M_month_a07 = "July";
++	  _M_month_a08 = "Aug";
++	  _M_month_a09 = "Sep";
++	  _M_month_a10 = "Oct";
++	  _M_month_a11 = "Nov";
++	  _M_month_a12 = "Dec";
++	}
++      else
++	{
++	  _M_c_locale_timepunct = _S_clone_c_locale(__cloc); 
++
++	  _M_date_format = __nl_langinfo_l(D_FMT, __cloc);
++	  _M_date_era_format = __nl_langinfo_l(ERA_D_FMT, __cloc);
++	  _M_time_format = __nl_langinfo_l(T_FMT, __cloc);
++	  _M_time_era_format = __nl_langinfo_l(ERA_T_FMT, __cloc);
++	  _M_date_time_format = __nl_langinfo_l(D_T_FMT, __cloc);
++	  _M_date_time_era_format = __nl_langinfo_l(ERA_D_T_FMT, __cloc);
++	  _M_am = __nl_langinfo_l(AM_STR, __cloc);
++	  _M_pm = __nl_langinfo_l(PM_STR, __cloc);
++	  _M_am_pm_format = __nl_langinfo_l(T_FMT_AMPM, __cloc);
++
++	  // Day names, starting with "C"'s Sunday.
++	  _M_day1 = __nl_langinfo_l(DAY_1, __cloc);
++	  _M_day2 = __nl_langinfo_l(DAY_2, __cloc);
++	  _M_day3 = __nl_langinfo_l(DAY_3, __cloc);
++	  _M_day4 = __nl_langinfo_l(DAY_4, __cloc);
++	  _M_day5 = __nl_langinfo_l(DAY_5, __cloc);
++	  _M_day6 = __nl_langinfo_l(DAY_6, __cloc);
++	  _M_day7 = __nl_langinfo_l(DAY_7, __cloc);
++
++	  // Abbreviated day names, starting with "C"'s Sun.
++	  _M_day_a1 = __nl_langinfo_l(ABDAY_1, __cloc);
++	  _M_day_a2 = __nl_langinfo_l(ABDAY_2, __cloc);
++	  _M_day_a3 = __nl_langinfo_l(ABDAY_3, __cloc);
++	  _M_day_a4 = __nl_langinfo_l(ABDAY_4, __cloc);
++	  _M_day_a5 = __nl_langinfo_l(ABDAY_5, __cloc);
++	  _M_day_a6 = __nl_langinfo_l(ABDAY_6, __cloc);
++	  _M_day_a7 = __nl_langinfo_l(ABDAY_7, __cloc);
++
++	  // Month names, starting with "C"'s January.
++	  _M_month01 = __nl_langinfo_l(MON_1, __cloc);
++	  _M_month02 = __nl_langinfo_l(MON_2, __cloc);
++	  _M_month03 = __nl_langinfo_l(MON_3, __cloc);
++	  _M_month04 = __nl_langinfo_l(MON_4, __cloc);
++	  _M_month05 = __nl_langinfo_l(MON_5, __cloc);
++	  _M_month06 = __nl_langinfo_l(MON_6, __cloc);
++	  _M_month07 = __nl_langinfo_l(MON_7, __cloc);
++	  _M_month08 = __nl_langinfo_l(MON_8, __cloc);
++	  _M_month09 = __nl_langinfo_l(MON_9, __cloc);
++	  _M_month10 = __nl_langinfo_l(MON_10, __cloc);
++	  _M_month11 = __nl_langinfo_l(MON_11, __cloc);
++	  _M_month12 = __nl_langinfo_l(MON_12, __cloc);
++
++	  // Abbreviated month names, starting with "C"'s Jan.
++	  _M_month_a01 = __nl_langinfo_l(ABMON_1, __cloc);
++	  _M_month_a02 = __nl_langinfo_l(ABMON_2, __cloc);
++	  _M_month_a03 = __nl_langinfo_l(ABMON_3, __cloc);
++	  _M_month_a04 = __nl_langinfo_l(ABMON_4, __cloc);
++	  _M_month_a05 = __nl_langinfo_l(ABMON_5, __cloc);
++	  _M_month_a06 = __nl_langinfo_l(ABMON_6, __cloc);
++	  _M_month_a07 = __nl_langinfo_l(ABMON_7, __cloc);
++	  _M_month_a08 = __nl_langinfo_l(ABMON_8, __cloc);
++	  _M_month_a09 = __nl_langinfo_l(ABMON_9, __cloc);
++	  _M_month_a10 = __nl_langinfo_l(ABMON_10, __cloc);
++	  _M_month_a11 = __nl_langinfo_l(ABMON_11, __cloc);
++	  _M_month_a12 = __nl_langinfo_l(ABMON_12, __cloc);
++	}
++    }
++
++#ifdef _GLIBCPP_USE_WCHAR_T
++  template<>
++    void
++    __timepunct<wchar_t>::
++    _M_put(wchar_t* __s, size_t __maxlen, const wchar_t* __format, 
++	   const tm* __tm) const
++    {
++#ifdef __UCLIBC_HAS_XLOCALE__
++      __wcsftime_l(__s, __maxlen, __format, __tm, _M_c_locale_timepunct);
++#else
++      char* __old = strdup(setlocale(LC_ALL, NULL));
++      setlocale(LC_ALL, _M_name_timepunct);
++      wcsftime(__s, __maxlen, __format, __tm);
++      setlocale(LC_ALL, __old);
++      free(__old);
++#endif
++    }
++
++  template<> 
++    void
++    __timepunct<wchar_t>::_M_initialize_timepunct(__c_locale __cloc)
++    {
++#warning wide time stuff
++//       if (!__cloc)
++	{
++	  // "C" locale
++	  _M_c_locale_timepunct = _S_c_locale;
++
++	  _M_date_format = L"%m/%d/%y";
++	  _M_date_era_format = L"%m/%d/%y";
++	  _M_time_format = L"%H:%M:%S";
++	  _M_time_era_format = L"%H:%M:%S";
++	  _M_date_time_format = L"";
++	  _M_date_time_era_format = L"";
++	  _M_am = L"AM";
++	  _M_pm = L"PM";
++	  _M_am_pm_format = L"";
++
++	  // Day names, starting with "C"'s Sunday.
++	  _M_day1 = L"Sunday";
++	  _M_day2 = L"Monday";
++	  _M_day3 = L"Tuesday";
++	  _M_day4 = L"Wednesday";
++	  _M_day5 = L"Thursday";
++	  _M_day6 = L"Friday";
++	  _M_day7 = L"Saturday";
++
++	  // Abbreviated day names, starting with "C"'s Sun.
++	  _M_day_a1 = L"Sun";
++	  _M_day_a2 = L"Mon";
++	  _M_day_a3 = L"Tue";
++	  _M_day_a4 = L"Wed";
++	  _M_day_a5 = L"Thu";
++	  _M_day_a6 = L"Fri";
++	  _M_day_a7 = L"Sat";
++
++	  // Month names, starting with "C"'s January.
++	  _M_month01 = L"January";
++	  _M_month02 = L"February";
++	  _M_month03 = L"March";
++	  _M_month04 = L"April";
++	  _M_month05 = L"May";
++	  _M_month06 = L"June";
++	  _M_month07 = L"July";
++	  _M_month08 = L"August";
++	  _M_month09 = L"September";
++	  _M_month10 = L"October";
++	  _M_month11 = L"November";
++	  _M_month12 = L"December";
++
++	  // Abbreviated month names, starting with "C"'s Jan.
++	  _M_month_a01 = L"Jan";
++	  _M_month_a02 = L"Feb";
++	  _M_month_a03 = L"Mar";
++	  _M_month_a04 = L"Apr";
++	  _M_month_a05 = L"May";
++	  _M_month_a06 = L"Jun";
++	  _M_month_a07 = L"July";
++	  _M_month_a08 = L"Aug";
++	  _M_month_a09 = L"Sep";
++	  _M_month_a10 = L"Oct";
++	  _M_month_a11 = L"Nov";
++	  _M_month_a12 = L"Dec";
++	}
++#if 0
++      else
++	{
++	  _M_c_locale_timepunct = _S_clone_c_locale(__cloc); 
++
++	  _M_date_format = reinterpret_cast<wchar_t*>(__nl_langinfo_l(_NL_WD_FMT, __cloc));
++	  _M_date_era_format = reinterpret_cast<wchar_t*>(__nl_langinfo_l(_NL_WERA_D_FMT, __cloc));
++	  _M_time_format = reinterpret_cast<wchar_t*>(__nl_langinfo_l(_NL_WT_FMT, __cloc));
++	  _M_time_era_format = reinterpret_cast<wchar_t*>(__nl_langinfo_l(_NL_WERA_T_FMT, __cloc));
++	  _M_date_time_format = reinterpret_cast<wchar_t*>(__nl_langinfo_l(_NL_WD_T_FMT, __cloc));
++	  _M_date_time_era_format = reinterpret_cast<wchar_t*>(__nl_langinfo_l(_NL_WERA_D_T_FMT, __cloc));
++	  _M_am = reinterpret_cast<wchar_t*>(__nl_langinfo_l(_NL_WAM_STR, __cloc));
++	  _M_pm = reinterpret_cast<wchar_t*>(__nl_langinfo_l(_NL_WPM_STR, __cloc));
++	  _M_am_pm_format = reinterpret_cast<wchar_t*>(__nl_langinfo_l(_NL_WT_FMT_AMPM, __cloc));
++
++	  // Day names, starting with "C"'s Sunday.
++	  _M_day1 = reinterpret_cast<wchar_t*>(__nl_langinfo_l(_NL_WDAY_1, __cloc));
++	  _M_day2 = reinterpret_cast<wchar_t*>(__nl_langinfo_l(_NL_WDAY_2, __cloc));
++	  _M_day3 = reinterpret_cast<wchar_t*>(__nl_langinfo_l(_NL_WDAY_3, __cloc));
++	  _M_day4 = reinterpret_cast<wchar_t*>(__nl_langinfo_l(_NL_WDAY_4, __cloc));
++	  _M_day5 = reinterpret_cast<wchar_t*>(__nl_langinfo_l(_NL_WDAY_5, __cloc));
++	  _M_day6 = reinterpret_cast<wchar_t*>(__nl_langinfo_l(_NL_WDAY_6, __cloc));
++	  _M_day7 = reinterpret_cast<wchar_t*>(__nl_langinfo_l(_NL_WDAY_7, __cloc));
++
++	  // Abbreviated day names, starting with "C"'s Sun.
++	  _M_day_a1 = reinterpret_cast<wchar_t*>(__nl_langinfo_l(_NL_WABDAY_1, __cloc));
++	  _M_day_a2 = reinterpret_cast<wchar_t*>(__nl_langinfo_l(_NL_WABDAY_2, __cloc));
++	  _M_day_a3 = reinterpret_cast<wchar_t*>(__nl_langinfo_l(_NL_WABDAY_3, __cloc));
++	  _M_day_a4 = reinterpret_cast<wchar_t*>(__nl_langinfo_l(_NL_WABDAY_4, __cloc));
++	  _M_day_a5 = reinterpret_cast<wchar_t*>(__nl_langinfo_l(_NL_WABDAY_5, __cloc));
++	  _M_day_a6 = reinterpret_cast<wchar_t*>(__nl_langinfo_l(_NL_WABDAY_6, __cloc));
++	  _M_day_a7 = reinterpret_cast<wchar_t*>(__nl_langinfo_l(_NL_WABDAY_7, __cloc));
++
++	  // Month names, starting with "C"'s January.
++	  _M_month01 = reinterpret_cast<wchar_t*>(__nl_langinfo_l(_NL_WMON_1, __cloc));
++	  _M_month02 = reinterpret_cast<wchar_t*>(__nl_langinfo_l(_NL_WMON_2, __cloc));
++	  _M_month03 = reinterpret_cast<wchar_t*>(__nl_langinfo_l(_NL_WMON_3, __cloc));
++	  _M_month04 = reinterpret_cast<wchar_t*>(__nl_langinfo_l(_NL_WMON_4, __cloc));
++	  _M_month05 = reinterpret_cast<wchar_t*>(__nl_langinfo_l(_NL_WMON_5, __cloc));
++	  _M_month06 = reinterpret_cast<wchar_t*>(__nl_langinfo_l(_NL_WMON_6, __cloc));
++	  _M_month07 = reinterpret_cast<wchar_t*>(__nl_langinfo_l(_NL_WMON_7, __cloc));
++	  _M_month08 = reinterpret_cast<wchar_t*>(__nl_langinfo_l(_NL_WMON_8, __cloc));
++	  _M_month09 = reinterpret_cast<wchar_t*>(__nl_langinfo_l(_NL_WMON_9, __cloc));
++	  _M_month10 = reinterpret_cast<wchar_t*>(__nl_langinfo_l(_NL_WMON_10, __cloc));
++	  _M_month11 = reinterpret_cast<wchar_t*>(__nl_langinfo_l(_NL_WMON_11, __cloc));
++	  _M_month12 = reinterpret_cast<wchar_t*>(__nl_langinfo_l(_NL_WMON_12, __cloc));
++
++	  // Abbreviated month names, starting with "C"'s Jan.
++	  _M_month_a01 = reinterpret_cast<wchar_t*>(__nl_langinfo_l(_NL_WABMON_1, __cloc));
++	  _M_month_a02 = reinterpret_cast<wchar_t*>(__nl_langinfo_l(_NL_WABMON_2, __cloc));
++	  _M_month_a03 = reinterpret_cast<wchar_t*>(__nl_langinfo_l(_NL_WABMON_3, __cloc));
++	  _M_month_a04 = reinterpret_cast<wchar_t*>(__nl_langinfo_l(_NL_WABMON_4, __cloc));
++	  _M_month_a05 = reinterpret_cast<wchar_t*>(__nl_langinfo_l(_NL_WABMON_5, __cloc));
++	  _M_month_a06 = reinterpret_cast<wchar_t*>(__nl_langinfo_l(_NL_WABMON_6, __cloc));
++	  _M_month_a07 = reinterpret_cast<wchar_t*>(__nl_langinfo_l(_NL_WABMON_7, __cloc));
++	  _M_month_a08 = reinterpret_cast<wchar_t*>(__nl_langinfo_l(_NL_WABMON_8, __cloc));
++	  _M_month_a09 = reinterpret_cast<wchar_t*>(__nl_langinfo_l(_NL_WABMON_9, __cloc));
++	  _M_month_a10 = reinterpret_cast<wchar_t*>(__nl_langinfo_l(_NL_WABMON_10, __cloc));
++	  _M_month_a11 = reinterpret_cast<wchar_t*>(__nl_langinfo_l(_NL_WABMON_11, __cloc));
++	  _M_month_a12 = reinterpret_cast<wchar_t*>(__nl_langinfo_l(_NL_WABMON_12, __cloc));
++	}
++#endif // 0
++    }
++#endif
++}
+diff -urN gcc-3.3.2/libstdc++-v3/config/locale/uclibc/time_members.h gcc-3.3.2-uClibc/libstdc++-v3/config/locale/uclibc/time_members.h
+--- gcc-3.3.2/libstdc++-v3/config/locale/uclibc/time_members.h	1969-12-31 18:00:00.000000000 -0600
++++ gcc-3.3.2-uClibc/libstdc++-v3/config/locale/uclibc/time_members.h	2004-01-09 04:26:21.000000000 -0600
+@@ -0,0 +1,68 @@
++// std::time_get, std::time_put implementation, GNU version -*- C++ -*-
++
++// Copyright (C) 2001, 2002, 2003 Free Software Foundation, Inc.
++//
++// This file is part of the GNU ISO C++ Library.  This library is free
++// software; you can redistribute it and/or modify it under the
++// terms of the GNU General Public License as published by the
++// Free Software Foundation; either version 2, or (at your option)
++// any later version.
++
++// This library is distributed in the hope that it will be useful,
++// but WITHOUT ANY WARRANTY; without even the implied warranty of
++// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++// GNU General Public License for more details.
++
++// You should have received a copy of the GNU General Public License along
++// with this library; see the file COPYING.  If not, write to the Free
++// Software Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307,
++// USA.
++
++// As a special exception, you may use this file as part of a free software
++// library without restriction.  Specifically, if other files instantiate
++// templates or use macros or inline functions from this file, or you compile
++// this file and link it with other files to produce an executable, this
++// file does not by itself cause the resulting executable to be covered by
++// the GNU General Public License.  This exception does not however
++// invalidate any other reasons why the executable file might be covered by
++// the GNU General Public License.
++
++//
++// ISO C++ 14882: 22.2.5.1.2 - time_get functions
++// ISO C++ 14882: 22.2.5.3.2 - time_put functions
++//
++
++// Written by Benjamin Kosnik <bkoz@redhat.com>
++
++  template<typename _CharT>
++    __timepunct<_CharT>::__timepunct(size_t __refs) 
++    : locale::facet(__refs)
++    { 
++#ifndef __UCLIBC_HAS_XLOCALE__
++      _M_name_timepunct = _S_c_name;
++#endif
++      _M_initialize_timepunct(); 
++    }
++
++  template<typename _CharT>
++    __timepunct<_CharT>::__timepunct(__c_locale __cloc, 
++				     const char* __s,
++				     size_t __refs) 
++    : locale::facet(__refs)
++    { 
++#ifndef __UCLIBC_HAS_XLOCALE__
++      _M_name_timepunct = new char[strlen(__s) + 1];
++      strcpy(_M_name_timepunct, __s);
++#endif
++      _M_initialize_timepunct(__cloc); 
++    }
++
++  template<typename _CharT>
++    __timepunct<_CharT>::~__timepunct()
++    { 
++#ifndef __UCLIBC_HAS_XLOCALE__
++      if (_S_c_name != _M_name_timepunct)
++	delete [] _M_name_timepunct;
++#endif
++      _S_destroy_c_locale(_M_c_locale_timepunct); 
++    }
+diff -urN gcc-3.3.2/libstdc++-v3/config/os/uclibc/ctype_base.h gcc-3.3.2-uClibc/libstdc++-v3/config/os/uclibc/ctype_base.h
+--- gcc-3.3.2/libstdc++-v3/config/os/uclibc/ctype_base.h	1969-12-31 18:00:00.000000000 -0600
++++ gcc-3.3.2-uClibc/libstdc++-v3/config/os/uclibc/ctype_base.h	2004-01-09 02:54:54.000000000 -0600
+@@ -0,0 +1,57 @@
++// Locale support -*- C++ -*-
++
++// Copyright (C) 1997, 1998, 1999, 2000, 2002 Free Software Foundation, Inc.
++//
++// This file is part of the GNU ISO C++ Library.  This library is free
++// software; you can redistribute it and/or modify it under the
++// terms of the GNU General Public License as published by the
++// Free Software Foundation; either version 2, or (at your option)
++// any later version.
++
++// This library is distributed in the hope that it will be useful,
++// but WITHOUT ANY WARRANTY; without even the implied warranty of
++// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++// GNU General Public License for more details.
++
++// You should have received a copy of the GNU General Public License along
++// with this library; see the file COPYING.  If not, write to the Free
++// Software Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307,
++// USA.
++
++// As a special exception, you may use this file as part of a free software
++// library without restriction.  Specifically, if other files instantiate
++// templates or use macros or inline functions from this file, or you compile
++// this file and link it with other files to produce an executable, this
++// file does not by itself cause the resulting executable to be covered by
++// the GNU General Public License.  This exception does not however
++// invalidate any other reasons why the executable file might be covered by
++// the GNU General Public License.
++
++//
++// ISO C++ 14882: 22.1  Locales
++//
++  
++// Information as gleaned from /usr/include/ctype.h
++  
++  struct ctype_base
++  {
++    // Note: In uClibc, the following two types depend on configuration.
++
++    // Non-standard typedefs.
++    typedef const __ctype_touplow_t* __to_type;
++    // NB: Offsets into ctype<char>::_M_table force a particular size
++    // on the mask type. Because of this, we don't use an enum.
++    typedef __ctype_mask_t	mask;   
++
++    static const mask upper    	= _ISupper;
++    static const mask lower 	= _ISlower;
++    static const mask alpha 	= _ISalpha;
++    static const mask digit 	= _ISdigit;
++    static const mask xdigit 	= _ISxdigit;
++    static const mask space 	= _ISspace;
++    static const mask print 	= _ISprint;
++    static const mask graph 	= _ISgraph;
++    static const mask cntrl 	= _IScntrl;
++    static const mask punct 	= _ISpunct;
++    static const mask alnum 	= _ISalnum;
++  };
+diff -urN gcc-3.3.2/libstdc++-v3/config/os/uclibc/ctype_inline.h gcc-3.3.2-uClibc/libstdc++-v3/config/os/uclibc/ctype_inline.h
+--- gcc-3.3.2/libstdc++-v3/config/os/uclibc/ctype_inline.h	1969-12-31 18:00:00.000000000 -0600
++++ gcc-3.3.2-uClibc/libstdc++-v3/config/os/uclibc/ctype_inline.h	2002-06-24 00:49:19.000000000 -0500
+@@ -0,0 +1,69 @@
++// Locale support -*- C++ -*-
++
++// Copyright (C) 2000, 2002 Free Software Foundation, Inc.
++//
++// This file is part of the GNU ISO C++ Library.  This library is free
++// software; you can redistribute it and/or modify it under the
++// terms of the GNU General Public License as published by the
++// Free Software Foundation; either version 2, or (at your option)
++// any later version.
++
++// This library is distributed in the hope that it will be useful,
++// but WITHOUT ANY WARRANTY; without even the implied warranty of
++// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++// GNU General Public License for more details.
++
++// You should have received a copy of the GNU General Public License along
++// with this library; see the file COPYING.  If not, write to the Free
++// Software Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307,
++// USA.
++
++// As a special exception, you may use this file as part of a free software
++// library without restriction.  Specifically, if other files instantiate
++// templates or use macros or inline functions from this file, or you compile
++// this file and link it with other files to produce an executable, this
++// file does not by itself cause the resulting executable to be covered by
++// the GNU General Public License.  This exception does not however
++// invalidate any other reasons why the executable file might be covered by
++// the GNU General Public License.
++
++//
++// ISO C++ 14882: 22.1  Locales
++//
++  
++// ctype bits to be inlined go here. Non-inlinable (ie virtual do_*)
++// functions go in ctype.cc
++  
++  bool
++  ctype<char>::
++  is(mask __m, char __c) const
++  { return _M_table[static_cast<unsigned char>(__c)] & __m; }
++
++  const char*
++  ctype<char>::
++  is(const char* __low, const char* __high, mask* __vec) const
++  {
++    while (__low < __high)
++      *__vec++ = _M_table[static_cast<unsigned char>(*__low++)];
++    return __high;
++  }
++
++  const char*
++  ctype<char>::
++  scan_is(mask __m, const char* __low, const char* __high) const
++  {
++    while (__low < __high 
++	   && !(_M_table[static_cast<unsigned char>(*__low)] & __m))
++      ++__low;
++    return __low;
++  }
++
++  const char*
++  ctype<char>::
++  scan_not(mask __m, const char* __low, const char* __high) const
++  {
++    while (__low < __high 
++	   && (_M_table[static_cast<unsigned char>(*__low)] & __m) != 0)
++      ++__low;
++    return __low;
++  }
+diff -urN gcc-3.3.2/libstdc++-v3/config/os/uclibc/ctype_noninline.h gcc-3.3.2-uClibc/libstdc++-v3/config/os/uclibc/ctype_noninline.h
+--- gcc-3.3.2/libstdc++-v3/config/os/uclibc/ctype_noninline.h	1969-12-31 18:00:00.000000000 -0600
++++ gcc-3.3.2-uClibc/libstdc++-v3/config/os/uclibc/ctype_noninline.h	2004-01-09 03:34:53.000000000 -0600
+@@ -0,0 +1,90 @@
++// Locale support -*- C++ -*-
++
++// Copyright (C) 1997, 1998, 1999, 2000, 2001, 2002
++// Free Software Foundation, Inc.
++//
++// This file is part of the GNU ISO C++ Library.  This library is free
++// software; you can redistribute it and/or modify it under the
++// terms of the GNU General Public License as published by the
++// Free Software Foundation; either version 2, or (at your option)
++// any later version.
++
++// This library is distributed in the hope that it will be useful,
++// but WITHOUT ANY WARRANTY; without even the implied warranty of
++// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++// GNU General Public License for more details.
++
++// You should have received a copy of the GNU General Public License along
++// with this library; see the file COPYING.  If not, write to the Free
++// Software Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307,
++// USA.
++
++// As a special exception, you may use this file as part of a free software
++// library without restriction.  Specifically, if other files instantiate
++// templates or use macros or inline functions from this file, or you compile
++// this file and link it with other files to produce an executable, this
++// file does not by itself cause the resulting executable to be covered by
++// the GNU General Public License.  This exception does not however
++// invalidate any other reasons why the executable file might be covered by
++// the GNU General Public License.
++
++//
++// ISO C++ 14882: 22.1  Locales
++//
++  
++// Information as gleaned from /usr/include/ctype.h
++
++  const ctype_base::mask*
++  ctype<char>::classic_table() throw()
++  { 
++    return __C_ctype_b;
++  }
++
++  ctype<char>::ctype(__c_locale, const mask* __table, bool __del, 
++		     size_t __refs) 
++  : __ctype_abstract_base<char>(__refs), _M_del(__table != 0 && __del)
++  {
++    _M_toupper = __C_ctype_toupper;
++    _M_tolower = __C_ctype_tolower;
++    _M_table = __table ? __table : __C_ctype_b;
++    _M_c_locale_ctype = _S_c_locale;
++  }
++
++  ctype<char>::ctype(const mask* __table, bool __del, size_t __refs) : 
++  __ctype_abstract_base<char>(__refs), _M_del(__table != 0 && __del)
++  {
++    _M_toupper = __C_ctype_toupper;
++    _M_tolower = __C_ctype_tolower;
++    _M_table = __table ? __table : __C_ctype_b;
++    _M_c_locale_ctype = _S_c_locale; 
++  }
++
++  char
++  ctype<char>::do_toupper(char __c) const
++  { return _M_toupper[static_cast<unsigned char>(__c)]; }
++
++  const char*
++  ctype<char>::do_toupper(char* __low, const char* __high) const
++  {
++    while (__low < __high)
++      {
++	*__low = _M_toupper[static_cast<unsigned char>(*__low)];
++	++__low;
++      }
++    return __high;
++  }
++
++  char
++  ctype<char>::do_tolower(char __c) const
++  { return _M_tolower[static_cast<unsigned char>(__c)]; }
++
++  const char* 
++  ctype<char>::do_tolower(char* __low, const char* __high) const
++  {
++    while (__low < __high)
++      {
++	*__low = _M_tolower[static_cast<unsigned char>(*__low)];
++	++__low;
++      }
++    return __high;
++  }
+diff -urN gcc-3.3.2/libstdc++-v3/config/os/uclibc/os_defines.h gcc-3.3.2-uClibc/libstdc++-v3/config/os/uclibc/os_defines.h
+--- gcc-3.3.2/libstdc++-v3/config/os/uclibc/os_defines.h	1969-12-31 18:00:00.000000000 -0600
++++ gcc-3.3.2-uClibc/libstdc++-v3/config/os/uclibc/os_defines.h	2004-01-09 04:56:13.000000000 -0600
+@@ -0,0 +1,56 @@
++// Specific definitions for GNU/Linux  -*- C++ -*-
++
++// Copyright (C) 2000, 2001, 2002 Free Software Foundation, Inc.
++//
++// This file is part of the GNU ISO C++ Library.  This library is free
++// software; you can redistribute it and/or modify it under the
++// terms of the GNU General Public License as published by the
++// Free Software Foundation; either version 2, or (at your option)
++// any later version.
++
++// This library is distributed in the hope that it will be useful,
++// but WITHOUT ANY WARRANTY; without even the implied warranty of
++// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++// GNU General Public License for more details.
++
++// You should have received a copy of the GNU General Public License along
++// with this library; see the file COPYING.  If not, write to the Free
++// Software Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307,
++// USA.
++
++// As a special exception, you may use this file as part of a free software
++// library without restriction.  Specifically, if other files instantiate
++// templates or use macros or inline functions from this file, or you compile
++// this file and link it with other files to produce an executable, this
++// file does not by itself cause the resulting executable to be covered by
++// the GNU General Public License.  This exception does not however
++// invalidate any other reasons why the executable file might be covered by
++// the GNU General Public License.
++
++#ifndef _GLIBCPP_OS_DEFINES
++#define _GLIBCPP_OS_DEFINES 1
++
++// System-specific #define, typedefs, corrections, etc, go here.  This
++// file will come before all others.
++
++// This keeps isanum, et al from being propagated as macros.
++#define __NO_CTYPE 1
++
++#include <features.h>
++
++// These systems have declarations mismatching those in libio.h by
++// omitting throw qualifiers.  Cleanest way out is to not provide
++// throw-qualifiers at all.  Defining it as empty here will make libio.h
++// not define it.
++#undef __THROW
++#define __THROW
++
++// Tell Glibc not to try to provide its own inline versions of
++// some math functions.  Those cause assembly-time clashes with
++// our definitions.
++#define __NO_MATH_INLINES
++
++// We must not see the optimized string functions GNU libc defines.
++#define __NO_STRING_INLINES
++
++#endif

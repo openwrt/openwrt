@@ -1,0 +1,113 @@
+#
+# Automatically generated make config: don't edit
+#
+BR2_HAVE_DOT_CONFIG=y
+# BR2_arm is not set
+# BR2_armeb is not set
+# BR2_cris is not set
+# BR2_i386 is not set
+# BR2_m68k is not set
+# BR2_mips is not set
+BR2_mipsel=y
+# BR2_powerpc is not set
+# BR2_sh3 is not set
+# BR2_sh3eb is not set
+# BR2_sh4 is not set
+# BR2_sh4eb is not set
+# BR2_sparc is not set
+BR2_ARCH="mipsel"
+
+#
+# Build options
+#
+BR2_WGET="wget --passive-ftp"
+# BR2_TAR_VERBOSITY is not set
+BR2_STAGING_DIR="$(BUILD_DIR)/staging_dir"
+BR2_JLEVEL=1
+
+#
+# Toolchain Options
+#
+
+#
+# uClibc Options
+#
+BR2_UCLIBC_VERSION_SNAPSHOT=y
+BR2_USE_UCLIBC_SNAPSHOT="snapshot"
+# BR2_ENABLE_LOCALE is not set
+
+#
+# Binutils Options
+#
+# BR2_BINUTILS_VERSION_2_14_90_0_6 is not set
+# BR2_BINUTILS_VERSION_2_14_90_0_7 is not set
+# BR2_BINUTILS_VERSION_2_14_90_0_8 is not set
+# BR2_BINUTILS_VERSION_2_15 is not set
+# BR2_BINUTILS_VERSION_2_15_90_0_1 is not set
+# BR2_BINUTILS_VERSION_2_15_90_0_1_1 is not set
+# BR2_BINUTILS_VERSION_2_15_90_0_2 is not set
+# BR2_BINUTILS_VERSION_2_15_90_0_3 is not set
+# BR2_BINUTILS_VERSION_2_15_91_0_1 is not set
+# BR2_BINUTILS_VERSION_2_15_91_0_2 is not set
+# BR2_BINUTILS_VERSION_2_15_92_0_2 is not set
+# BR2_BINUTILS_VERSION_2_15_94_0_1 is not set
+BR2_BINUTILS_VERSION_2_15_94_0_2=y
+BR2_BINUTILS_VERSION="2.15.94.0.2"
+
+#
+# Gcc Options
+#
+# BR2_GCC_VERSION_2_95 is not set
+# BR2_GCC_VERSION_3_3_3 is not set
+# BR2_GCC_VERSION_3_3_4 is not set
+# BR2_GCC_VERSION_3_3_5 is not set
+# BR2_GCC_VERSION_3_4_0 is not set
+# BR2_GCC_VERSION_3_4_1 is not set
+# BR2_GCC_VERSION_3_4_2 is not set
+BR2_GCC_VERSION_3_4_3=y
+BR2_GCC_VERSION="3.4.3"
+BR2_GCC_USE_SJLJ_EXCEPTIONS="--enable-sjlj-exceptions"
+BR2_EXTRA_GCC_CONFIG_OPTIONS=""
+# BR2_INSTALL_LIBSTDCPP is not set
+
+#
+# Ccache Options
+#
+BR2_CCACHE=y
+
+#
+# Gdb Options
+#
+# BR2_PACKAGE_GDB is not set
+# BR2_PACKAGE_GDB_SERVER is not set
+
+#
+# Common Toolchain Options
+#
+# BR2_ENABLE_MULTILIB is not set
+# BR2_LARGEFILE is not set
+BR2_TARGET_OPTIMIZATION="-Os -pipe"
+
+#
+# OpenWrt Package Selection
+#
+
+#
+# The default set
+#
+BR2_PACKAGE_BUSYBOX=y
+BR2_PACKAGE_BUSYBOX_SNAPSHOT=y
+# BR2_PACKAGE_DNSMASQ is not set
+# BR2_PACKAGE_LINUX is not set
+# BR2_PACKAGE_IPTABLES is not set
+# BR2_PACKAGE_BRIDGE is not set
+
+#
+# Suggested Extras
+#
+# BR2_PACKAGE_DROPBEAR_SSHD is not set
+
+#
+# Target Filesystem
+#
+# BR2_TARGET_ROOTFS_JFFS2 is not set

@@ -1,0 +1,270 @@
+Note... modified my mjn3 to not conflict with the big endian arm patch.
+Warning!!!  Only the linux target is aware of TARGET_ENDIAN_DEFAULT.
+Also changed
+  #define SUBTARGET_EXTRA_ASM_SPEC "\
+  %{!mcpu=*:-mcpu=xscale} \
+  %{mhard-float:-mfpu=fpa} \
+  %{!mhard-float: %{msoft-float:-mfpu=softfpa} %{!msoft-float:-mfpu=softvfp}}"
+to
+  #define SUBTARGET_EXTRA_ASM_SPEC "\
+  %{mhard-float:-mfpu=fpa} \
+  %{!mhard-float: %{msoft-float:-mfpu=softfpa} %{!msoft-float:-mfpu=softvfp}}"
+in gcc/config/arm/linux-elf.h.
+#
+# Submitted:
+#
+# Dimitry Andric <dimitry@andric.com>, 2004-05-01
+#
+# Description:
+#
+# Nicholas Pitre released this patch for gcc soft-float support here: 
+# http://lists.arm.linux.org.uk/pipermail/linux-arm/2003-October/006436.html
+#
+# This version has been adapted to work with gcc 3.4.0.
+#
+# The original patch doesn't distinguish between softfpa and softvfp modes
+# in the way Nicholas Pitre probably meant.  His description is:
+#
+# "Default is to use APCS-32 mode with soft-vfp.  The old Linux default for
+# floats can be achieved with -mhard-float or with the configure
+# --with-float=hard option.  If -msoft-float or --with-float=soft is used then
+# software float support will be used just like the default but with the legacy
+# big endian word ordering for double float representation instead."
+#
+# Which means the following:
+#
+# * If you compile without -mhard-float or -msoft-float, you should get
+#   software floating point, using the VFP format.  The produced object file
+#   should have these flags in its header:
+#
+#     private flags = 600: [APCS-32] [VFP float format] [software FP]
+#
+# * If you compile with -mhard-float, you should get hardware floating point,
+#   which always uses the FPA format.  Object file header flags should be:
+#
+#     private flags = 0: [APCS-32] [FPA float format]
+#
+# * If you compile with -msoft-float, you should get software floating point,
+#   using the FPA format.  This is done for compatibility reasons with many
+#   existing distributions.  Object file header flags should be:
+#
+#     private flags = 200: [APCS-32] [FPA float format] [software FP]
+#
+# The original patch from Nicholas Pitre contained the following constructs:
+#
+#   #define SUBTARGET_EXTRA_ASM_SPEC "%{!mcpu=*:-mcpu=xscale} \
+#     %{mhard-float:-mfpu=fpa} \
+#     %{!mhard-float: %{msoft-float:-mfpu=softfpa;:-mfpu=softvfp}}"
+#
+# However, gcc doesn't accept this ";:" notation, used in the 3rd line.  This
+# is probably the reason Robert Schwebel modified it to:
+#
+#   #define SUBTARGET_EXTRA_ASM_SPEC "%{!mcpu=*:-mcpu=xscale} \
+#     %{mhard-float:-mfpu=fpa} \
+#     %{!mhard-float: %{msoft-float:-mfpu=softfpa -mfpu=softvfp}}"
+#
+# But this causes the following behaviour:
+#
+# * If you compile without -mhard-float or -msoft-float, the compiler generates
+#   software floating point instructions, but *nothing* is passed to the
+#   assembler, which results in an object file which has flags:
+#
+#     private flags = 0: [APCS-32] [FPA float format]
+#
+#   This is not correct!
+#
+# * If you compile with -mhard-float, the compiler generates hardware floating
+#   point instructions, and passes "-mfpu=fpa" to the assembler, which results
+#   in an object file which has the same flags as in the previous item, but now
+#   those *are* correct.
+#    
+# * If you compile with -msoft-float, the compiler generates software floating
+#   point instructions, and passes "-mfpu=softfpa -mfpu=softvfp" (in that
+#   order) to the assembler, which results in an object file with flags:
+#
+#   private flags = 600: [APCS-32] [VFP float format] [software FP]
+#
+#   This is not correct, because the last "-mfpu=" option on the assembler
+#   command line determines the actual FPU convention used (which should be FPA
+#   in this case).
+#
+# Therefore, I modified this patch to get the desired behaviour.  Every
+# instance of the notation:
+#
+#   %{msoft-float:-mfpu=softfpa -mfpu=softvfp}
+#
+# was changed to:
+#
+#   %{msoft-float:-mfpu=softfpa} %{!msoft-float:-mfpu=softvfp}
+#
+# I also did the following:
+# 
+# * Modified all TARGET_DEFAULT macros I could find to include ARM_FLAG_VFP, to
+#   be consistent with Nicholas' original patch.
+# * Removed any "msoft-float" or "mhard-float" from all MULTILIB_DEFAULTS
+#   macros I could find.  I think that if you compile without any options, you
+#   would like to get the defaults. :)
+# * Removed the extra -lfloat option from LIBGCC_SPEC, since it isn't needed
+#   anymore.  (The required functions are now in libgcc.)
+
+diff -urN gcc-3.4.1-old/gcc/config/arm/coff.h gcc-3.4.1/gcc/config/arm/coff.h
+--- gcc-3.4.1-old/gcc/config/arm/coff.h	2004-02-24 08:25:22.000000000 -0600
++++ gcc-3.4.1/gcc/config/arm/coff.h	2004-09-02 21:51:15.000000000 -0500
+@@ -31,11 +31,16 @@
+ #define TARGET_VERSION fputs (" (ARM/coff)", stderr)
+ 
+ #undef  TARGET_DEFAULT
+-#define TARGET_DEFAULT (ARM_FLAG_SOFT_FLOAT | ARM_FLAG_APCS_32 | ARM_FLAG_APCS_FRAME | ARM_FLAG_MMU_TRAPS)
++#define TARGET_DEFAULT		\
++	( ARM_FLAG_SOFT_FLOAT	\
++	| ARM_FLAG_VFP		\
++	| ARM_FLAG_APCS_32	\
++	| ARM_FLAG_APCS_FRAME	\
++	| ARM_FLAG_MMU_TRAPS )
+ 
+ #ifndef MULTILIB_DEFAULTS
+ #define MULTILIB_DEFAULTS \
+-  { "marm", "mlittle-endian", "msoft-float", "mapcs-32", "mno-thumb-interwork" }
++  { "marm", "mlittle-endian", "mapcs-32", "mno-thumb-interwork" }
+ #endif
+ 
+ /* This is COFF, but prefer stabs.  */
+diff -urN gcc-3.4.1-old/gcc/config/arm/elf.h gcc-3.4.1/gcc/config/arm/elf.h
+--- gcc-3.4.1-old/gcc/config/arm/elf.h	2004-02-24 08:25:22.000000000 -0600
++++ gcc-3.4.1/gcc/config/arm/elf.h	2004-09-02 21:51:15.000000000 -0500
+@@ -46,7 +46,9 @@
+ 
+ #ifndef SUBTARGET_ASM_FLOAT_SPEC
+ #define SUBTARGET_ASM_FLOAT_SPEC "\
+-%{mapcs-float:-mfloat} %{msoft-float:-mfpu=softfpa}"
++%{mapcs-float:-mfloat} \
++%{mhard-float:-mfpu=fpa} \
++%{!mhard-float: %{msoft-float:-mfpu=softfpa} %{!msoft-float:-mfpu=softvfp}}"
+ #endif
+ 
+ #ifndef ASM_SPEC
+@@ -106,12 +108,17 @@
+ #endif
+ 
+ #ifndef TARGET_DEFAULT
+-#define TARGET_DEFAULT (ARM_FLAG_SOFT_FLOAT | ARM_FLAG_APCS_32 | ARM_FLAG_APCS_FRAME | ARM_FLAG_MMU_TRAPS)
++#define TARGET_DEFAULT		\
++	( ARM_FLAG_SOFT_FLOAT	\
++	| ARM_FLAG_VFP		\
++	| ARM_FLAG_APCS_32	\
++	| ARM_FLAG_APCS_FRAME	\
++	| ARM_FLAG_MMU_TRAPS )
+ #endif
+ 
+ #ifndef MULTILIB_DEFAULTS
+ #define MULTILIB_DEFAULTS \
+-  { "marm", "mlittle-endian", "msoft-float", "mapcs-32", "mno-thumb-interwork", "fno-leading-underscore" }
++  { "marm", "mlittle-endian", "mapcs-32", "mno-thumb-interwork", "fno-leading-underscore" }
+ #endif
+ 
+ #define TARGET_ASM_FILE_START_APP_OFF true
+diff -urN gcc-3.4.1-old/gcc/config/arm/linux-elf.h gcc-3.4.1/gcc/config/arm/linux-elf.h
+--- gcc-3.4.1-old/gcc/config/arm/linux-elf.h	2004-09-02 21:50:52.000000000 -0500
++++ gcc-3.4.1/gcc/config/arm/linux-elf.h	2004-09-02 22:00:49.000000000 -0500
+@@ -44,12 +44,26 @@
+ #define TARGET_LINKER_EMULATION "armelf_linux"
+ #endif
+ 
+-/* Default is to use APCS-32 mode.  */
++/*
++ * Default is to use APCS-32 mode with soft-vfp.
++ * The old Linux default for floats can be achieved with -mhard-float
++ * or with the configure --with-float=hard option.
++ * If -msoft-float or --with-float=soft is used then software float 
++ * support will be used just like the default but with the legacy
++ * big endian word ordering for double float representation instead.
++ */
+ #undef  TARGET_DEFAULT
+-#define TARGET_DEFAULT \
+-		( ARM_FLAG_APCS_32 | \
+-		  ARM_FLAG_MMU_TRAPS | \
+-		  TARGET_ENDIAN_DEFAULT )
++#define TARGET_DEFAULT		\
++	( ARM_FLAG_APCS_32	\
++	| ARM_FLAG_SOFT_FLOAT	\
++	| TARGET_ENDIAN_DEFAULT	\
++	| ARM_FLAG_VFP		\
++	| ARM_FLAG_MMU_TRAPS )
++
++#undef  SUBTARGET_EXTRA_ASM_SPEC
++#define SUBTARGET_EXTRA_ASM_SPEC "\
++%{mhard-float:-mfpu=fpa} \
++%{!mhard-float: %{msoft-float:-mfpu=softfpa} %{!msoft-float:-mfpu=softvfp}}"
+ 
+ #define SUBTARGET_CPU_DEFAULT TARGET_CPU_arm6
+ 
+@@ -57,7 +71,7 @@
+ 
+ #undef  MULTILIB_DEFAULTS
+ #define MULTILIB_DEFAULTS \
+-	{ "marm", TARGET_ENDIAN_OPTION, "mhard-float", "mapcs-32", "mno-thumb-interwork" }
++	{ "marm", TARGET_ENDIAN_OPTION, "mapcs-32", "mno-thumb-interwork" }
+ 
+ #define CPP_APCS_PC_DEFAULT_SPEC "-D__APCS_32__"
+ 
+@@ -72,7 +86,7 @@
+    %{shared:-lc} \
+    %{!shared:%{profile:-lc_p}%{!profile:-lc}}"
+ 
+-#define LIBGCC_SPEC "%{msoft-float:-lfloat} -lgcc"
++#define LIBGCC_SPEC "-lgcc"
+ 
+ /* Provide a STARTFILE_SPEC appropriate for GNU/Linux.  Here we add
+    the GNU/Linux magical crtbegin.o file (see crtstuff.c) which
+diff -urN gcc-3.4.1-old/gcc/config/arm/t-linux gcc-3.4.1/gcc/config/arm/t-linux
+--- gcc-3.4.1-old/gcc/config/arm/t-linux	2003-09-20 16:09:07.000000000 -0500
++++ gcc-3.4.1/gcc/config/arm/t-linux	2004-09-02 21:51:15.000000000 -0500
+@@ -4,7 +4,10 @@
+ LIBGCC2_DEBUG_CFLAGS = -g0
+ 
+ LIB1ASMSRC = arm/lib1funcs.asm
+-LIB1ASMFUNCS = _udivsi3 _divsi3 _umodsi3 _modsi3 _dvmd_lnx
++LIB1ASMFUNCS = _udivsi3 _divsi3 _umodsi3 _modsi3 _dvmd_lnx \
++	_negdf2 _addsubdf3 _muldivdf3 _cmpdf2 _unorddf2 _fixdfsi _fixunsdfsi \
++	_truncdfsf2 _negsf2 _addsubsf3 _muldivsf3 _cmpsf2 _unordsf2 \
++	_fixsfsi _fixunssfsi
+ 
+ # MULTILIB_OPTIONS = mhard-float/msoft-float
+ # MULTILIB_DIRNAMES = hard-float soft-float
+diff -urN gcc-3.4.1-old/gcc/config/arm/unknown-elf.h gcc-3.4.1/gcc/config/arm/unknown-elf.h
+--- gcc-3.4.1-old/gcc/config/arm/unknown-elf.h	2004-02-24 08:25:22.000000000 -0600
++++ gcc-3.4.1/gcc/config/arm/unknown-elf.h	2004-09-02 21:51:15.000000000 -0500
+@@ -30,7 +30,12 @@
+ 
+ /* Default to using APCS-32 and software floating point.  */
+ #ifndef TARGET_DEFAULT
+-#define TARGET_DEFAULT	(ARM_FLAG_SOFT_FLOAT | ARM_FLAG_APCS_32 | ARM_FLAG_APCS_FRAME | ARM_FLAG_MMU_TRAPS)
++#define TARGET_DEFAULT		\
++	( ARM_FLAG_SOFT_FLOAT	\
++	| ARM_FLAG_VFP		\
++	| ARM_FLAG_APCS_32	\
++	| ARM_FLAG_APCS_FRAME	\
++	| ARM_FLAG_MMU_TRAPS )
+ #endif
+ 
+ /* Now we define the strings used to build the spec file.  */
+diff -urN gcc-3.4.1-old/gcc/config/arm/xscale-elf.h gcc-3.4.1/gcc/config/arm/xscale-elf.h
+--- gcc-3.4.1-old/gcc/config/arm/xscale-elf.h	2003-07-01 18:26:43.000000000 -0500
++++ gcc-3.4.1/gcc/config/arm/xscale-elf.h	2004-09-02 21:51:15.000000000 -0500
+@@ -49,11 +49,12 @@
+ 		     endian, regardless of the endian-ness of the memory
+ 		     system.  */
+ 		     
+-#define SUBTARGET_EXTRA_ASM_SPEC "%{!mcpu=*:-mcpu=xscale} \
+-  %{mhard-float:-mfpu=fpa} \
+-  %{!mhard-float: %{msoft-float:-mfpu=softfpa;:-mfpu=softvfp}}"
++#define SUBTARGET_EXTRA_ASM_SPEC "\
++%{!mcpu=*:-mcpu=xscale} \
++%{mhard-float:-mfpu=fpa} \
++%{!mhard-float: %{msoft-float:-mfpu=softfpa} %{!msoft-float:-mfpu=softvfp}}"
+ 
+ #ifndef MULTILIB_DEFAULTS
+ #define MULTILIB_DEFAULTS \
+-  { "mlittle-endian", "mno-thumb-interwork", "marm", "msoft-float" }
++  { "mlittle-endian", "mno-thumb-interwork", "marm" }
+ #endif

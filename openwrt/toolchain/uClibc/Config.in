@@ -1,0 +1,23 @@
+# Choose uClibc options
+#
+
+comment "uClibc Options"
+
+config BR2_UCLIBC_VERSION_SNAPSHOT
+	bool "Use the daily snapshot of uClibc?"
+	default y
+	help
+	    Would you like to use the latest daily snapshot?
+
+config BR2_USE_UCLIBC_SNAPSHOT
+	string
+	default "snapshot"
+	depends on BR2_UCLIBC_VERSION_SNAPSHOT
+
+config BR2_ENABLE_LOCALE
+	bool "Enable locale/gettext/i18n support?"
+	default n
+	help
+	    Enable locale/gettext/i18n support?
+
+
