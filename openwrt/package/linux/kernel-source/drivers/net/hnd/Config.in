@@ -1,0 +1,35 @@
+#
+# Broadcom Home Networking Division (HND) driver configuration
+#
+# Copyright 2004, Broadcom Corporation
+# All Rights Reserved.
+# 
+# THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
+# KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
+# SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
+# FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+#
+
+mainmenu_option next_comment
+comment 'Broadcom HND network devices'
+   tristate 'Broadcom HND network device support' CONFIG_HND $CONFIG_PCI
+   if [ "$CONFIG_HND" != "n" ]; then
+      dep_tristate '  Broadcom InsideLine HPNA support' CONFIG_IL $CONFIG_HND
+      if [ "$CONFIG_IL" != "n" ]; then
+         bool '    Broadcom BCM42xx support' CONFIG_IL_42XX
+         bool '    Broadcom BCM47xx support' CONFIG_IL_47XX
+         int '    LARQ buffer allocation (0 = tiny, 2 = huge)' CONFIG_LARQ_BUF 0
+      fi
+      dep_tristate '  Broadcom 10/100 Ethernet support' CONFIG_ET $CONFIG_HND
+      if [ "$CONFIG_ET" != "n" ]; then
+         bool '    Broadcom BCM4413 support' CONFIG_ET_4413
+         bool '    Broadcom BCM47xx support' CONFIG_ET_47XX
+      fi
+      dep_tristate '  Broadcom BCM43xx 802.11 Wireless support' CONFIG_WL $CONFIG_HND
+      if [ "$CONFIG_WL" != "n" ]; then
+         bool '    Access Point Mode Supported' CONFIG_WL_AP
+         bool '    STA Mode Supported' CONFIG_WL_STA
+         bool '    OID Interface Supported' CONFIG_WL_OID
+      fi
+   fi
+endmenu

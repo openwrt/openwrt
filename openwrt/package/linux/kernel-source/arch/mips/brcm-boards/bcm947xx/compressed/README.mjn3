@@ -1,0 +1,20 @@
+
+FIRST... See the dedication in the decompress_bunzip2.c file as it applies
+here too.  Donations to hospice in Toni's memory would be appreciated.
+
+As far as the code goes... the bzImage is just a bzip'd kernel image with
+a small gzip'd decompressor/loader stuck on front.  CFE ungzip's the loader
+app which then relocates the bunzip decompressor into higher memory and
+bunzip's the compressed kernel directly from flash.  Then the instruction
+cache is flushed (to remove traces of the loader) and the kernel is executed.
+
+Of course, a better approach would be to add bunzip decompression to CFE.
+
+Notes...
+  1) Instruction cache size and linesize are hardcoded (see the #warning).
+  2) Currently assumes at least 16M or ram.
+  3) Thanks to Mike Baker   mbm at alt dot org  for bouncing ideas back
+     and forth as well as diagnosing the last (icache) bug.
+
+Manuel Novoa III   <mjn3@codepoet.org>        May 30, 2004
+
