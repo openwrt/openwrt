@@ -35,8 +35,7 @@ jffs2root: mtd
 	@rm -rf $(TARGET_DIR)/usr/man
 	@rm -rf $(TARGET_DIR)/usr/info
 	$(MKFS_JFFS2) --pad --little-endian --squash -e 0x20000 \
-		-D target/default/device_table.txt -d $(TARGET_DIR) \
-		-o $(IMAGE).jffs2
+		-d $(TARGET_DIR) -o $(IMAGE).jffs2
 
 jffs2root-source: $(DL_DIR)/$(MTD_SOURCE)
 
@@ -46,5 +45,15 @@ jffs2root-clean:
 jffs2root-dirclean:
 	rm -rf $(MTD_DIR)
 
+openwrt-linux.trx.jffs2:
+	$(BUILD_DIR)/trx -o openwrt-linux.trx.jffs2 $(LINUX_DIR)/$(LINUX_BINLOC) $(IMAGE).jffs2
+
+openwrt-gs-code.bin.jffs2: openwrt-linux.trx.jffs2
+	$(BUILD_DIR)/addpattern -2 -i  openwrt-linux.trx.jffs2 -o openwrt-gs-code.bin.jffs2 -g
+
+openwrt-g-code.bin.jffs2: openwrt-gs-code.bin.jffs2
+	sed -e "1s,^W54S,W54G," < openwrt-gs-code.bin.jffs2 > openwrt-g-code.bin.jffs2
+
+openwrt-image:	openwrt-g-code.bin.jffs2
 
 
