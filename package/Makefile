@@ -37,6 +37,7 @@ package-$(BR2_PACKAGE_STRACE) += strace
 package-$(BR2_PACKAGE_TCPDUMP) += tcpdump
 package-$(BR2_PACKAGE_WOL) += wol
 package-$(BR2_PACKAGE_ZLIB) += zlib
+package-$(BR2_PACKAGE_DHCPFWD) += dhcp-forwarder
 
 all: compile install
 clean: $(patsubst %,%-clean,$(package-) $(package-y) $(package-m)) linux-clean
