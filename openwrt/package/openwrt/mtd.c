@@ -232,10 +232,6 @@ mtd_write(const char *trxfile, const char *mtd)
 int
 mtd_update(const char *trxfile, const char *mtd)
 {
-	if (mtd_unlock(mtd) != 0) {
-		fprintf(stderr, "Could not unlock mtd device: %s\n", mtd);
-		exit(1);
-	}
 	if (mtd_erase("rootfs") != 0) {
 		fprintf(stderr, "Could not erase rootfs\n");
 		exit(1);
