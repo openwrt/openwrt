@@ -1,0 +1,11 @@
+--- uClibc/libc/sysdeps/linux/mips/Makefile	17 Jul 2004 00:39:14 -0000	1.41
++++ uClibc/libc/sysdeps/linux/mips/Makefile	9 Aug 2004 03:33:14 -0000
+@@ -28,7 +28,7 @@
+ SOBJS=$(patsubst %.S,%.o, $(SSRC))
+ 
+ CSRC=__longjmp.c  brk.c setjmp_aux.c mmap.c __syscall_error.c \
+-	cacheflush.c pread_write.c sysmips.c _test_and_set.c sigaction.c
++	cacheflush.c pread_write.c sysmips.c _test_and_set.c
+ COBJS=$(patsubst %.c,%.o, $(CSRC))
+ 
+ OBJS=$(SOBJS) $(MOBJ) $(COBJS)
