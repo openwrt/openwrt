@@ -12,8 +12,10 @@ package-$(BR2_PACKAGE_IPTABLES) += iptables
 package-$(BR2_PACKAGE_PPP) += ppp
 package-$(BR2_PACKAGE_LZO) += lzo
 package-$(BR2_PACKAGE_ZLIB) += zlib
+package-$(BR2_PACKAGE_MATRIXSSL) += matrixssl
 package-$(BR2_PACKAGE_OPENSSL) += openssl
 package-$(BR2_PACKAGE_OPENVPN) += openvpn
+package-$(BR2_PACKAGE_PPTPD) += pptpd
 package-$(BR2_PACKAGE_IPROUTE2) += iproute2
 package-$(BR2_PACKAGE_LINKSYS_UTILS) += linksys-utils
 

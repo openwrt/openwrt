@@ -1,0 +1,37 @@
+config BR2_PACKAGE_PPP
+	tristate
+	prompt "PPP daemon"
+	default y
+
+config BR2_PACKAGE_PPP_PPPOE
+	tristate
+	prompt "PPP over Ethernet plugin"
+	default y
+	depends on BR2_PACKAGE_PPP
+
+config BR2_PACKAGE_PPP_RADIUS
+	tristate
+	prompt "PPP RADIUS plugin"
+	default m
+	depends on BR2_PACKAGE_PPP
+
+config BR2_PACKAGE_PPP_CHAT
+	tristate
+	prompt "chat utility"
+	default m
+	depends on BR2_PACKAGE_PPP
+
+config BR2_PACKAGE_PPPDUMP
+	tristate
+	prompt "pppdump utility"
+	default m
+	depends on BR2_PACKAGE_PPP
+
+config BR2_PACKAGE_PPPSTATS
+	tristate
+	prompt "pppstats utility"
+	default m
+	depends on BR2_PACKAGE_PPP
+
+
+
