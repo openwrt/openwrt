@@ -34,7 +34,7 @@
       netmask=$(nvram_get ${type}_netmask)
       gateway=$(nvram_get ${type}_gateway)
 
-      $DEBUG ifconfig $if $if_ip ${netmask:+netmask $netmask} broadcast + up
+      $DEBUG ifconfig $if $ip ${netmask:+netmask $netmask} broadcast + up
       ${gateway:+$DEBUG route add default gw $gateway}
 
       [ -f /etc/resolv.conf ] && return
