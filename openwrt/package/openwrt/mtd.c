@@ -1,7 +1,8 @@
 /*
  * mtd - simple memory technology device manipulation tool
  *
- * Copyright (C) 2005 Waldemar Brodkorb <wbx@dass-it.de>
+ * Copyright (C) 2005 Waldemar Brodkorb <wbx@dass-it.de>,
+ *		      Felix Fietkau <nbd@vd-s.ath.cx>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -17,12 +18,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  *
- * mtd utility for the openwrt project
- * it is mainly code from the linux-mtd project, which accepts the same
- * command line arguments as the broadcom utility
- * 
  * $Id$
- *
  */
 
 #include <limits.h>
@@ -39,6 +35,7 @@
 #include <sys/param.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
+#include <sys/reboot.h>
 #include <string.h>
 
 #include <linux/mtd/mtd.h>
@@ -48,6 +45,8 @@
 #define TRX_VERSION     1
 #define TRX_MAX_LEN     0x3A0000
 #define TRX_NO_HEADER   1               /* Do not write TRX header */
+
+#define MAX_ARGS 8
 
 struct trx_header {
 	uint32_t magic;                 /* "HDR0" */
@@ -59,10 +58,6 @@ struct trx_header {
 
 #define BUFSIZE (10 * 1024)
 
-extern int mtd_open(const char *mtd, int flags);
-extern int mtd_erase(const char *mtd);
-extern int mtd_write(const char *trxfile, const char *mtd);
-extern int mtd_update(const char *trxfile, const char *mtd);
 
 int
 mtd_unlock(const char *mtd)
@@ -83,12 +78,13 @@ mtd_unlock(const char *mtd)
 		exit(1);
 	}
 
+	printf("Unlocking %s ...\n", mtd);
 	mtdLockInfo.start = 0;
 	mtdLockInfo.length = mtdInfo.size;
 	if(ioctl(fd, MEMUNLOCK, &mtdLockInfo)) {
 		fprintf(stderr, "Could not unlock MTD device: %s\n", mtd);
 		close(fd);
-		exit(1);
+		return 0;
 	}
 		
 	close(fd);
@@ -135,6 +131,7 @@ mtd_erase(const char *mtd)
 		exit(1);
 	}
 
+	printf("Erasing %s ...\n", mtd);
 	mtdEraseInfo.length = mtdInfo.erasesize;
 
 	for (mtdEraseInfo.start = 0;
@@ -196,6 +193,8 @@ mtd_write(const char *trxfile, const char *mtd)
 		exit(1);
 	}	
 	
+	printf("Writing %s to %s ...\n", trxfile, mtd);
+
 	mtdEraseInfo.start = 0;
 	mtdEraseInfo.length = trxstat.st_size & ~(mtdInfo.erasesize -1);
 	if(trxstat.st_size % mtdInfo.erasesize) mtdEraseInfo.length += mtdInfo.erasesize;
@@ -229,52 +228,109 @@ mtd_write(const char *trxfile, const char *mtd)
 	return 0;
 }
 
-int
-mtd_update(const char *trxfile, const char *mtd)
+void usage(void)
 {
-	if (mtd_erase("rootfs") != 0) {
-		fprintf(stderr, "Could not erase rootfs\n");
-		exit(1);
+	printf("Usage: mtd [<options> ...] <command> [<arguments> ...] <device>\n\n"
+	"The device is in the format of mtdX (eg: mtd4) or its label.\n"
+	"mtd recognizes these commands:\n"
+	"	unlock			unlock the device\n"
+	"	erase			erase all data on device\n"
+	"	write <imagefile>	write imagefile to device\n"
+	"Following options are available:\n"
+	"	-u			unlock device before accessing it\n"
+	"	-r			reboot after successful command\n"
+	"	-e <device>		erase <device> before executing the command\n\n"
+	"Example: To write linux.trx to mtd4 labeled as linux and reboot afterwards\n"
+	"         mtd -r write linux.trx linux\n\n");
+	exit(1);
+}
+
+int main (int argc, char **argv)
+{
+	int ch, i, boot, unlock;
+	char *erase[MAX_ARGS], *device;
+	enum {
+		CMD_ERASE,
+		CMD_WRITE,
+		CMD_UNLOCK
+	} cmd;
+	
+	erase[0] = NULL;
+	boot = 0;
+	unlock = 0;
+
+	printf("mtd: Modify data within a Memory Technology Device.\n"
+	"Copyright (C) 2005 Waldemar Brodkorb <wbx@dass-it.de>,\n"
+	"                   Felix Fietkau <nbd@vd-s.ath.cx>\n"
+	"Documented by Mike Strates [dumpedcore] <mike@dilaudid.net>\n"
+	"mtd has ABSOLUTELY NO WARRANTY and is licensed under the GNU GPL.\n\n");
+	
+	while ((ch = getopt(argc, argv, "ure:")) != -1)
+		switch (ch) {
+			case 'u':
+				unlock = 1;
+				break;
+			case 'r':
+				boot = 1;
+				break;
+			case 'e':
+				i = 0;
+				while ((erase[i] != NULL) && ((i + 1) < MAX_ARGS))
+					i++;
+					
+				erase[i++] = optarg;
+				erase[i] = NULL;
+				break;
+			
+			case '?':
+			default:
+				usage();
+		}
+	argc -= optind;
+	argv += optind;
+	
+	if (argc < 2)
+		usage();
+
+	if ((strcmp(argv[0], "unlock") == 0) && (argc == 2)) {
+		cmd = CMD_UNLOCK;
+		device = argv[1];
+	} else if ((strcmp(argv[0], "erase") == 0) && (argc == 2)) {
+		cmd = CMD_ERASE;
+		device = argv[1];
+	} else if ((strcmp(argv[0], "write") == 0) && (argc == 3)) {
+		cmd = CMD_WRITE;
+		device = argv[2];
+	} else {
+		usage();
 	}
-	if (mtd_write(trxfile, mtd) != 0) {
-		fprintf(stderr, "Could not update %s with %s\n", mtd, trxfile);
-		exit(1);
-	}	
+
+	sync();
+
+	i = 0;
+	while (erase[i] != NULL) {
+		mtd_unlock(erase[i]);
+		mtd_erase(erase[i]);
+		i++;
+	}
+	
+	if (unlock) 
+		mtd_unlock(device);
+
+	switch (cmd) {
+		case CMD_UNLOCK:
+			mtd_unlock(device);
+			break;
+		case CMD_ERASE:
+			mtd_erase(device);
+			break;
+		case CMD_WRITE:
+			mtd_write(argv[1], device);
+			break;
+	}
+
+	if (boot)
+		reboot(0);
+
 	return 0;
 }
-
-int main(int argc, char **argv) {
-	if(argc == 3 && strcasecmp(argv[1],"unlock")==0) {
-		printf("Unlocking %s ...\n",argv[2]);
-		return mtd_unlock(argv[2]);
-	}
-	if(argc == 3 && strcasecmp(argv[1],"erase")==0) {
-		printf("Erasing %s ...\n",argv[2]);
-		return mtd_erase(argv[2]);
-	}
-	if(argc == 4 && strcasecmp(argv[1],"write")==0) {
-		printf("Writing %s to %s ...\n",argv[2],argv[3]);
-		return mtd_write(argv[2],argv[3]);
-	}
-	if(argc == 4 && strcasecmp(argv[1],"update")==0) {
-		printf("Updating %s on %s ...\n",argv[2],argv[3]);
-		return mtd_update(argv[2],argv[3]);
-	}
-
-	printf("no valid command given\n");
-	printf("\nmtd: modify data within a Memory Technology Device.\n");
-	printf("Copyright (C) 2005 Waldemar Brodkorb <wbx@dass-it.de>\n");
-	printf("Documented by Mike Strates [dumpedcore] <mike@dilaudid.net>\n");
-	printf("mtd has ABSOLUTELY NO WARRANTY and is licensed under the GNU GPL.\n");
-	printf("\nUsage: mtd [unlock|erase] device\n");
-	printf("       mtd [write|update] imagefile device\n");
-	printf("\n.. where device is in the format of mtdX (eg: mtd4) or its label.\n\n");
-	printf("unlock          enable modification to device\n");
-	printf("erase           erase all data on device\n");
-	printf("write           write imagefile to device\n");
-	printf("update          remove rootfs and update imagefile on device\n");
-	printf("\nExample: To write linux.trx to mtd4 labeled as linux\n");
-	printf("\n                mtd unlock linux && mtd write linux.trx linux\n\n");
-	return -1;
-}
-
