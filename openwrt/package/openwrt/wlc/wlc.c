@@ -39,7 +39,8 @@ struct wl_config {
 struct wl_config commands[] = {
 	{"txpwr", "transmit power (in mW)", INT, WLC_GET_TXPWR, WLC_SET_TXPWR, 0, 255, NULL},
 	{"promisc", "promiscuous mode", BOOL, WLC_GET_PROMISC, WLC_SET_PROMISC, 0, 0, NULL},
-	{"monitor", "monitor mode", BOOL, WLC_GET_AP, WLC_SET_AP, 0, 0, NULL},
+	{"monitor", "monitor mode", BOOL, WLC_GET_MONITOR, WLC_SET_MONITOR, 0, 0, NULL},
+	{"passive", "passive mode", BOOL, WLC_GET_PASSIVE, WLC_SET_PASSIVE, 0, 0, NULL},
 	{"ap", "access point mode (0 = STA, 1 = AP)", BOOL, WLC_GET_AP, WLC_SET_AP, 0, 0, NULL},
 	{"infra", "infrastructure mode (0 = IBSS, 1 = Infra BSS)", BOOL, WLC_GET_INFRA, WLC_SET_INFRA, 0, 0, NULL},
 	{"antdiv", "rx antenna diversity (0 = antenna 0, 1 = antenna 1, 3 = auto select)", INT, WLC_GET_ANTDIV, WLC_SET_ANTDIV, 0, 3, NULL},
