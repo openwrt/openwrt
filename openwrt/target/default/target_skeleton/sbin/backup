@@ -1,11 +1,9 @@
 #!/bin/sh
 for param in $*; do
 	case "$param" in
-		-n)
-			SAVE_NVRAM=y
-			;;
 		*)
 			OUTPUT_FILE="$param"
+			;;
 	esac
 done
 
@@ -13,6 +11,7 @@ if [ "$OUTPUT_FILE" = "-" ]; then
 	echo "Writing backup to stdout.." >&2
 elif [ "$OUTPUT_FILE" = "" ]; then
 	echo "No output file."
+	exit 1
 else
 	echo "Writing backup to $OUTPUT_FILE" >&2
 	exec > "$OUTPUT_FILE"
@@ -24,11 +23,6 @@ cat /tmp/.wlbackup_files
 
 echo __IPKG__
 cat /etc/ipkg.conf
-
-if [ "$1" = "-n" ]; then
-	echo __NVRAM__
-	nvram show 2>/dev/null
-fi
 
 echo __PACKAGES__
 grep '^Package:' /usr/lib/ipkg/status | cut -d' ' -f2
