@@ -17,11 +17,12 @@ PKG_IPK_DIR:=$(PKG_BUILD_DIR)/ipkg
 $(DL_DIR)/$(PKG_SOURCE):
 	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE) $(PKG_MD5SUM) $(PKG_SOURCE_URL)
 
-$(PKG_BUILD_DIR)/.unpacked: $(DL_DIR)/$(PKG_SOURCE)
+$(PKG_BUILD_DIR)/.patched: $(DL_DIR)/$(PKG_SOURCE)
 	$(PKG_CAT) $(DL_DIR)/$(PKG_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
-	touch $(PKG_BUILD_DIR)/.unpacked
+	$(PATCH) $(PKG_BUILD_DIR) ./patches
+	touch $(PKG_BUILD_DIR)/.patched
 
-$(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.unpacked
+$(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.patched
 	(cd $(PKG_BUILD_DIR); rm -rf config.cache; \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
@@ -71,7 +72,7 @@ $(IPKG_STATE_DIR)/info/$(PKG_NAME).list: $(PKG_IPK)
 	$(IPKG) install $(PKG_IPK)
 
 source: $(DL_DIR)/$(PKG_SOURCE)
-prepare: $(PKG_BUILD_DIR)/.unpacked
+prepare: $(PKG_BUILD_DIR)/.patched
 compile: $(PKG_IPK)
 install: $(IPKG_STATE_DIR)/info/$(PKG_NAME).list
 
