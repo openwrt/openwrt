@@ -28,13 +28,9 @@ if_valid () (
   return $?
 )
 
-mac () {
-  echo $2|awk -F ":" '{for(x=6,y='$1';x;x--){y+=int("0x"$x);$x=sprintf("%02x",y%256);y/=256}gsub(" ",":");print$0}'
-}                                                                                                                  
 wifi () (
   debug "### wifi $1 ###"
   if=$(awk 'gsub(":","") {print $1}' /proc/net/wireless)
-  $DEBUG ifconfig $if hw ether $(mac 2 $(nvram get et0macaddr))
   $DEBUG wlconf $if $1 
 )
 
