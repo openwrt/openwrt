@@ -31,7 +31,7 @@ $(STAGING_DIR)/lib/libslang.so.1: $(SLANG_DIR)/libslang.so
 
 $(TARGET_DIR)/lib/libslang.so.1: $(STAGING_DIR)/lib/libslang.so.1
 	cp -a $(STAGING_DIR)/lib/libslang.so* $(TARGET_DIR)/lib;
-	-$(STRIP) --strip-unneeded $(TARGET_DIR)/lib/libslang.so*
+	-$(STRIP)  $(TARGET_DIR)/lib/libslang.so*
 	touch -c $(TARGET_DIR)/lib/libslang.so.1
 
 slang: uclibc $(STAGING_DIR)/lib/libslang.so.1 $(TARGET_DIR)/lib/libslang.so.1

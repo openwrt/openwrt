@@ -74,7 +74,7 @@ $(TARGET_DIR)/lib/libdb-4.1.so: $(STAGING_DIR)/lib/libdb-4.1.so
 	cp -a $(STAGING_DIR)/lib/libdb*so*  $(TARGET_DIR)/lib/
 	rm -f $(TARGET_DIR)/lib/libdb.so $(TARGET_DIR)/lib/libdb.la $(TARGET_DIR)/lib/libdb.a
 	(cd $(TARGET_DIR)/usr/lib; ln -fs /lib/libdb-4.1.so libdb.so)
-	-$(STRIP) --strip-unneeded $(TARGET_DIR)/lib/libdb*so*
+	-$(STRIP) $(TARGET_DIR)/lib/libdb*so*
 
 $(TARGET_DIR)/usr/lib/libdb.a: $(STAGING_DIR)/lib/libdb-4.1.a
 	cp -dpf $(STAGING_DIR)/include/db.h $(TARGET_DIR)/usr/include/

@@ -113,7 +113,7 @@ $(TARGET_DIR)/usr/lib/libncurses.a: $(STAGING_DIR)/lib/libncurses.a
 	(cd $(TARGET_DIR)/usr/include; ln -fs ncurses.h curses.h)
 	rm -f $(TARGET_DIR)/lib/libncurses.so
 	(cd $(TARGET_DIR)/usr/lib; ln -fs /lib/libncurses.so.5.2 libncurses.so)
-	-$(STRIP) --strip-unneeded $(TARGET_DIR)/lib/libncurses.so.5.2
+	-$(STRIP)  $(TARGET_DIR)/lib/libncurses.so.5.2
 	touch -c $(TARGET_DIR)/usr/lib/libncurses.a
 
 ncurses-headers: $(TARGET_DIR)/usr/lib/libncurses.a
