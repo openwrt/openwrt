@@ -68,6 +68,7 @@ $(eval $(call KMOD_template,USB,usb,\
 ,CONFIG_USB))
 $(eval $(call KMOD_template,LP,lp,\
 	$(MODULES_DIR)/kernel/drivers/parport/parport.o \
+	$(MODULES_DIR)/kernel/drivers/parport/parport_splink.o \
 	$(MODULES_DIR)/kernel/drivers/char/lp.o \
 ,CONFIG_PARPORT))
 $(eval $(call KMOD_template,VFAT,vfat,\
