@@ -4,7 +4,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME := popt
 PKG_VERSION := 1.7
-PKG_RELEASE := 3
+PKG_RELEASE := 4
 PKG_MD5SUM := 5988e7aeb0ae4dac8d83561265984cc9
 
 PKG_SOURCE_SITE := ftp://ftp.rpm.org/pub/rpm/dist/rpm-4.1.x/
@@ -21,16 +21,15 @@ $(DL_DIR)/$(PKG_SOURCE_FILE):
 $(PKG_BUILD_DIR)/ipkg/rules: $(DL_DIR)/$(PKG_SOURCE_FILE)
 	mkdir -p $(TOOL_BUILD_DIR)
 	$(PKG_SOURCE_CAT) $(DL_DIR)/$(PKG_SOURCE_FILE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
-	$(PATCH) $(PKG_BUILD_DIR) . $(PKG_NAME)-\*.diff
+#	$(PATCH) $(PKG_BUILD_DIR) ./patches
+	cp -fpR ./ipkg $(PKG_BUILD_DIR)/
 	chmod a+x $(PKG_BUILD_DIR)/ipkg/rules
 
 $(PKG_IPK): $(PKG_BUILD_DIR)/ipkg/rules
 	cd $(PKG_BUILD_DIR); \
-	ipkg/rules \
-	  TOPDIR="$(TOPDIR)" \
-	  IPKG_RULES_INC="$(TOPDIR)/rules.mk" \
-	  INSTALL_DIR="$(STAGING_DIR)" \
-	 package
+	TOPDIR="$(TOPDIR)" IPKG_RULES_INC="$(TOPDIR)/rules.mk" \
+	INSTALL_DIR="$(STAGING_DIR)" \
+	ipkg/rules package
 
 $(IPKG_STATE_DIR)/info/lib$(PKG_NAME).list: $(PKG_IPK)
 	$(IPKG) install $(PKG_IPK)
@@ -42,10 +41,9 @@ install: $(IPKG_STATE_DIR)/info/lib$(PKG_NAME).list
 
 clean:
 	-cd $(PKG_BUILD_DIR); \
-	ipkg/rules \
-	  TOPDIR="$(TOPDIR)" IPKG_RULES_INC="$(TOPDIR)/rules.mk" \
-	  INSTALL_DIR="$(STAGING_DIR)" \
-	 clean
+	TOPDIR="$(TOPDIR)" IPKG_RULES_INC="$(TOPDIR)/rules.mk" \
+	INSTALL_DIR="$(STAGING_DIR)" \
+	ipkg/rules clean
 	rm -rf $(PKG_BUILD_DIR)
 	rm -r $(PKG_IPK)
 
