@@ -39,7 +39,8 @@ $(NETFILTER_DIR)/.unpacked: $(DL_DIR)/$(NETFILTER_SOURCE)
 	$(SED) "s,\-p1,\-l \-p1," $(NETFILTER_DIR)/runme
 	touch $(NETFILTER_DIR)/.unpacked
 
-$(LINUX_DIR)/.nf-patched: $(LINUX_DIR)/.patched $(NETFILTER_DIR)/.unpacked
+$(LINUX_DIR)/.nf-patched: $(LINUX_DIR)/.unpacked $(NETFILTER_DIR)/.unpacked
+	$(SOURCE_DIR)/patch-kernel.sh $(LINUX_DIR) $(SOURCE_DIR)/openwrt/kernel/netfilter/patches
 	-(cd $(NETFILTER_DIR); KERNEL_DIR=$(LINUX_DIR) ./runme --batch $(NETFILTER_EXCLUDE) $(NETFILTER_PATCHES))
 	touch $(LINUX_DIR)/.nf-patched
 

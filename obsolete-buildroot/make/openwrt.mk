@@ -60,7 +60,7 @@ $(LINUX_DIR)/.patched: $(WRT54G_DIR)/.prepared
 	)
 	touch $(LINUX_DIR)/.patched
 
-$(LINUX_DIR)/.configured: $(LINUX_DIR)/.patched $(LINUX_DIR)/.bbc-patched $(LINUX_DIR)/.nf-patched 
+$(LINUX_DIR)/.configured: $(LINUX_DIR)/.nf-patched $(LINUX_DIR)/.patched $(LINUX_DIR)/.bbc-patched
 	$(SED) "s,^CROSS_COMPILE.*,CROSS_COMPILE=$(KERNEL_CROSS),g;" $(LINUX_DIR)/Makefile
 	$(SED) "s,^CROSS_COMPILE.*,CROSS_COMPILE=$(KERNEL_CROSS),g;" $(LINUX_DIR)/arch/mips/Makefile
 	$(SED) "s,\-mcpu=,\-mtune=,g;" $(LINUX_DIR)/arch/mips/Makefile
