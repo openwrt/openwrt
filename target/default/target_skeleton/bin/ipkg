@@ -21,8 +21,8 @@ set -o noglob
 
 ipkg_is_upgrade () {
   local A B a b     
-  A=$(echo $1 | sed -r "s/([0-9]+)[^A-Za-z]?/ \1 /g").
-  B=$(echo $2 | sed -r "s/([0-9]+)[^A-Za-z]?/ \1 /g").
+  A=$(echo $1 | sed -r "s/([0-9]+)[^[:alnum:]]*/ \1 /g").
+  B=$(echo $2 | sed -r "s/([0-9]+)[^[:alnum:]]*/ \1 /g").
   while [ \! -z "$A" ] && [ \! -z "$B" ]; do {        
     set $A; a=$1; shift; A=$*
     set $B; b=$1; shift; B=$*
