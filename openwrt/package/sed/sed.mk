@@ -71,7 +71,7 @@ host-sed: $(HOST_SED_TARGET)
 host-sed-clean:
 	-$(MAKE) -C $(SED_DIR1) clean
 
-host-sed-dirclean:
+host-sed-toolclean:
 	rm -rf $(SED_DIR1)
 
 
