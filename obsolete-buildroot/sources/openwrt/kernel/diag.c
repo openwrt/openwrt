@@ -7,7 +7,6 @@
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/kernel.h>
-#include <linux/timer.h>
 #include <linux/sysctl.h>
 #include <asm/io.h>
 #include <typedefs.h>
@@ -63,7 +62,6 @@ void (*set_diag)(u8 state);
 void (*set_dmz)(u8 state);
 
 static unsigned int diag = 0;
-static struct timer_list timer;
 
 static void diag_change()
 {
@@ -90,6 +88,28 @@ static int proc_diag(ctl_table *table, int write, struct file *filp,
 }
 
 // - - - - -
+static unsigned char reset_gpio = 0;
+static unsigned char reset_polarity = 0;
+static unsigned int reset = 0;
+
+static int proc_reset(ctl_table *table, int write, struct file *filp,
+		void *buffer, size_t *lenp)
+{
+
+	if (reset_gpio) {
+		sb_gpiocontrol(sbh,reset_gpio,reset_gpio);
+		sb_gpioouten(sbh,reset_gpio,0);
+		reset=!(sb_gpioin(sbh)&reset_gpio);
+
+		if (reset_polarity) reset=!reset;
+	} else {
+		reset=0;
+	}
+
+	return proc_dointvec(table, write, filp, buffer, lenp);
+}
+
+// - - - - -
 static struct ctl_table_header *diag_sysctl_header;
 
 static ctl_table sys_diag[] = {
@@ -101,31 +121,64 @@ static ctl_table sys_diag[] = {
 	   mode: 0644,
 	   proc_handler: proc_diag
 	 },
+	 {
+	   ctl_name: 2001,
+	   procname: "reset",
+	   data: &reset,
+	   maxlen: sizeof(reset),
+	   mode: 0444,
+	   proc_handler: proc_reset 
+	 },
          { 0 }
 };
 
 static int __init diag_init()
 {
+	char *buf;
 	u32 board_type;
 	sbh = sb_kattach();
 	sb_gpiosetcore(sbh);
 
 	board_type = sb_boardtype(sbh);
-	printk(KERN_INFO "diag board_type: %08x\n",board_type);
+	printk(KERN_INFO "diag boardtype: %08x\n",board_type);
 
+	set_diag=ignore;
+	set_dmz=ignore;
+	
 	if (board_type & 0x400) {
+		board_type=1;
 		set_diag=v1_set_diag;
 		set_dmz=v1_set_dmz;
-		if (board_type==0x41d) {
-			printk(KERN_INFO "buffalo hack.\n");
+
+		buf=nvram_get("boardtype")?:"";
+
+		if (!strcmp(buf,"bcm94710dev")) {
+			buf=nvram_get("boardnum")?:"";
+			if (!strcmp(buf,"42")) {
+				// wrt54g v1.x
+				set_diag=v1_set_diag;
+				set_dmz=v1_set_dmz;
+				reset_gpio=(1<<6);
+				reset_polarity=0;
+			} else (!strcmp(buf,"asusX")) {
+				//asus wl-500g
+				//no leds
+				reset_gpio=(1<<6);
+				reset_polarity=1;
+			}
+		} else if (!strcmp(buf,"bcm94710ap")) {
+			// buffalo
 			set_diag=ignore;
 			set_dmz=v2_set_dmz;
+			reset_gpio=(1<<4);
+			reset_polarity=1;
 		}
-		board_type=1;
 	} else {
 		board_type=2;
 		set_diag=v2_set_diag;
 		set_dmz=v2_set_dmz;
+		reset_gpio=(1<<6);
+		reset_polarity=0;
 	}
 	printk(KERN_INFO "using v%d hardware\n",board_type);
 
@@ -138,7 +191,6 @@ static int __init diag_init()
 static void __exit diag_exit()
 {
 	unregister_sysctl_table(diag_sysctl_header);
-	del_timer(&timer);
 }
 
 module_init(diag_init);
