@@ -43,11 +43,40 @@ config BR2_PACKAGE_KMOD_CIFS
 	  Kernel modules for CIFS support
 
 config BR2_PACKAGE_KMOD_USB
-	tristate "USB/SCSI support"
+	tristate "USB support"
 	default m
-	help
-	  Kernel modules for USB/SCSI support
-	  Includes usb-storage and printer
+
+config BR2_PACKAGE_KMOD_USB_CONTROLLER
+	tristate
+	depends on BR2_PACKAGE_KMOD_USB_UHCI || BR2_PACKAGE_KMOD_USB_OHCI
+	default n
+
+config BR2_PACKAGE_KMOD_USB_UHCI
+	tristate "Support for UHCI controllers"
+	default m
+	depends BR2_PACKAGE_KMOD_USB
+	select BR2_PACKAGE_KMOD_USB_CONTROLLER
+
+config BR2_PACKAGE_KMOD_USB_OHCI
+	tristate "Support for OHCI controllers"
+	default m
+	depends BR2_PACKAGE_KMOD_USB
+	select BR2_PACKAGE_KMOD_USB_CONTROLLER
+
+config BR2_PACKAGE_KMOD_USB2
+	tristate "Support for USB 2.0 controllers"
+	default m
+	depends BR2_PACKAGE_KMOD_USB_CONTROLLER
+
+config BR2_PACKAGE_KMOD_USB_STORAGE
+	tristate "Support for USB storage devices"
+	default m
+	depends BR2_PACKAGE_KMOD_USB_CONTROLLER
+
+config BR2_PACKAGE_KMOD_USB_PRINTER
+	tristate "Support for USB printers"
+	default m
+	depends BR2_PACKAGE_KMOD_USB_CONTROLLER
 
 config BR2_PACKAGE_KMOD_VFAT
 	tristate "VFAT filesystem support"
