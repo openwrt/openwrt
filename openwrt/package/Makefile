@@ -47,6 +47,7 @@ openssl-compile: zlib-compile
 openvpn-compile: openssl-compile
 nfs-server-compile: portmap-compile
 portmap-compile: tcp_wrappers-compile
+lcd4linux-compile: ncurses-compile
 $(patsubst %,%-prepare,$(package-y) $(package-m)): linux-install
 
 %-prepare:
