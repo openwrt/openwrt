@@ -6,6 +6,13 @@ config BR2_PACKAGE_IPTABLES
 
 	  http://www.iptables.org/
 
+config BR2_PACKAGE_IPTABLES_UTILS
+	tristate "save and restore"
+	default m
+	depends BR2_PACKAGE_IPTABLES
+	help
+	  iptables-save and iptables-restore
+
 config BR2_PACKAGE_IPTABLES_EXTRA
 	tristate "extra modules"
 	default m
