@@ -31,9 +31,9 @@ $(PKG_BUILD_DIR)/.patched: $(PKG_BUILD_DIR)/.unpacked
 
 $(STAGING_DIR)/usr/bin/ipkg-build: $(PKG_BUILD_DIR)/.patched
 	mkdir -p $(STAGING_DIR)/etc
-	echo "dest root $(TARGET_DIR)" > $(STAGING_DIR)/etc/ipkg.conf
+	echo "dest root /" > $(STAGING_DIR)/etc/ipkg.conf
+	echo "option offline_root $(TARGET_DIR)" >> $(STAGING_DIR)/etc/ipkg.conf
 	mkdir -p $(STAGING_DIR)/usr/bin
-	install -m0755 $(TARGET_DIR)/bin/ipkg $(STAGING_DIR)/usr/bin
 	install -m0755 $(PKG_BUILD_DIR)/ipkg-build $(STAGING_DIR)/usr/bin
 	install -m0755 $(PKG_BUILD_DIR)/ipkg-buildpackage $(STAGING_DIR)/usr/bin
 	install -m0755 $(PKG_BUILD_DIR)/ipkg-make-index $(STAGING_DIR)/usr/bin
