@@ -16,14 +16,19 @@ PKG_SOURCE_DIR := $(PKG_NAME)-$(PKG_VERSION)
 PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_SOURCE_DIR)
 
 PKG_IPT := $(PACKAGE_DIR)/iptables_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
+PKG_IPT_UTILS := $(PACKAGE_DIR)/iptables-utils_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
 PKG_IPT_EXTRA := $(PACKAGE_DIR)/iptables-extra_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
 PKG_IP6T := $(PACKAGE_DIR)/ip6tables_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
 
 I_IPT := $(PKG_BUILD_DIR)/ipkg/iptables
+I_IPT_UTILS := $(PKG_BUILD_DIR)/ipkg/iptables-utils
 I_IPT_EXTRA := $(PKG_BUILD_DIR)/ipkg/iptables-extra
 I_IP6T := $(PKG_BUILD_DIR)/ipkg/ip6tables
 
 TARGETS := $(PKG_IPT)
+ifneq ($(BR2_PACKAGE_IPTABLES_UTILS),)
+TARGETS += $(PKG_IPT_UTILS)
+endif
 ifneq ($(BR2_PACKAGE_IPTABLES_EXTRA),)
 TARGETS += $(PKG_IPT_EXTRA)
 endif
@@ -32,6 +37,9 @@ TARGETS += $(PKG_IP6T)
 endif
 
 INSTALL_TARGETS := $(IPKG_STATE_DIR)/info/iptables.list
+ifeq ($(BR2_PACKAGE_IPTABLES_UTILS),y)
+INSTALL_TARGETS += $(IPKG_STATE_DIR)/info/iptables-utils.list
+endif
 ifeq ($(BR2_PACKAGE_IPTABLES_EXTRA),y)
 INSTALL_TARGETS += $(IPKG_STATE_DIR)/info/iptables-extra.list
 endif
@@ -81,6 +89,18 @@ $(PKG_IPT_EXTRA): $(PKG_BUILD_DIR)/iptables
 
 $(IPKG_STATE_DIR)/info/iptables-extra.list: $(PKG_IPT)
 	$(IPKG) install $(PKG_IPT_EXTRA)
+
+$(PKG_IPT_UTILS): $(PKG_BUILD_DIR)/iptables
+	$(SCRIPT_DIR)/make-ipkg-dir.sh $(I_IPT_UTILS) control/iptables-utils.control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH) 
+	mkdir -p $(I_IPT_UTILS)/usr/sbin
+	cp $(PKG_BUILD_DIR)/iptables-save $(I_IPT_UTILS)/usr/sbin
+	cp $(PKG_BUILD_DIR)/iptables-restore $(I_IPT_UTILS)/usr/sbin
+	-$(STRIP) $(I_IPT_UTILS)/usr/sbin/*
+	mkdir -p $(PACKAGE_DIR)
+	$(IPKG_BUILD) $(I_IPT_UTILS) $(PACKAGE_DIR)
+
+$(IPKG_STATE_DIR)/info/iptables-utils.list: $(PKG_IPT)
+	$(IPKG) install $(PKG_IPT_UTILS)
 
 $(PKG_IP6T): $(PKG_BUILD_DIR)/iptables
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(I_IP6T) control/ip6tables.control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH) 
