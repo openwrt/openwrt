@@ -9,8 +9,7 @@ if /sbin/resetmon ; then
   pivot_root /jffs /jffs/rom
   mount none /dev -t devfs
   mount none /proc -t proc
-  umount rom/proc
-  umount rom/dev
+  umount rom/proc rom/dev
 else
   export FAILSAFE=true
 fi
