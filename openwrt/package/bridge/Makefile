@@ -1,14 +1,12 @@
-#############################################################
-#
-# ebtables
-#
-#############################################################
+# $Id$
+
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=bridge
 PKG_VERSION:=1.0.4
 PKG_RELEASE:=1
 PKG_MD5SUM:=2cab42847c4654e58c4d0ba114bfe2c2
+
 PKG_SOURCE_URL:=@SF/bridge
 PKG_SOURCE:=bridge-utils-$(PKG_VERSION).tar.gz
 PKG_BUILD_DIR:=$(BUILD_DIR)/bridge-utils-$(PKG_VERSION)

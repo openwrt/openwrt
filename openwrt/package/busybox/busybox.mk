@@ -1,8 +1,4 @@
-#############################################################
-#
-# busybox
-#
-#############################################################
+# $Id$
 
 ifeq ($(strip $(BR2_PACKAGE_BUSYBOX_SNAPSHOT)),y)
 # Be aware that this changes daily....
@@ -11,6 +7,7 @@ BUSYBOX_SOURCE:=busybox-snapshot.tar.bz2
 BUSYBOX_SITE:=http://www.busybox.net/downloads/snapshots
 else
 BUSYBOX_VER:=1.00
+BUSYBOX_MD5:=5c7ea9b5d3b3677dfcdcec38b281a756
 BUSYBOX_DIR:=$(BUILD_DIR)/busybox-$(BUSYBOX_VER)
 BUSYBOX_SOURCE:=busybox-$(BUSYBOX_VER).tar.bz2
 BUSYBOX_SITE:=http://www.busybox.net/downloads
@@ -18,7 +15,7 @@ endif
 BUSYBOX_UNZIP=bzcat
 
 $(DL_DIR)/$(BUSYBOX_SOURCE):
-	 $(SCRIPT_DIR)/download.pl $(DL_DIR) $(BUSYBOX_SOURCE) x $(BUSYBOX_SITE)
+	 $(SCRIPT_DIR)/download.pl $(DL_DIR) $(BUSYBOX_SOURCE) $(BUSYBOX_MD5) $(BUSYBOX_SITE)
 
 busybox-source: $(DL_DIR)/$(BUSYBOX_SOURCE) $(BUSYBOX_CONFIG)
 

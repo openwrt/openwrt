@@ -1,8 +1,11 @@
+# $Id$
+
 include $(TOPDIR)/rules.mk
 
 PKG_NAME := libelf
 PKG_VERSION := 0.8.5
 PKG_RELEASE := 1
+PKG_MD5SUM := c1daf069367871350ece779b7de20047
 
 PKG_SOURCE_SITE := http://www.mr511.de/software/
 PKG_SOURCE_FILE := $(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -12,10 +15,9 @@ PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_SOURCE_DIR)
 PKG_IPK := $(PACKAGE_DIR)/$(PKG_NAME)_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
 PKG_IPK_DIR :=$(PKG_BUILD_DIR)/ipkg/
 
-
 $(DL_DIR)/$(PKG_SOURCE_FILE):
 	mkdir -p $(DL_DIR)
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE_FILE) x $(PKG_SOURCE_SITE)
+	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE_FILE) $(PKG_MD5SUM) $(PKG_SOURCE_SITE)
 
 $(PKG_BUILD_DIR)/.unpacked: $(DL_DIR)/$(PKG_SOURCE_FILE)
 	mkdir -p $(TOOL_BUILD_DIR)
@@ -64,4 +66,3 @@ clean:
 	rm -rf $(PKG_BUILD_DIR)
 	rm -f $(STAGING_DIR)/lib/$(PKG_NAME)* 
 	rm -f $(PACKAGE_DIR)/$(PKG_NAME)\*.ipk
-

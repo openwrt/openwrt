@@ -1,9 +1,12 @@
+# $Id$
+
 include $(TOPDIR)/rules.mk
 include kernelconfig.mk
 
 PKG_NAME := iptables
 PKG_VERSION := 1.3.0
 PKG_RELEASE := 1
+PKG_MD5SUM := a072c0f09f1b289cb7af56f76407d033
 
 PKG_SOURCE_SITE := http://www.netfilter.org/files
 PKG_SOURCE_FILE := $(PKG_NAME)-$(PKG_VERSION).tar.bz2
@@ -38,7 +41,7 @@ endif
 
 $(DL_DIR)/$(PKG_SOURCE_FILE):
 	mkdir -p $(DL_DIR)
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE_FILE) x $(PKG_SOURCE_SITE)
+	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE_FILE) $(PKG_MD5SUM) $(PKG_SOURCE_SITE)
 
 $(PKG_BUILD_DIR)/.patched: $(DL_DIR)/$(PKG_SOURCE_FILE)
 	mkdir -p $(PKG_BUILD_DIR)/modules

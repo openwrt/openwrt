@@ -1,13 +1,12 @@
-#############################################################
-#
-# ebtables
-#
-#############################################################
+# $Id$
+
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dnsmasq
 PKG_VERSION:=2.20
 PKG_RELEASE:=1
+PKG_MD5SUM:=a1501ff96a2925d9c1d44388892cd5af
+
 PKG_SOURCE_URL:=http://thekelleys.org.uk/dnsmasq
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
@@ -16,7 +15,7 @@ PKG_IPK:=$(PACKAGE_DIR)/$(PKG_NAME)_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
 PKG_IPK_DIR:=$(PKG_BUILD_DIR)/ipkg
 
 $(DL_DIR)/$(PKG_SOURCE):
-	 $(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE) x $(PKG_SOURCE_URL)
+	 $(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE) $(PKG_MD5SUM) $(PKG_SOURCE_URL)
 
 $(PKG_BUILD_DIR)/.patched: $(DL_DIR)/$(PKG_SOURCE)
 	$(PKG_CAT) $(DL_DIR)/$(PKG_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -

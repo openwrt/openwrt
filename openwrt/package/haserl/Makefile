@@ -1,8 +1,11 @@
+# $Id$
+
 include $(TOPDIR)/rules.mk
 
 PKG_NAME := haserl
 PKG_VERSION := 0.7.3
 PKG_RELEASE := 3
+PKG_MD5SUM := a45d9c5b07e053ad105124e1fc12d9c4
 
 PKG_SOURCE_SITE := @SF/haserl
 PKG_SOURCE_FILE := $(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -14,7 +17,7 @@ PKG_IPK := $(PACKAGE_DIR)/$(PKG_NAME)_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
 
 $(DL_DIR)/$(PKG_SOURCE_FILE):
 	mkdir -p $(DL_DIR)
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE_FILE) x $(PKG_SOURCE_SITE)
+	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE_FILE) $(PKG_MD5SUM) $(PKG_SOURCE_SITE)
 
 $(PKG_BUILD_DIR)/ipkg/rules: $(DL_DIR)/$(PKG_SOURCE_FILE)
 	mkdir -p $(TOOL_BUILD_DIR)

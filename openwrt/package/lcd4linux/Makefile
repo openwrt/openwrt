@@ -1,14 +1,12 @@
-#############################################################
-#
-# lcd4linux
-#
-#############################################################
+# $Id$
+
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=lcd4linux
 PKG_VERSION:=0.10.0-RC1
 PKG_RELEASE:=1
 PKG_MD5SUM:=bab64ac01ebdce7e46ab367351af839f
+
 PKG_SOURCE_URL:=@SF/lcd4linux/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)

@@ -1,14 +1,12 @@
-#############################################################
-#
-# ebtables
-#
-#############################################################
+# $Id$
+
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ebtables
 PKG_VERSION:=2.0.6
 PKG_RELEASE:=1
 PKG_MD5SUM:=c4559af2366c764c6c42a3fdd40d60d3
+
 PKG_SOURCE_URL:=@SF/ebtables
 PKG_SOURCE:=$(PKG_NAME)-v$(PKG_VERSION).tar.gz
 PKG_BUILD_DIR:=$(BUILD_DIR)/ebtables-v$(PKG_VERSION)

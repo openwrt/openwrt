@@ -1,8 +1,11 @@
+# $Id$
+
 include $(TOPDIR)/rules.mk
 
 PKG_NAME := popt
 PKG_VERSION := 1.7
 PKG_RELEASE := 3
+PKG_MD5SUM := 5988e7aeb0ae4dac8d83561265984cc9
 
 PKG_SOURCE_SITE := ftp://ftp.rpm.org/pub/rpm/dist/rpm-4.1.x/
 PKG_SOURCE_FILE := $(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -11,10 +14,9 @@ PKG_SOURCE_DIR := $(PKG_NAME)-$(PKG_VERSION)
 PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_SOURCE_DIR)
 PKG_IPK := $(PACKAGE_DIR)/lib$(PKG_NAME)_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
 
-
 $(DL_DIR)/$(PKG_SOURCE_FILE):
 	mkdir -p $(DL_DIR)
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE_FILE) x $(PKG_SOURCE_SITE)
+	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE_FILE) $(PKG_MD5SUM) $(PKG_SOURCE_SITE)
 
 $(PKG_BUILD_DIR)/ipkg/rules: $(DL_DIR)/$(PKG_SOURCE_FILE)
 	mkdir -p $(TOOL_BUILD_DIR)
