@@ -46,6 +46,7 @@ jffs2root-dirclean:
 ifeq ($(strip $(BR2_TARGET_ROOTFS_JFFS2)),y)
 TARGETS+=openwrt-image
 ROOTFS=jffs2
+JFFS2FLAGS=-a $(JFFS2_BLOCK_SIZE)
 
 openwrt-image:	openwrt
 	@make jffs2root openwrt-code.bin TAG=W54G \
