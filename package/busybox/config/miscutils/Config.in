@@ -1,0 +1,201 @@
+#
+# For a description of the syntax of this configuration file,
+# see scripts/kbuild/config-language.txt.
+#
+
+menu "Miscellaneous Utilities"
+
+config BUSYBOX_CONFIG_ADJTIMEX
+	bool "adjtimex"
+	default n
+	help
+	  Adjtimex reads and optionally sets adjustment parameters for
+	  the Linux clock adjustment algorithm.
+
+config BUSYBOX_CONFIG_CROND
+	bool "crond"
+	default y
+	select BUSYBOX_CONFIG_FEATURE_SUID
+	help
+	  Crond is a background daemon that parses individual crontab
+	  files and executes commands on behalf of the users in question.
+	  This is a port of dcron from slackware.  It uses files of the
+	  format /var/spool/cron/crontabs/<username> files, for example:
+	      $ cat /var/spool/cron/crontabs/root
+	      # Run daily cron jobs at 4:40 every day:
+	      40 4 * * * /etc/cron/daily > /dev/null 2>&1
+	  Note that Busybox binary must be setuid root for this applet to
+	  work properly.
+
+config BUSYBOX_CONFIG_FEATURE_CROND_CALL_SENDMAIL
+	bool "  Using /usr/sbin/sendmail?"
+	default n
+	depends on BUSYBOX_CONFIG_CROND
+	help
+	  Support calling /usr/sbin/sendmail for send cmd outputs.
+
+config BUSYBOX_CONFIG_CRONTAB
+	bool "crontab"
+	default y
+	help
+	  Crontab manipulates the crontab for a particular user.  Only
+	  the superuser may specify a different user and/or crontab directory.
+
+config BUSYBOX_CONFIG_DC
+	bool "dc"
+	default n
+	help
+	  Dc is a reverse-polish desk calculator which supports unlimited
+	  precision arithmetic.
+
+config BUSYBOX_CONFIG_DEVFSD
+	bool "devfsd"
+	default n
+	help
+	  Provides compatibility with old device names on a devfs systems.
+	  You should set it to true if you have devfs enabled.
+	  The following keywords in devsfd.conf are supported:
+	  "CLEAR_CONFIG", "INCLUDE", "OPTIONAL_INCLUDE", "RESTORE",
+	  "PERMISSIONS", "EXECUTE", "COPY", "IGNORE",
+	  "MKOLDCOMPAT", "MKNEWCOMPAT","RMOLDCOMPAT", "RMNEWCOMPAT".
+
+	   But only if they are written UPPERCASE!!!!!!!!
+
+config BUSYBOX_CONFIG_DEVFSD_MODLOAD
+	bool "Adds support for MODLOAD keyword in devsfd.conf"
+	default n
+	depends on BUSYBOX_CONFIG_DEVFSD
+	help
+	  This actually doesn't work with busybox  modutils but needs the real modutils.
+
+config BUSYBOX_CONFIG_DEVFSD_FG_NP
+	bool "Enables the -fg and -np options"
+	default n
+	depends on BUSYBOX_CONFIG_DEVFSD
+	help
+		-fg	Run the daemon in the foreground.
+		-np	Exit  after  parsing  the configuration file. Do not poll for events.
+
+config BUSYBOX_CONFIG_DEVFSD_VERBOSE
+	bool "Increases logging (and size)"
+	default n
+	depends on BUSYBOX_CONFIG_DEVFSD
+	help
+	  Increases logging to stderr or syslog.
+
+config BUSYBOX_CONFIG_LAST
+	bool "last"
+	default n
+	select BUSYBOX_CONFIG_FEATURE_U_W_TMP
+	help
+	  'last' displays a list of the last users that logged into the system.
+
+config BUSYBOX_CONFIG_HDPARM
+	bool "hdparm"
+	default n
+	help
+	  Get/Set hard drive parameters.  Primarily intended for ATA
+	  drives.  Adds about 13k (or around 30k if you enable the
+	  BUSYBOX_CONFIG_FEATURE_HDPARM_GET_IDENTITY option)....
+
+config BUSYBOX_CONFIG_FEATURE_HDPARM_GET_IDENTITY
+	bool "  Support obtaining detailed information directly from drives"
+	default n
+	depends on BUSYBOX_CONFIG_HDPARM
+	help
+	  Enables the -I and -Istdin options to obtain detailed information
+	  directly from drives about their capabilities and supported ATA
+	  feature set.  Enabling this option will add about 16k...
+
+config BUSYBOX_CONFIG_FEATURE_HDPARM_HDIO_SCAN_HWIF
+	bool "  Register an IDE interface (DANGEROUS)"
+	default n
+	depends on BUSYBOX_CONFIG_HDPARM
+	help
+	  Enables the 'hdparm -R' option to register an IDE interface.
+	  This is dangerous stuff, so you should probably say N.
+
+config BUSYBOX_CONFIG_FEATURE_HDPARM_HDIO_UNREGISTER_HWIF
+	bool "  Un-register an IDE interface (DANGEROUS)"
+	default n
+	depends on BUSYBOX_CONFIG_HDPARM
+	help
+	  Enables the 'hdparm -U' option to un-register an IDE interface.
+	  This is dangerous stuff, so you should probably say N.
+
+config BUSYBOX_CONFIG_FEATURE_HDPARM_HDIO_DRIVE_RESET
+	bool "  perform device reset (DANGEROUS)"
+	default n
+	depends on BUSYBOX_CONFIG_HDPARM
+	help
+	  Enables the 'hdparm -w' option to perform a device reset.
+	  This is dangerous stuff, so you should probably say N.
+
+config BUSYBOX_CONFIG_FEATURE_HDPARM_HDIO_TRISTATE_HWIF
+	bool "  tristate device for hotswap (DANGEROUS)"
+	default n
+	depends on BUSYBOX_CONFIG_HDPARM
+	help
+	  Enables the 'hdparm -x' option to tristate device for hotswap,
+	  and the '-b' option to get/set bus state.  This is dangerous
+	  stuff, so you should probably say N.
+
+config BUSYBOX_CONFIG_FEATURE_HDPARM_HDIO_GETSET_DMA
+	bool "  get/set using_dma flag (DANGEROUS)"
+	default n
+	depends on BUSYBOX_CONFIG_HDPARM
+	help
+	  Enables the 'hdparm -d' option to get/set using_dma flag.
+	  This is dangerous stuff, so you should probably say N.
+
+config BUSYBOX_CONFIG_MAKEDEVS
+	bool "makedevs"
+	default n
+	help
+	  'makedevs' is a utility used and created by the Linux Router Project.
+	  It creates a large number of device special files (/dev devices)
+	  rather quickly, and can be considerably faster then running mknod a
+	  zillion times.
+
+config BUSYBOX_CONFIG_MT
+	bool "mt"
+	default n
+	help
+	  mt is used to control tape devices.  You can use the mt utility
+	  to advance or rewind a tape past a specified number of archive
+	  files on the tape.
+
+config BUSYBOX_CONFIG_RX
+        bool "rx"
+	default n
+	help
+ 	  Receive files using the Xmodem protocol.
+
+config BUSYBOX_CONFIG_STRINGS
+	bool "strings"
+	default y
+	help
+	  strings prints the printable character sequences for each file
+	  specified.
+
+config BUSYBOX_CONFIG_TIME
+	bool "time"
+	default y
+	help
+	  The time command runs the specified program with the given arguments.
+	  When the command finishes, time writes a message to standard output
+	  giving timing statistics about this program run.
+
+config BUSYBOX_CONFIG_WATCHDOG
+	bool "watchdog"
+	default n
+	help
+	  The watchdog utility is used with hardware or software watchdog
+	  device drivers.  It opens the specified watchdog device special file
+	  and periodically writes a magic character to the device.  If the
+	  watchdog applet ever fails to write the magic character within a
+	  certain amount of time, the watchdog device assumes the system has
+	  hung, and will cause the hardware to reboot.
+
+endmenu
+

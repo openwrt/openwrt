@@ -20,13 +20,12 @@ DNSMASQ_TARGET_BINARY=usr/sbin/dnsmasq
 $(DL_DIR)/$(DNSMASQ_SOURCE):
 	$(WGET) -P $(DL_DIR) $(DNSMASQ_SITE)/$(DNSMASQ_SOURCE)
 
-$(DNSMASQ_DIR)/.source: $(DL_DIR)/$(DNSMASQ_SOURCE)
+$(DNSMASQ_DIR)/.unpacked: $(DL_DIR)/$(DNSMASQ_SOURCE)
 	zcat $(DL_DIR)/$(DNSMASQ_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
-	toolchain/patch-kernel.sh $(DNSMASQ_DIR) package/dnsmasq/ \
-		$(DNSMASQ_VER)-\*.patch
-	touch $(DNSMASQ_DIR)/.source
+	$(PATCH) $(DNSMASQ_DIR) ./ $(DNSMASQ_VER)-\*.patch
+	touch $(DNSMASQ_DIR)/.unpacked
 
-$(DNSMASQ_DIR)/src/$(DNSMASQ_BINARY): $(DNSMASQ_DIR)/.source
+$(DNSMASQ_DIR)/src/$(DNSMASQ_BINARY): $(DNSMASQ_DIR)/.unpacked
 	$(MAKE) CC=$(TARGET_CC) CFLAGS="$(TARGET_CFLAGS)" \
 		BINDIR=/usr/sbin MANDIR=/usr/man -C $(DNSMASQ_DIR)
 
@@ -36,9 +35,9 @@ $(TARGET_DIR)/$(DNSMASQ_TARGET_BINARY): $(DNSMASQ_DIR)/src/$(DNSMASQ_BINARY)
 	$(STRIP) $(TARGET_DIR)/$(DNSMASQ_TARGET_BINARY)
 	rm -rf $(TARGET_DIR)/usr/man
 
-dnsmasq: uclibc $(TARGET_DIR)/$(DNSMASQ_TARGET_BINARY)
+dnsmasq: $(TARGET_DIR)/$(DNSMASQ_TARGET_BINARY)
 
-dnsmasq1: uclibc $(TARGET_DIR)/$(DNSMASQ_TARGET_BINARY)
+dnsmasq1: $(TARGET_DIR)/$(DNSMASQ_TARGET_BINARY)
 
 dnsmasq-source: $(DL_DIR)/$(DNSMASQ_SOURCE)
 

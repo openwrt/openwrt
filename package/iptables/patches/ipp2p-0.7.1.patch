@@ -1,0 +1,538 @@
+diff -urN iptables-1.2.11.old/extensions/libipt_ipp2p.c iptables-1.2.11/extensions/libipt_ipp2p.c
+--- iptables-1.2.11.old/extensions/libipt_ipp2p.c	1970-01-01 01:00:00.000000000 +0100
++++ iptables-1.2.11/extensions/libipt_ipp2p.c	2005-03-01 17:49:59.000000000 +0100
+@@ -0,0 +1,482 @@
++
++#include <stdio.h>
++#include <netdb.h>
++#include <string.h>
++#include <stdlib.h>
++#include <getopt.h>
++#include <ctype.h>
++
++#include <iptables.h>
++
++#include <linux/netfilter_ipv4/ipt_ipp2p.h>
++
++
++
++
++static void
++help(void)
++{
++    printf(
++    "IPP2P v%s options:\n"
++    " --ipp2p	Grab all known p2p packets\n"
++    " --ipp2p-data	Identify all known p2p download commands (obsolete)\n\n"
++    " --edk		[TCP&UDP]	All known eDonkey/eMule/Overnet packets\n"
++    " --dc		[TCP] 		All known Direct Connect packets\n"
++    " --kazaa	[TCP&UDP] 	All known KaZaA packets\n"
++    " --gnu		[TCP&UDP]	All known Gnutella packets\n"
++    " --bit		[TCP&UDP]	All known BitTorrent packets\n"
++    " --apple	[TCP] 		All known AppleJuice packets (beta - just a few tests until now)\n"
++    " --winmx	[TCP] 		All known WinMX (beta - need feedback)\n"
++    " --soul		[TCP] 		All known SoulSeek (beta - need feedback!)\n"
++    " --ares		[TCP] 		All known Ares - use with DROP only (beta - need feedback!)\n\n"
++    " --edk-data	[TCP] 		eDonkey/eMule/Overnet download commands (obsolete)\n"
++    " --dc-data	[TCP] 		Direct Connect download command (obsolete)\n"
++    " --kazaa-data	[TCP] 		KaZaA download command (obsolete)\n"
++    " --gnu-data	[TCP] 		Gnutella download command (obsolete)\n"
++    "\nNote that the follwing options will have the same meaning:\n"
++    " '--ipp2p' is equal to '--edk --dc --kazaa --gnu'\n"
++    " '--ipp2p-data' is equal to '--edk-data --dc-data --kazaa-data --gnu-data'\n"
++    "\nIPP2P was intended for TCP only. Due to increasing usage of UDP we needed to change this:\n"
++    " --udp		search UDP packets only\n"
++    " --tcp		search TCP packets only\n"
++    " --udp --tcp	search UDP and TCP packets\n"
++    "\nSee README included with this package for more details or visit http://www.ipp2p.org\n"
++    "\nExamples:\n"
++    " iptables -A FORWARD -m ipp2p --ipp2p -j MARK --set-mark 0x01\n"
++    " iptables -A FORWARD -m ipp2p --udp --kazaa --bit -j DROP\n"
++    " iptables -A FORWARD -m ipp2p --tcp --edk --soul -j DROP\n\n"
++    , IPP2P_VERSION);
++}
++
++							    
++
++static struct option opts[] = {
++        { "ipp2p", 0, 0, '1' },
++        { "edk", 0, 0, '2' },	
++        { "ipp2p-data", 0, 0, '3' },		
++        { "kazaa-data", 0, 0, '4' },
++        { "edk-data", 0, 0, '5' },	
++        { "dc-data", 0, 0, '6' },
++	{ "dc", 0, 0, '7' },
++	{ "gnu-data", 0, 0, '8' },	
++	{ "gnu", 0, 0, '9' },
++	{ "kazaa", 0, 0, 'a' },
++	{ "bit", 0, 0, 'b' },
++	{ "apple", 0, 0, 'c' },	
++	{ "soul", 0, 0, 'd' },	
++	{ "winmx", 0, 0, 'e' },	
++	{ "ares", 0, 0, 'f' },
++	{ "debug", 0, 0, 'g' },
++	{ "udp", 0, 0, 'h' },
++	{ "tcp", 0, 0, 'i' },
++        {0}
++};
++
++	
++
++static void
++init(struct ipt_entry_match *m, unsigned int *nfcache)
++{
++    struct ipt_p2p_info *info = (struct ipt_p2p_info *)m->data;
++
++    *nfcache |= NFC_UNKNOWN;
++
++    /*init the module with default values*/
++    info->cmd = 0;
++    info->debug = 0;
++    info->proto = IPP2P_PROTO_DEFAULT;
++
++}
++	
++
++static int
++parse(int c, char **argv, int invert, unsigned int *flags,
++	const struct ipt_entry *entry,
++	unsigned int *nfcache,
++	struct ipt_entry_match **match)
++{
++    struct ipt_p2p_info *info = (struct ipt_p2p_info *)(*match)->data;
++    
++    switch (c) {
++	case '1':		/*cmd: ipp2p*/
++	    if ((*flags & SHORT_HAND_IPP2P) == SHORT_HAND_IPP2P)
++		    exit_error(PARAMETER_PROBLEM,
++				"ipp2p: `--ipp2p' may only be "
++				"specified once!");
++	    if ((*flags & SHORT_HAND_DATA) == SHORT_HAND_DATA)
++		    exit_error(PARAMETER_PROBLEM,
++				"ipp2p: `--ipp2p-data' may only be "
++				"specified alone!");
++	    if ((*flags) != 0)
++		    exit_error(PARAMETER_PROBLEM,
++				"ipp2p: `--ipp2p' may only be "
++				"specified alone!");
++	    if (invert) exit_error(PARAMETER_PROBLEM, "ipp2p: invert [!] is not allowed!");
++	    *flags += SHORT_HAND_IPP2P;
++	    info->cmd = *flags;
++	    break;
++	    
++	case '2':		/*cmd: edk*/
++	    if ((*flags & IPP2P_EDK) == IPP2P_EDK)
++		    exit_error(PARAMETER_PROBLEM,
++				"ipp2p: `--edk' may only be "
++				"specified once");
++	    if ((*flags & SHORT_HAND_IPP2P) == SHORT_HAND_IPP2P)
++		    exit_error(PARAMETER_PROBLEM,
++				"ipp2p: `--ipp2p' may only be "
++				"specified alone!");
++	    if ((*flags & SHORT_HAND_DATA) == SHORT_HAND_DATA)
++		    exit_error(PARAMETER_PROBLEM,
++				"ipp2p: `--ipp2p-data' may only be "
++				"specified alone!");
++            if ((*flags & IPP2P_DATA_EDK) == IPP2P_DATA_EDK)
++            exit_error(PARAMETER_PROBLEM,
++                                "ipp2p: use `--edk' OR `--edk-data' but not both of them!");
++	    if (invert) exit_error(PARAMETER_PROBLEM, "ipp2p: invert [!] is not allowed!");
++	    *flags += IPP2P_EDK;
++	    info->cmd = *flags;	    
++	    break;
++
++	case '3':		/*cmd: ipp2p-data*/
++	    if ((*flags & SHORT_HAND_DATA) == SHORT_HAND_DATA)
++		    exit_error(PARAMETER_PROBLEM,
++				"ipp2p: `--ipp2p-data' may only be "
++				"specified once!");
++	    if ((*flags & SHORT_HAND_IPP2P) == SHORT_HAND_IPP2P)
++		    exit_error(PARAMETER_PROBLEM,
++				"ipp2p: `--ipp2p' may only be "
++				"specified alone!");
++	    if ((*flags) != 0)
++		    exit_error(PARAMETER_PROBLEM,
++				"ipp2p: `--ipp2p-data' may only be "
++				"specified alone!");
++	    if (invert) exit_error(PARAMETER_PROBLEM, "ipp2p: invert [!] is not allowed!");
++	    *flags += SHORT_HAND_DATA;
++	    info->cmd = *flags;	    
++	    break;
++
++        case '4':		/*cmd: kazaa-data*/
++            if ((*flags & IPP2P_DATA_KAZAA) == IPP2P_DATA_KAZAA)
++            exit_error(PARAMETER_PROBLEM,
++                                "ipp2p: `--kazaa-data' may only be "
++                                "specified once!");
++	    if ((*flags & SHORT_HAND_IPP2P) == SHORT_HAND_IPP2P)
++		    exit_error(PARAMETER_PROBLEM,
++				"ipp2p: `--ipp2p' may only be "
++				"specified alone!");
++	    if ((*flags & SHORT_HAND_DATA) == SHORT_HAND_DATA)
++		    exit_error(PARAMETER_PROBLEM,
++				"ipp2p: `--ipp2p-data' may only be "
++				"specified alone!");
++            if ((*flags & IPP2P_KAZAA) == IPP2P_KAZAA)
++            exit_error(PARAMETER_PROBLEM,
++                                "ipp2p: use `--kazaa' OR `--kazaa-data' but not both of them!");
++	    if (invert) exit_error(PARAMETER_PROBLEM, "ipp2p: invert [!] is not allowed!");
++            *flags += IPP2P_DATA_KAZAA;
++	    info->cmd = *flags;
++	    break;
++
++	case '5':		/*cmd: edk-data*/
++            if ((*flags & IPP2P_DATA_EDK) == IPP2P_DATA_EDK)
++            exit_error(PARAMETER_PROBLEM,
++                                "ipp2p: `--edk-data' may only be "
++                                "specified once!");
++	    if ((*flags & SHORT_HAND_IPP2P) == SHORT_HAND_IPP2P)
++		    exit_error(PARAMETER_PROBLEM,
++				"ipp2p: `--ipp2p' may only be "
++				"specified alone!");
++	    if ((*flags & SHORT_HAND_DATA) == SHORT_HAND_DATA)
++		    exit_error(PARAMETER_PROBLEM,
++				"ipp2p: `--ipp2p-data' may only be "
++				"specified alone!");
++            if ((*flags & IPP2P_EDK) == IPP2P_EDK)
++            exit_error(PARAMETER_PROBLEM,
++                                "ipp2p: use `--edk' OR `--edk-data' but not both of them!");
++	    if (invert) exit_error(PARAMETER_PROBLEM, "ipp2p: invert [!] is not allowed!");
++            *flags += IPP2P_DATA_EDK;
++	    info->cmd = *flags;
++	    break;																											
++
++	case '6':		/*cmd: dc-data*/
++            if ((*flags & IPP2P_DATA_DC) == IPP2P_DATA_DC)
++            exit_error(PARAMETER_PROBLEM,
++                                "ipp2p: `--dc-data' may only be "
++                                "specified once!");
++	    if ((*flags & SHORT_HAND_DATA) == SHORT_HAND_DATA)
++		    exit_error(PARAMETER_PROBLEM,
++				"ipp2p: `--ipp2p-data' may only be "
++				"specified alone!");
++	    if ((*flags & SHORT_HAND_IPP2P) == SHORT_HAND_IPP2P)
++		    exit_error(PARAMETER_PROBLEM,
++				"ipp2p: `--ipp2p' may only be "
++				"specified alone!");
++            if ((*flags & IPP2P_DC) == IPP2P_DC)
++            exit_error(PARAMETER_PROBLEM,
++                                "ipp2p: use `--dc' OR `--dc-data' but not both of them!");
++	    if (invert) exit_error(PARAMETER_PROBLEM, "ipp2p: invert [!] is not allowed!");
++            *flags += IPP2P_DATA_DC;
++	    info->cmd = *flags;
++	    break;																											
++
++	case '7':		/*cmd: dc*/
++            if ((*flags & IPP2P_DC) == IPP2P_DC)
++            exit_error(PARAMETER_PROBLEM,
++                                "ipp2p: `--dc' may only be "
++                                "specified once!");
++	    if ((*flags & SHORT_HAND_IPP2P) == SHORT_HAND_IPP2P)
++		    exit_error(PARAMETER_PROBLEM,
++				"ipp2p: `--ipp2p' may only be "
++				"specified alone!");
++	    if ((*flags & SHORT_HAND_DATA) == SHORT_HAND_DATA)
++		    exit_error(PARAMETER_PROBLEM,
++				"ipp2p: `--ipp2p-data' may only be "
++				"specified alone!");
++            if ((*flags & IPP2P_DATA_DC) == IPP2P_DATA_DC)
++            exit_error(PARAMETER_PROBLEM,
++                                "ipp2p: use `--dc' OR `--dc-data' but not both of them!");
++	    if (invert) exit_error(PARAMETER_PROBLEM, "ipp2p: invert [!] is not allowed!");
++            *flags += IPP2P_DC;
++	    info->cmd = *flags;
++	    break;																											
++
++
++	case '8':		/*cmd: gnu-data*/
++            if ((*flags & IPP2P_DATA_GNU) == IPP2P_DATA_GNU)
++            exit_error(PARAMETER_PROBLEM,
++                                "ipp2p: `--gnu-data' may only be "
++                                "specified once!");
++	    if ((*flags & SHORT_HAND_IPP2P) == SHORT_HAND_IPP2P)
++		    exit_error(PARAMETER_PROBLEM,
++				"ipp2p: `--ipp2p' may only be "
++				"specified alone!");
++	    if ((*flags & SHORT_HAND_DATA) == SHORT_HAND_DATA)
++		    exit_error(PARAMETER_PROBLEM,
++				"ipp2p: `--ipp2p-data' may only be "
++				"specified alone!");
++            if ((*flags & IPP2P_GNU) == IPP2P_GNU)
++            exit_error(PARAMETER_PROBLEM,
++                                "ipp2p: use `--gnu' OR `--gnu-data' but not both of them!");
++	    if (invert) exit_error(PARAMETER_PROBLEM, "ipp2p: invert [!] is not allowed!");
++            *flags += IPP2P_DATA_GNU;
++	    info->cmd = *flags;
++	    break;																											
++
++	case '9':		/*cmd: gnu*/
++            if ((*flags & IPP2P_GNU) == IPP2P_GNU)
++            exit_error(PARAMETER_PROBLEM,
++                                "ipp2p: `--gnu' may only be "
++                                "specified once!");
++	    if ((*flags & SHORT_HAND_DATA) == SHORT_HAND_DATA)
++		    exit_error(PARAMETER_PROBLEM,
++				"ipp2p: `--ipp2p-data' may only be "
++				"specified alone!");
++	    if ((*flags & SHORT_HAND_IPP2P) == SHORT_HAND_IPP2P)
++		    exit_error(PARAMETER_PROBLEM,
++				"ipp2p: `--ipp2p' may only be "
++				"specified alone!");
++            if ((*flags & IPP2P_DATA_GNU) == IPP2P_DATA_GNU)
++            exit_error(PARAMETER_PROBLEM,
++                                "ipp2p: use `--gnu' OR `--gnu-data' but not both of them!");
++	    if (invert) exit_error(PARAMETER_PROBLEM, "ipp2p: invert [!] is not allowed!");
++            *flags += IPP2P_GNU;
++	    info->cmd = *flags;
++	    break;																											
++
++	case 'a':		/*cmd: kazaa*/
++            if ((*flags & IPP2P_KAZAA) == IPP2P_KAZAA)
++            exit_error(PARAMETER_PROBLEM,
++                                "ipp2p: `--kazaa' may only be "
++                                "specified once!");
++	    if ((*flags & SHORT_HAND_DATA) == SHORT_HAND_DATA)
++		    exit_error(PARAMETER_PROBLEM,
++				"ipp2p: `--ipp2p-data' may only be "
++				"specified alone!");
++	    if ((*flags & SHORT_HAND_IPP2P) == SHORT_HAND_IPP2P)
++		    exit_error(PARAMETER_PROBLEM,
++				"ipp2p: `--ipp2p' may only be "
++				"specified alone!");
++            if ((*flags & IPP2P_DATA_KAZAA) == IPP2P_DATA_KAZAA)
++            exit_error(PARAMETER_PROBLEM,
++                                "ipp2p: use `--kazaa' OR `--kazaa-data' but not both of them!");
++	    if (invert) exit_error(PARAMETER_PROBLEM, "ipp2p: invert [!] is not allowed!");
++            *flags += IPP2P_KAZAA;
++	    info->cmd = *flags;
++	    break;																											
++
++	case 'b':		/*cmd: bit*/
++            if ((*flags & IPP2P_BIT) == IPP2P_BIT)
++            exit_error(PARAMETER_PROBLEM,
++                                "ipp2p: `--bit' may only be "
++                                "specified once!");
++	    if (invert) exit_error(PARAMETER_PROBLEM, "ipp2p: invert [!] is not allowed!");
++            *flags += IPP2P_BIT;
++	    info->cmd = *flags;
++	    break;																											
++
++	case 'c':		/*cmd: apple*/
++            if ((*flags & IPP2P_APPLE) == IPP2P_APPLE)
++            exit_error(PARAMETER_PROBLEM,
++                                "ipp2p: `--apple' may only be "
++                                "specified once!");
++	    if (invert) exit_error(PARAMETER_PROBLEM, "ipp2p: invert [!] is not allowed!");
++            *flags += IPP2P_APPLE;
++	    info->cmd = *flags;
++	    break;																											
++
++
++	case 'd':		/*cmd: soul*/
++            if ((*flags & IPP2P_SOUL) == IPP2P_SOUL)
++            exit_error(PARAMETER_PROBLEM,
++                                "ipp2p: `--soul' may only be "
++                                "specified once!");
++	    if (invert) exit_error(PARAMETER_PROBLEM, "ipp2p: invert [!] is not allowed!");
++            *flags += IPP2P_SOUL;
++	    info->cmd = *flags;
++	    break;																											
++
++
++	case 'e':		/*cmd: winmx*/
++            if ((*flags & IPP2P_WINMX) == IPP2P_WINMX)
++            exit_error(PARAMETER_PROBLEM,
++                                "ipp2p: `--winmx' may only be "
++                                "specified once!");
++	    if (invert) exit_error(PARAMETER_PROBLEM, "ipp2p: invert [!] is not allowed!");
++            *flags += IPP2P_WINMX;
++	    info->cmd = *flags;
++	    break;																											
++
++	case 'f':		/*cmd: ares*/
++            if ((*flags & IPP2P_ARES) == IPP2P_ARES)
++            exit_error(PARAMETER_PROBLEM,
++                                "ipp2p: `--ares' may only be "
++                                "specified once!");
++	    if (invert) exit_error(PARAMETER_PROBLEM, "ipp2p: invert [!] is not allowed!");
++            *flags += IPP2P_ARES;
++	    info->cmd = *flags;
++	    break;																											
++
++	case 'g':		/*cmd: debug*/
++	    if (invert) exit_error(PARAMETER_PROBLEM, "ipp2p: invert [!] is not allowed!");
++	    info->debug = 1;
++	    break;																											
++
++	case 'h':		/*cmd: udp*/
++	    if ((info->proto & IPP2P_PROTO_UDP) == IPP2P_PROTO_UDP)
++		exit_error(PARAMETER_PROBLEM,
++                    "ipp2p: --udp may only be specified once!");
++
++	    if (invert) exit_error(PARAMETER_PROBLEM, "ipp2p: invert [!] is not allowed!");
++	    info->proto += IPP2P_PROTO_UDP;
++	    break;																											
++
++
++	case 'i':		/*cmd: tcp*/
++	    if ((info->proto & IPP2P_PROTO_TCP) == IPP2P_PROTO_TCP)
++		exit_error(PARAMETER_PROBLEM,
++                    "ipp2p: --tcp may only be specified once!");
++	    if (invert) exit_error(PARAMETER_PROBLEM, "ipp2p: invert [!] is not allowed!");
++	    info->proto += IPP2P_PROTO_TCP;
++	    break;																											
++
++
++	default:
++            exit_error(PARAMETER_PROBLEM,
++	    "\nipp2p-parameter problem: for ipp2p usage type: iptables -m ipp2p --help\n");
++	    return 0;
++    }
++    return 1;
++}
++
++
++static void
++final_check(unsigned int flags)
++{
++    if (!flags)
++            exit_error(PARAMETER_PROBLEM,
++	    "\nipp2p-parameter problem: for ipp2p usage type: iptables -m ipp2p --help\n");
++}
++
++
++
++static void
++print(const struct ipt_ip *ip,
++        const struct ipt_entry_match *match,
++	int numeric)
++{
++    struct ipt_p2p_info *info = (struct ipt_p2p_info *)match->data;
++    
++    printf("ipp2p v%s", IPP2P_VERSION);
++    if ((info->cmd & SHORT_HAND_IPP2P) == SHORT_HAND_IPP2P) printf(" --ipp2p");
++    if ((info->cmd & SHORT_HAND_DATA) == SHORT_HAND_DATA) printf(" --ipp2p-data");
++    if ((info->cmd & IPP2P_KAZAA) == IPP2P_KAZAA) printf(" --kazaa");
++    if ((info->cmd & IPP2P_DATA_KAZAA) == IPP2P_DATA_KAZAA) printf(" --kazaa-data");
++    if ((info->cmd & IPP2P_DATA_GNU) == IPP2P_DATA_GNU) printf(" --gnu-data");
++    if ((info->cmd & IPP2P_GNU) == IPP2P_GNU) printf(" --gnu");
++    if ((info->cmd & IPP2P_EDK) == IPP2P_EDK) printf(" --edk");
++    if ((info->cmd & IPP2P_DATA_EDK) == IPP2P_DATA_EDK) printf(" --edk-data");
++    if ((info->cmd & IPP2P_DATA_DC) == IPP2P_DATA_DC) printf(" --dc-data");
++    if ((info->cmd & IPP2P_DC) == IPP2P_DC) printf(" --dc");
++    if ((info->cmd & IPP2P_BIT) == IPP2P_BIT) printf(" --bit");
++    if ((info->cmd & IPP2P_APPLE) == IPP2P_APPLE) printf(" --apple");
++    if ((info->cmd & IPP2P_SOUL) == IPP2P_SOUL) printf(" --soul");
++    if ((info->cmd & IPP2P_WINMX) == IPP2P_WINMX) printf(" --winmx");
++    if ((info->cmd & IPP2P_ARES) == IPP2P_ARES) printf(" --ares");
++    if ((info->proto & IPP2P_PROTO_UDP) == IPP2P_PROTO_UDP) printf(" --udp");
++    if ((info->proto & IPP2P_PROTO_TCP) == IPP2P_PROTO_TCP) printf(" --tcp");
++    if (info->debug != 0) printf(" --debug");
++    printf(" ");
++}
++			    						   
++
++
++static void
++save(const struct ipt_ip *ip, const struct ipt_entry_match *match)
++{
++    struct ipt_p2p_info *info = (struct ipt_p2p_info *)match->data;
++    
++    if ((info->cmd & SHORT_HAND_IPP2P) == SHORT_HAND_IPP2P) printf("--ipp2p ");
++    if ((info->cmd & SHORT_HAND_DATA) == SHORT_HAND_DATA) printf("--ipp2p-data ");
++    if ((info->cmd & IPP2P_KAZAA) == IPP2P_KAZAA) printf("--kazaa ");
++    if ((info->cmd & IPP2P_DATA_KAZAA) == IPP2P_DATA_KAZAA) printf("--kazaa-data ");
++    if ((info->cmd & IPP2P_DATA_GNU) == IPP2P_DATA_GNU) printf("--gnu-data ");
++    if ((info->cmd & IPP2P_GNU) == IPP2P_GNU) printf("--gnu ");
++    if ((info->cmd & IPP2P_EDK) == IPP2P_EDK) printf("--edk ");
++    if ((info->cmd & IPP2P_DATA_EDK) == IPP2P_DATA_EDK) printf("--edk-data ");
++    if ((info->cmd & IPP2P_DATA_DC) == IPP2P_DATA_DC) printf("--dc-data ");
++    if ((info->cmd & IPP2P_DC) == IPP2P_DC) printf("--dc ");
++    if ((info->cmd & IPP2P_BIT) == IPP2P_BIT) printf("--bit ");
++    if ((info->cmd & IPP2P_APPLE) == IPP2P_APPLE) printf("--apple ");
++    if ((info->cmd & IPP2P_SOUL) == IPP2P_SOUL) printf("--soul ");
++    if ((info->cmd & IPP2P_WINMX) == IPP2P_WINMX) printf("--winmx ");
++    if ((info->cmd & IPP2P_ARES) == IPP2P_ARES) printf("--ares ");
++    if ((info->proto & IPP2P_PROTO_UDP) == IPP2P_PROTO_UDP) printf("--udp ");
++    if ((info->proto & IPP2P_PROTO_TCP) == IPP2P_PROTO_TCP) printf("--tcp ");
++    if (info->debug != 0) printf("--debug ");
++}
++
++		
++
++
++static
++struct iptables_match ipp2p
++= { NULL,
++    "ipp2p",
++    IPTABLES_VERSION, 
++    IPT_ALIGN(sizeof(struct ipt_p2p_info)),
++    IPT_ALIGN(sizeof(struct ipt_p2p_info)),
++    &help,
++    &init,
++    &parse,
++    &final_check,
++    &print,
++    &save,
++    opts
++};
++					    
++
++
++void _init(void)
++{
++    register_match(&ipp2p);
++}
++
+diff -urN iptables-1.2.11.old/extensions/Makefile iptables-1.2.11/extensions/Makefile
+--- iptables-1.2.11.old/extensions/Makefile	2004-06-17 12:22:54.000000000 +0200
++++ iptables-1.2.11/extensions/Makefile	2005-03-01 17:51:19.000000000 +0100
+@@ -8,6 +8,10 @@
+ PF_EXT_SLIB:=ah connlimit connmark conntrack dscp ecn esp helper icmp iprange length limit mac mark multiport owner physdev pkttype realm rpc sctp standard state tcp tcpmss tos ttl udp unclean CLASSIFY CONNMARK DNAT DSCP ECN LOG MARK MASQUERADE MIRROR NETMAP NOTRACK REDIRECT REJECT SAME SNAT TARPIT TCPMSS TOS TRACE TTL ULOG
+ PF6_EXT_SLIB:=eui64 hl icmpv6 length limit mac mark multiport owner standard tcp udp HL LOG MARK TRACE
+ 
++
++# ipp2p
++PF_EXT_SLIB += ipp2p
++
+ # Optionals
+ PF_EXT_SLIB_OPTS:=$(foreach T,$(wildcard extensions/.*-test),$(shell KERNEL_DIR=$(KERNEL_DIR) $(T)))
+ PF6_EXT_SLIB_OPTS:=$(foreach T,$(wildcard extensions/.*-test6),$(shell KERNEL_DIR=$(KERNEL_DIR) $(T)))
+diff -urN iptables-1.2.11.old/include/linux/netfilter_ipv4/ipt_ipp2p.h iptables-1.2.11/include/linux/netfilter_ipv4/ipt_ipp2p.h
+--- iptables-1.2.11.old/include/linux/netfilter_ipv4/ipt_ipp2p.h	1970-01-01 01:00:00.000000000 +0100
++++ iptables-1.2.11/include/linux/netfilter_ipv4/ipt_ipp2p.h	2005-03-01 17:48:03.000000000 +0100
+@@ -0,0 +1,34 @@
++#ifndef __IPT_IPP2P_H
++#define __IPT_IPP2P_H
++#define IPP2P_VERSION "0.7.1"
++
++struct ipt_p2p_info {
++    int cmd;
++    int debug;
++    int proto;
++};
++
++#endif //__IPT_IPP2P_H
++
++#define SHORT_HAND_IPP2P	1 /* --ipp2p switch*/
++#define SHORT_HAND_DATA		4 /* --ipp2p-data switch*/
++#define SHORT_HAND_NONE		5 /* no short hand*/
++
++#define IPP2P_EDK		2
++#define IPP2P_DATA_KAZAA	8
++#define IPP2P_DATA_EDK		16
++#define IPP2P_DATA_DC		32
++#define IPP2P_DC		64
++#define IPP2P_DATA_GNU		128
++#define IPP2P_GNU		256
++#define IPP2P_KAZAA		512
++#define IPP2P_BIT		1024
++#define IPP2P_APPLE		2048
++#define IPP2P_SOUL		4096
++#define IPP2P_WINMX		8192
++#define IPP2P_ARES		16384
++
++#define IPP2P_PROTO_DEFAULT	1
++#define IPP2P_PROTO_UDP		2
++#define IPP2P_PROTO_TCP		4
++

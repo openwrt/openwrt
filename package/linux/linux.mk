@@ -11,7 +11,6 @@
 # 4xx	patches needed to integrate feature patches
 #
 #############################################################
-ifneq ($(filter $(TARGETS),linux),)
 
 LINUX_FORMAT=zImage
 LINUX_KARCH:=$(shell echo $(ARCH) | sed -e 's/i[3-9]86/i386/' \
@@ -20,16 +19,13 @@ LINUX_KARCH:=$(shell echo $(ARCH) | sed -e 's/i[3-9]86/i386/' \
 	-e 's/sh[234]/sh/' \
 	)
 
-LINUX_VERSION=2.4.29
-LINUX_DIR=$(BUILD_DIR)/linux-$(LINUX_VERSION)
 LINUX_SITE=http://www.kernel.org/pub/linux/kernel/v2.4
 LINUX_SOURCE=linux-$(LINUX_VERSION).tar.bz2
-LINUX_KCONFIG=package/linux/linux.config
-LINUX_KERNEL=$(BUILD_DIR)/buildroot-kernel
-LINUX_PATCHES=$(PACKAGE_DIR)/linux/kernel-patches
+LINUX_KCONFIG=./linux.config
+LINUX_PATCHES=./kernel-patches
 LINUX_BINLOC=arch/$(LINUX_KARCH)/brcm-boards/bcm947xx/compressed/vmlinuz
 # Used by pcmcia-cs and others
-LINUX_SOURCE_DIR=$(LINUX_DIR)
+LINUX_SOURCE_DIR=$(LINUX_DIR)-$(LINUX_VERSION)
 
 # kernel stuff extracted from linksys firmware GPL sourcetree
 # WRT54GS_3_37_2_1109_US (shared,include,wl,et)
@@ -46,17 +42,24 @@ $(LINUX_DIR)/.unpacked: $(DL_DIR)/$(LINUX_SOURCE) $(DL_DIR)/$(LINKSYS_KERNEL_TGZ
 	bzcat $(DL_DIR)/$(LINUX_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
 	# extract linksys binary kernel stuff and include/shared files
 	zcat $(DL_DIR)/$(LINKSYS_KERNEL_TGZ) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
+	ln -sf $(LINUX_DIR)-$(LINUX_VERSION) $(LINUX_DIR)
 	touch $(LINUX_DIR)/.unpacked
 
 $(LINUX_DIR)/.patched: $(LINUX_DIR)/.unpacked
 	$(PATCH) $(LINUX_DIR) $(LINUX_PATCHES)
 	touch $(LINUX_DIR)/.patched
 
-$(LINUX_DIR)/.configured:  $(LINUX_DIR)/.patched
+$(LINUX_DIR)/.configured: $(LINUX_DIR)/.patched
 	-cp $(LINUX_KCONFIG) $(LINUX_DIR)/.config
+#ifeq ($(BR2_TARGET_ROOTFS_SQUASHFS_LZMA),y)
+#	$(SED) "s,rootfstype=jffs2,rootfstype=squashfs," $(LINUX_DIR)/.config
+#endif
+#ifeq ($(BR2_TARGET_ROOTFS_SQUASHFS),y)
+#	$(SED) "s,rootfstype=jffs2,rootfstype=squashfs," $(LINUX_DIR)/.config
+#endif
 	$(SED) "s,^CROSS_COMPILE.*,CROSS_COMPILE=$(KERNEL_CROSS),g;" \
-		$(LINUX_DIR)/Makefile \
-		$(LINUX_DIR)/arch/mips/Makefile
+	  $(LINUX_DIR)/Makefile  \
+	  $(LINUX_DIR)/arch/mips/Makefile
 	$(SED) "s,\-mcpu=,\-mtune=,g;" $(LINUX_DIR)/arch/mips/Makefile
 	$(MAKE) -C $(LINUX_DIR) ARCH=$(LINUX_KARCH) oldconfig include/linux/version.h
 	touch $(LINUX_DIR)/.configured
@@ -76,7 +79,6 @@ $(LINUX_KERNEL): $(LINUX_DIR)/$(LINUX_BINLOC)
 $(LINUX_DIR)/.modules_done: $(LINUX_KERNEL)
 	rm -rf $(BUILD_DIR)/modules
 	$(MAKE) -C $(LINUX_DIR) DEPMOD=true INSTALL_MOD_PATH=$(BUILD_DIR)/modules modules_install
-	tar -C $(BUILD_DIR)/modules/lib -cjf openwrt-kmodules.tar.bz2 modules
 	touch $(LINUX_DIR)/.modules_done
 
 $(STAGING_DIR)/include/linux/version.h: $(LINUX_DIR)/.configured
@@ -100,15 +102,9 @@ linuxclean: clean
 	-$(MAKE) -C $(LINUX_DIR) clean
 
 linux-dirclean:
+	rm -f $(BUILD_DIR)/openwrt-kmodules.tar.bz2
+	rm -rf $(LINUX_DIR)-$(LINUX_VERSION)
 	rm -rf $(LINUX_DIR)
+	rm -rf $(BUILD_DIR)/modules
+	rm -rf $(BUILD_DIR)/linksys-kernel
 
-endif
-
-#############################################################
-#
-# Toplevel Makefile options
-#
-##############################################################
-ifeq ($(strip $(BR2_PACKAGE_LINUX)),y)
-TARGETS+=linux
-endif

@@ -1,5 +1,7 @@
 config BR2_PACKAGE_ZLIB
-	bool "zlib"
-	default n
+	tristate "zlib"
+	default y
 	help
-		zlib library
+	  A library implementing the 'deflate' compression method
+	  
+	  http://www.zlib.net/

@@ -8,7 +8,7 @@ if [ $(cat /proc/sys/reset) = 1 ] ; then
   while :; do { echo $(((X=(X+1)%8)%2)) > /proc/sys/diag; sleep $((X==0)); } done &
 else
   mount | grep jffs2 >&-
-  if [ $? = 0 ] ; then 
+  if [ $? = 0 ] ; then
     mtd unlock rootfs
     [ $(cat /proc/mtd | wc -l) = 6 ] && {
       echo 5 > /proc/sys/diag
@@ -27,4 +27,6 @@ else
   fi
 fi
 mount none /tmp -t ramfs
+mkdir -p /dev/pts
+mount none /dev/pts -t devpts
 exec /sbin/init

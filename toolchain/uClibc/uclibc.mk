@@ -11,8 +11,6 @@ UCLIBC_SOURCE:=uClibc-$(strip $(subst ",, $(BR2_USE_UCLIBC_SNAPSHOT))).tar.bz2
 #"
 UCLIBC_SITE:=http://www.uclibc.org/downloads/snapshots
 else
-# Note: 0.9.26 has known problems.  So best use a snapshot until .27 is out.
-# Anticipate the change.
 UCLIBC_DIR:=$(TOOL_BUILD_DIR)/uClibc-0.9.27
 UCLIBC_SOURCE:=uClibc-0.9.27.tar.bz2
 UCLIBC_SITE:=http://www.uclibc.org/downloads
@@ -45,9 +43,9 @@ $(UCLIBC_DIR)/.unpacked: $(DL_DIR)/$(UCLIBC_SOURCE)
 $(UCLIBC_DIR)/.configured: $(UCLIBC_DIR)/.unpacked
 	$(SED) 's,^CROSS=.*,CROSS=$(TARGET_CROSS),g' $(UCLIBC_DIR)/Rules.mak
 ifeq ($(BR2_ENABLE_LOCALE),y)
-	cp toolchain/uClibc/uClibc.config-locale $(UCLIBC_DIR)/.config
+	cp ./uClibc.config-locale $(UCLIBC_DIR)/.config
 else
-	cp toolchain/uClibc/uClibc.config $(UCLIBC_DIR)/.config
+	cp ./uClibc.config $(UCLIBC_DIR)/.config
 endif
 	$(SED) 's,^.*TARGET_$(UCLIBC_TARGET_ARCH).*,TARGET_$(UCLIBC_TARGET_ARCH)=y,g' \
 		$(UCLIBC_DIR)/.config
@@ -126,7 +124,7 @@ endif
 
 uclibc-configured: $(UCLIBC_DIR)/.configured
 
-uclibc: $(STAGING_DIR)/bin/$(REAL_GNU_TARGET_NAME)-gcc $(STAGING_DIR)/lib/libc.a \
+uclibc: $(STAGING_DIR)/lib/libc.a \
 	$(UCLIBC_TARGETS)
 
 uclibc-source: $(DL_DIR)/$(UCLIBC_SOURCE)

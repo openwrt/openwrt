@@ -1,0 +1,72 @@
+#
+# For a description of the syntax of this configuration file,
+# see scripts/kbuild/config-language.txt.
+#
+
+menu "Init Utilities"
+
+config BUSYBOX_CONFIG_INIT
+	bool "init"
+	default y
+	help
+	  init is the first program run when the system boots.
+
+config BUSYBOX_CONFIG_FEATURE_USE_INITTAB
+	bool "  Support reading an inittab file?"
+	default y
+	depends on BUSYBOX_CONFIG_INIT
+	help
+	  Allow init to read an inittab file when the system boot.
+
+config BUSYBOX_CONFIG_FEATURE_INITRD
+	bool "  Support running init from within an initrd?"
+	default n
+	depends on BUSYBOX_CONFIG_INIT
+	help
+	  Allow init to be called from an initrd as linuxrc.
+
+config BUSYBOX_CONFIG_FEATURE_INIT_COREDUMPS
+	bool "  Support dumping core for child processes (debugging only)?"
+	default n
+	depends on BUSYBOX_CONFIG_INIT
+	help
+	  If this option is enabled and the file /.init_enable_core
+	  exists, then init will call setrlimit() to allow unlimited
+	  core file sizes.  If this option is disabled, processes
+	  will not generate any core files.
+
+config BUSYBOX_CONFIG_FEATURE_EXTRA_QUIET
+	bool "  Should init be _extra_ quiet on boot?"
+	default n
+	depends on BUSYBOX_CONFIG_INIT
+	help
+	  Prevent init from logging some messages to the console
+	  during boot.
+
+config BUSYBOX_CONFIG_HALT
+	bool "halt"
+	default n
+	help
+	  Stop all processes and halt the system.
+
+config BUSYBOX_CONFIG_POWEROFF
+	bool "poweroff"
+	default n
+	help
+	  Stop all processes and (try to) power off the system.
+
+config BUSYBOX_CONFIG_REBOOT
+	bool "reboot"
+	default y
+	help
+	  Stop all processes and reboot the system.
+
+config BUSYBOX_CONFIG_MESG
+	bool "mesg"
+	default y
+	help
+	  Mesg controls access to your terminal by others.  It is typically
+	  used to allow or disallow other users to write to your terminal
+
+endmenu
+

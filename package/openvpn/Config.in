@@ -1,0 +1,10 @@
+config BR2_PACKAGE_OPENVPN
+	tristate "OpenVPN"
+	default m
+	select BR2_PACKAGE_KMOD_TUN
+	select BR2_PACKAGE_OPENSSL
+	select BR2_PACKAGE_LZO
+	help
+	  Open Source VPN solution using SSL
+
+	  http://openvpn.net/
