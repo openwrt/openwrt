@@ -44,3 +44,4 @@ install: $(IPKG_STATE_DIR)/info/ebtables.list
 
 clean:
 	rm -rf $(PKG_BUILD_DIR)
+	rm -f $(PKG_IPK)

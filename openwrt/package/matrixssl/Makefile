@@ -52,5 +52,5 @@ install: $(PKG_ZLIB) $(IPKG_STATE_DIR)/info/libmatrixssl.list
 clean:
 	rm -rf $(PKG_BUILD_DIR)
 	rm -f $(STAGING_DIR)/lib/libmatrixssl* $(STAGING_DIR)/include/matrixssl*
-	rm -f $(PACKAGE_DIR)/matrixssl\*.ipk
+	rm -f $(PKG_IPK)
 
