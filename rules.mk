@@ -112,7 +112,8 @@ endif
 
 
 # invoke ipkg with configuration in $(STAGING_DIR)/etc/ipkg.conf 
-IPKG := PATH="$(TARGET_PATH)" IPKG_CONF_DIR=$(STAGING_DIR)/etc ipkg -force-depends
+IPKG := IPKG_CONF_DIR=$(STAGING_DIR)/etc $(TARGET_DIR)/bin/ipkg -force-defaults -force-depends
+IPKG_STATE_DIR := $(TARGET_DIR)/usr/lib/ipkg
 
 # invoke ipkg-build with some default options
 IPKG_BUILD := PATH="$(TARGET_PATH)" ipkg-build -c -o root -g root
