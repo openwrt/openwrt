@@ -26,6 +26,7 @@ package-$(BR2_PACKAGE_MICROPERL) += microperl
 package-$(BR2_PACKAGE_LIBELF) += libelf
 package-$(BR2_PACKAGE_STRACE) += strace
 package-$(BR2_PACKAGE_TCPDUMP) += tcpdump
+package-$(BR2_PACKAGE_LCD4LINUX) += lcd4linux
 
 all: compile install
 clean: $(patsubst %,%-clean,$(package-) $(package-y) $(package-m)) linux-clean
