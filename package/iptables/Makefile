@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 include kernelconfig.mk
 
 PKG_NAME := iptables
-PKG_VERSION := 1.2.11
+PKG_VERSION := 1.3.0
 PKG_RELEASE := 1
 
 PKG_SOURCE_SITE := http://www.netfilter.org/files

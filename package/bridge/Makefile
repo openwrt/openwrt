@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=bridge
 PKG_VERSION:=1.0.4
 PKG_RELEASE:=1
-PKG_SOURCE_URL:=http://umn.dl.sourceforge.net/sourceforge/bridge
+PKG_SOURCE_URL:=http://unc.dl.sourceforge.net/sourceforge/bridge
 PKG_SOURCE:=bridge-utils-$(PKG_VERSION).tar.gz
 PKG_BUILD_DIR:=$(BUILD_DIR)/bridge-utils-$(PKG_VERSION)
 PKG_CAT:=zcat
