@@ -19,6 +19,18 @@ set -e
 # explicitly enable it first and disable it afterwards.
 set -o noglob
 
+ipkg_is_upgrade () {
+  local A B a b
+  A=$(echo $1 | sed "s/[0-9]*/ & /g")
+  B=$(echo $2 | sed "s/[0-9]*/ & /g")
+  while [ \! -z "$A" ] && [ \! -z "$B" ]; do {
+    set $A; a=$1; shift; A=$*
+    set $B; b=$1; shift; B=$*
+    { [ "$a" -gt "$b" ] 2>- || [ "$a" ">" "$b" ]; } && { return 0; }
+  }; done
+  return 1;
+}
+
 ipkg_srcs() {
 	local srcre="$1"
 	sed -ne "s/^src[[:space:]]\+$srcre[[:space:]]\+//p" < $IPKG_CONF
@@ -984,7 +996,7 @@ ipkg_upgrade_pkg() {
 
 			if [ "$avail_ver" = "$inst_ver" ]; then 
 				echo "Package $pkg ($inst_ver) installed in $dest_name is up to date"
-			elif [ "$avail_ver" -gt "$inst_ver" ]; then
+			elif ipkg_is_upgrade "$avail_ver" "$inst_ver"; then
 				echo "Upgrading $pkg ($dest_name) from $inst_ver to $avail_ver"
 				ipkg_get_install_dest $dest $pkg
 			else
