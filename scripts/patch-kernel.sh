@@ -34,6 +34,7 @@ for i in ${patchdir}/${patchpattern} ; do
 	*)
 	type="plaintext"; uncomp="cat"; ;; 
     esac
+    [ -d "${i}" ] && echo "Ignoring subdirectory ${i}" && continue	
     echo ""
     echo "Applying ${i} using ${type}: " 
     ${uncomp} ${i} | patch -p1 -E -d ${targetdir} 
