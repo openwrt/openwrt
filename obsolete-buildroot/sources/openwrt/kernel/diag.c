@@ -185,6 +185,13 @@ static int __init diag_init()
 		set_dmz=v2_set_dmz;
 		reset_gpio=(1<<6);
 		reset_polarity=0;
+		buf=nvram_get("boardnum")?:"";
+		if (!strcmp(buf,"44")) {
+			set_diag=ignore;
+			set_dmz=ignore;
+			reset_gpio=(1<<5);
+			reset_polarity=0;
+		}
 	}
 	printk(KERN_INFO "using v%d hardware\n",board_type);
 
