@@ -2,20 +2,33 @@
 
 menu "OpenWrt Package Selection"
 
-comment "The absolute minimum"
-source "package/linux/Config.in"
-source "package/busybox/Config.in"
-
 comment "The default set"
+source "package/busybox/Config.in"
 source "package/dnsmasq/Config.in"
 source "package/iptables/Config.in"
 source "package/bridge/Config.in"
 
-comment "libraries"
-source "package/zlib/Config.in"
-
-comment "Suggested Extras"
+comment "Networking"
+source "package/linksys-utils/Config.in"
+source "package/ppp/Config.in"
+source "package/dropbear/Config.in"
 source "package/ebtables/Config.in"
-source "package/dropbear_sshd/Config.in"
+source "package/arptables/Config.in"
+source "package/iproute2/Config.in"
+source "package/openvpn/Config.in"
+
+comment "Libraries"
+source "package/zlib/Config.in"
+source "package/lzo/Config.in"
+source "package/openssl/Config.in"
 
 endmenu
+
+menu "Kernel Configuration"
+
+source "package/linux/Config.in"
+
+endmenu
+
+source "package/Sysconf.in"
+

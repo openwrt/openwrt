@@ -1,0 +1,17 @@
+config BR2_PACKAGE_IPROUTE2
+	bool
+	depends BR2_PACKAGE_IPROUTE2_IP || BR2_PACKAGE_IPROUTE2_TC
+	default n
+
+config BR2_PACKAGE_IPROUTE2_IP
+	tristate "iproute2 routing control (ip)"
+	default m
+	select BR2_PACKAGE_IPROUTE2
+
+config BR2_PACKAGE_IPROUTE2_TC
+	tristate "iproute2 traffic control (tc)"
+	default m
+	select BR2_PACKAGE_IPROUTE2
+	select BR2_PACKAGE_KMOD_SCHED
+
+	

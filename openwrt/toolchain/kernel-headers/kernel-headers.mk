@@ -3,8 +3,7 @@
 LINUX_HEADERS_VERSION=2.4.29
 LINUX_HEADERS_SITE=http://www.kernel.org/pub/linux/kernel/v2.4
 LINUX_HEADERS_SOURCE=linux-$(LINUX_HEADERS_VERSION).tar.bz2
-LINUX_HEADERS_CONFIG=toolchain/kernel-headers/linux.config
-LINUX_HEADERS_DIR=$(TOOL_BUILD_DIR)/linux-$(LINUX_HEADERS_VERSION)
+LINUX_HEADERS_CONFIG=./linux.config
 LINUX_HEADERS_ARCH:=$(shell echo $(ARCH) | sed -e 's/i[3-9]86/i386/' \
 	-e 's/mipsel/mips/' \
 	-e 's/powerpc/ppc/' \
@@ -26,6 +25,7 @@ $(LINUX_HEADERS_DIR)/.unpacked: $(DL_DIR)/$(LINUX_HEADERS_SOURCE)
 		linux-$(LINUX_HEADERS_VERSION)/arch/$(LINUX_HEADERS_ARCH)/config*.in \
 		linux-$(LINUX_HEADERS_VERSION)/*/*/Config.in \
 		linux-$(LINUX_HEADERS_VERSION)/*/Config.in
+	ln -sf $(LINUX_HEADERS_DIR)-$(LINUX_HEADERS_VERSION) $(LINUX_HEADERS_DIR)
 	touch $(LINUX_HEADERS_DIR)/.unpacked
 
 $(LINUX_HEADERS_DIR)/.configured: $(LINUX_HEADERS_DIR)/.unpacked

@@ -17,3 +17,10 @@ config BR2_PACKAGE_BUSYBOX_SNAPSHOT
 	  Use the latest busybox CVS snapshot instead of release.
 
 	  For fun, you should say Y.
+	  
+menu "Busybox Configuration"
+	depends BR2_PACKAGE_BUSYBOX
+
+source package/busybox/config/Config.in
+
+endmenu

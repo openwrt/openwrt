@@ -2,6 +2,10 @@
 
 mainmenu "OpenWRT Configuration"
 
+config MODULES
+	bool
+	default y
+
 config BR2_HAVE_DOT_CONFIG
 	bool
 	default y
@@ -102,8 +106,5 @@ config BR2_JLEVEL
 endmenu
 
 source "toolchain/Config.in"
-
 source "package/Config.in"
-
 source "target/Config.in"
-

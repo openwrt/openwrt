@@ -33,7 +33,7 @@ $(BINUTILS_DIR)/.unpacked: $(DL_DIR)/$(BINUTILS_SOURCE)
 
 $(BINUTILS_DIR)/.patched: $(BINUTILS_DIR)/.unpacked
 	# Apply appropriate binutils patches.
-	toolchain/patch-kernel.sh $(BINUTILS_DIR) toolchain/binutils/$(BINUTILS_VERSION) \*.patch
+	$(SCRIPT_DIR)/patch-kernel.sh $(BINUTILS_DIR) ./$(BINUTILS_VERSION) \*.patch
 	touch $(BINUTILS_DIR)/.patched
 
 $(BINUTILS_DIR1)/.configured: $(BINUTILS_DIR)/.patched
@@ -54,10 +54,10 @@ $(BINUTILS_DIR1)/binutils/objdump: $(BINUTILS_DIR1)/.configured
 
 # Make install will put gettext data in staging_dir/share/locale.
 # Unfortunatey, it isn't configureable.
-$(STAGING_DIR)/$(REAL_GNU_TARGET_NAME)/bin/ld: $(BINUTILS_DIR1)/binutils/objdump
+$(STAGING_DIR)/bin/$(REAL_GNU_TARGET_NAME)-ld: $(BINUTILS_DIR1)/binutils/objdump
 	$(MAKE) -C $(BINUTILS_DIR1) install
 
-binutils-dependancies:
+binutils-dependencies:
 	@if ! which bison > /dev/null ; then \
 		echo -e "\n\nYou must install 'bison' on your build machine\n"; \
 		exit 1; \
@@ -71,7 +71,7 @@ binutils-dependancies:
 		exit 1; \
 	fi;
 
-binutils: binutils-dependancies $(STAGING_DIR)/$(REAL_GNU_TARGET_NAME)/bin/ld
+binutils: binutils-dependencies $(STAGING_DIR)/bin/$(REAL_GNU_TARGET_NAME)-ld
 
 binutils-source: $(DL_DIR)/$(BINUTILS_SOURCE)
 
@@ -82,6 +82,8 @@ binutils-clean:
 binutils-toolclean:
 	rm -rf $(BINUTILS_DIR1)
 
+binutils-distclean:
+	rm -rf $(BINUTILS_DIR)
 
 
 #############################################################

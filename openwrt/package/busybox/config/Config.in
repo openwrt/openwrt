@@ -1,0 +1,293 @@
+#
+# For a description of the syntax of this configuration file,
+# see scripts/kbuild/config-language.txt.
+#
+
+
+config BUSYBOX_HAVE_DOT_CONFIG
+	bool
+	default y
+
+menu "General Configuration"
+
+choice
+	prompt "Buffer allocation policy"
+	default BUSYBOX_CONFIG_FEATURE_BUFFERS_GO_ON_STACK
+	help
+	  There are 3 ways BusyBox can handle buffer allocations:
+	  - Use malloc. This costs code size for the call to xmalloc.
+	  - Put them on stack. For some very small machines with limited stack
+	    space, this can be deadly.  For most folks, this works just fine.
+	  - Put them in BSS. This works beautifully for computers with a real
+	    MMU (and OS support), but wastes runtime RAM for uCLinux. This
+	    behavior was the only one available for BusyBox versions 0.48 and
+	    earlier.
+
+config BUSYBOX_CONFIG_FEATURE_BUFFERS_USE_MALLOC
+	bool "Allocate with Malloc"
+
+config BUSYBOX_CONFIG_FEATURE_BUFFERS_GO_ON_STACK
+	bool "Allocate on the Stack"
+
+config BUSYBOX_CONFIG_FEATURE_BUFFERS_GO_IN_BSS
+	bool "Allocate in the .bss section"
+
+endchoice
+
+config BUSYBOX_CONFIG_FEATURE_VERBOSE_USAGE
+	bool "Show verbose applet usage messages"
+	default y
+	help
+	  All BusyBox applets will show more verbose help messages when
+	  busybox is invoked with --help.  This will add a lot of text to the
+	  busybox binary.  In the default configuration, this will add about
+	  13k, but it can add much more depending on your configuration.
+
+config BUSYBOX_CONFIG_FEATURE_INSTALLER
+	bool "Support --install [-s] to install applet links at runtime"
+	default n
+	help
+	  Enable 'busybox --install [-s]' support.  This will allow you to use
+	  busybox at runtime to create hard links or symlinks for all the
+	  applets that are compiled into busybox.  This feature requires the
+	  /proc filesystem.
+
+config BUSYBOX_CONFIG_LOCALE_SUPPORT
+	bool "Enable locale support (system needs locale for this to work)"
+	default n
+	help
+	  Enable this if your system has locale support and you would like
+	  busybox to support locale settings.
+
+config BUSYBOX_CONFIG_FEATURE_DEVFS
+	bool "Support for devfs"
+	default y
+	help
+	  Enable if you want BusyBox to work with devfs.
+
+config BUSYBOX_CONFIG_FEATURE_DEVPTS
+	bool "Use the devpts filesystem for Unix98 PTYs"
+	default y if BUSYBOX_CONFIG_FEATURE_DEVFS
+	help
+	  Enable if you want BusyBox to use Unix98 PTY support. If enabled,
+	  busybox will use /dev/ptmx for the master side of the pseudoterminal
+	  and /dev/pts/<number> for the slave side.  Otherwise, BSD style
+	  /dev/ttyp<number> will be used. To use this option, you should have
+	  devpts or devfs mounted.
+
+config BUSYBOX_CONFIG_FEATURE_CLEAN_UP
+	bool "Clean up all memory before exiting (usually not needed)"
+	default n
+	help
+	  As a size optimization, busybox by default does not cleanup memory
+	  that is dynamically allocated or close files before exiting. This
+	  saves space and is usually not needed since the OS will clean up for
+	  us.  Don't enable this unless you have a really good reason to clean
+	  things up manually.
+
+config BUSYBOX_CONFIG_FEATURE_SUID
+	bool "Support for SUID/SGID handling"
+	default y
+	help
+	  Support SUID and SGID binaries.
+
+config BUSYBOX_CONFIG_FEATURE_SUID_CONFIG
+	bool "Runtime SUID/SGID configuration via /etc/busybox.conf"
+	default n if BUSYBOX_CONFIG_FEATURE_SUID
+	depends on BUSYBOX_CONFIG_FEATURE_SUID
+	help
+	  Allow the SUID / SGID state of an applet to be determined runtime by
+	  checking /etc/busybox.conf.  The format of this file is as follows:
+
+	  <applet> = [Ssx-][Ssx-][x-] (<username>|<uid>).(<groupname>|<gid>)
+	
+	  An example might help:
+
+	  [SUID]
+	  su = ssx root.0 # applet su can be run by anyone and runs with euid=0/egid=0
+	  su = ssx        # exactly the same
+
+	  mount = sx- root.disk # applet mount can be run by root and members of group disk
+	                        # and runs with euid=0
+
+	  cp = --- # disable applet cp for everyone
+
+	  Robert 'sandman' Griebl has more information here:
+	  <url: http://www.softforge.de/bb/suid.html >.
+
+config BUSYBOX_CONFIG_FEATURE_SUID_CONFIG_QUIET
+	bool "Suppress warning message if /etc/busybox.conf is not readable"
+	default n
+	depends on BUSYBOX_CONFIG_FEATURE_SUID_CONFIG
+	help
+	  /etc/busybox.conf should be readable by the user needing the SUID, check
+	  this option to avoid users to be notified about missing permissions.
+
+config BUSYBOX_CONFIG_SELINUX
+	bool "Support NSA Security Enhanced Linux"
+	default n
+	help
+	  Enable support for SE Linux in applets ls, ps, and id.  Also provide
+	  the option of compiling in SE Linux applets.
+
+	  If you do not have a complete SE Linux Full Userland installed, this
+	  stuff will not compile.  Go visit
+		http://www.nsa.gov/selinux/index.html
+	  to download the necessary stuff to allow busybox to compile with this
+	  option enabled.
+
+	  Most people will leave this set to 'N'.
+
+endmenu
+
+menu 'Build Options'
+
+config BUSYBOX_CONFIG_STATIC
+	bool "Build BusyBox as a static binary (no shared libs)"
+	default n
+	help
+	  If you want to build a static BusyBox binary, which does not
+	  use or require any shared libraries, then enable this option.
+	  This can cause BusyBox to be considerably larger, so you should
+	  leave this option false unless you have a good reason (i.e.
+	  your target platform does not support shared libraries, or
+	  you are building an initrd which doesn't need anything but
+	  BusyBox, etc).
+
+	  Most people will leave this set to 'N'.
+
+config BUSYBOX_CONFIG_LFS
+	bool
+	default y
+	select BUSYBOX_FDISK_SUPPORT_LARGE_DISKS
+	help
+	  If you want to build BusyBox with large file support, then enable
+	  this option.  This will have no effect if your kernel or your C
+	  library lacks large file support for large files.  Some of the
+	  programs that can benefit from large file support include dd, gzip,
+	  cp, mount, tar, and many others.  If you want to access files larger
+	  than 2 Gigabytes, enable this option.  Otherwise, leave it set to 'N'.
+
+config BUSYBOX_USING_CROSS_COMPILER
+	bool
+	default y
+	help
+	  Do you want to build BusyBox with a Cross Compiler?  If so,
+	  then enable this option.  Otherwise leave it set to 'N'.
+
+config BUSYBOX_CROSS_COMPILER_PREFIX
+	string
+	default "mipsel-uclibc-"
+	depends on BUSYBOX_USING_CROSS_COMPILER
+	help
+	  If you want to build BusyBox with a cross compiler, then you
+	  will need to set this to the cross-compiler prefix.  For example,
+	  if my cross-compiler is /usr/i386-linux-uclibc/bin/i386-uclibc-gcc
+	  then I would enter '/usr/i386-linux-uclibc/bin/i386-uclibc-' here,
+	  which will ensure the correct compiler is used.
+
+config BUSYBOX_EXTRA_CFLAGS_OPTIONS
+	string
+	default "-Os "
+	help
+	  Do you want to pass any extra CFLAGS options to the compiler as
+	  you build BusyBox? If so, this is the option for you...  For example,
+	  if you want to add some simple compiler switches (like -march=i686),
+	  or check for warnings using -Werror, just those options here.
+
+endmenu
+
+menu 'Installation Options'
+
+config BUSYBOX_CONFIG_INSTALL_NO_USR
+	bool "Don't use /usr"
+	default n
+	help
+	  Disable use of /usr. Don't activate this option if you don't know
+	  that you really want this behaviour.
+
+config BUSYBOX_PREFIX
+	string
+	default "./_install"
+	help
+	  Define your directory to install BusyBox files/subdirs in.
+
+
+
+endmenu
+
+source package/busybox/config/archival/Config.in
+source package/busybox/config/coreutils/Config.in
+source package/busybox/config/console-tools/Config.in
+source package/busybox/config/debianutils/Config.in
+source package/busybox/config/editors/Config.in
+source package/busybox/config/findutils/Config.in
+source package/busybox/config/init/Config.in
+source package/busybox/config/loginutils/Config.in
+source package/busybox/config/miscutils/Config.in
+source package/busybox/config/modutils/Config.in
+source package/busybox/config/networking/Config.in
+source package/busybox/config/procps/Config.in
+source package/busybox/config/shell/Config.in
+source package/busybox/config/sysklogd/Config.in
+source package/busybox/config/util-linux/Config.in
+
+menu 'Debugging Options'
+
+config BUSYBOX_CONFIG_DEBUG
+	bool "Build BusyBox with Debugging symbols"
+	default n
+	help
+	  Say Y here if you wish to compile BusyBox with debugging symbols.
+	  This will allow you to use a debugger to examine BusyBox internals
+	  while applets are running.  This increases the size of the binary
+	  considerably and should only be used when doing development.
+	  If you are doing development and want to debug BusyBox, answer Y.
+
+	  Most people should answer N.
+
+choice
+	prompt "Additional debugging library"
+	default BUSYBOX_CONFIG_NO_DEBUG_LIB
+	depends on BUSYBOX_CONFIG_DEBUG
+	help
+	  Using an additional debugging library will make BusyBox become
+	  considerable larger and will cause it to run more slowly.  You
+	  should always leave this option disabled for production use.
+
+	  dmalloc support:
+	  ----------------
+	  This enables compiling with dmalloc ( http://dmalloc.com/ )
+	  which is an excellent public domain mem leak and malloc problem
+	  detector.  To enable dmalloc, before running busybox you will
+	  want to properly set your environment, for example:
+	    export DMALLOC_OPTIONS=debug=0x34f47d83,inter=100,log=logfile
+	  The 'debug=' value is generated using the following command
+	    dmalloc -p log-stats -p log-non-free -p log-bad-space -p log-elapsed-time \
+	       -p check-fence -p check-heap -p check-lists -p check-blank \
+	       -p check-funcs -p realloc-copy -p allow-free-null
+
+	  Electric-fence support:
+	  -----------------------
+	  This enables compiling with Electric-fence support.  Electric
+	  fence is another very useful malloc debugging library which uses
+	  your computer's virtual memory hardware to detect illegal memory
+	  accesses.  This support will make BusyBox be considerable larger
+	  and run slower, so you should leave this option disabled unless
+	  you are hunting a hard to find memory problem.
+
+
+config BUSYBOX_CONFIG_NO_DEBUG_LIB
+	bool "None"
+
+config BUSYBOX_CONFIG_DMALLOC
+	bool "Dmalloc"
+
+config BUSYBOX_CONFIG_EFENCE
+	bool "Electric-fence"
+
+endchoice
+
+
+endmenu
+

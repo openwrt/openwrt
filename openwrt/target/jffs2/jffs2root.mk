@@ -28,13 +28,6 @@ mtd: $(MKFS_JFFS2)
 #
 #############################################################
 
-jffs2root: mtd
-	-@find $(TARGET_DIR) -type f -perm +111 | xargs $(SSTRIP) 2>/dev/null || true;
-	@rm -rf $(TARGET_DIR)/usr/man
-	@rm -rf $(TARGET_DIR)/usr/info
-	$(MKFS_JFFS2) --pad --little-endian --squash -e $(JFFS2_BLOCK_SIZE) \
-		-d $(TARGET_DIR) -o $(IMAGE).jffs2
-
 jffs2root-source: $(DL_DIR)/$(MTD_SOURCE)
 
 jffs2root-clean:
@@ -42,15 +35,3 @@ jffs2root-clean:
 
 jffs2root-dirclean:
 	rm -rf $(MTD_DIR)
-
-ifeq ($(strip $(BR2_TARGET_ROOTFS_JFFS2)),y)
-TARGETS+=openwrt-jffs2root openwrt-image
-ROOTFS=jffs2
-JFFS2FLAGS=-a $(JFFS2_BLOCK_SIZE)
-
-openwrt-image: openwrt
-	@make jffs2root openwrt-code.bin TAG=W54G \
-	EXTRAVERSION=$(EXTRAVERSION)-JFFS2-4M JFFS2_BLOCK_SIZE=0x10000
-	@make jffs2root openwrt-code.bin TAG=W54S \
-	EXTRAVERSION=$(EXTRAVERSION)-JFFS2-8M JFFS2_BLOCK_SIZE=0x20000
-endif
