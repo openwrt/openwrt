@@ -1,8 +1,6 @@
 #!/bin/sh
 sysctl -p
-
-insmod diag
-echo "0x01" > /proc/sys/diag
+echo "S" > /proc/jffs2_bbc
 
 # networking stub
 insmod et
