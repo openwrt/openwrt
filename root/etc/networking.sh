@@ -90,7 +90,7 @@ configure () {
       [ -f /etc/resolv.conf ] && return
 
       echo "# --- creating /etc/resolv.conf ---"
-      for dns in $(nvram_get ${if}_dns); do {
+      for dns in $(nvram_get ${type}_dns); do {
 	echo "nameserver $dns" >> /etc/resolv.conf
       }; done
     ;;
