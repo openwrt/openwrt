@@ -50,20 +50,23 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.unpacked
 	);
 	touch $(PKG_BUILD_DIR)/.configured
 
-$(PKG_BUILD_DIR)/usr/sbin/openvpn: $(PKG_BUILD_DIR)/.configured
+$(PKG_BUILD_DIR)/openvpn: $(PKG_BUILD_DIR)/.configured
 	$(MAKE) -C $(PKG_BUILD_DIR)
 
-$(PKG_IPK): $(PKG_BUILD_DIR)/usr/sbin/openvpn
+$(PKG_IPK): $(PKG_BUILD_DIR)/openvpn
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_IPK_DIR) $(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
 	mkdir -p $(PKG_IPK_DIR)/usr/sbin
 	cp $(PKG_BUILD_DIR)/openvpn $(PKG_IPK_DIR)/usr/sbin/
 	mkdir -p $(PACKAGE_DIR)
 	$(IPKG_BUILD) $(PKG_IPK_DIR) $(PACKAGE_DIR)
 
+$(IPKG_STATE_DIR)/info/openvpn.list: $(PKG_IPK)
+	$(IPKG) install $(PKG_IPK)
+
 source: $(DL_DIR)/$(PKG_SOURCE)
 prepare: $(PKG_BUILD_DIR)/.unpacked
 compile: $(PKG_IPK)
-install:
-	$(IPKG) install $(PKG_IPK)
+install: $(IPKG_STATE_DIR)/info/openvpn.list
+
 clean:
 	rm -rf $(PKG_BUILD_DIR)

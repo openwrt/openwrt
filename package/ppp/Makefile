@@ -37,6 +37,20 @@ ifneq ($(BR2_PACKAGE_PPPSTATS),)
 TARGETS += $(PKG_PPPSTATS)
 endif
 
+INSTALL_TARGETS := $(IPKG_STATE_DIR)/info/ppp.list
+ifeq ($(BR2_PACKAGE_PPP_PPPOE),y)
+INSTALL_TARGETS += $(IPKG_STATE_DIR)/info/ppp-pppoe-plugin.list
+endif
+ifeq ($(BR2_PACKAGE_PPP_RADIUS),y)
+INSTALL_TARGETS += $(IPKG_STATE_DIR)/info/ppp-radius-plugin.list
+endif
+ifeq ($(BR2_PACKAGE_PPPDUMP),y)
+INSTALL_TARGETS += $(IPKG_STATE_DIR)/info/pppdump.list
+endif
+ifeq ($(BR2_PACKAGE_PPPSTATS),y)
+INSTALL_TARGETS += $(IPKG_STATE_DIR)/info/pppstats.list
+endif
+
 $(DL_DIR)/$(PKG_SOURCE_FILE):
 	mkdir -p $(DL_DIR)
 	$(WGET) -P $(DL_DIR) $(PKG_SOURCE_SITE)/$(PKG_SOURCE_FILE)
@@ -91,6 +105,9 @@ $(PKG_PPP): $(PKG_BUILD_DIR)/pppd/pppd
 	cp $(MODULES_DIR)/kernel/drivers/net/bsd_comp.o $(I_PPP)/$(MODULES_SUBDIR)
 	$(IPKG_BUILD) $(I_PPP) $(PACKAGE_DIR)
 	
+$(IPKG_STATE_DIR)/info/ppp.list: $(PKG_PPP)
+	$(IPKG) install $(PKG_PPP)
+
 $(PKG_PPP_PPPOE_PLUGIN): $(PKG_PPP)
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(I_PPP_PPPOE_PLUGIN) control/ppp-pppoe-plugin.control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
 	mkdir -p $(I_PPP_PPPOE_PLUGIN)/usr/lib/pppd/rp-pppoe
@@ -101,6 +118,9 @@ $(PKG_PPP_PPPOE_PLUGIN): $(PKG_PPP)
 	cp $(MODULES_DIR)/kernel/drivers/net/pppo*.o $(I_PPP_PPPOE_PLUGIN)/$(MODULES_SUBDIR)
 	$(IPKG_BUILD) $(I_PPP_PPPOE_PLUGIN) $(PACKAGE_DIR)
 
+$(IPKG_STATE_DIR)/info/ppp-pppoe-plugin.list: $(PKG_PPP_PPPOE_PLUGIN)
+	$(IPKG) install $(PKG_PPP_PPPOE_PLUGIN)
+
 $(PKG_PPP_RADIUS_PLUGIN): $(PKG_PPP)
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(I_PPP_RADIUS_PLUGIN) control/ppp-radius-plugin.control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
 	mkdir -p $(I_PPP_RADIUS_PLUGIN)/usr/lib/pppd/radius
@@ -109,12 +129,18 @@ $(PKG_PPP_RADIUS_PLUGIN): $(PKG_PPP)
 	$(STRIP) $(I_PPP_RADIUS_PLUGIN)/usr/lib/pppd/*/*.so
 	$(IPKG_BUILD) $(I_PPP_RADIUS_PLUGIN) $(PACKAGE_DIR)
 
+$(IPKG_STATE_DIR)/info/ppp-radius-plugin.list: $(PKG_PPP_RADIUS_PLUGIN)
+	$(IPKG) install $(PKG_PPP_RADIUS_PLUGIN)
+
 $(PKG_PPPDUMP): $(PKG_PPP)
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(I_PPPDUMP) control/pppdump.control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
 	mkdir -p $(I_PPPDUMP)/usr/sbin
 	cp -af $(PKG_BUILD_DIR)/pppdump/pppdump $(I_PPPDUMP)/usr/sbin/
 	$(STRIP) $(I_PPPDUMP)/usr/sbin/*
 	$(IPKG_BUILD) $(I_PPPDUMP) $(PACKAGE_DIR)
+
+$(IPKG_STATE_DIR)/info/pppdump.list: $(PKG_PPPDUMP)
+	$(IPKG) install $(PKG_PPPDUMP)
 
 $(PKG_PPPSTATS): $(PKG_PPP)
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(I_PPPSTATS) control/pppstats.control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
@@ -123,24 +149,13 @@ $(PKG_PPPSTATS): $(PKG_PPP)
 	$(STRIP) $(I_PPPSTATS)/usr/sbin/*
 	$(IPKG_BUILD) $(I_PPPSTATS) $(PACKAGE_DIR)
 
+$(IPKG_STATE_DIR)/info/pppstats.list: $(PKG_PPPSTATS)
+	$(IPKG) install $(PKG_PPPSTATS)
 
 source: $(DL_DIR)/$(PKG_SOURCE_FILE)
 prepare: $(PKG_BUILD_DIR)/.patched
 compile: $(TARGETS)
-install: compile
-	$(IPKG) install $(PKG_PPP)
-ifeq ($(BR2_PACKAGE_PPP_PPPOE),y)
-	$(IPKG) install $(PKG_PPP_PPPOE_PLUGIN)
-endif
-ifeq ($(BR2_PACKAGE_PPP_RADIUS),y)
-	$(IPKG) install $(PKG_PPP_RADIUS_PLUGIN)
-endif
-ifeq ($(BR2_PACKAGE_PPPDUMP),y)
-	$(IPKG) install $(PKG_PPPDUMP)
-endif
-ifeq ($(BR2_PACKAGE_PPPSTATS),y)
-	$(IPKG) install $(PKG_PPPSTATS)
-endif
+install: $(INSTALL_TARGETS)
 
 clean:
 	rm -rf $(PKG_BUILD_DIR)

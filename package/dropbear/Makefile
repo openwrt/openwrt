@@ -69,11 +69,14 @@ $(PACKAGE_DIR)/$(DROPBEAR_IPK): $(DROPBEAR_DIR)/$(DROPBEAR_BINARY)
 	chmod a+x $(DROPBEAR_IPK_DIR)/etc/init.d/S50dropbear
 	$(IPKG_BUILD) $(DROPBEAR_IPK_DIR) $(PACKAGE_DIR)
 
+$(IPKG_STATE_DIR)/info/dropbear.list: $(PACKAGE_DIR)/$(DROPBEAR_IPK)
+	$(IPKG) install $(PACKAGE_DIR)/$(DROPBEAR_IPK)
+
 source: $(DL_DIR)/$(DROPBEAR_SOURCE)
 prepare: $(DROPBEAR_DIR)/.patched
 compile: $(PACKAGE_DIR)/$(DROPBEAR_IPK)
-install: compile
-	$(IPKG) install $(PACKAGE_DIR)/$(DROPBEAR_IPK)
+install: $(IPKG_STATE_DIR)/info/dropbear.list
+
 clean:
 	rm -rf $(DROPBEAR_DIR)
 	rm -f $(PACKAGE_DIR)/$(DROPBEAR_IPK)
