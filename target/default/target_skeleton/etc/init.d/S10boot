@@ -17,8 +17,7 @@ touch /var/log/lastlog
   awk '{OFS=FS=":";for(x=7,y=2;--x;){$x=sprintf("%02x",(y+="0x"$x)%256);y/=256}print}')
 }
 
-insmod et
-insmod wl
+sed 's/^[^#]/insmod &/' /etc/modules 2>&-|ash
 
 ifconfig lo 127.0.0.1 up
 ifconfig eth0 promisc
