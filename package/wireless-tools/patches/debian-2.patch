@@ -1,0 +1,89 @@
+--- wireless-tools-27.orig/iwlib.c
++++ wireless-tools-27/iwlib.c
+@@ -622,6 +622,7 @@
+ {
+   struct iwreq		wrq;
+ 
++  memset((char *) &wrq, 0, sizeof(struct iwreq));
+   memset((char *) info, 0, sizeof(struct wireless_config));
+ 
+   /* Get wireless name */
+--- wireless-tools-27.orig/Makefile
++++ wireless-tools-27/Makefile
+@@ -64,8 +64,8 @@
+ # Install directories
+ INSTALL_DIR= $(PREFIX)/sbin/
+ INSTALL_LIB= $(PREFIX)/lib/
+-INSTALL_INC= $(PREFIX)/include/
+-INSTALL_MAN= $(PREFIX)/man/
++INSTALL_INC= $(PREFIX)/usr/include/
++INSTALL_MAN= $(PREFIX)/usr/share/man/
+ 
+ # Various commands
+ RM = rm -f
+@@ -81,9 +81,9 @@
+ endif
+ 
+ # Other flags
+-CFLAGS=-Os -W -Wall -Wstrict-prototypes -Wmissing-prototypes -Wshadow \
++#CFLAGS=-Os -W -Wall -Wstrict-prototypes -Wmissing-prototypes -Wshadow \
+ 	-Wpointer-arith -Wcast-qual -Winline -I.
+-#CFLAGS=-O2 -W -Wall -Wstrict-prototypes -I.
++CFLAGS=-O2 -W -Wall -Wstrict-prototypes -I.
+ DEPFLAGS=-MMD
+ XCFLAGS=$(CFLAGS) $(DEPFLAGS) $(WARN) $(HEADERS) $(WELIB_FLAG)
+ PICFLAG=-fPIC
+--- wireless-tools-27.orig/iwlist.c
++++ wireless-tools-27/iwlist.c
+@@ -870,7 +870,7 @@
+   struct iw_range	range;
+   int			has_range;
+   struct timeval	tv;				/* Select timeout */
+-  int			timeout = 5000000;		/* 5s */
++  int			timeout = 15000000;		/* 15s */
+ 
+   /* Avoid "Unused parameter" warning */
+   args = args; count = count;
+--- wireless-tools-27.orig/iwconfig.c
++++ wireless-tools-27/iwconfig.c
+@@ -835,10 +835,10 @@
+ 	      }
+ 	    else
+ 	      {
+-		/* '-' allow to escape the ESSID string, allowing
++		/* '-' or '--' allow to escape the ESSID string, allowing
+ 		 * to set it to the string "any" or "off".
+ 		 * This is a big ugly, but it will do for now */
+-		if(!strcmp(args[i], "-"))
++		if(!strcmp(args[i], "-") || !strcmp(args[i], "--"))
+ 		  {
+ 		    i++;
+ 		    if(i >= count)
+@@ -1377,12 +1377,21 @@
+       if (!strcmp(argv[1], "-v") || !strcmp(argv[1], "--version"))
+ 	goterr = iw_print_version_info("iwconfig");
+       else
+-	/* The device name must be the first argument */
+-	if(argc == 2)
+-	  print_info(skfd, argv[1], NULL, 0);
+-	else
+-	  /* The other args on the line specify options to be set... */
+-	  goterr = set_info(skfd, argv + 2, argc - 2, argv[1]);
++      {
++        /* '--' escape device name */
++        if((argc > 2) && !strcmp(argv[1], "--"))
++          {
++            argv++;
++            argc--;
++          }
++
++        /* The device name must be the first argument */
++        if(argc == 2)
++          print_info(skfd, argv[1], NULL, 0);
++        else
++          /* The other args on the line specify options to be set... */
++          goterr = set_info(skfd, argv + 2, argc - 2, argv[1]);
++      }
+ 
+   /* Close the socket. */
+   iw_sockets_close(skfd);
