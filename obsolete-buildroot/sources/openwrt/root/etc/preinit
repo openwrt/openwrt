@@ -1,17 +1,19 @@
 #!/bin/sh
+# executed from squashfs before init to 
+# transfer root to the jffs2 partition
 mount none /proc -t proc
 insmod diag
 echo 0x01 > /proc/sys/diag
 sleep 1
-if [ $(cat /proc/sys/reset) = 0 ] ; then
+if [ $(cat /proc/sys/reset) = 1 ] ; then
+  export FAILSAFE=true
+else
   mtd unlock mtd4
   mount -t jffs2 /dev/mtdblock/4 /jffs
   pivot_root /jffs /jffs/rom
   mount none /dev -t devfs
   mount none /proc -t proc
   umount rom/proc rom/dev
-else
-  export FAILSAFE=true
 fi
 mount none /tmp -t ramfs
 exec /sbin/init

@@ -1,7 +1,7 @@
 #!/bin/sh
 . /etc/functions.sh
 
-WAN=$(nvram_get wan_ifname)
+WAN=$(nvram get wan_ifname)
 
 IPT=/usr/sbin/iptables
 
