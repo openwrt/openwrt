@@ -1,7 +1,5 @@
 #!/bin/sh
 
-. /etc/nvram.overrides
-
 debug () {
  [ -z "$DEBUG" ] || echo $1
 }
@@ -10,6 +8,7 @@ debug () {
 nvram_get () {
  eval "echo \${$1:-\$(nvram get $1)}"
 }
+. /etc/nvram.overrides
 
 # valid interface?
 if_valid () (
