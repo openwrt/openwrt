@@ -4,6 +4,7 @@
 #
 #############################################################
 
+LINKSYS_TGZ_SITE=http://openwrt.openbsd-geek.de
 LINKSYS_KERNEL_INCLUDE=$(BUILD_DIR)/linksys-kernel
 
 # shared library stuff extracted from linksys firmware GPL sourcetree
@@ -116,5 +117,4 @@ $(OPENWRT_ADDPATTERN_TARGET):
 openwrt-addpattern: $(OPENWRT_ADDPATTERN_TARGET)
 
 openwrt:	linksys-shared linksys-nvram linksys-wlconf openwrt-mtd openwrt-trx openwrt-addpattern
-
 
