@@ -1,6 +1,6 @@
-diff -Nurb src/linux/linux.orig/Makefile src/linux/linux/Makefile
---- src/linux/linux.orig/Makefile	2003-10-14 04:00:10.000000000 -0400
-+++ src/linux/linux/Makefile	2004-05-25 21:12:24.000000000 -0400
+diff -Nurb linux.orig/Makefile linux/Makefile
+--- linux.orig/Makefile	2003-10-14 04:00:10.000000000 -0400
++++ linux/Makefile	2004-05-25 21:12:24.000000000 -0400
 @@ -17,7 +17,7 @@
  FINDHPATH	= $(HPATH)/asm $(HPATH)/linux $(HPATH)/scsi $(HPATH)/net $(HPATH)/math-emu
  
@@ -19,9 +19,9 @@ diff -Nurb src/linux/linux.orig/Makefile src/linux/linux/Makefile
  	  -fno-strict-aliasing -fno-common
  
  # Turn on -pg to instrument the kernel with calls to mcount().
-diff -Nurb src/linux/linux.orig/arch/mips/brcm-boards/bcm947xx/setup.c src/linux/linux/arch/mips/brcm-boards/bcm947xx/setup.c
---- src/linux/linux.orig/arch/mips/brcm-boards/bcm947xx/setup.c	2003-11-11 09:08:46.000000000 -0500
-+++ src/linux/linux/arch/mips/brcm-boards/bcm947xx/setup.c	2004-05-25 21:12:24.000000000 -0400
+diff -Nurb linux.orig/arch/mips/brcm-boards/bcm947xx/setup.c linux/arch/mips/brcm-boards/bcm947xx/setup.c
+--- linux.orig/arch/mips/brcm-boards/bcm947xx/setup.c	2003-11-11 09:08:46.000000000 -0500
++++ linux/arch/mips/brcm-boards/bcm947xx/setup.c	2004-05-25 21:12:24.000000000 -0400
 @@ -27,6 +27,7 @@
  #include <linux/ext2_fs.h>
  #include <linux/romfs_fs.h>
@@ -223,9 +223,9 @@ diff -Nurb src/linux/linux.orig/arch/mips/brcm-boards/bcm947xx/setup.c src/linux
  	return bcm947xx_parts;
  }
  
-diff -Nurb src/linux/linux.orig/drivers/mtd/maps/bcm947xx-flash.c src/linux/linux/drivers/mtd/maps/bcm947xx-flash.c
---- src/linux/linux.orig/drivers/mtd/maps/bcm947xx-flash.c	2003-11-08 04:35:52.000000000 -0500
-+++ src/linux/linux/drivers/mtd/maps/bcm947xx-flash.c	2004-05-25 21:12:24.000000000 -0400
+diff -Nurb linux.orig/drivers/mtd/maps/bcm947xx-flash.c linux/drivers/mtd/maps/bcm947xx-flash.c
+--- linux.orig/drivers/mtd/maps/bcm947xx-flash.c	2003-11-08 04:35:52.000000000 -0500
++++ linux/drivers/mtd/maps/bcm947xx-flash.c	2004-05-25 21:12:24.000000000 -0400
 @@ -82,7 +82,21 @@
  
  void bcm947xx_map_copy_from(struct map_info *map, void *to, unsigned long from, ssize_t len)
@@ -248,9 +248,9 @@ diff -Nurb src/linux/linux.orig/drivers/mtd/maps/bcm947xx-flash.c src/linux/linu
  }
  
  void bcm947xx_map_write8(struct map_info *map, __u8 d, unsigned long adr)
-diff -Nurb src/linux/linux.orig/drivers/net/Makefile src/linux/linux/drivers/net/Makefile
---- src/linux/linux.orig/drivers/net/Makefile	2004-02-12 21:35:15.000000000 -0500
-+++ src/linux/linux/drivers/net/Makefile	2004-05-25 21:12:24.000000000 -0400
+diff -Nurb linux.orig/drivers/net/Makefile linux/drivers/net/Makefile
+--- linux.orig/drivers/net/Makefile	2004-02-12 21:35:15.000000000 -0500
++++ linux/drivers/net/Makefile	2004-05-25 21:12:24.000000000 -0400
 @@ -25,7 +25,7 @@
  list-multi	:=	rcpci.o
  rcpci-objs	:=	rcpci45.o rclanmtl.o
@@ -260,9 +260,9 @@ diff -Nurb src/linux/linux.orig/drivers/net/Makefile src/linux/linux/drivers/net
  subdir-m += diag
  
  ifeq ($(CONFIG_HW_QOS),y)
-diff -Nurb src/linux/linux.orig/fs/Config.in src/linux/linux/fs/Config.in
---- src/linux/linux.orig/fs/Config.in	2003-07-04 04:12:05.000000000 -0400
-+++ src/linux/linux/fs/Config.in	2004-05-25 21:13:03.000000000 -0400
+diff -Nurb linux.orig/fs/Config.in linux/fs/Config.in
+--- linux.orig/fs/Config.in	2003-07-04 04:12:05.000000000 -0400
++++ linux/fs/Config.in	2004-05-25 21:13:03.000000000 -0400
 @@ -47,6 +47,7 @@
     int 'JFFS2 debugging verbosity (0 = quiet, 2 = noisy)' CONFIG_JFFS2_FS_DEBUG 0
  fi
@@ -271,9 +271,9 @@ diff -Nurb src/linux/linux.orig/fs/Config.in src/linux/linux/fs/Config.in
  bool 'Virtual memory file system support (former shm fs)' CONFIG_TMPFS
  define_bool CONFIG_RAMFS y
  
-diff -Nurb src/linux/linux.orig/fs/Makefile src/linux/linux/fs/Makefile
---- src/linux/linux.orig/fs/Makefile	2003-07-04 04:12:05.000000000 -0400
-+++ src/linux/linux/fs/Makefile	2004-05-25 21:13:03.000000000 -0400
+diff -Nurb linux.orig/fs/Makefile linux/fs/Makefile
+--- linux.orig/fs/Makefile	2003-07-04 04:12:05.000000000 -0400
++++ linux/fs/Makefile	2004-05-25 21:13:03.000000000 -0400
 @@ -68,6 +68,7 @@
  subdir-$(CONFIG_SUN_OPENPROMFS)	+= openpromfs
  subdir-$(CONFIG_BEFS_FS)	+= befs
@@ -282,9 +282,9 @@ diff -Nurb src/linux/linux.orig/fs/Makefile src/linux/linux/fs/Makefile
  
  
  obj-$(CONFIG_BINFMT_AOUT)	+= binfmt_aout.o
-diff -Nurb src/linux/linux.orig/fs/squashfs/Makefile src/linux/linux/fs/squashfs/Makefile
---- src/linux/linux.orig/fs/squashfs/Makefile	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/fs/squashfs/Makefile	2004-05-25 21:13:03.000000000 -0400
+diff -Nurb linux.orig/fs/squashfs/Makefile linux/fs/squashfs/Makefile
+--- linux.orig/fs/squashfs/Makefile	1969-12-31 19:00:00.000000000 -0500
++++ linux/fs/squashfs/Makefile	2004-05-25 21:13:03.000000000 -0400
 @@ -0,0 +1,11 @@
 +#
 +# Makefile for the linux squashfs routines.
@@ -297,9 +297,9 @@ diff -Nurb src/linux/linux.orig/fs/squashfs/Makefile src/linux/linux/fs/squashfs
 +obj-m := $(O_TARGET)
 +
 +include $(TOPDIR)/Rules.make
-diff -Nurb src/linux/linux.orig/fs/squashfs/inode.c src/linux/linux/fs/squashfs/inode.c
---- src/linux/linux.orig/fs/squashfs/inode.c	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/fs/squashfs/inode.c	2004-05-25 21:13:03.000000000 -0400
+diff -Nurb linux.orig/fs/squashfs/inode.c linux/fs/squashfs/inode.c
+--- linux.orig/fs/squashfs/inode.c	1969-12-31 19:00:00.000000000 -0500
++++ linux/fs/squashfs/inode.c	2004-05-25 21:13:03.000000000 -0400
 @@ -0,0 +1,1515 @@
 +/*
 + * Squashfs - a compressed read only filesystem for Linux
@@ -1816,9 +1816,9 @@ diff -Nurb src/linux/linux.orig/fs/squashfs/inode.c src/linux/linux/fs/squashfs/
 +MODULE_DESCRIPTION("squashfs, a compressed read-only filesystem");
 +MODULE_AUTHOR("Phillip Lougher <plougher@users.sourceforge.net>");
 +MODULE_LICENSE("GPL");
-diff -Nurb src/linux/linux.orig/include/linux/fs.h src/linux/linux/include/linux/fs.h
---- src/linux/linux.orig/include/linux/fs.h	2003-07-04 04:12:25.000000000 -0400
-+++ src/linux/linux/include/linux/fs.h	2004-05-25 21:13:03.000000000 -0400
+diff -Nurb linux.orig/include/linux/fs.h linux/include/linux/fs.h
+--- linux.orig/include/linux/fs.h	2003-07-04 04:12:25.000000000 -0400
++++ linux/include/linux/fs.h	2004-05-25 21:13:03.000000000 -0400
 @@ -313,6 +313,7 @@
  #include <linux/usbdev_fs_i.h>
  #include <linux/jffs2_fs_i.h>
@@ -1851,9 +1851,9 @@ diff -Nurb src/linux/linux.orig/include/linux/fs.h src/linux/linux/include/linux
  		void			*generic_sbp;
  	} u;
  	/*
-diff -Nurb src/linux/linux.orig/include/linux/squashfs_fs.h src/linux/linux/include/linux/squashfs_fs.h
---- src/linux/linux.orig/include/linux/squashfs_fs.h	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/include/linux/squashfs_fs.h	2004-05-25 21:13:03.000000000 -0400
+diff -Nurb linux.orig/include/linux/squashfs_fs.h linux/include/linux/squashfs_fs.h
+--- linux.orig/include/linux/squashfs_fs.h	1969-12-31 19:00:00.000000000 -0500
++++ linux/include/linux/squashfs_fs.h	2004-05-25 21:13:03.000000000 -0400
 @@ -0,0 +1,474 @@
 +#ifndef SQUASHFS_FS
 +#define SQUASHFS_FS
@@ -2329,9 +2329,9 @@ diff -Nurb src/linux/linux.orig/include/linux/squashfs_fs.h src/linux/linux/incl
 +#define SQUASHFS_MEMSET(s, d, n)	memset(s, 0, n);
 +#endif
 +#endif
-diff -Nurb src/linux/linux.orig/include/linux/squashfs_fs_i.h src/linux/linux/include/linux/squashfs_fs_i.h
---- src/linux/linux.orig/include/linux/squashfs_fs_i.h	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/include/linux/squashfs_fs_i.h	2004-05-25 21:13:03.000000000 -0400
+diff -Nurb linux.orig/include/linux/squashfs_fs_i.h linux/include/linux/squashfs_fs_i.h
+--- linux.orig/include/linux/squashfs_fs_i.h	1969-12-31 19:00:00.000000000 -0500
++++ linux/include/linux/squashfs_fs_i.h	2004-05-25 21:13:03.000000000 -0400
 @@ -0,0 +1,33 @@
 +#ifndef SQUASHFS_FS_I
 +#define SQUASHFS_FS_I
@@ -2366,9 +2366,9 @@ diff -Nurb src/linux/linux.orig/include/linux/squashfs_fs_i.h src/linux/linux/in
 +	unsigned int	fragment_offset;
 +	} squashfs_inode_info;
 +#endif
-diff -Nurb src/linux/linux.orig/include/linux/squashfs_fs_sb.h src/linux/linux/include/linux/squashfs_fs_sb.h
---- src/linux/linux.orig/include/linux/squashfs_fs_sb.h	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/include/linux/squashfs_fs_sb.h	2004-05-25 21:13:03.000000000 -0400
+diff -Nurb linux.orig/include/linux/squashfs_fs_sb.h linux/include/linux/squashfs_fs_sb.h
+--- linux.orig/include/linux/squashfs_fs_sb.h	1969-12-31 19:00:00.000000000 -0500
++++ linux/include/linux/squashfs_fs_sb.h	2004-05-25 21:13:03.000000000 -0400
 @@ -0,0 +1,65 @@
 +#ifndef SQUASHFS_FS_SB
 +#define SQUASHFS_FS_SB
@@ -2435,9 +2435,9 @@ diff -Nurb src/linux/linux.orig/include/linux/squashfs_fs_sb.h src/linux/linux/i
 +					char *block_list, char **block_p, unsigned int *bsize);
 +	} squashfs_sb_info;
 +#endif
-diff -Nurb src/linux/linux.orig/init/do_mounts.c src/linux/linux/init/do_mounts.c
---- src/linux/linux.orig/init/do_mounts.c	2003-11-08 03:13:20.000000000 -0500
-+++ src/linux/linux/init/do_mounts.c	2004-05-25 21:13:03.000000000 -0400
+diff -Nurb linux.orig/init/do_mounts.c linux/init/do_mounts.c
+--- linux.orig/init/do_mounts.c	2003-11-08 03:13:20.000000000 -0500
++++ linux/init/do_mounts.c	2004-05-25 21:13:03.000000000 -0400
 @@ -16,6 +16,7 @@
  #include <linux/ext2_fs.h>
  #include <linux/romfs_fs.h>
@@ -2486,9 +2486,9 @@ diff -Nurb src/linux/linux.orig/init/do_mounts.c src/linux/linux/init/do_mounts.
  	/*
  	 * Read block 1 to test for minix and ext2 superblock
  	 */
-diff -Nurb src/linux/linux.orig/kernel/ksyms.c src/linux/linux/kernel/ksyms.c
---- src/linux/linux.orig/kernel/ksyms.c	2003-07-04 04:12:28.000000000 -0400
-+++ src/linux/linux/kernel/ksyms.c	2004-05-25 21:12:24.000000000 -0400
+diff -Nurb linux.orig/kernel/ksyms.c linux/kernel/ksyms.c
+--- linux.orig/kernel/ksyms.c	2003-07-04 04:12:28.000000000 -0400
++++ linux/kernel/ksyms.c	2004-05-25 21:12:24.000000000 -0400
 @@ -482,9 +482,9 @@
  EXPORT_SYMBOL(simple_strtoull);
  EXPORT_SYMBOL(system_utsname);	/* UTS data */
@@ -2501,9 +2501,9 @@ diff -Nurb src/linux/linux.orig/kernel/ksyms.c src/linux/linux/kernel/ksyms.c
  EXPORT_SYMBOL(machine_restart);
  EXPORT_SYMBOL(machine_halt);
  EXPORT_SYMBOL(machine_power_off);
-diff -Nurb src/linux/linux.orig/lib/Config.in src/linux/linux/lib/Config.in
---- src/linux/linux.orig/lib/Config.in	2003-07-04 04:12:29.000000000 -0400
-+++ src/linux/linux/lib/Config.in	2004-05-25 21:13:03.000000000 -0400
+diff -Nurb linux.orig/lib/Config.in linux/lib/Config.in
+--- linux.orig/lib/Config.in	2003-07-04 04:12:29.000000000 -0400
++++ linux/lib/Config.in	2004-05-25 21:13:03.000000000 -0400
 @@ -8,12 +8,14 @@
  # Do we need the compression support?
  #

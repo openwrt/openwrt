@@ -25,3 +25,5 @@ echo ${HOSTNAME:=OpenWrt} > /proc/sys/kernel/hostname
 echo ${DOMAINNAME:=lan}   > /proc/sys/kernel/domainname
 
 vconfig set_name_type VLAN_PLUS_VID_NO_PAD
+
+syslogd -C 16 

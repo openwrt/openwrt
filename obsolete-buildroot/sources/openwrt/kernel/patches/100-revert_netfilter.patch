@@ -1,6 +1,6 @@
-diff -Nurb src/linux/linux/include/linux/netfilter_ipv4/ip_conntrack.h src/linux/linux.stock/include/linux/netfilter_ipv4/ip_conntrack.h
---- src/linux/linux/include/linux/netfilter_ipv4/ip_conntrack.h	2003-08-12 07:43:11.000000000 -0400
-+++ src/linux/linux.stock/include/linux/netfilter_ipv4/ip_conntrack.h	2004-05-09 04:13:03.000000000 -0400
+diff -Nurb linux/include/linux/netfilter_ipv4/ip_conntrack.h linux.stock/include/linux/netfilter_ipv4/ip_conntrack.h
+--- linux/include/linux/netfilter_ipv4/ip_conntrack.h	2003-08-12 07:43:11.000000000 -0400
++++ linux.stock/include/linux/netfilter_ipv4/ip_conntrack.h	2004-05-09 04:13:03.000000000 -0400
 @@ -45,39 +45,27 @@
  
  #include <linux/netfilter_ipv4/ip_conntrack_tcp.h>
@@ -73,9 +73,9 @@ diff -Nurb src/linux/linux/include/linux/netfilter_ipv4/ip_conntrack.h src/linux
 -extern int sysctl_ip_conntrack_udp_timeouts[2];
  #endif /* __KERNEL__ */
  #endif /* _IP_CONNTRACK_H */
-diff -Nurb src/linux/linux/include/linux/netfilter_ipv4/ip_conntrack_h323.h src/linux/linux.stock/include/linux/netfilter_ipv4/ip_conntrack_h323.h
---- src/linux/linux/include/linux/netfilter_ipv4/ip_conntrack_h323.h	2003-07-04 04:12:27.000000000 -0400
-+++ src/linux/linux.stock/include/linux/netfilter_ipv4/ip_conntrack_h323.h	1969-12-31 19:00:00.000000000 -0500
+diff -Nurb linux/include/linux/netfilter_ipv4/ip_conntrack_h323.h linux.stock/include/linux/netfilter_ipv4/ip_conntrack_h323.h
+--- linux/include/linux/netfilter_ipv4/ip_conntrack_h323.h	2003-07-04 04:12:27.000000000 -0400
++++ linux.stock/include/linux/netfilter_ipv4/ip_conntrack_h323.h	1969-12-31 19:00:00.000000000 -0500
 @@ -1,30 +0,0 @@
 -#ifndef _IP_CONNTRACK_H323_H
 -#define _IP_CONNTRACK_H323_H
@@ -107,9 +107,9 @@ diff -Nurb src/linux/linux/include/linux/netfilter_ipv4/ip_conntrack_h323.h src/
 -};
 -
 -#endif /* _IP_CONNTRACK_H323_H */
-diff -Nurb src/linux/linux/include/linux/netfilter_ipv4/ip_conntrack_mms.h src/linux/linux.stock/include/linux/netfilter_ipv4/ip_conntrack_mms.h
---- src/linux/linux/include/linux/netfilter_ipv4/ip_conntrack_mms.h	2003-07-04 04:12:27.000000000 -0400
-+++ src/linux/linux.stock/include/linux/netfilter_ipv4/ip_conntrack_mms.h	1969-12-31 19:00:00.000000000 -0500
+diff -Nurb linux/include/linux/netfilter_ipv4/ip_conntrack_mms.h linux.stock/include/linux/netfilter_ipv4/ip_conntrack_mms.h
+--- linux/include/linux/netfilter_ipv4/ip_conntrack_mms.h	2003-07-04 04:12:27.000000000 -0400
++++ linux.stock/include/linux/netfilter_ipv4/ip_conntrack_mms.h	1969-12-31 19:00:00.000000000 -0500
 @@ -1,31 +0,0 @@
 -#ifndef _IP_CONNTRACK_MMS_H
 -#define _IP_CONNTRACK_MMS_H
@@ -142,9 +142,9 @@ diff -Nurb src/linux/linux/include/linux/netfilter_ipv4/ip_conntrack_mms.h src/l
 -};
 -
 -#endif /* _IP_CONNTRACK_MMS_H */
-diff -Nurb src/linux/linux/include/linux/netfilter_ipv4/ip_conntrack_pptp.h src/linux/linux.stock/include/linux/netfilter_ipv4/ip_conntrack_pptp.h
---- src/linux/linux/include/linux/netfilter_ipv4/ip_conntrack_pptp.h	2003-07-04 04:12:27.000000000 -0400
-+++ src/linux/linux.stock/include/linux/netfilter_ipv4/ip_conntrack_pptp.h	1969-12-31 19:00:00.000000000 -0500
+diff -Nurb linux/include/linux/netfilter_ipv4/ip_conntrack_pptp.h linux.stock/include/linux/netfilter_ipv4/ip_conntrack_pptp.h
+--- linux/include/linux/netfilter_ipv4/ip_conntrack_pptp.h	2003-07-04 04:12:27.000000000 -0400
++++ linux.stock/include/linux/netfilter_ipv4/ip_conntrack_pptp.h	1969-12-31 19:00:00.000000000 -0500
 @@ -1,313 +0,0 @@
 -/* PPTP constants and structs */
 -#ifndef _CONNTRACK_PPTP_H
@@ -459,9 +459,9 @@ diff -Nurb src/linux/linux/include/linux/netfilter_ipv4/ip_conntrack_pptp.h src/
 -
 -#endif /* __KERNEL__ */
 -#endif /* _CONNTRACK_PPTP_H */
-diff -Nurb src/linux/linux/include/linux/netfilter_ipv4/ip_conntrack_proto_gre.h src/linux/linux.stock/include/linux/netfilter_ipv4/ip_conntrack_proto_gre.h
---- src/linux/linux/include/linux/netfilter_ipv4/ip_conntrack_proto_gre.h	2003-07-04 04:12:27.000000000 -0400
-+++ src/linux/linux.stock/include/linux/netfilter_ipv4/ip_conntrack_proto_gre.h	1969-12-31 19:00:00.000000000 -0500
+diff -Nurb linux/include/linux/netfilter_ipv4/ip_conntrack_proto_gre.h linux.stock/include/linux/netfilter_ipv4/ip_conntrack_proto_gre.h
+--- linux/include/linux/netfilter_ipv4/ip_conntrack_proto_gre.h	2003-07-04 04:12:27.000000000 -0400
++++ linux.stock/include/linux/netfilter_ipv4/ip_conntrack_proto_gre.h	1969-12-31 19:00:00.000000000 -0500
 @@ -1,121 +0,0 @@
 -#ifndef _CONNTRACK_PROTO_GRE_H
 -#define _CONNTRACK_PROTO_GRE_H
@@ -584,9 +584,9 @@ diff -Nurb src/linux/linux/include/linux/netfilter_ipv4/ip_conntrack_proto_gre.h
 -#endif /* __KERNEL__ */
 -
 -#endif /* _CONNTRACK_PROTO_GRE_H */
-diff -Nurb src/linux/linux/include/linux/netfilter_ipv4/ip_conntrack_tftp.h src/linux/linux.stock/include/linux/netfilter_ipv4/ip_conntrack_tftp.h
---- src/linux/linux/include/linux/netfilter_ipv4/ip_conntrack_tftp.h	2003-07-04 04:12:27.000000000 -0400
-+++ src/linux/linux.stock/include/linux/netfilter_ipv4/ip_conntrack_tftp.h	1969-12-31 19:00:00.000000000 -0500
+diff -Nurb linux/include/linux/netfilter_ipv4/ip_conntrack_tftp.h linux.stock/include/linux/netfilter_ipv4/ip_conntrack_tftp.h
+--- linux/include/linux/netfilter_ipv4/ip_conntrack_tftp.h	2003-07-04 04:12:27.000000000 -0400
++++ linux.stock/include/linux/netfilter_ipv4/ip_conntrack_tftp.h	1969-12-31 19:00:00.000000000 -0500
 @@ -1,13 +0,0 @@
 -#ifndef _IP_CT_TFTP
 -#define _IP_CT_TFTP
@@ -601,9 +601,9 @@ diff -Nurb src/linux/linux/include/linux/netfilter_ipv4/ip_conntrack_tftp.h src/
 -#define TFTP_OPCODE_WRITE	2
 -
 -#endif /* _IP_CT_TFTP */
-diff -Nurb src/linux/linux/include/linux/netfilter_ipv4/ip_conntrack_tuple.h src/linux/linux.stock/include/linux/netfilter_ipv4/ip_conntrack_tuple.h
---- src/linux/linux/include/linux/netfilter_ipv4/ip_conntrack_tuple.h	2003-07-04 04:12:27.000000000 -0400
-+++ src/linux/linux.stock/include/linux/netfilter_ipv4/ip_conntrack_tuple.h	2004-05-09 04:13:03.000000000 -0400
+diff -Nurb linux/include/linux/netfilter_ipv4/ip_conntrack_tuple.h linux.stock/include/linux/netfilter_ipv4/ip_conntrack_tuple.h
+--- linux/include/linux/netfilter_ipv4/ip_conntrack_tuple.h	2003-07-04 04:12:27.000000000 -0400
++++ linux.stock/include/linux/netfilter_ipv4/ip_conntrack_tuple.h	2004-05-09 04:13:03.000000000 -0400
 @@ -14,7 +14,7 @@
  union ip_conntrack_manip_proto
  {
@@ -664,9 +664,9 @@ diff -Nurb src/linux/linux/include/linux/netfilter_ipv4/ip_conntrack_tuple.h src
  
  #define CTINFO2DIR(ctinfo) ((ctinfo) >= IP_CT_IS_REPLY ? IP_CT_DIR_REPLY : IP_CT_DIR_ORIGINAL)
  
-diff -Nurb src/linux/linux/include/linux/netfilter_ipv4/ip_nat_pptp.h src/linux/linux.stock/include/linux/netfilter_ipv4/ip_nat_pptp.h
---- src/linux/linux/include/linux/netfilter_ipv4/ip_nat_pptp.h	2003-07-04 04:12:27.000000000 -0400
-+++ src/linux/linux.stock/include/linux/netfilter_ipv4/ip_nat_pptp.h	1969-12-31 19:00:00.000000000 -0500
+diff -Nurb linux/include/linux/netfilter_ipv4/ip_nat_pptp.h linux.stock/include/linux/netfilter_ipv4/ip_nat_pptp.h
+--- linux/include/linux/netfilter_ipv4/ip_nat_pptp.h	2003-07-04 04:12:27.000000000 -0400
++++ linux.stock/include/linux/netfilter_ipv4/ip_nat_pptp.h	1969-12-31 19:00:00.000000000 -0500
 @@ -1,11 +0,0 @@
 -/* PPTP constants and structs */
 -#ifndef _NAT_PPTP_H
@@ -679,9 +679,9 @@ diff -Nurb src/linux/linux/include/linux/netfilter_ipv4/ip_nat_pptp.h src/linux/
 -};
 -
 -#endif /* _NAT_PPTP_H */
-diff -Nurb src/linux/linux/include/linux/netfilter_ipv4/ip_pool.h src/linux/linux.stock/include/linux/netfilter_ipv4/ip_pool.h
---- src/linux/linux/include/linux/netfilter_ipv4/ip_pool.h	2003-07-04 04:12:27.000000000 -0400
-+++ src/linux/linux.stock/include/linux/netfilter_ipv4/ip_pool.h	1969-12-31 19:00:00.000000000 -0500
+diff -Nurb linux/include/linux/netfilter_ipv4/ip_pool.h linux.stock/include/linux/netfilter_ipv4/ip_pool.h
+--- linux/include/linux/netfilter_ipv4/ip_pool.h	2003-07-04 04:12:27.000000000 -0400
++++ linux.stock/include/linux/netfilter_ipv4/ip_pool.h	1969-12-31 19:00:00.000000000 -0500
 @@ -1,64 +0,0 @@
 -#ifndef _IP_POOL_H
 -#define _IP_POOL_H
@@ -747,9 +747,9 @@ diff -Nurb src/linux/linux/include/linux/netfilter_ipv4/ip_pool.h src/linux/linu
 -#endif
 -
 -#endif /*_IP_POOL_H*/
-diff -Nurb src/linux/linux/include/linux/netfilter_ipv4/ipt_pool.h src/linux/linux.stock/include/linux/netfilter_ipv4/ipt_pool.h
---- src/linux/linux/include/linux/netfilter_ipv4/ipt_pool.h	2003-07-04 04:12:27.000000000 -0400
-+++ src/linux/linux.stock/include/linux/netfilter_ipv4/ipt_pool.h	1969-12-31 19:00:00.000000000 -0500
+diff -Nurb linux/include/linux/netfilter_ipv4/ipt_pool.h linux.stock/include/linux/netfilter_ipv4/ipt_pool.h
+--- linux/include/linux/netfilter_ipv4/ipt_pool.h	2003-07-04 04:12:27.000000000 -0400
++++ linux.stock/include/linux/netfilter_ipv4/ipt_pool.h	1969-12-31 19:00:00.000000000 -0500
 @@ -1,25 +0,0 @@
 -#ifndef _IPT_POOL_H
 -#define _IPT_POOL_H
@@ -776,9 +776,9 @@ diff -Nurb src/linux/linux/include/linux/netfilter_ipv4/ipt_pool.h src/linux/lin
 -};
 -
 -#endif /*_IPT_POOL_H*/
-diff -Nurb src/linux/linux/net/ipv4/netfilter/Config.in src/linux/linux.stock/net/ipv4/netfilter/Config.in
---- src/linux/linux/net/ipv4/netfilter/Config.in	2004-02-19 06:04:35.000000000 -0500
-+++ src/linux/linux.stock/net/ipv4/netfilter/Config.in	2004-05-09 04:13:03.000000000 -0400
+diff -Nurb linux/net/ipv4/netfilter/Config.in linux.stock/net/ipv4/netfilter/Config.in
+--- linux/net/ipv4/netfilter/Config.in	2004-02-19 06:04:35.000000000 -0500
++++ linux.stock/net/ipv4/netfilter/Config.in	2004-05-09 04:13:03.000000000 -0400
 @@ -7,12 +7,7 @@
  tristate 'Connection tracking (required for masq/NAT)' CONFIG_IP_NF_CONNTRACK
  if [ "$CONFIG_IP_NF_CONNTRACK" != "n" ]; then
@@ -878,9 +878,9 @@ diff -Nurb src/linux/linux/net/ipv4/netfilter/Config.in src/linux/linux.stock/ne
      fi
    fi
  
-diff -Nurb src/linux/linux/net/ipv4/netfilter/Makefile src/linux/linux.stock/net/ipv4/netfilter/Makefile
---- src/linux/linux/net/ipv4/netfilter/Makefile	2004-02-19 06:04:35.000000000 -0500
-+++ src/linux/linux.stock/net/ipv4/netfilter/Makefile	2004-05-09 04:13:03.000000000 -0400
+diff -Nurb linux/net/ipv4/netfilter/Makefile linux.stock/net/ipv4/netfilter/Makefile
+--- linux/net/ipv4/netfilter/Makefile	2004-02-19 06:04:35.000000000 -0500
++++ linux.stock/net/ipv4/netfilter/Makefile	2004-05-09 04:13:03.000000000 -0400
 @@ -31,48 +31,20 @@
  # connection tracking
  obj-$(CONFIG_IP_NF_CONNTRACK) += ip_conntrack.o
@@ -968,9 +968,9 @@ diff -Nurb src/linux/linux/net/ipv4/netfilter/Makefile src/linux/linux.stock/net
  
  # generic ARP tables
  obj-$(CONFIG_IP_NF_ARPTABLES) += arp_tables.o
-diff -Nurb src/linux/linux/net/ipv4/netfilter/ip_conntrack_core.c src/linux/linux.stock/net/ipv4/netfilter/ip_conntrack_core.c
---- src/linux/linux/net/ipv4/netfilter/ip_conntrack_core.c	2003-08-12 07:33:45.000000000 -0400
-+++ src/linux/linux.stock/net/ipv4/netfilter/ip_conntrack_core.c	2004-05-09 04:13:03.000000000 -0400
+diff -Nurb linux/net/ipv4/netfilter/ip_conntrack_core.c linux.stock/net/ipv4/netfilter/ip_conntrack_core.c
+--- linux/net/ipv4/netfilter/ip_conntrack_core.c	2003-08-12 07:33:45.000000000 -0400
++++ linux.stock/net/ipv4/netfilter/ip_conntrack_core.c	2004-05-09 04:13:03.000000000 -0400
 @@ -47,7 +47,11 @@
  
  #define IP_CONNTRACK_VERSION	"2.1"
@@ -1225,9 +1225,9 @@ diff -Nurb src/linux/linux/net/ipv4/netfilter/ip_conntrack_core.c src/linux/linu
   	{ 0 }
  };
  
-diff -Nurb src/linux/linux/net/ipv4/netfilter/ip_conntrack_ftp.c src/linux/linux.stock/net/ipv4/netfilter/ip_conntrack_ftp.c
---- src/linux/linux/net/ipv4/netfilter/ip_conntrack_ftp.c	2003-07-04 04:12:31.000000000 -0400
-+++ src/linux/linux.stock/net/ipv4/netfilter/ip_conntrack_ftp.c	2004-05-09 04:13:03.000000000 -0400
+diff -Nurb linux/net/ipv4/netfilter/ip_conntrack_ftp.c linux.stock/net/ipv4/netfilter/ip_conntrack_ftp.c
+--- linux/net/ipv4/netfilter/ip_conntrack_ftp.c	2003-07-04 04:12:31.000000000 -0400
++++ linux.stock/net/ipv4/netfilter/ip_conntrack_ftp.c	2004-05-09 04:13:03.000000000 -0400
 @@ -24,7 +24,11 @@
  static int loose = 0;
  MODULE_PARM(loose, "i");
@@ -1273,9 +1273,9 @@ diff -Nurb src/linux/linux/net/ipv4/netfilter/ip_conntrack_ftp.c src/linux/linux
  	if (tcp_v4_check(tcph, tcplen, iph->saddr, iph->daddr,
  			 csum_partial((char *)tcph, tcplen, 0))) {
  		DEBUGP("ftp_help: bad csum: %p %u %u.%u.%u.%u %u.%u.%u.%u\n",
-diff -Nurb src/linux/linux/net/ipv4/netfilter/ip_conntrack_h323.c src/linux/linux.stock/net/ipv4/netfilter/ip_conntrack_h323.c
---- src/linux/linux/net/ipv4/netfilter/ip_conntrack_h323.c	2003-07-04 04:12:31.000000000 -0400
-+++ src/linux/linux.stock/net/ipv4/netfilter/ip_conntrack_h323.c	1969-12-31 19:00:00.000000000 -0500
+diff -Nurb linux/net/ipv4/netfilter/ip_conntrack_h323.c linux.stock/net/ipv4/netfilter/ip_conntrack_h323.c
+--- linux/net/ipv4/netfilter/ip_conntrack_h323.c	2003-07-04 04:12:31.000000000 -0400
++++ linux.stock/net/ipv4/netfilter/ip_conntrack_h323.c	1969-12-31 19:00:00.000000000 -0500
 @@ -1,302 +0,0 @@
 -/* 
 - * H.323 'brute force' extension for H.323 connection tracking. 
@@ -1579,9 +1579,9 @@ diff -Nurb src/linux/linux/net/ipv4/netfilter/ip_conntrack_h323.c src/linux/linu
 -
 -module_init(init);
 -module_exit(fini);
-diff -Nurb src/linux/linux/net/ipv4/netfilter/ip_conntrack_mms.c src/linux/linux.stock/net/ipv4/netfilter/ip_conntrack_mms.c
---- src/linux/linux/net/ipv4/netfilter/ip_conntrack_mms.c	2003-07-04 04:12:31.000000000 -0400
-+++ src/linux/linux.stock/net/ipv4/netfilter/ip_conntrack_mms.c	1969-12-31 19:00:00.000000000 -0500
+diff -Nurb linux/net/ipv4/netfilter/ip_conntrack_mms.c linux.stock/net/ipv4/netfilter/ip_conntrack_mms.c
+--- linux/net/ipv4/netfilter/ip_conntrack_mms.c	2003-07-04 04:12:31.000000000 -0400
++++ linux.stock/net/ipv4/netfilter/ip_conntrack_mms.c	1969-12-31 19:00:00.000000000 -0500
 @@ -1,292 +0,0 @@
 -/* MMS extension for IP connection tracking
 - * (C) 2002 by Filip Sneppe <filip.sneppe@cronos.be>
@@ -1875,9 +1875,9 @@ diff -Nurb src/linux/linux/net/ipv4/netfilter/ip_conntrack_mms.c src/linux/linux
 -
 -module_init(init);
 -module_exit(fini);
-diff -Nurb src/linux/linux/net/ipv4/netfilter/ip_conntrack_pptp.c src/linux/linux.stock/net/ipv4/netfilter/ip_conntrack_pptp.c
---- src/linux/linux/net/ipv4/netfilter/ip_conntrack_pptp.c	2003-07-04 04:12:31.000000000 -0400
-+++ src/linux/linux.stock/net/ipv4/netfilter/ip_conntrack_pptp.c	1969-12-31 19:00:00.000000000 -0500
+diff -Nurb linux/net/ipv4/netfilter/ip_conntrack_pptp.c linux.stock/net/ipv4/netfilter/ip_conntrack_pptp.c
+--- linux/net/ipv4/netfilter/ip_conntrack_pptp.c	2003-07-04 04:12:31.000000000 -0400
++++ linux.stock/net/ipv4/netfilter/ip_conntrack_pptp.c	1969-12-31 19:00:00.000000000 -0500
 @@ -1,531 +0,0 @@
 -/*
 - * ip_conntrack_pptp.c	- Version 1.11
@@ -2410,9 +2410,9 @@ diff -Nurb src/linux/linux/net/ipv4/netfilter/ip_conntrack_pptp.c src/linux/linu
 -module_exit(fini);
 -
 -EXPORT_SYMBOL(ip_pptp_lock);
-diff -Nurb src/linux/linux/net/ipv4/netfilter/ip_conntrack_pptp_priv.h src/linux/linux.stock/net/ipv4/netfilter/ip_conntrack_pptp_priv.h
---- src/linux/linux/net/ipv4/netfilter/ip_conntrack_pptp_priv.h	2003-07-04 04:12:31.000000000 -0400
-+++ src/linux/linux.stock/net/ipv4/netfilter/ip_conntrack_pptp_priv.h	1969-12-31 19:00:00.000000000 -0500
+diff -Nurb linux/net/ipv4/netfilter/ip_conntrack_pptp_priv.h linux.stock/net/ipv4/netfilter/ip_conntrack_pptp_priv.h
+--- linux/net/ipv4/netfilter/ip_conntrack_pptp_priv.h	2003-07-04 04:12:31.000000000 -0400
++++ linux.stock/net/ipv4/netfilter/ip_conntrack_pptp_priv.h	1969-12-31 19:00:00.000000000 -0500
 @@ -1,24 +0,0 @@
 -#ifndef _IP_CT_PPTP_PRIV_H
 -#define _IP_CT_PPTP_PRIV_H
@@ -2438,9 +2438,9 @@ diff -Nurb src/linux/linux/net/ipv4/netfilter/ip_conntrack_pptp_priv.h src/linux
 -};
 -
 -#endif
-diff -Nurb src/linux/linux/net/ipv4/netfilter/ip_conntrack_proto_gre.c src/linux/linux.stock/net/ipv4/netfilter/ip_conntrack_proto_gre.c
---- src/linux/linux/net/ipv4/netfilter/ip_conntrack_proto_gre.c	2003-07-04 04:12:31.000000000 -0400
-+++ src/linux/linux.stock/net/ipv4/netfilter/ip_conntrack_proto_gre.c	1969-12-31 19:00:00.000000000 -0500
+diff -Nurb linux/net/ipv4/netfilter/ip_conntrack_proto_gre.c linux.stock/net/ipv4/netfilter/ip_conntrack_proto_gre.c
+--- linux/net/ipv4/netfilter/ip_conntrack_proto_gre.c	2003-07-04 04:12:31.000000000 -0400
++++ linux.stock/net/ipv4/netfilter/ip_conntrack_proto_gre.c	1969-12-31 19:00:00.000000000 -0500
 @@ -1,320 +0,0 @@
 -/*
 - * ip_conntrack_proto_gre.c - Version 1.11
@@ -2762,9 +2762,9 @@ diff -Nurb src/linux/linux/net/ipv4/netfilter/ip_conntrack_proto_gre.c src/linux
 -
 -module_init(init);
 -module_exit(fini);
-diff -Nurb src/linux/linux/net/ipv4/netfilter/ip_conntrack_proto_tcp.c src/linux/linux.stock/net/ipv4/netfilter/ip_conntrack_proto_tcp.c
---- src/linux/linux/net/ipv4/netfilter/ip_conntrack_proto_tcp.c	2003-08-12 07:33:45.000000000 -0400
-+++ src/linux/linux.stock/net/ipv4/netfilter/ip_conntrack_proto_tcp.c	2004-05-09 04:13:03.000000000 -0400
+diff -Nurb linux/net/ipv4/netfilter/ip_conntrack_proto_tcp.c linux.stock/net/ipv4/netfilter/ip_conntrack_proto_tcp.c
+--- linux/net/ipv4/netfilter/ip_conntrack_proto_tcp.c	2003-08-12 07:33:45.000000000 -0400
++++ linux.stock/net/ipv4/netfilter/ip_conntrack_proto_tcp.c	2004-05-09 04:13:03.000000000 -0400
 @@ -15,11 +15,17 @@
  #include <linux/netfilter_ipv4/ip_conntrack_protocol.h>
  #include <linux/netfilter_ipv4/lockhelp.h>
@@ -2835,9 +2835,9 @@ diff -Nurb src/linux/linux/net/ipv4/netfilter/ip_conntrack_proto_tcp.c src/linux
  	}
  
  	return NF_ACCEPT;
-diff -Nurb src/linux/linux/net/ipv4/netfilter/ip_conntrack_proto_udp.c src/linux/linux.stock/net/ipv4/netfilter/ip_conntrack_proto_udp.c
---- src/linux/linux/net/ipv4/netfilter/ip_conntrack_proto_udp.c	2003-08-12 07:33:45.000000000 -0400
-+++ src/linux/linux.stock/net/ipv4/netfilter/ip_conntrack_proto_udp.c	2004-05-09 04:13:03.000000000 -0400
+diff -Nurb linux/net/ipv4/netfilter/ip_conntrack_proto_udp.c linux.stock/net/ipv4/netfilter/ip_conntrack_proto_udp.c
+--- linux/net/ipv4/netfilter/ip_conntrack_proto_udp.c	2003-08-12 07:33:45.000000000 -0400
++++ linux.stock/net/ipv4/netfilter/ip_conntrack_proto_udp.c	2004-05-09 04:13:03.000000000 -0400
 @@ -5,7 +5,9 @@
  #include <linux/in.h>
  #include <linux/udp.h>
@@ -2865,9 +2865,9 @@ diff -Nurb src/linux/linux/net/ipv4/netfilter/ip_conntrack_proto_udp.c src/linux
  
  	return NF_ACCEPT;
  }
-diff -Nurb src/linux/linux/net/ipv4/netfilter/ip_conntrack_standalone.c src/linux/linux.stock/net/ipv4/netfilter/ip_conntrack_standalone.c
---- src/linux/linux/net/ipv4/netfilter/ip_conntrack_standalone.c	2003-08-12 07:33:45.000000000 -0400
-+++ src/linux/linux.stock/net/ipv4/netfilter/ip_conntrack_standalone.c	2004-05-09 04:13:03.000000000 -0400
+diff -Nurb linux/net/ipv4/netfilter/ip_conntrack_standalone.c linux.stock/net/ipv4/netfilter/ip_conntrack_standalone.c
+--- linux/net/ipv4/netfilter/ip_conntrack_standalone.c	2003-08-12 07:33:45.000000000 -0400
++++ linux.stock/net/ipv4/netfilter/ip_conntrack_standalone.c	2004-05-09 04:13:03.000000000 -0400
 @@ -27,7 +27,11 @@
  #include <linux/netfilter_ipv4/ip_conntrack_helper.h>
  #include <linux/netfilter_ipv4/listhelp.h>
@@ -2917,9 +2917,9 @@ diff -Nurb src/linux/linux/net/ipv4/netfilter/ip_conntrack_standalone.c src/linu
  EXPORT_SYMBOL(ip_conntrack_expect_related);
  EXPORT_SYMBOL(ip_conntrack_change_expect);
  EXPORT_SYMBOL(ip_conntrack_unexpect_related);
-diff -Nurb src/linux/linux/net/ipv4/netfilter/ip_conntrack_tftp.c src/linux/linux.stock/net/ipv4/netfilter/ip_conntrack_tftp.c
---- src/linux/linux/net/ipv4/netfilter/ip_conntrack_tftp.c	2003-07-04 04:12:31.000000000 -0400
-+++ src/linux/linux.stock/net/ipv4/netfilter/ip_conntrack_tftp.c	1969-12-31 19:00:00.000000000 -0500
+diff -Nurb linux/net/ipv4/netfilter/ip_conntrack_tftp.c linux.stock/net/ipv4/netfilter/ip_conntrack_tftp.c
+--- linux/net/ipv4/netfilter/ip_conntrack_tftp.c	2003-07-04 04:12:31.000000000 -0400
++++ linux.stock/net/ipv4/netfilter/ip_conntrack_tftp.c	1969-12-31 19:00:00.000000000 -0500
 @@ -1,126 +0,0 @@
 -/*
 - * Licensed under GNU GPL version 2 Copyright Magnus Boden <mb@ozaba.mine.nu>
@@ -3047,9 +3047,9 @@ diff -Nurb src/linux/linux/net/ipv4/netfilter/ip_conntrack_tftp.c src/linux/linu
 -
 -module_init(init);
 -module_exit(fini);
-diff -Nurb src/linux/linux/net/ipv4/netfilter/ip_nat_core.c src/linux/linux.stock/net/ipv4/netfilter/ip_nat_core.c
---- src/linux/linux/net/ipv4/netfilter/ip_nat_core.c	2003-07-04 04:12:31.000000000 -0400
-+++ src/linux/linux.stock/net/ipv4/netfilter/ip_nat_core.c	2004-05-09 04:13:03.000000000 -0400
+diff -Nurb linux/net/ipv4/netfilter/ip_nat_core.c linux.stock/net/ipv4/netfilter/ip_nat_core.c
+--- linux/net/ipv4/netfilter/ip_nat_core.c	2003-07-04 04:12:31.000000000 -0400
++++ linux.stock/net/ipv4/netfilter/ip_nat_core.c	2004-05-09 04:13:03.000000000 -0400
 @@ -31,7 +31,11 @@
  #include <linux/netfilter_ipv4/ip_conntrack_helper.h>
  #include <linux/netfilter_ipv4/listhelp.h>
@@ -3170,9 +3170,9 @@ diff -Nurb src/linux/linux/net/ipv4/netfilter/ip_nat_core.c src/linux/linux.stoc
  	IP_NF_ASSERT(ip_conntrack_destroyed == NULL);
  	ip_conntrack_destroyed = &ip_nat_cleanup_conntrack;
  
-diff -Nurb src/linux/linux/net/ipv4/netfilter/ip_nat_h323.c src/linux/linux.stock/net/ipv4/netfilter/ip_nat_h323.c
---- src/linux/linux/net/ipv4/netfilter/ip_nat_h323.c	2003-07-04 04:12:31.000000000 -0400
-+++ src/linux/linux.stock/net/ipv4/netfilter/ip_nat_h323.c	1969-12-31 19:00:00.000000000 -0500
+diff -Nurb linux/net/ipv4/netfilter/ip_nat_h323.c linux.stock/net/ipv4/netfilter/ip_nat_h323.c
+--- linux/net/ipv4/netfilter/ip_nat_h323.c	2003-07-04 04:12:31.000000000 -0400
++++ linux.stock/net/ipv4/netfilter/ip_nat_h323.c	1969-12-31 19:00:00.000000000 -0500
 @@ -1,403 +0,0 @@
 -/* 
 - * H.323 'brute force' extension for NAT alteration. 
@@ -3577,9 +3577,9 @@ diff -Nurb src/linux/linux/net/ipv4/netfilter/ip_nat_h323.c src/linux/linux.stoc
 -
 -module_init(init);
 -module_exit(fini);
-diff -Nurb src/linux/linux/net/ipv4/netfilter/ip_nat_helper.c src/linux/linux.stock/net/ipv4/netfilter/ip_nat_helper.c
---- src/linux/linux/net/ipv4/netfilter/ip_nat_helper.c	2003-07-04 04:12:31.000000000 -0400
-+++ src/linux/linux.stock/net/ipv4/netfilter/ip_nat_helper.c	2004-05-09 04:13:03.000000000 -0400
+diff -Nurb linux/net/ipv4/netfilter/ip_nat_helper.c linux.stock/net/ipv4/netfilter/ip_nat_helper.c
+--- linux/net/ipv4/netfilter/ip_nat_helper.c	2003-07-04 04:12:31.000000000 -0400
++++ linux.stock/net/ipv4/netfilter/ip_nat_helper.c	2004-05-09 04:13:03.000000000 -0400
 @@ -8,9 +8,6 @@
   *		- add support for SACK adjustment 
   *	14 Mar 2002 Harald Welte <laforge@gnumonks.org>:
@@ -3785,9 +3785,9 @@ diff -Nurb src/linux/linux/net/ipv4/netfilter/ip_nat_helper.c src/linux/linux.st
  /* Adjust one found SACK option including checksum correction */
  static void
  sack_adjust(struct tcphdr *tcph, 
-diff -Nurb src/linux/linux/net/ipv4/netfilter/ip_nat_mms.c src/linux/linux.stock/net/ipv4/netfilter/ip_nat_mms.c
---- src/linux/linux/net/ipv4/netfilter/ip_nat_mms.c	2003-07-04 04:12:31.000000000 -0400
-+++ src/linux/linux.stock/net/ipv4/netfilter/ip_nat_mms.c	1969-12-31 19:00:00.000000000 -0500
+diff -Nurb linux/net/ipv4/netfilter/ip_nat_mms.c linux.stock/net/ipv4/netfilter/ip_nat_mms.c
+--- linux/net/ipv4/netfilter/ip_nat_mms.c	2003-07-04 04:12:31.000000000 -0400
++++ linux.stock/net/ipv4/netfilter/ip_nat_mms.c	1969-12-31 19:00:00.000000000 -0500
 @@ -1,330 +0,0 @@
 -/* MMS extension for TCP NAT alteration.
 - * (C) 2002 by Filip Sneppe <filip.sneppe@cronos.be>
@@ -4119,9 +4119,9 @@ diff -Nurb src/linux/linux/net/ipv4/netfilter/ip_nat_mms.c src/linux/linux.stock
 -
 -module_init(init);
 -module_exit(fini);
-diff -Nurb src/linux/linux/net/ipv4/netfilter/ip_nat_pptp.c src/linux/linux.stock/net/ipv4/netfilter/ip_nat_pptp.c
---- src/linux/linux/net/ipv4/netfilter/ip_nat_pptp.c	2003-07-04 04:12:31.000000000 -0400
-+++ src/linux/linux.stock/net/ipv4/netfilter/ip_nat_pptp.c	1969-12-31 19:00:00.000000000 -0500
+diff -Nurb linux/net/ipv4/netfilter/ip_nat_pptp.c linux.stock/net/ipv4/netfilter/ip_nat_pptp.c
+--- linux/net/ipv4/netfilter/ip_nat_pptp.c	2003-07-04 04:12:31.000000000 -0400
++++ linux.stock/net/ipv4/netfilter/ip_nat_pptp.c	1969-12-31 19:00:00.000000000 -0500
 @@ -1,412 +0,0 @@
 -/*
 - * ip_nat_pptp.c	- Version 1.11
@@ -4535,9 +4535,9 @@ diff -Nurb src/linux/linux/net/ipv4/netfilter/ip_nat_pptp.c src/linux/linux.stoc
 -
 -module_init(init);
 -module_exit(fini);
-diff -Nurb src/linux/linux/net/ipv4/netfilter/ip_nat_proto_gre.c src/linux/linux.stock/net/ipv4/netfilter/ip_nat_proto_gre.c
---- src/linux/linux/net/ipv4/netfilter/ip_nat_proto_gre.c	2003-07-04 04:12:31.000000000 -0400
-+++ src/linux/linux.stock/net/ipv4/netfilter/ip_nat_proto_gre.c	1969-12-31 19:00:00.000000000 -0500
+diff -Nurb linux/net/ipv4/netfilter/ip_nat_proto_gre.c linux.stock/net/ipv4/netfilter/ip_nat_proto_gre.c
+--- linux/net/ipv4/netfilter/ip_nat_proto_gre.c	2003-07-04 04:12:31.000000000 -0400
++++ linux.stock/net/ipv4/netfilter/ip_nat_proto_gre.c	1969-12-31 19:00:00.000000000 -0500
 @@ -1,212 +0,0 @@
 -/*
 - * ip_nat_proto_gre.c - Version 1.11
@@ -4751,9 +4751,9 @@ diff -Nurb src/linux/linux/net/ipv4/netfilter/ip_nat_proto_gre.c src/linux/linux
 -
 -module_init(init);
 -module_exit(fini);
-diff -Nurb src/linux/linux/net/ipv4/netfilter/ip_nat_standalone.c src/linux/linux.stock/net/ipv4/netfilter/ip_nat_standalone.c
---- src/linux/linux/net/ipv4/netfilter/ip_nat_standalone.c	2003-07-04 04:12:31.000000000 -0400
-+++ src/linux/linux.stock/net/ipv4/netfilter/ip_nat_standalone.c	2004-05-09 04:13:03.000000000 -0400
+diff -Nurb linux/net/ipv4/netfilter/ip_nat_standalone.c linux.stock/net/ipv4/netfilter/ip_nat_standalone.c
+--- linux/net/ipv4/netfilter/ip_nat_standalone.c	2003-07-04 04:12:31.000000000 -0400
++++ linux.stock/net/ipv4/netfilter/ip_nat_standalone.c	2004-05-09 04:13:03.000000000 -0400
 @@ -37,7 +37,11 @@
  #include <linux/netfilter_ipv4/ip_conntrack_core.h>
  #include <linux/netfilter_ipv4/listhelp.h>
@@ -4773,9 +4773,9 @@ diff -Nurb src/linux/linux/net/ipv4/netfilter/ip_nat_standalone.c src/linux/linu
 -EXPORT_SYMBOL(ip_nat_mangle_udp_packet);
  EXPORT_SYMBOL(ip_nat_used_tuple);
  MODULE_LICENSE("GPL");
-diff -Nurb src/linux/linux/net/ipv4/netfilter/ip_nat_tftp.c src/linux/linux.stock/net/ipv4/netfilter/ip_nat_tftp.c
---- src/linux/linux/net/ipv4/netfilter/ip_nat_tftp.c	2003-07-04 04:12:31.000000000 -0400
-+++ src/linux/linux.stock/net/ipv4/netfilter/ip_nat_tftp.c	1969-12-31 19:00:00.000000000 -0500
+diff -Nurb linux/net/ipv4/netfilter/ip_nat_tftp.c linux.stock/net/ipv4/netfilter/ip_nat_tftp.c
+--- linux/net/ipv4/netfilter/ip_nat_tftp.c	2003-07-04 04:12:31.000000000 -0400
++++ linux.stock/net/ipv4/netfilter/ip_nat_tftp.c	1969-12-31 19:00:00.000000000 -0500
 @@ -1,186 +0,0 @@
 -/*
 - * Licensed under GNU GPL version 2 Copyright Magnus Boden <mb@ozaba.mine.nu>
@@ -4963,9 +4963,9 @@ diff -Nurb src/linux/linux/net/ipv4/netfilter/ip_nat_tftp.c src/linux/linux.stoc
 -
 -module_init(init);
 -module_exit(fini);
-diff -Nurb src/linux/linux/net/ipv4/netfilter/ip_pool.c src/linux/linux.stock/net/ipv4/netfilter/ip_pool.c
---- src/linux/linux/net/ipv4/netfilter/ip_pool.c	2003-07-04 04:12:31.000000000 -0400
-+++ src/linux/linux.stock/net/ipv4/netfilter/ip_pool.c	1969-12-31 19:00:00.000000000 -0500
+diff -Nurb linux/net/ipv4/netfilter/ip_pool.c linux.stock/net/ipv4/netfilter/ip_pool.c
+--- linux/net/ipv4/netfilter/ip_pool.c	2003-07-04 04:12:31.000000000 -0400
++++ linux.stock/net/ipv4/netfilter/ip_pool.c	1969-12-31 19:00:00.000000000 -0500
 @@ -1,328 +0,0 @@
 -/* Kernel module for IP pool management */
 -
@@ -5295,9 +5295,9 @@ diff -Nurb src/linux/linux/net/ipv4/netfilter/ip_pool.c src/linux/linux.stock/ne
 -
 -module_init(init);
 -module_exit(fini);
-diff -Nurb src/linux/linux/net/ipv4/netfilter/ip_tables.c src/linux/linux.stock/net/ipv4/netfilter/ip_tables.c
---- src/linux/linux/net/ipv4/netfilter/ip_tables.c	2003-07-04 04:12:31.000000000 -0400
-+++ src/linux/linux.stock/net/ipv4/netfilter/ip_tables.c	2004-05-09 04:13:03.000000000 -0400
+diff -Nurb linux/net/ipv4/netfilter/ip_tables.c linux.stock/net/ipv4/netfilter/ip_tables.c
+--- linux/net/ipv4/netfilter/ip_tables.c	2003-07-04 04:12:31.000000000 -0400
++++ linux.stock/net/ipv4/netfilter/ip_tables.c	2004-05-09 04:13:03.000000000 -0400
 @@ -62,6 +62,11 @@
  #include <linux/netfilter_ipv4/lockhelp.h>
  #include <linux/netfilter_ipv4/listhelp.h>
@@ -5492,9 +5492,9 @@ diff -Nurb src/linux/linux/net/ipv4/netfilter/ip_tables.c src/linux/linux.stock/
  #endif
  }
  
-diff -Nurb src/linux/linux/net/ipv4/netfilter/ipchains_core.c src/linux/linux.stock/net/ipv4/netfilter/ipchains_core.c
---- src/linux/linux/net/ipv4/netfilter/ipchains_core.c	2003-07-04 04:12:31.000000000 -0400
-+++ src/linux/linux.stock/net/ipv4/netfilter/ipchains_core.c	2004-05-09 04:13:03.000000000 -0400
+diff -Nurb linux/net/ipv4/netfilter/ipchains_core.c linux.stock/net/ipv4/netfilter/ipchains_core.c
+--- linux/net/ipv4/netfilter/ipchains_core.c	2003-07-04 04:12:31.000000000 -0400
++++ linux.stock/net/ipv4/netfilter/ipchains_core.c	2004-05-09 04:13:03.000000000 -0400
 @@ -977,10 +977,17 @@
  		    || ftmp->ipfw.fw_dst.s_addr!=frwl->ipfw.fw_dst.s_addr
  		    || ftmp->ipfw.fw_smsk.s_addr!=frwl->ipfw.fw_smsk.s_addr
@@ -5521,9 +5521,9 @@ diff -Nurb src/linux/linux/net/ipv4/netfilter/ipchains_core.c src/linux/linux.st
  	int reset = 0;
  #endif
  	struct ip_chain *i;
-diff -Nurb src/linux/linux/net/ipv4/netfilter/ipfwadm_core.c src/linux/linux.stock/net/ipv4/netfilter/ipfwadm_core.c
---- src/linux/linux/net/ipv4/netfilter/ipfwadm_core.c	2003-10-14 04:09:33.000000000 -0400
-+++ src/linux/linux.stock/net/ipv4/netfilter/ipfwadm_core.c	2004-05-09 04:13:03.000000000 -0400
+diff -Nurb linux/net/ipv4/netfilter/ipfwadm_core.c linux.stock/net/ipv4/netfilter/ipfwadm_core.c
+--- linux/net/ipv4/netfilter/ipfwadm_core.c	2003-10-14 04:09:33.000000000 -0400
++++ linux.stock/net/ipv4/netfilter/ipfwadm_core.c	2004-05-09 04:13:03.000000000 -0400
 @@ -20,7 +20,7 @@
   *	license in recognition of the original copyright.
   *				-- Alan Cox.
@@ -5565,9 +5565,9 @@ diff -Nurb src/linux/linux/net/ipv4/netfilter/ipfwadm_core.c src/linux/linux.sto
  	int reset = 0;
  #endif
  	return ip_chain_procinfo(IP_FW_FWD, buffer,start,offset,length,
-diff -Nurb src/linux/linux/net/ipv4/netfilter/ipt_ECN.c src/linux/linux.stock/net/ipv4/netfilter/ipt_ECN.c
---- src/linux/linux/net/ipv4/netfilter/ipt_ECN.c	2003-10-14 04:02:57.000000000 -0400
-+++ src/linux/linux.stock/net/ipv4/netfilter/ipt_ECN.c	2004-05-09 04:13:03.000000000 -0400
+diff -Nurb linux/net/ipv4/netfilter/ipt_ECN.c linux.stock/net/ipv4/netfilter/ipt_ECN.c
+--- linux/net/ipv4/netfilter/ipt_ECN.c	2003-10-14 04:02:57.000000000 -0400
++++ linux.stock/net/ipv4/netfilter/ipt_ECN.c	2004-05-09 04:13:03.000000000 -0400
 @@ -87,8 +87,8 @@
  	}
  	
@@ -5579,9 +5579,9 @@ diff -Nurb src/linux/linux/net/ipv4/netfilter/ipt_ECN.c src/linux/linux.stock/ne
  		tcph->check = csum_fold(csum_partial((char *)diffs,
  		                                    sizeof(diffs),
  		                                    tcph->check^0xFFFF));
-diff -Nurb src/linux/linux/net/ipv4/netfilter/ipt_LOG.c src/linux/linux.stock/net/ipv4/netfilter/ipt_LOG.c
---- src/linux/linux/net/ipv4/netfilter/ipt_LOG.c	2003-07-04 04:12:31.000000000 -0400
-+++ src/linux/linux.stock/net/ipv4/netfilter/ipt_LOG.c	2004-05-09 04:13:03.000000000 -0400
+diff -Nurb linux/net/ipv4/netfilter/ipt_LOG.c linux.stock/net/ipv4/netfilter/ipt_LOG.c
+--- linux/net/ipv4/netfilter/ipt_LOG.c	2003-07-04 04:12:31.000000000 -0400
++++ linux.stock/net/ipv4/netfilter/ipt_LOG.c	2004-05-09 04:13:03.000000000 -0400
 @@ -14,11 +14,15 @@
  #include <net/route.h>
  #include <linux/netfilter_ipv4/ipt_LOG.h>
@@ -5599,9 +5599,9 @@ diff -Nurb src/linux/linux/net/ipv4/netfilter/ipt_LOG.c src/linux/linux.stock/ne
          
  /* Use lock to serialize, so printks don't overlap */
  static spinlock_t log_lock = SPIN_LOCK_UNLOCKED;
-diff -Nurb src/linux/linux/net/ipv4/netfilter/ipt_REJECT.c src/linux/linux.stock/net/ipv4/netfilter/ipt_REJECT.c
---- src/linux/linux/net/ipv4/netfilter/ipt_REJECT.c	2003-07-04 04:12:31.000000000 -0400
-+++ src/linux/linux.stock/net/ipv4/netfilter/ipt_REJECT.c	2004-05-09 04:13:03.000000000 -0400
+diff -Nurb linux/net/ipv4/netfilter/ipt_REJECT.c linux.stock/net/ipv4/netfilter/ipt_REJECT.c
+--- linux/net/ipv4/netfilter/ipt_REJECT.c	2003-07-04 04:12:31.000000000 -0400
++++ linux.stock/net/ipv4/netfilter/ipt_REJECT.c	2004-05-09 04:13:03.000000000 -0400
 @@ -6,8 +6,6 @@
  #include <linux/module.h>
  #include <linux/skbuff.h>
@@ -5667,9 +5667,9 @@ diff -Nurb src/linux/linux/net/ipv4/netfilter/ipt_REJECT.c src/linux/linux.stock
  	memcpy(data, skb_in->nh.iph,
  	       length - sizeof(struct iphdr) - sizeof(struct icmphdr));
  	icmph->checksum = ip_compute_csum((unsigned char *)icmph,
-diff -Nurb src/linux/linux/net/ipv4/netfilter/ipt_ULOG.c src/linux/linux.stock/net/ipv4/netfilter/ipt_ULOG.c
---- src/linux/linux/net/ipv4/netfilter/ipt_ULOG.c	2003-07-04 04:12:32.000000000 -0400
-+++ src/linux/linux.stock/net/ipv4/netfilter/ipt_ULOG.c	2004-05-09 04:13:03.000000000 -0400
+diff -Nurb linux/net/ipv4/netfilter/ipt_ULOG.c linux.stock/net/ipv4/netfilter/ipt_ULOG.c
+--- linux/net/ipv4/netfilter/ipt_ULOG.c	2003-07-04 04:12:32.000000000 -0400
++++ linux.stock/net/ipv4/netfilter/ipt_ULOG.c	2004-05-09 04:13:03.000000000 -0400
 @@ -12,7 +12,6 @@
   * 	      module loadtime -HW
   * 2002/07/07 remove broken nflog_rcv() function -HW
@@ -5710,9 +5710,9 @@ diff -Nurb src/linux/linux/net/ipv4/netfilter/ipt_ULOG.c src/linux/linux.stock/n
  
  	if (in)
  		strncpy(pm->indev_name, in->name, sizeof(pm->indev_name));
-diff -Nurb src/linux/linux/net/ipv4/netfilter/ipt_multiport.c src/linux/linux.stock/net/ipv4/netfilter/ipt_multiport.c
---- src/linux/linux/net/ipv4/netfilter/ipt_multiport.c	2003-07-04 04:12:32.000000000 -0400
-+++ src/linux/linux.stock/net/ipv4/netfilter/ipt_multiport.c	2004-05-09 04:13:03.000000000 -0400
+diff -Nurb linux/net/ipv4/netfilter/ipt_multiport.c linux.stock/net/ipv4/netfilter/ipt_multiport.c
+--- linux/net/ipv4/netfilter/ipt_multiport.c	2003-07-04 04:12:32.000000000 -0400
++++ linux.stock/net/ipv4/netfilter/ipt_multiport.c	2004-05-09 04:13:03.000000000 -0400
 @@ -8,7 +8,11 @@
  #include <linux/netfilter_ipv4/ipt_multiport.h>
  #include <linux/netfilter_ipv4/ip_tables.h>
@@ -5734,9 +5734,9 @@ diff -Nurb src/linux/linux/net/ipv4/netfilter/ipt_multiport.c src/linux/linux.st
  		&& matchsize == IPT_ALIGN(sizeof(struct ipt_multiport))
  		&& (multiinfo->flags == IPT_MULTIPORT_SOURCE
  		    || multiinfo->flags == IPT_MULTIPORT_DESTINATION
-diff -Nurb src/linux/linux/net/ipv4/netfilter/ipt_pool.c src/linux/linux.stock/net/ipv4/netfilter/ipt_pool.c
---- src/linux/linux/net/ipv4/netfilter/ipt_pool.c	2003-07-04 04:12:32.000000000 -0400
-+++ src/linux/linux.stock/net/ipv4/netfilter/ipt_pool.c	1969-12-31 19:00:00.000000000 -0500
+diff -Nurb linux/net/ipv4/netfilter/ipt_pool.c linux.stock/net/ipv4/netfilter/ipt_pool.c
+--- linux/net/ipv4/netfilter/ipt_pool.c	2003-07-04 04:12:32.000000000 -0400
++++ linux.stock/net/ipv4/netfilter/ipt_pool.c	1969-12-31 19:00:00.000000000 -0500
 @@ -1,71 +0,0 @@
 -/* Kernel module to match an IP address pool. */
 -
@@ -5809,9 +5809,9 @@ diff -Nurb src/linux/linux/net/ipv4/netfilter/ipt_pool.c src/linux/linux.stock/n
 -
 -module_init(init);
 -module_exit(fini);
-diff -Nurb src/linux/linux/net/ipv6/mcast.c src/linux/linux.stock/net/ipv6/mcast.c
---- src/linux/linux/net/ipv6/mcast.c	2003-10-14 04:09:34.000000000 -0400
-+++ src/linux/linux.stock/net/ipv6/mcast.c	2004-05-09 04:13:22.000000000 -0400
+diff -Nurb linux/net/ipv6/mcast.c linux.stock/net/ipv6/mcast.c
+--- linux/net/ipv6/mcast.c	2003-10-14 04:09:34.000000000 -0400
++++ linux.stock/net/ipv6/mcast.c	2004-05-09 04:13:22.000000000 -0400
 @@ -5,7 +5,7 @@
   *	Authors:
   *	Pedro Roque		<roque@di.fc.ul.pt>	
@@ -5821,3 +5821,14 @@ diff -Nurb src/linux/linux/net/ipv6/mcast.c src/linux/linux.stock/net/ipv6/mcast
   *
   *	Based on linux/ipv4/igmp.c and linux/ipv4/ip_sockglue.c 
   *
+--- linux/include/linux/ppp-comp.h	2004-08-16 20:58:32.089851872 -0400
++++ linux.stock/include/linux/ppp-comp.h	2004-08-16 20:59:48.217278744 -0400
+@@ -24,7 +24,7 @@
+  * OBLIGATION TO PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS,
+  * OR MODIFICATIONS.
+  *
+- * $Id: ppp-comp.h,v 1.1.1.4 2003/10/14 08:09:26 sparq Exp $
++ * $Id: ppp-comp.h,v 1.6 1997/11/27 06:04:44 paulus Exp $
+  */
+ 
+ /*

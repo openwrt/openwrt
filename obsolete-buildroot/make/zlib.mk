@@ -71,7 +71,7 @@ $(ZLIB_IPK): uclibc $(STAGING_DIR)/lib/libz.so.1.1.4
 	cp -dpf $(STAGING_DIR)/lib/libz.so* $(ZLIB_IPK_DIR)/lib;
 	-$(STRIP) --strip-unneeded $(ZLIB_IPK_DIR)/lib/libz.so*
 	touch -c $(ZLIB_IPK_DIR)/lib/libz.so.1.1.4
-	cd $(BUILD_DIR); $(STAGING_DIR)/bin/ipkg-build -c -o root -g root $(ZLIB_IPK_DIR)
+	cd $(ZLIB_IPK_DIR) $(IPKG_BUILDPACKAGE)
 
 zlib-ipk: $(ZLIB_IPK)
 

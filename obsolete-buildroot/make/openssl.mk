@@ -77,7 +77,7 @@ $(LIBSSL_IPK): uclibc $(STAGING_DIR)/lib/libcrypto.a
 	cp -fa $(STAGING_DIR)/lib/libssl.so* $(OPENSSL_IPK_BUILD_DIR)/usr/lib/
 	-$(STRIP) --strip-unneeded $(OPENSSL_IPK_BUILD_DIR)/usr/lib/libssl.so.0.9.7
 	-$(STRIP) --strip-unneeded $(OPENSSL_IPK_BUILD_DIR)/usr/lib/libcrypto.so.0.9.7
-	cd $(BUILD_DIR); $(STAGING_DIR)/bin/ipkg-build -c -o root -g root $(OPENSSL_IPK_BUILD_DIR)
+	cd $(BUILD_DIR); $(IPKG_BUILD) $(OPENSSL_IPK_BUILD_DIR)
 
 openssl-ipk: $(LIBSSL_IPK)
 

@@ -40,9 +40,6 @@ BUILD_WITH_LARGEFILE:=true
 
 OPTIMIZE_FOR_CPU=$(ARCH)
 
-# directory used by 'make publish'
-PUB_DIR:=/var/www/html/testsite/ipkg
-
 # Command used to download source code
 WGET:=wget --passive-ftp
 
@@ -151,7 +148,6 @@ TARGET_CROSS=$(STAGING_DIR)/bin/$(OPTIMIZE_FOR_CPU)-linux-uclibc-
 TARGET_CC=$(TARGET_CROSS)gcc
 STRIP=$(TARGET_CROSS)strip --remove-section=.comment --remove-section=.note
 
-
 HOST_ARCH:=$(shell $(HOSTCC) -dumpmachine | sed -e s'/-.*//' \
 	-e 's/sparc.*/sparc/' \
 	-e 's/arm.*/arm/g' \
@@ -191,13 +187,14 @@ TARGETS_DIRCLEAN:=$(patsubst %,%-dirclean,$(TARGETS))
 PACKAGES_IPK:=$(patsubst %,%-ipk,$(PACKAGES))
 OPENWRT_IPK_DIR=$(SOURCE_DIR)/openwrt/ipkg
 
-$(BUILD_DIR)/Packages : $(PACKAGES_IPK)
-	(cd $(BUILD_DIR) ; $(IPKG_MAKE_INDEX) . > Packages)
-
 world: $(DL_DIR) $(TARGETS_SOURCE) $(BUILD_DIR) $(STAGING_DIR) $(TARGET_DIR) $(TARGETS)
 	@echo "ALL DONE."
 
-packages: ipkg-utils $(PACKAGES_IPK) $(BUILD_DIR)/Packages
+packages: ipkg-utils $(PACKAGES_IPK)
+	-@mkdir -p $(BASE_DIR)/packages
+	cd $(BASE_DIR)/packages
+	-mv $(BUILD_DIR)/*.ipk .
+	$(IPKG_MAKE_INDEX) . > Packages
 	@echo "ALL DONE."
 
 .PHONY: all world clean dirclean distclean source $(TARGETS) \
@@ -240,11 +237,13 @@ source: $(TARGETS_SOURCE)
 #############################################################
 clean:
 	rm -rf $(TOOL_BUILD_DIR) $(BUILD_DIR) $(IMAGE) \
+		$(BASE_DIR)/packages \
 		openwrt-linux.trx openwrt-g-code.bin openwrt-gs-code.bin \
 		openwrt-kmodules.tar.bz2
 
 dirclean: $(TARGETS_DIRCLEAN)
 	rm -rf $(TARGET_DIR) $(STAGING_DIR) $(IMAGE) \
+		$(BASE_DIR)/packages \
 		openwrt-linux.trx openwrt-g-code.bin openwrt-gs-code.bin \
 		openwrt-kmodules.tar.bz2
 
@@ -252,14 +251,6 @@ distclean:
 	rm -rf $(DL_DIR) $(BUILD_DIR) $(LINUX_KERNEL) $(IMAGE) \
 		openwrt-linux.trx openwrt-g-code.bin openwrt-gs-code.bin \
 		openwrt-kmodules.tar.bz2
-
-publish:	
-	chmod 644 $(BUILD_DIR)/Packages
-	chmod 644 $(BUILD_DIR)/Packages.filelist
-	chmod 644 $(BUILD_DIR)/*.ipk
-	cp $(BUILD_DIR)/Packages $(PUB_DIR)
-	cp $(BUILD_DIR)/Packages.filelist $(PUB_DIR)
-	cp $(BUILD_DIR)/*.ipk $(PUB_DIR)
 
 sourceball: 
 	rm -rf $(BUILD_DIR)
