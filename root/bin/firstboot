@@ -12,27 +12,33 @@ touch /tmp/.firstboot
 jdev=$(mount | awk '/jffs2/ {print $3}')
 
 if [ -z "$jdev" ]; then
-	mtd erase OpenWrt
+	echo -n "Creating jffs2 partition... "
+	mtd erase OpenWrt >- 
 	mount -t jffs2 /dev/mtdblock/4 /jffs
+	echo "done"
 	cd /jffs
 else
 	echo "firstboot has already been run"
-	echo "fixing symlinks instead"
+	echo "jffs2 partition is mounted, only resetting files"
 	cd $jdev
 fi
 
 mount /dev/mtdblock/2 /rom -o ro
 
+echo -n "creating directories... "
 {
 	cd /rom
 	find . -type d
 	cd -
 } | xargs mkdir
+echo "done"
 
+echo -n "setting up symlinks... "
 for file in $(cd /rom; find *  -type f; find *  -type l;)
 do {
 	ln -sf  /rom/$file $file
 } done
+echo "done"
 
 touch /tmp/resolv.conf
 ln -s /tmp/resolv.conf /etc/resolv.conf
