@@ -33,7 +33,7 @@ $(DL_DIR)/$(NETFILTER_SOURCE):
 
 netfilter-source: $(DL_DIR)/$(NETFILTER_SOURCE)
 
-$(NETFILTER_DIR)/.unpacked: $(DL_DIR)/$(NETFILTER_SOURCE)
+$(NETFILTER_DIR)/.unpacked: $(DL_DIR)/$(NETFILTER_SOURCE) host-sed
 	$(NETFILTER_CAT) $(DL_DIR)/$(NETFILTER_SOURCE) | tar -C $(BUILD_DIR) -xvf -
 	#ignore whitespace in patches
 	$(SED) "s,\-p1,\-l \-p1," $(NETFILTER_DIR)/runme
