@@ -54,6 +54,10 @@ clean: $(patsubst %,%-clean,$(package-) $(package-y) $(package-m)) linux-clean
 compile: $(patsubst %,%-compile,$(package-y) $(package-m))
 install: $(patsubst %,%-install,$(package-y))
 
+ifeq ($(BR2_PACKAGE_OPENVPN_LZO),y)
+openvpn-compile: lzo-compile
+endif
+
 nocatsplash-compile: glib-compile
 arpwatch-compile: libpcap-compile
 tcpdump-compile: libpcap-compile
