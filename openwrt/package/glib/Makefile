@@ -79,6 +79,7 @@ $(STAGING_DIR)/lib/libglib.so: $(PKG_BUILD_DIR)/libglib.so
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 	  DESTDIR="$(STAGING_DIR)" \
 	  install
+	cp $(PKG_BUILD_DIR)/glibconfig-sysdefs.h $(STAGING_DIR)/usr/include/glib-1.2/
 
 $(PKG_IPK): $(STAGING_DIR)/lib/libglib.so
 	mkdir -p $(PACKAGE_DIR)
