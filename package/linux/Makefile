@@ -53,6 +53,9 @@ $(eval $(call KMOD_template,USB,usb,\
 $(eval $(call KMOD_template,CRYPTO,crypto,\
 	$(MODULES_DIR)/kernel/crypto/*.o \
 ))
+$(eval $(call KMOD_template,PPP,ppp,\
+	$(MODULES_DIR)/kernel/drivers/net/ppp_generic.o \
+))
 $(eval $(call KMOD_template,MPPE,mppe,\
 	$(MODULES_DIR)/kernel/drivers/net/ppp_mppe_mppc.o \
 ))
