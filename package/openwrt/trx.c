@@ -31,6 +31,10 @@
  * Sigh... Make it endian-neutral.
  *
  * TODO: Support '-b' option to specify offsets for each file.
+ *
+ * February 19, 2005 - mbm
+ *
+ * Add -a (align offset) and -b (absolute offset)
  */
 
 #include <stdio.h>
@@ -75,7 +79,7 @@ void usage(void) __attribute__ (( __noreturn__ ));
 
 void usage(void)
 {
-	fprintf(stderr, "Usage: trx [-o outfile] [-m maxlen] file [file [file]]\n");
+	fprintf(stderr, "Usage: trx [-o outfile] [-m maxlen] [-a align] [-b offset] file [file [file]]\n");
 	exit(EXIT_FAILURE);
 }
 
@@ -92,12 +96,54 @@ int main(int argc, char **argv)
 	unsigned long maxlen = TRX_MAX_LEN;
 	struct trx_header *p;
 
-	fprintf(stderr, "mjn3's trx replacement - v0.81\n");
+	fprintf(stderr, "mjn3's trx replacement - v0.81.1\n");
 
-	while ((c = getopt(argc, argv, "o:m:")) != -1) {
+	if (!(buf = malloc(maxlen))) {
+		fprintf(stderr, "malloc failed\n");
+		return EXIT_FAILURE;
+	}
+
+	p = (struct trx_header *) buf;
+
+	p->magic = STORE32_LE(TRX_MAGIC);
+	cur_len = sizeof(struct trx_header);
+	p->flag_version = STORE32_LE((TRX_VERSION << 16));
+
+	in = NULL;
+	i = 0;
+
+	while ((c = getopt(argc, argv, "-:o:m:a:b:")) != -1) {
 		switch (c) {
+			case 1:
+				p->offsets[i++] = STORE32_LE(cur_len);
+
+				if (!(in = fopen(optarg, "r"))) {
+					fprintf(stderr, "can not open \"%s\" for reading\n", optarg);
+					usage();
+				}
+				n = fread(buf + cur_len, 1, maxlen - cur_len, in);
+				if (!feof(in)) {
+					fprintf(stderr, "fread failure or file \"%s\" too large\n",optarg);
+					fclose(in);
+					return EXIT_FAILURE;
+				}
+				fclose(in);
+#undef  ROUND
+#define ROUND 4
+				if (n & (ROUND-1)) {
+					memset(buf + cur_len + n, 0, ROUND - (n & (ROUND-1)));
+					n += ROUND - (n & (ROUND-1));
+				}
+				cur_len += n;
+
+				break;
 			case 'o':
 				ofn = optarg;
+				if (ofn && !(out = fopen(ofn, "w"))) {
+					fprintf(stderr, "can not open \"%s\" for writing\n", ofn);
+					usage();
+				}
+
 				break;
 			case 'm':
 				errno = 0;
@@ -115,74 +161,38 @@ int main(int argc, char **argv)
 					fprintf(stderr, "maxlen too small (or wrapped)\n");
 					usage();
 				}
+				if (maxlen > TRX_MAX_LEN) {
+					fprintf(stderr, "WARNING: maxlen exceeds default maximum!  Beware of overwriting nvram!\n");
+				}
+				if (!(buf = realloc(buf,maxlen))) {
+					fprintf(stderr, "realloc failed");
+					return EXIT_FAILURE;
+				}
 				break;
+			case 'a':
+				n = atoi(optarg);
+				if (cur_len & (n-1)) {
+					n = n - (cur_len & (n-1));
+					memset(buf + cur_len, 0, n);
+					cur_len += n;
+				}
+				break;
+			case 'b':
+				n = atoi(optarg);
+				if (n < cur_len) {
+					fprintf(stderr, "WARNING: current length exceeds -b %d offset",n);
+				} else {
+					memset(buf + cur_len, 0, n - cur_len);
+					cur_len = n;
+				}
 			default:
 				usage();
 		}
 	}
 
-	if (ofn && !(out = fopen(ofn, "w"))) {
-		fprintf(stderr, "can not open \"%s\" for writing\n", ofn);
+	if (!in) {
+		fprintf(stderr, "we require atleast one filename\n");
 		usage();
-	}
-
-	if (optind == argc) {
-		fprintf(stderr, "we require at least one arg\n");
-		usage();
-	}
-
-	if (argc - optind > 3) {
-		fprintf(stderr, "too many args: %d > 3\n", argc - optind);
-		usage();
-	}
-
-	if (maxlen > TRX_MAX_LEN) {
-		fprintf(stderr, "WARNING: maxlen exceeds default maximum!  Beware of overwriting nvram!\n");
-	}
-
-	if (!(buf = malloc(maxlen))) {
-		fprintf(stderr, "malloc failed\n");
-		return EXIT_FAILURE;
-	}
-
-	p = (struct trx_header *) buf;
-
-	p->magic = STORE32_LE(TRX_MAGIC);
-	cur_len = sizeof(struct trx_header);
-	p->flag_version = STORE32_LE((TRX_VERSION << 16));
-
-	i = 0;
-
-	while (optind < argc) {
-		p->offsets[i++] = STORE32_LE(cur_len);
-
-		if (!(in = fopen(argv[optind], "r"))) {
-			fprintf(stderr, "can not open \"%s\" for reading\n", argv[optind]);
-			usage();
-		}
-
-		n = fread(buf + cur_len, 1, maxlen - cur_len, in);
-		if (!feof(in)) {
-			fprintf(stderr, "fread failure or file \"%s\" too large\n",
-					argv[optind]);
-			fclose(in);
-			return EXIT_FAILURE;
-		}
-
-		fclose(in);
-
-		++optind;
-
-		if (optind < argc) {
-#undef  ROUND
-#define ROUND 4
-			if (n & (ROUND-1)) {
-				memset(buf + cur_len + n, 0, ROUND - (n & (ROUND-1)));
-				n += ROUND - (n & (ROUND-1));
-			}
-		}
-
-		cur_len += n;
 	}
 
 #undef  ROUND
