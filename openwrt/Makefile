@@ -24,7 +24,11 @@
 #--------------------------------------------------------------
 TOPDIR=${shell pwd}
 export TOPDIR
+ifneq ($(DEVELOPER),)
+CONFIG_CONFIG_IN = Config.in.devel
+else
 CONFIG_CONFIG_IN = Config.in
+endif
 CONFIG_DEFCONFIG = .defconfig
 CONFIG = package/config
 

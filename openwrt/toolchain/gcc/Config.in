@@ -2,10 +2,12 @@
 # WARNING -- 2.95 currently only builds for i386, arm, mips*, and powerpc.
 # WARNING -- 2.95 does not currently build natively for the target.
 
-comment "Gcc Options"
+if CONFIG_DEVEL
+	comment "Gcc Options"
+endif
 
 choice
-	prompt "GCC compiler Version"
+	prompt "GCC compiler Version" if CONFIG_DEVEL
 	default BR2_GCC_VERSION_3_3_5
 	help
 	  Select the version of gcc you wish to use.
@@ -35,10 +37,9 @@ endchoice
 
 config BR2_GCC_VERSION
 	string
-	default "2.95"      if BR2_GCC_VERSION_2_95
 	default "3.3.3"     if BR2_GCC_VERSION_3_3_3
 	default "3.3.4"     if BR2_GCC_VERSION_3_3_4
-	default "3.3.5"     if BR2_GCC_VERSION_3_3_5
+	default "3.3.5"     if BR2_GCC_VERSION_3_3_5 || !CONFIG_DEVEL
 	default "3.4.0"     if BR2_GCC_VERSION_3_4_0
 	default "3.4.1"     if BR2_GCC_VERSION_3_4_1
 	default "3.4.2"     if BR2_GCC_VERSION_3_4_2
@@ -53,13 +54,15 @@ config BR2_GCC_USE_SJLJ_EXCEPTIONS
 	    but not dynamic.  So use setjmp/longjmp exceptions by default.
 
 config BR2_EXTRA_GCC_CONFIG_OPTIONS
-	string "Additional gcc options"
+	string
+	prompt "Additional gcc options" if CONFIG_DEVEL
 	default ""
 	help
 	    Any additional gcc options you may want to include....
 
 config BR2_INSTALL_LIBSTDCPP
-	bool "Build/install c++ compiler and libstdc++?"
+	bool
+	prompt "Build/install c++ compiler and libstdc++?" if CONFIG_DEVEL
 	default n
 	help
 	    Build/install c++ compiler and libstdc++?

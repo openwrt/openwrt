@@ -12,6 +12,7 @@ config BR2_PACKAGE_BUSYBOX
 config BR2_PACKAGE_BUSYBOX_SNAPSHOT
 	bool "Use the daily snapshot of busybox?"
 	depends BR2_PACKAGE_BUSYBOX
+	depends CONFIG_DEVEL
 	default n
 	help
 	  Use the latest busybox CVS snapshot instead of release.

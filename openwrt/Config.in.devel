@@ -10,7 +10,12 @@ config BR2_HAVE_DOT_CONFIG
 	bool
 	default y
 
+config CONFIG_DEVEL
+	bool
+	default y
+
 choice
+	prompt "Target Architecture" if CONFIG_DEVEL
 	default BR2_mipsel
 	help
 	  Stuff
@@ -64,7 +69,7 @@ config BR2_ARCH
 	default "i386"    if BR2_i386
 	default "m68k"    if BR2_m68k
 	default "mips"    if BR2_mips
-	default "mipsel"  if BR2_mipsel || !CONFIG_DEVEL
+	default "mipsel"  if BR2_mipsel
 	default "powerpc" if BR2_powerpc
 	default "sh3"     if BR2_sh3
 	default "sh3eb"   if BR2_sh3eb
@@ -73,22 +78,37 @@ config BR2_ARCH
 	default "sparc"   if BR2_sparc
 
 
+menu "Build options"
+
 config BR2_WGET
-	string 
+	string "Wget command"
 	default "wget --passive-ftp -nd"
 
 config BR2_TAR_VERBOSITY
-	bool 
+	bool "Tar verbose"
 	default n
 
 config BR2_STAGING_DIR
-	string
+	string "Toolchain and header file location?"
 	default "$(BASE_DIR)/staging_dir_$(ARCH)$(ARCH_FPU_SUFFIX)"
+	help
+	    This is the location where the toolchain will be installed.
+	    Since the toolchain will not work if it is moved from this
+	    location, it is important for people wishing to package up
+	    a uClibc toolchain that this be set to the location in which
+	    the toolchain will be used.
+
+	    Most people will leave this set to the default value of
+	    "$(BASE_DIR)/staging_dir_$(ARCH)$(ARCH_FPU_SUFFIX)".
 
 config BR2_JLEVEL
-	int
+	int "Number of jobs to run simultaneously"
 	default "1"
+	help
+	    Number of jobs to run simultanesouly
 
-source "toolchain/Config.in"
+endmenu
+
+source "toolchain/Config.in.devel"
 source "package/Config.in"
 source "target/Config.in"
