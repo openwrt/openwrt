@@ -1,6 +1,6 @@
 #!/bin/ash
 
-alias debug=${DEBUG:-true}
+alias debug=${DEBUG:-:}
 
 # allow env to override nvram
 nvram_get () {
