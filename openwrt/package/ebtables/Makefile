@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=ebtables
 PKG_VERSION:=2.0.6
 PKG_RELEASE:=1
-PKG_SOURCE_URL:=http://umn.dl.sourceforge.net/sourceforge/ebtables/
+PKG_SOURCE_URL:=http://unc.dl.sourceforge.net/sourceforge/ebtables/
 PKG_SOURCE:=$(PKG_NAME)-v$(PKG_VERSION).tar.gz
 PKG_BUILD_DIR:=$(BUILD_DIR)/ebtables-v$(PKG_VERSION)
 PKG_CAT:=zcat
