@@ -1,31 +1,17 @@
 #!/bin/sh
 
-# Make sure the dropbearkey progam exists
-[ -f /usr/bin/dropbearkey ] || exit 0
-
-# Check for the Dropbear RSA key
-if [ ! -f /etc/dropbear/dropbear_rsa_host_key ] ; then
-	(
-		echo Generating RSA Key...
-		mkdir -p /etc/dropbear
-		/usr/bin/dropbearkey -t rsa -f /etc/dropbear/dropbear_rsa_host_key
-		[ -f /etc/dropbear/dropbear_rsa_host_key ] && exec $0 $*
-	) > /dev/null 2> /dev/null &
-	exit 0
-fi
-
-# Check for the Dropbear DSS key
-if [ ! -f /etc/dropbear/dropbear_dss_host_key ] ; then
-	(
-		echo Generating DSS Key...
-		mkdir -p /etc/dropbear
-		/usr/bin/dropbearkey -t dss -f /etc/dropbear/dropbear_dss_host_key
-		[ -f /etc/dropbear/dropbear_dss_host_key ] && exec $0 $*
-	) > /dev/null 2> /dev/null &
-	exit 0
-fi
+for type in rsa dss; do {
+  # check for keys
+  key=/tmp/dropbear/dropbear_${type}_host_key
+  [ ! -f $key ] && {
+    # generate missing keys
+    mkdir -p /tmp/dropbear
+    [ -x /usr/bin/dropbearkey ] && {
+      /usr/bin/dropbearkey -t $type -f $key 2>&- >&- && exec $0 $*
+    } &
+    exit 0
+  }
+}; done
 
 umask 077
-
 /usr/sbin/dropbear
-
