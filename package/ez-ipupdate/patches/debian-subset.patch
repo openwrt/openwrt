@@ -1,0 +1,568 @@
+--- ez-ipupdate-3.0.11b8.orig/ez-ipupdate.c
++++ ez-ipupdate-3.0.11b8/ez-ipupdate.c
+@@ -139,6 +139,9 @@
+ #if HAVE_SIGNAL_H
+ #  include <signal.h>
+ #endif
++#if HAVE_TIME_H
++#  include <time.h>
++#endif
+ #if HAVE_SYS_TIME_H
+ #  include <sys/time.h>
+ #endif
+@@ -165,7 +168,7 @@
+ #endif
+ 
+ 
+-#if __linux__ || __SVR4 || __OpenBSD__ || __FreeBSD__ || __NetBSD__
++#if __GLIBC__ || __SVR4 || __OpenBSD__ || __FreeBSD__ || __NetBSD__
+ #  define IF_LOOKUP 1
+ #  include <sys/ioctl.h>
+ #  include <net/if.h>
+@@ -640,7 +643,7 @@
+   fprintf(stdout, "  -q, --quiet \t\t\tbe quiet\n");
+   fprintf(stdout, "  -r, --retrys <num>\t\tnumber of trys (default: 1)\n");
+   fprintf(stdout, "  -R, --run-as-user <user>\tchange to <user> for running, be ware\n\t\t\t\tthat this can cause problems with handeling\n\t\t\t\tSIGHUP properly if that user can't read the\n\t\t\t\tconfig file. also it can't write it's pid file \n\t\t\t\tto a root directory\n");
+-  fprintf(stdout, "  -Q, --run-as-euser <user>\tchange to effective <user> for running, \n\t\t\t\tthis is NOT secure but it does solve the \n\t\t\t\tproblems with run-as-user and config files and \n\t\t\t\tpid files.\n");
++  fprintf(stdout, "  -Q, --run-as-euser <user>\tchange to effective <user> for running, \n\t\t\t\tthis is NOT secure but it does solve the \n\t\t\t\tproblems with run-as-user and config files and \n\t\t\t\tpid files\n");
+   fprintf(stdout, "  -s, --server <server[:port]>\tthe server to connect to\n");
+   fprintf(stdout, "  -S, --service-type <server>\tthe type of service that you are using\n");
+   width = fprintf(stdout, "\t\t\t\ttry one of: ") + 4*7;
+@@ -682,7 +685,7 @@
+ 
+ void print_signalhelp( void )
+ {
+-  fprintf(stdout, "\nsignals are only really used when in daemon mode.\n\n");
++  fprintf(stdout, "\nsignals are only really used when in daemon mode\n\n");
+   fprintf(stdout, "signals: \n");
+   fprintf(stdout, "  HUP\t\tcauses it to re-read its config file\n");
+   fprintf(stdout, "  TERM\t\twake up and possibly perform an update\n");
+@@ -693,7 +696,7 @@
+ #if HAVE_SIGNAL_H
+ RETSIGTYPE sigint_handler(int sig)
+ {
+-  char message[] = "interupted.\n";
++  char message[] = "interrupted\n";
+   close(client_sockfd);
+   write(2, message, sizeof(message)-1);
+ 
+@@ -704,6 +707,10 @@
+   }
+ #endif
+ 
++#if HAVE_SYSLOG_H
++  closelog();
++#endif
++
+   exit(1);
+ }
+ RETSIGTYPE generic_sig_handler(int sig)
+@@ -798,7 +805,7 @@
+     sprintf(buf, "message incomplete because your OS sucks: %s\n", fmt);
+ #endif
+ 
+-    syslog(LOG_NOTICE, buf);
++    syslog(LOG_NOTICE, "%s", buf);
+   }
+   else
+   {
+@@ -1439,7 +1446,7 @@
+   if(!(options & OPT_QUIET))
+   {
+     fprintf(stderr,
+-        "connected to %s (%s) on port %d.\n",
++        "connected to %s (%s) on port %d\n",
+         host,
+         inet_ntoa(address.sin_addr),
+         ntohs(address.sin_port));
+@@ -1683,7 +1690,7 @@
+       close(client_sockfd);
+       return(-1);
+     }
+-    if(strstr(buf, "\r\n") > 0)
++    if(strstr(buf, "\n") != NULL)
+     {
+       break;
+     }
+@@ -1702,8 +1709,8 @@
+ 
+   if(options & OPT_DAEMON)
+   {
+-    fprintf(stderr, "no compile time default service was set therefor you must "
+-        "specify a service type.\n");
++    fprintf(stderr, "no compile time default service was set, you must "
++        "specify a service type\n");
+ 
+     return(-1);
+   }
+@@ -2039,7 +2046,7 @@
+         }
+         else if(strstr(buf, "\nnumhost") != NULL)
+         {
+-          show_message("Too many or too few hosts found\n");
++          show_message("too many or too few hosts found\n");
+           retval = UPDATERES_SHUTDOWN;
+         }
+         else if(strstr(buf, "\ndnserr") != NULL)
+@@ -2051,17 +2058,17 @@
+         }
+         else if(strstr(buf, "\n911") != NULL)
+         {
+-          show_message("Ahhhh! call 911!\n");
++          show_message("ahhhh! call 911!\n");
+           retval = UPDATERES_SHUTDOWN;
+         }
+         else if(strstr(buf, "\n999") != NULL)
+         {
+-          show_message("Ahhhh! call 999!\n");
++          show_message("ahhhh! call 999!\n");
+           retval = UPDATERES_SHUTDOWN;
+         }
+         else if(strstr(buf, "\n!donator") != NULL)
+         {
+-          show_message("a feature requested is only available to donators, please donate.\n", host);
++          show_message("a feature requested is only available to donators, please donate\n", host);
+           retval = UPDATERES_OK;
+         }
+         // this one should be last as it is a stupid string to signify waits
+@@ -2095,9 +2102,9 @@
+             sprintf(reason, "problem parsing reason for wait response");
+           }
+ 
+-          show_message("Wait response received, waiting for %s before next update.\n",
++          show_message("wait response received, waiting for %s before next update\n",
+               format_time(howlong));
+-          show_message("Wait response reason: %d\n", N_STR(reason));
++          show_message("wait response reason: %d\n", N_STR(reason));
+           sleep(howlong);
+           retval = UPDATERES_ERROR;
+         }
+@@ -3370,7 +3377,7 @@
+   {
+     if(!(options & OPT_QUIET))
+     {
+-      fprintf(stderr, "warning: for GNUDIP the \"address\" parpameter is only used if set to \"0.0.0.0\" thus making an offline request.\n");
++      fprintf(stderr, "warning: for GNUDIP the \"address\" parameter is only used if set to \"0.0.0.0\" thus making an offline request\n");
+     }
+   }
+ 
+@@ -3392,7 +3399,7 @@
+ 
+   // send an offline request if address 0.0.0.0 is used
+   // otherwise, we ignore the address and send an update request
+-  gnudip_request[0] = strcmp(address, "0.0.0.0") == 0 ? '1' : '0';
++  gnudip_request[0] = address && strcmp(address, "0.0.0.0") == 0 ? '1' : '0';
+   gnudip_request[1] = '\0';
+ 
+   // find domainname
+@@ -3943,22 +3950,22 @@
+           break;
+ 
+         case 201:
+-          show_message("Last update was less than %d seconds ago.\n", 300);
++          show_message("last update was less than %d seconds ago\n", 300);
+           return(UPDATERES_ERROR);
+           break;
+ 
+         case 202:
+-          show_message("Server error.\n");
++          show_message("server error\n");
+           return(UPDATERES_ERROR);
+           break;
+ 
+         case 203:
+-          show_message("Failure because account is frozen (by admin).\n");
++          show_message("failure because account is frozen (by admin)\n");
+           return(UPDATERES_SHUTDOWN);
+           break;
+ 
+         case 204:
+-          show_message("Failure because account is locked (by user).\n");
++          show_message("failure because account is locked (by user)\n");
+           return(UPDATERES_SHUTDOWN);
+           break;
+ 
+@@ -4215,8 +4222,6 @@
+ 
+   switch(ret)
+   {
+-    char *p;
+-
+     case -1:
+       if(!(options & OPT_QUIET))
+       {
+@@ -4349,7 +4354,7 @@
+     case SIGHUP:
+       if(config_file)
+       {
+-        show_message("SIGHUP recieved, re-reading config file\n");
++        show_message("SIGHUP received, re-reading config file\n");
+         if(parse_conf_file(config_file, conf_commands) != 0)
+         {
+           show_message("error parsing config file \"%s\"\n", config_file);
+@@ -4384,6 +4389,7 @@
+ 
+ int main(int argc, char **argv)
+ {
++  char *tmp;
+   int ifresolve_warned = 0;
+   int i;
+   int retval = 1;
+@@ -4395,9 +4401,10 @@
+   mcheck(NULL);
+ #endif
+ 
+-  dprintf((stderr, "staring...\n"));
++  dprintf((stderr, "starting...\n"));
+ 
+-  program_name = argv[0];
++  tmp = strrchr(argv[0], '/');
++  program_name = tmp ? tmp + 1 : argv[0];
+   options = 0;
+   *user = '\0';
+   timeout.tv_sec = DEFAULT_TIMEOUT;
+@@ -4417,7 +4424,7 @@
+ 
+   if(!(options & OPT_QUIET) && !(options & OPT_DAEMON))
+   {
+-    fprintf(stderr, "ez-ipupdate Version %s\nCopyright (C) 1998-2001 Angus Mackay.\n", VERSION);
++    fprintf(stderr, "%s Version %s\nCopyright (C) 1998-2001 Angus Mackay\n", program_name, VERSION);
+   }
+ 
+   dprintf((stderr, "options: 0x%04X\n", options));
+@@ -4434,7 +4441,7 @@
+   {
+     if(service->check_info() != 0)
+     {
+-      fprintf(stderr, "invalid data to perform requested action.\n");
++      fprintf(stderr, "invalid data to perform requested action\n");
+       exit(1);
+     }
+   }
+@@ -4456,13 +4463,13 @@
+     dprintf((stderr, "user_name: %s\n", user_name));
+     dprintf((stderr, "password: %s\n", password));
+   }
+-  if(*user_name == '\0')
++  if(*user_name == '\0' && !(options & OPT_DAEMON))
+   {
+     printf("user name: ");
+     fgets(user_name, sizeof(user_name), stdin);
+     chomp(user_name);
+   }
+-  if(*password == '\0')
++  if(*password == '\0' && !(options & OPT_DAEMON))
+   {
+     strncpy(password, getpass("password: "), sizeof(password));
+   }
+@@ -4480,7 +4487,7 @@
+ 
+   if(service->check_info() != 0)
+   {
+-    fprintf(stderr, "invalid data to perform requested action.\n");
++    fprintf(stderr, "invalid data to perform requested action\n");
+     exit(1);
+   }
+ 
+@@ -4503,7 +4510,7 @@
+ 
+     if(interface == NULL) 
+     { 
+-      fprintf(stderr, "invalid data to perform requested action.\n");
++      fprintf(stderr, "invalid data to perform requested action\n");
+       fprintf(stderr, "you must provide an interface for daemon mode");
+       exit(1);
+     }
+@@ -4519,23 +4526,25 @@
+       if(fork() > 0) { exit(0); } /* parent */
+     }
+ 
++#  if HAVE_SYSLOG_H
++    openlog(program_name, LOG_PID, LOG_DAEMON );
++    //options |= OPT_QUIET;
++#  endif
++    show_message("version %s, interface %s, host %s, server %s, service %s\n",
++        VERSION, N_STR(interface), N_STR(host), server, service->title);
++
+ #if HAVE_GETPID
+     if(pid_file && pid_file_create(pid_file) != 0)
+     {
+-      fprintf(stderr, "exiting...\n");
++      show_message("could not create pid file %s (%s), exiting\n",
++                   pid_file, strerror(errno));
++#if HAVE_SYSLOG_H
++      closelog();
++#endif
+       exit(1);
+     }
+ #endif
+ 
+-#  if HAVE_SYSLOG_H
+-    openlog(program_name, LOG_PID, LOG_USER );
+-    options |= OPT_QUIET;
+-#  endif
+-    show_message("ez-ipupdate Version %s, Copyright (C) 1998-2001 Angus Mackay.\n", 
+-        VERSION);
+-    show_message("%s started for interface %s host %s using server %s and service %s\n",
+-        program_name, N_STR(interface), N_STR(host), server, service->title);
+-
+     memset(&sin, 0, sizeof(sin));
+ 
+     if(cache_file)
+@@ -4560,7 +4569,7 @@
+           strftime(timebuf, sizeof(timebuf), "%Y/%m/%d %H:%M", ts);
+           show_message("got last update %s on %s from cache file\n", ipstr, timebuf);
+         }
+-        else
++        else if(ipstr||ipdate)
+         {
+           show_message("malformed cache file: %s\n", cache_file);
+         }
+@@ -4647,7 +4656,7 @@
+           }
+           else
+           {
+-            show_message("failure to update %s->%s (%s)\n",
++            show_message("failed to update %s->%s (%s)\n",
+                 interface, inet_ntoa(sin.sin_addr), N_STR(host));
+             memset(&sin, 0, sizeof(sin));
+ 
+@@ -4671,7 +4680,7 @@
+             dprintf((stderr, "updateres: %d\n", updateres));
+             if(updateres == UPDATERES_SHUTDOWN)
+             {
+-              show_message("shuting down updater for %s due to fatal error\n", 
++              show_message("shutting down updater for %s due to fatal error\n",
+                   N_STR(host));
+ 
+               if(notify_email && *notify_email != '\0')
+@@ -4711,7 +4720,7 @@
+ #endif
+ 
+ #else
+-    fprintf(stderr, "sorry, this mode is only available on platforms that the ");
++    fprintf(stderr, "sorry, this mode is only available on platforms where the ");
+     fprintf(stderr, "IP address \ncan be determined. feel free to hack the code");
+     fprintf(stderr, " though.\n");
+     exit(1);
+@@ -4799,7 +4808,7 @@
+         }
+         else
+         {
+-          show_message("could not resolve ip address for %s.\n", interface);
++          show_message("could not resolve ip address for %s\n", interface);
+           exit(1);
+         }
+         close(sock);
+--- ez-ipupdate-3.0.11b8.orig/example.conf
++++ ez-ipupdate-3.0.11b8/example.conf
+@@ -1,4 +1,4 @@
+-#!/usr/local/bin/ez-ipupdate -c
++#!/usr/sbin/ez-ipupdate -c
+ #
+ # example config file for ez-ipupdate
+ #
+--- ez-ipupdate-3.0.11b8.orig/example-pgpow.conf
++++ ez-ipupdate-3.0.11b8/example-pgpow.conf
+@@ -1,4 +1,4 @@
+-#!/usr/local/bin/ez-ipupdate -c
++#!/usr/sbin/ez-ipupdate -c
+ #
+ # example config file for ez-ipupdate
+ #
+@@ -10,8 +10,8 @@
+ host=mydomain.penguinpowered.com
+ interface=eth1
+ 
+-# if you use run-as ensure the user has permission to write this file
+-cache-file=/tmp/ez-ipupdate.cache
++run-as-user=ez-ipupd
++cache-file=/var/cache/ez-ipupdate/default-cache
+ 
+ # uncomment this once you have everything working how you want and you are
+ # ready to have ez-ipupdate running in the background all the time. to stop it
+--- ez-ipupdate-3.0.11b8.orig/example-dhs.conf
++++ ez-ipupdate-3.0.11b8/example-dhs.conf
+@@ -1,4 +1,4 @@
+-#!/usr/local/bin/ez-ipupdate -c
++#!/usr/sbin/ez-ipupdate -c
+ #
+ # example config file for ez-ipupdate
+ #
+@@ -10,8 +10,8 @@
+ host=mydomain.whatever.com
+ interface=eth1
+ 
+-# if you use run-as ensure the user has permission to write this file
+-cache-file=/tmp/ez-ipupdate.cache
++run-as-user=ez-ipupd
++cache-file=/var/cache/ez-ipupdate/default-cache
+ 
+ # uncomment this once you have everything working how you want and you are
+ # ready to have ez-ipupdate running in the background all the time. to stop it
+--- ez-ipupdate-3.0.11b8.orig/example-dyndns.conf
++++ ez-ipupdate-3.0.11b8/example-dyndns.conf
+@@ -1,4 +1,4 @@
+-#!/usr/local/bin/ez-ipupdate -c
++#!/usr/sbin/ez-ipupdate -c
+ #
+ # example config file for ez-ipupdate
+ #
+@@ -12,14 +12,9 @@
+ interface=eth1
+ max-interval=2073600
+ 
+-# please create this file and ensure that the user that ez-ipupdate is running
+-# as has write permissions to it then uncomment this line, if you don't your
+-# dyndns account will probably get banned. if you run ez-ipupdate as root (bad
+-# idea, use "run-as-user") then you can just uncomment this line.
+-#cache-file=/etc/ez-ipupdate.cache.eth1
+-
+-# for the mean time we'll just use a cache file in the temp directory
+-cache-file=/tmp/ez-ipupdate.cache
++# if you don't use a cache file your dyndns account will probably get banned.
++run-as-user=ez-ipupd
++cache-file=/var/cache/ez-ipupdate/default-cache
+ 
+ # uncomment this once you have everything working how you want and you are
+ # ready to have ez-ipupdate running in the background all the time. to stop it
+--- ez-ipupdate-3.0.11b8.orig/example-ods.conf
++++ ez-ipupdate-3.0.11b8/example-ods.conf
+@@ -1,4 +1,4 @@
+-#!/usr/local/bin/ez-ipupdate -c
++#!/usr/sbin/ez-ipupdate -c
+ #
+ # example config file for ez-ipupdate
+ #
+@@ -10,8 +10,8 @@
+ host=mydomain.ods.org
+ interface=eth1
+ 
+-# if you use run-as ensure the user has permission to write this file
+-cache-file=/tmp/ez-ipupdate.cache
++run-as-user=ez-ipupd
++cache-file=/var/cache/ez-ipupdate/default-cache
+ 
+ # uncomment this once you have everything working how you want and you are
+ # ready to have ez-ipupdate running in the background all the time. to stop it
+--- ez-ipupdate-3.0.11b8.orig/example-tzo.conf
++++ ez-ipupdate-3.0.11b8/example-tzo.conf
+@@ -1,4 +1,4 @@
+-#!/usr/local/bin/ez-ipupdate -c
++#!/usr/sbin/ez-ipupdate -c
+ #
+ # example config file for ez-ipupdate
+ #
+@@ -14,8 +14,8 @@
+ max-interval=2073600
+ interface=eth1
+ 
+-# if you use run-as ensure the user has permission to write this file
+-cache-file=/tmp/ez-ipupdate.cache
++run-as-user=ez-ipupd
++cache-file=/var/cache/ez-ipupdate/default-cache
+ 
+ # uncomment this once you have everything working how you want and you are
+ # ready to have ez-ipupdate running in the background all the time. to stop it
+--- ez-ipupdate-3.0.11b8.orig/example-gnudip.conf
++++ ez-ipupdate-3.0.11b8/example-gnudip.conf
+@@ -1,4 +1,4 @@
+-#!/usr/local/bin/ez-ipupdate -c
++#!/usr/sbin/ez-ipupdate -c
+ #
+ # example config file for ez-ipupdate
+ #
+@@ -14,8 +14,8 @@
+ # any other value is ignored
+ #address=0.0.0.0
+ 
+-# if you use run-as ensure the user has permission to write this file
+-cache-file=/tmp/ez-ipupdate.cache
++run-as-user=ez-ipupd
++cache-file=/var/cache/ez-ipupdate/default-cache
+ 
+ # uncomment this once you have everything working how you want and you are
+ # ready to have ez-ipupdate running in the background all the time. to stop it
+--- ez-ipupdate-3.0.11b8.orig/example-easydns.conf
++++ ez-ipupdate-3.0.11b8/example-easydns.conf
+@@ -1,4 +1,4 @@
+-#!/usr/local/bin/ez-ipupdate -c
++#!/usr/sbin/ez-ipupdate -c
+ #
+ # example config file for ez-ipupdate
+ #
+@@ -10,8 +10,8 @@
+ host=mydomain.whatever.com
+ interface=eth1
+ 
+-# if you use run-as ensure the user has permission to write this file
+-cache-file=/tmp/ez-ipupdate.cache
++run-as-user=ez-ipupd
++cache-file=/var/cache/ez-ipupdate/default-cache
+ 
+ # uncomment this once you have everything working how you want and you are
+ # ready to have ez-ipupdate running in the background all the time. to stop it
+--- ez-ipupdate-3.0.11b8.orig/example-justlinux.conf
++++ ez-ipupdate-3.0.11b8/example-justlinux.conf
+@@ -1,4 +1,4 @@
+-#!/usr/local/bin/ez-ipupdate -c
++#!/usr/sbin/ez-ipupdate -c
+ #
+ # example config file for ez-ipupdate
+ #
+@@ -10,8 +10,8 @@
+ host=mydomain.penguinpowered.com
+ interface=eth1
+ 
+-# if you use run-as ensure the user has permission to write this file
+-cache-file=/tmp/ez-ipupdate.cache
++run-as-user=ez-ipupd
++cache-file=/var/cache/ez-ipupdate/default-cache
+ 
+ # uncomment this once you have everything working how you want and you are
+ # ready to have ez-ipupdate running in the background all the time. to stop it
+--- ez-ipupdate-3.0.11b8.orig/example-dyns.conf
++++ ez-ipupdate-3.0.11b8/example-dyns.conf
+@@ -1,4 +1,4 @@
+-#!/usr/local/bin/ez-ipupdate -c
++#!/usr/sbin/ez-ipupdate -c
+ #
+ # example config file for ez-ipupdate
+ #
+@@ -10,8 +10,8 @@
+ host=myhost
+ #interface=eth1
+ 
+-# if you use run-as ensure the user has permission to write this file
+-#cache-file=/tmp/ez-ipupdate.cache
++run-as-user=ez-ipupd
++cache-file=/var/cache/ez-ipupdate/default-cache
+ 
+ # uncomment this once you have everything working how you want and you are
+ # ready to have ez-ipupdate running in the background all the time. to stop it
+--- ez-ipupdate-3.0.11b8.orig/example-heipv6tb.conf
++++ ez-ipupdate-3.0.11b8/example-heipv6tb.conf
+@@ -1,4 +1,4 @@
+-#!/usr/local/bin/ez-ipupdate -c
++#!/usr/sbin/ez-ipupdate -c
+ #
+ # example config file for ez-ipupdate
+ #
+@@ -11,14 +11,9 @@
+ interface=eth1
+ max-interval=2073600
+ 
+-# please create this file and ensure that the user that ez-ipupdate is running
+-# as has write permissions to it then uncomment this line, if you don't your
+-# dyndns account will probably get banned. if you run ez-ipupdate as root (bad
+-# idea, use "run-as-user") then you can just uncomment this line.
+-#cache-file=/etc/ez-ipupdate.cache.eth1
+-
+-# for the mean time we'll just use a cache file in the temp directory
+-cache-file=/tmp/ez-ipupdate.cache
++# if you don't use a cache file your account will probably get banned.
++run-as-user=ez-ipupd
++cache-file=/var/cache/ez-ipupdate/default-cache
+ 
+ # uncomment this once you have everything working how you want and you are
+ # ready to have ez-ipupdate running in the background all the time. to stop it
