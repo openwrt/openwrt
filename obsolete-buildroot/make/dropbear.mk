@@ -10,14 +10,14 @@
 
 #  For this example we'll use a fairly simple package that compiles easily
 #  and has sources available for download at sourceforge
-DROPBEAR=dropbear-0.44test2
+DROPBEAR=dropbear-0.44test3
 DROPBEAR_TARGET=.built
-DROPBEAR_DIR=$(BUILD_DIR)/dropbear-0.44test2
-DROPBEAR_IPK=$(BUILD_DIR)/dropbear-0.44test2_mipsel.ipk
-DROPBEAR_IPK_DIR=$(BUILD_DIR)/dropbear-0.44test2-ipk
+DROPBEAR_DIR=$(BUILD_DIR)/$(DROPBEAR)
+DROPBEAR_IPK=$(BUILD_DIR)/$(DROPBEAR)_mipsel.ipk
+DROPBEAR_IPK_DIR=$(BUILD_DIR)/$(DROPBEAR)-ipk
 
 DROPBEAR_SITE=http://matt.ucc.asn.au/dropbear/testing/
-DROPBEAR_SOURCE=dropbear-0.44test2.tar.bz2
+DROPBEAR_SOURCE=$(DROPBEAR).tar.bz2
 
 
 # We need to download sources if we dont have them

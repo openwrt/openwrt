@@ -1,81 +1,11 @@
-Only in dropbear-0.44test2: .configured
-diff -r -u dropbear-0.44test2-old/cli-session.c dropbear-0.44test2/cli-session.c
---- dropbear-0.44test2-old/cli-session.c	2004-08-17 21:22:59.000000000 +1000
-+++ dropbear-0.44test2/cli-session.c	2004-08-19 21:50:59.000000000 +1000
-@@ -112,9 +112,14 @@
- 	cli_ses.tty_raw_mode = 0;
- 	cli_ses.winchange = 0;
- 
-+	/* We store stdin's flags, so we can set them back on exit (otherwise
-+	 * busybox's ash isn't happy */
-+	cli_ses.stdincopy = dup(STDIN_FILENO);
-+	cli_ses.stdinflags = fcntl(STDIN_FILENO, F_GETFL, 0);
-+
- 	/* Auth */
- 	cli_ses.lastpubkey = NULL;
--	cli_ses.lastauthtype = NULL;
-+	cli_ses.lastauthtype = 0;
- 
- 	/* For printing "remote host closed" for the user */
- 	ses.remoteclosed = cli_remoteclosed;
-@@ -240,6 +245,12 @@
- 	if (!sessinitdone) {
- 		return;
- 	}
-+
-+	/* Set stdin back to non-blocking - busybox ash dies nastily
-+	 * if we don't revert the flags */
-+	TRACE(("close stdincopy = %d", cli_ses.stdincopy));
-+	fcntl(cli_ses.stdincopy, F_SETFL, cli_ses.stdinflags);
-+
- 	cli_tty_cleanup();
- 
- }
-diff -r -u dropbear-0.44test2-old/options.h dropbear-0.44test2/options.h
---- dropbear-0.44test2-old/options.h	2004-08-17 21:23:00.000000000 +1000
-+++ dropbear-0.44test2/options.h	2004-08-20 13:40:44.000000000 +1000
-@@ -87,7 +87,7 @@
-  * for hostkey as well as for verifying signatures with pubkey auth.
-  * Removing either of these won't save very much space.
-  * SSH2 RFC Draft requires dss, recommends rsa */
--#define DROPBEAR_RSA
-+//#define DROPBEAR_RSA
- #define DROPBEAR_DSS
- 
- /* Define DSS_PROTOK to use PuTTY's method of generating the value k for dss,
-diff -r -u dropbear-0.44test2-old/session.h dropbear-0.44test2/session.h
---- dropbear-0.44test2-old/session.h	2004-08-17 21:23:00.000000000 +1000
-+++ dropbear-0.44test2/session.h	2004-08-19 21:50:59.000000000 +1000
-@@ -212,6 +212,8 @@
- 
- 	int tty_raw_mode; /* Whether we're in raw mode (and have to clean up) */
- 	struct termios saved_tio;
-+	int stdincopy;
-+	int stdinflags;
- 
- 	int winchange; /* Set to 1 when a windowchange signal happens */
- 
-diff -r -u dropbear-0.44test2-old/svr-auth.c dropbear-0.44test2/svr-auth.c
---- dropbear-0.44test2-old/svr-auth.c	2004-08-17 21:23:00.000000000 +1000
-+++ dropbear-0.44test2/svr-auth.c	2004-08-20 15:06:15.000000000 +1000
-@@ -102,6 +102,8 @@
- 		return;
- 	}
- 
-+	ses.connecttimeout = 0;
-+
- 	/* send the banner if it exists, it will only exist once */
- 	if (svr_opts.banner) {
- 		send_msg_userauth_banner();
-diff -r -u dropbear-0.44test2-old/svr-runopts.c dropbear-0.44test2/svr-runopts.c
---- dropbear-0.44test2-old/svr-runopts.c	2004-08-17 21:23:00.000000000 +1000
-+++ dropbear-0.44test2/svr-runopts.c	2004-08-20 11:56:31.000000000 +1000
-@@ -302,7 +302,7 @@
- 	}
+--- dropbear-0.44test3-old/options.h	2004-08-27 11:22:17.000000000 -0400
++++ dropbear-0.44test3/options.h	2004-08-27 23:44:16.271117200 -0400
+@@ -176,7 +176,7 @@
+ #define DROPBEAR_VERSION "0.44test3"
  #endif
- #ifdef DROPBEAR_DSS
--	type = DROPBEAR_SIGNKEY_RSA;
-+	type = DROPBEAR_SIGNKEY_DSS;
- 	ret = readhostkey(dsskeyfile, hostkey, &type);
- 	if (ret == DROPBEAR_FAILURE) {
- 		disablekey(DROPBEAR_SIGNKEY_DSS, dsskeyfile);
+ 
+-#define LOCAL_IDENT "SSH-2.0-dropbear_" DROPBEAR_VERSION
++#define LOCAL_IDENT "SSH-2.0"
+ #define PROGNAME "dropbear"
+ 
+ /* Spec recommends after one hour or 1 gigabyte of data. One hour
