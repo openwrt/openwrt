@@ -195,7 +195,8 @@ find_root(struct mtd_info *mtd, size_t size, struct mtd_partition *part)
 
 		/* found a TRX header */
 		if (le32_to_cpu(trx->magic) == TRX_MAGIC) {
-			part->offset = le32_to_cpu(trx->offsets[1]);
+			part->offset = le32_to_cpu(trx->offsets[2]) ? : 
+				le32_to_cpu(trx->offsets[1]);
 			part->size = le32_to_cpu(trx->len); 
 
 			part->size -= part->offset;
