@@ -33,6 +33,7 @@ package-$(BR2_PACKAGE_PPTP) += pptp
 package-$(BR2_PACKAGE_PPTPD) += pptpd
 package-$(BR2_PACKAGE_QUAGGA) += quagga
 package-$(BR2_PACKAGE_SER) += ser
+package-$(BR2_PACKAGE_SETSERIAL) += setserial
 package-$(BR2_PACKAGE_STRACE) += strace
 package-$(BR2_PACKAGE_TCPDUMP) += tcpdump
 package-$(BR2_PACKAGE_WOL) += wol
