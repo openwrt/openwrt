@@ -1,9 +1,7 @@
 /*
- * mtd.c
+ * mtd - simple memory technology device manipulation tool
  *
  * Copyright (C) 2005 Waldemar Brodkorb <wbx@dass-it.de>
- *
- * $Id$
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -23,6 +21,8 @@
  * it is mainly code from the linux-mtd project, which accepts the same
  * command line arguments as the broadcom utility
  * 
+ * $Id$
+ *
  */
 
 #include <limits.h>
