@@ -259,12 +259,6 @@ int main (int argc, char **argv)
 	boot = 0;
 	unlock = 0;
 
-	printf("mtd: Modify data within a Memory Technology Device.\n"
-	"Copyright (C) 2005 Waldemar Brodkorb <wbx@dass-it.de>,\n"
-	"                   Felix Fietkau <nbd@vd-s.ath.cx>\n"
-	"Documented by Mike Strates [dumpedcore] <mike@dilaudid.net>\n"
-	"mtd has ABSOLUTELY NO WARRANTY and is licensed under the GNU GPL.\n\n");
-	
 	while ((ch = getopt(argc, argv, "ure:")) != -1)
 		switch (ch) {
 			case 'u':
