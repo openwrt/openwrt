@@ -84,11 +84,13 @@ int main(int argc, char **argv)
     if (argc > 1 && !strcmp(argv[1],"--move")) {
       if (ptr->offsets[1] >= ptr->len) {
         printf("Partition already moved outside trx\n");
+#if 0
       } else if (ptr->offsets[1] & 0x0001ffff) {
         printf("Partition does not start on a block boundary\n");
+#endif
       } else {
 	init_crc32();
-	bzero((void *)((int)ptr + ptr->len), (size_t)(len - ptr->len));
+	//bzero((void *)((int)ptr + ptr->len), (size_t)(len - ptr->len));
         ptr->len = ptr->offsets[1];
         ptr->crc32 = crc32buf((void *) &(ptr->flag_version), ptr->len - offsetof(struct trx_header, flag_version));
 	msync(ptr,len,MS_SYNC|MS_INVALIDATE);
