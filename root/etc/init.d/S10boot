@@ -3,6 +3,12 @@ sysctl -p
 echo "S" > /proc/jffs2_bbc
 
 # networking stub
+[ "$(nvram get il0macaddr)" = "00:90:4c:5f:00:2a" ] && {
+  # force unique mac
+  nvram set il0macaddr=$(nvram get et0macaddr|
+  awk -F ":" '{for(x=6,y=2;x;x--){y+=int("0x"$x);$x=sprintf("%02x",y%256);y/=256}gsub(" ",":");print$0}')
+}
+
 insmod et
 insmod wl
 
