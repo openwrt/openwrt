@@ -1,0 +1,25 @@
+diff -urN openswan-2.3.1dr6.old/programs/pluto/Makefile openswan-2.3.1dr6/programs/pluto/Makefile
+--- openswan-2.3.1dr6.old/programs/pluto/Makefile	2005-03-27 22:21:41.000000000 +0200
++++ openswan-2.3.1dr6/programs/pluto/Makefile	2005-04-05 02:58:42.000000000 +0200
+@@ -66,7 +66,7 @@
+ 
+ # where to find klips headers and Openswan headers
+ # and 2.6 kernel's <rtnetlink.h> and <xfrm.h>
+-HDRDIRS = -I${OPENSWANSRCDIR}/programs/pluto/linux26 -I${OPENSWANSRCDIR}/include -I$(KLIPSINC) 
++HDRDIRS = -I${OPENSWANSRCDIR}/programs/pluto/linux26 -I${OPENSWANSRCDIR}/include -I$(KLIPSINC)  $(EXTRA_INCLUDE)
+ 
+ # On non-LINUX systems, these one of these may be needed (see endian.h)
+ # BYTE_ORDER = -DBIG_ENDIAN=4321 -DLITTLE_ENDIAN=1234 -DBYTE_ORDER=BIG_ENDIAN
+diff -urN openswan-2.3.1dr6.old/programs/pluto/Makefile openswan-2.3.1dr6.dev/programs/pluto/Makefile
+--- openswan-2.3.1dr6.old/programs/pluto/Makefile	2005-04-05 03:00:36.000000000 +0200
++++ openswan-2.3.1dr6.dev/programs/pluto/Makefile	2005-04-05 03:06:18.000000000 +0200
+@@ -255,7 +255,7 @@
+ LIBSPLUTO+=$(IPSECPOLICY_LIBS) $(X509_LIBS) $(SMARTCARD_LIBS) 
+ LIBSPLUTO+=$(HAVE_THREADS_LIBS) ${XAUTHPAM_LIBS}
+ LIBSPLUTO+=${CURL_LIBS} 
+-LIBSPLUTO+= -lgmp -lresolv # -lefence
++LIBSPLUTO+= $(EXTRA_LIBS) -lgmp -lresolv # -lefence
+ 
+ ifneq ($(LD_LIBRARY_PATH),)
+ LDFLAGS=-L$(LD_LIBRARY_PATH)
+Binary files openswan-2.3.1dr6.old/programs/pluto/.Makefile.swp and openswan-2.3.1dr6.dev/programs/pluto/.Makefile.swp differ

@@ -31,6 +31,7 @@ package-$(BR2_PACKAGE_NFSD) += nfs-server
 package-$(BR2_PACKAGE_NOCATSPLASH) += nocatsplash
 package-$(BR2_PACKAGE_NTPCLIENT) += ntpclient
 package-$(BR2_PACKAGE_OPENSSL) += openssl
+package-$(BR2_PACKAGE_OPENSWAN) += openswan
 package-$(BR2_PACKAGE_OPENNTPD) += openntpd
 package-$(BR2_PACKAGE_OPENVPN) += openvpn
 package-$(BR2_PACKAGE_PCRE) += pcre
@@ -62,6 +63,7 @@ ifeq ($(BR2_PACKAGE_OPENVPN_LZO),y)
 openvpn-compile: lzo-compile
 endif
 
+openswan-compile: gmp-compile
 nocatsplash-compile: glib-compile
 arpwatch-compile: libpcap-compile
 tcpdump-compile: libpcap-compile
