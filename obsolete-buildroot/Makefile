@@ -98,9 +98,9 @@ INSTALL_LIBGCJ:=false
 # The list of stuff to build for the target filesystem
 #
 #############################################################
-TARGETS:=host-sed gcc3_3 ipkg-utils openwrt-base openwrt-code.bin
+TARGETS:=host-sed openwrt-code.bin
 
-PACKAGES:=oidentd iproute2 sched-modules wshaper
+PACKAGES:=oidentd iproute2 sched-modules wshaper zlib openssl openssh pppoecd
 
 #############################################################
 #
@@ -194,7 +194,10 @@ OPENWRT_IPK_DIR=$(SOURCE_DIR)/openwrt/ipkg
 $(BUILD_DIR)/Packages : $(PACKAGES_IPK)
 	(cd $(BUILD_DIR) ; $(IPKG_MAKE_INDEX) . > Packages)
 
-world: $(DL_DIR) $(BUILD_DIR) $(STAGING_DIR) $(TARGET_DIR) $(TARGETS) $(PACKAGES_IPK) $(BUILD_DIR)/Packages
+world: $(DL_DIR) $(TARGETS_SOURCE) $(BUILD_DIR) $(STAGING_DIR) $(TARGET_DIR) $(TARGETS)
+	@echo "ALL DONE."
+
+packages: ipkg-utils $(PACKAGES_IPK) $(BUILD_DIR)/Packages
 	@echo "ALL DONE."
 
 .PHONY: all world clean dirclean distclean source $(TARGETS) \
@@ -223,9 +226,9 @@ $(STAGING_DIR):
 	ln -fs ../$(REAL_GNU_TARGET_NAME)/include $(STAGING_DIR)/usr/include
 
 
-$(TARGET_DIR): $(DL_DIR)/$(OPENWRT_ROOT_SKEL)
+$(TARGET_DIR):
 	rm -rf $(TARGET_DIR)
-	zcat $(DL_DIR)/$(OPENWRT_ROOT_SKEL) | tar -C $(BUILD_DIR) -xf -
+	cp -a $(SOURCE_DIR)/openwrt/root/ $(TARGET_DIR)
 	-find $(TARGET_DIR) -type d -name CVS -exec rm -rf {} \; > /dev/null 2>&1
 
 source: $(TARGETS_SOURCE)

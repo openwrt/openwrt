@@ -23,7 +23,7 @@
 # Currently the dependencies are not all handled.  But that's true of
 # our buildroot in general, since it wasn't really set up for end users.
 
-OPENWRT_TARGETS:= openwrt-linux openwrt-kmodules.tar.bz2 \
+OPENWRT_TARGETS:= gcc3_3 openwrt-linux openwrt-kmodules.tar.bz2 \
 	openwrt-shared openwrt-mtd openwrt-nvram openwrt-wlconf \
 	bridge dnsmasq1 iptables wtools busybox \
 	openwrt-rootprep
@@ -33,8 +33,6 @@ OPENWRT_TARGETS:= openwrt-linux openwrt-kmodules.tar.bz2 \
 openwrt-base: $(OPENWRT_TARGETS)
 
 ######################################################################
-
-ifneq ($(filter $(TARGETS),openwrt-base),)
 
 WRT54G_SOURCE=wrt54gs.2.07.1.tgz
 WRT54G_SITE=http://www.linksys.com/support/opensourcecode/wrt54gs/2.07.1
@@ -204,7 +202,7 @@ openwrt-rootprep:
 
 ######################################################################
 
-openwrt-prune: 
+openwrt-prune: openwrt-base
 	-@find $(TARGET_DIR) -type f -perm +111 | xargs $(STRIP) 2>/dev/null || true;
 	# remove unneeded uClibc libs
 	rm -rf $(TARGET_DIR)/lib/libthread_db*
@@ -237,4 +235,3 @@ openwrt-g-code.bin: openwrt-gs-code.bin
 openwrt-code.bin: openwrt-gs-code.bin openwrt-g-code.bin
 
 ######################################################################
-endif
