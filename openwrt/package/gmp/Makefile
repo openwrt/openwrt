@@ -47,6 +47,7 @@ $(PKG_BUILD_DIR)/.libs/libgmp.so: $(PKG_BUILD_DIR)/.configured
 
 $(PKG_IPK): $(PKG_BUILD_DIR)/.libs/libgmp.so
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_IPK_DIR) $(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
+	$(MAKE) -C $(PKG_BUILD_DIR) DESTDIR="$(STAGING_DIR)" install
 	$(MAKE) -C $(PKG_BUILD_DIR) DESTDIR="$(PKG_IPK_DIR)" install
 	rm $(PKG_IPK_DIR)/usr/lib/*.la
 	rm $(PKG_IPK_DIR)/usr/lib/*.a
