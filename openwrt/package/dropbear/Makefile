@@ -55,6 +55,7 @@ $(DROPBEAR_DIR)/$(DROPBEAR_BINARY): $(DROPBEAR_DIR)/.configured
 
 $(PACKAGE_DIR)/$(DROPBEAR_IPK): $(DROPBEAR_DIR)/$(DROPBEAR_BINARY)
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(DROPBEAR_IPK_DIR) dropbear.control $(DROPBEAR_VERSION)-1 $(ARCH)
+	cp dropbear.conffiles $(DROPBEAR_IPK_DIR)/CONTROL/conffiles
 	mkdir -p $(DROPBEAR_IPK_DIR)/usr/bin
 	mkdir -p $(DROPBEAR_IPK_DIR)/usr/sbin
 	install -m 755 $(DROPBEAR_DIR)/$(DROPBEAR_BINARY) \
@@ -65,6 +66,7 @@ $(PACKAGE_DIR)/$(DROPBEAR_IPK): $(DROPBEAR_DIR)/$(DROPBEAR_BINARY)
 	ln -sf ../sbin/dropbear $(DROPBEAR_IPK_DIR)/usr/bin/dropbearkey
 	ln -sf ../sbin/dropbear $(DROPBEAR_IPK_DIR)/usr/bin/dropbearconvert
 	mkdir -p $(DROPBEAR_IPK_DIR)/etc/init.d
+	cp ./files/passwd $(DROPBEAR_IPK_DIR)/etc
 	cp ./files/S50dropbear $(DROPBEAR_IPK_DIR)/etc/init.d/
 	chmod a+x $(DROPBEAR_IPK_DIR)/etc/init.d/S50dropbear
 	$(IPKG_BUILD) $(DROPBEAR_IPK_DIR) $(PACKAGE_DIR)
