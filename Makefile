@@ -27,7 +27,8 @@ CONFIG_DEFCONFIG = .defconfig
 CONFIG = package/config
 
 noconfig_targets := menuconfig config oldconfig randconfig \
-	defconfig allyesconfig allnoconfig release tags
+	defconfig allyesconfig allnoconfig clean distclean \
+	release tags
 
 # Pull in the user's configuration file
 ifeq ($(filter $(noconfig_targets),$(MAKECMDGOALS)),)
@@ -48,13 +49,11 @@ ifeq ($(strip $(BR2_HAVE_DOT_CONFIG)),y)
 # along with the packages to build for the target.
 #
 ##############################################################
-TARGETS:=host-sed linux-headers uclibc-configured binutils gcc uclibc-target-utils
+TARGETS:=host-sed kernel-headers uclibc-configured binutils gcc uclibc-target-utils
+TARGETS+=linux
+
 include toolchain/Makefile.in
-include toolchain/*/Makefile.in
 include package/Makefile.in
-include package/*/Makefile.in
-include target/Makefile.in
-include target/*/Makefile.in
 
 #############################################################
 #
@@ -70,18 +69,25 @@ all:   world
 # In this section, we need .config
 include .config.cmd
 
-TARGETS_CLEAN:=$(patsubst %,%-clean,$(TARGETS))
-TARGETS_SOURCE:=$(patsubst %,%-source,$(TARGETS))
-
-world: $(DL_DIR) $(BUILD_DIR) $(STAGING_DIR) $(TARGET_DIR) $(TARGETS)
-
-.PHONY: all world clean distclean source $(TARGETS) \
-	$(TARGETS_CLEAN) $(TARGETS_DIRCLEAN) $(TARGETS_SOURCE) \
-	$(DL_DIR) $(BUILD_DIR) $(TOOL_BUILD_DIR) $(STAGING_DIR)
-
+# We also need the various per-package makefiles, which also add
+# each selected package to TARGETS if that package was selected
+# in the .config file.
 include toolchain/*/*.mk
 include package/*/*.mk
 include target/*/*.mk
+
+# target stuff is last so it can override anything else
+include target/Makefile.in
+
+TARGETS_CLEAN:=$(patsubst %,%-clean,$(TARGETS))
+TARGETS_SOURCE:=$(patsubst %,%-source,$(TARGETS))
+TARGETS_DIRCLEAN:=$(patsubst %,%-dirclean,$(TARGETS))
+
+world: $(DL_DIR) $(BUILD_DIR) $(STAGING_DIR) $(TARGET_DIR) $(TARGETS)
+
+.PHONY: all world clean dirclean distclean source $(TARGETS) \
+	$(TARGETS_CLEAN) $(TARGETS_DIRCLEAN) $(TARGETS_SOURCE) \
+	$(DL_DIR) $(BUILD_DIR) $(TOOL_BUILD_DIR) $(STAGING_DIR)
 
 #############################################################
 #
@@ -105,11 +111,14 @@ $(STAGING_DIR):
 	@ln -sf ../lib $(STAGING_DIR)/$(REAL_GNU_TARGET_NAME)/lib
 
 $(TARGET_DIR):
-	@mkdir -p $(TARGET_DIR)
-	cp -a target/default/target_skeleton/* $(TARGET_DIR)/
-	mkdir -p $(TARGET_DIR)/{proc,dev,jffs,tmp,usr/sbin}
-	chmod 1777 $(TARGET_DIR)/tmp
-	-find $(TARGET_DIR) -type d -name CVS -exec rm -rf {} \; > /dev/null 2>&1
+	if [ -f "$(TARGET_SKELETON)" ] ; then \
+		zcat $(TARGET_SKELETON) | tar -C $(BUILD_DIR) -xf -; \
+	fi;
+	if [ -d "$(TARGET_SKEL_DIR)" ] ; then \
+		cp -a $(TARGET_SKEL_DIR)/* $(TARGET_DIR)/; \
+	fi;
+	-find $(TARGET_DIR) -type d -name CVS | xargs rm -rf
+	-find $(TARGET_DIR) -type d -name .svn | xargs rm -rf
 
 source: $(TARGETS_SOURCE)
 
@@ -118,13 +127,17 @@ source: $(TARGETS_SOURCE)
 # Cleanup and misc junk
 #
 #############################################################
-clean:
-	rm -rf $(BUILD_DIR) $(IMAGE).*
-	-rm -f openwrt-*
-	@$(MAKE) -C $(CONFIG) clean
+clean: $(TARGETS_CLEAN)
+	rm -rf $(STAGING_DIR) $(TARGET_DIR) $(IMAGE)
 
-distclean: clean
-	rm -rf $(DL_DIR) $(TOOL_BUILD_DIR) .config
+dirclean: $(TARGETS_DIRCLEAN)
+	rm -rf $(STAGING_DIR) $(TARGET_DIR) $(IMAGE)
+
+distclean:
+	rm -rf $(DL_DIR) $(BUILD_DIR) $(LINUX_KERNEL) $(IMAGE)
+
+cleanall:
+	rm -rf $(DL_DIR) $(BUILD_DIR) $(LINUX_KERNEL) $(IMAGE) $(TOOL_BUILD_DIR)
 
 sourceball:
 	rm -rf $(BUILD_DIR)
@@ -182,7 +195,7 @@ defconfig: $(CONFIG)/conf
 #
 #############################################################
 clean: 
-	@$(MAKE) -C $(CONFIG) clean
+	- $(MAKE) -C $(CONFIG) clean
 
 distclean: clean
 
