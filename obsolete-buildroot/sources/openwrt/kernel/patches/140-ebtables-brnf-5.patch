@@ -1,6 +1,6 @@
-diff -Nurb src/linux/linux.stock/include/linux/if_bridge.h src/linux/linux/include/linux/if_bridge.h
---- src/linux/linux.stock/include/linux/if_bridge.h	2003-10-14 04:09:25.000000000 -0400
-+++ src/linux/linux/include/linux/if_bridge.h	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/include/linux/if_bridge.h linux/include/linux/if_bridge.h
+--- linux.stock/include/linux/if_bridge.h	2003-10-14 04:09:25.000000000 -0400
++++ linux/include/linux/if_bridge.h	2004-07-10 23:46:39.000000000 -0400
 @@ -102,7 +102,8 @@
  struct net_bridge_port;
  
@@ -11,9 +11,9 @@ diff -Nurb src/linux/linux.stock/include/linux/if_bridge.h src/linux/linux/inclu
  
  #endif
  
-diff -Nurb src/linux/linux.stock/include/linux/netfilter.h src/linux/linux/include/linux/netfilter.h
---- src/linux/linux.stock/include/linux/netfilter.h	2004-07-10 23:30:09.000000000 -0400
-+++ src/linux/linux/include/linux/netfilter.h	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/include/linux/netfilter.h linux/include/linux/netfilter.h
+--- linux.stock/include/linux/netfilter.h	2004-07-10 23:30:09.000000000 -0400
++++ linux/include/linux/netfilter.h	2004-07-10 23:46:39.000000000 -0400
 @@ -119,17 +119,23 @@
  /* This is gross, but inline doesn't cut it for avoiding the function
     call in fast path: gcc doesn't inline (needs value tracking?). --RR */
@@ -41,9 +41,9 @@ diff -Nurb src/linux/linux.stock/include/linux/netfilter.h src/linux/linux/inclu
  
  /* Call setsockopt() */
  int nf_setsockopt(struct sock *sk, int pf, int optval, char *opt, 
-diff -Nurb src/linux/linux.stock/include/linux/netfilter_bridge/ebt_802_3.h src/linux/linux/include/linux/netfilter_bridge/ebt_802_3.h
---- src/linux/linux.stock/include/linux/netfilter_bridge/ebt_802_3.h	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/include/linux/netfilter_bridge/ebt_802_3.h	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/include/linux/netfilter_bridge/ebt_802_3.h linux/include/linux/netfilter_bridge/ebt_802_3.h
+--- linux.stock/include/linux/netfilter_bridge/ebt_802_3.h	1969-12-31 19:00:00.000000000 -0500
++++ linux/include/linux/netfilter_bridge/ebt_802_3.h	2004-07-10 23:46:39.000000000 -0400
 @@ -0,0 +1,60 @@
 +#ifndef __LINUX_BRIDGE_EBT_802_3_H
 +#define __LINUX_BRIDGE_EBT_802_3_H
@@ -105,9 +105,9 @@ diff -Nurb src/linux/linux.stock/include/linux/netfilter_bridge/ebt_802_3.h src/
 +};
 +
 +#endif
-diff -Nurb src/linux/linux.stock/include/linux/netfilter_bridge/ebt_among.h src/linux/linux/include/linux/netfilter_bridge/ebt_among.h
---- src/linux/linux.stock/include/linux/netfilter_bridge/ebt_among.h	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/include/linux/netfilter_bridge/ebt_among.h	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/include/linux/netfilter_bridge/ebt_among.h linux/include/linux/netfilter_bridge/ebt_among.h
+--- linux.stock/include/linux/netfilter_bridge/ebt_among.h	1969-12-31 19:00:00.000000000 -0500
++++ linux/include/linux/netfilter_bridge/ebt_among.h	2004-07-10 23:46:39.000000000 -0400
 @@ -0,0 +1,65 @@
 +#ifndef __LINUX_BRIDGE_EBT_AMONG_H
 +#define __LINUX_BRIDGE_EBT_AMONG_H
@@ -174,9 +174,9 @@ diff -Nurb src/linux/linux.stock/include/linux/netfilter_bridge/ebt_among.h src/
 +#define EBT_AMONG_MATCH "among"
 +
 +#endif
-diff -Nurb src/linux/linux.stock/include/linux/netfilter_bridge/ebt_arp.h src/linux/linux/include/linux/netfilter_bridge/ebt_arp.h
---- src/linux/linux.stock/include/linux/netfilter_bridge/ebt_arp.h	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/include/linux/netfilter_bridge/ebt_arp.h	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/include/linux/netfilter_bridge/ebt_arp.h linux/include/linux/netfilter_bridge/ebt_arp.h
+--- linux.stock/include/linux/netfilter_bridge/ebt_arp.h	1969-12-31 19:00:00.000000000 -0500
++++ linux/include/linux/netfilter_bridge/ebt_arp.h	2004-07-10 23:46:39.000000000 -0400
 @@ -0,0 +1,32 @@
 +#ifndef __LINUX_BRIDGE_EBT_ARP_H
 +#define __LINUX_BRIDGE_EBT_ARP_H
@@ -210,9 +210,9 @@ diff -Nurb src/linux/linux.stock/include/linux/netfilter_bridge/ebt_arp.h src/li
 +};
 +
 +#endif
-diff -Nurb src/linux/linux.stock/include/linux/netfilter_bridge/ebt_arpreply.h src/linux/linux/include/linux/netfilter_bridge/ebt_arpreply.h
---- src/linux/linux.stock/include/linux/netfilter_bridge/ebt_arpreply.h	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/include/linux/netfilter_bridge/ebt_arpreply.h	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/include/linux/netfilter_bridge/ebt_arpreply.h linux/include/linux/netfilter_bridge/ebt_arpreply.h
+--- linux.stock/include/linux/netfilter_bridge/ebt_arpreply.h	1969-12-31 19:00:00.000000000 -0500
++++ linux/include/linux/netfilter_bridge/ebt_arpreply.h	2004-07-10 23:46:39.000000000 -0400
 @@ -0,0 +1,11 @@
 +#ifndef __LINUX_BRIDGE_EBT_ARPREPLY_H
 +#define __LINUX_BRIDGE_EBT_ARPREPLY_H
@@ -225,9 +225,9 @@ diff -Nurb src/linux/linux.stock/include/linux/netfilter_bridge/ebt_arpreply.h s
 +#define EBT_ARPREPLY_TARGET "arpreply"
 +
 +#endif
-diff -Nurb src/linux/linux.stock/include/linux/netfilter_bridge/ebt_ip.h src/linux/linux/include/linux/netfilter_bridge/ebt_ip.h
---- src/linux/linux.stock/include/linux/netfilter_bridge/ebt_ip.h	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/include/linux/netfilter_bridge/ebt_ip.h	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/include/linux/netfilter_bridge/ebt_ip.h linux/include/linux/netfilter_bridge/ebt_ip.h
+--- linux.stock/include/linux/netfilter_bridge/ebt_ip.h	1969-12-31 19:00:00.000000000 -0500
++++ linux/include/linux/netfilter_bridge/ebt_ip.h	2004-07-10 23:46:39.000000000 -0400
 @@ -0,0 +1,43 @@
 +/*
 + *  ebt_ip
@@ -272,9 +272,9 @@ diff -Nurb src/linux/linux.stock/include/linux/netfilter_bridge/ebt_ip.h src/lin
 +};
 +
 +#endif
-diff -Nurb src/linux/linux.stock/include/linux/netfilter_bridge/ebt_limit.h src/linux/linux/include/linux/netfilter_bridge/ebt_limit.h
---- src/linux/linux.stock/include/linux/netfilter_bridge/ebt_limit.h	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/include/linux/netfilter_bridge/ebt_limit.h	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/include/linux/netfilter_bridge/ebt_limit.h linux/include/linux/netfilter_bridge/ebt_limit.h
+--- linux.stock/include/linux/netfilter_bridge/ebt_limit.h	1969-12-31 19:00:00.000000000 -0500
++++ linux/include/linux/netfilter_bridge/ebt_limit.h	2004-07-10 23:46:39.000000000 -0400
 @@ -0,0 +1,23 @@
 +#ifndef __LINUX_BRIDGE_EBT_LIMIT_H
 +#define __LINUX_BRIDGE_EBT_LIMIT_H
@@ -299,9 +299,9 @@ diff -Nurb src/linux/linux.stock/include/linux/netfilter_bridge/ebt_limit.h src/
 +};
 +
 +#endif
-diff -Nurb src/linux/linux.stock/include/linux/netfilter_bridge/ebt_log.h src/linux/linux/include/linux/netfilter_bridge/ebt_log.h
---- src/linux/linux.stock/include/linux/netfilter_bridge/ebt_log.h	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/include/linux/netfilter_bridge/ebt_log.h	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/include/linux/netfilter_bridge/ebt_log.h linux/include/linux/netfilter_bridge/ebt_log.h
+--- linux.stock/include/linux/netfilter_bridge/ebt_log.h	1969-12-31 19:00:00.000000000 -0500
++++ linux/include/linux/netfilter_bridge/ebt_log.h	2004-07-10 23:46:39.000000000 -0400
 @@ -0,0 +1,17 @@
 +#ifndef __LINUX_BRIDGE_EBT_LOG_H
 +#define __LINUX_BRIDGE_EBT_LOG_H
@@ -320,9 +320,9 @@ diff -Nurb src/linux/linux.stock/include/linux/netfilter_bridge/ebt_log.h src/li
 +};
 +
 +#endif
-diff -Nurb src/linux/linux.stock/include/linux/netfilter_bridge/ebt_mark_m.h src/linux/linux/include/linux/netfilter_bridge/ebt_mark_m.h
---- src/linux/linux.stock/include/linux/netfilter_bridge/ebt_mark_m.h	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/include/linux/netfilter_bridge/ebt_mark_m.h	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/include/linux/netfilter_bridge/ebt_mark_m.h linux/include/linux/netfilter_bridge/ebt_mark_m.h
+--- linux.stock/include/linux/netfilter_bridge/ebt_mark_m.h	1969-12-31 19:00:00.000000000 -0500
++++ linux/include/linux/netfilter_bridge/ebt_mark_m.h	2004-07-10 23:46:39.000000000 -0400
 @@ -0,0 +1,15 @@
 +#ifndef __LINUX_BRIDGE_EBT_MARK_M_H
 +#define __LINUX_BRIDGE_EBT_MARK_M_H
@@ -339,9 +339,9 @@ diff -Nurb src/linux/linux.stock/include/linux/netfilter_bridge/ebt_mark_m.h src
 +#define EBT_MARK_MATCH "mark_m"
 +
 +#endif
-diff -Nurb src/linux/linux.stock/include/linux/netfilter_bridge/ebt_mark_t.h src/linux/linux/include/linux/netfilter_bridge/ebt_mark_t.h
---- src/linux/linux.stock/include/linux/netfilter_bridge/ebt_mark_t.h	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/include/linux/netfilter_bridge/ebt_mark_t.h	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/include/linux/netfilter_bridge/ebt_mark_t.h linux/include/linux/netfilter_bridge/ebt_mark_t.h
+--- linux.stock/include/linux/netfilter_bridge/ebt_mark_t.h	1969-12-31 19:00:00.000000000 -0500
++++ linux/include/linux/netfilter_bridge/ebt_mark_t.h	2004-07-10 23:46:39.000000000 -0400
 @@ -0,0 +1,12 @@
 +#ifndef __LINUX_BRIDGE_EBT_MARK_T_H
 +#define __LINUX_BRIDGE_EBT_MARK_T_H
@@ -355,9 +355,9 @@ diff -Nurb src/linux/linux.stock/include/linux/netfilter_bridge/ebt_mark_t.h src
 +#define EBT_MARK_TARGET "mark"
 +
 +#endif
-diff -Nurb src/linux/linux.stock/include/linux/netfilter_bridge/ebt_nat.h src/linux/linux/include/linux/netfilter_bridge/ebt_nat.h
---- src/linux/linux.stock/include/linux/netfilter_bridge/ebt_nat.h	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/include/linux/netfilter_bridge/ebt_nat.h	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/include/linux/netfilter_bridge/ebt_nat.h linux/include/linux/netfilter_bridge/ebt_nat.h
+--- linux.stock/include/linux/netfilter_bridge/ebt_nat.h	1969-12-31 19:00:00.000000000 -0500
++++ linux/include/linux/netfilter_bridge/ebt_nat.h	2004-07-10 23:46:39.000000000 -0400
 @@ -0,0 +1,13 @@
 +#ifndef __LINUX_BRIDGE_EBT_NAT_H
 +#define __LINUX_BRIDGE_EBT_NAT_H
@@ -372,9 +372,9 @@ diff -Nurb src/linux/linux.stock/include/linux/netfilter_bridge/ebt_nat.h src/li
 +#define EBT_DNAT_TARGET "dnat"
 +
 +#endif
-diff -Nurb src/linux/linux.stock/include/linux/netfilter_bridge/ebt_pkttype.h src/linux/linux/include/linux/netfilter_bridge/ebt_pkttype.h
---- src/linux/linux.stock/include/linux/netfilter_bridge/ebt_pkttype.h	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/include/linux/netfilter_bridge/ebt_pkttype.h	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/include/linux/netfilter_bridge/ebt_pkttype.h linux/include/linux/netfilter_bridge/ebt_pkttype.h
+--- linux.stock/include/linux/netfilter_bridge/ebt_pkttype.h	1969-12-31 19:00:00.000000000 -0500
++++ linux/include/linux/netfilter_bridge/ebt_pkttype.h	2004-07-10 23:46:39.000000000 -0400
 @@ -0,0 +1,11 @@
 +#ifndef __LINUX_BRIDGE_EBT_PKTTYPE_H
 +#define __LINUX_BRIDGE_EBT_PKTTYPE_H
@@ -387,9 +387,9 @@ diff -Nurb src/linux/linux.stock/include/linux/netfilter_bridge/ebt_pkttype.h sr
 +#define EBT_PKTTYPE_MATCH "pkttype"
 +
 +#endif
-diff -Nurb src/linux/linux.stock/include/linux/netfilter_bridge/ebt_redirect.h src/linux/linux/include/linux/netfilter_bridge/ebt_redirect.h
---- src/linux/linux.stock/include/linux/netfilter_bridge/ebt_redirect.h	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/include/linux/netfilter_bridge/ebt_redirect.h	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/include/linux/netfilter_bridge/ebt_redirect.h linux/include/linux/netfilter_bridge/ebt_redirect.h
+--- linux.stock/include/linux/netfilter_bridge/ebt_redirect.h	1969-12-31 19:00:00.000000000 -0500
++++ linux/include/linux/netfilter_bridge/ebt_redirect.h	2004-07-10 23:46:39.000000000 -0400
 @@ -0,0 +1,11 @@
 +#ifndef __LINUX_BRIDGE_EBT_REDIRECT_H
 +#define __LINUX_BRIDGE_EBT_REDIRECT_H
@@ -402,9 +402,9 @@ diff -Nurb src/linux/linux.stock/include/linux/netfilter_bridge/ebt_redirect.h s
 +#define EBT_REDIRECT_TARGET "redirect"
 +
 +#endif
-diff -Nurb src/linux/linux.stock/include/linux/netfilter_bridge/ebt_stp.h src/linux/linux/include/linux/netfilter_bridge/ebt_stp.h
---- src/linux/linux.stock/include/linux/netfilter_bridge/ebt_stp.h	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/include/linux/netfilter_bridge/ebt_stp.h	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/include/linux/netfilter_bridge/ebt_stp.h linux/include/linux/netfilter_bridge/ebt_stp.h
+--- linux.stock/include/linux/netfilter_bridge/ebt_stp.h	1969-12-31 19:00:00.000000000 -0500
++++ linux/include/linux/netfilter_bridge/ebt_stp.h	2004-07-10 23:46:39.000000000 -0400
 @@ -0,0 +1,46 @@
 +#ifndef __LINUX_BRIDGE_EBT_STP_H
 +#define __LINUX_BRIDGE_EBT_STP_H
@@ -452,9 +452,9 @@ diff -Nurb src/linux/linux.stock/include/linux/netfilter_bridge/ebt_stp.h src/li
 +};
 +
 +#endif
-diff -Nurb src/linux/linux.stock/include/linux/netfilter_bridge/ebt_vlan.h src/linux/linux/include/linux/netfilter_bridge/ebt_vlan.h
---- src/linux/linux.stock/include/linux/netfilter_bridge/ebt_vlan.h	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/include/linux/netfilter_bridge/ebt_vlan.h	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/include/linux/netfilter_bridge/ebt_vlan.h linux/include/linux/netfilter_bridge/ebt_vlan.h
+--- linux.stock/include/linux/netfilter_bridge/ebt_vlan.h	1969-12-31 19:00:00.000000000 -0500
++++ linux/include/linux/netfilter_bridge/ebt_vlan.h	2004-07-10 23:46:39.000000000 -0400
 @@ -0,0 +1,20 @@
 +#ifndef __LINUX_BRIDGE_EBT_VLAN_H
 +#define __LINUX_BRIDGE_EBT_VLAN_H
@@ -476,9 +476,9 @@ diff -Nurb src/linux/linux.stock/include/linux/netfilter_bridge/ebt_vlan.h src/l
 +};
 +
 +#endif
-diff -Nurb src/linux/linux.stock/include/linux/netfilter_bridge/ebtables.h src/linux/linux/include/linux/netfilter_bridge/ebtables.h
---- src/linux/linux.stock/include/linux/netfilter_bridge/ebtables.h	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/include/linux/netfilter_bridge/ebtables.h	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/include/linux/netfilter_bridge/ebtables.h linux/include/linux/netfilter_bridge/ebtables.h
+--- linux.stock/include/linux/netfilter_bridge/ebtables.h	1969-12-31 19:00:00.000000000 -0500
++++ linux/include/linux/netfilter_bridge/ebtables.h	2004-07-10 23:46:39.000000000 -0400
 @@ -0,0 +1,361 @@
 +/*
 + *  ebtables
@@ -841,9 +841,9 @@ diff -Nurb src/linux/linux.stock/include/linux/netfilter_bridge/ebtables.h src/l
 +})
 +
 +#endif
-diff -Nurb src/linux/linux.stock/include/linux/netfilter_bridge.h src/linux/linux/include/linux/netfilter_bridge.h
---- src/linux/linux.stock/include/linux/netfilter_bridge.h	2003-07-04 04:12:26.000000000 -0400
-+++ src/linux/linux/include/linux/netfilter_bridge.h	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/include/linux/netfilter_bridge.h linux/include/linux/netfilter_bridge.h
+--- linux.stock/include/linux/netfilter_bridge.h	2003-07-04 04:12:26.000000000 -0400
++++ linux/include/linux/netfilter_bridge.h	2004-07-10 23:46:39.000000000 -0400
 @@ -6,6 +6,10 @@
  
  #include <linux/config.h>
@@ -933,9 +933,9 @@ diff -Nurb src/linux/linux.stock/include/linux/netfilter_bridge.h src/linux/linu
  
 +#endif /* __KERNEL__ */
  #endif
-diff -Nurb src/linux/linux.stock/include/linux/netfilter_ipv4/ipt_physdev.h src/linux/linux/include/linux/netfilter_ipv4/ipt_physdev.h
---- src/linux/linux.stock/include/linux/netfilter_ipv4/ipt_physdev.h	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/include/linux/netfilter_ipv4/ipt_physdev.h	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/include/linux/netfilter_ipv4/ipt_physdev.h linux/include/linux/netfilter_ipv4/ipt_physdev.h
+--- linux.stock/include/linux/netfilter_ipv4/ipt_physdev.h	1969-12-31 19:00:00.000000000 -0500
++++ linux/include/linux/netfilter_ipv4/ipt_physdev.h	2004-07-10 23:46:39.000000000 -0400
 @@ -0,0 +1,24 @@
 +#ifndef _IPT_PHYSDEV_H
 +#define _IPT_PHYSDEV_H
@@ -961,9 +961,9 @@ diff -Nurb src/linux/linux.stock/include/linux/netfilter_ipv4/ipt_physdev.h src/
 +};
 +
 +#endif /*_IPT_PHYSDEV_H*/
-diff -Nurb src/linux/linux.stock/include/linux/netfilter_ipv4.h src/linux/linux/include/linux/netfilter_ipv4.h
---- src/linux/linux.stock/include/linux/netfilter_ipv4.h	2004-07-10 23:30:09.000000000 -0400
-+++ src/linux/linux/include/linux/netfilter_ipv4.h	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/include/linux/netfilter_ipv4.h linux/include/linux/netfilter_ipv4.h
+--- linux.stock/include/linux/netfilter_ipv4.h	2004-07-10 23:30:09.000000000 -0400
++++ linux/include/linux/netfilter_ipv4.h	2004-07-10 23:46:39.000000000 -0400
 @@ -54,8 +54,10 @@
  	NF_IP_PRI_CONNTRACK_DEFRAG = -400,
  	NF_IP_PRI_RAW = -300,
@@ -975,9 +975,9 @@ diff -Nurb src/linux/linux.stock/include/linux/netfilter_ipv4.h src/linux/linux/
  	NF_IP_PRI_FILTER = 0,
  	NF_IP_PRI_NAT_SRC = 100,
  	NF_IP_PRI_LAST = INT_MAX,
-diff -Nurb src/linux/linux.stock/include/linux/skbuff.h src/linux/linux/include/linux/skbuff.h
---- src/linux/linux.stock/include/linux/skbuff.h	2003-07-04 04:12:26.000000000 -0400
-+++ src/linux/linux/include/linux/skbuff.h	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/include/linux/skbuff.h linux/include/linux/skbuff.h
+--- linux.stock/include/linux/skbuff.h	2003-07-04 04:12:26.000000000 -0400
++++ linux/include/linux/skbuff.h	2004-07-10 23:46:39.000000000 -0400
 @@ -92,6 +92,20 @@
  struct nf_ct_info {
  	struct nf_conntrack *master;
@@ -1030,9 +1030,9 @@ diff -Nurb src/linux/linux.stock/include/linux/skbuff.h src/linux/linux/include/
  #endif
  
  #endif	/* __KERNEL__ */
-diff -Nurb src/linux/linux.stock/include/linux/sysctl.h src/linux/linux/include/linux/sysctl.h
---- src/linux/linux.stock/include/linux/sysctl.h	2004-07-10 23:29:55.000000000 -0400
-+++ src/linux/linux/include/linux/sysctl.h	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/include/linux/sysctl.h linux/include/linux/sysctl.h
+--- linux.stock/include/linux/sysctl.h	2004-07-10 23:29:55.000000000 -0400
++++ linux/include/linux/sysctl.h	2004-07-10 23:46:39.000000000 -0400
 @@ -547,6 +547,15 @@
  	NET_DECNET_CONF_DEV_STATE = 7
  };
@@ -1049,9 +1049,9 @@ diff -Nurb src/linux/linux.stock/include/linux/sysctl.h src/linux/linux/include/
  /* CTL_PROC names: */
  
  /* CTL_FS names: */
-diff -Nurb src/linux/linux.stock/net/8021q/vlan_dev.c src/linux/linux/net/8021q/vlan_dev.c
---- src/linux/linux.stock/net/8021q/vlan_dev.c	2003-07-04 04:12:29.000000000 -0400
-+++ src/linux/linux/net/8021q/vlan_dev.c	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/net/8021q/vlan_dev.c linux/net/8021q/vlan_dev.c
+--- linux.stock/net/8021q/vlan_dev.c	2003-07-04 04:12:29.000000000 -0400
++++ linux/net/8021q/vlan_dev.c	2004-07-10 23:46:39.000000000 -0400
 @@ -503,6 +503,10 @@
  	stats->tx_packets++; /* for statics only */
  	stats->tx_bytes += skb->len;
@@ -1063,9 +1063,9 @@ diff -Nurb src/linux/linux.stock/net/8021q/vlan_dev.c src/linux/linux/net/8021q/
  	dev_queue_xmit(skb);
  
  	return 0;
-diff -Nurb src/linux/linux.stock/net/Config.in src/linux/linux/net/Config.in
---- src/linux/linux.stock/net/Config.in	2004-07-10 23:29:49.000000000 -0400
-+++ src/linux/linux/net/Config.in	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/net/Config.in linux/net/Config.in
+--- linux.stock/net/Config.in	2004-07-10 23:29:49.000000000 -0400
++++ linux/net/Config.in	2004-07-10 23:46:39.000000000 -0400
 @@ -68,6 +68,9 @@
     source net/decnet/Config.in
  fi
@@ -1076,9 +1076,9 @@ diff -Nurb src/linux/linux.stock/net/Config.in src/linux/linux/net/Config.in
  if [ "$CONFIG_EXPERIMENTAL" = "y" ]; then
     tristate 'CCITT X.25 Packet Layer (EXPERIMENTAL)' CONFIG_X25
     tristate 'LAPB Data Link Driver (EXPERIMENTAL)' CONFIG_LAPB
-diff -Nurb src/linux/linux.stock/net/Makefile src/linux/linux/net/Makefile
---- src/linux/linux.stock/net/Makefile	2004-07-10 23:29:49.000000000 -0400
-+++ src/linux/linux/net/Makefile	2004-07-10 23:49:10.000000000 -0400
+diff -Nurb linux.stock/net/Makefile linux/net/Makefile
+--- linux.stock/net/Makefile	2004-07-10 23:29:49.000000000 -0400
++++ linux/net/Makefile	2004-07-10 23:49:10.000000000 -0400
 @@ -26,6 +26,12 @@
  endif
  endif
@@ -1092,9 +1092,9 @@ diff -Nurb src/linux/linux.stock/net/Makefile src/linux/linux/net/Makefile
  subdir-$(CONFIG_KHTTPD)		+= khttpd
  subdir-$(CONFIG_PACKET)		+= packet
  subdir-$(CONFIG_NET_SCHED)	+= sched
-diff -Nurb src/linux/linux.stock/net/bridge/Makefile src/linux/linux/net/bridge/Makefile
---- src/linux/linux.stock/net/bridge/Makefile	2003-07-04 04:12:30.000000000 -0400
-+++ src/linux/linux/net/bridge/Makefile	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/net/bridge/Makefile linux/net/bridge/Makefile
+--- linux.stock/net/bridge/Makefile	2003-07-04 04:12:30.000000000 -0400
++++ linux/net/bridge/Makefile	2004-07-10 23:46:39.000000000 -0400
 @@ -7,10 +7,17 @@
  #
  # Note 2! The CFLAGS definition is now in the main makefile...
@@ -1113,9 +1113,9 @@ diff -Nurb src/linux/linux.stock/net/bridge/Makefile src/linux/linux/net/bridge/
  obj-m		:= $(O_TARGET)
  
  include $(TOPDIR)/Rules.make
-diff -Nurb src/linux/linux.stock/net/bridge/br.c src/linux/linux/net/bridge/br.c
---- src/linux/linux.stock/net/bridge/br.c	2003-10-14 04:09:32.000000000 -0400
-+++ src/linux/linux/net/bridge/br.c	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/net/bridge/br.c linux/net/bridge/br.c
+--- linux.stock/net/bridge/br.c	2003-10-14 04:09:32.000000000 -0400
++++ linux/net/bridge/br.c	2004-07-10 23:46:39.000000000 -0400
 @@ -29,6 +29,8 @@
  #include "../atm/lec.h"
  #endif
@@ -1155,9 +1155,9 @@ diff -Nurb src/linux/linux.stock/net/bridge/br.c src/linux/linux/net/bridge/br.c
  
  module_init(br_init)
  module_exit(br_deinit)
-diff -Nurb src/linux/linux.stock/net/bridge/br_forward.c src/linux/linux/net/bridge/br_forward.c
---- src/linux/linux.stock/net/bridge/br_forward.c	2003-10-14 04:09:32.000000000 -0400
-+++ src/linux/linux/net/bridge/br_forward.c	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/net/bridge/br_forward.c linux/net/bridge/br_forward.c
+--- linux.stock/net/bridge/br_forward.c	2003-10-14 04:09:32.000000000 -0400
++++ linux/net/bridge/br_forward.c	2004-07-10 23:46:39.000000000 -0400
 @@ -30,18 +30,21 @@
  	return 1;
  }
@@ -1205,9 +1205,9 @@ diff -Nurb src/linux/linux.stock/net/bridge/br_forward.c src/linux/linux/net/bri
  }
  
  /* called under bridge lock */
-diff -Nurb src/linux/linux.stock/net/bridge/br_input.c src/linux/linux/net/bridge/br_input.c
---- src/linux/linux.stock/net/bridge/br_input.c	2003-10-14 04:09:32.000000000 -0400
-+++ src/linux/linux/net/bridge/br_input.c	2004-07-10 23:48:36.000000000 -0400
+diff -Nurb linux.stock/net/bridge/br_input.c linux/net/bridge/br_input.c
+--- linux.stock/net/bridge/br_input.c	2003-10-14 04:09:32.000000000 -0400
++++ linux/net/bridge/br_input.c	2004-07-10 23:48:36.000000000 -0400
 @@ -24,6 +24,9 @@
  
  static int br_pass_frame_up_finish(struct sk_buff *skb)
@@ -1274,9 +1274,9 @@ diff -Nurb src/linux/linux.stock/net/bridge/br_input.c src/linux/linux/net/bridg
  	kfree_skb(skb);
 +	return 0;
  }
-diff -Nurb src/linux/linux.stock/net/bridge/br_netfilter.c src/linux/linux/net/bridge/br_netfilter.c
---- src/linux/linux.stock/net/bridge/br_netfilter.c	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/net/bridge/br_netfilter.c	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/net/bridge/br_netfilter.c linux/net/bridge/br_netfilter.c
+--- linux.stock/net/bridge/br_netfilter.c	1969-12-31 19:00:00.000000000 -0500
++++ linux/net/bridge/br_netfilter.c	2004-07-10 23:46:39.000000000 -0400
 @@ -0,0 +1,896 @@
 +/*
 + *	Handle firewalling
@@ -2174,9 +2174,9 @@ diff -Nurb src/linux/linux.stock/net/bridge/br_netfilter.c src/linux/linux/net/b
 +#endif
 +
 +}
-diff -Nurb src/linux/linux.stock/net/bridge/br_private.h src/linux/linux/net/bridge/br_private.h
---- src/linux/linux.stock/net/bridge/br_private.h	2003-10-14 04:09:32.000000000 -0400
-+++ src/linux/linux/net/bridge/br_private.h	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/net/bridge/br_private.h linux/net/bridge/br_private.h
+--- linux.stock/net/bridge/br_private.h	2003-10-14 04:09:32.000000000 -0400
++++ linux/net/bridge/br_private.h	2004-07-10 23:46:39.000000000 -0400
 @@ -145,8 +145,10 @@
  /* br_forward.c */
  extern void br_deliver(struct net_bridge_port *to,
@@ -2209,9 +2209,9 @@ diff -Nurb src/linux/linux.stock/net/bridge/br_private.h src/linux/linux/net/bri
  /* br_stp.c */
  extern int br_is_root_bridge(struct net_bridge *br);
  extern struct net_bridge_port *br_get_port(struct net_bridge *br,
-diff -Nurb src/linux/linux.stock/net/bridge/netfilter/Config.in src/linux/linux/net/bridge/netfilter/Config.in
---- src/linux/linux.stock/net/bridge/netfilter/Config.in	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/net/bridge/netfilter/Config.in	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/net/bridge/netfilter/Config.in linux/net/bridge/netfilter/Config.in
+--- linux.stock/net/bridge/netfilter/Config.in	1969-12-31 19:00:00.000000000 -0500
++++ linux/net/bridge/netfilter/Config.in	2004-07-10 23:46:39.000000000 -0400
 @@ -0,0 +1,22 @@
 +#
 +# Bridge netfilter configuration
@@ -2235,9 +2235,9 @@ diff -Nurb src/linux/linux.stock/net/bridge/netfilter/Config.in src/linux/linux/
 +dep_tristate '    ebt: dnat target support' CONFIG_BRIDGE_EBT_DNAT $CONFIG_BRIDGE_NF_EBTABLES
 +dep_tristate '    ebt: redirect target support' CONFIG_BRIDGE_EBT_REDIRECT $CONFIG_BRIDGE_NF_EBTABLES
 +dep_tristate '    ebt: mark target support' CONFIG_BRIDGE_EBT_MARK_T $CONFIG_BRIDGE_NF_EBTABLES
-diff -Nurb src/linux/linux.stock/net/bridge/netfilter/Makefile src/linux/linux/net/bridge/netfilter/Makefile
---- src/linux/linux.stock/net/bridge/netfilter/Makefile	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/net/bridge/netfilter/Makefile	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/net/bridge/netfilter/Makefile linux/net/bridge/netfilter/Makefile
+--- linux.stock/net/bridge/netfilter/Makefile	1969-12-31 19:00:00.000000000 -0500
++++ linux/net/bridge/netfilter/Makefile	2004-07-10 23:46:39.000000000 -0400
 @@ -0,0 +1,33 @@
 +#
 +# Makefile for the netfilter modules on top of bridging.
@@ -2272,9 +2272,9 @@ diff -Nurb src/linux/linux.stock/net/bridge/netfilter/Makefile src/linux/linux/n
 +obj-$(CONFIG_BRIDGE_EBT_REDIRECT) += ebt_redirect.o
 +obj-$(CONFIG_BRIDGE_EBT_SNAT) += ebt_snat.o
 +include $(TOPDIR)/Rules.make
-diff -Nurb src/linux/linux.stock/net/bridge/netfilter/ebt_802_3.c src/linux/linux/net/bridge/netfilter/ebt_802_3.c
---- src/linux/linux.stock/net/bridge/netfilter/ebt_802_3.c	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/net/bridge/netfilter/ebt_802_3.c	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/net/bridge/netfilter/ebt_802_3.c linux/net/bridge/netfilter/ebt_802_3.c
+--- linux.stock/net/bridge/netfilter/ebt_802_3.c	1969-12-31 19:00:00.000000000 -0500
++++ linux/net/bridge/netfilter/ebt_802_3.c	2004-07-10 23:46:39.000000000 -0400
 @@ -0,0 +1,74 @@
 +/*
 + * 802_3
@@ -2350,9 +2350,9 @@ diff -Nurb src/linux/linux.stock/net/bridge/netfilter/ebt_802_3.c src/linux/linu
 +module_exit(fini);
 +EXPORT_NO_SYMBOLS;
 +MODULE_LICENSE("GPL");
-diff -Nurb src/linux/linux.stock/net/bridge/netfilter/ebt_among.c src/linux/linux/net/bridge/netfilter/ebt_among.c
---- src/linux/linux.stock/net/bridge/netfilter/ebt_among.c	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/net/bridge/netfilter/ebt_among.c	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/net/bridge/netfilter/ebt_among.c linux/net/bridge/netfilter/ebt_among.c
+--- linux.stock/net/bridge/netfilter/ebt_among.c	1969-12-31 19:00:00.000000000 -0500
++++ linux/net/bridge/netfilter/ebt_among.c	2004-07-10 23:46:39.000000000 -0400
 @@ -0,0 +1,223 @@
 +/*
 + *  ebt_among
@@ -2577,9 +2577,9 @@ diff -Nurb src/linux/linux.stock/net/bridge/netfilter/ebt_among.c src/linux/linu
 +module_exit(fini);
 +EXPORT_NO_SYMBOLS;
 +MODULE_LICENSE("GPL");
-diff -Nurb src/linux/linux.stock/net/bridge/netfilter/ebt_arp.c src/linux/linux/net/bridge/netfilter/ebt_arp.c
---- src/linux/linux.stock/net/bridge/netfilter/ebt_arp.c	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/net/bridge/netfilter/ebt_arp.c	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/net/bridge/netfilter/ebt_arp.c linux/net/bridge/netfilter/ebt_arp.c
+--- linux.stock/net/bridge/netfilter/ebt_arp.c	1969-12-31 19:00:00.000000000 -0500
++++ linux/net/bridge/netfilter/ebt_arp.c	2004-07-10 23:46:39.000000000 -0400
 @@ -0,0 +1,149 @@
 +/*
 + *  ebt_arp
@@ -2730,9 +2730,9 @@ diff -Nurb src/linux/linux.stock/net/bridge/netfilter/ebt_arp.c src/linux/linux/
 +module_exit(fini);
 +EXPORT_NO_SYMBOLS;
 +MODULE_LICENSE("GPL");
-diff -Nurb src/linux/linux.stock/net/bridge/netfilter/ebt_arpreply.c src/linux/linux/net/bridge/netfilter/ebt_arpreply.c
---- src/linux/linux.stock/net/bridge/netfilter/ebt_arpreply.c	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/net/bridge/netfilter/ebt_arpreply.c	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/net/bridge/netfilter/ebt_arpreply.c linux/net/bridge/netfilter/ebt_arpreply.c
+--- linux.stock/net/bridge/netfilter/ebt_arpreply.c	1969-12-31 19:00:00.000000000 -0500
++++ linux/net/bridge/netfilter/ebt_arpreply.c	2004-07-10 23:46:39.000000000 -0400
 @@ -0,0 +1,86 @@
 +/*
 + *  ebt_arpreply
@@ -2820,9 +2820,9 @@ diff -Nurb src/linux/linux.stock/net/bridge/netfilter/ebt_arpreply.c src/linux/l
 +module_exit(fini);
 +EXPORT_NO_SYMBOLS;
 +MODULE_LICENSE("GPL");
-diff -Nurb src/linux/linux.stock/net/bridge/netfilter/ebt_dnat.c src/linux/linux/net/bridge/netfilter/ebt_dnat.c
---- src/linux/linux.stock/net/bridge/netfilter/ebt_dnat.c	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/net/bridge/netfilter/ebt_dnat.c	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/net/bridge/netfilter/ebt_dnat.c linux/net/bridge/netfilter/ebt_dnat.c
+--- linux.stock/net/bridge/netfilter/ebt_dnat.c	1969-12-31 19:00:00.000000000 -0500
++++ linux/net/bridge/netfilter/ebt_dnat.c	2004-07-10 23:46:39.000000000 -0400
 @@ -0,0 +1,65 @@
 +/*
 + *  ebt_dnat
@@ -2889,9 +2889,9 @@ diff -Nurb src/linux/linux.stock/net/bridge/netfilter/ebt_dnat.c src/linux/linux
 +module_exit(fini);
 +EXPORT_NO_SYMBOLS;
 +MODULE_LICENSE("GPL");
-diff -Nurb src/linux/linux.stock/net/bridge/netfilter/ebt_ip.c src/linux/linux/net/bridge/netfilter/ebt_ip.c
---- src/linux/linux.stock/net/bridge/netfilter/ebt_ip.c	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/net/bridge/netfilter/ebt_ip.c	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/net/bridge/netfilter/ebt_ip.c linux/net/bridge/netfilter/ebt_ip.c
+--- linux.stock/net/bridge/netfilter/ebt_ip.c	1969-12-31 19:00:00.000000000 -0500
++++ linux/net/bridge/netfilter/ebt_ip.c	2004-07-10 23:46:39.000000000 -0400
 @@ -0,0 +1,121 @@
 +/*
 + *  ebt_ip
@@ -3014,9 +3014,9 @@ diff -Nurb src/linux/linux.stock/net/bridge/netfilter/ebt_ip.c src/linux/linux/n
 +module_exit(fini);
 +EXPORT_NO_SYMBOLS;
 +MODULE_LICENSE("GPL");
-diff -Nurb src/linux/linux.stock/net/bridge/netfilter/ebt_limit.c src/linux/linux/net/bridge/netfilter/ebt_limit.c
---- src/linux/linux.stock/net/bridge/netfilter/ebt_limit.c	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/net/bridge/netfilter/ebt_limit.c	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/net/bridge/netfilter/ebt_limit.c linux/net/bridge/netfilter/ebt_limit.c
+--- linux.stock/net/bridge/netfilter/ebt_limit.c	1969-12-31 19:00:00.000000000 -0500
++++ linux/net/bridge/netfilter/ebt_limit.c	2004-07-10 23:46:39.000000000 -0400
 @@ -0,0 +1,101 @@
 +/*
 + *  ebt_limit
@@ -3119,9 +3119,9 @@ diff -Nurb src/linux/linux.stock/net/bridge/netfilter/ebt_limit.c src/linux/linu
 +module_exit(fini);
 +EXPORT_NO_SYMBOLS;
 +MODULE_LICENSE("GPL");
-diff -Nurb src/linux/linux.stock/net/bridge/netfilter/ebt_log.c src/linux/linux/net/bridge/netfilter/ebt_log.c
---- src/linux/linux.stock/net/bridge/netfilter/ebt_log.c	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/net/bridge/netfilter/ebt_log.c	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/net/bridge/netfilter/ebt_log.c linux/net/bridge/netfilter/ebt_log.c
+--- linux.stock/net/bridge/netfilter/ebt_log.c	1969-12-31 19:00:00.000000000 -0500
++++ linux/net/bridge/netfilter/ebt_log.c	2004-07-10 23:46:39.000000000 -0400
 @@ -0,0 +1,152 @@
 +/*
 + *  ebt_log
@@ -3275,9 +3275,9 @@ diff -Nurb src/linux/linux.stock/net/bridge/netfilter/ebt_log.c src/linux/linux/
 +module_exit(fini);
 +EXPORT_NO_SYMBOLS;
 +MODULE_LICENSE("GPL");
-diff -Nurb src/linux/linux.stock/net/bridge/netfilter/ebt_mark.c src/linux/linux/net/bridge/netfilter/ebt_mark.c
---- src/linux/linux.stock/net/bridge/netfilter/ebt_mark.c	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/net/bridge/netfilter/ebt_mark.c	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/net/bridge/netfilter/ebt_mark.c linux/net/bridge/netfilter/ebt_mark.c
+--- linux.stock/net/bridge/netfilter/ebt_mark.c	1969-12-31 19:00:00.000000000 -0500
++++ linux/net/bridge/netfilter/ebt_mark.c	2004-07-10 23:46:39.000000000 -0400
 @@ -0,0 +1,66 @@
 +/*
 + *  ebt_mark
@@ -3345,9 +3345,9 @@ diff -Nurb src/linux/linux.stock/net/bridge/netfilter/ebt_mark.c src/linux/linux
 +module_exit(fini);
 +EXPORT_NO_SYMBOLS;
 +MODULE_LICENSE("GPL");
-diff -Nurb src/linux/linux.stock/net/bridge/netfilter/ebt_mark_m.c src/linux/linux/net/bridge/netfilter/ebt_mark_m.c
---- src/linux/linux.stock/net/bridge/netfilter/ebt_mark_m.c	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/net/bridge/netfilter/ebt_mark_m.c	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/net/bridge/netfilter/ebt_mark_m.c linux/net/bridge/netfilter/ebt_mark_m.c
+--- linux.stock/net/bridge/netfilter/ebt_mark_m.c	1969-12-31 19:00:00.000000000 -0500
++++ linux/net/bridge/netfilter/ebt_mark_m.c	2004-07-10 23:46:39.000000000 -0400
 @@ -0,0 +1,61 @@
 +/*
 + *  ebt_mark_m
@@ -3410,9 +3410,9 @@ diff -Nurb src/linux/linux.stock/net/bridge/netfilter/ebt_mark_m.c src/linux/lin
 +module_exit(fini);
 +EXPORT_NO_SYMBOLS;
 +MODULE_LICENSE("GPL");
-diff -Nurb src/linux/linux.stock/net/bridge/netfilter/ebt_pkttype.c src/linux/linux/net/bridge/netfilter/ebt_pkttype.c
---- src/linux/linux.stock/net/bridge/netfilter/ebt_pkttype.c	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/net/bridge/netfilter/ebt_pkttype.c	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/net/bridge/netfilter/ebt_pkttype.c linux/net/bridge/netfilter/ebt_pkttype.c
+--- linux.stock/net/bridge/netfilter/ebt_pkttype.c	1969-12-31 19:00:00.000000000 -0500
++++ linux/net/bridge/netfilter/ebt_pkttype.c	2004-07-10 23:46:39.000000000 -0400
 @@ -0,0 +1,60 @@
 +/*
 + *  ebt_pkttype
@@ -3474,9 +3474,9 @@ diff -Nurb src/linux/linux.stock/net/bridge/netfilter/ebt_pkttype.c src/linux/li
 +module_exit(fini);
 +EXPORT_NO_SYMBOLS;
 +MODULE_LICENSE("GPL");
-diff -Nurb src/linux/linux.stock/net/bridge/netfilter/ebt_redirect.c src/linux/linux/net/bridge/netfilter/ebt_redirect.c
---- src/linux/linux.stock/net/bridge/netfilter/ebt_redirect.c	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/net/bridge/netfilter/ebt_redirect.c	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/net/bridge/netfilter/ebt_redirect.c linux/net/bridge/netfilter/ebt_redirect.c
+--- linux.stock/net/bridge/netfilter/ebt_redirect.c	1969-12-31 19:00:00.000000000 -0500
++++ linux/net/bridge/netfilter/ebt_redirect.c	2004-07-10 23:46:39.000000000 -0400
 @@ -0,0 +1,71 @@
 +/*
 + *  ebt_redirect
@@ -3549,9 +3549,9 @@ diff -Nurb src/linux/linux.stock/net/bridge/netfilter/ebt_redirect.c src/linux/l
 +module_exit(fini);
 +EXPORT_NO_SYMBOLS;
 +MODULE_LICENSE("GPL");
-diff -Nurb src/linux/linux.stock/net/bridge/netfilter/ebt_snat.c src/linux/linux/net/bridge/netfilter/ebt_snat.c
---- src/linux/linux.stock/net/bridge/netfilter/ebt_snat.c	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/net/bridge/netfilter/ebt_snat.c	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/net/bridge/netfilter/ebt_snat.c linux/net/bridge/netfilter/ebt_snat.c
+--- linux.stock/net/bridge/netfilter/ebt_snat.c	1969-12-31 19:00:00.000000000 -0500
++++ linux/net/bridge/netfilter/ebt_snat.c	2004-07-10 23:46:39.000000000 -0400
 @@ -0,0 +1,64 @@
 +/*
 + *  ebt_snat
@@ -3617,9 +3617,9 @@ diff -Nurb src/linux/linux.stock/net/bridge/netfilter/ebt_snat.c src/linux/linux
 +module_exit(fini);
 +EXPORT_NO_SYMBOLS;
 +MODULE_LICENSE("GPL");
-diff -Nurb src/linux/linux.stock/net/bridge/netfilter/ebt_stp.c src/linux/linux/net/bridge/netfilter/ebt_stp.c
---- src/linux/linux.stock/net/bridge/netfilter/ebt_stp.c	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/net/bridge/netfilter/ebt_stp.c	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/net/bridge/netfilter/ebt_stp.c linux/net/bridge/netfilter/ebt_stp.c
+--- linux.stock/net/bridge/netfilter/ebt_stp.c	1969-12-31 19:00:00.000000000 -0500
++++ linux/net/bridge/netfilter/ebt_stp.c	2004-07-10 23:46:39.000000000 -0400
 @@ -0,0 +1,191 @@
 +/*
 + *  ebt_stp
@@ -3812,9 +3812,9 @@ diff -Nurb src/linux/linux.stock/net/bridge/netfilter/ebt_stp.c src/linux/linux/
 +module_exit(fini);
 +EXPORT_NO_SYMBOLS;
 +MODULE_LICENSE("GPL");
-diff -Nurb src/linux/linux.stock/net/bridge/netfilter/ebt_vlan.c src/linux/linux/net/bridge/netfilter/ebt_vlan.c
---- src/linux/linux.stock/net/bridge/netfilter/ebt_vlan.c	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/net/bridge/netfilter/ebt_vlan.c	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/net/bridge/netfilter/ebt_vlan.c linux/net/bridge/netfilter/ebt_vlan.c
+--- linux.stock/net/bridge/netfilter/ebt_vlan.c	1969-12-31 19:00:00.000000000 -0500
++++ linux/net/bridge/netfilter/ebt_vlan.c	2004-07-10 23:46:39.000000000 -0400
 @@ -0,0 +1,259 @@
 +/*
 + * Description: EBTables 802.1Q match extension kernelspace module.
@@ -4075,9 +4075,9 @@ diff -Nurb src/linux/linux.stock/net/bridge/netfilter/ebt_vlan.c src/linux/linux
 +module_exit(fini);
 +
 +EXPORT_NO_SYMBOLS;
-diff -Nurb src/linux/linux.stock/net/bridge/netfilter/ebtable_broute.c src/linux/linux/net/bridge/netfilter/ebtable_broute.c
---- src/linux/linux.stock/net/bridge/netfilter/ebtable_broute.c	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/net/bridge/netfilter/ebtable_broute.c	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/net/bridge/netfilter/ebtable_broute.c linux/net/bridge/netfilter/ebtable_broute.c
+--- linux.stock/net/bridge/netfilter/ebtable_broute.c	1969-12-31 19:00:00.000000000 -0500
++++ linux/net/bridge/netfilter/ebtable_broute.c	2004-07-10 23:46:39.000000000 -0400
 @@ -0,0 +1,79 @@
 +/*
 + *  ebtable_broute
@@ -4158,9 +4158,9 @@ diff -Nurb src/linux/linux.stock/net/bridge/netfilter/ebtable_broute.c src/linux
 +module_exit(fini);
 +EXPORT_NO_SYMBOLS;
 +MODULE_LICENSE("GPL");
-diff -Nurb src/linux/linux.stock/net/bridge/netfilter/ebtable_filter.c src/linux/linux/net/bridge/netfilter/ebtable_filter.c
---- src/linux/linux.stock/net/bridge/netfilter/ebtable_filter.c	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/net/bridge/netfilter/ebtable_filter.c	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/net/bridge/netfilter/ebtable_filter.c linux/net/bridge/netfilter/ebtable_filter.c
+--- linux.stock/net/bridge/netfilter/ebtable_filter.c	1969-12-31 19:00:00.000000000 -0500
++++ linux/net/bridge/netfilter/ebtable_filter.c	2004-07-10 23:46:39.000000000 -0400
 @@ -0,0 +1,90 @@
 +/*
 + *  ebtable_filter
@@ -4252,9 +4252,9 @@ diff -Nurb src/linux/linux.stock/net/bridge/netfilter/ebtable_filter.c src/linux
 +module_exit(fini);
 +EXPORT_NO_SYMBOLS;
 +MODULE_LICENSE("GPL");
-diff -Nurb src/linux/linux.stock/net/bridge/netfilter/ebtable_nat.c src/linux/linux/net/bridge/netfilter/ebtable_nat.c
---- src/linux/linux.stock/net/bridge/netfilter/ebtable_nat.c	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/net/bridge/netfilter/ebtable_nat.c	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/net/bridge/netfilter/ebtable_nat.c linux/net/bridge/netfilter/ebtable_nat.c
+--- linux.stock/net/bridge/netfilter/ebtable_nat.c	1969-12-31 19:00:00.000000000 -0500
++++ linux/net/bridge/netfilter/ebtable_nat.c	2004-07-10 23:46:39.000000000 -0400
 @@ -0,0 +1,96 @@
 +/*
 + *  ebtable_nat
@@ -4352,9 +4352,9 @@ diff -Nurb src/linux/linux.stock/net/bridge/netfilter/ebtable_nat.c src/linux/li
 +module_exit(fini);
 +EXPORT_NO_SYMBOLS;
 +MODULE_LICENSE("GPL");
-diff -Nurb src/linux/linux.stock/net/bridge/netfilter/ebtables.c src/linux/linux/net/bridge/netfilter/ebtables.c
---- src/linux/linux.stock/net/bridge/netfilter/ebtables.c	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/net/bridge/netfilter/ebtables.c	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/net/bridge/netfilter/ebtables.c linux/net/bridge/netfilter/ebtables.c
+--- linux.stock/net/bridge/netfilter/ebtables.c	1969-12-31 19:00:00.000000000 -0500
++++ linux/net/bridge/netfilter/ebtables.c	2004-07-10 23:46:39.000000000 -0400
 @@ -0,0 +1,1490 @@
 +/*
 + *  ebtables
@@ -5846,9 +5846,9 @@ diff -Nurb src/linux/linux.stock/net/bridge/netfilter/ebtables.c src/linux/linux
 +module_init(init);
 +module_exit(fini);
 +MODULE_LICENSE("GPL");
-diff -Nurb src/linux/linux.stock/net/core/dev.c src/linux/linux/net/core/dev.c
---- src/linux/linux.stock/net/core/dev.c	2003-10-14 04:02:55.000000000 -0400
-+++ src/linux/linux/net/core/dev.c	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/net/core/dev.c linux/net/core/dev.c
+--- linux.stock/net/core/dev.c	2003-10-14 04:02:55.000000000 -0400
++++ linux/net/core/dev.c	2004-07-10 23:46:39.000000000 -0400
 @@ -1393,7 +1393,7 @@
  
  
@@ -5880,9 +5880,9 @@ diff -Nurb src/linux/linux.stock/net/core/dev.c src/linux/linux/net/core/dev.c
  	}
  #endif
  
-diff -Nurb src/linux/linux.stock/net/core/netfilter.c src/linux/linux/net/core/netfilter.c
---- src/linux/linux.stock/net/core/netfilter.c	2004-07-10 23:29:56.000000000 -0400
-+++ src/linux/linux/net/core/netfilter.c	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/net/core/netfilter.c linux/net/core/netfilter.c
+--- linux.stock/net/core/netfilter.c	2004-07-10 23:29:56.000000000 -0400
++++ linux/net/core/netfilter.c	2004-07-10 23:46:39.000000000 -0400
 @@ -344,10 +344,15 @@
  			       const struct net_device *indev,
  			       const struct net_device *outdev,
@@ -5979,9 +5979,9 @@ diff -Nurb src/linux/linux.stock/net/core/netfilter.c src/linux/linux/net/core/n
  	}
  
  	switch (verdict) {
-diff -Nurb src/linux/linux.stock/net/core/skbuff.c src/linux/linux/net/core/skbuff.c
---- src/linux/linux.stock/net/core/skbuff.c	2003-10-14 04:09:32.000000000 -0400
-+++ src/linux/linux/net/core/skbuff.c	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/net/core/skbuff.c linux/net/core/skbuff.c
+--- linux.stock/net/core/skbuff.c	2003-10-14 04:09:32.000000000 -0400
++++ linux/net/core/skbuff.c	2004-07-10 23:46:39.000000000 -0400
 @@ -244,6 +244,9 @@
  #ifdef CONFIG_NETFILTER_DEBUG
  	skb->nf_debug = 0;
@@ -6044,9 +6044,9 @@ diff -Nurb src/linux/linux.stock/net/core/skbuff.c src/linux/linux/net/core/skbu
  		BUG();
  
  	copy_skb_header(n, skb);
-diff -Nurb src/linux/linux.stock/net/ipv4/ip_output.c src/linux/linux/net/ipv4/ip_output.c
---- src/linux/linux.stock/net/ipv4/ip_output.c	2003-10-14 04:09:33.000000000 -0400
-+++ src/linux/linux/net/ipv4/ip_output.c	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/net/ipv4/ip_output.c linux/net/ipv4/ip_output.c
+--- linux.stock/net/ipv4/ip_output.c	2003-10-14 04:09:33.000000000 -0400
++++ linux/net/ipv4/ip_output.c	2004-07-10 23:46:39.000000000 -0400
 @@ -879,6 +879,10 @@
  		/* Connection association is same as pre-frag packet */
  		skb2->nfct = skb->nfct;
@@ -6058,9 +6058,9 @@ diff -Nurb src/linux/linux.stock/net/ipv4/ip_output.c src/linux/linux/net/ipv4/i
  #ifdef CONFIG_NETFILTER_DEBUG
  		skb2->nf_debug = skb->nf_debug;
  #endif
-diff -Nurb src/linux/linux.stock/net/ipv4/netfilter/Config.in src/linux/linux/net/ipv4/netfilter/Config.in
---- src/linux/linux.stock/net/ipv4/netfilter/Config.in	2004-07-10 23:30:19.000000000 -0400
-+++ src/linux/linux/net/ipv4/netfilter/Config.in	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/net/ipv4/netfilter/Config.in linux/net/ipv4/netfilter/Config.in
+--- linux.stock/net/ipv4/netfilter/Config.in	2004-07-10 23:30:19.000000000 -0400
++++ linux/net/ipv4/netfilter/Config.in	2004-07-10 23:46:39.000000000 -0400
 @@ -83,6 +83,9 @@
      dep_tristate '  String match support (EXPERIMENTAL)' CONFIG_IP_NF_MATCH_STRING $CONFIG_IP_NF_IPTABLES
      dep_tristate '  Owner match support (EXPERIMENTAL)' CONFIG_IP_NF_MATCH_OWNER $CONFIG_IP_NF_IPTABLES
@@ -6071,9 +6071,9 @@ diff -Nurb src/linux/linux.stock/net/ipv4/netfilter/Config.in src/linux/linux/ne
  # The targets
    dep_tristate '  Packet filtering' CONFIG_IP_NF_FILTER $CONFIG_IP_NF_IPTABLES 
    if [ "$CONFIG_IP_NF_FILTER" != "n" ]; then
-diff -Nurb src/linux/linux.stock/net/ipv4/netfilter/Makefile src/linux/linux/net/ipv4/netfilter/Makefile
---- src/linux/linux.stock/net/ipv4/netfilter/Makefile	2004-07-10 23:30:19.000000000 -0400
-+++ src/linux/linux/net/ipv4/netfilter/Makefile	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/net/ipv4/netfilter/Makefile linux/net/ipv4/netfilter/Makefile
+--- linux.stock/net/ipv4/netfilter/Makefile	2004-07-10 23:30:19.000000000 -0400
++++ linux/net/ipv4/netfilter/Makefile	2004-07-10 23:46:39.000000000 -0400
 @@ -149,6 +149,8 @@
  obj-$(CONFIG_IP_NF_MATCH_TCPMSS) += ipt_tcpmss.o
  obj-$(CONFIG_IP_NF_MATCH_REALM) += ipt_realm.o
@@ -6083,9 +6083,9 @@ diff -Nurb src/linux/linux.stock/net/ipv4/netfilter/Makefile src/linux/linux/net
  # targets
  obj-$(CONFIG_IP_NF_TARGET_REJECT) += ipt_REJECT.o
  obj-$(CONFIG_IP_NF_TARGET_MIRROR) += ipt_MIRROR.o
-diff -Nurb src/linux/linux.stock/net/ipv4/netfilter/ip_tables.c src/linux/linux/net/ipv4/netfilter/ip_tables.c
---- src/linux/linux.stock/net/ipv4/netfilter/ip_tables.c	2004-07-10 23:29:53.000000000 -0400
-+++ src/linux/linux/net/ipv4/netfilter/ip_tables.c	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/net/ipv4/netfilter/ip_tables.c linux/net/ipv4/netfilter/ip_tables.c
+--- linux.stock/net/ipv4/netfilter/ip_tables.c	2004-07-10 23:29:53.000000000 -0400
++++ linux/net/ipv4/netfilter/ip_tables.c	2004-07-10 23:46:39.000000000 -0400
 @@ -121,12 +121,19 @@
  static inline int
  ip_packet_match(const struct iphdr *ip,
@@ -6181,9 +6181,9 @@ diff -Nurb src/linux/linux.stock/net/ipv4/netfilter/ip_tables.c src/linux/linux/
  			struct ipt_entry_target *t;
  
  			if (IPT_MATCH_ITERATE(e, do_match,
-diff -Nurb src/linux/linux.stock/net/ipv4/netfilter/ipt_LOG.c src/linux/linux/net/ipv4/netfilter/ipt_LOG.c
---- src/linux/linux.stock/net/ipv4/netfilter/ipt_LOG.c	2004-07-10 23:29:56.000000000 -0400
-+++ src/linux/linux/net/ipv4/netfilter/ipt_LOG.c	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/net/ipv4/netfilter/ipt_LOG.c linux/net/ipv4/netfilter/ipt_LOG.c
+--- linux.stock/net/ipv4/netfilter/ipt_LOG.c	2004-07-10 23:29:56.000000000 -0400
++++ linux/net/ipv4/netfilter/ipt_LOG.c	2004-07-10 23:46:39.000000000 -0400
 @@ -319,6 +319,18 @@
  	       prefix == NULL ? loginfo->prefix : prefix,
  	       in ? in->name : "",
@@ -6203,9 +6203,9 @@ diff -Nurb src/linux/linux.stock/net/ipv4/netfilter/ipt_LOG.c src/linux/linux/ne
  	if (in && !out) {
  		/* MAC logging for input chain only. */
  		printk("MAC=");
-diff -Nurb src/linux/linux.stock/net/ipv4/netfilter/ipt_physdev.c src/linux/linux/net/ipv4/netfilter/ipt_physdev.c
---- src/linux/linux.stock/net/ipv4/netfilter/ipt_physdev.c	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/net/ipv4/netfilter/ipt_physdev.c	2004-07-10 23:46:39.000000000 -0400
+diff -Nurb linux.stock/net/ipv4/netfilter/ipt_physdev.c linux/net/ipv4/netfilter/ipt_physdev.c
+--- linux.stock/net/ipv4/netfilter/ipt_physdev.c	1969-12-31 19:00:00.000000000 -0500
++++ linux/net/ipv4/netfilter/ipt_physdev.c	2004-07-10 23:46:39.000000000 -0400
 @@ -0,0 +1,127 @@
 +/* Kernel module to match the bridge port in and
 + * out device for IP packets coming into contact with a bridge. */

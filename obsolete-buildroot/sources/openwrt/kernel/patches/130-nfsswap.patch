@@ -1,6 +1,6 @@
-diff -Nurb src/linux/linux.orig/Documentation/netswap.txt src/linux/linux/Documentation/netswap.txt
---- src/linux/linux.orig/Documentation/netswap.txt	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/Documentation/netswap.txt	2004-05-31 02:18:03.000000000 -0400
+diff -Nurb linux.orig/Documentation/netswap.txt linux/Documentation/netswap.txt
+--- linux.orig/Documentation/netswap.txt	1969-12-31 19:00:00.000000000 -0500
++++ linux/Documentation/netswap.txt	2004-05-31 02:18:03.000000000 -0400
 @@ -0,0 +1,51 @@
 +                     Swapping over network
 +
@@ -53,9 +53,9 @@ diff -Nurb src/linux/linux.orig/Documentation/netswap.txt src/linux/linux/Docume
 +
 +Swapping over the network is insecure unless the data would be
 +encrypted, which is not the case with NFS. It is also very slow.
-diff -Nurb src/linux/linux.orig/Documentation/nfsswap.txt src/linux/linux/Documentation/nfsswap.txt
---- src/linux/linux.orig/Documentation/nfsswap.txt	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/Documentation/nfsswap.txt	2004-05-31 02:18:03.000000000 -0400
+diff -Nurb linux.orig/Documentation/nfsswap.txt linux/Documentation/nfsswap.txt
+--- linux.orig/Documentation/nfsswap.txt	1969-12-31 19:00:00.000000000 -0500
++++ linux/Documentation/nfsswap.txt	2004-05-31 02:18:03.000000000 -0400
 @@ -0,0 +1,41 @@
 +                   Swapping to files on NFS volumes
 +
@@ -98,9 +98,9 @@ diff -Nurb src/linux/linux.orig/Documentation/nfsswap.txt src/linux/linux/Docume
 +Swapping  over  the network is   insecure   unless the data  would  be
 +encrypted, which is not the case with NFS. It is also very slow.
 +
-diff -Nurb src/linux/linux.orig/drivers/block/blkpg.c src/linux/linux/drivers/block/blkpg.c
---- src/linux/linux.orig/drivers/block/blkpg.c	2003-07-04 04:11:31.000000000 -0400
-+++ src/linux/linux/drivers/block/blkpg.c	2004-05-31 02:18:03.000000000 -0400
+diff -Nurb linux.orig/drivers/block/blkpg.c linux/drivers/block/blkpg.c
+--- linux.orig/drivers/block/blkpg.c	2003-07-04 04:11:31.000000000 -0400
++++ linux/drivers/block/blkpg.c	2004-05-31 02:18:03.000000000 -0400
 @@ -34,7 +34,7 @@
  #include <linux/blk.h>			/* for set_device_ro() */
  #include <linux/blkpg.h>
@@ -140,9 +140,9 @@ diff -Nurb src/linux/linux.orig/drivers/block/blkpg.c src/linux/linux/drivers/bl
  /*
   * Delete a partition given by partition number
   *
-diff -Nurb src/linux/linux.orig/fs/Config.in src/linux/linux/fs/Config.in
---- src/linux/linux.orig/fs/Config.in	2004-05-31 02:02:43.000000000 -0400
-+++ src/linux/linux/fs/Config.in	2004-05-31 02:18:03.000000000 -0400
+diff -Nurb linux.orig/fs/Config.in linux/fs/Config.in
+--- linux.orig/fs/Config.in	2004-05-31 02:02:43.000000000 -0400
++++ linux/fs/Config.in	2004-05-31 02:18:03.000000000 -0400
 @@ -4,6 +4,12 @@
  mainmenu_option next_comment
  comment 'File systems'
@@ -169,9 +169,9 @@ diff -Nurb src/linux/linux.orig/fs/Config.in src/linux/linux/fs/Config.in
  
     dep_tristate 'NFS server support' CONFIG_NFSD $CONFIG_INET
     dep_mbool '  Provide NFSv3 server support' CONFIG_NFSD_V3 $CONFIG_NFSD
-diff -Nurb src/linux/linux.orig/fs/Makefile src/linux/linux/fs/Makefile
---- src/linux/linux.orig/fs/Makefile	2004-05-31 02:02:42.000000000 -0400
-+++ src/linux/linux/fs/Makefile	2004-05-31 02:18:03.000000000 -0400
+diff -Nurb linux.orig/fs/Makefile linux/fs/Makefile
+--- linux.orig/fs/Makefile	2004-05-31 02:02:42.000000000 -0400
++++ linux/fs/Makefile	2004-05-31 02:18:03.000000000 -0400
 @@ -8,7 +8,7 @@
  O_TARGET := fs.o
  
@@ -189,9 +189,9 @@ diff -Nurb src/linux/linux.orig/fs/Makefile src/linux/linux/fs/Makefile
  
  obj-$(CONFIG_BINFMT_AOUT)	+= binfmt_aout.o
  obj-$(CONFIG_BINFMT_EM86)	+= binfmt_em86.o
-diff -Nurb src/linux/linux.orig/fs/blkdev_swap.c src/linux/linux/fs/blkdev_swap.c
---- src/linux/linux.orig/fs/blkdev_swap.c	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/fs/blkdev_swap.c	2004-05-31 02:18:03.000000000 -0400
+diff -Nurb linux.orig/fs/blkdev_swap.c linux/fs/blkdev_swap.c
+--- linux.orig/fs/blkdev_swap.c	1969-12-31 19:00:00.000000000 -0500
++++ linux/fs/blkdev_swap.c	2004-05-31 02:18:03.000000000 -0400
 @@ -0,0 +1,309 @@
 +/*
 + * Swapping to partitions or files located on partitions.
@@ -502,9 +502,9 @@ diff -Nurb src/linux/linux.orig/fs/blkdev_swap.c src/linux/linux/fs/blkdev_swap.
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Many. Stuffed into a module by cH (Claus-Justus Heine)");
 +MODULE_DESCRIPTION("Swapping to partitions and files on local hard-disks");
-diff -Nurb src/linux/linux.orig/fs/buffer.c src/linux/linux/fs/buffer.c
---- src/linux/linux.orig/fs/buffer.c	2003-07-04 04:12:05.000000000 -0400
-+++ src/linux/linux/fs/buffer.c	2004-05-31 02:21:05.000000000 -0400
+diff -Nurb linux.orig/fs/buffer.c linux/fs/buffer.c
+--- linux.orig/fs/buffer.c	2003-07-04 04:12:05.000000000 -0400
++++ linux/fs/buffer.c	2004-05-31 02:21:05.000000000 -0400
 @@ -743,7 +743,7 @@
  	bh->b_private = private;
  }
@@ -550,9 +550,9 @@ diff -Nurb src/linux/linux.orig/fs/buffer.c src/linux/linux/fs/buffer.c
  int block_symlink(struct inode *inode, const char *symname, int len)
  {
  	struct address_space *mapping = inode->i_mapping;
-diff -Nurb src/linux/linux.orig/fs/nfs/Makefile src/linux/linux/fs/nfs/Makefile
---- src/linux/linux.orig/fs/nfs/Makefile	2003-07-04 04:12:07.000000000 -0400
-+++ src/linux/linux/fs/nfs/Makefile	2004-05-31 02:18:03.000000000 -0400
+diff -Nurb linux.orig/fs/nfs/Makefile linux/fs/nfs/Makefile
+--- linux.orig/fs/nfs/Makefile	2003-07-04 04:12:07.000000000 -0400
++++ linux/fs/nfs/Makefile	2004-05-31 02:18:03.000000000 -0400
 @@ -15,6 +15,14 @@
  obj-$(CONFIG_ROOT_NFS) += nfsroot.o mount_clnt.o      
  obj-$(CONFIG_NFS_V3) += nfs3proc.o nfs3xdr.o
@@ -569,9 +569,9 @@ diff -Nurb src/linux/linux.orig/fs/nfs/Makefile src/linux/linux/fs/nfs/Makefile
 +endif
  
  include $(TOPDIR)/Rules.make
-diff -Nurb src/linux/linux.orig/fs/nfs/file.c src/linux/linux/fs/nfs/file.c
---- src/linux/linux.orig/fs/nfs/file.c	2003-07-04 04:12:07.000000000 -0400
-+++ src/linux/linux/fs/nfs/file.c	2004-05-31 02:18:03.000000000 -0400
+diff -Nurb linux.orig/fs/nfs/file.c linux/fs/nfs/file.c
+--- linux.orig/fs/nfs/file.c	2003-07-04 04:12:07.000000000 -0400
++++ linux/fs/nfs/file.c	2004-05-31 02:18:03.000000000 -0400
 @@ -58,11 +58,6 @@
  	setattr:	nfs_notify_change,
  };
@@ -604,9 +604,9 @@ diff -Nurb src/linux/linux.orig/fs/nfs/file.c src/linux/linux/fs/nfs/file.c
  }
  
  /*
-diff -Nurb src/linux/linux.orig/fs/nfs/nfs_syms.c src/linux/linux/fs/nfs/nfs_syms.c
---- src/linux/linux.orig/fs/nfs/nfs_syms.c	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/fs/nfs/nfs_syms.c	2004-05-31 02:18:03.000000000 -0400
+diff -Nurb linux.orig/fs/nfs/nfs_syms.c linux/fs/nfs/nfs_syms.c
+--- linux.orig/fs/nfs/nfs_syms.c	1969-12-31 19:00:00.000000000 -0500
++++ linux/fs/nfs/nfs_syms.c	2004-05-31 02:18:03.000000000 -0400
 @@ -0,0 +1,10 @@
 +#include <linux/config.h>
 +#define __NO_VERSION__
@@ -618,9 +618,9 @@ diff -Nurb src/linux/linux.orig/fs/nfs/nfs_syms.c src/linux/linux/fs/nfs/nfs_sym
 +EXPORT_SYMBOL(__nfs_refresh_inode);
 +EXPORT_SYMBOL(nfs_write_attributes);
 +
-diff -Nurb src/linux/linux.orig/fs/nfs/nfsswap.c src/linux/linux/fs/nfs/nfsswap.c
---- src/linux/linux.orig/fs/nfs/nfsswap.c	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/fs/nfs/nfsswap.c	2004-05-31 02:18:03.000000000 -0400
+diff -Nurb linux.orig/fs/nfs/nfsswap.c linux/fs/nfs/nfsswap.c
+--- linux.orig/fs/nfs/nfsswap.c	1969-12-31 19:00:00.000000000 -0500
++++ linux/fs/nfs/nfsswap.c	2004-05-31 02:18:03.000000000 -0400
 @@ -0,0 +1,350 @@
 +/*
 + * Swapping to files located on NFS mounted volumes
@@ -972,9 +972,9 @@ diff -Nurb src/linux/linux.orig/fs/nfs/nfsswap.c src/linux/linux/fs/nfs/nfsswap.
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("(c) 1996-2002 cH (Claus-Justus Heine)");
 +MODULE_DESCRIPTION("Swapping to files located on volumes mounted via NFS");
-diff -Nurb src/linux/linux.orig/fs/nfs/read.c src/linux/linux/fs/nfs/read.c
---- src/linux/linux.orig/fs/nfs/read.c	2003-07-04 04:12:08.000000000 -0400
-+++ src/linux/linux/fs/nfs/read.c	2004-05-31 02:18:03.000000000 -0400
+diff -Nurb linux.orig/fs/nfs/read.c linux/fs/nfs/read.c
+--- linux.orig/fs/nfs/read.c	2003-07-04 04:12:08.000000000 -0400
++++ linux/fs/nfs/read.c	2004-05-31 02:18:03.000000000 -0400
 @@ -50,11 +50,6 @@
   */
  static void	nfs_readpage_result(struct rpc_task *task);
@@ -1022,9 +1022,9 @@ diff -Nurb src/linux/linux.orig/fs/nfs/read.c src/linux/linux/fs/nfs/read.c
  out:
  	return error;
  
-diff -Nurb src/linux/linux.orig/fs/nfs/write.c src/linux/linux/fs/nfs/write.c
---- src/linux/linux.orig/fs/nfs/write.c	2003-07-04 04:12:08.000000000 -0400
-+++ src/linux/linux/fs/nfs/write.c	2004-05-31 02:20:47.000000000 -0400
+diff -Nurb linux.orig/fs/nfs/write.c linux/fs/nfs/write.c
+--- linux.orig/fs/nfs/write.c	2003-07-04 04:12:08.000000000 -0400
++++ linux/fs/nfs/write.c	2004-05-31 02:20:47.000000000 -0400
 @@ -3,7 +3,6 @@
  #include <linux/config.h>
  #include <linux/types.h>
@@ -1122,9 +1122,9 @@ diff -Nurb src/linux/linux.orig/fs/nfs/write.c src/linux/linux/fs/nfs/write.c
  	while (!list_empty(&data->pages)) {
  		req = nfs_list_entry(data->pages.next);
  		nfs_list_remove_request(req);
-diff -Nurb src/linux/linux.orig/include/linux/fs.h src/linux/linux/include/linux/fs.h
---- src/linux/linux.orig/include/linux/fs.h	2004-05-31 02:06:19.000000000 -0400
-+++ src/linux/linux/include/linux/fs.h	2004-05-31 02:18:03.000000000 -0400
+diff -Nurb linux.orig/include/linux/fs.h linux/include/linux/fs.h
+--- linux.orig/include/linux/fs.h	2004-05-31 02:06:19.000000000 -0400
++++ linux/include/linux/fs.h	2004-05-31 02:18:03.000000000 -0400
 @@ -1500,6 +1500,10 @@
  extern int inode_change_ok(struct inode *, struct iattr *);
  extern int inode_setattr(struct inode *, struct iattr *);
@@ -1136,9 +1136,9 @@ diff -Nurb src/linux/linux.orig/include/linux/fs.h src/linux/linux/include/linux
  /*
   * Common dentry functions for inclusion in the VFS
   * or in other stackable file systems.  Some of these
-diff -Nurb src/linux/linux.orig/include/linux/nfs_fs.h src/linux/linux/include/linux/nfs_fs.h
---- src/linux/linux.orig/include/linux/nfs_fs.h	2004-05-31 02:06:28.000000000 -0400
-+++ src/linux/linux/include/linux/nfs_fs.h	2004-05-31 02:18:03.000000000 -0400
+diff -Nurb linux.orig/include/linux/nfs_fs.h linux/include/linux/nfs_fs.h
+--- linux.orig/include/linux/nfs_fs.h	2004-05-31 02:06:28.000000000 -0400
++++ linux/include/linux/nfs_fs.h	2004-05-31 02:18:03.000000000 -0400
 @@ -40,8 +40,8 @@
   */
  #define NFS_MAX_DIRCACHE		16
@@ -1167,9 +1167,9 @@ diff -Nurb src/linux/linux.orig/include/linux/nfs_fs.h src/linux/linux/include/l
  #define NFSDBG_ALL		0xFFFF
  
  #ifdef __KERNEL__
-diff -Nurb src/linux/linux.orig/include/linux/slab.h src/linux/linux/include/linux/slab.h
---- src/linux/linux.orig/include/linux/slab.h	2004-05-31 02:06:19.000000000 -0400
-+++ src/linux/linux/include/linux/slab.h	2004-05-31 02:18:03.000000000 -0400
+diff -Nurb linux.orig/include/linux/slab.h linux/include/linux/slab.h
+--- linux.orig/include/linux/slab.h	2004-05-31 02:06:19.000000000 -0400
++++ linux/include/linux/slab.h	2004-05-31 02:18:03.000000000 -0400
 @@ -39,6 +39,7 @@
  #define	SLAB_HWCACHE_ALIGN	0x00002000UL	/* align objs on a h/w cache lines */
  #define SLAB_CACHE_DMA		0x00004000UL	/* use GFP_DMA memory */
@@ -1178,9 +1178,9 @@ diff -Nurb src/linux/linux.orig/include/linux/slab.h src/linux/linux/include/lin
  
  /* flags passed to a constructor func */
  #define	SLAB_CTOR_CONSTRUCTOR	0x001UL		/* if not set, then deconstructor */
-diff -Nurb src/linux/linux.orig/include/linux/swap.h src/linux/linux/include/linux/swap.h
---- src/linux/linux.orig/include/linux/swap.h	2004-05-31 02:06:19.000000000 -0400
-+++ src/linux/linux/include/linux/swap.h	2004-05-31 02:18:03.000000000 -0400
+diff -Nurb linux.orig/include/linux/swap.h linux/include/linux/swap.h
+--- linux.orig/include/linux/swap.h	2004-05-31 02:06:19.000000000 -0400
++++ linux/include/linux/swap.h	2004-05-31 02:18:03.000000000 -0400
 @@ -58,15 +58,29 @@
  #define SWAP_MAP_MAX	0x7fff
  #define SWAP_MAP_BAD	0x8000
@@ -1233,9 +1233,9 @@ diff -Nurb src/linux/linux.orig/include/linux/swap.h src/linux/linux/include/lin
  extern int swap_duplicate(swp_entry_t);
  extern int swap_count(struct page *);
  extern int valid_swaphandles(swp_entry_t, unsigned long *);
-diff -Nurb src/linux/linux.orig/include/net/netswapping.h src/linux/linux/include/net/netswapping.h
---- src/linux/linux.orig/include/net/netswapping.h	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/include/net/netswapping.h	2004-05-31 02:18:03.000000000 -0400
+diff -Nurb linux.orig/include/net/netswapping.h linux/include/net/netswapping.h
+--- linux.orig/include/net/netswapping.h	1969-12-31 19:00:00.000000000 -0500
++++ linux/include/net/netswapping.h	2004-05-31 02:18:03.000000000 -0400
 @@ -0,0 +1,47 @@
 +#ifndef _LINUX_NETSWAPPING_H
 +#define _LINUX_NETSWAPPING_H
@@ -1284,9 +1284,9 @@ diff -Nurb src/linux/linux.orig/include/net/netswapping.h src/linux/linux/includ
 +#endif
 +
 +#endif
-diff -Nurb src/linux/linux.orig/include/net/sock.h src/linux/linux/include/net/sock.h
---- src/linux/linux.orig/include/net/sock.h	2004-05-31 02:07:17.000000000 -0400
-+++ src/linux/linux/include/net/sock.h	2004-05-31 02:18:03.000000000 -0400
+diff -Nurb linux.orig/include/net/sock.h linux/include/net/sock.h
+--- linux.orig/include/net/sock.h	2004-05-31 02:07:17.000000000 -0400
++++ linux/include/net/sock.h	2004-05-31 02:18:03.000000000 -0400
 @@ -103,6 +103,10 @@
  #include <linux/filter.h>
  #endif
@@ -1323,9 +1323,9 @@ diff -Nurb src/linux/linux.orig/include/net/sock.h src/linux/linux/include/net/s
  
  	skb->dev = NULL;
  	skb_set_owner_r(skb, sk);
-diff -Nurb src/linux/linux.orig/kernel/ksyms.c src/linux/linux/kernel/ksyms.c
---- src/linux/linux.orig/kernel/ksyms.c	2004-05-31 02:02:43.000000000 -0400
-+++ src/linux/linux/kernel/ksyms.c	2004-05-31 02:18:03.000000000 -0400
+diff -Nurb linux.orig/kernel/ksyms.c linux/kernel/ksyms.c
+--- linux.orig/kernel/ksyms.c	2004-05-31 02:02:43.000000000 -0400
++++ linux/kernel/ksyms.c	2004-05-31 02:18:03.000000000 -0400
 @@ -41,6 +41,7 @@
  #include <linux/mm.h>
  #include <linux/capability.h>
@@ -1355,9 +1355,9 @@ diff -Nurb src/linux/linux.orig/kernel/ksyms.c src/linux/linux/kernel/ksyms.c
  EXPORT_SYMBOL(__inode_dir_notify);
  
  #ifdef CONFIG_UID16
-diff -Nurb src/linux/linux.orig/mm/page_io.c src/linux/linux/mm/page_io.c
---- src/linux/linux.orig/mm/page_io.c	2003-07-04 04:12:29.000000000 -0400
-+++ src/linux/linux/mm/page_io.c	2004-05-31 02:18:03.000000000 -0400
+diff -Nurb linux.orig/mm/page_io.c linux/mm/page_io.c
+--- linux.orig/mm/page_io.c	2003-07-04 04:12:29.000000000 -0400
++++ linux/mm/page_io.c	2004-05-31 02:18:03.000000000 -0400
 @@ -36,11 +36,8 @@
  static int rw_swap_page_base(int rw, swp_entry_t entry, struct page *page)
  {
@@ -1405,9 +1405,9 @@ diff -Nurb src/linux/linux.orig/mm/page_io.c src/linux/linux/mm/page_io.c
  	return 1;
  }
  
-diff -Nurb src/linux/linux.orig/mm/slab.c src/linux/linux/mm/slab.c
---- src/linux/linux.orig/mm/slab.c	2003-07-04 04:12:29.000000000 -0400
-+++ src/linux/linux/mm/slab.c	2004-05-31 02:18:03.000000000 -0400
+diff -Nurb linux.orig/mm/slab.c linux/mm/slab.c
+--- linux.orig/mm/slab.c	2003-07-04 04:12:29.000000000 -0400
++++ linux/mm/slab.c	2004-05-31 02:18:03.000000000 -0400
 @@ -111,10 +111,12 @@
  # define CREATE_MASK	(SLAB_DEBUG_INITIAL | SLAB_RED_ZONE | \
  			 SLAB_POISON | SLAB_HWCACHE_ALIGN | \
@@ -1462,9 +1462,9 @@ diff -Nurb src/linux/linux.orig/mm/slab.c src/linux/linux/mm/slab.c
  		if (flags & CFLGS_OFF_SLAB && cachep->num > offslab_limit) {
  			/* Oops, this num of objs will cause problems. */
  			cachep->gfporder--;
-diff -Nurb src/linux/linux.orig/mm/swapfile.c src/linux/linux/mm/swapfile.c
---- src/linux/linux.orig/mm/swapfile.c	2003-07-04 04:12:29.000000000 -0400
-+++ src/linux/linux/mm/swapfile.c	2004-05-31 02:18:03.000000000 -0400
+diff -Nurb linux.orig/mm/swapfile.c linux/mm/swapfile.c
+--- linux.orig/mm/swapfile.c	2003-07-04 04:12:29.000000000 -0400
++++ linux/mm/swapfile.c	2004-05-31 02:18:03.000000000 -0400
 @@ -11,12 +11,17 @@
  #include <linux/swap.h>
  #include <linux/swapctl.h>
@@ -1953,9 +1953,9 @@ diff -Nurb src/linux/linux.orig/mm/swapfile.c src/linux/linux/mm/swapfile.c
  }
  
  /*
-diff -Nurb src/linux/linux.orig/net/Config.in src/linux/linux/net/Config.in
---- src/linux/linux.orig/net/Config.in	2003-07-04 04:12:29.000000000 -0400
-+++ src/linux/linux/net/Config.in	2004-05-31 02:18:03.000000000 -0400
+diff -Nurb linux.orig/net/Config.in linux/net/Config.in
+--- linux.orig/net/Config.in	2003-07-04 04:12:29.000000000 -0400
++++ linux/net/Config.in	2004-05-31 02:18:03.000000000 -0400
 @@ -16,6 +16,9 @@
  fi
  bool 'Socket Filtering'  CONFIG_FILTER
@@ -1966,9 +1966,9 @@ diff -Nurb src/linux/linux.orig/net/Config.in src/linux/linux/net/Config.in
  bool 'TCP/IP networking' CONFIG_INET
  if [ "$CONFIG_INET" = "y" ]; then
     source net/ipv4/Config.in
-diff -Nurb src/linux/linux.orig/net/Makefile src/linux/linux/net/Makefile
---- src/linux/linux.orig/net/Makefile	2003-07-04 04:12:29.000000000 -0400
-+++ src/linux/linux/net/Makefile	2004-05-31 02:18:03.000000000 -0400
+diff -Nurb linux.orig/net/Makefile linux/net/Makefile
+--- linux.orig/net/Makefile	2003-07-04 04:12:29.000000000 -0400
++++ linux/net/Makefile	2004-05-31 02:18:03.000000000 -0400
 @@ -51,6 +51,7 @@
  ifeq ($(CONFIG_NET),y)
  obj-$(CONFIG_MODULES)		+= netsyms.o
@@ -1977,9 +1977,9 @@ diff -Nurb src/linux/linux.orig/net/Makefile src/linux/linux/net/Makefile
  endif
  
  include $(TOPDIR)/Rules.make
-diff -Nurb src/linux/linux.orig/net/core/sock.c src/linux/linux/net/core/sock.c
---- src/linux/linux.orig/net/core/sock.c	2003-10-14 04:09:32.000000000 -0400
-+++ src/linux/linux/net/core/sock.c	2004-05-31 02:18:03.000000000 -0400
+diff -Nurb linux.orig/net/core/sock.c linux/net/core/sock.c
+--- linux.orig/net/core/sock.c	2003-10-14 04:09:32.000000000 -0400
++++ linux/net/core/sock.c	2004-05-31 02:18:03.000000000 -0400
 @@ -402,6 +402,21 @@
  			ret = -ENONET;
  			break;
@@ -2015,9 +2015,9 @@ diff -Nurb src/linux/linux.orig/net/core/sock.c src/linux/linux/net/core/sock.c
  		/* Dubious BSD thing... Probably nobody even uses it, but
  		 * the UNIX standard wants it for whatever reason... -DaveM
  		 */
-diff -Nurb src/linux/linux.orig/net/ipv4/tcp_ipv4.c src/linux/linux/net/ipv4/tcp_ipv4.c
---- src/linux/linux.orig/net/ipv4/tcp_ipv4.c	2003-10-14 04:09:33.000000000 -0400
-+++ src/linux/linux/net/ipv4/tcp_ipv4.c	2004-05-31 02:18:03.000000000 -0400
+diff -Nurb linux.orig/net/ipv4/tcp_ipv4.c linux/net/ipv4/tcp_ipv4.c
+--- linux.orig/net/ipv4/tcp_ipv4.c	2003-10-14 04:09:33.000000000 -0400
++++ linux/net/ipv4/tcp_ipv4.c	2004-05-31 02:18:03.000000000 -0400
 @@ -1657,6 +1657,12 @@
  	if (filter && sk_filter(skb, filter))
  		goto discard;
@@ -2031,9 +2031,9 @@ diff -Nurb src/linux/linux.orig/net/ipv4/tcp_ipv4.c src/linux/linux/net/ipv4/tcp
  
    	IP_INC_STATS_BH(IpInDelivers);
  
-diff -Nurb src/linux/linux.orig/net/ipv6/tcp_ipv6.c src/linux/linux/net/ipv6/tcp_ipv6.c
---- src/linux/linux.orig/net/ipv6/tcp_ipv6.c	2003-10-14 04:09:34.000000000 -0400
-+++ src/linux/linux/net/ipv6/tcp_ipv6.c	2004-05-31 02:18:03.000000000 -0400
+diff -Nurb linux.orig/net/ipv6/tcp_ipv6.c linux/net/ipv6/tcp_ipv6.c
+--- linux.orig/net/ipv6/tcp_ipv6.c	2003-10-14 04:09:34.000000000 -0400
++++ linux/net/ipv6/tcp_ipv6.c	2004-05-31 02:18:03.000000000 -0400
 @@ -1424,6 +1424,12 @@
  	if (filter && sk_filter(skb, filter))
  		goto discard;
@@ -2047,9 +2047,9 @@ diff -Nurb src/linux/linux.orig/net/ipv6/tcp_ipv6.c src/linux/linux/net/ipv6/tcp
  
  	/*
  	 *	socket locking is here for SMP purposes as backlog rcv
-diff -Nurb src/linux/linux.orig/net/netswapping.c src/linux/linux/net/netswapping.c
---- src/linux/linux.orig/net/netswapping.c	1969-12-31 19:00:00.000000000 -0500
-+++ src/linux/linux/net/netswapping.c	2004-05-31 02:18:03.000000000 -0400
+diff -Nurb linux.orig/net/netswapping.c linux/net/netswapping.c
+--- linux.orig/net/netswapping.c	1969-12-31 19:00:00.000000000 -0500
++++ linux/net/netswapping.c	2004-05-31 02:18:03.000000000 -0400
 @@ -0,0 +1,76 @@
 +/*
 + * linux/net/swapping.c
@@ -2127,9 +2127,9 @@ diff -Nurb src/linux/linux.orig/net/netswapping.c src/linux/linux/net/netswappin
 +
 +module_init(netswap_init)
 +module_exit(netswap_exit)
-diff -Nurb src/linux/linux.orig/net/netsyms.c src/linux/linux/net/netsyms.c
---- src/linux/linux.orig/net/netsyms.c	2004-05-31 02:02:49.000000000 -0400
-+++ src/linux/linux/net/netsyms.c	2004-05-31 02:18:03.000000000 -0400
+diff -Nurb linux.orig/net/netsyms.c linux/net/netsyms.c
+--- linux.orig/net/netsyms.c	2004-05-31 02:02:49.000000000 -0400
++++ linux/net/netsyms.c	2004-05-31 02:18:03.000000000 -0400
 @@ -601,4 +601,10 @@
  EXPORT_SYMBOL(wireless_send_event);
  #endif /* CONFIG_NET_RADIO || CONFIG_NET_PCMCIA_RADIO */
@@ -2141,9 +2141,9 @@ diff -Nurb src/linux/linux.orig/net/netsyms.c src/linux/linux/net/netsyms.c
 +#endif
 +
  #endif  /* CONFIG_NET */
-diff -Nurb src/linux/linux.orig/net/packet/af_packet.c src/linux/linux/net/packet/af_packet.c
---- src/linux/linux.orig/net/packet/af_packet.c	2003-10-14 04:09:35.000000000 -0400
-+++ src/linux/linux/net/packet/af_packet.c	2004-05-31 02:18:03.000000000 -0400
+diff -Nurb linux.orig/net/packet/af_packet.c linux/net/packet/af_packet.c
+--- linux.orig/net/packet/af_packet.c	2003-10-14 04:09:35.000000000 -0400
++++ linux/net/packet/af_packet.c	2004-05-31 02:18:03.000000000 -0400
 @@ -449,6 +449,12 @@
  			snaplen = res;
  	}
@@ -2179,9 +2179,9 @@ diff -Nurb src/linux/linux.orig/net/packet/af_packet.c src/linux/linux/net/packe
  
  	if (sk->type == SOCK_DGRAM) {
  		macoff = netoff = TPACKET_ALIGN(TPACKET_HDRLEN) + 16;
-diff -Nurb src/linux/linux.orig/net/sunrpc/sched.c src/linux/linux/net/sunrpc/sched.c
---- src/linux/linux.orig/net/sunrpc/sched.c	2003-07-04 04:12:33.000000000 -0400
-+++ src/linux/linux/net/sunrpc/sched.c	2004-05-31 02:18:03.000000000 -0400
+diff -Nurb linux.orig/net/sunrpc/sched.c linux/net/sunrpc/sched.c
+--- linux.orig/net/sunrpc/sched.c	2003-07-04 04:12:33.000000000 -0400
++++ linux/net/sunrpc/sched.c	2004-05-31 02:18:03.000000000 -0400
 @@ -79,10 +79,11 @@
   */
  static spinlock_t rpc_sched_lock = SPIN_LOCK_UNLOCKED;
@@ -2329,9 +2329,9 @@ diff -Nurb src/linux/linux.orig/net/sunrpc/sched.c src/linux/linux/net/sunrpc/sc
  }
  
  /*
-diff -Nurb src/linux/linux.orig/net/sunrpc/xprt.c src/linux/linux/net/sunrpc/xprt.c
---- src/linux/linux.orig/net/sunrpc/xprt.c	2003-07-04 04:12:33.000000000 -0400
-+++ src/linux/linux/net/sunrpc/xprt.c	2004-05-31 02:18:03.000000000 -0400
+diff -Nurb linux.orig/net/sunrpc/xprt.c linux/net/sunrpc/xprt.c
+--- linux.orig/net/sunrpc/xprt.c	2003-07-04 04:12:33.000000000 -0400
++++ linux/net/sunrpc/xprt.c	2004-05-31 02:18:03.000000000 -0400
 @@ -139,7 +139,7 @@
  __xprt_lock_write(struct rpc_xprt *xprt, struct rpc_task *task)
  {

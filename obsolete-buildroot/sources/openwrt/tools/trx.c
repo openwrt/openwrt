@@ -26,6 +26,10 @@
  * .trx file using '-m'.  It will be rounded up to be a multiple of 4K.
  * NOTE: This space will be malloc()'d.
  *
+ * August 16, 2004
+ *
+ * Sigh... Make it endian-neutral.
+ *
  * TODO: Support '-b' option to specify offsets for each file.
  */
 
@@ -36,6 +40,16 @@
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
+#include <endian.h>
+#include <byteswap.h>
+
+#if __BYTE_ORDER == __BIG_ENDIAN
+#define STORE32_LE(X)		bswap_32(X)
+#elif __BYTE_ORDER == __LITTLE_ENDIAN
+#define STORE32_LE(X)		(X)
+#else
+#error unkown endianness!
+#endif
 
 uint32_t crc32buf(char *buf, size_t len);
 
@@ -74,10 +88,11 @@ int main(int argc, char **argv)
 	char *e;
 	int c, i;
 	size_t n;
+	uint32_t cur_len;
 	unsigned long maxlen = TRX_MAX_LEN;
 	struct trx_header *p;
 
-	fprintf(stderr, "mjn3's trx replacement - v0.80\n");
+	fprintf(stderr, "mjn3's trx replacement - v0.81\n");
 
 	while ((c = getopt(argc, argv, "o:m:")) != -1) {
 		switch (c) {
@@ -132,21 +147,21 @@ int main(int argc, char **argv)
 
 	p = (struct trx_header *) buf;
 
-	p->magic = TRX_MAGIC;
-	p->len = sizeof(struct trx_header);
-	p->flag_version = (TRX_VERSION << 16);
+	p->magic = STORE32_LE(TRX_MAGIC);
+	cur_len = sizeof(struct trx_header);
+	p->flag_version = STORE32_LE((TRX_VERSION << 16));
 
 	i = 0;
 
 	while (optind < argc) {
-		p->offsets[i++] = p->len;
+		p->offsets[i++] = STORE32_LE(cur_len);
 
 		if (!(in = fopen(argv[optind], "r"))) {
 			fprintf(stderr, "can not open \"%s\" for reading\n", argv[optind]);
 			usage();
 		}
 
-		n = fread(buf + p->len, 1, maxlen - p->len, in);
+		n = fread(buf + cur_len, 1, maxlen - cur_len, in);
 		if (!feof(in)) {
 			fprintf(stderr, "fread failure or file \"%s\" too large\n",
 					argv[optind]);
@@ -162,26 +177,29 @@ int main(int argc, char **argv)
 #undef  ROUND
 #define ROUND 4
 			if (n & (ROUND-1)) {
-				memset(buf + p->len + n, 0, ROUND - (n & (ROUND-1)));
+				memset(buf + cur_len + n, 0, ROUND - (n & (ROUND-1)));
 				n += ROUND - (n & (ROUND-1));
 			}
 		}
 
-		p->len += n;
+		cur_len += n;
 	}
 
 #undef  ROUND
 #define ROUND 0x1000
-	n = p->len & (ROUND-1);
+	n = cur_len & (ROUND-1);
 	if (n) {
-		memset(buf + p->len, 0, ROUND - n);
-		p->len += ROUND - n;
+		memset(buf + cur_len, 0, ROUND - n);
+		cur_len += ROUND - n;
 	}
 
 	p->crc32 = crc32buf((char *) &p->flag_version,
-						p->len - offsetof(struct trx_header, flag_version));
+						cur_len - offsetof(struct trx_header, flag_version));
+	p->crc32 = STORE32_LE(p->crc32);
 
-	if (!fwrite(buf, p->len, 1, out) || fflush(out)) {
+	p->len = STORE32_LE(cur_len);
+
+	if (!fwrite(buf, cur_len, 1, out) || fflush(out)) {
 		fprintf(stderr, "fwrite failed\n");
 		return EXIT_FAILURE;
 	}

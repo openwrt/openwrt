@@ -172,7 +172,7 @@ diff -bBurN WRT54G/release/src/router/shared/Makefile-openwrt WRT54G.new/release
 +clean:
 +	rm -f *.o *.so
 +
-+libshared.so: shutils.o wl.o wl_linux.o defaults.o
++libshared.so: shutils.o wl.o wl_linux.o defaults.o linux_timer.o
 +	$(LD) -shared -o $@ $^
 +
 +build_date.o: build_date.c

@@ -108,7 +108,7 @@ $(OPENSSH_SERVER_IPK): $(OPENSSH_IPK_BUILD_DIR)/usr/bin/ssh
 	cp $(OPENSSH_IPK_BUILD_DIR)/usr/sbin/sshd $(OPENSSH_IPK_BUILD_DIR)/build/usr/sbin
 	mkdir -p $(OPENSSH_IPK_BUILD_DIR)/build/usr/bin
 	cp $(OPENSSH_IPK_BUILD_DIR)/usr/bin/ssh-keygen $(OPENSSH_IPK_BUILD_DIR)/build/usr/bin
-	cd $(BUILD_DIR); $(STAGING_DIR)/bin/ipkg-build -c -o root -g root $(OPENSSH_IPK_BUILD_DIR)/build
+	cd $(BUILD_DIR); $(IPKG_BUILD) $(OPENSSH_IPK_BUILD_DIR)/build
 	rm -rf $(OPENSSH_IPK_BUILD_DIR)/build
 
 $(OPENSSH_CLIENT_IPK): $(OPENSSH_IPK_BUILD_DIR)/usr/bin/ssh
@@ -123,7 +123,7 @@ $(OPENSSH_CLIENT_IPK): $(OPENSSH_IPK_BUILD_DIR)/usr/bin/ssh
 	mkdir -p $(OPENSSH_IPK_BUILD_DIR)/build/usr/bin
 	cp $(OPENSSH_IPK_BUILD_DIR)/usr/bin/ssh $(OPENSSH_IPK_BUILD_DIR)/build/usr/bin
 	cp $(OPENSSH_IPK_BUILD_DIR)/usr/bin/scp $(OPENSSH_IPK_BUILD_DIR)/build/usr/bin
-	cd $(BUILD_DIR); $(STAGING_DIR)/bin/ipkg-build -c -o root -g root $(OPENSSH_IPK_BUILD_DIR)/build
+	cd $(BUILD_DIR); $(IPKG_BUILD) $(OPENSSH_IPK_BUILD_DIR)/build
 	rm -rf $(OPENSSH_IPK_BUILD_DIR)/build
 
 $(OPENSSH_SFTP_SERVER_IPK): $(OPENSSH_IPK_BUILD_DIR)/usr/bin/ssh
@@ -132,7 +132,7 @@ $(OPENSSH_SFTP_SERVER_IPK): $(OPENSSH_IPK_BUILD_DIR)/usr/bin/ssh
 	cp $(OPENSSH_IPK_DIR)/openssh.sftp-server.control $(OPENSSH_IPK_BUILD_DIR)/build/CONTROL/control
 	mkdir -p $(OPENSSH_IPK_BUILD_DIR)/build/usr/sbin
 	cp $(OPENSSH_IPK_BUILD_DIR)/usr/sbin/sftp-server $(OPENSSH_IPK_BUILD_DIR)/build/usr/sbin
-	cd $(BUILD_DIR); $(STAGING_DIR)/bin/ipkg-build -c -o root -g root $(OPENSSH_IPK_BUILD_DIR)/build
+	cd $(BUILD_DIR); $(IPKG_BUILD) $(OPENSSH_IPK_BUILD_DIR)/build
 	rm -rf $(OPENSSH_IPK_BUILD_DIR)/build
 
 $(OPENSSH_SFTP_CLIENT_IPK): $(OPENSSH_IPK_BUILD_DIR)/usr/bin/ssh
@@ -141,7 +141,7 @@ $(OPENSSH_SFTP_CLIENT_IPK): $(OPENSSH_IPK_BUILD_DIR)/usr/bin/ssh
 	cp $(OPENSSH_IPK_DIR)/openssh.sftp-client.control $(OPENSSH_IPK_BUILD_DIR)/build/CONTROL/control
 	mkdir -p $(OPENSSH_IPK_BUILD_DIR)/build/usr/bin
 	cp $(OPENSSH_IPK_BUILD_DIR)/usr/bin/sftp $(OPENSSH_IPK_BUILD_DIR)/build/usr/bin
-	cd $(BUILD_DIR); $(STAGING_DIR)/bin/ipkg-build -c -o root -g root $(OPENSSH_IPK_BUILD_DIR)/build
+	cd $(BUILD_DIR); $(IPKG_BUILD) $(OPENSSH_IPK_BUILD_DIR)/build
 	rm -rf $(OPENSSH_IPK_BUILD_DIR)/build
 
 $(OPENSSH_CLIENT_EX_IPK): $(OPENSSH_IPK_BUILD_DIR)/usr/bin/ssh
@@ -154,7 +154,7 @@ $(OPENSSH_CLIENT_EX_IPK): $(OPENSSH_IPK_BUILD_DIR)/usr/bin/ssh
 	cp $(OPENSSH_IPK_BUILD_DIR)/usr/bin/ssh-keyscan $(OPENSSH_IPK_BUILD_DIR)/build/usr/bin
 	mkdir -p $(OPENSSH_IPK_BUILD_DIR)/build/usr/sbin
 	cp $(OPENSSH_IPK_BUILD_DIR)/usr/sbin/ssh-keysign $(OPENSSH_IPK_BUILD_DIR)/build/usr/sbin
-	cd $(BUILD_DIR); $(STAGING_DIR)/bin/ipkg-build -c -o root -g root $(OPENSSH_IPK_BUILD_DIR)/build
+	cd $(BUILD_DIR); $(IPKG_BUILD) $(OPENSSH_IPK_BUILD_DIR)/build
 	rm -rf $(OPENSSH_IPK_BUILD_DIR)/build
 
 openssh-ipk: $(OPENSSH_SERVER_IPK) $(OPENSSH_CLIENT_IPK) \

@@ -49,7 +49,7 @@ $(LINUX_DIR)/.unpacked: $(WRT54G_DIR)/.prepared
 	touch $(LINUX_DIR)/.unpacked
 
 $(LINUX_DIR)/.patched: $(WRT54G_DIR)/.prepared
-	$(SOURCE_DIR)/patch-kernel.sh $(LINUX_DIR)/../.. $(SOURCE_DIR)/openwrt/kernel/patches
+	$(SOURCE_DIR)/patch-kernel.sh $(LINUX_DIR) $(SOURCE_DIR)/openwrt/kernel/patches
 	# use replacement diag module code
 	cp -f $(SOURCE_DIR)/openwrt/kernel/diag.c $(LINUX_DIR)/drivers/net/diag/diag_led.c
 	cp -f $(SOURCE_DIR)/openwrt/kernel/linux.config $(LINUX_DIR)/.config
@@ -76,7 +76,7 @@ $(LINUX_DIR)/$(LINUX_BINLOC): $(LINUX_DIR)/.depend_done
 
 openwrt-kmodules.tar.bz2: $(LINUX_DIR)/$(LINUX_BINLOC)
 	$(MAKE) -C $(LINUX_DIR) modules
-	$(MAKE) -C $(LINUX_DIR) DEPMOD=/bin/true \
+	$(MAKE) -C $(LINUX_DIR) DEPMOD=true \
 		INSTALL_MOD_PATH=$(LINUX_DIR)/modules modules_install
 	tar -C $(LINUX_DIR)/modules/lib -cjf openwrt-kmodules.tar.bz2 modules
 
@@ -202,8 +202,8 @@ openwrt-rootprep:
 
 ######################################################################
 
-openwrt-prune: openwrt-base
-	-@find $(TARGET_DIR) -type f -perm +111 | xargs $(STRIP) 2>/dev/null || true;
+openwrt-prune: $(STAGING_DIR)/bin/sstrip openwrt-base
+	-@find $(TARGET_DIR) -type f -perm +111 | xargs $(STAGING_DIR)/bin/sstrip 2>/dev/null || true;
 	# remove unneeded uClibc libs
 	rm -rf $(TARGET_DIR)/lib/libthread_db*
 	rm -rf $(TARGET_DIR)/lib/libpthread*
@@ -216,6 +216,9 @@ openwrt-prune: openwrt-base
 	rm -f $(TARGET_DIR)/usr/sbin/ip6tables
 
 ######################################################################
+
+$(STAGING_DIR)/bin/sstrip:
+	$(CC) -o $(STAGING_DIR)/bin/sstrip -I$(STAGING_DIR)/mipsel-linux-uclibc/include $(SOURCE_DIR)/openwrt/tools/sstrip.c
 
 wrt-tools:
 	$(CC) -o $(WRT54G_DIR)/release/tools/trx $(SOURCE_DIR)/openwrt/tools/trx.c

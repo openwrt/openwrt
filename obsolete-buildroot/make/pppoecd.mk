@@ -47,7 +47,7 @@ $(PPPOECD_IPK_BUILD_DIR)/CONTROL/control:
 	
 # build the ipk package
 $(PPPOECD_PACKAGE): $(PPPOECD_IPK_BIN) $(PPPOECD_IPK_BUILD_DIR)/CONTROL/control
-	cd $(BUILD_DIR); $(STAGING_DIR)/bin/ipkg-build -c -o root -g root $(PPPOECD_IPK_BUILD_DIR)
+	cd $(BUILD_DIR); $(IPKG_BUILD) $(PPPOECD_IPK_BUILD_DIR)
 
 # main target for building the ipk version
 pppoecd-ipk: $(PPPOECD_PACKAGE)

@@ -84,7 +84,7 @@ int main(int argc, char **argv)
 	time_t t;
 	struct tm *ptm;
 
-	fprintf(stderr, "mjn3's addpattern replacement - v0.80\n");
+	fprintf(stderr, "mjn3's addpattern replacement - v0.81\n");
 
 	hdr = (struct code_header *) buf;
 
