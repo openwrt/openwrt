@@ -148,7 +148,7 @@ static int __init diag_init()
 	set_diag=ignore;
 	set_dmz=ignore;
 	
-	if (board_type & 0x400) {
+	if ((board_type & 0xf00) == 0x400) {
 		board_type=1;
 		buf=nvram_get("boardtype")?:"";
 		if (!strcmp(buf,"bcm94710dev")) {
