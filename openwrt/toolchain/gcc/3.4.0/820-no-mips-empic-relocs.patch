@@ -1,0 +1,59 @@
+From: cgd at broadcom dot com
+To: gcc-patches at gcc dot gnu dot org
+Cc: mark at codesourcery dot com
+Date: 13 Jun 2004 22:51:30 -0700
+Subject: [trunk + 3.4-branch RFA] don't use empic relocs for mips-linuxeh
+
+This patch changes mips-linux to avoid using embedded-pic relocs for
+its eh data.  (Support for generating these for new code is removed in
+current binutils srcs.)
+
+Relating to this, previously, mips-linux and mips64-linux would use
+different representations for their EH data (even for mips64-linux o32
+abi), due to the mips64-linux n32/64 BFDs not supporting the
+embedded-pic relocs.  This was a bug.
+
+For more explanation, see the thread of the URL quoted in the comment
+in linux.h.
+
+
+Tested the same w/ sources of about a week ago for c/c++ for
+mips-linux (native) before/after.  Also verified .o compatibility
+before/after just to be sure.
+
+I'd like this approved for the branch as well, so 3.4.1 will work
+nicely w/ the next major binutils release.
+
+
+thanks,
+
+chris
+
+2004-06-13  Chris Demetriou  <cgd@broadcom.com>
+
+	* config/mips/linux.h (ASM_PREFERRED_EH_DATA_FORMAT): Redefine
+	to return DW_EH_PE_absptr.
+
+Index: config/mips/linux.h
+===================================================================
+RCS file: /cvs/gcc/gcc/gcc/config/mips/linux.h,v
+retrieving revision 1.77
+diff -u -p -r1.77 linux.h
+--- gcc/gcc/config/mips/linux.h	19 Feb 2004 22:07:51 -0000	1.77
++++ gcc/gcc/config/mips/linux.h	14 Jun 2004 05:49:51 -0000
+@@ -170,10 +170,11 @@ Boston, MA 02111-1307, USA.  */
+ #undef FUNCTION_NAME_ALREADY_DECLARED
+ #define FUNCTION_NAME_ALREADY_DECLARED 1
+ 
+-#define ASM_PREFERRED_EH_DATA_FORMAT(CODE, GLOBAL)       		\
+-  (flag_pic								\
+-    ? ((GLOBAL) ? DW_EH_PE_indirect : 0) | DW_EH_PE_pcrel | DW_EH_PE_sdata4\
+-   : DW_EH_PE_absptr)
++/* If possible, we should attempt to use GP-relative relocs for this
++   (see <a  href="http://sources.redhat.com/ml/binutils/2004-05/msg00227.html">http://sources.redhat.com/ml/binutils/2004-05/msg00227.html</a>).
++   However, until that is implement, this just uses standard, absolute
++   references.  */
++#define ASM_PREFERRED_EH_DATA_FORMAT(CODE, GLOBAL)	DW_EH_PE_absptr
+ 
+ /* The glibc _mcount stub will save $v0 for us.  Don't mess with saving
+    it, since ASM_OUTPUT_REG_PUSH/ASM_OUTPUT_REG_POP do not work in the
