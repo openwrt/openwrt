@@ -1,0 +1,165 @@
+--- fping-2.4b2-to-ipv6.orig/fping.8
++++ fping-2.4b2-to-ipv6/fping.8
+@@ -1,4 +1,4 @@
+-.TH fping l
++.TH fping 8
+ .SH NAME
+ fping \- send ICMP ECHO_REQUEST packets to network hosts
+ .SH SYNOPSIS
+@@ -152,7 +152,7 @@
+ example none the less. 
+ .nf
+ 
+-#!/usr/local/bin/perl
++#!/usr/bin/perl
+ require 'open2.pl';
+ 
+ $MAILTO = "root";
+@@ -178,7 +178,7 @@
+ that are currently reachable.
+ .nf
+ 
+-#!/usr/local/bin/perl
++#!/usr/bin/perl
+ 
+ $hosts_to_backup = `cat /etc/hosts.backup | fping -a`;
+ 
+--- fping-2.4b2-to-ipv6.orig/fping.c
++++ fping-2.4b2-to-ipv6/fping.c
+@@ -42,7 +42,6 @@
+  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+  */
+-#define IPV6 1						/* This should be a compiler option, or even better be done from the Makefile... ;) */
+ 
+ #ifndef _NO_PROTO
+ #if !__STDC__ && !defined( __cplusplus ) && !defined( FUNCPROTO ) \
+@@ -101,13 +100,8 @@
+ #endif
+ #include <netinet/in_systm.h>
+ 
+-/* Linux has bizarre ip.h and ip_icmp.h */
+-#if defined( __linux__ )
+-#include "linux.h"
+-#else
+ #include <netinet/ip.h>
+ #include <netinet/ip_icmp.h>
+-#endif /* defined(__linux__) */
+ 
+ #include <arpa/inet.h>
+ #include <netdb.h>
+@@ -150,7 +144,11 @@
+ #define MIN_PING_DATA	sizeof( PING_DATA )
+ #define	MAX_IP_PACKET	65536	/* (theoretical) max IP packet size */
+ #define SIZE_IP_HDR		20
++#ifndef IPV6
+ #define SIZE_ICMP_HDR	ICMP_MINLEN		/* from ip_icmp.h */
++#else
++#define SIZE_ICMP_HDR	sizeof(FPING_ICMPHDR)
++#endif
+ #define MAX_PING_DATA	( MAX_IP_PACKET - SIZE_IP_HDR - SIZE_ICMP_HDR )
+ 
+ /* sized so as to be like traditional ping */
+@@ -474,6 +472,35 @@
+ 		    sizeof(opton)))
+ 			err(1, "setsockopt(IPV6_RTHDR)");
+ #endif
++#ifndef USE_SIN6_SCOPE_ID
++#ifdef IPV6_RECVPKTINFO
++		if (setsockopt(s, IPPROTO_IPV6, IPV6_RECVPKTINFO, &opton,
++		    sizeof(opton)))
++			err(1, "setsockopt(IPV6_RECVPKTINFO)");
++#else  /* old adv. API */
++		if (setsockopt(s, IPPROTO_IPV6, IPV6_PKTINFO, &opton,
++		    sizeof(opton)))
++			err(1, "setsockopt(IPV6_PKTINFO)");
++#endif
++#endif /* USE_SIN6_SCOPE_ID */
++#ifdef IPV6_RECVHOPLIMIT
++		if (setsockopt(s, IPPROTO_IPV6, IPV6_RECVHOPLIMIT, &opton,
++		    sizeof(opton)))
++			err(1, "setsockopt(IPV6_RECVHOPLIMIT)");
++#else  /* old adv. API */
++		if (setsockopt(s, IPPROTO_IPV6, IPV6_HOPLIMIT, &opton,
++		    sizeof(opton)))
++			err(1, "setsockopt(IPV6_HOPLIMIT)");
++#endif
++#ifdef IPV6_CHECKSUM
++#ifndef SOL_RAW
++#define SOL_RAW IPPROTO_IPV6
++#endif
++		opton = 2;
++		if (setsockopt(s, SOL_RAW, IPV6_CHECKSUM, &opton,
++		    sizeof(opton)))
++			err(1, "setsockopt(SOL_RAW,IPV6_CHECKSUM)");
++#endif
+ #endif
+ 
+ 	if( ( uid = getuid() ) )
+@@ -1112,7 +1139,7 @@
+ 		/* but allow time for the last one to come in */
+ 		if( count_flag )
+ 		{
+-			if( ( cursor->num_sent >= count ) && ( ht > cursor->timeout ) )
++			if( ( cursor->num_sent >= count ) && ( cursor->num_recv >= count || ht > cursor->timeout ) )
+ 			{
+ 				remove_job( cursor );
+ 				continue;
+@@ -1382,15 +1409,15 @@
+ 		if( h->num_recv_i <= h->num_sent_i )
+ 		{
+ 			fprintf( stderr, " xmt/rcv/%%loss = %d/%d/%d%%",
+-				h->num_sent_i, h->num_recv_i,
+-				( ( h->num_sent_i - h->num_recv_i ) * 100 ) / h->num_sent_i );
++				h->num_sent_i, h->num_recv_i, h->num_sent_i > 0 ?
++				( ( h->num_sent_i - h->num_recv_i ) * 100 ) / h->num_sent_i : 0 );
+ 
+ 		}/* IF */
+ 		else
+ 		{
+ 			fprintf( stderr, " xmt/rcv/%%return = %d/%d/%d%%",
+-				h->num_sent_i, h->num_recv_i,
+-				( ( h->num_recv_i * 100 ) / h->num_sent_i ) );
++				h->num_sent_i, h->num_recv_i, h->num_sent_i > 0 ?
++				( ( h->num_recv_i * 100 ) / h->num_sent_i ) : 0 );
+ 
+ 		}/* ELSE */
+ 
+@@ -2165,20 +2192,33 @@
+ 	struct addrinfo		*res, hints;
+ 	int						ret_ga;
+ 	char						*hostname;
++	size_t len;
+ 
+ 	/* getaddrinfo */
+ 	bzero(&hints, sizeof(struct addrinfo));
+-	hints.ai_flags = AI_CANONNAME;
++	hints.ai_flags = name_flag ? AI_CANONNAME : 0;
+ 	hints.ai_family = AF_INET6;
+ 	hints.ai_socktype = SOCK_RAW;
+ 	hints.ai_protocol = IPPROTO_ICMPV6;
+ 
+ 	ret_ga = getaddrinfo(name, NULL, &hints, &res);
+-	if (ret_ga) errx(1, "%s", gai_strerror(ret_ga));
++	if (ret_ga) {
++		if(!quiet_flag)
++			warnx("%s", gai_strerror(ret_ga));
++		num_noaddress++;
++		return; 
++	}
+ 	if (res->ai_canonname) hostname = res->ai_canonname;
+ 	else hostname = name;
+-	if (!res->ai_addr) errx(1, "getaddrinfo failed");
+-	(void)memcpy(&dst, res->ai_addr, sizeof(FPING_SOCKADDR)); /*res->ai_addrlen);*/
++	if (!res->ai_addr) {
++		if(!quiet_flag)
++			warnx("getaddrinfo failed");
++		num_noaddress++;
++		return; 
++	}
++	len = res->ai_addrlen;
++	if (len > sizeof(FPING_SOCKADDR)) len = sizeof(FPING_SOCKADDR);
++	(void)memcpy(&dst, res->ai_addr, len);
+ 	add_addr(name, name, &dst);
+ #endif
+ } /* add_name() */
