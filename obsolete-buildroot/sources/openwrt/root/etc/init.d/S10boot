@@ -1,4 +1,5 @@
 #!/bin/sh
+klogd
 syslogd -C 16 
 sysctl -p
 echo "S" > /proc/jffs2_bbc
