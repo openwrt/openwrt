@@ -28,6 +28,8 @@
 #define	PACKED
 #endif
 
+#define WLC_ESSID_MAX_SIZE	32
+
 #define WL_NUMRATES		255	/* max # of rates in a rateset */
 
 typedef struct wl_rateset {
