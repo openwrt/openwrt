@@ -1,5 +1,6 @@
 #!/bin/sh
 mount none /proc -t proc
+mount none /tmp -t ramfs
 insmod diag
 echo 0x01 > /proc/sys/diag
 sleep 1
@@ -7,14 +8,16 @@ if [ $(cat /proc/sys/reset) = 1 ] ; then
   export FAILSAFE=true
   while :; do { echo $(((X=(X+1)%8)%2)) > /proc/sys/diag; sleep $((X==0)); } done &
 else
-  mount | grep jffs2 1>&- || {
+  mount | grep jffs2 >&-
+  if [ $? = 0 ] && [ $(cat /proc/mtd | wc -l) = 6 ] ; then
+    jffs2root --move && reboot 
+  else
     mtd unlock mtd4
     mount -t jffs2 /dev/mtdblock/4 /jffs
     pivot_root /jffs /jffs/rom
-  }
-  mount none /dev -t devfs
-  mount none /proc -t proc
-  umount rom/proc
+    mount none /dev -t devfs
+    mount none /proc -t proc
+    umount rom/proc
+  fi
 fi
-mount none /tmp -t ramfs
 exec /sbin/init
