@@ -116,7 +116,7 @@ dirclean: clean
 	rm -rf $(BUILD_DIR)
 
 distclean: clean
-	rm -rf $(STAMP_DIR) $(DL_DIR) $(BUILD_DIR) $(TOOL_BUILD_DIR)
+	rm -rf $(STAMP_DIR) $(DL_DIR) $(BUILD_DIR) $(TOOL_BUILD_DIR) $(STAGING_DIR)
 	rm -f .config* .tmpconfig.h
 
 sourceball: distclean

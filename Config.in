@@ -86,7 +86,7 @@ config BR2_TAR_VERBOSITY
 
 config BR2_STAGING_DIR
 	string "Toolchain and header file location?"
-	default "$(BUILD_DIR)/staging_dir"
+	default "$(BASE_DIR)/staging_dir_$(ARCH)$(ARCH_FPU_SUFFIX)"
 	help
 	    This is the location where the toolchain will be installed.
 	    Since the toolchain will not work if it is moved from this
@@ -95,7 +95,7 @@ config BR2_STAGING_DIR
 	    the toolchain will be used.
 
 	    Most people will leave this set to the default value of
-	    "$(BUILD_DIR)/staging_dir".
+	    "$(BASE_DIR)/staging_dir_$(ARCH)$(ARCH_FPU_SUFFIX)".
 
 config BR2_JLEVEL
 	int "Number of jobs to run simultaneously"
