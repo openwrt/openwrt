@@ -1,3 +1,15 @@
+config BR2_PACKAGE_KMOD_BRCM_WL
+	tristate "Broadcom Wireless Network Driver"
+	default y
+	help
+	  Proprietary driver for Broadcom Wireless chipsets
+
+config BR2_PACKAGE_KMOD_BRCM_ET
+	tristate "Broadcom Ethernet Driver"
+	default y
+	help
+	  Proprietary driver for Broadcom Ethernet chipsets
+
 config BR2_PACKAGE_KMOD_ARPT
 	tristate "ARP firewalling support"
 	default m
