@@ -50,21 +50,13 @@ $(LINUX_DIR)/.unpacked: $(DL_DIR)/$(LINUX_SOURCE) $(DL_DIR)/$(LINKSYS_KERNEL_TGZ
 
 $(LINUX_DIR)/.patched: $(LINUX_DIR)/.unpacked
 	$(PATCH) $(LINUX_DIR) $(LINUX_PATCHES)
-ifeq ($(BR2_TARGET_ROOTFS_SQUASHFS_LZMA),y)
-	$(PATCH) $(LINUX_DIR) target/squashfs-lzma/kernel-patch
-endif
 	touch $(LINUX_DIR)/.patched
 
 $(LINUX_DIR)/.configured:  $(LINUX_DIR)/.patched
 	-cp $(LINUX_KCONFIG) $(LINUX_DIR)/.config
-ifeq ($(BR2_TARGET_ROOTFS_SQUASHFS_LZMA),y)
-	$(SED) "s,rootfstype=jffs2,rootfstype=squashfs," $(LINUX_DIR)/.config
-endif
-ifeq ($(BR2_TARGET_ROOTFS_SQUASHFS),y)
-	$(SED) "s,rootfstype=jffs2,rootfstype=squashfs," $(LINUX_DIR)/.config
-endif
-	$(SED) "s,^CROSS_COMPILE.*,CROSS_COMPILE=$(KERNEL_CROSS),g;" $(LINUX_DIR)/Makefile
-	$(SED) "s,^CROSS_COMPILE.*,CROSS_COMPILE=$(KERNEL_CROSS),g;" $(LINUX_DIR)/arch/mips/Makefile
+	$(SED) "s,^CROSS_COMPILE.*,CROSS_COMPILE=$(KERNEL_CROSS),g;" \
+		$(LINUX_DIR)/Makefile \
+		$(LINUX_DIR)/arch/mips/Makefile
 	$(SED) "s,\-mcpu=,\-mtune=,g;" $(LINUX_DIR)/arch/mips/Makefile
 	$(MAKE) -C $(LINUX_DIR) ARCH=$(LINUX_KARCH) oldconfig include/linux/version.h
 	touch $(LINUX_DIR)/.configured

@@ -6,7 +6,8 @@ TARGET_SKEL_DIR=target/default/target_skeleton
 include target/device/Makefile.in
 
 ifeq ($(strip $(BR2_TARGET_ROOTFS_JFFS2)),y)
-JFFS2FLAGS+=-a 131072
+include target/jffs2/blocksize.mk
+JFFS2FLAGS+=-a $(JFFS2_BLOCK_SIZE) 
 endif
 
 
