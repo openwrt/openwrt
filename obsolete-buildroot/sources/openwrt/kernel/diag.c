@@ -3,6 +3,8 @@
 // mbm at alt dot org
 //
 // initial release 2004/03/28
+//
+// 2004/08/26 asus & buffalo support added
 
 #include <linux/module.h>
 #include <linux/init.h>
@@ -13,6 +15,7 @@
 #include <bcm4710.h>
 #include <sbutils.h>
 
+extern char * nvram_get(const char *name);
 static void *sbh;
 
 // v2.x - - - - -
@@ -147,11 +150,7 @@ static int __init diag_init()
 	
 	if (board_type & 0x400) {
 		board_type=1;
-		set_diag=v1_set_diag;
-		set_dmz=v1_set_dmz;
-
 		buf=nvram_get("boardtype")?:"";
-
 		if (!strcmp(buf,"bcm94710dev")) {
 			buf=nvram_get("boardnum")?:"";
 			if (!strcmp(buf,"42")) {
@@ -160,7 +159,7 @@ static int __init diag_init()
 				set_dmz=v1_set_dmz;
 				reset_gpio=(1<<6);
 				reset_polarity=0;
-			} else (!strcmp(buf,"asusX")) {
+			} else if (!strcmp(buf,"asusX")) {
 				//asus wl-500g
 				//no leds
 				reset_gpio=(1<<6);
