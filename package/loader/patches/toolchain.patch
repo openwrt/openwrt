@@ -1,0 +1,12 @@
+--- loader-0.03/Makefile	2005-03-28 22:15:24.569677129 +0400
++++ loader/Makefile	2005-03-28 22:16:42.339989214 +0400
+@@ -24,7 +24,8 @@
+ 
+ CFLAGS		= -D__KERNEL__ -Wall -Wstrict-prototypes -Wno-trigraphs -O2 \
+ 		  -fno-strict-aliasing -fno-common -fomit-frame-pointer -G 0 -mno-abicalls -fno-pic \
+-		  -ffunction-sections -pipe -mcpu=r4600 -mips2 -Wa,--trap  -m4710a0kern
++		  -ffunction-sections -pipe -mlong-calls -fno-common \
++		  -mabi=32 -march=mips32 -Wa,-32 -Wa,-march=mips32 -Wa,-mips32 -Wa,--trap
+ CFLAGS		+= -DLOADADDR=$(TEXT_START) -D_LZMA_IN_CB
+ 
+ ASFLAGS		= $(CFLAGS) -D__ASSEMBLY__ -DBZ_TEXT_START=$(BZ_TEXT_START)
