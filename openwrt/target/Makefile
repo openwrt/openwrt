@@ -19,6 +19,14 @@ endif
 ifeq ($(BR2_TARGET_WRT54GS),y)
 IMAGE_TARGETS += $(BIN_DIR)/openwrt-wrt54gs-$(1).bin
 endif
+
+
+$(BIN_DIR)/openwrt-motorola-$(1).bin: $(BIN_DIR)/openwrt-generic-$(patsubst jffs2,jffs2-8MB,$(1)).trx
+	PATH=$(TARGET_PATH) motorola-bin $$< $$@
+
+ifeq ($(BR2_TARGET_MOTOROLA),y)
+IMAGE_TARGETS += $(BIN_DIR)/openwrt-motorola-$(1).bin
+endif
 endef
 
 TARGET_DIRS:=
