@@ -161,3 +161,12 @@ lan_proto="static"
 configure lan
 configure wifi
 configure wan
+
+for route in $(nvram_get static_route); do {
+      ip=${route%%:*} route=${route#*:}
+ netmask=${route%%:*} route=${route#*:}
+ gateway=${route%%:*} route=${route#*:}
+  metric=${route%%:*} route=${route#*:}
+      if=${route%%:*}
+  $DEBUG route add -net $ip netmask $netmask gw $gateway metric $metric dev $if
+} done
