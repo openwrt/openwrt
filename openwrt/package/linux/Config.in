@@ -83,6 +83,13 @@ config BR2_PACKAGE_KMOD_MPPE
 	help
 	  Support for Microsoft PPP Encryption/Compression
 
+config BR2_PACKAGE_KMOD_PPPOE
+	tristate "PPPoE modules"
+	default m
+	depends BR2_PACKAGE_KMOD_PPP
+	help
+	  Support for PPP over Ethernet
+
 config BR2_PACKAGE_KMOD_TUN
 	tristate "Universal TUN/TAP driver"
 	default m
