@@ -6,8 +6,8 @@
 
 DNSMASQ_SITE=http://thekelleys.org.uk/dnsmasq
 ifeq ($(filter $(TARGETS),dnsmasq1),)
-DNSMASQ_SOURCE=dnsmasq-2.16.tar.gz
-DNSMASQ_DIR=$(BUILD_DIR)/dnsmasq-2.16
+DNSMASQ_SOURCE=dnsmasq-2.17.tar.gz
+DNSMASQ_DIR=$(BUILD_DIR)/dnsmasq-2.17
 DNSMASQ_VER=dnsmasq2
 else
 DNSMASQ_SOURCE=dnsmasq-1.18.tar.gz
