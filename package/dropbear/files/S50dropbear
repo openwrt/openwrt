@@ -2,10 +2,10 @@
 
 for type in rsa dss; do {
   # check for keys
-  key=/tmp/dropbear/dropbear_${type}_host_key
+  key=/etc/dropbear/dropbear_${type}_host_key
   [ ! -f $key ] && {
     # generate missing keys
-    mkdir -p /tmp/dropbear
+    mkdir -p /etc/dropbear
     [ -x /usr/bin/dropbearkey ] && {
       /usr/bin/dropbearkey -t $type -f $key 2>&- >&- && exec $0 $*
     } &
