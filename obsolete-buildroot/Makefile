@@ -28,62 +28,20 @@
 #
 #############################################################
 
-# What sortof target system shall we compile this for?
-#ARCH:=i386
-#ARCH:=arm
-#ARCH:=mips
+SNAPSHOT:=20040531
+
 ARCH:=mipsel
-#ARCH:=powerpc
-#ARCH:=sh4
-# Busybox link failing due to needing libgcc functions that are statics.
-#ARCH:=cris
-
-# The following currently fail to build since no shared lib support.
-#ARCH:=sh64
-#ARCH:=m68k
-#ARCH:=v850
-#ARCH:=sparc
-#ARCH:=whatever
-
-# If you are building a native gcc toolchain, do you want to
-# build the old gcc-2.95 based toolchain, or would you prefer
-# a nice and shiny new gcc-3.3.2 toolchain?
-# WARNING -- 2.95 currently only builds for i386, arm, mips*, and powerpc.
-# WARNING -- 2.95 does not currently build natively for the target.
-GCC_2_95_TOOLCHAIN:=false
-
-# Enable this to use the uClibc daily snapshot instead of a released
-# version.  Daily snapshots may contain new features and bugfixes. Or
-# they may not even compile at all, depending on what Erik is doing...
-#USE_UCLIBC_SNAPSHOT:=
-#USE_UCLIBC_SNAPSHOT:=snapshot
-USE_UCLIBC_SNAPSHOT:=20040509
-
-# Temporary option... Fall back to (slightly modified) ldso 0.9.24 code?
-# This is here temporarily since I'm having problems with the current
-# cvs ldso code on mipsel.
-USE_UCLIBC_LDSO_0_9_24:=true
-#USE_UCLIBC_LDSO_0_9_24:=false
-
-# Enable this to use the busybox daily snapshot instead of a released
-# version.  Daily snapshots may contain new features and bugfixes. Or
-# they may not even compile at all....
-#USE_BUSYBOX_SNAPSHOT:=
-#USE_BUSYBOX_SNAPSHOT:=snapshot
-USE_BUSYBOX_SNAPSHOT:=20040509
-
-# Enable large file (files > 2 GB) support
+USE_UCLIBC_SNAPSHOT:=$(SNAPSHOT)
+USE_UCLIBC_LDSO_0_9_24:=false
+USE_BUSYBOX_SNAPSHOT:=$(SNAPSHOT)
+USE_NETFILTER_SNAPSHOT:=$(SNAPSHOT)
+USE_BRIDGE_VERSION:=0.9.7
 BUILD_WITH_LARGEFILE:=true
+
+OPTIMIZE_FOR_CPU=$(ARCH)
 
 # Command used to download source code
 WGET:=wget --passive-ftp
-
-# Optimize toolchain for which type of CPU?
-OPTIMIZE_FOR_CPU=$(ARCH)
-#OPTIMIZE_FOR_CPU=i686
-# Note... gcc 2.95 does not seem to like anything higher than i586.
-#OPTIMIZE_FOR_CPU=i586
-#OPTIMIZE_FOR_CPU=whatever
 
 # Soft floating point options.
 # Notes:
@@ -106,8 +64,8 @@ TARGET_DEBUGGING= #-g
 
 # Currently the unwind stuff seems to work for staticly linked apps but
 # not dynamic.  So use setjmp/longjmp exceptions by default.
-GCC_USE_SJLJ_EXCEPTIONS:=--enable-sjlj-exceptions
-#GCC_USE_SJLJ_EXCEPTIONS:=
+# GCC_USE_SJLJ_EXCEPTIONS:=--enable-sjlj-exceptions
+GCC_USE_SJLJ_EXCEPTIONS:=
 
 # Any additional gcc options you may want to include....
 EXTRA_GCC_CONFIG_OPTIONS:=
@@ -137,85 +95,7 @@ INSTALL_LIBGCJ:=false
 # The list of stuff to build for the target filesystem
 #
 #############################################################
-TARGETS:=host-sed
-
-ifeq ($(GCC_2_95_TOOLCHAIN),true)
-TARGETS+=uclibc-configured binutils gcc2_95
-else
-TARGETS+=uclibc-configured binutils gcc3_3
-endif
-
-# Do you want user mode Linux (x86 only), or are you building a
-# your own kernel that will run on its own?  Perhaps you have a
-# kernel you have already configured and you want to use that?
-# The default is to just use a set of known working kernel
-# headers.  Unless you want to build a kernel, I recommend just
-# using that...
-#TARGETS+=kernel-headers
-#TARGETS+=linux
-#TARGETS+=user-mode-linux
-#TARGETS+=system-linux
-TARGETS+= openwrt-base
-
-# The default minimal set
-#TARGETS+=busybox tinylogin
-
-# Openssh...
-#TARGETS+=zlib openssl openssh
-# Dropbear sshd is much smaller than openssl + openssh
-#TARGETS+=dropbear_sshd
-
-# Everything needed to build a full uClibc development system!
-#TARGETS+=coreutils findutils bash make diffutils patch sed
-#TARGETS+=ed flex bison file gawk tar grep bzip2
-
-#If you want a development system, you probably want gcc built
-# with uClibc so it can run within your dev system...
-#TARGETS+=gcc2_95_target ccache_target   # NOT WORKING!!!
-#TARGETS+=gcc3_3_target ccache_target
-
-# Of course, if you are installing a development system, you
-# may want some header files so you can compile stuff....
-#TARGETS+=ncurses-headers zlib-headers openssl-headers
-
-# More development system stuff for those that want it
-#TARGETS+=m4 autoconf automake libtool
-
-# Perl
-#TARGETS+=perl
-
-# Some nice debugging tools
-#TARGETS+=gdb strace ltrace
-
-# The Valgrind debugger (x86 only)
-#TARGETS+=valgrind
-
-# Some stuff for access points and firewalls
-#TARGETS+=iptables hostap wtools dhcp_relay bridge
-#TARGETS+=iproute2 netsnmp
-
-# Run customize.mk at the very end to add your own special config.
-# This is useful for making your own distro within the buildroot
-# process.
-# TARGETS+=customize
-
-#############################################################
-#
-# Pick your root filesystem type.
-#
-#############################################################
-#TARGETS+=ext2root
-
-# Must mount cramfs with 'ramdisk_blocksize=4096'
-#TARGETS+=cramfsroot
-
-# You may need to edit make/jffs2root.mk to change target
-# endian-ness or similar, but this is sufficient for most
-# things as-is...
-#TARGETS+=jffs2root
-
-#TARGETS+= openwrt-linux.trx
-TARGETS+= openwrt-code.bin
+TARGETS:=gcc3_3 openwrt-base openwrt-code.bin
 
 #############################################################
 #
