@@ -45,6 +45,18 @@ $(DROPBEAR_DIR)/.configured: $(DROPBEAR_DIR)/.patched
 		--infodir=/usr/info \
 		$(DISABLE_NLS) \
 		--with-shared \
+		--disable-pam \
+		--enable-openpty \
+		--enable-syslog \
+		--disable-shadow \
+		--disable-lastlog \
+		--disable-utmp \
+		--disable-utmpx \
+		--disable-wtmp \
+		--disable-wtmpx \
+		--disable-loginfunc \
+		--disable-pututline \
+		--disable-pututxline \
 	);
 	touch  $(DROPBEAR_DIR)/.configured
 
@@ -66,8 +78,7 @@ $(PACKAGE_DIR)/$(DROPBEAR_IPK): $(DROPBEAR_DIR)/$(DROPBEAR_BINARY)
 	ln -sf ../sbin/dropbear $(DROPBEAR_IPK_DIR)/usr/bin/dropbearkey
 	ln -sf ../sbin/dropbear $(DROPBEAR_IPK_DIR)/usr/bin/dropbearconvert
 	mkdir -p $(DROPBEAR_IPK_DIR)/etc/init.d
-	cp ./files/S50dropbear $(DROPBEAR_IPK_DIR)/etc/init.d/
-	chmod a+x $(DROPBEAR_IPK_DIR)/etc/init.d/S50dropbear
+	install -m 755 ./files/S50dropbear $(DROPBEAR_IPK_DIR)/etc/init.d/
 	$(IPKG_BUILD) $(DROPBEAR_IPK_DIR) $(PACKAGE_DIR)
 
 $(IPKG_STATE_DIR)/info/dropbear.list: $(PACKAGE_DIR)/$(DROPBEAR_IPK)
