@@ -36,7 +36,7 @@ $(BRIDGE_BUILD_DIR)/.configured: $(BRIDGE_BUILD_DIR)/.unpacked
 		--mandir=/usr/man \
 		--infodir=/usr/info \
 		$(DISABLE_NLS) \
-		--with-linux=$(LINUX_DIR) \
+		--with-linux-headers=$(LINUX_DIR) \
 	);
 	touch  $(BRIDGE_BUILD_DIR)/.configured
 
