@@ -21,7 +21,7 @@ $(IPTABLES_BUILD_DIR)/.configured: $(IPTABLES_BUILD_DIR)/.unpacked
 	$(SOURCE_DIR)/patch-kernel.sh $(IPTABLES_BUILD_DIR) $(SOURCE_DIR) iptables-*.patch
 	#
 	$(SED) "s;\[ -f /usr/include/netinet/ip6.h \];grep -q '__UCLIBC_HAS_IPV6__ 1' \
-		$(BUILD_DIR)/uClibc/include/bits/uClibc_config.h;" $(IPTABLES_BUILD_DIR)/Makefile
+		$(BUILD_DIR)/uClibc-0.9.27/include/bits/uClibc_config.h;" $(IPTABLES_BUILD_DIR)/Makefile
 	touch  $(IPTABLES_BUILD_DIR)/.configured
 
 $(IPTABLES_BUILD_DIR)/iptables: $(IPTABLES_BUILD_DIR)/.configured
