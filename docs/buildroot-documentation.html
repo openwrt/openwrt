@@ -460,10 +460,10 @@ foo-compile: bar-compile
     31          );
     32          touch $(PKG_DIR)/.configured;
     33
-    34  $(PKG_DIR)/foo $(PKG_DIR)/.configured
+    34  $(PKG_DIR)/$(PKG_NAME) $(PKG_DIR)/.configured
     35          $(MAKE) CC=$(TARGET_CC) -C $(PKG_DIR)
     36
-    37  $(PKG_IPK): $(PKG_DIR)/$(PKG_BINARY)
+    37  $(PKG_IPK): $(PKG_DIR)/$(PKG_NAME)
     38		$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_IPK_DIR) $(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
     39          $(MAKE) prefix=$(PKG_IPK_DIR)/usr -C $(PKG_DIR) install
     40          rm -Rf $(PKG_IPK_DIR)/usr/man
