@@ -26,7 +26,7 @@ config BUSYBOX_CONFIG_READLINK
 
 config BUSYBOX_CONFIG_RUN_PARTS
 	bool "run-parts"
-	default y
+	default n
 	help
 	  run-parts is a utility designed to run all the scripts in a directory.
 
@@ -41,7 +41,7 @@ config BUSYBOX_CONFIG_RUN_PARTS
 
 config BUSYBOX_CONFIG_START_STOP_DAEMON
 	bool "start-stop-daemon"
-	default y
+	default n
 	help
 	  start-stop-daemon is used to control the creation and
 	  termination of system-level processes, usually the ones
