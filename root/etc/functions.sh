@@ -89,10 +89,12 @@ ifup () (
       if_password=$(nvram_get ppp_passwd)
       if_redial=$(nvram_get ppp_redialperiod)
       if_idletime=$(nvram_get ppp_idletime)
+      if_mtu=$(nvram_get wan_mtu)
 
       $DEBUG ifconfig $if 0.0.0.0 up
 
-      $DEBUG /sbin/pppoecd $if -u $if_username -p $if_password -i 0 -I $if_redial -T $if_idletime -k
+      $DEBUG /sbin/pppoecd $if -u $if_username -p $if_password -i 0 -I $if_redial -T $if_idletim
+      e -t $if_mtu -k
     ;;
     *)
       echo "### WARNING $if: $if_proto is not supported"
@@ -105,6 +107,6 @@ ifdown () (
   debug "### ifdown $type ###"
   if=$(nvram_get ${type}_ifname)
   if_valid $if || return
-  kill $(cat /var/run/${if}.pid 2>-)2>-
+  kill $(cat /var/run/${if}.pid 2>-) 2>-
   $DEBUG ifconfig $if down
 )
