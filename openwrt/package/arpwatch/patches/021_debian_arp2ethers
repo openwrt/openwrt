@@ -1,0 +1,90 @@
+Index: arpwatch/arp2ethers
+diff -u arpwatch/arp2ethers:1.1.1.1 arpwatch/arp2ethers:1.1.1.1.14.1
+--- arpwatch/arp2ethers:1.1.1.1	Tue Apr 17 13:31:36 2001
++++ arpwatch/arp2ethers	Tue Apr 17 13:56:38 2001
+@@ -1,5 +1,5 @@
+-#!/bin/csh -f
+-# @(#) $Id$ (LBL)
++#!/bin/sh
++# @(#) $Header$ (LBL)
+ #
+ # Convert arp.dat to ethers format
+ #
+@@ -12,12 +12,74 @@
+ #	- append "-old", "-old1", etc. as necessary
+ #	- sort
+ #
++# 1999-04-12	KELEMEN Peter <fuji@debian.org>
++#	Use sh(1) instead of csh(1).
++#
++# 2000-03-21	Erik Warmelink <erik@selwerd.nl>
++#	Use next instead of continue in included p.awk.
+ 
+ sort +2rn arp.dat | \
+     awk 'NF == 4 { print }' | \
+-    awk -f p.awk | \
++# 1999-04-12	KELEMEN Peter <fuji@debian.org>
++#    awk -f p.awk | \
++    awk '
++# Only print the first ethernet address seen
++
++{
++	e = $1
++	if (seen[e])
++		next
++	seen[e] = 1
++	print $0
++}
++    ' | \
+     egrep -v '\.[0-9][0-9]*$' | \
+     sed -e 's/	.*	/	/' | \
+-    awk -f d.awk | \
+-    awk -f e.awk | \
++# 1999-04-12	KELEMEN Peter <fuji@debian.org>
++#    awk -f d.awk | \
++    awk '
++# DECnet hacking
++
++BEGIN {
++	n = 0
++	sdecnet = "aa:0:4:"
++	ldecnet = length(sdecnet)
++}
++
++{
++	++n
++	e[n] = $1
++	h[n] = $2
++	if (sdecnet == substr($1, 1, ldecnet))
++		decnet[$2] = 1
++}
++
++END {
++	for (i = 1; i <= n; ++i) {
++		if (decnet[h[i]] && sdecnet != substr(e[i], 1, ldecnet))
++			h[i] = h[i] "-ip"
++		print e[i] "\t" h[i]
++	}
++}
++    ' | \
++# 1999-04-12	KELEMEN Peter <fuji@debian.org>
++#    awk -f e.awk | \
++    awk '
++# Add -old suffix to ethers file, as required. Assumed sorted input
++
++{
++	if (!seen[$2]) {
++		seen[$2] = 1
++		print
++		next
++	}
++	h = $2 "-old"
++	s = h
++	for (n = 1; seen[h]; ++n)
++		h = s n
++	seen[h] = 1
++	print $1 "\t" h
++	next
++}
++    ' | \
+     sort
