@@ -1,5 +1,5 @@
 # Default target skeleton stuff, may be overridden
-DIST=openwrt
+EXTRAVERSION=
 TARGET_SKELETON=target/default/skel.tar.gz
 TARGET_SKEL_DIR=target/default/target_skeleton
 
@@ -10,16 +10,20 @@ JFFS2FLAGS+=-a 131072
 endif
 
 
-$(DIST)-linux.trx: openwrt-trx
-	PATH=$(TARGET_PATH) trx -o $(DIST)-linux.trx $(LINUX_DIR)/$(LINUX_BINLOC) $(JFFS2FLAGS) $(IMAGE).$(ROOTFS)
+openwrt-linux.trx: openwrt-trx
+	PATH=$(TARGET_PATH) trx -o openwrt-linux$(EXTRAVERSION).trx \
+	 $(LINUX_DIR)/$(LINUX_BINLOC) $(JFFS2FLAGS) $(IMAGE).$(ROOTFS)
 
-$(DIST)-gs-code.bin: openwrt-addpattern $(DIST)-linux.trx
-	PATH=$(TARGET_PATH) addpattern -2 -i  $(DIST)-linux.trx -o $(DIST)-gs-code.bin -g
+openwrt-gs-code.bin: openwrt-addpattern openwrt-linux.trx
+	PATH=$(TARGET_PATH) addpattern -2 -i  openwrt-linux$(EXTRAVERSION).trx \
+	-o openwrt-gs-code$(EXTRAVERSION).bin -g
 
-$(DIST)-g-code.bin: $(DIST)-gs-code.bin
-	sed -e "1s,^W54S,W54G," < $(DIST)-gs-code.bin > $(DIST)-g-code.bin
+openwrt-g-code.bin: openwrt-gs-code.bin
+	sed -e "1s,^W54S,W54G," < openwrt-gs-code$(EXTRAVERSION).bin > openwrt-g-code$(EXTRAVERSION).bin
 
-openwrt-image:	openwrt $(DIST)-g-code.bin
+openwrt-image:	openwrt openwrt-g-code.bin
 
-$(DIST)-image-clean:
-	@-rm $(DIST)-* 2>/dev/null
+openwrt-image-clean: 
+	@-rm openwrt-* 2>/dev/null
+
+openwrt-image-dirclean: openwrt-dirclean
