@@ -156,7 +156,7 @@ openwrt-sstrip: $(OPENWRT_SSTRIP_TARGET)
 openwrt-sstrip-clean:
 	rm $(OPENWRT_SSTRIP_TARGET)
 
-STRIP=$(OPENWRT_SSTRIP_TARGET)
+SSTRIP=$(OPENWRT_SSTRIP_TARGET)
 
 linksys:	linksys-shared linksys-nvram linksys-wlconf
 
