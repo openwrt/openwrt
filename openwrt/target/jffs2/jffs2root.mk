@@ -4,8 +4,6 @@
 #
 #############################################################
 
-include target/jffs2/blocksize.mk
-
 MTD_DIR:=$(BUILD_DIR)/mtd-20050122.orig
 MTD_SOURCE=mtd_20050122.orig.tar.gz
 MTD_SITE=http://ftp.debian.org/debian/pool/main/m/mtd
@@ -46,6 +44,12 @@ jffs2root-dirclean:
 	rm -rf $(MTD_DIR)
 
 ifeq ($(strip $(BR2_TARGET_ROOTFS_JFFS2)),y)
-TARGETS+=jffs2root openwrt-image
+TARGETS+=openwrt-image
 ROOTFS=jffs2
+
+openwrt-image:	openwrt
+	@make jffs2root openwrt-code.bin TAG=W54G \
+	EXTRAVERSION=$(EXTRAVERSION)-JFFS2-4M JFFS2_BLOCK_SIZE=0x10000
+	@make jffs2root openwrt-code.bin TAG=W54S \
+	EXTRAVERSION=$(EXTRAVERSION)-JFFS2-8M JFFS2_BLOCK_SIZE=0x20000
 endif

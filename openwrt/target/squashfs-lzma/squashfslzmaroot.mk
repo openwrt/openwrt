@@ -39,7 +39,8 @@ squashfslzma-dirclean:
 squashfslzmaroot: squashfslzma
 	@rm -rf $(TARGET_DIR)/usr/man
 	@rm -rf $(TARGET_DIR)/usr/info
-	$(SQUASHFSLZMA_DIR)/squashfs-tools/mksquashfs-lzma $(TARGET_DIR) $(IMAGE).squashfslzma -noappend -root-owned -le
+	$(SQUASHFSLZMA_DIR)/squashfs-tools/mksquashfs-lzma \
+	$(TARGET_DIR) $(IMAGE).squashfslzma -noappend -root-owned -le
 
 squashfslzmaroot-source: squashfslzma-source
 
@@ -52,4 +53,10 @@ squashfslzmaroot-dirclean:
 ifeq ($(strip $(BR2_TARGET_ROOTFS_SQUASHFS_LZMA)),y)
 TARGETS+=squashfslzmaroot openwrt-image
 ROOTFS=squashfslzma
+
+openwrt-image:  openwrt
+	@make openwrt-code.bin TAG=W54G \
+	EXTRAVERSION=$(EXTRAVERSION)-SQUASHFSLZMA
+	@make openwrt-code.bin TAG=W54S \
+	EXTRAVERSION=$(EXTRAVERSION)-SQUASHFSLZMA
 endif
