@@ -44,3 +44,8 @@ lan_proto="static"
   lan_ifname="br0"
   lan_ifnames="vlan0 vlan2 eth1 eth2 eth3"
 }
+
+[ -z "$(nvram_get wan_ifname)" ] && {
+   wan_ifname="vlan1"
+   wan_proto="dhcp"
+}
