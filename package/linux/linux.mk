@@ -25,7 +25,7 @@ LINUX_SOURCE=linux-$(LINUX_VERSION).tar.bz2
 LINUX_KCONFIG=./linux.config
 LINUX_PATCHES=./kernel-patches
 LINUX_KERNEL_SOURCE=./kernel-source
-LINUX_BINLOC=arch/$(LINUX_KARCH)/brcm-boards/bcm947xx/compressed/vmlinuz
+LINUX_BINLOC=arch/$(LINUX_KARCH)/brcm-boards/bcm947xx/compressed/piggy
 # Used by pcmcia-cs and others
 LINUX_SOURCE_DIR=$(LINUX_DIR)-$(LINUX_VERSION)
 
