@@ -38,6 +38,12 @@ $$(PKG_$(1)): $(LINUX_DIR)/.modules_done
 
 endef
 
+$(eval $(call KMOD_template,BRCM_WL,brcm-wl,\
+	$(MODULES_DIR)/kernel/drivers/net/wl/wl.o \
+,CONFIG_WL))
+$(eval $(call KMOD_template,BRCM_ET,brcm-et,\
+	$(MODULES_DIR)/kernel/drivers/net/et/et.o \
+,CONFIG_ET))
 $(eval $(call KMOD_template,ARPT,arptables,\
 	$(MODULES_DIR)/kernel/net/ipv4/netfilter/arp*.o \
 ,CONFIG_IP_NF_ARPTABLES))
