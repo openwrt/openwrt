@@ -67,7 +67,7 @@ $(TARGET_DIR)/$(DROPBEAR_SSHD_TARGET_BINARY): $(DROPBEAR_SSHD_DIR)/$(DROPBEAR_SS
 	cp $(DROPBEAR_SSHD_DIR)/S50dropbear $(TARGET_DIR)/etc/init.d/
 	chmod a+x $(TARGET_DIR)/etc/init.d/S50dropbear
 
-dropbear_sshd: uclibc zlib $(TARGET_DIR)/$(DROPBEAR_SSHD_TARGET_BINARY)
+dropbear_sshd: uclibc $(TARGET_DIR)/$(DROPBEAR_SSHD_TARGET_BINARY)
 
 dropbear_sshd-clean:
 	$(MAKE) DESTDIR=$(TARGET_DIR) $(TARGET_CONFIGURE_OPTS) \

@@ -1,5 +1,6 @@
 config BR2_PACKAGE_DROPBEAR_SSHD
 	bool "dropbear_sshd"
+	select BR2_PACKAGE_ZLIB
 	default n
 	help
 	  A small SSH 2 server designed for small memory environments.
