@@ -53,9 +53,9 @@ $(eval $(call KMOD_template,IPT6,ip6tables,\
 $(eval $(call KMOD_template,IPV6,ipv6,\
 	$(MODULES_DIR)/kernel/net/ipv6/ipv6.o \
 ,CONFIG_IPV6))
-$(eval $(call KMOD_template,SMBFS,smbfs,\
-	$(MODULES_DIR)/kernel/fs/smbfs/smbfs.o \
-,CONFIG_SMB_FS))
+$(eval $(call KMOD_template,CIFS,cifs,\
+	$(MODULES_DIR)/kernel/fs/cifs/cifs.o \
+,CONFIG_CIFS))
 $(eval $(call KMOD_template,NFS,nfs,\
 	$(MODULES_DIR)/kernel/fs/lockd/*.o \
 	$(MODULES_DIR)/kernel/fs/nfs/*.o \
