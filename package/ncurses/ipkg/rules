@@ -1,0 +1,161 @@
+#!/usr/bin/make -f
+
+ifneq ($(strip ${IPKG_RULES_INC}),)
+ include $(IPKG_RULES_INC)
+endif
+
+##
+
+PKG_VERSION := $(shell cat ./ipkg/version)
+CURRENT_DIR := $(shell pwd)
+INSTALL_DIR ?= $(CURRENT_DIR)/ipkg-install
+
+unexport INSTALL_DIR
+
+I_LIBNCURSES := ipkg/libncurses
+I_LIBNCURSES_DEV := ipkg/libncurses-dev
+I_NCURSES_TERM := ipkg/ncurses-term
+
+BUILD_DEPS := \
+
+CONFIGURE_OPTS = \
+	--with-terminfo-dirs=/usr/share/terminfo \
+	--with-default-terminfo-dir=/usr/share/terminfo \
+	--without-ada \
+	--without-cxx \
+	--without-cxx-binding \
+	--without-progs \
+	--without-profile \
+	--without-debug \
+	--disable-rpath \
+	--enable-echo \
+	--enable-const \
+	--enable-overwrite \
+	--with-shared \
+	--with-normal \
+##
+
+all: package
+
+
+.stamp-configured: $(BUILD_DEPS)
+
+	rm -rf config.cache
+	$(TARGET_CONFIGURE_OPTS) \
+	CFLAGS="$(TARGET_CFLAGS)" \
+	ac_cv_linux_vers="2" \
+	./configure \
+	  --target=$(GNU_TARGET_NAME) \
+	  --host=$(GNU_TARGET_NAME) \
+	  --build=$(GNU_HOST_NAME) \
+	  --program-prefix="" \
+	  --program-suffix="" \
+	  --prefix=/usr \
+	  --exec-prefix=/usr \
+	  --bindir=/usr/bin \
+	  --datadir=/usr/share \
+	  --includedir=/usr/include \
+	  --infodir=/usr/share/info \
+	  --libdir=/usr/lib \
+	  --libexecdir=/usr/lib \
+	  --localstatedir=/var \
+	  --mandir=/usr/share/man \
+	  --sbindir=/usr/sbin \
+	  --sysconfdir=/etc \
+	  $(DISABLE_LARGEFILE) \
+	  $(DISABLE_NLS) \
+	  $(CONFIGURE_OPTS) \
+	
+	touch .stamp-configured
+
+
+.stamp-built: .stamp-configured
+
+	$(MAKE) \
+	  $(TARGET_CONFIGURE_OPTS) \
+	  BUILD_CC="$(TARGET_CROSS)gcc" \
+	  HOSTCC="$(HOSTCC)" \
+	  HOSTCCFLAGS="\$$(CPPFLAGS)" \
+	
+	touch .stamp-built
+
+
+$(INSTALL_DIR)/usr/include/ncurses.h: .stamp-built
+
+	mkdir -p $(INSTALL_DIR)
+	
+	$(MAKE) \
+	  DESTDIR="$(INSTALL_DIR)" \
+	 install
+
+
+configure: .stamp-configured
+
+
+build: .stamp-built
+
+
+install: $(INSTALL_DIR)/usr/include/ncurses.h
+
+
+package: $(INSTALL_DIR)/usr/include/ncurses.h
+
+	mkdir -p $(I_LIBNCURSES)/usr/lib
+	cp -fpR $(INSTALL_DIR)/usr/lib/libncurses*.so.* $(I_LIBNCURSES)/usr/lib/
+	cp -fpR $(INSTALL_DIR)/usr/lib/libpanel*.so.* $(I_LIBNCURSES)/usr/lib/
+	$(STRIP) $(I_LIBNCURSES)/usr/lib/*
+	
+	mkdir -p $(I_LIBNCURSES_DEV)/usr/include
+	cp -fpR $(INSTALL_DIR)/usr/include/curses.h $(I_LIBNCURSES_DEV)/usr/include/
+	cp -fpR $(INSTALL_DIR)/usr/include/ncurses.h $(I_LIBNCURSES_DEV)/usr/include/
+	cp -fpR $(INSTALL_DIR)/usr/include/panel.h $(I_LIBNCURSES_DEV)/usr/include/
+	mkdir -p $(I_LIBNCURSES_DEV)/usr/lib
+	cp -fpR $(INSTALL_DIR)/usr/lib/libncurses.a $(I_LIBNCURSES_DEV)/usr/lib/
+	cp -fpR $(INSTALL_DIR)/usr/lib/libpanel.a $(I_LIBNCURSES_DEV)/usr/lib/
+	cp -fpR $(INSTALL_DIR)/usr/lib/libncurses*.so* $(I_LIBNCURSES_DEV)/usr/lib/
+	cp -fpR $(INSTALL_DIR)/usr/lib/libpanel*.so* $(I_LIBNCURSES_DEV)/usr/lib/
+	
+	mkdir -p $(I_NCURSES_TERM)/usr/share/terminfo
+	for f in a/ansi d/dumb l/linux s/screen v/vt100; do \
+	  mkdir -p $(I_NCURSES_TERM)/usr/share/terminfo/`dirname $${f}`; \
+	  cp -fpR \
+	    $(INSTALL_DIR)/usr/share/terminfo/$${f} \
+	    $(I_NCURSES_TERM)/usr/share/terminfo/$${f}; \
+	done
+	
+	chmod 0755 ipkg/*/CONTROL/
+	chmod 0644 ipkg/*/CONTROL/control
+	
+	perl -pi -e "s/^Arch.*:.*/Architecture: $(ARCH)/g" ipkg/*/CONTROL/control
+ifneq ($(strip $(PKG_VERSION)),)
+	perl -pi -e "s/^Vers.*:.*/Version: $(PKG_VERSION)/g" ipkg/*/CONTROL/control
+endif
+
+	$(IPKG_BUILD) $(I_LIBNCURSES) $(IPKG_TARGET_DIR)
+	$(IPKG_BUILD) $(I_LIBNCURSES_DEV) $(IPKG_TARGET_DIR)
+	$(IPKG_BUILD) $(I_NCURSES_TERM) $(IPKG_TARGET_DIR)
+
+
+clean:
+
+	-$(MAKE) \
+	  DESTDIR="$(INSTALL_DIR)" \
+	 uninstall clean
+	
+	rm -rf .stamp-* \
+	  $(I_LIBNCURSES)/usr \
+	  $(I_LIBNCURSES_DEV)/usr \
+	  $(I_NCURSES_TERM)/usr \
+
+
+control:
+
+	@cat $(I_LIBNCURSES)/CONTROL/control
+	@echo
+	@cat $(I_LIBNCURSES_DEV)/CONTROL/control
+	@echo
+	@cat $(I_NCURSES_TERM)/CONTROL/control
+	@echo
+	
+
+.PHONY: configure build install package clean control
