@@ -67,7 +67,7 @@ ifup () (
       if_netmask=$(nvram_get ${type}_netmask)
       if_gateway=$(nvram_get ${type}_gateway)
 
-      $DEBUG ifconfig $if $if_ip ${if_netmask:+netmask $if_netmask} up
+      $DEBUG ifconfig $if $if_ip ${if_netmask:+netmask $if_netmask} broadcast + up
       ${if_gateway:+$DEBUG route add default gw $if_gateway}
 
       [ -f /etc/resolv.conf ] && return
