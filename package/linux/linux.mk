@@ -112,4 +112,6 @@ linux-dirclean:
 	rm -rf $(LINUX_DIR)-$(LINUX_VERSION)
 	rm -rf $(LINUX_DIR)
 	rm -rf $(BUILD_DIR)/modules
+	rm -rf $(BUILD_DIR)/wl
+	rm -rf $(BUILD_DIR)/et
 
