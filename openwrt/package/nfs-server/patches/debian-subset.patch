@@ -1,0 +1,698 @@
+--- nfs-user-server-2.2beta47.orig/BUILD
++++ nfs-user-server-2.2beta47/BUILD
+@@ -48,7 +48,7 @@
+ 	shift
+ done
+ 
+-function read_yesno {
++read_yesno() {
+ 	ans=""
+ 	echo >&2
+ 	default=$2
+@@ -84,7 +84,7 @@
+ 	echo $ans
+ }
+ 
+-function read_ugid {
++read_ugid() {
+ 	ans=""
+ 	prompt="$2 [default $3 $4] "
+ 	default=$3
+@@ -145,7 +145,7 @@
+ 
+ if ! $batch; then
+ 	echo -n "Please press return to continue"
+-	read
++	read ans
+ fi
+ 
+ version=`cat .version`
+--- nfs-user-server-2.2beta47.orig/Makefile.in
++++ nfs-user-server-2.2beta47/Makefile.in
+@@ -95,20 +95,20 @@
+ LIBSRCS		= fileblocks.c fsusage.c realpath.c strerror.c \
+ 		  utimes.c mkdir.c rename.c getopt.c getopt_long.c \
+ 		  alloca.c mountlist.c xmalloc.c \
+-		  xstrdup.c strdup.c strstr.c nfsmounted.c faccess.c \
++		  xstrdup.c strdup.c strstr.c nfsmounted.c \
+ 		  haccess.c failsafe.c signals.c
+ XDRFILES	= mount.x nfs_prot.x
+ GENFILES	= mount.h mount_xdr.c mount_svc.c nfs_prot.h nfs_prot_xdr.c \
+ 		  ugid.h ugid_xdr.c ugid_clnt.c
+ HDRS		= system.h nfsd.h auth.h fh.h logging.h fakefsuid.h \
+-		  rpcmisc.h faccess.h rquotad.h rquota.h haccess.h
++		  rpcmisc.h rquotad.h rquota.h haccess.h
+ LIBHDRS		= fsusage.h getopt.h mountlist.h failsafe.h signals.h
+ MANPAGES5	= exports
+ MANPAGES8p	= mountd nfsd $(UGIDD_MAN)
+ MANPAGES8	= showmount
+ MANPAGES	= $(MANPAGES5) $(MANPAGES8p) $(MANPAGES8)
+ LIBOBJS		= version.o fsusage.o mountlist.o xmalloc.o xstrdup.o \
+-		  nfsmounted.o faccess.o haccess.o failsafe.o \
++		  nfsmounted.o haccess.o failsafe.o \
+ 		  signals.o @LIBOBJS@ @ALLOCA@
+ OBJS		= logging.o fh.o devtab.o auth_init.o auth_clnt.o auth.o
+ NFSD_OBJS	= nfsd.o rpcmisc.o nfs_dispatch.o getattr.o setattr.o \
+@@ -116,7 +116,7 @@
+ MOUNTD_OBJS	= mountd.o rpcmisc.o mount_dispatch.o mount_xdr.o rmtab.o \
+ 		  $(OBJS)
+ SHOWMOUNT_OBJS	= showmount.o mount_xdr.o
+-UGIDD_OBJS	= ugidd.o ugid_xdr.o logging.o
++UGIDD_OBJS	= ugidd.o ugid_xdr.o logging.o rpcmisc.o
+ DAEMONS		= $(rpcprefix)mountd $(rpcprefix)nfsd $(UGIDD_PROG)
+ CLIENTS		= showmount
+ 
+--- nfs-user-server-2.2beta47.orig/auth.c
++++ nfs-user-server-2.2beta47/auth.c
+@@ -143,6 +143,21 @@
+ 	return okay;
+ }
+ 
++static inline int
++auth_atob(const char *name, struct in_addr *ap)
++{
++	int m;
++
++	if (!isdigit(*name))
++		return 0;
++	for (m = 0; isdigit(*name); name++)
++		m = m * 10 + (unsigned char) *name - '0';
++	if (m > 32)
++		return 0;
++	ap->s_addr = m ? ~((1 << (32 - m)) - 1) : 0;
++	return 1;
++}
++
+ /*
+  * Get a client entry for a specific name or pattern.
+  * If necessary, this function performs a hostname lookup to
+@@ -614,7 +629,9 @@
+ 	if (auth_aton(hname, &haddr, &ename)) {
+ 		if (*ename == '\0')
+ 			is_hostaddr = 1;
+-		else if (*ename == '/' && auth_aton(ename+1, &hmask, NULL))
++		else if (*ename == '/' &&
++			 (auth_aton(ename+1, &hmask, NULL) ||
++			  auth_atob(ename+1, &hmask)))
+ 			is_netmask = 1;
+ 	}
+ 	is_special = is_wildcard + is_netgroup + is_netmask;
+--- nfs-user-server-2.2beta47.orig/auth_init.c
++++ nfs-user-server-2.2beta47/auth_init.c
+@@ -23,6 +23,7 @@
+ #define EXPORTSFILE	"/etc/exports"
+ #endif
+ 
++#if 0
+ /* Support for file access control on /etc/exports by Alex Yuriev. */
+ #include "faccess.h"
+ #ifndef EXPORTSOWNERUID
+@@ -31,6 +32,7 @@
+ #ifndef EXPORTSOWNERGID
+ #define EXPORTSOWNERGID		((gid_t) 0)
+ #endif
++#endif
+ 
+ exportnode *	export_list = NULL;
+ int		allow_non_root = 0;
+@@ -395,6 +397,7 @@
+ 	auth_file = fname;	/* Save for re-initialization */
+ 
+ 	/* Check protection of exports file. */
++#if 0	/* A man's house is his castle. */
+ 	switch(iCheckAccess(auth_file, EXPORTSOWNERUID, EXPORTSOWNERGID)) {
+ 	case FACCESSWRITABLE:
+ 		Dprintf(L_ERROR,
+@@ -409,6 +412,7 @@
+ 		Dprintf(L_ERROR, "exiting because of security violation.\n");
+ 		exit(1);
+ 	}
++#endif
+ 
+ 	if ((ef = fopen(fname, "r")) == NULL) {
+ 		Dprintf(L_ERROR, "Could not open exports file %s: %s\n",
+@@ -468,7 +472,7 @@
+ 
+ 		/* Build the RPC mount export list data structure. */
+ 		resex = (exportnode *) xmalloc(sizeof *resex);
+-		resex->ex_dir = mount_point;
++		resex->ex_dir = xstrdup(path);
+ 		resex->ex_groups = NULL;
+ 
+ #ifndef NEW_STYLE_EXPORTS_FILE
+--- nfs-user-server-2.2beta47.orig/configure.in
++++ nfs-user-server-2.2beta47/configure.in
+@@ -53,7 +53,7 @@
+ AC_CHECK_LIB(crypt, main)
+ AC_CHECK_LIB(nys, main)
+ AC_REPLACE_FUNCS(strerror realpath mkdir rename utimes strdup strstr getopt getopt_long)
+-AC_HAVE_FUNCS(getcwd seteuid setreuid getdtablesize setgroups lchown setsid setfsuid setfsgid innetgr quotactl authdes_getucred)
++AC_HAVE_FUNCS(getcwd seteuid setreuid getdtablesize setgroups lchown setsid setfsuid setfsgid innetgr quotactl authdes_getucred strsignal)
+ AC_AUTHDES_GETUCRED
+ AC_BROKEN_SETFSUID
+ AC_MOUNTLIST
+--- nfs-user-server-2.2beta47.orig/exports.man
++++ nfs-user-server-2.2beta47/exports.man
+@@ -8,7 +8,7 @@
+ The file
+ .I /etc/exports
+ serves as the access control list for file systems which may be
+-exported to NFS clients.  It it used by both the NFS mount daemon,
++exported to NFS clients.  It is used by both the NFS mount daemon,
+ .IR mountd (8)
+ and the NFS file server daemon
+ .IR nfsd (8).
+@@ -75,11 +75,12 @@
+ off, specify
+ .IR insecure .
+ .TP
++.IR ro
++Disallow the client to modify files and directories.  The client is only
++allowed to issue read-only requests.
++.TP
+ .IR rw
+-Allow the client to modify files and directories. The default is to
+-restrict the client to read-only request, which can be made explicit
+-by using the
+-.IR ro " option.
++Allow the client to modify files and directories. This is the default.
+ .TP
+ .I noaccess
+ This makes everything below the directory inaccessible for the named
+@@ -98,6 +99,14 @@
+ .TP
+ .IR link_absolute
+ Leave all symbolic link as they are. This is the default operation.
++.SS Anonymous Entries
++.PP
++Entries where hosts are not specified are known as anonymous entries.  They
++have different default settings compared to normal entries.  The differences
++include
++.IR all_squash ,
++.IR no_secure ", and"
++.IR ro .
+ .SS User ID Mapping
+ .PP
+ .I nfsd
+--- nfs-user-server-2.2beta47.orig/failsafe.c
++++ nfs-user-server-2.2beta47/failsafe.c
+@@ -10,8 +10,12 @@
+ #include "logging.h"
+ #include "signals.h"
+ #include <sys/wait.h>
++#ifdef HAVE_STRSIGNAL
++#include <string.h>
++#else
+ 
+ static const char *	get_signame(int signo);
++#endif
+ 
+ void
+ failsafe(int level, int ncopies)
+@@ -111,9 +115,17 @@
+ 					pid, running? "Continue" : "Exit");
+ 			} else {
+ 				Dprintf(L_WARNING, "failsafe: "
++#ifdef HAVE_STRSIGNAL
++					"child %d terminated by: %s. "
++#else
+ 					"child %d terminated by %s. "
++#endif
+ 					"Restarting.",
++#ifdef HAVE_STRSIGNAL
++					pid, strsignal(signo));
++#else
+ 					pid, get_signame(signo));
++#endif
+ 				child = -1; /* Restart */
+ 			}
+ 		} else if (WIFEXITED(status)) {
+@@ -159,6 +171,7 @@
+ 	/* NOP */
+ }
+ 
++#ifndef HAVE_STRSIGNAL
+ static const char *
+ get_signame(int signo)
+ {
+@@ -199,3 +212,4 @@
+ 	sprintf(namebuf, "signal #%d", signo);
+ 	return namebuf;
+ }
++#endif
+--- nfs-user-server-2.2beta47.orig/mount_dispatch.c
++++ nfs-user-server-2.2beta47/mount_dispatch.c
+@@ -131,7 +131,7 @@
+ 	dent = &dtbl[proc_index];
+ 
+ 	memset(&argument, 0, dent->arg_size);
+-	if (!svc_getargs(transp, (xdrproc_t) dent->xdr_argument, &argument)) {
++	if (!svc_getargs(transp, (xdrproc_t) dent->xdr_argument, (caddr_t) &argument)) {
+ 		svcerr_decode(transp);
+ 		goto done;
+ 	}
+@@ -148,7 +148,7 @@
+ 	if (!svc_sendreply(transp, dent->xdr_result, (caddr_t) resp)) {
+ 		svcerr_systemerr(transp);
+ 	}
+-	if (!svc_freeargs(transp, (xdrproc_t) dent->xdr_argument, &argument)) {
++	if (!svc_freeargs(transp, (xdrproc_t) dent->xdr_argument, (caddr_t) &argument)) {
+ 		Dprintf(L_ERROR, "unable to free RPC arguments, exiting\n");
+ 		exit(1);
+ 	}
+--- nfs-user-server-2.2beta47.orig/mount_xdr.c
++++ nfs-user-server-2.2beta47/mount_xdr.c
+@@ -190,7 +190,7 @@
+ xdr_ppathcnf(XDR *xdrs, ppathcnf *objp)
+ {
+ 
+-	 register long *buf=buf;
++	 int32_t *buf=buf;
+ 
+ 	 int i=i;
+ 
+--- nfs-user-server-2.2beta47.orig/mountd.c
++++ nfs-user-server-2.2beta47/mountd.c
+@@ -310,6 +310,7 @@
+ 	int c;
+ 
+ 	program_name = argv[0];
++	chdir("/");
+ 
+ 	/* Parse the command line options and arguments. */
+ 	opterr = 0;
+--- nfs-user-server-2.2beta47.orig/nfs_dispatch.c
++++ nfs-user-server-2.2beta47/nfs_dispatch.c
+@@ -147,7 +147,7 @@
+ 	nfsclient = NULL;
+ 
+ 	memset(&argument, 0, dent->arg_size);
+-	if (!svc_getargs(transp, (xdrproc_t) dent->xdr_argument, &argument)) {
++	if (!svc_getargs(transp, (xdrproc_t) dent->xdr_argument, (caddr_t) &argument)) {
+ 		svcerr_decode(transp);
+ 		goto done;
+ 	}
+@@ -173,7 +173,7 @@
+ 	svc_sendreply(transp, dent->xdr_result, (caddr_t) &result);
+ #endif
+ 
+-	if (!svc_freeargs(transp, (xdrproc_t) dent->xdr_argument, &argument)) {
++	if (!svc_freeargs(transp, (xdrproc_t) dent->xdr_argument, (caddr_t) &argument)) {
+ 		Dprintf(L_ERROR, "unable to free RPC arguments, exiting\n");
+ 		exit(1);
+ 	}
+--- nfs-user-server-2.2beta47.orig/nfs_prot_xdr.c
++++ nfs-user-server-2.2beta47/nfs_prot_xdr.c
+@@ -98,7 +98,7 @@
+ xdr_fattr(XDR *xdrs, fattr *objp)
+ {
+ 
+-	 register long *buf=buf;
++	 int32_t *buf=buf;
+ 
+ 
+ 	 if (xdrs->x_op == XDR_ENCODE) {
+@@ -273,7 +273,7 @@
+ xdr_sattr(XDR *xdrs, sattr *objp)
+ {
+ 
+-	 register long *buf=buf;
++	 int32_t *buf=buf;
+ 
+ 
+ 	 if (xdrs->x_op == XDR_ENCODE) {
+@@ -553,7 +553,7 @@
+ xdr_writeargs(XDR *xdrs, writeargs *objp)
+ {
+ 
+-	register long  *buf = buf;
++	int32_t *buf = buf;
+ 
+ 
+ 	if (xdrs->x_op == XDR_ENCODE) {
+@@ -777,7 +777,7 @@
+ xdr_statfsokres(XDR *xdrs, statfsokres *objp)
+ {
+ 
+-	 register long *buf=buf;
++	 int32_t *buf=buf;
+ 
+ 
+ 	 if (xdrs->x_op == XDR_ENCODE) {
+--- nfs-user-server-2.2beta47.orig/nfsd.c
++++ nfs-user-server-2.2beta47/nfsd.c
+@@ -36,6 +36,7 @@
+ #define CHK_READ	0
+ #define CHK_WRITE	1
+ #define CHK_NOACCESS	2
++#define CHK_ROOT	4
+ 
+ /* Make larger reads possible. Without crashing the machine :-) */
+ #undef NFS_MAXDATA
+@@ -173,7 +174,8 @@
+ 		return NULL;
+ 	}
+ 
+-	auth_user(nfsmount, rqstp);
++	if (!(flags & CHK_ROOT) || strcmp(nfsmount->path, fhc->path))
++		auth_user(nfsmount, rqstp);
+ 
+ 	*statp = NFS_OK;
+ 	return fhc;
+@@ -244,7 +246,7 @@
+ 	nfsstat status;
+ 	fhcache *fhc;
+ 
+-	fhc = auth_fh(rqstp, argp, &status, CHK_READ);
++	fhc = auth_fh(rqstp, argp, &status, CHK_READ | CHK_ROOT);
+ 	if (fhc == NULL)
+ 		return status;
+ 
+@@ -575,7 +577,12 @@
+ #endif
+ 
+ 			/* MvS: Some clients use chardev 0xFFFF for a FIFO. */
++#if defined(major) && defined(minor)
++			if (S_ISCHR(argp->attributes.mode) &&
++			    major(dev) == 0xff && minor(dev) == 0xff) {
++#else
+ 			if (S_ISCHR(argp->attributes.mode) && dev == 0xFFFF) {
++#endif
+ 				is_borc = 0;
+ 				dev = 0;
+ 				argp->attributes.mode &= ~S_IFMT;
+@@ -882,7 +889,9 @@
+ 
+ 	/* This code is from Mark Shand's version */
+ 	errno = 0;
+-	if (efs_lstat(h->path, &sbuf) < 0 || !(S_ISDIR(sbuf.st_mode)))
++	if (efs_lstat(h->path, &sbuf) < 0)
++		return (NFSERR_ACCES);
++	if (!S_ISDIR(sbuf.st_mode))
+ 		return (NFSERR_NOTDIR);
+ 	if ((dirp = efs_opendir(h->path)) == NULL)
+ 		return ((errno ? nfs_errno() : NFSERR_NAMETOOLONG));
+@@ -940,7 +949,7 @@
+ 	char *path;
+ 	struct fs_usage fs;
+ 
+-	fhc = auth_fh(rqstp, argp, &status, CHK_READ | CHK_NOACCESS);
++	fhc = auth_fh(rqstp, argp, &status, CHK_READ | CHK_NOACCESS | CHK_ROOT);
+ 	if (fhc == NULL)
+ 		return status;
+ 	path = fhc->path;
+--- nfs-user-server-2.2beta47.orig/rpcmisc.c
++++ nfs-user-server-2.2beta47/rpcmisc.c
+@@ -64,25 +64,25 @@
+ 	asize = sizeof(saddr);
+ 	sock = 0;
+ 	if (getsockname(0, (struct sockaddr *) &saddr, &asize) == 0) {
+-		int	ssize = sizeof (int);
++		int	ssize = sizeof (i);
+ 
+ 		if (saddr.sin_family != AF_INET)
+ 			goto not_inetd;
+-		if (getsockopt(0, SOL_SOCKET, SO_TYPE, &_rpcfdtype, &ssize) < 0)
++		if (getsockopt(0, SOL_SOCKET, SO_TYPE, &i, &ssize) < 0)
+ 			goto not_inetd;
++		_rpcfdtype = i;
+ 		background_logging();	/* no more logging to stderr */
+ 		closedown = time(NULL) + _RPCSVC_CLOSEDOWN;
+ 		_rpcpmstart = 1;
+ 	} else {
+ not_inetd:
+-		_rpcfdtype = 0;
+ 		for (i = 0; (vers = verstbl[i]) != 0; i++)
+ 			pmap_unset(prog, vers);
+ 		sock = RPC_ANYSOCK;
+ 	}
+ 
+ 	if ((_rpcfdtype == 0) || (_rpcfdtype == SOCK_DGRAM)) {
+-		if (_rpcfdtype == 0 && defport != 0)
++		if (_rpcpmstart == 0 && defport != 0)
+ 	    		sock = makesock(defport, IPPROTO_UDP, bufsiz);
+ 		transp = svcudp_create(sock);
+ 		if (transp == NULL)
+@@ -97,7 +97,7 @@
+ 	}
+ 
+ 	if ((_rpcfdtype == 0) || (_rpcfdtype == SOCK_STREAM)) {
+-		if (_rpcfdtype == 0 && defport != 0)
++		if (_rpcpmstart == 0 && defport != 0)
+ 			sock = makesock(defport, IPPROTO_TCP, bufsiz);
+ 		transp = svctcp_create(sock, 0, 0);
+ 		if (transp == NULL)
+@@ -220,11 +220,14 @@
+ 	}
+ #endif				/* SO_SNDBUF */
+ 
+-	if (bind(s, (struct sockaddr *) &sin, sizeof(sin)) == -1)
+-		Dprintf(L_FATAL, "Could not bind %s socket to %s:%d: %s\n",
++	if (bind(s, (struct sockaddr *) &sin, sizeof(sin)) == -1) {
++		Dprintf(L_ERROR, "Could not bind %s socket to %s:%d: %s\n",
+ 					prot_name, inet_ntoa(sin.sin_addr), 
+ 					ntohs(sin.sin_port),
+ 					strerror(errno));
++		close(s);
++		s = RPC_ANYSOCK;
++	}
+ 
+ 	return (s);
+ }
+--- nfs-user-server-2.2beta47.orig/showmount.c
++++ nfs-user-server-2.2beta47/showmount.c
+@@ -200,7 +200,7 @@
+ 		memset(&exportlist, '\0', sizeof(exportlist));
+ 		clnt_stat = clnt_call(mclient, MOUNTPROC_EXPORT,
+ 			(xdrproc_t) xdr_void, NULL,
+-			(xdrproc_t) xdr_exports, &exportlist,
++			(xdrproc_t) xdr_exports, (caddr_t) &exportlist,
+ 			total_timeout);
+ 		if (clnt_stat != RPC_SUCCESS) {
+ 			clnt_perror(mclient, "rpc mount export");
+@@ -233,7 +233,7 @@
+ 	memset(&dumplist, '\0', sizeof(dumplist));
+ 	clnt_stat = clnt_call(mclient, MOUNTPROC_DUMP,
+ 		(xdrproc_t) xdr_void, NULL,
+-		(xdrproc_t) xdr_mountlist, &dumplist,
++		(xdrproc_t) xdr_mountlist, (caddr_t) &dumplist,
+ 		total_timeout);
+ 	if (clnt_stat != RPC_SUCCESS) {
+ 		clnt_perror(mclient, "rpc mount dump");
+--- nfs-user-server-2.2beta47.orig/ugid_clnt.c
++++ nfs-user-server-2.2beta47/ugid_clnt.c
+@@ -16,7 +16,7 @@
+ 	static int clnt_res;
+ 
+ 	memset((char *)&clnt_res, 0, sizeof(clnt_res));
+-	if (clnt_call(clnt, AUTHENTICATE, (xdrproc_t) xdr_int, argp, (xdrproc_t) xdr_int, &clnt_res, TIMEOUT) != RPC_SUCCESS) {
++	if (clnt_call(clnt, AUTHENTICATE, (xdrproc_t) xdr_int, (caddr_t) argp, (xdrproc_t) xdr_int, (caddr_t) &clnt_res, TIMEOUT) != RPC_SUCCESS) {
+ 		return (NULL);
+ 	}
+ 	return (&clnt_res);
+@@ -28,7 +28,7 @@
+ 	static int clnt_res;
+ 
+ 	memset((char *)&clnt_res, 0, sizeof(clnt_res));
+-	if (clnt_call(clnt, NAME_UID, (xdrproc_t) xdr_ugname, argp, (xdrproc_t) xdr_int, &clnt_res, TIMEOUT) != RPC_SUCCESS) {
++	if (clnt_call(clnt, NAME_UID, (xdrproc_t) xdr_ugname, (caddr_t) argp, (xdrproc_t) xdr_int, (caddr_t) &clnt_res, TIMEOUT) != RPC_SUCCESS) {
+ 		return (NULL);
+ 	}
+ 	return (&clnt_res);
+@@ -40,7 +40,7 @@
+ 	static int clnt_res;
+ 
+ 	memset((char *)&clnt_res, 0, sizeof(clnt_res));
+-	if (clnt_call(clnt, GROUP_GID, (xdrproc_t) xdr_ugname, argp, (xdrproc_t) xdr_int, &clnt_res, TIMEOUT) != RPC_SUCCESS) {
++	if (clnt_call(clnt, GROUP_GID, (xdrproc_t) xdr_ugname, (caddr_t) argp, (xdrproc_t) xdr_int, (caddr_t) &clnt_res, TIMEOUT) != RPC_SUCCESS) {
+ 		return (NULL);
+ 	}
+ 	return (&clnt_res);
+@@ -52,7 +52,7 @@
+ 	static ugname clnt_res;
+ 
+ 	memset((char *)&clnt_res, 0, sizeof(clnt_res));
+-	if (clnt_call(clnt, UID_NAME, (xdrproc_t) xdr_int, argp, (xdrproc_t) xdr_ugname, &clnt_res, TIMEOUT) != RPC_SUCCESS) {
++	if (clnt_call(clnt, UID_NAME, (xdrproc_t) xdr_int, (caddr_t) argp, (xdrproc_t) xdr_ugname, (caddr_t) &clnt_res, TIMEOUT) != RPC_SUCCESS) {
+ 		return (NULL);
+ 	}
+ 	return (&clnt_res);
+@@ -64,7 +64,7 @@
+ 	static ugname clnt_res;
+ 
+ 	memset((char *)&clnt_res, 0, sizeof(clnt_res));
+-	if (clnt_call(clnt, GID_GROUP, (xdrproc_t) xdr_int, argp, (xdrproc_t) xdr_ugname, &clnt_res, TIMEOUT) != RPC_SUCCESS) {
++	if (clnt_call(clnt, GID_GROUP, (xdrproc_t) xdr_int, (caddr_t) argp, (xdrproc_t) xdr_ugname, (caddr_t) &clnt_res, TIMEOUT) != RPC_SUCCESS) {
+ 		return (NULL);
+ 	}
+ 	return (&clnt_res);
+--- nfs-user-server-2.2beta47.orig/ugid_map.c
++++ nfs-user-server-2.2beta47/ugid_map.c
+@@ -602,7 +602,7 @@
+ 	 * the server's port after clntudp_create, so we fetch it
+ 	 * explicitly.
+ 	 */
+-	clnt_control(clnt, CLGET_SERVER_ADDR, &addr);
++	clnt_control(clnt, CLGET_SERVER_ADDR, (caddr_t) &addr);
+ 	if (!SECURE_PORT(addr.sin_port)) {
+ 		Dprintf(L_ERROR, "%s on %s runs on unprivileged port.\n",
+ 				name, inet_ntoa(addr.sin_addr));
+--- nfs-user-server-2.2beta47.orig/ugidd.c
++++ nfs-user-server-2.2beta47/ugidd.c
+@@ -20,6 +20,8 @@
+ #include "ugid.h"
+ #include "logging.h"
+ #include "haccess.h"
++#include "rpcmisc.h"
++#include "signals.h"
+ #ifdef HAVE_LIBWRAP_BUG
+ #include <syslog.h>
+ #endif
+@@ -27,6 +29,8 @@
+ 
+ static void	ugidprog_1(struct svc_req *rqstp, SVCXPRT *transp);
+ static void	usage(void);
++static void	terminate(void);
++static RETSIGTYPE sigterm(int sig);
+ 
+ #ifndef HAVE_RPCGEN_C
+ #define authenticate_1_svc	authenticate_1
+@@ -39,17 +43,23 @@
+ 
+ static struct option longopts[] = {
+ 	{ "debug", 0, 0, 'd' },
++	{ "port", required_argument, 0, 'P' },
+ 	{ NULL, 0, 0, 0 }
+ };
+ 
++static int ugidd_versions[] = {
++	UGIDVERS,
++	0
++};
++
+ int
+ main(argc, argv)
+ int	argc;
+ char	**argv;
+ {
+-	SVCXPRT	*transp;
+ 	int	c, longind;
+ 	int	foreground = 0;
++	int	port = 0;
+ 
+ #ifndef HOSTS_ACCESS
+ 	fprintf(stderr,
+@@ -59,40 +69,34 @@
+ 	sleep(1);
+ #endif
+ 
+-	while ((c = getopt_long(argc, argv, "d", longopts, &longind)) != EOF) {
++	chdir("/");
++
++	while ((c = getopt_long(argc, argv, "dP:", longopts, &longind)) != EOF) {
+ 		switch (c) {
+ 		case 'd':
+ 			foreground = 1;
+ 			enable_logging("ugid");
+ 			break;
++		case 'P':
++			port = atoi(optarg);
++			if (port <= 0 || port > 65535) {
++				fprintf(stderr, "ugidd: bad port number: %s\n",
++					optarg);
++				usage();
++			}
++			break;
+ 		default:
+ 			usage();
+ 		}
+ 	}
+ 
+-        (void)pmap_unset(UGIDPROG, UGIDVERS);
++	log_open("ugidd", foreground);
+ 
+-        transp = svcudp_create(RPC_ANYSOCK);
+-        if (transp == NULL) {
+-                (void)fprintf(stderr, "cannot create udp service.\n");
+-                exit(1);
+-        }
+-        if (!svc_register(transp, UGIDPROG, UGIDVERS, ugidprog_1, IPPROTO_UDP)) {
+-                fprintf(stderr, "unable to register (UGIDPROG, UGIDVERS, UDP)\n");
+-                exit(1);
+-        }
+-
+-        transp = svctcp_create(RPC_ANYSOCK, 0, 0);
+-        if (transp == NULL) {
+-                fprintf(stderr, "cannot create tcp service.\n");
+-                exit(1);
+-        }
+-        if (!svc_register(transp, UGIDPROG, UGIDVERS, ugidprog_1, IPPROTO_TCP)) {
+-                fprintf(stderr, "unable to register (UGIDPROG, UGIDVERS, TCP)\n");
+-                exit(1);
+-        }
++	/* Create services and register with portmapper */
++	_rpcfdtype = SOCK_DGRAM;
++	rpc_init("ugidd", UGIDPROG, ugidd_versions, ugidprog_1, port, 0);
+ 
+-	if (!foreground) {
++	if (!foreground && !_rpcpmstart) {
+ 		if ((c = fork()) > 0)
+ 			exit(0);
+ 		if (c < 0) {
+@@ -117,7 +121,8 @@
+ #endif
+ 	}
+ 
+-	log_open("ugidd", foreground);
++	install_signal_handler(SIGTERM, sigterm);
++	atexit(terminate);
+ 
+ 	svc_run();
+ 	Dprintf(L_ERROR, "svc_run returned\n");
+@@ -127,7 +132,7 @@
+ static void
+ usage()
+ {
+-	fprintf(stderr, "rpc.ugidd: [-d]\n");
++	fprintf(stderr, "rpc.ugidd: [-d] [-P port]\n");
+ 	exit (2);
+ }
+ 
+@@ -188,7 +193,7 @@
+ 		return;
+ 	}
+ 	bzero((char *)&argument, sizeof(argument));
+-	if (!svc_getargs(transp, xdr_argument, &argument)) {
++	if (!svc_getargs(transp, xdr_argument, (caddr_t) &argument)) {
+ 		svcerr_decode(transp);
+ 		return;
+ 	}
+@@ -196,7 +201,7 @@
+ 	if (result != NULL && !svc_sendreply(transp, xdr_result, result)) {
+ 		svcerr_systemerr(transp);
+ 	}
+-	if (!svc_freeargs(transp, xdr_argument, &argument)) {
++	if (!svc_freeargs(transp, xdr_argument, (caddr_t) &argument)) {
+ 		(void)fprintf(stderr, "unable to free arguments\n");
+ 		exit(1);
+ 	}
+@@ -321,6 +326,19 @@
+ }
+ 
+ 
++static RETSIGTYPE
++sigterm(int sig)
++{
++	exit(0);
++}
++
++static void
++terminate(void)
++{
++	rpc_exit(UGIDPROG, ugidd_versions);
++}
++
++
+ 
+ #else /* ENABLE_UGID_DAEMON */
+ 

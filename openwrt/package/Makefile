@@ -21,11 +21,13 @@ package-$(BR2_PACKAGE_LZO) += lzo
 package-$(BR2_PACKAGE_MATRIXSSL) += matrixssl
 package-$(BR2_PACKAGE_MICROPERL) += microperl
 package-$(BR2_PACKAGE_NCURSES) += ncurses
+package-$(BR2_PACKAGE_NFSD) += nfs-server
 package-$(BR2_PACKAGE_OPENSSL) += openssl
 package-$(BR2_PACKAGE_OPENNTPD) += openntpd
 package-$(BR2_PACKAGE_OPENVPN) += openvpn
 package-$(BR2_PACKAGE_PCRE) += pcre
 package-$(BR2_PACKAGE_POPT) += popt
+package-$(BR2_PACKAGE_PORTMAP) += portmap
 package-$(BR2_PACKAGE_PPP) += ppp
 package-$(BR2_PACKAGE_PPTP) += pptp
 package-$(BR2_PACKAGE_PPTPD) += pptpd
@@ -42,6 +44,8 @@ tcpdump-compile: libpcap-compile
 dropbear-compile: zlib-compile
 openssl-compile: zlib-compile
 openvpn-compile: openssl-compile
+nfs-server-compile: portmap-compile
+portmap-compile: tcp_wrappers-compile
 $(patsubst %,%-prepare,$(package-y) $(package-m)): linux-install
 
 %-prepare:
