@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME := popt
 PKG_VERSION := 1.7
-PKG_RELEASE := 2
+PKG_RELEASE := 3
 
 PKG_SOURCE_SITE := ftp://ftp.rpm.org/pub/rpm/dist/rpm-4.1.x/
 PKG_SOURCE_FILE := $(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -39,8 +39,11 @@ compile: $(PKG_IPK)
 install: $(IPKG_STATE_DIR)/info/lib$(PKG_NAME).list
 
 clean:
+	-cd $(PKG_BUILD_DIR); \
+	ipkg/rules \
+	  TOPDIR="$(TOPDIR)" IPKG_RULES_INC="$(TOPDIR)/rules.mk" \
+	  INSTALL_DIR="$(STAGING_DIR)" \
+	 clean
 	rm -rf $(PKG_BUILD_DIR)
-	rm -f $(STAGING_DIR)/usr/include/popt.h
-	rm -f $(STAGING_DIR)/usr/lib/libpopt\*
-	rm -f $(PACKAGE_DIR)/lib$(PKG_NAME)\*.ipk
+	rm -r $(PKG_IPK)
 
