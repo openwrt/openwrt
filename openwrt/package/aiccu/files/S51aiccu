@@ -1,0 +1,21 @@
+#!/bin/sh
+
+case "$1" in
+    start)
+	aiccu start	
+	;;
+
+    stop)
+	aiccu stop
+	aiccu stop
+	;;
+
+    restart)
+	$0 stop
+	$0 start
+	;;
+    *)
+	echo "Usage: $0 {start|stop|restart}"
+	exit 1
+	;;
+esac

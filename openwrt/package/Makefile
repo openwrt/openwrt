@@ -2,10 +2,12 @@
 include $(TOPDIR)/rules.mk
 
 package-y:=openwrt
+package-$(BR2_PACKAGE_AICCU) += aiccu
 package-$(BR2_PACKAGE_ARPTABLES) += arptables
 package-$(BR2_PACKAGE_ARPWATCH) += arpwatch
 package-$(BR2_PACKAGE_BRIDGE) += bridge
 package-$(BR2_PACKAGE_BUSYBOX) += busybox
+package-$(BR2_PACKAGE_BWM) += bwm
 package-$(BR2_PACKAGE_CHILLISPOT) += chillispot
 package-$(BR2_PACKAGE_CIFSMOUNT) += cifsmount
 package-$(BR2_PACKAGE_CUPS) += cups
@@ -27,6 +29,7 @@ package-$(BR2_PACKAGE_MICROPERL) += microperl
 package-$(BR2_PACKAGE_NCURSES) += ncurses
 package-$(BR2_PACKAGE_NFSD) += nfs-server
 package-$(BR2_PACKAGE_NOCATSPLASH) += nocatsplash
+package-$(BR2_PACKAGE_NTPCLIENT) += ntpclient
 package-$(BR2_PACKAGE_OPENSSL) += openssl
 package-$(BR2_PACKAGE_OPENNTPD) += openntpd
 package-$(BR2_PACKAGE_OPENVPN) += openvpn
@@ -37,6 +40,7 @@ package-$(BR2_PACKAGE_PPP) += ppp
 package-$(BR2_PACKAGE_PPTP) += pptp
 package-$(BR2_PACKAGE_PPTPD) += pptpd
 package-$(BR2_PACKAGE_QUAGGA) += quagga
+package-$(BR2_PACKAGE_RADVD) += radvd
 package-$(BR2_PACKAGE_SER) += ser
 package-$(BR2_PACKAGE_SETSERIAL) += setserial
 package-$(BR2_PACKAGE_STRACE) += strace
