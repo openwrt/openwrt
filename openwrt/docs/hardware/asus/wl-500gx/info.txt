@@ -1,0 +1,47 @@
+Asus WL-500g Deluxe
+
+Online Description from Asus:
+http://www.asus.com/prog/spec.asp?m=WL-%20500g%20Deluxe&langs=01
+
+CPU: BCM5365 rev 1 at 200 MHz
+Memory: 32 MB
+Flash: 4 MB
+
+Component details:
+BROADCOM BCM5364PKPB
+MX 29LV320ABTC-90
+SAMSUNG K4S281632F-TC75
+VIA VT6212L
+DELTA LF8731 0432
+DELTA LF8505 0434W
+BCM4306KFB
+ATMEL434 93C46
+BCM2050KML
+
+2 USB2.0 external
+2 USB2.0 internal
+2 serial internal
+no JTAG
+
+Original ifnames:
+WAN: eth0
+LAN: eth0.1
+WIFI: eth1
+
+
+Openwrt ifnames:
+WIFI: eth1
+LAN: vlan0
+WAN: vlan1
+
+swtich: eth0
+birdge: vlan0, eth1
+
+List of files:
+nvram.txt: contents of NVRAM after OpenWRT upgrade 
+cpuinfo.txt: contents of /proc/cpuinfo (2.4.29)
+pci.txt:  contents of /proc/pci (2.4.29)
+dmesg-2_4_29.txt: dmesg from Kernel 2.4.29
+cfe.txt: output of the bootloader
+
+Newer models come with upgraded CFE, 32MB memory should be enabled by default
