@@ -80,7 +80,7 @@ $(IPKG_STATE_DIR)/info/$(PKG_NAME).list: $(PKG_IPK)
 
 source: $(DL_DIR)/$(PKG_SOURCE_FILE)
 prepare: $(PKG_BUILD_DIR)/.patched
-compile: $(STAGING_DIR)/lib/libpcap.a
+compile: $(STAGING_DIR)/usr/lib/libpcap.a
 install: $(IPKG_STATE_DIR)/info/$(PKG_NAME).list
 
 clean:
