@@ -1,8 +1,11 @@
-#############################################################
+########################################################################
 #
 # ebtables
 #
-#############################################################
+# Utility that enables basic Ethernet frame filtering on a Linux bridge,
+# MAC NAT and brouting.
+#
+########################################################################
 
 EBTABLES_NAME=ebtables
 EBTABLES_VERSION=v2.0.6
@@ -26,7 +29,8 @@ $(EBTABLES_BUILD_DIR)/.configured: $(EBTABLES_BUILD_DIR)/.unpacked
 $(EBTABLES_BUILD_DIR)/$(EBTABLES_NAME): $(EBTABLES_BUILD_DIR)/.configured
 	$(TARGET_CONFIGURE_OPTS) \
 	$(MAKE) -C $(EBTABLES_BUILD_DIR) \
-		CC=$(TARGET_CC) CFLAGS="$(TARGET_CFLAGS)" LDFLAGS="$(TARGET_LDFLAGS)"
+		CC=$(TARGET_CC) CFLAGS="$(TARGET_CFLAGS)" \
+		LDFLAGS="$(TARGET_LDFLAGS)"
 
 $(TARGET_DIR)/sbin/$(EBTABLES_NAME): $(EBTABLES_BUILD_DIR)/$(EBTABLES_NAME)
 	$(TARGET_CONFIGURE_OPTS) \
