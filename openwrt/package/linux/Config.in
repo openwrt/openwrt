@@ -39,6 +39,7 @@ config BR2_PACKAGE_KMOD_USB
 config BR2_PACKAGE_KMOD_CRYPTO
 	tristate "CryptoAPI modules"
 	default m
+	select BUSYBOX_CONFIG_FEATURE_CHECK_TAINTED_MODULE
 	help
 	  Kernel modules for cryptographic algorithms
 
