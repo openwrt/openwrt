@@ -45,6 +45,7 @@ sub download
 	
 	unlink "$target/$filename";
 	system("mv \"$target/$filename.dl\" \"$target/$filename\"");
+	cleanup();
 }
 
 sub cleanup
