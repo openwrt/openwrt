@@ -1,0 +1,10 @@
+#!/bin/sh
+. /etc/functions.sh
+case "$1" in
+  start|restart)
+    ifup lan
+    ifup wan
+    ifup wifi
+    wifi up
+    ;;
+esac
