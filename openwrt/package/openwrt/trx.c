@@ -170,7 +170,12 @@ int main(int argc, char **argv)
 				}
 				break;
 			case 'a':
-				n = atoi(optarg);
+				errno = 0;
+				n = strtoul(optarg, &e, 0);
+				if (errno || (e == optarg) || *e) {
+					fprintf(stderr, "illegal numeric string\n");
+					usage();
+				}
 				if (cur_len & (n-1)) {
 					n = n - (cur_len & (n-1));
 					memset(buf + cur_len, 0, n);
@@ -178,7 +183,12 @@ int main(int argc, char **argv)
 				}
 				break;
 			case 'b':
-				n = atoi(optarg);
+				errno = 0;
+				n = strtoul(optarg, &e, 0);
+				if (errno || (e == optarg) || *e) {
+					fprintf(stderr, "illegal numeric string\n");
+					usage();
+				}
 				if (n < cur_len) {
 					fprintf(stderr, "WARNING: current length exceeds -b %d offset\n",n);
 				} else {
