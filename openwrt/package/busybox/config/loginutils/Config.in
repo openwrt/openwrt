@@ -87,7 +87,7 @@ config BUSYBOX_CONFIG_FEATURE_SECURETTY
 
 config BUSYBOX_CONFIG_PASSWD
 	bool "passwd"
-	default n
+	default y
 	select BUSYBOX_CONFIG_FEATURE_SUID
 	help
 	  passwd changes passwords for user and group accounts.  A normal user
