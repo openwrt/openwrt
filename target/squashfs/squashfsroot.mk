@@ -47,14 +47,3 @@ squashfsroot-clean:
 
 squashfsroot-dirclean:
 	rm -rf $(SQUASHFS_DIR)
-
-openwrt-linux.trx.squashfs:
-	$(BUILD_DIR)/trx -o openwrt-linux.trx.squashfs $(LINUX_DIR)/$(LINUX_BINLOC) $(IMAGE).squashfs
-
-openwrt-gs-code.bin.squashfs: openwrt-linux.trx.squashfs
-	$(BUILD_DIR)/addpattern -2 -i  openwrt-linux.trx.squashfs -o openwrt-gs-code.bin.squashfs -g
-
-openwrt-g-code.bin.squashfs: openwrt-gs-code.bin.squashfs
-	sed -e "1s,^W54S,W54G," < openwrt-gs-code.bin.squashfs > openwrt-g-code.bin.squashfs
-
-openwrt-image-squashfs:	openwrt-g-code.bin.squashfs
