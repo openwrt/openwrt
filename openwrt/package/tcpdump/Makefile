@@ -40,9 +40,9 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.unpacked
 
 $(PKG_BUILD_DIR)/$(PKG_NAME): $(PKG_BUILD_DIR)/.configured
 	$(MAKE) \
-		LDFLAGS="-L$(STAGING_DIR)/lib" \
+		LDFLAGS="-L$(STAGING_DIR)/usr/lib" \
 		LIBS="-lpcap" \
-		INCLS="-I. -I$(STAGING_DIR)/include" \
+		INCLS="-I. -I$(STAGING_DIR)/usr/include" \
 		-C $(PKG_BUILD_DIR)
 
 $(PKG_IPK): $(PKG_BUILD_DIR)/$(PKG_NAME)
