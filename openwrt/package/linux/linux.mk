@@ -94,8 +94,6 @@ $(STAGING_DIR)/include/linux/version.h: $(LINUX_DIR)/.configured
 
 $(TARGET_MODULES_DIR): 
 	-mkdir -p $(TARGET_MODULES_DIR)
-	cp $(LINUX_DIR)/drivers/net/wl/wl.o $(TARGET_MODULES_DIR)
-	cp $(LINUX_DIR)/drivers/net/et/et.o $(TARGET_MODULES_DIR)
 	cp $(LINUX_DIR)/drivers/net/diag/diag.o $(TARGET_MODULES_DIR)
 
 linux: $(LINUX_DIR)/.modules_done $(TARGET_MODULES_DIR)
