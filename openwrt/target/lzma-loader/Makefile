@@ -26,14 +26,14 @@ $(PKG_BUILD_DIR)/loader.gz: $(PKG_BUILD_DIR)/.patched
 	$(MAKE) -C $(PKG_BUILD_DIR) CC=$(TARGET_CC) \
 		LD=$(TARGET_CROSS)ld CROSS_COMPILE=$(TARGET_CROSS)
 
-$(BUILD_DIR)/lzmaldr: $(PKG_BUILD_DIR)/loader.gz
+$(BUILD_DIR)/loader.gz: $(PKG_BUILD_DIR)/loader.gz
 	cp $< $@
 
 source: $(DL_DIR)/$(PKG_SOURCE_FILE)
 prepare: $(PKG_BUILD_DIR)/.patched
-compile: $(BUILD_DIR)/lzmaldr
+compile: $(BUILD_DIR)/loader.gz
 install:
 
 clean:
 	rm -rf $(PKG_BUILD_DIR)
-	rm -f $(BUILD_DIR)/lzmaldr
+	rm -f $(BUILD_DIR)/loader.gz
