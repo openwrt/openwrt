@@ -40,6 +40,9 @@ $(eval $(call KMOD_template,IPT6,ip6tables,\
 $(eval $(call KMOD_template,IPV6,ipv6,\
 	$(MODULES_DIR)/kernel/net/ipv6/ipv6.o \
 ))
+$(eval $(call KMOD_template,SMBFS,smbfs,\
+	$(MODULES_DIR)/kernel/fs/smbfs/smbfs.o \
+))
 $(eval $(call KMOD_template,NFS,nfs,\
 	$(MODULES_DIR)/kernel/fs/lockd/*.o \
 	$(MODULES_DIR)/kernel/fs/nfs/*.o \
