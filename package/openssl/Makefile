@@ -51,7 +51,7 @@ $(STAGING_DIR)/lib/libssl.so: $(PKG_BUILD_DIR)/apps/openssl
 	(cd $(STAGING_DIR)/lib; ln -fs libssl.so.0.9.7 libssl.so)
 	(cd $(STAGING_DIR)/lib; ln -fs libssl.so.0.9.7 libssl.so.0)
 
-$(PKG_IPK): $(STAGING_DIR)/lib/libssl.so
+$(PACKAGE_DIR)/$(PKG_IPK): $(STAGING_DIR)/lib/libssl.so
 	mkdir -p $(PACKAGE_DIR)
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_BUILD_DIR)/ipkg/$(PKG_NAME) $(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
 	mkdir -p $(PKG_BUILD_DIR)/ipkg/$(PKG_NAME)/usr/lib
