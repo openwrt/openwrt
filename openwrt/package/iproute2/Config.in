@@ -1,5 +1,5 @@
 config BR2_PACKAGE_IPROUTE2
-	bool
+	tristate
 	depends BR2_PACKAGE_IPROUTE2_IP || BR2_PACKAGE_IPROUTE2_TC
 	default n
 
