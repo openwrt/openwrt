@@ -13,7 +13,7 @@ I_$(1) := $(PKG_BUILD_DIR)/ipkg/$(2)
 ifneq ($(BR2_PACKAGE_KMOD_$(1)),)
 TARGETS += $$(PKG_$(1))
 endif
-ifeq ($(BR2_PACLAGE_KMOD_$(1)),y)
+ifeq ($(BR2_PACKAGE_KMOD_$(1)),y)
 INSTALL_TARGETS += $$(PKG_$(1))
 endif
 
