@@ -1,6 +1,7 @@
 #!/bin/sh
 mount none /proc -t proc
 mtd unlock mtd4
+sleep 1
 if /sbin/resetmon ; then
   mount -t jffs2 /dev/mtdblock/4 /jffs
   pivot_root /jffs /jffs/rom
