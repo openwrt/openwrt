@@ -4742,14 +4742,6 @@
  # targets
  obj-$(CONFIG_IP_NF_TARGET_REJECT) += ipt_REJECT.o
  obj-$(CONFIG_IP_NF_TARGET_MIRROR) += ipt_MIRROR.o
-@@ -100,6 +102,7 @@ obj-$(CONFIG_IP_NF_TARGET_TCPMSS) += ipt
- 
- # generic ARP tables
- obj-$(CONFIG_IP_NF_ARPTABLES) += arp_tables.o
-+obj-$(CONFIG_IP_NF_ARP_MANGLE) += arpt_mangle.o
- 
- # just filtering instance of ARP tables for now
- obj-$(CONFIG_IP_NF_ARPFILTER) += arptable_filter.o
 --- linux-2.4.21/net/ipv4/netfilter/Config.in	Fri Jun 13 16:51:39 2003
 +++ linux-2.4.21-ebt-brnf-3/net/ipv4/netfilter/Config.in	Fri Aug  8 01:09:06 2003
 @@ -43,6 +43,9 @@ if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; 
