@@ -212,7 +212,7 @@ typedef struct wl_rm_rep {
 #define WLC_MAX_IV_SIZE		16	/* max size of any IV */
 #define WLC_EXT_IV_FLAG		(1<<5)	/* flag to indicate IV is > 4 bytes */
 #define WLC_MAX_DEFAULT_KEYS	4	/* # of default WEP keys */
-#define WLC_MAX_KEYS		16	/* # of WEP keys */
+#define WLC_MAX_KEYS		54	/* Max # of WEP keys */
 #define WLC_WEP1_KEY_SIZE	5	/* max size of any WEP key */
 #define WLC_WEP1_KEY_HEX_SIZE	10	/* size of WEP key in hex. */
 #define WLC_WEP128_KEY_SIZE	13	/* max size of any WEP key */
