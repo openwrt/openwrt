@@ -1,0 +1,146 @@
+diff -ruN popt-1.7-orig/ipkg/libpopt/CONTROL/control popt-1.7-2/ipkg/libpopt/CONTROL/control
+--- popt-1.7-orig/ipkg/libpopt/CONTROL/control	1970-01-01 01:00:00.000000000 +0100
++++ popt-1.7-2/ipkg/libpopt/CONTROL/control	2005-02-27 16:29:21.000000000 +0100
+@@ -0,0 +1,8 @@
++Package: libpopt
++Priority: optional
++Section: libs
++Version: 1.7-2
++Architecture: mipsel
++Maintainer: Nico <nthill@free.fr>
++Source: http://nthill.free.fr/openwrt/sources/popt/
++Description: a command line option parsing library
+diff -ruN popt-1.7-orig/ipkg/libpopt-dev/CONTROL/control popt-1.7-2/ipkg/libpopt-dev/CONTROL/control
+--- popt-1.7-orig/ipkg/libpopt-dev/CONTROL/control	1970-01-01 01:00:00.000000000 +0100
++++ popt-1.7-2/ipkg/libpopt-dev/CONTROL/control	2005-02-27 16:29:29.000000000 +0100
+@@ -0,0 +1,8 @@
++Package: libpopt-dev
++Priority: optional
++Section: devel
++Version: 1.7-2
++Architecture: mipsel
++Maintainer: Nico <nthill@free.fr>
++Source: http://nthill.free.fr/openwrt/sources/popt/
++Description: a command line option parsing library (development)
+diff -ruN popt-1.7-orig/ipkg/rules popt-1.7-2/ipkg/rules
+--- popt-1.7-orig/ipkg/rules	1970-01-01 01:00:00.000000000 +0100
++++ popt-1.7-2/ipkg/rules	2005-02-27 16:31:03.000000000 +0100
+@@ -0,0 +1,118 @@
++#!/usr/bin/make -f
++
++ifneq ($(strip ${IPKG_RULES_INC}),)
++  include $(IPKG_RULES_INC)
++endif
++
++##
++
++CURRENT_DIR := $(shell pwd)
++
++INSTALL_DIR = $(CURRENT_DIR)/ipkg-install
++
++I_LIBPOPT := ipkg/libpopt
++I_LIBPOPT_DEV := ipkg/libpopt-dev
++
++BUILD_DEPS := \
++
++##
++
++all: package
++
++.stamp-configured: $(BUILD_DEPS)
++
++	rm -rf config.cache
++	$(TARGET_CONFIGURE_OPTS) \
++	CFLAGS="$(TARGET_CFLAGS)" \
++	am_cv_func_iconv=no \
++	./configure \
++	  --target=$(GNU_TARGET_NAME) \
++	  --host=$(GNU_TARGET_NAME) \
++	  --build=$(GNU_HOST_NAME) \
++	  --prefix=/usr \
++	  --exec-prefix=/usr \
++	  --bindir=/usr/bin \
++	  --datadir=/usr/share \
++	  --includedir=/usr/include \
++	  --infodir=/usr/share/info \
++	  --libdir=/usr/lib \
++	  --libexecdir=/usr/lib \
++	  --localstatedir=/var \
++	  --mandir=/usr/share/man \
++	  --sbindir=/usr/sbin \
++	  --sysconfdir=/etc \
++	  $(DISABLE_NLS) \
++	  --enable-shared \
++	  --enable-static \
++
++	touch .stamp-configured
++
++
++.stamp-built: .stamp-configured
++
++	$(MAKE) \
++	  $(TARGET_CONFIGURE_OPTS) \
++	  CFLAGS="$(TARGET_CFLAGS)" \
++	  
++	touch .stamp-built
++
++
++$(INSTALL_DIR)/usr/include/popt.h: .stamp-built
++
++	mkdir -p $(INSTALL_DIR)
++
++	$(MAKE) \
++	  DESTDIR="$(INSTALL_DIR)" \
++	  program_transform_name="s,x,x," \
++	 install
++
++
++configure: .stamp-configured
++
++
++build: .stamp-built
++
++
++install: $(INSTALL_DIR)/usr/include/popt.h
++
++
++package: $(INSTALL_DIR)/usr/include/popt.h
++
++	mkdir -p $(I_LIBPOPT)/usr/lib
++	cp -fpR $(INSTALL_DIR)/usr/lib/libpopt*.so.* $(I_LIBPOPT)/usr/lib/
++	$(STRIP) $(I_LIBPOPT)/usr/lib/lib*.so.*
++
++	mkdir -p $(I_LIBPOPT_DEV)/usr/include
++	cp -fpR $(INSTALL_DIR)/usr/include/popt.h $(I_LIBPOPT_DEV)/usr/include/
++	mkdir -p $(I_LIBPOPT_DEV)/usr/lib
++	cp -fpR $(INSTALL_DIR)/usr/lib/libpopt*.a $(I_LIBPOPT_DEV)/usr/lib/
++	cp -fpR $(INSTALL_DIR)/usr/lib/libpopt*.so* $(I_LIBPOPT_DEV)/usr/lib/
++
++	chmod 0755 $(I_LIBPOPT)/CONTROL/
++	chmod 0644 $(I_LIBPOPT)/CONTROL/control
++
++	chmod 0755 $(I_LIBPOPT_DEV)/CONTROL/
++	chmod 0644 $(I_LIBPOPT_DEV)/CONTROL/control
++
++	$(IPKG_BUILD) $(I_LIBPOPT) $(IPKG_TARGET_DIR)
++	$(IPKG_BUILD) $(I_LIBPOPT_DEV) $(IPKG_TARGET_DIR)
++
++
++clean:
++
++	-$(MAKE) clean
++	rm -rf .stamp-*
++	rm -rf $(INSTALL_DIR)
++	rm -rf $(I_LIBPOPT)/usr
++	rm -rf $(I_LIBPOPT_DEV)/usr
++
++
++control:
++
++	@cat $(I_LIBPOPT)/CONTROL/control
++	@echo
++	@cat $(I_LIBPOPT_DEV)/CONTROL/control
++	@echo
++	
++
++.PHONY: configure build install package clean control
