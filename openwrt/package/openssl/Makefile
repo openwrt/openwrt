@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME := openssl
-PKG_VERSION := 0.9.7e
+PKG_VERSION := 0.9.7f
 PKG_RELEASE := 1
-PKG_MD5SUM := a8777164bca38d84e5eb2b1535223474
+PKG_MD5SUM := b2d37d7eb8a5a5040d834105d5ae1a50
 
 PKG_SOURCE_SITE := http://www.openssl.org/source
 PKG_SOURCE_FILE := $(PKG_NAME)-$(PKG_VERSION).tar.gz
