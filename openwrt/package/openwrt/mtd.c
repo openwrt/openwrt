@@ -62,6 +62,7 @@ struct trx_header {
 extern int mtd_open(const char *mtd, int flags);
 extern int mtd_erase(const char *mtd);
 extern int mtd_write(const char *trxfile, const char *mtd);
+extern int mtd_update(const char *trxfile, const char *mtd);
 
 int
 mtd_unlock(const char *mtd)
@@ -228,6 +229,24 @@ mtd_write(const char *trxfile, const char *mtd)
 	return 0;
 }
 
+int
+mtd_update(const char *trxfile, const char *mtd)
+{
+	if (mtd_unlock(mtd) != 0) {
+		fprintf(stderr, "Could not unlock mtd device: %s\n", mtd);
+		exit(1);
+	}
+	if (mtd_erase("rootfs") != 0) {
+		fprintf(stderr, "Could not erase rootfs\n");
+		exit(1);
+	}
+	if (mtd_write(trxfile, mtd) != 0) {
+		fprintf(stderr, "Could not update %s with %s\n", mtd, trxfile);
+		exit(1);
+	}	
+	return 0;
+}
+
 int main(int argc, char **argv) {
 	if(argc == 3 && strcasecmp(argv[1],"unlock")==0) {
 		printf("Unlocking %s ...\n",argv[2]);
@@ -241,6 +260,10 @@ int main(int argc, char **argv) {
 		printf("Writing %s to %s ...\n",argv[2],argv[3]);
 		return mtd_write(argv[2],argv[3]);
 	}
+	if(argc == 4 && strcasecmp(argv[1],"update")==0) {
+		printf("Updating %s on %s ...\n",argv[2],argv[3]);
+		return mtd_update(argv[2],argv[3]);
+	}
 
 	printf("no valid command given\n");
 	printf("\nmtd: modify data within a Memory Technology Device.\n");
@@ -248,11 +271,12 @@ int main(int argc, char **argv) {
 	printf("Documented by Mike Strates [dumpedcore] <mike@dilaudid.net>\n");
 	printf("mtd has ABSOLUTELY NO WARRANTY and is licensed under the GNU GPL.\n");
 	printf("\nUsage: mtd [unlock|erase] device\n");
-	printf("       mtd write imagefile device\n");
-	printf("\n .. where device is in the format of mtdX (eg: mtd4) or its label.\n");
-	printf("\nunlock                enable modification to device\n");
+	printf("       mtd [write|update] imagefile device\n");
+	printf("\n.. where device is in the format of mtdX (eg: mtd4) or its label.\n\n");
+	printf("unlock          enable modification to device\n");
 	printf("erase           erase all data on device\n");
 	printf("write           write imagefile to device\n");
+	printf("update          remove rootfs and update imagefile on device\n");
 	printf("\nExample: To write linux.trx to mtd4 labeled as linux\n");
 	printf("\n                mtd unlock linux && mtd write linux.trx linux\n\n");
 	return -1;
