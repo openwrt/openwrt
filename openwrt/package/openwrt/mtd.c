@@ -324,7 +324,7 @@ int main (int argc, char **argv)
 	}
 
 	if (boot)
-		reboot(0);
+		kill(1, 15); // send SIGTERM to init for reboot
 
 	return 0;
 }
