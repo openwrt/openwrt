@@ -1,0 +1,531 @@
+--- portmap-5.orig/Makefile
++++ portmap-5/Makefile
+@@ -8,7 +8,7 @@
+ # if you disagree. See `man 3 syslog' for examples. Some syslog versions
+ # do not provide this flexibility.
+ #
+-FACILITY=LOG_MAIL
++FACILITY=LOG_DAEMON
+ 
+ # To disable tcp-wrapper style access control, comment out the following
+ # macro definitions.  Access control can also be turned off by providing
+@@ -16,7 +16,8 @@
+ # daemon, is always treated as an authorized host.
+ 
+ HOSTS_ACCESS= -DHOSTS_ACCESS
+-WRAP_LIB = $(WRAP_DIR)/libwrap.a
++#WRAP_LIB = $(WRAP_DIR)/libwrap.a
++WRAP_LIB = -lwrap
+ 
+ # Comment out if your RPC library does not allocate privileged ports for
+ # requests from processes with root privilege, or the new portmap will
+@@ -71,7 +72,7 @@
+ # With verbose logging on, HP-UX 9.x and AIX 4.1 leave zombies behind when
+ # SIGCHLD is not ignored. Enable next macro for a fix.
+ #
+-# ZOMBIES = -DIGNORE_SIGCHLD	# AIX 4.x, HP-UX 9.x
++ZOMBIES = -DIGNORE_SIGCHLD	# AIX 4.x, HP-UX 9.x
+ 
+ # Uncomment the following macro if your system does not have u_long.
+ #
+@@ -81,11 +82,14 @@
+ # libwrap.a object library. WRAP_DIR should specify the directory with
+ # that library.
+ 
+-WRAP_DIR= ../tcp_wrappers
++WRAP_DIR= $(TCPD_DIR)
+ 
+ # Auxiliary object files that may be missing from your C library.
+ #
+-AUX	= daemon.o strerror.o
++#AUX	= daemon.o strerror.o
++
++# glibc has strerror() (it's POSIX) and daemon() (when compiling -D_BSD_SOURCE)
++AUX	= 
+ 
+ # NEXTSTEP is a little different. The following seems to work with NS 3.2
+ #
+@@ -99,22 +103,31 @@
+ 
+ # Comment out if your compiler talks ANSI and understands const
+ #
+-CONST   = -Dconst=
++#CONST   = -Dconst=
+ 
+ ### End of configurable stuff.
+ ##############################
+ 
++GLIBC=$(shell grep -s -c __GLIBC__ /usr/include/features.h)
++
++ifeq ($(GLIBC),0)
++LIBS   += # -lbsd
++else
++LIBS   += -lnsl
++endif
++
++
+ SHELL	= /bin/sh
+ 
+-COPT	= $(CONST) -Dperror=xperror $(HOSTS_ACCESS) $(CHECK_PORT) \
++COPT	= $(CONST) $(HOSTS_ACCESS) $(CHECK_PORT) \
+ 	$(SYS) -DFACILITY=$(FACILITY) $(ULONG) $(ZOMBIES) $(SA_LEN) \
+ 	$(LOOPBACK) $(SETPGRP)
+-CFLAGS	= $(COPT) -O $(NSARCHS)
++CFLAGS	= -Wall $(COPT) -O2 $(NSARCHS)
+ OBJECTS	= portmap.o pmap_check.o from_local.o $(AUX)
+ 
+ all:	portmap pmap_dump pmap_set
+ 
+-portmap: $(OBJECTS) $(WRAP_DIR)/libwrap.a
++portmap: $(OBJECTS) # $(WRAP_DIR)/libwrap.a
+ 	$(CC) $(CFLAGS) -o $@ $(OBJECTS) $(WRAP_LIB) $(LIBS)
+ 
+ pmap_dump: pmap_dump.c
+@@ -129,6 +142,17 @@
+ get_myaddress: get_myaddress.c
+ 	cc $(CFLAGS) -DTEST -o $@ get_myaddress.c $(LIBS)
+ 
++install: all
++	install -o root -g root -m 0755 -s portmap ${BASEDIR}/sbin
++	install -o root -g root -m 0755 -s pmap_dump ${BASEDIR}/sbin
++	install -o root -g root -m 0755 -s pmap_set ${BASEDIR}/sbin
++	install -o root -g root -m 0644 portmap.8 ${BASEDIR}/usr/share/man/man8
++	install -o root -g root -m 0644 pmap_dump.8 ${BASEDIR}/usr/share/man/man8
++	install -o root -g root -m 0644 pmap_set.8 ${BASEDIR}/usr/share/man/man8
++	cat BLURB >${BASEDIR}/usr/share/doc/portmap/portmapper.txt
++	gzip -9f ${BASEDIR}/usr/share/doc/portmap/portmapper.txt
++
++
+ lint:	
+ 	lint $(COPT) $(OBJECTS:%.o=%.c)
+ 
+--- portmap-5.orig/daemon.c
++++ portmap-5/daemon.c
+@@ -36,11 +36,8 @@
+ #endif /* LIBC_SCCS and not lint */
+ 
+ #include <fcntl.h>
+-
+-/* From unistd.h */
+-#define STDIN_FILENO	0
+-#define STDOUT_FILENO	1
+-#define STDERR_FILENO	2
++#include <unistd.h>
++#include <sys/types.h>
+ 
+ /* From paths.h */
+ #define _PATH_DEVNULL	"/dev/null"
+--- portmap-5.orig/pmap_check.c
++++ portmap-5/pmap_check.c
+@@ -41,10 +41,14 @@
+ #include <syslog.h>
+ #include <netdb.h>
+ #include <sys/signal.h>
++#include <grp.h>
+ #ifdef SYSV40
+ #include <netinet/in.h>
+ #include <rpc/rpcent.h>
+ #endif
++#include <sys/types.h>
++#include <unistd.h>
++#include <tcpd.h>
+ 
+ extern char *inet_ntoa();
+ 
+@@ -101,15 +105,25 @@
+      * Give up root privileges so that we can never allocate a privileged
+      * port when forwarding an rpc request.
+      */
++    if (setgid(1) == -1) {
++	syslog(LOG_ERR, "setgid(1) failed: %m");
++	exit(1);
++    }
++    if (setgroups(0, 0) == -1) {
++	syslog(LOG_ERR, "setgroups(0, 0) failed: %m");
++	exit(1);
++    }
+     if (setuid(1) == -1) {
+ 	syslog(LOG_ERR, "setuid(1) failed: %m");
+ 	exit(1);
+     }
++
+     (void) signal(SIGINT, toggle_verboselog);
+ }
+ 
+ /* check_default - additional checks for NULL, DUMP, GETPORT and unknown */
+ 
++int
+ check_default(addr, proc, prog)
+ struct sockaddr_in *addr;
+ u_long  proc;
+@@ -128,6 +142,7 @@
+ 
+ /* check_privileged_port - additional checks for privileged-port updates */
+ 
++int
+ check_privileged_port(addr, proc, prog, port)
+ struct sockaddr_in *addr;
+ u_long  proc;
+@@ -173,6 +188,7 @@
+ 
+ #else
+ 
++int
+ check_setunset(addr, proc, prog, port)
+ struct sockaddr_in *addr;
+ u_long  proc;
+@@ -197,6 +213,7 @@
+ 
+ /* check_callit - additional checks for forwarded requests */
+ 
++int
+ check_callit(addr, proc, prog, aproc)
+ struct sockaddr_in *addr;
+ u_long  proc;
+@@ -249,13 +266,13 @@
+     };
+     struct proc_map *procp;
+     static struct proc_map procmap[] = {
+-	PMAPPROC_CALLIT, "callit",
+-	PMAPPROC_DUMP, "dump",
+-	PMAPPROC_GETPORT, "getport",
+-	PMAPPROC_NULL, "null",
+-	PMAPPROC_SET, "set",
+-	PMAPPROC_UNSET, "unset",
+-	0, 0,
++        {PMAPPROC_CALLIT, "callit"},
++	{PMAPPROC_DUMP, "dump"},
++	{PMAPPROC_GETPORT, "getport"},
++	{PMAPPROC_NULL, "null"},
++	{PMAPPROC_SET, "set"},
++	{PMAPPROC_UNSET, "unset"},
++	{0, 0},
+     };
+ 
+     /*
+@@ -269,7 +286,7 @@
+ 
+ 	if (prognum == 0) {
+ 	    progname = "";
+-	} else if (rpc = getrpcbynumber((int) prognum)) {
++	} else if ((rpc = getrpcbynumber((int) prognum))) {
+ 	    progname = rpc->r_name;
+ 	} else {
+ 	    sprintf(progname = progbuf, "%lu", prognum);
+--- portmap-5.orig/from_local.c
++++ portmap-5/from_local.c
+@@ -51,6 +51,9 @@
+ #include <net/if.h>
+ #include <sys/ioctl.h>
+ #include <syslog.h>
++#include <stdlib.h>
++#include <string.h>
++#include <unistd.h>
+ 
+ #ifndef TRUE
+ #define	TRUE	1
+@@ -96,6 +99,7 @@
+ 
+ /* find_local - find all IP addresses for this host */
+ 
++int
+ find_local()
+ {
+     struct ifconf ifc;
+@@ -154,6 +158,7 @@
+ 
+ /* from_local - determine whether request comes from the local system */
+ 
++int
+ from_local(addr)
+ struct sockaddr_in *addr;
+ {
+--- portmap-5.orig/pmap_dump.c
++++ portmap-5/pmap_dump.c
+@@ -23,6 +23,20 @@
+ 
+ static char *protoname();
+ 
++#ifndef INADDR_LOOPBACK
++#define INADDR_LOOPBACK ntohl(inet_addr("127.0.0.1"))
++#endif
++
++static void    get_myloopaddress(addrp)
++struct sockaddr_in *addrp;
++{
++    memset((char *) addrp, 0, sizeof(*addrp));
++    addrp->sin_family = AF_INET;
++    addrp->sin_port = htons(PMAPPORT);
++    addrp->sin_addr.s_addr = htonl(INADDR_LOOPBACK);
++}
++
++int
+ main(argc, argv)
+ int     argc;
+ char  **argv;
+@@ -31,7 +45,7 @@
+     register struct pmaplist *list;
+     register struct rpcent *rpc;
+ 
+-    get_myaddress(&addr);
++    get_myloopaddress(&addr);
+ 
+     for (list = pmap_getmaps(&addr); list; list = list->pml_next) {
+ 	rpc = getrpcbynumber((int) list->pml_map.pm_prog);
+--- portmap-5.orig/pmap_set.c
++++ portmap-5/pmap_set.c
+@@ -17,6 +17,10 @@
+ #include <rpc/rpc.h>
+ #include <rpc/pmap_clnt.h>
+ 
++int parse_line(char *buf, u_long *prog, u_long *vers, int *prot,
++	       unsigned *port);
++
++int
+ main(argc, argv)
+ int     argc;
+ char  **argv;
+@@ -40,6 +44,7 @@
+ 
+ /* parse_line - convert line to numbers */
+ 
++int
+ parse_line(buf, prog, vers, prot, port)
+ char   *buf;
+ u_long *prog;
+@@ -47,9 +52,9 @@
+ int    *prot;
+ unsigned *port;
+ {
+-    char    proto_name[BUFSIZ];
++    char    proto_name[256];
+ 
+-    if (sscanf(buf, "%lu %lu %s %u", prog, vers, proto_name, port) != 4) {
++    if (sscanf(buf, "%lu %lu %255s %u", prog, vers, proto_name, port) != 4) {
+ 	return (0);
+     }
+     if (strcmp(proto_name, "tcp") == 0) {
+@@ -65,3 +70,4 @@
+     }
+     return (0);
+ }
++
+--- portmap-5.orig/portmap.c
++++ portmap-5/portmap.c
+@@ -80,6 +80,10 @@
+  * Mountain View, California  94043
+  */
+ 
++#if defined(__GLIBC__)
++#define _BSD_SOURCE 1	/* for daemon(3) */
++#include <rpc/xdr.h>
++#endif /* __GLIBC__ */
+ #include <rpc/rpc.h>
+ #include <rpc/pmap_prot.h>
+ #include <stdio.h>
+@@ -91,11 +95,13 @@
+ #include <sys/signal.h>
+ #include <sys/time.h>
+ #include <sys/resource.h>
+-#ifdef SYSV40
+ #include <netinet/in.h>
+-#endif
++#include <sys/types.h>
++#include <unistd.h>
++#include <string.h>
++#include <errno.h>
++#include <arpa/inet.h>
+ 
+-extern char *strerror();
+ #include <stdlib.h>
+ 
+ #ifndef LOG_PERROR
+@@ -124,7 +130,6 @@
+ static void callit();
+ struct pmaplist *pmaplist;
+ int debugging = 0;
+-extern int errno;
+ 
+ #include "pmap_check.h"
+ 
+@@ -148,6 +153,7 @@
+ #endif
+ #endif
+ 
++int
+ main(argc, argv)
+ 	int argc;
+ 	char **argv;
+@@ -157,22 +163,31 @@
+ 	struct sockaddr_in addr;
+ 	int len = sizeof(struct sockaddr_in);
+ 	register struct pmaplist *pml;
++	char *chroot_path = NULL;
++	struct in_addr bindaddr;
++	int have_bindaddr = 0;
+ 
+-	while ((c = getopt(argc, argv, "dv")) != EOF) {
++	while ((c = getopt(argc, argv, "dt:vi:")) != EOF) {
+ 		switch (c) {
+ 
+ 		case 'd':
+ 			debugging = 1;
+ 			break;
+-
++		case 't':
++			chroot_path = optarg;
++			break;
+ 		case 'v':
+ 			verboselog = 1;
+ 			break;
+-
++		case 'i':
++			have_bindaddr = inet_aton(optarg, &bindaddr);
++			break;
+ 		default:
+-			(void) fprintf(stderr, "usage: %s [-dv]\n", argv[0]);
++			(void) fprintf(stderr, "usage: %s [-dv] [-t path] [-i address]\n", argv[0]);
+ 			(void) fprintf(stderr, "-d: debugging mode\n");
++			(void) fprintf(stderr, "-t path: chroot into path\n");
+ 			(void) fprintf(stderr, "-v: verbose logging\n");
++			(void) fprintf(stderr, "-i address: bind to address\n");
+ 			exit(1);
+ 		}
+ 	}
+@@ -201,6 +216,9 @@
+ 	addr.sin_addr.s_addr = 0;
+ 	addr.sin_family = AF_INET;
+ 	addr.sin_port = htons(PMAPPORT);
++	if (have_bindaddr)
++		memcpy(&addr.sin_addr, &bindaddr, sizeof(bindaddr));
++
+ 	if (bind(sock, (struct sockaddr *)&addr, len) != 0) {
+ 		syslog(LOG_ERR, "cannot bind udp: %m");
+ 		exit(1);
+@@ -227,7 +245,7 @@
+ 	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &on, sizeof on);
+ #endif
+ 	if (bind(sock, (struct sockaddr *)&addr, len) != 0) {
+-		syslog(LOG_ERR, "cannot bind udp: %m");
++		syslog(LOG_ERR, "cannot bind tcp: %m");
+ 		exit(1);
+ 	}
+ 	if ((xprt = svctcp_create(sock, RPCSMALLMSGSIZE, RPCSMALLMSGSIZE))
+@@ -280,6 +298,14 @@
+ 	(void)svc_register(xprt, PMAPPROG, PMAPVERS, reg_service, FALSE);
+ 
+ 	/* additional initializations */
++	if (chroot_path)
++	{
++		if (-1 == chroot(chroot_path))
++		{
++			syslog(LOG_ERR, "couldn't do chroot");
++			exit(1);
++		}
++	}
+ 	check_startup();
+ #ifdef IGNORE_SIGCHLD			/* Lionel Cons <cons@dxcern.cern.ch> */
+ 	(void)signal(SIGCHLD, SIG_IGN);
+@@ -350,7 +376,7 @@
+ 		 */
+ 		/* remote host authorization check */
+ 		check_default(svc_getcaller(xprt), rqstp->rq_proc, (u_long) 0);
+-		if (!svc_sendreply(xprt, xdr_void, (caddr_t)0) && debugging) {
++		if (!svc_sendreply(xprt, (xdrproc_t) xdr_void, (caddr_t)0) && debugging) {
+ 			abort();
+ 		}
+ 		break;
+@@ -359,7 +385,7 @@
+ 		/*
+ 		 * Set a program,version to port mapping
+ 		 */
+-		if (!svc_getargs(xprt, xdr_pmap, &reg))
++		if (!svc_getargs(xprt, (xdrproc_t) xdr_pmap, (caddr_t) &reg))
+ 			svcerr_decode(xprt);
+ 		else {
+ 			/* reject non-local requests, protect priv. ports */
+@@ -401,7 +427,7 @@
+ 				ans = 1;
+ 			}
+ 		done:
+-			if ((!svc_sendreply(xprt, xdr_int, (caddr_t)&ans)) &&
++			if ((!svc_sendreply(xprt, (xdrproc_t) xdr_int, (caddr_t)&ans)) &&
+ 			    debugging) {
+ 				(void) fprintf(stderr, "svc_sendreply\n");
+ 				abort();
+@@ -413,7 +439,7 @@
+ 		/*
+ 		 * Remove a program,version to port mapping.
+ 		 */
+-		if (!svc_getargs(xprt, xdr_pmap, &reg))
++		if (!svc_getargs(xprt, (xdrproc_t) xdr_pmap, (caddr_t) &reg))
+ 			svcerr_decode(xprt);
+ 		else {
+ 			ans = 0;
+@@ -447,7 +473,7 @@
+ 					prevpml->pml_next = pml;
+ 				free(t);
+ 			}
+-			if ((!svc_sendreply(xprt, xdr_int, (caddr_t)&ans)) &&
++			if ((!svc_sendreply(xprt, (xdrproc_t) xdr_int, (caddr_t)&ans)) &&
+ 			    debugging) {
+ 				(void) fprintf(stderr, "svc_sendreply\n");
+ 				abort();
+@@ -459,7 +485,7 @@
+ 		/*
+ 		 * Lookup the mapping for a program,version and return its port
+ 		 */
+-		if (!svc_getargs(xprt, xdr_pmap, &reg))
++		if (!svc_getargs(xprt, (xdrproc_t) xdr_pmap, (caddr_t) &reg))
+ 			svcerr_decode(xprt);
+ 		else {
+ 			/* remote host authorization check */
+@@ -474,7 +500,7 @@
+ 				port = fnd->pml_map.pm_port;
+ 			else
+ 				port = 0;
+-			if ((!svc_sendreply(xprt, xdr_int, (caddr_t)&port)) &&
++			if ((!svc_sendreply(xprt, (xdrproc_t) xdr_int, (caddr_t)&port)) &&
+ 			    debugging) {
+ 				(void) fprintf(stderr, "svc_sendreply\n");
+ 				abort();
+@@ -486,7 +512,7 @@
+ 		/*
+ 		 * Return the current set of mapped program,version
+ 		 */
+-		if (!svc_getargs(xprt, xdr_void, NULL))
++		if (!svc_getargs(xprt, (xdrproc_t) xdr_void, (caddr_t) NULL))
+ 			svcerr_decode(xprt);
+ 		else {
+ 			/* remote host authorization check */
+@@ -497,7 +523,7 @@
+ 			} else {
+ 				p = pmaplist;
+ 			}
+-			if ((!svc_sendreply(xprt, xdr_pmaplist,
++			if ((!svc_sendreply(xprt, (xdrproc_t) xdr_pmaplist,
+ 			    (caddr_t)&p)) && debugging) {
+ 				(void) fprintf(stderr, "svc_sendreply\n");
+ 				abort();
+@@ -645,7 +671,7 @@
+ 	timeout.tv_sec = 5;
+ 	timeout.tv_usec = 0;
+ 	a.rmt_args.args = buf;
+-	if (!svc_getargs(xprt, xdr_rmtcall_args, &a))
++	if (!svc_getargs(xprt, (xdrproc_t) xdr_rmtcall_args, (caddr_t) &a))
+ 		return;
+ 	/* host and service access control */
+ 	if (!check_callit(svc_getcaller(xprt), 
+@@ -674,9 +700,9 @@
+ 			   au->aup_uid, au->aup_gid, au->aup_len, au->aup_gids);
+ 		}
+ 		a.rmt_port = (u_long)port;
+-		if (clnt_call(client, a.rmt_proc, xdr_opaque_parms, &a,
+-		    xdr_len_opaque_parms, &a, timeout) == RPC_SUCCESS) {
+-			svc_sendreply(xprt, xdr_rmtcall_result, (caddr_t)&a);
++		if (clnt_call(client, a.rmt_proc, (xdrproc_t) xdr_opaque_parms, (char*) &a,
++		    (xdrproc_t) xdr_len_opaque_parms, (char*) &a, timeout) == RPC_SUCCESS) {
++			svc_sendreply(xprt, (xdrproc_t) xdr_rmtcall_result, (caddr_t)&a);
+ 		}
+ 		AUTH_DESTROY(client->cl_auth);
+ 		clnt_destroy(client);

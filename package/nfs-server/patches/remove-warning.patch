@@ -1,0 +1,30 @@
+--- nfs-server-2.2beta47.old/auth_clnt.c	1999-11-10 10:18:06.000000000 +0100
++++ nfs-server-2.2beta47/auth_clnt.c	2005-03-24 23:44:16.000000000 +0100
+@@ -238,19 +238,23 @@
+ 
+ 	/* First, set the user ID. */
+ 	if (auth_uid != cred_uid) {
+-		if (setfsuid(cred_uid) < 0)
++		if (setfsuid(cred_uid) < 0) {
++#if 0
+ 			Dprintf(L_ERROR, "Unable to setfsuid %d: %s\n",
+ 			    cred_uid, strerror(errno));
+-		else
++#endif 
++		} else
+ 			auth_uid = cred_uid;
+ 	}
+ 
+ 	/* Next, the group ID. */
+ 	if (auth_gid != cred_gid) {
+-		if (setfsgid(cred_gid) < 0)
++		if (setfsgid(cred_gid) < 0) {
++#if 0
+ 			Dprintf(L_ERROR, "Unable to setfsgid %d: %s\n",
+ 			    cred_gid, strerror(errno));
+-		else
++#endif 
++		} else
+ 			auth_gid = cred_gid;
+ 	}
+ 

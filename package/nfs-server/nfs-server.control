@@ -1,0 +1,16 @@
+Package: nfs-server
+Section: net
+Priority: optional
+Maintainer: Felix Fietkau <nbd@vd-s.ath.cx>
+Source: buildroot internal
+Depends: portmap
+Description: User space NFS server
+ This package contains all necessary programs to make your Linux machine act
+ as an NFS server, being an NFS daemon (rpc.nfsd), a mount daemon (rpc.mountd).
+ .
+ Unlike other NFS daemons, this NFS server runs entirely in user space.  This
+ makes it a tad slower than other NFS implementations, and also introduces
+ some awkwardnesses in the semantics (for instance, moving a file to a
+ different directory will render its file handle invalid).
+ .
+ There is currently no support for file locking.
