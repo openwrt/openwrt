@@ -2,6 +2,12 @@
 
 include $(TOPDIR)/rules.mk
 
+PKG_NAME := openwrt-utils
+PKG_RELEASE := 1
+PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
+PKG_IPK:=$(PACKAGE_DIR)/$(PKG_NAME)_$(PKG_RELEASE)_$(ARCH).ipk
+PKG_IPK_DIR:=$(PKG_BUILD_DIR)/ipkg
+
 SHARED_INCLUDE:=${shell pwd}/include
 
 libshared-compile libnvram-compile wlc-compile:
@@ -13,13 +19,17 @@ libshared-install libnvram-install wlc-install:
 libshared-clean libnvram-clean wlc-clean:
 	@$(MAKE) -C $(patsubst %-clean,%,$@) clean
 
-$(TARGET_DIR)/sbin/mtd: mtd.c
+$(PKG_IPK_DIR)/sbin/mtd: mtd.c
+	mkdir -p $(PKG_IPK_DIR)/sbin
 	$(TARGET_CC) -o $@ $<
-	$(STRIP) $@
 
-$(TARGET_DIR)/sbin/jffs2root: jffs2root.c
+$(PKG_IPK_DIR)/sbin/jffs2root: jffs2root.c
+	mkdir -p $(PKG_IPK_DIR)/sbin
 	$(TARGET_CC) -o $@ $<
-	$(STRIP) $@
+
+$(PKG_IPK_DIR)/usr/sbin/wlc: wlc.c libshared-compile
+	mkdir -p $(PKG_IPK_DIR)/usr/sbin
+	$(TARGET_CC) -o $@ $< -lshared -L./libshared -I$(SHARED_INCLUDE)
 
 # wlconf tool extracted from linksys firmware GPL.unpackedtree
 # WRT54GS_3_37_2_1109_US
@@ -44,13 +54,23 @@ $(TARGET_DIR)/usr/sbin/wlconf: $(LINKSYS_WLCONF_DIR)/.unpacked
 			install
 	$(STRIP) $@
 
-source:
-prepare: 
-compile: libnvram-compile libshared-compile wlc-compile
-install: libnvram-install libshared-install wlc-install \
-	$(TARGET_DIR)/sbin/mtd $(TARGET_DIR)/sbin/jffs2root $(TARGET_DIR)/usr/sbin/wlconf
+$(PKG_IPK): $(PKG_IPK_DIR)/sbin/mtd $(PKG_IPK_DIR)/sbin/jffs2root $(PKG_IPK_DIR)/usr/sbin/wlc
+	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_IPK_DIR) $(PKG_NAME).control $(PKG_RELEASE) $(ARCH)
+	$(STRIP) $(PKG_IPK_DIR)/usr/sbin/*
+	$(STRIP) $(PKG_IPK_DIR)/sbin/*
+	mkdir -p $(PACKAGE_DIR)
+	$(IPKG_BUILD) $(PKG_IPK_DIR) $(PACKAGE_DIR)
 
-clean: libnvram-clean libshared-clean wlc-clean
-	rm -rf $(LINKSYS_WLCONF_DIR)
-	rm -f $(TARGET_DIR)/sbin/mtd
-	rm -f $(TARGET_DIR)/sbin/jffs2root
+$(IPKG_STATE_DIR)/info/$(PKG_NAME).list: $(PKG_IPK)
+	$(IPKG) install $(PKG_IPK)
+
+source: $(DL_DIR)/$(LINKSYS_WLCONF_TGZ)
+prepare: $(LINKSYS_WLCONF_DIR)/.unpacked
+compile: prepare libnvram-compile libshared-compile $(PKG_IPK)
+install: libnvram-install libshared-install \
+	 $(TARGET_DIR)/usr/sbin/wlconf \
+	 $(IPKG_STATE_DIR)/info/$(PKG_NAME).list
+
+clean: libshared-clean libnvram-clean
+	rm -rf $(PKG_BUILD_DIR)
+	rm -f $(PKG_IPK)
