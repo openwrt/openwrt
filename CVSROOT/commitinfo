@@ -1,0 +1,15 @@
+# The "commitinfo" file is used to control pre-commit checks.
+# The filter on the right is invoked with the repository and a list 
+# of files to check.  A non-zero exit of the filter program will 
+# cause the commit to be aborted.
+#
+# The first entry on a line is a regular expression which is tested
+# against the directory that the change is being committed to, relative
+# to the $CVSROOT.  For the first match that is found, then the remainder
+# of the line is the name of the filter to run.
+#
+# If the repository name does not match any of the regular expressions in this
+# file, the "DEFAULT" line is used, if it is specified.
+#
+# If the name "ALL" appears as a regular expression it is always used
+# in addition to the first matching regex or "DEFAULT".

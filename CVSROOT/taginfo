@@ -1,0 +1,20 @@
+# The "taginfo" file is used to control pre-tag checks.
+# The filter on the right is invoked with the following arguments:
+#
+# $1 -- tagname
+# $2 -- operation "add" for tag, "mov" for tag -F, and "del" for tag -d
+# $3 -- repository
+# $4->  file revision [file revision ...]
+#
+# A non-zero exit of the filter program will cause the tag to be aborted.
+#
+# The first entry on a line is a regular expression which is tested
+# against the directory that the change is being committed to, relative
+# to the $CVSROOT.  For the first match that is found, then the remainder
+# of the line is the name of the filter to run.
+#
+# If the repository name does not match any of the regular expressions in this
+# file, the "DEFAULT" line is used, if it is specified.
+#
+# If the name "ALL" appears as a regular expression it is always used
+# in addition to the first matching regex or "DEFAULT".
