@@ -40,5 +40,5 @@ kernel-headers-source: $(DL_DIR)/$(LINUX_HEADERS_SOURCE)
 kernel-headers-clean: clean
 	rm -rf $(LINUX_HEADERS_DIR)
 
-kernel-headers-dirclean:
+kernel-headers-toolclean:
 	rm -rf $(LINUX_HEADERS_DIR)

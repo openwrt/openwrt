@@ -79,7 +79,7 @@ binutils-clean:
 	rm -f $(STAGING_DIR)/bin/$(REAL_GNU_TARGET_NAME)*
 	-$(MAKE) -C $(BINUTILS_DIR1) clean
 
-binutils-dirclean:
+binutils-toolclean:
 	rm -rf $(BINUTILS_DIR1)
 
 
@@ -130,5 +130,5 @@ binutils_target-clean:
 	rm -f $(TARGET_DIR)/bin/$(REAL_GNU_TARGET_NAME)*
 	-$(MAKE) -C $(BINUTILS_DIR2) clean
 
-binutils_target-dirclean:
+binutils_target-toolclean:
 	rm -rf $(BINUTILS_DIR2)
