@@ -15,6 +15,16 @@ touch /var/log/lastlog
   awk '{OFS=FS=":";for(x=7,y=2;--x;){$x=sprintf("%02x",(y+="0x"$x)%256);y/=256}print}')
 }
 
+# set up the vlan*ports variables for the asus wl-500g deluxe, if they aren't exist
+[ "$(nvram get boardtype)" = "bcm95365r" ] && \
+[ "$(nvram get boardnum)" = "45" ] && {
+  [ -z "$(nvram get vlan0ports)" ] && \
+  [ -z "$(nvram get vlan1ports)" ] && {
+    nvram set vlan0ports="1 2 3 4 5*"
+    nvram set vlan1ports="0 5"
+  }
+}
+
 sed 's/^[^#]/insmod &/' /etc/modules 2>&-|ash
 
 ifconfig lo 127.0.0.1 up

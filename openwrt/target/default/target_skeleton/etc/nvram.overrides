@@ -45,9 +45,27 @@ NVRAM_lan_proto="static"
   FAILSAFE_ifnames="eth0 eth1"
 }
 
+# hacks for buffalo wla2-g54l
+[ "$(nvram get boardnum)" = "00" ] && \
+[ "$(nvram get product_name)" = "Product_name" ] && {
+  debug "### wla2-g54l hacks ###"
+  NVRAM_lan_ifnames="vlan0"
+  NVRAM_wan_ifname="none"
+}
+
 # hack for asus wl-500g hardware
 [ $asus ] && {
     FAILSAFE_lan_ifnames="eth0 eth2"
+}
+
+# hacks for asus wl-500g deluxe
+[ "$(nvram get boardtype)" = "bcm95365r" ] && \
+[ "$(nvram get boardnum)" = "45" ] && {
+  debug "### wl-500g deluxe hacks ###"
+  NVRAM_vlan0hwname="et0"
+  NVRAM_vlan1hwname="et0"
+  NVRAM_lan_ifnames="vlan0 eth1"
+  NVRAM_wan_ifname="vlan1"
 }
 
 # defaults if lan_ifname is missing
