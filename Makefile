@@ -119,7 +119,7 @@ source: $(TARGETS_SOURCE)
 #
 #############################################################
 clean:
-	rm -rf $(BUILD_DIR)
+	rm -rf $(BUILD_DIR) $(IMAGE).*
 	-rm -f openwrt-*
 	@$(MAKE) -C $(CONFIG) clean
 
