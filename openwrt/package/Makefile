@@ -18,6 +18,7 @@ package-$(BR2_PACKAGE_OPENVPN) += openvpn
 package-$(BR2_PACKAGE_POPT) += popt
 package-$(BR2_PACKAGE_PPTPD) += pptpd
 package-$(BR2_PACKAGE_IPROUTE2) += iproute2
+package-$(BR2_PACKAGE_HASERL) += haserl
 package-$(BR2_PACKAGE_MICROPERL) += microperl
 package-$(BR2_PACKAGE_LIBELF) += libelf
 package-$(BR2_PACKAGE_STRACE) += strace
