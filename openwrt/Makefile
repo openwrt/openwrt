@@ -27,8 +27,7 @@ CONFIG_DEFCONFIG = .defconfig
 CONFIG = package/config
 
 noconfig_targets := menuconfig config oldconfig randconfig \
-	defconfig allyesconfig allnoconfig clean distclean \
-	release tags
+	defconfig allyesconfig allnoconfig release tags
 
 # Pull in the user's configuration file
 ifeq ($(filter $(noconfig_targets),$(MAKECMDGOALS)),)
@@ -127,17 +126,17 @@ source: $(TARGETS_SOURCE)
 # Cleanup and misc junk
 #
 #############################################################
-clean: $(TARGETS_CLEAN)
-	rm -rf $(STAGING_DIR) $(TARGET_DIR) $(IMAGE)
+clean: 
+	rm -rf $(TARGET_DIR) $(IMAGE).*
+	$(MAKE) $(DIST)-image-clean
 
 dirclean: $(TARGETS_DIRCLEAN)
-	rm -rf $(STAGING_DIR) $(TARGET_DIR) $(IMAGE)
+	rm -rf $(TARGET_DIR) $(IMAGE).*
+	$(MAKE) $(DIST)-image-clean
 
-distclean:
-	rm -rf $(DL_DIR) $(BUILD_DIR) $(LINUX_KERNEL) $(IMAGE)
-
-cleanall:
-	rm -rf $(DL_DIR) $(BUILD_DIR) $(LINUX_KERNEL) $(IMAGE) $(TOOL_BUILD_DIR)
+distclean: clean
+	rm -rf $(DL_DIR) $(BUILD_DIR) $(TOOL_BUILD_DIR) 
+	rm .config* .tmpconfig.h
 
 sourceball:
 	rm -rf $(BUILD_DIR)
@@ -194,8 +193,8 @@ defconfig: $(CONFIG)/conf
 # Cleanup and misc junk
 #
 #############################################################
-clean: 
-	- $(MAKE) -C $(CONFIG) clean
+clean:
+	@$(MAKE) -C $(CONFIG) clean
 
 distclean: clean
 
@@ -203,5 +202,4 @@ endif # ifeq ($(strip $(BR2_HAVE_DOT_CONFIG)),y)
 
 .PHONY: dummy subdirs release distclean clean config oldconfig \
 	menuconfig tags check test depend
-
 

@@ -1,17 +1,20 @@
 # Default target skeleton stuff, may be overridden
+DIST=openwrt
 TARGET_SKELETON=target/default/skel.tar.gz
 TARGET_SKEL_DIR=target/default/target_skeleton
 
 include target/device/Makefile.in
 
-openwrt-linux.trx: openwrt-trx
-	PATH=$(TARGET_PATH) trx -o openwrt-linux.trx $(LINUX_DIR)/$(LINUX_BINLOC) $(IMAGE).$(ROOTFS)
+$(DIST)-linux.trx: openwrt-trx
+	PATH=$(TARGET_PATH) trx -o $(DIST)-linux.trx $(LINUX_DIR)/$(LINUX_BINLOC) $(IMAGE).$(ROOTFS)
 
-openwrt-gs-code.bin: openwrt-addpattern openwrt-linux.trx
-	PATH=$(TARGET_PATH) addpattern -2 -i  openwrt-linux.trx -o openwrt-gs-code.bin -g
+$(DIST)-gs-code.bin: openwrt-addpattern $(DIST)-linux.trx
+	PATH=$(TARGET_PATH) addpattern -2 -i  $(DIST)-linux.trx -o $(DIST)-gs-code.bin -g
 
-openwrt-g-code.bin: openwrt-gs-code.bin
-	sed -e "1s,^W54S,W54G," < openwrt-gs-code.bin > openwrt-g-code.bin
+$(DIST)-g-code.bin: $(DIST)-gs-code.bin
+	sed -e "1s,^W54S,W54G," < $(DIST)-gs-code.bin > $(DIST)-g-code.bin
 
-openwrt-image:	openwrt openwrt-g-code.bin
+openwrt-image:	openwrt $(DIST)-g-code.bin
 
+$(DIST)-image-clean:
+	@-rm $(DIST)-* 2>/dev/null
