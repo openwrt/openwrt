@@ -8,6 +8,9 @@ source "package/dnsmasq/Config.in"
 source "package/iptables/Config.in"
 source "package/bridge/Config.in"
 
+comment "Applications"
+source "package/microperl/Config.in"
+
 comment "Networking"
 source "package/ppp/Config.in"
 source "package/dropbear/Config.in"
