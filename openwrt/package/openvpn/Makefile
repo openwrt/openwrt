@@ -57,6 +57,7 @@ $(PKG_IPK): $(PKG_BUILD_DIR)/openvpn
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_IPK_DIR) $(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
 	mkdir -p $(PKG_IPK_DIR)/usr/sbin
 	cp $(PKG_BUILD_DIR)/openvpn $(PKG_IPK_DIR)/usr/sbin/
+	$(STRIP) $(PKG_IPK_DIR)/usr/sbin/*
 	mkdir -p $(PACKAGE_DIR)
 	$(IPKG_BUILD) $(PKG_IPK_DIR) $(PACKAGE_DIR)
 
