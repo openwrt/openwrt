@@ -26,4 +26,5 @@ if_valid () (
     $DEBUG vconfig add $vif $i 2>/dev/null
   }
   ifconfig "$1" >/dev/null 2>&1 || [ "${1%%[0-9]}" = "br" ]
+  [ $? = 0 ] || { echo -e "# $1 ignored: no such interface"; return 1; }
 )
