@@ -57,4 +57,4 @@ openwrt-gs-code.bin.squashfs: openwrt-linux.trx.squashfs
 openwrt-g-code.bin.squashfs: openwrt-gs-code.bin.squashfs
 	sed -e "1s,^W54S,W54G," < openwrt-gs-code.bin.squashfs > openwrt-g-code.bin.squashfs
 
-openwrt-image:	openwrt-g-code.bin.squashfs
+openwrt-image-squashfs:	openwrt-g-code.bin.squashfs
