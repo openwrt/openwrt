@@ -11,6 +11,9 @@ source "package/dnsmasq/Config.in"
 source "package/iptables/Config.in"
 source "package/bridge/Config.in"
 
+comment "libraries"
+source "package/zlib/Config.in"
+
 comment "Suggested Extras"
 source "package/ebtables/Config.in"
 source "package/dropbear_sshd/Config.in"
