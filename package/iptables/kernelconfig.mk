@@ -1,6 +1,7 @@
 include $(LINUX_DIR)/.config
 
 # translate linux kernel config to filenames
+ext-$(CONFIG_IP_NF_NAT) += SNAT DNAT
 ext-$(CONFIG_IP_NF_MATCH_LIMIT) += limit
 ext-$(CONFIG_IP_NF_MATCH_MAC) += mac
 ext-$(CONFIG_IP_NF_MATCH_PKTTYPE) += pkttype
