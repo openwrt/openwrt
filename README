@@ -1,26 +1,15 @@
-This is the buildsystem for the OpenWrt Linux Distribution
+This is the buildsystem for the OpenWrt Linux distribution
 It is a modified uClibc buildroot2.
 
 Please use "make menuconfig" to configure your appreciated
 configuration for the toolchain and firmware.
 
-Simply running 'make' will build your firmware and a tarball
-of kernel modules. It will download all sources, build the 
-cross-compile toolchain, the kernel and all choosen applications.
+Simply running 'make' will build your firmware.
+It will download all sources, build the cross-compile toolchain, 
+the kernel and all choosen applications.
 
 You can use scripts/flash.sh for remotely updating your embedded system
 via tftp.
-
-
-There are some cleanup targets we would like to explain.
-"make clean" will only clean the firmware images and the root
-filesystem. "make dirclean" will remove the extracted kernel source
-and all exctracted software. (busybox,bridge-utils,..), but will
-preserve your toolchain. (compiler,linker,..)
-"make distclean" will remove everything, including the toolchain, 
-all downloaded source code archives and your firmware configuration. 
-You can cleanup separate directories by using "make application-dirclean" 
-and rebuild the firmware with "make".
 
 Be happy..
 	Your OpenWrt Project
