@@ -1,21 +1,24 @@
 #!/bin/sh
+# $Id$
 
 exec 2>/dev/null
 
 umount /jffs 
-mount | grep jffs2 && {
+if [ -z "$(mount | grep jffs2)" ]; then
+	mtd erase OpenWrt
+	mount -t jffs2 /dev/mtdblock/4 /jffs
+	mount /dev/mtdblock/2 /rom -o ro
+	cd /jffs
+else
 	echo "firstboot has already been run"
-	echo "to run firstboot again you must boot failsafe"
-	exit
-}
+	echo "fixing symlinks instead"
+	cd /
+fi
 
-mtd erase OpenWrt
-mount -t jffs2 /dev/mtdblock/4 /jffs
-mount /dev/mtdblock/2 /rom -o ro
-cd /jffs
 {
 	cd /rom
 	find . -type d
+	cd -
 } | xargs mkdir
 
 for file in $(cd /rom; find *  -type f; find *  -type l;)
