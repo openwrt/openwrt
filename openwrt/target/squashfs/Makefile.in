@@ -1,3 +1,4 @@
 ifeq ($(strip $(BR2_TARGET_ROOTFS_SQUASHFS)),y)
-TARGETS+=squashfsroot openwrt-image-squashfs
+TARGETS+=squashfsroot
+ROOTFS=squashfs
 endif

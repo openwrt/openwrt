@@ -44,16 +44,3 @@ jffs2root-clean:
 
 jffs2root-dirclean:
 	rm -rf $(MTD_DIR)
-
-openwrt-linux.trx.jffs2:
-	$(BUILD_DIR)/trx -o openwrt-linux.trx.jffs2 $(LINUX_DIR)/$(LINUX_BINLOC) $(IMAGE).jffs2
-
-openwrt-gs-code.bin.jffs2: openwrt-linux.trx.jffs2
-	$(BUILD_DIR)/addpattern -2 -i  openwrt-linux.trx.jffs2 -o openwrt-gs-code.bin.jffs2 -g
-
-openwrt-g-code.bin.jffs2: openwrt-gs-code.bin.jffs2
-	sed -e "1s,^W54S,W54G," < openwrt-gs-code.bin.jffs2 > openwrt-g-code.bin.jffs2
-
-openwrt-image-jffs2:	openwrt-g-code.bin.jffs2
-
-
