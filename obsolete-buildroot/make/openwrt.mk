@@ -60,21 +60,23 @@ TARGET_MODULES_DIR:=$(TARGET_DIR)/lib/modules/2.4.20
 
 $(LINUX_DIR)/.unpacked: $(WRT54G_DIR)/.prepared
 	-(cd $(BUILD_DIR); ln -sf $(LINUX_DIR) linux)
-	# preserve the binary-only driver
-	#mv $(LINUX_DIR)/drivers/net/mac/mac.o \
-	#	$(LINUX_DIR)/drivers/net/mac/mac.o-saved
 	touch $(LINUX_DIR)/.unpacked
 
 $(LINUX_DIR)/.patched: $(WRT54G_DIR)/.prepared
 	$(SOURCE_DIR)/patch-kernel.sh $(LINUX_DIR)/../.. $(SOURCE_DIR) openwrt-linux-netfilter.patch
 	$(SOURCE_DIR)/patch-kernel.sh $(LINUX_DIR)/../.. $(SOURCE_DIR) openwrt-wrt54g-linux.patch
+	$(SOURCE_DIR)/patch-kernel.sh $(LINUX_DIR)/../.. $(SOURCE_DIR) openwrt-wrt54g-nfsswap.patch
 	# use replacement diag module code
 	cp -f $(SOURCE_DIR)/openwrt-diag.c $(LINUX_DIR)/drivers/net/diag/diag_led.c
 	cp -f $(SOURCE_DIR)/openwrt-wrt54g-linux.config $(LINUX_DIR)/.config
 	-(cd $(BUILD_DIR); ln -sf $(LINUX_DIR) linux)
+	-(cd $(LINUX_DIR)/arch/mips/brcm-boards/bcm947xx/; \
+	rm -rf compressed; \
+	tar jxvf $(SOURCE_DIR)/compressed-20040531.tar.bz2; \
+	)
 	touch $(LINUX_DIR)/.patched
 
-$(LINUX_DIR)/.configured: $(LINUX_DIR)/.patched $(LINUX_DIR)/.nf-patched
+$(LINUX_DIR)/.configured: $(LINUX_DIR)/.patched $(LINUX_DIR)/.bbc-patched $(LINUX_DIR)/.nf-patched 
 	$(SED) "s,^CROSS_COMPILE.*,CROSS_COMPILE=$(KERNEL_CROSS),g;" $(LINUX_DIR)/Makefile
 	$(SED) "s,^CROSS_COMPILE.*,CROSS_COMPILE=$(KERNEL_CROSS),g;" $(LINUX_DIR)/arch/mips/Makefile
 	$(SED) "s,\-mcpu=,\-mtune=,g;" $(LINUX_DIR)/arch/mips/Makefile
@@ -100,7 +102,6 @@ $(DL_DIR)/$(WRT54G_SOURCE):
 	$(WGET) -P $(DL_DIR) $(WRT54G_SITE)/$(WRT54G_SOURCE)
 
 $(WRT54G_DIR)/.source: $(DL_DIR)/$(WRT54G_SOURCE)
-	#zcat $(DL_DIR)/$(WRT54G_SOURCE) | tar -C $(BUILD_DIR) -xvf - WRT54G/README.TXT WRT54G/release
 	zcat $(DL_DIR)/$(WRT54G_SOURCE) | tar -C $(BUILD_DIR) -xvf - WRT54GS/README.TXT WRT54GS/release
 	touch $(WRT54G_DIR)/.source
 
