@@ -1,53 +1,60 @@
 # NVRAM overrides
-# This file handles the NVRAM quirks of various hardware.
 #
+# This file handles the NVRAM quirks of various hardware.
 # THIS FILE IS NOT A REPLACEMENT FOR NVRAM
 
-# linksys bug has lan doing dhcp; force static
-lan_proto="static"
+# linksys bug; remove when not using static configuration for lan
+NVRAM_lan_proto="static"
 
-# hacks for 1.x hardware
+# hacks for wrt54g 1.x hardware
 [ "$(nvram get boardnum)"  = "42" ] && \
 [ "$(nvram get boardtype)" = "bcm94710dev" ] && {
-  debug "### 1.x hardware hack ###"
-  vlan1hwname="et0"
-  vlan2hwname="et0"
 
-  # we remap old device names to new
-  # it's recommended that you continue to
-  # use the old names to preserve backwards
-  # compatibility
+  # remap eth0 => vlan2, eth1 => vlan1
+  # for all *_ifname(s)
+
+  debug "### wrt54g 1.x hack ###"
+  NVRAM_vlan1hwname="et0"
+  NVRAM_vlan2hwname="et0"
+
   remap () {
-    eval $1=\"$(nvram_get $1 | awk 'gsub("eth0","vlan2") gsub("eth1","vlan1")')\"
+    eval NVRAM_$1=\"$(nvram get $1 | awk 'gsub("eth0","vlan2") gsub("eth1","vlan1")')\"
   }
 
-  remap lan_ifname
-  remap lan_ifnames
-  remap wifi_ifname
-  remap wifi_ifnames
-  remap wan_ifname
-  remap wan_ifnames
-  remap pppoe_ifname
+  for type in lan wifi wan pppoe
+  do
+  remap ${type}_ifname
+  remap ${type}_ifnames
+  done
 }
 
-[ -z "$(nvram_get lan_ifname)" ] && {
-  lan_ifname="br0"
-  lan_ifnames="vlan0 vlan2 eth1 eth2 eth3"
+# hacks for wap54g hardware
+[ "$(nvram get boardnum)"  = "2" ] || \
+[ "$(nvram get boardnum)"  = "1024" ] && {
+  debug "### wap54g hack ###"
+  NVRAM_wan_ifname="none"
 }
 
-[ -z "$(nvram_get wan_ifname)" ] && {
-   wan_ifname="vlan1"
-   wan_proto="dhcp"
+# defaults if lan_ifname is missing
+[ -z "$(nvram get lan_ifname)" ] && {
+  NVRAM_lan_ifname="br0"
+  NVRAM_lan_ifnames="vlan0 vlan2 eth1 eth2 eth3"
+}
+
+# defaults if wan_ifname is missing
+[ -z "$(nvram get wan_ifname)" ] && {
+   NVRAM_wan_ifname="vlan1"
+   NVRAM_wan_proto="dhcp"
 }
 
 # failsafe if reset is held
 [ "$FAILSAFE" = "true" ] && {
   echo "### FAILSAFE MODE ####"
-  lan_ifname="br0"
-  lan_ifnames="vlan0 vlan2 eth1 eth2 eth3"
-  lan_ipaddr="192.168.1.1"
-  lan_netmask="255.255.255.0"
-  lan_hwaddr="00:0B:AD:0A:DD:00"
-  wan_ifname="none"
-  wifi_ifname="none"
+  NVRAM_lan_ifname="br0"
+  NVRAM_lan_ifnames="vlan0 vlan2 eth1 eth2 eth3"
+  NVRAM_lan_ipaddr="192.168.1.1"
+  NVRAM_lan_netmask="255.255.255.0"
+  NVRAM_lan_hwaddr="00:0B:AD:0A:DD:00"
+  NVRAM_wan_ifname="none"
+  NVRAM_wifi_ifname="none"
 }

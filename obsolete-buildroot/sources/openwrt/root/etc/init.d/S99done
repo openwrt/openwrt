@@ -1,6 +1,7 @@
 #!/bin/sh
+# automagically run firstboot
 [ -z "$FAILSAFE" ] && {
 	{ mount | grep jffs2 1>&-; } || firstboot
 }
-# turn off DMZ led
+# set leds to normal state
 echo "0x00" > /proc/sys/diag

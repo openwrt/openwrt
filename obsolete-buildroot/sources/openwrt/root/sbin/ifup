@@ -3,36 +3,36 @@
   type=$1
   debug "### ifup $type ###"
 
-  if=$(nvram_get ${type}_ifname)
+  if=$(nvram get ${type}_ifname)
   if [ "${if%%[0-9]}" = "ppp" ]; then
-    if=$(nvram_get pppoe_ifname)
+    if=$(nvram get pppoe_ifname)
   fi
 
   if_valid $if || return
 
   $DEBUG ifconfig $if down
   if [ "${if%%[0-9]}" = "br" ]; then
-    stp=$(nvram_get ${type}_stp)
+    stp=$(nvram get ${type}_stp)
     $DEBUG brctl delbr $if
     $DEBUG brctl addbr $if
     $DEBUG brctl setfd $if 0
     $DEBUG brctl stp $if ${stp:-0}
-    for sif in $(nvram_get ${type}_ifnames); do {
+    for sif in $(nvram get ${type}_ifnames); do {
       if_valid $sif || continue
       $DEBUG ifconfig $sif 0.0.0.0 up
       $DEBUG brctl addif $if $sif
     } done
   fi
 
-  mac=$(nvram_get ${type}_hwaddr)
+  mac=$(nvram get ${type}_hwaddr)
   ${mac:+$DEBUG ifconfig $if hw ether $mac}
 
-  if_proto=$(nvram_get ${type}_proto)
+  if_proto=$(nvram get ${type}_proto)
   case "$if_proto" in
     static)
-      ip=$(nvram_get ${type}_ipaddr)
-      netmask=$(nvram_get ${type}_netmask)
-      gateway=$(nvram_get ${type}_gateway)
+      ip=$(nvram get ${type}_ipaddr)
+      netmask=$(nvram get ${type}_netmask)
+      gateway=$(nvram get ${type}_gateway)
 
       $DEBUG ifconfig $if $ip ${netmask:+netmask $netmask} broadcast + up
       ${gateway:+$DEBUG route add default gw $gateway}
@@ -40,7 +40,7 @@
       [ -f /etc/resolv.conf ] && return
 
       debug "# --- creating /etc/resolv.conf ---"
-      for dns in $(nvram_get ${type}_dns); do {
+      for dns in $(nvram get ${type}_dns); do {
 	echo "nameserver $dns" >> /etc/resolv.conf
       } done
     ;;
@@ -52,11 +52,11 @@
       ${DEBUG:-eval} "udhcpc -i $if -b -p $pidfile &" 
     ;;
     pppoe)
-      username=$(nvram_get ppp_username)
-      password=$(nvram_get ppp_passwd)
-      redial=$(nvram_get ppp_redialperiod)
-      idletime=$(nvram_get ppp_idletime)
-      mtu=$(nvram_get wan_mtu)
+      username=$(nvram get ppp_username)
+      password=$(nvram get ppp_passwd)
+      redial=$(nvram get ppp_redialperiod)
+      idletime=$(nvram get ppp_idletime)
+      mtu=$(nvram get wan_mtu)
 
       $DEBUG ifconfig $if 0.0.0.0 up
 
