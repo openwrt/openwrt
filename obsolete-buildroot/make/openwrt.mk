@@ -235,7 +235,11 @@ openwrt-prune:
 
 ######################################################################
 
-openwrt-linux.trx:  openwrt-prune squashfsroot
+wrt-tools:
+	$(CC) -o $(WRT54G_DIR)/release/tools/trx $(SOURCE_DIR)/trx.c
+	$(CC) -o $(WRT54G_DIR)/release/tools/addpattern $(SOURCE_DIR)/addpattern.c
+
+openwrt-linux.trx:  openwrt-prune squashfsroot wrt-tools
 	$(WRT54G_DIR)/release/tools/trx -o openwrt-linux.trx \
 		$(LINUX_DIR)/$(LINUX_BINLOC) $(IMAGE)
 
