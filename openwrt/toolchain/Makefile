@@ -13,7 +13,7 @@ uClibc-prepare: kernel-headers-prepare sed-install utils-install
 binutils-prepare: uClibc-prepare
 gcc-prepare: binutils-install
 uClibc-compile: gcc-prepare
-gcc-install: uClibc-install
+gcc-compile: uClibc-install
 
 $(STAMP_DIR):
 	mkdir -p $(STAMP_DIR)
