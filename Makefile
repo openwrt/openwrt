@@ -107,6 +107,8 @@ $(STAGING_DIR):
 $(TARGET_DIR):
 	@mkdir -p $(TARGET_DIR)
 	cp -a target/default/target_skeleton/* $(TARGET_DIR)/
+	mkdir $(TARGET_DIR)/{proc,dev,jffs,tmp,usr/sbin}
+	chmod 1777 $(TARGET_DIR)/tmp
 	-find $(TARGET_DIR) -type d -name CVS -exec rm -rf {} \; > /dev/null 2>&1
 
 source: $(TARGETS_SOURCE)
