@@ -95,7 +95,7 @@ INSTALL_LIBGCJ:=false
 # The list of stuff to build for the target filesystem
 #
 #############################################################
-TARGETS:=gcc3_3 openwrt-base openwrt-code.bin
+TARGETS:=host-sed gcc3_3 openwrt-base openwrt-code.bin
 
 #############################################################
 #
