@@ -39,9 +39,9 @@ if_valid () {
 
 wifi_init () {
   echo "# --- wifi init ---"
-  hwaddr=$(nvram_get il0macaddr)
-  [ -z "$hwaddr" ] && hwaddr=$(nvram_get wl0_hwaddr)
-  if=$(mac2if $hwaddr)
+  # assume wifi is eth2, fall back to eth1
+  if="eth2"
+  if_valid $if || if="eth1"
   $DEBUG wlconf $if up
 }
 
@@ -123,7 +123,8 @@ wifi_init
 $DEBUG vconfig set_name_type VLAN_PLUS_VID_NO_PAD
 
 # hacks for 1.x hardware
-[ -z "$(nvram_get vlan0hwname)" ] && {
+[ "$(nvram get boardnum)"  = "42" ] && \
+[ "$(nvram get boardtype)" = "bcm94710dev" ] && {
   echo "# 1.x HACK"
   vlan1hwname="et0"
   vlan2hwname="et0"
