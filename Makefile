@@ -69,16 +69,13 @@ package_install: toolchain
 # In this section, we need .config
 include .config.cmd
 
-world: $(DL_DIR) $(BUILD_DIR) target_prepare $(TARGET_DIR) toolchain_install package_install target_install
+world: $(DL_DIR) $(BUILD_DIR) target_prepare $(TARGET_DIR) toolchain_install package_install target_install package_index
 
 .PHONY: all world clean dirclean distclean image_clean target_clean source target_prepare target_install toolchain_install package_install
 
-#############################################################
-#
-# staging and target directories do NOT list these as
-# dependancies anywhere else
-#
-#############################################################
+package_index:
+	$(STAGING_DIR)/usr/bin/ipkg-make-index $(PACKAGE_DIR) > $(PACKAGE_DIR)/Packages
+
 target_prepare:
 	$(MAKE) -C target prepare
 
