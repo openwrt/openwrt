@@ -50,10 +50,17 @@ config BR2_PACKAGE_KMOD_CRYPTO
 	help
 	  Kernel modules for cryptographic algorithms
 
+config BR2_PACKAGE_KMOD_PPP
+	tristate "PPP support"
+	default m
+	help
+	  Kernel support for PPP
+
 config BR2_PACKAGE_KMOD_MPPE
 	tristate "PPP MPPE/MPPC module"
 	default m
 	select BR2_PACKAGE_KMOD_CRYPTO
+	depends BR2_PACKAGE_KMOD_PPP
 	help
 	  Support for Microsoft PPP Encryption/Compression
 
