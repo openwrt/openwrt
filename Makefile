@@ -49,7 +49,7 @@ ifeq ($(strip $(BR2_HAVE_DOT_CONFIG)),y)
 #
 ##############################################################
 TARGETS:=host-sed kernel-headers uclibc-configured binutils gcc uclibc-target-utils
-TARGETS+=linux
+TARGETS+=openwrt-sstrip linux
 
 include toolchain/Makefile.in
 include package/Makefile.in
