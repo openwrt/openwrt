@@ -8,11 +8,7 @@ ifneq ($(strip $(USE_BUSYBOX_SNAPSHOT)),)
 # Be aware that this changes daily....
 BUSYBOX_DIR:=$(BUILD_DIR)/busybox
 BUSYBOX_SOURCE:=busybox-$(strip $(USE_BUSYBOX_SNAPSHOT)).tar.bz2
-#BUSYBOX_SITE:=http://www.busybox.net/downloads/snapshots
-#
-# TEMPORARY HACK!
-#
-BUSYBOX_SITE:=http://openwrt.ksilebo.net/downloads
+BUSYBOX_SITE:=http://www.busybox.net/downloads/snapshots
 else
 BUSYBOX_DIR:=$(BUILD_DIR)/busybox-1.00-pre8
 BUSYBOX_SOURCE:=busybox-1.00-pre8.tar.bz2

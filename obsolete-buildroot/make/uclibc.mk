@@ -7,11 +7,7 @@ ifneq ($(strip $(USE_UCLIBC_SNAPSHOT)),)
 # Be aware that this changes daily....
 UCLIBC_DIR:=$(BUILD_DIR)/uClibc
 UCLIBC_SOURCE:=uClibc-$(strip $(USE_UCLIBC_SNAPSHOT)).tar.bz2
-#UCLIBC_SITE:=http://www.uclibc.org/downloads/snapshots
-#
-#  TEMPORARY HACK!
-#
-UCLIBC_SITE:=http://openwrt.ksilebo.net/downloads
+UCLIBC_SITE:=http://www.uclibc.org/downloads/snapshots
 else
 UCLIBC_DIR:=$(BUILD_DIR)/uClibc-0.9.26
 UCLIBC_SOURCE:=uClibc-0.9.26.tar.bz2
@@ -51,7 +47,7 @@ endif
 ifeq ($(strip $(USE_UCLIBC_LDSO_0_9_24)),true)
 	$(SOURCE_DIR)/patch-kernel.sh $(UCLIBC_DIR) $(SOURCE_DIR) uClibc-ldso-0.9.24.patch
 endif
-	$(SOURCE_DIR)/patch-kernel.sh $(UCLIBC_DIR) $(SOURCE_DIR) uClibc-ftruncate.patch
+	$(SOURCE_DIR)/patch-kernel.sh $(UCLIBC_DIR) $(SOURCE_DIR) uClibc-sigaction.patch
 	touch $(UCLIBC_DIR)/.unpacked
 
 $(UCLIBC_DIR)/.configured: $(UCLIBC_DIR)/.unpacked $(LINUX_DIR)/.configured
