@@ -114,15 +114,14 @@ static int __init diag_init()
 	printk(KERN_INFO "diag board_type: %08x\n",board_type);
 
 	if (board_type & 0x400) {
-		board_type=1;
 		set_diag=v1_set_diag;
 		set_dmz=v1_set_dmz;
-
 		if (board_type==0x41d) {
 			printk(KERN_INFO "buffalo hack.\n");
 			set_diag=ignore;
 			set_dmz=v2_set_dmz;
 		}
+		board_type=1;
 	} else {
 		board_type=2;
 		set_diag=v2_set_diag;
