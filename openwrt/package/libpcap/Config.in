@@ -1,6 +1,6 @@
 config BR2_PACKAGE_LIBPCAP
-	bool "libpcap"
-	default n
+	tristate "libpcap (a low-level packet capture library)"
+	default m
 	help
 	  A system-independent library for user-level network packet capture.
 
