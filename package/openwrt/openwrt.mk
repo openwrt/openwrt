@@ -34,6 +34,8 @@ linksys-shared: $(TARGET_DIR)/$(LINKSYS_SHARED_TARGET_BINARY)
 linksys-shared-clean:
 	-$(MAKE) -C $(LINKSYS_SHARED_DIR) clean
 
+linksys-shared-dirclean:
+	rm -rf $(LINKSYS_SHARED_DIR)
 
 # nvram tool extracted from linksys firmware GPL sourcetree
 # WRT54GS_3_37_2_1109_US
@@ -58,6 +60,9 @@ linksys-nvram: $(TARGET_DIR)/$(LINKSYS_NVRAM_TARGET_BINARY)
 
 linksys-nvram-clean:
 	-$(MAKE) -C $(LINKSYS_NVRAM_BUILD_DIR) clean
+
+linksys-nvram-dirclean:
+	rm -rf $(LINKSYS_NVRAM_BUILD_DIR)
 
 # wlconf tool extracted from linksys firmware GPL sourcetree
 # WRT54GS_3_37_2_1109_US
@@ -88,6 +93,8 @@ linksys-wlconf: $(TARGET_DIR)/$(LINKSYS_WLCONF_TARGET_BINARY)
 linksys-wlconf-clean:
 	-$(MAKE) -C $(LINKSYS_WLCONF_BUILD_DIR) clean
 
+linksys-wlconf-dirclean:
+	rm -rf $(LINKSYS_WLCONF_BUILD_DIR)
 
 # mtd tool
 OPENWRT_MTD_SOURCE=package/openwrt/mtd.c
@@ -98,6 +105,21 @@ $(TARGET_DIR)/$(OPENWRT_MTD_TARGET_BINARY):
 
 openwrt-mtd: $(TARGET_DIR)/$(OPENWRT_MTD_TARGET_BINARY)
 
+openwrt-mtd-clean:
+	rm $(TARGET_DIR)/$(OPENWRT_MTD_TARGET_BINARY)
+
+# jffs2root tool
+OPENWRT_JFFS2ROOT_SOURCE=package/openwrt/jffs2root.c
+OPENWRT_JFFS2ROOT_TARGET_BINARY:=sbin/jffs2root
+
+$(TARGET_DIR)/$(OPENWRT_JFFS2ROOT_TARGET_BINARY): 
+		$(TARGET_CC) -o $(TARGET_DIR)/$(OPENWRT_JFFS2ROOT_TARGET_BINARY) $(OPENWRT_JFFS2ROOT_SOURCE)
+
+openwrt-jffs2root: $(TARGET_DIR)/$(OPENWRT_JFFS2ROOT_TARGET_BINARY)
+
+openwrt-jffs2root-clean:
+	rm $(TARGET_DIR)/$(OPENWRT_JFFS2ROOT_TARGET_BINARY)
+
 # trx tool
 OPENWRT_TRX_SOURCE=package/openwrt/trx.c
 OPENWRT_TRX_TARGET=$(STAGING_DIR)/bin/trx
@@ -107,6 +129,9 @@ $(OPENWRT_TRX_TARGET):
 
 openwrt-trx: $(OPENWRT_TRX_TARGET)
 
+openwrt-trx-clean: 
+	rm $(OPENWRT_TRX_TARGET)
+
 # addpattern tool
 OPENWRT_ADDPATTERN_SOURCE=package/openwrt/addpattern.c
 OPENWRT_ADDPATTERN_TARGET=$(STAGING_DIR)/bin/addpattern
@@ -115,6 +140,9 @@ $(OPENWRT_ADDPATTERN_TARGET):
 		$(CC) -o $(OPENWRT_ADDPATTERN_TARGET) $(OPENWRT_ADDPATTERN_SOURCE)
 
 openwrt-addpattern: $(OPENWRT_ADDPATTERN_TARGET)
+
+openwrt-addpattern-clean: 
+	rm $(OPENWRT_ADDPATTERN_TARGET)
 
 openwrt:	linksys-shared linksys-nvram linksys-wlconf openwrt-mtd openwrt-trx openwrt-addpattern
 
