@@ -47,3 +47,8 @@ squashfsroot-clean:
 
 squashfsroot-dirclean:
 	rm -rf $(SQUASHFS_DIR)
+
+ifeq ($(strip $(BR2_TARGET_ROOTFS_SQUASHFS)),y)
+TARGETS+=squashfsroot openwrt-image
+ROOTFS=squashfs
+endif

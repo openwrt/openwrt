@@ -1,0 +1,17 @@
+choice
+	prompt "Device Support"
+	default BR2_TARGET_ALL
+
+config BR2_TARGET_ALL
+	bool "Support for all devices"
+
+config BR2_TARGET_LINKSYS_WRT54G
+    bool "Linksys WRT54G Support"
+
+config BR2_TARGET_LINKSYS_WRT54GS
+    bool "Linksys WRT54GS Support"
+
+config BR2_TARGET_ASUS_WL500G
+	bool "Asus WL-500g Support"
+
+endchoice

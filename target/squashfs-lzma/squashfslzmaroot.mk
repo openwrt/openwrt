@@ -48,3 +48,8 @@ squashfslzmaroot-clean:
 
 squashfslzmaroot-dirclean:
 	rm -rf $(SQUASHFSLZMA_DIR)
+
+ifeq ($(strip $(BR2_TARGET_ROOTFS_SQUASHFS_LZMA)),y)
+TARGETS+=squashfslzmaroot openwrt-image
+ROOTFS=squashfslzma
+endif
