@@ -128,11 +128,11 @@ source: $(TARGETS_SOURCE)
 #############################################################
 clean: 
 	rm -rf $(TARGET_DIR) $(IMAGE).*
-	$(MAKE) $(DIST)-image-clean
+	$(MAKE) openwrt-image-clean
 
 dirclean: $(TARGETS_DIRCLEAN)
 	rm -rf $(TARGET_DIR) $(IMAGE).*
-	$(MAKE) $(DIST)-image-clean
+	$(MAKE) openwrt-image-dirclean
 
 distclean: clean
 	rm -rf $(DL_DIR) $(BUILD_DIR) $(TOOL_BUILD_DIR) 

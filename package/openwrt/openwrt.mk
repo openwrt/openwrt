@@ -62,7 +62,7 @@ linksys-nvram-clean:
 	-$(MAKE) -C $(LINKSYS_NVRAM_BUILD_DIR) clean
 
 linksys-nvram-dirclean:
-	rm -rf $(LINKSYS_NVRAM_BUILD_DIR)
+	rm -rf $(LINKSYS_NVRAM_DIR)
 
 # wlconf tool extracted from linksys firmware GPL sourcetree
 # WRT54GS_3_37_2_1109_US
@@ -94,7 +94,7 @@ linksys-wlconf-clean:
 	-$(MAKE) -C $(LINKSYS_WLCONF_BUILD_DIR) clean
 
 linksys-wlconf-dirclean:
-	rm -rf $(LINKSYS_WLCONF_BUILD_DIR)
+	rm -rf $(LINKSYS_WLCONF_DIR)
 
 # mtd tool
 OPENWRT_MTD_SOURCE=package/openwrt/mtd.c
@@ -144,5 +144,9 @@ openwrt-addpattern: $(OPENWRT_ADDPATTERN_TARGET)
 openwrt-addpattern-clean: 
 	rm $(OPENWRT_ADDPATTERN_TARGET)
 
-openwrt:	linksys-shared linksys-nvram linksys-wlconf openwrt-mtd openwrt-trx openwrt-addpattern
+linksys:	linksys-shared linksys-nvram linksys-wlconf
+
+openwrt:	linksys openwrt-mtd openwrt-trx openwrt-addpattern openwrt-jffs2root
+
+openwrt-dirclean: linksys-shared-dirclean linksys-nvram-dirclean linksys-wlconf-dirclean
 
