@@ -1,0 +1,30 @@
+#!/bin/sh
+
+exec 2>/dev/null
+
+umount /jffs 
+mtd erase OpenWrt
+mount -t jffs2 /dev/mtdblock/4 /jffs
+mount /dev/mtdblock/2 /rom -o ro
+cd /jffs
+{
+	cd /rom
+	find . -type d
+} | xargs mkdir
+
+for file in $(cd /rom; find *  -type f; find *  -type l;)
+do {
+	ln -sf  /rom/$file $file
+} done
+
+touch /tmp/resolv.conf
+ln -s /tmp/resolv.conf /etc/resolv.conf
+
+umount /rom
+mount none /jffs/proc -t proc
+pivot_root /jffs /jffs/rom
+mount none /dev  -t devfs
+mount none /tmp  -t ramfs
+umount /rom/proc
+umount /rom/tmp
+umount /rom/dev

@@ -1,0 +1,7 @@
+::sysinit:/etc/rcS
+::restart:/sbin/init
+::ctrlaltdel:/sbin/reboot
+::shutdown:/bin/alldone
+::respawn:/usr/sbin/dnsmasq -d -l /tmp/udhcpd.leases -s lan
+
+
