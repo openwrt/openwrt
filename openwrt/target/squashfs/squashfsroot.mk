@@ -4,8 +4,6 @@
 # 
 #############################################################
 
-ROOTFSTYPE=squashfs
-
 SQUASHFS_DIR=$(BUILD_DIR)/squashfs2.1-r2
 SQUASHFS_SOURCE=squashfs2.1-r2.tar.gz
 SQUASHFS_SITE=http://dl.sourceforge.net/sourceforge/squashfs
@@ -40,7 +38,7 @@ squashfs-dirclean:
 squashfsroot: squashfs
 	@rm -rf $(TARGET_DIR)/usr/man
 	@rm -rf $(TARGET_DIR)/usr/info
-	$(SQUASHFS_DIR)/squashfs-tools/mksquashfs $(TARGET_DIR) $(IMAGE).$(ROOTFSTYPE) -noappend -root-owned -le
+	$(SQUASHFS_DIR)/squashfs-tools/mksquashfs $(TARGET_DIR) $(IMAGE).squashfs -noappend -root-owned -le
 
 squashfsroot-source: squashfs-source
 
@@ -50,13 +48,13 @@ squashfsroot-clean:
 squashfsroot-dirclean:
 	rm -rf $(SQUASHFS_DIR)
 
-openwrt-linux.trx.$(ROOTFSTYPE):
-	$(BUILD_DIR)/trx -o openwrt-linux.trx.$(ROOTFSTYPE) $(LINUX_DIR)/$(LINUX_BINLOC) $(IMAGE).$(ROOTFSTYPE)
+openwrt-linux.trx.squashfs:
+	$(BUILD_DIR)/trx -o openwrt-linux.trx.squashfs $(LINUX_DIR)/$(LINUX_BINLOC) $(IMAGE).squashfs
 
-openwrt-gs-code.bin.$(ROOTFSTYPE): openwrt-linux.trx.$(ROOTFSTYPE)
-	$(BUILD_DIR)/addpattern -2 -i  openwrt-linux.trx.$(ROOTFSTYPE) -o openwrt-gs-code.bin.$(ROOTFSTYPE) -g
+openwrt-gs-code.bin.squashfs: openwrt-linux.trx.squashfs
+	$(BUILD_DIR)/addpattern -2 -i  openwrt-linux.trx.squashfs -o openwrt-gs-code.bin.squashfs -g
 
-openwrt-g-code.bin.$(ROOTFSTYPE): openwrt-gs-code.bin.$(ROOTFSTYPE)
-	sed -e "1s,^W54S,W54G," < openwrt-gs-code.bin.$(ROOTFSTYPE) > openwrt-g-code.bin.$(ROOTFSTYPE)
+openwrt-g-code.bin.squashfs: openwrt-gs-code.bin.squashfs
+	sed -e "1s,^W54S,W54G," < openwrt-gs-code.bin.squashfs > openwrt-g-code.bin.squashfs
 
-openwrt-image:	openwrt-g-code.bin.$(ROOTFSTYPE)
+openwrt-image:	openwrt-g-code.bin.squashfs
