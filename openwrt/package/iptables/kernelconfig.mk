@@ -23,6 +23,7 @@ ext-$(CONFIG_IP_NF_MATCH_OWNER) += owner
 ext-$(CONFIG_IP_NF_MATCH_PHYSDEV) += physdev
 ext-$(CONFIG_IP_NF_TARGET_MASQUERADE) += MASQUERADE
 ext-$(CONFIG_IP_NF_TARGET_REDIRECT) += REDIRECT
+ext-$(CONFIG_IP_NF_TARGET_REJECT) += REJECT
 ext-$(CONFIG_IP_NF_TARGET_TOS) += TOS
 ext-$(CONFIG_IP_NF_TARGET_ECN) += ECN
 ext-$(CONFIG_IP_NF_TARGET_DSCP) += DSCP
@@ -31,5 +32,6 @@ ext-$(CONFIG_IP_NF_TARGET_LOG) += LOG
 ext-$(CONFIG_IP_NF_TARGET_ULOG) += ULOG
 ext-$(CONFIG_IP_NF_TARGET_TCPMSS) += TCPMSS
 
-
-
+# add extensions that don't depend on kernel config
+ext-m += TTL
+ext-y += icmp standard tcp udp
