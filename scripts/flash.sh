@@ -24,16 +24,14 @@ if [ -z "$1" ] || [ ! -f $1 ] || [ -z $2 ]; then
     echo Usage: $0 firmware vendor
 cat << EOF
 IMPORTANT:
-Notes for Linksys Routers: 
+Notes for Linksys router: 
    be sure you have set boot_wait to yes. Power on your router
    after executing this script.
-   Use openwrt-gs-code.bin or openwrt-g-code.bin as firmware.
  
-Notes for Asus Routers:
-   be sure POWER led is flashing (If this is not a case
+Notes for Asus router:
+   be sure POWER led is flashing (If this is not the case
    poweroff the device, push the reset button & power on
    it again, then release button)
-   Use openwrt-linux.trx as firmware.
 
 1) connect your pc to the LAN port
 2) be sure your link is up and has an address in the
