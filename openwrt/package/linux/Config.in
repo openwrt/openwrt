@@ -29,6 +29,13 @@ config BR2_PACKAGE_KMOD_IPT6
 	help
 	  IPv6 firewalling support
 
+config BR2_PACKAGE_KMOD_NFS
+	tristate "NFS support"
+	default m
+	help
+	  Kernel modules for NFS support
+	  Includes lockd, nfs and sunrpc
+
 config BR2_PACKAGE_KMOD_USB
 	tristate "USB/SCSI support"
 	default m
