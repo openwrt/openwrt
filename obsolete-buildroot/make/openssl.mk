@@ -10,6 +10,9 @@ OPENSSL_SOURCE:=openssl-0.9.7d.tar.gz
 OPENSSL_DIR:=$(BUILD_DIR)/openssl-0.9.7d
 OPENSSL_PATCH=$(SOURCE_DIR)/openssl.patch
 
+OPENSSL_IPK_DIR=$(BUILD_DIR)/openssl-0.9.7d-ipk
+LIBSSL_IPK=$(BUILD_DIR)/libssl_0.9.7d_mipsel.ipk
+
 $(DL_DIR)/$(OPENSSL_SOURCE):
 	$(WGET) -P $(DL_DIR) $(OPENSSL_SITE)/$(OPENSSL_SOURCE)
 
@@ -64,6 +67,18 @@ $(TARGET_DIR)/usr/lib/libssl.a: $(STAGING_DIR)/lib/libcrypto.a
 openssl-headers: $(TARGET_DIR)/usr/lib/libssl.a
 
 openssl: uclibc $(TARGET_DIR)/usr/lib/libcrypto.so.0.9.7
+
+$(LIBSSL_IPK): uclibc $(STAGING_DIR)/usr/lib/libcrypto.so.0.9.7
+	mkdir -p $(OPENSSL_IPK_DIR)/CONTROL
+	cp $(SOURCE_DIR)/libssl.control $(OPENSSL_IPK_DIR)/CONTROL/control
+	mkdir -p $(OPENSSL_IPK_DIR)/usr/lib
+	cp -fa $(STAGING_DIR)/lib/libcrypto.so* $(OPENSSL_IPK_DIR)/usr/lib/
+	cp -fa $(STAGING_DIR)/lib/libssl.so* $(OPENSSL_IPK_DIR)/usr/lib/
+	-$(STRIP) --strip-unneeded $(OPENSSL_IPK_DIR)/usr/lib/libssl.so.0.9.7
+	-$(STRIP) --strip-unneeded $(OPENSSL_IPK_DIR)/usr/lib/libcrypto.so.0.9.7
+	cd $(BUILD_DIR); $(STAGING_DIR)/bin/ipkg-build -c -o root -g root $(OPENSSL_IPK_DIR)
+
+openssl-ipk: $(LIBSSL_IPK)
 
 openssl-source: $(DL_DIR)/$(OPENSSL_SOURCE)
 
