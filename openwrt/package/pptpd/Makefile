@@ -57,6 +57,7 @@ $(PKG_IPK): $(PKG_BUILD_DIR)/$(PKG_NAME)
 	cp $(PKG_BUILD_DIR)/pptpctrl $(PKG_IPK_DIR)/usr/sbin/
 	$(STRIP) $(PKG_IPK_DIR)/usr/sbin/*
 	mkdir -p $(PACKAGE_DIR)
+	find $(PKG_IPK_DIR) -name CVS | xargs rm -rf
 	$(IPKG_BUILD) $(PKG_IPK_DIR) $(PACKAGE_DIR)
 
 $(IPKG_STATE_DIR)/info/pptpd.list: $(PKG_IPK)
