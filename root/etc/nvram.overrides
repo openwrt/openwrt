@@ -6,7 +6,7 @@ lan_proto="static"
 
 # failsafe if reset is held
 [ "$FAILSAFE" = "true" ] && {
-  debug "### FAILSAFE MODE ####"
+  echo "### FAILSAFE MODE ####"
   lan_ifname="br0"
   lan_ifnames="vlan0 vlan2 eth1 eth2 eth3"
   lan_ipaddr="192.168.1.1"
@@ -38,4 +38,9 @@ lan_proto="static"
   remap wan_ifname
   remap wan_ifnames
   remap pppoe_ifname
+}
+
+[ -z "$(nvram_get lan_ifname)" ] && {
+  lan_ifname="br0"
+  lan_ifnames="vlan0 vlan2 eth1 eth2 eth3"
 }
