@@ -51,6 +51,8 @@ $(PKG_IPK): $(PKG_BUILD_DIR)/.libs/libgmp.so
 	rm $(PKG_IPK_DIR)/usr/lib/*.la
 	rm $(PKG_IPK_DIR)/usr/lib/*.a
 	$(STRIP) $(PKG_IPK_DIR)/usr/lib/*.so
+	rm -rf $(PKG_IPK_DIR)/usr/info
+	rm -rf $(PKG_IPK_DIR)/usr/include
 	mkdir -p $(PACKAGE_DIR)
 	$(IPKG_BUILD) $(PKG_IPK_DIR) $(PACKAGE_DIR)
 
