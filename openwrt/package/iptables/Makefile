@@ -4,9 +4,9 @@ include $(TOPDIR)/rules.mk
 include kernelconfig.mk
 
 PKG_NAME := iptables
-PKG_VERSION := 1.3.0
+PKG_VERSION := 1.3.1
 PKG_RELEASE := 1
-PKG_MD5SUM := a072c0f09f1b289cb7af56f76407d033
+PKG_MD5SUM := c3358a3bd0d7755df0b64a5063db296b
 
 PKG_SOURCE_SITE := http://www.netfilter.org/files
 PKG_SOURCE_FILE := $(PKG_NAME)-$(PKG_VERSION).tar.bz2
@@ -25,7 +25,7 @@ I_IPT_UTILS := $(PKG_BUILD_DIR)/ipkg/iptables-utils
 I_IPT_EXTRA := $(PKG_BUILD_DIR)/ipkg/iptables-extra
 I_IP6T := $(PKG_BUILD_DIR)/ipkg/ip6tables
 
-TARGETS := $(PKG_IPT)
+TARGETS := $(STAGING_DIR)/libipq/libipq.a $(PKG_IPT)
 ifneq ($(BR2_PACKAGE_IPTABLES_UTILS),)
 TARGETS += $(PKG_IPT_UTILS)
 endif
@@ -62,6 +62,15 @@ $(PKG_BUILD_DIR)/iptables: $(PKG_BUILD_DIR)/.patched
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		KERNEL_DIR=$(LINUX_DIR) PREFIX=/usr \
 		CC=$(TARGET_CC) COPT_FLAGS="$(TARGET_CFLAGS)"
+		
+$(STAGING_DIR)/libipq/libipq.a: $(PKG_BUILD_DIR)/iptables
+	$(TARGET_CONFIGURE_OPTS) \
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		KERNEL_DIR=$(LINUX_DIR) PREFIX=/usr \
+		CC=$(TARGET_CC) COPT_FLAGS="$(TARGET_CFLAGS)" \
+		libipq/libipq.a
+	cp -a $(PKG_BUILD_DIR)/include/* $(STAGING_DIR)/include/
+	cp $(PKG_BUILD_DIR)/libipq/libipq.a $(STAGING_DIR)/lib/
 
 $(PKG_IPT): $(PKG_BUILD_DIR)/iptables
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(I_IPT) control/iptables.control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH) 
