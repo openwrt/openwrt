@@ -56,7 +56,13 @@ $(PKG_BUILD_DIR)/src/splashd: $(PKG_BUILD_DIR)/.configured
 
 $(PKG_IPK): $(PKG_BUILD_DIR)/src/splashd
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_IPK_DIR) $(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
-	$(MAKE) -C $(PKG_BUILD_DIR) DESTDIR=$(PKG_IPK_DIR) install
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		CC=$(TARGET_CC) \
+		GLIB_CFLAGS="$(GLIB_CFLAGS)" \
+		AM_CFLAGS="$(TARGET_CFLAGS) $(GLIB_CFLAGS)" \
+		GLIB_LIBS="-L$(STAGING_DIR)/usr/lib -lglib" \
+		LIBS="-L$(STAGING_DIR)/usr/lib -lglib" \
+		DESTDIR=$(PKG_IPK_DIR) install
 	$(STRIP) $(PKG_IPK_DIR)/usr/sbin/splashd
 	mkdir -p $(PACKAGE_DIR)
 	$(IPKG_BUILD) $(PKG_IPK_DIR) $(PACKAGE_DIR)
