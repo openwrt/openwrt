@@ -133,4 +133,6 @@ sed-clean:
 sed-dirclean:
 	rm -rf $(SED_DIR2)
 
-
+ifeq ($(strip $(BR2_PACKAGE_SED)),y)
+TARGETS+=sed
+endif
