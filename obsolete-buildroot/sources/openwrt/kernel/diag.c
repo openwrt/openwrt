@@ -166,11 +166,18 @@ static int __init diag_init()
 				reset_polarity=1;
 			}
 		} else if (!strcmp(buf,"bcm94710ap")) {
-			// buffalo
-			set_diag=ignore;
-			set_dmz=v2_set_dmz;
-			reset_gpio=(1<<4);
-			reset_polarity=1;
+			buf=nvram_get("boardnum")?:"";
+			if (!strcmp(buf,"44")) {
+				//dell truemobile
+				set_dmz=v2_set_dmz;
+				reset_gpio=(1<<0);
+				reset_polarity=0;
+			} else {
+				// buffalo
+				set_dmz=v2_set_dmz;
+				reset_gpio=(1<<4);
+				reset_polarity=1;
+			}
 		}
 	} else {
 		board_type=2;
