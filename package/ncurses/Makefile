@@ -3,8 +3,14 @@ include $(TOPDIR)/rules.mk
 PKG_NAME := ncurses
 PKG_VERSION := 5.2
 PKG_RELEASE := 5
-
-PKG_SOURCE_SITE := ftp://ftp.gnu.org/pub/gnu/ncurses/
+PKG_MD5SUM := 464d6a49010cf2a6eb9ce59a264d4d47
+PKG_SOURCE_SITE := ftp://ftp.gnu.org/pub/gnu/$(PKG_NAME) \
+	    ftp://gatekeeper.dec.com/pub/GNU/$(PKG_NAME) \
+        ftp://ftp.uu.net/archive/systems/gnu/$(PKG_NAME) \
+        ftp://ftp.eu.uu.net/pub/gnu/$(PKG_NAME) \
+        ftp://ftp.funet.fi/pub/gnu/prep/$(PKG_NAME) \
+        ftp://ftp.leo.org/pub/comp/os/unix/gnu/$(PKG_NAME) \
+        ftp://ftp.digex.net/pub/gnu/$(PKG_NAME) 
 PKG_SOURCE_FILE := $(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_CAT := zcat
 PKG_SOURCE_DIR := $(PKG_NAME)-$(PKG_VERSION)
@@ -14,7 +20,7 @@ PKG_IPK := $(PACKAGE_DIR)/lib$(PKG_NAME)_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).i
 
 $(DL_DIR)/$(PKG_SOURCE_FILE):
 	mkdir -p $(DL_DIR)
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE_FILE) x $(PKG_SOURCE_SITE)
+	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE_FILE) $(PKG_MD5SUM) $(PKG_SOURCE_SITE)
 
 $(PKG_BUILD_DIR)/ipkg/rules: $(DL_DIR)/$(PKG_SOURCE_FILE)
 	mkdir -p $(TOOL_BUILD_DIR)
