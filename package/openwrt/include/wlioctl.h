@@ -562,6 +562,8 @@ typedef struct wlc_rev_info {
 #define WLC_SET_WEP				43
 #define WLC_GET_KEY				44
 #define WLC_SET_KEY				45
+#define WLC_GET_PASSIVE				48 /* added by nbd */
+#define WLC_SET_PASSIVE				49 /* added by nbd */
 #define WLC_SCAN				50
 #define WLC_SCAN_RESULTS			51
 #define WLC_DISASSOC				52
