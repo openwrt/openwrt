@@ -1,0 +1,150 @@
+#!/usr/bin/make -f
+
+ifneq ($(strip ${IPKG_RULES_INC}),)
+ include $(IPKG_RULES_INC)
+endif
+
+##
+
+PKG_VERSION := $(shell cat ./ipkg/version)
+CURRENT_DIR := $(shell pwd)
+INSTALL_DIR ?= $(CURRENT_DIR)/ipkg-install
+
+unexport INSTALL_DIR
+
+I_LIBPQ := ipkg/libpq
+I_LIBPQ_DEV := ipkg/libpq-dev
+I_PGSQL_UTILS := ipkg/pgsql-utils
+
+BUILD_DEPS := \
+#	$(STAGING_DIR)/usr/include/zlib.h \
+
+CONFIGURE_OPTS = \
+	--enable-shared \
+	--enable-static \
+	--disable-integer-datetimes \
+	--disable-rpath \
+	--without-tcl \
+	--without-tk \
+	--without-perl \
+	--without-python \
+	--without-java \
+	--without-krb4 \
+	--without-krb5 \
+	--without-pam \
+	--without-openssl \
+	--without-rendezvous \
+	--without-readline \
+	--with-zlib \
+
+##
+
+all: package
+
+
+.stamp-configured: $(BUILD_DEPS)
+
+	rm -rf config.cache
+	$(TARGET_CONFIGURE_OPTS) \
+	CFLAGS="$(TARGET_CFLAGS)" \
+	./configure \
+	  --target=$(GNU_TARGET_NAME) \
+	  --host=$(GNU_TARGET_NAME) \
+	  --build=$(GNU_HOST_NAME) \
+	  --prefix=/usr \
+	  --exec-prefix=/usr \
+	  --bindir=/usr/bin \
+	  --datadir=/usr/share \
+	  --includedir=/usr/include \
+	  --libdir=/usr/lib \
+	  --libexecdir=/usr/lib \
+	  --localstatedir=/var \
+	  --mandir=/usr/share/man \
+	  --sbindir=/usr/sbin \
+	  --sysconfdir=/etc \
+	  $(DISABLE_LARGEFILE) \
+	  $(DISABLE_NLS) \
+	  $(CONFIGURE_OPTS) \
+
+	touch .stamp-configured
+
+
+.stamp-built: .stamp-configured
+
+	$(MAKE) 
+
+	touch .stamp-built
+
+
+$(INSTALL_DIR)/usr/bin/psql: .stamp-built
+
+	mkdir -p $(INSTALL_DIR)
+
+	$(MAKE) \
+	  DESTDIR="$(INSTALL_DIR)" \
+	 install
+	 
+
+configure: .stamp-configured
+
+
+build: .stamp-built
+
+
+install: $(INSTALL_DIR)/usr/bin/psql
+
+
+package: $(INSTALL_DIR)/usr/bin/psql
+
+	mkdir -p $(I_LIBPQ)/usr/lib/
+	cp -fpR $(INSTALL_DIR)/usr/lib/libpq*.so.* $(I_LIBPQ)/usr/lib/
+	$(STRIP) $(I_LIBPQ)/usr/lib/lib*.so.*
+
+	mkdir -p $(I_LIBPQ_DEV)/usr/bin
+	cp -fpR $(INSTALL_DIR)/usr/bin/pg_config $(I_LIBPQ_DEV)/usr/bin/
+	mkdir -p $(I_LIBPQ_DEV)/usr/include
+	cp -fpR $(INSTALL_DIR)/usr/include/* $(I_LIBPQ_DEV)/usr/include/
+	mkdir -p $(I_LIBPQ_DEV)/usr/lib/
+	cp -fpR $(INSTALL_DIR)/usr/lib/lib*.a $(I_LIBPQ_DEV)/usr/lib/
+	cp -fpR $(INSTALL_DIR)/usr/lib/lib*.so* $(I_LIBPQ_DEV)/usr/lib/
+	
+	mkdir -p $(I_PGSQL_UTILS)/usr/bin
+	cp -fpR $(INSTALL_DIR)/usr/bin/psql $(I_PGSQL_UTILS)/usr/bin/
+	$(STRIP) $(I_PGSQL_UTILS)/usr/bin/*
+
+	chmod 0755 ipkg/*/CONTROL/
+	chmod 0644 ipkg/*/CONTROL/control
+
+	perl -pi -e "s/^Arch.*:.*/Architecture: $(ARCH)/g" ipkg/*/CONTROL/control
+ifneq ($(strip $(PKG_VERSION)),)
+	perl -pi -e "s/^Vers.*:.*/Version: $(PKG_VERSION)/g" ipkg/*/CONTROL/control
+endif
+
+	$(IPKG_BUILD) $(I_LIBPQ) $(IPKG_TARGET_DIR)
+	$(IPKG_BUILD) $(I_LIBPQ_DEV) $(IPKG_TARGET_DIR)
+	$(IPKG_BUILD) $(I_PGSQL_UTILS) $(IPKG_TARGET_DIR)
+
+
+clean:
+
+	$(MAKE) \
+	  DESTDIR="$(INSTALL_DIR)" \
+	 uninstall clean
+
+	rm -rf .stamp-* \
+	  $(I_LIBPQ)/usr \
+	  $(I_LIBPQ_DEV)/usr \
+	  $(I_PGSQL_UTILS)/usr \
+
+
+control:
+
+	@cat $(I_LIBPQ)/CONTROL/control
+	@echo
+	@cat $(I_LIBPQ_DEV)/CONTROL/control
+	@echo
+	@cat $(I_PGSQL_UTILS)/CONTROL/control
+	@echo
+	
+
+.PHONY: configure build install package clean control
