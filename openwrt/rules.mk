@@ -119,5 +119,5 @@ IPKG_STATE_DIR := $(TARGET_DIR)/usr/lib/ipkg
 IPKG_BUILD := PATH="$(TARGET_PATH)" ipkg-build -c -o root -g root
 
 # where to build (and put) .ipk packages
-IPKG_TARGET_DIR := $(BUILD_DIR)
+IPKG_TARGET_DIR := $(PACKAGE_DIR)
 
