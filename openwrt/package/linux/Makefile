@@ -50,6 +50,16 @@ $(eval $(call KMOD_template,USB,usb,\
 	$(MODULES_DIR)/kernel/drivers/usb/*.o \
 	$(MODULES_DIR)/kernel/drivers/usb/*/*.o \
 ))
+$(eval $(call KMOD_template,LP,lp,\
+	$(MODULES_DIR)/kernel/drivers/parport/parport.o \
+	$(MODULES_DIR)/kernel/drivers/parport/parport_pc.o \
+	$(MODULES_DIR)/kernel/drivers/char/lp.o \
+))
+$(eval $(call KMOD_template,VFAT,vfat,\
+	$(MODULES_DIR)/kernel/fs/vfat/vfat.o \
+	$(MODULES_DIR)/kernel/fs/fat/fat.o \
+	$(MODULES_DIR)/kernel/fs/msdos/msdos.o \
+))
 $(eval $(call KMOD_template,CRYPTO,crypto,\
 	$(MODULES_DIR)/kernel/crypto/*.o \
 ))

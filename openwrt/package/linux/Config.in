@@ -43,6 +43,19 @@ config BR2_PACKAGE_KMOD_USB
 	  Kernel modules for USB/SCSI support
 	  Includes usb-storage and printer
 
+config BR2_PACKAGE_KMOD_VFAT
+	tristate "VFAT filesystem support"
+	default m
+	help
+	  Kernel modules for VFAT filesystem support
+	  useful for usb mass storage devices
+
+config BR2_PACKAGE_KMOD_LP
+	tristate "parallel port and lp support"
+	default m
+	help
+	  Kernel modules for line printer and parallel port support
+
 config BR2_PACKAGE_KMOD_CRYPTO
 	tristate "CryptoAPI modules"
 	default m
