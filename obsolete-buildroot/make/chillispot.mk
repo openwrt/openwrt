@@ -4,7 +4,7 @@
 #
 #############################################################
 
-CHILLISPOT_VERSION:=0.92
+CHILLISPOT_VERSION:=0.95
 CHILLISPOT_SOURCE:=chillispot-$(CHILLISPOT_VERSION).tar.gz
 CHILLISPOT_SITE:=http://www.chillispot.org/download/
 CHILLISPOT_CAT:=zcat
