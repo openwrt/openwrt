@@ -40,6 +40,8 @@ package-$(BR2_PACKAGE_WOL) += wol
 package-$(BR2_PACKAGE_ZLIB) += zlib
 package-$(BR2_PACKAGE_DHCPFWD) += dhcp-forwarder
 package-$(BR2_PACKAGE_LIBNET) += libnet
+package-$(BR2_PACKAGE_LIBMYSQLCLIENT) += mysql
+package-$(BR2_PACKAGE_LIBPQ) += postgresql
 
 all: compile install
 clean: $(patsubst %,%-clean,$(package-) $(package-y) $(package-m)) linux-clean
@@ -54,6 +56,8 @@ nfs-server-compile: portmap-compile
 portmap-compile: tcp_wrappers-compile
 lcd4linux-compile: ncurses-compile
 libnet-compile: libpcap-compile
+mysql-compile: ncurses-compile zlib-compile
+postgresql-compile: zlib-compile
 
 $(patsubst %,%-prepare,$(package-y) $(package-m)): linux-install
 
