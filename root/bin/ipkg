@@ -34,7 +34,7 @@ ipkg_src_byname() {
 }
 
 ipkg_dests() {
-	local destre=`echo $1 | ipkg_protect_slashes`
+	local destre="`echo $1 | ipkg_protect_slashes`"
 	sed -ne "/^dest[[:space:]]\+$destre/{
 s/^dest[[:space:]]\+[^[:space:]]\+[[:space:]]\+//
 s/^/`echo $IPKG_OFFLINE_ROOT | ipkg_protect_slashes`/
@@ -80,12 +80,12 @@ ipkg_load_configuration() {
 	IPKG_CONF="$IPKG_CONF_DIR/ipkg.conf"
 
 	if [ -z "$IPKG_OFFLINE_ROOT" ]; then
-	    IPKG_OFFLINE_ROOT=`ipkg_option offline_root`
+	    IPKG_OFFLINE_ROOT="`ipkg_option offline_root`"
 	fi
 	# Export IPKG_OFFLINE_ROOT for use by update-alternatives
 	export IPKG_OFFLINE_ROOT
 	if [ -n "$DEST_NAME" ]; then
-		IPKG_ROOT=`ipkg_dest_byname $DEST_NAME`
+		IPKG_ROOT="`ipkg_dest_byname $DEST_NAME`"
 		if [ -z "$IPKG_ROOT" ]; then
 			if [ -d "$IPKG_OFFLINE_ROOT$DEST_NAME" ]; then
 				IPKG_ROOT="$IPKG_OFFLINE_ROOT$DEST_NAME";
@@ -97,7 +97,7 @@ Valid destinations are directories or one of the dest names from $IPKG_CONF:" >&
 			fi
 		fi
 	else
-		IPKG_ROOT=`ipkg_dest_default`
+		IPKG_ROOT="`ipkg_dest_default`"
 	fi
 
 	# Global ipkg state directories
@@ -110,11 +110,11 @@ Valid destinations are directories or one of the dest names from $IPKG_CONF:" >&
 	IPKG_STATE_DIR=$IPKG_ROOT/$IPKG_DIR_PREFIX
 
 	# Proxy Support
-	IPKG_PROXY_USERNAME=`ipkg_option proxy_username`
-	IPKG_PROXY_PASSWORD=`ipkg_option proxy_password`
-	IPKG_HTTP_PROXY=`ipkg_option http_proxy`
-	IPKG_FTP_PROXY=`ipkg_option ftp_proxy`
-	IPKG_NO_PROXY=`ipkg_option no_proxy`
+	IPKG_PROXY_USERNAME="`ipkg_option proxy_username`"
+	IPKG_PROXY_PASSWORD="`ipkg_option proxy_password`"
+	IPKG_HTTP_PROXY="`ipkg_option http_proxy`"
+	IPKG_FTP_PROXY="`ipkg_option ftp_proxy`"
+	IPKG_NO_PROXY="`ipkg_option no_proxy`"
 	if [ -n "$IPKG_HTTP_PROXY" ]; then 
 		export http_proxy="$IPKG_HTTP_PROXY"
 	fi
@@ -171,7 +171,7 @@ Force Options (use when ipkg is too smart for its own good):
 }
 
 ipkg_dir_part() {
-	local dir=`echo $1 | sed -ne 's/\(.*\/\).*/\1/p'`
+	local dir="`echo $1 | sed -ne 's/\(.*\/\).*/\1/p'`"
 	if [ -z "$dir" ]; then
 		dir="./"
 	fi
@@ -190,13 +190,13 @@ ipkg_download() {
 	local src="$1"
 	local dest="$2"
 
-	local src_file=`ipkg_file_part $src`
-	local dest_dir=`ipkg_dir_part $dest`
+	local src_file="`ipkg_file_part $src`"
+	local dest_dir="`ipkg_dir_part $dest`"
 	if [ -z "$dest_dir" ]; then
 		dest_dir="$IPKG_TMP"
 	fi
 
-	local dest_file=`ipkg_file_part $dest`
+	local dest_file="`ipkg_file_part $dest`"
 	if [ -z "$dest_file" ]; then
 		dest_file="$src_file"
 	fi
@@ -244,7 +244,7 @@ ipkg_update() {
 
 	local err=
 	for src_name in `ipkg_src_names`; do
-		local src=`ipkg_src_byname $src_name`
+		local src="`ipkg_src_byname $src_name`"
 		if ! ipkg_download $src/Packages $IPKG_LISTS_DIR/$src_name; then
 			echo "ipkg_update: Error downloading $src/Packages to $IPKG_LISTS_DIR/$src_name" >&2
 			err=t
@@ -439,11 +439,11 @@ ipkg_files() {
 	if [ -n "$DEST_NAME" ]; then
 		dests=$IPKG_ROOT
 	else
-		dests=`ipkg_dests_all`
+		dests="`ipkg_dests_all`"
 	fi
 	for dest in $dests; do
 		if [ -f $dest/$IPKG_DIR_PREFIX/info/$pkg.list ]; then
-			dest_sed=`echo $dest | ipkg_protect_slashes`
+			dest_sed="`echo $dest | ipkg_protect_slashes`"
 			sed -e "s/^/$dest_sed/" < $dest/$IPKG_DIR_PREFIX/info/$pkg.list
 		fi
 	done
@@ -453,15 +453,15 @@ ipkg_search() {
 	local pattern="$1"
 
 	for dest_name in `ipkg_dest_names`; do
-		dest=`ipkg_dest_byname $dest_name`
-		dest_sed=`echo $dest | ipkg_protect_slashes`
+		dest="`ipkg_dest_byname $dest_name`"
+		dest_sed="`echo $dest | ipkg_protect_slashes`"
 
 		set +o noglob
-		local list_files=`ls -1 $dest/$IPKG_DIR_PREFIX/info/*.list 2>/dev/null`
+		local list_files="`ls -1 $dest/$IPKG_DIR_PREFIX/info/*.list 2>/dev/null`"
 		set -o noglob
 		for file in $list_files; do
 			if sed "s/^/$dest_sed/" $file | grep -q $pattern; then
-				local pkg=`echo $file | sed "s/^.*\/\(.*\)\.list/\1/"`
+				local pkg="`echo $file | sed "s/^.*\/\(.*\)\.list/\1/"`"
 				[ "$dest_name" != `ipkg_dest_default_name` ] && pkg="$pkg ($dest_name)"
 				sed "s/^/$dest_sed/" $file | grep $pattern | sed "s/^/$pkg: /"
 			fi
@@ -510,10 +510,10 @@ ipkg_status_update() {
 
 ipkg_unsatisfied_dependences() {
     local pkg=$1
-    local deps=`ipkg_get_depends $pkg`
+    local deps="`ipkg_get_depends $pkg`"
     local remaining_deps=
     for dep in $deps; do
-	local installed=`ipkg_get_installed $dep`
+	local installed="`ipkg_get_installed $dep`"
 	if [ "$installed" != "installed" ] ; then
 	    remaining_deps="$remaining_deps $dep"
 	fi
@@ -524,35 +524,35 @@ ipkg_unsatisfied_dependences() {
 
 ipkg_safe_pkg_name() {
 	local pkg=$1
-	local spkg=`echo pkg_$pkg | sed -e y/-+./___/`
+	local spkg="`echo pkg_$pkg | sed -e y/-+./___/`"
 	echo $spkg
 }
 
 ipkg_set_depends() {
 	local pkg=$1; shift 
 	local new_deps="$*"
-	pkg=`ipkg_safe_pkg_name $pkg`
+	pkg="`ipkg_safe_pkg_name $pkg`"
 	## setvar ${pkg}_depends "$new_deps"
 	echo $new_deps > /tmp/ipkg/${pkg}.depends
 }
 
 ipkg_get_depends() {
 	local pkg=$1
-	pkg=`ipkg_safe_pkg_name $pkg`
+	pkg="`ipkg_safe_pkg_name $pkg`"
 	cat /tmp/ipkg/${pkg}.depends
 	## eval "echo \$${pkg}_depends"
 }
 
 ipkg_set_installed() {
 	local pkg=$1
-	pkg=`ipkg_safe_pkg_name $pkg`
+	pkg="`ipkg_safe_pkg_name $pkg`"
 	echo installed > /tmp/ipkg/${pkg}.installed
 	## setvar ${pkg}_installed "installed"
 }
 
 ipkg_set_uninstalled() {
 	local pkg=$1
-	pkg=`ipkg_safe_pkg_name $pkg`
+	pkg="`ipkg_safe_pkg_name $pkg`"
 	### echo ipkg_set_uninstalled $pkg > /dev/console
 	echo uninstalled > /tmp/ipkg/${pkg}.installed
 	## setvar ${pkg}_installed "uninstalled"
@@ -560,7 +560,7 @@ ipkg_set_uninstalled() {
 
 ipkg_get_installed() {
 	local pkg=$1
-	pkg=`ipkg_safe_pkg_name $pkg`
+	pkg="`ipkg_safe_pkg_name $pkg`"
 	if [ -f /tmp/ipkg/${pkg}.installed ]; then
 		cat /tmp/ipkg/${pkg}.installed
 	fi
@@ -570,7 +570,7 @@ ipkg_get_installed() {
 ipkg_depends() {
 	local new_pkgs="$*"
 	local all_deps=
-	local installed_pkgs=`ipkg_status_matching_all 'Status:.*[[:space:]]installed'`
+	local installed_pkgs="`ipkg_status_matching_all 'Status:.*[[:space:]]installed'`"
 	for pkg in $installed_pkgs; do
 	    ipkg_set_installed $pkg
 	done
@@ -626,7 +626,7 @@ ipkg_get_install_dest() {
 	local info_dir=$sd/info
 
         local requested_pkgs="$*"
-	local pkgs=`ipkg_depends $*`
+	local pkgs="`ipkg_depends $*`"
 
 	mkdir -p $info_dir
 	for pkg in $pkgs; do
@@ -644,14 +644,14 @@ Status: install ok not-installed" | ipkg_status_update_sd $sd $pkg
 		curcheck=0
 		## echo "pkgs to install: {$pkgs}" > /dev/console
 		for pkg in $pkgs; do
-			curcheck=`expr $curcheck + 1`
-			local is_installed=`ipkg_get_installed $pkg`
+			curcheck="`expr $curcheck + 1`"
+			local is_installed="`ipkg_get_installed $pkg`"
 			if [ "$is_installed" = "installed" ]; then
 				echo "$pkg is installed" > /dev/console
 				continue
 			fi
 
-			local remaining_deps=`ipkg_unsatisfied_dependences $pkg`
+			local remaining_deps="`ipkg_unsatisfied_dependences $pkg`"
 			if [ -n "$remaining_deps" ]; then
 				new_pkgs="$new_pkgs $pkg"
 				### echo "Dependences not satisfied for $pkg: $remaining_deps"
@@ -663,7 +663,7 @@ Status: install ok not-installed" | ipkg_status_update_sd $sd $pkg
 			local filename=
 			for src in `ipkg_src_names`; do
 				if ipkg_require_list $src; then
-					filename=`ipkg_extract_paragraph $pkg < $IPKG_LISTS_DIR/$src | ipkg_extract_field Filename | ipkg_extract_value`
+					filename="`ipkg_extract_paragraph $pkg < $IPKG_LISTS_DIR/$src | ipkg_extract_field Filename | ipkg_extract_value`"
 					[ -n "$filename" ] && break
 				fi
 			done
@@ -691,7 +691,7 @@ Status: install ok not-installed" | ipkg_status_update_sd $sd $pkg
 			fi
 
 			ipkg_set_installed $pkg
-			pkgs_installed=`expr $pkgs_installed + 1`
+			pkgs_installed="`expr $pkgs_installed + 1`"
 			rm $tmp_pkg_file
 		done
 		### echo "Installed $pkgs_installed package(s) this round"
@@ -722,8 +722,8 @@ ipkg_install_file_dest() {
 		return 1
 	fi
 
-	local pkg=`ipkg_file_part $filename | sed 's/\([a-z0-9.+-]\+\)_.*/\1/'`
-	local ext=`echo $filename | sed 's/.*\.//'`
+	local pkg="`ipkg_file_part $filename | sed 's/\([a-z0-9.+-]\+\)_.*/\1/'`"
+	local ext="`echo $filename | sed 's/.*\.//'`"
 	local pkg_extract_stdout
 	if [ "$ext" = "ipk" ]; then
 		pkg_extract_stdout="tar -xzOf"
@@ -735,7 +735,7 @@ ipkg_install_file_dest() {
 	fi
 
 	# Check dependencies
-	local depends=`ipkg_depends $pkg | sed -e "s/\<$pkg\>//"`
+	local depends="`ipkg_depends $pkg | sed -e "s/\<$pkg\>//"`"
 
 	# Don't worry about deps that are scheduled for installation
 	local missing_deps=
@@ -784,7 +784,7 @@ Status: install ok pending" | ipkg_status_update_sd $sd $pkg
 	echo -n "Unpacking $pkg..."
 	set +o noglob
 	for file in $IPKG_TMP/$pkg/control/*; do
-		local base_file=`ipkg_file_part $file`
+		local base_file="`ipkg_file_part $file`"
 		mv $file $info_dir/$pkg.$base_file
 	done
 	set -o noglob
@@ -807,7 +807,7 @@ Status: install ok pending" | ipkg_status_update_sd $sd $pkg
 		fi
 	fi
 
-	local old_conffiles=`ipkg_status_sd $sd $pkg Conffiles | ipkg_extract_value`
+	local old_conffiles="`ipkg_status_sd $sd $pkg Conffiles | ipkg_extract_value`"
 	local new_conffiles=
 	if [ -f "$info_dir/$pkg.conffiles" ]; then
 		for conffile in `cat $info_dir/$pkg.conffiles`; do
@@ -844,20 +844,20 @@ diff -u $dest/$conffile $IPKG_TMP/$pkg/data/$conffile"
 					done
 				fi
 				if [ -n "$use_maintainers_conffile" ]; then
-					local md5sum=`md5sum $IPKG_TMP/$pkg/data/$conffile | sed 's/ .*//'`
+					local md5sum="`md5sum $IPKG_TMP/$pkg/data/$conffile | sed 's/ .*//'`"
 					new_conffiles="$new_conffiles $conffile $md5sum"
 				else
 					new_conffiles="$new_conffiles $conffile <custom>"
 					rm $IPKG_TMP/$pkg/data/$conffile
 				fi
 			else
-				md5sum=`md5sum $IPKG_TMP/$pkg/data/$conffile | sed 's/ .*//'`
+				md5sum="`md5sum $IPKG_TMP/$pkg/data/$conffile | sed 's/ .*//'`"
 				new_conffiles="$new_conffiles $conffile $md5sum"
 			fi
 		done
 	fi
 
-	local owd=`pwd`
+	local owd="`pwd`"
 	(cd $IPKG_TMP/$pkg/data/; tar cf - . | (cd $owd; cd $dest; tar xf -))
 	rm -rf $IPKG_TMP/$pkg/data
 	rmdir $IPKG_TMP/$pkg
@@ -870,7 +870,7 @@ diff -u $dest/$conffile $IPKG_TMP/$pkg/data/$conffile"
 	if [ -n "$new_conffiles" ]; then
 		new_conffiles='Conffiles: '`echo $new_conffiles | ipkg_protect_slashes`
 	fi
-	local sed_safe_root=`echo $dest | sed -e "s/^${IPKG_OFFLINE_ROOT}//" | ipkg_protect_slashes`
+	local sed_safe_root="`echo $dest | sed -e "s/^${IPKG_OFFLINE_ROOT}//" | ipkg_protect_slashes`"
 	sed -e "s/\(Package:.*\)/\1\\
 Status: install ok installed\\
 Root: ${sed_safe_root}\\
@@ -925,7 +925,7 @@ ipkg_install_pending() {
 
 	if [ -d "$IPKG_PENDING_DIR" ]; then
 		set +o noglob
-		local pending=`ls -1d $IPKG_PENDING_DIR/*.ipk 2> /dev/null` || true
+		local pending="`ls -1d $IPKG_PENDING_DIR/*.ipk 2> /dev/null`" || true
 		set -o noglob
 		if [ -n "$pending" ]; then
 			echo "The following packages in $IPKG_PENDING_DIR will now be installed:"
@@ -941,7 +941,7 @@ ipkg_install_pending() {
 }
 
 ipkg_install_wanted() {
-	local wanted=`ipkg_status_matching 'Status:[[:space:]]*install.*not-installed'`
+	local wanted="`ipkg_status_matching 'Status:[[:space:]]*install.*not-installed'`"
 
 	if [ -n "$wanted" ]; then
 		echo "The following package were previously requested but have not been installed:"
@@ -967,13 +967,13 @@ ipkg_install_wanted() {
 
 ipkg_upgrade_pkg() {
 	local pkg="$1"
-	local avail_ver=`ipkg_info $pkg Version | ipkg_extract_value | head -1`
+	local avail_ver="`ipkg_info $pkg Version | ipkg_extract_value | head -1`"
 
 	is_installed=
 	for dest_name in `ipkg_dest_names`; do
-		local dest=`ipkg_dest_byname $dest_name`
+		local dest="`ipkg_dest_byname $dest_name`"
 		local sd=$dest/$IPKG_DIR_PREFIX
-		local inst_ver=`ipkg_status_sd $sd $pkg Version | ipkg_extract_value`
+		local inst_ver="`ipkg_status_sd $sd $pkg Version | ipkg_extract_value`"
 		if [ -n "$inst_ver" ]; then
 			is_installed=t
 
@@ -984,7 +984,7 @@ ipkg_upgrade_pkg() {
 
 			if [ "$avail_ver" = "$inst_ver" ]; then 
 				echo "Package $pkg ($inst_ver) installed in $dest_name is up to date"
-			elif ipkg-compare-versions $avail_ver '>>' $inst_ver; then
+			elif [ "$avail_ver" -gt "$inst_ver" ]; then
 				echo "Upgrading $pkg ($dest_name) from $inst_ver to $avail_ver"
 				ipkg_get_install_dest $dest $pkg
 			else
@@ -1002,7 +1002,7 @@ ipkg_upgrade_pkg() {
 
 ipkg_upgrade() {
 	if [ $# -lt 1 ]; then
-		local pkgs=`ipkg_status_matching 'Status:.*[[:space:]]installed'`
+		local pkgs="`ipkg_status_matching 'Status:.*[[:space:]]installed'`"
 	else
 		pkgs="$*"
 	fi
@@ -1029,14 +1029,14 @@ ipkg_remove_pkg_dest() {
 
 	echo "ipkg_remove: Removing $pkg... "
 
-	local files=`cat $info_dir/$pkg.list`
+	local files="`cat $info_dir/$pkg.list`"
 
 	export PKG_ROOT=$dest
 	if [ -x "$info_dir/$pkg.prerm" ]; then
 		$info_dir/$pkg.prerm remove
 	fi
 
-	local conffiles=`ipkg_status_sd $sd $pkg Conffiles | ipkg_extract_value`
+	local conffiles="`ipkg_status_sd $sd $pkg Conffiles | ipkg_extract_value`"
 
 	local dirs_to_remove=
 	for file in $files; do
