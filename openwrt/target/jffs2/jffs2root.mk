@@ -4,6 +4,8 @@
 #
 #############################################################
 
+include target/jffs2/blocksize.mk
+
 MTD_DIR:=$(BUILD_DIR)/mtd-20050122.orig
 MTD_SOURCE=mtd_20050122.orig.tar.gz
 MTD_SITE=http://ftp.debian.org/debian/pool/main/m/mtd
@@ -32,7 +34,7 @@ jffs2root: mtd
 	-@find $(TARGET_DIR) -type f -perm +111 | xargs $(SSTRIP) 2>/dev/null || true;
 	@rm -rf $(TARGET_DIR)/usr/man
 	@rm -rf $(TARGET_DIR)/usr/info
-	$(MKFS_JFFS2) --pad --little-endian --squash -e 0x20000 \
+	$(MKFS_JFFS2) --pad --little-endian --squash -e $(JFFS2_BLOCK_SIZE) \
 		-d $(TARGET_DIR) -o $(IMAGE).jffs2
 
 jffs2root-source: $(DL_DIR)/$(MTD_SOURCE)
