@@ -44,7 +44,7 @@ $(TARGET_DIR)/usr/lib/libnvram.so: $(PKG_BUILD_DIR)/libnvram.so
 
 $(TARGET_DIR)/usr/sbin/nvram: $(PKG_BUILD_DIR)/nvram
 	mkdir -p $(TARGET_DIR)/usr/sbin
-	install -m 644 $< $@
+	install -m 755 $< $@
 	$(STRIP) $@
 
 compile: $(PKG_BUILD_DIR)/libnvram.so $(PKG_BUILD_DIR)/nvram
