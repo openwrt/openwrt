@@ -1,6 +1,6 @@
 #!/bin/sh
 [ -z "$FAILSAFE" ] && {
-	{ mount | grep jffs2 1>-; } || firstboot
+	{ mount | grep jffs2 1>&-; } || firstboot
 }
 # turn off DMZ led
 echo "0x00" > /proc/sys/diag

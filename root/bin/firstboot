@@ -1,7 +1,6 @@
 #!/bin/sh
 # $Id$
 
-exec 2>/dev/null
 
 [ -f "/tmp/.firstboot" ] && {
 	echo "firstboot is already running"
@@ -13,7 +12,7 @@ jdev=$(mount | awk '/jffs2/ {print $3}')
 
 if [ -z "$jdev" ]; then
 	echo -n "Creating jffs2 partition... "
-	mtd erase OpenWrt >- 
+	mtd erase OpenWrt >&- 
 	mount -t jffs2 /dev/mtdblock/4 /jffs
 	echo "done"
 	cd /jffs
@@ -22,6 +21,8 @@ else
 	echo "jffs2 partition is mounted, only resetting files"
 	cd $jdev
 fi
+
+exec 2>/dev/null
 
 mount /dev/mtdblock/2 /rom -o ro
 
