@@ -1,0 +1,16 @@
+--- linux-mips-cvs/init/do_mounts.c	2005-01-20 03:19:24.000000000 +0100
++++ linux-broadcom/init/do_mounts.c	2005-01-31 13:13:14.000000000 +0100
+@@ -253,7 +253,13 @@
+ 	{ "ftlb", 0x2c08 },
+ 	{ "ftlc", 0x2c10 },
+ 	{ "ftld", 0x2c18 },
++#if defined(CONFIG_MTD_BLOCK) || defined(CONFIG_MTD_BLOCK_RO)
+ 	{ "mtdblock", 0x1f00 },
++	{ "mtdblock0",0x1f00 },
++	{ "mtdblock1",0x1f01 },
++	{ "mtdblock2",0x1f02 },
++	{ "mtdblock3",0x1f03 },
++#endif
+ 	{ "nb", 0x2b00 },
+ 	{ NULL, 0 }
+ };

@@ -1,0 +1,42 @@
+--- linux-mips-cvs/arch/mips/Makefile	2005-01-31 12:59:28.000000000 +0100
++++ linux-broadcom/arch/mips/Makefile	2005-01-31 13:13:14.000000000 +0100
+@@ -47,9 +47,9 @@
+ GCCFLAGS	+= -G 0 -mno-abicalls -fno-pic -pipe
+ GCCFLAGS	+= $(call check_gcc, -finline-limit=100000,)
+ LINKFLAGS	+= -G 0 -static -n
+-MODFLAGS	+= -mlong-calls
++MODFLAGS	+= -mlong-calls -fno-common
+ 
+-ifdef CONFIG_DEBUG_INFO
++ifdef CONFIG_REMOTE_DEBUG
+ GCCFLAGS	+= -g
+ ifdef CONFIG_SB1XXX_CORELIS
+ GCCFLAGS	+= -mno-sched-prolog -fno-omit-frame-pointer
+@@ -174,6 +174,7 @@
+ endif
+ 
+ AFLAGS		+= $(GCCFLAGS)
++ASFLAGS		+= $(GCCFLAGS)
+ CFLAGS		+= $(GCCFLAGS)
+ 
+ LD		+= -m $(ld-emul)
+@@ -727,6 +728,19 @@
+ endif
+ 
+ #
++# Broadcom BCM947XX variants
++#
++ifdef CONFIG_BCM947XX
++LIBS           += arch/mips/brcm-boards/generic/brcm.o arch/mips/brcm-boards/bcm947xx/bcm947xx.o
++SUBDIRS		   += arch/mips/brcm-boards/generic arch/mips/brcm-boards/bcm947xx
++LOADADDR       := 0x80001000
++
++zImage: vmlinux
++	$(MAKE) -C arch/$(ARCH)/brcm-boards/bcm947xx/compressed
++export LOADADDR
++endif
++
++#
+ # Choosing incompatible machines durings configuration will result in
+ # error messages during linking.  Select a default linkscript if
+ # none has been choosen above.
