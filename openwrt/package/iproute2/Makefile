@@ -1,6 +1,6 @@
 #############################################################
 #
-# ebtables
+# iproute2
 #
 #############################################################
 include $(TOPDIR)/rules.mk
@@ -53,12 +53,18 @@ $(PKG_IP): $(PKG_BUILD_DIR)/ip/ip $(PACKAGE_DIR)
 	$(STRIP) $(PKG_IP_DIR)/usr/sbin/*
 	$(IPKG_BUILD) $(PKG_IP_DIR) $(PACKAGE_DIR)
 
+$(IPKG_STATE_DIR)/info/ip.list: $(PKG_IP)
+	$(IPKG) install $(PKG_IP)
+
 $(PKG_TC): $(PKG_BUILD_DIR)/tc/tc $(PACKAGE_DIR)
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_TC_DIR) tc.control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
 	mkdir -p $(PKG_TC_DIR)/usr/sbin
 	cp $< $(PKG_TC_DIR)/usr/sbin/
 	$(STRIP) $(PKG_TC_DIR)/usr/sbin/*
 	$(IPKG_BUILD) $(PKG_TC_DIR) $(PACKAGE_DIR)
+
+$(IPKG_STATE_DIR)/info/tc.list: $(PKG_TC)
+	$(IPKG) install $(PKG_TC)
 
 $(PACKAGE_DIR):
 	mkdir -p $(PACKAGE_DIR)
@@ -71,17 +77,17 @@ ifneq ($(BR2_PACKAGE_IPROUTE2_TC),)
 TARGETS += $(PKG_TC)
 endif
 
+ifeq ($(BR2_PACKAGE_IPROUTE2_IP),y)
+INSTALL_TARGETS += $(IPKG_STATE_DIR)/info/ip.list
+endif
+ifeq ($(BR2_PACKAGE_IPROUTE2_TC),y)
+INSTALL_TARGETS += $(IPKG_STATE_DIR)/info/tc.list
+endif
+
 source: $(DL_DIR)/$(PKG_SOURCE)
 prepare: $(PKG_BUILD_DIR)/.patched
 compile: $(TARGETS)
-install:
-ifeq ($(BR2_PACKAGE_IPROUTE2_IP),y)
-	$(IPKG) install $(PKG_IP)
-endif
-ifeq ($(BR2_PACKAGE_IPROUTE2_TC),y)
-	$(IPKG) install $(PKG_TC)
-endif
-
+install: $(INSTALL_TARGETS)
 
 clean:
 	rm -rf $(PKG_BUILD_DIR)

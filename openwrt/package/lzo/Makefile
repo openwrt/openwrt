@@ -9,7 +9,7 @@ PKG_SOURCE_FILE := $(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_CAT := zcat
 PKG_SOURCE_DIR := $(PKG_NAME)-$(PKG_VERSION)
 PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_SOURCE_DIR)
-PKG_IPK := $(PKG_NAME)_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
+PKG_IPK := $(PACKAGE_DIR)/$(PKG_NAME)_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
 
 
 $(DL_DIR)/$(PKG_SOURCE_FILE):
@@ -49,7 +49,7 @@ $(STAGING_DIR)/lib/liblzo.a: $(PKG_BUILD_DIR)/src/liblzo.la
 	  DESTDIR="$(STAGING_DIR)" \
 	  install
 
-$(PACKAGE_DIR)/$(PKG_IPK): $(STAGING_DIR)/lib/liblzo.a
+$(PKG_IPK): $(STAGING_DIR)/lib/liblzo.a
 	mkdir -p $(PACKAGE_DIR)
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_BUILD_DIR)/ipkg/lzo lzo.control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
 	mkdir -p $(PKG_BUILD_DIR)/ipkg/lzo/usr/lib
@@ -57,11 +57,14 @@ $(PACKAGE_DIR)/$(PKG_IPK): $(STAGING_DIR)/lib/liblzo.a
 	$(STRIP) $(PKG_BUILD_DIR)/ipkg/lzo/usr/lib/*
 	$(IPKG_BUILD) $(PKG_BUILD_DIR)/ipkg/lzo $(PACKAGE_DIR)
 
+$(IPKG_STATE_DIR)/info/lzo.list: $(PKG_IPK)
+	$(IPKG) install $(PKG_IPK)
+
 source: $(DL_DIR)/$(PKG_SOURCE_FILE)
 prepare: $(PKG_BUILD_DIR)/.patched
-compile: $(STAGING_DIR)/lib/liblzo.a $(PACKAGE_DIR)/$(PKG_IPK)
-install: $(PKG_ZLIB)
-	$(IPKG) install $(PACKAGE_DIR)/$(PKG_IPK)
+compile: $(STAGING_DIR)/lib/liblzo.a $(PKG_IPK)
+install: $(IPKG_STATE_DIR)/info/lzo.list
+
 clean:
 	rm -rf $(PKG_BUILD_DIR)
 	rm -f $(STAGING_DIR)/lib/liblzo*

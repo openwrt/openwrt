@@ -9,7 +9,7 @@ PKG_SOURCE_FILE := $(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_CAT := zcat
 PKG_SOURCE_DIR := $(PKG_NAME)
 PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_SOURCE_DIR)
-PKG_IPK := $(PACKAGE_DIR)/$(PKG_NAME)_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
+PKG_IPK := $(PACKAGE_DIR)/lib$(PKG_NAME)_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
 
 
 $(DL_DIR)/$(PKG_SOURCE_FILE):
@@ -41,12 +41,14 @@ $(PKG_IPK): $(STAGING_DIR)/lib/libmatrixssl.so
 	$(STRIP) $(PKG_BUILD_DIR)/ipkg/matrixssl/usr/lib/*
 	$(IPKG_BUILD) $(PKG_BUILD_DIR)/ipkg/matrixssl $(PACKAGE_DIR)
 
+$(IPKG_STATE_DIR)/info/libmatrixssl.list: $(PKG_IPK)
+	$(IPKG) install $(PKG_IPK)
 
 source: $(DL_DIR)/$(PKG_SOURCE_FILE)
 prepare: $(PKG_BUILD_DIR)/.patched
 compile: $(STAGING_DIR)/lib/libmatrixssl.so $(PKG_IPK)
-install: $(PKG_ZLIB)
-	$(IPKG) install $(PACKAGE_DIR)/$(PKG_IPK)
+install: $(PKG_ZLIB) $(IPKG_STATE_DIR)/info/libmatrixssl.list
+
 clean:
 	rm -rf $(PKG_BUILD_DIR)
 	rm -f $(STAGING_DIR)/lib/libmatrixssl* $(STAGING_DIR)/include/matrixssl*
