@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME := haserl
-PKG_VERSION := 0.7.3
-PKG_RELEASE := 3
-PKG_MD5SUM := a45d9c5b07e053ad105124e1fc12d9c4
+PKG_VERSION := 0.8.0
+PKG_RELEASE := 1
+PKG_MD5SUM := bd9195d086566f56634c0bcbbbcbebea
 
 PKG_SOURCE_SITE := @SF/haserl
 PKG_SOURCE_FILE := $(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -22,15 +22,14 @@ $(DL_DIR)/$(PKG_SOURCE_FILE):
 $(PKG_BUILD_DIR)/ipkg/rules: $(DL_DIR)/$(PKG_SOURCE_FILE)
 	mkdir -p $(TOOL_BUILD_DIR)
 	$(PKG_SOURCE_CAT) $(DL_DIR)/$(PKG_SOURCE_FILE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
-	$(PATCH) $(PKG_BUILD_DIR) . $(PKG_NAME)-\*.diff
+#	$(PATCH) $(PKG_BUILD_DIR) ./patches
+	cp -fpR ./ipkg $(PKG_BUILD_DIR)/
 	chmod a+x $(PKG_BUILD_DIR)/ipkg/rules
 
 $(PKG_IPK): $(PKG_BUILD_DIR)/ipkg/rules
 	cd $(PKG_BUILD_DIR); \
-	ipkg/rules \
-	  TOPDIR="$(TOPDIR)" \
-	  IPKG_RULES_INC="$(TOPDIR)/rules.mk" \
-	 package
+	TOPDIR="$(TOPDIR)" IPKG_RULES_INC="$(TOPDIR)/rules.mk" \
+	./ipkg/rules package
 
 $(IPKG_STATE_DIR)/info/$(PKG_NAME).list: $(PKG_IPK)
 	$(IPKG) install $(PKG_IPK)
