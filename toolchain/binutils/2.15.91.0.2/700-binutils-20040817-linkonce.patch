@@ -1,0 +1,118 @@
+From http://sources.redhat.com/ml/binutils/2004-08/msg00190.html
+
+Date: Tue, 17 Aug 2004 12:04:29 +0200
+From: Jakub Jelinek <jakub at redhat dot com>
+To: binutils at sources dot redhat dot com
+Subject: [PATCH] Fix `defined in discarded section' errors when building ia64 gcc
+Message-ID: <20040817100429.GL30497@sunsite.ms.mff.cuni.cz>
+Reply-To: Jakub Jelinek <jakub at redhat dot com>
+References: <20040817090201.GK30497@sunsite.ms.mff.cuni.cz>
+In-Reply-To: <20040817090201 dot GK30497 at sunsite dot ms dot mff dot cuni dot cz>
+
+On Tue, Aug 17, 2004 at 11:02:01AM +0200, Jakub Jelinek wrote:
+> Current gcc 3.4.x (at least gcc-3_4-rhl-branch) doesn't build with CVS
+> binutils (nor 2.15.91.0.2).
+> The problem is that libstdc++.so linking fails with:
+> `.gnu.linkonce.t._ZNSdD2Ev' referenced in section `.gnu.linkonce.ia64unw._ZNSdD2Ev' of .libs/sstream-inst.o: defined in discarded section `.gnu.linkonce.t._ZNSdD2Ev' of .libs/sstream-inst.o
+> The problem is that both io-inst.s and sstream-inst.s have
+> .gnu.linkonce.t._ZNSdD2Ev definition, but because io-inst.cc
+> also instantiates some templates sstream-inst.cc doesn't instantiate,
+> the inliner can do a better job in io-inst.cc.
+> The result is that _ZNSdD2Ev in io-inst.cc is a leaf routine, while
+> it is not in sstream-inst.cc (in assembly,
+> _ZNSdD2Ev in io-inst.s starts with .prologue and no .save directives,
+> while _ZNSdD2Ev] in sstream-inst.s has .prologue 12, 35 and some
+> .save directives.
+> IA-64 ABI allows leaf routines to have no unwind section at all,
+> which means .gnu.linkonce.ia64unw._ZNSdD2Ev is not created in
+> io-inst.o at all and as .gnu.linkonce.t._ZNSdD2Ev comes first
+> and wins, .gnu.linkonce.ia64unw._ZNSdD2Ev in sstream.o suddenly
+> references a discarded section.
+> 
+> Not sure what should be done here, but certainly the compiler
+> isn't at fault here, it is a binutils problem.
+> One fix could be to create empty .gnu.linkonce.ia64unw.* section
+> in assembler, another special case ia64 unwind sections in the linker.
+
+Here is a patch for the first possibility.
+It certainly makes libstdc++.so to link and even the unwind info looks
+good on brief skimming.
+
+2004-08-17  Jakub Jelinek  <jakub@redhat.com>
+
+	* config/tc-ia64.c (start_unwind_section): Add linkonce_empty
+	argument, don't do anything if current section is not
+	.gnu.linkonce.t.* and linkonce_empty is set.
+	(generate_unwind_image, dot_endp): Adjust callers, call
+	start_unwind_section (*, 1) if nothing will be put into the
+	section.
+
+--- binutils/gas/config/tc-ia64.c.jj	2004-07-30 11:42:24.000000000 +0200
++++ binutils/gas/config/tc-ia64.c	2004-08-17 13:45:04.288173205 +0200
+@@ -1,5 +1,6 @@
+ /* tc-ia64.c -- Assembler for the HP/Intel IA-64 architecture.
+-   Copyright 1998, 1999, 2000, 2001, 2002, 2003 Free Software Foundation, Inc.
++   Copyright 1998, 1999, 2000, 2001, 2002, 2003, 2004
++   Free Software Foundation, Inc.
+    Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
+ 
+    This file is part of GAS, the GNU Assembler.
+@@ -3297,7 +3298,7 @@ static char *special_linkonce_name[] =
+   };
+ 
+ static void
+-start_unwind_section (const segT text_seg, int sec_index)
++start_unwind_section (const segT text_seg, int sec_index, int linkonce_empty)
+ {
+   /*
+     Use a slightly ugly scheme to derive the unwind section names from
+@@ -3359,6 +3360,8 @@ start_unwind_section (const segT text_se
+       prefix = special_linkonce_name [sec_index - SPECIAL_SECTION_UNWIND];
+       suffix += sizeof (".gnu.linkonce.t.") - 1;
+     }
++  else if (linkonce_empty)
++    return;
+ 
+   prefix_len = strlen (prefix);
+   suffix_len = strlen (suffix);
+@@ -3444,7 +3447,7 @@ generate_unwind_image (const segT text_s
+       expressionS exp;
+       bfd_reloc_code_real_type reloc;
+ 
+-      start_unwind_section (text_seg, SPECIAL_SECTION_UNWIND_INFO);
++      start_unwind_section (text_seg, SPECIAL_SECTION_UNWIND_INFO, 0);
+ 
+       /* Make sure the section has 4 byte alignment for ILP32 and
+ 	 8 byte alignment for LP64.  */
+@@ -3485,6 +3488,8 @@ generate_unwind_image (const segT text_s
+ 	  unwind.personality_routine = 0;
+ 	}
+     }
++  else
++    start_unwind_section (text_seg, SPECIAL_SECTION_UNWIND_INFO, 1);
+ 
+   free_saved_prologue_counts ();
+   unwind.list = unwind.tail = unwind.current_entry = NULL;
+@@ -4164,7 +4169,7 @@ dot_endp (dummy)
+       subseg_set (md.last_text_seg, 0);
+       unwind.proc_end = expr_build_dot ();
+ 
+-      start_unwind_section (saved_seg, SPECIAL_SECTION_UNWIND);
++      start_unwind_section (saved_seg, SPECIAL_SECTION_UNWIND, 0);
+ 
+       /* Make sure that section has 4 byte alignment for ILP32 and
+          8 byte alignment for LP64.  */
+@@ -4204,6 +4209,9 @@ dot_endp (dummy)
+ 			    bytes_per_address);
+ 
+     }
++  else
++    start_unwind_section (saved_seg, SPECIAL_SECTION_UNWIND, 1);
++
+   subseg_set (saved_seg, saved_subseg);
+ 
+   /* Parse names of main and alternate entry points and set symbol sizes.  */
+
+
+	Jakub
+

@@ -1,0 +1,76 @@
+# Choose gcc version.
+# WARNING -- 2.95 currently only builds for i386, arm, mips*, and powerpc.
+# WARNING -- 2.95 does not currently build natively for the target.
+
+comment "Gcc Options"
+
+choice
+	prompt "GCC compiler Version"
+	default BR2_GCC_VERSION_3_4_2
+	help
+	  Select the version of gcc you wish to use.
+
+	config BR2_GCC_VERSION_2_95
+		bool "gcc 2.95"
+		depends on BR2_arm || BR2_i386 || BR2_mips || BR2_powerpc
+
+	config BR2_GCC_VERSION_3_3_3
+		bool "gcc 3.3.3"
+
+	config BR2_GCC_VERSION_3_3_4
+		bool "gcc 3.3.4"
+
+	config BR2_GCC_VERSION_3_3_5
+		bool "gcc 3.3.5"
+
+	config BR2_GCC_VERSION_3_4_0
+		bool "gcc 3.4.0"
+
+	config BR2_GCC_VERSION_3_4_1
+		bool "gcc 3.4.1"
+
+	config BR2_GCC_VERSION_3_4_2
+		bool "gcc 3.4.2"
+
+	config BR2_GCC_VERSION_3_4_3
+		bool "gcc 3.4.3"
+
+endchoice
+
+config BR2_GCC_VERSION
+	string
+	default "2.95"      if BR2_GCC_VERSION_2_95
+	default "3.3.3"     if BR2_GCC_VERSION_3_3_3
+	default "3.3.4"     if BR2_GCC_VERSION_3_3_4
+	default "3.3.5"     if BR2_GCC_VERSION_3_3_5
+	default "3.4.0"     if BR2_GCC_VERSION_3_4_0
+	default "3.4.1"     if BR2_GCC_VERSION_3_4_1
+	default "3.4.2"     if BR2_GCC_VERSION_3_4_2
+	default "3.4.3"     if BR2_GCC_VERSION_3_4_3
+
+
+config BR2_GCC_USE_SJLJ_EXCEPTIONS
+	string
+	default "--enable-sjlj-exceptions"
+	help
+	    Currently the unwind stuff seems to work for staticly linked apps
+	    but not dynamic.  So use setjmp/longjmp exceptions by default.
+
+config BR2_EXTRA_GCC_CONFIG_OPTIONS
+	string "Additional gcc options"
+	default ""
+	help
+	    Any additional gcc options you may want to include....
+
+config BR2_INSTALL_LIBSTDCPP
+	bool "Build/install c++ compiler and libstdc++?"
+	default n
+	help
+	    Build/install c++ compiler and libstdc++?
+
+config BR2_INSTALL_LIBGCJ
+	bool "Build/install java compiler and libgcj?"
+	default n
+	depends on BR2_INSTALL_LIBSTDCPP
+	help
+	    Build/install java compiler and libgcj?

@@ -1,0 +1,66 @@
+# Choose binutils version.
+
+comment "Binutils Options"
+
+choice
+	prompt "Binutils Version"
+	default BR2_BINUTILS_VERSION_2_15_91_0_2
+	help
+	  Select the version of binutils you wish to use.
+
+	config BR2_BINUTILS_VERSION_2_14_90_0_6
+		bool "binutils 2.14.90.0.6"
+
+	config BR2_BINUTILS_VERSION_2_14_90_0_7
+		bool "binutils 2.14.90.0.7"
+
+	config BR2_BINUTILS_VERSION_2_14_90_0_8
+		bool "binutils 2.14.90.0.8"
+
+	config BR2_BINUTILS_VERSION_2_15
+		bool "binutils 2.15"
+
+	config BR2_BINUTILS_VERSION_2_15_90_0_1
+		bool "binutils 2.15.90.0.1"
+
+	config BR2_BINUTILS_VERSION_2_15_90_0_1_1
+		bool "binutils 2.15.90.0.1.1"
+
+	config BR2_BINUTILS_VERSION_2_15_90_0_2
+		bool "binutils 2.15.90.0.2"
+
+	config BR2_BINUTILS_VERSION_2_15_90_0_3
+		bool "binutils 2.15.90.0.3"
+
+	config BR2_BINUTILS_VERSION_2_15_91_0_1
+		bool "binutils 2.15.91.0.1"
+
+	config BR2_BINUTILS_VERSION_2_15_91_0_2
+		bool "binutils 2.15.91.0.2"
+
+	config BR2_BINUTILS_VERSION_2_15_92_0_2
+		bool "binutils 2.15.92.0.2"
+
+	config BR2_BINUTILS_VERSION_2_15_94_0_1
+		bool "binutils 2.15.94.0.1"
+
+	config BR2_BINUTILS_VERSION_2_15_94_0_2
+		bool "binutils 2.15.94.0.2"
+
+endchoice
+
+config BR2_BINUTILS_VERSION
+	string
+	default "2.14.90.0.6"     if BR2_BINUTILS_VERSION_2_14_90_0_6
+	default "2.14.90.0.7"     if BR2_BINUTILS_VERSION_2_14_90_0_7
+	default "2.14.90.0.8"     if BR2_BINUTILS_VERSION_2_14_90_0_8
+	default "2.15"            if BR2_BINUTILS_VERSION_2_15
+	default "2.15.90.0.1"     if BR2_BINUTILS_VERSION_2_15_90_0_1
+	default "2.15.90.0.0.1.1" if BR2_BINUTILS_VERSION_2_15_90_0_1_1
+	default "2.15.90.0.2"     if BR2_BINUTILS_VERSION_2_15_90_0_2
+	default "2.15.90.0.3"     if BR2_BINUTILS_VERSION_2_15_90_0_3
+	default "2.15.91.0.1"     if BR2_BINUTILS_VERSION_2_15_91_0_1
+	default "2.15.91.0.2"     if BR2_BINUTILS_VERSION_2_15_91_0_2
+	default "2.15.92.0.2"     if BR2_BINUTILS_VERSION_2_15_92_0_2
+	default "2.15.94.0.1"     if BR2_BINUTILS_VERSION_2_15_94_0_1
+	default "2.15.94.0.2"     if BR2_BINUTILS_VERSION_2_15_94_0_2

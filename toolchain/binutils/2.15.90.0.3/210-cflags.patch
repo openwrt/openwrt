@@ -1,0 +1,32 @@
+diff -urN binutils-2.14.90.0.6/bfd/doc/Makefile.am binutils-2.14.90.0.6.new/bfd/doc/Makefile.am
+--- binutils-2.14.90.0.6/bfd/doc/Makefile.am	2003-07-23 10:08:09.000000000 -0500
++++ binutils-2.14.90.0.6.new/bfd/doc/Makefile.am	2004-03-01 16:05:16.000000000 -0600
+@@ -55,10 +55,10 @@
+ MKDOC = chew$(EXEEXT_FOR_BUILD)
+ 
+ $(MKDOC): chew.o
+-	$(CC_FOR_BUILD) -o $(MKDOC) chew.o $(CFLAGS) $(LOADLIBES) $(LDFLAGS)
++	$(CC_FOR_BUILD) -o $(MKDOC) chew.o $(CFLAGS_FOR_BUILD) $(LOADLIBES) $(LDFLAGS)
+ 
+ chew.o: chew.c
+-	$(CC_FOR_BUILD) -c -I.. -I$(srcdir)/.. -I$(srcdir)/../../include -I$(srcdir)/../../intl -I../../intl $(H_CFLAGS) $(CFLAGS) $(srcdir)/chew.c
++	$(CC_FOR_BUILD) -c -I.. -I$(srcdir)/.. -I$(srcdir)/../../include -I$(srcdir)/../../intl -I../../intl $(H_CFLAGS) $(CFLAGS_FOR_BUILD) $(srcdir)/chew.c
+ 
+ protos: libbfd.h libcoff.h bfd.h
+ 
+diff -urN binutils-2.14.90.0.6/bfd/doc/Makefile.in binutils-2.14.90.0.6.new/bfd/doc/Makefile.in
+--- binutils-2.14.90.0.6/bfd/doc/Makefile.in	2003-07-23 10:08:09.000000000 -0500
++++ binutils-2.14.90.0.6.new/bfd/doc/Makefile.in	2004-03-01 16:05:03.000000000 -0600
+@@ -472,10 +472,10 @@
+ 
+ 
+ $(MKDOC): chew.o
+-	$(CC_FOR_BUILD) -o $(MKDOC) chew.o $(CFLAGS) $(LOADLIBES) $(LDFLAGS)
++	$(CC_FOR_BUILD) -o $(MKDOC) chew.o $(CFLAGS_FOR_BUILD) $(LOADLIBES) $(LDFLAGS)
+ 
+ chew.o: chew.c
+-	$(CC_FOR_BUILD) -c -I.. -I$(srcdir)/.. -I$(srcdir)/../../include -I$(srcdir)/../../intl -I../../intl $(H_CFLAGS) $(CFLAGS) $(srcdir)/chew.c
++	$(CC_FOR_BUILD) -c -I.. -I$(srcdir)/.. -I$(srcdir)/../../include -I$(srcdir)/../../intl -I../../intl $(H_CFLAGS) $(CFLAGS_FOR_BUILD) $(srcdir)/chew.c
+ 
+ protos: libbfd.h libcoff.h bfd.h
+ 

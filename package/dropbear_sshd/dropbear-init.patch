@@ -1,0 +1,59 @@
+--- dropbear-0.42/S50dropbear
++++ dropbear-0.42/S50dropbear
+@@ -0,0 +1,56 @@
++#!/bin/sh
++#
++# Starts dropbear sshd.
++#
++
++# Make sure the dropbearkey progam exists
++[ -f /usr/bin/dropbearkey ] || exit 0
++
++# Check for the Dropbear RSA key
++if [ ! -f /etc/dropbear/dropbear_rsa_host_key ] ; then
++	echo Generating RSA Key...
++	mkdir -p /etc/dropbear
++	/usr/bin/dropbearkey -t rsa -f /etc/dropbear/dropbear_rsa_host_key
++fi
++
++# Check for the Dropbear DSS key
++if [ ! -f /etc/dropbear/dropbear_dss_host_key ] ; then
++	echo Generating DSS Key...
++	mkdir -p /etc/dropbear
++	/usr/bin/dropbearkey -t dss -f /etc/dropbear/dropbear_dss_host_key
++fi
++
++umask 077
++
++start() {
++ 	echo -n "Starting dropbear sshd: "
++	start-stop-daemon --start --quiet --pidfile /var/run/dropbear.pid --exec /usr/sbin/dropbear
++	echo "OK"
++}
++stop() {
++	echo -n "Stopping sshd: "
++	start-stop-daemon --stop --quiet --pidfile /var/run/dropbear.pid
++	echo "OK"
++}
++restart() {
++	stop
++	start
++}
++
++case "$1" in
++  start)
++  	start
++	;;
++  stop)
++  	stop
++	;;
++  restart|reload)
++  	restart
++	;;
++  *)
++	echo $"Usage: $0 {start|stop|restart}"
++	exit 1
++esac
++
++exit $?
++

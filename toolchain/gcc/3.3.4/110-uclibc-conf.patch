@@ -1,0 +1,55 @@
+Use the patch by Carl Miller <chaz@energoncube.net> for powerpc, with
+some minor modifications.  Changed *os_uclibc to *os_linux_uclibc since
+at some point we might support other platforms.  Also updated to 3.3.3.
+diff -urN gcc-3.3.3/gcc/config/rs6000/linux.h gcc-3.3.3-new/gcc/config/rs6000/linux.h
+--- gcc-3.3.3/gcc/config/rs6000/linux.h	2003-11-14 00:46:10.000000000 -0600
++++ gcc-3.3.3-new/gcc/config/rs6000/linux.h	2004-02-16 21:13:40.000000000 -0600
+@@ -64,7 +64,11 @@
+ #define LINK_START_DEFAULT_SPEC "%(link_start_linux)"
+ 
+ #undef	LINK_OS_DEFAULT_SPEC
++#ifdef USE_UCLIBC
++#define LINK_OS_DEFAULT_SPEC "%(link_os_linux_uclibc)"
++#else
+ #define LINK_OS_DEFAULT_SPEC "%(link_os_linux)"
++#endif
+ 
+ #undef TARGET_VERSION
+ #define TARGET_VERSION fprintf (stderr, " (PowerPC GNU/Linux)");
+diff -urN gcc-3.3.3/gcc/config/rs6000/sysv4.h gcc-3.3.3-new/gcc/config/rs6000/sysv4.h
+--- gcc-3.3.3/gcc/config/rs6000/sysv4.h	2003-10-28 13:55:41.000000000 -0600
++++ gcc-3.3.3-new/gcc/config/rs6000/sysv4.h	2004-02-16 21:13:40.000000000 -0600
+@@ -968,9 +968,11 @@
+ %{mcall-linux: %(link_os_linux) } \
+ %{mcall-gnu: %(link_os_gnu) } \
+ %{mcall-netbsd: %(link_os_netbsd) } \
++%{mcall-uclibc: %(link_os_linux_uclibc) } \
+ %{!mads: %{!myellowknife: %{!mmvme: %{!msim: %{!mwindiss: \
+          %{!mcall-freebsd: %{!mcall-linux: %{!mcall-gnu: \
+-         %{!mcall-netbsd: %(link_os_default) }}}}}}}}}"
++         %{!mcall-netbsd: %{!mcall-uclibc: \
++         %(link_os_default) }}}}}}}}}}"
+ 
+ #define LINK_OS_DEFAULT_SPEC ""
+ 
+@@ -1307,6 +1309,12 @@
+ 
+ #define LINK_OS_WINDISS_SPEC ""
+ 
++/* uClibc support for Linux. */
++
++#define LINK_OS_LINUX_UCLIBC_SPEC "-m elf32ppclinux %{!shared: %{!static: \
++  %{rdynamic:-export-dynamic} \
++  %{!dynamic-linker:-dynamic-linker /lib/ld-uClibc.so.0}}}"
++
+ /* Define any extra SPECS that the compiler needs to generate.  */
+ /* Override rs6000.h definition.  */
+ #undef	SUBTARGET_EXTRA_SPECS
+@@ -1372,6 +1380,7 @@
+   { "link_os_netbsd",		LINK_OS_NETBSD_SPEC },			\
+   { "link_os_vxworks",		LINK_OS_VXWORKS_SPEC },			\
+   { "link_os_windiss",		LINK_OS_WINDISS_SPEC },			\
++  { "link_os_linux_uclibc",	LINK_OS_LINUX_UCLIBC_SPEC },		\
+   { "link_os_default",		LINK_OS_DEFAULT_SPEC },			\
+   { "cc1_endian_big",		CC1_ENDIAN_BIG_SPEC },			\
+   { "cc1_endian_little",	CC1_ENDIAN_LITTLE_SPEC },		\

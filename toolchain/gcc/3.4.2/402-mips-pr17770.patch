@@ -1,0 +1,12 @@
+--- gcc-3.4.2/gcc/config/mips/mips.md	2004-06-25 02:35:30.000000000 -0500
++++ gcc-3.4-cvs/gcc/config/mips/mips.md	2004-10-26 01:54:56.000000000 -0500
+@@ -4073,8 +4073,7 @@
+   "!TARGET_MIPS16"
+   "lwl\t%0,%2"
+   [(set_attr "type" "load")
+-   (set_attr "mode" "SI")
+-   (set_attr "hazard" "none")])
++   (set_attr "mode" "SI")])
+ 
+ (define_insn "mov_lwr"
+   [(set (match_operand:SI 0 "register_operand" "=d")

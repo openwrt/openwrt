@@ -1,0 +1,10 @@
+--- binutils-2.15.90.0.3/gas/config/tc-mips.c-dist	2004-08-19 12:56:20.000000000 -0500
++++ binutils-2.15.90.0.3/gas/config/tc-mips.c	2004-08-19 12:57:30.000000000 -0500
+@@ -2708,6 +2708,7 @@
+ 	  prev_insn_reloc_type[1] = BFD_RELOC_UNUSED;
+ 	  prev_insn_reloc_type[2] = BFD_RELOC_UNUSED;
+ 	  prev_insn_extended = 0;
++	  prev_insn_is_delay_slot = 1;
+ 	}
+       else
+ 	{
