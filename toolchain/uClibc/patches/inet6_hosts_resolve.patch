@@ -1,0 +1,24 @@
+diff -urN uClibc-0.9.27.old/libc/inet/resolv.c uClibc-0.9.27/libc/inet/resolv.c
+--- uClibc-0.9.27.old/libc/inet/resolv.c	2005-01-12 08:59:21.000000000 +0100
++++ uClibc-0.9.27/libc/inet/resolv.c	2005-04-04 22:14:38.000000000 +0200
+@@ -2029,7 +2029,7 @@
+ 		int old_errno = errno;	/* Save the old errno and reset errno */
+ 		__set_errno(0);			/* to check for missing /etc/hosts. */
+ 
+-		if ((i=__get_hosts_byname_r(name, AF_INET, result_buf,
++		if ((i=__get_hosts_byname_r(name, AF_INET6, result_buf,
+ 									buf, buflen, result, h_errnop))==0)
+ 			return i;
+ 		switch (*h_errnop) {
+diff -urN uClibc-0.9.27.old/libc/inet/resolv.c uClibc-0.9.27/libc/inet/resolv.c
+--- uClibc-0.9.27.old/libc/inet/resolv.c	2005-04-04 22:16:54.000000000 +0200
++++ uClibc-0.9.27/libc/inet/resolv.c	2005-04-04 22:46:59.000000000 +0200
+@@ -1513,7 +1513,7 @@
+ 		} else {
+ 			DPRINTF("Error\n");
+ 			ret=TRY_AGAIN;
+-			break; /* bad ip address */
++			continue; /* bad ip address, ignore */
+         }
+         
+ 		if (action!=GETHOSTENT) {
