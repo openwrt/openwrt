@@ -19,7 +19,6 @@ LINUX_KARCH:=$(shell echo $(ARCH) | sed -e 's/i[3-9]86/i386/' \
 	-e 's/sh[234]/sh/' \
 	)
 
-LINUX_SITE=http://www.kernel.org/pub/linux/kernel/v2.4
 LINUX_BINARY_DRIVER_SITE=http://openwrt.openbsd-geek.de
 LINUX_SOURCE=linux-$(LINUX_VERSION).tar.bz2
 LINUX_KCONFIG=./linux.config
@@ -30,8 +29,8 @@ LINUX_BINLOC=arch/$(LINUX_KARCH)/brcm-boards/bcm947xx/compressed/vmlinuz
 LINUX_SOURCE_DIR=$(LINUX_DIR)-$(LINUX_VERSION)
 
 # binary driver extracted from linksys firmware GPL sourcetree WRT54GS_3_37_2_1109_US 
-LINUX_BINARY_WL_DRIVER=kernel-binary-wl.tar.gz
-LINUX_BINARY_ET_DRIVER=kernel-binary-et.tar.gz
+LINUX_BINARY_WL_DRIVER=kernel-binary-wl-0.1.tar.gz
+LINUX_BINARY_ET_DRIVER=kernel-binary-et-0.2.tar.gz
 
 TARGET_MODULES_DIR=$(TARGET_DIR)/lib/modules/$(LINUX_VERSION)
 
