@@ -1,0 +1,139 @@
+#!/usr/bin/make -f
+
+ifneq ($(strip ${IPKG_RULES_INC}),)
+ include $(IPKG_RULES_INC)
+endif
+
+##
+
+PKG_VERSION := $(shell cat ./ipkg/version)
+CURRENT_DIR := $(shell pwd)
+INSTALL_DIR ?= $(CURRENT_DIR)/ipkg-install
+
+unexport INSTALL_DIR
+
+I_LIBPCRE := ipkg/libpcre
+I_LIBPCRE_DEV := ipkg/libpcre-dev
+
+BUILD_DEPS := \
+
+CONFIGURE_OPTS = \
+	--enable-shared \
+	--enable-static \
+	--enable-utf8 \
+
+##
+
+all: package
+
+
+.stamp-configured: $(BUILD_DEPS)
+
+	rm -rf config.cache
+	$(TARGET_CONFIGURE_OPTS) \
+	CFLAGS="$(TARGET_CFLAGS)" \
+	./configure \
+	  --target=$(GNU_TARGET_NAME) \
+	  --host=$(GNU_TARGET_NAME) \
+	  --build=$(GNU_HOST_NAME) \
+	  --prefix=/usr \
+	  --exec-prefix=/usr \
+	  --bindir=/usr/bin \
+	  --datadir=/usr/share \
+	  --includedir=/usr/include \
+	  --infodir=/usr/share/info \
+	  --libdir=/usr/lib \
+	  --libexecdir=/usr/lib \
+	  --localstatedir=/var \
+	  --mandir=/usr/share/man \
+	  --sbindir=/usr/sbin \
+	  --sysconfdir=/etc \
+	  $(DISABLE_LARGEFILE) \
+	  $(DISABLE_NLS) \
+	  $(CONFIGURE_OPTS) \
+
+	touch .stamp-configured
+
+
+.stamp-built: .stamp-configured
+
+	$(MAKE) \
+	  CC_FOR_BUILD="$(HOSTCC)" \
+	  LINK_FOR_BUILD="$(HOSTCC)" \
+	  CFLAGS_FOR_BUILD="" \
+	 dftables
+
+	$(MAKE) \
+	  $(TARGET_CONFIGURE_OPTS) \
+	  CFLAGS="$(TARGET_CFLAGS)" \
+	  
+	touch .stamp-built
+
+
+$(INSTALL_DIR)/usr/include/pcre.h: .stamp-built
+
+	mkdir -p $(INSTALL_DIR)
+
+	$(MAKE) \
+	  DESTDIR="$(INSTALL_DIR)" \
+	 install
+
+
+configure: .stamp-configured
+
+
+build: .stamp-built
+
+
+install: $(INSTALL_DIR)/usr/include/pcre.h
+
+
+package: $(INSTALL_DIR)/usr/include/pcre.h
+
+	mkdir -p $(I_LIBPCRE)/usr/lib
+	cp -fpR $(INSTALL_DIR)/usr/lib/libpcre*.so.* $(I_LIBPCRE)/usr/lib/
+	$(STRIP) $(I_LIBPCRE)/usr/lib/lib*.so.*
+
+	mkdir -p $(I_LIBPCRE_DEV)/usr/bin
+	cp -fpR $(INSTALL_DIR)/usr/bin/pcre-config  $(I_LIBPCRE_DEV)/usr/bin/
+	mkdir -p $(I_LIBPCRE_DEV)/usr/include
+	cp -fpR $(INSTALL_DIR)/usr/include/pcre*.h $(I_LIBPCRE_DEV)/usr/include/
+	mkdir -p $(I_LIBPCRE_DEV)/usr/lib
+	cp -fpR $(INSTALL_DIR)/usr/lib/libpcre*.a $(I_LIBPCRE_DEV)/usr/lib/
+	cp -fpR $(INSTALL_DIR)/usr/lib/libpcre*.so* $(I_LIBPCRE_DEV)/usr/lib/
+
+	chmod 0755 ipkg/*/CONTROL/
+	chmod 0644 ipkg/*/CONTROL/control
+	
+	perl -pi -e "s/^Arch.*:.*/Architecture: $(ARCH)/g" ipkg/*/CONTROL/control
+ifneq ($(strip $(PKG_VERSION)),)
+	perl -pi -e "s/^Vers.*:.*/Version: $(PKG_VERSION)/g" ipkg/*/CONTROL/control
+endif
+
+	$(IPKG_BUILD) $(I_LIBPCRE) $(IPKG_TARGET_DIR)
+	$(IPKG_BUILD) $(I_LIBPCRE_DEV) $(IPKG_TARGET_DIR)
+
+
+clean:
+
+	-$(MAKE) clean
+
+	rm -rf .stamp-* \
+	  $(INSTALL_DIR)/usr/bin/pcre* \
+	  $(INSTALL_DIR)/usr/include/pcre* \
+	  $(INSTALL_DIR)/usr/lib/libpcre* \
+	  $(INSTALL_DIR)/usr/lib/pkgconfig/libpcre.pc \
+	  $(INSTALL_DIR)/usr/share/man/man*/pcre* \
+	  $(I_LIBPCRE)/usr \
+	 $(I_LIBPCRE_DEV)/usr \
+
+
+control:
+
+	@cat $(I_LIBPCRE)/CONTROL/control
+	@echo
+	@cat $(I_LIBPCRE_DEV)/CONTROL/control
+	@echo
+	
+
+.PHONY: configure build install package clean control
