@@ -7,7 +7,9 @@ PKG_VERSION:=1.1.23
 PKG_RELEASE:=1
 PKG_MD5SUM:=4ce09b1dce09b6b9398af0daae9adf63
 
-PKG_SOURCE_URL:=ftp://ftp3.easysw.com/pub/cups/1.1.23/
+PKG_SOURCE_URL:=http://ftp.funet.fi/pub/mirrors/ftp.easysw.com/ftp.easysw.com/pub/cups/$(PKG_VERSION) \
+	http://ftp.rz.tu-bs.de/pub/mirror/ftp.easysw.com/ftp/pub/cups/$(PKG_VERSION) \
+	ftp://ftp3.easysw.com/pub/cups/$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-source.tar.bz2
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_CAT:=bzcat
