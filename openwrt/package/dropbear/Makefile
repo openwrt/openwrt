@@ -54,7 +54,6 @@ $(DROPBEAR_DIR)/$(DROPBEAR_BINARY): $(DROPBEAR_DIR)/.configured
 
 $(PACKAGE_DIR)/$(DROPBEAR_IPK): $(DROPBEAR_DIR)/$(DROPBEAR_BINARY)
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(DROPBEAR_IPK_DIR) dropbear.control $(DROPBEAR_VERSION)-1 $(ARCH)
-	cp dropbear.conffiles $(DROPBEAR_IPK_DIR)/CONTROL/conffiles
 	mkdir -p $(DROPBEAR_IPK_DIR)/usr/bin
 	mkdir -p $(DROPBEAR_IPK_DIR)/usr/sbin
 	install -m 755 $(DROPBEAR_DIR)/$(DROPBEAR_BINARY) \
