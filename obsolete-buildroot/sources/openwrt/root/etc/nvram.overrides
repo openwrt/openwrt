@@ -51,7 +51,7 @@ NVRAM_lan_proto="static"
 [ "$FAILSAFE" = "true" ] && {
   echo "### YOU ARE IN FAILSAFE MODE ####"
   NVRAM_lan_ifname="br0"
-  NVRAM_lan_ifnames="vlan0 vlan2 eth1 eth2 eth3"
+  NVRAM_lan_ifnames="vlan0 vlan1 vlan2 eth0 eth1 eth2 eth3"
   NVRAM_lan_ipaddr="192.168.1.1"
   NVRAM_lan_netmask="255.255.255.0"
   NVRAM_lan_hwaddr="00:0B:AD:0A:DD:00"
