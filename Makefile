@@ -74,7 +74,9 @@ world: $(DL_DIR) $(BUILD_DIR) target_prepare $(TARGET_DIR) toolchain_install pac
 .PHONY: all world clean dirclean distclean image_clean target_clean source target_prepare target_install toolchain_install package_install
 
 package_index:
-	$(STAGING_DIR)/usr/bin/ipkg-make-index $(PACKAGE_DIR) > $(PACKAGE_DIR)/Packages
+	(cd $(PACKAGE_DIR); \
+		$(STAGING_DIR)/usr/bin/ipkg-make-index . > Packages \
+	)
 
 target_prepare:
 	$(MAKE) -C target prepare
