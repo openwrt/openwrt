@@ -1,0 +1,11 @@
+--- lcd4linux-0.10.0-RC1/drv_RouterBoard.c	2004-08-30 15:20:45.000000000 +0200
++++ lcd-patched/drv_RouterBoard.c	2005-03-19 16:03:26.849650830 +0100
+@@ -113,7 +113,7 @@
+ #include <string.h>
+ #include <errno.h>
+ #include <unistd.h>
+-#include <sys/io.h>
++#include <asm/io.h>
+ 
+ #include "debug.h"
+ #include "cfg.h"
