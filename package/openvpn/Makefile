@@ -14,6 +14,14 @@ PKG_CAT:=zcat
 PKG_IPK:=$(PACKAGE_DIR)/$(PKG_NAME)_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
 PKG_IPK_DIR:=$(PKG_BUILD_DIR)/ipkg
 
+ifneq ($(BR2_PACKAGE_OPENVPN_LZO),y)
+DISABLE_LZO:=--disable-lzo
+endif
+
+ifneq ($(BR2_PACKAGE_OPENVPN_SERVER),y)
+DISABLE_SERVER:=--disable-server
+endif
+
 $(DL_DIR)/$(PKG_SOURCE):
 	 $(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE) $(PKG_MD5SUM) $(PKG_SOURCE_URL)
 
@@ -46,6 +54,8 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.unpacked
 		--disable-management \
 		--disable-socks \
 		--disable-http \
+		$(DISABLE_LZO) \
+		$(DISABLE_SERVER) \
 	);
 	touch $(PKG_BUILD_DIR)/.configured
 
