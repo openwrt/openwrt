@@ -39,6 +39,7 @@ squashfslzma-dirclean:
 squashfslzmaroot: squashfslzma
 	@rm -rf $(TARGET_DIR)/usr/man
 	@rm -rf $(TARGET_DIR)/usr/info
+	@mkdir -p $(TARGET_DIR)/jffs
 	$(SQUASHFSLZMA_DIR)/squashfs-tools/mksquashfs-lzma $(TARGET_DIR) $(IMAGE).squashfslzma -noappend -root-owned -le
 
 squashfslzmaroot-source: squashfslzma-source
