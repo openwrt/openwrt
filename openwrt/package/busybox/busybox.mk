@@ -16,7 +16,6 @@ BUSYBOX_SOURCE:=busybox-$(BUSYBOX_VER).tar.bz2
 BUSYBOX_SITE:=http://www.busybox.net/downloads
 endif
 BUSYBOX_UNZIP=bzcat
-BUSYBOX_CONFIG:=./busybox.config
 
 $(DL_DIR)/$(BUSYBOX_SOURCE):
 	 $(WGET) -P $(DL_DIR) $(BUSYBOX_SITE)/$(BUSYBOX_SOURCE)
@@ -29,7 +28,7 @@ $(BUSYBOX_DIR)/.unpacked: $(DL_DIR)/$(BUSYBOX_SOURCE)
 	$(PATCH) $(BUSYBOX_DIR) ./patches
 	touch $(BUSYBOX_DIR)/.unpacked
 
-$(BUSYBOX_DIR)/.configured: $(BUSYBOX_DIR)/.unpacked $(BUSYBOX_CONFIG)
+$(BUSYBOX_DIR)/.configured: $(BUSYBOX_DIR)/.unpacked
 	$(SCRIPT_DIR)/gen_busybox_config.pl $(TOPDIR)/.config > $(BUSYBOX_DIR)/.config
 #	cp $(BUSYBOX_CONFIG) $(BUSYBOX_DIR)/.config
 #	$(SED) "s,^CROSS.*,CROSS=$(TARGET_CROSS)\n\
