@@ -23,7 +23,7 @@ $(EBTABLES_BUILD_DIR)/.unpacked: $(DL_DIR)/$(EBTABLES_SOURCE)
 
 $(EBTABLES_BUILD_DIR)/.configured: $(EBTABLES_BUILD_DIR)/.unpacked
 	# Allow patches.  Needed for openwrt for instance.
-	$(SOURCE_DIR)/patch-kernel.sh $(EBTABLES_BUILD_DIR) $(SOURCE_DIR) $(EBTABLES_NAME)-*.patch
+	$(SOURCE_DIR)/patch-kernel.sh $(LINUX_DIR)/../.. $(SOURCE_DIR) $(EBTABLES_NAME)-*.patch
 	touch  $(EBTABLES_BUILD_DIR)/.configured
 
 $(EBTABLES_BUILD_DIR)/$(EBTABLES_NAME): $(EBTABLES_BUILD_DIR)/.configured
