@@ -11,10 +11,10 @@ else
     mtd unlock mtd4
     mount -t jffs2 /dev/mtdblock/4 /jffs
     pivot_root /jffs /jffs/rom
-    mount none /dev -t devfs
-    mount none /proc -t proc
-    umount rom/proc
   }
+  mount none /dev -t devfs
+  mount none /proc -t proc
+  umount rom/proc
 fi
 mount none /tmp -t ramfs
 exec /sbin/init

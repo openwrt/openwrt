@@ -38,7 +38,6 @@ squashfs-dirclean:
 squashfsroot: squashfs
 	@rm -rf $(TARGET_DIR)/usr/man
 	@rm -rf $(TARGET_DIR)/usr/info
-	@mkdir -p $(TARGET_DIR)/jffs
 	$(SQUASHFS_DIR)/squashfs-tools/mksquashfs $(TARGET_DIR) $(IMAGE).squashfs -noappend -root-owned -le
 
 squashfsroot-source: squashfs-source
