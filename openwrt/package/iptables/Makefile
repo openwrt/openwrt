@@ -61,8 +61,6 @@ $(PKG_IPT): $(PKG_BUILD_DIR)/iptables
 	(cd $(PKG_BUILD_DIR)/extensions; \
 	 cp $(patsubst %,libipt_%.so,$(ext-y)) $(I_IPT)/usr/lib/iptables)
 	-$(STRIP) $(I_IPT)/usr/lib/iptables/*.so
-	mkdir -p $(I_IPT_EXTRA)/$(MODULES_SUBDIR)
-	cp $(MODULES_DIR)/kernel/net/ipv6/netfilter/*.o $(I_IPT_EXTRA)/$(MODULES_SUBDIR)
 	mkdir -p $(PACKAGE_DIR)
 	$(IPKG_BUILD) $(I_IPT) $(PACKAGE_DIR)
 
