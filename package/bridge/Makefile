@@ -70,3 +70,4 @@ install: $(IPKG_STATE_DIR)/info/bridge.list
 
 clean:
 	rm -rf $(PKG_BUILD_DIR)
+	rm -f $(PKG_IPK)
