@@ -19,8 +19,8 @@ $(IPTABLES_BUILD_DIR)/.configured: $(IPTABLES_BUILD_DIR)/.unpacked
 	# Allow patches.  Needed for openwrt for instance.
 	toolchain/patch-kernel.sh $(IPTABLES_BUILD_DIR) package/iptables/ iptables-\*.patch
 	#
-	$(SED) "s;\[ -f /usr/include/netinet/ip6.h \];grep -q '__UCLIBC_HAS_IPV6__ 1' \
-		$(BUILD_DIR)/uClibc/include/bits/uClibc_config.h;" $(IPTABLES_BUILD_DIR)/Makefile
+	# $(SED) "s;\[ -f /usr/include/netinet/ip6.h \];grep -q '__UCLIBC_HAS_IPV6__ 1' \
+	# 	$(BUILD_DIR)/uClibc/include/bits/uClibc_config.h;" $(IPTABLES_BUILD_DIR)/Makefile
 	touch  $(IPTABLES_BUILD_DIR)/.configured
 
 $(IPTABLES_BUILD_DIR)/iptables: $(IPTABLES_BUILD_DIR)/.configured
@@ -39,7 +39,7 @@ $(TARGET_DIR)/usr/sbin/iptables: $(IPTABLES_BUILD_DIR)/iptables
 	$(STRIP) $(TARGET_DIR)/usr/lib/iptables/*.so
 	rm -rf $(TARGET_DIR)/usr/man
 
-iptables: kernel-headers $(TARGET_DIR)/usr/sbin/iptables
+iptables: $(TARGET_DIR)/usr/sbin/iptables
 
 iptables-source: $(DL_DIR)/$(IPTABLES_SOURCE)
 

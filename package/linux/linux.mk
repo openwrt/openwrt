@@ -21,43 +21,47 @@
 #############################################################
 ifneq ($(filter $(TARGETS),linux),)
 
-# Version of Linux to download and then apply patches to
-DOWNLOAD_LINUX_VERSION=2.4.27
-# Version of Linux AFTER patches
-LINUX_VERSION=2.4.28-pre4-erik
-
-LINUX_FORMAT=vmlinux
-#LINUX_FORMAT=images/zImage.prep
+LINUX_FORMAT=zImage
 LINUX_KARCH:=$(shell echo $(ARCH) | sed -e 's/i[3-9]86/i386/' \
 	-e 's/mipsel/mips/' \
 	-e 's/powerpc/ppc/' \
 	-e 's/sh[234]/sh/' \
 	)
-LINUX_BINLOC=arch/$(LINUX_KARCH)/boot/$(LINUX_FORMAT)
 
-LINUX_DIR=$(BUILD_DIR)/linux-$(LINUX_VERSION)
-LINUX_SOURCE=linux-$(DOWNLOAD_LINUX_VERSION).tar.bz2
-LINUX_SITE=http://www.kernel.org/pub/linux/kernel/v2.4
+LINUX_VERSION=2.4.29
+LINUX_CVS_DATE="2005-01-30"
+LINUX_CVS_BRANCH=linux_2_4
+LINUX_DIR=$(BUILD_DIR)/linux
+LINUX_SITE=ftp.linux-mips.org
 LINUX_KCONFIG=package/linux/linux.config
 LINUX_KERNEL=$(BUILD_DIR)/buildroot-kernel
+LINUX_BINLOC=arch/$(LINUX_KARCH)/brcm-boards/bcm947xx/compressed/vmlinuz
 # Used by pcmcia-cs and others
 LINUX_SOURCE_DIR=$(LINUX_DIR)
 
+LINKSYS_SITE=openwrt.openbsd-geek.de
+LINKSYS_TGZ=linksys-3.37.2.tgz
 
-$(DL_DIR)/$(LINUX_SOURCE):
+TARGET_MODULES_DIR=$(TARGET_DIR)/lib/modules/$(LINUX_VERSION)
+
+$(DL_DIR)/linux.tar.bz2:
 	-mkdir -p $(DL_DIR)
-	$(WGET) -P $(DL_DIR) $(LINUX_SITE)/$(LINUX_SOURCE)
+	(cd $(DL_DIR); cvs -d :pserver:cvs:cvs@$(LINUX_SITE):/home/cvs login)
+	(cd $(DL_DIR); cvs -z3 -d :pserver:cvs:cvs@$(LINUX_SITE):/home/cvs co -D $(LINUX_CVS_DATE) -r$(LINUX_CVS_BRANCH) linux)
+	(cd $(DL_DIR); tar jcvf linux.tar.bz2 linux && rm -rf linux)
+	$(WGET) -P $(DL_DIR) $(LINKSYS_SITE)/$(LINKSYS_TGZ)
 
-$(LINUX_DIR)/.unpacked: $(DL_DIR)/$(LINUX_SOURCE)
+$(LINUX_DIR)/.unpacked: $(DL_DIR)/linux.tar.bz2
+	-mkdir -p $(BUILD_DIR)
+	#-(cp -a $(DL_DIR)/linux $(BUILD_DIR)/linux)
+	(cd $(BUILD_DIR); tar jxvf $(DL_DIR)/linux.tar.bz2)
 	-mkdir -p $(TOOL_BUILD_DIR)
-	-(cd $(TOOL_BUILD_DIR); ln -sf $(LINUX_DIR) linux)
-	bzcat $(DL_DIR)/$(LINUX_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
-ifneq ($(DOWNLOAD_LINUX_VERSION),$(LINUX_VERSION))
-	# Rename the dir from the downloaded version to the AFTER patch version	
-	mv -f $(BUILD_DIR)/linux-$(DOWNLOAD_LINUX_VERSION) $(BUILD_DIR)/linux-$(LINUX_VERSION)
-endif
-	mkdir -p package/linux/kernel-patches
+	-(cd $(TOOL_BUILD_DIR); ln -sf $(BUILD_DIR)/linux linux)
 	toolchain/patch-kernel.sh $(LINUX_DIR) package/linux/kernel-patches
+	-cp $(LINUX_KCONFIG) $(LINUX_DIR)/.config
+	# extract linksys binary kernel modules and include/shared files
+	-mkdir -p $(BUILD_DIR)/binary
+	tar -C $(BUILD_DIR)/binary -xzvf $(DL_DIR)/linksys-3.37.2.tgz
 	touch $(LINUX_DIR)/.unpacked
 
 $(LINUX_KCONFIG):
@@ -69,9 +73,10 @@ $(LINUX_KCONFIG):
 		sleep 5; \
 	fi;
 
-$(LINUX_DIR)/.configured $(BUILD_DIR)/linux/.configured:  $(LINUX_DIR)/.unpacked  $(LINUX_KCONFIG)
+$(LINUX_DIR)/.configured:  $(LINUX_DIR)/.unpacked  $(LINUX_KCONFIG)
 	$(SED) "s,^CROSS_COMPILE.*,CROSS_COMPILE=$(KERNEL_CROSS),g;" $(LINUX_DIR)/Makefile
-	-cp $(LINUX_KCONFIG) $(LINUX_DIR)/.config
+	$(SED) "s,^CROSS_COMPILE.*,CROSS_COMPILE=$(KERNEL_CROSS),g;" $(LINUX_DIR)/arch/mips/Makefile
+	$(SED) "s,\-mcpu=,\-mtune=,g;" $(LINUX_DIR)/arch/mips/Makefile
 	$(MAKE) -C $(LINUX_DIR) ARCH=$(LINUX_KARCH) oldconfig include/linux/version.h
 	touch $(LINUX_DIR)/.configured
 
@@ -87,18 +92,25 @@ $(LINUX_KERNEL): $(LINUX_DIR)/$(LINUX_BINLOC)
 	cp -fa $(LINUX_DIR)/$(LINUX_BINLOC) $(LINUX_KERNEL)
 	touch -c $(LINUX_KERNEL)
 
-$(TARGET_DIR)/lib/modules/$(LINUX_VERSION)/modules.dep: $(LINUX_KERNEL)
-	rm -rf $(TARGET_DIR)/lib/modules
-	rm -f $(TARGET_DIR)/sbin/cardmgr
-	$(MAKE) -C $(LINUX_DIR) INSTALL_MOD_PATH=$(TARGET_DIR) modules_install
-	(cd $(TARGET_DIR)/lib/modules; ln -s $(LINUX_VERSION)/kernel/drivers .)
+$(LINUX_DIR)/.modules_done: $(LINUX_KERNEL)
+	rm -rf $(BUILD_DIR)/modules
+	$(MAKE) -C $(LINUX_DIR) DEPMOD=true INSTALL_MOD_PATH=$(BUILD_DIR)/modules modules_install
+	tar -C $(BUILD_DIR)/modules/lib -cjf openwrt-kmodules.tar.bz2 modules
+	touch $(LINUX_DIR)/.modules_done
+
 
 $(STAGING_DIR)/include/linux/version.h: $(LINUX_DIR)/.configured
 	mkdir -p $(STAGING_DIR)/include
 	tar -ch -C $(LINUX_DIR)/include -f - linux | tar -xf - -C $(STAGING_DIR)/include/
 	tar -ch -C $(LINUX_DIR)/include -f - asm | tar -xf - -C $(STAGING_DIR)/include/
 
-linux: $(STAGING_DIR)/include/linux/version.h $(TARGET_DIR)/lib/modules/$(LINUX_VERSION)/modules.dep
+linux: $(STAGING_DIR)/include/linux/version.h $(LINUX_DIR)/.modules_done linux-modules-root
+
+linux-modules-root: 
+	-mkdir -p $(TARGET_MODULES_DIR)
+	cp $(LINUX_DIR)/drivers/net/wl/wl.o $(TARGET_MODULES_DIR)
+	cp $(LINUX_DIR)/drivers/net/et/et.o $(TARGET_MODULES_DIR)
+	cp $(LINUX_DIR)/drivers/net/diag/diag.o $(TARGET_MODULES_DIR)
 
 linux-source: $(DL_DIR)/$(LINUX_SOURCE)
 
