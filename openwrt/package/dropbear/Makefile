@@ -3,6 +3,7 @@
 include $(TOPDIR)/rules.mk
 
 DROPBEAR_VERSION:=0.45
+DROPBEAR_RELEASE:=2
 DROPBEAR_MD5SUM:=2bcc46e4c239aec982bf36a723dd0b0e
 
 DROPBEAR_SOURCE:=dropbear-$(DROPBEAR_VERSION).tar.bz2
@@ -11,7 +12,7 @@ DROPBEAR_DIR:=$(BUILD_DIR)/dropbear-$(DROPBEAR_VERSION)
 DROPBEAR_CAT:=bzcat
 DROPBEAR_BINARY:=dropbearmulti
 DROPBEAR_TARGET_BINARY:=usr/sbin/dropbear
-DROPBEAR_IPK:=dropbear_$(DROPBEAR_VERSION)-1_$(ARCH).ipk
+DROPBEAR_IPK:=dropbear_$(DROPBEAR_VERSION)-$(DROPBEAR_RELEASE)_$(ARCH).ipk
 DROPBEAR_IPK_DIR:=$(DROPBEAR_DIR)/ipkg
 
 $(DL_DIR)/$(DROPBEAR_SOURCE):
@@ -53,7 +54,7 @@ $(DROPBEAR_DIR)/$(DROPBEAR_BINARY): $(DROPBEAR_DIR)/.configured
 		MULTI=1 SCPPROGRESS=1 -C $(DROPBEAR_DIR)
 
 $(PACKAGE_DIR)/$(DROPBEAR_IPK): $(DROPBEAR_DIR)/$(DROPBEAR_BINARY)
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(DROPBEAR_IPK_DIR) dropbear.control $(DROPBEAR_VERSION)-1 $(ARCH)
+	$(SCRIPT_DIR)/make-ipkg-dir.sh $(DROPBEAR_IPK_DIR) dropbear.control $(DROPBEAR_VERSION)-$(DROPBEAR_RELEASE) $(ARCH)
 	mkdir -p $(DROPBEAR_IPK_DIR)/usr/bin
 	mkdir -p $(DROPBEAR_IPK_DIR)/usr/sbin
 	install -m 755 $(DROPBEAR_DIR)/$(DROPBEAR_BINARY) \
@@ -61,6 +62,7 @@ $(PACKAGE_DIR)/$(DROPBEAR_IPK): $(DROPBEAR_DIR)/$(DROPBEAR_BINARY)
 	$(STRIP) $(DROPBEAR_IPK_DIR)/usr/sbin/dropbear
 	ln -sf ../sbin/dropbear $(DROPBEAR_IPK_DIR)/usr/bin/scp
 	ln -sf ../sbin/dropbear $(DROPBEAR_IPK_DIR)/usr/bin/ssh
+	ln -sf ../sbin/dropbear $(DROPBEAR_IPK_DIR)/usr/bin/dbclient
 	ln -sf ../sbin/dropbear $(DROPBEAR_IPK_DIR)/usr/bin/dropbearkey
 	ln -sf ../sbin/dropbear $(DROPBEAR_IPK_DIR)/usr/bin/dropbearconvert
 	mkdir -p $(DROPBEAR_IPK_DIR)/etc/init.d
