@@ -97,7 +97,7 @@ INSTALL_LIBGCJ:=false
 #############################################################
 TARGETS:=host-sed openwrt-code.bin
 
-PACKAGES:=oidentd iproute2 sched-modules wshaper zlib openssl openssh pppoecd
+PACKAGES:=oidentd iproute2 sched-modules wshaper zlib openssl openssh pppoecd dropbear
 
 #############################################################
 #
@@ -192,9 +192,11 @@ world: $(DL_DIR) $(TARGETS_SOURCE) $(BUILD_DIR) $(STAGING_DIR) $(TARGET_DIR) $(T
 
 packages: ipkg-utils $(PACKAGES_IPK)
 	-@mkdir -p $(BASE_DIR)/packages
-	cd $(BASE_DIR)/packages
-	-mv $(BUILD_DIR)/*.ipk .
-	$(IPKG_MAKE_INDEX) . > Packages
+	{ \
+		cd $(BASE_DIR)/packages; \
+		mv $(BUILD_DIR)/*.ipk .; \
+		$(IPKG_MAKE_INDEX) . > Packages; \
+	}
 	@echo "ALL DONE."
 
 .PHONY: all world clean dirclean distclean source $(TARGETS) \
