@@ -1,0 +1,23 @@
+#!/bin/sh
+
+. /etc/functions.sh
+
+WAN_PROTO=$(nvram get wan_proto)
+[ "$WAN_PROTO" = "pppoe" ] || exit 0
+
+for module in slhc ppp_generic pppox pppoe; do
+	insmod $module 2>/dev/null >/dev/null
+done
+
+IFNAME=$(nvram get pppoe_ifname)
+USERNAME=$(nvram get ppp_username)
+PASSWORD=$(nvram get ppp_passwd)
+REDIAL=$(nvram get ppp_redialperiod)
+REDIAL=${REDIAL:+holdoff $REDIAL}
+IDLETIME=$(nvram get ppp_idletime)
+IDLETIME=${IDLETIME:+idle $IDLETIME}
+MTU=$(nvram get ppp_mtu)
+
+ifconfig $IFNAME up
+echo -e "plugin /usr/lib/pppd/rp-pppoe/rp-pppoe.so\nconnect /bin/true\nusepeerdns\ndefaultroute\nuser \"$USERNAME\"\npassword \"$PASSWORD\"\nmtu $MTU\n$IDLETIME\n$REDIAL" > /tmp/.pppoe-data
+/usr/sbin/pppd file /tmp/.pppoe-data $IFNAME
