@@ -70,7 +70,7 @@ openssl: uclibc $(TARGET_DIR)/usr/lib/libcrypto.so.0.9.7
 
 $(LIBSSL_IPK): uclibc $(STAGING_DIR)/usr/lib/libcrypto.a
 	mkdir -p $(OPENSSL_IPK_DIR)/CONTROL
-	cp $(SOURCE_DIR)/libssl.control $(OPENSSL_IPK_DIR)/CONTROL/control
+	cp $(SOURCE_DIR)/openwrt/openssl/control $(OPENSSL_IPK_DIR)/CONTROL/control
 	mkdir -p $(OPENSSL_IPK_DIR)/usr/lib
 	cp -fa $(STAGING_DIR)/lib/libcrypto.so* $(OPENSSL_IPK_DIR)/usr/lib/
 	cp -fa $(STAGING_DIR)/lib/libssl.so* $(OPENSSL_IPK_DIR)/usr/lib/

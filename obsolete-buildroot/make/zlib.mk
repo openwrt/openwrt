@@ -66,7 +66,7 @@ zlib: uclibc $(TARGET_DIR)/lib/libz.so.1.1.4
 
 $(ZLIB_IPK): uclibc $(STAGING_DIR)/lib/libz.so.1.1.4
 	mkdir -p $(ZLIB_IPK_DIR)/CONTROL
-	cp $(SOURCE_DIR)/zlib.control $(ZLIB_IPK_DIR)/CONTROL/control
+	cp $(SOURCE_DIR)/openwrt/ipkg/zlib/control $(ZLIB_IPK_DIR)/CONTROL/control
 	mkdir -p $(ZLIB_IPK_DIR)/lib
 	cp -dpf $(STAGING_DIR)/lib/libz.so* $(ZLIB_IPK_DIR)/lib;
 	-$(STRIP) --strip-unneeded $(ZLIB_IPK_DIR)/lib/libz.so*
