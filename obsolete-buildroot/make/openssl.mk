@@ -8,9 +8,10 @@
 OPENSSL_SITE:=http://www.openssl.org/source
 OPENSSL_SOURCE:=openssl-0.9.7d.tar.gz
 OPENSSL_DIR:=$(BUILD_DIR)/openssl-0.9.7d
-OPENSSL_PATCH=$(SOURCE_DIR)/openssl.patch
+OPENSSL_IPK_DIR=$(OPENWRT_IPK_DIR)/openssl
+OPENSSL_PATCH=$(OPENSSL_IPK_DIR)/openssl.patch
 
-OPENSSL_IPK_DIR=$(BUILD_DIR)/openssl-0.9.7d-ipk
+OPENSSL_IPK_BUILD_DIR=$(BUILD_DIR)/openssl-0.9.7d-ipk
 LIBSSL_IPK=$(BUILD_DIR)/libssl_0.9.7d_mipsel.ipk
 
 $(DL_DIR)/$(OPENSSL_SOURCE):
@@ -68,15 +69,15 @@ openssl-headers: $(TARGET_DIR)/usr/lib/libssl.a
 
 openssl: uclibc $(TARGET_DIR)/usr/lib/libcrypto.so.0.9.7
 
-$(LIBSSL_IPK): uclibc $(STAGING_DIR)/usr/lib/libcrypto.a
-	mkdir -p $(OPENSSL_IPK_DIR)/CONTROL
-	cp $(SOURCE_DIR)/openwrt/openssl/control $(OPENSSL_IPK_DIR)/CONTROL/control
-	mkdir -p $(OPENSSL_IPK_DIR)/usr/lib
-	cp -fa $(STAGING_DIR)/lib/libcrypto.so* $(OPENSSL_IPK_DIR)/usr/lib/
-	cp -fa $(STAGING_DIR)/lib/libssl.so* $(OPENSSL_IPK_DIR)/usr/lib/
-	-$(STRIP) --strip-unneeded $(OPENSSL_IPK_DIR)/usr/lib/libssl.so.0.9.7
-	-$(STRIP) --strip-unneeded $(OPENSSL_IPK_DIR)/usr/lib/libcrypto.so.0.9.7
-	cd $(BUILD_DIR); $(STAGING_DIR)/bin/ipkg-build -c -o root -g root $(OPENSSL_IPK_DIR)
+$(LIBSSL_IPK): uclibc $(STAGING_DIR)/lib/libcrypto.a
+	mkdir -p $(OPENSSL_IPK_BUILD_DIR)/CONTROL
+	cp $(OPENSSL_IPK_DIR)/control $(OPENSSL_IPK_BUILD_DIR)/CONTROL/control
+	mkdir -p $(OPENSSL_IPK_BUILD_DIR)/usr/lib
+	cp -fa $(STAGING_DIR)/lib/libcrypto.so* $(OPENSSL_IPK_BUILD_DIR)/usr/lib/
+	cp -fa $(STAGING_DIR)/lib/libssl.so* $(OPENSSL_IPK_BUILD_DIR)/usr/lib/
+	-$(STRIP) --strip-unneeded $(OPENSSL_IPK_BUILD_DIR)/usr/lib/libssl.so.0.9.7
+	-$(STRIP) --strip-unneeded $(OPENSSL_IPK_BUILD_DIR)/usr/lib/libcrypto.so.0.9.7
+	cd $(BUILD_DIR); $(STAGING_DIR)/bin/ipkg-build -c -o root -g root $(OPENSSL_IPK_BUILD_DIR)
 
 openssl-ipk: $(LIBSSL_IPK)
 
@@ -86,6 +87,7 @@ openssl-clean:
 	rm -f $(STAGING_DIR)/bin/openssl  $(TARGET_DIR)/bin/openssl
 	rm -f $(STAGING_DIR)/lib/libcrypto.so* $(TARGET_DIR)/lib/libcrypto.so*
 	rm -f $(STAGING_DIR)/lib/libssl.so* $(TARGET_DIR)/lib/libssl.so*
+	rm -rf $(OPENSSL_IPK_BUILD_DIR)
 	$(MAKE) -C $(OPENSSL_DIR) clean
 
 openssl-dirclean: 
