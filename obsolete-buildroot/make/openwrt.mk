@@ -23,7 +23,7 @@
 # Currently the dependencies are not all handled.  But that's true of
 # our buildroot in general, since it wasn't really set up for end users.
 
-OPENWRT_TARGETS:= gcc3_3 openwrt-linux openwrt-kmodules.tar.bz2 \
+OPENWRT_TARGETS:= $(STAGING_DIR)/bin/sstrip gcc3_3 openwrt-linux openwrt-kmodules.tar.bz2 \
 	openwrt-shared openwrt-mtd openwrt-nvram openwrt-wlconf \
 	bridge dnsmasq1 iptables wtools busybox \
 	openwrt-rootprep
@@ -202,7 +202,7 @@ openwrt-rootprep:
 
 ######################################################################
 
-openwrt-prune: openwrt-base $(STAGING_DIR)/bin/sstrip
+openwrt-prune: openwrt-base
 	# remove unneeded uClibc libs
 	rm -rf $(TARGET_DIR)/lib/libthread_db*
 	rm -rf $(TARGET_DIR)/lib/libpthread*

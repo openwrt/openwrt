@@ -41,7 +41,7 @@ GENEXT2_INODES=$(shell expr $(shell find $(TARGET_DIR) | wc -l) + 400)
 #GENEXT2_SIZE=100000
 
 ext2root: genext2fs
-	#-@find $(TARGET_DIR)/lib -type f -name \*.so\* | xargs $(STRIP) --strip-unneeded 2>/dev/null || true;
+	#-@find $(TARGET_DIR)/lib -type f -name \*.so\* | xargs $(STRIP)  2>/dev/null || true;
 	-@find $(TARGET_DIR) -type f -perm +111 | xargs $(STRIP) 2>/dev/null || true;
 	$(GENEXT2_DIR)/genext2fs -i $(GENEXT2_INODES) -b $(GENEXT2_SIZE) \
 		-d $(TARGET_DIR) -q -D $(SOURCE_DIR)/device_table.txt $(IMAGE)

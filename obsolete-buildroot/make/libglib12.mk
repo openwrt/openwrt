@@ -66,7 +66,7 @@ $(TARGET_DIR)/lib/$(LIBGLIB12_BINARY): $(STAGING_DIR)/lib/$(LIBGLIB12_BINARY)
 	cp -a $(STAGING_DIR)/lib/$(LIBGLIB12_BINARY) $(TARGET_DIR)/lib/
 	cp -a $(STAGING_DIR)/lib/libglib.so $(TARGET_DIR)/lib/
 	cp -a $(STAGING_DIR)/lib/libglib-1.2.so.0 $(TARGET_DIR)/lib/
-	$(STRIP) --strip-unneeded $(TARGET_DIR)/lib/$(LIBGLIB12_BINARY)
+	$(STRIP)  $(TARGET_DIR)/lib/$(LIBGLIB12_BINARY)
 
 libglib12: uclibc $(TARGET_DIR)/lib/$(LIBGLIB12_BINARY)
 

@@ -48,7 +48,7 @@ $(STAGING_DIR)/lib/libz.so.1.1.4: $(ZLIB_DIR)/libz.so.1.1.4
 
 $(TARGET_DIR)/lib/libz.so.1.1.4: $(STAGING_DIR)/lib/libz.so.1.1.4
 	cp -dpf $(STAGING_DIR)/lib/libz.so* $(TARGET_DIR)/lib;
-	-$(STRIP) --strip-unneeded $(TARGET_DIR)/lib/libz.so*
+	-$(STRIP)  $(TARGET_DIR)/lib/libz.so*
 	touch -c $(TARGET_DIR)/lib/libz.so.1.1.4
 
 $(TARGET_DIR)/usr/lib/libz.a: $(STAGING_DIR)/lib/libz.so.1.1.4
@@ -69,7 +69,7 @@ $(ZLIB_IPK): uclibc $(STAGING_DIR)/lib/libz.so.1.1.4
 	cp $(SOURCE_DIR)/openwrt/ipkg/zlib/control $(ZLIB_IPK_DIR)/CONTROL/control
 	mkdir -p $(ZLIB_IPK_DIR)/lib
 	cp -dpf $(STAGING_DIR)/lib/libz.so* $(ZLIB_IPK_DIR)/lib;
-	-$(STRIP) --strip-unneeded $(ZLIB_IPK_DIR)/lib/libz.so*
+	-$(STRIP)  $(ZLIB_IPK_DIR)/lib/libz.so*
 	touch -c $(ZLIB_IPK_DIR)/lib/libz.so.1.1.4
 	cd $(BUILD_DIR); $(IPKG_BUILD) $(ZLIB_IPK_DIR)
 

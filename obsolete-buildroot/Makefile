@@ -146,7 +146,8 @@ GNU_TARGET_NAME=$(OPTIMIZE_FOR_CPU)-linux
 KERNEL_CROSS=$(STAGING_DIR)/bin/$(OPTIMIZE_FOR_CPU)-linux-uclibc-
 TARGET_CROSS=$(STAGING_DIR)/bin/$(OPTIMIZE_FOR_CPU)-linux-uclibc-
 TARGET_CC=$(TARGET_CROSS)gcc
-STRIP=$(TARGET_CROSS)strip --remove-section=.comment --remove-section=.note
+#STRIP=$(TARGET_CROSS)strip --remove-section=.comment --remove-section=.note --strip-unneeded
+STRIP=$(STAGING_DIR)/bin/sstrip
 
 HOST_ARCH:=$(shell $(HOSTCC) -dumpmachine | sed -e s'/-.*//' \
 	-e 's/sparc.*/sparc/' \

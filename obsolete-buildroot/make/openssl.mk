@@ -55,8 +55,8 @@ $(TARGET_DIR)/usr/lib/libcrypto.so.0.9.7: $(STAGING_DIR)/lib/libcrypto.a
 	cp -fa $(STAGING_DIR)/lib/libcrypto.so* $(TARGET_DIR)/usr/lib/
 	cp -fa $(STAGING_DIR)/lib/libssl.so* $(TARGET_DIR)/usr/lib/
 	#cp -fa $(STAGING_DIR)/bin/openssl  $(TARGET_DIR)/bin/
-	-$(STRIP) --strip-unneeded $(TARGET_DIR)/usr/lib/libssl.so.0.9.7
-	-$(STRIP) --strip-unneeded $(TARGET_DIR)/usr/lib/libcrypto.so.0.9.7
+	-$(STRIP)  $(TARGET_DIR)/usr/lib/libssl.so.0.9.7
+	-$(STRIP)  $(TARGET_DIR)/usr/lib/libcrypto.so.0.9.7
 
 $(TARGET_DIR)/usr/lib/libssl.a: $(STAGING_DIR)/lib/libcrypto.a
 	mkdir -p $(TARGET_DIR)/usr/include 
@@ -75,8 +75,8 @@ $(LIBSSL_IPK): uclibc $(STAGING_DIR)/lib/libcrypto.a
 	mkdir -p $(OPENSSL_IPK_BUILD_DIR)/usr/lib
 	cp -fa $(STAGING_DIR)/lib/libcrypto.so* $(OPENSSL_IPK_BUILD_DIR)/usr/lib/
 	cp -fa $(STAGING_DIR)/lib/libssl.so* $(OPENSSL_IPK_BUILD_DIR)/usr/lib/
-	-$(STRIP) --strip-unneeded $(OPENSSL_IPK_BUILD_DIR)/usr/lib/libssl.so.0.9.7
-	-$(STRIP) --strip-unneeded $(OPENSSL_IPK_BUILD_DIR)/usr/lib/libcrypto.so.0.9.7
+	-$(STRIP)  $(OPENSSL_IPK_BUILD_DIR)/usr/lib/libssl.so.0.9.7
+	-$(STRIP)  $(OPENSSL_IPK_BUILD_DIR)/usr/lib/libcrypto.so.0.9.7
 	cd $(BUILD_DIR); $(IPKG_BUILD) $(OPENSSL_IPK_BUILD_DIR)
 
 openssl-ipk: $(LIBSSL_IPK)
