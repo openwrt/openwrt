@@ -3,7 +3,7 @@
 menu "Runtime Configuration"
 	choice
 		bool "Telnet access"
-		default BR2_SYSCONF_TELNET_OPEN
+		default BR2_SYSCONF_TELNET_FAILSAFE_ONLY
 		
 		config BR2_SYSCONF_TELNET_FAILSAFE_ONLY
 			bool "open, failsafe only"
