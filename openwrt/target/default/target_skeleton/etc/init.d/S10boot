@@ -4,8 +4,6 @@ syslogd -C 16
 sysctl -p
 echo "S" > /proc/jffs2_bbc
 
-rm -rf /var
-ln -sf /tmp /var
 mkdir -p /var/run
 mkdir -p /var/log
 touch /var/log/wtmp
