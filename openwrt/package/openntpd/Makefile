@@ -42,6 +42,7 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.unpacked
 		--mandir=/usr/man \
 		--infodir=/usr/info \
 		--with-builtin-arc4random \
+		--with-privsep-user=ntp \
 	);
 	touch $(PKG_BUILD_DIR)/.configured
 
@@ -49,11 +50,10 @@ $(PKG_BUILD_DIR)/ntpd: $(PKG_BUILD_DIR)/.configured
 	$(MAKE) -C $(PKG_BUILD_DIR)
 
 $(PKG_IPK): $(PKG_BUILD_DIR)/ntpd
+	mkdir -p $(PKG_IPK_DIR)/usr/sbin 
+	cp -a ./ipkg/* $(PKG_IPK_DIR)/
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_IPK_DIR) $(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
-	mkdir -p $(PKG_IPK_DIR){/usr/sbin,/etc/init.d} 
 	cp $(PKG_BUILD_DIR)/ntpd $(PKG_IPK_DIR)/usr/sbin/
-	cp ./files/ntpd.conf $(PKG_IPK_DIR)/etc/
-	cp ./files/S49ntpd $(PKG_IPK_DIR)/etc/init.d/
 	$(STRIP) $(PKG_IPK_DIR)/usr/sbin/*
 	mkdir -p $(PACKAGE_DIR)
 	$(IPKG_BUILD) $(PKG_IPK_DIR) $(PACKAGE_DIR)
