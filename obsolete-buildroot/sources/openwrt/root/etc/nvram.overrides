@@ -16,6 +16,7 @@ NVRAM_lan_proto="static"
   debug "### wrt54g 1.x hack ###"
   NVRAM_vlan1hwname="et0"
   NVRAM_vlan2hwname="et0"
+  FAILSAFE_ifnames="vlan1 vlan2 eth2"
 
   remap () {
     eval NVRAM_$1=\"$(nvram get $1 | awk 'gsub("eth0","vlan2") gsub("eth1","vlan1")')\"
@@ -23,8 +24,8 @@ NVRAM_lan_proto="static"
 
   for type in lan wifi wan pppoe
   do
-  remap ${type}_ifname
-  remap ${type}_ifnames
+    remap ${type}_ifname
+    remap ${type}_ifnames
   done
 }
 
@@ -33,6 +34,7 @@ NVRAM_lan_proto="static"
 [ "$(nvram get boardnum)"  = "1024" ] && {
   debug "### wap54g hack ###"
   NVRAM_wan_ifname="none"
+  FAILSAFE_ifnames="eth0 eth1"
 }
 
 # defaults if lan_ifname is missing
@@ -51,7 +53,7 @@ NVRAM_lan_proto="static"
 [ "$FAILSAFE" = "true" ] && {
   echo "### YOU ARE IN FAILSAFE MODE ####"
   NVRAM_lan_ifname="br0"
-  NVRAM_lan_ifnames="vlan0 vlan1 vlan2 eth0 eth1 eth2 eth3"
+  NVRAM_lan_ifnames=${FAILSAFE_ifnames:-"vlan0 vlan1 eth1"}
   NVRAM_lan_ipaddr="192.168.1.1"
   NVRAM_lan_netmask="255.255.255.0"
   NVRAM_lan_hwaddr="00:0B:AD:0A:DD:00"
