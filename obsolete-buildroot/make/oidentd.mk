@@ -68,7 +68,7 @@ $(OIDENTD_DIR)/$(OIDENTD_TARGET):	$(OIDENTD_DIR)/.configured
 	
 
 $(BUILD_DIR)/$(OIDENTD_IPKTARGET):	$(OIDENTD_DIR)/$(OIDENTD_TARGET) $(OIDENTD_DIR)/ipkg/rules
-	(cd $(OIDENTD_DIR); ipkg-buildpackage)
+	(cd $(OIDENTD_DIR); $(IPKG_BUILDPACKAGE))
 	
 	
 		
