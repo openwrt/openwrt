@@ -4,7 +4,7 @@
 #
 #############################################################
 SQUASHFS_DIR=$(BUILD_DIR)/squashfs2.0
-SQUASHFS_SOURCE=squashfs2.0-ALPHA.tar.gz
+SQUASHFS_SOURCE=squashfs2.0.tar.gz
 SQUASHFS_SITE=http://dl.sourceforge.net/sourceforge/squashfs
 
 $(DL_DIR)/$(SQUASHFS_SOURCE):
@@ -40,7 +40,7 @@ squashfsroot: squashfs
 	@rm -rf $(TARGET_DIR)/usr/man
 	@rm -rf $(TARGET_DIR)/usr/info
 	#$(SQUASHFS_DIR)/squashfs-tools/mksquashfs -q -D $(SOURCE_DIR)/device_table.txt $(TARGET_DIR) $(IMAGE)
-	$(SQUASHFS_DIR)/squashfs-tools/mksquashfs $(TARGET_DIR) $(IMAGE) -noappend -root-owned
+	$(SQUASHFS_DIR)/squashfs-tools/mksquashfs $(TARGET_DIR) $(IMAGE) -noappend -root-owned -le
 
 squashfsroot-source: squashfs-source
 
