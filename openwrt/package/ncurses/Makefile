@@ -1,9 +1,12 @@
+# $Id$
+
 include $(TOPDIR)/rules.mk
 
 PKG_NAME := ncurses
 PKG_VERSION := 5.2
 PKG_RELEASE := 5
 PKG_MD5SUM := 464d6a49010cf2a6eb9ce59a264d4d47
+
 PKG_SOURCE_SITE := ftp://ftp.gnu.org/pub/gnu/$(PKG_NAME) \
 	    ftp://gatekeeper.dec.com/pub/GNU/$(PKG_NAME) \
         ftp://ftp.uu.net/archive/systems/gnu/$(PKG_NAME) \
@@ -16,7 +19,6 @@ PKG_SOURCE_CAT := zcat
 PKG_SOURCE_DIR := $(PKG_NAME)-$(PKG_VERSION)
 PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_SOURCE_DIR)
 PKG_IPK := $(PACKAGE_DIR)/lib$(PKG_NAME)_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
-
 
 $(DL_DIR)/$(PKG_SOURCE_FILE):
 	mkdir -p $(DL_DIR)
@@ -52,4 +54,3 @@ clean:
 	 clean
 	rm -rf $(PKG_BUILD_DIR)
 	rm -r $(PKG_IPK)
-

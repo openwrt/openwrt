@@ -1,8 +1,11 @@
+# $Id$
+
 include $(TOPDIR)/rules.mk
 
 PKG_NAME := zlib
 PKG_VERSION := 1.2.2
 PKG_RELEASE := 1
+PKG_MD5SUM := 68bd51aaa6558c3bc3fd4890e53413de
 
 PKG_SOURCE_SITE := http://www.zlib.net/
 PKG_SOURCE_FILE := $(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -14,7 +17,7 @@ PKG_IPK := $(PACKAGE_DIR)/zlib_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
 
 $(DL_DIR)/$(PKG_SOURCE_FILE):
 	mkdir -p $(DL_DIR)
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE_FILE) x $(PKG_SOURCE_SITE)
+	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE_FILE) $(PKG_MD5SUM) $(PKG_SOURCE_SITE)
 
 $(PKG_BUILD_DIR)/.patched: $(DL_DIR)/$(PKG_SOURCE_FILE)
 	mkdir -p $(TOOL_BUILD_DIR)

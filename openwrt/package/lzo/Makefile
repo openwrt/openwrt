@@ -1,8 +1,11 @@
+# $Id$
+
 include $(TOPDIR)/rules.mk
 
 PKG_NAME := lzo
 PKG_VERSION := 1.08
 PKG_RELEASE := 1
+PKG_MD5SUM := ab94d3da364c7cbd5b78d76f1875b0f6
 
 PKG_SOURCE_SITE := http://www.oberhumer.com/opensource/lzo/download/
 PKG_SOURCE_FILE := $(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -11,10 +14,9 @@ PKG_SOURCE_DIR := $(PKG_NAME)-$(PKG_VERSION)
 PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_SOURCE_DIR)
 PKG_IPK := $(PACKAGE_DIR)/$(PKG_NAME)_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
 
-
 $(DL_DIR)/$(PKG_SOURCE_FILE):
 	mkdir -p $(DL_DIR)
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE_FILE) x $(PKG_SOURCE_SITE)
+	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE_FILE) $(PKG_MD5SUM) $(PKG_SOURCE_SITE)
 
 $(PKG_BUILD_DIR)/.patched: $(DL_DIR)/$(PKG_SOURCE_FILE)
 	mkdir -p $(TOOL_BUILD_DIR)
@@ -69,4 +71,3 @@ clean:
 	rm -rf $(PKG_BUILD_DIR)
 	rm -f $(STAGING_DIR)/lib/liblzo*
 	rm -f $(PACKAGE_DIR)/lzo\*.ipk
-

@@ -1,14 +1,16 @@
+# $Id$
+
 include $(TOPDIR)/rules.mk
 
 PKG_NAME := ppp
 PKG_VERSION := 2.4.3
 PKG_RELEASE := 3
+PKG_MD5SUM := 848f6c3cafeb6074ffeb293c3af79b7c
 
 PKG_SOURCE_SITE := ftp://ftp.samba.org/pub/ppp/
 PKG_SOURCE_FILE := $(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_CAT := zcat
 PKG_SOURCE_DIR := $(PKG_NAME)-$(PKG_VERSION)
-
 PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_SOURCE_DIR)
 
 PKG_PPP := $(PACKAGE_DIR)/ppp_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
@@ -53,7 +55,7 @@ endif
 
 $(DL_DIR)/$(PKG_SOURCE_FILE):
 	mkdir -p $(DL_DIR)
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE_FILE) x $(PKG_SOURCE_SITE)
+	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE_FILE) $(PKG_MD5SUM) $(PKG_SOURCE_SITE)
 
 $(PKG_BUILD_DIR)/.patched: $(DL_DIR)/$(PKG_SOURCE_FILE)
 	mkdir -p $(TOOL_BUILD_DIR)

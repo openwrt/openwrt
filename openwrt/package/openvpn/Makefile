@@ -1,13 +1,12 @@
-#############################################################
-#
-# ebtables
-#
-#############################################################
+# $Id$
+
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openvpn
 PKG_VERSION:=2.0_rc16
 PKG_RELEASE:=1
+PKG_MD5SUM:=296a4ca736405525a8de4cd46fef4af5
+
 PKG_SOURCE_URL:=@SF/openvpn
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
@@ -16,7 +15,7 @@ PKG_IPK:=$(PACKAGE_DIR)/$(PKG_NAME)_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
 PKG_IPK_DIR:=$(PKG_BUILD_DIR)/ipkg
 
 $(DL_DIR)/$(PKG_SOURCE):
-	 $(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE) x $(PKG_SOURCE_URL)
+	 $(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE) $(PKG_MD5SUM) $(PKG_SOURCE_URL)
 
 $(PKG_BUILD_DIR)/.unpacked: $(DL_DIR)/$(PKG_SOURCE)
 	$(PKG_CAT) $(DL_DIR)/$(PKG_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -

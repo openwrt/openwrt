@@ -1,4 +1,5 @@
 #############################################################
+# $Id$
 #
 # Linux kernel target for the OpenWRT project
 #
@@ -30,15 +31,17 @@ LINUX_SOURCE_DIR=$(LINUX_DIR)-$(LINUX_VERSION)
 
 # binary driver extracted from linksys firmware GPL sourcetree WRT54GS_3_37_2_1109_US 
 LINUX_BINARY_WL_DRIVER=kernel-binary-wl-0.1.tar.gz
+LINUX_BINARY_WL_MD5SUM=1b57ba129ad80c7f1702d0be1422cfba
 LINUX_BINARY_ET_DRIVER=kernel-binary-et-0.2.tar.gz
+LINUX_BINARY_ET_MD5SUM=d657f929bceee926bc28821d753d945c
 
 TARGET_MODULES_DIR=$(TARGET_DIR)/lib/modules/$(LINUX_VERSION)
 
 $(DL_DIR)/$(LINUX_BINARY_WL_DRIVER):
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(LINUX_BINARY_WL_DRIVER) x $(LINUX_BINARY_DRIVER_SITE)
+	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(LINUX_BINARY_WL_DRIVER) $(LINUX_BINARY_WL_MD5SUM) $(LINUX_BINARY_DRIVER_SITE)
 
 $(DL_DIR)/$(LINUX_BINARY_ET_DRIVER):
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(LINUX_BINARY_ET_DRIVER) x $(LINUX_BINARY_DRIVER_SITE)
+	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(LINUX_BINARY_ET_DRIVER) $(LINUX_BINARY_ET_MD5SUM) $(LINUX_BINARY_DRIVER_SITE)
 
 $(LINUX_DIR)/.unpacked: $(DL_DIR)/$(LINUX_SOURCE) $(DL_DIR)/$(LINUX_BINARY_WL_DRIVER) $(DL_DIR)/$(LINUX_BINARY_ET_DRIVER)
 	-mkdir -p $(BUILD_DIR)

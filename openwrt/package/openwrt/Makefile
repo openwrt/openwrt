@@ -1,3 +1,5 @@
+# $Id$
+
 include $(TOPDIR)/rules.mk
 
 SHARED_INCLUDE:=${shell pwd}/include
@@ -22,11 +24,12 @@ $(TARGET_DIR)/sbin/jffs2root: jffs2root.c
 # wlconf tool extracted from linksys firmware GPL.unpackedtree
 # WRT54GS_3_37_2_1109_US
 LINKSYS_TGZ_SITE=http://openwrt.openbsd-geek.de
+LINKSYS_TGZ_MD5SUM=1b596e5bf26d2898d1eab5bd200bee58
 LINKSYS_WLCONF_TGZ=linksys-wlconf.tar.gz
 LINKSYS_WLCONF_DIR=$(BUILD_DIR)/linksys-wlconf
 
 $(DL_DIR)/$(LINKSYS_WLCONF_TGZ):
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(LINKSYS_WLCONF_TGZ) x $(LINKSYS_TGZ_SITE)
+	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(LINKSYS_WLCONF_TGZ) $(LINKSYS_TGZ_MD5SUM) $(LINKSYS_TGZ_SITE)
 
 $(LINKSYS_WLCONF_DIR)/.unpacked: $(DL_DIR)/$(LINKSYS_WLCONF_TGZ)
 	zcat $(DL_DIR)/$(LINKSYS_WLCONF_TGZ) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
