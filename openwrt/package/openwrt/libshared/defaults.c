@@ -126,13 +126,13 @@ struct nvram_tuple router_defaults[] = {
 	{ "wl_corerev", "", 0 },		/* Current core revision */
 	{ "wl_phytypes", "", 0 },		/* List of supported wireless bands (e.g. "ga") */
 	{ "wl_radioids", "", 0 },		/* List of radio IDs */
-	{ "wl_ssid", "linksys", 0 },		/* Service set ID (network name) */
+	{ "wl_ssid", "OpenWrt", 0 },		/* Service set ID (network name) */
 	{ "wl_country", "", 0 },		/* Country (default obtained from driver) */
 	{ "wl_radio", "1", 0 },			/* Enable (1) or disable (0) radio */
 	{ "wl_closed", "0", 0 },		/* Closed (hidden) network */
         { "wl_ap_isolate", "0", 0 },            /* AP isolate mode */
 	{ "wl_mode", "ap", 0 },			/* AP mode (ap|sta|wds) */
-	{ "wl_lazywds", "1", 0 },		/* Enable "lazy" WDS mode (0|1) */
+	{ "wl_lazywds", "0", 0 },		/* Enable "lazy" WDS mode (0|1) */
 	{ "wl_wds", "", 0 },			/* xx:xx:xx:xx:xx:xx ... */
 	{ "wl_wep", "disabled", 0 },		/* WEP data encryption (enabled|disabled) */
 	{ "wl_auth", "0", 0 },			/* Shared key authentication optional (0) or required (1) */
