@@ -555,16 +555,16 @@
  		if (hopt->quantum)
 --- src/linux/linux/include/net/pkt_cls.h	2003-07-04 01:12:28.000000000 -0700
 +++ src/linux/linux.2.4.26/include/net/pkt_cls.h	2004-05-10 22:21:40.000000000 -0700
-@@ -77,11 +77,7 @@
+@@ -77,7 +77,11 @@
  	return -1;
  }
  
+-
 +static inline void tcf_destroy(struct tcf_proto *tp)
 +{
 +	tp->ops->destroy(tp);
 +	kfree(tp);
 +}
--
  
  extern int register_tcf_proto_ops(struct tcf_proto_ops *ops);
  extern int unregister_tcf_proto_ops(struct tcf_proto_ops *ops);
