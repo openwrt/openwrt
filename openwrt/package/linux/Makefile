@@ -52,7 +52,6 @@ $(eval $(call KMOD_template,USB,usb,\
 ))
 $(eval $(call KMOD_template,LP,lp,\
 	$(MODULES_DIR)/kernel/drivers/parport/parport.o \
-	$(MODULES_DIR)/kernel/drivers/parport/parport_pc.o \
 	$(MODULES_DIR)/kernel/drivers/char/lp.o \
 ))
 $(eval $(call KMOD_template,VFAT,vfat,\
