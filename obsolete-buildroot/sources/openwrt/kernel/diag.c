@@ -68,7 +68,7 @@ static unsigned int diag = 0;
 
 static void diag_change()
 {
-	printk(KERN_INFO "led -> %02x\n",diag);
+	//printk(KERN_INFO "led -> %02x\n",diag);
 
 	set_diag(0xFF); // off
 	set_dmz(0xFF); // off
