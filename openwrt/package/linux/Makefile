@@ -55,6 +55,7 @@ $(eval $(call KMOD_template,CRYPTO,crypto,\
 ))
 $(eval $(call KMOD_template,PPP,ppp,\
 	$(MODULES_DIR)/kernel/drivers/net/ppp_generic.o \
+	$(MODULES_DIR)/kernel/drivers/net/slhc.o \
 ))
 $(eval $(call KMOD_template,MPPE,mppe,\
 	$(MODULES_DIR)/kernel/drivers/net/ppp_mppe_mppc.o \
