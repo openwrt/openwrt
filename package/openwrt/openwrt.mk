@@ -112,7 +112,7 @@ openwrt-mtd-clean:
 OPENWRT_JFFS2ROOT_SOURCE=package/openwrt/jffs2root.c
 OPENWRT_JFFS2ROOT_TARGET_BINARY:=sbin/jffs2root
 
-$(TARGET_DIR)/$(OPENWRT_JFFS2ROOT_TARGET_BINARY): 
+$(TARGET_DIR)/$(OPENWRT_JFFS2ROOT_TARGET_BINARY): openwrt
 		$(TARGET_CC) -o $(TARGET_DIR)/$(OPENWRT_JFFS2ROOT_TARGET_BINARY) $(OPENWRT_JFFS2ROOT_SOURCE)
 
 openwrt-jffs2root: $(TARGET_DIR)/$(OPENWRT_JFFS2ROOT_TARGET_BINARY)
@@ -160,7 +160,7 @@ SSTRIP=$(OPENWRT_SSTRIP_TARGET)
 
 linksys:	linksys-shared linksys-nvram linksys-wlconf
 
-openwrt:	linksys openwrt-mtd openwrt-trx openwrt-addpattern openwrt-jffs2root openwrt-sstrip
+openwrt:	linksys openwrt-mtd openwrt-trx openwrt-addpattern openwrt-sstrip
 
 openwrt-dirclean: linksys-shared-dirclean linksys-nvram-dirclean linksys-wlconf-dirclean
 

@@ -44,11 +44,11 @@ jffs2root-dirclean:
 	rm -rf $(MTD_DIR)
 
 ifeq ($(strip $(BR2_TARGET_ROOTFS_JFFS2)),y)
-TARGETS+=openwrt-image
+TARGETS+=openwrt-jffs2root openwrt-image
 ROOTFS=jffs2
 JFFS2FLAGS=-a $(JFFS2_BLOCK_SIZE)
 
-openwrt-image:	openwrt
+openwrt-image: openwrt
 	@make jffs2root openwrt-code.bin TAG=W54G \
 	EXTRAVERSION=$(EXTRAVERSION)-JFFS2-4M JFFS2_BLOCK_SIZE=0x10000
 	@make jffs2root openwrt-code.bin TAG=W54S \
