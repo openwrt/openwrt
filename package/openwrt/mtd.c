@@ -1,7 +1,7 @@
 /*
  * mtd.c
  *
- * Copyright (C) 2005 Waldemar Brodkorb
+ * Copyright (C) 2005 Waldemar Brodkorb <wbx@dass-it.de>
  *
  * $Id$
  *
@@ -190,7 +190,7 @@ mtd_write(const char *trxfile, const char *mtd)
 	}
 		
 	if(mtdInfo.size < trxstat.st_size) {
-		fprintf(stderr, "image to big for mtd partition: %s\n", mtd);
+		fprintf(stderr, "Image too big for partition: %s\n", mtd);
 		close(trxfd);
 		exit(1);
 	}	
@@ -201,7 +201,7 @@ mtd_write(const char *trxfile, const char *mtd)
 
 	/* erase the chunk */
 	if (ioctl (fd,MEMERASE,&mtdEraseInfo) < 0) {
-		fprintf(stderr, "erasing mtd failed: %s\n", mtd);
+		fprintf(stderr, "Erasing mtd failed: %s\n", mtd);
 		exit(1);
 	}
 	
@@ -215,10 +215,10 @@ mtd_write(const char *trxfile, const char *mtd)
 		result = write(fd,src,i);
 		if (i != result) {
 			if (result < 0) {
-				fprintf(stderr,"error while writing image");
+				fprintf(stderr,"Error while writing image");
 				exit(1);
 			}
-			fprintf(stderr,"error writing image");
+			fprintf(stderr,"Error writing image");
 			exit(1);
 		}
 		written += i;
@@ -230,19 +230,31 @@ mtd_write(const char *trxfile, const char *mtd)
 
 int main(int argc, char **argv) {
 	if(argc == 3 && strcasecmp(argv[1],"unlock")==0) {
-		printf("Unlocking %s\n",argv[2]);
+		printf("Unlocking %s ...\n",argv[2]);
 		return mtd_unlock(argv[2]);
 	}
 	if(argc == 3 && strcasecmp(argv[1],"erase")==0) {
-		printf("Erasing %s\n",argv[2]);
+		printf("Erasing %s ...\n",argv[2]);
 		return mtd_erase(argv[2]);
 	}
 	if(argc == 4 && strcasecmp(argv[1],"write")==0) {
-		printf("Writing %s to %s\n",argv[2],argv[3]);
+		printf("Writing %s to %s ...\n",argv[2],argv[3]);
 		return mtd_write(argv[2],argv[3]);
 	}
 
 	printf("no valid command given\n");
+	printf("\nmtd: modify data within a Memory Technology Device.\n");
+	printf("Copyright (C) 2005 Waldemar Brodkorb <wbx@dass-it.de>\n");
+	printf("Documented by Mike Strates [dumpedcore] <mike@dilaudid.net>\n");
+	printf("mtd has ABSOLUTELY NO WARRANTY and is licensed under the GNU GPL.\n");
+	printf("\nUsage: mtd [unlock|erase] device\n");
+	printf("       mtd write imagefile device\n");
+	printf("\n .. where device is in the format of mtdX (eg: mtd4) or its label.\n");
+	printf("\nunlock                enable modification to device\n");
+	printf("erase           erase all data on device\n");
+	printf("write           write imagefile to device\n");
+	printf("\nExample: To write linux.trx to mtd4 labeled as linux\n");
+	printf("\n                mtd unlock linux && mtd write linux.trx linux\n\n");
 	return -1;
 }
 
