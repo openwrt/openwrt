@@ -3,10 +3,12 @@
 # strace
 #
 #############################################################
-STRACE_SOURCE:=strace-4.5.3.tar.bz2
+STRACE_SOURCE:=strace-4.5.6.tar.bz2
 STRACE_SITE:=http://aleron.dl.sourceforge.net/sourceforge/strace
 STRACE_CAT:=bzcat
-STRACE_DIR:=$(BUILD_DIR)/strace-4.5.3
+STRACE_DIR:=$(BUILD_DIR)/strace-4.5.6
+STRACE_IPK=$(BUILD_DIR)/strace_4.5.6-1_mipsel.ipk
+STRACE_IPK_DIR:=$(BUILD_DIR)/strace-4.5.6-ipk
 
 
 $(DL_DIR)/$(STRACE_SOURCE):
@@ -50,10 +52,16 @@ $(TARGET_DIR)/usr/bin/strace: $(STRACE_DIR)/strace
 
 strace: uclibc $(TARGET_DIR)/usr/bin/strace 
 
+strace-ipk: $(STRACE_DIR)/strace
+	mkdir -p $(STRACE_IPK_DIR)/CONTROL
+	mkdir -p $(STRACE_IPK_DIR)/usr/bin
+	install -m 644 $(OPENWRT_IPK_DIR)/strace/CONTROL/control $(STRACE_IPK_DIR)/CONTROL/control
+	install -m 755 $(STRACE_DIR)/strace $(STRACE_IPK_DIR)/usr/bin/
+	$(STRIP) $(STRACE_IPK_DIR)/usr/bin/strace 
+	cd $(BUILD_DIR); $(STAGING_DIR)/bin/ipkg-build -c -o root -g root $(STRACE_IPK_DIR)
+
 strace-clean: 
 	$(MAKE) -C $(STRACE_DIR) clean
 
 strace-dirclean: 
-	rm -rf $(STRACE_DIR) 
-
-
+	rm -rf $(STRACE_DIR) $(STRACE_IPK_DIR)
