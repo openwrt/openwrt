@@ -39,8 +39,9 @@ LINUX_BINLOC=arch/$(LINUX_KARCH)/brcm-boards/bcm947xx/compressed/vmlinuz
 # Used by pcmcia-cs and others
 LINUX_SOURCE_DIR=$(LINUX_DIR)
 
-LINKSYS_SITE=openwrt.openbsd-geek.de
-LINKSYS_TGZ=linksys-3.37.2.tgz
+# kernel stuff extracted from linksys firmware GPL sourcetree
+# WRT54GS_3_37_2_1109_US (shared,include,wl,et)
+LINKSYS_KERNEL_TGZ=linksys-kernel.tar.gz
 
 TARGET_MODULES_DIR=$(TARGET_DIR)/lib/modules/$(LINUX_VERSION)
 
@@ -49,19 +50,19 @@ $(DL_DIR)/linux.tar.bz2:
 	(cd $(DL_DIR); cvs -d :pserver:cvs:cvs@$(LINUX_SITE):/home/cvs login)
 	(cd $(DL_DIR); cvs -z3 -d :pserver:cvs:cvs@$(LINUX_SITE):/home/cvs co -D $(LINUX_CVS_DATE) -r$(LINUX_CVS_BRANCH) linux)
 	(cd $(DL_DIR); tar jcvf linux.tar.bz2 linux && rm -rf linux)
-	$(WGET) -P $(DL_DIR) $(LINKSYS_SITE)/$(LINKSYS_TGZ)
 
-$(LINUX_DIR)/.unpacked: $(DL_DIR)/linux.tar.bz2
+$(DL_DIR)/$(LINKSYS_KERNEL_TGZ):
+	$(WGET) -P $(DL_DIR) $(LINKSYS_TGZ_SITE)/$(LINKSYS_KERNEL_TGZ)
+
+$(LINUX_DIR)/.unpacked: $(DL_DIR)/linux.tar.bz2 $(DL_DIR)/$(LINKSYS_KERNEL_TGZ)
 	-mkdir -p $(BUILD_DIR)
-	#-(cp -a $(DL_DIR)/linux $(BUILD_DIR)/linux)
 	(cd $(BUILD_DIR); tar jxvf $(DL_DIR)/linux.tar.bz2)
 	-mkdir -p $(TOOL_BUILD_DIR)
 	-(cd $(TOOL_BUILD_DIR); ln -sf $(BUILD_DIR)/linux linux)
 	toolchain/patch-kernel.sh $(LINUX_DIR) package/linux/kernel-patches
 	-cp $(LINUX_KCONFIG) $(LINUX_DIR)/.config
-	# extract linksys binary kernel modules and include/shared files
-	-mkdir -p $(BUILD_DIR)/binary
-	tar -C $(BUILD_DIR)/binary -xzvf $(DL_DIR)/linksys-3.37.2.tgz
+	# extract linksys binary kernel stuff and include/shared files
+	zcat $(DL_DIR)/$(LINKSYS_KERNEL_TGZ) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
 	touch $(LINUX_DIR)/.unpacked
 
 $(LINUX_KCONFIG):
