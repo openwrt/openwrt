@@ -93,8 +93,8 @@ ifup () (
 
       $DEBUG ifconfig $if 0.0.0.0 up
 
-      $DEBUG /sbin/pppoecd $if -u $if_username -p $if_password -i 0 -I $if_redial -T $if_idletim
-      e -t $if_mtu -k
+      $DEBUG /sbin/pppoecd $if -u $if_username -p $if_password \
+        -i 0 -I $if_redial -T $if_idletime -t $if_mtu -k
     ;;
     *)
       echo "### WARNING $if: $if_proto is not supported"
