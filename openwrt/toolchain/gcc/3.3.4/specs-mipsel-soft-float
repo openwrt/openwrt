@@ -1,0 +1,145 @@
+*asm:
+%{G*} %(endian_spec) %{mips1} %{mips2} %{mips3} %{mips4} %{mips32} %{mips64}%{mips16:%{!mno-mips16:-mips16}} %{mno-mips16:-no-mips16} %(subtarget_asm_optimizing_spec) %(subtarget_asm_debugging_spec) %{membedded-pic} %{mabi=32:-32}%{mabi=n32:-n32}%{mabi=64:-64}%{mabi=n64:-64} %{mabi=eabi} %{mabi=o64} %{!mabi*: %(asm_abi_default_spec)} %{mgp32} %{mgp64} %{march=*} %(target_asm_spec) %(subtarget_asm_spec)
+
+*asm_debug:
+%{gstabs*:--gstabs}%{!gstabs*:%{g*:--gdwarf2}}
+
+*asm_final:
+%|
+
+*asm_options:
+%a %Y %{c:%W{o*}%{!o*:-o %w%b%O}}%{!c:-o %d%w%u%O}
+
+*invoke_as:
+%{!S:-o %{|!pipe:%g.s} |
+ as %(asm_options) %{!pipe:%g.s} %A }
+
+*cpp:
+%(subtarget_cpp_spec)
+
+*cpp_options:
+%(cpp_unique_options) %1 %{m*} %{std*} %{ansi} %{W*&pedantic*} %{w} %{f*} %{O*} %{undef}
+
+*cpp_debug_options:
+%{d*}
+
+*cpp_unique_options:
+%{C:%{!E:%eGNU C does not support -C without using -E}} %{CC:%{!E:%eGNU C does not support -CC without using -E}} %{!Q:-quiet} %{nostdinc*} %{C} %{CC} %{v} %{I*} %{P} %I %{MD:-MD %{!o:%b.d}%{o*:%.d%*}} %{MMD:-MMD %{!o:%b.d}%{o*:%.d%*}} %{M} %{MM} %{MF*} %{MG} %{MP} %{MQ*} %{MT*} %{!E:%{!M:%{!MM:%{MD|MMD:%{o*:-MQ %*}}}}} %{!no-gcc:-D__GNUC__=%v1 -D__GNUC_MINOR__=%v2 -D__GNUC_PATCHLEVEL__=%v3} %{!undef:%{!ansi:%{!std=*:%p}%{std=gnu*:%p}} %P} %{trigraphs} %{remap} %{g3:-dD} %{H} %C %{D*&U*&A*} %{i*} %Z %i %{E|M|MM:%W{o*}}
+
+*trad_capable_cpp:
+cc1 -E %{traditional|ftraditional|traditional-cpp:-traditional-cpp}
+
+*cc1:
+%{profile:-p}
+
+*cc1_options:
+%{pg:%{fomit-frame-pointer:%e-pg and -fomit-frame-pointer are incompatible}} %1 %{!Q:-quiet} -dumpbase %B %{d*} %{m*} %{a*} %{c|S:%{o*:-auxbase-strip %*}%{!o*:-auxbase %b}}%{!c:%{!S:-auxbase %b}} %{g*} %{O*} %{W*&pedantic*} %{w} %{std*} %{ansi} %{v:-version} %{pg:-p} %{p} %{f*} %{undef} %{Qn:-fno-ident} %{--help:--help} %{--target-help:--target-help} %{!fsyntax-only:%{S:%W{o*}%{!o*:-o %b.s}}} %{fsyntax-only:-o %j} %{-param*} %{msoft-float:%{mhard-float: %e-msoft-float and -mhard_float may not be used together}} %{!mhard-float:%{!msoft-float:-msoft-float}}
+
+*cc1plus:
+
+
+*link_gcc_c_sequence:
+%{static:--start-group} %G %L %{static:--end-group}%{!static:%G}
+
+*endfile:
+%{!shared:crtend.o%s} %{shared:crtendS.o%s} crtn.o%s
+
+*link:
+%{!static:--eh-frame-hdr} %(endian_spec)   %{shared:-shared}   %{!shared:     %{!ibcs:       %{!static:         %{rdynamic:-export-dynamic}         %{!dynamic-linker:-dynamic-linker /lib/ld-uClibc.so.0}}         %{static:-static}}}
+
+*lib:
+%{shared: -lc} %{!static:-rpath-link %R/lib:%R/usr/lib} %{!shared: %{pthread:-lpthread}   %{profile:-lc_p} %{!profile: -lc}}
+
+*libgcc:
+%{static|static-libgcc:-lgcc -lgcc_eh}%{!static:%{!static-libgcc:%{!shared:%{!shared-libgcc:-lgcc -lgcc_eh}%{shared-libgcc:-lgcc_s%M -lgcc}}%{shared:%{shared-libgcc:-lgcc_s%M}%{!shared-libgcc:-lgcc}}}}
+
+*startfile:
+%{!shared:      %{pg:gcrt1.o%s} %{!pg:%{p:gcrt1.o%s} 		       %{!p:%{profile:gcrt1.o%s} 			 %{!profile:crt1.o%s}}}}    crti.o%s %{static:crtbeginT.o%s}   %{!static:%{!shared:crtbegin.o%s} %{shared:crtbeginS.o%s}}
+
+*switches_need_spaces:
+
+
+*predefines:
+
+
+*cross_compile:
+1
+
+*version:
+3.3.4
+
+*multilib:
+. ;
+
+*multilib_defaults:
+EL mips1 mabi=32
+
+*multilib_extra:
+
+
+*multilib_matches:
+
+
+*multilib_exclusions:
+
+
+*multilib_options:
+
+
+*linker:
+collect2
+
+*link_libgcc:
+%D
+
+*md_exec_prefix:
+
+
+*md_startfile_prefix:
+
+
+*md_startfile_prefix_1:
+
+
+*startfile_prefix_spec:
+
+
+*subtarget_cc1_spec:
+
+
+*subtarget_cpp_spec:
+%{fno-PIC:-U__PIC__ -U__pic__} %{fno-pic:-U__PIC__ -U__pic__} %{fPIC:-D__PIC__ -D__pic__} %{fpic:-D__PIC__ -D__pic__} %{pthread:-D_REENTRANT}
+
+*mips_as_asm_spec:
+%{!.s:-nocpp} %{.s: %{cpp} %{nocpp}} %{pipe: %e-pipe is not supported} %{K} %(subtarget_mips_as_asm_spec)
+
+*gas_asm_spec:
+%{mtune=*} %{v}
+
+*target_asm_spec:
+%{mmips-as: %(mips_as_asm_spec)} %{!mmips-as: %(gas_asm_spec)}
+
+*subtarget_mips_as_asm_spec:
+%{v}
+
+*subtarget_asm_optimizing_spec:
+%{noasmopt:-O0} %{!noasmopt:%{O:-O2} %{O1:-O2} %{O2:-O2} %{O3:-O3}}
+
+*subtarget_asm_debugging_spec:
+-g0
+
+*mdebug_asm_spec:
+%{!gdwarf*:-mdebug} %{gdwarf*:-no-mdebug}
+
+*subtarget_asm_spec:
+%{mabi=64: -64} %{!fno-PIC:%{!fno-pic:-KPIC}} %{fno-PIC:-non_shared} %{fno-pic:-non_shared}
+
+*asm_abi_default_spec:
+-32
+
+*endian_spec:
+%{!EB:%{!meb:-EL}} %{EB|meb:-EB}
+
+*link_command:
+%{!fsyntax-only:%{!c:%{!M:%{!MM:%{!E:%{!S:    %(linker) %l %X %{o*} %{A} %{d} %{e*} %{m} %{N} %{n} %{r} %{s} %{t}    %{u*} %{x} %{z} %{Z} %{!A:%{!nostdlib:%{!nostartfiles:%S}}}    %{static:} %{L*} %(link_libgcc) %o %{!nostdlib:%{!nodefaultlibs:%(link_gcc_c_sequence)}}    %{!A:%{!nostdlib:%{!nostartfiles:%E}}} %{T*} }}}}}}
+

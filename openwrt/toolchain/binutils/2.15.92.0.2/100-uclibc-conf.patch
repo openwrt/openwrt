@@ -1,0 +1,724 @@
+diff -urN binutils-2.15.92.0.2-dist/bfd/config.bfd binutils-2.15.92.0.2/bfd/config.bfd
+--- binutils-2.15.92.0.2-dist/bfd/config.bfd	2004-09-15 14:05:02.000000000 -0500
++++ binutils-2.15.92.0.2/bfd/config.bfd	2004-09-28 14:11:57.000000000 -0500
+@@ -129,7 +129,7 @@
+     targ_defvec=ecoffalpha_little_vec
+     targ_selvecs=bfd_elf64_alpha_vec
+     ;;
+-  alpha*-*-linux-gnu* | alpha*-*-elf*)
++  alpha*-*-linux-gnu* | alpha*-*-linux-uclibc* | alpha*-*-elf*)
+     targ_defvec=bfd_elf64_alpha_vec
+     targ_selvecs=ecoffalpha_little_vec
+     ;;
+@@ -139,7 +139,7 @@
+   alpha*-*-*)
+     targ_defvec=ecoffalpha_little_vec
+     ;;
+-  ia64*-*-freebsd* | ia64*-*-netbsd* | ia64*-*-linux-gnu* | ia64*-*-elf* | ia64*-*-kfreebsd*-gnu)
++  ia64*-*-freebsd* | ia64*-*-netbsd* | ia64*-*-linux-gnu* | ia64*-*-linux-uclibc* | ia64*-*-elf* | ia64*-*-kfreebsd*-gnu)
+     targ_defvec=bfd_elf64_ia64_little_vec
+     targ_selvecs="bfd_elf64_ia64_big_vec bfd_efi_app_ia64_vec"
+     ;;
+@@ -216,7 +216,7 @@
+     targ_defvec=bfd_elf32_littlearm_vec
+     targ_selvecs=bfd_elf32_bigarm_vec
+     ;;
+-  armeb-*-elf | arm*b-*-linux-gnu*)
++  armeb-*-elf | arm*b-*-linux-gnu* | arm*b-*-linux-uclibc*)
+     targ_defvec=bfd_elf32_bigarm_vec
+     targ_selvecs=bfd_elf32_littlearm_vec
+     ;;
+@@ -224,8 +224,8 @@
+     targ_defvec=bfd_elf32_littlearm_vec
+     targ_selvecs=bfd_elf32_bigarm_vec
+     ;;
+-  arm-*-elf | arm-*-freebsd* | arm*-*-linux-gnu* | arm*-*-conix* | \
+-  arm*-*-uclinux* | arm-*-kfreebsd*-gnu | arm-*-vxworks | \
++  arm-*-elf | arm-*-freebsd* | arm*-*-linux-gnu* | arm*-*-linux-uclibc* | \
++  arm*-*-conix* | arm*-*-uclinux* | arm-*-kfreebsd*-gnu | arm-*-vxworks | \
+   arm*-*-eabi* )
+     targ_defvec=bfd_elf32_littlearm_vec
+     targ_selvecs=bfd_elf32_bigarm_vec
+@@ -378,7 +378,7 @@
+     ;;
+ 
+ #ifdef BFD64
+-  hppa*64*-*-linux-gnu*)
++  hppa*64*-*-linux-gnu* | hppa*64*-*-linux-uclibc*)
+     targ_defvec=bfd_elf64_hppa_linux_vec
+     targ_selvecs=bfd_elf64_hppa_vec
+     ;;
+@@ -389,7 +389,7 @@
+     ;;
+ #endif
+ 
+-  hppa*-*-linux-gnu*)
++  hppa*-*-linux-gnu* | hppa*-*-linux-uclibc*)
+     targ_defvec=bfd_elf32_hppa_linux_vec
+     targ_selvecs=bfd_elf32_hppa_vec
+     ;;
+@@ -516,7 +516,7 @@
+     targ_selvecs=bfd_elf32_i386_vec
+     targ_underscore=yes
+     ;;
+-  i[3-7]86-*-linux-gnu*)
++  i[3-7]86-*-linux-gnu* | i[3-7]86-*-linux-uclibc*)
+     targ_defvec=bfd_elf32_i386_vec
+     targ_selvecs="i386linux_vec bfd_efi_app_ia32_vec"
+     targ64_selvecs=bfd_elf64_x86_64_vec
+@@ -530,7 +530,7 @@
+     targ_defvec=bfd_elf64_x86_64_vec
+     targ_selvecs="bfd_elf32_i386_vec i386netbsd_vec i386coff_vec bfd_efi_app_ia32_vec"
+     ;;
+-  x86_64-*-linux-gnu*)
++  x86_64-*-linux-gnu* | x86_64-*-linux-uclibc*)
+     targ_defvec=bfd_elf64_x86_64_vec
+     targ_selvecs="bfd_elf32_i386_vec i386linux_vec bfd_efi_app_ia32_vec"
+     ;;
+@@ -705,7 +705,7 @@
+     targ_selvecs=bfd_elf32_m68k_vec
+     targ_underscore=yes
+     ;;
+-  m68*-*-linux-gnu*)
++  m68*-*-linux-gnu* | m68*-*-linux-uclibc*)
+     targ_defvec=bfd_elf32_m68k_vec
+     targ_selvecs=m68klinux_vec
+     ;;
+@@ -981,7 +981,8 @@
+     ;;
+ #endif
+   powerpc-*-*bsd* | powerpc-*-elf* | powerpc-*-sysv4* | powerpc-*-eabi* | \
+-  powerpc-*-solaris2* | powerpc-*-linux-gnu* | powerpc-*-rtems* | \
++  powerpc-*-solaris2* | powerpc-*-linux-gnu* | powerpc-*-linux-uclibc* | \
++  powerpc-*-rtems* | \
+   powerpc-*-chorus* | powerpc-*-vxworks* | powerpc-*-windiss*)
+     targ_defvec=bfd_elf32_powerpc_vec
+     targ_selvecs="rs6000coff_vec bfd_elf32_powerpcle_vec ppcboot_vec"
+@@ -1018,8 +1019,8 @@
+     targ_selvecs="rs6000coff_vec bfd_elf32_powerpc_vec ppcboot_vec"
+     ;;
+   powerpcle-*-elf* | powerpcle-*-sysv4* | powerpcle-*-eabi* | \
+-  powerpcle-*-solaris2* | powerpcle-*-linux-gnu* | powerpcle-*-vxworks* |\
+-  powerpcle-*-rtems*)
++  powerpcle-*-solaris2* | powerpcle-*-linux-gnu* | powerpcle-*-linux-uclibc* |\
++  powerpcle-*-vxworks* | powerpcle-*-rtems*)
+     targ_defvec=bfd_elf32_powerpcle_vec
+     targ_selvecs="rs6000coff_vec bfd_elf32_powerpc_vec ppcboot_vec"
+     targ64_selvecs="bfd_elf64_powerpc_vec bfd_elf64_powerpcle_vec"
+@@ -1186,7 +1187,7 @@
+     targ_selvecs="bfd_elf32_sparc_vec sunos_big_vec"
+     targ_underscore=yes
+     ;;
+-  sparc-*-linux-gnu*)
++  sparc-*-linux-gnu* | sparc-*-linux-uclibc*)
+     targ_defvec=bfd_elf32_sparc_vec
+     targ_selvecs="sparclinux_vec bfd_elf64_sparc_vec sunos_big_vec"
+     ;;
+@@ -1233,7 +1234,7 @@
+     targ_defvec=sunos_big_vec
+     targ_underscore=yes
+     ;;
+-  sparc64-*-linux-gnu*)
++  sparc64-*-linux-gnu* | sparc64-*-linux-uclibc*)
+     targ_defvec=bfd_elf64_sparc_vec
+     targ_selvecs="bfd_elf32_sparc_vec sparclinux_vec sunos_big_vec"
+     ;;
+@@ -1302,7 +1303,7 @@
+     targ_underscore=yes
+     ;;
+ 
+-  vax-*-linux-gnu*)
++  vax-*-linux-gnu* | vax-*-linux-uclibc*)
+     targ_defvec=bfd_elf32_vax_vec
+     ;;
+ 
+diff -urN binutils-2.15.92.0.2-dist/bfd/configure binutils-2.15.92.0.2/bfd/configure
+--- binutils-2.15.92.0.2-dist/bfd/configure	2004-09-27 15:46:06.000000000 -0500
++++ binutils-2.15.92.0.2/bfd/configure	2004-09-28 14:09:03.000000000 -0500
+@@ -3583,6 +3583,11 @@
+   lt_cv_file_magic_test_file=`echo /lib/libc.so* /lib/libc-*.so`
+   ;;
+ 
++linux-uclibc*)
++  lt_cv_deplibs_check_method=pass_all
++  lt_cv_file_magic_test_file=`echo /lib/libuClibc-*.so`
++  ;;
++
+ netbsd* | knetbsd*-gnu)
+   if echo __ELF__ | $CC -E - | grep __ELF__ > /dev/null; then
+     lt_cv_deplibs_check_method='match_pattern /lib[^/\.]+\.so\.[0-9]+\.[0-9]+$'
+@@ -9914,7 +9919,7 @@
+   alpha*-*-freebsd* | alpha*-*-kfreebsd*-gnu)
+ 	COREFILE=''
+ 	;;
+-  alpha*-*-linux-gnu*)
++  alpha*-*-linux-gnu* | alpha*-*-linux-uclibc*)
+ 	COREFILE=trad-core.lo
+ 	TRAD_HEADER='"hosts/alphalinux.h"'
+ 	;;
+@@ -9978,7 +9983,7 @@
+ 	COREFILE=trad-core.lo
+ 	TRAD_HEADER='"hosts/i386mach3.h"'
+ 	;;
+-  i[3-7]86-*-linux-gnu*)
++  i[3-7]86-*-linux-gnu* | i[3-7]86-*-linux-uclibc*)
+ 	COREFILE=trad-core.lo
+ 	TRAD_HEADER='"hosts/i386linux.h"'
+ 	;;
+@@ -10016,7 +10021,7 @@
+ 	COREFILE=trad-core.lo
+ 	TRAD_HEADER='"hosts/hp300bsd.h"'
+ 	;;
+-  m68*-*-linux-gnu*)
++  m68*-*-linux-gnu* | m68*-*-linux-uclibc*)
+ 	COREFILE=trad-core.lo
+ 	TRAD_HEADER='"hosts/m68klinux.h"'
+ 	;;
+@@ -10150,7 +10155,7 @@
+ 	COREFILE=trad-core.lo
+ 	TRAD_HEADER='"hosts/vaxult2.h"'
+ 	;;
+-  vax-*-linux-gnu*)
++  vax-*-linux-gnu* | vax-*-linux-uclibc*)
+ 	COREFILE=trad-core.lo
+ 	TRAD_HEADER='"hosts/vaxlinux.h"'
+ 	;;
+diff -urN binutils-2.15.92.0.2-dist/bfd/configure.in binutils-2.15.92.0.2/bfd/configure.in
+--- binutils-2.15.92.0.2-dist/bfd/configure.in	2004-09-27 15:46:06.000000000 -0500
++++ binutils-2.15.92.0.2/bfd/configure.in	2004-09-28 14:09:03.000000000 -0500
+@@ -163,7 +163,7 @@
+   alpha*-*-freebsd* | alpha*-*-kfreebsd*-gnu)
+ 	COREFILE=''
+ 	;;
+-  alpha*-*-linux-gnu*)
++  alpha*-*-linux-gnu* | alpha*-*-linux-uclibc*)
+ 	COREFILE=trad-core.lo
+ 	TRAD_HEADER='"hosts/alphalinux.h"'
+ 	;;
+@@ -248,7 +248,7 @@
+ 	TRAD_HEADER='"hosts/i386mach3.h"'
+ 	;;
+ changequote(,)dnl
+-  i[3-7]86-*-linux-gnu*)
++  i[3-7]86-*-linux-gnu* | i[3-7]86-*-linux-uclibc*)
+ changequote([,])dnl
+ 	COREFILE=trad-core.lo
+ 	TRAD_HEADER='"hosts/i386linux.h"'
+@@ -289,7 +289,7 @@
+ 	COREFILE=trad-core.lo
+ 	TRAD_HEADER='"hosts/hp300bsd.h"'
+ 	;;
+-  m68*-*-linux-gnu*)
++  m68*-*-linux-gnu* | m68*-*-linux-uclibc*)
+ 	COREFILE=trad-core.lo
+ 	TRAD_HEADER='"hosts/m68klinux.h"'
+ 	;;
+@@ -375,7 +375,7 @@
+ 	COREFILE=trad-core.lo
+ 	TRAD_HEADER='"hosts/vaxult2.h"'
+ 	;;
+-  vax-*-linux-gnu*)
++  vax-*-linux-gnu* | vax-*-linux-uclibc*)
+ 	COREFILE=trad-core.lo
+ 	TRAD_HEADER='"hosts/vaxlinux.h"'
+ 	;;
+diff -urN binutils-2.15.92.0.2-dist/binutils/configure binutils-2.15.92.0.2/binutils/configure
+--- binutils-2.15.92.0.2-dist/binutils/configure	2004-09-15 14:05:03.000000000 -0500
++++ binutils-2.15.92.0.2/binutils/configure	2004-09-28 14:09:03.000000000 -0500
+@@ -1575,6 +1575,11 @@
+   lt_cv_file_magic_test_file=`echo /lib/libc.so* /lib/libc-*.so`
+   ;;
+ 
++linux-uclibc*)
++  lt_cv_deplibs_check_method=pass_all
++  lt_cv_file_magic_test_file=`echo /lib/libuClibc-*.so`
++  ;;
++
+ netbsd* | knetbsd*-gnu)
+   if echo __ELF__ | $CC -E - | grep __ELF__ > /dev/null; then
+     lt_cv_deplibs_check_method='match_pattern /lib[^/\.]+\.so\.[0-9]+\.[0-9]+$'
+diff -urN binutils-2.15.92.0.2-dist/configure binutils-2.15.92.0.2/configure
+--- binutils-2.15.92.0.2-dist/configure	2004-09-27 15:46:06.000000000 -0500
++++ binutils-2.15.92.0.2/configure	2004-09-28 14:09:03.000000000 -0500
+@@ -1334,6 +1334,18 @@
+   i[3456789]86-*-coff | i[3456789]86-*-elf)
+     noconfigdirs="$noconfigdirs ${libgcj}"
+     ;;
++  i[3456789]86-*-linux-uclibc*)
++    # This section makes it possible to build newlib natively on linux.
++    # If we are using a cross compiler then don't configure newlib.
++    if test x${is_cross_compiler} != xno ; then
++      noconfigdirs="$noconfigdirs target-newlib"
++    fi
++    noconfigdirs="$noconfigdirs target-libgloss"
++    # If we are not using a cross compiler, do configure newlib.
++    # Note however, that newlib will only be configured in this situation
++    # if the --with-newlib option has been given, because otherwise
++    # 'target-newlib' will appear in skipdirs.
++    ;;
+   i[3456789]86-*-linux*)
+     # The GCC port for glibc1 has no MD_FALLBACK_FRAME_STATE_FOR, so let's
+     # not build java stuff by default.
+diff -urN binutils-2.15.92.0.2-dist/configure.in binutils-2.15.92.0.2/configure.in
+--- binutils-2.15.92.0.2-dist/configure.in	2004-09-27 15:46:06.000000000 -0500
++++ binutils-2.15.92.0.2/configure.in	2004-09-28 14:09:03.000000000 -0500
+@@ -556,6 +556,18 @@
+   i[[3456789]]86-*-coff | i[[3456789]]86-*-elf)
+     noconfigdirs="$noconfigdirs ${libgcj}"
+     ;;
++  i[[3456789]]86-*-linux-uclibc*)
++    # This section makes it possible to build newlib natively on linux.
++    # If we are using a cross compiler then don't configure newlib.
++    if test x${is_cross_compiler} != xno ; then
++      noconfigdirs="$noconfigdirs target-newlib"
++    fi
++    noconfigdirs="$noconfigdirs target-libgloss"
++    # If we are not using a cross compiler, do configure newlib.
++    # Note however, that newlib will only be configured in this situation
++    # if the --with-newlib option has been given, because otherwise
++    # 'target-newlib' will appear in skipdirs.
++    ;;
+   i[[3456789]]86-*-linux*)
+     # The GCC port for glibc1 has no MD_FALLBACK_FRAME_STATE_FOR, so let's
+     # not build java stuff by default.
+diff -urN binutils-2.15.92.0.2-dist/gas/configure binutils-2.15.92.0.2/gas/configure
+--- binutils-2.15.92.0.2-dist/gas/configure	2004-09-27 15:46:07.000000000 -0500
++++ binutils-2.15.92.0.2/gas/configure	2004-09-28 14:09:03.000000000 -0500
+@@ -3420,6 +3420,11 @@
+   lt_cv_file_magic_test_file=`echo /lib/libc.so* /lib/libc-*.so`
+   ;;
+ 
++linux-uclibc*)
++  lt_cv_deplibs_check_method=pass_all
++  lt_cv_file_magic_test_file=`echo /lib/libuClibc-*.so`
++  ;;
++
+ netbsd* | knetbsd*-gnu)
+   if echo __ELF__ | $CC -E - | grep __ELF__ > /dev/null; then
+     lt_cv_deplibs_check_method='match_pattern /lib[^/\.]+\.so\.[0-9]+\.[0-9]+$'
+@@ -4248,6 +4253,7 @@
+       alpha*-*-osf*)			fmt=ecoff ;;
+       alpha*-*-linuxecoff*)		fmt=ecoff ;;
+       alpha*-*-linux-gnu*)		fmt=elf em=linux ;;
++      alpha*-*-linux-uclibc*)		fmt=elf em=linux ;;
+       alpha*-*-netbsd*)			fmt=elf em=nbsd ;;
+       alpha*-*-openbsd*)		fmt=elf em=obsd ;;
+ 
+@@ -4263,6 +4269,7 @@
+       arm*-*-conix*)			fmt=elf ;;
+       arm-*-linux*aout*)		fmt=aout em=linux ;;
+       arm*-*-linux-gnu*)		fmt=elf  em=linux ;;
++      arm*-*-linux-uclibc*)		fmt=elf  em=linux ;;
+       arm*-*-uclinux*)			fmt=elf  em=linux ;;
+       arm-*-netbsdelf*)                 fmt=elf  em=nbsd ;;
+       arm-*-*n*bsd*)			fmt=aout em=nbsd ;;
+@@ -4276,6 +4283,7 @@
+       avr-*-*)				fmt=elf ;;
+ 
+       cris-*-linux-gnu*)		fmt=multi bfd_gas=yes em=linux ;;
++      cris-*-linux-uclibc*)		fmt=multi bfd_gas=yes em=linux ;;
+       cris-*-*)				fmt=multi bfd_gas=yes ;;
+ 
+       crx-*-elf*)	    		fmt=elf ;;
+@@ -4335,7 +4343,9 @@
+       i386-*-linux*oldld)		fmt=aout em=linux ;;
+       i386-*-linux*coff*)		fmt=coff em=linux ;;
+       i386-*-linux-gnu*)		fmt=elf em=linux ;;
++      i386-*-linux-uclibc*)		fmt=elf em=linux ;;
+       x86_64-*-linux-gnu*)		fmt=elf em=linux ;;
++      x86_64-*-linux-uclibc*)		fmt=elf em=linux ;;
+       i386-*-lynxos*)			fmt=elf em=lynx bfd_gas=yes ;;
+       i386-*-sysv[45]*)			fmt=elf ;;
+       i386-*-solaris*)			fmt=elf ;;
+@@ -4395,6 +4405,7 @@
+       ia64-*-elf*)			fmt=elf ;;
+       ia64-*-aix*)			fmt=elf em=ia64aix ;;
+       ia64-*-linux-gnu*)		fmt=elf em=linux ;;
++      ia64-*-linux-uclibc*)		fmt=elf em=linux ;;
+       ia64-*-hpux*)			fmt=elf em=hpux ;;
+       ia64-*-netbsd*)			fmt=elf em=nbsd ;;
+ 
+@@ -4422,6 +4433,7 @@
+       m68k-*-hpux*)			fmt=hp300 em=hp300 ;;
+       m68k-*-linux*aout*)		fmt=aout em=linux ;;
+       m68k-*-linux-gnu*)		fmt=elf em=linux ;;
++      m68k-*-linux-uclibc*)		fmt=elf em=linux ;;
+       m68k-*-uclinux*)			fmt=elf ;;
+       m68k-*-gnu*)			fmt=elf ;;
+       m68k-*-lynxos*)			fmt=coff em=lynx ;;
+@@ -4494,6 +4506,7 @@
+       ppc-*-beos*)			fmt=coff ;;
+       ppc-*-*n*bsd* | ppc-*-elf*)	fmt=elf ;;
+       ppc-*-eabi* | ppc-*-sysv4*)	fmt=elf ;;
++      ppc-*-linux-uclibc* | \
+       ppc-*-linux-gnu*)			fmt=elf em=linux
+ 	    case "$endian" in
+ 		big)  ;;
+@@ -4521,7 +4534,9 @@
+       ppc-*-lynxos*)			fmt=elf em=lynx bfd_gas=yes ;;
+ 
+       s390x-*-linux-gnu*)		fmt=elf em=linux ;;
++      s390x-*-linux-uclibc*)		fmt=elf em=linux ;;
+       s390-*-linux-gnu*)		fmt=elf em=linux ;;
++      s390-*-linux-uclibc*)		fmt=elf em=linux ;;
+ 
+       sh*-*-linux*)			fmt=elf em=linux
+ 	    case ${cpu} in
+@@ -4556,6 +4571,7 @@
+       sparc-*-coff)			fmt=coff ;;
+       sparc-*-linux*aout*)		fmt=aout em=linux ;;
+       sparc-*-linux-gnu*)		fmt=elf em=linux ;;
++      sparc-*-linux-uclibc*)		fmt=elf em=linux ;;
+       sparc-*-lynxos*)			fmt=coff em=lynx ;;
+       sparc-fujitsu-none)		fmt=aout ;;
+       sparc-*-elf)			fmt=elf ;;
+diff -urN binutils-2.15.92.0.2-dist/gas/configure.in binutils-2.15.92.0.2/gas/configure.in
+--- binutils-2.15.92.0.2-dist/gas/configure.in	2004-09-15 14:05:03.000000000 -0500
++++ binutils-2.15.92.0.2/gas/configure.in	2004-09-28 14:09:03.000000000 -0500
+@@ -197,6 +197,7 @@
+       alpha*-*-osf*)			fmt=ecoff ;;
+       alpha*-*-linuxecoff*)		fmt=ecoff ;;
+       alpha*-*-linux-gnu*)		fmt=elf em=linux ;;
++      alpha*-*-linux-uclibc*)		fmt=elf em=linux ;;
+       alpha*-*-netbsd*)			fmt=elf em=nbsd ;;
+       alpha*-*-openbsd*)		fmt=elf em=obsd ;;
+ 
+@@ -212,6 +213,7 @@
+       arm*-*-conix*)			fmt=elf ;;
+       arm-*-linux*aout*)		fmt=aout em=linux ;;
+       arm*-*-linux-gnu*)		fmt=elf  em=linux ;;
++      arm*-*-linux-uclibc*)		fmt=elf  em=linux ;;
+       arm*-*-uclinux*)			fmt=elf  em=linux ;;
+       arm-*-netbsdelf*)                 fmt=elf  em=nbsd ;;
+       arm-*-*n*bsd*)			fmt=aout em=nbsd ;;
+@@ -225,6 +227,7 @@
+       avr-*-*)				fmt=elf ;;
+ 
+       cris-*-linux-gnu*)		fmt=multi bfd_gas=yes em=linux ;;
++      cris-*-linux-uclibc*)		fmt=multi bfd_gas=yes em=linux ;;
+       cris-*-*)				fmt=multi bfd_gas=yes ;;
+ 
+       crx-*-elf*)	    		fmt=elf ;;
+@@ -284,7 +287,9 @@
+       i386-*-linux*oldld)		fmt=aout em=linux ;;
+       i386-*-linux*coff*)		fmt=coff em=linux ;;
+       i386-*-linux-gnu*)		fmt=elf em=linux ;;
++      i386-*-linux-uclibc*)		fmt=elf em=linux ;;
+       x86_64-*-linux-gnu*)		fmt=elf em=linux ;;
++      x86_64-*-linux-uclibc*)		fmt=elf em=linux ;;
+       i386-*-lynxos*)			fmt=elf em=lynx bfd_gas=yes ;;
+ changequote(,)dnl
+       i386-*-sysv[45]*)			fmt=elf ;;
+@@ -337,6 +342,7 @@
+       ia64-*-elf*)			fmt=elf ;;
+       ia64-*-aix*)			fmt=elf em=ia64aix ;;
+       ia64-*-linux-gnu*)		fmt=elf em=linux ;;
++      ia64-*-linux-uclibc*)		fmt=elf em=linux ;;
+       ia64-*-hpux*)			fmt=elf em=hpux ;;
+       ia64-*-netbsd*)			fmt=elf em=nbsd ;;
+ 
+@@ -364,6 +370,7 @@
+       m68k-*-hpux*)			fmt=hp300 em=hp300 ;;
+       m68k-*-linux*aout*)		fmt=aout em=linux ;;
+       m68k-*-linux-gnu*)		fmt=elf em=linux ;;
++      m68k-*-linux-uclibc*)		fmt=elf em=linux ;;
+       m68k-*-uclinux*)			fmt=elf ;;
+       m68k-*-gnu*)			fmt=elf ;;
+       m68k-*-lynxos*)			fmt=coff em=lynx ;;
+@@ -433,6 +440,7 @@
+       ppc-*-beos*)			fmt=coff ;;
+       ppc-*-*n*bsd* | ppc-*-elf*)	fmt=elf ;;
+       ppc-*-eabi* | ppc-*-sysv4*)	fmt=elf ;;
++      ppc-*-linux-uclibc* | \
+       ppc-*-linux-gnu*)			fmt=elf em=linux
+ 	    case "$endian" in
+ 		big)  ;;
+@@ -453,7 +461,9 @@
+       ppc-*-lynxos*)			fmt=elf em=lynx bfd_gas=yes ;;
+ 
+       s390x-*-linux-gnu*)		fmt=elf em=linux ;;
++      s390x-*-linux-uclibc*)		fmt=elf em=linux ;;
+       s390-*-linux-gnu*)		fmt=elf em=linux ;;
++      s390-*-linux-uclibc*)		fmt=elf em=linux ;;
+ 
+       sh*-*-linux*)			fmt=elf em=linux
+ 	    case ${cpu} in
+@@ -484,6 +494,7 @@
+       sparc-*-coff)			fmt=coff ;;
+       sparc-*-linux*aout*)		fmt=aout em=linux ;;
+       sparc-*-linux-gnu*)		fmt=elf em=linux ;;
++      sparc-*-linux-uclibc*)		fmt=elf em=linux ;;
+       sparc-*-lynxos*)			fmt=coff em=lynx ;;
+       sparc-fujitsu-none)		fmt=aout ;;
+       sparc-*-elf)			fmt=elf ;;
+diff -urN binutils-2.15.92.0.2-dist/gprof/configure binutils-2.15.92.0.2/gprof/configure
+--- binutils-2.15.92.0.2-dist/gprof/configure	2004-09-27 15:46:07.000000000 -0500
++++ binutils-2.15.92.0.2/gprof/configure	2004-09-28 14:09:03.000000000 -0500
+@@ -3418,6 +3418,11 @@
+   lt_cv_file_magic_test_file=`echo /lib/libc.so* /lib/libc-*.so`
+   ;;
+ 
++linux-uclibc*)
++  lt_cv_deplibs_check_method=pass_all
++  lt_cv_file_magic_test_file=`echo /lib/libuClibc-*.so`
++  ;;
++
+ netbsd* | knetbsd*-gnu)
+   if echo __ELF__ | $CC -E - | grep __ELF__ > /dev/null; then
+     lt_cv_deplibs_check_method='match_pattern /lib[^/\.]+\.so\.[0-9]+\.[0-9]+$'
+diff -urN binutils-2.15.92.0.2-dist/ld/configure binutils-2.15.92.0.2/ld/configure
+--- binutils-2.15.92.0.2-dist/ld/configure	2004-09-27 15:46:07.000000000 -0500
++++ binutils-2.15.92.0.2/ld/configure	2004-09-28 14:09:03.000000000 -0500
+@@ -1579,6 +1579,11 @@
+   lt_cv_file_magic_test_file=`echo /lib/libc.so* /lib/libc-*.so`
+   ;;
+ 
++linux-uclibc*)
++  lt_cv_deplibs_check_method=pass_all
++  lt_cv_file_magic_test_file=`echo /lib/libuClibc-*.so`
++  ;;
++
+ netbsd* | knetbsd*-gnu)
+   if echo __ELF__ | $CC -E - | grep __ELF__ > /dev/null; then
+     lt_cv_deplibs_check_method='match_pattern /lib[^/\.]+\.so\.[0-9]+\.[0-9]+$'
+diff -urN binutils-2.15.92.0.2-dist/ld/configure.tgt binutils-2.15.92.0.2/ld/configure.tgt
+--- binutils-2.15.92.0.2-dist/ld/configure.tgt	2004-09-15 14:05:04.000000000 -0500
++++ binutils-2.15.92.0.2/ld/configure.tgt	2004-09-28 14:09:03.000000000 -0500
+@@ -31,6 +31,7 @@
+ 			targ_extra_emuls="criself crislinux"
+ 			targ_extra_libpath=$targ_extra_emuls ;;
+ cris-*-linux-gnu*)	targ_emul=crislinux ;;
++cris-*-linux-uclibc*)	targ_emul=crislinux ;;
+ cris-*-*)		targ_emul=criself
+ 			targ_extra_emuls="crisaout crislinux"
+ 			targ_extra_libpath=$targ_extra_emuls ;;
+@@ -61,14 +62,16 @@
+ 			tdir_elf32_sparc=`echo ${targ_alias} | sed -e 's/aout//'`
+ 			tdir_sun4=sparc-sun-sunos4
+ 			;;
+-sparc64-*-linux-gnu*)	targ_emul=elf64_sparc
++sparc64-*-linux-gnu* | sparc64-*-linux-uclibc*)	 \
++			targ_emul=elf64_sparc
+ 			targ_extra_emuls="elf32_sparc sparclinux sun4"
+ 			targ_extra_libpath=elf32_sparc
+ 			tdir_elf32_sparc=`echo ${targ_alias} | sed -e 's/64//'`
+ 			tdir_sparclinux=${tdir_elf32_sparc}aout
+ 			tdir_sun4=sparc-sun-sunos4
+ 			;;
+-sparc*-*-linux-gnu*)	targ_emul=elf32_sparc
++sparc*-*-linux-gnu* | sparc*-*-linux-uclibc*) \
++			targ_emul=elf32_sparc
+ 			targ_extra_emuls="sparclinux elf64_sparc sun4"
+ 			targ_extra_libpath=elf64_sparc
+ 			tdir_sparclinux=${targ_alias}aout
+@@ -120,7 +123,9 @@
+ m32r*le-*-elf*)         targ_emul=m32rlelf ;;
+ m32r*-*-elf*)           targ_emul=m32relf ;;
+ m32r*le-*-linux-gnu*)   targ_emul=m32rlelf_linux ;;
++m32r*le-*-linux-uclibc*) targ_emul=m32rlelf_linux ;;
+ m32r*-*-linux-gnu*)     targ_emul=m32relf_linux ;;
++m32r*-*-linux-uclibc*)  targ_emul=m32relf_linux ;;
+ m68hc11-*-*|m6811-*-*)	targ_emul=m68hc11elf 
+ 			targ_extra_emuls="m68hc11elfb m68hc12elf m68hc12elfb" ;;
+ m68hc12-*-*|m6812-*-*)	targ_emul=m68hc12elf 
+@@ -130,7 +135,7 @@
+ m68*-ericsson-ose)	targ_emul=sun3 ;;
+ m68*-apple-aux*)	targ_emul=m68kaux ;;
+ *-tandem-none)		targ_emul=st2000 ;;
+-i370-*-elf* | i370-*-linux-gnu*) targ_emul=elf32i370 ;;
++i370-*-elf* | i370-*-linux-gnu* | i370-*-linux-uclibc*) targ_emul=elf32i370 ;;
+ i[3-7]86-*-nto-qnx*)	targ_emul=i386nto ;;
+ i[3-7]86-*-vsta)	targ_emul=vsta ;;
+ i[3-7]86-go32-rtems*)	targ_emul=i386go32 ;;
+@@ -154,14 +159,16 @@
+ 			tdir_elf_i386=`echo ${targ_alias} | sed -e 's/aout//'`
+ 			;;
+ i[3-7]86-*-linux*oldld)	targ_emul=i386linux; targ_extra_emuls=elf_i386 ;;
+-i[3-7]86-*-linux-gnu*)	targ_emul=elf_i386
++i[3-7]86-*-linux-gnu* | i[3-7]86-*-linux-uclibc*) \
++			targ_emul=elf_i386
+ 			targ_extra_emuls=i386linux
+ 			if test x${want64} = xtrue; then
+ 			  targ_extra_emuls="$targ_extra_emuls elf_x86_64"
+ 			fi
+ 			tdir_i386linux=${targ_alias}aout
+ 			;;
+-x86_64-*-linux-gnu*)	targ_emul=elf_x86_64
++x86_64-*-linux-gnu* | x86_64-*-linux-uclibc*) \
++			targ_emul=elf_x86_64
+ 			targ_extra_emuls="elf_i386 i386linux"
+ 			targ_extra_libpath=elf_i386
+ 			tdir_i386linux=`echo ${targ_alias}aout | sed -e 's/x86_64/i386/'`
+@@ -262,10 +269,13 @@
+ arm9e-*-elf)		targ_emul=armelf ;;
+ arm-*-oabi)		targ_emul=armelf_oabi ;;
+ arm*b-*-linux-gnu*)	targ_emul=armelfb_linux; targ_extra_emuls=armelfb ;;
++arm*b-*-linux-uclibc*)	targ_emul=armelfb_linux; targ_extra_emuls=armelfb ;;
+ arm*-*-linux-gnu*)	targ_emul=armelf_linux; targ_extra_emuls=armelf ;;
++arm*-*-linux-uclibc*)	targ_emul=armelf_linux; targ_extra_emuls=armelf ;;
+ arm*-*-uclinux*)	targ_emul=armelf_linux; targ_extra_emuls=armelf ;;
+ arm*-*-conix*)		targ_emul=armelf ;;
+-thumb-*-linux-gnu* | thumb-*-uclinux*)	targ_emul=armelf_linux; targ_extra_emuls=armelf ;;
++thumb-*-linux-gnu* | thumb-*-linux-uclibc* | thumb-*-uclinux*) \
++			targ_emul=armelf_linux; targ_extra_emuls=armelf ;;
+ strongarm-*-coff)	targ_emul=armcoff ;;
+ strongarm-*-elf)	targ_emul=armelf ;;
+ strongarm-*-kaos*)	targ_emul=armelf ;;
+@@ -370,7 +380,8 @@
+ 			targ_extra_emuls=m68kelf
+ 			tdir_m68kelf=`echo ${targ_alias} | sed -e 's/aout//'`
+ 			;;
+-m68k-*-linux-gnu*)	targ_emul=m68kelf
++m68k-*-linux-gnu* | m68k-*-linux-uclibc*) \
++			targ_emul=m68kelf
+ 			targ_extra_emuls=m68klinux
+ 			tdir_m68klinux=`echo ${targ_alias} | sed -e 's/linux/linuxaout/'`
+ 			;;
+@@ -387,9 +398,9 @@
+ m68*-*-psos*)		targ_emul=m68kpsos ;;
+ m68*-*-rtemscoff*)	targ_emul=m68kcoff ;;
+ m68*-*-rtems*)		targ_emul=m68kelf ;;
+-hppa*64*-*-linux-gnu*)	targ_emul=hppa64linux ;;
++hppa*64*-*-linux-gnu* | hppa*64*-*-linux-uclibc*)  targ_emul=hppa64linux ;;
+ hppa*64*-*)		targ_emul=elf64hppa ;;
+-hppa*-*-linux-gnu*)	targ_emul=hppalinux ;;
++hppa*-*-linux-gnu* | hppa*-*-linux-uclibc*)	targ_emul=hppalinux ;;
+ hppa*-*-*elf*)		targ_emul=hppaelf ;;
+ hppa*-*-lites*)		targ_emul=hppaelf ;;
+ hppa*-*-netbsd*)	targ_emul=hppanbsd ;;
+@@ -402,6 +413,7 @@
+ 			targ_emul=vaxnbsd
+ 			targ_extra_emuls=elf32vax ;;
+ vax-*-linux-gnu*)	targ_emul=elf32vax ;;
++vax-*-linux-uclibc*)	targ_emul=elf32vax ;;
+ mips*-*-pe)		targ_emul=mipspe ;
+ 			targ_extra_ofiles="deffilep.o pe-dll.o" ;;
+ mips*-dec-ultrix*)	targ_emul=mipslit ;;
+@@ -435,16 +447,16 @@
+ mips*-*-vxworks*)	targ_emul=elf32ebmip
+ 		        targ_extra_emuls="elf32elmip" ;;
+ mips*-*-windiss)	targ_emul=elf32mipswindiss ;;
+-mips64*el-*-linux-gnu*)	targ_emul=elf32ltsmipn32
++mips64*el-*-linux-gnu* | mips64*el-*-linux-uclibc*)	targ_emul=elf32ltsmipn32
+ 			targ_extra_emuls="elf32btsmipn32 elf32ltsmip elf32btsmip elf64ltsmip elf64btsmip"
+ 			;;
+-mips64*-*-linux-gnu*)	targ_emul=elf32btsmipn32
++mips64*-*-linux-gnu* | mips64*-*-linux-uclibc*)	targ_emul=elf32btsmipn32
+ 			targ_extra_emuls="elf32ltsmipn32 elf32btsmip elf32ltsmip elf64btsmip elf64ltsmip"
+ 			;;
+-mips*el-*-linux-gnu*)	targ_emul=elf32ltsmip
++mips*el-*-linux-gnu* | mips*el-*-linux-uclibc*)	targ_emul=elf32ltsmip
+ 			targ_extra_emuls="elf32btsmip elf32ltsmipn32 elf64ltsmip elf32btsmipn32 elf64btsmip"
+ 			;;
+-mips*-*-linux-gnu*)	targ_emul=elf32btsmip
++mips*-*-linux-gnu* | mips*-*-linux-uclibc*)	targ_emul=elf32btsmip
+ 			targ_extra_emuls="elf32ltsmip elf32btsmipn32 elf64btsmip elf32ltsmipn32 elf64ltsmip"
+ 			;;
+ mips*-*-lnews*)		targ_emul=mipslnews ;;
+@@ -467,6 +479,10 @@
+ alpha*-*-linux-gnu*)	targ_emul=elf64alpha targ_extra_emuls=alpha
+ 			tdir_alpha=`echo ${targ_alias} | sed -e 's/linux/linuxecoff/'`
+ 			;;
++alpha*-*-linux-uclibc*)	targ_emul=elf64alpha targ_extra_emuls=alpha
++			# The following needs to be checked...
++			tdir_alpha=`echo ${targ_alias} | sed -e 's/linux/linuxecoff/'`
++			;;
+ alpha*-*-osf*)		targ_emul=alpha ;;
+ alpha*-*-gnu*)		targ_emul=elf64alpha ;;
+ alpha*-*-netware*)	targ_emul=alpha ;;
+diff -urN binutils-2.15.92.0.2-dist/ld/emultempl/elf32.em binutils-2.15.92.0.2/ld/emultempl/elf32.em
+--- binutils-2.15.92.0.2-dist/ld/emultempl/elf32.em	2004-07-27 23:36:11.000000000 -0500
++++ binutils-2.15.92.0.2/ld/emultempl/elf32.em	2004-09-28 14:13:04.000000000 -0500
+@@ -327,7 +327,7 @@
+ 
+ EOF
+ case ${target} in
+-  *-*-linux-gnu*)
++  *-*-linux-gnu* | *-*-linux-uclibc*)
+     cat >>e${EMULATION_NAME}.c <<EOF
+ 	  {
+ 	    struct bfd_link_needed_list *l;
+@@ -500,7 +500,7 @@
+ 
+ EOF
+   case ${target} in
+-    *-*-linux-gnu*)
++    *-*-linux-gnu* | *-*-linux-uclibc*)
+       cat >>e${EMULATION_NAME}.c <<EOF
+ /* For a native linker, check the file /etc/ld.so.conf for directories
+    in which we may find shared libraries.  /etc/ld.so.conf is really
+@@ -784,7 +784,7 @@
+ EOF
+ if [ "x${USE_LIBPATH}" = xyes ] ; then
+   case ${target} in
+-    *-*-linux-gnu*)
++    *-*-linux-gnu* | *-*-linux-uclibc*)
+       cat >>e${EMULATION_NAME}.c <<EOF
+ 	  if (gld${EMULATION_NAME}_check_ld_so_conf (l->name, force))
+ 	    break;
+diff -urN binutils-2.15.92.0.2-dist/libtool.m4 binutils-2.15.92.0.2/libtool.m4
+--- binutils-2.15.92.0.2-dist/libtool.m4	2004-07-27 23:36:06.000000000 -0500
++++ binutils-2.15.92.0.2/libtool.m4	2004-09-28 14:09:03.000000000 -0500
+@@ -645,6 +645,11 @@
+   lt_cv_file_magic_test_file=`echo /lib/libc.so* /lib/libc-*.so`
+   ;;
+ 
++linux-uclibc*)
++  lt_cv_deplibs_check_method=pass_all
++  lt_cv_file_magic_test_file=`echo /lib/libuClibc-*.so`
++  ;;
++
+ netbsd* | knetbsd*-gnu)
+   if echo __ELF__ | $CC -E - | grep __ELF__ > /dev/null; then
+     [lt_cv_deplibs_check_method='match_pattern /lib[^/\.]+\.so\.[0-9]+\.[0-9]+$']
+diff -urN binutils-2.15.92.0.2-dist/ltconfig binutils-2.15.92.0.2/ltconfig
+--- binutils-2.15.92.0.2-dist/ltconfig	2004-07-27 23:36:06.000000000 -0500
++++ binutils-2.15.92.0.2/ltconfig	2004-09-28 14:09:03.000000000 -0500
+@@ -603,6 +603,7 @@
+ # Transform linux* to *-*-linux-gnu*, to support old configure scripts.
+ case $host_os in
+ linux-gnu*) ;;
++linux-uclibc*) ;;
+ linux*) host=`echo $host | sed 's/^\(.*-.*-linux\)\(.*\)$/\1-gnu\2/'`
+ esac
+ 
+@@ -1270,6 +1271,24 @@
+   dynamic_linker='GNU/Linux ld.so'
+   ;;
+ 
++linux-uclibc*)
++  version_type=linux
++  need_lib_prefix=no
++  need_version=no
++  library_names_spec='${libname}${release}.so$versuffix ${libname}${release}.so$major $libname.so'
++  soname_spec='${libname}${release}.so$major'
++  finish_cmds='PATH="\$PATH:/sbin" ldconfig -n $libdir'
++  shlibpath_var=LD_LIBRARY_PATH
++  shlibpath_overrides_runpath=no
++  # This implies no fast_install, which is unacceptable.
++  # Some rework will be needed to allow for fast_install
++  # before this can be enabled.
++  # Note: copied from linux-gnu, and may not be appropriate.
++  hardcode_into_libs=yes
++  # Assume using the uClibc dynamic linker.
++  dynamic_linker="uClibc ld.so"
++  ;;
++
+ netbsd*)
+   need_lib_prefix=no
+   need_version=no
+diff -urN binutils-2.15.92.0.2-dist/opcodes/configure binutils-2.15.92.0.2/opcodes/configure
+--- binutils-2.15.92.0.2-dist/opcodes/configure	2004-09-27 15:46:08.000000000 -0500
++++ binutils-2.15.92.0.2/opcodes/configure	2004-09-28 14:09:03.000000000 -0500
+@@ -3587,6 +3587,11 @@
+   lt_cv_file_magic_test_file=`echo /lib/libc.so* /lib/libc-*.so`
+   ;;
+ 
++linux-uclibc*)
++  lt_cv_deplibs_check_method=pass_all
++  lt_cv_file_magic_test_file=`echo /lib/libuClibc-*.so`
++  ;;
++
+ netbsd* | knetbsd*-gnu)
+   if echo __ELF__ | $CC -E - | grep __ELF__ > /dev/null; then
+     lt_cv_deplibs_check_method='match_pattern /lib[^/\.]+\.so\.[0-9]+\.[0-9]+$'

@@ -1,0 +1,46 @@
+http://www.linux-mips.org/archives/linux-mips/2004-09/msg00000.html
+
+Atsushi Nemoto <anemo@mba.ocn.ne.jp> writes:
+>/ Is this a get_user's problem or gcc's?/
+
+The latter.  gcc is putting the empty asm:
+
+        __asm__ ("":"=r" (__gu_val));
+
+into the delay slot of the call.
+
+Part of the problem is that gcc estimates the length of an asm to be the
+number of instruction separators + 1.  This means that it estimates the
+asm above to be one instruction long, which is perhaps a little silly
+for an empty string.
+
+But the real problem is that gcc should never trust this estimate anyway,
+since each "instruction" could obviously be a multi-instruction macro.
+gcc should certainly never put asms into delay slots.
+
+FWIW, I don't think the bug is specific to 3.3 or 3.4.  It could
+probably trigger for other gcc versions too.  It is highly dependent
+on scheduling though.
+
+The attached 3.4.x patch fixes the problem there, but if you want to work
+around it for old versions, just avoid using empty asms if you can,
+or make them volatile if you can't.
+
+Of course, the problem isn't confined to empty asms.  If you have an asm
+with a single, multi-instruction macro, gcc might try putting that in a
+delay slot too.  You should at least get an assembler warning in that case.
+
+Richard
+
+
+--- gcc-3.4.1/gcc/config/mips/mips.md-orig	2004-09-02 10:38:36.000000000 -0500
++++ gcc-3.4.1/gcc/config/mips/mips.md	2004-09-02 10:38:42.000000000 -0500
+@@ -251,7 +251,7 @@
+ 
+ ;; Can the instruction be put into a delay slot?
+ (define_attr "can_delay" "no,yes"
+-  (if_then_else (and (eq_attr "type" "!branch,call,jump")
++  (if_then_else (and (eq_attr "type" "!branch,call,jump,multi")
+ 		     (and (eq_attr "hazard" "none")
+ 			  (eq_attr "single_insn" "yes")))
+ 		(const_string "yes")

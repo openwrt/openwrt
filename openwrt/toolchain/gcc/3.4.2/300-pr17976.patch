@@ -1,0 +1,106 @@
+From: Mark Mitchell <mark@codesourcery.com>
+Sender: gcc-patches-owner@gcc.gnu.org
+To: gcc-patches@gcc.gnu.org
+Subject: C++ PATCH: PR 17976
+Date: Thu, 14 Oct 2004 21:24:41 -0700
+
+
+This was a case where we generated multiple destructor calls for the
+same global variable, in the (probably rare) situation that an
+"extern" declaration followed the definition.
+
+Tested on i686-pc-linux-gnu, applied on the mainline and on the 3.4
+branch.
+
+--
+Mark Mitchell
+CodeSourcery, LLC
+mark@codesourcery.com
+
+# DP: 2004-10-14  Mark Mitchell  <mark@codesourcery.com>
+# DP: 
+# DP: 	PR c++/17976
+# DP: 	* decl.c (cp_finish_decl): Do not call expand_static_init more
+# DP: 	than once for a single variable.
+# DP: 
+# DP: 2004-10-14  Mark Mitchell  <mark@codesourcery.com>
+# DP: 
+# DP: 	PR c++/17976
+# DP: 	* g++.dg/init/dtor3.C: New test.
+
+Index: testsuite/g++.dg/init/dtor3.C
+===================================================================
+RCS file: testsuite/g++.dg/init/dtor3.C
+diff -N testsuite/g++.dg/init/dtor3.C
+*** /dev/null	1 Jan 1970 00:00:00 -0000
+--- gcc/gcc/testsuite/g++.dg/init/dtor3.C	15 Oct 2004 04:02:22 -0000
+***************
+*** 0 ****
+--- 1,21 ----
++ // PR c++/17976
++ // { dg-do run }
++ 
++ extern "C" void abort();
++ struct A
++ {
++   static int i;
++   A(){}
++   ~A(){i++;if(i>1)abort();}
++ };
++ 
++ int A::i = 0;
++ 
++ A a;
++ extern A a;
++ 
++ int main()
++ {
++   return 0;
++ }
++ 
+===================================================================
+RCS file: /cvs/gcc/gcc/gcc/cp/decl.c,v
+retrieving revision 1.1174.2.26
+retrieving revision 1.1174.2.27
+diff -u -r1.1174.2.26 -r1.1174.2.27
+--- gcc/gcc/cp/decl.c	2004/10/10 21:54:59	1.1174.2.26
++++ gcc/gcc/cp/decl.c	2004/10/15 04:23:46	1.1174.2.27
+@@ -4778,6 +4778,7 @@
+   tree cleanup;
+   const char *asmspec = NULL;
+   int was_readonly = 0;
++  bool var_definition_p = false;
+ 
+   if (decl == error_mark_node)
+     return;
+@@ -4930,6 +4931,11 @@
+ 	  /* Remember that the initialization for this variable has
+ 	     taken place.  */
+ 	  DECL_INITIALIZED_P (decl) = 1;
++	  /* This declaration is the definition of this variable,
++	     unless we are initializing a static data member within
++	     the class specifier.  */
++	  if (!DECL_EXTERNAL (decl))
++	    var_definition_p = true;
+ 	}
+       /* If the variable has an array type, lay out the type, even if
+ 	 there is no initializer.  It is valid to index through the
+@@ -5004,8 +5010,16 @@
+ 		initialize_local_var (decl, init);
+ 	    }
+ 
+-	  if (TREE_STATIC (decl))
+-	    expand_static_init (decl, init);
++	  /* If a variable is defined, and then a subsequent
++	     definintion with external linkage is encountered, we will
++	     get here twice for the same variable.  We want to avoid
++	     calling expand_static_init more than once.  For variables
++	     that are not static data members, we can call
++	     expand_static_init only when we actually process the
++	     initializer.  It is not legal to redeclare a static data
++	     member, so this issue does not arise in that case.  */
++	  if (var_definition_p && TREE_STATIC (decl))
++	    expand_static_init (decl, init); 
+ 	}
+     finish_end0:
+ 

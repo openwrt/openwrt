@@ -1,0 +1,53 @@
+# DP: 2004-09-26  Roger Sayle  <roger@eyesopen.com>
+# DP: 
+# DP: 	PR other/15526
+# DP: 	Backport from mainline
+# DP: 	2004-05-20  Falk Hueffner  <falk@debian.org>
+# DP: 	* libgcc2.c (__mulvsi3): Fix overflow test.
+
+diff -u -r1.170.6.1 -r1.170.6.2
+--- gcc/gcc/libgcc2.c	2004/07/17 21:18:47	1.170.6.1
++++ gcc/gcc/libgcc2.c	2004/09/26 20:47:14	1.170.6.2
+@@ -130,9 +130,7 @@
+ {
+   const DWtype w = (DWtype) a * (DWtype) b;
+ 
+-  if (((a >= 0) == (b >= 0))
+-      ? (UDWtype) w > (UDWtype) (((DWtype) 1 << (WORD_SIZE - 1)) - 1)
+-      : (UDWtype) w < (UDWtype) ((DWtype) -1 << (WORD_SIZE - 1)))
++  if ((Wtype) (w >> WORD_SIZE) != (Wtype) w >> (WORD_SIZE - 1))
+     abort ();
+ 
+   return w;
+
+/cvs/gcc/gcc/gcc/testsuite/gcc.dg/ftrapv-1.c,v  -->  standard output
+revision 1.1.22.1
+--- gcc/gcc/testsuite/gcc.dg/ftrapv-1.c
++++ /dev/null	2004-10-15 06:22:06.980596000 +0000
+@@ -0,0 +1,25 @@
++/* Copyright (C) 2004 Free Software Foundation.
++
++   PR other/15526
++   Verify correct overflow checking with -ftrapv.
++
++   Written by Falk Hueffner, 20th May 2004.  */
++
++/* { dg-do run } */
++/* { dg-options "-ftrapv" } */
++
++__attribute__((noinline)) int
++mulv(int a, int b)
++{
++  return a * b;
++}
++
++int
++main()
++{
++  mulv( 0,  0);
++  mulv( 0, -1);
++  mulv(-1,  0);
++  mulv(-1, -1);
++  return 0;
++}
+

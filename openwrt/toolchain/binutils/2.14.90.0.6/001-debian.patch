@@ -1,0 +1,185 @@
+--- binutils-2.11.90.0.19.orig/ld/Makefile.am
++++ binutils-2.11.90.0.19/ld/Makefile.am
+@@ -19,7 +19,7 @@
+ # We put the scripts in the directory $(scriptdir)/ldscripts.
+ # We can't put the scripts in $(datadir) because the SEARCH_DIR
+ # directives need to be different for native and cross linkers.
+-scriptdir = $(tooldir)/lib
++scriptdir = $(libdir)
+ 
+ EMUL = @EMUL@
+ EMULATION_OFILES = @EMULATION_OFILES@
+--- binutils-2.11.90.0.19.orig/ld/Makefile.in
++++ binutils-2.11.90.0.19/ld/Makefile.in
+@@ -123,7 +123,7 @@
+ # We put the scripts in the directory $(scriptdir)/ldscripts.
+ # We can't put the scripts in $(datadir) because the SEARCH_DIR
+ # directives need to be different for native and cross linkers.
+-scriptdir = $(tooldir)/lib
++scriptdir = $(libdir)
+ 
+ EMUL = @EMUL@
+ EMULATION_OFILES = @EMULATION_OFILES@
+diff -urN binutils-2.11.90.0.27/gprof/gprof.texi binutils-2.11.90.0.27.new/gprof/gprof.texi
+--- binutils-2.11.90.0.27/gprof/gprof.texi	Tue Jun 19 14:57:58 2001
++++ binutils-2.11.90.0.27.new/gprof/gprof.texi	Mon Aug 27 10:27:23 2001
+@@ -137,6 +137,10 @@
+ If more than one profile file is specified, the @code{gprof}
+ output shows the sum of the profile information in the given profile files.
+ 
++If you use gcc 2.95.x or 3.0 to compile your binaries, you may need
++to add the @samp{-fprofile-arcs} to the compile command line in order
++for the call graphs to be properly stored in gmon.out.
++
+ @code{Gprof} calculates the amount of time spent in each routine.
+ Next, these times are propagated along the edges of the call graph.
+ Cycles are discovered, and calls into a cycle are made to share the time
+@@ -266,6 +270,11 @@
+ to do the linking, simply specify @samp{-pg} in addition to your usual
+ options.  The same option, @samp{-pg}, alters either compilation or linking
+ to do what is necessary for profiling.  Here are examples:
++
++If you use gcc 2.95.x or 3.0.x, you may need to add the
++@samp{-fprofile-arcs} option to the compile line along with @samp{-pg}
++in order to allow the call-graphs to be properly included in the gmon.out
++file.
+ 
+ @example
+ cc -g -c myprog.c utils.c -pg
+diff -urN binutils-2.11.92.0.5/bfd/opncls.c binutils-2.11.92.0.5.new/bfd/opncls.c
+--- binutils-2.11.92.0.5/bfd/opncls.c	Mon Oct  1 18:25:21 2001
++++ binutils-2.11.92.0.5.new/bfd/opncls.c	Sat Oct 13 11:26:59 2001
+@@ -127,6 +127,13 @@
+ {
+   bfd *nbfd;
+   const bfd_target *target_vec;
++  struct stat s;
++
++  if (stat (filename, &s) == 0)
++    if (S_ISDIR(s.st_mode)) {
++      bfd_set_error (bfd_error_file_not_recognized);
++      return NULL;
++    }
+ 
+   nbfd = _bfd_new_bfd ();
+   if (nbfd == NULL)
+diff -urN binutils-2.11.92.0.12.3/opcodes/i386-dis.c binutils-2.11.92.0.12.3.new/opcodes/i386-dis.c
+--- binutils-2.11.92.0.12.3/opcodes/i386-dis.c	Fri Nov 16 17:05:55 2001
++++ binutils-2.11.92.0.12.3.new/opcodes/i386-dis.c	Mon Dec 31 15:55:04 2001
+@@ -1830,7 +1830,7 @@
+  * The function returns the length of this instruction in bytes.
+  */
+ 
+-static char intel_syntax;
++static signed char intel_syntax;
+ static char open_char;
+ static char close_char;
+ static char separator_char;
+diff -urN binutils-2.12.90.0.12/ld/emultempl/elf32.em binutils-2.12.90.0.12.new/ld/emultempl/elf32.em
+--- binutils-2.12.90.0.12/ld/emultempl/elf32.em	Wed Jun 19 00:41:59 2002
++++ binutils-2.12.90.0.12.new/ld/emultempl/elf32.em	Wed Jun 26 10:00:26 2002
+@@ -672,6 +672,8 @@
+ 	      && command_line.rpath == NULL)
+ 	    {
+ 	      lib_path = (const char *) getenv ("LD_RUN_PATH");
++	      if ((lib_path) && (strlen (lib_path) == 0))
++		  lib_path = NULL;
+ 	      if (gld${EMULATION_NAME}_search_needed (lib_path, l->name,
+ 						      force))
+ 		break;
+@@ -867,6 +869,8 @@
+   rpath = command_line.rpath;
+   if (rpath == NULL)
+     rpath = (const char *) getenv ("LD_RUN_PATH");
++  if ((rpath) && (strlen (rpath) == 0))
++      rpath = NULL;
+   if (! (bfd_elf${ELFSIZE}_size_dynamic_sections
+          (output_bfd, command_line.soname, rpath,
+ 	  command_line.filter_shlib,
+diff -urN binutils-2.13.90.0.18/gprof/gprof.texi binutils-2.13.90.0.18.new/gprof/gprof.texi
+--- binutils-2.13.90.0.18/gprof/gprof.texi	2003-02-02 18:29:09.000000000 -0500
++++ binutils-2.13.90.0.18.new/gprof/gprof.texi	2003-02-02 18:28:37.000000000 -0500
+@@ -185,7 +185,7 @@
+ @c man end
+ 
+ @c man begin SEEALSO
+-monitor(3), profil(2), cc(1), prof(1), and the Info entry for @file{gprof}.
++profil(2), cc(1), prof(1), and the Info entry for @file{gprof}.
+ 
+ ``An Execution Profiler for Modular Programs'',
+ by S. Graham, P. Kessler, M. McKusick;
+diff -urN binutils-2.13.90.0.10/opcodes/alpha-opc.c binutils-2.13.90.0.10.new/opcodes/alpha-opc.c
+--- binutils-2.13.90.0.10/opcodes/alpha-opc.c	2002-03-07 14:52:40.000000000 -0500
++++ binutils-2.13.90.0.10.new/opcodes/alpha-opc.c	2002-10-12 20:16:08.000000000 -0400
+@@ -1101,7 +1101,8 @@
+   { "wmb",		MFC(0x18,0x4400), BASE, ARG_NONE },
+   { "fetch",		MFC(0x18,0x8000), BASE, { ZA, PRB } },
+   { "fetch_m",		MFC(0x18,0xA000), BASE, { ZA, PRB } },
+-  { "rpcc",		MFC(0x18,0xC000), BASE, { RA } },
++  { "rpcc",		MFC(0x18,0xC000), BASE, { RA, ZB } },
++  { "rpcc",		MFC(0x18,0xC000), BASE, { RA, RB } },	/* ev6 una */
+   { "rc",		MFC(0x18,0xE000), BASE, { RA } },
+   { "ecb",		MFC(0x18,0xE800), BASE, { ZA, PRB } },	/* ev56 una */
+   { "rs",		MFC(0x18,0xF000), BASE, { RA } },
+--- binutils-2.13.90.0.18/bfd/elf64-alpha.c	2003-01-21 19:21:32.000000000 +0100
++++ binutils-2.13.90.0.18-modif/bfd/elf64-alpha.c	2003-04-11 01:24:26.000000000 +0200
+@@ -4184,9 +4184,12 @@
+ 
+   loc = srel->contents;
+   loc += srel->reloc_count++ * sizeof (Elf64_External_Rela);
+-  bfd_elf64_swap_reloca_out (abfd, &outrel, loc);
+-  BFD_ASSERT (sizeof (Elf64_External_Rela) * srel->reloc_count
+-	      <= srel->_cooked_size);
++  if (loc)
++    {
++      bfd_elf64_swap_reloca_out (abfd, &outrel, loc);
++      BFD_ASSERT (sizeof (Elf64_External_Rela) * srel->reloc_count
++		  <= srel->_cooked_size);
++    }
+ }
+ 
+ /* Relocate an Alpha ELF section for a relocatable link.
+2003-05-23  H.J. Lu <hongjiu.lu@intel.com>
+
+	* ltmain.sh: Make symlink for shared library if needed.
+
+opcodes/
+
+2003-07-14  H.J. Lu <hongjiu.lu@intel.com>
+
+	* Makefile.in: Regenerated.
+
+2003-06-11  H.J. Lu <hongjiu.lu@intel.com>
+
+	* Makefile.in: Regenerated.
+
+2003-05-23  H.J. Lu <hongjiu.lu@intel.com>
+
+	* Makefile.am (libopcodes_la_LIBADD): Use "-L../bfd -lbfd"
+	instead of "../bfd/libbfd.la".
+	* Makefile.in: Regenerated.
+
+--- binutils/ltmain.sh.dso	2002-03-22 00:16:20.000000000 -0800
++++ binutils/ltmain.sh	2003-07-14 12:50:17.000000000 -0700
+@@ -4413,6 +4413,10 @@ relink_command=\"$relink_command\""
+       # LD_LIBRARY_PATH before the program is installed.
+       $show "(cd $output_objdir && $rm $outputname && $LN_S ../$outputname $outputname)"
+       $run eval '(cd $output_objdir && $rm $outputname && $LN_S ../$outputname $outputname)' || exit $?
++      if test -n "$linkname"; then
++        $show "(cd $output_objdir && $rm ../$linkname && $LN_S $output_objdir/$linkname ../$linkname)"
++        $run eval '(cd $output_objdir && $rm ../$linkname && $LN_S $output_objdir/$linkname ../$linkname)' || exit $?
++      fi
+       ;;
+     esac
+     exit 0
+--- binutils/opcodes/Makefile.am.dso	2003-06-11 07:18:04.000000000 -0700
++++ binutils/opcodes/Makefile.am	2003-07-14 12:50:18.000000000 -0700
+@@ -283,7 +283,7 @@ disassemble.lo: disassemble.c $(INCDIR)/
+ 
+ libopcodes_la_SOURCES =  dis-buf.c disassemble.c
+ libopcodes_la_DEPENDENCIES = $(OFILES) ../bfd/libbfd.la
+-libopcodes_la_LIBADD = $(OFILES) @WIN32LIBADD@ ../bfd/libbfd.la
++libopcodes_la_LIBADD = $(OFILES) @WIN32LIBADD@ -L../bfd -lbfd
+ libopcodes_la_LDFLAGS = -release $(VERSION) @WIN32LDFLAGS@
+ 
+ # libtool will build .libs/libopcodes.a.  We create libopcodes.a in
