@@ -20,43 +20,47 @@ LINUX_KARCH:=$(shell echo $(ARCH) | sed -e 's/i[3-9]86/i386/' \
 	)
 
 LINUX_SITE=http://www.kernel.org/pub/linux/kernel/v2.4
+LINUX_BINARY_DRIVER_SITE=http://openwrt.openbsd-geek.de
 LINUX_SOURCE=linux-$(LINUX_VERSION).tar.bz2
 LINUX_KCONFIG=./linux.config
 LINUX_PATCHES=./kernel-patches
+LINUX_KERNEL_SOURCE=./kernel-source
 LINUX_BINLOC=arch/$(LINUX_KARCH)/brcm-boards/bcm947xx/compressed/vmlinuz
 # Used by pcmcia-cs and others
 LINUX_SOURCE_DIR=$(LINUX_DIR)-$(LINUX_VERSION)
 
-# kernel stuff extracted from linksys firmware GPL sourcetree
-# WRT54GS_3_37_2_1109_US (shared,include,wl,et)
-LINKSYS_KERNEL_SITE=http://openwrt.openbsd-geek.de
-LINKSYS_KERNEL_TGZ=linksys-kernel.tar.gz
+# binary driver extracted from linksys firmware GPL sourcetree WRT54GS_3_37_2_1109_US 
+LINUX_BINARY_WL_DRIVER=kernel-binary-wl.tar.gz
+LINUX_BINARY_ET_DRIVER=kernel-binary-et.tar.gz
 
 TARGET_MODULES_DIR=$(TARGET_DIR)/lib/modules/$(LINUX_VERSION)
 
-$(DL_DIR)/$(LINKSYS_KERNEL_TGZ):
-	$(WGET) -P $(DL_DIR) $(LINKSYS_KERNEL_SITE)/$(LINKSYS_KERNEL_TGZ)
+$(DL_DIR)/$(LINUX_BINARY_WL_DRIVER):
+	$(WGET) -P $(DL_DIR) $(LINUX_BINARY_DRIVER_SITE)/$(LINUX_BINARY_WL_DRIVER)
 
-$(LINUX_DIR)/.unpacked: $(DL_DIR)/$(LINUX_SOURCE) $(DL_DIR)/$(LINKSYS_KERNEL_TGZ)
+$(DL_DIR)/$(LINUX_BINARY_ET_DRIVER):
+	$(WGET) -P $(DL_DIR) $(LINUX_BINARY_DRIVER_SITE)/$(LINUX_BINARY_ET_DRIVER)
+
+$(LINUX_DIR)/.unpacked: $(DL_DIR)/$(LINUX_SOURCE) $(DL_DIR)/$(LINUX_BINARY_WL_DRIVER) $(DL_DIR)/$(LINUX_BINARY_ET_DRIVER)
 	-mkdir -p $(BUILD_DIR)
 	bzcat $(DL_DIR)/$(LINUX_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
-	# extract linksys binary kernel stuff and include/shared files
-	zcat $(DL_DIR)/$(LINKSYS_KERNEL_TGZ) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
 	ln -sf $(LINUX_DIR)-$(LINUX_VERSION) $(LINUX_DIR)
+	# extract wlan and lan binary only driver
+	zcat $(DL_DIR)/$(LINUX_BINARY_WL_DRIVER) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
+	zcat $(DL_DIR)/$(LINUX_BINARY_ET_DRIVER) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
 	touch $(LINUX_DIR)/.unpacked
 
 $(LINUX_DIR)/.patched: $(LINUX_DIR)/.unpacked
 	$(PATCH) $(LINUX_DIR) $(LINUX_PATCHES)
+	# copy kernel source which is maintained in openwrt via cvs
+	cp -a $(LINUX_KERNEL_SOURCE)/* $(LINUX_DIR)
+	# copy binary drivers
+	cp -a $(BUILD_DIR)/wl/*.o $(LINUX_DIR)/drivers/net/wl
+	cp -a $(BUILD_DIR)/et/*.o $(LINUX_DIR)/drivers/net/et
 	touch $(LINUX_DIR)/.patched
 
 $(LINUX_DIR)/.configured: $(LINUX_DIR)/.patched
 	-cp $(LINUX_KCONFIG) $(LINUX_DIR)/.config
-#ifeq ($(BR2_TARGET_ROOTFS_SQUASHFS_LZMA),y)
-#	$(SED) "s,rootfstype=jffs2,rootfstype=squashfs," $(LINUX_DIR)/.config
-#endif
-#ifeq ($(BR2_TARGET_ROOTFS_SQUASHFS),y)
-#	$(SED) "s,rootfstype=jffs2,rootfstype=squashfs," $(LINUX_DIR)/.config
-#endif
 	$(SED) "s,^CROSS_COMPILE.*,CROSS_COMPILE=$(KERNEL_CROSS),g;" \
 	  $(LINUX_DIR)/Makefile  \
 	  $(LINUX_DIR)/arch/mips/Makefile
@@ -106,5 +110,4 @@ linux-dirclean:
 	rm -rf $(LINUX_DIR)-$(LINUX_VERSION)
 	rm -rf $(LINUX_DIR)
 	rm -rf $(BUILD_DIR)/modules
-	rm -rf $(BUILD_DIR)/linksys-kernel
 
