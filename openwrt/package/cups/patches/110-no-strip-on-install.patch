@@ -1,0 +1,12 @@
+diff -urN cups-1.1.23.old/Makedefs.in cups-1.1.23/Makedefs.in
+--- cups-1.1.23.old/Makedefs.in	2005-01-03 20:29:44.000000000 +0100
++++ cups-1.1.23/Makedefs.in	2005-03-23 20:28:06.000000000 +0100
+@@ -47,7 +47,7 @@
+ # Installation programs...
+ #
+ 
+-INSTALL_BIN	=	$(LIBTOOL) $(INSTALL) -m 755 -s
++INSTALL_BIN	=	$(LIBTOOL) $(INSTALL) -m 755
+ INSTALL_DATA	=	$(INSTALL) -m 644
+ INSTALL_DIR	=	$(INSTALL) -d
+ INSTALL_LIB	=	$(LIBTOOL) $(INSTALL) -m 755
