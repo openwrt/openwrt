@@ -49,6 +49,9 @@ $(LINUX_DIR)/.unpacked: $(DL_DIR)/$(LINUX_SOURCE) $(DL_DIR)/$(LINKSYS_KERNEL_TGZ
 	-mkdir -p $(TOOL_BUILD_DIR)
 	-(cd $(TOOL_BUILD_DIR); ln -sf $(LINUX_DIR) linux)
 	toolchain/patch-kernel.sh $(LINUX_DIR) package/linux/kernel-patches
+ifeq ($(BR2_TARGET_ROOTFS_SQUASHFS_LZMA),y)
+	toolchain/patch-kernel.sh $(LINUX_DIR) target/squashfs-lzma/kernel-patch
+endif
 	-cp $(LINUX_KCONFIG) $(LINUX_DIR)/.config
 	# extract linksys binary kernel stuff and include/shared files
 	zcat $(DL_DIR)/$(LINKSYS_KERNEL_TGZ) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
