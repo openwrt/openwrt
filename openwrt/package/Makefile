@@ -5,6 +5,7 @@ package-y:=openwrt
 package-$(BR2_PACKAGE_ARPTABLES) += arptables
 package-$(BR2_PACKAGE_BRIDGE) += bridge
 package-$(BR2_PACKAGE_BUSYBOX) += busybox
+package-$(BR2_PACKAGE_CUPS) += cups
 package-$(BR2_PACKAGE_DROPBEAR) += dropbear
 package-$(BR2_PACKAGE_DNSMASQ) += dnsmasq
 package-$(BR2_PACKAGE_EBTABLES) += ebtables
