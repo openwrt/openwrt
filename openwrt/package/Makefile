@@ -2,31 +2,32 @@
 include $(TOPDIR)/rules.mk
 
 package-y:=openwrt
+package-$(BR2_PACKAGE_ARPTABLES) += arptables
 package-$(BR2_PACKAGE_BRIDGE) += bridge
 package-$(BR2_PACKAGE_BUSYBOX) += busybox
 package-$(BR2_PACKAGE_DROPBEAR) += dropbear
 package-$(BR2_PACKAGE_DNSMASQ) += dnsmasq
 package-$(BR2_PACKAGE_EBTABLES) += ebtables
-package-$(BR2_PACKAGE_ARPTABLES) += arptables
+package-$(BR2_PACKAGE_HASERL) += haserl
 package-$(BR2_PACKAGE_IPTABLES) += iptables
-package-$(BR2_PACKAGE_PPP) += ppp
+package-$(BR2_PACKAGE_IPROUTE2) += iproute2
+package-$(BR2_PACKAGE_LCD4LINUX) += lcd4linux
+package-$(BR2_PACKAGE_LIBELF) += libelf
 package-$(BR2_PACKAGE_LZO) += lzo
-package-$(BR2_PACKAGE_ZLIB) += zlib
 package-$(BR2_PACKAGE_MATRIXSSL) += matrixssl
+package-$(BR2_PACKAGE_MICROPERL) += microperl
 package-$(BR2_PACKAGE_NCURSES) += ncurses
 package-$(BR2_PACKAGE_OPENSSL) += openssl
+package-$(BR2_PACKAGE_OPENNTPD) += openntpd
 package-$(BR2_PACKAGE_OPENVPN) += openvpn
 package-$(BR2_PACKAGE_PCRE) += pcre
 package-$(BR2_PACKAGE_POPT) += popt
+package-$(BR2_PACKAGE_PPP) += ppp
 package-$(BR2_PACKAGE_PPTP) += pptp
 package-$(BR2_PACKAGE_PPTPD) += pptpd
-package-$(BR2_PACKAGE_IPROUTE2) += iproute2
-package-$(BR2_PACKAGE_HASERL) += haserl
-package-$(BR2_PACKAGE_MICROPERL) += microperl
-package-$(BR2_PACKAGE_LIBELF) += libelf
 package-$(BR2_PACKAGE_STRACE) += strace
 package-$(BR2_PACKAGE_TCPDUMP) += tcpdump
-package-$(BR2_PACKAGE_LCD4LINUX) += lcd4linux
+package-$(BR2_PACKAGE_ZLIB) += zlib
 
 all: compile install
 clean: $(patsubst %,%-clean,$(package-) $(package-y) $(package-m)) linux-clean
