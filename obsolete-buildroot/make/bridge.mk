@@ -17,7 +17,7 @@ $(DL_DIR)/$(BRIDGE_SOURCE):
 
 $(BRIDGE_BUILD_DIR)/.unpacked: $(DL_DIR)/$(BRIDGE_SOURCE)
 	# ack! it's a .tgz which is really a bzip 
-	bzcat $(DL_DIR)/$(BRIDGE_SOURCE) | tar -C $(BUILD_DIR) -xvf -
+	zcat $(DL_DIR)/$(BRIDGE_SOURCE) | tar -C $(BUILD_DIR) -xvf -
 	patch -p1 -d $(BRIDGE_BUILD_DIR) < $(SOURCE_DIR)/bridge.patch 
 	touch $(BRIDGE_BUILD_DIR)/.unpacked
 
