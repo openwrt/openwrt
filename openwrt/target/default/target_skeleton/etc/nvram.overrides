@@ -65,7 +65,9 @@ NVRAM_lan_proto="static"
   NVRAM_vlan0hwname="et0"
   NVRAM_vlan1hwname="et0"
   NVRAM_lan_ifnames="vlan0 eth1"
-  NVRAM_wan_ifname="vlan1"
+  [ "$(nvram get wan_ifname)" = "eth0.1" ] && {
+    NVRAM_wan_ifname="vlan1"
+  }
 }
 
 # defaults if lan_ifname is missing
