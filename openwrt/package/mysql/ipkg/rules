@@ -1,0 +1,191 @@
+#!/usr/bin/make -f
+
+ifneq ($(strip ${IPKG_RULES_INC}),)
+ include $(IPKG_RULES_INC)
+endif
+
+##
+
+PKG_VERSION := $(shell cat ./ipkg/version)
+CURRENT_DIR := $(shell pwd)
+INSTALL_DIR ?= $(CURRENT_DIR)/ipkg-install
+
+unexport INSTALL_DIR
+
+I_LIBMYSQLCLIENT := ipkg/libmysqlclient
+I_LIBMYSQLCLIENT_DEV := ipkg/libmysqlclient-dev
+I_MYSQL_UTILS := ipkg/mysql-utils
+
+BUILD_DEPS := \
+	$(STAGING_DIR)/usr/include/ncurses.h \
+#	$(STAGING_DIR)/usr/include/zlib.h \
+
+CONFIGURE_OPTS = \
+	--enable-shared \
+	--enable-static \
+	--disable-assembler \
+	--with-pthread \
+	--without-raid \
+	--with-unix-socket-path=/tmp \
+	--without-libwrap \
+	--without-pstack \
+	--with-low-memory \
+	--without-server \
+	--without-embedded-server \
+	--without-query-cache \
+	--without-mysqlfs \
+	--without-vio \
+	--without-openssl \
+	--without-docs \
+	--without-bench \
+	--without-readline \
+
+##
+
+all: package
+
+
+.stamp-configured: $(BUILD_DEPS)
+
+	touch configure.in 
+	touch aclocal.m4 
+	touch Makefile.in
+	touch config.h.in
+	touch configure
+
+	rm -rf config.cache
+	$(TARGET_CONFIGURE_OPTS) \
+	CFLAGS="-I$(STAGING_DIR)/usr/include" \
+	LDFLAGS="-L$(STAGING_DIR)/usr/lib" \
+	OPTIMIZE_CFLAGS="$(TARGET_CFLAGS)" \
+	OPTIMIZE_CXXFLAGS="$(TARGET_CFLAGS)" \
+	ac_atomic_add=yes \
+	ac_atomic_sub=yes \
+	ac_cv_sys_restartable_syscalls=yes \
+	ac_cv_conv_longlong_to_float=yes \
+	mysql_cv_compress=yes \
+	mysql_cv_gethostname_style=glibc2 \
+	./configure \
+	  --target=$(GNU_TARGET_NAME) \
+	  --host=$(GNU_TARGET_NAME) \
+	  --build=$(GNU_HOST_NAME) \
+	  --program-prefix="" \
+	  --program-suffix="" \
+	  --prefix=/usr \
+	  --exec-prefix=/usr \
+	  --bindir=/usr/bin \
+	  --datadir=/usr/share \
+	  --includedir=/usr/include \
+	  --infodir=/usr/share/info \
+	  --libdir=/usr/lib \
+	  --libexecdir=/usr/lib \
+	  --localstatedir=/var \
+	  --mandir=/usr/share/man \
+	  --sbindir=/usr/sbin \
+	  --sysconfdir=/etc \
+	  $(DISABLE_LARGEFILE) \
+	  $(DISABLE_NLS) \
+	  $(CONFIGURE_OPTS) \
+
+	touch .stamp-configured
+
+
+.stamp-built: .stamp-configured
+
+	$(MAKE) -C "libmysql" \
+	  CC="$(HOSTCC)" \
+	  LINK="$(HOSTCC) -o conf_to_src -lc" \
+	  CFLAGS="" \
+	 conf_to_src
+
+	$(MAKE) \
+	  SUBDIRS="include libmysql" \
+	 all
+
+	$(MAKE) -C "client" mysqladmin mysqlshow
+
+	touch .stamp-built
+
+
+$(INSTALL_DIR)/usr/include/mysql/mysql.h: .stamp-built
+
+	mkdir -p $(INSTALL_DIR)
+
+	$(MAKE) \
+	  DESTDIR="$(INSTALL_DIR)" \
+	  SUBDIRS="include libmysql" \
+	 install
+	 
+	$(MAKE) -C "client" \
+	  DESTDIR="$(INSTALL_DIR)" \
+	  bin_PROGRAMS="mysqladmin mysqlshow" \
+	 install
+
+
+configure: .stamp-configured
+
+
+build: .stamp-built
+
+
+install: $(INSTALL_DIR)/usr/include/mysql/mysql.h
+
+
+package: $(INSTALL_DIR)/usr/include/mysql/mysql.h
+
+	mkdir -p $(I_LIBMYSQLCLIENT)/usr/lib/
+	cp -fpR $(INSTALL_DIR)/usr/lib/mysql/libmysqlclient.so.* $(I_LIBMYSQLCLIENT)/usr/lib/
+	$(STRIP) $(I_LIBMYSQLCLIENT)/usr/lib/libmysqlclient.so.*
+
+	mkdir -p $(I_LIBMYSQLCLIENT_DEV)/usr/include
+	cp -fpR $(INSTALL_DIR)/usr/include/mysql $(I_LIBMYSQLCLIENT_DEV)/usr/include/
+	mkdir -p $(I_LIBMYSQLCLIENT_DEV)/usr/lib/mysql
+	cp -fpR $(INSTALL_DIR)/usr/lib/mysql/libmysqlclient.a $(I_LIBMYSQLCLIENT_DEV)/usr/lib/mysql/
+	cp -fpR $(INSTALL_DIR)/usr/lib/mysql/libmysqlclient.so* $(I_LIBMYSQLCLIENT_DEV)/usr/lib/mysql/
+	
+	mkdir -p $(I_MYSQL_UTILS)/usr/bin
+	cp -fpR $(INSTALL_DIR)/usr/bin/mysqladmin $(I_MYSQL_UTILS)/usr/bin/
+	cp -fpR $(INSTALL_DIR)/usr/bin/mysqlshow $(I_MYSQL_UTILS)/usr/bin/
+	$(STRIP) $(I_MYSQL_UTILS)/usr/bin/*
+
+	chmod 0755 ipkg/*/CONTROL/
+	chmod 0644 ipkg/*/CONTROL/control
+
+	perl -pi -e "s/^Arch.*:.*/Architecture: $(ARCH)/g" ipkg/*/CONTROL/control
+ifneq ($(strip $(PKG_VERSION)),)
+	perl -pi -e "s/^Vers.*:.*/Version: $(PKG_VERSION)/g" ipkg/*/CONTROL/control
+endif
+
+	$(IPKG_BUILD) $(I_LIBMYSQLCLIENT) $(IPKG_TARGET_DIR)
+	$(IPKG_BUILD) $(I_LIBMYSQLCLIENT_DEV) $(IPKG_TARGET_DIR)
+	$(IPKG_BUILD) $(I_MYSQL_UTILS) $(IPKG_TARGET_DIR)
+
+
+clean:
+
+	-$(MAKE) -C "client" \
+	  DESTDIR="$(INSTALL_DIR)" \
+	  bin_PROGRAMS="mysqladmin mysqlshow" \
+	 uninstall
+
+	-$(MAKE) \
+	  DESTDIR="$(INSTALL_DIR)" \
+	 uninstall clean
+	
+	rm -rf .stamp-* \
+	  $(I_LIBMYSQLCLIENT)/usr \
+	  $(I_LIBMYSQLCLIENT_DEV)/usr \
+	  $(I_MYSQL_UTILS)/usr \
+
+
+control:
+
+	@cat $(I_LIBMYSQLCLIENT)/CONTROL/control
+	@echo
+	@cat $(I_LIBMYSQLCLIENT_DEV)/CONTROL/control
+	@echo
+	@cat $(I_MYSQL_UTILS)/CONTROL/control
+	@echo
+	
+
+.PHONY: configure build install package clean control
