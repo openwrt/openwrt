@@ -65,7 +65,6 @@ $(PACKAGE_DIR)/$(DROPBEAR_IPK): $(DROPBEAR_DIR)/$(DROPBEAR_BINARY)
 	ln -sf ../sbin/dropbear $(DROPBEAR_IPK_DIR)/usr/bin/dropbearkey
 	ln -sf ../sbin/dropbear $(DROPBEAR_IPK_DIR)/usr/bin/dropbearconvert
 	mkdir -p $(DROPBEAR_IPK_DIR)/etc/init.d
-	cp ./files/passwd $(DROPBEAR_IPK_DIR)/etc
 	cp ./files/S50dropbear $(DROPBEAR_IPK_DIR)/etc/init.d/
 	chmod a+x $(DROPBEAR_IPK_DIR)/etc/init.d/S50dropbear
 	$(IPKG_BUILD) $(DROPBEAR_IPK_DIR) $(PACKAGE_DIR)
