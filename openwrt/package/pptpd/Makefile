@@ -60,11 +60,14 @@ $(PKG_IPK): $(PKG_BUILD_DIR)/$(PKG_NAME)
 	mkdir -p $(PACKAGE_DIR)
 	$(IPKG_BUILD) $(PKG_IPK_DIR) $(PACKAGE_DIR)
 
+$(IPKG_STATE_DIR)/info/pptpd.list: $(PKG_IPK)
+	$(IPKG) install $(PKG_IPK)
+
 source: $(DL_DIR)/$(PKG_SOURCE)
 prepare: $(PKG_BUILD_DIR)/.unpacked
 compile: $(PKG_IPK)
-install:
-	$(IPKG) install $(PKG_IPK)
+install: $(IPKG_STATE_DIR)/info/pptpd.list
+
 clean:
 	rm -rf $(PKG_BUILD_DIR)
 	rm -f $(PKG_IPK)
