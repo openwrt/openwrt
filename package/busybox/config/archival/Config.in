@@ -159,7 +159,7 @@ config BUSYBOX_CONFIG_FEATURE_TAR_BZIP2
 
 config BUSYBOX_CONFIG_FEATURE_TAR_FROM
 	bool "  Enable -X (exclude from) and -T (include from) options)"
-	default n
+	default y
 	depends on BUSYBOX_CONFIG_TAR
 	help
 	  If you enable this option you'll be able to specify
