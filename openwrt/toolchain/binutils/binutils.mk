@@ -3,7 +3,7 @@
 # build binutils for use on the host system
 #
 #############################################################
-BINUTILS_VERSION:=$(strip $(BINUTILS_VERSION))
+BINUTILS_VERSION:=$(strip $(subst ",, $(BR2_BINUTILS_VERSION)))
 
 BINUTILS_SITE:=http://ftp.kernel.org/pub/linux/devel/binutils
 ifeq ($(BINUTILS_VERSION),2.15)
