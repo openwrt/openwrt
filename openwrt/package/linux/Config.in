@@ -36,6 +36,12 @@ config BR2_PACKAGE_KMOD_NFS
 	  Kernel modules for NFS support
 	  Includes lockd, nfs and sunrpc
 
+config BR2_PACKAGE_KMOD_SMBFS
+	tristate "SMB support"
+	default m
+	help
+	  Kernel modules for SMB support
+
 config BR2_PACKAGE_KMOD_USB
 	tristate "USB/SCSI support"
 	default m
