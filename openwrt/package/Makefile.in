@@ -1,5 +1,3 @@
-LINKSYS_TGZ_SITE=http://openwrt.openbsd-geek.de
-
 MAKE1=make
 MAKE=make -j$(BR2_JLEVEL)
 
@@ -17,8 +15,8 @@ TARGET_CFLAGS=$(TARGET_OPTIMIZATION) $(TARGET_DEBUGGING)
 HOSTCC:=gcc
 BASE_DIR:=${shell pwd}
 DL_DIR:=$(BASE_DIR)/dl
-#PATCH_DIR=$(BASE_DIR)/sources/patches
 BUILD_DIR:=$(BASE_DIR)/build_$(ARCH)$(ARCH_FPU_SUFFIX)
+PACKAGE_DIR:=$(BASE_DIR)/package
 TARGET_DIR:=$(BUILD_DIR)/root
 TOOL_BUILD_DIR=$(BASE_DIR)/toolchain_build_$(ARCH)$(ARCH_FPU_SUFFIX)
 # Strip off the annoying quoting
@@ -32,6 +30,7 @@ KERNEL_CROSS=$(STAGING_DIR)/bin/$(OPTIMIZE_FOR_CPU)-linux-uclibc-
 TARGET_CROSS=$(STAGING_DIR)/bin/$(OPTIMIZE_FOR_CPU)-linux-uclibc-
 TARGET_CC=$(TARGET_CROSS)gcc
 STRIP=$(TARGET_CROSS)strip --remove-section=.comment --remove-section=.note
+PATCH=toolchain/patch-kernel.sh
 
 
 HOST_ARCH:=$(shell $(HOSTCC) -dumpmachine | sed -e s'/-.*//' \

@@ -2,15 +2,17 @@
 
 menu "OpenWrt Package Selection"
 
-comment "The default set"
-source "package/busybox/Config.in"
-source "package/dnsmasq/Config.in"
+comment "The absolute minimum"
 source "package/linux/Config.in"
+source "package/busybox/Config.in"
+
+comment "The default set"
+source "package/dnsmasq/Config.in"
 source "package/iptables/Config.in"
 source "package/bridge/Config.in"
 
 comment "Suggested Extras"
-source "package/dropbear_sshd/Config.in"
 source "package/ebtables/Config.in"
+source "package/dropbear_sshd/Config.in"
 
 endmenu
