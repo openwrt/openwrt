@@ -131,14 +131,14 @@ config BUSYBOX_CONFIG_UNIX2DOS
 
 config BUSYBOX_CONFIG_DU
 	bool "du (default blocksize of 512 bytes)"
-	default n
+	default y
 	help
 	  du is used to report the amount of disk space used
 	  for specified files.
 
 config BUSYBOX_CONFIG_FEATURE_DU_DEFALT_BLOCKSIZE_1K
 	bool "  Use a default blocksize of 1024 bytes (1K)"
-	default n
+	default y
 	depends on BUSYBOX_CONFIG_DU
 	help
 	  Use a blocksize of (1K) instead of the default 512b.
@@ -220,7 +220,7 @@ config BUSYBOX_CONFIG_ID
 
 config BUSYBOX_CONFIG_INSTALL
 	bool "install"
-	default y
+	default n
 	help
 	  Copy files and set attributes.
 
@@ -471,7 +471,7 @@ config BUSYBOX_CONFIG_TOUCH
 
 config BUSYBOX_CONFIG_TR
 	bool "tr"
-	default n
+	default y
 	help
 	  tr is used to squeeze, and/or delete characters from standard
 	  input, writing to standard output.
