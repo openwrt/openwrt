@@ -104,5 +104,7 @@ ifdown () (
   type=$1
   debug "### ifdown $type ###"
   if=$(nvram_get ${type}_ifname)
-  if_valid $if && $DEBUG ifconfig $if down
+  if_valid $if || return
+  kill $(cat /var/run/${if}.pid 2>-)2>-
+  $DEBUG ifconfig $if down
 )

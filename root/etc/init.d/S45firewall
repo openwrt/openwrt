@@ -18,5 +18,6 @@ $IPT -t filter -A INPUT -i $WAN -j REJECT --reject-with icmp-port-unreachable
 $IPT -t filter -A FORWARD -m state --state INVALID -j DROP 
 $IPT -t filter -A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT 
 $IPT -t filter -A FORWARD -i $WAN -m state --state NEW,INVALID -j DROP
+$IPT -t filter -A FORWARD -o $WAN -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
 
 $IPT -t nat -A POSTROUTING -o $WAN -j MASQUERADE
