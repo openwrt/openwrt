@@ -1,0 +1,87 @@
+Index: arpwatch/arpsnmp.c
+diff -u arpwatch/arpsnmp.c:1.1.1.1 arpwatch/arpsnmp.c:1.1.1.1.2.1
+--- arpwatch/arpsnmp.c:1.1.1.1	Tue Apr 17 13:31:36 2001
++++ arpwatch/arpsnmp.c	Tue Apr 17 13:47:57 2001
+@@ -78,6 +78,10 @@
+ 	register char *cp;
+ 	register int op, i;
+ 	char errbuf[256];
++	char options[] =
++		"d"
++		"f:"
++	;
+ 
+ 	if ((cp = strrchr(argv[0], '/')) != NULL)
+ 		prog = cp + 1;
+@@ -90,7 +94,7 @@
+ 	}
+ 
+ 	opterr = 0;
+-	while ((op = getopt(argc, argv, "df:")) != EOF)
++	while ((op = getopt(argc, argv, options)) != EOF)
+ 		switch (op) {
+ 
+ 		case 'd':
+@@ -181,9 +185,14 @@
+ usage(void)
+ {
+ 	extern char version[];
++	char usage[] =
++		"[-d] "
++		"[-f datafile] "
++		"file [...]\n"
++	;
+ 
+ 	(void)fprintf(stderr, "Version %s\n", version);
+ 	(void)fprintf(stderr,
+-	    "usage: %s [-d] [-f datafile] file [...]\n", prog);
++	    "usage: %s %s", prog, usage);
+ 	exit(1);
+ }
+Index: arpwatch/arpwatch.c
+diff -u arpwatch/arpwatch.c:1.1.1.1 arpwatch/arpwatch.c:1.1.1.1.2.1
+--- arpwatch/arpwatch.c:1.1.1.1	Tue Apr 17 13:31:36 2001
++++ arpwatch/arpwatch.c	Tue Apr 17 13:47:57 2001
+@@ -153,6 +153,14 @@
+ 	register char *interface, *rfilename;
+ 	struct bpf_program code;
+ 	char errbuf[PCAP_ERRBUF_SIZE];
++	char options[] =
++		"d"
++		"f:"
++		"i:"
++		"n:"
++		"N"
++		"r:"
++	;
+ 
+ 	if (argv[0] == NULL)
+ 		prog = "arpwatch";
+@@ -170,7 +178,7 @@
+ 	interface = NULL;
+ 	rfilename = NULL;
+ 	pd = NULL;
+-	while ((op = getopt(argc, argv, "df:i:n:Nr:")) != EOF)
++	while ((op = getopt(argc, argv, options)) != EOF)
+ 		switch (op) {
+ 
+ 		case 'd':
+@@ -748,9 +756,16 @@
+ usage(void)
+ {
+ 	extern char version[];
++	char usage[] =
++		"[-dN] "
++		"[-f datafile] "
++		"[-i interface] "
++		"[-n net[/width]] "
++		"[-r file] "
++		"\n"
++	;
+ 
+ 	(void)fprintf(stderr, "Version %s\n", version);
+-	(void)fprintf(stderr, "usage: %s [-dN] [-f datafile] [-i interface]"
+-	    " [-n net[/width]] [-r file]\n", prog);
++	(void)fprintf(stderr, "usage: %s %s", prog, usage);
+ 	exit(1);
+ }
