@@ -10,6 +10,7 @@ package-$(BR2_PACKAGE_CUPS) += cups
 package-$(BR2_PACKAGE_DROPBEAR) += dropbear
 package-$(BR2_PACKAGE_DNSMASQ) += dnsmasq
 package-$(BR2_PACKAGE_EBTABLES) += ebtables
+package-$(BR2_PACKAGE_EZIPUPDATE) += ez-ipupdate
 package-$(BR2_PACKAGE_HASERL) += haserl
 package-$(BR2_PACKAGE_IPTABLES) += iptables
 package-$(BR2_PACKAGE_IPROUTE2) += iproute2
