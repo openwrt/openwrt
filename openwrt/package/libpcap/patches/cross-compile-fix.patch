@@ -1,0 +1,11 @@
+--- libpcap-0.8.3/Makefile.in.orig	2005-01-17 19:04:41.291056960 -0500
++++ libpcap-0.8.3/Makefile.in	2005-01-17 19:04:47.836061968 -0500
+@@ -100,7 +100,7 @@
+ 
+ libpcap.a: $(OBJ)
+ 	@rm -f $@
+-	ar rc $@ $(OBJ) $(LIBS)
++	$(AR) rc $@ $(OBJ) $(LIBS)
+ 	$(RANLIB) $@
+ 
+ scanner.c: $(srcdir)/scanner.l
