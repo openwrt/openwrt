@@ -96,7 +96,7 @@ $(PKG_PPP): $(PKG_BUILD_DIR)/pppd/pppd
 	cp -af ./ipkg/ppp/* $(I_PPP)
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(I_PPP) control/ppp.control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH) 
 	mkdir -p $(I_PPP)/etc/ppp
-	ln -s /tmp/resolv.conf $(I_PPP)/etc/ppp/resolv.conf
+	ln -sf /tmp/resolv.conf $(I_PPP)/etc/ppp/resolv.conf
 	mkdir -p $(I_PPP)/usr/sbin
 	cp -af $(PKG_BUILD_DIR)/pppd/pppd $(I_PPP)/usr/sbin/
 	$(STRIP) $(I_PPP)/usr/sbin/*
