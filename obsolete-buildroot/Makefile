@@ -97,7 +97,7 @@ INSTALL_LIBGCJ:=false
 #############################################################
 TARGETS:=host-sed openwrt-code.bin
 
-PACKAGES:=oidentd iproute2 sched-modules wshaper zlib openssl openssh pppoecd dropbear
+PACKAGES:=oidentd iproute2 sched-modules wshaper zlib openssl openssh pppoecd dropbear chillispot dhcp-fwd ip6tables kmod-ipt6 kmod-ipv6 nfs-modules ppp-async-module ppp-mppe-module ppp pppoecd pptp-server tun-module
 
 #############################################################
 #
