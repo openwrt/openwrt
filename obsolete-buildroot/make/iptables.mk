@@ -4,10 +4,10 @@
 #
 #############################################################
 IPTABLES_SOURCE_URL=http://www.netfilter.org/files
-IPTABLES_SOURCE=iptables-1.2.9.tar.bz2
-IPTABLES_BUILD_DIR=$(BUILD_DIR)/iptables-1.2.9
-IP6TABLES_IPK=$(BUILD_DIR)/ip6tables_1.2.9-1_mipsel.ipk
-IP6TABLES_IPK_DIR:=$(BUILD_DIR)/ip6tables-1.2.9-ipk
+IPTABLES_SOURCE=iptables-1.2.11.tar.bz2
+IPTABLES_BUILD_DIR=$(BUILD_DIR)/iptables-1.2.11
+IP6TABLES_IPK=$(BUILD_DIR)/ip6tables_1.2.11-1_mipsel.ipk
+IP6TABLES_IPK_DIR:=$(BUILD_DIR)/ip6tables-1.2.11-ipk
 
 $(DL_DIR)/$(IPTABLES_SOURCE):
 	 $(WGET) -P $(DL_DIR) $(IPTABLES_SOURCE_URL)/$(IPTABLES_SOURCE) 
