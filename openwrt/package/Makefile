@@ -26,6 +26,7 @@ install: $(patsubst %,%-install,$(package-y))
 
 dropbear-compile: zlib-compile
 openssl-compile: zlib-compile
+openvpn-compile: openssl-compile
 $(patsubst %,%-prepare,$(package-y) $(package-m)): linux-install
 
 %-prepare:
