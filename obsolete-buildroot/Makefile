@@ -28,7 +28,7 @@
 #
 #############################################################
 
-SNAPSHOT:=20040807
+SNAPSHOT:=20040916
 
 ARCH:=mipsel
 USE_UCLIBC_SNAPSHOT:=$(SNAPSHOT)

@@ -47,7 +47,6 @@ endif
 ifeq ($(strip $(USE_UCLIBC_LDSO_0_9_24)),true)
 	$(SOURCE_DIR)/patch-kernel.sh $(UCLIBC_DIR) $(SOURCE_DIR) uClibc-ldso-0.9.24.patch
 endif
-	$(SOURCE_DIR)/patch-kernel.sh $(UCLIBC_DIR) $(SOURCE_DIR) uClibc-sigaction.patch
 	touch $(UCLIBC_DIR)/.unpacked
 
 $(UCLIBC_DIR)/.configured: $(UCLIBC_DIR)/.unpacked $(LINUX_DIR)/.configured
