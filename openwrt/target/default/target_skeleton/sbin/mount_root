@@ -2,6 +2,7 @@
 if [ "$1" != "failsafe" ]; then 
 	mount | grep jffs2 >&-
 	if [ $? = 0 ] ; then
+		mtd unlock linux
 		mtd unlock rootfs
 		[ $(cat /proc/mtd | wc -l) = 6 ] && {
 			echo 5 > /proc/sys/diag
