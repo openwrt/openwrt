@@ -1,0 +1,22 @@
+--- linux-mips-cvs/arch/mips/kernel/setup.c	2005-01-13 22:15:57.000000000 +0100
++++ linux-broadcom/arch/mips/kernel/setup.c	2005-01-31 13:13:14.000000000 +0100
+@@ -493,6 +493,7 @@
+ 	void swarm_setup(void);
+ 	void hp_setup(void);
+ 	void au1x00_setup(void);
++	void brcm_setup(void);
+ 	void frame_info_init(void);
+ 
+ 	frame_info_init();
+@@ -691,6 +692,11 @@
+                 pmc_yosemite_setup();
+                 break;
+ #endif
++#if defined(CONFIG_BCM4710) || defined(CONFIG_BCM4310)
++	case MACH_GROUP_BRCM:
++			brcm_setup();
++			break;
++#endif	
+ 	default:
+ 		panic("Unsupported architecture");
+ 	}

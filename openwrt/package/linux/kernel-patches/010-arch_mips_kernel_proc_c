@@ -1,0 +1,14 @@
+--- linux-mips-cvs/arch/mips/kernel/proc.c	2004-07-07 20:19:37.000000000 +0200
++++ linux-broadcom/arch/mips/kernel/proc.c	2005-01-31 13:58:35.000000000 +0100
+@@ -78,9 +78,10 @@
+ 	[CPU_AU1550]	"Au1550",
+ 	[CPU_24K]	"MIPS 24K",
+ 	[CPU_AU1200]	"Au1200",
++	[CPU_BCM4710]   "BCM4710",
++	[CPU_BCM3302]   "BCM3302",
+ };
+ 
+-
+ static int show_cpuinfo(struct seq_file *m, void *v)
+ {
+ 	unsigned int version = current_cpu_data.processor_id;

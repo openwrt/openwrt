@@ -1,0 +1,28 @@
+--- linux-mips-cvs-21012005/include/linux/netdevice.h	2004-11-19 01:28:51.000000000 +0100
++++ linux-broadcom/include/linux/netdevice.h	2005-01-26 19:51:37.000000000 +0100
+@@ -297,7 +297,10 @@
+ 	 * See <net/iw_handler.h> for details. Jean II */
+ 	struct iw_handler_def *	wireless_handlers;
+ 
++#ifndef CONFIG_BCM4710
+ 	struct ethtool_ops *ethtool_ops;
++#endif
++
+ 
+ 	/*
+ 	 * This marks the end of the "visible" part of the structure. All
+@@ -353,7 +356,14 @@
+ 	struct Qdisc		*qdisc;
+ 	struct Qdisc		*qdisc_sleeping;
+ 	struct Qdisc		*qdisc_ingress;
++	/*
++	 * this is needed for the wlan driver binary blob from linksys
++	 */
++#ifdef CONFIG_BCM4710
++	struct Qdisc            *qdisc_list;
++#else
+ 	struct list_head	qdisc_list;
++#endif
+ 	unsigned long		tx_queue_len;	/* Max frames per queue allowed */
+ 
+ 	/* hard_start_xmit synchronizer */

@@ -1,0 +1,28 @@
+--- linux-mips-cvs-21012005/net/core/Makefile	2004-11-19 01:28:53.000000000 +0100
++++ linux-broadcom/net/core/Makefile	2005-01-26 15:56:36.000000000 +0100
+@@ -9,7 +9,11 @@
+ 
+ O_TARGET := core.o
+ 
++ifeq ($(CONFIG_BCM4710),y)
++export-objs := netfilter.o profile.o neighbour.o
++else
+ export-objs := netfilter.o profile.o ethtool.o neighbour.o
++endif
+ 
+ obj-y := sock.o skbuff.o iovec.o datagram.o scm.o
+ 
+@@ -21,8 +25,13 @@
+ 
+ obj-$(CONFIG_FILTER) += filter.o
+ 
++ifeq ($(CONFIG_BCM4710),y)
++obj-$(CONFIG_NET) +=	dev.o dev_mcast.o dst.o neighbour.o \
++			rtnetlink.o utils.o
++else
+ obj-$(CONFIG_NET) +=	dev.o ethtool.o dev_mcast.o dst.o neighbour.o \
+ 			rtnetlink.o utils.o
++endif
+ 
+ obj-$(CONFIG_NETFILTER) += netfilter.o
+ obj-$(CONFIG_NET_DIVERT) += dv.o

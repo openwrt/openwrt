@@ -1,0 +1,43 @@
+--- ../../../kernel/linux-mips-cvs/Makefile	2005-01-20 03:19:21.000000000 +0100
++++ linux-2.4.29.new/Makefile	2005-03-15 01:15:27.441095231 +0100
+@@ -17,9 +17,9 @@
+ FINDHPATH	= $(HPATH)/asm $(HPATH)/linux $(HPATH)/scsi $(HPATH)/net $(HPATH)/math-emu
+ 
+ HOSTCC  	= gcc
+-HOSTCFLAGS	= -Wall -Wstrict-prototypes -O2 -fomit-frame-pointer
++HOSTCFLAGS	= -Wall -Wstrict-prototypes -Os -fomit-frame-pointer
+ 
+-CROSS_COMPILE 	=
++CROSS_COMPILE=
+ 
+ #
+ # Include the make variables (CC, etc...)
+@@ -91,8 +91,18 @@
+ 
+ CPPFLAGS := -D__KERNEL__ -I$(HPATH)
+ 
+-CFLAGS := $(CPPFLAGS) -Wall -Wstrict-prototypes -Wno-trigraphs -O2 \
++CFLAGS := $(CPPFLAGS) -Wall -Wstrict-prototypes -Wno-trigraphs -Os \
+ 	  -fno-strict-aliasing -fno-common
++
++
++# Turn on -pg to instrument the kernel with calls to mcount().
++# Unfortunately, gcc won't allow -pg without frame pointers.
++ifdef CONFIG_MCOUNT
++  CFLAGS += -pg
++  CFLAGS_KERNEL += -pg
++  CONFIG_FRAME_POINTER = 1
++endif
++
+ ifndef CONFIG_FRAME_POINTER
+ CFLAGS += -fomit-frame-pointer
+ endif
+@@ -501,7 +511,7 @@
+ ifdef CONFIG_MODVERSIONS
+ 	$(MAKE) update-modverfile
+ endif
+-	scripts/mkdep -- `find $(FINDHPATH) \( -name SCCS -o -name .svn \) -prune -o -follow -name \*.h ! -name modversions.h -print` > .hdepend
++	(find $(FINDHPATH) \( -name SCCS -o -name .svn \) -prune -o -follow -name \*.h ! -name modversions.h -print | xargs -r scripts/mkdep -- ) > .hdepend
+ 	scripts/mkdep -- init/*.c > .depend
+ 
+ ifdef CONFIG_MODVERSIONS

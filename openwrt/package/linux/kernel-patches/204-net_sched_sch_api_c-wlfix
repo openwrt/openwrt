@@ -1,0 +1,83 @@
+--- linux-mips-cvs/net/sched/sch_api.c	2004-11-19 01:29:09.000000000 +0100
++++ linux-broadcom/net/sched/sch_api.c	2005-01-31 18:07:45.000000000 +0100
+@@ -194,7 +194,11 @@
+ {
+ 	struct Qdisc *q;
+ 
++#ifdef CONFIG_BCM4710
++	for (q = dev->qdisc_list; q; q = q->next) {
++#else
+ 	list_for_each_entry(q, &dev->qdisc_list, list) {
++#endif
+ 		if (q->handle == handle)
+ 			return q;
+ 	}
+@@ -371,8 +375,10 @@
+ 			unsigned long cl = cops->get(parent, classid);
+ 			if (cl) {
+ 				err = cops->graft(parent, cl, new, old);
++#ifndef CONFIG_BCM4710
+ 				if (new)
+ 					new->parent = classid;
++#endif
+ 				cops->put(parent, cl);
+ 			}
+ 		}
+@@ -427,7 +433,11 @@
+ 
+ 	memset(sch, 0, size);
+ 
++#ifdef CONFIG_BCM4710
++	sch->next = NULL;
++#else
+ 	INIT_LIST_HEAD(&sch->list);
++#endif
+ 	skb_queue_head_init(&sch->q);
+ 
+ 	if (handle == TC_H_INGRESS)
+@@ -453,7 +463,12 @@
+ 
+ 	if (!ops->init || (err = ops->init(sch, tca[TCA_OPTIONS-1])) == 0) {
+ 		write_lock(&qdisc_tree_lock);
++#ifdef CONFIG_BCM4710
++		sch->next = dev->qdisc_list;
++		dev->qdisc_list = sch;
++#else
+ 		list_add_tail(&sch->list, &dev->qdisc_list);
++#endif
+ 		write_unlock(&qdisc_tree_lock);
+ #ifdef CONFIG_NET_ESTIMATOR
+ 		if (tca[TCA_RATE-1])
+@@ -809,12 +824,20 @@
+ 			s_q_idx = 0;
+ 		read_lock(&qdisc_tree_lock);
+ 		q_idx = 0;
++#ifdef CONFIG_BCM4710	
++		for (q = dev->qdisc_list, q_idx = 0; q; q = q->next, q_idx++) {
++#else
+ 		list_for_each_entry(q, &dev->qdisc_list, list) {
++#endif
+ 			if (q_idx < s_q_idx) {
+ 				q_idx++;
+ 				continue;
+ 			}
++#ifdef CONFIG_BCM4710
++			if (tc_fill_qdisc(skb, q, 0, NETLINK_CB(cb->skb).pid,
++#else
+ 			if (tc_fill_qdisc(skb, q, q->parent, NETLINK_CB(cb->skb).pid,
++#endif
+ 					  cb->nlh->nlmsg_seq, NLM_F_MULTI, RTM_NEWQDISC) <= 0) {
+ 				read_unlock(&qdisc_tree_lock);
+ 				goto done;
+@@ -1033,7 +1056,11 @@
+ 	t = 0;
+ 
+ 	read_lock(&qdisc_tree_lock);
++#ifdef CONFIG_BCM4710
++	for (q=dev->qdisc_list, t=0; q; q = q->next, t++) {
++#else
+ 	list_for_each_entry(q, &dev->qdisc_list, list) {
++#endif
+ 		if (t < s_t || !q->ops->cl_ops ||
+ 		    (tcm->tcm_parent &&
+ 		     TC_H_MAJ(tcm->tcm_parent) != q->handle)) {

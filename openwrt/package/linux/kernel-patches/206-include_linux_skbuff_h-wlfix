@@ -1,0 +1,24 @@
+--- linux-mips-cvs-21012005/include/linux/skbuff.h	2005-01-31 12:56:47.000000000 +0100
++++ linux-broadcom/include/linux/skbuff.h	2005-01-31 12:55:24.000000000 +0100
+@@ -135,10 +135,6 @@
+ 	struct sock	*sk;			/* Socket we are owned by 			*/
+ 	struct timeval	stamp;			/* Time we arrived				*/
+ 	struct net_device	*dev;		/* Device we arrived on/are leaving by		*/
+-	struct net_device	*real_dev;	/* For support of point to point protocols 
+-						   (e.g. 802.3ad) over bonding, we must save the
+-						   physical device that got the packet before
+-						   replacing skb->dev with the virtual device.  */
+ 
+ 	/* Transport layer header */
+ 	union
+@@ -219,6 +215,10 @@
+ #ifdef CONFIG_NET_SCHED
+        __u32           tc_index;               /* traffic control index */
+ #endif
++	struct net_device	*real_dev;	/* For support of point to point protocols 
++						   (e.g. 802.3ad) over bonding, we must save the
++						   physical device that got the packet before
++						   replacing skb->dev with the virtual device.  */
+ };
+ 
+ #ifdef __KERNEL__
