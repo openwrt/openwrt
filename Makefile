@@ -119,7 +119,8 @@ source: $(TARGETS_SOURCE)
 #
 #############################################################
 clean:
-	rm -rf $(BUILD_DIR) $(IMAGE).*
+	rm -rf $(BUILD_DIR)
+	-rm -f openwrt-*
 	@$(MAKE) -C $(CONFIG) clean
 
 distclean: clean
@@ -180,7 +181,7 @@ defconfig: $(CONFIG)/conf
 # Cleanup and misc junk
 #
 #############################################################
-clean:
+clean: 
 	@$(MAKE) -C $(CONFIG) clean
 
 distclean: clean
