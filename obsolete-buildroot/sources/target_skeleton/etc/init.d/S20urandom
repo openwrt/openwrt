@@ -1,0 +1,44 @@
+#! /bin/sh
+#
+# urandom	This script saves the random seed between reboots.
+#		It is called from the boot, halt and reboot scripts.
+#
+# Version:	@(#)urandom  1.33  22-Jun-1998  miquels@cistron.nl
+#
+
+[ -c /dev/urandom ] || exit 0
+#. /etc/default/rcS
+
+case "$1" in
+	start|"")
+		if [ "$VERBOSE" != no ]
+		then
+			echo -n "Initializing random number generator... "
+		fi
+		# Load and then save 512 bytes,
+		# which is the size of the entropy pool
+		if [ -f /etc/random-seed ]
+		then
+			cat /etc/random-seed >/dev/urandom
+		fi
+		rm -f /etc/random-seed
+		umask 077
+		dd if=/dev/urandom of=/etc/random-seed count=1 \
+			>/dev/null 2>&1 || echo "urandom start: failed."
+		umask 022
+		[ "$VERBOSE" != no ] && echo "done."
+		;;
+	stop)
+		# Carry a random seed from shut-down to start-up;
+		# see documentation in linux/drivers/char/random.c
+		[ "$VERBOSE" != no ] && echo -n "Saving random seed... "
+		umask 077
+		dd if=/dev/urandom of=/etc/random-seed count=1 \
+			>/dev/null 2>&1 || echo "urandom stop: failed."
+		[ "$VERBOSE" != no ] && echo "done."
+		;;
+	*)
+		echo "Usage: urandom {start|stop}" >&2
+		exit 1
+		;;
+esac

@@ -1,0 +1,123 @@
+--- pcmcia-cs-3.1.34/etc/config.opts.orig	Tue Jul  9 09:36:23 2002
++++ pcmcia-cs-3.1.34/etc/config.opts	Tue Jul  9 09:37:47 2002
+@@ -5,7 +5,7 @@
+ 
+ # System resources available for PCMCIA devices
+ 
+-include port 0x100-0x4ff, port 0x800-0x8ff, port 0xc00-0xcff
++include port 0x100-0x4ff, port 0xc00-0xcff
+ include memory 0xc0000-0xfffff
+ include memory 0xa0000000-0xa0ffffff, memory 0x60000000-0x60ffffff
+ 
+diff -urN pcmcia-cs-3.2.3.orig/etc/shared pcmcia-cs-3.2.3/etc/shared
+--- pcmcia-cs-3.2.3.orig/etc/shared	2002-08-18 21:21:11.000000000 -0600
++++ pcmcia-cs-3.2.3/etc/shared	2003-02-14 05:05:07.000000000 -0700
+@@ -2,6 +2,8 @@
+ # shared 1.31 2002/08/19 03:21:11 (David Hinds)
+ #
+ 
++umask 022
++
+ usage ()
+ {
+     echo "usage: $0 [action] [device name]"
+--- /dev/null	2003-01-21 22:14:35.000000000 -0700
++++ pcmcia-cs-3.2.4/etc/pcmcia	2003-06-09 12:04:02.000000000 -0600
+@@ -0,0 +1,6 @@
++# Defaults for pcmcia (sourced by /etc/init.d/S30pcmcia)
++PCMCIA=yes
++PCIC=yenta_socket
++PCIC_OPTS=
++CORE_OPTS=
++CARDMGR_OPTS=
+--- pcmcia-cs-3.2.4/etc/rc.pcmcia.orig	2002-08-08 00:43:43.000000000 -0600
++++ pcmcia-cs-3.2.4/etc/rc.pcmcia	2003-06-09 15:17:28.000000000 -0600
+@@ -4,6 +4,8 @@
+ #
+ # This is designed to work in BSD as well as SysV init setups.  See
+ # the HOWTO for customization instructions.
++# Modified to comply with Debian's standards by Brian Mays
++# <brian@debian.org>.
+ 
+ # Tags for Red Hat init configuration tools
+ #
+@@ -26,9 +28,9 @@
+ done
+ 
+ # Source PCMCIA configuration, if available
+-if [ -f /etc/pcmcia.conf ] ; then
++if [ -f /etc/default/pcmcia ] ; then
+     # Debian startup option file
+-    . /etc/pcmcia.conf
++    . /etc/default/pcmcia
+ elif [ -f /etc/sysconfig/pcmcia ] ; then
+     # Red Hat startup option file
+     . /etc/sysconfig/pcmcia
+@@ -50,9 +52,22 @@
+ done
+ if [ "$PCMCIA" -a "$PCMCIA" != "yes" ] ; then exit 0 ; fi
+ 
++# Debian modification: Fix PCIC for stand-alone modules.
++# yenta_socket -> i82365 on these systems.
++# Existence of a standalone module implies that it is preferred.
++if [ -d /lib/modules/preferred ] ; then
++    PC=/lib/modules/preferred/pcmcia
++else
++    PC=/lib/modules/`uname -r`/pcmcia
++fi
++if [ "$PCIC" = yenta_socket -a -e $PC/i82365.o \
++    -a ! -L $PC/i82365.o ]; then
++    PCIC=i82365
++fi
++
+ usage()
+ {
+-    echo "Usage: $0 {start|stop|status|restart|reload}"
++    echo "Usage: $0 {start|stop|status|restart|reload|force-reload}"
+ }
+ 
+ cleanup()
+@@ -84,7 +99,7 @@
+ 	    SC=/var/lib/pcmcia/scheme
+ 	    RUN=/var/lib/pcmcia
+ 	else
+-	    SC=/var/run/pcmcia-scheme
++	    SC=/var/lib/misc/pcmcia-scheme
+ 	    RUN=/var/run
+ 	fi
+ 	if [ -L $SC -o ! -O $SC ] ; then rm -f $SC ; fi
+@@ -154,7 +172,7 @@
+ 	;;
+ 
+     status)
+-	pid=`/sbin/pidof cardmgr`
++	pid=`/bin/pidof cardmgr`
+ 	if [ "$pid" != "" ] ; then
+ 	    echo "cardmgr (pid $pid) is running..."
+ 	    EXITCODE=0
+@@ -164,12 +182,18 @@
+ 	fi
+ 	;;
+ 
+-    restart|reload)
++    restart)
+ 	$0 stop
+ 	$0 start
+ 	EXITCODE=$?
+ 	;;
+ 
++    reload|force-reload)
++	echo "Reloading $DESC configuration files."
++	kill -1 `cat /var/run/cardmgr.pid` 2>/dev/null
++	EXITCODE=0
++	;;
++
+     *)
+ 	usage
+ 	;;
+@@ -179,4 +203,4 @@
+ done
+ 
+ # Only exit if we're in our own subshell
+-case $0 in *rc.pcmcia) exit $EXITCODE ;; esac
++case $0 in *pcmcia) exit $EXITCODE ;; esac

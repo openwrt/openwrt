@@ -1,0 +1,36 @@
+This is a stupid little patch adding an option to change all uid/gid to
+root/root in the generated filesystem.  We really need to teach mksquashfs
+about device tables though...
+
+--- squashfs1.3r3/squashfs-tools/mksquashfs.c-dist	2004-03-29 20:35:37.000000000 -0600
++++ squashfs1.3r3/squashfs-tools/mksquashfs.c	2004-03-29 22:28:51.000000000 -0600
+@@ -136,6 +136,8 @@
+ 	stotal_bytes, stotal_inode_bytes, stotal_directory_bytes, sinode_count, sfile_count, ssym_count, sdev_count, sdir_count, sdup_files;
+ int restore = 0;
+ 
++unsigned int root_owned = 0;
++
+ /*flag whether destination file is a block device */
+ int block_device = 0;
+ 
+@@ -421,6 +423,11 @@
+ 		return SQUASHFS_INVALID;
+ 	}
+ 
++	if (root_owned) {
++		buf.st_uid = 0;
++		buf.st_gid = 0;
++	}
++
+ 	base->mode = SQUASHFS_MODE(buf.st_mode);
+ 	base->uid = get_uid(&file_type, (squashfs_uid) buf.st_uid);
+ 	base->inode_type = file_type;
+@@ -1268,6 +1275,8 @@
+ 			root_name = argv[i];
+ 		} else if(strcmp(argv[i], "-version") == 0) {
+ 			VERSION();
++		} else if (strcmp(argv[i], "-root-owned") == 0) {
++			root_owned = TRUE;
+ 		} else {
+ 			ERROR("%s: invalid option\n\n", argv[0]);
+ printOptions:
