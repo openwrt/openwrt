@@ -1,0 +1,31 @@
+--- linux-mips-cvs/arch/mips/kernel/traps.c	2004-11-22 14:38:23.000000000 +0100
++++ linux-broadcom/arch/mips/kernel/traps.c	2005-01-31 13:13:14.000000000 +0100
+@@ -919,6 +919,7 @@
+ void __init trap_init(void)
+ {
+ 	extern char except_vec1_generic;
++	extern char except_vec2_generic;
+ 	extern char except_vec3_generic, except_vec3_r4000;
+ 	extern char except_vec_ejtag_debug;
+ 	extern char except_vec4;
+@@ -926,6 +927,7 @@
+ 
+ 	/* Copy the generic exception handler code to it's final destination. */
+ 	memcpy((void *)(KSEG0 + 0x80), &except_vec1_generic, 0x80);
++	memcpy((void *)(KSEG0 + 0x100), &except_vec2_generic, 0x80);
+ 
+ 	/*
+ 	 * Setup default vectors
+@@ -984,6 +986,12 @@
+ 	set_except_vector(13, handle_tr);
+ 	set_except_vector(22, handle_mdmx);
+ 
++	if (current_cpu_data.cputype == CPU_SB1) {
++		/* Enable timer interrupt and scd mapped interrupt */
++		clear_c0_status(0xf000);
++		set_c0_status(0xc00);
++	}
++
+ 	if (cpu_has_fpu && !cpu_has_nofpuex)
+ 		set_except_vector(15, handle_fpe);
+ 

@@ -1,0 +1,18 @@
+--- linux-mips-cvs-21012005/net/core/dev.c	2004-04-16 05:14:21.000000000 +0200
++++ linux-broadcom/net/core/dev.c	2005-01-26 20:06:32.000000000 +0100
+@@ -2295,6 +2295,7 @@
+ 			}
+ 			return ret;
+ 
++#ifndef CONFIG_BCM4710
+ 		case SIOCETHTOOL:
+ 			dev_load(ifr.ifr_name);
+ 			rtnl_lock();
+@@ -2308,6 +2309,7 @@
+ 					ret = -EFAULT;
+ 			}
+ 			return ret;
++#endif
+ 
+ 		/*
+ 		 *	These ioctl calls:

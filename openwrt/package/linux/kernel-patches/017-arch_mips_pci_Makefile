@@ -1,0 +1,12 @@
+--- linux-mips-cvs/arch/mips/pci/Makefile	2004-07-31 02:12:38.000000000 +0200
++++ linux-broadcom/arch/mips/pci/Makefile	2005-01-31 13:13:14.000000000 +0100
+@@ -13,7 +13,9 @@
+ obj-$(CONFIG_MIPS_MSC)		+= ops-msc.o
+ obj-$(CONFIG_MIPS_NILE4)	+= ops-nile4.o
+ obj-$(CONFIG_SNI_RM200_PCI)	+= ops-sni.o
++ifndef CONFIG_BCM947XX
+ obj-y				+= pci.o
++endif
+ obj-$(CONFIG_PCI_AUTO)		+= pci_auto.o
+ 
+ include $(TOPDIR)/Rules.make

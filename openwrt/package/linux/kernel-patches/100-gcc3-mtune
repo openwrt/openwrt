@@ -1,0 +1,28 @@
+--- linux-mips-cvs-21012005/arch/mips/Makefile	2004-11-18 05:16:52.000000000 +0100
++++ linux-broadcom/arch/mips/Makefile	2005-01-24 02:56:02.000000000 +0100
+@@ -71,13 +74,13 @@
+ set_gccflags = $(shell \
+ while :; do \
+ 	cpu=$(1); isa=-$(2); \
+-	for gcc_opt in -march= -mcpu=; do \
++	for gcc_opt in -march= -mtune=; do \
+ 		$(CC) $$gcc_opt$$cpu $$isa -S -o /dev/null \
+ 			-xc /dev/null > /dev/null 2>&1 && \
+ 			break 2; \
+ 	done; \
+ 	cpu=$(3); isa=-$(4); \
+-	for gcc_opt in -march= -mcpu=; do \
++	for gcc_opt in -march= -mtune=; do \
+ 		$(CC) $$gcc_opt$$cpu $$isa -S -o /dev/null \
+ 			-xc /dev/null > /dev/null 2>&1 && \
+ 			break 2; \
+@@ -92,7 +95,7 @@
+ fi; \
+ gas_abi=-Wa,-32; gas_cpu=$$cpu; gas_isa=-Wa,$$isa; \
+ while :; do \
+-	for gas_opt in -Wa,-march= -Wa,-mcpu=; do \
++	for gas_opt in -Wa,-march= -Wa,-mtune=; do \
+ 		$(CC) $$gas_abi $$gas_opt$$cpu $$gas_isa -Wa,-Z -c \
+ 			-o /dev/null -xassembler /dev/null > /dev/null 2>&1 && \
+ 			break 2; \
+
