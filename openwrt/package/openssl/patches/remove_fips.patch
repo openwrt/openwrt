@@ -1,35 +1,20 @@
-diff -urN openssl-0.9.7e.old/Makefile.org openssl-0.9.7e/Makefile.org
---- openssl-0.9.7e.old/Makefile.org	2004-09-28 22:52:14.000000000 +0200
-+++ openssl-0.9.7e/Makefile.org	2005-03-03 15:55:11.000000000 +0100
-@@ -175,8 +175,8 @@
+diff -Nur openssl-0.9.7f/Makefile.org openssl-0.9.7f.new/Makefile.org
+--- openssl-0.9.7f/Makefile.org	2005-03-15 10:46:13.000000000 +0100
++++ openssl-0.9.7f.new/Makefile.org	2005-04-03 20:15:26.000000000 +0200
+@@ -175,7 +175,7 @@
  # we might set SHLIB_MARK to '$(SHARED_LIBS)'.
  SHLIB_MARK=
  
 -DIRS=   crypto fips ssl $(SHLIB_MARK) sigs apps test tools
--SHLIBDIRS= fips crypto ssl
 +DIRS=   crypto ssl $(SHLIB_MARK) sigs apps test tools
-+SHLIBDIRS= crypto ssl
+ SHLIBDIRS= crypto ssl
  
  # dirs in crypto to build
- SDIRS=  objects \
 @@ -229,7 +229,6 @@
  libcrypto.a.sha1: libcrypto.a
- 	if egrep 'define OPENSSL_FIPS' $(TOP)/include/openssl/opensslconf.h > /dev/null; then \
+ 	@if egrep 'define OPENSSL_FIPS' $(TOP)/include/openssl/opensslconf.h > /dev/null; then \
  		$(RANLIB) libcrypto.a; \
 -		fips/sha1/fips_standalone_sha1 libcrypto.a > libcrypto.a.sha1; \
  	fi
  
  sub_all:
---- openssl-0.9.7e/crypto/rand/rand_lib.c 2004-07-30 16:38:00.000000000 +0200
-+++ openssl-0.9.7e.patched/crypto/rand/rand_lib.c 2005-02-18 15:46:22.000000000 +0100
-@@ -63,8 +63,10 @@
- #ifndef OPENSSL_NO_ENGINE
- #include <openssl/engine.h>
- #endif
-+#ifdef OPENSSL_FIPS
- #include <openssl/fips.h>
- #include <openssl/fips_rand.h>
-+#endif
-
- #ifndef OPENSSL_NO_ENGINE
- /* non-NULL if default_RAND_meth is ENGINE-provided */
