@@ -6,5 +6,10 @@ case "$1" in
     ifup wan
     ifup wifi
     wifi up
+
+    for route in $(nvram_get static_route); do {
+      eval "set $(echo $route | sed 's/:/ /g')"
+      route add -net $1 netmask $2 gw $3 metric $4 dev $5
+    } done
     ;;
 esac
