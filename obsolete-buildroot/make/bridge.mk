@@ -3,18 +3,21 @@
 # bridgeutils - User Space Program For Controling Bridging
 #
 #############################################################
-#
-BRIDGE_SOURCE_URL=http://bridge.sourceforge.net/bridge-utils
-BRIDGE_SOURCE=bridge-utils-0.9.6.tar.gz
-BRIDGE_BUILD_DIR=$(BUILD_DIR)/bridge-utils-0.9.6
+
+ifeq ($(strip $(USE_BRIDGE_VERSION)),)
+USE_BRIDGE_VERSION=0.9.7
+endif
+BRIDGE_SOURCE_URL=http://dl.sourceforge.net/sourceforge/bridge/
+BRIDGE_SOURCE=bridge-utils-$(USE_BRIDGE_VERSION).tgz
+BRIDGE_BUILD_DIR=$(BUILD_DIR)/bridge-utils-$(USE_BRIDGE_VERSION)
 BRIDGE_TARGET_BINARY:=usr/sbin/brctl
 
 $(DL_DIR)/$(BRIDGE_SOURCE):
 	 $(WGET) -P $(DL_DIR) $(BRIDGE_SOURCE_URL)/$(BRIDGE_SOURCE) 
 
 $(BRIDGE_BUILD_DIR)/.unpacked: $(DL_DIR)/$(BRIDGE_SOURCE)
-	zcat $(DL_DIR)/$(BRIDGE_SOURCE) | tar -C $(BUILD_DIR) -xvf -
-	mv -f $(BUILD_DIR)/bridge-utils $(BRIDGE_BUILD_DIR)
+	# ack! it's a .tgz which is really a bzip 
+	bzcat $(DL_DIR)/$(BRIDGE_SOURCE) | tar -C $(BUILD_DIR) -xvf -
 	patch -p1 -d $(BRIDGE_BUILD_DIR) < $(SOURCE_DIR)/bridge.patch 
 	touch $(BRIDGE_BUILD_DIR)/.unpacked
 

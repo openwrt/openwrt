@@ -4,10 +4,12 @@
 #
 #############################################################
 
-NETFILTER_SNAPSHOT:=20040508
-NETFILTER_SOURCE:=patch-o-matic-$(NETFILTER_SNAPSHOT).tar.bz2
-NETFILTER_SITE:=ftp://ftp.netfilter.org/pub/patch-o-matic/snapshot/
-NETFILTER_DIR:=$(BUILD_DIR)/patch-o-matic-$(NETFILTER_SNAPSHOT)
+ifeq ($(strip $(USE_NETFILTER_SNAPSHOT)),)
+USE_NETFILTER_SNAPSHOT=20040508
+endif
+NETFILTER_SOURCE:=patch-o-matic-$(USE_NETFILTER_SNAPSHOT).tar.bz2
+NETFILTER_DIR:=$(BUILD_DIR)/patch-o-matic-$(USE_NETFILTER_SNAPSHOT)
+NETFILTER_SITE:=ftp://ftp.netfilter.org/pub/patch-o-matic/snapshot
 NETFILTER_CAT:=bzcat
 
 # ipv6_mld breaks net/ipv6/mcast.c
@@ -27,7 +29,7 @@ NETFILTER_PATCHES:= \
 LINUX_DIR:=$(BUILD_DIR)/WRT54GS/release/src/linux/linux
 
 $(DL_DIR)/$(NETFILTER_SOURCE):
-	 $(WGET) -P $(DL_DIR) $(NETFILTER_SITE)/$(NETFILTER_SOURCE)
+	 echo $(WGET) -P $(DL_DIR) $(NETFILTER_SITE)/$(NETFILTER_SOURCE)
 
 netfilter-source: $(DL_DIR)/$(NETFILTER_SOURCE)
 
