@@ -1,0 +1,19 @@
+diff -urN NoCatSplash-0.92.old/libexec/iptables/initialize.fw NoCatSplash-0.92/libexec/iptables/initialize.fw
+--- NoCatSplash-0.92.old/libexec/iptables/initialize.fw	2002-12-27 11:44:41.000000000 +0100
++++ NoCatSplash-0.92/libexec/iptables/initialize.fw	2005-04-04 20:45:57.000000000 +0200
+@@ -28,13 +28,9 @@
+ 
+ # Load alllll the kernel modules we need.
+ #
+-rmmod ipchains > /dev/null 2>&1 # for RH 7.1 users.
+ 
+-for module in ip_tables ipt_REDIRECT ipt_MASQUERADE ipt_MARK ipt_REJECT  \
+-    ipt_TOS ipt_LOG iptable_mangle iptable_filter iptable_nat ip_nat_ftp \
+-    ip_conntrack ipt_mac ipt_state ipt_mark; do
+-
+-    modprobe $module
++for module in ipt_TOS ipt_mac; do
++    insmod $module
+ done
+ 
+ 
