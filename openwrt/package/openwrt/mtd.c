@@ -140,11 +140,7 @@ mtd_erase(const char *mtd)
 		 mtdEraseInfo.start < mtdInfo.size;
 		 mtdEraseInfo.start += mtdInfo.erasesize) {
 		
-		if(ioctl(fd, MEMUNLOCK, &mtdEraseInfo)) {
-			fprintf(stderr, "Could not unlock MTD device: %s\n", mtd);
-			close(fd);
-			exit(1);
-		}
+		ioctl(fd, MEMUNLOCK, &mtdEraseInfo);
 		if(ioctl(fd, MEMERASE, &mtdEraseInfo)) {
 			fprintf(stderr, "Could not erase MTD device: %s\n", mtd);
 			close(fd);
