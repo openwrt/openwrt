@@ -96,6 +96,7 @@ $(PKG_IPK_DIR)/zebra: $(PKG_BUILD_DIR)/.configured
 
 $(PKG_IPK): $(PKG_IPK_DIR)/zebra
 	cp -a ./ipkg/* $(PKG_IPK_DIR)/
+	find $(PKG_IPK_DIR) -name CVS | xargs rm -rf
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_IPK_DIR) control/$(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
 	mkdir -p $(PKG_IPK_DIR)/usr/sbin
 	mkdir -p $(PKG_IPK_DIR)/usr/lib
@@ -117,6 +118,7 @@ $(PKG_ZEBRA): $(PKG_IPK_DIR)/zebra
 	mkdir -p $(PKG_ZEBRA_DIR)/usr/sbin
 	mkdir -p $(PKG_ZEBRA_DIR)/usr/lib
 	cp -a ./ipkg/* $(PKG_ZEBRA_DIR)/
+	find $(PKG_ZEBRA_DIR) -name CVS | xargs rm -rf
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_ZEBRA_DIR) control/$(PKG_NAME)-zebra.control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
 	cp $(PKG_IPK_DIR)/usr/sbin/zebra $(PKG_ZEBRA_DIR)/usr/sbin
 	cp $(PKG_IPK_DIR)/usr/lib/libzebra* $(PKG_ZEBRA_DIR)/usr/lib 	
@@ -129,6 +131,7 @@ $(PKG_BGPD): $(PKG_IPK_DIR)/zebra
 	mkdir -p $(PKG_BGPD_DIR)/etc/quagga
 	mkdir -p $(PKG_BGPD_DIR)/usr/sbin
 	cp -a ./ipkg/* $(PKG_BGPD_DIR)/
+	find $(PKG_BGPD_DIR) -name CVS | xargs rm -rf
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_BGPD_DIR) control/$(PKG_NAME)-bgpd.control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
 	cp $(PKG_IPK_DIR)/usr/sbin/bgpd $(PKG_BGPD_DIR)/usr/sbin
 	$(IPKG_BUILD) $(PKG_BGPD_DIR) $(PACKAGE_DIR)
@@ -140,6 +143,7 @@ $(PKG_RIPD): $(PKG_IPK_DIR)/zebra
 	mkdir -p $(PKG_RIPD_DIR)/etc/quagga
 	mkdir -p $(PKG_RIPD_DIR)/usr/sbin
 	cp -a ./ipkg/* $(PKG_RIPD_DIR)/
+	find $(PKG_RIPD_DIR) -name CVS | xargs rm -rf
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_RIPD_DIR) control/$(PKG_NAME)-ripd.control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
 	cp $(PKG_IPK_DIR)/usr/sbin/ripd $(PKG_RIPD_DIR)/usr/sbin
 	$(IPKG_BUILD) $(PKG_RIPD_DIR) $(PACKAGE_DIR)
@@ -152,6 +156,7 @@ $(PKG_OSPFD): $(PKG_IPK_DIR)/zebra
 	mkdir -p $(PKG_OSPFD_DIR)/usr/sbin
 	mkdir -p $(PKG_OSPFD_DIR)/usr/lib
 	cp -a ./ipkg/* $(PKG_OSPFD_DIR)/
+	find $(PKG_OSPFD_DIR) -name CVS | xargs rm -rf
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_OSPFD_DIR) control/$(PKG_NAME)-ospfd.control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
 	cp $(PKG_IPK_DIR)/usr/sbin/ospfd $(PKG_OSPFD_DIR)/usr/sbin
 	cp $(PKG_IPK_DIR)/usr/lib/libospf* $(PKG_OSPFD_DIR)/usr/lib 	
