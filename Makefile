@@ -109,9 +109,6 @@ clean: target_clean
 	@$(MAKE) -C $(CONFIG) clean
 
 dirclean: clean
-	rm -rf $(STAMP_DIR)
-	$(MAKE) -C package clean
-	$(MAKE) -C target clean
 	rm -rf $(BUILD_DIR)
 
 distclean: clean
