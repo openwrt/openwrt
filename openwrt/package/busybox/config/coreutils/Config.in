@@ -200,7 +200,7 @@ config BUSYBOX_CONFIG_HEAD
 
 config BUSYBOX_CONFIG_FEATURE_FANCY_HEAD
 	bool "  Enable head options (-c, -q, and -v)"
-	default n
+	default y
 	depends on BUSYBOX_CONFIG_HEAD
 	help
 	  This enables the head options (-c, -q, and -v).
