@@ -74,17 +74,6 @@ diff -uNr openswan-2.3.0.orig/programs/setup/setup.in openswan-2.3.0/programs/se
  	tmp=/var/run/pluto/ipsec_setup.st
  	outtmp=/var/run/pluto/ipsec_setup.out
  	(
---- openswan-2.3.0.orig/programs/setup/Makefile	2004-04-03 19:44:48.000000000 +0000
-+++ openswan-2.3.0/programs/setup/Makefile	2005-02-02 20:34:54.000000000 +0000
-@@ -32,7 +32,7 @@
- install:: setup
- 	@rm -f $(BINDIR)/setup
- 	@$(INSTALL) $(INSTBINFLAGS) setup $(RCDIR)/ipsec
--	@ln -s $(FINALRCDIR)/ipsec $(BINDIR)/setup
-+	@ln -s $(FINALRCDIR)/S50ipsec $(BINDIR)/setup
- 	-@for i in 0 1 2 3 4 5 6; do mkdir -p $(RCDIR)/../rc$$i.d; done
- 	-@cd $(RCDIR)/../rc0.d && ln -f -s ../init.d/ipsec K76ipsec
- 	-@cd $(RCDIR)/../rc1.d && ln -f -s ../init.d/ipsec K76ipsec
 diff -uNr openswan-2.3.0.orig/programs/showhostkey/showhostkey.in openswan-2.3.0/programs/showhostkey/showhostkey.in
 --- openswan-2.3.0.orig/programs/showhostkey/showhostkey.in	2004-11-14 13:40:41.000000000 +0000
 +++ openswan-2.3.0/programs/showhostkey/showhostkey.in	2005-02-02 20:34:54.000000000 +0000
