@@ -23,7 +23,6 @@ if_valid () (
     $DEBUG vconfig add $vif $i 2>/dev/null
   }
   ifconfig "$1" >/dev/null 2>&1 || [ "${1%%[0-9]}" = "br" ]
-  return $?
 )
 
 wifi () (
@@ -59,7 +58,7 @@ ifup () (
   fi
 
   if_mac=$(nvram_get ${type}_hwaddr)
-  [ -z "$if_mac" ] || $DEBUG ifconfig $if hw ether $if_mac
+  ${if_mac:+$DEBUG ifconfig $if hw ether $if_mac}
 
   if_proto=$(nvram_get ${type}_proto)
   case "$if_proto" in
@@ -68,12 +67,8 @@ ifup () (
       if_netmask=$(nvram_get ${type}_netmask)
       if_gateway=$(nvram_get ${type}_gateway)
 
-      ipcalc -s "$if_ip"      || return
-      ipcalc -s "$if_netmask" || return
-      $DEBUG ifconfig $if $if_ip netmask $if_netmask up
-
-      ipcalc -s "$if_gateway" || return
-      $DEBUG route add default gw $if_gateway
+      $DEBUG ifconfig $if $if_ip ${if_netmask:+netmask $if_netmask} up
+      ${if_gateway:+$DEBUG route add default gw $if_gateway}
 
       [ -f /etc/resolv.conf ] && return
 
@@ -87,8 +82,7 @@ ifup () (
       if [ -f $pidfile ]; then
         $DEBUG kill $(cat $pidfile)
       fi
-      cmd="udhcpc -i $if -b -p $pidfile &"
-      ${DEBUG:-eval} $cmd
+      ${DEBUG:-eval} "udhcpc -i $if -b -p $pidfile &" 
     ;;
     pppoe)
       if_username=$(nvram_get ppp_username)
@@ -110,6 +104,5 @@ ifdown () (
   type=$1
   debug "### ifdown $type ###"
   if=$(nvram_get ${type}_ifname)
-  if_valid $if || return
-  $DEBUG ifdown $if
+  if_valid $if && $DEBUG ifconfig $if down
 )
