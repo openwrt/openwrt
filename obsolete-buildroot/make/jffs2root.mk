@@ -7,7 +7,7 @@
 MTD_DIR:=$(BUILD_DIR)/mtd-20011217
 MTD_SOURCE=mtd_20011217.orig.tar.gz
 MTD_SITE=http://ftp.debian.org/debian/pool/main/m/mtd
-MKFS_JFFS2=$(shell which mkfs.jffs2 || echo $(MTD_DIR)/util/mkfs.jffs2)
+MKFS_JFFS2=${shell which mkfs.jffs2 || echo $(MTD_DIR)/util/mkfs.jffs2}
 
 $(DL_DIR)/$(MTD_SOURCE):
 	$(WGET) -P $(DL_DIR) $(MTD_SITE)/$(MTD_SOURCE)
