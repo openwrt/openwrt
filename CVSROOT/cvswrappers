@@ -1,0 +1,23 @@
+# This file affects handling of files based on their names.
+#
+# The -t/-f options allow one to treat directories of files
+# as a single file, or to transform a file in other ways on
+# its way in and out of CVS.
+#
+# The -m option specifies whether CVS attempts to merge files.
+#
+# The -k option specifies keyword expansion (e.g. -kb for binary).
+#
+# Format of wrapper file ($CVSROOT/CVSROOT/cvswrappers or .cvswrappers)
+#
+#  wildcard	[option value][option value]...
+#
+#  where option is one of
+#  -f		from cvs filter		value: path to filter
+#  -t		to cvs filter		value: path to filter
+#  -m		update methodology	value: MERGE or COPY
+#  -k		expansion mode		value: b, o, kkv, &c
+#
+#  and value is a single-quote delimited value.
+# For example:
+#*.gif -k 'b'
