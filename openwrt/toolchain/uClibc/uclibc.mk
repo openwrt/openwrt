@@ -99,11 +99,11 @@ $(STAGING_DIR)/lib/libc.a: $(UCLIBC_DIR)/lib/libc.a
 		DEVEL_PREFIX=/ \
 		RUNTIME_PREFIX=/ \
 		install_dev
-	# Build the host utils.  Need to add an install target...
-	$(MAKE1) -C $(UCLIBC_DIR)/utils \
-		PREFIX=$(STAGING_DIR) \
-		HOSTCC="$(HOSTCC)" \
-		hostutils
+	# Build the host utils.  Need to add an install target... - disabled
+#	$(MAKE1) -C $(UCLIBC_DIR)/utils \
+#		PREFIX=$(STAGING_DIR) \
+#		HOSTCC="$(HOSTCC)" \
+#		hostutils
 	touch -c $(STAGING_DIR)/lib/libc.a
 
 ifneq ($(TARGET_DIR),)
