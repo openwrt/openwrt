@@ -1,4 +1,5 @@
 config BR2_PACKAGE_TCPDUMP
+	select BR2_PACKAGE_LIBPCAP
 	tristate "tcpdump"
 	default m
 	help

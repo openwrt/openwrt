@@ -28,6 +28,7 @@ clean: $(patsubst %,%-clean,$(package-) $(package-y) $(package-m)) linux-clean
 compile: $(patsubst %,%-compile,$(package-y) $(package-m))
 install: $(patsubst %,%-install,$(package-y))
 
+tcpdump-compile: libpcap-compile
 dropbear-compile: zlib-compile
 openssl-compile: zlib-compile
 openvpn-compile: openssl-compile
