@@ -64,9 +64,3 @@ config BR2_INSTALL_LIBSTDCPP
 	help
 	    Build/install c++ compiler and libstdc++?
 
-config BR2_INSTALL_LIBGCJ
-	bool "Build/install java compiler and libgcj?"
-	default n
-	depends on BR2_INSTALL_LIBSTDCPP
-	help
-	    Build/install java compiler and libgcj?
