@@ -15,6 +15,7 @@ package-$(BR2_PACKAGE_ZLIB) += zlib
 package-$(BR2_PACKAGE_MATRIXSSL) += matrixssl
 package-$(BR2_PACKAGE_OPENSSL) += openssl
 package-$(BR2_PACKAGE_OPENVPN) += openvpn
+package-$(BR2_PACKAGE_POPT) += popt
 package-$(BR2_PACKAGE_PPTPD) += pptpd
 package-$(BR2_PACKAGE_IPROUTE2) += iproute2
 
