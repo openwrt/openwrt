@@ -308,6 +308,12 @@ static void build_conf(struct menu *menu)
 			return;
 		}
 	} else {
+                if (menu == current_menu) {
+                        cprint_tag(":%p", menu);
+                        cprint_name("---%*c%s", indent + 1, ' ', menu_get_prompt(menu));
+                        goto conf_childs;
+                }
+
 		child_count++;
 		val = sym_get_tristate_value(sym);
 		if (sym_is_choice_value(sym) && val == yes) {
