@@ -64,6 +64,7 @@ $(LINUX_DIR)/.unpacked: $(WRT54G_DIR)/.prepared
 
 $(LINUX_DIR)/.patched: $(WRT54G_DIR)/.prepared
 	$(SOURCE_DIR)/patch-kernel.sh $(LINUX_DIR)/../.. $(SOURCE_DIR) openwrt-linux-netfilter.patch
+	$(SOURCE_DIR)/patch-kernel.sh $(LINUX_DIR)/../.. $(SOURCE_DIR) openwrt-linux-sch_htb.patch
 	$(SOURCE_DIR)/patch-kernel.sh $(LINUX_DIR)/../.. $(SOURCE_DIR) openwrt-wrt54g-linux.patch
 	$(SOURCE_DIR)/patch-kernel.sh $(LINUX_DIR)/../.. $(SOURCE_DIR) openwrt-wrt54g-nfsswap.patch
 	# use replacement diag module code
