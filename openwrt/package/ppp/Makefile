@@ -105,6 +105,7 @@ $(PKG_PPP): $(PKG_BUILD_DIR)/pppd/pppd
 	cp $(MODULES_DIR)/kernel/drivers/net/ppp_async.o $(I_PPP)/$(MODULES_SUBDIR)
 	cp $(MODULES_DIR)/kernel/drivers/net/ppp_deflate.o $(I_PPP)/$(MODULES_SUBDIR)
 	cp $(MODULES_DIR)/kernel/drivers/net/bsd_comp.o $(I_PPP)/$(MODULES_SUBDIR)
+	find $(I_PPP) -name CVS | xargs rm -rf
 	$(IPKG_BUILD) $(I_PPP) $(PACKAGE_DIR)
 	
 $(IPKG_STATE_DIR)/info/ppp.list: $(PKG_PPP)
@@ -118,6 +119,7 @@ $(PKG_PPP_PPPOE_PLUGIN): $(PKG_PPP)
 	$(STRIP) $(I_PPP_PPPOE_PLUGIN)/usr/lib/pppd/*/*.so
 	mkdir -p $(I_PPP_PPPOE_PLUGIN)/$(MODULES_SUBDIR)
 	cp $(MODULES_DIR)/kernel/drivers/net/pppo*.o $(I_PPP_PPPOE_PLUGIN)/$(MODULES_SUBDIR)
+	find $(I_PPP_PPPOE_PLUGIN) -name CVS | xargs rm -rf
 	$(IPKG_BUILD) $(I_PPP_PPPOE_PLUGIN) $(PACKAGE_DIR)
 
 $(IPKG_STATE_DIR)/info/ppp-pppoe-plugin.list: $(PKG_PPP_PPPOE_PLUGIN)
@@ -129,6 +131,7 @@ $(PKG_PPP_RADIUS_PLUGIN): $(PKG_PPP)
 	cp -af $(PKG_BUILD_DIR)/pppd/plugins/radius/radius.so \
 	  $(I_PPP_RADIUS_PLUGIN)/usr/lib/pppd/radius/
 	$(STRIP) $(I_PPP_RADIUS_PLUGIN)/usr/lib/pppd/*/*.so
+	find $(I_PPP_RADIUS_PLUGIN) -name CVS | xargs rm -rf
 	$(IPKG_BUILD) $(I_PPP_RADIUS_PLUGIN) $(PACKAGE_DIR)
 
 $(IPKG_STATE_DIR)/info/ppp-radius-plugin.list: $(PKG_PPP_RADIUS_PLUGIN)
@@ -139,6 +142,7 @@ $(PKG_PPPDUMP): $(PKG_PPP)
 	mkdir -p $(I_PPPDUMP)/usr/sbin
 	cp -af $(PKG_BUILD_DIR)/pppdump/pppdump $(I_PPPDUMP)/usr/sbin/
 	$(STRIP) $(I_PPPDUMP)/usr/sbin/*
+	find $(I_PPPDUMP) -name CVS | xargs rm -rf
 	$(IPKG_BUILD) $(I_PPPDUMP) $(PACKAGE_DIR)
 
 $(IPKG_STATE_DIR)/info/pppdump.list: $(PKG_PPPDUMP)
@@ -149,6 +153,7 @@ $(PKG_PPPSTATS): $(PKG_PPP)
 	mkdir -p $(I_PPPSTATS)/usr/sbin
 	cp -af $(PKG_BUILD_DIR)/pppstats/pppstats $(I_PPPSTATS)/usr/sbin/
 	$(STRIP) $(I_PPPSTATS)/usr/sbin/*
+	find $(I_PPPSTATS) -name CVS | xargs rm -rf
 	$(IPKG_BUILD) $(I_PPPSTATS) $(PACKAGE_DIR)
 
 $(IPKG_STATE_DIR)/info/pppstats.list: $(PKG_PPPSTATS)
