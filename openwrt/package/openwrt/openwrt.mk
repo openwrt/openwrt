@@ -144,9 +144,23 @@ openwrt-addpattern: $(OPENWRT_ADDPATTERN_TARGET)
 openwrt-addpattern-clean: 
 	rm $(OPENWRT_ADDPATTERN_TARGET)
 
+# sstrip tool
+OPENWRT_SSTRIP_SOURCE=package/openwrt/sstrip.c
+OPENWRT_SSTRIP_TARGET=$(STAGING_DIR)/bin/sstrip
+
+$(OPENWRT_SSTRIP_TARGET):
+		$(CC) -o $(OPENWRT_SSTRIP_TARGET) $(OPENWRT_SSTRIP_SOURCE)
+
+openwrt-sstrip: $(OPENWRT_SSTRIP_TARGET)
+
+openwrt-sstrip-clean:
+	rm $(OPENWRT_SSTRIP_TARGET)
+
+STRIP=$(OPENWRT_SSTRIP_TARGET)
+
 linksys:	linksys-shared linksys-nvram linksys-wlconf
 
-openwrt:	linksys openwrt-mtd openwrt-trx openwrt-addpattern openwrt-jffs2root
+openwrt:	linksys openwrt-mtd openwrt-trx openwrt-addpattern openwrt-jffs2root openwrt-sstrip-clean
 
 openwrt-dirclean: linksys-shared-dirclean linksys-nvram-dirclean linksys-wlconf-dirclean
 
