@@ -19,9 +19,9 @@ WL_OBJS		:= wl_linux.o wlc.o d11ucode.o wlc_phy.o wlc_rate.o wlc_led.o wlc_secur
 INSUP_OBJS	:= aes.o aeskeywrap.o hmac.o md5.o passhash.o prf.o rijndael-alg-fst.o sha1.o 
 
 # Alternate ioctl interfaces
-ifeq ($(CONFIG_NET_WIRELESS),y)
-WL_OBJS		+= wlc_cmn_ioctl.o
-endif
+#ifeq ($(CONFIG_NET_WIRELESS),y)
+#WL_OBJS		+= wlc_cmn_ioctl.o
+#endif
 ifeq ($(CONFIG_WL_OID),y)
 WL_OBJS		+= wl_oid.o
 endif
