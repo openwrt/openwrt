@@ -1,0 +1,33 @@
+diff -urN diethotplug-0.4.orig/pci.c diethotplug-0.4/pci.c
+--- diethotplug-0.4.orig/pci.c	Wed Jan  9 13:57:29 2002
++++ diethotplug-0.4/pci.c	Wed Jan 30 22:35:24 2002
+@@ -68,8 +68,8 @@
+ 		}
+ 
+ 		/* check that the class matches */
+-		class_temp = pci_module_map[i].class_mask & pci_class;
+-		if (pci_module_map[i].class != class_temp) {
++		class_temp = (pci_module_map[i].class ^ pci_class) & pci_module_map[i].class_mask; 
++		if (class_temp != 0) { 
+ 			dbg ("class mask check failed %x != %x",
+ 			     pci_module_map[i].class, class_temp);
+ 			continue;
+--- diethotplug-0.4/Makefile.orig	Wed Jan  9 14:28:05 2002
++++ diethotplug-0.4/Makefile	Mon Jul  8 07:29:00 2002
+@@ -135,13 +135,13 @@
+ 
+ # Rules on how to create the generated header files
+ usb_modules.h:
+-	perl convert_usb.pl < /lib/modules/$(KERNEL_VERSION)/modules.usbmap > $@
++	perl convert_usb.pl < $(TARGET_DIR)/lib/modules/$(KERNEL_VERSION)/modules.usbmap > $@
+ 
+ pci_modules.h:
+-	perl convert_pci.pl < /lib/modules/$(KERNEL_VERSION)/modules.pcimap > $@
++	perl convert_pci.pl < $(TARGET_DIR)/lib/modules/$(KERNEL_VERSION)/modules.pcimap > $@
+ 
+ ieee1394_modules.h:
+-	perl convert_ieee1394.pl < /lib/modules/$(KERNEL_VERSION)/modules.ieee1394map > $@
++	perl convert_ieee1394.pl < $(TARGET_DIR)/lib/modules/$(KERNEL_VERSION)/modules.ieee1394map > $@
+ 
+ hotplug_version.h:
+ 	@echo \#define HOTPLUG_VERSION \"$(VERSION)\" > $@

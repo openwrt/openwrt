@@ -1,0 +1,129 @@
+diff -urN busybox-dist/networking/udhcp/dumpleases.c busybox/networking/udhcp/dumpleases.c
+--- busybox-dist/networking/udhcp/dumpleases.c	2004-03-15 02:29:00.000000000 -0600
++++ busybox/networking/udhcp/dumpleases.c	2004-03-16 09:52:32.000000000 -0600
+@@ -42,7 +42,7 @@
+ #endif
+ {
+ 	FILE *fp;
+-	int i, c, mode = REMAINING;
++	int i, c, mode = ABSOLUTE;
+ 	long expires;
+ 	const char *file = LEASES_FILE;
+ 	struct dhcpOfferedAddr lease;
+@@ -73,7 +73,7 @@
+ 
+ 	fp = xfopen(file, "r");
+ 
+-	printf("Mac Address       IP-Address      Expires %s\n", mode == REMAINING ? "in" : "at");
++	printf("Mac Address       IP-Address      Hostname        Expires %s\n", mode == REMAINING ? "in" : "at");
+ 	/*     "00:00:00:00:00:00 255.255.255.255 Wed Jun 30 21:49:08 1993" */
+ 	while (fread(&lease, sizeof(lease), 1, fp)) {
+ 
+@@ -84,7 +84,8 @@
+ 		addr.s_addr = lease.yiaddr;
+ 		printf(" %-15s", inet_ntoa(addr));
+ 		expires = ntohl(lease.expires);
+-		printf(" ");
++		//expires = lease.expires;
++		printf(" %-15s ",lease.hostname);
+ 		if (mode == REMAINING) {
+ 			if (!expires) printf("expired\n");
+ 			else {
+diff -urN busybox-dist/networking/udhcp/files.c busybox/networking/udhcp/files.c
+--- busybox-dist/networking/udhcp/files.c	2004-03-15 02:29:00.000000000 -0600
++++ busybox/networking/udhcp/files.c	2004-03-16 09:50:04.000000000 -0600
+@@ -281,7 +281,7 @@
+ 		if (lease.yiaddr >= server_config.start && lease.yiaddr <= server_config.end) {
+ 			lease.expires = ntohl(lease.expires);
+ 			if (!server_config.remaining) lease.expires -= time(0);
+-			if (!(add_lease(lease.chaddr, lease.yiaddr, lease.expires))) {
++			if (!(add_lease(lease.hostname, lease.chaddr, lease.yiaddr, lease.expires))) {
+ 				LOG(LOG_WARNING, "Too many leases while loading %s\n", file);
+ 				break;
+ 			}
+diff -urN busybox-dist/networking/udhcp/leases.c busybox/networking/udhcp/leases.c
+--- busybox-dist/networking/udhcp/leases.c	2004-03-15 02:29:00.000000000 -0600
++++ busybox/networking/udhcp/leases.c	2004-03-16 09:50:04.000000000 -0600
+@@ -35,7 +35,7 @@
+ 
+ 
+ /* add a lease into the table, clearing out any old ones */
+-struct dhcpOfferedAddr *add_lease(uint8_t *chaddr, uint32_t yiaddr, unsigned long lease)
++struct dhcpOfferedAddr *add_lease(uint8_t *hostname, uint8_t *chaddr, uint32_t yiaddr, unsigned long lease)
+ {
+ 	struct dhcpOfferedAddr *oldest;
+ 
+@@ -45,6 +45,13 @@
+ 	oldest = oldest_expired_lease();
+ 
+ 	if (oldest) {
++		if (hostname) {
++			uint8_t length = *(hostname-1);
++			if (length>15) length=15;
++			memcpy(oldest->hostname,hostname,length);
++			oldest->hostname[length]=0;
++		}
++		
+ 		memcpy(oldest->chaddr, chaddr, 16);
+ 		oldest->yiaddr = yiaddr;
+ 		oldest->expires = time(0) + lease;
+@@ -112,7 +119,7 @@
+ 		temp.s_addr = addr;
+ 		LOG(LOG_INFO, "%s belongs to someone, reserving it for %ld seconds",
+ 			inet_ntoa(temp), server_config.conflict_time);
+-		add_lease(blank_chaddr, addr, server_config.conflict_time);
++		add_lease(blank_chaddr, blank_chaddr, addr, server_config.conflict_time);
+ 		return 1;
+ 	} else return 0;
+ }
+diff -urN busybox-dist/networking/udhcp/leases.h busybox/networking/udhcp/leases.h
+--- busybox-dist/networking/udhcp/leases.h	2004-01-30 17:45:12.000000000 -0600
++++ busybox/networking/udhcp/leases.h	2004-03-16 09:50:04.000000000 -0600
+@@ -4,6 +4,7 @@
+ 
+ 
+ struct dhcpOfferedAddr {
++	uint8_t hostname[16];
+ 	uint8_t chaddr[16];
+ 	uint32_t yiaddr;	/* network order */
+ 	uint32_t expires;	/* host order */
+@@ -12,7 +13,7 @@
+ extern uint8_t blank_chaddr[];
+ 
+ void clear_lease(uint8_t *chaddr, uint32_t yiaddr);
+-struct dhcpOfferedAddr *add_lease(uint8_t *chaddr, uint32_t yiaddr, unsigned long lease);
++struct dhcpOfferedAddr *add_lease(uint8_t *hostname, uint8_t *chaddr, uint32_t yiaddr, unsigned long lease);
+ int lease_expired(struct dhcpOfferedAddr *lease);
+ struct dhcpOfferedAddr *oldest_expired_lease(void);
+ struct dhcpOfferedAddr *find_lease_by_chaddr(uint8_t *chaddr);
+diff -urN busybox-dist/networking/udhcp/serverpacket.c busybox/networking/udhcp/serverpacket.c
+--- busybox-dist/networking/udhcp/serverpacket.c	2004-03-15 02:29:01.000000000 -0600
++++ busybox/networking/udhcp/serverpacket.c	2004-03-16 09:51:36.000000000 -0600
+@@ -29,6 +29,7 @@
+ #include "dhcpd.h"
+ #include "options.h"
+ #include "common.h"
++#include "files.h"
+ 
+ /* send a packet to giaddr using the kernel ip stack */
+ static int send_packet_to_relay(struct dhcpMessage *payload)
+@@ -152,7 +153,7 @@
+ 		return -1;
+ 	}
+ 
+-	if (!add_lease(packet.chaddr, packet.yiaddr, server_config.offer_time)) {
++	if (!add_lease(get_option(oldpacket, DHCP_HOST_NAME), packet.chaddr, packet.yiaddr, server_config.offer_time)) {
+ 		LOG(LOG_WARNING, "lease pool is full -- OFFER abandoned");
+ 		return -1;
+ 	}
+@@ -233,7 +234,9 @@
+ 	if (send_packet(&packet, 0) < 0)
+ 		return -1;
+ 
+-	add_lease(packet.chaddr, packet.yiaddr, lease_time_align);
++	add_lease(get_option(oldpacket, DHCP_HOST_NAME), packet.chaddr, packet.yiaddr, lease_time_align);
++
++	write_leases();
+ 
+ 	return 0;
+ }

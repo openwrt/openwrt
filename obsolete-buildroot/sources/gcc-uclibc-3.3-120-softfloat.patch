@@ -1,0 +1,14 @@
+--- gcc-3.3.2-old/configure.in	2003-08-09 01:57:21.000000000 -0500
++++ gcc-3.3.2/configure.in	2004-01-15 12:46:29.000000000 -0600
+@@ -1418,6 +1418,11 @@
+ fi
+ 
+ FLAGS_FOR_TARGET=
++case " $targargs " in
++ *" --nfp "* | *" --without-float "*)
++    FLAGS_FOR_TARGET=$FLAGS_FOR_TARGET' -msoft-float'
++    ;;
++esac
+ case " $target_configdirs " in
+  *" newlib "*)
+   case " $targargs " in

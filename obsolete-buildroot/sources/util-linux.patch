@@ -1,0 +1,28 @@
+--- util-linux-2.11z/mount/fstab.c.orig	2003-12-03 15:28:22.000000000 -0700
++++ util-linux-2.11z/mount/fstab.c	2003-12-03 15:28:41.000000000 -0700
+@@ -342,7 +342,7 @@
+ /* Ensure that the lock is released if we are interrupted.  */
+ static void
+ handler (int sig) {
+-     die (EX_USER, "%s", sys_siglist[sig]);
++     die (EX_USER, "%s", strsignal(sig));
+ }
+ 
+ static void
+--- /dev/null	2003-09-07 01:55:59.000000000 -0600
++++ util-linux-2.11z/mount/swapargs.h	2003-12-03 15:44:50.000000000 -0700
+@@ -0,0 +1,3 @@
++#define SWAPON_HAS_TWO_ARGS
++#include <asm/page.h>
++#include <sys/swap.h>
+--- util-linux-2.11z/mount/swap.configure.orig	2003-12-03 15:43:24.000000000 -0700
++++ util-linux-2.11z/mount/swap.configure	2003-12-03 15:45:33.000000000 -0700
+@@ -1,6 +1,8 @@
+ # Find out whether we can include <sys/swap.h>
+ # and whether libc thinks that swapon() has two arguments.
+ 
++exit 0
++
+ # Prepare test
+ CC=${CC-cc}
+ compile="$CC -o conftest conftest.c >/dev/null 2>&1"
