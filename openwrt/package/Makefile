@@ -39,6 +39,7 @@ package-$(BR2_PACKAGE_TCPDUMP) += tcpdump
 package-$(BR2_PACKAGE_WOL) += wol
 package-$(BR2_PACKAGE_ZLIB) += zlib
 package-$(BR2_PACKAGE_DHCPFWD) += dhcp-forwarder
+package-$(BR2_PACKAGE_LIBNET) += libnet
 
 all: compile install
 clean: $(patsubst %,%-clean,$(package-) $(package-y) $(package-m)) linux-clean
@@ -52,6 +53,8 @@ openvpn-compile: openssl-compile
 nfs-server-compile: portmap-compile
 portmap-compile: tcp_wrappers-compile
 lcd4linux-compile: ncurses-compile
+libnet-compile: libpcap-compile
+
 $(patsubst %,%-prepare,$(package-y) $(package-m)): linux-install
 
 %-prepare:
