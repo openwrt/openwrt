@@ -10,7 +10,7 @@ export PATH=/usr/bin:/bin:/usr/sbin:/sbin
 
 # lookup an interface by mac address
 mac2if () {
-  if=$(ifconfig -a | grep -i "$1" | grep -e "^eth" | awk '{print $1}')
+  if=$(ifconfig -a | awk '{IGNORECASE=1} /^eth.*'$1'/ {print $1; exit}')
   echo $if
 }
 
@@ -31,7 +31,7 @@ if_valid () {
     echo "# vlan${i}: $hwname $hwaddr => $vif"
 
     $DEBUG ifconfig $vif up
-    $DEBUG vconfig add $vif $i
+    $DEBUG vconfig add $vif $i 2>/dev/null
   }
   ifconfig "$1" >/dev/null 2>&1 || [ "${1%[0-9]}" = "br" ] 
   return $?
@@ -51,13 +51,13 @@ configure () {
   
   if=$(nvram_get ${type}_ifname)
   if [ "${if%[0-9]}" = "ppp" ]; then
-    if=$(nvram get pppoe_ifname) 
+    if=$(nvram_get pppoe_ifname) 
   fi
   if_valid $if || return
   
+  $DEBUG ifconfig $if down
   if [ "${if%[0-9]}" = "br" ]; then
-    stp=$(nvram get ${type}_stp)
-    $DEBUG ifconfig $if down
+    stp=$(nvram_get ${type}_stp)
     $DEBUG brctl delbr $if
     $DEBUG brctl addbr $if
     $DEBUG brctl setfd $if 0
@@ -71,7 +71,7 @@ configure () {
   fi
 
   if_mac=$(nvram_get ${type}_hwaddr)
-  $DEBUG ifconfig $if hw ether $if_mac
+  [ -z "$if_mac" ] || $DEBUG ifconfig $if hw ether $if_mac
  
   if_proto=$(nvram_get ${type}_proto)
   case "$if_proto" in
@@ -110,8 +110,6 @@ configure () {
       $DEBUG ifconfig $if 0.0.0.0 up
       
       $DEBUG /sbin/pppoecd $if -u $if_username -p $if_password -i 0 -I $if_redial -T $if_idletime -k
-      sleep 5
-      $DEBUG /sbin/route add default $if
     ;;
     *)
       echo "$if: $if_proto is not supported"
