@@ -4,7 +4,7 @@ PKG_NAME := libelf
 PKG_VERSION := 0.8.5
 PKG_RELEASE := 1
 
-PKG_SOURCE_SITE := http://www.stud.uni-hannover.de/~michael/software/
+PKG_SOURCE_SITE := http://www.mr511.de/software/
 PKG_SOURCE_FILE := $(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_CAT := zcat
 PKG_SOURCE_DIR := $(PKG_NAME)-$(PKG_VERSION)
