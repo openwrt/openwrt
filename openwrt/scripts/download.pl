@@ -15,7 +15,7 @@ sub download
 {
 	my $mirror = shift;
 	
-	open WGET, "wget -t1 --connect-timeout=20 --read-timeout=15 -O- \"$mirror/$filename\" |" or die "Cannot launch wget.\n";
+	open WGET, "wget -t1 --timeout=20 -O- \"$mirror/$filename\" |" or die "Cannot launch wget.\n";
 	open MD5SUM, "| md5sum > \"$target/$filename.md5sum\"" or die "Cannot launch md5sum.\n";
 	open OUTPUT, "> $target/$filename.dl" or die "Cannot create file $target/$filename.dl: $!\n";
 	my $buffer;
