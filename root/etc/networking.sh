@@ -16,32 +16,30 @@ mac2if () {
 
 # allow env to override nvram 
 nvram_get () {
- eval "echo \${$1:=\$(nvram get $1)}"
+ eval "echo \${$1:-\$(nvram get $1)}"
 }
 
 # valid interface?
 if_valid () {
-  [ "${1%[0-9]}" = "vlan" ] && {
-    i=${1##vlan} 
+  [ "${1%%[0-9]}" = "vlan" ] && {
+    i=${1#vlan} 
     hwname=$(nvram_get vlan${i}hwname)
     hwaddr=$(nvram_get ${hwname}macaddr)
     [ -z "$hwaddr" ] && return 1
 
     vif=$(mac2if $hwaddr)
-    echo "# vlan${i}: $hwname $hwaddr => $vif"
+    echo "# vlan$i: $hwname $hwaddr => $vif"
 
     $DEBUG ifconfig $vif up
     $DEBUG vconfig add $vif $i 2>/dev/null
   }
-  ifconfig "$1" >/dev/null 2>&1 || [ "${1%[0-9]}" = "br" ] 
+  ifconfig "$1" >/dev/null 2>&1 || [ "${1%%[0-9]}" = "br" ] 
   return $?
 }
 
 wifi_init () {
   echo "# --- wifi init ---"
-  # assume wifi is eth2, fall back to eth1
-  if="eth2"
-  if_valid $if || if="eth1"
+  if=$(awk 'gsub(":","") {print $1}' /proc/net/wireless)
   $DEBUG wlconf $if up
 }
 
@@ -50,13 +48,13 @@ configure () {
   echo "# --- $type ---"
   
   if=$(nvram_get ${type}_ifname)
-  if [ "${if%[0-9]}" = "ppp" ]; then
+  if [ "${if%%[0-9]}" = "ppp" ]; then
     if=$(nvram_get pppoe_ifname) 
   fi
   if_valid $if || return
   
   $DEBUG ifconfig $if down
-  if [ "${if%[0-9]}" = "br" ]; then
+  if [ "${if%%[0-9]}" = "br" ]; then
     stp=$(nvram_get ${type}_stp)
     $DEBUG brctl delbr $if
     $DEBUG brctl addbr $if
@@ -67,7 +65,7 @@ configure () {
       if_valid $sif || continue
       $DEBUG ifconfig $sif 0.0.0.0 up
       $DEBUG brctl addif $if $sif 
-    }; done
+    } done
   fi
 
   if_mac=$(nvram_get ${type}_hwaddr)
@@ -92,7 +90,7 @@ configure () {
       echo "# --- creating /etc/resolv.conf ---"
       for dns in $(nvram_get ${type}_dns); do {
 	echo "nameserver $dns" >> /etc/resolv.conf
-      }; done
+      } done
     ;;
     dhcp)
       pidfile=/tmp/dhcp-${type}.pid
@@ -118,8 +116,6 @@ configure () {
 }
 
 ### START NETWORKING ###
-wifi_init
-
 $DEBUG vconfig set_name_type VLAN_PLUS_VID_NO_PAD
 
 # hacks for 1.x hardware
@@ -134,11 +130,7 @@ $DEBUG vconfig set_name_type VLAN_PLUS_VID_NO_PAD
   # use the old names to preserve backwards
   # compatibility
   remap () {
-    eval $1=\"$(nvram_get $1 | awk '{
-	  gsub(/eth0/,"vlan2")
-	  gsub(/eth1/,"vlan1")
-	  print $0
-    }')\"
+    eval $1=\"$(nvram_get $1 | awk 'gsub("eth0","vlan2") gsub("eth1","vlan1")')\"
   }
 
   remap lan_ifname
@@ -167,6 +159,8 @@ lan_proto="static"
 configure lan
 configure wifi
 configure wan
+
+wifi_init
 
 for route in $(nvram_get static_route); do {
       ip=${route%%:*} route=${route#*:}
