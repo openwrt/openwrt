@@ -91,3 +91,4 @@ install: $(INSTALL_TARGETS)
 
 clean:
 	rm -rf $(PKG_BUILD_DIR)
+	rm -f $(PKG_IP) $(PKG_TC)

@@ -104,4 +104,4 @@ install: $(INSTALL_TARGETS)
 
 clean:
 	rm -rf $(PKG_BUILD_DIR)
-	rm -f $(PKG_IPT) 
+	rm -f $(PKG_IPT) $(PKG_IPT_EXTRA) $(PKG_IP6T)

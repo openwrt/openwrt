@@ -72,5 +72,5 @@ clean:
 	rm -rf $(PKG_BUILD_DIR)
 	rm -f $(STAGING_DIR)/lib/libssl*
 	rm -f $(STAGING_DIR)/lib/libcrypto*
-	rm -f $(PACKAGE_DIR)/$(PKG_NAME)\*.ipk
+	rm -f $(PKG_IPK)
 
