@@ -25,7 +25,7 @@ OIDENTDIPK_SRC=oidentd-2.0.7-pkg.tgz
 # define a target for the master makefile
 oidentd:	$(OIDENTD_DIR)/$(OIDENTD_TARGET)
 
-oidentd-ipk:	$(BUILD_DIR)/$(OIDENTD_IPKTARGET)
+oidentd-ipk:	$(BUILD_DIR)/$(OIDENTD_IPKTARGET) 
 
 # We need to download sources if we dont have them
 $(DL_DIR)/$(OIDENTD_SOURCE) :
@@ -67,7 +67,7 @@ $(OIDENTD_DIR)/$(OIDENTD_TARGET):	$(OIDENTD_DIR)/.configured
 	cd $(OIDENTD_DIR); make
 	
 
-$(BUILD_DIR)/$(OIDENTD_IPKTARGET):	$(OIDENTD_DIR)/ipkg/rules
+$(BUILD_DIR)/$(OIDENTD_IPKTARGET):	$(OIDENTD_DIR)/$(OIDENTD_TARGET) $(OIDENTD_DIR)/ipkg/rules
 	(cd $(OIDENTD_DIR); ipkg-buildpackage)
 	
 	
