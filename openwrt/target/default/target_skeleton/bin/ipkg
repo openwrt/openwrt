@@ -20,16 +20,17 @@ set -e
 set -o noglob
 
 ipkg_is_upgrade () {
-  local A B a b
-  A=$(echo $1 | sed "s/[0-9]*/ & /g" | sed "s/[^ A-Za-z0-9]//g")
-  B=$(echo $2 | sed "s/[0-9]*/ & /g" | sed "s/[^ A-Za-z0-9]//g")
-  while [ \! -z "$A" ] && [ \! -z "$B" ]; do {
+  local A B a b     
+  A=$(echo $1 | sed -r "s/([0-9]+)[^A-Za-z]?/ \1 /g").
+  B=$(echo $2 | sed -r "s/([0-9]+)[^A-Za-z]?/ \1 /g").
+  while [ \! -z "$A" ] && [ \! -z "$B" ]; do {        
     set $A; a=$1; shift; A=$*
     set $B; b=$1; shift; B=$*
-    { [ "$a" -gt "$b" ] 2>&- || [ "$a" ">" "$b" ]; } && { return 0; }
-  }; done
-  return 1;
-}
+      [ "$a" -lt "$b" ] 2>&- && return 1
+    { [ "$a" -gt "$b" ] 2>&- || [ "$a" ">" "$b" ]; } && return
+  }; done                                                     
+  return 1
+}         
 
 ipkg_srcs() {
 	local srcre="$1"
