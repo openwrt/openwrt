@@ -48,7 +48,7 @@ ifup () (
     $DEBUG brctl delbr $if
     $DEBUG brctl addbr $if
     $DEBUG brctl setfd $if 0
-    $DEBUG brctl stp $if $stp
+    $DEBUG brctl stp $if ${stp:-0}
     if_list=$(nvram_get ${type}_ifnames)
     for sif in $if_list; do {
       if_valid $sif || continue
