@@ -1,0 +1,167 @@
+diff -ruN pcre-5.0-orig/ipkg/libpcre/CONTROL/control pcre-5.0-3/ipkg/libpcre/CONTROL/control
+--- pcre-5.0-orig/ipkg/libpcre/CONTROL/control	1970-01-01 01:00:00.000000000 +0100
++++ pcre-5.0-3/ipkg/libpcre/CONTROL/control	2005-03-08 03:33:59.000000000 +0100
+@@ -0,0 +1,8 @@
++Package: libpcre
++Priority: optional
++Section: libs
++Version: [TBDL]
++Architecture: [TBDL]
++Maintainer: Nico <nthill@free.fr>
++Source: http://nthill.free.fr/openwrt/sources/pcre/
++Description: a Perl Compatible Regular Expression library
+diff -ruN pcre-5.0-orig/ipkg/pcre-dev/CONTROL/control pcre-5.0-3/ipkg/pcre-dev/CONTROL/control
+--- pcre-5.0-orig/ipkg/pcre-dev/CONTROL/control	1970-01-01 01:00:00.000000000 +0100
++++ pcre-5.0-3/ipkg/pcre-dev/CONTROL/control	2005-03-08 03:34:14.000000000 +0100
+@@ -0,0 +1,8 @@
++Package: pcre-dev
++Priority: optional
++Section: devel
++Version: [TBDL]
++Architecture: [TBDL]
++Maintainer: Nico <nthill@free.fr>
++Source: http://nthill.free.fr/openwrt/sources/pcre/
++Description: a Perl Compatible Regular Expression library (development)
+diff -ruN pcre-5.0-orig/ipkg/rules pcre-5.0-3/ipkg/rules
+--- pcre-5.0-orig/ipkg/rules	1970-01-01 01:00:00.000000000 +0100
++++ pcre-5.0-3/ipkg/rules	2005-03-08 03:47:50.000000000 +0100
+@@ -0,0 +1,134 @@
++#!/usr/bin/make -f
++
++ifneq ($(strip ${IPKG_RULES_INC}),)
++  include $(IPKG_RULES_INC)
++endif
++
++##
++
++PKG_VERSION := $(shell cat ./ipkg/version)
++CURRENT_DIR := $(shell pwd)
++INSTALL_DIR = $(CURRENT_DIR)/ipkg-install
++
++I_LIBPCRE := ipkg/libpcre
++I_PCRE_DEV := ipkg/pcre-dev
++
++BUILD_DEPS := \
++
++CONFIGURE_OPTS = \
++	--enable-shared \
++	--enable-static \
++	--enable-utf8 \
++
++##
++
++all: package
++
++
++.stamp-configured: $(BUILD_DEPS)
++
++	rm -rf config.cache
++	$(TARGET_CONFIGURE_OPTS) \
++	CFLAGS="$(TARGET_CFLAGS)" \
++	./configure \
++	  --target=$(GNU_TARGET_NAME) \
++	  --host=$(GNU_TARGET_NAME) \
++	  --build=$(GNU_HOST_NAME) \
++	  --prefix=/usr \
++	  --exec-prefix=/usr \
++	  --bindir=/usr/bin \
++	  --datadir=/usr/share \
++	  --includedir=/usr/include \
++	  --infodir=/usr/share/info \
++	  --libdir=/usr/lib \
++	  --libexecdir=/usr/lib \
++	  --localstatedir=/var \
++	  --mandir=/usr/share/man \
++	  --sbindir=/usr/sbin \
++	  --sysconfdir=/etc \
++	  $(DISABLE_NLS) \
++
++	touch .stamp-configured
++
++
++.stamp-built: .stamp-configured
++
++	$(MAKE) \
++	  CC_FOR_BUILD="$(HOSTCC)" \
++	  LINK_FOR_BUILD="$(HOSTCC)" \
++	  CFLAGS_FOR_BUILD="" \
++	 dftables
++
++	$(MAKE) \
++	  $(TARGET_CONFIGURE_OPTS) \
++	  CFLAGS="$(TARGET_CFLAGS)" \
++	  
++	touch .stamp-built
++
++
++$(INSTALL_DIR)/usr/include/pcre.h: .stamp-built
++
++	mkdir -p $(INSTALL_DIR)
++
++	$(MAKE) \
++	  DESTDIR="$(INSTALL_DIR)" \
++	 install
++
++
++configure: .stamp-configured
++
++
++build: .stamp-built
++
++
++install: $(INSTALL_DIR)/usr/include/pcre.h
++
++
++package: $(INSTALL_DIR)/usr/include/pcre.h
++
++	mkdir -p $(I_LIBPCRE)/usr/lib
++	cp -fpR $(INSTALL_DIR)/usr/lib/libpcre*.so.* $(I_LIBPCRE)/usr/lib/
++	$(STRIP) $(I_LIBPCRE)/usr/lib/lib*.so.*
++
++	mkdir -p $(I_PCRE_DEV)/usr/bin
++	cp -fpR $(INSTALL_DIR)/usr/bin/pcre-config  $(I_PCRE_DEV)/usr/bin/
++	mkdir -p $(I_PCRE_DEV)/usr/include
++	cp -fpR $(INSTALL_DIR)/usr/include/pcre*.h $(I_PCRE_DEV)/usr/include/
++	mkdir -p $(I_PCRE_DEV)/usr/lib
++	cp -fpR $(INSTALL_DIR)/usr/lib/libpcre*.a $(I_PCRE_DEV)/usr/lib/
++	cp -fpR $(INSTALL_DIR)/usr/lib/libpcre*.so* $(I_PCRE_DEV)/usr/lib/
++
++	chmod 0755 ipkg/*/CONTROL/
++	chmod 0644 ipkg/*/CONTROL/control
++	
++	perl -pi -e "s/^Arch.*:.*/Architecture: $(TARGET_ARCH)/g" ipkg/*/CONTROL/control
++ifneq ($(strip $(PKG_VERSION)),)
++	perl -pi -e "s/^Vers.*:.*/Version: $(PKG_VERSION)/g" ipkg/*/CONTROL/control
++endif
++
++	$(IPKG_BUILD) $(I_LIBPCRE) $(IPKG_TARGET_DIR)
++	$(IPKG_BUILD) $(I_PCRE_DEV) $(IPKG_TARGET_DIR)
++
++
++clean:
++
++	-$(MAKE) clean
++	rm -rf .stamp-*
++	rm -rf $(INSTALL_DIR)/usr/bin/pcre*
++	rm -rf $(INSTALL_DIR)/usr/include/pcre*
++	rm -rf $(INSTALL_DIR)/usr/lib/libpcre*
++	rm -rf $(INSTALL_DIR)/usr/lib/pkgconfig/libpcre.pc
++	rm -rf $(INSTALL_DIR)/usr/share/man/man*/pcre*
++	rm -rf $(I_LIBPCRE)/usr
++	rm -rf $(I_PCRE_DEV)/usr
++
++
++control:
++
++	@cat $(I_LIBPCRE)/CONTROL/control
++	@echo
++	@cat $(I_PCRE_DEV)/CONTROL/control
++	@echo
++	
++
++.PHONY: configure build install package clean control
+diff -ruN pcre-5.0-orig/ipkg/version pcre-5.0-3/ipkg/version
+--- pcre-5.0-orig/ipkg/version	1970-01-01 01:00:00.000000000 +0100
++++ pcre-5.0-3/ipkg/version	2005-03-08 03:32:54.000000000 +0100
+@@ -0,0 +1 @@
++5.0-3
