@@ -48,7 +48,7 @@ ifeq ($(strip $(BR2_HAVE_DOT_CONFIG)),y)
 # along with the packages to build for the target.
 #
 ##############################################################
-TARGETS:=linux-headers host-sed uclibc-configured binutils gcc uclibc-target-utils
+TARGETS:=host-sed linux-headers uclibc-configured binutils gcc uclibc-target-utils
 include toolchain/Makefile.in
 include toolchain/*/Makefile.in
 include package/Makefile.in
