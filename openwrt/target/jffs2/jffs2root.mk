@@ -29,8 +29,7 @@ mtd: $(MKFS_JFFS2)
 #############################################################
 
 jffs2root: mtd
-	#-@find $(TARGET_DIR)/lib -type f -name \*.so\* | xargs $(STRIP) --strip-unneeded 2>/dev/null || true;
-	-@find $(TARGET_DIR) -type f -perm +111 | xargs $(STRIP) 2>/dev/null || true;
+	-@find $(TARGET_DIR) -type f -perm +111 | xargs $(SSTRIP) 2>/dev/null || true;
 	@rm -rf $(TARGET_DIR)/usr/man
 	@rm -rf $(TARGET_DIR)/usr/info
 	$(MKFS_JFFS2) --pad --little-endian --squash -e 0x20000 \

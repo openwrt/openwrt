@@ -160,7 +160,7 @@ STRIP=$(OPENWRT_SSTRIP_TARGET)
 
 linksys:	linksys-shared linksys-nvram linksys-wlconf
 
-openwrt:	linksys openwrt-mtd openwrt-trx openwrt-addpattern openwrt-jffs2root
+openwrt:	linksys openwrt-mtd openwrt-trx openwrt-addpattern openwrt-jffs2root openwrt-sstrip
 
 openwrt-dirclean: linksys-shared-dirclean linksys-nvram-dirclean linksys-wlconf-dirclean
 

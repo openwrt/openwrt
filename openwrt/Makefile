@@ -48,8 +48,7 @@ ifeq ($(strip $(BR2_HAVE_DOT_CONFIG)),y)
 # along with the packages to build for the target.
 #
 ##############################################################
-TARGETS:=host-sed kernel-headers uclibc-configured binutils gcc uclibc-target-utils
-TARGETS+=openwrt-sstrip linux
+TARGETS:=host-sed kernel-headers uclibc-configured binutils gcc uclibc-target-utils linux openwrt
 
 include toolchain/Makefile.in
 include package/Makefile.in
@@ -118,7 +117,7 @@ $(TARGET_DIR):
 	fi;
 	-find $(TARGET_DIR) -type d -name CVS | xargs rm -rf
 	-find $(TARGET_DIR) -type d -name .svn | xargs rm -rf
-	-ln -sf /tmp/resolv.conf $(TARGET_DIR)
+	-ln -sf /tmp/resolv.conf $(TARGET_DIR)/etc
 	-mkdir -p $(TARGET_DIR)/jffs
 
 source: $(TARGETS_SOURCE)
@@ -226,3 +225,5 @@ endif # ifeq ($(strip $(BR2_HAVE_DOT_CONFIG)),y)
 .PHONY: dummy subdirs release distclean clean config oldconfig \
 	menuconfig tags check test depend
 
+targets:
+	@echo $(TARGETS)
