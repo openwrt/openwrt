@@ -53,6 +53,8 @@ $(PKG_IPK): $(PKG_BUILD_DIR)/$(PKG_NAME)
 	cp $(PKG_BUILD_DIR)/arpwatch $(PKG_IPK_DIR)/usr/sbin/
 	cp $(PKG_BUILD_DIR)/arpsnmp $(PKG_IPK_DIR)/usr/sbin/
 	$(STRIP) $(PKG_IPK_DIR)/usr/sbin/*
+	mkdir $(PKG_IPK_DIR)/usr/arpwatch
+	cp $(PKG_BUILD_DIR)/arp.dat $(PKG_IPK_DIR)/usr/arpwatch/
 	mkdir -p $(PACKAGE_DIR)
 	$(IPKG_BUILD) $(PKG_IPK_DIR) $(PACKAGE_DIR)
 
