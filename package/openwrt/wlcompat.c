@@ -134,6 +134,7 @@ static int wlcompat_get_scan(struct net_device *dev,
 	wl_bss_info_t *bss_info;
 	char *info_ptr;
 	char *current_ev = extra;
+	char *current_val;
 	char *end_buf = extra + IW_SCAN_MAX_DATA;
 	struct iw_event iwe;
 	int i;
@@ -164,6 +165,25 @@ static int wlcompat_get_scan(struct net_device *dev,
 		iwe.u.freq.e = 0;
 		iwe.u.freq.m = bss_info->channel;
 		current_ev = iwe_stream_add_event(current_ev, end_buf, &iwe, IW_EV_FREQ_LEN);
+
+		/* add quality statistics */
+		iwe.cmd = IWEVQUAL;
+		iwe.u.qual.level = bss_info->RSSI;
+		iwe.u.qual.noise = bss_info->phy_noise;
+		iwe.u.qual.qual = 0;
+		current_ev = iwe_stream_add_event(current_ev, end_buf, &iwe, IW_EV_QUAL_LEN);
+	
+		/* send rate information */
+		iwe.cmd = SIOCGIWRATE;
+		current_val = current_ev + IW_EV_LCP_LEN;
+		iwe.u.bitrate.fixed = iwe.u.bitrate.disabled = 0;
+		
+		for(i = 0 ; i < bss_info->rateset.count ; i++) {
+			iwe.u.bitrate.value = ((bss_info->rateset.rates[i] & 0x7f) * 500000);
+			current_val = iwe_stream_add_value(current_ev, current_val, end_buf, &iwe, IW_EV_PARAM_LEN);
+		}
+		if((current_val - current_ev) > IW_EV_LCP_LEN)
+			current_ev = current_val;
 
 		info_ptr += sizeof(wl_bss_info_t);
 		if (bss_info->ie_length % 4)
