@@ -203,37 +203,39 @@ static int wlcompat_ioctl(struct net_device *dev,
 		}
 		case SIOCSIWMODE:
 		{
-			int ap = -1, infra = -1, passive = -1;
+			int ap = -1, infra = -1, passive = 0, wet = 0;
 			
 			switch (wrqu->mode) {
 				case IW_MODE_MONITOR:
 					passive = 1;
 					break;
 				case IW_MODE_ADHOC:
-					passive = 0;
 					infra = 0;
 					ap = 0;
 					break;
 				case IW_MODE_MASTER:
-					passive = 0;
 					infra = 1;
 					ap = 1;
 					break;
 				case IW_MODE_INFRA:
-					passive = 0;
 					infra = 1;
 					ap = 0;
+					break;
+				case IW_MODE_REPEAT:
+					infra = 1;
+					ap = 0;
+					wet = 1;
 					break;
 				default:
 					return -EINVAL;
 			}
 			
-			if (passive >= 0) {
-				if (wl_ioctl(dev, WLC_SET_PASSIVE, &passive, sizeof(passive)) < 0)
-					return -EINVAL;
-				if (wl_ioctl(dev, WLC_SET_MONITOR, &passive, sizeof(passive)) < 0)
-					return -EINVAL;
-			}
+			if (wl_ioctl(dev, WLC_SET_PASSIVE, &passive, sizeof(passive)) < 0)
+				return -EINVAL;
+			if (wl_ioctl(dev, WLC_SET_MONITOR, &passive, sizeof(passive)) < 0)
+				return -EINVAL;
+			if (wl_ioctl(dev, WLC_SET_WET, &wet, sizeof(wet)) < 0)
+				return -EINVAL;
 			if (ap >= 0)
 				if (wl_ioctl(dev, WLC_SET_AP, &ap, sizeof(ap)) < 0)
 					return -EINVAL;
@@ -246,15 +248,15 @@ static int wlcompat_ioctl(struct net_device *dev,
 		}
 		case SIOCGIWMODE:
 		{
-			int ap, infra, passive;
+			int ap, infra, wet, passive;
 
 			if (wl_ioctl(dev, WLC_GET_AP, &ap, sizeof(ap)) < 0)
 				return -EINVAL;
-
 			if (wl_ioctl(dev, WLC_GET_INFRA, &infra, sizeof(infra)) < 0)
 				return -EINVAL;
-
 			if (wl_ioctl(dev, WLC_GET_PASSIVE, &passive, sizeof(passive)) < 0)
+				return -EINVAL;
+			if (wl_ioctl(dev, WLC_GET_WET, &wet, sizeof(wet)) < 0)
 				return -EINVAL;
 
 			if (passive) {
@@ -265,7 +267,11 @@ static int wlcompat_ioctl(struct net_device *dev,
 				if (ap) {
 					wrqu->mode = IW_MODE_MASTER;
 				} else {
-					wrqu->mode = IW_MODE_INFRA;
+					if (wet) {
+						wrqu->mode = IW_MODE_REPEAT;
+					} else {
+						wrqu->mode = IW_MODE_INFRA;
+					}
 				}
 			}
 			break;
