@@ -170,6 +170,14 @@ static int wlcompat_ioctl(struct net_device *dev,
 			wrqu->txpower.flags = IW_TXPOW_MWATT;
 			break;
 		}
+		case SIOCSIWTXPOW:
+		{
+			if (wrqu->txpower.flags != IW_TXPOW_MWATT) {
+				err = -EINVAL;
+			} else {
+				wl_ioctl(dev, WLC_SET_TXPWR, &wrqu->txpower.value, sizeof(int));
+			}
+		}
 		case SIOCGIWENCODE:
 		{
 			wrqu->data.flags = IW_ENCODE_DISABLED;
@@ -229,7 +237,7 @@ static const iw_handler	 wlcompat_handler[] = {
 	wlcompat_ioctl,		/* SIOCGIWRTS */
 	NULL,			/* SIOCSIWFRAG */
 	wlcompat_ioctl,		/* SIOCGIWFRAG */
-	NULL,			/* SIOCSIWTXPOW */
+	wlcompat_ioctl,		/* SIOCSIWTXPOW */
 	wlcompat_ioctl,		/* SIOCGIWTXPOW */
 	NULL,			/* SIOCSIWRETRY */
 	NULL,			/* SIOCGIWRETRY */
