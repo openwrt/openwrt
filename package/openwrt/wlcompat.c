@@ -129,6 +129,7 @@ static int wlcompat_ioctl(struct net_device *dev,
 			} else {
 				return -EINVAL;
 			}
+			break;
 		}
 		case SIOCGIWAP:
 		{
