@@ -90,8 +90,6 @@ static int wlcompat_ioctl(struct net_device *dev,
 			 union iwreq_data *wrqu,
 			 char *extra)
 {
-	int err = 0;
-	
 	switch (info->cmd) {
 		case SIOCGIWNAME:
 			strcpy(wrqu->name, "IEEE 802.11-DS");
@@ -99,7 +97,10 @@ static int wlcompat_ioctl(struct net_device *dev,
 		case SIOCGIWFREQ:
 		{
 			channel_info_t ci;
-			wl_ioctl(dev,WLC_GET_CHANNEL, &ci, sizeof(ci));
+
+			if (wl_ioctl(dev,WLC_GET_CHANNEL, &ci, sizeof(ci)) < 0)
+				return -EINVAL;
+
 			wrqu->freq.m = ci.target_channel;
 			wrqu->freq.e = 0;
 			break;
@@ -112,29 +113,33 @@ static int wlcompat_ioctl(struct net_device *dev,
 				while ((channel < NUM_CHANNELS + 1) && (f != channel_frequency[channel]))
 					channel++;
 				
-				if (channel == NUM_CHANNELS) { // channel not found
-					err = -EINVAL;
-				} else {
-					wrqu->freq.e = 0;
-					wrqu->freq.m = channel + 1;
-				}
+				if (channel == NUM_CHANNELS) // channel not found
+					return -EINVAL;
+
+				wrqu->freq.e = 0;
+				wrqu->freq.m = channel + 1;
 			}
 			if ((wrqu->freq.e == 0) && (wrqu->freq.m < 1000)) {
-				wl_ioctl(dev, WLC_SET_CHANNEL, &wrqu->freq.m, sizeof(int));
+				if (wl_ioctl(dev, WLC_SET_CHANNEL, &wrqu->freq.m, sizeof(int)) < 0)
+					return -EINVAL;
 			} else {
-				err = -EINVAL;
+				return -EINVAL;
 			}
 		}
 		case SIOCGIWAP:
 		{
 			wrqu->ap_addr.sa_family = ARPHRD_ETHER;
-			wl_ioctl(dev,WLC_GET_BSSID,wrqu->ap_addr.sa_data,6);
+			if (wl_ioctl(dev,WLC_GET_BSSID,wrqu->ap_addr.sa_data,6) < 0)
+				return -EINVAL;
 			break;
 		}
 		case SIOCGIWESSID:
 		{
 			wlc_ssid_t ssid;
-			wl_ioctl(dev,WLC_GET_SSID, &ssid, sizeof(wlc_ssid_t));
+			
+			if (wl_ioctl(dev,WLC_GET_SSID, &ssid, sizeof(wlc_ssid_t)) < 0)
+				return -EINVAL;
+
 			wrqu->essid.flags = wrqu->data.flags = 1;
 			wrqu->essid.length = wrqu->data.length = ssid.SSID_len + 1;
 			memcpy(extra,ssid.SSID,ssid.SSID_len + 1);
@@ -148,23 +153,27 @@ static int wlcompat_ioctl(struct net_device *dev,
 			if (ssid.SSID_len > WLC_ESSID_MAX_SIZE)
 				ssid.SSID_len = WLC_ESSID_MAX_SIZE;
 			memcpy(ssid.SSID, extra, ssid.SSID_len);
-			wl_ioctl(dev, WLC_SET_SSID, &ssid, sizeof(ssid));
+			if (wl_ioctl(dev, WLC_SET_SSID, &ssid, sizeof(ssid)) < 0)
+				return -EINVAL;
 			break;
 		}
 		case SIOCGIWRTS:
 		{
-			wl_ioctl(dev,WLC_GET_RTS,&(wrqu->rts.value),sizeof(int));
+			if (wl_ioctl(dev,WLC_GET_RTS,&(wrqu->rts.value),sizeof(int)) < 0) 
+				return -EINVAL;
 			break;
 		}
 		case SIOCGIWFRAG:
 		{
-			wl_ioctl(dev,WLC_GET_FRAG,&(wrqu->frag.value),sizeof(int));
+			if (wl_ioctl(dev,WLC_GET_FRAG,&(wrqu->frag.value),sizeof(int)) < 0)
+				return -EINVAL;
 			break;
 		}
 		case SIOCGIWTXPOW:
 		{
 			wrqu->txpower.value = 0;
-			wl_ioctl(dev,WLC_GET_TXPWR, &(wrqu->txpower.value), sizeof(int));
+			if (wl_ioctl(dev,WLC_GET_TXPWR, &(wrqu->txpower.value), sizeof(int)) < 0)
+				return -EINVAL;
 			wrqu->txpower.fixed = 0;
 			wrqu->txpower.disabled = 0;
 			wrqu->txpower.flags = IW_TXPOW_MWATT;
@@ -172,11 +181,11 @@ static int wlcompat_ioctl(struct net_device *dev,
 		}
 		case SIOCSIWTXPOW:
 		{
-			if (wrqu->txpower.flags != IW_TXPOW_MWATT) {
-				err = -EINVAL;
-			} else {
-				wl_ioctl(dev, WLC_SET_TXPWR, &wrqu->txpower.value, sizeof(int));
-			}
+			if (wrqu->txpower.flags != IW_TXPOW_MWATT)
+				return -EINVAL;
+
+			if (wl_ioctl(dev, WLC_SET_TXPWR, &wrqu->txpower.value, sizeof(int)) < 0)
+				return -EINVAL;
 		}
 		case SIOCGIWENCODE:
 		{
@@ -185,17 +194,16 @@ static int wlcompat_ioctl(struct net_device *dev,
 		}
 		case SIOCGIWRANGE:
 		{
-			err = wlcompat_ioctl_getiwrange(dev, extra);
+			return wlcompat_ioctl_getiwrange(dev, extra);
 			break;
 		}
 		default:
 		{
-			err = -EINVAL;
-			break;
+			return -EINVAL;
 		}
 	}
 	
-	return err;
+	return 0;
 }
 
 static const iw_handler	 wlcompat_handler[] = {
