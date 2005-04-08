@@ -78,6 +78,8 @@ $(INSTALL_DIR)/usr/include/pcre.h: .stamp-built
 	  DESTDIR="$(INSTALL_DIR)" \
 	 install
 
+	rm -f $(INSTALL_DIR)/usr/lib/libpcre*.la
+
 
 configure: .stamp-configured
 

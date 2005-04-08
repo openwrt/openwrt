@@ -80,6 +80,7 @@ $(STAGING_DIR)/lib/libglib.so: $(PKG_BUILD_DIR)/libglib.so
 	  DESTDIR="$(STAGING_DIR)" \
 	  install
 	cp $(PKG_BUILD_DIR)/glibconfig-sysdefs.h $(STAGING_DIR)/usr/include/glib-1.2/
+	rm -f $(STAGING_DIR)/usr/lib/libg{lib,module,thread}.la
 
 $(PKG_IPK): $(STAGING_DIR)/lib/libglib.so
 	mkdir -p $(PACKAGE_DIR)
