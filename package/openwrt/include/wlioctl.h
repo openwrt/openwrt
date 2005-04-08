@@ -459,6 +459,48 @@ typedef struct {
 	struct ether_addr ea;
 } scb_val_t;
 
+/* callback registration data types */
+
+typedef struct _mac_event_params {
+	uint msg;
+	struct ether_addr *addr;
+	uint result;
+	uint status; 
+	uint auth_type;
+} mac_event_params_t;
+
+typedef struct _mic_error_params {
+	struct ether_addr *ea;
+	bool group;
+	bool flush_txq;
+} mic_error_params_t;
+
+typedef enum _wl_callback {
+	WL_MAC_EVENT_CALLBACK = 0,
+	WL_LINK_UP_CALLBACK,
+	WL_LINK_DOWN_CALLBACK,
+	WL_MIC_ERROR_CALLBACK,
+	WL_LAST_CALLBACK
+} wl_callback_t;
+
+typedef struct _callback {
+	void (*fn)(void *, void *);
+	void *context;
+} callback_t;
+
+typedef struct _scan_callback {
+	void (*fn)(void *);
+	void *context;
+} scan_callback_t;
+
+/* used to register an arbitrary callback via the IOCTL interface */
+typedef struct _set_callback {
+	int index;
+	callback_t callback;
+} set_callback_t;
+
+
+
 /* Event data type */
 typedef struct {
 	uint msg;			/* Message (see below) */
@@ -838,6 +880,7 @@ typedef struct wlc_rev_info {
 #define WLC_SET_WET				231
 #define WLC_GET_KEY_PRIMARY			235
 #define WLC_SET_KEY_PRIMARY			236
+#define WLC_SCAN_WITH_CALLBACK			240
 #define WLC_WDS_GET_REMOTE_HWADDR		246	/* currently handled in wl_linux.c/wl_vx.c */
 #define WLC_SET_CS_SCAN_TIMER			248
 #define WLC_GET_CS_SCAN_TIMER			249
