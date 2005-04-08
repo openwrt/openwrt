@@ -6,6 +6,7 @@
 #include <linux/init.h>
 #include <linux/if_arp.h>
 #include <asm/uaccess.h>
+#include <linux/wireless.h>
 
 #include <net/iw_handler.h>
 #include <wlioctl.h>
@@ -13,6 +14,13 @@
 #define DEBUG
 
 static struct net_device *dev;
+
+/* The frequency of each channel in MHz */
+const long channel_frequency[] = {
+	2412, 2417, 2422, 2427, 2432, 2437, 2442,
+	2447, 2452, 2457, 2462, 2467, 2472, 2484
+};
+#define NUM_CHANNELS ( sizeof(channel_frequency) / sizeof(channel_frequency[0]) )
 
 static int wl_ioctl(struct net_device *dev, int cmd, void *buf, int len)
 {
@@ -31,12 +39,59 @@ static int wl_ioctl(struct net_device *dev, int cmd, void *buf, int len)
 	return ret;
 }
 
+static int wlcompat_ioctl_getiwrange(struct net_device *dev,
+				    char *extra)
+{
+	int i, k;
+	struct iw_range *range;
+
+	range = (struct iw_range *) extra;
+
+	range->we_version_compiled = WIRELESS_EXT;
+	range->we_version_source = WIRELESS_EXT;
+	
+	range->min_nwid = range->max_nwid = 0;
+	
+	range->num_channels = NUM_CHANNELS;
+	k = 0;
+	for (i = 0; i < NUM_CHANNELS; i++) {
+		range->freq[k].i = i + 1;
+		range->freq[k].m = channel_frequency[i] * 100000;
+		range->freq[k].e = 1;
+		k++;
+		if (k >= IW_MAX_FREQUENCIES)
+			break;
+	}
+	range->num_frequency = k;
+	range->sensitivity = 3;
+
+	/* nbd: don't know what this means, but other drivers set it this way */
+	range->pmp_flags = IW_POWER_PERIOD;
+	range->pmt_flags = IW_POWER_TIMEOUT;
+	range->pm_capa = IW_POWER_PERIOD | IW_POWER_TIMEOUT | IW_POWER_UNICAST_R;
+
+	range->min_rts = 0;
+	range->max_rts = 2347;
+	range->min_frag = 256;
+	range->max_frag = 2346;
+
+	range->min_pmp = 0;
+	range->max_pmp = 65535000;
+	range->min_pmt = 0;
+	range->max_pmt = 65535 * 1000;
+
+	range->txpower_capa = IW_TXPOW_MWATT;
+	
+	return 0;
+}
 
 static int wlcompat_ioctl(struct net_device *dev,
 			 struct iw_request_info *info,
 			 union iwreq_data *wrqu,
 			 char *extra)
 {
+	int err = 0;
+	
 	switch (info->cmd) {
 		case SIOCGIWNAME:
 			strcpy(wrqu->name, "IEEE 802.11-DS");
@@ -88,12 +143,18 @@ static int wlcompat_ioctl(struct net_device *dev,
 			wrqu->data.flags = IW_ENCODE_DISABLED;
 			break;
 		}
+		case SIOCGIWRANGE:
+		{
+			err = wlcompat_ioctl_getiwrange(dev, extra);
+			break;
+		}
 	}
-	return 0;
+	
+	return err;
 }
 
 static const iw_handler	 wlcompat_handler[] = {
-	NULL,			/* SIOCSIWNAME */
+	NULL,			/* SIOCSIWCOMMIT */
 	wlcompat_ioctl,		/* SIOCGIWNAME */
 	NULL,			/* SIOCSIWNWID */
 	NULL,			/* SIOCGIWNWID */
@@ -104,7 +165,7 @@ static const iw_handler	 wlcompat_handler[] = {
 	NULL,			/* SIOCSIWSENS */
 	NULL,			/* SIOCGIWSENS */
 	NULL,			/* SIOCSIWRANGE */
-	NULL,			/* SIOCGIWRANGE */
+	wlcompat_ioctl,		/* SIOCGIWRANGE */
 	NULL,			/* SIOCSIWPRIV */
 	NULL,			/* SIOCGIWPRIV */
 	NULL,			/* SIOCSIWSTATS */
