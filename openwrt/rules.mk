@@ -1,6 +1,6 @@
 include $(TOPDIR)/.config
 MAKE1=make
-MAKE=make -j$(BR2_JLEVEL)
+MAKEFLAGS=-j$(BR2_JLEVEL)
 
 # Strip off the annoying quoting
 ARCH:=$(strip $(subst ",, $(BR2_ARCH)))

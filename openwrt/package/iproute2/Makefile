@@ -18,6 +18,8 @@ PKG_IP_DIR:=$(PKG_BUILD_DIR)/ipkg/ip
 PKG_TC:=$(PACKAGE_DIR)/tc_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
 PKG_TC_DIR:=$(PKG_BUILD_DIR)/ipkg/tc
 
+.NOTPARALLEL:
+
 $(DL_DIR)/$(PKG_SOURCE):
 	 $(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE) $(PKG_MD5SUM) $(PKG_SOURCE_URL)
 
@@ -39,10 +41,10 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.patched
 	touch $(PKG_BUILD_DIR)/.configured
 
 $(PKG_BUILD_DIR)/tc/tc: $(PKG_BUILD_DIR)/.configured
-	$(MAKE) -C $(PKG_BUILD_DIR) $(TARGET_CONFIGURE_OPTS) KERNEL_INCLUDE=$(LINUX_DIR)/include all tc/tc
+	$(MAKE) -j1 -C $(PKG_BUILD_DIR) $(TARGET_CONFIGURE_OPTS) KERNEL_INCLUDE=$(LINUX_DIR)/include all tc/tc
 
 $(PKG_BUILD_DIR)/ip/ip: $(PKG_BUILD_DIR)/.configured
-	$(MAKE) -C $(PKG_BUILD_DIR) $(TARGET_CONFIGURE_OPTS) KERNEL_INCLUDE=$(LINUX_DIR)/include all ip/ip
+	$(MAKE) -j1 -C $(PKG_BUILD_DIR) $(TARGET_CONFIGURE_OPTS) KERNEL_INCLUDE=$(LINUX_DIR)/include all ip/ip
 
 
 $(PKG_IP): $(PKG_BUILD_DIR)/ip/ip $(PACKAGE_DIR)

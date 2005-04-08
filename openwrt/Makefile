@@ -45,6 +45,8 @@ include $(TOPDIR)/rules.mk
 
 all: world
 
+.NOTPARALLEL:
+
 ##############################################################
 #
 # Build the toolchain
