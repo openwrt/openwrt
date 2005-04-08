@@ -1,6 +1,7 @@
 # Main makefile for the packages
 include $(TOPDIR)/rules.mk
 
+package-:=tcp_wrappers
 package-y:=openwrt
 package-$(BR2_PACKAGE_AICCU) += aiccu
 package-$(BR2_PACKAGE_ARPTABLES) += arptables
@@ -52,6 +53,7 @@ package-$(BR2_PACKAGE_ZLIB) += zlib
 package-$(BR2_PACKAGE_DHCPFWD) += dhcp-forwarder
 package-$(BR2_PACKAGE_LIBNET) += libnet
 package-$(BR2_PACKAGE_LIBMYSQLCLIENT) += mysql
+package-$(BR2_PACKAGE_LIBPCAP) += libpcap
 package-$(BR2_PACKAGE_LIBPQ) += postgresql
 
 all: compile install
@@ -77,7 +79,7 @@ libnet-compile: libpcap-compile
 mysql-compile: ncurses-compile zlib-compile
 postgresql-compile: zlib-compile
 
-$(patsubst %,%-prepare,$(package-y) $(package-m)): linux-install
+$(patsubst %,%-prepare,$(package-y) $(package-m) $(package-)): linux-install
 
 %-prepare:
 	@[ -f $(STAMP_DIR)/.$@ ] || $(MAKE) -C $(patsubst %-prepare,%,$@) prepare
