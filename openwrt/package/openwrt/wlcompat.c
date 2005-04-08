@@ -71,9 +71,13 @@ static int wlcompat_ioctl_getiwrange(struct net_device *dev,
 	range->pm_capa = IW_POWER_PERIOD | IW_POWER_TIMEOUT | IW_POWER_UNICAST_R;
 
 	range->min_rts = 0;
-	range->max_rts = 2347;
+	if (wl_ioctl(dev, WLC_GET_RTS, &range->max_rts, sizeof(int)) < 0)
+		range->max_rts = 2347;
+
 	range->min_frag = 256;
-	range->max_frag = 2346;
+	
+	if (wl_ioctl(dev, WLC_GET_FRAG, &range->max_frag, sizeof(int)) < 0)
+		range->max_frag = 2346;
 
 	range->min_pmp = 0;
 	range->max_pmp = 65535000;
