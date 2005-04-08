@@ -168,9 +168,21 @@ static int wlcompat_ioctl(struct net_device *dev,
 				return -EINVAL;
 			break;
 		}
+		case SIOCSIWRTS:
+		{
+			if (wl_ioctl(dev,WLC_SET_RTS,&(wrqu->rts.value),sizeof(int)) < 0) 
+				return -EINVAL;
+			break;
+		}
 		case SIOCGIWFRAG:
 		{
 			if (wl_ioctl(dev,WLC_GET_FRAG,&(wrqu->frag.value),sizeof(int)) < 0)
+				return -EINVAL;
+			break;
+		}
+		case SIOCSIWFRAG:
+		{
+			if (wl_ioctl(dev,WLC_SET_FRAG,&(wrqu->frag.value),sizeof(int)) < 0)
 				return -EINVAL;
 			break;
 		}
@@ -297,7 +309,7 @@ static const iw_handler	 wlcompat_handler[] = {
 	wlcompat_ioctl,		/* SIOCGIWMODE */
 	NULL,			/* SIOCSIWSENS */
 	NULL,			/* SIOCGIWSENS */
-	NULL,			/* SIOCSIWRANGE */
+	NULL,			/* SIOCSIWRANGE, unused */
 	wlcompat_ioctl,		/* SIOCGIWRANGE */
 	NULL,			/* SIOCSIWPRIV */
 	NULL,			/* SIOCGIWPRIV */
@@ -321,9 +333,9 @@ static const iw_handler	 wlcompat_handler[] = {
 	NULL,			/* -- hole -- */
 	NULL,			/* SIOCSIWRATE */
 	NULL,			/* SIOCGIWRATE */
-	NULL,			/* SIOCSIWRTS */
+	wlcompat_ioctl,		/* SIOCSIWRTS */
 	wlcompat_ioctl,		/* SIOCGIWRTS */
-	NULL,			/* SIOCSIWFRAG */
+	wlcompat_ioctl,		/* SIOCSIWFRAG */
 	wlcompat_ioctl,		/* SIOCGIWFRAG */
 	wlcompat_ioctl,		/* SIOCSIWTXPOW */
 	wlcompat_ioctl,		/* SIOCGIWTXPOW */
