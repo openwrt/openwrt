@@ -72,6 +72,8 @@ $(INSTALL_DIR)/usr/include/popt.h: .stamp-built
 	  DESTDIR="$(INSTALL_DIR)" \
 	 install
 
+	rm -f $(INSTALL_DIR)/usr/lib/libpopt.la
+
 
 configure: .stamp-configured
 
