@@ -14,6 +14,7 @@
 #define DEBUG
 
 static struct net_device *dev;
+char buf[WLC_IOCTL_MAXLEN];
 
 /* The frequency of each channel in MHz */
 const long channel_frequency[] = {
@@ -70,6 +71,11 @@ static int wlcompat_ioctl_getiwrange(struct net_device *dev,
 	range->pmt_flags = IW_POWER_TIMEOUT;
 	range->pm_capa = IW_POWER_PERIOD | IW_POWER_TIMEOUT | IW_POWER_UNICAST_R;
 
+	range->min_pmp = 0;
+	range->max_pmp = 65535000;
+	range->min_pmt = 0;
+	range->max_pmt = 65535 * 1000;
+
 	range->min_rts = 0;
 	if (wl_ioctl(dev, WLC_GET_RTS, &range->max_rts, sizeof(int)) < 0)
 		range->max_rts = 2347;
@@ -79,12 +85,96 @@ static int wlcompat_ioctl_getiwrange(struct net_device *dev,
 	if (wl_ioctl(dev, WLC_GET_FRAG, &range->max_frag, sizeof(int)) < 0)
 		range->max_frag = 2346;
 
-	range->min_pmp = 0;
-	range->max_pmp = 65535000;
-	range->min_pmt = 0;
-	range->max_pmt = 65535 * 1000;
-
 	range->txpower_capa = IW_TXPOW_MWATT;
+
+	return 0;
+}
+
+
+static int wlcompat_set_scan(struct net_device *dev,
+			 struct iw_request_info *info,
+			 union iwreq_data *wrqu,
+			 char *extra)
+{
+	int ap = 0, oldap = 0;
+	wl_scan_params_t params;
+
+	memset(&params, 0, sizeof(params));
+
+	/* use defaults (same parameters as wl scan) */
+	memset(&params.bssid, 0xff, sizeof(params.bssid));
+	params.bss_type = DOT11_BSSTYPE_ANY;
+	params.scan_type = -1;
+	params.nprobes = -1;
+	params.active_time = -1;
+	params.passive_time = -1;
+	params.home_time = -1;
+	
+	/* can only scan in STA mode */
+	wl_ioctl(dev, WLC_GET_AP, &oldap, sizeof(oldap));
+	if (oldap > 0)
+		wl_ioctl(dev, WLC_SET_AP, &ap, sizeof(ap));
+	
+	if (wl_ioctl(dev, WLC_SCAN, &params, 64) < 0)
+		return -EINVAL;
+	
+	if (oldap > 0)
+		wl_ioctl(dev, WLC_SET_AP, &oldap, sizeof(oldap));
+
+	return 0;
+}
+
+
+static int wlcompat_get_scan(struct net_device *dev,
+			 struct iw_request_info *info,
+			 union iwreq_data *wrqu,
+			 char *extra)
+{
+	wl_scan_results_t *results = (wl_scan_results_t *) buf;
+	wl_bss_info_t *bss_info;
+	char *info_ptr;
+	char *current_ev = extra;
+	char *end_buf = extra + IW_SCAN_MAX_DATA;
+	struct iw_event iwe;
+	int i;
+
+	if (wl_ioctl(dev, WLC_SCAN_RESULTS, buf, WLC_IOCTL_MAXLEN) < 0)
+		return -EAGAIN;
+	
+	bss_info = &(results->bss_info[0]);
+	info_ptr = (char *) bss_info;
+	for (i = 0; i < results->count; i++) {
+
+		/* send the cell address (must be sent first) */
+		iwe.cmd = SIOCGIWAP;
+		iwe.u.ap_addr.sa_family = ARPHRD_ETHER;
+		memcpy(&iwe.u.ap_addr.sa_data, &bss_info->BSSID, sizeof(bss_info->BSSID));
+		current_ev = iwe_stream_add_event(current_ev, end_buf, &iwe, IW_EV_ADDR_LEN);
+		
+		/* send the ESSID */
+		iwe.cmd = SIOCGIWESSID;
+		iwe.u.data.length = bss_info->SSID_len;
+		if (iwe.u.data.length > IW_ESSID_MAX_SIZE)
+			iwe.u.data.length = IW_ESSID_MAX_SIZE;
+		iwe.u.data.flags = 1;
+		current_ev = iwe_stream_add_point(current_ev, end_buf, &iwe, bss_info->SSID);
+
+		/* send frequency/channel info */
+		iwe.cmd = SIOCGIWFREQ;
+		iwe.u.freq.e = 0;
+		iwe.u.freq.m = bss_info->channel;
+		current_ev = iwe_stream_add_event(current_ev, end_buf, &iwe, IW_EV_FREQ_LEN);
+
+		info_ptr += sizeof(wl_bss_info_t);
+		if (bss_info->ie_length % 4)
+			info_ptr += bss_info->ie_length + 4 - (bss_info->ie_length % 4);
+		else
+			info_ptr += bss_info->ie_length;
+		bss_info = (wl_bss_info_t *) info_ptr;
+	}
+	
+	wrqu->data.length = (current_ev - extra);
+	wrqu->data.flags = 0;
 
 	return 0;
 }
@@ -323,8 +413,8 @@ static const iw_handler	 wlcompat_handler[] = {
 	wlcompat_ioctl,		/* SIOCGIWAP */
 	NULL,			/* -- hole -- */
 	NULL,			/* SIOCGIWAPLIST */
-	NULL,			/* -- hole -- */
-	NULL,			/* -- hole -- */
+	wlcompat_set_scan,	/* SIOCSIWSCAN */
+	wlcompat_get_scan,	/* SIOCGIWSCAN */
 	wlcompat_ioctl,		/* SIOCSIWESSID */
 	wlcompat_ioctl,		/* SIOCGIWESSID */
 	NULL,			/* SIOCSIWNICKN */
