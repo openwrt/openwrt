@@ -81,7 +81,7 @@ static int wlcompat_ioctl_getiwrange(struct net_device *dev,
 	range->max_pmt = 65535 * 1000;
 
 	range->txpower_capa = IW_TXPOW_MWATT;
-	
+
 	return 0;
 }
 
@@ -119,6 +119,17 @@ static int wlcompat_ioctl(struct net_device *dev,
 			memcpy(extra,ssid.SSID,ssid.SSID_len + 1);
 			break;
 		}
+		case SIOCSIWESSID:
+		{
+			wlc_ssid_t ssid;
+			memset(&ssid, 0, sizeof(ssid));
+			ssid.SSID_len = strlen(extra);
+			if (ssid.SSID_len > WLC_ESSID_MAX_SIZE)
+				ssid.SSID_len = WLC_ESSID_MAX_SIZE;
+			memcpy(ssid.SSID, extra, ssid.SSID_len);
+			wl_ioctl(dev, WLC_SET_SSID, &ssid, sizeof(ssid));
+			break;
+		}
 		case SIOCGIWRTS:
 		{
 			wl_ioctl(dev,WLC_GET_RTS,&(wrqu->rts.value),sizeof(int));
@@ -146,6 +157,11 @@ static int wlcompat_ioctl(struct net_device *dev,
 		case SIOCGIWRANGE:
 		{
 			err = wlcompat_ioctl_getiwrange(dev, extra);
+			break;
+		}
+		default:
+		{
+			err = -EINVAL;
 			break;
 		}
 	}
@@ -180,7 +196,7 @@ static const iw_handler	 wlcompat_handler[] = {
 	NULL,			/* SIOCGIWAPLIST */
 	NULL,			/* -- hole -- */
 	NULL,			/* -- hole -- */
-	NULL,			/* SIOCSIWESSID */
+	wlcompat_ioctl,		/* SIOCSIWESSID */
 	wlcompat_ioctl,		/* SIOCGIWESSID */
 	NULL,			/* SIOCSIWNICKN */
 	NULL,			/* SIOCGIWNICKN */
