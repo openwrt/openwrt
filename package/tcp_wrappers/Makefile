@@ -16,6 +16,7 @@ PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_SOURCE_DIR)
 # only need libwrap.a at the moment
 #PKG_IPK := $(PACKAGE_DIR)/zlib_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
 
+.NOTPARALLEL:
 
 $(DL_DIR)/$(PKG_SOURCE_FILE):
 	mkdir -p $(DL_DIR)
@@ -28,8 +29,7 @@ $(PKG_BUILD_DIR)/.patched: $(DL_DIR)/$(PKG_SOURCE_FILE)
 	touch $(PKG_BUILD_DIR)/.patched
 
 $(PKG_BUILD_DIR)/libwrap.a: $(PKG_BUILD_DIR)/.patched
-
-	$(MAKE) -C $(PKG_BUILD_DIR) \
+	$(MAKE) -j1 -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
 		COPTS="$(TARGET_CFLAGS)" \
 		LIBS=-lnsl \

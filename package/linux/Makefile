@@ -10,6 +10,7 @@ PKG_RELEASE := 1
 TARGETS := 
 INSTALL_TARGETS := 
 
+.NOTPARALLEL:
 
 define KMOD_template
 ifeq ($$(strip $(4)),)

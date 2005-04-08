@@ -16,6 +16,8 @@ PKG_IPK := $(PACKAGE_DIR)/$(PKG_NAME)_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
 
 OPENSSL_NO_CIPHERS:=no-idea no-mdc2 no-rc5 no-rc2 no-md2 no-md4
 
+.NOTPARALLEL:
+
 $(DL_DIR)/$(PKG_SOURCE_FILE):
 	mkdir -p $(DL_DIR)
 	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE_FILE) $(PKG_MD5SUM) $(PKG_SOURCE_SITE)
@@ -38,13 +40,13 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.patched
 	touch $(PKG_BUILD_DIR)/.configured
 
 $(PKG_BUILD_DIR)/apps/openssl: $(PKG_BUILD_DIR)/.configured
-	$(MAKE) CC=$(TARGET_CC) -C $(PKG_BUILD_DIR) all build-shared
+	$(MAKE) -j1 CC=$(TARGET_CC) -C $(PKG_BUILD_DIR) all build-shared
 	# Work around openssl build bug to link libssl.so with libcrypto.so.
 	-rm $(PKG_BUILD_DIR)/libssl.so.*.*.*
-	$(MAKE) CC=$(TARGET_CC) -C $(PKG_BUILD_DIR) do_linux-shared
+	$(MAKE) -j1 CC=$(TARGET_CC) -C $(PKG_BUILD_DIR) do_linux-shared
 
 $(STAGING_DIR)/lib/libssl.so: $(PKG_BUILD_DIR)/apps/openssl
-	$(MAKE) CC=$(TARGET_CC) INSTALL_PREFIX=$(STAGING_DIR) -C $(PKG_BUILD_DIR) install_sw
+	$(MAKE) -j1 CC=$(TARGET_CC) INSTALL_PREFIX=$(STAGING_DIR) -C $(PKG_BUILD_DIR) install_sw
 	cp -fa $(PKG_BUILD_DIR)/libcrypto.so* $(STAGING_DIR)/lib/
 	chmod a-x $(STAGING_DIR)/lib/libcrypto.so.0.9.7
 	(cd $(STAGING_DIR)/lib; ln -fs libcrypto.so.0.9.7 libcrypto.so)

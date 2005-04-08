@@ -21,8 +21,8 @@ $(foreach obj,$(OBJS),$(eval $(call OBJ_template,$(obj))))
 $(PKG_BUILD_DIR):
 	mkdir -p $(PKG_BUILD_DIR)
 
-$(PKG_BUILD_DIR)/nvram: $(PKG_BUILD_DIR)/main.o
-	$(TARGET_CC) $(TARGET_CFLAGS) -o $@ $^ -L$(PKG_BUILD_DIR) -lnvram 
+$(PKG_BUILD_DIR)/nvram: $(PKG_BUILD_DIR)/main.o $(PKG_BUILD_DIR)/libnvram.so
+	$(TARGET_CC) $(TARGET_CFLAGS) -o $@ $< -L$(PKG_BUILD_DIR) -lnvram 
 
 $(PKG_BUILD_DIR)/libnvram.so: $(LIBNVRAM_OBJS)
 	$(TARGET_CC) -shared -o $@ $^

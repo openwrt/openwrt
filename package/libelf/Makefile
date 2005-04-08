@@ -15,6 +15,8 @@ PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_SOURCE_DIR)
 PKG_IPK := $(PACKAGE_DIR)/$(PKG_NAME)_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
 PKG_IPK_DIR :=$(PKG_BUILD_DIR)/ipkg/
 
+.NOTPARALLEL:
+
 $(DL_DIR)/$(PKG_SOURCE_FILE):
 	mkdir -p $(DL_DIR)
 	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE_FILE) $(PKG_MD5SUM) $(PKG_SOURCE_SITE)
@@ -38,11 +40,11 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.unpacked
 	touch $(PKG_BUILD_DIR)/.configured
 
 $(PKG_BUILD_DIR)/lib/libelf.so.$(LIBELF_VER): $(PKG_BUILD_DIR)/.configured
-	$(MAKE) CC=$(TARGET_CC) LD=$(TARGET_CROSS)ld ARCH=$(ARCH) \
+	$(MAKE) -j1 CC=$(TARGET_CC) LD=$(TARGET_CROSS)ld ARCH=$(ARCH) \
 		-C $(PKG_BUILD_DIR)
 
 $(STAGING_DIR)/lib/libelf.so: $(PKG_BUILD_DIR)/lib/libelf.so.$(LIBELF_VER)
-	$(MAKE) CC=$(TARGET_CC) LD=$(TARGET_CROSS)ld ARCH=$(ARCH) \
+	$(MAKE) -j1 CC=$(TARGET_CC) LD=$(TARGET_CROSS)ld ARCH=$(ARCH) \
 		-C $(PKG_BUILD_DIR)/lib instroot="$(STAGING_DIR)" install
 
 

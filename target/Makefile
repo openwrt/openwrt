@@ -73,6 +73,7 @@ $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
 
 $(INSTALL_TARGET_DIRS): lzma-loader-compile
+$(IMAGE_TARGETS): $(patsubst %,%-install,$(TARGET_DIRS))
 compile: $(patsubst %,%-compile,$(TARGET_DIRS))
 install: utils-install lzma-install $(LINUX_IMAGE) $(patsubst %,%-install,$(TARGET_DIRS)) $(IMAGE_TARGETS)
 clean: $(patsubst %,%-clean,$(TARGET_DIRS)) image_clean

@@ -20,6 +20,8 @@ PKG_SOURCE_DIR := $(PKG_NAME)-$(PKG_VERSION)
 PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_SOURCE_DIR)
 PKG_IPK := $(PACKAGE_DIR)/lib$(PKG_NAME)_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
 
+.NOTPARALLEL:
+
 $(DL_DIR)/$(PKG_SOURCE_FILE):
 	mkdir -p $(DL_DIR)
 	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE_FILE) $(PKG_MD5SUM) $(PKG_SOURCE_SITE)
@@ -35,7 +37,7 @@ $(PKG_IPK): $(PKG_BUILD_DIR)/ipkg/rules
 	cd $(PKG_BUILD_DIR); \
 	TOPDIR="$(TOPDIR)" IPKG_RULES_INC="$(TOPDIR)/rules.mk" \
 	INSTALL_DIR="$(STAGING_DIR)" \
-	./ipkg/rules package
+	$(MAKE) -j1 -f ./ipkg/rules package
 
 $(IPKG_STATE_DIR)/info/lib$(PKG_NAME).list: $(PKG_IPK)
 	$(IPKG) install $(PKG_IPK)
