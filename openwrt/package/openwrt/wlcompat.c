@@ -104,6 +104,27 @@ static int wlcompat_ioctl(struct net_device *dev,
 			wrqu->freq.e = 0;
 			break;
 		}
+		case SIOCSIWFREQ:
+		{
+			if (wrqu->freq.e == 1) {
+				int channel = 0;
+				int f = wrqu->freq.m / 100000;
+				while ((channel < NUM_CHANNELS + 1) && (f != channel_frequency[channel]))
+					channel++;
+				
+				if (channel == NUM_CHANNELS) { // channel not found
+					err = -EINVAL;
+				} else {
+					wrqu->freq.e = 0;
+					wrqu->freq.m = channel + 1;
+				}
+			}
+			if ((wrqu->freq.e == 0) && (wrqu->freq.m < 1000)) {
+				wl_ioctl(dev, WLC_SET_CHANNEL, &wrqu->freq.m, sizeof(int));
+			} else {
+				err = -EINVAL;
+			}
+		}
 		case SIOCGIWAP:
 		{
 			wrqu->ap_addr.sa_family = ARPHRD_ETHER;
@@ -174,7 +195,7 @@ static const iw_handler	 wlcompat_handler[] = {
 	wlcompat_ioctl,		/* SIOCGIWNAME */
 	NULL,			/* SIOCSIWNWID */
 	NULL,			/* SIOCGIWNWID */
-	NULL,			/* SIOCSIWFREQ */
+	wlcompat_ioctl,		/* SIOCSIWFREQ */
 	wlcompat_ioctl,		/* SIOCGIWFREQ */
 	NULL,			/* SIOCSIWMODE */
 	NULL,			/* SIOCGIWMODE */
