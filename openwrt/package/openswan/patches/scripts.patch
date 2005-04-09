@@ -82,7 +82,7 @@ diff -uNr openswan-2.3.0.orig/programs/showhostkey/showhostkey.in openswan-2.3.0
  fi
  
 -host="`hostname --fqdn`"
-+host="`nvram get wan_hostname`"
++host="`cat /proc/sys/kernel/hostname`"
  
  awk '	BEGIN {
 
