@@ -1,7 +1,11 @@
 config BR2_PACKAGE_MATRIXSSL
+	select BR2_PACKAGE_LIBPTHREAD
 	tristate "matrixssl"
 	default m
 	help
 	  an embedded SSL implementation
 	  
 	  http://www.matrixssl.org/
+	  
+	  Depends: libpthread
+	  

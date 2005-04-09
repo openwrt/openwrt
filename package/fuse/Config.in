@@ -1,4 +1,5 @@
 config BR2_PACKAGE_FUSE
+	select BR2_PACKAGE_LIBPTHREAD
 	tristate "fuse (Filesystem in USErspace)"
 	default n
 	help
@@ -18,4 +19,5 @@ config BR2_PACKAGE_FUSE
 	  
 	  http://fuse.sourceforge.net/
 	  
-
+	  Depends: libpthread
+	  
