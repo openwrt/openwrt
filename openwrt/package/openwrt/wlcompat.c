@@ -158,7 +158,7 @@ static int wlcompat_get_scan(struct net_device *dev,
 	char *current_val;
 	char *end_buf = extra + IW_SCAN_MAX_DATA;
 	struct iw_event iwe;
-	int i;
+	int i, j;
 
 	if (wl_ioctl(dev, WLC_SCAN_RESULTS, buf, WLC_IOCTL_MAXLEN) < 0)
 		return -EAGAIN;
@@ -199,8 +199,8 @@ static int wlcompat_get_scan(struct net_device *dev,
 		current_val = current_ev + IW_EV_LCP_LEN;
 		iwe.u.bitrate.fixed = iwe.u.bitrate.disabled = 0;
 		
-		for(i = 0 ; i < bss_info->rateset.count ; i++) {
-			iwe.u.bitrate.value = ((bss_info->rateset.rates[i] & 0x7f) * 500000);
+		for(j = 0 ; j < bss_info->rateset.count ; j++) {
+			iwe.u.bitrate.value = ((bss_info->rateset.rates[j] & 0x7f) * 500000);
 			current_val = iwe_stream_add_value(current_ev, current_val, end_buf, &iwe, IW_EV_PARAM_LEN);
 		}
 		if((current_val - current_ev) > IW_EV_LCP_LEN)
