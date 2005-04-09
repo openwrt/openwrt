@@ -57,11 +57,14 @@ $(PKG_IPK): $(PKG_BUILD_DIR)/$(PKG_NAME)
 	-$(STRIP) $(PKG_IPK_DIR)/usr/libexec/ipsec/*
 	rm -rf $(PKG_IPK_DIR)/usr/share
 	rm -rf $(PKG_IPK_DIR)/usr/man
+	rm -rf $(PKG_IPK_DIR)/var
 	rm -rf $(PKG_IPK_DIR)/etc/rc.d/rc*.d
 	mkdir -p $(PKG_IPK_DIR)/etc/init.d
 	ln -sf ../rc.d/init.d/ipsec $(PKG_IPK_DIR)/etc/init.d/S60ipsec
 	mkdir -p $(PKG_IPK_DIR)/lib/modules/$(LINUX_VERSION)
 	cp $(PKG_BUILD_DIR)/modobj/ipsec.o $(PKG_IPK_DIR)/lib/modules/$(LINUX_VERSION)/
+	$(TARGET_CROSS)strip --remove-section=.comment --remove-section=.note \
+	  $(PKG_IPK_DIR)/lib/modules/$(LINUX_VERSION)/ipsec.o
 	mkdir -p $(PACKAGE_DIR)
 	find $(PKG_BUILD_DIR) -name \*.old | xargs rm -rf
 	$(IPKG_BUILD) $(PKG_IPK_DIR) $(PACKAGE_DIR)
