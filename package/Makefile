@@ -49,6 +49,7 @@ package-$(BR2_PACKAGE_RADVD) += radvd
 package-$(BR2_PACKAGE_SER) += ser
 package-$(BR2_PACKAGE_SETSERIAL) += setserial
 package-$(BR2_PACKAGE_SHFS) += shfs
+package-$(BR2_PACKAGE_SPEEX) += speex
 package-$(BR2_PACKAGE_STRACE) += strace
 package-$(BR2_PACKAGE_TCPDUMP) += tcpdump
 package-$(BR2_PACKAGE_WIRELESS_TOOLS) += wireless-tools
