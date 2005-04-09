@@ -1,0 +1,40 @@
+--- shfs-0.35-orig/shfsmount/Makefile	2004-06-01 15:16:19.000000000 +0200
++++ shfs-0.35-2/shfsmount/Makefile	2005-04-09 01:27:22.000000000 +0200
+@@ -2,15 +2,16 @@
+ SHFS_VERSION=unknown
+ endif
+ 
+-SHFSMOUNT := /usr/bin/shfsmount
+-SHFSUMOUNT := /usr/bin/shfsumount
++SHFSMOUNT := /usr/sbin/shfsmount
++SHFSUMOUNT := /usr/sbin/shfsumount
+ 
+ ALL_TARGETS := shfsmount shfsumount
+ 
+ SEARCHDIRS := -I- -I. -I../shfs/Linux-2.4/
+ 
+ CC     := gcc
+-CFLAGS  = -g -Wall ${SEARCHDIRS} -DSHFS_VERSION=\"${SHFS_VERSION}\"
++OFLAGS  = -g
++CFLAGS  = $(OFLAGS) -Wall ${SEARCHDIRS} -DSHFS_VERSION=\"${SHFS_VERSION}\"
+ 
+ LINKER    := gcc
+ LDFLAGS    = 
+@@ -40,12 +41,12 @@
+ 
+ 
+ install: shfsmount shfsumount
+-	install -m755 -b -D shfsmount ${ROOT}${SHFSMOUNT}
+-	install -m755 -b -D shfsumount ${ROOT}${SHFSUMOUNT}
+-	if [ ! -d ${ROOT}/sbin ]; then mkdir ${ROOT}/sbin; fi
+-	ln -fs ${SHFSMOUNT} ${ROOT}/sbin/mount.shfs
++	install -m755 -D shfsmount ${ROOT}${SHFSMOUNT}
++	install -m755 -D shfsumount ${ROOT}${SHFSUMOUNT}
++	if [ ! -d ${ROOT}/usr/sbin ]; then mkdir ${ROOT}/usr/sbin; fi
++	ln -fs ${SHFSMOUNT} ${ROOT}/usr/sbin/mount.shfs
+ 
+ uninstall:
+-	rm -f ${ROOT}${SHFSMOUNT} ${ROOT}${SHFSUMOUNT} ${ROOT}/sbin/mount.shfs
++	rm -f ${ROOT}${SHFSMOUNT} ${ROOT}${SHFSUMOUNT} ${ROOT}/usr/sbin/mount.shfs
+ 
+ .PHONY : all tidy clean install uninstall
