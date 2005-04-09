@@ -1,0 +1,163 @@
+#!/usr/bin/make -f
+
+ifneq ($(strip ${IPKG_RULES_INC}),)
+ include $(IPKG_RULES_INC)
+endif
+
+##
+
+PKG_VERSION := $(shell cat ./ipkg/version)
+CURRENT_DIR := $(shell pwd)
+INSTALL_DIR ?= $(CURRENT_DIR)/ipkg-install
+
+unexport INSTALL_DIR
+
+I_KMOD_FUSE := ipkg/kmod-fuse
+I_LIBFUSE := ipkg/libfuse
+I_LIBFUSE_DEV := ipkg/libfuse-dev
+I_FUSE_UTILS := ipkg/fuse-utils
+
+BUILD_DEPS = \
+
+CONFIGURE_OPTS = \
+	--enable-shared \
+	--enable-static \
+	--enable-kernel-module \
+	--enable-lib \
+	--enable-util \
+	--disable-example \
+	--disable-auto-modprobe \
+	--with-kernel=$(LINUX_DIR) \
+
+##
+
+all: package
+
+
+.stamp-configured: $(BUILD_DEPS)
+
+	touch configure.in
+	touch aclocal.m4
+	touch Makefile.in
+	touch include/config.h.in
+	touch configure
+	
+	rm -rf config.cache
+	$(TARGET_CONFIGURE_OPTS) \
+	CFLAGS="$(TARGET_CFLAGS)" \
+	./configure \
+	  --target=$(GNU_TARGET_NAME) \
+	  --host=$(GNU_TARGET_NAME) \
+	  --build=$(GNU_HOST_NAME) \
+	  --program-prefix="" \
+	  --program-suffix="" \
+	  --prefix=/usr \
+	  --exec-prefix=/usr \
+	  --bindir=/usr/bin \
+	  --datadir=/usr/share \
+	  --includedir=/usr/include \
+	  --infodir=/usr/share/info \
+	  --libdir=/usr/lib \
+	  --libexecdir=/usr/lib/locate \
+	  --localstatedir=/var/lib \
+	  --mandir=/usr/share/man \
+	  --sbindir=/usr/sbin \
+	  --sysconfdir=/etc \
+	  $(DISABLE_LARGEFILE) \
+	  $(DISABLE_NLS) \
+	  $(CONFIGURE_OPTS) \
+	
+	touch .stamp-configured
+	
+
+.stamp-built: .stamp-configured
+
+	$(MAKE) \
+
+	touch .stamp-built
+	
+
+$(INSTALL_DIR)/usr/bin/fusermount: .stamp-built
+
+	mkdir -p $(INSTALL_DIR)
+
+	$(MAKE) \
+	  DESTDIR="$(INSTALL_DIR)" \
+	 install
+	
+	rm -f $(INSTALL_DIR)/usr/lib/libfuse.la
+	
+
+configure: .stamp-configured
+
+
+build: .stamp-built
+
+
+install: $(INSTALL_DIR)/usr/bin/fusermount
+
+
+package: $(INSTALL_DIR)/usr/bin/fusermount
+
+	mkdir -p $(I_KMOD_FUSE)/lib/modules/$(LINUX_VERSION)
+	cp -fpR $(INSTALL_DIR)/lib/modules/$(LINUX_VERSION)/kernel/fs/fuse/fuse.o \
+	 $(I_KMOD_FUSE)/lib/modules/$(LINUX_VERSION)/
+	$(TARGET_CROSS)strip --remove-section=.comment --remove-section=.note \
+	 $(I_KMOD_FUSE)/lib/modules/$(LINUX_VERSION)/*.o
+	
+	mkdir -p $(I_LIBFUSE)/usr/lib
+	cp -fpR $(INSTALL_DIR)/usr/lib/libfuse.so.* $(I_LIBFUSE)/usr/lib/
+	$(STRIP) $(I_LIBFUSE)/usr/lib/*
+	
+	mkdir -p $(I_LIBFUSE_DEV)/usr/include
+	cp -fpR $(INSTALL_DIR)/usr/include/fuse* $(I_LIBFUSE_DEV)/usr/include/
+	mkdir -p $(I_LIBFUSE_DEV)/usr/lib
+	cp -fpR $(INSTALL_DIR)/usr/lib/libfuse.{a,so*} $(I_LIBFUSE_DEV)/usr/lib/
+	mkdir -p $(I_LIBFUSE_DEV)/usr/lib/pkgconfig
+	cp -fpR $(INSTALL_DIR)/usr/lib/pkgconfig/fuse.pc $(I_LIBFUSE_DEV)/usr/lib/pkgconfig/
+	
+	mkdir -p $(I_FUSE_UTILS)/usr/bin
+	cp -fpR $(INSTALL_DIR)/usr/bin/fusermount $(I_FUSE_UTILS)/usr/bin/
+	$(STRIP) $(I_FUSE_UTILS)/usr/bin/*
+	
+	chmod 0755 ipkg/*/CONTROL/
+	chmod 0644 ipkg/*/CONTROL/control
+	
+	perl -pi -e "s/^Arch.*:.*/Architecture: $(ARCH)/g" ipkg/*/CONTROL/control
+ifneq ($(strip $(PKG_VERSION)),)
+	perl -pi -e "s/^Vers.*:.*/Version: $(PKG_VERSION)/g" ipkg/*/CONTROL/control
+	perl -pi -e "s/^Vers.*:.*/Version: $(LINUX_VERSION)+$(PKG_VERSION)/g" $(I_KMOD_FUSE)/CONTROL/control
+endif
+	
+	$(IPKG_BUILD) $(I_KMOD_FUSE) $(IPKG_TARGET_DIR)
+	$(IPKG_BUILD) $(I_LIBFUSE) $(IPKG_TARGET_DIR)
+	$(IPKG_BUILD) $(I_LIBFUSE_DEV) $(IPKG_TARGET_DIR)
+	$(IPKG_BUILD) $(I_FUSE_UTILS) $(IPKG_TARGET_DIR)
+	
+
+clean:
+
+	-$(MAKE) \
+	  DESTDIR="$(INSTALL_DIR)" \
+	 install clean
+	
+	rm -rf .stamp-* \
+	  $(I_KMOD_FUSE)/lib
+	  $(I_LIBFUSE)/usr
+	  $(I_LIBFUSE_DEV)/usr
+	  $(I_FUSE_UTILS)/usr
+	
+
+control:
+
+	@cat $(I_KMOD_FUSE)/CONTROL/control
+	@echo
+	@cat $(I_LIBFUSE)/CONTROL/control
+	@echo
+	@cat $(I_LIBFUSE_DEV)/CONTROL/control
+	@echo
+	@cat $(I_FUSE_UTILS)/CONTROL/control
+	@echo
+	
+
+.PHONY: configure build install package clean control

@@ -1,0 +1,21 @@
+config BR2_PACKAGE_FUSE
+	tristate "fuse (Filesystem in USErspace)"
+	default n
+	help
+	  With FUSE it is possible to implement a fully functional 
+	  filesystem in a userspace program.
+	  
+	  Features include:
+	  
+	   * Simple library API
+	   * Simple installation (no need to patch or recompile the kernel)
+	   * Secure implementation
+	   * Userspace - kernel interface is very efficient
+	   * Usable by non privileged users
+	   * Runs on Linux kernels 2.4.X and 2.6.X
+	   * Has proven very stable over time
+	  
+	  
+	  http://fuse.sourceforge.net/
+	  
+
