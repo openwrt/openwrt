@@ -92,10 +92,22 @@ $(eval $(call KMOD_template,LP,lp,\
 	$(MODULES_DIR)/kernel/drivers/parport/parport_splink.o \
 	$(MODULES_DIR)/kernel/drivers/char/lp.o \
 ,CONFIG_PARPORT))
+$(eval $(call KMOD_template,EXT2,ext2,\
+	$(MODULES_DIR)/kernel/fs/ext2/*.o \
+,CONFIG_EXT2_FS))
+$(eval $(call KMOD_template,EXT3,ext3,\
+	$(MODULES_DIR)/kernel/fs/ext3/*.o \
+	$(MODULES_DIR)/kernel/fs/jbd/*.o \
+,CONFIG_EXT3_FS))
+$(eval $(call KMOD_template,XFS,xfs,\
+	$(MODULES_DIR)/kernel/fs/xfs/*.o \
+,CONFIG_XFS_FS))
+$(eval $(call KMOD_template,HFSPLUS,hfsplus,\
+	$(MODULES_DIR)/kernel/fs/hfsplus/*.o \
+,CONFIG_HFSPLUS_FS))
 $(eval $(call KMOD_template,VFAT,vfat,\
 	$(MODULES_DIR)/kernel/fs/vfat/vfat.o \
 	$(MODULES_DIR)/kernel/fs/fat/fat.o \
-	$(MODULES_DIR)/kernel/fs/msdos/msdos.o \
 ,CONFIG_VFAT_FS))
 $(eval $(call KMOD_template,CRYPTO,crypto,\
 	$(MODULES_DIR)/kernel/crypto/*.o \

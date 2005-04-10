@@ -97,6 +97,30 @@ config BR2_PACKAGE_KMOD_VFAT
 	  Kernel modules for VFAT filesystem support
 	  useful for usb mass storage devices
 
+config BR2_PACKAGE_KMOD_EXT2
+	tristate "EXT2 filesystem support"
+	default m
+	help
+	  Kernel modules for EXT2 filesystem support
+
+config BR2_PACKAGE_KMOD_EXT3
+	tristate "EXT3 filesystem support"
+	default m
+	help
+	  Kernel modules for EXT3 filesystem support
+
+config BR2_PACKAGE_KMOD_XFS
+	tristate "XFS filesystem support"
+	default m
+	help
+	  Kernel modules for XFS filesystem support
+
+config BR2_PACKAGE_KMOD_HFSPLUS
+	tristate "HFS+ filesystem support"
+	default m
+	help
+	  Kernel modules for HFS+ filesystem support
+
 config BR2_PACKAGE_KMOD_LP
 	tristate "parallel port and lp support"
 	default m
