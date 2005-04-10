@@ -105,6 +105,7 @@ $(PKG_IPK): $(PKG_BUILD_DIR)/libmysql/.libs/libmysqlclient.so
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_IPK_DIR) libmysqlclient.control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
 	mkdir -p $(PKG_IPK_DIR)/usr/lib
 	cp $< $(PKG_IPK_DIR)/usr/lib/
+	$(STRIP) $(PKG_IPK_DIR)/usr/lib/*
 	mkdir -p $(PACKAGE_DIR)
 	$(IPKG_BUILD) $(PKG_IPK_DIR) $(PACKAGE_DIR)
 
