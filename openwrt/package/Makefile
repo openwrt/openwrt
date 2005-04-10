@@ -6,6 +6,7 @@ package-y:=openwrt
 package-$(BR2_PACKAGE_AICCU) += aiccu
 package-$(BR2_PACKAGE_ARPTABLES) += arptables
 package-$(BR2_PACKAGE_ARPWATCH) += arpwatch
+package-$(BR2_PACKAGE_ASTERISK) += asterisk
 package-$(BR2_PACKAGE_BRIDGE) += bridge
 package-$(BR2_PACKAGE_BUSYBOX) += busybox
 package-$(BR2_PACKAGE_BWM) += bwm
@@ -68,6 +69,15 @@ install: $(patsubst %,%-install,$(package-y))
 
 ifeq ($(BR2_PACKAGE_OPENVPN_LZO),y)
 openvpn-compile: lzo-compile
+endif
+ifneq ($(BR2_PACKAGE_ASTERISK_SPEEX),)
+asterisk-compile: speex-compile
+endif
+ifneq ($(BR2_PACKAGE_ASTERISK_PGSQL),)
+asterisk-compile: postgresql-compile
+endif
+ifneq ($(BR2_PACKAGE_ASTERISK_MYSQL),)
+asterisk-compile: mysql-compile
 endif
 
 openswan-compile: gmp-compile
