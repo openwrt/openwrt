@@ -89,7 +89,7 @@ asterisk-compile: $(PKG_BUILD_DIR)/.patched
 		OPTIMIZE="$(TARGET_CFLAGS)" \
 		PROC="$(ARCH)" \
 		CFLAGS_EXTRA="-I$(STAGING_DIR)/usr/include" \
-		LDFLAGS_EXTRA="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/usr/lib/mysql" \
+		LDFLAGS_EXTRA="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib/mysql" \
 		CRYPTO_LIBS="-L$(STAGING_DIR)/usr/lib -Wl,-Bstatic -lssl -lcrypto -Wl,-Bdynamic" \
 		EXTRA_APPS="$(APPS)" \
 		EXTRA_MODS="$(MODS)" \
@@ -167,6 +167,8 @@ $(PKG_SOUNDS): asterisk-compile
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_SOUNDS_DIR) control/$(PKG_NAME)-sounds.control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
 	mkdir -p $(PKG_SOUNDS_DIR)/usr/lib/asterisk/sounds
 	cp -a $(PKG_BUILD_DIR)/sounds/* $(PKG_SOUNDS_DIR)/usr/lib/asterisk/sounds/
+	rm -f $(PKG_SOUNDS_DIR)/usr/lib/asterisk/sounds/*.mp3
+	rm -f $(PKG_SOUNDS_DIR)/usr/lib/asterisk/sounds/vm-*
 	mkdir -p $(PACKAGE_DIR)
 	$(IPKG_BUILD) $(PKG_SOUNDS_DIR) $(PACKAGE_DIR)
 
