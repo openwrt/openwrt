@@ -47,6 +47,7 @@ package-$(BR2_PACKAGE_PPTP) += pptp
 package-$(BR2_PACKAGE_PPTPD) += pptpd
 package-$(BR2_PACKAGE_QUAGGA) += quagga
 package-$(BR2_PACKAGE_RADVD) += radvd
+package-$(BR2_PACKAGE_SDK) += sdk
 package-$(BR2_PACKAGE_SER) += ser
 package-$(BR2_PACKAGE_SETSERIAL) += setserial
 package-$(BR2_PACKAGE_SHFS) += shfs
@@ -61,6 +62,9 @@ package-$(BR2_PACKAGE_LIBNET) += libnet
 package-$(BR2_PACKAGE_LIBMYSQLCLIENT) += mysql
 package-$(BR2_PACKAGE_LIBPCAP) += libpcap
 package-$(BR2_PACKAGE_LIBPQ) += postgresql
+
+DEV_LIBS:=tcp_wrappers glib ncurses openssl pcre popt zlib libnet libpcap mysql postgresql iptables matrixssl lzo gmp fuse portmap libelf
+DEV_LIBS_COMPILE:=$(patsubst %,%-compile,$(DEV_LIBS))
 
 all: compile install
 clean: $(patsubst %,%-clean,$(package-) $(package-y) $(package-m)) linux-clean
@@ -79,7 +83,6 @@ endif
 ifneq ($(BR2_PACKAGE_ASTERISK_MYSQL),)
 asterisk-compile: mysql-compile
 endif
-
 openswan-compile: gmp-compile
 nocatsplash-compile: glib-compile
 arpwatch-compile: libpcap-compile
@@ -94,6 +97,7 @@ libnet-compile: libpcap-compile
 mysql-compile: ncurses-compile zlib-compile
 postgresql-compile: zlib-compile
 
+sdk-compile: $(DEV_LIBS_COMPILE)
 $(patsubst %,%-prepare,$(package-y) $(package-m) $(package-)): linux-install
 
 %-prepare:

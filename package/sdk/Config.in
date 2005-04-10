@@ -1,0 +1,8 @@
+config BR2_PACKAGE_SDK
+	bool "OpenWrt SDK"
+	default y
+	help
+	  Build an OpenWrt SDK.
+	  This is essentially a stripped-down version of the buildroot
+	  with a precompiled toolchain. It can be used to develop and
+	  test packages for OpenWrt before including them in the buildroot
