@@ -337,7 +337,18 @@ static int wlcompat_ioctl(struct net_device *dev,
 		}
 		case SIOCGIWENCODE:
 		{
-			wrqu->data.flags = IW_ENCODE_DISABLED;
+			int val = 0;
+			if (wl_ioctl(dev, WLC_GET_WEP, &val, sizeof(val)) < 0)
+				return -EINVAL;
+			
+			if (val > 0) {
+				wrqu->data.flags = IW_ENCODE_ENABLED | IW_ENCODE_NOKEY;
+			} else {
+				wrqu->data.flags = IW_ENCODE_DISABLED;
+			}
+				
+				
+			
 			break;
 		}
 		case SIOCGIWRANGE:
@@ -488,19 +499,35 @@ static const struct iw_handler_def      wlcompat_handler_def =
 
 #ifdef DEBUG
 static int (*old_ioctl)(struct net_device *dev, struct ifreq *ifr, int cmd);
+void print_buffer(int len, unsigned char *buf) {
+	int x;
+	if (buf != NULL) {
+		for (x=0;x<len && x<180 ;x++) {
+			if ((x % 4) == 0)
+				printk(" ");
+			printk("%02X",buf[x]);
+		}
+	} else {
+		printk(" NULL");
+	}
+	printk("\n");
+
+}
 static int new_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd) {
-	int ret = old_ioctl(dev,ifr,cmd);
+	int ret = 0;
 	printk("dev: %s ioctl: 0x%04x\n",dev->name,cmd);
 	if (cmd==SIOCDEVPRIVATE) {
-		int x;
 		wl_ioctl_t *ioc = (wl_ioctl_t *)ifr->ifr_data;
 		unsigned char *buf = ioc->buf;
 		printk("   cmd: %d buf: 0x%08x len: %d\n",ioc->cmd,&(ioc->buf),ioc->len);
-		printk("   ->");
-		for (x=0;x<ioc->len && x<128 ;x++) {
-			printk("%02X",buf[x]);
-		}
-		printk("\n");
+		printk("   send: ->");
+		print_buffer(ioc->len, buf);
+		ret = old_ioctl(dev,ifr,cmd);
+		printk("   recv: ->");
+		print_buffer(ioc->len, buf);
+		printk("   ret: %d\n", ret);
+	} else {
+		ret = old_ioctl(dev,ifr,cmd);
 	}
 	return ret;
 }
