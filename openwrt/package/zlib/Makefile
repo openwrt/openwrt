@@ -48,7 +48,7 @@ $(PKG_IPK): $(STAGING_DIR)/lib/libz.so
 	mkdir -p $(PACKAGE_DIR)
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_BUILD_DIR)/ipkg/zlib zlib.control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
 	mkdir -p $(PKG_BUILD_DIR)/ipkg/zlib/usr/lib
-	cp -a $(PKG_BUILD_DIR)/libz.so* $(PKG_BUILD_DIR)/ipkg/zlib/usr/lib
+	cp -a $(PKG_BUILD_DIR)/libz.so.* $(PKG_BUILD_DIR)/ipkg/zlib/usr/lib
 	$(STRIP) $(PKG_BUILD_DIR)/ipkg/zlib/usr/lib/*
 	$(IPKG_BUILD) $(PKG_BUILD_DIR)/ipkg/zlib $(PACKAGE_DIR)
 
