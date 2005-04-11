@@ -157,3 +157,53 @@ diff -uNr openswan-2.3.0.orig/programs/_realsetup/_realsetup.in openswan-2.3.0/p
  		then
  			echo Cannot write to directory to create \"$stderrlog\".
  			exit 1
+diff -urN openswan-2.3.1.old/programs/_startklips/_startklips.in openswan-2.3.1/programs/_startklips/_startklips.in
+--- openswan-2.3.1.old/programs/_startklips/_startklips.in	2005-04-10 23:57:51.000000000 +0200
++++ openswan-2.3.1/programs/_startklips/_startklips.in	2005-04-11 00:00:36.000000000 +0200
+@@ -262,15 +262,15 @@
+     echo "FATAL ERROR: Both KLIPS and NETKEY IPsec code is present in kernel"
+     exit
+ fi
+-if test ! -f $ipsecversion && test ! -f $netkey && modprobe -qn ipsec
++if test ! -f $ipsecversion && test ! -f $netkey && insmod ipsec
+ then
+     # statically compiled KLIPS/NETKEY not found; try to load the module
+-    modprobe ipsec
++    insmod ipsec
+ fi
+ 
+ if test ! -f $ipsecversion && test ! -f $netkey
+ then
+-	modprobe -v af_key
++	insmod -v af_key
+ fi
+ 
+ if test -f $netkey
+@@ -278,18 +278,18 @@
+ 	klips=false
+ 	if test -f $modules
+ 	then
+-		modprobe -qv ah4
+-		modprobe -qv esp4
+-		modprobe -qv ipcomp
++		insmod -qv ah4
++		insmod -qv esp4
++		insmod -qv ipcomp
+ 		#  xfrm4_tunnel is needed by ipip and ipcomp
+-		modprobe -qv xfrm4_tunnel
++		insmod -qv xfrm4_tunnel
+ 		# xfrm_user contains netlink support for IPsec 
+-		modprobe -qv xfrm_user
++		insmod -qv xfrm_user
+ 		# load the most common ciphers/algo's
+-		modprobe -qv sha1
+-		modprobe -qv md5
+-		modprobe -qv des
+-		modprobe -qv aes
++		insmod -qv sha1
++		insmod -qv md5
++		insmod -qv des
++		insmod -qv aes
+ 	fi
+ fi
+ 
