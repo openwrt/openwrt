@@ -32,6 +32,8 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.unpacked
 			--target=$(GNU_TARGET_NAME) \
 			--host=$(GNU_TARGET_NAME) \
 			--build=$(GNU_HOST_NAME) \
+			--program-prefix="" \
+			--program-suffix="" \
 			--prefix=/usr \
 			--exec-prefix=/usr \
 			--bindir=/usr/bin \
@@ -39,11 +41,12 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.unpacked
 			--includedir=/usr/include \
 			--infodir=/usr/share/info \
 			--libdir=/usr/lib \
-			--libexecdir=/usr/lib/locate \
-			--localstatedir=/var/lib \
+			--libexecdir=/usr/lib \
+			--localstatedir=/var \
 			--mandir=/usr/share/man \
 			--sbindir=/usr/sbin \
 			--sysconfdir=/etc \
+		  	$(DISABLE_LARGEFILE) \
 			$(DISABLE_NLS) \
 	);
 	touch $(PKG_BUILD_DIR)/.configured
@@ -63,13 +66,13 @@ $(PKG_IPK): $(PKG_BUILD_DIR)/src/chilli
 	mkdir -p $(PACKAGE_DIR)
 	$(IPKG_BUILD) $(PKG_IPK_DIR) $(PACKAGE_DIR)
 
-$(IPKG_STATE_DIR)/info/openvpn.list: $(PKG_IPK)
+$(IPKG_STATE_DIR)/info/$(PKG_NAME).list: $(PKG_IPK)
 	$(IPKG) install $(PKG_IPK)
 
 source: $(DL_DIR)/$(PKG_SOURCE)
 prepare: $(PKG_BUILD_DIR)/.unpacked
 compile: $(PKG_IPK)
-install: $(IPKG_STATE_DIR)/info/openvpn.list
+install: $(IPKG_STATE_DIR)/info/$(PKG_NAME).list
 
 clean:
 	rm -rf $(PKG_BUILD_DIR)
