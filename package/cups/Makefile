@@ -90,10 +90,14 @@ $(PKG_IPK): $(PKG_IPK_DIR)/usr/sbin/cupsd
 	find $(PKG_IPK_DIR) -name CVS | xargs rm -rf
 	$(IPKG_BUILD) $(PKG_IPK_DIR) $(PACKAGE_DIR)
 
+$(IPKG_STATE_DIR)/info/$(PKG_NAME).list
+	$(IPKG) install $(PKG_IPK)
+
 source: $(DL_DIR)/$(PKG_SOURCE)
 prepare: $(PKG_BUILD_DIR)/.patched
 compile: $(PKG_IPK)
-install:
-	$(IPKG) install $(PKG_IPK)
+install: $(IPKG_STATE_DIR)/info/$(PKG_NAME).list
+
 clean:
 	rm -rf $(PKG_BUILD_DIR)
+	rm -f $(PKG_IPK)
