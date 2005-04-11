@@ -24,6 +24,7 @@ $(PKG_BUILD_DIR)/ipkg/rules: $(DL_DIR)/$(PKG_SOURCE_FILE)
 	$(PKG_SOURCE_CAT) $(DL_DIR)/$(PKG_SOURCE_FILE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
 #	$(PATCH) $(PKG_BUILD_DIR) ./patches
 	cp -fpR ./ipkg $(PKG_BUILD_DIR)/
+	find $(PKG_BUILD_DIR) -name CVS | xargs rm -rf
 	chmod a+x $(PKG_BUILD_DIR)/ipkg/rules
 	touch $(PKG_BUILD_DIR)/ipkg/rules
 
