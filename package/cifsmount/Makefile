@@ -19,7 +19,7 @@ $(PKG_IPK): $(PKG_BUILD_DIR)/sbin/mount.cifs
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_IPK_DIR) $(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
 	$(IPKG_BUILD) $(PKG_IPK_DIR) $(PACKAGE_DIR)
 
-$(IPKG_STATE_DIR)/info/$(PKG_NAME).list
+$(IPKG_STATE_DIR)/info/$(PKG_NAME).list:
 	$(IPKG) install $(PKG_IPK)
 
 source:
