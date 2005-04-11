@@ -54,7 +54,7 @@ $(PKG_IPK): $(STAGING_DIR)/lib/libspeex.a
 	mkdir -p $(PACKAGE_DIR)
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_BUILD_DIR)/ipkg/speex speex.control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
 	mkdir -p $(PKG_BUILD_DIR)/ipkg/speex/usr/lib
-	cp -a $(STAGING_DIR)/lib/libspeex.so* $(PKG_BUILD_DIR)/ipkg/speex/usr/lib
+	cp -a $(STAGING_DIR)/lib/libspeex.so.* $(PKG_BUILD_DIR)/ipkg/speex/usr/lib
 	$(STRIP) $(PKG_BUILD_DIR)/ipkg/speex/usr/lib/*
 	$(IPKG_BUILD) $(PKG_BUILD_DIR)/ipkg/speex $(PACKAGE_DIR)
 
