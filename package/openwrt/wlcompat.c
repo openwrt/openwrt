@@ -32,8 +32,6 @@
 #include <net/iw_handler.h>
 #include <wlioctl.h>
 
-#define DEBUG
-
 static struct net_device *dev;
 char buf[WLC_IOCTL_MAXLEN];
 
