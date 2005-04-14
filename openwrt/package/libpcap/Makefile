@@ -2,35 +2,39 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME := libpcap
-PKG_VERSION := 0.8.3
-PKG_RELEASE := 1
-PKG_MD5SUM := 56a9d4615d8354fcfe8cff8c8443c77b
+PKG_NAME:=libpcap
+PKG_VERSION:=0.8.3
+PKG_RELEASE:=1
+PKG_MD5SUM:=56a9d4615d8354fcfe8cff8c8443c77b
 
-PKG_SOURCE_SITE := http://www.tcpdump.org/release
-PKG_SOURCE_FILE := $(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_CAT := zcat
-PKG_SOURCE_DIR := $(PKG_NAME)-$(PKG_VERSION)
-PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_SOURCE_DIR)
-PKG_IPK := $(PACKAGE_DIR)/$(PKG_NAME)_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
-PKG_IPK_DIR:=$(PKG_BUILD_DIR)/ipkg
+PKG_SOURCE_URL:= \
+	http://www.tcpdump.org/release \
+	http://nthill.free.fr/openwrt/sources/$(PKG_NAME)/
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_CAT:=zcat
 
-$(DL_DIR)/$(PKG_SOURCE_FILE):
-	mkdir -p $(DL_DIR)
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE_FILE) $(PKG_MD5SUM) $(PKG_SOURCE_SITE)
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)/$(PKG_NAME)-$(PKG_VERSION)
 
-$(PKG_BUILD_DIR)/.patched: $(DL_DIR)/$(PKG_SOURCE_FILE)
-	mkdir -p $(TOOL_BUILD_DIR)
-	$(PKG_SOURCE_CAT) $(DL_DIR)/$(PKG_SOURCE_FILE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
+IPKG_LIBPCAP:=$(PACKAGE_DIR)/$(PKG_NAME)_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
+IDIR_LIBPCAP:=$(PKG_BUILD_DIR)/ipkg/$(PKG_NAME)
+INFO_LIBPCAP:=$(IPKG_STATE_DIR)/info/$(PKG_NAME).list
+
+$(DL_DIR)/$(PKG_SOURCE):
+	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE) $(PKG_MD5SUM) $(PKG_SOURCE_URL)
+
+$(PKG_BUILD_DIR)/.prepared: $(DL_DIR)/$(PKG_SOURCE)
+	mkdir -p $(BUILD_DIR)/$(PKG_NAME)
+	$(PKG_CAT) $(DL_DIR)/$(PKG_SOURCE) | tar -C $(BUILD_DIR)/$(PKG_NAME) $(TAR_OPTIONS) -
 	$(PATCH) $(PKG_BUILD_DIR) ./patches
-	touch $(PKG_BUILD_DIR)/.patched
+	touch $(PKG_BUILD_DIR)/.prepared
 
-$(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.patched
-	(cd $(PKG_BUILD_DIR); rm -rf config.cache; \
-		ac_cv_linux_vers=$(BR2_DEFAULT_KERNEL_HEADERS) \
-		BUILD_CC=$(TARGET_CC) HOSTCC=$(HOSTCC) \
+$(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
+	(cd $(PKG_BUILD_DIR); rm -rf config.cache config.status; \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
+		CPPFLAGS="-I$(STAGING_DIR)/usr/include" \
+		LDFLAGS="-L$(STAGING_DIR)/usr/lib" \
+		ac_cv_linux_vers=$(BR2_DEFAULT_KERNEL_HEADERS) \
 		./configure \
 		--target=$(GNU_TARGET_NAME) \
 		--host=$(GNU_TARGET_NAME) \
@@ -49,6 +53,8 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.patched
 		--mandir=/usr/share/man \
 		--sbindir=/usr/sbin \
 		--sysconfdir=/etc \
+		$(DISABLE_NLS) \
+		$(DISABLE_LARGEFILE) \
 		--enable-shared \
 		--enable-static \
 		--disable-yydebug \
@@ -57,35 +63,34 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.patched
 	);
 	touch $(PKG_BUILD_DIR)/.configured
 
-$(PKG_BUILD_DIR)/libpcap.a: $(PKG_BUILD_DIR)/.configured
+$(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 	$(MAKE) -C $(PKG_BUILD_DIR) \
-		$(TARGET_CONFIGURE_OPTS) \
-		CCOPT="$(TARGET_CFLAGS)" \
+		CCOPT="$(TARGET_CFLAGS)"
+	touch $(PKG_BUILD_DIR)/.built
 
-$(STAGING_DIR)/usr/lib/libpcap.a: $(PKG_BUILD_DIR)/libpcap.a
+$(STAGING_DIR)/usr/lib/libpcap.so: $(PKG_BUILD_DIR)/.built
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		DESTDIR="$(STAGING_DIR)" \
 		install
 
-$(PKG_IPK): $(STAGING_DIR)/usr/lib/libpcap.a
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_IPK_DIR) ./ipkg/$(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
-	mkdir -p $(PKG_IPK_DIR)/usr/lib
-	cp -fpR $(STAGING_DIR)/usr/lib/libpcap.so.* $(PKG_IPK_DIR)/usr/lib/
-	$(STRIP) $(PKG_IPK_DIR)/usr/lib/*
+$(IPKG_LIBPCAP): $(STAGING_DIR)/usr/lib/libpcap.so
+	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_LIBPCAP) $(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
+	mkdir -p $(IDIR_LIBPCAP)/usr/lib
+	cp -fpR $(STAGING_DIR)/usr/lib/libpcap.so.* $(IDIR_LIBPCAP)/usr/lib/
+	$(STRIP) $(IDIR_LIBPCAP)/usr/lib/lib*.so*
 	mkdir -p $(PACKAGE_DIR)
-	$(IPKG_BUILD) $(PKG_IPK_DIR) $(PACKAGE_DIR)
+	$(IPKG_BUILD) $(IDIR_LIBPCAP) $(PACKAGE_DIR)
 
-$(IPKG_STATE_DIR)/info/$(PKG_NAME).list: $(PKG_IPK)
-	$(IPKG) install $(PKG_IPK)
+$(INFO_LIBPCAP): $(IPKG_LIBPCAP)
+	$(IPKG) install $(IPKG_LIBPCAP)
 
-source: $(DL_DIR)/$(PKG_SOURCE_FILE)
-prepare: $(PKG_BUILD_DIR)/.patched
-compile: $(STAGING_DIR)/usr/lib/libpcap.a $(PKG_IPK)
-install: $(IPKG_STATE_DIR)/info/$(PKG_NAME).list
+source: $(DL_DIR)/$(PKG_SOURCE)
+prepare: $(PKG_BUILD_DIR)/.prepared
+compile: $(IPKG_LIBPCAP)
+install: $(INFO_LIBPCAP)
 
 clean:
 	-$(MAKE) -C $(PKG_BUILD_DIR) \
 		DESTDIR="$(STAGING_DIR)" \
-		uninstall clean
-	rm -rf $(PKG_BUILD_DIR)
-	rm -f $(PKG_IPK)
+		uninstall
+	rm -rf $(PKG_BUILD_DIR) $(IPKG_LIBPCAP)
