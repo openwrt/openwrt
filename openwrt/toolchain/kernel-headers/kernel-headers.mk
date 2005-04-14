@@ -1,7 +1,7 @@
 # linux kernel headers for toolchain
 
-LINUX_HEADERS_VERSION=2.4.29
-LINUX_KERNEL_MD5SUM:=fcf8b6bb620467f27b657c1c4a60bbff
+LINUX_HEADERS_VERSION=2.4.30
+LINUX_KERNEL_MD5SUM:=75d8ce40a3668603017cd186909efe8d
 LINUX_HEADERS_SITE=http://www.fi.kernel.org/pub/linux/kernel/v2.4 \
 		   http://www.fr.kernel.org/pub/linux/kernel/v2.4 \
 		   http://www.kernel.org/pub/linux/kernel/v2.4 \

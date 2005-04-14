@@ -1,11 +1,33 @@
-// replacement diag module
-// (c) 2004 openwrt 
-// mbm at alt dot org
-//
-// initial release 2004/03/28
-//
-// 2004/08/26 asus & buffalo support added
-// 2005/03/14 asus wl-500g deluxe and buffalo v2 support added
+/*
+ * diag_led.c - replacement diag module
+ *
+ * Copyright (C) 2004 Mike Baker,
+ *                    Imre Kaloz <kaloz@dune.hu>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ *
+ * $Id$
+ */
+
+/*
+ * ChangeLog:
+ * 2004/03/28 initial release 
+ * 2004/08/26 asus & buffalo support added
+ * 2005/03/14 asus wl-500g deluxe and buffalo v2 support added
+ * 2005/04/13 added licensing informations
+ */
 
 #include <linux/module.h>
 #include <linux/init.h>
@@ -221,6 +243,10 @@ static void __exit diag_exit()
 {
 	unregister_sysctl_table(diag_sysctl_header);
 }
+
+EXPORT_NO_SYMBOLS;
+MODULE_AUTHOR("openwrt.org");
+MODULE_LICENSE("GPL");
 
 module_init(diag_init);
 module_exit(diag_exit);
