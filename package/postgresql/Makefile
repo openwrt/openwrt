@@ -97,7 +97,7 @@ $(IPKG_LIBPQ): $(STAGING_DIR)/usr/lib/libpq.so
 $(INFO_LIBPQ): $(IPKG_LIBPQ)
 	$(IPKG) install $(IPKG_LIBPQ)
 
-prepare: $(PKG_BUILDPKG_SOURCE_DIR)/.prepared
+prepare: $(PKG_BUILD_DIR)/.prepared
 compile: $(IPKG_LIBPQ)
 install: $(INFO_LIBPQ)
 
