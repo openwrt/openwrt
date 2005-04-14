@@ -2,35 +2,35 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME := libpthread
-PKG_VERSION := 0.9.27
-PKG_RELEASE := 1
+PKG_NAME:=libpthread
+PKG_VERSION:=0.9.27
+PKG_RELEASE:=1
 
-PKG_SOURCE_DIR := $(PKG_NAME)-$(PKG_VERSION)
-PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_SOURCE_DIR)
-PKG_IPK := $(PACKAGE_DIR)/$(PKG_NAME)_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
-PKG_IPK_DIR :=$(PKG_BUILD_DIR)/ipkg/
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+
+IPKG_LIBPTHREAD:=$(PACKAGE_DIR)/$(PKG_NAME)_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
+IDIR_LIBPTHREAD:=$(PKG_BUILD_DIR)/ipkg/$(PKG_NAME)
+INFO_LIBPTHREAD:=$(IPKG_STATE_DIR)/info/$(PKG_NAME).list
 
 .NOTPARALLEL:
 
-$(PKG_IPK): $(STAGING_DIR)/lib/libpthread.so
+$(IPKG_LIBPTHREAD): $(STAGING_DIR)/lib/libpthread.so
 	rm -rf $(PKG_BUILD_DIR)
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_IPK_DIR) $(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
-	mkdir -p $(PKG_IPK_DIR)/lib
-	cp -fp $(STAGING_DIR)/lib/libpthread.so.* $(PKG_IPK_DIR)/lib/
-	cp -fp $(STAGING_DIR)/lib/libpthread-*.so $(PKG_IPK_DIR)/lib/
-	$(STRIP) $(PKG_IPK_DIR)/lib/*
+	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_LIBPTHREAD) $(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
+	mkdir -p $(IDIR_LIBPTHREAD)/lib
+	cp -fp $(STAGING_DIR)/lib/libpthread.so.* $(IDIR_LIBPTHREAD)/lib/
+	cp -fp $(STAGING_DIR)/lib/libpthread-*.so $(IDIR_LIBPTHREAD)/lib/
+	$(STRIP) $(IDIR_LIBPTHREAD)/lib/lib*.so*
 	mkdir -p $(PACKAGE_DIR)
-	$(IPKG_BUILD) $(PKG_IPK_DIR) $(PACKAGE_DIR)
+	$(IPKG_BUILD) $(IDIR_LIBPTHREAD) $(PACKAGE_DIR)
 
-$(IPKG_STATE_DIR)/info/$(PKG_NAME).list: $(PKG_IPK)
-	$(IPKG) install $(PKG_IPK)
+$(IPKG_STATE_DIR)/info/$(PKG_NAME).list: $(IPKG_LIBPTHREAD)
+	$(IPKG) install $(IPKG_LIBPTHREAD)
 
 source:
 prepare:
-compile: $(PKG_IPK)
-install: $(IPKG_STATE_DIR)/info/$(PKG_NAME).list
+compile: $(IPKG_LIBPTHREAD)
+install: $(INFO_LIBPTHREAD)
 
 clean:
-	rm -rf $(PKG_BUILD_DIR)
-	rm -f $(PKG_IPK)
+	rm -rf $(PKG_BUILD_DIR) $(IPKG_LIBPTHREAD)

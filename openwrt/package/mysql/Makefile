@@ -2,43 +2,44 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME := mysql
-PKG_VERSION := 4.0.24
-PKG_RELEASE := 2
-PKG_MD5SUM := 408d3001ed715ddc90009c247e548638
+PKG_NAME:=mysql
+PKG_VERSION:=4.0.24
+PKG_RELEASE:=2
+PKG_MD5SUM:=408d3001ed715ddc90009c247e548638
 
-PKG_SOURCE_SITE := \
+PKG_SOURCE_URL:=\
 	http://mysql.he.net/Downloads/MySQL-4.0/ \
 	http://www.linorg.usp.br/mysql/Downloads/MySQL-4.0/ \
 	http://mysql.planetmirror.com/Downloads/MySQL-4.0/ \
 	http://mysql.holywar.net/Downloads/MySQL-4.0/ \
 	http://netmirror.org/mirror/mysql.com/Downloads/MySQL-4.0/ \
 	http://nthill.free.fr/openwrt/sources/$(PKG_NAME)/
-PKG_SOURCE_FILE := $(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_CAT := zcat
-PKG_SOURCE_DIR := $(PKG_NAME)-$(PKG_VERSION)
-PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_SOURCE_DIR)
-PKG_IPK := $(PACKAGE_DIR)/libmysqlclient_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
-PKG_IPK_DIR := $(PKG_BUILD_DIR)/ipkg
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_CAT:=zcat
 
-$(DL_DIR)/$(PKG_SOURCE_FILE):
-	mkdir -p $(DL_DIR)
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE_FILE) $(PKG_MD5SUM) $(PKG_SOURCE_SITE)
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 
-$(PKG_BUILD_DIR)/.patched: $(DL_DIR)/$(PKG_SOURCE_FILE)
-	$(PKG_SOURCE_CAT) $(DL_DIR)/$(PKG_SOURCE_FILE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
+IPKG_LIBMYSQLCLIENT:=$(PACKAGE_DIR)/libmysqlclient_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
+IDIR_LIBMYSQLCLIENT:=$(PKG_BUILD_DIR)/ipkg/libmysqlclient
+INFO_LIBMYSQLCLIENT:=$(IPKG_STATE_DIR)/info/libmysqlclient.list
+
+$(DL_DIR)/$(PKG_SOURCE):
+	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE) $(PKG_MD5SUM) $(PKG_SOURCE_URL)
+
+$(PKG_BUILD_DIR)/.prepared: $(DL_DIR)/$(PKG_SOURCE)
+	$(PKG_CAT) $(DL_DIR)/$(PKG_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
 	$(PATCH) $(PKG_BUILD_DIR) ./patches
-	touch $(PKG_BUILD_DIR)/.patched
+	touch $(PKG_BUILD_DIR)/.prepared
 
-$(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.patched
-	(cd $(PKG_BUILD_DIR); rm -rf config.cache; \
+$(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
+	(cd $(PKG_BUILD_DIR); rm -rf config.cache config.status; \
 		touch configure.in; \
 		touch aclocal.m4; \
 		touch Makefile.in; \
 		touch config.h.in; \
 		touch configure; \
 		$(TARGET_CONFIGURE_OPTS) \
-		CFLAGS="-I$(STAGING_DIR)/usr/include" \
+		CPPFLAGS="-I$(STAGING_DIR)/usr/include" \
 		LDFLAGS="-L$(STAGING_DIR)/usr/lib" \
 		OPTIMIZE_CFLAGS="$(TARGET_CFLAGS)" \
 		OPTIMIZE_CXXFLAGS="$(TARGET_CFLAGS)" \
@@ -52,16 +53,22 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.patched
 		--target=$(GNU_TARGET_NAME) \
 		--host=$(GNU_TARGET_NAME) \
 		--build=$(GNU_HOST_NAME) \
-		--prefix=/ \
-		--exec-prefix=/ \
+		--program-prefix="" \
+		--program-suffix="" \
+		--prefix=/usr \
+		--exec-prefix=/usr \
 		--bindir=/usr/bin \
-		--sbindir=/usr/sbin \
-		--libexecdir=/usr/lib \
-		--sysconfdir=/etc \
 		--datadir=/usr/share \
+		--includedir=/usr/include \
+		--infodir=/usr/share/info \
+		--libdir=/usr/lib \
+		--libexecdir=/usr/lib \
 		--localstatedir=/var \
-		--mandir=/usr/man \
-		--infodir=/usr/info \
+		--mandir=/usr/share/man \
+		--sbindir=/usr/sbin \
+		--sysconfdir=/etc \
+		$(DISABLE_NLS) \
+		$(DISABLE_LARGEFILE) \
 		--enable-shared \
 		--enable-static \
 		--disable-assembler \
@@ -80,12 +87,10 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.patched
 		--without-docs \
 		--without-bench \
 		--without-readline \
-		$(DISABLE_NLS) \
-		$(DISABLE_LARGEFILE) \
 	);
 	touch $(PKG_BUILD_DIR)/.configured
 
-$(PKG_BUILD_DIR)/libmysql/.libs/libmysqlclient.so: $(PKG_BUILD_DIR)/.configured
+$(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 	$(MAKE) -C "$(PKG_BUILD_DIR)/libmysql" \
 		CC="$(HOSTCC)" \
 		LINK="$(HOSTCC) -o conf_to_src -lc" \
@@ -94,29 +99,34 @@ $(PKG_BUILD_DIR)/libmysql/.libs/libmysqlclient.so: $(PKG_BUILD_DIR)/.configured
 	$(MAKE) -C "$(PKG_BUILD_DIR)" \
 		SUBDIRS="include libmysql" \
 		all
+	touch $(PKG_BUILD_DIR)/.built
 
-$(STAGING_DIR)/include/mysql/mysql.h: $(PKG_BUILD_DIR)/libmysql/.libs/libmysqlclient.so
+$(STAGING_DIR)/usr/lib/mysql/libmysqlclient.so: $(PKG_BUILD_DIR)/.built
 	$(MAKE) -C "$(PKG_BUILD_DIR)" \
 		DESTDIR="$(STAGING_DIR)" \
 		SUBDIRS="include libmysql" \
 		install
+	rm -rf $(STAGING_DIR)/usr/lib/mysql/libmysqlclient.la
 
-$(PKG_IPK): $(PKG_BUILD_DIR)/libmysql/.libs/libmysqlclient.so
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_IPK_DIR) libmysqlclient.control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
-	mkdir -p $(PKG_IPK_DIR)/usr/lib
-	cp $< $(PKG_IPK_DIR)/usr/lib/
-	$(STRIP) $(PKG_IPK_DIR)/usr/lib/*
+$(IPKG_LIBMYSQLCLIENT): $(STAGING_DIR)/usr/lib/mysql/libmysqlclient.so
+	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_LIBMYSQLCLIENT) libmysqlclient.control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
+	mkdir -p $(IDIR_LIBMYSQLCLIENT)/usr/lib
+	cp -fp $(STAGING_DIR)/usr/lib/mysql/libmysqlclient.so.* $(IDIR_LIBMYSQLCLIENT)/usr/lib/
+	$(STRIP) $(IDIR_LIBMYSQLCLIENT)/usr/lib/*.so*
 	mkdir -p $(PACKAGE_DIR)
-	$(IPKG_BUILD) $(PKG_IPK_DIR) $(PACKAGE_DIR)
+	$(IPKG_BUILD) $(IDIR_LIBMYSQLCLIENT) $(PACKAGE_DIR)
 
-$(IPKG_STATE_DIR)/info/libmysqlclient.list: $(PKG_IPK)
-	$(IPKG) install $(PKG_IPK)
+$(INFO_LIBMYSQLCLIENT): $(IPKG_LIBMYSQLCLIENT)
+	$(IPKG) install $(IPKG_LIBMYSQLCLIENT)
 
 source: $(DL_DIR)/$(PKG_SOURCE)
-prepare: $(PKG_BUILD_DIR)/.patched
-compile: $(STAGING_DIR)/include/mysql/mysql.h $(PKG_IPK)
-install: $(IPKG_STATE_DIR)/info/libmysqlclient.list
+prepare: $(PKG_BUILD_DIR)/.prepared
+compile: $(IPKG_LIBMYSQLCLIENT)
+install: $(INFO_LIBMYSQLCLIENT)
 
 clean:
-	rm -rf $(PKG_BUILD_DIR)
-	rm -f $(PKG_IPK)
+	-$(MAKE) -C "$(PKG_BUILD_DIR)" \
+		DESTDIR="$(STAGING_DIR)" \
+		SUBDIRS="include libmysql" \
+		uninstall
+	rm -rf $(PKG_BUILD_DIR) $(IPKG_LIBMYSQLCLIENT)
