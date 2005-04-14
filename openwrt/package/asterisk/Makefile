@@ -89,7 +89,7 @@ asterisk-compile: $(PKG_BUILD_DIR)/.patched
 		OPTIMIZE="$(TARGET_CFLAGS)" \
 		PROC="$(ARCH)" \
 		CFLAGS_EXTRA="-I$(STAGING_DIR)/usr/include" \
-		LDFLAGS_EXTRA="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib/mysql" \
+		LDFLAGS_EXTRA="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/usr/lib/mysql" \
 		CRYPTO_LIBS="-L$(STAGING_DIR)/usr/lib -Wl,-Bstatic -lssl -lcrypto -Wl,-Bdynamic" \
 		EXTRA_APPS="$(APPS)" \
 		EXTRA_MODS="$(MODS)" \
