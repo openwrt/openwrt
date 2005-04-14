@@ -4,7 +4,7 @@ include ./jffs2root.mk
 
 TARGETS:= $(BIN_DIR)/openwrt-generic-jffs2-4MB.trx $(BIN_DIR)/openwrt-generic-jffs2-8MB.trx
 JFFS2OPTS :=  --pad --little-endian --squash -d $(TARGET_DIR)
-JFFS2OPTS += -Xlzo -msize -Xlzari
+#JFFS2OPTS += -Xlzo -msize -Xlzari
 
 prepare: $(MTD_DIR)/.unpacked
 compile: mtd

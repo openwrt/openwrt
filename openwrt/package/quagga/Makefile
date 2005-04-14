@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=quagga
-PKG_VERSION:=0.98.2
+PKG_VERSION:=0.98.3
 PKG_RELEASE:=1
-PKG_MD5SUM:=8757b155aa2458f6158ccd330d0e1b39
+PKG_MD5SUM:=68be5e911e4d604c0f5959338263356e
 
 PKG_SOURCE_URL:=http://www.quagga.net/download/ \
                 http://www.de.quagga.net/download/ \
