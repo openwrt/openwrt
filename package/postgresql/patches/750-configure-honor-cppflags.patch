@@ -1,0 +1,10 @@
+diff -ruN postgresql-7.4.6-old/src/template/linux postgresql-7.4.6-new/src/template/linux
+--- postgresql-7.4.6-old/src/template/linux	2003-10-09 18:52:45.000000000 +0200
++++ postgresql-7.4.6-new/src/template/linux	2005-04-13 03:12:49.000000000 +0200
+@@ -1,5 +1,5 @@
+ # Force _GNU_SOURCE on; plperl is broken with Perl 5.8.0 otherwise
+-CPPFLAGS="-D_GNU_SOURCE"
++CPPFLAGS="$CPPFLAGS -D_GNU_SOURCE"
+ 
+ THREAD_SUPPORT=yes
+ NEED_REENTRANT_FUNCS=yes	# Debian kernel 2.2 2003-09-27
