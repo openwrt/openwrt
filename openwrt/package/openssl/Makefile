@@ -34,13 +34,17 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.patched
 	(cd $(PKG_BUILD_DIR); \
 		CFLAGS="-DOPENSSL_NO_KRB5 -DOPENSSL_NO_IDEA -DOPENSSL_NO_MDC2 -DOPENSSL_NO_RC5" \
         PATH=$(TARGET_PATH) ./Configure linux-$(ARCH) --prefix=/ \
-		--openssldir=/usr/lib/ssl -L$(STAGING_DIR)/lib -ldl \
-		-I$(STAGING_DIR)/include $(OPENSSL_NO_CIPHERS) \
+		--openssldir=/usr/lib/ssl -L$(STAGING_DIR)/usr/lib -ldl \
+		-I$(STAGING_DIR)/usr/include $(OPENSSL_NO_CIPHERS) \
 		shared no-krb5 no-ec no-engine zlib-dynamic no-hw no-threads )
 	touch $(PKG_BUILD_DIR)/.configured
 
 $(PKG_BUILD_DIR)/apps/openssl: $(PKG_BUILD_DIR)/.configured
-	$(MAKE) -j1 CC=$(TARGET_CC) -C $(PKG_BUILD_DIR) all build-shared
+	$(MAKE)  -C $(PKG_BUILD_DIR) -j1 \
+		CC="$(TARGET_CC)" \
+		AR="$(TARGET_CROSS)ar r" \
+		RANLIB="$(TARGET_CROSS)ranlib" \
+		all build-shared
 	# Work around openssl build bug to link libssl.so with libcrypto.so.
 	-rm $(PKG_BUILD_DIR)/libssl.so.*.*.*
 	$(MAKE) -j1 CC=$(TARGET_CC) -C $(PKG_BUILD_DIR) do_linux-shared
