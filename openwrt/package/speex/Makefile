@@ -7,7 +7,7 @@ PKG_VERSION := 1.0.4
 PKG_RELEASE := 1
 PKG_MD5SUM := 15a0686b7e1f81d352a648044b350fcc
 
-PKG_SOURCE_SITE := http://www.speex.org/download
+PKG_SOURCE_SITE := http://us.speex.org/download 
 PKG_SOURCE_FILE := $(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_CAT := zcat
 PKG_SOURCE_DIR := $(PKG_NAME)-$(PKG_VERSION)
