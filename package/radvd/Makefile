@@ -5,7 +5,8 @@ PKG_VERSION:=0.7.3
 PKG_RELEASE:=1
 PKG_MD5SUM:=56ce3f8cbf5966a0d531c21813320423
 
-PKG_SOURCE_URL:=http://v6web.litech.org/radvd/dist
+PKG_SOURCE_URL:=http://v6web.litech.org/radvd/dist \
+		http://download.sourcemage.org/mirror
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_CAT:=zcat
