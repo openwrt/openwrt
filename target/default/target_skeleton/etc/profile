@@ -6,4 +6,6 @@ export PS1='\u@\h:\w\$ '
 
 alias less=more
 alias vim=vi
+
+arp() { cat /proc/net/arp; }
 ldd() { LD_TRACE_LOADED_OBJECTS=1 $*; }
