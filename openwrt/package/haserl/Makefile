@@ -60,9 +60,9 @@ $(PKG_INSTALL_DIR)/usr/bin/haserl: $(PKG_BUILD_DIR)/.built
 	 install
 	
 $(PKG_IPK): $(PKG_INSTALL_DIR)/usr/bin/haserl
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_IPK_DIR) $(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
+	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_IPK_DIR) ./ipkg/$(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
 	mkdir -p $(PKG_IPK_DIR)/usr/bin
-	cp -fp $(PKG_INSTALL_DIR)/usr/bin/haserl $(PKG_IPK_DIR)/usr/bin/
+	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/haserl $(PKG_IPK_DIR)/usr/bin/
 	$(STRIP) $(PKG_IPK_DIR)/usr/bin/*
 	$(IPKG_BUILD) $(PKG_IPK_DIR) $(PACKAGE_DIR)
 

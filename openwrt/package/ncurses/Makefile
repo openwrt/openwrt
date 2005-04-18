@@ -94,9 +94,9 @@ $(STAGING_DIR)/usr/lib/libncurses.so: $(PKG_BUILD_DIR)/.built
 		install
 
 $(IPKG_LIBNCURSES): $(STAGING_DIR)/usr/lib/libncurses.so
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_LIBNCURSES) lib$(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
+	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_LIBNCURSES) ./ipkg/lib$(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
 	mkdir -p $(IDIR_LIBNCURSES)/usr/lib
-	cp -fp $(STAGING_DIR)/usr/lib/lib{ncurses,panel}*.so.* $(IDIR_LIBNCURSES)/usr/lib/
+	cp -fpR $(STAGING_DIR)/usr/lib/lib{ncurses,panel}*.so.* $(IDIR_LIBNCURSES)/usr/lib/
 	$(STRIP) $(IDIR_LIBNCURSES)/usr/lib/*.so*
 	mkdir -p $(IDIR_LIBNCURSES)/usr/share/terminfo
 	for f in a/ansi d/dumb l/linux s/screen v/vt100 x/xterm x/xterm-color; do \

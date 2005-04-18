@@ -16,9 +16,9 @@ INFO_LIBGCC:=$(IPKG_STATE_DIR)/info/$(PKG_NAME).list
 
 $(IPKG_LIBGCC): $(STAGING_DIR)/lib/libgcc_s.so
 	rm -rf $(PKG_BUILD_DIR)
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_LIBGCC) $(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
+	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_LIBGCC) ./ipkg/$(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
 	mkdir -p $(IDIR_LIBGCC)/lib
-	cp -fp $(STAGING_DIR)/lib/libgcc_s.so.* $(IDIR_LIBGCC)/lib/
+	cp -fpR $(STAGING_DIR)/lib/libgcc_s.so.* $(IDIR_LIBGCC)/lib/
 	$(STRIP) $(IDIR_LIBGCC)/lib/lib*.so*
 	mkdir -p $(PACKAGE_DIR)
 	$(IPKG_BUILD) $(IDIR_LIBGCC) $(PACKAGE_DIR)
