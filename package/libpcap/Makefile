@@ -29,37 +29,37 @@ $(PKG_BUILD_DIR)/.prepared: $(DL_DIR)/$(PKG_SOURCE)
 	touch $(PKG_BUILD_DIR)/.prepared
 
 $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
-	(cd $(PKG_BUILD_DIR); rm -rf config.cache config.status; \
+	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
 		CPPFLAGS="-I$(STAGING_DIR)/usr/include" \
 		LDFLAGS="-L$(STAGING_DIR)/usr/lib" \
 		ac_cv_linux_vers=$(BR2_DEFAULT_KERNEL_HEADERS) \
 		./configure \
-		--target=$(GNU_TARGET_NAME) \
-		--host=$(GNU_TARGET_NAME) \
-		--build=$(GNU_HOST_NAME) \
-		--program-prefix="" \
-		--program-suffix="" \
-		--prefix=/usr \
-		--exec-prefix=/usr \
-		--bindir=/usr/bin \
-		--datadir=/usr/share \
-		--includedir=/usr/include \
-		--infodir=/usr/share/info \
-		--libdir=/usr/lib \
-		--libexecdir=/usr/lib \
-		--localstatedir=/var \
-		--mandir=/usr/share/man \
-		--sbindir=/usr/sbin \
-		--sysconfdir=/etc \
-		$(DISABLE_NLS) \
-		$(DISABLE_LARGEFILE) \
-		--enable-shared \
-		--enable-static \
-		--disable-yydebug \
-		--with-build-cc=$(HOSTCC) \
-		--with-pcap=linux \
+		  --target=$(GNU_TARGET_NAME) \
+		  --host=$(GNU_TARGET_NAME) \
+		  --build=$(GNU_HOST_NAME) \
+		  --program-prefix="" \
+		  --program-suffix="" \
+		  --prefix=/usr \
+		  --exec-prefix=/usr \
+		  --bindir=/usr/bin \
+		  --datadir=/usr/share \
+		  --includedir=/usr/include \
+		  --infodir=/usr/share/info \
+		  --libdir=/usr/lib \
+		  --libexecdir=/usr/lib \
+		  --localstatedir=/var \
+		  --mandir=/usr/share/man \
+		  --sbindir=/usr/sbin \
+		  --sysconfdir=/etc \
+		  $(DISABLE_NLS) \
+		  $(DISABLE_LARGEFILE) \
+		  --enable-shared \
+		  --enable-static \
+		  --disable-yydebug \
+		  --with-build-cc=$(HOSTCC) \
+		  --with-pcap=linux \
 	);
 	touch $(PKG_BUILD_DIR)/.configured
 
@@ -74,10 +74,10 @@ $(STAGING_DIR)/usr/lib/libpcap.so: $(PKG_BUILD_DIR)/.built
 		install
 
 $(IPKG_LIBPCAP): $(STAGING_DIR)/usr/lib/libpcap.so
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_LIBPCAP) $(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
-	mkdir -p $(IDIR_LIBPCAP)/usr/lib
+	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_LIBPCAP) ./ipkg/$(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
+	install -m0755 -d $(IDIR_LIBPCAP)/usr/lib
 	cp -fpR $(STAGING_DIR)/usr/lib/libpcap.so.* $(IDIR_LIBPCAP)/usr/lib/
-	$(STRIP) $(IDIR_LIBPCAP)/usr/lib/lib*.so*
+	$(RSTRIP) $(IDIR_LIBPCAP)
 	mkdir -p $(PACKAGE_DIR)
 	$(IPKG_BUILD) $(IDIR_LIBPCAP) $(PACKAGE_DIR)
 
