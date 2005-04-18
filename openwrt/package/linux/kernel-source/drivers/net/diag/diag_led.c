@@ -27,6 +27,7 @@
  * 2004/08/26 asus & buffalo support added
  * 2005/03/14 asus wl-500g deluxe and buffalo v2 support added
  * 2005/04/13 added licensing informations
+ * 2005/04/18 base reset polarity off initial readings
  */
 
 #include <linux/module.h>
@@ -181,12 +182,10 @@ static int __init diag_init()
 				set_diag=v1_set_diag;
 				set_dmz=v1_set_dmz;
 				reset_gpio=(1<<6);
-				reset_polarity=0;
 			} else if (!strcmp(buf,"asusX")) {
 				//asus wl-500g
 				//no leds
 				reset_gpio=(1<<6);
-				reset_polarity=1;
 			}
 		} else if (!strcmp(buf,"bcm94710ap")) {
 			buf=nvram_get("boardnum")?:"";
@@ -194,44 +193,44 @@ static int __init diag_init()
 				// buffalo
 				set_dmz=v2_set_dmz;
 				reset_gpio=(1<<4);
-				reset_polarity=1;
 			} else if (!strcmp(buf,"44")) {
 				//dell truemobile
 				set_dmz=v2_set_dmz;
 				reset_gpio=(1<<0);
-				reset_polarity=0;
 			}
 		}
 	} else {
-		board_type=2;
-		set_diag=v2_set_diag;
-		set_dmz=v2_set_dmz;
-		reset_gpio=(1<<6);
-		reset_polarity=0;
 		buf=nvram_get("boardnum")?:"";
+		if (!strcmp(buf,"42")) {
+			//linksys
+			set_diag=v2_set_diag;
+			set_dmz=v2_set_dmz;
+			reset_gpio=(1<<6);
+		}
 		if (!strcmp(buf,"44")) {
 			//motorola
 			set_diag=ignore;
 			set_dmz=ignore;
 			reset_gpio=(1<<5);
-			reset_polarity=0;
 		}
 		if (!strcmp(buf,"00")) {
 			//buffalo
 			set_diag=ignore;
 			set_dmz=ignore;
 			reset_gpio=(1<<7);
-			reset_polarity=1;
 		}
 		if (!strcmp(buf,"45")) {
 			//wl-500g deluxe
 			set_diag=ignore;
 			set_dmz=ignore;
 			reset_gpio=(1<<6);
-			reset_polarity=1;
 		}
 	}
-	printk(KERN_INFO "using v%d hardware\n",board_type);
+
+	
+	sb_gpiocontrol(sbh,reset_gpio,reset_gpio);
+	sb_gpioouten(sbh,reset_gpio,0);
+	reset_polarity=!(sb_gpioin(sbh)&reset_gpio);
 
 	diag_sysctl_header = register_sysctl_table(sys_diag, 0);
 	diag_change();
