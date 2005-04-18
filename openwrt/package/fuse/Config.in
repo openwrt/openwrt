@@ -1,7 +1,13 @@
 config BR2_PACKAGE_FUSE
 	select BR2_PACKAGE_LIBPTHREAD
-	bool "fuse (Filesystem in USErspace)"
+	depends BR2_PACKAGE_KMOD_FUSE
+	bool
 	default n
+
+config BR2_PACKAGE_KMOD_FUSE
+	select BR2_PACKAGE_FUSE
+	tristate "kmod-fuse (FUSE kernel module)"
+	default m
 	help
 	  With FUSE it is possible to implement a fully functional 
 	  filesystem in a userspace program.
@@ -20,20 +26,50 @@ config BR2_PACKAGE_FUSE
 	  http://fuse.sourceforge.net/
 	  
 	  Depends: libpthread
-	  
-
-config BR2_PACKAGE_KMOD_FUSE
-	depends BR2_PACKAGE_FUSE
-	tristate "kmod-fuse (FUSE kernel module)"
-	default m
 
 config BR2_PACKAGE_LIBFUSE
-	depends BR2_PACKAGE_FUSE
+	depends BR2_PACKAGE_KMOD_FUSE
 	tristate "libfuse (FUSE library)"
 	default m
+	help
+	  With FUSE it is possible to implement a fully functional 
+	  filesystem in a userspace program.
+	  
+	  Features include:
+	  
+	   * Simple library API
+	   * Simple installation (no need to patch or recompile the kernel)
+	   * Secure implementation
+	   * Userspace - kernel interface is very efficient
+	   * Usable by non privileged users
+	   * Runs on Linux kernels 2.4.X and 2.6.X
+	   * Has proven very stable over time
+	  
+	  
+	  http://fuse.sourceforge.net/
+	  
+	  Depends: libpthread
 
 config BR2_PACKAGE_FUSE_UTILS
-	depends BR2_PACKAGE_FUSE
+	depends BR2_PACKAGE_LIBFUSE
 	tristate "fuse-utils (FUSE utilities)"
 	default m
+	help
+	  With FUSE it is possible to implement a fully functional 
+	  filesystem in a userspace program.
+	  
+	  Features include:
+	  
+	   * Simple library API
+	   * Simple installation (no need to patch or recompile the kernel)
+	   * Secure implementation
+	   * Userspace - kernel interface is very efficient
+	   * Usable by non privileged users
+	   * Runs on Linux kernels 2.4.X and 2.6.X
+	   * Has proven very stable over time
+	  
+	  
+	  http://fuse.sourceforge.net/
+	  
+	  Depends: libpthread
 

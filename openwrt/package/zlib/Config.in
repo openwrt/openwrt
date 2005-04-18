@@ -1,6 +1,6 @@
 config BR2_PACKAGE_ZLIB
 	tristate "zlib"
-	default y
+	default m if CONFIG_DEVEL
 	help
 	  A library implementing the 'deflate' compression method
 	  

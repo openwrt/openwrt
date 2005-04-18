@@ -1,6 +1,6 @@
 config BR2_PACKAGE_ASTERISK
 	tristate "Asterisk"
-	default m
+	default m if CONFIG_DEVEL
 	help
  	  Asterisk is a complete PBX in software. It provides all of the features
 	  you would expect from a PBX and more. Asterisk does voice over IP in three
@@ -9,7 +9,7 @@ config BR2_PACKAGE_ASTERISK
 
 config BR2_PACKAGE_ASTERISK_SPEEX
 	tristate "Speex codec"
-	default m
+	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_ASTERISK
 	select BR2_PACKAGE_SPEEX
 	help
@@ -18,7 +18,7 @@ config BR2_PACKAGE_ASTERISK_SPEEX
 
 config BR2_PACKAGE_ASTERISK_MYSQL
 	tristate "MySQL plugins"
-	default m
+	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_ASTERISK
 	select BR2_PACKAGE_LIBMYSQLCLIENT
 	help
@@ -26,7 +26,7 @@ config BR2_PACKAGE_ASTERISK_MYSQL
 
 config BR2_PACKAGE_ASTERISK_PGSQL
 	tristate "PostgreSQL plugins"
-	default m
+	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_ASTERISK
 	select BR2_PACKAGE_LIBPQ
 	help
@@ -34,14 +34,14 @@ config BR2_PACKAGE_ASTERISK_PGSQL
 	  
 config BR2_PACKAGE_ASTERISK_VOICEMAIL
 	tristate "Voicemail support"
-	default m
+	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_ASTERISK
 	help
 	  Voicemail related plugins for Asterisk
 	  
 config BR2_PACKAGE_ASTERISK_SOUNDS
 	tristate "Sound files"
-	default m
+	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_ASTERISK
 	help
 	  Sound files for Asterisk

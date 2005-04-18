@@ -1,6 +1,6 @@
 config BR2_PACKAGE_LIBGCC
 	tristate "libgcc (GCC support library)"
-	default m
+	default m if CONFIG_DEVEL
 	help
 	  Shared version of the support library, a library of 
 	  internal subroutines that GCC uses to overcome 

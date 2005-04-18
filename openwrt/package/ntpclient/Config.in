@@ -1,5 +1,5 @@
 config BR2_PACKAGE_NTPCLIENT
 	tristate "ntpclient"
-	default m
+	default m if CONFIG_DEVEL
 	help
 	  NTP client for setting system time from NTP servers.

@@ -1,6 +1,6 @@
 config BR2_PACKAGE_STRACE
 	tristate "strace"
-	default m
+	default m if CONFIG_DEVEL
 	help
 	  A useful diagnostic, instructional, and debugging tool.
 	  Allows you to track what system calls a program makes 
