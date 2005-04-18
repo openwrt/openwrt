@@ -1,0 +1,35 @@
+--- snort-2.3.2-orig/src/snort.c	2005-01-13 21:36:20.000000000 +0100
++++ snort-2.3.2-1/src/snort.c	2005-04-04 20:03:34.000000000 +0200
+@@ -1949,7 +1949,7 @@
+ {
+     struct stat st;
+     int i;
+-    char *conf_files[]={"/etc/snort.conf", "./snort.conf", NULL};
++    char *conf_files[]={"/etc/snort/snort.conf", NULL};
+     char *fname = NULL;
+     char *home_dir = NULL;
+     char *rval = NULL;
+@@ -1970,23 +1970,6 @@
+         i++;
+     }
+ 
+-    /* search for .snortrc in the HOMEDIR */
+-    if(!rval)
+-    {
+-        if((home_dir = getenv("HOME")))
+-        {
+-            /* create the full path */
+-            fname = (char *)malloc(strlen(home_dir) + strlen("/.snortrc") + 1);
+-            if(!fname)
+-                FatalError("Out of memory searching for config file\n");
+-
+-            if(stat(fname, &st) != -1)
+-                rval = fname;
+-            else
+-                free(fname);
+-        }
+-    }
+-
+     return rval;
+ }
+ 
