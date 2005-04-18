@@ -1,5 +1,5 @@
 config BR2_PACKAGE_CUPS
 	tristate "Common UNIX Printing System"
-	default m
+	default m if CONFIG_DEVEL
 	help
 	  A printer spooling system for devices with USB or LP support

@@ -1,6 +1,6 @@
 config BR2_PACKAGE_SHFS
 	tristate "shfs (SHell FileSystem kernel module and utilities)"
-	default n
+	default m if CONFIG_DEVEL
 	help
 	  ShFS is a simple and easy to use Linux kernel module which 
 	  allows you to mount remote filesystems using a plain shell 

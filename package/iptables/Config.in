@@ -8,21 +8,21 @@ config BR2_PACKAGE_IPTABLES
 
 config BR2_PACKAGE_IPTABLES_UTILS
 	tristate "save and restore"
-	default m
+	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_IPTABLES
 	help
 	  iptables-save and iptables-restore
 
 config BR2_PACKAGE_IPTABLES_EXTRA
 	tristate "extra modules"
-	default m
+	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_IPTABLES
 	help
 	  Extra modules for iptables (kernel and user space)
 
 config BR2_PACKAGE_IP6TABLES
 	tristate "ip6tables"
-	default m
+	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_IPTABLES
 	select BR2_PACKAGE_KMOD_IPV6
 	help

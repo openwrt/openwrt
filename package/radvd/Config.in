@@ -1,6 +1,6 @@
 config BR2_PACKAGE_RADVD
 	select BR2_PACKAGE_KMOD_IPV6
 	tristate "radvd"
-	default m
+	default m if CONFIG_DEVEL
 	help
 	  Routing Advertisement Daemon for IPv6

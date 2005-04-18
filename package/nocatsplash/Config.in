@@ -1,6 +1,6 @@
 config BR2_PACKAGE_NOCATSPLASH
 	tristate "NoCatSplash"
-	default m
+	default m if CONFIG_DEVEL
 	help
 	 NoCatSplash is an Open Public Network Gateway Daemon.
 	 It performs as a [captive/open/active] portal. When run on a gateway/router

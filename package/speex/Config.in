@@ -1,5 +1,5 @@
 config BR2_PACKAGE_SPEEX
 	tristate "speex"
-	default m
+	default m if CONFIG_DEVEL
 	help
 	  An open source patent-free speech compression codec

@@ -1,6 +1,6 @@
 config BR2_PACKAGE_QUAGGA
 	tristate "Quagga"
-	default m
+	default m if CONFIG_DEVEL
 	help
 	routing software package that provides TCP/IP based routing services
         with routing protocols support such as RIPv1, RIPv2, RIPng, OSPFv2, 
@@ -10,28 +10,28 @@ config BR2_PACKAGE_QUAGGA
 
 config BR2_PACKAGE_QUAGGA_ZEBRA
 	tristate "zebra daemon"
-	default m
+	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_QUAGGA
 	help
 	 zebra daemon
 
 config BR2_PACKAGE_QUAGGA_RIPD
 	tristate "ripd daemon"
-	default m
+	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_QUAGGA
 	help
 	 ripd daemon
 
 config BR2_PACKAGE_QUAGGA_BGPD
 	tristate "bgpd daemon"
-	default m
+	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_QUAGGA
 	help
 	 bgpd daemon
 
 config BR2_PACKAGE_QUAGGA_OSPFD
 	tristate "ospfd daemon"
-	default m
+	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_QUAGGA
 	help
 	 ospfd daemon

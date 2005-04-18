@@ -1,6 +1,6 @@
 config BR2_PACKAGE_CHILLISPOT
 	tristate "chillispot"
-	default m
+	default m if CONFIG_DEVEL
 	help
 	  ChilliSpot is an open source captive portal or wireless LAN
 	  access point controller. It is used for authenticating users
