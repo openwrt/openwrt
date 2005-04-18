@@ -24,7 +24,7 @@ $(DL_DIR)/$(PKG_SOURCE):
 
 $(PKG_BUILD_DIR)/.prepared: $(DL_DIR)/$(PKG_SOURCE)
 	$(PKG_CAT) $(DL_DIR)/$(PKG_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
-	$(PATCH) $(PKG_BUILD_DIR) . $(PKG_NAME).patch
+	$(PATCH) $(PKG_BUILD_DIR) ./patches
 	touch $(PKG_BUILD_DIR)/.prepared
 
 $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
@@ -49,9 +49,9 @@ $(STAGING_DIR)/usr/lib/libz.so: $(PKG_BUILD_DIR)/.built
 		install
 
 $(IPKG_ZLIB): $(STAGING_DIR)/usr/lib/libz.so
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_ZLIB) $(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
+	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_ZLIB) ./ipkg/$(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
 	mkdir -p $(IDIR_ZLIB)/usr/lib
-	cp -a $(STAGING_DIR)/usr/lib/libz.so.* $(IDIR_ZLIB)/usr/lib/
+	cp -fpR $(STAGING_DIR)/usr/lib/libz.so.* $(IDIR_ZLIB)/usr/lib/
 	$(STRIP) $(IDIR_ZLIB)/usr/lib/lib*.so*
 	mkdir -p $(PACKAGE_DIR)
 	$(IPKG_BUILD) $(IDIR_ZLIB) $(PACKAGE_DIR)
@@ -65,7 +65,7 @@ compile: $(IPKG_ZLIB)
 install: $(INFO_ZLIB)
 
 clean:
-	-$(MAKE) -C $(PKG_BUILD_DIR) \
-		DESTDIR="$(STAGING_DIR)" \
-		uninstall
+	rm -rf $(STAGING_DIR)/usr/include/z{conf,lib}.h
+	rm -rf $(STAGING_DIR)/usr/lib/libz.{a,so*}
+	rm -rf $(STAGING_DIR)/usr/share/man/man*/zlib.*
 	rm -rf $(PKG_BUILD_DIR) $(IPKG_ZLIB)
