@@ -1,6 +1,6 @@
 config BR2_PACKAGE_PPTP
 	tristate "PPTP Client"
-	default m
+	default m if CONFIG_DEVEL
 	select BR2_PACKAGE_KMOD_GRE
 	select BR2_PACKAGE_PPP
 	help

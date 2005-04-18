@@ -1,5 +1,5 @@
 config BR2_PACKAGE_EZIPUPDATE
 	tristate "ez-ipupdate"
-	default m
+	default m if CONFIG_DEVEL
 	help
 	  A client for many Dynamic DNS services

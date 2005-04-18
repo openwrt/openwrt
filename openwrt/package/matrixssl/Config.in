@@ -1,7 +1,7 @@
 config BR2_PACKAGE_MATRIXSSL
 	select BR2_PACKAGE_LIBPTHREAD
 	tristate "matrixssl"
-	default m
+	default m if CONFIG_DEVEL
 	help
 	  an embedded SSL implementation
 	  

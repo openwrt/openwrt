@@ -1,6 +1,6 @@
 config BR2_PACKAGE_LIBELF
 	tristate "libelf"
-	default m
+	default m if CONFIG_DEVEL
 	help
 	  This is the public release of libelf-0.8.5, a free ELF object
 	  file access library.

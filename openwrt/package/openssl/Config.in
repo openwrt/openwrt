@@ -1,6 +1,6 @@
 config BR2_PACKAGE_OPENSSL
 	tristate "openssl"
-	default m
+	default m if CONFIG_DEVEL
 	help
 	  A library implementing the SSL and TLS protocols 
 	  

@@ -1,6 +1,6 @@
 config BR2_PACKAGE_SETSERIAL
 	tristate "setserial"
-	default m
+	default m if CONFIG_DEVEL
 	help
 	  setserial  is a program designed to set and/or report the
 	  configuration information associated with a serial port.  This

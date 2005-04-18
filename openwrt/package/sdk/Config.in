@@ -1,6 +1,6 @@
 config BR2_PACKAGE_SDK
 	bool "OpenWrt SDK"
-	default n
+	default y if CONFIG_DEVEL
 	help
 	  Build an OpenWrt SDK.
 	  This is essentially a stripped-down version of the buildroot

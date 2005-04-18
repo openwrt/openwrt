@@ -1,6 +1,6 @@
 config BR2_PACKAGE_OPENNTPD
 	tristate "Openntpd"
-	default m
+	default m if CONFIG_DEVEL
 	help
 	NTP server
 	http://www.openntpd.org

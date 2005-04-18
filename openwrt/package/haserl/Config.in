@@ -1,6 +1,6 @@
 config BR2_PACKAGE_HASERL
 	tristate "haserl"
-	default m
+	default m if CONFIG_DEVEL
 	help
 	  A CGI wrapper to embed shell scripts in HTML documents.
 	  

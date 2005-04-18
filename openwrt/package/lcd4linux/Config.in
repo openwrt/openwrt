@@ -1,7 +1,7 @@
 config BR2_PACKAGE_LCD4LINUX
 	tristate "lcd4linux"
 	select BR2_PACKAGE_NCURSES
-	default m
+	default m if CONFIG_DEVEL
 	help
 		LCD4Linux
 		https://ssl.bulix.org/projects/lcd4linux/wiki/Howto
