@@ -109,9 +109,9 @@ $(STAGING_DIR)/usr/lib/mysql/libmysqlclient.so: $(PKG_BUILD_DIR)/.built
 	rm -rf $(STAGING_DIR)/usr/lib/mysql/libmysqlclient.la
 
 $(IPKG_LIBMYSQLCLIENT): $(STAGING_DIR)/usr/lib/mysql/libmysqlclient.so
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_LIBMYSQLCLIENT) libmysqlclient.control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
+	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_LIBMYSQLCLIENT) ./ipkg/libmysqlclient.control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
 	mkdir -p $(IDIR_LIBMYSQLCLIENT)/usr/lib
-	cp -fp $(STAGING_DIR)/usr/lib/mysql/libmysqlclient.so.* $(IDIR_LIBMYSQLCLIENT)/usr/lib/
+	cp -fpR $(STAGING_DIR)/usr/lib/mysql/libmysqlclient.so.* $(IDIR_LIBMYSQLCLIENT)/usr/lib/
 	$(STRIP) $(IDIR_LIBMYSQLCLIENT)/usr/lib/*.so*
 	mkdir -p $(PACKAGE_DIR)
 	$(IPKG_BUILD) $(IDIR_LIBMYSQLCLIENT) $(PACKAGE_DIR)

@@ -80,9 +80,9 @@ $(STAGING_DIR)/usr/lib/libnet.so: $(PKG_BUILD_DIR)/.built
 	rm -rf $(STAGING_DIR)/usr/lib/libnet.la
 
 $(IPKG_LIBNET): $(STAGING_DIR)/usr/lib/libnet.so
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_LIBNET) $(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
+	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_LIBNET) ./ipkg/$(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
 	mkdir -p $(IDIR_LIBNET)/usr/lib
-	cp -fp $(STAGING_DIR)/usr/lib/libnet.so.* $(IDIR_LIBNET)/usr/lib/
+	cp -fpR $(STAGING_DIR)/usr/lib/libnet.so.* $(IDIR_LIBNET)/usr/lib/
 	$(STRIP) $(IDIR_LIBNET)/usr/lib/lib*.so*
 	mkdir -p $(PACKAGE_DIR)
 	$(IPKG_BUILD) $(IDIR_LIBNET) $(PACKAGE_DIR)

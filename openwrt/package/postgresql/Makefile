@@ -87,9 +87,9 @@ $(STAGING_DIR)/usr/lib/libpq.so: $(PKG_BUILD_DIR)/.built
 		install
 
 $(IPKG_LIBPQ): $(STAGING_DIR)/usr/lib/libpq.so
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_LIBPQ) libpq.control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
+	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_LIBPQ) ./ipkg/libpq.control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
 	mkdir -p $(IDIR_LIBPQ)/usr/lib
-	cp -fp $(STAGING_DIR)/usr/lib/libpq.so.* $(IDIR_LIBPQ)/usr/lib/
+	cp -fpR $(STAGING_DIR)/usr/lib/libpq.so.* $(IDIR_LIBPQ)/usr/lib/
 	$(STRIP) $(IDIR_LIBPQ)/usr/lib/*.so*
 	mkdir -p $(PACKAGE_DIR)
 	$(IPKG_BUILD) $(IDIR_LIBPQ) $(PACKAGE_DIR)

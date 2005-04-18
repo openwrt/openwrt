@@ -72,9 +72,9 @@ $(STAGING_DIR)/usr/lib/libelf.so: $(PKG_BUILD_DIR)/.built
 		install
 
 $(IPKG_LIBELF): $(STAGING_DIR)/usr/lib/libelf.so
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_LIBELF) $(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
+	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_LIBELF) ./ipkg/$(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
 	mkdir -p $(IDIR_LIBELF)/usr/lib
-	cp -fp $(PKG_BUILD_DIR)/lib/libelf.so.* $(IDIR_LIBELF)/usr/lib/
+	cp -fpR $(PKG_BUILD_DIR)/lib/libelf.so.* $(IDIR_LIBELF)/usr/lib/
 	$(STRIP) $(IDIR_LIBELF)/usr/lib/lib*.so*
 	mkdir -p $(PACKAGE_DIR)
 	$(IPKG_BUILD) $(IDIR_LIBELF) $(PACKAGE_DIR)
