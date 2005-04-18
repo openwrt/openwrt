@@ -42,6 +42,11 @@ const long channel_frequency[] = {
 };
 #define NUM_CHANNELS ( sizeof(channel_frequency) / sizeof(channel_frequency[0]) )
 
+static int wlcompat_private_ioctl(struct net_device *dev,
+			 struct iw_request_info *info,
+			 union iwreq_data *wrqu,
+			 char *extra);
+
 static int wl_ioctl(struct net_device *dev, int cmd, void *buf, int len)
 {
 	mm_segment_t old_fs = get_fs();
@@ -58,6 +63,43 @@ static int wl_ioctl(struct net_device *dev, int cmd, void *buf, int len)
 	set_fs (old_fs);
 	return ret;
 }
+
+static int wl_set_val(struct net_device *dev, char *var, void *val, int len)
+{
+	char buf[128];
+	int buf_len;
+
+	/* check for overflow */
+	if ((buf_len = strlen(var)) + 1 + len > sizeof(buf))
+		return -1;
+	
+	strcpy(buf, var);
+	buf_len += 1;
+
+	/* append int value onto the end of the name string */
+	memcpy(&buf[buf_len], val, len);
+	buf_len += len;
+
+	return wl_ioctl(dev, WLC_SET_VAR, buf, buf_len);
+}
+
+static int wl_get_val(struct net_device *dev, char *var, void *val, int len)
+{
+	char buf[128];
+	int ret;
+
+	/* check for overflow */
+	if (strlen(var) + 1 > sizeof(buf) || len > sizeof(buf))
+		return -1;
+	
+	strcpy(buf, var);
+	if ((ret = wl_ioctl(dev, WLC_GET_VAR, buf, sizeof(buf))))
+		return ret;
+
+	memcpy(val, buf, len);
+	return 0;
+}
+
 
 static int wlcompat_ioctl_getiwrange(struct net_device *dev,
 				    char *extra)
@@ -317,9 +359,11 @@ static int wlcompat_ioctl(struct net_device *dev,
 		}
 		case SIOCGIWTXPOW:
 		{
-			wrqu->txpower.value = 0;
-			if (wl_ioctl(dev,WLC_GET_TXPWR, &(wrqu->txpower.value), sizeof(int)) < 0)
+			if (wl_get_val(dev, "qtxpower", &(wrqu->txpower.value), sizeof(int)) < 0)
 				return -EINVAL;
+			
+			wrqu->txpower.value &= ~WL_TXPWR_OVERRIDE;
+				
 			wrqu->txpower.fixed = 0;
 			wrqu->txpower.disabled = 0;
 			wrqu->txpower.flags = IW_TXPOW_MWATT;
@@ -327,10 +371,17 @@ static int wlcompat_ioctl(struct net_device *dev,
 		}
 		case SIOCSIWTXPOW:
 		{
+			int override;
+			
+			if (wl_get_val(dev, "qtxpower", &override, sizeof(int)) < 0)
+				return -EINVAL;
+			
+			wrqu->txpower.value |= override & WL_TXPWR_OVERRIDE;
+			
 			if (wrqu->txpower.flags != IW_TXPOW_MWATT)
 				return -EINVAL;
 
-			if (wl_ioctl(dev, WLC_SET_TXPWR, &wrqu->txpower.value, sizeof(int)) < 0)
+			if (wl_set_val(dev, "qtxpower", &wrqu->txpower.value, sizeof(int)) < 0)
 				return -EINVAL;
 		}
 		case SIOCGIWENCODE:
@@ -431,6 +482,9 @@ static int wlcompat_ioctl(struct net_device *dev,
 		}
 		default:
 		{
+			if (info->cmd >= SIOCIWFIRSTPRIV)
+				return wlcompat_private_ioctl(dev, info, wrqu, extra);
+
 			return -EINVAL;
 		}
 	}
@@ -485,15 +539,113 @@ static const iw_handler	 wlcompat_handler[] = {
 	wlcompat_ioctl,		/* SIOCGIWENCODE */
 };
 
+#define PRIV_SET_MONITOR		SIOCIWFIRSTPRIV + 0
+#define PRIV_GET_MONITOR		SIOCIWFIRSTPRIV + 1
+#define PRIV_SET_TXPWR_LIMIT		SIOCIWFIRSTPRIV + 2
+#define PRIV_GET_TXPWR_LIMIT		SIOCIWFIRSTPRIV + 3
+
+static const struct iw_priv_args	wlcompat_private_args[] = 
+{
+	{	PRIV_SET_MONITOR, 
+		IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
+		0,
+		"set_monitor"
+	},
+	{	PRIV_GET_MONITOR, 
+		0,
+		IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
+		"get_monitor"
+	},
+	{	PRIV_SET_TXPWR_LIMIT, 
+		IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
+		0,
+		"set_txpwr_limit"
+	},
+	{	PRIV_GET_TXPWR_LIMIT, 
+		0,
+		IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
+		"get_txpwr_limit"
+	}
+};
+
+static int wlcompat_private_ioctl(struct net_device *dev,
+			 struct iw_request_info *info,
+			 union iwreq_data *wrqu,
+			 char *extra)
+{
+	int *value = (int *) wrqu->name;
+
+	switch (info->cmd) {
+		case PRIV_SET_MONITOR:
+		{
+			if (wl_ioctl(dev, WLC_SET_MONITOR, value, sizeof(int)) < 0)
+				return -EINVAL;
+
+			break;
+		}
+		case PRIV_GET_MONITOR:
+		{
+			if (wl_ioctl(dev, WLC_GET_MONITOR, extra, sizeof(int)) < 0)
+				return -EINVAL;
+
+			break;
+		}
+		case PRIV_SET_TXPWR_LIMIT:
+		{
+			int val;
+			
+
+			if (wl_get_val(dev, "qtxpower", &val, sizeof(int)) < 0)
+				return -EINVAL;
+			
+			if (*extra > 0)
+				val |= WL_TXPWR_OVERRIDE;
+			else
+				val &= ~WL_TXPWR_OVERRIDE;
+			
+			if (wl_set_val(dev, "qtxpower", &val, sizeof(int)) < 0)
+				return -EINVAL;
+			
+			break;
+		}
+		case PRIV_GET_TXPWR_LIMIT:
+		{
+			if (wl_get_val(dev, "qtxpower", value, sizeof(int)) < 0)
+				return -EINVAL;
+
+			*value = ((*value & WL_TXPWR_OVERRIDE) == WL_TXPWR_OVERRIDE ? 1 : 0);
+
+			break;
+		}
+		default:
+		{
+			return -EINVAL;
+		}
+			
+	}
+	return 0;
+}
+
+
+static const iw_handler	wlcompat_private[] = 
+{
+	wlcompat_private_ioctl,
+	wlcompat_private_ioctl,
+	wlcompat_private_ioctl,
+	wlcompat_private_ioctl
+};
+
+
 static const struct iw_handler_def      wlcompat_handler_def =
 {
 	.standard	= (iw_handler *) wlcompat_handler,
 	.num_standard	= sizeof(wlcompat_handler)/sizeof(iw_handler),
-	.private	= NULL,
-	.num_private	= 0,
-	.private_args	= NULL, 
-	.num_private_args = 0,
+	.private	= wlcompat_private,
+	.num_private	= sizeof(wlcompat_private)/sizeof(iw_handler),
+	.private_args	= wlcompat_private_args, 
+	.num_private_args = sizeof(wlcompat_private_args)/sizeof(struct iw_priv_args),
 };
+
 
 #ifdef DEBUG
 static int (*old_ioctl)(struct net_device *dev, struct ifreq *ifr, int cmd);
