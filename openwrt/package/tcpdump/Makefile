@@ -68,10 +68,10 @@ $(PKG_BUILD_DIR)/$(PKG_NAME): $(PKG_BUILD_DIR)/.configured
 		CCOPT="$(TARGET_CFLAGS)" INCLS="-I. -I$(STAGING_DIR)/usr/include"
 
 $(IPKG_TCPDUMP): $(PKG_BUILD_DIR)/$(PKG_NAME)
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_TCPDUMP) $(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
-	mkdir -p $(IDIR_TCPDUMP)/usr/sbin
-	cp $(PKG_BUILD_DIR)/$(PKG_NAME) $(IDIR_TCPDUMP)/usr/sbin/
-	$(STRIP) $(IDIR_TCPDUMP)/usr/sbin/*
+	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_TCPDUMP) ./ipkg/$(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
+	install -m0755 -d $(IDIR_TCPDUMP)/usr/sbin
+	install -m0755 $(PKG_BUILD_DIR)/$(PKG_NAME) $(IDIR_TCPDUMP)/usr/sbin/
+	$(RSTRIP) $(IDIR_TCPDUMP)
 	mkdir -p $(PACKAGE_DIR)
 	$(IPKG_BUILD) $(IDIR_TCPDUMP) $(PACKAGE_DIR)
 
@@ -84,4 +84,5 @@ compile: $(IPKG_TCPDUMP)
 install: $(INFO_TCPDUMP)
 
 clean:
-	rm -rf $(PKG_BUILD_DIR) $(IPKG_TCPDUMP)
+	rm -rf $(PKG_BUILD_DIR)
+	rm -rf $(IPKG_TCPDUMP)
