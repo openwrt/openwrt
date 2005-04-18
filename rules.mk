@@ -122,3 +122,6 @@ IPKG_BUILD := PATH="$(TARGET_PATH)" ipkg-build -c -o root -g root
 # where to build (and put) .ipk packages
 IPKG_TARGET_DIR := $(PACKAGE_DIR)
 
+RSTRIP:=STRIP="$(STRIP)" $(SCRIPT_DIR)/rstrip.sh
+RSTRIP_KMOD:=STRIP="$(TARGET_CROSS)strip --strip-unneeded --remove-section=.comment --remove-section=.comment" $(SCRIPT_DIR)/rstrip.sh
+
