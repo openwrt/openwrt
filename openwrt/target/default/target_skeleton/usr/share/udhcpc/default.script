@@ -13,8 +13,8 @@ case "$1" in
 
         renew|bound)
                 ifconfig $interface $ip \
-                ${broadcast:+broadcast $broadcast} \
-                ${subnet:+netmask $subnet}
+                netmask ${subnet:-255.255.255.0} \                                                                      
+                broadcast ${broadcast:-+}                                                                               
 
                 if [ -n "$router" ] ; then
                         echo "deleting routers"
