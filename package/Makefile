@@ -51,6 +51,7 @@ package-$(BR2_PACKAGE_SDK) += sdk
 package-$(BR2_PACKAGE_SER) += ser
 package-$(BR2_PACKAGE_SETSERIAL) += setserial
 package-$(BR2_PACKAGE_SHFS) += shfs
+package-$(BR2_PACKAGE_SNORT) += snort
 package-$(BR2_PACKAGE_SPEEX) += speex
 package-$(BR2_PACKAGE_STRACE) += strace
 package-$(BR2_PACKAGE_TCPDUMP) += tcpdump
@@ -96,6 +97,14 @@ lcd4linux-compile: ncurses-compile
 libnet-compile: libpcap-compile
 mysql-compile: ncurses-compile zlib-compile
 postgresql-compile: zlib-compile
+
+snort-compile: libnet-compile libpcap-compile pcre-compile
+ifeq ($(BR2_PACKAGE_SNORT_MYSQL),y)
+snort-compile: mysql-compile
+endif
+ifeq ($(BR2_PACKAGE_SNORT_PGSQL),y)
+snort-compile: postgresql-compile
+endif
 
 sdk-compile: $(DEV_LIBS_COMPILE)
 $(patsubst %,%-prepare,$(package-y) $(package-m) $(package-)): linux-install

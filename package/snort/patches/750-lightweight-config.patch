@@ -1,0 +1,178 @@
+--- snort-2.3.2-orig/etc/snort.conf	2005-03-10 23:04:38.000000000 +0100
++++ snort-2.3.2-1/etc/snort.conf	2005-04-04 20:01:41.000000000 +0200
+@@ -6,6 +6,7 @@
+ #
+ ###################################################
+ # This file contains a sample snort configuration. 
++# Most preprocessors and rules were disabled to save memory.
+ # You can take the following steps to create your own custom configuration:
+ #
+ #  1) Set the network variables for your network
+@@ -41,10 +42,10 @@
+ # or you can specify the variable to be any IP address
+ # like this:
+ 
+-var HOME_NET any
++var HOME_NET 192.168.1.0/24
+ 
+ # Set up the external network addresses as well.  A good start may be "any"
+-var EXTERNAL_NET any
++var EXTERNAL_NET !$HOME_NET
+ 
+ # Configure your server lists.  This allows snort to only look for attacks to
+ # systems that have a service up.  Why look for HTTP attacks if you are not
+@@ -106,7 +107,7 @@
+ # Path to your rules files (this can be a relative path)
+ # Note for Windows users:  You are advised to make this an absolute path,
+ # such as:  c:\snort\rules
+-var RULE_PATH ../rules
++var RULE_PATH /etc/snort/rules
+ 
+ # Configure the snort decoder
+ # ============================
+@@ -297,11 +298,11 @@
+ # lots of options available here. See doc/README.http_inspect.
+ # unicode.map should be wherever your snort.conf lives, or given
+ # a full path to where snort can find it.
+-preprocessor http_inspect: global \
+-    iis_unicode_map unicode.map 1252 
++#preprocessor http_inspect: global \
++#    iis_unicode_map unicode.map 1252 
+ 
+-preprocessor http_inspect_server: server default \
+-    profile all ports { 80 8080 8180 } oversize_dir_length 500
++#preprocessor http_inspect_server: server default \
++#    profile all ports { 80 8080 8180 } oversize_dir_length 500
+ 
+ #
+ #  Example unique server configuration
+@@ -335,7 +336,7 @@
+ # no_alert_incomplete - don't alert when a single segment
+ #                       exceeds the current packet size
+ 
+-preprocessor rpc_decode: 111 32771
++#preprocessor rpc_decode: 111 32771
+ 
+ # bo: Back Orifice detector
+ # -------------------------
+@@ -347,7 +348,7 @@
+ # -----   -------------------
+ #   1       Back Orifice traffic detected
+ 
+-preprocessor bo
++#preprocessor bo
+ 
+ # telnet_decode: Telnet negotiation string normalizer
+ # ---------------------------------------------------
+@@ -359,7 +360,7 @@
+ # This preprocessor requires no arguments.
+ # Portscan uses Generator ID 109 and does not generate any SID currently.
+ 
+-preprocessor telnet_decode
++#preprocessor telnet_decode
+ 
+ # Flow-Portscan: detect a variety of portscans
+ # ---------------------------------------
+@@ -455,9 +456,9 @@
+ #       are still watched as scanner hosts.  The 'ignore_scanned' option is
+ #       used to tune alerts from very active hosts such as syslog servers, etc.
+ #
+-preprocessor sfportscan: proto  { all } \
+-                         memcap { 10000000 } \
+-                         sense_level { low }
++#preprocessor sfportscan: proto  { all } \
++#                         memcap { 10000000 } \
++#                         sense_level { low }
+ 
+ # arpspoof
+ #----------------------------------------
+@@ -642,41 +643,41 @@
+ include $RULE_PATH/bad-traffic.rules
+ include $RULE_PATH/exploit.rules
+ include $RULE_PATH/scan.rules
+-include $RULE_PATH/finger.rules
+-include $RULE_PATH/ftp.rules
+-include $RULE_PATH/telnet.rules
+-include $RULE_PATH/rpc.rules
+-include $RULE_PATH/rservices.rules
+-include $RULE_PATH/dos.rules
+-include $RULE_PATH/ddos.rules
+-include $RULE_PATH/dns.rules
+-include $RULE_PATH/tftp.rules
+-
+-include $RULE_PATH/web-cgi.rules
+-include $RULE_PATH/web-coldfusion.rules
+-include $RULE_PATH/web-iis.rules
+-include $RULE_PATH/web-frontpage.rules
+-include $RULE_PATH/web-misc.rules
+-include $RULE_PATH/web-client.rules
+-include $RULE_PATH/web-php.rules
+-
+-include $RULE_PATH/sql.rules
+-include $RULE_PATH/x11.rules
+-include $RULE_PATH/icmp.rules
+-include $RULE_PATH/netbios.rules
+-include $RULE_PATH/misc.rules
+-include $RULE_PATH/attack-responses.rules
+-include $RULE_PATH/oracle.rules
+-include $RULE_PATH/mysql.rules
+-include $RULE_PATH/snmp.rules
+-
+-include $RULE_PATH/smtp.rules
+-include $RULE_PATH/imap.rules
+-include $RULE_PATH/pop2.rules
+-include $RULE_PATH/pop3.rules
++#include $RULE_PATH/finger.rules
++#include $RULE_PATH/ftp.rules
++#include $RULE_PATH/telnet.rules
++#include $RULE_PATH/rpc.rules
++#include $RULE_PATH/rservices.rules
++#include $RULE_PATH/dos.rules
++#include $RULE_PATH/ddos.rules
++#include $RULE_PATH/dns.rules
++#include $RULE_PATH/tftp.rules
++
++#include $RULE_PATH/web-cgi.rules
++#include $RULE_PATH/web-coldfusion.rules
++#include $RULE_PATH/web-iis.rules
++#include $RULE_PATH/web-frontpage.rules
++#include $RULE_PATH/web-misc.rules
++#include $RULE_PATH/web-client.rules
++#include $RULE_PATH/web-php.rules
++
++#include $RULE_PATH/sql.rules
++#include $RULE_PATH/x11.rules
++#include $RULE_PATH/icmp.rules
++#include $RULE_PATH/netbios.rules
++#include $RULE_PATH/misc.rules
++#include $RULE_PATH/attack-responses.rules
++#include $RULE_PATH/oracle.rules
++#include $RULE_PATH/mysql.rules
++#include $RULE_PATH/snmp.rules
++
++#include $RULE_PATH/smtp.rules
++#include $RULE_PATH/imap.rules
++#include $RULE_PATH/pop2.rules
++#include $RULE_PATH/pop3.rules
+ 
+-include $RULE_PATH/nntp.rules
+-include $RULE_PATH/other-ids.rules
++#include $RULE_PATH/nntp.rules
++#include $RULE_PATH/other-ids.rules
+ # include $RULE_PATH/web-attacks.rules
+ # include $RULE_PATH/backdoor.rules
+ # include $RULE_PATH/shellcode.rules
+@@ -684,11 +685,11 @@
+ # include $RULE_PATH/porn.rules
+ # include $RULE_PATH/info.rules
+ # include $RULE_PATH/icmp-info.rules
+- include $RULE_PATH/virus.rules
++# include $RULE_PATH/virus.rules
+ # include $RULE_PATH/chat.rules
+ # include $RULE_PATH/multimedia.rules
+ # include $RULE_PATH/p2p.rules
+-include $RULE_PATH/experimental.rules
++#include $RULE_PATH/experimental.rules
+ 
+ # Include any thresholding or suppression commands. See threshold.conf in the
+ # <snort src>/etc directory for details. Commands don't necessarily need to be
