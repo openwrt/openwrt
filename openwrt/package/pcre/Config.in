@@ -1,9 +1,14 @@
 config BR2_PACKAGE_PCRE
-	tristate "pcre"
+	prompt "pcre"
+	tristate
 	default m
 	help
 	  A Perl Compatible Regular Expression library
 	  
 	  http://www.pcre.org/
 	  
+
+config BR2_PACKAGE_LIBPCRE
+	tristate
+	default BR2_PACKAGE_PCRE
 
