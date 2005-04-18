@@ -15,9 +15,9 @@ done
 		USERNAME=$(nvram get ppp_username)
 		PASSWORD=$(nvram get ppp_passwd)
 		REDIAL=$(nvram get ppp_redialperiod)
-		REDIAL=${REDIAL:+holdoff $REDIAL}
+		REDIAL=${REDIAL:+lcp-echo-interval $REDIAL}
 		IDLETIME=$(nvram get ppp_idletime)
-		IDLETIME=${IDLETIME:+idle $IDLETIME}
+		IDLETIME=${IDLETIME:+lcp-echo-failure $IDLETIME}
 		MTU=$(nvram get ppp_mtu)
 		MTU=${MTU:+ mtu $MTU mru $MTU}
 
