@@ -92,8 +92,6 @@ static unsigned int diag = 0;
 
 static void diag_change()
 {
-	//printk(KERN_INFO "led -> %02x\n",diag);
-
 	set_diag(0xFF); // off
 	set_dmz(0xFF); // off
 
@@ -173,7 +171,6 @@ static int __init diag_init()
 	set_dmz=ignore;
 	
 	if ((board_type & 0xf00) == 0x400) {
-		board_type=1;
 		buf=nvram_get("boardtype")?:"";
 		if (!strcmp(buf,"bcm94710dev")) {
 			buf=nvram_get("boardnum")?:"";
@@ -182,18 +179,20 @@ static int __init diag_init()
 				set_diag=v1_set_diag;
 				set_dmz=v1_set_dmz;
 				reset_gpio=(1<<6);
-			} else if (!strcmp(buf,"asusX")) {
+			}
+			if (!strcmp(buf,"asusX")) {
 				//asus wl-500g
-				//no leds
 				reset_gpio=(1<<6);
 			}
-		} else if (!strcmp(buf,"bcm94710ap")) {
+		}
+		if (!strcmp(buf,"bcm94710ap")) {
 			buf=nvram_get("boardnum")?:"";
 			if (!strcmp(buf,"42")) {
 				// buffalo
 				set_dmz=v2_set_dmz;
 				reset_gpio=(1<<4);
-			} else if (!strcmp(buf,"44")) {
+			}
+			if (!strcmp(buf,"44")) {
 				//dell truemobile
 				set_dmz=v2_set_dmz;
 				reset_gpio=(1<<0);
@@ -209,20 +208,14 @@ static int __init diag_init()
 		}
 		if (!strcmp(buf,"44")) {
 			//motorola
-			set_diag=ignore;
-			set_dmz=ignore;
 			reset_gpio=(1<<5);
 		}
 		if (!strcmp(buf,"00")) {
 			//buffalo
-			set_diag=ignore;
-			set_dmz=ignore;
 			reset_gpio=(1<<7);
 		}
 		if (!strcmp(buf,"45")) {
 			//wl-500g deluxe
-			set_diag=ignore;
-			set_dmz=ignore;
 			reset_gpio=(1<<6);
 		}
 	}
