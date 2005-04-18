@@ -19,9 +19,10 @@ done
 		IDLETIME=$(nvram get ppp_idletime)
 		IDLETIME=${IDLETIME:+idle $IDLETIME}
 		MTU=$(nvram get ppp_mtu)
+		MTU=${MTU:+ mtu $MTU mru $MTU}
 
 		ifconfig $IFNAME up
-		echo -e "plugin rp-pppoe.so\nconnect /bin/true\nusepeerdns\ndefaultroute\nuser \"$USERNAME\"\npassword \"$PASSWORD\"\nmtu $MTU\n$IDLETIME\n$REDIAL" > /tmp/.pppoe-data
+		echo -e "plugin rp-pppoe.so\npersist\nconnect /bin/true\nusepeerdns\ndefaultroute\nuser \"$USERNAME\"\npassword \"$PASSWORD\"\n$MTU\n$IDLETIME\n$REDIAL" > /tmp/.pppoe-data
 		/usr/sbin/pppd nodetach file /tmp/.pppoe-data $IFNAME
 	done
 ) &
