@@ -1,6 +1,6 @@
 config BR2_PACKAGE_FUSE
 	select BR2_PACKAGE_LIBPTHREAD
-	tristate "fuse (Filesystem in USErspace)"
+	bool "fuse (Filesystem in USErspace)"
 	default n
 	help
 	  With FUSE it is possible to implement a fully functional 
@@ -21,3 +21,19 @@ config BR2_PACKAGE_FUSE
 	  
 	  Depends: libpthread
 	  
+
+config BR2_PACKAGE_KMOD_FUSE
+	depends BR2_PACKAGE_FUSE
+	tristate "kmod-fuse (FUSE kernel module)"
+	default m
+
+config BR2_PACKAGE_LIBFUSE
+	depends BR2_PACKAGE_FUSE
+	tristate "libfuse (FUSE library)"
+	default m
+
+config BR2_PACKAGE_FUSE_UTILS
+	depends BR2_PACKAGE_FUSE
+	tristate "fuse-utils (FUSE utilities)"
+	default m
+
