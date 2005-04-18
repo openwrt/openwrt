@@ -2413,3 +2413,14 @@ diff -ruN mysql-4.0.24-orig/ipkg/libmysqlclient-dev/CONTROL/control mysql-4.0.24
 diff -ruN mysql-4.0.24-orig/ipkg/mysql-utils/CONTROL/control mysql-4.0.24-2/ipkg/mysql-utils/CONTROL/control
 diff -ruN mysql-4.0.24-orig/ipkg/rules mysql-4.0.24-2/ipkg/rules
 diff -ruN mysql-4.0.24-orig/ipkg/version mysql-4.0.24-2/ipkg/version
+--- mysql-4.0.24/configure.old	2005-04-18 08:33:00.000000000 +0200
++++ mysql-4.0.24/configure	2005-04-18 08:34:28.000000000 +0200
+@@ -25013,7 +25013,7 @@
+   # Look for LinuxThreads.
+   echo "$as_me:$LINENO: checking \"LinuxThreads\"" >&5
+ echo $ECHO_N "checking \"LinuxThreads\"... $ECHO_C" >&6
+-    res=`grep Linuxthreads /usr/include/pthread.h 2>/dev/null | wc -l`
++    res=1
+     if test "$res" -gt 0
+     then
+       echo "$as_me:$LINENO: result: \"Found\"" >&5
