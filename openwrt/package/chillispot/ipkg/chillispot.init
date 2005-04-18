@@ -1,12 +1,16 @@
 #!/bin/sh
+
+RUN_D=/var/run
+PID_F=$RUN_D/chilli.pid
+
 case $1 in
  start)
   /sbin/insmod tun >/dev/null 2>&1
-  [ -d /var/run ] || mkdir -p /var/run
+  [ -d $RUN_D ] || mkdir -p $RUN_D
   /usr/sbin/chilli
   ;;
  stop)
-  [ -f /var/run/chilli.pid ] && kill $(cat /var/run/chilli.pid) >/dev/null 2>&1
+  [ -f $PID_F ] && kill $(cat $PID_F) >/dev/null 2>&1
   ;;
  *)
   echo "usage: $0 (start|stop)"
