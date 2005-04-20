@@ -1,3 +1,9 @@
+config BR2_PACKAGE_KMOD_DIAG
+	tristate "Router LED/Button Driver"
+	default y
+	help
+	  Driver for the LEDs on Wireless Routers (diag)
+
 config BR2_PACKAGE_KMOD_BRCM_WL
 	tristate "Broadcom Wireless Network Driver"
 	default y
