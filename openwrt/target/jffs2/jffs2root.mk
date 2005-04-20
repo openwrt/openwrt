@@ -8,7 +8,7 @@ MTD_DIR:=$(BUILD_DIR)/mtd-20050122.orig
 MTD_SOURCE=mtd_20050122.orig.tar.gz
 MTD_SITE=http://ftp.debian.org/debian/pool/main/m/mtd
 MTD_MD5SUM:=1f42c2cae08eb9e7b52d0c188f8d6338
-MKFS_JFFS2=$(shell which mkfs.jffs2 2>/dev/null || echo $(MTD_DIR)/util/mkfs.jffs2)
+MKFS_JFFS2=$(MTD_DIR)/util/mkfs.jffs2
 
 $(DL_DIR)/$(MTD_SOURCE):
 	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(MTD_SOURCE) $(MTD_MD5SUM) $(MTD_SITE)
@@ -20,7 +20,10 @@ $(MTD_DIR)/.unpacked: $(DL_DIR)/$(MTD_SOURCE)
 $(MTD_DIR)/util/mkfs.jffs2: $(MTD_DIR)/.unpacked
 	$(MAKE) LINUXDIR=$(LINUX_DIR) -C $(MTD_DIR)/util
 
-mtd: $(MKFS_JFFS2)
+$(STAGING_DIR)/bin/mkfs.jffs2: $(MTD_DIR)/util/mkfs.jffs2
+	cp $< $@
+
+mtd: $(MTD_DIR)/util/mkfs.jffs2 $(STAGING_DIR)/bin/mkfs.jffs2
 
 
 #############################################################
