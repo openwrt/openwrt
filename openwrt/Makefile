@@ -61,8 +61,11 @@ toolchain_install:
 #
 ##############################################################
 
-package_install: toolchain
-	$(MAKE) -C package compile install
+package_compile: target_compile
+	$(MAKE) -C package compile
+
+package_install: package_compile toolchain
+	$(MAKE) -C package install
 
 #############################################################
 #
@@ -90,6 +93,9 @@ package_index:
 
 target_prepare:
 	$(MAKE) -C target prepare
+
+target_compile:
+	$(MAKE) -C target compile
 
 target_install:
 	$(MAKE) -C target install
