@@ -35,6 +35,7 @@ package-$(BR2_PACKAGE_NCURSES) += ncurses
 package-$(BR2_PACKAGE_NFSD) += nfs-server
 package-$(BR2_PACKAGE_NOCATSPLASH) += nocatsplash
 package-$(BR2_PACKAGE_NTPCLIENT) += ntpclient
+package-$(BR2_PACKAGE_OLSRD) += olsrd
 package-$(BR2_PACKAGE_OPENSSL) += openssl
 package-$(BR2_PACKAGE_OPENSWAN) += openswan
 package-$(BR2_PACKAGE_OPENNTPD) += openntpd
