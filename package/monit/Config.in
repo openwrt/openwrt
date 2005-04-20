@@ -1,0 +1,8 @@
+config BR2_PACKAGE_MONIT
+	tristate "monit"
+	select BR2_PACKAGE_LIBPTHREAD
+	default m if CONFIG_DEVEL
+	help
+	  utility for monitoring services on a Unix system
+	  
+	  http://www.tildeslash.com/monit/
