@@ -32,6 +32,7 @@ package-$(BR2_PACKAGE_LIBUSB) += libusb
 package-$(BR2_PACKAGE_LZO) += lzo
 package-$(BR2_PACKAGE_MATRIXSSL) += matrixssl
 package-$(BR2_PACKAGE_MICROPERL) += microperl
+package-$(BR2_PACKAGE_MONIT) += monit
 package-$(BR2_PACKAGE_NCURSES) += ncurses
 package-$(BR2_PACKAGE_NFSD) += nfs-server
 package-$(BR2_PACKAGE_NOCATSPLASH) += nocatsplash
