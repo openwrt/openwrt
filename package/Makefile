@@ -66,6 +66,8 @@ package-$(BR2_PACKAGE_LIBPQ) += postgresql
 
 DEV_LIBS:=tcp_wrappers glib ncurses openssl pcre popt zlib libnet libpcap mysql postgresql iptables matrixssl lzo gmp fuse portmap libelf
 DEV_LIBS_COMPILE:=$(patsubst %,%-compile,$(DEV_LIBS))
+SDK_DEFAULT_PACKAGES:=busybox dnsmasq iptables wireless-tools dropbear bridge
+SDK_DEFAULT_COMPILE:=$(patsubst %,%-compile,$(SDK_DEFAULT_PACKAGES))
 
 all: compile install
 clean: $(patsubst %,%-clean,$(package-) $(package-y) $(package-m)) linux-clean
@@ -106,7 +108,7 @@ ifeq ($(BR2_PACKAGE_SNORT_PGSQL),y)
 snort-compile: postgresql-compile
 endif
 
-sdk-compile: $(DEV_LIBS_COMPILE)
+sdk-compile: $(DEV_LIBS_COMPILE) $(SDK_DEFAULT_COMPILE)
 $(patsubst %,%-prepare,$(package-y) $(package-m) $(package-)): linux-install
 
 %-prepare:

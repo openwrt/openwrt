@@ -16,10 +16,13 @@ $(SQUASHFSLZMA_DIR)/.unpacked: $(DL_DIR)/$(SQUASHFSLZMA_SOURCE)
 	patch -d $(SQUASHFSLZMA_DIR) -p1 < squashfs2.0-tools-lzma.patch
 	touch $(SQUASHFSLZMA_DIR)/.unpacked
 
-$(SQUASHFSLZMA_DIR)/squashfs-tools/mksquashfs: $(SQUASHFSLZMA_DIR)/.unpacked
+$(SQUASHFSLZMA_DIR)/squashfs-tools/mksquashfs-lzma: $(SQUASHFSLZMA_DIR)/.unpacked
 	$(MAKE) -C $(SQUASHFSLZMA_DIR)/squashfs-tools mksquashfs-lzma LZMAPATH=$(BUILD_DIR)/lzma
 
-squashfslzma: $(SQUASHFSLZMA_DIR)/squashfs-tools/mksquashfs
+$(STAGING_DIR)/bin/mksquashfs-lzma: $(SQUASHFSLZMA_DIR)/squashfs-tools/mksquashfs-lzma
+	cp $< $@
+
+squashfslzma: $(SQUASHFSLZMA_DIR)/squashfs-tools/mksquashfs-lzma $(STAGING_DIR)/bin/mksquashfs-lzma
 	
 squashfslzma-source: $(DL_DIR)/$(SQUASHFSLZMA_SOURCE)
 
