@@ -2,7 +2,6 @@ config BR2_PACKAGE_OPENVPN
 	tristate "OpenVPN"
 	default m if CONFIG_DEVEL
 	select BR2_PACKAGE_KMOD_TUN
-	select BR2_PACKAGE_LIBPTHREAD
 	select BR2_PACKAGE_OPENSSL
 	help
 	  Open Source VPN solution using SSL
