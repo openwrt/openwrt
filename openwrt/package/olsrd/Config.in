@@ -1,0 +1,5 @@
+config BR2_PACKAGE_OLSRD
+	tristate "olsrd"
+	default m if CONFIG_DEVEL
+	help
+	 The Optimized Link State Routing daemon
