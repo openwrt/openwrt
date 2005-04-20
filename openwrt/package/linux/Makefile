@@ -39,6 +39,9 @@ $$(PKG_$(1)): $(LINUX_DIR)/.modules_done
 
 endef
 
+$(eval $(call KMOD_template,DIAG,diag,\
+	$(MODULES_DIR)/kernel/drivers/net/diag/diag.o \
+))
 $(eval $(call KMOD_template,BRCM_WL,brcm-wl,\
 	$(MODULES_DIR)/kernel/drivers/net/wl/wl.o \
 ,CONFIG_WL))
