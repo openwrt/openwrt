@@ -6,11 +6,6 @@
 # Load sysconf defaults
 [ -f /etc/sysconf ] && . /etc/sysconf
 
-[ "$(nvram get boardnum)"  = "asusX" ] && \
-  [ "$(nvram get boardtype)"  = "bcm94710dev" ] && {
-  asus=1
-}
-
 # linksys bug; remove when not using static configuration for lan
 NVRAM_lan_proto="static"
 
@@ -54,8 +49,9 @@ NVRAM_lan_proto="static"
 }
 
 # hack for asus wl-500g hardware
-[ $asus ] && {
-    FAILSAFE_lan_ifnames="eth0 eth2"
+[ "$(nvram get boardnum)"  = "asusX" ] && \
+[ "$(nvram get boardtype)"  = "bcm94710dev" ] && {
+  FAILSAFE_lan_ifnames="eth0 eth2"
 }
 
 # hacks for asus wl-500g deluxe

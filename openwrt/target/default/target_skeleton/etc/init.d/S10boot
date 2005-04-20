@@ -1,7 +1,6 @@
 #!/bin/sh
 klogd
 syslogd -C 16 
-sysctl -p
 echo "S" > /proc/jffs2_bbc
 
 mkdir -p /var/run
@@ -15,7 +14,8 @@ touch /var/log/lastlog
   awk '{OFS=FS=":";for(x=7,y=2;--x;){$x=sprintf("%02x",(y+="0x"$x)%256);y/=256}print}')
 }
 
-# set up the vlan*ports variables for the asus wl-500g deluxe, if they aren't exist
+# set up the vlan*ports variables for the asus wl-500g deluxe
+# if they don't already exist 
 [ "$(nvram get boardtype)" = "bcm95365r" ] && \
 [ "$(nvram get boardnum)" = "45" ] && {
   [ -z "$(nvram get vlan0ports)" ] && \
@@ -40,3 +40,5 @@ vconfig set_name_type VLAN_PLUS_VID_NO_PAD
 [ -z "$FAILSAFE" ] && {
 	{ mount | grep jffs2 1>&-; } || firstboot
 }
+
+sysctl -p
