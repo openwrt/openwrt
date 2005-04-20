@@ -1,6 +1,6 @@
 #!/bin/sh
 # udhcpc script edited by Tim Riker <Tim@Rikers.org>
-# (slightly modified)
+# (slightly modified for openwrt)
 
 [ -z "$1" ] && echo "Error: should be run by udhcpc" && exit 1
 
@@ -13,8 +13,8 @@ case "$1" in
 
         renew|bound)
                 ifconfig $interface $ip \
-                netmask ${subnet:-255.255.255.0} \                                                                      
-                broadcast ${broadcast:-+}                                                                               
+                netmask ${subnet:-255.255.255.0} \
+                broadcast ${broadcast:-+}
 
                 if [ -n "$router" ] ; then
                         echo "deleting routers"
