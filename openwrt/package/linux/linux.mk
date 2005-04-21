@@ -79,10 +79,13 @@ $(LINUX_DIR)/$(LINUX_BINLOC): $(LINUX_DIR)/.depend_done
 	$(MAKE) -C $(LINUX_DIR) ARCH=$(LINUX_KARCH) PATH=$(TARGET_PATH) $(LINUX_FORMAT)
 
 $(LINUX_KERNEL): $(LINUX_DIR)/$(LINUX_BINLOC)
-	cp -fa $(LINUX_DIR)/$(LINUX_BINLOC) $(LINUX_KERNEL)
+	cp -fa $< $@ 
 	touch -c $(LINUX_KERNEL)
+	
+$(LINUX_IMAGE): $(LINUX_KERNEL)
+	cat $^ | $(BUILD_DIR)/lzma/lzma e -si -so -eos > $@ || (rm -f $@ && false)
 
-$(LINUX_DIR)/.modules_done: $(LINUX_KERNEL)
+$(LINUX_DIR)/.modules_done: $(LINUX_KERNEL) $(LINUX_IMAGE)
 	rm -rf $(BUILD_DIR)/modules
 	$(MAKE) -C $(LINUX_DIR) ARCH=$(LINUX_KARCH) PATH=$(TARGET_PATH) modules
 	$(MAKE) -C $(LINUX_DIR) DEPMOD=true INSTALL_MOD_PATH=$(BUILD_DIR)/modules modules_install
@@ -102,7 +105,7 @@ linux-source: $(DL_DIR)/$(LINUX_SOURCE)
 
 # This has been renamed so we do _NOT_ by default run this on 'make clean'
 linuxclean: clean
-	rm -f $(LINUX_KERNEL)
+	rm -f $(LINUX_KERNEL) $(LINUX_IMAGE)
 	-$(MAKE) -C $(LINUX_DIR) clean
 
 linux-dirclean:

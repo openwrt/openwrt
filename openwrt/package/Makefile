@@ -112,7 +112,7 @@ ifeq ($(BR2_PACKAGE_SNORT_PGSQL),y)
 snort-compile: postgresql-compile
 endif
 
-sdk-compile: $(DEV_LIBS_COMPILE) $(SDK_DEFAULT_COMPILE)
+sdk-compile: $(DEV_LIBS_COMPILE) $(SDK_DEFAULT_COMPILE) openwrt-install
 $(patsubst %,%-prepare,$(package-y) $(package-m) $(package-)): linux-install
 
 %-prepare:
