@@ -302,6 +302,16 @@ static int wlcompat_ioctl(struct net_device *dev,
 			}
 			break;
 		}
+		case SIOCSIWAP:
+		{
+			if (wrqu->ap_addr.sa_family != ARPHRD_ETHER)
+				return -EINVAL;
+
+			if (wl_ioctl(dev,WLC_SET_BSSID,wrqu->ap_addr.sa_data,6) < 0)
+				return -EINVAL;
+
+			break;
+		}
 		case SIOCGIWAP:
 		{
 			wrqu->ap_addr.sa_family = ARPHRD_ETHER;
@@ -513,7 +523,7 @@ static const iw_handler	 wlcompat_handler[] = {
 	iw_handler_get_spy,	/* SIOCGIWSPY */
 	iw_handler_set_thrspy,  /* SIOCSIWTHRSPY */
 	iw_handler_get_thrspy,  /* SIOCGIWTHRSPY */
-	NULL,			/* SIOCSIWAP */
+	wlcompat_ioctl,		/* SIOCSIWAP */
 	wlcompat_ioctl,		/* SIOCGIWAP */
 	NULL,			/* -- hole -- */
 	NULL,			/* SIOCGIWAPLIST */
