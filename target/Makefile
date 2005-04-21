@@ -29,9 +29,6 @@ IMAGE_TARGETS += $(BIN_DIR)/openwrt-motorola-$(1).bin
 endif
 endef
 
-$(LINUX_IMAGE): $(LINUX_KERNEL)
-	cat $^ | $(BUILD_DIR)/lzma/lzma e -si -so -eos > $@ || (rm -f $@ && false)
-
 TARGET_DIRS:=
 TARGET_FS:=
 IMAGE_TARGETS:=
@@ -74,8 +71,8 @@ $(BIN_DIR):
 
 $(INSTALL_TARGET_DIRS): lzma-loader-compile
 $(IMAGE_TARGETS): $(patsubst %,%-install,$(TARGET_DIRS))
-compile: $(patsubst %,%-compile,jffs2 lzma squashfs-lzma lzma-loader)
-install: utils-install lzma-install $(LINUX_IMAGE) $(patsubst %,%-install,$(TARGET_DIRS)) $(IMAGE_TARGETS)
+compile: $(patsubst %,%-compile,jffs2 lzma squashfs-lzma lzma-loader utils)
+install: utils-install lzma-install $(patsubst %,%-install,$(TARGET_DIRS)) $(IMAGE_TARGETS)
 clean: $(patsubst %,%-clean,$(TARGET_DIRS)) image_clean
 
 image_clean:
