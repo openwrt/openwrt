@@ -25,7 +25,7 @@ touch /var/log/lastlog
   }
 }
 
-sed 's/^[^#]/insmod &/' /etc/modules 2>&-|ash
+cat /etc/modules /etc/modules.d/* | sed 's/^[^#]/insmod &/' 2>&-|ash
 
 ifconfig lo 127.0.0.1 up
 ifconfig eth0 promisc
