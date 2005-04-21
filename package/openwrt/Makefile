@@ -83,6 +83,8 @@ $(PKG_BUILD_DIR)/wlcompat-debug.o:
 
 $(PKG_WLCOMPAT): $(PKG_BUILD_DIR)/wlcompat.o $(PKG_BUILD_DIR)/wlcompat-debug.o
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_BUILD_DIR)/wlcompat kmod-wlcompat.control $(LINUX_VERSION)-$(PKG_RELEASE) $(ARCH)
+	mkdir -p $(PKG_BUILD_DIR)/wlcompat/etc/modules.d
+	echo "insmod wlcompat" > $(PKG_BUILD_DIR)/wlcompat/etc/modules.d/10-wlcompat
 	mkdir -p $(PKG_BUILD_DIR)/wlcompat/lib/modules/$(LINUX_VERSION)
 	cp $^ $(PKG_BUILD_DIR)/wlcompat/lib/modules/$(LINUX_VERSION)/
 	$(IPKG_BUILD) $(PKG_BUILD_DIR)/wlcompat $(PACKAGE_DIR)
