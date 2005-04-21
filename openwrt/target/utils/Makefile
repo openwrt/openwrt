@@ -12,9 +12,9 @@ UTILS_BUILD_DIR:=$(BUILD_DIR)/target-utils
 
 prepare: $(UTILS_BUILD_DIR)
 compile: prepare $(patsubst %,$(UTILS_BUILD_DIR)/%,$(TARGETS))
-install: compile
 	mkdir -p $(STAGING_DIR)/bin
 	cp -a $(UTILS_BUILD_DIR)/* $(STAGING_DIR)/bin/
+install: compile
 package:
 clean:
 	rm -rf $(UTILS_BUILD_DIR)
