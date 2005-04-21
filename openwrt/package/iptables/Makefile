@@ -71,6 +71,7 @@ $(STAGING_DIR)/libipq/libipq.a: $(PKG_BUILD_DIR)/iptables
 		libipq/libipq.a
 	cp -a $(PKG_BUILD_DIR)/include/* $(STAGING_DIR)/include/
 	cp $(PKG_BUILD_DIR)/libipq/libipq.a $(STAGING_DIR)/lib/
+	cp $(PKG_BUILD_DIR)/libiptc/libiptc.a $(STAGING_DIR)/lib/
 
 $(PKG_IPT): $(PKG_BUILD_DIR)/iptables
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(I_IPT) control/iptables.control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH) 
