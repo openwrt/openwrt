@@ -103,11 +103,10 @@ $(IPKG_FUSE_UTILS): $(IDIR_FUSE_UTILS)/CONTROL/control $(PKG_BUILD_DIR)/.install
 	$(IPKG_BUILD) $(IDIR_FUSE_UTILS) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libfuse.so: $(PKG_BUILD_DIR)/.installed
-	mkdir -p $(PKG_INSTALL_DIR)/usr/include
+	mkdir -p $(STAGING_DIR)/usr/include
 	cp -fpR $(PKG_INSTALL_DIR)/usr/include/fuse* $(STAGING_DIR)/usr/include/
-	mkdir -p $(PKG_INSTALL_DIR)/usr/lib
+	mkdir -p $(STAGING_DIR)/usr/lib/pkgconfig
 	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libfuse.{a,so*} $(STAGING_DIR)/usr/lib/
-	mkdir -p $(PKG_INSTALL_DIR)/usr/lib/pkgconfig
 	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/fuse.pc $(STAGING_DIR)/usr/lib/pkgconfig/
 	
 install-dev: $(STAGING_DIR)/usr/lib/libfuse.so
