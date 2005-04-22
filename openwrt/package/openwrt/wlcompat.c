@@ -569,12 +569,12 @@ static const struct iw_priv_args	wlcompat_private_args[] =
 	{	PRIV_SET_TXPWR_LIMIT, 
 		IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
 		0,
-		"set_txpwr_limit"
+		"set_txpwr_force"
 	},
 	{	PRIV_GET_TXPWR_LIMIT, 
 		0,
 		IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
-		"get_txpwr_limit"
+		"get_txpwr_force"
 	}
 };
 
