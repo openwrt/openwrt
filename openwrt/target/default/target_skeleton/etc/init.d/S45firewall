@@ -1,36 +1,87 @@
 #!/bin/sh
 . /etc/functions.sh
-
 export WAN=$(nvram get wan_ifname)
-export IPT=/usr/sbin/iptables
+export LAN=$(nvram get lan_ifname)
 
-for T in filter nat mangle ; do
-  $IPT -t $T -F
-  $IPT -t $T -X
+## CLEAR TABLES
+for T in filter nat mangle; do
+  iptables -t $T -F
+  iptables -t $T -X
 done
 
-# initial rules
-$IPT -t filter -A INPUT -m state --state INVALID -j DROP
-$IPT -t filter -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT 
-$IPT -t filter -A FORWARD -m state --state INVALID -j DROP 
-$IPT -t filter -A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT 
+iptables -N input_rule
+iptables -N output_rule
+iptables -N forwarding_rule
 
-if [ -d /etc/firewall.d ]; then 
-	for fw in /etc/firewall.d/??*; do
-		[ -x $fw ] && $fw
-	done
-fi
+iptables -t nat -N prerouting_rule
+iptables -t nat -N postrouting_rule
 
-# defaults
+### Port forwarding
+# iptables -t nat -A prerouting_rule -p tcp --dport 22 -j DNAT --to 192.168.1.2
+# iptables        -A forwarding_rule -p tcp --dport 22 -d 192.168.1.2 -j ACCEPT
 
-$IPT -t filter -A INPUT -p icmp -j ACCEPT
-$IPT -t filter -A INPUT -p 47 -j ACCEPT # allow GRE
-$IPT -t filter -A INPUT -i $WAN -p tcp --syn --tcp-option \! 2 -j  DROP
-$IPT -t filter -A INPUT -i $WAN -p tcp -j REJECT --reject-with tcp-reset 
-$IPT -t filter -A INPUT -i $WAN -j REJECT --reject-with icmp-port-unreachable 
+### INPUT
+###  (connections with the router as destination)
 
-$IPT -t filter -A FORWARD -i br0 -o br0 -j ACCEPT
-$IPT -t filter -A FORWARD -i $WAN -m state --state NEW -j DROP
-$IPT -t filter -A FORWARD -o $WAN -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
+  # base case
+  iptables -P INPUT DROP
+  iptables -A INPUT -m state --state INVALID -j DROP
+  iptables -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
 
-$IPT -t nat -A POSTROUTING -o $WAN -j MASQUERADE
+  # allow
+  iptables -A INPUT -i \! $WAN -j ACCEPT	# allow from lan/wifi interfaces 
+  iptables -A INPUT -p icmp -j ACCEPT		# allow ICMP
+  iptables -A INPUT -p 47 -j ACCEPT		# allow GRE
+  #
+  # insert accept rule or to jump to new accept-check table here
+  #
+  iptables -A INPUT -j input_rule
+
+  # reject (what to do with anything not allowed earlier)
+  iptables -A INPUT -p tcp --syn --tcp-option \! 2 -j  DROP
+  iptables -A INPUT -p tcp -j REJECT --reject-with tcp-reset
+  iptables -A INPUT -j REJECT --reject-with icmp-port-unreachable
+
+### OUTPUT
+### (connections with the router as source)
+
+  # base case
+  iptables -P OUTPUT DROP
+  iptables -A OUTPUT -m state --state INVALID -j DROP
+  iptables -A OUTPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+
+  # allow
+  iptables -A OUTPUT -j ACCEPT		#allow everything out
+  #
+  # insert accept rule or to jump to new accept-check table here
+  #
+  iptables -A OUTPUT -j output_rule
+
+  # reject (what to do with anything not allowed earlier)
+  iptables -A OUTPUT -p tcp -j REJECT --reject-with tcp-reset
+  iptables -A OUTPUT -j REJECT --reject-with icmp-port-unreachable
+
+### FORWARDING
+### (connections routed through the router)
+
+  # base case
+  iptables -P FORWARD DROP 
+  iptables -A FORWARD -m state --state INVALID -j DROP
+  iptables -A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
+  iptables -A FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
+
+  # allow
+  iptables -A FORWARD -i br0 -o br0 -j ACCEPT
+  iptables -A FORWARD -i $LAN -o $WAN -j ACCEPT
+  #
+  # insert accept rule or to jump to new accept-check table here
+  #
+  iptables -A FORWARD -j forwarding_rule
+
+  # reject (what to do with anything not allowed earlier)
+  # uses the default -P DROP
+
+### MASQ
+  iptables -t nat -A PREROUTING -j prerouting_rule
+  iptables -t nat -A POSTROUTING -j postrouting_rule
+  iptables -t nat -A POSTROUTING -o $WAN -j MASQUERADE
