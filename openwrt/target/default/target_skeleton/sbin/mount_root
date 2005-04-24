@@ -7,7 +7,7 @@ if [ "$1" != "failsafe" ]; then
 			mtd unlock linux
 			mtd erase OpenWrt
 			jffs2root --move
-		}
+		} &
 		mtd unlock rootfs
 		mount -o remount,rw /dev/root /
 	else
