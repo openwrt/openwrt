@@ -52,17 +52,7 @@
       ${DEBUG:-eval} "udhcpc -i $if -b -p $pidfile &" 
     ;;
     pppoe)
-      username=$(nvram get ppp_username)
-      password=$(nvram get ppp_passwd)
-      redial=$(nvram get ppp_redialperiod)
-      idletime=$(nvram get ppp_idletime)
-      mtu=$(nvram get wan_mtu)
-
-#      handled by /etc/init.d/S50pppoe
-#      $DEBUG ifconfig $if 0.0.0.0 up
-
-#      $DEBUG /sbin/pppoecd $if -u $username -p $password \
-#        -i 0 -I $redial -T $idletime -t $mtu -k
+	# handled by /etc/init.d/S50pppoe
     ;;
     none)
     ;;
