@@ -45,6 +45,9 @@ $(eval $(call KMOD_template,DIAG,diag,\
 $(eval $(call KMOD_template,BRCM_WL,brcm-wl,\
 	$(MODULES_DIR)/kernel/drivers/net/wl/wl.o \
 ,CONFIG_WL))
+$(eval $(call KMOD_template,B44,b44,\
+	$(MODULES_DIR)/kernel/drivers/net/b44.o \
+,CONFIG_B44))
 $(eval $(call KMOD_template,BRCM_ET,brcm-et,\
 	$(MODULES_DIR)/kernel/drivers/net/et/et.o \
 ,CONFIG_ET))
