@@ -48,7 +48,8 @@ config BR2_GCC_VERSION
 
 config BR2_GCC_USE_SJLJ_EXCEPTIONS
 	string
-	default "--enable-sjlj-exceptions"
+#	default "--enable-sjlj-exceptions"
+	default ""
 	help
 	    Currently the unwind stuff seems to work for staticly linked apps
 	    but not dynamic.  So use setjmp/longjmp exceptions by default.
@@ -63,7 +64,7 @@ config BR2_EXTRA_GCC_CONFIG_OPTIONS
 config BR2_INSTALL_LIBSTDCPP
 	bool
 	prompt "Build/install c++ compiler and libstdc++?" if CONFIG_DEVEL
-	default n
+	default y
 	help
 	    Build/install c++ compiler and libstdc++?
 
