@@ -1,0 +1,5 @@
+config BR2_PACKAGE_UCLIBCXX
+	tristate "uClibc++"
+	default m if CONFIG_DEVEL
+	help
+	  A standard C++ library for embedded systems
