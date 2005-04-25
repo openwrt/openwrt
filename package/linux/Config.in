@@ -16,6 +16,12 @@ config BR2_PACKAGE_KMOD_BRCM_ET
 	help
 	  Proprietary driver for Broadcom Ethernet chipsets
 
+config BR2_PACKAGE_KMOD_B44
+	tristate "Broadcom 44XX, 47XX ethernet driver"
+	default m
+	help
+	  Free driver for Broadcom Ethernet chipsets (without switch support)
+
 config BR2_PACKAGE_KMOD_ARPT
 	tristate "ARP firewalling support"
 	default m
