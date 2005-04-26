@@ -1,0 +1,31 @@
+config BR2_PACKAGE_KISMET
+	tristate
+	depends BR2_PACKAGE_SERVER || BR2_PACKAGE_CLIENT || BR2_PACKAGE_DRONE
+	select BR2_PACKAGE_LIBGCC
+	select BR2_PACKAGE_LIBPCAP
+	select BR2_PACKAGE_UCLIBCXX
+	default n
+
+config BR2_PACKAGE_KISMET_SERVER
+	tristate "Kismet server"
+	select BR2_PACKAGE_KISMET
+	default m if CONFIG_DEVEL
+	help
+	  The Kismet server
+
+config BR2_PACKAGE_KISMET_CLIENT
+	tristate "Kismet client"
+	select BR2_PACKAGE_KISMET
+	default m if CONFIG_DEVEL
+	help
+	  The Kismet client
+
+config BR2_PACKAGE_KISMET_DRONE
+	tristate "Kismet drone"
+	select BR2_PACKAGE_KISMET
+	default m if CONFIG_DEVEL
+	help
+	  The Kismet drone
+
+
+
