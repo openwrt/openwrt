@@ -94,6 +94,9 @@ $(PKG_BUILD_DIR)/kismet_server $(PKG_BUILD_DIR)/kismet_drone $(PKG_BUILD_DIR)/ki
 
 $(IPKG_SERVER): $(PKG_BUILD_DIR)/kismet_server
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_SERVER) kismet-server.control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
+	mkdir -p $(IDIR_SERVER)/etc
+	cp ./files/kismet.conf $(IDIR_SERVER)/etc/
+	echo '/etc/kismet.conf' > $(IDIR_SERVER)/CONTROL/conffiles
 	mkdir -p $(IDIR_SERVER)/usr/sbin
 	cp $< $(IDIR_SERVER)/usr/sbin/
 	$(STRIP) $(IDIR_SERVER)/usr/sbin/*
@@ -105,6 +108,9 @@ $(INFO_SERVER): $(IPKG_SERVER)
 
 $(IPKG_DRONE): $(PKG_BUILD_DIR)/kismet_drone
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_DRONE) kismet-drone.control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
+	mkdir -p $(IDIR_DRONE)/etc
+	cp ./files/kismet_drone.conf $(IDIR_DRONE)/etc/
+	echo '/etc/kismet_drone.conf' > $(IDIR_DRONE)/CONTROL/conffiles
 	mkdir -p $(IDIR_DRONE)/usr/sbin
 	cp $< $(IDIR_DRONE)/usr/sbin/
 	$(STRIP) $(IDIR_DRONE)/usr/sbin/*
@@ -116,6 +122,9 @@ $(INFO_DRONE): $(IPKG_DRONE)
 
 $(IPKG_CLIENT): $(PKG_BUILD_DIR)/kismet_client
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_CLIENT) kismet-client.control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
+	mkdir -p $(IDIR_CLIENT)/etc
+	cp ./files/kismet.conf $(IDIR_CLIENT)/etc/
+	echo '/etc/kismet.conf' > $(IDIR_CLIENT)/CONTROL/conffiles
 	mkdir -p $(IDIR_CLIENT)/usr/sbin
 	cp $< $(IDIR_CLIENT)/usr/sbin/
 	$(STRIP) $(IDIR_CLIENT)/usr/sbin/*
