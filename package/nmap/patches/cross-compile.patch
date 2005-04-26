@@ -1,0 +1,41 @@
+diff -urN nmap-3.81.old/configure nmap-3.81.dev/configure
+--- nmap-3.81.old/configure	2004-10-17 05:49:33.000000000 +0200
++++ nmap-3.81.dev/configure	2005-04-26 14:47:42.000000000 +0200
+@@ -1339,12 +1339,6 @@
+    fi
+ fi
+ 
+-libpcapdir=libpcap-possiblymodified
+-
+-
+-pcredir=libpcre
+-
+-
+           ac_config_headers="$ac_config_headers config.h"
+ 
+ 
+diff -urN nmap-3.81.old/Makefile.in nmap-3.81.dev/Makefile.in
+--- nmap-3.81.old/Makefile.in	2005-02-07 07:14:03.000000000 +0100
++++ nmap-3.81.dev/Makefile.in	2005-04-26 14:52:39.000000000 +0200
+@@ -29,7 +29,7 @@
+ # CFLAGS = $(DEFS) $(INCLS)
+ STATIC =
+ LDFLAGS = @LDFLAGS@ $(STATIC)
+-LIBS =  @LIBNBASE_LIBS@ @LIBNSOCK_LIBS@ @LIBPCRE_LIBS@ @LIBPCAP_LIBS@ @OPENSSL_LIBS@ @LIBS@
++LIBS =  @LIBNBASE_LIBS@ @LIBNSOCK_LIBS@ -lpcre -lpcap @OPENSSL_LIBS@ @LIBS@
+ # LIBS =  -lefence @LIBS@
+ # LIBS =  -lrmalloc @LIBS@
+ SHTOOL = ./shtool
+@@ -69,12 +69,6 @@
+ # all of the prerequisites (e.g. recursive makes and such)
+ FORCE:
+ 
+-$(LIBPCREDIR)/libpcre.a: $(LIBPCREDIR)/Makefile FORCE
+-	@echo Compiling libpcre; cd $(LIBPCREDIR) && $(MAKE)
+-
+-$(LIBPCAPDIR)/libpcap.a: $(LIBPCAPDIR)/Makefile FORCE
+-	@echo Compiling libpcap; cd $(LIBPCAPDIR) && $(MAKE)
+-
+ $(NBASEDIR)/libnbase.a: $(NBASEDIR)/Makefile FORCE
+ 	@echo Compiling libnbase;
+ 	cd $(NBASEDIR) && $(MAKE)
