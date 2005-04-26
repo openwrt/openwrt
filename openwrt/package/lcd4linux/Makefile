@@ -35,6 +35,7 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.patched
 	--build=$(GNU_HOST_NAME) \
 	--prefix=/usr \
 	--sysconfdir=/etc \
+	--without-x \
 	--with-drivers='all,!RouterBoard,!X11' \
 	--with-plugins=wireless )
 	touch $(PKG_BUILD_DIR)/.configured
