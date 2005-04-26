@@ -3,8 +3,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME := loader
-PKG_VERSION := 0.03
-PKG_MD5SUM := 2681e6db8e0fe6095f6a90ad9b3f2d33
+PKG_VERSION := 0.04
+PKG_MD5SUM := c0b7c36232d3910c425d03e56d0f532b
 
 PKG_SOURCE_SITE := http://wl500g.dyndns.org/loader/
 PKG_SOURCE_FILE := $(PKG_NAME)-$(PKG_VERSION).tar.gz
