@@ -107,6 +107,7 @@ libnet-compile: libpcap-compile
 mysql-compile: ncurses-compile zlib-compile
 postgresql-compile: zlib-compile
 nmap-compile: uclibc++-compile pcre-compile libpcap-compile
+kismet-compile: uclibc++-compile libpcap-compile
 
 snort-compile: libnet-compile libpcap-compile pcre-compile
 ifeq ($(BR2_PACKAGE_SNORT_MYSQL),y)
