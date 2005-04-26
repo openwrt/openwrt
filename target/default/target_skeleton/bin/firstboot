@@ -37,10 +37,20 @@ echo "done"
 echo -n "setting up symlinks... "
 for file in $(cd /rom; find *  -type f; find *  -type l;)
 do {
-	ln -sf  /rom/$file $file
+  [ "${file%/*}" = "usr/lib/ipkg/info" ] && {
+    cp -f /rom/$file $file
+  } || {
+    ln -sf /rom/$file $file
+  }
 } done
 echo "done"
 
+echo -n "fixing ipkg symlinks... "
+for file in $( find /usr/lib/ipkg/info/*list -type l;)
+do {
+        rm $file; cp -f  /rom/$file $file
+} done  
+	
 touch /tmp/resolv.conf
 ln -s /tmp/resolv.conf /etc/resolv.conf
 
