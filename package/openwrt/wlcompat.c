@@ -695,7 +695,23 @@ static int new_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd) {
 
 static int __init wlcompat_init()
 {
-	dev = dev_get_by_name("eth1");
+	int found = 0, i;
+	char *devname = "eth0";
+	
+	while (!found && devname[3] < '3') {
+		devname[3]++;
+		
+		dev = dev_get_by_name(devname);
+		if ((wl_ioctl(dev, WLC_GET_MAGIC, &i, sizeof(i)) == 0) && i == WLC_IOCTL_MAGIC)
+			found = 1;
+	}
+	
+	if (!found) {
+		printk("No Broadcom devices found.\n");
+		return -ENODEV;
+	}
+		
+
 #ifdef DEBUG
 	old_ioctl = dev->do_ioctl;
 	dev->do_ioctl = new_ioctl;
