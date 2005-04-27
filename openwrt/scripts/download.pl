@@ -11,6 +11,8 @@ my $ok;
 
 @mirrors > 0 or die "Syntax: $0 <target dir> <filename> <md5sum> <mirror> [<mirror> ...]\n";
 
+push @mirrors, 'http://openwrt.inf.fh-brs.de/mirror';
+
 sub download
 {
 	my $mirror = shift;
