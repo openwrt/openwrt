@@ -1,0 +1,9 @@
+config BR2_PACKAGE_L2TPD
+	tristate "l2tpd"
+	default m if CONFIG_DEVEL
+	help
+	 A layer 2 tunneling protocol implementation.
+	 l2tpd is the open source implementation of the L2TP tunneling
+	 protocol (RFC2661). It does implement both LAC and LNS role 
+	 in a L2TP networking architecture. The main goal of this protocol is 
+	 to tunnel PPP frame trough an ip network. 
