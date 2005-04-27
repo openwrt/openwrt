@@ -61,6 +61,7 @@ package-$(BR2_PACKAGE_SNORT) += snort
 package-$(BR2_PACKAGE_SPEEX) += speex
 package-$(BR2_PACKAGE_STRACE) += strace
 package-$(BR2_PACKAGE_TCPDUMP) += tcpdump
+package-$(BR2_PACKAGE_TINC) += tinc
 package-$(BR2_PACKAGE_UCLIBCXX) += uclibc++
 package-$(BR2_PACKAGE_USBUTILS) += usbutils
 package-$(BR2_PACKAGE_WIRELESS_TOOLS) += wireless-tools
@@ -109,6 +110,7 @@ mysql-compile: ncurses-compile zlib-compile
 postgresql-compile: zlib-compile
 nmap-compile: uclibc++-compile pcre-compile libpcap-compile
 kismet-compile: uclibc++-compile libpcap-compile
+tinc-compile: zlib-compile openssl-compile lzo-compile
 
 snort-compile: libnet-compile libpcap-compile pcre-compile
 ifeq ($(BR2_PACKAGE_SNORT_MYSQL),y)
