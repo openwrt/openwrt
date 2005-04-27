@@ -8,6 +8,7 @@ IMAGE:=$(BUILD_DIR)/root_fs
 TARGET_DIR:=$(TOPDIR)/root
 SED:=PATH="$(TARGET_PATH)" sed -i -e
 PACKAGE_DIR=$(TOPDIR)/packages
+LINUX_IMAGE:=$(BUILD_DIR)/buildroot-kernel-image
 IPKG:=IPKG_INSTROOT=$(TARGET_DIR) IPKG_CONF_DIR=$(BUILD_DIR)/etc $(TARGET_DIR)/bin/ipkg -force-defaults -force-depends
 
 all: build
