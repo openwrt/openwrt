@@ -127,6 +127,7 @@ $(IPKG_CLIENT): $(PKG_BUILD_DIR)/kismet_client
 	cp ./files/kismet.conf $(IDIR_CLIENT)/etc/
 	cp ./files/kismet_ui.conf $(IDIR_CLIENT)/etc/
 	echo '/etc/kismet.conf' > $(IDIR_CLIENT)/CONTROL/conffiles
+	echo '/etc/kismet_ui.conf' >> $(IDIR_CLIENT)/CONTROL/conffiles
 	mkdir -p $(IDIR_CLIENT)/usr/sbin
 	cp $< $(IDIR_CLIENT)/usr/sbin/
 	$(STRIP) $(IDIR_CLIENT)/usr/sbin/*
