@@ -81,6 +81,7 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 		--sbindir=/usr/sbin \
 		--sysconfdir=/etc \
 		--enable-syspcap=yes \
+		--disable-wsp100 \
 		$(DISABLE_NLS) \
 		$(DISABLE_LARGEFILE) \
 	);
@@ -124,6 +125,7 @@ $(IPKG_CLIENT): $(PKG_BUILD_DIR)/kismet_client
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_CLIENT) kismet-client.control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
 	mkdir -p $(IDIR_CLIENT)/etc
 	cp ./files/kismet.conf $(IDIR_CLIENT)/etc/
+	cp ./files/kismet_ui.conf $(IDIR_CLIENT)/etc/
 	echo '/etc/kismet.conf' > $(IDIR_CLIENT)/CONTROL/conffiles
 	mkdir -p $(IDIR_CLIENT)/usr/sbin
 	cp $< $(IDIR_CLIENT)/usr/sbin/
