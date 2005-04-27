@@ -1,0 +1,52 @@
+# $Id$
+
+include $(TOPDIR)/rules.mk
+
+PKG_NAME:=l2tpd
+PKG_VERSION:=0.70pre
+PKG_UPSTREAM_VERSION:=0.70-pre20031121
+PKG_RELEASE:=1
+PKG_MD5SUM:=3f2707b6e16a8cb72e7bf64f574202fa
+
+PKG_SOURCE_URL:=http://ftp.debian.org/debian/pool/main/l/l2tpd
+PKG_SOURCE:=$(PKG_NAME)_$(PKG_UPSTREAM_VERSION).orig.tar.gz
+PKG_CAT:=zcat
+
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_UPSTREAM_VERSION).orig
+
+IPKG_L2TPD:=$(PACKAGE_DIR)/$(PKG_NAME)_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
+IDIR_L2TPD:=$(PKG_BUILD_DIR)/ipkg/$(PKG_NAME)
+INFO_L2TPD:=$(IPKG_STATE_DIR)/info/$(PKG_NAME).list
+
+$(DL_DIR)/$(PKG_SOURCE):
+	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE) $(PKG_MD5SUM) $(PKG_SOURCE_URL)
+
+$(PKG_BUILD_DIR)/.prepared: $(DL_DIR)/$(PKG_SOURCE)
+	$(PKG_CAT) $(DL_DIR)/$(PKG_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
+	$(PATCH) $(PKG_BUILD_DIR) ./patches
+	touch $(PKG_BUILD_DIR)/.prepared
+
+$(PKG_BUILD_DIR)/$(PKG_NAME): $(PKG_BUILD_DIR)/.prepared
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		$(TARGET_CONFIGURE_OPTS) \
+		CC=$(TARGET_CC) \
+		CFLAGS="$(TARGET_CFLAGS) -I. -DLINUX -DSANITY -DIP_ALLOCATION"
+
+$(IPKG_L2TPD): $(PKG_BUILD_DIR)/$(PKG_NAME)
+	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_L2TPD) $(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
+	mkdir -p $(IDIR_L2TPD)/usr/sbin
+	cp $(PKG_BUILD_DIR)/$(PKG_NAME) $(IDIR_L2TPD)/usr/sbin/
+	$(STRIP) $(IDIR_L2TPD)/usr/sbin/*
+	mkdir -p $(PACKAGE_DIR)
+	$(IPKG_BUILD) $(IDIR_L2TPD) $(PACKAGE_DIR)
+
+$(INFO_L2TPD): $(IPKG_L2TPD)
+	$(IPKG) install $(IPKG_L2TPD)
+
+source: $(DL_DIR)/$(PKG_SOURCE)
+prepare: $(PKG_BUILD_DIR)/.prepared
+compile: $(IPKG_L2TPD)
+install: $(INFO_L2TPD)
+
+clean:
+	rm -rf $(PKG_BUILD_DIR) $(IPKG_L2TPD)
