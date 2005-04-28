@@ -1,0 +1,25 @@
+--- linux-2.4.30/include/net/pkt_sched.h	2004-11-17 12:54:22.000000000 +0100
++++ linux-2.4.30-wl/include/net/pkt_sched.h	2005-04-24 18:32:48.000000000 +0200
+@@ -59,7 +59,7 @@
+ 	int 			(*enqueue)(struct sk_buff *, struct Qdisc *);
+ 	struct sk_buff *	(*dequeue)(struct Qdisc *);
+ 	int 			(*requeue)(struct sk_buff *, struct Qdisc *);
+-	unsigned int		(*drop)(struct Qdisc *);
++	int			(*drop)(struct Qdisc *);
+ 
+ 	int			(*init)(struct Qdisc *, struct rtattr *arg);
+ 	void			(*reset)(struct Qdisc *);
+@@ -80,12 +80,11 @@
+ #define TCQ_F_THROTTLED	2
+ #define TCQ_F_INGRESS	4
+ 	struct Qdisc_ops	*ops;
++	struct Qdisc            *next;
+ 	u32			handle;
+-	u32			parent;
+ 	atomic_t		refcnt;
+ 	struct sk_buff_head	q;
+ 	struct net_device	*dev;
+-	struct list_head	list;
+ 
+ 	struct tc_stats		stats;
+ 	int			(*reshape_fail)(struct sk_buff *skb, struct Qdisc *q);
