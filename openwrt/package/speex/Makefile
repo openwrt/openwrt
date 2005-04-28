@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME := speex
-PKG_VERSION := 1.0.4
+PKG_VERSION := 1.1.7
 PKG_RELEASE := 1
-PKG_MD5SUM := 15a0686b7e1f81d352a648044b350fcc
+PKG_MD5SUM := a900d009f937efbb896f1f816193742f
 
 PKG_SOURCE_SITE := http://us.speex.org/download 
 PKG_SOURCE_FILE := $(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -38,16 +38,19 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.unpacked
 		--sysconfdir=/etc \
 		--localstatedir=/var \
 		--enable-shared \
+		--disable-oggtest \
 	);
 	touch $(PKG_BUILD_DIR)/.configured
 
-$(PKG_BUILD_DIR)/src/libspeex.la: $(PKG_BUILD_DIR)/.configured
-	$(MAKE) -C $(PKG_BUILD_DIR)
+$(PKG_BUILD_DIR)/libspeex/libspeex.la: $(PKG_BUILD_DIR)/.configured
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+	  bin_PROGRAMS=""
 
-$(STAGING_DIR)/lib/libspeex.a: $(PKG_BUILD_DIR)/src/libspeex.la
+$(STAGING_DIR)/lib/libspeex.a: $(PKG_BUILD_DIR)/libspeex/libspeex.la
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 	  CC=$(TARGET_CC) \
 	  DESTDIR="$(STAGING_DIR)" \
+	  bin_PROGRAMS="" \
 	  install
 
 $(PKG_IPK): $(STAGING_DIR)/lib/libspeex.a
