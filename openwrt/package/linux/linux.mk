@@ -4,10 +4,10 @@
 # Linux kernel target for the OpenWRT project
 #
 # patches are sorted by numbers
-# 000	patch between linux-2.4.29 and linux-mips-cvs
+# 000	patch between linux-2.4.xx and linux-mips-cvs
 # 0xx	linksys patches
 # 1xx	OpenWRT patches (diag,compressed,..)
-# 2xx	fixes for 2.4.29 integration (wl driver)
+# 2xx	fixes for wl driver integration
 # 3xx	kernel feature patches (squashfs,jffs2 compression,..)
 # 4xx	patches needed to integrate feature patches
 #
@@ -29,36 +29,37 @@ LINUX_BINLOC=arch/$(LINUX_KARCH)/brcm-boards/bcm947xx/compressed/piggy
 # Used by pcmcia-cs and others
 LINUX_SOURCE_DIR=$(LINUX_DIR)-$(LINUX_VERSION)
 
-# binary driver extracted from linksys firmware GPL sourcetree WRT54GS_3_37_2_1109_US 
-LINUX_BINARY_WL_DRIVER=kernel-binary-wl-0.1.tar.gz
-LINUX_BINARY_WL_MD5SUM=1b57ba129ad80c7f1702d0be1422cfba
-LINUX_BINARY_ET_DRIVER=kernel-binary-et-0.2.tar.gz
-LINUX_BINARY_ET_MD5SUM=d657f929bceee926bc28821d753d945c
+# proprietary driver extracted from linksys firmware GPL sourcetree WRT54GS_3_37_2_1109_US 
+LINUX_BINARY_WL_DRIVER=kernel-binary-wl-0.2.tar.gz
+LINUX_BINARY_WL_MD5SUM=ab2a6d39ccb550e494bbeccf1b0e228f
+LINUX_ET_DRIVER=kernel-source-et-0.5.tar.gz
+LINUX_ET_MD5SUM=93402cd0cbb1cf81d6df204bb7de343d
 
 TARGET_MODULES_DIR=$(TARGET_DIR)/lib/modules/$(LINUX_VERSION)
 
 $(DL_DIR)/$(LINUX_BINARY_WL_DRIVER):
 	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(LINUX_BINARY_WL_DRIVER) $(LINUX_BINARY_WL_MD5SUM) $(LINUX_BINARY_DRIVER_SITE)
 
-$(DL_DIR)/$(LINUX_BINARY_ET_DRIVER):
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(LINUX_BINARY_ET_DRIVER) $(LINUX_BINARY_ET_MD5SUM) $(LINUX_BINARY_DRIVER_SITE)
+$(DL_DIR)/$(LINUX_ET_DRIVER):
+	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(LINUX_ET_DRIVER) $(LINUX_ET_MD5SUM) $(LINUX_BINARY_DRIVER_SITE)
 
-$(LINUX_DIR)/.unpacked: $(DL_DIR)/$(LINUX_SOURCE) $(DL_DIR)/$(LINUX_BINARY_WL_DRIVER) $(DL_DIR)/$(LINUX_BINARY_ET_DRIVER)
+$(LINUX_DIR)/.unpacked: $(DL_DIR)/$(LINUX_SOURCE) $(DL_DIR)/$(LINUX_BINARY_WL_DRIVER) $(DL_DIR)/$(LINUX_ET_DRIVER)
 	-mkdir -p $(BUILD_DIR)
 	bzcat $(DL_DIR)/$(LINUX_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
 	ln -sf $(LINUX_DIR)-$(LINUX_VERSION) $(LINUX_DIR)
-	# extract wlan and lan binary only driver
 	zcat $(DL_DIR)/$(LINUX_BINARY_WL_DRIVER) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
-	zcat $(DL_DIR)/$(LINUX_BINARY_ET_DRIVER) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
+	zcat $(DL_DIR)/$(LINUX_ET_DRIVER) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
 	touch $(LINUX_DIR)/.unpacked
 
 $(LINUX_DIR)/.patched: $(LINUX_DIR)/.unpacked
 	$(PATCH) $(LINUX_DIR) $(LINUX_PATCHES)
 	# copy kernel source which is maintained in openwrt via cvs
 	cp -a $(LINUX_KERNEL_SOURCE)/* $(LINUX_DIR)
-	# copy binary drivers
+	# copy binary wlan driver
 	cp -a $(BUILD_DIR)/wl/*.o $(LINUX_DIR)/drivers/net/wl
-	cp -a $(BUILD_DIR)/et/*.o $(LINUX_DIR)/drivers/net/et
+	# copy proprietary et source
+	cp -a $(BUILD_DIR)/et/* $(LINUX_DIR)/drivers/net/et
+	cp -a $(BUILD_DIR)/et/*.h $(LINUX_DIR)/include/
 	$(SED) 's/@expr length/@-expr length/' $(LINUX_DIR)/Makefile 
 	touch $(LINUX_DIR)/.patched
 
