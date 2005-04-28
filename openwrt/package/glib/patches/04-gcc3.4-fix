@@ -1,0 +1,22 @@
+Submitted By: Uwe Düffert (lfs at uwe-dueffert dot de)
+Date: 2004-05-15
+Initial Package Version: 1.2.10
+Origin: self-created, http://www.uwe-dueffert.de/lfs/ownpatches/glib-1.2.10-gcc34-1.patch
+Upstream Status: not reported
+Description: fix compilation of glib1 with gcc34
+ 
+$LastChangedBy: bdubbs $
+$Date$
+
+diff -Naur glib-1.2.10.orig/gstrfuncs.c glib-1.2.10/gstrfuncs.c
+--- glib-1.2.10.orig/gstrfuncs.c	2004-05-15 13:40:03.556092792 +0000
++++ glib-1.2.10/gstrfuncs.c	2004-05-15 13:40:36.712052320 +0000
+@@ -47,6 +47,8 @@
+  * inteferes with g_strsignal() on some OSes
+  */
+ 
++#define G_GNUC_PRETTY_FUNCTION
++
+ typedef union  _GDoubleIEEE754  GDoubleIEEE754;
+ #define G_IEEE754_DOUBLE_BIAS   (1023)
+ /* multiply with base2 exponent to get base10 exponent (nomal numbers) */
