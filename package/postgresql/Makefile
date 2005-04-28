@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=postgresql
-PKG_VERSION:=7.4.6
+PKG_VERSION:=7.4.7
 PKG_RELEASE:=3
-PKG_MD5SUM:=f0ea2b372a7bdaf2613e92176ebf5e0f
+PKG_MD5SUM:=32dac2916d16287d95e0c958a75161fa
 
 PKG_SOURCE_URL:=\
 	ftp://ftp3.us.postgresql.org/pub/postgresql/source/v$(PKG_VERSION)/ \
@@ -22,6 +22,11 @@ IPKG_LIBPQ:=$(PACKAGE_DIR)/libpq_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
 IDIR_LIBPQ:=$(PKG_BUILD_DIR)/ipkg
 INFO_LIBPQ:=$(IPKG_STATE_DIR)/info/libpq.list
 
+EXTRA_CFLAGS:=
+ifeq ($(BR2_GCC_3_4),y)
+	EXTRA_CFLAGS += -fno-unit-at-a-time
+endif
+
 $(DL_DIR)/$(PKG_SOURCE):
 	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE) $(PKG_MD5SUM) $(PKG_SOURCE_URL)
 
@@ -34,7 +39,7 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 #	./configure advertise "--infodir", but does not support it, replaced with "--docdir"
 	(cd $(PKG_BUILD_DIR); rm -rf config.cache config.status; \
 		$(TARGET_CONFIGURE_OPTS) \
-		CFLAGS="$(TARGET_CFLAGS)" \
+		CFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS)" \
 		CPPFLAGS="$$CPPFLAGS -I$(STAGING_DIR)/usr/include" \
 		LDFLAGS="-L$(STAGING_DIR)/usr/lib" \
 		./configure \
