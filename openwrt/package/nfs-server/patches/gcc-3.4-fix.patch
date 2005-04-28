@@ -1,0 +1,24 @@
+diff -urN nfs-server-2.2beta47.old/fh.c nfs-server-2.2beta47.dev/fh.c
+--- nfs-server-2.2beta47.old/fh.c	2005-04-29 00:37:48.000000000 +0200
++++ nfs-server-2.2beta47.dev/fh.c	2005-04-29 00:39:44.000000000 +0200
+@@ -351,13 +351,13 @@
+ #ifndef ENABLE_DEVTAB
+ 	psi_t		dmajor, dminor;
+ 
+-#if (SIZEOF_DEV_T == 4)
+-	/* This folds the upper 16 bits into bits 8..15, and
+-	 * the lower 16 bits into bits 0..7
+-	 */
+-	dev = (((dev >> 16) & 0xff00) ^ ((dev >> 8) & 0xff00)) | 
+-	      (((dev >> 8) & 0xff) ^ (dev & 0xff));
+-#endif
++	if (sizeof(dev_t) == 4) {
++		/* This folds the upper 16 bits into bits 8..15, and
++		 * the lower 16 bits into bits 0..7
++		 */
++		dev = (((dev >> 16) & 0xff00) ^ ((dev >> 8) & 0xff00)) | 
++		      (((dev >> 8) & 0xff) ^ (dev & 0xff));
++	}
+ 
+ 	/*
+          * Assuming major and minor numbers are small integers,
