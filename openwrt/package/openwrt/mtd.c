@@ -237,7 +237,6 @@ void usage(void)
 	"	erase			erase all data on device\n"
 	"	write <imagefile>	write imagefile to device\n"
 	"Following options are available:\n"
-	"	-u			unlock device before accessing it\n"
 	"	-r			reboot after successful command\n"
 	"	-e <device>		erase <device> before executing the command\n\n"
 	"Example: To write linux.trx to mtd4 labeled as linux and reboot afterwards\n"
@@ -257,13 +256,9 @@ int main (int argc, char **argv)
 	
 	erase[0] = NULL;
 	boot = 0;
-	unlock = 0;
 
-	while ((ch = getopt(argc, argv, "ure:")) != -1)
+	while ((ch = getopt(argc, argv, "re:")) != -1)
 		switch (ch) {
-			case 'u':
-				unlock = 1;
-				break;
 			case 'r':
 				boot = 1;
 				break;
@@ -308,12 +303,10 @@ int main (int argc, char **argv)
 		i++;
 	}
 	
-	if (unlock) 
-		mtd_unlock(device);
+	mtd_unlock(device);
 
 	switch (cmd) {
 		case CMD_UNLOCK:
-			mtd_unlock(device);
 			break;
 		case CMD_ERASE:
 			mtd_erase(device);
