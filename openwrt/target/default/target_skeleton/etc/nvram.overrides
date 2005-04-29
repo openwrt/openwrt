@@ -9,27 +9,35 @@
 # linksys bug; remove when not using static configuration for lan
 NVRAM_lan_proto="static"
 
+remap () {
+  for type in lan wifi wan pppoe
+  do
+    for s in '' s
+    do
+      eval NVRAM_${type}_ifname$s=\"$(nvram get ${type}_ifname$s|sed s/$1/$2/g)\" 
+    done
+  done
+}
+
 # hacks for wrt54g 1.x hardware
 [ "$(nvram get boardnum)"  = "42" ] && \
 [ "$(nvram get boardtype)" = "bcm94710dev" ] && {
-
-  # remap eth0 => vlan2, eth1 => vlan1
-  # for all *_ifname(s)
-
   debug "### wrt54g 1.x hack ###"
   NVRAM_vlan1hwname="et0"
   NVRAM_vlan2hwname="et0"
   FAILSAFE_ifnames="vlan1 vlan2 eth2"
+  remap eth0 vlan2
+  remap eth1 vlan1
+}
 
-  remap () {
-    eval NVRAM_$1=\"$(nvram get $1 | awk 'gsub("eth0","vlan2") gsub("eth1","vlan1")')\"
-  }
-
-  for type in lan wifi wan pppoe
-  do
-    remap ${type}_ifname
-    remap ${type}_ifnames
-  done
+# hacks for asus wl-500g deluxe
+[ "$(nvram get boardtype)" = "bcm95365r" ] && \
+[ "$(nvram get boardnum)" = "45" ] && {
+  debug "### wl-500g deluxe hacks ###"
+  NVRAM_vlan0hwname="et0"
+  NVRAM_vlan1hwname="et0"
+  FAILSAFE_ifnames="vlan0 vlan1 eth2"
+  remap eth0. vlan
 }
 
 # hacks for wap54g hardware
@@ -44,48 +52,33 @@ NVRAM_lan_proto="static"
 [ "$(nvram get boardnum)" = "00" ] && \
 [ "$(nvram get product_name)" = "Product_name" ] && {
   debug "### wla2-g54l hacks ###"
-  NVRAM_lan_ifnames="vlan0"
   NVRAM_wan_ifname="none"
+  NVRAM_lan_ifnames="vlan0"
 }
 
 # hack for asus wl-500g hardware
 [ "$(nvram get boardnum)"  = "asusX" ] && \
 [ "$(nvram get boardtype)"  = "bcm94710dev" ] && {
-  FAILSAFE_lan_ifnames="eth0 eth2"
-}
-
-# hacks for asus wl-500g deluxe
-[ "$(nvram get boardtype)" = "bcm95365r" ] && \
-[ "$(nvram get boardnum)" = "45" ] && {
-  debug "### wl-500g deluxe hacks ###"
-  NVRAM_vlan0hwname="et0"
-  NVRAM_vlan1hwname="et0"
-  NVRAM_lan_ifnames="vlan0 eth1"
-  [ "$(nvram get wan_ifname)" = "eth0.1" ] && {
-    NVRAM_wan_ifname="vlan1"
-  }
+  FAILSAFE_ifnames="eth0 eth2"
 }
 
 # defaults if lan_ifname is missing
 [ -z "$(nvram get lan_ifname)" ] && {
   NVRAM_lan_ifname="br0"
-  NVRAM_lan_ifnames=${FAILSAFE_lan_ifnames:-"vlan0 vlan2 eth1 eth2 eth3"}
+  NVRAM_lan_ifnames=${FAILSAFE_ifnames:-"vlan0 vlan2 eth1 eth2 eth3"}
 }
 
 # defaults if wan_ifname is missing
 [ -z "$(nvram get wan_ifname)" ] && {
    NVRAM_wan_ifname="vlan1"
    NVRAM_wan_proto="dhcp"
-   [ "$asus" ] && {
-     NVRAM_wan_ifname="eth1"
-   }
 }
 
 # failsafe if reset is held
 [ "$FAILSAFE" = "true" ] && {
   echo "### YOU ARE IN FAILSAFE MODE ####"
   NVRAM_lan_ifname="br0"
-  NVRAM_lan_ifnames=${FAILSAFE_ifnames:-"vlan0 vlan1 eth1"}
+  NVRAM_lan_ifnames=${FAILSAFE_ifnames:-"vlan0 vlan1 eth1 eth2 eth3"}
   NVRAM_lan_ipaddr=${BR2_SYSCONF_FAILSAFE_IP:-"192.168.1.1"}
   NVRAM_lan_netmask=${BR2_SYSCONF_FAILSAFE_NETMASK:-"255.255.255.0"}
   NVRAM_lan_hwaddr=${BR2_SYSCONF_FAILSAFE_MAC:-"00:0B:AD:0A:DD:00"}

@@ -40,5 +40,3 @@ vconfig set_name_type VLAN_PLUS_VID_NO_PAD
 [ -z "$FAILSAFE" ] && {
 	{ mount | grep jffs2 1>&-; } || firstboot
 }
-
-sysctl -p
