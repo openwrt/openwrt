@@ -45,11 +45,12 @@
       } done
     ;;
     dhcp)
+      ip=$(nvram get ${type}_ipaddr)
       pidfile=/tmp/dhcp-${type}.pid
       if [ -f $pidfile ]; then
         $DEBUG kill $(cat $pidfile)
       fi
-      ${DEBUG:-eval} "udhcpc -i $if -b -p $pidfile &" 
+      ${DEBUG:-eval} "udhcpc -i $if ${ip:+-r $ip} -b -p $pidfile &" 
     ;;
     pppoe)
 	# handled by /etc/init.d/S50pppoe
