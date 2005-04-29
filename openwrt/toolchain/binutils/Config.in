@@ -6,7 +6,7 @@ endif
 
 choice
 	prompt "Binutils Version" if CONFIG_DEVEL
-	default BR2_BINUTILS_VERSION_2_14_90_0_8
+	default BR2_BINUTILS_VERSION_2_15_94_0_2
 	help
 	  Select the version of binutils you wish to use.
 
@@ -54,7 +54,7 @@ endchoice
 
 config BR2_BINUTILS_VERSION
 	string
-	default "2.14.90.0.8"     if BR2_BINUTILS_VERSION_2_14_90_0_8 || !CONFIG_DEVEL
+	default "2.14.90.0.8"     if BR2_BINUTILS_VERSION_2_14_90_0_8
 	default "2.15"            if BR2_BINUTILS_VERSION_2_15
 	default "2.15.90.0.1"     if BR2_BINUTILS_VERSION_2_15_90_0_1
 	default "2.15.90.0.0.1.1" if BR2_BINUTILS_VERSION_2_15_90_0_1_1
@@ -64,5 +64,6 @@ config BR2_BINUTILS_VERSION
 	default "2.15.91.0.2"     if BR2_BINUTILS_VERSION_2_15_91_0_2
 	default "2.15.92.0.2"     if BR2_BINUTILS_VERSION_2_15_92_0_2
 	default "2.15.94.0.1"     if BR2_BINUTILS_VERSION_2_15_94_0_1
-	default "2.15.94.0.2"     if BR2_BINUTILS_VERSION_2_15_94_0_2
+	default "2.15.94.0.2"     if BR2_BINUTILS_VERSION_2_15_94_0_2 || !CONFIG_DEVEL
+	default "2.15.94.0.2.2"   if BR2_BINUTILS_VERSION_2_15_94_0_2_2
 	default "2.16.90.0.1"     if BR2_BINUTILS_VERSION_2_16_90_0_1
