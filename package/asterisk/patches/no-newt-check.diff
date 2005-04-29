@@ -1,0 +1,12 @@
+diff -urN asterisk-1.0.7.old/astman/Makefile asterisk-1.0.7.dev/astman/Makefile
+--- asterisk-1.0.7.old/astman/Makefile	2004-06-26 21:25:39.000000000 +0200
++++ asterisk-1.0.7.dev/astman/Makefile	2005-04-29 15:54:53.000000000 +0200
+@@ -8,7 +8,7 @@
+ CFLAGS+=-I/usr/local/include -L/usr/local/lib
+ endif
+ 
+-TARGET=$(shell if [ -f /usr/include/newt.h ]; then echo "astman"; else if [ -f /usr/local/include/newt.h ]; then echo "astman"; else echo "none" ; fi ; fi)
++TARGET=none
+ all: depend $(TARGET)
+ 
+ install:
