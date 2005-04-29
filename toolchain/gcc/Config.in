@@ -17,26 +17,8 @@ choice
 	help
 	  Select the version of gcc you wish to use.
 
-	config BR2_GCC_VERSION_3_3_3
-		bool "gcc 3.3.3"
-
-	config BR2_GCC_VERSION_3_3_4
-		bool "gcc 3.3.4"
-
 	config BR2_GCC_VERSION_3_3_5
 		bool "gcc 3.3.5"
-
-	config BR2_GCC_VERSION_3_4_0
-		bool "gcc 3.4.0"
-		select BR2_GCC_3_4
-
-	config BR2_GCC_VERSION_3_4_1
-		bool "gcc 3.4.1"
-		select BR2_GCC_3_4
-
-	config BR2_GCC_VERSION_3_4_2
-		bool "gcc 3.4.2"
-		select BR2_GCC_3_4
 
 	config BR2_GCC_VERSION_3_4_3
 		bool "gcc 3.4.3"
@@ -46,12 +28,7 @@ endchoice
 
 config BR2_GCC_VERSION
 	string
-	default "3.3.3"     if BR2_GCC_VERSION_3_3_3
-	default "3.3.4"     if BR2_GCC_VERSION_3_3_4
 	default "3.3.5"     if BR2_GCC_VERSION_3_3_5 || !CONFIG_DEVEL
-	default "3.4.0"     if BR2_GCC_VERSION_3_4_0
-	default "3.4.1"     if BR2_GCC_VERSION_3_4_1
-	default "3.4.2"     if BR2_GCC_VERSION_3_4_2
 	default "3.4.3"     if BR2_GCC_VERSION_3_4_3
 
 
