@@ -28,7 +28,6 @@ package-$(BR2_PACKAGE_KISMET) += kismet
 package-$(BR2_PACKAGE_L2TPD) += l2tpd
 package-$(BR2_PACKAGE_LCD4LINUX) += lcd4linux
 package-$(BR2_PACKAGE_LIBELF) += libelf
-package-$(BR2_PACKAGE_LIBGCC) += libgcc
 package-$(BR2_PACKAGE_LIBPTHREAD) += libpthread
 package-$(BR2_PACKAGE_LIBUSB) += libusb
 package-$(BR2_PACKAGE_LZO) += lzo
