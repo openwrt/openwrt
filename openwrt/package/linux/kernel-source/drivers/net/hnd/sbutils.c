@@ -136,7 +136,7 @@ sb_read_sbreg(void *sbh, volatile uint32 *sbr)
 		INTR_OFF(si, intr_val);
 		tmp = 1;
 		OSL_PCMCIA_WRITE_ATTR(si->osh, MEM_SEG, &tmp, 1);
-		(uint32)sbr &= ~(1 << 11);	/* mask out bit 11*/
+		sbr = (uint32 *) (((uint32) sbr) & ~(1 << 11));	/* mask out bit 11*/
 	}
 
 	val = R_REG(sbr);
@@ -170,7 +170,7 @@ sb_write_sbreg(void *sbh, volatile uint32 *sbr, uint32 v)
 		INTR_OFF(si, intr_val);
 		tmp = 1;
 		OSL_PCMCIA_WRITE_ATTR(si->osh, MEM_SEG, &tmp, 1);
-		(uint32)sbr &= ~(1 << 11);	/* mask out bit 11 */
+		sbr = (uint32 *) (((uint32) sbr) & ~(1 << 11));	/* mask out bit 11*/
 	}
 
 	if (si->bus == PCMCIA_BUS) {

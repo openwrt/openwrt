@@ -745,7 +745,7 @@ crc32(
     /* handle bulk of data as 32-bit words */
     pend = pdata + (nbytes & 0xfffffffc);
     while (pdata < pend) {
-	*tptr = *((ulong *)pdata)++;
+	*tptr = (*((ulong *)pdata))++;
         CRC_INNER_LOOP(32, crc, tmp[0]);
         CRC_INNER_LOOP(32, crc, tmp[1]);
         CRC_INNER_LOOP(32, crc, tmp[2]);
