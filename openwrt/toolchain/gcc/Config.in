@@ -10,6 +10,7 @@ endif
 config BR2_GCC_3_4
 	bool
 	default n
+	depends BR2_GCC_VERSION_3_4_3 || BR2_GCC_VERSION_4_0_0
 
 choice
 	prompt "GCC compiler Version" if CONFIG_DEVEL
@@ -24,12 +25,17 @@ choice
 		bool "gcc 3.4.3"
 		select BR2_GCC_3_4
 
+	config BR2_GCC_VERSION_4_0_0
+		bool "gcc 4.0.0"
+		select BR2_GCC_3_4
+
 endchoice
 
 config BR2_GCC_VERSION
 	string
 	default "3.3.5"     if BR2_GCC_VERSION_3_3_5 || !CONFIG_DEVEL
 	default "3.4.3"     if BR2_GCC_VERSION_3_4_3
+	default "4.0.0"     if BR2_GCC_VERSION_4_0_0
 
 
 config BR2_GCC_USE_SJLJ_EXCEPTIONS
