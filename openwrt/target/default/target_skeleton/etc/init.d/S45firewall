@@ -32,13 +32,13 @@ iptables -t nat -N postrouting_rule
   iptables -A INPUT -i \! $WAN -j ACCEPT	# allow from lan/wifi interfaces 
   iptables -A INPUT -p icmp -j ACCEPT		# allow ICMP
   iptables -A INPUT -p 47 -j ACCEPT		# allow GRE
+  iptables -A INPUT -p tcp --syn --tcp-option \! 2 -j  DROP
   #
   # insert accept rule or to jump to new accept-check table here
   #
   iptables -A INPUT -j input_rule
 
   # reject (what to do with anything not allowed earlier)
-  iptables -A INPUT -p tcp --syn --tcp-option \! 2 -j  DROP
   iptables -A INPUT -p tcp -j REJECT --reject-with tcp-reset
   iptables -A INPUT -j REJECT --reject-with icmp-port-unreachable
 
