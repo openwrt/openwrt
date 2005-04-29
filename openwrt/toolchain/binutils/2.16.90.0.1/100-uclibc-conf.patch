@@ -1,0 +1,141 @@
+diff -ur binutils-2.16.90.0.1.orig/bfd/configure binutils-2.16.90.0.1/bfd/configure
+--- binutils-2.16.90.0.1.orig/bfd/configure	2005-04-11 02:19:41.000000000 -0400
++++ binutils-2.16.90.0.1/bfd/configure	2005-04-11 02:19:54.000000000 -0400
+@@ -3584,6 +3584,11 @@
+   lt_cv_file_magic_test_file=`echo /lib/libc.so* /lib/libc-*.so`
+   ;;
+ 
++linux-uclibc*)
++  lt_cv_deplibs_check_method=pass_all
++  lt_cv_file_magic_test_file=`echo /lib/libuClibc-*.so`
++  ;;
++
+ netbsd* | knetbsd*-gnu)
+   if echo __ELF__ | $CC -E - | grep __ELF__ > /dev/null; then
+     lt_cv_deplibs_check_method='match_pattern /lib[^/\.]+\.so\.[0-9]+\.[0-9]+$'
+diff -ur binutils-2.16.90.0.1.orig/binutils/configure binutils-2.16.90.0.1/binutils/configure
+--- binutils-2.16.90.0.1.orig/binutils/configure	2005-04-11 02:19:42.000000000 -0400
++++ binutils-2.16.90.0.1/binutils/configure	2005-04-11 02:19:54.000000000 -0400
+@@ -1555,6 +1555,11 @@
+   lt_cv_file_magic_test_file=`echo /lib/libc.so* /lib/libc-*.so`
+   ;;
+ 
++linux-uclibc*)
++  lt_cv_deplibs_check_method=pass_all
++  lt_cv_file_magic_test_file=`echo /lib/libuClibc-*.so`
++  ;;
++
+ netbsd* | knetbsd*-gnu)
+   if echo __ELF__ | $CC -E - | grep __ELF__ > /dev/null; then
+     lt_cv_deplibs_check_method='match_pattern /lib[^/\.]+\.so\.[0-9]+\.[0-9]+$'
+diff -ur binutils-2.16.90.0.1.orig/gas/configure binutils-2.16.90.0.1/gas/configure
+--- binutils-2.16.90.0.1.orig/gas/configure	2005-04-11 02:19:42.000000000 -0400
++++ binutils-2.16.90.0.1/gas/configure	2005-04-11 02:19:54.000000000 -0400
+@@ -3421,6 +3421,11 @@
+   lt_cv_file_magic_test_file=`echo /lib/libc.so* /lib/libc-*.so`
+   ;;
+ 
++linux-uclibc*)
++  lt_cv_deplibs_check_method=pass_all
++  lt_cv_file_magic_test_file=`echo /lib/libuClibc-*.so`
++  ;;
++
+ netbsd* | knetbsd*-gnu)
+   if echo __ELF__ | $CC -E - | grep __ELF__ > /dev/null; then
+     lt_cv_deplibs_check_method='match_pattern /lib[^/\.]+\.so\.[0-9]+\.[0-9]+$'
+diff -ur binutils-2.16.90.0.1.orig/gprof/configure binutils-2.16.90.0.1/gprof/configure
+--- binutils-2.16.90.0.1.orig/gprof/configure	2005-04-11 02:19:43.000000000 -0400
++++ binutils-2.16.90.0.1/gprof/configure	2005-04-11 02:19:54.000000000 -0400
+@@ -3419,6 +3419,11 @@
+   lt_cv_file_magic_test_file=`echo /lib/libc.so* /lib/libc-*.so`
+   ;;
+ 
++linux-uclibc*)
++  lt_cv_deplibs_check_method=pass_all
++  lt_cv_file_magic_test_file=`echo /lib/libuClibc-*.so`
++  ;;
++
+ netbsd* | knetbsd*-gnu)
+   if echo __ELF__ | $CC -E - | grep __ELF__ > /dev/null; then
+     lt_cv_deplibs_check_method='match_pattern /lib[^/\.]+\.so\.[0-9]+\.[0-9]+$'
+diff -ur binutils-2.16.90.0.1.orig/ld/configure binutils-2.16.90.0.1/ld/configure
+--- binutils-2.16.90.0.1.orig/ld/configure	2005-04-11 02:19:43.000000000 -0400
++++ binutils-2.16.90.0.1/ld/configure	2005-04-11 02:19:54.000000000 -0400
+@@ -1581,6 +1581,11 @@
+   lt_cv_file_magic_test_file=`echo /lib/libc.so* /lib/libc-*.so`
+   ;;
+ 
++linux-uclibc*)
++  lt_cv_deplibs_check_method=pass_all
++  lt_cv_file_magic_test_file=`echo /lib/libuClibc-*.so`
++  ;;
++
+ netbsd* | knetbsd*-gnu)
+   if echo __ELF__ | $CC -E - | grep __ELF__ > /dev/null; then
+     lt_cv_deplibs_check_method='match_pattern /lib[^/\.]+\.so\.[0-9]+\.[0-9]+$'
+diff -ur binutils-2.16.90.0.1.orig/libtool.m4 binutils-2.16.90.0.1/libtool.m4
+--- binutils-2.16.90.0.1.orig/libtool.m4	2005-04-11 02:19:42.000000000 -0400
++++ binutils-2.16.90.0.1/libtool.m4	2005-04-11 02:19:54.000000000 -0400
+@@ -645,6 +645,11 @@
+   lt_cv_file_magic_test_file=`echo /lib/libc.so* /lib/libc-*.so`
+   ;;
+ 
++linux-uclibc*)
++  lt_cv_deplibs_check_method=pass_all
++  lt_cv_file_magic_test_file=`echo /lib/libuClibc-*.so`
++  ;;
++
+ netbsd* | knetbsd*-gnu)
+   if echo __ELF__ | $CC -E - | grep __ELF__ > /dev/null; then
+     [lt_cv_deplibs_check_method='match_pattern /lib[^/\.]+\.so\.[0-9]+\.[0-9]+$']
+diff -ur binutils-2.16.90.0.1.orig/ltconfig binutils-2.16.90.0.1/ltconfig
+--- binutils-2.16.90.0.1.orig/ltconfig	2005-04-11 02:19:42.000000000 -0400
++++ binutils-2.16.90.0.1/ltconfig	2005-04-11 02:19:54.000000000 -0400
+@@ -603,6 +603,7 @@
+ # Transform linux* to *-*-linux-gnu*, to support old configure scripts.
+ case $host_os in
+ linux-gnu*) ;;
++linux-uclibc*) ;;
+ linux*) host=`echo $host | sed 's/^\(.*-.*-linux\)\(.*\)$/\1-gnu\2/'`
+ esac
+ 
+@@ -1270,6 +1271,24 @@
+   dynamic_linker='GNU/Linux ld.so'
+   ;;
+ 
++linux-uclibc*)
++  version_type=linux
++  need_lib_prefix=no
++  need_version=no
++  library_names_spec='${libname}${release}.so$versuffix ${libname}${release}.so$major $libname.so'
++  soname_spec='${libname}${release}.so$major'
++  finish_cmds='PATH="\$PATH:/sbin" ldconfig -n $libdir'
++  shlibpath_var=LD_LIBRARY_PATH
++  shlibpath_overrides_runpath=no
++  # This implies no fast_install, which is unacceptable.
++  # Some rework will be needed to allow for fast_install
++  # before this can be enabled.
++  # Note: copied from linux-gnu, and may not be appropriate.
++  hardcode_into_libs=yes
++  # Assume using the uClibc dynamic linker.
++  dynamic_linker="uClibc ld.so"
++  ;;
++
+ netbsd*)
+   need_lib_prefix=no
+   need_version=no
+diff -ur binutils-2.16.90.0.1.orig/opcodes/configure binutils-2.16.90.0.1/opcodes/configure
+--- binutils-2.16.90.0.1.orig/opcodes/configure	2005-04-11 02:19:44.000000000 -0400
++++ binutils-2.16.90.0.1/opcodes/configure	2005-04-11 02:19:54.000000000 -0400
+@@ -3588,6 +3588,11 @@
+   lt_cv_file_magic_test_file=`echo /lib/libc.so* /lib/libc-*.so`
+   ;;
+ 
++linux-uclibc*)
++  lt_cv_deplibs_check_method=pass_all
++  lt_cv_file_magic_test_file=`echo /lib/libuClibc-*.so`
++  ;;
++
+ netbsd* | knetbsd*-gnu)
+   if echo __ELF__ | $CC -E - | grep __ELF__ > /dev/null; then
+     lt_cv_deplibs_check_method='match_pattern /lib[^/\.]+\.so\.[0-9]+\.[0-9]+$'
