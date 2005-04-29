@@ -37,7 +37,8 @@ remap () {
   NVRAM_vlan0hwname="et0"
   NVRAM_vlan1hwname="et0"
   FAILSAFE_ifnames="vlan0 vlan1 eth2"
-  remap eth0. vlan
+  remap eth0.1 vlan0
+  remap eth0 vlan1
 }
 
 # hacks for wap54g hardware
