@@ -203,6 +203,9 @@ ifeq ($(findstring 3.3.,$(GCC_VERSION)),3.3.)
 	cp ./$(GCC_VERSION)/specs-$(ARCH)-soft-float $(STAGING_DIR)/lib/gcc-lib/$(REAL_GNU_TARGET_NAME)/$(GCC_VERSION)/specs
 endif
 endif
+	# These are in /lib, so...
+	cp -a $(STAGING_DIR)/$(REAL_GNU_TARGET_NAME)/lib/libgcc_s* $(TARGET_DIR)/lib/
+	$(STRIP) $(TARGET_DIR)/lib/libgcc_s.so.1
 
 gcc: gcc_initial $(LIBFLOAT_TARGET) \
 	gcc-install $(GCC_TARGETS)
