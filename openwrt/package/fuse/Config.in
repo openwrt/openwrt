@@ -2,7 +2,7 @@ config BR2_PACKAGE_FUSE
 	select BR2_PACKAGE_LIBPTHREAD
 	depends BR2_PACKAGE_KMOD_FUSE
 	bool
-	default m if CONFIG_DEVEL
+	default n
 
 config BR2_PACKAGE_KMOD_FUSE
 	select BR2_PACKAGE_FUSE
