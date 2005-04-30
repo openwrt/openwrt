@@ -1,73 +1,75 @@
-diff -urN ser-0.9.0.old/Makefile.defs ser-0.9.0/Makefile.defs
---- ser-0.9.0.old/Makefile.defs	2004-12-16 18:50:40.000000000 +0100
-+++ ser-0.9.0/Makefile.defs	2005-03-25 15:24:03.000000000 +0100
-@@ -788,7 +788,7 @@
+Binary files ser-0.8.14.old/.cfg.lex.swp and ser-0.8.14.dev/.cfg.lex.swp differ
+diff -urN ser-0.8.14.old/Makefile.defs ser-0.8.14.dev/Makefile.defs
+--- ser-0.8.14.old/Makefile.defs	2004-07-27 13:38:33.000000000 +0200
++++ ser-0.8.14.dev/Makefile.defs	2005-05-01 01:18:12.000000000 +0200
+@@ -660,7 +660,7 @@
  endif
  YACC_FLAGS=-d -b cfg
  # on solaris add -lxnet (e.g. LIBS= -lxnet)
 -LIBS= -lfl -ldl -lresolv
-+LIBS= -ldl -lresolv
++LIBS=  -ldl -lresolv
  
  
  #os specific stuff
-@@ -826,7 +826,7 @@
+@@ -695,7 +695,7 @@
+ ifeq ($(CC_NAME), suncc)
+ 	LIBS= -lfast -ldl -lresolv
  endif
- 	OLD_SOLARIS= $(shell echo "$(OSREL)" | \
- 				sed -e 's/^5\.[0-6][^0-9]*$$/yes/' )
--	LIBS+= -L/usr/local/lib -lfl -lxnet -lnsl 
-+	LIBS+= -L/usr/local/lib -lxnet -lnsl 
- ifeq	($(OLD_SOLARIS), yes)
- 		LIBS+=-lposix4
- else
-@@ -841,9 +841,9 @@
+-	LIBS+= -L/usr/local/lib -lfl -lxnet -lrt -lnsl 
++	LIBS+= -L/usr/local/lib  -lxnet -lrt -lnsl 
+ 	# -lrt needed for sched_yield
+ endif
+ 
+@@ -705,9 +705,9 @@
  	ifneq ($(found_lock_method), yes)
  		DEFS+= -DUSE_PTHREAD_MUTEX  # try pthread sems
  		found_lock_method=yes
 -		LIBS= -pthread -lfl  #dlopen is in libc
-+		LIBS= -pthread  #dlopen is in libc
++		LIBS= -pthread   #dlopen is in libc
  	else
 -		LIBS= -lfl  #dlopen is in libc
-+		LIBS=  #dlopen is in libc
++		LIBS=   #dlopen is in libc
  	endif
  	YACC=yacc
  endif
-@@ -858,7 +858,7 @@
+@@ -722,7 +722,7 @@
  	# (symbols on openbsd are prefixed by "_")
  	YACC=yacc
  	# no sched_yield on openbsd unless linking with c_r (not recommended)
 -	LIBS= -lfl 
-+	LIBS= 
++	LIBS=  
  	OPENBSD_IS_AOUT= $(shell echo "$(OSREL)" | \
  				sed -e 's/^3\.[0-3][^0-9]*$$/yes/' |sed -e 's/^[0-2]\..*/yes/')
- # exception: on sparc openbsd 3.2 is elf and not aout
-@@ -885,7 +885,7 @@
+ 	
+@@ -740,7 +740,7 @@
  		found_lock_method=yes
  	endif
  	YACC=yacc
 -	LIBS= -lfl 
-+	LIBS= 
++	LIBS=  
  endif
  
  # OS X support, same as freebsd
-@@ -899,9 +899,9 @@
+@@ -754,9 +754,9 @@
  	ifneq ($(found_lock_method), yes)
  		DEFS+= -DUSE_PTHREAD_MUTEX  # try pthread sems
  		found_lock_method=yes
 -		LIBS= -pthread -lfl -lresolv  #dlopen is in libc
-+		LIBS= -pthread -lresolv  #dlopen is in libc
++		LIBS= -pthread  -lresolv  #dlopen is in libc
  	else
 -		LIBS= -lfl -lresolv  #dlopen is in libc
-+		LIBS= -lresolv  #dlopen is in libc
++		LIBS=  -lresolv  #dlopen is in libc
  	endif
  	LDFLAGS=        # darwin doesn't like -O2 or -E
  	MOD_LDFLAGS= -bundle -bundle_loader ../../$(MAIN_NAME)
-diff -urN ser-0.9.0.old/cfg.lex ser-0.9.0/cfg.lex
---- ser-0.9.0.old/cfg.lex	2004-11-30 17:28:23.000000000 +0100
-+++ ser-0.9.0/cfg.lex	2005-03-25 15:27:49.000000000 +0100
-@@ -90,6 +90,10 @@
- 	static char* addstr(struct str_buf *, char*, int);
- 	static void count();
+diff -urN ser-0.8.14.old/cfg.lex ser-0.8.14.dev/cfg.lex
+--- ser-0.8.14.old/cfg.lex	2004-02-12 17:17:48.000000000 +0100
++++ ser-0.8.14.dev/cfg.lex	2005-05-01 01:23:03.000000000 +0200
+@@ -71,7 +71,10 @@
  
+ 	static char* addstr(char*, char**);
+ 	static void count();
+-
 +	int yywrap(void)
 +	{
 +		return 1;

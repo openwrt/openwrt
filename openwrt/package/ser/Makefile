@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ser
-PKG_VERSION:=0.9.0
+PKG_VERSION:=0.8.14
 PKG_RELEASE:=1
-PKG_MD5SUM:=ae1f9b237f0006785ff22eafa1470ac4
+PKG_MD5SUM:=3e2e12c8dfbd7dad9199304093de0838
 
 PKG_SOURCE_URL:=ftp://ftp.berlios.de/pub/ser/$(PKG_VERSION)/src
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)_src.tar.gz
@@ -29,10 +29,10 @@ $(PKG_BUILD_DIR)/.patched: $(DL_DIR)/$(PKG_SOURCE)
 
 $(PKG_BUILD_DIR)/$(PKG_NAME): $(PKG_BUILD_DIR)/.patched
 	$(MAKE) -C $(PKG_BUILD_DIR) \
+		extra_defs="-DUSE_PTHREAD_MUTEX "  \
 		CC="$(TARGET_CC)" \
 		ARCH="$(ARCH)" \
 		COPTS="$(TARGET_CFLAGS)" \
-		modules="$(SER_MODULES)" \
 		modules all
 
 $(PKG_IPK): $(PKG_BUILD_DIR)/$(PKG_NAME)
