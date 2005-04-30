@@ -14,7 +14,7 @@ config BR2_GCC_3_4
 
 choice
 	prompt "GCC compiler Version" if CONFIG_DEVEL
-	default BR2_GCC_VERSION_3_4_3
+	default BR2_GCC_VERSION_3_3_5
 	help
 	  Select the version of gcc you wish to use.
 
@@ -33,8 +33,8 @@ endchoice
 
 config BR2_GCC_VERSION
 	string
-	default "3.3.5"     if BR2_GCC_VERSION_3_3_5
-	default "3.4.3"     if BR2_GCC_VERSION_3_4_3 || !CONFIG_DEVEL
+	default "3.3.5"     if BR2_GCC_VERSION_3_3_5 || !CONFIG_DEVEL
+	default "3.4.3"     if BR2_GCC_VERSION_3_4_3 
 	default "4.0.0"     if BR2_GCC_VERSION_4_0_0
 
 
