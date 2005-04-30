@@ -1,8 +1,12 @@
---- loader-0.03/Makefile	2005-03-28 22:15:24.569677129 +0400
-+++ loader/Makefile	2005-03-28 22:16:42.339989214 +0400
-@@ -24,7 +24,8 @@
+diff -Nur loader-0.04/Makefile loader-0.04-owrt/Makefile
+--- loader-0.04/Makefile	2005-03-08 11:32:32.000000000 +0100
++++ loader-0.04-owrt/Makefile	2005-04-30 13:44:39.000000000 +0200
+@@ -22,9 +22,10 @@
  
- CFLAGS		= -D__KERNEL__ -Wall -Wstrict-prototypes -Wno-trigraphs -O2 \
+ OBJCOPY		:= $(CROSS_COMPILE)objcopy -O binary -R .reginfo -R .note -R .comment -R .mdebug -S
+ 
+-CFLAGS		= -D__KERNEL__ -Wall -Wstrict-prototypes -Wno-trigraphs -O2 \
++CFLAGS		= -D__KERNEL__ -Wall -Wstrict-prototypes -Wno-trigraphs -Os \
  		  -fno-strict-aliasing -fno-common -fomit-frame-pointer -G 0 -mno-abicalls -fno-pic \
 -		  -ffunction-sections -pipe -mcpu=r4600 -mips2 -Wa,--trap  -m4710a0kern
 +		  -ffunction-sections -pipe -mlong-calls -fno-common \
