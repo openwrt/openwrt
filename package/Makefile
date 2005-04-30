@@ -22,6 +22,7 @@ package-$(BR2_PACKAGE_FUSE) += fuse
 package-$(BR2_PACKAGE_GLIB) += glib
 package-$(BR2_PACKAGE_GMP) += gmp
 package-$(BR2_PACKAGE_HASERL) += haserl
+package-$(BR2_PACKAGE_IPKG) += ipkg
 package-$(BR2_PACKAGE_IPTABLES) += iptables
 package-$(BR2_PACKAGE_IPROUTE2) += iproute2
 package-$(BR2_PACKAGE_KISMET) += kismet
