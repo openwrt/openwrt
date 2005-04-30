@@ -5,13 +5,11 @@ use warnings;
 my $target = shift @ARGV;
 my $filename = shift @ARGV;
 my $md5sum = shift @ARGV;
-my @mirrors = @ARGV;
+my @mirrors;
 
 my $ok;
 
-@mirrors > 0 or die "Syntax: $0 <target dir> <filename> <md5sum> <mirror> [<mirror> ...]\n";
-
-push @mirrors, 'http://openwrt.inf.fh-brs.de/mirror';
+@ARGV > 0 or die "Syntax: $0 <target dir> <filename> <md5sum> <mirror> [<mirror> ...]\n";
 
 sub download
 {
@@ -56,10 +54,7 @@ sub cleanup
 	unlink "$target/$filename.md5sum";
 }
 
-while (!$ok) {
-	my $mirror = shift @mirrors;
-	$mirror or die "No more mirrors to try - giving up.\n";
-	
+foreach my $mirror (@ARGV) {
 	if ($mirror =~ /^\@SF\/(.+)$/) {
 		my $sfpath = $1;
 		open SF, "wget -t1 -q -O- 'http://prdownloads.sf.net/$sfpath/$filename' |";
@@ -70,8 +65,17 @@ while (!$ok) {
 		}
 		close SF;
 	} else {
-		download($mirror);
+		push @mirrors, $mirror;
 	}
+}
+
+push @mirrors, 'http://openwrt.inf.fh-brs.de/mirror';
+
+while (!$ok) {
+	my $mirror = shift @mirrors;
+	$mirror or die "No more mirrors to try - giving up.\n";
+	
+	download($mirror);
 	-f "$target/$filename" and $ok = 1;
 }
 
