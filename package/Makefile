@@ -18,6 +18,7 @@ package-$(BR2_PACKAGE_DNSMASQ) += dnsmasq
 package-$(BR2_PACKAGE_EBTABLES) += ebtables
 package-$(BR2_PACKAGE_EZIPUPDATE) += ez-ipupdate
 package-$(BR2_PACKAGE_FPING) += fping
+package-$(BR2_PACKAGE_FPROBE) += fprobe
 package-$(BR2_PACKAGE_FUSE) += fuse
 package-$(BR2_PACKAGE_GLIB) += glib
 package-$(BR2_PACKAGE_GMP) += gmp
@@ -111,6 +112,7 @@ postgresql-compile: zlib-compile
 nmap-compile: uclibc++-compile pcre-compile libpcap-compile
 kismet-compile: uclibc++-compile libpcap-compile
 tinc-compile: zlib-compile openssl-compile lzo-compile
+fprobe-compile: libpcap-compile
 
 snort-compile: libnet-compile libpcap-compile pcre-compile
 ifeq ($(BR2_PACKAGE_SNORT_MYSQL),y)
