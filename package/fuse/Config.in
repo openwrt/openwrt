@@ -2,12 +2,12 @@ config BR2_PACKAGE_FUSE
 	select BR2_PACKAGE_LIBPTHREAD
 	depends BR2_PACKAGE_KMOD_FUSE
 	bool
-	default n
+	default m if CONFIG_DEVEL
 
 config BR2_PACKAGE_KMOD_FUSE
 	select BR2_PACKAGE_FUSE
 	tristate "kmod-fuse (FUSE kernel module)"
-	default m
+	default m if CONFIG_DEVEL
 	help
 	  With FUSE it is possible to implement a fully functional 
 	  filesystem in a userspace program.
@@ -30,7 +30,7 @@ config BR2_PACKAGE_KMOD_FUSE
 config BR2_PACKAGE_LIBFUSE
 	depends BR2_PACKAGE_KMOD_FUSE
 	tristate "libfuse (FUSE library)"
-	default m
+	default m if CONFIG_DEVEL
 	help
 	  With FUSE it is possible to implement a fully functional 
 	  filesystem in a userspace program.
@@ -53,7 +53,7 @@ config BR2_PACKAGE_LIBFUSE
 config BR2_PACKAGE_FUSE_UTILS
 	depends BR2_PACKAGE_LIBFUSE
 	tristate "fuse-utils (FUSE utilities)"
-	default m
+	default m if CONFIG_DEVEL
 	help
 	  With FUSE it is possible to implement a fully functional 
 	  filesystem in a userspace program.
