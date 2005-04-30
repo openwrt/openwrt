@@ -1,4 +1,5 @@
 #!/bin/sh
 # set leds to normal state
 echo "0x00" > /proc/sys/diag
-sysctl -np
+sysctl -p
+sysctl -n
