@@ -1,0 +1,5 @@
+config BR2_PACKAGE_MARADNS
+	tristate "MaraDNS"
+	default m if CONFIG_DEVEL
+	help
+	  A small secure DNS server

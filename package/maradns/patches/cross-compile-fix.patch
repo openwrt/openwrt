@@ -1,0 +1,12 @@
+diff -urN maradns-1.0.26.old/rng/Makefile maradns-1.0.26.dev/rng/Makefile
+--- maradns-1.0.26.old/rng/Makefile	2003-08-02 21:39:36.000000000 +0200
++++ maradns-1.0.26.dev/rng/Makefile	2005-04-30 23:29:30.000000000 +0200
+@@ -20,7 +20,7 @@
+ 	$(CC) -c $(FLAGS) -o rng-api-fst.o rng-api-fst.c
+ 
+ make_32bit_tables: make_32bit_tables.c
+-	$(CC) -o make_32bit_tables make_32bit_tables.c
++	$(HOSTCC) -o make_32bit_tables make_32bit_tables.c
+ 
+ rng-32bit-tables.h: make_32bit_tables
+ 	./make_32bit_tables > rng-32bit-tables.h
