@@ -47,7 +47,7 @@ $(BIN_DIR)/$(IB_NAME).tar.bz2:
 	mkdir -p $(IB_BUILD_DIR)/include
 	mkdir -p $(IB_BUILD_DIR)/packages
 	(cd $(PACKAGE_DIR); \
-		cp busybox_* kmod-brcm-* kmod-wlcompat* dnsmasq_* iptables_* dropbear_* kmod-diag_* \
+		cp ipkg_* busybox_* kmod-brcm-* kmod-wlcompat* dnsmasq_* iptables_* dropbear_* kmod-diag_* \
 		   wireless-tools_* zlib* bridge_* ppp_* ppp-pppoe* kmod-ppp* openwrt-utils* $(IB_BUILD_DIR)/packages/; \
 	)
 	egrep '^[^(include|prepare|compile|install)]' < $(TOPDIR)/target/jffs2/Makefile > $(IB_BUILD_DIR)/include/jffs2.mk
