@@ -1,0 +1,4 @@
+#!/bin/sh
+
+ntp_server=$(nvram get ntp_server)
+/usr/sbin/rdate ${ntp_server} 
