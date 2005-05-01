@@ -18,11 +18,12 @@ done
 		REDIAL=${REDIAL:+lcp-echo-interval $REDIAL}
 		IDLETIME=$(nvram get ppp_idletime)
 		IDLETIME=${IDLETIME:+lcp-echo-failure $IDLETIME}
-		MTU=$(nvram get ppp_mtu)
-		MTU=${MTU:+ mtu $MTU mru $MTU}
+		MTUV=$(nvram get ppp_mtu)
+		MTU=${MTUV:+mtu $MTUV}
+		MRU=${MTUV:+mru $MTUV}
 
 		ifconfig $IFNAME up
-		echo -e "plugin rp-pppoe.so\nconnect /bin/true\nusepeerdns\ndefaultroute\nuser \"$USERNAME\"\npassword \"$PASSWORD\"\n$MTU\n$IDLETIME\n$REDIAL" > /tmp/.pppoe-data
+		echo -e "plugin rp-pppoe.so\nconnect /bin/true\nusepeerdns\ndefaultroute\nuser \"$USERNAME\"\npassword \"$PASSWORD\"\n$MTU\n$MRU\n$IDLETIME\n$REDIAL" > /tmp/.pppoe-data
 		/usr/sbin/pppd nodetach file /tmp/.pppoe-data $IFNAME
 	done
 ) &
