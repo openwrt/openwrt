@@ -98,6 +98,9 @@ $(eval $(call KMOD_template,LP,lp,\
 	$(MODULES_DIR)/kernel/drivers/parport/parport_splink.o \
 	$(MODULES_DIR)/kernel/drivers/char/lp.o \
 ,CONFIG_PARPORT))
+$(eval $(call KMOD_template,IDE,ide,\
+	$(MODULES_DIR)/kernel/drivers/ide/*.o \
+,CONFIG_IDE))
 $(eval $(call KMOD_template,EXT2,ext2,\
 	$(MODULES_DIR)/kernel/fs/ext2/*.o \
 ,CONFIG_EXT2_FS))
