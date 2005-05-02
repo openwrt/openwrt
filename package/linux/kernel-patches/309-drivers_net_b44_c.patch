@@ -1,11 +1,5 @@
-This patch adds BCM47xx support for the B44 driver. It has been backported
-from Florian Schirmer's 2.6 port.
-
-Imre Kaloz <kaloz@dune.hu>
-
-diff -Nur linux-2.4.29/drivers/net/b44.c linux-2.4.29-b44/drivers/net/b44.c
---- linux-2.4.29/drivers/net/b44.c	2004-08-08 01:26:05.000000000 +0200
-+++ linux-2.4.29-b44/drivers/net/b44.c	2005-04-09 10:17:33.000000000 +0200
+--- linux-2.4.30/drivers/net/b44.c	2004-08-08 01:26:05.000000000 +0200
++++ openwrt/build_mipsel/linux-2.4.30/drivers/net/b44.c	2005-05-01 20:10:19.193354917 +0200
 @@ -1,7 +1,8 @@
  /* b44.c: Broadcom 4400 device driver.
   *
@@ -175,7 +169,7 @@ diff -Nur linux-2.4.29/drivers/net/b44.c linux-2.4.29-b44/drivers/net/b44.c
 -		ssb_pci_setup(bp, (bp->core_unit == 0 ?
 -				   SBINTVEC_ENET0 :
 -				   SBINTVEC_ENET1));
-+		if (bp->pdev->device != PCI_DEVICE_ID_BCM4713)
++		/*if (bp->pdev->device != PCI_DEVICE_ID_BCM4713)*/
 +			ssb_pci_setup(bp, (bp->core_unit == 0 ?
 +				   	SBINTVEC_ENET0 :
 +				   	SBINTVEC_ENET1));
@@ -276,26 +270,3 @@ diff -Nur linux-2.4.29/drivers/net/b44.c linux-2.4.29-b44/drivers/net/b44.c
  	for (i = 0; i < 6; i++)
  		printk("%2.2x%c", dev->dev_addr[i],
  		       i == 5 ? '\n' : ':');
-diff -Nur linux-2.4.29/drivers/net/b44.h linux-2.4.29-b44/drivers/net/b44.h
---- linux-2.4.29/drivers/net/b44.h	2003-08-25 13:44:42.000000000 +0200
-+++ linux-2.4.29-b44/drivers/net/b44.h	2005-04-09 10:13:55.000000000 +0200
-@@ -461,6 +461,8 @@
- };
- 
- #define B44_MCAST_TABLE_SIZE	32
-+#define B44_PHY_ADDR_NO_PHY	30
-+#define B44_MDC_RATIO		5000000
- 
- /* SW copy of device statistics, kept up to date by periodic timer
-  * which probes HW values.  Must have same relative layout as HW
-diff -Nur linux-2.4.29/include/linux/pci_ids.h linux-2.4.29-b44/include/linux/pci_ids.h
---- linux-2.4.29/include/linux/pci_ids.h	2005-01-19 15:10:12.000000000 +0100
-+++ linux-2.4.29-b44/include/linux/pci_ids.h	2005-04-09 10:13:55.000000000 +0200
-@@ -1735,6 +1735,7 @@
- #define PCI_DEVICE_ID_TIGON3_5901_2	0x170e
- #define PCI_DEVICE_ID_BCM4401		0x4401
- #define PCI_DEVICE_ID_BCM4401B0		0x4402
-+#define PCI_DEVICE_ID_BCM4713		0x4713
- 
- #define PCI_VENDOR_ID_ENE		0x1524
- #define PCI_DEVICE_ID_ENE_1211		0x1211
