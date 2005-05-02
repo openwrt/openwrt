@@ -3,7 +3,7 @@ mount none /proc -t proc
 insmod diag
 echo 0x01 > /proc/sys/diag
 sleep 1
-if [ $(cat /proc/sys/reset) = 1 ] ; then
+if [ $(cat /proc/sys/reset) = 1 ] || [ "$(nvram get failsafe)" = 1 ]; then
   export FAILSAFE=true
   while :; do { echo $(((X=(X+1)%8)%2)) > /proc/sys/diag; sleep $((X==0)); } done &
 fi
