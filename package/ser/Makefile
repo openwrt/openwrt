@@ -14,7 +14,7 @@ PKG_CAT:=zcat
 PKG_IPK:=$(PACKAGE_DIR)/$(PKG_NAME)_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
 PKG_IPK_DIR:=$(PKG_BUILD_DIR)/ipkg
 
-SER_MODULES := sl tm rr maxfwd usrloc registrar dbtext textops
+SER_MODULES := sl tm rr maxfwd usrloc registrar dbtext textops nathelper
 
 SER_MODULE_FILES := $(foreach module,$(SER_MODULES),modules/$(module)/$(module).so)
 SER_MODULES := $(patsubst %,modules/%,$(SER_MODULES))
