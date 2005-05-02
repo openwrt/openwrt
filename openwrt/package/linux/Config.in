@@ -102,6 +102,13 @@ config BR2_PACKAGE_KMOD_USB_PRINTER
 	default m
 	depends BR2_PACKAGE_KMOD_USB_CONTROLLER
 
+config BR2_PACKAGE_KMOD_IDE
+	tristate "IDE support"
+	default m
+	help
+	  Kernel modules for IDE support
+	  useful for usb mass storage devices (e.g. on WL-HDD)
+
 config BR2_PACKAGE_KMOD_VFAT
 	tristate "VFAT filesystem support"
 	default m
