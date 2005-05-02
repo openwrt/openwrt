@@ -58,6 +58,7 @@ package-$(BR2_PACKAGE_RADVD) += radvd
 package-$(BR2_PACKAGE_SDK) += sdk
 package-$(BR2_PACKAGE_SER) += ser
 package-$(BR2_PACKAGE_SETSERIAL) += setserial
+package-$(BR2_PACKAGE_SHAT) += shat
 package-$(BR2_PACKAGE_SHFS) += shfs
 package-$(BR2_PACKAGE_SNORT) += snort
 package-$(BR2_PACKAGE_SPEEX) += speex
