@@ -65,6 +65,7 @@ package-$(BR2_PACKAGE_SPEEX) += speex
 package-$(BR2_PACKAGE_STRACE) += strace
 package-$(BR2_PACKAGE_TCPDUMP) += tcpdump
 package-$(BR2_PACKAGE_TINC) += tinc
+package-$(BR2_PACKAGE_TTCP) += ttcp
 package-$(BR2_PACKAGE_UCLIBCXX) += uclibc++
 package-$(BR2_PACKAGE_USBUTILS) += usbutils
 package-$(BR2_PACKAGE_WIRELESS_TOOLS) += wireless-tools
