@@ -41,17 +41,30 @@ choice
 		select BR2_PACKAGE_LIBPCAP
 		select BR2_PACKAGE_LIBPCRE
 	
+	config BR2_PACKAGE_SNORT_ENABLE_DEBUG
+		prompt "debug (enable debugging options, useful for bugreports)"
+		bool
+		default n
+		depends BR2_PACKAGE_SNORT_CUSTOM
+
+	config BR2_PACKAGE_SNORT_ENABLE_INLINE
+		prompt "inline mode (read packets from iptables instead of libpcap)"
+		bool
+		default n
+		depends BR2_PACKAGE_SNORT_CUSTOM
+		select BR2_PACKAGE_IPTABLES
+
 	config BR2_PACKAGE_SNORT_WITH_MYSQL
 		prompt "MySQL database support"
 		bool
-		default y
+		default n
 		depends BR2_PACKAGE_SNORT_CUSTOM
 		select BR2_PACKAGE_LIBMYSQLCLIENT
 
 	config BR2_PACKAGE_SNORT_WITH_PGSQL
 		prompt "PostgreSQL database support"
 		bool
-		default y
+		default n
 		depends BR2_PACKAGE_SNORT_CUSTOM
 		select BR2_PACKAGE_LIBPQ
 
@@ -59,5 +72,5 @@ endchoice
 
 config BR2_PACKAGE_SNORT
 	tristate
-	default BR2_PACKAGE_SNORT_BASIC || BR2_PACKAGE_SNORT_MYSQL || BR2_PACKAGE_SNORT_PGSQL
+	default BR2_PACKAGE_SNORT_BASIC || BR2_PACKAGE_SNORT_MYSQL || BR2_PACKAGE_SNORT_PGSQL || BR2_PACKAGE_SNORT_CUSTOM
 
