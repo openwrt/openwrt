@@ -32,8 +32,8 @@ LINUX_SOURCE_DIR=$(LINUX_DIR)-$(LINUX_VERSION)
 # proprietary driver extracted from linksys firmware GPL sourcetree WRT54GS_3_37_2_1109_US 
 LINUX_BINARY_WL_DRIVER=kernel-binary-wl-0.2.tar.gz
 LINUX_BINARY_WL_MD5SUM=ab2a6d39ccb550e494bbeccf1b0e228f
-LINUX_ET_DRIVER=kernel-source-et-0.5.tar.gz
-LINUX_ET_MD5SUM=93402cd0cbb1cf81d6df204bb7de343d
+LINUX_ET_DRIVER=kernel-source-et-0.6.tar.gz
+LINUX_ET_MD5SUM=b7883403d3c1ce7b73c362db621c6f00
 
 TARGET_MODULES_DIR=$(TARGET_DIR)/lib/modules/$(LINUX_VERSION)
 
