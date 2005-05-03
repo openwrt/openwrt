@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=snort
-PKG_VERSION:=2.3.2
+PKG_VERSION:=2.3.3
 PKG_RELEASE:=1
-PKG_MD5SUM:=692602827ce9d1a611630149f8e50ec8
+PKG_MD5SUM:=06bf140893e7cb120aaa9372d10a0100
 
 PKG_SOURCE_URL:= \
 	http://www.snort.org/dl/current/ \
@@ -41,17 +41,12 @@ PKG_CONFIGURE_OPTS := \
 	--enable-shared \
 	--disable-static \
 	--enable-flexresp \
-	--disable-smbalerts \
 	--with-libnet-includes="$(STAGING_DIR)/usr/include" \
 	--with-libnet-libraries="$(STAGING_DIR)/usr/lib" \
 	--with-libpcap-includes="$(STAGING_DIR)/usr/include" \
 	--with-libpcap-libraries="$(STAGING_DIR)/usr/lib" \
 	--with-libpcre-includes="$(STAGING_DIR)/usr/include" \
 	--with-libpcre-libraries="$(STAGING_DIR)/usr/lib" \
-	--without-odbc \
-	--without-openssl \
-	--without-oracle \
-	--without-snmp \
 
 SNORT_BASIC_CONFIGURE_OPTS := \
 	--without-mysql \
@@ -67,11 +62,26 @@ SNORT_PGSQL_CONFIGURE_OPTS := \
 
 SNORT_CUSTOM_CONFIGURE_OPTS := \
 
+ifeq ($(BR2_PACKAGE_SNORT_ENABLE_DEBUG),y)
+SNORT_CUSTOM_CONFIGURE_OPTS += --enable-debug
+else
+SNORT_CUSTOM_CONFIGURE_OPTS += --disable-debug
+endif
+
+ifeq ($(BR2_PACKAGE_SNORT_ENABLE_INLINE),y)
+SNORT_CUSTOM_CONFIGURE_OPTS += --enable-inline
+SNORT_CUSTOM_CONFIGURE_OPTS += --with-libipq-includes="$(STAGING_DIR)/include/libipq"
+SNORT_CUSTOM_CONFIGURE_OPTS += --with-libipq-libraries="$(STAGING_DIR)/lib"
+else
+SNORT_CUSTOM_CONFIGURE_OPTS += --disable-inline
+endif
+
 ifeq ($(BR2_PACKAGE_SNORT_WITH_MYSQL),y)
 SNORT_CUSTOM_CONFIGURE_OPTS += --with-mysql="$(STAGING_DIR)/usr"
 else
 SNORT_CUSTOM_CONFIGURE_OPTS += --without-mysql
 endif
+
 ifeq ($(BR2_PACKAGE_SNORT_WITH_PGSQL),y)
 SNORT_CUSTOM_CONFIGURE_OPTS += --with-postgresql="$(STAGING_DIR)/usr"
 else
@@ -85,6 +95,8 @@ BUILD_TARGETS += $(PKG_BUILD_DIR)/$(2)
 endif
 
 $(PKG_BUILD_DIR)/$(2): $(PKG_BUILD_DIR)/.prepared
+	touch -r $(PKG_BUILD_DIR)/Makefile.am $(PKG_BUILD_DIR)/configure.in 
+	touch -r $(PKG_BUILD_DIR)/Makefile.in $(PKG_BUILD_DIR)/configure
 	-$(MAKE) -C $(PKG_BUILD_DIR) distclean
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
 		$(TARGET_CONFIGURE_OPTS) \
@@ -98,10 +110,7 @@ $(PKG_BUILD_DIR)/$(2): $(PKG_BUILD_DIR)/.prepared
 	$(MAKE) -C $(PKG_BUILD_DIR)
 	mv $(PKG_BUILD_DIR)/src/snort $(PKG_BUILD_DIR)/$(2)
 
-$(PKG_INSTALL_DIR)/usr/sbin/$(2): $(PKG_BUILD_DIR)/$(2)
-	install -m0755 $(PKG_BUILD_DIR)/$(2) $(PKG_INSTALL_DIR)/usr/sbin/
-
-$$(IPKG_$(1)): $(PKG_BUILD_DIR)/.installed $(PKG_INSTALL_DIR)/usr/sbin/$(2)
+$$(IPKG_$(1)): $(PKG_BUILD_DIR)/.installed $(PKG_BUILD_DIR)/$(2)
 	rm -rf $$(IDIR_$(1))
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $$(IDIR_$(1)) ./ipkg/$(2).control $(3) $(4)
 	install -m0644 ./ipkg/snort.conffiles $$(IDIR_$(1))/CONTROL/conffiles
@@ -118,7 +127,7 @@ $$(IPKG_$(1)): $(PKG_BUILD_DIR)/.installed $(PKG_INSTALL_DIR)/usr/sbin/$(2)
 	install -m0644 $(PKG_BUILD_DIR)/etc/threshold.conf $$(IDIR_$(1))/etc/snort/
 	install -m0644 $(PKG_BUILD_DIR)/etc/unicode.map $$(IDIR_$(1))/etc/snort/
 	install -d -m0755 $$(IDIR_$(1))/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/$(2) $$(IDIR_$(1))/usr/sbin/snort
+	install -m0755 $(PKG_BUILD_DIR)/$(2) $$(IDIR_$(1))/usr/sbin/snort
 	$(RSTRIP) $$(IDIR_$(1))
 	mkdir -p $(PACKAGE_DIR)
 	$(IPKG_BUILD) $$(IDIR_$(1)) $(PACKAGE_DIR)
