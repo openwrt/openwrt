@@ -100,6 +100,7 @@ $(eval $(call KMOD_template,LP,lp,\
 ,CONFIG_PARPORT))
 $(eval $(call KMOD_template,IDE,ide,\
 	$(MODULES_DIR)/kernel/drivers/ide/*.o \
+	$(MODULES_DIR)/kernel/drivers/ide/*/*.o \
 ,CONFIG_IDE))
 $(eval $(call KMOD_template,EXT2,ext2,\
 	$(MODULES_DIR)/kernel/fs/ext2/*.o \
