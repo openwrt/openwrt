@@ -98,7 +98,7 @@ int main(int argc, char **argv)
 	//bzero((void *)((int)ptr + ptr->len), (size_t)(len - ptr->len));
         ptr->len = offset;
         ptr->crc32 = crc32buf((void *) &(ptr->flag_version), ptr->len - offsetof(struct trx_header, flag_version));
-	msync(ptr,len,MS_SYNC|MS_INVALIDATE);
+	msync(ptr,sizeof(struct trx_header),MS_SYNC|MS_INVALIDATE);
 	printf("Partition moved; please reboot\n");
       }
     } else {
@@ -113,6 +113,7 @@ int main(int argc, char **argv)
     }
 
 
-    munmap((void *) ptr, sizeof(struct trx_header));
+    munmap((void *) ptr, len);
+    close (fd);
     return 0;
 }
