@@ -2,14 +2,15 @@
 if [ "$1" != "failsafe" ]; then 
 	mount | grep jffs2 >&-
 	if [ $? = 0 ] ; then
-		[ $(cat /proc/mtd | wc -l) = 6 ] && {
+		if [ $(cat /proc/mtd | wc -l) = 6 ]; then
 			echo 5 > /proc/sys/diag
 			mtd unlock linux
 			mtd erase OpenWrt
 			jffs2root --move
-		} &
-		mtd unlock rootfs
-		mount -o remount,rw /dev/root /
+		else
+			mtd unlock rootfs
+			mount -o remount,rw /dev/root /
+		fi
 	else
 		mtd unlock OpenWrt
 		mount -t jffs2 /dev/mtdblock/4 /jffs
