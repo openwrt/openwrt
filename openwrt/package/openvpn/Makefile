@@ -14,8 +14,11 @@ PKG_CAT:=zcat
 PKG_IPK:=$(PACKAGE_DIR)/$(PKG_NAME)_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
 PKG_IPK_DIR:=$(PKG_BUILD_DIR)/ipkg
 
+PKG_DEPEND:="openssl, kmod-tun"
 ifneq ($(BR2_PACKAGE_OPENVPN_LZO),y)
 DISABLE_LZO:=--disable-lzo
+else
+PKG_DEPEND+=", lzo"
 endif
 
 ifneq ($(BR2_PACKAGE_OPENVPN_SERVER),y)
@@ -64,6 +67,7 @@ $(PKG_BUILD_DIR)/openvpn: $(PKG_BUILD_DIR)/.configured
 
 $(PKG_IPK): $(PKG_BUILD_DIR)/openvpn
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_IPK_DIR) $(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
+	echo "Depends: $(PKG_DEPEND)" >> $(PKG_IPK_DIR)/CONTROL/control
 	mkdir -p $(PKG_IPK_DIR)/usr/sbin
 	cp $(PKG_BUILD_DIR)/openvpn $(PKG_IPK_DIR)/usr/sbin/
 	$(STRIP) $(PKG_IPK_DIR)/usr/sbin/*
