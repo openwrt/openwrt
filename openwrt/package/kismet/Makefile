@@ -96,8 +96,12 @@ $(PKG_BUILD_DIR)/kismet_server $(PKG_BUILD_DIR)/kismet_drone $(PKG_BUILD_DIR)/ki
 $(IPKG_SERVER): $(PKG_BUILD_DIR)/kismet_server
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_SERVER) kismet-server.control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
 	mkdir -p $(IDIR_SERVER)/etc
+	cp ./files/ap_manuf $(IDIR_SERVER)/etc/
+	cp ./files/client_manuf $(IDIR_SERVER)/etc/
 	cp ./files/kismet.conf $(IDIR_SERVER)/etc/
 	echo '/etc/kismet.conf' > $(IDIR_SERVER)/CONTROL/conffiles
+	echo '/etc/ap_manuf' >> $(IDIR_SERVER)/CONTROL/conffiles
+	echo '/etc/client_manuf' >> $(IDIR_SERVER)/CONTROL/conffiles
 	mkdir -p $(IDIR_SERVER)/usr/sbin
 	cp $< $(IDIR_SERVER)/usr/sbin/
 	$(STRIP) $(IDIR_SERVER)/usr/sbin/*
@@ -124,10 +128,14 @@ $(INFO_DRONE): $(IPKG_DRONE)
 $(IPKG_CLIENT): $(PKG_BUILD_DIR)/kismet_client
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_CLIENT) kismet-client.control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
 	mkdir -p $(IDIR_CLIENT)/etc
+	cp ./files/ap_manuf $(IDIR_CLIENT)/etc/
+	cp ./files/client_manuf $(IDIR_CLIENT)/etc/
 	cp ./files/kismet.conf $(IDIR_CLIENT)/etc/
 	cp ./files/kismet_ui.conf $(IDIR_CLIENT)/etc/
 	echo '/etc/kismet.conf' > $(IDIR_CLIENT)/CONTROL/conffiles
 	echo '/etc/kismet_ui.conf' >> $(IDIR_CLIENT)/CONTROL/conffiles
+	echo '/etc/ap_manuf' >> $(IDIR_CLIENT)/CONTROL/conffiles
+	echo '/etc/client_manuf' >> $(IDIR_CLIENT)/CONTROL/conffiles
 	mkdir -p $(IDIR_CLIENT)/usr/sbin
 	cp $< $(IDIR_CLIENT)/usr/sbin/
 	$(STRIP) $(IDIR_CLIENT)/usr/sbin/*
