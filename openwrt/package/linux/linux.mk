@@ -52,7 +52,6 @@ $(LINUX_DIR)/.unpacked: $(DL_DIR)/$(LINUX_SOURCE) $(DL_DIR)/$(LINUX_BINARY_WL_DR
 	touch $(LINUX_DIR)/.unpacked
 
 $(LINUX_DIR)/.patched: $(LINUX_DIR)/.unpacked
-	$(PATCH) $(LINUX_DIR) $(LINUX_PATCHES)
 	# copy kernel source which is maintained in openwrt via cvs
 	cp -a $(LINUX_KERNEL_SOURCE)/* $(LINUX_DIR)
 	# copy binary wlan driver
@@ -60,6 +59,7 @@ $(LINUX_DIR)/.patched: $(LINUX_DIR)/.unpacked
 	# copy proprietary et source
 	cp -a $(BUILD_DIR)/et/* $(LINUX_DIR)/drivers/net/et
 	cp -a $(BUILD_DIR)/et/*.h $(LINUX_DIR)/include/
+	$(PATCH) $(LINUX_DIR) $(LINUX_PATCHES)
 	$(SED) 's/@expr length/@-expr length/' $(LINUX_DIR)/Makefile 
 	touch $(LINUX_DIR)/.patched
 
