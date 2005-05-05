@@ -73,13 +73,14 @@ package-$(BR2_PACKAGE_WIRELESS_TOOLS) += wireless-tools
 package-$(BR2_PACKAGE_WOL) += wol
 package-$(BR2_PACKAGE_ZLIB) += zlib
 package-$(BR2_PACKAGE_DHCPFWD) += dhcp-forwarder
+package-$(BR2_PACKAGE_LIBGD) += libgd
 package-$(BR2_PACKAGE_LIBNET) += libnet
 package-$(BR2_PACKAGE_LIBMYSQLCLIENT) += mysql
 package-$(BR2_PACKAGE_LIBPCAP) += libpcap
 package-$(BR2_PACKAGE_LIBPNG) += libpng
 package-$(BR2_PACKAGE_LIBPQ) += postgresql
 
-DEV_LIBS:=tcp_wrappers glib ncurses openssl pcre popt zlib libnet libpcap mysql postgresql iptables matrixssl lzo gmp fuse portmap libelf uclibc++ speex libpng
+DEV_LIBS:=tcp_wrappers glib ncurses openssl pcre popt zlib libnet libpcap mysql postgresql iptables matrixssl lzo gmp fuse portmap libelf uclibc++ speex libpng libgd
 DEV_LIBS_COMPILE:=$(patsubst %,%-compile,$(DEV_LIBS))
 SDK_DEFAULT_PACKAGES:=busybox dnsmasq iptables wireless-tools dropbear bridge ipkg
 SDK_DEFAULT_COMPILE:=$(patsubst %,%-compile,$(SDK_DEFAULT_PACKAGES))
@@ -101,6 +102,7 @@ endif
 ifneq ($(BR2_PACKAGE_ASTERISK_MYSQL),)
 asterisk-compile: mysql-compile
 endif
+libgd-compile: libpng-compile
 screen-compile: ncurses-compile
 openswan-compile: gmp-compile
 nocatsplash-compile: glib-compile
