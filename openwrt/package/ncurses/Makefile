@@ -99,7 +99,7 @@ $(IPKG_LIBNCURSES): $(STAGING_DIR)/usr/lib/libncurses.so
 	cp -fpR $(STAGING_DIR)/usr/lib/lib{ncurses,panel}*.so.* $(IDIR_LIBNCURSES)/usr/lib/
 	$(STRIP) $(IDIR_LIBNCURSES)/usr/lib/*.so*
 	mkdir -p $(IDIR_LIBNCURSES)/usr/share/terminfo
-	for f in a/ansi d/dumb l/linux s/screen v/vt100 x/xterm x/xterm-color; do \
+	for f in a/ansi d/dumb l/linux s/screen v/vt100 v/vt102 x/xterm x/xterm-color; do \
 		mkdir -p $(IDIR_LIBNCURSES)/usr/share/terminfo/`dirname $${f}`; \
 		cp -fpR \
 			$(PKG_BUILD_DIR)/install/usr/share/terminfo/$${f} \
