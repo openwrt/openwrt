@@ -1,0 +1,6 @@
+config BR2_PACKAGE_SCREEN
+	tristate "screen"
+	default m if CONFIG_DEVEL
+	help
+	  Screen is a full-screen window manager that multiplexes a physical 
+	  terminal between several processes, typically interactive shells.
