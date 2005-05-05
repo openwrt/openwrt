@@ -101,6 +101,7 @@ endif
 ifneq ($(BR2_PACKAGE_ASTERISK_MYSQL),)
 asterisk-compile: mysql-compile
 endif
+screen-compile: ncurses-compile
 openswan-compile: gmp-compile
 nocatsplash-compile: glib-compile
 arpwatch-compile: libpcap-compile
