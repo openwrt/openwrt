@@ -698,12 +698,10 @@ static int __init wlcompat_init()
 	int found = 0, i;
 	char *devname = "eth0";
 	
-	while (!found && devname[3] < '3') {
-		devname[3]++;
-		
-		dev = dev_get_by_name(devname);
+	while (!found && (dev = dev_get_by_name(devname))) {
 		if ((wl_ioctl(dev, WLC_GET_MAGIC, &i, sizeof(i)) == 0) && i == WLC_IOCTL_MAGIC)
 			found = 1;
+		devname[3]++;
 	}
 	
 	if (!found) {
