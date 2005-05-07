@@ -32,16 +32,7 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 			--target=$(GNU_TARGET_NAME) \
 			--host=$(GNU_TARGET_NAME) \
 			--build=$(GNU_HOST_NAME) \
-			--prefix=/usr \
-			--exec-prefix=/usr \
-			--bindir=/usr/bin \
-			--sbindir=/usr/sbin \
-			--libexecdir=/usr/lib \
-			--datadir=/usr/share \
-			--infodir=/usr/share/info \
-			--mandir=/usr/share/man \
-			--localstatedir=/var \
-			--sysconfdir=/etc \
+			--prefix=$(STAGING_DIR)/usr \
 			--with-zlib=$(STAGING_DIR)/usr/ \
 			$(DISABLE_NLS) \
 	)
@@ -55,8 +46,9 @@ $(PKG_BUILD_DIR)/.libs/libpng.so: $(PKG_BUILD_DIR)/.configured
 
 $(STAGING_DIR)/usr/lib/libpng.so: $(PKG_BUILD_DIR)/.libs/libpng.so
 	$(MAKE) -C $(PKG_BUILD_DIR) \
-		DESTDIR="$(STAGING_DIR)" \
-		install-libLTLIBRARIES install-includeHEADERS install-binSCRIPTS
+		install
+#		DESTDIR="$(STAGING_DIR)" \
+#		install-libLTLIBRARIES install-includeHEADERS install-binSCRIPTS
 
 $(PKG_IPK): $(PKG_BUILD_DIR)/.libs/libpng.so
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_IPK_DIR) $(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
