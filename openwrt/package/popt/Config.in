@@ -7,3 +7,7 @@ config BR2_PACKAGE_POPT
 	  ftp://ftp.rpm.org/pub/rpm/dist/rpm-4.1.x/
 	  
 
+config BR2_PACKAGE_LIBPOPT
+	tristate
+	default BR2_PACKAGE_POPT
+
