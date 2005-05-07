@@ -36,15 +36,6 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.unpacked
 			--host=$(GNU_TARGET_NAME) \
 			--build=$(GNU_HOST_NAME) \
 			--prefix="$(STAGING_DIR)/usr" \
-			--exec-prefix=/usr \
-			--bindir=/usr/bin \
-			--sbindir=/usr/sbin \
-			--libexecdir=/usr/lib \
-			--datadir=/usr/share \
-			--infodir=/usr/share/info \
-			--mandir=/usr/share/man \
-			--localstatedir=/var \
-			--sysconfdir=/etc \
 			--disable-rpath \
 			--without-x \
 			--with-png=$(STAGING_DIR)/usr \
@@ -62,9 +53,7 @@ $(PKG_BUILD_DIR)/.libs/libgd.so: $(PKG_BUILD_DIR)/.configured
 
 $(STAGING_DIR)/usr/lib/libgd.so: $(PKG_BUILD_DIR)/.libs/libgd.so
 	$(MAKE) -C $(PKG_BUILD_DIR) \
-	DESTDIR="$(STAGING_DIR)" \
 	install
-	rm -f $(STAGING_DIR)/usr/lib/libgd*.la
 
 $(PKG_IPK): $(PKG_BUILD_DIR)/.libs/libgd.so
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_IPK_DIR) libgd.control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
