@@ -1,2 +1,2 @@
 #!/bin/sh
-/usr/sbin/rdate $(nvram get ntp_server)
+/usr/sbin/rdate $(/usr/sbin/nvram get ntp_server)
