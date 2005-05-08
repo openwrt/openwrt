@@ -234,7 +234,7 @@ sb_kattach()
 
 		regs = (uint32 *)REG_MAP(SB_ENUM_BASE, SB_CORE_SIZE);
 		cid = R_REG((uint32 *)regs);
-		if (((cid & CID_ID_MASK) == 0x4712) &&
+		if (((cid & (CID_ID_MASK | CID_PKG_MASK)) == 0x00104712) &&
 		    ((cid & CID_REV_MASK) <= 0x00020000)) {
 			uint32 *scc, val;
 

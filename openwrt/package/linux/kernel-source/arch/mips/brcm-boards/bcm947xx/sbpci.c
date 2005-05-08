@@ -245,7 +245,6 @@ sbpci_ban(uint16 core)
 	if (pci_banned < ARRAYSIZE(pci_ban))
 		pci_ban[pci_banned++] = core;
 }
-//#define CT4712_WR         1   /* Workaround for 4712 */
 
 int __init
 sbpci_init(void *sbh)
@@ -257,7 +256,6 @@ sbpci_init(void *sbh)
 	pci_config_regs *cfg;
 	void *regs;
 	char varname[8];
-	int CT4712_WR;
 	uint wlidx = 0;
 	uint16 vendor, core;
 	uint8 class, subclass, progif;
@@ -274,12 +272,6 @@ sbpci_init(void *sbh)
 		return -1;
 	sb_core_reset(sbh, 0);
 
-	/* In some board, */ 
-	if(nvram_match("boardtype", "bcm94710dev") || nvram_match("boardtype", "bcm94710ap")|| nvram_match("boardtype", "bcm94710r4")|| nvram_match("boardtype", "bcm94710r4")|| nvram_match("boardtype", "bcm95365r"))
-		CT4712_WR = 0;
-	else
-		CT4712_WR = 1;
-
 	boardflags = (uint32) getintvar(NULL, "boardflags");
 
 	if ((chip == BCM4310_DEVICE_ID) && (chiprev == 0))
@@ -291,7 +283,7 @@ sbpci_init(void *sbh)
 	 * floating.
 	 */
 	if (((chip == BCM4712_DEVICE_ID) && (chippkg == BCM4712SMALL_PKG_ID)) ||
-	    (boardflags & BFL_NOPCI) || CT4712_WR)
+	    (boardflags & BFL_NOPCI))
 		pci_disabled = TRUE;
 
 	/*
