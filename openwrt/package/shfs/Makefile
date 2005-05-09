@@ -7,9 +7,7 @@ PKG_VERSION := 0.35
 PKG_RELEASE := 2
 PKG_MD5SUM := 016f49d71bc32eee2b5d11fc1600cfbe
 
-PKG_SOURCE_URL := \
-	@SF/shfs \
-	http://nthill.free.fr/openwrt/sources/$(PKG_NAME)/
+PKG_SOURCE_URL := @SF/shfs
 PKG_SOURCE := $(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT := zcat
 PKG_SOURCE_DIR := 
@@ -17,12 +15,10 @@ PKG_SOURCE_DIR :=
 PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
-include $(TOPDIR)/package/templates.mk
+include $(TOPDIR)/package/rules.mk
 
 $(eval $(call PKG_template,KMOD_SHFS,kmod-shfs,$(LINUX_VERSION)+$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,SHFS_UTILS,shfs-utils,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
-
-include $(TOPDIR)/package/rules.mk
 
 $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.prepared
 	$(MAKE) -C $(PKG_BUILD_DIR) \
