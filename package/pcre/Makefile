@@ -7,23 +7,16 @@ PKG_VERSION:=5.0
 PKG_RELEASE:=3
 PKG_MD5SUM:=53976b62032fd5c76678274e5fd196b4
 
-PKG_SOURCE_URL:= \
-	ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/ \
-	http://nthill.free.fr/openwrt/sources/$(PKG_NAME)/
+PKG_SOURCE_URL:=ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
-include $(TOPDIR)/package/templates.mk
-
-$(eval $(call PKG_template,LIBPCRE,libpcre,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
-
 include $(TOPDIR)/package/rules.mk
 
-COMPILE_TARGETS += install-dev
-CLEAN_TARGETS += uninstall-dev
+$(eval $(call PKG_template,LIBPCRE,libpcre,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status}; \
@@ -90,3 +83,6 @@ uninstall-dev:
 	  $(STAGING_DIR)/usr/lib/libpcre* \
 	  $(STAGING_DIR)/usr/lib/pkgconfig/libpcre.pc \
 	  $(STAGING_DIR)/usr/share/man/man*/pcre* \
+
+compile: install-dev
+clean: uninstall-dev

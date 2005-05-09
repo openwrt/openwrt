@@ -7,16 +7,14 @@ PKG_VERSION:=2.3.3
 PKG_RELEASE:=1
 PKG_MD5SUM:=06bf140893e7cb120aaa9372d10a0100
 
-PKG_SOURCE_URL:= \
-	http://www.snort.org/dl/current/ \
-	http://nthill.free.fr/openwrt/sources/$(PKG_NAME)/
+PKG_SOURCE_URL:=http://www.snort.org/dl/current/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
-include $(TOPDIR)/package/templates.mk
+include $(TOPDIR)/package/rules.mk
 
 PKG_CONFIGURE_OPTS := \
 	--target=$(GNU_TARGET_NAME) \
@@ -143,8 +141,6 @@ $(eval $(call PKG_build,SNORT_BASIC,snort,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH))
 $(eval $(call PKG_build,SNORT_MYSQL,snort-mysql,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_build,SNORT_PGSQL,snort-pgsql,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_build,SNORT_CUSTOM,snort-custom,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
-
-include $(TOPDIR)/package/rules.mk
 
 $(PKG_BUILD_DIR)/.built: $(BUILD_TARGETS)
 	touch $(PKG_BUILD_DIR)/.built
