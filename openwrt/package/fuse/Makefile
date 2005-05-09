@@ -7,25 +7,18 @@ PKG_VERSION:=2.2.1
 PKG_RELEASE:=1
 PKG_MD5SUM:=250d89b9c7b6ecf531df60c67f75737d
 
-PKG_SOURCE_URL:= \
-	@SF/$(PKG_NAME) \
-	http://nthill.free.fr/openwrt/sources/$(PKG_NAME)/
+PKG_SOURCE_URL:=@SF/$(PKG_NAME)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
-include $(TOPDIR)/package/templates.mk
+include $(TOPDIR)/package/rules.mk
 
 $(eval $(call PKG_template,KMOD_FUSE,kmod-fuse,$(LINUX_VERSION)+$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,LIBFUSE,libfuse,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,FUSE_UTILS,fuse-utils,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
-
-COMPILE_TARGETS += install-dev
-CLEAN_TARGETS += uninstall-dev
-
-include $(TOPDIR)/package/rules.mk
 
 $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 	(cd $(PKG_BUILD_DIR); \
@@ -83,7 +76,6 @@ $(IPKG_KMOD_FUSE): $(IDIR_KMOD_FUSE)/CONTROL/control $(PKG_BUILD_DIR)/.installed
 	mkdir -p $(IDIR_KMOD_FUSE)/lib/modules/$(LINUX_VERSION)
 	cp -fpR $(PKG_INSTALL_DIR)/lib/modules/$(LINUX_VERSION)/kernel/fs/fuse/fuse.o \
 	 $(IDIR_KMOD_FUSE)/lib/modules/$(LINUX_VERSION)/
-	$(RSTRIP_KMOD) $(IDIR_KMOD_FUSE)
 	mkdir -p $(PACKAGE_DIR)
 	$(IPKG_BUILD) $(IDIR_KMOD_FUSE) $(PACKAGE_DIR)
 
@@ -115,3 +107,6 @@ uninstall-dev:
 	rm -rf $(STAGING_DIR)/usr/include/fuse*
 	rm -rf $(STAGING_DIR)/usr/lib/libfuse.{a,so*}
 	rm -rf $(STAGING_DIR)/usr/lib/pkgconfig/fuse.pc
+
+install: install-dev
+clean: uninstall-dev

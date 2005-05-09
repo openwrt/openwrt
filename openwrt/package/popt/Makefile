@@ -16,14 +16,9 @@ PKG_CAT:=zcat
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
-include $(TOPDIR)/package/templates.mk
-
-$(eval $(call PKG_template,LIBPOPT,libpopt,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
-
 include $(TOPDIR)/package/rules.mk
 
-COMPILE_TARGETS += install-dev
-CLEAN_TARGETS += uninstall-dev
+$(eval $(call PKG_template,LIBPOPT,libpopt,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
@@ -79,3 +74,6 @@ uninstall-dev:
 	-$(MAKE) -C $(PKG_BUILD_DIR) \
 		DESTDIR="$(STAGING_DIR)" \
 		uninstall
+
+compile: install-dev
+clean: uninstall-dev
