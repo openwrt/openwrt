@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME := tinc
-PKG_VERSION := 1.0.3
+PKG_VERSION := 1.0.4
 PKG_RELEASE := 1
-PKG_MD5SUM := 5dd1acf7d784e29aae78c31a2630fccd
+PKG_MD5SUM := 63887373dd763f8d90cecc5a3616c363
 
 PKG_SOURCE_SITE := http://www.tinc-vpn.org/packages
 PKG_SOURCE_FILE := $(PKG_NAME)-$(PKG_VERSION).tar.gz
