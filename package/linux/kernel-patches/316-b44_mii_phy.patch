@@ -1,0 +1,77 @@
+--- linux-2.4.30.old/drivers/net/b44.c	2005-05-01 23:30:22.000000000 +0400
++++ linux-2.4.30/drivers/net/b44.c	2005-05-10 16:51:24.410654488 +0400
+@@ -343,17 +343,14 @@
+ 	bw32(B44_IMASK, bp->imask);
+ }
+ 
+-static int b44_readphy(struct b44 *bp, int reg, u32 *val)
++static int __b44_readphy(struct b44 *bp, int phy_addr, int reg, u32 *val)
+ {
+ 	int err;
+ 
+-	if (bp->phy_addr == B44_PHY_ADDR_NO_PHY)
+-		return 0;
+-
+ 	bw32(B44_EMAC_ISTAT, EMAC_INT_MII);
+ 	bw32(B44_MDIO_DATA, (MDIO_DATA_SB_START |
+ 			     (MDIO_OP_READ << MDIO_DATA_OP_SHIFT) |
+-			     (bp->phy_addr << MDIO_DATA_PMD_SHIFT) |
++			     (phy_addr << MDIO_DATA_PMD_SHIFT) |
+ 			     (reg << MDIO_DATA_RA_SHIFT) |
+ 			     (MDIO_TA_VALID << MDIO_DATA_TA_SHIFT)));
+ 	err = b44_wait_bit(bp, B44_EMAC_ISTAT, EMAC_INT_MII, 100, 0);
+@@ -362,21 +359,34 @@
+ 	return err;
+ }
+ 
+-static int b44_writephy(struct b44 *bp, int reg, u32 val)
++static int b44_readphy(struct b44 *bp, int reg, u32 *val)
+ {
+ 	if (bp->phy_addr == B44_PHY_ADDR_NO_PHY)
+ 		return 0;
+ 
++	return __b44_readphy(bp, bp->phy_addr, reg, val);
++}
++
++static int __b44_writephy(struct b44 *bp, int phy_addr, int reg, u32 val)
++{
+ 	bw32(B44_EMAC_ISTAT, EMAC_INT_MII);
+ 	bw32(B44_MDIO_DATA, (MDIO_DATA_SB_START |
+ 			     (MDIO_OP_WRITE << MDIO_DATA_OP_SHIFT) |
+-			     (bp->phy_addr << MDIO_DATA_PMD_SHIFT) |
++			     (phy_addr << MDIO_DATA_PMD_SHIFT) |
+ 			     (reg << MDIO_DATA_RA_SHIFT) |
+ 			     (MDIO_TA_VALID << MDIO_DATA_TA_SHIFT) |
+ 			     (val & MDIO_DATA_DATA)));
+ 	return b44_wait_bit(bp, B44_EMAC_ISTAT, EMAC_INT_MII, 100, 0);
+ }
+ 
++static int b44_writephy(struct b44 *bp, int reg, u32 val)
++{
++	if (bp->phy_addr == B44_PHY_ADDR_NO_PHY)
++		return 0;
++		
++	return __b44_writephy(bp, bp->phy_addr, reg, val);
++}
++
+ static int b44_phy_reset(struct b44 *bp)
+ {
+ 	u32 val;
+@@ -1701,7 +1711,7 @@
+ 		u32 mii_regval;
+ 
+ 		spin_lock_irq(&bp->lock);
+-		err = b44_readphy(bp, data->reg_num & 0x1f, &mii_regval);
++		err = __b44_readphy(bp, data->phy_id & 0x1f, data->reg_num & 0x1f, &mii_regval);
+ 		spin_unlock_irq(&bp->lock);
+ 
+ 		data->val_out = mii_regval;
+@@ -1714,7 +1724,7 @@
+ 			return -EPERM;
+ 
+ 		spin_lock_irq(&bp->lock);
+-		err = b44_writephy(bp, data->reg_num & 0x1f, data->val_in);
++		err = __b44_writephy(bp, data->phy_id & 0x1f, data->reg_num & 0x1f, data->val_in);
+ 		spin_unlock_irq(&bp->lock);
+ 
+ 		return err;
