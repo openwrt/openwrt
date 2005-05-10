@@ -93,6 +93,7 @@ install: $(patsubst %,%-install,$(package-y))
 ifeq ($(BR2_PACKAGE_OPENVPN_LZO),y)
 openvpn-compile: lzo-compile
 endif
+asterisk-compile: openssl-compile
 ifneq ($(BR2_PACKAGE_ASTERISK_SPEEX),)
 asterisk-compile: speex-compile
 endif
