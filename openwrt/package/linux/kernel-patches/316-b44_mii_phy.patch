@@ -75,3 +75,15 @@
  		spin_unlock_irq(&bp->lock);
  
  		return err;
+@@ -1919,6 +1929,11 @@
+ 		printk("%2.2x%c", dev->dev_addr[i],
+ 		       i == 5 ? '\n' : ':');
+ 
++	/* Initialize phy */
++	spin_lock_irq(&bp->lock);
++	b44_chip_reset(bp);
++	spin_unlock_irq(&bp->lock);
++	
+ 	return 0;
+ 
+ err_out_iounmap:
