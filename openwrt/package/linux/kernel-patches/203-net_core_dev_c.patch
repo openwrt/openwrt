@@ -1,14 +1,24 @@
---- linux-mips-cvs-21012005/net/core/dev.c	2004-04-16 05:14:21.000000000 +0200
-+++ linux-broadcom/net/core/dev.c	2005-01-26 20:06:32.000000000 +0100
-@@ -2295,6 +2295,7 @@
- 			}
+--- linux-2.4.30/net/core/dev.c	2005-04-04 05:42:20.000000000 +0400
++++ linux/net/core/dev.c	2005-05-10 14:49:27.809927172 +0400
+@@ -2216,6 +2220,9 @@
+ 			    cmd == SIOCBONDSLAVEINFOQUERY ||
+ 			    cmd == SIOCBONDINFOQUERY ||
+ 			    cmd == SIOCBONDCHANGEACTIVE ||
++#ifdef CONFIG_BCM4710
++			    cmd == SIOCETHTOOL ||
++#endif
+ 			    cmd == SIOCGMIIPHY ||
+ 			    cmd == SIOCGMIIREG ||
+ 			    cmd == SIOCSMIIREG ||
+@@ -2312,6 +2319,7 @@
  			return ret;
  
-+#ifndef CONFIG_BCM4710
  		case SIOCETHTOOL:
++#ifndef CONFIG_BCM4710
  			dev_load(ifr.ifr_name);
  			rtnl_lock();
-@@ -2308,6 +2309,7 @@
+ 			ret = dev_ethtool(&ifr);
+@@ -2324,6 +2332,7 @@
  					ret = -EFAULT;
  			}
  			return ret;
