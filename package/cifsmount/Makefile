@@ -7,26 +7,20 @@ PKG_VERSION:=1.5
 PKG_RELEASE:=2
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/cifsmount
-PKG_IPK_DIR:=$(PKG_BUILD_DIR)
-PKG_IPK:=$(PACKAGE_DIR)/$(PKG_NAME)_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
 
-$(PKG_BUILD_DIR)/sbin/mount.cifs:
-	mkdir -p $(PKG_BUILD_DIR)/sbin
-	$(TARGET_CC) -o $@ mount.cifs.c
-	$(STRIP) $@
+include $(TOPDIR)/package/rules.mk
 
-$(PKG_IPK): $(PKG_BUILD_DIR)/sbin/mount.cifs
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_IPK_DIR) $(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
-	$(IPKG_BUILD) $(PKG_IPK_DIR) $(PACKAGE_DIR)
+$(eval $(call PKG_template,CIFSMOUNT,$(PKG_NAME),$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
-$(IPKG_STATE_DIR)/info/$(PKG_NAME).list:
-	$(IPKG) install $(PKG_IPK)
+$(PKG_BUILD_DIR)/.prepared:
+	mkdir -p $@
 
-source:
-prepare:
-compile: $(PKG_IPK)
-install: $(IPKG_STATE_DIR)/info/$(PKG_NAME).list
+$(PKG_BUILD_DIR)/.built:
+	$(TARGET_CC) -o $(PKG_BUILD_DIR)/mount.cifs mount.cifs.c
+	$(STRIP) $(PKG_BUILD_DIR)/mount.cifs
+	touch $@
 
-clean:
-	rm -rf $(PKG_BUILD_DIR)
-	rm -f $(PKG_IPK)
+$(IPKG_CIFSMOUNT):
+	mkdir -p $(IDIR_CIFSMOUNT)/sbin
+	install -m 0755 $(PKG_BUILD_DIR)/mount.cifs $(IDIR_CIFSMOUNT)/sbin/mount.cifs
+	$(IPKG_BUILD) $(IDIR_CIFSMOUNT) $(PACKAGE_DIR)
