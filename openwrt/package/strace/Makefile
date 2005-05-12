@@ -13,18 +13,11 @@ PKG_CAT:=bzcat
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 
-IPKG_STRACE:=$(PACKAGE_DIR)/$(PKG_NAME)_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
-IDIR_STRACE:=$(PKG_BUILD_DIR)/ipkg/$(PKG_NAME)
-INFO_STRACE:=$(IPKG_STATE_DIR)/info/$(PKG_NAME).list
+include $(TOPDIR)/package/rules.mk
 
-$(DL_DIR)/$(PKG_SOURCE):
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE) $(PKG_MD5SUM) $(PKG_SOURCE_URL)
+$(eval $(call PKG_template,STRACE,strace,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
-$(PKG_BUILD_DIR)/.prepared: $(DL_DIR)/$(PKG_SOURCE)
-	$(PKG_CAT) $(DL_DIR)/$(PKG_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
-	touch $(PKG_BUILD_DIR)/.prepared
-
-$(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
+$(PKG_BUILD_DIR)/.configured:
 	(cd $(PKG_BUILD_DIR); rm -rf config.cache; \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
@@ -53,25 +46,13 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 	);
 	touch $(PKG_BUILD_DIR)/.configured
 
-$(PKG_BUILD_DIR)/$(PKG_NAME): $(PKG_BUILD_DIR)/.configured
+$(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CC=$(TARGET_CC)
+	touch $@
 
-$(IPKG_STRACE): $(PKG_BUILD_DIR)/$(PKG_NAME)
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_STRACE) $(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
+$(IPKG_STRACE): 
 	mkdir -p $(IDIR_STRACE)/usr/sbin
 	cp $(PKG_BUILD_DIR)/$(PKG_NAME) $(IDIR_STRACE)/usr/sbin/
 	$(STRIP) $(IDIR_STRACE)/usr/sbin/*
-	mkdir -p $(PACKAGE_DIR)
 	$(IPKG_BUILD) $(IDIR_STRACE) $(PACKAGE_DIR)
-
-$(INFO_STRACE): $(IPKG_STRACE)
-	$(IPKG) install $(IPKG_STRACE)
-
-source: $(DL_DIR)/$(PKG_SOURCE)
-prepare: $(PKG_BUILD_DIR)/.prepared
-compile: $(IPKG_STRACE)
-install: $(INFO_STRACE)
-
-clean:
-	rm -rf $(PKG_BUILD_DIR) $(IPKG_STRACE)
