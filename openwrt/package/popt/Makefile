@@ -7,9 +7,7 @@ PKG_VERSION:=1.7
 PKG_RELEASE:=4
 PKG_MD5SUM:=5988e7aeb0ae4dac8d83561265984cc9
 
-PKG_SOURCE_URL:= \
-	ftp://ftp.rpm.org/pub/rpm/dist/rpm-4.1.x/ \
-	http://nthill.free.fr/openwrt/sources/$(PKG_NAME)/
+PKG_SOURCE_URL:=ftp://ftp.rpm.org/pub/rpm/dist/rpm-4.1.x/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
@@ -20,7 +18,7 @@ include $(TOPDIR)/package/rules.mk
 
 $(eval $(call PKG_template,LIBPOPT,libpopt,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
-$(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
+$(PKG_BUILD_DIR)/.configured:
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
@@ -51,7 +49,7 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 	);
 	touch $(PKG_BUILD_DIR)/.configured
 
-$(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
+$(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR)
 	touch $(PKG_BUILD_DIR)/.built
 
@@ -61,11 +59,10 @@ $(STAGING_DIR)/usr/lib/libpopt.so: $(PKG_BUILD_DIR)/.built
 		install
 	rm -f $(STAGING_DIR)/usr/lib/libpopt.la
 
-$(IPKG_LIBPOPT): $(IDIR_LIBPOPT)/CONTROL/control $(STAGING_DIR)/usr/lib/libpopt.so
+$(IPKG_LIBPOPT):
 	mkdir -p $(IDIR_LIBPOPT)/usr/lib
-	cp -fpR $(STAGING_DIR)/usr/lib/libpopt.so.* $(IDIR_LIBPOPT)/usr/lib/
+	cp -fpR $(PKG_BUILD_DIR)/.libs/libpopt.so.* $(IDIR_LIBPOPT)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBPOPT)
-	mkdir -p $(PACKAGE_DIR)
 	$(IPKG_BUILD) $(IDIR_LIBPOPT) $(PACKAGE_DIR)
 
 install-dev: $(STAGING_DIR)/usr/lib/libpopt.so
