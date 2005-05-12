@@ -52,7 +52,8 @@ $(PKG_BUILD_DIR)/.built:
 	  	ARPDIR=/etc/arpwatch \
 		CCOPT="$(TARGET_CFLAGS)" \
 		INCLS="-I. -I$(STAGING_DIR)/usr/include" \
-		LIBS="-L$(STAGING_DIR)/usr/lib -lpcap" \
+		LIBS="-L$(STAGING_DIR)/usr/lib -lpcap"
+	touch $@
 
 $(IPKG_ARPWATCH):
 	mkdir -p $(IDIR_ARPWATCH)/usr/sbin

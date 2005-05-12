@@ -17,6 +17,7 @@ $(eval $(call PKG_template,AICCU,aiccu,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(PKG_BUILD_DIR)/.built:
 	$(SED) "s,strip,$(STRIP)," $(PKG_BUILD_DIR)/unix-console/Makefile
 	$(MAKE) CC=$(TARGET_CC) CFLAGS="$(TARGET_CFLAGS) -D_GNU_SOURCE" DEBUG=0 -C $(PKG_BUILD_DIR)
+	touch $@
 
 $(IPKG_AICCU):
 	mkdir -p $(IDIR_AICCU)/usr/sbin $(IDIR_AICCU)/etc/init.d
