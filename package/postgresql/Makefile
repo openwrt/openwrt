@@ -83,10 +83,18 @@ $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 	touch $(PKG_BUILD_DIR)/.built
 
 $(STAGING_DIR)/usr/lib/libpq.so: $(PKG_BUILD_DIR)/.built
-	$(MAKE) -C "$(PKG_BUILD_DIR)" \
+	$(MAKE) -C "$(PKG_BUILD_DIR)/src" \
 		DESTDIR="$(STAGING_DIR)" \
 		install-all-headers
-	cp -a $(PKG_BUILD_DIR)/src/interfaces/libpq/libpq.so* $(STAGING_DIR)/usr/lib
+	$(MAKE) -C "$(PKG_BUILD_DIR)/src/include" \
+		DESTDIR="$(STAGING_DIR)" \
+		install
+	$(MAKE) -C "$(PKG_BUILD_DIR)/src/interfaces/libpq" \
+		DESTDIR="$(STAGING_DIR)" \
+		install
+	mkdir -p $(STAGING_DIR)/usr/lib
+	cp -a $(PKG_BUILD_DIR)/src/interfaces/libpq/libpq.so* $(STAGING_DIR)/usr/lib/
+	cp $(PKG_BUILD_DIR)/src/interfaces/libpq/libpq.a $(STAGING_DIR)/usr/lib/
 
 $(IPKG_LIBPQ): $(STAGING_DIR)/usr/lib/libpq.so
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_LIBPQ) ./ipkg/libpq.control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
