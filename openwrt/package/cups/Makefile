@@ -59,6 +59,7 @@ $(PKG_BUILD_DIR)/.built:
 	$(MAKE) STRIP=$(STRIP) DSTROOT=$(PKG_INSTALL_DIR) -C $(PKG_BUILD_DIR) install
 	cp -a $(PKG_INSTALL_DIR)/usr/lib/* $(STAGING_DIR)/lib/
 	cp -a $(PKG_INSTALL_DIR)/usr/include/* $(STAGING_DIR)/include/
+	touch $@
 
 $(IPKG_CUPS):
 	cp -a $(PKG_INSTALL_DIR)/* $(IDIR_CUPS)/

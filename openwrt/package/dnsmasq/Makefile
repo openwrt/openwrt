@@ -19,6 +19,7 @@ $(eval $(call PKG_template,DNSMASQ,$(PKG_NAME),$(PKG_VERSION)-$(PKG_RELEASE),$(A
 $(PKG_BUILD_DIR)/.built:
 	$(MAKE) CC=$(TARGET_CC) CFLAGS="$(TARGET_CFLAGS)" \
 		BINDIR=/usr/sbin MANDIR=/usr/man -C $(PKG_BUILD_DIR)
+	touch $@
 
 $(IPKG_DNSMASQ):
 	mkdir -p $(IDIR_DNSMASQ)/usr/sbin
