@@ -20,7 +20,7 @@ include $(TOPDIR)/package/rules.mk
 $(eval $(call PKG_template,KMOD_SHFS,kmod-shfs,$(LINUX_VERSION)+$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,SHFS_UTILS,shfs-utils,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
-$(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.prepared
+$(PKG_BUILD_DIR)/.built: 
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 	  OFLAGS="$(TARGET_CFLAGS)" \
 	  CC="$(TARGET_CC)" \
@@ -28,30 +28,25 @@ $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.prepared
 	  KERNEL="$(LINUX_VERSION)" \
 	  KERNEL_SOURCES="$(LINUX_DIR)" \
 	 all
-	touch $(PKG_BUILD_DIR)/.built
-
-$(PKG_BUILD_DIR)/.installed: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 	  ROOT="$(PKG_INSTALL_DIR)" \
 	  KERNEL="$(LINUX_VERSION)" \
 	  KERNEL_SOURCES="$(LINUX_DIR)" \
 	 install
-	touch $(PKG_BUILD_DIR)/.installed
+	touch $(PKG_BUILD_DIR)/.built
 
-$(IPKG_KMOD_SHFS): $(IDIR_KMOD_SHFS)/CONTROL/control $(PKG_BUILD_DIR)/.installed
+$(IPKG_KMOD_SHFS):
 	install -m0755 -d $(IDIR_KMOD_SHFS)/lib/modules/$(LINUX_VERSION)
 	cp -fpR $(PKG_INSTALL_DIR)/lib/modules/$(LINUX_VERSION)/kernel/fs/shfs/shfs.o \
 	 $(IDIR_KMOD_SHFS)/lib/modules/$(LINUX_VERSION)/
 	$(RSTRIP_KMOD) $(IDIR_KMOD_SHFS)
-	mkdir -p $(PACKAGE_DIR)
 	$(IPKG_BUILD) $(IDIR_KMOD_SHFS) $(PACKAGE_DIR)
 
-$(IPKG_SHFS_UTILS): $(IDIR_SHFS_UTILS)/CONTROL/control $(PKG_BUILD_DIR)/.installed
+$(IPKG_SHFS_UTILS):
 	install -m0755 -d $(IDIR_SHFS_UTILS)/usr/sbin
 	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/shfs{,u}mount $(IDIR_SHFS_UTILS)/usr/sbin/
 	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/mount.shfs $(IDIR_SHFS_UTILS)/usr/sbin/
 	$(RSTRIP) $(IDIR_SHFS_UTILS)
-	mkdir -p $(PACKAGE_DIR)
 	$(IPKG_BUILD) $(IDIR_SHFS_UTILS) $(PACKAGE_DIR)
 
