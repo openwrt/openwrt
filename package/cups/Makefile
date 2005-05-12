@@ -12,19 +12,14 @@ PKG_SOURCE_URL:=http://ftp.funet.fi/pub/mirrors/ftp.easysw.com/ftp.easysw.com/pu
 	ftp://ftp3.easysw.com/pub/cups/$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-source.tar.bz2
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 PKG_CAT:=bzcat
-PKG_IPK:=$(PACKAGE_DIR)/$(PKG_NAME)_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
-PKG_IPK_DIR:=$(PKG_BUILD_DIR)/ipkg
 
-$(DL_DIR)/$(PKG_SOURCE):
-	 $(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE) $(PKG_MD5SUM) $(PKG_SOURCE_URL)
+include $(TOPDIR)/package/rules.mk
 
-$(PKG_BUILD_DIR)/.patched: $(DL_DIR)/$(PKG_SOURCE)
-	$(PKG_CAT) $(DL_DIR)/$(PKG_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
-	$(PATCH) $(PKG_BUILD_DIR) ./patches
-	touch $(PKG_BUILD_DIR)/.patched
+$(eval $(call PKG_template,CUPS,$(PKG_NAME),$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
-$(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.patched
+$(PKG_BUILD_DIR)/.configured:
 	(cd $(PKG_BUILD_DIR); rm -rf config.cache; \
 		ac_cv_path_STRIP="$(STRIP)" \
 		$(TARGET_CONFIGURE_OPTS) \
@@ -57,47 +52,35 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.patched
 		--disable-ssl \
 		--disable-slp \
 	);
-	touch  $(PKG_BUILD_DIR)/.configured
+	touch $@
 
-
-$(PKG_IPK_DIR)/usr/sbin/cupsd: $(PKG_BUILD_DIR)/.configured
+$(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR)
-	$(MAKE) STRIP=$(STRIP) DSTROOT=$(PKG_IPK_DIR) -C $(PKG_BUILD_DIR) install
-	cp -a $(PKG_IPK_DIR)/usr/lib/* $(STAGING_DIR)/lib/
-	cp -a $(PKG_IPK_DIR)/usr/include/* $(STAGING_DIR)/include/
+	$(MAKE) STRIP=$(STRIP) DSTROOT=$(PKG_INSTALL_DIR) -C $(PKG_BUILD_DIR) install
+	cp -a $(PKG_INSTALL_DIR)/usr/lib/* $(STAGING_DIR)/lib/
+	cp -a $(PKG_INSTALL_DIR)/usr/include/* $(STAGING_DIR)/include/
 
-$(PKG_IPK): $(PKG_IPK_DIR)/usr/sbin/cupsd
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_IPK_DIR) $(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
-	rm -f $(PKG_IPK_DIR)/usr/bin/cups-config
-	rm -f $(PKG_IPK_DIR)/usr/lib/*.a
-	rm -f $(PKG_IPK_DIR)/usr/share/doc/cups/* || true
-	rm -rf $(PKG_IPK_DIR)/usr/share/doc/cups/??
-	rm -rf $(PKG_IPK_DIR)/usr/share/locale
-	rm -rf $(PKG_IPK_DIR)/usr/share/cups/banners
-	rm -rf $(PKG_IPK_DIR)/usr/share/cups/charsets
-	rm -rf $(PKG_IPK_DIR)/usr/share/cups/fonts
-	rm -rf $(PKG_IPK_DIR)/usr/share/cups/model
-	rm -rf $(PKG_IPK_DIR)/usr/share/cups/data
-	rm -rf $(PKG_IPK_DIR)/usr/share/cups/templates/??
-	rm -rf $(PKG_IPK_DIR)/usr/include
-	rm -rf $(PKG_IPK_DIR)/var
-	rm -rf $(PKG_IPK_DIR)/etc/*.d
-	$(STRIP) $(PKG_IPK_DIR)/usr/bin/*
-	$(STRIP) $(PKG_IPK_DIR)/usr/lib/cups/backend/*
-	$(STRIP) $(PKG_IPK_DIR)/usr/lib/cups/cgi-bin/*
-	$(STRIP) $(PKG_IPK_DIR)/usr/lib/cups/daemon/*
-	cp -a ./files/* $(PKG_IPK_DIR)/
-	find $(PKG_IPK_DIR) -name CVS | xargs rm -rf
-	$(IPKG_BUILD) $(PKG_IPK_DIR) $(PACKAGE_DIR)
+$(IPKG_CUPS):
+	cp -a $(PKG_INSTALL_DIR)/* $(IDIR_CUPS)/
+	rm -f $(IDIR_CUPS)/usr/bin/cups-config
+	rm -f $(IDIR_CUPS)/usr/lib/*.a
+	rm -f $(IDIR_CUPS)/usr/share/doc/cups/* || true
+	rm -rf $(IDIR_CUPS)/usr/share/doc/cups/??
+	rm -rf $(IDIR_CUPS)/usr/share/locale
+	rm -rf $(IDIR_CUPS)/usr/share/cups/banners
+	rm -rf $(IDIR_CUPS)/usr/share/cups/charsets
+	rm -rf $(IDIR_CUPS)/usr/share/cups/fonts
+	rm -rf $(IDIR_CUPS)/usr/share/cups/model
+	rm -rf $(IDIR_CUPS)/usr/share/cups/data
+	rm -rf $(IDIR_CUPS)/usr/share/cups/templates/??
+	rm -rf $(IDIR_CUPS)/usr/include
+	rm -rf $(IDIR_CUPS)/var
+	rm -rf $(IDIR_CUPS)/etc/*.d
+	$(STRIP) $(IDIR_CUPS)/usr/bin/*
+	$(STRIP) $(IDIR_CUPS)/usr/lib/cups/backend/*
+	$(STRIP) $(IDIR_CUPS)/usr/lib/cups/cgi-bin/*
+	$(STRIP) $(IDIR_CUPS)/usr/lib/cups/daemon/*
+	cp -a ./files/* $(IDIR_CUPS)/
+	find $(IDIR_CUPS) -name CVS | xargs rm -rf
+	$(IPKG_BUILD) $(IDIR_CUPS) $(PACKAGE_DIR)
 
-$(IPKG_STATE_DIR)/info/$(PKG_NAME).list:
-	$(IPKG) install $(PKG_IPK)
-
-source: $(DL_DIR)/$(PKG_SOURCE)
-prepare: $(PKG_BUILD_DIR)/.patched
-compile: $(PKG_IPK)
-install: $(IPKG_STATE_DIR)/info/$(PKG_NAME).list
-
-clean:
-	rm -rf $(PKG_BUILD_DIR)
-	rm -f $(PKG_IPK)
