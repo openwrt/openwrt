@@ -22,11 +22,6 @@ IPKG_LIBPQ:=$(PACKAGE_DIR)/libpq_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
 IDIR_LIBPQ:=$(PKG_BUILD_DIR)/ipkg
 INFO_LIBPQ:=$(IPKG_STATE_DIR)/info/libpq.list
 
-EXTRA_CFLAGS:=
-ifeq ($(BR2_GCC_3_4),y)
-	EXTRA_CFLAGS += -fno-unit-at-a-time
-endif
-
 $(DL_DIR)/$(PKG_SOURCE):
 	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE) $(PKG_MD5SUM) $(PKG_SOURCE_URL)
 
@@ -82,14 +77,16 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 	touch $(PKG_BUILD_DIR)/.configured
 
 $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
-	$(MAKE) -C "$(PKG_BUILD_DIR)" \
-		$(TARGET_CONFIGURE_OPTS)
+	$(MAKE) -C "$(PKG_BUILD_DIR)/src" \
+		$(TARGET_CONFIGURE_OPTS) \
+		submake-libpq
 	touch $(PKG_BUILD_DIR)/.built
 
 $(STAGING_DIR)/usr/lib/libpq.so: $(PKG_BUILD_DIR)/.built
 	$(MAKE) -C "$(PKG_BUILD_DIR)" \
 		DESTDIR="$(STAGING_DIR)" \
-		install
+		install-all-headers
+	cp -a $(PKG_BUILD_DIR)/src/interfaces/libpq/libpq.so* $(STAGING_DIR)/usr/lib
 
 $(IPKG_LIBPQ): $(STAGING_DIR)/usr/lib/libpq.so
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_LIBPQ) ./ipkg/libpq.control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
