@@ -20,7 +20,7 @@ $(eval $(call PKG_template,KMOD_FUSE,kmod-fuse,$(LINUX_VERSION)+$(PKG_VERSION)-$
 $(eval $(call PKG_template,LIBFUSE,libfuse,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,FUSE_UTILS,fuse-utils,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
-$(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
+$(PKG_BUILD_DIR)/.configured:
 	(cd $(PKG_BUILD_DIR); \
 		rm -rf config.{cache,status} ; \
 		touch configure.in ; \
@@ -61,40 +61,34 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 	);
 	touch $(PKG_BUILD_DIR)/.configured
 
-$(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
+$(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR)
-	touch $(PKG_BUILD_DIR)/.built
-
-$(PKG_BUILD_DIR)/.installed: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		install
-	touch $(PKG_BUILD_DIR)/.installed
+	touch $(PKG_BUILD_DIR)/.built
 
-$(IPKG_KMOD_FUSE): $(IDIR_KMOD_FUSE)/CONTROL/control $(PKG_BUILD_DIR)/.installed
+$(IPKG_KMOD_FUSE):
 	mkdir -p $(IDIR_KMOD_FUSE)/lib/modules/$(LINUX_VERSION)
 	cp -fpR $(PKG_INSTALL_DIR)/lib/modules/$(LINUX_VERSION)/kernel/fs/fuse/fuse.o \
 	 $(IDIR_KMOD_FUSE)/lib/modules/$(LINUX_VERSION)/
-	mkdir -p $(PACKAGE_DIR)
 	$(IPKG_BUILD) $(IDIR_KMOD_FUSE) $(PACKAGE_DIR)
 
-$(IPKG_LIBFUSE): $(IDIR_LIBFUSE)/CONTROL/control $(PKG_BUILD_DIR)/.installed
+$(IPKG_LIBFUSE):
 	mkdir -p $(IDIR_LIBFUSE)/usr/lib
 	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libfuse.so.* $(IDIR_LIBFUSE)/usr/lib/
 	chmod 0644 $(IDIR_LIBFUSE)/usr/lib/lib*.so*
 	$(RSTRIP) $(IDIR_LIBFUSE)
-	mkdir -p $(PACKAGE_DIR)
 	$(IPKG_BUILD) $(IDIR_LIBFUSE) $(PACKAGE_DIR)
 
-$(IPKG_FUSE_UTILS): $(IDIR_FUSE_UTILS)/CONTROL/control $(PKG_BUILD_DIR)/.installed
+$(IPKG_FUSE_UTILS):
 	mkdir -p $(IDIR_FUSE_UTILS)/usr/bin
 	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/fusermount $(IDIR_FUSE_UTILS)/usr/bin/
 	$(RSTRIP) $(IDIR_FUSE_UTILS)
-	mkdir -p $(PACKAGE_DIR)
 	$(IPKG_BUILD) $(IDIR_FUSE_UTILS) $(PACKAGE_DIR)
 
-$(STAGING_DIR)/usr/lib/libfuse.so: $(PKG_BUILD_DIR)/.installed
+$(STAGING_DIR)/usr/lib/libfuse.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include
 	cp -fpR $(PKG_INSTALL_DIR)/usr/include/fuse* $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib/pkgconfig
