@@ -7,28 +7,18 @@ PKG_VERSION:=0.45
 PKG_RELEASE:=2
 PKG_MD5SUM:=2bcc46e4c239aec982bf36a723dd0b0e
 
-PKG_SOURCE_URL:= \
-	http://matt.ucc.asn.au/dropbear/releases/ \
-	http://nthill.free.fr/openwrt/sources/$(PKG_NAME)/
+PKG_SOURCE_URL:=http://matt.ucc.asn.au/dropbear/releases/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_CAT:=bzcat
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 
-IPKG_DROPBEAR:=$(PACKAGE_DIR)/$(PKG_NAME)_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
-IDIR_DROPBEAR:=$(PKG_BUILD_DIR)/ipkg/$(PKG_NAME)
-INFO_DROPBEAR:=$(IPKG_STATE_DIR)/info/$(PKG_NAME).list
+include $(TOPDIR)/package/rules.mk
 
-$(DL_DIR)/$(PKG_SOURCE):
-	 $(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE) $(PKG_MD5SUM) $(PKG_SOURCE_URL)
+$(eval $(call PKG_template,DROPBEAR,$(PKG_NAME),$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
-$(PKG_BUILD_DIR)/.prepared: $(DL_DIR)/$(PKG_SOURCE)
-	$(PKG_CAT) $(DL_DIR)/$(PKG_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
-	$(PATCH) $(PKG_BUILD_DIR) ./patches \*.patch
+$(PKG_BUILD_DIR)/.configured:
 	$(SED) 's,^/\* #define PKG_MULTI.*,#define PKG_MULTI,g' $(PKG_BUILD_DIR)/options.h
-	touch $(PKG_BUILD_DIR)/.prepared
-
-$(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 	(cd $(PKG_BUILD_DIR); rm -rf config.cache; \
 		autoconf; \
 		$(TARGET_CONFIGURE_OPTS) \
@@ -70,14 +60,14 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 	);
 	touch  $(PKG_BUILD_DIR)/.configured
 
-$(PKG_BUILD_DIR)/dropbearmulti: $(PKG_BUILD_DIR)/.configured
+$(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		LD=$(TARGET_CC) \
 		PROGRAMS="dropbear dbclient dropbearkey dropbearconvert scp" \
 		MULTI=1 SCPPROGRESS=1
+	touch $@
 
-$(IPKG_DROPBEAR): $(PKG_BUILD_DIR)/dropbearmulti
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_DROPBEAR) $(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
+$(IPKG_DROPBEAR):
 	mkdir -p $(IDIR_DROPBEAR)/usr/bin
 	mkdir -p $(IDIR_DROPBEAR)/usr/sbin
 	install -m 755 $(PKG_BUILD_DIR)/dropbearmulti \
@@ -91,15 +81,3 @@ $(IPKG_DROPBEAR): $(PKG_BUILD_DIR)/dropbearmulti
 	mkdir -p $(IDIR_DROPBEAR)/etc/init.d
 	install -m 755 ./files/S50dropbear $(IDIR_DROPBEAR)/etc/init.d/
 	$(IPKG_BUILD) $(IDIR_DROPBEAR) $(PACKAGE_DIR)
-
-$(INFO_DROPBEAR): $(IPKG_DROPBEAR)
-	$(IPKG) install $(IPKG_DROPBEAR)
-
-source: $(DL_DIR)/$(PKG_SOURCE)
-prepare: $(PKG_BUILD_DIR)/.prepared
-compile: $(IPKG_DROPBEAR)
-install: $(INFO_DROPBEAR)
-
-clean:
-	rm -rf $(PKG_BUILD_DIR) $(IPKG_DROPBEAR)
-
