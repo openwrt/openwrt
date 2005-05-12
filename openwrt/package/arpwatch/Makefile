@@ -12,22 +12,13 @@ PKG_SOURCE_URL:= \
 	http://nthill.free.fr/openwrt/sources/$(PKG_NAME)/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)/$(PKG_NAME)-$(PKG_VERSION)
+include $(TOPDIR)/package/rules.mk
 
-IPKG_ARPWATCH:=$(PACKAGE_DIR)/$(PKG_NAME)_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
-IDIR_ARPWATCH:=$(PKG_BUILD_DIR)/ipkg/$(PKG_NAME)
-INFO_ARPWATCH:=$(IPKG_STATE_DIR)/info/$(PKG_NAME).list
+$(eval $(call PKG_template,ARPWATCH,arpwatch,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
-$(DL_DIR)/$(PKG_SOURCE):
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE) $(PKG_MD5SUM) $(PKG_SOURCE_URL)
-
-$(PKG_BUILD_DIR)/.prepared: $(DL_DIR)/$(PKG_SOURCE)
-	mkdir -p $(BUILD_DIR)/$(PKG_NAME)
-	$(PKG_CAT) $(DL_DIR)/$(PKG_SOURCE) | tar -C $(BUILD_DIR)/$(PKG_NAME) $(TAR_OPTIONS) -
-	touch $(PKG_BUILD_DIR)/.prepared
-
-$(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
+$(PKG_BUILD_DIR)/.configured:
 	(cd $(PKG_BUILD_DIR); rm -rf config.cache; \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
@@ -54,35 +45,20 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 		$(DISABLE_NLS) \
 		$(DISABLE_LARGEFILE) \
 	);
-	touch $(PKG_BUILD_DIR)/.configured
+	touch $@
 
-$(PKG_BUILD_DIR)/$(PKG_NAME): $(PKG_BUILD_DIR)/.configured
+$(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 	  	ARPDIR=/etc/arpwatch \
 		CCOPT="$(TARGET_CFLAGS)" \
 		INCLS="-I. -I$(STAGING_DIR)/usr/include" \
 		LIBS="-L$(STAGING_DIR)/usr/lib -lpcap" \
-	  
 
-$(IPKG_ARPWATCH): $(PKG_BUILD_DIR)/$(PKG_NAME)
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_ARPWATCH) $(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
-	cp arpwatch.conffiles $(IDIR_ARPWATCH)/CONTROL/conffiles
+$(IPKG_ARPWATCH):
 	mkdir -p $(IDIR_ARPWATCH)/usr/sbin
 	cp $(PKG_BUILD_DIR)/arpwatch $(IDIR_ARPWATCH)/usr/sbin/
 	cp $(PKG_BUILD_DIR)/arpsnmp $(IDIR_ARPWATCH)/usr/sbin/
 	$(STRIP) $(IDIR_ARPWATCH)/usr/sbin/*
 	mkdir -p $(IDIR_ARPWATCH)/etc/arpwatch
 	cp $(PKG_BUILD_DIR)/arp.dat $(IDIR_ARPWATCH)/etc/arpwatch/
-	mkdir -p $(PACKAGE_DIR)
 	$(IPKG_BUILD) $(IDIR_ARPWATCH) $(PACKAGE_DIR)
-
-$(INFO_ARPWATCH): $(IPKG_ARPWATCH)
-	$(IPKG) install $(IPKG_ARPWATCH)
-
-source: $(DL_DIR)/$(PKG_SOURCE)
-prepare: $(PKG_BUILD_DIR)/.prepared
-compile: $(IPKG_ARPWATCH)
-install: $(INFO_ARPWATCH)
-
-clean:
-	rm -rf $(PKG_BUILD_DIR) $(IPKG_ARPWATCH)
