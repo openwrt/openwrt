@@ -18,7 +18,7 @@ include $(TOPDIR)/package/rules.mk
 
 $(eval $(call PKG_template,LIBPCRE,libpcre,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
-$(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
+$(PKG_BUILD_DIR)/.configured:
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status}; \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
@@ -50,15 +50,16 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 	);
 	touch $(PKG_BUILD_DIR)/.configured
 
-$(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
+$(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C "$(PKG_BUILD_DIR)" \
 		CC_FOR_BUILD="$(HOSTCC)" \
 		LINK_FOR_BUILD="$(HOSTCC)" \
 		CFLAGS_FOR_BUILD="" \
 		dftables
-	$(MAKE) \
+	$(MAKE) -C "$(PKG_BUILD_DIR)" \
 		$(TARGET_CONFIGURE_OPTS) \
-		CFLAGS="$(TARGET_CFLAGS)"
+		CFLAGS="$(TARGET_CFLAGS)" \
+		all
 	touch $(PKG_BUILD_DIR)/.built
 
 $(STAGING_DIR)/usr/lib/libpcre.so: $(PKG_BUILD_DIR)/.built
@@ -67,11 +68,10 @@ $(STAGING_DIR)/usr/lib/libpcre.so: $(PKG_BUILD_DIR)/.built
 		install
 	rm -f $(STAGING_DIR)/usr/lib/libpcre*.la
 
-$(IPKG_LIBPCRE): $(IDIR_LIBPCRE)/CONTROL/control $(STAGING_DIR)/usr/lib/libpcre.so
+$(IPKG_LIBPCRE):
 	mkdir -p $(IDIR_LIBPCRE)/usr/lib
-	cp -fpR $(STAGING_DIR)/usr/lib/libpcre*.so.* $(IDIR_LIBPCRE)/usr/lib/
+	cp -fpR $(PKG_BUILD_DIR)/.libs/libpcre*.so.* $(IDIR_LIBPCRE)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBPCRE)
-	mkdir -p $(PACKAGE_DIR)
 	$(IPKG_BUILD) $(IDIR_LIBPCRE) $(PACKAGE_DIR)
 
 install-dev: $(STAGING_DIR)/usr/lib/libpcre.so
