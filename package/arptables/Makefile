@@ -22,6 +22,7 @@ $(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CC=$(TARGET_CC) LD=$(TARGET_CROSS)ld \
 		CFLAGS="$(TARGET_CFLAGS) -Wall -I$(PKG_BUILD_DIR)/include/linux/include -I$(PKG_BUILD_DIR)/include -DARPTABLES_VERSION=\\\"$(PKG_VERSION)\\\" "
+	touch $@
 
 $(IPKG_ARPTABLES):
 	mkdir -p $(IDIR_ARPTABLES)/usr/sbin
