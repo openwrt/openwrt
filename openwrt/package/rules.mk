@@ -16,6 +16,8 @@ $$(IDIR_$(1))/CONTROL/control: $(PKG_BUILD_DIR)/.prepared
 		[ -f ./ipkg/$(2).$$$$file ] && cp ./ipkg/$(2).$$$$file $$(IDIR_$(1))/CONTROL/$$$$file || true; \
 	done
 
+$$(IPKG_$(1)): $$(IDIR_$(1))/CONTROL/control $(PKG_BUILD_DIR)/.built $(PACKAGE_DIR)
+
 $$(INFO_$(1)): $$(IPKG_$(1))
 	$(IPKG) install $$(IPKG_$(1))
 
@@ -46,6 +48,13 @@ source: $(DL_DIR)/$(PKG_SOURCE)
 prepare: $(PKG_BUILD_DIR)/.prepared
 compile:
 install:
+
+$(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
+$(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
+
+$(PACKAGE_DIR):
+	mkdir -p $@
+
 
 clean: 
 	rm -rf $(PKG_BUILD_DIR)
