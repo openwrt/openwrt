@@ -12,21 +12,14 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
-PKG_IPK:=$(PACKAGE_DIR)/$(PKG_NAME)_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
-PKG_IPK_DIR:=$(PKG_BUILD_DIR)/ipkg/$(PKG_NAME)
-PKG_INFO:=$(IPKG_STATE_DIR)/info/$(PKG_NAME).list
+include $(TOPDIR)/package/rules.mk
 
-$(DL_DIR)/$(PKG_SOURCE):
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE) $(PKG_MD5SUM) $(PKG_SOURCE_URL)
-
-$(PKG_BUILD_DIR)/.prepared: $(DL_DIR)/$(PKG_SOURCE)
-	$(PKG_CAT) $(DL_DIR)/$(PKG_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
-	$(PATCH) $(PKG_BUILD_DIR) ./patches
-	touch $(PKG_BUILD_DIR)/.prepared
+$(eval $(call PKG_template,LIBUSB,libusb,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
-	(cd $(PKG_BUILD_DIR); rm -rf config.cache config.status; \
+	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
 		CPPFLAGS="-I$(STAGING_DIR)/usr/include" \
@@ -57,33 +50,35 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 	);
 	touch $(PKG_BUILD_DIR)/.configured
 
-$(PKG_BUILD_DIR)/.libs/libusb.so: $(PKG_BUILD_DIR)/.configured
+$(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 	$(MAKE) -C $(PKG_BUILD_DIR) -j1 \
-		CC=$(TARGET_CC) LD=$(TARGET_CROSS)ld ARCH=$(ARCH) \
+		CC=$(TARGET_CC) LD=$(TARGET_CROSS)ld ARCH=$(ARCH)
+	mkdir -p $(PKG_INSTALL_DIR)
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		DESTDIR="$(PKG_INSTALL_DIR)" \
+		install
+	touch $(PKG_BUILD_DIR)/.built
+
+$(IPKG_LIBUSB):
+	install -m0755 -d $(IDIR_LIBUSB)/usr/lib
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libusb*.so.* $(IDIR_LIBUSB)/usr/lib/
+	$(RSTRIP) $(IDIR_LIBUSB)
+	$(IPKG_BUILD) $(IDIR_LIBUSB) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libusb.so: $(PKG_BUILD_DIR)/.libs/libusb.so
-	mkdir -p $(STAGING_DIR)/usr/lib
+	mkdir -p $(STAGING_DIR)/usr/bin
+	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/libusb-config $(STAGING_DIR)/usr/bin/
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -a $(PKG_BUILD_DIR)/.libs/*.so* $(STAGING_DIR)/usr/lib/
-	cp -a $(PKG_BUILD_DIR)/usb.h $(STAGING_DIR)/usr/include/
+	cp -fpR $(PKG_INSTALL_DIR)/usr/include/usb.h $(STAGING_DIR)/usr/include/
+	mkdir -p $(STAGING_DIR)/usr/lib
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libusb*.{a,so*} $(STAGING_DIR)/usr/lib/
+	touch $(STAGING_DIR)/usr/lib/libusb.so
 
-$(PKG_IPK): $(STAGING_DIR)/usr/lib/libusb.so
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_IPK_DIR) $(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
-	mkdir -p $(PKG_IPK_DIR)/usr/lib
-	cp -a $(PKG_BUILD_DIR)/.libs/libusb*.so* $(PKG_IPK_DIR)/usr/lib/
-	$(STRIP) $(PKG_IPK_DIR)/usr/lib/*
-	mkdir -p $(PACKAGE_DIR)
-	$(IPKG_BUILD) $(PKG_IPK_DIR) $(PACKAGE_DIR)
+install-dev: $(STAGING_DIR)/usr/lib/libusb.so
 
-$(PKG_INFO): $(PKG_IPK)
-	$(IPKG) install $(PKG_IPK)
+uninstall-dev:
+	rm -rf $(STAGING_DIR)/usr/include/usb.h
+	rm -rf $(STAGING_DIR)/usr/lib/libusb.{a,so*}
 
-source: $(DL_DIR)/$(PKG_SOURCE)
-prepare: $(PKG_BUILD_DIR)/.prepared
-compile: $(PKG_IPK) $(STAGING_DIR)/usr/lib/libusb.so
-install: $(PKG_INFO)
-
-clean:
-	rm -f $(STAGING_DIR)/usr/lib/libusb*
-	rm -f $(STAGING_DIR)/usr/include/usb.h
-	rm -rf $(PKG_BUILD_DIR) $(PKG_IPK)
+compile: install-dev
+clean: uninstall-dev
