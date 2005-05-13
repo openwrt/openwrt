@@ -1,7 +1,7 @@
 #!/bin/sh
 . /etc/functions.sh
-export WAN=$(nvram get wan_ifname)
-export LAN=$(nvram get lan_ifname)
+WAN=$(nvram get wan_ifname)
+LAN=$(nvram get lan_ifname)
 
 ## CLEAR TABLES
 for T in filter nat mangle; do
@@ -17,8 +17,8 @@ iptables -t nat -N prerouting_rule
 iptables -t nat -N postrouting_rule
 
 ### Port forwarding
-# iptables -t nat -A prerouting_rule -p tcp --dport 22 -j DNAT --to 192.168.1.2
-# iptables        -A forwarding_rule -p tcp --dport 22 -d 192.168.1.2 -j ACCEPT
+# iptables -t nat -A prerouting_rule -i $WAN -p tcp --dport 22 -j DNAT --to 192.168.1.2
+# iptables        -A forwarding_rule -i $WAN -p tcp --dport 22 -d 192.168.1.2 -j ACCEPT
 
 ### INPUT
 ###  (connections with the router as destination)
@@ -27,12 +27,12 @@ iptables -t nat -N postrouting_rule
   iptables -P INPUT DROP
   iptables -A INPUT -m state --state INVALID -j DROP
   iptables -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+  iptables -A INPUT -p tcp --syn --tcp-option \! 2 -j  DROP
 
   # allow
-  iptables -A INPUT -i \! $WAN -j ACCEPT	# allow from lan/wifi interfaces 
-  iptables -A INPUT -p icmp -j ACCEPT		# allow ICMP
-  iptables -A INPUT -p 47 -j ACCEPT		# allow GRE
-  iptables -A INPUT -p tcp --syn --tcp-option \! 2 -j  DROP
+  iptables -A INPUT -i \! $WAN	-j ACCEPT	# allow from lan/wifi interfaces 
+  iptables -A INPUT -p icmp	-j ACCEPT	# allow ICMP
+  iptables -A INPUT -p gre	-j ACCEPT	# allow GRE
   #
   # insert accept rule or to jump to new accept-check table here
   #

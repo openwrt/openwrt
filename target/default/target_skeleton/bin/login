@@ -1,21 +1,20 @@
 #!/bin/sh
-[ "$FAILSAFE" = "true" ] && exec /bin/ash --login
+. /etc/sysconf 2>&-
 
-[ -f /etc/sysconf ] && . /etc/sysconf
-
-if [ "$BR2_SYSCONF_TELNET_FAILSAFE_ONLY" = "y" ]; then
-        if grep '^root:!' /etc/passwd > /dev/null 2>/dev/null; then
-                echo "You need to set a login password to protect your"
-                echo "Router from unauthorized access."
-                echo
-                echo "Use 'passwd' to set your password."
-                echo "telnet login will be disabled afterwards,"
-                echo "You can then login using SSH."
-                echo
-        else
-                echo "Login failed."
-                exit 0
-        fi
-fi
-
+[ "$FAILSAFE" != "true" ] &&
+[ "$BR2_SYSCONF_TELNET_FAILSAFE_ONLY" = "y" ] &&
+{
+  grep '^root:[^!]' /etc/passwd >&- 2>&- &&
+  {
+    echo "Login failed."
+    exit 0
+  } || {
+cat << EOF
+ === IMPORTANT ============================
+  Use 'passwd' to set your login password
+  this will disable telnet and enable SSH
+ ------------------------------------------
+EOF
+  }
+}
 exec /bin/ash --login
