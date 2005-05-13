@@ -599,6 +599,34 @@ static int wlcompat_private_ioctl(struct net_device *dev,
 
 			break;
 		}
+		case WLCOMPAT_SET_ANTDIV:
+		{
+			if (wl_ioctl(dev, WLC_SET_ANTDIV, value, sizeof(int)) < 0)
+				return -EINVAL;
+
+			break;
+		}
+		case WLCOMPAT_GET_ANTDIV:
+		{
+			if (wl_ioctl(dev, WLC_GET_ANTDIV, extra, sizeof(int)) < 0)
+				return -EINVAL;
+
+			break;
+		}
+		case WLCOMPAT_SET_TXANT:
+		{
+			if (wl_ioctl(dev, WLC_SET_TXANT, value, sizeof(int)) < 0)
+				return -EINVAL;
+
+			break;
+		}
+		case WLCOMPAT_GET_TXANT:
+		{
+			if (wl_ioctl(dev, WLC_GET_TXANT, extra, sizeof(int)) < 0)
+				return -EINVAL;
+
+			break;
+		}
 		default:
 		{
 			return -EINVAL;
@@ -629,7 +657,27 @@ static const struct iw_priv_args wlcompat_private_args[] =
 		0,
 		IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
 		"get_txpwr_force"
-	}
+	},
+	{	WLCOMPAT_SET_ANTDIV, 
+		IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
+		0,
+		"set_antdiv"
+	},
+	{	WLCOMPAT_GET_ANTDIV, 
+		0,
+		IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
+		"get_antdiv"
+	},
+	{	WLCOMPAT_SET_TXANT, 
+		IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
+		0,
+		"set_txant"
+	},
+	{	WLCOMPAT_GET_TXANT, 
+		0,
+		IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
+		"get_txant"
+	},
 };
 
 static const iw_handler wlcompat_private[] =
