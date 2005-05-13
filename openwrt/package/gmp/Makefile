@@ -9,62 +9,69 @@ PKG_MD5SUM:=0aa7d3b3f5b5ec5951e7dddd6f65e891
 
 PKG_SOURCE_URL:=ftp://ftp.gnu.org/gnu/gmp/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_CAT:=bzcat
-PKG_IPK:=$(PACKAGE_DIR)/$(PKG_NAME)_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
-PKG_IPK_DIR:=$(PKG_BUILD_DIR)/ipkg
 
-$(DL_DIR)/$(PKG_SOURCE):
-	 $(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE) $(PKG_MD5SUM) $(PKG_SOURCE_URL)
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
+include $(TOPDIR)/package/rules.mk
 
-$(PKG_BUILD_DIR)/.unpacked: $(DL_DIR)/$(PKG_SOURCE)
-	$(PKG_CAT) $(DL_DIR)/$(PKG_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
-	touch $(PKG_BUILD_DIR)/.unpacked
+$(eval $(call PKG_template,LIBGMP,libgmp,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
-$(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.unpacked
-	(cd $(PKG_BUILD_DIR); rm -rf config.cache; \
+$(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
+	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status}; \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
 		./configure \
-		--target=$(GNU_TARGET_NAME) \
-		--host=$(GNU_TARGET_NAME) \
-		--build=$(GNU_HOST_NAME) \
-		--prefix=/usr \
-		--exec-prefix=/usr \
-		--bindir=/usr/bin \
-		--sbindir=/usr/sbin \
-		--libexecdir=/usr/lib \
-		--sysconfdir=/etc \
-		--datadir=/usr/share \
-		--localstatedir=/var \
-		--mandir=/usr/man \
-		--infodir=/usr/info \
+		  --target=$(GNU_TARGET_NAME) \
+		  --host=$(GNU_TARGET_NAME) \
+		  --build=$(GNU_HOST_NAME) \
+		  --program-prefix="" \
+		  --program-suffix="" \
+		  --prefix=/usr \
+		  --exec-prefix=/usr \
+		  --bindir=/usr/bin \
+		  --datadir=/usr/share \
+		  --includedir=/usr/include \
+		  --infodir=/usr/share/info \
+		  --libdir=/usr/lib \
+		  --libexecdir=/usr/lib \
+		  --localstatedir=/var \
+		  --mandir=/usr/share/man \
+		  --sbindir=/usr/sbin \
+		  --sysconfdir=/etc \
+		  $(DISABLE_NLS) \
+		  $(DISABLE_LARGEFILE) \
+		  --enable-shared \
+		  --enable-static \
 	);
 	touch $(PKG_BUILD_DIR)/.configured
 
-$(PKG_BUILD_DIR)/.libs/libgmp.so: $(PKG_BUILD_DIR)/.configured
+$(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 	$(MAKE) -C $(PKG_BUILD_DIR)
+	mkdir -p $(PKG_INSTALL_DIR)
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		DESTDIR="$(PKG_INSTALL_DIR)" \
+		install
+	touch $(PKG_BUILD_DIR)/.built
 
-$(PKG_IPK): $(PKG_BUILD_DIR)/.libs/libgmp.so
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_IPK_DIR) $(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
-	$(MAKE) -C $(PKG_BUILD_DIR) DESTDIR="$(STAGING_DIR)" install
-	$(MAKE) -C $(PKG_BUILD_DIR) DESTDIR="$(PKG_IPK_DIR)" install
-	rm $(PKG_IPK_DIR)/usr/lib/*.la
-	rm $(PKG_IPK_DIR)/usr/lib/*.a
-	$(STRIP) $(PKG_IPK_DIR)/usr/lib/*.so
-	rm -rf $(PKG_IPK_DIR)/usr/info
-	rm -rf $(PKG_IPK_DIR)/usr/include
-	mkdir -p $(PACKAGE_DIR)
-	$(IPKG_BUILD) $(PKG_IPK_DIR) $(PACKAGE_DIR)
+$(IPKG_LIBGMP):
+	install -m0755 -d $(IDIR_LIBGMP)/usr/lib
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libgmp.so.* $(IDIR_LIBGMP)/usr/lib/
+	$(RSTRIP) $(IDIR_LIBGMP)
+	$(IPKG_BUILD) $(IDIR_LIBGMP) $(PACKAGE_DIR)
 
-$(IPKG_STATE_DIR)/info/$(PKG_NAME).list: $(PKG_IPK)
-	$(IPKG) install $(PKG_IPK)
+$(STAGING_DIR)/usr/lib/libgmp.so: $(PKG_BUILD_DIR)/.built
+	mkdir -p $(STAGING_DIR)/usr/include
+	cp -fpR $(PKG_INSTALL_DIR)/usr/include/gmp* $(STAGING_DIR)/usr/include/
+	mkdir -p $(I_LIBPCAP_DEV)/usr/lib
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libgmp.{a,so*} $(STAGING_DIR)/usr/lib/
+	touch $(STAGING_DIR)/usr/lib/libgmp.so
 
-source: $(DL_DIR)/$(PKG_SOURCE)
-prepare: $(PKG_BUILD_DIR)/.unpacked
-compile: $(PKG_IPK)
-install: $(IPKG_STATE_DIR)/info/$(PKG_NAME).list
+install-dev: $(STAGING_DIR)/usr/lib/libgmp.so
 
-clean:
-	rm -rf $(PKG_BUILD_DIR)
-	rm -f $(PKG_IPK)
+uninstall-dev:
+	rm -rf $(STAGING_DIR)/usr/include/gmp*
+	rm -rf $(STAGING_DIR)/usr/lib/libgmp.{a,so*}
+
+compile: install-dev
+clean: uninstall-dev
