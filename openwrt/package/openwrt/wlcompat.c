@@ -31,6 +31,7 @@
 
 #include <net/iw_handler.h>
 #include <wlioctl.h>
+#include <wlcompat.h>
 
 static struct net_device *dev;
 char buf[WLC_IOCTL_MAXLEN];
@@ -549,35 +550,6 @@ static const iw_handler	 wlcompat_handler[] = {
 	wlcompat_ioctl,		/* SIOCGIWENCODE */
 };
 
-#define PRIV_SET_MONITOR		SIOCIWFIRSTPRIV + 0
-#define PRIV_GET_MONITOR		SIOCIWFIRSTPRIV + 1
-#define PRIV_SET_TXPWR_LIMIT		SIOCIWFIRSTPRIV + 2
-#define PRIV_GET_TXPWR_LIMIT		SIOCIWFIRSTPRIV + 3
-
-static const struct iw_priv_args	wlcompat_private_args[] = 
-{
-	{	PRIV_SET_MONITOR, 
-		IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
-		0,
-		"set_monitor"
-	},
-	{	PRIV_GET_MONITOR, 
-		0,
-		IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
-		"get_monitor"
-	},
-	{	PRIV_SET_TXPWR_LIMIT, 
-		IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
-		0,
-		"set_txpwr_force"
-	},
-	{	PRIV_GET_TXPWR_LIMIT, 
-		0,
-		IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
-		"get_txpwr_force"
-	}
-};
-
 static int wlcompat_private_ioctl(struct net_device *dev,
 			 struct iw_request_info *info,
 			 union iwreq_data *wrqu,
@@ -586,21 +558,21 @@ static int wlcompat_private_ioctl(struct net_device *dev,
 	int *value = (int *) wrqu->name;
 
 	switch (info->cmd) {
-		case PRIV_SET_MONITOR:
+		case WLCOMPAT_SET_MONITOR:
 		{
 			if (wl_ioctl(dev, WLC_SET_MONITOR, value, sizeof(int)) < 0)
 				return -EINVAL;
 
 			break;
 		}
-		case PRIV_GET_MONITOR:
+		case WLCOMPAT_GET_MONITOR:
 		{
 			if (wl_ioctl(dev, WLC_GET_MONITOR, extra, sizeof(int)) < 0)
 				return -EINVAL;
 
 			break;
 		}
-		case PRIV_SET_TXPWR_LIMIT:
+		case WLCOMPAT_SET_TXPWR_LIMIT:
 		{
 			int val;
 			
@@ -618,7 +590,7 @@ static int wlcompat_private_ioctl(struct net_device *dev,
 			
 			break;
 		}
-		case PRIV_GET_TXPWR_LIMIT:
+		case WLCOMPAT_GET_TXPWR_LIMIT:
 		{
 			if (wl_get_val(dev, "qtxpower", value, sizeof(int)) < 0)
 				return -EINVAL;
@@ -636,29 +608,49 @@ static int wlcompat_private_ioctl(struct net_device *dev,
 	return 0;
 }
 
+static const struct iw_priv_args wlcompat_private_args[] = 
+{
+	{	WLCOMPAT_SET_MONITOR, 
+		IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
+		0,
+		"set_monitor"
+	},
+	{	WLCOMPAT_GET_MONITOR, 
+		0,
+		IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
+		"get_monitor"
+	},
+	{	WLCOMPAT_SET_TXPWR_LIMIT, 
+		IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
+		0,
+		"set_txpwr_force"
+	},
+	{	WLCOMPAT_GET_TXPWR_LIMIT, 
+		0,
+		IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
+		"get_txpwr_force"
+	}
+};
 
-static const iw_handler	wlcompat_private[] = 
+static const iw_handler wlcompat_private[] =
 {
 	wlcompat_private_ioctl,
-	wlcompat_private_ioctl,
-	wlcompat_private_ioctl,
-	wlcompat_private_ioctl
+	NULL
 };
 
 
-static const struct iw_handler_def      wlcompat_handler_def =
+static const struct iw_handler_def wlcompat_handler_def =
 {
 	.standard	= (iw_handler *) wlcompat_handler,
 	.num_standard	= sizeof(wlcompat_handler)/sizeof(iw_handler),
 	.private	= wlcompat_private,
-	.num_private	= sizeof(wlcompat_private)/sizeof(iw_handler),
-	.private_args	= wlcompat_private_args, 
-	.num_private_args = sizeof(wlcompat_private_args)/sizeof(struct iw_priv_args),
+	.num_private	= 1,
+	.private_args	= wlcompat_private_args,
+	.num_private_args = sizeof(wlcompat_private_args) / sizeof(wlcompat_private_args[0])
 };
 
 
 #ifdef DEBUG
-static int (*old_ioctl)(struct net_device *dev, struct ifreq *ifr, int cmd);
 void print_buffer(int len, unsigned char *buf) {
 	int x;
 	if (buf != NULL) {
@@ -673,10 +665,23 @@ void print_buffer(int len, unsigned char *buf) {
 	printk("\n");
 
 }
+#endif
+static int (*old_ioctl)(struct net_device *dev, struct ifreq *ifr, int cmd);
 static int new_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd) {
 	int ret = 0;
+	struct iwreq *iwr = (struct iwreq *) ifr;
+	struct iw_request_info info;
+	
+#ifdef DEBUG
 	printk("dev: %s ioctl: 0x%04x\n",dev->name,cmd);
-	if (cmd==SIOCDEVPRIVATE) {
+#endif
+
+	if (cmd >= SIOCIWFIRSTPRIV) {
+		info.cmd = cmd;
+		info.flags = 0;
+		ret = wlcompat_private_ioctl(dev, &info, &(iwr->u), (char *) &(iwr->u));
+#ifdef DEBUG
+	} else if (cmd==SIOCDEVPRIVATE) {
 		wl_ioctl_t *ioc = (wl_ioctl_t *)ifr->ifr_data;
 		unsigned char *buf = ioc->buf;
 		printk("   cmd: %d buf: 0x%08x len: %d\n",ioc->cmd,&(ioc->buf),ioc->len);
@@ -686,12 +691,12 @@ static int new_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd) {
 		printk("   recv: ->");
 		print_buffer(ioc->len, buf);
 		printk("   ret: %d\n", ret);
+#endif
 	} else {
 		ret = old_ioctl(dev,ifr,cmd);
 	}
 	return ret;
 }
-#endif
 
 static int __init wlcompat_init()
 {
@@ -699,7 +704,7 @@ static int __init wlcompat_init()
 	char *devname = "eth0";
 	
 	while (!found && (dev = dev_get_by_name(devname))) {
-		if ((wl_ioctl(dev, WLC_GET_MAGIC, &i, sizeof(i)) == 0) && i == WLC_IOCTL_MAGIC)
+		if ((dev->wireless_handlers == NULL) && ((wl_ioctl(dev, WLC_GET_MAGIC, &i, sizeof(i)) == 0) && i == WLC_IOCTL_MAGIC))
 			found = 1;
 		devname[3]++;
 	}
@@ -710,10 +715,8 @@ static int __init wlcompat_init()
 	}
 		
 
-#ifdef DEBUG
 	old_ioctl = dev->do_ioctl;
 	dev->do_ioctl = new_ioctl;
-#endif
 	dev->wireless_handlers = (struct iw_handler_def *)&wlcompat_handler_def;
 	return 0;
 }
@@ -721,9 +724,7 @@ static int __init wlcompat_init()
 static void __exit wlcompat_exit()
 {
 	dev->wireless_handlers = NULL;
-#ifdef DEBUG
 	dev->do_ioctl = old_ioctl;
-#endif
 	return;
 }
 
