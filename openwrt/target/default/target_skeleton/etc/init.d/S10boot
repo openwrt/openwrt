@@ -1,6 +1,4 @@
 #!/bin/sh
-klogd
-syslogd -C 16 
 echo "S" > /proc/jffs2_bbc
 
 mkdir -p /var/run
@@ -25,18 +23,18 @@ touch /var/log/lastlog
   }
 }
 
-cat /etc/modules /etc/modules.d/* | sed 's/^[^#]/insmod &/' 2>&-|ash
+cat /etc/modules /etc/modules.d/*|sed 's/^[^#]/insmod &/' 2>&-|ash
 
 ifconfig lo 127.0.0.1 up
 ifconfig eth0 promisc
 
 HOSTNAME=$(nvram get wan_hostname)
 HOSTNAME=${HOSTNAME%%.*}
-echo ${HOSTNAME:=OpenWrt} > /proc/sys/kernel/hostname
+echo ${HOSTNAME:=OpenWrt}>/proc/sys/kernel/hostname
 
 vconfig set_name_type VLAN_PLUS_VID_NO_PAD
 
 # automagically run firstboot
 [ -z "$FAILSAFE" ] && {
-	{ mount | grep jffs2 1>&-; } || firstboot
+	{ mount|grep jffs2 1>&-; } || firstboot
 }
