@@ -7,26 +7,20 @@ PKG_VERSION := 1.2.10
 PKG_RELEASE := 1
 PKG_MD5SUM := 6fe30dad87c77b91b632def29dd69ef9
 
-PKG_SOURCE_SITE := ftp://ftp.gtk.org/pub/gtk/v1.2
-PKG_SOURCE_FILE := $(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_CAT := zcat
-PKG_SOURCE_DIR := $(PKG_NAME)-$(PKG_VERSION)
-PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_SOURCE_DIR)
-PKG_IPK := $(PACKAGE_DIR)/glib1.2_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
+PKG_SOURCE_URL := ftp://ftp.gtk.org/pub/gtk/v1.2
+PKG_SOURCE := $(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_CAT := zcat
+
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
+
+include $(TOPDIR)/package/rules.mk
+
+$(eval $(call PKG_template,GLIB1,glib1,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 
-$(DL_DIR)/$(PKG_SOURCE_FILE):
-	mkdir -p $(DL_DIR)
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE_FILE) $(PKG_MD5SUM) $(PKG_SOURCE_SITE)
-
-$(PKG_BUILD_DIR)/.patched: $(DL_DIR)/$(PKG_SOURCE_FILE)
-	mkdir -p $(TOOL_BUILD_DIR)
-	$(PKG_SOURCE_CAT) $(DL_DIR)/$(PKG_SOURCE_FILE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
-	$(PATCH) $(PKG_BUILD_DIR) ./patches
-	touch $(PKG_BUILD_DIR)/.patched
-
-$(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.patched
-	(cd $(PKG_BUILD_DIR); rm -rf config.cache config.status; \
+$(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
+	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status}; \
 		glib_cv_sizeof_gmutex=24 \
 		ac_cv_sizeof_char=1 \
 		ac_cv_sizeof_short=2 \
@@ -52,55 +46,65 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.patched
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
 		./configure \
-		--target=$(GNU_TARGET_NAME) \
-		--host=$(GNU_TARGET_NAME) \
-		--build=$(GNU_HOST_NAME) \
-		--prefix=/usr \
-		--exec-prefix=/usr \
-		--bindir=/usr/bin \
-		--sbindir=/usr/sbin \
-		--libexecdir=/usr/lib \
-		--sysconfdir=/etc \
-		--datadir=/usr/share \
-		--localstatedir=/var \
-		--mandir=/usr/man \
-		--infodir=/usr/info \
-		--enable-shared=yes \
-		$(DISABLE_NLS) \
-		$(DISABLE_LARGEFILE) \
+		  --target=$(GNU_TARGET_NAME) \
+		  --host=$(GNU_TARGET_NAME) \
+		  --build=$(GNU_HOST_NAME) \
+		  --program-prefix="" \
+		  --program-suffix="" \
+		  --prefix=/usr \
+		  --exec-prefix=/usr \
+		  --bindir=/usr/bin \
+		  --sbindir=/usr/sbin \
+		  --libexecdir=/usr/lib \
+		  --sysconfdir=/etc \
+		  --datadir=/usr/share \
+		  --localstatedir=/var \
+		  --mandir=/usr/man \
+		  --infodir=/usr/info \
+		  $(DISABLE_NLS) \
+		  $(DISABLE_LARGEFILE) \
+		  --enable-shared=yes \
+		  --enable-static=yes \
 	);
 	touch $(PKG_BUILD_DIR)/.configured
 
-$(PKG_BUILD_DIR)/libglib.so: $(PKG_BUILD_DIR)/.configured
+$(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 	$(MAKE) -C $(PKG_BUILD_DIR) \
-	  $(TARGET_CONFIGURE_OPTS)
-
-$(STAGING_DIR)/lib/libglib.so: $(PKG_BUILD_DIR)/libglib.so
+	  	$(TARGET_CONFIGURE_OPTS)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
-	  DESTDIR="$(STAGING_DIR)" \
-	  install
-	cp $(PKG_BUILD_DIR)/glibconfig-sysdefs.h $(STAGING_DIR)/usr/include/glib-1.2/
-	rm -f $(STAGING_DIR)/usr/lib/libg{lib,module,thread}.la
+		DESTDIR="$(PKG_INSTALL_DIR)" \
+		install
+	touch $(PKG_BUILD_DIR)/.built
 
-$(PKG_IPK): $(STAGING_DIR)/lib/libglib.so
-	mkdir -p $(PACKAGE_DIR)
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_BUILD_DIR)/ipkg/glib glib.control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
-	mkdir -p $(PKG_BUILD_DIR)/ipkg/glib/usr/lib
-	cp -a $(PKG_BUILD_DIR)/.libs/*.so* $(PKG_BUILD_DIR)/ipkg/glib/usr/lib
-	cp -a $(PKG_BUILD_DIR)/*/.libs/*.so* $(PKG_BUILD_DIR)/ipkg/glib/usr/lib
-	$(STRIP) $(PKG_BUILD_DIR)/ipkg/glib/usr/lib/*
-	$(IPKG_BUILD) $(PKG_BUILD_DIR)/ipkg/glib $(PACKAGE_DIR)
+$(IPKG_GLIB1):
+	install -m0755 -d $(IDIR_GLIB1)/usr/lib
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libg{lib,module,thread}-1.2.so.* $(IDIR_GLIB1)/usr/lib/
+	$(RSTRIP) $(IDIR_GLIB1)
+	$(IPKG_BUILD) $(IDIR_GLIB1) $(PACKAGE_DIR)
 
-$(IPKG_STATE_DIR)/info/glib.list: $(PKG_IPK)
-	$(IPKG) install $(PKG_IPK)
+$(STAGING_DIR)/usr/lib/libglib.so: $(PKG_BUILD_DIR)/.built
+	mkdir -p $(STAGING_DIR)/usr/bin
+	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/glib-config $(STAGING_DIR)/usr/bin/
+	mkdir -p $(STAGING_DIR)/usr/include
+	cp -fpR $(PKG_INSTALL_DIR)/usr/include/glib-1.2 $(STAGING_DIR)/usr/include/
+	cp -fpR $(PKG_BUILD_DIR)/glibconfig-sysdefs.h $(STAGING_DIR)/usr/include/glib-1.2/
+	mkdir -p $(STAGING_DIR)/usr/lib
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libg{lib,module,thread}.{a,so} $(STAGING_DIR)/usr/lib/
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libg{lib,module,thread}-*.so.* $(STAGING_DIR)/usr/lib/
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/glib $(STAGING_DIR)/usr/lib/
+	mkdir -p $(STAGING_DIR)/usr/lib/pkgconfig
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/g{lib,module,thread}.pc $(STAGING_DIR)/usr/lib/pkgconfig/
+	touch $(STAGING_DIR)/usr/lib/libglib.so
 
-source: $(DL_DIR)/$(PKG_SOURCE_FILE)
-prepare: $(PKG_BUILD_DIR)/.patched
-compile: $(STAGING_DIR)/lib/libglib.so $(PKG_IPK)
-install: $(PKG_ZLIB) $(IPKG_STATE_DIR)/info/glib.list
+install-dev: $(STAGING_DIR)/usr/lib/libglib.so
 
-clean:
-	rm -rf $(PKG_BUILD_DIR)
-	rm -f $(STAGING_DIR)/lib/libglib* $(STAGING_DIR)/include/glib*
-	rm -f $(PACKAGE_DIR)/glib\*.ipk
+uninstall-dev:
+	rm -rf $(STAGING_DIR)/usr/bin/glib-config
+	rm -rf $(STAGING_DIR)/usr/include/glib-1.2
+	rm -rf $(STAGING_DIR)/usr/lib/libg{lib,module,thread}.{a,so}
+	rm -rf $(STAGING_DIR)/usr/lib/libg{lib,module,thread}-*.so.*
+	rm -rf $(STAGING_DIR)/usr/lib/glib
+	rm -rf $(STAGING_DIR)/usr/lib/pkgconfig/g{lib,module,thread}.pc
 
+compile: install-dev
+clean: uninstall-dev
