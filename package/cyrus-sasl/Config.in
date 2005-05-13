@@ -1,0 +1,9 @@
+config BR2_PACKAGE_LIBSASL2
+	tristate "libsasl2 (a general purpose authentication library)"
+	default m if CONFIG_DEVEL
+	help
+	  A general purpose authentication library.
+	  
+	  http://asg.web.cmu.edu/sasl/
+	  
+
