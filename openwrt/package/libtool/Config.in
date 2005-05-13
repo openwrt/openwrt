@@ -1,0 +1,7 @@
+config BR2_PACKAGE_LIBLTDL
+	tristate "libltdl (a generic dynamic object loading library)"
+	default m if CONFIG_DEVEL
+	help
+	  A generic dynamic object loading library.
+
+	  http://www.gnu.org/software/libtool/
