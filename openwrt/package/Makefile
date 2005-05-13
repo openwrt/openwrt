@@ -79,6 +79,7 @@ package-$(BR2_PACKAGE_LIBMYSQLCLIENT) += mysql
 package-$(BR2_PACKAGE_LIBPCAP) += libpcap
 package-$(BR2_PACKAGE_LIBPNG) += libpng
 package-$(BR2_PACKAGE_LIBPQ) += postgresql
+package-$(BR2_PACKAGE_LIBSASL2) += cyrus-sasl
 
 DEV_LIBS:=tcp_wrappers glib ncurses openssl pcre popt zlib libnet libpcap mysql postgresql iptables matrixssl lzo gmp fuse portmap libelf uclibc++ speex libpng libgd
 DEV_LIBS_COMPILE:=$(patsubst %,%-compile,$(DEV_LIBS))
@@ -122,6 +123,7 @@ nmap-compile: uclibc++-compile pcre-compile libpcap-compile
 kismet-compile: uclibc++-compile libpcap-compile
 tinc-compile: zlib-compile openssl-compile lzo-compile
 fprobe-compile: libpcap-compile
+cyrus-sasl-compile: openssl-compile
 
 snort-compile: libnet-compile libpcap-compile pcre-compile
 ifeq ($(BR2_PACKAGE_SNORT_MYSQL),y)
