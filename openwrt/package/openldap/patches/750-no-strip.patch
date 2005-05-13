@@ -1,0 +1,36 @@
+diff -ruN openldap-2.2.26-orig/clients/tools/Makefile.in openldap-2.2.26-1/clients/tools/Makefile.in
+--- openldap-2.2.26-orig/clients/tools/Makefile.in	2005-01-20 18:00:55.000000000 +0100
++++ openldap-2.2.26-1/clients/tools/Makefile.in	2005-05-08 15:47:08.000000000 +0200
+@@ -98,7 +98,7 @@
+ 	-$(MKDIR) $(DESTDIR)$(bindir)
+ 	@(								\
+ 	    for prg in $(PROGRAMS); do					\
+-		$(LTINSTALL) $(INSTALLFLAGS) -s -m 755 $$prg$(EXEEXT)	\
++		$(LTINSTALL) $(INSTALLFLAGS) -m 755 $$prg$(EXEEXT)	\
+ 		    $(DESTDIR)$(bindir);				\
+ 	    done							\
+ 	)
+diff -ruN openldap-2.2.26-orig/servers/slapd/Makefile.in openldap-2.2.26-1/servers/slapd/Makefile.in
+--- openldap-2.2.26-orig/servers/slapd/Makefile.in	2005-01-20 18:01:05.000000000 +0100
++++ openldap-2.2.26-1/servers/slapd/Makefile.in	2005-05-08 15:47:08.000000000 +0200
+@@ -355,7 +355,7 @@
+ install-slapd: FORCE
+ 	-$(MKDIR) $(DESTDIR)$(libexecdir)
+ 	-$(MKDIR) $(DESTDIR)$(localstatedir)/run
+-	$(LTINSTALL) $(INSTALLFLAGS) -s -m 755 \
++	$(LTINSTALL) $(INSTALLFLAGS) -m 755 \
+ 		slapd$(EXEEXT) $(DESTDIR)$(libexecdir)
+ 	@for i in $(SUBDIRS); do \
+ 	    if test -d $$i -a -f $$i/Makefile ; then \
+diff -ruN openldap-2.2.26-orig/servers/slurpd/Makefile.in openldap-2.2.26-1/servers/slurpd/Makefile.in
+--- openldap-2.2.26-orig/servers/slurpd/Makefile.in	2005-01-20 18:01:19.000000000 +0100
++++ openldap-2.2.26-1/servers/slurpd/Makefile.in	2005-05-08 15:47:08.000000000 +0200
+@@ -60,7 +60,7 @@
+ 	@-$(INSTALL) -m 700 -d $(DESTDIR)$(localstatedir)/openldap-slurp
+ 	@(								\
+ 	    for prg in $(PROGRAMS); do					\
+-		$(LTINSTALL) $(INSTALLFLAGS) -s -m 755 $$prg$(EXEEXT)	\
++		$(LTINSTALL) $(INSTALLFLAGS) -m 755 $$prg$(EXEEXT)	\
+ 		    $(DESTDIR)$(libexecdir);				\
+ 	    done							\
+ 	)
