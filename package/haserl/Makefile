@@ -16,17 +16,9 @@ PKG_CAT := zcat
 PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
-IPKG_HASERL:=$(PACKAGE_DIR)/$(PKG_NAME)_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
-IDIR_HASERL:=$(PKG_BUILD_DIR)/ipkg/$(PKG_NAME)
-INFO_HASERL:=$(IPKG_STATE_DIR)/info/$(PKG_NAME).list
+include $(TOPDIR)/package/rules.mk
 
-$(DL_DIR)/$(PKG_SOURCE):
-	 $(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE) $(PKG_MD5SUM) $(PKG_SOURCE_URL)
-
-$(PKG_BUILD_DIR)/.prepared: $(DL_DIR)/$(PKG_SOURCE)
-	rm -rf $(PKG_BUILD_DIR)
-	$(PKG_CAT) $(DL_DIR)/$(PKG_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
-	touch $(PKG_BUILD_DIR)/.prepared
+$(eval $(call PKG_template,HASERL,haserl,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
@@ -57,29 +49,15 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 
 $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 	$(MAKE) -C $(PKG_BUILD_DIR)
-	touch $(PKG_BUILD_DIR)/.built
-
-$(PKG_INSTALL_DIR)/usr/bin/haserl: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		install
-	
-$(IPKG_HASERL): $(PKG_INSTALL_DIR)/usr/bin/haserl
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_HASERL) ./ipkg/$(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
+	touch $(PKG_BUILD_DIR)/.built
+
+$(IPKG_HASERL):
 	install -m0755 -d $(IDIR_HASERL)/usr/bin
 	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/haserl $(IDIR_HASERL)/usr/bin/
 	$(RSTRIP) $(IDIR_HASERL)
 	$(IPKG_BUILD) $(IDIR_HASERL) $(PACKAGE_DIR)
 
-$(INFO_HASERL): $(IPKG_HASERL)
-	$(IPKG) install $(IPKG_HASERL)
-
-source: $(DL_DIR)/$(PKG_SOURCE)
-prepare: $(PKG_BUILD_DIR)/.prepared
-compile: $(IPKG_HASERL)
-install: $(INFO_HASERL)
-
-clean:
-	rm -rf $(PKG_BUILD_DIR)
-	rm -rf $(IPKG_HASERL)
