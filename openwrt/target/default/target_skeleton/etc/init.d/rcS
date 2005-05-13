@@ -1,7 +1,6 @@
 #!/bin/sh
-# Start all init scripts in /etc/init.d
-# executing them in numerical order.
-#
+syslogd -C 16
+klogd
 for i in /etc/init.d/S* ;do
-  [ -f "$i" ] && $i start
+  $i start 2>&1 | logger -s -p 6 -t ''
 done
