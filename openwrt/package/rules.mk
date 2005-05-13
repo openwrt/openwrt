@@ -35,7 +35,8 @@ endif
 ifneq ($(strip $(PKG_CAT)),)
 $(PKG_BUILD_DIR)/.prepared: $(DL_DIR)/$(PKG_SOURCE)
 	rm -rf $(PKG_BUILD_DIR)
-	$(PKG_CAT) $(DL_DIR)/$(PKG_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
+	mkdir -p $(PKG_BUILD_DIR)
+	$(PKG_CAT) $(DL_DIR)/$(PKG_SOURCE) | tar -C $(PKG_BUILD_DIR)/.. $(TAR_OPTIONS) -
 	if [ -d ./patches ]; then \
 		$(PATCH) $(PKG_BUILD_DIR) ./patches ; \
 	fi
