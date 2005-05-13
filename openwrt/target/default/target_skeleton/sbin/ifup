@@ -52,12 +52,10 @@
       fi
       ${DEBUG:-eval} "udhcpc -i $if ${ip:+-r $ip} -b -p $pidfile &" 
     ;;
-    pppoe)
-	# handled by /etc/init.d/S50pppoe
-    ;;
-    none)
+    none|"")
+	# pppoe is handled by /etc/init.d/S50pppoe
     ;;
     *)
-      echo "### WARNING $if: $if_proto is not supported"
+      echo "### ifup $type: ignored ${type}_proto=\"$if_proto\" (not supported)"
     ;;
   esac

@@ -29,5 +29,5 @@ if_valid () {
       $DEBUG vconfig add $vif $i 2>&-
     )
   } ||
-  { echo -e "# $1 ignored: can't find/create"; false; }
+  { debug "# missing interface '$if' ignored"; false; }
 }
