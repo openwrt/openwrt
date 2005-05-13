@@ -14,19 +14,11 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
-IPKG_LIBPCAP:=$(PACKAGE_DIR)/$(PKG_NAME)_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
-IDIR_LIBPCAP:=$(PKG_BUILD_DIR)/ipkg/$(PKG_NAME)
-INFO_LIBPCAP:=$(IPKG_STATE_DIR)/info/$(PKG_NAME).list
+include $(TOPDIR)/package/rules.mk
 
-$(DL_DIR)/$(PKG_SOURCE):
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE) $(PKG_MD5SUM) $(PKG_SOURCE_URL)
-
-$(PKG_BUILD_DIR)/.prepared: $(DL_DIR)/$(PKG_SOURCE)
-	mkdir -p $(BUILD_DIR)/$(PKG_NAME)
-	$(PKG_CAT) $(DL_DIR)/$(PKG_SOURCE) | tar -C $(BUILD_DIR)/$(PKG_NAME) $(TAR_OPTIONS) -
-	$(PATCH) $(PKG_BUILD_DIR) ./patches
-	touch $(PKG_BUILD_DIR)/.prepared
+$(eval $(call PKG_template,LIBPCAP,libpcap,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
@@ -66,31 +58,29 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CCOPT="$(TARGET_CFLAGS)"
+	mkdir -p $(PKG_INSTALL_DIR)
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		DESTDIR="$(PKG_INSTALL_DIR)" \
+		install
 	touch $(PKG_BUILD_DIR)/.built
 
-$(STAGING_DIR)/usr/lib/libpcap.so: $(PKG_BUILD_DIR)/.built
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		DESTDIR="$(STAGING_DIR)" \
-		install
-
-$(IPKG_LIBPCAP): $(STAGING_DIR)/usr/lib/libpcap.so
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_LIBPCAP) ./ipkg/$(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
+$(IPKG_LIBPCAP):
 	install -m0755 -d $(IDIR_LIBPCAP)/usr/lib
-	cp -fpR $(STAGING_DIR)/usr/lib/libpcap.so.* $(IDIR_LIBPCAP)/usr/lib/
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libpcap.so.* $(IDIR_LIBPCAP)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBPCAP)
-	mkdir -p $(PACKAGE_DIR)
 	$(IPKG_BUILD) $(IDIR_LIBPCAP) $(PACKAGE_DIR)
 
-$(INFO_LIBPCAP): $(IPKG_LIBPCAP)
-	$(IPKG) install $(IPKG_LIBPCAP)
+$(STAGING_DIR)/usr/lib/libpcap.so: $(PKG_BUILD_DIR)/.built
+	mkdir -p $(STAGING_DIR)/usr/include
+	cp -fpR $(PKG_INSTALL_DIR)/usr/include/pcap* $(STAGING_DIR)/usr/include/
+	mkdir -p $(I_LIBPCAP_DEV)/usr/lib
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libpcap.{a,so*} $(STAGING_DIR)/usr/lib/
 
-source: $(DL_DIR)/$(PKG_SOURCE)
-prepare: $(PKG_BUILD_DIR)/.prepared
-compile: $(IPKG_LIBPCAP)
-install: $(INFO_LIBPCAP)
+install-dev: $(STAGING_DIR)/usr/lib/libpcap.so
 
-clean:
-	-$(MAKE) -C $(PKG_BUILD_DIR) \
-		DESTDIR="$(STAGING_DIR)" \
-		uninstall
-	rm -rf $(PKG_BUILD_DIR) $(IPKG_LIBPCAP)
+uninstall-dev:
+	rm -rf $(STAGING_DIR)/usr/include/pcap*
+	rm -rf $(STAGING_DIR)/usr/lib/libpcap.{a,so*}
+
+compile: install-dev
+clean: uninstall-dev
