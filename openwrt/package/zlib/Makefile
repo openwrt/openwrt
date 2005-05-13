@@ -14,18 +14,11 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
-IPKG_ZLIB:=$(PACKAGE_DIR)/$(PKG_NAME)_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
-IDIR_ZLIB:=$(PKG_BUILD_DIR)/ipkg/$(PKG_NAME)
-INFO_ZLIB:=$(IPKG_STATE_DIR)/info/$(PKG_NAME).list
+include $(TOPDIR)/package/rules.mk
 
-$(DL_DIR)/$(PKG_SOURCE):
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE) $(PKG_MD5SUM) $(PKG_SOURCE_URL)
-
-$(PKG_BUILD_DIR)/.prepared: $(DL_DIR)/$(PKG_SOURCE)
-	$(PKG_CAT) $(DL_DIR)/$(PKG_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
-	$(PATCH) $(PKG_BUILD_DIR) ./patches
-	touch $(PKG_BUILD_DIR)/.prepared
+$(eval $(call PKG_template,ZLIB,zlib,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 	(cd $(PKG_BUILD_DIR); \
@@ -41,31 +34,30 @@ $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS) $(CFLAGS_LARGEFILE)" \
 		libz.a libz.so
+	mkdir -p $(PKG_INSTALL_DIR)
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		DESTDIR="$(PKG_INSTALL_DIR)" \
+		install
 	touch $(PKG_BUILD_DIR)/.built
 
-$(STAGING_DIR)/usr/lib/libz.so: $(PKG_BUILD_DIR)/.built
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		DESTDIR="$(STAGING_DIR)" \
-		install
-
-$(IPKG_ZLIB): $(STAGING_DIR)/usr/lib/libz.so
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_ZLIB) ./ipkg/$(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
-	mkdir -p $(IDIR_ZLIB)/usr/lib
-	cp -fpR $(STAGING_DIR)/usr/lib/libz.so.* $(IDIR_ZLIB)/usr/lib/
-	$(STRIP) $(IDIR_ZLIB)/usr/lib/lib*.so*
-	mkdir -p $(PACKAGE_DIR)
+$(IPKG_ZLIB):
+	install -m0755 -d $(IDIR_ZLIB)/usr/lib
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libz.so.* $(IDIR_ZLIB)/usr/lib/
+	$(RSTRIP) $(IDIR_ZLIB)
 	$(IPKG_BUILD) $(IDIR_ZLIB) $(PACKAGE_DIR)
 
-$(INFO_ZLIB): $(IPKG_ZLIB)
-	$(IPKG) install $(IPKG_ZLIB)
+$(STAGING_DIR)/usr/lib/libz.so: $(PKG_BUILD_DIR)/.built
+	mkdir -p $(STAGING_DIR)/usr/include
+	cp -fpR $(PKG_INSTALL_DIR)/usr/include/z{conf,lib}.h $(STAGING_DIR)/usr/include
+	mkdir -p $(STAGING_DIR)/usr/lib
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libz.{a,so*} $(STAGING_DIR)/usr/include
+	touch $(STAGING_DIR)/usr/lib/libz.so
+	
+install-dev: $(STAGING_DIR)/usr/lib/libz.so
 
-source: $(DL_DIR)/$(PKG_SOURCE)
-prepare: $(PKG_BUILD_DIR)/.prepared
-compile: $(IPKG_ZLIB)
-install: $(INFO_ZLIB)
-
-clean:
+uninstall-dev:
 	rm -rf $(STAGING_DIR)/usr/include/z{conf,lib}.h
 	rm -rf $(STAGING_DIR)/usr/lib/libz.{a,so*}
-	rm -rf $(STAGING_DIR)/usr/share/man/man*/zlib.*
-	rm -rf $(PKG_BUILD_DIR) $(IPKG_ZLIB)
+
+compile: install-dev
+clean: uninstall-dev
