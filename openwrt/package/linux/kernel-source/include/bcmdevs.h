@@ -98,7 +98,9 @@
 
 #define	BCM4712_DEVICE_ID	0x4712		/* 4712 chipcommon chipid */
 #define	BCM4712_MIPS_ID		0x4720		/* 4712 base devid */
+#define	BCM4712LARGE_PKG_ID	0		/* 340pin 4712 package id */
 #define	BCM4712SMALL_PKG_ID	1		/* 200pin 4712 package id */
+#define	BCM4712MID_PKG_ID	2		/* 225pin 4712 package id */
 
 #define	SDIOH_FPGA_ID		0x4380		/* sdio host fpga */
 

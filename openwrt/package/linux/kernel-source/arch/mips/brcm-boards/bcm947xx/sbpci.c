@@ -282,7 +282,9 @@ sbpci_init(void *sbh)
 	 * PCI is bonded out, some boards may leave the pins
 	 * floating.
 	 */
-	if (((chip == BCM4712_DEVICE_ID) && (chippkg == BCM4712SMALL_PKG_ID)) ||
+	if (((chip == BCM4712_DEVICE_ID) &&
+	     ((chippkg == BCM4712SMALL_PKG_ID) ||
+	      (chippkg == BCM4712MID_PKG_ID))) ||
 	    (boardflags & BFL_NOPCI))
 		pci_disabled = TRUE;
 
