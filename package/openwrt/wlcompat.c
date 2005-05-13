@@ -43,6 +43,8 @@ const long channel_frequency[] = {
 };
 #define NUM_CHANNELS ( sizeof(channel_frequency) / sizeof(channel_frequency[0]) )
 
+
+
 static int wlcompat_private_ioctl(struct net_device *dev,
 			 struct iw_request_info *info,
 			 union iwreq_data *wrqu,
@@ -101,6 +103,13 @@ static int wl_get_val(struct net_device *dev, char *var, void *val, int len)
 	return 0;
 }
 
+int read_shmem(struct net_device *dev, int offset)
+{
+	if (wl_ioctl(dev, WLC_GET_SHMEM, &offset, sizeof(offset)) < 0)
+		return -EINVAL;
+
+	return offset;
+}
 
 static int wlcompat_ioctl_getiwrange(struct net_device *dev,
 				    char *extra)
@@ -397,17 +406,43 @@ static int wlcompat_ioctl(struct net_device *dev,
 		}
 		case SIOCGIWENCODE:
 		{
-			int val = 0;
+			int val;
+			
 			if (wl_ioctl(dev, WLC_GET_WEP, &val, sizeof(val)) < 0)
 				return -EINVAL;
 			
+
 			if (val > 0) {
-				wrqu->data.flags = IW_ENCODE_ENABLED | IW_ENCODE_NOKEY;
+				int key;
+				
+				for (key = val = 0; (key < 4) && (val == 0); key++) {
+					val = key;
+					if (wl_ioctl(dev, WLC_GET_KEY_PRIMARY, &val, sizeof(val)) < 0)
+						return -EINVAL;
+				}
+				
+				wrqu->data.flags = IW_ENCODE_ENABLED;
+				if (key-- > 0) {
+					int magic_offset;
+					int16 buffer[8];
+					
+					magic_offset = read_shmem(dev, 0x56) * 2;
+
+					wrqu->data.flags |= key + 1;
+					wrqu->data.length = 16;
+					
+					for (val = 0; val < 8; val++) {
+						buffer[val] = read_shmem(dev, magic_offset + (key * 16) + val * 2);
+					}
+					
+					memset(extra, 0, 16);
+					memcpy(extra, buffer, 16);
+				} else {
+					wrqu->data.flags |= IW_ENCODE_NOKEY;
+				}
 			} else {
 				wrqu->data.flags = IW_ENCODE_DISABLED;
 			}
-				
-				
 			
 			break;
 		}
