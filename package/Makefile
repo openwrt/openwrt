@@ -43,6 +43,7 @@ package-$(BR2_PACKAGE_NMAP) += nmap
 package-$(BR2_PACKAGE_NOCATSPLASH) += nocatsplash
 package-$(BR2_PACKAGE_NTPCLIENT) += ntpclient
 package-$(BR2_PACKAGE_OLSRD) += olsrd
+package-$(BR2_PACKAGE_OPENLDAP) += openldap
 package-$(BR2_PACKAGE_OPENSSL) += openssl
 package-$(BR2_PACKAGE_OPENSWAN) += openswan
 package-$(BR2_PACKAGE_OPENNTPD) += openntpd
@@ -124,6 +125,7 @@ kismet-compile: uclibc++-compile libpcap-compile
 tinc-compile: zlib-compile openssl-compile lzo-compile
 fprobe-compile: libpcap-compile
 cyrus-sasl-compile: openssl-compile
+openldap-compile: cyrus-sasl-compile openssl-compile
 
 snort-compile: libnet-compile libpcap-compile pcre-compile
 ifeq ($(BR2_PACKAGE_SNORT_MYSQL),y)

@@ -1,0 +1,12 @@
+diff -ruN openldap-2.2.26-orig/libraries/liblunicode/Makefile.in openldap-2.2.26-1/libraries/liblunicode/Makefile.in
+--- openldap-2.2.26-orig/libraries/liblunicode/Makefile.in	2005-01-20 18:01:03.000000000 +0100
++++ openldap-2.2.26-1/libraries/liblunicode/Makefile.in	2005-05-08 15:47:08.000000000 +0200
+@@ -29,7 +29,7 @@
+ LDAP_INCDIR= ../../include       
+ LDAP_LIBDIR= ../../libraries
+ 
+-ucgendat: $(XLIBS) ucgendat.o
++ucgendat: ucgendat.o
+ 	$(LTLINK) -o $@ ucgendat.o $(LIBS)
+ 	./ucgendat $(srcdir)/UnicodeData.txt -x $(srcdir)/CompositionExclusions.txt
+ 
