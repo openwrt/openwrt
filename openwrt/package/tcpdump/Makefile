@@ -14,21 +14,14 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
-IPKG_TCPDUMP:=$(PACKAGE_DIR)/$(PKG_NAME)_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
-IDIR_TCPDUMP:=$(PKG_BUILD_DIR)/ipkg/$(PKG_NAME)
-INFO_TCPDUMP:=$(IPKG_STATE_DIR)/info/$(PKG_NAME).list
+include $(TOPDIR)/package/rules.mk
 
-$(DL_DIR)/$(PKG_SOURCE):
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE) $(PKG_MD5SUM) $(PKG_SOURCE_URL)
-
-$(PKG_BUILD_DIR)/.prepared: $(DL_DIR)/$(PKG_SOURCE)
-	$(PKG_CAT) $(DL_DIR)/$(PKG_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
-	$(PATCH) $(PKG_BUILD_DIR) ./patches
-	touch $(PKG_BUILD_DIR)/.prepared
+$(eval $(call PKG_template,TCPDUMP,tcpdump,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
-	(cd $(PKG_BUILD_DIR); rm -rf config.cache; \
+	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
 		BUILD_CC=$(TARGET_CC) HOSTCC=$(HOSTCC) \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
@@ -63,26 +56,17 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 	);
 	touch $(PKG_BUILD_DIR)/.configured
 
-$(PKG_BUILD_DIR)/$(PKG_NAME): $(PKG_BUILD_DIR)/.configured
+$(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CCOPT="$(TARGET_CFLAGS)" INCLS="-I. -I$(STAGING_DIR)/usr/include"
+	mkdir -p $(PKG_INSTALL_DIR)
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		DESTDIR="$(PKG_INSTALL_DIR)" \
+		install
+	touch $(PKG_BUILD_DIR)/.built
 
-$(IPKG_TCPDUMP): $(PKG_BUILD_DIR)/$(PKG_NAME)
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_TCPDUMP) ./ipkg/$(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
+$(IPKG_TCPDUMP):
 	install -m0755 -d $(IDIR_TCPDUMP)/usr/sbin
-	install -m0755 $(PKG_BUILD_DIR)/$(PKG_NAME) $(IDIR_TCPDUMP)/usr/sbin/
+	install -m0755 $(PKG_INSTALL_DIR)/usr/sbin/tcpdump $(IDIR_TCPDUMP)/usr/sbin/
 	$(RSTRIP) $(IDIR_TCPDUMP)
-	mkdir -p $(PACKAGE_DIR)
 	$(IPKG_BUILD) $(IDIR_TCPDUMP) $(PACKAGE_DIR)
-
-$(INFO_TCPDUMP): $(IPKG_TCPDUMP)
-	$(IPKG) install $(IPKG_TCPDUMP)
-
-source: $(DL_DIR)/$(PKG_SOURCE)
-prepare: $(PKG_BUILD_DIR)/.prepared
-compile: $(IPKG_TCPDUMP)
-install: $(INFO_TCPDUMP)
-
-clean:
-	rm -rf $(PKG_BUILD_DIR)
-	rm -rf $(IPKG_TCPDUMP)
