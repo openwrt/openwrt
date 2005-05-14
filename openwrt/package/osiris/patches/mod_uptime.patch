@@ -1,0 +1,239 @@
+--- osiris-4.1.8-orig/src/osirisd/modules/mod_uptime/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ osiris-4.1.8-1/src/osirisd/modules/mod_uptime/Makefile	2005-04-22 23:11:32.000000000 +0200
+@@ -0,0 +1,16 @@
++
++include ../Makefile
++
++SRCS=mod_uptime.c
++OBJS=$(SRCS:.c=.o)
++
++module: ${SRCS} ${OBJS}
++
++INCS=-I../.. -I../../../libosiris -I../../../libfileapi -I../../../..
++
++# meta-rule for compiling any "C" source file.
++$(OBJS): $(SRCS)
++	$(CC) $(DEFS) $(DEFAULT_INCLUDES) ${INCLUDES} ${INCS} $(AM_CPPFLAGS) \
++	$(CPPFLAGS) $(AM_CFLAGS)  $(CFLAGS) -c $(SRCS)
++	cp $@ ..
++
+--- osiris-4.1.8-orig/src/osirisd/modules/mod_uptime/README	1970-01-01 01:00:00.000000000 +0100
++++ osiris-4.1.8-1/src/osirisd/modules/mod_uptime/README	2005-04-22 23:11:32.000000000 +0200
+@@ -0,0 +1,36 @@
++
++Module: mod_uptime
++Author: Brian Wotring (brian@shmoo.com)
++
++
++
++DESCRIPTION:
++
++The mod_uptime module obtains the system boot time value for comparison
++with scans.
++
++USE:
++
++To use this module, all  that is needed is to include it in the System
++block of a scan configuration, e.g.:
++
++    <System>
++    ...
++    Include mod_uptime
++    ...
++    </System>
++
++
++PARAMETERS:
++
++There are no parameters for this module.
++
++PLATFORMS:
++    
++Currently, this module is implemented for FreeBSD, OpenBSD,
++Linux, Solaris, and Mac OS X.
++
++NOTES:
++
++
++
+--- osiris-4.1.8-orig/src/osirisd/modules/mod_uptime/mod_uptime.c	1970-01-01 01:00:00.000000000 +0100
++++ osiris-4.1.8-1/src/osirisd/modules/mod_uptime/mod_uptime.c	2005-04-22 23:11:32.000000000 +0200
+@@ -0,0 +1,178 @@
++
++/******************************************************************************
++**
++**  This program is free software; you can redistribute it and/or
++**  modify it, however, you cannot sell it.
++**
++**  This program is distributed in the hope that it will be useful,
++**  but WITHOUT ANY WARRANTY; without even the implied warranty of
++**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
++**
++**  You should have received a copy of the license attached to the
++**  use of this software.  If not, visit www.shmoo.com/osiris for
++**  details.
++**
++******************************************************************************/
++
++/*****************************************************************************
++**
++**  File:    mod_uptime.c
++**  Date:    March 22, 2004
++**
++**  Author:  Brian Wotring
++**  Purpose: platform specific methods for obtaining the system boot time.
++**
++******************************************************************************/
++
++#include "libosiris.h"
++#include "libfileapi.h"
++#include "rootpriv.h"
++#include "common.h"
++#include "version.h"
++
++#include "scanner.h"
++#include "logging.h"
++#include "config.h"
++
++#ifdef HAVE_SYS_SYSCTL_H
++#include <sys/sysctl.h>
++#endif
++
++#ifdef SYSTEM_SUNOS
++#include <utmpx.h>
++#endif
++
++#ifdef SYSTEM_LINUX
++#include <utmp.h>
++#endif
++
++#define PROC_FILE "/proc/uptime"
++#define OSI_WTMP_FILE "/var/log/wtmp"
++
++static const char *MODULE_NAME = "mod_uptime";
++
++
++void mod_uptime( SCANNER *scanner )
++{
++    SCAN_RECORD_TEXT_1 record;
++    char *time = NULL;
++    char *temp;
++
++    initialize_scan_record( (SCAN_RECORD *)&record,
++                             SCAN_RECORD_TYPE_TEXT_1 );
++
++    osi_strlcpy( record.module_name, MODULE_NAME,
++                 sizeof( record.module_name ) );
++
++#if defined(SYSTEM_FREEBSD) || defined(SYSTEM_OPENBSD) || defined(SYSTEM_DARWIN)
++    {
++        time_t t;
++        struct timeval result;
++
++        int request[2] = { CTL_KERN, KERN_BOOTTIME };
++        size_t result_len = sizeof(result);
++
++        if( sysctl( request, 2, &result, &result_len, NULL, 0 ) < 0)
++        {
++            log_error( "unable to obtain uptime value." );
++            return;
++        }
++
++        t = result.tv_sec;
++        time = ctime( &t );
++    }
++
++#elif defined(SYSTEM_SUNOS)
++    {
++        struct utmpx * ent;
++        time_t t;
++
++        while( ( ent = getutxent() ) )
++        {
++            if( !strcmp( "system boot", ent->ut_line ) )
++            {
++                t = ent->ut_tv.tv_sec;
++                time = ctime( &t );
++            }
++        }
++    }
++
++#elif defined(SYSTEM_LINUX)
++    {
++        FILE *fp;
++        time_t t;
++        struct utmp ut;
++
++        char buf[40];
++        char buf2[10];
++        int filecount = 0;
++
++next_file:
++
++        osi_strlcpy( buf, OSI_WTMP_FILE, sizeof( buf ) );
++
++        if( filecount > 0 )
++        {
++            osi_snprintf( buf2, sizeof(buf2), "%d", filecount );
++            osi_strlcat( buf, buf2, sizeof(buf) );
++        }
++
++        fp = osi_fopen( buf, "r", 0 );
++
++        if( fp == NULL )
++        {
++            log_error( "unable to obtain uptime value." );
++            return;
++        }
++
++        while(1)
++        {
++            int rc = fread( &ut, 1, sizeof(ut), fp );
++
++            /* end of file, try next. */
++
++            if( rc == 0 )
++            {
++                filecount++;                
++                fclose( fp );
++
++                goto next_file;
++            }
++
++            /* found restart event. */
++
++            if( ( strcmp( ut.ut_name, "reboot" ) == 0 ) ||
++                ( strcmp( ut.ut_name, "shutdown" ) == 0 ) )
++            {
++
++                t = ut.ut_time;
++                time = ctime( &t );
++
++                break;
++            }
++        }
++
++        fclose( fp );
++    }
++#endif
++
++    if( time == NULL )
++    {
++        log_error( "unable to obtain uptime value." );
++        return;
++    }
++
++    /* remove any trailing newline from the ctime() calls. */
++
++    if( ( temp = strchr( time, '\n' ) ) )
++    {
++        (*temp) = '\0';
++    }
++
++    osi_strlcpy( record.name, "uptime", sizeof( record.name ) );
++    osi_strlcpy( record.data, time, sizeof( record.data ) );
++
++    send_scan_data( scanner, (SCAN_RECORD *)&record );
++}
++
++
