@@ -1,0 +1,14 @@
+--- htpdate-0.7.2-orig/htpdate.c	2005-05-05 20:53:13.000000000 +0200
++++ htpdate-0.7.2-1/htpdate.c	2005-05-07 15:31:21.000000000 +0200
+@@ -411,11 +411,8 @@
+ 
+ 		timestamp = getHTTPdate( host, port, proxy, proxyport, when );
+ 
+-		/* Only include valid responses in timedelta[], |delta time| < year */
+-		if ( labs(timestamp) < 31536000 ) {
+ 			timedelta[validtime] = timestamp;
+ 			validtime++;
+-		}
+ 
+ 		/* Sleep for a while, unless we detect a time offset */
+ 		if ( daemonize && (timestamp == 0) )
