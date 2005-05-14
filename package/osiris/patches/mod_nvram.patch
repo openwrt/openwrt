@@ -1,0 +1,207 @@
+--- osiris-4.1.8-orig/src/osirisd/modules/mod_nvram/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ osiris-4.1.8-1/src/osirisd/modules/mod_nvram/Makefile	2005-04-22 23:11:32.000000000 +0200
+@@ -0,0 +1,16 @@
++
++include ../Makefile
++
++SRCS=mod_nvram.c
++OBJS=$(SRCS:.c=.o)
++
++module: ${SRCS} ${OBJS}
++
++INCS=-I../.. -I../../../libosiris -I../../../libfileapi -I../../../..
++
++# meta-rule for compiling any "C" source file.
++$(OBJS): $(SRCS)
++	$(CC) $(DEFS) $(DEFAULT_INCLUDES) ${INCLUDES} ${INCS} $(AM_CPPFLAGS) \
++	$(CPPFLAGS) $(AM_CFLAGS)  $(CFLAGS) -c $(SRCS)
++	cp $@ ..
++
+--- osiris-4.1.8-orig/src/osirisd/modules/mod_nvram/README	1970-01-01 01:00:00.000000000 +0100
++++ osiris-4.1.8-1/src/osirisd/modules/mod_nvram/README	2005-04-22 23:11:32.000000000 +0200
+@@ -0,0 +1,40 @@
++
++Module: mod_nvram
++Author: Brian Wotring (brian@shmoo.com)
++
++
++
++DESCRIPTION:
++
++The mod_nvram module reads the key=value pairs stored in nvram.  This
++is primarily for Linksys routers, but could be modified to run on
++other systems if necessary.  On the routers like the WRT54G, the 
++nvram settings hold sensitive information that needs to be monitored.
++The format for the record structure is as follows:
++
++    name:value
++
++USE:
++
++To use this module, all  that is needed is to include it in the System
++block of a scan configuration, e.g.:
++
++    <System>
++    ...
++    Include mod_nvram
++    ...
++    </System>
++
++
++PARAMETERS:
++
++There are no parameters for this module.
++
++PLATFORMS:
++
++Currently, only for the Linksys WRT54G and WRT54GS devices.    
++
++NOTES:
++
++
++
+--- osiris-4.1.8-orig/src/osirisd/modules/mod_nvram/mod_nvram.c	1970-01-01 01:00:00.000000000 +0100
++++ osiris-4.1.8-1/src/osirisd/modules/mod_nvram/mod_nvram.c	2005-04-22 23:11:32.000000000 +0200
+@@ -0,0 +1,142 @@
++
++/******************************************************************************
++**
++**  This program is free software; you can redistribute it and/or
++**  modify it, however, you cannot sell it.
++**
++**  This program is distributed in the hope that it will be useful,
++**  but WITHOUT ANY WARRANTY; without even the implied warranty of
++**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
++**
++**  You should have received a copy of the license attached to the
++**  use of this software.  If not, visit www.shmoo.com/osiris for
++**  details.
++**
++******************************************************************************/
++
++/*****************************************************************************
++**
++**  File:    mod_users.c
++**  Date:    January 1, 2004
++**
++**  Author:  Brian Wotring
++**  Purpose: platform specific methods for reading user file information.
++**
++******************************************************************************/
++
++#include "libosiris.h"
++#include "libfileapi.h"
++#include "rootpriv.h"
++#include "common.h"
++#include "version.h"
++
++#include "scanner.h"
++#include "logging.h"
++
++
++#define NVRAM_PATH "/usr/sbin/nvram"
++#define NVRAM_ARG "show"
++
++static const char *MODULE_NAME = "mod_nvram";
++
++
++void mod_nvram( SCANNER *scanner )
++{
++    int pid;
++    int pc[2];
++    int cp[2];
++    char temp_line[4096];
++    FILE *file;
++    SCAN_RECORD_TEXT_1 record;
++
++    if( pipe(pc) < 0)
++    {
++        log_error( "mod_nvram: error creating pipe!" );
++        return;
++    }
++
++    if( pipe(cp) < 0)
++    {
++        log_error( "mod_nvram: error creating pipe!" );
++        return;
++    }
++
++    /* Create a child to run nvram command. */
++
++    switch( pid = fork() )
++    {
++        case -1:
++            log_error( "nvram: fork error!" );
++            return;
++
++        case 0:
++
++            /* child */
++
++            close(1);    
++            dup( cp[1]); 
++            close(0); 
++            close( pc[1]);
++            close( cp[0]);
++            execl( NVRAM_PATH, NVRAM_PATH, NVRAM_ARG, NULL );
++            exit(0);
++
++        default:
++
++            /* parent */
++
++            close(pc[1]);
++            close(cp[1]);
++
++            file = fdopen( cp[0], "r" );
++
++            for(;;)
++            {
++                char *line;
++                char *key_end;
++
++                line = fgets( temp_line, sizeof( temp_line ), file );
++
++                if( line == NULL)
++                {
++                    break;
++                }
++
++                line = trim_white_space( line );
++
++                /* skip commented and empty lines. */
++
++                if( ( line == NULL ) || ( line[0] == '#' ) )
++                {
++                    continue;
++                }
++
++                /* locate the username, this is the first item in the colon list. */
++
++                if( ( key_end = strchr( line, '=' ) ) == NULL )
++                {
++                    continue;
++                }
++
++                initialize_scan_record( (SCAN_RECORD *)&record,
++                                         SCAN_RECORD_TYPE_TEXT_1 );
++
++                osi_strlcpy( record.module_name, MODULE_NAME,
++                             sizeof( record.module_name ) );
++
++                /* user the key as a key/path for this record. */
++
++                (*key_end) = '\0';
++                key_end++;
++                osi_strlcpy( record.name, "nvram:", sizeof( record.name ) );
++                osi_strlcat( record.name, line, sizeof( record.name ) );
++
++                /* now copy in the value into the data portion. */
++                /* and send this record on its way.             */
++
++                osi_strlcpy( record.data, key_end, sizeof( record.data ) );
++                send_scan_data( scanner, (SCAN_RECORD *)&record );
++            }
++    }
++}
++

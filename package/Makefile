@@ -87,6 +87,7 @@ package-$(BR2_PACKAGE_LIBOSIP2) += libosip2
 package-$(BR2_PACKAGE_SIPROXD) += siproxd
 package-$(BR2_PACKAGE_SIPSAK) += sipsak
 package-$(BR2_PACKAGE_HTPDATE) += htpdate
+package-$(BR2_PACKAGE_OSIRISD) += osiris
 
 DEV_LIBS:=tcp_wrappers glib ncurses openssl pcre popt zlib libnet libpcap mysql postgresql iptables matrixssl lzo gmp fuse portmap libelf uclibc++ speex libpng libgd
 DEV_LIBS_COMPILE:=$(patsubst %,%-compile,$(DEV_LIBS))
@@ -134,6 +135,7 @@ cyrus-sasl-compile: openssl-compile
 openldap-compile: cyrus-sasl-compile openssl-compile
 siproxd-compile: libosip2-compile
 sipsak-compile: openssl-compile
+osiris-compile: openssl-compile
 
 snort-compile: libnet-compile libpcap-compile pcre-compile
 ifeq ($(BR2_PACKAGE_SNORT_MYSQL),y)
