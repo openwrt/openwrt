@@ -86,6 +86,7 @@ package-$(BR2_PACKAGE_LIBLTDL) += libtool
 package-$(BR2_PACKAGE_LIBOSIP2) += libosip2
 package-$(BR2_PACKAGE_SIPROXD) += siproxd
 package-$(BR2_PACKAGE_SIPSAK) += sipsak
+package-$(BR2_PACKAGE_HTPDATE) += htpdate
 
 DEV_LIBS:=tcp_wrappers glib ncurses openssl pcre popt zlib libnet libpcap mysql postgresql iptables matrixssl lzo gmp fuse portmap libelf uclibc++ speex libpng libgd
 DEV_LIBS_COMPILE:=$(patsubst %,%-compile,$(DEV_LIBS))
