@@ -1,7 +1,7 @@
-config BR2_PACKAGE_LZO
-	tristate "lzo"
+config BR2_PACKAGE_LIBLZO
+	tristate "liblzo (a real-time data compression library)"
 	default m if CONFIG_DEVEL
 	help
-	  A library implementing transparent compression/decompression
+	  A real-time data compression library
 	 
 	  http://www.oberhumer.com/opensource/lzo/
