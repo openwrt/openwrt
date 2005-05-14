@@ -2,73 +2,67 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME := tinc
-PKG_VERSION := 1.0.4
-PKG_RELEASE := 1
-PKG_MD5SUM := 63887373dd763f8d90cecc5a3616c363
+PKG_NAME:=tinc
+PKG_VERSION:=1.0.4
+PKG_RELEASE:=1
+PKG_MD5SUM:=63887373dd763f8d90cecc5a3616c363
 
-PKG_SOURCE_SITE := http://www.tinc-vpn.org/packages
-PKG_SOURCE_FILE := $(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_CAT := zcat
-PKG_SOURCE_DIR := $(PKG_NAME)-$(PKG_VERSION)
-PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_SOURCE_DIR)
-PKG_IPK := $(PACKAGE_DIR)/$(PKG_NAME)_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
-PKG_CAT := zcat
-PKG_IPK_DIR := $(PKG_BUILD_DIR)/ipkg
+PKG_SOURCE_URL:=http://www.tinc-vpn.org/packages
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_CAT:=zcat
 
-$(DL_DIR)/$(PKG_SOURCE_FILE):
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE_FILE) $(PKG_MD5SUM) $(PKG_SOURCE_SITE)
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
-$(PKG_BUILD_DIR)/.unpacked: $(DL_DIR)/$(PKG_SOURCE_FILE)
-	$(PKG_CAT) $(DL_DIR)/$(PKG_SOURCE_FILE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
-	touch $(PKG_BUILD_DIR)/.unpacked
+include $(TOPDIR)/package/rules.mk
 
-$(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.unpacked
-	(cd $(PKG_BUILD_DIR) ; \
-	$(TARGET_CONFIGURE_OPTS) \
-	CFLAGS="$(TARGET_CFLAGS)" \
-	./configure \
-	--target=$(GNU_TARGET_NAME) \
-	--host=$(GNU_TARGET_NAME) \
-	--build=$(GNU_HOST_NAME) \
-	--prefix=/usr \
-	--exec-prefix=/usr \
-	--bindir=/usr/bin \
-	--sbindir=/usr/sbin \
-	--libexecdir=/usr/lib \
-	--datadir=/usr/share \
-	--infodir=/usr/share/info \
-	--mandir=/usr/share/man \
-	--localstatedir=/var \
-	--sysconfdir=/etc \
-	--with-kernel=$(LINUX_DIR) \
-	--with-zlib=$(STAGING_DIR)/usr/ \
-	$(DISABLE_NLS) )
+$(eval $(call PKG_template,TINC,tinc,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+
+$(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
+	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
+		$(TARGET_CONFIGURE_OPTS) \
+		CFLAGS="$(TARGET_CFLAGS)" \
+		CPPFLAGS="-I$(STAGING_DIR)/usr/include" \
+		LDFLAGS="-L$(STAGING_DIR)/usr/lib" \
+		./configure \
+		  --target=$(GNU_TARGET_NAME) \
+		  --host=$(GNU_TARGET_NAME) \
+		  --build=$(GNU_HOST_NAME) \
+		  --program-prefix="" \
+		  --program-suffix="" \
+		  --prefix=/usr \
+		  --exec-prefix=/usr \
+		  --bindir=/usr/bin \
+		  --datadir=/usr/share \
+		  --includedir=/usr/include \
+		  --infodir=/usr/share/info \
+		  --libdir=/usr/lib \
+		  --libexecdir=/usr/lib \
+		  --localstatedir=/var \
+		  --mandir=/usr/share/man \
+		  --sbindir=/usr/sbin \
+		  --sysconfdir=/etc \
+		  $(DISABLE_NLS) \
+		  $(DISABLE_LARGEFILE) \
+		  --with-kernel=$(LINUX_DIR) \
+		  --with-zlib=$(STAGING_DIR)/usr/ \
+	);
 	touch $(PKG_BUILD_DIR)/.configured
 
-$(PKG_BUILD_DIR)/$(PKG_NAME): $(PKG_BUILD_DIR)/.configured
+$(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 	$(MAKE) -C $(PKG_BUILD_DIR) \
-	CC=$(TARGET_CC) \
-	CFLAGS="$(TARGET_CFLAGS)" \
-	all
+		CC=$(TARGET_CC) \
+		CFLAGS="$(TARGET_CFLAGS)" \
+		all
+	mkdir -p $(PKG_INSTALL_DIR)
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		DESTDIR="$(PKG_INSTALL_DIR)" \
+		install
+	touch $(PKG_BUILD_DIR)/.built
 
-$(PKG_IPK): $(PKG_BUILD_DIR)/$(PKG_NAME)
-	mkdir -p $(PKG_IPK_DIR)/usr/bin
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_IPK_DIR) $(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
-	cp $(PKG_BUILD_DIR)/src/tincd $(PKG_IPK_DIR)/usr/bin/
-	$(STRIP) $(PKG_IPK_DIR)/usr/bin/*
-	mkdir -p $(PACKAGE_DIR)
-	find $(PKG_IPK_DIR) -name CVS | xargs rm -rf
-	$(IPKG_BUILD) $(PKG_IPK_DIR) $(PACKAGE_DIR)
+$(IPKG_TINC):
+	install -m0755 -d $(IDIR_TINC)/usr/sbin
+	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/tincd $(IDIR_TINC)/usr/sbin/
+	$(RSTRIP) $(IDIR_TINC)
+	$(IPKG_BUILD) $(IDIR_TINC) $(PACKAGE_DIR)
 
-$(IPKG_STATE_DIR)/info/tinc.list: $(PKG_IPK)
-	$(IPKG) install $(PKG_IPK)
-
-source: $(DL_DIR)/$(PKG_SOURCE)
-prepare: $(PKG_BUILD_DIR)/.unpacked
-compile: $(PKG_IPK)
-install: $(IPKG_STATE_DIR)/info/tinc.list
-
-clean:  
-	rm -rf $(PKG_BUILD_DIR)
-	rm -f $(PKG_IPK)
