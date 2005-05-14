@@ -1,0 +1,68 @@
+--- osiris-4.1.8-orig/src/osirisd/osirisd.c	2005-04-14 01:00:55.000000000 +0200
++++ osiris-4.1.8-1/src/osirisd/osirisd.c	2005-04-22 23:11:32.000000000 +0200
+@@ -218,6 +218,8 @@
+ 
+ #ifdef USE_PRIVSEP
+     rootpriv_setup_pidfile();
++#else
++    setup_pidfile();
+ #endif
+ 
+     process();
+--- osiris-4.1.8-orig/src/osirisd/rootpriv.c	2005-04-14 00:55:59.000000000 +0200
++++ osiris-4.1.8-1/src/osirisd/rootpriv.c	2005-04-22 23:25:10.000000000 +0200
+@@ -35,6 +35,10 @@
+ #include "logging.h"
+ #include "rootpriv.h"
+ 
++#ifndef WIN32
++extern char pid_file[MAX_PATH_LENGTH];
++#endif
++
+ #ifdef USE_PRIVSEP
+ 
+ /* this is defined in regex, and sometimes conflicts with stuff */
+@@ -80,10 +84,6 @@
+ extern pid_t child_pid;
+ extern int rootpriv_pipe[2];      /* socketpair used for rootpriv comm.  */
+ 
+-#ifndef WIN32
+-extern char pid_file[MAX_PATH_LENGTH];
+-#endif
+-
+ #define INCOMING_ROOT_REQUEST() ( FD_ISSET( rootpriv_pipe[1], &root_read_set ) )
+ 
+ 
+@@ -292,17 +292,6 @@
+ #endif
+ }
+ 
+-void setup_pidfile()
+-{
+-    FILE *pidfile = fopen( pid_file, "wb" );
+-
+-    if( pidfile != NULL )
+-    {
+-        fprintf( pidfile, "%ld\n", (long)getpid() );
+-        fclose( pidfile );
+-    }
+-}
+-
+ void handle_signals()
+ {
+     pid_t pid;
+@@ -789,3 +778,14 @@
+ 
+ #endif /* USE_PRIVSEP */
+ 
++void setup_pidfile()
++{
++    FILE *pidfile = fopen( pid_file, "wb" );
++
++    if( pidfile != NULL )
++    {
++        fprintf( pidfile, "%ld\n", (long)getpid() );
++        fclose( pidfile );
++    }
++}
++
