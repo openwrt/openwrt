@@ -83,6 +83,7 @@ package-$(BR2_PACKAGE_LIBPNG) += libpng
 package-$(BR2_PACKAGE_LIBPQ) += postgresql
 package-$(BR2_PACKAGE_LIBSASL2) += cyrus-sasl
 package-$(BR2_PACKAGE_LIBLTDL) += libtool
+package-$(BR2_PACKAGE_LIBOSIP2) += libosip2
 
 DEV_LIBS:=tcp_wrappers glib ncurses openssl pcre popt zlib libnet libpcap mysql postgresql iptables matrixssl lzo gmp fuse portmap libelf uclibc++ speex libpng libgd
 DEV_LIBS_COMPILE:=$(patsubst %,%-compile,$(DEV_LIBS))

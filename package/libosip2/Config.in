@@ -1,0 +1,8 @@
+config BR2_PACKAGE_LIBOSIP2
+	tristate "libosip2 (GNU oSIP library)"
+	default m if CONFIG_DEVEL
+	help
+	  GNU oSIP library, a Session Initiation Protocol (SIP) implementation
+	  
+	  http://www.gnu.org/software/osip/
+	  
