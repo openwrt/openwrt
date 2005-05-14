@@ -2,72 +2,81 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME := lzo
-PKG_VERSION := 1.08
-PKG_RELEASE := 1
-PKG_MD5SUM := ab94d3da364c7cbd5b78d76f1875b0f6
+PKG_NAME:=lzo
+PKG_VERSION:=1.08
+PKG_RELEASE:=1
+PKG_MD5SUM:=ab94d3da364c7cbd5b78d76f1875b0f6
 
-PKG_SOURCE_SITE := http://www.oberhumer.com/opensource/lzo/download/
-PKG_SOURCE_FILE := $(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_CAT := zcat
-PKG_SOURCE_DIR := $(PKG_NAME)-$(PKG_VERSION)
-PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_SOURCE_DIR)
-PKG_IPK := $(PACKAGE_DIR)/$(PKG_NAME)_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
+PKG_SOURCE_URL:=http://www.oberhumer.com/opensource/lzo/download/
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_CAT:=zcat
 
-$(DL_DIR)/$(PKG_SOURCE_FILE):
-	mkdir -p $(DL_DIR)
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE_FILE) $(PKG_MD5SUM) $(PKG_SOURCE_SITE)
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
-$(PKG_BUILD_DIR)/.patched: $(DL_DIR)/$(PKG_SOURCE_FILE)
-	mkdir -p $(TOOL_BUILD_DIR)
-	$(PKG_SOURCE_CAT) $(DL_DIR)/$(PKG_SOURCE_FILE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
-	$(PATCH) $(PKG_BUILD_DIR) . ./patches
-	touch $(PKG_BUILD_DIR)/.patched
+include $(TOPDIR)/package/rules.mk
 
-$(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.patched
-	(cd $(PKG_BUILD_DIR); rm -rf config.cache; \
+$(eval $(call PKG_template,LIBLZO,liblzo,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+
+$(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
+	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
 		$(TARGET_CONFIGURE_OPTS) \
+		CFLAGS="$(strip $(TARGET_CFLAGS))" \
+		CPPFLAGS="-I$(STAGING_DIR)/usr/include" \
+		LDFLAGS="-L$(STAGING_DIR)/usr/lib" \
 		./configure \
-		--target=$(GNU_TARGET_NAME) \
-		--host=$(GNU_TARGET_NAME) \
-		--build=$(GNU_HOST_NAME) \
-		--prefix=/ \
-		--exec-prefix=/ \
-		--bindir=/bin \
-		--sbindir=/sbin \
-		--libexecdir=/lib \
-		--sysconfdir=/etc \
-		--localstatedir=/var \
-		--enable-shared \
+		  --target=$(GNU_TARGET_NAME) \
+		  --host=$(GNU_TARGET_NAME) \
+		  --build=$(GNU_HOST_NAME) \
+		  --program-prefix="" \
+		  --program-suffix="" \
+		  --prefix=/usr \
+		  --exec-prefix=/usr \
+		  --bindir=/usr/bin \
+		  --datadir=/usr/share \
+		  --includedir=/usr/include \
+		  --infodir=/usr/share/info \
+		  --libdir=/usr/lib \
+		  --libexecdir=/usr/lib \
+		  --localstatedir=/var \
+		  --mandir=/usr/share/man \
+		  --sbindir=/usr/sbin \
+		  --sysconfdir=/etc \
+		  $(DISABLE_LARGEFILE) \
+		  $(DISABLE_NLS) \
+		  --enable-shared \
+		  --enable-static \
 	);
 	touch $(PKG_BUILD_DIR)/.configured
 
-$(PKG_BUILD_DIR)/src/liblzo.la: $(PKG_BUILD_DIR)/.configured
-	$(MAKE) -C $(PKG_BUILD_DIR)
-
-$(STAGING_DIR)/lib/liblzo.a: $(PKG_BUILD_DIR)/src/liblzo.la
+$(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR) \
-	  CC=$(TARGET_CC) \
-	  DESTDIR="$(STAGING_DIR)" \
-	  install
+		CFLAGS_O="$(TARGET_CFLAGS)"
+	mkdir -p $(PKG_INSTALL_DIR)
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		DESTDIR="$(PKG_INSTALL_DIR)" \
+		install
+	touch $(PKG_BUILD_DIR)/.built
 
-$(PKG_IPK): $(STAGING_DIR)/lib/liblzo.a
-	mkdir -p $(PACKAGE_DIR)
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_BUILD_DIR)/ipkg/lzo lzo.control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
-	mkdir -p $(PKG_BUILD_DIR)/ipkg/lzo/usr/lib
-	cp -a $(STAGING_DIR)/lib/liblzo.so* $(PKG_BUILD_DIR)/ipkg/lzo/usr/lib
-	$(STRIP) $(PKG_BUILD_DIR)/ipkg/lzo/usr/lib/*
-	$(IPKG_BUILD) $(PKG_BUILD_DIR)/ipkg/lzo $(PACKAGE_DIR)
+$(IPKG_LIBLZO):
+	install -d -m0755 $(IDIR_LIBLZO)/usr/lib
+	cp -fpR $(STAGING_DIR)/lib/liblzo.so.* $(IDIR_LIBLZO)/usr/lib
+	$(RSTRIP) $(IDIR_LIBLZO)
+	$(IPKG_BUILD) $(IDIR_LIBLZO) $(PACKAGE_DIR)
 
-$(IPKG_STATE_DIR)/info/lzo.list: $(PKG_IPK)
-	$(IPKG) install $(PKG_IPK)
+$(STAGING_DIR)/usr/lib/liblzo.so: $(PKG_BUILD_DIR)/.built
+	mkdir -p $(STAGING_DIR)/usr/include
+	cp -fpR $(PKG_INSTALL_DIR)/usr/include/lzo*.h $(STAGING_DIR)/usr/include/
+	mkdir -p $(STAGING_DIR)/usr/lib
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/liblzo.{a,so*} $(STAGING_DIR)/usr/lib/
+	touch $(STAGING_DIR)/usr/lib/liblzo.so
 
-source: $(DL_DIR)/$(PKG_SOURCE_FILE)
-prepare: $(PKG_BUILD_DIR)/.patched
-compile: $(STAGING_DIR)/lib/liblzo.a $(PKG_IPK)
-install: $(IPKG_STATE_DIR)/info/lzo.list
+install-dev: $(STAGING_DIR)/usr/lib/liblzo.so
 
-clean:
-	rm -rf $(PKG_BUILD_DIR)
-	rm -f $(STAGING_DIR)/lib/liblzo*
-	rm -f $(PACKAGE_DIR)/lzo\*.ipk
+uninstall-dev:
+	rm -rf \
+	  $(STAGING_DIR)/usr/include/lzo*.h \
+	  $(STAGING_DIR)/usr/lib/liblzo.{a,so*} \
+
+compile: install-dev
+clean: uninstall-dev
