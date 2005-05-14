@@ -15,6 +15,7 @@ PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
 include $(TOPDIR)/package/rules.mk
+
 $(eval $(call PKG_template,CHILLISPOT,$(PKG_NAME),$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 $(PKG_BUILD_DIR)/.configured:
@@ -60,7 +61,7 @@ $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 
 $(IPKG_CHILLISPOT):
 	install -m0755 -d $(IDIR_CHILLISPOT)/etc/init.d
-	install -m0755 ./ipkg/$(PKG_NAME).init $(IDIR_CHILLISPOT)/etc/init.d/chilli
+	install -m0755 ./files/$(PKG_NAME).init $(IDIR_CHILLISPOT)/etc/init.d/chilli
 	install -m0755 -d $(IDIR_CHILLISPOT)/etc
 	install -m0644 $(PKG_BUILD_DIR)/doc/chilli.conf $(IDIR_CHILLISPOT)/etc/
 	install -m0755 -d $(IDIR_CHILLISPOT)/usr/sbin
