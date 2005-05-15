@@ -1,30 +1,29 @@
 config BR2_PACKAGE_KISMET
-	tristate
-	depends BR2_PACKAGE_SERVER || BR2_PACKAGE_CLIENT || BR2_PACKAGE_DRONE
+	bool "kismet - an 802.11 layer2 wireless network detector, sniffer, and intrusion detection system"
+	default y if CONFIG_DEVEL
 	select BR2_PACKAGE_LIBPCAP
 	select BR2_PACKAGE_UCLIBCXX
 	default n
-
-config BR2_PACKAGE_KISMET_SERVER
-	tristate "Kismet server"
-	select BR2_PACKAGE_KISMET
-	default m if CONFIG_DEVEL
 	help
-	  The Kismet server
+	  An 802.11 layer2 wireless network detector, sniffer, and intrusion detection system.
+	  
+	  http://www.kismetwireless.net/
+	  
+	  Depends: libpcap, uClibc++
+	  
 
 config BR2_PACKAGE_KISMET_CLIENT
-	tristate "Kismet client"
-	select BR2_PACKAGE_KISMET
+	tristate "kismet-client - the Kismet client"
 	default m if CONFIG_DEVEL
-	help
-	  The Kismet client
+	depends BR2_PACKAGE_KISMET
 
 config BR2_PACKAGE_KISMET_DRONE
-	tristate "Kismet drone"
-	select BR2_PACKAGE_KISMET
+	tristate "kismet-drone - the Kismet drone"
 	default m if CONFIG_DEVEL
-	help
-	  The Kismet drone
+	depends BR2_PACKAGE_KISMET
 
-
+config BR2_PACKAGE_KISMET_SERVER
+	tristate "kismet-server - the Kismet server"
+	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_KISMET
 
