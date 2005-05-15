@@ -12,7 +12,6 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
 include $(TOPDIR)/package/rules.mk
 
@@ -48,10 +47,6 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 
 $(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR)
-	mkdir -p $(PKG_INSTALL_DIR)
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		DESTDIR="$(PKG_INSTALL_DIR)" \
-		install
 	touch $(PKG_BUILD_DIR)/.built
 
 $(IPKG_MONIT):
@@ -60,6 +55,6 @@ $(IPKG_MONIT):
 	install -d -m0755 $(IDIR_MONIT)/etc/init.d
 	install -m0755 ./files/monit.init $(IDIR_MONIT)/etc/init.d/monit
 	install -d -m0755 $(IDIR_MONIT)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/monit $(IDIR_MONIT)/usr/sbin/
-	$(RSTRIP) $(IDIR_MONIT)
+	cp -fpR $(PKG_BUILD_DIR)/monit $(IDIR_MONIT)/usr/sbin/
+	$(STRIP) $(IDIR_MONIT)/usr/sbin/monit
 	$(IPKG_BUILD) $(IDIR_MONIT) $(PACKAGE_DIR)
