@@ -4,3 +4,9 @@ config BR2_PACKAGE_USBUTILS
 	select BR2_PACKAGE_LIBUSB
 	help
 	  A program to list Linux USB devices
+
+
+config BR2_PACKAGE_LSUSB
+	tristate
+	default BR2_PACKAGE_USBUTILS
+
