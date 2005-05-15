@@ -1,0 +1,20 @@
+config BR2_PACKAGE_ULOGD
+	tristate "ulogd - netfilter userspace logging daemon"
+	default m if CONFIG_DEVEL
+	help
+	  The netfilter userspace logging daemon
+	  
+	  http://gnumonks.org/projects/ulogd
+	  
+config BR2_PACKAGE_ULOGD_MYSQL_PLUGIN
+	depends BR2_PACKAGE_ULOGD
+	tristate "ulogd-mysql-plugin - an output plugin for logging into a MySQL database"
+	default m if CONFIG_DEVEL
+	select BR2_PACKAGE_LIBMYSQLCLIENT
+
+config BR2_PACKAGE_ULOGD_PGSQL_PLUGIN
+	depends BR2_PACKAGE_ULOGD
+	tristate "ulogd-pgsql-plugin - an output plugin for logging into a PostgreSQL database"
+	default m if CONFIG_DEVEL
+	select BR2_PACKAGE_LIBPQ
+
