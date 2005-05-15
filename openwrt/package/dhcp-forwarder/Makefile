@@ -56,10 +56,10 @@ $(PKG_BUILD_DIR)/.built:
 	touch $(PKG_BUILD_DIR)/.built
 	
 $(IPKG_DHCP_FORWARDER):
-	install -m0755 -d $(IDIR_DHCP_FORWARDER)/etc/init.d
-	install -m0755 ./ipkg/$(PKG_NAME).init $(IDIR_DHCP_FORWARDER)/etc/init.d/dhcp-fwd
 	install -m0755 -d $(IDIR_DHCP_FORWARDER)/etc
 	install -m0644 $(PKG_BUILD_DIR)/contrib/dhcp-fwd.conf $(IDIR_DHCP_FORWARDER)/etc/
+	install -m0755 -d $(IDIR_DHCP_FORWARDER)/etc/init.d
+	install -m0755 ./files/dhcp-fwd.init $(IDIR_DHCP_FORWARDER)/etc/init.d/dhcp-fwd
 	install -m0755 -d $(IDIR_DHCP_FORWARDER)/usr/bin
 	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/dhcp-fwd $(IDIR_DHCP_FORWARDER)/usr/bin/
 	$(RSTRIP) $(IDIR_DHCP_FORWARDER)
