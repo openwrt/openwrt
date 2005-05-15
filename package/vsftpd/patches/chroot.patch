@@ -1,0 +1,12 @@
+diff -ruN vsftpd-1.2.2-orig/tunables.c vsftpd-1.2.2-3/tunables.c
+--- vsftpd-1.2.2-orig/tunables.c	2004-04-20 02:25:05.000000000 +0200
++++ vsftpd-1.2.2-3/tunables.c	2005-03-09 21:12:35.000000000 +0100
+@@ -78,7 +78,7 @@
+ unsigned int tunable_max_per_ip = 0;
+ unsigned int tunable_trans_chunk_size = 0;
+ 
+-const char* tunable_secure_chroot_dir = "/usr/share/empty";
++const char* tunable_secure_chroot_dir = "/var/run/vsftpd";
+ const char* tunable_ftp_username = "ftp";
+ const char* tunable_chown_username = "root";
+ const char* tunable_xferlog_file = "/var/log/xferlog";

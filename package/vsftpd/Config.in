@@ -1,0 +1,8 @@
+config BR2_PACKAGE_VSFTPD
+	tristate "vsftpd - a fast and secure FTP server"
+	default m if CONFIG_DEVEL
+	help
+	  A fast and secure FTP server
+	  
+	  http://vsftpd.beasts.org/
+	  
