@@ -89,6 +89,7 @@ package-$(BR2_PACKAGE_SIPSAK) += sipsak
 package-$(BR2_PACKAGE_HTPDATE) += htpdate
 package-$(BR2_PACKAGE_HOWL) += howl
 package-$(BR2_PACKAGE_OSIRISD) += osiris
+package-$(BR2_PACKAGE_VSFTPD) += vsftpd
 package-$(BR2_PACKAGE_XINETD) += xinetd
 
 DEV_LIBS:=tcp_wrappers glib ncurses openssl pcre popt zlib libnet libpcap mysql postgresql iptables matrixssl lzo gmp fuse portmap libelf uclibc++ speex libpng libgd
