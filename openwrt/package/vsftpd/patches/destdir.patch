@@ -1,0 +1,48 @@
+diff -ruN vsftpd-1.2.2-orig/Makefile vsftpd-1.2.2-3/Makefile
+--- vsftpd-1.2.2-orig/Makefile	2003-09-15 13:41:58.000000000 +0200
++++ vsftpd-1.2.2-3/Makefile	2005-03-09 22:23:12.000000000 +0100
+@@ -16,6 +16,8 @@
+     tcpwrap.o ipv6parse.o access.o \
+     sysutil.o sysdeputil.o
+ 
++DESTDIR =
++
+ .c.o:
+ 	$(CC) -c $*.c $(CFLAGS) $(IFLAGS)
+ 
+@@ -23,21 +25,20 @@
+ 	$(CC) -o vsftpd $(OBJS) $(LINK) $(LIBS)
+ 
+ install:
+-	if [ -x /usr/local/sbin ]; then \
+-		$(INSTALL) -m 755 vsftpd /usr/local/sbin/vsftpd; \
+-	else \
+-		$(INSTALL) -m 755 vsftpd /usr/sbin/vsftpd; fi
+-	if [ -x /usr/local/man ]; then \
+-		$(INSTALL) -m 644 vsftpd.8 /usr/local/man/man8/vsftpd.8; \
+-		$(INSTALL) -m 644 vsftpd.conf.5 /usr/local/man/man5/vsftpd.conf.5; \
+-	elif [ -x /usr/share/man ]; then \
+-		$(INSTALL) -m 644 vsftpd.8 /usr/share/man/man8/vsftpd.8; \
+-		$(INSTALL) -m 644 vsftpd.conf.5 /usr/share/man/man5/vsftpd.conf.5; \
+-	else \
+-		$(INSTALL) -m 644 vsftpd.8 /usr/man/man8/vsftpd.8; \
+-		$(INSTALL) -m 644 vsftpd.conf.5 /usr/man/man5/vsftpd.conf.5; fi
+-	if [ -x /etc/xinetd.d ]; then \
+-		$(INSTALL) -m 644 xinetd.d/vsftpd /etc/xinetd.d/vsftpd; fi
++	mkdir -p $(DESTDIR)/usr/sbin
++	$(INSTALL) -m 755 vsftpd $(DESTDIR)/usr/sbin/
++	mkdir -p $(DESTDIR)/usr/share/man/man8
++	$(INSTALL) -m 644 vsftpd.8 $(DESTDIR)/usr/share/man/man8/
++	mkdir -p $(DESTDIR)/usr/share/man/man5
++	$(INSTALL) -m 644 vsftpd.conf.5 $(DESTDIR)/usr/share/man/man5/
++	mkdir -p $(DESTDIR)/etc/xinetd.d
++	$(INSTALL) -m 644 xinetd.d/vsftpd $(DESTDIR)/etc/xinetd.d/
++
++uninstall:
++	rm -f $(DESTDIR)/usr/sbin/vsftpd
++	rm -f $(DESTDIR)/usr/share/man/man8/vsftpd.8
++	rm -f $(DESTDIR)/usr/share/man/man5/vsftpd.conf.5
++	rm -f $(DESTDIR)/etc/xinetd.d/vsftpd
+ 
+ clean:
+ 	rm -f *.o *.swp vsftpd
