@@ -1,0 +1,20 @@
+#!/bin/sh
+
+DEFAULT=/etc/default/autopid
+RUN_D=/var/run
+PID_F=$RUN_D/autoipd.pid
+[ -f $DEFAULT ] && . $DEFAULT
+
+case $1 in
+ start)
+  [ -d $RUN_D ] || mkdir -p $RUN_D
+  autoipd $OPTIONS
+  ;;
+ stop)
+  [ -f $PID_F ] && kill $(cat $PID_F)
+  ;;
+ *)
+  echo "usage: $0 (start|stop)"
+  exit 1
+esac
+exit $?

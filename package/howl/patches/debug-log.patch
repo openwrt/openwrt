@@ -1,0 +1,10 @@
+--- howl-0.9.10-orig/src/mDNSResponder/Posix/posix_main.c	2005-01-27 04:11:20.000000000 +0100
++++ howl-0.9.10-2/src/mDNSResponder/Posix/posix_main.c	2005-03-19 13:04:42.000000000 +0100
+@@ -186,6 +186,7 @@
+ 			case 'd':
+ 			{
+ 				make_daemon = SW_FALSE;
++				sw_debug_set_level(SW_LOG_VERBOSE);
+ 			}
+ 			break;
+ 
