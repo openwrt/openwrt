@@ -1,3 +1,5 @@
+# $Id$
+
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=radvd
@@ -8,56 +10,61 @@ PKG_MD5SUM:=56ce3f8cbf5966a0d531c21813320423
 PKG_SOURCE_URL:=http://v6web.litech.org/radvd/dist \
 		http://download.sourcemage.org/mirror
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_CAT:=zcat
-PKG_IPK:=$(PACKAGE_DIR)/$(PKG_NAME)_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
-PKG_IPK_DIR:=$(PKG_BUILD_DIR)/ipkg
 
-$(DL_DIR)/$(PKG_SOURCE):
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE) $(PKG_MD5SUM) $(PKG_SOURCE_URL)
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
-$(PKG_BUILD_DIR)/.patched: $(DL_DIR)/$(PKG_SOURCE)
-	$(PKG_CAT) $(DL_DIR)/$(PKG_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
-	$(PATCH) $(PKG_BUILD_DIR) ./patches
-	touch $(PKG_BUILD_DIR)/.patched
+include $(TOPDIR)/package/rules.mk
 
-$(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.patched
-	(cd $(PKG_BUILD_DIR); rm -rf config.cache; \
+$(eval $(call PKG_template,RADVD,radvd,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+
+$(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
+	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
 		./configure \
-		--target=$(GNU_TARGET_NAME) \
-		--host=$(GNU_TARGET_NAME) \
-		--build=$(GNU_HOST_NAME) \
-		--prefix=/usr \
-		--with-logfile=/tmp/radvd.log \
-		--with-pidfile=/tmp/run/radvd.pid \
-		--with-configfile=/etc/radvd.conf \
+		  --target=$(GNU_TARGET_NAME) \
+		  --host=$(GNU_TARGET_NAME) \
+		  --build=$(GNU_HOST_NAME) \
+		  --program-prefix="" \
+		  --program-suffix="" \
+		  --prefix=/usr \
+		  --exec-prefix=/usr \
+		  --bindir=/usr/bin \
+		  --datadir=/usr/share \
+		  --includedir=/usr/include \
+		  --infodir=/usr/share/info \
+		  --libdir=/usr/lib \
+		  --libexecdir=/usr/lib \
+		  --localstatedir=/var \
+		  --mandir=/usr/share/man \
+		  --sbindir=/usr/sbin \
+		  --sysconfdir=/etc \
+		  $(DISABLE_LARGEFILE) \
+		  $(DISABLE_NLS) \
+		  --with-configfile=/etc/radvd.conf \
+		  --with-logfile=/var/log/radvd.log \
+		  --with-pidfile=/var/run/radvd.pid \
 	);
 	touch $(PKG_BUILD_DIR)/.configured
 
-$(PKG_BUILD_DIR)/$(PKG_NAME): $(PKG_BUILD_DIR)/.configured
-	$(MAKE) $(TARGET_CONFIGURE_OPTS) LD=$(TARGET_CC) LDFLAGS=-L$(PKG_BUILD_DIR) -C $(PKG_BUILD_DIR) radvd_LDADD=""
+$(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		radvd_LDADD=""
+	mkdir -p $(PKG_INSTALL_DIR)
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		DESTDIR="$(PKG_INSTALL_DIR)" \
+		install
+	touch $(PKG_BUILD_DIR)/.built
 
-$(PKG_IPK): $(PKG_BUILD_DIR)/$(PKG_NAME)
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_IPK_DIR) $(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
-	mkdir -p $(PKG_IPK_DIR)/usr/sbin $(PKG_IPK_DIR)/etc/init.d
-	install -m 755 $(PKG_BUILD_DIR)/radvd $(PKG_IPK_DIR)/usr/sbin/
-	install -m 755 $(PKG_BUILD_DIR)/radvdump $(PKG_IPK_DIR)/usr/sbin/
-	install -m 755 ./files/S51radvd $(PKG_IPK_DIR)/etc/init.d/
-	install -m 644 ./files/radvd.conf.example $(PKG_IPK_DIR)/etc/
-	$(STRIP) $(PKG_IPK_DIR)/usr/sbin/*
-	mkdir -p $(PACKAGE_DIR)
-	$(IPKG_BUILD) $(PKG_IPK_DIR) $(PACKAGE_DIR)
-
-$(IPKG_STATE_DIR)/info/$(PKG_NAME).list: $(PKG_IPK)
-	$(IPKG) install $(PKG_IPK)
-
-source: $(DL_DIR)/$(PKG_SOURCE)
-prepare: $(PKG_BUILD_DIR)/.patched
-compile: $(PKG_IPK)
-install: $(IPKG_STATE_DIR)/info/$(PKG_NAME).list
-
-clean:
-	rm -rf $(PKG_BUILD_DIR)
-	rm -f $(PKG_IPK)
+$(IPKG_RADVD):
+	install -d -m0755 $(IDIR_RADVD)/etc
+	install -m0644 ./files/radvd.conf $(IDIR_RADVD)/etc/radvd.conf
+	install -d -m0755 $(IDIR_RADVD)/etc/init.d
+	install -m0755 ./files/radvd.init $(IDIR_RADVD)/etc/init.d/S51radvd
+	install -d -m0755 $(IDIR_RADVD)/usr/sbin
+	install -m 755 $(PKG_INSTALL_DIR)/usr/sbin/radvd $(IDIR_RADVD)/usr/sbin/
+	install -m 755 $(PKG_INSTALL_DIR)/usr/sbin/radvdump $(IDIR_RADVD)/usr/sbin/
+	$(RSTRIP) $(IDIR_RADVD)
+	$(IPKG_BUILD) $(IDIR_RADVD) $(PACKAGE_DIR)

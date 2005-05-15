@@ -3,6 +3,7 @@
 case "$1" in
     start)
 	echo 1 > /proc/sys/net/ipv6/conf/all/forwarding
+	mkdir -p /var/log
 	mkdir -p /var/run
 	/usr/sbin/radvd
 	;;
