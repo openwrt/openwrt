@@ -1,0 +1,14 @@
+--- howl-0.9.10-orig/src/mDNSResponder/Posix/posix_main.c	2005-01-27 04:11:20.000000000 +0100
++++ howl-0.9.10-2/src/mDNSResponder/Posix/posix_main.c	2005-03-19 13:04:42.000000000 +0100
+@@ -249,9 +249,9 @@
+ 	{
+ 		sw_mdns_servant_load_file(servant, conf_file);
+ 	}
+-	else if (sw_mdns_servant_load_file(servant, "/etc/howl/mDNSResponder.conf") != SW_OKAY)
++	else
+ 	{
+-		sw_mdns_servant_load_file(servant, "/usr/local/etc/howl/mDNSResponder.conf");
++		sw_mdns_servant_load_file(servant, "/etc/mDNSResponder.conf");
+ 	}
+ 
+ 	write_pidfile("mDNSResponder", &pidfd);
