@@ -89,6 +89,7 @@ package-$(BR2_PACKAGE_SIPSAK) += sipsak
 package-$(BR2_PACKAGE_HTPDATE) += htpdate
 package-$(BR2_PACKAGE_HOWL) += howl
 package-$(BR2_PACKAGE_OSIRISD) += osiris
+package-$(BR2_PACKAGE_ULOGD) += ulogd
 package-$(BR2_PACKAGE_VSFTPD) += vsftpd
 package-$(BR2_PACKAGE_XINETD) += xinetd
 
