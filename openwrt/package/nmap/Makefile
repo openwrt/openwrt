@@ -12,21 +12,14 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_CAT:=bzcat
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
-IPKG_NMAP:=$(PACKAGE_DIR)/$(PKG_NAME)_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
-IDIR_NMAP:=$(PKG_BUILD_DIR)/ipkg/$(PKG_NAME)
-INFO_NMAP:=$(IPKG_STATE_DIR)/info/$(PKG_NAME).list
+include $(TOPDIR)/package/rules.mk
 
-$(DL_DIR)/$(PKG_SOURCE):
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE) $(PKG_MD5SUM) $(PKG_SOURCE_URL)
+$(eval $(call PKG_template,NMAP,nmap,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
-$(PKG_BUILD_DIR)/.prepared: $(DL_DIR)/$(PKG_SOURCE)
-	$(PKG_CAT) $(DL_DIR)/$(PKG_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
-	$(PATCH) $(PKG_BUILD_DIR) ./patches
-	touch $(PKG_BUILD_DIR)/.prepared
-
-$(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
-	(cd $(PKG_BUILD_DIR); rm -rf config.cache; \
+$(PKG_BUILD_DIR)/.configured:
+	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
 		$(TARGET_CONFIGURE_OPTS) \
 		libpcapdir="$(STAGING_DIR)/usr/lib" \
 		CFLAGS="$(TARGET_CFLAGS)" \
@@ -35,55 +28,47 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 		LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib  -fno-builtin -nostdinc++ -nodefaultlibs -luClibc++ -lc -lm" \
 		ac_cv_prog_CXX="$(TARGET_CXX)" \
 		./configure \
-		--target=$(GNU_TARGET_NAME) \
-		--host=$(GNU_TARGET_NAME) \
-		--build=$(GNU_HOST_NAME) \
-		--program-prefix="" \
-		--program-suffix="" \
-		--prefix=/usr \
-		--exec-prefix=/usr \
-		--bindir=/usr/bin \
-		--datadir=/usr/share \
-		--includedir=/usr/include \
-		--infodir=/usr/share/info \
-		--libdir=/usr/lib \
-		--libexecdir=/usr/lib \
-		--localstatedir=/var \
-		--mandir=/usr/share/man \
-		--sbindir=/usr/sbin \
-		--sysconfdir=/etc \
-		--without-openssl \
-		--with-libpcap="$(STAGING_DIR)/usr" \
-		--with-libpcre="$(STAGING_DIR)/usr" \
-		$(DISABLE_NLS) \
-		$(DISABLE_LARGEFILE) \
+		  --target=$(GNU_TARGET_NAME) \
+		  --host=$(GNU_TARGET_NAME) \
+		  --build=$(GNU_HOST_NAME) \
+		  --program-prefix="" \
+		  --program-suffix="" \
+		  --prefix=/usr \
+		  --exec-prefix=/usr \
+		  --bindir=/usr/bin \
+		  --datadir=/usr/share \
+		  --includedir=/usr/include \
+		  --infodir=/usr/share/info \
+		  --libdir=/usr/lib \
+		  --libexecdir=/usr/lib \
+		  --localstatedir=/var \
+		  --mandir=/usr/share/man \
+		  --sbindir=/usr/sbin \
+		  --sysconfdir=/etc \
+		  $(DISABLE_LARGEFILE) \
+		  $(DISABLE_NLS) \
+		  --without-openssl \
+		  --with-libpcap="$(STAGING_DIR)/usr" \
+		  --with-libpcre="$(STAGING_DIR)/usr" \
 	);
 	touch $(PKG_BUILD_DIR)/.configured
 
-$(PKG_BUILD_DIR)/$(PKG_NAME): $(PKG_BUILD_DIR)/.configured
+$(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
 		CCOPT="-fno-builtin -nostdinc++ -nodefaultlibs $(TARGET_CFLAGS)"
+	mkdir -p $(PKG_INSTALL_DIR)
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		DESTDIR="$(PKG_INSTALL_DIR)" \
+		install
+	touch $(PKG_BUILD_DIR)/.built
 
-$(IPKG_NMAP): $(PKG_BUILD_DIR)/$(PKG_NAME)
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_NMAP) $(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
-	mkdir -p $(IDIR_NMAP)/usr/share/nmap
+$(IPKG_NMAP):
+	install -d -m0755 $(IDIR_NMAP)/usr/share/nmap
 	for file in mac-prefixes os-fingerprints protocols rpc service-probes services; do \
-		cp $(PKG_BUILD_DIR)/nmap-$$file $(IDIR_NMAP)/usr/share/nmap; \
+		cp -fpR $(PKG_INSTALL_DIR)/usr/share/nmap/nmap-$$file $(IDIR_NMAP)/usr/share/nmap; \
 	done
-	mkdir -p $(IDIR_NMAP)/usr/sbin
-	cp $(PKG_BUILD_DIR)/$(PKG_NAME) $(IDIR_NMAP)/usr/sbin/
-	$(STRIP) $(IDIR_NMAP)/usr/sbin/*
-	mkdir -p $(PACKAGE_DIR)
+	install -d -m0755 $(IDIR_NMAP)/usr/bin
+	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/nmap $(IDIR_NMAP)/usr/bin/
+	$(RSTRIP) $(IDIR_NMAP)
 	$(IPKG_BUILD) $(IDIR_NMAP) $(PACKAGE_DIR)
-
-$(INFO_NMAP): $(IPKG_NMAP)
-	$(IPKG) install $(IPKG_NMAP)
-
-source: $(DL_DIR)/$(PKG_SOURCE)
-prepare: $(PKG_BUILD_DIR)/.prepared
-compile: $(IPKG_NMAP)
-install: $(INFO_NMAP)
-
-clean:
-	rm -rf $(PKG_BUILD_DIR) $(IPKG_NMAP)
