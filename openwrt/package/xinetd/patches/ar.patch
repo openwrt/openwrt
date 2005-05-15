@@ -1,0 +1,72 @@
+diff -ruN xinetd-2.3.13-orig/libs/src/misc/Makefile.in xinetd-2.3.13-6/libs/src/misc/Makefile.in
+--- xinetd-2.3.13-orig/libs/src/misc/Makefile.in	2003-02-19 18:29:27.000000000 +0100
++++ xinetd-2.3.13-6/libs/src/misc/Makefile.in	2005-03-09 22:53:15.000000000 +0100
+@@ -62,7 +62,7 @@
+ 
+ 
+ $(LIBNAME): $(OBJECTS)
+-	ar r $@ $?
++	$(AR) r $@ $?
+ 	$(RANLIB) $@
+ 
+ install: $(LIBNAME)
+diff -ruN xinetd-2.3.13-orig/libs/src/portable/Makefile.in xinetd-2.3.13-6/libs/src/portable/Makefile.in
+--- xinetd-2.3.13-orig/libs/src/portable/Makefile.in	2003-02-19 18:29:27.000000000 +0100
++++ xinetd-2.3.13-6/libs/src/portable/Makefile.in	2005-03-09 22:53:15.000000000 +0100
+@@ -57,7 +57,7 @@
+ 
+ 
+ $(LIBNAME): $(OBJECTS)
+-	ar r $@ $?
++	$(AR) r $@ $?
+ 	$(RANLIB) $@
+ 
+ install: $(LIBNAME)
+diff -ruN xinetd-2.3.13-orig/libs/src/pset/Makefile.in xinetd-2.3.13-6/libs/src/pset/Makefile.in
+--- xinetd-2.3.13-orig/libs/src/pset/Makefile.in	2003-02-19 18:29:27.000000000 +0100
++++ xinetd-2.3.13-6/libs/src/pset/Makefile.in	2005-03-09 22:53:15.000000000 +0100
+@@ -53,7 +53,7 @@
+ 	mv $(LIBNAME) $(LIBDIR)/optimized
+ 
+ $(LIBNAME): $(OBJECTS)
+-	ar r $@ $?
++	$(AR) r $@ $?
+ 	$(RANLIB) $@
+ 
+ install: $(LIBNAME)
+diff -ruN xinetd-2.3.13-orig/libs/src/sio/Makefile.in xinetd-2.3.13-6/libs/src/sio/Makefile.in
+--- xinetd-2.3.13-orig/libs/src/sio/Makefile.in	2003-02-19 18:29:27.000000000 +0100
++++ xinetd-2.3.13-6/libs/src/sio/Makefile.in	2005-03-09 22:53:15.000000000 +0100
+@@ -52,7 +52,7 @@
+ 	$(INSTALL) $(FMODE) $(LIBNAME) $(LIBDIR)/optimized
+ 
+ $(LIBNAME): $(OBJECTS)
+-	ar r $@ $?
++	$(AR) r $@ $?
+ 	$(RANLIB) $@
+ 
+ install: $(LIBNAME)
+diff -ruN xinetd-2.3.13-orig/libs/src/str/Makefile.in xinetd-2.3.13-6/libs/src/str/Makefile.in
+--- xinetd-2.3.13-orig/libs/src/str/Makefile.in	2003-02-19 18:29:27.000000000 +0100
++++ xinetd-2.3.13-6/libs/src/str/Makefile.in	2005-03-09 22:53:15.000000000 +0100
+@@ -63,7 +63,7 @@
+ 	$(INSTALL) $(FMODE) $(LIBNAME) $(LIBDIR)-O
+ 
+ $(LIBNAME): $(OBJECTS)
+-	ar r $@ $?
++	$(AR) r $@ $?
+ 	$(RANLIB) $@
+ 
+ LINT_IGNORE=possible pointer alignment|RCSid unused
+diff -ruN xinetd-2.3.13-orig/libs/src/xlog/Makefile.in xinetd-2.3.13-6/libs/src/xlog/Makefile.in
+--- xinetd-2.3.13-orig/libs/src/xlog/Makefile.in	2003-02-19 18:29:27.000000000 +0100
++++ xinetd-2.3.13-6/libs/src/xlog/Makefile.in	2005-03-09 22:53:15.000000000 +0100
+@@ -58,7 +58,7 @@
+ 	$(INSTALL) $(FMODE) $(LIBNAME) $(LIBDIR)/optimized
+ 
+ $(LIBNAME): $(OBJECTS)
+-	ar r $@ $?
++	$(AR) r $@ $?
+ 	$(RANLIB) $@
+ 
+ install: $(LIBNAME)
