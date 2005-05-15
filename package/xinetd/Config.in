@@ -1,0 +1,8 @@
+config BR2_PACKAGE_XINETD
+	tristate "xinetd - a powerful and secure superserver"
+	default m if CONFIG_DEVEL
+	help
+	  A powerful and secure superserver
+	  
+	  http://www.xinetd.org/
+	  
