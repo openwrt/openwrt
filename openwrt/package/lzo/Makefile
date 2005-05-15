@@ -60,7 +60,7 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_LIBLZO):
 	install -d -m0755 $(IDIR_LIBLZO)/usr/lib
-	cp -fpR $(STAGING_DIR)/lib/liblzo.so.* $(IDIR_LIBLZO)/usr/lib
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/liblzo.so.* $(IDIR_LIBLZO)/usr/lib
 	$(RSTRIP) $(IDIR_LIBLZO)
 	$(IPKG_BUILD) $(IDIR_LIBLZO) $(PACKAGE_DIR)
 
