@@ -1,0 +1,22 @@
+#!/bin/sh
+
+BIN=pmacctd
+DEFAULT=/etc/default/$BIN
+RUN_D=/var/run
+PID_F=$RUN_D/$BIN.pid
+[ -f $DEFAULT ] && . $DEFAULT
+
+case $1 in
+ start)
+  mkdir -p $RUN_D
+  $BIN $OPTIONS
+  ;;
+ stop)
+  [ -f $PID_F ] && kill -INT $(cat $PID_F)
+  ;;
+ *)
+  echo "usage: $0 (start|stop)"
+  exit 1
+esac
+
+exit $?
