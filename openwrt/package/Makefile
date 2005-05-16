@@ -88,6 +88,7 @@ package-$(BR2_PACKAGE_SIPROXD) += siproxd
 package-$(BR2_PACKAGE_SIPSAK) += sipsak
 package-$(BR2_PACKAGE_HTPDATE) += htpdate
 package-$(BR2_PACKAGE_HOWL) += howl
+package-$(BR2_PACKAGE_LIGHTTPD) += lighttpd
 package-$(BR2_PACKAGE_OSIRISD) += osiris
 package-$(BR2_PACKAGE_PMACCT) += pmacct
 package-$(BR2_PACKAGE_ULOGD) += ulogd
@@ -140,6 +141,7 @@ cyrus-sasl-compile: openssl-compile
 openldap-compile: cyrus-sasl-compile openssl-compile
 siproxd-compile: libosip2-compile
 sipsak-compile: openssl-compile
+lighttpd-compile: openssl-compile pcre-compile
 osiris-compile: openssl-compile
 pmacct-compile: libpcap-compile
 
