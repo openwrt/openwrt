@@ -133,7 +133,7 @@ libnet-compile: libpcap-compile
 mysql-compile: ncurses-compile zlib-compile
 postgresql-compile: zlib-compile
 nmap-compile: uclibc++-compile pcre-compile libpcap-compile
-kismet-compile: uclibc++-compile libpcap-compile
+kismet-compile: uclibc++-compile libpcap-compile ncurses-compile
 tinc-compile: zlib-compile openssl-compile lzo-compile
 fprobe-compile: libpcap-compile
 cyrus-sasl-compile: openssl-compile
