@@ -89,6 +89,7 @@ package-$(BR2_PACKAGE_SIPSAK) += sipsak
 package-$(BR2_PACKAGE_HTPDATE) += htpdate
 package-$(BR2_PACKAGE_HOWL) += howl
 package-$(BR2_PACKAGE_OSIRISD) += osiris
+package-$(BR2_PACKAGE_PMACCT) += pmacct
 package-$(BR2_PACKAGE_ULOGD) += ulogd
 package-$(BR2_PACKAGE_VSFTPD) += vsftpd
 package-$(BR2_PACKAGE_XINETD) += xinetd
@@ -140,6 +141,7 @@ openldap-compile: cyrus-sasl-compile openssl-compile
 siproxd-compile: libosip2-compile
 sipsak-compile: openssl-compile
 osiris-compile: openssl-compile
+pmacct-compile: libpcap-compile
 
 snort-compile: libnet-compile libpcap-compile pcre-compile
 ifeq ($(BR2_PACKAGE_SNORT_MYSQL),y)
