@@ -1,0 +1,114 @@
+config BR2_PACKAGE_FREERADIUS
+	prompt "freeradius - a flexible RADIUS server"
+	tristate 
+	default m if CONFIG_DEVEL
+	help
+	  A flexible RADIUS server
+	  
+	  http://www.freeradius.org/
+	  
+	  Depends: libltdl, libopenssl, libpthread
+	  
+
+config BR2_PACKAGE_FREERADIUS_DEMOCERTS
+	depends BR2_PACKAGE_FREERADIUS
+	prompt "democerts - a set of certificates to test the server"
+	tristate 
+	default m if CONFIG_DEVEL
+
+config BR2_PACKAGE_FREERADIUS_MOD_CHAP
+	depends BR2_PACKAGE_FREERADIUS
+	prompt "mod-chap - a CHAP module"
+	tristate 
+	default m if CONFIG_DEVEL
+
+config BR2_PACKAGE_FREERADIUS_MOD_EAP
+	depends BR2_PACKAGE_FREERADIUS
+	prompt "mod-eap - an EAP module"
+	tristate 
+	default m if CONFIG_DEVEL
+
+config BR2_PACKAGE_FREERADIUS_MOD_EAP_GTC
+	depends BR2_PACKAGE_FREERADIUS
+	prompt "mod-eap-gtc - an EAP/GTC module"
+	tristate 
+	default m if CONFIG_DEVEL
+
+config BR2_PACKAGE_FREERADIUS_MOD_EAP_MD5
+	depends BR2_PACKAGE_FREERADIUS
+	prompt "mod-eap-md5 - an EAP/MD5 module"
+	tristate 
+	default m if CONFIG_DEVEL
+
+config BR2_PACKAGE_FREERADIUS_MOD_EAP_MSCHAPV2
+	depends BR2_PACKAGE_FREERADIUS
+	prompt "mod-eap-mschapv2 - an EAP/MS-CHAPv2 module"
+	tristate 
+	default m if CONFIG_DEVEL
+
+config BR2_PACKAGE_FREERADIUS_MOD_EAP_PEAP
+	depends BR2_PACKAGE_FREERADIUS
+	prompt "mod-eap-peap - an EAP/PEAP module"
+	tristate 
+	default m if CONFIG_DEVEL
+
+config BR2_PACKAGE_FREERADIUS_MOD_EAP_TLS
+	depends BR2_PACKAGE_FREERADIUS
+	prompt "mod-eap-tls - an EAP/TLS module"
+	tristate 
+	default m if CONFIG_DEVEL
+
+config BR2_PACKAGE_FREERADIUS_MOD_EAP_TTLS
+	depends BR2_PACKAGE_FREERADIUS
+	prompt "mod-eap-ttls - an EAP/TTLS module"
+	tristate 
+	default m if CONFIG_DEVEL
+
+config BR2_PACKAGE_FREERADIUS_MOD_FILES
+	depends BR2_PACKAGE_FREERADIUS
+	prompt "mod-files - a module using local files for authorization"
+	tristate 
+	default m if CONFIG_DEVEL
+
+config BR2_PACKAGE_FREERADIUS_MOD_LDAP
+	depends BR2_PACKAGE_FREERADIUS
+	prompt "mod-ldap - an LDAP module"
+	tristate 
+	default m if CONFIG_DEVEL
+
+config BR2_PACKAGE_FREERADIUS_MOD_MSCHAP
+	depends BR2_PACKAGE_FREERADIUS
+	prompt "mod-mschap - an MS-CHAP and MS-CHAPv2 module"
+	tristate 
+	default m if CONFIG_DEVEL
+
+config BR2_PACKAGE_FREERADIUS_MOD_PAP
+	depends BR2_PACKAGE_FREERADIUS
+	prompt "mod-pap - a PAP module"
+	tristate 
+	default m if CONFIG_DEVEL
+
+config BR2_PACKAGE_FREERADIUS_MOD_SQL
+	depends BR2_PACKAGE_FREERADIUS
+	prompt "mod-sql - an SQL module"
+	tristate 
+	default m if CONFIG_DEVEL
+
+config BR2_PACKAGE_FREERADIUS_MOD_SQL_MYSQL
+	depends BR2_PACKAGE_FREERADIUS
+	prompt "mod-sql-mysql - a MySQL module"
+	tristate 
+	default m if CONFIG_DEVEL
+
+config BR2_PACKAGE_FREERADIUS_MOD_SQL_PGSQL
+	depends BR2_PACKAGE_FREERADIUS
+	prompt "mod-sql-pgsql - a PostgreSQL module"
+	tristate 
+	default m if CONFIG_DEVEL
+
+config BR2_PACKAGE_FREERADIUS_UTILS
+	depends BR2_PACKAGE_FREERADIUS
+	prompt "mod-utils - misc client utilities"
+	tristate 
+	default m if CONFIG_DEVEL
+
