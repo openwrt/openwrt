@@ -86,6 +86,7 @@ package-$(BR2_PACKAGE_LIBLTDL) += libtool
 package-$(BR2_PACKAGE_LIBOSIP2) += libosip2
 package-$(BR2_PACKAGE_SIPROXD) += siproxd
 package-$(BR2_PACKAGE_SIPSAK) += sipsak
+package-$(BR2_PACKAGE_FREERADIUS) += freeradius
 package-$(BR2_PACKAGE_HTPDATE) += htpdate
 package-$(BR2_PACKAGE_HOWL) += howl
 package-$(BR2_PACKAGE_LIGHTTPD) += lighttpd
@@ -144,6 +145,7 @@ sipsak-compile: openssl-compile
 lighttpd-compile: openssl-compile pcre-compile
 osiris-compile: openssl-compile
 pmacct-compile: libpcap-compile
+freeradius-compile: libtool-compile mysql-compile openldap-compile openssl-compile postgresql-compile
 
 snort-compile: libnet-compile libpcap-compile pcre-compile
 ifeq ($(BR2_PACKAGE_SNORT_MYSQL),y)
