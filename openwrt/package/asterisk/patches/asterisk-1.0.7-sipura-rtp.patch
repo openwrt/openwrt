@@ -1,0 +1,11 @@
+diff -ruN asterisk-1.0.7-old/rtp.c asterisk-1.0.7-new/rtp.c
+--- asterisk-1.0.7-old/rtp.c	2005-01-19 03:33:54.000000000 +0100
++++ asterisk-1.0.7-new/rtp.c	2005-05-16 19:40:02.000000000 +0200
+@@ -1048,6 +1048,7 @@
+ 			rtpheader[3] |= htonl((800));
+ 			/* Set the End bit for the last 3 */
+ 			rtpheader[3] |= htonl((1 << 23));
++			rtpheader[1] = htonl(++(rtp->lastts)); /* added for Sipura SPA-3000 compat. */
+ 		} else if ( x < 5) {
+ 			rtpheader[0] = htonl((2 << 30) | (payload << 16) | (rtp->seqno++));
+ 		}
