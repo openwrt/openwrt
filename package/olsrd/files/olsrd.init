@@ -1,0 +1,15 @@
+#!/bin/sh
+
+DEFAULT=/etc/default/olsrd
+[ -f $DEFAULT ] && . $DEFAULT
+
+case $1 in
+ start)
+  olsrd $OPTIONS
+  ;;
+ *)
+  echo "usage: $0 (start)"
+  exit 1
+esac
+
+exit $?

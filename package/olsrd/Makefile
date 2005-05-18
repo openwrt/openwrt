@@ -9,52 +9,67 @@ PKG_MD5SUM:=593c0861fa10d2a8d0e7d8617479c5cf
 
 PKG_SOURCE_URL:=http://www.olsr.org/releases/0.4
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_CAT:=bzcat
-PKG_IPK:=$(PACKAGE_DIR)/$(PKG_NAME)_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
-PKG_IPK_DIR:=$(PKG_BUILD_DIR)/ipkg
 
-$(DL_DIR)/$(PKG_SOURCE):
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE) $(PKG_MD5SUM) $(PKG_SOURCE_URL)
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
-$(PKG_BUILD_DIR)/.unpacked: $(DL_DIR)/$(PKG_SOURCE)
-	$(PKG_CAT) $(DL_DIR)/$(PKG_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
-	touch $(PKG_BUILD_DIR)/.unpacked
+include $(TOPDIR)/package/rules.mk
 
-$(PKG_BUILD_DIR)/$(PKG_NAME): $(PKG_BUILD_DIR)/.unpacked
+define PKG_mod_template
+
+$$(IPKG_$(1)):
+	install -d -m0755 $$(IDIR_$(1))/usr/lib
+	install -m0755 $(PKG_INSTALL_DIR)/usr/lib/olsrd_$(2).so.* $$(IDIR_$(1))/usr/lib/
+	$(RSTRIP) $$(IDIR_$(1))
+	$(IPKG_BUILD) $$(IDIR_$(1)) $(PACKAGE_DIR)
+
+endef
+
+$(eval $(call PKG_template,OLSRD,olsrd,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,OLSRD_MOD_DOT_DRAW,olsrd-mod-dot-draw,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,OLSRD_MOD_DYN_GW,olsrd-mod-dyn-gw,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,OLSRD_MOD_HTTPINFO,olsrd-mod-httpinfo,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,OLSRD_MOD_NAMESERVICE,olsrd-mod-nameservice,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,OLSRD_MOD_POWER,olsrd-mod-power,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,OLSRD_MOD_SECURE,olsrd-mod-secure,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+
+$(eval $(call PKG_mod_template,OLSRD_MOD_DOT_DRAW,dot_draw))
+$(eval $(call PKG_mod_template,OLSRD_MOD_DYN_GW,dyn_gw))
+$(eval $(call PKG_mod_template,OLSRD_MOD_HTTPINFO,httpinfo))
+$(eval $(call PKG_mod_template,OLSRD_MOD_NAMESERVICE,nameservice))
+$(eval $(call PKG_mod_template,OLSRD_MOD_POWER,power))
+$(eval $(call PKG_mod_template,OLSRD_MOD_SECURE,secure))
+
+$(PKG_BUILD_DIR)/.configured:
+	touch $(PKG_BUILD_DIR)/.configured
+
+$(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C "$(PKG_BUILD_DIR)" \
+		$(TARGET_CONFIGURE_OPTS) \
+		OFLAGS="$(TARGET_CFLAGS)" \
 		OS="linux" \
-		CC="$(TARGET_CC)" \
-		CFLAGS="$(TARGET_CFLAGS) -DOLSR_PLUGIN -I. -Isrc -Dlinux -I../../src -DNODEBUG" \
-		libs
+		all libs
+	rm -rf $(PKG_INSTALL_DIR)
+	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C "$(PKG_BUILD_DIR)" \
+		INSTALL_PREFIX="$(PKG_INSTALL_DIR)" \
 		OS="linux" \
-		CC="$(TARGET_CC)" \
-		CFLAGS="$(TARGET_CFLAGS) -I. -Isrc -Dlinux -I../../src -DNODEBUG" \
-		all
+		install install_libs
+	touch $(PKG_BUILD_DIR)/.built
 
-$(PKG_IPK): $(PKG_BUILD_DIR)/$(PKG_NAME)
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_IPK_DIR) $(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
-	mkdir -p $(PKG_IPK_DIR)/usr/sbin
-	mkdir -p $(PKG_IPK_DIR)/usr/lib
-	cp $(PKG_BUILD_DIR)/$(PKG_NAME) $(PKG_IPK_DIR)/usr/sbin/
-	cp $(PKG_BUILD_DIR)/lib/dyn_gw/olsrd_dyn_gw.so.0.3 $(PKG_IPK_DIR)/usr/lib/
-	cp $(PKG_BUILD_DIR)/lib/nameservice/olsrd_nameservice.so.0.2 $(PKG_IPK_DIR)/usr/lib/
-	cp $(PKG_BUILD_DIR)/lib/httpinfo/olsrd_httpinfo.so.0.1 $(PKG_IPK_DIR)/usr/lib/
-	cp $(PKG_BUILD_DIR)/lib/secure/olsrd_secure.so.0.5 $(PKG_IPK_DIR)/usr/lib/
-	$(STRIP) $(PKG_IPK_DIR)/usr/sbin/*
-	$(STRIP) $(PKG_IPK_DIR)/usr/lib/*
-	mkdir -p $(PACKAGE_DIR)
-	$(IPKG_BUILD) $(PKG_IPK_DIR) $(PACKAGE_DIR)
+$(IPKG_OLSRD):
+	install -d -m0755 $(IDIR_OLSRD)/etc
+	cp -fpR $(PKG_INSTALL_DIR)/etc/olsrd.conf $(IDIR_OLSRD)/etc/
+	install -d -m0755 $(IDIR_OLSRD)/usr/sbin
+	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/olsrd $(IDIR_OLSRD)/usr/sbin/
+	install -d -m0755 $(IDIR_OLSRD)/etc/init.d
+	cp -fpR ./files/olsrd.init $(IDIR_OLSRD)/etc/init.d/olsrd
+	$(RSTRIP) $(IDIR_OLSRD)
+	$(IPKG_BUILD) $(IDIR_OLSRD) $(PACKAGE_DIR)
 
-$(IPKG_STATE_DIR)/info/$(PKG_NAME).list: $(PKG_IPK)
-	$(IPKG) install $(PKG_IPK)
+$(IPKG_OLSRD_MOD_SECURE): $(IDIR_OLSRD_MOD_SECURE)/etc/olsrd.d/olsrd_secure_key
 
-source: $(DL_DIR)/$(PKG_SOURCE)
-prepare: $(PKG_BUILD_DIR)/.unpacked
-compile: $(PKG_IPK)
-install: $(IPKG_STATE_DIR)/info/$(PKG_NAME).list
-
-clean:
-	rm -rf $(PKG_BUILD_DIR)
-	rm -f $(PKG_IPK)
+$(IDIR_OLSRD_MOD_SECURE)/etc/olsrd.d/olsrd_secure_key:
+	install -d -m0755 $(IDIR_OLSRD_MOD_SECURE)/etc/olsrd.d
+	cp -fpR ./files/olsrd_secure_key $(IDIR_OLSRD_MOD_SECURE)/etc/olsrd.d/
