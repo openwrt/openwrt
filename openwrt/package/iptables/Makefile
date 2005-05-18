@@ -22,6 +22,9 @@ $(eval $(call PKG_template,IPTABLES_EXTRA,iptables-extra,$(PKG_VERSION)-$(PKG_RE
 $(eval $(call PKG_template,IPTABLES_UTILS,iptables-utils,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,IP6TABLES,ip6tables,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
+$(PKG_BUILD_DIR)/.configured:
+	touch $(PKG_BUILD_DIR)/.configured
+
 $(PKG_BUILD_DIR)/.built:
 	chmod a+x $(PKG_BUILD_DIR)/extensions/.*-test
 	mkdir -p $(PKG_INSTALL_DIR)
