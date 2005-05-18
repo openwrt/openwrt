@@ -1,5 +1,45 @@
 config BR2_PACKAGE_OLSRD
-	tristate "olsrd"
+	tristate "olsrd - OLSR (Optimized Link State Routing) daemon"
 	default m if CONFIG_DEVEL
 	help
-	 The Optimized Link State Routing daemon
+	  The Optimized Link State Routing daemon
+	  
+	  http://www.olsr.org/
+	  
+
+config BR2_PACKAGE_OLSRD_MOD_DOT_DRAW
+	depends BR2_PACKAGE_OLSRD
+	prompt "mod-dot-draw - a dot topology information plugin"
+	tristate
+	default m if CONFIG_DEVEL
+
+config BR2_PACKAGE_OLSRD_MOD_DYN_GW
+	depends BR2_PACKAGE_OLSRD
+	prompt "mod-dyn-gw - a dynamic internet gateway plugin"
+	tristate
+	default m if CONFIG_DEVEL
+
+config BR2_PACKAGE_OLSRD_MOD_HTTPINFO
+	depends BR2_PACKAGE_OLSRD
+	prompt "mod-httpinfo - a small informative web server plugin"
+	tristate
+	default m if CONFIG_DEVEL
+
+config BR2_PACKAGE_OLSRD_MOD_NAMESERVICE
+	depends BR2_PACKAGE_OLSRD
+	prompt "mod-nameservice - a lightweight hostname resolver plugin"
+	tristate
+	default m if CONFIG_DEVEL
+
+config BR2_PACKAGE_OLSRD_MOD_POWER
+	depends BR2_PACKAGE_OLSRD
+	prompt "mod-power - a power status plugin"
+	tristate
+	default m if CONFIG_DEVEL
+
+config BR2_PACKAGE_OLSRD_MOD_SECURE
+	depends BR2_PACKAGE_OLSRD
+	prompt "mod-secure - a message signing plugin to secure olsrd routing domain"
+	tristate
+	default m if CONFIG_DEVEL
+
