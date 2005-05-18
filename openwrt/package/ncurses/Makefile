@@ -14,26 +14,19 @@ PKG_SOURCE_URL:=\
         ftp://ftp.eu.uu.net/pub/gnu/$(PKG_NAME) \
         ftp://ftp.funet.fi/pub/gnu/prep/$(PKG_NAME) \
         ftp://ftp.leo.org/pub/comp/os/unix/gnu/$(PKG_NAME) \
-        ftp://ftp.digex.net/pub/gnu/$(PKG_NAME) \
-	http://nthill.free.fr/openwrt/sources/$(PKG_NAME)/
+        ftp://ftp.digex.net/pub/gnu/$(PKG_NAME)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
-IPKG_LIBNCURSES:=$(PACKAGE_DIR)/lib$(PKG_NAME)_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
-IDIR_LIBNCURSES:=$(PKG_BUILD_DIR)/ipkg/lib$(PKG_NAME)
-INFO_LIBNCURSES:=$(IPKG_STATE_DIR)/info/lib$(PKG_NAME).list
+include $(TOPDIR)/package/rules.mk
 
-$(DL_DIR)/$(PKG_SOURCE):
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE) $(PKG_MD5SUM) $(PKG_SOURCE_URL)
-
-$(PKG_BUILD_DIR)/.prepared: $(DL_DIR)/$(PKG_SOURCE)
-	$(PKG_CAT) $(DL_DIR)/$(PKG_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
-	touch $(PKG_BUILD_DIR)/.prepared
+$(eval $(call PKG_template,LIBNCURSES,libncurses,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
-	(cd $(PKG_BUILD_DIR); rm -rf config.cache config.status; \
+	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
 		CPPFLAGS="-I$(STAGING_DIR)/usr/include" \
@@ -76,48 +69,53 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 	);
 	touch $(PKG_BUILD_DIR)/.configured
 
-$(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
+$(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
 		BUILD_CC="$(TARGET_CC)" \
 		HOSTCC="$(HOSTCC)" \
 		HOSTCCFLAGS="\$$(CPPFLAGS)"
-	mkdir -p $(PKG_BUILD_DIR)/terminfo
+	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
-		DESTDIR="$(PKG_BUILD_DIR)/install" \
+		DESTDIR="$(PKG_INSTALL_DIR)" \
 		install
 	touch $(PKG_BUILD_DIR)/.built
 	
-$(STAGING_DIR)/usr/lib/libncurses.so: $(PKG_BUILD_DIR)/.built
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		DESTDIR="$(STAGING_DIR)" \
-		install
-
-$(IPKG_LIBNCURSES): $(STAGING_DIR)/usr/lib/libncurses.so
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_LIBNCURSES) ./ipkg/lib$(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
-	mkdir -p $(IDIR_LIBNCURSES)/usr/lib
-	cp -fpR $(STAGING_DIR)/usr/lib/lib{ncurses,panel}*.so.* $(IDIR_LIBNCURSES)/usr/lib/
-	$(STRIP) $(IDIR_LIBNCURSES)/usr/lib/*.so*
-	mkdir -p $(IDIR_LIBNCURSES)/usr/share/terminfo
+$(IPKG_LIBNCURSES):
+	install -d -m0755 $(IDIR_LIBNCURSES)/usr/lib
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/lib{ncurses,panel}*.so.* $(IDIR_LIBNCURSES)/usr/lib/
+	install -d -m0755 $(IDIR_LIBNCURSES)/usr/share/terminfo
 	for f in a/ansi d/dumb l/linux s/screen v/vt100 v/vt102 x/xterm x/xterm-color; do \
-		mkdir -p $(IDIR_LIBNCURSES)/usr/share/terminfo/`dirname $${f}`; \
-		cp -fpR \
-			$(PKG_BUILD_DIR)/install/usr/share/terminfo/$${f} \
+		install -d -m0755 $(IDIR_LIBNCURSES)/usr/share/terminfo/`dirname $${f}`; \
+		cp -fpR $(PKG_INSTALL_DIR)/usr/share/terminfo/$${f} \
 			$(IDIR_LIBNCURSES)/usr/share/terminfo/$${f}; \
 	done
-	mkdir -p $(PACKAGE_DIR)
+	$(RSTRIP) $(IDIR_LIBNCURSES)
 	$(IPKG_BUILD) $(IDIR_LIBNCURSES) $(PACKAGE_DIR)
 
-$(INFO_LIBNCURSES): $(IPKG_LIBNCURSES)
-	$(IPKG) install $(IPKG_LIBNCURSES)
+$(STAGING_DIR)/usr/lib/libncurses.so: $(PKG_BUILD_DIR)/.built
+	mkdir -p $(STAGING_DIR)/usr/include
+	cp -fpR $(PKG_INSTALL_DIR)/usr/include/curses.h $(STAGING_DIR)/usr/include/
+	cp -fpR $(PKG_INSTALL_DIR)/usr/include/{ncurses,panel}.h $(STAGING_DIR)/usr/include/
+	cp -fpR $(PKG_INSTALL_DIR)/usr/include/panel.h $(STAGING_DIR)/usr/include/
+	cp -fpR $(PKG_INSTALL_DIR)/usr/include/term{,cap}.h $(STAGING_DIR)/usr/include/
+	cp -fpR $(PKG_INSTALL_DIR)/usr/include/unctrl.h $(STAGING_DIR)/usr/include/
+	mkdir -p $(STAGING_DIR)/usr/lib
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libcurses.so $(STAGING_DIR)/usr/lib/
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/lib{ncurses,panel}.{a,so*} $(STAGING_DIR)/usr/lib/
 
-source: $(DL_DIR)/$(PKG_SOURCE)
-prepare: $(PKG_BUILD_DIR)/.prepared
-compile: $(IPKG_LIBNCURSES)
-install: $(INFO_LIBNCURSES)
+install-dev: $(STAGING_DIR)/usr/lib/libncurses.so
 
-clean:
-	-$(MAKE) -C $(PKG_BUILD_DIR) \
-		DESTDIR="$(STAGING_DIR)" \
-		uninstall
-	rm -rf $(PKG_BUILD_DIR) $(IPKG_LIBNCURSES)
+uninstall-dev:
+	rm -rf \
+	  $(PKG_INSTALL_DIR)/usr/include/curses.h \
+	  $(PKG_INSTALL_DIR)/usr/include/{ncurses,panel}.h \
+	  $(PKG_INSTALL_DIR)/usr/include/panel.h \
+	  $(PKG_INSTALL_DIR)/usr/include/term{,cap}.h \
+	  $(PKG_INSTALL_DIR)/usr/include/unctrl.h \
+	  $(PKG_INSTALL_DIR)/usr/lib/libcurses.so \
+	  $(PKG_INSTALL_DIR)/usr/lib/lib{ncurses,panel}.{a,so*} \
+
+compile: install-dev
+clean: uninstall-dev
+
