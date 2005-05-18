@@ -1,5 +1,5 @@
-config BR2_PACKAGE_NFSD
-	tristate "NFS Server"
+config BR2_PACKAGE_NFS_SERVER
+	tristate "nfs-server - User Space NFS server"
 	default m if CONFIG_DEVEL
 	select BR2_PACKAGE_PORTMAP
 	help
