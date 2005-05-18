@@ -1,0 +1,12 @@
+diff -ruN ppp-2.4.3-orig/pppd/plugins/Makefile.linux ppp-2.4.3-3/pppd/plugins/Makefile.linux
+--- ppp-2.4.3-orig/pppd/plugins/Makefile.linux	2004-11-14 08:57:35.000000000 +0100
++++ ppp-2.4.3-3/pppd/plugins/Makefile.linux	2004-12-05 17:03:59.000000000 +0100
+@@ -9,7 +9,7 @@
+ MANDIR = $(DESTDIR)/share/man/man8
+ LIBDIR = $(DESTDIR)/lib/pppd/$(VERSION)
+ 
+-SUBDIRS := rp-pppoe pppoatm radius
++SUBDIRS := rp-pppoe radius
+ # Uncomment the next line to include the radius authentication plugin
+ # SUBDIRS += radius
+ PLUGINS := minconn.so passprompt.so passwordfd.so winbind.so
