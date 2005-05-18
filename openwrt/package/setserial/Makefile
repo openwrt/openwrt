@@ -7,52 +7,50 @@ PKG_MD5SUM:=c4867d72c41564318e0107745eb7a0f2
 
 PKG_SOURCE_URL:=@SF/setserial
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_CAT:=zcat
-PKG_IPK:=$(PACKAGE_DIR)/$(PKG_NAME)_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
-PKG_IPK_DIR:=$(PKG_BUILD_DIR)/ipkg
 
-$(DL_DIR)/$(PKG_SOURCE):
-	 $(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE) $(PKG_MD5SUM) $(PKG_SOURCE_URL)
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
-$(PKG_BUILD_DIR)/.unpacked: $(DL_DIR)/$(PKG_SOURCE)
-	$(PKG_CAT) $(DL_DIR)/$(PKG_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
-	touch $(PKG_BUILD_DIR)/.unpacked
+include $(TOPDIR)/package/rules.mk
 
-$(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.unpacked
-	(cd $(PKG_BUILD_DIR); \
+$(eval $(call PKG_template,SETSERIAL,setserial,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+
+$(PKG_BUILD_DIR)/.configured:
+	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
 		$(TARGET_CONFIGURE_OPTS) \
 		./configure \
-		  --prefix=/ \
-		  --target=$(REAL_GNU_TARGET_NAME) --host=$(GNU_HOST_NAME) \
+		  --target=$(GNU_TARGET_NAME) \
+		  --host=$(GNU_TARGET_NAME) \
+		  --build=$(GNU_HOST_NAME) \
+		  --program-prefix="" \
+		  --program-suffix="" \
+		  --prefix=/usr \
+		  --exec-prefix=/usr \
+		  --bindir=/usr/bin \
+		  --datadir=/usr/share \
+		  --includedir=/usr/include \
+		  --infodir=/usr/share/info \
+		  --libdir=/usr/lib \
+		  --libexecdir=/usr/lib \
+		  --localstatedir=/var \
+		  --mandir=/usr/share/man \
+		  --sbindir=/usr/sbin \
+		  --sysconfdir=/etc \
+		  $(DISABLE_LARGEFILE) \
+		  $(DISABLE_NLS) \
 	)
 	touch $(PKG_BUILD_DIR)/.configured
 
-$(PKG_BUILD_DIR)/$(PKG_NAME): $(PKG_BUILD_DIR)/.configured
+$(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR) \
-	 CC=$(TARGET_CC) \
-	 CFLAGS="$(TARGET_CFLAGS)" \
-	 all
+		all
+	touch $(PKG_BUILD_DIR)/.built
 
-$(PKG_IPK): $(PKG_BUILD_DIR)/$(PKG_NAME)
-	mkdir -p $(PKG_IPK_DIR)/usr/sbin
-	cp -a ./ipkg/* $(PKG_IPK_DIR)/
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_IPK_DIR) $(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
-	chmod +x $(PKG_IPK_DIR)/etc/init.d/*
-	cp $(PKG_BUILD_DIR)/setserial $(PKG_IPK_DIR)/usr/sbin/
-	$(STRIP) $(PKG_IPK_DIR)/usr/sbin/*
-	mkdir -p $(PACKAGE_DIR)
-	find $(PKG_IPK_DIR) -name CVS | xargs rm -rf
-	$(IPKG_BUILD) $(PKG_IPK_DIR) $(PACKAGE_DIR)
-
-$(IPKG_STATE_DIR)/info/setserial.list: $(PKG_IPK)
-	$(IPKG) install $(PKG_IPK)
-
-source: $(DL_DIR)/$(PKG_SOURCE)
-prepare: $(PKG_BUILD_DIR)/.unpacked
-compile: $(PKG_IPK)
-install: $(IPKG_STATE_DIR)/info/$(PKG_NAME).list
-
-clean:
-	rm -rf $(PKG_BUILD_DIR)
-	rm -f $(PKG_IPK)
+$(IPKG_SETSERIAL):
+	install -d -m0755 $(IDIR_SETSERIAL)/etc/init.d
+	install -m0755 ./files/serial.init $(IDIR_SETSERIAL)/etc/init.d/S15serial
+	install -d -m0755 $(IDIR_SETSERIAL)/usr/sbin
+	install -m0755 $(PKG_BUILD_DIR)/setserial $(IDIR_SETSERIAL)/usr/sbin/
+	$(RSTRIP) $(IDIR_SETSERIAL)
+	$(IPKG_BUILD) $(IDIR_SETSERIAL) $(PACKAGE_DIR)
