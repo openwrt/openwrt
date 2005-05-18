@@ -2,73 +2,87 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME := libpng
-PKG_VERSION := 1.2.8
-PKG_RELEASE := 1
-PKG_MD5SUM := e5a39003eed16103cbbd3b6a8bc6b1f9
+PKG_NAME:=libpng
+PKG_VERSION:=1.2.8
+PKG_RELEASE:=1
+PKG_MD5SUM:=e5a39003eed16103cbbd3b6a8bc6b1f9
 
-PKG_SOURCE_SITE := @SF/libpng
-PKG_SOURCE_FILE := $(PKG_NAME)-$(PKG_VERSION)-config.tar.gz
-PKG_SOURCE_DIR := $(PKG_NAME)-$(PKG_VERSION)-config
-PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_SOURCE_DIR)
-PKG_IPK := $(PACKAGE_DIR)/$(PKG_NAME)_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
-PKG_CAT := zcat
-PKG_IPK_DIR := $(PKG_BUILD_DIR)/ipkg
+PKG_SOURCE_URL:=@SF/libpng
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-config.tar.gz
+PKG_CAT:=zcat
 
-$(DL_DIR)/$(PKG_SOURCE_FILE):
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE_FILE) $(PKG_MD5SUM) $(PKG_SOURCE_SITE)
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)-config
+PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
-$(PKG_BUILD_DIR)/.prepared: $(DL_DIR)/$(PKG_SOURCE_FILE)
-	$(PKG_CAT) $(DL_DIR)/$(PKG_SOURCE_FILE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
-	$(PATCH) $(PKG_BUILD_DIR) ./patches
-	touch $(PKG_BUILD_DIR)/.prepared
+include $(TOPDIR)/package/rules.mk
 
-$(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
-	(cd $(PKG_BUILD_DIR); \
+$(eval $(call PKG_template,LIBPNG,libpng,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+
+$(PKG_BUILD_DIR)/.configured:
+	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
 		$(TARGET_CONFIGURE_OPTS) \
-		CFLAGS="$(TARGET_CFLAGS) -I$(STAGING_DIR)/usr/include" \
+		CFLAGS="$(TARGET_CFLAGS)" \
+		CPPFLAGS="-I$(STAGING_DIR)/usr/include" \
 		LDFLAGS="-L$(STAGING_DIR)/usr/lib" \
 		./configure \
-			--target=$(GNU_TARGET_NAME) \
-			--host=$(GNU_TARGET_NAME) \
-			--build=$(GNU_HOST_NAME) \
-			--prefix=$(STAGING_DIR)/usr \
-			--with-zlib=$(STAGING_DIR)/usr/ \
-			$(DISABLE_NLS) \
+		  --target=$(GNU_TARGET_NAME) \
+		  --host=$(GNU_TARGET_NAME) \
+		  --build=$(GNU_HOST_NAME) \
+		  --program-prefix="" \
+		  --program-suffix="" \
+		  --prefix=/usr \
+		  --exec-prefix=/usr \
+		  --bindir=/usr/bin \
+		  --datadir=/usr/share \
+		  --includedir=/usr/include \
+		  --infodir=/usr/share/info \
+		  --libdir=/usr/lib \
+		  --libexecdir=/usr/lib \
+		  --localstatedir=/var \
+		  --mandir=/usr/share/man \
+		  --sbindir=/usr/sbin \
+		  --sysconfdir=/etc \
+		  $(DISABLE_LARGEFILE) \
+		  $(DISABLE_NLS) \
+		  --enable-shared \
+		  --enable-static \
+		  --with-zlib=$(STAGING_DIR)/usr/ \
 	)
 	touch $(PKG_BUILD_DIR)/.configured
 
-$(PKG_BUILD_DIR)/.libs/libpng.so: $(PKG_BUILD_DIR)/.configured
+$(PKG_BUILD_DIR)/.built:
+	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
-		CC=$(TARGET_CC) \
-		CFLAGS="$(TARGET_CFLAGS) -I$(STAGING_DIR)/usr/include -L$(STAGING_DIR)/usr/lib" \
-		all
+		DESTDIR="$(PKG_INSTALL_DIR)" \
+		all install
 
-$(STAGING_DIR)/usr/lib/libpng.so: $(PKG_BUILD_DIR)/.libs/libpng.so
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		install
-#		DESTDIR="$(STAGING_DIR)" \
-#		install-libLTLIBRARIES install-includeHEADERS install-binSCRIPTS
+$(IPKG_LIBPNG):
+	install -d -m0755 $(IDIR_LIBPNG)/usr/lib
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libpng{,12}.so.* $(IDIR_LIBPNG)/usr/lib/
+	$(RSTRIP) $(IDIR_LIBPNG)
+	$(IPKG_BUILD) $(IDIR_LIBPNG) $(PACKAGE_DIR)
 
-$(PKG_IPK): $(PKG_BUILD_DIR)/.libs/libpng.so
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_IPK_DIR) $(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
-	mkdir -p $(PKG_IPK_DIR)/usr/lib
-	cp -a $(PKG_BUILD_DIR)/.libs/*.so* $(PKG_IPK_DIR)/usr/lib/
-	$(STRIP) $(PKG_IPK_DIR)/usr/lib/*
-	find $(PKG_IPK_DIR) -name CVS | xargs rm -rf
-	mkdir -p $(PACKAGE_DIR)
-	$(IPKG_BUILD) $(PKG_IPK_DIR) $(PACKAGE_DIR)
+$(STAGING_DIR)/usr/lib/libpng.so: $(PKG_BUILD_DIR)/.built
+	mkdir -p $(STAGING_DIR)/usr/bin
+	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/libpng{,12}-config $(STAGING_DIR)/usr/bin/
+	mkdir -p $(STAGING_DIR)/usr/include
+	cp -fpR $(PKG_INSTALL_DIR)/usr/include/png{,conf}.h $(STAGING_DIR)/usr/include/
+	cp -fpR $(PKG_INSTALL_DIR)/usr/include/libpng $(STAGING_DIR)/usr/include/
+	mkdir -p $(STAGING_DIR)/usr/lib
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libpng{,12}.{a,so*} $(STAGING_DIR)/usr/lib/
+	mkdir -p $(STAGING_DIR)/usr/lib/pkgconfig
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/libpng{,12}.pc $(STAGING_DIR)/usr/lib/pkgconfig/
 
-$(IPKG_STATE_DIR)/info/libpng.list: $(PKG_IPK)
-	$(IPKG) install $(PKG_IPK)
+install-dev: $(STAGING_DIR)/usr/lib/libpng.so
 
-source: $(DL_DIR)/$(PKG_SOURCE)
-prepare: $(PKG_BUILD_DIR)/.prepared
-compile: $(STAGING_DIR)/usr/lib/libpng.so $(PKG_IPK)
-install: $(IPKG_STATE_DIR)/info/libpng.list
+uninstall-dev:
+	rm -rf \
+	  $(STAGING_DIR)/usr/bin/libpng{,12}-config \
+	  $(STAGING_DIR)/usr/include/png{,conf}.h \
+	  $(STAGING_DIR)/usr/include/libpng \
+	  $(STAGING_DIR)/usr/lib/libpng{,12}.{a,so*} \
+	  $(STAGING_DIR)/usr/lib/pkgconfig/libpng{,12}.pc
 
-clean:  
-	rm -rf $(PKG_BUILD_DIR)
-	rm -f $(STAGING_DIR)/usr/bin/libpng*
-	rm -f $(STAGING_DIR)/usr/lib/libpng*
-	rm -f $(PKG_IPK)
+compile: install-dev
+clean: uninstall-dev
+
