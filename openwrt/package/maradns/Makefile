@@ -12,21 +12,14 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_CAT:=bzcat
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
-IPKG_MARADNS:=$(PACKAGE_DIR)/$(PKG_NAME)_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
-IDIR_MARADNS:=$(PKG_BUILD_DIR)/ipkg/$(PKG_NAME)
-INFO_MARADNS:=$(IPKG_STATE_DIR)/info/$(PKG_NAME).list
+include $(TOPDIR)/package/rules.mk
 
-$(DL_DIR)/$(PKG_SOURCE):
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE) $(PKG_MD5SUM) $(PKG_SOURCE_URL)
-
-$(PKG_BUILD_DIR)/.prepared: $(DL_DIR)/$(PKG_SOURCE)
-	$(PKG_CAT) $(DL_DIR)/$(PKG_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
-	$(PATCH) $(PKG_BUILD_DIR) ./patches
-	touch $(PKG_BUILD_DIR)/.prepared
+$(eval $(call PKG_template,MARADNS,maradns,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
-	(cd $(PKG_BUILD_DIR); rm -rf config.cache; \
+	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
 		$(TARGET_CONFIGURE_OPTS) \
 		./configure \
 		--target=$(GNU_TARGET_NAME) \
@@ -46,42 +39,34 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 		--mandir=/usr/share/man \
 		--sbindir=/usr/sbin \
 		--sysconfdir=/etc \
-		$(DISABLE_NLS) \
-		$(DISABLE_LARGEFILE) \
+		  $(DISABLE_LARGEFILE) \
+		  $(DISABLE_NLS) \
+		  --enable-shared \
+		  --disable-static \
 	);
 	touch $(PKG_BUILD_DIR)/.configured
 
-$(PKG_BUILD_DIR)/$(PKG_NAME): $(PKG_BUILD_DIR)/.configured
+$(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CFLAGS="$(TARGET_CFLAGS)" \
 		FLAGS="$(TARGET_CFLAGS)" \
 		CC=$(TARGET_CC) \
 		HOSTCC="$(HOSTCC)"
+	mkdir -p $(PKG_INSTALL_DIR)/usr/{bin,sbin}
+	mkdir -p $(PKG_INSTALL_DIR)/usr/man/man{1,5,8}
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		PREFIX="$(PKG_INSTALL_DIR)/usr" \
+		install
+	touch $(PKG_BUILD_DIR)/.built
 
-$(IPKG_MARADNS): $(PKG_BUILD_DIR)/$(PKG_NAME)
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_MARADNS) $(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
-	mkdir -p $(IDIR_MARADNS)/usr/bin
-	mkdir -p $(IDIR_MARADNS)/usr/sbin
-	cp $(PKG_BUILD_DIR)/server/maradns $(IDIR_MARADNS)/usr/sbin/
-	cp $(PKG_BUILD_DIR)/tuzona/getzone $(IDIR_MARADNS)/usr/bin/
-	cp $(PKG_BUILD_DIR)/tuzona/zoneserver $(IDIR_MARADNS)/usr/sbin/
-	cp $(PKG_BUILD_DIR)/tools/askmara $(IDIR_MARADNS)/usr/bin/
-	$(STRIP) $(IDIR_MARADNS)/usr/sbin/*
-	$(STRIP) $(IDIR_MARADNS)/usr/bin/*
-	cp -a ./files/* $(IDIR_MARADNS)/
-	find $(IDIR_MARADNS) -name CVS | xargs rm -rf
-	echo "/etc/maradns/maradnsrc" > $(IDIR_MARADNS)/CONTROL/conffiles
-	chmod 755 $(IDIR_MARADNS)/etc/init.d/*
-	mkdir -p $(PACKAGE_DIR)
+$(IPKG_MARADNS):
+	install -d -m0755 $(IDIR_MARADNS)/etc
+	install -m0644 ./files/mararc $(IDIR_MARADNS)/etc/mararc
+	install -d -m0755 $(IDIR_MARADNS)/etc/init.d
+	install -m0755 ./files/maradns.init $(IDIR_MARADNS)/etc/init.d/S60maradns
+	install -d -m0755 $(IDIR_MARADNS)/usr/bin
+	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/{askmara,getzone} $(IDIR_MARADNS)/usr/bin/
+	install -d -m0755 $(IDIR_MARADNS)/usr/sbin
+	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/{maradns,zoneserver} $(IDIR_MARADNS)/usr/sbin/
+	$(RSTRIP) $(IDIR_MARADNS)
 	$(IPKG_BUILD) $(IDIR_MARADNS) $(PACKAGE_DIR)
-
-$(INFO_MARADNS): $(IPKG_MARADNS)
-	$(IPKG) install $(IPKG_MARADNS)
-
-source: $(DL_DIR)/$(PKG_SOURCE)
-prepare: $(PKG_BUILD_DIR)/.prepared
-compile: $(IPKG_MARADNS)
-install: $(INFO_MARADNS)
-
-clean:
-	rm -rf $(PKG_BUILD_DIR) $(IPKG_MARADNS)
