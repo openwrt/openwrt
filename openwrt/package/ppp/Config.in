@@ -1,39 +1,37 @@
 config BR2_PACKAGE_PPP
+	prompt "ppp - PPP (Point-to-Point Protocol) daemon"
 	tristate
-	select BR2_PACKAGE_KMOD_PPP
-	prompt "PPP daemon"
 	default y
+	select BR2_PACKAGE_KMOD_PPP
 
-config BR2_PACKAGE_PPP_PPPOE
+config BR2_PACKAGE_PPP_MOD_PPPOE
+	prompt "mod-pppoe - PPPoE (PPP over Ethernet) plugin"
 	tristate
-	prompt "PPP over Ethernet plugin"
-	select BR2_PACKAGE_KMOD_PPPOE
 	default y
 	depends on BR2_PACKAGE_PPP
+	select BR2_PACKAGE_KMOD_PPPOE
 
-config BR2_PACKAGE_PPP_RADIUS
+config BR2_PACKAGE_PPP_MOD_RADIUS
+	prompt "mod-radius - RADIUS (Remote Authentication Dial-In User Service) plugin"
 	tristate
-	prompt "PPP RADIUS plugin"
 	default m
 	depends on BR2_PACKAGE_PPP
 
-config BR2_PACKAGE_PPP_CHAT
+config BR2_PACKAGE_CHAT
+	prompt "chat - an utility to establish conversation with other PPP servers (via a modem)"
 	tristate
-	prompt "chat utility"
 	default m
 	depends on BR2_PACKAGE_PPP
 
 config BR2_PACKAGE_PPPDUMP
+	prompt "pppdump - an utility to read PPP record file"
 	tristate
-	prompt "pppdump utility"
 	default m
 	depends on BR2_PACKAGE_PPP
 
 config BR2_PACKAGE_PPPSTATS
+	prompt "pppstats - an utility to report PPP statistics"
 	tristate
-	prompt "pppstats utility"
 	default m
 	depends on BR2_PACKAGE_PPP
-
-
 

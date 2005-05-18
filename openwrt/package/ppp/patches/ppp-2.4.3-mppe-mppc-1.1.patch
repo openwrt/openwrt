@@ -1,18 +1,6 @@
-diff -ruN ppp-2.4.3-orig/chat/Makefile.linux ppp-2.4.3-3/chat/Makefile.linux
---- ppp-2.4.3-orig/chat/Makefile.linux	2004-11-03 12:51:47.000000000 +0100
-+++ ppp-2.4.3-3/chat/Makefile.linux	2004-12-05 17:42:43.000000000 +0100
-@@ -25,7 +25,7 @@
- 
- install: chat
- 	mkdir -p $(BINDIR)
--	$(INSTALL) -s -c chat $(BINDIR)
-+	$(INSTALL) -c chat $(BINDIR)
- 	$(INSTALL) -c -m 644 chat.8 $(MANDIR)
- 
- clean:
-diff -ruN ppp-2.4.3-orig/include/linux/ppp-comp.h ppp-2.4.3-3/include/linux/ppp-comp.h
---- ppp-2.4.3-orig/include/linux/ppp-comp.h	2002-12-06 10:49:15.000000000 +0100
-+++ ppp-2.4.3-3/include/linux/ppp-comp.h	2004-12-16 00:50:53.000000000 +0100
+diff -ruN ppp-2.4.3.orig/include/linux/ppp-comp.h ppp-2.4.3/include/linux/ppp-comp.h
+--- ppp-2.4.3.orig/include/linux/ppp-comp.h	2002-12-06 10:49:15.000000000 +0100
++++ ppp-2.4.3/include/linux/ppp-comp.h	2004-11-21 13:54:09.000000000 +0100
 @@ -36,7 +36,7 @@
   */
  
@@ -22,19 +10,6 @@ diff -ruN ppp-2.4.3-orig/include/linux/ppp-comp.h ppp-2.4.3-3/include/linux/ppp-
   *
   *  NOTE TO MAINTAINERS:
   *     If you modify this file at all, please set the above date.
-@@ -56,10 +56,10 @@
-  */
- 
- #ifndef DO_BSD_COMPRESS
--#define DO_BSD_COMPRESS	1	/* by default, include BSD-Compress */
-+#define DO_BSD_COMPRESS	0	/* by default, don't include BSD-Compress */
- #endif
- #ifndef DO_DEFLATE
--#define DO_DEFLATE	1	/* by default, include Deflate */
-+#define DO_DEFLATE	0	/* by default, don't include Deflate */
- #endif
- #define DO_PREDICTOR_1	0
- #define DO_PREDICTOR_2	0
 @@ -86,7 +86,7 @@
  
  	/* Compress a packet */
@@ -87,22 +62,9 @@ diff -ruN ppp-2.4.3-orig/include/linux/ppp-comp.h ppp-2.4.3-3/include/linux/ppp-
  /*
   * Definitions for other, as yet unsupported, compression methods.
   */
-diff -ruN ppp-2.4.3-orig/include/net/ppp-comp.h ppp-2.4.3-3/include/net/ppp-comp.h
---- ppp-2.4.3-orig/include/net/ppp-comp.h	2002-12-06 10:49:15.000000000 +0100
-+++ ppp-2.4.3-3/include/net/ppp-comp.h	2004-12-16 00:51:06.000000000 +0100
-@@ -43,10 +43,10 @@
-  * various compression methods.
-  */
- #ifndef DO_BSD_COMPRESS
--#define DO_BSD_COMPRESS	1	/* by default, include BSD-Compress */
-+#define DO_BSD_COMPRESS	0	/* by default, don't include BSD-Compress */
- #endif
- #ifndef DO_DEFLATE
--#define DO_DEFLATE	1	/* by default, include Deflate */
-+#define DO_DEFLATE	0	/* by default, don't include Deflate */
- #endif
- #define DO_PREDICTOR_1	0
- #define DO_PREDICTOR_2	0
+diff -ruN ppp-2.4.3.orig/include/net/ppp-comp.h ppp-2.4.3/include/net/ppp-comp.h
+--- ppp-2.4.3.orig/include/net/ppp-comp.h	2002-12-06 10:49:15.000000000 +0100
++++ ppp-2.4.3/include/net/ppp-comp.h	2004-11-21 13:54:09.000000000 +0100
 @@ -255,6 +255,33 @@
  	    opts |= MPPE_OPT_UNKNOWN;		\
      } while (/* CONSTCOND */ 0)
@@ -137,80 +99,9 @@ diff -ruN ppp-2.4.3-orig/include/net/ppp-comp.h ppp-2.4.3-3/include/net/ppp-comp
  /*
   * Definitions for other, as yet unsupported, compression methods.
   */
-diff -ruN ppp-2.4.3-orig/pppd/Makefile.linux ppp-2.4.3-3/pppd/Makefile.linux
---- ppp-2.4.3-orig/pppd/Makefile.linux	2004-11-13 13:02:22.000000000 +0100
-+++ ppp-2.4.3-3/pppd/Makefile.linux	2004-12-16 04:43:41.000000000 +0100
-@@ -48,19 +48,19 @@
- # Uncomment the next line to include support for PPP packet filtering.
- # This requires that the libpcap library and headers be installed
- # and that the kernel driver support PPP packet filtering.
--FILTER=y
-+#FILTER=y
- 
- # Uncomment the next line to enable multilink PPP (enabled by default)
- # Linux distributions: Please leave multilink ENABLED in your builds
- # of pppd!
--HAVE_MULTILINK=y
-+#HAVE_MULTILINK=y
- 
- # Uncomment the next line to enable the TDB database (enabled by default.)
- # If you enable multilink, then TDB is automatically enabled also.
- # Linux distributions: Please leave TDB ENABLED in your builds.
--USE_TDB=y
-+#USE_TDB=y
- 
--HAS_SHADOW=y
-+#HAS_SHADOW=y
- #USE_PAM=y
- #HAVE_INET6=y
- 
-@@ -77,7 +77,7 @@
- 
- INCLUDE_DIRS= -I../include
- 
--COMPILE_FLAGS= -DHAVE_PATHS_H -DIPX_CHANGE -DHAVE_MMAP
-+COMPILE_FLAGS= -DHAVE_PATHS_H -DHAVE_MMAP
- 
- CFLAGS= $(COPTS) $(COMPILE_FLAGS) $(INCLUDE_DIRS)
- 
-@@ -99,7 +99,7 @@
- CFLAGS	+= -DUSE_SRP -DOPENSSL -I/usr/local/ssl/include
- LIBS	+= -lsrp -L/usr/local/ssl/lib -lcrypto
- TARGETS	+= srp-entry
--EXTRAINSTALL = $(INSTALL) -s -c -m 555 srp-entry $(BINDIR)/srp-entry
-+EXTRAINSTALL = $(INSTALL) -c -m 555 srp-entry $(BINDIR)/srp-entry
- MANPAGES += srp-entry.8
- EXTRACLEAN += srp-entry.o
- NEEDDES=y
-@@ -117,12 +117,12 @@
- #LIBS     += -lshadow $(LIBS)
- endif
- 
--ifneq ($(wildcard /usr/include/crypt.h),)
-+#ifneq ($(wildcard /usr/include/crypt.h),)
- CFLAGS   += -DHAVE_CRYPT_H=1
--endif
--ifneq ($(wildcard /usr/lib/libcrypt.*),)
-+#endif
-+#ifneq ($(wildcard /usr/lib/libcrypt.*),)
- LIBS	+= -lcrypt
--endif
-+#endif
- 
- ifdef NEEDDES
- ifndef USE_CRYPT
-@@ -202,7 +202,7 @@
- install: pppd
- 	mkdir -p $(BINDIR) $(MANDIR)
- 	$(EXTRAINSTALL)
--	$(INSTALL) -s -c -m 555 pppd $(BINDIR)/pppd
-+	$(INSTALL) -c -m 555 pppd $(BINDIR)/pppd
- 	if chgrp pppusers $(BINDIR)/pppd 2>/dev/null; then \
- 	  chmod o-rx,u+s $(BINDIR)/pppd; fi
- 	$(INSTALL) -c -m 444 pppd.8 $(MANDIR)
-diff -ruN ppp-2.4.3-orig/pppd/ccp.c ppp-2.4.3-3/pppd/ccp.c
---- ppp-2.4.3-orig/pppd/ccp.c	2004-11-13 03:28:15.000000000 +0100
-+++ ppp-2.4.3-3/pppd/ccp.c	2004-12-05 17:51:27.000000000 +0100
+diff -ruN ppp-2.4.3.orig/pppd/ccp.c ppp-2.4.3/pppd/ccp.c
+--- ppp-2.4.3.orig/pppd/ccp.c	2004-11-13 03:28:15.000000000 +0100
++++ ppp-2.4.3/pppd/ccp.c	2004-11-21 13:54:09.000000000 +0100
 @@ -62,12 +62,10 @@
  static char bsd_value[8];
  static char deflate_value[8];
@@ -1570,9 +1461,9 @@ diff -ruN ppp-2.4.3-orig/pppd/ccp.c ppp-2.4.3-3/pppd/ccp.c
  	ccp_localstate[f->unit] &= ~RACK_PENDING;
  }
 -
-diff -ruN ppp-2.4.3-orig/pppd/ccp.h ppp-2.4.3-3/pppd/ccp.h
---- ppp-2.4.3-orig/pppd/ccp.h	2004-11-04 11:02:26.000000000 +0100
-+++ ppp-2.4.3-3/pppd/ccp.h	2004-12-05 17:51:27.000000000 +0100
+diff -ruN ppp-2.4.3.orig/pppd/ccp.h ppp-2.4.3/pppd/ccp.h
+--- ppp-2.4.3.orig/pppd/ccp.h	2004-11-04 11:02:26.000000000 +0100
++++ ppp-2.4.3/pppd/ccp.h	2004-11-21 13:54:09.000000000 +0100
 @@ -37,9 +37,17 @@
      bool predictor_2;		/* do Predictor-2? */
      bool deflate_correct;	/* use correct code for deflate? */
@@ -1591,9 +1482,9 @@ diff -ruN ppp-2.4.3-orig/pppd/ccp.h ppp-2.4.3-3/pppd/ccp.h
      short method;		/* code for chosen compression method */
  } ccp_options;
  
-diff -ruN ppp-2.4.3-orig/pppd/chap_ms.c ppp-2.4.3-3/pppd/chap_ms.c
---- ppp-2.4.3-orig/pppd/chap_ms.c	2004-11-12 10:57:43.000000000 +0100
-+++ ppp-2.4.3-3/pppd/chap_ms.c	2004-12-05 17:51:27.000000000 +0100
+diff -ruN ppp-2.4.3.orig/pppd/chap_ms.c ppp-2.4.3/pppd/chap_ms.c
+--- ppp-2.4.3.orig/pppd/chap_ms.c	2004-11-12 10:57:43.000000000 +0100
++++ ppp-2.4.3/pppd/chap_ms.c	2004-11-21 13:54:09.000000000 +0100
 @@ -895,13 +895,17 @@
      /*
       * Disable undesirable encryption types.  Note that we don't ENABLE
@@ -1614,148 +1505,9 @@ diff -ruN ppp-2.4.3-orig/pppd/chap_ms.c ppp-2.4.3-3/pppd/chap_ms.c
  	    break;
  	default:
  	    break;
-diff -ruN ppp-2.4.3-orig/pppd/plugins/Makefile.linux ppp-2.4.3-3/pppd/plugins/Makefile.linux
---- ppp-2.4.3-orig/pppd/plugins/Makefile.linux	2004-11-14 08:57:35.000000000 +0100
-+++ ppp-2.4.3-3/pppd/plugins/Makefile.linux	2004-12-05 17:03:59.000000000 +0100
-@@ -9,7 +9,7 @@
- MANDIR = $(DESTDIR)/share/man/man8
- LIBDIR = $(DESTDIR)/lib/pppd/$(VERSION)
- 
--SUBDIRS := rp-pppoe pppoatm radius
-+SUBDIRS := rp-pppoe radius
- # Uncomment the next line to include the radius authentication plugin
- # SUBDIRS += radius
- PLUGINS := minconn.so passprompt.so passwordfd.so winbind.so
-diff -ruN ppp-2.4.3-orig/pppd/plugins/radius/Makefile.linux ppp-2.4.3-3/pppd/plugins/radius/Makefile.linux
---- ppp-2.4.3-orig/pppd/plugins/radius/Makefile.linux	2004-11-14 08:02:31.000000000 +0100
-+++ ppp-2.4.3-3/pppd/plugins/radius/Makefile.linux	2004-12-05 17:43:17.000000000 +0100
-@@ -12,7 +12,8 @@
- INSTALL	= install
- 
- PLUGIN=radius.so radattr.so radrealms.so
--CFLAGS=-I. -I../.. -I../../../include -O2 -fPIC -DRC_LOG_FACILITY=LOG_DAEMON
-+COPTS = -O2
-+CFLAGS=-I. -I../.. -I../../../include $(COPTS) -fPIC -DRC_LOG_FACILITY=LOG_DAEMON
- 
- # Uncomment the next line to include support for Microsoft's
- # MS-CHAP authentication protocol.
-@@ -36,9 +37,9 @@
- 
- install: all
- 	$(INSTALL) -d -m 755 $(LIBDIR)
--	$(INSTALL) -s -c -m 755 radius.so $(LIBDIR)
--	$(INSTALL) -s -c -m 755 radattr.so $(LIBDIR)
--	$(INSTALL) -s -c -m 755 radrealms.so $(LIBDIR)
-+	$(INSTALL) -c -m 755 radius.so $(LIBDIR)
-+	$(INSTALL) -c -m 755 radattr.so $(LIBDIR)
-+	$(INSTALL) -c -m 755 radrealms.so $(LIBDIR)
- 	$(INSTALL) -c -m 444 pppd-radius.8 $(MANDIR)
- 	$(INSTALL) -c -m 444 pppd-radattr.8 $(MANDIR)
- 
-diff -ruN ppp-2.4.3-orig/pppd/plugins/radius/config.c ppp-2.4.3-3/pppd/plugins/radius/config.c
---- ppp-2.4.3-orig/pppd/plugins/radius/config.c	2004-11-14 08:26:26.000000000 +0100
-+++ ppp-2.4.3-3/pppd/plugins/radius/config.c	2004-12-16 04:03:46.000000000 +0100
-@@ -369,31 +369,37 @@
- 	}
- #endif
- 
-+#if 0
- 	if (rc_conf_int("login_tries") <= 0)
- 	{
- 		error("%s: login_tries <= 0 is illegal", filename);
- 		return (-1);
- 	}
-+#endif
- 	if (rc_conf_str("seqfile") == NULL)
- 	{
- 		error("%s: seqfile not specified", filename);
- 		return (-1);
- 	}
-+#if 0
- 	if (rc_conf_int("login_timeout") <= 0)
- 	{
- 		error("%s: login_timeout <= 0 is illegal", filename);
- 		return (-1);
- 	}
-+#endif
- 	if (rc_conf_str("mapfile") == NULL)
- 	{
- 		error("%s: mapfile not specified", filename);
- 		return (-1);
- 	}
-+#if 0
- 	if (rc_conf_str("nologin") == NULL)
- 	{
- 		error("%s: nologin not specified", filename);
- 		return (-1);
- 	}
-+#endif
- 
- 	return 0;
- }
-diff -ruN ppp-2.4.3-orig/pppd/plugins/radius/options.h ppp-2.4.3-3/pppd/plugins/radius/options.h
---- ppp-2.4.3-orig/pppd/plugins/radius/options.h	2004-11-14 08:26:26.000000000 +0100
-+++ ppp-2.4.3-3/pppd/plugins/radius/options.h	2004-12-16 04:09:16.000000000 +0100
-@@ -31,24 +31,21 @@
- static SERVER acctserver = {0};
- static SERVER authserver = {0};
- 
--int default_tries = 4;
--int default_timeout = 60;
--
- static OPTION config_options[] = {
- /* internally used options */
- {"config_file",		OT_STR, ST_UNDEF, NULL},
- /* General options */
- {"auth_order",	 	OT_AUO, ST_UNDEF, NULL},
--{"login_tries",	 	OT_INT, ST_UNDEF, &default_tries},
--{"login_timeout",	OT_INT, ST_UNDEF, &default_timeout},
--{"nologin",		OT_STR, ST_UNDEF, "/etc/nologin"},
--{"issue",		OT_STR, ST_UNDEF, "/etc/radiusclient/issue"},
-+{"login_tries",	 	OT_INT, ST_UNDEF, NULL},
-+{"login_timeout",	OT_INT, ST_UNDEF, NULL},
-+{"nologin",		OT_STR, ST_UNDEF, NULL},
-+{"issue",		OT_STR, ST_UNDEF, NULL},
- /* RADIUS specific options */
- {"authserver",		OT_SRV, ST_UNDEF, &authserver},
- {"acctserver",		OT_SRV, ST_UNDEF, &acctserver},
- {"servers",		OT_STR, ST_UNDEF, NULL},
- {"dictionary",		OT_STR, ST_UNDEF, NULL},
--{"login_radius",	OT_STR, ST_UNDEF, "/usr/sbin/login.radius"},
-+{"login_radius",	OT_STR, ST_UNDEF, NULL},
- {"seqfile",		OT_STR, ST_UNDEF, NULL},
- {"mapfile",		OT_STR, ST_UNDEF, NULL},
- {"default_realm",	OT_STR, ST_UNDEF, NULL},
-diff -ruN ppp-2.4.3-orig/pppd/plugins/rp-pppoe/Makefile.linux ppp-2.4.3-3/pppd/plugins/rp-pppoe/Makefile.linux
---- ppp-2.4.3-orig/pppd/plugins/rp-pppoe/Makefile.linux	2004-11-14 08:58:37.000000000 +0100
-+++ ppp-2.4.3-3/pppd/plugins/rp-pppoe/Makefile.linux	2004-12-05 17:43:23.000000000 +0100
-@@ -39,9 +39,9 @@
- 
- install: all
- 	$(INSTALL) -d -m 755 $(LIBDIR)
--	$(INSTALL) -s -c -m 4550 rp-pppoe.so $(LIBDIR)
-+	$(INSTALL) -c -m 4550 rp-pppoe.so $(LIBDIR)
- 	$(INSTALL) -d -m 755 $(BINDIR)
--	$(INSTALL) -s -c -m 555 pppoe-discovery $(BINDIR)
-+	$(INSTALL) -c -m 555 pppoe-discovery $(BINDIR)
- 
- clean:
- 	rm -f *.o *.so
-diff -ruN ppp-2.4.3-orig/pppd/plugins/rp-pppoe/plugin.c ppp-2.4.3-3/pppd/plugins/rp-pppoe/plugin.c
---- ppp-2.4.3-orig/pppd/plugins/rp-pppoe/plugin.c	2004-11-04 11:07:37.000000000 +0100
-+++ ppp-2.4.3-3/pppd/plugins/rp-pppoe/plugin.c	2004-12-16 01:07:22.000000000 +0100
-@@ -286,7 +286,7 @@
- 	/* Strip off "nic-" */
- 	cmd += 4;
-     } else if (strlen(cmd) < 4
--	       || (strncmp(cmd, "eth", 3) && strncmp(cmd, "nas", 3)
-+	       || (strncmp(cmd, "eth", 3) && strncmp(cmd, "nas", 3) && strncmp(cmd, "vlan", 4)
- 		   && strncmp(cmd, "tap", 3) && strncmp(cmd, "br", 2))) {
- 	return 0;
-     }
-diff -ruN ppp-2.4.3-orig/pppd/pppd.8 ppp-2.4.3-3/pppd/pppd.8
---- ppp-2.4.3-orig/pppd/pppd.8	2004-11-13 13:22:49.000000000 +0100
-+++ ppp-2.4.3-3/pppd/pppd.8	2004-12-05 17:51:27.000000000 +0100
+diff -ruN ppp-2.4.3.orig/pppd/pppd.8 ppp-2.4.3/pppd/pppd.8
+--- ppp-2.4.3.orig/pppd/pppd.8	2004-11-13 13:22:49.000000000 +0100
++++ ppp-2.4.3/pppd/pppd.8	2004-11-21 14:24:47.000000000 +0100
 @@ -622,9 +622,29 @@
  Enables the use of PPP multilink; this is an alias for the `multilink'
  option.  This option is currently only available under Linux.
@@ -1831,35 +1583,3 @@ diff -ruN ppp-2.4.3-orig/pppd/pppd.8 ppp-2.4.3-3/pppd/pppd.8
  .TP
  .B require\-mschap
  Require the peer to authenticate itself using MS\-CHAP [Microsoft Challenge
-diff -ruN ppp-2.4.3-orig/pppdump/Makefile.linux ppp-2.4.3-3/pppdump/Makefile.linux
---- ppp-2.4.3-orig/pppdump/Makefile.linux	2004-10-31 02:36:52.000000000 +0200
-+++ ppp-2.4.3-3/pppdump/Makefile.linux	2004-12-05 17:50:34.000000000 +0100
-@@ -2,7 +2,8 @@
- BINDIR = $(DESTDIR)/sbin
- MANDIR = $(DESTDIR)/share/man/man8
- 
--CFLAGS= -O -I../include/net
-+COPTS = -O
-+CFLAGS= $(COPTS) -I../include/net
- OBJS = pppdump.o bsd-comp.o deflate.o zlib.o
- 
- INSTALL= install
-@@ -17,5 +18,5 @@
- 
- install:
- 	mkdir -p $(BINDIR) $(MANDIR)
--	$(INSTALL) -s -c pppdump $(BINDIR)
-+	$(INSTALL) -c pppdump $(BINDIR)
- 	$(INSTALL) -c -m 444 pppdump.8 $(MANDIR)
-diff -ruN ppp-2.4.3-orig/pppstats/Makefile.linux ppp-2.4.3-3/pppstats/Makefile.linux
---- ppp-2.4.3-orig/pppstats/Makefile.linux	2004-10-31 23:09:03.000000000 +0100
-+++ ppp-2.4.3-3/pppstats/Makefile.linux	2004-12-05 17:43:38.000000000 +0100
-@@ -22,7 +22,7 @@
- 
- install: pppstats
- 	-mkdir -p $(MANDIR)
--	$(INSTALL) -s -c pppstats $(BINDIR)
-+	$(INSTALL) -c pppstats $(BINDIR)
- 	$(INSTALL) -c -m 444 pppstats.8 $(MANDIR)
- 
- pppstats: $(PPPSTATSRCS)
