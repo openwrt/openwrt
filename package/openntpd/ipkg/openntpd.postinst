@@ -11,11 +11,11 @@ if [ -z "${IPKG_INSTROOT}" ]; then
 	if [ "$rootfs" = "squashfs" ]; then
 		if [ -h /etc/group ]; then
 			rm /etc/group
-			cp /rom/etc/group /etc/group
+			cp -p /rom/etc/group /etc/group
 		fi
 		if [ -h /etc/passwd ]; then
 			rm /etc/passwd
-			cp /rom/etc/passwd /etc/passwd
+			cp -p /rom/etc/passwd /etc/passwd
 		fi
 	fi
 fi
