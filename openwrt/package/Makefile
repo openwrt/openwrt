@@ -144,8 +144,15 @@ siproxd-compile: libosip2-compile
 sipsak-compile: openssl-compile
 lighttpd-compile: openssl-compile pcre-compile
 osiris-compile: openssl-compile
-pmacct-compile: libpcap-compile
 freeradius-compile: libtool-compile mysql-compile openldap-compile openssl-compile postgresql-compile
+
+pmacct-compile: libpcap-compile
+ifneq ($(BR2_PACKAGE_PMACCT_MYSQL),)
+pmacct-compile: mysql-compile
+endif
+ifneq ($(BR2_PACKAGE_PMACCT_PGSQL),)
+pmacct-compile: postgresql-compile
+endif
 
 snort-compile: libnet-compile libpcap-compile pcre-compile
 ifeq ($(BR2_PACKAGE_SNORT_MYSQL),y)
@@ -153,6 +160,9 @@ snort-compile: mysql-compile
 endif
 ifeq ($(BR2_PACKAGE_SNORT_PGSQL),y)
 snort-compile: postgresql-compile
+endif
+ifeq ($(BR2_PACKAGE_SNORT_ENABLE_INLINE),y)
+snort-compile: iptables-compile
 endif
 
 sdk-compile: $(DEV_LIBS_COMPILE) $(SDK_DEFAULT_COMPILE) openwrt-install
