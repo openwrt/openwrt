@@ -71,6 +71,7 @@ $(IPKG_IP6TABLES):
 	$(IPKG_BUILD) $(IDIR_IP6TABLES) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libipq.a: $(PKG_BUILD_DIR)/.built
+	mkdir -p $(STAGING_DIR)/usr/include/ $(STAGING_DIR)/usr/lib/
 	cp -fpR $(PKG_INSTALL_DIR)/usr/include/libipq.h $(STAGING_DIR)/usr/include/
 	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libipq.a $(STAGING_DIR)/usr/lib/
 
