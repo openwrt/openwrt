@@ -42,15 +42,17 @@ $(PKG_BUILD_DIR)/.configured:
 		--mandir=/usr/share/man \
 		--sbindir=/usr/sbin \
 		--sysconfdir=/etc \
-		$(DISABLE_NLS) \
-		$(DISABLE_LARGEFILE) \
+		  $(DISABLE_LARGEFILE) \
+		  $(DISABLE_NLS) \
 		--enable-shared \
 		--enable-static \
 		--enable-utf8 \
 	);
-	touch $(PKG_BUILD_DIR)/.configured
+	touch $@
 
 $(PKG_BUILD_DIR)/.built:
+	rm -rf $(PKG_INSTALL_DIR)
+	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C "$(PKG_BUILD_DIR)" \
 		CC_FOR_BUILD="$(HOSTCC)" \
 		LINK_FOR_BUILD="$(HOSTCC)" \
@@ -59,30 +61,32 @@ $(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C "$(PKG_BUILD_DIR)" \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
-		all
-	touch $(PKG_BUILD_DIR)/.built
-
-$(STAGING_DIR)/usr/lib/libpcre.so: $(PKG_BUILD_DIR)/.built
-	$(MAKE) -C "$(PKG_BUILD_DIR)" \
-		DESTDIR="$(STAGING_DIR)" \
-		install
-	rm -f $(STAGING_DIR)/usr/lib/libpcre*.la
+		DESTDIR="$(PKG_INSTALL_DIR)" \
+		all install
+	touch $@
 
 $(IPKG_LIBPCRE):
-	mkdir -p $(IDIR_LIBPCRE)/usr/lib
-	cp -fpR $(PKG_BUILD_DIR)/.libs/libpcre*.so.* $(IDIR_LIBPCRE)/usr/lib/
+	install -d -m0755 $(IDIR_LIBPCRE)/usr/lib
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libpcre{,posix}.so.* $(IDIR_LIBPCRE)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBPCRE)
 	$(IPKG_BUILD) $(IDIR_LIBPCRE) $(PACKAGE_DIR)
+
+$(STAGING_DIR)/usr/lib/libpcre.so: $(PKG_BUILD_DIR)/.built
+	mkdir -p $(STAGING_DIR)/usr/bin
+	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/pcre-config $(STAGING_DIR)/usr/bin/
+	mkdir -p $(STAGING_DIR)/usr/include
+	cp -fpR $(PKG_INSTALL_DIR)/usr/include/pcre{,posix}.h $(STAGING_DIR)/usr/include/
+	mkdir -p $(STAGING_DIR)/usr/lib
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libpcre{,posix}.{a,so*} $(STAGING_DIR)/usr/lib/
+	touch $(STAGING_DIR)/usr/lib/libpcre.so
 
 install-dev: $(STAGING_DIR)/usr/lib/libpcre.so
 
 uninstall-dev:
 	rm -rf \
 	  $(STAGING_DIR)/usr/bin/pcre-config \
-	  $(STAGING_DIR)/usr/include/pcre* \
-	  $(STAGING_DIR)/usr/lib/libpcre* \
-	  $(STAGING_DIR)/usr/lib/pkgconfig/libpcre.pc \
-	  $(STAGING_DIR)/usr/share/man/man*/pcre* \
+	  $(STAGING_DIR)/usr/include/pcre{,posix}.h \
+	  $(STAGING_DIR)/usr/lib/libpcre{,posix}.{a,so*} \
 
 compile: install-dev
 clean: uninstall-dev

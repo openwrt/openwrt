@@ -42,35 +42,40 @@ $(PKG_BUILD_DIR)/.configured:
 		--mandir=/usr/share/man \
 		--sbindir=/usr/sbin \
 		--sysconfdir=/etc \
-		$(DISABLE_NLS) \
-		$(DISABLE_LARGEFILE) \
+		  $(DISABLE_LARGEFILE) \
+		  $(DISABLE_NLS) \
 		--enable-shared \
 		--enable-static \
 	);
-	touch $(PKG_BUILD_DIR)/.configured
+	touch $@
 
 $(PKG_BUILD_DIR)/.built:
-	$(MAKE) -C $(PKG_BUILD_DIR)
-	touch $(PKG_BUILD_DIR)/.built
-
-$(STAGING_DIR)/usr/lib/libpopt.so: $(PKG_BUILD_DIR)/.built
+	rm -rf $(PKG_INSTALL_DIR)
+	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
-		DESTDIR="$(STAGING_DIR)" \
-		install
-	rm -f $(STAGING_DIR)/usr/lib/libpopt.la
+		DESTDIR="$(PKG_INSTALL_DIR)" \
+		all install
+	touch $@
 
 $(IPKG_LIBPOPT):
-	mkdir -p $(IDIR_LIBPOPT)/usr/lib
-	cp -fpR $(PKG_BUILD_DIR)/.libs/libpopt.so.* $(IDIR_LIBPOPT)/usr/lib/
+	install -d -m0755 $(IDIR_LIBPOPT)/usr/lib
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libpopt.so.* $(IDIR_LIBPOPT)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBPOPT)
 	$(IPKG_BUILD) $(IDIR_LIBPOPT) $(PACKAGE_DIR)
+
+$(STAGING_DIR)/usr/lib/libpopt.so: $(PKG_BUILD_DIR)/.built
+	mkdir -p $(STAGING_DIR)/usr/include
+	cp -fpR $(PKG_INSTALL_DIR)/usr/include/popt.h $(STAGING_DIR)/usr/include/
+	mkdir -p $(STAGING_DIR)/usr/lib
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libpopt.{a,so*} $(STAGING_DIR)/usr/lib/
+	touch $(STAGING_DIR)/usr/lib/libpopt.so
 
 install-dev: $(STAGING_DIR)/usr/lib/libpopt.so
 
 uninstall-dev:
-	-$(MAKE) -C $(PKG_BUILD_DIR) \
-		DESTDIR="$(STAGING_DIR)" \
-		uninstall
+	rm -rf \
+	  $(STAGING_DIR)/usr/include/popt.h \
+	  $(STAGING_DIR)/usr/lib/libpopt.{a,so*} \
 
 compile: install-dev
 clean: uninstall-dev
