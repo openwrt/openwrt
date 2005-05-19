@@ -20,21 +20,20 @@ include $(TOPDIR)/package/rules.mk
 $(eval $(call PKG_template,KMOD_SHFS,kmod-shfs,$(LINUX_VERSION)+$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,SHFS_UTILS,shfs-utils,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
+$(PKG_BUILD_DIR)/.configured:
+	touch $@
+
 $(PKG_BUILD_DIR)/.built: 
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-	  OFLAGS="$(TARGET_CFLAGS)" \
-	  CC="$(TARGET_CC)" \
-	  LINKER="$(TARGET_CC)" \
-	  KERNEL="$(LINUX_VERSION)" \
-	  KERNEL_SOURCES="$(LINUX_DIR)" \
-	 all
+	rm -rf $(PKG_INSTALL_DIR)
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
-	  ROOT="$(PKG_INSTALL_DIR)" \
-	  KERNEL="$(LINUX_VERSION)" \
-	  KERNEL_SOURCES="$(LINUX_DIR)" \
-	 install
-	touch $(PKG_BUILD_DIR)/.built
+		OFLAGS="$(TARGET_CFLAGS)" \
+		CC="$(TARGET_CC)" \
+		LINKER="$(TARGET_CC)" \
+		KERNEL="$(LINUX_VERSION)" \
+		KERNEL_SOURCES="$(LINUX_DIR)" \
+		all install
+	touch $@
 
 $(IPKG_KMOD_SHFS):
 	install -m0755 -d $(IDIR_KMOD_SHFS)/lib/modules/$(LINUX_VERSION)
