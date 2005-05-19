@@ -1,7 +1,12 @@
 config BR2_PACKAGE_PPTPD
-	tristate "PPTP Server"
+	prompt "pptpd - a PPTP (Point-to-Point Tunneling Protocol) server"
+	tristate
 	default m if CONFIG_DEVEL
 	select BR2_PACKAGE_KMOD_GRE
 	select BR2_PACKAGE_PPP
 	help
-	  A Point-to-Point Tunneling Protocol Server 
+	  A Point-to-Point Tunneling Protocol server
+	  
+	  http://poptop.sourceforge.net/
+	  
+
