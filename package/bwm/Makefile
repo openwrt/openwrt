@@ -14,6 +14,9 @@ include $(TOPDIR)/package/rules.mk
 
 $(eval $(call PKG_template,BWM,$(PKG_NAME),$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
+$(PKG_BUILD_DIR)/.configured:
+	touch $@
+
 $(PKG_BUILD_DIR)/.built:
 	$(TARGET_CC) $(TARGET_CFLAGS) $(PKG_BUILD_DIR)/bwm.c -o $(PKG_BUILD_DIR)/bwm
 	touch $@
