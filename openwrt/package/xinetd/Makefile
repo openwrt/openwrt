@@ -49,15 +49,15 @@ $(PKG_BUILD_DIR)/.configured:
 		  --without-libwrap \
 		  --with-loadavg \
 	);
-	touch $(PKG_BUILD_DIR)/.configured
+	touch $@
 
 $(PKG_BUILD_DIR)/.built:
-	$(MAKE) -C $(PKG_BUILD_DIR)
+	rm -rf $(PKG_INSTALL_DIR)
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
-		install
-	touch $(PKG_BUILD_DIR)/.built
+		build install
+	touch $@
 
 $(IPKG_XINETD):
 	install -d -m0755 $(IDIR_XINETD)/etc
