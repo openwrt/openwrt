@@ -22,7 +22,7 @@ PKG_DEPEND:="openssl, kmod-tun"
 ifneq ($(BR2_PACKAGE_OPENVPN_LZO),y)
 DISABLE_LZO:=--disable-lzo
 else
-PKG_DEPEND+=", lzo"
+PKG_DEPEND+=", liblzo"
 endif
 
 ifneq ($(BR2_PACKAGE_OPENVPN_SERVER),y)
