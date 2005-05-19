@@ -73,15 +73,15 @@ $(PKG_BUILD_DIR)/.configured:
 		  $(ULOGD_MYSQL_OPTION) \
 		  $(ULOGD_PGSQL_OPTION) \
 	);
-	touch $(PKG_BUILD_DIR)/.configured
+	touch $@
 
 $(PKG_BUILD_DIR)/.built:
-	$(MAKE) -C $(PKG_BUILD_DIR)
+	rm -rf $(PKG_INSTALL_DIR)
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
-		install
-	touch $(PKG_BUILD_DIR)/.built
+		all install
+	touch $@
 
 $(IPKG_ULOGD):
 	install -d -m0755 $(IDIR_ULOGD)/etc
