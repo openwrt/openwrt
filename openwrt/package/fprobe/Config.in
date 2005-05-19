@@ -1,10 +1,10 @@
 config BR2_PACKAGE_FPROBE
-	tristate "fprobe"
+	tristate "fprobe - NetFlow probe (libpcap-based)"
 	default m if CONFIG_DEVEL
 	select BR2_PACKAGE_LIBPCAP
 	select BR2_PACKAGE_LIBPTHREAD
-
 	help
 	  A NetFlow probe using libpcap
 	  
 	  http://fprobe.sourceforge.net/
+	  

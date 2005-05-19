@@ -1,16 +1,8 @@
-config BR2_PACKAGE_SHFS
-	tristate
-	default n
-	depends BR2_PACKAGE_KMOD_SHFS
-	help
-
-
 config BR2_PACKAGE_KMOD_SHFS
-	tristate "kmod-shfs (ShFS kernel module)"
+	tristate "kmod-shfs - Shell FileSystem kernel module (ShFS) kernel module"
 	default m if CONFIG_DEVEL
-	select BR2_PACKAGE_SHFS
 	help
-	
+	  
 	  Shell FileSystem kernel module
 	  
 	  ShFS is a simple and easy to use Linux kernel module which 
@@ -31,12 +23,20 @@ config BR2_PACKAGE_KMOD_SHFS
 	  
 	  
 	  http://shfs.sourceforge.net/
-		  
+	  
 
 config BR2_PACKAGE_SHFS_UTILS
 	depends BR2_PACKAGE_KMOD_SHFS
-	tristate "shfs-utils (ShFS mount/umount utilities)"
+	tristate "shfs-utils - ShFS mount/umount utilities"
 	default m if CONFIG_DEVEL
 	help
-	
+	  
 	  Shell FileSystem mount/umount utilities
+	  
+
+config BR2_PACKAGE_SHFS
+	tristate
+	default n
+	depends BR2_PACKAGE_KMOD_SHFS
+	help
+

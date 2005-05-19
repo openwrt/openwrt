@@ -1,37 +1,54 @@
 config BR2_PACKAGE_QUAGGA
-	tristate "Quagga"
+	tristate "quagga - the Quagga Software Routing Suite"
 	default m if CONFIG_DEVEL
 	help
-	routing software package that provides TCP/IP based routing services
-        with routing protocols support such as RIPv1, RIPv2, RIPng, OSPFv2, 
-        OSPFv3, BGP-4, and BGP-4+
-
-	http://www.quagga.net/
-
-config BR2_PACKAGE_QUAGGA_ZEBRA
-	tristate "zebra daemon"
-	default m if CONFIG_DEVEL
-	depends BR2_PACKAGE_QUAGGA
-	help
-	 zebra daemon
-
-config BR2_PACKAGE_QUAGGA_RIPD
-	tristate "ripd daemon"
-	default m if CONFIG_DEVEL
-	depends BR2_PACKAGE_QUAGGA
-	help
-	 ripd daemon
+	  A routing software package that provides TCP/IP based routing services
+	  with routing protocols support such as RIPv1, RIPv2, RIPng, OSPFv2, 
+	  OSPFv3, BGP-4, and BGP-4+
+	  
+	  http://www.quagga.net/
+	  
 
 config BR2_PACKAGE_QUAGGA_BGPD
-	tristate "bgpd daemon"
+	tristate "bgpd - BGPv4, BGPv4\+, BGPv4\- routing engine"
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_QUAGGA
 	help
-	 bgpd daemon
+	  A BGPv4, BGPv4\+, BGPv4\- routing engine for use with Quagga routing
+	  software.
 
 config BR2_PACKAGE_QUAGGA_OSPFD
-	tristate "ospfd daemon"
+	tristate "ospfd - OSPFv2 routing engine"
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_QUAGGA
 	help
-	 ospfd daemon
+	  An OSPFv2 routing engine for use with Quagga routing software.
+
+config BR2_PACKAGE_QUAGGA_OSPF6D
+	tristate "ospf6d - OSPFv3 routing engine"
+	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_QUAGGA
+	help
+	  An OSPFv3 routing engine for use with Quagga routing software.
+
+config BR2_PACKAGE_QUAGGA_RIPD
+	tristate "ripd - RIP routing engine"
+	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_QUAGGA
+	help
+	  A RIP routing engine for use with Quagga routing software.
+
+config BR2_PACKAGE_QUAGGA_RIPD
+	tristate "ripngd - RIPNG routing engine"
+	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_QUAGGA
+	help
+	  A RIPNG routing engine for use with Quagga routing software.
+
+config BR2_PACKAGE_QUAGGA_ZEBRA
+	tristate "zebra - Routing manager"
+	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_QUAGGA
+	help
+	  A routing manager for use with associated Quagga components.
+

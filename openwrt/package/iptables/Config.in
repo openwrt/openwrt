@@ -1,27 +1,28 @@
 config BR2_PACKAGE_IPTABLES
-	tristate "iptables"
+	tristate "iptables - IPv4 firewall administration tool"
 	default y
 	help
 	  Linux kernel (2.4+) firewall, NAT, and packet mangling tools.
-
+	  
 	  http://www.iptables.org/
+	  
 
 config BR2_PACKAGE_IPTABLES_UTILS
-	tristate "save and restore"
+	tristate "iptables - Save and restore utilities"
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_IPTABLES
 	help
 	  iptables-save and iptables-restore
 
 config BR2_PACKAGE_IPTABLES_EXTRA
-	tristate "extra modules"
+	tristate "extra modules - Extra modules not found elsewhere"
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_IPTABLES
 	help
 	  Extra modules for iptables (kernel and user space)
 
 config BR2_PACKAGE_IP6TABLES
-	tristate "ip6tables"
+	tristate "ip6tables - IPv6 firewall administration tool"
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_IPTABLES
 	select BR2_PACKAGE_KMOD_IPV6

@@ -1,5 +1,5 @@
 config BR2_PACKAGE_PPTP
-	prompt "pptp - a PPTP (Point-to-Point Tunneling Protocol) client"
+	prompt "pptp - PPTP (Point-to-Point Tunneling Protocol) client"
 	tristate
 	default m if CONFIG_DEVEL
 	select BR2_PACKAGE_KMOD_GRE

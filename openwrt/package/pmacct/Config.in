@@ -1,5 +1,5 @@
 config BR2_PACKAGE_PMACCT
-	prompt "pmacct - a set of IPv4/IPv6 accounting and aggregation tools"
+	prompt "pmacct - IPv4/IPv6 accounting and aggregation tools"
 	bool
 	default y if CONFIG_DEVEL
 	select BR2_PACKAGE_LIBPCAP
@@ -12,7 +12,7 @@ config BR2_PACKAGE_PMACCT
 
 choice
 	depends BR2_PACKAGE_PMACCT
-	prompt "nfacctd - a NetFlow accounting daemon"
+	prompt "nfacctd - NetFlow accounting daemon"
 	tristate
 	default m if CONFIG_DEVEL
 	default n
@@ -67,7 +67,7 @@ endchoice
 
 choice
 	depends BR2_PACKAGE_PMACCT
-	prompt "pmacctd - an IP accounting daemon"
+	prompt "pmacctd - IP accounting daemon (libpcap based)"
 	tristate
 	default m if CONFIG_DEVEL
 	default n
@@ -122,7 +122,7 @@ endchoice
 
 config BR2_PACKAGE_PMACCT_CLIENT
 	depends BR2_PACKAGE_PMACCT
-	prompt "pmacct-client: a command-line client to gather data from the IMT plugin" if BR2_PACKAGE_NFACCTD_BASIC || BR2_PACKAGE_NFACCTD_MYSQL || BR2_PACKAGE_NFACCTD_PGSQL || BR2_PACKAGE_NFACCTD_CUSTOM || BR2_PACKAGE_PMACCTD_BASIC || BR2_PACKAGE_PMACCTD_MYSQL || BR2_PACKAGE_PMACCTD_PGSQL || BR2_PACKAGE_PMACCTD_CUSTOM
+	prompt "pmacct-client - Command-line client to gather data from the IMT plugin" if BR2_PACKAGE_NFACCTD_BASIC || BR2_PACKAGE_NFACCTD_MYSQL || BR2_PACKAGE_NFACCTD_PGSQL || BR2_PACKAGE_NFACCTD_CUSTOM || BR2_PACKAGE_PMACCTD_BASIC || BR2_PACKAGE_PMACCTD_MYSQL || BR2_PACKAGE_PMACCTD_PGSQL || BR2_PACKAGE_PMACCTD_CUSTOM
 	tristate
 	default n
 

@@ -1,5 +1,5 @@
 config BR2_PACKAGE_FPING
-	tristate "fping"
+	tristate "fping - Program to ping multiple hosts in parallel"
 	default m if CONFIG_DEVEL
 	help
 	  fping is a ping(1) like program which uses the Internet Control Message Protocol
@@ -10,3 +10,6 @@ config BR2_PACKAGE_FPING
 	  round-robin fashion. If a host replies, it is noted and removed from the list of 
 	  hosts to check. If a host does not respond within a certain time limit and/or retry
 	  limit it will be considered unreachable.
+	  
+	  http://www.fping.com/
+	  
