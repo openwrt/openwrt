@@ -44,7 +44,7 @@ $(PKG_BUILD_DIR)/.configured:
 		  $(DISABLE_NLS) \
 		  --with-pppd-ip-alloc \
 	)
-	touch $(PKG_BUILD_DIR)/.configured
+	touch $@
 
 $(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR) \
@@ -53,7 +53,7 @@ $(PKG_BUILD_DIR)/.built:
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		INSTALL="install" \
 		all install
-	touch $(PKG_BUILD_DIR)/.built
+	touch $@
 
 $(IPKG_PPTPD):
 	install -d -m0755 $(IDIR_PPTPD)/etc

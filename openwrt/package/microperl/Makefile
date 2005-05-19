@@ -21,12 +21,12 @@ include $(TOPDIR)/package/rules.mk
 $(eval $(call PKG_template,MICROPERL,microperl,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 $(PKG_BUILD_DIR)/.configured:
-	touch $(PKG_BUILD_DIR)/.configured
+	touch $@
 
 $(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR) -f Makefile.micro \
 		CC="$(TARGET_CC)" OPTIMIZE="$(TARGET_CFLAGS)"
-	touch $(PKG_BUILD_DIR)/.built
+	touch $@
 
 $(IPKG_MICROPERL):
 	install -d -m0755 $(IDIR_MICROPERL)/usr/bin

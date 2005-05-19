@@ -47,7 +47,7 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 		  --with-logfile=/var/log/radvd.log \
 		  --with-pidfile=/var/run/radvd.pid \
 	);
-	touch $(PKG_BUILD_DIR)/.configured
+	touch $@
 
 $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 	$(MAKE) -C $(PKG_BUILD_DIR) \
@@ -56,7 +56,7 @@ $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		install
-	touch $(PKG_BUILD_DIR)/.built
+	touch $@
 
 $(IPKG_RADVD):
 	install -d -m0755 $(IDIR_RADVD)/etc

@@ -1,3 +1,4 @@
+# $Id$
 
 include $(TOPDIR)/rules.mk
 
@@ -13,6 +14,7 @@ $(eval $(call PKG_template,ROBOCFG,$(PKG_NAME),$(PKG_VERSION)-$(PKG_RELEASE),$(A
 
 $(PKG_BUILD_DIR)/.prepared:
 	mkdir -p $@
+	touch $@
 
 $(PKG_BUILD_DIR)/.built:
 	$(TARGET_CC) -o $(PKG_BUILD_DIR)/robocfg robocfg.c
