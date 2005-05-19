@@ -1,11 +1,10 @@
 config BR2_PACKAGE_TINC
-	tristate "tinc"
+	tristate "tinc - VPN tunneling daemon"
 	default m if CONFIG_DEVEL
-	select BR2_PACKAGE_ZLIB
+	select BR2_PACKAGE_KMOD_TUN
 	select BR2_PACKAGE_LIBLZO
 	select BR2_PACKAGE_OPENSSL
-	select BR2_PACKAGE_KMOD_TUN
-
+	select BR2_PACKAGE_ZLIB
 	help
 	  A VPN tunneling daemon
 	  

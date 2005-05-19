@@ -1,5 +1,5 @@
 config BR2_PACKAGE_HOWL
-	bool "howl - a cross-platform implementation of Zeroconf networking"
+	bool "howl - Zeroconf networking implementation"
 	default y if CONFIG_DEVEL
 	help
 	  A cross-platform implementation of Zeroconf networking.
@@ -8,27 +8,27 @@ config BR2_PACKAGE_HOWL
 	  
 
 config BR2_PACKAGE_LIBHOWL
+	depends BR2_PACKAGE_HOWL
 	tristate "libhowl - howl library"
 	default m if CONFIG_DEVEL
-	depends BR2_PACKAGE_HOWL
 
 config BR2_PACKAGE_HOWL_UTILS
+	depends BR2_PACKAGE_LIBHOWL
 	tristate "howl-utils - howl client utilities"
 	default m if CONFIG_DEVEL
-	depends BR2_PACKAGE_LIBHOWL
 
 config BR2_PACKAGE_MDNSRESPONDER
+	depends BR2_PACKAGE_LIBHOWL
 	tristate "mdnsresponder - an mDNS (Multicast DNS) service responder daemon"
 	default m if CONFIG_DEVEL
-	depends BR2_PACKAGE_LIBHOWL
 
 config BR2_PACKAGE_AUTOIPD
+	depends BR2_PACKAGE_LIBHOWL
 	tristate "autoipd - an IPv4 Link-Local address self-assigner daemon"
 	default m if CONFIG_DEVEL
-	depends BR2_PACKAGE_LIBHOWL
 
 config BR2_PACKAGE_NIFD
+	depends BR2_PACKAGE_LIBHOWL
 	tristate "nifd - a network interface monitor daemon"
 	default m if CONFIG_DEVEL
-	depends BR2_PACKAGE_LIBHOWL
 

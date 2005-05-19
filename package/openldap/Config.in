@@ -1,6 +1,7 @@
 config BR2_PACKAGE_OPENLDAP
-	tristate "OpenLDAP"
-	default m if CONFIG_DEVEL
+	prompt "openldap - Open source LDAP (Lightweight Directory Access Protocol) implementation"
+	bool
+	default y if CONFIG_DEVEL
 	help
 	  OpenLDAP Software is an open source implementation of the 
 	  Lightweight Directory Access Protocol (LDAP).
@@ -9,12 +10,12 @@ config BR2_PACKAGE_OPENLDAP
 	  
 
 config BR2_PACKAGE_LIBOPENLDAP
-	tristate "libopenldap (client libraries)"
+	tristate "libopenldap - client libraries"
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_OPENLDAP
 
 config BR2_PACKAGE_OPENLDAP_UTILS
-	tristate "openldap-utils (client utilities)"
+	tristate "openldap-utils - client utilities"
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_OPENLDAP
 

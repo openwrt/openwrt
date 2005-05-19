@@ -1,6 +1,10 @@
 config BR2_PACKAGE_LIBPNG
-	tristate "libpng"
+	tristate "libpng - PNG (Portable Network Graphics) format files handling library"
 	default m if CONFIG_DEVEL
 	select BR2_PACKAGE_ZLIB
 	help
 	  A library for reading/writing PNG files
+	  
+	  http://www.libpng.org/pub/png/libpng.html
+	  
+
