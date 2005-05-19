@@ -1,0 +1,21 @@
+--- libpng-1.2.8-config/Makefile.in.orig	2004-12-03 01:14:51.000000000 +0100
++++ libpng-1.2.8-config/Makefile.in	2005-05-18 14:17:31.000000000 +0200
+@@ -874,13 +874,13 @@
+ 	cp libpng.pc libpng12.pc
+ 
+ install-data-local: libpng.pc libpng12.pc
+-	@INSTALL@ -d @PKGCONFIGDIR@
+-	@INSTALL_DATA@ libpng.pc @PKGCONFIGDIR@
+-	@INSTALL_DATA@ libpng12.pc @PKGCONFIGDIR@
++	@INSTALL@ -d $(DESTDIR)@PKGCONFIGDIR@
++	@INSTALL_DATA@ libpng.pc $(DESTDIR)@PKGCONFIGDIR@
++	@INSTALL_DATA@ libpng12.pc $(DESTDIR)@PKGCONFIGDIR@
+ 
+ uninstall-local:
+-	rm -f @PKGCONFIGDIR@/libpng.pc
+-	rm -f @PKGCONFIGDIR@/libpng12.pc
++	rm -f $(DESTDIR)@PKGCONFIGDIR@/libpng.pc
++	rm -f $(DESTDIR)@PKGCONFIGDIR@/libpng12.pc
+ 
+ libpng-config:
+ 	( cat ${srcdir}/scripts/libpng-config-head.in; \
