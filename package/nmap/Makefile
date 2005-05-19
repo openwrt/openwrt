@@ -51,17 +51,16 @@ $(PKG_BUILD_DIR)/.configured:
 		  --with-libpcap="$(STAGING_DIR)/usr" \
 		  --with-libpcre="$(STAGING_DIR)/usr" \
 	);
-	touch $(PKG_BUILD_DIR)/.configured
+	touch $@
 
 $(PKG_BUILD_DIR)/.built:
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		$(TARGET_CONFIGURE_OPTS) \
-		CCOPT="-fno-builtin -nostdinc++ -nodefaultlibs $(TARGET_CFLAGS)"
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
+		$(TARGET_CONFIGURE_OPTS) \
+		CCOPT="-fno-builtin -nostdinc++ -nodefaultlibs $(TARGET_CFLAGS)" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
-		install
-	touch $(PKG_BUILD_DIR)/.built
+		all install
+	touch $@
 
 $(IPKG_NMAP):
 	install -d -m0755 $(IDIR_NMAP)/usr/share/nmap

@@ -2,16 +2,16 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME := dhcp-forwarder
-PKG_VERSION := 0.7
-PKG_RELEASE := 4
-PKG_MD5SUM := e7f876e615ebc3f96418f6477b4451e2
+PKG_NAME:=dhcp-forwarder
+PKG_VERSION:=0.7
+PKG_RELEASE:=4
+PKG_MD5SUM:=e7f876e615ebc3f96418f6477b4451e2
 
-PKG_SOURCE_URL := http://savannah.nongnu.org/download/dhcp-fwd
-PKG_SOURCE := $(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_CAT := bzcat
+PKG_SOURCE_URL:=http://savannah.nongnu.org/download/dhcp-fwd
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
+PKG_CAT:=bzcat
 
-PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
 include $(TOPDIR)/package/rules.mk
@@ -47,13 +47,13 @@ $(PKG_BUILD_DIR)/.configured:
 	touch $@
 
 $(PKG_BUILD_DIR)/.built:
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		cfg_filename="/etc/dhcp-fwd.conf"
+	rm -rf $(PKG_INSTALL_DIR)
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
+		cfg_filename="/etc/dhcp-fwd.conf" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
-		install
-	touch $(PKG_BUILD_DIR)/.built
+		all install
+	touch $@
 	
 $(IPKG_DHCP_FORWARDER):
 	install -m0755 -d $(IDIR_DHCP_FORWARDER)/etc

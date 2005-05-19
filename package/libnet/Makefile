@@ -7,9 +7,7 @@ PKG_VERSION:=1.0.2a
 PKG_RELEASE:=7
 PKG_MD5SUM:=ddf53f0f484184390e8c2a1bd0853667
 
-PKG_SOURCE_URL:=\
-	http://www.packetfactory.net/libnet/dist/deprecated/ \
-	http://nthill.free.fr/openwrt/sources/$(PKG_NAME)/
+PKG_SOURCE_URL:=http://www.packetfactory.net/libnet/dist/deprecated/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
@@ -58,17 +56,17 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 		--enable-static \
 		--with-pf_packet=yes \
 	);
-	touch $(PKG_BUILD_DIR)/.configured
+	touch $@
 
 $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		$(TARGET_CONFIGURE_OPTS) \
-		CFLAGS="$(TARGET_CFLAGS)"
+	rm -rf $(PKG_INSTALL_DIR)
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
+		$(TARGET_CONFIGURE_OPTS) \
+		CFLAGS="$(TARGET_CFLAGS)" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
-		install
-	touch $(PKG_BUILD_DIR)/.built
+		all install
+	touch $@
 
 $(IPKG_LIBNET): $(STAGING_DIR)/usr/lib/libnet.so
 	install -m0755 -d $(IDIR_LIBNET)/usr/lib

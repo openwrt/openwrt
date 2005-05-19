@@ -18,7 +18,6 @@ include $(TOPDIR)/package/rules.mk
 
 $(eval $(call PKG_template,LIBGD,libgd,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
-
 $(PKG_BUILD_DIR)/.configured:
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
 		$(TARGET_CONFIGURE_OPTS) \
@@ -54,13 +53,15 @@ $(PKG_BUILD_DIR)/.configured:
 		  --without-x \
 		  --with-png=$(STAGING_DIR)/usr \
 	)
-	touch $(PKG_BUILD_DIR)/.configured
+	touch $@
 
 $(PKG_BUILD_DIR)/.built:
+	rm -rf $(PKG_INSTALL_DIR)
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		all install
+	touch $@
 
 $(IPKG_LIBGD):
 	install -d -m0755 $(IDIR_LIBGD)/usr/lib
