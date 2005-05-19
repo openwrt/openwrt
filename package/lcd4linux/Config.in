@@ -1,10 +1,10 @@
 config BR2_PACKAGE_LCD4LINUX
 	tristate "lcd4linux - Program to access an external LCD"
 	default m if CONFIG_DEVEL
-	select BR2_PACKAGE_NCURSES
+	select BR2_PACKAGE_LIBNCURSES
 	help
 	  LCD4Linux
 	  
-	https://ssl.bulix.org/projects/lcd4linux/wiki/Howto
+	  https://ssl.bulix.org/projects/lcd4linux/wiki/Howto
 	  
 
