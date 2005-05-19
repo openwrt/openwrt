@@ -1,5 +1,5 @@
-config BR2_PACKAGE_PCRE
-	tristate "pcre"
+config BR2_PACKAGE_LIBPCRE
+	tristate "libpcre - a Perl Compatible Regular Expression library"
 	default m if CONFIG_DEVEL
 	help
 	  A Perl Compatible Regular Expression library
@@ -7,7 +7,7 @@ config BR2_PACKAGE_PCRE
 	  http://www.pcre.org/
 	  
 
-config BR2_PACKAGE_LIBPCRE
+config BR2_PACKAGE_PCRE
 	tristate
-	default BR2_PACKAGE_PCRE
+	default BR2_PACKAGE_LIBPCRE
 

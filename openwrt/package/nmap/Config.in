@@ -1,8 +1,11 @@
 config BR2_PACKAGE_NMAP
-	tristate "Nmap"
-	select BR2_PACKAGE_LIBPCRE
-	select BR2_PACKAGE_LIBPCAP
-	select BR2_PACKAGE_UCLIBCXX
+	tristate "nmap - Network exploration and/or security auditing utility"
 	default m if CONFIG_DEVEL
+	select BR2_PACKAGE_LIBPCAP
+	select BR2_PACKAGE_LIBPCRE
+	select BR2_PACKAGE_UCLIBCXX
 	help
 	  A free open source utility for network exploration or security auditing. 
+	  
+	  http://www.insecure.org/nmap/
+	  

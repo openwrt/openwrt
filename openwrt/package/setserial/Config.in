@@ -1,5 +1,5 @@
 config BR2_PACKAGE_SETSERIAL
-	tristate "setserial"
+	tristate "setserial - Serial port configuration utility"
 	default m if CONFIG_DEVEL
 	help
 	  setserial  is a program designed to set and/or report the
@@ -7,4 +7,5 @@ config BR2_PACKAGE_SETSERIAL
 	  information  includes what I/O port and IRQ a particular
 	  serial port is using, and whether or not the break key should
 	  be interpreted as the Secure  Attention  Key, and so on.
+	  
 

@@ -1,12 +1,6 @@
-config BR2_PACKAGE_FUSE
-	select BR2_PACKAGE_LIBPTHREAD
-	depends BR2_PACKAGE_KMOD_FUSE
-	bool
-	default n
-
 config BR2_PACKAGE_KMOD_FUSE
 	select BR2_PACKAGE_FUSE
-	tristate "kmod-fuse (FUSE kernel module)"
+	tristate "kmod-fuse - FUSE kernel module"
 	default m if CONFIG_DEVEL
 	help
 	  With FUSE it is possible to implement a fully functional 
@@ -28,9 +22,10 @@ config BR2_PACKAGE_KMOD_FUSE
 	  Depends: libpthread
 
 config BR2_PACKAGE_LIBFUSE
-	depends BR2_PACKAGE_KMOD_FUSE
-	tristate "libfuse (FUSE library)"
+	tristate "libfuse - FUSE library"
 	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_KMOD_FUSE
+	select BR2_PACKAGE_LIBPTHREAD
 	help
 	  With FUSE it is possible to implement a fully functional 
 	  filesystem in a userspace program.
@@ -51,9 +46,10 @@ config BR2_PACKAGE_LIBFUSE
 	  Depends: libpthread
 
 config BR2_PACKAGE_FUSE_UTILS
-	depends BR2_PACKAGE_LIBFUSE
-	tristate "fuse-utils (FUSE utilities)"
+	tristate "fuse-utils - FUSE utilities"
 	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_LIBFUSE
+	select BR2_PACKAGE_LIBPTHREAD
 	help
 	  With FUSE it is possible to implement a fully functional 
 	  filesystem in a userspace program.
@@ -72,4 +68,9 @@ config BR2_PACKAGE_FUSE_UTILS
 	  http://fuse.sourceforge.net/
 	  
 	  Depends: libpthread
+
+
+config BR2_PACKAGE_FUSE
+	tristate
+	default BR2_PACKAGE_KMOD_FUSE
 

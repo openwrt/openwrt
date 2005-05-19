@@ -1,9 +1,10 @@
 config BR2_PACKAGE_STRACE
-	tristate "strace"
+	tristate "strace - System call tracer"
 	default m if CONFIG_DEVEL
 	help
 	  A useful diagnostic, instructional, and debugging tool.
 	  Allows you to track what system calls a program makes 
 	  while it is running.
-
+	  
 	  http://sourceforge.net/projects/strace/
+	  

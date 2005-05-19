@@ -1,5 +1,5 @@
 config BR2_PACKAGE_LIGHTTPD
-	prompt "lighttpd - a flexible and lightweight web server"
+	prompt "lighttpd - Flexible and lightweight web server"
 	tristate 
 	default m if CONFIG_DEVEL
 	help
@@ -12,61 +12,61 @@ config BR2_PACKAGE_LIGHTTPD
 
 config BR2_PACKAGE_LIGHTTPD_MOD_ALIAS
 	depends BR2_PACKAGE_LIGHTTPD
-	prompt "mod-alias - a directory alias module"
+	prompt "mod-alias - Directory alias module"
 	tristate 
 	default m if CONFIG_DEVEL
 
 config BR2_PACKAGE_LIGHTTPD_MOD_AUTH
 	depends BR2_PACKAGE_LIGHTTPD
-	prompt "mod-auth - an authentication module"
+	prompt "mod-auth - Authentication module"
 	tristate 
 	default m if CONFIG_DEVEL
 
 config BR2_PACKAGE_LIGHTTPD_MOD_CGI
 	depends BR2_PACKAGE_LIGHTTPD
-	prompt "mod-cgi - a CGI module"
+	prompt "mod-cgi - CGI module"
 	tristate 
 	default m if CONFIG_DEVEL
 
 config BR2_PACKAGE_LIGHTTPD_MOD_PROXY
 	depends BR2_PACKAGE_LIGHTTPD
-	prompt "mod-proxy - a proxy module"
+	prompt "mod-proxy - Proxy module"
 	tristate 
 	default m if CONFIG_DEVEL
 
 config BR2_PACKAGE_LIGHTTPD_MOD_REDIRECT
 	depends BR2_PACKAGE_LIGHTTPD
-	prompt "mod-redirect - an url redirection module"
+	prompt "mod-redirect - URL redirection module"
 	tristate 
 	default m if CONFIG_DEVEL
 
 config BR2_PACKAGE_LIGHTTPD_MOD_REWRITE
 	depends BR2_PACKAGE_LIGHTTPD
-	prompt "mod-rewrite - an url rewriting module"
+	prompt "mod-rewrite - URL rewriting module"
 	tristate 
 	default m if CONFIG_DEVEL
 
 config BR2_PACKAGE_LIGHTTPD_MOD_SETENV
 	depends BR2_PACKAGE_LIGHTTPD
-	prompt "mod-setenv - an environment variable setting module"
+	prompt "mod-setenv - Environment variable setting module"
 	tristate 
 	default m if CONFIG_DEVEL
 
 config BR2_PACKAGE_LIGHTTPD_MOD_SIMPLE_VHOST
 	depends BR2_PACKAGE_LIGHTTPD
-	prompt "mod-simple-vhost - a simple virtual hosting module"
+	prompt "mod-simple-vhost - Simple virtual hosting module"
 	tristate 
 	default m if CONFIG_DEVEL
 
 config BR2_PACKAGE_LIGHTTPD_MOD_STATUS
 	depends BR2_PACKAGE_LIGHTTPD
-	prompt "mod-status - a server status display module"
+	prompt "mod-status - Server status display module"
 	tristate 
 	default m if CONFIG_DEVEL
 
 config BR2_PACKAGE_LIGHTTPD_MOD_USERTRACK
 	depends BR2_PACKAGE_LIGHTTPD
-	prompt "mod-usertrack - an user tracking module"
+	prompt "mod-usertrack - User tracking module"
 	tristate 
 	default m if CONFIG_DEVEL
 
