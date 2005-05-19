@@ -16,9 +16,13 @@ include $(TOPDIR)/package/rules.mk
 
 $(eval $(call PKG_template,DNSMASQ,$(PKG_NAME),$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
+$(PKG_BUILD_DIR)/.configured:
+	touch $@
+
 $(PKG_BUILD_DIR)/.built:
-	$(MAKE) CC=$(TARGET_CC) CFLAGS="$(TARGET_CFLAGS)" \
-		BINDIR=/usr/sbin MANDIR=/usr/man -C $(PKG_BUILD_DIR)
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		CC=$(TARGET_CC) CFLAGS="$(TARGET_CFLAGS)" \
+		BINDIR=/usr/sbin MANDIR=/usr/man
 	touch $@
 
 $(IPKG_DNSMASQ):

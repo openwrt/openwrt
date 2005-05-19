@@ -16,6 +16,9 @@ include $(TOPDIR)/package/rules.mk
 
 $(eval $(call PKG_template,EBTABLES,$(PKG_NAME),$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
+$(PKG_BUILD_DIR)/.configured:
+	touch $@
+
 $(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CC=$(TARGET_CC) LD=$(TARGET_CROSS)ld \
