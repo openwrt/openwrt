@@ -1,11 +1,14 @@
 config BR2_PACKAGE_ASTERISK
-	tristate "Asterisk"
+	tristate "asterisk - Complete open source PBX"
 	default m if CONFIG_DEVEL
 	help
  	  Asterisk is a complete PBX in software. It provides all of the features
 	  you would expect from a PBX and more. Asterisk does voice over IP in three
 	  protocols, and can interoperate with almost all standards-based telephony 
 	  equipment using relatively inexpensive hardware.
+	  
+	  http://www.asterisk.org/
+	  
 
 config BR2_PACKAGE_ASTERISK_SPEEX
 	tristate "Speex codec"
@@ -14,7 +17,6 @@ config BR2_PACKAGE_ASTERISK_SPEEX
 	select BR2_PACKAGE_SPEEX
 	help
 	  The Speex speech compression codec for Asterisk
-
 
 config BR2_PACKAGE_ASTERISK_MYSQL
 	tristate "MySQL plugins"
