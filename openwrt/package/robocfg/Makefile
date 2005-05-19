@@ -17,11 +17,11 @@ $(PKG_BUILD_DIR)/.prepared:
 	touch $@
 
 $(PKG_BUILD_DIR)/.built:
-	$(TARGET_CC) -o $(PKG_BUILD_DIR)/robocfg robocfg.c
-	$(STRIP) $(PKG_BUILD_DIR)/robocfg
+	$(TARGET_CC) $(TARGET_CFLAGS) -o $(PKG_BUILD_DIR)/robocfg robocfg.c
 	touch $@
 
 $(IPKG_ROBOCFG):
-	mkdir -p $(IDIR_ROBOCFG)/sbin
-	install -m 0755 $(PKG_BUILD_DIR)/robocfg $(IDIR_ROBOCFG)/sbin/robocfg
+	install -d -m0755 $(IDIR_ROBOCFG)/sbin
+	install -m0755 $(PKG_BUILD_DIR)/robocfg $(IDIR_ROBOCFG)/sbin/
+	$(RSTRIP) $(IDIR_ROBOCFG)
 	$(IPKG_BUILD) $(IDIR_ROBOCFG) $(PACKAGE_DIR)
