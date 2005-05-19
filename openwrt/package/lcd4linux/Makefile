@@ -24,7 +24,6 @@ $(PKG_BUILD_DIR)/.configured:
 		CFLAGS="$(TARGET_CFLAGS)" \
 		CPPFLAGS="-I$(STAGING_DIR)/usr/include" \
 		LDFLAGS="-L$(STAGING_DIR)/usr/lib" \
-		LIBS="-lpng12 -lz" \
 		./configure \
 		  --target=$(GNU_TARGET_NAME) \
 		  --host=$(GNU_TARGET_NAME) \
@@ -46,7 +45,7 @@ $(PKG_BUILD_DIR)/.configured:
 		  $(DISABLE_LARGEFILE) \
 		  $(DISABLE_NLS) \
 		  --without-x \
-		  --with-drivers='all,!RouterBoard,!X11' \
+		  --with-drivers='all,!PNG,!RouterBoard,!X11' \
 		  --with-plugins=wireless \
 	)
 	touch $@
