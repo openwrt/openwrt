@@ -7,9 +7,7 @@ PKG_VERSION:=1.2.2
 PKG_RELEASE:=1
 PKG_MD5SUM:=68bd51aaa6558c3bc3fd4890e53413de
 
-PKG_SOURCE_URL:=\
-	http://www.zlib.net/ \
-	http://nthill.free.fr/openwrt/sources/$(PKG_NAME)/
+PKG_SOURCE_URL:=http://www.zlib.net/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
@@ -27,7 +25,7 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 		--prefix=/usr \
 		--shared \
 	);
-	touch $(PKG_BUILD_DIR)/.configured
+	touch $@
 
 $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 	$(MAKE) -C $(PKG_BUILD_DIR) \
@@ -38,7 +36,7 @@ $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		install
-	touch $(PKG_BUILD_DIR)/.built
+	touch $@
 
 $(IPKG_ZLIB):
 	install -m0755 -d $(IDIR_ZLIB)/usr/lib

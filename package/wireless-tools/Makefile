@@ -19,7 +19,7 @@ include $(TOPDIR)/package/rules.mk
 $(eval $(call PKG_template,WIRELESS_TOOLS,wireless-tools,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
-	touch $(PKG_BUILD_DIR)/.configured
+	touch $@
 
 $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 	$(MAKE) -C $(PKG_BUILD_DIR) \
@@ -31,7 +31,7 @@ $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 		INSTALL_DIR="$(PKG_INSTALL_DIR)/usr/sbin" \
 		INSTALL_LIB="$(PKG_INSTALL_DIR)/usr/lib" \
 		install install-iwmulticall
-	touch $(PKG_BUILD_DIR)/.built
+	touch $@
 
 $(IPKG_WIRELESS_TOOLS):
 	mkdir -p $(IDIR_WIRELESS_TOOLS)/usr/lib
