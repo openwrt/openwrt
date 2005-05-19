@@ -13,163 +13,105 @@ PKG_SOURCE_URL:=http://www.quagga.net/download/ \
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_CAT:=zcat
-PKG_IPK:=$(PACKAGE_DIR)/$(PKG_NAME)-all_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
-PKG_IPK_DIR:=$(PKG_BUILD_DIR)/ipkg/quagga
 
-PKG_ZEBRA_DIR:=$(PKG_BUILD_DIR)/ipkg/zebra
-PKG_BGPD_DIR:=$(PKG_BUILD_DIR)/ipkg/bgpd
-PKG_OSPFD_DIR:=$(PKG_BUILD_DIR)/ipkg/ospfd
-PKG_RIPD_DIR:=$(PKG_BUILD_DIR)/ipkg/ripd
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
-# separate ipkg for zebra,bgpd,ospf and ripd
-PKG_ZEBRA:=$(PACKAGE_DIR)/$(PKG_NAME)-zebra_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
-PKG_BGPD:=$(PACKAGE_DIR)/$(PKG_NAME)-bgpd_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
-PKG_RIPD:=$(PACKAGE_DIR)/$(PKG_NAME)-ripd_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
-PKG_OSPFD:=$(PACKAGE_DIR)/$(PKG_NAME)-ospfd_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
+include $(TOPDIR)/package/rules.mk
 
-TARGETS:=$(PKG_IPK)
-ifneq ($(BR2_PACKAGE_QUAGGA_ZEBRA),)
-TARGETS += $(PKG_ZEBRA)
-endif
-ifneq ($(BR2_PACKAGE_QUAGGA_BGPD),)
-TARGETS += $(PKG_BGPD)
-endif
-ifneq ($(BR2_PACKAGE_QUAGGA_RIPD),)
-TARGETS += $(PKG_RIPD)
-endif
-ifneq ($(BR2_PACKAGE_QUAGGA_OSPFD),)
-TARGETS += $(PKG_OSPFD)
-endif
+$(eval $(call PKG_template,QUAGGA,quagga,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,QUAGGA_BGPD,quagga-bgpd,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,QUAGGA_OSPFD,quagga-ospfd,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,QUAGGA_OSPF6D,quagga-ospf6d,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,QUAGGA_RIPD,quagga-ripd,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,QUAGGA_RIPNGD,quagga-ripngd,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,QUAGGA_ZEBRA,quagga-zebra,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
-INSTALL_TARGETS := $(IPKG_STATE_DIR)/info/quagga.list
-ifeq ($(BR2_PACKAGE_QUAGGA_ZEBRA),y)
-INSTALL_TARGETS := $(IPKG_STATE_DIR)/info/quagga-zebra.list
-endif
-ifeq ($(BR2_PACKAGE_QUAGGA_BGPD),y)
-INSTALL_TARGETS := $(IPKG_STATE_DIR)/info/quagga-bgpd.list
-endif
-ifeq ($(BR2_PACKAGE_QUAGGA_RIPD),y)
-INSTALL_TARGETS := $(IPKG_STATE_DIR)/info/quagga-ripd.list
-endif
-ifeq ($(BR2_PACKAGE_QUAGGA_OSPFD),y)
-INSTALL_TARGETS := $(IPKG_STATE_DIR)/info/quagga-ospfd.list
-endif
-
-$(DL_DIR)/$(PKG_SOURCE):
-	 $(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE) $(PKG_MD5SUM) $(PKG_SOURCE_URL)
-
-$(PKG_BUILD_DIR)/.unpacked: $(DL_DIR)/$(PKG_SOURCE)
-	$(PKG_CAT) $(DL_DIR)/$(PKG_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
-	$(PATCH) $(PKG_BUILD_DIR) ./patches
-	touch $(PKG_BUILD_DIR)/.unpacked
-
-$(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.unpacked
-	(cd $(PKG_BUILD_DIR); rm -rf config.cache; \
+$(PKG_BUILD_DIR)/.configured:
+	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status}; \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
 		./configure \
 		--target=$(GNU_TARGET_NAME) \
 		--host=$(GNU_TARGET_NAME) \
 		--build=$(GNU_HOST_NAME) \
+		--program-prefix="" \
+		--program-suffix="" \
 		--prefix=/usr \
 		--exec-prefix=/usr \
 		--bindir=/usr/bin \
 		--sbindir=/usr/sbin \
 		--libexecdir=/usr/lib \
 		--datadir=/usr/share \
+		--includedir=/usr/include \
+		--infodir=/usr/share/info \
+		--libdir=/usr/lib \
+		--libexecdir=/usr/lib \
 		--localstatedir=/var \
-		--mandir=/usr/man \
-		--infodir=/usr/info \
+		--mandir=/usr/share/man \
+		--sbindir=/usr/sbin \
+		--sysconfdir=/etc \
+		$(DISABLE_NLS) \
+		$(DISABLE_LARGEFILE) \
+		--enable-shared \
 		--disable-static \
-		--disable-ipv6 \
+		--enable-ipv6 \
 		--disable-vtysh \
 		--enable-user=quagga \
 		--enable-group=quagga \
 		--sysconfdir=/etc/quagga \
-		--disable-exampledir \
 	);
-	touch $(PKG_BUILD_DIR)/.configured
+	touch $@
 
-$(PKG_IPK_DIR)/zebra: $(PKG_BUILD_DIR)/.configured
-	$(MAKE) -C $(PKG_BUILD_DIR)
-	$(MAKE) DESTDIR=$(PKG_IPK_DIR) -C $(PKG_BUILD_DIR) install
+$(PKG_BUILD_DIR)/.built:
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		DESTDIR=$(PKG_INSTALL_DIR) \
+		all install
+	touch $@
 
-$(PKG_IPK): $(PKG_IPK_DIR)/zebra
-	cp -a ./ipkg/* $(PKG_IPK_DIR)/
-	find $(PKG_IPK_DIR) -name CVS | xargs rm -rf
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_IPK_DIR) control/$(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
-	mkdir -p $(PKG_IPK_DIR)/usr/sbin
-	mkdir -p $(PKG_IPK_DIR)/usr/lib
-	mkdir -p $(PKG_IPK_DIR)/etc/quagga
-	rm $(PKG_IPK_DIR)/usr/lib/*.la
-	rm -rf $(PKG_IPK_DIR)/usr/include
-	rm -rf $(PKG_IPK_DIR)/usr/info
-	rm -rf $(PKG_IPK_DIR)/usr/man
-	$(STRIP) $(PKG_IPK_DIR)/usr/lib/*
-	$(STRIP) $(PKG_IPK_DIR)/usr/sbin/*
-	mkdir -p $(PACKAGE_DIR)
-	$(IPKG_BUILD) $(PKG_IPK_DIR) $(PACKAGE_DIR)
+$(IPKG_QUAGGA):
+	install -d -m0755 $(IDIR_QUAGGA)/usr/lib
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libzebra.so.* $(IDIR_QUAGGA)/usr/lib/
+	$(RSTRIP) $(IDIR_QUAGGA)
+	$(IPKG_BUILD) $(IDIR_QUAGGA) $(PACKAGE_DIR)
 
-$(IPKG_STATE_DIR)/info/quagga.list: $(PKG_IPK)
-	$(IPKG) install $(PKG_IPK)
+$(IPKG_QUAGGA_BGPD):
+	install -d -m0755 $(IDIR_QUAGGA_BGPD)/usr/sbin
+	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/bgpd $(IDIR_QUAGGA_BGPD)/usr/sbin/
+	$(RSTRIP) $(IDIR_QUAGGA_BGPD)
+	$(IPKG_BUILD) $(IDIR_QUAGGA_BGPD) $(PACKAGE_DIR)
 
-$(PKG_ZEBRA): $(PKG_IPK_DIR)/zebra
-	mkdir -p $(PKG_ZEBRA_DIR)/etc/quagga
-	mkdir -p $(PKG_ZEBRA_DIR)/usr/sbin
-	mkdir -p $(PKG_ZEBRA_DIR)/usr/lib
-	cp -a ./ipkg/* $(PKG_ZEBRA_DIR)/
-	find $(PKG_ZEBRA_DIR) -name CVS | xargs rm -rf
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_ZEBRA_DIR) control/$(PKG_NAME)-zebra.control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
-	cp $(PKG_IPK_DIR)/usr/sbin/zebra $(PKG_ZEBRA_DIR)/usr/sbin
-	cp $(PKG_IPK_DIR)/usr/lib/libzebra* $(PKG_ZEBRA_DIR)/usr/lib 	
-	$(IPKG_BUILD) $(PKG_ZEBRA_DIR) $(PACKAGE_DIR)
+$(IPKG_QUAGGA_OSPFD):
+	install -d -m0755 $(IDIR_QUAGGA_OSPFD)/usr/lib
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libospf.so.* $(IDIR_QUAGGA_OSPFD)/usr/lib/
+	install -d -m0755 $(IDIR_QUAGGA_OSPFD)/usr/sbin
+	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/ospfd $(IDIR_QUAGGA_OSPFD)/usr/sbin/
+	$(RSTRIP) $(IDIR_QUAGGA_OSPFD)
+	$(IPKG_BUILD) $(IDIR_QUAGGA_OSPFD) $(PACKAGE_DIR)
 
-$(IPKG_STATE_DIR)/info/quagga-zebra.list: $(PKG_ZEBRA)
-	$(IPKG) install $(PKG_ZEBRA)
+$(IPKG_QUAGGA_OSPF6D):
+	install -d -m0755 $(IDIR_QUAGGA_OSPF6D)/usr/lib
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libospf.so.* $(IDIR_QUAGGA_OSPF6D)/usr/lib/
+	install -d -m0755 $(IDIR_QUAGGA_OSPF6D)/usr/sbin
+	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/ospfd $(IDIR_QUAGGA_OSPF6D)/usr/sbin/
+	$(RSTRIP) $(IDIR_QUAGGA_OSPF6D)
+	$(IPKG_BUILD) $(IDIR_QUAGGA_OSPF6D) $(PACKAGE_DIR)
 
-$(PKG_BGPD): $(PKG_IPK_DIR)/zebra
-	mkdir -p $(PKG_BGPD_DIR)/etc/quagga
-	mkdir -p $(PKG_BGPD_DIR)/usr/sbin
-	cp -a ./ipkg/* $(PKG_BGPD_DIR)/
-	find $(PKG_BGPD_DIR) -name CVS | xargs rm -rf
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_BGPD_DIR) control/$(PKG_NAME)-bgpd.control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
-	cp $(PKG_IPK_DIR)/usr/sbin/bgpd $(PKG_BGPD_DIR)/usr/sbin
-	$(IPKG_BUILD) $(PKG_BGPD_DIR) $(PACKAGE_DIR)
+$(IPKG_QUAGGA_RIPD):
+	install -d -m0755 $(IDIR_QUAGGA_RIPD)/usr/sbin
+	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/ripd $(IDIR_QUAGGA_RIPD)/usr/sbin/
+	$(RSTRIP) $(IDIR_QUAGGA_RIPD)
+	$(IPKG_BUILD) $(IDIR_QUAGGA_RIPD) $(PACKAGE_DIR)
 
-$(IPKG_STATE_DIR)/info/quagga-bgpd.list: $(PKG_BGPD)
-	$(IPKG) install $(PKG_BGPD)
+$(IPKG_QUAGGA_RIPNGD):
+	install -d -m0755 $(IDIR_QUAGGA_RIPNGD)/usr/sbin
+	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/ripngd $(IDIR_QUAGGA_RIPNGD)/usr/sbin/
+	$(RSTRIP) $(IDIR_QUAGGA_RIPNGD)
+	$(IPKG_BUILD) $(IDIR_QUAGGA_RIPNGD) $(PACKAGE_DIR)
 
-$(PKG_RIPD): $(PKG_IPK_DIR)/zebra
-	mkdir -p $(PKG_RIPD_DIR)/etc/quagga
-	mkdir -p $(PKG_RIPD_DIR)/usr/sbin
-	cp -a ./ipkg/* $(PKG_RIPD_DIR)/
-	find $(PKG_RIPD_DIR) -name CVS | xargs rm -rf
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_RIPD_DIR) control/$(PKG_NAME)-ripd.control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
-	cp $(PKG_IPK_DIR)/usr/sbin/ripd $(PKG_RIPD_DIR)/usr/sbin
-	$(IPKG_BUILD) $(PKG_RIPD_DIR) $(PACKAGE_DIR)
+$(IPKG_QUAGGA_ZEBRA):
+	install -d -m0755 $(IDIR_QUAGGA_ZEBRA)/usr/sbin
+	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/zebra $(IDIR_QUAGGA_ZEBRA)/usr/sbin/
+	$(RSTRIP) $(IDIR_QUAGGA_ZEBRA)
+	$(IPKG_BUILD) $(IDIR_QUAGGA_ZEBRA) $(PACKAGE_DIR)
 
-$(IPKG_STATE_DIR)/info/quagga-ripd.list: $(PKG_RIPD)
-	$(IPKG) install $(PKG_RIPD)
-
-$(PKG_OSPFD): $(PKG_IPK_DIR)/zebra
-	mkdir -p $(PKG_OSPFD_DIR)/etc/quagga
-	mkdir -p $(PKG_OSPFD_DIR)/usr/sbin
-	mkdir -p $(PKG_OSPFD_DIR)/usr/lib
-	cp -a ./ipkg/* $(PKG_OSPFD_DIR)/
-	find $(PKG_OSPFD_DIR) -name CVS | xargs rm -rf
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_OSPFD_DIR) control/$(PKG_NAME)-ospfd.control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
-	cp $(PKG_IPK_DIR)/usr/sbin/ospfd $(PKG_OSPFD_DIR)/usr/sbin
-	cp $(PKG_IPK_DIR)/usr/lib/libospf* $(PKG_OSPFD_DIR)/usr/lib 	
-	$(IPKG_BUILD) $(PKG_OSPFD_DIR) $(PACKAGE_DIR)
-
-$(IPKG_STATE_DIR)/info/quagga-ospfd.list: $(PKG_OSPFD)
-	$(IPKG) install $(PKG_OSPFD)
-
-source: $(DL_DIR)/$(PKG_SOURCE)
-prepare: $(PKG_BUILD_DIR)/.unpacked
-compile: $(TARGETS)
-install: $(INSTALL_TARGETS)
-
-clean:
-	rm -rf $(PKG_BUILD_DIR)
-	rm -f $(PKG_IPK) $(PKG_ZEBRA) $(PKG_OSPFD) $(PKG_RIPD) $(PKG_BGPD)
