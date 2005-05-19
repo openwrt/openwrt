@@ -47,11 +47,11 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 		  --enable-shared \
 		  --disable-static \
 	);
-	touch $(PKG_BUILD_DIR)/.configured
+	touch $@
 
 $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 	$(MAKE) -C $(PKG_BUILD_DIR)
-	touch $(PKG_BUILD_DIR)/.built
+	touch $@
 
 $(IPKG_SCREEN):
 	install -d -m0755 $(IDIR_SCREEN)/usr/sbin

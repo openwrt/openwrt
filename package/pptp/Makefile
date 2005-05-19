@@ -18,14 +18,14 @@ include $(TOPDIR)/package/rules.mk
 $(eval $(call PKG_template,PPTP,pptp,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 $(PKG_BUILD_DIR)/.configured:
-	touch $(PKG_BUILD_DIR)/.configured
+	touch $@
 
 $(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CC=$(TARGET_CC) \
 		CFLAGS="$(TARGET_CFLAGS)" \
 		all
-	touch $(PKG_BUILD_DIR)/.built
+	touch $@
 
 $(IPKG_PPTP):
 	install -d -m0755 $(IDIR_PPTP)/etc/init.d

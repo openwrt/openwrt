@@ -62,7 +62,7 @@ $(PKG_BUILD_DIR)/.configured:
 		  $(DISABLE_LARGEFILE) \
 		  $(DISABLE_NLS) \
 	)
-	touch $(PKG_BUILD_DIR)/.configured
+	touch $@
 
 $(PKG_BUILD_DIR)/.built:
 	rm -rf $(PKG_INSTALL_DIR)
@@ -72,7 +72,7 @@ $(PKG_BUILD_DIR)/.built:
 		COPTS="$(TARGET_CFLAGS)" \
 		DESTDIR="$(PKG_INSTALL_DIR)/usr" \
 		all install
-	touch $(PKG_BUILD_DIR)/.built
+	touch $@
 
 $(IPKG_PPP):
 	install -d -m0755 $(IDIR_PPP)/etc/ppp

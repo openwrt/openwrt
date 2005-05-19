@@ -43,11 +43,11 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 		  $(DISABLE_NLS) \
 		  --without-ssl \
 	);
-	touch $(PKG_BUILD_DIR)/.configured
+	touch $@
 
 $(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR)
-	touch $(PKG_BUILD_DIR)/.built
+	touch $@
 
 $(IPKG_MONIT):
 	install -d -m0755 $(IDIR_MONIT)/etc

@@ -19,13 +19,13 @@ include $(TOPDIR)/package/rules.mk
 $(eval $(call PKG_template,HTPDATE,htpdate,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 $(PKG_BUILD_DIR)/.configured:
-	touch $(PKG_BUILD_DIR)/.configured
+	touch $@
 
 $(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)"
-	touch $(PKG_BUILD_DIR)/.built
+	touch $@
 
 $(IPKG_HTPDATE):
 	install -d -m0755 $(IDIR_HTPDATE)/etc/default/

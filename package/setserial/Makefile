@@ -1,3 +1,5 @@
+# $Id$
+
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=setserial
@@ -40,12 +42,12 @@ $(PKG_BUILD_DIR)/.configured:
 		  $(DISABLE_LARGEFILE) \
 		  $(DISABLE_NLS) \
 	)
-	touch $(PKG_BUILD_DIR)/.configured
+	touch $@
 
 $(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		all
-	touch $(PKG_BUILD_DIR)/.built
+	touch $@
 
 $(IPKG_SETSERIAL):
 	install -d -m0755 $(IDIR_SETSERIAL)/etc/init.d

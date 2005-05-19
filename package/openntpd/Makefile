@@ -46,11 +46,11 @@ $(PKG_BUILD_DIR)/.configured:
 		  --with-builtin-arc4random \
 		  --with-privsep-user=ntp \
 	);
-	touch $(PKG_BUILD_DIR)/.configured
+	touch $@
 
 $(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR)
-	touch $(PKG_BUILD_DIR)/.built
+	touch $@
 
 $(IPKG_OPENNTPD):
 	install -d -m0755 $(IDIR_OPENNTPD)/etc

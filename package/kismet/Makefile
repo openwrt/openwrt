@@ -50,14 +50,14 @@ $(PKG_BUILD_DIR)/.configured:
 		  --enable-syspcap=yes \
 		  --disable-wsp100 \
 	);
-	touch $(PKG_BUILD_DIR)/.configured
+	touch $@
 
 $(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CC=$(TARGET_CC) \
 		LIBS="-L$(STAGING_DIR)/lib -fno-builtin -nostdinc++ -nodefaultlibs -luClibc++ -lc -lm" \
 		CPPFLAGS="-I$(STAGING_DIR)/include -I$(STAGING_DIR)/usr/include -I$(LINUX_DIR)/include" 
-	touch $(PKG_BUILD_DIR)/.built
+	touch $@
 
 $(IPKG_KISMET_CLIENT):
 	install -d -m0755 $(IDIR_KISMET_CLIENT)/etc

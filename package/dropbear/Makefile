@@ -58,7 +58,7 @@ $(PKG_BUILD_DIR)/.configured:
 		--disable-pututline \
 		--disable-pututxline \
 	);
-	touch  $(PKG_BUILD_DIR)/.configured
+	touch $@
 
 $(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR) \

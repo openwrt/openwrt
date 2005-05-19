@@ -44,7 +44,7 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 		  --enable-shared \
 		  --disable-static \
 	);
-	touch $(PKG_BUILD_DIR)/.configured
+	touch $@
 
 $(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR) \
@@ -57,7 +57,7 @@ $(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		PREFIX="$(PKG_INSTALL_DIR)/usr" \
 		install
-	touch $(PKG_BUILD_DIR)/.built
+	touch $@
 
 $(IPKG_MARADNS):
 	install -d -m0755 $(IDIR_MARADNS)/etc
