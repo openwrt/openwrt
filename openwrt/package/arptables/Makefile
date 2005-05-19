@@ -1,8 +1,5 @@
-#############################################################
-#
-# arptables
-#
-#############################################################
+# $Id$
+
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=arptables
@@ -17,6 +14,9 @@ PKG_CAT:=zcat
 include $(TOPDIR)/package/rules.mk
 
 $(eval $(call PKG_template,ARPTABLES,arptables,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+
+$(PKG_BUILD_DIR)/.configured:
+	touch $@
 
 $(PKG_BUILD_DIR)/.built: 
 	$(MAKE) -C $(PKG_BUILD_DIR) \
