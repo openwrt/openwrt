@@ -47,16 +47,16 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 		  --enable-shared \
 		  --enable-static \
 	);
-	touch $(PKG_BUILD_DIR)/.configured
+	touch $@
 
 $(PKG_BUILD_DIR)/.built:
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		CFLAGS_O="$(TARGET_CFLAGS)"
+	rm -rf $(PKG_INSTALL_DIR)
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
+		CFLAGS_O="$(TARGET_CFLAGS)" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
-		install
-	touch $(PKG_BUILD_DIR)/.built
+		all install
+	touch $@
 
 $(IPKG_LIBLZO):
 	install -d -m0755 $(IDIR_LIBLZO)/usr/lib

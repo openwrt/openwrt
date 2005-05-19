@@ -67,19 +67,19 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 		--with-shared \
 		--with-normal \
 	);
-	touch $(PKG_BUILD_DIR)/.configured
+	touch $@
 
 $(PKG_BUILD_DIR)/.built:
+	rm -rf $(PKG_INSTALL_DIR)
+	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
 		BUILD_CC="$(TARGET_CC)" \
 		HOSTCC="$(HOSTCC)" \
-		HOSTCCFLAGS="\$$(CPPFLAGS)"
-	mkdir -p $(PKG_INSTALL_DIR)
-	$(MAKE) -C $(PKG_BUILD_DIR) \
+		HOSTCCFLAGS="\$$(CPPFLAGS)" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
-		install
-	touch $(PKG_BUILD_DIR)/.built
+		all install
+	touch $@
 	
 $(IPKG_LIBNCURSES):
 	install -d -m0755 $(IDIR_LIBNCURSES)/usr/lib

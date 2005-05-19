@@ -7,9 +7,7 @@ PKG_VERSION:=2.2.26
 PKG_RELEASE:=1
 PKG_MD5SUM:=afc8700b5738da863b30208e1d3e9de8
 
-PKG_SOURCE_URL:= \
-	ftp://ftp.openldap.org/pub/OpenLDAP/openldap-release/ \
-	http://nthill.free.fr/openwrt/sources/$(PKG_NAME)/
+PKG_SOURCE_URL:=ftp://ftp.openldap.org/pub/OpenLDAP/openldap-release/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tgz
 PKG_CAT:=zcat
 
@@ -36,10 +34,12 @@ include $(TOPDIR)/package/rules.mk
 $(eval $(call PKG_template,LIBOPENLDAP,libopenldap,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,OPENLDAP_UTILS,openldap-utils,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
-$(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
-	touch $(PKG_BUILD_DIR)/.configured
+$(PKG_BUILD_DIR)/.configured:
+	touch $@
 
-$(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
+$(PKG_BUILD_DIR)/.built:
+	rm -rf $(PKG_INSTALL_DIR)
+	mkdir -p $(PKG_INSTALL_DIR)
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
 		./configure \
 		  --target=$(GNU_HOST_NAME) \
@@ -95,12 +95,10 @@ $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 		  $(DISABLE_NLS) \
 		  $(PKG_CONFIGURE_OPTIONS) \
 	)
-	$(MAKE) -C $(PKG_BUILD_DIR)
-	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
-		install
-	touch $(PKG_BUILD_DIR)/.built
+		all install
+	touch $@
 	
 
 $(IPKG_LIBOPENLDAP):

@@ -131,16 +131,16 @@ $(PKG_BUILD_DIR)/.configured:
 		  --without-rlm_unix \
 		  --without-rlm_x99-token \
 	)
-	touch $(PKG_BUILD_DIR)/.configured
+	touch $@
 
 $(PKG_BUILD_DIR)/.built:
-	$(MAKE) -C $(PKG_BUILD_DIR)
+	rm -rf $(PKG_INSTALL_DIR)
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		R="$(PKG_INSTALL_DIR)" \
 		INSTALLSTRIP="" \
-		install
-	touch $(PKG_BUILD_DIR)/.built
+		all install
+	touch $@
 
 $(IPKG_FREERADIUS):
 	install -m0755 -d $(IDIR_FREERADIUS)/etc/init.d

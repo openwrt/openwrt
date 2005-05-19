@@ -7,9 +7,7 @@ PKG_VERSION:=0.8.3
 PKG_RELEASE:=1
 PKG_MD5SUM:=56a9d4615d8354fcfe8cff8c8443c77b
 
-PKG_SOURCE_URL:= \
-	http://www.tcpdump.org/release \
-	http://nthill.free.fr/openwrt/sources/$(PKG_NAME)/
+PKG_SOURCE_URL:=http://www.tcpdump.org/release/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
@@ -53,16 +51,16 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 		  --with-build-cc=$(HOSTCC) \
 		  --with-pcap=linux \
 	);
-	touch $(PKG_BUILD_DIR)/.configured
+	touch $@
 
 $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		CCOPT="$(TARGET_CFLAGS)"
+	rm -rf $(PKG_INSTALL_DIR)
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
+		CCOPT="$(TARGET_CFLAGS)" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
-		install
-	touch $(PKG_BUILD_DIR)/.built
+		all install
+	touch $@
 
 $(IPKG_LIBPCAP):
 	install -m0755 -d $(IDIR_LIBPCAP)/usr/lib

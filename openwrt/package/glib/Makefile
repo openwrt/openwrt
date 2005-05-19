@@ -66,15 +66,15 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 		  --enable-shared=yes \
 		  --enable-static=yes \
 	);
-	touch $(PKG_BUILD_DIR)/.configured
+	touch $@
 
 $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-	  	$(TARGET_CONFIGURE_OPTS)
+	rm -rf $(PKG_INSTALL_DIR)
+	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		install
-	touch $(PKG_BUILD_DIR)/.built
+	touch $@
 
 $(IPKG_GLIB1):
 	install -m0755 -d $(IDIR_GLIB1)/usr/lib
