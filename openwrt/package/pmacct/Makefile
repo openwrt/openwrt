@@ -154,10 +154,10 @@ $(eval $(call PKG_package,PMACCTD_PGSQL,pmacctd-pgsql,pmacctd,$(PKG_VERSION)-$(P
 $(eval $(call PKG_package,PMACCTD_CUSTOM,pmacctd-custom,pmacctd,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 $(PKG_BUILD_DIR)/.configured:
-	touch $(PKG_BUILD_DIR)/.configured
+	touch $@
 
 $(PKG_BUILD_DIR)/.built: $(BUILD_TARGETS)
-	touch $(PKG_BUILD_DIR)/.built
+	touch $@
 
 $(IPKG_PMACCT_CLIENT):
 	install -d -m0755 $(IDIR_PMACCT_CLIENT)/usr/sbin

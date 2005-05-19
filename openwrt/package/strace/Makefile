@@ -44,7 +44,7 @@ $(PKG_BUILD_DIR)/.configured:
 		$(DISABLE_NLS) \
 		$(DISABLE_LARGEFILE) \
 	);
-	touch $(PKG_BUILD_DIR)/.configured
+	touch $@
 
 $(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR) \

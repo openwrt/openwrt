@@ -19,13 +19,13 @@ include $(TOPDIR)/package/rules.mk
 $(eval $(call PKG_template,SHAT,shat,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 $(PKG_BUILD_DIR)/.configured:
-	touch $(PKG_BUILD_DIR)/.configured
+	touch $@
 
 $(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR)/src \
 		CC=$(TARGET_CC) LD=$(TARGET_CROSS)ld \
 		CFLAGS="$(TARGET_CFLAGS) -Wall -I$(PKG_BUILD_DIR)/include/linux/include -I$(PKG_BUILD_DIR)/include -DVERSION=\\\"$(PKG_VERSION)\\\" -DDROP_NETBIOS"
-	touch $(PKG_BUILD_DIR)/.built
+	touch $@
 
 $(IPKG_SHAT):
 	install -d -m0755 $(IDIR_SHAT)/usr/sbin

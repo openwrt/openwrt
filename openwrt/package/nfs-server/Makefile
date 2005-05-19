@@ -43,11 +43,11 @@ $(PKG_BUILD_DIR)/.configured:
 		  $(DISABLE_LARGEFILE) \
 		  $(DISABLE_NLS) \
 	);
-	touch $(PKG_BUILD_DIR)/.configured
+	touch $@
 
 $(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR)
-	touch $(PKG_BUILD_DIR)/.built
+	touch $@
 
 $(IPKG_NFS_SERVER):
 	install -d -m0755 $(IDIR_NFS_SERVER)/etc

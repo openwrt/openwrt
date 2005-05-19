@@ -17,13 +17,13 @@ $(eval $(call PKG_template,LIBPTHREAD,libpthread,$(PKG_VERSION)-$(PKG_RELEASE),$
 
 $(PKG_BUILD_DIR)/.prepared:
 	mkdir -p $(PKG_BUILD_DIR)
-	touch $(PKG_BUILD_DIR)/.prepared
+	touch $@
 
 $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
-	touch $(PKG_BUILD_DIR)/.configured
+	touch $@
 
 $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
-	touch $(PKG_BUILD_DIR)/.built
+	touch $@
 
 $(IPKG_LIBPTHREAD):
 	mkdir -p $(IDIR_LIBPTHREAD)/lib

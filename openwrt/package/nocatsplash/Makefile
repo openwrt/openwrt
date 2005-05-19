@@ -46,14 +46,14 @@ $(PKG_BUILD_DIR)/.configured:
 		  $(DISABLE_NLS) \
 		  --with-glib-prefix="$(STAGING_DIR)/usr" \
 	)
-	touch $(PKG_BUILD_DIR)/.configured
+	touch $@
 
 $(PKG_BUILD_DIR)/.built:
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		all install
-	touch $(PKG_BUILD_DIR)/.built
+	touch $@
 
 $(IPKG_NOCATSPLASH):
 	mkdir -p $(IDIR_NOCATSPLASH)

@@ -1,3 +1,5 @@
+# $Id$
+
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ntpclient
@@ -16,12 +18,12 @@ include $(TOPDIR)/package/rules.mk
 $(eval $(call PKG_template,NTPCLIENT,ntpclient,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 $(PKG_BUILD_DIR)/.configured:
-	touch $(PKG_BUILD_DIR)/.configured
+	touch @
 
 $(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CC=$(TARGET_CC) CFLAGS="$(TARGET_CFLAGS)"
-	touch $(PKG_BUILD_DIR)/.built
+	touch @
 
 $(IPKG_NTPCLIENT):
 	install -d -m0755 $(IDIR_NTPCLIENT)/etc/init.d

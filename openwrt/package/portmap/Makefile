@@ -20,13 +20,13 @@ include $(TOPDIR)/package/rules.mk
 $(eval $(call PKG_template,PORTMAP,portmap,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 $(PKG_BUILD_DIR)/.configured:
-	touch $(PKG_BUILD_DIR)/.configured
+	touch $@
 
 $(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS) -DHOSTS_ACCESS -DFACILITY=LOG_DAEMON -DIGNORE_SIGCHLD" all
-	touch $(PKG_BUILD_DIR)/.built
+	touch $@
 
 $(IPKG_PORTMAP):
 	install -d -m0755 $(IDIR_PORTMAP)/usr/sbin 
