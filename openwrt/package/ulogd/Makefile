@@ -35,8 +35,8 @@ endef
 include $(TOPDIR)/package/rules.mk
 
 $(eval $(call PKG_template,ULOGD,ulogd,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
-$(eval $(call PKG_template,ULOGD_MYSQL_PLUGIN,ulogd-mysql-plugin,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
-$(eval $(call PKG_template,ULOGD_PGSQL_PLUGIN,ulogd-pgsql-plugin,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,ULOGD_MYSQL_PLUGIN,ulogd-mod-mysql,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,ULOGD_PGSQL_PLUGIN,ulogd-mod-pgsql,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 $(eval $(call IPKG_plugin_template,ULOGD_MYSQL_PLUGIN,MYSQL))
 $(eval $(call IPKG_plugin_template,ULOGD_PGSQL_PLUGIN,PGSQL))
