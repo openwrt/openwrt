@@ -3,29 +3,28 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ttcp
+PKG_VERSION:=3.8
 PKG_RELEASE:=1
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/ttcp
-PKG_IPK_DIR:=$(PKG_BUILD_DIR)
-PKG_IPK:=$(PACKAGE_DIR)/$(PKG_NAME)_$(PKG_RELEASE)_$(ARCH).ipk
 
-$(PKG_BUILD_DIR)/usr/bin/ttcp:
-	mkdir -p $(PKG_BUILD_DIR)/usr/bin
-	$(TARGET_CC) -o $@ ttcp.c
-	$(STRIP) $@
+include $(TOPDIR)/package/rules.mk
 
-$(PKG_IPK): $(PKG_BUILD_DIR)/usr/bin/ttcp
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_IPK_DIR) $(PKG_NAME).control $(PKG_RELEASE) $(ARCH)
-	$(IPKG_BUILD) $(PKG_IPK_DIR) $(PACKAGE_DIR)
+$(eval $(call PKG_template,TTCP,ttcp,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
-$(IPKG_STATE_DIR)/info/$(PKG_NAME).list:
-	$(IPKG) install $(PKG_IPK)
+$(PKG_BUILD_DIR)/.prepared:
+	mkdir -p $@
+	touch $@
 
-source:
-prepare:
-compile: $(PKG_IPK)
-install: $(IPKG_STATE_DIR)/info/$(PKG_NAME).list
+$(PKG_BUILD_DIR)/.configured:
+	touch $@
 
-clean:
-	rm -rf $(PKG_BUILD_DIR)
-	rm -f $(PKG_IPK)
+$(PKG_BUILD_DIR)/.built:
+	$(TARGET_CC) $(TARGET_CFLAGS) -o $(PKG_BUILD_DIR)/ttcp ttcp.c
+	touch $@
+
+$(IPKG_TTCP):
+	install -d -m0755 $(IDIR_TTCP)/usr/bin
+	install -m0755 $(PKG_BUILD_DIR)/ttcp $(IDIR_TTCP)/usr/bin/
+	$(RSTRIP) $(IDIR_TTCP)
+	$(IPKG_BUILD) $(IDIR_TTCP) $(PACKAGE_DIR)
