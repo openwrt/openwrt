@@ -7,9 +7,7 @@ PKG_VERSION:=2.1.20
 PKG_RELEASE:=1
 PKG_MD5SUM:=268ead27f4ac39bcfe17d9e38e0f2977
 
-PKG_SOURCE_URL:= \
-	http://ftp.andrew.cmu.edu/pub/cyrus-mail/ \
-	http://nthill.free.fr/openwrt/sources/$(PKG_NAME)/
+PKG_SOURCE_URL:=http://ftp.andrew.cmu.edu/pub/cyrus-mail/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
@@ -85,20 +83,20 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 		  --without-dmalloc \
 		  --without-sfio \
 	);
-	touch $(PKG_BUILD_DIR)/.configured
+	touch $@
 
-$(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
+$(PKG_BUILD_DIR)/.built:
+	rm -rf $(PKG_INSTALL_DIR)
+	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR)/include \
 		CC="$(HOSTCC)" \
 		LINK="$(HOSTCC) -o makemd5 -lc" \
 		CFLAGS="" \
 		makemd5
-	$(MAKE) -C $(PKG_BUILD_DIR)
-	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
-		install
-	touch $(PKG_BUILD_DIR)/.built
+		all install
+	touch $@
 
 $(IPKG_LIBSASL2):
 	install -m0755 -d $(IDIR_LIBSASL2)/usr/lib/

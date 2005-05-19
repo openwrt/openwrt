@@ -7,9 +7,7 @@ PKG_VERSION:=1.5.14
 PKG_RELEASE:=1
 PKG_MD5SUM:=049bf67de9b0eb75cd943dafe3d749ec
 
-PKG_SOURCE_URL:= \
-	http://ftp.gnu.org/gnu/libtool/ \
-	http://nthill.free.fr/openwrt/sources/$(PKG_NAME)/
+PKG_SOURCE_URL:=http://ftp.gnu.org/gnu/libtool/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
@@ -47,15 +45,15 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 		  --enable-shared \
 		  --enable-static \
 	);
-	touch $(PKG_BUILD_DIR)/.configured
+	touch $@
 
 $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
-	$(MAKE) -C $(PKG_BUILD_DIR)
+	rm -rf $(PKG_INSTALL_DIR)
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
-		install
-	touch $(PKG_BUILD_DIR)/.built
+		all install
+	touch $@
 
 $(IPKG_LIBLTDL):
 	install -m0755 -d $(IDIR_LIBLTDL)/usr/lib
