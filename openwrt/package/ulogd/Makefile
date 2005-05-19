@@ -14,11 +14,11 @@ PKG_CAT:=bzcat
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
-ifneq ($(BR2_PACKAGE_ULOGD_MYSQL_PLUGIN),)
+ifneq ($(BR2_PACKAGE_ULOGD_MOD_MYSQL),)
 ULOGD_MYSQL_OPTION:=--with-mysql=$(STAGING_DIR)/usr
 endif
 
-ifneq ($(BR2_PACKAGE_ULOGD_PGSQL_PLUGIN),)
+ifneq ($(BR2_PACKAGE_ULOGD_MOD_PGSQL),)
 ULOGD_PGSQL_OPTION:=--with-pgsql=$(STAGING_DIR)/usr
 endif
 
@@ -35,11 +35,11 @@ endef
 include $(TOPDIR)/package/rules.mk
 
 $(eval $(call PKG_template,ULOGD,ulogd,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
-$(eval $(call PKG_template,ULOGD_MYSQL_PLUGIN,ulogd-mod-mysql,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
-$(eval $(call PKG_template,ULOGD_PGSQL_PLUGIN,ulogd-mod-pgsql,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,ULOGD_MOD_MYSQL,ulogd-mod-mysql,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,ULOGD_MOD_PGSQL,ulogd-mod-pgsql,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
-$(eval $(call IPKG_plugin_template,ULOGD_MYSQL_PLUGIN,MYSQL))
-$(eval $(call IPKG_plugin_template,ULOGD_PGSQL_PLUGIN,PGSQL))
+$(eval $(call IPKG_plugin_template,ULOGD_MOD_MYSQL,MYSQL))
+$(eval $(call IPKG_plugin_template,ULOGD_MOD_PGSQL,PGSQL))
 
 $(PKG_BUILD_DIR)/.configured:
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
