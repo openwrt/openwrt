@@ -1,9 +1,11 @@
 config BR2_PACKAGE_AICCU
+	tristate "aiccu - SixXS Automatic IPv6 Connectivity Client Utility"
+	default m if CONFIG_DEVEL
 	select BR2_PACKAGE_KMOD_IPV6
 	select BR2_PACKAGE_LIBPTHREAD
-	tristate "aiccu"
-	default m if CONFIG_DEVEL
 	help
-	 SixXS Automatic IPv6 Connectivity Client Utility
+	  SixXS Automatic IPv6 Connectivity Client Utility
+	  
+	  For more information about SixXS check http://www.sixxs.net/
+	  
 
-	 For more information about SixXS check http://www.sixxs.net
