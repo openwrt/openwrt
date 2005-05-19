@@ -7,9 +7,7 @@ PKG_VERSION:=3.8.3
 PKG_RELEASE:=1
 PKG_MD5SUM:=30645001f4b97019677cad88d3811904
 
-PKG_SOURCE_URL:= \
-	http://www.tcpdump.org/release \
-	http://nthill.free.fr/openwrt/sources/$(PKG_NAME)/
+PKG_SOURCE_URL:=http://www.tcpdump.org/release/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
@@ -20,7 +18,7 @@ include $(TOPDIR)/package/rules.mk
 
 $(eval $(call PKG_template,TCPDUMP,tcpdump,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
-$(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
+$(PKG_BUILD_DIR)/.configured:
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
 		BUILD_CC=$(TARGET_CC) HOSTCC=$(HOSTCC) \
 		$(TARGET_CONFIGURE_OPTS) \
@@ -54,16 +52,16 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 		--enable-ipv6 \
 		--without-crypto \
 	);
-	touch $(PKG_BUILD_DIR)/.configured
+	touch $@
 
-$(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		CCOPT="$(TARGET_CFLAGS)" INCLS="-I. -I$(STAGING_DIR)/usr/include"
+$(PKG_BUILD_DIR)/.built:
+	rm -rf $(PKG_INSTALL_DIR)
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
+		CCOPT="$(TARGET_CFLAGS)" INCLS="-I. -I$(STAGING_DIR)/usr/include" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
-		install
-	touch $(PKG_BUILD_DIR)/.built
+		all install
+	touch $@
 
 $(IPKG_TCPDUMP):
 	install -m0755 -d $(IDIR_TCPDUMP)/usr/sbin
