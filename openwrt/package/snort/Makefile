@@ -142,8 +142,11 @@ $(eval $(call PKG_build,SNORT_MYSQL,snort-mysql,$(PKG_VERSION)-$(PKG_RELEASE),$(
 $(eval $(call PKG_build,SNORT_PGSQL,snort-pgsql,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_build,SNORT_CUSTOM,snort-custom,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
+$(PKG_BUILD_DIR)/.configured:
+	touch $@
+
 $(PKG_BUILD_DIR)/.built: $(BUILD_TARGETS)
-	touch $(PKG_BUILD_DIR)/.built
+	touch $@
 
 $(PKG_BUILD_DIR)/.installed: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(PKG_INSTALL_DIR)
