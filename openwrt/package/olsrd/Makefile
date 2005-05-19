@@ -12,7 +12,6 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_CAT:=bzcat
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
 include $(TOPDIR)/package/rules.mk
 
@@ -20,7 +19,7 @@ define PKG_mod_template
 
 $$(IPKG_$(1)):
 	install -d -m0755 $$(IDIR_$(1))/usr/lib
-	install -m0755 $(PKG_INSTALL_DIR)/usr/lib/olsrd_$(2).so.* $$(IDIR_$(1))/usr/lib/
+	install -m0755 $(PKG_BUILD_DIR)/lib/$(2)*/olsrd_$(2).so.* $$(IDIR_$(1))/usr/lib/
 	$(RSTRIP) $$(IDIR_$(1))
 	$(IPKG_BUILD) $$(IDIR_$(1)) $(PACKAGE_DIR)
 
@@ -46,23 +45,22 @@ $(PKG_BUILD_DIR)/.configured:
 
 $(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C "$(PKG_BUILD_DIR)" \
-		$(TARGET_CONFIGURE_OPTS) \
-		OFLAGS="$(TARGET_CFLAGS)" \
 		OS="linux" \
-		all libs
-	rm -rf $(PKG_INSTALL_DIR)
-	mkdir -p $(PKG_INSTALL_DIR)
+		CC="$(TARGET_CC)" \
+		CFLAGS="$(TARGET_CFLAGS) -DOLSR_PLUGIN -I. -Isrc -Dlinux -I../../src -DNODEBUG" \
+		libs
 	$(MAKE) -C "$(PKG_BUILD_DIR)" \
-		INSTALL_PREFIX="$(PKG_INSTALL_DIR)" \
 		OS="linux" \
-		install install_libs
+		CC="$(TARGET_CC)" \
+		CFLAGS="$(TARGET_CFLAGS) -I. -Isrc -Dlinux -I../../src -DNODEBUG" \
+		all
 	touch $(PKG_BUILD_DIR)/.built
 
 $(IPKG_OLSRD):
 	install -d -m0755 $(IDIR_OLSRD)/etc
-	cp -fpR $(PKG_INSTALL_DIR)/etc/olsrd.conf $(IDIR_OLSRD)/etc/
+	cp -fpR $(PKG_BUILD_DIR)/files/olsrd.conf.default.rfc $(IDIR_OLSRD)/etc/olsrd.conf
 	install -d -m0755 $(IDIR_OLSRD)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/olsrd $(IDIR_OLSRD)/usr/sbin/
+	cp -fpR $(PKG_BUILD_DIR)/olsrd $(IDIR_OLSRD)/usr/sbin/
 	install -d -m0755 $(IDIR_OLSRD)/etc/init.d
 	cp -fpR ./files/olsrd.init $(IDIR_OLSRD)/etc/init.d/olsrd
 	$(RSTRIP) $(IDIR_OLSRD)
