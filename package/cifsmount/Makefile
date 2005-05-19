@@ -20,11 +20,11 @@ $(PKG_BUILD_DIR)/.configured:
 	touch $@
 
 $(PKG_BUILD_DIR)/.built:
-	$(TARGET_CC) -o $(PKG_BUILD_DIR)/mount.cifs mount.cifs.c
-	$(STRIP) $(PKG_BUILD_DIR)/mount.cifs
+	$(TARGET_CC) $(TARGET_CFLAGS) -o $(PKG_BUILD_DIR)/mount.cifs mount.cifs.c
 	touch $@
 
 $(IPKG_CIFSMOUNT):
-	mkdir -p $(IDIR_CIFSMOUNT)/sbin
-	install -m 0755 $(PKG_BUILD_DIR)/mount.cifs $(IDIR_CIFSMOUNT)/sbin/mount.cifs
+	install -d -m0755 $(IDIR_CIFSMOUNT)/sbin
+	install -m0755 $(PKG_BUILD_DIR)/mount.cifs $(IDIR_CIFSMOUNT)/sbin/
+	$(RSTRIP) $(IDIR_CIFSMOUNT)
 	$(IPKG_BUILD) $(IDIR_CIFSMOUNT) $(PACKAGE_DIR)
