@@ -7,3 +7,6 @@ config BR2_PACKAGE_LIBSASL2
 	  http://asg.web.cmu.edu/sasl/
 	  
 
+config BR2_PACKAGE_CYRUS_SASL
+	tristate
+	default BR2_PACKAGE_LIBSASL2
