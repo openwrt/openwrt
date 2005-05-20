@@ -17,22 +17,15 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_CAT:=bzcat
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
-IPKG_LIBPQ:=$(PACKAGE_DIR)/libpq_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
-IDIR_LIBPQ:=$(PKG_BUILD_DIR)/ipkg
-INFO_LIBPQ:=$(IPKG_STATE_DIR)/info/libpq.list
+include $(TOPDIR)/package/rules.mk
 
-$(DL_DIR)/$(PKG_SOURCE):
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE) $(PKG_MD5SUM) $(PKG_SOURCE_URL)
+$(eval $(call PKG_template,LIBPQ,libpq,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
-$(PKG_BUILD_DIR)/.prepared: $(DL_DIR)/$(PKG_SOURCE)
-	$(PKG_CAT) $(DL_DIR)/$(PKG_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
-	$(PATCH) $(PKG_BUILD_DIR) ./patches
-	touch $(PKG_BUILD_DIR)/.prepared
-
-$(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
+$(PKG_BUILD_DIR)/.configured:
 #	./configure advertise "--infodir", but does not support it, replaced with "--docdir"
-	(cd $(PKG_BUILD_DIR); rm -rf config.cache config.status; \
+	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS)" \
 		CPPFLAGS="$$CPPFLAGS -I$(STAGING_DIR)/usr/include" \
@@ -74,45 +67,40 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 		--without-tk \
 		--with-zlib="yes" \
 	);
-	touch $(PKG_BUILD_DIR)/.configured
+	touch $@
 
-$(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
-	$(MAKE) -C "$(PKG_BUILD_DIR)/src" \
-		$(TARGET_CONFIGURE_OPTS) \
-		submake-libpq
-	touch $(PKG_BUILD_DIR)/.built
-
-$(STAGING_DIR)/usr/lib/libpq.so: $(PKG_BUILD_DIR)/.built
-	$(MAKE) -C "$(PKG_BUILD_DIR)/src" \
-		DESTDIR="$(STAGING_DIR)" \
-		install-all-headers
+$(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C "$(PKG_BUILD_DIR)/src/include" \
-		DESTDIR="$(STAGING_DIR)" \
-		install
+		DESTDIR="$(PKG_INSTALL_DIR)" \
+		all install
 	$(MAKE) -C "$(PKG_BUILD_DIR)/src/interfaces/libpq" \
-		DESTDIR="$(STAGING_DIR)" \
-		install
-	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -a $(PKG_BUILD_DIR)/src/interfaces/libpq/libpq.so* $(STAGING_DIR)/usr/lib/
-	cp $(PKG_BUILD_DIR)/src/interfaces/libpq/libpq.a $(STAGING_DIR)/usr/lib/
+		DESTDIR="$(PKG_INSTALL_DIR)" \
+		all install
+	touch $@
 
 $(IPKG_LIBPQ): $(STAGING_DIR)/usr/lib/libpq.so
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_LIBPQ) ./ipkg/libpq.control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
-	mkdir -p $(IDIR_LIBPQ)/usr/lib
+	install -d -m0755 $(IDIR_LIBPQ)/usr/lib
 	cp -fpR $(STAGING_DIR)/usr/lib/libpq.so.* $(IDIR_LIBPQ)/usr/lib/
-	$(STRIP) $(IDIR_LIBPQ)/usr/lib/*.so*
-	mkdir -p $(PACKAGE_DIR)
+	$(RSTRIP) $(IDIR_LIBPQ)
 	$(IPKG_BUILD) $(IDIR_LIBPQ) $(PACKAGE_DIR)
 
-$(INFO_LIBPQ): $(IPKG_LIBPQ)
-	$(IPKG) install $(IPKG_LIBPQ)
+$(STAGING_DIR)/usr/lib/libpq.so: $(PKG_BUILD_DIR)/.built
+	mkdir -p $(STAGING_DIR)/usr/include
+	cp -fpR $(PKG_INSTALL_DIR)/usr/include/libpq-fe.h $(STAGING_DIR)/usr/include/
+	cp -fpR $(PKG_INSTALL_DIR)/usr/include/postgres_ext.h $(STAGING_DIR)/usr/include/
+	cp -fpR $(PKG_INSTALL_DIR)/usr/include/postgresql $(STAGING_DIR)/usr/include/
+	mkdir -p $(STAGING_DIR)/usr/lib
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libpq.{a,so*} $(STAGING_DIR)/usr/lib/
+	touch $(STAGING_DIR)/usr/lib/libpq.so
 
-prepare: $(PKG_BUILD_DIR)/.prepared
-compile: $(IPKG_LIBPQ)
-install: $(INFO_LIBPQ)
+install-dev: $(STAGING_DIR)/usr/lib/libpq.so
 
-clean:
-	-$(MAKE) -C "$(PKG_BUILD_DIR)" \
-		DESTDIR="$(STAGING_DIR)" \
-		uninstall
-	rm -rf $(PKG_BUILD_DIR) $(IPKG_LIBPQ)
+uninstall-dev:
+	rm -rf \
+	  $(STAGING_DIR)/usr/include/libpq-fe.h \
+	  $(STAGING_DIR)/usr/include/postgres_ext.h \
+	  $(STAGING_DIR)/usr/include/postgresql \
+	  $(STAGING_DIR)/usr/lib/libpq.{a,so*} \
+
+compile: install-dev
+clean: uninstall-dev
