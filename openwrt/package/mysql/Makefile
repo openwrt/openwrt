@@ -12,27 +12,19 @@ PKG_SOURCE_URL:=\
 	http://www.linorg.usp.br/mysql/Downloads/MySQL-4.0/ \
 	http://mysql.planetmirror.com/Downloads/MySQL-4.0/ \
 	http://mysql.holywar.net/Downloads/MySQL-4.0/ \
-	http://netmirror.org/mirror/mysql.com/Downloads/MySQL-4.0/ \
-	http://nthill.free.fr/openwrt/sources/$(PKG_NAME)/
+	http://netmirror.org/mirror/mysql.com/Downloads/MySQL-4.0/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
-IPKG_LIBMYSQLCLIENT:=$(PACKAGE_DIR)/libmysqlclient_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
-IDIR_LIBMYSQLCLIENT:=$(PKG_BUILD_DIR)/ipkg/libmysqlclient
-INFO_LIBMYSQLCLIENT:=$(IPKG_STATE_DIR)/info/libmysqlclient.list
+include $(TOPDIR)/package/rules.mk
 
-$(DL_DIR)/$(PKG_SOURCE):
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE) $(PKG_MD5SUM) $(PKG_SOURCE_URL)
+$(eval $(call PKG_template,LIBMYSQLCLIENT,libmysqlclient,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
-$(PKG_BUILD_DIR)/.prepared: $(DL_DIR)/$(PKG_SOURCE)
-	$(PKG_CAT) $(DL_DIR)/$(PKG_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
-	$(PATCH) $(PKG_BUILD_DIR) ./patches
-	touch $(PKG_BUILD_DIR)/.prepared
-
-$(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
-	(cd $(PKG_BUILD_DIR); rm -rf config.cache config.status; \
+$(PKG_BUILD_DIR)/.configured:
+	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
 		touch configure.in; \
 		touch aclocal.m4; \
 		touch Makefile.in; \
@@ -67,8 +59,8 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 		--mandir=/usr/share/man \
 		--sbindir=/usr/sbin \
 		--sysconfdir=/etc \
-		$(DISABLE_NLS) \
 		$(DISABLE_LARGEFILE) \
+		$(DISABLE_NLS) \
 		--enable-shared \
 		--enable-static \
 		--disable-assembler \
@@ -88,9 +80,11 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 		--without-bench \
 		--without-readline \
 	);
-	touch $(PKG_BUILD_DIR)/.configured
+	touch $@
 
-$(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
+$(PKG_BUILD_DIR)/.built:
+	rm -rf $(PKG_INSTALL_DIR)
+	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C "$(PKG_BUILD_DIR)/libmysql" \
 		CC="$(HOSTCC)" \
 		LINK="$(HOSTCC) -o conf_to_src -lc" \
@@ -98,35 +92,29 @@ $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 		conf_to_src
 	$(MAKE) -C "$(PKG_BUILD_DIR)" \
 		SUBDIRS="include libmysql" \
-		all
-	touch $(PKG_BUILD_DIR)/.built
+		DESTDIR="$(PKG_INSTALL_DIR)" \
+		all install
+	touch $@
 
-$(STAGING_DIR)/usr/lib/mysql/libmysqlclient.so: $(PKG_BUILD_DIR)/.built
-	$(MAKE) -C "$(PKG_BUILD_DIR)" \
-		DESTDIR="$(STAGING_DIR)" \
-		SUBDIRS="include libmysql" \
-		install
-	rm -rf $(STAGING_DIR)/usr/lib/mysql/libmysqlclient.la
-
-$(IPKG_LIBMYSQLCLIENT): $(STAGING_DIR)/usr/lib/mysql/libmysqlclient.so
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_LIBMYSQLCLIENT) ./ipkg/libmysqlclient.control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
-	mkdir -p $(IDIR_LIBMYSQLCLIENT)/usr/lib
-	cp -fpR $(STAGING_DIR)/usr/lib/mysql/libmysqlclient.so.* $(IDIR_LIBMYSQLCLIENT)/usr/lib/
-	$(STRIP) $(IDIR_LIBMYSQLCLIENT)/usr/lib/*.so*
-	mkdir -p $(PACKAGE_DIR)
+$(IPKG_LIBMYSQLCLIENT):
+	install -d -m0755 $(IDIR_LIBMYSQLCLIENT)/usr/lib
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/mysql/libmysqlclient.so.* $(IDIR_LIBMYSQLCLIENT)/usr/lib/
+	$(RSTRIP) $(IDIR_LIBMYSQLCLIENT)
 	$(IPKG_BUILD) $(IDIR_LIBMYSQLCLIENT) $(PACKAGE_DIR)
 
-$(INFO_LIBMYSQLCLIENT): $(IPKG_LIBMYSQLCLIENT)
-	$(IPKG) install $(IPKG_LIBMYSQLCLIENT)
+$(STAGING_DIR)/usr/lib/mysql/libmysqlclient.so: $(PKG_BUILD_DIR)/.built
+	mkdir -p $(STAGING_DIR)/usr/include
+	cp -fpR $(PKG_INSTALL_DIR)/usr/include/mysql $(STAGING_DIR)/usr/include/
+	mkdir -p $(STAGING_DIR)/usr/lib
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/mysql $(STAGING_DIR)/usr/lib/
+	touch $(STAGING_DIR)/usr/lib/mysql/libmysqlclient.so
 
-source: $(DL_DIR)/$(PKG_SOURCE)
-prepare: $(PKG_BUILD_DIR)/.prepared
-compile: $(IPKG_LIBMYSQLCLIENT)
-install: $(INFO_LIBMYSQLCLIENT)
+install-dev: $(STAGING_DIR)/usr/lib/mysql/libmysqlclient.so
 
-clean:
-	-$(MAKE) -C "$(PKG_BUILD_DIR)" \
-		DESTDIR="$(STAGING_DIR)" \
-		SUBDIRS="include libmysql" \
-		uninstall
-	rm -rf $(PKG_BUILD_DIR) $(IPKG_LIBMYSQLCLIENT)
+uninstall-dev:
+	rm -rf \
+	  $(STAGING_DIR)/usr/include/mysql \
+	  $(STAGING_DIR)/usr/lib/mysql \
+
+compile: install-dev
+clean: uninstall-dev
