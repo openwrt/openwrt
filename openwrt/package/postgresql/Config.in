@@ -7,3 +7,6 @@ config BR2_PACKAGE_LIBPQ
 	  http://www.postgresql.org/
 	  
 
+config BR2_PACKAGE_POSTGRESQL
+	tristate
+	default BR2_PACKAGE_LIBPQ
