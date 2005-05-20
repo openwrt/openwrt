@@ -61,6 +61,9 @@ $(PKG_BUILD_DIR)/.built:
 		  $(DISABLE_LARGEFILE) \
 		  $(DISABLE_NLS) \
 		  $(PKG_CONFIGURE_OPTIONS) \
+		  --without-cyrus-sasl \
+		  --without-threads \
+		  --without-tls \
 	)
 	$(MAKE) -C $(PKG_BUILD_DIR) depend 
 	$(MAKE) -C $(PKG_BUILD_DIR)/libraries/liblutil
