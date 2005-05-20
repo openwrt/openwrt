@@ -1,0 +1,25 @@
+#!/bin/sh
+
+DEFAULT=/etc/default/snmpd
+LIB_D=/var/lib/snmp
+LOG_D=/var/log
+RUN_D=/var/run
+PID_F=$RUN_D/snmpd.pid
+
+[ -f $DEFAULT ] && . $DEFAULT
+
+case $1 in
+ start)
+  [ -d $LIB_D ] || mkdir -p $LIB_D
+  [ -d $LOG_D ] || mkdir -p $LOG_D
+  [ -d $RUN_D ] || mkdir -p $RUN_D
+  snmpd $OPTIONS
+  ;;
+ stop)
+  [ -f $PID_F ] && kill $(cat $PID_F)
+  ;;
+ *)
+  echo "usage: $0 (start|stop)"
+  exit 1
+esac
+exit $?
