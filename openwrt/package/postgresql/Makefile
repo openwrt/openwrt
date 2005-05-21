@@ -11,8 +11,7 @@ PKG_SOURCE_URL:=\
 	ftp://ftp3.us.postgresql.org/pub/postgresql/source/v$(PKG_VERSION)/ \
 	ftp://ftp.br.postgresql.org/pub/PostgreSQL/source/v$(PKG_VERSION)/ \
 	ftp://ftp.au.postgresql.org/pub/postgresql/source/v$(PKG_VERSION)/ \
-	ftp://ftp.tw.postgresql.org/pub/postgresql/source/v$(PKG_VERSION)/ \
-	http://nthill.free.fr/openwrt/sources/$(PKG_NAME)/
+	ftp://ftp.tw.postgresql.org/pub/postgresql/source/v$(PKG_VERSION)/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_CAT:=bzcat
 
