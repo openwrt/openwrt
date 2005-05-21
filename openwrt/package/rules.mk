@@ -29,7 +29,7 @@ endef
 
 ifneq ($(strip $(PKG_SOURCE)),)
 $(DL_DIR)/$(PKG_SOURCE):
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE) $(PKG_MD5SUM) $(PKG_SOURCE_URL)
+	$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(PKG_SOURCE)" "$(PKG_MD5SUM)" $(PKG_SOURCE_URL)
 endif
 
 ifneq ($(strip $(PKG_CAT)),)
