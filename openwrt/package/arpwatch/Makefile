@@ -7,9 +7,7 @@ PKG_VERSION:=2.1a11
 PKG_RELEASE:=1
 PKG_MD5SUM:=9ecd00db892737431b0e524f3e52e19e
 
-PKG_SOURCE_URL:= \
-	http://nbd.vd-s.ath.cx/openwrt \
-	http://nthill.free.fr/openwrt/sources/$(PKG_NAME)/
+PKG_SOURCE_URL:=http://nbd.vd-s.ath.cx/openwrt
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
