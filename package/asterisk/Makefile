@@ -50,6 +50,9 @@ asterisk-compile: $(PKG_BUILD_DIR)/.prepared
 		EXTRA_MODS="$(MODS)" \
 		MODSPEEX="$(SPEEX)"
 
+$(PKG_BUILD_DIR)/.configured:
+	touch $@
+
 $(PKG_BUILD_DIR)/.built: asterisk-compile
 	touch $@
 
