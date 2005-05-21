@@ -2,36 +2,30 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME := tcp_wrappers
-PKG_VERSION := 7.6
-PKG_RELEASE := 1
-PKG_MD5SUM := e6fa25f71226d090f34de3f6b122fb5a
+PKG_NAME:=tcp_wrappers
+PKG_VERSION:=7.6
+PKG_RELEASE:=1
+PKG_MD5SUM:=e6fa25f71226d090f34de3f6b122fb5a
 
-PKG_SOURCE_SITE := ftp://ftp.porcupine.org/pub/security
-PKG_SOURCE_FILE := $(PKG_NAME)_$(PKG_VERSION).tar.gz
-PKG_SOURCE_CAT := zcat
-PKG_SOURCE_DIR := $(PKG_NAME)_$(PKG_VERSION)
-PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_SOURCE_DIR)
+PKG_SOURCE_URL:=ftp://ftp.porcupine.org/pub/security
+PKG_SOURCE:=$(PKG_NAME)_$(PKG_VERSION).tar.gz
+PKG_CAT:=zcat
 
-# only need libwrap.a at the moment
-#PKG_IPK := $(PACKAGE_DIR)/zlib_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)_$(PKG_VERSION)
+
+include $(TOPDIR)/package/rules.mk
+
+#$(eval $(call PKG_template,LIBWRAP,libwrap,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 .NOTPARALLEL:
 
-$(DL_DIR)/$(PKG_SOURCE_FILE):
-	mkdir -p $(DL_DIR)
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE_FILE) $(PKG_MD5SUM) $(PKG_SOURCE_SITE)
+$(PKG_BUILD_DIR)/.configured:
+	touch $@
 
-$(PKG_BUILD_DIR)/.patched: $(DL_DIR)/$(PKG_SOURCE_FILE)
-	mkdir -p $(TOOL_BUILD_DIR)
-	$(PKG_SOURCE_CAT) $(DL_DIR)/$(PKG_SOURCE_FILE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
-	$(PATCH) $(PKG_BUILD_DIR) ./patches
-	touch $(PKG_BUILD_DIR)/.patched
-
-$(PKG_BUILD_DIR)/libwrap.a: $(PKG_BUILD_DIR)/.patched
+$(PKG_BUILD_DIR)/.built:
 	$(MAKE) -j1 -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
-		COPTS="$(TARGET_CFLAGS)" \
+		OPT_CFLAGS="$(TARGET_CFLAGS)" \
 		LIBS=-lnsl \
 		NETGROUP= \
 		VSYSLOG= \
@@ -43,18 +37,28 @@ $(PKG_BUILD_DIR)/libwrap.a: $(PKG_BUILD_DIR)/.patched
 		REAL_DAEMON_DIR=/usr/sbin \
 		STYLE="-DPROCESS_OPTIONS" \
 		tidy all
+	touch $@
 
-$(STAGING_DIR)/lib/libwrap.a: $(PKG_BUILD_DIR)/libwrap.a
-	mkdir -p $(STAGING_DIR)/include/
-	cp -f $(PKG_BUILD_DIR)/tcpd.h $(STAGING_DIR)/include/
-	cp -f $^ $@
+$(IPKG_LIBWRAP):
+	install -d -m0755 $(IDIR_LIBWRAP)/usr/lib
+	cp -fp $(PKG_BUILD_DIR)/shared/libwrap.so.* $(IDIR_LIBWRAP)/usr/lib/
+	$(RSTRIP) $(IDIR_LIBWRAP)
+	$(IPKG_BUILD) $(IDIR_LIBWRAP) $(PACKAGE_DIR)
+	
+$(STAGING_DIR)/usr/lib/libwrap.a: $(PKG_BUILD_DIR)/.built
+	mkdir -p $(STAGING_DIR)/usr/include
+	cp -fp $(PKG_BUILD_DIR)/tcpd.h $(STAGING_DIR)/usr/include/
+	mkdir -p $(STAGING_DIR)/usr/lib
+	cp -fp $(PKG_BUILD_DIR)/libwrap.a $(STAGING_DIR)/usr/lib/
+#	cp -fp $(PKG_BUILD_DIR)/shared/libwrap.so* $(STAGING_DIR)/usr/lib/
+	touch $@
 
-source: $(DL_DIR)/$(PKG_SOURCE_FILE)
-prepare: $(PKG_BUILD_DIR)/.patched
-compile: $(STAGING_DIR)/lib/libwrap.a
-install:
+install-dev: $(STAGING_DIR)/usr/lib/libwrap.a
 
-clean:
-	rm -rf $(PKG_BUILD_DIR)
-	rm -f $(STAGING_DIR)/lib/libwrap.a
+uninstall-dev:
+	rm -rf \
+	  $(STAGING_DIR)/usr/include/tcpd.h \
+	  $(STAGING_DIR)/usr/lib/libwrap.{a,so*} \
 
+compile: install-dev
+clean: uninstall-dev
