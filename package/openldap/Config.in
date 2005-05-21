@@ -17,5 +17,5 @@ config BR2_PACKAGE_LIBOPENLDAP
 config BR2_PACKAGE_OPENLDAP_UTILS
 	tristate "openldap-utils - client utilities"
 	default m if CONFIG_DEVEL
-	depends BR2_PACKAGE_OPENLDAP
+	depends BR2_PACKAGE_LIBOPENLDAP
 
