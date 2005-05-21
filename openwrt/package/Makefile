@@ -166,6 +166,14 @@ ifeq ($(BR2_PACKAGE_SNORT_ENABLE_INLINE),y)
 snort-compile: iptables-compile
 endif
 
+ulogd-compile: iptables-compile
+ifneq ($(BR2_PACKAGE_ULOGD_MYSQL),)
+ulogd-compile: mysql-compile
+endif
+ifneq ($(BR2_PACKAGE_ULOGD_PGSQL),)
+ulogd-compile: postgresql-compile
+endif
+
 sdk-compile: $(DEV_LIBS_COMPILE) $(SDK_DEFAULT_COMPILE) openwrt-install
 $(patsubst %,%-prepare,$(package-y) $(package-m) $(package-)): linux-install
 
