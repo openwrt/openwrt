@@ -86,6 +86,8 @@ source "package/matrixssl/Config.in"  # libmatrixssl
 source "package/mysql/Config.in"  # limysqlclient
 source "package/ncurses/Config.in"  # libncurses
 source "package/libnet/Config.in"
+source "package/openldap/Config.in"  # libopenldap
+source "package/openssl/Config.in"  # libopenssl
 source "package/libosip2/Config.in"
 source "package/libpcap/Config.in"
 source "package/pcre/Config.in"  # libpcre
@@ -95,14 +97,12 @@ source "package/postgresql/Config.in"  # libpq
 source "package/libpthread/Config.in"
 source "package/cyrus-sasl/Config.in"  # libsasl2
 source "package/libusb/Config.in"
-source "package/openldap/Config.in"
-source "package/openssl/Config.in"
 source "package/speex/Config.in"
 source "package/uclibc++/Config.in"
 source "package/zlib/Config.in"
 
 # what are we going to do with both of you
-comment "Kernel related"
+comment "Kernel related ---"
 source "package/fuse/Config.in"  # kmod-fuse
 source "package/shfs/Config.in"  # kmod-shfs
 
