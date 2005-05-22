@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=howl
-PKG_VERSION:=0.9.10
+PKG_VERSION:=1.0.0
 PKG_RELEASE:=1
-PKG_MD5SUM:=444f2c1fe8eaf16d6822c01bfafba99b
+PKG_MD5SUM:=c389d3ffba0e69a179de2ec650f1fdcc
 
 PKG_SOURCE_URL:=http://www.porchdogsoft.com/download/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -71,7 +71,7 @@ $(IPKG_HOWL_UTILS):
 	install -m0755 -d $(IDIR_HOWL_UTILS)/usr/bin
 	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/mDNS{Browse,Publish,Query,Resolve} $(IDIR_HOWL_UTILS)/usr/bin/
 	$(RSTRIP) $(IDIR_HOWL_UTILS)
-	$(IPKG_BUILD) $(IDIR_LIBHOWL) $(PACKAGE_DIR)
+	$(IPKG_BUILD) $(IDIR_HOWL_UTILS) $(PACKAGE_DIR)
 	
 $(IPKG_MDNSRESPONDER):
 	install -m0755 -d $(IDIR_MDNSRESPONDER)/etc
