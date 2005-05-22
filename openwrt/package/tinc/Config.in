@@ -3,7 +3,7 @@ config BR2_PACKAGE_TINC
 	default m if CONFIG_DEVEL
 	select BR2_PACKAGE_KMOD_TUN
 	select BR2_PACKAGE_LIBLZO
-	select BR2_PACKAGE_OPENSSL
+	select BR2_PACKAGE_LIBOPENSSL
 	select BR2_PACKAGE_ZLIB
 	help
 	  A VPN tunneling daemon
