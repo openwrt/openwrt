@@ -11,77 +11,106 @@ PKG_SOURCE_URL:=http://ftp.funet.fi/pub/mirrors/ftp.easysw.com/ftp.easysw.com/pu
 	http://ftp.rz.tu-bs.de/pub/mirror/ftp.easysw.com/ftp/pub/cups/$(PKG_VERSION) \
 	ftp://ftp3.easysw.com/pub/cups/$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-source.tar.bz2
+PKG_CAT:=bzcat
+
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
-PKG_CAT:=bzcat
 
 include $(TOPDIR)/package/rules.mk
 
 $(eval $(call PKG_template,CUPS,$(PKG_NAME),$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 $(PKG_BUILD_DIR)/.configured:
-	(cd $(PKG_BUILD_DIR); rm -rf config.cache; \
-		ac_cv_path_STRIP="$(STRIP)" \
+	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
+		CPPFLAGS="-I$(STAGING_DIR)/usr/include" \
+		LDFLAGS="-L$(STAGING_DIR)/usr/lib" \
 		./configure \
-		--target=$(GNU_TARGET_NAME) \
-		--host=$(GNU_TARGET_NAME) \
-		--build=$(GNU_HOST_NAME) \
-		--prefix=$(CUPS_IPK_DIR)/usr \
-		--exec-prefix=/usr \
-		--bindir=/usr/bin \
-		--sbindir=/usr/sbin \
-		--libexecdir=/usr/lib \
-		--sysconfdir=/etc \
-		--datadir=/usr/share \
-		--localstatedir=/var \
-		--mandir=/usr/man \
-		--infodir=/usr/info \
-		--program-prefix="" \
-		--with-gnu-ld \
-		--with-cups-user=root \
-		--with-cups-group=root \
-		--without-perl \
-		--without-python \
-		--without-php \
-		--disable-slp \
-		--disable-gnutls \
-		--disable-openssl \
-		--disable-cdsassl \
-		--disable-ssl \
-		--disable-slp \
+		  --target=$(GNU_TARGET_NAME) \
+		  --host=$(GNU_TARGET_NAME) \
+		  --build=$(GNU_HOST_NAME) \
+		  --program-prefix="" \
+		  --program-suffix="" \
+		  --prefix=/usr \
+		  --exec-prefix=/usr \
+		  --bindir=/usr/bin \
+		  --datadir=/usr/share \
+		  --includedir=/usr/include \
+		  --infodir=/usr/share/info \
+		  --libdir=/usr/lib \
+		  --libexecdir=/usr/lib \
+		  --localstatedir=/var \
+		  --mandir=/usr/share/man \
+		  --sbindir=/usr/sbin \
+		  --sysconfdir=/etc \
+		  $(DISABLE_NLS) \
+		  $(DISABLE_LARGEFILE) \
+		  --with-gnu-ld \
+		  --with-cups-user=root \
+		  --with-cups-group=root \
+		  --without-perl \
+		  --without-python \
+		  --without-php \
+		  --disable-slp \
+		  --disable-gnutls \
+		  --disable-openssl \
+		  --disable-cdsassl \
+		  --disable-ssl \
+		  --disable-slp \
 	);
 	touch $@
 
 $(PKG_BUILD_DIR)/.built:
-	$(MAKE) -C $(PKG_BUILD_DIR)
-	$(MAKE) STRIP=$(STRIP) DSTROOT=$(PKG_INSTALL_DIR) -C $(PKG_BUILD_DIR) install
-	cp -a $(PKG_INSTALL_DIR)/usr/lib/* $(STAGING_DIR)/lib/
-	cp -a $(PKG_INSTALL_DIR)/usr/include/* $(STAGING_DIR)/include/
+	rm -rf $(PKG_INSTALL_DIR)
+	mkdir -p $(PKG_INSTALL_DIR)
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		DSTROOT="$(PKG_INSTALL_DIR)" \
+		STRIP="/bin/true" \
+		all install
 	touch $@
 
 $(IPKG_CUPS):
-	cp -a $(PKG_INSTALL_DIR)/* $(IDIR_CUPS)/
+	install -d -m0755 $(IDIR_CUPS)/etc/cups
+	cp -fpR $(PKG_INSTALL_DIR)/etc/cups/* $(IDIR_CUPS)/etc/cups/
+	install -d -m0755 $(IDIR_CUPS)/usr/bin
+	cp -fp $(PKG_INSTALL_DIR)/usr/bin/* $(IDIR_CUPS)/usr/bin/
 	rm -f $(IDIR_CUPS)/usr/bin/cups-config
-	rm -f $(IDIR_CUPS)/usr/lib/*.a
-	rm -f $(IDIR_CUPS)/usr/share/doc/cups/* || true
-	rm -rf $(IDIR_CUPS)/usr/share/doc/cups/??
-	rm -rf $(IDIR_CUPS)/usr/share/locale
-	rm -rf $(IDIR_CUPS)/usr/share/cups/banners
-	rm -rf $(IDIR_CUPS)/usr/share/cups/charsets
-	rm -rf $(IDIR_CUPS)/usr/share/cups/fonts
-	rm -rf $(IDIR_CUPS)/usr/share/cups/model
-	rm -rf $(IDIR_CUPS)/usr/share/cups/data
-	rm -rf $(IDIR_CUPS)/usr/share/cups/templates/??
-	rm -rf $(IDIR_CUPS)/usr/include
-	rm -rf $(IDIR_CUPS)/var
-	rm -rf $(IDIR_CUPS)/etc/*.d
-	$(STRIP) $(IDIR_CUPS)/usr/bin/*
-	$(STRIP) $(IDIR_CUPS)/usr/lib/cups/backend/*
-	$(STRIP) $(IDIR_CUPS)/usr/lib/cups/cgi-bin/*
-	$(STRIP) $(IDIR_CUPS)/usr/lib/cups/daemon/*
-	cp -a ./files/* $(IDIR_CUPS)/
+	install -d -m0755 $(IDIR_CUPS)/usr/lib
+	cp -fp $(PKG_INSTALL_DIR)/usr/lib/libcups.so.* $(IDIR_CUPS)/usr/lib/
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/cups $(IDIR_CUPS)/usr/lib/
+	install -d -m0755 $(IDIR_CUPS)/usr/share/cups/templates
+	cp -fp $(PKG_INSTALL_DIR)/usr/share/cups/templates/*.tmpl $(IDIR_CUPS)/usr/share/cups/templates/
+	install -d -m0755 $(IDIR_CUPS)/usr/share/doc/cups
+	cp -fp $(PKG_INSTALL_DIR)/usr/share/doc/cups/index.html $(IDIR_CUPS)/usr/share/doc/cups/
+	cp -fpR $(PKG_INSTALL_DIR)/usr/share/doc/cups/images $(IDIR_CUPS)/usr/share/doc/cups/
+	install -d -m0755 $(IDIR_CUPS)/usr/sbin
+	cp -fp $(PKG_INSTALL_DIR)/usr/sbin/* $(IDIR_CUPS)/usr/sbin/
+	# overwrite default config with our own
+	cp -fpR ./files/etc/cups/* $(IDIR_CUPS)/etc/cups/
+	# install initscript with priority 60
+	install -d -m0755 $(IDIR_CUPS)/etc/init.d
+	install -m0755 ./files/cupsd.init $(IDIR_CUPS)/etc/init.d/S60cupsd
 	find $(IDIR_CUPS) -name CVS | xargs rm -rf
+	$(RSTRIP) $(IDIR_CUPS)
 	$(IPKG_BUILD) $(IDIR_CUPS) $(PACKAGE_DIR)
+
+$(STAGING_DIR)/usr/lib/libcups.so: $(PKG_BUILD_DIR)/.built
+	mkdir -p $(STAGING_DIR)/usr/bin
+	cp -fp $(PKG_INSTALL_DIR)/usr/bin/cups-config $(STAGING_DIR)/usr/bin/
+	mkdir -p $(STAGING_DIR)/usr/include
+	cp -fpR $(PKG_INSTALL_DIR)/usr/include/cups $(STAGING_DIR)/usr/include/
+	mkdir -p $(STAGING_DIR)/usr/lib
+	cp -fp $(PKG_INSTALL_DIR)/usr/lib/libcups.{a,so*} $(STAGING_DIR)/usr/lib/
+
+install-dev: $(STAGING_DIR)/usr/lib/libcups.so
+
+uninstall-dev:
+	rm -rf \
+	  $(STAGING_DIR)/usr/bin/cups-config \
+	  $(STAGING_DIR)/usr/include/cups \
+	  $(STAGING_DIR)/usr/lib/libcups.{a,so*}
+
+compile: install-dev
+clean: uninstall-dev
 
