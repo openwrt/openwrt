@@ -11,11 +11,10 @@ config BR2_PACKAGE_PMACCT
 	  Depends: libpcap
 
 choice
-	depends BR2_PACKAGE_PMACCT
 	prompt "nfacctd - NetFlow accounting daemon"
 	tristate
 	default m if CONFIG_DEVEL
-	default n
+	depends BR2_PACKAGE_PMACCT
 	optional
 	
 	config BR2_PACKAGE_NFACCTD_BASIC
@@ -66,12 +65,11 @@ choice
 endchoice
 
 choice
-	depends BR2_PACKAGE_PMACCT
 	prompt "pmacctd - IP accounting daemon (libpcap based)"
 	tristate
-	default m if CONFIG_DEVEL
-	default n
 	optional
+	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_PMACCT
 	
 	config BR2_PACKAGE_PMACCTD_BASIC
 		prompt "pmacctd: without database support"
@@ -121,10 +119,10 @@ choice
 endchoice
 
 config BR2_PACKAGE_PMACCT_CLIENT
-	depends BR2_PACKAGE_PMACCT
 	prompt "pmacct-client - Command-line client to gather data from the IMT plugin" if BR2_PACKAGE_NFACCTD_BASIC || BR2_PACKAGE_NFACCTD_MYSQL || BR2_PACKAGE_NFACCTD_PGSQL || BR2_PACKAGE_NFACCTD_CUSTOM || BR2_PACKAGE_PMACCTD_BASIC || BR2_PACKAGE_PMACCTD_MYSQL || BR2_PACKAGE_PMACCTD_PGSQL || BR2_PACKAGE_PMACCTD_CUSTOM
 	tristate
-	default n
+	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_PMACCT
 
 config BR2_PACKAGE_PMACCT_BASIC
 	tristate
