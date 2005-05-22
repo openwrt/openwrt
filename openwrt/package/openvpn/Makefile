@@ -18,7 +18,7 @@ include $(TOPDIR)/package/rules.mk
 
 $(eval $(call PKG_template,OPENVPN,openvpn,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
-PKG_DEPEND:="openssl, kmod-tun"
+PKG_DEPEND:="libopenssl, kmod-tun"
 ifneq ($(BR2_PACKAGE_OPENVPN_LZO),y)
 DISABLE_LZO:=--disable-lzo
 else

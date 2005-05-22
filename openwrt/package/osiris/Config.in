@@ -1,7 +1,7 @@
 config BR2_PACKAGE_OSIRISD
 	tristate "osirisd - Host integrity monitoring system (scanning agent)"
 	default m if CONFIG_DEVEL
-	select BR2_PACKAGE_OPENSSL
+	select BR2_PACKAGE_LIBOPENSSL
 	help
 	  An host integrity monitoring system (scanning agent)
 	  
