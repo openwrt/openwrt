@@ -2,84 +2,89 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME := openssl
-PKG_VERSION := 0.9.7g
-PKG_RELEASE := 1
-PKG_MD5SUM := 991615f73338a571b6a1be7d74906934
+PKG_NAME:=openssl
+PKG_VERSION:=0.9.7g
+PKG_RELEASE:=1
+PKG_MD5SUM:=991615f73338a571b6a1be7d74906934
 
-PKG_SOURCE_SITE := http://www.openssl.org/source
-PKG_SOURCE_FILE := $(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_CAT := zcat
-PKG_SOURCE_DIR := $(PKG_NAME)-$(PKG_VERSION)
-PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_SOURCE_DIR)
-PKG_IPK := $(PACKAGE_DIR)/$(PKG_NAME)_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
+PKG_SOURCE_URL:=http://www.openssl.org/source/
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_CAT:=zcat
 
-OPENSSL_NO_CIPHERS:=no-idea no-mdc2 no-rc5 no-rc2 no-md2 no-md4
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
+
+OPENSSL_NO_CIPHERS:= no-idea no-md2 no-mdc2 no-rc2 no-rc5
+
+include $(TOPDIR)/package/rules.mk
+
+$(eval $(call PKG_template,LIBOPENSSL,libopenssl,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,OPENSSL_UTIL,openssl-util,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 .NOTPARALLEL:
 
-$(DL_DIR)/$(PKG_SOURCE_FILE):
-	mkdir -p $(DL_DIR)
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE_FILE) $(PKG_MD5SUM) $(PKG_SOURCE_SITE)
-
-$(PKG_BUILD_DIR)/.patched: $(DL_DIR)/$(PKG_SOURCE_FILE)
-	mkdir -p $(TOOL_BUILD_DIR)
-	$(PKG_SOURCE_CAT) $(DL_DIR)/$(PKG_SOURCE_FILE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
-	$(PATCH) $(PKG_BUILD_DIR) ./patches
-	$(SED) 's,/CFLAG=,/CFLAG= $(TARGET_SOFT_FLOAT) ,g' \
-		$(PKG_BUILD_DIR)/Configure
-	touch $(PKG_BUILD_DIR)/.patched
-
-$(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.patched
+$(PKG_BUILD_DIR)/.configured:
+	$(SED) 's,/CFLAG=,/CFLAG= $(TARGET_SOFT_FLOAT) ,g' $(PKG_BUILD_DIR)/Configure
 	(cd $(PKG_BUILD_DIR); \
-		CFLAGS="-DOPENSSL_NO_KRB5 -DOPENSSL_NO_IDEA -DOPENSSL_NO_MDC2 -DOPENSSL_NO_RC5" \
-        PATH=$(TARGET_PATH) ./Configure linux-$(ARCH) --prefix=/ \
-		--openssldir=/usr/lib/ssl -L$(STAGING_DIR)/usr/lib -ldl \
-		-I$(STAGING_DIR)/usr/include $(OPENSSL_NO_CIPHERS) \
-		shared no-krb5 no-ec no-engine zlib-dynamic no-hw no-threads )
-	touch $(PKG_BUILD_DIR)/.configured
+		PATH=$(TARGET_PATH) \
+		./Configure linux-$(ARCH) \
+		  --prefix=/usr \
+		  --openssldir=/etc/ssl \
+		  -I$(STAGING_DIR)/usr/include \
+		  -L$(STAGING_DIR)/usr/lib -ldl \
+		  $(OPENSSL_NO_CIPHERS) \
+		  shared no-asm no-ec no-engine no-err no-fips no-hw no-krb5 no-threads zlib-dynamic \
+	)
+	touch $@
 
-$(PKG_BUILD_DIR)/apps/openssl: $(PKG_BUILD_DIR)/.configured
-	$(MAKE)  -C $(PKG_BUILD_DIR) -j1 \
+$(PKG_BUILD_DIR)/.built:
+	rm -rf $(PKG_INSTALL_DIR)
+	mkdir -p $(PKG_INSTALL_DIR)
+	$(MAKE) -C $(PKG_BUILD_DIR) -j1 \
 		CC="$(TARGET_CC)" \
 		AR="$(TARGET_CROSS)ar r" \
 		RANLIB="$(TARGET_CROSS)ranlib" \
 		all build-shared
 	# Work around openssl build bug to link libssl.so with libcrypto.so.
 	-rm $(PKG_BUILD_DIR)/libssl.so.*.*.*
-	$(MAKE) -j1 CC=$(TARGET_CC) -C $(PKG_BUILD_DIR) do_linux-shared
+	$(MAKE) -C $(PKG_BUILD_DIR) -j1 \
+		CC=$(TARGET_CC) \
+		do_linux-shared
+	$(MAKE) -C $(PKG_BUILD_DIR) -j1 \
+		INSTALL_PREFIX="$(PKG_INSTALL_DIR)" \
+		install
+	touch $@
 
-$(STAGING_DIR)/lib/libssl.so: $(PKG_BUILD_DIR)/apps/openssl
-	$(MAKE) -j1 CC=$(TARGET_CC) INSTALL_PREFIX=$(STAGING_DIR) -C $(PKG_BUILD_DIR) install_sw
-	cp -fa $(PKG_BUILD_DIR)/libcrypto.so* $(STAGING_DIR)/lib/
-	chmod a-x $(STAGING_DIR)/lib/libcrypto.so.0.9.7
-	(cd $(STAGING_DIR)/lib; ln -fs libcrypto.so.0.9.7 libcrypto.so)
-	(cd $(STAGING_DIR)/lib; ln -fs libcrypto.so.0.9.7 libcrypto.so.0)
-	cp -fa $(PKG_BUILD_DIR)/libssl.so* $(STAGING_DIR)/lib/
-	chmod a-x $(STAGING_DIR)/lib/libssl.so.0.9.7
-	(cd $(STAGING_DIR)/lib; ln -fs libssl.so.0.9.7 libssl.so)
-	(cd $(STAGING_DIR)/lib; ln -fs libssl.so.0.9.7 libssl.so.0)
+$(IPKG_LIBOPENSSL):
+	install -d -m0755 $(IDIR_LIBOPENSSL)/usr/lib
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/lib{crypto,ssl}.so.* $(IDIR_LIBOPENSSL)/usr/lib/
+	chmod 0644 $(IDIR_LIBOPENSSL)/usr/lib/*
+	$(RSTRIP) $(IDIR_LIBOPENSSL)
+	$(IPKG_BUILD) $(IDIR_LIBOPENSSL) $(PACKAGE_DIR)
 
-$(PKG_IPK): $(STAGING_DIR)/lib/libssl.so
-	mkdir -p $(PACKAGE_DIR)
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_BUILD_DIR)/ipkg/$(PKG_NAME) $(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
-	mkdir -p $(PKG_BUILD_DIR)/ipkg/$(PKG_NAME)/usr/lib
-	cp -a $(STAGING_DIR)/lib/libssl.so* $(PKG_BUILD_DIR)/ipkg/$(PKG_NAME)/usr/lib
-	cp -a $(STAGING_DIR)/lib/libcrypto.so* $(PKG_BUILD_DIR)/ipkg/$(PKG_NAME)/usr/lib
-	$(STRIP) $(PKG_BUILD_DIR)/ipkg/$(PKG_NAME)/usr/lib/*
-	$(IPKG_BUILD) $(PKG_BUILD_DIR)/ipkg/$(PKG_NAME) $(PACKAGE_DIR)
+$(IPKG_OPENSSL_UTIL):
+	install -d -m0755 $(IDIR_OPENSSL_UTIL)/etc/ssl
+	cp -fpR $(PKG_INSTALL_DIR)/etc/ssl/openssl.cnf $(IDIR_OPENSSL_UTIL)/etc/ssl/
+	install -d -m0755 $(IDIR_OPENSSL_UTIL)/etc/ssl/certs
+	install -d -m0700 $(IDIR_OPENSSL_UTIL)/etc/ssl/private
+	install -d -m0755 $(IDIR_OPENSSL_UTIL)/usr/bin
+	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/openssl $(IDIR_OPENSSL_UTIL)/usr/bin/
+	$(RSTRIP) $(IDIR_OPENSSL_UTIL)
+	$(IPKG_BUILD) $(IDIR_OPENSSL_UTIL) $(PACKAGE_DIR)
 
-$(IPKG_STATE_DIR)/info/openssl.list: $(PKG_IPK)
-	$(IPKG) install $(PKG_IPK)
+$(STAGING_DIR)/usr/lib/libssl.so: $(PKG_BUILD_DIR)/.built
+	mkdir -p $(STAGING_DIR)/usr/include
+	cp -fpR $(PKG_INSTALL_DIR)/usr/include/openssl $(STAGING_DIR)/usr/include/
+	mkdir -p $(STAGING_DIR)/usr/lib/
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/lib{crypto,ssl}.{a,so*} $(STAGING_DIR)/usr/lib/
+	touch $@
+	
+install-dev: $(STAGING_DIR)/usr/lib/libssl.so
 
-source: $(DL_DIR)/$(PKG_SOURCE_FILE)
-prepare: $(PKG_BUILD_DIR)/.patched
-compile: $(STAGING_DIR)/lib/libssl.so $(PKG_IPK)
-install: $(PKG_ZLIB) $(IPKG_STATE_DIR)/info/openssl.list
+uninstall-dev:
+	rm -rf \
+	  $(STAGING_DIR)/usr/include/openssl \
+	  $(STAGING_DIR)/usr/lib/lib{crypto,ssl}.{a,so*} \
 
-clean:
-	rm -rf $(PKG_BUILD_DIR)
-	rm -f $(STAGING_DIR)/lib/libssl*
-	rm -f $(STAGING_DIR)/lib/libcrypto*
-	rm -f $(PKG_IPK)
-
+compile: install-dev
+clean: uninstall-dev
