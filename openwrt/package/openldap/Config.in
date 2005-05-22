@@ -1,21 +1,30 @@
-config BR2_PACKAGE_OPENLDAP
-	prompt "openldap - Open source LDAP (Lightweight Directory Access Protocol) implementation"
-	bool
-	default y if CONFIG_DEVEL
+config BR2_PACKAGE_LIBOPENLDAP
+	tristate "libopenldap - Open source LDAP (Lightweight Directory Access Protocol) client libraries"
+	default m if CONFIG_DEVEL
 	help
+	  
 	  OpenLDAP Software is an open source implementation of the 
 	  Lightweight Directory Access Protocol (LDAP).
 	  
 	  http://www.openldap.org/
 	  
-
-config BR2_PACKAGE_LIBOPENLDAP
-	tristate "libopenldap - client libraries"
-	default m if CONFIG_DEVEL
-	depends BR2_PACKAGE_OPENLDAP
+	  This package contains the LDAP client libraries, needed by other programs.
+	  
 
 config BR2_PACKAGE_OPENLDAP_UTILS
-	tristate "openldap-utils - client utilities"
+	tristate "openldap-utils - OpenLDAP client utilities"
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_LIBOPENLDAP
+	help
+	  
+	  OpenLDAP Software is an open source implementation of the 
+	  Lightweight Directory Access Protocol (LDAP).
+	  
+	  http://www.openldap.org/
+	  
+	  This package contains client programs required to access LDAP servers.
+	  
 
+config BR2_PACKAGE_OPENLDAP
+	tristate
+	depends BR2_PACKAGE_LIBOPENLDAP
