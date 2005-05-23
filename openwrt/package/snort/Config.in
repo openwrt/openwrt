@@ -1,19 +1,32 @@
+menu "snort - Ligthweight Network Intrusion Detection System (NIDS)"
+
+config BR2_PACKAGE_SNORT
+	bool
+	default BR2_PACKAGE_SNORT_BASIC || BR2_PACKAGE_SNORT_MYSQL || BR2_PACKAGE_SNORT_PGSQL || BR2_PACKAGE_SNORT_CUSTOM
+	default n
+
 choice
 	prompt "snort - Ligthweight Network Intrusion Detection System (NIDS)"
 	tristate
 	optional
-	default m if CONFIG_DEVEL
 	help
+	  
 	  A ligthweight Network Intrusion Detection System (NIDS)
 	  
 	  http://www.snort.org/
 	  
-	  Depends: libnet, libpcap, libpcre
+	  Depends: 
+	    - libmysqlclient (for MySQL database logging support)
+	    - libnet
+	    - libpcap
+	    - libpcre
+	    - libpq (for PostgreSQL database logging support)
 	  
 	
 	config BR2_PACKAGE_SNORT_BASIC
 		prompt "snort: without database support"
 		tristate
+		select BR2_PACKAGE_SNORT
 		select BR2_PACKAGE_LIBNET
 		select BR2_PACKAGE_LIBPCAP
 		select BR2_PACKAGE_LIBPCRE
@@ -21,6 +34,7 @@ choice
 	config BR2_PACKAGE_SNORT_MYSQL
 		prompt "snort-mysql: with MySQL database support"
 		tristate
+		select BR2_PACKAGE_SNORT
 		select BR2_PACKAGE_LIBNET
 		select BR2_PACKAGE_LIBPCAP
 		select BR2_PACKAGE_LIBPCRE
@@ -29,6 +43,7 @@ choice
 	config BR2_PACKAGE_SNORT_PGSQL
 		prompt "snort-pgsql: with PostgreSQL database support"
 		tristate
+		select BR2_PACKAGE_SNORT
 		select BR2_PACKAGE_LIBNET
 		select BR2_PACKAGE_LIBPCAP
 		select BR2_PACKAGE_LIBPCRE
@@ -37,6 +52,7 @@ choice
 	config BR2_PACKAGE_SNORT_CUSTOM
 		prompt "snort-custom: customized to your needs"
 		tristate
+		select BR2_PACKAGE_SNORT
 		select BR2_PACKAGE_LIBNET
 		select BR2_PACKAGE_LIBPCAP
 		select BR2_PACKAGE_LIBPCRE
@@ -70,6 +86,4 @@ choice
 
 endchoice
 
-config BR2_PACKAGE_SNORT
-	tristate
-	default BR2_PACKAGE_SNORT_BASIC || BR2_PACKAGE_SNORT_MYSQL || BR2_PACKAGE_SNORT_PGSQL || BR2_PACKAGE_SNORT_CUSTOM
+endmenu
