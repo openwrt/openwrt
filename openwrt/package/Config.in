@@ -16,8 +16,6 @@ source "package/microperl/Config.in"
 source "package/monit/Config.in"
 source "package/osiris/Config.in"
 source "package/screen/Config.in"
-source "package/setserial/Config.in"
-source "package/strace/Config.in"
 
 comment "Networking"
 source "package/aiccu/Config.in"
@@ -41,7 +39,6 @@ source "package/iproute2/Config.in"
 source "package/kismet/Config.in"
 source "package/l2tpd/Config.in"
 source "package/lighttpd/Config.in"
-source "package/usbutils/Config.in"  # lsusb
 source "package/maradns/Config.in"
 source "package/net-snmp/Config.in"
 source "package/nfs-server/Config.in"
@@ -103,6 +100,11 @@ source "package/libusb/Config.in"
 source "package/speex/Config.in"
 source "package/uclibc++/Config.in"
 source "package/zlib/Config.in"
+
+comment "Utilities ---"
+source "package/usbutils/Config.in"  # lsusb
+source "package/setserial/Config.in"
+source "package/strace/Config.in"
 
 # what are we going to do with both of you
 comment "Kernel related ---"
