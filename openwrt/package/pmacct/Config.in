@@ -1,8 +1,7 @@
 config BR2_PACKAGE_PMACCT
 	prompt "pmacct - IPv4/IPv6 accounting and aggregation tools"
 	bool
-	default y if CONFIG_DEVEL
-	select BR2_PACKAGE_LIBPCAP
+	default m if CONFIG_DEVEL
 	help
 	  A small set of IPv4/IPv6 accounting and aggregation tools
 	  
@@ -20,21 +19,25 @@ choice
 	config BR2_PACKAGE_NFACCTD_BASIC
 		prompt "nfacctd: without database support"
 		tristate
+		select BR2_PACKAGE_LIBPCAP
 	
 	config BR2_PACKAGE_NFACCTD_MYSQL
 		prompt "nfacctd-mysql: with MySQL database support"
 		tristate
+		select BR2_PACKAGE_LIBPCAP
 		select BR2_PACKAGE_LIBMYSQLCLIENT
 	
 	config BR2_PACKAGE_NFACCTD_PGSQL
 		prompt "nfacctd-pgsql: with PostgreSQL database support"
 		tristate
+		select BR2_PACKAGE_LIBPCAP
 		select BR2_PACKAGE_LIBPQ
 	
 	config BR2_PACKAGE_NFACCTD_CUSTOM
 		prompt "nfacctd-custom: customized to your needs"
 		tristate
-	
+		select BR2_PACKAGE_LIBPCAP
+
 	config BR2_PACKAGE_NFACCTD_ENABLE_DEBUG
 		prompt "debug (enable debugging options, useful for bugreports)"
 		bool
@@ -46,7 +49,6 @@ choice
 		bool
 		default n
 		depends BR2_PACKAGE_NFACCTD_CUSTOM
-		select BR2_PACKAGE_IPTABLES
 
 	config BR2_PACKAGE_NFACCTD_WITH_MYSQL
 		prompt "MySQL database support"
@@ -67,27 +69,31 @@ endchoice
 choice
 	prompt "pmacctd - IP accounting daemon (libpcap based)"
 	tristate
-	optional
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_PMACCT
+	optional
 	
 	config BR2_PACKAGE_PMACCTD_BASIC
 		prompt "pmacctd: without database support"
 		tristate
-	
+		select BR2_PACKAGE_LIBPCAP
+
 	config BR2_PACKAGE_PMACCTD_MYSQL
 		prompt "pmacctd-mysql: with MySQL database support"
 		tristate
+		select BR2_PACKAGE_LIBPCAP
 		select BR2_PACKAGE_LIBMYSQLCLIENT
 	
 	config BR2_PACKAGE_PMACCTD_PGSQL
 		prompt "pmacctd-pgsql: with PostgreSQL database support"
 		tristate
+		select BR2_PACKAGE_LIBPCAP
 		select BR2_PACKAGE_LIBPQ
 	
 	config BR2_PACKAGE_PMACCTD_CUSTOM
 		prompt "pmacctd-custom: customized to your needs"
 		tristate
+		select BR2_PACKAGE_LIBPCAP
 	
 	config BR2_PACKAGE_PMACCTD_ENABLE_DEBUG
 		prompt "debug (enable debugging options, useful for bugreports)"
@@ -100,7 +106,6 @@ choice
 		bool
 		default n
 		depends BR2_PACKAGE_PMACCTD_CUSTOM
-		select BR2_PACKAGE_IPTABLES
 
 	config BR2_PACKAGE_PMACCTD_WITH_MYSQL
 		prompt "MySQL database support"
@@ -136,3 +141,8 @@ config BR2_PACKAGE_PMACCT_PGSQL
 	tristate
 	default BR2_PACKAGE_NFACCTD_PGSQL || BR2_PACKAGE_PMACCTD_PGSQL
 
+config BR2_PACKAGE_PMACCT_DEVEL
+	tristate
+	default m if CONFIG_DEVEL
+	select BR2_PACKAGE_NFACCTD_BASIC if CONFIG_DEVEL
+	select BR2_PACKAGE_PMACCTD_BASIC if CONFIG_DEVEL
