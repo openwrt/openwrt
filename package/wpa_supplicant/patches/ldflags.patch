@@ -1,0 +1,24 @@
+--- wpa_supplicant-0.3.8/Makefile.orig	2005-05-22 12:37:28.000000000 +0200
++++ wpa_supplicant-0.3.8/Makefile	2005-05-22 12:40:04.000000000 +0200
+@@ -304,7 +304,7 @@
+ OBJS += wpa_supplicant.o wpa.o l2_packet.o drivers.o
+ 
+ wpa_supplicant: .config $(OBJS)
+-	$(CC) -o wpa_supplicant $(OBJS) $(LIBS)
++	$(CC) $(LDFLAGS) -o wpa_supplicant $(OBJS) $(LIBS)
+ 
+ eapol_test: .config $(OBJS_t)
+ 	$(CC) -o eapol_test $(OBJS_t) $(LIBS)
+@@ -313,10 +313,10 @@
+ 	$(CC) -o preauth_test $(OBJS_t2) $(LIBS)
+ 
+ wpa_passphrase: $(OBJS_p)
+-	$(CC) -o wpa_passphrase $(OBJS_p) $(LIBS_p)
++	$(CC) $(LDFLAGS) -o wpa_passphrase $(OBJS_p) $(LIBS_p)
+ 
+ wpa_cli: $(OBJS_c)
+-	$(CC) -o wpa_cli $(OBJS_c) $(LIBS_c)
++	$(CC) $(LDFLAGS) -o wpa_cli $(OBJS_c) $(LIBS_c)
+ 
+ win_if_list: win_if_list.c
+ 	$(CC) -o $@ win_if_list.c $(CFLAGS) $(LIBS_w)

@@ -1,0 +1,12 @@
+--- wpa_supplicant-0.3.8/Makefile.orig	2005-02-14 02:55:47.000000000 +0100
++++ wpa_supplicant-0.3.8/Makefile	2005-05-21 21:06:03.000000000 +0200
+@@ -3,7 +3,8 @@
+ endif
+ 
+ ifndef CFLAGS
+-CFLAGS = -MMD -O2 -Wall -g
++OPT_FLAGS = -O2 -g
++CFLAGS = -MMD $(OPT_FLAGS) -Wall
+ endif
+ 
+ # Include directories for CVS version
