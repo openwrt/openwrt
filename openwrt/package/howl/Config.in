@@ -1,34 +1,46 @@
+menu "howl - Zeroconf networking implementation"
+
 config BR2_PACKAGE_HOWL
-	bool "howl - Zeroconf networking implementation"
-	default y if CONFIG_DEVEL
+	bool
+	default n
+	depends BR2_PACKAGE_LIBHOWL
+
+config BR2_PACKAGE_LIBHOWL
+	prompt "libhowl - howl library"
+	tristate
+	default m if CONFIG_DEVEL
+	select BR2_PACKAGE_HOWL
 	help
+	  
 	  A cross-platform implementation of Zeroconf networking.
 	  
 	  http://www.porchdogsoft.com/products/howl/
 	  
-
-config BR2_PACKAGE_LIBHOWL
-	depends BR2_PACKAGE_HOWL
-	tristate "libhowl - howl library"
-	default m if CONFIG_DEVEL
+	  This package contains shared libraries, needed by other programs.
+	  
 
 config BR2_PACKAGE_HOWL_UTILS
 	depends BR2_PACKAGE_LIBHOWL
-	tristate "howl-utils - howl client utilities"
-	default m if CONFIG_DEVEL
-
-config BR2_PACKAGE_MDNSRESPONDER
-	depends BR2_PACKAGE_LIBHOWL
-	tristate "mdnsresponder - an mDNS (Multicast DNS) service responder daemon"
+	prompt "howl-utils - howl client utilities"
+	tristate
 	default m if CONFIG_DEVEL
 
 config BR2_PACKAGE_AUTOIPD
 	depends BR2_PACKAGE_LIBHOWL
-	tristate "autoipd - an IPv4 Link-Local address self-assigner daemon"
+	prompt "autoipd - an IPv4 Link-Local address self-assigner daemon"
+	tristate
+	default m if CONFIG_DEVEL
+
+config BR2_PACKAGE_MDNSRESPONDER
+	depends BR2_PACKAGE_LIBHOWL
+	prompt "mdnsresponder - an mDNS (Multicast DNS) service responder daemon"
+	tristate
 	default m if CONFIG_DEVEL
 
 config BR2_PACKAGE_NIFD
 	depends BR2_PACKAGE_LIBHOWL
-	tristate "nifd - a network interface monitor daemon"
+	prompt "nifd - a network interface monitor daemon"
+	tristate
 	default m if CONFIG_DEVEL
 
+endmenu
