@@ -88,6 +88,7 @@ package-$(BR2_PACKAGE_SPEEX) += speex
 package-$(BR2_PACKAGE_STRACE) += strace
 package-$(BR2_PACKAGE_TCPDUMP) += tcpdump
 package-$(BR2_PACKAGE_TINC) += tinc
+package-$(BR2_PACKAGE_TOR) += tor
 package-$(BR2_PACKAGE_TTCP) += ttcp
 package-$(BR2_PACKAGE_UCLIBCXX) += uclibc++
 package-$(BR2_PACKAGE_ULOGD) += ulogd
@@ -135,6 +136,7 @@ siproxd-compile: libosip2-compile
 sipsak-compile: openssl-compile
 tcpdump-compile: libpcap-compile
 tinc-compile: zlib-compile openssl-compile lzo-compile
+tor-compile: libevent-compile openssl-compile zlib-compile
 wpa_supplicant-compile: openssl-compile
 
 asterisk-compile: openssl-compile
