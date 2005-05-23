@@ -101,7 +101,7 @@ $(PKG_BUILD_DIR)/$(2) $(PKG_BUILD_DIR)/$(3): $(PKG_BUILD_DIR)/.prepared
 		  --enable-shared \
 		  --disable-static \
 		  --with-pcap-includes="$(STAGING_DIR)/usr/include" \
-		  --with-libpcap-libs="$(STAGING_DIR)/usr/lib" \
+		  --with-pcap-libs="$(STAGING_DIR)/usr/lib" \
 		  $$($(1)_CONFIGURE_OPTS) \
 	);
 	$(MAKE) -C $(PKG_BUILD_DIR) \
