@@ -94,6 +94,7 @@ package-$(BR2_PACKAGE_USBUTILS) += usbutils
 package-$(BR2_PACKAGE_VSFTPD) += vsftpd
 package-$(BR2_PACKAGE_WIRELESS_TOOLS) += wireless-tools
 package-$(BR2_PACKAGE_WOL) += wol
+package-$(BR2_PACKAGE_WPA_SUPPLICANT) += wpa_supplicant
 package-$(BR2_PACKAGE_WPUT) += wput
 package-$(BR2_PACKAGE_XINETD) += xinetd
 package-$(BR2_PACKAGE_ZLIB) += zlib
@@ -133,6 +134,7 @@ siproxd-compile: libosip2-compile
 sipsak-compile: openssl-compile
 tcpdump-compile: libpcap-compile
 tinc-compile: zlib-compile openssl-compile lzo-compile
+wpa_supplicant-compile: openssl-compile
 
 asterisk-compile: openssl-compile
 ifneq ($(BR2_PACKAGE_ASTERISK_SPEEX),)
