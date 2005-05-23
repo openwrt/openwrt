@@ -10,10 +10,10 @@
 
   if_valid $if || return
 
-  $DEBUG ifconfig $if down
+  $DEBUG ifconfig $if down 2>&-
   if [ "${if%%[0-9]}" = "br" ]; then
     stp=$(nvram get ${type}_stp)
-    $DEBUG brctl delbr $if
+    $DEBUG brctl delbr $if 2>&-
     $DEBUG brctl addbr $if
     $DEBUG brctl setfd $if 0
     $DEBUG brctl stp $if ${stp:-0}

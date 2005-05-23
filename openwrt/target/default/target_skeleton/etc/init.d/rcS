@@ -1,6 +1,6 @@
 #!/bin/sh
 syslogd -C 16
 klogd
-for i in /etc/init.d/S* ;do
-  $i start 2>&1 | logger -s -p 6 -t ''
-done
+for i in /etc/init.d/S*; do
+  $i start 2>&1
+done | logger -s -p 6 -t ''

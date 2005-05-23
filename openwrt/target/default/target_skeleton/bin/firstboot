@@ -1,6 +1,11 @@
 #!/bin/sh
 # $Id$
 
+mount | grep squashfs >&- || {
+	echo "You do not have a squashfs partition; aborting"
+	echo "(firstboot cannot be run on jffs2 based firmwares)"
+	return
+}
 
 [ -f "/tmp/.firstboot" ] && {
 	echo "firstboot is already running"
