@@ -14,7 +14,7 @@ config BR2_PACKAGE_ASTERISK_SPEEX
 	tristate "Speex codec"
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_ASTERISK
-	select BR2_PACKAGE_SPEEX
+	select BR2_PACKAGE_LIBSPEEX
 	help
 	  The Speex speech compression codec for Asterisk
 

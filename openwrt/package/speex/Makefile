@@ -2,74 +2,85 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME := speex
-PKG_VERSION := 1.1.7
-PKG_RELEASE := 1
-PKG_MD5SUM := a900d009f937efbb896f1f816193742f
+PKG_NAME:=speex
+PKG_VERSION:=1.1.8
+PKG_RELEASE:=1
+PKG_MD5SUM:=734892c8ca5e7e835828048a1289a0cc
 
-PKG_SOURCE_SITE := http://us.speex.org/download 
-PKG_SOURCE_FILE := $(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_CAT := zcat
-PKG_SOURCE_DIR := $(PKG_NAME)-$(PKG_VERSION)
-PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_SOURCE_DIR)
-PKG_IPK := $(PACKAGE_DIR)/$(PKG_NAME)_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
+PKG_SOURCE_URL:=http://us.speex.org/download 
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_CAT:=zcat
 
-$(DL_DIR)/$(PKG_SOURCE_FILE):
-	mkdir -p $(DL_DIR)
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE_FILE) $(PKG_MD5SUM) $(PKG_SOURCE_SITE)
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
-$(PKG_BUILD_DIR)/.unpacked: $(DL_DIR)/$(PKG_SOURCE_FILE)
-	mkdir -p $(TOOL_BUILD_DIR)
-	$(PKG_SOURCE_CAT) $(DL_DIR)/$(PKG_SOURCE_FILE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
-	touch $(PKG_BUILD_DIR)/.unpacked
+include $(TOPDIR)/package/rules.mk
 
-$(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.unpacked
-	(cd $(PKG_BUILD_DIR); rm -rf config.cache; \
+$(eval $(call PKG_template,LIBSPEEX,libspeex,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+
+$(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
+	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
 		$(TARGET_CONFIGURE_OPTS) \
+		CFLAGS="$(strip $(TARGET_CFLAGS))" \
+		CPPFLAGS="-I$(STAGING_DIR)/usr/include" \
+		LDFLAGS="-L$(STAGING_DIR)/usr/lib" \
 		./configure \
 		--target=$(GNU_TARGET_NAME) \
 		--host=$(GNU_TARGET_NAME) \
 		--build=$(GNU_HOST_NAME) \
-		--prefix=/ \
-		--exec-prefix=/ \
-		--bindir=/bin \
-		--sbindir=/sbin \
-		--libexecdir=/lib \
-		--sysconfdir=/etc \
-		--localstatedir=/var \
-		--enable-shared \
-		--disable-oggtest \
+		  --program-prefix="" \
+		  --program-suffix="" \
+		  --prefix=/usr \
+		  --exec-prefix=/usr \
+		  --bindir=/usr/bin \
+		  --datadir=/usr/share \
+		  --includedir=/usr/include \
+		  --infodir=/usr/share/info \
+		  --libdir=/usr/lib \
+		  --libexecdir=/usr/lib \
+		  --localstatedir=/var \
+		  --mandir=/usr/share/man \
+		  --sbindir=/usr/sbin \
+		  --sysconfdir=/etc \
+		  $(DISABLE_LARGEFILE) \
+		  $(DISABLE_NLS) \
+		  --enable-shared \
+		  --enable-static \
+		  --disable-oggtest \
 	);
-	touch $(PKG_BUILD_DIR)/.configured
+	touch $@
 
-$(PKG_BUILD_DIR)/libspeex/libspeex.la: $(PKG_BUILD_DIR)/.configured
+$(PKG_BUILD_DIR)/.built:
+	rm -rf $(PKG_INSTALL_DIR)
+	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
-	  bin_PROGRAMS=""
+		DESTDIR="$(PKG_INSTALL_DIR)" \
+	  	bin_PROGRAMS="" \
+		all install
+	touch $@
 
-$(STAGING_DIR)/lib/libspeex.a: $(PKG_BUILD_DIR)/libspeex/libspeex.la
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-	  CC=$(TARGET_CC) \
-	  DESTDIR="$(STAGING_DIR)" \
-	  bin_PROGRAMS="" \
-	  install
+$(IPKG_LIBSPEEX):
+	install -d -m0755 $(IDIR_LIBSPEEX)/usr/lib
+	cp -fp $(PKG_INSTALL_DIR)/usr/lib/libspeex.so.* $(IDIR_LIBSPEEX)/usr/lib/
+	$(RSTRIP) $(IDIR_LIBSPEEX)
+	$(IPKG_BUILD) $(IDIR_LIBSPEEX) $(PACKAGE_DIR)
 
-$(PKG_IPK): $(STAGING_DIR)/lib/libspeex.a
-	mkdir -p $(PACKAGE_DIR)
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_BUILD_DIR)/ipkg/speex speex.control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
-	mkdir -p $(PKG_BUILD_DIR)/ipkg/speex/usr/lib
-	cp -a $(STAGING_DIR)/lib/libspeex.so.* $(PKG_BUILD_DIR)/ipkg/speex/usr/lib
-	$(STRIP) $(PKG_BUILD_DIR)/ipkg/speex/usr/lib/*
-	$(IPKG_BUILD) $(PKG_BUILD_DIR)/ipkg/speex $(PACKAGE_DIR)
+$(STAGING_DIR)/usr/lib/libspeex.so: $(PKG_BUILD_DIR)/.built
+	mkdir -p $(STAGING_DIR)/usr/include
+	cp -fpR $(PKG_INSTALL_DIR)/usr/include/speex $(STAGING_DIR)/usr/include/
+	mkdir -p $(STAGING_DIR)/usr/lib
+	cp -fp $(PKG_INSTALL_DIR)/usr/lib/libspeex.{a,so*} $(STAGING_DIR)/usr/lib/
+	mkdir -p $(STAGING_DIR)/usr/lib/pkgconfig
+	cp -fp $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/speex.pc $(STAGING_DIR)/usr/lib/pkgconfig/
+	touch $@
 
-$(IPKG_STATE_DIR)/info/speex.list: $(PKG_IPK)
-	$(IPKG) install $(PKG_IPK)
+install-dev: $(STAGING_DIR)/usr/lib/libspeex.so
 
-source: $(DL_DIR)/$(PKG_SOURCE_FILE)
-prepare: $(PKG_BUILD_DIR)/.unpacked
-compile: $(STAGING_DIR)/lib/libspeex.a $(PKG_IPK)
-install: $(IPKG_STATE_DIR)/info/speex.list
+uninstall-dev:
+	rm -rf \
+		$(STAGING_DIR)/usr/include/speex \
+		$(STAGING_DIR)/usr/lib/libspeex.{a,so*} \
+		$(STAGING_DIR)/usr/lib/pkgconfig/speex.pc \
 
-clean:
-	rm -rf $(PKG_BUILD_DIR)
-	rm -f $(STAGING_DIR)/lib/libspeex*
-	rm -f $(PACKAGE_DIR)/speex\*.ipk
+compile: install-dev
+clean: uninstall-dev
