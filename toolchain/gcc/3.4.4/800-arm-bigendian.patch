@@ -1,0 +1,70 @@
+By Lennert Buytenhek <buytenh@wantstofly.org>
+Adds support for arm*b-linux* big-endian ARM targets
+
+See http://gcc.gnu.org/PR16350
+
+diff -urN gcc-3.4.1-dist/gcc/config/arm/linux-elf.h gcc-3.4.1/gcc/config/arm/linux-elf.h
+--- gcc-3.4.1-dist/gcc/config/arm/linux-elf.h	2004-08-16 16:01:50.000000000 -0500
++++ gcc-3.4.1/gcc/config/arm/linux-elf.h	2004-08-16 15:43:40.000000000 -0500
+@@ -30,17 +30,34 @@
+ /* Do not assume anything about header files.  */
+ #define NO_IMPLICIT_EXTERN_C
+ 
++/*
++ * 'config.gcc' defines TARGET_BIG_ENDIAN_DEFAULT as 1 for arm*b-*
++ * (big endian) configurations.
++ */
++#if TARGET_BIG_ENDIAN_DEFAULT
++#define TARGET_ENDIAN_DEFAULT ARM_FLAG_BIG_END
++#define TARGET_ENDIAN_OPTION "mbig-endian"
++#define TARGET_LINKER_EMULATION "armelfb_linux"
++#else
++#define TARGET_ENDIAN_DEFAULT 0
++#define TARGET_ENDIAN_OPTION "mlittle-endian"
++#define TARGET_LINKER_EMULATION "armelf_linux"
++#endif
++
+ /* Default is to use APCS-32 mode.  */
+ #undef  TARGET_DEFAULT
+-#define TARGET_DEFAULT (ARM_FLAG_APCS_32 | ARM_FLAG_MMU_TRAPS)
++#define TARGET_DEFAULT \
++		( ARM_FLAG_APCS_32 | \
++		  ARM_FLAG_MMU_TRAPS | \
++		  TARGET_ENDIAN_DEFAULT )
+ 
+ #define SUBTARGET_CPU_DEFAULT TARGET_CPU_arm6
+ 
+-#define SUBTARGET_EXTRA_LINK_SPEC " -m armelf_linux -p"
++#define SUBTARGET_EXTRA_LINK_SPEC " -m " TARGET_LINKER_EMULATION " -p"
+ 
+ #undef  MULTILIB_DEFAULTS
+ #define MULTILIB_DEFAULTS \
+-	{ "marm", "mlittle-endian", "mhard-float", "mapcs-32", "mno-thumb-interwork" }
++	{ "marm", TARGET_ENDIAN_OPTION, "mhard-float", "mapcs-32", "mno-thumb-interwork" }
+ 
+ #define CPP_APCS_PC_DEFAULT_SPEC "-D__APCS_32__"
+ 
+@@ -101,7 +118,7 @@
+    %{rdynamic:-export-dynamic} \
+    %{!dynamic-linker:-dynamic-linker /lib/ld-linux.so.2} \
+    -X \
+-   %{mbig-endian:-EB}" \
++   %{mbig-endian:-EB} %{mlittle-endian:-EL}" \
+    SUBTARGET_EXTRA_LINK_SPEC
+ #endif
+ 
+diff -urN gcc-3.4.1-dist/gcc/config.gcc gcc-3.4.1/gcc/config.gcc
+--- gcc-3.4.1-dist/gcc/config.gcc	2004-08-16 16:01:50.000000000 -0500
++++ gcc-3.4.1/gcc/config.gcc	2004-08-16 16:01:25.000000000 -0500
+@@ -672,6 +672,11 @@
+ 	;;
+ arm*-*-linux*)			# ARM GNU/Linux with ELF
+ 	tm_file="dbxelf.h elfos.h linux.h arm/elf.h  arm/linux-gas.h arm/linux-elf.h arm/aout.h arm/arm.h"
++	case $target in
++	arm*b-*)
++		tm_defines="TARGET_BIG_ENDIAN_DEFAULT=1 $tm_defines"
++		;;
++	esac
+ 	tmake_file="t-slibgcc-elf-ver t-linux arm/t-linux"
+ 	extra_parts="crtbegin.o crtbeginS.o crtend.o crtendS.o"
+ 	gnu_ld=yes
