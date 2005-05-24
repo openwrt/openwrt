@@ -36,8 +36,8 @@ $(PKG_BUILD_DIR)/.configured:
 		  --datadir=/usr/share \
 		  --includedir=/usr/include \
 		  --infodir=/usr/share/info \
-		  --libdir=/lib \
-		  --libexecdir=/lib \
+		  --libdir=/usr/lib \
+		  --libexecdir=/usr/lib \
 		  --localstatedir=/var \
 		  --mandir=/usr/share/man \
 		  --sbindir=/usr/sbin \
@@ -59,7 +59,7 @@ $(PKG_BUILD_DIR)/.built:
 $(IPKG_IPKG):
 	install -d -m0755 $(IDIR_IPKG)/bin
 	cp -fpR $(PKG_INSTALL_DIR)/bin/ipkg-cl $(IDIR_IPKG)/bin/ipkg
-	install -d -m0755 $(IDIR_IPKG)/lib
-	cp -fpR $(PKG_INSTALL_DIR)/lib/libipkg.so.* $(IDIR_IPKG)/lib/
+	install -d -m0755 $(IDIR_IPKG)/usr/lib
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libipkg.so.* $(IDIR_IPKG)/usr/lib/
 	$(RSTRIP) $(IDIR_IPKG)
 	$(IPKG_BUILD) $(IDIR_IPKG) $(PACKAGE_DIR)
