@@ -52,6 +52,7 @@ package-$(BR2_PACKAGE_MICROPERL) += microperl
 package-$(BR2_PACKAGE_MONIT) += monit
 package-$(BR2_PACKAGE_MYSQL) += mysql
 package-$(BR2_PACKAGE_NCURSES) += ncurses
+package-$(BR2_PACKAGE_NDISC) += ndisc
 package-$(BR2_PACKAGE_NET_SNMP) += net-snmp
 package-$(BR2_PACKAGE_NFS_SERVER) += nfs-server
 package-$(BR2_PACKAGE_NMAP) += nmap
