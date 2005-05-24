@@ -1,8 +1,17 @@
+menu "net-snmp - Open source SNMP (Simple Network Management Protocol) implementation"
+
 config BR2_PACKAGE_NET_SNMP
-	prompt "net-snmp - Open source SNMP (Simple Network Management Protocol) implementation"
 	bool
-	default y if CONFIG_DEVEL
+	default n
+	depends BR2_PACKAGE_LIBNETSNMP
+
+config BR2_PACKAGE_LIBNETSNMP
+	prompt "libnetsnmp - SNMP libraries"
+	tristate
+	default m if CONFIG_DEVEL
+	select BR2_PACKAGE_NET_SNMP
 	help
+	  
 	  Simple Network Management Protocol (SNMP) is a widely used 
 	  protocol for monitoring the health and welfare of network 
 	  equipment (eg. routers), computer equipment and even devices 
@@ -11,19 +20,19 @@ config BR2_PACKAGE_NET_SNMP
 	  
 	  http://www.net-snmp.org/
 	  
-
-config BR2_PACKAGE_LIBNETSNMP
-	tristate "libnet-snmp - SNMP libraries"
-	default m if CONFIG_DEVEL
-	depends BR2_PACKAGE_NET_SNMP
+	  This package contains shared libraries, needed by other programs.
+	  
 
 config BR2_PACKAGE_SNMPD
-	tristate "snmdp - SNMP agent"
-	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_LIBNETSNMP
+	prompt "snmpd - SNMP agent"
+	tristate
+	default m if CONFIG_DEVEL
 
 config BR2_PACKAGE_SNMP_UTILS
-	tristate "snmp-utils - SNMP client utilities"
-	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_LIBNETSNMP
+	prompt "snmp-utils - SNMP client utilities"
+	tristate
+	default m if CONFIG_DEVEL
 
+endmenu
