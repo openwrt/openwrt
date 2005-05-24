@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=sablevm-classpath
 PKG_VERSION:=1.11.3
 PKG_RELEASE:=1
-PKG_MD5SUM:=aea6e808c5f2e3646a60971485220bff
+PKG_MD5SUM:=0aed850f5583199b3d1adb41ac2043ed
 
 PKG_SOURCE_URL:=http://sablevm.org/download/release/$(PKG_VERSION)/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
