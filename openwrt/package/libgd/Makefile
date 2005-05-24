@@ -77,14 +77,16 @@ $(STAGING_DIR)/usr/lib/libgd.so: $(PKG_BUILD_DIR)/.built
 	cp -fpR $(PKG_INSTALL_DIR)/usr/include/gd*.h $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
 	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libgd.{a,so*} $(STAGING_DIR)/usr/lib/
+	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/libgd.so
 
 uninstall-dev:
 	rm -rf \
-	  $(STAGING_DIR)/usr/include/entities.h \
-	  $(STAGING_DIR)/usr/include/gd*.h \
-	  $(STAGING_DIR)/usr/lib/libgd.{a,so*}
+		$(STAGING_DIR)/usr/bin/gdlib-config \
+		$(STAGING_DIR)/usr/include/entities.h \
+		$(STAGING_DIR)/usr/include/gd*.h \
+		$(STAGING_DIR)/usr/lib/libgd.{a,so*} \
 
 compile: install-dev
 clean: uninstall-dev
