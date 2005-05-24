@@ -1,5 +1,8 @@
+menu "quagga - the Quagga Software Routing Suite"
+
 config BR2_PACKAGE_QUAGGA
-	tristate "quagga - the Quagga Software Routing Suite"
+	prompt "quagga - the Quagga Software Routing Suite"
+	tristate
 	default m if CONFIG_DEVEL
 	help
 	  A routing software package that provides TCP/IP based routing services
@@ -10,45 +13,52 @@ config BR2_PACKAGE_QUAGGA
 	  
 
 config BR2_PACKAGE_QUAGGA_BGPD
-	tristate "bgpd - BGPv4, BGPv4\+, BGPv4\- routing engine"
-	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_QUAGGA
+	prompt "...-bgpd - BGPv4, BGPv4\+, BGPv4\- routing engine"
+	tristate
+	default m if CONFIG_DEVEL
 	help
 	  A BGPv4, BGPv4\+, BGPv4\- routing engine for use with Quagga routing
 	  software.
 
 config BR2_PACKAGE_QUAGGA_OSPFD
-	tristate "ospfd - OSPFv2 routing engine"
-	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_QUAGGA
+	prompt "...-ospfd - OSPFv2 routing engine"
+	tristate
+	default m if CONFIG_DEVEL
 	help
 	  An OSPFv2 routing engine for use with Quagga routing software.
 
 config BR2_PACKAGE_QUAGGA_OSPF6D
-	tristate "ospf6d - OSPFv3 routing engine"
-	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_QUAGGA
+	prompt "...-ospf6d - OSPFv3 routing engine"
+	tristate
+	default m if CONFIG_DEVEL
 	help
 	  An OSPFv3 routing engine for use with Quagga routing software.
 
 config BR2_PACKAGE_QUAGGA_RIPD
-	tristate "ripd - RIP routing engine"
-	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_QUAGGA
+	prompt "...-ripd - RIP routing engine"
+	tristate
+	default m if CONFIG_DEVEL
 	help
 	  A RIP routing engine for use with Quagga routing software.
 
 config BR2_PACKAGE_QUAGGA_RIPD
-	tristate "ripngd - RIPNG routing engine"
-	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_QUAGGA
+	prompt "...-ripngd - RIPNG routing engine"
+	tristate
+	default m if CONFIG_DEVEL
 	help
 	  A RIPNG routing engine for use with Quagga routing software.
 
 config BR2_PACKAGE_QUAGGA_ZEBRA
-	tristate "zebra - Routing manager"
-	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_QUAGGA
+	prompt "...-zebra - Routing manager"
+	tristate
+	default m if CONFIG_DEVEL
 	help
 	  A routing manager for use with associated Quagga components.
 
+endmenu
