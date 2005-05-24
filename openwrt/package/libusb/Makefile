@@ -72,13 +72,15 @@ $(STAGING_DIR)/usr/lib/libusb.so: $(PKG_BUILD_DIR)/.libs/libusb.so
 	cp -fpR $(PKG_INSTALL_DIR)/usr/include/usb.h $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
 	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libusb*.{a,so*} $(STAGING_DIR)/usr/lib/
-	touch $(STAGING_DIR)/usr/lib/libusb.so
+	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/libusb.so
 
 uninstall-dev:
-	rm -rf $(STAGING_DIR)/usr/include/usb.h
-	rm -rf $(STAGING_DIR)/usr/lib/libusb.{a,so*}
+	rm -rf \
+		$(STAGING_DIR)/usr/bin/libusb-config \
+		$(STAGING_DIR)/usr/include/usb.h \
+		$(STAGING_DIR)/usr/lib/libusb*.{a,so*} \
 
 compile: install-dev
 clean: uninstall-dev
