@@ -1,0 +1,62 @@
+config BR2_PACKAGE_SABLEVM_CLASSPATH
+	depends BR2_PACKAGE_LIBSABLEVM_CLASSPATH
+	bool
+	default n
+
+config BR2_PACKAGE_LIBSABLEVM_CLASSPATH
+	depends BR2_PACKAGE_SABLEVM
+	prompt "libsablevm-classpath - Essential native libraries for Java"
+	tristate
+#	default m if CONFIG_DEVEL
+	default n
+	select BR2_PACKAGE_SABLEVM_CLASSPATH
+	help
+	  GNU Classpath, Essential Libraries for Java, is a GNU project to create 
+	  free core class libraries for use with virtual machines and compilers for 
+	  the java programming language.
+	  
+	  This is a modified version for use with SableVM.
+	  
+	  http://www.gnu.org/software/classpath/
+	  
+	  This package contains the native shared libraries, needed by other packages.
+	  
+
+choice
+	depends BR2_PACKAGE_LIBSABLEVM_CLASSPATH
+	prompt "sablevm-classpath - Essential classes for Java"
+	tristate
+	optional
+
+config BR2_PACKAGE_SABLEVM_CLASSPATH_FULL
+	prompt "...-full: Full set"
+	tristate
+	help
+	  GNU Classpath, Essential Libraries for Java, is a GNU project to create 
+	  free core class libraries for use with virtual machines and compilers for 
+	  the java programming language.
+	  
+	  This is a modified version for use with SableVM.
+	  
+	  http://www.gnu.org/software/classpath/
+	  
+	  This package contains the full set of Java compiled classes.
+	  It will unlikely fit on your router as-is.
+	  
+config BR2_PACKAGE_SABLEVM_CLASSPATH_MINI
+	prompt "...-mini: Minimal set"
+	tristate
+	help
+	  
+	  GNU Classpath, Essential Libraries for Java, is a GNU project to create 
+	  free core class libraries for use with virtual machines and compilers for 
+	  the java programming language.
+	  
+	  This is a modified version for use with SableVM.
+	  
+	  http://www.gnu.org/software/classpath/
+	  
+	  This package contains only a minimal set of Java compiled classes, just 
+	  enough to run the famous "Hello World !" test program.
+	  
+endchoice
