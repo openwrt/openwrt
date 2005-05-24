@@ -43,8 +43,8 @@ $(PKG_BUILD_DIR)/.configured:
 		  --includedir=/usr/include \
 		  --infodir=/usr/share/info \
 		  --libdir=/usr/lib \
-		  --libexecdir=/usr/lib/locate \
-		  --localstatedir=/var/lib \
+		  --libexecdir=/usr/lib \
+		  --localstatedir=/var \
 		  --mandir=/usr/share/man \
 		  --sbindir=/usr/sbin \
 		  --sysconfdir=/etc \
