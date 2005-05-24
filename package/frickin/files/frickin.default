@@ -1,0 +1,16 @@
+# ip address of the server the proxy should connect to
+TARGET_IP=192.168.1.2
+
+# ip address the proxy should listen to for incoming connections
+#LISTEN_IP=192.168.1.1
+
+# maximum number of simultaneous connections
+#PROXY_CONN_MAX=20
+
+# user the proxy should run as
+#PROXY_USER=root
+
+[ -n "$TARGET_IP" ] && OPTIONS="$OPTIONS -s $TARGET_IP"
+[ -n "$LISTEN_IP" ] && OPTIONS="$OPTIONS -l $LISTEN_IP"
+[ -n "$PROXY_CONN_MAX" ] && OPTIONS="$OPTIONS -c $PROXY_CONN_MAX"
+[ -n "$PROXY_USER" ] && OPTIONS="$OPTIONS -u $PROXY_USER"
