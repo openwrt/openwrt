@@ -1,0 +1,32 @@
+menu "ndisc - ICMPv6 discovery tools"
+
+config BR2_PACKAGE_NDISC
+	bool
+	default n
+	depends BR2_PACKAGE_NDISC6 || BR2_PACKAGE_RDISC6
+
+config BR2_PACKAGE_NDISC6
+	tristate "ndisc6 - ICMPv6 neighbour discovery tool"
+#	default m if CONFIG_DEVEL
+	default n
+	select BR2_PACKAGE_NDISC
+	help
+	  
+	  ICMPv6 neighbour discovery tools
+	  
+	  http://people.via.ecp.fr/~rem/ndisc/
+	  
+
+config BR2_PACKAGE_RDISC6
+	tristate "rdisc6 - ICMPv6 router discovery tool"
+#	default m if CONFIG_DEVEL
+	default n
+	select BR2_PACKAGE_NDISC
+	help
+	  
+	  ICMPv6 router discovery tool
+	  
+	  http://people.via.ecp.fr/~rem/ndisc/
+	  
+
+endmenu
