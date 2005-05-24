@@ -1,7 +1,14 @@
+config BR2_PACKAGE_FUSE
+	bool
+	default n
+	depends BR2_PACKAGE_KMOD_FUSE
+
 config BR2_PACKAGE_KMOD_FUSE
 	select BR2_PACKAGE_FUSE
-	tristate "kmod-fuse - FUSE kernel module"
+	prompt "kmod-fuse - FUSE kernel module"
+	tristate
 	default m if CONFIG_DEVEL
+	select BR2_PACKAGE_FUSE
 	help
 	  With FUSE it is possible to implement a fully functional 
 	  filesystem in a userspace program.
@@ -19,10 +26,12 @@ config BR2_PACKAGE_KMOD_FUSE
 	  
 	  http://fuse.sourceforge.net/
 	  
-	  Depends: libpthread
+	  This package contains the fuse.o kernel module.
+	  
 
 config BR2_PACKAGE_LIBFUSE
-	tristate "libfuse - FUSE library"
+	prompt "libfuse - FUSE library"
+	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_KMOD_FUSE
 	select BR2_PACKAGE_LIBPTHREAD
@@ -43,10 +52,14 @@ config BR2_PACKAGE_LIBFUSE
 	  
 	  http://fuse.sourceforge.net/
 	  
+	  This package contains the fuse shared library, needed by other programs.
+	  
 	  Depends: libpthread
+	  
 
 config BR2_PACKAGE_FUSE_UTILS
-	tristate "fuse-utils - FUSE utilities"
+	prompt "fuse-utils - FUSE utilities"
+	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_LIBFUSE
 	select BR2_PACKAGE_LIBPTHREAD
@@ -67,10 +80,5 @@ config BR2_PACKAGE_FUSE_UTILS
 	  
 	  http://fuse.sourceforge.net/
 	  
-	  Depends: libpthread
-
-
-config BR2_PACKAGE_FUSE
-	tristate
-	default BR2_PACKAGE_KMOD_FUSE
-
+	  This package contains the fusermount userland utility.
+	  
