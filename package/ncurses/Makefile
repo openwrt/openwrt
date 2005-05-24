@@ -103,18 +103,19 @@ $(STAGING_DIR)/usr/lib/libncurses.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/lib
 	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libcurses.so $(STAGING_DIR)/usr/lib/
 	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/lib{ncurses,panel}.{a,so*} $(STAGING_DIR)/usr/lib/
+	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/libncurses.so
 
 uninstall-dev:
 	rm -rf \
-	  $(PKG_INSTALL_DIR)/usr/include/curses.h \
-	  $(PKG_INSTALL_DIR)/usr/include/{ncurses,panel}.h \
-	  $(PKG_INSTALL_DIR)/usr/include/panel.h \
-	  $(PKG_INSTALL_DIR)/usr/include/term{,cap}.h \
-	  $(PKG_INSTALL_DIR)/usr/include/unctrl.h \
-	  $(PKG_INSTALL_DIR)/usr/lib/libcurses.so \
-	  $(PKG_INSTALL_DIR)/usr/lib/lib{ncurses,panel}.{a,so*} \
+		$(STAGING_DIR)/usr/include/curses.h \
+		$(STAGING_DIR)/usr/include/{ncurses,panel}.h \
+		$(STAGING_DIR)/usr/include/panel.h \
+		$(STAGING_DIR)/usr/include/term{,cap}.h \
+		$(STAGING_DIR)/usr/include/unctrl.h \
+		$(STAGING_DIR)/usr/lib/libcurses.so \
+		$(STAGING_DIR)/usr/lib/lib{ncurses,panel}.{a,so*} \
 
 compile: install-dev
 clean: uninstall-dev
