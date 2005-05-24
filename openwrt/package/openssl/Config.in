@@ -1,6 +1,13 @@
+config BR2_PACKAGE_OPENSSL
+	bool
+	default n
+	depends BR2_PACKAGE_LIBOPENSSL
+	
 config BR2_PACKAGE_LIBOPENSSL
-	tristate "libopenssl - Open source SSL (Secure Socket Layer) libraries"
+	prompt "libopenssl - Open source SSL (Secure Socket Layer) libraries"
+	tristate
 	default m if CONFIG_DEVEL
+	select BR2_PACKAGE_OPENSSL
 	help
 	  	
 	  The OpenSSL Project is a collaborative effort to develop a robust, 
@@ -14,9 +21,10 @@ config BR2_PACKAGE_LIBOPENSSL
 	  
 
 config BR2_PACKAGE_OPENSSL_UTIL
-	tristate "openssl-util - OpenSSL command line tool"
-	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_LIBOPENSSL
+	prompt "openssl-util - OpenSSL command line tool"
+	tristate
+	default m if CONFIG_DEVEL
 	help
 	  	
 	  The OpenSSL Project is a collaborative effort to develop a robust, 
@@ -28,7 +36,3 @@ config BR2_PACKAGE_OPENSSL_UTIL
 	  
 	  This package contains the multi-purpose OpenSSL binary tool.
 	  
-
-config BR_PACKAGE_OPENSSL
-	tristate
-	default BR2_PACKAGE_LIBOPENSSL
