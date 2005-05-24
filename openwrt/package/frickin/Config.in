@@ -1,0 +1,12 @@
+config BR2_PACKAGE_FRICKIN
+	tristate "frickin - PPTP (Point-to-Point Tunneling Protocol) proxy"
+#	default m if CONFIG_DEVEL
+	default n
+	help
+	  Frickin PPTP Proxy allows a Point-to-Point Tunneling Protocol (PPTP) 
+	  client to connect to a PPTP server through Network Address 
+	  Translation (NAT).
+	  
+	  http://frickin.sourceforge.net/
+	  
+	  
