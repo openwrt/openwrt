@@ -42,6 +42,7 @@ $(PKG_BUILD_DIR)/.configured:
 		  --mandir=/usr/share/man \
 		  --sbindir=/usr/sbin \
 		  --sysconfdir=/etc \
+		  --with-firewall=iptables \
 		  $(DISABLE_LARGEFILE) \
 		  $(DISABLE_NLS) \
 		  --with-glib-prefix="$(STAGING_DIR)/usr" \
