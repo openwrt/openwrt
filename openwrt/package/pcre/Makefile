@@ -5,11 +5,11 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=pcre
 PKG_VERSION:=5.0
 PKG_RELEASE:=3
-PKG_MD5SUM:=53976b62032fd5c76678274e5fd196b4
+PKG_MD5SUM:=813850808894d99fb5b1c41ec6335d4f
 
 PKG_SOURCE_URL:=ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_CAT:=zcat
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
+PKG_CAT:=bzcat
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
