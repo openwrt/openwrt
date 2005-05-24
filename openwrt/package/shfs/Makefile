@@ -31,6 +31,7 @@ $(PKG_BUILD_DIR)/.built:
 		LINKER="$(TARGET_CC)" \
 		KERNEL="$(LINUX_VERSION)" \
 		KERNEL_SOURCES="$(LINUX_DIR)" \
+		ROOT="$(PKG_INSTALL_DIR)" \
 		all install
 	touch $@
 
