@@ -496,3 +496,14 @@ diff -urN screen-4.0.2.old/pty.c screen-4.0.2.dev/pty.c
  
  #if defined(sun) && defined(LOCKPTY) && !defined(TIOCEXCL)
  # include <sys/ttold.h>
+--- screen-4.0.2/configure.old	2005-05-24 18:49:30.000000000 +0200
++++ screen-4.0.2/configure	2005-05-24 18:49:54.000000000 +0200
+@@ -6598,8 +6598,6 @@
+ LIBS="$oldlibs"
+ fi
+ rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+-test -f /lib/libsec.a || test -f /usr/lib/libsec.a && LIBS="$LIBS -lsec"
+-test -f /lib/libshadow.a || test -f /usr/lib/libshadow.a && LIBS="$LIBS -lshadow"
+ oldlibs="$LIBS"
+ LIBS="$LIBS -lsun"
+ { echo "$as_me:$LINENO: checking IRIX sun library..." >&5
