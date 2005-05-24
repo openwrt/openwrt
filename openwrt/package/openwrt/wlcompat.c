@@ -314,10 +314,15 @@ static int wlcompat_ioctl(struct net_device *dev,
 		}
 		case SIOCSIWAP:
 		{
+			int ap = 0;
+			
 			if (wrqu->ap_addr.sa_family != ARPHRD_ETHER)
 				return -EINVAL;
 
-			if (wl_ioctl(dev,WLC_SET_BSSID,wrqu->ap_addr.sa_data,6) < 0)
+			if (wl_ioctl(dev, WLC_GET_AP, &ap, sizeof(ap)) < 0)
+				return -EINVAL;
+			
+			if (wl_ioctl(dev, (ap ? WLC_SET_BSSID : WLC_REASSOC), wrqu->ap_addr.sa_data, 6) < 0)
 				return -EINVAL;
 
 			break;
