@@ -30,6 +30,8 @@
 #include <sys/stat.h>
 #include <string.h>
 
+#include <sys/ioctl.h>
+#include <linux/mtd/mtd.h>
 
 #define FILENAME "/dev/mtdblock/1"
 
@@ -71,9 +73,9 @@ unsigned int crc32buf(char *buf, size_t len)
 int main(int argc, char **argv)
 {
     int fd;
+    struct mtd_info_user mtdInfo;
     unsigned long len;
     struct trx_header *ptr;
-    unsigned offset;
 	
     if (((fd = open(FILENAME, O_RDWR))  < 0)
     || ((len = lseek(fd, 0, SEEK_END)) < 0)
@@ -82,27 +84,31 @@ int main(int argc, char **argv)
 	printf("Error reading trx info\n");
 	exit(-1);
     }
+    close (fd);
 
-    /* treat last partition as rootfs offset */
-    offset = ptr->offsets[2] ? : ptr->offsets[1];
-	
+    if (((fd = open("/dev/mtd/1", O_RDWR))  < 0)
+    || (ioctl(fd, MEMGETINFO, &mtdInfo))) {
+      fprintf(stderr, "Could not get MTD device info from %s\n", FILENAME);
+      close(fd);
+      exit(1);
+    }
+    close(fd);
+
     if (argc > 1 && !strcmp(argv[1],"--move")) {
-      if (offset >= ptr->len) {
+      if (ptr->offsets[2] >= ptr->len) {
         printf("Partition already moved outside trx\n");
-#if 0
-      } else if (offset & 0x0001ffff) {
-        printf("Partition does not start on a block boundary\n");
-#endif
       } else {
 	init_crc32();
-	//bzero((void *)((int)ptr + ptr->len), (size_t)(len - ptr->len));
-        ptr->len = offset;
+	ptr->offsets[2] += mtdInfo.erasesize;
+	ptr->offsets[2] &= ~(mtdInfo.erasesize - 1);
+        ptr->len = ptr->offsets[2];
         ptr->crc32 = crc32buf((void *) &(ptr->flag_version), ptr->len - offsetof(struct trx_header, flag_version));
 	msync(ptr,sizeof(struct trx_header),MS_SYNC|MS_INVALIDATE);
 	printf("Partition moved; please reboot\n");
       }
     } else {
       int x;
+      printf(" erase: 0x%08x\n",mtdInfo.erasesize);
       printf("=== trx ===\n");
       printf("mapped: 0x%08x\n", (unsigned)ptr);
       printf(" magic: 0x%08x\n", ptr->magic);
@@ -112,8 +118,6 @@ int main(int argc, char **argv)
 	printf(" offset[%d]: 0x%08x\n", x, ptr->offsets[x]);
     }
 
-
     munmap((void *) ptr, len);
-    close (fd);
     return 0;
 }
