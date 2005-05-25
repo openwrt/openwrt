@@ -99,7 +99,7 @@ int main(int argc, char **argv)
         printf("Partition already moved outside trx\n");
       } else {
 	init_crc32();
-	ptr->offsets[2] += mtdInfo.erasesize;
+	ptr->offsets[2] +=  (mtdInfo.erasesize - 1);
 	ptr->offsets[2] &= ~(mtdInfo.erasesize - 1);
         ptr->len = ptr->offsets[2];
         ptr->crc32 = crc32buf((void *) &(ptr->flag_version), ptr->len - offsetof(struct trx_header, flag_version));
