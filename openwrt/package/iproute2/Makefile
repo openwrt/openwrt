@@ -41,7 +41,7 @@ $(IPKG_IPROUTE2_IP):
 
 $(IPKG_IPROUTE2_TC):
 	mkdir -p $(IDIR_IPROUTE2_TC)/usr/sbin
-	cp $(PKG_BUILD_DIR)/ip/ip $(IDIR_IPROUTE2_TC)/usr/sbin/
+	cp $(PKG_BUILD_DIR)/tc/tc $(IDIR_IPROUTE2_TC)/usr/sbin/
 	$(STRIP) $(IDIR_IPROUTE2_TC)/usr/sbin/*
 	$(IPKG_BUILD) $(IDIR_IPROUTE2_TC) $(PACKAGE_DIR)
 
