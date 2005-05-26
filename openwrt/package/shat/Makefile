@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=shat
-PKG_VERSION:=0.9.5
+PKG_VERSION:=0.9.6
 PKG_RELEASE:=1
-PKG_MD5SUM:= fe29d5862a333af1f390052471a6dd0a
+PKG_MD5SUM:= 01d8ef12657cf663dd034be99394e605
 
 PKG_SOURCE_URL:=http://world.maxina.de/src/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
