@@ -31,26 +31,34 @@ Description of kernel patches in patches:
 	Filtering packets on ethernet layer. See http://ebtables.sf.net
 
 101-netfilter-ipp2p.patch
+	Netfilter ipp2p match module (matches traffic of most P2P networks)
 
 102-netfilter-layer7.patch
 
 103-netfilter-nat-pptp.patch
+	NAT support for PPTP and GRE
 
 104-netfilter-maxconn.patch
 
 105-netfilter-TTL.patch
+	Netfilter target for manipulating the TTL of IP packets
 
 106-mppe-mppc.patch
+	Microsoft PPP Encryption/Compression
 
 107-cifs.patch
+	CIFS (Common Internet File System) module.
 
 108-optional-aout-support.patch
 
 109-ipsec-nat-traversal.patch
+	Openswan patch for allowing IPSec through NAT
 
 110-netdev_random_core.patch
+	Support for gathering entropy from network devices for /dev/random
 
 111-netdev_random_et.patch
+	Patch agains the Broadcom et driver to gather entropy for /dev/random
 
 200-i4l.patch
 
@@ -61,6 +69,7 @@ Description of kernel patches in patches:
 203-hfsplus-fix.patch
 
 204-net-b44.patch
+	Support for the BCM47xx chipset in the b44 driver
 
 205-gcc-3.4-ldscript.patch
 
