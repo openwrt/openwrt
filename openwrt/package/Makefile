@@ -47,6 +47,7 @@ package-$(BR2_PACKAGE_LIBPTHREAD) += libpthread
 package-$(BR2_PACKAGE_LIBTOOL) += libtool
 package-$(BR2_PACKAGE_LIBUSB) += libusb
 package-$(BR2_PACKAGE_LIGHTTPD) += lighttpd
+package-$(BR2_PACKAGE_LUA) += lua
 package-$(BR2_PACKAGE_LZO) += lzo
 package-$(BR2_PACKAGE_MARADNS) += maradns
 package-$(BR2_PACKAGE_MATRIXSSL) += matrixssl
