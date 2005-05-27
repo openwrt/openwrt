@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=wireless-tools
-PKG_VERSION:=28.pre6
+PKG_VERSION:=28.pre7
 PKG_RELEASE:=1
-PKG_MD5SUM:=3ad1da3b17dff963eba32f0b79401253
+PKG_MD5SUM:=bf598d6ded79e9e6b9bc2dbeb8258f48
 
 PKG_SOURCE_URL:=http://www.hpl.hp.com/personal/Jean_Tourrilhes/Linux
 PKG_SOURCE:=wireless_tools.$(PKG_VERSION).tar.gz

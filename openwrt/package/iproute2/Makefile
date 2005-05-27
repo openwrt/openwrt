@@ -3,13 +3,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=iproute2
-PKG_VERSION:=2.6.9
+PKG_VERSION:=2.6.11-050330
 PKG_RELEASE:=1
-PKG_MD5SUM:=4b3f335b0139cb909c6a2ae8bf72e548
+PKG_MD5SUM:=e705f26b5ae93e0332e46a3ff15d934
 
 PKG_SOURCE_URL:=http://developer.osdl.org/dev/iproute2/download/
-PKG_SOURCE:=$(PKG_NAME)-2.6.9-041019.tar.gz
-PKG_BUILD_DIR:=$(BUILD_DIR)/iproute2-2.6.9
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_BUILD_DIR:=$(BUILD_DIR)/iproute2-$(PKG_VERSION)
 PKG_CAT:=zcat
 
 include $(TOPDIR)/package/rules.mk
@@ -30,6 +30,7 @@ $(PKG_BUILD_DIR)/.configured:
 	touch $@
 
 $(PKG_BUILD_DIR)/.built:
+	$(MAKE) -j1 -C $(PKG_BUILD_DIR)/netem HOSTCC=$(HOSTCC) CFLAGS="-D_GNU_SOURCE -O2 -Wstrict-prototypes -Wall -I ../include -DRESOLVE_HOSTNAMES"
 	$(MAKE) -j1 -C $(PKG_BUILD_DIR) $(TARGET_CONFIGURE_OPTS) KERNEL_INCLUDE=$(LINUX_DIR)/include all tc/tc ip/ip
 	touch $@
 
