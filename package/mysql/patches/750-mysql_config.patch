@@ -1,0 +1,21 @@
+--- mysql-4.0.24/scripts/mysql_config.sh.orig	2005-03-05 01:38:14.000000000 +0100
++++ mysql-4.0.24/scripts/mysql_config.sh	2005-05-27 06:55:46.000000000 +0200
+@@ -86,13 +86,13 @@
+ 
+ # Create options
+ 
+-libs="$ldflags -L$pkglibdir -lmysqlclient $client_libs"
++libs="-lmysqlclient $client_libs"
+ libs=`echo "$libs" | sed -e 's;  \+; ;g' | sed -e 's;^ *;;' | sed -e 's; *\$;;'`
+-libs_r="$ldflags -L$pkglibdir -lmysqlclient_r @LIBS@ @openssl_libs@"
++libs_r="-lmysqlclient_r @LIBS@ @openssl_libs@"
+ libs_r=`echo "$libs_r" | sed -e 's;  \+; ;g' | sed -e 's;^ *;;' | sed -e 's; *\$;;'`
+-cflags="-I$pkgincludedir @CFLAGS@ " #note: end space!
+-include="-I$pkgincludedir"
+-embedded_libs="$ldflags -L$pkglibdir -lmysqld @LIBS@ @WRAPLIBS@ @innodb_system_libs@"
++cflags=" " #note: end space!
++include=""
++embedded_libs="-lmysqld @LIBS@ @WRAPLIBS@ @innodb_system_libs@"
+ embedded_libs=`echo "$embedded_libs" | sed -e 's;  \+; ;g' | sed -e 's;^ *;;' | sed -e 's; *\$;;'`
+ 
+ # Remove some options that a client doesn't have to care about
