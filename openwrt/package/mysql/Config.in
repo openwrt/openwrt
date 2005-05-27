@@ -1,13 +1,16 @@
+config BR2_PACKAGE_MYSQL
+	bool
+	default n
+	depends BR2_PACKAGE_LIBMYSQLCLIENT
+
 config BR2_PACKAGE_LIBMYSQLCLIENT
-	tristate "libmysqlclient - MySQL client library"
+	prompt "libmysqlclient - MySQL client library"
+	tristate
 	default m if CONFIG_DEVEL
+	select BR2_PACKAGE_MYSQL
 	help
 	  MySQL client library.
 	  
 	  http://dev.mysql.com/
 	  
-
-config BR2_PACKAGE_MYSQL
-	tristate
-	default BR2_PACKAGE_LIBMYSQLCLIENT
 
