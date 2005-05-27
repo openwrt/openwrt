@@ -34,7 +34,13 @@ config BR2_PACKAGE_KMOD_EBT
 	help
 	  Kernel modules for bridge firewalling
 
-config BR2_PACKAGE_KMOD_IPT4
+config BR2_PACKAGE_KMOD_IPTABLES_V4
+	tristate "Basic set of kernel modules for iptables"
+	default y
+	help
+	  Kernel modules for IPv4 firewalling
+
+config BR2_PACKAGE_KMOD_IPTABLES_V4_EXTRA
 	tristate "Extra modules for iptables"
 	default m
 	help
@@ -46,7 +52,7 @@ config BR2_PACKAGE_KMOD_IPV6
 	help
 	  Kernel modules for IPv6 protocol support
 	  
-config BR2_PACKAGE_KMOD_IPT6
+config BR2_PACKAGE_KMOD_IPTABLES_V6
 	tristate "Kernel modules for ip6tables"
 	default m
 	depends BR2_PACKAGE_KMOD_IPV6
@@ -139,6 +145,18 @@ config BR2_PACKAGE_KMOD_HFSPLUS
 	default m
 	help
 	  Kernel modules for HFS+ filesystem support
+
+config BR2_PACKAGE_KMOD_LOOP
+	tristate "loop mount support"
+	default m
+	help
+	  Kernel module for loop mount support
+
+config BR2_PACKAGE_KMOD_NBD
+	tristate "network block device"
+	default m
+	help
+	  Kernel module for network block device
 
 config BR2_PACKAGE_KMOD_LP
 	tristate "parallel port and lp support"
