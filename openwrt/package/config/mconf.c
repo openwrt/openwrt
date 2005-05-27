@@ -101,7 +101,7 @@ static char filename[PATH_MAX+1] = ".config";
 static int indent = 0;
 static struct termios ios_org;
 static int rows, cols;
-static struct menu *current_menu;
+struct menu *current_menu;
 static int child_count;
 static int single_menu_mode;
 
