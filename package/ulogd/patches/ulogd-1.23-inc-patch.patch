@@ -1,0 +1,24 @@
+diff -ruN ulogd-1.23-old/Rules.make.in ulogd-1.23-new/Rules.make.in
+--- ulogd-1.23-old/Rules.make.in	2005-02-19 22:32:40.000000000 +0100
++++ ulogd-1.23-new/Rules.make.in	2005-05-27 07:45:18.000000000 +0200
+@@ -22,7 +22,7 @@
+ CFLAGS+=-DULOGD_CONFIGFILE=\"$(ULOGD_CONFIGFILE)\"
+ # doesn't work for subdirs
+ #CFLAGS+=$(INCIPULOG) $(INCCONFFILE)
+-CFLAGS+=-I/lib/modules/`uname -r`/build/include
++#CFLAGS+=-I/lib/modules/`uname -r`/build/include
+ #CFLAGS+=@DEFS@
+ #CFLAGS+=-g -DDEBUG -DDEBUG_MYSQL -DDEBUG_PGSQL
+ 
+diff -ruN ulogd-1.23-old/libipulog/Makefile.in ulogd-1.23-new/libipulog/Makefile.in
+--- ulogd-1.23-old/libipulog/Makefile.in	2004-03-23 23:36:06.000000000 +0100
++++ ulogd-1.23-new/libipulog/Makefile.in	2005-05-27 07:44:21.000000000 +0200
+@@ -1,7 +1,7 @@
+ #
+ 
+ include @top_srcdir@/Rules.make
+-CFLAGS+=-Iinclude -I/usr/src/linux/include
++CFLAGS+=-Iinclude
+ 
+ libipulog.a: libipulog.o
+ 	$(LD) -i $< -o $@
