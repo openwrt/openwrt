@@ -14,6 +14,57 @@ PKG_CAT:=zcat
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
+PKG_CONFIGURE_OPTIONS := \
+	--enable-shared \
+	--disable-static \
+	--disable-ltdl-install \
+	--with-ltdl-include="$(STAGING_DIR)/usr/include" \
+	--with-ltdl-lib="$(STAGING_DIR)/usr/lib" \
+	--with-openssl-includes="$(STAGING_DIR)/usr/include" \
+	--with-openssl-libraries="$(STAGING_DIR)/usr/lib" \
+	--enable-strict-dependencies \
+	--with-raddbdir=/etc/freeradius \
+	--without-edir \
+	--without-snmp \
+	--without-rlm_attr-rewrite \
+	--with-rlm_checkval \
+	--without-rlm_counter \
+	--without-rlm_dbm \
+	--with-rlm_eap \
+	--without-rlm_eap_sim \
+	--with-rlm_files \
+	--without-rlm_ippool \
+	--without-rlm_krb5 \
+	--without-rlm_pam \
+	--without-rlm_radutmp \
+	--without-rlm_sql_iodbc \
+	--without-rlm_sql_oracle \
+	--without-rlm_sql_unixodbc \
+	--without-rlm_unix \
+	--without-rlm_x99-token \
+
+ifneq ($(BR2_PACKAGE_FREERADIUS_MOD_LDAP),)
+PKG_CONFIGURE_OPTIONS += \
+	--with-rlm_ldap-include-dir="$(STAGING_DIR)/usr/include" \
+	--with-rlm_ldap-lib-dir="$(STAGING_DIR)/usr/lib"
+else
+PKG_CONFIGURE_OPTIONS += --without-rlm_ldap
+endif
+ifneq ($(BR2_PACKAGE_FREERADIUS_MOD_SQL_MYSQL),)
+PKG_CONFIGURE_OPTIONS += \
+	--with-mysql-include-dir="$(STAGING_DIR)/usr/include/mysql" \
+	--with-mysql-lib-dir="$(STAGING_DIR)/usr/lib/mysql"
+else
+PKG_CONFIGURE_OPTIONS += --without-rlm_sql_mysql
+endif
+ifneq ($(BR2_PACKAGE_FREERADIUS_MOD_SQL_PGSQL),)
+PKG_CONFIGURE_OPTIONS += \
+	--with-rlm_sql_postgresql-include-dir="$(STAGING_DIR)/usr/include" \
+	--with-rlm_sql_postgresql-lib-dir="$(STAGING_DIR)/usr/lib"
+else
+PKG_CONFIGURE_OPTIONS += --without-rlm_sql_postgresql
+endif
+
 include $(TOPDIR)/package/rules.mk
 
 define PKG_mod_template
@@ -97,39 +148,7 @@ $(PKG_BUILD_DIR)/.configured:
 		  --sysconfdir=/etc \
 		  $(DISABLE_LARGEFILE) \
 		  $(DISABLE_NLS) \
-		  --enable-shared \
-		  --disable-static \
-		  --disable-ltdl-install \
-		  --with-ltdl-include="$(STAGING_DIR)/usr/include" \
-		  --with-ltdl-lib="$(STAGING_DIR)/usr/lib" \
-		  --with-openssl-includes="$(STAGING_DIR)/usr/include" \
-		  --with-openssl-libraries="$(STAGING_DIR)/usr/lib" \
-		  --enable-strict-dependencies \
-		  --with-raddbdir=/etc/freeradius \
-		  --without-edir \
-		  --without-snmp \
-		  --without-rlm_attr-rewrite \
-		  --with-rlm_checkval \
-		  --without-rlm_counter \
-		  --without-rlm_dbm \
-		  --with-rlm_eap \
-		  --without-rlm_eap_sim \
-		  --with-rlm_files \
-		  --without-rlm_ippool \
-		  --without-rlm_krb5 \
-		  --with-rlm_ldap-include-dir="$(STAGING_DIR)/usr/include" \
-		  --with-rlm_ldap-lib-dir="$(STAGING_DIR)/usr/lib" \
-		  --without-rlm_pam \
-		  --without-rlm_radutmp \
-		  --without-rlm_sql_iodbc \
-		  --with-mysql-include-dir="$(STAGING_DIR)/usr/include/mysql" \
-		  --with-mysql-lib-dir="$(STAGING_DIR)/usr/lib/mysql" \
-		  --without-rlm_sql_oracle \
-		  --with-rlm_sql_postgresql-include-dir="$(STAGING_DIR)/usr/include" \
-		  --with-rlm_sql_postgresql-lib-dir="$(STAGING_DIR)/usr/lib" \
-		  --without-rlm_sql_unixodbc \
-		  --without-rlm_unix \
-		  --without-rlm_x99-token \
+		  $(PKG_CONFIGURE_OPTIONS) \
 	)
 	touch $@
 
