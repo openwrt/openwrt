@@ -11420,7 +11420,7 @@ diff -Nur linux-2.4.30/arch/mips/bcm947xx/sbmips.c linux-2.4.30-brcm/arch/mips/b
 +}
 diff -Nur linux-2.4.30/arch/mips/bcm947xx/sbpci.c linux-2.4.30-brcm/arch/mips/bcm947xx/sbpci.c
 --- linux-2.4.30/arch/mips/bcm947xx/sbpci.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.4.30-brcm/arch/mips/bcm947xx/sbpci.c	2005-05-26 01:46:08.000000000 +0200
++++ linux-2.4.30-brcm/arch/mips/bcm947xx/sbpci.c	2005-05-26 21:56:08.000000000 +0200
 @@ -0,0 +1,569 @@
 +/*
 + * Low-Level PCI and SB support for BCM47xx
@@ -11697,11 +11697,12 @@ diff -Nur linux-2.4.30/arch/mips/bcm947xx/sbpci.c linux-2.4.30-brcm/arch/mips/bc
 +		return -1;
 +	sb_core_reset(sbh, 0);
 +
-+	/* In some board, */
++	/* In some board,
 +	if(nvram_match("boardtype", "bcm94710dev"))
 +		CT4712_WR = 0;
 +	else
 +		CT4712_WR = 1;
++	/*
 +
 +	boardflags = (uint32) getintvar(NULL, "boardflags");
 +
@@ -11715,8 +11716,7 @@ diff -Nur linux-2.4.30/arch/mips/bcm947xx/sbpci.c linux-2.4.30-brcm/arch/mips/bc
 +	 */
 +	if (((chip == BCM4712_DEVICE_ID) &&
 +	     ((chippkg == BCM4712SMALL_PKG_ID) ||
-+	      (chippkg == BCM4712MID_PKG_ID))) ||
-+	    (boardflags & BFL_NOPCI || CT4712_WR))
++	      (chippkg == BCM4712MID_PKG_ID))) )
 +		pci_disabled = TRUE;
 +
 +	/*
