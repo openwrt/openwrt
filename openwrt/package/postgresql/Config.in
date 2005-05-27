@@ -1,12 +1,16 @@
+config BR2_PACKAGE_POSTGRESQL
+	bool
+	default n
+	depends BR2_PACKAGE_LIBPQ
+
 config BR2_PACKAGE_LIBPQ
-	tristate "libpq - PostgreSQL client library"
+	prompt "libpq - PostgreSQL client library"
+	tristate
 	default m if CONFIG_DEVEL
+	select BR2_PACKAGE_POSTGRESQL
 	help
 	  PostgreSQL client library.
 	  
 	  http://www.postgresql.org/
 	  
 
-config BR2_PACKAGE_POSTGRESQL
-	tristate
-	default BR2_PACKAGE_LIBPQ
