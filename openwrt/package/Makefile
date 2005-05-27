@@ -122,7 +122,6 @@ arpwatch-compile: libpcap-compile
 cyrus-sasl-compile: openssl-compile
 dropbear-compile: zlib-compile
 fprobe-compile: libpcap-compile
-freeradius-compile: libtool-compile mysql-compile openldap-compile openssl-compile postgresql-compile
 kismet-compile: uclibc++-compile libpcap-compile ncurses-compile
 lcd4linux-compile: ncurses-compile
 libgd-compile: libpng-compile
@@ -155,6 +154,17 @@ asterisk-compile: postgresql-compile
 endif
 ifneq ($(BR2_PACKAGE_ASTERISK_MYSQL),)
 asterisk-compile: mysql-compile
+endif
+
+freeradius-compile: libtool-compile openssl-compile
+ifneq ($(BR2_PACKAGE_FREERADIUS_MOD_LDAP),)
+freeradius-compile: openldap-compile
+endif
+ifneq ($(BR2_PACKAGE_FREERADIUS_MOD_SQL_MYSQL),)
+freeradius-compile: mysql-compile
+endif
+ifneq ($(BR2_PACKAGE_FREERADIUS_MOD_SQL_PGSQL),)
+freeradius-compile: postgresql-compile
 endif
 
 openvpn-compile: openssl-compile
