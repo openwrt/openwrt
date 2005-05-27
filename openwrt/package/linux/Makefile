@@ -1,8 +1,8 @@
 # $Id$
 
 include $(TOPDIR)/rules.mk
-include ./linux.mk
-include ./linux.config
+include ./linux-2.4/linux.mk
+include ./linux-2.4/linux.config
 
 PKG_BUILD_DIR := $(BUILD_DIR)/linux-modules
 PKG_RELEASE := 1
@@ -57,10 +57,19 @@ $(eval $(call KMOD_template,ARPT,arptables,\
 $(eval $(call KMOD_template,EBT,ebtables,\
 	$(MODULES_DIR)/kernel/net/bridge/netfilter/*.o \
 ,CONFIG_BRIDGE_NF_EBTABLES))
-$(eval $(call KMOD_template,IPT4,iptables-extra,\
+$(eval $(call KMOD_template,IPTABLES_V4,iptables,\
+	$(MODULES_DIR)/kernel/net/ipv4/netfilter/ipt_state.o \
+	$(MODULES_DIR)/kernel/net/ipv4/netfilter/iptable_nat.o \
+	$(MODULES_DIR)/kernel/net/ipv4/netfilter/ip_nat_ftp.o \
+	$(MODULES_DIR)/kernel/net/ipv4/netfilter/ipt_conntrack.o \
+	$(MODULES_DIR)/kernel/net/ipv4/netfilter/ip_conntrack.o \
+	$(MODULES_DIR)/kernel/net/ipv4/netfilter/ip_conntrack_ftp.o \
+	$(MODULES_DIR)/kernel/net/ipv4/netfilter/ipt_MASQUERADE.o \
+))
+$(eval $(call KMOD_template,IPTABLES_V4_EXTRA,iptables-extra,\
 	$(MODULES_DIR)/kernel/net/ipv4/netfilter/ip*.o \
 ))
-$(eval $(call KMOD_template,IPT6,ip6tables,\
+$(eval $(call KMOD_template,IPTABLES_V6,ip6tables,\
 	$(MODULES_DIR)/kernel/net/ipv6/netfilter/ip*.o \
 ,CONFIG_IP6_NF_IPTABLES))
 $(eval $(call KMOD_template,IPV6,ipv6,\
@@ -93,6 +102,12 @@ $(eval $(call KMOD_template,USB_STORAGE,usb-storage,\
 $(eval $(call KMOD_template,USB_PRINTER,usb-printer,\
 	$(MODULES_DIR)/kernel/drivers/usb/printer.o \
 ,CONFIG_USB_PRINTER))
+$(eval $(call KMOD_template,LOOP,loop,\
+	$(MODULES_DIR)/kernel/drivers/block/loop.o \
+,CONFIG_BLK_DEV_LOOP))
+$(eval $(call KMOD_template,NBD,nbd,\
+	$(MODULES_DIR)/kernel/drivers/block/nbd.o \
+,CONFIG_BLK_DEV_NBD))
 $(eval $(call KMOD_template,LP,lp,\
 	$(MODULES_DIR)/kernel/drivers/parport/parport.o \
 	$(MODULES_DIR)/kernel/drivers/parport/parport_splink.o \
