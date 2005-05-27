@@ -56,6 +56,7 @@ $(PKG_BUILD_DIR)/.built:
 	mkdir -p $(PKG_INSTALL_DIR)/usr/man/man{1,5,8}
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		PREFIX="$(PKG_INSTALL_DIR)/usr" \
+		RPM_BUILD_ROOT="$(PKG_INSTALL_DIR)" \
 		install
 	touch $@
 
