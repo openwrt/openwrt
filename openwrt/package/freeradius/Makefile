@@ -125,8 +125,9 @@ $(PKG_BUILD_DIR)/.configured:
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS) -I$(STAGING_DIR)/usr/include" \
 		CPPFLAGS="-I$(STAGING_DIR)/usr/include" \
-		LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(PKG_INSTALL_DIR)/usr/lib/freeradius" \
-		lt_sys_lib_search_path_spec="$(STAGING_DIR)/usr/lib" \
+		LDFLAGS="-L$(STAGING_DIR)/usr/lib" \
+		sys_lib_dlsearch_path_spec="$(STAGING_DIR)/lib $(STAGING_DIR)/usr/lib" \
+		sys_lib_search_path_spec="$(STAGING_DIR)/lib $(STAGING_DIR)/usr/lib" \
 		MYSQL_CONFIG="no" \
 		./configure \
 		  --target=$(GNU_TARGET_NAME) \
