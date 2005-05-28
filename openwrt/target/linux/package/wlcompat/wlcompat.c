@@ -485,18 +485,11 @@ static int wlcompat_ioctl(struct net_device *dev,
 					return -EINVAL;
 			}
 			
-			if (wl_ioctl(dev, WLC_SET_PASSIVE, &passive, sizeof(passive)) < 0)
-				return -EINVAL;
-			if (wl_ioctl(dev, WLC_SET_MONITOR, &passive, sizeof(passive)) < 0)
-				return -EINVAL;
-			if (wl_ioctl(dev, WLC_SET_WET, &wet, sizeof(wet)) < 0)
-				return -EINVAL;
-			if (ap >= 0)
-				if (wl_ioctl(dev, WLC_SET_AP, &ap, sizeof(ap)) < 0)
-					return -EINVAL;
-			if (infra >= 0)
-				if (wl_ioctl(dev, WLC_SET_INFRA, &infra, sizeof(infra)) < 0)
-					return -EINVAL;
+			wl_ioctl(dev, WLC_SET_PASSIVE, &passive, sizeof(passive));
+			wl_ioctl(dev, WLC_SET_MONITOR, &passive, sizeof(passive));
+			wl_ioctl(dev, WLC_SET_WET, &wet, sizeof(wet));
+			wl_ioctl(dev, WLC_SET_AP, &ap, sizeof(ap));
+			wl_ioctl(dev, WLC_SET_INFRA, &infra, sizeof(infra));
 
 			break;
 						
