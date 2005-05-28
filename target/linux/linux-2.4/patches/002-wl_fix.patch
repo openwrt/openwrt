@@ -10,7 +10,16 @@ diff -Nur linux-2.4.30/include/linux/netdevice.h linux-2.4.30-wl-fix/include/lin
  
  	/*
  	 * This marks the end of the "visible" part of the structure. All
-@@ -353,7 +353,14 @@
+@@ -352,8 +355,8 @@
+ 
+ 	struct Qdisc		*qdisc;
+ 	struct Qdisc		*qdisc_sleeping;
++	struct Qdisc		*qdisc_list;
+ 	struct Qdisc		*qdisc_ingress;
+-	struct list_head	qdisc_list;
+ 	unsigned long		tx_queue_len;	/* Max frames per queue allowed */
+ 
+ 	/* hard_start_xmit synchronizer */
  	struct Qdisc		*qdisc;
  	struct Qdisc		*qdisc_sleeping;
  	struct Qdisc		*qdisc_ingress;
