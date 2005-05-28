@@ -114,6 +114,7 @@ $(STAGING_DIR)/usr/lib/mysql/libmysqlclient.so: $(PKG_BUILD_DIR)/.built
 	cp -fpR $(PKG_INSTALL_DIR)/usr/include/mysql $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
 	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/mysql $(STAGING_DIR)/usr/lib/
+	rm -f $(STAGING_DIR)/usr/lib/mysql/libmysqlclient.la
 	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/mysql/libmysqlclient.so
