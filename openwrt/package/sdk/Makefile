@@ -74,7 +74,9 @@ $(BIN_DIR)/$(IB_NAME).tar.bz2:
 
 source:
 prepare:
-compile: $(BIN_DIR)/$(SDK_NAME).tar.bz2 $(BIN_DIR)/$(IB_NAME).tar.bz2
+compile: $(BIN_DIR)/$(SDK_NAME).tar.bz2
+# FIXME: image builder disabled for now. need to find a way to make it work cleanly with the new kernel structure
+# $(BIN_DIR)/$(IB_NAME).tar.bz2
 install:
 
 clean:

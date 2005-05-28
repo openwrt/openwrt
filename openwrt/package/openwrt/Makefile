@@ -8,8 +8,6 @@ PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
 PKG_IPK:=$(PACKAGE_DIR)/$(PKG_NAME)_$(PKG_RELEASE)_$(ARCH).ipk
 PKG_IPK_DIR:=$(PKG_BUILD_DIR)/ipkg
 
-PKG_WLCOMPAT := $(PACKAGE_DIR)/kmod-wlcompat_$(LINUX_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
-
 SHARED_INCLUDE:=${shell pwd}/include
 
 libshared-compile libnvram-compile:
@@ -66,36 +64,12 @@ $(PKG_IPK): $(PKG_IPK_DIR)/sbin/mtd $(PKG_IPK_DIR)/sbin/jffs2root $(PKG_IPK_DIR)
 $(IPKG_STATE_DIR)/info/$(PKG_NAME).list: $(PKG_IPK)
 	$(IPKG) install $<
 
-$(IPKG_STATE_DIR)/info/kmod-wlcompat.list: $(PKG_WLCOMPAT)
-	$(IPKG) install $<
-
-
-WLCOMPAT_FLAGS:=$(TARGET_CLFAGS) -D__KERNEL__ -fno-strict-aliasing -fno-common -fomit-frame-pointer -G 0 \
-		-mno-abicalls -fno-pic -finline-limit=100000 -mabi=32 -march=mips32 -Wa,-32 -Wa,-march=mips32 \
-		-Wa,-mips32 -Wa,--trap -DMODULE -mlong-calls -fno-common -I. -I linux-2.4 -funsigned-char -nostdinc \
-		-iwithprefix include -I$(LINUX_DIR)/include -I$(LINUX_DIR)/include/asm/gcc -I./include -c
-		
-$(PKG_BUILD_DIR)/wlcompat.o:
-	$(TARGET_CC) $(WLCOMPAT_FLAGS) -o $@ wlcompat.c
-
-$(PKG_BUILD_DIR)/wlcompat-debug.o:
-	$(TARGET_CC) -DDEBUG $(WLCOMPAT_FLAGS) -o $@ wlcompat.c
-
-$(PKG_WLCOMPAT): $(PKG_BUILD_DIR)/wlcompat.o $(PKG_BUILD_DIR)/wlcompat-debug.o
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_BUILD_DIR)/wlcompat kmod-wlcompat.control $(LINUX_VERSION)-$(PKG_RELEASE) $(ARCH)
-	mkdir -p $(PKG_BUILD_DIR)/wlcompat/etc/modules.d
-	echo "wlcompat" > $(PKG_BUILD_DIR)/wlcompat/etc/modules.d/10-wlcompat
-	mkdir -p $(PKG_BUILD_DIR)/wlcompat/lib/modules/$(LINUX_VERSION)
-	cp $^ $(PKG_BUILD_DIR)/wlcompat/lib/modules/$(LINUX_VERSION)/
-	$(IPKG_BUILD) $(PKG_BUILD_DIR)/wlcompat $(PACKAGE_DIR)
-
 source: $(DL_DIR)/$(LINKSYS_WLCONF_TGZ)
 prepare: $(LINKSYS_WLCONF_DIR)/.unpacked
 compile: prepare libnvram-compile libshared-compile $(PKG_IPK) $(PKG_WLCOMPAT)
 install: libnvram-install libshared-install \
 	 $(TARGET_DIR)/usr/sbin/wlconf \
 	 $(IPKG_STATE_DIR)/info/$(PKG_NAME).list \
-	 $(IPKG_STATE_DIR)/info/kmod-wlcompat.list
 
 clean: libshared-clean libnvram-clean
 	rm -rf $(PKG_BUILD_DIR)

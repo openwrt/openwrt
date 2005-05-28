@@ -5,12 +5,12 @@ TARGET_SKEL_DIR=default/target_skeleton
 
 all: install
 
-define IMAGE_template
-$(BIN_DIR)/openwrt-wrt54g-$(1).bin: $(BIN_DIR)/openwrt-generic-$(patsubst jffs2,jffs2-4MB,$(1)).trx
+define BIN_template
+$(BIN_DIR)/openwrt-wrt54g-$(1).bin: $(BIN_DIR)/openwrt-brcm-2.4-$(patsubst jffs2,jffs2-4MB,$(1)).trx
 	PATH=$(TARGET_PATH) addpattern -2 -i $$< -o $$@ -g
 	$(SED) "1s,^W54S,W54G," $$@
 	
-$(BIN_DIR)/openwrt-wrt54gs-$(1).bin: $(BIN_DIR)/openwrt-generic-$(patsubst jffs2,jffs2-8MB,$(1)).trx
+$(BIN_DIR)/openwrt-wrt54gs-$(1).bin: $(BIN_DIR)/openwrt-brcm-2.4-$(patsubst jffs2,jffs2-8MB,$(1)).trx
 	PATH=$(TARGET_PATH) addpattern -2 -i $$< -o $$@ -g
 	
 ifeq ($(BR2_TARGET_WRT54G),y)
@@ -21,7 +21,7 @@ IMAGE_TARGETS += $(BIN_DIR)/openwrt-wrt54gs-$(1).bin
 endif
 
 
-$(BIN_DIR)/openwrt-motorola-$(1).bin: $(BIN_DIR)/openwrt-generic-$(patsubst jffs2,jffs2-8MB,$(1)).trx
+$(BIN_DIR)/openwrt-motorola-$(1).bin: $(BIN_DIR)/openwrt-brcm-2.4-$(patsubst jffs2,jffs2-8MB,$(1)).trx
 	PATH=$(TARGET_PATH) motorola-bin $$< $$@
 
 ifeq ($(BR2_TARGET_MOTOROLA),y)
@@ -40,7 +40,7 @@ ifeq ($(strip $(BR2_TARGET_ROOTFS_SQUASHFS_LZMA)),y)
 TARGET_DIRS += squashfs-lzma
 TARGET_FS += squashfs
 endif
-$(foreach fs,$(TARGET_FS),$(eval $(call IMAGE_template,$(fs))))
+$(foreach fs,$(TARGET_FS),$(eval $(call BIN_template,$(fs))))
 
 INSTALL_TARGET_DIRS:=$(patsubst %,%-install,$(TARGET_DIRS))
 $(INSTALL_TARGET_DIRS): image_clean $(TARGET_DIR)/etc/sysconf $(BIN_DIR)
@@ -69,11 +69,11 @@ prepare: $(patsubst %,%-prepare,$(TARGET_DIRS))
 $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
 
-$(INSTALL_TARGET_DIRS): lzma-loader-compile
-$(IMAGE_TARGETS): $(patsubst %,%-install,$(TARGET_DIRS))
-compile: $(patsubst %,%-compile,jffs2 lzma squashfs-lzma lzma-loader utils)
-install: utils-install lzma-install $(patsubst %,%-install,$(TARGET_DIRS)) $(IMAGE_TARGETS)
-clean: $(patsubst %,%-clean,$(TARGET_DIRS)) image_clean
+$(INSTALL_TARGET_DIRS): lzma-loader-compile linux-install
+$(IMAGE_TARGETS): $(patsubst %,%-install,$(TARGET_DIRS) linux)
+compile: $(patsubst %,%-compile,jffs2 lzma squashfs-lzma lzma-loader utils linux)
+install: utils-install lzma-install $(patsubst %,%-install,$(TARGET_DIRS) linux) $(IMAGE_TARGETS)
+clean: $(patsubst %,%-clean,$(TARGET_DIRS) linux) image_clean
 
 image_clean:
 	rm -f $(BIN_DIR)/openwrt-*

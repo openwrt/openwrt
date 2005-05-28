@@ -114,7 +114,7 @@ SDK_DEFAULT_PACKAGES:=busybox dnsmasq iptables wireless-tools dropbear bridge ip
 SDK_DEFAULT_COMPILE:=$(patsubst %,%-compile,$(SDK_DEFAULT_PACKAGES))
 
 all: compile install
-clean: $(patsubst %,%-clean,$(package-) $(package-y) $(package-m)) linux-clean
+clean: $(patsubst %,%-clean,$(package-) $(package-y) $(package-m))
 compile: $(patsubst %,%-compile,$(package-y) $(package-m))
 install: $(patsubst %,%-install,$(package-y))
 
@@ -200,7 +200,6 @@ ulogd-compile: postgresql-compile
 endif
 
 sdk-compile: $(DEV_LIBS_COMPILE) $(SDK_DEFAULT_COMPILE) openwrt-install
-$(patsubst %,%-prepare,$(package-y) $(package-m) $(package-)): linux-install
 
 %-prepare:
 	@[ -f $(STAMP_DIR)/.$@ ] || $(MAKE) -C $(patsubst %-prepare,%,$@) prepare
