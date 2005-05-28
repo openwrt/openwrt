@@ -330,3 +330,22 @@ diff -Nur linux-2.4.30/net/sched/sch_generic.c linux-2.4.30-wl-fix/net/sched/sch
  	BUG_TRAP(!timer_pending(&dev->watchdog_timer));
  	spin_unlock_bh(&dev->queue_lock);
  	write_unlock(&qdisc_tree_lock);
+diff -urN linux.old/net/core/dev.c linux.dev/net/core/dev.c
+--- linux.old/net/core/dev.c	2005-05-28 17:42:07.000000000 +0200
++++ linux.dev/net/core/dev.c	2005-05-28 20:38:06.000000000 +0200
+@@ -2223,6 +2223,7 @@
+ 			    cmd == SIOCGMIIPHY ||
+ 			    cmd == SIOCGMIIREG ||
+ 			    cmd == SIOCSMIIREG ||
++			    cmd == SIOCETHTOOL ||
+ 			    cmd == SIOCWANDEV) {
+ 				if (dev->do_ioctl) {
+ 					if (!netif_device_present(dev))
+@@ -2405,6 +2406,7 @@
+ 		 
+ 		default:
+ 			if (cmd == SIOCWANDEV ||
++			    (cmd == SIOCETHTOOL) ||
+ 			    (cmd >= SIOCDEVPRIVATE &&
+ 			     cmd <= SIOCDEVPRIVATE + 15)) {
+ 				dev_load(ifr.ifr_name);
