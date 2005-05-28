@@ -1,0 +1,7 @@
+config BR2_PACKAGE_KMOD_WLCOMPAT
+	tristate "kmod-wlcompat"
+	default y
+	depends BR2_PACKAGE_KMOD_BRCM_WL
+	help
+	  A wrapper module, that provides Wireless Extension support for the
+	  proprietary Broadcom wl module.

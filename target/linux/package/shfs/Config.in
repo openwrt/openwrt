@@ -1,12 +1,5 @@
-config BR2_PACKAGE_SHFS
-	bool
-	default n
-	depends BR2_PACKAGE_SHFS_UTILS
-
-
-config BR2_PACKAGE_SHFS_UTILS
-	select BR2_PACKAGE_KMOD_SHFS
-	prompt "shfs-utils - ShFS mount/umount utilities"
+config BR2_PACKAGE_KMOD_SHFS
+	prompt "kmod-shfs - Shell FileSystem kernel module (ShFS) kernel module"
 	tristate
 	default m if CONFIG_DEVEL
 	help
@@ -28,6 +21,4 @@ config BR2_PACKAGE_SHFS_UTILS
 	  
 	  http://shfs.sourceforge.net/
 	  
-	  This package contains the shfs mount/umount utilities.
-	  
-
+	  This package contains the shfs.o kernel module.

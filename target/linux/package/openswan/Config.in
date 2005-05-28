@@ -1,0 +1,9 @@
+config BR2_PACKAGE_KMOD_OPENSWAN
+	tristate "kmod-openswan Openswan kernel module"
+	default m if CONFIG_DEVEL
+	help
+	  Openswan is an implementation of IPsec for Linux.
+	  
+	  http://www.openswan.org/
+	  
+	  This package contains the Openswan IPSec module for the kernel

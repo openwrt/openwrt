@@ -69,13 +69,8 @@ TARGET_CC:=$(TARGET_CROSS)gcc
 STRIP:=$(STAGING_DIR)/bin/sstrip
 PATCH=$(SCRIPT_DIR)/patch-kernel.sh
 SED:=$(STAGING_DIR)/bin/sed -i -e
-LINUX_VERSION=2.4.30
 LINUX_DIR:=$(BUILD_DIR)/linux
 LINUX_HEADERS_DIR:=$(TOOL_BUILD_DIR)/linux
-LINUX_KERNEL:=$(BUILD_DIR)/buildroot-kernel
-LINUX_IMAGE:=$(BUILD_DIR)/buildroot-kernel-image
-MODULES_SUBDIR := lib/modules/$(LINUX_VERSION)
-MODULES_DIR := $(BUILD_DIR)/modules/$(MODULES_SUBDIR)
 
 
 HOST_ARCH:=$(shell $(HOSTCC) -dumpmachine | sed -e s'/-.*//' \

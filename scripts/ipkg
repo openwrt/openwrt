@@ -117,7 +117,9 @@ Valid destinations are directories or one of the dest names from $IPKG_CONF:" >&
 	IPKG_DIR_PREFIX=usr/lib/ipkg
 	IPKG_LISTS_DIR=$IPKG_OFFLINE_ROOT/$IPKG_DIR_PREFIX/lists
 	IPKG_PENDING_DIR=$IPKG_OFFLINE_ROOT/$IPKG_DIR_PREFIX/pending
-	IPKG_TMP=$IPKG_ROOT/tmp/ipkg
+	if [ -z "$IPKG_TMP" ]; then
+		IPKG_TMP=$IPKG_ROOT/tmp/ipkg
+	fi
 
 	# Destination specific ipkg meta-data directory
 	IPKG_STATE_DIR=$IPKG_ROOT/$IPKG_DIR_PREFIX
@@ -546,20 +548,20 @@ ipkg_set_depends() {
 	local new_deps="$*"
 	pkg="`ipkg_safe_pkg_name $pkg`"
 	## setvar ${pkg}_depends "$new_deps"
-	echo $new_deps > /tmp/ipkg/${pkg}.depends
+	echo $new_deps > $IPKG_TMP/${pkg}.depends
 }
 
 ipkg_get_depends() {
 	local pkg=$1
 	pkg="`ipkg_safe_pkg_name $pkg`"
-	cat /tmp/ipkg/${pkg}.depends
+	cat $IPKG_TMP/${pkg}.depends
 	## eval "echo \$${pkg}_depends"
 }
 
 ipkg_set_installed() {
 	local pkg=$1
 	pkg="`ipkg_safe_pkg_name $pkg`"
-	echo installed > /tmp/ipkg/${pkg}.installed
+	echo installed > $IPKG_TMP/${pkg}.installed
 	## setvar ${pkg}_installed "installed"
 }
 
@@ -567,15 +569,15 @@ ipkg_set_uninstalled() {
 	local pkg=$1
 	pkg="`ipkg_safe_pkg_name $pkg`"
 	### echo ipkg_set_uninstalled $pkg > /dev/console
-	echo uninstalled > /tmp/ipkg/${pkg}.installed
+	echo uninstalled > $IPKG_TMP/${pkg}.installed
 	## setvar ${pkg}_installed "uninstalled"
 }
 
 ipkg_get_installed() {
 	local pkg=$1
 	pkg="`ipkg_safe_pkg_name $pkg`"
-	if [ -f /tmp/ipkg/${pkg}.installed ]; then
-		cat /tmp/ipkg/${pkg}.installed
+	if [ -f $IPKG_TMP/${pkg}.installed ]; then
+		cat $IPKG_TMP/${pkg}.installed
 	fi
 	## eval "echo \$${pkg}_installed"
 }
