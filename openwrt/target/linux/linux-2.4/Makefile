@@ -212,6 +212,7 @@ source: $(DL_DIR)/$(LINUX_SOURCE)
 prepare: $(LINUX_DIR)/.configured
 compile: $(LINUX_DIR)/.modules_done $(TARGETS)
 	$(MAKE) -C $(TOPDIR)/target/linux/package \
+		TARGET_DIR="$(LINUX_TARGET_DIR)" \
 		BUILD_DIR="$(LINUX_BUILD_DIR)" \
 		KERNEL_DIR="$(LINUX_SOURCE_DIR)" \
 		LINUX_VERSION="$(LINUX_VERSION)"
