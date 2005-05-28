@@ -1,0 +1,34 @@
+# $Id$
+
+include $(TOPDIR)/rules.mk
+
+PKG_NAME := kmod-wlcompat
+PKG_RELEASE := 1
+PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
+
+include $(TOPDIR)/package/rules.mk
+
+ifeq ($(patsubst 2.4%,2.4,$(LINUX_VERSION)),2.4)
+$(eval $(call PKG_template,KMOD_WLCOMPAT,$(PKG_NAME),$(KERNEL_VERSION)-$(PKG_RELEASE),$(ARCH)))
+endif
+
+WLCOMPAT_FLAGS:=$(TARGET_CLFAGS) -D__KERNEL__ -fno-strict-aliasing -fno-common -fomit-frame-pointer -G 0 \
+		-mno-abicalls -fno-pic -finline-limit=100000 -mabi=32 -march=mips32 -Wa,-32 -Wa,-march=mips32 \
+		-Wa,-mips32 -Wa,--trap -DMODULE -mlong-calls -fno-common -I. -I linux-2.4 -funsigned-char -nostdinc \
+		-iwithprefix include -I$(LINUX_DIR)/include -I$(LINUX_DIR)/include/asm/gcc -I./include -c
+	
+$(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/wlcompat.o $(PKG_BUILD_DIR)/wlcompat-debug.o
+	touch $@
+	
+$(PKG_BUILD_DIR)/wlcompat.o:
+	$(TARGET_CC) $(WLCOMPAT_FLAGS) -o $@ wlcompat.c
+
+$(PKG_BUILD_DIR)/wlcompat-debug.o:
+	$(TARGET_CC) -DDEBUG $(WLCOMPAT_FLAGS) -o $@ wlcompat.c
+
+$(IPKG_KMOD_WLCOMPAT): $(PKG_BUILD_DIR)/wlcompat.o $(PKG_BUILD_DIR)/wlcompat-debug.o
+	mkdir -p $(IDIR_WLCOMPAT)/etc/modules.d
+	echo "wlcompat" > $(IDIR_WLCOMPAT)/etc/modules.d/10-wlcompat
+	mkdir -p $(IDIR_WLCOMPAT)/lib/modules/$(LINUX_VERSION)
+	cp $^ $(IDIR_WLCOMPAT)/lib/modules/$(LINUX_VERSION)/
+	$(IPKG_BUILD) $(IDIR_WLCOMPAT) $(PACKAGE_DIR)

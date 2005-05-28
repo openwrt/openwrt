@@ -1,16 +1,36 @@
 include $(TOPDIR)/rules.mk
-include ./squashfslzmaroot.mk
 
-SQUASHFS_TARGETS:=$(BIN_DIR)/openwrt-generic-squashfs.trx
+SQUASHFSLZMA_DIR=$(BUILD_DIR)/squashfs2.1-r2
+SQUASHFSLZMA_SOURCE=squashfs2.1-r2.tar.gz
+SQUASHFSLZMA_SITE=@SF/squashfs
+SQUASHFSLZMA_MD5SUM=ffa24eff13b2ca51ed6990d15237e4c1
 
+$(DL_DIR)/$(SQUASHFSLZMA_SOURCE):
+	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(SQUASHFSLZMA_SOURCE) $(SQUASHFSLZMA_MD5SUM) $(SQUASHFSLZMA_SITE)
+
+$(SQUASHFSLZMA_DIR)/.unpacked: $(DL_DIR)/$(SQUASHFSLZMA_SOURCE) 
+	zcat $(DL_DIR)/$(SQUASHFSLZMA_SOURCE) | tar -C $(BUILD_DIR) -xvf -
+	$(PATCH) $(SQUASHFSLZMA_DIR) ./patches
+	touch $(SQUASHFSLZMA_DIR)/.unpacked
+
+$(SQUASHFSLZMA_DIR)/squashfs-tools/mksquashfs-lzma: $(SQUASHFSLZMA_DIR)/.unpacked
+	$(MAKE) -C $(SQUASHFSLZMA_DIR)/squashfs-tools mksquashfs-lzma LZMAPATH=$(BUILD_DIR)/lzma
+
+$(STAGING_DIR)/bin/mksquashfs-lzma: $(SQUASHFSLZMA_DIR)/squashfs-tools/mksquashfs-lzma
+	cp $< $@
+
+source: $(DL_DIR)/$(SQUASHFSLZMA_SOURCE)
 prepare: $(SQUASHFSLZMA_DIR)/.unpacked
-compile: squashfslzma
-install: $(SQUASHFS_TARGETS)
-clean: squashfslzmaroot-dirclean
+compile: $(SQUASHFSLZMA_DIR)/squashfs-tools/mksquashfs-lzma $(STAGING_DIR)/bin/mksquashfs-lzma
+install:
+clean: 
+	rm -rf $(SQUASHFSLZMA_DIR)
 
-$(BIN_DIR)/openwrt-generic-squashfs.trx:
-	@mkdir -p $(TARGET_DIR)/jffs
-	PATH=$(TARGET_PATH) mksquashfs-lzma $(TARGET_DIR) $(IMAGE).squashfslzma -noappend -root-owned -le
+FILESYSTEMS:=squashfs
+define squashfs_template
+	@mkdir -p $(1)/root/jffs
+	PATH=$(TARGET_PATH) mksquashfs-lzma $(1)/root $(1)/root.squashfs -noappend -root-owned -le
 	PATH=$(TARGET_PATH) trx -o $@ $(BUILD_DIR)/loader.gz \
-	 $(LINUX_IMAGE) $(IMAGE).squashfslzma
-	 
+		$(1)/kernel-image $(1)/root.squashfs
+endef
+include ../image.mk

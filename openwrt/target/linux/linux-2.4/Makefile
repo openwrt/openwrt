@@ -1,0 +1,228 @@
+#############################################################
+# $Id$
+#
+# Linux 2.4 kernel target for the OpenWRT project
+#
+# patches are sorted by numbers
+# 0xx	needed patches for board, cpu, filesystem
+# 1xx	addon patches for new features (netfilter, ebtables, cifs,..)
+# 2xx	compile fixes, driver fixes
+#
+#############################################################
+
+include $(TOPDIR)/rules.mk
+include ../rules.mk
+
+# for testing
+ifeq ($(BOARD),)
+BOARD:=brcm
+endif
+
+LINUX_VERSION:=2.4.30
+MODULES_SUBDIR:=lib/modules/$(LINUX_VERSION)
+LINUX_KCONFIG:=./config/$(BOARD)
+LINUX_BUILD_DIR:=$(BUILD_DIR)/linux-2.4-$(BOARD)
+LINUX_TARGET_DIR:=$(LINUX_BUILD_DIR)/root
+LINUX_KERNEL:=$(LINUX_BUILD_DIR)/vmlinux
+LINUX_IMAGE:=$(LINUX_BUILD_DIR)/kernel-image
+LINUX_FORMAT=zImage
+LINUX_KARCH:=$(shell echo $(ARCH) | sed -e 's/i[3-9]86/i386/' \
+	-e 's/mipsel/mips/' \
+	-e 's/powerpc/ppc/' \
+	-e 's/sh[234]/sh/' \
+	)
+
+LINUX_BINARY_DRIVER_SITE := http://openwrt.org/downloads/
+LINUX_SOURCE := linux-$(LINUX_VERSION).tar.bz2
+LINUX_BINLOC := arch/$(LINUX_KARCH)/bcm947xx/compressed/piggy
+LINUX_SOURCE_DIR := $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION)
+MODULES_DIR := $(LINUX_BUILD_DIR)/modules/$(MODULES_SUBDIR)
+TARGET_MODULES_DIR := $(TARGET_DIR)/lib/modules/$(LINUX_VERSION)
+IPKG_KERNEL:=IPKG_TMP=$(BUILD_DIR)/tmp IPKG_INSTROOT=$(LINUX_TARGET_DIR) IPKG_CONF_DIR=$(LINUX_BUILD_DIR) $(SCRIPT_DIR)/ipkg -force-defaults -force-depends
+
+include $(LINUX_KCONFIG)
+ifeq ($(BOARD),brcm)
+include ./broadcom.mk
+endif
+
+PKG_BUILD_DIR := $(LINUX_BUILD_DIR)/linux-modules
+PKG_RELEASE := 1
+
+TARGETS := 
+INSTALL_TARGETS := 
+
+$(eval $(call KMOD_template,DIAG,diag,\
+	$(MODULES_DIR)/kernel/drivers/net/diag/diag.o \
+))
+$(eval $(call KMOD_template,BRCM_WL,brcm-wl,\
+	$(MODULES_DIR)/kernel/drivers/net/wl/wl.o \
+,CONFIG_WL))
+$(eval $(call KMOD_template,B44,b44,\
+	$(MODULES_DIR)/kernel/drivers/net/b44.o \
+,CONFIG_B44))
+$(eval $(call KMOD_template,BRCM_ET,brcm-et,\
+	$(MODULES_DIR)/kernel/drivers/net/et/et.o \
+,CONFIG_ET))
+$(eval $(call KMOD_template,ARPT,arptables,\
+	$(MODULES_DIR)/kernel/net/ipv4/netfilter/arp*.o \
+,CONFIG_IP_NF_ARPTABLES))
+$(eval $(call KMOD_template,EBT,ebtables,\
+	$(MODULES_DIR)/kernel/net/bridge/netfilter/*.o \
+,CONFIG_BRIDGE_NF_EBTABLES))
+$(eval $(call KMOD_template,IPT4,iptables-extra,\
+	$(MODULES_DIR)/kernel/net/ipv4/netfilter/ip*.o \
+))
+$(eval $(call KMOD_template,IPT6,ip6tables,\
+	$(MODULES_DIR)/kernel/net/ipv6/netfilter/ip*.o \
+,CONFIG_IP6_NF_IPTABLES))
+$(eval $(call KMOD_template,IPV6,ipv6,\
+	$(MODULES_DIR)/kernel/net/ipv6/ipv6.o \
+,CONFIG_IPV6))
+$(eval $(call KMOD_template,CIFS,cifs,\
+	$(MODULES_DIR)/kernel/fs/cifs/cifs.o \
+,CONFIG_CIFS))
+$(eval $(call KMOD_template,NFS,nfs,\
+	$(MODULES_DIR)/kernel/fs/lockd/*.o \
+	$(MODULES_DIR)/kernel/fs/nfs/*.o \
+	$(MODULES_DIR)/kernel/net/sunrpc/*.o \
+,CONFIG_NFS_FS))
+$(eval $(call KMOD_template,USB,usb-core,\
+	$(MODULES_DIR)/kernel/drivers/usb/usbcore.o \
+,CONFIG_USB))
+$(eval $(call KMOD_template,USB_UHCI,usb-uhci,\
+	$(MODULES_DIR)/kernel/drivers/usb/host/uhci.o \
+,CONFIG_USB_UHCI_ALT))
+$(eval $(call KMOD_template,USB_OHCI,usb-ohci,\
+	$(MODULES_DIR)/kernel/drivers/usb/host/usb-ohci.o \
+,CONFIG_USB_OHCI))
+$(eval $(call KMOD_template,USB2,usb2,\
+	$(MODULES_DIR)/kernel/drivers/usb/host/ehci-hcd.o \
+,CONFIG_USB_EHCI_HCD))
+$(eval $(call KMOD_template,USB_STORAGE,usb-storage,\
+	$(MODULES_DIR)/kernel/drivers/scsi/*.o \
+	$(MODULES_DIR)/kernel/drivers/usb/storage/*.o \
+,CONFIG_USB_STORAGE))
+$(eval $(call KMOD_template,USB_PRINTER,usb-printer,\
+	$(MODULES_DIR)/kernel/drivers/usb/printer.o \
+,CONFIG_USB_PRINTER))
+$(eval $(call KMOD_template,LP,lp,\
+	$(MODULES_DIR)/kernel/drivers/parport/parport.o \
+	$(MODULES_DIR)/kernel/drivers/parport/parport_splink.o \
+	$(MODULES_DIR)/kernel/drivers/char/lp.o \
+,CONFIG_PARPORT))
+$(eval $(call KMOD_template,IDE,ide,\
+	$(MODULES_DIR)/kernel/drivers/ide/*.o \
+	$(MODULES_DIR)/kernel/drivers/ide/*/*.o \
+,CONFIG_IDE))
+$(eval $(call KMOD_template,EXT2,ext2,\
+	$(MODULES_DIR)/kernel/fs/ext2/*.o \
+,CONFIG_EXT2_FS))
+$(eval $(call KMOD_template,EXT3,ext3,\
+	$(MODULES_DIR)/kernel/fs/ext3/*.o \
+	$(MODULES_DIR)/kernel/fs/jbd/*.o \
+,CONFIG_EXT3_FS))
+$(eval $(call KMOD_template,XFS,xfs,\
+	$(MODULES_DIR)/kernel/fs/xfs/*.o \
+,CONFIG_XFS_FS))
+$(eval $(call KMOD_template,HFSPLUS,hfsplus,\
+	$(MODULES_DIR)/kernel/fs/hfsplus/*.o \
+,CONFIG_HFSPLUS_FS))
+$(eval $(call KMOD_template,VFAT,vfat,\
+	$(MODULES_DIR)/kernel/fs/vfat/vfat.o \
+	$(MODULES_DIR)/kernel/fs/fat/fat.o \
+,CONFIG_VFAT_FS))
+$(eval $(call KMOD_template,CRYPTO,crypto,\
+	$(MODULES_DIR)/kernel/crypto/*.o \
+))
+$(eval $(call KMOD_template,PPP,ppp,\
+	$(MODULES_DIR)/kernel/drivers/net/ppp_async.o \
+	$(MODULES_DIR)/kernel/drivers/net/ppp_generic.o \
+	$(MODULES_DIR)/kernel/drivers/net/slhc.o \
+,CONFIG_PPP))
+$(eval $(call KMOD_template,MPPE,mppe,\
+	$(MODULES_DIR)/kernel/drivers/net/ppp_mppe_mppc.o \
+,CONFIG_PPP_MPPE_MPPC))
+$(eval $(call KMOD_template,PPPOE,pppoe,\
+	$(MODULES_DIR)/kernel/drivers/net/pppoe.o \
+	$(MODULES_DIR)/kernel/drivers/net/pppox.o \
+,CONFIG_PPPOE))
+$(eval $(call KMOD_template,TUN,tun,\
+	$(MODULES_DIR)/kernel/drivers/net/tun.o \
+,CONFIG_TUN))
+$(eval $(call KMOD_template,GRE,gre,\
+	$(MODULES_DIR)/kernel/net/ipv4/ip_gre.o \
+,CONFIG_NET_IPGRE))
+$(eval $(call KMOD_template,SCHED,sched,\
+	$(MODULES_DIR)/kernel/net/sched/*.o \
+))
+
+$(TARGETS): $(PACKAGE_DIR)
+
+$(PACKAGE_DIR):
+	mkdir -p $(PACKAGE_DIR)
+
+$(LINUX_DIR)/.unpacked: $(DL_DIR)/$(LINUX_SOURCE) $(DL_DIR)/$(LINUX_BINARY_WL_DRIVER) $(DL_DIR)/$(LINUX_ET_DRIVER)
+	-mkdir -p $(LINUX_BUILD_DIR)
+	bzcat $(DL_DIR)/$(LINUX_SOURCE) | tar -C $(LINUX_BUILD_DIR) $(TAR_OPTIONS) -
+	ln -sf $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION) $(LINUX_DIR)
+	touch $(LINUX_DIR)/.unpacked
+
+$(LINUX_DIR)/.patched: $(LINUX_DIR)/.unpacked
+	$(PATCH) $(LINUX_DIR) ./patches
+	touch $(LINUX_DIR)/.patched
+
+$(LINUX_DIR)/.configured: $(LINUX_DIR)/.patched
+	-cp $(LINUX_KCONFIG) $(LINUX_DIR)/.config
+	$(SED) "s,^CROSS_COMPILE.*,CROSS_COMPILE=$(KERNEL_CROSS),g;" \
+	  $(LINUX_DIR)/Makefile  \
+	  $(LINUX_DIR)/arch/mips/Makefile
+	$(SED) "s,\-mcpu=,\-mtune=,g;" $(LINUX_DIR)/arch/mips/Makefile
+	$(MAKE) -C $(LINUX_DIR) ARCH=$(LINUX_KARCH) oldconfig include/linux/version.h
+	touch $(LINUX_DIR)/.configured
+
+$(LINUX_DIR)/.depend_done:  $(LINUX_DIR)/.configured
+	$(MAKE) -C $(LINUX_DIR) ARCH=$(LINUX_KARCH) dep
+	touch $(LINUX_DIR)/.depend_done
+
+$(LINUX_DIR)/$(LINUX_BINLOC): $(LINUX_DIR)/.depend_done
+	$(MAKE) -C $(LINUX_DIR) ARCH=$(LINUX_KARCH) PATH=$(TARGET_PATH) CFLAGS_KERNEL="-fno-delayed-branch " $(LINUX_FORMAT)
+
+$(LINUX_KERNEL): $(LINUX_DIR)/$(LINUX_BINLOC)
+	cp -fa $< $@ 
+	touch -c $(LINUX_KERNEL)
+	
+$(LINUX_IMAGE): $(LINUX_KERNEL)
+	cat $^ | $(BUILD_DIR)/lzma/lzma e -si -so -eos > $@ || (rm -f $@ && false)
+
+$(LINUX_DIR)/.modules_done: $(LINUX_KERNEL) $(LINUX_IMAGE)
+	rm -rf $(LINUX_BUILD_DIR)/modules
+	$(MAKE) -C $(LINUX_DIR) ARCH=$(LINUX_KARCH) PATH=$(TARGET_PATH) CFLAGS_KERNEL="-fno-delayed-branch " modules
+	$(MAKE) -C $(LINUX_DIR) DEPMOD=true INSTALL_MOD_PATH=$(LINUX_BUILD_DIR)/modules modules_install
+	touch $(LINUX_DIR)/.modules_done
+
+$(STAGING_DIR)/include/linux/version.h: $(LINUX_DIR)/.configured
+	mkdir -p $(STAGING_DIR)/include
+	tar -ch -C $(LINUX_DIR)/include -f - linux | tar -xf - -C $(STAGING_DIR)/include/
+	tar -ch -C $(LINUX_DIR)/include -f - asm | tar -xf - -C $(STAGING_DIR)/include/
+
+$(TARGET_MODULES_DIR): 
+	-mkdir -p $(TARGET_MODULES_DIR)
+
+source: $(DL_DIR)/$(LINUX_SOURCE)
+prepare: $(LINUX_DIR)/.configured
+compile: $(LINUX_DIR)/.modules_done $(TARGETS)
+	$(MAKE) -C $(TOPDIR)/target/linux/package \
+		BUILD_DIR="$(LINUX_BUILD_DIR)" \
+		KERNEL_DIR="$(LINUX_SOURCE_DIR)" \
+		LINUX_VERSION="$(LINUX_VERSION)"
+
+install: compile $(TARGET_MODULES_DIR)
+	rm -rf $(LINUX_BUILD_DIR)/root*
+	cp -a $(BUILD_DIR)/root $(LINUX_BUILD_DIR)/
+	echo -e 'dest root /\noption offline_root $(LINUX_BUILD_DIR)/root' > $(LINUX_BUILD_DIR)/ipkg.conf
+	[ "$(INSTALL_TARGETS)" != "" ] && $(IPKG_KERNEL) install $(INSTALL_TARGETS) || true
+
+clean:
+	rm -f $(LINUX_KERNEL) $(LINUX_IMAGE)
+	rm -rf $(LINUX_BUILD_DIR)
+	rm -f $(TARGETS)

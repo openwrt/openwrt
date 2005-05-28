@@ -14,25 +14,8 @@ menu "Target Root Filesystem"
 
 endmenu
 
-menu "Device Support"
+menu "Kernel Configuration / Device Support"
 
-	config BR2_TARGET_DEFAULT
-		default y
-		bool "Generic"
-
-	config BR2_TARGET_WRT54G
-		default y
-		select BR2_TARGET_DEFAULT
-		bool "Linksys WRT54G"
-
-	config BR2_TARGET_WRT54GS
-		default y
-		select BR2_TARGET_DEFAULT
-		bool "Linksys WRT54GS"
-	
-	config BR2_TARGET_MOTOROLA
-		default y
-		select BR2_TARGET_DEFAULT
-		bool "Motorola"
+source "target/linux/Config.in"
 
 endmenu
