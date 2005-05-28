@@ -4,6 +4,9 @@ include $(TOPDIR)/rules.mk
 package-$(BR2_PACKAGE_KMOD_FUSE) += fuse
 package-$(BR2_PACKAGE_KMOD_SHFS) += shfs
 package-$(BR2_PACKAGE_KMOD_OPENSWAN) += openswan
+ifeq ($(LINUX_VERSION),2.4.30)
+package-$(BR2_PACKAGE_KMOD_WLCOMPAT) += wlcompat
+endif
 
 all: compile install
 clean: $(patsubst %,%-clean,$(package-) $(package-y) $(package-m))
@@ -12,6 +15,7 @@ install: $(patsubst %,%-install,$(package-y))
 
 %-prepare:
 	$(MAKE) -C $(patsubst %-prepare,%,$@) \
+		TARGET_DIR="$(TARGET_DIR)" \
 		BUILD_DIR="$(BUILD_DIR)" \
 		KERNEL_DIR="$(KERNEL_DIR)" \
 		LINUX_VERSION="$(LINUX_VERSION)" \
@@ -19,6 +23,7 @@ install: $(patsubst %,%-install,$(package-y))
 
 %-compile: %-prepare 
 	$(MAKE) -C $(patsubst %-compile,%,$@) \
+		TARGET_DIR="$(TARGET_DIR)" \
 		BUILD_DIR="$(BUILD_DIR)" \
 		KERNEL_DIR="$(KERNEL_DIR)" \
 		LINUX_VERSION="$(LINUX_VERSION)" \
@@ -26,6 +31,7 @@ install: $(patsubst %,%-install,$(package-y))
 
 %-install: %-compile
 	$(MAKE) -C $(patsubst %-install,%,$@) \
+		TARGET_DIR="$(TARGET_DIR)" \
 		BUILD_DIR="$(BUILD_DIR)" \
 		KERNEL_DIR="$(KERNEL_DIR)" \
 		LINUX_VERSION="$(LINUX_VERSION)" \
