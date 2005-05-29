@@ -193,7 +193,7 @@ $(LINUX_KERNEL): $(LINUX_DIR)/$(LINUX_BINLOC)
 	touch -c $(LINUX_KERNEL)
 	
 $(LINUX_IMAGE): $(LINUX_KERNEL)
-	cat $^ | $(BUILD_DIR)/lzma/lzma e -si -so -eos > $@ || (rm -f $@ && false)
+	cat $^ | $(BUILD_DIR)/lzma/lzma e -si -so -eos -lc1 -lp2 -pb2 > $@ || (rm -f $@ && false)
 
 $(LINUX_DIR)/.modules_done: $(LINUX_KERNEL) $(LINUX_IMAGE)
 	rm -rf $(LINUX_BUILD_DIR)/modules
