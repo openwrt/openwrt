@@ -10,8 +10,8 @@ LINUX_BINARY_DRIVER_SITE=http://openwrt.org/downloads/
 # proprietary driver, extracted from asus GPL sourcetree GPL_1941.zip
 LINUX_BINARY_WL_DRIVER=kernel-binary-wl-0.3.tar.gz
 LINUX_BINARY_WL_MD5SUM=cc45df670bcfb4e74a709b9d7beba636
-LINUX_ET_DRIVER=kernel-source-et-0.8.tar.gz
-LINUX_ET_MD5SUM=6a5cedaf88c7660380e0ac8c89fc6318
+LINUX_ET_DRIVER=kernel-source-et-0.9.tar.gz
+LINUX_ET_MD5SUM=eba31483e5ff4f8420827538ab452b7c
 
 $(DL_DIR)/$(LINUX_BINARY_WL_DRIVER):
 	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(LINUX_BINARY_WL_DRIVER) $(LINUX_BINARY_WL_MD5SUM) $(LINUX_BINARY_DRIVER_SITE)
