@@ -65,7 +65,7 @@ $(IPKG_LIBUSB):
 	$(RSTRIP) $(IDIR_LIBUSB)
 	$(IPKG_BUILD) $(IDIR_LIBUSB) $(PACKAGE_DIR)
 
-$(STAGING_DIR)/usr/lib/libusb.so: $(PKG_BUILD_DIR)/.libs/libusb.so
+$(STAGING_DIR)/usr/lib/libusb.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/bin
 	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/libusb-config $(STAGING_DIR)/usr/bin/
 	mkdir -p $(STAGING_DIR)/usr/include
