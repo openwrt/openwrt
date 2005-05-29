@@ -20,20 +20,6 @@ diff -Nur linux-2.4.30/include/linux/netdevice.h linux-2.4.30-wl-fix/include/lin
  	unsigned long		tx_queue_len;	/* Max frames per queue allowed */
  
  	/* hard_start_xmit synchronizer */
- 	struct Qdisc		*qdisc;
- 	struct Qdisc		*qdisc_sleeping;
- 	struct Qdisc		*qdisc_ingress;
-+	/*
-+	 * this is needed for the wlan driver binary blob from linksys
-+	 */
-+#ifdef CONFIG_BCM4710
-+	struct Qdisc            *qdisc_list;
-+#else
- 	struct list_head	qdisc_list;
-+#endif
- 	unsigned long		tx_queue_len;	/* Max frames per queue allowed */
- 
- 	/* hard_start_xmit synchronizer */
 @@ -453,6 +460,7 @@
  	/* this will get initialized at each interface type init routine */
  	struct divert_blk	*divert;
