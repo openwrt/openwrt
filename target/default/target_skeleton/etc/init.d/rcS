@@ -1,6 +1,8 @@
 #!/bin/sh
 syslogd -C 16
 klogd
+${FAILSAFE:+telnetd -l /bin/login; ifup lan; exit}
+
 for i in /etc/init.d/S*; do
   $i start 2>&1
 done | logger -s -p 6 -t ''
