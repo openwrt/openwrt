@@ -6,12 +6,12 @@ config BR2_PACKAGE_NET_SNMP
 	depends BR2_PACKAGE_LIBNETSNMP
 
 config BR2_PACKAGE_LIBNETSNMP
-	prompt "libnetsnmp - SNMP libraries"
+	prompt "libnetsnmp - SNMP shared libraries"
 	tristate
 	default m if CONFIG_DEVEL
 	select BR2_PACKAGE_NET_SNMP
+	select BR2_PACKAGE_LIBELF
 	help
-	  
 	  Simple Network Management Protocol (SNMP) is a widely used 
 	  protocol for monitoring the health and welfare of network 
 	  equipment (eg. routers), computer equipment and even devices 
@@ -24,15 +24,37 @@ config BR2_PACKAGE_LIBNETSNMP
 	  
 
 config BR2_PACKAGE_SNMPD
-	depends BR2_PACKAGE_LIBNETSNMP
 	prompt "snmpd - SNMP agent"
 	tristate
+	select BR2_PACKAGE_LIBNETSNMP
 	default m if CONFIG_DEVEL
+	help
+	  Simple Network Management Protocol (SNMP) is a widely used 
+	  protocol for monitoring the health and welfare of network 
+	  equipment (eg. routers), computer equipment and even devices 
+	  like UPSs. Net-SNMP is a suite of applications used to implement 
+	  SNMP v1, SNMP v2c and SNMP v3 using both IPv4 and IPv6.
+	  
+	  http://www.net-snmp.org/
+	  
+	  This package contains the SNMP agent.
+	  
 
 config BR2_PACKAGE_SNMP_UTILS
-	depends BR2_PACKAGE_LIBNETSNMP
 	prompt "snmp-utils - SNMP client utilities"
 	tristate
+	select BR2_PACKAGE_LIBNETSNMP
 	default m if CONFIG_DEVEL
+	help
+	  Simple Network Management Protocol (SNMP) is a widely used 
+	  protocol for monitoring the health and welfare of network 
+	  equipment (eg. routers), computer equipment and even devices 
+	  like UPSs. Net-SNMP is a suite of applications used to implement 
+	  SNMP v1, SNMP v2c and SNMP v3 using both IPv4 and IPv6.
+	  
+	  http://www.net-snmp.org/
+	  
+	  This package contains the SNMP client utilities.
+	  
 
 endmenu
