@@ -5,7 +5,7 @@ diff -Nurb busybox-1.00/include/usage.h busybox-1.00-patched/include/usage.h
  	"\t-n,\t--now\tExit with failure if lease cannot be immediately negotiated.\n" \
  	"\t-p,\t--pidfile=file\tStore process ID of daemon in file\n" \
  	"\t-q,\t--quit\tQuit after obtaining lease\n" \
-+	"\t-R\t--release\tRelease IP on quit\n" \
++	"\t-R,\t--release\tRelease IP on quit\n" \
  	"\t-r,\t--request=IP\tIP address to request (default: none)\n" \
  	"\t-s,\t--script=file\tRun file at dhcp events (default: /usr/share/udhcpc/default.script)\n" \
  	"\t-v,\t--version\tDisplay version"
@@ -36,6 +36,15 @@ diff -Nurb busybox-1.00/networking/udhcp/dhcpc.c busybox-1.00-patched/networking
  		{"request",	required_argument,	0, 'r'},
  		{"script",	required_argument,	0, 's'},
  		{"version",	no_argument,		0, 'v'},
+@@ -214,7 +214,7 @@
+ 	/* get options */
+ 	while (1) {
+ 		int option_index = 0;
+-		c = getopt_long(argc, argv, "c:fbH:h:i:np:qr:s:v", arg_options, &option_index);
++		c = getopt_long(argc, argv, "c:fbH:h:i:np:qRr:s:v", arg_options, &option_index);
+ 		if (c == -1) break;
+ 
+ 		switch (c) {
 @@ -251,6 +254,9 @@
  		case 'q':
  			client_config.quit_after_lease = 1;
