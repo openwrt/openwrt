@@ -2,12 +2,12 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=ndisc
-PKG_VERSION:=0.1.3
+PKG_NAME:=ndisc6
+PKG_VERSION:=0.1.4
 PKG_RELEASE:=1
-PKG_MD5SUM:= c7a8acd8e3d1053265faa17f7edb75d6
+PKG_MD5SUM:= 57e86029d41734404d62330961c3d20c
 
-PKG_SOURCE_URL:=http://people.via.ecp.fr/~rem/ndisc/v0.1/
+PKG_SOURCE_URL:=http://people.via.ecp.fr/~rem/ndisc6/v0.1/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_CAT:=bzcat
 
