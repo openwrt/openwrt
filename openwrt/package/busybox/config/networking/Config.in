@@ -465,14 +465,14 @@ config BUSYBOX_CONFIG_ROUTE
 
 config BUSYBOX_CONFIG_TELNET
 	bool "telnet"
-	default n
+	default y
 	help
 	  Telnet is an interface to the TELNET protocol, but is also commonly
 	  used to test other simple protocols.
 
 config BUSYBOX_CONFIG_FEATURE_TELNET_TTYPE
 	bool "  Pass TERM type to remote host"
-	default n
+	default y
 	depends on BUSYBOX_CONFIG_TELNET
 	help
 	  Setting this option will forward the TERM environment variable to the
