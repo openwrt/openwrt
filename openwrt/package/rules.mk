@@ -6,6 +6,9 @@ INFO_$(1):=$(IPKG_STATE_DIR)/info/$(2).list
 ifneq ($(BR2_PACKAGE_$(1)),)
 compile: $$(IPKG_$(1))
 endif
+ifneq ($(DEVELOPER),)
+compile: $$(IPKG_$(1))
+endif
 ifeq ($(BR2_PACKAGE_$(1)),y)
 install: $$(INFO_$(1))
 endif
