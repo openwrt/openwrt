@@ -120,6 +120,7 @@ image_clean:
 	
 target_clean: image_clean
 	rm -rf $(TARGET_DIR)
+	rm -rf $(BUILD_DIR)/linux-*/root
 
 clean: target_clean
 	@$(MAKE) -C $(CONFIG) clean
