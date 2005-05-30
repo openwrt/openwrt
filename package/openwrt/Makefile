@@ -67,6 +67,8 @@ $(IPKG_STATE_DIR)/info/$(PKG_NAME).list: $(PKG_IPK)
 source: $(DL_DIR)/$(LINKSYS_WLCONF_TGZ)
 prepare: $(LINKSYS_WLCONF_DIR)/.unpacked
 compile: prepare libnvram-compile libshared-compile $(PKG_IPK) $(PKG_WLCOMPAT)
+	mkdir -p $(STAGING_DIR)/usr/include
+	cp -a ./include/* $(STAGING_DIR)/usr/include/
 install: libnvram-install libshared-install \
 	 $(TARGET_DIR)/usr/sbin/wlconf \
 	 $(IPKG_STATE_DIR)/info/$(PKG_NAME).list \
