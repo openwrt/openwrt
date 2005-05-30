@@ -100,6 +100,7 @@ package-$(BR2_PACKAGE_TTCP) += ttcp
 package-$(BR2_PACKAGE_UCLIBCXX) += uclibc++
 package-$(BR2_PACKAGE_ULOGD) += ulogd
 package-$(BR2_PACKAGE_USBUTILS) += usbutils
+package-$(BR2_PACKAGE_VTUN) += vtun
 package-$(BR2_PACKAGE_VSFTPD) += vsftpd
 package-$(BR2_PACKAGE_WIRELESS_TOOLS) += wireless-tools
 package-$(BR2_PACKAGE_WOL) += wol
@@ -142,6 +143,7 @@ siproxd-compile: libosip2-compile
 sipsak-compile: openssl-compile
 tcpdump-compile: libpcap-compile
 tinc-compile: zlib-compile openssl-compile lzo-compile
+vtun-compile: zlib-compile openssl-compile lzo-compile
 tor-compile: libevent-compile openssl-compile zlib-compile
 wpa_supplicant-compile: openssl-compile
 
