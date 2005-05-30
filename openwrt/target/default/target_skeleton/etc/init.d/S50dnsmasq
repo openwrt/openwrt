@@ -22,4 +22,4 @@ udhcpc -n -q -R -s /dev/zero -i $ifname >&- || {
   
   args="-K -F $(int2ip $start),$(int2ip $end),$(int2ip $netmask),12h"
 }
-/usr/sbin/dnsmasq ${args}
+dnsmasq ${args}
