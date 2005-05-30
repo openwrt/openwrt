@@ -169,7 +169,8 @@ $(LINUX_DIR)/.unpacked: $(DL_DIR)/$(LINUX_SOURCE) $(DL_DIR)/$(LINUX_BINARY_WL_DR
 	touch $(LINUX_DIR)/.unpacked
 
 $(LINUX_DIR)/.patched: $(LINUX_DIR)/.unpacked
-	$(PATCH) $(LINUX_DIR) ./patches
+	[ -d ./patches/$(BOARD) ] && $(PATCH) $(LINUX_DIR) ./patches/$(BOARD)
+	$(PATCH) $(LINUX_DIR) ./patches/generic
 	touch $(LINUX_DIR)/.patched
 
 $(LINUX_DIR)/.configured: $(LINUX_DIR)/.patched
