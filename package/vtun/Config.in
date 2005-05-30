@@ -1,0 +1,10 @@
+config BR2_PACKAGE_VTUN
+	tristate "vtun"
+	default m if CONFIG_DEVEL
+	select BR2_PACKAGE_ZLIB
+	select BR2_PACKAGE_LZO
+	select BR2_PACKAGE_OPENSSL
+	help
+	  A VPN tunneling daemon
+	  
+	  http://vtun.sourceforge.net
