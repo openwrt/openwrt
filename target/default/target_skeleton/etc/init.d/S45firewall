@@ -1,4 +1,5 @@
 #!/bin/sh
+${FAILSAFE:+return}
 . /etc/functions.sh
 WAN=$(nvram get wan_ifname)
 LAN=$(nvram get lan_ifname)
