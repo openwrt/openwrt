@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ipkg
-PKG_VERSION:=0.99.145
+PKG_VERSION:=0.99.149
 PKG_RELEASE:=1
-PKG_MD5SUM:=d98799dbcf911f90a7c3c897713cc37a
+PKG_MD5SUM:=975cc419d6db5fb279dc58177c68373b
 
 PKG_SOURCE_URL:=http://www.handhelds.org/packages/ipkg
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
