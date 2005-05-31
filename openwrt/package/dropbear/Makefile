@@ -4,7 +4,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dropbear
 PKG_VERSION:=0.45
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 PKG_MD5SUM:=2bcc46e4c239aec982bf36a723dd0b0e
 
 PKG_SOURCE_URL:=http://matt.ucc.asn.au/dropbear/releases/
@@ -19,6 +19,7 @@ $(eval $(call PKG_template,DROPBEAR,$(PKG_NAME),$(PKG_VERSION)-$(PKG_RELEASE),$(
 
 $(PKG_BUILD_DIR)/.configured:
 	$(SED) 's,^/\* #define PKG_MULTI.*,#define PKG_MULTI,g' $(PKG_BUILD_DIR)/options.h
+	$(SED) 's,^#define DO_HOST_LOOKUP,/* & */,g' $(PKG_BUILD_DIR)/options.h
 	(cd $(PKG_BUILD_DIR); rm -rf config.cache; \
 		autoconf; \
 		$(TARGET_CONFIGURE_OPTS) \
