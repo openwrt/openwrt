@@ -106,3 +106,17 @@ diff -urN linux.old/arch/mips/mm/tlbex-r4k.S linux.dev/arch/mips/mm/tlbex-r4k.S
  	GET_PGD(k0, k1)				# get pgd pointer
  	mfc0	k0, CP0_BADVADDR		# Get faulting address
  	srl	k0, k0, _PGDIR_SHIFT		# get pgd only bits
+diff -urN linux.old/arch/mips/kernel/entry.S linux.dev/arch/mips/kernel/entry.S
+--- linux.old/arch/mips/kernel/entry.S	2003-08-25 13:44:40.000000000 +0200
++++ linux.dev/arch/mips/kernel/entry.S	2005-06-01 20:10:36.000000000 +0200
+@@ -100,6 +100,10 @@
+ 		 * and R4400 SC and MC versions.
+ 		 */
+ NESTED(except_vec3_generic, 0, sp)
++#ifdef CONFIG_BCM4710
++		nop
++		nop
++#endif
+ #if R5432_CP0_INTERRUPT_WAR
+ 		mfc0	k0, CP0_INDEX
+ #endif
