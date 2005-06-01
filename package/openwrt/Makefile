@@ -31,30 +31,11 @@ $(PKG_IPK_DIR)/usr/sbin/wlc: wlc.c libshared-install
 	mkdir -p $(PKG_IPK_DIR)/usr/sbin
 	$(TARGET_CC) -o $@ $< -lshared -L./libshared -I$(SHARED_INCLUDE)
 
-# wlconf tool extracted from linksys firmware GPL.unpackedtree
-# WRT54GS_3_37_2_1109_US
-LINKSYS_TGZ_SITE=http://openwrt.openbsd-geek.de
-LINKSYS_TGZ_MD5SUM=1b596e5bf26d2898d1eab5bd200bee58
-LINKSYS_WLCONF_TGZ=linksys-wlconf.tar.gz
-LINKSYS_WLCONF_DIR=$(BUILD_DIR)/linksys-wlconf
+$(PKG_IPK_DIR)/usr/sbin/wlconf: wlconf.c libshared-install libnvram-install
+	mkdir -p $(PKG_IPK_DIR)/usr/sbin
+	$(TARGET_CC) -o $@ $< -lshared -L./libshared -lnvram -L./libnvram -I$(SHARED_INCLUDE)
 
-$(DL_DIR)/$(LINKSYS_WLCONF_TGZ):
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(LINKSYS_WLCONF_TGZ) $(LINKSYS_TGZ_MD5SUM) $(LINKSYS_TGZ_SITE)
-
-$(LINKSYS_WLCONF_DIR)/.unpacked: $(DL_DIR)/$(LINKSYS_WLCONF_TGZ)
-	zcat $(DL_DIR)/$(LINKSYS_WLCONF_TGZ) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
-	touch $(LINKSYS_WLCONF_DIR)/.unpacked
-	
-$(TARGET_DIR)/usr/sbin/wlconf: $(LINKSYS_WLCONF_DIR)/.unpacked 
-	$(MAKE) -C $(LINKSYS_WLCONF_DIR) INSTALLDIR=$(TARGET_DIR) \
-		CC=$(TARGET_CC) LD=$(TARGET_CROSS)ld STRIP="$(STRIP)" \
-		CFLAGS="$(TARGET_CFLAGS) -I. -I$(SHARED_INCLUDE) \
-			-Wall -DOPENWRT_WLCONF" \
-		LDFLAGS="-lnvram -lshared" \
-			install
-	$(STRIP) $@
-
-$(PKG_IPK): $(PKG_IPK_DIR)/sbin/mtd $(PKG_IPK_DIR)/sbin/jffs2root $(PKG_IPK_DIR)/usr/sbin/wlc
+$(PKG_IPK): $(PKG_IPK_DIR)/sbin/mtd $(PKG_IPK_DIR)/sbin/jffs2root $(PKG_IPK_DIR)/usr/sbin/wlc $(PKG_IPK_DIR)/usr/sbin/wlconf
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_IPK_DIR) $(PKG_NAME).control $(PKG_RELEASE) $(ARCH)
 	$(STRIP) $(PKG_IPK_DIR)/usr/sbin/*
 	$(STRIP) $(PKG_IPK_DIR)/sbin/*
@@ -64,13 +45,12 @@ $(PKG_IPK): $(PKG_IPK_DIR)/sbin/mtd $(PKG_IPK_DIR)/sbin/jffs2root $(PKG_IPK_DIR)
 $(IPKG_STATE_DIR)/info/$(PKG_NAME).list: $(PKG_IPK)
 	$(IPKG) install $<
 
-source: $(DL_DIR)/$(LINKSYS_WLCONF_TGZ)
-prepare: $(LINKSYS_WLCONF_DIR)/.unpacked
+source: 
+prepare: 
 compile: prepare libnvram-compile libshared-compile $(PKG_IPK) $(PKG_WLCOMPAT)
 	mkdir -p $(STAGING_DIR)/usr/include
 	cp -a ./include/* $(STAGING_DIR)/usr/include/
 install: libnvram-install libshared-install \
-	 $(TARGET_DIR)/usr/sbin/wlconf \
 	 $(IPKG_STATE_DIR)/info/$(PKG_NAME).list \
 
 clean: libshared-clean libnvram-clean
