@@ -129,6 +129,7 @@ libgd-compile: libpng-compile
 libnet-compile: libpcap-compile
 lighttpd-compile: openssl-compile pcre-compile
 mysql-compile: ncurses-compile zlib-compile
+net-snmp-compile: libelf-compile
 nfs-server-compile: portmap-compile
 nmap-compile: uclibc++-compile pcre-compile libpcap-compile
 nocatsplash-compile: glib-compile
