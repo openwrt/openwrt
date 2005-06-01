@@ -36,5 +36,5 @@ vconfig set_name_type VLAN_PLUS_VID_NO_PAD
 
 # automagically run firstboot
 [ -z "$FAILSAFE" ] && {
-	{ mount|grep jffs2 1>&-; } || firstboot
+	{ mount|grep "on / type jffs2" 1>&-; } || firstboot
 }
