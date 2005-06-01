@@ -120,6 +120,12 @@ config BR2_PACKAGE_FREERADIUS_MOD_SQL_PGSQL
 	default m if CONFIG_DEVEL
 	select BR2_PACKAGE_LIBPQ
 
+config BR2_PACKAGE_FREERADIUS_MOD_SQLCOUNTER
+	depends BR2_PACKAGE_FREERADIUS_MOD_SQL
+	prompt "...-mod-sqlcounter - Generic SQL Counter module"
+	tristate 
+	default m if CONFIG_DEVEL
+
 config BR2_PACKAGE_FREERADIUS_UTILS
 	depends BR2_PACKAGE_FREERADIUS
 	prompt "...-utils - Misc. client utilities"

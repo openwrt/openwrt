@@ -4,7 +4,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=freeradius
 PKG_VERSION:=1.0.2
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_MD5SUM:=f5dfce4efbb03bbc47ceae08270a875e
 
 PKG_SOURCE_URL:=ftp://ftp.freeradius.org/pub/radius/
@@ -26,19 +26,28 @@ PKG_CONFIGURE_OPTIONS := \
 	--with-raddbdir=/etc/freeradius \
 	--without-edir \
 	--without-snmp \
+	--with-experimental-modules \
 	--without-rlm_attr-rewrite \
-	--with-rlm_checkval \
+	--without-rlm_checkval \
 	--without-rlm_counter \
 	--without-rlm_dbm \
 	--with-rlm_eap \
 	--without-rlm_eap_sim \
-	--with-rlm_files \
+	--without-rlm_example \
 	--without-rlm_ippool \
 	--without-rlm_krb5 \
 	--without-rlm_pam \
+	--without-rlm_perl \
+	--without-rlm_python \
 	--without-rlm_radutmp \
+	--without-rlm_smb \
+	--with-rlm_sql \
+	--with-rlm_sqlcounter \
+	--without-rlm_sql_db2 \
+	--without-rlm_sql_freetds \
 	--without-rlm_sql_iodbc \
 	--without-rlm_sql_oracle \
+	--without-rlm_sql_sybase \
 	--without-rlm_sql_unixodbc \
 	--without-rlm_unix \
 	--without-rlm_x99-token \
@@ -70,12 +79,12 @@ include $(TOPDIR)/package/rules.mk
 define PKG_mod_template
 
 $$(IPKG_$(1)):
-	install -d -m0755 $$(IDIR_$(1))/usr/lib/freeradius
+	[ -z "$(2)" ] || install -d -m0755 $$(IDIR_$(1))/usr/lib/freeradius
 	for m in $(2); do \
 		cp -fpR $(PKG_INSTALL_DIR)/usr/lib/freeradius/$$$${m}{,-*}.so \
 		  $$(IDIR_$(1))/usr/lib/freeradius/ ; \
 	done
-	install -d -m0755 $$(IDIR_$(1))/etc/freeradius
+	[ -z "$(3)" ] || install -d -m0755 $$(IDIR_$(1))/etc/freeradius
 	for f in $(3); do \
 		cp -fpR $(PKG_INSTALL_DIR)/etc/freeradius/$$$${f} \
 		  $$(IDIR_$(1))/etc/freeradius/ ; \
@@ -102,6 +111,7 @@ $(eval $(call PKG_template,FREERADIUS_MOD_PAP,freeradius-mod-pap,$(PKG_VERSION)-
 $(eval $(call PKG_template,FREERADIUS_MOD_SQL,freeradius-mod-sql,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,FREERADIUS_MOD_SQL_MYSQL,freeradius-mod-sql-mysql,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,FREERADIUS_MOD_SQL_PGSQL,freeradius-mod-sql-pgsql,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,FREERADIUS_MOD_SQLCOUNTER,freeradius-mod-sqlcounter,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,FREERADIUS_UTILS,freeradius-utils,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 $(eval $(call PKG_mod_template,FREERADIUS_MOD_CHAP,rlm_chap,))
@@ -119,6 +129,7 @@ $(eval $(call PKG_mod_template,FREERADIUS_MOD_PAP,rlm_pap,))
 $(eval $(call PKG_mod_template,FREERADIUS_MOD_SQL,rlm_sql,sql.conf))
 $(eval $(call PKG_mod_template,FREERADIUS_MOD_SQL_MYSQL,rlm_sql_mysql,))
 $(eval $(call PKG_mod_template,FREERADIUS_MOD_SQL_PGSQL,rlm_sql_postgresql,))
+$(eval $(call PKG_mod_template,FREERADIUS_MOD_SQLCOUNTER,rlm_sqlcounter,))
 
 $(PKG_BUILD_DIR)/.configured:
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
