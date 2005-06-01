@@ -1087,6 +1087,8 @@ typedef struct wlc_rev_info {
 #define	ABO_OFF			0	/* force afterburner off */
 #define	ABO_ON			1	/* force afterburner on */
 
+#define GMODE_AFTERBURNER 6
+
 #undef PACKED
 
 #endif /* _wlioctl_h_ */
