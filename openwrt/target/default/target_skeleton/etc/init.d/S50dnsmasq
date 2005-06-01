@@ -20,6 +20,6 @@ udhcpc -n -q -R -s /dev/zero -i $ifname >&- || {
   end=$(nvram get dhcp_num)
   end=$((start+${end:-150}))
   
-  args="-K -F $(int2ip $start),$(int2ip $end),$(int2ip $netmask),12h"
+  args="-l /tmp/dhcp.leases -K -F $(int2ip $start),$(int2ip $end),$(int2ip $netmask),12h"
 }
 dnsmasq ${args}
