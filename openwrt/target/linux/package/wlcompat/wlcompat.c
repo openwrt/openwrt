@@ -384,30 +384,44 @@ static int wlcompat_ioctl(struct net_device *dev,
 		}
 		case SIOCGIWTXPOW:
 		{
+			int radio;
+
+			if (wl_ioctl(dev, WLC_GET_RADIO, &radio, sizeof(int)) < 0)
+				return -EINVAL;
+			
 			if (wl_get_val(dev, "qtxpower", &(wrqu->txpower.value), sizeof(int)) < 0)
 				return -EINVAL;
 			
 			wrqu->txpower.value &= ~WL_TXPWR_OVERRIDE;
 				
 			wrqu->txpower.fixed = 0;
-			wrqu->txpower.disabled = 0;
+			wrqu->txpower.disabled = radio;
 			wrqu->txpower.flags = IW_TXPOW_MWATT;
 			break;
 		}
 		case SIOCSIWTXPOW:
 		{
-			int override;
-			
-			if (wl_get_val(dev, "qtxpower", &override, sizeof(int)) < 0)
-				return -EINVAL;
-			
-			wrqu->txpower.value |= override & WL_TXPWR_OVERRIDE;
-			
-			if (wrqu->txpower.flags != IW_TXPOW_MWATT)
-				return -EINVAL;
+			/* This is weird: WLC_SET_RADIO with 1 as argument disables the radio */
+			int radio = wrqu->txpower.disabled;
 
-			if (wl_set_val(dev, "qtxpower", &wrqu->txpower.value, sizeof(int)) < 0)
+			if (wl_ioctl(dev, WLC_SET_RADIO, &radio, sizeof(int)) < 0)
 				return -EINVAL;
+			
+			if (!wrqu->txpower.disabled) {
+				int override;
+
+				if (wl_get_val(dev, "qtxpower", &override, sizeof(int)) < 0)
+					return -EINVAL;
+				
+				wrqu->txpower.value |= override & WL_TXPWR_OVERRIDE;
+				
+				if (wrqu->txpower.flags != IW_TXPOW_MWATT)
+					return -EINVAL;
+
+				if (wl_set_val(dev, "qtxpower", &wrqu->txpower.value, sizeof(int)) < 0)
+					return -EINVAL;
+
+			}
 		}
 		case SIOCGIWENCODE:
 		{
