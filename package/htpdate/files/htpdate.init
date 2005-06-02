@@ -9,7 +9,7 @@ PID_F=$RUN_D/$BIN.pid
 case $1 in
  start)
   mkdir -p $RUN_D
-  $BIN $OPTIONS
+  $BIN -C 0 -l -s $OPTIONS && $BIN -D $OPTIONS
   ;;
  stop)
   [ -f $PID_F ] && kill $(cat $PID_F)
