@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=htpdate
-PKG_VERSION:=0.7.2
+PKG_VERSION:=0.8.0
 PKG_RELEASE:=1
-PKG_MD5SUM:=5b5ab483bdb3ebe155c72197e1b885f6
+PKG_MD5SUM:=5fd1ba822e0949a3cb34e3f61fbeb8ca
 
 PKG_SOURCE_URL:=http://www.clevervest.com/htp/archive/c/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -32,8 +32,9 @@ $(IPKG_HTPDATE):
 	install -m0644 ./files/htpdate.default $(IDIR_HTPDATE)/etc/default/htpdate
 	install -d -m0755 $(IDIR_HTPDATE)/etc/init.d/
 	install -m0755 ./files/htpdate.init $(IDIR_HTPDATE)/etc/init.d/htpdate
+	ln -sf htpdate $(IDIR_HTPDATE)/etc/init.d/S49htpdate
 	install -d -m0755 $(IDIR_HTPDATE)/usr/sbin
-	cp -fpR $(PKG_BUILD_DIR)/htpdate $(IDIR_HTPDATE)/usr/sbin/
+	install -m0755 $(PKG_BUILD_DIR)/htpdate $(IDIR_HTPDATE)/usr/sbin/
 	$(RSTRIP) $(IDIR_HTPDATE)
 	$(IPKG_BUILD) $(IDIR_HTPDATE) $(PACKAGE_DIR)
 

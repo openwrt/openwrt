@@ -1,0 +1,67 @@
+diff -ruN htpdate-0.8.0-old/htpdate.c htpdate-0.8.0-new/htpdate.c
+--- htpdate-0.8.0-old/htpdate.c	2005-05-26 23:32:18.000000000 +0200
++++ htpdate-0.8.0-new/htpdate.c	2005-06-02 04:33:33.000000000 +0200
+@@ -243,7 +243,7 @@
+ 	printf("htpdate version %s\n", version);
+ 	printf("\
+ Usage: htpdate [-0|-1] [-a|-q|-s] [-d|-D] [-h|-l] [-i pid file] [-m minpoll]\n\
+-        [-M maxpoll] [-P <proxyserver>[:port]] <host[:port]> ...\n\n\
++        [-M maxpoll] [-C limit] [-P <proxyserver>[:port]] <host[:port]> ...\n\n\
+   -0    HTTP/1.0 request (default)\n\
+   -1    HTTP/1.1 request\n\
+   -a    adjust time smoothly\n\
+@@ -257,6 +257,8 @@
+   -m    minimum poll interval (2^m)\n\
+   -M    maximum poll interval (2^M)\n\
+   -P    proxy server\n\
++  -C    time delta limit in server responses (in seconds)\n\
++          default: 1 year, unlimited: 0\n\
+   host  web server hostname or ip address\n\
+   port  port number (default 80 and 8080 for proxy server)\n\n");
+ 
+@@ -271,6 +273,7 @@
+ 	int					port, proxyport = 8080;
+ 	int					sumtime, numservers, validtime, goodtime, mean, i;
+ 	double				timeavg;
++	int					timedeltalimit = YEAR;
+ 	unsigned int		nap = 0, when = 500000;
+ 	unsigned int		minsleep = 10, maxsleep = 18, sleeptime = minsleep;
+ 	char				setmode = 0, httpversion = 0, try, param;
+@@ -283,7 +286,7 @@
+ 
+ 
+ 	/* Parse the command line switches and arguments */
+-	while ( (param = getopt(argc, argv, "01adhi:lm:qsDM:P:") ) != -1)
++	while ( (param = getopt(argc, argv, "01adhi:lm:qsDM:P:C:") ) != -1)
+ 	switch (param)
+ 	{
+ 		case '0':			/* adjust time */
+@@ -340,6 +343,12 @@
+ 				}
+ 			}
+ 			break;
++		case 'C':			/* time delta limit in server responses */
++			if ( (timedeltalimit = atoi(optarg) ) < 0 ) {
++				printlog( 1, "Invalid time delta limit" );
++				exit(1);
++			}
++			break;
+ 		case '?':
+ 			return 1;
+ 		default:
+@@ -458,10 +467,12 @@
+ 			try--;
+ 		} while ( timestamp && try && daemonize );
+ 
+-		/* Only include valid responses in timedelta[], |delta time| < year */
+-		if ( ( timestamp > -YEAR ) && ( timestamp < YEAR ) ) {
+-			timedelta[validtime] = timestamp;
++		timedelta[validtime] = timestamp;
++		/* Only include valid responses in timedelta[], |delta time| < validlimit */
++		if ( ( timedeltalimit == 0 ) || ( ( timestamp > -timedeltalimit ) && ( timestamp < timedeltalimit ) ) ) {
+ 			validtime++;
++		} else {
++			printlog( 0, "Invalid server response (host: %s, time delta: %d, limit: %d)", host, timestamp, timedeltalimit);
+ 		}
+ 
+ 		/* Sleep for a while, unless we detected a time offset */
