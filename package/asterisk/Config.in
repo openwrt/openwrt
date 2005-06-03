@@ -1,5 +1,8 @@
+menu "asterisk - Complete open source PBX"
+
 config BR2_PACKAGE_ASTERISK
-	tristate "asterisk - Complete open source PBX"
+	prompt "asterisk - Complete open source PBX"
+	tristate
 	default m if CONFIG_DEVEL
 	help
  	  Asterisk is a complete PBX in software. It provides all of the features
@@ -10,41 +13,71 @@ config BR2_PACKAGE_ASTERISK
 	  http://www.asterisk.org/
 	  
 
-config BR2_PACKAGE_ASTERISK_SPEEX
-	tristate "Speex codec"
+config BR2_PACKAGE_ASTERISK_CODEC_ILBC
+	prompt "...-codec-ilbc - Internet Low Bitrate Codec (ILBC) Translator"
+	tristate
+	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_ASTERISK
+	help
+	  The Internet Low Bitrate Codec (ILBC) Translator for Asterisk
+
+config BR2_PACKAGE_ASTERISK_CODEC_LPC10
+	prompt "...-codec-lpc10 - LPC10 (Linear Predictor Code) 2.4kbps Voice Coder"
+	tristate
+	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_ASTERISK
+	help
+	  The LPC10 (Linear Predictor Code) 2.4kbps Voice Coder for Asterisk
+
+config BR2_PACKAGE_ASTERISK_CODEC_SPEEX
+	prompt "...-codec-speex - Speex/PCM16 Codec Translator"
+	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_ASTERISK
 	select BR2_PACKAGE_LIBSPEEX
 	help
 	  The Speex speech compression codec for Asterisk
 
+config BR2_PACKAGE_ASTERISK_PBX_DUNDI
+	prompt "...-pbx-dundi - Distributed Universal Number Discovery (DUNDi) support"
+	tristate
+	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_ASTERISK
+	help
+	  Distributed Universal Number Discovery (DUNDi) support for Asterisk
+
 config BR2_PACKAGE_ASTERISK_MYSQL
-	tristate "MySQL plugins"
+	prompt "...-mysql - MySQL modules"
+	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_ASTERISK
 	select BR2_PACKAGE_LIBMYSQLCLIENT
 	help
-	  MySQL plugins for Asterisk
+	  MySQL modules for Asterisk
 
 config BR2_PACKAGE_ASTERISK_PGSQL
-	tristate "PostgreSQL plugins"
+	prompt "...-pgsql - PostgreSQL modules"
+	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_ASTERISK
 	select BR2_PACKAGE_LIBPQ
 	help
-	  PostgreSQL plugins for Asterisk
-	  
-config BR2_PACKAGE_ASTERISK_VOICEMAIL
-	tristate "Voicemail support"
-	default m if CONFIG_DEVEL
-	depends BR2_PACKAGE_ASTERISK
-	help
-	  Voicemail related plugins for Asterisk
+	  PostgreSQL modules for Asterisk
 	  
 config BR2_PACKAGE_ASTERISK_SOUNDS
-	tristate "Sound files"
+	prompt "...-sounds - Sound files"
+	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_ASTERISK
 	help
 	  Sound files for Asterisk
 
+config BR2_PACKAGE_ASTERISK_VOICEMAIL
+	prompt "...-voicemail - Voicemail support"
+	tristate
+	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_ASTERISK
+	help
+	  Voicemail related modules for Asterisk
+	  
+endmenu
