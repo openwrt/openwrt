@@ -149,7 +149,7 @@ tor-compile: libevent-compile openssl-compile zlib-compile
 wpa_supplicant-compile: openssl-compile
 
 asterisk-compile: openssl-compile
-ifneq ($(BR2_PACKAGE_ASTERISK_SPEEX),)
+ifneq ($(BR2_PACKAGE_ASTERISK_CODEC_SPEEX),)
 asterisk-compile: speex-compile
 endif
 ifneq ($(BR2_PACKAGE_ASTERISK_PGSQL),)
