@@ -45,7 +45,9 @@ $(foreach fs,$(TARGET_FS),$(eval $(call BIN_template,$(fs))))
 INSTALL_TARGET_DIRS:=$(patsubst %,%-install,$(TARGET_DIRS))
 $(INSTALL_TARGET_DIRS): image_clean $(TARGET_DIR)/etc/sysconf $(BIN_DIR)
 
-prepare: $(patsubst %,%-prepare,$(TARGET_DIRS))
+prepare: $(patsubst %,%-prepare,$(TARGET_DIRS)) $(TARGET_DIR)
+
+$(TARGET_DIR):
 	mkdir -p $(TARGET_DIR)
 	if [ -f "$(TARGET_SKELETON)" ] ; then \
 	zcat $(TARGET_SKELETON) | tar -C $(BUILD_DIR) -xf -; \
@@ -88,6 +90,8 @@ $(TARGET_DIR)/etc/sysconf:
 	$(MAKE) -C $(patsubst %-prepare,%,$@) prepare
 %-compile: %-prepare
 	$(MAKE) -C $(patsubst %-compile,%,$@) compile
+%-rebuild: 
+	$(MAKE) -C $(patsubst %-rebuild,%,$@) rebuild
 %-install: %-compile
 	$(MAKE) -C $(patsubst %-install,%,$@) install
 
