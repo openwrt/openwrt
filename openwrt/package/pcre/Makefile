@@ -7,7 +7,7 @@ PKG_VERSION:=5.0
 PKG_RELEASE:=3
 PKG_MD5SUM:=813850808894d99fb5b1c41ec6335d4f
 
-PKG_SOURCE_URL:=ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/
+PKG_SOURCE_URL:=@SF/pcre
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_CAT:=bzcat
 
