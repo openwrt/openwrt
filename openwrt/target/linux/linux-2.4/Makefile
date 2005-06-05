@@ -213,6 +213,8 @@ $(TARGET_MODULES_DIR):
 source: $(DL_DIR)/$(LINUX_SOURCE)
 prepare: $(LINUX_DIR)/.configured
 compile: $(LINUX_DIR)/.modules_done $(TARGETS)
+	rm -f $(LINUX_DIR)
+	ln -s $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION) $(LINUX_DIR)
 	$(MAKE) -C $(TOPDIR)/target/linux/package \
 		TARGET_DIR="$(LINUX_TARGET_DIR)" \
 		BUILD_DIR="$(LINUX_BUILD_DIR)" \
@@ -224,6 +226,18 @@ install: compile $(TARGET_MODULES_DIR)
 	cp -a $(BUILD_DIR)/root $(LINUX_BUILD_DIR)/
 	echo -e 'dest root /\noption offline_root $(LINUX_BUILD_DIR)/root' > $(LINUX_BUILD_DIR)/ipkg.conf
 	[ "$(INSTALL_TARGETS)" != "" ] && $(IPKG_KERNEL) install $(INSTALL_TARGETS) || true
+
+mostlyclean:
+	rm -f $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION)/.{drivers-unpacked,modules_done}
+	$(MAKE) -C $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION) clean
+	rm -f $(LINUX_KERNEL) $(LINUX_IMAGE)
+
+rebuild:
+	-$(MAKE) mostlyclean
+	if [ -f $(LINUX_KERNEL) ]; then \
+		$(MAKE) clean; \
+	fi
+	$(MAKE) compile
 
 clean:
 	rm -rf $(LINUX_BUILD_DIR)
