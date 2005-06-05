@@ -27,7 +27,12 @@ $$(INFO_$(1)): $$(IPKG_$(1))
 $(2)-clean:
 	rm -f $$(IPKG_$(1))
 clean: $(2)-clean
-
+mostlyclean:
+rebuild: mostlyclean
+	if [ -f $(PKG_BUILD_DIR)/.built ]; then \
+		$(MAKE) clean; \
+	fi
+	$(MAKE) compile
 endef
 
 ifneq ($(strip $(PKG_SOURCE)),)
