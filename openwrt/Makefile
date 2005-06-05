@@ -74,7 +74,6 @@ package_install: package_compile toolchain
 #
 #############################################################
 
-
 # In this section, we need .config
 include .config.cmd
 
@@ -107,6 +106,16 @@ $(BUILD_DIR):
 	@mkdir -p $(BUILD_DIR)
 
 source: $(TARGETS_SOURCE)
+
+
+package/%:
+	$(MAKE) -C package $(patsubst package/%,%,$@)
+
+target/%:
+	$(MAKE) -C target $(patsubst target/%,%,$@)
+
+toolchain/%:
+	$(MAKE) -C toolchain $(patsubst toolchain/%,%,$@)
 
 #############################################################
 #
