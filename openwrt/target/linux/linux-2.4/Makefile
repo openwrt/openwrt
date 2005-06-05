@@ -213,8 +213,7 @@ $(TARGET_MODULES_DIR):
 source: $(DL_DIR)/$(LINUX_SOURCE)
 prepare: $(LINUX_DIR)/.configured
 compile: $(LINUX_DIR)/.modules_done $(TARGETS)
-	rm -f $(LINUX_DIR)
-	ln -s $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION) $(LINUX_DIR)
+	ln -sf $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION) $(LINUX_DIR)
 	$(MAKE) -C $(TOPDIR)/target/linux/package \
 		TARGET_DIR="$(LINUX_TARGET_DIR)" \
 		BUILD_DIR="$(LINUX_BUILD_DIR)" \
