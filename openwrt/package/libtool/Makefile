@@ -7,7 +7,10 @@ PKG_VERSION:=1.5.14
 PKG_RELEASE:=1
 PKG_MD5SUM:=049bf67de9b0eb75cd943dafe3d749ec
 
-PKG_SOURCE_URL:=http://ftp.gnu.org/gnu/libtool/
+PKG_SOURCE_URL:=http://ftp.gnu.org/gnu/libtool/ \
+	ftp://ftp.belnet.be/mirror/ftp.gnu.org/gnu/libtool/ \
+	ftp://ftp.mirror.nl/pub/mirror/gnu/libtool/ \
+	http://mirror.switch.ch/ftp/mirror/gnu/libtool/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
@@ -57,21 +60,23 @@ $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 
 $(IPKG_LIBLTDL):
 	install -m0755 -d $(IDIR_LIBLTDL)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libltdl.so.* $(IDIR_LIBLTDL)/usr/lib/
+	cp -fp $(PKG_INSTALL_DIR)/usr/lib/libltdl.so.* $(IDIR_LIBLTDL)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBLTDL)
 	$(IPKG_BUILD) $(IDIR_LIBLTDL) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libltdl.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/ltdl.h $(STAGING_DIR)/usr/include/
+	cp -fp $(PKG_INSTALL_DIR)/usr/include/ltdl.h $(STAGING_DIR)/usr/include/
 	mkdir -p $(I_LIBLTDL_DEV)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libltdl.{a,so*} $(STAGING_DIR)/usr/lib/
+	cp -fp $(PKG_INSTALL_DIR)/usr/lib/libltdl.{a,so*} $(STAGING_DIR)/usr/lib/
+	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/libltdl.so
 
 uninstall-dev:
-	rm -rf $(STAGING_DIR)/usr/include/ltdl*
-	rm -rf $(STAGING_DIR)/usr/lib/libltdl.{a,so*}
+	rm -rf \
+		$(STAGING_DIR)/usr/include/ltdl.h \
+		$(STAGING_DIR)/usr/lib/libltdl.{a,so*} \
 
 compile: install-dev
 clean: uninstall-dev
