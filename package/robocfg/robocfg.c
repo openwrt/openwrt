@@ -38,6 +38,7 @@ typedef u_int8_t u8;
 #include <linux/mii.h>
 
 #include "etc53xx.h"
+#define ROBO_PHY_ADDR	0x1E	/* robo switch phy address */
 
 /* MII registers */
 #define REG_MII_PAGE	0x10	/* MII Page register */
@@ -58,10 +59,18 @@ typedef struct {
 	int et;			/* use private ioctls */
 } robo_t;
 
-static u16 mdio_read(robo_t *robo, u8 reg)
+static u16 mdio_read(robo_t *robo, u16 phy_id, u8 reg)
 {
 	if (robo->et) {
 		int args[2] = { reg };
+		
+		if (phy_id != ROBO_PHY_ADDR) {
+			fprintf(stderr,
+				"Access to real 'phy' registers unavaliable.\n"
+				"Upgrade kernel driver.\n");
+
+			return 0xffff;
+		}
 	
 		robo->ifr.ifr_data = (caddr_t) args;
 		if (ioctl(robo->fd, SIOCGETCPHYRD, (caddr_t)&robo->ifr) < 0) {
@@ -72,6 +81,7 @@ static u16 mdio_read(robo_t *robo, u8 reg)
 		return args[1];
 	} else {
 		struct mii_ioctl_data *mii = (struct mii_ioctl_data *)&robo->ifr.ifr_data;
+		mii->phy_id = phy_id;
 		mii->reg_num = reg;
 		if (ioctl(robo->fd, SIOCGMIIREG, &robo->ifr) < 0) {
 			perror("SIOCGMIIREG");
@@ -81,11 +91,18 @@ static u16 mdio_read(robo_t *robo, u8 reg)
 	}
 }
 
-static void mdio_write(robo_t *robo, u8 reg, u16 val)
+static void mdio_write(robo_t *robo, u16 phy_id, u8 reg, u16 val)
 {
 	if (robo->et) {
 		int args[2] = { reg, val };
 
+		if (phy_id != ROBO_PHY_ADDR) {
+			fprintf(stderr,
+				"Access to real 'phy' registers unavaliable.\n"
+				"Upgrade kernel driver.\n");
+			return;
+		}
+		
 		robo->ifr.ifr_data = (caddr_t) args;
 		if (ioctl(robo->fd, SIOCSETCPHYWR, (caddr_t)&robo->ifr) < 0) {
 			perror("SIOCGETCPHYWR");
@@ -93,6 +110,7 @@ static void mdio_write(robo_t *robo, u8 reg, u16 val)
 		}
 	} else {
 		struct mii_ioctl_data *mii = (struct mii_ioctl_data *)&robo->ifr.ifr_data;
+		mii->phy_id = phy_id;
 		mii->reg_num = reg;
 		mii->val_in = val;
 		if (ioctl(robo->fd, SIOCSMIIREG, &robo->ifr) < 0) {
@@ -107,15 +125,16 @@ static int robo_reg(robo_t *robo, u8 page, u8 reg, u8 op)
 	int i = 3;
 	
 	/* set page number */
-	mdio_write(robo, REG_MII_PAGE, 
+	mdio_write(robo, ROBO_PHY_ADDR, REG_MII_PAGE, 
 		(page << 8) | REG_MII_PAGE_ENABLE);
 	
 	/* set register address */
-	mdio_write(robo, REG_MII_ADDR, (reg << 8) | op);
+	mdio_write(robo, ROBO_PHY_ADDR, REG_MII_ADDR, 
+		(reg << 8) | op);
 
 	/* check if operation completed */
 	while (i--) {
-		if ((mdio_read(robo, REG_MII_ADDR) & 3) == 0)
+		if ((mdio_read(robo, ROBO_PHY_ADDR, REG_MII_ADDR) & 3) == 0)
 			return 0;
 	}
 
@@ -132,28 +151,28 @@ static void robo_read(robo_t *robo, u8 page, u8 reg, u16 *val, int count)
 	robo_reg(robo, page, reg, REG_MII_ADDR_READ);
 	
 	for (i = 0; i < count; i++)
-		val[i] = mdio_read(robo, REG_MII_DATA0 + i);
+		val[i] = mdio_read(robo, ROBO_PHY_ADDR, REG_MII_DATA0 + i);
 }
 
 static u16 robo_read16(robo_t *robo, u8 page, u8 reg)
 {
 	robo_reg(robo, page, reg, REG_MII_ADDR_READ);
 	
-	return mdio_read(robo, REG_MII_DATA0);
+	return mdio_read(robo, ROBO_PHY_ADDR, REG_MII_DATA0);
 }
 
 static u32 robo_read32(robo_t *robo, u8 page, u8 reg)
 {
 	robo_reg(robo, page, reg, REG_MII_ADDR_READ);
 	
-	return mdio_read(robo, REG_MII_DATA0) +
-		(mdio_read(robo, REG_MII_DATA0 + 1) << 16);
+	return mdio_read(robo, ROBO_PHY_ADDR, REG_MII_DATA0) +
+		(mdio_read(robo, ROBO_PHY_ADDR, REG_MII_DATA0 + 1) << 16);
 }
 
 static void robo_write16(robo_t *robo, u8 page, u8 reg, u16 val16)
 {
 	/* write data */
-	mdio_write(robo, REG_MII_DATA0, val16);
+	mdio_write(robo, ROBO_PHY_ADDR, REG_MII_DATA0, val16);
 
 	robo_reg(robo, page, reg, REG_MII_ADDR_WRITE);
 }
@@ -161,8 +180,8 @@ static void robo_write16(robo_t *robo, u8 page, u8 reg, u16 val16)
 static void robo_write32(robo_t *robo, u8 page, u8 reg, u32 val32)
 {
 	/* write data */
-	mdio_write(robo, REG_MII_DATA0, val32 & 65535);
-	mdio_write(robo, REG_MII_DATA0 + 1, val32 >> 16);
+	mdio_write(robo, ROBO_PHY_ADDR, REG_MII_DATA0, val32 & 65535);
+	mdio_write(robo, ROBO_PHY_ADDR, REG_MII_DATA0 + 1, val32 >> 16);
 	
 	robo_reg(robo, page, reg, REG_MII_ADDR_WRITE);
 }
@@ -183,6 +202,18 @@ char ports[6] = { 'W', '4', '3', '2', '1', 'C' };
 char *rxtx[4] = { "enabled", "rx_disabled", "tx_disabled", "disabled" };
 char *stp[8] = { "none", "disable", "block", "listen", "learn", "forward", "6", "7" };
 
+struct {
+	char *name;
+	u16 bmcr;
+} media[5] = { { "auto", BMCR_ANENABLE | BMCR_ANRESTART }, 
+	{ "10HD", 0 }, { "10FD", BMCR_FULLDPLX },
+	{ "100HD", BMCR_SPEED100 }, { "100FD", BMCR_SPEED100 | BMCR_FULLDPLX } };
+
+struct {
+	char *name;
+	u16 value;
+} mdix[3] = { { "auto", 0x0000 }, { "on", 0x1800 }, { "off", 0x0800 } };
+
 void usage()
 {
 	fprintf(stderr, "Broadcom BCM5325E/536x switch configuration utility\n"
@@ -197,6 +228,7 @@ void usage()
 			"\tshow\n"
 			"\tswitch <enable|disable>\n"
 			"\tport <port_number> [state <%s|%s|%s|%s>]\n\t\t[stp %s|%s|%s|%s|%s|%s] [tag <vlan_tag>]\n"
+			"\t\t[media %s|%s|%s|%s|%s] [mdi-x %s|%s|%s]\n"
 			"\tvlan <vlan_number> [ports <ports_list>]\n"
 			"\tvlans <enable|disable|reset>\n\n"
 			"\tports_list should be one argument, space separated, quoted if needed,\n"
@@ -210,7 +242,9 @@ void usage()
 			"2) WRT54g, WL-500g Deluxe OpenWRT config (vlan0 is LAN, vlan1 is WAN):\n"
 			"robocfg switch disable vlans enable reset vlan 0 ports \"1 2 3 4 5t\" vlan 1 ports \"0 5t\""
 			" port 0 state enabled stp none switch enable\n",
-			rxtx[0], rxtx[1], rxtx[2], rxtx[3], stp[0], stp[1], stp[2], stp[3], stp[4], stp[5]);
+			rxtx[0], rxtx[1], rxtx[2], rxtx[3], stp[0], stp[1], stp[2], stp[3], stp[4], stp[5],
+			media[0].name, media[1].name, media[2].name, media[3].name, media[4].name,
+			mdix[0].name, mdix[1].name, mdix[2].name);
 }
 
 int
@@ -252,13 +286,14 @@ main(int argc, char *argv[])
 	} else {
 		/* got phy address check for robo address */
 		struct mii_ioctl_data *mii = (struct mii_ioctl_data *)&robo.ifr.ifr_data;
-		if (mii->phy_id != 30) {
+		if (mii->phy_id != ROBO_PHY_ADDR) {
 			fprintf(stderr, "Invalid phy address (%d)\n", mii->phy_id);
 			exit(1);
 		}
 	}
 
-	phyid = mdio_read(&robo, 0x2) | (mdio_read(&robo, 0x3) << 16);
+	phyid = mdio_read(&robo, ROBO_PHY_ADDR, 0x2) | 
+		(mdio_read(&robo, ROBO_PHY_ADDR, 0x3) << 16);
 	
 	if (phyid == 0xffffffff || phyid == 0x55210022) {
 		fprintf(stderr, "No Robo switch in managed mode found\n");
@@ -268,13 +303,13 @@ main(int argc, char *argv[])
 	robo5350 = robo_vlan5350(&robo);
 	
 	for (i = 1; i < argc;) {
-		if (strcmp(argv[i], "port") == 0 && (i + 1) < argc)
+		if (strcasecmp(argv[i], "port") == 0 && (i + 1) < argc)
 		{
 			int index = atoi(argv[++i]);
 			/* read port specs */
 			while (++i < argc) {
-				if (strcmp(argv[i], "state") == 0 && ++i < argc) {
-					for (j = 0; j < 4 && strcmp(argv[i], rxtx[j]); j++);
+				if (strcasecmp(argv[i], "state") == 0 && ++i < argc) {
+					for (j = 0; j < 4 && strcasecmp(argv[i], rxtx[j]); j++);
 					if (j < 4) {
 						/* change state */
 						robo_write16(&robo,ROBO_CTRL_PAGE, port[index],
@@ -284,8 +319,8 @@ main(int argc, char *argv[])
 						exit(1);
 					}
 				} else
-				if (strcmp(argv[i], "stp") == 0 && ++i < argc) {
-					for (j = 0; j < 8 && strcmp(argv[i], stp[j]); j++);
+				if (strcasecmp(argv[i], "stp") == 0 && ++i < argc) {
+					for (j = 0; j < 8 && strcasecmp(argv[i], stp[j]); j++);
 					if (j < 8) {
 						/* change stp */
 						robo_write16(&robo,ROBO_CTRL_PAGE, port[index],
@@ -295,18 +330,37 @@ main(int argc, char *argv[])
 						exit(1);
 					}
 				} else
-				if (strcmp(argv[i], "tag") == 0 && ++i < argc) {
+				if (strcasecmp(argv[i], "media") == 0 && ++i < argc) {
+					for (j = 0; j < 5 && strcasecmp(argv[i], media[j].name); j++);
+					if (j < 5) {
+                                    		mdio_write(&robo, port[index], MII_BMCR, media[j].bmcr);
+					} else {
+						fprintf(stderr, "Invalid media '%s'.\n", argv[i]);
+						exit(1);
+					}
+				} else
+				if (strcasecmp(argv[i], "mdi-x") == 0 && ++i < argc) {
+					for (j = 0; j < 3 && strcasecmp(argv[i], mdix[j].name); j++);
+					if (j < 3) {
+                                    		mdio_write(&robo, port[index], 0x1c, mdix[j].value |
+						    (mdio_read(&robo, port[index], 0x1c) & ~0x1800));
+					} else {
+						fprintf(stderr, "Invalid mdi-x '%s'.\n", argv[i]);
+						exit(1);
+					}
+				} else
+				if (strcasecmp(argv[i], "tag") == 0 && ++i < argc) {
 					j = atoi(argv[i]);
 					/* change vlan tag */
 					robo_write16(&robo, ROBO_VLAN_PAGE, ROBO_VLAN_PORT0_DEF_TAG + (index << 1), j);
 				} else break;
 			}
 		} else
-		if (strcmp(argv[i], "vlan") == 0 && (i + 1) < argc)
+		if (strcasecmp(argv[i], "vlan") == 0 && (i + 1) < argc)
 		{
 			int index = atoi(argv[++i]);
 			while (++i < argc) {
-				if (strcmp(argv[i], "ports") == 0 && ++i < argc) {
+				if (strcasecmp(argv[i], "ports") == 0 && ++i < argc) {
 					char *ports = argv[i];
 					int untag = 0;
 					int member = 0;
@@ -349,7 +403,7 @@ main(int argc, char *argv[])
 				} else break;
 			}
 		} else
-		if (strcmp(argv[i], "switch") == 0 && (i + 1) < argc)
+		if (strcasecmp(argv[i], "switch") == 0 && (i + 1) < argc)
 		{
 			/* enable/disable switching */
 			robo_write16(&robo, ROBO_CTRL_PAGE, ROBO_SWITCH_MODE,
@@ -357,10 +411,10 @@ main(int argc, char *argv[])
 				(*argv[++i] == 'e' ? 2 : 0));
 			i++;
 		} else
-		if (strcmp(argv[i], "vlans") == 0 && (i + 1) < argc)
+		if (strcasecmp(argv[i], "vlans") == 0 && (i + 1) < argc)
 		{
 			while (++i < argc) {
-				if (strcmp(argv[i], "reset") == 0) {
+				if (strcasecmp(argv[i], "reset") == 0) {
 					/* reset vlan validity bit */
 					for (j = 0; j <= (robo5350 ? VLAN_ID_MAX5350 : VLAN_ID_MAX); j++) 
 					{
@@ -375,9 +429,9 @@ main(int argc, char *argv[])
 						}
 					}
 				} else 
-				if (strcmp(argv[i], "enable") == 0 || strcmp(argv[i], "disable") == 0) 
+				if (strcasecmp(argv[i], "enable") == 0 || strcasecmp(argv[i], "disable") == 0) 
 				{
-					int disable = (*argv[i] == 'd');
+					int disable = (*argv[i] == 'd') || (*argv[i] == 'D');
 					/* enable/disable vlans */
 					robo_write16(&robo, ROBO_VLAN_PAGE, ROBO_VLAN_CTRL0, disable ? 0 :
 						(1 << 7) /* 802.1Q VLAN */ | (3 << 5) /* mac check and hash */);
@@ -394,7 +448,7 @@ main(int argc, char *argv[])
 				} else break;
 			}
 		} else
-		if (strcmp(argv[i], "show") == 0)
+		if (strcasecmp(argv[i], "show") == 0)
 		{
 			break;
 		} else {
