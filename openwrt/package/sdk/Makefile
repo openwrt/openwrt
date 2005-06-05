@@ -28,6 +28,7 @@ $(BIN_DIR)/$(SDK_NAME).tar.bz2:
 	cp ./files/Makefile.sdk $(SDK_BUILD_DIR)/Makefile
 	cp ./files/README.SDK $(SDK_BUILD_DIR)/
 	cp ./files/depend.mk $(SDK_BUILD_DIR)/package/
+	cp $(TOPDIR)/package/rules.mk $(SDK_BUILD_DIR)/package/
 	egrep '^BR2_(ARCH|WGET|STAGING|JLEVEL|LARGEFILE|TARGET_OPT)' $(TOPDIR)/.config > $(SDK_BUILD_DIR)/.config
 	find $(SDK_BUILD_DIR) -name CVS | xargs rm -rf 
 	(cd $(BUILD_DIR); \
