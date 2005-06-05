@@ -1,6 +1,8 @@
 # OpenWrt SDK Makefile
 TOPDIR:=${shell pwd}
 export TOPDIR
+DEVELOPER:=1
+export DEVELOPER
 
 include $(TOPDIR)/rules.mk
 include $(TOPDIR)/package/depend.mk
