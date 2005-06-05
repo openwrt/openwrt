@@ -56,3 +56,7 @@ $(IPKG_STRACE):
 	cp $(PKG_BUILD_DIR)/$(PKG_NAME) $(IDIR_STRACE)/usr/sbin/
 	$(STRIP) $(IDIR_STRACE)/usr/sbin/*
 	$(IPKG_BUILD) $(IDIR_STRACE) $(PACKAGE_DIR)
+
+mostlyclean:
+	$(MAKE) -C $(PKG_BUILD_DIR) clean
+	rm -f $(PKG_BUILD_DIR)/.built
