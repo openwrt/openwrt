@@ -3,7 +3,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=usbutils
-PKG_VERSION:=0.70
+PKG_VERSION:=0.71
 PKG_RELEASE:=1
 PKG_MD5SUM:=05276dc307a0297904bc892e9998bf59
 
@@ -60,8 +60,8 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_LSUSB):
 	install -d -m0755 $(IDIR_LSUSB)/usr/share
-	cp -fpR $(PKG_INSTALL_DIR)/usr/share/usb.ids $(IDIR_LSUSB)/usr/share/
+	cp -fp $(PKG_INSTALL_DIR)/usr/share/usb.ids $(IDIR_LSUSB)/usr/share/
 	install -d -m0755 $(IDIR_LSUSB)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/lsusb $(IDIR_LSUSB)/usr/sbin/
+	cp -fp $(PKG_INSTALL_DIR)/usr/sbin/lsusb $(IDIR_LSUSB)/usr/sbin/
 	$(RSTRIP) $(IDIR_LSUSB)
 	$(IPKG_BUILD) $(IDIR_LSUSB) $(PACKAGE_DIR)
