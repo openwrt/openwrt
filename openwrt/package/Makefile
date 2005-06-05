@@ -216,6 +216,10 @@ sdk-compile: $(DEV_LIBS_COMPILE) $(SDK_DEFAULT_COMPILE) openwrt-install
 	@[ -f $(STAMP_DIR)/.$@ ] || $(MAKE) -C $(patsubst %-install,%,$@) install
 	@touch $(STAMP_DIR)/.$@
 
+%-rebuild: 
+	@rm -f $(STAMP_DIR)/.$(patsubst %-rebuild,%,$@)-*
+	$(MAKE) -C $(patsubst %-rebuild,%,$@) rebuild
+
 %-clean:
 	@$(MAKE) -C $(patsubst %-clean,%,$@) clean
 	@rm -f $(STAMP_DIR)/.$(patsubst %-clean,%,$@)-*
