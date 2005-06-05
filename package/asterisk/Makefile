@@ -23,6 +23,11 @@ $(eval $(call PKG_template,ASTERISK_CODEC_LPC10,asterisk-codec-lpc10,$(PKG_VERSI
 $(eval $(call PKG_template,ASTERISK_CODEC_SPEEX,asterisk-codec-speex,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,ASTERISK_PBX_DUNDI,asterisk-pbx-dundi,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
+ifneq ($(DEVELOPER),)
+APPS:=app_sql_mysql.so app_sql_postgres.so
+MODS:=cdr_mysql.so cdr_pgsql.so
+SPEEX:=codec_speex.so
+else
 APPS:=
 MODS:=
 ifneq ($(BR2_PACKAGE_ASTERISK_MYSQL),)
@@ -35,6 +40,7 @@ MODS += cdr_pgsql.so
 endif
 ifneq ($(BR2_PACKAGE_ASTERISK_CODEC_SPEEX),)
 SPEEX:=codec_speex.so
+endif
 endif
 
 $(PKG_BUILD_DIR)/.configured:
