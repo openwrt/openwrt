@@ -19,9 +19,10 @@ $(DL_DIR)/$(LINUX_BINARY_WL_DRIVER):
 $(DL_DIR)/$(LINUX_ET_DRIVER):
 	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(LINUX_ET_DRIVER) $(LINUX_ET_MD5SUM) $(LINUX_BINARY_DRIVER_SITE)
 	
-$(LINUX_DIR)/.depend_done $(LINUX_DIR)/.modules_done: drivers-unpacked
+$(LINUX_DIR)/.depend_done: $(LINUX_DIR)/.drivers-unpacked
+$(LINUX_DIR)/.modules_done: $(LINUX_DIR)/.drivers-unpacked
 
-drivers-unpacked:
+$(LINUX_DIR)/.drivers-unpacked: $(LINUX_DIR)/.unpacked
 	-mkdir -p $(BUILD_DIR)
 	zcat $(DL_DIR)/$(LINUX_BINARY_WL_DRIVER) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
 	zcat $(DL_DIR)/$(LINUX_ET_DRIVER) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
@@ -32,6 +33,7 @@ drivers-unpacked:
 	cp -a $(BUILD_DIR)/et/* $(LINUX_DIR)/drivers/net/et
 	mkdir -p $(LINUX_DIR)/arch/mips/bcm947xx/include/
 	cp -a $(BUILD_DIR)/et/*.h $(LINUX_DIR)/arch/mips/bcm947xx/include/
+	touch $@
 
 linux-dirclean: drivers-clean
 
