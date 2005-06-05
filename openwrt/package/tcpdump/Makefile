@@ -7,7 +7,10 @@ PKG_VERSION:=3.8.3
 PKG_RELEASE:=1
 PKG_MD5SUM:=30645001f4b97019677cad88d3811904
 
-PKG_SOURCE_URL:=http://www.tcpdump.org/release/
+PKG_SOURCE_URL:=http://www.tcpdump.org/release/ \
+	http://ftp.gwdg.de/pub/misc/tcpdump/ \
+	http://www.at.tcpdump.org/ \
+	http://www.br.tcpdump.org/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
