@@ -7,7 +7,10 @@ PKG_VERSION:=1.23
 PKG_RELEASE:=1
 PKG_MD5SUM:=fa3dfcaacf31855626d5b731b04a077f
 
-PKG_SOURCE_URL:=ftp://ftp.netfilter.org/pub/ulogd/
+PKG_SOURCE_URL:=ftp://ftp.netfilter.org/pub/ulogd/ \
+	ftp://ftp.be.netfilter.org/pub/netfilter/ulogd/ \
+	ftp://ftp.de.netfilter.org/pub/netfilter/ulogd/ \
+	ftp://ftp.no.netfilter.org/pub/netfilter/ulogd/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_CAT:=bzcat
 
