@@ -28,7 +28,8 @@ $(2)-clean:
 	rm -f $$(IPKG_$(1))
 clean: $(2)-clean
 mostlyclean:
-rebuild: mostlyclean
+rebuild:
+	-$(MAKE) mostlyclean
 	if [ -f $(PKG_BUILD_DIR)/.built ]; then \
 		$(MAKE) clean; \
 	fi
@@ -63,7 +64,6 @@ $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 
 $(PACKAGE_DIR):
 	mkdir -p $@
-
 
 clean: 
 	rm -rf $(PKG_BUILD_DIR)
