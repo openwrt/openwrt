@@ -63,8 +63,8 @@ iptables -t nat -N postrouting_rule
   # base case
   iptables -P FORWARD DROP 
   iptables -A FORWARD -m state --state INVALID -j DROP
-  iptables -A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
   iptables -A FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
+  iptables -A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
 
   # allow
   iptables -A FORWARD -i br0 -o br0 -j ACCEPT
