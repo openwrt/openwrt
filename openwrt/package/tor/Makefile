@@ -8,7 +8,9 @@ PKG_RELEASE:=1
 PKG_UPSTREAM_VERSION=0.1.0.8-rc
 PKG_MD5SUM:=22f5c162e1c09f8693a21826f6a9999f
 
-PKG_SOURCE_URL:=http://tor.eff.org/dist/
+PKG_SOURCE_URL:=http://tor.eff.org/dist/ \
+	http://ftp.se.linux.org/crypto/tor/ \
+	http://tor.meulie.net/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_UPSTREAM_VERSION).tar.gz
 PKG_CAT:=zcat
 
