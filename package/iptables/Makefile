@@ -8,7 +8,10 @@ PKG_VERSION:=1.3.1
 PKG_RELEASE:=1
 PKG_MD5SUM:=c3358a3bd0d7755df0b64a5063db296b
 
-PKG_SOURCE_URL:=http://www.netfilter.org/files
+PKG_SOURCE_URL:=http://www.netfilter.org/files \
+	ftp://ftp.be.netfilter.org/pub/netfilter/iptables/ \
+	ftp://ftp.de.netfilter.org/pub/netfilter/iptables/ \
+	ftp://ftp.no.netfilter.org/pub/netfilter/iptables/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_CAT:=bzcat
 
