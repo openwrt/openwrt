@@ -7,7 +7,10 @@ PKG_VERSION := 1.2.10
 PKG_RELEASE := 1
 PKG_MD5SUM := 6fe30dad87c77b91b632def29dd69ef9
 
-PKG_SOURCE_URL := ftp://ftp.gtk.org/pub/gtk/v1.2
+PKG_SOURCE_URL := ftp://ftp.gtk.org/pub/gtk/v1.2 \
+	http://ftp.gwdg.de/pub/misc/grafik/gimp/gtk/v1.2/ \
+	http://ftp.esat.net/mirrors/ftp.gimp.org/pub/gtk/v1.2/ \
+	http://www.mirrorservice.org/sites/ftp.gimp.org/pub/gtk/v1.2/
 PKG_SOURCE := $(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT := zcat
 
