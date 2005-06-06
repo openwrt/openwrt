@@ -7,7 +7,10 @@ PKG_VERSION:=0.9.7g
 PKG_RELEASE:=1
 PKG_MD5SUM:=991615f73338a571b6a1be7d74906934
 
-PKG_SOURCE_URL:=http://www.openssl.org/source/
+PKG_SOURCE_URL:=http://www.openssl.org/source/ \
+	ftp://ftp.funet.fi/pub/crypt/cryptography/libs/openssl/source/ \
+	ftp://ftp.webmonster.de/pub/openssl/source/ \
+	ftp://ftp.sunet.se/pub/security/tools/net/openssl/source/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
