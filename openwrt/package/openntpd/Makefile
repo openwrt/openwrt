@@ -9,7 +9,9 @@ PKG_MD5SUM:=4584f226523776a3cdd2fb6f8212ba8d
 
 # space separated list or special @SF for sourceforge projects
 PKG_SOURCE_URL:=ftp://ftp.openbsd.org/pub/OpenBSD/OpenNTPD/ \
-                ftp://ftp.de.openbsd.org/pub/unix/OpenBSD/OpenNTPD/		
+	ftp://ftp.de.openbsd.org/pub/unix/OpenBSD/OpenNTPD/ \
+	ftp://ftp.fr.openbsd.org/pub/OpenBSD/OpenNTPD/ \
+	ftp://ftp.sunet.se/pub/OpenBSD/OpenNTPD/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
