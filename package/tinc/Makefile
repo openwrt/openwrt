@@ -7,7 +7,9 @@ PKG_VERSION:=1.0.4
 PKG_RELEASE:=1
 PKG_MD5SUM:=63887373dd763f8d90cecc5a3616c363
 
-PKG_SOURCE_URL:=http://www.tinc-vpn.org/packages
+PKG_SOURCE_URL:=http://www.tinc-vpn.org/packages \
+	http://ftp.yi.se/pub/tinc/ \
+	http://www.mirrors.wiretapped.net/security/network-security/tinc/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
