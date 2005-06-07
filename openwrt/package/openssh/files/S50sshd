@@ -1,0 +1,15 @@
+#!/bin/sh
+
+for type in rsa dsa; do {
+  # check for keys
+  key=/etc/ssh/ssh_${type}_host_key
+  [ ! -f $key ] && {
+    # generate missing keys
+    [ -x /usr/bin/ssh-keygen ] && {
+      /usr/bin/ssh-keygen -N '' -t $type -f $key 2>&- >&- && exec $0 $*
+    } &
+    exit 0
+  }
+}; done
+
+/usr/sbin/sshd
