@@ -7,8 +7,7 @@ PKG_VERSION:=1.2.4
 PKG_RELEASE:=1
 PKG_MD5SUM:=771c1489488e62668d673478311d63ca
 
-PKG_SOURCE_URL:=http://nbd.vd-s.ath.cx/openwrt \
-	http://openwrt.openbsd-geek.de/
+PKG_SOURCE_URL:=http://nbd.vd-s.ath.cx/openwrt
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
