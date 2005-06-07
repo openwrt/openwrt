@@ -1,0 +1,10 @@
+config BR2_PACKAGE_OPENSSH
+	tristate "OpenSSH"
+	default m if CONFIG_DEVEL
+	select BR2_PACKAGE_OPENSSL
+	help
+	  Popular SSH server and client
+	  
+	  http://www.openssh.com/
+	  
+	  Depends: openssl

@@ -65,6 +65,7 @@ package-$(BR2_PACKAGE_NTPCLIENT) += ntpclient
 package-$(BR2_PACKAGE_OLSRD) += olsrd
 package-$(BR2_PACKAGE_OPENLDAP) += openldap
 package-$(BR2_PACKAGE_OPENNTPD) += openntpd
+package-$(BR2_PACKAGE_OPENSSH) += openssh
 package-$(BR2_PACKAGE_OPENSSL) += openssl
 package-$(BR2_PACKAGE_OPENSWAN) += openswan
 package-$(BR2_PACKAGE_OPENVPN) += openvpn
@@ -134,6 +135,7 @@ nfs-server-compile: portmap-compile
 nmap-compile: uclibc++-compile pcre-compile libpcap-compile
 nocatsplash-compile: glib-compile
 openldap-compile: cyrus-sasl-compile openssl-compile
+openssh-compile: zlib-compile openssl-compile
 openssl-compile: zlib-compile
 openswan-compile: gmp-compile
 osiris-compile: openssl-compile
