@@ -25,7 +25,7 @@ $(GDB_DIR)/.patched: $(DL_DIR)/$(GDB_SOURCE)
 
 GDB_CLIENT_DIR:=$(TOOL_BUILD_DIR)/gdbclient-$(GDB_VERSION)
 
-$(GDB_CLIENT_DIR)/.configured: $(GDB_DIR)/.unpacked
+$(GDB_CLIENT_DIR)/.configured: $(GDB_DIR)/.patched
 	mkdir -p $(GDB_CLIENT_DIR)
 	(cd $(GDB_CLIENT_DIR); \
 		gdb_cv_func_sigsetjmp=yes \
