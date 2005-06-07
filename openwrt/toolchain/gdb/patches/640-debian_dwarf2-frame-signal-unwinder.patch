@@ -1,0 +1,120 @@
+Status: Checked in to HEAD after 6.3.
+
+2004-11-07  Daniel Jacobowitz  <dan@debian.org>
+
+	* dwarf2-frame.c (struct dwarf2_frame_ops): Add signal_frame_p.
+	(dwarf2_frame_set_signal_frame_p, dwarf2_frame_signal_frame_p)
+	(dwarf2_signal_frame_unwind): New.
+	(dwarf2_frame_sniffer): Use dwarf2_frame_signal_frame_p.
+	* dwarf2-frame.h (dwarf2_frame_set_signal_frame_p): New prototype.
+
+Index: src/gdb/dwarf2-frame.c
+===================================================================
+RCS file: /big/fsf/rsync/src-cvs/src/gdb/dwarf2-frame.c,v
+retrieving revision 1.41
+diff -u -p -r1.41 dwarf2-frame.c
+--- src/gdb/dwarf2-frame.c	4 Nov 2004 21:15:15 -0000	1.41
++++ src/gdb/dwarf2-frame.c	7 Nov 2004 17:41:58 -0000
+@@ -471,6 +471,10 @@ struct dwarf2_frame_ops
+ {
+   /* Pre-initialize the register state REG for register REGNUM.  */
+   void (*init_reg) (struct gdbarch *, int, struct dwarf2_frame_state_reg *);
++
++  /* Check whether the frame preceding NEXT_FRAME will be a signal
++     trampoline.  */
++  int (*signal_frame_p) (struct gdbarch *, struct frame_info *);
+ };
+ 
+ /* Default architecture-specific register state initialization
+@@ -547,6 +551,33 @@ dwarf2_frame_init_reg (struct gdbarch *g
+ 
+   ops->init_reg (gdbarch, regnum, reg);
+ }
++
++/* Set the architecture-specific signal trampoline recognition
++   function for GDBARCH to SIGNAL_FRAME_P.  */
++
++void
++dwarf2_frame_set_signal_frame_p (struct gdbarch *gdbarch,
++				 int (*signal_frame_p) (struct gdbarch *,
++							struct frame_info *))
++{
++  struct dwarf2_frame_ops *ops = gdbarch_data (gdbarch, dwarf2_frame_data);
++
++  ops->signal_frame_p = signal_frame_p;
++}
++
++/* Query the architecture-specific signal frame recognizer for
++   NEXT_FRAME.  */
++
++static int
++dwarf2_frame_signal_frame_p (struct gdbarch *gdbarch,
++			     struct frame_info *next_frame)
++{
++  struct dwarf2_frame_ops *ops = gdbarch_data (gdbarch, dwarf2_frame_data);
++
++  if (ops->signal_frame_p == NULL)
++    return 0;
++  return ops->signal_frame_p (gdbarch, next_frame);
++}
+ 
+ 
+ struct dwarf2_frame_cache
+@@ -841,6 +872,13 @@ static const struct frame_unwind dwarf2_
+   dwarf2_frame_prev_register
+ };
+ 
++static const struct frame_unwind dwarf2_signal_frame_unwind =
++{
++  SIGTRAMP_FRAME,
++  dwarf2_frame_this_id,
++  dwarf2_frame_prev_register
++};
++
+ const struct frame_unwind *
+ dwarf2_frame_sniffer (struct frame_info *next_frame)
+ {
+@@ -848,10 +886,18 @@ dwarf2_frame_sniffer (struct frame_info 
+      function.  frame_pc_unwind(), for a no-return next function, can
+      end up returning something past the end of this function's body.  */
+   CORE_ADDR block_addr = frame_unwind_address_in_block (next_frame);
+-  if (dwarf2_frame_find_fde (&block_addr))
+-    return &dwarf2_frame_unwind;
++  if (!dwarf2_frame_find_fde (&block_addr))
++    return NULL;
+ 
+-  return NULL;
++  /* On some targets, signal trampolines may have unwind information.
++     We need to recognize them so that we set the frame type
++     correctly.  */
++
++  if (dwarf2_frame_signal_frame_p (get_frame_arch (next_frame),
++				   next_frame))
++    return &dwarf2_signal_frame_unwind;
++
++  return &dwarf2_frame_unwind;
+ }
+ 
+ 
+Index: src/gdb/dwarf2-frame.h
+===================================================================
+RCS file: /big/fsf/rsync/src-cvs/src/gdb/dwarf2-frame.h,v
+retrieving revision 1.6
+diff -u -p -r1.6 dwarf2-frame.h
+--- src/gdb/dwarf2-frame.h	28 Feb 2004 16:59:32 -0000	1.6
++++ src/gdb/dwarf2-frame.h	7 Nov 2004 17:40:41 -0000
+@@ -79,6 +79,14 @@ extern void dwarf2_frame_set_init_reg (s
+ 				       void (*init_reg) (struct gdbarch *, int,
+ 					     struct dwarf2_frame_state_reg *));
+ 
++/* Set the architecture-specific signal trampoline recognition
++   function for GDBARCH to SIGNAL_FRAME_P.  */
++
++extern void
++  dwarf2_frame_set_signal_frame_p (struct gdbarch *gdbarch,
++				   int (*signal_frame_p) (struct gdbarch *,
++							  struct frame_info *));
++
+ /* Return the frame unwind methods for the function that contains PC,
+    or NULL if it can't be handled by DWARF CFI frame unwinder.  */
+ 

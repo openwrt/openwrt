@@ -1,0 +1,15 @@
+Trivial.  Still need to submit this.
+
+Index: gdb-6.1/gdb/tracepoint.c
+===================================================================
+--- gdb-6.1.orig/gdb/tracepoint.c	2004-04-05 13:26:43.000000000 -0400
++++ gdb-6.1/gdb/tracepoint.c	2004-04-05 13:26:45.000000000 -0400
+@@ -853,6 +853,8 @@ read_actions (struct tracepoint *t)
+       else
+ 	line = gdb_readline (0);
+ 
++      if (line == NULL || *line == EOF)
++	break;
+       linetype = validate_actionline (&line, t);
+       if (linetype == BADLINE)
+ 	continue;		/* already warned -- collect another line */
