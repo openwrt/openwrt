@@ -1,0 +1,39 @@
+Status: Unsuitable for upstream (at least, without a lot of arguing).
+
+GCC does not specify the state of every last register in the CIE.  Since
+GCC's focus is on correctness of runtime unwinding, any registers which
+have to be unwound will be specified; but unmodified registers will not
+be explicitly marked.  (How about modified, call-clobbered registers?
+I'm not sure if they are marked as unavailable.)
+
+GDB issues a noisy warning about this.  The warning is generally not useful,
+and we can get it extremely frequently (any time we load a new CIE).
+
+This patch disables the warning.  Alternately we could set the complaints
+threshold to zero, or implement a default frame init-register method for
+every architecture.  But someday the compiler will support using different
+calling conventions for internal functions, so that's not much of a stopgap. 
+ARM has a complex algorithm for handling this, involving scanning all CIEs -
+benefit not completely clear outside of the ARM context of flexible register
+sets.
+
+Index: gdb-6.3/gdb/dwarf2-frame.c
+===================================================================
+--- gdb-6.3.orig/gdb/dwarf2-frame.c	2004-11-15 11:54:57.000000000 -0500
++++ gdb-6.3/gdb/dwarf2-frame.c	2004-12-08 18:02:23.896409471 -0500
+@@ -705,9 +705,12 @@ dwarf2_frame_cache (struct frame_info *n
+ 	   table.  We need a way of iterating through all the valid
+ 	   DWARF2 register numbers.  */
+ 	if (fs->regs.reg[column].how == DWARF2_FRAME_REG_UNSPECIFIED)
+-	  complaint (&symfile_complaints,
+-		     "Incomplete CFI data; unspecified registers at 0x%s",
+-		     paddr (fs->pc));
++	  {
++	    if (0)
++	      complaint (&symfile_complaints,
++			 "Incomplete CFI data; unspecified registers at 0x%s",
++			 paddr (fs->pc));
++	  }
+ 	else
+ 	  cache->reg[regnum] = fs->regs.reg[column];
+       }

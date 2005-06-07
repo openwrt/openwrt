@@ -1,0 +1,675 @@
+Status: Commited to GDB after 6.3.
+
+Index: gdb-6.3/gdb/gdbserver/acinclude.m4
+===================================================================
+--- gdb-6.3.orig/gdb/gdbserver/acinclude.m4	2002-06-11 13:32:39.000000000 -0400
++++ gdb-6.3/gdb/gdbserver/acinclude.m4	2004-12-07 17:19:31.115089905 -0500
+@@ -13,6 +13,7 @@ AC_DEFUN([SRV_CHECK_THREAD_DB],
+    void ps_lsetregs() {}
+    void ps_lgetfpregs() {}
+    void ps_lsetfpregs() {}
++   void ps_get_thread_area() {}
+    void ps_getpid() {}],
+   [td_ta_new();],
+   [srv_cv_thread_db="-lthread_db"],
+@@ -32,10 +33,11 @@ AC_DEFUN([SRV_CHECK_THREAD_DB],
+    void ps_lsetregs() {}
+    void ps_lgetfpregs() {}
+    void ps_lsetfpregs() {}
++   void ps_get_thread_area() {}
+    void ps_getpid() {}],
+   [td_ta_new();],
+   [srv_cv_thread_db="$thread_db"],
+   [srv_cv_thread_db=no])
++  ]])
+  LIBS="$old_LIBS"
+- ]])
+ )])
+Index: gdb-6.3/gdb/gdbserver/configure
+===================================================================
+--- gdb-6.3.orig/gdb/gdbserver/configure	2004-10-16 12:18:54.000000000 -0400
++++ gdb-6.3/gdb/gdbserver/configure	2004-12-07 17:22:17.343129771 -0500
+@@ -28,6 +28,7 @@ program_suffix=NONE
+ program_transform_name=s,x,x,
+ silent=
+ site=
++sitefile=
+ srcdir=
+ target=NONE
+ verbose=
+@@ -142,6 +143,7 @@ Configuration:
+   --help                  print this message
+   --no-create             do not create output files
+   --quiet, --silent       do not print \`checking...' messages
++  --site-file=FILE        use FILE as the site file
+   --version               print the version of autoconf that created configure
+ Directory and file names:
+   --prefix=PREFIX         install architecture-independent files in PREFIX
+@@ -312,6 +314,11 @@ EOF
+   -site=* | --site=* | --sit=*)
+     site="$ac_optarg" ;;
+ 
++  -site-file | --site-file | --site-fil | --site-fi | --site-f)
++    ac_prev=sitefile ;;
++  -site-file=* | --site-file=* | --site-fil=* | --site-fi=* | --site-f=*)
++    sitefile="$ac_optarg" ;;
++
+   -srcdir | --srcdir | --srcdi | --srcd | --src | --sr)
+     ac_prev=srcdir ;;
+   -srcdir=* | --srcdir=* | --srcdi=* | --srcd=* | --src=* | --sr=*)
+@@ -477,12 +484,16 @@ fi
+ srcdir=`echo "${srcdir}" | sed 's%\([^/]\)/*$%\1%'`
+ 
+ # Prefer explicitly selected file to automatically selected ones.
+-if test -z "$CONFIG_SITE"; then
+-  if test "x$prefix" != xNONE; then
+-    CONFIG_SITE="$prefix/share/config.site $prefix/etc/config.site"
+-  else
+-    CONFIG_SITE="$ac_default_prefix/share/config.site $ac_default_prefix/etc/config.site"
++if test -z "$sitefile"; then
++  if test -z "$CONFIG_SITE"; then
++    if test "x$prefix" != xNONE; then
++      CONFIG_SITE="$prefix/share/config.site $prefix/etc/config.site"
++    else
++      CONFIG_SITE="$ac_default_prefix/share/config.site $ac_default_prefix/etc/config.site"
++    fi
+   fi
++else
++  CONFIG_SITE="$sitefile"
+ fi
+ for ac_site_file in $CONFIG_SITE; do
+   if test -r "$ac_site_file"; then
+@@ -526,7 +537,7 @@ fi
+ # Extract the first word of "gcc", so it can be a program name with args.
+ set dummy gcc; ac_word=$2
+ echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
+-echo "configure:530: checking for $ac_word" >&5
++echo "configure:541: checking for $ac_word" >&5
+ if eval "test \"`echo '$''{'ac_cv_prog_CC'+set}'`\" = set"; then
+   echo $ac_n "(cached) $ac_c" 1>&6
+ else
+@@ -556,7 +567,7 @@ if test -z "$CC"; then
+   # Extract the first word of "cc", so it can be a program name with args.
+ set dummy cc; ac_word=$2
+ echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
+-echo "configure:560: checking for $ac_word" >&5
++echo "configure:571: checking for $ac_word" >&5
+ if eval "test \"`echo '$''{'ac_cv_prog_CC'+set}'`\" = set"; then
+   echo $ac_n "(cached) $ac_c" 1>&6
+ else
+@@ -607,7 +618,7 @@ fi
+       # Extract the first word of "cl", so it can be a program name with args.
+ set dummy cl; ac_word=$2
+ echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
+-echo "configure:611: checking for $ac_word" >&5
++echo "configure:622: checking for $ac_word" >&5
+ if eval "test \"`echo '$''{'ac_cv_prog_CC'+set}'`\" = set"; then
+   echo $ac_n "(cached) $ac_c" 1>&6
+ else
+@@ -639,7 +650,7 @@ fi
+ fi
+ 
+ echo $ac_n "checking whether the C compiler ($CC $CFLAGS $LDFLAGS) works""... $ac_c" 1>&6
+-echo "configure:643: checking whether the C compiler ($CC $CFLAGS $LDFLAGS) works" >&5
++echo "configure:654: checking whether the C compiler ($CC $CFLAGS $LDFLAGS) works" >&5
+ 
+ ac_ext=c
+ # CFLAGS is not in ac_cpp because -g, -O, etc. are not valid cpp options.
+@@ -650,12 +661,12 @@ cross_compiling=$ac_cv_prog_cc_cross
+ 
+ cat > conftest.$ac_ext << EOF
+ 
+-#line 654 "configure"
++#line 665 "configure"
+ #include "confdefs.h"
+ 
+ main(){return(0);}
+ EOF
+-if { (eval echo configure:659: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
++if { (eval echo configure:670: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+   ac_cv_prog_cc_works=yes
+   # If we can't run a trivial program, we are probably using a cross compiler.
+   if (./conftest; exit) 2>/dev/null; then
+@@ -681,12 +692,12 @@ if test $ac_cv_prog_cc_works = no; then
+   { echo "configure: error: installation or configuration problem: C compiler cannot create executables." 1>&2; exit 1; }
+ fi
+ echo $ac_n "checking whether the C compiler ($CC $CFLAGS $LDFLAGS) is a cross-compiler""... $ac_c" 1>&6
+-echo "configure:685: checking whether the C compiler ($CC $CFLAGS $LDFLAGS) is a cross-compiler" >&5
++echo "configure:696: checking whether the C compiler ($CC $CFLAGS $LDFLAGS) is a cross-compiler" >&5
+ echo "$ac_t""$ac_cv_prog_cc_cross" 1>&6
+ cross_compiling=$ac_cv_prog_cc_cross
+ 
+ echo $ac_n "checking whether we are using GNU C""... $ac_c" 1>&6
+-echo "configure:690: checking whether we are using GNU C" >&5
++echo "configure:701: checking whether we are using GNU C" >&5
+ if eval "test \"`echo '$''{'ac_cv_prog_gcc'+set}'`\" = set"; then
+   echo $ac_n "(cached) $ac_c" 1>&6
+ else
+@@ -695,7 +706,7 @@ else
+   yes;
+ #endif
+ EOF
+-if { ac_try='${CC-cc} -E conftest.c'; { (eval echo configure:699: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }; } | egrep yes >/dev/null 2>&1; then
++if { ac_try='${CC-cc} -E conftest.c'; { (eval echo configure:710: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }; } | egrep yes >/dev/null 2>&1; then
+   ac_cv_prog_gcc=yes
+ else
+   ac_cv_prog_gcc=no
+@@ -714,7 +725,7 @@ ac_test_CFLAGS="${CFLAGS+set}"
+ ac_save_CFLAGS="$CFLAGS"
+ CFLAGS=
+ echo $ac_n "checking whether ${CC-cc} accepts -g""... $ac_c" 1>&6
+-echo "configure:718: checking whether ${CC-cc} accepts -g" >&5
++echo "configure:729: checking whether ${CC-cc} accepts -g" >&5
+ if eval "test \"`echo '$''{'ac_cv_prog_cc_g'+set}'`\" = set"; then
+   echo $ac_n "(cached) $ac_c" 1>&6
+ else
+@@ -793,7 +804,7 @@ else { echo "configure: error: can not r
+ fi
+ 
+ echo $ac_n "checking host system type""... $ac_c" 1>&6
+-echo "configure:797: checking host system type" >&5
++echo "configure:808: checking host system type" >&5
+ 
+ host_alias=$host
+ case "$host_alias" in
+@@ -814,7 +825,7 @@ host_os=`echo $host | sed 's/^\([^-]*\)-
+ echo "$ac_t""$host" 1>&6
+ 
+ echo $ac_n "checking target system type""... $ac_c" 1>&6
+-echo "configure:818: checking target system type" >&5
++echo "configure:829: checking target system type" >&5
+ 
+ target_alias=$target
+ case "$target_alias" in
+@@ -832,7 +843,7 @@ target_os=`echo $target | sed 's/^\([^-]
+ echo "$ac_t""$target" 1>&6
+ 
+ echo $ac_n "checking build system type""... $ac_c" 1>&6
+-echo "configure:836: checking build system type" >&5
++echo "configure:847: checking build system type" >&5
+ 
+ build_alias=$build
+ case "$build_alias" in
+@@ -867,7 +878,7 @@ test "$host_alias" != "$target_alias" &&
+ # SVR4 /usr/ucb/install, which tries to use the nonexistent group "staff"
+ # ./install, which can be erroneously created by make from ./install.sh.
+ echo $ac_n "checking for a BSD compatible install""... $ac_c" 1>&6
+-echo "configure:871: checking for a BSD compatible install" >&5
++echo "configure:882: checking for a BSD compatible install" >&5
+ if test -z "$INSTALL"; then
+ if eval "test \"`echo '$''{'ac_cv_path_install'+set}'`\" = set"; then
+   echo $ac_n "(cached) $ac_c" 1>&6
+@@ -921,7 +932,7 @@ test -z "$INSTALL_DATA" && INSTALL_DATA=
+ 
+ 
+ echo $ac_n "checking how to run the C preprocessor""... $ac_c" 1>&6
+-echo "configure:925: checking how to run the C preprocessor" >&5
++echo "configure:936: checking how to run the C preprocessor" >&5
+ # On Suns, sometimes $CPP names a directory.
+ if test -n "$CPP" && test -d "$CPP"; then
+   CPP=
+@@ -936,13 +947,13 @@ else
+   # On the NeXT, cc -E runs the code through the compiler's parser,
+   # not just through cpp.
+   cat > conftest.$ac_ext <<EOF
+-#line 940 "configure"
++#line 951 "configure"
+ #include "confdefs.h"
+ #include <assert.h>
+ Syntax Error
+ EOF
+ ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
+-{ (eval echo configure:946: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
++{ (eval echo configure:957: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+ ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
+ if test -z "$ac_err"; then
+   :
+@@ -953,13 +964,13 @@ else
+   rm -rf conftest*
+   CPP="${CC-cc} -E -traditional-cpp"
+   cat > conftest.$ac_ext <<EOF
+-#line 957 "configure"
++#line 968 "configure"
+ #include "confdefs.h"
+ #include <assert.h>
+ Syntax Error
+ EOF
+ ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
+-{ (eval echo configure:963: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
++{ (eval echo configure:974: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+ ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
+ if test -z "$ac_err"; then
+   :
+@@ -970,13 +981,13 @@ else
+   rm -rf conftest*
+   CPP="${CC-cc} -nologo -E"
+   cat > conftest.$ac_ext <<EOF
+-#line 974 "configure"
++#line 985 "configure"
+ #include "confdefs.h"
+ #include <assert.h>
+ Syntax Error
+ EOF
+ ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
+-{ (eval echo configure:980: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
++{ (eval echo configure:991: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+ ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
+ if test -z "$ac_err"; then
+   :
+@@ -1001,12 +1012,12 @@ fi
+ echo "$ac_t""$CPP" 1>&6
+ 
+ echo $ac_n "checking for ANSI C header files""... $ac_c" 1>&6
+-echo "configure:1005: checking for ANSI C header files" >&5
++echo "configure:1016: checking for ANSI C header files" >&5
+ if eval "test \"`echo '$''{'ac_cv_header_stdc'+set}'`\" = set"; then
+   echo $ac_n "(cached) $ac_c" 1>&6
+ else
+   cat > conftest.$ac_ext <<EOF
+-#line 1010 "configure"
++#line 1021 "configure"
+ #include "confdefs.h"
+ #include <stdlib.h>
+ #include <stdarg.h>
+@@ -1014,7 +1025,7 @@ else
+ #include <float.h>
+ EOF
+ ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
+-{ (eval echo configure:1018: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
++{ (eval echo configure:1029: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+ ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
+ if test -z "$ac_err"; then
+   rm -rf conftest*
+@@ -1031,7 +1042,7 @@ rm -f conftest*
+ if test $ac_cv_header_stdc = yes; then
+   # SunOS 4.x string.h does not declare mem*, contrary to ANSI.
+ cat > conftest.$ac_ext <<EOF
+-#line 1035 "configure"
++#line 1046 "configure"
+ #include "confdefs.h"
+ #include <string.h>
+ EOF
+@@ -1049,7 +1060,7 @@ fi
+ if test $ac_cv_header_stdc = yes; then
+   # ISC 2.0.2 stdlib.h does not declare free, contrary to ANSI.
+ cat > conftest.$ac_ext <<EOF
+-#line 1053 "configure"
++#line 1064 "configure"
+ #include "confdefs.h"
+ #include <stdlib.h>
+ EOF
+@@ -1070,7 +1081,7 @@ if test "$cross_compiling" = yes; then
+   :
+ else
+   cat > conftest.$ac_ext <<EOF
+-#line 1074 "configure"
++#line 1085 "configure"
+ #include "confdefs.h"
+ #include <ctype.h>
+ #define ISLOWER(c) ('a' <= (c) && (c) <= 'z')
+@@ -1081,7 +1092,7 @@ if (XOR (islower (i), ISLOWER (i)) || to
+ exit (0); }
+ 
+ EOF
+-if { (eval echo configure:1085: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
++if { (eval echo configure:1096: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
+ then
+   :
+ else
+@@ -1109,17 +1120,17 @@ for ac_hdr in sgtty.h termio.h termios.h
+ do
+ ac_safe=`echo "$ac_hdr" | sed 'y%./+-%__p_%'`
+ echo $ac_n "checking for $ac_hdr""... $ac_c" 1>&6
+-echo "configure:1113: checking for $ac_hdr" >&5
++echo "configure:1124: checking for $ac_hdr" >&5
+ if eval "test \"`echo '$''{'ac_cv_header_$ac_safe'+set}'`\" = set"; then
+   echo $ac_n "(cached) $ac_c" 1>&6
+ else
+   cat > conftest.$ac_ext <<EOF
+-#line 1118 "configure"
++#line 1129 "configure"
+ #include "confdefs.h"
+ #include <$ac_hdr>
+ EOF
+ ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
+-{ (eval echo configure:1123: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
++{ (eval echo configure:1134: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+ ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
+ if test -z "$ac_err"; then
+   rm -rf conftest*
+@@ -1147,12 +1158,12 @@ done
+ 
+ 
+ echo $ac_n "checking whether strerror must be declared""... $ac_c" 1>&6
+-echo "configure:1151: checking whether strerror must be declared" >&5
++echo "configure:1162: checking whether strerror must be declared" >&5
+ if eval "test \"`echo '$''{'bfd_cv_decl_needed_strerror'+set}'`\" = set"; then
+   echo $ac_n "(cached) $ac_c" 1>&6
+ else
+   cat > conftest.$ac_ext <<EOF
+-#line 1156 "configure"
++#line 1167 "configure"
+ #include "confdefs.h"
+ 
+ #include <stdio.h>
+@@ -1173,7 +1184,7 @@ int main() {
+ char *(*pfn) = (char *(*)) strerror
+ ; return 0; }
+ EOF
+-if { (eval echo configure:1177: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
++if { (eval echo configure:1188: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+   rm -rf conftest*
+   bfd_cv_decl_needed_strerror=no
+ else
+@@ -1205,19 +1216,19 @@ fi
+ 
+ if test "${srv_linux_regsets}" = "yes"; then
+   echo $ac_n "checking for PTRACE_GETREGS""... $ac_c" 1>&6
+-echo "configure:1209: checking for PTRACE_GETREGS" >&5
++echo "configure:1220: checking for PTRACE_GETREGS" >&5
+   if eval "test \"`echo '$''{'gdbsrv_cv_have_ptrace_getregs'+set}'`\" = set"; then
+   echo $ac_n "(cached) $ac_c" 1>&6
+ else
+   cat > conftest.$ac_ext <<EOF
+-#line 1214 "configure"
++#line 1225 "configure"
+ #include "confdefs.h"
+ #include <sys/ptrace.h>
+ int main() {
+ PTRACE_GETREGS;
+ ; return 0; }
+ EOF
+-if { (eval echo configure:1221: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
++if { (eval echo configure:1232: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+   rm -rf conftest*
+   gdbsrv_cv_have_ptrace_getregs=yes
+ else
+@@ -1238,19 +1249,19 @@ EOF
+   fi
+ 
+   echo $ac_n "checking for PTRACE_GETFPXREGS""... $ac_c" 1>&6
+-echo "configure:1242: checking for PTRACE_GETFPXREGS" >&5
++echo "configure:1253: checking for PTRACE_GETFPXREGS" >&5
+   if eval "test \"`echo '$''{'gdbsrv_cv_have_ptrace_getfpxregs'+set}'`\" = set"; then
+   echo $ac_n "(cached) $ac_c" 1>&6
+ else
+   cat > conftest.$ac_ext <<EOF
+-#line 1247 "configure"
++#line 1258 "configure"
+ #include "confdefs.h"
+ #include <sys/ptrace.h>
+ int main() {
+ PTRACE_GETFPXREGS;
+ ; return 0; }
+ EOF
+-if { (eval echo configure:1254: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
++if { (eval echo configure:1265: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+   rm -rf conftest*
+   gdbsrv_cv_have_ptrace_getfpxregs=yes
+ else
+@@ -1273,12 +1284,12 @@ fi
+ 
+ if test "$ac_cv_header_sys_procfs_h" = yes; then
+   echo $ac_n "checking for lwpid_t in sys/procfs.h""... $ac_c" 1>&6
+-echo "configure:1277: checking for lwpid_t in sys/procfs.h" >&5
++echo "configure:1288: checking for lwpid_t in sys/procfs.h" >&5
+  if eval "test \"`echo '$''{'bfd_cv_have_sys_procfs_type_lwpid_t'+set}'`\" = set"; then
+   echo $ac_n "(cached) $ac_c" 1>&6
+ else
+   cat > conftest.$ac_ext <<EOF
+-#line 1282 "configure"
++#line 1293 "configure"
+ #include "confdefs.h"
+ 
+ #define _SYSCALL32
+@@ -1287,7 +1298,7 @@ int main() {
+ lwpid_t avar
+ ; return 0; }
+ EOF
+-if { (eval echo configure:1291: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
++if { (eval echo configure:1302: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+   rm -rf conftest*
+   bfd_cv_have_sys_procfs_type_lwpid_t=yes
+ else
+@@ -1309,12 +1320,12 @@ EOF
+  echo "$ac_t""$bfd_cv_have_sys_procfs_type_lwpid_t" 1>&6
+ 
+   echo $ac_n "checking for psaddr_t in sys/procfs.h""... $ac_c" 1>&6
+-echo "configure:1313: checking for psaddr_t in sys/procfs.h" >&5
++echo "configure:1324: checking for psaddr_t in sys/procfs.h" >&5
+  if eval "test \"`echo '$''{'bfd_cv_have_sys_procfs_type_psaddr_t'+set}'`\" = set"; then
+   echo $ac_n "(cached) $ac_c" 1>&6
+ else
+   cat > conftest.$ac_ext <<EOF
+-#line 1318 "configure"
++#line 1329 "configure"
+ #include "confdefs.h"
+ 
+ #define _SYSCALL32
+@@ -1323,7 +1334,7 @@ int main() {
+ psaddr_t avar
+ ; return 0; }
+ EOF
+-if { (eval echo configure:1327: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
++if { (eval echo configure:1338: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+   rm -rf conftest*
+   bfd_cv_have_sys_procfs_type_psaddr_t=yes
+ else
+@@ -1345,12 +1356,12 @@ EOF
+  echo "$ac_t""$bfd_cv_have_sys_procfs_type_psaddr_t" 1>&6
+ 
+   echo $ac_n "checking for prgregset_t in sys/procfs.h""... $ac_c" 1>&6
+-echo "configure:1349: checking for prgregset_t in sys/procfs.h" >&5
++echo "configure:1360: checking for prgregset_t in sys/procfs.h" >&5
+  if eval "test \"`echo '$''{'bfd_cv_have_sys_procfs_type_prgregset_t'+set}'`\" = set"; then
+   echo $ac_n "(cached) $ac_c" 1>&6
+ else
+   cat > conftest.$ac_ext <<EOF
+-#line 1354 "configure"
++#line 1365 "configure"
+ #include "confdefs.h"
+ 
+ #define _SYSCALL32
+@@ -1359,7 +1370,7 @@ int main() {
+ prgregset_t avar
+ ; return 0; }
+ EOF
+-if { (eval echo configure:1363: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
++if { (eval echo configure:1374: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+   rm -rf conftest*
+   bfd_cv_have_sys_procfs_type_prgregset_t=yes
+ else
+@@ -1381,12 +1392,12 @@ EOF
+  echo "$ac_t""$bfd_cv_have_sys_procfs_type_prgregset_t" 1>&6
+ 
+   echo $ac_n "checking for prfpregset_t in sys/procfs.h""... $ac_c" 1>&6
+-echo "configure:1385: checking for prfpregset_t in sys/procfs.h" >&5
++echo "configure:1396: checking for prfpregset_t in sys/procfs.h" >&5
+  if eval "test \"`echo '$''{'bfd_cv_have_sys_procfs_type_prfpregset_t'+set}'`\" = set"; then
+   echo $ac_n "(cached) $ac_c" 1>&6
+ else
+   cat > conftest.$ac_ext <<EOF
+-#line 1390 "configure"
++#line 1401 "configure"
+ #include "confdefs.h"
+ 
+ #define _SYSCALL32
+@@ -1395,7 +1406,7 @@ int main() {
+ prfpregset_t avar
+ ; return 0; }
+ EOF
+-if { (eval echo configure:1399: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
++if { (eval echo configure:1410: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+   rm -rf conftest*
+   bfd_cv_have_sys_procfs_type_prfpregset_t=yes
+ else
+@@ -1421,7 +1432,7 @@ EOF
+         
+   if test $bfd_cv_have_sys_procfs_type_prfpregset_t = yes; then
+     echo $ac_n "checking whether prfpregset_t type is broken""... $ac_c" 1>&6
+-echo "configure:1425: checking whether prfpregset_t type is broken" >&5
++echo "configure:1436: checking whether prfpregset_t type is broken" >&5
+     if eval "test \"`echo '$''{'gdb_cv_prfpregset_t_broken'+set}'`\" = set"; then
+   echo $ac_n "(cached) $ac_c" 1>&6
+ else
+@@ -1429,7 +1440,7 @@ else
+   gdb_cv_prfpregset_t_broken=yes
+ else
+   cat > conftest.$ac_ext <<EOF
+-#line 1433 "configure"
++#line 1444 "configure"
+ #include "confdefs.h"
+ #include <sys/procfs.h>
+        int main ()
+@@ -1439,7 +1450,7 @@ else
+          return 0;
+        }
+ EOF
+-if { (eval echo configure:1443: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
++if { (eval echo configure:1454: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
+ then
+   gdb_cv_prfpregset_t_broken=no
+ else
+@@ -1463,12 +1474,12 @@ EOF
+   fi
+ 
+   echo $ac_n "checking for elf_fpregset_t in sys/procfs.h""... $ac_c" 1>&6
+-echo "configure:1467: checking for elf_fpregset_t in sys/procfs.h" >&5
++echo "configure:1478: checking for elf_fpregset_t in sys/procfs.h" >&5
+  if eval "test \"`echo '$''{'bfd_cv_have_sys_procfs_type_elf_fpregset_t'+set}'`\" = set"; then
+   echo $ac_n "(cached) $ac_c" 1>&6
+ else
+   cat > conftest.$ac_ext <<EOF
+-#line 1472 "configure"
++#line 1483 "configure"
+ #include "confdefs.h"
+ 
+ #define _SYSCALL32
+@@ -1477,7 +1488,7 @@ int main() {
+ elf_fpregset_t avar
+ ; return 0; }
+ EOF
+-if { (eval echo configure:1481: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
++if { (eval echo configure:1492: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+   rm -rf conftest*
+   bfd_cv_have_sys_procfs_type_elf_fpregset_t=yes
+ else
+@@ -1506,14 +1517,14 @@ USE_THREAD_DB=
+ 
+ if test "$srv_linux_thread_db" = "yes"; then
+   echo $ac_n "checking for libthread_db""... $ac_c" 1>&6
+-echo "configure:1510: checking for libthread_db" >&5
++echo "configure:1521: checking for libthread_db" >&5
+ if eval "test \"`echo '$''{'srv_cv_thread_db'+set}'`\" = set"; then
+   echo $ac_n "(cached) $ac_c" 1>&6
+ else
+   old_LIBS="$LIBS"
+   LIBS="$LIBS -lthread_db"
+   cat > conftest.$ac_ext <<EOF
+-#line 1517 "configure"
++#line 1528 "configure"
+ #include "confdefs.h"
+ void ps_pglobal_lookup() {}
+    void ps_pdread() {}
+@@ -1522,12 +1533,13 @@ void ps_pglobal_lookup() {}
+    void ps_lsetregs() {}
+    void ps_lgetfpregs() {}
+    void ps_lsetfpregs() {}
++   void ps_get_thread_area() {}
+    void ps_getpid() {}
+ int main() {
+ td_ta_new();
+ ; return 0; }
+ EOF
+-if { (eval echo configure:1531: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
++if { (eval echo configure:1543: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+   rm -rf conftest*
+   srv_cv_thread_db="-lthread_db"
+ else
+@@ -1543,7 +1555,7 @@ else
+  fi
+  LIBS="$old_LIBS `eval echo "$thread_db"`"
+  cat > conftest.$ac_ext <<EOF
+-#line 1547 "configure"
++#line 1559 "configure"
+ #include "confdefs.h"
+ void ps_pglobal_lookup() {}
+    void ps_pdread() {}
+@@ -1552,12 +1564,13 @@ void ps_pglobal_lookup() {}
+    void ps_lsetregs() {}
+    void ps_lgetfpregs() {}
+    void ps_lsetfpregs() {}
++   void ps_get_thread_area() {}
+    void ps_getpid() {}
+ int main() {
+ td_ta_new();
+ ; return 0; }
+ EOF
+-if { (eval echo configure:1561: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
++if { (eval echo configure:1574: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+   rm -rf conftest*
+   srv_cv_thread_db="$thread_db"
+ else
+@@ -1567,11 +1580,11 @@ else
+   srv_cv_thread_db=no
+ fi
+ rm -f conftest*
+- LIBS="$old_LIBS"
+- 
++  
+ fi
+ 
+ echo "$ac_t""$srv_cv_thread_db" 1>&6
++ LIBS="$old_LIBS"
+ 
+ fi
+ rm -f conftest*
+@@ -1585,14 +1598,14 @@ rm -f conftest*
+   old_LDFLAGS="$LDFLAGS"
+   LDFLAGS="$LDFLAGS -rdynamic"
+   cat > conftest.$ac_ext <<EOF
+-#line 1589 "configure"
++#line 1602 "configure"
+ #include "confdefs.h"
+ 
+ int main() {
+ 
+ ; return 0; }
+ EOF
+-if { (eval echo configure:1596: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
++if { (eval echo configure:1609: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+   rm -rf conftest*
+   RDYNAMIC=-rdynamic
+ else
+Index: gdb-6.3/gdb/gdbserver/aclocal.m4
+===================================================================
+--- gdb-6.3.orig/gdb/gdbserver/aclocal.m4	2002-06-11 13:32:39.000000000 -0400
++++ gdb-6.3/gdb/gdbserver/aclocal.m4	2004-12-07 17:22:00.382495519 -0500
+@@ -1,4 +1,4 @@
+-dnl aclocal.m4 generated automatically by aclocal 1.4-p4
++dnl aclocal.m4 generated automatically by aclocal 1.4
+ 
+ dnl Copyright (C) 1994, 1995-8, 1999 Free Software Foundation, Inc.
+ dnl This file is free software; the Free Software Foundation
+@@ -25,6 +25,7 @@ AC_DEFUN([SRV_CHECK_THREAD_DB],
+    void ps_lsetregs() {}
+    void ps_lgetfpregs() {}
+    void ps_lsetfpregs() {}
++   void ps_get_thread_area() {}
+    void ps_getpid() {}],
+   [td_ta_new();],
+   [srv_cv_thread_db="-lthread_db"],
+@@ -44,11 +45,12 @@ AC_DEFUN([SRV_CHECK_THREAD_DB],
+    void ps_lsetregs() {}
+    void ps_lgetfpregs() {}
+    void ps_lsetfpregs() {}
++   void ps_get_thread_area() {}
+    void ps_getpid() {}],
+   [td_ta_new();],
+   [srv_cv_thread_db="$thread_db"],
+   [srv_cv_thread_db=no])
++  ]])
+  LIBS="$old_LIBS"
+- ]])
+ )])
+ 
