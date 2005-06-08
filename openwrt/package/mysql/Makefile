@@ -103,13 +103,13 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_LIBMYSQLCLIENT):
 	install -d -m0755 $(IDIR_LIBMYSQLCLIENT)/usr/lib
-	cp -fp $(PKG_INSTALL_DIR)/usr/lib/mysql/libmysqlclient.so.* $(IDIR_LIBMYSQLCLIENT)/usr/lib/
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/mysql/libmysqlclient.so.* $(IDIR_LIBMYSQLCLIENT)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBMYSQLCLIENT)
 	$(IPKG_BUILD) $(IDIR_LIBMYSQLCLIENT) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/mysql/libmysqlclient.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/bin
-	cp -fp $(PKG_INSTALL_DIR)/usr/bin/mysql_config $(STAGING_DIR)/usr/bin/
+	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/mysql_config $(STAGING_DIR)/usr/bin/
 	mkdir -p $(STAGING_DIR)/usr/include
 	cp -fpR $(PKG_INSTALL_DIR)/usr/include/mysql $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib

@@ -65,18 +65,18 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_LIBOPENSSL):
 	install -d -m0755 $(IDIR_LIBOPENSSL)/usr/lib
-	cp -fp $(PKG_INSTALL_DIR)/usr/lib/lib{crypto,ssl}.so.* $(IDIR_LIBOPENSSL)/usr/lib/
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/lib{crypto,ssl}.so.* $(IDIR_LIBOPENSSL)/usr/lib/
 	chmod 0644 $(IDIR_LIBOPENSSL)/usr/lib/*
 	$(RSTRIP) $(IDIR_LIBOPENSSL)
 	$(IPKG_BUILD) $(IDIR_LIBOPENSSL) $(PACKAGE_DIR)
 
 $(IPKG_OPENSSL_UTIL):
 	install -d -m0755 $(IDIR_OPENSSL_UTIL)/etc/ssl
-	cp -fp $(PKG_INSTALL_DIR)/etc/ssl/openssl.cnf $(IDIR_OPENSSL_UTIL)/etc/ssl/
+	cp -fpR $(PKG_INSTALL_DIR)/etc/ssl/openssl.cnf $(IDIR_OPENSSL_UTIL)/etc/ssl/
 	install -d -m0755 $(IDIR_OPENSSL_UTIL)/etc/ssl/certs
 	install -d -m0700 $(IDIR_OPENSSL_UTIL)/etc/ssl/private
 	install -d -m0755 $(IDIR_OPENSSL_UTIL)/usr/bin
-	cp -fp $(PKG_INSTALL_DIR)/usr/bin/openssl $(IDIR_OPENSSL_UTIL)/usr/bin/
+	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/openssl $(IDIR_OPENSSL_UTIL)/usr/bin/
 	$(RSTRIP) $(IDIR_OPENSSL_UTIL)
 	$(IPKG_BUILD) $(IDIR_OPENSSL_UTIL) $(PACKAGE_DIR)
 
@@ -84,7 +84,7 @@ $(STAGING_DIR)/usr/lib/libssl.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include
 	cp -fpR $(PKG_INSTALL_DIR)/usr/include/openssl $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib/
-	cp -fp $(PKG_INSTALL_DIR)/usr/lib/lib{crypto,ssl}.{a,so*} $(STAGING_DIR)/usr/lib/
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/lib{crypto,ssl}.{a,so*} $(STAGING_DIR)/usr/lib/
 	touch $@
 	
 install-dev: $(STAGING_DIR)/usr/lib/libssl.so
