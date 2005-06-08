@@ -27,3 +27,15 @@ diff -urN kismet-2005-04-R1.old/macaddr.h kismet-2005-04-R1.dev/macaddr.h
              return (singleton_itr != op.singleton_itr) || (vector_itr != op.vector_itr);
          }
  
+diff -urN kismet-2005-04-R1.old/tcpserver.cc kismet-2005-04-R1.dev/tcpserver.cc
+--- kismet-2005-04-R1.old/tcpserver.cc	2005-04-03 07:33:42.000000000 +0200
++++ kismet-2005-04-R1.dev/tcpserver.cc	2005-06-08 23:17:34.000000000 +0200
+@@ -373,7 +373,7 @@
+                 return 0;
+             }
+         } else {
+-            copt->wrbuf.erase(0, res);
++            copt->wrbuf = "";
+ 	}
+     }
+ 
