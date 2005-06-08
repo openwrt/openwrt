@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=wpa_supplicant
 PKG_VERSION:=0.3.8
 PKG_RELEASE:=1
-PKG_MD5SUM:=
+PKG_MD5SUM:=c9ced104f0322f834a84336c293b4b57
 
 PKG_SOURCE_URL:=http://hostap.epitest.fi/releases/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -18,7 +18,7 @@ include $(TOPDIR)/package/rules.mk
 $(eval $(call PKG_template,WPA_SUPPLICANT,wpa-supplicant,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 $(PKG_BUILD_DIR)/.configured:
-	cp -fp ./files/config $(PKG_BUILD_DIR)/.config
+	cp -fpR ./files/config $(PKG_BUILD_DIR)/.config
 	touch $@
 
 $(PKG_BUILD_DIR)/.built:
