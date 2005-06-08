@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libosip2
-PKG_VERSION:=2.0.9
+PKG_VERSION:=2.2.0
 PKG_RELEASE:=1
-PKG_MD5SUM:=dba6d47332f4842f70694792939fec2d
+PKG_MD5SUM:=f1237af0250c59b318bd64a59f5750ea
 
 PKG_SOURCE_URL:=http://ftp.gnu.org/gnu/osip/ \
 	ftp://ftp.belnet.be/mirror/ftp.gnu.org/gnu/osip/ \
@@ -77,6 +77,8 @@ $(STAGING_DIR)/usr/lib/libosip2.so: $(PKG_BUILD_DIR)/.built
 	cp -fpR $(PKG_INSTALL_DIR)/usr/include/osip{,parser}2 $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
 	cp -fp $(PKG_INSTALL_DIR)/usr/lib/libosip{,parser}2.{a,so*} $(STAGING_DIR)/usr/lib/
+	mkdir -p $(STAGING_DIR)/usr/lib/pkgconfig
+	cp -fp $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/libosip2.pc $(STAGING_DIR)/usr/lib/pkgconfig/
 	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/libosip2.so
@@ -85,6 +87,7 @@ uninstall-dev:
 	rm -rf \
 		$(STAGING_DIR)/usr/include/osip{,parser}2 \
 		$(STAGING_DIR)/usr/lib/libosip{,parser}2.{a,so*} \
+		$(STAGING_DIR)/usr/lib/pkgconfig/libosip2.pc \
 
 compile: install-dev
 clean: uninstall-dev
