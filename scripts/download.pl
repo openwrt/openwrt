@@ -64,12 +64,19 @@ foreach my $mirror (@ARGV) {
 			};
 		}
 		close SF;
+	} elsif ($mirror =~ /^\@GNU\/(.+)$/) {
+		my $gnupath = $1;
+		push @mirrors, "ftp://ftp.gnu.org/gnu/$gnupath";
+		push @mirrors, "ftp://ftp.belnet.be/mirror/ftp.gnu.org/gnu/$gnupath";
+		push @mirrors, "ftp://ftp.mirror.nl/pub/mirror/gnu/$gnupath";
+		push @mirrors, "http://mirror.switch.ch/ftp/mirror/gnu/$gnupath";
 	} else {
 		push @mirrors, $mirror;
 	}
 }
 
 push @mirrors, 'http://openwrt.inf.fh-brs.de/mirror';
+push @mirrors, 'http://openwrt.org/download/sources/';
 
 while (!$ok) {
 	my $mirror = shift @mirrors;
