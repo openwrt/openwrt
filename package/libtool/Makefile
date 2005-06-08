@@ -60,15 +60,15 @@ $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 
 $(IPKG_LIBLTDL):
 	install -m0755 -d $(IDIR_LIBLTDL)/usr/lib
-	cp -fp $(PKG_INSTALL_DIR)/usr/lib/libltdl.so.* $(IDIR_LIBLTDL)/usr/lib/
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libltdl.so.* $(IDIR_LIBLTDL)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBLTDL)
 	$(IPKG_BUILD) $(IDIR_LIBLTDL) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libltdl.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fp $(PKG_INSTALL_DIR)/usr/include/ltdl.h $(STAGING_DIR)/usr/include/
+	cp -fpR $(PKG_INSTALL_DIR)/usr/include/ltdl.h $(STAGING_DIR)/usr/include/
 	mkdir -p $(I_LIBLTDL_DEV)/usr/lib
-	cp -fp $(PKG_INSTALL_DIR)/usr/lib/libltdl.{a,so*} $(STAGING_DIR)/usr/lib/
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libltdl.{a,so*} $(STAGING_DIR)/usr/lib/
 	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/libltdl.so
