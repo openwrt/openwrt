@@ -18,7 +18,7 @@ include $(TOPDIR)/package/rules.mk
 
 $(eval $(call PKG_template,LIBNET,libnet,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
-$(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
+$(PKG_BUILD_DIR)/.configured:
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
 		touch configure.in; \
 		touch include.m4; \
@@ -58,7 +58,7 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 	);
 	touch $@
 
-$(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
+$(PKG_BUILD_DIR)/.built:
 	rm -rf $(PKG_INSTALL_DIR)
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
@@ -68,7 +68,7 @@ $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 		all install
 	touch $@
 
-$(IPKG_LIBNET): $(STAGING_DIR)/usr/lib/libnet.so
+$(IPKG_LIBNET):
 	install -m0755 -d $(IDIR_LIBNET)/usr/lib
 	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libnet.so.* $(IDIR_LIBNET)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBNET)
@@ -81,14 +81,15 @@ $(STAGING_DIR)/usr/lib/libnet.so: $(PKG_BUILD_DIR)/.built
 	cp -fpR $(PKG_INSTALL_DIR)/usr/include/libnet* $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
 	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libnet.{a,so*} $(STAGING_DIR)/usr/lib/
-	touch $(STAGING_DIR)/usr/lib/libnet.so
+	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/libnet.so
 
 uninstall-dev:
-	rm -rf $(STAGING_DIR)/usr/bin/libnet-config
-	rm -rf $(STAGING_DIR)/usr/include/libnet*
-	rm -rf $(STAGING_DIR)/usr/lib/libnet.{a,so*}
+	rm -rf \
+		$(STAGING_DIR)/usr/bin/libnet-config \
+		$(STAGING_DIR)/usr/include/libnet*  \
+		$(STAGING_DIR)/usr/lib/libnet.{a,so*} \
 
 compile: install-dev
 clean: uninstall-dev
