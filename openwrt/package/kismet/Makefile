@@ -88,3 +88,6 @@ $(IPKG_KISMET_SERVER):
 	$(RSTRIP) $(IDIR_KISMET_SERVER)
 	$(IPKG_BUILD) $(IDIR_KISMET_SERVER) $(PACKAGE_DIR)
 
+mostlyclean:
+	$(MAKE) -C $(PKG_BUILD_DIR) clean
+	rm -f $(PKG_BUILD_DIR)/.built
