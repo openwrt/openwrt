@@ -1,10 +1,52 @@
+menu "openssh - A free implementation of the Secure Shell protocol"
+
 config BR2_PACKAGE_OPENSSH
-	tristate "OpenSSH"
-	default m if CONFIG_DEVEL
-	select BR2_PACKAGE_OPENSSL
+	bool "OpenSSH - A free implementation of the Secure Shell protocol"
+	default y if CONFIG_DEVEL
 	help
-	  Popular SSH server and client
+	  OpenSSH is a FREE version of the SSH protocol suite of network 
+	  connectivity tools that increasing numbers of people on the Internet 
+	  are coming to rely on. Many users of telnet, rlogin, ftp, and other 
+	  such programs might not realize that their password is transmitted 
+	  across the Internet unencrypted, but it is. OpenSSH encrypts all 
+	  traffic (including passwords) to effectively eliminate eavesdropping, 
+	  connection hijacking, and other network-level attacks. Additionally, 
+	  OpenSSH provides a myriad of secure tunneling capabilities, as well 
+	  as a variety of authentication methods.
 	  
 	  http://www.openssh.com/
 	  
 	  Depends: openssl
+	  
+
+config BR2_PACKAGE_OPENSSH_CLIENT
+	tristate "openssh-client - OpenSSH client"
+	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_OPENSSH
+	select BR2_PACKAGE_LIBOPENSSL
+
+config BR2_PACKAGE_OPENSSH_CLIENT_UTILS
+	tristate "openssh-client-utils - OpenSSH client utilities"
+	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_OPENSSH_CLIENT
+
+config BR2_PACKAGE_OPENSSH_SERVER
+	tristate "openssh-server - OpenSSH server"
+	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_OPENSSH
+	select BR2_PACKAGE_LIBOPENSSL
+
+config BR2_PACKAGE_OPENSSH_SFTP_CLIENT
+	tristate "openssh-sftp-client - OpenSSH SFTP client"
+	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_OPENSSH
+	select BR2_PACKAGE_LIBOPENSSL
+
+config BR2_PACKAGE_OPENSSH_SFTP_SERVER
+	tristate "openssh-sftp-server - OpenSSH SFTP server"
+	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_OPENSSH
+	select BR2_PACKAGE_LIBOPENSSL
+
+endmenu
+
