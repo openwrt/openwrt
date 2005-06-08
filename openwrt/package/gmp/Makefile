@@ -60,15 +60,15 @@ $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 
 $(IPKG_LIBGMP):
 	install -m0755 -d $(IDIR_LIBGMP)/usr/lib
-	cp -fp $(PKG_INSTALL_DIR)/usr/lib/libgmp.so.* $(IDIR_LIBGMP)/usr/lib/
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libgmp.so.* $(IDIR_LIBGMP)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBGMP)
 	$(IPKG_BUILD) $(IDIR_LIBGMP) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libgmp.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fp $(PKG_INSTALL_DIR)/usr/include/gmp* $(STAGING_DIR)/usr/include/
+	cp -fpR $(PKG_INSTALL_DIR)/usr/include/gmp* $(STAGING_DIR)/usr/include/
 	mkdir -p $(I_LIBPCAP_DEV)/usr/lib
-	cp -fp $(PKG_INSTALL_DIR)/usr/lib/libgmp.{a,so*} $(STAGING_DIR)/usr/lib/
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libgmp.{a,so*} $(STAGING_DIR)/usr/lib/
 	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/libgmp.so
