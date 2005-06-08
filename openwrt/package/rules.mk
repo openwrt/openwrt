@@ -27,13 +27,6 @@ $$(INFO_$(1)): $$(IPKG_$(1))
 $(2)-clean:
 	rm -f $$(IPKG_$(1))
 clean: $(2)-clean
-mostlyclean:
-rebuild:
-	-$(MAKE) mostlyclean
-	if [ -f $(PKG_BUILD_DIR)/.built ]; then \
-		$(MAKE) clean; \
-	fi
-	$(MAKE) compile
 endef
 
 ifneq ($(strip $(PKG_SOURCE)),)
@@ -58,6 +51,13 @@ source: $(DL_DIR)/$(PKG_SOURCE)
 prepare: $(PKG_BUILD_DIR)/.prepared
 compile:
 install:
+mostlyclean:
+rebuild:
+	-$(MAKE) mostlyclean
+	if [ -f $(PKG_BUILD_DIR)/.built ]; then \
+		$(MAKE) clean; \
+	fi
+	$(MAKE) compile
 
 $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
