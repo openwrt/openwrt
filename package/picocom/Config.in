@@ -1,0 +1,15 @@
+config BR2_PACKAGE_PICOCOM
+	tristate "picocom - minimal dumb-terminal emulation program"
+#	default m if CONFIG_DEVEL
+	default n
+	help
+	  As its name suggests, picocom is a minimal dumb-terminal emulation 
+	  program. It is, in principle, very much like minicom, only it's pico 
+	  instead of mini! It was designed to serve as a simple, manual, modem 
+	  configuration, testing, and debugging tool. It has also served (quite 
+	  well) as a low-tech "terminal-window" to allow operator intervention 
+	  in PPP connection scripts. It could also prove useful in many other 
+	  similar tasks.
+	  
+	  http://efault.net/npat/hacks/picocom/
+	  
