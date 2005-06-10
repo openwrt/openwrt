@@ -28,7 +28,7 @@ $(PKG_BUILD_DIR)/.configured:
 		CFLAGS="$(TARGET_CFLAGS)" \
 		CPPFLAGS="-I$(STAGING_DIR)/usr/include" \
 		LDFLAGS="-L$(STAGING_DIR)/usr/lib" \
-		ac_cv_linux_vers=$(LINUX_VERSION) \
+		ac_cv_linux_vers=2 \
 		td_cv_buggygetaddrinfo="no" \
 		./configure \
 		--target=$(GNU_TARGET_NAME) \
