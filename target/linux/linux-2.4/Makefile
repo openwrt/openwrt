@@ -69,10 +69,10 @@ $(eval $(call KMOD_template,ARPT,arptables,\
 $(eval $(call KMOD_template,EBT,ebtables,\
 	$(MODULES_DIR)/kernel/net/bridge/netfilter/*.o \
 ,CONFIG_BRIDGE_NF_EBTABLES))
-$(eval $(call KMOD_template,IPT4,iptables-extra,\
+$(eval $(call KMOD_template,IPTABLES_V4_EXTRA,iptables-extra,\
 	$(MODULES_DIR)/kernel/net/ipv4/netfilter/ip*.o \
 ))
-$(eval $(call KMOD_template,IPT6,ip6tables,\
+$(eval $(call KMOD_template,IPTABLES_V6,ip6tables,\
 	$(MODULES_DIR)/kernel/net/ipv6/netfilter/ip*.o \
 ,CONFIG_IP6_NF_IPTABLES))
 $(eval $(call KMOD_template,IPV6,ipv6,\
