@@ -43,12 +43,24 @@ const long channel_frequency[] = {
 };
 #define NUM_CHANNELS ( sizeof(channel_frequency) / sizeof(channel_frequency[0]) )
 
+typedef struct internal_wsec_key {
+	uint8 index;		// 0x00
+	uint8 unknown_1;	// 0x01
+	uint8 type;		// 0x02
+	uint8 unknown_2[7];	// 0x03
+	uint8 len;		// 0x0a
+	uint8 pad[3];
+	char data[32];		// 0x0e
+} wkey;
 
 
 static int wlcompat_private_ioctl(struct net_device *dev,
 			 struct iw_request_info *info,
 			 union iwreq_data *wrqu,
 			 char *extra);
+#ifdef DEBUG
+void print_buffer(int len, unsigned char *buf);
+#endif
 
 static int wl_ioctl(struct net_device *dev, int cmd, void *buf, int len)
 {
@@ -101,14 +113,6 @@ static int wl_get_val(struct net_device *dev, char *var, void *val, int len)
 
 	memcpy(val, buf, len);
 	return 0;
-}
-
-int read_shmem(struct net_device *dev, int offset)
-{
-	if (wl_ioctl(dev, WLC_GET_SHMEM, &offset, sizeof(offset)) < 0)
-		return -EINVAL;
-
-	return offset;
 }
 
 static int wlcompat_ioctl_getiwrange(struct net_device *dev,
@@ -442,20 +446,17 @@ static int wlcompat_ioctl(struct net_device *dev,
 				
 				wrqu->data.flags = IW_ENCODE_ENABLED;
 				if (key-- > 0) {
-					int magic_offset;
-					int16 buffer[8];
+					int *info_addr; 
+					wkey *wep_key;
 					
-					magic_offset = read_shmem(dev, 0x56) * 2;
-
+					info_addr = (int *) dev->priv;
+					wep_key = (wkey *) ((*info_addr) + 0x2752 + (key * 0x110));
+					
 					wrqu->data.flags |= key + 1;
-					wrqu->data.length = 16;
-					
-					for (val = 0; val < 8; val++) {
-						buffer[val] = read_shmem(dev, magic_offset + (key * 16) + val * 2);
-					}
-					
+					wrqu->data.length = wep_key->len;
+
 					memset(extra, 0, 16);
-					memcpy(extra, buffer, 16);
+					memcpy(extra, wep_key->data, 16);
 				} else {
 					wrqu->data.flags |= IW_ENCODE_NOKEY;
 				}
@@ -472,7 +473,7 @@ static int wlcompat_ioctl(struct net_device *dev,
 		}
 		case SIOCSIWMODE:
 		{
-			int ap = -1, infra = -1, passive = 0, wet = 0;
+			int ap = -1, infra = -1, passive = 0, wet = 0, wds = 0;
 			
 			switch (wrqu->mode) {
 				case IW_MODE_MONITOR:
@@ -495,6 +496,11 @@ static int wlcompat_ioctl(struct net_device *dev,
 					ap = 0;
 					wet = 1;
 					break;
+				case IW_MODE_SECOND:
+					ap = 0;
+					infra = 1;
+					wds = 1;
+					
 				default:
 					return -EINVAL;
 			}
@@ -502,15 +508,18 @@ static int wlcompat_ioctl(struct net_device *dev,
 			wl_ioctl(dev, WLC_SET_PASSIVE, &passive, sizeof(passive));
 			wl_ioctl(dev, WLC_SET_MONITOR, &passive, sizeof(passive));
 			wl_ioctl(dev, WLC_SET_WET, &wet, sizeof(wet));
-			wl_ioctl(dev, WLC_SET_AP, &ap, sizeof(ap));
-			wl_ioctl(dev, WLC_SET_INFRA, &infra, sizeof(infra));
+			wl_ioctl(dev, WLC_SET_WET, &wds, sizeof(wds));
+			if (ap >= 0) 
+				wl_ioctl(dev, WLC_SET_AP, &ap, sizeof(ap));
+			if (infra >= 0)
+				wl_ioctl(dev, WLC_SET_INFRA, &infra, sizeof(infra));
 
 			break;
 						
 		}
 		case SIOCGIWMODE:
 		{
-			int ap, infra, wet, passive;
+			int ap, infra, wet, wds, passive;
 
 			if (wl_ioctl(dev, WLC_GET_AP, &ap, sizeof(ap)) < 0)
 				return -EINVAL;
@@ -520,11 +529,15 @@ static int wlcompat_ioctl(struct net_device *dev,
 				return -EINVAL;
 			if (wl_ioctl(dev, WLC_GET_WET, &wet, sizeof(wet)) < 0)
 				return -EINVAL;
+			if (wl_ioctl(dev, WLC_GET_WET, &wds, sizeof(wds)) < 0)
+				return -EINVAL;
 
 			if (passive) {
 				wrqu->mode = IW_MODE_MONITOR;
 			} else if (!infra) {
 				wrqu->mode = IW_MODE_ADHOC;
+			} else if (wds) {
+				wrqu->mode = IW_MODE_SECOND;
 			} else {
 				if (ap) {
 					wrqu->mode = IW_MODE_MASTER;
@@ -813,6 +826,10 @@ static int __init wlcompat_init()
 	old_ioctl = dev->do_ioctl;
 	dev->do_ioctl = new_ioctl;
 	dev->wireless_handlers = (struct iw_handler_def *)&wlcompat_handler_def;
+#ifdef DEBUG
+	printk("broadcom driver private data: 0x%08x\n", dev->priv);
+	print_buffer(200, dev->priv);
+#endif
 	return 0;
 }
 
