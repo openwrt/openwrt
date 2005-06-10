@@ -9,6 +9,8 @@ config BR2_PACKAGE_LIBSQLITE
 #	default m if CONFIG_DEVEL
 	default n
 	select BR2_PACKAGE_SQLITE
+	select BR2_PACKAGE_LIBNCURSES
+	select BR2_PACKAGE_LIBREADLINE
 	help
 	  SQLite is a small C library that implements a self-contained, embeddable, 
 	  zero-configuration SQL database engine. Features include:
