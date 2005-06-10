@@ -112,7 +112,7 @@ static void check_timer();
 #if THIS_FINDS_USE
 static int count_queue(struct event *);
 #endif
-
+static int timer_change_settime(timer_t timer_id, const struct itimerspec *timer_spec);
 void block_timer();
 void unblock_timer();
 
@@ -247,6 +247,23 @@ int timer_connect
     return 0;
 }    
 
+/* 
+ * Please Call this function only from the call back functions of the alarm_handler.
+ * This is just a hack 
+*/
+int timer_change_settime
+(
+    timer_t                   timerid, /* timer ID */
+    const struct itimerspec * value   /* time to be set */
+)
+{
+    struct event *event = (struct event *) timerid;
+
+    TIMESPEC_TO_TIMEVAL(&event->it_interval, &value->it_interval);
+    TIMESPEC_TO_TIMEVAL(&event->it_value, &value->it_value);
+
+    return 1; 	
+}
 
 int timer_settime
 (
@@ -673,6 +690,16 @@ int bcm_timer_module_cleanup(bcm_timer_module_id module_id)
 	return 0;
 }
 
+/* Enable/Disable timer module */
+int bcm_timer_module_enable(bcm_timer_module_id module_id, int enable)
+{
+	if (enable)
+		unblock_timer();
+	else
+		block_timer();
+	return 0;
+}
+
 int bcm_timer_create(bcm_timer_module_id module_id, bcm_timer_id *timer_id)
 {
 	module_id = 0;
@@ -704,4 +731,8 @@ int bcm_timer_cancel(bcm_timer_id timer_id)
 	timer_cancel((timer_t)timer_id);
 	return 0;
 }
-
+int bcm_timer_change_expirytime(bcm_timer_id timer_id, const struct itimerspec *timer_spec)
+{
+	timer_change_settime((timer_t)timer_id, timer_spec);
+	return 1;
+}
