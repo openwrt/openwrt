@@ -113,10 +113,13 @@ source "package/libusb/Config.in"
 source "package/uclibc++/Config.in"
 source "package/zlib/Config.in"
 
-comment "Utilities ---"
+comment "Serial communications & terminal emulation ---"
 source "package/microcom/Config.in"
-source "package/usbutils/Config.in"  # lsusb
+source "package/picocom/Config.in"
 source "package/setserial/Config.in"
+
+comment "Utilities ---"
+source "package/usbutils/Config.in"  # lsusb
 source "package/strace/Config.in"
 
 # what are we going to do with both of you
