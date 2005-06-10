@@ -1,0 +1,75 @@
+config BR2_PACKAGE_SQLITE
+	bool
+	default n
+	depends BR2_PACKAGE_LIBSQLITE
+
+config BR2_PACKAGE_LIBSQLITE
+	prompt "libsqlite - Self-contained, embeddable, zero-configuration SQL database engine"
+	tristate
+#	default m if CONFIG_DEVEL
+	default n
+	select BR2_PACKAGE_SQLITE
+	help
+	  SQLite is a small C library that implements a self-contained, embeddable, 
+	  zero-configuration SQL database engine. Features include:
+	  
+	    * Transactions are atomic, consistent, isolated, and durable (ACID) 
+	      even after system crashes and power failures.
+	    * Zero-configuration - no setup or administration needed.
+	    * Implements most of SQL92. (Features not supported)
+	    * A complete database is stored in a single disk file.
+	    * Database files can be freely shared between machines with different 
+	      byte orders.
+	    * Supports databases up to 2 terabytes (241 bytes) in size.
+	    * Sizes of strings and BLOBs limited only by available memory.
+	    * Small code footprint: less than 30K lines of C code, less than 250KB 
+	      code space (gcc on i486)
+	    * Faster than popular client/server database engines for most common 
+	      operations.
+	    * Simple, easy to use API.
+	    * TCL bindings included. Bindings for many other languages available 
+	      separately.
+	    * Well-commented source code with over 95% test coverage.
+	    * Self-contained: no external dependencies.
+	    * Sources are in the public domain. Use for any purpose.
+	  
+	  http://www.sqlite.org/
+	  
+	  This package contains the shared library, needed by other programs.
+	  
+config BR2_PACKAGE_SQLITE_CLI
+	prompt "sqlite-cli - Command line interface for SQLite"
+	tristate
+#	default m if CONFIG_DEVEL
+	default n
+	depends BR2_PACKAGE_LIBSQLITE
+	help
+	  SQLite is a small C library that implements a self-contained, embeddable, 
+	  zero-configuration SQL database engine. Features include:
+	  
+	    * Transactions are atomic, consistent, isolated, and durable (ACID) 
+	      even after system crashes and power failures.
+	    * Zero-configuration - no setup or administration needed.
+	    * Implements most of SQL92. (Features not supported)
+	    * A complete database is stored in a single disk file.
+	    * Database files can be freely shared between machines with different 
+	      byte orders.
+	    * Supports databases up to 2 terabytes (241 bytes) in size.
+	    * Sizes of strings and BLOBs limited only by available memory.
+	    * Small code footprint: less than 30K lines of C code, less than 250KB 
+	      code space (gcc on i486)
+	    * Faster than popular client/server database engines for most common 
+	      operations.
+	    * Simple, easy to use API.
+	    * TCL bindings included. Bindings for many other languages available 
+	      separately.
+	    * Well-commented source code with over 95% test coverage.
+	    * Self-contained: no external dependencies.
+	    * Sources are in the public domain. Use for any purpose.
+	  
+	  http://www.sqlite.org/
+	  
+	  This package contains a terminal-based front-end to the SQLite library 
+	  that can evaluate queries interactively and display the results in 
+	  multiple formats.
+	  
