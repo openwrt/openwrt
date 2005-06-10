@@ -4,7 +4,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=wpa_supplicant
 PKG_VERSION:=0.3.8
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_MD5SUM:=c9ced104f0322f834a84336c293b4b57
 
 PKG_SOURCE_URL:=http://hostap.epitest.fi/releases/
