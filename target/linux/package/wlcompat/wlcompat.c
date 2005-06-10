@@ -115,6 +115,19 @@ static int wl_get_val(struct net_device *dev, char *var, void *val, int len)
 	return 0;
 }
 
+int get_primary_key(struct net_device *dev)
+{
+	int key, val;
+	
+	for (key = val = 0; (key < 4) && (val == 0); key++) {
+		val = key;
+		if (wl_ioctl(dev, WLC_GET_KEY_PRIMARY, &val, sizeof(val)) < 0)
+			return -EINVAL;
+	}
+	return key;
+}
+
+
 static int wlcompat_ioctl_getiwrange(struct net_device *dev,
 				    char *extra)
 {
@@ -427,6 +440,44 @@ static int wlcompat_ioctl(struct net_device *dev,
 
 			}
 		}
+		case SIOCSIWENCODE:
+		{
+			int wep = 1, wrestrict = 1;
+			int index = (wrqu->data.flags & IW_ENCODE_INDEX) - 1;
+
+			if (index < 0)
+				index = get_primary_key(dev);
+			
+			if (wrqu->data.flags & IW_ENCODE_DISABLED)
+				wep = 0;
+
+			if (wrqu->data.flags & IW_ENCODE_OPEN)
+				wrestrict = 0;
+			
+			if (wrqu->data.pointer && (wrqu->data.length > 0) && (wrqu->data.length <= 16)) {
+				wl_wsec_key_t key;
+				memset(&key, 0, sizeof(key));
+
+				key.flags = WL_PRIMARY_KEY;
+				key.len = wrqu->data.length;
+				key.index = index;
+				memcpy(key.data, wrqu->data.pointer, wrqu->data.length);
+
+				if (wl_ioctl(dev, WLC_SET_KEY, &key, sizeof(key)) < 0)
+					return -EINVAL;
+			}
+
+			if (index >= 0)
+				if (wl_ioctl(dev, WLC_SET_KEY_PRIMARY, &index, sizeof(index)) < 0)
+					return -EINVAL;
+			
+			if (wl_ioctl(dev, WLC_SET_WSEC, &wep, sizeof(wep)) < 0)
+				return -EINVAL;
+
+			if (wrestrict >= 0)
+				if (wl_ioctl(dev, WLC_SET_WEP_RESTRICT, &wrestrict, sizeof(wrestrict)) < 0)
+					return -EINVAL;
+		}
 		case SIOCGIWENCODE:
 		{
 			int val;
@@ -436,13 +487,7 @@ static int wlcompat_ioctl(struct net_device *dev,
 			
 
 			if (val > 0) {
-				int key;
-				
-				for (key = val = 0; (key < 4) && (val == 0); key++) {
-					val = key;
-					if (wl_ioctl(dev, WLC_GET_KEY_PRIMARY, &val, sizeof(val)) < 0)
-						return -EINVAL;
-				}
+				int key = get_primary_key(dev);
 				
 				wrqu->data.flags = IW_ENCODE_ENABLED;
 				if (key-- > 0) {
@@ -473,7 +518,7 @@ static int wlcompat_ioctl(struct net_device *dev,
 		}
 		case SIOCSIWMODE:
 		{
-			int ap = -1, infra = -1, passive = 0, wet = 0, wds = 0;
+			int ap = -1, infra = -1, passive = 0, wet = 0;
 			
 			switch (wrqu->mode) {
 				case IW_MODE_MONITOR:
@@ -496,10 +541,6 @@ static int wlcompat_ioctl(struct net_device *dev,
 					ap = 0;
 					wet = 1;
 					break;
-				case IW_MODE_SECOND:
-					ap = 0;
-					infra = 1;
-					wds = 1;
 					
 				default:
 					return -EINVAL;
@@ -508,7 +549,6 @@ static int wlcompat_ioctl(struct net_device *dev,
 			wl_ioctl(dev, WLC_SET_PASSIVE, &passive, sizeof(passive));
 			wl_ioctl(dev, WLC_SET_MONITOR, &passive, sizeof(passive));
 			wl_ioctl(dev, WLC_SET_WET, &wet, sizeof(wet));
-			wl_ioctl(dev, WLC_SET_WET, &wds, sizeof(wds));
 			if (ap >= 0) 
 				wl_ioctl(dev, WLC_SET_AP, &ap, sizeof(ap));
 			if (infra >= 0)
@@ -519,7 +559,7 @@ static int wlcompat_ioctl(struct net_device *dev,
 		}
 		case SIOCGIWMODE:
 		{
-			int ap, infra, wet, wds, passive;
+			int ap, infra, wet, passive;
 
 			if (wl_ioctl(dev, WLC_GET_AP, &ap, sizeof(ap)) < 0)
 				return -EINVAL;
@@ -529,15 +569,11 @@ static int wlcompat_ioctl(struct net_device *dev,
 				return -EINVAL;
 			if (wl_ioctl(dev, WLC_GET_WET, &wet, sizeof(wet)) < 0)
 				return -EINVAL;
-			if (wl_ioctl(dev, WLC_GET_WET, &wds, sizeof(wds)) < 0)
-				return -EINVAL;
 
 			if (passive) {
 				wrqu->mode = IW_MODE_MONITOR;
 			} else if (!infra) {
 				wrqu->mode = IW_MODE_ADHOC;
-			} else if (wds) {
-				wrqu->mode = IW_MODE_SECOND;
 			} else {
 				if (ap) {
 					wrqu->mode = IW_MODE_MASTER;
@@ -606,7 +642,7 @@ static const iw_handler	 wlcompat_handler[] = {
 	wlcompat_ioctl,		/* SIOCGIWTXPOW */
 	NULL,			/* SIOCSIWRETRY */
 	NULL,			/* SIOCGIWRETRY */
-	NULL,			/* SIOCSIWENCODE */
+	wlcompat_ioctl,		/* SIOCSIWENCODE */
 	wlcompat_ioctl,		/* SIOCGIWENCODE */
 };
 
@@ -828,7 +864,6 @@ static int __init wlcompat_init()
 	dev->wireless_handlers = (struct iw_handler_def *)&wlcompat_handler_def;
 #ifdef DEBUG
 	printk("broadcom driver private data: 0x%08x\n", dev->priv);
-	print_buffer(200, dev->priv);
 #endif
 	return 0;
 }
