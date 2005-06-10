@@ -21,6 +21,7 @@ PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 include $(TOPDIR)/package/rules.mk
 
 $(eval $(call PKG_template,LIBPQ,libpq,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,PGSQL_CLI,pgsql-cli,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 $(PKG_BUILD_DIR)/.configured:
 #	./configure advertise "--infodir", but does not support it, replaced with "--docdir"
@@ -75,13 +76,22 @@ $(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C "$(PKG_BUILD_DIR)/src/interfaces/libpq" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		all install
+	$(MAKE) -C "$(PKG_BUILD_DIR)/src/bin/psql" \
+		DESTDIR="$(PKG_INSTALL_DIR)" \
+		all install
 	touch $@
 
-$(IPKG_LIBPQ): $(STAGING_DIR)/usr/lib/libpq.so
+$(IPKG_LIBPQ):
 	install -d -m0755 $(IDIR_LIBPQ)/usr/lib
-	cp -fpR $(STAGING_DIR)/usr/lib/libpq.so.* $(IDIR_LIBPQ)/usr/lib/
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libpq.so.* $(IDIR_LIBPQ)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBPQ)
 	$(IPKG_BUILD) $(IDIR_LIBPQ) $(PACKAGE_DIR)
+
+$(IPKG_PGSQL_CLI):
+	install -d -m0755 $(IDIR_PGSQL_CLI)/usr/bin
+	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/psql $(IDIR_PGSQL_CLI)/usr/bin/
+	$(RSTRIP) $(IDIR_PGSQL_CLI)
+	$(IPKG_BUILD) $(IDIR_PGSQL_CLI) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libpq.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include
@@ -90,16 +100,16 @@ $(STAGING_DIR)/usr/lib/libpq.so: $(PKG_BUILD_DIR)/.built
 	cp -fpR $(PKG_INSTALL_DIR)/usr/include/postgresql $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
 	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libpq.{a,so*} $(STAGING_DIR)/usr/lib/
-	touch $(STAGING_DIR)/usr/lib/libpq.so
+	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/libpq.so
 
 uninstall-dev:
 	rm -rf \
-	  $(STAGING_DIR)/usr/include/libpq-fe.h \
-	  $(STAGING_DIR)/usr/include/postgres_ext.h \
-	  $(STAGING_DIR)/usr/include/postgresql \
-	  $(STAGING_DIR)/usr/lib/libpq.{a,so*} \
+		$(STAGING_DIR)/usr/include/libpq-fe.h \
+		$(STAGING_DIR)/usr/include/postgres_ext.h \
+		$(STAGING_DIR)/usr/include/postgresql \
+		$(STAGING_DIR)/usr/lib/libpq.{a,so*} \
 
 compile: install-dev
 clean: uninstall-dev
