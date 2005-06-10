@@ -51,7 +51,8 @@ remap () {
 
 # hacks for buffalo wla2-g54l
 [ "$(nvram get boardnum)" = "00" ] && \
-[ "$(nvram get product_name)" = "Product_name" ] && {
+[ "$(nvram get product_name)" = "Product_name" ] || \
+[ "$(nvram get product_name)" = "WLA2-G54L" ] && {
   debug "### wla2-g54l hacks ###"
   NVRAM_wan_ifname="none"
   NVRAM_lan_ifnames="vlan0"
