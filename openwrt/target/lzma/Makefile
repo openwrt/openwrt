@@ -9,6 +9,7 @@ include $(TOPDIR)/rules.mk
 LZMA_DIR=$(BUILD_DIR)/lzma
 LZMA_SOURCE=lzma406.zip
 LZMA_SITE=http://www.7-zip.org/dl
+LZMA_MD5=a09378411cba5f786b5c49c9c58496df
 
 LZMA_LIB_DIR=$(LZMA_DIR)/SRC/7zip/Compress/LZMA_Lib
 LZMA_ALONE_DIR=$(LZMA_DIR)/SRC/7zip/Compress/LZMA_Alone
@@ -16,7 +17,7 @@ LZMA_ALONE_DIR=$(LZMA_DIR)/SRC/7zip/Compress/LZMA_Alone
 TARGETS=$(LZMA_LIB_DIR)/liblzma.a $(LZMA_ALONE_DIR)/lzma
 
 $(DL_DIR)/$(LZMA_SOURCE):
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(LZMA_SOURCE) x $(LZMA_SITE)
+	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(LZMA_SOURCE) $(LZMA_MD5) $(LZMA_SITE)
 
 $(LZMA_DIR)/.unpacked: $(DL_DIR)/$(LZMA_SOURCE) 
 	@rm -rf $(LZMA_DIR) && mkdir -p $(LZMA_DIR)
