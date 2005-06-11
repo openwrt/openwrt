@@ -240,3 +240,43 @@ diff -urN linux.old/include/asm-mips/r4kcache.h linux.dev/include/asm-mips/r4kca
  	do {
  		cache32_unroll32(start,Hit_Invalidate_I);
  		start += 0x400;
+diff -urN linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
+--- linux.old/arch/mips/mm/c-r4k.c	2005-06-01 18:49:07.000000000 +0200
++++ linux.dev/arch/mips/mm/c-r4k.c	2005-06-03 12:11:13.000000000 +0200
+@@ -51,6 +51,7 @@
+ #define cpu_is_r4600_v1_x()	((read_c0_prid() & 0xfffffff0) == 0x2010)
+ #define cpu_is_r4600_v2_x()	((read_c0_prid() & 0xfffffff0) == 0x2020)
+ 
++#ifndef CONFIG_BCM4710
+ #define R4600_HIT_CACHEOP_WAR_IMPL					\
+ do {									\
+ 	if (R4600_V2_HIT_CACHEOP_WAR && cpu_is_r4600_v2_x())		\
+@@ -58,11 +59,17 @@
+ 	if (R4600_V1_HIT_CACHEOP_WAR)					\
+ 		__asm__ __volatile__("nop;nop;nop;nop");		\
+ } while (0)
++#else
++#define R4600_HIT_CACHEOP_WAR_IMPL
++#endif
+ 
+ static void (* r4k_blast_dcache_page)(unsigned long addr);
+ 
+ static inline void r4k_blast_dcache_page_dc32(unsigned long addr)
+ {
++#ifdef CONFIG_BCM4710
++	BCM4710_FILL_TLB(addr);
++#endif
+ 	R4600_HIT_CACHEOP_WAR_IMPL;
+ 	blast_dcache32_page(addr);
+ }
+@@ -581,6 +588,10 @@
+ 		R4600_HIT_CACHEOP_WAR_IMPL;
+ 		a = addr & ~(dc_lsize - 1);
+ 		end = (addr + size - 1) & ~(dc_lsize - 1);
++#ifdef CONFIG_BCM4710
++		BCM4710_FILL_TLB(a);
++		BCM4710_FILL_TLB(end);
++#endif
+ 		while (1) {
+ 			flush_dcache_line(a);	/* Hit_Writeback_Inv_D */
+ 			if (a == end)
