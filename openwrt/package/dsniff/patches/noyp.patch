@@ -1,6 +1,6 @@
 diff -Nur dsniff-2.3/decode.c dsniff-2.3.patched/decode.c
 --- dsniff-2.3/decode.c	2000-12-15 21:03:26.000000000 +0100
-+++ dsniff-2.3.patched/decode.c	2005-06-09 15:20:16.000000000 +0200
++++ dsniff-2.3.patched/decode.c	2005-06-11 18:17:48.000000000 +0200
 @@ -49,8 +49,6 @@
  extern int decode_portmap(u_char *, int, u_char *, int);
  extern int decode_mountd(u_char *, int, u_char *, int);
@@ -19,9 +19,18 @@ diff -Nur dsniff-2.3/decode.c dsniff-2.3.patched/decode.c
  	{ NULL }
  };
  
+diff -Nur dsniff-2.3/dsniff.services dsniff-2.3.patched/dsniff.services
+--- dsniff-2.3/dsniff.services	2000-12-15 21:10:58.000000000 +0100
++++ dsniff-2.3.patched/dsniff.services	2005-06-11 18:19:27.000000000 +0200
+@@ -66,5 +66,3 @@
+ aim		9898/tcp
+ pcanywhere	65301/tcp
+ mountd		100005/rpc
+-ypserv		100004/rpc
+-yppasswd	100009/rpc
 diff -Nur dsniff-2.3/Makefile.in dsniff-2.3.patched/Makefile.in
---- dsniff-2.3/Makefile.in	2005-06-09 15:20:41.000000000 +0200
-+++ dsniff-2.3.patched/Makefile.in	2005-06-09 15:18:51.000000000 +0200
+--- dsniff-2.3/Makefile.in	2005-06-11 18:17:20.000000000 +0200
++++ dsniff-2.3.patched/Makefile.in	2005-06-11 18:17:48.000000000 +0200
 @@ -60,7 +60,7 @@
  	  decode_pop.c decode_portmap.c decode_postgresql.c decode_pptp.c \
  	  decode_rip.c decode_rlogin.c decode_smb.c decode_smtp.c \
