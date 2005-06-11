@@ -48,4 +48,5 @@ lzma-dirclean:
 prepare: $(LZMA_DIR)/.unpacked
 compile: lzma
 install: lzma
+	cp $(LZMA_DIR)/lzma $(STAGING_DIR)/bin/
 clean: lzma-dirclean

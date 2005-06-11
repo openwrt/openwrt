@@ -24,7 +24,6 @@ LINUX_KCONFIG:=./config/$(BOARD)
 LINUX_BUILD_DIR:=$(BUILD_DIR)/linux-2.4-$(BOARD)
 LINUX_TARGET_DIR:=$(LINUX_BUILD_DIR)/root
 LINUX_KERNEL:=$(LINUX_BUILD_DIR)/vmlinux
-LINUX_IMAGE:=$(LINUX_BUILD_DIR)/kernel-image
 LINUX_FORMAT=zImage
 LINUX_KARCH:=$(shell echo $(ARCH) | sed -e 's/i[3-9]86/i386/' \
 	-e 's/mipsel/mips/' \
@@ -196,9 +195,6 @@ $(LINUX_KERNEL): $(LINUX_DIR)/$(LINUX_BINLOC)
 	cp -fa $< $@ 
 	touch -c $(LINUX_KERNEL)
 	
-$(LINUX_IMAGE): $(LINUX_KERNEL)
-	cat $^ | $(BUILD_DIR)/lzma/lzma e -si -so -eos -lc1 -lp2 -pb2 > $@ || (rm -f $@ && false)
-
 $(LINUX_DIR)/.modules_done: $(LINUX_KERNEL) $(LINUX_IMAGE)
 	rm -rf $(LINUX_BUILD_DIR)/modules
 	$(MAKE) -C $(LINUX_DIR) ARCH=$(LINUX_KARCH) PATH=$(TARGET_PATH) modules
