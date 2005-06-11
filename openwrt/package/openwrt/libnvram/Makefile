@@ -26,10 +26,12 @@ $(PKG_BUILD_DIR)/nvram: $(PKG_BUILD_DIR)/main.o $(PKG_BUILD_DIR)/libnvram.so
 
 $(PKG_BUILD_DIR)/libnvram.so: $(LIBNVRAM_OBJS)
 	$(TARGET_CC) -shared -o $@ $^
+	
+$(STAGING_DIR)/lib/libnvram.so: $(PKG_BUILD_DIR)/libnvram.so
+	install -m 644 $< $@
 
 $(TARGET_DIR)/usr/lib/libnvram.so: $(PKG_BUILD_DIR)/libnvram.so
 	install -m 644 $< $@
-	install -m 644 $< $(STAGING_DIR)/lib/libnvram.so
 	$(STRIP) $@
 
 $(TARGET_DIR)/usr/sbin/nvram: $(PKG_BUILD_DIR)/nvram
@@ -37,7 +39,7 @@ $(TARGET_DIR)/usr/sbin/nvram: $(PKG_BUILD_DIR)/nvram
 	install -m 755 $< $@
 	$(STRIP) $@
 
-compile: $(PKG_BUILD_DIR)/libnvram.so $(PKG_BUILD_DIR)/nvram
+compile: $(PKG_BUILD_DIR)/libnvram.so $(STAGING_DIR)/lib/libnvram.so $(PKG_BUILD_DIR)/nvram
 install: $(TARGET_DIR)/usr/lib/libnvram.so $(TARGET_DIR)/usr/sbin/nvram
 
 clean:
