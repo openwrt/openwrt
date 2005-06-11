@@ -26,10 +26,10 @@ $(PKG_BUILD_DIR)/.prepared:
 $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/wlcompat.o $(PKG_BUILD_DIR)/wlcompat-debug.o
 	touch $@
 	
-$(PKG_BUILD_DIR)/wlcompat.o:
+$(PKG_BUILD_DIR)/wlcompat.o: $(PKG_BUILD_DIR)/.prepared
 	$(TARGET_CC) $(WLCOMPAT_FLAGS) -o $@ wlcompat.c
 
-$(PKG_BUILD_DIR)/wlcompat-debug.o:
+$(PKG_BUILD_DIR)/wlcompat-debug.o: $(PKG_BUILD_DIR)/.prepared
 	$(TARGET_CC) -DDEBUG $(WLCOMPAT_FLAGS) -o $@ wlcompat.c
 
 $(IPKG_KMOD_WLCOMPAT): $(PKG_BUILD_DIR)/wlcompat.o $(PKG_BUILD_DIR)/wlcompat-debug.o
