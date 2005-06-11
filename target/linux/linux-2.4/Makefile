@@ -44,25 +44,17 @@ KERNEL_IPKG:=$(LINUX_BUILD_DIR)/kernel_$(LINUX_VERSION)-$(BOARD)-$(PKG_RELEASE)_
 KERNEL_IDIR:=$(LINUX_BUILD_DIR)/kernel-ipkg
 
 include $(LINUX_KCONFIG)
+
+INSTALL_TARGETS := $(KERNEL_IPKG)
+TARGETS := 
+
 ifeq ($(BOARD),brcm)
 include ./broadcom.mk
 endif
 
-TARGETS := 
-INSTALL_TARGETS := $(KERNEL_IPKG)
-
-$(eval $(call KMOD_template,DIAG,diag,\
-	$(MODULES_DIR)/kernel/drivers/net/diag/diag.o \
-))
-$(eval $(call KMOD_template,BRCM_WL,brcm-wl,\
-	$(MODULES_DIR)/kernel/drivers/net/wl/wl.o \
-,CONFIG_WL))
 $(eval $(call KMOD_template,B44,b44,\
 	$(MODULES_DIR)/kernel/drivers/net/b44.o \
 ,CONFIG_B44))
-$(eval $(call KMOD_template,BRCM_ET,brcm-et,\
-	$(MODULES_DIR)/kernel/drivers/net/et/et.o \
-,CONFIG_ET))
 $(eval $(call KMOD_template,ARPT,arptables,\
 	$(MODULES_DIR)/kernel/net/ipv4/netfilter/arp*.o \
 ,CONFIG_IP_NF_ARPTABLES))
