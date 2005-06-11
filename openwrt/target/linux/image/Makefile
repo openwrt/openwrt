@@ -15,10 +15,10 @@ include ./squashfs.mk
 endif
 
 prepare:
-	$(MAKE) -C $(BOARD) prepare
 compile:
-	$(MAKE) -C $(BOARD) compile
 install:
+	$(MAKE) -C $(BOARD) prepare
+	$(MAKE) -C $(BOARD) compile
 rebuild: clean prepare compile install
 clean:
 
