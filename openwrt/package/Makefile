@@ -17,6 +17,7 @@ package-$(BR2_PACKAGE_CYRUS_SASL) += cyrus-sasl
 package-$(BR2_PACKAGE_DHCP_FORWARDER) += dhcp-forwarder
 package-$(BR2_PACKAGE_DNSMASQ) += dnsmasq
 package-$(BR2_PACKAGE_DROPBEAR) += dropbear
+package-$(BR2_PACKAGE_DSNIFF) += dsniff
 package-$(BR2_PACKAGE_EBTABLES) += ebtables
 package-$(BR2_PACKAGE_EZIPUPDATE) += ez-ipupdate
 package-$(BR2_PACKAGE_FPING) += fping
@@ -39,7 +40,9 @@ package-$(BR2_PACKAGE_LIBELF) += libelf
 package-$(BR2_PACKAGE_LIBEVENT) += libevent
 package-$(BR2_PACKAGE_LIBFFI_SABLE) += libffi-sable
 package-$(BR2_PACKAGE_LIBGD) += libgd
+package-$(BR2_PACKAGE_LIBGDBM) += libgdbm
 package-$(BR2_PACKAGE_LIBNET) += libnet
+package-$(BR2_PACKAGE_LIBNIDS) += libnids
 package-$(BR2_PACKAGE_LIBOSIP2) += libosip2
 package-$(BR2_PACKAGE_LIBPCAP) += libpcap
 package-$(BR2_PACKAGE_LIBPNG) += libpng
@@ -127,11 +130,13 @@ install: $(patsubst %,%-install,$(package-y))
 arpwatch-compile: libpcap-compile
 cyrus-sasl-compile: openssl-compile
 dropbear-compile: zlib-compile
+dsniff-compile: libnids-compile openssl-compile libgdbm-compile
 fprobe-compile: libpcap-compile
 kismet-compile: uclibc++-compile libpcap-compile ncurses-compile
 lcd4linux-compile: ncurses-compile
 libgd-compile: libpng-compile
 libnet-compile: libpcap-compile
+libnids-compile: libnet-compile
 lighttpd-compile: openssl-compile pcre-compile
 mysql-compile: ncurses-compile zlib-compile
 net-snmp-compile: libelf-compile
