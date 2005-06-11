@@ -1,7 +1,16 @@
 diff -Nur dsniff-2.3/configure dsniff-2.3.patched/configure
---- dsniff-2.3/configure	2005-06-09 15:21:49.000000000 +0200
-+++ dsniff-2.3.patched/configure	2005-06-09 15:26:41.000000000 +0200
-@@ -3051,7 +3051,40 @@
+--- dsniff-2.3/configure	2005-06-11 16:38:47.000000000 +0200
++++ dsniff-2.3.patched/configure	2005-06-11 16:39:26.000000000 +0200
+@@ -16,6 +16,8 @@
+ ac_help="$ac_help
+   --with-db=DIR           use Berkeley DB (with --enable-compat185) in DIR"
+ ac_help="$ac_help
++  --with-gdbm=DIR         use GNU DBM in DIR"
++ac_help="$ac_help
+   --with-libpcap=DIR      use libpcap in DIR"
+ ac_help="$ac_help
+   --with-libnet=DIR       use libnet in DIR"
+@@ -3051,7 +3053,40 @@
  
  fi
  
@@ -42,21 +51,9 @@ diff -Nur dsniff-2.3/configure dsniff-2.3.patched/configure
  
  
  echo $ac_n "checking for libnet""... $ac_c" 1>&6
-diff -Nur dsniff-2.3/configure dsniff-2.3.patched/configure
---- dsniff-2.3/configure	2005-06-09 15:17:11.000000000 +0200
-+++ dsniff-2.3.patched/configure	2005-06-09 14:47:24.000000000 +0200
-@@ -16,6 +16,8 @@
- ac_help="$ac_help
-   --with-db=DIR           use Berkeley DB (with --enable-compat185) in DIR"
- ac_help="$ac_help
-+  --with-gdbm=DIR         use GNU DBM in DIR"
-+ac_help="$ac_help
-   --with-libpcap=DIR      use libpcap in DIR"
- ac_help="$ac_help
-   --with-libnet=DIR       use libnet in DIR"
 diff -Nur dsniff-2.3/record.c dsniff-2.3.patched/record.c
 --- dsniff-2.3/record.c	2000-11-14 16:51:02.000000000 +0100
-+++ dsniff-2.3.patched/record.c	2005-06-09 15:16:50.000000000 +0200
++++ dsniff-2.3.patched/record.c	2005-06-11 16:39:49.000000000 +0200
 @@ -13,12 +13,7 @@
  #include <stdio.h>
  #include <time.h>
@@ -160,9 +157,18 @@ diff -Nur dsniff-2.3/record.c dsniff-2.3.patched/record.c
  	}
  }
  
-@@ -157,14 +156,14 @@
+@@ -155,16 +154,23 @@
+ record_init(char *file)
+ {
  	int flags, mode;
- 	
+-	
++	// needed for gdbm_open, which does not have the option to create
++	// a database in memory
++	if(file == NULL) {
++		char *record_file = "/tmp/.dsniff.db";
++		file = record_file;
++	}
++
  	if (Opt_read) {
 -		flags = O_RDONLY;
 +		flags = GDBM_READER;
@@ -174,11 +180,12 @@ diff -Nur dsniff-2.3/record.c dsniff-2.3.patched/record.c
  		mode = S_IRUSR|S_IWUSR;
  	}
 -	if ((db = dbopen(file, flags, mode, DB_BTREE, NULL)) == NULL)
++
 +	if ((dbf = gdbm_open(file, 1024, flags, mode, NULL)) == NULL)
  		return (0);
  
  	return (1);
-@@ -203,6 +202,6 @@
+@@ -203,6 +209,6 @@
  void
  record_close(void)
  {
