@@ -8,7 +8,7 @@ PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
 
 include $(TOPDIR)/package/rules.mk
 
-$(eval $(call PKG_template,KMOD_WLCOMPAT,$(PKG_NAME),$(LINUX_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,KMOD_WLCOMPAT,$(PKG_NAME),$(LINUX_VERSION)-$(BOARD)-$(PKG_RELEASE),$(ARCH),kernel ($(LINUX_VERSION)-$(BOARD)-$(KERNEL_RELEASE))))
 
 ifeq ($(KERNEL_DIR),)
 KERNEL_DIR:=$(LINUX_DIR)
