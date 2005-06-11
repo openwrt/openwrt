@@ -1,0 +1,12 @@
+diff -Nur dsniff-2.3/configure dsniff-2.3.patched/configure
+--- dsniff-2.3/configure	2000-12-03 05:35:46.000000000 +0100
++++ dsniff-2.3.patched/configure	2005-06-09 11:44:33.000000000 +0200
+@@ -3023,7 +3023,7 @@
+ 	PCAPINC="-I$withval -I$withval/bpf"
+ 	PCAPLIB="-L$withval -lpcap"
+      elif test -f $withval/include/pcap.h -a \
+-	       -f $withval/include/net/bpf.h -a \
++	       -f $withval/include/pcap-bpf.h -a \
+ 	       -f $withval/lib/libpcap.a; then
+ 	owd=`pwd`
+ 	if cd $withval; then withval=`pwd`; cd $owd; fi

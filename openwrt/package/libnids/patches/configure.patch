@@ -1,0 +1,62 @@
+diff -Nur libnids-1.18/configure libnids-1.18.patched/configure
+--- libnids-1.18/configure	2003-10-15 01:40:09.000000000 +0200
++++ libnids-1.18.patched/configure	2005-06-09 12:37:42.000000000 +0200
+@@ -3253,7 +3253,7 @@
+ esac
+ 
+ 
+-CFLAGS="$CFLAGS -D_BSD_SOURCE"
++CFLAGS="$CFLAGS"
+ 
+ for ac_func in gettimeofday
+ do
+@@ -3489,17 +3489,21 @@
+ echo "${ECHO_T}no" >&6
+      ;;
+   *)
+-     echo "$as_me:$LINENO: result: $withval" >&5
+-echo "${ECHO_T}$withval" >&6
++     echo "$ac_t""$withval" 1>&6
+      if test -f $withval/pcap.h -a -f $withval/libpcap.a; then
+         owd=`pwd`
+         if cd $withval; then withval=`pwd`; cd $owd; fi
+-	PCAP_CFLAGS="-I$withval -I$withval/bpf"
++	PCAPINC="-I$withval -I$withval/bpf"
+ 	PCAPLIB="-L$withval -lpcap"
++     elif test -f $withval/include/pcap.h -a \
++	       -f $withval/include/pcap-bpf.h -a \
++	       -f $withval/lib/libpcap.a; then
++	owd=`pwd`
++	if cd $withval; then withval=`pwd`; cd $owd; fi
++	PCAPINC="-I$withval/include"
++	PCAPLIB="-L$withval/lib -lpcap"
+      else
+-        { { echo "$as_me:$LINENO: error: pcap.h or libpcap.a not found in $withval" >&5
+-echo "$as_me: error: pcap.h or libpcap.a not found in $withval" >&2;}
+-   { (exit 1); exit 1; }; }
++        { echo "configure: error: pcap.h" 1>&2; exit 1; }
+      fi
+      ;;
+   esac
+@@ -3605,10 +3609,10 @@
+   *)
+      echo "$as_me:$LINENO: result: $withval" >&5
+ echo "${ECHO_T}$withval" >&6
+-     if test -f $withval/include/libnet.h -a -f $withval/lib/libnet.a -a -f $withval/libnet-config ; then
++     if test -f $withval/include/libnet.h -a -f $withval/lib/libnet.a -a -f $withval/bin/libnet-config ; then
+         owd=`pwd`
+         if cd $withval; then withval=`pwd`; cd $owd; fi
+-	LNET_CFLAGS="-I$withval/include `$withval/libnet-config --defines`"
++	LNET_CFLAGS="-I$withval/include `$withval/bin/libnet-config --defines`"
+ 	LNETLIB="-L$withval/lib -lnet"
+      elif test -f $withval/include/libnet.h -a -f $withval/src/libnet.a; then
+         owd=`pwd`
+@@ -3861,7 +3865,7 @@
+ else
+   echo "$as_me: failed program was:" >&5
+ cat conftest.$ac_ext >&5
+-HAVE_BSD_UDPHDR=0
++HAVE_BSD_UDPHDR=1
+ fi
+ rm -f conftest.$ac_objext conftest.$ac_ext
+ 
