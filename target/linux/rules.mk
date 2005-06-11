@@ -24,5 +24,3 @@ $$(PKG_$(1)): $(LINUX_DIR)/.modules_done
 	$(IPKG_BUILD) $$(I_$(1)) $(PACKAGE_DIR)
 
 endef
-
-
