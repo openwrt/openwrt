@@ -97,11 +97,6 @@ $(eval $(call KMOD_template,USB_STORAGE,usb-storage,\
 $(eval $(call KMOD_template,USB_PRINTER,usb-printer,\
 	$(MODULES_DIR)/kernel/drivers/usb/printer.o \
 ,CONFIG_USB_PRINTER))
-$(eval $(call KMOD_template,LP,lp,\
-	$(MODULES_DIR)/kernel/drivers/parport/parport.o \
-	$(MODULES_DIR)/kernel/drivers/parport/parport_splink.o \
-	$(MODULES_DIR)/kernel/drivers/char/lp.o \
-,CONFIG_PARPORT))
 $(eval $(call KMOD_template,IDE,ide,\
 	$(MODULES_DIR)/kernel/drivers/ide/*.o \
 	$(MODULES_DIR)/kernel/drivers/ide/*/*.o \
