@@ -48,8 +48,8 @@ $(GDB_CLIENT_DIR)/gdb/gdb: $(GDB_CLIENT_DIR)/.configured
 
 $(TARGET_CROSS)gdb: $(GDB_CLIENT_DIR)/gdb/gdb
 	install -c $(GDB_CLIENT_DIR)/gdb/gdb $(TARGET_CROSS)gdb
-	ln -fs ../../bin/$(REAL_GNU_TARGET_NAME)-gdb \
-		$(STAGING_DIR)/$(REAL_GNU_TARGET_NAME)/bin/gdb
+	cd $(STAGING_DIR)/bin && \
+	ln -fs $(GNU_TARGET_NAME)-gdb $(REAL_GNU_TARGET_NAME)-gdb
 
 source: $(DL_DIR)/$(GDB_SOURCE)
 prepare: $(GDB_DIR)/.patched
