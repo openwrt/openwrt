@@ -25,12 +25,3 @@ compile: $(SQUASHFSLZMA_DIR)/squashfs-tools/mksquashfs-lzma $(STAGING_DIR)/bin/m
 install:
 clean: 
 	rm -rf $(SQUASHFSLZMA_DIR)
-
-FILESYSTEMS:=squashfs
-define squashfs_template
-	@mkdir -p $(1)/root/jffs
-	PATH=$(TARGET_PATH) mksquashfs-lzma $(1)/root $(1)/root.squashfs -noappend -root-owned -le
-	PATH=$(TARGET_PATH) trx -o $@ $(BUILD_DIR)/loader.gz \
-		$(1)/kernel-image $(1)/root.squashfs
-endef
-include ../image.mk
