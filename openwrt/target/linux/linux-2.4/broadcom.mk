@@ -15,6 +15,11 @@ $(eval $(call KMOD_template,BRCM_WL,brcm-wl,\
 $(eval $(call KMOD_template,BRCM_ET,brcm-et,\
 	$(MODULES_DIR)/kernel/drivers/net/et/et.o \
 ,CONFIG_ET))
+$(eval $(call KMOD_template,LP,lp,\
+	$(MODULES_DIR)/kernel/drivers/parport/parport.o \
+	$(MODULES_DIR)/kernel/drivers/parport/parport_splink.o \
+	$(MODULES_DIR)/kernel/drivers/char/lp.o \
+,CONFIG_PARPORT))
 
 
 LINUX_BINARY_DRIVER_SITE=http://openwrt.org/downloads/
