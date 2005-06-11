@@ -13,28 +13,27 @@ clean: $(patsubst %,%-clean,$(package-) $(package-y) $(package-m))
 compile: $(patsubst %,%-compile,$(package-y) $(package-m))
 install: $(patsubst %,%-install,$(package-y))
 
-%-prepare:
-	$(MAKE) -C $(patsubst %-prepare,%,$@) \
+MAKEOPTS:=	BOARD="$(BOARD)" \
 		TARGET_DIR="$(TARGET_DIR)" \
 		BUILD_DIR="$(BUILD_DIR)" \
 		KERNEL_DIR="$(KERNEL_DIR)" \
 		LINUX_VERSION="$(LINUX_VERSION)" \
+		KERNEL_RELEASE="$(KERNEL_RELEASE)"
+
+
+%-prepare:
+	$(MAKE) -C $(patsubst %-prepare,%,$@) \
+		$(MAKEOPTS) \
 		prepare
 
 %-compile: %-prepare 
 	$(MAKE) -C $(patsubst %-compile,%,$@) \
-		TARGET_DIR="$(TARGET_DIR)" \
-		BUILD_DIR="$(BUILD_DIR)" \
-		KERNEL_DIR="$(KERNEL_DIR)" \
-		LINUX_VERSION="$(LINUX_VERSION)" \
+		$(MAKEOPTS) \
 		compile
 
 %-install: %-compile
 	$(MAKE) -C $(patsubst %-install,%,$@) \
-		TARGET_DIR="$(TARGET_DIR)" \
-		BUILD_DIR="$(BUILD_DIR)" \
-		KERNEL_DIR="$(KERNEL_DIR)" \
-		LINUX_VERSION="$(LINUX_VERSION)" \
+		$(MAKEOPTS) \
 		install
 
 %-clean:
