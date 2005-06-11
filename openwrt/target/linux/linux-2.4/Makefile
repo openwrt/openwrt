@@ -40,16 +40,16 @@ MODULES_DIR := $(LINUX_BUILD_DIR)/modules/$(MODULES_SUBDIR)
 TARGET_MODULES_DIR := $(TARGET_DIR)/lib/modules/$(LINUX_VERSION)
 IPKG_KERNEL:=IPKG_TMP=$(BUILD_DIR)/tmp IPKG_INSTROOT=$(LINUX_TARGET_DIR) IPKG_CONF_DIR=$(LINUX_BUILD_DIR) $(SCRIPT_DIR)/ipkg -force-defaults -force-depends
 
-KERNEL_IPKG:=$(LINUX_BUILD_DIR)/kernel_$(LINUX_VERSION)-$(BOARD)_$(ARCH).ipk
+PKG_BUILD_DIR := $(LINUX_BUILD_DIR)/linux-modules
+PKG_RELEASE := 1
+
+KERNEL_IPKG:=$(LINUX_BUILD_DIR)/kernel_$(LINUX_VERSION)-$(BOARD)-$(PKG_RELEASE)_$(ARCH).ipk
 KERNEL_IDIR:=$(LINUX_BUILD_DIR)/kernel-ipkg
 
 include $(LINUX_KCONFIG)
 ifeq ($(BOARD),brcm)
 include ./broadcom.mk
 endif
-
-PKG_BUILD_DIR := $(LINUX_BUILD_DIR)/linux-modules
-PKG_RELEASE := 1
 
 TARGETS := 
 INSTALL_TARGETS := $(KERNEL_IPKG)
@@ -77,7 +77,7 @@ $(eval $(call KMOD_template,IPTABLES_V4_EXTRA,iptables-extra,\
 ))
 $(eval $(call KMOD_template,IPTABLES_V6,ip6tables,\
 	$(MODULES_DIR)/kernel/net/ipv6/netfilter/ip*.o \
-,CONFIG_IP6_NF_IPTABLES))
+,CONFIG_IP6_NF_IPTABLES,kmod-ipv6))
 $(eval $(call KMOD_template,IPV6,ipv6,\
 	$(MODULES_DIR)/kernel/net/ipv6/ipv6.o \
 ,CONFIG_IPV6))
@@ -94,13 +94,13 @@ $(eval $(call KMOD_template,USB,usb-core,\
 ,CONFIG_USB))
 $(eval $(call KMOD_template,USB_UHCI,usb-uhci,\
 	$(MODULES_DIR)/kernel/drivers/usb/host/uhci.o \
-,CONFIG_USB_UHCI_ALT))
+,CONFIG_USB_UHCI_ALT,kmod-usb-core))
 $(eval $(call KMOD_template,USB_OHCI,usb-ohci,\
 	$(MODULES_DIR)/kernel/drivers/usb/host/usb-ohci.o \
-,CONFIG_USB_OHCI))
+,CONFIG_USB_OHCI,kmod-usb-core))
 $(eval $(call KMOD_template,USB2,usb2,\
 	$(MODULES_DIR)/kernel/drivers/usb/host/ehci-hcd.o \
-,CONFIG_USB_EHCI_HCD))
+,CONFIG_USB_EHCI_HCD,kmod-usb-core))
 $(eval $(call KMOD_template,USB_STORAGE,usb-storage,\
 	$(MODULES_DIR)/kernel/drivers/scsi/*.o \
 	$(MODULES_DIR)/kernel/drivers/usb/storage/*.o \
@@ -216,7 +216,7 @@ $(TARGET_MODULES_DIR):
 $(KERNEL_IPKG):
 	rm -rf $(KERNEL_IDIR)
 	mkdir -p $(KERNEL_IDIR)/etc
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(KERNEL_IDIR) ../control/kernel.control $(LINUX_VERSION)-$(BOARD) $(ARCH)
+	$(SCRIPT_DIR)/make-ipkg-dir.sh $(KERNEL_IDIR) ../control/kernel.control $(LINUX_VERSION)-$(BOARD)-$(PKG_RELEASE) $(ARCH)
 	if [ -f ./config/$(BOARD).modules ]; then \
 		cp ./config/$(BOARD).modules $(KERNEL_IDIR)/etc/modules; \
 	fi
@@ -227,10 +227,12 @@ prepare: $(LINUX_DIR)/.configured
 compile: $(LINUX_DIR)/.modules_done $(TARGETS)
 	ln -sf $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION) $(LINUX_DIR)
 	$(MAKE) -C $(TOPDIR)/target/linux/package \
+		BOARD="$(BOARD)" \
 		TARGET_DIR="$(LINUX_TARGET_DIR)" \
 		BUILD_DIR="$(LINUX_BUILD_DIR)" \
 		KERNEL_DIR="$(LINUX_SOURCE_DIR)" \
-		LINUX_VERSION="$(LINUX_VERSION)"
+		LINUX_VERSION="$(LINUX_VERSION)" \
+		KERNEL_RELEASE="$(PKG_RELEASE)"
 
 install: compile $(TARGET_MODULES_DIR) $(KERNEL_IPKG)
 	rm -rf $(LINUX_BUILD_DIR)/root*

@@ -20,7 +20,7 @@ endif
 
 include $(TOPDIR)/package/rules.mk
 
-$(eval $(call PKG_template,KMOD_SHFS,kmod-shfs,$(LINUX_VERSION)+$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,KMOD_SHFS,kmod-shfs,$(LINUX_VERSION)$(BOARD)+$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH),kernel ($(LINUX_VERSION)-$(BOARD)-$(KERNEL_RELEASE))))
 
 $(PKG_BUILD_DIR)/.configured:
 	touch $@
