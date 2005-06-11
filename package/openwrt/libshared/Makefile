@@ -26,12 +26,14 @@ $(PKG_BUILD_DIR):
 $(PKG_BUILD_DIR)/libshared.so: $(LIBSHARED_OBJS)
 	$(TARGET_CC) -shared -o $@ $^
 
+$(STAGING_DIR)/lib/libshared.so: $(PKG_BUILD_DIR)/libshared.so
+	install -m 644 $< $@ 
+
 $(TARGET_DIR)/usr/lib/libshared.so: $(PKG_BUILD_DIR)/libshared.so
 	install -m 644 $^ $@
-	install -m 644 $^ $(STAGING_DIR)/lib/libshared.so
 	$(STRIP) $@
 
-compile: $(PKG_BUILD_DIR)/libshared.so
+compile: $(PKG_BUILD_DIR)/libshared.so $(STAGING_DIR)/lib/libshared.so
 install: $(TARGET_DIR)/usr/lib/libshared.so
 
 clean:
