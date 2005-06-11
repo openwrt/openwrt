@@ -40,6 +40,9 @@ MODULES_DIR := $(LINUX_BUILD_DIR)/modules/$(MODULES_SUBDIR)
 TARGET_MODULES_DIR := $(TARGET_DIR)/lib/modules/$(LINUX_VERSION)
 IPKG_KERNEL:=IPKG_TMP=$(BUILD_DIR)/tmp IPKG_INSTROOT=$(LINUX_TARGET_DIR) IPKG_CONF_DIR=$(LINUX_BUILD_DIR) $(SCRIPT_DIR)/ipkg -force-defaults -force-depends
 
+KERNEL_IPKG:=$(LINUX_BUILD_DIR)/kernel_$(LINUX_VERSION)-$(BOARD)_$(ARCH).ipk
+KERNEL_IDIR:=$(LINUX_BUILD_DIR)/kernel-ipkg
+
 include $(LINUX_KCONFIG)
 ifeq ($(BOARD),brcm)
 include ./broadcom.mk
@@ -49,7 +52,7 @@ PKG_BUILD_DIR := $(LINUX_BUILD_DIR)/linux-modules
 PKG_RELEASE := 1
 
 TARGETS := 
-INSTALL_TARGETS := 
+INSTALL_TARGETS := $(KERNEL_IPKG)
 
 $(eval $(call KMOD_template,DIAG,diag,\
 	$(MODULES_DIR)/kernel/drivers/net/diag/diag.o \
@@ -210,6 +213,15 @@ $(STAGING_DIR)/include/linux/version.h: $(LINUX_DIR)/.configured
 $(TARGET_MODULES_DIR): 
 	-mkdir -p $(TARGET_MODULES_DIR)
 
+$(KERNEL_IPKG):
+	rm -rf $(KERNEL_IDIR)
+	mkdir -p $(KERNEL_IDIR)/etc
+	$(SCRIPT_DIR)/make-ipkg-dir.sh $(KERNEL_IDIR) ../control/kernel.control $(LINUX_VERSION)-$(BOARD) $(ARCH)
+	if [ -f ./config/$(BOARD).modules ]; then \
+		cp ./config/$(BOARD).modules $(KERNEL_IDIR)/etc/modules; \
+	fi
+	$(IPKG_BUILD) $(KERNEL_IDIR) $(LINUX_BUILD_DIR)
+
 source: $(DL_DIR)/$(LINUX_SOURCE)
 prepare: $(LINUX_DIR)/.configured
 compile: $(LINUX_DIR)/.modules_done $(TARGETS)
@@ -220,7 +232,7 @@ compile: $(LINUX_DIR)/.modules_done $(TARGETS)
 		KERNEL_DIR="$(LINUX_SOURCE_DIR)" \
 		LINUX_VERSION="$(LINUX_VERSION)"
 
-install: compile $(TARGET_MODULES_DIR)
+install: compile $(TARGET_MODULES_DIR) $(KERNEL_IPKG)
 	rm -rf $(LINUX_BUILD_DIR)/root*
 	cp -a $(BUILD_DIR)/root $(LINUX_BUILD_DIR)/
 	echo -e 'dest root /\noption offline_root $(LINUX_BUILD_DIR)/root' > $(LINUX_BUILD_DIR)/ipkg.conf
