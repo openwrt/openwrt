@@ -31,11 +31,7 @@ $(PKG_IPK_DIR)/usr/sbin/wlc: wlc.c libshared-install
 	mkdir -p $(PKG_IPK_DIR)/usr/sbin
 	$(TARGET_CC) -o $@ $< -lshared -L./libshared -I$(SHARED_INCLUDE)
 
-$(PKG_IPK_DIR)/usr/sbin/wlconf: wlconf.c libshared-install libnvram-install
-	mkdir -p $(PKG_IPK_DIR)/usr/sbin
-	$(TARGET_CC) -o $@ $< -lshared -L./libshared -lnvram -L./libnvram -I$(SHARED_INCLUDE)
-
-$(PKG_IPK): $(PKG_IPK_DIR)/sbin/mtd $(PKG_IPK_DIR)/sbin/jffs2root $(PKG_IPK_DIR)/usr/sbin/wlc $(PKG_IPK_DIR)/usr/sbin/wlconf
+$(PKG_IPK): $(PKG_IPK_DIR)/sbin/mtd $(PKG_IPK_DIR)/sbin/jffs2root $(PKG_IPK_DIR)/usr/sbin/wlc
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_IPK_DIR) $(PKG_NAME).control $(PKG_RELEASE) $(ARCH)
 	$(STRIP) $(PKG_IPK_DIR)/usr/sbin/*
 	$(STRIP) $(PKG_IPK_DIR)/sbin/*
