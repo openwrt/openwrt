@@ -83,6 +83,7 @@ static int wl_set_val(struct net_device *dev, char *var, void *val, int len)
 {
 	char buf[128];
 	int buf_len;
+	int ret;
 
 	/* check for overflow */
 	if ((buf_len = strlen(var)) + 1 + len > sizeof(buf))
@@ -92,23 +93,25 @@ static int wl_set_val(struct net_device *dev, char *var, void *val, int len)
 	buf_len += 1;
 
 	/* append int value onto the end of the name string */
-	memcpy(&buf[buf_len], val, len);
+	memcpy(&(buf[buf_len]), val, len);
 	buf_len += len;
 
-	return wl_ioctl(dev, WLC_SET_VAR, buf, buf_len);
+	ret = wl_ioctl(dev, WLC_SET_VAR, buf, buf_len);
+	return ret;
 }
 
 static int wl_get_val(struct net_device *dev, char *var, void *val, int len)
 {
 	char buf[128];
+	int buf_len;
 	int ret;
 
 	/* check for overflow */
-	if (strlen(var) + 1 > sizeof(buf) || len > sizeof(buf))
+	if ((buf_len = strlen(var)) + 1 > sizeof(buf) || len > sizeof(buf))
 		return -1;
 	
 	strcpy(buf, var);
-	if ((ret = wl_ioctl(dev, WLC_GET_VAR, buf, sizeof(buf))))
+	if (ret = wl_ioctl(dev, WLC_GET_VAR, buf, buf_len + len))
 		return ret;
 
 	memcpy(val, buf, len);
@@ -309,23 +312,29 @@ static int wlcompat_ioctl(struct net_device *dev,
 		}
 		case SIOCSIWFREQ:
 		{
-			if (wrqu->freq.e == 1) {
-				int channel = 0;
-				int f = wrqu->freq.m / 100000;
-				while ((channel < NUM_CHANNELS + 1) && (f != channel_frequency[channel]))
-					channel++;
-				
-				if (channel == NUM_CHANNELS) // channel not found
-					return -EINVAL;
-
-				wrqu->freq.e = 0;
-				wrqu->freq.m = channel + 1;
-			}
-			if ((wrqu->freq.e == 0) && (wrqu->freq.m < 1000)) {
+			if (wrqu->freq.m == -1) {
+				wrqu->freq.m = 0;
 				if (wl_ioctl(dev, WLC_SET_CHANNEL, &wrqu->freq.m, sizeof(int)) < 0)
 					return -EINVAL;
 			} else {
-				return -EINVAL;
+				if (wrqu->freq.e == 1) {
+					int channel = 0;
+					int f = wrqu->freq.m / 100000;
+					while ((channel < NUM_CHANNELS + 1) && (f != channel_frequency[channel]))
+						channel++;
+					
+					if (channel == NUM_CHANNELS) // channel not found
+						return -EINVAL;
+
+					wrqu->freq.e = 0;
+					wrqu->freq.m = channel + 1;
+				}
+				if ((wrqu->freq.e == 0) && (wrqu->freq.m < 1000)) {
+					if (wl_ioctl(dev, WLC_SET_CHANNEL, &wrqu->freq.m, sizeof(int)) < 0)
+						return -EINVAL;
+				} else {
+					return -EINVAL;
+				}
 			}
 			break;
 		}
@@ -425,24 +434,26 @@ static int wlcompat_ioctl(struct net_device *dev,
 				return -EINVAL;
 			
 			if (!wrqu->txpower.disabled) {
-				int override;
-
-				if (wl_get_val(dev, "qtxpower", &override, sizeof(int)) < 0)
+				int value;
+				
+				if (wl_get_val(dev, "qtxpower", &value, sizeof(int)) < 0)
 					return -EINVAL;
 				
-				wrqu->txpower.value |= override & WL_TXPWR_OVERRIDE;
+				value &= WL_TXPWR_OVERRIDE;
+				wrqu->txpower.value |= value;
 				
 				if (wrqu->txpower.flags != IW_TXPOW_MWATT)
 					return -EINVAL;
-
-				if (wl_set_val(dev, "qtxpower", &wrqu->txpower.value, sizeof(int)) < 0)
-					return -EINVAL;
-
+				
+				if (wrqu->txpower.value > 0)
+					if (wl_set_val(dev, "qtxpower", &(wrqu->txpower.value), sizeof(int)) < 0)
+						return -EINVAL;
 			}
+			break;
 		}
 		case SIOCSIWENCODE:
 		{
-			int wep = 1, wrestrict = 1;
+			int val = 0, wep = 1, wrestrict = 1;
 			int index = (wrqu->data.flags & IW_ENCODE_INDEX) - 1;
 
 			if (index < 0)
@@ -471,12 +482,16 @@ static int wlcompat_ioctl(struct net_device *dev,
 				if (wl_ioctl(dev, WLC_SET_KEY_PRIMARY, &index, sizeof(index)) < 0)
 					return -EINVAL;
 			
-			if (wl_ioctl(dev, WLC_SET_WSEC, &wep, sizeof(wep)) < 0)
+			if (wl_ioctl(dev, WLC_GET_WSEC, &val, sizeof(val)) < 0)
+				return -EINVAL;
+			val |= wep;
+			if (wl_ioctl(dev, WLC_SET_WSEC, &val, sizeof(val)) < 0)
 				return -EINVAL;
 
 			if (wrestrict >= 0)
 				if (wl_ioctl(dev, WLC_SET_WEP_RESTRICT, &wrestrict, sizeof(wrestrict)) < 0)
 					return -EINVAL;
+			break;
 		}
 		case SIOCGIWENCODE:
 		{
