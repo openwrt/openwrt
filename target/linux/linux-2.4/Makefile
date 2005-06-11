@@ -24,7 +24,6 @@ LINUX_KCONFIG:=./config/$(BOARD)
 LINUX_BUILD_DIR:=$(BUILD_DIR)/linux-2.4-$(BOARD)
 LINUX_TARGET_DIR:=$(LINUX_BUILD_DIR)/root
 LINUX_KERNEL:=$(LINUX_BUILD_DIR)/vmlinux
-LINUX_FORMAT=zImage
 LINUX_KARCH:=$(shell echo $(ARCH) | sed -e 's/i[3-9]86/i386/' \
 	-e 's/mipsel/mips/' \
 	-e 's/powerpc/ppc/' \
@@ -33,7 +32,6 @@ LINUX_KARCH:=$(shell echo $(ARCH) | sed -e 's/i[3-9]86/i386/' \
 
 LINUX_BINARY_DRIVER_SITE := http://openwrt.org/downloads/
 LINUX_SOURCE := linux-$(LINUX_VERSION).tar.bz2
-LINUX_BINLOC := arch/$(LINUX_KARCH)/bcm947xx/compressed/piggy
 LINUX_SOURCE_DIR := $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION)
 MODULES_DIR := $(LINUX_BUILD_DIR)/modules/$(MODULES_SUBDIR)
 TARGET_MODULES_DIR := $(TARGET_DIR)/lib/modules/$(LINUX_VERSION)
@@ -188,11 +186,11 @@ $(LINUX_DIR)/.depend_done:  $(LINUX_DIR)/.configured
 	$(MAKE) -C $(LINUX_DIR) ARCH=$(LINUX_KARCH) dep
 	touch $(LINUX_DIR)/.depend_done
 
-$(LINUX_DIR)/$(LINUX_BINLOC): $(LINUX_DIR)/.depend_done
-	$(MAKE) -C $(LINUX_DIR) ARCH=$(LINUX_KARCH) PATH=$(TARGET_PATH) $(LINUX_FORMAT)
+$(LINUX_DIR)/vmlinux: $(LINUX_DIR)/.depend_done
+	$(MAKE) -C $(LINUX_DIR) ARCH=$(LINUX_KARCH) PATH=$(TARGET_PATH)
 
-$(LINUX_KERNEL): $(LINUX_DIR)/$(LINUX_BINLOC)
-	cp -fa $< $@ 
+$(LINUX_KERNEL): $(LINUX_DIR)/vmlinux
+	$(TARGET_CROSS)objcopy -O binary -R .reginfo -R .note -R .comment -R .mdebug -S $< $@ 
 	touch -c $(LINUX_KERNEL)
 	
 $(LINUX_DIR)/.modules_done: $(LINUX_KERNEL) $(LINUX_IMAGE)
