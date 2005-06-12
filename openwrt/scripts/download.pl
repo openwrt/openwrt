@@ -75,7 +75,8 @@ foreach my $mirror (@ARGV) {
 	}
 }
 
-push @mirrors, 'http://openwrt.inf.fh-brs.de/mirror';
+push @mirrors, 'http://mirror1.openwrt.org/';
+push @mirrors, 'http://mirror2.openwrt.org/';
 push @mirrors, 'http://openwrt.org/download/sources/';
 
 while (!$ok) {
