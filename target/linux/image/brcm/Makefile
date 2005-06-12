@@ -43,5 +43,5 @@ endif
 clean: lzma-loader-clean
 prepare: lzma-loader-prepare
 compile: lzma-loader-compile
-install: $(BIN_DIR)/openwrt-brcm-$(KERNEL)-$(FS).trx
+install: compile $(BIN_DIR)/openwrt-brcm-$(KERNEL)-$(FS).trx
 	
