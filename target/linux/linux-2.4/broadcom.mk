@@ -21,7 +21,7 @@ $(eval $(call KMOD_template,LP,lp,\
 	$(MODULES_DIR)/kernel/drivers/char/lp.o \
 ,CONFIG_PARPORT))
 
-LINUX_BINARY_DRIVER_SITE=http://openwrt.org/downloads/distfiles
+LINUX_BINARY_DRIVER_SITE=http://openwrt.org/downloads/sources
 # proprietary driver, extracted from asus GPL sourcetree GPL_1941.zip
 LINUX_BINARY_WL_DRIVER=kernel-binary-wl-0.3.tar.gz
 LINUX_BINARY_WL_MD5SUM=cc45df670bcfb4e74a709b9d7beba636
