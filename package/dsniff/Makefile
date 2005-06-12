@@ -43,6 +43,7 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 		  --sbindir=/usr/sbin \
 		  --sysconfdir=/etc \
 		  --without-db \
+		  --without-x \
 		  --with-gdbm="$(STAGING_DIR)/usr" \
 		  --with-libnids="$(STAGING_DIR)/usr" \
 		  --with-libpcap="$(STAGING_DIR)/usr" \
@@ -69,3 +70,7 @@ $(IPKG_DSNIFF):
 	cp -fpR  $(PKG_INSTALL_DIR)/usr/lib/* $(IDIR_DSNIFF)/usr/lib
 	$(RSTRIP) $(IDIR_DSNIFF)
 	$(IPKG_BUILD) $(IDIR_DSNIFF) $(PACKAGE_DIR)
+
+mostlyclean:
+	make -C $(PKG_BUILD_DIR) clean
+	rm $(PKG_BUILD_DIR)/.built
