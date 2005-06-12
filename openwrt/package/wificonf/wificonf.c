@@ -160,6 +160,8 @@ void setup_bcom(int skfd, char *ifname)
 		val = AES_ENABLED;
 	else if (nvram_match(wl_var("crypto"), "tkip+aes"))
 		val = TKIP_ENABLED | AES_ENABLED;
+	else
+		val = 0;
 	bcom_ioctl(skfd, ifname, WLC_SET_WSEC, &val, sizeof(val));
 
 	if (val && nvram_get(wl_var("wpa_psk"))) {
