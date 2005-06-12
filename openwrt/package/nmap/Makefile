@@ -48,6 +48,7 @@ $(PKG_BUILD_DIR)/.configured:
 		  $(DISABLE_LARGEFILE) \
 		  $(DISABLE_NLS) \
 		  --without-openssl \
+		  --without-nmapfe \
 		  --with-libpcap="$(STAGING_DIR)/usr" \
 		  --with-libpcre="$(STAGING_DIR)/usr" \
 	);
@@ -71,3 +72,7 @@ $(IPKG_NMAP):
 	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/nmap $(IDIR_NMAP)/usr/bin/
 	$(RSTRIP) $(IDIR_NMAP)
 	$(IPKG_BUILD) $(IDIR_NMAP) $(PACKAGE_DIR)
+
+mostlyclean:
+	$(MAKE) -C $(PKG_BUILD_DIR) clean
+	rm $(PKG_BUILD_DIR)/.built
