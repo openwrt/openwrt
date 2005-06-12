@@ -86,6 +86,7 @@ package-$(BR2_PACKAGE_QUAGGA) += quagga
 package-$(BR2_PACKAGE_RADVD) += radvd
 package-$(BR2_PACKAGE_READLINE) += readline
 package-$(BR2_PACKAGE_ROBOCFG) += robocfg
+package-$(BR2_PACKAGE_RSYNC) += rsync
 package-$(BR2_PACKAGE_SABLEVM) += sablevm
 package-$(BR2_PACKAGE_SABLEVM_CLASSPATH) += sablevm-classpath
 package-$(BR2_PACKAGE_SCREEN) += screen
@@ -151,6 +152,7 @@ openswan-compile: gmp-compile
 osiris-compile: openssl-compile
 portmap-compile: tcp_wrappers-compile
 postgresql-compile: zlib-compile
+rsync-compile: popt-compile
 screen-compile: ncurses-compile
 siproxd-compile: libosip2-compile
 sipsak-compile: openssl-compile

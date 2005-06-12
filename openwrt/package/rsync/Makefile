@@ -2,12 +2,12 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=dsniff
-PKG_VERSION:=2.3
-PKG_RELEASE:=1
-PKG_MD5SUM:=183e336a45e38013f3af840bddec44b4
+PKG_NAME:=rsync
+PKG_VERSION:=2.6.5
+PKG_RELEASE:=0
+PKG_MD5SUM:=3691cdf1540d0649ba679edce6bae8fc
 
-PKG_SOURCE_URL:=http://www.monkey.org/~dugsong/dsniff/
+PKG_SOURCE_URL:=http://rsync.samba.org/ftp/rsync/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
@@ -16,7 +16,7 @@ PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
 include $(TOPDIR)/package/rules.mk
 
-$(eval $(call PKG_template,DSNIFF,dsniff,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,RSYNC,rsync,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
@@ -42,12 +42,6 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 		  --mandir=/usr/share/man \
 		  --sbindir=/usr/sbin \
 		  --sysconfdir=/etc \
-		  --without-db \
-		  --with-gdbm="$(STAGING_DIR)/usr" \
-		  --with-libnids="$(STAGING_DIR)/usr" \
-		  --with-libpcap="$(STAGING_DIR)/usr" \
-		  --with-libnet="$(STAGING_DIR)/usr" \
-		  --with-openssl="$(STAGING_DIR)/usr" \
 		  $(DISABLE_LARGEFILE) \
 		  $(DISABLE_NLS) \
 	);
@@ -58,14 +52,12 @@ $(PKG_BUILD_DIR)/.built:
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
-		install_prefix="$(PKG_INSTALL_DIR)" \
+		DESTDIR="$(PKG_INSTALL_DIR)" \
 		all install
 	touch $@
 
-$(IPKG_DSNIFF):
-	install -d -m0755 $(IDIR_DSNIFF)/usr/lib
-	install -d -m0755 $(IDIR_DSNIFF)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/* $(IDIR_DSNIFF)/usr/sbin
-	cp -fpR  $(PKG_INSTALL_DIR)/usr/lib/* $(IDIR_DSNIFF)/usr/lib
-	$(RSTRIP) $(IDIR_DSNIFF)
-	$(IPKG_BUILD) $(IDIR_DSNIFF) $(PACKAGE_DIR)
+$(IPKG_RSYNC):
+	install -d -m0755 $(IDIR_RSYNC)/usr/bin
+	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/* $(IDIR_RSYNC)/usr/bin
+	$(RSTRIP) $(IDIR_RSYNC)
+	$(IPKG_BUILD) $(IDIR_RSYNC) $(PACKAGE_DIR)
