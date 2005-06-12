@@ -1,0 +1,9 @@
+config BR2_PACKAGE_RSYNC
+	tristate "rsync"
+	select BR2_PACKAGE_LIBPOPT
+	default m if CONFIG_DEVEL
+	help
+
+	utility that provides fast incremental file transfer
+
+	http://rsync.samba.org
