@@ -30,7 +30,7 @@ LINUX_KARCH:=$(shell echo $(ARCH) | sed -e 's/i[3-9]86/i386/' \
 	-e 's/sh[234]/sh/' \
 	)
 
-LINUX_BINARY_DRIVER_SITE := http://openwrt.org/downloads/
+LINUX_BINARY_DRIVER_SITE := http://openwrt.org/downloads/sources/
 LINUX_SOURCE := linux-$(LINUX_VERSION).tar.bz2
 LINUX_SOURCE_DIR := $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION)
 MODULES_DIR := $(LINUX_BUILD_DIR)/modules/$(MODULES_SUBDIR)
