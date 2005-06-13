@@ -14,8 +14,15 @@ lzma-loader-compile: lzma-loader-prepare
 $(KDIR)/vmlinux.lzma: $(KDIR)/vmlinux
 	cat $^ | $(STAGING_DIR)/bin/lzma e -si -so -eos -lc1 -lp2 -pb2 > $@ || (rm -f $@ && false)
 
+ifeq ($(FS),jffs2-8MB)
+TRXALIGN:=-a 0x20000
+endif
+ifeq ($(FS),jffs2-4MB)
+TRXALIGN:=-a 0x10000
+endif
 $(BIN_DIR)/openwrt-brcm-$(KERNEL)-$(FS).trx: $(KDIR)/vmlinux.lzma
-	$(STAGING_DIR)/bin/trx -o $@ $(BUILD_DIR)/loader.gz $(KDIR)/vmlinux.lzma $(KDIR)/root.$(FS)
+	$(STAGING_DIR)/bin/trx -o $@ $(BUILD_DIR)/loader.gz $(KDIR)/vmlinux.lzma $(TRXALIGN) $(KDIR)/root.$(FS)
+
 
 ifeq ($(KERNEL),2.4)
 FSNAME:=$(patsubst jffs2-%,jffs2,$(FS))
