@@ -1,6 +1,6 @@
 include $(TOPDIR)/rules.mk
 
-TARGETS := addpattern trx belkin-bin motorola-bin
+TARGETS := addpattern trx motorola-bin
 
 UTILS_BUILD_DIR:=$(BUILD_DIR)/target-utils
 
