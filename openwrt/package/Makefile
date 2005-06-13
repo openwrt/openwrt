@@ -25,6 +25,7 @@ package-$(BR2_PACKAGE_FPROBE) += fprobe
 package-$(BR2_PACKAGE_FREERADIUS) += freeradius
 package-$(BR2_PACKAGE_FRICKIN) += frickin
 package-$(BR2_PACKAGE_FUSE) += fuse
+package-$(BR2_PACKAGE_GDB) += gdb
 package-$(BR2_PACKAGE_GLIB) += glib
 package-$(BR2_PACKAGE_GMP) += gmp
 package-$(BR2_PACKAGE_HASERL) += haserl
@@ -36,6 +37,7 @@ package-$(BR2_PACKAGE_IPTABLES) += iptables
 package-$(BR2_PACKAGE_KISMET) += kismet
 package-$(BR2_PACKAGE_L2TPD) += l2tpd
 package-$(BR2_PACKAGE_LCD4LINUX) += lcd4linux
+package-$(BR2_PACKAGE_LIBDB) += libdb
 package-$(BR2_PACKAGE_LIBELF) += libelf
 package-$(BR2_PACKAGE_LIBEVENT) += libevent
 package-$(BR2_PACKAGE_LIBFFI_SABLE) += libffi-sable
@@ -134,6 +136,7 @@ cyrus-sasl-compile: openssl-compile
 dropbear-compile: zlib-compile
 dsniff-compile: libnids-compile openssl-compile libgdbm-compile
 fprobe-compile: libpcap-compile
+gdb-compile: ncurses-compile
 kismet-compile: uclibc++-compile libpcap-compile ncurses-compile
 lcd4linux-compile: ncurses-compile
 libgd-compile: libpng-compile
