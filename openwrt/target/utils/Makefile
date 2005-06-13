@@ -1,12 +1,6 @@
 include $(TOPDIR)/rules.mk
 
-TARGETS := addpattern trx
-ifeq ($(BR2_TARGET_BELKIN),y)
-TARGETS += belkin-bin
-endif
-ifeq ($(BR2_TARGET_MOTOROLA),y)
-TARGETS += motorola-bin
-endif
+TARGETS := addpattern trx belkin-bin motorola-bin
 
 UTILS_BUILD_DIR:=$(BUILD_DIR)/target-utils
 
