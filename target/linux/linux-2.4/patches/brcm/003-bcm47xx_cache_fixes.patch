@@ -1,3 +1,125 @@
+diff -urN linux.old/arch/mips/mm/tlbex-mips32.S linux.dev/arch/mips/mm/tlbex-mips32.S
+--- linux.old/arch/mips/mm/tlbex-mips32.S	2005-05-28 17:42:03.000000000 +0200
++++ linux.dev/arch/mips/mm/tlbex-mips32.S	2005-05-28 21:48:55.000000000 +0200
+@@ -90,6 +90,9 @@
+ 	.set	noat
+ 	LEAF(except_vec0_r4000)
+ 	.set	mips3
++#ifdef CONFIG_BCM4704
++	nop
++#endif
+ #ifdef CONFIG_SMP
+ 	mfc0	k1, CP0_CONTEXT
+ 	la	k0, pgd_current
+diff -urN linux.old/arch/mips/mm/pg-r4k.c linux.dev/arch/mips/mm/pg-r4k.c
+--- linux.old/arch/mips/mm/pg-r4k.c	2005-01-19 15:09:29.000000000 +0100
++++ linux.dev/arch/mips/mm/pg-r4k.c	2005-05-28 21:57:52.000000000 +0200
+@@ -180,6 +180,7 @@
+ 
+ static inline void build_cdex_s(void)
+ {
++#if !defined(CONFIG_BCM4704) && !defined(CONFIG_BCM4710)
+ 	union mips_instruction mi;
+ 
+ 	if ((store_offset & (cpu_scache_line_size() - 1)))
+@@ -192,10 +193,12 @@
+ 	mi.c_format.simmediate = store_offset;
+ 
+ 	emit_instruction(mi);
++#endif
+ }
+ 
+ static inline void build_cdex_p(void)
+ {
++#if !defined(CONFIG_BCM4704) && !defined(CONFIG_BCM4710)
+ 	union mips_instruction mi;
+ 
+ 	if (store_offset & (cpu_dcache_line_size() - 1))
+@@ -218,6 +221,7 @@
+ 	mi.c_format.simmediate = store_offset;
+ 
+ 	emit_instruction(mi);
++#endif
+ }
+ 
+ static void __build_store_reg(int reg)
+diff -urN linux.old/include/asm-mips/stackframe.h linux.dev/include/asm-mips/stackframe.h
+--- linux.old/include/asm-mips/stackframe.h	2002-11-29 00:53:15.000000000 +0100
++++ linux.dev/include/asm-mips/stackframe.h	2005-05-28 21:53:03.000000000 +0200
+@@ -172,6 +172,46 @@
+ 		 rfe;					 \
+ 		.set	pop
+ 
++#elif defined(CONFIG_BCM4710) || defined(CONFIG_BCM4704)
++
++#define RESTORE_SOME                                     \
++		.set    push;                            \
++		.set    reorder;                         \
++		mfc0    t0, CP0_STATUS;                  \
++		.set    pop;                             \
++		ori     t0, 0x1f;                        \
++		xori    t0, 0x1f;                        \
++		mtc0    t0, CP0_STATUS;                  \
++		li      v1, 0xff00;                      \
++		and     t0, v1;                          \
++		lw      v0, PT_STATUS(sp);               \
++		nor     v1, $0, v1;                      \
++		and     v0, v1;                          \
++		or      v0, t0;                          \
++		ori     v1, v0, ST0_IE;                  \
++		xori    v1, v1, ST0_IE;                  \
++		mtc0    v1, CP0_STATUS;                  \
++		mtc0    v0, CP0_STATUS;                  \
++		lw      v1, PT_EPC(sp);                  \
++		mtc0    v1, CP0_EPC;                     \
++		lw      $31, PT_R31(sp);                 \
++		lw      $28, PT_R28(sp);                 \
++		lw      $25, PT_R25(sp);                 \
++		lw      $7,  PT_R7(sp);                  \
++		lw      $6,  PT_R6(sp);                  \
++		lw      $5,  PT_R5(sp);                  \
++		lw      $4,  PT_R4(sp);                  \
++		lw      $3,  PT_R3(sp);                  \
++		lw      $2,  PT_R2(sp)
++
++#define RESTORE_SP_AND_RET                               \
++		lw      sp,  PT_R29(sp);                 \
++		nop;                                     \
++		nop;                                     \
++		.set    mips3;                           \
++		eret;                                    \
++		.set    mips0
++
+ #else
+ 
+ #define RESTORE_SOME                                     \
+diff -urN linux.old/arch/mips/mm/tlbex-r4k.S linux.dev/arch/mips/mm/tlbex-r4k.S
+--- linux.old/arch/mips/mm/tlbex-r4k.S	2005-05-28 17:42:03.000000000 +0200
++++ linux.dev/arch/mips/mm/tlbex-r4k.S	2005-05-29 15:04:43.000000000 +0200
+@@ -168,6 +168,9 @@
+ 	.set	noat
+ 	LEAF(except_vec0_r4000)
+ 	.set	mips3
++#ifdef CONFIG_BCM4704
++	nop
++#endif
+ 	GET_PGD(k0, k1)				# get pgd pointer
+ 	mfc0	k0, CP0_BADVADDR		# Get faulting address
+ 	srl	k0, k0, _PGDIR_SHIFT		# get pgd only bits
+diff -urN linux.old/arch/mips/kernel/entry.S linux.dev/arch/mips/kernel/entry.S
+--- linux.old/arch/mips/kernel/entry.S	2003-08-25 13:44:40.000000000 +0200
++++ linux.dev/arch/mips/kernel/entry.S	2005-06-01 20:10:36.000000000 +0200
+@@ -100,6 +100,10 @@
+ 		 * and R4400 SC and MC versions.
+ 		 */
+ NESTED(except_vec3_generic, 0, sp)
++#ifdef CONFIG_BCM4710
++		nop
++		nop
++#endif
+ #if R5432_CP0_INTERRUPT_WAR
+ 		mfc0	k0, CP0_INDEX
+ #endif
 diff -urN linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
 --- linux.old/arch/mips/mm/c-r4k.c	2005-06-01 18:42:44.000000000 +0200
 +++ linux.dev/arch/mips/mm/c-r4k.c	2005-06-01 18:49:07.000000000 +0200
@@ -280,3 +402,119 @@ diff -urN linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
  		while (1) {
  			flush_dcache_line(a);	/* Hit_Writeback_Inv_D */
  			if (a == end)
+diff -urN linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
+--- linux.old/arch/mips/mm/c-r4k.c	2005-06-11 19:39:17.000000000 +0200
++++ linux.dev/arch/mips/mm/c-r4k.c	2005-06-11 19:54:48.000000000 +0200
+@@ -1083,6 +1083,19 @@
+ static inline void coherency_setup(void)
+ {
+ 	change_c0_config(CONF_CM_CMASK, CONF_CM_DEFAULT);
++	
++#if defined(CONFIG_BCM4310) || defined(CONFIG_BCM4704) || defined(CONFIG_BCM5365)
++	if (BCM330X(current_cpu_data.processor_id)) {
++		uint32 cm;
++
++		cm = read_c0_diag();
++		/* Enable icache */
++		cm |= (1 << 31);
++		/* Enable dcache */
++		cm |= (1 << 30);
++		write_c0_diag(cm);
++	}
++#endif
+ 
+ 	/*
+ 	 * c0_status.cu=0 specifies that updates by the sc instruction use
+@@ -1104,6 +1117,42 @@
+ 
+ }
+ 
++#ifdef CONFIG_BCM4704
++static void __init mips32_icache_fill(unsigned long addr, uint nbytes)
++{
++	unsigned long ic_lsize = current_cpu_data.icache.linesz;
++	int i;
++	for (i = 0; i < nbytes; i += ic_lsize)
++		fill_icache_line((addr + i));
++}
++
++/*
++ *  This must be run from the cache on 4704A0
++ *  so there are no mips core BIU ops in progress
++ *  when the PFC is enabled.
++ */
++#define PFC_CR0         0xff400000      /* control reg 0 */
++#define PFC_CR1         0xff400004      /* control reg 1 */
++static void __init enable_pfc(u32 mode)
++{
++	/* write range */
++	*(volatile u32 *)PFC_CR1 = 0xffff0000;
++
++	/* enable */
++	*(volatile u32 *)PFC_CR0 = mode;
++}
++
++void check_enable_mips_pfc(int val)
++{
++	/* enable prefetch cache */
++	if (BCM330X(current_cpu_data.processor_id)
++		&& (read_c0_diag() & (1 << 29))) {
++			mips32_icache_fill((unsigned long) &enable_pfc, 64);
++			enable_pfc(val);
++	}
++}
++#endif
++
+ void __init ld_mmu_r4xx0(void)
+ {
+ 	extern void build_clear_page(void);
+@@ -1159,47 +1208,9 @@
+ 
+ 	build_clear_page();
+ 	build_copy_page();
+-}
+-
+-#ifdef CONFIG_BCM4704
+-static void __init mips32_icache_fill(unsigned long addr, uint nbytes)
+-{
+-	unsigned long ic_lsize = current_cpu_data.icache.linesz;
+-	int i;
+-	for (i = 0; i < nbytes; i += ic_lsize)
+-		fill_icache_line((addr + i));
+-}
+-
+-/*
+- *  This must be run from the cache on 4704A0
+- *  so there are no mips core BIU ops in progress
+- *  when the PFC is enabled.
+- */
+-#define PFC_CR0         0xff400000      /* control reg 0 */
+-#define PFC_CR1         0xff400004      /* control reg 1 */
+-static void __init enable_pfc(u32 mode)
+-{
+-	/* write range */
+-	*(volatile u32 *)PFC_CR1 = 0xffff0000;
+-
+-	/* enable */
+-	*(volatile u32 *)PFC_CR0 = mode;
+-}
+-#endif
+-
+-
+-void check_enable_mips_pfc(int val)
+-{
+-
++	
+ #ifdef CONFIG_BCM4704
+-	struct cpuinfo_mips *c = &current_cpu_data;
+-
+-	/* enable prefetch cache */
+-	if (((c->processor_id & (PRID_COMP_MASK | PRID_IMP_MASK)) == PRID_IMP_BCM3302) 
+-		&& (read_c0_diag() & (1 << 29))) {
+-			mips32_icache_fill((unsigned long) &enable_pfc, 64);
+-			enable_pfc(val);
+-	}
++	check_enable_mips_pfc(0x15);
+ #endif
+ }
+ 
