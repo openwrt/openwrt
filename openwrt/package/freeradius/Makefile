@@ -3,11 +3,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=freeradius
-PKG_VERSION:=1.0.2
-PKG_RELEASE:=2
-PKG_MD5SUM:=f5dfce4efbb03bbc47ceae08270a875e
+PKG_VERSION:=1.0.3
+PKG_RELEASE:=1
+PKG_MD5SUM:=7fe6732fa69ff4351f51d69212e89bb6
 
-PKG_SOURCE_URL:=ftp://ftp.freeradius.org/pub/radius/
+PKG_SOURCE_URL:=ftp://ftp.freeradius.org/pub/radius/ \
+	http://freeradius.portal-to-web.de/ \
+	ftp://ftp.uk.freeradius.org/pub/radius/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
