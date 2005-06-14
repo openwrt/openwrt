@@ -1,6 +1,6 @@
-diff -Nru linux-2.4.30-openwrt/drivers/mtd/maps/Config.in linux-2.4.30-wag-jiauka/drivers/mtd/maps/Config.in
---- linux-2.4.30-openwrt/drivers/mtd/maps/Config.in	Sun May 29 18:07:48 2005
-+++ linux-2.4.30-wag-jiauka/drivers/mtd/maps/Config.in	Thu Jun  9 01:49:32 2005
+diff -urN linux-2.4.30/drivers/mtd/maps/Config.in linux-2.4.30.dev/drivers/mtd/maps/Config.in
+--- linux-2.4.30/drivers/mtd/maps/Config.in	2005-06-14 19:31:49.000000000 +0200
++++ linux-2.4.30.dev/drivers/mtd/maps/Config.in	2005-06-14 15:36:59.000000000 +0200
 @@ -48,6 +48,21 @@
  fi
  
@@ -23,9 +23,9 @@ diff -Nru linux-2.4.30-openwrt/drivers/mtd/maps/Config.in linux-2.4.30-wag-jiauk
     dep_tristate '  Pb1000 MTD support' CONFIG_MTD_PB1000 $CONFIG_MIPS_PB1000
     dep_tristate '  Pb1500 MTD support' CONFIG_MTD_PB1500 $CONFIG_MIPS_PB1500
     dep_tristate '  Pb1100 MTD support' CONFIG_MTD_PB1100 $CONFIG_MIPS_PB1100
-diff -Nru linux-2.4.30-openwrt/drivers/mtd/maps/Makefile linux-2.4.30-wag-jiauka/drivers/mtd/maps/Makefile
---- linux-2.4.30-openwrt/drivers/mtd/maps/Makefile	Sun May 29 18:07:48 2005
-+++ linux-2.4.30-wag-jiauka/drivers/mtd/maps/Makefile	Thu Jun  9 01:49:32 2005
+diff -urN linux-2.4.30/drivers/mtd/maps/Makefile linux-2.4.30.dev/drivers/mtd/maps/Makefile
+--- linux-2.4.30/drivers/mtd/maps/Makefile	2005-06-14 19:31:49.000000000 +0200
++++ linux-2.4.30.dev/drivers/mtd/maps/Makefile	2005-06-14 15:36:59.000000000 +0200
 @@ -10,6 +10,7 @@
  endif
  
@@ -34,10 +34,10 @@ diff -Nru linux-2.4.30-openwrt/drivers/mtd/maps/Makefile linux-2.4.30-wag-jiauka
  obj-$(CONFIG_MTD_CDB89712)	+= cdb89712.o
  obj-$(CONFIG_MTD_ARM_INTEGRATOR)+= integrator-flash.o
  obj-$(CONFIG_MTD_CFI_FLAGADM)	+= cfi_flagadm.o
-diff -Nru linux-2.4.30-openwrt/drivers/mtd/maps/ar7-flash.c linux-2.4.30-wag-jiauka/drivers/mtd/maps/ar7-flash.c
---- linux-2.4.30-openwrt/drivers/mtd/maps/ar7-flash.c	Thu Jan  1 01:00:00 1970
-+++ linux-2.4.30-wag-jiauka/drivers/mtd/maps/ar7-flash.c	Thu Jun  9 01:49:32 2005
-@@ -0,0 +1,208 @@
+diff -urN linux-2.4.30/drivers/mtd/maps/ar7-flash.c linux-2.4.30.dev/drivers/mtd/maps/ar7-flash.c
+--- linux-2.4.30/drivers/mtd/maps/ar7-flash.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.30.dev/drivers/mtd/maps/ar7-flash.c	2005-06-14 19:38:19.000000000 +0200
+@@ -0,0 +1,218 @@
 +/*
 + * $Id$
 + *
@@ -187,7 +187,8 @@ diff -Nru linux-2.4.30-openwrt/drivers/mtd/maps/ar7-flash.c linux-2.4.30-wag-jia
 +
 +		/* get base and end addresses of flash file system from environment */
 +		sprintf(env_name, "mtd%1u", num_of_partitions);
-+printk("Looking for mtd device :%s:\n", env_name);
++		printk("Looking for mtd device :%s:\n", env_name);
++
 +		env_ptr = prom_getenv(env_name);
 +		if(env_ptr == NULL) {
 +			/* No more partitions to find */
@@ -214,7 +215,16 @@ diff -Nru linux-2.4.30-openwrt/drivers/mtd/maps/ar7-flash.c linux-2.4.30-wag-jia
 +		printk("Found a %s image (0x%x), with size (0x%x).\n",env_name, offset, size);
 +
 +		/* Setup the partition info. We duplicate the env_name for the partiton name */
-+		avalanche_partition_info[num_of_partitions].name = strdup(env_name);
++		if (num_of_partitions == 0)
++			avalanche_partition_info[num_of_partitions].name = strdup("linux");
++		else if (num_of_partitions == 1)
++			avalanche_partition_info[num_of_partitions].name = strdup("rootfs");
++		else if (num_of_partitions == 2)
++			avalanche_partition_info[num_of_partitions].name = strdup("adam2");
++		else if (num_of_partitions == 3)
++			avalanche_partition_info[num_of_partitions].name = strdup("config");
++		else
++			avalanche_partition_info[num_of_partitions].name = strdup(env_name);
 +		avalanche_partition_info[num_of_partitions].offset = offset;
 +		avalanche_partition_info[num_of_partitions].size = size;
 +		avalanche_partition_info[num_of_partitions].mask_flags = 0;
