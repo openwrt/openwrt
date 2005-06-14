@@ -16,8 +16,6 @@ PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
 include $(TOPDIR)/package/rules.mk
 
-BR2_PACKAGE_LIBGPG_ERROR=m
-
 $(eval $(call PKG_template,LIBGPG_ERROR,libgpg-error,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
