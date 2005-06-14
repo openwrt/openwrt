@@ -1,0 +1,42 @@
+diff -ruN freeradius-1.0.2-orig/src/modules/rlm_sql/drivers/rules.mak freeradius-1.0.2-2/src/modules/rlm_sql/drivers/rules.mak
+--- freeradius-1.0.2-orig/src/modules/rlm_sql/drivers/rules.mak	2003-06-05 22:16:54.000000000 +0200
++++ freeradius-1.0.2-2/src/modules/rlm_sql/drivers/rules.mak	2005-03-13 23:53:24.000000000 +0100
+@@ -67,7 +67,7 @@
+ #
+ #######################################################################
+ $(TARGET).a: $(STATIC_OBJS)
+-	$(LIBTOOL) --mode=link $(LD) -module -static $(CFLAGS) $(RLM_SQL_CFLAGS) $^ -o $@ 
++	$(LIBTOOL) --mode=link $(LD) -module -static $(CFLAGS) $(RLM_SQL_CFLAGS) $(LDFLAGS) $^ -o $@ 
+ 
+ #
+ #  If the module is in the list of static modules, then the "dynamic"
+@@ -93,7 +93,7 @@
+ $(TARGET).la: $(DYNAMIC_OBJS)
+ 	$(LIBTOOL) --mode=link $(CC) -release $(RADIUSD_VERSION) \
+ 	-module $(LINK_MODE) $(CFLAGS) \
+-	$(RLM_SQL_CFLAGS) -o $@ -rpath $(libdir) $^ $(RLM_SQL_LIBS)
++	$(RLM_SQL_CFLAGS) $(LDFLAGS) -o $@ -rpath $(libdir) $^ $(RLM_SQL_LIBS)
+ 
+ #######################################################################
+ #
+diff -ruN freeradius-1.0.2-orig/src/modules/rules.mak freeradius-1.0.2-2/src/modules/rules.mak
+--- freeradius-1.0.2-orig/src/modules/rules.mak	2002-08-06 18:11:39.000000000 +0200
++++ freeradius-1.0.2-2/src/modules/rules.mak	2005-03-13 23:53:31.000000000 +0100
+@@ -70,7 +70,7 @@
+ #######################################################################
+ $(TARGET).a: $(STATIC_OBJS)
+ 	$(LIBTOOL) --mode=link $(LD) \
+-	-module -static $(CFLAGS) $(RLM_CFLAGS) $^ -o $@ 
++	-module -static $(CFLAGS) $(RLM_CFLAGS) $(LDFLAGS) $^ -o $@ 
+ 
+ #
+ #  If the module is in the list of static modules, then the "dynamic"
+@@ -95,7 +95,7 @@
+ 
+ $(TARGET).la: $(DYNAMIC_OBJS)
+ 	$(LIBTOOL) --mode=link $(CC) -release $(RADIUSD_VERSION) \
+-	-module $(LINK_MODE) $(CFLAGS) $(RLM_CFLAGS) $(RLM_LDFLAGS) \
++	-module $(LINK_MODE) $(CFLAGS) $(RLM_CFLAGS) $(LDFLAGS) $(RLM_LDFLAGS) \
+ 	-o $@ -rpath $(libdir) $^ $(RLM_LIBS) $(LIBS)
+ 
+ #######################################################################
