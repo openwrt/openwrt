@@ -1,6 +1,6 @@
-diff -ruN linux_2_4_30/Makefile linux/Makefile
---- linux_2_4_30/Makefile	2005-05-22 18:23:27.000000000 +0000
-+++ linux/Makefile	2005-06-12 11:49:50.000000000 +0000
+diff -urN linux-2.4.30/Makefile linux-2.4.30.dev/Makefile
+--- linux-2.4.30/Makefile	2005-06-14 18:42:06.000000000 +0200
++++ linux-2.4.30.dev/Makefile	2005-06-14 15:36:59.000000000 +0200
 @@ -91,7 +91,7 @@
  
  CPPFLAGS := -D__KERNEL__ -I$(HPATH)
@@ -10,9 +10,9 @@ diff -ruN linux_2_4_30/Makefile linux/Makefile
  	  -fno-strict-aliasing -fno-common
  ifndef CONFIG_FRAME_POINTER
  CFLAGS += -fomit-frame-pointer
-diff -ruN linux_2_4_30/arch/mips/Makefile linux/arch/mips/Makefile
---- linux_2_4_30/arch/mips/Makefile	2005-05-22 18:24:01.000000000 +0000
-+++ linux/arch/mips/Makefile	2005-06-11 09:41:27.000000000 +0000
+diff -urN linux-2.4.30/arch/mips/Makefile linux-2.4.30.dev/arch/mips/Makefile
+--- linux-2.4.30/arch/mips/Makefile	2005-06-14 18:42:06.000000000 +0200
++++ linux-2.4.30.dev/arch/mips/Makefile	2005-06-14 15:36:59.000000000 +0200
 @@ -369,6 +369,16 @@
  endif
  
@@ -30,9 +30,9 @@ diff -ruN linux_2_4_30/arch/mips/Makefile linux/arch/mips/Makefile
  # DECstation family
  #
  ifdef CONFIG_DECSTATION
-diff -ruN linux_2_4_30/arch/mips/ar7/Makefile linux/arch/mips/ar7/Makefile
---- linux_2_4_30/arch/mips/ar7/Makefile	1970-01-01 00:00:00.000000000 +0000
-+++ linux/arch/mips/ar7/Makefile	2005-06-11 12:36:01.000000000 +0000
+diff -urN linux-2.4.30/arch/mips/ar7/Makefile linux-2.4.30.dev/arch/mips/ar7/Makefile
+--- linux-2.4.30/arch/mips/ar7/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.30.dev/arch/mips/ar7/Makefile	2005-06-14 15:36:59.000000000 +0200
 @@ -0,0 +1,12 @@
 +.S.s:
 +	$(CPP) $(AFLAGS) $< -o $*.s
@@ -46,9 +46,9 @@ diff -ruN linux_2_4_30/arch/mips/ar7/Makefile linux/arch/mips/ar7/Makefile
 +obj-y += setup.o irq.o mipsIRQ.o reset.o init.o memory.o printf.o cmdline.o time.o
 +
 +include $(TOPDIR)/Rules.make
-diff -ruN linux_2_4_30/arch/mips/ar7/avalanche/Makefile linux/arch/mips/ar7/avalanche/Makefile
---- linux_2_4_30/arch/mips/ar7/avalanche/Makefile	1970-01-01 00:00:00.000000000 +0000
-+++ linux/arch/mips/ar7/avalanche/Makefile	2005-06-11 07:59:49.000000000 +0000
+diff -urN linux-2.4.30/arch/mips/ar7/avalanche/Makefile linux-2.4.30.dev/arch/mips/ar7/avalanche/Makefile
+--- linux-2.4.30/arch/mips/ar7/avalanche/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.30.dev/arch/mips/ar7/avalanche/Makefile	2005-06-14 15:36:59.000000000 +0200
 @@ -0,0 +1,13 @@
 +.S.s:
 +	$(CPP) $(AFLAGS) $< -o $*.s
@@ -63,9 +63,9 @@ diff -ruN linux_2_4_30/arch/mips/ar7/avalanche/Makefile linux/arch/mips/ar7/aval
 +obj-y += avalanche_paging.o avalanche_jump.o
 +
 +include $(TOPDIR)/Rules.make
-diff -ruN linux_2_4_30/arch/mips/ar7/avalanche/avalanche_jump.S linux/arch/mips/ar7/avalanche/avalanche_jump.S
---- linux_2_4_30/arch/mips/ar7/avalanche/avalanche_jump.S	1970-01-01 00:00:00.000000000 +0000
-+++ linux/arch/mips/ar7/avalanche/avalanche_jump.S	2005-06-11 17:20:29.000000000 +0000
+diff -urN linux-2.4.30/arch/mips/ar7/avalanche/avalanche_jump.S linux-2.4.30.dev/arch/mips/ar7/avalanche/avalanche_jump.S
+--- linux-2.4.30/arch/mips/ar7/avalanche/avalanche_jump.S	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.30.dev/arch/mips/ar7/avalanche/avalanche_jump.S	2005-06-14 15:36:59.000000000 +0200
 @@ -0,0 +1,69 @@
 +#include <linux/config.h>
 +#include <linux/threads.h>
@@ -136,9 +136,9 @@ diff -ruN linux_2_4_30/arch/mips/ar7/avalanche/avalanche_jump.S linux/arch/mips/
 +END(jump_dedicated_interrupt)
 +
 +	.set at
-diff -ruN linux_2_4_30/arch/mips/ar7/avalanche/avalanche_paging.c linux/arch/mips/ar7/avalanche/avalanche_paging.c
---- linux_2_4_30/arch/mips/ar7/avalanche/avalanche_paging.c	1970-01-01 00:00:00.000000000 +0000
-+++ linux/arch/mips/ar7/avalanche/avalanche_paging.c	2005-06-12 10:21:34.000000000 +0000
+diff -urN linux-2.4.30/arch/mips/ar7/avalanche/avalanche_paging.c linux-2.4.30.dev/arch/mips/ar7/avalanche/avalanche_paging.c
+--- linux-2.4.30/arch/mips/ar7/avalanche/avalanche_paging.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.30.dev/arch/mips/ar7/avalanche/avalanche_paging.c	2005-06-14 15:36:59.000000000 +0200
 @@ -0,0 +1,314 @@
 +/*
 + *  -*- linux-c -*-
@@ -454,9 +454,9 @@ diff -ruN linux_2_4_30/arch/mips/ar7/avalanche/avalanche_paging.c linux/arch/mip
 +
 +	return;
 +}
-diff -ruN linux_2_4_30/arch/mips/ar7/cmdline.c linux/arch/mips/ar7/cmdline.c
---- linux_2_4_30/arch/mips/ar7/cmdline.c	1970-01-01 00:00:00.000000000 +0000
-+++ linux/arch/mips/ar7/cmdline.c	2005-06-12 08:55:20.000000000 +0000
+diff -urN linux-2.4.30/arch/mips/ar7/cmdline.c linux-2.4.30.dev/arch/mips/ar7/cmdline.c
+--- linux-2.4.30/arch/mips/ar7/cmdline.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.30.dev/arch/mips/ar7/cmdline.c	2005-06-14 15:36:59.000000000 +0200
 @@ -0,0 +1,64 @@
 +/*
 + * Carsten Langgaard, carstenl@mips.com
@@ -522,10 +522,10 @@ diff -ruN linux_2_4_30/arch/mips/ar7/cmdline.c linux/arch/mips/ar7/cmdline.c
 +		--cp;
 +	*cp = '\0';
 +}
-diff -ruN linux_2_4_30/arch/mips/ar7/init.c linux/arch/mips/ar7/init.c
---- linux_2_4_30/arch/mips/ar7/init.c	1970-01-01 00:00:00.000000000 +0000
-+++ linux/arch/mips/ar7/init.c	2005-06-11 10:43:59.000000000 +0000
-@@ -0,0 +1,127 @@
+diff -urN linux-2.4.30/arch/mips/ar7/init.c linux-2.4.30.dev/arch/mips/ar7/init.c
+--- linux-2.4.30/arch/mips/ar7/init.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.30.dev/arch/mips/ar7/init.c	2005-06-14 19:15:15.000000000 +0200
+@@ -0,0 +1,144 @@
 +/*
 + * Carsten Langgaard, carstenl@mips.com
 + * Copyright (C) 1999,2000 MIPS Technologies, Inc.  All rights reserved.
@@ -563,11 +563,10 @@ diff -ruN linux_2_4_30/arch/mips/ar7/init.c linux/arch/mips/ar7/init.c
 +int prom_argc;
 +int *_prom_argv, *_prom_envp;
 +
-+/*
-+ * YAMON (32-bit PROM) pass arguments and environment as 32-bit pointer.
-+ * This macro take care of sign extension, if running in 64-bit mode.
-+ */
-+#define prom_envp(index) ((char *)(((int *)(int)_prom_envp)[(index)]))
++/* max # of Adam2 environment variables */
++#define MAX_ENV_ENTRY 80
++
++static t_env_var local_envp[MAX_ENV_ENTRY];
 +
 +int init_debug = 0;
 +
@@ -580,14 +579,14 @@ diff -ruN linux_2_4_30/arch/mips/ar7/init.c linux/arch/mips/ar7/init.c
 +	 * workarounds, if we are running in 64-bit mode.
 +	 */
 +	int i, index=0;
++	t_env_var *env = (t_env_var *) local_envp;
 +
 +	i = strlen(envname);
-+
-+	while (prom_envp(index)) {
-+		if(strncmp(envname, prom_envp(index), i) == 0) {
-+			return(prom_envp(index+1));
++	while (env->name) {
++		if(strncmp(envname, env->name, i) == 0) {
++			return(env->val);
 +		}
-+		index += 2;
++		env++;
 +	}
 +
 +	return NULL;
@@ -641,9 +640,27 @@ diff -ruN linux_2_4_30/arch/mips/ar7/init.c linux/arch/mips/ar7/init.c
 +
 +int __init prom_init(int argc, char **argv, char **envp)
 +{
++	int i;
++	t_env_var *env = (t_env_var *) envp;
++
 +	prom_argc = argc;
 +	_prom_argv = (int *)argv;
 +	_prom_envp = (int *)envp;
++
++	/* Copy what we need locally so we are not dependent on
++	 * bootloader RAM.  In Adam2, the environment parameters
++	 * are in flash but the table that references them is in
++	 * RAM
++	 */
++	for(i=0; i < MAX_ENV_ENTRY; i++, env++) {
++		if (env->name) {
++			local_envp[i].name = env->name;
++			local_envp[i].val = env->val;
++		} else {
++			local_envp[i].name = NULL;
++			local_envp[i].val = NULL;
++		}
++	}
 +
 +	set_io_port_base(0);
 +
@@ -653,9 +670,9 @@ diff -ruN linux_2_4_30/arch/mips/ar7/init.c linux/arch/mips/ar7/init.c
 +
 +	return 0;
 +}
-diff -ruN linux_2_4_30/arch/mips/ar7/irq.c linux/arch/mips/ar7/irq.c
---- linux_2_4_30/arch/mips/ar7/irq.c	1970-01-01 00:00:00.000000000 +0000
-+++ linux/arch/mips/ar7/irq.c	2005-06-11 10:54:13.000000000 +0000
+diff -urN linux-2.4.30/arch/mips/ar7/irq.c linux-2.4.30.dev/arch/mips/ar7/irq.c
+--- linux-2.4.30/arch/mips/ar7/irq.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.30.dev/arch/mips/ar7/irq.c	2005-06-14 15:36:59.000000000 +0200
 @@ -0,0 +1,669 @@
 +/*
 + * Nitin Dhingra, iamnd@ti.com
@@ -1326,9 +1343,9 @@ diff -ruN linux_2_4_30/arch/mips/ar7/irq.c linux/arch/mips/ar7/irq.c
 +
 +}
 +
-diff -ruN linux_2_4_30/arch/mips/ar7/memory.c linux/arch/mips/ar7/memory.c
---- linux_2_4_30/arch/mips/ar7/memory.c	1970-01-01 00:00:00.000000000 +0000
-+++ linux/arch/mips/ar7/memory.c	2005-06-11 10:43:59.000000000 +0000
+diff -urN linux-2.4.30/arch/mips/ar7/memory.c linux-2.4.30.dev/arch/mips/ar7/memory.c
+--- linux-2.4.30/arch/mips/ar7/memory.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.30.dev/arch/mips/ar7/memory.c	2005-06-14 15:36:59.000000000 +0200
 @@ -0,0 +1,130 @@
 +/*
 + * Carsten Langgaard, carstenl@mips.com
@@ -1460,9 +1477,9 @@ diff -ruN linux_2_4_30/arch/mips/ar7/memory.c linux/arch/mips/ar7/memory.c
 +	}
 +	printk("Freeing prom memory: %ldkb freed\n", freed >> 10);
 +}
-diff -ruN linux_2_4_30/arch/mips/ar7/mipsIRQ.S linux/arch/mips/ar7/mipsIRQ.S
---- linux_2_4_30/arch/mips/ar7/mipsIRQ.S	1970-01-01 00:00:00.000000000 +0000
-+++ linux/arch/mips/ar7/mipsIRQ.S	2005-06-11 08:30:52.000000000 +0000
+diff -urN linux-2.4.30/arch/mips/ar7/mipsIRQ.S linux-2.4.30.dev/arch/mips/ar7/mipsIRQ.S
+--- linux-2.4.30/arch/mips/ar7/mipsIRQ.S	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.30.dev/arch/mips/ar7/mipsIRQ.S	2005-06-14 15:36:59.000000000 +0200
 @@ -0,0 +1,120 @@
 +/*
 + * Carsten Langgaard, carstenl@mips.com
@@ -1584,9 +1601,9 @@ diff -ruN linux_2_4_30/arch/mips/ar7/mipsIRQ.S linux/arch/mips/ar7/mipsIRQ.S
 +	j	ret_from_irq
 +	nop
 +END(mipsIRQ)
-diff -ruN linux_2_4_30/arch/mips/ar7/printf.c linux/arch/mips/ar7/printf.c
---- linux_2_4_30/arch/mips/ar7/printf.c	1970-01-01 00:00:00.000000000 +0000
-+++ linux/arch/mips/ar7/printf.c	2005-06-11 10:43:59.000000000 +0000
+diff -urN linux-2.4.30/arch/mips/ar7/printf.c linux-2.4.30.dev/arch/mips/ar7/printf.c
+--- linux-2.4.30/arch/mips/ar7/printf.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.30.dev/arch/mips/ar7/printf.c	2005-06-14 15:36:59.000000000 +0200
 @@ -0,0 +1,51 @@
 +/*
 + * Carsten Langgaard, carstenl@mips.com
@@ -1639,9 +1656,9 @@ diff -ruN linux_2_4_30/arch/mips/ar7/printf.c linux/arch/mips/ar7/printf.c
 +	return;
 +
 +}
-diff -ruN linux_2_4_30/arch/mips/ar7/reset.c linux/arch/mips/ar7/reset.c
---- linux_2_4_30/arch/mips/ar7/reset.c	1970-01-01 00:00:00.000000000 +0000
-+++ linux/arch/mips/ar7/reset.c	2005-06-11 10:43:59.000000000 +0000
+diff -urN linux-2.4.30/arch/mips/ar7/reset.c linux-2.4.30.dev/arch/mips/ar7/reset.c
+--- linux-2.4.30/arch/mips/ar7/reset.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.30.dev/arch/mips/ar7/reset.c	2005-06-14 15:36:59.000000000 +0200
 @@ -0,0 +1,54 @@
 +/*
 + * Carsten Langgaard, carstenl@mips.com
@@ -1697,9 +1714,9 @@ diff -ruN linux_2_4_30/arch/mips/ar7/reset.c linux/arch/mips/ar7/reset.c
 +	_machine_halt = ar7_machine_halt;
 +	_machine_power_off = ar7_machine_power_off;
 +}
-diff -ruN linux_2_4_30/arch/mips/ar7/setup.c linux/arch/mips/ar7/setup.c
---- linux_2_4_30/arch/mips/ar7/setup.c	1970-01-01 00:00:00.000000000 +0000
-+++ linux/arch/mips/ar7/setup.c	2005-06-12 08:53:26.000000000 +0000
+diff -urN linux-2.4.30/arch/mips/ar7/setup.c linux-2.4.30.dev/arch/mips/ar7/setup.c
+--- linux-2.4.30/arch/mips/ar7/setup.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.30.dev/arch/mips/ar7/setup.c	2005-06-14 15:36:59.000000000 +0200
 @@ -0,0 +1,150 @@
 +/*
 + * Carsten Langgaard, carstenl@mips.com
@@ -1851,9 +1868,9 @@ diff -ruN linux_2_4_30/arch/mips/ar7/setup.c linux/arch/mips/ar7/setup.c
 +	board_time_init = ar7_time_init;
 +	board_timer_setup = ar7_timer_setup;
 +}
-diff -ruN linux_2_4_30/arch/mips/ar7/time.c linux/arch/mips/ar7/time.c
---- linux_2_4_30/arch/mips/ar7/time.c	1970-01-01 00:00:00.000000000 +0000
-+++ linux/arch/mips/ar7/time.c	2005-06-11 11:53:22.000000000 +0000
+diff -urN linux-2.4.30/arch/mips/ar7/time.c linux-2.4.30.dev/arch/mips/ar7/time.c
+--- linux-2.4.30/arch/mips/ar7/time.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.30.dev/arch/mips/ar7/time.c	2005-06-14 15:36:59.000000000 +0200
 @@ -0,0 +1,125 @@
 +/*
 + * Carsten Langgaard, carstenl@mips.com
@@ -1980,9 +1997,9 @@ diff -ruN linux_2_4_30/arch/mips/ar7/time.c linux/arch/mips/ar7/time.c
 +	write_c0_compare(r4k_cur);
 +	set_c0_status(ALLINTS);
 +}
-diff -ruN linux_2_4_30/arch/mips/ar7/tnetd73xx_misc.c linux/arch/mips/ar7/tnetd73xx_misc.c
---- linux_2_4_30/arch/mips/ar7/tnetd73xx_misc.c	1970-01-01 00:00:00.000000000 +0000
-+++ linux/arch/mips/ar7/tnetd73xx_misc.c	2005-06-11 10:43:59.000000000 +0000
+diff -urN linux-2.4.30/arch/mips/ar7/tnetd73xx_misc.c linux-2.4.30.dev/arch/mips/ar7/tnetd73xx_misc.c
+--- linux-2.4.30/arch/mips/ar7/tnetd73xx_misc.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.30.dev/arch/mips/ar7/tnetd73xx_misc.c	2005-06-14 15:36:59.000000000 +0200
 @@ -0,0 +1,924 @@
 +/******************************************************************************
 + * FILE PURPOSE:    TNETD73xx Misc modules API Source
@@ -2908,9 +2925,9 @@ diff -ruN linux_2_4_30/arch/mips/ar7/tnetd73xx_misc.c linux/arch/mips/ar7/tnetd7
 +	return ( (pin_value & (1 << gpio_pin)) ? 1 : 0 );
 +}
 +
-diff -ruN linux_2_4_30/arch/mips/config-shared.in linux/arch/mips/config-shared.in
---- linux_2_4_30/arch/mips/config-shared.in	2005-05-22 18:24:01.000000000 +0000
-+++ linux/arch/mips/config-shared.in	2005-06-12 10:34:41.000000000 +0000
+diff -urN linux-2.4.30/arch/mips/config-shared.in linux-2.4.30.dev/arch/mips/config-shared.in
+--- linux-2.4.30/arch/mips/config-shared.in	2005-06-14 18:42:06.000000000 +0200
++++ linux-2.4.30.dev/arch/mips/config-shared.in	2005-06-14 15:36:59.000000000 +0200
 @@ -20,6 +20,15 @@
  mainmenu_option next_comment
  comment 'Machine selection'
@@ -2955,9 +2972,9 @@ diff -ruN linux_2_4_30/arch/mips/config-shared.in linux/arch/mips/config-shared.
       "$CONFIG_CASIO_E55" = "y" -o \
       "$CONFIG_DECSTATION" = "y" -o \
       "$CONFIG_IBM_WORKPAD" = "y" -o \
-diff -ruN linux_2_4_30/arch/mips/kernel/irq.c linux/arch/mips/kernel/irq.c
---- linux_2_4_30/arch/mips/kernel/irq.c	2005-05-22 18:24:12.000000000 +0000
-+++ linux/arch/mips/kernel/irq.c	2005-06-11 11:02:36.000000000 +0000
+diff -urN linux-2.4.30/arch/mips/kernel/irq.c linux-2.4.30.dev/arch/mips/kernel/irq.c
+--- linux-2.4.30/arch/mips/kernel/irq.c	2005-06-14 18:42:06.000000000 +0200
++++ linux-2.4.30.dev/arch/mips/kernel/irq.c	2005-06-14 15:36:59.000000000 +0200
 @@ -76,6 +76,7 @@
   * Generic, controller-independent functions:
   */
@@ -3006,9 +3023,9 @@ diff -ruN linux_2_4_30/arch/mips/kernel/irq.c linux/arch/mips/kernel/irq.c
  
  /*
   * IRQ autodetection code..
-diff -ruN linux_2_4_30/arch/mips/kernel/setup.c linux/arch/mips/kernel/setup.c
---- linux_2_4_30/arch/mips/kernel/setup.c	2005-05-22 18:24:12.000000000 +0000
-+++ linux/arch/mips/kernel/setup.c	2005-06-12 10:37:51.000000000 +0000
+diff -urN linux-2.4.30/arch/mips/kernel/setup.c linux-2.4.30.dev/arch/mips/kernel/setup.c
+--- linux-2.4.30/arch/mips/kernel/setup.c	2005-06-14 18:42:06.000000000 +0200
++++ linux-2.4.30.dev/arch/mips/kernel/setup.c	2005-06-14 15:36:59.000000000 +0200
 @@ -109,6 +109,7 @@
  unsigned long isa_slot_offset;
  EXPORT_SYMBOL(isa_slot_offset);
@@ -3056,9 +3073,9 @@ diff -ruN linux_2_4_30/arch/mips/kernel/setup.c linux/arch/mips/kernel/setup.c
  	default:
  		panic("Unsupported architecture");
  	}
-diff -ruN linux_2_4_30/arch/mips/kernel/traps.c linux/arch/mips/kernel/traps.c
---- linux_2_4_30/arch/mips/kernel/traps.c	2005-05-22 18:24:13.000000000 +0000
-+++ linux/arch/mips/kernel/traps.c	2005-06-12 11:07:11.000000000 +0000
+diff -urN linux-2.4.30/arch/mips/kernel/traps.c linux-2.4.30.dev/arch/mips/kernel/traps.c
+--- linux-2.4.30/arch/mips/kernel/traps.c	2005-06-14 18:42:06.000000000 +0200
++++ linux-2.4.30.dev/arch/mips/kernel/traps.c	2005-06-14 15:36:59.000000000 +0200
 @@ -40,6 +40,10 @@
  #include <asm/uaccess.h>
  #include <asm/mmu_context.h>
@@ -3176,9 +3193,9 @@ diff -ruN linux_2_4_30/arch/mips/kernel/traps.c linux/arch/mips/kernel/traps.c
  
  	per_cpu_trap_init();
  }
-diff -ruN linux_2_4_30/arch/mips/lib/promlib.c linux/arch/mips/lib/promlib.c
---- linux_2_4_30/arch/mips/lib/promlib.c	2005-05-22 18:24:14.000000000 +0000
-+++ linux/arch/mips/lib/promlib.c	2005-06-12 09:16:23.000000000 +0000
+diff -urN linux-2.4.30/arch/mips/lib/promlib.c linux-2.4.30.dev/arch/mips/lib/promlib.c
+--- linux-2.4.30/arch/mips/lib/promlib.c	2005-06-14 18:42:06.000000000 +0200
++++ linux-2.4.30.dev/arch/mips/lib/promlib.c	2005-06-14 15:36:59.000000000 +0200
 @@ -1,3 +1,4 @@
 +#ifndef CONFIG_AR7
  #include <stdarg.h>
@@ -3189,9 +3206,9 @@ diff -ruN linux_2_4_30/arch/mips/lib/promlib.c linux/arch/mips/lib/promlib.c
  	va_end(args);
  }
 +#endif
-diff -ruN linux_2_4_30/arch/mips/mm/init.c linux/arch/mips/mm/init.c
---- linux_2_4_30/arch/mips/mm/init.c	2005-05-22 18:24:17.000000000 +0000
-+++ linux/arch/mips/mm/init.c	2005-06-12 10:33:49.000000000 +0000
+diff -urN linux-2.4.30/arch/mips/mm/init.c linux-2.4.30.dev/arch/mips/mm/init.c
+--- linux-2.4.30/arch/mips/mm/init.c	2005-06-14 18:42:06.000000000 +0200
++++ linux-2.4.30.dev/arch/mips/mm/init.c	2005-06-14 15:36:59.000000000 +0200
 @@ -40,8 +40,10 @@
  
  mmu_gather_t mmu_gathers[NR_CPUS];
@@ -3258,9 +3275,9 @@ diff -ruN linux_2_4_30/arch/mips/mm/init.c linux/arch/mips/mm/init.c
  	return;
  }
 +#endif
-diff -ruN linux_2_4_30/arch/mips/mm/tlb-r4k.c linux/arch/mips/mm/tlb-r4k.c
---- linux_2_4_30/arch/mips/mm/tlb-r4k.c	2005-05-22 18:24:17.000000000 +0000
-+++ linux/arch/mips/mm/tlb-r4k.c	2005-06-12 11:07:31.000000000 +0000
+diff -urN linux-2.4.30/arch/mips/mm/tlb-r4k.c linux-2.4.30.dev/arch/mips/mm/tlb-r4k.c
+--- linux-2.4.30/arch/mips/mm/tlb-r4k.c	2005-06-14 18:42:06.000000000 +0200
++++ linux-2.4.30.dev/arch/mips/mm/tlb-r4k.c	2005-06-14 15:36:59.000000000 +0200
 @@ -20,6 +20,10 @@
  #include <asm/pgtable.h>
  #include <asm/system.h>
@@ -3285,9 +3302,9 @@ diff -ruN linux_2_4_30/arch/mips/mm/tlb-r4k.c linux/arch/mips/mm/tlb-r4k.c
 +#endif
  	}
  }
-diff -ruN linux_2_4_30/drivers/char/serial.c linux/drivers/char/serial.c
---- linux_2_4_30/drivers/char/serial.c	2005-05-22 18:25:22.000000000 +0000
-+++ linux/drivers/char/serial.c	2005-06-11 17:39:00.000000000 +0000
+diff -urN linux-2.4.30/drivers/char/serial.c linux-2.4.30.dev/drivers/char/serial.c
+--- linux-2.4.30/drivers/char/serial.c	2005-06-14 18:42:06.000000000 +0200
++++ linux-2.4.30.dev/drivers/char/serial.c	2005-06-14 15:36:59.000000000 +0200
 @@ -419,7 +419,40 @@
  	return 0;
  }
@@ -3384,9 +3401,9 @@ diff -ruN linux_2_4_30/drivers/char/serial.c linux/drivers/char/serial.c
  	cval = cflag & (CSIZE | CSTOPB);
  #if defined(__powerpc__) || defined(__alpha__)
  	cval >>= 8;
-diff -ruN linux_2_4_30/include/asm-mips/ar7/ar7.h linux/include/asm-mips/ar7/ar7.h
---- linux_2_4_30/include/asm-mips/ar7/ar7.h	1970-01-01 00:00:00.000000000 +0000
-+++ linux/include/asm-mips/ar7/ar7.h	2005-06-12 11:08:12.000000000 +0000
+diff -urN linux-2.4.30/include/asm-mips/ar7/ar7.h linux-2.4.30.dev/include/asm-mips/ar7/ar7.h
+--- linux-2.4.30/include/asm-mips/ar7/ar7.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.30.dev/include/asm-mips/ar7/ar7.h	2005-06-14 15:36:59.000000000 +0200
 @@ -0,0 +1,137 @@
 +#ifndef _MIPS_AR7_H
 +#define _MIPS_AR7_H
@@ -3525,9 +3542,9 @@ diff -ruN linux_2_4_30/include/asm-mips/ar7/ar7.h linux/include/asm-mips/ar7/ar7
 +}
 +
 +#endif /*_MIPS_AR7_H */
-diff -ruN linux_2_4_30/include/asm-mips/ar7/avalanche.h linux/include/asm-mips/ar7/avalanche.h
---- linux_2_4_30/include/asm-mips/ar7/avalanche.h	1970-01-01 00:00:00.000000000 +0000
-+++ linux/include/asm-mips/ar7/avalanche.h	2005-06-11 07:48:48.000000000 +0000
+diff -urN linux-2.4.30/include/asm-mips/ar7/avalanche.h linux-2.4.30.dev/include/asm-mips/ar7/avalanche.h
+--- linux-2.4.30/include/asm-mips/ar7/avalanche.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.30.dev/include/asm-mips/ar7/avalanche.h	2005-06-14 15:36:59.000000000 +0200
 @@ -0,0 +1,183 @@
 +/* $Id$
 + *
@@ -3712,9 +3729,9 @@ diff -ruN linux_2_4_30/include/asm-mips/ar7/avalanche.h linux/include/asm-mips/a
 +
 +
 +
-diff -ruN linux_2_4_30/include/asm-mips/ar7/avalanche_int.h linux/include/asm-mips/ar7/avalanche_int.h
---- linux_2_4_30/include/asm-mips/ar7/avalanche_int.h	1970-01-01 00:00:00.000000000 +0000
-+++ linux/include/asm-mips/ar7/avalanche_int.h	2005-06-11 07:48:48.000000000 +0000
+diff -urN linux-2.4.30/include/asm-mips/ar7/avalanche_int.h linux-2.4.30.dev/include/asm-mips/ar7/avalanche_int.h
+--- linux-2.4.30/include/asm-mips/ar7/avalanche_int.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.30.dev/include/asm-mips/ar7/avalanche_int.h	2005-06-14 15:36:59.000000000 +0200
 @@ -0,0 +1,298 @@
 +/* $Id$
 + *
@@ -4014,9 +4031,9 @@ diff -ruN linux_2_4_30/include/asm-mips/ar7/avalanche_int.h linux/include/asm-mi
 +
 +
 +
-diff -ruN linux_2_4_30/include/asm-mips/ar7/avalanche_intc.h linux/include/asm-mips/ar7/avalanche_intc.h
---- linux_2_4_30/include/asm-mips/ar7/avalanche_intc.h	1970-01-01 00:00:00.000000000 +0000
-+++ linux/include/asm-mips/ar7/avalanche_intc.h	2005-06-11 07:48:48.000000000 +0000
+diff -urN linux-2.4.30/include/asm-mips/ar7/avalanche_intc.h linux-2.4.30.dev/include/asm-mips/ar7/avalanche_intc.h
+--- linux-2.4.30/include/asm-mips/ar7/avalanche_intc.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.30.dev/include/asm-mips/ar7/avalanche_intc.h	2005-06-14 15:36:59.000000000 +0200
 @@ -0,0 +1,273 @@
 + /*
 + * Nitin Dhingra, iamnd@ti.com
@@ -4291,9 +4308,9 @@ diff -ruN linux_2_4_30/include/asm-mips/ar7/avalanche_intc.h linux/include/asm-m
 +
 +
 +#endif /* _AVALANCHE_INTC_H */
-diff -ruN linux_2_4_30/include/asm-mips/ar7/avalanche_prom.h linux/include/asm-mips/ar7/avalanche_prom.h
---- linux_2_4_30/include/asm-mips/ar7/avalanche_prom.h	1970-01-01 00:00:00.000000000 +0000
-+++ linux/include/asm-mips/ar7/avalanche_prom.h	2005-06-11 07:48:48.000000000 +0000
+diff -urN linux-2.4.30/include/asm-mips/ar7/avalanche_prom.h linux-2.4.30.dev/include/asm-mips/ar7/avalanche_prom.h
+--- linux-2.4.30/include/asm-mips/ar7/avalanche_prom.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.30.dev/include/asm-mips/ar7/avalanche_prom.h	2005-06-14 15:36:59.000000000 +0200
 @@ -0,0 +1,54 @@
 +/* $Id$
 + *
@@ -4349,9 +4366,9 @@ diff -ruN linux_2_4_30/include/asm-mips/ar7/avalanche_prom.h linux/include/asm-m
 +
 +#endif /* !(_MIPS_PROM_H) */
 +
-diff -ruN linux_2_4_30/include/asm-mips/ar7/avalanche_regs.h linux/include/asm-mips/ar7/avalanche_regs.h
---- linux_2_4_30/include/asm-mips/ar7/avalanche_regs.h	1970-01-01 00:00:00.000000000 +0000
-+++ linux/include/asm-mips/ar7/avalanche_regs.h	2005-06-11 07:48:48.000000000 +0000
+diff -urN linux-2.4.30/include/asm-mips/ar7/avalanche_regs.h linux-2.4.30.dev/include/asm-mips/ar7/avalanche_regs.h
+--- linux-2.4.30/include/asm-mips/ar7/avalanche_regs.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.30.dev/include/asm-mips/ar7/avalanche_regs.h	2005-06-14 15:36:59.000000000 +0200
 @@ -0,0 +1,567 @@
 +/* 
 + *  $Id$
@@ -4920,9 +4937,9 @@ diff -ruN linux_2_4_30/include/asm-mips/ar7/avalanche_regs.h linux/include/asm-m
 +
 +
 +
-diff -ruN linux_2_4_30/include/asm-mips/ar7/tnetd73xx.h linux/include/asm-mips/ar7/tnetd73xx.h
---- linux_2_4_30/include/asm-mips/ar7/tnetd73xx.h	1970-01-01 00:00:00.000000000 +0000
-+++ linux/include/asm-mips/ar7/tnetd73xx.h	2005-06-12 10:28:19.000000000 +0000
+diff -urN linux-2.4.30/include/asm-mips/ar7/tnetd73xx.h linux-2.4.30.dev/include/asm-mips/ar7/tnetd73xx.h
+--- linux-2.4.30/include/asm-mips/ar7/tnetd73xx.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.30.dev/include/asm-mips/ar7/tnetd73xx.h	2005-06-14 15:36:59.000000000 +0200
 @@ -0,0 +1,340 @@
 +/******************************************************************************
 + * FILE PURPOSE:    TNETD73xx Common Header File
@@ -5264,9 +5281,9 @@ diff -ruN linux_2_4_30/include/asm-mips/ar7/tnetd73xx.h linux/include/asm-mips/a
 +
 +
 +#endif /* __TNETD73XX_H_ */
-diff -ruN linux_2_4_30/include/asm-mips/ar7/tnetd73xx_err.h linux/include/asm-mips/ar7/tnetd73xx_err.h
---- linux_2_4_30/include/asm-mips/ar7/tnetd73xx_err.h	1970-01-01 00:00:00.000000000 +0000
-+++ linux/include/asm-mips/ar7/tnetd73xx_err.h	2005-06-11 07:48:48.000000000 +0000
+diff -urN linux-2.4.30/include/asm-mips/ar7/tnetd73xx_err.h linux-2.4.30.dev/include/asm-mips/ar7/tnetd73xx_err.h
+--- linux-2.4.30/include/asm-mips/ar7/tnetd73xx_err.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.30.dev/include/asm-mips/ar7/tnetd73xx_err.h	2005-06-14 15:36:59.000000000 +0200
 @@ -0,0 +1,42 @@
 +/******************************************************************************
 + * FILE PURPOSE:    TNETD73xx Error Definations Header File
@@ -5310,9 +5327,9 @@ diff -ruN linux_2_4_30/include/asm-mips/ar7/tnetd73xx_err.h linux/include/asm-mi
 +} TNETD73XX_ERR;
 +
 +#endif /* __TNETD73XX_ERR_H__ */
-diff -ruN linux_2_4_30/include/asm-mips/ar7/tnetd73xx_misc.h linux/include/asm-mips/ar7/tnetd73xx_misc.h
---- linux_2_4_30/include/asm-mips/ar7/tnetd73xx_misc.h	1970-01-01 00:00:00.000000000 +0000
-+++ linux/include/asm-mips/ar7/tnetd73xx_misc.h	2005-06-12 10:29:31.000000000 +0000
+diff -urN linux-2.4.30/include/asm-mips/ar7/tnetd73xx_misc.h linux-2.4.30.dev/include/asm-mips/ar7/tnetd73xx_misc.h
+--- linux-2.4.30/include/asm-mips/ar7/tnetd73xx_misc.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.30.dev/include/asm-mips/ar7/tnetd73xx_misc.h	2005-06-14 15:36:59.000000000 +0200
 @@ -0,0 +1,243 @@
 +/******************************************************************************
 + * FILE PURPOSE:    TNETD73xx Misc modules API Header
@@ -5557,9 +5574,9 @@ diff -ruN linux_2_4_30/include/asm-mips/ar7/tnetd73xx_misc.h linux/include/asm-m
 +u32 tnetd73xx_get_revision(void);
 +
 +#endif /* __TNETD73XX_MISC_H__ */
-diff -ruN linux_2_4_30/include/asm-mips/io.h linux/include/asm-mips/io.h
---- linux_2_4_30/include/asm-mips/io.h	2005-05-22 18:27:58.000000000 +0000
-+++ linux/include/asm-mips/io.h	2005-06-12 11:08:22.000000000 +0000
+diff -urN linux-2.4.30/include/asm-mips/io.h linux-2.4.30.dev/include/asm-mips/io.h
+--- linux-2.4.30/include/asm-mips/io.h	2005-06-14 18:42:07.000000000 +0200
++++ linux-2.4.30.dev/include/asm-mips/io.h	2005-06-14 15:36:59.000000000 +0200
 @@ -63,8 +63,12 @@
  #ifdef CONFIG_64BIT_PHYS_ADDR
  #define page_to_phys(page)	((u64)(page - mem_map) << PAGE_SHIFT)
@@ -5573,9 +5590,9 @@ diff -ruN linux_2_4_30/include/asm-mips/io.h linux/include/asm-mips/io.h
  
  #define IO_SPACE_LIMIT 0xffff
  
-diff -ruN linux_2_4_30/include/asm-mips/irq.h linux/include/asm-mips/irq.h
---- linux_2_4_30/include/asm-mips/irq.h	2005-05-22 18:27:58.000000000 +0000
-+++ linux/include/asm-mips/irq.h	2005-06-12 10:22:33.000000000 +0000
+diff -urN linux-2.4.30/include/asm-mips/irq.h linux-2.4.30.dev/include/asm-mips/irq.h
+--- linux-2.4.30/include/asm-mips/irq.h	2005-06-14 18:42:07.000000000 +0200
++++ linux-2.4.30.dev/include/asm-mips/irq.h	2005-06-14 15:36:59.000000000 +0200
 @@ -14,7 +14,12 @@
  #include <linux/config.h>
  #include <linux/linkage.h>
@@ -5589,9 +5606,9 @@ diff -ruN linux_2_4_30/include/asm-mips/irq.h linux/include/asm-mips/irq.h
  
  #ifdef CONFIG_I8259
  static inline int irq_cannonicalize(int irq)
-diff -ruN linux_2_4_30/include/asm-mips/page.h linux/include/asm-mips/page.h
---- linux_2_4_30/include/asm-mips/page.h	2005-05-22 18:27:59.000000000 +0000
-+++ linux/include/asm-mips/page.h	2005-06-12 10:39:06.000000000 +0000
+diff -urN linux-2.4.30/include/asm-mips/page.h linux-2.4.30.dev/include/asm-mips/page.h
+--- linux-2.4.30/include/asm-mips/page.h	2005-06-14 18:42:07.000000000 +0200
++++ linux-2.4.30.dev/include/asm-mips/page.h	2005-06-14 15:36:59.000000000 +0200
 @@ -129,7 +129,11 @@
  
  #define __pa(x)		((unsigned long) (x) - PAGE_OFFSET)
@@ -5604,9 +5621,9 @@ diff -ruN linux_2_4_30/include/asm-mips/page.h linux/include/asm-mips/page.h
  #define VALID_PAGE(page)	((page - mem_map) < max_mapnr)
  
  #define VM_DATA_DEFAULT_FLAGS  (VM_READ | VM_WRITE | VM_EXEC | \
-diff -ruN linux_2_4_30/include/asm-mips/pgtable-32.h linux/include/asm-mips/pgtable-32.h
---- linux_2_4_30/include/asm-mips/pgtable-32.h	2005-05-22 18:27:59.000000000 +0000
-+++ linux/include/asm-mips/pgtable-32.h	2005-06-12 10:39:06.000000000 +0000
+diff -urN linux-2.4.30/include/asm-mips/pgtable-32.h linux-2.4.30.dev/include/asm-mips/pgtable-32.h
+--- linux-2.4.30/include/asm-mips/pgtable-32.h	2005-06-14 18:42:07.000000000 +0200
++++ linux-2.4.30.dev/include/asm-mips/pgtable-32.h	2005-06-14 15:36:59.000000000 +0200
 @@ -108,7 +108,18 @@
   * and a page entry and page directory to the page they refer to.
   */
@@ -5647,9 +5664,9 @@ diff -ruN linux_2_4_30/include/asm-mips/pgtable-32.h linux/include/asm-mips/pgta
  #define pte_page(x)  (mem_map+((unsigned long)(((x).pte_low >> (PAGE_SHIFT+2)))))
  #define __mk_pte(page_nr,pgprot) __pte(((page_nr) << (PAGE_SHIFT+2)) | pgprot_val(pgprot))
  #else
-diff -ruN linux_2_4_30/include/asm-mips/serial.h linux/include/asm-mips/serial.h
---- linux_2_4_30/include/asm-mips/serial.h	2005-05-22 18:28:00.000000000 +0000
-+++ linux/include/asm-mips/serial.h	2005-06-12 11:08:39.000000000 +0000
+diff -urN linux-2.4.30/include/asm-mips/serial.h linux-2.4.30.dev/include/asm-mips/serial.h
+--- linux-2.4.30/include/asm-mips/serial.h	2005-06-14 18:42:07.000000000 +0200
++++ linux-2.4.30.dev/include/asm-mips/serial.h	2005-06-14 15:36:59.000000000 +0200
 @@ -65,6 +65,15 @@
  
  #define C_P(card,port) (((card)<<6|(port)<<3) + 1)
