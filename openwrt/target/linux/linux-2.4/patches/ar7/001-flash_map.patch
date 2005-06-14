@@ -36,8 +36,8 @@ diff -urN linux-2.4.30/drivers/mtd/maps/Makefile linux-2.4.30.dev/drivers/mtd/ma
  obj-$(CONFIG_MTD_CFI_FLAGADM)	+= cfi_flagadm.o
 diff -urN linux-2.4.30/drivers/mtd/maps/ar7-flash.c linux-2.4.30.dev/drivers/mtd/maps/ar7-flash.c
 --- linux-2.4.30/drivers/mtd/maps/ar7-flash.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.4.30.dev/drivers/mtd/maps/ar7-flash.c	2005-06-14 19:38:19.000000000 +0200
-@@ -0,0 +1,218 @@
++++ linux-2.4.30.dev/drivers/mtd/maps/ar7-flash.c	2005-06-14 22:42:23.000000000 +0200
+@@ -0,0 +1,245 @@
 +/*
 + * $Id$
 + *
@@ -52,6 +52,7 @@ diff -urN linux-2.4.30/drivers/mtd/maps/ar7-flash.c linux-2.4.30.dev/drivers/mtd
 +#include <linux/mtd/map.h>
 +#include <linux/config.h>
 +#include <linux/mtd/partitions.h>
++#include "trxhdr.h"
 +
 +#define WINDOW_ADDR CONFIG_MTD_AVALANCHE_START
 +#define WINDOW_SIZE CONFIG_MTD_AVALANCHE_LEN
@@ -176,6 +177,7 @@ diff -urN linux-2.4.30/drivers/mtd/maps/ar7-flash.c linux-2.4.30.dev/drivers/mtd
 +	unsigned int found;
 +	unsigned char *flash_base;
 +	unsigned char *flash_end;
++	struct trx_header hdr;
 +	char *env_ptr;
 +	char *base_ptr;
 +	char *end_ptr;
@@ -215,19 +217,44 @@ diff -urN linux-2.4.30/drivers/mtd/maps/ar7-flash.c linux-2.4.30.dev/drivers/mtd
 +		printk("Found a %s image (0x%x), with size (0x%x).\n",env_name, offset, size);
 +
 +		/* Setup the partition info. We duplicate the env_name for the partiton name */
-+		if (num_of_partitions == 0)
-+			avalanche_partition_info[num_of_partitions].name = strdup("linux");
-+		else if (num_of_partitions == 1)
-+			avalanche_partition_info[num_of_partitions].name = strdup("rootfs");
-+		else if (num_of_partitions == 2)
-+			avalanche_partition_info[num_of_partitions].name = strdup("adam2");
-+		else if (num_of_partitions == 3)
-+			avalanche_partition_info[num_of_partitions].name = strdup("config");
-+		else
-+			avalanche_partition_info[num_of_partitions].name = strdup(env_name);
 +		avalanche_partition_info[num_of_partitions].offset = offset;
 +		avalanche_partition_info[num_of_partitions].size = size;
 +		avalanche_partition_info[num_of_partitions].mask_flags = 0;
++		
++		switch (num_of_partitions ) {
++			case 0:
++				avalanche_partition_info[num_of_partitions].name = strdup("rootfs");
++				avalanche_copy_from(&avalanche_map, &hdr, offset, sizeof(hdr));
++				if (hdr.magic == TRX_MAGIC) {
++					printk("TRX partition detected. First offset: %08x\n", hdr.offsets[0]);
++					avalanche_partition_info[num_of_partitions].offset += hdr.offsets[0];
++					avalanche_partition_info[num_of_partitions].size -= hdr.offsets[0];
++				} else {
++					printk("No TRX partition detected\n");
++				}
++				break;
++				
++			case 1:
++				avalanche_partition_info[num_of_partitions].name = strdup("linux");
++				break;
++				
++			case 2:
++				avalanche_partition_info[num_of_partitions].name = strdup("adam2");
++				break;
++				
++			case 3:
++				avalanche_partition_info[num_of_partitions].name = strdup("config");
++				break;
++			
++			case 4:
++				avalanche_partition_info[num_of_partitions].name = strdup("firmware");
++				break;
++
++			default:
++				avalanche_partition_info[num_of_partitions].name = strdup(env_name);
++				break;
++		}
++		
 +		num_of_partitions++;
 +	} while (num_of_partitions < MAX_NUM_PARTITIONS);
 +
@@ -256,3 +283,36 @@ diff -urN linux-2.4.30/drivers/mtd/maps/ar7-flash.c linux-2.4.30.dev/drivers/mtd
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Snehaprabha Narnakaje");
 +MODULE_DESCRIPTION("Avalanche CFI map driver");
+diff -urN linux-2.4.30/drivers/mtd/maps/trxhdr.h linux-2.4.30.dev/drivers/mtd/maps/trxhdr.h
+--- linux-2.4.30/drivers/mtd/maps/trxhdr.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.30.dev/drivers/mtd/maps/trxhdr.h	2005-06-14 21:57:04.000000000 +0200
+@@ -0,0 +1,29 @@
++/*
++ * TRX image file header format.
++ *
++ * Copyright 2005, Broadcom Corporation
++ * All Rights Reserved.
++ * 
++ * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
++ * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
++ * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
++ * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
++ *
++ * $Id$
++ */ 
++
++
++#define TRX_MAGIC	0x30524448	/* "HDR0" */
++#define TRX_VERSION	1
++#define TRX_MAX_LEN	0x3A0000
++#define TRX_NO_HEADER	1		/* Do not write TRX header */	
++#define TRX_GZ_FILES	0x2     /* Contains up to TRX_MAX_OFFSET individual gzip files */
++#define TRX_MAX_OFFSET	3
++
++struct trx_header {
++	__u32 magic;		/* "HDR0" */
++	__u32 len;		/* Length of file including header */
++	__u32 crc32;		/* 32-bit CRC from flag_version to end of file */
++	__u32 flag_version;	/* 0:15 flags, 16:31 version */
++	__u32 offsets[TRX_MAX_OFFSET];	/* Offsets of partitions from start of header */
++};
