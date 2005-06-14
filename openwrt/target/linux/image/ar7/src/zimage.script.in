@@ -1,0 +1,11 @@
+	OUTPUT_FORMAT("@@OUTPUT_FORMAT@@")
+OUTPUT_ARCH(mips)
+	SECTIONS
+{
+	.data :
+	{
+		kernelimage = .;
+		*(.data)
+			kernelimage_end = .;
+	}
+}
