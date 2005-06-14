@@ -165,7 +165,8 @@ CONFIG_BINFMT_ELF=y
 # CONFIG_BINFMT_ELF32 is not set
 # CONFIG_BINFMT_MISC is not set
 # CONFIG_OOM_KILLER is not set
-# CONFIG_CMDLINE_BOOL is not set
+CONFIG_CMDLINE_BOOL=y
+CONFIG_CMDLINE="root=/dev/mtdblock0 console=ttyS0,38400 rootfstype=squashfs,jffs2 init=/etc/preinit noinitrd"
 
 #
 # Memory Technology Devices (MTD)
