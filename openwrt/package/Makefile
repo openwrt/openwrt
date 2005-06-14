@@ -43,6 +43,7 @@ package-$(BR2_PACKAGE_LIBEVENT) += libevent
 package-$(BR2_PACKAGE_LIBFFI_SABLE) += libffi-sable
 package-$(BR2_PACKAGE_LIBGD) += libgd
 package-$(BR2_PACKAGE_LIBGDBM) += libgdbm
+package-$(BR2_PACKAGE_LIBGPG_ERROR) += libgpg-error
 package-$(BR2_PACKAGE_LIBNET) += libnet
 package-$(BR2_PACKAGE_LIBNIDS) += libnids
 package-$(BR2_PACKAGE_LIBOSIP2) += libosip2
