@@ -7,8 +7,7 @@ config BR2_PACKAGE_LUA
 
 config BR2_PACKAGE_LUA_INTERPRETER
 	tristate "lua - LUA programming language interpreter"
-#	default m if CONFIG_DEVEL
-	default n
+	default m if CONFIG_DEVEL
 	select BR2_PACKAGE_LUA
 	select BR2_PACKAGE_LIBLUA
 	help
@@ -35,8 +34,7 @@ config BR2_PACKAGE_LUA_INTERPRETER
 
 config BR2_PACKAGE_LUA_COMPILER
 	tristate "luac - LUA programming language compiler"
-#	default m if CONFIG_DEVEL
-	default n
+	default m if CONFIG_DEVEL
 	select BR2_PACKAGE_LUA
 	select BR2_PACKAGE_LIBLUA
 	help
@@ -63,8 +61,7 @@ config BR2_PACKAGE_LUA_COMPILER
 
 config BR2_PACKAGE_LUA_EXAMPLES
 	tristate "lua-examples - LUA programming language examples"
-#	default m if CONFIG_DEVEL
-	default n
+	default m if CONFIG_DEVEL
 	select BR2_PACKAGE_LUA
 	select BR2_PACKAGE_LUA_INTERPRETER
 	help
@@ -91,8 +88,7 @@ config BR2_PACKAGE_LUA_EXAMPLES
 
 config BR2_PACKAGE_LIBLUA
 	tristate "liblua - LUA programming language shared libraries"
-#	default m if CONFIG_DEVEL
-	default n
+	default m if CONFIG_DEVEL
 	select BR2_PACKAGE_LUA
 	help
 	  Lua is a powerful light-weight programming language designed for extending 
