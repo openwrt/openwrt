@@ -1,0 +1,5597 @@
+diff -urN linux-2.4.30/Makefile linux-2.4.30.current/Makefile
+--- linux-2.4.30/Makefile	2005-06-11 20:24:07.000000000 +0200
++++ linux-2.4.30.current/Makefile	2005-06-12 20:14:28.000000000 +0200
+@@ -91,7 +91,7 @@
+ 
+ CPPFLAGS := -D__KERNEL__ -I$(HPATH)
+ 
+-CFLAGS := $(CPPFLAGS) -Wall -Wstrict-prototypes -Wno-trigraphs -O2 \
++CFLAGS := $(CPPFLAGS) -Wall -Wstrict-prototypes -Wno-trigraphs -Os \
+ 	  -fno-strict-aliasing -fno-common
+ ifndef CONFIG_FRAME_POINTER
+ CFLAGS += -fomit-frame-pointer
+diff -urN linux-2.4.30/arch/mips/Makefile linux-2.4.30.current/arch/mips/Makefile
+--- linux-2.4.30/arch/mips/Makefile	2005-06-11 20:24:07.000000000 +0200
++++ linux-2.4.30.current/arch/mips/Makefile	2005-06-12 20:14:28.000000000 +0200
+@@ -369,6 +369,16 @@
+ endif
+ 
+ #
++# Texas Instruments AR7
++#
++
++ifdef CONFIG_AR7
++LIBS		+= arch/mips/ar7/ar7.o arch/mips/ar7/avalanche/avalanche.o
++SUBDIRS		+= arch/mips/ar7 arch/mips/ar7/avalanche
++LOADADDR	+= 0x94020000
++endif
++
++#
+ # DECstation family
+ #
+ ifdef CONFIG_DECSTATION
+diff -urN linux-2.4.30/arch/mips/ar7/Makefile linux-2.4.30.current/arch/mips/ar7/Makefile
+--- linux-2.4.30/arch/mips/ar7/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.30.current/arch/mips/ar7/Makefile	2005-06-12 20:14:28.000000000 +0200
+@@ -0,0 +1,12 @@
++.S.s:
++	$(CPP) $(AFLAGS) $< -o $*.s
++
++.S.o:
++	$(CC) $(AFLAGS) -c $< -o $*.o
++
++O_TARGET := ar7.o
++
++obj-y := tnetd73xx_misc.o
++obj-y += setup.o irq.o mipsIRQ.o reset.o init.o memory.o printf.o cmdline.o time.o
++
++include $(TOPDIR)/Rules.make
+diff -urN linux-2.4.30/arch/mips/ar7/avalanche/Makefile linux-2.4.30.current/arch/mips/ar7/avalanche/Makefile
+--- linux-2.4.30/arch/mips/ar7/avalanche/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.30.current/arch/mips/ar7/avalanche/Makefile	2005-06-12 20:14:28.000000000 +0200
+@@ -0,0 +1,13 @@
++.S.s:
++	$(CPP) $(AFLAGS) $< -o $*.s
++
++.S.o:
++	$(CC) $(AFLAGS) -c $< -o $*.o
++
++EXTRA_CFLAGS := -DLITTLE_ENDIAN -D_LINK_KSEG0_
++
++O_TARGET := avalanche.o
++
++obj-y += avalanche_paging.o avalanche_jump.o
++
++include $(TOPDIR)/Rules.make
+diff -urN linux-2.4.30/arch/mips/ar7/avalanche/avalanche_jump.S linux-2.4.30.current/arch/mips/ar7/avalanche/avalanche_jump.S
+--- linux-2.4.30/arch/mips/ar7/avalanche/avalanche_jump.S	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.30.current/arch/mips/ar7/avalanche/avalanche_jump.S	2005-06-12 20:14:28.000000000 +0200
+@@ -0,0 +1,69 @@
++#include <linux/config.h>
++#include <linux/threads.h>
++
++#include <asm/asm.h>
++#include <asm/cacheops.h>
++#include <asm/current.h>
++#include <asm/offset.h>
++#include <asm/processor.h>
++#include <asm/regdef.h>
++#include <asm/cachectl.h>
++#include <asm/mipsregs.h>
++#include <asm/stackframe.h>
++
++.text
++
++.set noreorder
++.set noat
++
++/* TLB Miss Vector */
++
++LEAF(jump_tlb_miss)
++	.set mips2
++	lui     k0,0x9400
++	ori     k0,0
++	jr	k0
++	nop       
++END(jump_tlb_miss)
++
++	/* Unused TLB Miss Vector */
++
++LEAF(jump_tlb_miss_unused)
++	.set mips2
++	lui     k0,0x9400
++	ori     k0,0x80
++	jr	k0
++	nop       
++END(jump_tlb_miss_unused)
++
++	/* Cache Error Vector */
++
++LEAF(jump_cache_error)
++	.set mips2
++	lui     k0,0x9400
++	ori     k0,0x100
++	jr	k0
++	nop       
++END(jump_cache_error)
++
++	/* General Exception */
++
++LEAF(jump_general_exception)
++	.set mips2
++	lui     k0,0x9400
++	ori     k0,0x180
++	jr	k0
++	nop
++END(jump_general_exception)
++
++	/* Dedicated Interrupt */
++
++LEAF(jump_dedicated_interrupt)
++	.set mips2
++	lui     k0,0x9400
++	ori     k0,0x200
++	jr	k0
++	nop       
++END(jump_dedicated_interrupt)
++
++	.set at
+diff -urN linux-2.4.30/arch/mips/ar7/avalanche/avalanche_paging.c linux-2.4.30.current/arch/mips/ar7/avalanche/avalanche_paging.c
+--- linux-2.4.30/arch/mips/ar7/avalanche/avalanche_paging.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.30.current/arch/mips/ar7/avalanche/avalanche_paging.c	2005-06-12 20:14:28.000000000 +0200
+@@ -0,0 +1,314 @@
++/*
++ *  -*- linux-c -*-
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ *
++ * Copyright (C) 2002 by Jeff Harrell (jharrell@ti.com)
++ * Copyright (C) 2002 Texas Instruments, Inc.
++ *
++ */
++
++/*
++ * This file takes care of the "memory hole" issue that exists with the standard
++ * linux kernel and the TI Avalanche ASIC.  The Avalanche ASIC requires an offset
++ * of 0x14000000 due to the ASIC's memory map constraints.  This file corrects the
++ * paging tables so that the only reflect valid memory (i.e. > 0x14000000)
++ * 
++ *  -JAH
++ */
++#include <linux/config.h>
++#include <linux/signal.h>
++#include <linux/sched.h>
++#include <linux/kernel.h>
++#include <linux/errno.h>
++#include <linux/string.h>
++#include <linux/types.h>
++#include <linux/ptrace.h>
++#include <linux/mman.h>
++#include <linux/mm.h>
++#include <linux/swap.h>
++#include <linux/smp.h>
++#include <linux/init.h>
++#ifdef CONFIG_BLK_DEV_INITRD
++#include <linux/blk.h>
++#endif /* CONFIG_BLK_DEV_INITRD */
++#include <linux/highmem.h>
++#include <linux/bootmem.h>
++
++#include <asm/processor.h>
++#include <asm/system.h>
++#include <asm/uaccess.h>
++#include <asm/pgtable.h>
++#include <asm/pgalloc.h>
++#include <asm/mmu_context.h>
++#include <asm/io.h>
++#include <asm/tlb.h>
++#include <asm/cpu.h>
++
++#define __MEMORY_START CONFIG_AR7_MEMORY
++
++#ifdef CONFIG_DISCONTIGMEM
++pg_data_t discontig_page_data[NR_NODES];
++bootmem_data_t discontig_node_bdata[NR_NODES];
++#endif
++
++static unsigned long totalram_pages;
++/* static unsigned long totalhigh_pages; */
++
++#define START_PFN (NODE_DATA(0)->bdata->node_boot_start >> PAGE_SHIFT)
++#define MAX_LOW_PFN (NODE_DATA(0)->bdata->node_low_pfn)
++
++#define PFN_UP(x)  (((x) + PAGE_SIZE - 1) >> PAGE_SHIFT)
++#define PFN_DOWN(x)        ((x) >> PAGE_SHIFT)
++#define PFN_PHYS(x)        ((x) << PAGE_SHIFT)
++
++unsigned long bootmap_size;
++
++extern char *prom_getenv(char *envname);
++
++/*
++ * We have upto 8 empty zeroed pages so we can map one of the right colour
++ * when needed.  This is necessary only on R4000 / R4400 SC and MC versions
++ * where we have to avoid VCED / VECI exceptions for good performance at
++ * any price.  Since page is never written to after the initialization we
++ * don't have to care about aliases on other CPUs.
++ */
++
++static inline unsigned long setup_zero_pages(void)
++{
++	unsigned long order, size;
++	struct page *page;
++	if(current_cpu_data.options & MIPS_CPU_VCE) 
++		order = 3;
++	else 
++		order = 0;
++
++	empty_zero_page = __get_free_pages(GFP_KERNEL, order);
++
++	if (!empty_zero_page)
++		panic("Oh boy, that early out of memory?");
++
++	page = virt_to_page(empty_zero_page);
++
++	while (page < virt_to_page(empty_zero_page + (PAGE_SIZE << order))) {
++		set_bit(PG_reserved, &page->flags);
++		set_page_count(page, 0);
++		page++;
++	}
++
++	size = PAGE_SIZE << order;
++	zero_page_mask = (size - 1) & PAGE_MASK;
++	memset((void *)empty_zero_page, 0, size);
++
++	return 1UL << order;
++}
++
++/*
++ * paging_init() sets up the page tables
++ *
++ * This routines also unmaps the page at virtual kernel address 0, so
++ * that we can trap those pesky NULL-reference errors in the kernel.
++ */
++void __init paging_init(void)
++{
++	unsigned long zones_size[MAX_NR_ZONES] = {0, 0, 0};
++	unsigned long low, start_pfn;
++
++	/* Initialize the entire pgd.  */
++	pgd_init((unsigned long)swapper_pg_dir);
++	pgd_init((unsigned long)swapper_pg_dir + PAGE_SIZE / 2);
++
++
++	start_pfn = START_PFN;
++	// max_dma = virt_to_phys((char *)MAX_DMA_ADDRESS) >> PAGE_SHIFT;
++	low = MAX_LOW_PFN;
++
++	/* Avalanche DMA-able memory 0x14000000+memsize */
++
++	zones_size[ZONE_DMA] = low - start_pfn;
++
++	free_area_init_node(0, NODE_DATA(0), 0, zones_size, __MEMORY_START, 0);
++
++#ifdef CONFIG_DISCONTIGMEM
++	zones_size[ZONE_DMA] = __MEMORY_SIZE_2ND >> PAGE_SHIFT;
++	zones_size[ZONE_NORMAL] = 0;
++	free_area_init_node(1, NODE_DATA(1), 0, zones_size, __MEMORY_START_2ND, 0);
++#endif /* CONFIG_DISCONTIGMEM */
++
++}
++
++extern char _ftext, _etext, _fdata, _edata, _end;
++extern char __init_begin, __init_end;
++
++void __init mem_init(void)
++{
++	int codesize, reservedpages, datasize, initsize;
++	int tmp;
++	
++	max_mapnr = num_physpages = MAX_LOW_PFN - START_PFN;
++	high_memory = (void *)__va(MAX_LOW_PFN * PAGE_SIZE);
++
++	/* free up the memory associated with Adam2 -
++	 * that is the, after the first page that is 
++	 * reserved all the way up to the start of the kernel
++	 */
++	free_bootmem_node(NODE_DATA(0), (__MEMORY_START+PAGE_SIZE),
++			(__pa(&_ftext))-(__MEMORY_START+PAGE_SIZE) );
++
++	/* this will put all low memory onto the freelists */
++	totalram_pages += free_all_bootmem_node(NODE_DATA(0));
++
++	/* Setup zeroed pages */
++	totalram_pages -= setup_zero_pages();	
++
++
++#ifdef CONFIG_DISCONTIGMEM
++	totalram_pages += free_all_bootmem_node(NODE_DATA(1));
++#endif
++	reservedpages = 0;
++	for (tmp = 0; tmp < num_physpages; tmp++)
++		/*
++		 * Only count reserved RAM pages
++		 */
++		if (PageReserved(mem_map+tmp))
++			reservedpages++;
++
++	codesize =  (unsigned long) &_etext - (unsigned long) &_ftext;
++	datasize =  (unsigned long) &_edata - (unsigned long) &_fdata;
++	initsize =  (unsigned long) &__init_end - (unsigned long) &__init_begin;
++
++	printk("Memory: %luk/%luk available (%dk kernel code, %dk reserved, %dk data, %dk init)\n",
++			(unsigned long) nr_free_pages() << (PAGE_SHIFT-10),
++			max_mapnr << (PAGE_SHIFT-10),
++			codesize >> 10,
++			reservedpages << (PAGE_SHIFT-10),
++			datasize >> 10,
++			initsize >> 10);
++
++}
++
++/* fixes paging routines for avalanche  (utilized in /arch/mips/kernel/setup.c) */
++
++void avalanche_bootmem_init(void)
++{
++	unsigned long start_pfn, max_pfn;
++	unsigned long max_low_pfn;
++	unsigned int memsize,memory_end,memory_start;
++	char *memsize_str;
++
++	memsize_str = prom_getenv("memsize");
++	if (!memsize_str) {
++		memsize = 0x02000000;
++	} else {
++		memsize = simple_strtol(memsize_str, NULL, 0);
++	}
++
++
++	memory_start = (unsigned long)PAGE_OFFSET+__MEMORY_START;
++	memory_end = memory_start + memsize;
++
++	/*
++	 * Find the highest memory page fram number we have available 
++	 */
++
++	max_pfn = PFN_DOWN(__pa(memory_end));
++
++	/*
++	 * Determine the low and high memory ranges 
++	 */
++
++	max_low_pfn = max_pfn;
++
++	/*
++	 * Partially used pages are not usable - thus we are
++	 * rounding upwards:
++	 */
++
++	start_pfn = PFN_UP(__pa(&_end));
++
++	/*
++	 * Find a proper area for the bootmem bitmap. After this
++	 * bootstrap step all allocations (until the page allocator is
++	 * intact)  must be done via bootmem_alloc().
++	 */
++
++	bootmap_size = init_bootmem_node(NODE_DATA(0), start_pfn,
++			__MEMORY_START>>PAGE_SHIFT, max_low_pfn);
++
++
++	/* 
++	 * Register fully available low RAM pages with the bootmem allocator.
++	 */
++
++	{
++		unsigned long curr_pfn, last_pfn, pages;
++
++		/*
++		 * We are rounding up the start address of usable memory:
++		 */
++		curr_pfn = PFN_UP(__MEMORY_START);
++
++		/*
++		 * ... and at the end of the usable range downwards:
++		 */
++		last_pfn = PFN_DOWN(__pa(memory_end));
++
++		if (last_pfn > max_low_pfn)
++			last_pfn = max_low_pfn;
++
++		pages = last_pfn - curr_pfn;
++
++
++		free_bootmem_node(NODE_DATA(0), PFN_PHYS(curr_pfn),
++				PFN_PHYS(pages));
++	}
++
++	/*
++	 * Reserve the kernel text and
++	 * Reserve the bootmem bitmap. We do this in two steps (first step
++	 * was init_bootmem()), because this catches the (definitely buggy)
++	 * case of us accidentally initializing the bootmem allocator with
++	 * an invalid RAM area.
++	 */
++	reserve_bootmem_node(NODE_DATA(0), __MEMORY_START+PAGE_SIZE,
++			(PFN_PHYS(start_pfn)+bootmap_size+PAGE_SIZE-1)-__MEMORY_START);
++
++	/*
++	 * reserve physical page 0 - it's a special BIOS page on many boxes,
++	 * enabling clean reboots, SMP operation, laptop functions.
++	 */
++	reserve_bootmem_node(NODE_DATA(0), __MEMORY_START, PAGE_SIZE);
++}
++
++extern char __init_begin, __init_end;
++
++void free_initmem(void)
++{
++	unsigned long addr;
++	//	prom_free_prom_memory ();
++
++	addr = (unsigned long) &__init_begin;
++	while (addr < (unsigned long) &__init_end) {
++		ClearPageReserved(virt_to_page(addr));
++		set_page_count(virt_to_page(addr), 1);
++		free_page(addr);
++		totalram_pages++;
++		addr += PAGE_SIZE;
++	}
++	printk("Freeing unused kernel memory: %dk freed\n",
++			(&__init_end - &__init_begin) >> 10);
++}
++
++void si_meminfo(struct sysinfo *val)
++{
++	val->totalram = totalram_pages;
++	val->sharedram = 0;
++	val->freeram = nr_free_pages();
++	val->bufferram = atomic_read(&buffermem_pages);
++	val->totalhigh = 0;
++	val->freehigh = nr_free_highpages();
++	val->mem_unit = PAGE_SIZE;
++
++	return;
++}
+diff -urN linux-2.4.30/arch/mips/ar7/cmdline.c linux-2.4.30.current/arch/mips/ar7/cmdline.c
+--- linux-2.4.30/arch/mips/ar7/cmdline.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.30.current/arch/mips/ar7/cmdline.c	2005-06-12 20:14:28.000000000 +0200
+@@ -0,0 +1,64 @@
++/*
++ * Carsten Langgaard, carstenl@mips.com
++ * Copyright (C) 1999,2000 MIPS Technologies, Inc.  All rights reserved.
++ *
++ * This program is free software; you can distribute it and/or modify it
++ * under the terms of the GNU General Public License (Version 2) as
++ * published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope it will be useful, but WITHOUT
++ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
++ * for more details.
++ *
++ * You should have received a copy of the GNU General Public License along
++ * with this program; if not, write to the Free Software Foundation, Inc.,
++ * 59 Temple Place - Suite 330, Boston MA 02111-1307, USA.
++ *
++ * Kernel command line creation using the prom monitor (YAMON) argc/argv.
++ */
++#include <linux/init.h>
++#include <linux/string.h>
++
++#include <asm/bootinfo.h>
++
++extern int prom_argc;
++extern int *_prom_argv;
++
++/*
++ * YAMON (32-bit PROM) pass arguments and environment as 32-bit pointer.
++ * This macro take care of sign extension.
++ */
++#define prom_argv(index) ((char *)(((int *)(int)_prom_argv)[(index)]))
++
++char arcs_cmdline[CL_SIZE];
++
++char * __init prom_getcmdline(void)
++{
++	return &(arcs_cmdline[0]);
++}
++
++
++void  __init prom_init_cmdline(void)
++{
++	char *cp;
++	int actr;
++
++	actr = 1; /* Always ignore argv[0] */
++
++	cp = &(arcs_cmdline[0]);
++#ifdef CONFIG_CMDLINE_BOOL
++	strcpy(cp, CONFIG_CMDLINE);
++	cp += strlen(CONFIG_CMDLINE);
++	*cp++ = ' ';
++#endif
++	while(actr < prom_argc) {
++		strcpy(cp, prom_argv(actr));
++		cp += strlen(prom_argv(actr));
++		*cp++ = ' ';
++		actr++;
++	}
++	if (cp != &(arcs_cmdline[0])) /* get rid of trailing space */
++		--cp;
++	*cp = '\0';
++}
+diff -urN linux-2.4.30/arch/mips/ar7/init.c linux-2.4.30.current/arch/mips/ar7/init.c
+--- linux-2.4.30/arch/mips/ar7/init.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.30.current/arch/mips/ar7/init.c	2005-06-12 20:14:28.000000000 +0200
+@@ -0,0 +1,127 @@
++/*
++ * Carsten Langgaard, carstenl@mips.com
++ * Copyright (C) 1999,2000 MIPS Technologies, Inc.  All rights reserved.
++ *
++ *  This program is free software; you can distribute it and/or modify it
++ *  under the terms of the GNU General Public License (Version 2) as
++ *  published by the Free Software Foundation.
++ *
++ *  This program is distributed in the hope it will be useful, but WITHOUT
++ *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ *  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
++ *  for more details.
++ *
++ *  You should have received a copy of the GNU General Public License along
++ *  with this program; if not, write to the Free Software Foundation, Inc.,
++ *  59 Temple Place - Suite 330, Boston MA 02111-1307, USA.
++ *
++ * PROM library initialisation code.
++ */
++#include <linux/config.h>
++#include <linux/init.h>
++#include <linux/string.h>
++#include <linux/kernel.h>
++
++#include <asm/io.h>
++#include <asm/mips-boards/prom.h>
++#include <asm/mips-boards/generic.h>
++
++/* Environment variable */
++typedef struct {
++	char *name;
++	char *val;
++} t_env_var;
++
++int prom_argc;
++int *_prom_argv, *_prom_envp;
++
++/*
++ * YAMON (32-bit PROM) pass arguments and environment as 32-bit pointer.
++ * This macro take care of sign extension, if running in 64-bit mode.
++ */
++#define prom_envp(index) ((char *)(((int *)(int)_prom_envp)[(index)]))
++
++int init_debug = 0;
++
++char *prom_getenv(char *envname)
++{
++	/*
++	 * Return a pointer to the given environment variable.
++	 * In 64-bit mode: we're using 64-bit pointers, but all pointers
++	 * in the PROM structures are only 32-bit, so we need some
++	 * workarounds, if we are running in 64-bit mode.
++	 */
++	int i, index=0;
++
++	i = strlen(envname);
++
++	while (prom_envp(index)) {
++		if(strncmp(envname, prom_envp(index), i) == 0) {
++			return(prom_envp(index+1));
++		}
++		index += 2;
++	}
++
++	return NULL;
++}
++
++static inline unsigned char str2hexnum(unsigned char c)
++{
++	if (c >= '0' && c <= '9')
++		return c - '0';
++	if (c >= 'a' && c <= 'f')
++		return c - 'a' + 10;
++	return 0; /* foo */
++}
++
++static inline void str2eaddr(unsigned char *ea, unsigned char *str)
++{
++	int i;
++
++	for (i = 0; i < 6; i++) {
++		unsigned char num;
++
++		if((*str == '.') || (*str == ':'))
++			str++;
++		num = str2hexnum(*str++) << 4;
++		num |= (str2hexnum(*str++));
++		ea[i] = num;
++	}
++}
++
++int get_ethernet_addr(char *ethernet_addr)
++{
++	char *ethaddr_str;
++
++	ethaddr_str = prom_getenv("ethaddr");
++	if (!ethaddr_str) {
++		printk("ethaddr not set in boot prom\n");
++		return -1;
++	}
++	str2eaddr(ethernet_addr, ethaddr_str);
++
++	if (init_debug > 1) {
++		int i;
++		printk("get_ethernet_addr: ");
++		for (i=0; i<5; i++)
++			printk("%02x:", (unsigned char)*(ethernet_addr+i));
++		printk("%02x\n", *(ethernet_addr+i));
++	}
++
++	return 0;
++}
++
++int __init prom_init(int argc, char **argv, char **envp)
++{
++	prom_argc = argc;
++	_prom_argv = (int *)argv;
++	_prom_envp = (int *)envp;
++
++	set_io_port_base(0);
++
++	prom_printf("\nLINUX started...\n");
++	prom_init_cmdline();
++	prom_meminit();
++
++	return 0;
++}
+diff -urN linux-2.4.30/arch/mips/ar7/irq.c linux-2.4.30.current/arch/mips/ar7/irq.c
+--- linux-2.4.30/arch/mips/ar7/irq.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.30.current/arch/mips/ar7/irq.c	2005-06-12 20:14:28.000000000 +0200
+@@ -0,0 +1,669 @@
++/*
++ * Nitin Dhingra, iamnd@ti.com
++ * Copyright (C) 2002 Texas Instruments, Inc.  All rights reserved.
++ *
++ * ########################################################################
++ *
++ *  This program is free software; you can distribute it and/or modify it
++ *  under the terms of the GNU General Public License (Version 2) as
++ *  published by the Free Software Foundation.
++ *
++ *  This program is distributed in the hope it will be useful, but WITHOUT
++ *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ *  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
++ *  for more details.
++ *
++ *  You should have received a copy of the GNU General Public License along
++ *  with this program; if not, write to the Free Software Foundation, Inc.,
++ *  59 Temple Place - Suite 330, Boston MA 02111-1307, USA.
++ *
++ * ########################################################################
++ *
++ * Routines for generic manipulation of the interrupts found on the Texas
++ * Instruments avalanche board
++ *
++ */
++
++#include <linux/config.h>
++#include <linux/init.h>
++#include <linux/sched.h>
++#include <linux/slab.h>
++#include <linux/interrupt.h>
++#include <linux/kernel_stat.h>
++#include <linux/proc_fs.h>
++#include <asm/irq.h>
++#include <asm/mips-boards/prom.h>
++#include <asm/ar7/ar7.h>
++#include <asm/ar7/avalanche_intc.h>
++#include <asm/gdb-stub.h>
++
++
++#define shutdown_avalanche_irq	disable_avalanche_irq
++#define mask_and_ack_avalanche_irq   disable_avalanche_irq
++
++static unsigned int startup_avalanche_irq(unsigned int irq);
++static void end_avalanche_irq(unsigned int irq);
++void enable_avalanche_irq(unsigned int irq_nr);
++void disable_avalanche_irq(unsigned int irq_nr);
++
++static struct hw_interrupt_type avalanche_irq_type = {
++	"TI AVALANCHE",
++	startup_avalanche_irq,
++	shutdown_avalanche_irq,
++	enable_avalanche_irq,
++	disable_avalanche_irq,
++	mask_and_ack_avalanche_irq,
++	end_avalanche_irq,
++	NULL
++};
++
++irq_desc_t irq_desc_ti[AVALANCHE_INT_END+1] __cacheline_aligned =
++{ [0 ... AVALANCHE_INT_END] = { 0, &avalanche_irq_type, NULL, 0, SPIN_LOCK_UNLOCKED}};
++
++
++unsigned long spurious_count = 0;
++
++struct avalanche_ictrl_regs         *avalanche_hw0_icregs;  /* Interrupt control regs (primary)   */
++struct avalanche_exctrl_regs        *avalanche_hw0_ecregs;  /* Exception control regs (secondary) */
++struct avalanche_ipace_regs         *avalanche_hw0_ipaceregs;
++struct avalanche_channel_int_number *avalanche_hw0_chregs;  /* Channel control registers          */
++
++extern asmlinkage void mipsIRQ(void);
++
++
++/*
++ *   The avalanche/MIPS interrupt line numbers are used to represent the
++ *   interrupts within the irqaction arrays.  The index notation is
++ *   is as follows:
++ *
++ *           0-7    MIPS CPU Exceptions  (HW/SW)
++ *           8-47   Primary Interrupts   (Avalanche)
++ *           48-79  Secondary Interrupts (Avalanche)
++ *
++ */
++
++
++static struct irqaction *hw0_irq_action_primary[AVINTNUM(AVALANCHE_INT_END_PRIMARY)] =
++{
++	NULL, NULL, NULL, NULL,
++	NULL, NULL, NULL, NULL,
++	NULL, NULL, NULL, NULL,
++	NULL, NULL, NULL, NULL,
++	NULL, NULL, NULL, NULL,
++	NULL, NULL, NULL, NULL,
++	NULL, NULL, NULL, NULL,
++	NULL, NULL, NULL, NULL,
++	NULL, NULL, NULL, NULL,
++	NULL, NULL, NULL, NULL
++};
++
++static struct irqaction *hw0_irq_action_secondary[AVINTNUM(AVALANCHE_INT_END_SECONDARY)] =
++{
++	NULL, NULL, NULL, NULL,
++	NULL, NULL, NULL, NULL,
++	NULL, NULL, NULL, NULL,
++	NULL, NULL, NULL, NULL,
++	NULL, NULL, NULL, NULL,
++	NULL, NULL, NULL, NULL,
++	NULL, NULL, NULL, NULL,
++	NULL, NULL, NULL, NULL
++};
++
++/*
++   This remaps interrupts to exist on other channels than the default
++   channels.  essentially we can use the line # as the index for this
++   array
++ */
++
++
++static unsigned long line_to_channel[AVINTNUM(AVALANCHE_INT_END_PRIMARY)];
++unsigned long uni_secondary_interrupt = 0;
++
++static struct irqaction r4ktimer_action = {
++	NULL, 0, 0, "R4000 timer/counter", NULL, NULL,
++};
++
++static struct irqaction *irq_action[8] = {
++	NULL,              /* SW int 0 */
++	NULL,              /* SW int 1 */
++	NULL,              /* HW int 0 */
++	NULL,
++	NULL,
++	NULL,              /* HW int 3 */
++	NULL,              /* HW int 4 */
++	&r4ktimer_action   /* HW int 5 */
++};
++
++static void end_avalanche_irq(unsigned int irq)
++{
++	if (!(irq_desc_ti[irq].status & (IRQ_DISABLED|IRQ_INPROGRESS)))
++		enable_avalanche_irq(irq);
++}
++
++void disable_avalanche_irq(unsigned int irq_nr)
++{
++	unsigned long flags;
++	unsigned long chan_nr=0;
++	unsigned long int_bit=0;
++
++	if(irq_nr >= AVALANCHE_INT_END)
++	{
++		printk("whee, invalid irq_nr %d\n", irq_nr);
++		panic("IRQ, you lose...");
++	}
++
++	save_and_cli(flags);
++
++
++	if(irq_nr <  MIPS_EXCEPTION_OFFSET)
++	{
++		/* disable mips exception */
++
++		int_bit = read_c0_status() & ~(1 << (8+irq_nr));
++		change_c0_status(ST0_IM,int_bit);
++		restore_flags(flags);
++		return;
++	}
++
++	/* irq_nr represents the line number for the interrupt.  We must
++	 *  disable the channel number associated with that line number.
++	 */
++
++	if(irq_nr > AVALANCHE_INT_END_PRIMARY_REG2)
++		chan_nr = AVINTNUM(irq_nr);                 /*CHECK THIS ALSO*/
++	else
++		chan_nr = line_to_channel[AVINTNUM(irq_nr)];/* WE NEED A LINE TO CHANNEL MAPPING FUNCTION HERE*/
++
++	/* disable the interrupt channel bit */
++
++	/* primary interrupt #'s 0-31 */
++
++	if(chan_nr <= AVINTNUM(AVALANCHE_INT_END_PRIMARY_REG1))
++		avalanche_hw0_icregs->intecr1 = (1 << chan_nr);
++
++	/* primary interrupt #'s 32-39 */
++
++	else if ((chan_nr <= AVINTNUM(AVALANCHE_INT_END_PRIMARY_REG2)) &&
++			(chan_nr > AVINTNUM(AVALANCHE_INT_END_PRIMARY_REG1)))
++		avalanche_hw0_icregs->intecr2 = (1 << (chan_nr - AVINTNUM(AVALANCHE_INT_END_SECONDARY)));
++
++	else  /* secondary interrupt #'s 0-31 */
++		avalanche_hw0_ecregs->exiecr = (1 << (chan_nr - AVINTNUM(AVALANCHE_INT_END_PRIMARY)));
++
++	restore_flags(flags);
++}
++
++void enable_avalanche_irq(unsigned int irq_nr)
++{
++	unsigned long flags;
++	unsigned long chan_nr=0;
++	unsigned long int_bit=0;
++
++	if(irq_nr > AVALANCHE_INT_END) {
++		printk("whee, invalid irq_nr %d\n", irq_nr);
++		panic("IRQ, you lose...");
++	}
++
++	save_and_cli(flags);
++
++
++	if(irq_nr <  MIPS_EXCEPTION_OFFSET)
++	{
++		/* Enable MIPS exceptions */
++		int_bit = read_c0_status();
++		change_c0_status(ST0_IM,int_bit | (1<<(8+irq_nr)));
++		restore_flags(flags);
++		return;
++	}
++
++	/* irq_nr represents the line number for the interrupt.  We must
++	 *  disable the channel number associated with that line number.
++	 */
++
++	if(irq_nr > AVALANCHE_INT_END_PRIMARY_REG2)
++		chan_nr = AVINTNUM(irq_nr);
++	else
++		chan_nr = line_to_channel[AVINTNUM(irq_nr)];
++
++	/* enable the interrupt channel  bit */
++
++	/* primary interrupt #'s 0-31 */
++	if(chan_nr <= AVINTNUM(AVALANCHE_INT_END_PRIMARY_REG1))
++		avalanche_hw0_icregs->intesr1 = (1 << chan_nr);
++
++	/* primary interrupt #'s 32 throuth 39 */
++	else if ((chan_nr <= AVINTNUM(AVALANCHE_INT_END_PRIMARY_REG2)) &&
++			(chan_nr > AVINTNUM(AVALANCHE_INT_END_PRIMARY_REG1)))
++		avalanche_hw0_icregs->intesr2 = (1 << (chan_nr - AVINTNUM(AVALANCHE_INT_END_SECONDARY)));
++
++	else    /* secondary interrupt #'s 0-31 */
++		avalanche_hw0_ecregs->exiesr = (1 << (chan_nr - AVINTNUM(AVALANCHE_INT_END_PRIMARY)));
++
++	restore_flags(flags);
++}
++
++static unsigned int startup_avalanche_irq(unsigned int irq)
++{
++	enable_avalanche_irq(irq);
++	return 0; /* never anything pending */
++}
++
++
++int get_irq_list(char *buf)
++{
++	int i, len = 0;
++	int num = 0;
++	struct irqaction *action;
++
++	for (i = 0; i < MIPS_EXCEPTION_OFFSET; i++, num++)
++	{
++		action = irq_action[i];
++		if (!action)
++			continue;
++		len += sprintf(buf+len, "%2d: %8d %c %s",
++				num, kstat.irqs[0][num],
++				(action->flags & SA_INTERRUPT) ? '+' : ' ',
++				action->name);
++		for (action=action->next; action; action = action->next) {
++			len += sprintf(buf+len, ",%s %s",
++					(action->flags & SA_INTERRUPT) ? " +" : "",
++					action->name);
++		}
++		len += sprintf(buf+len, " [MIPS interrupt]\n");
++	}
++
++
++	for (i = 0; i < AVINTNUM(AVALANCHE_INT_END); i++,num++)
++	{
++		if(i < AVINTNUM(AVALANCHE_INT_END_PRIMARY))
++			action = hw0_irq_action_primary[i];
++		else
++			action = hw0_irq_action_secondary[i-AVINTNUM(AVALANCHE_INT_END_PRIMARY)];
++		if (!action)
++			continue;
++		len += sprintf(buf+len, "%2d: %8d %c %s",
++				num, kstat.irqs[0][ LNXINTNUM(i) ],
++				(action->flags & SA_INTERRUPT) ? '+' : ' ',
++				action->name);
++
++		for (action=action->next; action; action = action->next)
++		{
++			len += sprintf(buf+len, ",%s %s",
++					(action->flags & SA_INTERRUPT) ? " +" : "",
++					action->name);
++		}
++
++		if(i < AVINTNUM(AVALANCHE_INT_END_PRIMARY))
++			len += sprintf(buf+len, " [hw0 (Avalanche Primary)]\n");
++		else
++			len += sprintf(buf+len, " [hw0 (Avalanche Secondary)]\n");
++
++	}
++
++	return len;
++}
++
++int request_irq(unsigned int irq,
++		void (*handler)(int, void *, struct pt_regs *),
++		unsigned long irqflags,
++		const char * devname,
++		void *dev_id)
++{
++	struct irqaction *action;
++
++	if (irq >  AVALANCHE_INT_END)
++		return -EINVAL;
++	if (!handler)
++		return -EINVAL;
++
++	action = (struct irqaction *)kmalloc(sizeof(struct irqaction), GFP_KERNEL);
++	if(!action)
++		return -ENOMEM;
++
++	action->handler = handler;
++	action->flags = irqflags;
++	action->mask = 0;
++	action->name = devname;
++	irq_desc_ti[irq].action = action;
++	action->dev_id = dev_id;
++
++	action->next = 0;
++
++	if(irq <  MIPS_EXCEPTION_OFFSET)
++	{
++		irq_action[irq] = action;
++		enable_avalanche_irq(irq);
++		return 0;
++	}
++
++	if(irq < AVALANCHE_INT_END_PRIMARY)
++		hw0_irq_action_primary[line_to_channel[AVINTNUM(irq)]] = action;
++	else
++		hw0_irq_action_secondary[irq - AVALANCHE_INT_END_PRIMARY] = action;
++
++	enable_avalanche_irq(irq);
++
++	return 0;
++}
++
++void free_irq(unsigned int irq, void *dev_id)
++{
++	struct irqaction *action;
++
++	if (irq > AVALANCHE_INT_END) {
++		printk("Trying to free IRQ%d\n",irq);
++		return;
++	}
++
++	if(irq <  MIPS_EXCEPTION_OFFSET)
++	{
++		action = irq_action[irq];
++		irq_action[irq] = NULL;
++		irq_desc_ti[irq].action = NULL;
++		disable_avalanche_irq(irq);
++		kfree(action);
++		return;
++	}
++
++	if(irq < AVALANCHE_INT_END_PRIMARY) {
++		action = hw0_irq_action_primary[line_to_channel[AVINTNUM(irq)]];
++		hw0_irq_action_primary[line_to_channel[AVINTNUM(irq)]] = NULL;
++		irq_desc_ti[irq].action = NULL;
++	}
++	else {
++		action = hw0_irq_action_secondary[irq - AVALANCHE_INT_END_PRIMARY];
++		hw0_irq_action_secondary[irq - AVALANCHE_INT_END_PRIMARY] = NULL;
++		irq_desc_ti[irq].action = NULL;
++	}
++
++	disable_avalanche_irq(irq);
++	kfree(action);
++}
++
++#ifdef CONFIG_KGDB
++extern void breakpoint(void);
++extern int remote_debug;
++#endif
++
++//void init_IRQ(void) __init;
++void __init init_IRQ(void)
++{
++	int i;
++
++	avalanche_hw0_icregs = (struct avalanche_ictrl_regs *)AVALANCHE_ICTRL_REGS_BASE;
++	avalanche_hw0_ecregs = (struct avalanche_exctrl_regs *)AVALANCHE_ECTRL_REGS_BASE;
++	avalanche_hw0_ipaceregs = (struct avalanche_ipace_regs *)AVALANCHE_IPACE_REGS_BASE;
++	avalanche_hw0_chregs = (struct avalanche_channel_int_number *)AVALANCHE_CHCTRL_REGS_BASE;
++
++	/*  Disable interrupts and clear pending
++	 */
++
++	avalanche_hw0_icregs->intecr1 = 0xffffffff;    /* disable interrupts 0:31  */
++	avalanche_hw0_icregs->intcr1 = 0xffffffff;     /* clear interrupts 0:31    */
++	avalanche_hw0_icregs->intecr2 = 0xff;          /* disable interrupts 32:39 */
++	avalanche_hw0_icregs->intcr2 = 0xff;           /* clear interrupts 32:39   */
++	avalanche_hw0_ecregs->exiecr = 0xffffffff;     /* disable secondary interrupts 0:31 */
++	avalanche_hw0_ecregs->excr = 0xffffffff;       /* clear secondary interrupts 0:31 */
++
++
++	// avalanche_hw0_ipaceregs->ipacep = (2*get_avalanche_vbus_freq()/1000000)*4;
++	/* hack for speeding up the pacing. */
++	printk("the pacing pre-scalar has been set as 600.\n");
++	avalanche_hw0_ipaceregs->ipacep = 600;
++	/* Channel to line mapping, Line to Channel mapping */
++
++	for(i = 0; i < 40; i++)
++		avalanche_int_set(i,i);
++
++	/* Now safe to set the exception vector. */
++	set_except_vector(0, mipsIRQ);
++
++	/* Setup the IRQ description array.  These will be mapped
++	 *  as flat interrupts numbers.  The mapping is as follows
++	 *
++	 *           0-7    MIPS CPU Exceptions  (HW/SW)
++	 *           8-46   Primary Interrupts   (Avalanche)
++	 *           47-78  Secondary Interrupts (Avalanche)
++	 */
++
++	for (i = 0; i <= AVALANCHE_INT_END; i++)
++	{
++		irq_desc_ti[i].status	= IRQ_DISABLED;
++		irq_desc_ti[i].action	= 0;
++		irq_desc_ti[i].depth	= 1;
++		irq_desc_ti[i].handler	= &avalanche_irq_type;
++	}
++
++#ifdef CONFIG_KGDB
++	if (remote_debug)
++	{
++		set_debug_traps();
++		breakpoint();
++	}
++#endif
++}
++
++
++void avalanche_hw0_irqdispatch(struct pt_regs *regs)
++{
++	struct irqaction *action;
++	int irq, cpu = smp_processor_id();
++	unsigned long int_line_number,status;
++	int i,secondary = 0;
++	int chan_nr=0;
++
++	int_line_number = ((avalanche_hw0_icregs->pintir >> 16) & 0x3F);
++	chan_nr = ((avalanche_hw0_icregs->pintir) & 0x3F);
++
++
++	if(chan_nr < 32)
++	{
++		if( chan_nr != uni_secondary_interrupt)
++			avalanche_hw0_icregs->intcr1 = (1<<chan_nr);
++
++	}
++
++	if((chan_nr < 40) && (chan_nr > 31))
++	{
++		avalanche_hw0_icregs->intcr2 = (1<<(chan_nr-AVINTNUM(AVALANCHE_INT_END_SECONDARY)));
++	}
++
++
++	/* If the Priority Interrupt Index Register returns 40  then no
++	 * interrupts are pending
++	 */
++
++	if(chan_nr == 40)
++		return;
++
++	if(chan_nr == uni_secondary_interrupt)
++	{
++		status = avalanche_hw0_ecregs->exsr;
++		for(i=0; i < AVINTNUM(AVALANCHE_INT_END_SECONDARY); i++)
++		{
++			if (status & 1<<i)
++			{
++				/* clear secondary interrupt */
++				avalanche_hw0_ecregs->excr = 1 << i;
++				break;
++			}
++		}
++		irq = i;
++		secondary = 1;
++
++		/* clear the universal secondary interrupt */
++		avalanche_hw0_icregs->intcr1 = 1 << uni_secondary_interrupt;
++
++	}
++	else
++		irq = chan_nr;
++
++	/* Suraj Add code to clear secondary interrupt */
++
++	if(secondary)
++		action = hw0_irq_action_secondary[irq];
++	else
++		action = hw0_irq_action_primary[irq];
++
++	/* if action == NULL, then we don't have a handler for the irq */
++
++	if ( action == NULL ) {
++		printk("No handler for hw0 irq: %i\n", irq);
++		return;
++	}
++
++	irq_enter(cpu,irq);
++	if(secondary)
++	{
++		kstat.irqs[0][(irq + AVINTNUM(AVALANCHE_INT_END_PRIMARY)) + 8]++;
++		action->handler((irq + AVALANCHE_INT_END_PRIMARY), action->dev_id, regs);
++	}
++	else
++	{
++		kstat.irqs[0][irq + 8]++;
++		action->handler(LNXINTNUM(irq), action->dev_id, regs);
++	}
++
++	irq_exit(cpu,irq);
++
++	if(softirq_pending(cpu))
++		do_softirq();
++
++	return;
++}
++
++void avalanche_int_set(int channel, int line)
++{
++	switch(channel)
++	{
++		case(0):
++			avalanche_hw0_chregs->cintnr0 =  line;
++			break;
++		case(1):
++			avalanche_hw0_chregs->cintnr1 =  line;
++			break;
++		case(2):
++			avalanche_hw0_chregs->cintnr2 =  line;
++			break;
++		case(3):
++			avalanche_hw0_chregs->cintnr3 =  line;
++			break;
++		case(4):
++			avalanche_hw0_chregs->cintnr4 =  line;
++			break;
++		case(5):
++			avalanche_hw0_chregs->cintnr5 =  line;
++			break;
++		case(6):
++			avalanche_hw0_chregs->cintnr6 =  line;
++			break;
++		case(7):
++			avalanche_hw0_chregs->cintnr7 =  line;
++			break;
++		case(8):
++			avalanche_hw0_chregs->cintnr8 =  line;
++			break;
++		case(9):
++			avalanche_hw0_chregs->cintnr9 =  line;
++			break;
++		case(10):
++			avalanche_hw0_chregs->cintnr10 = line;
++			break;
++		case(11):
++			avalanche_hw0_chregs->cintnr11 = line;
++			break;
++		case(12):
++			avalanche_hw0_chregs->cintnr12 = line;
++			break;
++		case(13):
++			avalanche_hw0_chregs->cintnr13 = line;
++			break;
++		case(14):
++			avalanche_hw0_chregs->cintnr14 = line;
++			break;
++		case(15):
++			avalanche_hw0_chregs->cintnr15 = line;
++			break;
++		case(16):
++			avalanche_hw0_chregs->cintnr16 = line;
++			break;
++		case(17):
++			avalanche_hw0_chregs->cintnr17 = line;
++			break;
++		case(18):
++			avalanche_hw0_chregs->cintnr18 = line;
++			break;
++		case(19):
++			avalanche_hw0_chregs->cintnr19 = line;
++			break;
++		case(20):
++			avalanche_hw0_chregs->cintnr20 = line;
++			break;
++		case(21):
++			avalanche_hw0_chregs->cintnr21 = line;
++			break;
++		case(22):
++			avalanche_hw0_chregs->cintnr22 = line;
++			break;
++		case(23):
++			avalanche_hw0_chregs->cintnr23 = line;
++			break;
++		case(24):
++			avalanche_hw0_chregs->cintnr24 = line;
++			break;
++		case(25):
++			avalanche_hw0_chregs->cintnr25 = line;
++			break;
++		case(26):
++			avalanche_hw0_chregs->cintnr26 = line;
++			break;
++		case(27):
++			avalanche_hw0_chregs->cintnr27 = line;
++			break;
++		case(28):
++			avalanche_hw0_chregs->cintnr28 = line;
++			break;
++		case(29):
++			avalanche_hw0_chregs->cintnr29 = line;
++			break;
++		case(30):
++			avalanche_hw0_chregs->cintnr30 = line;
++			break;
++		case(31):
++			avalanche_hw0_chregs->cintnr31 = line;
++			break;
++		case(32):
++			avalanche_hw0_chregs->cintnr32 = line;
++			break;
++		case(33):
++			avalanche_hw0_chregs->cintnr33 = line;
++			break;
++		case(34):
++			avalanche_hw0_chregs->cintnr34 = line;
++			break;
++		case(35):
++			avalanche_hw0_chregs->cintnr35 = line;
++			break;
++		case(36):
++			avalanche_hw0_chregs->cintnr36 = line;
++			break;
++		case(37):
++			avalanche_hw0_chregs->cintnr37 = line;
++			break;
++		case(38):
++			avalanche_hw0_chregs->cintnr38 = line;
++			break;
++		case(39):
++			avalanche_hw0_chregs->cintnr39 = line;
++			break;
++		default:
++			printk("Error: Unknown Avalanche interrupt channel\n");
++	}
++
++	line_to_channel[line] = channel; /* Suraj check */
++
++	if (channel == UNIFIED_SECONDARY_INTERRUPT)
++		uni_secondary_interrupt = line;
++
++}
++
+diff -urN linux-2.4.30/arch/mips/ar7/memory.c linux-2.4.30.current/arch/mips/ar7/memory.c
+--- linux-2.4.30/arch/mips/ar7/memory.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.30.current/arch/mips/ar7/memory.c	2005-06-12 20:14:28.000000000 +0200
+@@ -0,0 +1,130 @@
++/*
++ * Carsten Langgaard, carstenl@mips.com
++ * Copyright (C) 1999,2000 MIPS Technologies, Inc.  All rights reserved.
++ *
++ * ########################################################################
++ *
++ *  This program is free software; you can distribute it and/or modify it
++ *  under the terms of the GNU General Public License (Version 2) as
++ *  published by the Free Software Foundation.
++ *
++ *  This program is distributed in the hope it will be useful, but WITHOUT
++ *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ *  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
++ *  for more details.
++ *
++ *  You should have received a copy of the GNU General Public License along
++ *  with this program; if not, write to the Free Software Foundation, Inc.,
++ *  59 Temple Place - Suite 330, Boston MA 02111-1307, USA.
++ *
++ * ########################################################################
++ *
++ * PROM library functions for acquiring/using memory descriptors given to
++ * us from the YAMON.
++ *
++ */
++#include <linux/config.h>
++#include <linux/init.h>
++#include <linux/mm.h>
++#include <linux/bootmem.h>
++
++#include <asm/bootinfo.h>
++#include <asm/page.h>
++#include <asm/mips-boards/prom.h>
++#include <asm/ar7/ar7.h>
++
++enum yamon_memtypes {
++	yamon_dontuse,
++	yamon_prom,
++	yamon_free,
++};
++struct prom_pmemblock mdesc[PROM_MAX_PMEMBLOCKS];
++
++/* References to section boundaries */
++extern char _end;
++
++#define PFN_ALIGN(x)    (((unsigned long)(x) + (PAGE_SIZE - 1)) & PAGE_MASK)
++
++
++struct prom_pmemblock * __init prom_getmdesc(void)
++{
++	char *memsize_str;
++	unsigned int memsize;
++
++	memsize_str = prom_getenv("memsize");
++	if (!memsize_str) {
++		memsize = 0x02000000;
++	} else {
++		memsize = simple_strtol(memsize_str, NULL, 0);
++	}
++
++	memset(mdesc, 0, sizeof(mdesc));
++
++	mdesc[0].type = yamon_dontuse;
++	mdesc[0].base = 0x00000000;
++	mdesc[0].size = AVALANCHE_SDRAM_BASE;
++
++	mdesc[1].type = yamon_prom;
++	mdesc[1].base = AVALANCHE_SDRAM_BASE;
++	mdesc[1].size = 0x00020000;
++
++	mdesc[2].type = yamon_free;
++	mdesc[2].base = AVALANCHE_SDRAM_BASE + 0x00020000;
++	mdesc[2].size = (memsize + AVALANCHE_SDRAM_BASE) - mdesc[2].base;
++
++	return &mdesc[0];
++}
++
++static int __init prom_memtype_classify (unsigned int type)
++{
++	switch (type) {
++		case yamon_free:
++			return BOOT_MEM_RAM;
++		case yamon_prom:
++			return BOOT_MEM_ROM_DATA;
++		default:
++			return BOOT_MEM_RESERVED;
++	}
++}
++
++void __init prom_meminit(void)
++{
++	struct prom_pmemblock *p;
++
++	p = prom_getmdesc();
++
++	while (p->size) {
++		long type;
++		unsigned long base, size;
++
++		type = prom_memtype_classify (p->type);
++		base = p->base;
++		size = p->size;
++
++		add_memory_region(base, size, type);
++		p++;
++	}
++}
++
++void __init prom_free_prom_memory (void)
++{
++	int i;
++	unsigned long freed = 0;
++	unsigned long addr;
++
++	for (i = 0; i < boot_mem_map.nr_map; i++) {
++		if (boot_mem_map.map[i].type != BOOT_MEM_ROM_DATA)
++			continue;
++
++		addr = boot_mem_map.map[i].addr;
++		while (addr < boot_mem_map.map[i].addr
++				+ boot_mem_map.map[i].size) {
++			ClearPageReserved(virt_to_page(__va(addr)));
++			set_page_count(virt_to_page(__va(addr)), 1);
++			free_page((unsigned long)__va(addr));
++			addr += PAGE_SIZE;
++			freed += PAGE_SIZE;
++		}
++	}
++	printk("Freeing prom memory: %ldkb freed\n", freed >> 10);
++}
+diff -urN linux-2.4.30/arch/mips/ar7/mipsIRQ.S linux-2.4.30.current/arch/mips/ar7/mipsIRQ.S
+--- linux-2.4.30/arch/mips/ar7/mipsIRQ.S	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.30.current/arch/mips/ar7/mipsIRQ.S	2005-06-12 20:14:28.000000000 +0200
+@@ -0,0 +1,120 @@
++/*
++ * Carsten Langgaard, carstenl@mips.com
++ * Copyright (C) 1999, 2000 MIPS Technologies, Inc.  All rights reserved.
++ *
++ * ########################################################################
++ *
++ *  This program is free software; you can distribute it and/or modify it
++ *  under the terms of the GNU General Public License (Version 2) as
++ *  published by the Free Software Foundation.
++ *
++ *  This program is distributed in the hope it will be useful, but WITHOUT
++ *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ *  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
++ *  for more details.
++ *
++ *  You should have received a copy of the GNU General Public License along
++ *  with this program; if not, write to the Free Software Foundation, Inc.,
++ *  59 Temple Place - Suite 330, Boston MA 02111-1307, USA.
++ *
++ * ########################################################################
++ *
++ * Interrupt exception dispatch code.
++ *
++ */
++#include <linux/config.h>
++
++#include <asm/asm.h>
++#include <asm/mipsregs.h>
++#include <asm/regdef.h>
++#include <asm/stackframe.h>
++
++/* A lot of complication here is taken away because:
++ *
++ * 1) We handle one interrupt and return, sitting in a loop and moving across
++ *    all the pending IRQ bits in the cause register is _NOT_ the answer, the
++ *    common case is one pending IRQ so optimize in that direction.
++ *
++ * 2) We need not check against bits in the status register IRQ mask, that
++ *    would make this routine slow as hell.
++ *
++ * 3) Linux only thinks in terms of all IRQs on or all IRQs off, nothing in
++ *    between like BSD spl() brain-damage.
++ *
++ * Furthermore, the IRQs on the MIPS board look basically (barring software
++ * IRQs which we don't use at all and all external interrupt sources are
++ * combined together on hardware interrupt 0 (MIPS IRQ 2)) like:
++ *
++ *	MIPS IRQ	Source
++ *      --------        ------
++ *             0	Software (ignored)
++ *             1        Software (ignored)
++ *             2        Combined hardware interrupt (hw0)
++ *             3        Hardware (ignored)
++ *             4        Hardware (ignored)
++ *             5        Hardware (ignored)
++ *             6        Hardware (ignored)
++ *             7        R4k timer (what we use)
++ *
++ * Note: On the SEAD board thing are a little bit different.
++ *       Here IRQ 2 (hw0) is wired to the UART0 and IRQ 3 (hw1) is wired
++ *       wired to UART1.
++ *
++ * We handle the IRQ according to _our_ priority which is:
++ *
++ * Highest ----     R4k Timer
++ * Lowest  ----     Combined hardware interrupt
++ *
++ * then we just return, if multiple IRQs are pending then we will just take
++ * another exception, big deal.
++ */
++
++.text
++.set	noreorder
++.set	noat
++	.align	5
++NESTED(mipsIRQ, PT_SIZE, sp)
++	SAVE_ALL
++	CLI
++	.set	at
++
++	mfc0	s0, CP0_CAUSE		# get irq bits
++
++	/* First we check for r4k counter/timer IRQ. */
++	andi	a0, s0, CAUSEF_IP7
++	beq	a0, zero, 1f
++	andi	a0, s0, CAUSEF_IP2	# delay slot, check hw0 interrupt
++
++	/* Wheee, a timer interrupt. */
++	move	a0, sp
++	jal	ar7_timer_interrupt
++	nop
++
++	j	ret_from_irq
++	nop
++
++	1:
++	beq	a0, zero, 1f		# delay slot, check hw3 interrupt
++	nop
++
++	/* Wheee, combined hardware level zero interrupt. */
++	jal	avalanche_hw0_irqdispatch     
++	move	a0, sp			# delay slot
++
++	j	ret_from_irq
++	nop				# delay slot
++
++	1:
++	/*
++	 * Here by mistake?  This is possible, what can happen is that by the
++	 * time we take the exception the IRQ pin goes low, so just leave if
++	 * this is the case.
++	 */
++	move	a1,s0
++	PRINT("Got interrupt: c0_cause = %08x\n")
++	mfc0	a1, CP0_EPC
++	PRINT("c0_epc = %08x\n")
++
++	j	ret_from_irq
++	nop
++END(mipsIRQ)
+diff -urN linux-2.4.30/arch/mips/ar7/printf.c linux-2.4.30.current/arch/mips/ar7/printf.c
+--- linux-2.4.30/arch/mips/ar7/printf.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.30.current/arch/mips/ar7/printf.c	2005-06-12 20:14:28.000000000 +0200
+@@ -0,0 +1,51 @@
++/*
++ * Carsten Langgaard, carstenl@mips.com
++ * Copyright (C) 1999,2000 MIPS Technologies, Inc.  All rights reserved.
++ *
++ *  This program is free software; you can distribute it and/or modify it
++ *  under the terms of the GNU General Public License (Version 2) as
++ *  published by the Free Software Foundation.
++ *
++ *  This program is distributed in the hope it will be useful, but WITHOUT
++ *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ *  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
++ *  for more details.
++ *
++ *  You should have received a copy of the GNU General Public License along
++ *  with this program; if not, write to the Free Software Foundation, Inc.,
++ *  59 Temple Place - Suite 330, Boston MA 02111-1307, USA.
++ *
++ * Putting things on the screen/serial line using Adam2 facilities.
++ */
++
++#include <linux/config.h>
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/serial_reg.h>
++#include <linux/spinlock.h>
++#include <asm/io.h>
++#include <asm/serial.h>
++#include <asm/addrspace.h>
++#include <asm/ar7/ar7.h>
++
++static char ppbuf[1024];
++
++void (*prom_print_str)(unsigned int out, char *s, int len);
++
++void prom_printf(char *fmt, ...) __init;
++void prom_printf(char *fmt, ...)
++{
++	va_list args;
++	int len;
++	prom_print_str = (void *)*(unsigned int *)AVALANCHE_YAMON_PROM_PRINT_COUNT_ADDR;
++
++	va_start(args, fmt);
++	vsprintf(ppbuf, fmt, args);
++	len = strlen(ppbuf);
++
++	prom_print_str(1, ppbuf, len);
++
++	va_end(args);
++	return;
++
++}
+diff -urN linux-2.4.30/arch/mips/ar7/reset.c linux-2.4.30.current/arch/mips/ar7/reset.c
+--- linux-2.4.30/arch/mips/ar7/reset.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.30.current/arch/mips/ar7/reset.c	2005-06-12 20:14:28.000000000 +0200
+@@ -0,0 +1,54 @@
++/*
++ * Carsten Langgaard, carstenl@mips.com
++ * Copyright (C) 1999,2000 MIPS Technologies, Inc.  All rights reserved.
++ *
++ * ########################################################################
++ *
++ *  This program is free software; you can distribute it and/or modify it
++ *  under the terms of the GNU General Public License (Version 2) as
++ *  published by the Free Software Foundation.
++ *
++ *  This program is distributed in the hope it will be useful, but WITHOUT
++ *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ *  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
++ *  for more details.
++ *
++ *  You should have received a copy of the GNU General Public License along
++ *  with this program; if not, write to the Free Software Foundation, Inc.,
++ *  59 Temple Place - Suite 330, Boston MA 02111-1307, USA.
++ *
++ * ########################################################################
++ *
++ * Reset the MIPS boards.
++ *
++ */
++#include <linux/config.h>
++
++#include <asm/reboot.h>
++#include <asm/mips-boards/generic.h>
++
++static void ar7_machine_restart(char *command);
++static void ar7_machine_halt(void);
++static void ar7_machine_power_off(void);
++
++static void ar7_machine_restart(char *command)
++{
++
++}
++
++static void ar7_machine_halt(void)
++{
++
++}
++
++static void ar7_machine_power_off(void)
++{
++
++}
++
++void ar7_reboot_setup(void)
++{
++	_machine_restart = ar7_machine_restart;
++	_machine_halt = ar7_machine_halt;
++	_machine_power_off = ar7_machine_power_off;
++}
+diff -urN linux-2.4.30/arch/mips/ar7/setup.c linux-2.4.30.current/arch/mips/ar7/setup.c
+--- linux-2.4.30/arch/mips/ar7/setup.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.30.current/arch/mips/ar7/setup.c	2005-06-12 20:14:28.000000000 +0200
+@@ -0,0 +1,150 @@
++/*
++ * Carsten Langgaard, carstenl@mips.com
++ * Copyright (C) 2000 MIPS Technologies, Inc.  All rights reserved.
++ *
++ *  This program is free software; you can distribute it and/or modify it
++ *  under the terms of the GNU General Public License (Version 2) as
++ *  published by the Free Software Foundation.
++ *
++ *  This program is distributed in the hope it will be useful, but WITHOUT
++ *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ *  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
++ *  for more details.
++ *
++ *  You should have received a copy of the GNU General Public License along
++ *  with this program; if not, write to the Free Software Foundation, Inc.,
++ *  59 Temple Place - Suite 330, Boston MA 02111-1307, USA.
++ */
++#include <linux/config.h>
++#include <linux/init.h>
++#include <linux/sched.h>
++#include <linux/mc146818rtc.h>
++#include <linux/ioport.h>
++
++#include <asm/cpu.h>
++#include <asm/bootinfo.h>
++#include <asm/irq.h>
++#include <asm/mips-boards/generic.h>
++#include <asm/mips-boards/prom.h>
++
++#include <asm/dma.h>
++#include <asm/time.h>
++#include <asm/traps.h>
++
++
++#define _LINK_KSEG0_
++#define LITTLE_ENDIAN
++#include <asm/ar7/tnetd73xx.h>
++#include <asm/ar7/tnetd73xx_misc.h>
++
++// Specific for ar7wrd
++unsigned int tnetd73xx_vbus_freq;
++#define BOOTCR_MIPS_ASYNC_MODE  (1 << 25)
++#define AFECLK_FREQ                                 35328000
++#define REFCLK_FREQ                                 25000000
++#define OSC3_FREQ                                   24000000
++#define AVALANCHE_CPMAC_INTERNAL_PHY_MASK           0x80000000
++
++#if defined(CONFIG_AR7_MARVELL)
++#define AVALANCHE_CPMAC_EXTERNAL_PHY_MASK           0x00010000
++#else
++#define AVALANCHE_CPMAC_EXTERNAL_PHY_MASK           0x2
++#endif
++
++
++#ifdef CONFIG_KGDB
++extern void rs_kgdb_hook(int);
++int remote_debug = 0;
++#endif
++
++extern struct rtc_ops no_rtc_ops;
++
++extern void ar7_reboot_setup(void);
++
++extern void ar7_time_init(void);
++extern void ar7_timer_setup(struct irqaction *irq);
++
++/* maybe some of this is not needed? */
++static void ar7_platform_init(void)
++{
++	//tnetd73xx_gpio_init();
++
++	tnetd73xx_reset_ctrl(RESET_MODULE_UART0, OUT_OF_RESET);
++	//tnetd73xx_reset_ctrl(RESET_MODULE_GPIO, OUT_OF_RESET);
++	//REG32_WRITE(TNETD73XX_GPIOENR, 0xf3fc3ff0);
++
++	//tnetd73xx_reset_ctrl(RESET_MODULE_EPHY, IN_RESET);
++	//tnetd73xx_reset_ctrl(RESET_MODULE_EPHY, OUT_OF_RESET);
++
++	tnetd73xx_clkc_init(AFECLK_FREQ, REFCLK_FREQ, OSC3_FREQ);
++
++	tnetd73xx_vbus_freq = tnetd73xx_clkc_get_freq(CLKC_SYS) / 2;
++
++#if defined(CONFIG_AR7WRD)
++	if(! (REG32_DATA(TNETD73XX_DCL_BOOTCR) & BOOTCR_MIPS_ASYNC_MODE)) {
++		tnetd73xx_clkc_set_freq(CLKC_MIPS, CLK_MHZ(150));
++	}
++#endif
++
++}
++
++const char *get_system_type(void)
++{
++	return "Texas Instruments AR7";
++}
++
++void __init ar7_setup(void)
++{
++#ifdef CONFIG_KGDB
++	int rs_putDebugChar(char);
++	char rs_getDebugChar(void);
++	extern int (*generic_putDebugChar)(char);
++	extern char (*generic_getDebugChar)(void);
++#endif
++	char *argptr;
++
++#ifdef CONFIG_SERIAL_CONSOLE
++	argptr = prom_getcmdline();
++	if ((argptr = strstr(argptr, "console=")) == NULL) {
++		argptr = prom_getcmdline();
++		strcat(argptr, " console=ttyS0,38400");
++	}
++#endif
++
++#ifdef CONFIG_KGDB
++	argptr = prom_getcmdline();
++	if ((argptr = strstr(argptr, "kgdb=ttyS")) != NULL) {
++		int line;
++		argptr += strlen("kgdb=ttyS");
++		if (*argptr != '0' && *argptr != '1')
++			printk("KGDB: Uknown serial line /dev/ttyS%c, "
++					"falling back to /dev/ttyS1\n", *argptr);
++		line = *argptr == '0' ? 0 : 1;
++		printk("KGDB: Using serial line /dev/ttyS%d for session\n",
++				line ? 1 : 0);
++
++		rs_kgdb_hook(line);
++		generic_putDebugChar = rs_putDebugChar;
++		generic_getDebugChar = rs_getDebugChar;
++
++		prom_printf("KGDB: Using serial line /dev/ttyS%d for session, "
++				"please connect your debugger\n", line ? 1 : 0);
++
++		remote_debug = 1;
++		/* Breakpoints are in init_IRQ() */
++	}
++#endif
++
++	argptr = prom_getcmdline();
++	if ((argptr = strstr(argptr, "nofpu")) != NULL)
++		cpu_data[0].options &= ~MIPS_CPU_FPU;
++
++	rtc_ops = &no_rtc_ops;
++
++	ar7_platform_init();
++
++	ar7_reboot_setup();
++
++	board_time_init = ar7_time_init;
++	board_timer_setup = ar7_timer_setup;
++}
+diff -urN linux-2.4.30/arch/mips/ar7/time.c linux-2.4.30.current/arch/mips/ar7/time.c
+--- linux-2.4.30/arch/mips/ar7/time.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.30.current/arch/mips/ar7/time.c	2005-06-12 20:14:28.000000000 +0200
+@@ -0,0 +1,125 @@
++/*
++ * Carsten Langgaard, carstenl@mips.com
++ * Copyright (C) 1999,2000 MIPS Technologies, Inc.  All rights reserved.
++ *
++ * ########################################################################
++ *
++ *  This program is free software; you can distribute it and/or modify it
++ *  under the terms of the GNU General Public License (Version 2) as
++ *  published by the Free Software Foundation.
++ *
++ *  This program is distributed in the hope it will be useful, but WITHOUT
++ *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ *  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
++ *  for more details.
++ *
++ *  You should have received a copy of the GNU General Public License along
++ *  with this program; if not, write to the Free Software Foundation, Inc.,
++ *  59 Temple Place - Suite 330, Boston MA 02111-1307, USA.
++ *
++ * ########################################################################
++ *
++ * Setting up the clock on the MIPS boards.
++ *
++ */
++
++#include <linux/types.h>
++#include <linux/config.h>
++#include <linux/init.h>
++#include <linux/kernel_stat.h>
++#include <linux/sched.h>
++#include <linux/spinlock.h>
++
++#include <asm/mipsregs.h>
++#include <asm/ptrace.h>
++#include <asm/hardirq.h>
++#include <asm/div64.h>
++
++#include <linux/interrupt.h>
++#include <linux/mc146818rtc.h>
++#include <linux/timex.h>
++
++#include <asm/mips-boards/generic.h>
++#include <asm/mips-boards/prom.h>
++#include <asm/ar7/ar7.h>
++
++extern asmlinkage void mipsIRQ(void);
++
++static unsigned long r4k_offset; /* Amount to increment compare reg each time */
++static unsigned long r4k_cur;    /* What counter should be at next timer irq */
++
++#define MIPS_CPU_TIMER_IRQ 7
++#define ALLINTS (IE_IRQ0 | IE_IRQ1 | IE_IRQ2 | IE_IRQ3 | IE_IRQ4 | IE_IRQ5)
++
++static inline void ack_r4ktimer(unsigned long newval)
++{
++	write_c0_compare(newval);
++}
++
++void ar7_timer_interrupt(struct pt_regs *regs)
++{
++	int cpu = smp_processor_id();
++
++	irq_enter(cpu, MIPS_CPU_TIMER_IRQ);
++
++	if (r4k_offset == 0)
++		goto null;
++
++	do {
++		kstat.irqs[cpu][MIPS_CPU_TIMER_IRQ]++;
++		do_timer(regs);
++		r4k_cur += r4k_offset;
++		ack_r4ktimer(r4k_cur);
++
++	} while (((unsigned long)read_c0_count()
++				- r4k_cur) < 0x7fffffff);
++
++	irq_exit(cpu, MIPS_CPU_TIMER_IRQ);
++
++	if (softirq_pending(cpu))
++		do_softirq();
++
++	return;
++
++null:
++	ack_r4ktimer(0);
++}
++
++/*
++ * Figure out the r4k offset, the amount to increment the compare
++ * register for each time tick.
++ */
++static unsigned long __init cal_r4koff(void)
++{
++	return ((CONFIG_AR7_FREQUENCY*500000)/HZ);
++}
++
++void __init ar7_time_init(void)
++{
++	unsigned long flags;
++	unsigned int est_freq; 
++
++	set_except_vector(0, mipsIRQ);
++	write_c0_count(0);
++
++	printk("calculating r4koff... ");
++	r4k_offset = cal_r4koff();
++	printk("%08lx(%d)\n", r4k_offset, (int) r4k_offset);
++
++	est_freq = 2*r4k_offset*HZ;
++	est_freq += 5000;    /* round */
++	est_freq -= est_freq%10000;
++	printk("CPU frequency %d.%02d MHz\n", est_freq/1000000,
++			(est_freq%1000000)*100/1000000);
++}
++
++void __init ar7_timer_setup(struct irqaction *irq)
++{
++	/* we are using the cpu counter for timer interrupts */
++	irq->handler = no_action;     /* we use our own handler */
++	setup_irq(MIPS_CPU_TIMER_IRQ, irq);
++
++	r4k_cur = (read_c0_count() + r4k_offset);
++	write_c0_compare(r4k_cur);
++	set_c0_status(ALLINTS);
++}
+diff -urN linux-2.4.30/arch/mips/ar7/tnetd73xx_misc.c linux-2.4.30.current/arch/mips/ar7/tnetd73xx_misc.c
+--- linux-2.4.30/arch/mips/ar7/tnetd73xx_misc.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.30.current/arch/mips/ar7/tnetd73xx_misc.c	2005-06-12 20:14:28.000000000 +0200
+@@ -0,0 +1,924 @@
++/******************************************************************************
++ * FILE PURPOSE:    TNETD73xx Misc modules API Source
++ ******************************************************************************
++ * FILE NAME:       tnetd73xx_misc.c
++ *
++ * DESCRIPTION:     Clock Control, Reset Control, Power Management, GPIO
++ *                  FSER Modules API
++ *                  As per TNETD73xx specifications
++ *
++ * REVISION HISTORY:
++ * 27 Nov 02 - Sharath Kumar     PSP TII  
++ * 14 Feb 03 - Anant Gole        PSP TII
++ *
++ * (C) Copyright 2002, Texas Instruments, Inc
++ *******************************************************************************/
++
++#define LITTLE_ENDIAN
++#define _LINK_KSEG0_
++
++#include <linux/types.h>
++#include <asm/ar7/tnetd73xx.h>
++#include <asm/ar7/tnetd73xx_misc.h>
++
++/* TNETD73XX Revision */
++u32 tnetd73xx_get_revision(void)
++{
++	/* Read Chip revision register - This register is from GPIO module */
++	return ( (u32) REG32_DATA(TNETD73XX_CVR));
++}
++
++/*****************************************************************************
++ * Reset Control Module
++ *****************************************************************************/
++
++
++void tnetd73xx_reset_ctrl(TNETD73XX_RESET_MODULE_T reset_module, TNETD73XX_RESET_CTRL_T reset_ctrl)
++{
++	u32 reset_status;
++
++	/* read current reset register */
++	REG32_READ(TNETD73XX_RST_CTRL_PRCR, reset_status);
++
++	if (reset_ctrl == OUT_OF_RESET)
++	{
++		/* bring module out of reset */
++		reset_status |= (1 << reset_module);
++	}
++	else
++	{
++		/* put module in reset */
++		reset_status &= (~(1 << reset_module));
++	}
++
++	/* write to the reset register */
++	REG32_WRITE(TNETD73XX_RST_CTRL_PRCR, reset_status);
++}
++
++
++TNETD73XX_RESET_CTRL_T tnetd73xx_get_reset_status (TNETD73XX_RESET_MODULE_T reset_module)
++{
++	u32 reset_status;
++
++	REG32_READ(TNETD73XX_RST_CTRL_PRCR, reset_status);
++	return ( (reset_status & (1 << reset_module)) ? OUT_OF_RESET : IN_RESET );
++}
++
++void tnetd73xx_sys_reset(TNETD73XX_SYS_RST_MODE_T mode)
++{
++	REG32_WRITE(TNETD73XX_RST_CTRL_SWRCR, mode);
++}
++
++#define TNETD73XX_RST_CTRL_RSR_MASK 0x3
++
++TNETD73XX_SYS_RESET_STATUS_T tnetd73xx_get_sys_last_reset_status()
++{
++	u32 sys_reset_status;
++
++	REG32_READ(TNETD73XX_RST_CTRL_RSR, sys_reset_status);
++
++	return ( (TNETD73XX_SYS_RESET_STATUS_T) (sys_reset_status & TNETD73XX_RST_CTRL_RSR_MASK) );
++}
++
++
++/*****************************************************************************
++ * Power Control Module
++ *****************************************************************************/
++#define TNETD73XX_GLOBAL_POWER_DOWN_MASK    0x3FFFFFFF      /* bit 31, 30 masked */
++#define TNETD73XX_GLOBAL_POWER_DOWN_BIT     30              /* shift to bit 30, 31 */
++
++
++void tnetd73xx_power_ctrl(TNETD73XX_POWER_MODULE_T power_module, TNETD73XX_POWER_CTRL_T power_ctrl)
++{
++	u32 power_status;
++
++	/* read current power down control register */
++	REG32_READ(TNETD73XX_POWER_CTRL_PDCR, power_status);
++
++	if (power_ctrl == POWER_CTRL_POWER_DOWN)
++	{
++		/* power down the module */
++		power_status |= (1 << power_module);
++	}
++	else
++	{
++		/* power on the module */
++		power_status &= (~(1 << power_module));
++	}
++
++	/* write to the reset register */
++	REG32_WRITE(TNETD73XX_POWER_CTRL_PDCR, power_status);
++}
++
++TNETD73XX_POWER_CTRL_T tnetd73xx_get_pwr_status(TNETD73XX_POWER_MODULE_T power_module)
++{
++	u32 power_status;
++
++	/* read current power down control register */
++	REG32_READ(TNETD73XX_POWER_CTRL_PDCR, power_status);
++
++	return ( (power_status & (1 << power_module)) ? POWER_CTRL_POWER_DOWN : POWER_CTRL_POWER_UP );
++}
++
++void tnetd73xx_set_global_pwr_mode(TNETD73XX_SYS_POWER_MODE_T power_mode)
++{
++	u32 power_status;
++
++	/* read current power down control register */
++	REG32_READ(TNETD73XX_POWER_CTRL_PDCR, power_status);
++
++	power_status &= TNETD73XX_GLOBAL_POWER_DOWN_MASK;
++	power_status |= ( power_mode << TNETD73XX_GLOBAL_POWER_DOWN_BIT);
++
++	/* write to power down control register */
++	REG32_WRITE(TNETD73XX_POWER_CTRL_PDCR, power_status);
++}
++
++TNETD73XX_SYS_POWER_MODE_T tnetd73xx_get_global_pwr_mode()
++{
++	u32 power_status;
++
++	/* read current power down control register */
++	REG32_READ(TNETD73XX_POWER_CTRL_PDCR, power_status);
++
++	power_status &= (~TNETD73XX_GLOBAL_POWER_DOWN_MASK);
++	power_status = ( power_status >> TNETD73XX_GLOBAL_POWER_DOWN_BIT);
++
++	return ( (TNETD73XX_SYS_POWER_MODE_T) power_status );
++}
++
++
++/*****************************************************************************
++ * Wakeup Control
++ *****************************************************************************/
++
++#define TNETD73XX_WAKEUP_POLARITY_BIT   16
++
++void tnetd73xx_wakeup_ctrl(TNETD73XX_WAKEUP_INTERRUPT_T wakeup_int,
++		TNETD73XX_WAKEUP_CTRL_T wakeup_ctrl,
++		TNETD73XX_WAKEUP_POLARITY_T wakeup_polarity)
++{
++	u32 wakeup_status;
++
++	/* read the wakeup control register */
++	REG32_READ(TNETD73XX_POWER_CTRL_WKCR, wakeup_status);
++
++	/* enable/disable */
++	if (wakeup_ctrl == WAKEUP_ENABLED)
++	{
++		/* enable wakeup */
++		wakeup_status |= wakeup_int;
++	}
++	else
++	{
++		/* disable wakeup */
++		wakeup_status &= (~wakeup_int);
++	}
++
++	/* set polarity */
++	if (wakeup_polarity == WAKEUP_ACTIVE_LOW)
++	{
++		wakeup_status |= (wakeup_int << TNETD73XX_WAKEUP_POLARITY_BIT);
++	}
++	else
++	{
++		wakeup_status &= ~(wakeup_int << TNETD73XX_WAKEUP_POLARITY_BIT);
++	}
++
++	/* write  the wakeup control register */
++	REG32_WRITE(TNETD73XX_POWER_CTRL_WKCR, wakeup_status);
++}
++
++
++/*****************************************************************************
++ * FSER  Control
++ *****************************************************************************/
++
++void tnetd73xx_fser_ctrl(TNETD73XX_FSER_MODE_T fser_mode)
++{
++	REG32_WRITE(TNETD73XX_FSER_BASE, fser_mode);
++}
++
++/*****************************************************************************
++ * Clock Control
++ *****************************************************************************/
++
++#define MIN(x,y)               ( ((x) <  (y)) ? (x) : (y) )
++#define MAX(x,y)               ( ((x) >  (y)) ? (x) : (y) )
++#define ABS(x)                 ( ((signed)(x) > 0) ? (x) : (-(x)) )
++#define CEIL(x,y)              ( ((x) + (y) / 2) / (y) )
++
++#define CLKC_CLKCR(x)          (TNETD73XX_CLOCK_CTRL_BASE + 0x20 + (0x20 * (x)))
++#define CLKC_CLKPLLCR(x)       (TNETD73XX_CLOCK_CTRL_BASE + 0x30 + (0x20 * (x)))
++
++#define CLKC_PRE_DIVIDER        0x0000001F
++#define CLKC_POST_DIVIDER       0x001F0000
++
++#define CLKC_PLL_STATUS         0x1
++#define CLKC_PLL_FACTOR         0x0000F000
++
++#define BOOTCR_PLL_BYPASS       (1 << 5)
++#define BOOTCR_MIPS_ASYNC_MODE  (1 << 25)
++
++#define MIPS_PLL_SELECT         0x00030000
++#define SYSTEM_PLL_SELECT       0x0000C000
++#define USB_PLL_SELECT          0x000C0000
++#define ADSLSS_PLL_SELECT       0x00C00000
++
++#define MIPS_AFECLKI_SELECT     0x00000000
++#define MIPS_REFCLKI_SELECT     0x00010000
++#define MIPS_XTAL3IN_SELECT     0x00020000
++
++#define SYSTEM_AFECLKI_SELECT   0x00000000
++#define SYSTEM_REFCLKI_SELECT   0x00004000
++#define SYSTEM_XTAL3IN_SELECT   0x00008000
++#define SYSTEM_MIPSPLL_SELECT   0x0000C000
++
++#define USB_SYSPLL_SELECT       0x00000000
++#define USB_REFCLKI_SELECT      0x00040000
++#define USB_XTAL3IN_SELECT      0x00080000
++#define USB_MIPSPLL_SELECT      0x000C0000
++
++#define ADSLSS_AFECLKI_SELECT   0x00000000
++#define ADSLSS_REFCLKI_SELECT   0x00400000
++#define ADSLSS_XTAL3IN_SELECT   0x00800000
++#define ADSLSS_MIPSPLL_SELECT   0x00C00000
++
++#define  SYS_MAX                CLK_MHZ(150)
++#define  SYS_MIN                CLK_MHZ(1)
++
++#define  MIPS_SYNC_MAX          SYS_MAX
++#define  MIPS_ASYNC_MAX         CLK_MHZ(160)
++#define  MIPS_MIN               CLK_MHZ(1)
++
++#define  USB_MAX                CLK_MHZ(100)
++#define  USB_MIN                CLK_MHZ(1)
++
++#define  ADSL_MAX               CLK_MHZ(180)
++#define  ADSL_MIN               CLK_MHZ(1)
++
++#define  PLL_MUL_MAXFACTOR      15
++#define  MAX_DIV_VALUE          32
++#define  MIN_DIV_VALUE          1
++
++#define  MIN_PLL_INP_FREQ       CLK_MHZ(8)
++#define  MAX_PLL_INP_FREQ       CLK_MHZ(100)
++
++#define  DIVIDER_LOCK_TIME      10100
++#define  PLL_LOCK_TIME          10100 * 75
++
++
++
++							      /****************************************************************************
++							       * DATA PURPOSE:    PRIVATE Variables
++							       **************************************************************************/
++							      static u32 *clk_src[4];
++							      static u32 mips_pll_out;
++							      static u32 sys_pll_out;
++							      static u32 afeclk_inp;
++							      static u32 refclk_inp;
++							      static u32 xtal_inp;
++							      static u32 present_min;
++							      static u32 present_max;
++
++							      /* Forward References */
++							      static u32 find_gcd(u32 min, u32 max);
++							      static u32 compute_prediv( u32 divider, u32 min, u32 max);
++							      static void get_val(u32 base_freq, u32 output_freq,u32 *multiplier, u32 *divider);
++							      static u32 get_base_frequency(TNETD73XX_CLKC_ID_T clk_id);
++							      static void find_approx(u32 *,u32 *,u32);
++
++							      /****************************************************************************
++							       * FUNCTION: tnetd73xx_clkc_init
++							       ****************************************************************************
++							       * Description: The routine initializes the internal variables depending on
++							       *              on the sources selected for different clocks.
++							       ***************************************************************************/
++void tnetd73xx_clkc_init(u32 afeclk, u32 refclk, u32 xtal3in)
++{
++
++	u32 choice;
++
++	afeclk_inp = afeclk;
++	refclk_inp = refclk;
++	xtal_inp = xtal3in;
++
++	choice = REG32_DATA(TNETD73XX_DCL_BOOTCR) & MIPS_PLL_SELECT;
++	switch(choice)
++	{
++		case MIPS_AFECLKI_SELECT:
++			clk_src[CLKC_MIPS] = &afeclk_inp;
++			break;
++
++		case MIPS_REFCLKI_SELECT:
++			clk_src[CLKC_MIPS] = &refclk_inp;
++			break;
++
++		case MIPS_XTAL3IN_SELECT:
++			clk_src[CLKC_MIPS] = &xtal_inp;
++			break;
++
++		default :
++			clk_src[CLKC_MIPS] = 0;
++
++	}
++
++	choice = REG32_DATA(TNETD73XX_DCL_BOOTCR) & SYSTEM_PLL_SELECT;
++	switch(choice)
++	{
++		case SYSTEM_AFECLKI_SELECT:
++			clk_src[CLKC_SYS] = &afeclk_inp;
++			break;
++
++		case SYSTEM_REFCLKI_SELECT:
++			clk_src[CLKC_SYS] = &refclk_inp;
++			break;
++
++		case SYSTEM_XTAL3IN_SELECT:
++			clk_src[CLKC_SYS] = &xtal_inp;
++			break;
++
++		case SYSTEM_MIPSPLL_SELECT:
++			clk_src[CLKC_SYS] = &mips_pll_out;
++			break;
++
++		default :
++			clk_src[CLKC_SYS] = 0;
++
++	}
++
++
++	choice = REG32_DATA(TNETD73XX_DCL_BOOTCR) & ADSLSS_PLL_SELECT;
++	switch(choice)
++	{
++		case ADSLSS_AFECLKI_SELECT:
++			clk_src[CLKC_ADSLSS] = &afeclk_inp;
++			break;
++
++		case ADSLSS_REFCLKI_SELECT:
++			clk_src[CLKC_ADSLSS] = &refclk_inp;
++			break;
++
++		case ADSLSS_XTAL3IN_SELECT:
++			clk_src[CLKC_ADSLSS] = &xtal_inp;
++			break;
++
++		case ADSLSS_MIPSPLL_SELECT:
++			clk_src[CLKC_ADSLSS] = &mips_pll_out;
++			break;
++
++		default :
++			clk_src[CLKC_ADSLSS] = 0;
++
++	}
++
++
++	choice = REG32_DATA(TNETD73XX_DCL_BOOTCR) & USB_PLL_SELECT;
++	switch(choice)
++	{
++		case USB_SYSPLL_SELECT:
++			clk_src[CLKC_USB] = &sys_pll_out ;
++			break;
++
++		case USB_REFCLKI_SELECT:
++			clk_src[CLKC_USB] = &refclk_inp;
++			break;
++
++		case USB_XTAL3IN_SELECT:
++			clk_src[CLKC_USB] = &xtal_inp;
++			break;
++
++		case USB_MIPSPLL_SELECT:
++			clk_src[CLKC_USB] = &mips_pll_out;
++			break;
++
++		default :
++			clk_src[CLKC_USB] = 0;
++
++	}
++}
++
++
++
++/****************************************************************************
++ * FUNCTION: tnetd73xx_clkc_set_freq
++ ****************************************************************************
++ * Description: The above routine is called to set the output_frequency of the
++ *              selected clock(using clk_id) to the  required value given
++ *              by the variable output_freq.
++ ***************************************************************************/
++TNETD73XX_ERR tnetd73xx_clkc_set_freq
++(
++ TNETD73XX_CLKC_ID_T clk_id,
++ u32              output_freq
++ )
++{
++	u32 base_freq;
++	u32 multiplier;
++	u32 divider;
++	u32 min_prediv;
++	u32 max_prediv;
++	u32 prediv;
++	u32 postdiv;
++	u32 temp;
++
++	/* check if PLLs are bypassed*/
++	if(REG32_DATA(TNETD73XX_DCL_BOOTCR) & BOOTCR_PLL_BYPASS)
++	{
++		return TNETD73XX_ERR_ERROR;
++	}
++
++	/*check if the requested output_frequency is in valid range*/
++	switch( clk_id )
++	{
++		case CLKC_SYS:
++			if( output_freq < SYS_MIN || output_freq > SYS_MAX)
++			{
++				return TNETD73XX_ERR_ERROR;
++			}
++			present_min = SYS_MIN;
++			present_max = SYS_MAX;
++			break;
++
++		case CLKC_MIPS:
++			if((output_freq < MIPS_MIN) ||
++					(output_freq > ((REG32_DATA(TNETD73XX_DCL_BOOTCR) & BOOTCR_MIPS_ASYNC_MODE) ? MIPS_ASYNC_MAX: MIPS_SYNC_MAX)))
++			{
++				return TNETD73XX_ERR_ERROR;
++			}
++			present_min = MIPS_MIN;
++			present_max = (REG32_DATA(TNETD73XX_DCL_BOOTCR) & BOOTCR_MIPS_ASYNC_MODE) ? MIPS_ASYNC_MAX: MIPS_SYNC_MAX;
++			break;
++
++		case CLKC_USB:
++			if( output_freq < USB_MIN || output_freq > USB_MAX)
++			{
++				return TNETD73XX_ERR_ERROR;
++			}
++			present_min = USB_MIN;
++			present_max = USB_MAX;
++			break;
++
++		case CLKC_ADSLSS:
++			if( output_freq < ADSL_MIN || output_freq > ADSL_MAX)
++			{
++				return TNETD73XX_ERR_ERROR;
++			}
++			present_min = ADSL_MIN;
++			present_max = ADSL_MAX;
++			break;
++	}
++
++
++	base_freq = get_base_frequency(clk_id);
++
++
++	/* check for minimum base frequency value */
++	if( base_freq < MIN_PLL_INP_FREQ)
++	{
++		return TNETD73XX_ERR_ERROR;
++	}
++
++	get_val(output_freq, base_freq, &multiplier, &divider);
++
++	/* check multiplier range  */
++	if( (multiplier  > PLL_MUL_MAXFACTOR) || (multiplier <= 0) )
++	{
++		return TNETD73XX_ERR_ERROR;
++	}
++
++	/* check divider value */
++	if( divider == 0 )
++	{
++		return TNETD73XX_ERR_ERROR;
++	}
++
++	/*compute minimum and maximum predivider values */
++	min_prediv = MAX(base_freq / MAX_PLL_INP_FREQ + 1, divider / MAX_DIV_VALUE + 1);
++	max_prediv = MIN(base_freq / MIN_PLL_INP_FREQ, MAX_DIV_VALUE);
++
++	/*adjust  the value of divider so that it not less than minimum predivider value*/
++	if (divider < min_prediv)
++	{
++		temp = CEIL(min_prediv, divider);
++		if ((temp * multiplier) > PLL_MUL_MAXFACTOR)
++		{
++			return TNETD73XX_ERR_ERROR  ;
++		}
++		else
++		{
++			multiplier = temp * multiplier;
++			divider = min_prediv;
++		}
++
++	}
++
++	/* compute predivider  and postdivider values */
++	prediv = compute_prediv (divider, min_prediv, max_prediv);
++	postdiv = CEIL(divider,prediv);
++
++	/*return fail if postdivider value falls out of range */
++	if(postdiv > MAX_DIV_VALUE)
++	{
++		return TNETD73XX_ERR_ERROR;
++	}
++
++
++	/*write predivider and postdivider values*/
++	/* pre-Divider and post-divider are 5 bit N+1 dividers */
++	REG32_WRITE(CLKC_CLKCR(clk_id), ((postdiv -1) & 0x1F) << 16 | ((prediv -1) & 0x1F) );
++
++	/*wait for divider output to stabilise*/
++	for(temp =0; temp < DIVIDER_LOCK_TIME; temp++);
++
++	/*write to PLL clock register*/
++
++	if(clk_id == CLKC_SYS)
++	{
++		/* but before writing put DRAM to hold mode */
++		REG32_DATA(TNETD73XX_EMIF_SDRAM_CFG) |= 0x80000000;
++	}
++	/*Bring PLL into div mode */
++	REG32_WRITE(CLKC_CLKPLLCR(clk_id), 0x4);
++
++	/*compute the word to be written to PLLCR
++	 *corresponding to multiplier value
++	 */
++	multiplier = (((multiplier - 1) & 0xf) << 12)| ((255 <<3) | 0x0e);
++
++	/* wait till PLL enters div mode */
++	while(REG32_DATA(CLKC_CLKPLLCR(clk_id)) & CLKC_PLL_STATUS)
++		/*nothing*/;
++
++	REG32_WRITE(CLKC_CLKPLLCR(clk_id), multiplier);
++
++	while(!REG32_DATA(CLKC_CLKPLLCR(clk_id)) & CLKC_PLL_STATUS)
++		/*nothing*/;
++
++
++	/*wait for External pll to lock*/
++	for(temp =0; temp < PLL_LOCK_TIME; temp++);
++
++	if(clk_id == CLKC_SYS)
++	{
++		/* Bring DRAM out of hold */
++		REG32_DATA(TNETD73XX_EMIF_SDRAM_CFG) &= ~0x80000000;
++	}
++
++	return TNETD73XX_ERR_OK ;
++}
++
++/****************************************************************************
++ * FUNCTION: tnetd73xx_clkc_get_freq
++ ****************************************************************************
++ * Description: The above routine is called to get the output_frequency of the
++ *              selected clock( clk_id)
++ ***************************************************************************/
++u32 tnetd73xx_clkc_get_freq
++(
++ TNETD73XX_CLKC_ID_T clk_id
++ )
++{
++
++	u32  clk_ctrl_register;
++	u32  clk_pll_setting;
++	u32  clk_predivider;
++	u32  clk_postdivider;
++	u16  pll_factor;
++	u32  base_freq;
++	u32  divider;
++
++	base_freq = get_base_frequency(clk_id);
++
++	clk_ctrl_register = REG32_DATA(CLKC_CLKCR(clk_id));
++
++	/* pre-Divider and post-divider are 5 bit N+1 dividers */
++	clk_predivider = (CLKC_PRE_DIVIDER & clk_ctrl_register) + 1;
++	clk_postdivider = ((CLKC_POST_DIVIDER & clk_ctrl_register) >> 16) + 1;
++
++	divider =  clk_predivider * clk_postdivider;
++
++
++	if( (REG32_DATA(TNETD73XX_DCL_BOOTCR) & BOOTCR_PLL_BYPASS))
++	{
++		return (CEIL(base_freq, divider));  /* PLLs bypassed.*/
++	}
++
++
++	else
++	{
++		/*  return the current clock speed based upon the PLL setting */
++		clk_pll_setting = REG32_DATA(CLKC_CLKPLLCR(clk_id));
++
++		/* Get the PLL multiplication factor */
++		pll_factor = ((clk_pll_setting & CLKC_PLL_FACTOR) >> 12) + 1;
++
++		/* Check if we're in divide mode or multiply mode */
++		if((clk_pll_setting & 0x1)   == 0)
++		{
++			/* We're in divide mode */
++			if(pll_factor <  0x10)
++				return (CEIL(base_freq >> 1, divider));
++			else
++				return (CEIL(base_freq >> 2, divider));
++		}
++
++		else     /* We're in PLL mode */
++		{
++			/* See if PLLNDIV & PLLDIV are set */
++			if((clk_pll_setting & 0x0800) && (clk_pll_setting & 0x2))
++			{
++				if(clk_pll_setting & 0x1000)
++				{
++					/* clk = base_freq * k/2  */
++					return(CEIL((base_freq * pll_factor) >> 1, divider));
++				}
++				else
++				{
++					/* clk = base_freq * (k-1) / 4)*/
++					return(CEIL((base_freq * (pll_factor - 1)) >>2, divider));
++				}
++			}
++			else
++			{
++				if(pll_factor < 0x10)
++				{
++					/* clk = base_freq * k */
++					return(CEIL(base_freq * pll_factor, divider));
++				}
++
++				else
++				{
++					/* clk = base_freq  */
++					return(CEIL(base_freq, divider));
++				}
++			}
++		}
++		return(0); /* Should never reach here */
++
++	}
++
++}
++
++
++/* local helper functions */
++
++/****************************************************************************
++ * FUNCTION: get_base_frequency
++ ****************************************************************************
++ * Description: The above routine is called to get base frequency of the clocks.
++ ***************************************************************************/
++
++static u32 get_base_frequency(TNETD73XX_CLKC_ID_T clk_id)
++{
++	/* update the current MIPs PLL output value, if the required
++	 * source is MIPS PLL
++	 */
++	if ( clk_src[clk_id] == &mips_pll_out)
++	{
++		*clk_src[clk_id] = tnetd73xx_clkc_get_freq(CLKC_MIPS);
++	}
++
++
++	/* update the current System PLL output value, if the required
++	 * source is system PLL
++	 */
++	if ( clk_src[clk_id] == &sys_pll_out)
++	{
++		*clk_src[clk_id] = tnetd73xx_clkc_get_freq(CLKC_SYS);
++	}
++
++	return (*clk_src[clk_id]);
++
++}
++
++
++
++/****************************************************************************
++ * FUNCTION: find_gcd
++ ****************************************************************************
++ * Description: The above routine is called to find gcd of 2 numbers.
++ ***************************************************************************/
++static u32 find_gcd
++(
++ u32 min,
++ u32 max
++ )
++{
++	if (max % min == 0)
++	{
++		return min;
++	}
++	else
++	{
++		return find_gcd(max % min, min);
++	}
++}
++
++/****************************************************************************
++ * FUNCTION: compute_prediv
++ ****************************************************************************
++ * Description: The above routine is called to compute predivider value
++ ***************************************************************************/
++static u32 compute_prediv(u32 divider, u32 min, u32 max)
++{
++	u16 prediv;
++
++	/* return the divider itself it it falls within the range of predivider*/
++	if (min <= divider && divider <= max)
++	{
++		return divider;
++	}
++
++	/* find a value for prediv such that it is a factor of divider */
++	for (prediv = max; prediv >= min ; prediv--)
++	{
++		if ( (divider % prediv) == 0 )
++		{
++			return prediv;
++		}
++	}
++
++	/* No such factor exists,  return min as prediv */
++	return min;
++}
++
++/****************************************************************************
++ * FUNCTION: get_val
++ ****************************************************************************
++ * Description: This routine is called to get values of divider and multiplier.
++ ***************************************************************************/
++
++static void get_val(u32 output_freq, u32 base_freq,u32 *multiplier, u32 *divider)
++{
++	u32 temp_mul;
++	u32 temp_div;
++	u32 gcd;
++	u32 min_freq;
++	u32 max_freq;
++
++	/* find gcd of base_freq, output_freq */
++	min_freq = (base_freq < output_freq) ? base_freq : output_freq;
++	max_freq = (base_freq > output_freq) ? base_freq : output_freq;
++	gcd = find_gcd(min_freq , max_freq);
++
++	if(gcd == 0)
++		return;  /* ERROR */
++
++	/* compute values of multiplier and divider */
++	temp_mul = output_freq / gcd;
++	temp_div = base_freq / gcd;
++
++
++	/* set multiplier such that 1 <= multiplier <= PLL_MUL_MAXFACTOR */
++	if( temp_mul > PLL_MUL_MAXFACTOR )
++	{
++		if((temp_mul / temp_div) > PLL_MUL_MAXFACTOR)
++			return;
++
++		find_approx(&temp_mul,&temp_div,base_freq);
++	}
++
++	*multiplier = temp_mul;
++	*divider    = temp_div;
++}
++
++/****************************************************************************
++ * FUNCTION: find_approx
++ ****************************************************************************
++ * Description: This function gets the approx value of num/denom.
++ ***************************************************************************/
++
++static void find_approx(u32 *num,u32 *denom,u32 base_freq)
++{
++	u32 num1;
++	u32 denom1;
++	u32 num2;
++	u32 denom2;
++	int32_t closest;
++	int32_t prev_closest;
++	u32 temp_num;
++	u32 temp_denom;
++	u32 normalize;
++	u32 gcd;
++	u32 output_freq;
++
++	num1 = *num;
++	denom1 = *denom;
++
++	prev_closest = 0x7fffffff; /* maximum possible value */
++	num2 = num1;
++	denom2 = denom1;
++
++	/* start with  max */
++	for(temp_num = 15; temp_num >=1; temp_num--)
++	{
++
++		temp_denom = CEIL(temp_num * denom1, num1);
++		output_freq = (temp_num * base_freq) / temp_denom;
++
++		if(temp_denom < 1)
++		{
++			break;
++		}
++		else
++		{
++			normalize = CEIL(num1,temp_num);
++			closest = (ABS((num1 * (temp_denom) ) - (temp_num * denom1)))  * normalize;
++			if(closest < prev_closest && output_freq > present_min && output_freq <present_max)
++			{
++				prev_closest = closest;
++				num2 = temp_num;
++				denom2 = temp_denom;
++			}
++
++		}
++
++	}
++
++	gcd = find_gcd(num2,denom2);
++	num2 = num2 / gcd;
++	denom2 = denom2 /gcd;
++
++	*num      = num2;
++	*denom    = denom2;
++}
++
++
++/*****************************************************************************
++ * GPIO  Control
++ *****************************************************************************/
++
++/****************************************************************************
++ * FUNCTION: tnetd73xx_gpio_init
++ ***************************************************************************/
++void tnetd73xx_gpio_init()
++{
++	/* Bring module out of reset */
++	tnetd73xx_reset_ctrl(RESET_MODULE_GPIO, OUT_OF_RESET);
++	REG32_WRITE(TNETD73XX_GPIOENR, 0xFFFFFFFF);    
++}
++
++/****************************************************************************
++ * FUNCTION: tnetd73xx_gpio_ctrl
++ ***************************************************************************/
++void tnetd73xx_gpio_ctrl(TNETD73XX_GPIO_PIN_T gpio_pin, 
++		TNETD73XX_GPIO_PIN_MODE_T pin_mode,
++		TNETD73XX_GPIO_PIN_DIRECTION_T pin_direction)
++{
++	u32 pin_status;
++	REG32_READ(TNETD73XX_GPIOENR, pin_status);
++	if (pin_mode == GPIO_PIN)
++	{
++		pin_status |= (1 << gpio_pin);
++		REG32_WRITE(TNETD73XX_GPIOENR, pin_status);
++
++		/* Set pin direction */
++		REG32_READ(TNETD73XX_GPIOPDIRR, pin_status);
++		if (pin_direction == GPIO_INPUT_PIN)
++		{
++			pin_status |= (1 << gpio_pin);
++		}
++		else /* GPIO_OUTPUT_PIN */
++		{
++			pin_status &= (~(1 << gpio_pin));
++		}
++		REG32_WRITE(TNETD73XX_GPIOPDIRR, pin_status);
++	}
++	else /* FUNCTIONAL PIN */
++	{
++		pin_status &= (~(1 << gpio_pin));
++		REG32_WRITE(TNETD73XX_GPIOENR, pin_status);
++	}
++
++}
++
++/****************************************************************************
++ * FUNCTION: tnetd73xx_gpio_out
++ ***************************************************************************/
++void tnetd73xx_gpio_out(TNETD73XX_GPIO_PIN_T gpio_pin, int value)
++{
++	u32 pin_value;
++
++	REG32_READ(TNETD73XX_GPIODOUTR, pin_value);
++	if (value == 1)
++	{
++		pin_value |= (1 << gpio_pin);
++	}
++	else
++	{
++		pin_value &= (~(1 << gpio_pin));
++	}
++	REG32_WRITE(TNETD73XX_GPIODOUTR, pin_value);
++}
++
++/****************************************************************************
++ * FUNCTION: tnetd73xx_gpio_in
++ ***************************************************************************/
++int tnetd73xx_gpio_in(TNETD73XX_GPIO_PIN_T gpio_pin)
++{
++	u32 pin_value;
++	REG32_READ(TNETD73XX_GPIODINR, pin_value);
++	return ( (pin_value & (1 << gpio_pin)) ? 1 : 0 );
++}
++
+diff -urN linux-2.4.30/arch/mips/config-shared.in linux-2.4.30.current/arch/mips/config-shared.in
+--- linux-2.4.30/arch/mips/config-shared.in	2005-06-11 20:24:09.000000000 +0200
++++ linux-2.4.30.current/arch/mips/config-shared.in	2005-06-12 20:14:28.000000000 +0200
+@@ -20,6 +20,15 @@
+ mainmenu_option next_comment
+ comment 'Machine selection'
+ dep_bool 'Support for Acer PICA 1 chipset (EXPERIMENTAL)' CONFIG_ACER_PICA_61 $CONFIG_EXPERIMENTAL
++dep_bool 'Support for Texas Instruments AR7 (EXPERIMENTAL)' CONFIG_AR7 $CONFIG_MIPS32 $CONFIG_EXPERIMENTAL
++if [ "$CONFIG_AR7" = "y" ]; then
++   choice 'Texas Instruments Reference Platform' \
++      "AR7DB CONFIG_AR7DB \
++      AR7RD CONFIG_AR7RD \
++      AR7WRD CONFIG_AR7WRD" AR7DB
++   int 'Texas Instruments AR7 CPU Frequency' CONFIG_AR7_FREQUENCY 150
++   hex 'Texas Instruments AR7 SDRAM Start' CONFIG_AR7_MEMORY 0x14000000
++fi
+ dep_bool 'Support for Alchemy Bosporus board' CONFIG_MIPS_BOSPORUS $CONFIG_MIPS32
+ dep_bool 'Support for FIC Multimedia Player board' CONFIG_MIPS_FICMMP $CONFIG_MIPS32
+ dep_bool 'Support for Alchemy Mirage board' CONFIG_MIPS_MIRAGE $CONFIG_MIPS32
+@@ -239,6 +248,11 @@
+    define_bool CONFIG_NONCOHERENT_IO y
+    define_bool CONFIG_PC_KEYB y
+ fi
++if [ "$CONFIG_AR7" = "y" ]; then
++   define_bool CONFIG_NONCOHERENT_IO y
++   define_bool CONFIG_SWAP_IO_SPACE y
++   define_bool CONFIG_AR7_PAGING y
++fi
+ if [ "$CONFIG_CASIO_E55" = "y" ]; then
+    define_bool CONFIG_IRQ_CPU y
+    define_bool CONFIG_NONCOHERENT_IO y
+@@ -736,6 +750,7 @@
+ mainmenu_option next_comment
+ comment 'General setup'
+ if [ "$CONFIG_ACER_PICA_61" = "y" -o \
++     "$CONFIG_AR7" = "y" -o \
+      "$CONFIG_CASIO_E55" = "y" -o \
+      "$CONFIG_DDB5074" = "y" -o \
+      "$CONFIG_DDB5476" = "y" -o \
+@@ -797,6 +812,7 @@
+ bool 'Networking support' CONFIG_NET
+ 
+ if [ "$CONFIG_ACER_PICA_61" = "y" -o \
++     "$CONFIG_AR7" = "y" -o \
+      "$CONFIG_CASIO_E55" = "y" -o \
+      "$CONFIG_DECSTATION" = "y" -o \
+      "$CONFIG_IBM_WORKPAD" = "y" -o \
+diff -urN linux-2.4.30/arch/mips/kernel/irq.c linux-2.4.30.current/arch/mips/kernel/irq.c
+--- linux-2.4.30/arch/mips/kernel/irq.c	2004-02-18 14:36:30.000000000 +0100
++++ linux-2.4.30.current/arch/mips/kernel/irq.c	2005-06-12 20:21:34.000000000 +0200
+@@ -76,6 +76,7 @@
+  * Generic, controller-independent functions:
+  */
+ 
++#ifndef CONFIG_AR7
+ int get_irq_list(char *buf)
+ {
+ 	int i, j;
+@@ -110,6 +111,7 @@
+ 	p += sprintf(p, "ERR: %10u\n", atomic_read(&irq_err_count));
+ 	return p - buf;
+ }
++#endif
+ 
+ #ifdef CONFIG_SMP
+ int global_irq_holder = NO_PROC_ID;
+@@ -525,6 +527,7 @@
+  *
+  */
+ 
++#ifndef CONFIG_AR7
+ int request_irq(unsigned int irq,
+ 		void (*handler)(int, void *, struct pt_regs *),
+ 		unsigned long irqflags,
+@@ -569,6 +572,7 @@
+ 		kfree(action);
+ 	return retval;
+ }
++#endif
+ 
+ /**
+  *	free_irq - free an interrupt
+@@ -588,6 +592,7 @@
+  *	      the machine.
+  */
+ 
++#ifndef CONFIG_AR7
+ void free_irq(unsigned int irq, void *dev_id)
+ {
+ 	irq_desc_t *desc;
+@@ -629,6 +634,7 @@
+ 		return;
+ 	}
+ }
++#endif
+ 
+ /*
+  * IRQ autodetection code..
+diff -urN linux-2.4.30/arch/mips/kernel/setup.c linux-2.4.30.current/arch/mips/kernel/setup.c
+--- linux-2.4.30/arch/mips/kernel/setup.c	2005-06-11 20:24:07.000000000 +0200
++++ linux-2.4.30.current/arch/mips/kernel/setup.c	2005-06-12 20:14:28.000000000 +0200
+@@ -109,6 +109,7 @@
+ unsigned long isa_slot_offset;
+ EXPORT_SYMBOL(isa_slot_offset);
+ 
++extern void avalanche_bootmem_init(void);
+ extern void SetUpBootInfo(void);
+ extern void load_mmu(void);
+ extern asmlinkage void start_kernel(void);
+@@ -267,6 +268,9 @@
+ #endif	/* CONFIG_BLK_DEV_INITRD */
+ 
+ 	/* Find the highest page frame number we have available.  */
++#ifdef CONFIG_AR7_PAGING
++ 	avalanche_bootmem_init();
++#else
+ 	max_pfn = 0;
+ 	first_usable_pfn = -1UL;
+ 	for (i = 0; i < boot_mem_map.nr_map; i++) {
+@@ -376,7 +380,7 @@
+ 
+ 	/* Reserve the bootmap memory.  */
+ 	reserve_bootmem(PFN_PHYS(first_usable_pfn), bootmap_size);
+-
++#endif
+ #ifdef CONFIG_BLK_DEV_INITRD
+ 	/* Board specific code should have set up initrd_start and initrd_end */
+ 	ROOT_DEV = MKDEV(RAMDISK_MAJOR, 0);
+@@ -494,6 +498,7 @@
+ 	void hp_setup(void);
+ 	void au1x00_setup(void);
+ 	void frame_info_init(void);
++ 	void ar7_setup(void);
+ 
+ 	frame_info_init();
+ #if defined(CONFIG_BLK_DEV_FD) || defined(CONFIG_BLK_DEV_FD_MODULE)
+@@ -691,6 +696,11 @@
+                 pmc_yosemite_setup();
+                 break;
+ #endif
++#ifdef CONFIG_AR7
++	case MACH_GROUP_UNKNOWN:
++		ar7_setup();
++		break;
++#endif
+ 	default:
+ 		panic("Unsupported architecture");
+ 	}
+diff -urN linux-2.4.30/arch/mips/kernel/traps.c linux-2.4.30.current/arch/mips/kernel/traps.c
+--- linux-2.4.30/arch/mips/kernel/traps.c	2005-06-11 20:24:07.000000000 +0200
++++ linux-2.4.30.current/arch/mips/kernel/traps.c	2005-06-12 20:24:13.000000000 +0200
+@@ -40,6 +40,10 @@
+ #include <asm/uaccess.h>
+ #include <asm/mmu_context.h>
+ 
++#ifdef CONFIG_AR7
++#include <asm/ar7/ar7.h>
++#endif
++
+ extern asmlinkage void handle_mod(void);
+ extern asmlinkage void handle_tlbl(void);
+ extern asmlinkage void handle_tlbs(void);
+@@ -920,14 +924,37 @@
+ void __init trap_init(void)
+ {
+ 	extern char except_vec1_generic;
++	extern char except_vec2_generic;
+ 	extern char except_vec3_generic, except_vec3_r4000;
+ 	extern char except_vec_ejtag_debug;
+ 	extern char except_vec4;
+ 	unsigned long i;
+ 
++#ifdef CONFIG_AR7
++	extern char jump_tlb_miss, jump_tlb_miss_unused;
++	extern char jump_cache_error,jump_general_exception;
++	extern char jump_dedicated_interrupt;
++	clear_c0_status(ST0_BEV);
++#endif
++
+ 	/* Copy the generic exception handler code to it's final destination. */
+ 	memcpy((void *)(KSEG0 + 0x80), &except_vec1_generic, 0x80);
+ 
++#ifdef CONFIG_AR7
++	memcpy((void *)(KSEG0 + 0x100), &except_vec2_generic, 0x80);
++	memcpy((void *)(KSEG0 + 0x180), &except_vec3_generic, 0x80);
++	flush_icache_range(KSEG0, KSEG0 + 0x200);
++
++	/* jump table to exception routines */
++
++	memcpy((void *)(KSEG0 + 0x0),   &jump_tlb_miss, 0x80);
++	memcpy((void *)(KSEG0 + 0x80),  &jump_tlb_miss_unused, 0x80);
++	memcpy((void *)(KSEG0 + 0x100), &jump_cache_error, 0x80);
++	memcpy((void *)(KSEG0 + 0x180), &jump_general_exception, 0x80);
++	memcpy((void *)(KSEG0 + 0x200), &jump_dedicated_interrupt, 0x80);
++	flush_icache_range(KSEG0 + 0x80, KSEG0 + 0x200);
++#endif
++	
+ 	/*
+ 	 * Setup default vectors
+ 	 */
+diff -urN linux-2.4.30/arch/mips/lib/promlib.c linux-2.4.30.current/arch/mips/lib/promlib.c
+--- linux-2.4.30/arch/mips/lib/promlib.c	2003-08-25 13:44:40.000000000 +0200
++++ linux-2.4.30.current/arch/mips/lib/promlib.c	2005-06-12 20:14:28.000000000 +0200
+@@ -1,3 +1,4 @@
++#ifndef CONFIG_AR7
+ #include <stdarg.h>
+ #include <linux/kernel.h>
+ 
+@@ -22,3 +23,4 @@
+ 	}
+ 	va_end(args);
+ }
++#endif
+diff -urN linux-2.4.30/arch/mips/mm/init.c linux-2.4.30.current/arch/mips/mm/init.c
+--- linux-2.4.30/arch/mips/mm/init.c	2004-02-18 14:36:30.000000000 +0100
++++ linux-2.4.30.current/arch/mips/mm/init.c	2005-06-12 20:14:28.000000000 +0200
+@@ -40,8 +40,10 @@
+ 
+ mmu_gather_t mmu_gathers[NR_CPUS];
+ unsigned long highstart_pfn, highend_pfn;
++#ifndef CONFIG_AR7_PAGING
+ static unsigned long totalram_pages;
+ static unsigned long totalhigh_pages;
++#endif
+ 
+ void pgd_init(unsigned long page)
+ {
+@@ -235,6 +237,7 @@
+ #endif
+ }
+ 
++#ifndef CONFIG_AR7_PAGING
+ void __init paging_init(void)
+ {
+ 	unsigned long zones_size[MAX_NR_ZONES] = {0, 0, 0};
+@@ -272,6 +275,7 @@
+ 
+ 	free_area_init(zones_size);
+ }
++#endif
+ 
+ #define PFN_UP(x)	(((x) + PAGE_SIZE - 1) >> PAGE_SHIFT)
+ #define PFN_DOWN(x)	((x) >> PAGE_SHIFT)
+@@ -298,6 +302,7 @@
+ 	return 0;
+ }
+ 
++#ifndef CONFIG_AR7_PAGING
+ void __init mem_init(void)
+ {
+ 	unsigned long codesize, reservedpages, datasize, initsize;
+@@ -359,6 +364,7 @@
+ 	       initsize >> 10,
+ 	       (unsigned long) (totalhigh_pages << (PAGE_SHIFT-10)));
+ }
++#endif
+ 
+ #ifdef CONFIG_BLK_DEV_INITRD
+ void free_initrd_mem(unsigned long start, unsigned long end)
+@@ -376,6 +382,7 @@
+ }
+ #endif
+ 
++#ifndef CONFIG_AR7_PAGING
+ extern char __init_begin, __init_end;
+ extern void prom_free_prom_memory(void) __init;
+ 
+@@ -383,7 +390,9 @@
+ {
+ 	unsigned long addr;
+ 
++#ifndef CONFIG_AR7
+ 	prom_free_prom_memory ();
++#endif
+ 
+ 	addr = (unsigned long) &__init_begin;
+ 	while (addr < (unsigned long) &__init_end) {
+@@ -409,3 +418,4 @@
+ 
+ 	return;
+ }
++#endif
+diff -urN linux-2.4.30/arch/mips/mm/tlb-r4k.c linux-2.4.30.current/arch/mips/mm/tlb-r4k.c
+--- linux-2.4.30/arch/mips/mm/tlb-r4k.c	2005-06-11 20:24:07.000000000 +0200
++++ linux-2.4.30.current/arch/mips/mm/tlb-r4k.c	2005-06-12 20:14:28.000000000 +0200
+@@ -20,6 +20,10 @@
+ #include <asm/pgtable.h>
+ #include <asm/system.h>
+ 
++#ifdef CONFIG_AR7
++#include <asm/ar7/ar7.h>
++#endif
++
+ extern char except_vec0_nevada, except_vec0_r4000, except_vec0_r4600;
+ 
+ /* CP0 hazard avoidance. */
+diff -urN linux-2.4.30/drivers/char/serial.c linux-2.4.30.current/drivers/char/serial.c
+--- linux-2.4.30/drivers/char/serial.c	2005-06-11 20:24:07.000000000 +0200
++++ linux-2.4.30.current/drivers/char/serial.c	2005-06-12 20:14:28.000000000 +0200
+@@ -419,7 +419,40 @@
+ 	return 0;
+ }
+ 
+-#if defined(CONFIG_MIPS_ATLAS) || defined(CONFIG_MIPS_SEAD)
++#if defined(CONFIG_AR7)
++
++static _INLINE_ unsigned int serial_in(struct async_struct *info, int offset)
++{
++	return (inb(info->port + (offset * 4)) & 0xff);  
++}
++
++
++static _INLINE_ unsigned int serial_inp(struct async_struct *info, int offset)
++{
++#ifdef CONFIG_SERIAL_NOPAUSE_IO
++	return (inb(info->port + (offset * 4)) & 0xff);
++#else
++	return (inb_p(info->port + (offset * 4)) & 0xff);
++#endif
++}
++
++static _INLINE_ void serial_out(struct async_struct *info, int offset, int value)
++{
++	outb(value, info->port + (offset * 4));      
++}
++
++
++static _INLINE_ void serial_outp(struct async_struct *info, int offset,
++		int value)
++{
++#ifdef CONFIG_SERIAL_NOPAUSE_IO
++	outb(value, info->port + (offset * 4));
++#else
++	outb_p(value, info->port + (offset * 4));
++#endif
++}
++
++#elif defined(CONFIG_MIPS_ATLAS) || defined(CONFIG_MIPS_SEAD)
+ 
+ #include <asm/mips-boards/atlas.h>
+ 
+@@ -478,8 +511,10 @@
+  * needed for certain old 386 machines, I've left these #define's
+  * in....
+  */
++#ifdef CONFIG_AR7
+ #define serial_inp(info, offset)		serial_in(info, offset)
+ #define serial_outp(info, offset, value)	serial_out(info, offset, value)
++#endif
+ 
+ 
+ /*
+@@ -1728,7 +1763,15 @@
+ 			/* Special case since 134 is really 134.5 */
+ 			quot = (2*baud_base / 269);
+ 		else if (baud)
++#ifdef CONFIG_AR7
++			quot = get_avalanche_vbus_freq() / baud;
++
++		if ((quot%16)>7)
++			quot += 8;
++		quot /=16;
++#else
+ 			quot = baud_base / baud;
++#endif
+ 	}
+ 	/* If the quotient is zero refuse the change */
+ 	if (!quot && old_termios) {
+@@ -5552,8 +5595,10 @@
+ 		state->irq = irq_cannonicalize(state->irq);
+ 		if (state->hub6)
+ 			state->io_type = SERIAL_IO_HUB6;
++#ifdef CONFIG_AR7
+ 		if (state->port && check_region(state->port,8))
+ 			continue;
++#endif
+ #ifdef CONFIG_MCA			
+ 		if ((state->flags & ASYNC_BOOT_ONLYMCA) && !MCA_bus)
+ 			continue;
+@@ -6009,7 +6054,15 @@
+ 	info->io_type = state->io_type;
+ 	info->iomem_base = state->iomem_base;
+ 	info->iomem_reg_shift = state->iomem_reg_shift;
++#ifdef CONFIG_AR7
++	quot = get_avalanche_vbus_freq() / baud;
++
++	if ((quot%16)>7)
++		quot += 8;
++	quot /=16;
++#else
+ 	quot = state->baud_base / baud;
++#endif
+ 	cval = cflag & (CSIZE | CSTOPB);
+ #if defined(__powerpc__) || defined(__alpha__)
+ 	cval >>= 8;
+Binary files linux-2.4.30/include/asm-mips/.addrspace.h.swp and linux-2.4.30.current/include/asm-mips/.addrspace.h.swp differ
+diff -urN linux-2.4.30/include/asm-mips/ar7/ar7.h linux-2.4.30.current/include/asm-mips/ar7/ar7.h
+--- linux-2.4.30/include/asm-mips/ar7/ar7.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.30.current/include/asm-mips/ar7/ar7.h	2005-06-12 20:59:09.000000000 +0200
+@@ -0,0 +1,138 @@
++#ifndef _MIPS_AR7_H
++#define _MIPS_AR7_H
++
++#include <linux/config.h>
++#include <asm/addrspace.h>
++
++
++#ifndef LITTLE_ENDIAN
++#define LITTLE_ENDIAN
++#endif
++
++#ifndef _LINK_KSEG0_
++#define _LINK_KSEG0_
++#endif
++
++#include <asm/ar7/tnetd73xx.h>
++
++#define AVALANCHE_UART0_INT          7
++#define AVALANCHE_UART1_INT          8
++
++#define MIPS_EXCEPTION_OFFSET 8
++#define LNXINTNUM(x)((x) + MIPS_EXCEPTION_OFFSET)
++
++/*
++ * AR7 board SDRAM base address.  This is used to setup the
++ * bootmem tables
++ */
++
++#define AVALANCHE_SDRAM_BASE CONFIG_AR7_MEMORY//0x14000000UL
++#define AVALANCHE_INTC_BASE  TNETD73XX_INTC_BASE
++
++
++/*
++ * AR7 board vectors
++ */
++
++#define AVALANCHE_VECS (KSEG1ADDR(AVALANCHE_SDRAM_BASE))
++#define AVALANCHE_VECS_KSEG0 (CPHYSADDR(AVALANCHE_SDRAM_BASE) | 0x80000000)
++#undef KSEG0
++#define KSEG0 AVALANCHE_VECS_KSEG0
++
++/*
++ * Yamon Prom print address.
++ */
++#define AVALANCHE_YAMON_FUNCTION_BASE             (KSEG1ADDR(0x10000500))
++#define AVALANCHE_YAMON_PROM_PRINT_COUNT_ADDR     (AVALANCHE_YAMON_FUNCTION_BASE + 0x4)  /* print_count function */
++#define AVALANCHE_YAMON_PROM_PRINT_ADDR           (AVALANCHE_YAMON_FUNCTION_BASE + 0x34)
++
++/*
++ * AR7 Reset and PSU standby register.
++ */
++#define AVALANCHE_SOFTRES_REG         (KSEG1ADDR(0x08611600))    /* Resets machine */
++#define AVALANCHE_PSUSTBY_REG         (KSEG1ADDR(0x08611600))    /* Turns off power supply unit */
++#define AVALANCHE_GORESET             0x1
++#define AVALANCHE_GOSTBY              0x1
++#define AVALANCHE_SWRCR              (*(unsigned int *)TNETD73XX_RST_CTRL_SWRCR)
++
++/*
++ * Avalanche UART register base.
++ */
++
++#define AVALANCHE_UART0_REGS_BASE (KSEG1ADDR(0x08610E00)) /* AVALANCHE UART 0 */
++#define AVALANCHE_UART1_REGS_BASE (KSEG1ADDR(0x08610F00)) /* AVALANCHE UART 1 */
++#define AVALANCHE_BASE_BAUD       ( 3686400 / 16 )
++
++/*
++ * AVALANCHE DMA controller base
++ */
++
++#define AVALANCHE_DMA0_CTRL_BASE       (KSEG1ADDR(0x08611400)) /* DMA 0 (channels 0-3) */
++
++
++
++/*
++ * GPIO register map
++ */
++
++/* to be obtained from avalanche_map.h */
++#define  AVALANCHE_GPIO_WRITE_REG         (KSEG1ADDR(0xa8610904))
++#define  AVALANCHE_GPIO_DIRECTION_REG     (KSEG1ADDR(0xa8610908))
++#define  AVALANCHE_GPIO_MODE_REG          (KSEG1ADDR(0xa861090C))
++#define  AVALANCHE_GPIO_PIN_COUNT         32
++#define  AVALANCHE_GPIO_OFF_MAP           {0xF34FFFC0,0}
++
++
++// Let us define board specific information here. 
++
++#if defined(CONFIG_AR7DB)
++
++#define AFECLK_FREQ                                 35328000
++#define REFCLK_FREQ                                 25000000
++#define OSC3_FREQ                                   24000000
++#define AVALANCHE_CPMAC_INTERNAL_PHY_MASK           0x80000000
++#define AVALANCHE_CPMAC_EXTERNAL_PHY_MASK           0x55555555  
++
++#endif
++
++
++#if defined(CONFIG_AR7RD)
++
++#define AFECLK_FREQ                                 35328000
++#define REFCLK_FREQ                                 25000000
++#define OSC3_FREQ                                   24000000
++#define AVALANCHE_CPMAC_INTERNAL_PHY_MASK           0x80000000
++
++#if defined(CONFIG_AR7_MARVELL)
++#define AVALANCHE_CPMAC_EXTERNAL_PHY_MASK           0x00010000
++#else
++#define AVALANCHE_CPMAC_EXTERNAL_PHY_MASK           0x2
++#endif
++
++#endif
++
++
++#if defined(CONFIG_AR7WRD)
++
++#define AFECLK_FREQ                                 35328000
++#define REFCLK_FREQ                                 25000000
++#define OSC3_FREQ                                   24000000
++#define AVALANCHE_CPMAC_INTERNAL_PHY_MASK           0x80000000
++
++#if defined(CONFIG_AR7_MARVELL)
++#define AVALANCHE_CPMAC_EXTERNAL_PHY_MASK           0x00010000
++#else
++#define AVALANCHE_CPMAC_EXTERNAL_PHY_MASK           0x2
++#endif
++
++#endif
++
++extern unsigned int tnetd73xx_vbus_freq;
++#define AVALANCHE_VBUS_FREQ            tnetd73xx_vbus_freq
++
++static inline unsigned int get_avalanche_vbus_freq(void)
++{
++    return (tnetd73xx_vbus_freq);
++}
++
++#endif /*_MIPS_AR7_H */
+diff -urN linux-2.4.30/include/asm-mips/ar7/avalanche.h linux-2.4.30.current/include/asm-mips/ar7/avalanche.h
+--- linux-2.4.30/include/asm-mips/ar7/avalanche.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.30.current/include/asm-mips/ar7/avalanche.h	2005-06-12 20:14:28.000000000 +0200
+@@ -0,0 +1,183 @@
++/* $Id$
++ *
++ * avalanche.h
++ *
++ * Jeff Harrell, jharrell@ti.com
++ * Copyright (C) 2000,2001,2002 Texas Instruments Inc.
++ *
++ *
++ * ########################################################################
++ *
++ *  This program is free software; you can distribute it and/or modify it
++ *  under the terms of the GNU General Public License (Version 2) as
++ *  published by the Free Software Foundation.
++ *
++ *  This program is distributed in the hope it will be useful, but WITHOUT
++ *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ *  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
++ *  for more details.
++ *
++ *  You should have received a copy of the GNU General Public License along
++ *  with this program; if not, write to the Free Software Foundation, Inc.,
++ *  59 Temple Place - Suite 330, Boston MA 02111-1307, USA.
++ *
++ * ########################################################################
++ *
++ * Defines of the AVALANCHE board specific address-MAP, registers, etc.
++ *
++ */
++#ifndef _MIPS_AVALANCHE_H
++#define _MIPS_AVALANCHE_H
++
++#include <asm/addrspace.h>
++
++/*
++ * AVALANCHE board SDRAM base address.  This is used to setup the 
++ * bootmem tables
++ */
++
++#define AVALANCHE_SDRAM_BASE 0x14000000UL
++
++/*
++ * AVALANCHE board vectors
++ */
++
++#define AVALANCHE_VECS (KSEG1ADDR(AVALANCHE_SDRAM_BASE))
++#define AVALANCHE_VECS_KSEG0 (KSEG0ADDR(AVALANCHE_SDRAM_BASE))
++/* 
++ * Avalanche RTC-device indirect register access.
++ */
++
++#define EVM3_RTC_ADR_REG       (KSEG1ADDR(0x1f000800))
++#define EVM3_RTC_DAT_REG       (KSEG1ADDR(0x1f000808))
++
++/*
++ * Evm3 interrupt controller register base (primary) 
++ */
++
++#define AVALANCHE_ICTRL_REGS_BASE  (KSEG1ADDR(0x08612400))
++
++/*
++ * Avalanche exception controller register base (secondary) 
++ */
++#define AVALANCHE_ECTRL_REGS_BASE  (AVALANCHE_ICTRL_REGS_BASE+0x80)
++
++
++/*
++ * Avalanche Interrupt Channel Control register base
++ */
++#define AVALANCHE_CHCTRL_REGS_BASE (AVALANCHE_ICTRL_REGS_BASE + 0x200)
++
++
++/*
++ * Avalanche UART register base.
++ */
++
++#define AVALANCHE_UART0_REGS_BASE (KSEG1ADDR(0x08610E00))  /* AVALANCHE UART 0 */
++#define AVALANCHE_UART1_REGS_BASE (KSEG1ADDR(0x08610F00))  /* AVALANCHE UART 1 */
++#define AVALANCHE_BASE_BAUD ( 3686400 / 16 ) 
++/* 
++ * AVALANCHE DMA controller base
++ */
++
++#define AVALANCHE_DMA0_CTRL_BASE       (KSEG1ADDR(0x08611400)) /* DMA 0 (channels 0-3) */
++
++
++/*
++ * AVALANCHE display register base.
++ */
++
++#define EVM3_ASCII_DISPLAY_POS_BASE     (KSEG1ADDR(0x1D000038))
++#define EVM3_ASCII_DISPLAY_WORD_BASE    (KSEG1ADDR(0x1D00003F)) /* How is this used??? JAH */
++
++
++#define EVM3_ASCIIPOS0          	0x1D000038
++#define EVM3_ASCIIPOS1          	0x1D000039
++#define EVM3_ASCIIPOS2          	0x1D00003A
++#define EVM3_ASCIIPOS3          	0x1D00003B
++#define EVM3_ASCIIPOS4          	0x1D00003C
++#define EVM3_ASCIIPOS5          	0x1D00003D
++#define EVM3_ASCIIPOS6          	0x1D00003E
++#define EVM3_ASCIIPOS7          	0x1D00003F
++
++/*
++ * Yamon Prom print address.
++ */
++#define AVALANCHE_YAMON_FUNCTION_BASE             (KSEG1ADDR(0x10000500))
++#define AVALANCHE_YAMON_PROM_PRINT_COUNT_ADDR     (AVALANCHE_YAMON_FUNCTION_BASE + 0x4)  /* print_count function */
++#define AVALANCHE_YAMON_PROM_PRINT_ADDR           (AVALANCHE_YAMON_FUNCTION_BASE + 0x34)
++
++/*
++ * Evm3 Reset and PSU standby register.
++ */
++#define AVALANCHE_SOFTRES_REG         (KSEG1ADDR(0x08611600))    /* Resets machine */
++#define AVALANCHE_PSUSTBY_REG         (KSEG1ADDR(0x08611600))    /* Turns off power supply unit */
++#define AVALANCHE_GORESET             0x1
++#define AVALANCHE_GOSTBY              0x1
++
++/************************************************************************
++ *  PERIPHERAL BUS LEDs (P-LED):
++*************************************************************************/
++
++/************************************************************************
++ *      P-LED Register Addresses
++*************************************************************************/
++
++#define EVM3_PLED		  (KSEG1ADDR(0x01C500000)) /* 0x1D200000 P-LED         	*/
++
++
++/************************************************************************
++ *      Register field encodings
++*************************************************************************/
++
++/******** reg: PLED ********/
++/* bits 7:0: VAL */
++#define EVM3_PLED_VAL_MSK	        0xff
++
++/* bit 0:  */
++#define EVM3_PLED_BIT0_SHF	    	0
++#define EVM3_PLED_BIT0_MSK	    	(1 << EVM3_PLED_BIT0_SHF)
++#define EVM3_PLED_BIT0_ON           	EVM3_PLED_BIT0_MSK
++
++/* bit 1:  */
++#define EVM3_PLED_BIT1_SHF	    	1
++#define EVM3_PLED_BIT1_MSK	    	(1 << EVM3_PLED_BIT1_SHF)
++#define EVM3_PLED_BIT1_ON           	EVM3_PLED_BIT1_MSK
++
++/* bit 2:  */
++#define EVM3_PLED_BIT2_SHF	    	2
++#define EVM3_PLED_BIT2_MSK	    	(1 << EVM3_PLED_BIT2_SHF)
++#define EVM3_PLED_BIT2_ON           	EVM3_PLED_BIT2_MSK
++
++/* bit 3:  */
++#define EVM3_PLED_BIT3_SHF	    	3
++#define EVM3_PLED_BIT3_MSK	    	(1 << EVM3_PLED_BIT3_SHF)
++#define EVM3_PLED_BIT3_ON           	EVM3_PLED_BIT3_MSK
++
++/* bit 4:  */
++#define EVM3_PLED_BIT4_SHF	    	4
++#define EVM3_PLED_BIT4_MSK	    	(1 << EVM3_PLED_BIT4_SHF)
++#define EVM3_PLED_BIT4_ON           	EVM3_PLED_BIT4_MSK
++
++/* bit 5:  */
++#define EVM3_PLED_BIT5_SHF	    	5
++#define EVM3_PLED_BIT5_MSK	    	(1 << EVM3_PLED_BIT5_SHF)
++#define EVM3_PLED_BIT5_ON           	EVM3_PLED_BIT5_MSK
++
++/* bit 6:  */
++#define EVM3_PLED_BIT6_SHF	    	6
++#define EVM3_PLED_BIT6_MSK	    	(1 << EVM3_PLED_BIT6_SHF)
++#define EVM3_PLED_BIT6_ON           	EVM3_PLED_BIT6_MSK
++
++/* bit 7:  */
++#define EVM3_PLED_BIT7_SHF	    	7
++#define EVM3_PLED_BIT7_MSK	    	(1 << EVM3_PLED_BIT7_SHF)
++#define EVM3_PLED_BIT7_ON           	EVM3_PLED_BIT7_MSK
++
++#endif /* !(_MIPS_AVALANCHE_H) */
++
++
++
++
++
++
+diff -urN linux-2.4.30/include/asm-mips/ar7/avalanche_int.h linux-2.4.30.current/include/asm-mips/ar7/avalanche_int.h
+--- linux-2.4.30/include/asm-mips/ar7/avalanche_int.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.30.current/include/asm-mips/ar7/avalanche_int.h	2005-06-12 20:14:28.000000000 +0200
+@@ -0,0 +1,298 @@
++/* $Id$
++ *
++ * avalancheint.h
++ *
++ * Jeff Harrell, jharrell@ti.com
++ * Copyright (C) 2000,2001 Texas Instruments , Inc.
++ *
++ * ########################################################################
++ *
++ *  This program is free software; you can distribute it and/or modify it
++ *  under the terms of the GNU General Public License (Version 2) as
++ *  published by the Free Software Foundation.
++ *
++ *  This program is distributed in the hope it will be useful, but WITHOUT
++ *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ *  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
++ *  for more details.
++ *
++ *  You should have received a copy of the GNU General Public License along
++ *  with this program; if not, write to the Free Software Foundation, Inc.,
++ *  59 Temple Place - Suite 330, Boston MA 02111-1307, USA.
++ *
++ * ########################################################################
++ *
++ * Defines for the AVALANCHE interrupt controller.
++ *
++ */
++#ifndef _MIPS_AVALANCHEINT_H
++#define _MIPS_AVALANCHEINT_H
++
++#include <linux/config.h>
++
++/* Avalanche Interrupt number */
++#define AVINTNUM(x) ((x) - MIPS_EXCEPTION_OFFSET)
++/* Linux Interrupt number     */ 
++#define LNXINTNUM(x)((x) + MIPS_EXCEPTION_OFFSET)
++/* Number of IRQ supported on hw interrupt 0. */
++
++//#define SEADINT_UART0      3            /* TTYS0 interrupt on SEAD */
++//#define SEADINT_UART1      4            /* TTYS1 interrupt on SEAD */
++
++
++#define MIPS_EXCEPTION_OFFSET 8
++#define AVALANCHE_INT_END_PRIMARY      (40 + MIPS_EXCEPTION_OFFSET)
++#define AVALANCHE_INT_END_SECONDARY    (32 + MIPS_EXCEPTION_OFFSET)
++
++#define AVALANCHE_INT_END_PRIMARY_REG1 (31 + MIPS_EXCEPTION_OFFSET)
++#define AVALANCHE_INT_END_PRIMARY_REG2 (39 + MIPS_EXCEPTION_OFFSET)
++
++
++#define AVALANCHE_INT_END (AVINTNUM(AVALANCHE_INT_END_PRIMARY) + AVINTNUM(AVALANCHE_INT_END_SECONDARY)  \
++                     + MIPS_EXCEPTION_OFFSET - 1)
++
++struct avalanche_ictrl_regs /* Avalanche Interrupt control registers */
++{
++  volatile unsigned long intsr1;    /* Interrupt Status/Set Register 1   */ /* 0x00 */      
++  volatile unsigned long intsr2;    /* Interrupt Status/Set Register 2   */ /* 0x04 */
++  volatile unsigned long unused1;                                           /* 0x08 */
++  volatile unsigned long unused2;                                           /* 0x0C */
++  volatile unsigned long intcr1;    /* Interrupt Clear Register 1        */ /* 0x10 */
++  volatile unsigned long intcr2;    /* Interrupt Clear Register 2        */ /* 0x14 */
++  volatile unsigned long unused3;                                           /* 0x18 */
++  volatile unsigned long unused4;                                           /* 0x1C */
++  volatile unsigned long intesr1;   /* Interrupt Enable (Set) Register 1 */ /* 0x20 */
++  volatile unsigned long intesr2;   /* Interrupt Enable (Set) Register 2 */ /* 0x24 */
++  volatile unsigned long unused5;                                           /* 0x28 */
++  volatile unsigned long unused6;                                           /* 0x2C */
++  volatile unsigned long intecr1;   /* Interrupt Enable Clear Register 1 */ /* 0x30 */
++  volatile unsigned long intecr2;   /* Interrupt Enable Clear Register 2 */ /* 0x34 */
++  volatile unsigned long unused7;                                           /* 0x38 */
++  volatile unsigned long unused8;                                           /* 0x3c */
++  volatile unsigned long pintir;    /* Priority Interrupt Index Register */ /* 0x40 */
++  volatile unsigned long intmsr;    /* Priority Interrupt Mask Index Reg.*/ /* 0x44 */
++  volatile unsigned long unused9;                                           /* 0x48 */
++  volatile unsigned long unused10;                                          /* 0x4C */
++  volatile unsigned long intpolr1;  /* Interrupt Polarity Mask register 1*/ /* 0x50 */
++  volatile unsigned long intpolr2;  /* Interrupt Polarity Mask register 2*/ /* 0x54 */
++};
++
++struct avalanche_exctrl_regs   /* Avalanche Exception control registers */
++{
++  volatile unsigned long exsr;      /* Exceptions Status/Set register    */  /* 0x80 */
++  volatile unsigned long reserved;                                           /* 0x84 */
++  volatile unsigned long excr;      /* Exceptions Clear Register         */  /* 0x88 */
++  volatile unsigned long reserved1;                                          /* 0x8c */
++  volatile unsigned long exiesr;    /* Exceptions Interrupt Enable (set) */  /* 0x90 */
++  volatile unsigned long reserved2;                                          /* 0x94 */
++  volatile unsigned long exiecr;    /* Exceptions Interrupt Enable (clear)*/ /* 0x98 */
++};
++
++struct avalanche_channel_int_number
++{
++  volatile unsigned long cintnr0;   /* Channel Interrupt Number Register */  /* 0x200 */
++  volatile unsigned long cintnr1;   /* Channel Interrupt Number Register */  /* 0x204 */
++  volatile unsigned long cintnr2;   /* Channel Interrupt Number Register */  /* 0x208 */
++  volatile unsigned long cintnr3;   /* Channel Interrupt Number Register */  /* 0x20C */
++  volatile unsigned long cintnr4;   /* Channel Interrupt Number Register */  /* 0x210 */
++  volatile unsigned long cintnr5;   /* Channel Interrupt Number Register */  /* 0x214 */
++  volatile unsigned long cintnr6;   /* Channel Interrupt Number Register */  /* 0x218 */
++  volatile unsigned long cintnr7;   /* Channel Interrupt Number Register */  /* 0x21C */
++  volatile unsigned long cintnr8;   /* Channel Interrupt Number Register */  /* 0x220 */
++  volatile unsigned long cintnr9;   /* Channel Interrupt Number Register */  /* 0x224 */
++  volatile unsigned long cintnr10;  /* Channel Interrupt Number Register */  /* 0x228 */
++  volatile unsigned long cintnr11;  /* Channel Interrupt Number Register */  /* 0x22C */
++  volatile unsigned long cintnr12;  /* Channel Interrupt Number Register */  /* 0x230 */
++  volatile unsigned long cintnr13;  /* Channel Interrupt Number Register */  /* 0x234 */
++  volatile unsigned long cintnr14;  /* Channel Interrupt Number Register */  /* 0x238 */
++  volatile unsigned long cintnr15;  /* Channel Interrupt Number Register */  /* 0x23C */
++  volatile unsigned long cintnr16;  /* Channel Interrupt Number Register */  /* 0x240 */
++  volatile unsigned long cintnr17;  /* Channel Interrupt Number Register */  /* 0x244 */
++  volatile unsigned long cintnr18;  /* Channel Interrupt Number Register */  /* 0x248 */
++  volatile unsigned long cintnr19;  /* Channel Interrupt Number Register */  /* 0x24C */
++  volatile unsigned long cintnr20;  /* Channel Interrupt Number Register */  /* 0x250 */
++  volatile unsigned long cintnr21;  /* Channel Interrupt Number Register */  /* 0x254 */
++  volatile unsigned long cintnr22;  /* Channel Interrupt Number Register */  /* 0x358 */
++  volatile unsigned long cintnr23;  /* Channel Interrupt Number Register */  /* 0x35C */
++  volatile unsigned long cintnr24;  /* Channel Interrupt Number Register */  /* 0x260 */
++  volatile unsigned long cintnr25;  /* Channel Interrupt Number Register */  /* 0x264 */
++  volatile unsigned long cintnr26;  /* Channel Interrupt Number Register */  /* 0x268 */
++  volatile unsigned long cintnr27;  /* Channel Interrupt Number Register */  /* 0x26C */
++  volatile unsigned long cintnr28;  /* Channel Interrupt Number Register */  /* 0x270 */
++  volatile unsigned long cintnr29;  /* Channel Interrupt Number Register */  /* 0x274 */
++  volatile unsigned long cintnr30;  /* Channel Interrupt Number Register */  /* 0x278 */
++  volatile unsigned long cintnr31;  /* Channel Interrupt Number Register */  /* 0x27C */
++  volatile unsigned long cintnr32;  /* Channel Interrupt Number Register */  /* 0x280 */
++  volatile unsigned long cintnr33;  /* Channel Interrupt Number Register */  /* 0x284 */
++  volatile unsigned long cintnr34;  /* Channel Interrupt Number Register */  /* 0x288 */
++  volatile unsigned long cintnr35;  /* Channel Interrupt Number Register */  /* 0x28C */
++  volatile unsigned long cintnr36;  /* Channel Interrupt Number Register */  /* 0x290 */
++  volatile unsigned long cintnr37;  /* Channel Interrupt Number Register */  /* 0x294 */
++  volatile unsigned long cintnr38;  /* Channel Interrupt Number Register */  /* 0x298 */
++  volatile unsigned long cintnr39;  /* Channel Interrupt Number Register */  /* 0x29C */
++};
++
++struct avalanche_interrupt_line_to_channel 
++{
++  unsigned long int_line0;    /* Start of primary interrupts */
++  unsigned long int_line1;
++  unsigned long int_line2;
++  unsigned long int_line3;
++  unsigned long int_line4;
++  unsigned long int_line5;
++  unsigned long int_line6;
++  unsigned long int_line7;
++  unsigned long int_line8;
++  unsigned long int_line9;
++  unsigned long int_line10;
++  unsigned long int_line11; 
++  unsigned long int_line12; 
++  unsigned long int_line13; 
++  unsigned long int_line14; 
++  unsigned long int_line15; 
++  unsigned long int_line16; 
++  unsigned long int_line17; 
++  unsigned long int_line18; 
++  unsigned long int_line19; 
++  unsigned long int_line20; 
++  unsigned long int_line21;
++  unsigned long int_line22; 
++  unsigned long int_line23; 
++  unsigned long int_line24; 
++  unsigned long int_line25; 
++  unsigned long int_line26; 
++  unsigned long int_line27; 
++  unsigned long int_line28; 
++  unsigned long int_line29; 
++  unsigned long int_line30; 
++  unsigned long int_line31; 
++  unsigned long int_line32;
++  unsigned long int_line33; 
++  unsigned long int_line34; 
++  unsigned long int_line35; 
++  unsigned long int_line36; 
++  unsigned long int_line37; 
++  unsigned long int_line38; 
++  unsigned long int_line39;  
++};
++
++/* Interrupt Line #'s  (Avalanche peripherals) */
++
++/*------------------------------*/
++/* Avalanche primary interrupts */
++/*------------------------------*/
++#define UNIFIED_SECONDARY_INTERRUPT  0
++#define AVALANCHE_EXT_INT_0          1
++#define AVALANCHE_EXT_INT_1          2
++#define AVALANCHE_EXT_INT_2          3
++#define AVALANCHE_EXT_INT_3          4
++#define AVALANCHE_TIMER_0_INT        5
++#define AVALANCHE_TIMER_1_INT        6
++#define AVALANCHE_UART0_INT          7
++#define AVALANCHE_UART1_INT          8
++#define AVALANCHE_PDMA_INT0          9
++#define AVALANCHE_PDMA_INT1          10
++#define AVALANCHE_HDLC_TXA           11
++#define AVALANCHE_HDLC_TXB           12
++#define AVALANCHE_HDLC_RXA           13
++#define AVALANCHE_HDLC_RXB           14
++#define AVALANCHE_ATM_SAR_TXA        15
++#define AVALANCHE_ATM_SAR_TXB        16
++#define AVALANCHE_ATM_SAR_RXA        17
++#define AVALANCHE_ATM_SAR_RXB        18
++#define AVALANCHE_MAC_TXA            19
++#define AVALANCHE_MAC_RXA            20
++#define AVALANCHE_DSP_SUB0           21
++#define AVALANCHE_DSP_SUB1           22
++#define AVALANCHE_DES_INT            23
++#define AVALANCHE_USB_INT            24
++#define AVALANCHE_PCI_INTA           25
++#define AVALANCHE_PCI_INTB           26
++#define AVALANCHE_PCI_INTC           27
++/*  Line #28  Reserved               */
++#define AVALANCHE_I2CM_INT           29
++#define AVALANCHE_PDMA_INT2          30
++#define AVALANCHE_PDMA_INT3          31
++#define AVALANCHE_CODEC              32
++#define AVALANCHE_MAC_TXB            33
++#define AVALANCHE_MAC_RXB            34
++/*  Line #35  Reserved               */
++/*  Line #36  Reserved               */
++/*  Line #37  Reserved               */
++/*  Line #38  Reserved               */
++/*  Line #39  Reserved               */
++
++#define DEBUG_MISSED_INTS 1
++
++#ifdef DEBUG_MISSED_INTS
++struct debug_missed_int
++{
++  unsigned int atm_sar_txa;
++  unsigned int atm_sar_txb;
++  unsigned int atm_sar_rxa;
++  unsigned int atm_sar_rxb;
++  unsigned int mac_txa;
++  unsigned int mac_rxa;
++  unsigned int mac_txb;
++  unsigned int mac_rxb;
++};
++#endif /* DEBUG_MISSED_INTS */
++
++/*-----------------------------------*/
++/* Avalanche Secondary Interrupts    */
++/*-----------------------------------*/
++#define PRIMARY_INTS                 40
++
++#define AVALANCHE_HDLC_STATUS        (0 + PRIMARY_INTS)
++#define AVALANCHE_SAR_STATUS         (1 + PRIMARY_INTS)
++/*  Line #02  Reserved               */
++#define AVALANCHE_ETH_MACA_LNK_CHG   (3 + PRIMARY_INTS)
++#define AVALANCHE_ETH_MACA_MGT       (4 + PRIMARY_INTS)
++#define AVALANCHE_PCI_STATUS_INT     (5 + PRIMARY_INTS)
++/*  Line #06  Reserved               */
++#define AVALANCHE_EXTERN_MEM_INT     (7 + PRIMARY_INTS)
++#define AVALANCHE_DSP_A_DOG          (8 + PRIMARY_INTS)
++#define AVALANCHE_DSP_B_DOG          (9 + PRIMARY_INTS)
++/*  Line #10-#20 Reserved            */
++#define AVALANCHE_ETH_MACB_LNK_CHG   (21 + PRIMARY_INTS)
++#define AVALANCHE_ETH_MACB_MGT       (22 + PRIMARY_INTS)
++#define AVALANCHE_AAL2_STATUS        (23 + PRIMARY_INTS)
++/*  Line #24-#31 Reserved            */
++
++#define AVALANCHEINT_UART0        LNXINTNUM(AVALANCHE_UART0_INT)
++#define AVALANCHEINT_UART1        LNXINTNUM(AVALANCHE_UART1_INT)
++#define SEADINT_UART0    3   /* TTYS0 interrupt on SEAD */
++#define SEADINT_UART1    4   /* TTYS1 interrupt on SEAD */
++
++#ifdef JIMK_INT_CTRLR
++/*-----------------------------------*/
++/* Jim Kennedy's Interrupt Controller*/
++/*-----------------------------------*/
++
++/* to clear the interrupt write the bit back to the status reg */
++
++#define JIMK_INT_STATUS (*(volatile unsigned int *)(0xA8612400))
++#define JIMK_INT_MASK   (*(volatile unsigned int *)(0xA8612404))
++#define JIMK_SAR_STATUS  (1<<0)
++#define JIMK_SAR_TX_A    (1<<1)
++#define JIMK_SAR_TX_B    (1<<2)
++#define JIMK_SAR_RX_A    (1<<3)
++#define JIMK_SAR_RX_B    (1<<4)
++#define JIMK_AAL2_STATUS (1<<5)
++#define JIMK_UART0_INT   (1<<11)
++
++#ifdef SEAD_USB_DEVELOPMENT
++#define JIMK_USB_INT     (1<<0)
++#endif /* SEAD_USB_DEVELOPMENT */
++
++#endif /* JIMK_INT_CTRLR */
++
++extern void avalanche_int_set(int channel, int line);
++extern void avalancheint_init(void);
++
++
++#endif /* !(_MIPS_AVALANCHEINT_H) */
++
++
++
++
+diff -urN linux-2.4.30/include/asm-mips/ar7/avalanche_intc.h linux-2.4.30.current/include/asm-mips/ar7/avalanche_intc.h
+--- linux-2.4.30/include/asm-mips/ar7/avalanche_intc.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.30.current/include/asm-mips/ar7/avalanche_intc.h	2005-06-12 20:14:28.000000000 +0200
+@@ -0,0 +1,273 @@
++ /*
++ * Nitin Dhingra, iamnd@ti.com
++ * Copyright (C) 2000 Texas Instruments Inc.
++ *
++ *
++ * ########################################################################
++ *
++ *  This program is free software; you can distribute it and/or modify it
++ *  under the terms of the GNU General Public License (Version 2) as
++ *  published by the Free Software Foundation.
++ *
++ *  This program is distributed in the hope it will be useful, but WITHOUT
++ *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ *  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
++ *  for more details.
++ *
++ *  You should have received a copy of the GNU General Public License along
++ *  with this program; if not, write to the Free Software Foundation, Inc.,
++ *  59 Temple Place - Suite 330, Boston MA 02111-1307, USA.
++ *
++ * ########################################################################
++ *
++ * Defines of the Sead board specific address-MAP, registers, etc.
++ *
++ */
++#ifndef _AVALANCHE_INTC_H
++#define _AVALANCHE_INTC_H
++
++#define MIPS_EXCEPTION_OFFSET 8
++
++/******************************************************************************
++ Avalanche Interrupt number
++******************************************************************************/
++#define AVINTNUM(x) ((x) - MIPS_EXCEPTION_OFFSET)
++
++/*******************************************************************************
++*Linux Interrupt number
++*******************************************************************************/
++#define LNXINTNUM(x)((x) + MIPS_EXCEPTION_OFFSET)
++
++
++
++#define AVALANCHE_INT_END_PRIMARY      (40 + MIPS_EXCEPTION_OFFSET)
++#define AVALANCHE_INT_END_SECONDARY    (32 + MIPS_EXCEPTION_OFFSET)
++
++#define AVALANCHE_INT_END_PRIMARY_REG1 (31 + MIPS_EXCEPTION_OFFSET)
++#define AVALANCHE_INT_END_PRIMARY_REG2 (39 + MIPS_EXCEPTION_OFFSET)
++
++
++#define AVALANCHE_INT_END (AVINTNUM(AVALANCHE_INT_END_PRIMARY) + \
++			    AVINTNUM(AVALANCHE_INT_END_SECONDARY)  \
++                                    + MIPS_EXCEPTION_OFFSET - 1) /* Suraj, check */
++
++
++/*
++ * Avalanche interrupt controller register base (primary)
++ */
++#define AVALANCHE_ICTRL_REGS_BASE  AVALANCHE_INTC_BASE
++
++/******************************************************************************
++ * Avalanche exception controller register base (secondary)
++ ******************************************************************************/
++#define AVALANCHE_ECTRL_REGS_BASE  (AVALANCHE_ICTRL_REGS_BASE + 0x80)
++
++
++/******************************************************************************
++ *  Avalanche Interrupt pacing register base (secondary)
++ ******************************************************************************/
++#define AVALANCHE_IPACE_REGS_BASE  (AVALANCHE_ICTRL_REGS_BASE + 0xA0)
++
++
++
++/******************************************************************************
++ * Avalanche Interrupt Channel Control register base
++ *****************************************************************************/
++#define AVALANCHE_CHCTRL_REGS_BASE (AVALANCHE_ICTRL_REGS_BASE + 0x200)
++
++
++struct avalanche_ictrl_regs /* Avalanche Interrupt control registers */
++{
++  volatile unsigned long intsr1;    /* Interrupt Status/Set Register 1   0x00 */
++  volatile unsigned long intsr2;    /* Interrupt Status/Set Register 2   0x04 */
++  volatile unsigned long unused1;                                      /*0x08 */
++  volatile unsigned long unused2;                                      /*0x0C */
++  volatile unsigned long intcr1;    /* Interrupt Clear Register 1        0x10 */
++  volatile unsigned long intcr2;    /* Interrupt Clear Register 2        0x14 */
++  volatile unsigned long unused3;                                      /*0x18 */
++  volatile unsigned long unused4;                                      /*0x1C */
++  volatile unsigned long intesr1;   /* Interrupt Enable (Set) Register 1 0x20 */
++  volatile unsigned long intesr2;   /* Interrupt Enable (Set) Register 2 0x24 */
++  volatile unsigned long unused5;                                      /*0x28 */
++  volatile unsigned long unused6;                                      /*0x2C */
++  volatile unsigned long intecr1;   /* Interrupt Enable Clear Register 1 0x30 */
++  volatile unsigned long intecr2;   /* Interrupt Enable Clear Register 2 0x34 */
++  volatile unsigned long unused7;                                     /* 0x38 */
++  volatile unsigned long unused8;                                     /* 0x3c */
++  volatile unsigned long pintir;    /* Priority Interrupt Index Register 0x40 */
++  volatile unsigned long intmsr;    /* Priority Interrupt Mask Index Reg 0x44 */
++  volatile unsigned long unused9;                                     /* 0x48 */
++  volatile unsigned long unused10;                                    /* 0x4C */
++  volatile unsigned long intpolr1;  /* Interrupt Polarity Mask register 10x50 */
++  volatile unsigned long intpolr2;  /* Interrupt Polarity Mask register 20x54 */
++  volatile unsigned long unused11;                                    /* 0x58 */
++  volatile unsigned long unused12;                                   /*0x5C */
++  volatile unsigned long inttypr1;  /* Interrupt Type     Mask register 10x60 */
++  volatile unsigned long inttypr2;  /* Interrupt Type     Mask register 20x64 */
++};
++
++struct avalanche_exctrl_regs   /* Avalanche Exception control registers */
++{
++  volatile unsigned long exsr;      /* Exceptions Status/Set register    0x80 */
++  volatile unsigned long reserved;                                     /*0x84 */
++  volatile unsigned long excr;      /* Exceptions Clear Register         0x88 */
++  volatile unsigned long reserved1;                                    /*0x8c */
++  volatile unsigned long exiesr;    /* Exceptions Interrupt Enable (set) 0x90 */
++  volatile unsigned long reserved2;                                    /*0x94 */
++  volatile unsigned long exiecr;    /* Exceptions Interrupt Enable(clear)0x98 */
++};
++struct avalanche_ipace_regs
++{
++
++  volatile unsigned long ipacep;    /* Interrupt pacing register         0xa0 */
++  volatile unsigned long ipacemap;  /*Interrupt Pacing Map Register      0xa4 */
++  volatile unsigned long ipacemax;  /*Interrupt Pacing Max Register      0xa8 */
++};
++struct avalanche_channel_int_number
++{
++  volatile unsigned long cintnr0;   /* Channel Interrupt Number Register0x200 */
++  volatile unsigned long cintnr1;   /* Channel Interrupt Number Register0x204 */
++  volatile unsigned long cintnr2;   /* Channel Interrupt Number Register0x208 */
++  volatile unsigned long cintnr3;   /* Channel Interrupt Number Register0x20C */
++  volatile unsigned long cintnr4;   /* Channel Interrupt Number Register0x210 */
++  volatile unsigned long cintnr5;   /* Channel Interrupt Number Register0x214 */
++  volatile unsigned long cintnr6;   /* Channel Interrupt Number Register0x218 */
++  volatile unsigned long cintnr7;   /* Channel Interrupt Number Register0x21C */
++  volatile unsigned long cintnr8;   /* Channel Interrupt Number Register0x220 */
++  volatile unsigned long cintnr9;   /* Channel Interrupt Number Register0x224 */
++  volatile unsigned long cintnr10;  /* Channel Interrupt Number Register0x228 */
++  volatile unsigned long cintnr11;  /* Channel Interrupt Number Register0x22C */
++  volatile unsigned long cintnr12;  /* Channel Interrupt Number Register0x230 */
++  volatile unsigned long cintnr13;  /* Channel Interrupt Number Register0x234 */
++  volatile unsigned long cintnr14;  /* Channel Interrupt Number Register0x238 */
++  volatile unsigned long cintnr15;  /* Channel Interrupt Number Register0x23C */
++  volatile unsigned long cintnr16;  /* Channel Interrupt Number Register0x240 */
++  volatile unsigned long cintnr17;  /* Channel Interrupt Number Register0x244 */
++  volatile unsigned long cintnr18;  /* Channel Interrupt Number Register0x248 */
++  volatile unsigned long cintnr19;  /* Channel Interrupt Number Register0x24C */
++  volatile unsigned long cintnr20;  /* Channel Interrupt Number Register0x250 */
++  volatile unsigned long cintnr21;  /* Channel Interrupt Number Register0x254 */
++  volatile unsigned long cintnr22;  /* Channel Interrupt Number Register0x358 */
++  volatile unsigned long cintnr23;  /* Channel Interrupt Number Register0x35C */
++  volatile unsigned long cintnr24;  /* Channel Interrupt Number Register0x260 */
++  volatile unsigned long cintnr25;  /* Channel Interrupt Number Register0x264 */
++  volatile unsigned long cintnr26;  /* Channel Interrupt Number Register0x268 */
++  volatile unsigned long cintnr27;  /* Channel Interrupt Number Register0x26C */
++  volatile unsigned long cintnr28;  /* Channel Interrupt Number Register0x270 */
++  volatile unsigned long cintnr29;  /* Channel Interrupt Number Register0x274 */
++  volatile unsigned long cintnr30;  /* Channel Interrupt Number Register0x278 */
++  volatile unsigned long cintnr31;  /* Channel Interrupt Number Register0x27C */
++  volatile unsigned long cintnr32;  /* Channel Interrupt Number Register0x280 */
++  volatile unsigned long cintnr33;  /* Channel Interrupt Number Register0x284 */
++  volatile unsigned long cintnr34;  /* Channel Interrupt Number Register0x288 */
++  volatile unsigned long cintnr35;  /* Channel Interrupt Number Register0x28C */
++  volatile unsigned long cintnr36;  /* Channel Interrupt Number Register0x290 */
++  volatile unsigned long cintnr37;  /* Channel Interrupt Number Register0x294 */
++  volatile unsigned long cintnr38;  /* Channel Interrupt Number Register0x298 */
++  volatile unsigned long cintnr39;  /* Channel Interrupt Number Register0x29C */
++};
++
++struct avalanche_interrupt_line_to_channel
++{
++  unsigned long int_line0;    /* Start of primary interrupts */
++  unsigned long int_line1;
++  unsigned long int_line2;
++  unsigned long int_line3;
++  unsigned long int_line4;
++  unsigned long int_line5;
++  unsigned long int_line6;
++  unsigned long int_line7;
++  unsigned long int_line8;
++  unsigned long int_line9;
++  unsigned long int_line10;
++  unsigned long int_line11;
++  unsigned long int_line12;
++  unsigned long int_line13;
++  unsigned long int_line14;
++  unsigned long int_line15;
++  unsigned long int_line16;
++  unsigned long int_line17;
++  unsigned long int_line18;
++  unsigned long int_line19;
++  unsigned long int_line20;
++  unsigned long int_line21;
++  unsigned long int_line22;
++  unsigned long int_line23;
++  unsigned long int_line24;
++  unsigned long int_line25;
++  unsigned long int_line26;
++  unsigned long int_line27;
++  unsigned long int_line28;
++  unsigned long int_line29;
++  unsigned long int_line30;
++  unsigned long int_line31;
++  unsigned long int_line32;
++  unsigned long int_line33;
++  unsigned long int_line34;
++  unsigned long int_line35;
++  unsigned long int_line36;
++  unsigned long int_line37;
++  unsigned long int_line38;
++  unsigned long int_line39;
++};
++
++
++/* Interrupt Line #'s  (Sangam peripherals) */
++
++/*------------------------------*/
++/* Sangam primary interrupts */
++/*------------------------------*/
++
++#define UNIFIED_SECONDARY_INTERRUPT  0
++#define AVALANCHE_EXT_INT_0          1
++#define AVALANCHE_EXT_INT_1          2
++/*  Line #3  Reserved               */
++/*  Line #4  Reserved               */
++#define AVALANCHE_TIMER_0_INT        5
++#define AVALANCHE_TIMER_1_INT        6
++#define AVALANCHE_UART0_INT          7
++#define AVALANCHE_UART1_INT          8
++#define AVALANCHE_PDMA_INT0          9
++#define AVALANCHE_PDMA_INT1          10
++/*  Line #11  Reserved               */
++/*  Line #12  Reserved               */
++/*  Line #13  Reserved               */
++/*  Line #14  Reserved               */
++#define AVALANCHE_ATM_SAR_INT        15
++/*  Line #16  Reserved               */
++/*  Line #17  Reserved               */
++/*  Line #18  Reserved               */
++#define AVALANCHE_MAC0_INT           19
++/*  Line #20  Reserved               */
++#define AVALANCHE_VLYNQ0_INT         21
++#define AVALANCHE_CODEC_WAKE_INT     22
++/*  Line #23  Reserved               */
++#define AVALANCHE_USB_INT            24
++#define AVALANCHE_VLYNQ1_INT         25
++/*  Line #26  Reserved               */
++/*  Line #27  Reserved               */
++#define AVALANCHE_MAC1_INT           28
++#define AVALANCHE_I2CM_INT           29
++#define AVALANCHE_PDMA_INT2          30
++#define AVALANCHE_PDMA_INT3          31
++/*  Line #32  Reserved               */
++/*  Line #33  Reserved               */
++/*  Line #34  Reserved               */
++/*  Line #35  Reserved               */
++/*  Line #36  Reserved               */
++#define AVALANCHE_VDMA_VT_RX_INT     37
++#define AVALANCHE_VDMA_VT_TX_INT     38
++#define AVALANCHE_ADSLSS_INT         39
++
++/*-----------------------------------*/
++/* Sangam Secondary Interrupts    */
++/*-----------------------------------*/
++#define PRIMARY_INTS                 40
++
++#define EMIF_INT                    (7 + PRIMARY_INTS)
++
++
++extern void avalanche_int_set(int channel, int line);
++
++
++#endif /* _AVALANCHE_INTC_H */
+diff -urN linux-2.4.30/include/asm-mips/ar7/avalanche_prom.h linux-2.4.30.current/include/asm-mips/ar7/avalanche_prom.h
+--- linux-2.4.30/include/asm-mips/ar7/avalanche_prom.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.30.current/include/asm-mips/ar7/avalanche_prom.h	2005-06-12 20:14:28.000000000 +0200
+@@ -0,0 +1,54 @@
++/* $Id$
++ *
++ * prom.h
++ *
++ * Carsten Langgaard, carstenl@mips.com
++ * Copyright (C) 1999 MIPS Technologies, Inc.
++ *
++ * ########################################################################
++ *
++ *  This program is free software; you can distribute it and/or modify it
++ *  under the terms of the GNU General Public License (Version 2) as
++ *  published by the Free Software Foundation.
++ *
++ *  This program is distributed in the hope it will be useful, but WITHOUT
++ *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ *  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
++ *  for more details.
++ *
++ *  You should have received a copy of the GNU General Public License along
++ *  with this program; if not, write to the Free Software Foundation, Inc.,
++ *  59 Temple Place - Suite 330, Boston MA 02111-1307, USA.
++ *
++ * ########################################################################
++ *
++ * Sead bootprom interface for the Linux kernel.
++ *
++ */
++
++#ifndef _MIPS_PROM_H
++#define _MIPS_PROM_H
++
++extern char *prom_getcmdline(void);
++extern char *prom_getenv(char *name);
++extern void setup_prom_printf(void);
++extern void prom_printf(char *fmt, ...);
++extern void prom_init_cmdline(void);
++extern void prom_meminit(void);
++extern void prom_fixup_mem_map(unsigned long start_mem, unsigned long end_mem);
++extern void prom_free_prom_memory (void);
++extern void sead_display_message(const char *str);
++extern void sead_display_word(unsigned int num);
++extern int get_ethernet_addr(char *ethernet_addr);
++
++/* Memory descriptor management. */
++#define PROM_MAX_PMEMBLOCKS    32
++struct prom_pmemblock {
++        unsigned long base; /* Within KSEG0. */
++        unsigned int size;  /* In bytes. */
++        unsigned int type;  /* free or prom memory */
++};
++
++
++#endif /* !(_MIPS_PROM_H) */
++
+diff -urN linux-2.4.30/include/asm-mips/ar7/avalanche_regs.h linux-2.4.30.current/include/asm-mips/ar7/avalanche_regs.h
+--- linux-2.4.30/include/asm-mips/ar7/avalanche_regs.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.30.current/include/asm-mips/ar7/avalanche_regs.h	2005-06-12 20:14:28.000000000 +0200
+@@ -0,0 +1,567 @@
++/* 
++ *  $Id$
++ *  Avalanche Register Descriptions
++ *
++ *  Jeff Harrell, jharrell@ti.com
++ *  2000 (c) Texas Instruments Inc.
++ */
++
++#ifndef __AVALANCHE_REGS_H
++#define __AVALANCHE_REGS_H
++
++#include <asm/addrspace.h>
++#include <linux/config.h>
++
++/*----------------------------------------*/
++/* Base offsets within the Avalanche ASIC */
++/*----------------------------------------*/
++
++#define BBIF_SPACE0     (KSEG1ADDR(0x01000000))
++#define BBIF_SPACE1     (KSEG1ADDR(0x01800000))
++#define BBIF_CONTROL    (KSEG1ADDR(0x02000000))
++#define ATM_SAR_BASE    (KSEG1ADDR(0x03000000))
++#define USB_MCU_BASE    (KSEG1ADDR(0x03400000))
++#define DES_BASE        (KSEG1ADDR(0x08600000))
++#define ETH_MACA_BASE   (KSEG1ADDR(0x08610000))
++#define ETH_MACB_BASE   (KSEG1ADDR(0x08612800))
++#define MEM_CTRLR_BASE  (KSEG1ADDR(0x08610800))
++#define GPIO_BASE       (KSEG1ADDR(0x08610900))
++#define CLK_CTRL_BASE   (KSEG1ADDR(0x08610A00))
++#define WATCH_DOG_BASE  (KSEG1ADDR(0x08610B00))
++#define TMR1_BASE       (KSEG1ADDR(0x08610C00))
++#define TRM2_BASE       (KSEG1ADDR(0x08610D00))
++#define UARTA_BASE      (KSEG1ADDR(0x08610E00))
++#define UARTB_BASE      (KSEG1ADDR(0x08610F00))
++#define I2C_BASE        (KSEG1ADDR(0x08611000))
++#define DEV_ID_BASE     (KSEG1ADDR(0x08611100))
++#define USB_BASE        (KSEG1ADDR(0x08611200))
++#define PCI_CONFIG_BASE (KSEG1ADDR(0x08611300))
++#define DMA_BASE        (KSEG1ADDR(0x08611400))
++#define RESET_CTRL_BASE (KSEG1ADDR(0x08611600))
++#define DSL_IF_BASE     (KSEG1ADDR(0x08611B00))
++#define INT_CTL_BASE    (KSEG1ADDR(0x08612400)) 
++#define PHY_BASE        (KSEG1ADDR(0x1E000000))
++
++/*---------------------------------*/
++/* Device ID, chip version number  */
++/*---------------------------------*/
++
++#define AVALANCHE_CHVN  (*(volatile unsigned int *)(DEV_ID_BASE+0x14))
++#define AVALANCHE_DEVID1 (*(volatile unsigned int *)(DEV_ID_BASE+0x18))
++#define AVALANCHE_DEVID2 (*(volatile unsigned int *)(DEV_ID_BASE+0x1C))
++
++/*----------------------------------*/
++/* Reset Control VW changed to ptrs */
++/*----------------------------------*/
++
++#define AVALANCHE_PRCR  (*(volatile unsigned int *)(RESET_CTRL_BASE + 0x0))  /* Peripheral reset control */
++#define AVALANCHE_SWRCR (*(volatile unsigned int *)(RESET_CTRL_BASE + 0x4))  /* Software reset control   */
++#define AVALANCHE_RSR   (*(volatile unsigned int *)(RESET_CTRL_BASE + 0x8))  /* Reset status register    */
++
++/* reset control bits */
++
++#define AV_RST_UART0    (1<<0)    /* Brings UART0 out of reset              */
++#define AV_RST_UART1    (1<<1)    /* Brings UART1 out of reset              */
++#define AV_RST_IICM     (1<<2)    /* Brings the I2CM out of reset           */
++#define AV_RST_TIMER0   (1<<3)    /* Brings Timer 0 out of reset            */
++#define AV_RST_TIMER1   (1<<4)    /* Brings Timer 1 out of reset            */
++#define AV_RST_DES      (1<<5)    /* Brings the DES module out of reset     */
++#define AV_RST_GPIO     (1<<6)    /* Brings the GPIO module out of reset (see note below) */
++/*
++  JAH NOTE JAH NOTE JAH NOTE JAH NOTE JAH NOTE JAH NOTE JAH NOTE JAH NOTE
++       If you reset the GPIO interface all of the directions (i/o) of the UART B
++       interface pins are inputs and must be reconfigured so as not to lose the 
++       serial console interface
++  JAH NOTE JAH NOTE JAH NOTE JAH NOTE JAH NOTE JAH NOTE JAH NOTE JAH NOTE
++*/
++#define AV_RST_BBIF     (1<<7)    /* Brings the Broadband interface out of reset */
++#define AV_RST_USB      (1<<8)    /* Brings the USB module out of reset     */
++#define AV_RST_SAR      (1<<9)    /* Brings the SAR out of reset            */
++#define AV_RST_HDLC     (1<<10)   /* Brings the HDLC module out of reset    */
++#define AV_RST_PCI      (1<<16)   /* Brings the PCI module out of reset     */
++#define AV_RST_ETH_MAC0 (1<<17)   /* Brings the Ethernet MAC0 out of reset  */
++#define AV_RST_PICO_DMA (1<<18)   /* Brings the PICO DMA module out of reset */
++#define AV_RST_BIST     (1<<19)   /* Brings the BIST module out of reset    */
++#define AV_RST_DSP      (1<<20)   /* Brings the DSP sub system out of reset */
++#define AV_RST_ETH_MAC1 (1<<21)   /* Brings the Ethernet MAC1 out of reset  */
++
++/*----------------------*/
++/* Physical interfaces  */
++/*----------------------*/
++
++/* Phy loopback */
++#define PHY_LOOPBACK    1
++
++
++/* Phy 0 */
++#define PHY0BASE        (PHY_BASE)
++#define PHY0RST         (*(volatile unsigned char *) (PHY0BASE))      /* reset   */
++#define PHY0CTRL        (*(volatile unsigned char *) (PHY0BASE+0x5))  /* control */
++#define PHY0RACPCTRL    (*(volatile unsigned char *) (PHY0BASE+0x50)) /* RACP control/status */ 
++#define PHY0TACPCTRL    (*(volatile unsigned char *) (PHY0BASE+0x60)) /* TACP idle/unassigned cell hdr */
++#define PHY0RACPINT     (*(volatile unsigned char *) (PHY0BASE+0x51)) /* RACP interrupt enable/Status */
++
++
++/* Phy 1 */
++
++#define PHY1BASE        (PHY_BASE + 0x100000)
++#define PHY1RST         (*(volatile unsigned char *) (PHY1BASE))      /* reset   */
++#define PHY1CTRL        (*(volatile unsigned char *) (PHY1BASE+0x5))  /* control */
++#define PHY1RACPCTRL    (*(volatile unsigned char *) (PHY1BASE+0x50)) 
++#define PHY1TACPCTRL    (*(volatile unsigned char *) (PHY1BASE+0x60)) 
++#define PHY1RACPINT     (*(volatile unsigned char *) (PHY1BASE+0x51)) 
++
++/* Phy 2 */
++
++#define PHY2BASE        (PHY_BASE + 0x200000)
++#define PHY2RST         (*(volatile unsigned char *) (PHY2BASE))      /* reset   */
++#define PHY2CTRL        (*(volatile unsigned char *) (PHY2BASE+0x5))  /* control */
++#define PHY2RACPCTRL    (*(volatile unsigned char *) (PHY2BASE+0x50)) 
++#define PHY2TACPCTRL    (*(volatile unsigned char *) (PHY2BASE+0x60)) 
++#define PHY2RACPINT     (*(volatile unsigned char *) (PHY2BASE+0x51)) 
++
++/*-------------------*/
++/* Avalanche ATM SAR */
++/*-------------------*/
++
++#define AVSAR_SYSCONFIG    (*(volatile unsigned int*)(ATM_SAR_BASE+0x00000000)) /* SAR system config register    */
++#define AVSAR_SYSSTATUS    (*(volatile unsigned int*)(ATM_SAR_BASE+0x00000004)) /* SAR system status register    */
++#define AVSAR_INT_ENABLE   (*(volatile unsigned int*)(ATM_SAR_BASE+0x00000008)) /* SAR interrupt enable register */
++#define AVSAR_CONN_VPI_VCI (*(volatile unsigned int*)(ATM_SAR_BASE+0x0000000c)) /* VPI/VCI connection config     */
++#define AVSAR_CONN_CONFIG  (*(volatile unsigned int*)(ATM_SAR_BASE+0x00000010)) /* Connection config register    */
++#define AVSAR_OAM_CONFIG   (*(volatile unsigned int*)(ATM_SAR_BASE+0x00000018)) /* OAM configuration register    */
++
++/* Transmit completion ring registers */
++
++#define AVSAR_TCRAPTR       (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000100))
++#define AVSAR_TCRASIZE      (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000104))
++#define AVSAR_TCRAINTTHRESH (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000108))
++#define AVSAR_TCRATOTENT    (*(volatile unsigned int *)(ATM_SAR_BASE+0x0000010c))
++#define AVSAR_TCRAFREEENT   (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000110))
++#define AVSAR_TCRAPENDENT   (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000114))
++#define AVSAR_TCRAENTINC    (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000118))
++#define AVSAR_TCRBPTR       (*(volatile unsigned int *)(ATM_SAR_BASE+0x0000011c))
++#define AVSAR_TCRBSIZE      (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000120))
++#define AVSAR_TCRBINTTHRESH (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000124))
++#define AVSAR_TCRBTOTENT    (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000128))
++#define AVSAR_TCRBFREEENT   (*(volatile unsigned int *)(ATM_SAR_BASE+0x0000012c))
++#define AVSAR_TCRBPENDENT   (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000130))
++#define AVSAR_TCRBENTINC    (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000134))
++
++/* Transmit Queue Packet registers */
++#define AVSAR_TXQUEUE_PKT0  (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000140))
++#define AVSAR_TXQUEUE_PKT1  (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000144))
++#define AVSAR_TXQUEUE_PKT2  (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000148))
++#define AVSAR_TX_FLUSH      (*(volatile unsigned int *)(ATM_SAR_BASE+0x0000014C))
++/* Receive completion ring registers */
++
++#define AVSAR_RCRAPTR       (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000200))
++#define AVSAR_RCRASIZE      (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000204))
++#define AVSAR_RCRAINTTHRESH (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000208))
++#define AVSAR_RCRATOTENT    (*(volatile unsigned int *)(ATM_SAR_BASE+0x0000020c))
++#define AVSAR_RCRAFREEENT   (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000210))
++#define AVSAR_RCRAPENDENT   (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000214))
++#define AVSAR_RCRAENTINC    (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000218))
++#define AVSAR_RCRBPTR       (*(volatile unsigned int *)(ATM_SAR_BASE+0x0000021c))
++#define AVSAR_RCRBSIZE      (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000220))
++#define AVSAR_RCRBINTTHRESH (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000224))
++#define AVSAR_RCRBTOTENT    (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000228))
++#define AVSAR_RCRBFREEENT   (*(volatile unsigned int *)(ATM_SAR_BASE+0x0000022c))
++#define AVSAR_RCRBPENDENT   (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000230))
++#define AVSAR_RCRBENTINC    (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000234))
++
++#define AVSAR_RXFBL_ADD0    (*(volatile unsigned int*)(ATM_SAR_BASE+0x00000240)) /* Rx Free buffer list add 0  */
++#define AVSAR_RXFBL_ADD1    (*(volatile unsigned int*)(ATM_SAR_BASE+0x00000244)) /* Rx Free buffer list add 1  */
++#define AVSAR_RXFBL_ADD2    (*(volatile unsigned int*)(ATM_SAR_BASE+0x00000248)) /* Rx Free buffer list add 2  */
++#define AVSAR_RXFBLSIZE_0   (*(volatile unsigned int*)(ATM_SAR_BASE+0x0000028c)) /* Rx Free buffer list size 0 */
++#define AVSAR_RXFBLSIZE_1   (*(volatile unsigned int*)(ATM_SAR_BASE+0x0000029c)) /* Rx Free buffer list size 1 */
++#define AVSAR_RXFBLSIZE_2   (*(volatile unsigned int*)(ATM_SAR_BASE+0x000002ac)) /* Rx Free buffer list size 2 */
++#define AVSAR_RXFBLSIZE_3   (*(volatile unsigned int*)(ATM_SAR_BASE+0x000002bc)) /* Rx Free buffer list size 3 */
++
++
++#if defined(CONFIG_MIPS_EVM3D) || defined(CONFIG_MIPS_AR5D01) || defined(CONFIG_MIPS_AR5W01)
++
++#define AVSAR_SAR_FREQUENCY (*(volatile unsigned int*)(ATM_SAR_BASE+0x00010480))
++#define AVSAR_OAM_CC_SINK   (*(volatile unsigned int*)(ATM_SAR_BASE+0x00010484))
++#define AVSAR_OAM_AIS_RDI_RX (*(volatile unsigned int*)(ATM_SAR_BASE+0x00010488))
++#define AVSAR_OAM_CPID0      (*(volatile unsigned int*)(ATM_SAR_BASE+0x000104E0))
++#define AVSAR_OAM_LLID0      (*(volatile unsigned int*)(ATM_SAR_BASE+0x000104F0))
++#define AVSAR_OAM_CPID1      (*(volatile unsigned int*)(ATM_SAR_BASE+0x000104E4))
++#define AVSAR_OAM_LLID1      (*(volatile unsigned int*)(ATM_SAR_BASE+0x000104F4))
++#define AVSAR_OAM_CPID2      (*(volatile unsigned int*)(ATM_SAR_BASE+0x000104E8))
++#define AVSAR_OAM_LLID2      (*(volatile unsigned int*)(ATM_SAR_BASE+0x000104F8))
++#define AVSAR_OAM_CPID3      (*(volatile unsigned int*)(ATM_SAR_BASE+0x000104EC))
++#define AVSAR_OAM_LLID3      (*(volatile unsigned int*)(ATM_SAR_BASE+0x000104FC))
++#define AVSAR_OAM_CORR_TAG      (*(volatile unsigned int*)(ATM_SAR_BASE+0x00010500))
++#define AVSAR_OAM_FAR_COUNT      (*(volatile unsigned int*)(ATM_SAR_BASE+0x00010520))
++#define AVSAR_OAM_NEAR_COUNT      (*(volatile unsigned int*)(ATM_SAR_BASE+0x00010540))
++#define AVSAR_OAM_CONFIG_REG      (*(volatile unsigned int*)(ATM_SAR_BASE+0x00000018))
++#define AVSAR_FAIRNESS_REG   (*(volatile unsigned int*)(ATM_SAR_BASE+0x000104B8))
++#define AVSAR_UBR_PCR_REG   (*(volatile unsigned int*)(ATM_SAR_BASE+0x00010490))
++
++
++/*
++
++#define OAM_CPID_ADD  0xa30104e0
++
++#define OAM_LLID_ADD  0xa30104f0
++
++#define OAM_LLID_VAL  0xffffffff
++
++#define OAM_CORR_TAG  0xa3010500
++
++#define OAM_FAR_COUNT_ADD 0xa3010520
++
++#define OAM_NEAR_COUNT_ADD 0xa3010540
++
++#define OAM_CONFIG_REG_ADD 0xa3000018
++*/
++
++
++#else /* CONFIG_MIPS_EVM3 || CONFIG_MIPS_ACPEP */
++
++#define AVSAR_SAR_FREQUENCY (*(volatile unsigned int*)(ATM_SAR_BASE+0x00012000))
++#define AVSAR_OAM_CC_SINK   (*(volatile unsigned int*)(ATM_SAR_BASE+0x00012004))
++#define AVSAR_OAM_AIS_RDI_RX (*(volatile unsigned int*)(ATM_SAR_BASE+0x00012008))
++#define AVSAR_OAM_CPID      (*(volatile unsigned int*)(ATM_SAR_BASE+0x00012300))
++
++#endif /* CONFIG_MIPS_EVM3D || CONFIG_MIPS_AR5D01 || CONFIG_MIPS_AR5W01 */
++
++
++#define AVSAR_STATE_RAM     (ATM_SAR_BASE + 0x010000) /* SAR state RAM */
++#define AVSAR_PDSP_BASE     (ATM_SAR_BASE + 0x020000) /* SAR PDSP base address   */
++#define AVSAR_TXDMA_BASE    (ATM_SAR_BASE + 0x030000) /* Transmit DMA state base */ 
++#define AVSAR_TDMASTATE6    0x18                      /* Transmit DMA state word 6 */
++#define AVSAR_RXDMA_BASE    (ATM_SAR_BASE + 0x040000) /* Receive  DMA state base */
++#define AVSAR_RDMASTATE0    0x0                       /* Receive  DMA state word 0 */
++
++/*------------------------------------------*/
++/* DSL Interface                            */
++/*------------------------------------------*/
++
++#define AVDSL_TX_EN          (*(volatile unsigned int *)(DSL_IF_BASE + 0x00000000))
++#define AVDSL_RX_EN          (*(volatile unsigned int *)(DSL_IF_BASE + 0x00000004))
++#define AVDSL_POLL           (*(volatile unsigned int *)(DSL_IF_BASE + 0x00000008))
++
++/* Fast */
++
++#define AVDSL_TX_FIFO_ADDR0  (*(volatile unsigned int *)(DSL_IF_BASE + 0x0000000C))
++#define AVDSL_TX_FIFO_BASE0  (*(volatile unsigned int *)(DSL_IF_BASE + 0x00000010))
++#define AVDSL_TX_FIFO_LEN0   (*(volatile unsigned int *)(DSL_IF_BASE + 0x00000014))
++#define AVDSL_TX_FIFO_PR0    (*(volatile unsigned int *)(DSL_IF_BASE + 0x00000018))
++#define AVDSL_RX_FIFO_ADDR0  (*(volatile unsigned int *)(DSL_IF_BASE + 0x0000001C))
++#define AVDSL_RX_FIFO_BASE0  (*(volatile unsigned int *)(DSL_IF_BASE + 0x00000020))
++#define AVDSL_RX_FIFO_LEN0   (*(volatile unsigned int *)(DSL_IF_BASE + 0x00000024))
++#define AVDSL_RX_FIFO_PR0    (*(volatile unsigned int *)(DSL_IF_BASE + 0x00000028))
++
++/* Interleaved */
++
++#define AVDSL_TX_FIFO_ADDR1  (*(volatile unsigned int *)(DSL_IF_BASE + 0x0000002C))
++#define AVDSL_TX_FIFO_BASE1  (*(volatile unsigned int *)(DSL_IF_BASE + 0x00000030))
++#define AVDSL_TX_FIFO_LEN1   (*(volatile unsigned int *)(DSL_IF_BASE + 0x00000034))
++#define AVDSL_TX_FIFO_PR1    (*(volatile unsigned int *)(DSL_IF_BASE + 0x00000038))
++#define AVDSL_RX_FIFO_ADDR1  (*(volatile unsigned int *)(DSL_IF_BASE + 0x0000003C))
++#define AVDSL_RX_FIFO_BASE1  (*(volatile unsigned int *)(DSL_IF_BASE + 0x00000040))
++#define AVDSL_RX_FIFO_LEN1   (*(volatile unsigned int *)(DSL_IF_BASE + 0x00000044))
++#define AVDSL_RX_FIFO_PR1    (*(volatile unsigned int *)(DSL_IF_BASE + 0x00000048))
++
++/*------------------------------------------*/
++/* Broadband I/F                            */
++/*------------------------------------------*/
++
++#define AVBBIF_BBIF_CNTRL    (*(volatile unsigned int *)(BBIF_CONTROL + 0x00000000))
++#define AVBBIF_ADDR_TRANS_0  (*(volatile unsigned int *)(BBIF_CONTROL + 0x00000004))
++#define AVBBIF_ADDR_TRANS_1  (*(volatile unsigned int *)(BBIF_CONTROL + 0x00000008))
++#define AVBBIF_ADDR_XB_MX_BL (*(volatile unsigned int *)(BBIF_CONTROL + 0x0000000C))
++#define AVBBIF_INFIFO_LVL    (*(volatile unsigned int *)(BBIF_CONTROL + 0x00000010))
++#define AVBBIF_OUTFIFO_LVL   (*(volatile unsigned int *)(BBIF_CONTROL + 0x00000014))
++
++#define AVBBIF_DISABLED    0x0
++#define AVBBIF_LBT4040_INT 0x1
++#define AVBBIF_XBUS        0x2
++#define AVBBIF_LBT4040_EXT 0x4
++
++#define AVBBIF_ADDR_MASK0   0xff000000 /* handles upper bits of BBIF 0 address */
++#define AVBBIF_ADDR_MASK1   0xff800000 /* handles upper bits of BBIF 1 address */
++#define AVBBIF_TRANS_MASK   0xff000000
++/*------------------------------------------*/
++/* GPIO I/F                                 */
++/*------------------------------------------*/
++
++#define GPIO_DATA_INPUT      (*(volatile unsigned int *)(GPIO_BASE + 0x00000000))
++#define GPIO_DATA_OUTPUT     (*(volatile unsigned int *)(GPIO_BASE + 0x00000004))
++#define GPIO_DATA_DIR        (*(volatile unsigned int *)(GPIO_BASE + 0x00000008)) /* 0=output 1=input  */
++#define GPIO_DATA_ENABLE     (*(volatile unsigned int *)(GPIO_BASE + 0x0000000C)) /* 0=GPIO Mux 1=GPIO */
++
++#define GPIO_0 (1<<21)
++#define GPIO_1 (1<<22)
++#define GPIO_2 (1<<23)
++#define GPIO_3 (1<<24)
++#define EINT_1 (1<<18)
++
++/*
++  JAH NOTE JAH NOTE JAH NOTE JAH NOTE JAH NOTE JAH NOTE JAH NOTE JAH NOTE
++       If you reset the GPIO interface all of the directions (i/o) of the UART B
++       interface pins are inputs and must be reconfigured so as not to lose the 
++       serial console interface
++  JAH NOTE JAH NOTE JAH NOTE JAH NOTE JAH NOTE JAH NOTE JAH NOTE JAH NOTE
++*/
++
++/*------------------------------------------*/
++/* CLK_CTRL                                 */
++/*------------------------------------------*/
++#define PERIPH_CLK_CTL       (*(volatile unsigned int *)(CLK_CTRL_BASE + 0x00000004))
++
++#define PCLK_0_HALF_VBUS     (0<<16)
++#define PCLK_EQ_INPUT        (1<<16)
++#define BBIF_CLK_HALF_VBUS   (0<<17)
++#define BBIF_CLK_EQ_VBUS     (1<<17)
++#define BBIF_CLK_EQ_BBCLK    (3<<17)
++#define DSP_MODCLK_DSPCLKI   (0<<20)
++#define DSP_MODCLK_REFCLKI   (1<<20)
++#define USB_CLK_EQ_USBCLKI   (0<<21)
++#define USB_CLK_EQ_REFCLKI   (1<<21)
++
++/*------------------------------------------*/
++/* PCI Control Registers                    */
++/*------------------------------------------*/
++#define	PCIC_CONTROL		(*(volatile unsigned int *)(PCI_CONFIG_BASE))
++#define		PCIC_CONTROL_CFG_DONE				(1<<0)
++#define		PCIC_CONTROL_DIS_SLAVE_TO			(1<<1)
++#define		PCIC_CONTROL_FORCE_DELAY_READ		(1<<2)
++#define		PCIC_CONTROL_FORCE_DELAY_READ_LINE	(1<<3)
++#define		PCIC_CONTROL_FORCE_DELAY_READ_MULT	(1<<4)
++#define		PCIC_CONTROL_MEM_SPACE_EN			(1<<5)
++#define		PCIC_CONTROL_MEM_MASK				(1<<6)
++#define		PCIC_CONTROL_IO_SPACE_EN			(1<<7)
++#define		PCIC_CONTROL_IO_MASK				(1<<8)
++/*			PCIC_CONTROL_RESERVED				(1<<9)	*/
++#define		PCIC_CONTROL_BASE0_EN				(1<<10)
++#define		PCIC_CONTROL_BASE1_EN				(1<<11)
++#define		PCIC_CONTROL_BASE2_EN				(1<<12)
++#define		PCIC_CONTROL_HOLD_MASTER_WRITE		(1<<13)
++#define		PCIC_CONTROL_ARBITER_EN				(1<<14)
++#define	PCIC_INT_SOURCE		(*(volatile unsigned int *)(PCI_CONFIG_BASE + 0x00000004))
++#define		PCIC_INT_SOURCE_PWR_MGMT			(1<<0)
++#define		PCIC_INT_SOURCE_PCI_TARGET			(1<<1)
++#define		PCIC_INT_SOURCE_PCI_MASTER			(1<<2)
++#define		PCIC_INT_SOURCE_POWER_WAKEUP		(1<<3)
++#define		PCIC_INT_SOURCE_PMEIN				(1<<4)
++/*			PCIC_INT_SOURCE_RESERVED			(1<<5) */
++/*			PCIC_INT_SOURCE_RESERVED			(1<<6) */
++#define		PCIC_INT_SOURCE_PIC_INTA			(1<<7)
++#define		PCIC_INT_SOURCE_PIC_INTB			(1<<8)
++#define		PCIC_INT_SOURCE_PIC_INTC			(1<<9)
++#define		PCIC_INT_SOURCE_PIC_INTD			(1<<10)
++#define		PCIC_INT_SOURCE_SOFT_INT0			(1<<11)
++#define		PCIC_INT_SOURCE_SOFT_INT1			(1<<12)
++#define		PCIC_INT_SOURCE_SOFT_INT2			(1<<13)
++#define		PCIC_INT_SOURCE_SOFT_INT3			(1<<14)
++#define	PCIC_INT_CLEAR		(*(volatile unsigned int *)(PCI_CONFIG_BASE + 0x00000008))
++#define		PCIC_INT_CLEAR_PM					(1<<0)
++#define		PCIC_INT_CLEAR_PCI_TARGET			(1<<1)
++#define		PCIC_INT_CLEAR_PCI_MASTER			(1<<2)
++/*			PCIC_INT_CLEAR_RESERVED				(1<<3)	*/
++#define		PCIC_INT_CLEAR_PMEIN				(1<<4)
++/*			PCIC_INT_CLEAR_RESERVED				(1<<5)	*/
++/*			PCIC_INT_CLEAR_RESERVED				(1<<6)	*/
++#define		PCIC_INT_CLEAR_PCI_INTA				(1<<7)
++#define		PCIC_INT_CLEAR_PCI_INTB				(1<<8)
++#define		PCIC_INT_CLEAR_PCI_INTC				(1<<9)
++#define		PCIC_INT_CLEAR_PCI_INTD				(1<<10)
++#define		PCIC_INT_CLEAR_SOFT_INT0			(1<<11)
++#define		PCIC_INT_CLEAR_SOFT_INT1			(1<<12)
++#define		PCIC_INT_CLEAR_SOFT_INT2			(1<<13)
++#define		PCIC_INT_CLEAR_SOFT_INT3			(1<<14)
++#define	PCIC_INT_EN_AVAL	(*(volatile unsigned int *)(PCI_CONFIG_BASE + 0x0000000c))
++#define		PCIC_INT_EN_AVAL_PM					(1<<0)
++#define		PCIC_INT_EN_AVAL_PCI_TARGET			(1<<1)
++#define		PCIC_INT_EN_AVAL_PCI_MASTER			(1<<2)
++/*			PCIC_INT_EN_AVAL_RESERVED			(1<<3)	*/
++#define		PCIC_INT_EN_AVAL_PMEIN				(1<<4)
++/*			PCIC_INT_EN_AVAL_RESERVED			(1<<5)	*/
++/*			PCIC_INT_EN_AVAL_RESERVED			(1<<6)	*/
++#define		PCIC_INT_EN_AVAL_PCI_INTA			(1<<7)
++#define		PCIC_INT_EN_AVAL_PCI_INTB			(1<<8)
++#define		PCIC_INT_EN_AVAL_PCI_INTC			(1<<9)
++#define		PCIC_INT_EN_AVAL_PCI_INTD			(1<<10)
++#define		PCIC_INT_EN_AVAL_SOFT_INT0			(1<<11)
++#define		PCIC_INT_EN_AVAL_SOFT_INT1			(1<<12)
++#define		PCIC_INT_EN_AVAL_SOFT_INT2			(1<<13)
++#define		PCIC_INT_EN_AVAL_SOFT_INT3			(1<<14)
++#define	PCIC_INT_EN_PCI			(*(volatile unsigned int *)(PCI_CONFIG_BASE + 0x00000010))
++#define		PCIC_INT_EN_PCI_PM					(1<<0)
++#define		PCIC_INT_EN_PCI_PCI_TARGET			(1<<1)
++#define		PCIC_INT_EN_PCI_PCI_MASTER			(1<<2)
++/*			PCIC_INT_EN_PCI_RESERVED			(1<<3)	*/
++#define		PCIC_INT_EN_PCI_PMEIN				(1<<4)
++/*			PCIC_INT_EN_PCI_RESERVED			(1<<5)	*/
++/*			PCIC_INT_EN_PCI_RESERVED			(1<<6)	*/
++#define		PCIC_INT_EN_PCI_PCI_INTA			(1<<7)
++#define		PCIC_INT_EN_PCI_PCI_INTB			(1<<8)
++#define		PCIC_INT_EN_PCI_PCI_INTC			(1<<9)
++#define		PCIC_INT_EN_PCI_PCI_INTD			(1<<10)
++#define		PCIC_INT_EN_PCI_SOFT_INT0			(1<<11)
++#define		PCIC_INT_EN_PCI_SOFT_INT1			(1<<12)
++#define		PCIC_INT_EN_PCI_SOFT_INT2			(1<<13)
++#define		PCIC_INT_EN_PCI_SOFT_INT3			(1<<14)
++#define	PCIC_INT_SWSET		(*(volatile unsigned int *)(PCI_CONFIG_BASE + 0x00000014))
++#define		PCIC_INT_SWSET_SOFT_INT0			(1<<0)
++#define		PCIC_INT_SWSET_SOFT_INT1			(1<<1)
++#define		PCIC_INT_SWSET_SOFT_INT2			(1<<2)
++#define		PCIC_INT_SWSET_SOFT_INT3			(1<<3)
++#define	PCIC_PM_CTL			(*(volatile unsigned int *)(PCI_CONFIG_BASE + 0x00000018))
++#define		PCIC_PM_CTL_PWR_STATE_MASK			(0x02)
++/*			PCIC_PM_CTL_RESERVED				(1<<2) */
++/*			PCIC_PM_CTL_RESERVED				(1<<3) */
++/*			PCIC_PM_CTL_RESERVED				(1<<4) */
++/*			PCIC_PM_CTL_RESERVED				(1<<5) */
++/*			PCIC_PM_CTL_RESERVED				(1<<6) */
++/*			PCIC_PM_CTL_RESERVED				(1<<7) */
++/*			PCIC_PM_CTL_RESERVED				(1<<8) */
++/*			PCIC_PM_CTL_RESERVED				(1<<9) */
++#define		PCIC_PM_CTL_PWR_SUPPORT				(1<<10)
++#define		PCIC_PM_CTL_PMEIN					(1<<11)
++#define		PCIC_PM_CTL_CAP_MASK	(*(volatile unsigned short int *)(PCI_CONFIG_BASE + 0x0000001a))
++#define	PCIC_PM_CONSUME		(*(volatile unsigned int *)(PCI_CONFIG_BASE + 0x0000001c))
++#define		PCIC_PM_CONSUME_D0		(*(volatile unsigned char *)(PCI_CONFIG_BASE + 0x0000001c))
++#define		PCIC_PM_CONSUME_D1		(*(volatile unsigned char *)(PCI_CONFIG_BASE + 0x0000001d))
++#define		PCIC_PM_CONSUME_D2		(*(volatile unsigned char *)(PCI_CONFIG_BASE + 0x0000001e))
++#define		PCIC_PM_CONSUME_D3		(*(volatile unsigned char *)(PCI_CONFIG_BASE + 0x0000001f))
++#define	PCIC_PM_DISSAPATED	(*(volatile unsigned int *)(PCI_CONFIG_BASE + 0x00000020))
++#define		PCIC_PM_DISSAPATED_D0	(*(volatile unsigned char *)(PCI_CONFIG_BASE + 0x00000020))
++#define		PCIC_PM_DISSAPATED_D1	(*(volatile unsigned char *)(PCI_CONFIG_BASE + 0x00000021))
++#define		PCIC_PM_DISSAPATED_D2	(*(volatile unsigned char *)(PCI_CONFIG_BASE + 0x00000022))
++#define		PCIC_PM_DISSAPATED_D3	(*(volatile unsigned char *)(PCI_CONFIG_BASE + 0x00000023))
++#define	PCIC_PM_DATA_SCALE	(*(volatile unsigned short int *)(PCI_CONFIG_BASE + 0x00000024))
++#define	PCIC_VEND_DEV_ID	(*(volatile unsigned int *)(PCI_CONFIG_BASE + 0x00000028))
++#define	PCIC_SUB_VEND_DEV_ID	(*(volatile unsigned int *)(PCI_CONFIG_BASE + 0x0000002c))
++#define	PCIC_CLASS_REV_ID	(*(volatile unsigned int *)(PCI_CONFIG_BASE + 0x00000030))
++#define	PCIC_MAX_MIN		(*(volatile unsigned int *)(PCI_CONFIG_BASE + 0x00000034))
++#define	PCIC_MAST_MEM_AT0	(*(volatile unsigned int *)(PCI_CONFIG_BASE + 0x0000003c))
++#define	PCIC_MAST_MEM_AT1	(*(volatile unsigned int *)(PCI_CONFIG_BASE + 0x00000040))
++#define	PCIC_MAST_MEM_AT2	(*(volatile unsigned int *)(PCI_CONFIG_BASE + 0x00000044))
++#define	PCIC_SLAVE_MASK0	(*(volatile unsigned int *)(PCI_CONFIG_BASE + 0x0000004c))
++#define	PCIC_SLAVE_MASK1	(*(volatile unsigned int *)(PCI_CONFIG_BASE + 0x00000050))
++#define	PCIC_SLAVE_MASK2	(*(volatile unsigned int *)(PCI_CONFIG_BASE + 0x00000054))
++#define	PCIC_SLAVE_BASE_AT0	(*(volatile unsigned int *)(PCI_CONFIG_BASE + 0x00000058))
++#define	PCIC_SLAVE_BASE_AT1	(*(volatile unsigned int *)(PCI_CONFIG_BASE + 0x0000005c))
++#define	PCIC_SLAVE_BASE_AT2	(*(volatile unsigned int *)(PCI_CONFIG_BASE + 0x00000060))
++#define	PCIC_CONF_COMMAND	(*(volatile unsigned int *)(PCI_CONFIG_BASE + 0x00000090))
++#define	PCIC_CONF_ADDR		(*(volatile unsigned int *)(PCI_CONFIG_BASE + 0x00000094))
++#define	PCIC_CONF_DATA		(*(volatile unsigned int *)(PCI_CONFIG_BASE + 0x00000098))
++
++/*------------------------------------------*/
++/* IIC_INTERFACE                            */
++/*------------------------------------------*/
++#define I2C_DATA_HI          (*(volatile unsigned int *)(I2C_BASE + 0x0))
++#define I2C_DATA_LOW         (*(volatile unsigned int *)(I2C_BASE + 0x4))
++#define I2C_CONFIG           (*(volatile unsigned int *)(I2C_BASE + 0x8))
++#define I2C_DATA_READ        (*(volatile unsigned int *)(I2C_BASE + 0xC))
++#define I2C_CLOCK_DIV        (*(volatile unsigned int *)(I2C_BASE + 0x10))
++
++#define I2CWRITE      0x200
++#define I2CREAD       0x300
++#define I2C_END_BURST 0x400
++
++/* read bits */
++#define I2C_READ_ERROR    0x8000
++#define I2C_READ_COMPLETE 0x4000
++#define I2C_READ_BUSY     0x2000
++
++/* device types */
++#define I2C_IO_EXPANDER      0x2
++#define I2C_RTC              0xd
++
++/* device Addresses on I2C bus (EVM3) */
++#define SEVEN_SEGMENT_DISP    0x23   /* Device type = 0x2, Addr = 3 */
++#define EVM3_RTC              0xd0   /* Device type = 0xd, Addr = 0 */
++#define EVM3_RTC_I2C_ADDR      0x0
++
++/*------------------------------------------*/
++/* Ethernet MAC register offset definitions */
++/*------------------------------------------*/
++#define VMAC_DMACONFIG(X)      (*(volatile unsigned int *)(X + 0x00000000))
++#define VMAC_INTSTS(X)         (*(volatile unsigned int *)(X + 0x00000004))
++#define VMAC_INTMASK(X)        (*(volatile unsigned int *)(X + 0x00000008))
++
++#define VMAC_WRAPCLK(X)        (*(volatile unsigned int *)(X + 0x00000340))
++#define VMAC_STATSBASE(X)      (*(volatile unsigned int *)(X + 0x00000400))
++ 
++#define VMAC_TCRPTR(X)         (*(volatile unsigned int *)(X + 0x00000100))
++#define VMAC_TCRSIZE(X)        (*(volatile unsigned int *)(X + 0x00000104))
++#define VMAC_TCRINTTHRESH(X)   (*(volatile unsigned int *)(X + 0x00000108))
++#define VMAC_TCRTOTENT(X)      (*(volatile unsigned int *)(X + 0x0000010C))
++#define VMAC_TCRFREEENT(X)     (*(volatile unsigned int *)(X + 0x00000110))
++#define VMAC_TCRPENDENT(X)     (*(volatile unsigned int *)(X + 0x00000114))
++#define VMAC_TCRENTINC(X)      (*(volatile unsigned int *)(X + 0x00000118))
++#define VMAC_TXISRPACE(X)      (*(volatile unsigned int *)(X + 0x0000011c))
++
++
++#define VMAC_TDMASTATE0(X)     (*(volatile unsigned int *)(X + 0x00000120))
++#define VMAC_TDMASTATE1(X)     (*(volatile unsigned int *)(X + 0x00000124))
++#define VMAC_TDMASTATE2(X)     (*(volatile unsigned int *)(X + 0x00000128))
++#define VMAC_TDMASTATE3(X)     (*(volatile unsigned int *)(X + 0x0000012C))
++#define VMAC_TDMASTATE4(X)     (*(volatile unsigned int *)(X + 0x00000130))
++#define VMAC_TDMASTATE5(X)     (*(volatile unsigned int *)(X + 0x00000134))
++#define VMAC_TDMASTATE6(X)     (*(volatile unsigned int *)(X + 0x00000138))
++#define VMAC_TDMASTATE7(X)     (*(volatile unsigned int *)(X + 0x0000013C))
++#define VMAC_TXPADDCNT(X)      (*(volatile unsigned int *)(X + 0x00000140))
++#define VMAC_TXPADDSTART(X)    (*(volatile unsigned int *)(X + 0x00000144))
++#define VMAC_TXPADDEND(X)      (*(volatile unsigned int *)(X + 0x00000148))
++#define VMAC_TXQFLUSH(X)       (*(volatile unsigned int *)(X + 0x0000014C))
++ 
++#define VMAC_RCRPTR(X)         (*(volatile unsigned int *)(X + 0x00000200))
++#define VMAC_RCRSIZE(X)        (*(volatile unsigned int *)(X + 0x00000204))
++#define VMAC_RCRINTTHRESH(X)   (*(volatile unsigned int *)(X + 0x00000208))
++#define VMAC_RCRTOTENT(X)      (*(volatile unsigned int *)(X + 0x0000020C))
++#define VMAC_RCRFREEENT(X)     (*(volatile unsigned int *)(X + 0x00000210))
++#define VMAC_RCRPENDENT(X)     (*(volatile unsigned int *)(X + 0x00000214))
++#define VMAC_RCRENTINC(X)      (*(volatile unsigned int *)(X + 0x00000218))
++#define VMAC_RXISRPACE(X)      (*(volatile unsigned int *)(X + 0x0000021c))
++
++#define VMAC_RDMASTATE0(X)     (*(volatile unsigned int *)(X + 0x00000220))
++#define VMAC_RDMASTATE1(X)     (*(volatile unsigned int *)(X + 0x00000224))
++#define VMAC_RDMASTATE2(X)     (*(volatile unsigned int *)(X + 0x00000228))
++#define VMAC_RDMASTATE3(X)     (*(volatile unsigned int *)(X + 0x0000022C))
++#define VMAC_RDMASTATE4(X)     (*(volatile unsigned int *)(X + 0x00000230))
++#define VMAC_RDMASTATE5(X)     (*(volatile unsigned int *)(X + 0x00000234))
++#define VMAC_RDMASTATE6(X)     (*(volatile unsigned int *)(X + 0x00000238))
++#define VMAC_RDMASTATE7(X)     (*(volatile unsigned int *)(X + 0x0000023C))
++#define VMAC_FBLADDCNT(X)      (*(volatile unsigned int *)(X + 0x00000240))
++#define VMAC_FBLADDSTART(X)    (*(volatile unsigned int *)(X + 0x00000244))
++#define VMAC_FBLADDEND(X)      (*(volatile unsigned int *)(X + 0x00000248))
++#define VMAC_RXONOFF(X)        (*(volatile unsigned int *)(X + 0x0000024C))
++ 
++#define VMAC_FBL0NEXTD(X)      (*(volatile unsigned int *)(X + 0x00000280))
++#define VMAC_FBL0LASTD(X)      (*(volatile unsigned int *)(X + 0x00000284))
++#define VMAC_FBL0COUNTD(X)     (*(volatile unsigned int *)(X + 0x00000288))
++#define VMAC_FBL0BUFSIZE(X)    (*(volatile unsigned int *)(X + 0x0000028C))
++ 
++#define VMAC_MACCONTROL(X)     (*(volatile unsigned int *)(X + 0x00000300))
++#define VMAC_MACSTATUS(X)      (*(volatile unsigned int *)(X + 0x00000304))
++#define VMAC_MACADDRHI(X)      (*(volatile unsigned int *)(X + 0x00000308))
++#define VMAC_MACADDRLO(X)      (*(volatile unsigned int *)(X + 0x0000030C))
++#define VMAC_MACHASH1(X)       (*(volatile unsigned int *)(X + 0x00000310))
++#define VMAC_MACHASH2(X)       (*(volatile unsigned int *)(X + 0x00000314))
++ 
++#define VMAC_WRAPCLK(X)        (*(volatile unsigned int *)(X + 0x00000340))
++#define VMAC_BOFTEST(X)        (*(volatile unsigned int *)(X + 0x00000344))
++#define VMAC_PACTEST(X)        (*(volatile unsigned int *)(X + 0x00000348))
++#define VMAC_PAUSEOP(X)        (*(volatile unsigned int *)(X + 0x0000034C))
++ 
++#define VMAC_MDIOCONTROL(X)    (*(volatile unsigned int *)(X + 0x00000380))
++#define VMAC_MDIOUSERACCESS(X) (*(volatile unsigned int *)(X +0x00000384))
++#define VMAC_MDIOACK(X)        (*(volatile unsigned int *)(X + 0x00000388))
++#define VMAC_MDIOLINK(X)       (*(volatile unsigned int *)(X + 0x0000038C))
++#define VMAC_MDIOMACPHY(X)     (*(volatile unsigned int *)(X + 0x00000390))
++
++#define VMAC_STATS_BASE(X)     (X + 0x00000400)
++
++#endif
++
++
++
++
++
++
+diff -urN linux-2.4.30/include/asm-mips/ar7/tnetd73xx.h linux-2.4.30.current/include/asm-mips/ar7/tnetd73xx.h
+--- linux-2.4.30/include/asm-mips/ar7/tnetd73xx.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.30.current/include/asm-mips/ar7/tnetd73xx.h	2005-06-12 20:14:28.000000000 +0200
+@@ -0,0 +1,340 @@
++/******************************************************************************
++ * FILE PURPOSE:    TNETD73xx Common Header File
++ ******************************************************************************
++ * FILE NAME:       tnetd73xx.h
++ *
++ * DESCRIPTION:     shared typedef's, constants and API for TNETD73xx
++ *
++ * REVISION HISTORY:
++ * 27 Nov 02 - PSP TII  
++ *
++ * (C) Copyright 2002, Texas Instruments, Inc
++ *******************************************************************************/
++
++/*
++ *
++ *
++ *   These are const, typedef, and api definitions for tnetd73xx.
++ *
++ *   NOTES:
++ *   1. This file may be included into both C and Assembly files.
++ *       - for .s files, please do #define _ASMLANGUAGE in your ASM file to
++ *           avoid C data types (typedefs) below;
++ *       - for .c files, you don't have to do anything special.
++ *
++ *   2. This file has a number of sections for each SOC subsystem. When adding
++ *       a new constant, find the subsystem you are working on and follow the
++ *       name pattern. If you are adding another typedef for your interface, please,
++ *       place it with other typedefs and function prototypes.
++ *
++ *   3. Please, DO NOT add any macros or types that are local to a subsystem to avoid
++ *       cluttering. Include such items directly into the module's .c file or have a
++ *       local .h file to pass data between smaller modules. This file defines only
++ *       shared items.
++ */
++
++#ifndef __TNETD73XX_H__
++#define __TNETD73XX_H__
++
++#ifndef _ASMLANGUAGE        /* This part not for assembly language */
++
++#include <linux/types.h>
++
++extern unsigned int tnetd73xx_mips_freq;
++extern unsigned int tnetd73xx_vbus_freq;
++
++#include "tnetd73xx_err.h"
++
++#endif /* _ASMLANGUAGE */
++
++
++/*******************************************************************************************
++*   Emerald core specific
++******************************************************************************************** */
++
++#ifdef  BIG_ENDIAN
++#elif defined(LITTLE_ENDIAN)
++#else
++#error Need to define endianism
++#endif
++
++#ifndef KSEG_MSK
++#define KSEG_MSK                    0xE0000000 /* Most significant 3 bits denote kseg choice */
++#endif
++
++#ifndef KSEG_INV_MASK
++#define KSEG_INV_MASK               0x1FFFFFFF /* Inverted mask for kseg address */
++#endif
++
++#ifndef KSEG0_BASE
++#define KSEG0_BASE                  0x80000000
++#endif
++
++#ifndef KSEG1_BASE
++#define KSEG1_BASE                  0xA0000000
++#endif
++
++#ifndef KSEG0
++#define KSEG0(addr)                 (((u32)(addr) & ~KSEG_MSK) | KSEG0_BASE)
++#endif
++
++#ifndef KSEG1
++#define KSEG1(addr)                 (((u32)(addr) & ~KSEG_MSK) | KSEG1_BASE)
++#endif
++
++#ifndef KUSEG
++#define KUSEG(addr)                 ((u32)(addr) & ~KSEG_MSK)
++#endif
++
++#ifndef PHYS_ADDR
++#define PHYS_ADDR(addr)             ((addr) & KSEG_INV_MASK)
++#endif
++
++#ifndef PHYS_TO_K0
++#define PHYS_TO_K0(addr)            (PHYS_ADDR(addr)|KSEG0_BASE)
++#endif
++
++#ifndef PHYS_TO_K1
++#define PHYS_TO_K1(addr)            (PHYS_ADDR(addr)|KSEG1_BASE)
++#endif
++
++#ifndef REG8_ADDR
++#define REG8_ADDR(addr)             (volatile u8 *)(PHYS_TO_K1(addr))
++#define REG8_DATA(addr)             (*(volatile u8 *)(PHYS_TO_K1(addr)))
++#define REG8_WRITE(addr, data)      REG8_DATA(addr) = data;
++#define REG8_READ(addr, data)       data = (u8) REG8_DATA(addr);
++#endif
++
++#ifndef REG16_ADDR
++#define REG16_ADDR(addr)            (volatile u16 *)(PHYS_TO_K1(addr))
++#define REG16_DATA(addr)            (*(volatile u16 *)(PHYS_TO_K1(addr)))
++#define REG16_WRITE(addr, data)     REG16_DATA(addr) = data;
++#define REG16_READ(addr, data)      data = (u16) REG16_DATA(addr);
++#endif
++
++#ifndef REG32_ADDR
++#define REG32_ADDR(addr)            (volatile u32 *)(PHYS_TO_K1(addr))
++#define REG32_DATA(addr)            (*(volatile u32 *)(PHYS_TO_K1(addr)))
++#define REG32_WRITE(addr, data)     REG32_DATA(addr) = data;
++#define REG32_READ(addr, data)      data = (u32) REG32_DATA(addr);
++#endif
++
++#ifdef  _LINK_KSEG0_                /* Application is linked into KSEG0 space */
++#define VIRT_ADDR(addr)             PHYS_TO_K0(PHYS_ADDR(addr))
++#endif
++
++#ifdef  _LINK_KSEG1_                /* Application is linked into KSEG1 space */
++#define VIRT_ADDR(addr)             PHYS_TO_K1(PHYS_ADDR(addr))
++#endif
++
++#if !defined(_LINK_KSEG0_) && !defined(_LINK_KSEG1_)
++#error  You must define _LINK_KSEG0_ or _LINK_KSEG1_ to compile the code.
++#endif
++
++/* TNETD73XX chip definations */
++
++#define FREQ_1MHZ                       1000000
++#define TNETD73XX_MIPS_FREQ             tnetd73xx_mips_freq /* CPU clock frequency */
++#define TNETD73XX_VBUS_FREQ             tnetd73xx_vbus_freq /* originally (TNETD73XX_MIPS_FREQ/2) */
++
++#ifdef AR7SEAD2
++#define TNETD73XX_MIPS_FREQ_DEFAULT     25000000       /* 25 Mhz for sead2 board crystal */
++#else
++#define TNETD73XX_MIPS_FREQ_DEFAULT     125000000      /* 125 Mhz */
++#endif
++#define TNETD73XX_VBUS_FREQ_DEFAULT     (TNETD73XX_MIPS_FREQ_DEFAULT / 2) /* Sync mode */
++
++
++
++/* Module base addresses */
++#define TNETD73XX_ADSLSS_BASE               PHYS_TO_K1(0x01000000)      /* ADSLSS Module */
++#define TNETD73XX_BBIF_CTRL_BASE            PHYS_TO_K1(0x02000000)      /* BBIF Control */
++#define TNETD73XX_ATMSAR_BASE               PHYS_TO_K1(0x03000000)      /* ATM SAR */
++#define TNETD73XX_USB_BASE                  PHYS_TO_K1(0x03400000)      /* USB Module */
++#define TNETD73XX_VLYNQ0_BASE               PHYS_TO_K1(0x04000000)      /* VLYNQ0 Module */
++#define TNETD73xx_EMAC0_BASE                PHYS_TO_K1(0x08610000)      /* EMAC0 Module*/
++#define TNETD73XX_EMIF_BASE                 PHYS_TO_K1(0x08610800)      /* EMIF Module */
++#define TNETD73XX_GPIO_BASE                 PHYS_TO_K1(0x08610900)      /* GPIO control */
++#define TNETD73XX_CLOCK_CTRL_BASE           PHYS_TO_K1(0x08610A00)      /* Clock Control */
++#define TNETD73XX_WDTIMER_BASE              PHYS_TO_K1(0x08610B00)      /* WDTIMER Module */
++#define TNETD73XX_TIMER0_BASE               PHYS_TO_K1(0x08610C00)      /* TIMER0 Module */
++#define TNETD73XX_TIMER1_BASE               PHYS_TO_K1(0x08610D00)      /* TIMER1 Module */
++#define TNETD73XX_UARTA_BASE                PHYS_TO_K1(0x08610E00)      /* UART A */
++#define TNETD73XX_UARTB_BASE                PHYS_TO_K1(0x08610F00)      /* UART B */
++#define TNETD73XX_I2C_BASE                  PHYS_TO_K1(0x08611000)      /* I2C Module */
++#define TNETD73XX_USB_DMA_BASE              PHYS_TO_K1(0x08611200)      /* USB Module */
++#define TNETD73XX_MCDMA_BASE                PHYS_TO_K1(0x08611400)      /* MC-DMA */
++#define TNETD73xx_VDMAVT_BASE               PHYS_TO_K1(0x08611500)      /* VDMAVT Control */
++#define TNETD73XX_RST_CTRL_BASE             PHYS_TO_K1(0x08611600)      /* Reset Control */
++#define TNETD73xx_BIST_CTRL_BASE            PHYS_TO_K1(0x08611700)      /* BIST Control */
++#define TNETD73xx_VLYNQ0_CTRL_BASE          PHYS_TO_K1(0x08611800)      /* VLYNQ0 Control */
++#define TNETD73XX_DCL_BASE                  PHYS_TO_K1(0x08611A00)      /* Device Configuration Latch */
++#define TNETD73xx_VLYNQ1_CTRL_BASE          PHYS_TO_K1(0x08611C00)      /* VLYNQ1 Control */
++#define TNETD73xx_MDIO_BASE                 PHYS_TO_K1(0x08611E00)      /* MDIO Control */
++#define TNETD73XX_FSER_BASE                 PHYS_TO_K1(0x08612000)      /* FSER Control */
++#define TNETD73XX_INTC_BASE                 PHYS_TO_K1(0x08612400)      /* Interrupt Controller */
++#define TNETD73xx_EMAC1_BASE                PHYS_TO_K1(0x08612800)      /* EMAC1 Module*/
++#define TNETD73XX_VLYNQ1_BASE               PHYS_TO_K1(0x0C000000)      /* VLYNQ1 Module */
++
++/* BBIF Registers */
++#define TNETD73XX_BBIF_ADSLADR              (TNETD73XX_BBIF_CTRL_BASE + 0x0)
++
++/* Device Configuration Latch Registers */
++#define TNETD73XX_DCL_BOOTCR                (TNETD73XX_DCL_BASE + 0x0)
++#define TNETD73XX_DCL_DPLLSELR              (TNETD73XX_DCL_BASE + 0x10)
++#define TNETD73XX_DCL_SPEEDCTLR             (TNETD73XX_DCL_BASE + 0x14)
++#define TNETD73XX_DCL_SPEEDPWDR             (TNETD73XX_DCL_BASE + 0x18)
++#define TNETD73XX_DCL_SPEEDCAPR             (TNETD73XX_DCL_BASE + 0x1C)
++
++/* GPIO Control */
++#define TNETD73XX_GPIODINR                  (TNETD73XX_GPIO_BASE + 0x0)
++#define TNETD73XX_GPIODOUTR                 (TNETD73XX_GPIO_BASE + 0x4)
++#define TNETD73XX_GPIOPDIRR                 (TNETD73XX_GPIO_BASE + 0x8)
++#define TNETD73XX_GPIOENR                   (TNETD73XX_GPIO_BASE + 0xC)
++#define TNETD73XX_CVR                       (TNETD73XX_GPIO_BASE + 0x14)
++#define TNETD73XX_DIDR1                     (TNETD73XX_GPIO_BASE + 0x18)
++#define TNETD73XX_DIDR2                     (TNETD73XX_GPIO_BASE + 0x1C)
++
++/* Reset Control  */
++#define TNETD73XX_RST_CTRL_PRCR             (TNETD73XX_RST_CTRL_BASE + 0x0)
++#define TNETD73XX_RST_CTRL_SWRCR            (TNETD73XX_RST_CTRL_BASE + 0x4)
++#define TNETD73XX_RST_CTRL_RSR              (TNETD73XX_RST_CTRL_BASE + 0x8)
++
++/* Power Control  */
++#define TNETD73XX_POWER_CTRL_PDCR           (TNETD73XX_CLOCK_CTRL_BASE + 0x0)
++#define TNETD73XX_POWER_CTRL_PCLKCR         (TNETD73XX_CLOCK_CTRL_BASE + 0x4)
++#define TNETD73XX_POWER_CTRL_PDUCR          (TNETD73XX_CLOCK_CTRL_BASE + 0x8)
++#define TNETD73XX_POWER_CTRL_WKCR           (TNETD73XX_CLOCK_CTRL_BASE + 0xC)
++
++/* Clock Control */
++#define TNETD73XX_CLK_CTRL_SCLKCR           (TNETD73XX_CLOCK_CTRL_BASE + 0x20)
++#define TNETD73XX_CLK_CTRL_SCLKPLLCR        (TNETD73XX_CLOCK_CTRL_BASE + 0x30)
++#define TNETD73XX_CLK_CTRL_MCLKCR           (TNETD73XX_CLOCK_CTRL_BASE + 0x40)
++#define TNETD73XX_CLK_CTRL_MCLKPLLCR        (TNETD73XX_CLOCK_CTRL_BASE + 0x50)
++#define TNETD73XX_CLK_CTRL_UCLKCR           (TNETD73XX_CLOCK_CTRL_BASE + 0x60)
++#define TNETD73XX_CLK_CTRL_UCLKPLLCR        (TNETD73XX_CLOCK_CTRL_BASE + 0x70)
++#define TNETD73XX_CLK_CTRL_ACLKCR0          (TNETD73XX_CLOCK_CTRL_BASE + 0x80)
++#define TNETD73XX_CLK_CTRL_ACLKPLLCR0       (TNETD73XX_CLOCK_CTRL_BASE + 0x90)
++#define TNETD73XX_CLK_CTRL_ACLKCR1          (TNETD73XX_CLOCK_CTRL_BASE + 0xA0)
++#define TNETD73XX_CLK_CTRL_ACLKPLLCR1       (TNETD73XX_CLOCK_CTRL_BASE + 0xB0)
++
++/* EMIF control */
++#define TNETD73XX_EMIF_SDRAM_CFG              ( TNETD73XX_EMIF_BASE + 0x08 )                
++
++/* UART */
++#ifdef AR7SEAD2
++#define TNETD73XX_UART_FREQ                 3686400
++#else
++#define TNETD73XX_UART_FREQ                 TNETD73XX_VBUS_FREQ
++#endif
++
++/* Interrupt Controller */
++
++/* Primary interrupts */
++#define TNETD73XX_INTC_UNIFIED_SECONDARY    0   /* Unified secondary interrupt */
++#define TNETD73XX_INTC_EXTERNAL0            1   /* External Interrupt Line 0 */
++#define TNETD73XX_INTC_EXTERNAL1            2   /* External Interrupt Line 1 */
++#define TNETD73XX_INTC_RESERVED3            3   /* Reserved */
++#define TNETD73XX_INTC_RESERVED4            4   /* Reserved */
++#define TNETD73XX_INTC_TIMER0               5   /* TIMER 0 int */
++#define TNETD73XX_INTC_TIMER1               6   /* TIMER 1 int */
++#define TNETD73XX_INTC_UART0                7   /* UART 0 int */
++#define TNETD73XX_INTC_UART1                8   /* UART 1 int */
++#define TNETD73XX_INTC_MCDMA0               9   /* MCDMA 0 int */
++#define TNETD73XX_INTC_MCDMA1               10  /* MCDMA 1 int */
++#define TNETD73XX_INTC_RESERVED11           11  /* Reserved */
++#define TNETD73XX_INTC_RESERVED12           12  /* Reserved */
++#define TNETD73XX_INTC_RESERVED13           13  /* Reserved */
++#define TNETD73XX_INTC_RESERVED14           14  /* Reserved */
++#define TNETD73XX_INTC_ATMSAR               15  /* ATM SAR int */
++#define TNETD73XX_INTC_RESERVED16           16  /* Reserved */
++#define TNETD73XX_INTC_RESERVED17           17  /* Reserved */
++#define TNETD73XX_INTC_RESERVED18           18  /* Reserved */
++#define TNETD73XX_INTC_EMAC0                19  /* EMAC 0 int */
++#define TNETD73XX_INTC_RESERVED20           20  /* Reserved */
++#define TNETD73XX_INTC_VLYNQ0               21  /* VLYNQ 0 int */
++#define TNETD73XX_INTC_CODEC                22  /* CODEC int */
++#define TNETD73XX_INTC_RESERVED23           23  /* Reserved */
++#define TNETD73XX_INTC_USBSLAVE             24  /* USB Slave int */
++#define TNETD73XX_INTC_VLYNQ1               25  /* VLYNQ 1 int */
++#define TNETD73XX_INTC_RESERVED26           26  /* Reserved */
++#define TNETD73XX_INTC_RESERVED27           27  /* Reserved */
++#define TNETD73XX_INTC_ETH_PHY              28  /* Ethernet PHY   */
++#define TNETD73XX_INTC_I2C                  29  /* I2C int */
++#define TNETD73XX_INTC_MCDMA2               30  /* MCDMA 2 int */
++#define TNETD73XX_INTC_MCDMA3               31  /* MCDMA 3 int */
++#define TNETD73XX_INTC_RESERVED32           32  /* Reserved */
++#define TNETD73XX_INTC_EMAC1                33  /* EMAC 1 int */
++#define TNETD73XX_INTC_RESERVED34           34  /* Reserved */
++#define TNETD73XX_INTC_RESERVED35           35  /* Reserved */
++#define TNETD73XX_INTC_RESERVED36           36  /* Reserved */
++#define TNETD73XX_INTC_VDMAVTRX             37  /* VDMAVTRX */
++#define TNETD73XX_INTC_VDMAVTTX             38  /* VDMAVTTX */
++#define TNETD73XX_INTC_ADSLSS               39  /* ADSLSS */
++
++/* Secondary interrupts */
++#define TNETD73XX_INTC_SEC0                 40  /* Secondary */
++#define TNETD73XX_INTC_SEC1                 41  /* Secondary */
++#define TNETD73XX_INTC_SEC2                 42  /* Secondary */
++#define TNETD73XX_INTC_SEC3                 43  /* Secondary */
++#define TNETD73XX_INTC_SEC4                 44  /* Secondary */
++#define TNETD73XX_INTC_SEC5                 45  /* Secondary */
++#define TNETD73XX_INTC_SEC6                 46  /* Secondary */
++#define TNETD73XX_INTC_EMIF                 47  /* EMIF */
++#define TNETD73XX_INTC_SEC8                 48  /* Secondary */
++#define TNETD73XX_INTC_SEC9                 49  /* Secondary */
++#define TNETD73XX_INTC_SEC10                50  /* Secondary */
++#define TNETD73XX_INTC_SEC11                51  /* Secondary */
++#define TNETD73XX_INTC_SEC12                52  /* Secondary */
++#define TNETD73XX_INTC_SEC13                53  /* Secondary */
++#define TNETD73XX_INTC_SEC14                54  /* Secondary */
++#define TNETD73XX_INTC_SEC15                55  /* Secondary */
++#define TNETD73XX_INTC_SEC16                56  /* Secondary */
++#define TNETD73XX_INTC_SEC17                57  /* Secondary */
++#define TNETD73XX_INTC_SEC18                58  /* Secondary */
++#define TNETD73XX_INTC_SEC19                59  /* Secondary */
++#define TNETD73XX_INTC_SEC20                60  /* Secondary */
++#define TNETD73XX_INTC_SEC21                61  /* Secondary */
++#define TNETD73XX_INTC_SEC22                62  /* Secondary */
++#define TNETD73XX_INTC_SEC23                63  /* Secondary */
++#define TNETD73XX_INTC_SEC24                64  /* Secondary */
++#define TNETD73XX_INTC_SEC25                65  /* Secondary */
++#define TNETD73XX_INTC_SEC26                66  /* Secondary */
++#define TNETD73XX_INTC_SEC27                67  /* Secondary */
++#define TNETD73XX_INTC_SEC28                68  /* Secondary */
++#define TNETD73XX_INTC_SEC29                69  /* Secondary */
++#define TNETD73XX_INTC_SEC30                70  /* Secondary */
++#define TNETD73XX_INTC_SEC31                71  /* Secondary */
++
++/* These ugly macros are to access the -1 registers, like config1 */
++#define MFC0_SEL1_OPCODE(dst, src)\
++        .word (0x40000000 | ((dst)<<16) | ((src)<<11) | 1);\
++        nop; \
++        nop; \
++        nop
++
++#define MTC0_SEL1_OPCODE(dst, src)\
++        .word (0x40800000 | ((dst)<<16) | ((src)<<11) | 1);\
++        nop; \
++        nop; \
++        nop
++
++
++/* Below are Jade core specific */
++#define CFG0_4K_IL_MASK         0x00380000
++#define CFG0_4K_IL_SHIFT        19
++#define CFG0_4K_IA_MASK         0x00070000
++#define CFG0_4K_IA_SHIFT        16
++#define CFG0_4K_IS_MASK         0x01c00000
++#define CFG0_4K_IS_SHIFT        22
++
++#define CFG0_4K_DL_MASK         0x00001c00
++#define CFG0_4K_DL_SHIFT        10
++#define CFG0_4K_DA_MASK         0x00000380
++#define CFG0_4K_DA_SHIFT        7
++#define CFG0_4K_DS_MASK         0x0000E000
++#define CFG0_4K_DS_SHIFT        13
++
++
++
++#endif /* __TNETD73XX_H_ */
+diff -urN linux-2.4.30/include/asm-mips/ar7/tnetd73xx_err.h linux-2.4.30.current/include/asm-mips/ar7/tnetd73xx_err.h
+--- linux-2.4.30/include/asm-mips/ar7/tnetd73xx_err.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.30.current/include/asm-mips/ar7/tnetd73xx_err.h	2005-06-12 20:14:28.000000000 +0200
+@@ -0,0 +1,42 @@
++/******************************************************************************
++ * FILE PURPOSE:    TNETD73xx Error Definations Header File
++ ******************************************************************************
++ * FILE NAME:       tnetd73xx_err.h
++ *
++ * DESCRIPTION:     Error definations for TNETD73XX
++ *
++ * REVISION HISTORY:
++ * 27 Nov 02 - PSP TII  
++ *
++ * (C) Copyright 2002, Texas Instruments, Inc
++ *******************************************************************************/
++
++ 
++#ifndef __TNETD73XX_ERR_H__
++#define __TNETD73XX_ERR_H__
++
++typedef enum TNETD73XX_ERR_t
++{
++    TNETD73XX_ERR_OK        = 0,    /* OK or SUCCESS */
++    TNETD73XX_ERR_ERROR     = -1,   /* Unspecified/Generic ERROR */
++
++    /* Pointers and args */
++    TNETD73XX_ERR_INVARG        = -2,   /* Invaild argument to the call */
++    TNETD73XX_ERR_NULLPTR       = -3,   /* NULL pointer */
++    TNETD73XX_ERR_BADPTR        = -4,   /* Bad (out of mem) pointer */
++
++    /* Memory issues */
++    TNETD73XX_ERR_ALLOC_FAIL    = -10,  /* allocation failed */
++    TNETD73XX_ERR_FREE_FAIL     = -11,  /* free failed */
++    TNETD73XX_ERR_MEM_CORRUPT   = -12,  /* corrupted memory */
++    TNETD73XX_ERR_BUF_LINK      = -13,  /* buffer linking failed */
++
++    /* Device issues */
++    TNETD73XX_ERR_DEVICE_TIMEOUT    = -20,  /* device timeout on read/write */
++    TNETD73XX_ERR_DEVICE_MALFUNC    = -21,  /* device malfunction */
++
++    TNETD73XX_ERR_INVID     = -30   /* Invalid ID */
++
++} TNETD73XX_ERR;
++
++#endif /* __TNETD73XX_ERR_H__ */
+diff -urN linux-2.4.30/include/asm-mips/ar7/tnetd73xx_misc.h linux-2.4.30.current/include/asm-mips/ar7/tnetd73xx_misc.h
+--- linux-2.4.30/include/asm-mips/ar7/tnetd73xx_misc.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.30.current/include/asm-mips/ar7/tnetd73xx_misc.h	2005-06-12 20:14:28.000000000 +0200
+@@ -0,0 +1,243 @@
++/******************************************************************************
++ * FILE PURPOSE:    TNETD73xx Misc modules API Header
++ ******************************************************************************
++ * FILE NAME:       tnetd73xx_misc.h
++ *
++ * DESCRIPTION:     Clock Control, Reset Control, Power Management, GPIO
++ *                  FSER Modules API 
++ *                  As per TNETD73xx specifications
++ *
++ * REVISION HISTORY:
++ * 27 Nov 02 - Sharath Kumar     PSP TII  
++ * 14 Feb 03 - Anant Gole        PSP TII
++ *
++ * (C) Copyright 2002, Texas Instruments, Inc
++ *******************************************************************************/
++
++#ifndef __TNETD73XX_MISC_H__
++#define __TNETD73XX_MISC_H__
++
++#include <linux/types.h>
++
++#define BOOTCR_MIPS_ASYNC_MODE  (1 << 25)
++
++/*****************************************************************************
++ * Reset Control Module
++ *****************************************************************************/
++ 
++typedef enum TNETD73XX_RESET_MODULE_tag
++{
++    RESET_MODULE_UART0      = 0,
++    RESET_MODULE_UART1      = 1,
++    RESET_MODULE_I2C        = 2,
++    RESET_MODULE_TIMER0     = 3,
++    RESET_MODULE_TIMER1     = 4,
++    RESET_MODULE_GPIO       = 6,
++    RESET_MODULE_ADSLSS     = 7,
++    RESET_MODULE_USBS       = 8,
++    RESET_MODULE_SAR        = 9,
++    RESET_MODULE_VDMA_VT    = 11,
++    RESET_MODULE_FSER       = 12,
++    RESET_MODULE_VLYNQ1     = 16,
++    RESET_MODULE_EMAC0      = 17,
++    RESET_MODULE_DMA        = 18,
++    RESET_MODULE_BIST       = 19,
++    RESET_MODULE_VLYNQ0     = 20,
++    RESET_MODULE_EMAC1      = 21,
++    RESET_MODULE_MDIO       = 22,
++    RESET_MODULE_ADSLSS_DSP = 23,
++    RESET_MODULE_EPHY       = 26
++} TNETD73XX_RESET_MODULE_T;
++
++typedef enum TNETD73XX_RESET_CTRL_tag
++{
++    IN_RESET        = 0,
++    OUT_OF_RESET
++} TNETD73XX_RESET_CTRL_T;
++
++typedef enum TNETD73XX_SYS_RST_MODE_tag
++{
++    RESET_SOC_WITH_MEMCTRL      = 1,    /* SW0 bit in SWRCR register */
++    RESET_SOC_WITHOUT_MEMCTRL   = 2     /* SW1 bit in SWRCR register */
++} TNETD73XX_SYS_RST_MODE_T;
++
++typedef enum TNETD73XX_SYS_RESET_STATUS_tag
++{
++    HARDWARE_RESET = 0,
++    SOFTWARE_RESET0,            /* Caused by writing 1 to SW0 bit in SWRCR register */
++    WATCHDOG_RESET,
++    SOFTWARE_RESET1             /* Caused by writing 1 to SW1 bit in SWRCR register */
++} TNETD73XX_SYS_RESET_STATUS_T;
++
++void tnetd73xx_reset_ctrl(TNETD73XX_RESET_MODULE_T reset_module, 
++                                TNETD73XX_RESET_CTRL_T reset_ctrl);
++TNETD73XX_RESET_CTRL_T tnetd73xx_get_reset_status(TNETD73XX_RESET_MODULE_T reset_module);
++void tnetd73xx_sys_reset(TNETD73XX_SYS_RST_MODE_T mode);
++TNETD73XX_SYS_RESET_STATUS_T tnetd73xx_get_sys_last_reset_status(void);
++                    
++/*****************************************************************************
++ * Power Control Module
++ *****************************************************************************/
++
++typedef enum TNETD73XX_POWER_MODULE_tag
++{
++    POWER_MODULE_USBSP      = 0,
++    POWER_MODULE_WDTP       = 1,
++    POWER_MODULE_UT0P       = 2,
++    POWER_MODULE_UT1P       = 3,
++    POWER_MODULE_IICP       = 4,
++    POWER_MODULE_VDMAP      = 5,
++    POWER_MODULE_GPIOP      = 6,
++    POWER_MODULE_VLYNQ1P    = 7,
++    POWER_MODULE_SARP       = 8,
++    POWER_MODULE_ADSLP      = 9,
++    POWER_MODULE_EMIFP      = 10,
++    POWER_MODULE_ADSPP      = 12,
++    POWER_MODULE_RAMP       = 13,
++    POWER_MODULE_ROMP       = 14,
++    POWER_MODULE_DMAP       = 15,
++    POWER_MODULE_BISTP      = 16,
++    POWER_MODULE_TIMER0P    = 18,
++    POWER_MODULE_TIMER1P    = 19,
++    POWER_MODULE_EMAC0P     = 20,
++    POWER_MODULE_EMAC1P     = 22,
++    POWER_MODULE_EPHYP      = 24,
++    POWER_MODULE_VLYNQ0P    = 27,
++} TNETD73XX_POWER_MODULE_T;
++
++typedef enum TNETD73XX_POWER_CTRL_tag
++{
++    POWER_CTRL_POWER_UP = 0,
++    POWER_CTRL_POWER_DOWN
++} TNETD73XX_POWER_CTRL_T;
++
++typedef enum TNETD73XX_SYS_POWER_MODE_tag
++{
++    GLOBAL_POWER_MODE_RUN       = 0,    /* All system is up */
++    GLOBAL_POWER_MODE_IDLE,             /* MIPS is power down, all peripherals working */
++    GLOBAL_POWER_MODE_STANDBY,          /* Chip in power down, but clock to ADSKL subsystem is running */
++    GLOBAL_POWER_MODE_POWER_DOWN        /* Total chip is powered down */
++} TNETD73XX_SYS_POWER_MODE_T;
++
++void tnetd73xx_power_ctrl(TNETD73XX_POWER_MODULE_T power_module,  TNETD73XX_POWER_CTRL_T power_ctrl);
++TNETD73XX_POWER_CTRL_T tnetd73xx_get_pwr_status(TNETD73XX_POWER_MODULE_T power_module);
++void tnetd73xx_set_global_pwr_mode(TNETD73XX_SYS_POWER_MODE_T power_mode);
++TNETD73XX_SYS_POWER_MODE_T tnetd73xx_get_global_pwr_mode(void);
++
++/*****************************************************************************
++ * Wakeup Control 
++ *****************************************************************************/
++
++typedef enum TNETD73XX_WAKEUP_INTERRUPT_tag
++{
++    WAKEUP_INT0 = 1,
++    WAKEUP_INT1 = 2,
++    WAKEUP_INT2 = 4,
++    WAKEUP_INT3 = 8
++} TNETD73XX_WAKEUP_INTERRUPT_T;
++
++typedef enum TNETD73XX_WAKEUP_CTRL_tag
++{
++    WAKEUP_DISABLED = 0,
++    WAKEUP_ENABLED
++} TNETD73XX_WAKEUP_CTRL_T;
++
++typedef enum TNETD73XX_WAKEUP_POLARITY_tag
++{
++    WAKEUP_ACTIVE_HIGH = 0,
++    WAKEUP_ACTIVE_LOW
++} TNETD73XX_WAKEUP_POLARITY_T;
++
++void tnetd73xx_wakeup_ctrl(TNETD73XX_WAKEUP_INTERRUPT_T wakeup_int, 
++                           TNETD73XX_WAKEUP_CTRL_T wakeup_ctrl, 
++                           TNETD73XX_WAKEUP_POLARITY_T wakeup_polarity);
++
++/*****************************************************************************
++ * FSER  Control 
++ *****************************************************************************/
++ 
++typedef enum TNETD73XX_FSER_MODE_tag
++{
++    FSER_I2C    = 0,
++    FSER_UART   = 1
++} TNETD73XX_FSER_MODE_T;
++
++void tnetd73xx_fser_ctrl(TNETD73XX_FSER_MODE_T fser_mode);
++
++/*****************************************************************************
++ * Clock Control 
++ *****************************************************************************/
++
++#define CLK_MHZ(x)    ( (x) * 1000000 )
++
++typedef enum TNETD73XX_CLKC_ID_tag
++{
++    CLKC_SYS = 0,
++    CLKC_MIPS,
++    CLKC_USB,
++    CLKC_ADSLSS
++} TNETD73XX_CLKC_ID_T;
++
++void tnetd73xx_clkc_init(u32 afeclk, u32 refclk, u32 xtal3in);
++TNETD73XX_ERR tnetd73xx_clkc_set_freq(TNETD73XX_CLKC_ID_T clk_id, u32 output_freq);
++u32 tnetd73xx_clkc_get_freq(TNETD73XX_CLKC_ID_T clk_id);
++
++/*****************************************************************************
++ * GPIO Control 
++ *****************************************************************************/
++
++typedef enum TNETD73XX_GPIO_PIN_tag
++{
++    GPIO_UART0_RD           = 0,
++    GPIO_UART0_TD           = 1,
++    GPIO_UART0_RTS          = 2,
++    GPIO_UART0_CTS          = 3,
++    GPIO_FSER_CLK           = 4,
++    GPIO_FSER_D             = 5,
++    GPIO_EXT_AFE_SCLK       = 6,
++    GPIO_EXT_AFE_TX_FS      = 7,
++    GPIO_EXT_AFE_TXD        = 8,
++    GPIO_EXT_AFE_RS_FS      = 9,
++    GPIO_EXT_AFE_RXD1       = 10,
++    GPIO_EXT_AFE_RXD0       = 11,
++    GPIO_EXT_AFE_CDIN       = 12,
++    GPIO_EXT_AFE_CDOUT      = 13,
++    GPIO_EPHY_SPEED100      = 14,
++    GPIO_EPHY_LINKON        = 15,
++    GPIO_EPHY_ACTIVITY      = 16,
++    GPIO_EPHY_FDUPLEX       = 17,
++    GPIO_EINT0              = 18,
++    GPIO_EINT1              = 19,
++    GPIO_MBSP0_TCLK         = 20,
++    GPIO_MBSP0_RCLK         = 21,
++    GPIO_MBSP0_RD           = 22,
++    GPIO_MBSP0_TD           = 23,
++    GPIO_MBSP0_RFS          = 24,
++    GPIO_MBSP0_TFS          = 25,
++    GPIO_MII_DIO            = 26,
++    GPIO_MII_DCLK           = 27,
++} TNETD73XX_GPIO_PIN_T;
++
++typedef enum TNETD73XX_GPIO_PIN_MODE_tag
++{
++    FUNCTIONAL_PIN = 0,
++    GPIO_PIN = 1
++} TNETD73XX_GPIO_PIN_MODE_T;
++
++typedef enum TNETD73XX_GPIO_PIN_DIRECTION_tag
++{
++    GPIO_OUTPUT_PIN = 0,
++    GPIO_INPUT_PIN = 1
++} TNETD73XX_GPIO_PIN_DIRECTION_T;
++ 
++void tnetd73xx_gpio_init(void);
++void tnetd73xx_gpio_ctrl(TNETD73XX_GPIO_PIN_T gpio_pin, 
++                         TNETD73XX_GPIO_PIN_MODE_T pin_mode,
++                         TNETD73XX_GPIO_PIN_DIRECTION_T pin_direction);
++void tnetd73xx_gpio_out(TNETD73XX_GPIO_PIN_T gpio_pin, int value);
++int tnetd73xx_gpio_in(TNETD73XX_GPIO_PIN_T gpio_pin);
++
++/* TNETD73XX Revision */
++u32 tnetd73xx_get_revision(void);
++
++#endif /* __TNETD73XX_MISC_H__ */
+diff -urN linux-2.4.30/include/asm-mips/io.h linux-2.4.30.current/include/asm-mips/io.h
+--- linux-2.4.30/include/asm-mips/io.h	2003-08-25 13:44:43.000000000 +0200
++++ linux-2.4.30.current/include/asm-mips/io.h	2005-06-12 20:14:28.000000000 +0200
+@@ -63,8 +63,12 @@
+ #ifdef CONFIG_64BIT_PHYS_ADDR
+ #define page_to_phys(page)	((u64)(page - mem_map) << PAGE_SHIFT)
+ #else
++#ifdef CONFIG_AR7_PAGING
++#define page_to_phys(page)	(((page - mem_map) << PAGE_SHIFT) + CONFIG_AR7_MEMORY)
++#else 
+ #define page_to_phys(page)	((page - mem_map) << PAGE_SHIFT)
+ #endif
++#endif
+ 
+ #define IO_SPACE_LIMIT 0xffff
+ 
+diff -urN linux-2.4.30/include/asm-mips/irq.h linux-2.4.30.current/include/asm-mips/irq.h
+--- linux-2.4.30/include/asm-mips/irq.h	2003-08-25 13:44:43.000000000 +0200
++++ linux-2.4.30.current/include/asm-mips/irq.h	2005-06-12 20:14:28.000000000 +0200
+@@ -14,7 +14,12 @@
+ #include <linux/config.h>
+ #include <linux/linkage.h>
+ 
++#ifdef CONFIG_AR7
++#include <asm/ar7/avalanche_intc.h>
++#define NR_IRQS AVALANCHE_INT_END + 1
++#else
+ #define NR_IRQS 128		/* Largest number of ints of all machines.  */
++#endif
+ 
+ #ifdef CONFIG_I8259
+ static inline int irq_cannonicalize(int irq)
+diff -urN linux-2.4.30/include/asm-mips/page.h linux-2.4.30.current/include/asm-mips/page.h
+--- linux-2.4.30/include/asm-mips/page.h	2004-02-18 14:36:32.000000000 +0100
++++ linux-2.4.30.current/include/asm-mips/page.h	2005-06-12 20:14:28.000000000 +0200
+@@ -129,7 +129,11 @@
+ 
+ #define __pa(x)		((unsigned long) (x) - PAGE_OFFSET)
+ #define __va(x)		((void *)((unsigned long) (x) + PAGE_OFFSET))
++#ifdef CONFIG_AR7_PAGING
++#define virt_to_page(kaddr)	phys_to_page(__pa(kaddr))
++#else
+ #define virt_to_page(kaddr)	(mem_map + (__pa(kaddr) >> PAGE_SHIFT))
++#endif
+ #define VALID_PAGE(page)	((page - mem_map) < max_mapnr)
+ 
+ #define VM_DATA_DEFAULT_FLAGS  (VM_READ | VM_WRITE | VM_EXEC | \
+diff -urN linux-2.4.30/include/asm-mips/pgtable-32.h linux-2.4.30.current/include/asm-mips/pgtable-32.h
+--- linux-2.4.30/include/asm-mips/pgtable-32.h	2004-02-18 14:36:32.000000000 +0100
++++ linux-2.4.30.current/include/asm-mips/pgtable-32.h	2005-06-12 20:14:28.000000000 +0200
+@@ -108,7 +108,18 @@
+  * and a page entry and page directory to the page they refer to.
+  */
+ 
+-#ifdef CONFIG_CPU_VR41XX
++#if defined(CONFIG_AR7_PAGING)
++#define mk_pte(page, pgprot)						\
++({									\
++	pte_t   __pte;							\
++									\
++	pte_val(__pte) = ((phys_t)(page - mem_map) << (PAGE_SHIFT) |	\
++		CONFIG_AR7_MEMORY) |					\
++	pgprot_val(pgprot);						\
++									\
++	__pte;								\
++})
++#elif defined(CONFIG_CPU_VR41XX)
+ #define mk_pte(page, pgprot)                                            \
+ ({                                                                      \
+         pte_t   __pte;                                                  \
+@@ -130,6 +141,7 @@
+ })
+ #endif
+ 
++
+ static inline pte_t mk_pte_phys(phys_t physpage, pgprot_t pgprot)
+ {
+ #ifdef CONFIG_CPU_VR41XX
+@@ -175,7 +187,10 @@
+ 		set_pte(ptep, __pte(0));
+ }
+ 
+-#ifdef CONFIG_CPU_VR41XX
++#if defined(CONFIG_AR7_PAGING)
++#define phys_to_page(phys)	(mem_map + (((phys)-CONFIG_AR7_MEMORY) >> PAGE_SHIFT))
++#define pte_page(x)		phys_to_page(pte_val(x))
++#elif defined(CONFIG_CPU_VR41XX)
+ #define pte_page(x)  (mem_map+((unsigned long)(((x).pte_low >> (PAGE_SHIFT+2)))))
+ #define __mk_pte(page_nr,pgprot) __pte(((page_nr) << (PAGE_SHIFT+2)) | pgprot_val(pgprot))
+ #else
+diff -urN linux-2.4.30/include/asm-mips/serial.h linux-2.4.30.current/include/asm-mips/serial.h
+--- linux-2.4.30/include/asm-mips/serial.h	2005-01-19 15:10:12.000000000 +0100
++++ linux-2.4.30.current/include/asm-mips/serial.h	2005-06-12 20:14:28.000000000 +0200
+@@ -65,6 +65,15 @@
+ 
+ #define C_P(card,port) (((card)<<6|(port)<<3) + 1)
+ 
++#ifdef CONFIG_AR7
++#include <asm/ar7/ar7.h>
++#define AR7_SERIAL_PORT_DEFNS  \
++	{ 0, AVALANCHE_BASE_BAUD, AVALANCHE_UART0_REGS_BASE, LNXINTNUM(AVALANCHE_UART0_INT), STD_COM_FLAGS }, \
++	{ 0, AVALANCHE_BASE_BAUD, AVALANCHE_UART1_REGS_BASE, LNXINTNUM(AVALANCHE_UART1_INT), STD_COM_FLAGS }, 
++#else 
++#define AR7_SERIAL_PORT_DEFNS
++#endif
++
+ #ifdef CONFIG_MIPS_JAZZ
+ #define _JAZZ_SERIAL_INIT(int, base)					\
+ 	{ .baud_base = JAZZ_BASE_BAUD, .irq = int, .flags = STD_COM_FLAGS,	\
+@@ -468,6 +477,7 @@
+ #endif
+ 
+ #define SERIAL_PORT_DFNS			\
++	AR7_SERIAL_PORT_DEFNS			\
+ 	ATLAS_SERIAL_PORT_DEFNS			\
+ 	AU1000_SERIAL_PORT_DEFNS		\
+ 	COBALT_SERIAL_PORT_DEFNS		\

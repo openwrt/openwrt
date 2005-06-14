@@ -40,3 +40,4 @@ rebuild:
 clean:
 
 $(eval $(call kernel_template,2.4,brcm,2_4_BRCM))
+$(eval $(call kernel_template,2.4,ar7,2_4_AR7))

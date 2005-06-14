@@ -24,6 +24,12 @@ config BR2_LINUX_2_4_BRCM
 		depends BR2_LINUX_2_4_BRCM
 		bool "Motorola"
 
+config BR2_LINUX_2_4_AR7
+	bool "Support for TI AR7 based devices"
+	default n
+	help
+	  Build firmware images for TI AR7 based routers (w.g. Linksys WAG54G v2)
+
 comment "Kernel Modules"
 
 config BR2_PACKAGE_KMOD_DIAG
