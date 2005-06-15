@@ -1,0 +1,68 @@
+diff -ruN gnutls-1.0.24-orig/configure gnutls-1.0.24-1/configure
+--- gnutls-1.0.24-orig/configure	2005-01-18 19:31:03.000000000 +0100
++++ gnutls-1.0.24-1/configure	2005-03-15 23:23:12.000000000 +0100
+@@ -3633,7 +3633,7 @@
+ 	if test x$opt_developer_mode = xyes; then
+ 	  CFLAGS="${CFLAGS} -g -Wno-format-y2k -Wall -Wcast-align -W -Wpointer-arith -Wchar-subscripts -Wformat-security -Wmissing-braces -Winline -Wstrict-prototypes"
+ 	else
+-	  CFLAGS="${CFLAGS} -O2 -finline-functions"
++	  CFLAGS="${CFLAGS} -finline-functions"
+ 	fi
+ 
+ 	if test x$opt_dmalloc_mode = xyes; then
+@@ -25004,8 +25004,8 @@
+ 
+ 
+ 
+-LIBGNUTLS_LIBS="-L${libdir} -lgnutls $LIBTASN1_LIBS $LIBGCRYPT_LIBS $LIBS"
+-LIBGNUTLS_CFLAGS="$LIBGCRYPT_CFLAGS $LIBTASN1_CFLAGS -I${includedir}"
++LIBGNUTLS_LIBS="-lgnutls $LIBTASN1_LIBS $LIBGCRYPT_LIBS $LIBS"
++LIBGNUTLS_CFLAGS="$LIBGCRYPT_CFLAGS $LIBTASN1_CFLAGS"
+ 
+ CFLAGS="${CFLAGS} ${LIBGCRYPT_CFLAGS}"
+ 
+@@ -25015,8 +25015,8 @@
+ SERV_LIBS="$LIBS $SERV_LIBS"
+ 
+ 
+-LIBGNUTLS_EXTRA_LIBS="-L${libdir} -lgnutls-extra $LIBOPENCDK_LIBS $LZO_LIBS $LIBGNUTLS_LIBS"
+-LIBGNUTLS_EXTRA_CFLAGS="$LIBOPENCDK_CFLAGS -I${includedir}"
++LIBGNUTLS_EXTRA_LIBS="-lgnutls-extra $LIBOPENCDK_LIBS $LZO_LIBS $LIBGNUTLS_LIBS"
++LIBGNUTLS_EXTRA_CFLAGS="$LIBOPENCDK_CFLAGS $LIBGNUTLS_CFLAGS"
+ 
+ 
+ 
+diff -ruN gnutls-1.0.24-orig/configure.in gnutls-1.0.24-1/configure.in
+--- gnutls-1.0.24-orig/configure.in	2004-11-14 00:06:57.000000000 +0100
++++ gnutls-1.0.24-1/configure.in	2005-03-15 23:24:35.000000000 +0100
+@@ -137,7 +137,7 @@
+ 	if test x$opt_developer_mode = xyes; then
+ 	  CFLAGS="${CFLAGS} -g -Wno-format-y2k -Wall -Wcast-align -W -Wpointer-arith -Wchar-subscripts -Wformat-security -Wmissing-braces -Winline -Wstrict-prototypes"
+ 	else
+-	  CFLAGS="${CFLAGS} -O2 -finline-functions"
++	  CFLAGS="${CFLAGS} -finline-functions"
+ 	fi
+ 
+ 	if test x$opt_dmalloc_mode = xyes; then
+@@ -489,8 +489,8 @@
+ ])
+ AM_PROG_LIBTOOL
+ 
+-LIBGNUTLS_LIBS="-L${libdir} -lgnutls $LIBTASN1_LIBS $LIBGCRYPT_LIBS $LIBS"
+-LIBGNUTLS_CFLAGS="$LIBGCRYPT_CFLAGS $LIBTASN1_CFLAGS -I${includedir}"
++LIBGNUTLS_LIBS="-lgnutls $LIBTASN1_LIBS $LIBGCRYPT_LIBS $LIBS"
++LIBGNUTLS_CFLAGS="$LIBGCRYPT_CFLAGS $LIBTASN1_CFLAGS"
+ 
+ CFLAGS="${CFLAGS} ${LIBGCRYPT_CFLAGS}"
+ 
+@@ -500,8 +500,8 @@
+ SERV_LIBS="$LIBS $SERV_LIBS"
+ AC_SUBST(SERV_LIBS)
+ 
+-LIBGNUTLS_EXTRA_LIBS="-L${libdir} -lgnutls-extra $LIBOPENCDK_LIBS $LZO_LIBS $LIBGNUTLS_LIBS"
+-LIBGNUTLS_EXTRA_CFLAGS="$LIBOPENCDK_CFLAGS -I${includedir}"
++LIBGNUTLS_EXTRA_LIBS="-lgnutls-extra $LIBOPENCDK_LIBS $LZO_LIBS $LIBGNUTLS_LIBS"
++LIBGNUTLS_EXTRA_CFLAGS="$LIBOPENCDK_CFLAGS $LIBGNUTLS_CFLAGS"
+ 
+ AC_SUBST(LIBGNUTLS_EXTRA_LIBS)
+ AC_SUBST(LIBGNUTLS_EXTRA_CFLAGS)
