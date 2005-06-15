@@ -41,6 +41,7 @@ package-$(BR2_PACKAGE_LIBDB) += libdb
 package-$(BR2_PACKAGE_LIBELF) += libelf
 package-$(BR2_PACKAGE_LIBEVENT) += libevent
 package-$(BR2_PACKAGE_LIBFFI_SABLE) += libffi-sable
+package-$(BR2_PACKAGE_LIBGCRYPT) += libgcrypt
 package-$(BR2_PACKAGE_LIBGD) += libgd
 package-$(BR2_PACKAGE_LIBGDBM) += libgdbm
 package-$(BR2_PACKAGE_LIBGPG_ERROR) += libgpg-error
@@ -140,6 +141,7 @@ fprobe-compile: libpcap-compile
 gdb-compile: ncurses-compile
 kismet-compile: uclibc++-compile libpcap-compile ncurses-compile
 lcd4linux-compile: ncurses-compile
+libgcrypt-compile: libgpg-error-compile
 libgd-compile: libpng-compile
 libnet-compile: libpcap-compile
 libnids-compile: libnet-compile
