@@ -1,0 +1,28 @@
+diff -ruN libtasn1-0.2.13-orig/configure libtasn1-0.2.13-1/configure
+--- libtasn1-0.2.13-orig/configure	2004-12-15 19:40:02.000000000 +0100
++++ libtasn1-0.2.13-1/configure	2005-03-15 22:35:56.000000000 +0100
+@@ -22448,8 +22448,8 @@
+ 
+ 
+ 
+-LIBTASN1_LIBS="-L${libdir} -ltasn1 $LIBS"
+-LIBTASN1_CFLAGS="-I${includedir}"
++LIBTASN1_LIBS="-ltasn1 $LIBS"
++LIBTASN1_CFLAGS=""
+ 
+ 
+ 
+diff -ruN libtasn1-0.2.13-orig/configure.in libtasn1-0.2.13-1/configure.in
+--- libtasn1-0.2.13-orig/configure.in	2004-12-15 19:39:01.000000000 +0100
++++ libtasn1-0.2.13-1/configure.in	2005-03-15 22:35:46.000000000 +0100
+@@ -85,8 +85,8 @@
+ ])
+ AM_PROG_LIBTOOL
+ 
+-LIBTASN1_LIBS="-L${libdir} -ltasn1 $LIBS"
+-LIBTASN1_CFLAGS="-I${includedir}"
++LIBTASN1_LIBS="-ltasn1 $LIBS"
++LIBTASN1_CFLAGS=""
+ 
+ AC_SUBST(LIBTASN1_LIBS)
+ AC_SUBST(LIBTASN1_CFLAGS)
