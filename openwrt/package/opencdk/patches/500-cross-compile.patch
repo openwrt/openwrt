@@ -1,0 +1,28 @@
+diff -ruN opencdk-0.5.5-orig/configure opencdk-0.5.5-1/configure
+--- opencdk-0.5.5-orig/configure	2004-06-20 15:54:29.000000000 +0200
++++ opencdk-0.5.5-1/configure	2005-03-15 22:36:53.000000000 +0100
+@@ -19788,8 +19788,8 @@
+ 
+ 
+ 
+-LIBOPENCDK_LIBS="$LIBS -L${libdir} -lopencdk $LIBGCRYPT_LIBS"
+-LIBOPENCDK_CFLAGS="$LIBGCRYPT_CFLAGS -I${includedir}"
++LIBOPENCDK_LIBS="$LIBS -lopencdk $LIBGCRYPT_LIBS"
++LIBOPENCDK_CFLAGS="$LIBGCRYPT_CFLAGS"
+ 
+ 
+ 
+diff -ruN opencdk-0.5.5-orig/configure.ac opencdk-0.5.5-1/configure.ac
+--- opencdk-0.5.5-orig/configure.ac	2004-06-05 19:46:31.000000000 +0200
++++ opencdk-0.5.5-1/configure.ac	2005-03-15 22:36:26.000000000 +0100
+@@ -96,8 +96,8 @@
+ ***
+ ]]))
+ 
+-LIBOPENCDK_LIBS="$LIBS -L${libdir} -lopencdk $LIBGCRYPT_LIBS"
+-LIBOPENCDK_CFLAGS="$LIBGCRYPT_CFLAGS -I${includedir}"
++LIBOPENCDK_LIBS="$LIBS -lopencdk $LIBGCRYPT_LIBS"
++LIBOPENCDK_CFLAGS="$LIBGCRYPT_CFLAGS"
+ AC_SUBST(LIBOPENCDK_LIBS)
+ AC_SUBST(LIBOPENCDK_CFLAGS)
+ 
