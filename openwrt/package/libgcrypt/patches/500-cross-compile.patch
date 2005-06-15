@@ -1,0 +1,24 @@
+diff -ruN libgcrypt-1.2.1-orig/tests/Makefile.am libgcrypt-1.2.1-1/tests/Makefile.am
+--- libgcrypt-1.2.1-orig/tests/Makefile.am	2004-03-03 09:08:05.000000000 +0100
++++ libgcrypt-1.2.1-1/tests/Makefile.am	2005-03-15 21:36:49.000000000 +0100
+@@ -21,7 +21,7 @@
+ TESTS = prime register ac basic tsexp keygen pubkey benchmark
+ 
+ INCLUDES = -I$(top_srcdir)/src
+-LDADD = ../src/libgcrypt.la
++LDADD = ../src/libgcrypt.la @LTLIBOBJS@ @GPG_ERROR_LIBS@
+ 
+ EXTRA_PROGRAMS = testapi
+ noinst_PROGRAMS = $(TESTS)
+diff -ruN libgcrypt-1.2.1-orig/tests/Makefile.in libgcrypt-1.2.1-1/tests/Makefile.in
+--- libgcrypt-1.2.1-orig/tests/Makefile.in	2005-01-05 14:53:23.000000000 +0100
++++ libgcrypt-1.2.1-1/tests/Makefile.in	2005-03-15 21:37:12.000000000 +0100
+@@ -258,7 +258,7 @@
+ target_vendor = @target_vendor@
+ TESTS = prime register ac basic tsexp keygen pubkey benchmark
+ INCLUDES = -I$(top_srcdir)/src
+-LDADD = ../src/libgcrypt.la
++LDADD = ../src/libgcrypt.la @LTLIBOBJS@ @GPG_ERROR_LIBS@
+ AM_CFLAGS = @GPG_ERROR_CFLAGS@
+ all: all-am
+ 
