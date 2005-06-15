@@ -18,7 +18,7 @@ include $(TOPDIR)/package/rules.mk
 
 $(eval $(call PKG_template,LIBGPG_ERROR,libgpg-error,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
-$(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
+$(PKG_BUILD_DIR)/.configured:
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
@@ -50,7 +50,7 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 	);
 	touch $@
 
-$(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
+$(PKG_BUILD_DIR)/.built:
 	rm -rf $(PKG_INSTALL_DIR)
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
@@ -58,7 +58,7 @@ $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 		all install
 	touch $@
 
-$(IPKG_LIBGPG_ERROR): $(STAGING_DIR)/usr/lib/libgpg-error.so
+$(IPKG_LIBGPG_ERROR):
 	install -m0755 -d $(IDIR_LIBGPG_ERROR)/usr/lib
 	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libgpg-error.so.* $(IDIR_LIBGPG_ERROR)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBGPG_ERROR)
@@ -85,4 +85,9 @@ uninstall-dev:
 		$(STAGING_DIR)/usr/share/aclocal/gpg-error.m4 \
 
 compile: install-dev
+
 clean: uninstall-dev
+
+mostlyclean:
+	make -C $(PKG_BUILD_DIR) clean
+	rm -f $(PKG_BUILD_DIR)/.built

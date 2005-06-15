@@ -18,7 +18,7 @@ include $(TOPDIR)/package/rules.mk
 
 $(eval $(call PKG_template,LIBGCRYPT,libgcrypt,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
-$(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
+$(PKG_BUILD_DIR)/.configured:
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
@@ -51,7 +51,7 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 	);
 	touch $@
 
-$(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
+$(PKG_BUILD_DIR)/.built:
 	rm -rf $(PKG_INSTALL_DIR)
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
@@ -59,7 +59,7 @@ $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 		all install
 	touch $@
 
-$(IPKG_LIBGCRYPT): $(STAGING_DIR)/usr/lib/libgcrypt.so
+$(IPKG_LIBGCRYPT):
 	install -m0755 -d $(IDIR_LIBGCRYPT)/usr/lib
 	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libgcrypt.so.* $(IDIR_LIBGCRYPT)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBGCRYPT)
@@ -86,4 +86,9 @@ uninstall-dev:
 		$(STAGING_DIR)/usr/share/aclocal/libgcrypt.m4 \
 
 compile: install-dev
+
 clean: uninstall-dev
+
+mostlyclean:
+	make -C $(PKG_BUILD_DIR) clean
+	rm -f $(PKG_BUILD_DIR)/.built

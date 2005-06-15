@@ -22,9 +22,9 @@ include $(TOPDIR)/package/rules.mk
 
 $(eval $(call PKG_template,LIBOPENCDK,libopencdk,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
-$(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
+$(PKG_BUILD_DIR)/.configured:
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
-		touch configure.ec ; \
+		touch configure.ac ; \
 		touch acinclude.m4 ; \
 		touch aclocal.m4 ; \
 		touch Makefile.in ; \
@@ -61,7 +61,7 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 	);
 	touch $@
 
-$(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
+$(PKG_BUILD_DIR)/.built:
 	rm -rf $(PKG_INSTALL_DIR)
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
@@ -69,7 +69,7 @@ $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 		all install
 	touch $@
 
-$(IPKG_LIBOPENCDK): $(STAGING_DIR)/usr/lib/libopencdk.so
+$(IPKG_LIBOPENCDK):
 	install -m0755 -d $(IDIR_LIBOPENCDK)/usr/lib
 	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libopencdk.so.* $(IDIR_LIBOPENCDK)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBOPENCDK)
@@ -93,4 +93,9 @@ uninstall-dev:
 		$(STAGING_DIR)/usr/lib/opencdk.{a,so*} \
 
 compile: install-dev
+
 clean: uninstall-dev
+
+mostlyclean:
+	make -C $(PKG_BUILD_DIR) clean
+	rm -f $(PKG_BUILD_DIR)/.built
