@@ -1,0 +1,24 @@
+diff -ruN gnutls-1.0.24-orig/src/Makefile.am gnutls-1.0.24-1/src/Makefile.am
+--- gnutls-1.0.24-orig/src/Makefile.am	2004-09-17 11:08:24.000000000 +0200
++++ gnutls-1.0.24-1/src/Makefile.am	2005-03-15 23:28:19.000000000 +0100
+@@ -31,7 +31,7 @@
+ 	cfg/cfg+.c cfg/cfgfile.c cfg/cmdline.c cfg/parse.c cfg/props.c \
+ 	cfg/shared.c cfg/platon/str/dynfgets.c cfg/platon/str/strctype.c \
+ 	cfg/platon/str/strdyn.c cfg/platon/str/strplus.c
+-certtool_LDADD = ../lib/libgnutls.la $(LIBGCRYPT_LIBS)
++certtool_LDADD = ../lib/libgnutls.la $(LIBGCRYPT_LIBS) $(LIBTASN1_LIBS)
+ endif
+ 
+ 
+diff -ruN gnutls-1.0.24-orig/src/Makefile.in gnutls-1.0.24-1/src/Makefile.in
+--- gnutls-1.0.24-orig/src/Makefile.in	2005-01-18 19:31:14.000000000 +0100
++++ gnutls-1.0.24-1/src/Makefile.in	2005-03-15 23:28:41.000000000 +0100
+@@ -308,7 +308,7 @@
+ @HAVE_LIBCFG_FALSE@	cfg/platon/str/strdyn.c cfg/platon/str/strplus.c
+ 
+ @HAVE_LIBCFG_TRUE@certtool_SOURCES = certtool-gaa.c certtool.c prime.c getpass.c certtool-cfg.c
+-@HAVE_LIBCFG_FALSE@certtool_LDADD = ../lib/libgnutls.la $(LIBGCRYPT_LIBS)
++@HAVE_LIBCFG_FALSE@certtool_LDADD = ../lib/libgnutls.la $(LIBGCRYPT_LIBS) $(LIBTASN1_LIBS)
+ @HAVE_LIBCFG_TRUE@certtool_LDADD = ../lib/libgnutls.la $(LIBGCRYPT_LIBS) $(LIBTASN1_LIBS) -lcfg+
+ all: all-recursive
+ 

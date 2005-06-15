@@ -28,6 +28,7 @@ package-$(BR2_PACKAGE_FUSE) += fuse
 package-$(BR2_PACKAGE_GDB) += gdb
 package-$(BR2_PACKAGE_GLIB) += glib
 package-$(BR2_PACKAGE_GMP) += gmp
+package-$(BR2_PACKAGE_GNUTLS) += gnutls
 package-$(BR2_PACKAGE_HASERL) += haserl
 package-$(BR2_PACKAGE_HOWL) += howl
 package-$(BR2_PACKAGE_HTPDATE) += htpdate
@@ -141,6 +142,7 @@ dropbear-compile: zlib-compile
 dsniff-compile: libnids-compile openssl-compile libgdbm-compile
 fprobe-compile: libpcap-compile
 gdb-compile: ncurses-compile
+gnutls-compile: libgcrypt-compile opencdk-compile libtasn1-compile
 kismet-compile: uclibc++-compile libpcap-compile ncurses-compile
 lcd4linux-compile: ncurses-compile
 libgcrypt-compile: libgpg-error-compile
