@@ -1,0 +1,10 @@
+config BR2_PACKAGE_LIBTASN1
+	tristate "libtasn1 - an ASN.1 and DER structures manipulation library"
+#	default m if CONFIG_DEVEL
+	default n
+	help
+	 This is a library for Abstract Syntax Notation One (ASN.1) and 
+	 Distinguish Encoding Rules (DER) manipulation.
+	 
+	 ftp://ftp.gnutls.org/pub/gnutls/libtasn1/
+	 
