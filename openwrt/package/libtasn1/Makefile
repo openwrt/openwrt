@@ -20,11 +20,9 @@ PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
 include $(TOPDIR)/package/rules.mk
 
-BR2_PACKAGE_LIBTASN1=m
-
 $(eval $(call PKG_template,LIBTASN1,libtasn1,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
-$(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
+$(PKG_BUILD_DIR)/.configured:
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
 		touch configure.ac ; \
 		touch acinclude.m4 ; \
@@ -62,7 +60,7 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 	);
 	touch $@
 
-$(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
+$(PKG_BUILD_DIR)/.built:
 	rm -rf $(PKG_INSTALL_DIR)
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
@@ -70,7 +68,7 @@ $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 		all install
 	touch $@
 
-$(IPKG_LIBTASN1): $(STAGING_DIR)/usr/lib/libtasn1.so
+$(IPKG_LIBTASN1):
 	install -m0755 -d $(IDIR_LIBTASN1)/usr/lib
 	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libtasn1.so.* $(IDIR_LIBTASN1)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBTASN1)
