@@ -67,7 +67,7 @@ $(IPKG_LIBGMP):
 $(STAGING_DIR)/usr/lib/libgmp.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include
 	cp -fpR $(PKG_INSTALL_DIR)/usr/include/gmp* $(STAGING_DIR)/usr/include/
-	mkdir -p $(I_LIBPCAP_DEV)/usr/lib
+	mkdir -p $(STAGING_DIR)/usr/lib
 	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libgmp.{a,so*} $(STAGING_DIR)/usr/lib/
 	touch $@
 
