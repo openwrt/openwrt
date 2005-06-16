@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=pmacct
-PKG_VERSION:=0.8.6
+PKG_VERSION:=0.8.7
 PKG_RELEASE:=1
-PKG_MD5SUM:=b725f7b4af335d2f668cb61621a5c2d9
+PKG_MD5SUM:=3da0205de772fb6d915e03cadf2a8e9b
 
 PKG_SOURCE_URL:=http://www.ba.cnr.it/~paolo/pmacct/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
