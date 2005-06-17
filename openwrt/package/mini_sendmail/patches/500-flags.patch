@@ -1,0 +1,15 @@
+--- mini_sendmail-1.3.5/Makefile.orig	2002-01-04 07:05:25.000000000 +0100
++++ mini_sendmail-1.3.5/Makefile	2005-06-17 01:57:06.000000000 +0200
+@@ -7,9 +7,10 @@
+ BINDIR =	/usr/local/sbin
+ MANDIR =	/usr/local/man
+ CC =		gcc
+-CFLAGS =	-O
++OFLAGS =	-O
++CFLAGS =	$(OFLAGS)
+ #CFLAGS =	-g
+-LDFLAGS =	-s -static
++LDFLAGS =
+ #LDFLAGS =	-g -static
+ LDLIBS =	$(SYSV_LIBS)
+ 
