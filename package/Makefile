@@ -62,6 +62,7 @@ package-$(BR2_PACKAGE_MARADNS) += maradns
 package-$(BR2_PACKAGE_MATRIXSSL) += matrixssl
 package-$(BR2_PACKAGE_MICROCOM) += microcom
 package-$(BR2_PACKAGE_MICROPERL) += microperl
+package-$(BR2_PACKAGE_MINI_HTTPD) += mini_httpd
 package-$(BR2_PACKAGE_MONIT) += monit
 package-$(BR2_PACKAGE_MYSQL) += mysql
 package-$(BR2_PACKAGE_NCURSES) += ncurses
@@ -149,6 +150,7 @@ libgd-compile: libpng-compile
 libnet-compile: libpcap-compile
 libnids-compile: libnet-compile
 lighttpd-compile: openssl-compile pcre-compile
+mini_httpd-compile: matrixssl-compile
 mysql-compile: ncurses-compile zlib-compile
 net-snmp-compile: libelf-compile
 nfs-server-compile: portmap-compile
