@@ -25,7 +25,7 @@ package-$(BR2_PACKAGE_FPROBE) += fprobe
 package-$(BR2_PACKAGE_FREERADIUS) += freeradius
 package-$(BR2_PACKAGE_FRICKIN) += frickin
 package-$(BR2_PACKAGE_FUSE) += fuse
-package-$(BR2_PACKAGE_GDB) += gdb
+package-$(BR2_PACKAGE_GDBSERVER) += gdbserver
 package-$(BR2_PACKAGE_GLIB) += glib
 package-$(BR2_PACKAGE_GMP) += gmp
 package-$(BR2_PACKAGE_GNUTLS) += gnutls
@@ -135,7 +135,6 @@ clean: $(patsubst %,%-clean,$(package-) $(package-y) $(package-m))
 compile: $(patsubst %,%-compile,$(package-y) $(package-m))
 install: $(patsubst %,%-install,$(package-y))
 
-wificonf-compile: openwrt-compile wireless-tools-compile
 arpwatch-compile: libpcap-compile
 cyrus-sasl-compile: openssl-compile
 dropbear-compile: zlib-compile
@@ -170,8 +169,9 @@ sipsak-compile: openssl-compile
 sqlite-compile: ncurses-compile readline-compile
 tcpdump-compile: libpcap-compile
 tinc-compile: zlib-compile openssl-compile lzo-compile
-vtun-compile: zlib-compile openssl-compile lzo-compile
 tor-compile: libevent-compile openssl-compile zlib-compile
+vtun-compile: zlib-compile openssl-compile lzo-compile
+wificonf-compile: openwrt-compile wireless-tools-compile
 wpa_supplicant-compile: openssl-compile
 
 asterisk-compile: openssl-compile
