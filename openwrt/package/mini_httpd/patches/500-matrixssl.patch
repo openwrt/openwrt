@@ -1,0 +1,161 @@
+diff -ruN mini_httpd-1.19-orig/Makefile mini_httpd-1.19-3/Makefile
+--- mini_httpd-1.19-orig/Makefile	2002-11-02 00:02:57.000000000 +0100
++++ mini_httpd-1.19-3/Makefile	2005-03-09 08:52:21.000000000 +0100
+@@ -14,17 +14,30 @@
+ # http://www.openssl.org/  Make sure the SSL_TREE definition points to the
+ # tree with your OpenSSL installation - depending on how you installed it,
+ # it may be in /usr/local instead of /usr/local/ssl.
++
++# OpenSSL
+ #SSL_TREE =	/usr/local/ssl
+ #SSL_DEFS =	-DUSE_SSL
+ #SSL_INC =	-I${SSL_TREE}/include
+ #SSL_LIBS =	-L${SSL_TREE}/lib -lssl -lcrypto
++#SSL_OBJS =
++
++# MatrixSSL
++SSL_TREE =
++SSL_DEFS =	-DUSE_SSL -DHAVE_MATRIXSSL
++SSL_INC =
++SSL_LIBS =	-lmatrixssl
++SSL_OBJS =	matrixssl_helper.o
+ 
+ 
+-BINDIR =	/usr/local/sbin
+-MANDIR =	/usr/local/man
++DESTDIR =
++
++BINDIR =	$(DESTDIR)/usr/sbin
++MANDIR =	$(DESTDIR)/usr/share/man
+ CC =		gcc
+ CDEFS =		${SSL_DEFS} ${SSL_INC}
+-CFLAGS =	-O ${CDEFS}
++OFLAGS =	-O
++CFLAGS =	${OFLAGS} ${CDEFS}
+ #CFLAGS =	-g ${CDEFS}
+-LDFLAGS =	-s
++LDFLAGS =
+ #LDFLAGS =	-g
+@@ -32,12 +45,15 @@
+ 
+ all:		mini_httpd htpasswd
+ 
+-mini_httpd:	mini_httpd.o match.o tdate_parse.o
+-	${CC} ${CFLAGS} ${LDFLAGS} mini_httpd.o match.o tdate_parse.o ${LDLIBS} -o mini_httpd
++mini_httpd:	mini_httpd.o match.o tdate_parse.o ${SSL_OBJS}
++	${CC} ${CFLAGS} ${LDFLAGS} mini_httpd.o match.o tdate_parse.o ${SSL_OBJS} ${LDLIBS} -o mini_httpd
+ 
+ mini_httpd.o:	mini_httpd.c version.h port.h match.h tdate_parse.h mime_encodings.h mime_types.h
+ 	${CC} ${CFLAGS} -c mini_httpd.c
+ 
++matrixssl_helper.o: matrixssl_helper.c
++	${CC} ${CFLAGS} -c matrixssl_helper.c
++	
+ match.o:	match.c match.h
+ 	${CC} ${CFLAGS} -c match.c
+ 
+@@ -71,16 +87,18 @@
+ 	chmod 600 mini_httpd.pem
+ 
+ 
+-install:	all
+-	rm -f ${BINDIR}/mini_httpd ${BINDIR}/htpasswd
++install:	all uninstall
+ 	-mkdir -p ${BINDIR}
+ 	cp mini_httpd htpasswd ${BINDIR}
+-	rm -f ${MANDIR}/man8/mini_httpd.8 ${MANDIR}/man1/htpasswd.1
+ 	-mkdir -p ${MANDIR}/man8
+ 	cp mini_httpd.8 ${MANDIR}/man8
+ 	-mkdir -p ${MANDIR}/man1
+ 	cp htpasswd.1 ${MANDIR}/man1
+ 
++uninstall:
++	rm -f ${BINDIR}/mini_httpd ${BINDIR}/htpasswd
++	rm -f ${MANDIR}/man8/mini_httpd.8 ${MANDIR}/man1/htpasswd.1
++
+ clean:
+ 	rm -f mini_httpd mime_encodings.h mime_types.h htpasswd mini_httpd.rnd *.o core core.* *.core
+ 
+diff -ruN mini_httpd-1.19-orig/mini_httpd.c mini_httpd-1.19-3/mini_httpd.c
+--- mini_httpd-1.19-orig/mini_httpd.c	2003-12-03 19:27:22.000000000 +0100
++++ mini_httpd-1.19-3/mini_httpd.c	2005-03-09 08:46:28.000000000 +0100
+@@ -66,8 +66,14 @@
+ #endif /* HAVE_SENDFILE */
+ 
+ #ifdef USE_SSL
++# ifdef HAVE_OPENSSL
+ #include <openssl/ssl.h>
+ #include <openssl/err.h>
++# else /* HAVE_OPENSSL */
++#  ifdef HAVE_MATRIXSSL
++#   include "matrixssl_helper.h"
++#  endif /* HAVE_MATRIXSSL */
++# endif /* HAVE_OPENSSL */
+ #endif /* USE_SSL */
+ 
+ extern char* crypt( const char* key, const char* setting );
+@@ -193,7 +199,13 @@
+ static int do_ssl;
+ static char* certfile;
+ static char* cipher;
++#ifdef HAVE_OPENSSL
+ static SSL_CTX* ssl_ctx;
++#else /* HAVE_OPENSSL */
++ #ifdef HAVE_MATRIXSSL
++static sslKeys_t* keys;
++ #endif /* HAVE_MATRIXSSL */
++#endif /* HAVE_OPENSSL */
+ #endif /* USE_SSL */
+ static char cwd[MAXPATHLEN];
+ static int got_hup;
+@@ -540,6 +552,7 @@
+ #ifdef USE_SSL
+     if ( do_ssl )
+ 	{
++# ifdef HAVE_OPENSSL
+ 	SSL_load_error_strings();
+ 	SSLeay_add_ssl_algorithms();
+ 	ssl_ctx = SSL_CTX_new( SSLv23_server_method() );
+@@ -559,6 +572,17 @@
+ 		exit( 1 );
+ 		}
+ 	    }
++# else /* HAVE_OPENSSL */
++#  ifdef HAVE_MATRIXSSL
++	matrixSslOpen();
++	if ( matrixSslReadKeys( &keys, certfile, certfile, NULL, NULL < 0) )
++	    {
++	    syslog( LOG_CRIT, "can't load certificate and/or private key\n");
++	    (void) fprintf( stderr, "%s: can't load certificate and/or private key\n", argv0 );
++	    exit( 1 );
++	    }
++#  endif /* HAVE_MATRIXSSL */
++# endif /* HAVE_OPENSSL */
+ 	}
+ #endif /* USE_SSL */
+ 
+@@ -1174,6 +1198,7 @@
+ #ifdef USE_SSL
+     if ( do_ssl )
+ 	{
++# ifdef HAVE_OPENSSL
+ 	ssl = SSL_new( ssl_ctx );
+ 	SSL_set_fd( ssl, conn_fd );
+ 	if ( SSL_accept( ssl ) == 0 )
+@@ -1181,6 +1206,16 @@
+ 	    ERR_print_errors_fp( stderr );
+ 	    exit( 1 );
+ 	    }
++# else /* HAVE_OPENSSL */
++#  ifdef HAVE_MATRIXSSL
++	ssl = SSL_new(keys);
++	SSL_set_fd( ssl, conn_fd );
++	if ( SSL_accept( ssl ) <= 0 )
++	    {
++	    perror( "SSL_accept" );
++	    }
++#  endif /* HAVE_MATRIXSSL */
++# endif /* HAVE_OPENSSL */
+ 	}
+ #endif /* USE_SSL */
+ 

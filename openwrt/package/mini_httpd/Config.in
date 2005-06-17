@@ -1,0 +1,24 @@
+config BR2_PACKAGE_MINI_HTTPD
+	tristate "mini-httpd - A small web server"
+	default m if CONFIG_DEVEL
+	help
+	 mini_httpd is a small HTTP server. Its performance is not great, but for 
+	 low or medium traffic sites it's quite adequate. It implements all the 
+	 basic features of an HTTP server, including:
+	 
+	     * GET, HEAD, and POST methods.
+	     * CGI.
+	     * Basic authentication.
+	     * Security against ".." filename snooping.
+	     * The common MIME types.
+	     * Trailing-slash redirection.
+	     * index.html, index.htm, index.cgi
+	     * Directory listings.
+	     * Multihoming / virtual hosting.
+	     * Standard logging.
+	     * Custom error pages. 
+	 
+	 It can also be configured to do SSL/HTTPS and IPv6. 
+	 
+	 http://www.acme.com/software/mini_httpd/
+	 
