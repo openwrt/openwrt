@@ -92,12 +92,12 @@ char *wl_var(char *name)
 
 int nvram_enabled(char *name)
 {
-	return (nvram_match(name, "1") || nvram_match(name, "on") || nvram_match(name, "enabled") ? 1 : 0);
+	return (nvram_match(name, "1") || nvram_match(name, "on") || nvram_match(name, "enabled") || nvram_match(name, "true") || nvram_match(name, "yes") ? 1 : 0);
 }
 
 int nvram_disabled(char *name)
 {
-	return (nvram_match(name, "0") || nvram_match(name, "off") || nvram_match(name, "disabled") ? 1 : 0);
+	return (nvram_match(name, "0") || nvram_match(name, "off") || nvram_match(name, "disabled") || nvram_match(name, "false") || nvram_match(name, "no") ? 1 : 0);
 }
 
 
@@ -195,6 +195,7 @@ void setup_bcom(int skfd, char *ifname)
 
 	val = nvram_enabled(wl_var("ap_isolate"));
 	bcom_set_int(skfd, ifname, "ap_isolate", val);
+
 	val = nvram_enabled(wl_var("frameburst"));
 	bcom_ioctl(skfd, ifname, WLC_SET_FAKEFRAG, &val, sizeof(val));
 
@@ -215,13 +216,15 @@ void setup_bcom(int skfd, char *ifname)
 		memset(buf, 0, 8192);
 		mac_list = (struct maclist *) buf;
 		addr = mac_list->ea;
-
+		
+		v = malloc(80);
 		foreach(v, nvram_safe_get(wl_var("maclist")), next) {
 			if (ether_atoe(v, addr->ether_addr_octet)) {
 				mac_list->count++;
 				addr++;
 			}
 		}
+		free(v);
 		bcom_ioctl(skfd, ifname, WLC_SET_MACLIST, buf, sizeof(buf));
 	} else {
 		val = WLC_MACMODE_DISABLED;
@@ -385,7 +388,6 @@ static int setup_interfaces(int skfd, char *ifname, char *args[], int count)
 int main(int argc, char **argv)
 {
 	int skfd;
-
 	if((skfd = iw_sockets_open()) < 0) {
 		perror("socket");
 		exit(-1);
