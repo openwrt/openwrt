@@ -173,6 +173,7 @@ sqlite-compile: ncurses-compile readline-compile
 tcpdump-compile: libpcap-compile
 tinc-compile: zlib-compile openssl-compile lzo-compile
 tor-compile: libevent-compile openssl-compile zlib-compile
+usbutils-compile: libusb-compile
 vtun-compile: zlib-compile openssl-compile lzo-compile
 wificonf-compile: openwrt-compile wireless-tools-compile
 wpa_supplicant-compile: openssl-compile
