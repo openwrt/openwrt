@@ -1,0 +1,12 @@
+config BR2_PACKAGE_SSMTP
+	tristate "ssmtp - A minimal and secure mail sender"
+	default m if CONFIG_DEVEL
+	help
+	 A secure, effective and simple way of getting mail off a system to your 
+	 mail hub. It contains no suid-binaries or other dangerous things - no 
+	 mail spool to poke around in, and no daemons running in the background. 
+	 Mail is simply forwarded to the configured mailhost. Extremely easy 
+	 configuration.
+	 
+	 http://packages.debian.org/stable/mail/ssmtp
+	 

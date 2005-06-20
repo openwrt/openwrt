@@ -1,0 +1,248 @@
+--- ssmtp-2.61.orig/ssmtp.conf
++++ ssmtp-2.61/ssmtp.conf
+@@ -36,3 +36,8 @@
+ 
+ # Use this RSA certificate.
+ #TLSCert=/etc/ssl/certs/ssmtp.pem
++
++# Get enhanced (*really* enhanced) debugging information in the logs
++# If you want to have debugging of the config file parsing, move this option
++# to the top of the config file and uncomment
++#Debug=YES
+--- ssmtp-2.61.orig/ssmtp.c
++++ ssmtp-2.61/ssmtp.c
+@@ -93,6 +93,7 @@
+ static char hextab[]="0123456789abcdef";
+ #endif
+ 
++ssize_t outbytes;
+ 
+ /*
+ log_event() -- Write event to syslog (or log file if defined)
+@@ -129,7 +130,7 @@
+ #endif
+ }
+ 
+-void smtp_write(int fd, char *format, ...);
++ssize_t smtp_write(int fd, char *format, ...);
+ int smtp_read(int fd, char *response);
+ int smtp_read_all(int fd, char *response);
+ int smtp_okay(int fd, char *response);
+@@ -150,7 +151,7 @@
+ 	if(isatty(fileno(stdin))) {
+ 		if(log_level > 0) {
+ 			log_event(LOG_ERR,
+-				"stdin is a TTY - not saving to %s/dead.letter, pw->pw_dir");
++				"stdin is a TTY - not saving to %s/dead.letter", pw->pw_dir);
+ 		}
+ 		return;
+ 	}
+@@ -964,6 +965,17 @@
+ 					log_event(LOG_INFO, "Set AuthMethod=\"%s\"\n", auth_method);
+ 				}
+ 			}
++			else if (strcasecmp(p, "Debug") == 0)
++			{
++				if (strcasecmp(q, "YES") == 0)
++				{
++					log_level = 1;
++				}
++				else
++				{
++					log_level = 0;
++				}
++			}
+ 			else {
+ 				log_event(LOG_INFO, "Unable to set %s=\"%s\"\n", p, q);
+ 			}
+@@ -1232,10 +1244,11 @@
+ /*
+ smtp_write() -- A printf to an fd and append <CR/LF>
+ */
+-void smtp_write(int fd, char *format, ...)
++ssize_t smtp_write(int fd, char *format, ...)
+ {
+ 	char buf[(BUF_SZ + 1)];
+ 	va_list ap;
++	ssize_t outbytes = 0;
+ 
+ 	va_start(ap, format);
+ 	if(vsnprintf(buf, (BUF_SZ - 2), format, ap) == -1) {
+@@ -1252,7 +1265,9 @@
+ 	}
+ 	(void)strcat(buf, "\r\n");
+ 
+-	(void)fd_puts(fd, buf, strlen(buf));
++	outbytes = fd_puts(fd, buf, strlen(buf));
++	
++	return (outbytes >= 0) ? outbytes : 0;
+ }
+ 
+ /*
+@@ -1282,6 +1297,8 @@
+ 	int i, sock;
+ 	uid_t uid;
+ 
++	outbytes = 0;
++
+ 	uid = getuid();
+ 	if((pw = getpwuid(uid)) == (struct passwd *)NULL) {
+ 		die("Could not find password entry for UID %d", uid);
+@@ -1335,10 +1352,10 @@
+ 
+ 	/* If user supplied username and password, then try ELHO */
+ 	if(auth_user) {
+-		smtp_write(sock, "EHLO %s", hostname);
++		outbytes += smtp_write(sock, "EHLO %s", hostname);
+ 	}
+ 	else {
+-		smtp_write(sock, "HELO %s", hostname);
++		outbytes += smtp_write(sock, "HELO %s", hostname);
+ 	}
+ 	(void)alarm((unsigned) MEDWAIT);
+ 
+@@ -1354,7 +1371,7 @@
+ 		}
+ 
+ 		if(strcasecmp(auth_method, "cram-md5") == 0) {
+-			smtp_write(sock, "AUTH CRAM-MD5");
++			outbytes += smtp_write(sock, "AUTH CRAM-MD5");
+ 			(void)alarm((unsigned) MEDWAIT);
+ 
+ 			if(smtp_read(sock, buf) != 3) {
+@@ -1369,7 +1386,7 @@
+ #endif
+ 		memset(buf, 0, sizeof(buf));
+ 		to64frombits(buf, auth_user, strlen(auth_user));
+-		smtp_write(sock, "AUTH LOGIN %s", buf);
++		outbytes += smtp_write(sock, "AUTH LOGIN %s", buf);
+ 
+ 		(void)alarm((unsigned) MEDWAIT);
+ 		if(smtp_read(sock, buf) != 3) {
+@@ -1381,7 +1398,7 @@
+ #ifdef MD5AUTH
+ 		}
+ #endif
+-		smtp_write(sock, "%s", buf);
++		outbytes += smtp_write(sock, "%s", buf);
+ 		(void)alarm((unsigned) MEDWAIT);
+ 
+ 		if(smtp_okay(sock, buf) == False) {
+@@ -1390,7 +1407,7 @@
+ 	}
+ 
+ 	/* Send "MAIL FROM:" line */
+-	smtp_write(sock, "MAIL FROM:<%s>", uad);
++	outbytes += smtp_write(sock, "MAIL FROM:<%s>", uad);
+ 
+ 	(void)alarm((unsigned) MEDWAIT);
+ 
+@@ -1408,7 +1425,7 @@
+ 
+ 		while(rt->next) {
+ 			p = rcpt_remap(rt->string);
+-			smtp_write(sock, "RCPT TO:<%s>", p);
++			outbytes += smtp_write(sock, "RCPT TO:<%s>", p);
+ 
+ 			(void)alarm((unsigned)MEDWAIT);
+ 
+@@ -1425,7 +1442,7 @@
+ 			while(p) {
+ 				/* RFC822 Address -> "foo@bar" */
+ 				q = rcpt_remap(addr_parse(p));
+-				smtp_write(sock, "RCPT TO:<%s>", q);
++				outbytes += smtp_write(sock, "RCPT TO:<%s>", q);
+ 
+ 				(void)alarm((unsigned) MEDWAIT);
+ 
+@@ -1439,7 +1456,7 @@
+ 	}
+ 
+ 	/* Send DATA */
+-	smtp_write(sock, "DATA");
++	outbytes += smtp_write(sock, "DATA");
+ 	(void)alarm((unsigned) MEDWAIT);
+ 
+ 	if(smtp_read(sock, buf) != 3) {
+@@ -1447,45 +1464,45 @@
+ 		die("%s", buf);
+ 	}
+ 
+-	smtp_write(sock,
++	outbytes += smtp_write(sock,
+ 		"Received: by %s (sSMTP sendmail emulation); %s", hostname, arpadate);
+ 
+ 	if(have_from == False) {
+-		smtp_write(sock, "From: %s", from);
++		outbytes += smtp_write(sock, "From: %s", from);
+ 	}
+ 
+ 	if(have_date == False) {
+-		smtp_write(sock, "Date: %s", arpadate);
++		outbytes += smtp_write(sock, "Date: %s", arpadate);
+ 	}
+ 
+ #ifdef HASTO_OPTION
+ 	if(have_to == False) {
+-		smtp_write(sock, "To: postmaster");
++		outbytes += smtp_write(sock, "To: postmaster");
+ 	}
+ #endif
+ 
+ 	ht = &headers;
+ 	while(ht->next) {
+-		smtp_write(sock, "%s", ht->string);
++		outbytes += smtp_write(sock, "%s", ht->string);
+ 		ht = ht->next;
+ 	}
+ 
+ 	(void)alarm((unsigned) MEDWAIT);
+ 
+ 	/* End of headers, start body */
+-	smtp_write(sock, "");
++	outbytes += smtp_write(sock, "");
+ 
+ 	while(fgets(buf, sizeof(buf), stdin)) {
+ 		/* Trim off \n, double leading .'s */
+ 		standardise(buf);
+ 
+-		smtp_write(sock, "%s", buf);
++		outbytes += smtp_write(sock, "%s", buf);
+ 
+ 		(void)alarm((unsigned) MEDWAIT);
+ 	}
+ 	/* End of body */
+ 
+-	smtp_write(sock, ".");
++	outbytes += smtp_write(sock, ".");
+ 	(void)alarm((unsigned) MAXWAIT);
+ 
+ 	if(smtp_okay(sock, buf) == 0) {
+@@ -1495,11 +1512,12 @@
+ 	/* Close conection */
+ 	(void)signal(SIGALRM, SIG_IGN);
+ 
+-	smtp_write(sock, "QUIT");
++	outbytes += smtp_write(sock, "QUIT");
+ 	(void)smtp_okay(sock, buf);
+ 	(void)close(sock);
+ 
+-	log_event(LOG_INFO, "Sent mail for %s (%s)", from_strip(uad), buf);
++	log_event(LOG_INFO, "Sent mail for %s (%s) uid=%d username=%s outbytes=%d", 
++		from_strip(uad), buf, uid, pw->pw_name, outbytes);
+ 
+ 	return(0);
+ }
+--- ssmtp-2.61.orig/configure.in
++++ ssmtp-2.61/configure.in
+@@ -24,8 +24,8 @@
+ AC_STRUCT_TM
+ 
+ dnl Checks for libraries.
+-AC_CHECK_LIB(nsl, gethostname)
+-AC_CHECK_LIB(socket, socket)
++AC_SEARCH_LIBS(gethostname, nsl)
++AC_SEARCH_LIBS(socket, socket)
+ 
+ dnl Checks for library functions.
+ AC_TYPE_SIGNAL
