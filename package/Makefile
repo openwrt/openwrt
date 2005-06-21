@@ -143,7 +143,7 @@ cyrus-sasl-compile: openssl-compile
 dropbear-compile: zlib-compile
 dsniff-compile: libnids-compile openssl-compile libgdbm-compile
 fprobe-compile: libpcap-compile
-gdb-compile: ncurses-compile
+gdbserver-compile: ncurses-compile
 gnutls-compile: libgcrypt-compile opencdk-compile libtasn1-compile
 kismet-compile: uclibc++-compile libpcap-compile ncurses-compile
 lcd4linux-compile: ncurses-compile
