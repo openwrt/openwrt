@@ -192,6 +192,9 @@ void setup_bcom(int skfd, char *ifname)
 	bcom_ioctl(skfd, ifname, WLC_SET_ANTDIV, &val, sizeof(val));
 	val = atoi(nvram_safe_get(wl_var("txant")));
 	bcom_ioctl(skfd, ifname, WLC_SET_TXANT, &val, sizeof(val));
+	
+	val = nvram_enabled(wl_var("closed"));
+	bcom_ioctl(skfd, ifname, WLC_SET_CLOSED, &val, sizeof(val));
 
 	val = nvram_enabled(wl_var("ap_isolate"));
 	bcom_set_int(skfd, ifname, "ap_isolate", val);
@@ -209,6 +212,7 @@ void setup_bcom(int skfd, char *ifname)
 
 	if ((val != WLC_MACMODE_DISABLED) && (v = nvram_get(wl_var("maclist")))) {
 		char buf[8192];
+		char wbuf[80];
 		struct maclist *mac_list;
 		struct ether_addr *addr;
 		char *next;
@@ -217,14 +221,12 @@ void setup_bcom(int skfd, char *ifname)
 		mac_list = (struct maclist *) buf;
 		addr = mac_list->ea;
 		
-		v = malloc(80);
-		foreach(v, nvram_safe_get(wl_var("maclist")), next) {
-			if (ether_atoe(v, addr->ether_addr_octet)) {
+		foreach(wbuf, nvram_safe_get(wl_var("maclist")), next) {
+			if (ether_atoe(wbuf, addr->ether_addr_octet)) {
 				mac_list->count++;
 				addr++;
 			}
 		}
-		free(v);
 		bcom_ioctl(skfd, ifname, WLC_SET_MACLIST, buf, sizeof(buf));
 	} else {
 		val = WLC_MACMODE_DISABLED;
@@ -343,18 +345,15 @@ void setup_wext(int skfd, char *ifname)
 	/* Set operation mode */
 	int ap = 0, infra = 0, wet = 0;
 	
-	ap = (nvram_match(wl_var("mode"), "ap") || nvram_match(wl_var("mode"), "wds"));
-	infra = nvram_enabled(wl_var("infra"));
+	ap = !nvram_match(wl_var("mode"), "sta");
+	infra = !nvram_disabled(wl_var("infra"));
 	wet = nvram_enabled(wl_var("wet"));
 
 	wrq.u.mode = (!infra ? IW_MODE_ADHOC : (ap ? IW_MODE_MASTER : (wet ? IW_MODE_REPEAT : IW_MODE_INFRA)));
 	IW_SET_EXT_ERR(skfd, ifname, SIOCSIWMODE, &wrq, "Set Mode");
 
 	/* Disable radio if wlX_radio is set and not enabled */
-	if (nvram_disabled(wl_var("radio")))
-		wrq.u.txpower.disabled = 1;
-	else 
-		wrq.u.txpower.disabled = 0;
+	wrq.u.txpower.disabled = nvram_disabled(wl_var("radio"));
 
 	wrq.u.txpower.value = -1;
 	wrq.u.txpower.fixed = 1;
