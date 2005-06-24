@@ -178,20 +178,34 @@ void setup_bcom(int skfd, char *ifname)
 	bcom_set_val(skfd, ifname, "afterburner_override", &val, sizeof(val));
 	
 	/* Set other options */
-	val = atoi(nvram_safe_get(wl_var("lazywds")));
-	bcom_ioctl(skfd, ifname, WLC_SET_LAZYWDS, &val, sizeof(val));
-	val = atoi(nvram_safe_get(wl_var("frag")));
-	bcom_ioctl(skfd, ifname, WLC_SET_FRAG, &val, sizeof(val));
-	val = atoi(nvram_safe_get(wl_var("dtim")));
-	bcom_ioctl(skfd, ifname, WLC_SET_DTIMPRD, &val, sizeof(val));
-	val = atoi(nvram_safe_get(wl_var("bcn")));
-	bcom_ioctl(skfd, ifname, WLC_SET_BCNPRD, &val, sizeof(val));
-	val = atoi(nvram_safe_get(wl_var("rts")));
-	bcom_ioctl(skfd, ifname, WLC_SET_RTS, &val, sizeof(val));
-	val = atoi(nvram_safe_get(wl_var("antdiv")));
-	bcom_ioctl(skfd, ifname, WLC_SET_ANTDIV, &val, sizeof(val));
-	val = atoi(nvram_safe_get(wl_var("txant")));
-	bcom_ioctl(skfd, ifname, WLC_SET_TXANT, &val, sizeof(val));
+	if (v = nvram_get(wl_var("lazywds"))) {
+		val = atoi(v);
+		bcom_ioctl(skfd, ifname, WLC_SET_LAZYWDS, &val, sizeof(val));
+	}
+	if (v = nvram_get(wl_var("frag"))) {
+		val = atoi(v);
+		bcom_ioctl(skfd, ifname, WLC_SET_FRAG, &val, sizeof(val));
+	}
+	if (v = nvram_get(wl_var("dtim"))) {
+		val = atoi(v);
+		bcom_ioctl(skfd, ifname, WLC_SET_DTIMPRD, &val, sizeof(val));
+	}
+	if (v = nvram_get(wl_var("bcn"))) {
+		val = atoi(v);
+		bcom_ioctl(skfd, ifname, WLC_SET_BCNPRD, &val, sizeof(val));
+	}
+	if (v = nvram_get(wl_var("rts"))) {
+		val = atoi(v);
+		bcom_ioctl(skfd, ifname, WLC_SET_RTS, &val, sizeof(val));
+	}
+	if (v = nvram_get(wl_var("antdiv"))) {
+		val = atoi(v);
+		bcom_ioctl(skfd, ifname, WLC_SET_ANTDIV, &val, sizeof(val));
+	}
+	if (v = nvram_get(wl_var("txant"))) {
+		val = atoi(v);
+		bcom_ioctl(skfd, ifname, WLC_SET_TXANT, &val, sizeof(val));
+	}
 	
 	val = nvram_enabled(wl_var("closed"));
 	bcom_ioctl(skfd, ifname, WLC_SET_CLOSED, &val, sizeof(val));
@@ -339,8 +353,8 @@ void setup_wext(int skfd, char *ifname)
 	if (channel > 0) {
 		wrq.u.freq.flags = IW_FREQ_FIXED;
 		wrq.u.freq.m = channel;
+		IW_SET_EXT_ERR(skfd, ifname, SIOCSIWFREQ, &wrq, "Set Frequency");
 	}
-	IW_SET_EXT_ERR(skfd, ifname, SIOCSIWFREQ, &wrq, "Set Frequency");
 	
 	/* Set operation mode */
 	int ap = 0, infra = 0, wet = 0;
