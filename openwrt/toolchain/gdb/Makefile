@@ -56,4 +56,4 @@ prepare: $(GDB_DIR)/.patched
 compile: 
 install: $(TARGET_CROSS)gdb
 clean:
-	rm -rf $(GDB_CLIENT_DIR)
+	rm -rf $(GDB_CLIENT_DIR) $(GDB_DIR)
