@@ -155,20 +155,22 @@ void setup_bcom(int skfd, char *ifname)
 
 	bcom_ioctl(skfd, ifname, WLC_DOWN, NULL, 0);
 	
-	/* Set up WPA */
-	if (nvram_match(wl_var("crypto"), "tkip"))
-		val = TKIP_ENABLED;
-	else if (nvram_match(wl_var("crypto"), "aes"))
-		val = AES_ENABLED;
-	else if (nvram_match(wl_var("crypto"), "tkip+aes"))
-		val = TKIP_ENABLED | AES_ENABLED;
-	else
-		val = 0;
-	bcom_ioctl(skfd, ifname, WLC_SET_WSEC, &val, sizeof(val));
+	if (!nvram_enabled(wl_var("wep"))) {
+		/* Set up WPA */
+		if (nvram_match(wl_var("crypto"), "tkip"))
+			val = TKIP_ENABLED;
+		else if (nvram_match(wl_var("crypto"), "aes"))
+			val = AES_ENABLED;
+		else if (nvram_match(wl_var("crypto"), "tkip+aes"))
+			val = TKIP_ENABLED | AES_ENABLED;
+		else
+			val = 0;
+		bcom_ioctl(skfd, ifname, WLC_SET_WSEC, &val, sizeof(val));
 
-	if (val && nvram_get(wl_var("wpa_psk"))) {
-		val = 1;
-		bcom_ioctl(skfd, ifname, WLC_SET_EAP_RESTRICT, &val, sizeof(val));
+		if (val && nvram_get(wl_var("wpa_psk"))) {
+			val = 1;
+			bcom_ioctl(skfd, ifname, WLC_SET_EAP_RESTRICT, &val, sizeof(val));
+		}
 	}
 
 	/* Set up afterburner */
