@@ -13,8 +13,11 @@ ifeq ($(BR2_PACKAGE_$(1)),y)
 install: $$(INFO_$(1))
 endif
 
+IDEPEND_$(1):=$$(strip $(5))
+
 $$(IDIR_$(1))/CONTROL/control: $(PKG_BUILD_DIR)/.prepared
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $$(IDIR_$(1)) ./ipkg/$(2).control $(3) $(4)
+	if [ "$$(IDEPEND_$(1))" != "" ]; then echo "Depends: $$(IDEPEND_$(1))" >> $$(IDIR_$(1))/CONTROL/control; fi
 	for file in conffiles preinst postinst prerm postrm; do \
 		[ -f ./ipkg/$(2).$$$$file ] && cp ./ipkg/$(2).$$$$file $$(IDIR_$(1))/CONTROL/$$$$file || true; \
 	done
