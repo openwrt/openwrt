@@ -7,7 +7,10 @@ PKG_VERSION:=1.0
 PKG_RELEASE:=0
 PKG_MD5SUM:=ff409db977e4a4897aa09ea420a28a2f
 
-PKG_SOURCE_URL:=@GNU/$(PKG_NAME)
+PKG_SOURCE_URL:=ftp://ftp.gnupg.org/gcrypt/libgpg-error/ \
+	http://mirrors.rootmode.com/ftp.gnupg.org/libgpg-error/ \
+	http://gulus.usherbrooke.ca/pub/appl/GnuPG/libgpg-error/ \
+	http://gnupg.unixmexico.org/ftp/libgpg-error/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
