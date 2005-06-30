@@ -1,114 +1,6 @@
-diff -urN linux.old/arch/mips/mm/tlbex-mips32.S linux.dev/arch/mips/mm/tlbex-mips32.S
---- linux.old/arch/mips/mm/tlbex-mips32.S	2005-05-28 17:42:03.000000000 +0200
-+++ linux.dev/arch/mips/mm/tlbex-mips32.S	2005-05-28 21:48:55.000000000 +0200
-@@ -90,6 +90,9 @@
- 	.set	noat
- 	LEAF(except_vec0_r4000)
- 	.set	mips3
-+#ifdef CONFIG_BCM4704
-+	nop
-+#endif
- #ifdef CONFIG_SMP
- 	mfc0	k1, CP0_CONTEXT
- 	la	k0, pgd_current
-diff -urN linux.old/arch/mips/mm/pg-r4k.c linux.dev/arch/mips/mm/pg-r4k.c
---- linux.old/arch/mips/mm/pg-r4k.c	2005-01-19 15:09:29.000000000 +0100
-+++ linux.dev/arch/mips/mm/pg-r4k.c	2005-05-28 21:57:52.000000000 +0200
-@@ -180,6 +180,7 @@
- 
- static inline void build_cdex_s(void)
- {
-+#if !defined(CONFIG_BCM4704) && !defined(CONFIG_BCM4710)
- 	union mips_instruction mi;
- 
- 	if ((store_offset & (cpu_scache_line_size() - 1)))
-@@ -192,10 +193,12 @@
- 	mi.c_format.simmediate = store_offset;
- 
- 	emit_instruction(mi);
-+#endif
- }
- 
- static inline void build_cdex_p(void)
- {
-+#if !defined(CONFIG_BCM4704) && !defined(CONFIG_BCM4710)
- 	union mips_instruction mi;
- 
- 	if (store_offset & (cpu_dcache_line_size() - 1))
-@@ -218,6 +221,7 @@
- 	mi.c_format.simmediate = store_offset;
- 
- 	emit_instruction(mi);
-+#endif
- }
- 
- static void __build_store_reg(int reg)
-diff -urN linux.old/include/asm-mips/stackframe.h linux.dev/include/asm-mips/stackframe.h
---- linux.old/include/asm-mips/stackframe.h	2002-11-29 00:53:15.000000000 +0100
-+++ linux.dev/include/asm-mips/stackframe.h	2005-05-28 21:53:03.000000000 +0200
-@@ -172,6 +172,46 @@
- 		 rfe;					 \
- 		.set	pop
- 
-+#elif defined(CONFIG_BCM4710) || defined(CONFIG_BCM4704)
-+
-+#define RESTORE_SOME                                     \
-+		.set    push;                            \
-+		.set    reorder;                         \
-+		mfc0    t0, CP0_STATUS;                  \
-+		.set    pop;                             \
-+		ori     t0, 0x1f;                        \
-+		xori    t0, 0x1f;                        \
-+		mtc0    t0, CP0_STATUS;                  \
-+		li      v1, 0xff00;                      \
-+		and     t0, v1;                          \
-+		lw      v0, PT_STATUS(sp);               \
-+		nor     v1, $0, v1;                      \
-+		and     v0, v1;                          \
-+		or      v0, t0;                          \
-+		ori     v1, v0, ST0_IE;                  \
-+		xori    v1, v1, ST0_IE;                  \
-+		mtc0    v1, CP0_STATUS;                  \
-+		mtc0    v0, CP0_STATUS;                  \
-+		lw      v1, PT_EPC(sp);                  \
-+		mtc0    v1, CP0_EPC;                     \
-+		lw      $31, PT_R31(sp);                 \
-+		lw      $28, PT_R28(sp);                 \
-+		lw      $25, PT_R25(sp);                 \
-+		lw      $7,  PT_R7(sp);                  \
-+		lw      $6,  PT_R6(sp);                  \
-+		lw      $5,  PT_R5(sp);                  \
-+		lw      $4,  PT_R4(sp);                  \
-+		lw      $3,  PT_R3(sp);                  \
-+		lw      $2,  PT_R2(sp)
-+
-+#define RESTORE_SP_AND_RET                               \
-+		lw      sp,  PT_R29(sp);                 \
-+		nop;                                     \
-+		nop;                                     \
-+		.set    mips3;                           \
-+		eret;                                    \
-+		.set    mips0
-+
- #else
- 
- #define RESTORE_SOME                                     \
-diff -urN linux.old/arch/mips/mm/tlbex-r4k.S linux.dev/arch/mips/mm/tlbex-r4k.S
---- linux.old/arch/mips/mm/tlbex-r4k.S	2005-05-28 17:42:03.000000000 +0200
-+++ linux.dev/arch/mips/mm/tlbex-r4k.S	2005-05-29 15:04:43.000000000 +0200
-@@ -168,6 +168,9 @@
- 	.set	noat
- 	LEAF(except_vec0_r4000)
- 	.set	mips3
-+#ifdef CONFIG_BCM4704
-+	nop
-+#endif
- 	GET_PGD(k0, k1)				# get pgd pointer
- 	mfc0	k0, CP0_BADVADDR		# Get faulting address
- 	srl	k0, k0, _PGDIR_SHIFT		# get pgd only bits
 diff -urN linux.old/arch/mips/kernel/entry.S linux.dev/arch/mips/kernel/entry.S
---- linux.old/arch/mips/kernel/entry.S	2003-08-25 13:44:40.000000000 +0200
-+++ linux.dev/arch/mips/kernel/entry.S	2005-06-01 20:10:36.000000000 +0200
+--- linux.old/arch/mips/kernel/entry.S	2005-06-26 16:27:01.000000000 +0200
++++ linux.dev/arch/mips/kernel/entry.S	2005-06-29 20:24:54.000000000 +0200
 @@ -100,6 +100,10 @@
  		 * and R4400 SC and MC versions.
  		 */
@@ -121,8 +13,8 @@ diff -urN linux.old/arch/mips/kernel/entry.S linux.dev/arch/mips/kernel/entry.S
  		mfc0	k0, CP0_INDEX
  #endif
 diff -urN linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
---- linux.old/arch/mips/mm/c-r4k.c	2005-06-01 18:42:44.000000000 +0200
-+++ linux.dev/arch/mips/mm/c-r4k.c	2005-06-01 18:49:07.000000000 +0200
+--- linux.old/arch/mips/mm/c-r4k.c	2005-06-26 16:27:01.000000000 +0200
++++ linux.dev/arch/mips/mm/c-r4k.c	2005-06-30 22:24:29.000000000 +0200
 @@ -14,6 +14,12 @@
  #include <linux/mm.h>
  #include <linux/bitops.h>
@@ -136,276 +28,143 @@ diff -urN linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
  #include <asm/bcache.h>
  #include <asm/bootinfo.h>
  #include <asm/cacheops.h>
-@@ -390,6 +396,11 @@
- 			addr = start & ~(dc_lsize - 1);
- 			aend = (end - 1) & ~(dc_lsize - 1);
+@@ -40,6 +46,7 @@
+ 	.bc_inv = (void *)no_sc_noop
+ };
  
-+#ifdef CONFIG_BCM4710
-+			BCM4710_FILL_TLB(addr);
-+			BCM4710_FILL_TLB(aend);
-+#endif
++static int bcm4710 = 0;
+ struct bcache_ops *bcops = &no_sc_ops;
+ 
+ #define cpu_is_r4600_v1_x()	((read_c0_prid() & 0xfffffff0) == 0x2010)
+@@ -266,6 +273,7 @@
+ 	r4k_blast_dcache();
+ 	r4k_blast_icache();
+ 
++	if (!bcm4710)
+ 	switch (current_cpu_data.cputype) {
+ 	case CPU_R4000SC:
+ 	case CPU_R4000MC:
+@@ -304,10 +312,10 @@
+ 	 * Kludge alert.  For obscure reasons R4000SC and R4400SC go nuts if we
+ 	 * only flush the primary caches but R10000 and R12000 behave sane ...
+ 	 */
+-	if (current_cpu_data.cputype == CPU_R4000SC ||
++	if (!bcm4710 && (current_cpu_data.cputype == CPU_R4000SC ||
+ 	    current_cpu_data.cputype == CPU_R4000MC ||
+ 	    current_cpu_data.cputype == CPU_R4400SC ||
+-	    current_cpu_data.cputype == CPU_R4400MC)
++	    current_cpu_data.cputype == CPU_R4400MC))
+ 		r4k_blast_scache();
+ }
+ 
+@@ -383,12 +391,15 @@
+ 	unsigned long ic_lsize = current_cpu_data.icache.linesz;
+ 	unsigned long addr, aend;
+ 
++	addr = start & ~(dc_lsize - 1);
++	aend = (end - 1) & ~(dc_lsize - 1);
 +
+ 	if (!cpu_has_ic_fills_f_dc) {
+ 		if (end - start > dcache_size)
+ 			r4k_blast_dcache();
+ 		else {
+-			addr = start & ~(dc_lsize - 1);
+-			aend = (end - 1) & ~(dc_lsize - 1);
++			BCM4710_PROTECTED_FILL_TLB(addr);
++			BCM4710_PROTECTED_FILL_TLB(aend);
+ 
  			while (1) {
  				/* Hit_Writeback_Inv_D */
- 				protected_writeback_dcache_line(addr);
-@@ -405,6 +416,10 @@
+@@ -403,8 +414,6 @@
+ 	if (end - start > icache_size)
+ 		r4k_blast_icache();
  	else {
- 		addr = start & ~(ic_lsize - 1);
- 		aend = (end - 1) & ~(ic_lsize - 1);
-+#ifdef CONFIG_BCM4710
-+		BCM4710_FILL_TLB(addr);
-+		BCM4710_FILL_TLB(aend);
-+#endif
+-		addr = start & ~(ic_lsize - 1);
+-		aend = (end - 1) & ~(ic_lsize - 1);
  		while (1) {
  			/* Hit_Invalidate_I */
  			protected_flush_icache_line(addr);
-@@ -487,6 +502,10 @@
+@@ -443,7 +452,8 @@
+ 	if (cpu_has_subset_pcaches) {
+ 		unsigned long addr = (unsigned long) page_address(page);
  
- 		a = addr & ~(sc_lsize - 1);
- 		end = (addr + size - 1) & ~(sc_lsize - 1);
-+#ifdef CONFIG_BCM4710
-+		BCM4710_FILL_TLB(a);
-+		BCM4710_FILL_TLB(end);
-+#endif
- 		while (1) {
- 			flush_scache_line(a);	/* Hit_Writeback_Inv_SD */
- 			if (a == end)
-@@ -509,6 +528,10 @@
+-		r4k_blast_scache_page(addr);
++		if (!bcm4710)
++			r4k_blast_scache_page(addr);
+ 		ClearPageDcacheDirty(page);
+ 
+ 		return;
+@@ -451,6 +461,7 @@
+ 
+ 	if (!cpu_has_ic_fills_f_dc) {
+ 		unsigned long addr = (unsigned long) page_address(page);
++
+ 		r4k_blast_dcache_page(addr);
+ 		ClearPageDcacheDirty(page);
+ 	}
+@@ -477,7 +488,7 @@
+ 	/* Catch bad driver code */
+ 	BUG_ON(size == 0);
+ 
+-	if (cpu_has_subset_pcaches) {
++	if (!bcm4710 && cpu_has_subset_pcaches) {
+ 		unsigned long sc_lsize = current_cpu_data.scache.linesz;
+ 
+ 		if (size >= scache_size) {
+@@ -509,6 +520,8 @@
  		R4600_HIT_CACHEOP_WAR_IMPL;
  		a = addr & ~(dc_lsize - 1);
  		end = (addr + size - 1) & ~(dc_lsize - 1);
-+#ifdef CONFIG_BCM4710
 +		BCM4710_FILL_TLB(a);
 +		BCM4710_FILL_TLB(end);
-+#endif
  		while (1) {
  			flush_dcache_line(a);	/* Hit_Writeback_Inv_D */
  			if (a == end)
-@@ -537,6 +560,10 @@
+@@ -527,7 +540,7 @@
+ 	/* Catch bad driver code */
+ 	BUG_ON(size == 0);
  
- 		a = addr & ~(sc_lsize - 1);
- 		end = (addr + size - 1) & ~(sc_lsize - 1);
-+#ifdef CONFIG_BCM4710
+-	if (cpu_has_subset_pcaches) {
++	if (!bcm4710 && (cpu_has_subset_pcaches)) {
+ 		unsigned long sc_lsize = current_cpu_data.scache.linesz;
+ 
+ 		if (size >= scache_size) {
+@@ -554,6 +567,8 @@
+ 		R4600_HIT_CACHEOP_WAR_IMPL;
+ 		a = addr & ~(dc_lsize - 1);
+ 		end = (addr + size - 1) & ~(dc_lsize - 1);
 +		BCM4710_FILL_TLB(a);
 +		BCM4710_FILL_TLB(end);
-+#endif
  		while (1) {
- 			flush_scache_line(a);	/* Hit_Writeback_Inv_SD */
+ 			flush_dcache_line(a);	/* Hit_Writeback_Inv_D */
  			if (a == end)
-@@ -576,6 +603,10 @@
- 	unsigned long ic_lsize = current_cpu_data.icache.linesz;
+@@ -577,6 +592,8 @@
  	unsigned long dc_lsize = current_cpu_data.dcache.linesz;
  
-+#ifdef CONFIG_BCM4710
+ 	R4600_HIT_CACHEOP_WAR_IMPL;
 +	BCM4710_PROTECTED_FILL_TLB(addr);
 +	BCM4710_PROTECTED_FILL_TLB(addr + 4);
-+#endif
- 	R4600_HIT_CACHEOP_WAR_IMPL;
  	protected_writeback_dcache_line(addr & ~(dc_lsize - 1));
  	protected_flush_icache_line(addr & ~(ic_lsize - 1));
-diff -urN linux.old/include/asm-mips/r4kcache.h linux.dev/include/asm-mips/r4kcache.h
---- linux.old/include/asm-mips/r4kcache.h	2005-06-01 18:42:43.000000000 +0200
-+++ linux.dev/include/asm-mips/r4kcache.h	2005-06-01 19:07:11.000000000 +0200
-@@ -15,6 +15,25 @@
- #include <asm/asm.h>
- #include <asm/cacheops.h>
- 
-+#ifdef CONFIG_BCM4710
-+#define BCM4710_DUMMY_RREG() (((sbconfig_t *)(KSEG1ADDR(SB_ENUM_BASE + SBCONFIGOFF)))->sbimstate)
-+
-+#define BCM4710_FILL_TLB(addr) (*(volatile unsigned long *)(addr))
-+#define BCM4710_PROTECTED_FILL_TLB(addr) ({ unsigned long x; get_dbe(x, (volatile unsigned long *)(addr)); })
-+
-+#define cache_op(op,addr)						\
-+	BCM4710_DUMMY_RREG();						\
-+	__asm__ __volatile__(						\
-+	"	.set	noreorder				\n"	\
-+	"	.set	mips3\n\t				\n"	\
-+	"	cache	%0, %1					\n"	\
-+	"	.set	mips0					\n"	\
-+	"	.set	reorder"					\
-+	:								\
-+	: "i" (op), "m" (*(unsigned char *)(addr)))
-+
-+#else
-+
- #define cache_op(op,addr)						\
- 	__asm__ __volatile__(						\
- 	"	.set	noreorder				\n"	\
-@@ -24,6 +43,8 @@
- 	"	.set	reorder"					\
- 	:								\
- 	: "i" (op), "m" (*(unsigned char *)(addr)))
-+#endif
-+
- 
- static inline void flush_icache_line_indexed(unsigned long addr)
- {
-@@ -32,6 +53,9 @@
- 
- static inline void flush_dcache_line_indexed(unsigned long addr)
- {
-+#ifdef CONFIG_BCM4710	
-+	BCM4710_DUMMY_RREG();
-+#endif
- 	cache_op(Index_Writeback_Inv_D, addr);
- }
- 
-@@ -47,6 +71,10 @@
- 
- static inline void flush_dcache_line(unsigned long addr)
- {
-+
-+#ifdef CONFIG_BCM4710	
-+	BCM4710_DUMMY_RREG();
-+#endif
- 	cache_op(Hit_Writeback_Inv_D, addr);
- }
- 
-@@ -91,6 +119,9 @@
-  */
- static inline void protected_writeback_dcache_line(unsigned long addr)
- {
-+#ifdef CONFIG_BCM4710	
-+	BCM4710_DUMMY_RREG();
-+#endif
- 	__asm__ __volatile__(
- 		".set noreorder\n\t"
- 		".set mips3\n"
-@@ -148,8 +179,12 @@
- 	unsigned long ws, addr;
- 
- 	for (ws = 0; ws < ws_end; ws += ws_inc) 
--		for (addr = start; addr < end; addr += 0x200)
-+		for (addr = start; addr < end; addr += 0x200) {
-+#ifdef CONFIG_BCM4710	
-+			BCM4710_DUMMY_RREG();
-+#endif
- 			cache16_unroll32(addr|ws,Index_Writeback_Inv_D);
+ 	if (MIPS4K_ICACHE_REFILL_WAR) {
+@@ -986,10 +1003,12 @@
+ 	case CPU_R4000MC:
+ 	case CPU_R4400SC:
+ 	case CPU_R4400MC:
+-		probe_scache_kseg1 = (probe_func_t) (KSEG1ADDR(&probe_scache));
+-		sc_present = probe_scache_kseg1(config);
+-		if (sc_present)
+-			c->options |= MIPS_CPU_CACHE_CDEX_S;
++		if (!bcm4710) {
++			probe_scache_kseg1 = (probe_func_t) (KSEG1ADDR(&probe_scache));
++			sc_present = probe_scache_kseg1(config);
++			if (sc_present)
++				c->options |= MIPS_CPU_CACHE_CDEX_S;
 +		}
- }
+ 		break;
  
- static inline void blast_dcache16_page(unsigned long page)
-@@ -158,6 +193,9 @@
- 	unsigned long end = start + PAGE_SIZE;
- 
- 	do {
-+#ifdef CONFIG_BCM4710	
-+		BCM4710_DUMMY_RREG();
-+#endif
- 		cache16_unroll32(start,Hit_Writeback_Inv_D);
- 		start += 0x200;
- 	} while (start < end);
-@@ -173,8 +211,12 @@
- 	unsigned long ws, addr;
- 
- 	for (ws = 0; ws < ws_end; ws += ws_inc) 
--		for (addr = start; addr < end; addr += 0x200) 
-+		for (addr = start; addr < end; addr += 0x200) {
-+#ifdef CONFIG_BCM4710	
-+			BCM4710_DUMMY_RREG();
-+#endif
- 			cache16_unroll32(addr|ws,Index_Writeback_Inv_D);
-+		}
- }
- 
- static inline void blast_icache16(void)
-@@ -196,7 +238,13 @@
- 	unsigned long start = page;
- 	unsigned long end = start + PAGE_SIZE;
- 
-+#ifdef CONFIG_BCM4710	
-+	BCM4710_FILL_TLB(start);
-+#endif
- 	do {
-+#ifdef CONFIG_BCM4710	
-+		BCM4710_DUMMY_RREG();
-+#endif
- 		cache16_unroll32(start,Hit_Invalidate_I);
- 		start += 0x200;
- 	} while (start < end);
-@@ -291,8 +339,12 @@
- 	unsigned long ws, addr;
- 
- 	for (ws = 0; ws < ws_end; ws += ws_inc) 
--		for (addr = start; addr < end; addr += 0x400) 
-+		for (addr = start; addr < end; addr += 0x400) {
-+#ifdef CONFIG_BCM4710	
-+			BCM4710_DUMMY_RREG();
-+#endif
- 			cache32_unroll32(addr|ws,Index_Writeback_Inv_D);
-+		}
- }
- 
- static inline void blast_dcache32_page(unsigned long page)
-@@ -300,7 +352,13 @@
- 	unsigned long start = page;
- 	unsigned long end = start + PAGE_SIZE;
- 
-+#ifdef CONFIG_BCM4710	
-+	__asm__ __volatile__("nop;nop;nop;nop");
-+#endif
- 	do {
-+#ifdef CONFIG_BCM4710	
-+		BCM4710_DUMMY_RREG();
-+#endif
- 		cache32_unroll32(start,Hit_Writeback_Inv_D);
- 		start += 0x400;
- 	} while (start < end);
-@@ -339,6 +397,9 @@
- 	unsigned long start = page;
- 	unsigned long end = start + PAGE_SIZE;
- 
-+#ifdef CONFIG_BCM4710	
-+	BCM4710_FILL_TLB(start);
-+#endif
- 	do {
- 		cache32_unroll32(start,Hit_Invalidate_I);
- 		start += 0x400;
-diff -urN linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
---- linux.old/arch/mips/mm/c-r4k.c	2005-06-01 18:49:07.000000000 +0200
-+++ linux.dev/arch/mips/mm/c-r4k.c	2005-06-03 12:11:13.000000000 +0200
-@@ -51,6 +51,7 @@
- #define cpu_is_r4600_v1_x()	((read_c0_prid() & 0xfffffff0) == 0x2010)
- #define cpu_is_r4600_v2_x()	((read_c0_prid() & 0xfffffff0) == 0x2020)
- 
-+#ifndef CONFIG_BCM4710
- #define R4600_HIT_CACHEOP_WAR_IMPL					\
- do {									\
- 	if (R4600_V2_HIT_CACHEOP_WAR && cpu_is_r4600_v2_x())		\
-@@ -58,11 +59,17 @@
- 	if (R4600_V1_HIT_CACHEOP_WAR)					\
- 		__asm__ __volatile__("nop;nop;nop;nop");		\
- } while (0)
-+#else
-+#define R4600_HIT_CACHEOP_WAR_IMPL
-+#endif
- 
- static void (* r4k_blast_dcache_page)(unsigned long addr);
- 
- static inline void r4k_blast_dcache_page_dc32(unsigned long addr)
- {
-+#ifdef CONFIG_BCM4710
-+	BCM4710_FILL_TLB(addr);
-+#endif
- 	R4600_HIT_CACHEOP_WAR_IMPL;
- 	blast_dcache32_page(addr);
- }
-@@ -581,6 +588,10 @@
- 		R4600_HIT_CACHEOP_WAR_IMPL;
- 		a = addr & ~(dc_lsize - 1);
- 		end = (addr + size - 1) & ~(dc_lsize - 1);
-+#ifdef CONFIG_BCM4710
-+		BCM4710_FILL_TLB(a);
-+		BCM4710_FILL_TLB(end);
-+#endif
- 		while (1) {
- 			flush_dcache_line(a);	/* Hit_Writeback_Inv_D */
- 			if (a == end)
-diff -urN linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
---- linux.old/arch/mips/mm/c-r4k.c	2005-06-11 19:39:17.000000000 +0200
-+++ linux.dev/arch/mips/mm/c-r4k.c	2005-06-11 19:54:48.000000000 +0200
-@@ -1083,6 +1083,19 @@
+ 	case CPU_R10000:
+@@ -1041,6 +1060,19 @@
  static inline void coherency_setup(void)
  {
  	change_c0_config(CONF_CM_CMASK, CONF_CM_DEFAULT);
@@ -425,7 +184,7 @@ diff -urN linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
  
  	/*
  	 * c0_status.cu=0 specifies that updates by the sc instruction use
-@@ -1104,6 +1117,42 @@
+@@ -1062,6 +1094,42 @@
  
  }
  
@@ -468,7 +227,19 @@ diff -urN linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
  void __init ld_mmu_r4xx0(void)
  {
  	extern void build_clear_page(void);
-@@ -1159,47 +1208,9 @@
+@@ -1073,6 +1141,11 @@
+ 	memcpy((void *)(KSEG0 + 0x100), &except_vec2_generic, 0x80);
+ 	memcpy((void *)(KSEG1 + 0x100), &except_vec2_generic, 0x80);
+ 
++	if (current_cpu_data.cputype == CPU_BCM4710 && (current_cpu_data.processor_id & PRID_REV_MASK) == 0)
++		bcm4710 = 1;
++	else
++		bcm4710 = 0;
++	
+ 	probe_pcache();
+ 	setup_scache();
+ 
+@@ -1117,47 +1190,9 @@
  
  	build_clear_page();
  	build_copy_page();
@@ -518,3 +289,271 @@ diff -urN linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
  #endif
  }
  
+diff -urN linux.old/arch/mips/mm/tlb-r4k.c linux.dev/arch/mips/mm/tlb-r4k.c
+--- linux.old/arch/mips/mm/tlb-r4k.c	2005-06-26 16:24:26.000000000 +0200
++++ linux.dev/arch/mips/mm/tlb-r4k.c	2005-06-29 20:29:16.000000000 +0200
+@@ -38,6 +38,7 @@
+ 	old_ctx = read_c0_entryhi();
+ 	write_c0_entrylo0(0);
+ 	write_c0_entrylo1(0);
++	BARRIER;
+ 
+ 	entry = read_c0_wired();
+ 
+@@ -47,6 +48,7 @@
+ 		write_c0_index(entry);
+ 		mtc0_tlbw_hazard();
+ 		tlb_write_indexed();
++		BARRIER;
+ 		entry++;
+ 	}
+ 	tlbw_use_hazard();
+@@ -98,6 +100,7 @@
+ 				write_c0_entryhi(KSEG0 + idx*0x2000);
+ 				mtc0_tlbw_hazard();
+ 				tlb_write_indexed();
++				BARRIER;
+ 			}
+ 			tlbw_use_hazard();
+ 			write_c0_entryhi(oldpid);
+@@ -136,6 +139,7 @@
+ 		tlbw_use_hazard();
+ 
+ 	finish:
++		BARRIER;
+ 		write_c0_entryhi(oldpid);
+ 		local_irq_restore(flags);
+ 	}
+@@ -204,6 +208,7 @@
+ 	pmdp = pmd_offset(pgdp, address);
+ 	idx = read_c0_index();
+ 	ptep = pte_offset(pmdp, address);
++	BARRIER;
+ #if defined(CONFIG_64BIT_PHYS_ADDR) && defined(CONFIG_CPU_MIPS32)
+ 	write_c0_entrylo0(ptep->pte_high);
+ 	ptep++;
+@@ -220,6 +225,7 @@
+ 		tlb_write_indexed();
+ 	tlbw_use_hazard();
+ 	write_c0_entryhi(pid);
++	BARRIER;
+ 	local_irq_restore(flags);
+ }
+ 
+@@ -317,6 +323,7 @@
+ 	}
+ 
+ 	write_c0_index(temp_tlb_entry);
++	BARRIER;
+ 	write_c0_pagemask(pagemask);
+ 	write_c0_entryhi(entryhi);
+ 	write_c0_entrylo0(entrylo0);
+diff -urN linux.old/arch/mips/mm/tlbex-mips32.S linux.dev/arch/mips/mm/tlbex-mips32.S
+--- linux.old/arch/mips/mm/tlbex-mips32.S	2005-06-26 16:27:01.000000000 +0200
++++ linux.dev/arch/mips/mm/tlbex-mips32.S	2005-06-29 20:24:54.000000000 +0200
+@@ -90,6 +90,9 @@
+ 	.set	noat
+ 	LEAF(except_vec0_r4000)
+ 	.set	mips3
++#ifdef CONFIG_BCM4704
++	nop
++#endif
+ #ifdef CONFIG_SMP
+ 	mfc0	k1, CP0_CONTEXT
+ 	la	k0, pgd_current
+diff -urN linux.old/include/asm-mips/r4kcache.h linux.dev/include/asm-mips/r4kcache.h
+--- linux.old/include/asm-mips/r4kcache.h	2005-06-26 16:27:01.000000000 +0200
++++ linux.dev/include/asm-mips/r4kcache.h	2005-06-30 22:39:42.000000000 +0200
+@@ -15,6 +15,18 @@
+ #include <asm/asm.h>
+ #include <asm/cacheops.h>
+ 
++#ifdef CONFIG_BCM4710
++#define BCM4710_DUMMY_RREG() (((sbconfig_t *)(KSEG1ADDR(SB_ENUM_BASE + SBCONFIGOFF)))->sbimstate)
++
++#define BCM4710_FILL_TLB(addr) (*(volatile unsigned long *)(addr))
++#define BCM4710_PROTECTED_FILL_TLB(addr) ({ unsigned long x; get_dbe(x, (volatile unsigned long *)(addr)); })
++#else
++#define BCM4710_DUMMY_RREG()
++
++#define BCM4710_FILL_TLB(addr)
++#define BCM4710_PROTECTED_FILL_TLB(addr)
++#endif
++
+ #define cache_op(op,addr)						\
+ 	__asm__ __volatile__(						\
+ 	"	.set	noreorder				\n"	\
+@@ -32,6 +44,7 @@
+ 
+ static inline void flush_dcache_line_indexed(unsigned long addr)
+ {
++	BCM4710_DUMMY_RREG();
+ 	cache_op(Index_Writeback_Inv_D, addr);
+ }
+ 
+@@ -47,6 +60,7 @@
+ 
+ static inline void flush_dcache_line(unsigned long addr)
+ {
++	BCM4710_DUMMY_RREG();
+ 	cache_op(Hit_Writeback_Inv_D, addr);
+ }
+ 
+@@ -91,6 +105,7 @@
+  */
+ static inline void protected_writeback_dcache_line(unsigned long addr)
+ {
++	BCM4710_DUMMY_RREG();
+ 	__asm__ __volatile__(
+ 		".set noreorder\n\t"
+ 		".set mips3\n"
+@@ -148,8 +163,10 @@
+ 	unsigned long ws, addr;
+ 
+ 	for (ws = 0; ws < ws_end; ws += ws_inc) 
+-		for (addr = start; addr < end; addr += 0x200)
++		for (addr = start; addr < end; addr += 0x200) {
++			BCM4710_DUMMY_RREG();
+ 			cache16_unroll32(addr|ws,Index_Writeback_Inv_D);
++		}
+ }
+ 
+ static inline void blast_dcache16_page(unsigned long page)
+@@ -157,7 +174,9 @@
+ 	unsigned long start = page;
+ 	unsigned long end = start + PAGE_SIZE;
+ 
++	BCM4710_FILL_TLB(start);
+ 	do {
++		BCM4710_DUMMY_RREG();
+ 		cache16_unroll32(start,Hit_Writeback_Inv_D);
+ 		start += 0x200;
+ 	} while (start < end);
+@@ -173,8 +192,10 @@
+ 	unsigned long ws, addr;
+ 
+ 	for (ws = 0; ws < ws_end; ws += ws_inc) 
+-		for (addr = start; addr < end; addr += 0x200) 
++		for (addr = start; addr < end; addr += 0x200) {
++			BCM4710_DUMMY_RREG();
+ 			cache16_unroll32(addr|ws,Index_Writeback_Inv_D);
++		}
+ }
+ 
+ static inline void blast_icache16(void)
+@@ -196,6 +217,7 @@
+ 	unsigned long start = page;
+ 	unsigned long end = start + PAGE_SIZE;
+ 
++	BCM4710_FILL_TLB(start);
+ 	do {
+ 		cache16_unroll32(start,Hit_Invalidate_I);
+ 		start += 0x200;
+@@ -281,6 +303,7 @@
+ 		: "r" (base),						\
+ 		  "i" (op));
+ 
++
+ static inline void blast_dcache32(void)
+ {
+ 	unsigned long start = KSEG0;
+@@ -291,8 +314,10 @@
+ 	unsigned long ws, addr;
+ 
+ 	for (ws = 0; ws < ws_end; ws += ws_inc) 
+-		for (addr = start; addr < end; addr += 0x400) 
++		for (addr = start; addr < end; addr += 0x400) {
++			BCM4710_DUMMY_RREG();
+ 			cache32_unroll32(addr|ws,Index_Writeback_Inv_D);
++		}
+ }
+ 
+ static inline void blast_dcache32_page(unsigned long page)
+@@ -300,7 +325,9 @@
+ 	unsigned long start = page;
+ 	unsigned long end = start + PAGE_SIZE;
+ 
++	BCM4710_FILL_TLB(start);
+ 	do {
++		BCM4710_DUMMY_RREG();
+ 		cache32_unroll32(start,Hit_Writeback_Inv_D);
+ 		start += 0x400;
+ 	} while (start < end);
+@@ -316,8 +343,10 @@
+ 	unsigned long ws, addr;
+ 
+ 	for (ws = 0; ws < ws_end; ws += ws_inc) 
+-		for (addr = start; addr < end; addr += 0x400) 
++		for (addr = start; addr < end; addr += 0x400) {
++			BCM4710_DUMMY_RREG();
+ 			cache32_unroll32(addr|ws,Index_Writeback_Inv_D);
++		}
+ }
+ 
+ static inline void blast_icache32(void)
+@@ -339,6 +368,7 @@
+ 	unsigned long start = page;
+ 	unsigned long end = start + PAGE_SIZE;
+ 
++	BCM4710_FILL_TLB(start);
+ 	do {
+ 		cache32_unroll32(start,Hit_Invalidate_I);
+ 		start += 0x400;
+@@ -443,6 +473,7 @@
+ 	unsigned long start = page;
+ 	unsigned long end = start + PAGE_SIZE;
+ 
++	BCM4710_FILL_TLB(start);
+ 	do {
+ 		cache64_unroll32(start,Hit_Invalidate_I);
+ 		start += 0x800;
+diff -urN linux.old/include/asm-mips/stackframe.h linux.dev/include/asm-mips/stackframe.h
+--- linux.old/include/asm-mips/stackframe.h	2005-06-26 16:27:01.000000000 +0200
++++ linux.dev/include/asm-mips/stackframe.h	2005-06-30 19:04:46.000000000 +0200
+@@ -172,6 +172,46 @@
+ 		 rfe;					 \
+ 		.set	pop
+ 
++#elif defined(CONFIG_BCM4710) || defined(CONFIG_BCM4704)
++
++#define RESTORE_SOME                                     \
++		.set    push;                            \
++		.set    reorder;                         \
++		mfc0    t0, CP0_STATUS;                  \
++		.set    pop;                             \
++		ori     t0, 0x1f;                        \
++		xori    t0, 0x1f;                        \
++		mtc0    t0, CP0_STATUS;                  \
++		li      v1, 0xff00;                      \
++		and     t0, v1;                          \
++		lw      v0, PT_STATUS(sp);               \
++		nor     v1, $0, v1;                      \
++		and     v0, v1;                          \
++		or      v0, t0;                          \
++		ori     v1, v0, ST0_IE;                  \
++		xori    v1, v1, ST0_IE;                  \
++		mtc0    v1, CP0_STATUS;                  \
++		mtc0    v0, CP0_STATUS;                  \
++		lw      v1, PT_EPC(sp);                  \
++		mtc0    v1, CP0_EPC;                     \
++		lw      $31, PT_R31(sp);                 \
++		lw      $28, PT_R28(sp);                 \
++		lw      $25, PT_R25(sp);                 \
++		lw      $7,  PT_R7(sp);                  \
++		lw      $6,  PT_R6(sp);                  \
++		lw      $5,  PT_R5(sp);                  \
++		lw      $4,  PT_R4(sp);                  \
++		lw      $3,  PT_R3(sp);                  \
++		lw      $2,  PT_R2(sp)
++
++#define RESTORE_SP_AND_RET                               \
++		lw      sp,  PT_R29(sp);                 \
++		nop;                                     \
++		nop;                                     \
++		.set    mips3;                           \
++		eret;                                    \
++		.set    mips0
++
+ #else
+ 
+ #define RESTORE_SOME                                     \
