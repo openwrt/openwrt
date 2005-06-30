@@ -32,9 +32,15 @@ $(PKG_BUILD_DIR)/wlcompat.o: $(PKG_BUILD_DIR)/.prepared
 $(PKG_BUILD_DIR)/wlcompat-debug.o: $(PKG_BUILD_DIR)/.prepared
 	$(TARGET_CC) -DDEBUG $(WLCOMPAT_FLAGS) -o $@ wlcompat.c
 
-$(IPKG_KMOD_WLCOMPAT): $(PKG_BUILD_DIR)/wlcompat.o $(PKG_BUILD_DIR)/wlcompat-debug.o
+$(IPKG_KMOD_WLCOMPAT): $(PKG_BUILD_DIR)/wlcompat.o
 	mkdir -p $(IDIR_KMOD_WLCOMPAT)/etc/modules.d
 	echo "wlcompat" > $(IDIR_KMOD_WLCOMPAT)/etc/modules.d/10-wlcompat
 	mkdir -p $(IDIR_KMOD_WLCOMPAT)/lib/modules/$(LINUX_VERSION)
-	cp $(PKG_BUILD_DIR)/*.o $(IDIR_KMOD_WLCOMPAT)/lib/modules/$(LINUX_VERSION)/
+	cp $(PKG_BUILD_DIR)/wlcompat.o $(IDIR_KMOD_WLCOMPAT)/lib/modules/$(LINUX_VERSION)/
 	$(IPKG_BUILD) $(IDIR_KMOD_WLCOMPAT) $(PACKAGE_DIR)
+
+$(IPKG_KMOD_WLCOMPAT_DEBUG): $(PKG_BUILD_DIR)/wlcompat-debug.o
+	mkdir -p $(IDIR_KMOD_WLCOMPAT)/lib/modules/$(LINUX_VERSION)
+	cp $(PKG_BUILD_DIR)/wlcompat-debug.o $(IDIR_KMOD_WLCOMPAT)/lib/modules/$(LINUX_VERSION)/
+	$(IPKG_BUILD) $(IDIR_KMOD_WLCOMPAT_DEBUG) $(PACKAGE_DIR)
+
