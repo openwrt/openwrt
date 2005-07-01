@@ -41,6 +41,13 @@ remap () {
   remap eth0 vlan1
 }
 
+# hacks for asus wl-300g
+[ "$(nvram get productid)"  = "WL300g" ] && {
+  debug "### wl-300g hacks ###"
+  NVRAM_lan_ifnames="eth0 eth2"
+  NVRAM_wan_ifname="none"
+}
+
 # hacks for wap54g hardware
 [ "$(nvram get boardnum)"  = "2" ] || \
 [ "$(nvram get boardnum)"  = "1024" ] && {
