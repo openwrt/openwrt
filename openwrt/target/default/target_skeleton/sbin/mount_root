@@ -20,6 +20,6 @@ if [ "$1" != "failsafe" ]; then
 		umount /rom/proc rom/dev >&-
 	fi
 fi
-mount none /tmp -t tmpfs size=50%
+mount none /tmp -t tmpfs -o nosuid,nodev,mode=1777,size=50%
 mkdir -p /dev/pts
 mount none /dev/pts -t devpts
