@@ -155,7 +155,7 @@ void setup_bcom(int skfd, char *ifname)
 
 	bcom_ioctl(skfd, ifname, WLC_DOWN, NULL, 0);
 	
-	if (!nvram_enabled(wl_var("wep"))) {
+	if (nvram_match(wl_var("auth_mode"), "wpa") || nvram_match(wl_var("auth_mode"), "psk") || (nvram_get(wl_var("akm")) && !nvram_disabled(wl_var("akm")))) {
 		/* Set up WPA */
 		if (nvram_match(wl_var("crypto"), "tkip"))
 			val = TKIP_ENABLED;
