@@ -1,0 +1,27 @@
+#!/bin/sh
+. /etc/functions.sh
+
+WAN=$(nvram get wan_ifname)
+LAN=$(nvram get lan_ifname)
+
+iptables -F input_rule
+iptables -F output_rule
+iptables -F forwarding_rule
+iptables -F prerouting_rule
+iptables -F postrouting_rule
+
+### BIG FAT DISCLAIMER
+### The "-i $WAN" literally means packets that came in over the $WAN interface;
+### this WILL NOT MATCH packets sent from the LAN to the WAN address.
+
+### Allow SSH from WAN
+# iptables -t nat -A prerouting_rule -i $WAN -p tcp --dport 22 -j ACCEPT 
+# iptables        -A input_rule      -i $WAN -p tcp --dport 22 -j ACCEPT
+
+### Port forwarding
+# iptables -t nat -A prerouting_rule -i $WAN -p tcp --dport 22 -j DNAT --to 192.168.1.2
+# iptables        -A forwarding_rule -i $WAN -p tcp --dport 22 -d 192.168.1.2 -j ACCEPT
+
+### DMZ (should be placed after port forwarding / accept rules)
+# iptables -t nat -A prerouting_rule -i $WAN -j DNAT --to 192.168.1.2
+# iptables        -A forwarding_rule -i $WAN -d 192.168.1.2 -j ACCEPT
