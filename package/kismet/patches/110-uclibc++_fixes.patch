@@ -39,3 +39,15 @@ diff -urN kismet-2005-04-R1.old/tcpserver.cc kismet-2005-04-R1.dev/tcpserver.cc
  	}
      }
  
+diff -urN kismet-2005-04-R1.old/tcpclient.cc kismet-2005-04-R1.dev/tcpclient.cc
+--- kismet-2005-04-R1.old/tcpclient.cc	2005-04-03 07:33:42.000000000 +0200
++++ kismet-2005-04-R1.dev/tcpclient.cc	2005-07-01 16:42:33.000000000 +0200
+@@ -214,7 +214,7 @@
+                 return(-1);
+             }
+         } else {
+-            writebuf.erase(0, res);
++            writebuf = "";
+         }
+     }
+ 
