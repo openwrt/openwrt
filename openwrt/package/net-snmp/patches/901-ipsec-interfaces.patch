@@ -1,0 +1,44 @@
+Date: Tue, 14 Jun 2005 00:39:54 +0200
+From: Alexander Holler <aholler@ahsoftware.de>
+To: nthill@free.fr
+Subject: Patch for libsnmp (openwrt) to work with ipsec-if
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
+
+Hello,
+
+I've a small patch for net-snmp (5.1.2) which is needed to work with
+ipsec-interfaces. Otherwise snmpd will segfault which means snmp is not
+really usable.
+
+The patch is from me, but the source for the fault is from:
+
+http://lists.openswan.org/pipermail/users/2004-August/001773.html
+
+It works, because this  email is going out over ipsec using a
+snmp-monitored wrt54g. ;)
+
+
+--- net-snmp-5.1.2/agent/mibgroup/mibII/interfaces.c.orig	2005-06-14 00:41:16.000000000 +0200
++++ net-snmp-5.1.2/agent/mibgroup/mibII/interfaces.c	2005-06-14 03:21:35.000000000 +0200
+@@ -1438,8 +1438,10 @@
+ 
+ 	if (ioctl(fd, 0x8947, &ifr) >= 0) {
+ 		new_ioctl_nums = 1;
++/*
+ 	} else if (ioctl(fd, SIOCDEVPRIVATE, &ifr) >= 0) {
+ 		new_ioctl_nums = 0;
++*/
+ 	} else {
+ 		DEBUGMSGTL(("mibII/interfaces", "SIOCGMIIPHY on %s failed\n", ifr.ifr_name));
+ 		return retspeed;
+@@ -1449,7 +1451,8 @@
+ 	for (mii_reg = 0; mii_reg < 8; mii_reg++){
+ 		data[0] = phy_id;
+ 		data[1] = mii_reg;
+-		if(ioctl(fd, new_ioctl_nums ? 0x8948 : SIOCDEVPRIVATE+1, &ifr) <0){
++/*		if(ioctl(fd, new_ioctl_nums ? 0x8948 : SIOCDEVPRIVATE+1, &ifr) <0){ */
++		if(ioctl(fd, 0x8948, &ifr) <0){
+ 			DEBUGMSGTL(("mibII/interfaces", "SIOCGMIIREG on %s failed\n", ifr.ifr_name));
+ 		}
+ 		mii_val[mii_reg] = data[3];		
