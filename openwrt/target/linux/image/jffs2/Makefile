@@ -11,6 +11,7 @@ $(DL_DIR)/$(MTD_SOURCE):
 
 $(MTD_DIR)/.unpacked: $(DL_DIR)/$(MTD_SOURCE)
 	zcat $(DL_DIR)/$(MTD_SOURCE) | tar -C $(BUILD_DIR) -xvf -
+	$(PATCH) $(MTD_DIR) ./patches
 	touch $(MTD_DIR)/.unpacked
 
 $(MTD_DIR)/util/mkfs.jffs2: $(MTD_DIR)/.unpacked
