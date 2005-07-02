@@ -1,32 +1,29 @@
-Description of kernel patches in patches:
+Description of kernel patches:
+
+
+generic/
+	Generic patches for vanilla Linux kernel
 
 000-linux_mips.patch
 	This is the diff between vanilla linux-2.4.30 and linux-mips.org kernel
 	(CVS tag 2_4_30 used). The kernel source from linux-mips.org CVS repository has
 	newer drivers and code then vanilla linux-2.4.30 especially for the mips architecture.
 
-001-bcm47xx.patch
-	This is the broadcom specific code from asus (1941) GPL source tarball. 
-	There are many small patches included, so it works with linux 2.4.30 kernel. 
-	The original code is based on Linux 2.4.20.
-
-002-wl_fix.patch
-	The driver for the wireless lan chip on brcm47xx based routers is binary only. 
-	This means it depends on older data structures in the kernel. We backported some
-	of the changes or changed some of the data structures to work with the binary modul. 
-	This is a really bad hack, but without source code, there is no better chance to get
-	the driver working with newer kernels.
-
-003-squashfs.patch
+001-squashfs.patch
 	Support for the squashfs filesystem. It has better compression ratio then cramfs.
 
-004-squashfs_lzma.patch
+002-squashfs_lzma.patch
 	LZMA Addon patch from Oleg I. Vdovikin for the squashfs filesystem. 
 	Even better compression ratio. 
 
-005-jffs2_compression.patch
+003-jffs2_compression.patch
 	Compression for jffs2 filesystem.
-	
+
+004-exec_pagesize.patch
+
+005-mtd_flashtypes.patch
+	Additional mtd drivers for flash chips
+
 100-ebtables.patch
 	Filtering packets on ethernet layer. See http://ebtables.sf.net
 
@@ -57,9 +54,6 @@ Description of kernel patches in patches:
 110-netdev_random_core.patch
 	Support for gathering entropy from network devices for /dev/random
 
-111-netdev_random_et.patch
-	Patch agains the Broadcom et driver to gather entropy for /dev/random
-
 200-i4l.patch
 
 201-hfc_usb_backport.patch
@@ -71,8 +65,37 @@ Description of kernel patches in patches:
 204-net_b44.patch
 	Support for the BCM47xx chipset in the b44 driver
 
-205-gcc_3.4_ldscript.patch
-
 206-gcc_3.4_fixes.patch
+	mips specific gcc 3.4 fixes
 
 207-gcc_4.0_fixes.patch
+	gcc 4.0 fixes
+
+
+brcm/
+	Broadcom specific patches
+
+001-bcm47xx.patch
+	This is the broadcom specific code from asus (1941) GPL source tarball. 
+	There are many small patches included, so it works with linux 2.4.30 kernel. 
+	The original code is based on Linux 2.4.20.
+
+002-wl_fix.patch
+	The driver for the wireless lan chip on brcm47xx based routers is binary only. 
+	This means it depends on older data structures in the kernel. We backported some
+	of the changes or changed some of the data structures to work with the binary modul. 
+	This is a really bad hack, but without source code, there is no better chance to get
+	the driver working with newer kernels.
+
+003-bcm47xx_cache_fixes.patch
+
+004-diag_led.patch
+	OpenWrt diag (led and reset button) driver
+
+
+ar7/
+	TI AR7 specific patches
+
+000-ar7_support.patch
+
+001-flash_map.patch
