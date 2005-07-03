@@ -1,9 +1,9 @@
 #!/bin/sh
-
 . /etc/functions.sh
+IF_NAME=$1
 
-WAN_PROTO=$(nvram get wan_proto)
-[ "$WAN_PROTO" = "pppoe" ] || exit 0
+PROTO=$(nvram get ${IF_NAME}_proto)
+[ "$PROTO" = "pppoe" ] || exit 0
 
 for module in slhc ppp_generic pppox pppoe; do
 	/sbin/insmod $module 2>/dev/null >/dev/null
