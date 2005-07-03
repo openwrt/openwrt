@@ -12143,7 +12143,7 @@ diff -Nur linux-2.4.30/arch/mips/bcm947xx/setup.c linux-2.4.30-brcm/arch/mips/bc
 +#endif
 +
 +	/* Override default command line arguments */
-+	value = nvram_get("kernel_args");
++	value = nvram_get("kernel_cmdline");
 +	if (value && strlen(value) && strncmp(value, "empty", 5))
 +		strncpy(arcs_cmdline, value, sizeof(arcs_cmdline));
 +
