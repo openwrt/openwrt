@@ -39,6 +39,7 @@ package-$(BR2_PACKAGE_IRSSI) += irssi
 package-$(BR2_PACKAGE_KISMET) += kismet
 package-$(BR2_PACKAGE_L2TPD) += l2tpd
 package-$(BR2_PACKAGE_LCD4LINUX) += lcd4linux
+package-$(BR2_PACKAGE_LESS) += less
 package-$(BR2_PACKAGE_LIBDB) += libdb
 package-$(BR2_PACKAGE_LIBELF) += libelf
 package-$(BR2_PACKAGE_LIBEVENT) += libevent
@@ -147,6 +148,7 @@ fprobe-compile: libpcap-compile
 gdbserver-compile: ncurses-compile
 gnutls-compile: libgcrypt-compile opencdk-compile libtasn1-compile
 kismet-compile: uclibc++-compile libpcap-compile ncurses-compile
+less-compile: ncurses-compile
 lcd4linux-compile: ncurses-compile
 libgcrypt-compile: libgpg-error-compile
 libgd-compile: libpng-compile
