@@ -7,8 +7,8 @@ LAN=$(nvram get lan_ifname)
 iptables -F input_rule
 iptables -F output_rule
 iptables -F forwarding_rule
-iptables -F prerouting_rule
-iptables -F postrouting_rule
+iptables -t nat -F prerouting_rule
+iptables -t nat -F postrouting_rule
 
 ### BIG FAT DISCLAIMER
 ### The "-i $WAN" literally means packets that came in over the $WAN interface;
