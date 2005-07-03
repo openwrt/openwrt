@@ -1,0 +1,9 @@
+config BR2_PACKAGE_LESS
+	tristate "less - a text file viewer."
+	default m if CONFIG_DEVEL
+	select BR2_PACKAGE_LIBNCURSES
+	help
+	  less - less is a pager. A pager usually displays text files.
+
+          http://www.greenwoodsoftware.com/less/
+	  
