@@ -70,6 +70,7 @@ $(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CC=$(TARGET_CC) \
 		COPTS="$(TARGET_CFLAGS)" \
+		HAVE_INET6="1" \
 		DESTDIR="$(PKG_INSTALL_DIR)/usr" \
 		all install
 	touch $@
@@ -88,8 +89,8 @@ $(IPKG_PPP):
 	$(IPKG_BUILD) $(IDIR_PPP) $(PACKAGE_DIR)
 	
 $(IDIR_PPP_MOD_PPPOE)/etc/init.d/S50pppoe:
-	install -d -m0755 $(IDIR_PPP_MOD_PPPOE)/etc/init.d
-	install -m0755 ./files/pppoe.init $(IDIR_PPP_MOD_PPPOE)/etc/init.d/S50pppoe
+	install -d -m0755 $(IDIR_PPP_MOD_PPPOE)/sbin
+	install -m0755 ./files/ifup.pppoe $(IDIR_PPP_MOD_PPPOE)/sbin/
 
 $(IPKG_PPP_MOD_PPPOE): $(IDIR_PPP_MOD_PPPOE)/etc/init.d/S50pppoe
 
