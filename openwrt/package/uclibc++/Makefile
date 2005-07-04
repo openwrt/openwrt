@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=uClibc++
-PKG_VERSION:=0.1.9
+PKG_VERSION:=0.1.11
 PKG_RELEASE:=1
-PKG_MD5SUM:=ebf58e04d72eab5c131c2c9118737024
+PKG_MD5SUM:=8a8e0ee8fefef150c08a649fd7da04aa
 
 PKG_SOURCE_URL:=http://cxx.uclibc.org/src/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tbz2
@@ -59,7 +59,7 @@ $(STAGING_DIR)/lib/libuClibc++.so: $(PKG_BUILD_DIR)/.built
 $(IPKG_LIBCXX): $(STAGING_DIR)/lib/libuClibc++.so
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_LIBCXX) ./$(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
 	mkdir -p $(IDIR_LIBCXX)/usr/lib
-	cp -fpR $(STAGING_DIR)/lib/libuClibc++.so* $(IDIR_LIBCXX)/usr/lib/
+	cp -fpR $(PKG_BUILD_DIR)/src/libuClibc++*.so* $(IDIR_LIBCXX)/usr/lib/
 	$(STRIP) $(IDIR_LIBCXX)/usr/lib/*.so*
 	mkdir -p $(PACKAGE_DIR)
 	$(IPKG_BUILD) $(IDIR_LIBCXX) $(PACKAGE_DIR)
