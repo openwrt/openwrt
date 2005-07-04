@@ -6,9 +6,9 @@ KDEPEND_$(1):=$($(4))
 endif
 
 ifeq ($$(strip $(5)),)
-IDEPEND_$(1):=kernel ($(LINUX_VERSION)-$(BOARD)-$(PKG_RELEASE))
+IDEPEND_$(1):=kernel-$(LINUX_VERSION)-$(BOARD) ($(PKG_RELEASE))
 else
-IDEPEND_$(1):=kernel ($(LINUX_VERSION)-$(BOARD)-$(PKG_RELEASE)), $(5)
+IDEPEND_$(1):=kernel-$(LINUX_VERSION)-$(BOARD) ($(PKG_RELEASE)), $(5)
 endif
 
 PKG_$(1) := $(PACKAGE_DIR)/kmod-$(2)_$(LINUX_VERSION)-$(BOARD)-$(PKG_RELEASE)_$(ARCH).ipk
