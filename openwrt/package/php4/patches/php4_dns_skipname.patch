@@ -1,0 +1,23 @@
+--- php-4.3.9.orig/ext/standard/dns.c   2003-09-01 16:37:46.000000000 -0600
++++ php-4.3.9/ext/standard/dns.c        2004-11-30 23:53:55.000000000 -0700
+@@ -207,7 +207,7 @@
+ }
+ /* }}} */
+ 
+-#if HAVE_RES_SEARCH && !(defined(__BEOS__)||defined(PHP_WIN32) || defined(NETWARE))
++#if HAVE_RES_SEARCH && HAVE_DN_SKIPNAME && !(defined(__BEOS__)||defined(PHP_WIN32) || defined(NETWARE))
+ 
+ /* {{{ proto int checkdnsrr(string host [, string type])
+    Check DNS records corresponding to a given Internet host name or IP address */
+
+--- php-4.3.9.orig/ext/standard/basic_functions.c       2004-07-30 10:52:35.000000000 -0600
++++ php-4.3.9/ext/standard/basic_functions.c    2004-11-30 23:56:42.000000000 -0700
+@@ -447,7 +447,7 @@
+	PHP_FE(gethostbyname,													NULL)
+	PHP_FE(gethostbynamel,													NULL)
+
+-#if HAVE_RES_SEARCH && !(defined(__BEOS__) || defined(PHP_WIN32) || defined(NETWARE))
++#if HAVE_RES_SEARCH && HAVE_DN_SKIPNAME && !(defined(__BEOS__)||defined(PHP_WIN32) || defined(NETWARE))
+	PHP_FE(checkdnsrr,														NULL)
+	PHP_FE(getmxrr,second_and_third_args_force_ref)
+#endif
