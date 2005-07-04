@@ -85,6 +85,7 @@ package-$(BR2_PACKAGE_OPENSWAN) += openswan
 package-$(BR2_PACKAGE_OPENVPN) += openvpn
 package-$(BR2_PACKAGE_OSIRIS) += osiris
 package-$(BR2_PACKAGE_PCRE) += pcre
+package-$(BR2_PACKAGE_PHP4) += php4
 package-$(BR2_PACKAGE_PICOCOM) += picocom
 package-$(BR2_PACKAGE_PMACCT) += pmacct
 package-$(BR2_PACKAGE_POPT) += popt
@@ -209,6 +210,28 @@ endif
 openvpn-compile: openssl-compile
 ifeq ($(BR2_PACKAGE_OPENVPN_LZO),y)
 openvpn-compile: lzo-compile
+endif
+
+ifneq ($(BR2_PACKAGE_PHP4_MOD_GD),)
+php4-compile: libgd-compile libpng-compile
+endif
+ifneq ($(BR2_PACKAGE_PHP4_MOD_LDAP),)
+php4-compile: openldap-compile
+endif
+ifneq ($(BR2_PACKAGE_PHP4_MOD_MYSQL),)
+php4-compile: mysql-compile
+endif
+ifneq ($(BR2_PACKAGE_PHP4_MOD_OPENSSL),)
+php4-compile: openssl-compile
+endif
+ifneq ($(BR2_PACKAGE_PHP4_MOD_PCRE),)
+php4-compile: pcre-compile
+endif
+ifneq ($(BR2_PACKAGE_PHP4_MOD_PGSQL),)
+php4-compile: postgresql-compile
+endif
+ifneq ($(BR2_PACKAGE_PHP4_MOD_SQLITE),)
+php4-compile: sqlite2-compile
 endif
 
 pmacct-compile: libpcap-compile
