@@ -32,6 +32,12 @@ config BR2_PACKAGE_LIGHTTPD_MOD_CGI
 	tristate 
 	default m if CONFIG_DEVEL
 
+config BR2_PACKAGE_LIGHTTPD_MOD_FASTCGI
+	depends BR2_PACKAGE_LIGHTTPD
+	prompt "...-mod-fastcgi - FastCGI module"
+	tristate 
+	default m if CONFIG_DEVEL
+
 config BR2_PACKAGE_LIGHTTPD_MOD_PROXY
 	depends BR2_PACKAGE_LIGHTTPD
 	prompt "...-mod-proxy - Proxy module"
