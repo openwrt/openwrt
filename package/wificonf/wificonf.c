@@ -270,9 +270,14 @@ void setup_bcom(int skfd, char *ifname)
 		int override = WLC_G_PROTECTION_OFF;
 		int control = WLC_G_PROTECTION_CTL_OFF;
 		
-		val = atoi(nvram_safe_get(wl_var("gmode")));
+		if (v = nvram_get(wl_var("gmode"))) 
+			val = atoi(v);
+		else
+			val = 1;
+
 		if (val > 5)
 			val = 1;
+
 		bcom_ioctl(skfd, ifname, WLC_SET_GMODE, &val, sizeof(val));
 		
 		if (nvram_match(wl_var("gmode_protection"), "auto")) {
