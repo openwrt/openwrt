@@ -40,7 +40,7 @@ IPKG_KERNEL:=IPKG_TMP=$(BUILD_DIR)/tmp IPKG_INSTROOT=$(LINUX_TARGET_DIR) IPKG_CO
 PKG_BUILD_DIR := $(LINUX_BUILD_DIR)/linux-modules
 PKG_RELEASE := 1
 
-KERNEL_IPKG:=$(LINUX_BUILD_DIR)/kernel_$(LINUX_VERSION)-$(BOARD)-$(PKG_RELEASE)_$(ARCH).ipk
+KERNEL_IPKG:=$(LINUX_BUILD_DIR)/kernel-$(LINUX_VERSION)-$(BOARD)_$(PKG_RELEASE)_$(ARCH).ipk
 KERNEL_IDIR:=$(LINUX_BUILD_DIR)/kernel-ipkg
 
 include $(LINUX_KCONFIG)
@@ -197,7 +197,8 @@ $(TARGET_MODULES_DIR):
 $(KERNEL_IPKG):
 	rm -rf $(KERNEL_IDIR)
 	mkdir -p $(KERNEL_IDIR)/etc
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(KERNEL_IDIR) ../control/kernel.control $(LINUX_VERSION)-$(BOARD)-$(PKG_RELEASE) $(ARCH)
+	$(SCRIPT_DIR)/make-ipkg-dir.sh $(KERNEL_IDIR) ../control/kernel.control $(PKG_RELEASE) $(ARCH)
+	echo 'Package: kernel-$(LINUX_VERSION)-$(BOARD)' >> $(KERNEL_IDIR)/CONTROL/control
 	if [ -f ./config/$(BOARD).modules ]; then \
 		cp ./config/$(BOARD).modules $(KERNEL_IDIR)/etc/modules; \
 	fi
