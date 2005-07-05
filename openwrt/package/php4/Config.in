@@ -89,7 +89,7 @@ config BR2_PACKAGE_PHP4_MOD_SQLITE
 	tristate 
 #	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_PHP4
-	select BR2_PACKAGE_LIBSQLITE
+	select BR2_PACKAGE_LIBSQLITE2
 
 config BR2_PACKAGE_PHP4_MOD_SOCKETS
 	prompt "...-mod-sockets - Sockets module"
