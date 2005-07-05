@@ -1,6 +1,6 @@
 diff -urN linux.old/arch/mips/kernel/entry.S linux.dev/arch/mips/kernel/entry.S
---- linux.old/arch/mips/kernel/entry.S	2005-07-04 23:39:26.000000000 +0200
-+++ linux.dev/arch/mips/kernel/entry.S	2005-07-05 14:33:14.000000000 +0200
+--- linux.old/arch/mips/kernel/entry.S	2005-07-05 16:46:49.000000000 +0200
++++ linux.dev/arch/mips/kernel/entry.S	2005-07-05 16:42:36.000000000 +0200
 @@ -100,6 +100,10 @@
  		 * and R4400 SC and MC versions.
  		 */
@@ -13,8 +13,8 @@ diff -urN linux.old/arch/mips/kernel/entry.S linux.dev/arch/mips/kernel/entry.S
  		mfc0	k0, CP0_INDEX
  #endif
 diff -urN linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
---- linux.old/arch/mips/mm/c-r4k.c	2005-07-04 23:39:26.000000000 +0200
-+++ linux.dev/arch/mips/mm/c-r4k.c	2005-07-05 15:11:49.000000000 +0200
+--- linux.old/arch/mips/mm/c-r4k.c	2005-07-05 16:46:49.000000000 +0200
++++ linux.dev/arch/mips/mm/c-r4k.c	2005-07-05 16:48:47.000000000 +0200
 @@ -14,6 +14,12 @@
  #include <linux/mm.h>
  #include <linux/bitops.h>
@@ -262,19 +262,20 @@ diff -urN linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
  void __init ld_mmu_r4xx0(void)
  {
  	extern void build_clear_page(void);
-@@ -1073,6 +1147,11 @@
+@@ -1073,6 +1147,12 @@
  	memcpy((void *)(KSEG0 + 0x100), &except_vec2_generic, 0x80);
  	memcpy((void *)(KSEG1 + 0x100), &except_vec2_generic, 0x80);
  
-+	if (current_cpu_data.cputype == CPU_BCM4710 && (current_cpu_data.processor_id & PRID_REV_MASK) == 0)
++	if (current_cpu_data.cputype == CPU_BCM4710 && (current_cpu_data.processor_id & PRID_REV_MASK) == 0) {
++		printk("Enabling BCM4710A0 cache workarounds.\n");
 +		bcm4710 = 1;
-+	else
++	} else
 +		bcm4710 = 0;
 +	
  	probe_pcache();
  	setup_scache();
  
-@@ -1117,47 +1196,9 @@
+@@ -1117,47 +1197,9 @@
  
  	build_clear_page();
  	build_copy_page();
@@ -325,8 +326,8 @@ diff -urN linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
  }
  
 diff -urN linux.old/arch/mips/mm/tlb-r4k.c linux.dev/arch/mips/mm/tlb-r4k.c
---- linux.old/arch/mips/mm/tlb-r4k.c	2005-07-04 23:39:26.000000000 +0200
-+++ linux.dev/arch/mips/mm/tlb-r4k.c	2005-07-05 14:33:14.000000000 +0200
+--- linux.old/arch/mips/mm/tlb-r4k.c	2005-07-05 16:46:49.000000000 +0200
++++ linux.dev/arch/mips/mm/tlb-r4k.c	2005-07-05 16:42:36.000000000 +0200
 @@ -38,6 +38,7 @@
  	old_ctx = read_c0_entryhi();
  	write_c0_entrylo0(0);
@@ -384,8 +385,8 @@ diff -urN linux.old/arch/mips/mm/tlb-r4k.c linux.dev/arch/mips/mm/tlb-r4k.c
  	write_c0_entryhi(entryhi);
  	write_c0_entrylo0(entrylo0);
 diff -urN linux.old/arch/mips/mm/tlbex-mips32.S linux.dev/arch/mips/mm/tlbex-mips32.S
---- linux.old/arch/mips/mm/tlbex-mips32.S	2005-07-04 23:39:26.000000000 +0200
-+++ linux.dev/arch/mips/mm/tlbex-mips32.S	2005-07-05 14:33:14.000000000 +0200
+--- linux.old/arch/mips/mm/tlbex-mips32.S	2005-07-05 16:46:49.000000000 +0200
++++ linux.dev/arch/mips/mm/tlbex-mips32.S	2005-07-05 16:42:36.000000000 +0200
 @@ -90,6 +90,9 @@
  	.set	noat
  	LEAF(except_vec0_r4000)
@@ -397,8 +398,8 @@ diff -urN linux.old/arch/mips/mm/tlbex-mips32.S linux.dev/arch/mips/mm/tlbex-mip
  	mfc0	k1, CP0_CONTEXT
  	la	k0, pgd_current
 diff -urN linux.old/include/asm-mips/r4kcache.h linux.dev/include/asm-mips/r4kcache.h
---- linux.old/include/asm-mips/r4kcache.h	2005-07-04 23:39:26.000000000 +0200
-+++ linux.dev/include/asm-mips/r4kcache.h	2005-07-05 15:13:56.000000000 +0200
+--- linux.old/include/asm-mips/r4kcache.h	2005-07-05 16:46:49.000000000 +0200
++++ linux.dev/include/asm-mips/r4kcache.h	2005-07-05 16:42:36.000000000 +0200
 @@ -15,6 +15,18 @@
  #include <asm/asm.h>
  #include <asm/cacheops.h>
@@ -579,8 +580,8 @@ diff -urN linux.old/include/asm-mips/r4kcache.h linux.dev/include/asm-mips/r4kca
  		cache64_unroll32(start,Hit_Invalidate_I);
  		start += 0x800;
 diff -urN linux.old/include/asm-mips/stackframe.h linux.dev/include/asm-mips/stackframe.h
---- linux.old/include/asm-mips/stackframe.h	2005-07-04 23:39:26.000000000 +0200
-+++ linux.dev/include/asm-mips/stackframe.h	2005-07-05 14:33:14.000000000 +0200
+--- linux.old/include/asm-mips/stackframe.h	2005-07-05 16:46:49.000000000 +0200
++++ linux.dev/include/asm-mips/stackframe.h	2005-07-05 16:42:36.000000000 +0200
 @@ -172,6 +172,46 @@
  		 rfe;					 \
  		.set	pop
