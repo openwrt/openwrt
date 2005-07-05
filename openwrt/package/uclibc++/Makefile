@@ -48,7 +48,7 @@ $(PKG_BUILD_DIR)/.config: $(PKG_BUILD_DIR)/.prepared
 
 $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.config
 	$(MAKE) -C $(PKG_BUILD_DIR) \
-		$(TARGET_CONFIGURE_OPTS)
+		$(TARGET_CONFIGURE_OPTS) CROSS="$(TARGET_CROSS)"
 	touch $(PKG_BUILD_DIR)/.built
 
 $(STAGING_DIR)/lib/libuClibc++.so: $(PKG_BUILD_DIR)/.built
