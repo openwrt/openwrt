@@ -25,7 +25,7 @@ $(PKG_BUILD_DIR)/.configured:
 		CFLAGS="$(TARGET_CFLAGS)" \
 		CXXFLAGS="$(TARGET_CFLAGS) -fno-builtin -nostdinc++ -nodefaultlibs " \
 		CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include" \
-		LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib  -fno-builtin -nostdinc++ -nodefaultlibs -luClibc++ -lc -lm" \
+		LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib  -fno-builtin -nostdinc++ -nodefaultlibs -luClibc++ -lc -lm -lgcc_s" \
 		ac_cv_prog_CXX="$(TARGET_CXX)" \
 		./configure \
 		  --target=$(GNU_TARGET_NAME) \
