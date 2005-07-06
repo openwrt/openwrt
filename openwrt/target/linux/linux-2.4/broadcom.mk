@@ -34,6 +34,7 @@ $(DL_DIR)/$(LINUX_BINARY_WL_DRIVER):
 $(DL_DIR)/$(LINUX_ET_DRIVER):
 	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(LINUX_ET_DRIVER) $(LINUX_ET_MD5SUM) $(LINUX_BINARY_DRIVER_SITE)
 	
+$(LINUX_DIR)/.unpacked: $(DL_DIR)/$(LINUX_BINARY_WL_DRIVER) $(DL_DIR)/$(LINUX_ET_DRIVER)
 $(LINUX_DIR)/.depend_done: $(LINUX_DIR)/.drivers-unpacked
 $(LINUX_DIR)/.modules_done: $(LINUX_DIR)/.drivers-unpacked
 
