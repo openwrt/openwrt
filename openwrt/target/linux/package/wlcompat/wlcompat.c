@@ -176,7 +176,7 @@ static int wlcompat_ioctl_getiwrange(struct net_device *dev,
 	if (wl_ioctl(dev, WLC_GET_FRAG, &range->max_frag, sizeof(int)) < 0)
 		range->max_frag = 2346;
 
-	range->txpower_capa = IW_TXPOW_MWATT;
+	range->txpower_capa = IW_TXPOW_DBM;
 
 	return 0;
 }
@@ -419,10 +419,11 @@ static int wlcompat_ioctl(struct net_device *dev,
 				return -EINVAL;
 			
 			wrqu->txpower.value &= ~WL_TXPWR_OVERRIDE;
+			wrqu->txpower.value /= 4;
 				
 			wrqu->txpower.fixed = 0;
 			wrqu->txpower.disabled = radio;
-			wrqu->txpower.flags = IW_TXPOW_MWATT;
+			wrqu->txpower.flags = IW_TXPOW_DBM;
 			break;
 		}
 		case SIOCSIWTXPOW:
@@ -440,9 +441,10 @@ static int wlcompat_ioctl(struct net_device *dev,
 					return -EINVAL;
 				
 				value &= WL_TXPWR_OVERRIDE;
+				wrqu->txpower.value *= 4;
 				wrqu->txpower.value |= value;
 				
-				if (wrqu->txpower.flags != IW_TXPOW_MWATT)
+				if (wrqu->txpower.flags != IW_TXPOW_DBM)
 					return -EINVAL;
 				
 				if (wrqu->txpower.value > 0)
