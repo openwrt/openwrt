@@ -1,4 +1,8 @@
 #!/bin/sh
+[ "$(/usr/sbin/nvram get boot_wait)" != "on" ] && {
+	/usr/sbin/nvram set boot_wait=on
+	/usr/sbin/nvram commit
+}
 mount none /proc -t proc
 insmod diag
 echo 0x01 > /proc/sys/diag
