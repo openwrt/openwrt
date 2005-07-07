@@ -290,7 +290,17 @@ void setup_bcom(int skfd, char *ifname)
 		}
 		bcom_ioctl(skfd, ifname, WLC_SET_GMODE_PROTECTION_CONTROL, &override, sizeof(control));
 		bcom_ioctl(skfd, ifname, WLC_SET_GMODE_PROTECTION_OVERRIDE, &override, sizeof(override));
+
+		if (val = 0) {
+			if (nvram_match(wl_var("plcphdr"), "long"))
+				val = WLC_PLCP_AUTO;
+			else
+				val = WLC_PLCP_SHORT;
+
+			bcom_ioctl(skfd, ifname, WLC_SET_PLCPHDR, &val, sizeof(val));
+		}
 	}
+
 }
 
 void set_wext_ssid(int skfd, char *ifname)
