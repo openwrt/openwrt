@@ -7,8 +7,13 @@ config BR2_LINUX_2_4_BRCM
 	bool "Support for Broadcom based routers"
 	default y
 	help
-	  Build firmware images for Broadcom based routers (e.g. Linksys WRT54G(S), Asus WL-500g)
+	  Build firmware images for Broadcom based routers
+	  (e.g. Linksys WRT54G(S), Asus WL-500g, Motorola WR850G)
 	  
+	  This one builds the generic .trx images, activate one of the
+	  options below for creating device specific files for use 
+	  with TFTP client too. 
+
 	config BR2_TARGET_WRT54G
 		default y
 		depends BR2_LINUX_2_4_BRCM
@@ -22,7 +27,7 @@ config BR2_LINUX_2_4_BRCM
 	config BR2_TARGET_MOTOROLA
 		default y
 		depends BR2_LINUX_2_4_BRCM
-		bool "Motorola"
+		bool "Motorola WR850G"
 
 config BR2_LINUX_2_4_AR7
 	bool "Support for TI AR7 based devices"
