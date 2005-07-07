@@ -52,6 +52,9 @@ ifeq ($(BOARD),brcm)
 include ./broadcom.mk
 endif
 
+$(eval $(call KMOD_template,USB_ACM,usb-acm,\
+	$(MODULES_DIR)/kernel/drivers/usb/acm.o \
+,CONFIG_USB_ACM))
 $(eval $(call KMOD_template,B44,b44,\
 	$(MODULES_DIR)/kernel/drivers/net/b44.o \
 ,CONFIG_B44))
