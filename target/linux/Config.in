@@ -144,6 +144,11 @@ config BR2_PACKAGE_KMOD_USB_PRINTER
 	default m
 	depends BR2_PACKAGE_KMOD_USB_CONTROLLER
 
+config BR2_PACKAGE_KMOD_USB_ACM
+	tristate "Support for USB modems/isdn controllers"
+	default m
+	depends BR2_PACKAGE_KMOD_USB_CONTROLLER
+
 config BR2_PACKAGE_KMOD_IDE
 	tristate "IDE support"
 	default m
