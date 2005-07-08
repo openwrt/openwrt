@@ -1,0 +1,10 @@
+config BR2_PACKAGE_BIND
+	tristate "bind - popular dns server"
+	default m if CONFIG_DEVEL
+	select BR2_PACKAGE_LIBOPENSSL
+	help
+	  DNS server implementation
+	  
+	  http://www.isc.org/
+	  
+	  Depends: openssl
