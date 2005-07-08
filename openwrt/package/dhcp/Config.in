@@ -1,0 +1,7 @@
+config BR2_PACKAGE_DHCP
+	tristate "dhcp"
+	default m if CONFIG_DEVEL
+	help
+	dhcp server
+
+	http://www.isc.org

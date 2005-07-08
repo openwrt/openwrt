@@ -7,6 +7,8 @@ package-$(BR2_PACKAGE_AICCU) += aiccu
 package-$(BR2_PACKAGE_ARPTABLES) += arptables
 package-$(BR2_PACKAGE_ARPWATCH) += arpwatch
 package-$(BR2_PACKAGE_ASTERISK) += asterisk
+package-$(BR2_PACKAGE_ASTERISK) += atftp
+package-$(BR2_PACKAGE_BIND) += bind
 package-$(BR2_PACKAGE_BRIDGE) += bridge
 package-$(BR2_PACKAGE_BUSYBOX) += busybox
 package-$(BR2_PACKAGE_BWM) += bwm
@@ -14,6 +16,7 @@ package-$(BR2_PACKAGE_CHILLISPOT) += chillispot
 package-$(BR2_PACKAGE_CIFSMOUNT) += cifsmount
 package-$(BR2_PACKAGE_CUPS) += cups
 package-$(BR2_PACKAGE_CYRUS_SASL) += cyrus-sasl
+package-$(BR2_PACKAGE_DHCP) += dhcp
 package-$(BR2_PACKAGE_DHCP_FORWARDER) += dhcp-forwarder
 package-$(BR2_PACKAGE_DNSMASQ) += dnsmasq
 package-$(BR2_PACKAGE_DROPBEAR) += dropbear
@@ -143,6 +146,7 @@ compile: $(patsubst %,%-compile,$(package-y) $(package-m))
 install: $(patsubst %,%-install,$(package-y))
 
 arpwatch-compile: libpcap-compile
+bind-compile: openssl-compile
 cyrus-sasl-compile: openssl-compile
 dropbear-compile: zlib-compile
 dsniff-compile: libnids-compile openssl-compile libgdbm-compile

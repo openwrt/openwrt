@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libdb
-PKG_VERSION:=4.3.28
-PKG_RELEASE:=0
-PKG_MD5SUM:=e27759537db6054b31d8cb3e99ba6fbb
+PKG_VERSION:=4.2.52
+PKG_RELEASE:=1
+PKG_MD5SUM:=x
 
 PKG_SOURCE_URL:=ftp://ftp.sleepycat.com/releases/ \
 	http://downloads.sleepycat.com/
@@ -48,15 +48,16 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 		--enable-shared \
 		--enable-static \
 		--disable-java \
-		--disable-cxx \
+		--enable-cxx \
+		--disable-posixmutexes \
+		--enable-uimutexes \
 		--disable-tcl \
 		--disable-rpc \
-		--disable-compat185 \
-		--disable-debug \
-		--disable-statistics \
-		--disable-replication \
-		--disable-cryptography \
-		--enable-smallbuild \
+		--enable-compat185 \
+		--enable-debug \
+		--enable-statistics \
+		--enable-replication \
+		--enable-cryptography \
 	);
 	touch $@
 
