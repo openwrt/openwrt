@@ -1,0 +1,11 @@
+config BR2_PACKAGE_ATFTP
+	tristate "atftp"
+	default m if CONFIG_DEVEL
+	help
+	tftp client
+
+config BR2_PACKAGE_ATFTPD
+	tristate "atftpd"
+	default m if CONFIG_DEVEL
+	help
+	tftp server 
