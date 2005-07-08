@@ -1,0 +1,178 @@
+--- bind-9.3.1/configure	2004-12-09 05:09:03.000000000 +0100
++++ bind-9.3.1.patched/configure	2005-05-23 13:17:58.919886003 +0200
+@@ -23675,175 +23675,6 @@
+ # which provides some (all?) of the desired functions.
+ #
+ 
+-echo "$as_me:$LINENO: checking for inet_ntop with IPv6 support" >&5
+-echo $ECHO_N "checking for inet_ntop with IPv6 support... $ECHO_C" >&6
+-if test "$cross_compiling" = yes; then
+-  { { echo "$as_me:$LINENO: error: cannot run test program while cross compiling
+-See \`config.log' for more details." >&5
+-echo "$as_me: error: cannot run test program while cross compiling
+-See \`config.log' for more details." >&2;}
+-   { (exit 1); exit 1; }; }
+-else
+-  cat >conftest.$ac_ext <<_ACEOF
+-/* confdefs.h.  */
+-_ACEOF
+-cat confdefs.h >>conftest.$ac_ext
+-cat >>conftest.$ac_ext <<_ACEOF
+-/* end confdefs.h.  */
+-
+-#include <sys/types.h>
+-#include <sys/socket.h>
+-#include <netinet/in.h>
+-#include <arpa/inet.h>
+-main() {
+-char a[16],b[64]; return(inet_ntop(AF_INET6, a, b, sizeof(b)) == (char*)0);}
+-_ACEOF
+-rm -f conftest$ac_exeext
+-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+-  (eval $ac_link) 2>&5
+-  ac_status=$?
+-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+-  (exit $ac_status); } && { ac_try='./conftest$ac_exeext'
+-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+-  (eval $ac_try) 2>&5
+-  ac_status=$?
+-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+-  (exit $ac_status); }; }; then
+-  echo "$as_me:$LINENO: result: yes" >&5
+-echo "${ECHO_T}yes" >&6
+-        ISC_PLATFORM_NEEDNTOP="#undef ISC_PLATFORM_NEEDNTOP"
+-else
+-  echo "$as_me: program exited with status $ac_status" >&5
+-echo "$as_me: failed program was:" >&5
+-sed 's/^/| /' conftest.$ac_ext >&5
+-
+-( exit $ac_status )
+-echo "$as_me:$LINENO: result: no" >&5
+-echo "${ECHO_T}no" >&6
+-        ISC_EXTRA_OBJS="$ISC_EXTRA_OBJS inet_ntop.$O"
+-        ISC_EXTRA_SRCS="$ISC_EXTRA_SRCS inet_ntop.c"
+-        ISC_PLATFORM_NEEDNTOP="#define ISC_PLATFORM_NEEDNTOP 1"
+-fi
+-rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+-fi
+-
+-
+-# On NetBSD 1.4.2 and maybe others, inet_pton() incorrectly accepts
+-# addresses with less than four octets, like "1.2.3".  Also leading
+-# zeros should also be rejected.
+-
+-echo "$as_me:$LINENO: checking for working inet_pton with IPv6 support" >&5
+-echo $ECHO_N "checking for working inet_pton with IPv6 support... $ECHO_C" >&6
+-if test "$cross_compiling" = yes; then
+-  echo "$as_me:$LINENO: result: assuming target platform has working inet_pton" >&5
+-echo "${ECHO_T}assuming target platform has working inet_pton" >&6
+-	ISC_PLATFORM_NEEDPTON="#undef ISC_PLATFORM_NEEDPTON"
+-else
+-  cat >conftest.$ac_ext <<_ACEOF
+-/* confdefs.h.  */
+-_ACEOF
+-cat confdefs.h >>conftest.$ac_ext
+-cat >>conftest.$ac_ext <<_ACEOF
+-/* end confdefs.h.  */
+-
+-#include <sys/types.h>
+-#include <sys/socket.h>
+-#include <netinet/in.h>
+-#include <arpa/inet.h>
+-main() { char a[16]; return (inet_pton(AF_INET, "1.2.3", a) == 1 ? 1 :
+-			     inet_pton(AF_INET, "1.2.3.04", a) == 1 ? 1 :
+-			     (inet_pton(AF_INET6, "::1.2.3.4", a) != 1)); }
+-_ACEOF
+-rm -f conftest$ac_exeext
+-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+-  (eval $ac_link) 2>&5
+-  ac_status=$?
+-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+-  (exit $ac_status); } && { ac_try='./conftest$ac_exeext'
+-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+-  (eval $ac_try) 2>&5
+-  ac_status=$?
+-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+-  (exit $ac_status); }; }; then
+-  echo "$as_me:$LINENO: result: yes" >&5
+-echo "${ECHO_T}yes" >&6
+-        ISC_PLATFORM_NEEDPTON="#undef ISC_PLATFORM_NEEDPTON"
+-else
+-  echo "$as_me: program exited with status $ac_status" >&5
+-echo "$as_me: failed program was:" >&5
+-sed 's/^/| /' conftest.$ac_ext >&5
+-
+-( exit $ac_status )
+-echo "$as_me:$LINENO: result: no" >&5
+-echo "${ECHO_T}no" >&6
+-        ISC_EXTRA_OBJS="$ISC_EXTRA_OBJS inet_pton.$O"
+-        ISC_EXTRA_SRCS="$ISC_EXTRA_SRCS inet_pton.c"
+-        ISC_PLATFORM_NEEDPTON="#define ISC_PLATFORM_NEEDPTON 1"
+-fi
+-rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+-fi
+-
+-echo "$as_me:$LINENO: checking for inet_aton" >&5
+-echo $ECHO_N "checking for inet_aton... $ECHO_C" >&6
+-cat >conftest.$ac_ext <<_ACEOF
+-/* confdefs.h.  */
+-_ACEOF
+-cat confdefs.h >>conftest.$ac_ext
+-cat >>conftest.$ac_ext <<_ACEOF
+-/* end confdefs.h.  */
+-
+-#include <sys/types.h>
+-#include <netinet/in.h>
+-#include <arpa/inet.h>
+-int
+-main ()
+-{
+-struct in_addr in; inet_aton(0, &in); return (0);
+-  ;
+-  return 0;
+-}
+-_ACEOF
+-rm -f conftest.$ac_objext conftest$ac_exeext
+-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+-  (eval $ac_link) 2>conftest.er1
+-  ac_status=$?
+-  grep -v '^ *+' conftest.er1 >conftest.err
+-  rm -f conftest.er1
+-  cat conftest.err >&5
+-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+-  (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
+-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+-  (eval $ac_try) 2>&5
+-  ac_status=$?
+-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+-  (exit $ac_status); }; } &&
+-	 { ac_try='test -s conftest$ac_exeext'
+-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+-  (eval $ac_try) 2>&5
+-  ac_status=$?
+-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+-  (exit $ac_status); }; }; then
+-  echo "$as_me:$LINENO: result: yes" >&5
+-echo "${ECHO_T}yes" >&6
+-        ISC_PLATFORM_NEEDATON="#undef ISC_PLATFORM_NEEDATON"
+-else
+-  echo "$as_me: failed program was:" >&5
+-sed 's/^/| /' conftest.$ac_ext >&5
+-
+-echo "$as_me:$LINENO: result: no" >&5
+-echo "${ECHO_T}no" >&6
+-        ISC_EXTRA_OBJS="$ISC_EXTRA_OBJS inet_aton.$O"
+-        ISC_EXTRA_SRCS="$ISC_EXTRA_SRCS inet_aton.c"
+-        ISC_PLATFORM_NEEDATON="#define ISC_PLATFORM_NEEDATON 1"
+-fi
+-rm -f conftest.err conftest.$ac_objext \
+-      conftest$ac_exeext conftest.$ac_ext
+-
+-
+-
+-
+ 
+ #
+ # Look for a 4.4BSD-style sa_len member in struct sockaddr.
