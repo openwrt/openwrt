@@ -3356,7 +3356,7 @@ diff -urN linux.old/drivers/char/serial.c linux.dev/drivers/char/serial.c
   * needed for certain old 386 machines, I've left these #define's
   * in....
   */
-+#ifdef CONFIG_AR7
++#ifndef CONFIG_AR7
  #define serial_inp(info, offset)		serial_in(info, offset)
  #define serial_outp(info, offset, value)	serial_out(info, offset, value)
 +#endif
