@@ -36,21 +36,18 @@
 	do { \
 		ERR_SET_EXT(rname, request); \
 		fprintf(stderr, "    too few arguments.\n"); \
-		return; \
 	} while(0)
 
 #define ABORT_ARG_TYPE(rname, request, arg) \
 	do { \
 		ERR_SET_EXT(rname, request); \
 		fprintf(stderr, "    invalid argument \"%s\".\n", arg); \
-		return; \
 	} while(0)
 
 #define ABORT_ARG_SIZE(rname, request, max) \
 	do { \
 		ERR_SET_EXT(rname, request); \
 		fprintf(stderr, "    argument too big (max %d)\n", max); \
-		return; \
 	} while(0)
 
 /*------------------------------------------------------------------*/
@@ -64,7 +61,6 @@
 		ERR_SET_EXT(rname, request); \
 		fprintf(stderr, "    SET failed on device %-1.16s ; %s.\n", \
 			ifname, strerror(errno)); \
-		return; \
 	} } while(0)
 
 /*------------------------------------------------------------------*/
@@ -78,7 +74,6 @@
 		ERR_SET_EXT(rname, request); \
 		fprintf(stderr, "    GET failed on device %-1.16s ; %s.\n", \
 			ifname, strerror(errno)); \
-		return; \
 	} } while(0)
 
 char *prefix;
@@ -115,8 +110,6 @@ int bcom_ioctl(int skfd, char *ifname, int cmd, void *buf, int len)
 	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
 
 	ret = ioctl(skfd, SIOCDEVPRIVATE, &ifr);
-	if (ret < 0)
-		fprintf(stderr, "bcom_ioctl [cmd=%d, buf=%08x, len=%d] failed: %d\n", cmd, buf, len, ret);
 
 	return ret;
 }
