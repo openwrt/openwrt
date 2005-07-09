@@ -41,10 +41,28 @@ $(BIN_DIR)/openwrt-ar7-zimage.bin: $(KDIR)/vmlinux.gz compile
 		-o $(KDIR)/loader
 	$(TARGET_CROSS)objcopy -O srec $(KDIR)/loader $(KDIR)/ram_zimage.sre
 	$(PKG_BUILD_DIR)/srec2bin $(KDIR)/ram_zimage.sre $@
+
+$(BIN_DIR)/openwrt-ar7-$(KERNEL)-$(FS).bin:
+	dd if=$(BIN_DIR)/openwrt-ar7-zimage.bin of=$@ bs=786432 conv=sync
+	cat $(BUILD_DIR)/linux-$(KERNEL)-ar7/root.$(FS) >> $@
+
+define pattern_template
+$(BIN_DIR)/openwrt-ar7-$(KERNEL)-$(FS)-$(1).bin: $(BIN_DIR)/openwrt-ar7-$(KERNEL)-$(FS).bin
+	(dd if=/dev/zero bs=16 count=1; cat $(BIN_DIR)/openwrt-ar7-$(KERNEL)-$(FS).bin) | \
+		$(STAGING_DIR)/bin/addpattern -p $(1) -o $(BIN_DIR)/openwrt-ar7-$(KERNEL)-$(FS)-$(1).bin
 	
+install: $(BIN_DIR)/openwrt-ar7-$(KERNEL)-$(FS)-$(1).bin
+endef
+
+$(eval $(call pattern_template,WA22))
+$(eval $(call pattern_template,WAG2))
+$(eval $(call pattern_template,WA21))
+
 clean:
 	rm -rf $(PKG_BUILD_DIR)
+	rm -f $(BIN_DIR)/openwrt-ar7*
+
 prepare: $(PKG_BUILD_DIR) $(PKG_BUILD_DIR)/zimage.script $(PKG_BUILD_DIR)/ld.script
 compile: prepare $(PKG_BUILD_DIR)/loader.o $(PKG_BUILD_DIR)/srec2bin
-install: $(BIN_DIR)/openwrt-ar7-zimage.bin
+install: $(BIN_DIR)/openwrt-ar7-zimage.bin $(BIN_DIR)/openwrt-ar7-$(KERNEL)-$(FS).bin
 	

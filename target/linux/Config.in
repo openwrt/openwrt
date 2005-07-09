@@ -37,6 +37,13 @@ config BR2_LINUX_2_4_AR7
 
 comment "Kernel Modules"
 
+config BR2_PACKAGE_KMOD_CPMAC
+	tristate "AR7 CPMAC Network Driver"
+	default y
+	depends BR2_LINUX_2_4_AR7
+	help
+	  Driver for the AR7 CPMAC network chip
+
 config BR2_PACKAGE_KMOD_DIAG
 	tristate "Router LED/Button Driver"
 	default y
