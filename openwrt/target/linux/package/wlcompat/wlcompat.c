@@ -412,8 +412,7 @@ static int wlcompat_ioctl(struct net_device *dev,
 		{
 			int radio;
 
-			if (wl_ioctl(dev, WLC_GET_RADIO, &radio, sizeof(int)) < 0)
-				return -EINVAL;
+			wl_ioctl(dev, WLC_GET_RADIO, &radio, sizeof(int));
 			
 			if (wl_get_val(dev, "qtxpower", &(wrqu->txpower.value), sizeof(int)) < 0)
 				return -EINVAL;
@@ -431,10 +430,9 @@ static int wlcompat_ioctl(struct net_device *dev,
 			/* This is weird: WLC_SET_RADIO with 1 as argument disables the radio */
 			int radio = wrqu->txpower.disabled;
 
-			if (wl_ioctl(dev, WLC_SET_RADIO, &radio, sizeof(int)) < 0)
-				return -EINVAL;
+			wl_ioctl(dev, WLC_SET_RADIO, &radio, sizeof(int));
 			
-			if (!wrqu->txpower.disabled) {
+			if (!wrqu->txpower.disabled && (wrqu->txpower.value > 0)) {
 				int value;
 				
 				if (wl_get_val(dev, "qtxpower", &value, sizeof(int)) < 0)
