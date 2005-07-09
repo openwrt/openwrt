@@ -1,6 +1,6 @@
-diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/cpcommon_cpmac.c linux-2.4.30/drivers/net/avalanche_cpmac/cpcommon_cpmac.c
---- linux-2.4.30.orig/drivers/net/avalanche_cpmac/cpcommon_cpmac.c	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.4.30/drivers/net/avalanche_cpmac/cpcommon_cpmac.c	2005-04-15 05:10:40.000000000 +0200
+diff -urN linux.old/drivers/net/avalanche_cpmac/cpcommon_cpmac.c linux.dev/drivers/net/avalanche_cpmac/cpcommon_cpmac.c
+--- linux.old/drivers/net/avalanche_cpmac/cpcommon_cpmac.c	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/drivers/net/avalanche_cpmac/cpcommon_cpmac.c	2005-07-10 04:06:50.491302256 +0200
 @@ -0,0 +1,728 @@
 +#ifndef _INC_CPCOMMON_C
 +#define _INC_CPCOMMON_C
@@ -730,9 +730,9 @@ diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/cpcommon_cpmac.c linux-2
 +#endif
 +
 +#endif  /* _INC  */
-diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/cpcommon_cpmac.h linux-2.4.30/drivers/net/avalanche_cpmac/cpcommon_cpmac.h
---- linux-2.4.30.orig/drivers/net/avalanche_cpmac/cpcommon_cpmac.h	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.4.30/drivers/net/avalanche_cpmac/cpcommon_cpmac.h	2005-04-15 05:10:40.000000000 +0200
+diff -urN linux.old/drivers/net/avalanche_cpmac/cpcommon_cpmac.h linux.dev/drivers/net/avalanche_cpmac/cpcommon_cpmac.h
+--- linux.old/drivers/net/avalanche_cpmac/cpcommon_cpmac.h	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/drivers/net/avalanche_cpmac/cpcommon_cpmac.h	2005-07-10 03:22:40.508160000 +0200
 @@ -0,0 +1,79 @@
 +#ifndef _INC_CPCOMMON_H
 +#define _INC_CPCOMMON_H
@@ -813,10 +813,10 @@ diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/cpcommon_cpmac.h linux-2
 +
 +#endif
 +
-diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/cpmac.c linux-2.4.30/drivers/net/avalanche_cpmac/cpmac.c
---- linux-2.4.30.orig/drivers/net/avalanche_cpmac/cpmac.c	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.4.30/drivers/net/avalanche_cpmac/cpmac.c	2005-07-08 22:20:26.953335844 +0200
-@@ -0,0 +1,2507 @@
+diff -urN linux.old/drivers/net/avalanche_cpmac/cpmac.c linux.dev/drivers/net/avalanche_cpmac/cpmac.c
+--- linux.old/drivers/net/avalanche_cpmac/cpmac.c	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/drivers/net/avalanche_cpmac/cpmac.c	2005-07-10 07:39:15.514764184 +0200
+@@ -0,0 +1,2509 @@
 +/******************************************************************************
 + * FILE PURPOSE:    CPMAC Linux Network Device Driver Source
 + ******************************************************************************
@@ -851,10 +851,8 @@ diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/cpmac.c linux-2.4.30/dri
 +#include <linux/string.h>
 +#include <asm/uaccess.h>
 +#include <linux/config.h>
-+
-+#include <asm/ar7/avalanche_misc.h>
-+#include <asm/ar7/sangam_clk_cntl.h>
 +#include <asm/ar7/if_port.h>
++
 +extern void build_psp_config(void);
 +extern void psp_config_cleanup(void);
 +
@@ -1993,10 +1991,12 @@ diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/cpmac.c linux-2.4.30/dri
 +
 +    val = g_cfg_start_link_params;
 +
++#ifdef CONFIG_AR7_MDIX
 +    if( avalanche_is_mdix_on_chip() )
 +    {
 +        val |= _CPMDIO_AUTOMDIX;
 +    }
++#endif 
 +
 +    if(p_hal_funcs->Control(p_hal_dev,pszMdioConnect,pszSet, &val) !=0)
 +    {
@@ -2902,7 +2902,7 @@ diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/cpmac.c linux-2.4.30/dri
 +        /* OS Needs to supply CORRECT frequency */
 +        if(cpmac_ci_strcmp(action, "Get") == 0 && value != NULL)
 +        {
-+            *(unsigned int *)value = avalanche_get_vbus_freq();
++            *(unsigned int *)value = CONFIG_AR7_SYS_FREQUENCY * 1000 * 1000;
 +            ret_val = 0;
 +        }
 +    }
@@ -2921,7 +2921,7 @@ diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/cpmac.c linux-2.4.30/dri
 +        /* For Sangam MdioBusFreq is off the PBUS */
 +        if(cpmac_ci_strcmp(action, "Get") == 0 && value != NULL)
 +        {
-+            *(unsigned int *)value = avalanche_get_vbus_freq();
++            *(unsigned int *)value = CONFIG_AR7_SYS_FREQUENCY * 1000 * 1000;
 +            ret_val = 0;
 +        }
 +    }
@@ -2955,7 +2955,9 @@ diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/cpmac.c linux-2.4.30/dri
 +        {
 +           unsigned  int mdix =  *((unsigned int *) value) ;
 +
-+           avalanche_set_mdix_on_chip(0xa8610000 , mdix ? 1: 0);
++#ifdef CONFIG_AR7_MDIX
++	   avalanche_set_mdix_on_chip(0xa8610000 , mdix ? 1: 0);
++#endif
 +  
 +           ret_val = 0;
 +        } 
@@ -3146,7 +3148,7 @@ diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/cpmac.c linux-2.4.30/dri
 +    int     instance_count = CONFIG_MIPS_CPMAC_PORTS;
 +
 +    //cpmac_cpu_freq = avalanche_clkc_get_freq(CLKC_MIPS);
-+    cpmac_cpu_freq = tnetd73xx_clkc_get_freq(CLKC_MIPS);
++    cpmac_cpu_freq = CONFIG_AR7_CPU_FREQUENCY * 1000 * 1000;
 +
 +    build_psp_config();                       
 +
@@ -3324,9 +3326,9 @@ diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/cpmac.c linux-2.4.30/dri
 +     
 +module_init(cpmac_dev_probe);
 +module_exit(cpmac_exit);
-diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/cpmac.h linux-2.4.30/drivers/net/avalanche_cpmac/cpmac.h
---- linux-2.4.30.orig/drivers/net/avalanche_cpmac/cpmac.h	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.4.30/drivers/net/avalanche_cpmac/cpmac.h	2005-07-08 22:00:13.000000000 +0200
+diff -urN linux.old/drivers/net/avalanche_cpmac/cpmac.h linux.dev/drivers/net/avalanche_cpmac/cpmac.h
+--- linux.old/drivers/net/avalanche_cpmac/cpmac.h	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/drivers/net/avalanche_cpmac/cpmac.h	2005-07-10 03:22:40.511160000 +0200
 @@ -0,0 +1,379 @@
 +/******************************************************************************
 + * FILE PURPOSE:    CPMAC Linux Network Device Driver Header
@@ -3707,9 +3709,9 @@ diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/cpmac.h linux-2.4.30/dri
 +}
 +
 +#endif
-diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/cpmacHalLx.c linux-2.4.30/drivers/net/avalanche_cpmac/cpmacHalLx.c
---- linux-2.4.30.orig/drivers/net/avalanche_cpmac/cpmacHalLx.c	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.4.30/drivers/net/avalanche_cpmac/cpmacHalLx.c	2005-04-15 05:10:41.000000000 +0200
+diff -urN linux.old/drivers/net/avalanche_cpmac/cpmacHalLx.c linux.dev/drivers/net/avalanche_cpmac/cpmacHalLx.c
+--- linux.old/drivers/net/avalanche_cpmac/cpmacHalLx.c	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/drivers/net/avalanche_cpmac/cpmacHalLx.c	2005-07-10 04:06:50.491302256 +0200
 @@ -0,0 +1,492 @@
 +/******************************************************************************
 + * FILE PURPOSE:    CPMAC Net Driver HAL support Source
@@ -4203,9 +4205,9 @@ diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/cpmacHalLx.c linux-2.4.3
 +
 +    return (ret_val);  
 +}
-diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/cpmacHalLx.h linux-2.4.30/drivers/net/avalanche_cpmac/cpmacHalLx.h
---- linux-2.4.30.orig/drivers/net/avalanche_cpmac/cpmacHalLx.h	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.4.30/drivers/net/avalanche_cpmac/cpmacHalLx.h	2005-07-08 22:00:13.000000000 +0200
+diff -urN linux.old/drivers/net/avalanche_cpmac/cpmacHalLx.h linux.dev/drivers/net/avalanche_cpmac/cpmacHalLx.h
+--- linux.old/drivers/net/avalanche_cpmac/cpmacHalLx.h	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/drivers/net/avalanche_cpmac/cpmacHalLx.h	2005-07-10 03:22:40.512160000 +0200
 @@ -0,0 +1,51 @@
 +/******************************************************************************
 + * FILE PURPOSE:    CPMAC Linux Device Driver HAL support Header
@@ -4258,9 +4260,9 @@ diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/cpmacHalLx.h linux-2.4.3
 +                   CPMAC_RX_CHAN_INFO_T *p_rx_chan_info,unsigned int flags);
 +
 +#endif
-diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/cpmac_reg.h linux-2.4.30/drivers/net/avalanche_cpmac/cpmac_reg.h
---- linux-2.4.30.orig/drivers/net/avalanche_cpmac/cpmac_reg.h	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.4.30/drivers/net/avalanche_cpmac/cpmac_reg.h	2005-07-08 22:08:52.149427385 +0200
+diff -urN linux.old/drivers/net/avalanche_cpmac/cpmac_reg.h linux.dev/drivers/net/avalanche_cpmac/cpmac_reg.h
+--- linux.old/drivers/net/avalanche_cpmac/cpmac_reg.h	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/drivers/net/avalanche_cpmac/cpmac_reg.h	2005-07-10 03:22:40.513160000 +0200
 @@ -0,0 +1,406 @@
 +/****************************************************************************
 +        TNETD73xx Software Support
@@ -4668,9 +4670,9 @@ diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/cpmac_reg.h linux-2.4.30
 +#define RX_FLOW_ACT              (1 << 1)
 +#define TX_FLOW_ACT              (1 << 0)
 +#endif _INC_CPMAC_REG
-diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/cpmdio.c linux-2.4.30/drivers/net/avalanche_cpmac/cpmdio.c
---- linux-2.4.30.orig/drivers/net/avalanche_cpmac/cpmdio.c	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.4.30/drivers/net/avalanche_cpmac/cpmdio.c	2005-04-15 05:10:41.000000000 +0200
+diff -urN linux.old/drivers/net/avalanche_cpmac/cpmdio.c linux.dev/drivers/net/avalanche_cpmac/cpmdio.c
+--- linux.old/drivers/net/avalanche_cpmac/cpmdio.c	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/drivers/net/avalanche_cpmac/cpmdio.c	2005-07-10 04:06:50.491302256 +0200
 @@ -0,0 +1,960 @@
 +/***************************************************************************
 +**  TNETD53xx Software Support
@@ -5632,9 +5634,9 @@ diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/cpmdio.c linux-2.4.30/dr
 +  }
 +
 +
-diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/cpmdio.h linux-2.4.30/drivers/net/avalanche_cpmac/cpmdio.h
---- linux-2.4.30.orig/drivers/net/avalanche_cpmac/cpmdio.h	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.4.30/drivers/net/avalanche_cpmac/cpmdio.h	2005-04-15 05:10:41.000000000 +0200
+diff -urN linux.old/drivers/net/avalanche_cpmac/cpmdio.h linux.dev/drivers/net/avalanche_cpmac/cpmdio.h
+--- linux.old/drivers/net/avalanche_cpmac/cpmdio.h	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/drivers/net/avalanche_cpmac/cpmdio.h	2005-07-10 03:22:40.515159000 +0200
 @@ -0,0 +1,73 @@
 +/*****************************************************************************
 +**      TNETD53xx Software Support
@@ -5709,9 +5711,9 @@ diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/cpmdio.h linux-2.4.30/dr
 +#define _AUTOMDIX_DELAY_MAX 200  /* milli-seconds*/
 +
 +#endif  /*  _INC_CPMDIO */
-diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/cppi_cpmac.c linux-2.4.30/drivers/net/avalanche_cpmac/cppi_cpmac.c
---- linux-2.4.30.orig/drivers/net/avalanche_cpmac/cppi_cpmac.c	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.4.30/drivers/net/avalanche_cpmac/cppi_cpmac.c	2005-04-15 05:10:41.000000000 +0200
+diff -urN linux.old/drivers/net/avalanche_cpmac/cppi_cpmac.c linux.dev/drivers/net/avalanche_cpmac/cppi_cpmac.c
+--- linux.old/drivers/net/avalanche_cpmac/cppi_cpmac.c	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/drivers/net/avalanche_cpmac/cppi_cpmac.c	2005-07-10 04:06:50.492302104 +0200
 @@ -0,0 +1,1345 @@
 +/*************************************************************************
 + *  TNETDxxxx Software Support
@@ -7058,9 +7060,9 @@ diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/cppi_cpmac.c linux-2.4.3
 +
 +   return(EC_NO_ERRORS);
 +  }
-diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/cpremap_cpmac.c linux-2.4.30/drivers/net/avalanche_cpmac/cpremap_cpmac.c
---- linux-2.4.30.orig/drivers/net/avalanche_cpmac/cpremap_cpmac.c	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.4.30/drivers/net/avalanche_cpmac/cpremap_cpmac.c	2005-04-15 05:10:41.000000000 +0200
+diff -urN linux.old/drivers/net/avalanche_cpmac/cpremap_cpmac.c linux.dev/drivers/net/avalanche_cpmac/cpremap_cpmac.c
+--- linux.old/drivers/net/avalanche_cpmac/cpremap_cpmac.c	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/drivers/net/avalanche_cpmac/cpremap_cpmac.c	2005-07-10 04:06:50.492302104 +0200
 @@ -0,0 +1,28 @@
 +#ifndef _INC_CPREMAP_C
 +#define _INC_CPREMAP_C
@@ -7090,9 +7092,9 @@ diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/cpremap_cpmac.c linux-2.
 +#endif
 +
 +#endif
-diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/cpswhal_cpmac.h linux-2.4.30/drivers/net/avalanche_cpmac/cpswhal_cpmac.h
---- linux-2.4.30.orig/drivers/net/avalanche_cpmac/cpswhal_cpmac.h	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.4.30/drivers/net/avalanche_cpmac/cpswhal_cpmac.h	2005-04-15 05:10:41.000000000 +0200
+diff -urN linux.old/drivers/net/avalanche_cpmac/cpswhal_cpmac.h linux.dev/drivers/net/avalanche_cpmac/cpswhal_cpmac.h
+--- linux.old/drivers/net/avalanche_cpmac/cpswhal_cpmac.h	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/drivers/net/avalanche_cpmac/cpswhal_cpmac.h	2005-07-10 03:22:40.518159000 +0200
 @@ -0,0 +1,632 @@
 +/************************************************************************
 + *  TNETDxxxx Software Support
@@ -7726,9 +7728,9 @@ diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/cpswhal_cpmac.h linux-2.
 +#endif
 +
 +#endif  /*  end of _INC_    */
-diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/dox_cpmac.h linux-2.4.30/drivers/net/avalanche_cpmac/dox_cpmac.h
---- linux-2.4.30.orig/drivers/net/avalanche_cpmac/dox_cpmac.h	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.4.30/drivers/net/avalanche_cpmac/dox_cpmac.h	2005-04-15 05:10:41.000000000 +0200
+diff -urN linux.old/drivers/net/avalanche_cpmac/dox_cpmac.h linux.dev/drivers/net/avalanche_cpmac/dox_cpmac.h
+--- linux.old/drivers/net/avalanche_cpmac/dox_cpmac.h	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/drivers/net/avalanche_cpmac/dox_cpmac.h	2005-07-10 03:22:40.519159000 +0200
 @@ -0,0 +1,842 @@
 +/*****************************************************************************
 + *  TNETDxxxx Software Support
@@ -8572,9 +8574,9 @@ diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/dox_cpmac.h linux-2.4.30
 +*/
 +
 +#endif
-diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/ec_errors_cpmac.h linux-2.4.30/drivers/net/avalanche_cpmac/ec_errors_cpmac.h
---- linux-2.4.30.orig/drivers/net/avalanche_cpmac/ec_errors_cpmac.h	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.4.30/drivers/net/avalanche_cpmac/ec_errors_cpmac.h	2005-04-15 05:10:41.000000000 +0200
+diff -urN linux.old/drivers/net/avalanche_cpmac/ec_errors_cpmac.h linux.dev/drivers/net/avalanche_cpmac/ec_errors_cpmac.h
+--- linux.old/drivers/net/avalanche_cpmac/ec_errors_cpmac.h	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/drivers/net/avalanche_cpmac/ec_errors_cpmac.h	2005-07-10 03:22:40.519159000 +0200
 @@ -0,0 +1,118 @@
 +/***************************************************************************
 + Copyright(c) 2001, Texas Instruments Incorporated. All Rights Reserved.
@@ -8694,9 +8696,9 @@ diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/ec_errors_cpmac.h linux-
 +extern void ec_log_error( unsigned int );
 +
 +#endif /* _INC_EC_ERRORS */
-diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/hcpmac.c linux-2.4.30/drivers/net/avalanche_cpmac/hcpmac.c
---- linux-2.4.30.orig/drivers/net/avalanche_cpmac/hcpmac.c	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.4.30/drivers/net/avalanche_cpmac/hcpmac.c	2005-07-08 22:08:07.755958806 +0200
+diff -urN linux.old/drivers/net/avalanche_cpmac/hcpmac.c linux.dev/drivers/net/avalanche_cpmac/hcpmac.c
+--- linux.old/drivers/net/avalanche_cpmac/hcpmac.c	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/drivers/net/avalanche_cpmac/hcpmac.c	2005-07-10 04:06:50.492302104 +0200
 @@ -0,0 +1,1878 @@
 +/******************************************************************************
 + *  TNETDxxxx Software Support
@@ -10576,9 +10578,9 @@ diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/hcpmac.c linux-2.4.30/dr
 +    iTmp &= (0x3FF); /* field is 10 bits wide */
 +    return(iTmp);
 +}
-diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/hcpmac.h linux-2.4.30/drivers/net/avalanche_cpmac/hcpmac.h
---- linux-2.4.30.orig/drivers/net/avalanche_cpmac/hcpmac.h	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.4.30/drivers/net/avalanche_cpmac/hcpmac.h	2005-04-15 05:10:41.000000000 +0200
+diff -urN linux.old/drivers/net/avalanche_cpmac/hcpmac.h linux.dev/drivers/net/avalanche_cpmac/hcpmac.h
+--- linux.old/drivers/net/avalanche_cpmac/hcpmac.h	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/drivers/net/avalanche_cpmac/hcpmac.h	2005-07-10 03:22:40.522158000 +0200
 @@ -0,0 +1,383 @@
 +/** @file***********************************************************************
 + *  TNETDxxxx Software Support
@@ -10963,9 +10965,9 @@ diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/hcpmac.h linux-2.4.30/dr
 +const char hcMdixMask[]           = "MdixMask";
 +const char hcMdioMdixSwitch[]     = "MdixSet";
 +#endif
-diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/Makefile linux-2.4.30/drivers/net/avalanche_cpmac/Makefile
---- linux-2.4.30.orig/drivers/net/avalanche_cpmac/Makefile	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.4.30/drivers/net/avalanche_cpmac/Makefile	2005-04-15 05:10:40.000000000 +0200
+diff -urN linux.old/drivers/net/avalanche_cpmac/Makefile linux.dev/drivers/net/avalanche_cpmac/Makefile
+--- linux.old/drivers/net/avalanche_cpmac/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/drivers/net/avalanche_cpmac/Makefile	2005-07-10 03:22:40.522158000 +0200
 @@ -0,0 +1,26 @@
 +# File: drivers/net/avalanche_cpmac/Makefile
 +#
@@ -10993,9 +10995,9 @@ diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/Makefile linux-2.4.30/dr
 +
 +clean:
 +	rm -f core *.o *.a *.s
-diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/mdio_reg.h linux-2.4.30/drivers/net/avalanche_cpmac/mdio_reg.h
---- linux-2.4.30.orig/drivers/net/avalanche_cpmac/mdio_reg.h	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.4.30/drivers/net/avalanche_cpmac/mdio_reg.h	2005-07-08 22:08:44.964969914 +0200
+diff -urN linux.old/drivers/net/avalanche_cpmac/mdio_reg.h linux.dev/drivers/net/avalanche_cpmac/mdio_reg.h
+--- linux.old/drivers/net/avalanche_cpmac/mdio_reg.h	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/drivers/net/avalanche_cpmac/mdio_reg.h	2005-07-10 03:22:40.522158000 +0200
 @@ -0,0 +1,121 @@
 +/****************************************************************************
 +**      TNETD53xx Software Support
@@ -11118,10 +11120,10 @@ diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/mdio_reg.h linux-2.4.30/
 +
 +
 +#endif _INC_MDIO_REG
-diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/psp_config_build.c linux-2.4.30/drivers/net/avalanche_cpmac/psp_config_build.c
---- linux-2.4.30.orig/drivers/net/avalanche_cpmac/psp_config_build.c	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.4.30/drivers/net/avalanche_cpmac/psp_config_build.c	2005-07-08 22:09:17.761928277 +0200
-@@ -0,0 +1,336 @@
+diff -urN linux.old/drivers/net/avalanche_cpmac/psp_config_build.c linux.dev/drivers/net/avalanche_cpmac/psp_config_build.c
+--- linux.old/drivers/net/avalanche_cpmac/psp_config_build.c	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/drivers/net/avalanche_cpmac/psp_config_build.c	2005-07-10 07:31:18.203326552 +0200
+@@ -0,0 +1,335 @@
 +/******************************************************************************
 + * FILE PURPOSE:    PSP Config Manager - Configuration Build Source
 + ******************************************************************************
@@ -11150,7 +11152,6 @@ diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/psp_config_build.c linux
 +#define NULL (char *)0
 +#endif
 +
-+#include <asm/ar7/avalanche_misc.h>
 +#include <asm/ar7/sangam.h>
 +#include <linux/slab.h>
 +#include <linux/config.h>
@@ -11175,7 +11176,7 @@ diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/psp_config_build.c linux
 +    unsigned int j= 0, detected_phy_map = 0, auto_select = SELECT_INT_PHY_MAC;
 +                                                                                                                   
 +    *reset_cntl |= (1 << AVALANCHE_MDIO_RESET_BIT) | (1 << AVALANCHE_LOW_CPMAC_RESET_BIT) | (1 << AVALANCHE_HIGH_CPMAC_RESET_BIT) | (1 << AVALANCHE_LOW_EPHY_RESET_BIT);                                 
-+    *mdio_cntl   = (1 << 30) | (avalanche_get_vbus_freq()/2200000);                                              
++    *mdio_cntl   = (1 << 30) | ((CONFIG_AR7_SYS_FREQUENCY * 1000)/2200);                                              
 +                                                                                                                   
 +    for(j=0;j < 300000; j++) 
 +    { 
@@ -11458,9 +11459,9 @@ diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/psp_config_build.c linux
 +
 +}
 +
-diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/psp_config_build.h linux-2.4.30/drivers/net/avalanche_cpmac/psp_config_build.h
---- linux-2.4.30.orig/drivers/net/avalanche_cpmac/psp_config_build.h	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.4.30/drivers/net/avalanche_cpmac/psp_config_build.h	2005-04-15 05:10:41.000000000 +0200
+diff -urN linux.old/drivers/net/avalanche_cpmac/psp_config_build.h linux.dev/drivers/net/avalanche_cpmac/psp_config_build.h
+--- linux.old/drivers/net/avalanche_cpmac/psp_config_build.h	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/drivers/net/avalanche_cpmac/psp_config_build.h	2005-07-10 03:22:40.523158000 +0200
 @@ -0,0 +1,138 @@
 +/******************************************************************************
 + * FILE PURPOSE:    PSP Config Manager - Configuration Build Header
@@ -11600,9 +11601,9 @@ diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/psp_config_build.h linux
 +
 +#endif /* __PSP_CONF_BUILD_H__ */
 +
-diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/psp_config_mgr.c linux-2.4.30/drivers/net/avalanche_cpmac/psp_config_mgr.c
---- linux-2.4.30.orig/drivers/net/avalanche_cpmac/psp_config_mgr.c	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.4.30/drivers/net/avalanche_cpmac/psp_config_mgr.c	2005-04-15 05:10:41.000000000 +0200
+diff -urN linux.old/drivers/net/avalanche_cpmac/psp_config_mgr.c linux.dev/drivers/net/avalanche_cpmac/psp_config_mgr.c
+--- linux.old/drivers/net/avalanche_cpmac/psp_config_mgr.c	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/drivers/net/avalanche_cpmac/psp_config_mgr.c	2005-07-10 04:06:50.492302104 +0200
 @@ -0,0 +1,464 @@
 +/******************************************************************************
 + * FILE PURPOSE:    PSP Config Manager Source
@@ -12068,9 +12069,9 @@ diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/psp_config_mgr.c linux-2
 +        p = p_temp;                                                             
 +    }                                                                           
 +}                                                                               
-diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/psp_config_mgr.h linux-2.4.30/drivers/net/avalanche_cpmac/psp_config_mgr.h
---- linux-2.4.30.orig/drivers/net/avalanche_cpmac/psp_config_mgr.h	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.4.30/drivers/net/avalanche_cpmac/psp_config_mgr.h	2005-04-15 05:10:41.000000000 +0200
+diff -urN linux.old/drivers/net/avalanche_cpmac/psp_config_mgr.h linux.dev/drivers/net/avalanche_cpmac/psp_config_mgr.h
+--- linux.old/drivers/net/avalanche_cpmac/psp_config_mgr.h	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/drivers/net/avalanche_cpmac/psp_config_mgr.h	2005-07-10 03:22:40.525158000 +0200
 @@ -0,0 +1,110 @@
 +/******************************************************************************
 + * FILE PURPOSE:    PSP Config Manager Header
@@ -12182,10 +12183,10 @@ diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/psp_config_mgr.h linux-2
 +void  dump_device_cfg_pool(void);
 +
 +#endif /* __PSP_CONFIG_MGR_H__ */
-diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/psp_config_parse.c linux-2.4.30/drivers/net/avalanche_cpmac/psp_config_parse.c
---- linux-2.4.30.orig/drivers/net/avalanche_cpmac/psp_config_parse.c	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.4.30/drivers/net/avalanche_cpmac/psp_config_parse.c	2005-07-08 22:11:19.180858923 +0200
-@@ -0,0 +1,363 @@
+diff -urN linux.old/drivers/net/avalanche_cpmac/psp_config_parse.c linux.dev/drivers/net/avalanche_cpmac/psp_config_parse.c
+--- linux.old/drivers/net/avalanche_cpmac/psp_config_parse.c	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/drivers/net/avalanche_cpmac/psp_config_parse.c	2005-07-10 04:06:50.492302104 +0200
+@@ -0,0 +1,362 @@
 +/******************************************************************************
 + * FILE PURPOSE:    PSP Config Manager - Parse API Source
 + ******************************************************************************
@@ -12203,8 +12204,7 @@ diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/psp_config_parse.c linux
 + *******************************************************************************/
 +
 +//#include <stdio.h>
-+//#include <ctype.h>
-+#include <asm/ar7/hal/haltypes.h>
++#include <linux/stddef.h>
 +
 +/*--------------------------------------------------
 + * MACROS.
@@ -12549,9 +12549,9 @@ diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/psp_config_parse.c linux
 +
 +
 +
-diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/psp_config_parse.h linux-2.4.30/drivers/net/avalanche_cpmac/psp_config_parse.h
---- linux-2.4.30.orig/drivers/net/avalanche_cpmac/psp_config_parse.h	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.4.30/drivers/net/avalanche_cpmac/psp_config_parse.h	2005-07-08 22:07:07.685855972 +0200
+diff -urN linux.old/drivers/net/avalanche_cpmac/psp_config_parse.h linux.dev/drivers/net/avalanche_cpmac/psp_config_parse.h
+--- linux.old/drivers/net/avalanche_cpmac/psp_config_parse.h	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/drivers/net/avalanche_cpmac/psp_config_parse.h	2005-07-10 03:22:40.526158000 +0200
 @@ -0,0 +1,32 @@
 +/******************************************************************************
 + * FILE PURPOSE:    PSP Config Manager - Parse API Header
@@ -12585,9 +12585,9 @@ diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/psp_config_parse.h linux
 +                                char **out_val);
 +
 +#endif /* __PSP_CONFIG_PARSER_H__ */
-diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/psp_config_util.c linux-2.4.30/drivers/net/avalanche_cpmac/psp_config_util.c
---- linux-2.4.30.orig/drivers/net/avalanche_cpmac/psp_config_util.c	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.4.30/drivers/net/avalanche_cpmac/psp_config_util.c	2005-07-08 22:11:56.567831651 +0200
+diff -urN linux.old/drivers/net/avalanche_cpmac/psp_config_util.c linux.dev/drivers/net/avalanche_cpmac/psp_config_util.c
+--- linux.old/drivers/net/avalanche_cpmac/psp_config_util.c	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/drivers/net/avalanche_cpmac/psp_config_util.c	2005-07-10 04:06:50.492302104 +0200
 @@ -0,0 +1,106 @@
 +/******************************************************************************
 + * FILE PURPOSE:    PSP Config Manager - Utilities API Source
@@ -12607,7 +12607,7 @@ diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/psp_config_util.c linux-
 +
 +//#include <stdio.h>
 +#include "psp_config_util.h"
-+#include <asm/ar7/hal/haltypes.h>
++#include <linux/stddef.h>
 +
 +/*---------------------------------------------
 + * strlen.
@@ -12695,9 +12695,9 @@ diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/psp_config_util.c linux-
 +}
 +
 +#endif /* PSP_CONFIG_MGR_DEBUG_TEST */
-diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/psp_config_util.h linux-2.4.30/drivers/net/avalanche_cpmac/psp_config_util.h
---- linux-2.4.30.orig/drivers/net/avalanche_cpmac/psp_config_util.h	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.4.30/drivers/net/avalanche_cpmac/psp_config_util.h	2005-04-15 05:10:41.000000000 +0200
+diff -urN linux.old/drivers/net/avalanche_cpmac/psp_config_util.h linux.dev/drivers/net/avalanche_cpmac/psp_config_util.h
+--- linux.old/drivers/net/avalanche_cpmac/psp_config_util.h	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/drivers/net/avalanche_cpmac/psp_config_util.h	2005-07-10 03:22:40.526158000 +0200
 @@ -0,0 +1,26 @@
 +/******************************************************************************
 + * FILE PURPOSE:    PSP Config Manager - Utilities API Header
@@ -12725,9 +12725,9 @@ diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/psp_config_util.h linux-
 +extern char* psp_config_strchr(char*, char);
 +
 +#endif /* __PSP_CONFIG_UTIL_H__ */
-diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/readme.txt linux-2.4.30/drivers/net/avalanche_cpmac/readme.txt
---- linux-2.4.30.orig/drivers/net/avalanche_cpmac/readme.txt	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.4.30/drivers/net/avalanche_cpmac/readme.txt	2005-04-15 05:10:41.000000000 +0200
+diff -urN linux.old/drivers/net/avalanche_cpmac/readme.txt linux.dev/drivers/net/avalanche_cpmac/readme.txt
+--- linux.old/drivers/net/avalanche_cpmac/readme.txt	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/drivers/net/avalanche_cpmac/readme.txt	2005-07-10 03:22:40.527158000 +0200
 @@ -0,0 +1,545 @@
 +23 August 2004      CPMAC 1.7.8 (NSP Performance Team Release)
 +
@@ -13274,9 +13274,9 @@ diff -ruN linux-2.4.30.orig/drivers/net/avalanche_cpmac/readme.txt linux-2.4.30/
 +RC1             11300                 38%
 +RC2              9524                 32%
 +RC3             15190                 51%
-diff -ruN linux-2.4.30.orig/drivers/net/Config.in linux-2.4.30/drivers/net/Config.in
---- linux-2.4.30.orig/drivers/net/Config.in	2005-07-07 20:49:04.000000000 +0200
-+++ linux-2.4.30/drivers/net/Config.in	2005-07-08 21:52:27.000000000 +0200
+diff -urN linux.old/drivers/net/Config.in linux.dev/drivers/net/Config.in
+--- linux.old/drivers/net/Config.in	2005-07-10 03:24:49.242590320 +0200
++++ linux.dev/drivers/net/Config.in	2005-07-10 03:22:40.527158000 +0200
 @@ -25,6 +25,24 @@
  comment 'Ethernet (10 or 100Mbit)'
  bool 'Ethernet (10 or 100Mbit)' CONFIG_NET_ETHERNET
@@ -13302,9 +13302,9 @@ diff -ruN linux-2.4.30.orig/drivers/net/Config.in linux-2.4.30/drivers/net/Confi
     if [ "$CONFIG_ARM" = "y" ]; then  
        dep_bool '  ARM EBSA110 AM79C961A support' CONFIG_ARM_AM79C961A $CONFIG_ARCH_EBSA110
        tristate '  Cirrus Logic CS8900A support' CONFIG_ARM_CIRRUS
-diff -ruN linux-2.4.30.orig/drivers/net/Makefile linux-2.4.30/drivers/net/Makefile
---- linux-2.4.30.orig/drivers/net/Makefile	2005-07-07 20:49:03.000000000 +0200
-+++ linux-2.4.30/drivers/net/Makefile	2005-07-08 21:52:57.000000000 +0200
+diff -urN linux.old/drivers/net/Makefile linux.dev/drivers/net/Makefile
+--- linux.old/drivers/net/Makefile	2005-07-10 03:24:49.243590168 +0200
++++ linux.dev/drivers/net/Makefile	2005-07-10 03:22:40.528157000 +0200
 @@ -56,6 +56,16 @@
  subdir-$(CONFIG_BONDING) += bonding
  
