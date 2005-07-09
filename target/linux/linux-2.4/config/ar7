@@ -166,7 +166,7 @@ CONFIG_BINFMT_ELF=y
 # CONFIG_BINFMT_MISC is not set
 # CONFIG_OOM_KILLER is not set
 CONFIG_CMDLINE_BOOL=y
-CONFIG_CMDLINE="root=/dev/mtdblock0 console=ttyS0,38400 rootfstype=squashfs,jffs2 init=/etc/preinit noinitrd"
+CONFIG_CMDLINE="root=/dev/mtdblock0 rootfstype=squashfs,jffs2 init=/etc/preinit noinitrd"
 
 #
 # Memory Technology Devices (MTD)
@@ -605,6 +605,12 @@ CONFIG_NET_RANDOM=y
 # Ethernet (10 or 100Mbit)
 #
 CONFIG_NET_ETHERNET=y
+CONFIG_MIPS_AVALANCHE_CPMAC=m
+CONFIG_MIPS_CPMAC_INIT_BUF_MALLOC=y
+CONFIG_MIPS_CPMAC_PORTS=1
+CONFIG_AVALANCHE_CPMAC_AUTO=y
+# CONFIG_AVALANCHE_LOW_CPMAC is not set
+# CONFIG_AVALANCHE_HIGH_CPMAC is not set
 # CONFIG_SUNLANCE is not set
 # CONFIG_SUNBMAC is not set
 # CONFIG_SUNQE is not set
