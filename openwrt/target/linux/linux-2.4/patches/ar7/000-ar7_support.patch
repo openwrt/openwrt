@@ -1,6 +1,6 @@
-diff -urN kernel-base/arch/mips/ar7/ar7/ar7_jump.S kernel-tmp2/arch/mips/ar7/ar7/ar7_jump.S
+diff -urN kernel-base/arch/mips/ar7/ar7/ar7_jump.S kernel-current/arch/mips/ar7/ar7/ar7_jump.S
 --- kernel-base/arch/mips/ar7/ar7/ar7_jump.S	1970-01-01 01:00:00.000000000 +0100
-+++ kernel-tmp2/arch/mips/ar7/ar7/ar7_jump.S	2005-07-10 06:40:39.582267168 +0200
++++ kernel-current/arch/mips/ar7/ar7/ar7_jump.S	2005-07-10 06:40:39.582267168 +0200
 @@ -0,0 +1,89 @@
 +/*
 + * $Id$
@@ -91,9 +91,9 @@ diff -urN kernel-base/arch/mips/ar7/ar7/ar7_jump.S kernel-tmp2/arch/mips/ar7/ar7
 +END(jump_dedicated_interrupt)
 +
 +	.set at
-diff -urN kernel-base/arch/mips/ar7/ar7/ar7_paging.c kernel-tmp2/arch/mips/ar7/ar7/ar7_paging.c
+diff -urN kernel-base/arch/mips/ar7/ar7/ar7_paging.c kernel-current/arch/mips/ar7/ar7/ar7_paging.c
 --- kernel-base/arch/mips/ar7/ar7/ar7_paging.c	1970-01-01 01:00:00.000000000 +0100
-+++ kernel-tmp2/arch/mips/ar7/ar7/ar7_paging.c	2005-07-10 07:08:33.725758672 +0200
++++ kernel-current/arch/mips/ar7/ar7/ar7_paging.c	2005-07-10 07:08:33.725758672 +0200
 @@ -0,0 +1,314 @@
 +/*
 + *  -*- linux-c -*-
@@ -409,10 +409,862 @@ diff -urN kernel-base/arch/mips/ar7/ar7/ar7_paging.c kernel-tmp2/arch/mips/ar7/a
 +
 +	return;
 +}
-diff -urN kernel-base/arch/mips/ar7/ar7/Makefile kernel-tmp2/arch/mips/ar7/ar7/Makefile
+diff -urN kernel-base/arch/mips/ar7/ar7/gpio.c kernel-current/arch/mips/ar7/ar7/gpio.c
+--- kernel-base/arch/mips/ar7/ar7/gpio.c	1970-01-01 01:00:00.000000000 +0100
++++ kernel-current/arch/mips/ar7/ar7/gpio.c	2005-07-10 09:46:52.164776456 +0200
+@@ -0,0 +1,132 @@
++#include <linux/kernel.h>
++#include <asm/uaccess.h>
++#include <linux/spinlock.h>
++#include <linux/proc_fs.h>
++#include <linux/fs.h>
++#include <linux/timer.h>
++#include <linux/module.h>
++#include <linux/stddef.h>
++
++#include <asm/ar7/tnetd73xx_err.h>
++#include <asm/ar7/tnetd73xx_misc.h>
++#include <asm/ar7/ledapp.h>
++
++
++#if defined (CONFIG_AR7RD) || defined(CONFIG_AR7WRD)
++
++#define AR7_RESET_FILE "led_mod/ar7reset"
++#define AR7_RESET_GPIO 11
++#define RESET_POLL_TIME 1
++#define RESET_HOLD_TIME 4
++#define NO_OF_LEDS
++#define TRUE 1
++#define FALSE 0
++
++static struct proc_dir_entry *reset_file;
++static int res_state = 0;
++static int count;
++static struct timer_list *pTimer = NULL;
++static ssize_t proc_read_reset_fops(struct file *filp, char *buf, size_t count, loff_t * offp);
++
++struct file_operations reset_fops = {
++  read:proc_read_reset_fops
++};
++
++#endif
++
++static spinlock_t device_lock;
++led_reg_t temp[15];
++
++static void gpio_led_on(unsigned long param)
++{
++	unsigned int flags;
++
++	spin_lock_irqsave(&device_lock, flags);
++	tnetd73xx_gpio_out(param, FALSE);
++	spin_unlock_irqrestore(&device_lock, flags);
++}
++
++static void gpio_led_off(unsigned long param)
++{
++	unsigned int flags = 0x00;
++
++	spin_lock_irqsave(&device_lock, flags);
++	tnetd73xx_gpio_out(param, TRUE);
++	spin_unlock_irqrestore(&device_lock, flags);
++}
++
++static void gpio_led_init(unsigned long param)
++{
++	tnetd73xx_gpio_ctrl(param, GPIO_PIN, GPIO_OUTPUT_PIN);
++}
++
++static void board_gpio_reset(void)
++{
++	tnetd73xx_gpio_init();
++
++	/* Initialize the link mask */
++	device_lock = SPIN_LOCK_UNLOCKED;
++	return;
++}
++
++#if defined(CONFIG_AR7WRD)
++
++static ssize_t proc_read_reset_fops(struct file *filp, char *buf, size_t count, loff_t * offp)
++{
++	char *pdata = NULL;
++	char line[3];
++	int len = 0;
++	if (*offp != 0)
++		return 0;
++
++	pdata = buf;
++	len = sprintf(line, "%d\n", res_state);
++	res_state = 0;
++	copy_to_user(buf, line, len);
++	*offp = len;
++	return len;
++}
++
++static void reset_timer_func(unsigned long data)
++{
++	count = (tnetd73xx_gpio_in(AR7_RESET_GPIO) == 0) ? count + 1 : 0;
++	if (count >= RESET_HOLD_TIME / RESET_POLL_TIME)
++		res_state = 1;
++	pTimer->expires = jiffies + HZ * RESET_POLL_TIME;
++	add_timer(pTimer);
++	return;
++}
++
++static void reset_init(void)
++{
++	/* Create board reset proc file */
++	reset_file = create_proc_entry(AR7_RESET_FILE, 0777, NULL);
++	if (reset_file == NULL)
++		goto reset_file;
++	reset_file->owner = THIS_MODULE;
++	reset_file->proc_fops = &reset_fops;
++
++	/* Initialise GPIO 11 for input */
++	tnetd73xx_gpio_ctrl(AR7_RESET_GPIO, GPIO_PIN, GPIO_INPUT_PIN);
++
++	/* Create a timer which fires every seconds */
++	pTimer = kmalloc(sizeof(struct timer_list), GFP_KERNEL);
++	init_timer(pTimer);
++	pTimer->function = reset_timer_func;
++	pTimer->data = 0;
++	/* Start the timer */
++	reset_timer_func(0);
++	return;
++
++  reset_file:
++	remove_proc_entry(AR7_RESET_FILE, NULL);
++	return;
++}
++#endif
++
++
++void board_gpio_init(void)
++{
++	board_gpio_reset();
++	return;
++}
+diff -urN kernel-base/arch/mips/ar7/ar7/ledmod.c kernel-current/arch/mips/ar7/ar7/ledmod.c
+--- kernel-base/arch/mips/ar7/ar7/ledmod.c	1970-01-01 01:00:00.000000000 +0100
++++ kernel-current/arch/mips/ar7/ar7/ledmod.c	2005-07-10 09:45:36.692250024 +0200
+@@ -0,0 +1,712 @@
++#include <linux/config.h>
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/proc_fs.h>
++#include <asm/uaccess.h>
++#include <linux/fs.h>
++#include <linux/timer.h>
++#include <linux/delay.h>
++#include <linux/spinlock.h>
++#include <asm/ar7/avalanche_regs.h>
++#include <asm/ar7/ledapp.h>
++#include <linux/module.h>
++
++#define LED_ON  		1
++#define LED_OFF 		2
++#define LED_BLINK   3
++#define LED_FLASH		4
++
++#define LED_BLINK_UP   		5
++#define LED_BLINK_DOWN   	6
++
++typedef struct state_entry {
++	unsigned char mode;
++	unsigned char led;
++	void (*handler) (struct state_entry * pState);
++	unsigned long param;
++} state_entry_t;
++
++typedef struct mod_entry {
++	state_entry_t *states[MAX_STATE_ID];
++} mod_entry_t;
++
++static mod_entry_t *modArr[MAX_MOD_ID];
++static struct proc_dir_entry *led_proc_dir, *led_file;
++
++/* index of the array is the led number HARDWARE SPECIFIC*/
++typedef struct led_data {
++	led_reg_t *led;
++	int state;
++	struct timer_list *pTimer;
++	unsigned char timer_running;
++	unsigned long param;
++} led_data_t;
++
++led_data_t led_arr[MAX_LED_ID + 1];
++/*!!! The last device is actually being used for ar7 reset to factory default */
++#if 1
++/* Ron add for adsl LED blink */
++#define GPIO_ADSL_ACT  (1<<6)
++#define GPIO_ADSL_DOWN (1<<8)
++#define BLINK_FAST     5*HZ/100
++#define BLINK_SLOW     15*HZ/100
++static struct timer_list my_led_timer;
++static int my_blink_count = 0;
++static int my_mode = 1;
++void led_operation(int mod, int state);
++
++static void my_led_on(unsigned long gpio, int logic)
++{
++	if (logic > 0)
++		GPIO_DATA_OUTPUT |= gpio;
++	else
++		GPIO_DATA_OUTPUT &= ~gpio;
++
++}
++static void my_led_off(unsigned long gpio, int logic)
++{
++	if (logic > 0)
++		GPIO_DATA_OUTPUT &= ~gpio;
++	else
++		GPIO_DATA_OUTPUT |= gpio;
++
++}
++
++static void my_led_init(unsigned long gpio, int init, int logic)
++{
++	GPIO_DATA_ENABLE |= gpio;
++	GPIO_DATA_DIR &= ~gpio;
++	if (init)
++		my_led_on(gpio, logic);
++	else
++		my_led_off(gpio, logic);
++}
++
++static void my_led_blink_timer(unsigned long data)
++{
++	unsigned long gpio = GPIO_ADSL_ACT;
++	unsigned int speed = BLINK_FAST;
++	if (my_mode == 2) {
++		gpio = GPIO_ADSL_DOWN;
++		speed = BLINK_SLOW;
++	}
++	if (my_blink_count) {
++		if (GPIO_DATA_OUTPUT & gpio) {
++			GPIO_DATA_OUTPUT &= ~gpio;
++			if (my_mode != 2)
++				my_blink_count = 0;
++		} else {
++			GPIO_DATA_OUTPUT |= gpio;
++		}
++	}
++	my_led_timer.expires = jiffies + speed;
++	add_timer(&my_led_timer);
++}
++
++/* Ron add for ADSL led blink */
++#endif
++static spinlock_t config_lock;
++
++static void board_led_link_up(state_entry_t * pState);
++static void board_led_link_down(state_entry_t * pState);
++static void board_led_activity_on(state_entry_t * pState);
++static void board_led_activity_off(state_entry_t * pState);
++static void led_timer_func(unsigned long data);
++
++extern void board_gpio_init(void);
++extern void uart_led_init(void);
++
++static ssize_t proc_read_led_fops(struct file *filp, char *buf, size_t count, loff_t * offp);
++static ssize_t proc_write_led_fops(struct file *filp, const char *buffer, size_t count, loff_t * offp);
++static int config_led(unsigned long y);
++
++struct file_operations led_fops = {
++  read:proc_read_led_fops,
++  write:proc_write_led_fops,
++};
++
++static int led_atoi(char *name)
++{
++	int val = 0;
++	for (;; name++) {
++		switch (*name) {
++		case '0'...'9':
++			val = val * 10 + (*name - '0');
++			break;
++		default:
++			return val;
++		}
++	}
++}
++
++static int free_memory(void)
++{
++	int i, j;
++
++	for (i = 0; i < MAX_MOD_ID; i++) {
++		if (modArr[i] != NULL) {
++			for (j = 0; j < MAX_STATE_ID; j++) {
++				if (modArr[i]->states[j] != NULL)
++					kfree(modArr[i]->states[j]);
++			}
++			kfree(modArr[i]);
++			modArr[i] = NULL;
++		}
++	}
++	return 0;
++}
++
++static int led_on(state_entry_t * pState)
++{
++	if (led_arr[pState->led].led == NULL)
++		return -1;
++	led_arr[pState->led].led->onfunc(led_arr[pState->led].led->param);
++	return 0;
++}
++
++static int led_off(state_entry_t * pState)
++{
++	if (led_arr[pState->led].led == NULL)
++		return -1;
++	led_arr[pState->led].led->offfunc(led_arr[pState->led].led->param);
++	return 0;
++}
++
++static void board_led_link_up(state_entry_t * pState)
++{
++	led_arr[pState->led].state = LED_ON;
++	if (led_arr[pState->led].timer_running == 0)
++		led_on(pState);
++	return;
++}
++
++static void board_led_link_down(state_entry_t * pState)
++{
++	led_arr[pState->led].state = LED_OFF;
++	if (led_arr[pState->led].timer_running == 0)
++		led_off(pState);
++	return;
++}
++
++static void add_led_timer(state_entry_t * pState)
++{
++	led_arr[pState->led].pTimer->expires =
++		jiffies + HZ * (pState->param) / 1000;
++	led_arr[pState->led].param = pState->param;
++	led_arr[pState->led].pTimer->data = pState;
++	add_timer(led_arr[pState->led].pTimer);
++}
++
++static void board_led_activity_on(state_entry_t * pState)
++{
++	if (led_arr[pState->led].timer_running == 0) {
++		led_on(pState);
++		add_led_timer(pState);
++		led_arr[pState->led].timer_running = 1;
++		led_arr[pState->led].state = LED_BLINK_UP;
++	} else if (led_arr[pState->led].timer_running > 0xF0) {
++		led_arr[pState->led].state = LED_BLINK_UP;
++		led_arr[pState->led].pTimer->expires =
++			jiffies + HZ * (pState->param) / 1000;
++		led_arr[pState->led].param = pState->param;
++		led_arr[pState->led].pTimer->data = pState;
++	}
++	return;
++}
++
++static void board_led_activity_off(state_entry_t * pState)
++{
++	if (led_arr[pState->led].timer_running == 0) {
++		led_off(pState);
++		add_led_timer(pState);
++		led_arr[pState->led].timer_running = 1;
++		led_arr[pState->led].state = LED_BLINK_UP;
++	} else if (led_arr[pState->led].timer_running > 0xF0) {
++		led_arr[pState->led].state = LED_BLINK_UP;
++		led_arr[pState->led].pTimer->expires =
++			jiffies + HZ * (pState->param) / 1000;
++		led_arr[pState->led].param = pState->param;
++		led_arr[pState->led].pTimer->data = pState;
++	}
++	return;
++}
++
++static void board_led_link_flash(state_entry_t * pState)
++{
++	if (led_on(pState))
++		return;
++	if (led_arr[pState->led].timer_running == 0)
++		add_led_timer(pState);
++	else
++		led_arr[pState->led].param = pState->param;
++	led_arr[pState->led].timer_running = 0xFF;
++	led_arr[pState->led].state = LED_FLASH;
++	return;
++}
++
++static void led_timer_func(unsigned long data)
++{
++	state_entry_t *pState = NULL;
++	mod_entry_t *pMod = NULL;
++	unsigned int flags;
++
++	spin_lock_irqsave(&config_lock, flags);
++
++	pState = (state_entry_t *) data;
++
++	if (led_arr[pState->led].state == LED_BLINK_DOWN) {
++		led_arr[pState->led].timer_running = 0;
++		if (pState->mode == 2)
++			led_arr[pState->led].state = LED_OFF;
++		else
++			led_arr[pState->led].state = LED_ON;
++	} else if (led_arr[pState->led].state == LED_BLINK_UP) {
++		led_arr[pState->led].pTimer->expires =
++			jiffies + HZ * (led_arr[pState->led].param) / 1000;
++		led_arr[pState->led].pTimer->data = pState;
++		add_timer(led_arr[pState->led].pTimer);
++		if (pState->mode == 2) {
++			led_off(pState);
++			led_arr[pState->led].state = LED_BLINK_DOWN;
++		} else {
++			led_on(pState);
++			led_arr[pState->led].state = LED_BLINK_DOWN;
++		}
++		led_arr[pState->led].timer_running = 1;
++	} else if (led_arr[pState->led].state == LED_FLASH) {
++		led_arr[pState->led].pTimer->expires =
++			jiffies + HZ * (led_arr[pState->led].param) / 1000;
++		led_arr[pState->led].pTimer->data = pState;
++		add_timer(led_arr[pState->led].pTimer);
++
++		if (led_arr[pState->led].timer_running == 0xFF) {
++			led_off(pState);
++			led_arr[pState->led].timer_running--;
++		} else {
++			led_on(pState);
++			led_arr[pState->led].timer_running++;
++		}
++		spin_unlock_irqrestore(&config_lock, flags);
++		return;
++	} else if (led_arr[pState->led].state == LED_OFF) {
++		led_off(pState);
++		led_arr[pState->led].timer_running = 0;
++	} else if (led_arr[pState->led].state == LED_ON) {
++		led_on(pState);
++		led_arr[pState->led].timer_running = 0;
++	}
++	spin_unlock_irqrestore(&config_lock, flags);
++	return;
++}
++
++static ssize_t proc_read_led_fops(struct file *filp,
++								  char *buf, size_t count, loff_t * offp)
++{
++	char *pdata = NULL;
++	int i = 0, j = 0, len = 0, totallen = 0;
++	char line[255];
++
++	if (*offp != 0)
++		return 0;
++
++	pdata = buf;
++	len += sprintf(line, "LEDS Registered for use are:");
++	for (i = 0; i < MAX_LED_ID; i++)
++		if (led_arr[i].led != NULL)
++			len += sprintf(&line[len], " %d ", i);
++	line[len++] = '\n';
++
++	copy_to_user(pdata, line, len);
++	pdata += len;
++	totallen += len;
++	len = 0;
++	len = sprintf(line, "USER MODULE INFORMATION:\n");
++	copy_to_user(pdata, line, len);
++	pdata += len;
++	totallen += len;
++	len = 0;
++	for (i = 0; i < MAX_MOD_ID; i++) {
++		if (modArr[i] != NULL) {
++			len = sprintf(line, "  Module ID = %d \n", i);
++			copy_to_user(pdata, line, len);
++			pdata += len;
++			totallen += len;
++			len = 0;
++			for (j = 0; j < MAX_STATE_ID; j++) {
++				if (modArr[i]->states[j] != NULL) {
++					len = sprintf(line,	  "    State = %d , Led = %d,", j,
++								  modArr[i]->states[j]->led);
++					copy_to_user(pdata, line, len);
++					pdata += len;
++					totallen += len;
++
++					len = 0;
++					switch (modArr[i]->states[j]->mode) {
++					case 1:
++						len = sprintf(line,     " Mode = OFF\n");
++						break;
++					case 2:
++						len = sprintf(line,	" Mode = BLINK_ON , On Time(ms) = %d\n",
++									(unsigned int) modArr[i]->states[j]->
++									param);
++						break;
++					case 3:
++						len = sprintf(line,     " Mode = BLINK_OFF , Off Time(ms) = %d\n",
++									(unsigned int) modArr[i]->states[j]->
++									param);
++						break;
++					case 4:
++						len = sprintf(line,     " Mode = ON \n");
++						break;
++					case 5:
++						len = sprintf(line,	" Mode = FLASH , Time Period(ms) = %d\n",
++									(unsigned int) modArr[i]->states[j]->
++									param);
++						break;
++					default:
++						break;
++
++					}
++					copy_to_user(pdata, line, len);
++					pdata += len;
++					totallen += len;
++
++					len = 0;
++				}
++			}
++		}
++	}
++	/* Return with configuration information for LEDs */
++	*offp = totallen;
++	return totallen;
++}
++
++static ssize_t proc_write_led_fops(struct file *filp, const char *buffer, size_t count, loff_t * offp)
++{
++	char *pdata = NULL, *ptemp = NULL;
++	char line[10], temp[10];
++	int i = 0;
++	int mod = 0xFFFF, state = 0xFFFF;
++	int flag = 0;
++
++	/* Check if this write is for configuring stuff */
++	if (*(int *) (buffer) == 0xFFEEDDCC) {
++		printk("<1>proc write:Calling Configuration\n");
++		config_led((unsigned long) (buffer + sizeof(int)));
++		return count;
++	}
++
++	if (count >= 10) {
++		printk("<1>proc write:Input too long,max length = %d\n", 10);
++		return count;
++	}
++	memset(temp, 0x00, 10);
++	memset(line, 0x00, 10);
++	copy_from_user(line, buffer, count);
++	line[count] = 0x00;
++	pdata = line;
++	ptemp = temp;
++	while (flag == 0) {
++		if (i > 10)
++			break;
++		if (((*pdata) >= '0') && ((*pdata) <= '9')) {
++			*ptemp = *pdata;
++			ptemp++;
++		} else if ((*pdata) == ',') {
++			*ptemp = 0x00;
++			flag = 1;
++		}
++		pdata++;
++		i++;
++	};
++	if (flag == 1)
++		mod = led_atoi(temp);
++	else
++		return count;
++
++	ptemp = temp;
++	*ptemp = 0x00;
++	flag = 0;
++	while (flag == 0) {
++		if (i > 10)
++			break;
++		if (((*pdata) >= '0') && ((*pdata) <= '9')) {
++			*ptemp = *pdata;
++			ptemp++;
++		} else if ((*pdata) == 0x00) {
++			*ptemp = 0x00;
++			flag = 1;
++		}
++		pdata++;
++		i++;
++	};
++	if (flag == 1)
++		state = led_atoi(temp);
++	else
++		return count;
++	if ((mod == 0xFFFF) || (state == 0xFFFF))
++		return count;
++	else
++		led_operation(mod, state);
++	return count;
++}
++
++static int config_led(unsigned long y)
++{
++	config_elem_t *pcfg = NULL;
++	char *pdata = NULL;
++	int i;
++	int length = 0, number = 0;
++	unsigned int flags;
++
++	spin_lock_irqsave(&config_lock, flags);
++
++	/* ioctl to configure */
++	length = *((int *) y);
++	pdata = (char *) y + sizeof(int);
++	number = (length - sizeof(int)) / sizeof(config_elem_t);
++	pcfg = (config_elem_t *) (pdata);
++
++	/* Check if an earlier configuration exists IF yes free it up */
++	free_memory();
++
++	for (i = 0; i < number; i++) {
++		/* If no structure has been allocated for the module do so */
++		if (modArr[pcfg->name] == NULL) {
++			printk("<1>module =  %d\n", pcfg->name);
++			if (pcfg->name >= MAX_MOD_ID) {
++				printk
++					("<1>Exiting Configuration: Module ID too large %d\n",
++					 pcfg->name);
++				free_memory();
++				spin_unlock_irqrestore(&config_lock, flags);
++				return -1;
++			}
++			modArr[pcfg->name] = kmalloc(sizeof(mod_entry_t), GFP_KERNEL);
++			if (modArr[pcfg->name] == NULL) {
++				printk
++					("<1>Exiting Configuration: Error in allocating memory\n");
++				free_memory();
++				spin_unlock_irqrestore(&config_lock, flags);
++				return -1;
++			}
++			memset(modArr[pcfg->name], 0x00, sizeof(mod_entry_t));
++		}
++
++		/* if no structure is allocated previously for this state
++		   allocate a structure, if it's already there fill it up */
++		if (modArr[pcfg->name]->states[pcfg->state] == NULL) {
++			printk("<1>STATE =  %d\n", pcfg->state);
++			if (pcfg->state >= MAX_STATE_ID) {
++				printk("<1>Exiting Configuration: State ID too large\n");
++				free_memory();
++				spin_unlock_irqrestore(&config_lock, flags);
++				return -1;
++			}
++			modArr[pcfg->name]->states[pcfg->state] =
++				kmalloc(sizeof(state_entry_t), GFP_KERNEL);
++			if (modArr[pcfg->name]->states[pcfg->state] == NULL) {
++				free_memory();
++				spin_unlock_irqrestore(&config_lock, flags);
++				return -1;
++			}
++			memset(modArr[pcfg->name]->states[pcfg->state], 0x00,
++				   sizeof(state_entry_t));
++		}
++		/* Fill up the fields of the state */
++		if (pcfg->led >= MAX_LED_ID) {
++			printk("<1>led =  %d\n", pcfg->led);
++			free_memory();
++			spin_unlock_irqrestore(&config_lock, flags);
++			return -1;
++		}
++		modArr[pcfg->name]->states[pcfg->state]->led = pcfg->led;
++		modArr[pcfg->name]->states[pcfg->state]->mode = pcfg->mode;
++		modArr[pcfg->name]->states[pcfg->state]->param = pcfg->param;
++		switch (pcfg->mode) {
++		case 1:
++			modArr[pcfg->name]->states[pcfg->state]->handler =
++				board_led_link_down;
++			break;
++		case 2:
++		case 3:
++		case 5:
++			if (pcfg->mode == 2)
++				modArr[pcfg->name]->states[pcfg->state]->handler =
++					board_led_activity_on;
++			else if (pcfg->mode == 3)
++				modArr[pcfg->name]->states[pcfg->state]->handler =
++					board_led_activity_off;
++			else
++				modArr[pcfg->name]->states[pcfg->state]->handler =
++					board_led_link_flash;
++			break;
++		case 4:
++			modArr[pcfg->name]->states[pcfg->state]->handler =
++				board_led_link_up;
++			break;
++		default:
++			printk("<1>Exiting Configuration: Unknown LED Mode\n");
++			free_memory();
++			spin_unlock_irqrestore(&config_lock, flags);
++			return -1;
++		}
++		pcfg++;
++	}
++	spin_unlock_irqrestore(&config_lock, flags);
++	return 0;
++}
++
++
++int led_init(void)
++{
++
++	/* Clear our memory */
++	memset(modArr, 0x00, sizeof(mod_entry_t *) * MAX_MOD_ID);
++	memset(led_arr, 0x00, sizeof(led_data_t *) * MAX_LED_ID);
++
++	/* Create spin lock for config data structure */
++	config_lock = SPIN_LOCK_UNLOCKED;
++
++	/* Create directory */
++	led_proc_dir = proc_mkdir("led_mod", NULL);
++	if (led_proc_dir == NULL)
++		goto out;
++
++	/* Create adsl file */
++	led_file = create_proc_entry("led", 0777, led_proc_dir);
++	if (led_file == NULL)
++		goto led_file;
++	led_file->owner = THIS_MODULE;
++	led_file->proc_fops = &led_fops;
++
++	memset(modArr, 0x00, sizeof(mod_entry_t *) * MAX_MOD_ID);
++	/* Reset the GPIO pins  */
++	board_gpio_init();
++
++	/* Ron add for ADSL LED blink */
++	my_mode = 1;
++	my_led_init(GPIO_ADSL_ACT, 0, -1);
++	my_led_init(GPIO_ADSL_DOWN, 0, -1);
++	init_timer(&my_led_timer);
++	my_led_timer.function = my_led_blink_timer;
++	my_led_timer.data = 0;
++	my_led_timer.expires = jiffies + BLINK_SLOW;
++	add_timer(&my_led_timer);
++	/* Ron add for ADSL LED blink */
++	return 0;
++
++  led_file:
++	remove_proc_entry("led", led_proc_dir);
++  out:
++	return 0;
++
++}
++
++void led_operation(int mod, int state)
++{
++
++	unsigned int flags;
++
++	spin_lock_irqsave(&config_lock, flags);
++#if 1
++	/* Ron Add for ADSL LED blink */
++	//printk("mod==%d state==%d\n",mod,state);
++
++	if (mod == 1) {
++		switch (state) {
++			/* off */
++		case 1:
++			my_mode = 1;
++			my_blink_count = 0;
++			my_led_off(GPIO_ADSL_ACT, -1);
++			my_led_off(GPIO_ADSL_DOWN, -1);
++			break;
++			/* sync */
++		case 2:
++			if (my_mode == 1) {
++				my_mode = 2;
++				my_led_off(GPIO_ADSL_ACT, -1);
++				my_blink_count++;
++			}
++			break;
++			/* on */
++		case 3:
++			my_mode = 3;
++			my_blink_count = 0;
++			my_led_off(GPIO_ADSL_DOWN, -1);
++			my_led_on(GPIO_ADSL_ACT, -1);
++			break;
++			/* off */
++		case 4:
++			my_mode = 4;
++			my_led_off(GPIO_ADSL_DOWN, -1);
++			my_blink_count++;
++			break;
++		}
++	}							/* Ron add for ADSL LED Blink */
++#endif
++	if ((mod >= MAX_MOD_ID) || (state >= MAX_STATE_ID)) {
++		spin_unlock_irqrestore(&config_lock, flags);
++		return;
++	}
++	if (modArr[mod] == NULL) {
++		spin_unlock_irqrestore(&config_lock, flags);
++		return;
++	}
++	if (modArr[mod]->states[state] == NULL) {
++		spin_unlock_irqrestore(&config_lock, flags);
++		return;
++	}
++	/* Call the function handler  */
++	modArr[mod]->states[state]->handler(modArr[mod]->states[state]);
++
++	spin_unlock_irqrestore(&config_lock, flags);
++}
++
++void register_led_drv(int device, led_reg_t * pInfo)
++{
++	unsigned int flags;
++	struct timer_list *pTimer = NULL;
++
++	spin_lock_irqsave(&config_lock, flags);
++
++	led_arr[device].led = pInfo;
++	if (led_arr[device].led->init != 0x00)
++		led_arr[device].led->init(led_arr[device].led->param);
++	if (led_arr[device].led->offfunc != 0x00)
++		led_arr[device].led->offfunc(led_arr[device].led->param);
++
++	/* Create a timer for blinking   */
++	pTimer = kmalloc(sizeof(struct timer_list), GFP_KERNEL);
++	init_timer(pTimer);
++	pTimer->function = led_timer_func;
++	pTimer->data = 0;
++	led_arr[device].pTimer = pTimer;
++	led_arr[device].timer_running = 0;
++
++	spin_unlock_irqrestore(&config_lock, flags);
++
++	return;
++}
++
++void deregister_led_drv(int device)
++{
++	unsigned int flags;
++
++	spin_lock_irqsave(&config_lock, flags);
++	led_arr[device].led = NULL;
++
++	if (led_arr[device].pTimer != NULL) {
++		del_timer(led_arr[device].pTimer);
++		kfree(led_arr[device].pTimer);
++	}
++	spin_unlock_irqrestore(&config_lock, flags);
++
++	return;
++}
++
++EXPORT_SYMBOL_NOVERS(led_init);
++EXPORT_SYMBOL_NOVERS(led_operation);
++EXPORT_SYMBOL_NOVERS(register_led_drv);
++EXPORT_SYMBOL_NOVERS(deregister_led_drv);
+diff -urN kernel-base/arch/mips/ar7/ar7/Makefile kernel-current/arch/mips/ar7/ar7/Makefile
 --- kernel-base/arch/mips/ar7/ar7/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ kernel-tmp2/arch/mips/ar7/ar7/Makefile	2005-07-10 06:40:39.583267016 +0200
-@@ -0,0 +1,30 @@
++++ kernel-current/arch/mips/ar7/ar7/Makefile	2005-07-10 09:31:33.038504888 +0200
+@@ -0,0 +1,31 @@
 +# $Id$
 +# Copyright (C) $Date$  $Author$
 +#
@@ -440,12 +1292,943 @@ diff -urN kernel-base/arch/mips/ar7/ar7/Makefile kernel-tmp2/arch/mips/ar7/ar7/M
 +
 +O_TARGET := ar7.o
 +
-+obj-y += ar7_paging.o ar7_jump.o
++export-objs:= ledmod.o gpio.o
++obj-y += ar7_paging.o ar7_jump.o ledmod.o gpio.o tnetd73xx_misc.o
 +
 +include $(TOPDIR)/Rules.make
-diff -urN kernel-base/arch/mips/ar7/cmdline.c kernel-tmp2/arch/mips/ar7/cmdline.c
+diff -urN kernel-base/arch/mips/ar7/ar7/tnetd73xx_misc.c kernel-current/arch/mips/ar7/ar7/tnetd73xx_misc.c
+--- kernel-base/arch/mips/ar7/ar7/tnetd73xx_misc.c	1970-01-01 01:00:00.000000000 +0100
++++ kernel-current/arch/mips/ar7/ar7/tnetd73xx_misc.c	2005-07-10 09:57:09.935860976 +0200
+@@ -0,0 +1,926 @@
++/******************************************************************************
++ * FILE PURPOSE:    TNETD73xx Misc modules API Source
++ ******************************************************************************
++ * FILE NAME:       tnetd73xx_misc.c
++ *
++ * DESCRIPTION:     Clock Control, Reset Control, Power Management, GPIO
++ *                  FSER Modules API
++ *                  As per TNETD73xx specifications
++ *
++ * REVISION HISTORY:
++ * 27 Nov 02 - Sharath Kumar     PSP TII  
++ * 14 Feb 03 - Anant Gole        PSP TII
++ *
++ * (C) Copyright 2002, Texas Instruments, Inc
++ *******************************************************************************/
++
++
++#include <linux/stddef.h>
++#include <linux/types.h>
++#include <asm/ar7/tnetd73xx.h>
++#include <asm/ar7/tnetd73xx_misc.h>
++
++#define TRUE 1
++#define FALSE 0
++
++/* TNETD73XX Revision */
++__u32 tnetd73xx_get_revision(void)
++{
++    /* Read Chip revision register - This register is from GPIO module */
++    return ( (__u32) REG32_DATA(TNETD73XX_CVR));
++}
++
++/*****************************************************************************
++ * Reset Control Module
++ *****************************************************************************/
++
++
++void tnetd73xx_reset_ctrl(TNETD73XX_RESET_MODULE_T reset_module, TNETD73XX_RESET_CTRL_T reset_ctrl)
++{
++    __u32 reset_status;
++
++    /* read current reset register */
++    REG32_READ(TNETD73XX_RST_CTRL_PRCR, reset_status);
++
++    if (reset_ctrl == OUT_OF_RESET)
++    {
++        /* bring module out of reset */
++        reset_status |= (1 << reset_module);
++    }
++    else
++    {
++        /* put module in reset */
++        reset_status &= (~(1 << reset_module));
++    }
++
++    /* write to the reset register */
++    REG32_WRITE(TNETD73XX_RST_CTRL_PRCR, reset_status);
++}
++
++
++TNETD73XX_RESET_CTRL_T tnetd73xx_get_reset_status (TNETD73XX_RESET_MODULE_T reset_module)
++{
++    __u32 reset_status;
++
++    REG32_READ(TNETD73XX_RST_CTRL_PRCR, reset_status);
++    return ( (reset_status & (1 << reset_module)) ? OUT_OF_RESET : IN_RESET );
++}
++
++void tnetd73xx_sys_reset(TNETD73XX_SYS_RST_MODE_T mode)
++{
++    REG32_WRITE(TNETD73XX_RST_CTRL_SWRCR, mode);
++}
++
++#define TNETD73XX_RST_CTRL_RSR_MASK 0x3
++
++TNETD73XX_SYS_RESET_STATUS_T tnetd73xx_get_sys_last_reset_status()
++{
++    __u32 sys_reset_status;
++
++    REG32_READ(TNETD73XX_RST_CTRL_RSR, sys_reset_status);
++
++    return ( (TNETD73XX_SYS_RESET_STATUS_T) (sys_reset_status & TNETD73XX_RST_CTRL_RSR_MASK) );
++}
++
++
++/*****************************************************************************
++ * Power Control Module
++ *****************************************************************************/
++#define TNETD73XX_GLOBAL_POWER_DOWN_MASK    0x3FFFFFFF      /* bit 31, 30 masked */
++#define TNETD73XX_GLOBAL_POWER_DOWN_BIT     30              /* shift to bit 30, 31 */
++
++
++void tnetd73xx_power_ctrl(TNETD73XX_POWER_MODULE_T power_module, TNETD73XX_POWER_CTRL_T power_ctrl)
++{
++    __u32 power_status;
++
++    /* read current power down control register */
++    REG32_READ(TNETD73XX_POWER_CTRL_PDCR, power_status);
++
++    if (power_ctrl == POWER_CTRL_POWER_DOWN)
++    {
++        /* power down the module */
++        power_status |= (1 << power_module);
++    }
++    else
++    {
++        /* power on the module */
++        power_status &= (~(1 << power_module));
++    }
++
++    /* write to the reset register */
++    REG32_WRITE(TNETD73XX_POWER_CTRL_PDCR, power_status);
++}
++
++TNETD73XX_POWER_CTRL_T tnetd73xx_get_pwr_status(TNETD73XX_POWER_MODULE_T power_module)
++{
++    __u32 power_status;
++
++    /* read current power down control register */
++    REG32_READ(TNETD73XX_POWER_CTRL_PDCR, power_status);
++
++    return ( (power_status & (1 << power_module)) ? POWER_CTRL_POWER_DOWN : POWER_CTRL_POWER_UP );
++}
++
++void tnetd73xx_set_global_pwr_mode(TNETD73XX_SYS_POWER_MODE_T power_mode)
++{
++    __u32 power_status;
++
++    /* read current power down control register */
++    REG32_READ(TNETD73XX_POWER_CTRL_PDCR, power_status);
++
++    power_status &= TNETD73XX_GLOBAL_POWER_DOWN_MASK;
++    power_status |= ( power_mode << TNETD73XX_GLOBAL_POWER_DOWN_BIT);
++
++    /* write to power down control register */
++    REG32_WRITE(TNETD73XX_POWER_CTRL_PDCR, power_status);
++}
++
++TNETD73XX_SYS_POWER_MODE_T tnetd73xx_get_global_pwr_mode()
++{
++    __u32 power_status;
++
++    /* read current power down control register */
++    REG32_READ(TNETD73XX_POWER_CTRL_PDCR, power_status);
++
++    power_status &= (~TNETD73XX_GLOBAL_POWER_DOWN_MASK);
++    power_status = ( power_status >> TNETD73XX_GLOBAL_POWER_DOWN_BIT);
++
++    return ( (TNETD73XX_SYS_POWER_MODE_T) power_status );
++}
++
++
++/*****************************************************************************
++ * Wakeup Control
++ *****************************************************************************/
++
++#define TNETD73XX_WAKEUP_POLARITY_BIT   16
++
++void tnetd73xx_wakeup_ctrl(TNETD73XX_WAKEUP_INTERRUPT_T wakeup_int,
++                           TNETD73XX_WAKEUP_CTRL_T wakeup_ctrl,
++                           TNETD73XX_WAKEUP_POLARITY_T wakeup_polarity)
++{
++    __u32 wakeup_status;
++
++    /* read the wakeup control register */
++    REG32_READ(TNETD73XX_POWER_CTRL_WKCR, wakeup_status);
++
++    /* enable/disable */
++    if (wakeup_ctrl == WAKEUP_ENABLED)
++    {
++        /* enable wakeup */
++        wakeup_status |= wakeup_int;
++    }
++    else
++    {
++        /* disable wakeup */
++        wakeup_status &= (~wakeup_int);
++    }
++
++    /* set polarity */
++    if (wakeup_polarity == WAKEUP_ACTIVE_LOW)
++    {
++        wakeup_status |= (wakeup_int << TNETD73XX_WAKEUP_POLARITY_BIT);
++    }
++    else
++    {
++        wakeup_status &= ~(wakeup_int << TNETD73XX_WAKEUP_POLARITY_BIT);
++    }
++
++    /* write  the wakeup control register */
++    REG32_WRITE(TNETD73XX_POWER_CTRL_WKCR, wakeup_status);
++}
++
++
++/*****************************************************************************
++ * FSER  Control
++ *****************************************************************************/
++
++void tnetd73xx_fser_ctrl(TNETD73XX_FSER_MODE_T fser_mode)
++{
++    REG32_WRITE(TNETD73XX_FSER_BASE, fser_mode);
++}
++
++/*****************************************************************************
++ * Clock Control
++ *****************************************************************************/
++
++#define MIN(x,y)               ( ((x) <  (y)) ? (x) : (y) )
++#define MAX(x,y)               ( ((x) >  (y)) ? (x) : (y) )
++#define ABS(x)                 ( ((signed)(x) > 0) ? (x) : (-(x)) )
++#define CEIL(x,y)              ( ((x) + (y) / 2) / (y) )
++
++#define CLKC_CLKCR(x)          (TNETD73XX_CLOCK_CTRL_BASE + 0x20 + (0x20 * (x)))
++#define CLKC_CLKPLLCR(x)       (TNETD73XX_CLOCK_CTRL_BASE + 0x30 + (0x20 * (x)))
++
++#define CLKC_PRE_DIVIDER        0x0000001F
++#define CLKC_POST_DIVIDER       0x001F0000
++
++#define CLKC_PLL_STATUS         0x1
++#define CLKC_PLL_FACTOR         0x0000F000
++
++#define BOOTCR_PLL_BYPASS       (1 << 5)
++#define BOOTCR_MIPS_ASYNC_MODE  (1 << 25)
++
++#define MIPS_PLL_SELECT         0x00030000
++#define SYSTEM_PLL_SELECT       0x0000C000
++#define USB_PLL_SELECT          0x000C0000
++#define ADSLSS_PLL_SELECT       0x00C00000
++
++#define MIPS_AFECLKI_SELECT     0x00000000
++#define MIPS_REFCLKI_SELECT     0x00010000
++#define MIPS_XTAL3IN_SELECT     0x00020000
++
++#define SYSTEM_AFECLKI_SELECT   0x00000000
++#define SYSTEM_REFCLKI_SELECT   0x00004000
++#define SYSTEM_XTAL3IN_SELECT   0x00008000
++#define SYSTEM_MIPSPLL_SELECT   0x0000C000
++
++#define USB_SYSPLL_SELECT       0x00000000
++#define USB_REFCLKI_SELECT      0x00040000
++#define USB_XTAL3IN_SELECT      0x00080000
++#define USB_MIPSPLL_SELECT      0x000C0000
++
++#define ADSLSS_AFECLKI_SELECT   0x00000000
++#define ADSLSS_REFCLKI_SELECT   0x00400000
++#define ADSLSS_XTAL3IN_SELECT   0x00800000
++#define ADSLSS_MIPSPLL_SELECT   0x00C00000
++
++#define  SYS_MAX                CLK_MHZ(150)
++#define  SYS_MIN                CLK_MHZ(1)
++
++#define  MIPS_SYNC_MAX          SYS_MAX
++#define  MIPS_ASYNC_MAX         CLK_MHZ(160)
++#define  MIPS_MIN               CLK_MHZ(1)
++
++#define  USB_MAX                CLK_MHZ(100)
++#define  USB_MIN                CLK_MHZ(1)
++
++#define  ADSL_MAX               CLK_MHZ(180)
++#define  ADSL_MIN               CLK_MHZ(1)
++
++#define  PLL_MUL_MAXFACTOR      15
++#define  MAX_DIV_VALUE          32
++#define  MIN_DIV_VALUE          1
++
++#define  MIN_PLL_INP_FREQ       CLK_MHZ(8)
++#define  MAX_PLL_INP_FREQ       CLK_MHZ(100)
++
++#define  DIVIDER_LOCK_TIME      10100
++#define  PLL_LOCK_TIME          10100 * 75
++
++
++
++/****************************************************************************
++ * DATA PURPOSE:    PRIVATE Variables
++ **************************************************************************/
++static __u32 *clk_src[4];
++static __u32 mips_pll_out;
++static __u32 sys_pll_out;
++static __u32 afeclk_inp;
++static __u32 refclk_inp;
++static __u32 xtal_inp;
++static __u32 present_min;
++static __u32 present_max;
++
++/* Forward References */
++static __u32 find_gcd(__u32 min, __u32 max);
++static __u32 compute_prediv( __u32 divider, __u32 min, __u32 max);
++static void get_val(__u32 base_freq, __u32 output_freq,__u32 *multiplier, __u32 *divider);
++static __u32 get_base_frequency(TNETD73XX_CLKC_ID_T clk_id);
++static void find_approx(__u32 *,__u32 *,__u32);
++
++/****************************************************************************
++ * FUNCTION: tnetd73xx_clkc_init
++ ****************************************************************************
++ * Description: The routine initializes the internal variables depending on
++ *              on the sources selected for different clocks.
++ ***************************************************************************/
++void tnetd73xx_clkc_init(__u32 afeclk, __u32 refclk, __u32 xtal3in)
++{
++
++     __u32 choice;
++
++     afeclk_inp = afeclk;
++     refclk_inp = refclk;
++     xtal_inp = xtal3in;
++
++     choice = REG32_DATA(TNETD73XX_DCL_BOOTCR) & MIPS_PLL_SELECT;
++     switch(choice)
++        {
++            case MIPS_AFECLKI_SELECT:
++                     clk_src[CLKC_MIPS] = &afeclk_inp;
++                 break;
++
++            case MIPS_REFCLKI_SELECT:
++                    clk_src[CLKC_MIPS] = &refclk_inp;
++                 break;
++
++            case MIPS_XTAL3IN_SELECT:
++                    clk_src[CLKC_MIPS] = &xtal_inp;
++                 break;
++
++            default :
++                    clk_src[CLKC_MIPS] = 0;
++
++        }
++
++     choice = REG32_DATA(TNETD73XX_DCL_BOOTCR) & SYSTEM_PLL_SELECT;
++     switch(choice)
++        {
++            case SYSTEM_AFECLKI_SELECT:
++                     clk_src[CLKC_SYS] = &afeclk_inp;
++                 break;
++
++            case SYSTEM_REFCLKI_SELECT:
++                     clk_src[CLKC_SYS] = &refclk_inp;
++                 break;
++
++            case SYSTEM_XTAL3IN_SELECT:
++                     clk_src[CLKC_SYS] = &xtal_inp;
++                 break;
++
++            case SYSTEM_MIPSPLL_SELECT:
++                     clk_src[CLKC_SYS] = &mips_pll_out;
++                 break;
++
++            default :
++                     clk_src[CLKC_SYS] = 0;
++
++        }
++
++
++     choice = REG32_DATA(TNETD73XX_DCL_BOOTCR) & ADSLSS_PLL_SELECT;
++     switch(choice)
++        {
++            case ADSLSS_AFECLKI_SELECT:
++                     clk_src[CLKC_ADSLSS] = &afeclk_inp;
++                 break;
++
++            case ADSLSS_REFCLKI_SELECT:
++                    clk_src[CLKC_ADSLSS] = &refclk_inp;
++                 break;
++
++            case ADSLSS_XTAL3IN_SELECT:
++                    clk_src[CLKC_ADSLSS] = &xtal_inp;
++                 break;
++
++            case ADSLSS_MIPSPLL_SELECT:
++                    clk_src[CLKC_ADSLSS] = &mips_pll_out;
++                 break;
++
++            default :
++                    clk_src[CLKC_ADSLSS] = 0;
++
++        }
++
++
++     choice = REG32_DATA(TNETD73XX_DCL_BOOTCR) & USB_PLL_SELECT;
++     switch(choice)
++        {
++            case USB_SYSPLL_SELECT:
++                     clk_src[CLKC_USB] = &sys_pll_out ;
++                 break;
++
++            case USB_REFCLKI_SELECT:
++                    clk_src[CLKC_USB] = &refclk_inp;
++                 break;
++
++            case USB_XTAL3IN_SELECT:
++                    clk_src[CLKC_USB] = &xtal_inp;
++                 break;
++
++            case USB_MIPSPLL_SELECT:
++                    clk_src[CLKC_USB] = &mips_pll_out;
++                 break;
++
++            default :
++                    clk_src[CLKC_USB] = 0;
++
++        }
++}
++
++
++
++/****************************************************************************
++ * FUNCTION: tnetd73xx_clkc_set_freq
++ ****************************************************************************
++ * Description: The above routine is called to set the output_frequency of the
++ *              selected clock(using clk_id) to the  required value given
++ *              by the variable output_freq.
++ ***************************************************************************/
++TNETD73XX_ERR tnetd73xx_clkc_set_freq
++(
++    TNETD73XX_CLKC_ID_T clk_id,
++    __u32              output_freq
++)
++{
++    __u32 base_freq;
++    __u32 multiplier;
++    __u32 divider;
++    __u32 min_prediv;
++    __u32 max_prediv;
++    __u32 prediv;
++    __u32 postdiv;
++    __u32 temp;
++
++    /* check if PLLs are bypassed*/
++    if(REG32_DATA(TNETD73XX_DCL_BOOTCR) & BOOTCR_PLL_BYPASS)
++    {
++        return TNETD73XX_ERR_ERROR;
++    }
++
++     /*check if the requested output_frequency is in valid range*/
++    switch( clk_id )
++    {
++        case CLKC_SYS:
++            if( output_freq < SYS_MIN || output_freq > SYS_MAX)
++            {
++                return TNETD73XX_ERR_ERROR;
++            }
++            present_min = SYS_MIN;
++            present_max = SYS_MAX;
++        break;
++
++        case CLKC_MIPS:
++            if((output_freq < MIPS_MIN) ||
++               (output_freq > ((REG32_DATA(TNETD73XX_DCL_BOOTCR) & BOOTCR_MIPS_ASYNC_MODE) ? MIPS_ASYNC_MAX: MIPS_SYNC_MAX)))
++            {
++                return TNETD73XX_ERR_ERROR;
++            }
++            present_min = MIPS_MIN;
++            present_max = (REG32_DATA(TNETD73XX_DCL_BOOTCR) & BOOTCR_MIPS_ASYNC_MODE) ? MIPS_ASYNC_MAX: MIPS_SYNC_MAX;
++        break;
++
++        case CLKC_USB:
++            if( output_freq < USB_MIN || output_freq > USB_MAX)
++            {
++                return TNETD73XX_ERR_ERROR;
++            }
++            present_min = USB_MIN;
++            present_max = USB_MAX;
++        break;
++
++        case CLKC_ADSLSS:
++            if( output_freq < ADSL_MIN || output_freq > ADSL_MAX)
++            {
++                return TNETD73XX_ERR_ERROR;
++            }
++            present_min = ADSL_MIN;
++            present_max = ADSL_MAX;
++        break;
++    }
++
++
++    base_freq = get_base_frequency(clk_id);
++
++
++    /* check for minimum base frequency value */
++    if( base_freq < MIN_PLL_INP_FREQ)
++    {
++        return TNETD73XX_ERR_ERROR;
++    }
++
++    get_val(output_freq, base_freq, &multiplier, &divider);
++
++    /* check multiplier range  */
++    if( (multiplier  > PLL_MUL_MAXFACTOR) || (multiplier <= 0) )
++    {
++        return TNETD73XX_ERR_ERROR;
++    }
++
++    /* check divider value */
++    if( divider == 0 )
++    {
++        return TNETD73XX_ERR_ERROR;
++    }
++
++    /*compute minimum and maximum predivider values */
++    min_prediv = MAX(base_freq / MAX_PLL_INP_FREQ + 1, divider / MAX_DIV_VALUE + 1);
++    max_prediv = MIN(base_freq / MIN_PLL_INP_FREQ, MAX_DIV_VALUE);
++
++    /*adjust  the value of divider so that it not less than minimum predivider value*/
++    if (divider < min_prediv)
++    {
++        temp = CEIL(min_prediv, divider);
++        if ((temp * multiplier) > PLL_MUL_MAXFACTOR)
++        {
++            return TNETD73XX_ERR_ERROR  ;
++        }
++        else
++        {
++            multiplier = temp * multiplier;
++            divider = min_prediv;
++        }
++
++    }
++
++    /* compute predivider  and postdivider values */
++    prediv = compute_prediv (divider, min_prediv, max_prediv);
++    postdiv = CEIL(divider,prediv);
++
++    /*return fail if postdivider value falls out of range */
++    if(postdiv > MAX_DIV_VALUE)
++    {
++        return TNETD73XX_ERR_ERROR;
++    }
++
++
++    /*write predivider and postdivider values*/
++    /* pre-Divider and post-divider are 5 bit N+1 dividers */
++    REG32_WRITE(CLKC_CLKCR(clk_id), ((postdiv -1) & 0x1F) << 16 | ((prediv -1) & 0x1F) );
++
++    /*wait for divider output to stabilise*/
++    for(temp =0; temp < DIVIDER_LOCK_TIME; temp++);
++
++    /*write to PLL clock register*/
++
++    if(clk_id == CLKC_SYS)
++    {
++        /* but before writing put DRAM to hold mode */
++        REG32_DATA(TNETD73XX_EMIF_SDRAM_CFG) |= 0x80000000;
++    }
++    /*Bring PLL into div mode */
++    REG32_WRITE(CLKC_CLKPLLCR(clk_id), 0x4);
++
++    /*compute the word to be written to PLLCR
++     *corresponding to multiplier value
++     */
++    multiplier = (((multiplier - 1) & 0xf) << 12)| ((255 <<3) | 0x0e);
++
++    /* wait till PLL enters div mode */
++    while(REG32_DATA(CLKC_CLKPLLCR(clk_id)) & CLKC_PLL_STATUS)
++        /*nothing*/;
++
++    REG32_WRITE(CLKC_CLKPLLCR(clk_id), multiplier);
++
++    while(!REG32_DATA(CLKC_CLKPLLCR(clk_id)) & CLKC_PLL_STATUS)
++        /*nothing*/;
++
++
++    /*wait for External pll to lock*/
++    for(temp =0; temp < PLL_LOCK_TIME; temp++);
++
++    if(clk_id == CLKC_SYS)
++    {
++        /* Bring DRAM out of hold */
++        REG32_DATA(TNETD73XX_EMIF_SDRAM_CFG) &= ~0x80000000;
++    }
++
++    return TNETD73XX_ERR_OK ;
++}
++
++/****************************************************************************
++ * FUNCTION: tnetd73xx_clkc_get_freq
++ ****************************************************************************
++ * Description: The above routine is called to get the output_frequency of the
++ *              selected clock( clk_id)
++ ***************************************************************************/
++__u32 tnetd73xx_clkc_get_freq
++(
++    TNETD73XX_CLKC_ID_T clk_id
++)
++{
++
++    __u32  clk_ctrl_register;
++    __u32  clk_pll_setting;
++    __u32  clk_predivider;
++    __u32  clk_postdivider;
++    __u16  pll_factor;
++    __u32  base_freq;
++    __u32  divider;
++
++    base_freq = get_base_frequency(clk_id);
++
++    clk_ctrl_register = REG32_DATA(CLKC_CLKCR(clk_id));
++
++    /* pre-Divider and post-divider are 5 bit N+1 dividers */
++    clk_predivider = (CLKC_PRE_DIVIDER & clk_ctrl_register) + 1;
++    clk_postdivider = ((CLKC_POST_DIVIDER & clk_ctrl_register) >> 16) + 1;
++
++    divider =  clk_predivider * clk_postdivider;
++
++
++    if( (REG32_DATA(TNETD73XX_DCL_BOOTCR) & BOOTCR_PLL_BYPASS))
++    {
++        return (CEIL(base_freq, divider));  /* PLLs bypassed.*/
++    }
++
++
++    else
++    {
++        /*  return the current clock speed based upon the PLL setting */
++        clk_pll_setting = REG32_DATA(CLKC_CLKPLLCR(clk_id));
++
++        /* Get the PLL multiplication factor */
++        pll_factor = ((clk_pll_setting & CLKC_PLL_FACTOR) >> 12) + 1;
++
++        /* Check if we're in divide mode or multiply mode */
++        if((clk_pll_setting & 0x1)   == 0)
++        {
++            /* We're in divide mode */
++            if(pll_factor <  0x10)
++                return (CEIL(base_freq >> 1, divider));
++            else
++                return (CEIL(base_freq >> 2, divider));
++        }
++
++        else     /* We're in PLL mode */
++        {
++            /* See if PLLNDIV & PLLDIV are set */
++            if((clk_pll_setting & 0x0800) && (clk_pll_setting & 0x2))
++            {
++                if(clk_pll_setting & 0x1000)
++                {
++                    /* clk = base_freq * k/2  */
++                    return(CEIL((base_freq * pll_factor) >> 1, divider));
++                }
++                else
++                {
++                    /* clk = base_freq * (k-1) / 4)*/
++                    return(CEIL((base_freq * (pll_factor - 1)) >>2, divider));
++                }
++            }
++            else
++            {
++                if(pll_factor < 0x10)
++                {
++                   /* clk = base_freq * k */
++                   return(CEIL(base_freq * pll_factor, divider));
++                }
++
++                else
++                {
++                   /* clk = base_freq  */
++                   return(CEIL(base_freq, divider));
++                }
++            }
++        }
++    return(0); /* Should never reach here */
++
++    }
++
++}
++
++
++/* local helper functions */
++
++ /****************************************************************************
++ * FUNCTION: get_base_frequency
++ ****************************************************************************
++ * Description: The above routine is called to get base frequency of the clocks.
++ ***************************************************************************/
++
++static __u32 get_base_frequency(TNETD73XX_CLKC_ID_T clk_id)
++{
++    /* update the current MIPs PLL output value, if the required
++     * source is MIPS PLL
++     */
++     if ( clk_src[clk_id] == &mips_pll_out)
++     {
++         *clk_src[clk_id] = tnetd73xx_clkc_get_freq(CLKC_MIPS);
++     }
++
++
++     /* update the current System PLL output value, if the required
++      * source is system PLL
++      */
++     if ( clk_src[clk_id] == &sys_pll_out)
++     {
++         *clk_src[clk_id] = tnetd73xx_clkc_get_freq(CLKC_SYS);
++     }
++
++     return (*clk_src[clk_id]);
++
++}
++
++
++
++/****************************************************************************
++ * FUNCTION: find_gcd
++ ****************************************************************************
++ * Description: The above routine is called to find gcd of 2 numbers.
++ ***************************************************************************/
++static __u32 find_gcd
++(
++__u32 min,
++__u32 max
++)
++{
++    if (max % min == 0)
++    {
++        return min;
++    }
++    else
++    {
++        return find_gcd(max % min, min);
++    }
++}
++
++/****************************************************************************
++ * FUNCTION: compute_prediv
++ ****************************************************************************
++ * Description: The above routine is called to compute predivider value
++ ***************************************************************************/
++static __u32 compute_prediv(__u32 divider, __u32 min, __u32 max)
++{
++__u16 prediv;
++
++/* return the divider itself it it falls within the range of predivider*/
++if (min <= divider && divider <= max)
++{
++    return divider;
++}
++
++/* find a value for prediv such that it is a factor of divider */
++for (prediv = max; prediv >= min ; prediv--)
++{
++    if ( (divider % prediv) == 0 )
++    {
++        return prediv;
++    }
++}
++
++/* No such factor exists,  return min as prediv */
++return min;
++}
++
++/****************************************************************************
++ * FUNCTION: get_val
++ ****************************************************************************
++ * Description: This routine is called to get values of divider and multiplier.
++ ***************************************************************************/
++
++static void get_val(__u32 output_freq, __u32 base_freq,__u32 *multiplier, __u32 *divider)
++{
++    __u32 temp_mul;
++    __u32 temp_div;
++    __u32 gcd;
++    __u32 min_freq;
++    __u32 max_freq;
++
++    /* find gcd of base_freq, output_freq */
++    min_freq = (base_freq < output_freq) ? base_freq : output_freq;
++    max_freq = (base_freq > output_freq) ? base_freq : output_freq;
++    gcd = find_gcd(min_freq , max_freq);
++
++    if(gcd == 0)
++        return;  /* ERROR */
++
++    /* compute values of multiplier and divider */
++    temp_mul = output_freq / gcd;
++    temp_div = base_freq / gcd;
++
++
++    /* set multiplier such that 1 <= multiplier <= PLL_MUL_MAXFACTOR */
++    if( temp_mul > PLL_MUL_MAXFACTOR )
++    {
++        if((temp_mul / temp_div) > PLL_MUL_MAXFACTOR)
++           return;
++
++        find_approx(&temp_mul,&temp_div,base_freq);
++    }
++
++    *multiplier = temp_mul;
++    *divider    = temp_div;
++}
++
++/****************************************************************************
++ * FUNCTION: find_approx
++ ****************************************************************************
++ * Description: This function gets the approx value of num/denom.
++ ***************************************************************************/
++
++static void find_approx(__u32 *num,__u32 *denom,__u32 base_freq)
++{
++    __u32 num1;
++    __u32 denom1;
++    __u32 num2;
++    __u32 denom2;
++    int closest;
++    int prev_closest;
++    __u32 temp_num;
++    __u32 temp_denom;
++    __u32 normalize;
++    __u32 gcd;
++    __u32 output_freq;
++
++    num1 = *num;
++    denom1 = *denom;
++
++    prev_closest = 0x7fffffff; /* maximum possible value */
++    num2 = num1;
++    denom2 = denom1;
++
++    /* start with  max */
++    for(temp_num = 15; temp_num >=1; temp_num--)
++    {
++
++        temp_denom = CEIL(temp_num * denom1, num1);
++        output_freq = (temp_num * base_freq) / temp_denom;
++
++        if(temp_denom < 1)
++        {
++            break;
++        }
++        else
++        {
++            normalize = CEIL(num1,temp_num);
++            closest = (ABS((num1 * (temp_denom) ) - (temp_num * denom1)))  * normalize;
++            if(closest < prev_closest && output_freq > present_min && output_freq <present_max)
++            {
++                prev_closest = closest;
++                num2 = temp_num;
++                denom2 = temp_denom;
++            }
++
++        }
++
++    }
++
++    gcd = find_gcd(num2,denom2);
++    num2 = num2 / gcd;
++    denom2 = denom2 /gcd;
++
++    *num      = num2;
++    *denom    = denom2;
++}
++
++
++/*****************************************************************************
++ * GPIO  Control
++ *****************************************************************************/
++
++/****************************************************************************
++ * FUNCTION: tnetd73xx_gpio_init
++ ***************************************************************************/
++void tnetd73xx_gpio_init()
++{
++    /* Bring module out of reset */
++    tnetd73xx_reset_ctrl(RESET_MODULE_GPIO, OUT_OF_RESET);
++    REG32_WRITE(TNETD73XX_GPIOENR, 0xFFFFFFFF);    
++}
++
++/****************************************************************************
++ * FUNCTION: tnetd73xx_gpio_ctrl
++ ***************************************************************************/
++void tnetd73xx_gpio_ctrl(TNETD73XX_GPIO_PIN_T gpio_pin, 
++                         TNETD73XX_GPIO_PIN_MODE_T pin_mode,
++                         TNETD73XX_GPIO_PIN_DIRECTION_T pin_direction)
++{
++    __u32 pin_status;
++    REG32_READ(TNETD73XX_GPIOENR, pin_status);
++    if (pin_mode == GPIO_PIN)
++    {
++        pin_status |= (1 << gpio_pin);
++        REG32_WRITE(TNETD73XX_GPIOENR, pin_status);
++        
++        /* Set pin direction */
++        REG32_READ(TNETD73XX_GPIOPDIRR, pin_status);
++        if (pin_direction == GPIO_INPUT_PIN)
++        {
++            pin_status |= (1 << gpio_pin);
++        }
++        else /* GPIO_OUTPUT_PIN */
++        {
++            pin_status &= (~(1 << gpio_pin));
++        }
++        REG32_WRITE(TNETD73XX_GPIOPDIRR, pin_status);
++    }
++    else /* FUNCTIONAL PIN */
++    {
++            pin_status &= (~(1 << gpio_pin));
++            REG32_WRITE(TNETD73XX_GPIOENR, pin_status);
++    }
++                         
++}
++                         
++/****************************************************************************
++ * FUNCTION: tnetd73xx_gpio_out
++ ***************************************************************************/
++void tnetd73xx_gpio_out(TNETD73XX_GPIO_PIN_T gpio_pin, int value)
++{
++    __u32 pin_value;
++    
++    REG32_READ(TNETD73XX_GPIODOUTR, pin_value);
++    if (value == TRUE)
++    {
++        pin_value |= (1 << gpio_pin);
++    }
++    else
++    {
++        pin_value &= (~(1 << gpio_pin));
++    }
++    REG32_WRITE(TNETD73XX_GPIODOUTR, pin_value);
++}
++
++/****************************************************************************
++ * FUNCTION: tnetd73xx_gpio_in
++ ***************************************************************************/
++int tnetd73xx_gpio_in(TNETD73XX_GPIO_PIN_T gpio_pin)
++{
++    __u32 pin_value;
++    REG32_READ(TNETD73XX_GPIODINR, pin_value);
++    return ( (pin_value & (1 << gpio_pin)) ? TRUE : FALSE );
++}
++
+diff -urN kernel-base/arch/mips/ar7/cmdline.c kernel-current/arch/mips/ar7/cmdline.c
 --- kernel-base/arch/mips/ar7/cmdline.c	1970-01-01 01:00:00.000000000 +0100
-+++ kernel-tmp2/arch/mips/ar7/cmdline.c	2005-07-10 06:40:39.584266864 +0200
++++ kernel-current/arch/mips/ar7/cmdline.c	2005-07-10 06:40:39.584266864 +0200
 @@ -0,0 +1,64 @@
 +/*
 + * Carsten Langgaard, carstenl@mips.com
@@ -511,9 +2294,9 @@ diff -urN kernel-base/arch/mips/ar7/cmdline.c kernel-tmp2/arch/mips/ar7/cmdline.
 +		--cp;
 +	*cp = '\0';
 +}
-diff -urN kernel-base/arch/mips/ar7/init.c kernel-tmp2/arch/mips/ar7/init.c
+diff -urN kernel-base/arch/mips/ar7/init.c kernel-current/arch/mips/ar7/init.c
 --- kernel-base/arch/mips/ar7/init.c	1970-01-01 01:00:00.000000000 +0100
-+++ kernel-tmp2/arch/mips/ar7/init.c	2005-07-10 06:40:39.584266864 +0200
++++ kernel-current/arch/mips/ar7/init.c	2005-07-10 06:40:39.584266864 +0200
 @@ -0,0 +1,146 @@
 +/*
 + * Carsten Langgaard, carstenl@mips.com
@@ -661,10 +2444,10 @@ diff -urN kernel-base/arch/mips/ar7/init.c kernel-tmp2/arch/mips/ar7/init.c
 +}
 +
 +EXPORT_SYMBOL(prom_getenv);
-diff -urN kernel-base/arch/mips/ar7/irq.c kernel-tmp2/arch/mips/ar7/irq.c
+diff -urN kernel-base/arch/mips/ar7/irq.c kernel-current/arch/mips/ar7/irq.c
 --- kernel-base/arch/mips/ar7/irq.c	1970-01-01 01:00:00.000000000 +0100
-+++ kernel-tmp2/arch/mips/ar7/irq.c	2005-07-10 06:40:39.585266712 +0200
-@@ -0,0 +1,664 @@
++++ kernel-current/arch/mips/ar7/irq.c	2005-07-10 10:02:30.212171576 +0200
+@@ -0,0 +1,705 @@
 +/*
 + * Nitin Dhingra, iamnd@ti.com
 + * Copyright (C) 2002 Texas Instruments, Inc.  All rights reserved.
@@ -1329,9 +3112,50 @@ diff -urN kernel-base/arch/mips/ar7/irq.c kernel-tmp2/arch/mips/ar7/irq.c
 +		uni_secondary_interrupt = line;
 +
 +}
-diff -urN kernel-base/arch/mips/ar7/Makefile kernel-tmp2/arch/mips/ar7/Makefile
++
++
++#define AVALANCHE_MAX_PACING_BLK   3
++#define AVALANCHE_PACING_LOW_VAL   2
++#define AVALANCHE_PACING_HIGH_VAL 63
++
++int avalanche_request_pacing(int irq_nr, unsigned int blk_num,
++                            unsigned int pace_value)
++{
++    unsigned int  blk_offset;
++    unsigned long flags;
++
++    if(irq_nr < MIPS_EXCEPTION_OFFSET &&
++       irq_nr >= AVALANCHE_INT_END_PRIMARY)
++        return (0);
++
++    if(blk_num > AVALANCHE_MAX_PACING_BLK)
++        return(-1);
++
++    if(pace_value > AVALANCHE_PACING_HIGH_VAL &&
++       pace_value < AVALANCHE_PACING_LOW_VAL)
++       return(-1);
++
++    blk_offset = blk_num*8;
++
++    save_and_cli(flags);
++
++    /* disable the interrupt pacing, if enabled previously */
++    avalanche_hw0_ipaceregs->ipacemax &= ~(0xff << blk_offset);
++
++    /* clear the pacing map */
++    avalanche_hw0_ipaceregs->ipacemap &= ~(0xff << blk_offset);
++
++    /* setup the new values */
++    avalanche_hw0_ipaceregs->ipacemap |= ((AVINTNUM(irq_nr))   << blk_offset);
++    avalanche_hw0_ipaceregs->ipacemax |= ((0x80 | pace_value)  << blk_offset);
++
++    restore_flags(flags);
++
++    return(0);
++}
+diff -urN kernel-base/arch/mips/ar7/Makefile kernel-current/arch/mips/ar7/Makefile
 --- kernel-base/arch/mips/ar7/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ kernel-tmp2/arch/mips/ar7/Makefile	2005-07-10 06:40:39.586266560 +0200
++++ kernel-current/arch/mips/ar7/Makefile	2005-07-10 08:23:55.081408136 +0200
 @@ -0,0 +1,29 @@
 +# $Id$
 +# Copyright (C) $Date$  $Author$
@@ -1358,13 +3182,13 @@ diff -urN kernel-base/arch/mips/ar7/Makefile kernel-tmp2/arch/mips/ar7/Makefile
 +
 +O_TARGET := ar7.o
 +
-+export-objs := init.o
++export-objs := init.o irq.o
 +obj-y := setup.o irq.o mipsIRQ.o reset.o init.o memory.o printf.o cmdline.o time.o
 +
 +include $(TOPDIR)/Rules.make
-diff -urN kernel-base/arch/mips/ar7/memory.c kernel-tmp2/arch/mips/ar7/memory.c
+diff -urN kernel-base/arch/mips/ar7/memory.c kernel-current/arch/mips/ar7/memory.c
 --- kernel-base/arch/mips/ar7/memory.c	1970-01-01 01:00:00.000000000 +0100
-+++ kernel-tmp2/arch/mips/ar7/memory.c	2005-07-10 06:40:39.586266560 +0200
++++ kernel-current/arch/mips/ar7/memory.c	2005-07-10 06:40:39.586266560 +0200
 @@ -0,0 +1,130 @@
 +/*
 + * Carsten Langgaard, carstenl@mips.com
@@ -1496,9 +3320,9 @@ diff -urN kernel-base/arch/mips/ar7/memory.c kernel-tmp2/arch/mips/ar7/memory.c
 +	}
 +	printk("Freeing prom memory: %ldkb freed\n", freed >> 10);
 +}
-diff -urN kernel-base/arch/mips/ar7/mipsIRQ.S kernel-tmp2/arch/mips/ar7/mipsIRQ.S
+diff -urN kernel-base/arch/mips/ar7/mipsIRQ.S kernel-current/arch/mips/ar7/mipsIRQ.S
 --- kernel-base/arch/mips/ar7/mipsIRQ.S	1970-01-01 01:00:00.000000000 +0100
-+++ kernel-tmp2/arch/mips/ar7/mipsIRQ.S	2005-07-10 06:40:39.587266408 +0200
++++ kernel-current/arch/mips/ar7/mipsIRQ.S	2005-07-10 06:40:39.587266408 +0200
 @@ -0,0 +1,120 @@
 +/*
 + * Carsten Langgaard, carstenl@mips.com
@@ -1620,9 +3444,9 @@ diff -urN kernel-base/arch/mips/ar7/mipsIRQ.S kernel-tmp2/arch/mips/ar7/mipsIRQ.
 +	j	ret_from_irq
 +	nop
 +END(mipsIRQ)
-diff -urN kernel-base/arch/mips/ar7/printf.c kernel-tmp2/arch/mips/ar7/printf.c
+diff -urN kernel-base/arch/mips/ar7/printf.c kernel-current/arch/mips/ar7/printf.c
 --- kernel-base/arch/mips/ar7/printf.c	1970-01-01 01:00:00.000000000 +0100
-+++ kernel-tmp2/arch/mips/ar7/printf.c	2005-07-10 06:40:39.587266408 +0200
++++ kernel-current/arch/mips/ar7/printf.c	2005-07-10 06:40:39.587266408 +0200
 @@ -0,0 +1,54 @@
 +/*
 + * Carsten Langgaard, carstenl@mips.com
@@ -1678,9 +3502,9 @@ diff -urN kernel-base/arch/mips/ar7/printf.c kernel-tmp2/arch/mips/ar7/printf.c
 +	return;
 +
 +}
-diff -urN kernel-base/arch/mips/ar7/reset.c kernel-tmp2/arch/mips/ar7/reset.c
+diff -urN kernel-base/arch/mips/ar7/reset.c kernel-current/arch/mips/ar7/reset.c
 --- kernel-base/arch/mips/ar7/reset.c	1970-01-01 01:00:00.000000000 +0100
-+++ kernel-tmp2/arch/mips/ar7/reset.c	2005-07-10 06:40:39.587266408 +0200
++++ kernel-current/arch/mips/ar7/reset.c	2005-07-10 06:40:39.587266408 +0200
 @@ -0,0 +1,54 @@
 +/*
 + * Carsten Langgaard, carstenl@mips.com
@@ -1736,9 +3560,9 @@ diff -urN kernel-base/arch/mips/ar7/reset.c kernel-tmp2/arch/mips/ar7/reset.c
 +	_machine_halt = ar7_machine_halt;
 +	_machine_power_off = ar7_machine_power_off;
 +}
-diff -urN kernel-base/arch/mips/ar7/setup.c kernel-tmp2/arch/mips/ar7/setup.c
+diff -urN kernel-base/arch/mips/ar7/setup.c kernel-current/arch/mips/ar7/setup.c
 --- kernel-base/arch/mips/ar7/setup.c	1970-01-01 01:00:00.000000000 +0100
-+++ kernel-tmp2/arch/mips/ar7/setup.c	2005-07-10 06:40:39.588266256 +0200
++++ kernel-current/arch/mips/ar7/setup.c	2005-07-10 06:40:39.588266256 +0200
 @@ -0,0 +1,120 @@
 +/*
 + * Carsten Langgaard, carstenl@mips.com
@@ -1860,9 +3684,9 @@ diff -urN kernel-base/arch/mips/ar7/setup.c kernel-tmp2/arch/mips/ar7/setup.c
 +	board_time_init = ar7_time_init;
 +	board_timer_setup = ar7_timer_setup;
 +}
-diff -urN kernel-base/arch/mips/ar7/time.c kernel-tmp2/arch/mips/ar7/time.c
+diff -urN kernel-base/arch/mips/ar7/time.c kernel-current/arch/mips/ar7/time.c
 --- kernel-base/arch/mips/ar7/time.c	1970-01-01 01:00:00.000000000 +0100
-+++ kernel-tmp2/arch/mips/ar7/time.c	2005-07-10 06:40:39.588266256 +0200
++++ kernel-current/arch/mips/ar7/time.c	2005-07-10 06:40:39.588266256 +0200
 @@ -0,0 +1,125 @@
 +/*
 + * Carsten Langgaard, carstenl@mips.com
@@ -1989,9 +3813,9 @@ diff -urN kernel-base/arch/mips/ar7/time.c kernel-tmp2/arch/mips/ar7/time.c
 +	write_c0_compare(r4k_cur);
 +	set_c0_status(ALLINTS);
 +}
-diff -urN kernel-base/arch/mips/config-shared.in kernel-tmp2/arch/mips/config-shared.in
+diff -urN kernel-base/arch/mips/config-shared.in kernel-current/arch/mips/config-shared.in
 --- kernel-base/arch/mips/config-shared.in	2005-07-10 03:00:44.784181376 +0200
-+++ kernel-tmp2/arch/mips/config-shared.in	2005-07-10 06:40:39.589266104 +0200
++++ kernel-current/arch/mips/config-shared.in	2005-07-10 06:40:39.589266104 +0200
 @@ -20,6 +20,16 @@
  mainmenu_option next_comment
  comment 'Machine selection'
@@ -2037,9 +3861,9 @@ diff -urN kernel-base/arch/mips/config-shared.in kernel-tmp2/arch/mips/config-sh
       "$CONFIG_CASIO_E55" = "y" -o \
       "$CONFIG_DECSTATION" = "y" -o \
       "$CONFIG_IBM_WORKPAD" = "y" -o \
-diff -urN kernel-base/arch/mips/kernel/irq.c kernel-tmp2/arch/mips/kernel/irq.c
+diff -urN kernel-base/arch/mips/kernel/irq.c kernel-current/arch/mips/kernel/irq.c
 --- kernel-base/arch/mips/kernel/irq.c	2005-07-10 03:00:44.784181376 +0200
-+++ kernel-tmp2/arch/mips/kernel/irq.c	2005-07-10 06:40:39.589266104 +0200
++++ kernel-current/arch/mips/kernel/irq.c	2005-07-10 06:40:39.589266104 +0200
 @@ -76,6 +76,7 @@
   * Generic, controller-independent functions:
   */
@@ -2088,9 +3912,32 @@ diff -urN kernel-base/arch/mips/kernel/irq.c kernel-tmp2/arch/mips/kernel/irq.c
  
  /*
   * IRQ autodetection code..
-diff -urN kernel-base/arch/mips/kernel/setup.c kernel-tmp2/arch/mips/kernel/setup.c
+diff -urN kernel-base/arch/mips/kernel/mips_ksyms.c kernel-current/arch/mips/kernel/mips_ksyms.c
+--- kernel-base/arch/mips/kernel/mips_ksyms.c	2004-02-18 14:36:30.000000000 +0100
++++ kernel-current/arch/mips/kernel/mips_ksyms.c	2005-07-10 10:08:15.469684456 +0200
+@@ -40,6 +40,10 @@
+ extern long __strnlen_user_nocheck_asm(const char *s);
+ extern long __strnlen_user_asm(const char *s);
+ 
++#ifdef CONFIG_AR7
++extern int avalanche_request_pacing(int irq_nr, unsigned int blk_num, unsigned int pace_value);
++#endif
++
+ EXPORT_SYMBOL(mips_machtype);
+ #ifdef CONFIG_EISA
+ EXPORT_SYMBOL(EISA_bus);
+@@ -102,4 +106,8 @@
+ EXPORT_SYMBOL(ide_ops);
+ #endif
+ 
++#ifdef CONFIG_AR7
++EXPORT_SYMBOL_NOVERS(avalanche_request_pacing);
++#endif
++
+ EXPORT_SYMBOL(get_wchan);
+diff -urN kernel-base/arch/mips/kernel/setup.c kernel-current/arch/mips/kernel/setup.c
 --- kernel-base/arch/mips/kernel/setup.c	2005-07-10 03:00:44.785181224 +0200
-+++ kernel-tmp2/arch/mips/kernel/setup.c	2005-07-10 06:40:39.590265952 +0200
++++ kernel-current/arch/mips/kernel/setup.c	2005-07-10 06:40:39.590265952 +0200
 @@ -109,6 +109,7 @@
  unsigned long isa_slot_offset;
  EXPORT_SYMBOL(isa_slot_offset);
@@ -2137,9 +3984,9 @@ diff -urN kernel-base/arch/mips/kernel/setup.c kernel-tmp2/arch/mips/kernel/setu
  	default:
  		panic("Unsupported architecture");
  	}
-diff -urN kernel-base/arch/mips/kernel/traps.c kernel-tmp2/arch/mips/kernel/traps.c
+diff -urN kernel-base/arch/mips/kernel/traps.c kernel-current/arch/mips/kernel/traps.c
 --- kernel-base/arch/mips/kernel/traps.c	2005-07-10 03:00:44.786181072 +0200
-+++ kernel-tmp2/arch/mips/kernel/traps.c	2005-07-10 06:40:39.591265800 +0200
++++ kernel-current/arch/mips/kernel/traps.c	2005-07-10 06:40:39.591265800 +0200
 @@ -40,6 +40,10 @@
  #include <asm/uaccess.h>
  #include <asm/mmu_context.h>
@@ -2257,9 +4104,9 @@ diff -urN kernel-base/arch/mips/kernel/traps.c kernel-tmp2/arch/mips/kernel/trap
  
  	per_cpu_trap_init();
  }
-diff -urN kernel-base/arch/mips/lib/promlib.c kernel-tmp2/arch/mips/lib/promlib.c
+diff -urN kernel-base/arch/mips/lib/promlib.c kernel-current/arch/mips/lib/promlib.c
 --- kernel-base/arch/mips/lib/promlib.c	2005-07-10 03:00:44.786181072 +0200
-+++ kernel-tmp2/arch/mips/lib/promlib.c	2005-07-10 06:40:39.591265800 +0200
++++ kernel-current/arch/mips/lib/promlib.c	2005-07-10 06:40:39.591265800 +0200
 @@ -1,3 +1,4 @@
 +#ifndef CONFIG_AR7
  #include <stdarg.h>
@@ -2270,9 +4117,9 @@ diff -urN kernel-base/arch/mips/lib/promlib.c kernel-tmp2/arch/mips/lib/promlib.
  	va_end(args);
  }
 +#endif
-diff -urN kernel-base/arch/mips/Makefile kernel-tmp2/arch/mips/Makefile
+diff -urN kernel-base/arch/mips/Makefile kernel-current/arch/mips/Makefile
 --- kernel-base/arch/mips/Makefile	2005-07-10 03:00:44.786181072 +0200
-+++ kernel-tmp2/arch/mips/Makefile	2005-07-10 06:40:39.591265800 +0200
++++ kernel-current/arch/mips/Makefile	2005-07-10 06:40:39.591265800 +0200
 @@ -369,6 +369,16 @@
  endif
  
@@ -2290,9 +4137,9 @@ diff -urN kernel-base/arch/mips/Makefile kernel-tmp2/arch/mips/Makefile
  # DECstation family
  #
  ifdef CONFIG_DECSTATION
-diff -urN kernel-base/arch/mips/mm/init.c kernel-tmp2/arch/mips/mm/init.c
+diff -urN kernel-base/arch/mips/mm/init.c kernel-current/arch/mips/mm/init.c
 --- kernel-base/arch/mips/mm/init.c	2005-07-10 03:00:44.787180920 +0200
-+++ kernel-tmp2/arch/mips/mm/init.c	2005-07-10 07:09:29.914216728 +0200
++++ kernel-current/arch/mips/mm/init.c	2005-07-10 07:09:29.914216728 +0200
 @@ -40,8 +40,10 @@
  
  mmu_gather_t mmu_gathers[NR_CPUS];
@@ -2359,9 +4206,9 @@ diff -urN kernel-base/arch/mips/mm/init.c kernel-tmp2/arch/mips/mm/init.c
  	return;
  }
 +#endif
-diff -urN kernel-base/arch/mips/mm/tlb-r4k.c kernel-tmp2/arch/mips/mm/tlb-r4k.c
+diff -urN kernel-base/arch/mips/mm/tlb-r4k.c kernel-current/arch/mips/mm/tlb-r4k.c
 --- kernel-base/arch/mips/mm/tlb-r4k.c	2005-07-10 03:00:44.787180920 +0200
-+++ kernel-tmp2/arch/mips/mm/tlb-r4k.c	2005-07-10 06:40:39.592265648 +0200
++++ kernel-current/arch/mips/mm/tlb-r4k.c	2005-07-10 06:40:39.592265648 +0200
 @@ -20,6 +20,10 @@
  #include <asm/pgtable.h>
  #include <asm/system.h>
@@ -2386,9 +4233,9 @@ diff -urN kernel-base/arch/mips/mm/tlb-r4k.c kernel-tmp2/arch/mips/mm/tlb-r4k.c
 +#endif
  	}
  }
-diff -urN kernel-base/drivers/char/serial.c kernel-tmp2/drivers/char/serial.c
+diff -urN kernel-base/drivers/char/serial.c kernel-current/drivers/char/serial.c
 --- kernel-base/drivers/char/serial.c	2005-07-10 03:00:44.789180616 +0200
-+++ kernel-tmp2/drivers/char/serial.c	2005-07-10 06:42:02.902600552 +0200
++++ kernel-current/drivers/char/serial.c	2005-07-10 06:42:02.902600552 +0200
 @@ -419,7 +419,40 @@
  	return 0;
  }
@@ -2487,9 +4334,9 @@ diff -urN kernel-base/drivers/char/serial.c kernel-tmp2/drivers/char/serial.c
  	cval = cflag & (CSIZE | CSTOPB);
  #if defined(__powerpc__) || defined(__alpha__)
  	cval >>= 8;
-diff -urN kernel-base/include/asm-mips/ar7/ar7.h kernel-tmp2/include/asm-mips/ar7/ar7.h
+diff -urN kernel-base/include/asm-mips/ar7/ar7.h kernel-current/include/asm-mips/ar7/ar7.h
 --- kernel-base/include/asm-mips/ar7/ar7.h	1970-01-01 01:00:00.000000000 +0100
-+++ kernel-tmp2/include/asm-mips/ar7/ar7.h	2005-07-10 06:40:39.622261088 +0200
++++ kernel-current/include/asm-mips/ar7/ar7.h	2005-07-10 06:40:39.622261088 +0200
 @@ -0,0 +1,33 @@
 +/*
 + * $Id$
@@ -2524,9 +4371,9 @@ diff -urN kernel-base/include/asm-mips/ar7/ar7.h kernel-tmp2/include/asm-mips/ar
 +#define AR7_BASE_BAUD ( 3686400 / 16 )
 +
 +#endif
-diff -urN kernel-base/include/asm-mips/ar7/avalanche_intc.h kernel-tmp2/include/asm-mips/ar7/avalanche_intc.h
+diff -urN kernel-base/include/asm-mips/ar7/avalanche_intc.h kernel-current/include/asm-mips/ar7/avalanche_intc.h
 --- kernel-base/include/asm-mips/ar7/avalanche_intc.h	1970-01-01 01:00:00.000000000 +0100
-+++ kernel-tmp2/include/asm-mips/ar7/avalanche_intc.h	2005-07-10 06:40:39.622261088 +0200
++++ kernel-current/include/asm-mips/ar7/avalanche_intc.h	2005-07-10 06:40:39.622261088 +0200
 @@ -0,0 +1,278 @@
 + /*
 + * Nitin Dhingra, iamnd@ti.com
@@ -2806,9 +4653,580 @@ diff -urN kernel-base/include/asm-mips/ar7/avalanche_intc.h kernel-tmp2/include/
 +
 +
 +#endif /* _AVALANCHE_INTC_H */
-diff -urN kernel-base/include/asm-mips/ar7/if_port.h kernel-tmp2/include/asm-mips/ar7/if_port.h
+diff -urN kernel-base/include/asm-mips/ar7/avalanche_regs.h kernel-current/include/asm-mips/ar7/avalanche_regs.h
+--- kernel-base/include/asm-mips/ar7/avalanche_regs.h	1970-01-01 01:00:00.000000000 +0100
++++ kernel-current/include/asm-mips/ar7/avalanche_regs.h	2005-07-10 09:27:48.638618856 +0200
+@@ -0,0 +1,567 @@
++/* 
++ *  $Id$
++ *  Avalanche Register Descriptions
++ *
++ *  Jeff Harrell, jharrell@ti.com
++ *  2000 (c) Texas Instruments Inc.
++ */
++
++#ifndef __AVALANCHE_REGS_H
++#define __AVALANCHE_REGS_H
++
++#include <asm/addrspace.h>
++#include <linux/config.h>
++
++/*----------------------------------------*/
++/* Base offsets within the Avalanche ASIC */
++/*----------------------------------------*/
++
++#define BBIF_SPACE0     (KSEG1ADDR(0x01000000))
++#define BBIF_SPACE1     (KSEG1ADDR(0x01800000))
++#define BBIF_CONTROL    (KSEG1ADDR(0x02000000))
++#define ATM_SAR_BASE    (KSEG1ADDR(0x03000000))
++#define USB_MCU_BASE    (KSEG1ADDR(0x03400000))
++#define DES_BASE        (KSEG1ADDR(0x08600000))
++#define ETH_MACA_BASE   (KSEG1ADDR(0x08610000))
++#define ETH_MACB_BASE   (KSEG1ADDR(0x08612800))
++#define MEM_CTRLR_BASE  (KSEG1ADDR(0x08610800))
++#define GPIO_BASE       (KSEG1ADDR(0x08610900))
++#define CLK_CTRL_BASE   (KSEG1ADDR(0x08610A00))
++#define WATCH_DOG_BASE  (KSEG1ADDR(0x08610B00))
++#define TMR1_BASE       (KSEG1ADDR(0x08610C00))
++#define TRM2_BASE       (KSEG1ADDR(0x08610D00))
++#define UARTA_BASE      (KSEG1ADDR(0x08610E00))
++#define UARTB_BASE      (KSEG1ADDR(0x08610F00))
++#define I2C_BASE        (KSEG1ADDR(0x08611000))
++#define DEV_ID_BASE     (KSEG1ADDR(0x08611100))
++#define USB_BASE        (KSEG1ADDR(0x08611200))
++#define PCI_CONFIG_BASE (KSEG1ADDR(0x08611300))
++#define DMA_BASE        (KSEG1ADDR(0x08611400))
++#define RESET_CTRL_BASE (KSEG1ADDR(0x08611600))
++#define DSL_IF_BASE     (KSEG1ADDR(0x08611B00))
++#define INT_CTL_BASE    (KSEG1ADDR(0x08612400)) 
++#define PHY_BASE        (KSEG1ADDR(0x1E000000))
++
++/*---------------------------------*/
++/* Device ID, chip version number  */
++/*---------------------------------*/
++
++#define AVALANCHE_CHVN  (*(volatile unsigned int *)(DEV_ID_BASE+0x14))
++#define AVALANCHE_DEVID1 (*(volatile unsigned int *)(DEV_ID_BASE+0x18))
++#define AVALANCHE_DEVID2 (*(volatile unsigned int *)(DEV_ID_BASE+0x1C))
++
++/*----------------------------------*/
++/* Reset Control VW changed to ptrs */
++/*----------------------------------*/
++
++#define AVALANCHE_PRCR  (*(volatile unsigned int *)(RESET_CTRL_BASE + 0x0))  /* Peripheral reset control */
++#define AVALANCHE_SWRCR (*(volatile unsigned int *)(RESET_CTRL_BASE + 0x4))  /* Software reset control   */
++#define AVALANCHE_RSR   (*(volatile unsigned int *)(RESET_CTRL_BASE + 0x8))  /* Reset status register    */
++
++/* reset control bits */
++
++#define AV_RST_UART0    (1<<0)    /* Brings UART0 out of reset              */
++#define AV_RST_UART1    (1<<1)    /* Brings UART1 out of reset              */
++#define AV_RST_IICM     (1<<2)    /* Brings the I2CM out of reset           */
++#define AV_RST_TIMER0   (1<<3)    /* Brings Timer 0 out of reset            */
++#define AV_RST_TIMER1   (1<<4)    /* Brings Timer 1 out of reset            */
++#define AV_RST_DES      (1<<5)    /* Brings the DES module out of reset     */
++#define AV_RST_GPIO     (1<<6)    /* Brings the GPIO module out of reset (see note below) */
++/*
++  JAH NOTE JAH NOTE JAH NOTE JAH NOTE JAH NOTE JAH NOTE JAH NOTE JAH NOTE
++       If you reset the GPIO interface all of the directions (i/o) of the UART B
++       interface pins are inputs and must be reconfigured so as not to lose the 
++       serial console interface
++  JAH NOTE JAH NOTE JAH NOTE JAH NOTE JAH NOTE JAH NOTE JAH NOTE JAH NOTE
++*/
++#define AV_RST_BBIF     (1<<7)    /* Brings the Broadband interface out of reset */
++#define AV_RST_USB      (1<<8)    /* Brings the USB module out of reset     */
++#define AV_RST_SAR      (1<<9)    /* Brings the SAR out of reset            */
++#define AV_RST_HDLC     (1<<10)   /* Brings the HDLC module out of reset    */
++#define AV_RST_PCI      (1<<16)   /* Brings the PCI module out of reset     */
++#define AV_RST_ETH_MAC0 (1<<17)   /* Brings the Ethernet MAC0 out of reset  */
++#define AV_RST_PICO_DMA (1<<18)   /* Brings the PICO DMA module out of reset */
++#define AV_RST_BIST     (1<<19)   /* Brings the BIST module out of reset    */
++#define AV_RST_DSP      (1<<20)   /* Brings the DSP sub system out of reset */
++#define AV_RST_ETH_MAC1 (1<<21)   /* Brings the Ethernet MAC1 out of reset  */
++
++/*----------------------*/
++/* Physical interfaces  */
++/*----------------------*/
++
++/* Phy loopback */
++#define PHY_LOOPBACK    1
++
++
++/* Phy 0 */
++#define PHY0BASE        (PHY_BASE)
++#define PHY0RST         (*(volatile unsigned char *) (PHY0BASE))      /* reset   */
++#define PHY0CTRL        (*(volatile unsigned char *) (PHY0BASE+0x5))  /* control */
++#define PHY0RACPCTRL    (*(volatile unsigned char *) (PHY0BASE+0x50)) /* RACP control/status */ 
++#define PHY0TACPCTRL    (*(volatile unsigned char *) (PHY0BASE+0x60)) /* TACP idle/unassigned cell hdr */
++#define PHY0RACPINT     (*(volatile unsigned char *) (PHY0BASE+0x51)) /* RACP interrupt enable/Status */
++
++
++/* Phy 1 */
++
++#define PHY1BASE        (PHY_BASE + 0x100000)
++#define PHY1RST         (*(volatile unsigned char *) (PHY1BASE))      /* reset   */
++#define PHY1CTRL        (*(volatile unsigned char *) (PHY1BASE+0x5))  /* control */
++#define PHY1RACPCTRL    (*(volatile unsigned char *) (PHY1BASE+0x50)) 
++#define PHY1TACPCTRL    (*(volatile unsigned char *) (PHY1BASE+0x60)) 
++#define PHY1RACPINT     (*(volatile unsigned char *) (PHY1BASE+0x51)) 
++
++/* Phy 2 */
++
++#define PHY2BASE        (PHY_BASE + 0x200000)
++#define PHY2RST         (*(volatile unsigned char *) (PHY2BASE))      /* reset   */
++#define PHY2CTRL        (*(volatile unsigned char *) (PHY2BASE+0x5))  /* control */
++#define PHY2RACPCTRL    (*(volatile unsigned char *) (PHY2BASE+0x50)) 
++#define PHY2TACPCTRL    (*(volatile unsigned char *) (PHY2BASE+0x60)) 
++#define PHY2RACPINT     (*(volatile unsigned char *) (PHY2BASE+0x51)) 
++
++/*-------------------*/
++/* Avalanche ATM SAR */
++/*-------------------*/
++
++#define AVSAR_SYSCONFIG    (*(volatile unsigned int*)(ATM_SAR_BASE+0x00000000)) /* SAR system config register    */
++#define AVSAR_SYSSTATUS    (*(volatile unsigned int*)(ATM_SAR_BASE+0x00000004)) /* SAR system status register    */
++#define AVSAR_INT_ENABLE   (*(volatile unsigned int*)(ATM_SAR_BASE+0x00000008)) /* SAR interrupt enable register */
++#define AVSAR_CONN_VPI_VCI (*(volatile unsigned int*)(ATM_SAR_BASE+0x0000000c)) /* VPI/VCI connection config     */
++#define AVSAR_CONN_CONFIG  (*(volatile unsigned int*)(ATM_SAR_BASE+0x00000010)) /* Connection config register    */
++#define AVSAR_OAM_CONFIG   (*(volatile unsigned int*)(ATM_SAR_BASE+0x00000018)) /* OAM configuration register    */
++
++/* Transmit completion ring registers */
++
++#define AVSAR_TCRAPTR       (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000100))
++#define AVSAR_TCRASIZE      (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000104))
++#define AVSAR_TCRAINTTHRESH (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000108))
++#define AVSAR_TCRATOTENT    (*(volatile unsigned int *)(ATM_SAR_BASE+0x0000010c))
++#define AVSAR_TCRAFREEENT   (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000110))
++#define AVSAR_TCRAPENDENT   (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000114))
++#define AVSAR_TCRAENTINC    (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000118))
++#define AVSAR_TCRBPTR       (*(volatile unsigned int *)(ATM_SAR_BASE+0x0000011c))
++#define AVSAR_TCRBSIZE      (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000120))
++#define AVSAR_TCRBINTTHRESH (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000124))
++#define AVSAR_TCRBTOTENT    (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000128))
++#define AVSAR_TCRBFREEENT   (*(volatile unsigned int *)(ATM_SAR_BASE+0x0000012c))
++#define AVSAR_TCRBPENDENT   (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000130))
++#define AVSAR_TCRBENTINC    (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000134))
++
++/* Transmit Queue Packet registers */
++#define AVSAR_TXQUEUE_PKT0  (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000140))
++#define AVSAR_TXQUEUE_PKT1  (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000144))
++#define AVSAR_TXQUEUE_PKT2  (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000148))
++#define AVSAR_TX_FLUSH      (*(volatile unsigned int *)(ATM_SAR_BASE+0x0000014C))
++/* Receive completion ring registers */
++
++#define AVSAR_RCRAPTR       (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000200))
++#define AVSAR_RCRASIZE      (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000204))
++#define AVSAR_RCRAINTTHRESH (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000208))
++#define AVSAR_RCRATOTENT    (*(volatile unsigned int *)(ATM_SAR_BASE+0x0000020c))
++#define AVSAR_RCRAFREEENT   (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000210))
++#define AVSAR_RCRAPENDENT   (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000214))
++#define AVSAR_RCRAENTINC    (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000218))
++#define AVSAR_RCRBPTR       (*(volatile unsigned int *)(ATM_SAR_BASE+0x0000021c))
++#define AVSAR_RCRBSIZE      (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000220))
++#define AVSAR_RCRBINTTHRESH (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000224))
++#define AVSAR_RCRBTOTENT    (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000228))
++#define AVSAR_RCRBFREEENT   (*(volatile unsigned int *)(ATM_SAR_BASE+0x0000022c))
++#define AVSAR_RCRBPENDENT   (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000230))
++#define AVSAR_RCRBENTINC    (*(volatile unsigned int *)(ATM_SAR_BASE+0x00000234))
++
++#define AVSAR_RXFBL_ADD0    (*(volatile unsigned int*)(ATM_SAR_BASE+0x00000240)) /* Rx Free buffer list add 0  */
++#define AVSAR_RXFBL_ADD1    (*(volatile unsigned int*)(ATM_SAR_BASE+0x00000244)) /* Rx Free buffer list add 1  */
++#define AVSAR_RXFBL_ADD2    (*(volatile unsigned int*)(ATM_SAR_BASE+0x00000248)) /* Rx Free buffer list add 2  */
++#define AVSAR_RXFBLSIZE_0   (*(volatile unsigned int*)(ATM_SAR_BASE+0x0000028c)) /* Rx Free buffer list size 0 */
++#define AVSAR_RXFBLSIZE_1   (*(volatile unsigned int*)(ATM_SAR_BASE+0x0000029c)) /* Rx Free buffer list size 1 */
++#define AVSAR_RXFBLSIZE_2   (*(volatile unsigned int*)(ATM_SAR_BASE+0x000002ac)) /* Rx Free buffer list size 2 */
++#define AVSAR_RXFBLSIZE_3   (*(volatile unsigned int*)(ATM_SAR_BASE+0x000002bc)) /* Rx Free buffer list size 3 */
++
++
++#if defined(CONFIG_MIPS_EVM3D) || defined(CONFIG_MIPS_AR5D01) || defined(CONFIG_MIPS_AR5W01)
++
++#define AVSAR_SAR_FREQUENCY (*(volatile unsigned int*)(ATM_SAR_BASE+0x00010480))
++#define AVSAR_OAM_CC_SINK   (*(volatile unsigned int*)(ATM_SAR_BASE+0x00010484))
++#define AVSAR_OAM_AIS_RDI_RX (*(volatile unsigned int*)(ATM_SAR_BASE+0x00010488))
++#define AVSAR_OAM_CPID0      (*(volatile unsigned int*)(ATM_SAR_BASE+0x000104E0))
++#define AVSAR_OAM_LLID0      (*(volatile unsigned int*)(ATM_SAR_BASE+0x000104F0))
++#define AVSAR_OAM_CPID1      (*(volatile unsigned int*)(ATM_SAR_BASE+0x000104E4))
++#define AVSAR_OAM_LLID1      (*(volatile unsigned int*)(ATM_SAR_BASE+0x000104F4))
++#define AVSAR_OAM_CPID2      (*(volatile unsigned int*)(ATM_SAR_BASE+0x000104E8))
++#define AVSAR_OAM_LLID2      (*(volatile unsigned int*)(ATM_SAR_BASE+0x000104F8))
++#define AVSAR_OAM_CPID3      (*(volatile unsigned int*)(ATM_SAR_BASE+0x000104EC))
++#define AVSAR_OAM_LLID3      (*(volatile unsigned int*)(ATM_SAR_BASE+0x000104FC))
++#define AVSAR_OAM_CORR_TAG      (*(volatile unsigned int*)(ATM_SAR_BASE+0x00010500))
++#define AVSAR_OAM_FAR_COUNT      (*(volatile unsigned int*)(ATM_SAR_BASE+0x00010520))
++#define AVSAR_OAM_NEAR_COUNT      (*(volatile unsigned int*)(ATM_SAR_BASE+0x00010540))
++#define AVSAR_OAM_CONFIG_REG      (*(volatile unsigned int*)(ATM_SAR_BASE+0x00000018))
++#define AVSAR_FAIRNESS_REG   (*(volatile unsigned int*)(ATM_SAR_BASE+0x000104B8))
++#define AVSAR_UBR_PCR_REG   (*(volatile unsigned int*)(ATM_SAR_BASE+0x00010490))
++
++
++/*
++
++#define OAM_CPID_ADD  0xa30104e0
++
++#define OAM_LLID_ADD  0xa30104f0
++
++#define OAM_LLID_VAL  0xffffffff
++
++#define OAM_CORR_TAG  0xa3010500
++
++#define OAM_FAR_COUNT_ADD 0xa3010520
++
++#define OAM_NEAR_COUNT_ADD 0xa3010540
++
++#define OAM_CONFIG_REG_ADD 0xa3000018
++*/
++
++
++#else /* CONFIG_MIPS_EVM3 || CONFIG_MIPS_ACPEP */
++
++#define AVSAR_SAR_FREQUENCY (*(volatile unsigned int*)(ATM_SAR_BASE+0x00012000))
++#define AVSAR_OAM_CC_SINK   (*(volatile unsigned int*)(ATM_SAR_BASE+0x00012004))
++#define AVSAR_OAM_AIS_RDI_RX (*(volatile unsigned int*)(ATM_SAR_BASE+0x00012008))
++#define AVSAR_OAM_CPID      (*(volatile unsigned int*)(ATM_SAR_BASE+0x00012300))
++
++#endif /* CONFIG_MIPS_EVM3D || CONFIG_MIPS_AR5D01 || CONFIG_MIPS_AR5W01 */
++
++
++#define AVSAR_STATE_RAM     (ATM_SAR_BASE + 0x010000) /* SAR state RAM */
++#define AVSAR_PDSP_BASE     (ATM_SAR_BASE + 0x020000) /* SAR PDSP base address   */
++#define AVSAR_TXDMA_BASE    (ATM_SAR_BASE + 0x030000) /* Transmit DMA state base */ 
++#define AVSAR_TDMASTATE6    0x18                      /* Transmit DMA state word 6 */
++#define AVSAR_RXDMA_BASE    (ATM_SAR_BASE + 0x040000) /* Receive  DMA state base */
++#define AVSAR_RDMASTATE0    0x0                       /* Receive  DMA state word 0 */
++
++/*------------------------------------------*/
++/* DSL Interface                            */
++/*------------------------------------------*/
++
++#define AVDSL_TX_EN          (*(volatile unsigned int *)(DSL_IF_BASE + 0x00000000))
++#define AVDSL_RX_EN          (*(volatile unsigned int *)(DSL_IF_BASE + 0x00000004))
++#define AVDSL_POLL           (*(volatile unsigned int *)(DSL_IF_BASE + 0x00000008))
++
++/* Fast */
++
++#define AVDSL_TX_FIFO_ADDR0  (*(volatile unsigned int *)(DSL_IF_BASE + 0x0000000C))
++#define AVDSL_TX_FIFO_BASE0  (*(volatile unsigned int *)(DSL_IF_BASE + 0x00000010))
++#define AVDSL_TX_FIFO_LEN0   (*(volatile unsigned int *)(DSL_IF_BASE + 0x00000014))
++#define AVDSL_TX_FIFO_PR0    (*(volatile unsigned int *)(DSL_IF_BASE + 0x00000018))
++#define AVDSL_RX_FIFO_ADDR0  (*(volatile unsigned int *)(DSL_IF_BASE + 0x0000001C))
++#define AVDSL_RX_FIFO_BASE0  (*(volatile unsigned int *)(DSL_IF_BASE + 0x00000020))
++#define AVDSL_RX_FIFO_LEN0   (*(volatile unsigned int *)(DSL_IF_BASE + 0x00000024))
++#define AVDSL_RX_FIFO_PR0    (*(volatile unsigned int *)(DSL_IF_BASE + 0x00000028))
++
++/* Interleaved */
++
++#define AVDSL_TX_FIFO_ADDR1  (*(volatile unsigned int *)(DSL_IF_BASE + 0x0000002C))
++#define AVDSL_TX_FIFO_BASE1  (*(volatile unsigned int *)(DSL_IF_BASE + 0x00000030))
++#define AVDSL_TX_FIFO_LEN1   (*(volatile unsigned int *)(DSL_IF_BASE + 0x00000034))
++#define AVDSL_TX_FIFO_PR1    (*(volatile unsigned int *)(DSL_IF_BASE + 0x00000038))
++#define AVDSL_RX_FIFO_ADDR1  (*(volatile unsigned int *)(DSL_IF_BASE + 0x0000003C))
++#define AVDSL_RX_FIFO_BASE1  (*(volatile unsigned int *)(DSL_IF_BASE + 0x00000040))
++#define AVDSL_RX_FIFO_LEN1   (*(volatile unsigned int *)(DSL_IF_BASE + 0x00000044))
++#define AVDSL_RX_FIFO_PR1    (*(volatile unsigned int *)(DSL_IF_BASE + 0x00000048))
++
++/*------------------------------------------*/
++/* Broadband I/F                            */
++/*------------------------------------------*/
++
++#define AVBBIF_BBIF_CNTRL    (*(volatile unsigned int *)(BBIF_CONTROL + 0x00000000))
++#define AVBBIF_ADDR_TRANS_0  (*(volatile unsigned int *)(BBIF_CONTROL + 0x00000004))
++#define AVBBIF_ADDR_TRANS_1  (*(volatile unsigned int *)(BBIF_CONTROL + 0x00000008))
++#define AVBBIF_ADDR_XB_MX_BL (*(volatile unsigned int *)(BBIF_CONTROL + 0x0000000C))
++#define AVBBIF_INFIFO_LVL    (*(volatile unsigned int *)(BBIF_CONTROL + 0x00000010))
++#define AVBBIF_OUTFIFO_LVL   (*(volatile unsigned int *)(BBIF_CONTROL + 0x00000014))
++
++#define AVBBIF_DISABLED    0x0
++#define AVBBIF_LBT4040_INT 0x1
++#define AVBBIF_XBUS        0x2
++#define AVBBIF_LBT4040_EXT 0x4
++
++#define AVBBIF_ADDR_MASK0   0xff000000 /* handles upper bits of BBIF 0 address */
++#define AVBBIF_ADDR_MASK1   0xff800000 /* handles upper bits of BBIF 1 address */
++#define AVBBIF_TRANS_MASK   0xff000000
++/*------------------------------------------*/
++/* GPIO I/F                                 */
++/*------------------------------------------*/
++
++#define GPIO_DATA_INPUT      (*(volatile unsigned int *)(GPIO_BASE + 0x00000000))
++#define GPIO_DATA_OUTPUT     (*(volatile unsigned int *)(GPIO_BASE + 0x00000004))
++#define GPIO_DATA_DIR        (*(volatile unsigned int *)(GPIO_BASE + 0x00000008)) /* 0=output 1=input  */
++#define GPIO_DATA_ENABLE     (*(volatile unsigned int *)(GPIO_BASE + 0x0000000C)) /* 0=GPIO Mux 1=GPIO */
++
++#define GPIO_0 (1<<21)
++#define GPIO_1 (1<<22)
++#define GPIO_2 (1<<23)
++#define GPIO_3 (1<<24)
++#define EINT_1 (1<<18)
++
++/*
++  JAH NOTE JAH NOTE JAH NOTE JAH NOTE JAH NOTE JAH NOTE JAH NOTE JAH NOTE
++       If you reset the GPIO interface all of the directions (i/o) of the UART B
++       interface pins are inputs and must be reconfigured so as not to lose the 
++       serial console interface
++  JAH NOTE JAH NOTE JAH NOTE JAH NOTE JAH NOTE JAH NOTE JAH NOTE JAH NOTE
++*/
++
++/*------------------------------------------*/
++/* CLK_CTRL                                 */
++/*------------------------------------------*/
++#define PERIPH_CLK_CTL       (*(volatile unsigned int *)(CLK_CTRL_BASE + 0x00000004))
++
++#define PCLK_0_HALF_VBUS     (0<<16)
++#define PCLK_EQ_INPUT        (1<<16)
++#define BBIF_CLK_HALF_VBUS   (0<<17)
++#define BBIF_CLK_EQ_VBUS     (1<<17)
++#define BBIF_CLK_EQ_BBCLK    (3<<17)
++#define DSP_MODCLK_DSPCLKI   (0<<20)
++#define DSP_MODCLK_REFCLKI   (1<<20)
++#define USB_CLK_EQ_USBCLKI   (0<<21)
++#define USB_CLK_EQ_REFCLKI   (1<<21)
++
++/*------------------------------------------*/
++/* PCI Control Registers                    */
++/*------------------------------------------*/
++#define	PCIC_CONTROL		(*(volatile unsigned int *)(PCI_CONFIG_BASE))
++#define		PCIC_CONTROL_CFG_DONE				(1<<0)
++#define		PCIC_CONTROL_DIS_SLAVE_TO			(1<<1)
++#define		PCIC_CONTROL_FORCE_DELAY_READ		(1<<2)
++#define		PCIC_CONTROL_FORCE_DELAY_READ_LINE	(1<<3)
++#define		PCIC_CONTROL_FORCE_DELAY_READ_MULT	(1<<4)
++#define		PCIC_CONTROL_MEM_SPACE_EN			(1<<5)
++#define		PCIC_CONTROL_MEM_MASK				(1<<6)
++#define		PCIC_CONTROL_IO_SPACE_EN			(1<<7)
++#define		PCIC_CONTROL_IO_MASK				(1<<8)
++/*			PCIC_CONTROL_RESERVED				(1<<9)	*/
++#define		PCIC_CONTROL_BASE0_EN				(1<<10)
++#define		PCIC_CONTROL_BASE1_EN				(1<<11)
++#define		PCIC_CONTROL_BASE2_EN				(1<<12)
++#define		PCIC_CONTROL_HOLD_MASTER_WRITE		(1<<13)
++#define		PCIC_CONTROL_ARBITER_EN				(1<<14)
++#define	PCIC_INT_SOURCE		(*(volatile unsigned int *)(PCI_CONFIG_BASE + 0x00000004))
++#define		PCIC_INT_SOURCE_PWR_MGMT			(1<<0)
++#define		PCIC_INT_SOURCE_PCI_TARGET			(1<<1)
++#define		PCIC_INT_SOURCE_PCI_MASTER			(1<<2)
++#define		PCIC_INT_SOURCE_POWER_WAKEUP		(1<<3)
++#define		PCIC_INT_SOURCE_PMEIN				(1<<4)
++/*			PCIC_INT_SOURCE_RESERVED			(1<<5) */
++/*			PCIC_INT_SOURCE_RESERVED			(1<<6) */
++#define		PCIC_INT_SOURCE_PIC_INTA			(1<<7)
++#define		PCIC_INT_SOURCE_PIC_INTB			(1<<8)
++#define		PCIC_INT_SOURCE_PIC_INTC			(1<<9)
++#define		PCIC_INT_SOURCE_PIC_INTD			(1<<10)
++#define		PCIC_INT_SOURCE_SOFT_INT0			(1<<11)
++#define		PCIC_INT_SOURCE_SOFT_INT1			(1<<12)
++#define		PCIC_INT_SOURCE_SOFT_INT2			(1<<13)
++#define		PCIC_INT_SOURCE_SOFT_INT3			(1<<14)
++#define	PCIC_INT_CLEAR		(*(volatile unsigned int *)(PCI_CONFIG_BASE + 0x00000008))
++#define		PCIC_INT_CLEAR_PM					(1<<0)
++#define		PCIC_INT_CLEAR_PCI_TARGET			(1<<1)
++#define		PCIC_INT_CLEAR_PCI_MASTER			(1<<2)
++/*			PCIC_INT_CLEAR_RESERVED				(1<<3)	*/
++#define		PCIC_INT_CLEAR_PMEIN				(1<<4)
++/*			PCIC_INT_CLEAR_RESERVED				(1<<5)	*/
++/*			PCIC_INT_CLEAR_RESERVED				(1<<6)	*/
++#define		PCIC_INT_CLEAR_PCI_INTA				(1<<7)
++#define		PCIC_INT_CLEAR_PCI_INTB				(1<<8)
++#define		PCIC_INT_CLEAR_PCI_INTC				(1<<9)
++#define		PCIC_INT_CLEAR_PCI_INTD				(1<<10)
++#define		PCIC_INT_CLEAR_SOFT_INT0			(1<<11)
++#define		PCIC_INT_CLEAR_SOFT_INT1			(1<<12)
++#define		PCIC_INT_CLEAR_SOFT_INT2			(1<<13)
++#define		PCIC_INT_CLEAR_SOFT_INT3			(1<<14)
++#define	PCIC_INT_EN_AVAL	(*(volatile unsigned int *)(PCI_CONFIG_BASE + 0x0000000c))
++#define		PCIC_INT_EN_AVAL_PM					(1<<0)
++#define		PCIC_INT_EN_AVAL_PCI_TARGET			(1<<1)
++#define		PCIC_INT_EN_AVAL_PCI_MASTER			(1<<2)
++/*			PCIC_INT_EN_AVAL_RESERVED			(1<<3)	*/
++#define		PCIC_INT_EN_AVAL_PMEIN				(1<<4)
++/*			PCIC_INT_EN_AVAL_RESERVED			(1<<5)	*/
++/*			PCIC_INT_EN_AVAL_RESERVED			(1<<6)	*/
++#define		PCIC_INT_EN_AVAL_PCI_INTA			(1<<7)
++#define		PCIC_INT_EN_AVAL_PCI_INTB			(1<<8)
++#define		PCIC_INT_EN_AVAL_PCI_INTC			(1<<9)
++#define		PCIC_INT_EN_AVAL_PCI_INTD			(1<<10)
++#define		PCIC_INT_EN_AVAL_SOFT_INT0			(1<<11)
++#define		PCIC_INT_EN_AVAL_SOFT_INT1			(1<<12)
++#define		PCIC_INT_EN_AVAL_SOFT_INT2			(1<<13)
++#define		PCIC_INT_EN_AVAL_SOFT_INT3			(1<<14)
++#define	PCIC_INT_EN_PCI			(*(volatile unsigned int *)(PCI_CONFIG_BASE + 0x00000010))
++#define		PCIC_INT_EN_PCI_PM					(1<<0)
++#define		PCIC_INT_EN_PCI_PCI_TARGET			(1<<1)
++#define		PCIC_INT_EN_PCI_PCI_MASTER			(1<<2)
++/*			PCIC_INT_EN_PCI_RESERVED			(1<<3)	*/
++#define		PCIC_INT_EN_PCI_PMEIN				(1<<4)
++/*			PCIC_INT_EN_PCI_RESERVED			(1<<5)	*/
++/*			PCIC_INT_EN_PCI_RESERVED			(1<<6)	*/
++#define		PCIC_INT_EN_PCI_PCI_INTA			(1<<7)
++#define		PCIC_INT_EN_PCI_PCI_INTB			(1<<8)
++#define		PCIC_INT_EN_PCI_PCI_INTC			(1<<9)
++#define		PCIC_INT_EN_PCI_PCI_INTD			(1<<10)
++#define		PCIC_INT_EN_PCI_SOFT_INT0			(1<<11)
++#define		PCIC_INT_EN_PCI_SOFT_INT1			(1<<12)
++#define		PCIC_INT_EN_PCI_SOFT_INT2			(1<<13)
++#define		PCIC_INT_EN_PCI_SOFT_INT3			(1<<14)
++#define	PCIC_INT_SWSET		(*(volatile unsigned int *)(PCI_CONFIG_BASE + 0x00000014))
++#define		PCIC_INT_SWSET_SOFT_INT0			(1<<0)
++#define		PCIC_INT_SWSET_SOFT_INT1			(1<<1)
++#define		PCIC_INT_SWSET_SOFT_INT2			(1<<2)
++#define		PCIC_INT_SWSET_SOFT_INT3			(1<<3)
++#define	PCIC_PM_CTL			(*(volatile unsigned int *)(PCI_CONFIG_BASE + 0x00000018))
++#define		PCIC_PM_CTL_PWR_STATE_MASK			(0x02)
++/*			PCIC_PM_CTL_RESERVED				(1<<2) */
++/*			PCIC_PM_CTL_RESERVED				(1<<3) */
++/*			PCIC_PM_CTL_RESERVED				(1<<4) */
++/*			PCIC_PM_CTL_RESERVED				(1<<5) */
++/*			PCIC_PM_CTL_RESERVED				(1<<6) */
++/*			PCIC_PM_CTL_RESERVED				(1<<7) */
++/*			PCIC_PM_CTL_RESERVED				(1<<8) */
++/*			PCIC_PM_CTL_RESERVED				(1<<9) */
++#define		PCIC_PM_CTL_PWR_SUPPORT				(1<<10)
++#define		PCIC_PM_CTL_PMEIN					(1<<11)
++#define		PCIC_PM_CTL_CAP_MASK	(*(volatile unsigned short int *)(PCI_CONFIG_BASE + 0x0000001a))
++#define	PCIC_PM_CONSUME		(*(volatile unsigned int *)(PCI_CONFIG_BASE + 0x0000001c))
++#define		PCIC_PM_CONSUME_D0		(*(volatile unsigned char *)(PCI_CONFIG_BASE + 0x0000001c))
++#define		PCIC_PM_CONSUME_D1		(*(volatile unsigned char *)(PCI_CONFIG_BASE + 0x0000001d))
++#define		PCIC_PM_CONSUME_D2		(*(volatile unsigned char *)(PCI_CONFIG_BASE + 0x0000001e))
++#define		PCIC_PM_CONSUME_D3		(*(volatile unsigned char *)(PCI_CONFIG_BASE + 0x0000001f))
++#define	PCIC_PM_DISSAPATED	(*(volatile unsigned int *)(PCI_CONFIG_BASE + 0x00000020))
++#define		PCIC_PM_DISSAPATED_D0	(*(volatile unsigned char *)(PCI_CONFIG_BASE + 0x00000020))
++#define		PCIC_PM_DISSAPATED_D1	(*(volatile unsigned char *)(PCI_CONFIG_BASE + 0x00000021))
++#define		PCIC_PM_DISSAPATED_D2	(*(volatile unsigned char *)(PCI_CONFIG_BASE + 0x00000022))
++#define		PCIC_PM_DISSAPATED_D3	(*(volatile unsigned char *)(PCI_CONFIG_BASE + 0x00000023))
++#define	PCIC_PM_DATA_SCALE	(*(volatile unsigned short int *)(PCI_CONFIG_BASE + 0x00000024))
++#define	PCIC_VEND_DEV_ID	(*(volatile unsigned int *)(PCI_CONFIG_BASE + 0x00000028))
++#define	PCIC_SUB_VEND_DEV_ID	(*(volatile unsigned int *)(PCI_CONFIG_BASE + 0x0000002c))
++#define	PCIC_CLASS_REV_ID	(*(volatile unsigned int *)(PCI_CONFIG_BASE + 0x00000030))
++#define	PCIC_MAX_MIN		(*(volatile unsigned int *)(PCI_CONFIG_BASE + 0x00000034))
++#define	PCIC_MAST_MEM_AT0	(*(volatile unsigned int *)(PCI_CONFIG_BASE + 0x0000003c))
++#define	PCIC_MAST_MEM_AT1	(*(volatile unsigned int *)(PCI_CONFIG_BASE + 0x00000040))
++#define	PCIC_MAST_MEM_AT2	(*(volatile unsigned int *)(PCI_CONFIG_BASE + 0x00000044))
++#define	PCIC_SLAVE_MASK0	(*(volatile unsigned int *)(PCI_CONFIG_BASE + 0x0000004c))
++#define	PCIC_SLAVE_MASK1	(*(volatile unsigned int *)(PCI_CONFIG_BASE + 0x00000050))
++#define	PCIC_SLAVE_MASK2	(*(volatile unsigned int *)(PCI_CONFIG_BASE + 0x00000054))
++#define	PCIC_SLAVE_BASE_AT0	(*(volatile unsigned int *)(PCI_CONFIG_BASE + 0x00000058))
++#define	PCIC_SLAVE_BASE_AT1	(*(volatile unsigned int *)(PCI_CONFIG_BASE + 0x0000005c))
++#define	PCIC_SLAVE_BASE_AT2	(*(volatile unsigned int *)(PCI_CONFIG_BASE + 0x00000060))
++#define	PCIC_CONF_COMMAND	(*(volatile unsigned int *)(PCI_CONFIG_BASE + 0x00000090))
++#define	PCIC_CONF_ADDR		(*(volatile unsigned int *)(PCI_CONFIG_BASE + 0x00000094))
++#define	PCIC_CONF_DATA		(*(volatile unsigned int *)(PCI_CONFIG_BASE + 0x00000098))
++
++/*------------------------------------------*/
++/* IIC_INTERFACE                            */
++/*------------------------------------------*/
++#define I2C_DATA_HI          (*(volatile unsigned int *)(I2C_BASE + 0x0))
++#define I2C_DATA_LOW         (*(volatile unsigned int *)(I2C_BASE + 0x4))
++#define I2C_CONFIG           (*(volatile unsigned int *)(I2C_BASE + 0x8))
++#define I2C_DATA_READ        (*(volatile unsigned int *)(I2C_BASE + 0xC))
++#define I2C_CLOCK_DIV        (*(volatile unsigned int *)(I2C_BASE + 0x10))
++
++#define I2CWRITE      0x200
++#define I2CREAD       0x300
++#define I2C_END_BURST 0x400
++
++/* read bits */
++#define I2C_READ_ERROR    0x8000
++#define I2C_READ_COMPLETE 0x4000
++#define I2C_READ_BUSY     0x2000
++
++/* device types */
++#define I2C_IO_EXPANDER      0x2
++#define I2C_RTC              0xd
++
++/* device Addresses on I2C bus (EVM3) */
++#define SEVEN_SEGMENT_DISP    0x23   /* Device type = 0x2, Addr = 3 */
++#define EVM3_RTC              0xd0   /* Device type = 0xd, Addr = 0 */
++#define EVM3_RTC_I2C_ADDR      0x0
++
++/*------------------------------------------*/
++/* Ethernet MAC register offset definitions */
++/*------------------------------------------*/
++#define VMAC_DMACONFIG(X)      (*(volatile unsigned int *)(X + 0x00000000))
++#define VMAC_INTSTS(X)         (*(volatile unsigned int *)(X + 0x00000004))
++#define VMAC_INTMASK(X)        (*(volatile unsigned int *)(X + 0x00000008))
++
++#define VMAC_WRAPCLK(X)        (*(volatile unsigned int *)(X + 0x00000340))
++#define VMAC_STATSBASE(X)      (*(volatile unsigned int *)(X + 0x00000400))
++ 
++#define VMAC_TCRPTR(X)         (*(volatile unsigned int *)(X + 0x00000100))
++#define VMAC_TCRSIZE(X)        (*(volatile unsigned int *)(X + 0x00000104))
++#define VMAC_TCRINTTHRESH(X)   (*(volatile unsigned int *)(X + 0x00000108))
++#define VMAC_TCRTOTENT(X)      (*(volatile unsigned int *)(X + 0x0000010C))
++#define VMAC_TCRFREEENT(X)     (*(volatile unsigned int *)(X + 0x00000110))
++#define VMAC_TCRPENDENT(X)     (*(volatile unsigned int *)(X + 0x00000114))
++#define VMAC_TCRENTINC(X)      (*(volatile unsigned int *)(X + 0x00000118))
++#define VMAC_TXISRPACE(X)      (*(volatile unsigned int *)(X + 0x0000011c))
++
++
++#define VMAC_TDMASTATE0(X)     (*(volatile unsigned int *)(X + 0x00000120))
++#define VMAC_TDMASTATE1(X)     (*(volatile unsigned int *)(X + 0x00000124))
++#define VMAC_TDMASTATE2(X)     (*(volatile unsigned int *)(X + 0x00000128))
++#define VMAC_TDMASTATE3(X)     (*(volatile unsigned int *)(X + 0x0000012C))
++#define VMAC_TDMASTATE4(X)     (*(volatile unsigned int *)(X + 0x00000130))
++#define VMAC_TDMASTATE5(X)     (*(volatile unsigned int *)(X + 0x00000134))
++#define VMAC_TDMASTATE6(X)     (*(volatile unsigned int *)(X + 0x00000138))
++#define VMAC_TDMASTATE7(X)     (*(volatile unsigned int *)(X + 0x0000013C))
++#define VMAC_TXPADDCNT(X)      (*(volatile unsigned int *)(X + 0x00000140))
++#define VMAC_TXPADDSTART(X)    (*(volatile unsigned int *)(X + 0x00000144))
++#define VMAC_TXPADDEND(X)      (*(volatile unsigned int *)(X + 0x00000148))
++#define VMAC_TXQFLUSH(X)       (*(volatile unsigned int *)(X + 0x0000014C))
++ 
++#define VMAC_RCRPTR(X)         (*(volatile unsigned int *)(X + 0x00000200))
++#define VMAC_RCRSIZE(X)        (*(volatile unsigned int *)(X + 0x00000204))
++#define VMAC_RCRINTTHRESH(X)   (*(volatile unsigned int *)(X + 0x00000208))
++#define VMAC_RCRTOTENT(X)      (*(volatile unsigned int *)(X + 0x0000020C))
++#define VMAC_RCRFREEENT(X)     (*(volatile unsigned int *)(X + 0x00000210))
++#define VMAC_RCRPENDENT(X)     (*(volatile unsigned int *)(X + 0x00000214))
++#define VMAC_RCRENTINC(X)      (*(volatile unsigned int *)(X + 0x00000218))
++#define VMAC_RXISRPACE(X)      (*(volatile unsigned int *)(X + 0x0000021c))
++
++#define VMAC_RDMASTATE0(X)     (*(volatile unsigned int *)(X + 0x00000220))
++#define VMAC_RDMASTATE1(X)     (*(volatile unsigned int *)(X + 0x00000224))
++#define VMAC_RDMASTATE2(X)     (*(volatile unsigned int *)(X + 0x00000228))
++#define VMAC_RDMASTATE3(X)     (*(volatile unsigned int *)(X + 0x0000022C))
++#define VMAC_RDMASTATE4(X)     (*(volatile unsigned int *)(X + 0x00000230))
++#define VMAC_RDMASTATE5(X)     (*(volatile unsigned int *)(X + 0x00000234))
++#define VMAC_RDMASTATE6(X)     (*(volatile unsigned int *)(X + 0x00000238))
++#define VMAC_RDMASTATE7(X)     (*(volatile unsigned int *)(X + 0x0000023C))
++#define VMAC_FBLADDCNT(X)      (*(volatile unsigned int *)(X + 0x00000240))
++#define VMAC_FBLADDSTART(X)    (*(volatile unsigned int *)(X + 0x00000244))
++#define VMAC_FBLADDEND(X)      (*(volatile unsigned int *)(X + 0x00000248))
++#define VMAC_RXONOFF(X)        (*(volatile unsigned int *)(X + 0x0000024C))
++ 
++#define VMAC_FBL0NEXTD(X)      (*(volatile unsigned int *)(X + 0x00000280))
++#define VMAC_FBL0LASTD(X)      (*(volatile unsigned int *)(X + 0x00000284))
++#define VMAC_FBL0COUNTD(X)     (*(volatile unsigned int *)(X + 0x00000288))
++#define VMAC_FBL0BUFSIZE(X)    (*(volatile unsigned int *)(X + 0x0000028C))
++ 
++#define VMAC_MACCONTROL(X)     (*(volatile unsigned int *)(X + 0x00000300))
++#define VMAC_MACSTATUS(X)      (*(volatile unsigned int *)(X + 0x00000304))
++#define VMAC_MACADDRHI(X)      (*(volatile unsigned int *)(X + 0x00000308))
++#define VMAC_MACADDRLO(X)      (*(volatile unsigned int *)(X + 0x0000030C))
++#define VMAC_MACHASH1(X)       (*(volatile unsigned int *)(X + 0x00000310))
++#define VMAC_MACHASH2(X)       (*(volatile unsigned int *)(X + 0x00000314))
++ 
++#define VMAC_WRAPCLK(X)        (*(volatile unsigned int *)(X + 0x00000340))
++#define VMAC_BOFTEST(X)        (*(volatile unsigned int *)(X + 0x00000344))
++#define VMAC_PACTEST(X)        (*(volatile unsigned int *)(X + 0x00000348))
++#define VMAC_PAUSEOP(X)        (*(volatile unsigned int *)(X + 0x0000034C))
++ 
++#define VMAC_MDIOCONTROL(X)    (*(volatile unsigned int *)(X + 0x00000380))
++#define VMAC_MDIOUSERACCESS(X) (*(volatile unsigned int *)(X +0x00000384))
++#define VMAC_MDIOACK(X)        (*(volatile unsigned int *)(X + 0x00000388))
++#define VMAC_MDIOLINK(X)       (*(volatile unsigned int *)(X + 0x0000038C))
++#define VMAC_MDIOMACPHY(X)     (*(volatile unsigned int *)(X + 0x00000390))
++
++#define VMAC_STATS_BASE(X)     (X + 0x00000400)
++
++#endif __AVALANCHE_REGS_H
++
++
++
++
++
++
+diff -urN kernel-base/include/asm-mips/ar7/if_port.h kernel-current/include/asm-mips/ar7/if_port.h
 --- kernel-base/include/asm-mips/ar7/if_port.h	1970-01-01 01:00:00.000000000 +0100
-+++ kernel-tmp2/include/asm-mips/ar7/if_port.h	2005-07-10 06:40:39.623260936 +0200
++++ kernel-current/include/asm-mips/ar7/if_port.h	2005-07-10 06:40:39.623260936 +0200
 @@ -0,0 +1,26 @@
 +/*******************************************************************************   
 + * FILE PURPOSE:    Interface port id Header file                                      
@@ -2836,9 +5254,72 @@ diff -urN kernel-base/include/asm-mips/ar7/if_port.h kernel-tmp2/include/asm-mip
 +
 +
 +#endif /* _IF_PORT_H_ */
-diff -urN kernel-base/include/asm-mips/ar7/sangam_boards.h kernel-tmp2/include/asm-mips/ar7/sangam_boards.h
+diff -urN kernel-base/include/asm-mips/ar7/ledapp.h kernel-current/include/asm-mips/ar7/ledapp.h
+--- kernel-base/include/asm-mips/ar7/ledapp.h	1970-01-01 01:00:00.000000000 +0100
++++ kernel-current/include/asm-mips/ar7/ledapp.h	2005-07-10 08:26:11.663644480 +0200
+@@ -0,0 +1,59 @@
++#ifndef __LED_APP__
++#define __LED_APP__
++
++#define CONF_FILE		"/etc/led.conf"
++#define LED_PROC_FILE		"/proc/led_mod/led"
++
++#define CONFIG_LED_MODULE
++
++#define MAX_MOD_ID        25
++#define MAX_STATE_ID   	  25
++#define MAX_LED_ID 	  25
++
++#define MOD_ADSL 1
++#define DEF_ADSL_IDLE     1
++#define DEF_ADSL_TRAINING 2
++#define DEF_ADSL_SYNC     3
++#define DEF_ADSL_ACTIVITY 4
++
++#define MOD_WAN  2
++#define DEF_WAN_IDLE      1
++#define DEF_WAN_NEGOTIATE 2
++#define DEF_WAN_SESSION   3
++
++#define MOD_LAN  3
++#define DEF_LAN_IDLE		  1
++#define DEF_LAN_LINK_UP   2
++#define DEF_LAN_ACTIVITY  3
++
++#define MOD_WLAN 4
++#define DEF_WLAN_IDLE     1
++#define DEF_WLAN_LINK_UP  2
++#define DEF_WLAN_ACTIVITY 3
++
++#define MOD_USB  5
++#define DEF_USB_IDLE		  1
++#define DEF_USB_LINK_UP   2
++#define DEF_USB_ACTIVITY  3
++
++#define MOD_ETH  6
++#define DEF_ETH_IDLE		  1
++#define DEF_ETH_LINK_UP   2
++#define DEF_ETH_ACTIVITY  3
++
++typedef struct config_elem{
++  unsigned char name;
++  unsigned char state;
++  unsigned char mode;
++  unsigned char led;
++            int param;
++}config_elem_t;
++
++typedef struct led_reg{
++	unsigned int param;
++  void (*init)(unsigned long param);
++  void (*onfunc)(unsigned long param);
++  void (*offfunc)(unsigned long param);
++}led_reg_t;
++
++#endif
+diff -urN kernel-base/include/asm-mips/ar7/sangam_boards.h kernel-current/include/asm-mips/ar7/sangam_boards.h
 --- kernel-base/include/asm-mips/ar7/sangam_boards.h	1970-01-01 01:00:00.000000000 +0100
-+++ kernel-tmp2/include/asm-mips/ar7/sangam_boards.h	2005-07-10 06:40:39.623260936 +0200
++++ kernel-current/include/asm-mips/ar7/sangam_boards.h	2005-07-10 06:40:39.623260936 +0200
 @@ -0,0 +1,77 @@
 +#ifndef _SANGAM_BOARDS_H
 +#define _SANGAM_BOARDS_H
@@ -2917,9 +5398,9 @@ diff -urN kernel-base/include/asm-mips/ar7/sangam_boards.h kernel-tmp2/include/a
 +
 +
 +#endif
-diff -urN kernel-base/include/asm-mips/ar7/sangam.h kernel-tmp2/include/asm-mips/ar7/sangam.h
+diff -urN kernel-base/include/asm-mips/ar7/sangam.h kernel-current/include/asm-mips/ar7/sangam.h
 --- kernel-base/include/asm-mips/ar7/sangam.h	1970-01-01 01:00:00.000000000 +0100
-+++ kernel-tmp2/include/asm-mips/ar7/sangam.h	2005-07-10 06:40:39.624260784 +0200
++++ kernel-current/include/asm-mips/ar7/sangam.h	2005-07-10 06:40:39.624260784 +0200
 @@ -0,0 +1,180 @@
 +#ifndef _SANGAM_H_
 +#define _SANGAM_H_
@@ -3101,9 +5582,640 @@ diff -urN kernel-base/include/asm-mips/ar7/sangam.h kernel-tmp2/include/asm-mips
 +#include "sangam_boards.h"
 +
 +#endif /*_SANGAM_H_ */
-diff -urN kernel-base/include/asm-mips/io.h kernel-tmp2/include/asm-mips/io.h
+diff -urN kernel-base/include/asm-mips/ar7/tnetd73xx_err.h kernel-current/include/asm-mips/ar7/tnetd73xx_err.h
+--- kernel-base/include/asm-mips/ar7/tnetd73xx_err.h	1970-01-01 01:00:00.000000000 +0100
++++ kernel-current/include/asm-mips/ar7/tnetd73xx_err.h	2005-07-10 09:34:36.482617144 +0200
+@@ -0,0 +1,42 @@
++/******************************************************************************
++ * FILE PURPOSE:    TNETD73xx Error Definations Header File
++ ******************************************************************************
++ * FILE NAME:       tnetd73xx_err.h
++ *
++ * DESCRIPTION:     Error definations for TNETD73XX
++ *
++ * REVISION HISTORY:
++ * 27 Nov 02 - PSP TII  
++ *
++ * (C) Copyright 2002, Texas Instruments, Inc
++ *******************************************************************************/
++
++ 
++#ifndef __TNETD73XX_ERR_H__
++#define __TNETD73XX_ERR_H__
++
++typedef enum TNETD73XX_ERR_t
++{
++    TNETD73XX_ERR_OK        = 0,    /* OK or SUCCESS */
++    TNETD73XX_ERR_ERROR     = -1,   /* Unspecified/Generic ERROR */
++
++    /* Pointers and args */
++    TNETD73XX_ERR_INVARG        = -2,   /* Invaild argument to the call */
++    TNETD73XX_ERR_NULLPTR       = -3,   /* NULL pointer */
++    TNETD73XX_ERR_BADPTR        = -4,   /* Bad (out of mem) pointer */
++
++    /* Memory issues */
++    TNETD73XX_ERR_ALLOC_FAIL    = -10,  /* allocation failed */
++    TNETD73XX_ERR_FREE_FAIL     = -11,  /* free failed */
++    TNETD73XX_ERR_MEM_CORRUPT   = -12,  /* corrupted memory */
++    TNETD73XX_ERR_BUF_LINK      = -13,  /* buffer linking failed */
++
++    /* Device issues */
++    TNETD73XX_ERR_DEVICE_TIMEOUT    = -20,  /* device timeout on read/write */
++    TNETD73XX_ERR_DEVICE_MALFUNC    = -21,  /* device malfunction */
++
++    TNETD73XX_ERR_INVID     = -30   /* Invalid ID */
++
++} TNETD73XX_ERR;
++
++#endif /* __TNETD73XX_ERR_H__ */
+diff -urN kernel-base/include/asm-mips/ar7/tnetd73xx.h kernel-current/include/asm-mips/ar7/tnetd73xx.h
+--- kernel-base/include/asm-mips/ar7/tnetd73xx.h	1970-01-01 01:00:00.000000000 +0100
++++ kernel-current/include/asm-mips/ar7/tnetd73xx.h	2005-07-10 09:51:18.910224984 +0200
+@@ -0,0 +1,338 @@
++/******************************************************************************
++ * FILE PURPOSE:    TNETD73xx Common Header File
++ ******************************************************************************
++ * FILE NAME:       tnetd73xx.h
++ *
++ * DESCRIPTION:     shared typedef's, constants and API for TNETD73xx
++ *
++ * REVISION HISTORY:
++ * 27 Nov 02 - PSP TII  
++ *
++ * (C) Copyright 2002, Texas Instruments, Inc
++ *******************************************************************************/
++
++/*
++ *
++ *
++ *   These are const, typedef, and api definitions for tnetd73xx.
++ *
++ *   NOTES:
++ *   1. This file may be included into both C and Assembly files.
++ *       - for .s files, please do #define _ASMLANGUAGE in your ASM file to
++ *           avoid C data types (typedefs) below;
++ *       - for .c files, you don't have to do anything special.
++ *
++ *   2. This file has a number of sections for each SOC subsystem. When adding
++ *       a new constant, find the subsystem you are working on and follow the
++ *       name pattern. If you are adding another typedef for your interface, please,
++ *       place it with other typedefs and function prototypes.
++ *
++ *   3. Please, DO NOT add any macros or types that are local to a subsystem to avoid
++ *       cluttering. Include such items directly into the module's .c file or have a
++ *       local .h file to pass data between smaller modules. This file defines only
++ *       shared items.
++ */
++
++#ifndef __TNETD73XX_H__
++#define __TNETD73XX_H__
++
++#ifndef _ASMLANGUAGE        /* This part not for assembly language */
++
++extern unsigned int tnetd73xx_mips_freq;
++extern unsigned int tnetd73xx_vbus_freq;
++
++#include "tnetd73xx_err.h"
++
++#endif /* _ASMLANGUAGE */
++
++
++/*******************************************************************************************
++*   Emerald core specific
++******************************************************************************************** */
++
++#ifdef  BIG_ENDIAN
++#elif defined(LITTLE_ENDIAN)
++#else
++#error Need to define endianism
++#endif
++
++#ifndef KSEG_MSK
++#define KSEG_MSK                    0xE0000000 /* Most significant 3 bits denote kseg choice */
++#endif
++
++#ifndef KSEG_INV_MASK
++#define KSEG_INV_MASK               0x1FFFFFFF /* Inverted mask for kseg address */
++#endif
++
++#ifndef KSEG0_BASE
++#define KSEG0_BASE                  0x80000000
++#endif
++
++#ifndef KSEG1_BASE
++#define KSEG1_BASE                  0xA0000000
++#endif
++
++#ifndef KSEG0
++#define KSEG0(addr)                 (((__u32)(addr) & ~KSEG_MSK) | KSEG0_BASE)
++#endif
++
++#ifndef KSEG1
++#define KSEG1(addr)                 (((__u32)(addr) & ~KSEG_MSK) | KSEG1_BASE)
++#endif
++
++#ifndef KUSEG
++#define KUSEG(addr)                 ((__u32)(addr) & ~KSEG_MSK)
++#endif
++
++#ifndef PHYS_ADDR
++#define PHYS_ADDR(addr)             ((addr) & KSEG_INV_MASK)
++#endif
++
++#ifndef PHYS_TO_K0
++#define PHYS_TO_K0(addr)            (PHYS_ADDR(addr)|KSEG0_BASE)
++#endif
++
++#ifndef PHYS_TO_K1
++#define PHYS_TO_K1(addr)            (PHYS_ADDR(addr)|KSEG1_BASE)
++#endif
++
++#ifndef REG8_ADDR
++#define REG8_ADDR(addr)             (volatile __u8 *)(PHYS_TO_K1(addr))
++#define REG8_DATA(addr)             (*(volatile __u8 *)(PHYS_TO_K1(addr)))
++#define REG8_WRITE(addr, data)      REG8_DATA(addr) = data;
++#define REG8_READ(addr, data)       data = (__u8) REG8_DATA(addr);
++#endif
++
++#ifndef REG16_ADDR
++#define REG16_ADDR(addr)            (volatile __u16 *)(PHYS_TO_K1(addr))
++#define REG16_DATA(addr)            (*(volatile __u16 *)(PHYS_TO_K1(addr)))
++#define REG16_WRITE(addr, data)     REG16_DATA(addr) = data;
++#define REG16_READ(addr, data)      data = (__u16) REG16_DATA(addr);
++#endif
++
++#ifndef REG32_ADDR
++#define REG32_ADDR(addr)            (volatile __u32 *)(PHYS_TO_K1(addr))
++#define REG32_DATA(addr)            (*(volatile __u32 *)(PHYS_TO_K1(addr)))
++#define REG32_WRITE(addr, data)     REG32_DATA(addr) = data;
++#define REG32_READ(addr, data)      data = (__u32) REG32_DATA(addr);
++#endif
++
++#ifdef  _LINK_KSEG0_                /* Application is linked into KSEG0 space */
++#define VIRT_ADDR(addr)             PHYS_TO_K0(PHYS_ADDR(addr))
++#endif
++
++#ifdef  _LINK_KSEG1_                /* Application is linked into KSEG1 space */
++#define VIRT_ADDR(addr)             PHYS_TO_K1(PHYS_ADDR(addr))
++#endif
++
++#if !defined(_LINK_KSEG0_) && !defined(_LINK_KSEG1_)
++#error  You must define _LINK_KSEG0_ or _LINK_KSEG1_ to compile the code.
++#endif
++
++/* TNETD73XX chip definations */
++
++#define FREQ_1MHZ                       1000000
++#define TNETD73XX_MIPS_FREQ             tnetd73xx_mips_freq /* CPU clock frequency */
++#define TNETD73XX_VBUS_FREQ             tnetd73xx_vbus_freq /* originally (TNETD73XX_MIPS_FREQ/2) */
++
++#ifdef AR7SEAD2
++#define TNETD73XX_MIPS_FREQ_DEFAULT     25000000       /* 25 Mhz for sead2 board crystal */
++#else
++#define TNETD73XX_MIPS_FREQ_DEFAULT     125000000      /* 125 Mhz */
++#endif
++#define TNETD73XX_VBUS_FREQ_DEFAULT     (TNETD73XX_MIPS_FREQ_DEFAULT / 2) /* Sync mode */
++
++
++
++/* Module base addresses */
++#define TNETD73XX_ADSLSS_BASE               PHYS_TO_K1(0x01000000)      /* ADSLSS Module */
++#define TNETD73XX_BBIF_CTRL_BASE            PHYS_TO_K1(0x02000000)      /* BBIF Control */
++#define TNETD73XX_ATMSAR_BASE               PHYS_TO_K1(0x03000000)      /* ATM SAR */
++#define TNETD73XX_USB_BASE                  PHYS_TO_K1(0x03400000)      /* USB Module */
++#define TNETD73XX_VLYNQ0_BASE               PHYS_TO_K1(0x04000000)      /* VLYNQ0 Module */
++#define TNETD73xx_EMAC0_BASE                PHYS_TO_K1(0x08610000)      /* EMAC0 Module*/
++#define TNETD73XX_EMIF_BASE                 PHYS_TO_K1(0x08610800)      /* EMIF Module */
++#define TNETD73XX_GPIO_BASE                 PHYS_TO_K1(0x08610900)      /* GPIO control */
++#define TNETD73XX_CLOCK_CTRL_BASE           PHYS_TO_K1(0x08610A00)      /* Clock Control */
++#define TNETD73XX_WDTIMER_BASE              PHYS_TO_K1(0x08610B00)      /* WDTIMER Module */
++#define TNETD73XX_TIMER0_BASE               PHYS_TO_K1(0x08610C00)      /* TIMER0 Module */
++#define TNETD73XX_TIMER1_BASE               PHYS_TO_K1(0x08610D00)      /* TIMER1 Module */
++#define TNETD73XX_UARTA_BASE                PHYS_TO_K1(0x08610E00)      /* UART A */
++#define TNETD73XX_UARTB_BASE                PHYS_TO_K1(0x08610F00)      /* UART B */
++#define TNETD73XX_I2C_BASE                  PHYS_TO_K1(0x08611000)      /* I2C Module */
++#define TNETD73XX_USB_DMA_BASE              PHYS_TO_K1(0x08611200)      /* USB Module */
++#define TNETD73XX_MCDMA_BASE                PHYS_TO_K1(0x08611400)      /* MC-DMA */
++#define TNETD73xx_VDMAVT_BASE               PHYS_TO_K1(0x08611500)      /* VDMAVT Control */
++#define TNETD73XX_RST_CTRL_BASE             PHYS_TO_K1(0x08611600)      /* Reset Control */
++#define TNETD73xx_BIST_CTRL_BASE            PHYS_TO_K1(0x08611700)      /* BIST Control */
++#define TNETD73xx_VLYNQ0_CTRL_BASE          PHYS_TO_K1(0x08611800)      /* VLYNQ0 Control */
++#define TNETD73XX_DCL_BASE                  PHYS_TO_K1(0x08611A00)      /* Device Configuration Latch */
++#define TNETD73xx_VLYNQ1_CTRL_BASE          PHYS_TO_K1(0x08611C00)      /* VLYNQ1 Control */
++#define TNETD73xx_MDIO_BASE                 PHYS_TO_K1(0x08611E00)      /* MDIO Control */
++#define TNETD73XX_FSER_BASE                 PHYS_TO_K1(0x08612000)      /* FSER Control */
++#define TNETD73XX_INTC_BASE                 PHYS_TO_K1(0x08612400)      /* Interrupt Controller */
++#define TNETD73xx_EMAC1_BASE                PHYS_TO_K1(0x08612800)      /* EMAC1 Module*/
++#define TNETD73XX_VLYNQ1_BASE               PHYS_TO_K1(0x0C000000)      /* VLYNQ1 Module */
++
++/* BBIF Registers */
++#define TNETD73XX_BBIF_ADSLADR              (TNETD73XX_BBIF_CTRL_BASE + 0x0)
++
++/* Device Configuration Latch Registers */
++#define TNETD73XX_DCL_BOOTCR                (TNETD73XX_DCL_BASE + 0x0)
++#define TNETD73XX_DCL_DPLLSELR              (TNETD73XX_DCL_BASE + 0x10)
++#define TNETD73XX_DCL_SPEEDCTLR             (TNETD73XX_DCL_BASE + 0x14)
++#define TNETD73XX_DCL_SPEEDPWDR             (TNETD73XX_DCL_BASE + 0x18)
++#define TNETD73XX_DCL_SPEEDCAPR             (TNETD73XX_DCL_BASE + 0x1C)
++
++/* GPIO Control */
++#define TNETD73XX_GPIODINR                  (TNETD73XX_GPIO_BASE + 0x0)
++#define TNETD73XX_GPIODOUTR                 (TNETD73XX_GPIO_BASE + 0x4)
++#define TNETD73XX_GPIOPDIRR                 (TNETD73XX_GPIO_BASE + 0x8)
++#define TNETD73XX_GPIOENR                   (TNETD73XX_GPIO_BASE + 0xC)
++#define TNETD73XX_CVR                       (TNETD73XX_GPIO_BASE + 0x14)
++#define TNETD73XX_DIDR1                     (TNETD73XX_GPIO_BASE + 0x18)
++#define TNETD73XX_DIDR2                     (TNETD73XX_GPIO_BASE + 0x1C)
++
++/* Reset Control  */
++#define TNETD73XX_RST_CTRL_PRCR             (TNETD73XX_RST_CTRL_BASE + 0x0)
++#define TNETD73XX_RST_CTRL_SWRCR            (TNETD73XX_RST_CTRL_BASE + 0x4)
++#define TNETD73XX_RST_CTRL_RSR              (TNETD73XX_RST_CTRL_BASE + 0x8)
++
++/* Power Control  */
++#define TNETD73XX_POWER_CTRL_PDCR           (TNETD73XX_CLOCK_CTRL_BASE + 0x0)
++#define TNETD73XX_POWER_CTRL_PCLKCR         (TNETD73XX_CLOCK_CTRL_BASE + 0x4)
++#define TNETD73XX_POWER_CTRL_PDUCR          (TNETD73XX_CLOCK_CTRL_BASE + 0x8)
++#define TNETD73XX_POWER_CTRL_WKCR           (TNETD73XX_CLOCK_CTRL_BASE + 0xC)
++
++/* Clock Control */
++#define TNETD73XX_CLK_CTRL_SCLKCR           (TNETD73XX_CLOCK_CTRL_BASE + 0x20)
++#define TNETD73XX_CLK_CTRL_SCLKPLLCR        (TNETD73XX_CLOCK_CTRL_BASE + 0x30)
++#define TNETD73XX_CLK_CTRL_MCLKCR           (TNETD73XX_CLOCK_CTRL_BASE + 0x40)
++#define TNETD73XX_CLK_CTRL_MCLKPLLCR        (TNETD73XX_CLOCK_CTRL_BASE + 0x50)
++#define TNETD73XX_CLK_CTRL_UCLKCR           (TNETD73XX_CLOCK_CTRL_BASE + 0x60)
++#define TNETD73XX_CLK_CTRL_UCLKPLLCR        (TNETD73XX_CLOCK_CTRL_BASE + 0x70)
++#define TNETD73XX_CLK_CTRL_ACLKCR0          (TNETD73XX_CLOCK_CTRL_BASE + 0x80)
++#define TNETD73XX_CLK_CTRL_ACLKPLLCR0       (TNETD73XX_CLOCK_CTRL_BASE + 0x90)
++#define TNETD73XX_CLK_CTRL_ACLKCR1          (TNETD73XX_CLOCK_CTRL_BASE + 0xA0)
++#define TNETD73XX_CLK_CTRL_ACLKPLLCR1       (TNETD73XX_CLOCK_CTRL_BASE + 0xB0)
++
++/* EMIF control */
++#define TNETD73XX_EMIF_SDRAM_CFG              ( TNETD73XX_EMIF_BASE + 0x08 )                
++
++/* UART */
++#ifdef AR7SEAD2
++#define TNETD73XX_UART_FREQ                 3686400
++#else
++#define TNETD73XX_UART_FREQ                 TNETD73XX_VBUS_FREQ
++#endif
++
++/* Interrupt Controller */
++
++/* Primary interrupts */
++#define TNETD73XX_INTC_UNIFIED_SECONDARY    0   /* Unified secondary interrupt */
++#define TNETD73XX_INTC_EXTERNAL0            1   /* External Interrupt Line 0 */
++#define TNETD73XX_INTC_EXTERNAL1            2   /* External Interrupt Line 1 */
++#define TNETD73XX_INTC_RESERVED3            3   /* Reserved */
++#define TNETD73XX_INTC_RESERVED4            4   /* Reserved */
++#define TNETD73XX_INTC_TIMER0               5   /* TIMER 0 int */
++#define TNETD73XX_INTC_TIMER1               6   /* TIMER 1 int */
++#define TNETD73XX_INTC_UART0                7   /* UART 0 int */
++#define TNETD73XX_INTC_UART1                8   /* UART 1 int */
++#define TNETD73XX_INTC_MCDMA0               9   /* MCDMA 0 int */
++#define TNETD73XX_INTC_MCDMA1               10  /* MCDMA 1 int */
++#define TNETD73XX_INTC_RESERVED11           11  /* Reserved */
++#define TNETD73XX_INTC_RESERVED12           12  /* Reserved */
++#define TNETD73XX_INTC_RESERVED13           13  /* Reserved */
++#define TNETD73XX_INTC_RESERVED14           14  /* Reserved */
++#define TNETD73XX_INTC_ATMSAR               15  /* ATM SAR int */
++#define TNETD73XX_INTC_RESERVED16           16  /* Reserved */
++#define TNETD73XX_INTC_RESERVED17           17  /* Reserved */
++#define TNETD73XX_INTC_RESERVED18           18  /* Reserved */
++#define TNETD73XX_INTC_EMAC0                19  /* EMAC 0 int */
++#define TNETD73XX_INTC_RESERVED20           20  /* Reserved */
++#define TNETD73XX_INTC_VLYNQ0               21  /* VLYNQ 0 int */
++#define TNETD73XX_INTC_CODEC                22  /* CODEC int */
++#define TNETD73XX_INTC_RESERVED23           23  /* Reserved */
++#define TNETD73XX_INTC_USBSLAVE             24  /* USB Slave int */
++#define TNETD73XX_INTC_VLYNQ1               25  /* VLYNQ 1 int */
++#define TNETD73XX_INTC_RESERVED26           26  /* Reserved */
++#define TNETD73XX_INTC_RESERVED27           27  /* Reserved */
++#define TNETD73XX_INTC_ETH_PHY              28  /* Ethernet PHY   */
++#define TNETD73XX_INTC_I2C                  29  /* I2C int */
++#define TNETD73XX_INTC_MCDMA2               30  /* MCDMA 2 int */
++#define TNETD73XX_INTC_MCDMA3               31  /* MCDMA 3 int */
++#define TNETD73XX_INTC_RESERVED32           32  /* Reserved */
++#define TNETD73XX_INTC_EMAC1                33  /* EMAC 1 int */
++#define TNETD73XX_INTC_RESERVED34           34  /* Reserved */
++#define TNETD73XX_INTC_RESERVED35           35  /* Reserved */
++#define TNETD73XX_INTC_RESERVED36           36  /* Reserved */
++#define TNETD73XX_INTC_VDMAVTRX             37  /* VDMAVTRX */
++#define TNETD73XX_INTC_VDMAVTTX             38  /* VDMAVTTX */
++#define TNETD73XX_INTC_ADSLSS               39  /* ADSLSS */
++
++/* Secondary interrupts */
++#define TNETD73XX_INTC_SEC0                 40  /* Secondary */
++#define TNETD73XX_INTC_SEC1                 41  /* Secondary */
++#define TNETD73XX_INTC_SEC2                 42  /* Secondary */
++#define TNETD73XX_INTC_SEC3                 43  /* Secondary */
++#define TNETD73XX_INTC_SEC4                 44  /* Secondary */
++#define TNETD73XX_INTC_SEC5                 45  /* Secondary */
++#define TNETD73XX_INTC_SEC6                 46  /* Secondary */
++#define TNETD73XX_INTC_EMIF                 47  /* EMIF */
++#define TNETD73XX_INTC_SEC8                 48  /* Secondary */
++#define TNETD73XX_INTC_SEC9                 49  /* Secondary */
++#define TNETD73XX_INTC_SEC10                50  /* Secondary */
++#define TNETD73XX_INTC_SEC11                51  /* Secondary */
++#define TNETD73XX_INTC_SEC12                52  /* Secondary */
++#define TNETD73XX_INTC_SEC13                53  /* Secondary */
++#define TNETD73XX_INTC_SEC14                54  /* Secondary */
++#define TNETD73XX_INTC_SEC15                55  /* Secondary */
++#define TNETD73XX_INTC_SEC16                56  /* Secondary */
++#define TNETD73XX_INTC_SEC17                57  /* Secondary */
++#define TNETD73XX_INTC_SEC18                58  /* Secondary */
++#define TNETD73XX_INTC_SEC19                59  /* Secondary */
++#define TNETD73XX_INTC_SEC20                60  /* Secondary */
++#define TNETD73XX_INTC_SEC21                61  /* Secondary */
++#define TNETD73XX_INTC_SEC22                62  /* Secondary */
++#define TNETD73XX_INTC_SEC23                63  /* Secondary */
++#define TNETD73XX_INTC_SEC24                64  /* Secondary */
++#define TNETD73XX_INTC_SEC25                65  /* Secondary */
++#define TNETD73XX_INTC_SEC26                66  /* Secondary */
++#define TNETD73XX_INTC_SEC27                67  /* Secondary */
++#define TNETD73XX_INTC_SEC28                68  /* Secondary */
++#define TNETD73XX_INTC_SEC29                69  /* Secondary */
++#define TNETD73XX_INTC_SEC30                70  /* Secondary */
++#define TNETD73XX_INTC_SEC31                71  /* Secondary */
++
++/* These ugly macros are to access the -1 registers, like config1 */
++#define MFC0_SEL1_OPCODE(dst, src)\
++        .word (0x40000000 | ((dst)<<16) | ((src)<<11) | 1);\
++        nop; \
++        nop; \
++        nop
++
++#define MTC0_SEL1_OPCODE(dst, src)\
++        .word (0x40800000 | ((dst)<<16) | ((src)<<11) | 1);\
++        nop; \
++        nop; \
++        nop
++
++
++/* Below are Jade core specific */
++#define CFG0_4K_IL_MASK         0x00380000
++#define CFG0_4K_IL_SHIFT        19
++#define CFG0_4K_IA_MASK         0x00070000
++#define CFG0_4K_IA_SHIFT        16
++#define CFG0_4K_IS_MASK         0x01c00000
++#define CFG0_4K_IS_SHIFT        22
++
++#define CFG0_4K_DL_MASK         0x00001c00
++#define CFG0_4K_DL_SHIFT        10
++#define CFG0_4K_DA_MASK         0x00000380
++#define CFG0_4K_DA_SHIFT        7
++#define CFG0_4K_DS_MASK         0x0000E000
++#define CFG0_4K_DS_SHIFT        13
++
++
++
++#endif /* __TNETD73XX_H_ */
+diff -urN kernel-base/include/asm-mips/ar7/tnetd73xx_misc.h kernel-current/include/asm-mips/ar7/tnetd73xx_misc.h
+--- kernel-base/include/asm-mips/ar7/tnetd73xx_misc.h	1970-01-01 01:00:00.000000000 +0100
++++ kernel-current/include/asm-mips/ar7/tnetd73xx_misc.h	2005-07-10 09:53:49.418344272 +0200
+@@ -0,0 +1,239 @@
++/******************************************************************************
++ * FILE PURPOSE:    TNETD73xx Misc modules API Header
++ ******************************************************************************
++ * FILE NAME:       tnetd73xx_misc.h
++ *
++ * DESCRIPTION:     Clock Control, Reset Control, Power Management, GPIO
++ *                  FSER Modules API 
++ *                  As per TNETD73xx specifications
++ *
++ * REVISION HISTORY:
++ * 27 Nov 02 - Sharath Kumar     PSP TII  
++ * 14 Feb 03 - Anant Gole        PSP TII
++ *
++ * (C) Copyright 2002, Texas Instruments, Inc
++ *******************************************************************************/
++
++#ifndef __TNETD73XX_MISC_H__
++#define __TNETD73XX_MISC_H__
++
++/*****************************************************************************
++ * Reset Control Module
++ *****************************************************************************/
++ 
++typedef enum TNETD73XX_RESET_MODULE_tag
++{
++    RESET_MODULE_UART0      = 0,
++    RESET_MODULE_UART1      = 1,
++    RESET_MODULE_I2C        = 2,
++    RESET_MODULE_TIMER0     = 3,
++    RESET_MODULE_TIMER1     = 4,
++    RESET_MODULE_GPIO       = 6,
++    RESET_MODULE_ADSLSS     = 7,
++    RESET_MODULE_USBS       = 8,
++    RESET_MODULE_SAR        = 9,
++    RESET_MODULE_VDMA_VT    = 11,
++    RESET_MODULE_FSER       = 12,
++    RESET_MODULE_VLYNQ1     = 16,
++    RESET_MODULE_EMAC0      = 17,
++    RESET_MODULE_DMA        = 18,
++    RESET_MODULE_BIST       = 19,
++    RESET_MODULE_VLYNQ0     = 20,
++    RESET_MODULE_EMAC1      = 21,
++    RESET_MODULE_MDIO       = 22,
++    RESET_MODULE_ADSLSS_DSP = 23,
++    RESET_MODULE_EPHY       = 26
++} TNETD73XX_RESET_MODULE_T;
++
++typedef enum TNETD73XX_RESET_CTRL_tag
++{
++    IN_RESET        = 0,
++    OUT_OF_RESET
++} TNETD73XX_RESET_CTRL_T;
++
++typedef enum TNETD73XX_SYS_RST_MODE_tag
++{
++    RESET_SOC_WITH_MEMCTRL      = 1,    /* SW0 bit in SWRCR register */
++    RESET_SOC_WITHOUT_MEMCTRL   = 2     /* SW1 bit in SWRCR register */
++} TNETD73XX_SYS_RST_MODE_T;
++
++typedef enum TNETD73XX_SYS_RESET_STATUS_tag
++{
++    HARDWARE_RESET = 0,
++    SOFTWARE_RESET0,            /* Caused by writing 1 to SW0 bit in SWRCR register */
++    WATCHDOG_RESET,
++    SOFTWARE_RESET1             /* Caused by writing 1 to SW1 bit in SWRCR register */
++} TNETD73XX_SYS_RESET_STATUS_T;
++
++void tnetd73xx_reset_ctrl(TNETD73XX_RESET_MODULE_T reset_module, 
++                                TNETD73XX_RESET_CTRL_T reset_ctrl);
++TNETD73XX_RESET_CTRL_T tnetd73xx_get_reset_status(TNETD73XX_RESET_MODULE_T reset_module);
++void tnetd73xx_sys_reset(TNETD73XX_SYS_RST_MODE_T mode);
++TNETD73XX_SYS_RESET_STATUS_T tnetd73xx_get_sys_last_reset_status(void);
++                    
++/*****************************************************************************
++ * Power Control Module
++ *****************************************************************************/
++
++typedef enum TNETD73XX_POWER_MODULE_tag
++{
++    POWER_MODULE_USBSP      = 0,
++    POWER_MODULE_WDTP       = 1,
++    POWER_MODULE_UT0P       = 2,
++    POWER_MODULE_UT1P       = 3,
++    POWER_MODULE_IICP       = 4,
++    POWER_MODULE_VDMAP      = 5,
++    POWER_MODULE_GPIOP      = 6,
++    POWER_MODULE_VLYNQ1P    = 7,
++    POWER_MODULE_SARP       = 8,
++    POWER_MODULE_ADSLP      = 9,
++    POWER_MODULE_EMIFP      = 10,
++    POWER_MODULE_ADSPP      = 12,
++    POWER_MODULE_RAMP       = 13,
++    POWER_MODULE_ROMP       = 14,
++    POWER_MODULE_DMAP       = 15,
++    POWER_MODULE_BISTP      = 16,
++    POWER_MODULE_TIMER0P    = 18,
++    POWER_MODULE_TIMER1P    = 19,
++    POWER_MODULE_EMAC0P     = 20,
++    POWER_MODULE_EMAC1P     = 22,
++    POWER_MODULE_EPHYP      = 24,
++    POWER_MODULE_VLYNQ0P    = 27,
++} TNETD73XX_POWER_MODULE_T;
++
++typedef enum TNETD73XX_POWER_CTRL_tag
++{
++    POWER_CTRL_POWER_UP = 0,
++    POWER_CTRL_POWER_DOWN
++} TNETD73XX_POWER_CTRL_T;
++
++typedef enum TNETD73XX_SYS_POWER_MODE_tag
++{
++    GLOBAL_POWER_MODE_RUN       = 0,    /* All system is up */
++    GLOBAL_POWER_MODE_IDLE,             /* MIPS is power down, all peripherals working */
++    GLOBAL_POWER_MODE_STANDBY,          /* Chip in power down, but clock to ADSKL subsystem is running */
++    GLOBAL_POWER_MODE_POWER_DOWN        /* Total chip is powered down */
++} TNETD73XX_SYS_POWER_MODE_T;
++
++void tnetd73xx_power_ctrl(TNETD73XX_POWER_MODULE_T power_module,  TNETD73XX_POWER_CTRL_T power_ctrl);
++TNETD73XX_POWER_CTRL_T tnetd73xx_get_pwr_status(TNETD73XX_POWER_MODULE_T power_module);
++void tnetd73xx_set_global_pwr_mode(TNETD73XX_SYS_POWER_MODE_T power_mode);
++TNETD73XX_SYS_POWER_MODE_T tnetd73xx_get_global_pwr_mode(void);
++
++/*****************************************************************************
++ * Wakeup Control 
++ *****************************************************************************/
++
++typedef enum TNETD73XX_WAKEUP_INTERRUPT_tag
++{
++    WAKEUP_INT0 = 1,
++    WAKEUP_INT1 = 2,
++    WAKEUP_INT2 = 4,
++    WAKEUP_INT3 = 8
++} TNETD73XX_WAKEUP_INTERRUPT_T;
++
++typedef enum TNETD73XX_WAKEUP_CTRL_tag
++{
++    WAKEUP_DISABLED = 0,
++    WAKEUP_ENABLED
++} TNETD73XX_WAKEUP_CTRL_T;
++
++typedef enum TNETD73XX_WAKEUP_POLARITY_tag
++{
++    WAKEUP_ACTIVE_HIGH = 0,
++    WAKEUP_ACTIVE_LOW
++} TNETD73XX_WAKEUP_POLARITY_T;
++
++void tnetd73xx_wakeup_ctrl(TNETD73XX_WAKEUP_INTERRUPT_T wakeup_int, 
++                           TNETD73XX_WAKEUP_CTRL_T wakeup_ctrl, 
++                           TNETD73XX_WAKEUP_POLARITY_T wakeup_polarity);
++
++/*****************************************************************************
++ * FSER  Control 
++ *****************************************************************************/
++ 
++typedef enum TNETD73XX_FSER_MODE_tag
++{
++    FSER_I2C    = 0,
++    FSER_UART   = 1
++} TNETD73XX_FSER_MODE_T;
++
++void tnetd73xx_fser_ctrl(TNETD73XX_FSER_MODE_T fser_mode);
++
++/*****************************************************************************
++ * Clock Control 
++ *****************************************************************************/
++
++#define CLK_MHZ(x)    ( (x) * 1000000 )
++
++typedef enum TNETD73XX_CLKC_ID_tag
++{
++    CLKC_SYS = 0,
++    CLKC_MIPS,
++    CLKC_USB,
++    CLKC_ADSLSS
++} TNETD73XX_CLKC_ID_T;
++
++void tnetd73xx_clkc_init(__u32 afeclk, __u32 refclk, __u32 xtal3in);
++TNETD73XX_ERR tnetd73xx_clkc_set_freq(TNETD73XX_CLKC_ID_T clk_id, __u32 output_freq);
++__u32 tnetd73xx_clkc_get_freq(TNETD73XX_CLKC_ID_T clk_id);
++
++/*****************************************************************************
++ * GPIO Control 
++ *****************************************************************************/
++
++typedef enum TNETD73XX_GPIO_PIN_tag
++{
++    GPIO_UART0_RD           = 0,
++    GPIO_UART0_TD           = 1,
++    GPIO_UART0_RTS          = 2,
++    GPIO_UART0_CTS          = 3,
++    GPIO_FSER_CLK           = 4,
++    GPIO_FSER_D             = 5,
++    GPIO_EXT_AFE_SCLK       = 6,
++    GPIO_EXT_AFE_TX_FS      = 7,
++    GPIO_EXT_AFE_TXD        = 8,
++    GPIO_EXT_AFE_RS_FS      = 9,
++    GPIO_EXT_AFE_RXD1       = 10,
++    GPIO_EXT_AFE_RXD0       = 11,
++    GPIO_EXT_AFE_CDIN       = 12,
++    GPIO_EXT_AFE_CDOUT      = 13,
++    GPIO_EPHY_SPEED100      = 14,
++    GPIO_EPHY_LINKON        = 15,
++    GPIO_EPHY_ACTIVITY      = 16,
++    GPIO_EPHY_FDUPLEX       = 17,
++    GPIO_EINT0              = 18,
++    GPIO_EINT1              = 19,
++    GPIO_MBSP0_TCLK         = 20,
++    GPIO_MBSP0_RCLK         = 21,
++    GPIO_MBSP0_RD           = 22,
++    GPIO_MBSP0_TD           = 23,
++    GPIO_MBSP0_RFS          = 24,
++    GPIO_MBSP0_TFS          = 25,
++    GPIO_MII_DIO            = 26,
++    GPIO_MII_DCLK           = 27,
++} TNETD73XX_GPIO_PIN_T;
++
++typedef enum TNETD73XX_GPIO_PIN_MODE_tag
++{
++    FUNCTIONAL_PIN = 0,
++    GPIO_PIN = 1
++} TNETD73XX_GPIO_PIN_MODE_T;
++
++typedef enum TNETD73XX_GPIO_PIN_DIRECTION_tag
++{
++    GPIO_OUTPUT_PIN = 0,
++    GPIO_INPUT_PIN = 1
++} TNETD73XX_GPIO_PIN_DIRECTION_T;
++ 
++void tnetd73xx_gpio_init(void);
++void tnetd73xx_gpio_ctrl(TNETD73XX_GPIO_PIN_T gpio_pin, 
++                         TNETD73XX_GPIO_PIN_MODE_T pin_mode,
++                         TNETD73XX_GPIO_PIN_DIRECTION_T pin_direction);
++void tnetd73xx_gpio_out(TNETD73XX_GPIO_PIN_T gpio_pin, int value);
++int tnetd73xx_gpio_in(TNETD73XX_GPIO_PIN_T gpio_pin);
++
++/* TNETD73XX Revision */
++__u32 tnetd73xx_get_revision(void);
++
++#endif /* __TNETD73XX_MISC_H__ */
+diff -urN kernel-base/include/asm-mips/io.h kernel-current/include/asm-mips/io.h
 --- kernel-base/include/asm-mips/io.h	2005-07-10 03:00:44.797179400 +0200
-+++ kernel-tmp2/include/asm-mips/io.h	2005-07-10 06:40:39.624260784 +0200
++++ kernel-current/include/asm-mips/io.h	2005-07-10 06:40:39.624260784 +0200
 @@ -63,8 +63,12 @@
  #ifdef CONFIG_64BIT_PHYS_ADDR
  #define page_to_phys(page)	((u64)(page - mem_map) << PAGE_SHIFT)
@@ -3117,9 +6229,9 @@ diff -urN kernel-base/include/asm-mips/io.h kernel-tmp2/include/asm-mips/io.h
  
  #define IO_SPACE_LIMIT 0xffff
  
-diff -urN kernel-base/include/asm-mips/irq.h kernel-tmp2/include/asm-mips/irq.h
+diff -urN kernel-base/include/asm-mips/irq.h kernel-current/include/asm-mips/irq.h
 --- kernel-base/include/asm-mips/irq.h	2005-07-10 03:00:44.798179248 +0200
-+++ kernel-tmp2/include/asm-mips/irq.h	2005-07-10 06:40:39.624260784 +0200
++++ kernel-current/include/asm-mips/irq.h	2005-07-10 06:40:39.624260784 +0200
 @@ -14,7 +14,12 @@
  #include <linux/config.h>
  #include <linux/linkage.h>
@@ -3133,9 +6245,9 @@ diff -urN kernel-base/include/asm-mips/irq.h kernel-tmp2/include/asm-mips/irq.h
  
  #ifdef CONFIG_I8259
  static inline int irq_cannonicalize(int irq)
-diff -urN kernel-base/include/asm-mips/page.h kernel-tmp2/include/asm-mips/page.h
+diff -urN kernel-base/include/asm-mips/page.h kernel-current/include/asm-mips/page.h
 --- kernel-base/include/asm-mips/page.h	2005-07-10 03:00:44.798179248 +0200
-+++ kernel-tmp2/include/asm-mips/page.h	2005-07-10 06:40:39.625260632 +0200
++++ kernel-current/include/asm-mips/page.h	2005-07-10 06:40:39.625260632 +0200
 @@ -129,7 +129,11 @@
  
  #define __pa(x)		((unsigned long) (x) - PAGE_OFFSET)
@@ -3148,9 +6260,9 @@ diff -urN kernel-base/include/asm-mips/page.h kernel-tmp2/include/asm-mips/page.
  #define VALID_PAGE(page)	((page - mem_map) < max_mapnr)
  
  #define VM_DATA_DEFAULT_FLAGS  (VM_READ | VM_WRITE | VM_EXEC | \
-diff -urN kernel-base/include/asm-mips/pgtable-32.h kernel-tmp2/include/asm-mips/pgtable-32.h
+diff -urN kernel-base/include/asm-mips/pgtable-32.h kernel-current/include/asm-mips/pgtable-32.h
 --- kernel-base/include/asm-mips/pgtable-32.h	2005-07-10 03:00:44.798179248 +0200
-+++ kernel-tmp2/include/asm-mips/pgtable-32.h	2005-07-10 06:40:39.625260632 +0200
++++ kernel-current/include/asm-mips/pgtable-32.h	2005-07-10 06:40:39.625260632 +0200
 @@ -108,7 +108,18 @@
   * and a page entry and page directory to the page they refer to.
   */
@@ -3191,9 +6303,9 @@ diff -urN kernel-base/include/asm-mips/pgtable-32.h kernel-tmp2/include/asm-mips
  #define pte_page(x)  (mem_map+((unsigned long)(((x).pte_low >> (PAGE_SHIFT+2)))))
  #define __mk_pte(page_nr,pgprot) __pte(((page_nr) << (PAGE_SHIFT+2)) | pgprot_val(pgprot))
  #else
-diff -urN kernel-base/include/asm-mips/serial.h kernel-tmp2/include/asm-mips/serial.h
+diff -urN kernel-base/include/asm-mips/serial.h kernel-current/include/asm-mips/serial.h
 --- kernel-base/include/asm-mips/serial.h	2005-07-10 03:00:44.799179096 +0200
-+++ kernel-tmp2/include/asm-mips/serial.h	2005-07-10 06:40:39.625260632 +0200
++++ kernel-current/include/asm-mips/serial.h	2005-07-10 06:40:39.625260632 +0200
 @@ -65,6 +65,15 @@
  
  #define C_P(card,port) (((card)<<6|(port)<<3) + 1)
@@ -3218,9 +6330,9 @@ diff -urN kernel-base/include/asm-mips/serial.h kernel-tmp2/include/asm-mips/ser
  	ATLAS_SERIAL_PORT_DEFNS			\
  	AU1000_SERIAL_PORT_DEFNS		\
  	COBALT_SERIAL_PORT_DEFNS		\
-diff -urN kernel-base/Makefile kernel-tmp2/Makefile
+diff -urN kernel-base/Makefile kernel-current/Makefile
 --- kernel-base/Makefile	2005-07-10 03:00:44.799179096 +0200
-+++ kernel-tmp2/Makefile	2005-07-10 06:40:39.626260480 +0200
++++ kernel-current/Makefile	2005-07-10 06:40:39.626260480 +0200
 @@ -91,7 +91,7 @@
  
  CPPFLAGS := -D__KERNEL__ -I$(HPATH)
