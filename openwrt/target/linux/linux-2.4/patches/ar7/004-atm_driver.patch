@@ -21433,8 +21433,8 @@ diff -urN linux.old/drivers/atm/sangam_atm/tn7api.h linux.dev/drivers/atm/sangam
 +#endif
 diff -urN linux.old/drivers/atm/sangam_atm/tn7atm.c linux.dev/drivers/atm/sangam_atm/tn7atm.c
 --- linux.old/drivers/atm/sangam_atm/tn7atm.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/atm/sangam_atm/tn7atm.c	2005-07-10 08:27:20.947111792 +0200
-@@ -0,0 +1,1237 @@
++++ linux.dev/drivers/atm/sangam_atm/tn7atm.c	2005-07-10 19:35:40.033466344 +0200
+@@ -0,0 +1,1212 @@
 +/* 
 + *   tn7.c
 + *   Linux atm module implementation.
@@ -22403,25 +22403,15 @@ diff -urN linux.old/drivers/atm/sangam_atm/tn7atm.c linux.dev/drivers/atm/sangam
 +  shutdown_atm_dev(dev);
 +
 +  /* remove proc entries */
-+#ifdef COMMON_NSP
-+  remove_proc_entry("avalanche/avsar_ver",NULL);
-+  remove_proc_entry("avalanche/avsar_modem_stats",NULL);
-+  remove_proc_entry("avalanche/avsar_modem_training",NULL);
-+  remove_proc_entry("avalanche/avsar_channels",NULL);
-+  remove_proc_entry("avalanche/avsar_private",NULL);
-+  remove_proc_entry("avalanche/avsar_sarhal_stats",NULL);
-+  remove_proc_entry("avalanche/avsar_oam_ping",NULL);
-+  remove_proc_entry("avalanche/avsar_pvc_table",NULL);
-+#else
-+  remove_proc_entry("ti_commproc/atm/modem_ver",NULL);
-+  remove_proc_entry("ti_commproc/atm/modem_stats",NULL);
-+  remove_proc_entry("ti_commproc/atm/modem_training",NULL);
-+  remove_proc_entry("ti_commproc/atm/modem_channels",NULL);
-+  remove_proc_entry("ti_commproc/atm/modem_private",NULL);
-+  remove_proc_entry("ti_commproc/atm/sarhal_stats",NULL);
-+  remove_proc_entry("ti_commproc/atm/oam_ping",NULL);
-+  remove_proc_entry("ti_commproc/atm/pvc_table",NULL);
-+#endif
++  remove_proc_entry("tiatm/avsar_ver",NULL);
++  remove_proc_entry("tiatm/avsar_modem_stats",NULL);
++  remove_proc_entry("tiatm/avsar_modem_training",NULL);
++  remove_proc_entry("tiatm/avsar_channels",NULL);
++  remove_proc_entry("tiatm/avsar_private",NULL);
++  remove_proc_entry("tiatm/avsar_sarhal_stats",NULL);
++  remove_proc_entry("tiatm/avsar_oam_ping",NULL);
++  remove_proc_entry("tiatm/avsar_pvc_table",NULL);
++  remove_proc_entry("tiatm",NULL);
 +  tn7dsl_dslmod_sysctl_unregister();
 +  
 +  printk ("Module Removed\n");
@@ -22560,30 +22550,15 @@ diff -urN linux.old/drivers/atm/sangam_atm/tn7atm.c linux.dev/drivers/atm/sangam
 +  tn7atm_init(mydev);
 +
 +  /* Set up proc entry for atm stats */
-+#ifdef COMMON_NSP
-+#define PROC_DIR "avalanche"
-+  //proc_dir = proc_mkdir(PROC_DIR, NULL);
-+  create_proc_read_entry("avalanche/avsar_modem_stats",0,NULL,tn7dsl_proc_stats,NULL);
-+  //create_proc_read_entry("avsar_modem_stats",0,proc_dir,tn7dsl_proc_stats,NULL);
-+  create_proc_read_entry("avalanche/avsar_modem_training",0,NULL,tn7dsl_proc_modem,NULL);
-+  create_proc_read_entry("avalanche/avsar_ver",0,NULL,tn7atm_proc_version,NULL);
-+  create_proc_read_entry("avalanche/avsar_channels",0,NULL,tn7atm_proc_channels,mydev);
-+  create_proc_read_entry("avalanche/avsar_private",0,NULL,tn7atm_proc_private,mydev);
-+  create_proc_read_entry("avalanche/avsar_sarhal_stats",0,NULL,tn7sar_proc_sar_stat,mydev);
-+  create_proc_read_entry("avalanche/avsar_oam_ping",0,NULL,tn7sar_proc_oam_ping,mydev);
-+  create_proc_read_entry("avalanche/avsar_pvc_table",0,NULL,tn7sar_proc_pvc_table,mydev);
-+#else
-+#define PROC_DIR "atm"
-+  proc_dir = proc_mkdir(PROC_DIR, "ti_commproc");
-+  create_proc_read_entry("modem_stats",0,pro_dir,tn7dsl_proc_stats,NULL);
-+  create_proc_read_entry("modem_training",0,pro_dir,tn7dsl_proc_modem,NULL);
-+  create_proc_read_entry("modem_ver",0,pro_dir,tn7atm_proc_version,NULL);
-+  create_proc_read_entry("modem_channels",0,pro_dir,tn7atm_proc_channels,mydev);
-+  create_proc_read_entry("modem_private",0,pro_dir,tn7atm_proc_private,mydev);
-+  create_proc_read_entry("sarhal_stats", pro_dir,tn7sar_proc_sar_stat,mydev);
-+  create_proc_read_entry("oam_ping",0,pro_dir,tn7sar_proc_oam_ping,mydev);
-+  create_proc_read_entry("pvc_table",0,pro_dir,tn7sar_proc_pvc_table,mydev);
-+#endif
++  proc_mkdir("tiatm", NULL);
++  create_proc_read_entry("tiatm/avsar_modem_stats",0,NULL,tn7dsl_proc_stats,NULL);
++  create_proc_read_entry("tiatm/avsar_modem_training",0,NULL,tn7dsl_proc_modem,NULL);
++  create_proc_read_entry("tiatm/avsar_ver",0,NULL,tn7atm_proc_version,NULL);
++  create_proc_read_entry("tiatm/avsar_channels",0,NULL,tn7atm_proc_channels,mydev);
++  create_proc_read_entry("tiatm/avsar_private",0,NULL,tn7atm_proc_private,mydev);
++  create_proc_read_entry("tiatm/avsar_sarhal_stats",0,NULL,tn7sar_proc_sar_stat,mydev);
++  create_proc_read_entry("tiatm/avsar_oam_ping",0,NULL,tn7sar_proc_oam_ping,mydev);
++  create_proc_read_entry("tiatm/avsar_pvc_table",0,NULL,tn7sar_proc_pvc_table,mydev);
 +
 +  tn7dsl_dslmod_sysctl_register();
 +
