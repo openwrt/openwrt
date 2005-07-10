@@ -95,6 +95,7 @@ $(IPKG_PGSQL_CLI):
 
 $(STAGING_DIR)/usr/lib/libpq.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include
+	cp -fpR $(PKG_INSTALL_DIR)/usr/include/libpq $(STAGING_DIR)/usr/include/
 	cp -fpR $(PKG_INSTALL_DIR)/usr/include/libpq-fe.h $(STAGING_DIR)/usr/include/
 	cp -fpR $(PKG_INSTALL_DIR)/usr/include/postgres_ext.h $(STAGING_DIR)/usr/include/
 	cp -fpR $(PKG_INSTALL_DIR)/usr/include/postgresql $(STAGING_DIR)/usr/include/
@@ -106,6 +107,7 @@ install-dev: $(STAGING_DIR)/usr/lib/libpq.so
 
 uninstall-dev:
 	rm -rf \
+		$(STAGING_DIR)/usr/include/libpq \
 		$(STAGING_DIR)/usr/include/libpq-fe.h \
 		$(STAGING_DIR)/usr/include/postgres_ext.h \
 		$(STAGING_DIR)/usr/include/postgresql \
