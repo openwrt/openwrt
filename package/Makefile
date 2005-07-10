@@ -25,6 +25,7 @@ package-$(BR2_PACKAGE_EBTABLES) += ebtables
 package-$(BR2_PACKAGE_EZIPUPDATE) += ez-ipupdate
 package-$(BR2_PACKAGE_FPING) += fping
 package-$(BR2_PACKAGE_FPROBE) += fprobe
+package-$(BR2_PACKAGE_FPROBE_ULOG) += fprobe-ulog
 package-$(BR2_PACKAGE_FREERADIUS) += freeradius
 package-$(BR2_PACKAGE_FRICKIN) += frickin
 package-$(BR2_PACKAGE_FUSE) += fuse
