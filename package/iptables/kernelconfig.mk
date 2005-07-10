@@ -33,6 +33,7 @@ ext-$(CONFIG_IP_NF_TARGET_MARK) += MARK
 #ext-$(CONFIG_IP_NF_TARGET_LOG) += LOG
 ext-$(CONFIG_IP_NF_TARGET_ULOG) += ULOG
 #ext-$(CONFIG_IP_NF_TARGET_TCPMSS) += TCPMSS
+ext-$(CONFIG_IP_NF_TARGET_NETMAP) += NETMAP
 
 # add extensions that don't depend on kernel config
 ext-m += TTL
