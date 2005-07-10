@@ -396,7 +396,7 @@ void setup_wext(int skfd, char *ifname)
 
 	wrq.u.txpower.value = -1;
 	wrq.u.txpower.fixed = 1;
-	wrq.u.txpower.flags = IW_TXPOW_MWATT;
+	wrq.u.txpower.flags = IW_TXPOW_DBM;
 	IW_SET_EXT_ERR(skfd, ifname, SIOCSIWTXPOW, &wrq, "Set Tx Power");
 
 	/* Set up WEP */
