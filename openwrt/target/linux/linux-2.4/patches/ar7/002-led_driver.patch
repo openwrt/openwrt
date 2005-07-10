@@ -1,1928 +1,729 @@
-diff -urN kernel-old/drivers/char/avalanche_led/led_drv.c kernel-current/drivers/char/avalanche_led/led_drv.c
---- kernel-old/drivers/char/avalanche_led/led_drv.c	1970-01-01 01:00:00.000000000 +0100
-+++ kernel-current/drivers/char/avalanche_led/led_drv.c	2005-07-10 18:40:23.008730752 +0200
-@@ -0,0 +1,375 @@
-+/******************************************************************************    
-+ * FILE PURPOSE:     - LED driver module Source                                       
-+ ******************************************************************************    
-+ * FILE NAME:     led_drv.c                                                        
-+ *                                                                                 
-+ * DESCRIPTION:   Linux LED character driver implementation                                                  
-+ *                                                                                 
-+ * REVISION HISTORY:                                                               
-+ * 27 Aug 2003    Initial Creation                      Sharath Kumar<krs@ti.com>  
-+ * 
-+ * 16 Dec 2003    Updates for 5.7                       Sharath Kumar<krs@ti.com>       
-+ *
-+ * 07 Jan 2004    Wrapper for DSL                       Sharath Kumar<krs@ti.com>                                                   
-+ *                                                                                 
-+ * (C) Copyright 2002, Texas Instruments, Inc                                      
-+ *******************************************************************************/  
-+
+diff -urN linux.old/drivers/char/avalanche_led/ledmod.c linux.dev/drivers/char/avalanche_led/ledmod.c
+--- linux.old/drivers/char/avalanche_led/ledmod.c	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/drivers/char/avalanche_led/ledmod.c	2005-07-11 03:16:48.247012224 +0200
+@@ -0,0 +1,719 @@
 +#include <linux/config.h>
-+#include <linux/module.h>
 +#include <linux/init.h>
-+#include <linux/types.h>
-+#include <linux/errno.h>
-+#include <linux/slab.h>
-+#include <linux/ioport.h>
-+#include <linux/fcntl.h>
-+#include <linux/interrupt.h>
-+#include <linux/sched.h>
-+#include <linux/mm.h>
-+#include <asm/io.h>
-+#include <asm/uaccess.h>
-+#include <asm/system.h>
-+#include <linux/delay.h>
-+#include <linux/devfs_fs_kernel.h>
-+#include <linux/wait.h>
++#include <linux/kernel.h>
 +#include <linux/proc_fs.h>
++#include <asm/uaccess.h>
++#include <linux/fs.h>
 +#include <linux/timer.h>
-+#include <asm/ar7/sangam.h>
-+#include <asm/ar7/avalanche_misc.h>
++#include <linux/delay.h>
++#include <linux/spinlock.h>
++#include <asm/ar7/avalanche_regs.h>
++#include <asm/ar7/ledapp.h>
++#include <linux/module.h>
 +
-+#include "led_config.h"
-+#include "led_hal.h"
-+#include "led_ioctl.h"
-+#include "led_platform.h"
++#define LED_ON  		1
++#define LED_OFF 		2
++#define LED_BLINK   3
++#define LED_FLASH		4
 +
-+//#define tnetd73xx_gpio_ctrl(gpio_pin, pin_mode, pin_direction) avalanche_gpio_ctrl(gpio_pin, pin_mode, pin_direction)
-+#define tnetd73xx_gpio_out(gpio_pin, value)  avalanche_gpio_out_bit(gpio_pin, value)
-+//#define avalanche_gpio_in_bit(gpio_pin) tnetd73xx_gpio_in(gpio_pin)
++#define LED_BLINK_UP   		5
++#define LED_BLINK_DOWN   	6
 +
-+#define TI_LED_VERSION          "0.1"
-+#define GPIO_MAP_LEN   ((MAX_GPIO_PIN_NUM/32) + 1)
++typedef struct state_entry {
++	unsigned char mode;
++	unsigned char led;
++	void (*handler) (struct state_entry * pState);
++	unsigned long param;
++} state_entry_t;
 +
-+static int gpio_off_state[GPIO_MAP_LEN] = AVALANCHE_GPIO_OFF_MAP;
++typedef struct mod_entry {
++	state_entry_t *states[MAX_STATE_ID];
++} mod_entry_t;
 +
-+#define TRUE 1
-+#define FALSE 0
-+#define FLICK_TIME (HZ*100/1000)
-+static unsigned int wan_txrx_state = 0;
-+static unsigned int wlan_txrx_state = 0;
-+struct timer_list *pWanTimer = NULL;
++static mod_entry_t *modArr[MAX_MOD_ID];
++static struct proc_dir_entry *led_proc_dir, *led_file;
 +
-+static void wan_led_func(unsigned long data)
++/* index of the array is the led number HARDWARE SPECIFIC*/
++typedef struct led_data {
++	led_reg_t *led;
++	int state;
++	struct timer_list *pTimer;
++	unsigned char timer_running;
++	unsigned long param;
++} led_data_t;
++
++led_data_t led_arr[MAX_LED_ID + 1];
++/*!!! The last device is actually being used for ar7 reset to factory default */
++#if 1
++/* Ron add for adsl LED blink */
++#define GPIO_ADSL_ACT  (1<<6)
++#define GPIO_ADSL_DOWN (1<<8)
++#define BLINK_FAST     5*HZ/100
++#define BLINK_SLOW     15*HZ/100
++static struct timer_list my_led_timer;
++static int my_blink_count = 0;
++static int my_mode = 1;
++void led_operation(int mod, int state);
++
++static void my_led_on(unsigned long gpio, int logic)
 +{
-+        avalanche_gpio_ctrl(2, GPIO_PIN, GPIO_OUTPUT_PIN);
-+        avalanche_gpio_ctrl(3, GPIO_PIN, GPIO_OUTPUT_PIN);
++	if (logic > 0)
++		GPIO_DATA_OUTPUT |= gpio;
++	else
++		GPIO_DATA_OUTPUT &= ~gpio;
 +
-+        if (wan_txrx_state == 0)
-+        {
-+                tnetd73xx_gpio_out(2, TRUE);
-+                tnetd73xx_gpio_out(3, FALSE);
-+                wan_txrx_state = 1;
-+        }
-+        else
-+        {
-+                tnetd73xx_gpio_out(2, FALSE);
-+                tnetd73xx_gpio_out(3, FALSE);
-+                wan_txrx_state = 0;
-+        }
-+        pWanTimer->expires = jiffies + FLICK_TIME;
-+        add_timer(pWanTimer);
++}
++static void my_led_off(unsigned long gpio, int logic)
++{
++	if (logic > 0)
++		GPIO_DATA_OUTPUT &= ~gpio;
++	else
++		GPIO_DATA_OUTPUT |= gpio;
 +
 +}
 +
-+static int led_ioctl( struct inode * inode, struct file * file,
-+                             unsigned int cmd, unsigned long arg )
++static void my_led_init(unsigned long gpio, int init, int logic)
 +{
-+
-+    int ret = 0;
-+//    char name[80];
-+
-+    switch ( cmd )
-+    {
-+        case LED_CONFIG:
-+        {
-+            LED_CONFIG_T led_cfg;
-+            if (copy_from_user((char *)&led_cfg, (char *)arg, sizeof(led_cfg)))
-+            {
-+		printk("in led config error\n");
-+                ret = -EFAULT;
-+                break;
-+            }
-+		printk("in led config\n");
-+            ret = avalanche_led_config_set(&led_cfg);
-+        }
-+        break;
-+
-+        case LED_GET_HANDLE:
-+        {
-+            LED_MODULE_T led_mod;
-+            int handle;
-+
-+            if (copy_from_user((char *)&led_mod, (char *)arg, sizeof(led_mod)))
-+            {
-+                ret =  -EFAULT;
-+                break;
-+            }
-+
-+            handle = (int)avalanche_led_register(led_mod.name,led_mod.instance);
-+
-+            if (copy_to_user((char *)(&(((LED_MODULE_T *)arg)->handle)), (char *)(&handle), sizeof(int)))
-+            {
-+                ret =  -EFAULT;
-+                break;
-+            }
-+
-+            if(handle)
-+                ret = 0;
-+            else
-+                ret = -1;
-+        }
-+        break;
-+
-+        case LED_ACTION:
-+        {
-+            LED_STATE_T led_state;
-+            if (copy_from_user((char *)&led_state, (char *)arg, sizeof(led_state)))
-+            {
-+                ret =  -EFAULT;
-+                break;
-+            }
-+            else {
-+		printk("led action : handle = %d, id = %d\n", led_state.handle, led_state.state_id);
-+            	//add by leijun
-+            	if (led_state.handle == 2) //system led
-+            	{
-+            		switch (led_state.state_id)
-+			{
-+                                case 1:
-+                                        break;
-+                                case 2:  /*sys led flashing green */
-+                                        tnetd73xx_gpio_out(4, FALSE);
-+                                        tnetd73xx_gpio_out(5, TRUE);
-+                                        tnetd73xx_gpio_out(8, TRUE);
-+                                        break;
-+                                case 3: /*sys led solid green */
-+                                        tnetd73xx_gpio_out(4, TRUE);
-+                                        tnetd73xx_gpio_out(5, TRUE);
-+                                        tnetd73xx_gpio_out(8, TRUE);
-+
-+                                        break;
-+                                case 4: /*sys fail red */
-+                                        tnetd73xx_gpio_out(4, TRUE);
-+                                        tnetd73xx_gpio_out(5, FALSE);
-+                                        tnetd73xx_gpio_out(8, FALSE);
-+                                        break;
-+                                default:
-+                                        break;
-+
-+			}
-+            	}else if (led_state.handle == 3)
-+            	{
-+			printk("led action : handle = %d, id = %d\n", led_state.handle, led_state.state_id);
-+		        avalanche_gpio_ctrl(2, GPIO_PIN, GPIO_OUTPUT_PIN);
-+		        avalanche_gpio_ctrl(3, GPIO_PIN, GPIO_OUTPUT_PIN);
-+
-+			switch (led_state.state_id)
-+			{
-+                                case 1: /*no wan interface*/
-+                                        if (pWanTimer)
-+                                        {
-+                                                del_timer(pWanTimer);
-+                                                kfree(pWanTimer);
-+                                                pWanTimer = NULL;
-+                                        }
-+                                        tnetd73xx_gpio_out(2, FALSE);
-+                                        tnetd73xx_gpio_out(3, FALSE);
-+                                        break;
-+                                case 2: /*wan connected */
-+                                        if (pWanTimer)
-+                                        {
-+                                                del_timer(pWanTimer);
-+                                                kfree(pWanTimer);
-+                                                pWanTimer = NULL;
-+                                        }
-+                                        tnetd73xx_gpio_out(2, TRUE);
-+                                        tnetd73xx_gpio_out(3, FALSE);
-+                                        break;
-+                                case 3: /*rx/tx activity */
-+                                        if (pWanTimer != NULL)
-+                                                break;
-+
-+                                        pWanTimer = kmalloc(sizeof(struct timer_list), GFP_KERNEL);
-+                                        init_timer(pWanTimer);
-+
-+                                        pWanTimer->function = wan_led_func;
-+                                        pWanTimer->data = 0;
-+                                        pWanTimer->expires = jiffies + FLICK_TIME;
-+                                        tnetd73xx_gpio_out(2, FALSE);
-+                                        tnetd73xx_gpio_out(3, FALSE);
-+                                        wan_txrx_state = 0;
-+                                        add_timer(pWanTimer);
-+
-+                                        break;
-+                                case 4: /*no ipaddress */
-+                                        if (pWanTimer)
-+                                        {
-+                                                del_timer(pWanTimer);
-+                                                kfree(pWanTimer);
-+                                                pWanTimer = NULL;
-+                                        }
-+                                        tnetd73xx_gpio_out(2, FALSE);
-+                                        tnetd73xx_gpio_out(3, TRUE);
-+                                        break;
-+                                default:
-+                                        if (pWanTimer)
-+                                        {
-+                                                del_timer(pWanTimer);
-+                                                kfree(pWanTimer);
-+                                                pWanTimer = NULL;
-+                                        }
-+                                        break;
-+			}
-+		}else if (led_state.handle == 4) //test
-+		{
-+			int high, low;
-+			high = (led_state.state_id & 0xf0) >> 4;
-+			low = (led_state.state_id & 0x0f);
-+			tnetd73xx_gpio_out(high, (low > 0)?1:0);
-+	       	}else avalanche_led_action((void *)led_state.handle,led_state.state_id);
-+        	}
-+                        
-+        }
-+        break;
-+
-+        case LED_RELEASE_HANDLE:
-+            ret = avalanche_led_unregister((void *)arg);
-+        break;
-+
-+        default:
-+            ret = -EINVAL;
-+    }
-+    return ret;
-+
++	GPIO_DATA_ENABLE |= gpio;
++	GPIO_DATA_DIR &= ~gpio;
++	if (init)
++		my_led_on(gpio, logic);
++	else
++		my_led_off(gpio, logic);
 +}
 +
-+static int led_open( struct inode * inode, struct file * file )
++static void my_led_blink_timer(unsigned long data)
 +{
-+    return 0;
++	unsigned long gpio = GPIO_ADSL_ACT;
++	unsigned int speed = BLINK_FAST;
++	if (my_mode == 2) {
++		gpio = GPIO_ADSL_DOWN;
++		speed = BLINK_SLOW;
++	}
++	if (my_blink_count) {
++		if (GPIO_DATA_OUTPUT & gpio) {
++			GPIO_DATA_OUTPUT &= ~gpio;
++			if (my_mode != 2)
++				my_blink_count = 0;
++		} else {
++			GPIO_DATA_OUTPUT |= gpio;
++		}
++	}
++	my_led_timer.expires = jiffies + speed;
++	add_timer(&my_led_timer);
 +}
 +
-+static int led_close( struct inode * inode, struct file * file )
-+{
-+    return 0;
-+}
++/* Ron add for ADSL led blink */
++#endif
++static spinlock_t config_lock;
++
++static void board_led_link_up(state_entry_t * pState);
++static void board_led_link_down(state_entry_t * pState);
++static void board_led_activity_on(state_entry_t * pState);
++static void board_led_activity_off(state_entry_t * pState);
++static void led_timer_func(unsigned long data);
++
++static ssize_t proc_read_led_fops(struct file *filp, char *buf, size_t count, loff_t * offp);
++static ssize_t proc_write_led_fops(struct file *filp, const char *buffer, size_t count, loff_t * offp);
++static int config_led(unsigned long y);
 +
 +struct file_operations led_fops = {
-+    ioctl:    led_ioctl,
-+    open:    led_open,
-+    release:  led_close
++  read:proc_read_led_fops,
++  write:proc_write_led_fops,
 +};
 +
-+
-+/* Proc function to display driver version */                                                                       
-+static int                                                                                     
-+led_ver_info(char *buf, char **start, off_t offset, int count, int *eof, void *data)        
-+{                                                                                              
-+//	int instance;                                                                              
-+	int len=0;                                                                                 
-+                                                                                               
-+	len += sprintf(buf +len,"\nTI Linux LED Driver Version %s\n",TI_LED_VERSION);         
-+	return len;                                                                                
-+}                                                                                              
-+
-+
-+/* proc interface /proc/avalanche/led  */
-+int led_cfg_info(char* buf, char **start, off_t offset, int count,
-+                              int *eof, void *data)
++static int led_atoi(char *name)
 +{
-+    int mod_count = 0;
-+    int len=0;
-+    int limit = count - 80;
-+    char *msg[5]={"LED OFF", "LED_ON", "LED_ONESHOT_OFF", "LED_ONESHOT_ON","LED_FLASH"};
++	int val = 0;
++	for (;; name++) {
++		switch (*name) {
++		case '0'...'9':
++			val = val * 10 + (*name - '0');
++			break;
++		default:
++			return val;
++		}
++	}
++}
 +
-+    for(mod_count = 0;mod_count<MAX_MODULE_ENTRIES;mod_count++)
-+    {
-+        int instance;
++static int free_memory(void)
++{
++	int i, j;
 +
-+        for(instance = 0; instance < MAX_MODULE_INSTANCES; instance++)
-+        {  
-+            int state_id;
-+            int flag = 0;
-+          
-+            for(state_id =0 ;state_id < MAX_STATE_ENTRIES; state_id++)
-+            {
-+                LED_CONFIG_T led_cfg;
-+                if(avalanche_led_config_get(&led_cfg,mod_count,instance,state_id) == 0)
-+                { 
-+                    if(flag == 0)
-+                    {
-+                        flag = 1;
-+                        if(len <= limit)
-+                            len+= sprintf(buf+len, "\nModule:%s\n",led_cfg.name);
-+                        
-+                        if(len <= limit)
-+                            len+= sprintf(buf+len, "\n    Instance:%d\n",instance);
-+                        
-+                    }
-+                    
-+                    if(len <= limit)
-+                        len+= sprintf(buf+len, "\n        State: %d\n",state_id);
-+                    
-+                    if(len <= limit)
-+                        len+= sprintf(buf+len, "\n            mode: %s\n",msg[led_cfg.mode[0]% 5 ]);
-+                    
-+                    if(len <= limit)
-+                        len+= sprintf(buf+len, "\n            gpio: %d\n",led_cfg.gpio[0]);
-+                    
-+                    if(len <= limit)
-+                        len+= sprintf(buf+len, "\n            param1: %d\n",led_cfg.param1);
-+                    
-+                    if(len <= limit)
-+                        len+= sprintf(buf+len, "\n            param2: %d\n",led_cfg.param2);
-+                }
-+            }
-+        }
-+    }       
-+       
-+                                
-+                        
-+    return len;
-+}    
++	for (i = 0; i < MAX_MOD_ID; i++) {
++		if (modArr[i] != NULL) {
++			for (j = 0; j < MAX_STATE_ID; j++) {
++				if (modArr[i]->states[j] != NULL)
++					kfree(modArr[i]->states[j]);
++			}
++			kfree(modArr[i]);
++			modArr[i] = NULL;
++		}
++	}
++	return 0;
++}
 +
++static int led_on(state_entry_t * pState)
++{
++	if (led_arr[pState->led].led == NULL)
++		return -1;
++	led_arr[pState->led].led->onfunc(led_arr[pState->led].led->param);
++	return 0;
++}
++
++static int led_off(state_entry_t * pState)
++{
++	if (led_arr[pState->led].led == NULL)
++		return -1;
++	led_arr[pState->led].led->offfunc(led_arr[pState->led].led->param);
++	return 0;
++}
++
++static void board_led_link_up(state_entry_t * pState)
++{
++	led_arr[pState->led].state = LED_ON;
++	if (led_arr[pState->led].timer_running == 0)
++		led_on(pState);
++	return;
++}
++
++static void board_led_link_down(state_entry_t * pState)
++{
++	led_arr[pState->led].state = LED_OFF;
++	if (led_arr[pState->led].timer_running == 0)
++		led_off(pState);
++	return;
++}
++
++static void add_led_timer(state_entry_t * pState)
++{
++	led_arr[pState->led].pTimer->expires =
++		jiffies + HZ * (pState->param) / 1000;
++	led_arr[pState->led].param = pState->param;
++	led_arr[pState->led].pTimer->data = pState;
++	add_timer(led_arr[pState->led].pTimer);
++}
++
++static void board_led_activity_on(state_entry_t * pState)
++{
++	if (led_arr[pState->led].timer_running == 0) {
++		led_on(pState);
++		add_led_timer(pState);
++		led_arr[pState->led].timer_running = 1;
++		led_arr[pState->led].state = LED_BLINK_UP;
++	} else if (led_arr[pState->led].timer_running > 0xF0) {
++		led_arr[pState->led].state = LED_BLINK_UP;
++		led_arr[pState->led].pTimer->expires =
++			jiffies + HZ * (pState->param) / 1000;
++		led_arr[pState->led].param = pState->param;
++		led_arr[pState->led].pTimer->data = pState;
++	}
++	return;
++}
++
++static void board_led_activity_off(state_entry_t * pState)
++{
++	if (led_arr[pState->led].timer_running == 0) {
++		led_off(pState);
++		add_led_timer(pState);
++		led_arr[pState->led].timer_running = 1;
++		led_arr[pState->led].state = LED_BLINK_UP;
++	} else if (led_arr[pState->led].timer_running > 0xF0) {
++		led_arr[pState->led].state = LED_BLINK_UP;
++		led_arr[pState->led].pTimer->expires =
++			jiffies + HZ * (pState->param) / 1000;
++		led_arr[pState->led].param = pState->param;
++		led_arr[pState->led].pTimer->data = pState;
++	}
++	return;
++}
++
++static void board_led_link_flash(state_entry_t * pState)
++{
++	if (led_on(pState))
++		return;
++	if (led_arr[pState->led].timer_running == 0)
++		add_led_timer(pState);
++	else
++		led_arr[pState->led].param = pState->param;
++	led_arr[pState->led].timer_running = 0xFF;
++	led_arr[pState->led].state = LED_FLASH;
++	return;
++}
++
++static void led_timer_func(unsigned long data)
++{
++	state_entry_t *pState = NULL;
++	mod_entry_t *pMod = NULL;
++	unsigned int flags;
++
++	spin_lock_irqsave(&config_lock, flags);
++
++	pState = (state_entry_t *) data;
++
++	if (led_arr[pState->led].state == LED_BLINK_DOWN) {
++		led_arr[pState->led].timer_running = 0;
++		if (pState->mode == 2)
++			led_arr[pState->led].state = LED_OFF;
++		else
++			led_arr[pState->led].state = LED_ON;
++	} else if (led_arr[pState->led].state == LED_BLINK_UP) {
++		led_arr[pState->led].pTimer->expires =
++			jiffies + HZ * (led_arr[pState->led].param) / 1000;
++		led_arr[pState->led].pTimer->data = pState;
++		add_timer(led_arr[pState->led].pTimer);
++		if (pState->mode == 2) {
++			led_off(pState);
++			led_arr[pState->led].state = LED_BLINK_DOWN;
++		} else {
++			led_on(pState);
++			led_arr[pState->led].state = LED_BLINK_DOWN;
++		}
++		led_arr[pState->led].timer_running = 1;
++	} else if (led_arr[pState->led].state == LED_FLASH) {
++		led_arr[pState->led].pTimer->expires =
++			jiffies + HZ * (led_arr[pState->led].param) / 1000;
++		led_arr[pState->led].pTimer->data = pState;
++		add_timer(led_arr[pState->led].pTimer);
++
++		if (led_arr[pState->led].timer_running == 0xFF) {
++			led_off(pState);
++			led_arr[pState->led].timer_running--;
++		} else {
++			led_on(pState);
++			led_arr[pState->led].timer_running++;
++		}
++		spin_unlock_irqrestore(&config_lock, flags);
++		return;
++	} else if (led_arr[pState->led].state == LED_OFF) {
++		led_off(pState);
++		led_arr[pState->led].timer_running = 0;
++	} else if (led_arr[pState->led].state == LED_ON) {
++		led_on(pState);
++		led_arr[pState->led].timer_running = 0;
++	}
++	spin_unlock_irqrestore(&config_lock, flags);
++	return;
++}
++
++static ssize_t proc_read_led_fops(struct file *filp,
++								  char *buf, size_t count, loff_t * offp)
++{
++	char *pdata = NULL;
++	int i = 0, j = 0, len = 0, totallen = 0;
++	char line[255];
++
++	if (*offp != 0)
++		return 0;
++
++	pdata = buf;
++	len += sprintf(line, "LEDS Registered for use are:");
++	for (i = 0; i < MAX_LED_ID; i++)
++		if (led_arr[i].led != NULL)
++			len += sprintf(&line[len], " %d ", i);
++	line[len++] = '\n';
++
++	copy_to_user(pdata, line, len);
++	pdata += len;
++	totallen += len;
++	len = 0;
++	len = sprintf(line, "USER MODULE INFORMATION:\n");
++	copy_to_user(pdata, line, len);
++	pdata += len;
++	totallen += len;
++	len = 0;
++	for (i = 0; i < MAX_MOD_ID; i++) {
++		if (modArr[i] != NULL) {
++			len = sprintf(line, "  Module ID = %d \n", i);
++			copy_to_user(pdata, line, len);
++			pdata += len;
++			totallen += len;
++			len = 0;
++			for (j = 0; j < MAX_STATE_ID; j++) {
++				if (modArr[i]->states[j] != NULL) {
++					len = sprintf(line,	  "    State = %d , Led = %d,", j,
++								  modArr[i]->states[j]->led);
++					copy_to_user(pdata, line, len);
++					pdata += len;
++					totallen += len;
++
++					len = 0;
++					switch (modArr[i]->states[j]->mode) {
++					case 1:
++						len = sprintf(line,     " Mode = OFF\n");
++						break;
++					case 2:
++						len = sprintf(line,	" Mode = BLINK_ON , On Time(ms) = %d\n",
++									(unsigned int) modArr[i]->states[j]->
++									param);
++						break;
++					case 3:
++						len = sprintf(line,     " Mode = BLINK_OFF , Off Time(ms) = %d\n",
++									(unsigned int) modArr[i]->states[j]->
++									param);
++						break;
++					case 4:
++						len = sprintf(line,     " Mode = ON \n");
++						break;
++					case 5:
++						len = sprintf(line,	" Mode = FLASH , Time Period(ms) = %d\n",
++									(unsigned int) modArr[i]->states[j]->
++									param);
++						break;
++					default:
++						break;
++
++					}
++					copy_to_user(pdata, line, len);
++					pdata += len;
++					totallen += len;
++
++					len = 0;
++				}
++			}
++		}
++	}
++	/* Return with configuration information for LEDs */
++	*offp = totallen;
++	return totallen;
++}
++
++static ssize_t proc_write_led_fops(struct file *filp, const char *buffer, size_t count, loff_t * offp)
++{
++	char *pdata = NULL, *ptemp = NULL;
++	char line[10], temp[10];
++	int i = 0;
++	int mod = 0xFFFF, state = 0xFFFF;
++	int flag = 0;
++
++	/* Check if this write is for configuring stuff */
++	if (*(int *) (buffer) == 0xFFEEDDCC) {
++		printk("<1>proc write:Calling Configuration\n");
++		config_led((unsigned long) (buffer + sizeof(int)));
++		return count;
++	}
++
++	if (count >= 10) {
++		printk("<1>proc write:Input too long,max length = %d\n", 10);
++		return count;
++	}
++	memset(temp, 0x00, 10);
++	memset(line, 0x00, 10);
++	copy_from_user(line, buffer, count);
++	line[count] = 0x00;
++	pdata = line;
++	ptemp = temp;
++	while (flag == 0) {
++		if (i > 10)
++			break;
++		if (((*pdata) >= '0') && ((*pdata) <= '9')) {
++			*ptemp = *pdata;
++			ptemp++;
++		} else if ((*pdata) == ',') {
++			*ptemp = 0x00;
++			flag = 1;
++		}
++		pdata++;
++		i++;
++	};
++	if (flag == 1)
++		mod = led_atoi(temp);
++	else
++		return count;
++
++	ptemp = temp;
++	*ptemp = 0x00;
++	flag = 0;
++	while (flag == 0) {
++		if (i > 10)
++			break;
++		if (((*pdata) >= '0') && ((*pdata) <= '9')) {
++			*ptemp = *pdata;
++			ptemp++;
++		} else if ((*pdata) == 0x00) {
++			*ptemp = 0x00;
++			flag = 1;
++		}
++		pdata++;
++		i++;
++	};
++	if (flag == 1)
++		state = led_atoi(temp);
++	else
++		return count;
++	if ((mod == 0xFFFF) || (state == 0xFFFF))
++		return count;
++	else
++		led_operation(mod, state);
++	return count;
++}
++
++static int config_led(unsigned long y)
++{
++	config_elem_t *pcfg = NULL;
++	char *pdata = NULL;
++	int i;
++	int length = 0, number = 0;
++	unsigned int flags;
++
++	spin_lock_irqsave(&config_lock, flags);
++
++	/* ioctl to configure */
++	length = *((int *) y);
++	pdata = (char *) y + sizeof(int);
++	number = (length - sizeof(int)) / sizeof(config_elem_t);
++	pcfg = (config_elem_t *) (pdata);
++
++	/* Check if an earlier configuration exists IF yes free it up */
++	free_memory();
++
++	for (i = 0; i < number; i++) {
++		/* If no structure has been allocated for the module do so */
++		if (modArr[pcfg->name] == NULL) {
++			printk("<1>module =  %d\n", pcfg->name);
++			if (pcfg->name >= MAX_MOD_ID) {
++				printk
++					("<1>Exiting Configuration: Module ID too large %d\n",
++					 pcfg->name);
++				free_memory();
++				spin_unlock_irqrestore(&config_lock, flags);
++				return -1;
++			}
++			modArr[pcfg->name] = kmalloc(sizeof(mod_entry_t), GFP_KERNEL);
++			if (modArr[pcfg->name] == NULL) {
++				printk
++					("<1>Exiting Configuration: Error in allocating memory\n");
++				free_memory();
++				spin_unlock_irqrestore(&config_lock, flags);
++				return -1;
++			}
++			memset(modArr[pcfg->name], 0x00, sizeof(mod_entry_t));
++		}
++
++		/* if no structure is allocated previously for this state
++		   allocate a structure, if it's already there fill it up */
++		if (modArr[pcfg->name]->states[pcfg->state] == NULL) {
++			printk("<1>STATE =  %d\n", pcfg->state);
++			if (pcfg->state >= MAX_STATE_ID) {
++				printk("<1>Exiting Configuration: State ID too large\n");
++				free_memory();
++				spin_unlock_irqrestore(&config_lock, flags);
++				return -1;
++			}
++			modArr[pcfg->name]->states[pcfg->state] =
++				kmalloc(sizeof(state_entry_t), GFP_KERNEL);
++			if (modArr[pcfg->name]->states[pcfg->state] == NULL) {
++				free_memory();
++				spin_unlock_irqrestore(&config_lock, flags);
++				return -1;
++			}
++			memset(modArr[pcfg->name]->states[pcfg->state], 0x00,
++				   sizeof(state_entry_t));
++		}
++		/* Fill up the fields of the state */
++		if (pcfg->led >= MAX_LED_ID) {
++			printk("<1>led =  %d\n", pcfg->led);
++			free_memory();
++			spin_unlock_irqrestore(&config_lock, flags);
++			return -1;
++		}
++		modArr[pcfg->name]->states[pcfg->state]->led = pcfg->led;
++		modArr[pcfg->name]->states[pcfg->state]->mode = pcfg->mode;
++		modArr[pcfg->name]->states[pcfg->state]->param = pcfg->param;
++		switch (pcfg->mode) {
++		case 1:
++			modArr[pcfg->name]->states[pcfg->state]->handler =
++				board_led_link_down;
++			break;
++		case 2:
++		case 3:
++		case 5:
++			if (pcfg->mode == 2)
++				modArr[pcfg->name]->states[pcfg->state]->handler =
++					board_led_activity_on;
++			else if (pcfg->mode == 3)
++				modArr[pcfg->name]->states[pcfg->state]->handler =
++					board_led_activity_off;
++			else
++				modArr[pcfg->name]->states[pcfg->state]->handler =
++					board_led_link_flash;
++			break;
++		case 4:
++			modArr[pcfg->name]->states[pcfg->state]->handler =
++				board_led_link_up;
++			break;
++		default:
++			printk("<1>Exiting Configuration: Unknown LED Mode\n");
++			free_memory();
++			spin_unlock_irqrestore(&config_lock, flags);
++			return -1;
++		}
++		pcfg++;
++	}
++	spin_unlock_irqrestore(&config_lock, flags);
++	return 0;
++}
 +
 +
 +int __init led_init(void)
 +{
 +
-+    /* register LED device */
-+    devfs_register(NULL, "led", DEVFS_FL_AUTO_DEVNUM, 0, 0,
-+                            S_IFCHR | S_IRUGO | S_IWUGO, &led_fops,NULL);
++	/* Clear our memory */
++	memset(modArr, 0x00, sizeof(mod_entry_t *) * MAX_MOD_ID);
++	memset(led_arr, 0x00, sizeof(led_data_t *) * MAX_LED_ID);
 +
++	/* Create spin lock for config data structure */
++	config_lock = SPIN_LOCK_UNLOCKED;
 +
-+    avalanche_led_hal_init(gpio_off_state,AVALANCHE_GPIO_PIN_COUNT);
++#if 0
++	/* Create directory */
++	led_proc_dir = proc_mkdir("led_mod", NULL);
++	if (led_proc_dir == NULL)
++		goto out;
++#endif
++	
++	/* Create adsl file */
++	led_file = create_proc_entry("led", 0777, NULL);
++	if (led_file == NULL)
++		goto led_file;
 +
-+    /* create proc entry */
-+    create_proc_read_entry("avalanche/led_cfg", 0, NULL, led_cfg_info, NULL);
-+    create_proc_read_entry("avalanche/led_ver", 0, NULL, led_ver_info, NULL);
++	led_file->owner = THIS_MODULE;
++	led_file->proc_fops = &led_fops;
 +
-+    return 0;
++	memset(modArr, 0x00, sizeof(mod_entry_t *) * MAX_MOD_ID);
++
++	/* Ron add for ADSL LED blink */
++	my_mode = 1;
++	my_led_init(GPIO_ADSL_ACT, 0, -1);
++	my_led_init(GPIO_ADSL_DOWN, 0, -1);
++	init_timer(&my_led_timer);
++	my_led_timer.function = my_led_blink_timer;
++	my_led_timer.data = 0;
++	my_led_timer.expires = jiffies + BLINK_SLOW;
++	add_timer(&my_led_timer);
++	/* Ron add for ADSL LED blink */
++	return 0;
++
++  led_file:
++	remove_proc_entry("led", NULL);
++  out:
++	return 0;
++
 +}
 +
 +void led_exit(void)
 +{
-+    avalanche_led_hal_exit();
-+    return;
++	remove_proc_entry("led", NULL);
++}
++
++void led_operation(int mod, int state)
++{
++
++	unsigned int flags;
++
++	spin_lock_irqsave(&config_lock, flags);
++#if 1
++	/* Ron Add for ADSL LED blink */
++	//printk("mod==%d state==%d\n",mod,state);
++
++	if (mod == 1) {
++		switch (state) {
++			/* off */
++		case 1:
++			my_mode = 1;
++			my_blink_count = 0;
++			my_led_off(GPIO_ADSL_ACT, -1);
++			my_led_off(GPIO_ADSL_DOWN, -1);
++			break;
++			/* sync */
++		case 2:
++			if (my_mode == 1) {
++				my_mode = 2;
++				my_led_off(GPIO_ADSL_ACT, -1);
++				my_blink_count++;
++			}
++			break;
++			/* on */
++		case 3:
++			my_mode = 3;
++			my_blink_count = 0;
++			my_led_off(GPIO_ADSL_DOWN, -1);
++			my_led_on(GPIO_ADSL_ACT, -1);
++			break;
++			/* off */
++		case 4:
++			my_mode = 4;
++			my_led_off(GPIO_ADSL_DOWN, -1);
++			my_blink_count++;
++			break;
++		}
++	}							/* Ron add for ADSL LED Blink */
++#endif
++	if ((mod >= MAX_MOD_ID) || (state >= MAX_STATE_ID)) {
++		spin_unlock_irqrestore(&config_lock, flags);
++		return;
++	}
++	if (modArr[mod] == NULL) {
++		spin_unlock_irqrestore(&config_lock, flags);
++		return;
++	}
++	if (modArr[mod]->states[state] == NULL) {
++		spin_unlock_irqrestore(&config_lock, flags);
++		return;
++	}
++	/* Call the function handler  */
++	modArr[mod]->states[state]->handler(modArr[mod]->states[state]);
++
++	spin_unlock_irqrestore(&config_lock, flags);
++}
++
++void register_led_drv(int device, led_reg_t * pInfo)
++{
++	unsigned int flags;
++	struct timer_list *pTimer = NULL;
++
++	spin_lock_irqsave(&config_lock, flags);
++
++	led_arr[device].led = pInfo;
++	if (led_arr[device].led->init != 0x00)
++		led_arr[device].led->init(led_arr[device].led->param);
++	if (led_arr[device].led->offfunc != 0x00)
++		led_arr[device].led->offfunc(led_arr[device].led->param);
++
++	/* Create a timer for blinking   */
++	pTimer = kmalloc(sizeof(struct timer_list), GFP_KERNEL);
++	init_timer(pTimer);
++	pTimer->function = led_timer_func;
++	pTimer->data = 0;
++	led_arr[device].pTimer = pTimer;
++	led_arr[device].timer_running = 0;
++
++	spin_unlock_irqrestore(&config_lock, flags);
++
++	return;
++}
++
++void deregister_led_drv(int device)
++{
++	unsigned int flags;
++
++	spin_lock_irqsave(&config_lock, flags);
++	led_arr[device].led = NULL;
++
++	if (led_arr[device].pTimer != NULL) {
++		del_timer(led_arr[device].pTimer);
++		kfree(led_arr[device].pTimer);
++	}
++	spin_unlock_irqrestore(&config_lock, flags);
++
++	return;
 +}
 +
 +module_init(led_init);
 +module_exit(led_exit);
 +
 +
-+EXPORT_SYMBOL_NOVERS(avalanche_led_register);
-+EXPORT_SYMBOL_NOVERS(avalanche_led_action);
-+EXPORT_SYMBOL_NOVERS(avalanche_led_unregister);
-+EXPORT_SYMBOL_NOVERS(avalanche_led_config_set);
-+EXPORT_SYMBOL_NOVERS(avalanche_led_config_get);
-diff -urN kernel-old/drivers/char/avalanche_led/led_hal.c kernel-current/drivers/char/avalanche_led/led_hal.c
---- kernel-old/drivers/char/avalanche_led/led_hal.c	1970-01-01 01:00:00.000000000 +0100
-+++ kernel-current/drivers/char/avalanche_led/led_hal.c	2005-07-10 18:24:22.242038232 +0200
-@@ -0,0 +1,821 @@
-+/******************************************************************************
-+ * FILE PURPOSE:     - LED HAL module source
-+ ******************************************************************************
-+ * FILE NAME:     led_hal.c
-+ *
-+ * DESCRIPTION:    LED HAL API's source.
-+ *
-+ * REVISION HISTORY:
-+ * 27 Aug 2003    Initial Creation                      Sharath Kumar<krs@ti.com>  
-+ * 
-+ * 16 Dec 2003    Updates for 5.7                       Sharath Kumar<krs@ti.com>       
-+ *
-+ * 07 Jan 2004    Wrapper for DSL                       Sharath Kumar<krs@ti.com>                                                   
-+ *
-+ * (C) Copyright 2002, Texas Instruments, Inc
-+ *******************************************************************************/
-+
-+#include "led_platform.h"
-+#include "led_config.h"
-+#include "led_hal.h"
-+
-+/* include for gpio APIs */
-+#include <asm/ar7/avalanche_misc.h>
-+
-+
-+#define REQUIRES_TIMER(x) ( (x == LED_ONESHOT_ON) || (x == LED_ONESHOT_OFF) || (x == LED_FLASH) )
-+
-+/*******************TYPEDEFs**************************************************/
-+typedef struct
-+{
-+    unsigned int state;
-+    unsigned int module_map;
-+    unsigned int pos_map[2];
-+}
-+LED_OBJ_T;
-+
-+typedef struct state_entry STATE_ENTRY_T;
-+
-+struct state_entry
-+{
-+    void (*handler) (STATE_ENTRY_T * state);
-+    unsigned int timer_running;
-+    LED_OBJ_T *led;
-+    unsigned int map1[2];
-+    unsigned int map2[2];
-+    void *os_timer;
-+    unsigned int param1;
-+    unsigned int param2;
-+    unsigned int module_id;
-+    unsigned int mode;
-+};
-+
-+typedef struct module_instance
-+{
-+    int module_id;
-+    int instance;
-+    STATE_ENTRY_T *states[MAX_STATE_ENTRIES];
-+}
-+MODULE_INSTANCE_T;
-+
-+typedef struct module_entry
-+{
-+    unsigned char *name;
-+    MODULE_INSTANCE_T *module_instance[MAX_MODULE_INSTANCES];
-+}
-+MODULE_ENTRY_T;
-+
-+
-+
-+/******************variable defn/declns***************************************/
-+
-+static LED_OBJ_T *leds[MAX_LED_ENTRIES];
-+static MODULE_ENTRY_T *modules[MAX_MODULE_ENTRIES];
-+
-+/* Declare Mutex lock */
-+MUTEX_DECLARE (led_lock);
-+
-+/*  GPIO OFF STATE  */
-+static unsigned int gpio_offstate_map[2];
-+
-+/*  Number of GPIO pins in the system  */
-+static unsigned int num_gpios;
-+
-+/* LED handlers */
-+static void (*led_mode_handler[NUM_LED_MODES]) (STATE_ENTRY_T * state);
-+
-+
-+
-+/******************static functions*****************************************/
-+
-+static void *led_malloc (int n)
-+{
-+    void *p;
-+    p = os_malloc (n);
-+
-+    if (p)
-+        os_memset (p, 0, n);
-+
-+    return p;
-+}
-+
-+static void avalanche_gpio_set(int * set_map,int *pos_map)
-+{
-+    int i;
-+    
-+    for(i = 0;i <num_gpios ;i+=32)
-+    {
-+        int index = i/32;
-+        avalanche_gpio_out_value(set_map[index],pos_map[index],index);
-+        
-+    } 
-+
-+}
-+
-+
-+static MODULE_INSTANCE_T *get_module (char *name, int instance)
-+{
-+    int module_id;
-+    MODULE_INSTANCE_T *mod_inst;
-+
-+
-+    if (instance >= MAX_MODULE_INSTANCES)
-+        return NULL;
-+
-+    for (module_id = 0; module_id < MAX_MODULE_ENTRIES; module_id++)
-+      {
-+          if (modules[module_id]
-+              && !os_strcmp (name, modules[module_id]->name))
-+              break;
-+      }
-+
-+    if (module_id == MAX_MODULE_ENTRIES)
-+      {
-+          for (module_id = 0;
-+               (module_id < MAX_MODULE_ENTRIES) && modules[module_id];
-+               module_id++);
-+
-+          if (module_id < MAX_MODULE_ENTRIES)
-+            {
-+                modules[module_id] = led_malloc (sizeof (MODULE_ENTRY_T));
-+
-+                if (!modules[module_id])
-+                    return NULL;
-+
-+                modules[module_id]->name = led_malloc (os_strlen (name) + 1);
-+
-+                if (!modules[module_id]->name)
-+                    return NULL;
-+
-+                os_strcpy (modules[module_id]->name, name);
-+            }
-+          else
-+            {
-+                log_msg ("ERROR:Module Count exceeded\n");
-+                return NULL;
-+            }
-+      }
-+
-+    if (!modules[module_id]->module_instance[instance])
-+        modules[module_id]->module_instance[instance] =
-+            led_malloc (sizeof (MODULE_INSTANCE_T));
-+
-+    if (!modules[module_id]->module_instance[instance])
-+        return NULL;
-+
-+    mod_inst = modules[module_id]->module_instance[instance];
-+    mod_inst->module_id = module_id;
-+    mod_inst->instance = instance;
-+
-+    return mod_inst;
-+}
-+
-+
-+static void assign_map(int *to, int *from)
-+{
-+    int i;
-+    
-+    for(i = 0;i <num_gpios ;i+=32)
-+    { 
-+        int index = i/32;
-+        to[index] = from[index];
-+    }
-+} 
-+
-+
-+
-+
-+static LED_OBJ_T *get_led (int * pos_map)
-+{
-+    int led_id;
-+
-+    for (led_id = 0; led_id < MAX_LED_ENTRIES; led_id++)
-+      {
-+          if (leds[led_id])
-+          {
-+              int i;
-+              int flag=0;
-+    
-+               for(i = 0;i <num_gpios ;i+=32)
-+               { 
-+                   int index = i/32;
-+                   if(leds[led_id]->pos_map[index] != pos_map[index])
-+                       flag =1;
-+               } 
-+               if(flag == 0)
-+                   break;
-+          }
-+      }
-+
-+    if (led_id == MAX_LED_ENTRIES)
-+      {
-+          for (led_id = 0; (led_id < MAX_LED_ENTRIES) && leds[led_id];
-+               led_id++);
-+
-+          if (led_id < MAX_LED_ENTRIES)
-+            {
-+                leds[led_id] = led_malloc (sizeof (LED_OBJ_T));
-+
-+                if (!leds[led_id])
-+                    return NULL;
-+
-+                assign_map(leds[led_id]->pos_map,pos_map);
-+            }
-+          else
-+            {
-+                log_msg ("ERROR:Module Count exceeded\n");
-+                return NULL;
-+            }
-+      }
-+
-+    return leds[led_id];
-+}
-+
-+static void led_oneshot_on_timer_func (int arg)
-+{
-+    STATE_ENTRY_T *state = (STATE_ENTRY_T *) arg;
-+    LED_OBJ_T *led = state->led;
-+
-+    state->timer_running = 0;
-+    MUTEX_GET (led_lock);
-+    if (led->state == LED_ONESHOT_ON)
-+    {    
-+        led->state = LED_OFF;
-+        avalanche_gpio_set (state->map2,led->pos_map);
-+    }
-+    MUTEX_RELEASE (led_lock);
-+
-+}
-+
-+static void led_oneshot_off_timer_func (int arg)
-+{
-+    STATE_ENTRY_T *state = (STATE_ENTRY_T *) arg;
-+    LED_OBJ_T *led = state->led;
-+
-+    state->timer_running = 0;
-+
-+    MUTEX_GET (led_lock);
-+    if (led->state == LED_ONESHOT_OFF)
-+    {
-+        led->state = LED_ON;
-+        avalanche_gpio_set(state->map2,led->pos_map);
-+    }
-+    MUTEX_RELEASE (led_lock);
-+
-+}
-+
-+static void led_flash_timer_func (int arg)
-+{
-+    STATE_ENTRY_T *state = (STATE_ENTRY_T *) arg;
-+    LED_OBJ_T *led = state->led;
-+
-+
-+    if (led->state != LED_FLASH)
-+        return;
-+
-+    MUTEX_GET (led_lock);
-+    
-+    if (state->timer_running == 1)
-+      {
-+          state->timer_running = 2;
-+          avalanche_gpio_set(state->map2,led->pos_map);
-+          os_timer_add (state->os_timer, state->param2, (int)state);
-+      }
-+    else
-+      {
-+          state->timer_running = 1;
-+          avalanche_gpio_set(state->map1,led->pos_map);
-+          os_timer_add (state->os_timer, state->param1, (int)state);
-+      }
-+
-+    MUTEX_RELEASE (led_lock);
-+}
-+
-+static void led_on(STATE_ENTRY_T * state)
-+{
-+    LED_OBJ_T *led = state->led;
-+
-+    led->state = LED_ON;
-+    avalanche_gpio_set(state->map1,led->pos_map);
-+    led->module_map |= (1 << (state->module_id));
-+
-+}
-+
-+static void led_off (STATE_ENTRY_T * state)
-+{
-+    LED_OBJ_T *led = state->led;
-+
-+    led->module_map &= ~(1 << (state->module_id));
-+    if (!led->module_map)
-+      {
-+          led->state = LED_OFF;
-+          avalanche_gpio_set(state->map1,led->pos_map);
-+      }
-+
-+}
-+
-+static void led_oneshot_on (STATE_ENTRY_T * state)
-+{
-+    LED_OBJ_T *led = state->led;
-+
-+    if (state->timer_running)
-+        return;
-+
-+    state->timer_running = 1;
-+    led->state = LED_ONESHOT_ON;
-+    avalanche_gpio_set(state->map1,led->pos_map);
-+    os_timer_add (state->os_timer, state->param1,(int) state);
-+}
-+
-+static void led_oneshot_off (STATE_ENTRY_T * state)
-+{
-+
-+    LED_OBJ_T *led = state->led;
-+
-+    if (state->timer_running)
-+        return;
-+
-+    state->timer_running = 1;
-+    led->state = LED_ONESHOT_OFF;
-+    avalanche_gpio_set(state->map1,led->pos_map);
-+    os_timer_add (state->os_timer, state->param1,(int) state);
-+}
-+
-+static void led_flash (STATE_ENTRY_T * state)
-+{
-+    LED_OBJ_T *led = state->led;
-+
-+    if (state->timer_running)
-+        return;
-+
-+    state->timer_running = 1;
-+    led->state = LED_FLASH;
-+    avalanche_gpio_set(state->map1,led->pos_map);
-+    os_timer_add (state->os_timer, state->param1,(int) state);
-+}
-+
-+
-+
-+static int led_get_mode(LED_CONFIG_T *led_cfg)
-+{
-+    int num_gpio = led_cfg->gpio_num;
-+    int i;
-+    int *led_mode = led_cfg->mode;
-+    int max = -1;
-+
-+    /* Return Max of available modes */
-+    for(i = 0; i<num_gpio; i++)
-+    {
-+       max = (max > led_mode[i]) ? max : led_mode[i];
-+    }
-+  
-+    return max; 
-+}
-+
-+static void led_assign_timer(STATE_ENTRY_T *state_entry)
-+{
-+
-+     if (state_entry->os_timer)
-+     {
-+         os_timer_delete(state_entry->os_timer);
-+     }
-+
-+     switch(state_entry->mode)
-+     {
-+         case LED_ONESHOT_ON:
-+              state_entry->os_timer = os_timer_init(led_oneshot_on_timer_func);
-+              break;
-+
-+         case LED_ONESHOT_OFF:
-+              state_entry->os_timer = os_timer_init(led_oneshot_off_timer_func);
-+              break;
-+
-+         case LED_FLASH:
-+              state_entry->os_timer = os_timer_init(led_flash_timer_func);
-+              break;
-+
-+         default:
-+              log_msg("invalid mode in function led_assign timer\n");
-+     }
-+
-+}
-+
-+static int led_get_map(LED_CONFIG_T *led_cfg,int *p_pos_map,int *p_map1,int *p_map2)
-+{
-+    int i;
-+    int map1[2] = {0,0};
-+    int pos_map[2] = {0,0};
-+    int map2[2] = {0,0};
-+    int requires_timer = REQUIRES_TIMER(led_get_mode(led_cfg));    
-+
-+    for (i = 0; i < led_cfg->gpio_num; i++)
-+    {
-+        int gpio_map;
-+        int index = led_cfg->gpio[i]/32;
-+        int pos = led_cfg->gpio[i] % 32;
-+        
-+        if (led_cfg->gpio[i] >= num_gpios)
-+        {
-+            log_msg ("Error: gpio number out of range\n");
-+            return -1;
-+        }
-+
-+        gpio_map = 1 << pos;        
-+
-+        pos_map[index] |= gpio_map;
-+        
-+
-+        switch (led_cfg->mode[i])
-+        {
-+            case LED_OFF:
-+                if(gpio_offstate_map[index] & gpio_map)
-+                    map1[index] |= gpio_map;
-+                
-+                if (requires_timer && (gpio_offstate_map[index] & gpio_map))
-+                    map2[index] |= gpio_map;
-+            break;
-+
-+            case LED_ON:
-+
-+                if(!(gpio_offstate_map[index] & gpio_map))
-+                    map1[index] |= gpio_map;
-+                
-+                if (requires_timer && !(gpio_offstate_map[index] & gpio_map))
-+                    map2[index] |= gpio_map;
-+            break;
-+
-+            case LED_ONESHOT_OFF:
-+
-+                if ((gpio_offstate_map[index] & gpio_map))
-+                    map1[index] |= gpio_map;
-+                else
-+                    map2[index] |= gpio_map;
-+            break;
-+
-+            case LED_ONESHOT_ON:
-+            case LED_FLASH:
-+
-+                if (!(gpio_offstate_map[index] & gpio_map))
-+                    map1[index] |= gpio_map;
-+                else
-+                    map2[index] |= gpio_map;
-+            break;
-+
-+            default:
-+                log_msg ("Error: Invalid mode\n");
-+                return -1;
-+        }
-+    }
-+
-+    assign_map(p_pos_map,pos_map);
-+    assign_map(p_map1,map1);
-+    assign_map(p_map2,map2);
-+ 
-+    return 0;
-+}
-+
-+
-+
-+
-+static int configure_state(STATE_ENTRY_T *state_entry,LED_CONFIG_T *led_cfg)
-+{
-+//    int state = led_cfg->state;
-+    int i;
-+    int map1[2] ;
-+    int pos_map[2];
-+    int map2[2];
-+
-+    if((state_entry->mode = led_get_mode(led_cfg)) >=  NUM_LED_MODES)
-+    {
-+        log_msg ("Error: Invalid mode in func configure_state\n");
-+        return -1;
-+    }
-+
-+    state_entry->handler = led_mode_handler[state_entry->mode];
-+
-+ 
-+    if(led_get_map(led_cfg,pos_map,map1,map2))
-+    {
-+        log_msg ("Error: gpio number out of range\n");
-+        return -1;
-+    }
-+
-+    assign_map(state_entry->map1,map1);
-+    assign_map(state_entry->map2,map2);
-+    state_entry->led = get_led(pos_map);
-+
-+    /* Check if the state requires timer */
-+    if(REQUIRES_TIMER(state_entry->mode))
-+    {
-+        state_entry->timer_running = 0;
-+        state_entry->param1 = led_cfg->param1;
-+        state_entry->param2 = led_cfg->param2;
-+        led_assign_timer(state_entry);
-+    }
-+   
-+    /* enable gpio pins */
-+    for(i = 0;i<led_cfg->gpio_num;i++)
-+    {
-+        int value;
-+        int index;
-+        int pos;
-+        avalanche_gpio_ctrl (led_cfg->gpio[i],GPIO_PIN,GPIO_OUTPUT_PIN);
-+        
-+        /* Turn off the led */
-+        index = led_cfg->gpio[i]/32;
-+        pos = led_cfg->gpio[i] % 32;
-+        value = (gpio_offstate_map[index] & (1 << pos))?1:0; 
-+        avalanche_gpio_out_bit(led_cfg->gpio[i],value);
-+    }
-+   
-+    return 0;
-+}
-+
-+
-+static void free_all_states(void)
-+{
-+    int module_id;
-+
-+    for(module_id = 0; module_id < MAX_MODULE_ENTRIES; module_id++)
-+    {
-+        if(modules[module_id])
-+        {
-+            int i;
-+            for(i = 0; i< MAX_MODULE_INSTANCES; i++)
-+            {
-+                MODULE_INSTANCE_T *module_instance = modules[module_id]->module_instance[i];
-+
-+                if(module_instance)
-+                {
-+                    int state_id;
-+
-+                    for(state_id =0; state_id < MAX_STATE_ENTRIES; state_id++)
-+                    {
-+                        STATE_ENTRY_T *state= module_instance->states[state_id];
-+
-+                        if(state)
-+                        {
-+                            if(state->os_timer)
-+                                os_timer_delete(state->os_timer);
-+
-+                            os_free(state);
-+                            module_instance->states[state_id] = NULL;
-+                        }
-+
-+                    }
-+                }
-+
-+            }
-+            os_free(modules[module_id]->name);
-+            os_free(modules[module_id]);
-+            modules[module_id] = NULL;
-+        }
-+    }
-+}
-+
-+/***********************************HAL APIS************************************/
-+
-+/**************************************************************************
-+ * FUNCTION NAME : avalanche_led_hal_init
-+ **************************************************************************
-+ * DESCRIPTION   :
-+ *      The function initializes led hal module
-+ *
-+ * RETURNS               :
-+ *      0               on Success
-+ *      Negative value  on Error
-+ ***************************************************************************/
-+
-+
-+int avalanche_led_hal_init (int  *gpio_off_value, int num_gpio_pins)
-+{
-+    //int i;
-+
-+    num_gpios = num_gpio_pins + 4;
-+    assign_map(gpio_offstate_map, gpio_off_value);
-+
-+    MUTEX_INIT (led_lock);
-+
-+    /* initialize led state function handlers */
-+    led_mode_handler[LED_ON] = led_on;
-+    led_mode_handler[LED_OFF] = led_off;
-+    led_mode_handler[LED_ONESHOT_ON] = led_oneshot_on;
-+    led_mode_handler[LED_ONESHOT_OFF] = led_oneshot_off;
-+    led_mode_handler[LED_FLASH] = led_flash;
-+
-+    return 0;
-+}
-+
-+
-+/**************************************************************************
-+ * FUNCTION NAME : avalanche_led_config_set
-+ **************************************************************************
-+ * DESCRIPTION   :
-+ *      The function configures LED state object
-+ *
-+ * RETURNS               :
-+ *      0               on Success
-+ *      Negative value  on Error
-+ ***************************************************************************/
-+
-+int avalanche_led_config_set(LED_CONFIG_T * led_cfg)
-+{
-+    MODULE_INSTANCE_T *module;
-+    MUTEX_GET (led_lock);
-+    module = get_module (led_cfg->name, led_cfg->instance);
-+
-+    if (!module)
-+        goto config_failed;
-+
-+    if (led_cfg->state < MAX_STATE_ENTRIES)
-+      {
-+          int state = led_cfg->state;
-+
-+          if (!(module->states[state]))
-+            {
-+                module->states[state] = led_malloc (sizeof (STATE_ENTRY_T));
-+            }
-+
-+          if (!(module->states[state]))
-+              goto config_failed;
-+
-+          module->states[state]->module_id = module->module_id;	
-+
-+          if(configure_state(module->states[state],led_cfg))
-+          {
-+              os_free(module->states[state]);
-+              module->states[state] = NULL;
-+              goto config_failed;
-+          }
-+
-+      }
-+    else
-+      {
-+          log_msg ("ERROR:State Count exceeded\n");
-+          goto config_failed;
-+      }
-+
-+    MUTEX_RELEASE (led_lock);
-+    return 0;
-+
-+  config_failed:
-+
-+    MUTEX_RELEASE (led_lock);
-+    return -1;
-+
-+}
-+
-+/**************************************************************************
-+ * FUNCTION NAME : avalanche_led_register
-+ **************************************************************************
-+ * DESCRIPTION   :
-+ *      The function creates handle to the given module and returns it.
-+ *
-+ * RETURNS               :
-+ *      Handle to the module instance on success.
-+ *      NULL  on failure.
-+ ***************************************************************************/
-+
-+void *avalanche_led_register (const char *mod_name, int instance)
-+{
-+    void *p;
-+    MUTEX_GET (led_lock);
-+    p = (void *)get_module ((char *)mod_name, instance);
-+    MUTEX_RELEASE (led_lock);
-+    return p;
-+}
-+
-+
-+/**************************************************************************
-+ * FUNCTION NAME : avalanche_led_action
-+ **************************************************************************
-+ * DESCRIPTION   :
-+ *      The function triggers action on LED
-+ *
-+ ***************************************************************************/
-+
-+void avalanche_led_action (void *module, int state_id)
-+{
-+
-+    MUTEX_GET (led_lock);
-+    if (module && (state_id < MAX_STATE_ENTRIES))
-+      {
-+
-+          STATE_ENTRY_T *state =
-+              ((MODULE_INSTANCE_T *) (module))->states[state_id];
-+          if (state)
-+            {
-+                state->handler (state);
-+            }
-+      }
-+    MUTEX_RELEASE (led_lock);
-+    return;
-+}
-+
-+
-+/**************************************************************************
-+ * FUNCTION NAME : avalanche_led_unregister
-+ **************************************************************************
-+ * DESCRIPTION   :
-+ *      The function unregisters the module
-+ *
-+ * RETURNS               :
-+ *      0               on Success
-+ *      Negative value  on Error
-+ ***************************************************************************/
-+
-+int avalanche_led_unregister (void *mod_inst)
-+{
-+
-+    return 0;
-+}
-+
-+
-+/**************************************************************************
-+ * FUNCTION NAME : led_free_all
-+ **************************************************************************
-+ * DESCRIPTION   :
-+ *      The function frees the memory allocated for holding state
-+ *       configuration data
-+ *
-+ ***************************************************************************/
-+
-+void avalanche_led_free_all()
-+{
-+    free_all_states();
-+}
-+
-+/**************************************************************************
-+ * FUNCTION NAME : avalanche_led_hal_exit
-+ **************************************************************************
-+ * DESCRIPTION   :
-+ *      The function releases all the allocated memory
-+ *
-+ ***************************************************************************/
-+
-+void avalanche_led_hal_exit ()
-+{
-+    free_all_states();
-+}
-+
-+/*****************************************************************************
-+ * FUNCTION NAME : avalanche_led_config_get
-+ *****************************************************************************
-+ * DESCRIPTION   :
-+ *      The function returns configuration information corresponding to module
-+ *      state.
-+ *
-+ * RETURNS               :
-+ *      0               on Success
-+ *      Negative value  on Error
-+ ***************************************************************************/
-+int avalanche_led_config_get(LED_CONFIG_T *led_cfg,int module_id,int instance, int state_id)
-+{
-+    if(module_id == -1)
-+    {
-+        /* The module info is passed through  field of led_cfg */
-+        MODULE_INSTANCE_T *mod = get_module (led_cfg->name, instance);
-+        if(mod)
-+            module_id = mod->module_id;
-+
-+    }
-+    if(module_id >= MAX_MODULE_ENTRIES ||  module_id < 0)
-+        return -1;
-+
-+    if(state_id >= MAX_STATE_ENTRIES ||  module_id < 0)
-+        return -1;
-+
-+    if(instance >= MAX_MODULE_INSTANCES ||  module_id < 0)
-+        return -1;
-+
-+    if(modules[module_id])
-+    {
-+         MODULE_INSTANCE_T *module = modules[module_id]->module_instance[instance];
-+         if(module)
-+         {
-+             STATE_ENTRY_T *state = module->states[state_id];
-+             if(state)
-+             {
-+                 int i;
-+                 LED_OBJ_T *led;
-+                 strcpy(led_cfg->name, modules[module_id]->name);
-+                 led_cfg->state = state_id;
-+                 led_cfg->instance = instance;
-+                 led_cfg->param1 = state->param1;
-+                 led_cfg->param2 = state->param2;
-+                 led_cfg->mode[0] = state->mode;
-+                 led = state->led;
-+                 
-+                 /* needs to be modified for multi-pin leds */
-+                 for(i = 0;i < num_gpios && !(led->pos_map[i/32] & (1 << i)); i++);
-+
-+                 led_cfg->gpio[0] = i;
-+                 led_cfg->gpio_num = 1;
-+
-+                 return 0;
-+             }
-+         }
-+    }
-+
-+    return -1;
-+}
-diff -urN kernel-old/drivers/char/avalanche_led/led_hal.h kernel-current/drivers/char/avalanche_led/led_hal.h
---- kernel-old/drivers/char/avalanche_led/led_hal.h	1970-01-01 01:00:00.000000000 +0100
-+++ kernel-current/drivers/char/avalanche_led/led_hal.h	2005-07-10 18:03:46.120957200 +0200
-@@ -0,0 +1,28 @@
-+/******************************************************************************
-+ * FILE PURPOSE:     - LED HAL module Header
-+ ******************************************************************************
-+ * FILE NAME:     led_hal.h
-+ *
-+ * DESCRIPTION:    LED HAL API's.
-+ *
-+ * REVISION HISTORY:
-+ * 11 Oct 03 - PSP TII
-+ *
-+ * (C) Copyright 2002, Texas Instruments, Inc
-+ *******************************************************************************/
-+
-+#ifndef __LED_HAL__
-+#define __LED_HAL__
-+
-+/* Interface prototypes */
-+
-+int avalanche_led_hal_init (int *gpio_off_value, int num_gpio_pins);
-+int avalanche_led_config_set (LED_CONFIG_T * led_cfg);
-+int avalanche_led_config_get (LED_CONFIG_T *led_cfg,int module_id,int instance, int state);
-+void *avalanche_led_register (const char *module_name, int instance_num);
-+void  avalanche_led_action (void *handle, int state_id);
-+int avalanche_led_unregister (void *handle);
-+void avalanche_led_free_all(void);
-+void avalanche_led_hal_exit (void);
-+
-+#endif /*__LED_HAL__ */
-diff -urN kernel-old/drivers/char/avalanche_led/led_platform.h kernel-current/drivers/char/avalanche_led/led_platform.h
---- kernel-old/drivers/char/avalanche_led/led_platform.h	1970-01-01 01:00:00.000000000 +0100
-+++ kernel-current/drivers/char/avalanche_led/led_platform.h	2005-07-10 18:03:46.120957200 +0200
-@@ -0,0 +1,117 @@
-+/******************************************************************************    
-+ * FILE PURPOSE:     - LED Platform specific Header file                                      
-+ ******************************************************************************    
-+ * FILE NAME:     led_platform.h                                                        
-+ *                                                                                 
-+ * DESCRIPTION:   Linux specific implementation for OS abstracted function calls 
-+ *                made by LED HAL module. This file has functions defined for
-+ *                Memory allocation calls, Mutex calls, String and Timer 
-+ *                operations.
-+ *                                                                 
-+ * REVISION HISTORY:                                                               
-+ * 11 Oct 03 - PSP TII                                                             
-+ *                                                                                 
-+ * (C) Copyright 2002, Texas Instruments, Inc                                      
-+ *******************************************************************************/  
-+                                                                                   
-+#ifndef __LED_PLATFORM__
-+#define __LED_PLATFORM__
-+
-+#include <linux/mm.h>
-+#include <linux/slab.h>
-+#include <asm/string.h>
-+#include <linux/param.h>
-+#include <linux/sched.h>
-+#include <linux/timer.h>
-+#include <linux/spinlock.h>
-+
-+
-+#define os_malloc(x)         kmalloc(x,GFP_KERNEL)
-+#define os_memset            memset
-+#define os_free(x)           kfree(x)
-+#define os_strcmp            os_strcasecmp
-+#define os_strcpy            strcpy
-+
-+#if defined(DEBUG)
-+#define log_msg              printk
-+#else
-+#define log_msg(x)
-+#endif
-+
-+/*    defines for Mutex        */
-+typedef struct {
-+    spinlock_t lock;
-+    int flags;
-+}OS_SPINLOCK_T;
-+
-+#define MUTEX_DECLARE(x)   static  OS_SPINLOCK_T	x
-+#define MUTEX_INIT(x)      x.lock = SPIN_LOCK_UNLOCKED
-+#define MUTEX_GET(x)       spin_lock_irqsave(&x.lock, x.flags)
-+#define MUTEX_RELEASE(x)   spin_unlock_irqrestore(&x.lock, x.flags)         
-+
-+
-+
-+/* String handling functions  not defined in asm/string.h */
-+static __inline__ int os_strlen(char *str)
-+{
-+    int i;
-+    for(i=0;str[i];i++);
-+    return i;
-+}
-+
-+
-+#define LOWER(x)    ((x < 'a') ? (x - 'A' + 'a'):(x))                                    
-+#define ISALPHA(x)   ((( x >= 'a') && (x <= 'z')) || (( x >= 'A') && (x <= 'Z')))        
-+#define COMP(x,y)   ((x == y) || ((ISALPHA(x) && ISALPHA(y)) && (LOWER(x) == LOWER(y)))) 
-+
-+
-+static __inline__ int os_strcasecmp(char *str1, char *str2)
-+{                                         
-+    int i;                            
-+    
-+    for(i=0;str1[i] && str2[i];i++)
-+    {
-+        char x,y;
-+        
-+        x = str1[i];
-+        y = str2[i];
-+
-+        if(!COMP(x,y))
-+            break;
-+    }              
-+
-+    return(str1[i] || str2[i]);
-+}                                         
-+                                          
-+
-+
-+/* Functions for timer related operations */
-+static __inline__ void * os_timer_init(void (*func)(int))
-+{
-+    struct timer_list *ptimer;
-+    ptimer = (struct timer_list *) kmalloc(sizeof(struct timer_list),GFP_KERNEL);
-+    init_timer( ptimer );
-+    (void *)ptimer->function = (void *)func;
-+    return (void *)ptimer;
-+}
-+
-+static __inline__ int os_timer_add(void *timer_handle,int milisec,int arg)
-+{
-+    struct timer_list *ptimer=timer_handle;
-+    ptimer->expires = ((HZ * milisec)/1000) + jiffies;
-+    ptimer->data = arg;
-+    add_timer(ptimer);
-+    return 0;
-+
-+}
-+
-+static __inline__ int os_timer_delete(void *timer_handle)
-+{
-+    struct timer_list *ptimer=timer_handle;
-+    del_timer(ptimer);
-+    kfree(ptimer);
-+    return 0;
-+}
-+
-+
-+#endif /* __LED_PLATFORM__ */
-diff -urN kernel-old/drivers/char/avalanche_led/led_wrapper.c kernel-current/drivers/char/avalanche_led/led_wrapper.c
---- kernel-old/drivers/char/avalanche_led/led_wrapper.c	1970-01-01 01:00:00.000000000 +0100
-+++ kernel-current/drivers/char/avalanche_led/led_wrapper.c	2005-07-10 18:25:14.657069936 +0200
-@@ -0,0 +1,561 @@
-+/******************************************************************************    
-+ * FILE PURPOSE:     - LED Wrapper file for DSL module support                                       
-+ ******************************************************************************    
-+ * FILE NAME:     led_wrapper.c                                                        
-+ *                                                                                 
-+ * DESCRIPTION:   LED Wrapper file for DSL module support     
-+ *                This is to provide backward compatibility to the ADSL module 
-+ *                using OLD LED driver. The numbers mapped for DSL LEDs in the
-+ *                previous implementation is  3,4,5,6. Since these numbers overlap 
-+ *                with the existing numbering scheme, the following numbers need to 
-+ *                be used in the led configuration file - 32,33,34,35.                                            
-+ *                                                                                 
-+ * (C) Copyright 2002, Texas Instruments, Inc                                      
-+ *******************************************************************************/  
-+#include <linux/config.h>
-+#include <linux/init.h>
-+#include <linux/module.h>
-+#include <asm/ar7/sangam.h>
-+#include "led_platform.h"
-+#include "led_config.h" 
-+
-+#define BITS_PER_INT               (8 * sizeof(int))                                      
-+#define GPIOS_PER_INT              BITS_PER_INT                                           
-+#define GPIO_MAP_LEN               ((MAX_GPIO_PIN_NUM + GPIOS_PER_INT -1)/GPIOS_PER_INT)  
-+#define MODULE_MAP_LEN             ((MAX_MODULE_ENTRIES + BITS_PER_INT -1)/BITS_PER_INT)  
-+                                                                                          
-+                                                                                               
-+#define REQUIRES_TIMER(x)         (x > 1)                                                      
-+                                                                                               
-+#define gpio_on(gpio)  do \
-+                    {  \
-+                          if(gpio >= 32 && adsl_led_objs[gpio - 32].onfunc) \
-+                              adsl_led_objs[gpio - 32].onfunc(adsl_led_objs[gpio - 32].param);\
-+                   } while(0)
-+
-+
-+
-+#define gpio_off(gpio)  \
-+                do \
-+                {  \
-+                      if(gpio >= 32 && adsl_led_objs[gpio - 32].offfunc) \
-+                          adsl_led_objs[gpio - 32].offfunc(adsl_led_objs[gpio - 32].param);\
-+                } while(0)
-+                                                                                               
-+                                                                                               
-+                                                                                                                                                                                         
-+                                                                                          
-+                                                                                          
-+                                                                                          
-+/********************TYPEDEFS***********************************************/             
-+                                                                                          
-+typedef struct gpio_module                                                            
-+{                                                                                     
-+    volatile unsigned int *gpio_write_reg;                                            
-+    volatile unsigned int *gpio_dir_reg;                                              
-+    volatile unsigned int *gpio_mode_reg;                                             
-+}GPIO_REGS_T;                                                                         
-+                                                                                          
-+typedef struct {                                                                      
-+    unsigned int gpio_id;                                                             
-+    unsigned int gpio_state;                                                          
-+    int module_map[MODULE_MAP_LEN];                                                   
-+}GPIO_OBJ_T;                                                                          
-+                                                                                          
-+                                                                                          
-+typedef struct state_entry STATE_ENTRY_T;                                             
-+                                                                                          
-+struct state_entry{                                                                  
-+    unsigned int timer_running;                                                       
-+    STATE_ENTRY_T *next;                                                              
-+    void (*handler)(STATE_ENTRY_T *state);                                            
-+    GPIO_OBJ_T *gpio;                                                                 
-+    void  *os_timer;                                                                  
-+    unsigned int param;                                                               
-+    unsigned int module_id;                                                           
-+    unsigned int mode;                                                                
-+};                                                                                    
-+                                                                                          
-+                                                                                          
-+typedef struct module_instance{                                                       
-+    int module_id;                                                                    
-+    int instance;                                                                     
-+    STATE_ENTRY_T *states[MAX_STATE_ENTRIES];                                         
-+}MODULE_INSTANCE_T;                                                                   
-+                                                                                          
-+typedef struct module_entry{                                                          
-+    unsigned char *name;                                                              
-+    MODULE_INSTANCE_T *module_instance[MAX_MODULE_INSTANCES];                         
-+}MODULE_ENTRY_T;                                                                      
-+                                                                                          
-+                                                                                          
-+
-+typedef struct led_reg{
-+    unsigned int param;
-+    void (*init)(unsigned long param);
-+    void (*onfunc)(unsigned long param);
-+    void (*offfunc)(unsigned long param);
-+}led_reg_t;
-+
-+
-+
-+/* Interface prototypes */                                                            
-+static int led_hal_init(GPIO_REGS_T gpio_mod, unsigned int *gpio_off_value,int num_gpio_pins);  
-+static int avalanche_led_set_config(LED_CONFIG_T *led_cfg);                                     
-+static void *avalanche_led_register(const char *module_name, int instance_num);                 
-+static int avalanche_led_action(void *handle,int state_id);                                     
-+int avalanche_led_config_get (LED_CONFIG_T *led_cfg,int module_id,int instance, int state);
-+
-+led_reg_t adsl_led_objs[4];
-+MODULE_INSTANCE_T *dsl_mod = NULL; 
-+static int gpio_off_state[GPIO_MAP_LEN] = AVALANCHE_GPIO_OFF_MAP; 
-+
-+
-+
-+static    unsigned int num_gpios;
-+static GPIO_OBJ_T *gpio_arr;
-+GPIO_REGS_T gpio_regs;
-+
-+/*  GPIO OFF STATE  */
-+static unsigned int gpio_off_val[GPIO_MAP_LEN];
-+
-+    
-+MODULE_ENTRY_T *modules[MAX_MODULE_ENTRIES];
-+
-+/* LED handlers */
-+void (*led_mode_handler[NUM_LED_MODES])(STATE_ENTRY_T *state);
-+
-+
-+/******************static functions*****************************************/
-+static void *led_malloc(int n)
-+{
-+    void *p;
-+    p=kmalloc(n,GFP_ATOMIC);
-+
-+    if(p)
-+        os_memset(p,0,n);
-+    return p;
-+}
-+
-+static void free_state(STATE_ENTRY_T *state)
-+{
-+
-+    STATE_ENTRY_T *prev = NULL;
-+    STATE_ENTRY_T *curr = NULL ;
-+    while(curr != state)
-+    {
-+        curr = state;
-+        prev = NULL;
-+
-+        while(curr->next != NULL)
-+        {
-+            prev = curr;
-+            curr = curr->next;
-+        }
-+       
-+        os_free(curr);
-+        if(prev)
-+        {   
-+            prev->next = NULL;
-+        }
-+        
-+    }
-+
-+}
-+
-+static MODULE_INSTANCE_T* get_module(char * name,int instance)
-+{
-+    int module_id;
-+    MODULE_INSTANCE_T *mod_inst;
-+
-+    if(instance >= MAX_MODULE_INSTANCES)
-+        return NULL;
-+
-+    for(module_id=0;module_id <MAX_MODULE_ENTRIES;module_id++)
-+    {
-+        if(modules[module_id] && !os_strcmp(name,modules[module_id]->name))
-+                     break;
-+    }
-+
-+    if(module_id == MAX_MODULE_ENTRIES)
-+    {
-+        for(module_id = 0; (module_id < MAX_MODULE_ENTRIES) && modules[module_id] ; module_id++);
-+
-+        if(module_id < MAX_MODULE_ENTRIES)
-+        {
-+            modules[module_id]=led_malloc(sizeof(MODULE_ENTRY_T));
-+            modules[module_id]->name = led_malloc(os_strlen(name));
-+            os_strcpy(modules[module_id]->name,name);
-+        }
-+        else
-+        {
-+            log_msg("ERROR:Module Count exceeded\n");
-+            return NULL;
-+        }
-+    }
-+
-+    if(!modules[module_id]->module_instance[instance])
-+        modules[module_id]->module_instance[instance] = led_malloc(sizeof(MODULE_INSTANCE_T));
-+
-+    mod_inst = modules[module_id]->module_instance[instance];
-+    mod_inst->module_id = module_id;
-+    mod_inst->instance = instance;
-+
-+    return mod_inst;
-+}
-+
-+
-+static void led_timer_func(int arg)
-+{
-+    STATE_ENTRY_T *state = (STATE_ENTRY_T *) arg;
-+    GPIO_OBJ_T *gpio;
-+
-+
-+    gpio = state->gpio;
-+
-+    switch(gpio->gpio_state)
-+    {
-+        case LED_ONESHOT_ON:
-+            gpio->gpio_state = LED_OFF;
-+            gpio_off(gpio->gpio_id);
-+            break;
-+
-+        case LED_ONESHOT_OFF:
-+            gpio->gpio_state = LED_ON;
-+            gpio_on(gpio->gpio_id);
-+            break;
-+
-+        case LED_FLASH:
-+	    {
-+                  	
-+                if(state->timer_running == 1)
-+                {
-+                    state->timer_running = 2;
-+                    gpio_off(gpio->gpio_id);
-+                    os_timer_add(state->os_timer,(state->param >> 16),(int)state);
-+                }
-+                else
-+                {
-+                    state->timer_running = 1;
-+                    gpio_on(gpio->gpio_id);
-+                    os_timer_add(state->os_timer, (state->param & 0xffff),(int)state);
-+                }
-+                return;
-+            }
-+        default:
-+            break;
-+
-+    }
-+
-+    state->timer_running = 0;
-+
-+
-+}
-+
-+
-+static void led_on(STATE_ENTRY_T *state)
-+{
-+    int mod_index = state->module_id >> 5;
-+    GPIO_OBJ_T *gpio = state->gpio;	
-+
-+    gpio->gpio_state = LED_ON;
-+    gpio_on(gpio->gpio_id);
-+    gpio->module_map[mod_index] |= (1 <<  (state->module_id % BITS_PER_INT));
-+
-+}
-+
-+static void led_off(STATE_ENTRY_T *state)
-+{
-+
-+    int mod_index = state->module_id >> 5;
-+    GPIO_OBJ_T *gpio = state->gpio;	
-+    
-+    gpio->module_map[mod_index] &= ~(1 <<  (state->module_id % BITS_PER_INT) );
-+    if(!gpio->module_map[mod_index])
-+    {
-+        gpio->gpio_state = LED_OFF;
-+        gpio_off(gpio->gpio_id);
-+    }
-+
-+}
-+
-+static void led_oneshot_on(STATE_ENTRY_T *state)
-+{
-+    GPIO_OBJ_T *gpio = state->gpio;
-+
-+    state->timer_running = 1; 
-+    gpio->gpio_state = LED_ONESHOT_ON;
-+    gpio_on(gpio->gpio_id);
-+    os_timer_add(state->os_timer,state->param,(int)state);
-+}
-+
-+static void led_oneshot_off(STATE_ENTRY_T *state)
-+{
-+
-+    GPIO_OBJ_T *gpio = state->gpio;
-+
-+    state->timer_running = 1;
-+    gpio->gpio_state = LED_ONESHOT_OFF;
-+    gpio_off(gpio->gpio_id);
-+    os_timer_add(state->os_timer,state->param,(int)state);
-+}
-+
-+static void led_flash(STATE_ENTRY_T *state)
-+{
-+
-+    GPIO_OBJ_T *gpio = state->gpio;
-+ 
-+    state->timer_running = 1;
-+    gpio->gpio_state = LED_FLASH;
-+    gpio_on(gpio->gpio_id);
-+    os_timer_add(state->os_timer,(state->param & 0xffff),(int)state);
-+}
-+
-+
-+/****************HAL APIS***********************************************/
-+int led_hal_init(GPIO_REGS_T gpio_reg,unsigned int *gpio_off_value,int num_gpio_pins)
-+{
-+        int i;
-+        unsigned int *p_gpio=gpio_off_val;
-+
-+        gpio_regs = gpio_reg;
-+        num_gpios = num_gpio_pins;
-+
-+        gpio_arr = led_malloc((num_gpio_pins + 4) * sizeof(GPIO_OBJ_T)); /* 4 added for ADSL gpio pins */
-+
-+        /* get gpios off state */
-+        for(i=0; i < num_gpio_pins; i+=GPIOS_PER_INT)
-+        {
-+            *p_gpio = *gpio_off_value;
-+            gpio_off_value++;
-+            p_gpio++;
-+        }
-+
-+        /* initialize gpio objects */
-+        for(i=0; i<num_gpio_pins + 4;i++) /* 4 added for ADSL gpio pins */
-+        {
-+            gpio_arr[i].gpio_id = i;
-+        }
-+
-+        
-+
-+	/* initialize led state function handlers */
-+	led_mode_handler[LED_ON] = led_on;
-+	led_mode_handler[LED_OFF] = led_off;
-+	led_mode_handler[LED_ONESHOT_ON] = led_oneshot_on;
-+	led_mode_handler[LED_ONESHOT_OFF] = led_oneshot_off;
-+	led_mode_handler[LED_FLASH] = led_flash;
-+
-+ 
-+        return 0;
-+}
-+
-+
-+    /*********************************************************/
-+
-+int avalanche_led_set_config(LED_CONFIG_T *led_cfg)
-+{
-+        MODULE_INSTANCE_T *module;
-+        module = get_module(led_cfg->name,led_cfg->instance);
-+
-+        if(!module )
-+            goto config_failed;
-+
-+        if(led_cfg->state < MAX_STATE_ENTRIES)
-+        {
-+            STATE_ENTRY_T *state_entry;
-+            int state=led_cfg->state;
-+            int i;
-+
-+            if(!(module->states[state]))
-+            {
-+                module->states[state] = led_malloc(sizeof(STATE_ENTRY_T));
-+            }
-+
-+            state_entry = module->states[state];
-+
-+            for(i=0;i<led_cfg->gpio_num;i++)
-+            {
-+                if(led_cfg->gpio[i] >= (num_gpios + 4) ) /* 4 added for ADSL */
-+                {
-+                    log_msg("Error: gpio number out of range\n");
-+                    goto config_failed;
-+                }
-+
-+                state_entry->gpio = &gpio_arr[led_cfg->gpio[i]];
-+                state_entry->mode = led_cfg->mode[i];
-+                state_entry->module_id = module->module_id;
-+                state_entry->handler = led_mode_handler[state_entry->mode]; 
-+                state_entry->timer_running = 0;
-+
-+                if(REQUIRES_TIMER(led_cfg->mode[i])) /* requires timer */
-+                {
-+
-+                    state_entry->param = led_cfg->param1;
-+
-+                    if(led_cfg->mode[i] == LED_FLASH)
-+                        state_entry->param |= (led_cfg->param2 << 16);
-+
-+                    if(!(state_entry->os_timer))
-+                        state_entry->os_timer = os_timer_init(led_timer_func);
-+                }
-+
-+                if(i == led_cfg->gpio_num - 1)
-+                {
-+                   free_state(state_entry->next); 
-+                   state_entry->next = NULL;
-+                   break;
-+                }  
-+               
-+               
-+                /* allocate next node */
-+                else if( !(state_entry->next))
-+                {
-+                    state_entry->next = led_malloc(sizeof(STATE_ENTRY_T));
-+                }
-+                
-+                state_entry = state_entry->next;
-+
-+
-+            }
-+
-+        }
-+        else
-+        {
-+            log_msg("ERROR:State Count exceeded\n");
-+            goto config_failed;
-+        }
-+
-+        return 0;
-+
-+        config_failed:
-+ 
-+           return -1;
-+
-+
-+
-+}
-+
-+    /*********************************************************/
-+
-+void *avalanche_led_register(const char * mod_name,int instance)
-+{
-+        void *p;
-+        p = get_module((void * )mod_name,instance);
-+        return p;
-+    }
-+
-+
-+int avalanche_led_action(void *module, int state_id)
-+{
-+
-+        if(module && state_id < MAX_STATE_ENTRIES)
-+        {
-+
-+            STATE_ENTRY_T *state =((MODULE_INSTANCE_T *)(module))->states[state_id];
-+            while(state)
-+            {
-+		if(state->timer_running == 0)
-+                    {
-+                        state->handler(state);  
-+                    }
-+                state = state->next; 
-+               
-+            }
-+        }
-+        return 0;
-+}
-+
-+
-+
-+int led_get_dsl_config(void)
-+{
-+    
-+    int state_id = 0;
-+    LED_CONFIG_T led_cfg;
-+    int state_count = 0;
-+ 
-+    os_strcpy(led_cfg.name,"adsl");
-+
-+    for(state_id = 0; state_id < MAX_STATE_ENTRIES;state_id++)
-+    {
-+        if(avalanche_led_config_get(&led_cfg,-1,0,state_id) == 0)     
-+        {   
-+           /* call configure */
-+           avalanche_led_set_config(&led_cfg);    
-+           state_count++;
-+        }
-+
-+    }
-+    return state_count;
-+
-+
-+}
-+
-+
-+void register_led_drv(int led_num,led_reg_t *led)
-+{
-+
-+    /* DSL leds are numbered from 3  to 6 */
-+    int led_index = led_num - 3;
-+
-+    if(led_index >=0 && led_index <= 2)
-+    {   
-+        adsl_led_objs[led_index] = *led;
-+
-+        if(adsl_led_objs[led_index].init)
-+            adsl_led_objs[led_index].init(adsl_led_objs[led_index].param);
-+    }    
-+
-+}
-+
-+void deregister_led_drv( int led_num)
-+{
-+    /* DSL leds are numbered from 3  to 6 */
-+    int led_index = led_num - 3;
-+             
-+    if(led_index >=0 && led_index <= 2)
-+    {   
-+        adsl_led_objs[led_index].onfunc = NULL;
-+        adsl_led_objs[led_index].offfunc = NULL;
-+    }
-+    return;
-+}
-+
-+void led_operation(int mod,int state_id)
-+{
-+    static int configured = 0;
-+  
-+    if(configured == 0)
-+    {
-+       configured = led_get_dsl_config();
-+    }
-+   
-+    avalanche_led_action(dsl_mod,state_id); 
-+}
-+
-+static int __init  led_init(void)
-+{
-+    GPIO_REGS_T gpio_regs;  
-+
-+    gpio_regs.gpio_write_reg = NULL;
-+    gpio_regs.gpio_dir_reg =  NULL;       
-+    gpio_regs.gpio_mode_reg = NULL;   
-+  
-+    led_hal_init(gpio_regs,gpio_off_state,AVALANCHE_GPIO_PIN_COUNT);     
-+
-+    /* register instance 0 of adsl module */   
-+    dsl_mod = avalanche_led_register("adsl",0);
-+    return 0;
-+
-+}
-+
-+__initcall(led_init);
-+
-+
-+
 +EXPORT_SYMBOL_NOVERS(led_init);
 +EXPORT_SYMBOL_NOVERS(led_operation);
 +EXPORT_SYMBOL_NOVERS(register_led_drv);
 +EXPORT_SYMBOL_NOVERS(deregister_led_drv);
-+
-diff -urN kernel-old/drivers/char/avalanche_led/Makefile kernel-current/drivers/char/avalanche_led/Makefile
---- kernel-old/drivers/char/avalanche_led/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ kernel-current/drivers/char/avalanche_led/Makefile	2005-07-10 18:25:32.692328160 +0200
+diff -urN linux.old/drivers/char/avalanche_led/Makefile linux.dev/drivers/char/avalanche_led/Makefile
+--- linux.old/drivers/char/avalanche_led/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/drivers/char/avalanche_led/Makefile	2005-07-11 02:42:24.191796312 +0200
 @@ -0,0 +1,23 @@
 +# File: drivers/char/avalanche_led/Makefile
 +#
@@ -1936,9 +737,9 @@ diff -urN kernel-old/drivers/char/avalanche_led/Makefile kernel-current/drivers/
 +
 +EXTRA_CFLAGS := -I$(TOPDIR)/include/asm/ar7
 +
-+export-objs := led_drv.o led_wrapper.o
++export-objs := ledmod.o
 +
-+avalanche_led-objs := led_hal.o led_drv.o led_wrapper.o
++avalanche_led-objs := ledmod.o
 +
 +include $(TOPDIR)/Rules.make
 +
@@ -1947,9 +748,9 @@ diff -urN kernel-old/drivers/char/avalanche_led/Makefile kernel-current/drivers/
 +
 +clean:
 +	rm -f core *.o *.a *.s
-diff -urN kernel-old/drivers/char/Config.in kernel-current/drivers/char/Config.in
---- kernel-old/drivers/char/Config.in	2005-07-10 02:55:18.318811000 +0200
-+++ kernel-current/drivers/char/Config.in	2005-07-10 18:03:46.121957048 +0200
+diff -urN linux.old/drivers/char/Config.in linux.dev/drivers/char/Config.in
+--- linux.old/drivers/char/Config.in	2005-07-10 20:53:55.650624032 +0200
++++ linux.dev/drivers/char/Config.in	2005-07-10 20:50:43.556826000 +0200
 @@ -133,6 +133,10 @@
        fi
     fi
@@ -1961,9 +762,9 @@ diff -urN kernel-old/drivers/char/Config.in kernel-current/drivers/char/Config.i
  if [ "$CONFIG_EXPERIMENTAL" = "y" -a "$CONFIG_ZORRO" = "y" ]; then
     tristate 'Commodore A2232 serial support (EXPERIMENTAL)' CONFIG_A2232
  fi
-diff -urN kernel-old/drivers/char/Makefile kernel-current/drivers/char/Makefile
---- kernel-old/drivers/char/Makefile	2005-07-10 02:55:18.319811000 +0200
-+++ kernel-current/drivers/char/Makefile	2005-07-10 18:03:46.122956896 +0200
+diff -urN linux.old/drivers/char/Makefile linux.dev/drivers/char/Makefile
+--- linux.old/drivers/char/Makefile	2005-07-10 20:53:55.651623880 +0200
++++ linux.dev/drivers/char/Makefile	2005-07-10 20:50:43.556826000 +0200
 @@ -190,6 +190,19 @@
    obj-$(CONFIG_PCI) += keyboard.o $(KEYMAP)
  endif
@@ -1984,9 +785,9 @@ diff -urN kernel-old/drivers/char/Makefile kernel-current/drivers/char/Makefile
  obj-$(CONFIG_HIL) += hp_keyb.o
  obj-$(CONFIG_MAGIC_SYSRQ) += sysrq.o
  obj-$(CONFIG_ATARI_DSP56K) += dsp56k.o
-diff -urN kernel-old/include/asm-mips/ar7/ledapp.h kernel-current/include/asm-mips/ar7/ledapp.h
---- kernel-old/include/asm-mips/ar7/ledapp.h	1970-01-01 01:00:00.000000000 +0100
-+++ kernel-current/include/asm-mips/ar7/ledapp.h	2005-07-10 18:49:37.556426688 +0200
+diff -urN linux.old/include/asm-mips/ar7/ledapp.h linux.dev/include/asm-mips/ar7/ledapp.h
+--- linux.old/include/asm-mips/ar7/ledapp.h	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/include/asm-mips/ar7/ledapp.h	2005-07-10 20:50:43.557826000 +0200
 @@ -0,0 +1,59 @@
 +#ifndef __LED_APP__
 +#define __LED_APP__
@@ -2047,94 +848,3 @@ diff -urN kernel-old/include/asm-mips/ar7/ledapp.h kernel-current/include/asm-mi
 +}led_reg_t;
 +
 +#endif
-diff -urN kernel-old/include/asm-mips/ar7/led_config.h kernel-current/include/asm-mips/ar7/led_config.h
---- kernel-old/include/asm-mips/ar7/led_config.h	1970-01-01 01:00:00.000000000 +0100
-+++ kernel-current/include/asm-mips/ar7/led_config.h	2005-07-10 18:03:46.122956896 +0200
-@@ -0,0 +1,51 @@
-+/******************************************************************************    
-+ * FILE PURPOSE:     - LED config Header                                       
-+ ******************************************************************************    
-+ * FILE NAME:     led_config.h                                                        
-+ *                                                                                 
-+ * DESCRIPTION:  Header file for LED configuration parameters
-+ *               and data structures                                                 
-+ *                                                                                 
-+ * REVISION HISTORY:                                                               
-+ * 11 Oct 03 - PSP TII                                                             
-+ *                                                                                 
-+ * (C) Copyright 2002, Texas Instruments, Inc                                      
-+ *******************************************************************************/  
-+                                                                                   
-+
-+#ifndef __LED_CONFIG__
-+#define __LED_CONFIG__
-+
-+/* LED config parameters */
-+#define  MAX_GPIO_PIN_NUM           64
-+#define  MAX_GPIOS_PER_STATE         2
-+#define  MAX_MODULE_ENTRIES         25
-+#define  MAX_MODULE_INSTANCES        2
-+#define  MAX_STATE_ENTRIES          25
-+#define  NUM_LED_MODES               5
-+#define  MAX_LED_ENTRIES            25
-+
-+
-+/* LED modes */
-+#define LED_OFF                    0
-+#define LED_ON                     1
-+#define LED_ONESHOT_OFF            2
-+#define LED_ONESHOT_ON             3
-+#define LED_FLASH                  4
-+
-+
-+
-+/* Data structure for LED configuration */
-+typedef struct led_config{
-+    unsigned char name[80];
-+    unsigned int instance;
-+    unsigned int state;
-+    unsigned int gpio[MAX_GPIOS_PER_STATE];
-+    unsigned int mode[MAX_GPIOS_PER_STATE];
-+    unsigned int gpio_num;
-+    unsigned int param1;
-+    unsigned int param2;
-+}LED_CONFIG_T;
-+
-+
-+#endif /* __LED_CONFIG__ */
-diff -urN kernel-old/include/asm-mips/ar7/led_ioctl.h kernel-current/include/asm-mips/ar7/led_ioctl.h
---- kernel-old/include/asm-mips/ar7/led_ioctl.h	1970-01-01 01:00:00.000000000 +0100
-+++ kernel-current/include/asm-mips/ar7/led_ioctl.h	2005-07-10 18:03:46.122956896 +0200
-@@ -0,0 +1,32 @@
-+/******************************************************************************   
-+ * FILE PURPOSE:     - LED ioctl Header                                           
-+ ******************************************************************************   
-+ * FILE NAME:     led_ioctl.h                                                     
-+ *                                                                                
-+ * DESCRIPTION:   Header file defining macros for ioctl commands.                 
-+ *                                                                                
-+ * REVISION HISTORY:                                                              
-+ * 11 Oct 03 - PSP TII                                                            
-+ *                                                                                
-+ * (C) Copyright 2002, Texas Instruments, Inc                                     
-+ *******************************************************************************/ 
-+#ifndef __LED_IOCTL__
-+#define __LED_IOCTL__
-+
-+typedef struct led_mod{
-+unsigned char *name;
-+unsigned int instance;
-+unsigned int handle;
-+}LED_MODULE_T;
-+
-+typedef struct led_state{
-+unsigned int handle;
-+unsigned int state_id;
-+}LED_STATE_T;
-+
-+#define LED_CONFIG           0
-+#define LED_GET_HANDLE       1
-+#define LED_ACTION           2
-+#define LED_RELEASE_HANDLE   3
-+
-+#endif /*  __LED_IOCTL__ */

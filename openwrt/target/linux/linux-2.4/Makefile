@@ -52,10 +52,10 @@ ifeq ($(BOARD),brcm)
 include ./broadcom.mk
 endif
 
+ifeq ($(BOARD),ar7)
+include ./ar7.mk
+endif
 
-$(eval $(call KMOD_template,SANGAM_ATM,sangam-atm,\
-	$(MODULES_DIR)/kernel/drivers/atm/tiatm.o \
-,CONFIG_MIPS_SANGAM_ATM))
 $(eval $(call KMOD_template,ATM,atm,\
 	$(MODULES_DIR)/kernel/net/atm/atm.o \
 	$(MODULES_DIR)/kernel/net/atm/br2684.o \
@@ -63,9 +63,6 @@ $(eval $(call KMOD_template,ATM,atm,\
 $(eval $(call KMOD_template,PPPOATM,pppoatm,\
 	$(MODULES_DIR)/kernel/net/atm/pppoatm.o \
 ,CONFIG_PPPOATM))
-$(eval $(call KMOD_template,CPMAC,cpmac,\
-        $(MODULES_DIR)/kernel/drivers/net/avalanche_cpmac/avalanche_cpmac.o \
-,CONFIG_MIPS_AVALANCHE_CPMAC))
 $(eval $(call KMOD_template,USB_ACM,usb-acm,\
 	$(MODULES_DIR)/kernel/drivers/usb/acm.o \
 ,CONFIG_USB_ACM))
