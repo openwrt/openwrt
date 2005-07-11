@@ -1,0 +1,170 @@
+#!/usr/bin/make -f
+
+ifneq ($(strip ${IPKG_RULES_INC}),)
+ include $(IPKG_RULES_INC)
+endif
+
+##
+
+PKG_VERSION := $(shell cat ./ipkg/version)
+CURRENT_DIR := $(shell pwd)
+INSTALL_DIR ?= $(CURRENT_DIR)/ipkg-install
+
+unexport INSTALL_DIR
+
+I_PPPOE_SERVER := ipkg/pppoe-server
+I_PPPOE_RELAY := ipkg/pppoe-relay
+I_PPPOE_SNIFF := ipkg/pppoe-sniff
+I_PPPOE_CLIENT := ipkg/pppoe-client
+
+BUILD_DEPS = \
+
+CONFIGURE_OPTS = \
+
+##
+
+all: package
+
+
+.stamp-configured: $(BUILD_DEPS)
+
+	cd src ; \
+	rm -rf config.cache ; \
+	$(TARGET_CONFIGURE_OPTS) \
+	ac_cv_func_setvbuf_reversed=no \
+	ac_cv_sizeof_unsigned_short=2 \
+	ac_cv_sizeof_unsigned_int=4 \
+	ac_cv_sizeof_unsigned_long=4 \
+	ac_cv_linux_kernel_pppoe=yes \
+	ac_cv_pack_bitfields_reversed=yes \
+	CFLAGS="$(TARGET_CFLAGS)" \
+	./configure \
+	  --target=$(GNU_TARGET_NAME) \
+	  --host=$(GNU_TARGET_NAME) \
+	  --build=$(GNU_HOST_NAME) \
+	  --program-prefix="" \
+	  --program-suffix="" \
+	  --prefix=/usr \
+	  --exec-prefix=/usr \
+	  --bindir=/usr/bin \
+	  --datadir=/usr/share \
+	  --includedir=/usr/include \
+	  --infodir=/usr/share/info \
+	  --libdir=/usr/lib \
+	  --libexecdir=/usr/lib \
+	  --localstatedir=/var \
+	  --mandir=/usr/share/man \
+	  --sbindir=/usr/sbin \
+	  --sysconfdir=/etc \
+	  $(DISABLE_LARGEFILE) \
+	  $(DISABLE_NLS) \
+	  $(CONFIGURE_OPTS) \
+
+	touch .stamp-configured
+
+
+.stamp-built: .stamp-configured
+
+	$(MAKE) -C src \
+	  $(TARGET_CONFIGURE_OPTS) \
+
+	touch .stamp-built
+
+
+$(INSTALL_DIR)/usr/sbin/pppoe: .stamp-built
+
+	mkdir -p $(INSTALL_DIR)
+
+	$(MAKE) -C src \
+	  DESTDIR="$(INSTALL_DIR)" \
+	 install
+	
+
+configure: .stamp-configured
+
+
+build: .stamp-built
+
+
+install: $(INSTALL_DIR)/usr/sbin/pppoe
+
+
+package: $(INSTALL_DIR)/usr/sbin/pppoe
+
+	mkdir -p $(I_PPPOE_SERVER)/etc/ppp
+	cp -fpR $(INSTALL_DIR)/etc/ppp/pppoe-server-options $(I_PPPOE_SERVER)/etc/ppp/
+	mkdir -p $(I_PPPOE_SERVER)/usr/sbin
+	cp -fpR $(INSTALL_DIR)/usr/sbin/pppoe-server $(I_PPPOE_SERVER)/usr/sbin/
+	$(STRIP) $(I_PPPOE_SERVER)/usr/sbin/*
+	
+	mkdir -p $(I_PPPOE_RELAY)/usr/sbin
+	cp -fpR $(INSTALL_DIR)/usr/sbin/pppoe-relay $(I_PPPOE_RELAY)/usr/sbin/
+	$(STRIP) $(I_PPPOE_RELAY)/usr/sbin/*
+
+	mkdir -p $(I_PPPOE_SNIFF)/usr/sbin
+	cp -fpR $(INSTALL_DIR)/usr/sbin/pppoe-sniff $(I_PPPOE_SNIFF)/usr/sbin/
+	$(STRIP) $(I_PPPOE_SNIFF)/usr/sbin/*
+
+	mkdir -p $(I_PPPOE_CLIENT)/etc
+	cp -fpR $(INSTALL_DIR)/etc/pppoe.conf $(I_PPPOE_CLIENT)/etc/
+	mkdir -p $(I_PPPOE_CLIENT)/usr/sbin
+	cp -fpR $(INSTALL_DIR)/usr/sbin/pppoe $(I_PPPOE_CLIENT)/usr/sbin/
+	$(STRIP) $(I_PPPOE_CLIENT)/usr/sbin/*
+	cp -fpR $(INSTALL_DIR)/usr/sbin/adsl-* $(I_PPPOE_CLIENT)/usr/sbin/
+	
+	chmod 0755 ipkg/*/etc/
+	chmod 0755 ipkg/*/etc/default/
+	chmod 0644 ipkg/*/etc/default/*
+	chmod 0755 ipkg/*/etc/init.d/
+	chmod 0755 ipkg/*/etc/init.d/*
+
+	chmod 0755 ipkg/*/CONTROL/
+	chmod 0644 ipkg/*/CONTROL/control
+	-chmod 0644 ipkg/*/CONTROL/conffiles
+	
+	perl -pi -e "s/^Arch.*:.*/Architecture: $(ARCH)/g" ipkg/*/CONTROL/control
+ifneq ($(strip $(PKG_VERSION)),)
+	perl -pi -e "s/^Vers.*:.*/Version: $(PKG_VERSION)/g" ipkg/*/CONTROL/control
+endif
+
+	$(IPKG_BUILD) $(I_PPPOE_SERVER) $(IPKG_TARGET_DIR)
+	$(IPKG_BUILD) $(I_PPPOE_RELAY) $(IPKG_TARGET_DIR)
+	$(IPKG_BUILD) $(I_PPPOE_SNIFF) $(IPKG_TARGET_DIR)
+	$(IPKG_BUILD) $(I_PPPOE_CLIENT) $(IPKG_TARGET_DIR)
+
+
+clean:
+
+	-$(MAKE) -C src \
+	  clean
+	
+	rm -rf .stamp-* \
+	  $(INSTALL_DIR)/etc/pppoe.conf \
+	  $(INSTALL_DIR)/etc/ppp/pppoe-server-options \
+	  $(INSTALL_DIR)/usr/doc/rp-pppoe* \
+	  $(INSTALL_DIR)/usr/sbin/adsl-* \
+	  $(INSTALL_DIR)/usr/sbin/pppoe* \
+	  $(INSTALL_DIR)/usr/share/man/man5/pppoe.conf.5* \
+	  $(INSTALL_DIR)/usr/share/man/man8/adsl-*.8* \
+	  $(INSTALL_DIR)/usr/share/man/man8/pppoe*.8* \
+	  $(I_PPPOE_SERVER)/etc/ppp \
+	  $(I_PPPOE_SERVER)/usr \
+	  $(I_PPPOE_RELAY)/usr \
+	  $(I_PPPOE_SNIFF)/usr \
+	  $(I_PPPOE_CLIENT)/etc/ppp* \
+	  $(I_PPPOE_CLIENT)/usr \
+
+
+control:
+
+	@cat $(I_PPPOE_SERVER)/CONTROL/control
+	@echo
+	@cat $(I_PPPOE_RELAY)/CONTROL/control
+	@echo
+	@cat $(I_PPPOE_SNIFF)/CONTROL/control
+	@echo
+	@cat $(I_PPPOE_CLIENT)/CONTROL/control
+	@echo
+	
+
+.PHONY: configure build install package clean control
