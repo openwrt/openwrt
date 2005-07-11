@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=htpdate
-PKG_VERSION:=0.8.2
+PKG_VERSION:=0.8.3
 PKG_RELEASE:=1
-PKG_MD5SUM:=f1d8c0706a6a60f880ce6a0dccbb99a3
+PKG_MD5SUM:=4771e33a3f15706ee49d7a4ddb924757
 
 PKG_SOURCE_URL:=http://www.clevervest.com/htp/archive/c/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
