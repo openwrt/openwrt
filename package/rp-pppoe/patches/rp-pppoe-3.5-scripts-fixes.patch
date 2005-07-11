@@ -1,0 +1,227 @@
+diff -ruN rp-pppoe-3.5-orig/scripts/adsl-connect.in rp-pppoe-3.5-4/scripts/adsl-connect.in
+--- rp-pppoe-3.5-orig/scripts/adsl-connect.in	2002-07-08 16:38:24.000000000 +0200
++++ rp-pppoe-3.5-4/scripts/adsl-connect.in	2005-03-10 01:01:15.000000000 +0100
+@@ -18,7 +18,7 @@
+ # Usage: adsl-connect [config_file]
+ #        adsl-connect interface user [config_file]
+ # Second form overrides USER and ETH from config file.
+-# If config_file is omitted, defaults to /etc//ppp/pppoe.conf
++# If config_file is omitted, defaults to /etc/pppoe.conf
+ #
+ #***********************************************************************
+ 
+@@ -30,25 +30,22 @@
+ # Paths to programs
+ IFCONFIG=/sbin/ifconfig
+ PPPD=@PPPD@
+-SETSID=@SETSID@
++SETSID=
+ PPPOE=@sbindir@/pppoe
+ LOGGER="/usr/bin/logger -t `basename $0`"
+ 
++#MODPROBE=modprobe
++MODPROBE=insmod
++
+ # Set to "C" locale so we can parse messages from commands
+ LANG=C
+ export LANG
+ 
+-# Must be root
+-if test "`@ID@ -u`" != 0 ; then
+-    echo "$0: You must be root to run this script" >& 2
+-    exit 1
+-fi
+-
+ if test "$SETSID" != "" -a ! -x "$SETSID"; then
+     SETSID=""
+ fi
+ 
+-CONFIG=/etc//ppp/pppoe.conf
++CONFIG=/etc/pppoe.conf
+ USER=""
+ ETH=""
+ 
+@@ -117,12 +114,12 @@
+ if test `uname -s` = Linux ; then
+     $IFCONFIG $ETH up mtu 1500
+     # For 2.4 kernels.  Will fail on 2.2.x, but who cares?
+-    modprobe ppp_generic > /dev/null 2>&1
+-    modprobe ppp_async > /dev/null 2>&1
+-    modprobe ppp_synctty > /dev/null 2>&1
++    $MODPROBE ppp_generic > /dev/null 2>&1
++    $MODPROBE ppp_async > /dev/null 2>&1
++    $MODPROBE ppp_synctty > /dev/null 2>&1
+     if test -n "$LINUX_PLUGIN" ; then
+-	modprobe pppox > /dev/null 2>&1
+-	modprobe pppoe > /dev/null 2>&1
++	$MODPROBE pppox > /dev/null 2>&1
++	$MODPROBE pppoe > /dev/null 2>&1
+     fi
+ fi
+ 
+@@ -131,7 +128,7 @@
+     PPPD_SYNC=sync
+ 	# Increase the chances of it working on Linux...
+     if test `uname -s` = Linux ; then
+-	modprobe n_hdlc > /dev/null 2>&1
++	$MODPROBE n_hdlc > /dev/null 2>&1
+     fi
+ else
+     PPPOE_SYNC=""
+@@ -204,7 +201,7 @@
+ 
+     # Interface name MUST BE LAST!!
+     PLUGIN_OPTS="$PLUGIN_OPTS $ETH"
+-    modprobe pppoe > /dev/null 2>&1
++    $MODPROBE pppoe > /dev/null 2>&1
+ fi
+ 
+ if test "$DEFAULTROUTE" != "no" ; then
+diff -ruN rp-pppoe-3.5-orig/scripts/adsl-setup.in rp-pppoe-3.5-4/scripts/adsl-setup.in
+--- rp-pppoe-3.5-orig/scripts/adsl-setup.in	2002-07-08 16:38:24.000000000 +0200
++++ rp-pppoe-3.5-4/scripts/adsl-setup.in	2005-03-09 17:24:02.000000000 +0100
+@@ -27,7 +27,7 @@
+ LANG=C
+ export LANG
+ 
+-CONFIG=/etc/ppp/pppoe.conf
++CONFIG=/etc/pppoe.conf
+ 
+ # Protect created files
+ umask 077
+@@ -46,12 +46,6 @@
+ $ECHO "properly..."
+ $ECHO ""
+ 
+-# Must be root
+-if [ "`@ID@ -u`" != 0 ] ; then
+-    $ECHO "$0: Sorry, you must be root to run this script"
+-    exit 1
+-fi
+-
+ # Prototype config file must exist
+ if [ ! -r "$CONFIG" ] ; then
+     $ECHO "Oh, dear, I don't see the file '$CONFIG' anywhere.  Please"
+@@ -280,12 +274,7 @@
+     fi
+ fi
+ 
+-# Where is pppd likely to put its pid?
+-if [ -d /var/run ] ; then
+-    VARRUN=/var/run
+-else
+-    VARRUN=/etc/ppp
+-fi
++VARRUN=/var/run
+ 
+ # Some #$(*& ISP's use a slash in the user name...
+ sed -e "s&^USER=.*&USER='$U'&" \
+diff -ruN rp-pppoe-3.5-orig/scripts/adsl-start.in rp-pppoe-3.5-4/scripts/adsl-start.in
+--- rp-pppoe-3.5-orig/scripts/adsl-start.in	2002-07-08 16:38:24.000000000 +0200
++++ rp-pppoe-3.5-4/scripts/adsl-start.in	2005-03-10 00:53:13.000000000 +0100
+@@ -18,7 +18,7 @@
+ # Usage: adsl-start [config_file]
+ #        adsl-start interface user [config_file]
+ # Second form overrides USER and ETH from config file.
+-# If config_file is omitted, defaults to /etc/ppp/pppoe.conf
++# If config_file is omitted, defaults to /etc/pppoe.conf
+ #
+ #***********************************************************************
+ 
+@@ -36,15 +36,13 @@
+ export LANG
+ 
+ # Defaults
+-CONFIG=/etc/ppp/pppoe.conf
++CONFIG=/etc/pppoe.conf
+ USER=""
+ ETH=""
+ ME=`basename $0`
+-# Must be root
+-if [ "`@ID@ -u`" != 0 ] ; then
+-    $ECHO "$ME: You must be root to run this script" >& 2
+-    exit 1
+-fi
++
++#TTY_S="tty -s"
++TTY_S=/bin/true
+ 
+ # Debugging
+ if [ "$DEBUG" = "1" ] ; then
+@@ -139,6 +137,8 @@
+     fi
+     # Delete bogus PIDFILE
+     rm -f "$PIDFILE" "$PIDFILE.pppd" "$PIDFILE.pppoe" "$PIDFILE.start"
++else
++  mkdir -p /var/run
+ fi
+ 
+ echo $$ > $PIDFILE.start
+@@ -169,14 +169,14 @@
+     # Looks like the interface came up
+     if [ $? = 0 ] ; then
+ 	# Print newline if standard input is a TTY
+-	tty -s && $ECHO " Connected!"
++	$TTY_S && $ECHO " Connected!"
+ 	exit 0
+     fi
+ 
+     if test -n "$FORCEPING" ; then
+ 	$ECHO -n "$FORCEPING"
+     else
+-	tty -s && $ECHO -n "$PING"
++	$TTY_S && $ECHO -n "$PING"
+     fi
+     sleep $CONNECT_POLL
+     TIME=`expr $TIME + $CONNECT_POLL`
+diff -ruN rp-pppoe-3.5-orig/scripts/adsl-status rp-pppoe-3.5-4/scripts/adsl-status
+--- rp-pppoe-3.5-orig/scripts/adsl-status	2002-07-08 16:38:24.000000000 +0200
++++ rp-pppoe-3.5-4/scripts/adsl-status	2005-03-10 01:01:17.000000000 +0100
+@@ -15,12 +15,12 @@
+ # LIC: GPL
+ #
+ # Usage: adsl-status [config_file]
+-# If config_file is omitted, defaults to /etc/ppp/pppoe.conf
++# If config_file is omitted, defaults to /etc/pppoe.conf
+ #
+ #***********************************************************************
+ 
+ # Defaults
+-CONFIG=/etc/ppp/pppoe.conf
++CONFIG=/etc/pppoe.conf
+ 
+ case "$#" in
+     1)
+@@ -58,10 +58,7 @@
+ 
+ PPPD_PID=`cat "$PPPD_PIDFILE"`
+ 
+-# Sigh.  Some versions of pppd put PID files in /var/run; others put them
+-# in /etc/ppp.  Since it's too messy to figure out what pppd does, we
+-# try both locations.
+-for i in /etc/ppp/ppp*.pid /var/run/ppp*.pid ; do
++for i in /var/run/ppp*.pid ; do
+     if [ -r $i ] ; then
+ 	PID=`cat $i`
+ 	if [ "$PID" = "$PPPD_PID" ] ; then
+diff -ruN rp-pppoe-3.5-orig/scripts/adsl-stop.in rp-pppoe-3.5-4/scripts/adsl-stop.in
+--- rp-pppoe-3.5-orig/scripts/adsl-stop.in	2002-07-08 16:38:24.000000000 +0200
++++ rp-pppoe-3.5-4/scripts/adsl-stop.in	2005-03-09 16:37:38.000000000 +0100
+@@ -16,7 +16,7 @@
+ # LIC: GPL
+ #
+ # Usage: adsl-stop [config_file]
+-# If config_file is omitted, defaults to /etc/ppp/pppoe.conf
++# If config_file is omitted, defaults to /etc/pppoe.conf
+ #
+ #***********************************************************************
+ 
+@@ -28,7 +28,7 @@
+ LOGGER="/usr/bin/logger -t $ME"
+ CONFIG="$1"
+ if [ "$CONFIG" = "" ] ; then
+-    CONFIG=/etc/ppp/pppoe.conf
++    CONFIG=/etc/pppoe.conf
+ fi
+ 
+ if [ ! -f "$CONFIG" -o ! -r "$CONFIG" ] ; then

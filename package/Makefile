@@ -102,6 +102,7 @@ package-$(BR2_PACKAGE_QUAGGA) += quagga
 package-$(BR2_PACKAGE_RADVD) += radvd
 package-$(BR2_PACKAGE_READLINE) += readline
 package-$(BR2_PACKAGE_ROBOCFG) += robocfg
+package-$(BR2_PACKAGE_RP_PPPOE) += rp-pppoe
 package-$(BR2_PACKAGE_RSYNC) += rsync
 package-$(BR2_PACKAGE_SABLEVM) += sablevm
 package-$(BR2_PACKAGE_SABLEVM_CLASSPATH) += sablevm-classpath

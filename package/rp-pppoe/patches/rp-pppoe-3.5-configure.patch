@@ -1,0 +1,241 @@
+diff -ruN rp-pppoe-3.5-orig/src/configure rp-pppoe-3.5-4/src/configure
+--- rp-pppoe-3.5-orig/src/configure	2002-07-08 16:38:24.000000000 +0200
++++ rp-pppoe-3.5-4/src/configure	2005-03-09 16:37:38.000000000 +0100
+@@ -1707,6 +1707,7 @@
+ #line 1708 "configure"
+ #include "confdefs.h"
+ #include <stdio.h>
++#include <sys/types.h>
+ main()
+ {
+   FILE *f=fopen("conftestval", "w");
+@@ -1715,7 +1716,7 @@
+   exit(0);
+ }
+ EOF
+-if { (eval echo configure:1719: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
++if { (eval echo configure:1720: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
+ then
+   ac_cv_sizeof_unsigned_short=`cat conftestval`
+ else
+@@ -1735,7 +1736,7 @@
+ 
+ 
+ echo $ac_n "checking size of unsigned int""... $ac_c" 1>&6
+-echo "configure:1739: checking size of unsigned int" >&5
++echo "configure:1740: checking size of unsigned int" >&5
+ if eval "test \"`echo '$''{'ac_cv_sizeof_unsigned_int'+set}'`\" = set"; then
+   echo $ac_n "(cached) $ac_c" 1>&6
+ else
+@@ -1743,9 +1744,10 @@
+     { echo "configure: error: can not run test program while cross compiling" 1>&2; exit 1; }
+ else
+   cat > conftest.$ac_ext <<EOF
+-#line 1747 "configure"
++#line 1748 "configure"
+ #include "confdefs.h"
+ #include <stdio.h>
++#include <sys/types.h>
+ main()
+ {
+   FILE *f=fopen("conftestval", "w");
+@@ -1754,7 +1756,7 @@
+   exit(0);
+ }
+ EOF
+-if { (eval echo configure:1758: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
++if { (eval echo configure:1760: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
+ then
+   ac_cv_sizeof_unsigned_int=`cat conftestval`
+ else
+@@ -1774,7 +1776,7 @@
+ 
+ 
+ echo $ac_n "checking size of unsigned long""... $ac_c" 1>&6
+-echo "configure:1778: checking size of unsigned long" >&5
++echo "configure:1780: checking size of unsigned long" >&5
+ if eval "test \"`echo '$''{'ac_cv_sizeof_unsigned_long'+set}'`\" = set"; then
+   echo $ac_n "(cached) $ac_c" 1>&6
+ else
+@@ -1782,9 +1784,10 @@
+     { echo "configure: error: can not run test program while cross compiling" 1>&2; exit 1; }
+ else
+   cat > conftest.$ac_ext <<EOF
+-#line 1786 "configure"
++#line 1788 "configure"
+ #include "confdefs.h"
+ #include <stdio.h>
++#include <sys/types.h>
+ main()
+ {
+   FILE *f=fopen("conftestval", "w");
+@@ -1793,7 +1796,7 @@
+   exit(0);
+ }
+ EOF
+-if { (eval echo configure:1797: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
++if { (eval echo configure:1800: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
+ then
+   ac_cv_sizeof_unsigned_long=`cat conftestval`
+ else
+@@ -1816,7 +1819,7 @@
+ # Extract the first word of "pppd", so it can be a program name with args.
+ set dummy pppd; ac_word=$2
+ echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
+-echo "configure:1820: checking for $ac_word" >&5
++echo "configure:1823: checking for $ac_word" >&5
+ if eval "test \"`echo '$''{'ac_cv_path_PPPD'+set}'`\" = set"; then
+   echo $ac_n "(cached) $ac_c" 1>&6
+ else
+@@ -1853,7 +1856,7 @@
+ # Extract the first word of "setsid", so it can be a program name with args.
+ set dummy setsid; ac_word=$2
+ echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
+-echo "configure:1857: checking for $ac_word" >&5
++echo "configure:1860: checking for $ac_word" >&5
+ if eval "test \"`echo '$''{'ac_cv_path_SETSID'+set}'`\" = set"; then
+   echo $ac_n "(cached) $ac_c" 1>&6
+ else
+@@ -1890,7 +1893,7 @@
+ # Extract the first word of "id", so it can be a program name with args.
+ set dummy id; ac_word=$2
+ echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
+-echo "configure:1894: checking for $ac_word" >&5
++echo "configure:1897: checking for $ac_word" >&5
+ if eval "test \"`echo '$''{'ac_cv_path_ID'+set}'`\" = set"; then
+   echo $ac_n "(cached) $ac_c" 1>&6
+ else
+@@ -1925,14 +1928,11 @@
+ 
+ 
+ echo $ac_n "checking for Linux 2.4.X kernel-mode PPPoE support""... $ac_c" 1>&6
+-echo "configure:1929: checking for Linux 2.4.X kernel-mode PPPoE support" >&5
+-if test "`uname -s`" = "Linux" ; then
+-modprobe ppp_generic > /dev/null 2>&1
+-modprobe ppp_async > /dev/null 2>&1
+-modprobe n_hdlc > /dev/null 2>&1
+-modprobe ppp_synctty > /dev/null 2>&1
+-modprobe pppoe > /dev/null 2>&1
+-if test "$cross_compiling" = yes; then
++echo "configure:1932: checking for Linux 2.4.X kernel-mode PPPoE support" >&5
++if eval "test \"`echo '$''{'ac_cv_linux_kernel_pppoe'+set}'`\" = set"; then
++  echo $ac_n "(cached) $ac_c" 1>&6
++else
++  if test "$cross_compiling" = yes; then
+     { echo "configure: error: can not run test program while cross compiling" 1>&2; exit 1; }
+ else
+   cat > conftest.$ac_ext <<EOF
+@@ -1960,10 +1960,10 @@
+ rm -fr conftest*
+ fi
+ 
+-else
+-	ac_cv_linux_kernel_pppoe=no
+ fi
+ 
++echo "$ac_t""$ac_cv_linux_kernel_pppoe" 1>&6
++
+ $ECHO $ac_cv_linux_kernel_pppoe
+ if test "$ac_cv_linux_kernel_pppoe" != yes ; then
+    if test "$LINUX_KERNELMODE_PLUGIN" = rp-pppoe.so; then
+@@ -2018,11 +2018,14 @@
+ 
+ echo $ac_n "checking packing order of bit fields""... $ac_c" 1>&6
+ echo "configure:2021: checking packing order of bit fields" >&5
+-if test "$cross_compiling" = yes; then
++if eval "test \"`echo '$''{'ac_cv_pack_bitfields_reversed'+set}'`\" = set"; then
++  echo $ac_n "(cached) $ac_c" 1>&6
++else
++  if test "$cross_compiling" = yes; then
+     { echo "configure: error: can not run test program while cross compiling" 1>&2; exit 1; }
+ else
+   cat > conftest.$ac_ext <<EOF
+-#line 2026 "configure"
++#line 2029 "configure"
+ #include "confdefs.h"
+ 
+ union foo {
+@@ -2048,20 +2051,23 @@
+     }
+ }
+ EOF
+-if { (eval echo configure:2052: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
++if { (eval echo configure:2055: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
+ then
+-  PACK=normal
++  ac_cv_pack_bitfields_reversed=no
+ else
+   echo "configure: failed program was:" >&5
+   cat conftest.$ac_ext >&5
+   rm -fr conftest*
+-  PACK=rev
++  ac_cv_pack_bitfields_reversed=yes
+ fi
+ rm -fr conftest*
+ fi
+ 
++fi
++
++echo "$ac_t""$ac_cv_pack_bitfields_reversed" 1>&6
+ 
+-if test "$PACK" = "rev" ; then
++if test "$ac_cv_pack_bitfields_reversed" = "yes" ; then
+ 	$ECHO "reversed"
+ 	cat >> confdefs.h <<\EOF
+ #define PACK_BITFIELDS_REVERSED 1
+diff -ruN rp-pppoe-3.5-orig/src/configure.in rp-pppoe-3.5-4/src/configure.in
+--- rp-pppoe-3.5-orig/src/configure.in	2002-07-08 16:38:24.000000000 +0200
++++ rp-pppoe-3.5-4/src/configure.in	2005-03-09 16:37:38.000000000 +0100
+@@ -130,15 +130,8 @@
+ AC_PATH_PROG(ID, id, "", /usr/xpg4/bin:$PATH)
+ 
+ dnl Check for Linux-specific kernel support for PPPoE
+-AC_MSG_CHECKING(for Linux 2.4.X kernel-mode PPPoE support)
+-if test "`uname -s`" = "Linux" ; then
+-dnl Do a bunch of modprobes.  Can't hurt; might help.
+-modprobe ppp_generic > /dev/null 2>&1
+-modprobe ppp_async > /dev/null 2>&1
+-modprobe n_hdlc > /dev/null 2>&1
+-modprobe ppp_synctty > /dev/null 2>&1
+-modprobe pppoe > /dev/null 2>&1
+-AC_TRY_RUN([#include <sys/socket.h>
++AC_CACHE_CHECK([for Linux 2.4.X kernel-mode PPPoE support], ac_cv_linux_kernel_pppoe,
++[AC_TRY_RUN([#include <sys/socket.h>
+ #include <net/ethernet.h>
+ #include <linux/if.h>
+ #include <linux/if_pppox.h>
+@@ -146,10 +139,7 @@
+ {
+ 	if (socket(AF_PPPOX, SOCK_DGRAM, PX_PROTO_OE) >= 0) return 0; else return 1;
+ }
+-], ac_cv_linux_kernel_pppoe=yes, ac_cv_linux_kernel_pppoe=no)
+-else
+-	ac_cv_linux_kernel_pppoe=no
+-fi
++], ac_cv_linux_kernel_pppoe=yes, ac_cv_linux_kernel_pppoe=no)])
+ 
+ $ECHO $ac_cv_linux_kernel_pppoe
+ if test "$ac_cv_linux_kernel_pppoe" != yes ; then
+@@ -208,8 +198,8 @@
+ esac
+ 
+ dnl Figure out packing order of structures
+-AC_MSG_CHECKING(packing order of bit fields)
+-AC_TRY_RUN([
++AC_CACHE_CHECK([packing order of bit fields], ac_cv_pack_bitfields_reversed,
++[AC_TRY_RUN([
+ union foo {
+     struct bar {
+ 	unsigned int ver:4;
+@@ -231,9 +221,9 @@
+     } else {
+ 	return 2;
+     }
+-}], PACK=normal, PACK=rev)
++}], ac_cv_pack_bitfields_reversed=no, ac_cv_pack_bitfields_reversed=yes)])
+ 
+-if test "$PACK" = "rev" ; then
++if test "$ac_cv_pack_bitfields_reversed" = "yes" ; then
+ 	$ECHO "reversed"
+ 	AC_DEFINE(PACK_BITFIELDS_REVERSED)
+ else
