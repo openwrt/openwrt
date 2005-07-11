@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=asterisk
-PKG_VERSION:=1.0.7
+PKG_VERSION:=1.0.9
 PKG_RELEASE:=1
-PKG_MD5SUM:=4cc3c1e4a1b12e0e4c748326ad153291
+PKG_MD5SUM:=0d7f1c680ae53a739f26a069ef8b580a
 
 PKG_SOURCE_URL:=http://www.asterisk.org/html/downloads ftp://ftp.asterisk.org/pub/asterisk
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz

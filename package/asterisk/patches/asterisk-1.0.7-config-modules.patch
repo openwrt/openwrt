@@ -1,0 +1,28 @@
+diff -ruN asterisk-1.0.7-old/configs/modules.conf.sample asterisk-1.0.7-new/configs/modules.conf.sample
+--- asterisk-1.0.7-old/configs/modules.conf.sample	2003-06-26 20:57:54.000000000 +0200
++++ asterisk-1.0.7-new/configs/modules.conf.sample	2005-03-19 17:38:06.000000000 +0100
+@@ -23,8 +23,8 @@
+ ; Explicitly load the chan_modem.so early on to be sure
+ ; it loads before any of the chan_modem_* 's afte rit
+ ;
+-load => chan_modem.so
+-load => res_musiconhold.so
++noload => chan_modem.so
++noload => res_musiconhold.so
+ ;
+ ; Load either OSS or ALSA, not both
+ ; By default, load OSS only (automatically) and do not load ALSA
+@@ -36,4 +36,12 @@
+ ; exported to modules loaded after them.
+ ;
+ [global]
+-chan_modem.so=yes
++; chan_modem.so=yes
++noload => app_adsiprog.so
++noload => app_db.so
++noload => app_hasnewvoicemail.so
++noload => app_voicemail.so
++noload => chan_skinny.so
++noload => cdr_csv.so
++noload => res_adsi.so
++noload => res_agi.so

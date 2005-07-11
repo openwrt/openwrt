@@ -1,0 +1,80 @@
+diff -ruN asterisk-1.0.9-old/codecs/gsm/Makefile asterisk-1.0.9-new/codecs/gsm/Makefile
+--- asterisk-1.0.9-old/codecs/gsm/Makefile	2005-06-21 16:27:28.000000000 +0200
++++ asterisk-1.0.9-new/codecs/gsm/Makefile	2005-07-11 13:36:12.000000000 +0200
+@@ -40,12 +40,12 @@
+ ifneq (${OSARCH},Darwin)
+ ifneq (${PROC},x86_64)
+ ifneq (${PROC},ultrasparc)
+-ifneq ($(shell uname -m),ppc)
+-ifneq ($(shell uname -m),alpha)
+-ifneq ($(shell uname -m),armv4l)
++ifneq (${PROC},alpha)
++ifneq (${PROC},armv4l)
+ ifneq (${PROC},sparc64)
+ ifneq (${PROC},ppc)
+ ifneq (${PROC},ppc64)
++ifneq (${PROC},mipsel)
+ OPTIMIZE+=-march=$(PROC)
+ endif
+ endif
+@@ -84,7 +84,7 @@
+ # CCFLAGS 	= -c -O
+ 
+ CC		?= gcc
+-CCFLAGS 	+= -c -DNeedFunctionPrototypes=1 -funroll-loops -fPIC $(OPTIMIZE) -fomit-frame-pointer
++CCFLAGS 	+= -c -DNeedFunctionPrototypes=1 -fPIC $(OPTIMIZE)
+ 
+ LD 		= $(CC)
+ 
+@@ -219,11 +219,12 @@
+ 		$(SRC)/short_term.c	\
+ 		$(SRC)/table.c
+ ifeq (${OSARCH},Linux)
+-ifneq ($(shell uname -m),x86_64)
+-ifneq ($(shell uname -m),ppc)
+-ifneq ($(shell uname -m),alpha)
+-ifneq ($(shell uname -m),armv4l)
+-ifneq ($(shell uname -m),sparc64)
++ifneq (${PROC},x86_64)
++ifneq (${PROC},ppc)
++ifneq (${PROC},alpha)
++ifneq (${PROC},armv4l)
++ifneq (${PROC},sparc64)
++ifneq ($(PROC),mipsel)
+ GSM_SOURCES+= $(SRC)/k6opt.s
+ endif
+ endif
+@@ -231,6 +232,7 @@
+ endif
+ endif
+ endif
++endif
+ 
+ TOAST_SOURCES = $(SRC)/toast.c 		\
+ 		$(SRC)/toast_lin.c	\
+@@ -277,11 +279,12 @@
+ 		$(SRC)/table.o
+ 
+ ifeq (${OSARCH},Linux)
+-ifneq ($(shell uname -m), x86_64)
+-ifneq ($(shell uname -m), ppc)
+-ifneq ($(shell uname -m), alpha)
+-ifneq ($(shell uname -m), armv4l)
+-ifneq ($(shell uname -m), sparc64)
++ifneq (${PROC}, x86_64)
++ifneq (${PROC}, ppc)
++ifneq (${PROC}, alpha)
++ifneq (${PROC}, armv4l)
++ifneq (${PROC}, sparc64)
++ifneq ($(PROC), mipsel)
+ GSM_OBJECTS+= $(SRC)/k6opt.o
+ endif
+ endif
+@@ -289,6 +292,7 @@
+ endif
+ endif
+ endif
++endif
+ 
+ TOAST_OBJECTS =	$(SRC)/toast.o 		\
+ 		$(SRC)/toast_lin.o	\

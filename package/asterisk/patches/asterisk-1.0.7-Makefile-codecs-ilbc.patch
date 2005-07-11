@@ -1,0 +1,21 @@
+diff -ruN asterisk-1.0.7-old/codecs/ilbc/Makefile asterisk-1.0.7-new/codecs/ilbc/Makefile
+--- asterisk-1.0.7-old/codecs/ilbc/Makefile	2004-08-29 19:40:58.000000000 +0200
++++ asterisk-1.0.7-new/codecs/ilbc/Makefile	2005-03-19 17:38:06.000000000 +0100
+@@ -1,5 +1,5 @@
+ ARCH=$(PROC)
+-CFLAGS+=-Wall -fPIC -O3 -funroll-loops -fomit-frame-pointer
++CFLAGS+=-Wall -fPIC $(OPTIMIZE)
+ LIB=libilbc.a
+ 
+ OBJS= anaFilter.o iCBSearch.o packing.o \
+@@ -12,8 +12,8 @@
+ 
+ 
+ $(LIB): $(OBJS)
+-	ar cr $(LIB) $(OBJS)
+-	ranlib $(LIB)
++	$(AR) cr $(LIB) $(OBJS)
++	$(RANLIB) $(LIB)
+ 
+ clean:
+ 	rm -f $(LIB) *.o

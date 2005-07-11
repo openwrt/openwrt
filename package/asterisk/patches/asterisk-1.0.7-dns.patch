@@ -1,0 +1,18 @@
+diff -ruN asterisk-1.0.7-old/dns.c asterisk-1.0.7-new/dns.c
+--- asterisk-1.0.7-old/dns.c	2004-06-22 22:11:15.000000000 +0200
++++ asterisk-1.0.7-new/dns.c	2005-03-19 17:38:06.000000000 +0100
+@@ -153,7 +153,13 @@
+ 
+ #if defined(res_ninit)
+ #define HAS_RES_NINIT
+-#else
++#endif
++
++#ifdef __UCLIBC__
++#undef HAS_RES_NINIT
++#endif
++
++#ifndef HAS_RES_NINIT
+ AST_MUTEX_DEFINE_STATIC(res_lock);
+ #if 0
+ #warning "Warning, res_ninit is missing...  Could have reentrancy issues"
