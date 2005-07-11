@@ -1,0 +1,16 @@
+diff -ruN asterisk-1.0.7-old/res/Makefile asterisk-1.0.7-new/res/Makefile
+--- asterisk-1.0.7-old/res/Makefile	2004-07-17 22:58:01.000000000 +0200
++++ asterisk-1.0.7-new/res/Makefile	2005-03-19 17:58:17.000000000 +0100
+@@ -13,9 +13,9 @@
+ 
+ MODS=res_adsi.so res_features.so res_crypto.so res_musiconhold.so res_indications.so res_monitor.so \
+      res_agi.so
+-MODS+=$(shell if [ -f "/usr/include/odbcinst.h" ]; then echo "res_odbc.so res_config_odbc.so"; fi)
+-MODS+=$(shell if [ -f "/usr/local/include/odbcinst.h" ]; then echo "res_odbc.so res_config_odbc.so"; fi)
+-MODS+=$(shell if [ -f "/usr/include/osp/osp.h" ]; then echo "res_osp.so"; fi)
++#MODS+=$(shell if [ -f "/usr/include/odbcinst.h" ]; then echo "res_odbc.so res_config_odbc.so"; fi)
++#MODS+=$(shell if [ -f "/usr/local/include/odbcinst.h" ]; then echo "res_odbc.so res_config_odbc.so"; fi)
++#MODS+=$(shell if [ -f "/usr/include/osp/osp.h" ]; then echo "res_osp.so"; fi)
+ 
+ CRYPTO_LIBS=-lssl -lcrypto
+ 

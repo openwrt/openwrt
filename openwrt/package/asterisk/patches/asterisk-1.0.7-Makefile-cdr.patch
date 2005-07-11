@@ -1,0 +1,12 @@
+diff -ruN asterisk-1.0.7-old/cdr/Makefile asterisk-1.0.7-new/cdr/Makefile
+--- asterisk-1.0.7-old/cdr/Makefile	2004-08-31 18:33:00.000000000 +0200
++++ asterisk-1.0.7-new/cdr/Makefile	2005-03-19 17:38:06.000000000 +0100
+@@ -12,7 +12,7 @@
+ #
+ 
+ #ADD cdr_pgsql.so to MODS= to include PostgreSQL support: REQUIRES PostgreSQL libs
+-MODS=cdr_csv.so cdr_manager.so
++MODS=cdr_csv.so cdr_manager.so $(EXTRA_MODS)
+ 
+ 
+ CFLAGS+=-fPIC

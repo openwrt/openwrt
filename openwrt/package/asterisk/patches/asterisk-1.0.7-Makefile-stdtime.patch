@@ -1,0 +1,14 @@
+diff -ruN asterisk-1.0.7-old/stdtime/Makefile asterisk-1.0.7-new/stdtime/Makefile
+--- asterisk-1.0.7-old/stdtime/Makefile	2003-11-05 07:19:41.000000000 +0100
++++ asterisk-1.0.7-new/stdtime/Makefile	2005-03-19 17:38:06.000000000 +0100
+@@ -3,8 +3,8 @@
+ all: libtime.a
+ 
+ libtime.a: $(OBJS)
+-	ar rv $@ $(OBJS)
+-	ranlib $@
++	$(AR) rv $@ $(OBJS)
++	$(RANLIB) $@
+ 
+ install:
+ 
