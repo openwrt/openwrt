@@ -25,7 +25,48 @@ include $(TOPDIR)/package/rules.mk
 
 $(eval $(call PKG_template,LIBNCURSES,libncurses,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
-$(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
+$(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.prepared
+	rm -rf $(PKG_INSTALL_DIR)
+	mkdir -p $(PKG_INSTALL_DIR)
+	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
+		./configure \
+		--target=$(GNU_HOST_NAME) \
+		--host=$(GNU_HOST_NAME) \
+		--build=$(GNU_HOST_NAME) \
+		--program-prefix="" \
+		--program-suffix="" \
+		--prefix=/usr \
+		--exec-prefix=/usr \
+		--bindir=/usr/bin \
+		--datadir=/usr/share \
+		--includedir=/usr/include \
+		--infodir=/usr/share/info \
+		--libdir=/usr/lib \
+		--libexecdir=/usr/lib \
+		--localstatedir=/var \
+		--mandir=/usr/share/man \
+		--sbindir=/usr/sbin \
+		--sysconfdir=/etc \
+		$(DISABLE_NLS) \
+		$(DISABLE_LARGEFILE) \
+		--enable-echo \
+		--enable-const \
+		--enable-overwrite \
+		--disable-rpath \
+		--without-ada \
+		--without-cxx \
+		--without-cxx-binding \
+		--without-debug \
+		--without-profile \
+		--with-progs \
+		--with-normal \
+		--without-shared \
+		--with-terminfo-dirs=/usr/share/terminfo \
+		--with-default-terminfo-dir=/usr/share/terminfo \
+	);
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		DESTDIR="$(PKG_INSTALL_DIR)" \
+		libs install.progs
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
@@ -52,35 +93,30 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 		--sysconfdir=/etc \
 		$(DISABLE_NLS) \
 		$(DISABLE_LARGEFILE) \
-		--with-terminfo-dirs=/usr/share/terminfo \
-		--with-default-terminfo-dir=/usr/share/terminfo \
-		--without-ada \
-		--without-cxx \
-		--without-cxx-binding \
-		--without-progs \
-		--without-profile \
-		--without-debug \
-		--disable-rpath \
 		--enable-echo \
 		--enable-const \
 		--enable-overwrite \
-		--with-shared \
+		--disable-rpath \
+		--without-ada \
+		--without-cxx \
+		--without-cxx-binding \
+		--without-debug \
+		--without-profile \
+		--without-progs \
 		--with-normal \
+		--with-shared \
+		--with-terminfo-dirs=/usr/share/terminfo \
+		--with-default-terminfo-dir=/usr/share/terminfo \
 	);
-	touch $@
-
-$(PKG_BUILD_DIR)/.built:
-	rm -rf $(PKG_INSTALL_DIR)
-	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
 		BUILD_CC="$(TARGET_CC)" \
 		HOSTCC="$(HOSTCC)" \
 		HOSTCCFLAGS="\$$(CPPFLAGS)" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
-		all install
+		libs install.libs install.data
 	touch $@
-	
+
 $(IPKG_LIBNCURSES):
 	install -d -m0755 $(IDIR_LIBNCURSES)/usr/lib
 	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/lib{ncurses,panel}*.so.* $(IDIR_LIBNCURSES)/usr/lib/

@@ -50,7 +50,7 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 		--disable-java \
 		--enable-cxx \
 		--disable-posixmutexes \
-		--enable-uimutexes \
+		--disable-uimutexes \
 		--disable-tcl \
 		--disable-rpc \
 		--enable-compat185 \

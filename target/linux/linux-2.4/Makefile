@@ -115,6 +115,9 @@ $(eval $(call KMOD_template,IDE,ide,\
 	$(MODULES_DIR)/kernel/drivers/ide/*.o \
 	$(MODULES_DIR)/kernel/drivers/ide/*/*.o \
 ,CONFIG_IDE))
+$(eval $(call KMOD_template,LOOP,loop,\
+    $(MODULES_DIR)/kernel/drivers/block/loop.o \
+,CONFIG_BLK_DEV_LOOP))
 $(eval $(call KMOD_template,EXT2,ext2,\
 	$(MODULES_DIR)/kernel/fs/ext2/*.o \
 ,CONFIG_EXT2_FS))
