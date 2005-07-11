@@ -22187,7 +22187,7 @@ diff -urN linux.old/drivers/atm/sangam_atm/tn7atm.c linux.dev/drivers/atm/sangam
 +  /* Update Stats: There may be a better place to do this, but this is a start */
 +  priv->stats.tx_packets++;
 +#ifdef CONFIG_LED_MODULE
-+    led_operation(MOD_ADSL, DEF_ADSL_ACTIVITY);           
++//    led_operation(MOD_ADSL, DEF_ADSL_ACTIVITY);           
 +#endif
 +
 +  /* track number of buffer used */
@@ -22283,7 +22283,7 @@ diff -urN linux.old/drivers/atm/sangam_atm/tn7atm.c linux.dev/drivers/atm/sangam
 +  atomic_inc(&vcc->stats->rx);
 +
 +#ifdef CONFIG_LED_MODULE
-+    led_operation(MOD_ADSL, DEF_ADSL_ACTIVITY);           
++//    led_operation(MOD_ADSL, DEF_ADSL_ACTIVITY);           
 +#endif
 +  dprintf(3, "(a) Receiving:vpi/vci[%d/%d] chan_id: %d  skb len:0x%x  skb truesize:0x%x\n",
 +                vcc->vpi,vcc->vci,ch,skb->len, skb->truesize);
@@ -23611,7 +23611,7 @@ diff -urN linux.old/drivers/atm/sangam_atm/tn7dsl.c linux.dev/drivers/atm/sangam
 +        dslhal_api_initStatistics(pIhw);
 +        dslhal_api_gatherStatistics(pIhw);
 +#ifdef CONFIG_LED_MODULE
-+        led_operation(MOD_ADSL, DEF_ADSL_SYNC);           
++//        led_operation(MOD_ADSL, DEF_ADSL_SYNC);           
 +        led_on = DEF_ADSL_SYNC;
 +#endif
 +        /* add auto margin retrain */
@@ -23649,7 +23649,7 @@ diff -urN linux.old/drivers/atm/sangam_atm/tn7dsl.c linux.dev/drivers/atm/sangam
 +      {
 +        if(led_on != DEF_ADSL_IDLE)
 +        {
-+          led_operation(MOD_ADSL, DEF_ADSL_IDLE);           
++//          led_operation(MOD_ADSL, DEF_ADSL_IDLE);           
 +          led_on = DEF_ADSL_IDLE;
 +        }
 +      }
@@ -23657,7 +23657,7 @@ diff -urN linux.old/drivers/atm/sangam_atm/tn7dsl.c linux.dev/drivers/atm/sangam
 +      {
 +        if(led_on != DEF_ADSL_TRAINING)
 +        {
-+          led_operation(MOD_ADSL, DEF_ADSL_TRAINING);           
++//          led_operation(MOD_ADSL, DEF_ADSL_TRAINING);           
 +          led_on = DEF_ADSL_TRAINING;
 +        }
 +
@@ -23904,7 +23904,7 @@ diff -urN linux.old/drivers/atm/sangam_atm/tn7dsl.c linux.dev/drivers/atm/sangam
 +  deregister_led_drv(LED_NUM_1);
 +  deregister_led_drv(LED_NUM_2);
 +#else
-+  led_operation(MOD_ADSL,DEF_ADSL_IDLE);
++//  led_operation(MOD_ADSL,DEF_ADSL_IDLE);
 +#endif
 +#endif
 +  stop_kthread(&overlay_thread);
