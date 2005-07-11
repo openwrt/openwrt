@@ -1,0 +1,61 @@
+diff -ruN asterisk-1.0.7-old/channels/Makefile asterisk-1.0.7-new/channels/Makefile
+--- asterisk-1.0.7-old/channels/Makefile	2004-08-31 18:33:00.000000000 +0200
++++ asterisk-1.0.7-new/channels/Makefile	2005-03-19 17:38:06.000000000 +0100
+@@ -71,25 +71,25 @@
+ CHANNEL_LIBS+=chan_oss.so
+ endif
+ 
+-CHANNEL_LIBS+=$(shell [ -f /usr/include/linux/ixjuser.h ] && echo chan_phone.so)
+-CHANNEL_LIBS+=$(shell [ -f /usr/local/include/ixjuser.h ] && echo chan_phone.so)
+-CHANNEL_LIBS+=$(shell [ -f h323/libchanh323.a ] && echo chan_h323.so)
+-
+-CFLAGS+=-Wno-missing-prototypes -Wno-missing-declarations
+-CFLAGS+=$(shell [ ! -f /usr/include/linux/if_wanpipe.h ] && echo " -DOLD_SANGOMA_API")
+-CHANNEL_LIBS+=$(shell [ -f /usr/include/alsa/asoundlib.h ] && echo "chan_alsa.so")
+-CFLAGS+=$(shell [ -f /usr/lib/libpri.so.1 ] && echo " -DZAPATA_PRI")
+-CFLAGS+=$(shell [ -f /usr/lib/libmfcr2.so.1 ] && echo " -DZAPATA_R2")
+-CFLAGS+=$(shell [ -f alsa-monitor.h ] && echo " -DALSA_MONITOR")
+-ZAPPRI=$(shell [ -f /usr/lib/libpri.so.1 ] && echo "-lpri")
+-ZAPR2=$(shell [ -f /usr/lib/libmfcr2.so.1 ] && echo "-lmfcr2")
+-CFLAGS+=$(shell [ -f /usr/include/linux/zaptel.h ] && echo "-DIAX_TRUNKING")
+-CFLAGS+=$(shell [ -f /usr/local/include/zaptel.h ] && echo "-DIAX_TRUNKING")
+-CHANNEL_LIBS+=$(shell [ -f /usr/include/vpbapi.h ] && echo "chan_vpb.so" )
+-CFLAGS+=$(shell [ -f /usr/include/vpbapi.h ] && echo " -DLINUX")
++#CHANNEL_LIBS+=$(shell [ -f /usr/include/linux/ixjuser.h ] && echo chan_phone.so)
++#CHANNEL_LIBS+=$(shell [ -f /usr/local/include/ixjuser.h ] && echo chan_phone.so)
++#CHANNEL_LIBS+=$(shell [ -f h323/libchanh323.a ] && echo chan_h323.so)
++
++#CFLAGS+=-Wno-missing-prototypes -Wno-missing-declarations
++#CFLAGS+=$(shell [ ! -f /usr/include/linux/if_wanpipe.h ] && echo " -DOLD_SANGOMA_API")
++#CHANNEL_LIBS+=$(shell [ -f /usr/include/alsa/asoundlib.h ] && echo "chan_alsa.so")
++#CFLAGS+=$(shell [ -f /usr/lib/libpri.so.1 ] && echo " -DZAPATA_PRI")
++#CFLAGS+=$(shell [ -f /usr/lib/libmfcr2.so.1 ] && echo " -DZAPATA_R2")
++#CFLAGS+=$(shell [ -f alsa-monitor.h ] && echo " -DALSA_MONITOR")
++#ZAPPRI=$(shell [ -f /usr/lib/libpri.so.1 ] && echo "-lpri")
++#ZAPR2=$(shell [ -f /usr/lib/libmfcr2.so.1 ] && echo "-lmfcr2")
++#CFLAGS+=$(shell [ -f /usr/include/linux/zaptel.h ] && echo "-DIAX_TRUNKING")
++#CFLAGS+=$(shell [ -f /usr/local/include/zaptel.h ] && echo "-DIAX_TRUNKING")
++#CHANNEL_LIBS+=$(shell [ -f /usr/include/vpbapi.h ] && echo "chan_vpb.so" )
++#CFLAGS+=$(shell [ -f /usr/include/vpbapi.h ] && echo " -DLINUX")
+ 
+-ALSA_SRC=chan_alsa.c
+-ALSA_SRC+=$(shell [ -f alsa-monitor.h ] && echo "alsa-monitor.h")
++#ALSA_SRC=chan_alsa.c
++#ALSA_SRC+=$(shell [ -f alsa-monitor.h ] && echo "alsa-monitor.h")
+ 
+ CFLAGS+=-DCRYPTO
+ CFLAGS+=-fPIC
+@@ -106,10 +106,10 @@
+ 
+ ZAPDIR=/usr/lib
+ 
+-CHANNEL_LIBS+=$(shell [ -f /usr/include/linux/zaptel.h ] && echo "chan_zap.so")
+-CHANNEL_LIBS+=$(shell [ -f /usr/local/include/zaptel.h ] && echo "chan_zap.so")
++#CHANNEL_LIBS+=$(shell [ -f /usr/include/linux/zaptel.h ] && echo "chan_zap.so")
++#CHANNEL_LIBS+=$(shell [ -f /usr/local/include/zaptel.h ] && echo "chan_zap.so")
+ 
+-CHANNEL_LIBS+=$(shell [ -f /usr/include/nbs.h ] && echo "chan_nbs.so" )
++#CHANNEL_LIBS+=$(shell [ -f /usr/include/nbs.h ] && echo "chan_nbs.so" )
+ 
+ ifndef OPENH323DIR
+ OPENH323DIR=$(HOME)/openh323

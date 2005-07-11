@@ -1,0 +1,20 @@
+diff -ruN asterisk-1.0.7-old/pbx/Makefile asterisk-1.0.7-new/pbx/Makefile
+--- asterisk-1.0.7-old/pbx/Makefile	2003-10-26 19:50:49.000000000 +0100
++++ asterisk-1.0.7-new/pbx/Makefile	2005-07-04 15:42:52.000000000 +0200
+@@ -16,13 +16,13 @@
+ PBX_LIBS=pbx_config.so pbx_wilcalu.so pbx_spool.so     # pbx_gtkconsole.so pbx_kdeconsole.so
+ 
+ # Add GTK console if appropriate
+-PBX_LIBS+=$(shell gtk-config --cflags >/dev/null 2>/dev/null && echo "pbx_gtkconsole.so")
++#PBX_LIBS+=$(shell gtk-config --cflags >/dev/null 2>/dev/null && echo "pbx_gtkconsole.so")
+ # Add KDE Console if appropriate
+ #PBX_LIBS+=$(shell [ "$$QTDIR" != "" ] && echo "pbx_kdeconsole.so")
+ 
+ 
+-GTK_FLAGS=`gtk-config --cflags gthread`
+-GTK_LIBS=`gtk-config --libs gthread`
++#GTK_FLAGS=`gtk-config --cflags gthread`
++#GTK_LIBS=`gtk-config --libs gthread`
+ #CXX=egcs
+ MOC=$(QTDIR)/bin/moc
+ KDE_FLAGS=-I$(KDEDIR)/include -I$(KDEDIR)/include/kde -I$(QTDIR)/include

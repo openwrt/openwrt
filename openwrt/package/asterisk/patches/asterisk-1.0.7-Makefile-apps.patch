@@ -1,0 +1,22 @@
+diff -ruN asterisk-1.0.7-old/apps/Makefile asterisk-1.0.7-new/apps/Makefile
+--- asterisk-1.0.7-old/apps/Makefile	2004-09-24 23:32:56.000000000 +0200
++++ asterisk-1.0.7-new/apps/Makefile	2005-03-19 17:38:06.000000000 +0100
+@@ -35,13 +35,14 @@
+ APPS+=app_intercom.so
+ endif
+ 
+-#APPS+=app_sql_postgres.so
++# add extra apps
++APPS+=$(EXTRA_APPS)
+ #APPS+=app_sql_odbc.so
+ #APPS+=app_rpt.so
+ 
+-APPS+=$(shell if [ -f /usr/include/linux/zaptel.h ]; then echo "app_zapras.so app_meetme.so app_flash.so app_zapbarge.so app_zapscan.so" ; fi)
+-APPS+=$(shell if [ -f /usr/local/include/zaptel.h ]; then echo "app_zapras.so app_meetme.so app_flash.so app_zapbarge.so app_zapscan.so" ; fi)
+-APPS+=$(shell if [ -f /usr/include/osp/osp.h ]; then echo "app_osplookup.so" ; fi)
++#APPS+=$(shell if [ -f /usr/include/linux/zaptel.h ]; then echo "app_zapras.so app_meetme.so app_flash.so app_zapbarge.so app_zapscan.so" ; fi)
++#APPS+=$(shell if [ -f /usr/local/include/zaptel.h ]; then echo "app_zapras.so app_meetme.so app_flash.so app_zapbarge.so app_zapscan.so" ; fi)
++#APPS+=$(shell if [ -f /usr/include/osp/osp.h ]; then echo "app_osplookup.so" ; fi)
+ 
+ CFLAGS+=-fPIC
+ 

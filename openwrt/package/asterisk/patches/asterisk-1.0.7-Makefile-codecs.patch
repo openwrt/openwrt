@@ -1,0 +1,69 @@
+diff -ruN asterisk-1.0.7-old/codecs/Makefile asterisk-1.0.7-new/codecs/Makefile
+--- asterisk-1.0.7-old/codecs/Makefile	2005-03-17 15:43:51.000000000 +0100
++++ asterisk-1.0.7-new/codecs/Makefile	2005-03-22 23:26:20.000000000 +0100
+@@ -17,21 +17,21 @@
+ # g723.1b)
+ #
+ #MODG723=codec_g723_1.so codec_g723_1b.so
+-MODG723=$(shell [ -f g723.1/coder.c ] && echo "codec_g723_1.so")
+-MODG723+=$(shell [ -f g723.1b/coder2.c ] && echo "codec_g723_1b.so")
+-MODSPEEX=$(shell [ -f /usr/include/speex.h ] || [ -f /usr/include/speex/speex.h ] || [ -f /usr/local/include/speex.h ] || [ -f /usr/local/include/speex/speex.h ] && echo "codec_speex.so")
++#MODG723=$(shell [ -f g723.1/coder.c ] && echo "codec_g723_1.so")
++#MODG723+=$(shell [ -f g723.1b/coder2.c ] && echo "codec_g723_1b.so")
++#MODSPEEX=$(shell [ -f /usr/include/speex.h ] || [ -f /usr/include/speex/speex.h ] || [ -f /usr/local/include/speex.h ] || [ -f /usr/local/include/speex/speex.h ] && echo "codec_speex.so")
+ MODILBC=$(shell [ -f ilbc/iLBC_decode.h ] && echo "codec_ilbc.so")
+ CFLAGS+=-fPIC
+-CFLAGS+=$(shell [ -f /usr/local/include/speex.h ] && echo "-I/usr/local/include")
+-CFLAGS+=$(shell [ -f /usr/local/include/speex/speex.h ] && echo "-I/usr/local/include/speex")
+-CFLAGS+=$(shell [ -f /usr/include/speex/speex.h ] && echo "-I/usr/include/speex")
++#CFLAGS+=$(shell [ -f /usr/local/include/speex.h ] && echo "-I/usr/local/include")
++#CFLAGS+=$(shell [ -f /usr/local/include/speex/speex.h ] && echo "-I/usr/local/include/speex")
++#CFLAGS+=$(shell [ -f /usr/include/speex/speex.h ] && echo "-I/usr/include/speex")
+ 
+ LIBG723=g723.1/libg723.a
+ LIBG723B=g723.1b/libg723b.a
+ LIBGSM=gsm/lib/libgsm.a
+ LIBGSMT=gsm/lib/libgsm.a
+ LIBLPC10=lpc10/liblpc10.a
+-LIBSPEEX=$(shell [ -f /usr/local/lib/libspeex.a ] && echo "-L/usr/local/lib")
++LIBSPEEX=$(LDFLAGS_EXTRA)
+ LIBSPEEX+=-lspeex -lm
+ LIBILBC=ilbc/libilbc.a
+ 
+@@ -43,26 +43,26 @@
+ 
+ clean:
+ 	rm -f *.so *.o .depend
+-	! [ -d g723.1 ] || $(MAKE) -C g723.1 clean
+-	! [ -d g723.1b ] || $(MAKE) -C g723.1b clean
+-	$(MAKE) -C gsm clean
+-	$(MAKE) -C lpc10 clean
+-	$(MAKE) -C ilbc clean
++	! [ -d g723.1 ] || $(MAKE) PROC=$(PROC) -C g723.1 clean
++	! [ -d g723.1b ] || $(MAKE) PROC=$(PROC) -C g723.1b clean
++	$(MAKE) PROC=$(PROC) -C gsm clean
++	$(MAKE) PROC=$(PROC) -C lpc10 clean
++	$(MAKE) PROC=$(PROC) -C ilbc clean
+ 
+ $(LIBG723):
+-	$(MAKE) -C g723.1 all
++	$(MAKE) PROC=$(PROC) -C g723.1 all
+ 
+ gsm/lib/libgsm.a:
+-	$(MAKE) -C gsm lib/libgsm.a
++	$(MAKE) PROC=$(PROC) -C gsm lib/libgsm.a
+ 
+ $(LIBG723B):
+-	$(MAKE) -C g723.1b all
++	$(MAKE) PROC=$(PROC) -C g723.1b all
+ 
+ $(LIBLPC10):
+-	$(MAKE) -C lpc10 all
++	$(MAKE) PROC=$(PROC) -C lpc10 all
+ 
+ $(LIBILBC):
+-	$(MAKE) -C ilbc all
++	$(MAKE) PROC=$(PROC) -C ilbc all
+ 
+ codec_ilbc.so: codec_ilbc.o $(LIBILBC)
+ 	$(CC) $(SOLINK) -o $@ $< $(LIBILBC)

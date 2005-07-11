@@ -1,0 +1,121 @@
+diff -ruN asterisk-1.0.7-old/Makefile asterisk-1.0.7-new/Makefile
+--- asterisk-1.0.7-old/Makefile	2005-03-10 09:15:05.000000000 +0100
++++ asterisk-1.0.7-new/Makefile	2005-03-19 17:38:06.000000000 +0100
+@@ -63,10 +63,10 @@
+ #K6OPT  = -DK6OPT
+ 
+ #Tell gcc to optimize the asterisk's code
+-OPTIMIZE+=-O6
++#OPTIMIZE+=-O6
+ 
+ #Include debug symbols in the executables (-g) and profiling info (-pg)
+-DEBUG=-g #-pg
++#DEBUG=-g #-pg
+ 
+ # If you are running a radio application, define RADIO_RELAX so that the DTMF
+ # will be received more reliably
+@@ -74,7 +74,7 @@
+ 
+ # If you don't have a lot of memory (e.g. embedded Asterisk), uncomment the
+ # following to reduce the size of certain static buffers
+-#OPTIONS += -DLOW_MEMORY
++OPTIONS += -DLOW_MEMORY
+ 
+ # Optional debugging parameters
+ DEBUG_THREADS = #-DDEBUG_THREADS #-DDO_CRASH 
+@@ -112,7 +112,7 @@
+ BUSYDETECT+= #-DBUSYDETECT_COMPARE_TONE_AND_SILENCE
+ 
+ ASTLIBDIR=$(INSTALL_PREFIX)/usr/lib/asterisk
+-ASTVARLIBDIR=$(INSTALL_PREFIX)/var/lib/asterisk
++ASTVARLIBDIR=$(INSTALL_PREFIX)/usr/lib/asterisk
+ ASTETCDIR=$(INSTALL_PREFIX)/etc/asterisk
+ ASTSPOOLDIR=$(INSTALL_PREFIX)/var/spool/asterisk
+ ASTLOGDIR=$(INSTALL_PREFIX)/var/log/asterisk
+@@ -128,7 +128,7 @@
+ 
+ INCLUDE=-Iinclude -I../include
+ CFLAGS=-pipe  -Wall -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations $(DEBUG) $(INCLUDE) -D_REENTRANT -D_GNU_SOURCE #-DMAKE_VALGRIND_HAPPY
+-CFLAGS+=$(OPTIMIZE)
++CFLAGS+=$(OPTIMIZE) $(CFLAGS_EXTRA)
+ 
+ ifneq ($(PROC),ultrasparc)
+ CFLAGS+=$(shell if $(CC) -march=$(PROC) -S -o /dev/null -xc /dev/null >/dev/null 2>&1; then echo "-march=$(PROC)"; fi)
+@@ -187,7 +187,7 @@
+ CFLAGS+=# -fomit-frame-pointer 
+ SUBDIRS=res channels pbx apps codecs formats agi cdr astman stdtime
+ ifeq (${OSARCH},Linux)
+-LIBS=-ldl -lpthread
++LIBS=$(LDFLAGS_EXTRA) -ldl -lpthread
+ endif
+ LIBS+=-lncurses -lm
+ ifeq (${OSARCH},Linux)
+@@ -205,7 +205,7 @@
+ ifeq (${OSARCH},OpenBSD)
+ LIBS=-lcrypto -lpthread -lm -lncurses
+ endif
+-LIBS+=-lssl
++LIBS+=-Wl,-Bstatic -lssl -Wl,-Bdynamic
+ OBJS=io.o sched.o logger.o frame.o loader.o config.o channel.o \
+ 	translate.o file.o say.o pbx.o cli.o md5.o term.o \
+ 	ulaw.o alaw.o callerid.o fskmodem.o image.o app.o \
+@@ -240,12 +240,12 @@
+ 	cd editline && unset CFLAGS LIBS && ./configure ; \
+ 
+ editline/libedit.a: FORCE
+-	cd editline && unset CFLAGS LIBS && test -f config.h || ./configure
+-	$(MAKE) -C editline libedit.a
++	cd editline && unset CFLAGS LIBS && test -f config.h || CFLAGS="$(OPTIMIZE) $(CFLAGS_EXTRA)" LDFLAGS="$(LDFLAGS_EXTRA)" ./configure
++	$(MAKE) PROC=$(PROC) CFLAGS="$(OPTIMIZE)" -C editline libedit.a
+ 
+ db1-ast/libdb1.a: FORCE
+ 	@if [ -d db1-ast ]; then \
+-		$(MAKE) -C db1-ast libdb1.a ; \
++		$(MAKE) PROC=$(PROC) OORG="$(OPTIMIZE)" -C db1-ast libdb1.a ; \
+ 	else \
+ 		echo "You need to do a cvs update -d not just cvs update"; \
+ 		exit 1; \
+@@ -289,7 +289,7 @@
+ 
+ stdtime/libtime.a: FORCE
+ 	@if [ -d stdtime ]; then \
+-		$(MAKE) -C stdtime libtime.a ; \
++		$(MAKE) PROC=$(PROC) -C stdtime libtime.a ; \
+ 	else \
+ 		echo "You need to do a cvs update -d not just cvs update"; \
+ 		exit 1; \
+@@ -381,7 +381,7 @@
+ 	if [ ! -f $(DESTDIR)$(ASTSBINDIR)/safe_asterisk ]; then \
+ 		install -m 755 contrib/scripts/safe_asterisk $(DESTDIR)$(ASTSBINDIR)/ ;\
+ 	fi
+-	for x in $(SUBDIRS); do $(MAKE) -C $$x install || exit 1 ; done
++	for x in $(SUBDIRS); do $(MAKE) PROC=$(PROC) -C $$x install || exit 1 ; done
+ 	install -d $(DESTDIR)$(ASTHEADERDIR)
+ 	install -m 644 include/asterisk/*.h $(DESTDIR)$(ASTHEADERDIR)
+ 	rm -f $(DESTDIR)$(ASTVARLIBDIR)/sounds/vm
+@@ -519,8 +519,8 @@
+ __rpm: _version
+ 	rm -rf /tmp/asterisk ; \
+ 	mkdir -p /tmp/asterisk/redhat/RPMS/i386 ; \
+-	$(MAKE) DESTDIR=/tmp/asterisk install ; \
+-	$(MAKE) DESTDIR=/tmp/asterisk samples ; \
++	$(MAKE) PROC=$(PROC) DESTDIR=/tmp/asterisk install ; \
++	$(MAKE) PROC=$(PROC) DESTDIR=/tmp/asterisk samples ; \
+ 	mkdir -p /tmp/asterisk/etc/rc.d/init.d ; \
+ 	cp -f redhat/asterisk /tmp/asterisk/etc/rc.d/init.d/ ; \
+ 	sed "s/^Version:.*/Version: $(RPMVERSION)/g" redhat/asterisk.spec > asterisk.spec ; \
+@@ -544,12 +544,12 @@
+ 	fi 
+ 
+ dont-optimize:
+-	$(MAKE) OPTIMIZE= K6OPT= install
++	$(MAKE) PROC=$(PROC) OPTIMIZE= K6OPT= install
+ 
+ valgrind: dont-optimize
+ 
+ depend: .depend
+-	for x in $(SUBDIRS); do $(MAKE) -C $$x depend || exit 1 ; done
++	for x in $(SUBDIRS); do $(MAKE) PROC=$(PROC) -C $$x depend || exit 1 ; done
+ 
+ .depend:
+ 	@if ! which mpg123 &>/dev/null ; then \

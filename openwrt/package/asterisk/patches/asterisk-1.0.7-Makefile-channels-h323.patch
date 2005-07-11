@@ -1,0 +1,33 @@
+diff -ruN asterisk-1.0.7-old/channels/h323/Makefile asterisk-1.0.7-new/channels/h323/Makefile
+--- asterisk-1.0.7-old/channels/h323/Makefile	2004-11-15 03:35:35.000000000 +0100
++++ asterisk-1.0.7-new/channels/h323/Makefile	2005-03-19 17:38:06.000000000 +0100
+@@ -22,9 +22,11 @@
+ OSARCH=$(shell uname -s)
+ ifneq (${OSARCH},FreeBSD)
+ ifneq (${OSARCH},NetBSD)
++ifneq ($(PROC),mipsel)
+ CFLAGS += -march=$(shell uname -m)
+ endif
+ endif
++endif
+ CFLAGS += -DPBYTE_ORDER=PLITTLE_ENDIAN
+ 
+ ifeq (${OSARCH},Linux)
+@@ -47,7 +49,7 @@
+ 
+ # Pre Janus release directives
+ CFLAGS += -DNDEBUG -DDO_CRASH -DDEBUG_THREADS
+-CFLAGS += -pipe -Wall -fPIC
++CFLAGS += -pipe -Wall -fPIC $(OPTIMIZE)
+ ifeq (${OSARCH},Linux)
+ CFLAGS += -DP_LINUX
+ LIBS+=-lpthread
+@@ -74,7 +76,7 @@
+  
+ 
+ libchanh323.a:	ast_h323.o
+-	ar cr libchanh323.a ast_h323.o
++	$(AR) cr libchanh323.a ast_h323.o
+ 
+ ast_h323.o:	ast_h323.cpp
+ 	$(CXX) -g -c -fno-rtti -o $@ $(CFLAGS) $<

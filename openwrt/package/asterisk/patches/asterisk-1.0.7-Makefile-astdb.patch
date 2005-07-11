@@ -1,0 +1,14 @@
+diff -ruN asterisk-1.0.7-old/db1-ast/Makefile asterisk-1.0.7-new/db1-ast/Makefile
+--- asterisk-1.0.7-old/db1-ast/Makefile	2004-08-31 18:33:00.000000000 +0200
++++ asterisk-1.0.7-new/db1-ast/Makefile	2005-03-19 17:38:06.000000000 +0100
+@@ -32,8 +32,8 @@
+ 
+ $(LIBDB): $(OBJS)
+ 	rm -f $@
+-	ar cq $@ $(OBJS)
+-	ranlib $@
++	$(AR) cq $@ $(OBJS)
++	$(RANLIB) $@
+ 
+ $(LIBDBSO): $(SHOBJS)
+ 	$(CC) -Wl,-O1 -Wl,--version-script=libdb.map -Wl,-soname=$(LIBDBSO) -shared -o $@ $^
