@@ -1,0 +1,26 @@
+Name: CAN-2005-2096 (under review)
+Description:
+  Buffer overflow in zlib 1.2 and later versions allows remote attackers 
+  to cause a denial of service (crash) via a crafted compressed stream, as 
+  demonstrated using a crafted PNG file.
+  
+References:
+  * DEBIAN:DSA-740
+    http://www.debian.org/security/2005/dsa-740
+  * REDHAT:RHSA-2005:569
+    http://www.redhat.com/support/errata/RHSA-2005-569.html 
+
+  http://cve.mitre.org/cgi-bin/cvename.cgi?name=CAN-2005-2096
+
+diff -ruN zlib-1.2.2-old/inftrees.c zlib-1.2.2-new/inftrees.c
+--- zlib-1.2.2-old/inftrees.c	2004-09-15 16:30:06.000000000 +0200
++++ zlib-1.2.2-new/inftrees.c	2005-07-08 21:18:58.000000000 +0200
+@@ -134,7 +134,7 @@
+         left -= count[len];
+         if (left < 0) return -1;        /* over-subscribed */
+     }
+-    if (left > 0 && (type == CODES || (codes - count[0] != 1)))
++    if (left > 0 && (type == CODES || max != 1))
+         return -1;                      /* incomplete set */
+ 
+     /* generate offsets into symbol table for each length for sorting */
