@@ -16,15 +16,14 @@ PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
 include $(TOPDIR)/package/rules.mk
 
-$(eval $(call PKG_template,DHCP,dhcp,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,DHCP_RELAY,dhcp-relay,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,DHCP_SERVER,dhcp-server,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
-	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
-		$(TARGET_CONFIGURE_OPTS) \
-		CFLAGS="$(TARGET_CFLAGS)" \
-		CPPFLAGS="-I$(STAGING_DIR)/usr/include" \
-		LDFLAGS="-L$(STAGING_DIR)/usr/lib" \
+	(cd $(PKG_BUILD_DIR) ; \
 		./configure \
+		  --copts "$(TARGET_CFLAGS)" \
+		  linux-2.2 \
 	);
 	touch $@
 
@@ -37,8 +36,14 @@ $(PKG_BUILD_DIR)/.built:
 		all install
 	touch $@
 
-$(IPKG_DHCP):
-	install -d -m0755 $(IDIR_DHCP)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/dhcpd $(IDIR_DHCP)/usr/sbin
-	$(RSTRIP) $(IDIR_DHCP)
-	$(IPKG_BUILD) $(IDIR_DHCP) $(PACKAGE_DIR)
+$(IPKG_DHCP_RELAY):
+	install -d -m0755 $(IDIR_DHCP_RELAY)/usr/sbin
+	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/dhcrelay $(IDIR_DHCP_RELAY)/usr/sbin/
+	$(RSTRIP) $(IDIR_DHCP_RELAY)
+	$(IPKG_BUILD) $(IDIR_DHCP_RELAY) $(PACKAGE_DIR)
+
+$(IPKG_DHCP_SERVER):
+	install -d -m0755 $(IDIR_DHCP_SERVER)/usr/sbin
+	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/dhcpd $(IDIR_DHCP_SERVER)/usr/sbin/
+	$(RSTRIP) $(IDIR_DHCP_SERVER)
+	$(IPKG_BUILD) $(IDIR_DHCP_SERVER) $(PACKAGE_DIR)
