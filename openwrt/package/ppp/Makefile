@@ -4,7 +4,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ppp
 PKG_VERSION:=2.4.3
-PKG_RELEASE:=4
+PKG_RELEASE:=5
 PKG_MD5SUM:=848f6c3cafeb6074ffeb293c3af79b7c
 
 PKG_SOURCE_URL:=ftp://ftp.samba.org/pub/ppp/
