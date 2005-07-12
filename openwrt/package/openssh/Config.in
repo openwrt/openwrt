@@ -24,29 +24,34 @@ config BR2_PACKAGE_OPENSSH_CLIENT
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_OPENSSH
 	select BR2_PACKAGE_LIBOPENSSL
+	select BR2_PACKAGE_ZLIB
 
 config BR2_PACKAGE_OPENSSH_CLIENT_UTILS
 	tristate "openssh-client-utils - OpenSSH client utilities"
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_OPENSSH_CLIENT
+	select BR2_PACKAGE_ZLIB
 
 config BR2_PACKAGE_OPENSSH_SERVER
 	tristate "openssh-server - OpenSSH server"
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_OPENSSH
 	select BR2_PACKAGE_LIBOPENSSL
+	select BR2_PACKAGE_ZLIB
 
 config BR2_PACKAGE_OPENSSH_SFTP_CLIENT
 	tristate "openssh-sftp-client - OpenSSH SFTP client"
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_OPENSSH
 	select BR2_PACKAGE_LIBOPENSSL
+	select BR2_PACKAGE_ZLIB
 
 config BR2_PACKAGE_OPENSSH_SFTP_SERVER
 	tristate "openssh-sftp-server - OpenSSH SFTP server"
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_OPENSSH
 	select BR2_PACKAGE_LIBOPENSSL
+	select BR2_PACKAGE_ZLIB
 
 endmenu
 
