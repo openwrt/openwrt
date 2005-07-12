@@ -10,20 +10,13 @@ endif
 config BR2_GCC_3_4
 	bool
 	default n
-	depends BR2_GCC_VERSION_3_4_3 || BR2_GCC_VERSION_3_4_4 || BR2_GCC_VERSION_4_0_0
+	depends BR2_GCC_VERSION_3_4_4 || BR2_GCC_VERSION_4_0_0 || BR2_GCC_VERSION_4_0_1
 
 choice
 	prompt "GCC compiler Version" if CONFIG_DEVEL
 	default BR2_GCC_VERSION_3_4_4
 	help
 	  Select the version of gcc you wish to use.
-
-	config BR2_GCC_VERSION_3_3_5
-		bool "gcc 3.3.5"
-
-	config BR2_GCC_VERSION_3_4_3
-		bool "gcc 3.4.3"
-		select BR2_GCC_3_4
 
 	config BR2_GCC_VERSION_3_4_4
 		bool "gcc 3.4.4"
@@ -33,14 +26,17 @@ choice
 		bool "gcc 4.0.0"
 		select BR2_GCC_3_4
 
+	config BR2_GCC_VERSION_4_0_1
+		bool "gcc 4.0.1"
+		select BR2_GCC_3_4
+
 endchoice
 
 config BR2_GCC_VERSION
 	string
-	default "3.3.5"     if BR2_GCC_VERSION_3_3_5 
-	default "3.4.3"     if BR2_GCC_VERSION_3_4_3
 	default "3.4.4"     if BR2_GCC_VERSION_3_4_4 || !CONFIG_DEVEL
 	default "4.0.0"     if BR2_GCC_VERSION_4_0_0
+	default "4.0.1"     if BR2_GCC_VERSION_4_0_1
 
 
 config BR2_GCC_USE_SJLJ_EXCEPTIONS
