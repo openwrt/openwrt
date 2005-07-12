@@ -1,0 +1,31 @@
+diff -ruNp ppp-2.4.3.orig/pppd/plugins/pppoatm/pppoatm.c ppp-2.4.3/pppd/plugins/pppoatm/pppoatm.c
+--- ppp-2.4.3.orig/pppd/plugins/pppoatm/pppoatm.c	2005-05-04 02:00:28.000000000 +0200
++++ ppp-2.4.3/pppd/plugins/pppoatm/pppoatm.c	2005-05-04 01:59:11.000000000 +0200
+@@ -183,8 +183,11 @@ static void send_config_pppoa(int mtu,
+ 	int sock;
+ 	struct ifreq ifr;
+ 
+-	if (mtu > pppoatm_max_mtu)
+-		error("Couldn't increase MTU to %d", mtu);
++	if (pppoatm_max_mtu && mtu > pppoatm_max_mtu) {
++		warn("Couldn't increase MTU to %d. Using %d",
++			mtu, pppoatm_max_mtu);
++		mtu = pppoatm_max_mtu;
++	}
+ 
+ 	sock = socket(AF_INET, SOCK_DGRAM, 0);
+ 	if (sock < 0)
+@@ -202,8 +205,11 @@ static void recv_config_pppoa(int mru,
+ 			      int pcomp,
+ 			      int accomp)
+ {
+-	if (mru > pppoatm_max_mru)
+-		error("Couldn't increase MRU to %d", mru);
++	if (pppoatm_max_mru && mru > pppoatm_max_mru) {
++		warn("Couldn't increase MRU to %d. Using %d",
++			mru, pppoatm_max_mru);
++		mru = pppoatm_max_mru;
++	}
+ }
+ 
+ void plugin_init(void)
