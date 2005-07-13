@@ -1,0 +1,129 @@
+diff -urN -x'*.swp' ppp.old/pppd/auth.c ppp.dev/pppd/auth.c
+--- ppp.old/pppd/auth.c	2004-11-12 11:30:51.000000000 +0100
++++ ppp.dev/pppd/auth.c	2005-07-13 14:54:23.000000000 +0200
+@@ -532,6 +532,12 @@
+ link_required(unit)
+     int unit;
+ {
++}
++
++void
++start_link(unit)
++    int unit;
++{
+     new_phase(PHASE_SERIALCONN);
+ 
+     devfd = the_channel->connect();
+@@ -984,10 +990,12 @@
+     int unit, protocol, prot_flavor;
+ {
+     int bit;
++    const char *prot = "";
+ 
+     switch (protocol) {
+     case PPP_CHAP:
+ 	bit = CHAP_WITHPEER;
++	prot = "CHAP";
+ 	switch (prot_flavor) {
+ 	case CHAP_MD5:
+ 	    bit |= CHAP_MD5_WITHPEER;
+@@ -1006,15 +1014,19 @@
+ 	if (passwd_from_file)
+ 	    BZERO(passwd, MAXSECRETLEN);
+ 	bit = PAP_WITHPEER;
++	prot = "PAP";
+ 	break;
+     case PPP_EAP:
+ 	bit = EAP_WITHPEER;
++	prot = "EAP";
+ 	break;
+     default:
+ 	warn("auth_withpeer_success: unknown protocol %x", protocol);
+ 	bit = 0;
+     }
+ 
++    notice("%s authentication succeeded", prot);
++
+     /* Save the authentication method for later. */
+     auth_done[unit] |= bit;
+ 
+@@ -1648,6 +1660,7 @@
+ static void
+ plogout()
+ {
++    char *tty;
+ #ifdef USE_PAM
+     int pam_error;
+ 
+@@ -1658,14 +1671,12 @@
+     }
+     /* Apparently the pam stuff does closelog(). */
+     reopen_log();
+-#else /* ! USE_PAM */   
+-    char *tty;
++#endif /* USE_PAM */
+ 
+     tty = devnam;
+     if (strncmp(tty, "/dev/", 5) == 0)
+ 	tty += 5;
+     logwtmp(tty, "", "");		/* Wipe out utmp logout entry */
+-#endif /* ! USE_PAM */
+     logged_in = 0;
+ }
+ 
+diff -urN -x'*.swp' ppp.old/pppd/main.c ppp.dev/pppd/main.c
+--- ppp.old/pppd/main.c	2005-07-13 11:34:28.000000000 +0200
++++ ppp.dev/pppd/main.c	2005-07-13 14:49:06.000000000 +0200
+@@ -537,6 +537,7 @@
+ 	script_unsetenv("BYTES_RCVD");
+ 
+ 	lcp_open(0);		/* Start protocol */
++	start_link(0);
+ 	while (phase != PHASE_DEAD) {
+ 	    handle_events();
+ 	    get_input();
+diff -urN -x'*.swp' ppp.old/pppd/pppd.h ppp.dev/pppd/pppd.h
+--- ppp.old/pppd/pppd.h	2005-07-13 11:34:28.000000000 +0200
++++ ppp.dev/pppd/pppd.h	2005-07-13 14:48:56.000000000 +0200
+@@ -526,6 +526,7 @@
+ 
+ /* Procedures exported from auth.c */
+ void link_required __P((int));	  /* we are starting to use the link */
++void start_link __P((int));	  /* bring the link up now */
+ void link_terminated __P((int));  /* we are finished with the link */
+ void link_down __P((int));	  /* the LCP layer has left the Opened state */
+ void upper_layers_down __P((int));/* take all NCPs down */
+diff -urN -x'*.swp' ppp.old/pppd/tty.c ppp.dev/pppd/tty.c
+--- ppp.old/pppd/tty.c	2004-11-13 13:07:29.000000000 +0100
++++ ppp.dev/pppd/tty.c	2005-07-13 14:46:57.000000000 +0200
+@@ -755,14 +755,6 @@
+ 		close(pty_master);
+ 		pty_master = -1;
+ 	}
+-	if (pty_slave >= 0) {
+-		close(pty_slave);
+-		pty_slave = -1;
+-	}
+-	if (real_ttyfd >= 0) {
+-		close(real_ttyfd);
+-		real_ttyfd = -1;
+-	}
+ 	ttyfd = -1;
+ 	if (got_sigterm)
+ 		asked_to_quit = 1;
+@@ -781,6 +773,7 @@
+ 	} else {
+ 		info("Serial link disconnected.");
+ 	}
++	stop_charshunt(NULL, 0);
+ }
+ 
+ void tty_close_fds()
+@@ -944,7 +937,6 @@
+ 	exit(0);
+     }
+     charshunt_pid = cpid;
+-    add_notifier(&sigreceived, stop_charshunt, 0);
+     record_child(cpid, "pppd (charshunt)", charshunt_done, NULL);
+     return 1;
+ }
