@@ -151,6 +151,10 @@ comment "Kernel related ---"
 source "package/fuse/Config.in"  # kmod-fuse
 source "package/shfs/Config.in"  # kmod-shfs
 
+comment "Bluetooth related"
+source "package/bluez-libs/Config.in"
+source "package/bluez-utils/Config.in"
+
 comment "Extra stuff"
 source "package/sdk/Config.in"
 
