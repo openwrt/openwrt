@@ -42,24 +42,17 @@
 
 #include <linux/mtd/mtd.h>
 
-/* trx header */
 #define TRX_MAGIC       0x30524448      /* "HDR0" */
-#define TRX_VERSION     1
-#define TRX_MAX_LEN     0x3A0000
-#define TRX_NO_HEADER   1               /* Do not write TRX header */
-
+#define BUFSIZE (10 * 1024)
 #define MAX_ARGS 8
 
 struct trx_header {
-	uint32_t magic;                 /* "HDR0" */
-	uint32_t len;                   /* Length of file including header */
-	uint32_t crc32;                 /* 32-bit CRC from flag_version to end of file */
-	uint32_t flag_version;  /* 0:15 flags, 16:31 version */
+	uint32_t magic;		/* "HDR0" */
+	uint32_t len;		/* Length of file including header */
+	uint32_t crc32;		/* 32-bit CRC from flag_version to end of file */
+	uint32_t flag_version;	/* 0:15 flags, 16:31 version */
 	uint32_t offsets[3];    /* Offsets of partitions from start of header */
 };
-
-#define BUFSIZE (10 * 1024)
-
 
 int
 mtd_unlock(const char *mtd)
@@ -84,7 +77,6 @@ mtd_unlock(const char *mtd)
 	mtdLockInfo.start = 0;
 	mtdLockInfo.length = mtdInfo.size;
 	if(ioctl(fd, MEMUNLOCK, &mtdLockInfo)) {
-		fprintf(stderr, "Could not unlock MTD device: %s\n", mtd);
 		close(fd);
 		return 0;
 	}
@@ -156,15 +148,44 @@ mtd_erase(const char *mtd)
 int
 mtd_write(const char *trxfile, const char *mtd)
 {
-	int fd;
-	int trxfd;
-	int i;
-	size_t result,size,written;
+	int fd,trxfd,i;
+	struct trx_header trx;
+	size_t count,result,size,written;
 	struct mtd_info_user mtdInfo;
 	struct erase_info_user mtdEraseInfo;
 	struct stat trxstat;
 	unsigned char src[BUFSIZE],dest[BUFSIZE];
 
+	trxfd = open(trxfile,O_RDONLY);	
+	if(trxfd < 0) {
+		fprintf(stderr, "Could not open trx image: %s\n", trxfile);
+		exit(1);
+	}
+
+	if (fstat(trxfd,&trxstat) < 0) {
+		fprintf(stderr, "Could not get trx image file status: %s\n", trxfile);
+		close(trxfd);
+		exit(1);
+	}
+
+	count = read(trxfd, &trx, sizeof(struct trx_header));
+	if (count < sizeof(struct trx_header)) {
+		fprintf(stderr, "Could not trx header, file too small (%ld bytes)\n", count);
+		close(trxfd);
+		exit(1);
+	}
+
+	if (trx.magic != TRX_MAGIC || trx.len < sizeof(struct trx_header)) {
+		fprintf(stderr, "Bad trx header\n");
+		fprintf(stderr, "If this is a firmware in bin format, like some of the\n"
+				"original firmware files are, use following command to convert to trx:\n"
+				"dd if=firmware.bin of=firmware.trx bs=32 skip=1\n");
+		close(trxfd);
+		exit(1);
+	}
+	
+	lseek(trxfd, 0, SEEK_SET);
+	
 	fd = mtd_open(mtd, O_RDWR);
 	if(fd < 0) {
 		fprintf(stderr, "Could not open mtd device: %s\n", mtd);
@@ -174,18 +195,6 @@ mtd_write(const char *trxfile, const char *mtd)
 	if(ioctl(fd, MEMGETINFO, &mtdInfo)) {
 		fprintf(stderr, "Could not get MTD device info from %s\n", mtd);
 		close(fd);
-		exit(1);
-	}
-
-	trxfd = open(trxfile,O_RDONLY);	
-	if(trxfd < 0) {
-		fprintf(stderr, "Could not open trx image: %s\n", trxfile);
-		exit(1);
-	}
-
-	if (fstat (trxfd,&trxstat) < 0) {
-		fprintf(stderr, "Could not get trx image file status: %s\n", trxfile);
-		close(trxfd);
 		exit(1);
 	}
 		
