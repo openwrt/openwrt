@@ -1,63 +1,59 @@
 #!/bin/ash
+[ $# = 0 ] && { echo "  $0 <group>"; exit; }
 . /etc/functions.sh
 type=$1
 debug "### ifup $type ###"
 
 if=$(nvram get ${type}_ifname)
-if [ "${if%%[0-9]}" = "ppp" ]; then
-  if=$(nvram get pppoe_ifname)
-fi
+[ "${if%%[0-9]}" = "ppp" ] && if=$(nvram get pppoe_ifname)
 
-if_valid $if || return
-
+if_valid $if || exit 
 mac=$(nvram get ${type}_hwaddr)
 $DEBUG ifconfig $if down 2>&-
-if [ "${if%%[0-9]}" = "br" ]; then
-  stp=$(nvram get ${type}_stp)
-  $DEBUG brctl delbr $if 2>&-
-  $DEBUG brctl addbr $if
-  $DEBUG brctl setfd $if 0
-  $DEBUG brctl stp $if ${stp:-0}
-  for sif in $(nvram get ${type}_ifnames); do {
-    if_valid $sif || continue
-    ${mac:+$DEBUG ifconfig $sif down hw ether $mac}
-    $DEBUG ifconfig $sif 0.0.0.0 up
-    $DEBUG brctl addif $if $sif
-  } done
-else
-  ${mac:+$DEBUG ifconfig $if down hw ether $mac}
-fi
 
+if [ "${if%%[0-9]}" = "br" ]; then
+	stp=$(nvram get ${type}_stp)
+	$DEBUG brctl delbr $if 2>&-
+	$DEBUG brctl addbr $if
+	$DEBUG brctl setfd $if 0
+	$DEBUG brctl stp $if ${stp:-0}
+
+	for sif in $(nvram get ${type}_ifnames); do
+		if_valid $sif || continue
+		${mac:+$DEBUG ifconfig $sif down hw ether $mac}
+		$DEBUG ifconfig $sif 0.0.0.0 up
+		$DEBUG brctl addif $if $sif
+	done
+else
+	${mac:+$DEBUG ifconfig $if down hw ether $mac}
+fi
 
 if_proto=$(nvram get ${type}_proto)
 case "$if_proto" in
-  static)
-    ip=$(nvram get ${type}_ipaddr)
-    netmask=$(nvram get ${type}_netmask)
-    gateway=$(nvram get ${type}_gateway)
+	static)
+		ip=$(nvram get ${type}_ipaddr)
+		netmask=$(nvram get ${type}_netmask)
+		gateway=$(nvram get ${type}_gateway)
 
-    $DEBUG ifconfig $if $ip ${netmask:+netmask $netmask} broadcast + up
-    ${gateway:+$DEBUG route add default gw $gateway}
+		$DEBUG ifconfig $if $ip ${netmask:+netmask $netmask} broadcast + up
+		${gateway:+$DEBUG route add default gw $gateway}
 
-    [ -f /etc/resolv.conf ] && return
+		[ -f /etc/resolv.conf ] && return
 
-    debug "# --- creating /etc/resolv.conf ---"
-    for dns in $(nvram get ${type}_dns); do {
-	echo "nameserver $dns" >> /etc/resolv.conf
-    } done
-  ;;
-  dhcp)
-    ip=$(nvram get ${type}_ipaddr)
-    pidfile=/tmp/dhcp-${type}.pid
-    if [ -f $pidfile ]; then
-      $DEBUG kill $(cat $pidfile)
-    fi
-    ${DEBUG:-eval} "udhcpc -R -i $if ${ip:+-r $ip} -b -p $pidfile &" 
-  ;;
-  none|"")
-  ;;
-  *)
-    [ -x "/sbin/ifup.${if_proto}" ] && { $DEBUG /sbin/ifup.${if_proto} $*; exit; }
-    echo "### ifup $type: ignored ${type}_proto=\"$if_proto\" (not supported)"
-  ;;
+		debug "# --- creating /etc/resolv.conf ---"
+		for dns in $(nvram get ${type}_dns); do
+			echo "nameserver $dns" >> /etc/resolv.conf
+		done
+	;;
+	dhcp)
+		ip=$(nvram get ${type}_ipaddr)
+		[ -f $pidfile ] && $DEBUG kill $(cat $pidfile)
+		${DEBUG:-eval} "udhcpc -R -i $if ${ip:+-r $ip} -b -p $pidfile &" 
+	;;
+	none|"")
+	;;
+	*)
+		[ -x "/sbin/ifup.${if_proto}" ] && { $DEBUG /sbin/ifup.${if_proto} $*; exit; }
+		echo "### ifup $type: ignored ${type}_proto=\"$if_proto\" (not supported)"
+	;;
 esac

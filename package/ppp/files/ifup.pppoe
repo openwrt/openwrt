@@ -1,29 +1,39 @@
 #!/bin/sh
+[ $# = 0 ] && { echo "  $0 <group>"; exit; }
 . /etc/functions.sh
-IF_NAME=$1
+type=$1
 
-PROTO=$(nvram get ${IF_NAME}_proto)
-[ "$PROTO" = "pppoe" ] || exit 0
+[ "$(nvram get ${type}_proto)" = "pppoe" ] || {
+	echo "$0: ${type}_proto isn't pppoe"
+	exit
+}
 
 for module in slhc ppp_generic pppox pppoe; do
-	/sbin/insmod $module 2>/dev/null >/dev/null
+	/sbin/insmod $module 2>&- >&-
 done
 
-(
-	while true; do
-		IFNAME=$(nvram get pppoe_ifname)
-		USERNAME=$(nvram get ppp_username)
-		PASSWORD=$(nvram get ppp_passwd)
-		REDIAL=$(nvram get ppp_redialperiod)
-		REDIAL=${REDIAL:+lcp-echo-interval $REDIAL}
-		IDLETIME=$(nvram get ppp_idletime)
-		IDLETIME=${IDLETIME:+lcp-echo-failure $IDLETIME}
-		MTUV=$(nvram get ppp_mtu)
-		MTU=${MTUV:+mtu $MTUV}
-		MRU=${MTUV:+mru $MTUV}
+while :; do
+	IFNAME=$(nvram get pppoe_ifname)
+	USERNAME=$(nvram get ppp_username)
+	PASSWORD=$(nvram get ppp_passwd)
+	REDIAL=$(nvram get ppp_redialperiod)
+	REDIAL=${REDIAL:+lcp-echo-interval $REDIAL}
+	IDLETIME=$(nvram get ppp_idletime)
+	IDLETIME=${IDLETIME:+lcp-echo-failure $IDLETIME}
+	MTU=$(nvram get ppp_mtu)
+	MTU=${MTU:+ mtu $MTU mru $MTU}
 
-		ifconfig $IFNAME up
-		echo -e "plugin rp-pppoe.so\nconnect /bin/true\nusepeerdns\ndefaultroute\nuser \"$USERNAME\"\npassword \"$PASSWORD\"\n$MTU\n$MRU\n$IDLETIME\n$REDIAL" > /tmp/.pppoe-data
-		/usr/sbin/pppd nodetach file /tmp/.pppoe-data $IFNAME
-	done
-) &
+	ifconfig $IFNAME up
+	/usr/sbin/pppd nodetach \
+		plugin rp-pppoe.so \
+		connect /bin/true \
+		usepeerdns \
+		defaultroute \
+		linkname $type \
+		user "$USERNAME" \
+		password "$PASSWORD" \
+		$MTU \
+		$IDLETIME \
+		$REDIAL \
+		$IFNAME
+done &
