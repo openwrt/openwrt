@@ -69,6 +69,10 @@ $(eval $(call KMOD_template,USB_ACM,usb-acm,\
 $(eval $(call KMOD_template,B44,b44,\
 	$(MODULES_DIR)/kernel/drivers/net/b44.o \
 ,CONFIG_B44))
+$(eval $(call KMOD_template,BLUETOOTH,bluetooth,\
+	$(MODULES_DIR)/kernel/net/bluetooth/*.o \
+	$(MODULES_DIR)/kernel/drivers/bluetooth/*.o \
+,CONFIG_BLUEZ))
 $(eval $(call KMOD_template,ARPT,arptables,\
 	$(MODULES_DIR)/kernel/net/ipv4/netfilter/arp*.o \
 ,CONFIG_IP_NF_ARPTABLES))
