@@ -84,6 +84,12 @@ config BR2_PACKAGE_KMOD_ARPT
 	help
 	  Kernel modules for ARP firewalling
 
+config BR2_PACKAGE_KMOD_BLUETOOTH
+	tristate "Bluetooth drivers and network stack"
+	default m
+	help
+	  Bluetooth drivers and network stack
+
 config BR2_PACKAGE_KMOD_EBT
 	tristate "Ethernet Bridge firewalling support"
 	default m
