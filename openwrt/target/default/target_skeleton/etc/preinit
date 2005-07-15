@@ -1,16 +1,17 @@
 #!/bin/sh
-[ "$(/usr/sbin/nvram get boot_wait)" != "on" ] && {
-	/usr/sbin/nvram set boot_wait=on
-	/usr/sbin/nvram commit
-}
 mount none /proc -t proc
 insmod diag
 echo 0x01 > /proc/sys/diag
 sleep 1
 if [ $(cat /proc/sys/reset) = 1 ] || [ "$(/usr/sbin/nvram get failsafe)" = 1 ]; then
-  export FAILSAFE=true
-  while :; do { echo $(((X=(X+1)%8)%2)) > /proc/sys/diag; sleep $((X==0)); } done &
+	export FAILSAFE=true
+	[ "$(/usr/sbin/nvram get boot_wait)" != "on" ] && {
+		/usr/sbin/nvram set boot_wait=on
+		/usr/sbin/nvram commit
+	}
+	while :; do { echo $(((X=(X+1)%8)%2)) > /proc/sys/diag; sleep $((X==0)); } done &
 fi
+
 /sbin/mount_root ${FAILSAFE:+failsafe}
 
 exec /sbin/init
