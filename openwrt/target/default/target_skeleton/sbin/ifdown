@@ -1,8 +1,9 @@
 #!/bin/ash
+[ $# = 0 ] && { echo "  $0 <group>"; exit; }
 . /etc/functions.sh
-  type=$1
-  debug "### ifdown $type ###"
-  if=$(nvram get ${type}_ifname)
-  if_valid $if || return
-  kill $(cat /var/run/${if}.pid 2>&-) 2>&-
-  $DEBUG ifconfig $if down
+type=$1
+debug "### ifdown $type ###"
+if=$(nvram get ${type}_ifname)
+if_valid $if || exit 
+$DEBUG ifconfig $if down
+kill $(cat /var/run/${if}.pid 2>&-) 2>&-
