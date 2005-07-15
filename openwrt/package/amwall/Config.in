@@ -1,0 +1,9 @@
+config BR2_PACKAGE_AMWALL
+        tristate "amwall - pf to iptables "
+	default m if CONFIG_DEVEL
+	select BR2_PACKAGE_LIBAMSEL
+        help
+          See 
+
+          http://amselinux.de/
+

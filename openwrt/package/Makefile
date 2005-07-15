@@ -4,6 +4,7 @@ include $(TOPDIR)/rules.mk
 package-:=tcp_wrappers
 package-y:=openwrt
 package-$(BR2_PACKAGE_AICCU) += aiccu
+package-$(BR2_PACKAGE_AMWALL) += amwall
 package-$(BR2_PACKAGE_ARPTABLES) += arptables
 package-$(BR2_PACKAGE_ARPWATCH) += arpwatch
 package-$(BR2_PACKAGE_ASTERISK) += asterisk
@@ -46,6 +47,7 @@ package-$(BR2_PACKAGE_KISMET) += kismet
 package-$(BR2_PACKAGE_L2TPD) += l2tpd
 package-$(BR2_PACKAGE_LCD4LINUX) += lcd4linux
 package-$(BR2_PACKAGE_LESS) += less
+package-$(BR2_PACKAGE_LIBAMSEL) += libamsel
 package-$(BR2_PACKAGE_LIBDB) += libdb
 package-$(BR2_PACKAGE_LIBELF) += libelf
 package-$(BR2_PACKAGE_LIBEVENT) += libevent
@@ -149,6 +151,7 @@ clean: $(patsubst %,%-clean,$(package-) $(package-y) $(package-m))
 compile: $(patsubst %,%-compile,$(package-y) $(package-m))
 install: $(patsubst %,%-install,$(package-y))
 
+amwall-compile: libamsel-compile
 arpwatch-compile: libpcap-compile
 bind-compile: openssl-compile
 cyrus-sasl-compile: openssl-compile
