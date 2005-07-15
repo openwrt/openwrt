@@ -15,7 +15,7 @@
       <h1>OpenWrt Buildroot</h1>
     </div>
 
-    <p>Usage and documentation by Felix Fietkau, based on uClibc Buildroot
+    <p>Usage and documentation by Felix Fietkau and Waldemar Brodkorb, based on uClibc Buildroot
     documentation by Thomas Petazzoni. Contributions from Karsten Kruse,
     Ned Ludd, Martin Herren.</p>
 
@@ -129,8 +129,8 @@
         <li>squashfs</li>
     </ul>
     <p><code>jffs2</code> contains a writable root filesystem, which will expand to
-    the size of your flash image. Note that you if you use the generic firmware
-    Image, you need to pick the right image for your Flash size, because of different
+    the size of your flash image. Note: if you use the generic firmware image, you 
+    need to pick the right image for your flash size, because of different
     eraseblock sizes.</p>
     
     <p><code>squashfs</code> contains a read-only root filesystem using a modified 
@@ -197,7 +197,7 @@
       configuration, and the latter is used if you have selected
       locale support.</li>
 
-      <li>Run the compilation again</li>
+      <li>Run the compilation again.</li>
 
     </ol>
 
@@ -232,7 +232,9 @@
 
       <li><b>target</b> (in the <code>target</code> directory) contains the
       Makefiles and associated files for software related to the generation of
-      the target root filesystem image. Two types of filesystems are supported
+      the target root filesystem image and the linux kernel for the different 
+      system on a chip boards, used in the Wireless Routers. 
+      Two types of filesystems are supported
       : jffs2 and squashfs. 
     </ul>
 
@@ -276,7 +278,7 @@
 
       <li>Create the target directory (<code>build_ARCH/root/</code> by
       default) and the target filesystem skeleton. This directory will contain
-      the final root filesystem. To setup it up, it first deletes it, then it
+      the final root filesystem. To set it up, it first deletes it, then it
       copies the skeleton available in  <code>target/default/target_skeleton</code>
       and then removes useless <code>CVS/</code> directories.</li>
 
@@ -302,10 +304,10 @@
     <p>For example, you may add the following to your
     <code>.bashrc</code> (considering you're building for the MIPS
     architecture and that Buildroot is located in
-    <code>~/buildroot/</code>) :</p>
+    <code>~/openwrt/</code>) :</p>
 
 <pre>
-export PATH=$PATH:~/buildroot/staging_dir_mipsel/bin/
+export PATH=$PATH:~/openwrt/staging_dir_mipsel/bin/
 </pre>
 
     <p>Then you can simply do :</p>
@@ -344,7 +346,7 @@ mipsel-linux-uclibc-gcc -o foo foo.c
     downloaded by the <i>Makefiles</i> are all stored in the
     <code>DL_DIR</code> which by default is the <code>dl</code>
     directory. It's useful for example if you want to keep a complete
-    version of Buildroot which is know to be working with the
+    version of Buildroot which is known to be working with the
     associated tarballs. This will allow you to regenerate the
     toolchain and the target filesystem with exactly the same
     versions.</p>
@@ -369,14 +371,38 @@ mipsel-linux-uclibc-gcc -o foo foo.c
 
 <pre>
 config BR2_PACKAGE_FOO
-        tristate "foo"
-        default n
+        tristate "foo - some nice tool"
+        default m if CONFIG_DEVEL
         help
 	     This is a comment that explains what foo is.
 </pre>
 
+    <p>If you depend on other software or library inside the Buildroot, it
+    is important that you automatically select these packages in your 
+    <code>Config.in</code>. Example if foo depends on bar library:
+    </p>
+<pre>
+config BR2_PACKAGE_FOO
+        tristate "foo - some nice tool"
+        default m if CONFIG_DEVEL
+	select BR2_PACKAGE_LIBBAR
+        help
+        This is a comment that explains what foo is.
+</pre>
+
     <p>Of course, you can add other options to configure particular
     things in your software.</p>
+
+    <h3><code>Config.in</code> in the package directory</h3>
+	
+    <p>To add your package to the configuration tool, you need
+    to add the following line to <code>package/Config.in</code>,
+    please add it to a section, which fits the purpose of foo:
+
+<pre>
+comment "Networking"
+source "package/foo/Config.in"
+</pre>
 
     <h3><code>Makefile</code> in the package directory</h3>
 
@@ -391,18 +417,18 @@ package-$(BR2_PACKAGE_FOO) += foo
    <p>As you can see, this short line simply adds the target 
    <code>foo</code> to the list of targets handled by OpenWrt Buildroot.</p>
 
-
-    <p>In addition to the default dependencies, you make your package
-    depend on another package (e.g. a library) by adding a line:
+   <p>In addition to the default dependencies, you make your package
+   depend on another package (e.g. a library) by adding a line:
     
 <pre>
 foo-compile: bar-compile
 </pre>
 
-   <h3>The <i>.control</i> file</h3>
+   <h3>The ipkg control file</h3>
    <p>Additionally, you need to create a control file which contains
    information about your package, readable by the <i>ipkg</i> package
-   utility.</p>
+   utility. It should be created as file:
+   <code>package/foo/ipkg/foo.control</code></p>
    
    <p>The file looks like this</p>
 
@@ -412,12 +438,14 @@ foo-compile: bar-compile
      3  Section: net
      4  Maintainer: Foo Software &lt;foo@foosoftware.com&gt;
      5  Source: http://foosoftware.com
-     6  Description: Your Package Description
+     6  Depends: libbar
+     7  Description: Package Description
 </pre>
    
    <p>You can skip the usual <code>Version:</code> and <code>Architecture</code>
    fields, as they will be generated by the <code>make-ipkg-dir.sh</code> script
-   called from your Makefile</p>
+   called from your Makefile. The Depends field is important, so that ipkg will
+   automatically fetch all dependend software on your target system.</p>
 
    <h3>The real <i>Makefile</i></h3>
 
@@ -434,7 +462,6 @@ foo-compile: bar-compile
      4  PKG_VERSION:=1.0
      5  PKG_RELEASE:=1
      6  PKG_MD5SUM:=4584f226523776a3cdd2fb6f8212ba8d
-     7
      8  PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
      9  PKG_SOURCE_URL:=http://www.foosoftware.org/downloads
     10  PKG_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
