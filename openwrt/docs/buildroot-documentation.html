@@ -80,17 +80,18 @@
     <code>gcc</code>, <code>binutils</code>, uClibc and all the tools by hand.
     Of course, doing so is possible. But dealing with all configure options,
     with all problems of every <code>gcc</code> or <code>binutils</code>
-    version it very time-consuming and uninteresting. OpenWrt Buildroot automates this
+    version is very time-consuming and uninteresting. OpenWrt Buildroot automates this
     process through the use of Makefiles, and has a collection of patches for
     each <code>gcc</code> and <code>binutils</code> version to make them work
-    on the MIPS architecture of most Broadcom based Wireless Routers.</p>
+    on the MIPS architecture of most Wireless Routers.</p>
 
     <h2><a name="download" id="download"></a>Obtaining OpenWrt Buildroot</h2>
 
-    <p>OpenWrt Buildroot is currently available as experimental snapshots</p>
-
-    <p>The latest snapshot is always available at <a
-    href="http://openwrt.org/downloads/experimental/">http://openwrt.org/downloads/experimental/</a>,
+    <p>OpenWrt Buildroot is available via CVS - Concurrent Version System.
+    For any kind of development you should get the latest version from cvs via:</p>
+<pre>
+ $ cvs -d:pserver:anonymous@openwrt.org:/openwrt co openwrt
+</pre>
 
     <h2><a name="using" id="using"></a>Using OpenWrt Buildroot</h2>
 
