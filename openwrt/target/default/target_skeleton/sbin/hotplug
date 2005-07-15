@@ -1,7 +1,6 @@
 #!/bin/ash
 # $Id$
 [ "${INTERFACE%%[0-9]*}" = "wds" ] && { 
-	[ -x "/usr/sbin/nas4not" ] && /usr/sbin/nas4not lan $INTERFACE up
 	ifconfig $INTERFACE 0.0.0.0 up
 	/usr/sbin/brctl addif br0 $INTERFACE
 }
