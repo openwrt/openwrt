@@ -14,16 +14,14 @@ touch /var/log/lastlog
 
 # set up the vlan*ports variables for the asus wl-500g deluxe
 # if they don't already exist 
-[ "$(nvram get boardtype)" = "bcm95365r" ] && \
-[ "$(nvram get boardnum)" = "45" ] && {
-  [ -z "$(nvram get vlan0ports)" ] && \
-  [ -z "$(nvram get vlan1ports)" ] && {
-    nvram set vlan0ports="1 2 3 4 5*"
-    nvram set vlan1ports="0 5"
-  }
+[  "$(nvram get boardtype)" = "bcm95365r" \
+-a "$(nvram get boardnum)" = "45" \
+-a -z "$(nvram get vlan0ports)$(nvram get vlan1ports)" ] && {
+	nvram set vlan0ports="1 2 3 4 5*"
+	nvram set vlan1ports="0 5"
 }
 
-cat /etc/modules /etc/modules.d/*|sed 's/^[^#]/insmod &/' 2>&-|ash
+sed 's/^[^#]/insmod &/' /etc/modules /etc/modules.d/* 2>&-|ash
 
 ifconfig lo 127.0.0.1 up
 ifconfig eth0 promisc

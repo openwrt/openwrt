@@ -10,7 +10,7 @@ squashfs-clean:
 
 $(KDIR)/root.squashfs:
 	@mkdir -p $(KDIR)/root/jffs
-	$(STAGING_DIR)/bin/mksquashfs-lzma $(KDIR)/root $@ -noappend -root-owned -le
+	$(STAGING_DIR)/bin/mksquashfs-lzma $(KDIR)/root $@ -nopad -noappend -root-owned -le
 
 squashfs-install: $(KDIR)/root.squashfs
 	$(MAKE) -C $(BOARD) install KERNEL="$(KERNEL)" FS="squashfs"
