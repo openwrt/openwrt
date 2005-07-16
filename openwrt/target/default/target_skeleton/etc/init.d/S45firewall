@@ -26,7 +26,7 @@ iptables -t nat -N postrouting_rule
   iptables -P INPUT DROP
   iptables -A INPUT -m state --state INVALID -j DROP
   iptables -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
-  iptables -A INPUT -p tcp --syn --tcp-option \! 2 -j  DROP
+  iptables -A INPUT -p tcp --tcp-flags SYN SYN --tcp-option \! 2 -j  DROP
 
   #
   # insert accept rule or to jump to new accept-check table here
