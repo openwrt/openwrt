@@ -459,8 +459,15 @@ static int wlcompat_ioctl(struct net_device *dev,
 			if (index < 0)
 				index = get_primary_key(dev);
 			
-			if (wrqu->data.flags & IW_ENCODE_DISABLED)
+			if (wrqu->data.flags & IW_ENCODE_DISABLED) {
 				wep = 0;
+				if (wl_ioctl(dev, WLC_SET_WSEC, &wep, sizeof(val)) < 0)
+					return -EINVAL;
+				return 0;
+			}
+
+			if (wl_ioctl(dev, WLC_SET_WSEC, &wep, sizeof(val)) < 0)
+				return -EINVAL;
 
 			if (wrqu->data.flags & IW_ENCODE_OPEN)
 				wrestrict = 0;
@@ -479,18 +486,11 @@ static int wlcompat_ioctl(struct net_device *dev,
 			}
 
 			if (index >= 0)
-				if (wl_ioctl(dev, WLC_SET_KEY_PRIMARY, &index, sizeof(index)) < 0)
-					return -EINVAL;
+				wl_ioctl(dev, WLC_SET_KEY_PRIMARY, &index, sizeof(index));
 			
-			if (wl_ioctl(dev, WLC_GET_WSEC, &val, sizeof(val)) < 0)
-				return -EINVAL;
-			val |= wep;
-			if (wl_ioctl(dev, WLC_SET_WSEC, &val, sizeof(val)) < 0)
-				return -EINVAL;
-
 			if (wrestrict >= 0)
-				if (wl_ioctl(dev, WLC_SET_WEP_RESTRICT, &wrestrict, sizeof(wrestrict)) < 0)
-					return -EINVAL;
+				wl_ioctl(dev, WLC_SET_WEP_RESTRICT, &wrestrict, sizeof(wrestrict));
+
 			break;
 		}
 		case SIOCGIWENCODE:
