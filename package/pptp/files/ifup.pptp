@@ -1,0 +1,43 @@
+#!/bin/sh
+. /etc/functions.sh
+type=$1
+
+[ "$(nvram get ${type}_proto)" = "pptp" ] || exit
+
+[ -d "/var/lock" ] || mkdir -p /var/lock || exit 1
+
+for module in slhc ppp_generic ppp_async ip_gre; do
+	/sbin/insmod $module 2>&- >&-
+done
+
+if=$(nvram get pptp_ifname)
+ip=$(nvram get ${type}_ipaddr)
+netmask=$(nvram get ${type}_netmask)
+[ -z "$ip" -o -z "$if" ] || ifconfig $if $ip ${netmask:+netmask $netmask} broadcast + up
+
+while :; do
+	IP=$(nvram get pptp_server_ip)
+	USERNAME=$(nvram get ppp_username)
+	PASSWORD=$(nvram get ppp_passwd)
+	REDIAL=$(nvram get ppp_redialperiod)
+	REDIAL=${REDIAL:+lcp-echo-interval $REDIAL}
+	IDLETIME=$(nvram get ppp_idletime)
+	IDLETIME=${IDLETIME:+lcp-echo-failure $IDLETIME}
+	MTU=$(nvram get ppp_mtu)
+	MTU=${MTU:+ mtu $MTU mru $MTU}
+
+	/usr/sbin/pppd nodetach \
+		pty "/usr/sbin/pptp $IP --loglevel 0 --nolaunchpppd" \
+		file /etc/ppp/options.pptp \
+		connect /bin/true \
+		usepeerdns \
+		defaultroute \
+		linkname $type \
+		user "$USERNAME" \
+		password "$PASSWORD" \
+		$MTU \
+		$IDLETIME \
+		$REDIAL \
+		$IFNAME
+done &
+
