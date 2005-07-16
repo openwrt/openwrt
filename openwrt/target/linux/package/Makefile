@@ -14,6 +14,7 @@ compile: $(patsubst %,%-compile,$(package-y) $(package-m))
 install: $(patsubst %,%-install,$(package-y))
 
 MAKEOPTS:=	BOARD="$(BOARD)" \
+		IPKG="$(IPKG)" \
 		TARGET_DIR="$(TARGET_DIR)" \
 		BUILD_DIR="$(BUILD_DIR)" \
 		KERNEL_DIR="$(KERNEL_DIR)" \
