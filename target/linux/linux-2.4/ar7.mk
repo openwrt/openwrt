@@ -26,7 +26,7 @@ $(LINUX_DIR)/.drivers-unpacked: $(LINUX_DIR)/.unpacked
 
 $(eval $(call KMOD_template,SANGAM_ATM,sangam-atm,\
 	$(MODULES_DIR)/kernel/drivers/atm/tiatm.o \
-,CONFIG_MIPS_SANGAM_ATM,, \
+,CONFIG_MIPS_SANGAM_ATM,kmod-atm,60,tiatm, \
 	cp $(BUILD_DIR)/$(ATM_FIRMWARE_DIR)/*.bin $$(I_SANGAM_ATM)/lib/modules/ \
 ))
 

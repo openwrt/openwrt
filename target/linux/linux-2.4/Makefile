@@ -59,7 +59,7 @@ endif
 $(eval $(call KMOD_template,ATM,atm,\
 	$(MODULES_DIR)/kernel/net/atm/atm.o \
 	$(MODULES_DIR)/kernel/net/atm/br2684.o \
-,CONFIG_ATM))
+,CONFIG_ATM,,50,atm))
 $(eval $(call KMOD_template,PPPOATM,pppoatm,\
 	$(MODULES_DIR)/kernel/net/atm/pppoatm.o \
 ,CONFIG_PPPOATM))
@@ -87,58 +87,58 @@ $(eval $(call KMOD_template,IPTABLES_V6,ip6tables,\
 ,CONFIG_IP6_NF_IPTABLES,kmod-ipv6))
 $(eval $(call KMOD_template,IPV6,ipv6,\
 	$(MODULES_DIR)/kernel/net/ipv6/ipv6.o \
-,CONFIG_IPV6))
+,CONFIG_IPV6,,20,ipv6))
 $(eval $(call KMOD_template,CIFS,cifs,\
 	$(MODULES_DIR)/kernel/fs/cifs/cifs.o \
-,CONFIG_CIFS))
+,CONFIG_CIFS,,30,cifs))
 $(eval $(call KMOD_template,NFS,nfs,\
 	$(MODULES_DIR)/kernel/fs/lockd/*.o \
 	$(MODULES_DIR)/kernel/fs/nfs/*.o \
 	$(MODULES_DIR)/kernel/net/sunrpc/*.o \
-,CONFIG_NFS_FS))
+,CONFIG_NFS_FS,,30,sunrpc lockd nfs))
 $(eval $(call KMOD_template,USB,usb-core,\
 	$(MODULES_DIR)/kernel/drivers/usb/usbcore.o \
-,CONFIG_USB))
+,CONFIG_USB,,50,usbcore))
 $(eval $(call KMOD_template,USB_UHCI,usb-uhci,\
 	$(MODULES_DIR)/kernel/drivers/usb/host/uhci.o \
-,CONFIG_USB_UHCI_ALT,kmod-usb-core))
+,CONFIG_USB_UHCI_ALT,kmod-usb-core,60,uhci))
 $(eval $(call KMOD_template,USB_OHCI,usb-ohci,\
 	$(MODULES_DIR)/kernel/drivers/usb/host/usb-ohci.o \
-,CONFIG_USB_OHCI,kmod-usb-core))
+,CONFIG_USB_OHCI,kmod-usb-core,60,ohci))
 $(eval $(call KMOD_template,USB2,usb2,\
 	$(MODULES_DIR)/kernel/drivers/usb/host/ehci-hcd.o \
-,CONFIG_USB_EHCI_HCD,kmod-usb-core))
+,CONFIG_USB_EHCI_HCD,kmod-usb-core,60,ehci-hcd))
 $(eval $(call KMOD_template,USB_STORAGE,usb-storage,\
 	$(MODULES_DIR)/kernel/drivers/scsi/*.o \
 	$(MODULES_DIR)/kernel/drivers/usb/storage/*.o \
-,CONFIG_USB_STORAGE))
+,CONFIG_USB_STORAGE,kmod-usb-core,60,scsi_mod sd_mod usb-storage))
 $(eval $(call KMOD_template,USB_PRINTER,usb-printer,\
 	$(MODULES_DIR)/kernel/drivers/usb/printer.o \
-,CONFIG_USB_PRINTER))
+,CONFIG_USB_PRINTER,kmod-usb-core,60,printer))
 $(eval $(call KMOD_template,IDE,ide,\
 	$(MODULES_DIR)/kernel/drivers/ide/*.o \
 	$(MODULES_DIR)/kernel/drivers/ide/*/*.o \
 ,CONFIG_IDE))
 $(eval $(call KMOD_template,LOOP,loop,\
     $(MODULES_DIR)/kernel/drivers/block/loop.o \
-,CONFIG_BLK_DEV_LOOP))
+,CONFIG_BLK_DEV_LOOP,,20,loop))
 $(eval $(call KMOD_template,EXT2,ext2,\
 	$(MODULES_DIR)/kernel/fs/ext2/*.o \
-,CONFIG_EXT2_FS))
+,CONFIG_EXT2_FS,,30,ext2))
 $(eval $(call KMOD_template,EXT3,ext3,\
 	$(MODULES_DIR)/kernel/fs/ext3/*.o \
 	$(MODULES_DIR)/kernel/fs/jbd/*.o \
-,CONFIG_EXT3_FS))
+,CONFIG_EXT3_FS,,30,jbd ext3))
 $(eval $(call KMOD_template,XFS,xfs,\
 	$(MODULES_DIR)/kernel/fs/xfs/*.o \
-,CONFIG_XFS_FS))
+,CONFIG_XFS_FS,,30,xfs))
 $(eval $(call KMOD_template,HFSPLUS,hfsplus,\
 	$(MODULES_DIR)/kernel/fs/hfsplus/*.o \
-,CONFIG_HFSPLUS_FS))
+,CONFIG_HFSPLUS_FS,,30,hfsplus))
 $(eval $(call KMOD_template,VFAT,vfat,\
 	$(MODULES_DIR)/kernel/fs/vfat/vfat.o \
 	$(MODULES_DIR)/kernel/fs/fat/fat.o \
-,CONFIG_VFAT_FS))
+,CONFIG_VFAT_FS,,30,fat vfat))
 $(eval $(call KMOD_template,CRYPTO,crypto,\
 	$(MODULES_DIR)/kernel/crypto/*.o \
 ))
@@ -156,10 +156,10 @@ $(eval $(call KMOD_template,PPPOE,pppoe,\
 ,CONFIG_PPPOE))
 $(eval $(call KMOD_template,TUN,tun,\
 	$(MODULES_DIR)/kernel/drivers/net/tun.o \
-,CONFIG_TUN))
+,CONFIG_TUN,,20,tun))
 $(eval $(call KMOD_template,GRE,gre,\
 	$(MODULES_DIR)/kernel/net/ipv4/ip_gre.o \
-,CONFIG_NET_IPGRE))
+,CONFIG_NET_IPGRE,,30,ip_gre))
 $(eval $(call KMOD_template,SCHED,sched,\
 	$(MODULES_DIR)/kernel/net/sched/*.o \
 ))
