@@ -16,6 +16,7 @@ PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
 include $(TOPDIR)/package/rules.mk
 
+$(eval $(call PKG_template,KISMET,kismet,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,KISMET_CLIENT,kismet-client,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,KISMET_DRONE,kismet-drone,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,KISMET_SERVER,kismet-server,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
@@ -58,6 +59,11 @@ $(PKG_BUILD_DIR)/.built:
 		LIBS="-L$(STAGING_DIR)/lib -fno-builtin -nostdinc++ -nodefaultlibs -luClibc++ -lc -lm" \
 		CPPFLAGS="-I$(STAGING_DIR)/include -I$(STAGING_DIR)/usr/include -I$(LINUX_DIR)/include" 
 	touch $@
+
+$(IPKG_KISMET):
+	install -d -m0755 $(IDIR_KISMET)/usr/bin/
+	cp -fpR $(PKG_BUILD_DIR)/scripts/kismet $(IDIR_KISMET)/usr/bin/
+	$(IPKG_BUILD) $(IDIR_KISMET) $(PACKAGE_DIR)
 
 $(IPKG_KISMET_CLIENT):
 	install -d -m0755 $(IDIR_KISMET_CLIENT)/etc/kismet/

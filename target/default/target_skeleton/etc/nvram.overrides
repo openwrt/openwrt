@@ -20,8 +20,8 @@ remap () {
 }
 
 # hacks for wrt54g 1.x hardware
-[ "$(nvram get boardnum)"  = "42" ] && \
-[ "$(nvram get boardtype)" = "bcm94710dev" ] && {
+[  "$(nvram get boardnum)"  = "42" \
+-a "$(nvram get boardtype)" = "bcm94710dev" ] && {
   debug "### wrt54g 1.x hack ###"
   NVRAM_vlan1hwname="et0"
   NVRAM_vlan2hwname="et0"
@@ -31,8 +31,8 @@ remap () {
 }
 
 # hacks for asus wl-500g deluxe
-[ "$(nvram get boardtype)" = "bcm95365r" ] && \
-[ "$(nvram get boardnum)" = "45" ] && {
+[  "$(nvram get boardtype)" = "bcm95365r" \
+-a "$(nvram get boardnum)" = "45" ] && {
   debug "### wl-500g deluxe hacks ###"
   NVRAM_vlan0hwname="et0"
   NVRAM_vlan1hwname="et0"
@@ -42,32 +42,32 @@ remap () {
 }
 
 # hacks for asus wl-300g
-[ "$(nvram get productid)"  = "WL300g" ] && {
+[ "$(nvram get productid)" = "WL300g" ] && {
   debug "### wl-300g hacks ###"
   NVRAM_lan_ifnames="eth0 eth2"
   NVRAM_wan_ifname="none"
 }
 
 # hacks for wap54g hardware
-[ "$(nvram get boardnum)"  = "2" ] || \
-[ "$(nvram get boardnum)"  = "1024" ] && {
+[  "$(nvram get boardnum)" = "2" \
+-o "$(nvram get boardnum)" = "1024" ] && {
   debug "### wap54g hack ###"
   NVRAM_wan_ifname="none"
   FAILSAFE_ifnames="eth0 eth1"
 }
 
 # hacks for buffalo wla2-g54l
-[ "$(nvram get boardnum)" = "00" ] && \
-[ "$(nvram get product_name)" = "Product_name" ] || \
-[ "$(nvram get product_name)" = "WLA2-G54L" ] && {
+[  "$(nvram get boardnum)" = "00" \
+-a "$(nvram get product_name)" = "Product_name" \
+-o "$(nvram get product_name)" = "WLA2-G54L" ] && {
   debug "### wla2-g54l hacks ###"
   NVRAM_wan_ifname="none"
   NVRAM_lan_ifnames="vlan0"
 }
 
 # hack for asus wl-500g hardware
-[ "$(nvram get boardnum)"  = "asusX" ] && \
-[ "$(nvram get boardtype)"  = "bcm94710dev" ] && {
+[  "$(nvram get boardnum)"  = "asusX" \
+-a "$(nvram get boardtype)"  = "bcm94710dev" ] && {
   FAILSAFE_ifnames="eth0 eth2"
 }
 
