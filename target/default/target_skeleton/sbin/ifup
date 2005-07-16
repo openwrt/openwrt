@@ -4,8 +4,9 @@
 type=$1
 debug "### ifup $type ###"
 
+if_proto=$(nvram get ${type}_proto)
 if=$(nvram get ${type}_ifname)
-[ "${if%%[0-9]}" = "ppp" ] && if=$(nvram get pppoe_ifname)
+[ "${if%%[0-9]}" = "ppp" ] && if=$(nvram get ${if_proto}_ifname)
 
 if_valid $if || exit 
 mac=$(nvram get ${type}_hwaddr)
@@ -28,7 +29,6 @@ else
 	${mac:+$DEBUG ifconfig $if down hw ether $mac}
 fi
 
-if_proto=$(nvram get ${type}_proto)
 case "$if_proto" in
 	static)
 		ip=$(nvram get ${type}_ipaddr)
