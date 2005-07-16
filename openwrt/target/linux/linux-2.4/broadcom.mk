@@ -19,7 +19,7 @@ $(eval $(call KMOD_template,LP,lp,\
 	$(MODULES_DIR)/kernel/drivers/parport/parport.o \
 	$(MODULES_DIR)/kernel/drivers/parport/parport_splink.o \
 	$(MODULES_DIR)/kernel/drivers/char/lp.o \
-,CONFIG_PARPORT))
+,CONFIG_PARPORT,,50,parport parport_splink lp))
 
 LINUX_BINARY_DRIVER_SITE=http://openwrt.org/downloads/sources
 # proprietary driver, extracted from asus GPL sourcetree GPL_1941.zip
