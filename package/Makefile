@@ -98,6 +98,7 @@ package-$(BR2_PACKAGE_PICOCOM) += picocom
 package-$(BR2_PACKAGE_PMACCT) += pmacct
 package-$(BR2_PACKAGE_POPT) += popt
 package-$(BR2_PACKAGE_PORTMAP) += portmap
+package-$(BR2_PACKAGE_PORTSENTRY) += portsentry
 package-$(BR2_PACKAGE_POSTGRESQL) += postgresql
 package-$(BR2_PACKAGE_PPP) += ppp
 package-$(BR2_PACKAGE_PPTP) += pptp
