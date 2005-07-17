@@ -15,8 +15,10 @@ gcc-prepare: binutils-install
 uClibc-compile: gcc-prepare
 gcc-compile: uClibc-install
 
-$(STAMP_DIR):
-	mkdir -p $(STAMP_DIR)
+TOOLCHAIN_STAMP_DIR:=$(STAGING_DIR)/stampfiles
+
+$(TOOLCHAIN_STAMP_DIR):
+	mkdir -p $(TOOLCHAIN_STAMP_DIR)
 
 $(STAGING_DIR):
 	@mkdir -p $(STAGING_DIR)/lib
@@ -27,19 +29,19 @@ $(STAGING_DIR):
 $(TOOL_BUILD_DIR):
 	@mkdir -p $(TOOL_BUILD_DIR)
 
-%-prepare: $(STAMP_DIR) $(STAGING_DIR) $(TOOL_BUILD_DIR)
-	@[ -f $(STAMP_DIR)/.toolchain_$@ ] || $(MAKE) -C $(patsubst %-prepare,%,$@) prepare
-	@touch $(STAMP_DIR)/.toolchain_$@
+%-prepare: $(TOOLCHAIN_STAMP_DIR) $(STAGING_DIR) $(TOOL_BUILD_DIR)
+	@[ -f $(TOOLCHAIN_STAMP_DIR)/.toolchain_$@ ] || $(MAKE) -C $(patsubst %-prepare,%,$@) prepare
+	@touch $(TOOLCHAIN_STAMP_DIR)/.toolchain_$@
 
 %-compile: %-prepare 
-	@[ -f $(STAMP_DIR)/.toolchain_$@ ] || $(MAKE) -C $(patsubst %-compile,%,$@) compile
-	@touch $(STAMP_DIR)/.toolchain_$@
+	@[ -f $(TOOLCHAIN_STAMP_DIR)/.toolchain_$@ ] || $(MAKE) -C $(patsubst %-compile,%,$@) compile
+	@touch $(TOOLCHAIN_STAMP_DIR)/.toolchain_$@
 
 %-install: %-compile
-	@[ -f $(STAMP_DIR)/.toolchain_$@ ] || $(MAKE) -C $(patsubst %-install,%,$@) install
-	@touch $(STAMP_DIR)/.toolchain_$@
+	@[ -f $(TOOLCHAIN_STAMP_DIR)/.toolchain_$@ ] || $(MAKE) -C $(patsubst %-install,%,$@) install
+	@touch $(TOOLCHAIN_STAMP_DIR)/.toolchain_$@
 
 %-clean:
 	@$(MAKE) -C $(patsubst %-clean,%,$@) clean
-	@rm -f $(STAMP_DIR)/.toolchain_$(patsubst %-clean,%,$@)-*
+	@rm -f $(TOOLCHAIN_STAMP_DIR)/.toolchain_$(patsubst %-clean,%,$@)-*
 

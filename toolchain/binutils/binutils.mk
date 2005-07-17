@@ -133,24 +133,3 @@ $(BINUTILS_DIR2)/binutils/objdump: $(BINUTILS_DIR2)/.configured
 	PATH=$(TARGET_PATH) \
 	$(MAKE) -C $(BINUTILS_DIR2) all
 
-$(TARGET_DIR)/usr/bin/ld: $(BINUTILS_DIR2)/binutils/objdump
-	PATH=$(TARGET_PATH) \
-	$(MAKE) DESTDIR=$(TARGET_DIR) \
-		tooldir=/usr build_tooldir=/usr \
-		-C $(BINUTILS_DIR2) install
-	#rm -rf $(TARGET_DIR)/share/locale $(TARGET_DIR)/usr/info \
-	#	$(TARGET_DIR)/usr/man $(TARGET_DIR)/usr/share/doc
-	-$(STRIP) $(TARGET_DIR)/usr/$(REAL_GNU_TARGET_NAME)/bin/* > /dev/null 2>&1
-	-$(STRIP) $(TARGET_DIR)/usr/bin/* > /dev/null 2>&1
-
-binutils_target: $(GCC_DEPENDANCY) $(TARGET_DIR)/usr/bin/ld
-
-binutils_target-clean:
-	(cd $(TARGET_DIR)/usr/bin; \
-		rm -f addr2line ar as gprof ld nm objcopy \
-		      objdump ranlib readelf size strings strip)
-	rm -f $(TARGET_DIR)/bin/$(REAL_GNU_TARGET_NAME)*
-	-$(MAKE) -C $(BINUTILS_DIR2) clean
-
-binutils_target-toolclean:
-	rm -rf $(BINUTILS_DIR2)

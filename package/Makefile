@@ -146,11 +146,16 @@ DEV_LIBS:=tcp_wrappers glib ncurses openssl pcre popt zlib libnet libpcap mysql 
 DEV_LIBS_COMPILE:=$(patsubst %,%-compile,$(DEV_LIBS))
 SDK_DEFAULT_PACKAGES:=busybox dnsmasq iptables wireless-tools dropbear bridge ipkg ppp
 SDK_DEFAULT_COMPILE:=$(patsubst %,%-compile,$(SDK_DEFAULT_PACKAGES))
+COMPILE_PACKAGES:=$(patsubst %,%-compile,$(package-y) $(package-m))
+INSTALL_PACKAGES:=$(patsubst %,%-install,$(package-y))
 
 all: compile install
 clean: $(patsubst %,%-clean,$(package-) $(package-y) $(package-m))
-compile: $(patsubst %,%-compile,$(package-y) $(package-m))
-install: $(patsubst %,%-install,$(package-y))
+compile: $(COMPILE_PACKAGES)
+install: base-files-install $(INSTALL_PACKAGES)
+
+$(COMPILE_PACKAGES): base-files-install
+$(INSTALL_PACKAGES): base-files-install
 
 amwall-compile: libamsel-compile
 arpwatch-compile: libpcap-compile

@@ -57,7 +57,7 @@ sub cleanup
 foreach my $mirror (@ARGV) {
 	if ($mirror =~ /^\@SF\/(.+)$/) {
 		my $sfpath = $1;
-		open SF, "wget -t1 -q -O- 'http://prdownloads.sf.net/$sfpath/$filename' |";
+		open SF, "wget -t1 -q -O- 'http://prdownloads.sourceforge.net/$sfpath/$filename' |";
 		while (<SF>) {
 			/RADIO NAME=use_default VALUE=(\w+) OnClick="form\.submit\(\)">/ and do {
 				push @mirrors, "http://$1.dl.sourceforge.net/sourceforge/$sfpath";
