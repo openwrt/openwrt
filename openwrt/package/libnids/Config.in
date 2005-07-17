@@ -1,5 +1,5 @@
 config BR2_PACKAGE_LIBNIDS
-	tristate "libnids"
+	tristate "libnids - network intrusion detection library"
 	select BR2_PACKAGE_LIBPCAP
 	select BR2_PACKAGE_LIBNET
 	default m if CONFIG_DEVEL
