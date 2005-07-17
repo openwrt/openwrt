@@ -77,9 +77,9 @@ package_install: package_compile toolchain
 # In this section, we need .config
 include .config.cmd
 
-world: $(DL_DIR) $(BUILD_DIR) configtest target_prepare $(TARGET_DIR) toolchain_install package_install target_install package_index
+world: $(DL_DIR) $(BUILD_DIR) configtest toolchain_install package_install target_install package_index
 
-.PHONY: all world clean dirclean distclean image_clean target_clean source target_prepare target_install toolchain_install package_install configtest
+.PHONY: all world clean dirclean distclean image_clean target_clean source target_install toolchain_install package_install configtest
 
 configtest:
 	-cp .config .config.test
@@ -89,9 +89,6 @@ package_index:
 	(cd $(PACKAGE_DIR); \
 		$(STAGING_DIR)/usr/bin/ipkg-make-index . > Packages \
 	)
-
-target_prepare:
-	$(MAKE) -C target prepare
 
 target_compile:
 	$(MAKE) -C target compile
