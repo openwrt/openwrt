@@ -1,5 +1,5 @@
 config BR2_PACKAGE_OPENSWAN
-	tristate "Openswan"
+	tristate "Openswan - VPN solution using IPsec"
 	select BR2_PACKAGE_LIBGMP
 	select BR2_PACKAGE_KMOD_OPENSWAN
 	default m if CONFIG_DEVEL
