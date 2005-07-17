@@ -21,6 +21,7 @@ include $(TOPDIR)/package/rules.mk
 
 $(eval $(call PKG_template,QUAGGA,quagga,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,QUAGGA_BGPD,quagga-bgpd,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,LIBOSPF,libospf,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,QUAGGA_OSPFD,quagga-ospfd,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,QUAGGA_OSPF6D,quagga-ospf6d,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,QUAGGA_RIPD,quagga-ripd,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
@@ -81,17 +82,19 @@ $(IPKG_QUAGGA_BGPD):
 	$(RSTRIP) $(IDIR_QUAGGA_BGPD)
 	$(IPKG_BUILD) $(IDIR_QUAGGA_BGPD) $(PACKAGE_DIR)
 
+$(IPKG_LIBOSPF):
+	install -d -m0755 $(IDIR_LIBOSPF)/usr/lib
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libospf.so.* $(IDIR_LIBOSPF)/usr/lib/
+	$(RSTRIP) $(IDIR_LIBOSPF)
+	$(IPKG_BUILD) $(IDIR_LIBOSPF) $(PACKAGE_DIR)
+
 $(IPKG_QUAGGA_OSPFD):
-	install -d -m0755 $(IDIR_QUAGGA_OSPFD)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libospf.so.* $(IDIR_QUAGGA_OSPFD)/usr/lib/
 	install -d -m0755 $(IDIR_QUAGGA_OSPFD)/usr/sbin
 	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/ospfd $(IDIR_QUAGGA_OSPFD)/usr/sbin/
 	$(RSTRIP) $(IDIR_QUAGGA_OSPFD)
 	$(IPKG_BUILD) $(IDIR_QUAGGA_OSPFD) $(PACKAGE_DIR)
 
 $(IPKG_QUAGGA_OSPF6D):
-	install -d -m0755 $(IDIR_QUAGGA_OSPF6D)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libospf.so.* $(IDIR_QUAGGA_OSPF6D)/usr/lib/
 	install -d -m0755 $(IDIR_QUAGGA_OSPF6D)/usr/sbin
 	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/ospfd $(IDIR_QUAGGA_OSPF6D)/usr/sbin/
 	$(RSTRIP) $(IDIR_QUAGGA_OSPF6D)
