@@ -55,6 +55,73 @@ struct trx_header {
 };
 
 int
+trx_check(const char *trxfile, const char *mtd)
+{
+	struct mtd_info_user mtdInfo;
+	int trxfd, fd;
+	size_t count;
+	struct trx_header trx;
+	struct stat trxstat;
+
+	trxfd = open(trxfile,O_RDONLY);	
+	if(trxfd < 0) {
+		fprintf(stderr, "Could not open trx image: %s\n", trxfile);
+		exit(1);
+	}
+
+	if (fstat(trxfd,&trxstat) < 0) {
+		fprintf(stderr, "Could not get trx image file status: %s\n", trxfile);
+		close(trxfd);
+		exit(1);
+	}
+
+	count = read(trxfd, &trx, sizeof(struct trx_header));
+	if (count < sizeof(struct trx_header)) {
+		fprintf(stderr, "Could not trx header, file too small (%ld bytes)\n", count);
+		close(trxfd);
+		exit(1);
+	}
+
+	if (trx.magic != TRX_MAGIC || trx.len < sizeof(struct trx_header)) {
+		fprintf(stderr, "Bad trx header\n");
+		fprintf(stderr, "If this is a firmware in bin format, like some of the\n"
+				"original firmware files are, use following command to convert to trx:\n"
+				"dd if=firmware.bin of=firmware.trx bs=32 skip=1\n");
+		close(trxfd);
+		exit(1);
+	}
+	
+	lseek(trxfd, 0, SEEK_SET);
+
+	/* check if image fits to mtd device */
+
+	fd = mtd_open(mtd, O_RDWR);
+	if(fd < 0) {
+		fprintf(stderr, "Could not open mtd device: %s\n", mtd);
+		exit(1);
+	}
+
+	if(ioctl(fd, MEMGETINFO, &mtdInfo)) {
+		fprintf(stderr, "Could not get MTD device info from %s\n", mtd);
+		close(fd);
+		exit(1);
+	}
+		
+	if(mtdInfo.size < trxstat.st_size) {
+		fprintf(stderr, "Image too big for partition: %s\n", mtd);
+		close(trxfd);
+		close(fd);
+		exit(1);
+	}	
+	
+	printf("Writing %s to %s ...\n", trxfile, mtd);
+
+	close(fd);
+
+	return(trxfd);
+}
+
+int
 mtd_unlock(const char *mtd)
 {
 	int fd;
@@ -146,46 +213,21 @@ mtd_erase(const char *mtd)
 }
 
 int
-mtd_write(const char *trxfile, const char *mtd)
+mtd_write(int trxfd, const char *mtd)
 {
-	int fd,trxfd,i;
-	struct trx_header trx;
-	size_t count,result,size,written;
+	int fd,i;
+	size_t result,size,written;
 	struct mtd_info_user mtdInfo;
 	struct erase_info_user mtdEraseInfo;
-	struct stat trxstat;
 	unsigned char src[BUFSIZE],dest[BUFSIZE];
-
-	trxfd = open(trxfile,O_RDONLY);	
-	if(trxfd < 0) {
-		fprintf(stderr, "Could not open trx image: %s\n", trxfile);
-		exit(1);
-	}
+	struct stat trxstat;
 
 	if (fstat(trxfd,&trxstat) < 0) {
-		fprintf(stderr, "Could not get trx image file status: %s\n", trxfile);
+		fprintf(stderr, "Could not get trx image file status\n");
 		close(trxfd);
 		exit(1);
 	}
 
-	count = read(trxfd, &trx, sizeof(struct trx_header));
-	if (count < sizeof(struct trx_header)) {
-		fprintf(stderr, "Could not trx header, file too small (%ld bytes)\n", count);
-		close(trxfd);
-		exit(1);
-	}
-
-	if (trx.magic != TRX_MAGIC || trx.len < sizeof(struct trx_header)) {
-		fprintf(stderr, "Bad trx header\n");
-		fprintf(stderr, "If this is a firmware in bin format, like some of the\n"
-				"original firmware files are, use following command to convert to trx:\n"
-				"dd if=firmware.bin of=firmware.trx bs=32 skip=1\n");
-		close(trxfd);
-		exit(1);
-	}
-	
-	lseek(trxfd, 0, SEEK_SET);
-	
 	fd = mtd_open(mtd, O_RDWR);
 	if(fd < 0) {
 		fprintf(stderr, "Could not open mtd device: %s\n", mtd);
@@ -198,14 +240,6 @@ mtd_write(const char *trxfile, const char *mtd)
 		exit(1);
 	}
 		
-	if(mtdInfo.size < trxstat.st_size) {
-		fprintf(stderr, "Image too big for partition: %s\n", mtd);
-		close(trxfd);
-		exit(1);
-	}	
-	
-	printf("Writing %s to %s ...\n", trxfile, mtd);
-
 	mtdEraseInfo.start = 0;
 	mtdEraseInfo.length = trxstat.st_size & ~(mtdInfo.erasesize -1);
 	if(trxstat.st_size % mtdInfo.erasesize) mtdEraseInfo.length += mtdInfo.erasesize;
@@ -257,7 +291,7 @@ void usage(void)
 
 int main (int argc, char **argv)
 {
-	int ch, i, boot, unlock;
+	int ch, i, boot, unlock, trxfd;
 	char *erase[MAX_ARGS], *device;
 	enum {
 		CMD_ERASE,
@@ -301,6 +335,8 @@ int main (int argc, char **argv)
 	} else if ((strcmp(argv[0], "write") == 0) && (argc == 3)) {
 		cmd = CMD_WRITE;
 		device = argv[2];
+		/* check trx file before erasing or writing anything */
+		trxfd = trx_check(argv[1], device);
 	} else {
 		usage();
 	}
@@ -323,7 +359,7 @@ int main (int argc, char **argv)
 			mtd_erase(device);
 			break;
 		case CMD_WRITE:
-			mtd_write(argv[1], device);
+			mtd_write(trxfd, device);
 			break;
 	}
 
