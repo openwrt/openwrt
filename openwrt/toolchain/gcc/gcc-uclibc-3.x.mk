@@ -171,6 +171,7 @@ $(GCC_BUILD_DIR2)/.compiled: $(GCC_BUILD_DIR2)/.configured
 
 gcc-install: $(GCC_BUILD_DIR2)/.compiled
 	PATH=$(TARGET_PATH) $(MAKE) -C $(GCC_BUILD_DIR2) install
+	echo $(GCC_VERSION) > $(STAGING_DIR)/gcc_version
 	# Strip the host binaries
 ifeq ($(GCC_STRIP_HOST_BINARIES),true)
 	-strip --strip-all -R .note -R .comment $(STAGING_DIR)/bin/*
@@ -203,9 +204,6 @@ ifeq ($(findstring 3.3.,$(GCC_VERSION)),3.3.)
 	cp ./$(GCC_VERSION)/specs-$(ARCH)-soft-float $(STAGING_DIR)/lib/gcc-lib/$(REAL_GNU_TARGET_NAME)/$(GCC_VERSION)/specs
 endif
 endif
-	# These are in /lib, so...
-	cp -a $(STAGING_DIR)/$(REAL_GNU_TARGET_NAME)/lib/libgcc_s* $(TARGET_DIR)/lib/
-	$(STRIP) $(TARGET_DIR)/lib/libgcc_s.so.1
 
 gcc: gcc_initial $(LIBFLOAT_TARGET) \
 	gcc-install $(GCC_TARGETS)
@@ -263,51 +261,4 @@ GCC_LIB_SUBDIR=lib/gcc/$(REAL_GNU_TARGET_NAME)/$(GCC_VERSION)
 else
 GCC_LIB_SUBDIR=lib/gcc-lib/$(REAL_GNU_TARGET_NAME)/$(GCC_VERSION)
 endif
-
-$(TARGET_DIR)/usr/bin/gcc: $(GCC_BUILD_DIR3)/.compiled
-	PATH=$(TARGET_PATH) \
-	$(MAKE) DESTDIR=$(TARGET_DIR) -C $(GCC_BUILD_DIR3) install
-	# Remove broken specs file (cross compile flag is set).
-	rm -f $(TARGET_DIR)/usr/$(GCC_LIB_SUBDIR)/specs
-	#
-	# Now for the ugly 3.3.x soft float hack...
-	#
-ifeq ($(BR2_SOFT_FLOAT),y)
-ifeq ($(findstring 3.3.,$(GCC_VERSION)),3.3.)
-	# Add a specs file that defaults to soft float mode.
-	cp ./$(GCC_VERSION)/specs-$(ARCH)-soft-float $(TARGET_DIR)/usr/lib/gcc-lib/$(REAL_GNU_TARGET_NAME)/$(GCC_VERSION)/specs
-	# Make sure gcc does not think we are cross compiling
-	$(SED) "s/^1/0/;" $(TARGET_DIR)/usr/lib/gcc-lib/$(REAL_GNU_TARGET_NAME)/$(GCC_VERSION)/specs
-endif
-endif
-	#
-	# Ok... that's enough of that.
-	#
-	-(cd $(TARGET_DIR)/bin; find -type f | xargs $(STRIP) > /dev/null 2>&1)
-	-(cd $(TARGET_DIR)/usr/bin; find -type f | xargs $(STRIP) > /dev/null 2>&1)
-	-(cd $(TARGET_DIR)/usr/$(GCC_LIB_SUBDIR); $(STRIP) cc1 cc1plus collect2 > /dev/null 2>&1)
-	-(cd $(TARGET_DIR)/usr/lib; $(STRIP) libstdc++.so.*.*.* > /dev/null 2>&1)
-	-(cd $(TARGET_DIR)/lib; $(STRIP) libgcc_s.so.*.*.* > /dev/null 2>&1)
-	#
-	rm -f $(TARGET_DIR)/usr/lib/*.la*
-	#rm -rf $(TARGET_DIR)/share/locale $(TARGET_DIR)/usr/info \
-	#	$(TARGET_DIR)/usr/man $(TARGET_DIR)/usr/share/doc
-	# Work around problem of missing syslimits.h
-	@if [ ! -f $(TARGET_DIR)/usr/$(GCC_LIB_SUBDIR)/include/syslimits.h ] ; then \
-		echo "warning: working around missing syslimits.h" ; \
-		cp -f $(STAGING_DIR)/$(GCC_LIB_SUBDIR)/include/syslimits.h \
-			$(TARGET_DIR)/usr/$(GCC_LIB_SUBDIR)/include/ ; \
-	fi
-	# These are in /lib, so...
-	#rm -rf $(TARGET_DIR)/usr/lib/libgcc_s.so*
-	#touch -c $(TARGET_DIR)/usr/bin/gcc
-
-gcc_target: uclibc_target binutils_target $(TARGET_DIR)/usr/bin/gcc
-
-gcc_target-clean:
-	rm -rf $(GCC_BUILD_DIR3)
-	rm -f $(TARGET_DIR)/usr/bin/$(REAL_GNU_TARGET_NAME)*
-
-gcc_target-toolclean:
-	rm -rf $(GCC_BUILD_DIR3)
 

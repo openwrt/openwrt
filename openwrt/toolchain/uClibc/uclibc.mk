@@ -10,9 +10,11 @@ UCLIBC_DIR:=$(TOOL_BUILD_DIR)/uClibc
 UCLIBC_SOURCE:=uClibc-$(strip $(subst ",, $(BR2_USE_UCLIBC_SNAPSHOT))).tar.bz2
 #"
 UCLIBC_SITE:=http://www.uclibc.org/downloads/snapshots
+UCLIBC_VER:=PKG_VERSION:=0.${shell date +"%G%m%d"}
 else
-UCLIBC_DIR:=$(TOOL_BUILD_DIR)/uClibc-0.9.27
-UCLIBC_SOURCE:=uClibc-0.9.27.tar.bz2
+UCLIBC_VER:=0.9.27
+UCLIBC_DIR:=$(TOOL_BUILD_DIR)/uClibc-$(UCLIBC_VER)
+UCLIBC_SOURCE:=uClibc-$(UCLIBC_VER).tar.bz2
 UCLIBC_SITE:=http://www.uclibc.org/downloads
 endif
 
@@ -99,29 +101,13 @@ $(STAGING_DIR)/lib/libc.a: $(UCLIBC_DIR)/lib/libc.a
 		DEVEL_PREFIX=/ \
 		RUNTIME_PREFIX=/ \
 		install_dev
+	echo $(UCLIBC_VER) > $(STAGING_DIR)/uclibc_version
 	# Build the host utils.  Need to add an install target... - disabled
 #	$(MAKE1) -C $(UCLIBC_DIR)/utils \
 #		PREFIX=$(STAGING_DIR) \
 #		HOSTCC="$(HOSTCC)" \
 #		hostutils
 	touch -c $(STAGING_DIR)/lib/libc.a
-
-ifneq ($(TARGET_DIR),)
-$(TARGET_DIR)/lib/libc.so.0: $(STAGING_DIR)/lib/libc.a
-	$(MAKE1) -C $(UCLIBC_DIR) \
-		PREFIX=$(TARGET_DIR) \
-		DEVEL_PREFIX=/usr/ \
-		RUNTIME_PREFIX=/ \
-		install_runtime
-	touch -c $(TARGET_DIR)/lib/libc.so.0
-
-$(TARGET_DIR)/usr/bin/ldd:
-	$(MAKE1) -C $(UCLIBC_DIR) $(TARGET_CONFIGURE_OPTS) \
-		PREFIX=$(TARGET_DIR) utils install_utils
-	touch -c $(TARGET_DIR)/usr/bin/ldd
-
-UCLIBC_TARGETS=$(TARGET_DIR)/lib/libc.so.0
-endif
 
 uclibc-configured: $(UCLIBC_DIR)/.configured
 
@@ -138,29 +124,4 @@ uclibc-clean:
 
 uclibc-toolclean:
 	rm -rf $(UCLIBC_DIR)
-
-uclibc-target-utils: $(TARGET_DIR)/usr/bin/ldd
-
-#############################################################
-#
-# uClibc for the target just needs its header files
-# and whatnot installed.
-#
-#############################################################
-
-$(TARGET_DIR)/usr/lib/libc.a: $(STAGING_DIR)/$(REAL_GNU_TARGET_NAME)/lib/libc.a
-	$(MAKE1) -C $(UCLIBC_DIR) \
-		PREFIX=$(TARGET_DIR) \
-		DEVEL_PREFIX=/usr/ \
-		RUNTIME_PREFIX=/ \
-		install_dev
-	touch -c $(TARGET_DIR)/usr/lib/libc.a
-
-uclibc_target: gcc uclibc $(TARGET_DIR)/usr/lib/libc.a $(TARGET_DIR)/usr/bin/ldd
-
-uclibc_target-clean:
-	rm -f $(TARGET_DIR)/include
-
-uclibc_target-dirclean:
-	rm -f $(TARGET_DIR)/include
 
