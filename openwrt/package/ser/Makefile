@@ -32,7 +32,7 @@ $(PKG_BUILD_DIR)/$(PKG_NAME): $(PKG_BUILD_DIR)/.patched
 		extra_defs="-DUSE_PTHREAD_MUTEX "  \
 		CC="$(TARGET_CC)" \
 		ARCH="$(ARCH)" \
-		COPTS="$(TARGET_CFLAGS)" \
+		CFLAGS="$(TARGET_CFLAGS)" \
 		modules all
 
 $(PKG_IPK): $(PKG_BUILD_DIR)/$(PKG_NAME)
