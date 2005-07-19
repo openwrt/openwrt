@@ -145,7 +145,10 @@ GCC_BUILD_DIR2:=$(TOOL_BUILD_DIR)/gcc-$(GCC_VERSION)-final
 $(GCC_BUILD_DIR2)/.configured: $(GCC_DIR)/.patched $(STAGING_DIR)/lib/libc.a
 	mkdir -p $(GCC_BUILD_DIR2)
 	# Important!  Required for limits.h to be fixed.
+	rm -rf $(STAGING_DIR)/$(REAL_GNU_TARGET_NAME)/sys-include
 	ln -sf ../include $(STAGING_DIR)/$(REAL_GNU_TARGET_NAME)/sys-include
+	rm -rf $(STAGING_DIR)/$(REAL_GNU_TARGET_NAME)/lib
+	ln -sf ../lib $(STAGING_DIR)/$(REAL_GNU_TARGET_NAME)/
 	(cd $(GCC_BUILD_DIR2); PATH=$(TARGET_PATH) \
 		$(GCC_DIR)/configure \
 		--prefix=$(STAGING_DIR) \
