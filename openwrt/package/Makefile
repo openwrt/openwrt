@@ -281,7 +281,10 @@ endif
 
 sdk-compile: $(DEV_LIBS_COMPILE) $(SDK_DEFAULT_COMPILE) openwrt-install
 
-%-prepare:
+$(STAMP_DIR):
+	mkdir -p $@
+
+%-prepare: $(STAMP_DIR)
 	@[ -f $(STAMP_DIR)/.$@ ] || $(MAKE) -C $(patsubst %-prepare,%,$@) prepare
 	@touch $(STAMP_DIR)/.$@
 
