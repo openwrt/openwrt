@@ -18,10 +18,11 @@ IPKG_GCC:=$(PACKAGE_DIR)/libgcc_$(GCC_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
 
 PACKAGES:=$(IPKG_BASE) $(IPKG_LIBC) $(IPKG_GCC)
 
+$(PACKAGES): $(PACKAGE_DIR)
 $(PACKAGE_DIR):
-	mkdir -p $(PACKAGE_DIR)
+	mkdir -p $@
 
-$(IPKG_BASE): $(PACKAGE_DIR)
+$(IPKG_BASE):
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_BASE) ipkg/$(PKG_NAME).control $(PKG_RELEASE) $(ARCH)
 	cp -a ./default/* $(IDIR_BASE)
 	mkdir -p $(IDIR_BASE)/jffs
@@ -40,7 +41,7 @@ $(IPKG_BASE): $(PACKAGE_DIR)
 	-grep \^BR2_SYSCONF $(TOPDIR)/.config > $(IDIR_BASE)/etc/sysconf
 	$(IPKG_BUILD) $(IDIR_BASE) $(PACKAGE_DIR)
 
-$(IPKG_LIBC): $(PACKAGE_DIR)
+$(IPKG_LIBC):
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_LIBC) ipkg/uclibc.control $(LIBC_VERSION)-$(PKG_RELEASE) $(ARCH)
 	mkdir -p $(IDIR_LIBC)/lib
 	cp -a $(STAGING_DIR)/lib/ld-uClibc*.so* $(IDIR_LIBC)/lib/
@@ -50,7 +51,7 @@ $(IPKG_LIBC): $(PACKAGE_DIR)
 	-$(STRIP) $(IDIR_LIBC)/lib/*
 	$(IPKG_BUILD) $(IDIR_LIBC) $(PACKAGE_DIR)
 
-$(IPKG_GCC): $(PACKAGE_DIR)
+$(IPKG_GCC):
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_GCC) ipkg/libgcc.control $(GCC_VERSION)-$(PKG_RELEASE) $(ARCH)
 	mkdir -p $(IDIR_GCC)/lib
 	cp -a $(STAGING_DIR)/lib/libgcc*.so* $(IDIR_GCC)/lib/
@@ -62,3 +63,5 @@ compile: $(PACKAGES)
 install: compile
 	mkdir -p $(TARGET_DIR)
 	$(IPKG) install $(PACKAGES)
+clean:
+	rm -rf $(IDIR_BASE) $(IDIR_LIBC) $(IDIR_GCC)
