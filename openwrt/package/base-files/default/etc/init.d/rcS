@@ -1,8 +1,9 @@
 #!/bin/sh
-syslogd -C 16
+syslog_ip=$(nvram get log_ipaddr)
+ipcalc -s "$syslog_ip" || syslog_ip=""
+syslogd -C 16 ${syslog_ip:+-L -R $syslog_ip}
 klogd
-${FAILSAFE:+telnetd -l /bin/login; ifup lan; exit}
-
+#${FAILSAFE:+telnetd -l /bin/login; ifup lan; exit}
 for i in /etc/init.d/S*; do
   $i start 2>&1
 done | logger -s -p 6 -t '' &

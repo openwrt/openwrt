@@ -12,12 +12,14 @@ if [ "$1" != "failsafe" ]; then
 			mount -o remount,rw /dev/root /
 		fi
 	else
-		mtd unlock OpenWrt
-		mount -t jffs2 /dev/mtdblock/4 /jffs
-		pivot_root /jffs /jffs/rom
-		mount none /proc -t proc
-		mount none /dev -t devfs
-		umount /rom/proc rom/dev >&-
+		if [ -z "$(nvram get no_root_swap)" ]; then
+			mtd unlock OpenWrt
+			mount -t jffs2 /dev/mtdblock/4 /jffs
+			pivot_root /jffs /jffs/rom
+			mount none /proc -t proc
+			mount none /dev -t devfs
+			umount /rom/proc rom/dev >&-
+		fi
 	fi
 fi
 mount none /tmp -t tmpfs -o nosuid,nodev,mode=1777,size=50%
