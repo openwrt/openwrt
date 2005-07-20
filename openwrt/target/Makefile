@@ -1,8 +1,5 @@
 include $(TOPDIR)/rules.mk
 
-# Default target skeleton stuff, may be overridden
-TARGET_SKEL_DIR=default/target_skeleton
-
 all: install
 
 $(BIN_DIR):
