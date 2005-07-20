@@ -1,43 +1,7 @@
-diff -urN linux-2.4.30/drivers/mtd/maps/Config.in linux-2.4.30.dev/drivers/mtd/maps/Config.in
---- linux-2.4.30/drivers/mtd/maps/Config.in	2005-06-14 19:31:49.000000000 +0200
-+++ linux-2.4.30.dev/drivers/mtd/maps/Config.in	2005-06-14 15:36:59.000000000 +0200
-@@ -48,6 +48,21 @@
- fi
- 
- if [ "$CONFIG_MIPS" = "y" ]; then
-+    if [ "$CONFIG_AR7" = "y" ]; then
-+      dep_tristate '  Flash chip mapping on Texas Instruments AR7' CONFIG_MTD_AVALANCHE $CONFIG_MTD_CFI $CONFIG_MTD_PARTITIONS
-+      dep_bool     '    Use defaults for Texas Instruments AR7' CONFIG_MTD_AVALANCHE_DEFAULTS $CONFIG_MTD_AVALANCHE
-+      if [ "$CONFIG_MTD_AVALANCHE" = "y" -o "$CONFIG_MTD_AVALANCHE" = "m" ]; then
-+         if [ "$CONFIG_MTD_AVALANCHE_DEFAULTS" = "y" ]; then
-+            define_hex CONFIG_MTD_AVALANCHE_START 0x10000000
-+            define_hex CONFIG_MTD_AVALANCHE_LEN 0x400000
-+            define_int CONFIG_MTD_AVALANCHE_BUSWIDTH 2
-+         else
-+            hex '      Physical start address of flash mapping' CONFIG_MTD_AVALANCHE_START 0x10000000
-+            hex '      Physical length of flash mapping' CONFIG_MTD_AVALANCHE_LEN 0x400000
-+            int '      Bus width in octets' CONFIG_MTD_AVALANCHE_BUSWIDTH 2
-+         fi
-+      fi
-+   fi
-    dep_tristate '  Pb1000 MTD support' CONFIG_MTD_PB1000 $CONFIG_MIPS_PB1000
-    dep_tristate '  Pb1500 MTD support' CONFIG_MTD_PB1500 $CONFIG_MIPS_PB1500
-    dep_tristate '  Pb1100 MTD support' CONFIG_MTD_PB1100 $CONFIG_MIPS_PB1100
-diff -urN linux-2.4.30/drivers/mtd/maps/Makefile linux-2.4.30.dev/drivers/mtd/maps/Makefile
---- linux-2.4.30/drivers/mtd/maps/Makefile	2005-06-14 19:31:49.000000000 +0200
-+++ linux-2.4.30.dev/drivers/mtd/maps/Makefile	2005-06-14 15:36:59.000000000 +0200
-@@ -10,6 +10,7 @@
- endif
- 
- # Chip mappings
-+obj-$(CONFIG_MTD_AVALANCHE)	+= ar7-flash.o
- obj-$(CONFIG_MTD_CDB89712)	+= cdb89712.o
- obj-$(CONFIG_MTD_ARM_INTEGRATOR)+= integrator-flash.o
- obj-$(CONFIG_MTD_CFI_FLAGADM)	+= cfi_flagadm.o
-diff -urN linux-2.4.30/drivers/mtd/maps/ar7-flash.c linux-2.4.30.dev/drivers/mtd/maps/ar7-flash.c
---- linux-2.4.30/drivers/mtd/maps/ar7-flash.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.4.30.dev/drivers/mtd/maps/ar7-flash.c	2005-06-14 22:42:23.000000000 +0200
-@@ -0,0 +1,245 @@
+diff -urN linux.old/drivers/mtd/maps/ar7-flash.c linux.dev/drivers/mtd/maps/ar7-flash.c
+--- linux.old/drivers/mtd/maps/ar7-flash.c	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/drivers/mtd/maps/ar7-flash.c	2005-07-21 09:01:39.994240680 +0200
+@@ -0,0 +1,272 @@
 +/*
 + * $Id$
 + *
@@ -54,110 +18,104 @@ diff -urN linux-2.4.30/drivers/mtd/maps/ar7-flash.c linux-2.4.30.dev/drivers/mtd
 +#include <linux/mtd/partitions.h>
 +#include "trxhdr.h"
 +
-+#define WINDOW_ADDR CONFIG_MTD_AVALANCHE_START
-+#define WINDOW_SIZE CONFIG_MTD_AVALANCHE_LEN
-+#define BUSWIDTH CONFIG_MTD_AVALANCHE_BUSWIDTH
++#define WINDOW_ADDR CONFIG_MTD_AR7_START
++#define WINDOW_SIZE CONFIG_MTD_AR7_LEN
++#define BUSWIDTH CONFIG_MTD_AR7_BUSWIDTH
 +
 +#include <asm/mips-boards/prom.h>
 +extern char *prom_getenv(char *name);
 +
 +static int create_mtd_partitions(void);
-+static void __exit avalanche_mtd_cleanup(void);
++static void __exit ar7_mtd_cleanup(void);
 +	
-+/* avalanche__partition_info gives details on the logical partitions that splits
-+ * the flash device into. If the size if zero we use up to the end of
-+ * the device. */
 +#define MAX_NUM_PARTITIONS 5
-+static struct mtd_partition avalanche_partition_info[MAX_NUM_PARTITIONS];
-+static int num_of_partitions = 0;
++static struct mtd_partition ar7_partinfo[MAX_NUM_PARTITIONS];
 +
-+static struct mtd_info *avalanche_mtd_info;
++static struct mtd_info *ar7_mtd_info;
 +
-+int avalanche_mtd_ready=0;
-+
-+__u8 avalanche_read8(struct map_info *map, unsigned long ofs)
++__u8 ar7_read8(struct map_info *map, unsigned long ofs)
 +{
 +	return __raw_readb(map->map_priv_1 + ofs);
 +}
 +
-+__u16 avalanche_read16(struct map_info *map, unsigned long ofs)
++__u16 ar7_read16(struct map_info *map, unsigned long ofs)
 +{
 +	return __raw_readw(map->map_priv_1 + ofs);
 +}
 +
-+__u32 avalanche_read32(struct map_info *map, unsigned long ofs)
++__u32 ar7_read32(struct map_info *map, unsigned long ofs)
 +{
 +	return __raw_readl(map->map_priv_1 + ofs);
 +}
 +
-+void avalanche_copy_from(struct map_info *map, void *to, unsigned long from, ssize_t len)
++void ar7_copy_from(struct map_info *map, void *to, unsigned long from, ssize_t len)
 +{
 +	memcpy_fromio(to, map->map_priv_1 + from, len);
 +}
 +
-+void avalanche_write8(struct map_info *map, __u8 d, unsigned long adr)
++void ar7_write8(struct map_info *map, __u8 d, unsigned long adr)
 +{
 +	__raw_writeb(d, map->map_priv_1 + adr);
 +	mb();
 +}
 +
-+void avalanche_write16(struct map_info *map, __u16 d, unsigned long adr)
++void ar7_write16(struct map_info *map, __u16 d, unsigned long adr)
 +{
 +	__raw_writew(d, map->map_priv_1 + adr);
 +	mb();
 +}
 +
-+void avalanche_write32(struct map_info *map, __u32 d, unsigned long adr)
++void ar7_write32(struct map_info *map, __u32 d, unsigned long adr)
 +{
 +	__raw_writel(d, map->map_priv_1 + adr);
 +	mb();
 +}
 +
-+void avalanche_copy_to(struct map_info *map, unsigned long to, const void *from, ssize_t len)
++void ar7_copy_to(struct map_info *map, unsigned long to, const void *from, ssize_t len)
 +{
 +	memcpy_toio(map->map_priv_1 + to, from, len);
 +}
 +
-+struct map_info avalanche_map = {
++struct map_info ar7_map = {
 +	name: "Physically mapped flash",
 +	size: WINDOW_SIZE,
 +	buswidth: BUSWIDTH,
-+	read8: avalanche_read8,
-+	read16: avalanche_read16,
-+	read32: avalanche_read32,
-+	copy_from: avalanche_copy_from,
-+	write8: avalanche_write8,
-+	write16: avalanche_write16,
-+	write32: avalanche_write32,
-+	copy_to: avalanche_copy_to
++	read8: ar7_read8,
++	read16: ar7_read16,
++	read32: ar7_read32,
++	copy_from: ar7_copy_from,
++	write8: ar7_write8,
++	write16: ar7_write16,
++	write32: ar7_write32,
++	copy_to: ar7_copy_to
 +};
 +
-+int __init avalanche_mtd_init(void)
++int __init ar7_mtd_init(void)
 +{
-+       	printk(KERN_NOTICE "avalanche flash device: 0x%lx at 0x%lx.\n", (unsigned long)WINDOW_SIZE, (unsigned long)WINDOW_ADDR);
-+	avalanche_map.map_priv_1 = (unsigned long)ioremap_nocache(WINDOW_ADDR, WINDOW_SIZE);
++	int partitions;
++	
++       	printk(KERN_NOTICE "ar7 flash device: 0x%lx at 0x%lx.\n", (unsigned long)WINDOW_SIZE, (unsigned long)WINDOW_ADDR);
++	ar7_map.map_priv_1 = (unsigned long)ioremap_nocache(WINDOW_ADDR, WINDOW_SIZE);
 +
-+	if (!avalanche_map.map_priv_1) {
++	if (!ar7_map.map_priv_1) {
 +		printk("Failed to ioremap\n");
 +		return -EIO;
 +	}
 +	
-+	avalanche_mtd_info = do_map_probe("cfi_probe", &avalanche_map);
-+	if (!avalanche_mtd_info)
++	ar7_mtd_info = do_map_probe("cfi_probe", &ar7_map);
++	if (!ar7_mtd_info)
 +	{
-+		avalanche_mtd_cleanup();
++		ar7_mtd_cleanup();
 +		return -ENXIO;
 +	}
 +	
-+	avalanche_mtd_info->module = THIS_MODULE;
++	ar7_mtd_info->module = THIS_MODULE;
 +
-+	if (!create_mtd_partitions())
-+		add_mtd_device(avalanche_mtd_info);
++	if (!(partitions = create_mtd_partitions()))
++		add_mtd_device(ar7_mtd_info);
 +	else		
-+		add_mtd_partitions(avalanche_mtd_info, avalanche_partition_info, num_of_partitions);
++		add_mtd_partitions(ar7_mtd_info, ar7_partinfo, partitions);
 +
-+	avalanche_mtd_ready=1;
-+	
 +	return 0;
 +}
 +
@@ -174,21 +132,25 @@ diff -urN linux-2.4.30/drivers/mtd/maps/ar7-flash.c linux-2.4.30.dev/drivers/mtd
 +{
 +	unsigned int offset;
 +	unsigned int size;
-+	unsigned int found;
++	unsigned int found = 0;
++	unsigned int p = 0;
 +	unsigned char *flash_base;
 +	unsigned char *flash_end;
 +	struct trx_header hdr;
 +	char *env_ptr;
 +	char *base_ptr;
 +	char *end_ptr;
++	unsigned int adam2_size = 0x20000;
++	unsigned int config_offset = WINDOW_SIZE;
++	unsigned int rootfs_start = 0xe0000;
 +
++	printk("Parsing ADAM2 partition map...\n");
++	
 +	do {
 +		char	env_name[20];
 +
-+		found = 0;
-+
 +		/* get base and end addresses of flash file system from environment */
-+		sprintf(env_name, "mtd%1u", num_of_partitions);
++		sprintf(env_name, "mtd%1u", p);
 +		printk("Looking for mtd device :%s:\n", env_name);
 +
 +		env_ptr = prom_getenv(env_name);
@@ -201,14 +163,14 @@ diff -urN linux-2.4.30/drivers/mtd/maps/ar7-flash.c linux-2.4.30.dev/drivers/mtd
 +		base_ptr = strtok(env_ptr, ",");
 +		end_ptr = strtok(NULL, ",");
 +		if ((base_ptr == NULL) || (end_ptr == NULL)) {	
-+			printk("JFFS2 ERROR: Invalid %s start,end.\n", env_name);
++			printk("ADAM2 partition error: Invalid %s start,end.\n", env_name);
 +			break;
 +		}
 +
 +		flash_base = (unsigned char*) simple_strtol(base_ptr, NULL, 0);
 +		flash_end = (unsigned char*) simple_strtol(end_ptr, NULL, 0);
 +		if((!flash_base) || (!flash_end)) {
-+			printk("JFFS2 ERROR: Invalid %s start,end.\n", env_name);
++			printk("ADAM2 partition error: Invalid %s start,end.\n", env_name);
 +			break;
 +		}
 +
@@ -216,76 +178,141 @@ diff -urN linux-2.4.30/drivers/mtd/maps/ar7-flash.c linux-2.4.30.dev/drivers/mtd
 +		size = flash_end - flash_base;
 +		printk("Found a %s image (0x%x), with size (0x%x).\n",env_name, offset, size);
 +
-+		/* Setup the partition info. We duplicate the env_name for the partiton name */
-+		avalanche_partition_info[num_of_partitions].offset = offset;
-+		avalanche_partition_info[num_of_partitions].size = size;
-+		avalanche_partition_info[num_of_partitions].mask_flags = 0;
 +		
-+		switch (num_of_partitions ) {
-+			case 0:
-+				avalanche_partition_info[num_of_partitions].name = strdup("rootfs");
-+				avalanche_copy_from(&avalanche_map, &hdr, offset, sizeof(hdr));
-+				if (hdr.magic == TRX_MAGIC) {
-+					printk("TRX partition detected. First offset: %08x\n", hdr.offsets[0]);
-+					avalanche_partition_info[num_of_partitions].offset += hdr.offsets[0];
-+					avalanche_partition_info[num_of_partitions].size -= hdr.offsets[0];
-+				} else {
-+					printk("No TRX partition detected\n");
-+				}
-+				break;
-+				
-+			case 1:
-+				avalanche_partition_info[num_of_partitions].name = strdup("linux");
-+				break;
-+				
-+			case 2:
-+				avalanche_partition_info[num_of_partitions].name = strdup("adam2");
-+				break;
-+				
-+			case 3:
-+				avalanche_partition_info[num_of_partitions].name = strdup("config");
-+				break;
-+			
-+			case 4:
-+				avalanche_partition_info[num_of_partitions].name = strdup("firmware");
-+				break;
-+
-+			default:
-+				avalanche_partition_info[num_of_partitions].name = strdup(env_name);
-+				break;
++		if (offset == 0) {
++			printk("Assuming adam2 size of 0x%x\n", size);
++			adam2_size = size; 			// boot loader
++		} else if (offset > 0x120000) {
++			if (config_offset > offset)
++				config_offset = offset;		// reserved at the end of the flash chip
++		} else if (offset > 0x30000) {
++			printk("Assuming rootfs offset of 0x%x\n", offset);
++			rootfs_start = offset;			// probably root fs
 +		}
 +		
-+		num_of_partitions++;
-+	} while (num_of_partitions < MAX_NUM_PARTITIONS);
++		p++;
++	} while (p < MAX_NUM_PARTITIONS);
++	
++	p = 0;
++	
++	ar7_partinfo[p].name = strdup("adam2");
++	ar7_partinfo[p].offset = 0;
++	ar7_partinfo[p].size = adam2_size;
++	ar7_partinfo[p++].mask_flags = 0;
 +
-+	return num_of_partitions;
++	ar7_partinfo[p].name = strdup("linux");
++	ar7_partinfo[p].offset = adam2_size;
++	ar7_partinfo[p].size = config_offset - adam2_size;
++	ar7_partinfo[p++].mask_flags = 0;
++
++	for (offset = adam2_size; !found && (offset < rootfs_start); offset += 1024) {
++		if (ar7_read32(&ar7_map, offset) == TRX_MAGIC) {
++			found = 1;
++			rootfs_start = offset;
++		}
++	}
++	
++	ar7_partinfo[p].name = strdup("rootfs");
++	ar7_partinfo[p].offset = rootfs_start;
++	ar7_partinfo[p].size = config_offset - rootfs_start;
++	
++	ar7_copy_from(&ar7_map, &hdr, rootfs_start, sizeof(hdr));
++	if (hdr.magic == TRX_MAGIC) {
++		printk("TRX header in rootfs partition detected.\n");
++		printk("offset[0] = 0x%05x\n", hdr.offsets[0]);
++		printk("offset[1] = 0x%05x\n", hdr.offsets[1]);
++		printk("offset[2] = 0x%05x\n", hdr.offsets[2]);
++		ar7_partinfo[p].offset += hdr.offsets[0];
++		ar7_partinfo[p].size -= hdr.offsets[0];
++	}
++
++	ar7_partinfo[p++].mask_flags = 0;
++
++	ar7_partinfo[p].name = strdup("config");
++	ar7_partinfo[p].offset = config_offset;
++	ar7_partinfo[p].size = WINDOW_SIZE - config_offset;
++	ar7_partinfo[p++].mask_flags = 0;
++
++	if (ar7_read32(&ar7_map, rootfs_start + hdr.offsets[0]) == 0x73717368) {
++		int newsize;
++		
++		printk("Squashfs detected. Adding extra partition\n");
++		newsize = hdr.len;
++		if (newsize % ar7_mtd_info->erasesize)
++			newsize += ar7_mtd_info->erasesize - ((newsize + hdr.offsets[0]) % ar7_mtd_info->erasesize);
++		
++
++		ar7_partinfo[p].name = strdup("test");
++		ar7_partinfo[p].offset = rootfs_start + newsize;
++		ar7_partinfo[p].size = ar7_partinfo[p - 2].size + hdr.offsets[0] - newsize;
++		ar7_partinfo[p - 2].size = newsize - hdr.offsets[0];
++
++		p++;
++	}
++
++
++	return p;
 +}
 +
-+static void __exit avalanche_mtd_cleanup(void)
++static void __exit ar7_mtd_cleanup(void)
 +{
-+	avalanche_mtd_ready=0;
-+
-+	if (avalanche_mtd_info) {
-+		del_mtd_partitions(avalanche_mtd_info);
-+		del_mtd_device(avalanche_mtd_info);
-+		map_destroy(avalanche_mtd_info);
++	if (ar7_mtd_info) {
++		del_mtd_partitions(ar7_mtd_info);
++		del_mtd_device(ar7_mtd_info);
++		map_destroy(ar7_mtd_info);
 +	}
 +
-+	if (avalanche_map.map_priv_1) {
-+		iounmap((void *)avalanche_map.map_priv_1);
-+		avalanche_map.map_priv_1 = 0;
++	if (ar7_map.map_priv_1) {
++		iounmap((void *)ar7_map.map_priv_1);
++		ar7_map.map_priv_1 = 0;
 +	}
 +}
 +
-+module_init(avalanche_mtd_init);
-+module_exit(avalanche_mtd_cleanup);
++module_init(ar7_mtd_init);
++module_exit(ar7_mtd_cleanup);
 +
 +MODULE_LICENSE("GPL");
-+MODULE_AUTHOR("Snehaprabha Narnakaje");
-+MODULE_DESCRIPTION("Avalanche CFI map driver");
-diff -urN linux-2.4.30/drivers/mtd/maps/trxhdr.h linux-2.4.30.dev/drivers/mtd/maps/trxhdr.h
---- linux-2.4.30/drivers/mtd/maps/trxhdr.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.4.30.dev/drivers/mtd/maps/trxhdr.h	2005-06-14 21:57:04.000000000 +0200
++MODULE_AUTHOR("Felix Fietkau");
++MODULE_DESCRIPTION("AR7 CFI map driver");
+diff -urN linux.old/drivers/mtd/maps/Config.in linux.dev/drivers/mtd/maps/Config.in
+--- linux.old/drivers/mtd/maps/Config.in	2005-07-21 05:36:32.414242296 +0200
++++ linux.dev/drivers/mtd/maps/Config.in	2005-07-21 06:29:04.067118232 +0200
+@@ -48,6 +48,21 @@
+ fi
+ 
+ if [ "$CONFIG_MIPS" = "y" ]; then
++    if [ "$CONFIG_AR7" = "y" ]; then
++      dep_tristate '  Flash chip mapping on Texas Instruments AR7' CONFIG_MTD_AR7 $CONFIG_MTD_CFI $CONFIG_MTD_PARTITIONS
++      dep_bool     '    Use defaults for Texas Instruments AR7' CONFIG_MTD_AR7_DEFAULTS $CONFIG_MTD_AR7
++      if [ "$CONFIG_MTD_AR7" = "y" -o "$CONFIG_MTD_AR7" = "m" ]; then
++         if [ "$CONFIG_MTD_AR7_DEFAULTS" = "y" ]; then
++            define_hex CONFIG_MTD_AR7_START 0x10000000
++            define_hex CONFIG_MTD_AR7_LEN 0x400000
++            define_int CONFIG_MTD_AR7_BUSWIDTH 2
++         else
++            hex '      Physical start address of flash mapping' CONFIG_MTD_AR7_START 0x10000000
++            hex '      Physical length of flash mapping' CONFIG_MTD_AR7_LEN 0x400000
++            int '      Bus width in octets' CONFIG_MTD_AR7_BUSWIDTH 2
++         fi
++      fi
++   fi
+    dep_tristate '  Pb1000 MTD support' CONFIG_MTD_PB1000 $CONFIG_MIPS_PB1000
+    dep_tristate '  Pb1500 MTD support' CONFIG_MTD_PB1500 $CONFIG_MIPS_PB1500
+    dep_tristate '  Pb1100 MTD support' CONFIG_MTD_PB1100 $CONFIG_MIPS_PB1100
+diff -urN linux.old/drivers/mtd/maps/Makefile linux.dev/drivers/mtd/maps/Makefile
+--- linux.old/drivers/mtd/maps/Makefile	2005-07-21 05:36:32.414242296 +0200
++++ linux.dev/drivers/mtd/maps/Makefile	2005-07-21 06:56:33.265401984 +0200
+@@ -10,6 +10,7 @@
+ endif
+ 
+ # Chip mappings
++obj-$(CONFIG_MTD_AR7)		+= ar7-flash.o
+ obj-$(CONFIG_MTD_CDB89712)	+= cdb89712.o
+ obj-$(CONFIG_MTD_ARM_INTEGRATOR)+= integrator-flash.o
+ obj-$(CONFIG_MTD_CFI_FLAGADM)	+= cfi_flagadm.o
+diff -urN linux.old/drivers/mtd/maps/trxhdr.h linux.dev/drivers/mtd/maps/trxhdr.h
+--- linux.old/drivers/mtd/maps/trxhdr.h	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/drivers/mtd/maps/trxhdr.h	2005-07-10 20:50:43.550827000 +0200
 @@ -0,0 +1,29 @@
 +/*
 + * TRX image file header format.
