@@ -2,6 +2,7 @@
 include $(TOPDIR)/rules.mk
 
 package-$(BR2_PACKAGE_KMOD_FUSE) += fuse
+package-$(BR2_PACKAGE_KMOD_MINI_FO) += mini_fo
 package-$(BR2_PACKAGE_KMOD_SHFS) += shfs
 package-$(BR2_PACKAGE_KMOD_OPENSWAN) += openswan
 ifeq ($(LINUX_VERSION),2.4.30)
