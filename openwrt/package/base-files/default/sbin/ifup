@@ -12,6 +12,9 @@ if_valid $if || exit
 mac=$(nvram get ${type}_hwaddr)
 $DEBUG ifconfig $if down 2>&-
 
+pidfile=/var/run/${if}.pid
+[ -f $pidfile ] && $DEBUG kill $(cat $pidfile)
+
 if [ "${if%%[0-9]}" = "br" ]; then
 	stp=$(nvram get ${type}_stp)
 	$DEBUG brctl delbr $if 2>&-
@@ -47,7 +50,6 @@ case "$if_proto" in
 	;;
 	dhcp)
 		ip=$(nvram get ${type}_ipaddr)
-		[ -f $pidfile ] && $DEBUG kill $(cat $pidfile)
 		${DEBUG:-eval} "udhcpc -R -i $if ${ip:+-r $ip} -b -p $pidfile &" 
 	;;
 	none|"")

@@ -16,7 +16,8 @@ touch /var/log/lastlog
 # if they don't already exist 
 [  "$(nvram get boardtype)" = "bcm95365r" \
 -a "$(nvram get boardnum)" = "45" \
--a -z "$(nvram get vlan0ports)$(nvram get vlan1ports)" ] && {
+-a -z "$(nvram get vlan0ports)"
+-a -z "$(nvram get vlan1ports)" ] && {
 	nvram set vlan0ports="1 2 3 4 5*"
 	nvram set vlan1ports="0 5"
 }
@@ -33,6 +34,6 @@ echo ${HOSTNAME:=OpenWrt}>/proc/sys/kernel/hostname
 vconfig set_name_type VLAN_PLUS_VID_NO_PAD
 
 # automagically run firstboot
-[ -z "$FAILSAFE" ] && {
+[ -z "$FAILSAFE" -a -z "$(nvram get no_root_swap)" ] && {
 	{ mount|grep "on / type jffs2" 1>&-; } || firstboot
 }

@@ -1,17 +1,18 @@
 #!/bin/sh
+export PATH=/bin:/sbin:/usr/bin:/usr/sbin
 mount none /proc -t proc
 insmod diag
 echo 0x01 > /proc/sys/diag
 sleep 1
-if [ $(cat /proc/sys/reset) = 1 ] || [ "$(/usr/sbin/nvram get failsafe)" = 1 ]; then
+if [ $(cat /proc/sys/reset) = 1 -o "$(nvram get failsafe)" = 1 ]; then
 	export FAILSAFE=true
-	[ "$(/usr/sbin/nvram get boot_wait)" != "on" ] && {
-		/usr/sbin/nvram set boot_wait=on
-		/usr/sbin/nvram commit
+	[ "$(nvram get boot_wait)" != "on" ] && {
+		nvram set boot_wait=on
+		nvram commit
 	}
 	while :; do { echo $(((X=(X+1)%8)%2)) > /proc/sys/diag; sleep $((X==0)); } done &
 fi
 
-/sbin/mount_root ${FAILSAFE:+failsafe}
+mount_root ${FAILSAFE:+failsafe}
 
 exec /sbin/init

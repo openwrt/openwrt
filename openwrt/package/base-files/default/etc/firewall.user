@@ -14,7 +14,7 @@ iptables -t nat -F postrouting_rule
 ### The "-i $WAN" literally means packets that came in over the $WAN interface;
 ### this WILL NOT MATCH packets sent from the LAN to the WAN address.
 
-### Allow SSH from WAN
+### Allow SSH on the WAN interface
 # iptables -t nat -A prerouting_rule -i $WAN -p tcp --dport 22 -j ACCEPT 
 # iptables        -A input_rule      -i $WAN -p tcp --dport 22 -j ACCEPT
 
