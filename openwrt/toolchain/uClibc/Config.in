@@ -16,11 +16,3 @@ config BR2_USE_UCLIBC_SNAPSHOT
 	default "snapshot"
 	depends on BR2_UCLIBC_VERSION_SNAPSHOT
 
-config BR2_ENABLE_LOCALE
-	bool
-	prompt "Enable locale/gettext/i18n support?" if CONFIG_DEVEL
-	default n
-	help
-	    Enable locale/gettext/i18n support?
-
-
