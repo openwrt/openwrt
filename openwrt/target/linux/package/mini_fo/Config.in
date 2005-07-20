@@ -1,0 +1,8 @@
+config BR2_PACKAGE_KMOD_MINI_FO
+	prompt "kmod-mini_fo - mini fanout overlay file system"
+	tristate
+	default m if CONFIG_DEVEL
+	help
+	  The mini fanout overlay file system.
+	  
+	  This package contains the mini_fo.o kernel module.
