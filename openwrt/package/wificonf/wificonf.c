@@ -76,6 +76,8 @@
 			ifname, strerror(errno)); \
 	} } while(0)
 
+void set_wext_ssid(int skfd, char *ifname);
+
 char *prefix;
 char buffer[128];
 
@@ -136,6 +138,33 @@ int bcom_set_int(int skfd, char *ifname, char *var, int val)
 	return bcom_set_val(skfd, ifname, var, &val, sizeof(val));
 }
 
+void stop_bcom(int skfd, char *ifname)
+{
+	int val = 0;
+	wlc_ssid_t ssid;
+	
+	if (bcom_ioctl(skfd, ifname, WLC_GET_MAGIC, &val, sizeof(val)) < 0)
+		return;
+	
+	ssid.SSID_len = 0;
+	ssid.SSID[0] = 0;
+	bcom_ioctl(skfd, ifname, WLC_SET_SSID, &ssid, sizeof(ssid));
+	bcom_ioctl(skfd, ifname, WLC_DOWN, NULL, 0);
+
+}
+
+void start_bcom(int skfd, char *ifname)
+{
+	int val = 0;
+	
+	if (bcom_ioctl(skfd, ifname, WLC_GET_MAGIC, &val, sizeof(val)) < 0)
+		return;
+
+	bcom_ioctl(skfd, ifname, WLC_UP, &val, sizeof(val));
+	set_wext_ssid(skfd, ifname);
+}
+
+
 void setup_bcom(int skfd, char *ifname)
 {
 	int val = 0;
@@ -145,27 +174,14 @@ void setup_bcom(int skfd, char *ifname)
 	
 	if (bcom_ioctl(skfd, ifname, WLC_GET_MAGIC, &val, sizeof(val)) < 0)
 		return;
-
-	bcom_ioctl(skfd, ifname, WLC_DOWN, NULL, 0);
 	
-	if (nvram_match(wl_var("auth_mode"), "wpa") || nvram_match(wl_var("auth_mode"), "psk") || (nvram_get(wl_var("akm")) && !nvram_disabled(wl_var("akm")))) {
-		/* Set up WPA */
-		if (nvram_match(wl_var("crypto"), "tkip"))
-			val = TKIP_ENABLED;
-		else if (nvram_match(wl_var("crypto"), "aes"))
-			val = AES_ENABLED;
-		else if (nvram_match(wl_var("crypto"), "tkip+aes"))
-			val = TKIP_ENABLED | AES_ENABLED;
-		else
-			val = 0;
-		bcom_ioctl(skfd, ifname, WLC_SET_WSEC, &val, sizeof(val));
+	stop_bcom(skfd, ifname);
 
-		if (val && nvram_get(wl_var("wpa_psk"))) {
-			val = 1;
-			bcom_ioctl(skfd, ifname, WLC_SET_EAP_RESTRICT, &val, sizeof(val));
-		}
-	}
-
+	/* Set Country */
+	strncpy(buf, nvram_safe_get(wl_var("country_code")), 4);
+	buf[3] = 0;
+	bcom_ioctl(skfd, ifname, 273, buf, 4);
+	
 	/* Set up afterburner */
 	val = ABO_AUTO;
 	if (nvram_enabled(wl_var("afterburner")))
@@ -294,6 +310,54 @@ void setup_bcom(int skfd, char *ifname)
 		}
 	}
 
+	start_bcom(skfd, ifname);
+
+	if (!(v = nvram_get(wl_var("akm"))))
+		v = nvram_safe_get(wl_var("auth_mode"));
+	
+	if (strstr(v, "wpa") || strstr(v, "psk")) {
+		/* Set up WPA */
+		if (nvram_match(wl_var("crypto"), "tkip"))
+			val = TKIP_ENABLED;
+		else if (nvram_match(wl_var("crypto"), "aes"))
+			val = AES_ENABLED;
+		else if (nvram_match(wl_var("crypto"), "tkip+aes"))
+			val = TKIP_ENABLED | AES_ENABLED;
+		else
+			val = 0;
+		bcom_ioctl(skfd, ifname, WLC_SET_WSEC, &val, sizeof(val));
+
+		if (val && strstr(v, "psk")) {
+			v = nvram_safe_get(wl_var("wpa_psk"));
+
+			if ((strlen(v) >= 8) && (strlen(v) < 63)) {
+				val = 4;
+				bcom_ioctl(skfd, ifname, WLC_SET_WPA_AUTH, &val, sizeof(val));
+				
+				bcom_ioctl(skfd, ifname, WLC_GET_AP, &val, sizeof(val));
+				if (!val) {
+					/* Enable in-driver WPA supplicant */
+					wsec_pmk_t pmk;
+					
+					pmk.key_len = (unsigned short) strlen(v);
+					pmk.flags = WSEC_PASSPHRASE;
+					strcpy(pmk.key, v);
+					bcom_ioctl(skfd, ifname, WLC_SET_WSEC_PMK, &pmk, sizeof(pmk));
+					bcom_set_int(skfd, ifname, "sup_wpa", 1);
+				}
+			}
+		} else  {
+			val = 1;
+			bcom_ioctl(skfd, ifname, WLC_SET_EAP_RESTRICT, &val, sizeof(val));
+		}
+	} else {
+		val = 0;
+
+		bcom_ioctl(skfd, ifname, WLC_SET_WSEC, &val, sizeof(val));
+		bcom_ioctl(skfd, ifname, WLC_SET_WPA_AUTH, &val, sizeof(val));
+	}
+
+
 }
 
 void set_wext_ssid(int skfd, char *ifname)
@@ -315,20 +379,6 @@ void set_wext_ssid(int skfd, char *ifname)
 		}
 	}
 }
-
-void start_bcom(int skfd, char *ifname)
-{
-	int val = 0;
-	
-	if (bcom_ioctl(skfd, ifname, WLC_GET_MAGIC, &val, sizeof(val)) < 0)
-		return;
-
-	bcom_ioctl(skfd, ifname, WLC_UP, &val, sizeof(val));
-	
-	/* Need to re-set SSID after WLC_UP */
-	set_wext_ssid(skfd, ifname);
-}
-
 void setup_wext_wep(int skfd, char *ifname)
 {
 	int i, keylen;
@@ -360,14 +410,25 @@ void setup_wext_wep(int skfd, char *ifname)
 	}
 }
 
+void set_wext_mode(skfd, ifname)
+{
+	struct iwreq wrq;
+	int ap = 0, infra = 0, wet = 0;
+	
+	/* Set operation mode */
+	ap = !nvram_match(wl_var("mode"), "sta");
+	infra = !nvram_disabled(wl_var("infra"));
+	wet = nvram_enabled(wl_var("wet"));
+
+	wrq.u.mode = (!infra ? IW_MODE_ADHOC : (ap ? IW_MODE_MASTER : (wet ? IW_MODE_REPEAT : IW_MODE_INFRA)));
+	IW_SET_EXT_ERR(skfd, ifname, SIOCSIWMODE, &wrq, "Set Mode");
+}
+
 void setup_wext(int skfd, char *ifname)
 {
 	char *buffer;
 	struct iwreq wrq;
 
-	/* Set ESSID */
-	set_wext_ssid(skfd, ifname);
-	
 	/* Set channel */
 	int channel = atoi(nvram_safe_get(wl_var("channel")));
 	
@@ -380,16 +441,7 @@ void setup_wext(int skfd, char *ifname)
 		wrq.u.freq.m = channel;
 		IW_SET_EXT_ERR(skfd, ifname, SIOCSIWFREQ, &wrq, "Set Frequency");
 	}
-	
-	/* Set operation mode */
-	int ap = 0, infra = 0, wet = 0;
-	
-	ap = !nvram_match(wl_var("mode"), "sta");
-	infra = !nvram_disabled(wl_var("infra"));
-	wet = nvram_enabled(wl_var("wet"));
 
-	wrq.u.mode = (!infra ? IW_MODE_ADHOC : (ap ? IW_MODE_MASTER : (wet ? IW_MODE_REPEAT : IW_MODE_INFRA)));
-	IW_SET_EXT_ERR(skfd, ifname, SIOCSIWMODE, &wrq, "Set Mode");
 
 	/* Disable radio if wlX_radio is set and not enabled */
 	wrq.u.txpower.disabled = nvram_disabled(wl_var("radio"));
@@ -402,6 +454,9 @@ void setup_wext(int skfd, char *ifname)
 	/* Set up WEP */
 	if (nvram_enabled(wl_var("wep")))
 		setup_wext_wep(skfd, ifname);
+	
+	/* Set ESSID */
+	set_wext_ssid(skfd, ifname);
 
 }
 
@@ -417,9 +472,11 @@ static int setup_interfaces(int skfd, char *ifname, char *args[], int count)
 	if(iw_get_ext(skfd, ifname, SIOCGIWNAME, &wrq) < 0)
 		return 0;
 
+	stop_bcom(skfd, ifname);
+	set_wext_mode(skfd, ifname);
 	setup_bcom(skfd, ifname);
 	setup_wext(skfd, ifname);
-	start_bcom(skfd, ifname);
+	
 	prefix[2]++;
 }
 
