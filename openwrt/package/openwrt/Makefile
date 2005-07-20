@@ -16,7 +16,7 @@ libshared-compile libnvram-compile:
 libshared-install libnvram-install: libshared-compile libnvram-compile
 	@$(MAKE) -C $(patsubst %-install,%,$@) install
 
-libshared-clean libnvram-clean wlc-clean:
+libshared-clean libnvram-clean:
 	@$(MAKE) -C $(patsubst %-clean,%,$@) clean
 
 $(PKG_IPK_DIR)/sbin/mtd: mtd.c
@@ -27,13 +27,8 @@ $(PKG_IPK_DIR)/sbin/jffs2root: jffs2root.c
 	mkdir -p $(PKG_IPK_DIR)/sbin
 	$(TARGET_CC) -o $@ $<
 
-$(PKG_IPK_DIR)/usr/sbin/wlc: wlc.c libshared-install
-	mkdir -p $(PKG_IPK_DIR)/usr/sbin
-	$(TARGET_CC) -o $@ $< -lshared -L./libshared -I$(SHARED_INCLUDE)
-
-$(PKG_IPK): $(PKG_IPK_DIR)/sbin/mtd $(PKG_IPK_DIR)/sbin/jffs2root $(PKG_IPK_DIR)/usr/sbin/wlc
+$(PKG_IPK): $(PKG_IPK_DIR)/sbin/mtd $(PKG_IPK_DIR)/sbin/jffs2root
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_IPK_DIR) $(PKG_NAME).control $(PKG_RELEASE) $(ARCH)
-	$(STRIP) $(PKG_IPK_DIR)/usr/sbin/*
 	$(STRIP) $(PKG_IPK_DIR)/sbin/*
 	mkdir -p $(PACKAGE_DIR)
 	$(IPKG_BUILD) $(PKG_IPK_DIR) $(PACKAGE_DIR)
