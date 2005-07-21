@@ -5,7 +5,8 @@ ${FAILSAFE:+exit}
 
 . /etc/functions.sh
 . /etc/network.overrides
-[ -e /etc/config/network] && . /etc/config/network
+[ -e /etc/config/network ] && . /etc/config/network
+
 WAN=$(nvram get wan_ifname)
 LAN=$(nvram get lan_ifname)
 
@@ -37,7 +38,7 @@ iptables -t nat -N postrouting_rule
   iptables -A INPUT -j input_rule
 
   # allow
-  iptables -A INPUT -i \! $WAN	-j ACCEPT	# allow from lan/wifi interfaces 
+  iptables -A INPUT ${WAN:+-i \! $WAN}	-j ACCEPT	# allow from lan/wifi interfaces 
   iptables -A INPUT -p icmp	-j ACCEPT	# allow ICMP
   iptables -A INPUT -p gre	-j ACCEPT	# allow GRE
 
@@ -81,7 +82,7 @@ iptables -t nat -N postrouting_rule
 
   # allow
   iptables -A FORWARD -i br0 -o br0 -j ACCEPT
-  iptables -A FORWARD -i $LAN -o $WAN -j ACCEPT
+  [ -z "$WAN" ] || iptables -A FORWARD -i $LAN -o $WAN -j ACCEPT
 
   # reject (what to do with anything not allowed earlier)
   # uses the default -P DROP
@@ -89,7 +90,7 @@ iptables -t nat -N postrouting_rule
 ### MASQ
   iptables -t nat -A PREROUTING -j prerouting_rule
   iptables -t nat -A POSTROUTING -j postrouting_rule
-  iptables -t nat -A POSTROUTING -o $WAN -j MASQUERADE
+  [ -z "$WAN" ] || iptables -t nat -A POSTROUTING -o $WAN -j MASQUERADE
 
 ## USER RULES
 [ -f /etc/firewall.user ] && . /etc/firewall.user
