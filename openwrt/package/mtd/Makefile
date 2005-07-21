@@ -22,5 +22,5 @@ $(PKG_BUILD_DIR)/.built:
 $(IPKG_MTD): 
 	install -d -m0755 $(IDIR_MTD)/sbin
 	install -m0755 $(PKG_BUILD_DIR)/mtd $(IDIR_MTD)/sbin
-	$(RSTRIP) $(_IPK_DIR)/sbin/*
+	$(RSTRIP) $(IDIR_MTD)/sbin/*
 	$(IPKG_BUILD) $(IDIR_MTD) $(PACKAGE_DIR)
