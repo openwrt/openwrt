@@ -2,7 +2,6 @@
 include $(TOPDIR)/rules.mk
 
 package-:=tcp_wrappers
-package-y:=openwrt
 package-$(BR2_PACKAGE_AICCU) += aiccu
 package-$(BR2_PACKAGE_AMWALL) += amwall
 package-$(BR2_PACKAGE_ARPTABLES) += arptables
@@ -201,7 +200,7 @@ tinc-compile: zlib-compile openssl-compile lzo-compile
 tor-compile: libevent-compile openssl-compile zlib-compile
 usbutils-compile: libusb-compile
 vtun-compile: zlib-compile openssl-compile lzo-compile
-wificonf-compile: openwrt-compile wireless-tools-compile
+wificonf-compile: wireless-tools-compile
 wpa_supplicant-compile: openssl-compile
 
 asterisk-compile: ncurses-compile openssl-compile
@@ -280,7 +279,7 @@ ifneq ($(BR2_PACKAGE_ULOGD_PGSQL),)
 ulogd-compile: postgresql-compile
 endif
 
-sdk-compile: $(DEV_LIBS_COMPILE) $(SDK_DEFAULT_COMPILE) openwrt-install
+sdk-compile: $(DEV_LIBS_COMPILE) $(SDK_DEFAULT_COMPILE)
 
 $(STAMP_DIR):
 	mkdir -p $@
