@@ -1,7 +1,7 @@
 diff -urN linux.old/drivers/mtd/maps/ar7-flash.c linux.dev/drivers/mtd/maps/ar7-flash.c
 --- linux.old/drivers/mtd/maps/ar7-flash.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/mtd/maps/ar7-flash.c	2005-07-21 09:01:39.994240680 +0200
-@@ -0,0 +1,272 @@
++++ linux.dev/drivers/mtd/maps/ar7-flash.c	2005-07-22 04:35:26.624453992 +0200
+@@ -0,0 +1,265 @@
 +/*
 + * $Id$
 + *
@@ -16,7 +16,7 @@ diff -urN linux.old/drivers/mtd/maps/ar7-flash.c linux.dev/drivers/mtd/maps/ar7-
 +#include <linux/mtd/map.h>
 +#include <linux/config.h>
 +#include <linux/mtd/partitions.h>
-+#include "trxhdr.h"
++#include <linux/squashfs_fs.h>
 +
 +#define WINDOW_ADDR CONFIG_MTD_AR7_START
 +#define WINDOW_SIZE CONFIG_MTD_AR7_LEN
@@ -136,7 +136,6 @@ diff -urN linux.old/drivers/mtd/maps/ar7-flash.c linux.dev/drivers/mtd/maps/ar7-
 +	unsigned int p = 0;
 +	unsigned char *flash_base;
 +	unsigned char *flash_end;
-+	struct trx_header hdr;
 +	char *env_ptr;
 +	char *base_ptr;
 +	char *end_ptr;
@@ -186,7 +185,7 @@ diff -urN linux.old/drivers/mtd/maps/ar7-flash.c linux.dev/drivers/mtd/maps/ar7-
 +			if (config_offset > offset)
 +				config_offset = offset;		// reserved at the end of the flash chip
 +		} else if (offset > 0x30000) {
-+			printk("Assuming rootfs offset of 0x%x\n", offset);
++			printk("Assuming default rootfs offset of 0x%x\n", offset);
 +			rootfs_start = offset;			// probably root fs
 +		}
 +		
@@ -205,27 +204,15 @@ diff -urN linux.old/drivers/mtd/maps/ar7-flash.c linux.dev/drivers/mtd/maps/ar7-
 +	ar7_partinfo[p].size = config_offset - adam2_size;
 +	ar7_partinfo[p++].mask_flags = 0;
 +
-+	for (offset = adam2_size; !found && (offset < rootfs_start); offset += 1024) {
-+		if (ar7_read32(&ar7_map, offset) == TRX_MAGIC) {
-+			found = 1;
-+			rootfs_start = offset;
-+		}
++	if (ar7_read32(&ar7_map, adam2_size) == 0xfeedfa42) {
++		rootfs_start = ar7_read32(&ar7_map, adam2_size + 4) + adam2_size + 28;
++		printk("Setting new rootfs offset to %08x\n", rootfs_start);
 +	}
 +	
 +	ar7_partinfo[p].name = strdup("rootfs");
 +	ar7_partinfo[p].offset = rootfs_start;
 +	ar7_partinfo[p].size = config_offset - rootfs_start;
 +	
-+	ar7_copy_from(&ar7_map, &hdr, rootfs_start, sizeof(hdr));
-+	if (hdr.magic == TRX_MAGIC) {
-+		printk("TRX header in rootfs partition detected.\n");
-+		printk("offset[0] = 0x%05x\n", hdr.offsets[0]);
-+		printk("offset[1] = 0x%05x\n", hdr.offsets[1]);
-+		printk("offset[2] = 0x%05x\n", hdr.offsets[2]);
-+		ar7_partinfo[p].offset += hdr.offsets[0];
-+		ar7_partinfo[p].size -= hdr.offsets[0];
-+	}
-+
 +	ar7_partinfo[p++].mask_flags = 0;
 +
 +	ar7_partinfo[p].name = strdup("config");
@@ -233,23 +220,29 @@ diff -urN linux.old/drivers/mtd/maps/ar7-flash.c linux.dev/drivers/mtd/maps/ar7-
 +	ar7_partinfo[p].size = WINDOW_SIZE - config_offset;
 +	ar7_partinfo[p++].mask_flags = 0;
 +
-+	if (ar7_read32(&ar7_map, rootfs_start + hdr.offsets[0]) == 0x73717368) {
-+		int newsize;
-+		
-+		printk("Squashfs detected. Adding extra partition\n");
-+		newsize = hdr.len;
-+		if (newsize % ar7_mtd_info->erasesize)
-+			newsize += ar7_mtd_info->erasesize - ((newsize + hdr.offsets[0]) % ar7_mtd_info->erasesize);
-+		
++	if (ar7_read32(&ar7_map, rootfs_start) == SQUASHFS_MAGIC) {
++		int newsize, newoffset;
++		squashfs_super_block sb;
 +
++		ar7_copy_from(&ar7_map, &sb, rootfs_start, sizeof(sb));
++		printk("Squashfs detected (size = 0x%08x)\n", sb.bytes_used);
++		
++		newoffset = rootfs_start + sb.bytes_used;
++
++		if ((newoffset % ar7_mtd_info->erasesize) > 0)
++			newoffset += ar7_mtd_info->erasesize - (newoffset % ar7_mtd_info->erasesize);
++		
++		ar7_partinfo[p - 2].size = newoffset - rootfs_start;
++		
 +		ar7_partinfo[p].name = strdup("OpenWrt");
-+		ar7_partinfo[p].offset = rootfs_start + newsize;
-+		ar7_partinfo[p].size = ar7_partinfo[p - 2].size + hdr.offsets[0] - newsize;
-+		ar7_partinfo[p - 2].size = newsize - hdr.offsets[0];
-+
-+		p++;
++		ar7_partinfo[p].offset = newoffset;
++		ar7_partinfo[p].size = config_offset - newoffset;
++		ar7_partinfo[p++].mask_flags = 0;
++	} else {
++		printk("Unknown filesystem. Moving rootfs partition to next erase block");
++		if ((rootfs_start % ar7_mtd_info->erasesize) > 0)
++			rootfs_start += ar7_mtd_info->erasesize - (rootfs_start % ar7_mtd_info->erasesize);
 +	}
-+
 +
 +	return p;
 +}
@@ -310,36 +303,3 @@ diff -urN linux.old/drivers/mtd/maps/Makefile linux.dev/drivers/mtd/maps/Makefil
  obj-$(CONFIG_MTD_CDB89712)	+= cdb89712.o
  obj-$(CONFIG_MTD_ARM_INTEGRATOR)+= integrator-flash.o
  obj-$(CONFIG_MTD_CFI_FLAGADM)	+= cfi_flagadm.o
-diff -urN linux.old/drivers/mtd/maps/trxhdr.h linux.dev/drivers/mtd/maps/trxhdr.h
---- linux.old/drivers/mtd/maps/trxhdr.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/mtd/maps/trxhdr.h	2005-07-10 20:50:43.550827000 +0200
-@@ -0,0 +1,29 @@
-+/*
-+ * TRX image file header format.
-+ *
-+ * Copyright 2005, Broadcom Corporation
-+ * All Rights Reserved.
-+ * 
-+ * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
-+ * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
-+ * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
-+ * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
-+ *
-+ * $Id$
-+ */ 
-+
-+
-+#define TRX_MAGIC	0x30524448	/* "HDR0" */
-+#define TRX_VERSION	1
-+#define TRX_MAX_LEN	0x3A0000
-+#define TRX_NO_HEADER	1		/* Do not write TRX header */	
-+#define TRX_GZ_FILES	0x2     /* Contains up to TRX_MAX_OFFSET individual gzip files */
-+#define TRX_MAX_OFFSET	3
-+
-+struct trx_header {
-+	__u32 magic;		/* "HDR0" */
-+	__u32 len;		/* Length of file including header */
-+	__u32 crc32;		/* 32-bit CRC from flag_version to end of file */
-+	__u32 flag_version;	/* 0:15 flags, 16:31 version */
-+	__u32 offsets[TRX_MAX_OFFSET];	/* Offsets of partitions from start of header */
-+};
