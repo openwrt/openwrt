@@ -19,15 +19,11 @@ libshared-install libnvram-install: libshared-compile libnvram-compile
 libshared-clean libnvram-clean:
 	@$(MAKE) -C $(patsubst %-clean,%,$@) clean
 
-$(PKG_IPK_DIR)/sbin/mtd: mtd.c
-	mkdir -p $(PKG_IPK_DIR)/sbin
-	$(TARGET_CC) -o $@ $<
-
 $(PKG_IPK_DIR)/sbin/jffs2root: jffs2root.c
 	mkdir -p $(PKG_IPK_DIR)/sbin
 	$(TARGET_CC) -o $@ $<
 
-$(PKG_IPK): $(PKG_IPK_DIR)/sbin/mtd $(PKG_IPK_DIR)/sbin/jffs2root
+$(PKG_IPK): $(PKG_IPK_DIR)/sbin/jffs2root
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_IPK_DIR) $(PKG_NAME).control $(PKG_RELEASE) $(ARCH)
 	$(STRIP) $(PKG_IPK_DIR)/sbin/*
 	mkdir -p $(PACKAGE_DIR)
