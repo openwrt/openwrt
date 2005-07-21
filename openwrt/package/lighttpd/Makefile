@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=lighttpd
-PKG_VERSION:=1.3.14
+PKG_VERSION:=1.3.15
 PKG_RELEASE:=1
-PKG_MD5SUM:=16d9f8c40bcb5638ee452fa23b21e346
+PKG_MD5SUM:=e605ade1071f25dec9001730ec753112
 
 PKG_SOURCE_URL:=http://www.lighttpd.net/download/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
