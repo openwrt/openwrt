@@ -1667,8 +1667,8 @@ diff -urN linux.old/drivers/char/avalanche_vlynq/vlynq_hal.c linux.dev/drivers/c
 +
 +
 diff -urN linux.old/drivers/char/Config.in linux.dev/drivers/char/Config.in
---- linux.old/drivers/char/Config.in	2005-07-10 20:50:43.556826000 +0200
-+++ linux.dev/drivers/char/Config.in	2005-07-22 06:32:53.359187480 +0200
+--- linux.old/drivers/char/Config.in	2005-07-22 06:47:42.777975272 +0200
++++ linux.dev/drivers/char/Config.in	2005-07-22 06:48:54.359093288 +0200
 @@ -192,6 +192,13 @@
     tristate 'Total Impact briQ front panel driver' CONFIG_BRIQ_PANEL
  fi
@@ -1684,9 +1684,9 @@ diff -urN linux.old/drivers/char/Config.in linux.dev/drivers/char/Config.in
  
  mainmenu_option next_comment
 diff -urN linux.old/drivers/char/Makefile linux.dev/drivers/char/Makefile
---- linux.old/drivers/char/Makefile	2005-07-10 20:50:43.556826000 +0200
+--- linux.old/drivers/char/Makefile	2005-07-22 06:47:35.151134728 +0200
 +++ linux.dev/drivers/char/Makefile	2005-07-22 06:32:53.360187328 +0200
-@@ -191,16 +191,23 @@
+@@ -191,6 +191,13 @@
  endif
  
  #
@@ -1699,23 +1699,7 @@ diff -urN linux.old/drivers/char/Makefile linux.dev/drivers/char/Makefile
 +#
  # Texas Intruments LED driver
  # 
--ifeq ($(CONFIG_MIPS_AVALANCHE_LED),y)
--obj-$(CONFIG_MIPS_AVALANCHE_LED) += avalanche_led/avalanche_led.o
--subdir-$(CONFIG_MIPS_AVALANCHE_LED) += avalanche_led
-+ifeq ($(CONFIG_AR7_LED),y)
-+obj-$(CONFIG_AR7_LED) += avalanche_led/avalanche_led.o
-+subdir-$(CONFIG_AR7_LED) += avalanche_led
- endif
- 
--ifeq ($(CONFIG_MIPS_AVALANCHE_LED),m)
--obj-$(CONFIG_MIPS_AVALANCHE_LED) += avalanche_led/avalanche_led.o
--subdir-$(CONFIG_MIPS_AVALANCHE_LED) += avalanche_led
-+ifeq ($(CONFIG_AR7_LED),m)
-+obj-$(CONFIG_AR7_LED) += avalanche_led/avalanche_led.o
-+subdir-$(CONFIG_AR7_LED) += avalanche_led
- endif
- 
- obj-$(CONFIG_HIL) += hp_keyb.o
+ obj-$(CONFIG_AR7_LED) += avalanche_led/avalanche_led.o
 diff -urN linux.old/include/asm-mips/ar7/vlynq.h linux.dev/include/asm-mips/ar7/vlynq.h
 --- linux.old/include/asm-mips/ar7/vlynq.h	1970-01-01 01:00:00.000000000 +0100
 +++ linux.dev/include/asm-mips/ar7/vlynq.h	2005-07-22 06:32:53.361187176 +0200
