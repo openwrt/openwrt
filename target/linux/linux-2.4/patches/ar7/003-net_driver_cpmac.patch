@@ -815,8 +815,8 @@ diff -urN linux.old/drivers/net/avalanche_cpmac/cpcommon_cpmac.h linux.dev/drive
 +
 diff -urN linux.old/drivers/net/avalanche_cpmac/cpmac.c linux.dev/drivers/net/avalanche_cpmac/cpmac.c
 --- linux.old/drivers/net/avalanche_cpmac/cpmac.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/net/avalanche_cpmac/cpmac.c	2005-07-12 03:21:00.298934472 +0200
-@@ -0,0 +1,2509 @@
++++ linux.dev/drivers/net/avalanche_cpmac/cpmac.c	2005-07-22 01:03:12.609318544 +0200
+@@ -0,0 +1,2504 @@
 +/******************************************************************************
 + * FILE PURPOSE:    CPMAC Linux Network Device Driver Source
 + ******************************************************************************
@@ -3035,12 +3035,7 @@ diff -urN linux.old/drivers/net/avalanche_cpmac/cpmac.c linux.dev/drivers/net/av
 +    skb_trim(p_skb, packet_size);                                                                                            
 +#endif 
 + 
-+#ifndef TI_SLOW_PATH
-+    /* TI Optimization: This is NOT required if the ethernet resides below the bridge. But is
-+    * required only if the ethernet is directly connected to the IP stack. */
-+    if (p_dev->br_port == NULL)   
-+#endif
-+       p_skb->protocol = eth_type_trans(p_skb, p_dev);
++    p_skb->protocol = eth_type_trans(p_skb, p_dev);
 +
 +    netif_rx(p_skb);
 +
