@@ -17,7 +17,7 @@ endif
 WLCOMPAT_FLAGS:=$(TARGET_CFLAGS) -D__KERNEL__ -fno-strict-aliasing -fno-common -fomit-frame-pointer -G 0 \
 		-mno-abicalls -fno-pic -finline-limit=100000 -mabi=32 -march=mips32 -Wa,-32 -Wa,-march=mips32 \
 		-Wa,-mips32 -Wa,--trap -DMODULE -mlong-calls -fno-common -I. -I linux-2.4 -funsigned-char -nostdinc \
-		-iwithprefix include -I$(KERNEL_DIR)/include -I$(KERNEL_DIR)/include/asm/gcc -I$(TOPDIR)/package/openwrt/include -c
+		-iwithprefix include -I$(KERNEL_DIR)/include -I$(KERNEL_DIR)/include/asm/gcc -I../openwrt/include -c
 
 $(PKG_BUILD_DIR)/.prepared:
 	mkdir -p $(PKG_BUILD_DIR)
