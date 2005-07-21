@@ -1,5 +1,7 @@
 #!/bin/sh
 . /etc/functions.sh
+. /etc/nvram.overrides
+[ -e /etc/config/network ] && . /etc/config/network
 type=$1
 
 [ "$(nvram get ${type}_proto)" = "pptp" ] || exit
