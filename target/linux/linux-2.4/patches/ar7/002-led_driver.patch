@@ -1,6 +1,6 @@
 diff -urN linux.old/drivers/char/avalanche_led/gpio.c linux.dev/drivers/char/avalanche_led/gpio.c
 --- linux.old/drivers/char/avalanche_led/gpio.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/char/avalanche_led/gpio.c	2005-07-12 03:13:02.696541072 +0200
++++ linux.dev/drivers/char/avalanche_led/gpio.c	2005-07-22 06:52:42.973338640 +0200
 @@ -0,0 +1,382 @@
 +#include <linux/kernel.h>
 +#include <asm/uaccess.h>
@@ -386,7 +386,7 @@ diff -urN linux.old/drivers/char/avalanche_led/gpio.c linux.dev/drivers/char/ava
 +
 diff -urN linux.old/drivers/char/avalanche_led/ledmod.c linux.dev/drivers/char/avalanche_led/ledmod.c
 --- linux.old/drivers/char/avalanche_led/ledmod.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/char/avalanche_led/ledmod.c	2005-07-12 03:12:40.675888720 +0200
++++ linux.dev/drivers/char/avalanche_led/ledmod.c	2005-07-22 06:52:42.975338336 +0200
 @@ -0,0 +1,1116 @@
 +#include <linux/config.h>
 +#include <linux/init.h>
@@ -1506,7 +1506,7 @@ diff -urN linux.old/drivers/char/avalanche_led/ledmod.c linux.dev/drivers/char/a
 +
 diff -urN linux.old/drivers/char/avalanche_led/leds.c linux.dev/drivers/char/avalanche_led/leds.c
 --- linux.old/drivers/char/avalanche_led/leds.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/char/avalanche_led/leds.c	2005-07-12 03:08:48.265220512 +0200
++++ linux.dev/drivers/char/avalanche_led/leds.c	2005-07-22 06:52:42.976338184 +0200
 @@ -0,0 +1,133 @@
 +#include <linux/config.h>
 +#include <linux/init.h>
@@ -1643,7 +1643,7 @@ diff -urN linux.old/drivers/char/avalanche_led/leds.c linux.dev/drivers/char/ava
 +
 diff -urN linux.old/drivers/char/avalanche_led/Makefile linux.dev/drivers/char/avalanche_led/Makefile
 --- linux.old/drivers/char/avalanche_led/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/char/avalanche_led/Makefile	2005-07-12 03:08:48.265220512 +0200
++++ linux.dev/drivers/char/avalanche_led/Makefile	2005-07-22 06:52:42.977338032 +0200
 @@ -0,0 +1,23 @@
 +# File: drivers/char/avalanche_led/Makefile
 +#
@@ -1670,7 +1670,7 @@ diff -urN linux.old/drivers/char/avalanche_led/Makefile linux.dev/drivers/char/a
 +	rm -f core *.o *.a *.s
 diff -urN linux.old/drivers/char/avalanche_led/uartled.c linux.dev/drivers/char/avalanche_led/uartled.c
 --- linux.old/drivers/char/avalanche_led/uartled.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/char/avalanche_led/uartled.c	2005-07-12 03:08:48.266220360 +0200
++++ linux.dev/drivers/char/avalanche_led/uartled.c	2005-07-22 06:52:42.977338032 +0200
 @@ -0,0 +1,55 @@
 +#include <linux/kernel.h>
 +#include <asm/uaccess.h>
@@ -1728,45 +1728,38 @@ diff -urN linux.old/drivers/char/avalanche_led/uartled.c linux.dev/drivers/char/
 +}
 +
 diff -urN linux.old/drivers/char/Config.in linux.dev/drivers/char/Config.in
---- linux.old/drivers/char/Config.in	2005-07-10 20:53:55.650624032 +0200
-+++ linux.dev/drivers/char/Config.in	2005-07-12 03:07:20.861507896 +0200
+--- linux.old/drivers/char/Config.in	2005-07-10 20:53:55.650624000 +0200
++++ linux.dev/drivers/char/Config.in	2005-07-22 06:52:58.716945248 +0200
 @@ -133,6 +133,10 @@
        fi
     fi
  fi
 +if [ "$CONFIG_AR7" = "y" ]; then
-+   bool  'Enable LED support' CONFIG_MIPS_AVALANCHE_LED
++   bool  'Enable LED support' CONFIG_AR7_LED
 +fi
 +
  if [ "$CONFIG_EXPERIMENTAL" = "y" -a "$CONFIG_ZORRO" = "y" ]; then
     tristate 'Commodore A2232 serial support (EXPERIMENTAL)' CONFIG_A2232
  fi
 diff -urN linux.old/drivers/char/Makefile linux.dev/drivers/char/Makefile
---- linux.old/drivers/char/Makefile	2005-07-10 20:53:55.651623880 +0200
-+++ linux.dev/drivers/char/Makefile	2005-07-12 03:07:20.861507896 +0200
-@@ -190,6 +190,19 @@
+--- linux.old/drivers/char/Makefile	2005-07-10 20:53:55.651623000 +0200
++++ linux.dev/drivers/char/Makefile	2005-07-22 06:53:35.321380528 +0200
+@@ -190,6 +190,12 @@
    obj-$(CONFIG_PCI) += keyboard.o $(KEYMAP)
  endif
  
 +#
 +# Texas Intruments LED driver
 +# 
-+ifeq ($(CONFIG_MIPS_AVALANCHE_LED),y)
-+obj-$(CONFIG_MIPS_AVALANCHE_LED) += avalanche_led/avalanche_led.o
-+subdir-$(CONFIG_MIPS_AVALANCHE_LED) += avalanche_led
-+endif
-+
-+ifeq ($(CONFIG_MIPS_AVALANCHE_LED),m)
-+obj-$(CONFIG_MIPS_AVALANCHE_LED) += avalanche_led/avalanche_led.o
-+subdir-$(CONFIG_MIPS_AVALANCHE_LED) += avalanche_led
-+endif
++obj-$(CONFIG_AR7_LED) += avalanche_led/avalanche_led.o
++subdir-$(CONFIG_AR7_LED) += avalanche_led
 +
  obj-$(CONFIG_HIL) += hp_keyb.o
  obj-$(CONFIG_MAGIC_SYSRQ) += sysrq.o
  obj-$(CONFIG_ATARI_DSP56K) += dsp56k.o
 diff -urN linux.old/include/asm-mips/ar7/ledapp.h linux.dev/include/asm-mips/ar7/ledapp.h
 --- linux.old/include/asm-mips/ar7/ledapp.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/include/asm-mips/ar7/ledapp.h	2005-07-12 03:08:48.266220360 +0200
++++ linux.dev/include/asm-mips/ar7/ledapp.h	2005-07-22 06:52:42.982337272 +0200
 @@ -0,0 +1,59 @@
 +#ifndef __LED_APP__
 +#define __LED_APP__
