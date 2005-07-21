@@ -5,9 +5,10 @@ package-$(BR2_PACKAGE_KMOD_FUSE) += fuse
 package-$(BR2_PACKAGE_KMOD_MINI_FO) += mini_fo
 package-$(BR2_PACKAGE_KMOD_SHFS) += shfs
 package-$(BR2_PACKAGE_KMOD_OPENSWAN) += openswan
+package-y += openwrt
 
 ifeq ($(BOARD),brcm)
-package-y += nvram openwrt
+package-y += nvram
 
 ifeq ($(LINUX_VERSION),2.4.30)
 package-$(BR2_PACKAGE_KMOD_WLCOMPAT) += wlcompat
