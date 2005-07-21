@@ -10,7 +10,7 @@ PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
 include $(TOPDIR)/package/rules.mk
 
 BR2_PACKAGE_NVRAM:=y	# does not depend on menuconfig
-$(eval $(call PKG_template,NVRAM,nvram,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,NVRAM,nvram,$(PKG_RELEASE),$(ARCH)))
 
 $(PKG_BUILD_DIR)/.prepared:
 	mkdir -p $(PKG_BUILD_DIR)
@@ -30,4 +30,10 @@ $(IPKG_NVRAM):
 	cp $(PKG_BUILD_DIR)/nvram $(IDIR_NVRAM)/usr/sbin
 	$(RSTRIP) $(IDIR_NVRAM)
 	$(IPKG_BUILD) $(IDIR_NVRAM) $(PACKAGE_DIR)
+
+
+compile: install-dev
+install-dev:
+	cp $(PKG_BUILD_DIR)/*.so $(STAGING_DIR)/usr/lib
+	
 
