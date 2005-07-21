@@ -1,13 +1,14 @@
 #!/usr/bin/perl
 my %change = (
-	'BUSYBOX' => 'make -C package busybox-clean',
-	'OPENVPN_' => 'make -C package openvpn-clean',
+	'BUSYBOX' => 'make package/busybox-clean',
+	'OPENVPN_' => 'make package/openvpn-clean',
+	'SYSCONF_' => 'make package/base-files-clean target_clean',
 	'' => 'make target_clean'
 );
 
 my @configfiles = (
-	['package/linux/linux.config', 'build_mipsel/linux/.config' =>
-		'make -C package linux-clean']
+#	['package/linux/linux.config', 'build_mipsel/linux/.config' =>
+#		'make -C package linux-clean']
 );
 
 

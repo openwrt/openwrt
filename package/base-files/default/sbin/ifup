@@ -1,6 +1,9 @@
 #!/bin/ash
 [ $# = 0 ] && { echo "  $0 <group>"; exit; }
 . /etc/functions.sh
+. /etc/network.overrides
+[ -e /etc/config/network ] && . /etc/config/network
+
 type=$1
 debug "### ifup $type ###"
 

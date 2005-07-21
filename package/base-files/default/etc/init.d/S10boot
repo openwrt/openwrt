@@ -6,20 +6,22 @@ mkdir -p /var/log
 touch /var/log/wtmp
 touch /var/log/lastlog
 
-[ "$(nvram get il0macaddr)" = "00:90:4c:5f:00:2a" ] && {
-  # if default wifi mac, set two higher than the lan mac
-  nvram set il0macaddr=$(nvram get et0macaddr|
-  awk '{OFS=FS=":";for(x=7,y=2;--x;){$x=sprintf("%02x",(y+="0x"$x)%256);y/=256}print}')
-}
+[ -x /usr/sbin/nvram ] && {
+  [ "$(nvram get il0macaddr)" = "00:90:4c:5f:00:2a" ] && {
+    # if default wifi mac, set two higher than the lan mac
+    nvram set il0macaddr=$(nvram get et0macaddr|
+    awk '{OFS=FS=":";for(x=7,y=2;--x;){$x=sprintf("%02x",(y+="0x"$x)%256);y/=256}print}')
+  }
 
-# set up the vlan*ports variables for the asus wl-500g deluxe
-# if they don't already exist 
-[  "$(nvram get boardtype)" = "bcm95365r" \
--a "$(nvram get boardnum)" = "45" \
--a -z "$(nvram get vlan0ports)"
--a -z "$(nvram get vlan1ports)" ] && {
-	nvram set vlan0ports="1 2 3 4 5*"
-	nvram set vlan1ports="0 5"
+  # set up the vlan*ports variables for the asus wl-500g deluxe
+  # if they don't already exist 
+  [  "$(nvram get boardtype)" = "bcm95365r" \
+  -a "$(nvram get boardnum)" = "45" \
+  -a -z "$(nvram get vlan0ports)"
+  -a -z "$(nvram get vlan1ports)" ] && {
+  	nvram set vlan0ports="1 2 3 4 5*"
+  	nvram set vlan1ports="0 5"
+  }
 }
 
 sed 's/^[^#]/insmod &/' /etc/modules /etc/modules.d/* 2>&-|ash

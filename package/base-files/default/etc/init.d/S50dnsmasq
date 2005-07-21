@@ -1,5 +1,7 @@
 #!/bin/sh
 . /etc/functions.sh
+. /etc/network.overrides
+[ -e /etc/config/network] && . /etc/config/network
 
 # interface to use for DHCP
 iface=lan
