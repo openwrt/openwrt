@@ -5,8 +5,15 @@ package-$(BR2_PACKAGE_KMOD_FUSE) += fuse
 package-$(BR2_PACKAGE_KMOD_MINI_FO) += mini_fo
 package-$(BR2_PACKAGE_KMOD_SHFS) += shfs
 package-$(BR2_PACKAGE_KMOD_OPENSWAN) += openswan
+
+ifeq ($(BOARD),brcm)
+package-y += nvram openwrt
+
 ifeq ($(LINUX_VERSION),2.4.30)
 package-$(BR2_PACKAGE_KMOD_WLCOMPAT) += wlcompat
+endif
+
+nvram-compile: openwrt-compile
 endif
 
 all: compile install
