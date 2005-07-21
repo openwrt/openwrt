@@ -41,19 +41,17 @@ $(BIN_DIR)/openwrt-ar7-zimage.bin: $(KDIR)/vmlinux.gz compile
 		-o $(KDIR)/loader
 	$(TARGET_CROSS)objcopy -O srec $(KDIR)/loader $(KDIR)/ram_zimage.sre
 	$(PKG_BUILD_DIR)/srec2bin $(KDIR)/ram_zimage.sre $@
-	dd if=/dev/zero bs=1024 count=1 >> $@
 
-ALIGN:=1024
 ifeq ($(FS),jffs2-8MB)
-ALIGN:=131072
+ALIGN:=bs=131072 conv=sync
 endif
 ifeq ($(FS),jffs2-4MB)
-ALIGN:=65536
+ALIGN:=bs=65536 conv=sync
 endif
 
 $(BIN_DIR)/openwrt-ar7-$(KERNEL)-$(FS).bin:
-	dd if=$(BIN_DIR)/openwrt-ar7-zimage.bin bs=$(ALIGN) conv=sync | head -c -1024 > $@
-	$(STAGING_DIR)/bin/trx -a 1024 $(BUILD_DIR)/linux-$(KERNEL)-ar7/root.$(FS) >> $@
+	dd if=$(BIN_DIR)/openwrt-ar7-zimage.bin $(ALIGN) > $@
+	cat $(BUILD_DIR)/linux-$(KERNEL)-ar7/root.$(FS) >> $@
 
 define pattern_template
 $(BIN_DIR)/openwrt-ar7-$(KERNEL)-$(FS)-$(1).bin: $(BIN_DIR)/openwrt-ar7-$(KERNEL)-$(FS).bin
