@@ -242,7 +242,7 @@ diff -urN linux.old/drivers/mtd/maps/ar7-flash.c linux.dev/drivers/mtd/maps/ar7-
 +			newsize += ar7_mtd_info->erasesize - ((newsize + hdr.offsets[0]) % ar7_mtd_info->erasesize);
 +		
 +
-+		ar7_partinfo[p].name = strdup("test");
++		ar7_partinfo[p].name = strdup("OpenWrt");
 +		ar7_partinfo[p].offset = rootfs_start + newsize;
 +		ar7_partinfo[p].size = ar7_partinfo[p - 2].size + hdr.offsets[0] - newsize;
 +		ar7_partinfo[p - 2].size = newsize - hdr.offsets[0];
