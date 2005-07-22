@@ -1,0 +1,16 @@
+#!/bin/sh
+
+BIN=portmap
+DEFAULT=/etc/default/$BIN
+[ -f $DEFAULT ] && . $DEFAULT
+
+case $1 in
+ start)
+  $BIN $OPTIONS
+  ;;
+ *)
+  echo "usage: $0 (start)"
+  exit 1
+esac
+
+exit $?
