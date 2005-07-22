@@ -6,7 +6,7 @@ DEFAULT=/etc/default/$BIN
 
 case $1 in
  start)
-  $BIN $OPTIONS
+  $BIN $OPTIONS &
   ;;
  *)
   echo "usage: $0 (start)"
