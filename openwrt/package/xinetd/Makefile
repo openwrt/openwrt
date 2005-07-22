@@ -4,7 +4,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=xinetd
 PKG_VERSION:=2.3.13
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_MD5SUM:=4295b5fe12350f09b5892b363348ac8b
 
 PKG_SOURCE_URL:=http://www.xinetd.org/
@@ -62,6 +62,7 @@ $(PKG_BUILD_DIR)/.built:
 $(IPKG_XINETD):
 	install -d -m0755 $(IDIR_XINETD)/etc
 	install -m0644 ./files/xinetd.conf $(IDIR_XINETD)/etc/xinetd.conf
+	install -d -m0755 $(IDIR_XINETD)/etc/xinetd.d
 	install -d -m0755 $(IDIR_XINETD)/etc/init.d
 	install -m0755 ./files/xinetd.init $(IDIR_XINETD)/etc/init.d/xinetd
 	install -d -m0755 $(IDIR_XINETD)/usr/sbin
