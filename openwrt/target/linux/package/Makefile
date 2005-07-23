@@ -8,6 +8,7 @@ package-$(BR2_PACKAGE_KMOD_OPENSWAN) += openswan
 package-y += openwrt
 
 ifeq ($(BOARD),brcm)
+package-$(BR2_PACKAGE_WIFICONF) += wificonf
 package-y += nvram
 
 ifeq ($(LINUX_VERSION),2.4.30)
