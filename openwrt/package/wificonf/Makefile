@@ -9,8 +9,9 @@ PKG_BUILD_DIR:=$(BUILD_DIR)/wificonf
 
 include $(TOPDIR)/package/rules.mk
 
-
-
+ifneq ($(BOARD),brcm)
+BR2_PACKAGE_WIFICONF:=m
+endif
 
 $(eval $(call PKG_template,WIFICONF,$(PKG_NAME),$(PKG_RELEASE),$(ARCH)))
 

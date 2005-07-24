@@ -1,6 +1,6 @@
 # Makefile for OpenWRT
 #
-# Copyright (C) 2005 by Felix Fietkau <nbd@vd-s.ath.cx>
+# Copyright (C) 2005 by Felix Fietkau <openwrt@nbd.name>
 # Copyright (C) 1999-2004 by Erik Andersen <andersen@codepoet.org>
 #
 # This program is free software; you can redistribute it and/or modify
@@ -47,26 +47,6 @@ all: world
 
 .NOTPARALLEL:
 
-##############################################################
-#
-# Build the toolchain
-#
-##############################################################
-toolchain_install:
-	$(MAKE) -C toolchain install
-
-##############################################################
-#
-# Make all packages
-#
-##############################################################
-
-package_compile: target_compile
-	$(MAKE) -C package compile
-
-package_install: package_compile toolchain
-	$(MAKE) -C package install
-
 #############################################################
 #
 # You should probably leave this stuff alone unless you know
@@ -77,9 +57,9 @@ package_install: package_compile toolchain
 # In this section, we need .config
 include .config.cmd
 
-world: $(DL_DIR) $(BUILD_DIR) configtest toolchain_install package_install target_install package_index
+world: $(DL_DIR) $(BUILD_DIR) configtest toolchain/install target/compile package/compile target/install package_index
 
-.PHONY: all world clean dirclean distclean image_clean target_clean source target_install toolchain_install package_install configtest
+.PHONY: all world clean dirclean distclean image_clean target_clean source configtest
 
 configtest:
 	-cp .config .config.test
@@ -89,12 +69,6 @@ package_index:
 	(cd $(PACKAGE_DIR); \
 		$(STAGING_DIR)/usr/bin/ipkg-make-index . > Packages \
 	)
-
-target_compile:
-	$(MAKE) -C target compile
-
-target_install:
-	$(MAKE) -C target install
 
 $(DL_DIR):
 	@mkdir -p $(DL_DIR)
@@ -125,7 +99,6 @@ image_clean:
 	rm -rf $(BIN_DIR)
 	
 target_clean: image_clean
-	rm -rf $(TARGET_DIR)
 	rm -rf $(BUILD_DIR)/linux-*/root
 
 clean: target_clean
@@ -188,8 +161,6 @@ randconfig: $(CONFIG)/conf
 	-./scripts/configtest.pl
 
 allyesconfig: $(CONFIG)/conf
-	#@$(CONFIG)/conf -y $(CONFIG_CONFIG_IN)
-	#sed -i -e "s/^CONFIG_DEBUG.*/# CONFIG_DEBUG is not set/" .config
 	-touch .config
 	-cp .config .config.test
 	@$(CONFIG)/conf -o $(CONFIG_CONFIG_IN)
