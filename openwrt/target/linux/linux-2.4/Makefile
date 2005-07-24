@@ -188,7 +188,7 @@ $(LINUX_DIR)/.configured: $(LINUX_DIR)/.patched
 	-cp $(LINUX_KCONFIG) $(LINUX_DIR)/.config
 	$(SED) "s,^CROSS_COMPILE.*,CROSS_COMPILE=$(KERNEL_CROSS),g;" \
 	  $(LINUX_DIR)/Makefile  \
-	  $(LINUX_DIR)/arch/mips/Makefile
+	  $(LINUX_DIR)/arch/*/Makefile
 	$(SED) "s,\-mcpu=,\-mtune=,g;" $(LINUX_DIR)/arch/mips/Makefile
 	$(MAKE) -C $(LINUX_DIR) ARCH=$(LINUX_KARCH) oldconfig include/linux/version.h
 	touch $(LINUX_DIR)/.configured
