@@ -4,23 +4,29 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=base-files
 PKG_RELEASE:=1
+PKG_BUILD_DIR:=$(BUILD_DIR)/base-files
 
-IDIR_BASE:=$(BUILD_DIR)/base-files
+include $(TOPDIR)/package/rules.mk
+
+IDIR_BASE:=$(PKG_BUILD_DIR)/base-files
 IPKG_BASE:=$(PACKAGE_DIR)/$(PKG_NAME)_$(PKG_RELEASE)_$(ARCH).ipk
 
 LIBC_VERSION:=${shell cat $(STAGING_DIR)/uclibc_version}
-IDIR_LIBC:=$(BUILD_DIR)/uclibc
+IDIR_LIBC:=$(PKG_BUILD_DIR)/uclibc
 IPKG_LIBC:=$(PACKAGE_DIR)/uclibc_$(LIBC_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
 
 GCC_VERSION:=${shell cat $(STAGING_DIR)/gcc_version}
-IDIR_GCC:=$(BUILD_DIR)/libgcc
+IDIR_GCC:=$(PKG_BUILD_DIR)/libgcc
 IPKG_GCC:=$(PACKAGE_DIR)/libgcc_$(GCC_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
 
 PACKAGES:=$(IPKG_BASE) $(IPKG_LIBC) $(IPKG_GCC)
 
-$(PACKAGES): $(PACKAGE_DIR)
-$(PACKAGE_DIR):
-	mkdir -p $@
+$(PKG_BUILD_DIR)/.prepared:
+	mkdir -p $(PKG_BUILD_DIR) $(PACKAGE_DIR)
+	touch $@
+
+$(PKG_BUILD_DIR)/.built:
+	touch $@
 
 $(IPKG_BASE):
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_BASE) ipkg/$(PKG_NAME).control $(PKG_RELEASE) $(ARCH)
@@ -63,5 +69,3 @@ compile: $(PACKAGES)
 install: compile
 	mkdir -p $(TARGET_DIR)
 	$(IPKG) install $(PACKAGES)
-clean:
-	rm -rf $(IDIR_BASE) $(IDIR_LIBC) $(IDIR_GCC)

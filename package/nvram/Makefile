@@ -9,7 +9,13 @@ PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
 
 include $(TOPDIR)/package/rules.mk
 
-BR2_PACKAGE_NVRAM:=y	# does not depend on menuconfig
+# does not depend on menuconfig
+ifneq ($(BOARD),brcm)
+BR2_PACKAGE_NVRAM:=m
+else
+BR2_PACKAGE_NVRAM:=y
+endif
+
 $(eval $(call PKG_template,NVRAM,nvram,$(PKG_RELEASE),$(ARCH)))
 
 $(PKG_BUILD_DIR)/.prepared:

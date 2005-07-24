@@ -52,7 +52,6 @@ SCRIPT_DIR:=$(BASE_DIR)/scripts
 BIN_DIR:=$(BASE_DIR)/bin
 STAMP_DIR:=$(BUILD_DIR)/stamp
 PACKAGE_DIR:=$(BIN_DIR)/packages
-TARGET_DIR:=$(BUILD_DIR)/root
 STAMP_DIR:=$(BUILD_DIR)/stamp
 TOOL_BUILD_DIR=$(BASE_DIR)/toolchain_build_$(ARCH)$(ARCH_FPU_SUFFIX)
 # Strip off the annoying quoting
@@ -105,11 +104,6 @@ endif
 ifeq ($(BR2_ENABLE_MULTILIB),y)
 MULTILIB:=--enable-multilib
 endif
-
-
-# invoke ipkg with configuration in $(STAGING_DIR)/etc/ipkg.conf 
-IPKG := IPKG_INSTROOT=$(TARGET_DIR) IPKG_CONF_DIR=$(STAGING_DIR)/etc $(SCRIPT_DIR)/ipkg -force-defaults -force-depends
-IPKG_STATE_DIR := $(TARGET_DIR)/usr/lib/ipkg
 
 # invoke ipkg-build with some default options
 IPKG_BUILD := PATH="$(TARGET_PATH)" ipkg-build -c -o root -g root

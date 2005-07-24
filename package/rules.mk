@@ -1,3 +1,7 @@
+# invoke ipkg with configuration in $(STAGING_DIR)/etc/ipkg.conf 
+IPKG := IPKG_INSTROOT=$(TARGET_DIR) IPKG_CONF_DIR=$(IPKG_CONF) $(SCRIPT_DIR)/ipkg -force-defaults -force-depends
+IPKG_STATE_DIR := $(TARGET_DIR)/usr/lib/ipkg
+
 define PKG_template
 IPKG_$(1):=$(PACKAGE_DIR)/$(2)_$(3)_$(4).ipk
 IDIR_$(1):=$(PKG_BUILD_DIR)/ipkg/$(2)

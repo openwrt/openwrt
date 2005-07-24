@@ -2,6 +2,7 @@
 include $(TOPDIR)/rules.mk
 
 package-:=tcp_wrappers
+package-y:=nvram
 package-$(BR2_PACKAGE_AICCU) += aiccu
 package-$(BR2_PACKAGE_AMWALL) += amwall
 package-$(BR2_PACKAGE_ARPTABLES) += arptables
@@ -134,6 +135,7 @@ package-$(BR2_PACKAGE_ULOGD) += ulogd
 package-$(BR2_PACKAGE_USBUTILS) += usbutils
 package-$(BR2_PACKAGE_VTUN) += vtun
 package-$(BR2_PACKAGE_VSFTPD) += vsftpd
+package-$(BR2_PACKAGE_WIFICONF) += wificonf
 package-$(BR2_PACKAGE_WIRELESS_TOOLS) += wireless-tools
 package-$(BR2_PACKAGE_WOL) += wol
 package-$(BR2_PACKAGE_WPA_SUPPLICANT) += wpa_supplicant
@@ -141,19 +143,19 @@ package-$(BR2_PACKAGE_WPUT) += wput
 package-$(BR2_PACKAGE_XINETD) += xinetd
 package-$(BR2_PACKAGE_ZLIB) += zlib
 
-DEV_LIBS:=tcp_wrappers glib ncurses openssl pcre popt zlib libnet libpcap mysql postgresql iptables matrixssl lzo gmp fuse portmap libelf uclibc++ speex libpng libgd wireless-tools
+DEV_LIBS:=tcp_wrappers glib ncurses openssl pcre popt zlib libnet libpcap mysql postgresql iptables matrixssl lzo gmp fuse portmap libelf uclibc++ speex libpng libgd wireless-tools nvram
 DEV_LIBS_COMPILE:=$(patsubst %,%-compile,$(DEV_LIBS))
 SDK_DEFAULT_PACKAGES:=busybox dnsmasq iptables wireless-tools dropbear bridge ipkg ppp
 SDK_DEFAULT_COMPILE:=$(patsubst %,%-compile,$(SDK_DEFAULT_PACKAGES))
 COMPILE_PACKAGES:=$(patsubst %,%-compile,$(package-y) $(package-m))
 INSTALL_PACKAGES:=$(patsubst %,%-install,$(package-y))
 
-all: compile install
+all: compile
 clean: $(patsubst %,%-clean,$(package-) $(package-y) $(package-m))
 compile: $(COMPILE_PACKAGES)
 install: base-files-install $(INSTALL_PACKAGES)
 
-$(COMPILE_PACKAGES): base-files-install
+$(COMPILE_PACKAGES): base-files-compile
 $(INSTALL_PACKAGES): base-files-install
 
 amwall-compile: libamsel-compile
@@ -199,7 +201,7 @@ tinc-compile: zlib-compile openssl-compile lzo-compile
 tor-compile: libevent-compile openssl-compile zlib-compile
 usbutils-compile: libusb-compile
 vtun-compile: zlib-compile openssl-compile lzo-compile
-wificonf-compile: wireless-tools-compile
+wificonf-compile: wireless-tools-compile nvram-compile
 wpa_supplicant-compile: openssl-compile
 
 asterisk-compile: ncurses-compile openssl-compile
@@ -292,8 +294,11 @@ $(STAMP_DIR):
 	@touch $(STAMP_DIR)/.$@
 
 %-install: %-compile
-	@[ -f $(STAMP_DIR)/.$@ ] || $(MAKE) -C $(patsubst %-install,%,$@) install
-	@touch $(STAMP_DIR)/.$@
+	@$(MAKE) -C $(patsubst %-install,%,$@) \
+		TARGET_DIR="$(TARGET_DIR)" \
+		IPKG_CONF="$(IPKG_CONF)" \
+		BOARD="$(BOARD)" \
+		install
 
 %-rebuild: 
 	@rm -f $(STAMP_DIR)/.$(patsubst %-rebuild,%,$@)-*

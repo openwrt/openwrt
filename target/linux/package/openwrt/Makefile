@@ -4,12 +4,12 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME := base-files-arch
 PKG_RELEASE := 1
-PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
+PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)-$(BOARD)
 
 include $(TOPDIR)/package/rules.mk
 
-BR2_PACKAGE_OPENWRT:=y		# ignore menuconfig
-$(eval $(call PKG_template,OPENWRT,$(PKG_NAME),$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+IDIR_OPENWRT:=$(PKG_BUILD_DIR)/ipkg
+IPKG_OPENWRT:=$(PACKAGE_DIR)/base-files-$(BOARD)_$(PKG_RELEASE)_$(ARCH).ipk
 
 $(PKG_BUILD_DIR)/.prepared:
 	mkdir -p $(PKG_BUILD_DIR)
@@ -30,8 +30,12 @@ endif
 
 $(PKG_BUILD_DIR)/.built:
 	touch $@
+	
+$(IDIR_OPENWRT):
+	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_OPENWRT) ipkg/base-files-arch.control $(PKG_RELEASE) $(ARCH)
+	$(SED) s,base-files-arch,base-files-$(BOARD),g $(IDIR_OPENWRT)/CONTROL/control
 
-$(IPKG_OPENWRT): 
+$(IPKG_OPENWRT):
 	mkdir -p $(IDIR_OPENWRT)/etc
 	cp files/network.overrides.$(BOARD) $(IDIR_OPENWRT)/etc/network.overrides
 	$(RSTRIP) $(IDIR_OPENWRT)

@@ -11,55 +11,36 @@ PKG_SOURCE_URL:=ftp://ftp.berlios.de/pub/ser/$(PKG_VERSION)/src
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)_src.tar.gz
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_CAT:=zcat
-PKG_IPK:=$(PACKAGE_DIR)/$(PKG_NAME)_$(PKG_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
-PKG_IPK_DIR:=$(PKG_BUILD_DIR)/ipkg
+
+include $(TOPDIR)/package/rules.mk
+
+$(eval $(call PKG_template,SER,ser,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 SER_MODULES := sl tm rr maxfwd usrloc registrar dbtext textops nathelper
 
 SER_MODULE_FILES := $(foreach module,$(SER_MODULES),modules/$(module)/$(module).so)
 SER_MODULES := $(patsubst %,modules/%,$(SER_MODULES))
 
-$(DL_DIR)/$(PKG_SOURCE):
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(PKG_SOURCE) $(PKG_MD5SUM) $(PKG_SOURCE_URL)
-
-$(PKG_BUILD_DIR)/.patched: $(DL_DIR)/$(PKG_SOURCE)
-	$(PKG_CAT) $(DL_DIR)/$(PKG_SOURCE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
-	$(PATCH) $(PKG_BUILD_DIR) ./patches
-	touch $(PKG_BUILD_DIR)/.patched
-
-$(PKG_BUILD_DIR)/$(PKG_NAME): $(PKG_BUILD_DIR)/.patched
+$(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		extra_defs="-DUSE_PTHREAD_MUTEX "  \
 		CC="$(TARGET_CC)" \
 		ARCH="$(ARCH)" \
 		CFLAGS="$(TARGET_CFLAGS)" \
 		modules all
+	touch $@
 
-$(PKG_IPK): $(PKG_BUILD_DIR)/$(PKG_NAME)
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(PKG_IPK_DIR) $(PKG_NAME).control $(PKG_VERSION)-$(PKG_RELEASE) $(ARCH)
-	mkdir -p $(PKG_IPK_DIR)/usr/sbin
-	cp -a $(PKG_BUILD_DIR)/$(PKG_NAME) $(PKG_IPK_DIR)/usr/sbin/
-	-$(STRIP) $(PKG_IPK_DIR)/usr/sbin/*
-	cp -a $(PKG_BUILD_DIR)/scripts/sc $(PKG_IPK_DIR)/usr/sbin/serctl
-	mkdir -p $(PKG_IPK_DIR)/usr/lib/ser/modules
+$(IPKG_SER):
+	mkdir -p $(IDIR_SER)/usr/sbin
+	cp -a $(PKG_BUILD_DIR)/$(PKG_NAME) $(IDIR_SER)/usr/sbin/
+	-$(STRIP) $(IDIR_SER)/usr/sbin/*
+	cp -a $(PKG_BUILD_DIR)/scripts/sc $(IDIR_SER)/usr/sbin/serctl
+	mkdir -p $(IDIR_SER)/usr/lib/ser/modules
 	(cd $(PKG_BUILD_DIR);\
-		cp -a $(SER_MODULE_FILES) $(PKG_IPK_DIR)/usr/lib/ser/modules/; \
+		cp -a $(SER_MODULE_FILES) $(IDIR_SER)/usr/lib/ser/modules/; \
 	)
-	$(STRIP) $(PKG_IPK_DIR)/usr/lib/ser/modules/*
-	mkdir -p $(PKG_IPK_DIR)/etc/ser
-	cp -a $(PKG_BUILD_DIR)/etc/ser.cfg $(PKG_IPK_DIR)/etc/ser/
-	mkdir -p $(PACKAGE_DIR)
-	$(IPKG_BUILD) $(PKG_IPK_DIR) $(PACKAGE_DIR)
+	$(STRIP) $(IDIR_SER)/usr/lib/ser/modules/*
+	mkdir -p $(IDIR_SER)/etc/ser
+	cp -a $(PKG_BUILD_DIR)/etc/ser.cfg $(IDIR_SER)/etc/ser/
+	$(IPKG_BUILD) $(IDIR_SER) $(PACKAGE_DIR)
 
-$(IPKG_STATE_DIR)/info/$(PKG_NAME).list: $(PKG_IPK)
-	$(IPKG) install $(PKG_IPK)
-
-source: $(DL_DIR)/$(PKG_SOURCE)
-prepare: $(PKG_BUILD_DIR)/.patched
-compile: $(PKG_IPK)
-install: $(IPKG_STATE_DIR)/info/$(PKG_NAME).list
-
-
-clean:
-	rm -rf $(PKG_BUILD_DIR)
-	rm -f $(PKG_IPK)
