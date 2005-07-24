@@ -22,7 +22,7 @@ $(PKG_BUILD_DIR)/.configured:
 
 $(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR) \
-		CC="$(TARGET_CC)" CFLAGS="$(TARGET_CFLAGS)" \
+		CC="$(TARGET_CC)" CFLAGS="$(TARGET_CFLAGS)" LDFLAGS="" \
 		all
 	touch $@
 
