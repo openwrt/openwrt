@@ -93,6 +93,7 @@ package-$(BR2_PACKAGE_OPENSSL) += openssl
 package-$(BR2_PACKAGE_OPENSWAN) += openswan
 package-$(BR2_PACKAGE_OPENVPN) += openvpn
 package-$(BR2_PACKAGE_OSIRIS) += osiris
+package-$(BR2_PACKAGE_PARPROUTED) += parprouted
 package-$(BR2_PACKAGE_PCRE) += pcre
 package-$(BR2_PACKAGE_PHP4) += php4
 package-$(BR2_PACKAGE_PICOCOM) += picocom
