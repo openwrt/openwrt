@@ -13,11 +13,6 @@
 include $(TOPDIR)/rules.mk
 include ../rules.mk
 
-# for testing
-ifeq ($(BOARD),)
-BOARD:=brcm
-endif
-
 LINUX_VERSION:=2.4.30
 MODULES_SUBDIR:=lib/modules/$(LINUX_VERSION)
 LINUX_KCONFIG:=./config/$(BOARD)
@@ -43,7 +38,7 @@ PKG_RELEASE := 2
 KERNEL_IPKG:=$(LINUX_BUILD_DIR)/kernel-$(LINUX_VERSION)-$(BOARD)_$(PKG_RELEASE)_$(ARCH).ipk
 KERNEL_IDIR:=$(LINUX_BUILD_DIR)/kernel-ipkg
 
-PKG_MAKEOPTS:=	IPKG="$(IPKG_KERNEL)" \
+KPKG_MAKEOPTS:=	IPKG="$(IPKG_KERNEL)" \
 		BOARD="$(BOARD)" \
 		TARGET_DIR="$(LINUX_TARGET_DIR)" \
 		BUILD_DIR="$(LINUX_BUILD_DIR)" \
@@ -238,20 +233,25 @@ prepare: $(LINUX_DIR)/.configured
 compile: $(LINUX_DIR)/.modules_done $(TARGETS)
 	ln -sf $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION) $(LINUX_DIR)
 	$(MAKE) -C $(TOPDIR)/target/linux/package \
-		$(PKG_MAKEOPTS) \
+		$(KPKG_MAKEOPTS) \
 		compile
 
 install: compile $(TARGET_MODULES_DIR) $(KERNEL_IPKG)
 	rm -rf $(LINUX_BUILD_DIR)/root*
-	cp -a $(BUILD_DIR)/root $(LINUX_BUILD_DIR)/
 	echo -e 'dest root /\noption offline_root $(LINUX_BUILD_DIR)/root' > $(LINUX_BUILD_DIR)/ipkg.conf
 	[ "$(INSTALL_TARGETS)" != "" ] && $(IPKG_KERNEL) install $(INSTALL_TARGETS) || true
+	$(MAKE) -C $(TOPDIR)/package \
+		TARGET_DIR="$(LINUX_TARGET_DIR)" \
+		IPKG_CONF="$(LINUX_BUILD_DIR)" \
+		BOARD="$(BOARD)" \
+		install
 	$(MAKE) -C $(TOPDIR)/target/linux/package \
-		$(PKG_MAKEOPTS) \
+		$(KPKG_MAKEOPTS) \
 		install
 
 mostlyclean:
-	rm -f $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION)/.{drivers-unpacked,modules_done}
+	rm -f $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION)/.modules_done
+	rm -f $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION)/.drivers-unpacked
 	$(MAKE) -C $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION) clean
 	rm -f $(LINUX_KERNEL) $(LINUX_IMAGE)
 
