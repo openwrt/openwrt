@@ -1,11 +1,12 @@
 config BR2_PACKAGE_DHCP
-	bool
+	tristate
 	default n
 	depends BR2_PACKAGE_DHCP_RELAY || BR2_PACKAGE_DHCP_SERVER
 
 config BR2_PACKAGE_DHCP_RELAY
 	tristate "dhcp-relay - ISC DHCP relay"
 	default m if CONFIG_DEVEL
+	select BR2_PACKAGE_DHCP
 	help
 	  ISC (Internet Software Consortium) DHCP (Dynamic Host Configuration 
 	  Protocol) relay daemon.
@@ -16,6 +17,7 @@ config BR2_PACKAGE_DHCP_RELAY
 config BR2_PACKAGE_DHCP_SERVER
 	tristate "dhcp-server - ISC DHCP server"
 	default m if CONFIG_DEVEL
+	select BR2_PACKAGE_DHCP
 	help
 	  ISC (Internet Software Consortium) DHCP (Dynamic Host Configuration 
 	  Protocol) server daemon.
