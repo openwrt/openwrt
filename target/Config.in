@@ -3,14 +3,22 @@ menu "Target Root Filesystem"
 	config BR2_TARGET_ROOTFS_JFFS2
 		bool "jffs2"
 		default y
+		depends BR2_mipsel
 		help
 		  Build a jffs2 root filesystem
 
 	config BR2_TARGET_ROOTFS_SQUASHFS_LZMA
 		bool "squashfs-lzma"
 		default y
+		depends BR2_mipsel
 		help
 		  Build a squashfs-lzma root filesystem
+
+	config BR2_TARGET_ROOTFS_TGZ
+		bool "tgz"
+		default y
+		help
+		  Build a compressed tar archive of the kernel and the root filesystem
 
 endmenu
 
