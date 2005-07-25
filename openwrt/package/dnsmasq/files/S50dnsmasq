@@ -1,0 +1,25 @@
+#!/bin/sh
+. /etc/functions.sh
+
+# interface to use for DHCP
+iface=lan
+
+ifname=$(nvram get ${iface}_ifname)
+ipaddr=$(nvram get ${iface}_ipaddr)
+netmask=$(nvram get ${iface}_netmask)
+
+# check for existing DHCP server
+udhcpc -n -q -R -s /bin/true -i $ifname >&- || {
+
+  ipaddr=$(ip2int $ipaddr)
+  netmask=$(ip2int ${netmask:-255.255.255.0})
+  network=$((ipaddr&netmask))
+  
+  start=$(nvram get dhcp_start)
+  start=$((network+${start:-100}))
+  end=$(nvram get dhcp_num)
+  end=$((start+${end:-150}))
+  
+  args="-l /tmp/dhcp.leases -K -F $(int2ip $start),$(int2ip $end),$(int2ip $netmask),12h"
+}
+dnsmasq ${args}
