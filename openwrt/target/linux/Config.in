@@ -58,13 +58,23 @@ config BR2_LINUX_2_4_SOEKRIS
 
 comment "Kernel Modules"
 
-config BR2_PACKAGE_KMOD_SANGAM_ATM
-	tristate "AR7 Sangam ADSL Driver"
+config BR2_PACKAGE_KMOD_SANGAM_ATM_A
+	tristate "AR7 Sangam ADSL Driver (Annex A)"
+	default m
+	depends BR2_LINUX_2_4_AR7
+	select BR2_PACKAGE_KMOD_ATM
+	help
+	  ATM driver for the Sangam ADSL chip on AR7
+	  Annex A version
+
+config BR2_PACKAGE_KMOD_SANGAM_ATM_B
+	tristate "AR7 Sangam ADSL Driver (Annex B)"
 	default y
 	depends BR2_LINUX_2_4_AR7
 	select BR2_PACKAGE_KMOD_ATM
 	help
 	  ATM driver for the Sangam ADSL chip on AR7
+	  Annex B version
 
 config BR2_PACKAGE_KMOD_CPMAC
 	tristate "AR7 CPMAC Network Driver"
