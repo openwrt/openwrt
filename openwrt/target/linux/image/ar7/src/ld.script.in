@@ -5,15 +5,15 @@ ENTRY(tikernelunzip)
 {
 
 	/* Allocate memory space on top of kernel bss space */
-	. = _fbss;
+	. = 0x94200000;
 	.text :
 	{
 		*(.text)
-			*(.rodata)
-			*(.rodata1)
-			*(.gnu.warning)
-			*(.text.init)
-			*(.data.init)
+		*(.rodata)
+		*(.rodata1)
+		*(.gnu.warning)
+		*(.text.init)
+		*(.data.init)
 	}                    
 
 	.data :
@@ -21,21 +21,14 @@ ENTRY(tikernelunzip)
 		*(*)
 	}
 
-bss :
+	.bss :
 	{
-		inflate_bss_start = .;
 		*(.dynbss)
-			*(.bss)
-			*(COMMON)
-			*(.sbss)
-			*(.scommon)
-			inflate_bss_end = .;
+		*(COMMON)
+		*(.bss)
+		*(.sbss)
+		*(.scommon)
 		. = ALIGN (0x8000);
-		inflate_slide_window = .;
-		. += 0x8000;  /* slide window is 8000h */
-		inflate_free_memory_start = .;
+		workspace = .;
 	}
-
-
-
 }
