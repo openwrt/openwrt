@@ -126,7 +126,7 @@ int bcom_set_val(int skfd, char *ifname, char *var, void *val, int len)
 
 	strcpy(buf, var);
 	
-	if ((ret = bcom_ioctl(skfd, ifname, WLC_GET_VAR, buf, sizeof(buf))))
+	if ((ret = bcom_ioctl(skfd, ifname, WLC_SET_VAR, buf, sizeof(buf))))
 		return ret;
 
 	memcpy(val, buf, len);
@@ -180,7 +180,7 @@ void setup_bcom(int skfd, char *ifname)
 	/* Set Country */
 	strncpy(buf, nvram_safe_get(wl_var("country_code")), 4);
 	buf[3] = 0;
-	bcom_ioctl(skfd, ifname, 273, buf, 4);
+	bcom_ioctl(skfd, ifname, WLC_SET_COUNTRY, buf, 4);
 	
 	/* Set up afterburner */
 	val = ABO_AUTO;
@@ -416,9 +416,9 @@ void set_wext_mode(skfd, ifname)
 	int ap = 0, infra = 0, wet = 0;
 	
 	/* Set operation mode */
-	ap = !nvram_match(wl_var("mode"), "sta");
+	ap = !nvram_match(wl_var("mode"), "sta") && !nvram_match(wl_var("mode"), "wet");
 	infra = !nvram_disabled(wl_var("infra"));
-	wet = nvram_enabled(wl_var("wet"));
+	wet = nvram_enabled(wl_var("wet")) || !nvram_match(wl_var("mode"), "wet");
 
 	wrq.u.mode = (!infra ? IW_MODE_ADHOC : (ap ? IW_MODE_MASTER : (wet ? IW_MODE_REPEAT : IW_MODE_INFRA)));
 	IW_SET_EXT_ERR(skfd, ifname, SIOCSIWMODE, &wrq, "Set Mode");
