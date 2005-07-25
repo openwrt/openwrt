@@ -4,7 +4,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME := base-files-arch
 PKG_RELEASE := 1
-PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)-$(BOARD)
+PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
 
 include $(TOPDIR)/package/rules.mk
 
@@ -35,13 +35,15 @@ $(IDIR_OPENWRT):
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_OPENWRT) ipkg/base-files-arch.control $(PKG_RELEASE) $(ARCH)
 	$(SED) s,base-files-arch,base-files-$(BOARD),g $(IDIR_OPENWRT)/CONTROL/control
 
-$(IPKG_OPENWRT):
+$(IPKG_OPENWRT): $(IDIR_OPENWRT)
 	mkdir -p $(IDIR_OPENWRT)/etc
 	cp files/network.overrides.$(BOARD) $(IDIR_OPENWRT)/etc/network.overrides
 	$(RSTRIP) $(IDIR_OPENWRT)
 	$(IPKG_BUILD) $(IDIR_OPENWRT) $(PACKAGE_DIR)
 
-compile: install-dev
+install: $(IPKG_OPENWRT)
+	$(IPKG) install $(IPKG_OPENWRT)
+compile: install-dev $(IPKG_OPENWRT)
 install-dev:
 	mkdir -p $(STAGING_DIR)/usr/include
 	cp -a ./include/* $(STAGING_DIR)/usr/include/
