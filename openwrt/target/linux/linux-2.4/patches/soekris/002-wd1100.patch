@@ -1,0 +1,417 @@
+diff -Nur linux-2.4.29/drivers/char/Config.in linux-2.4.29_geode/drivers/char/Config.in
+--- linux-2.4.29/drivers/char/Config.in	Sun Aug  8 01:26:04 2004
++++ linux-2.4.29_geode/drivers/char/Config.in	Tue Feb 15 23:41:54 2005
+@@ -270,6 +270,7 @@
+       fi
+    fi
+    tristate '  ZF MachZ Watchdog' CONFIG_MACHZ_WDT
++   tristate '  Embedded NatSemi SC1x00 Watchdog' CONFIG_WD1100
+    if [ "$CONFIG_SGI_IP22" = "y" ]; then
+       dep_tristate '  Indy/I2 Hardware Watchdog' CONFIG_INDYDOG $CONFIG_SGI_IP22
+    fi
+diff -Nur linux-2.4.29/drivers/char/Makefile linux-2.4.29_geode/drivers/char/Makefile
+--- linux-2.4.29/drivers/char/Makefile	Sun Aug  8 01:26:04 2004
++++ linux-2.4.29_geode/drivers/char/Makefile	Tue Feb 15 23:41:54 2005
+@@ -302,6 +302,7 @@
+ obj-$(CONFIG_ACQUIRE_WDT) += acquirewdt.o
+ obj-$(CONFIG_ADVANTECH_WDT) += advantechwdt.o
+ obj-$(CONFIG_IB700_WDT) += ib700wdt.o
++obj-$(CONFIG_WD1100) += wd1100.o
+ obj-$(CONFIG_MIXCOMWD) += mixcomwd.o
+ obj-$(CONFIG_60XX_WDT) += sbc60xxwdt.o
+ obj-$(CONFIG_W83877F_WDT) += w83877f_wdt.o
+diff -Nur linux-2.4.29/drivers/char/wd1100.c linux-2.4.29_geode/drivers/char/wd1100.c
+--- linux-2.4.29/drivers/char/wd1100.c	Thu Jan  1 01:00:00 1970
++++ linux-2.4.29_geode/drivers/char/wd1100.c	Tue Feb 15 23:41:54 2005
+@@ -0,0 +1,391 @@
++/*
++ *   National Semiconductor SC1x00 CPU watchdog driver
++ *   Copyright (c) Inprimis Technologies 2002
++ *
++ *   by Mark Grosberg <markg@inprimis.com>
++ *   and Rolando Goldman <rolandog@inprimis.com>
++ *
++ *   Minor changes by Kianusch Sayah Karadji <kianusch@sk-tech.net>
++ *   ( Soekris net4801 Support, module-parameter )
++ *
++ *   This program is free software; you can redistribute it and/or
++ *   modify it under the terms of the GNU General Public License
++ *   as published by the Free Software Foundation; either version
++ *   2 of the License, or (at your option) any later version.
++ *   
++ */
++
++#include <linux/module.h>
++#include <linux/types.h>
++#include <linux/kernel.h>
++#include <linux/fs.h>
++#include <linux/mm.h>
++#include <linux/miscdevice.h>
++#include <linux/watchdog.h>
++#include <linux/spinlock.h>
++#include <linux/sysctl.h>
++#include <linux/pci.h>
++
++/* 
++ * Since the SC1100 is an x86 clone, we don't even bother with 
++ * allowing other architectures to compile us.
++ */
++#ifndef CONFIG_X86
++# error Sorry this driver is only for x86.
++#endif
++
++#include <asm/system.h>
++#include <asm/io.h>
++#include <asm/uaccess.h>
++#include <asm/processor.h>
++
++/* #define DEBUG_WD1100 */
++
++static int proc_wd_timeout(ctl_table   *ctl, 
++                           int          write,
++                           struct file *file,
++                           void        *buffer,
++                           size_t      *lenp);
++static int proc_wd_graceful(ctl_table   *ctl, 
++                            int          write,
++                            struct file *file,
++                            void        *buffer,
++                            size_t      *lenp);
++                           
++/* Register definitions */
++
++#define SC1100_F5_VENDOR_ID  0x100B
++#define SC1100_F5_DEVICE_ID  0x0515   
++
++#define CPU_WDTO_REG    0x00 /* watchdog time out, 16 bit register */
++#define CPU_WDCNFG_REG  0x02 /* watchdog config , 16 bit register */
++#define CPU_WDSTS_REG   0x04 /* watchdog status , 8 bit register */
++
++/* Default timeout: 4 seconds (changeable via sysctl) */
++static unsigned int    sysctl_wd_timeout  = 0;
++static unsigned int    sysctl_wd_graceful = 0;
++
++static unsigned int    timeout  = 4;
++static unsigned int    graceful = 1;
++
++MODULE_PARM (timeout,  "i");
++MODULE_PARM (graceful, "i");
++
++static int             in_use    = 0;
++static unsigned short  cpu_base;
++static spinlock_t      wd_lock;
++
++/**************************************************************************/
++
++/* XXX To-do: DEV_WATCHDOG must be in include/linux/sysctl.h */
++enum
++{ DEV_WATCHDOG = 6 };
++
++enum
++{
++   DEV_WD_TIMEOUT   = 1,
++   DEV_WD_GRACEFUL  = 2
++};
++
++static struct ctl_table_header *wd_table_header;
++
++static ctl_table wd_table[] = {
++   {
++    DEV_WD_TIMEOUT, "timeout",
++    &sysctl_wd_timeout, sizeof(int), 0644, NULL, &proc_wd_timeout
++   },
++   
++   {
++    DEV_WD_GRACEFUL, "graceful",
++    &sysctl_wd_graceful, sizeof(int), 0644, NULL, &proc_wd_graceful
++   },
++
++   {0}
++};
++
++static ctl_table wd_dir_table[] = {
++   {DEV_WATCHDOG, "wd", NULL, 0, 0555, wd_table},
++   {0}
++};
++
++static ctl_table wd_root_table[] = {
++   {CTL_DEV, "dev", NULL, 0, 0555, wd_dir_table},
++   {0}
++};
++
++static int proc_wd_timeout(ctl_table   *ctl, 
++                           int          write,
++                           struct file *file,
++                           void        *buffer,
++                           size_t      *lenp)
++{
++  int   rc;
++  
++  rc = proc_dointvec(ctl, write, file, buffer, lenp);
++  if (write && (rc == 0))
++  {
++     /* Clamp to limits. */
++     if (sysctl_wd_timeout < 1) 
++       sysctl_wd_timeout = 1;
++     else if (sysctl_wd_timeout > 65535)
++       sysctl_wd_timeout = 65535;
++  }
++  
++  return (rc);
++}
++
++static int proc_wd_graceful(ctl_table   *ctl, 
++                            int          write,
++                            struct file *file,
++                            void        *buffer,
++                            size_t      *lenp)
++{
++  int   rc;
++  
++  rc = proc_dointvec(ctl, write, file, buffer, lenp);
++  if (write && (rc == 0))
++  {
++     /* Clamp to true/false. */
++     if (sysctl_wd_graceful) 
++       sysctl_wd_graceful = 1;
++  }
++  
++  return (rc);
++}                           
++
++/**************************************************************************/
++
++static __inline__ void reset_wd(void)
++{
++  outw(sysctl_wd_timeout * 8, cpu_base + CPU_WDTO_REG);
++}
++
++static int reboot_reason(void)
++{
++   static int    result;
++   static int    fetched = 0;
++ 
++   if (!fetched)
++   {
++     unsigned char sr;
++     
++     sr = inb(cpu_base + CPU_WDSTS_REG);
++     outb(sr | 1, cpu_base + CPU_WDSTS_REG);
++   
++     fetched = 1;
++   }
++   
++   return (result);
++}
++
++static struct watchdog_info wd_info =
++{
++   0,   /* Options          */
++   0,   /* Firmware version */
++   "NSC SC1x00 WD"
++};
++
++static int wd_ioctl(struct inode *inode, 
++                    struct file  *file, 
++                    unsigned int  cmd,
++                    unsigned long arg)
++{
++   int  i;
++   
++   switch (cmd)
++   {
++      default:
++        return (-ENOTTY);
++        
++      case WDIOC_GETSUPPORT:
++        i = verify_area(VERIFY_WRITE, (void *)arg, sizeof(struct watchdog_info));
++        if (i)
++          return (i);
++        else
++          return copy_to_user((struct watchdog_info *)arg, 
++                              &wd_info, 
++                              sizeof(wd_info));
++        break;
++        
++      case WDIOC_KEEPALIVE:
++        reset_wd();
++        return (0);
++        
++      case WDIOC_GETBOOTSTATUS:
++        i = reboot_reason();
++        return (put_user(i, (int *)arg));
++        
++      case WDIOC_GETSTATUS:
++        i = inw(cpu_base + CPU_WDTO_REG) / 8;
++        return (put_user(i, (int *)arg));
++   }       
++}                    
++
++static int wd_open(struct inode *inode, 
++                   struct file  *file)
++{
++  spin_lock(&wd_lock);
++  if (in_use)
++  {
++    spin_unlock(&wd_lock);
++    return (-EBUSY);
++  }
++  else
++    in_use++;
++    
++  spin_unlock(&wd_lock);
++
++  MOD_INC_USE_COUNT;
++
++  /*
++   * Configure the chip to do a reset if the timer goes to 0.
++   * Set the clock divisor to 4096.
++   */
++     
++  outw(0xfc, cpu_base + CPU_WDCNFG_REG);
++  
++  /* Start the watchdog: It won't run until we write the TO reg. */
++  reset_wd();
++
++  return (0);
++}
++
++static int wd_release(struct inode *inode,
++                       struct file  *file)
++{
++  spin_lock(&wd_lock);
++    
++  in_use = 0;
++  
++  /*
++   * If graceful shutdown is not set, then don't bother to stop the
++   * watchdog timer. This handles the scenario where the user process
++   * that is poking the watchdog gets terminated due to some error
++   * (say a SEGV or some VM condition). 
++   *
++   * In that case, the kernel would happily close the descriptor for
++   * us and leave us in a state where we aren't watching the dog...
++   *
++   * To work around this, the "graceful" sysctl prevents reset of the
++   * watchdog on close.
++   */
++  if (sysctl_wd_graceful)
++    outw(0, cpu_base + CPU_WDCNFG_REG);
++  
++  spin_unlock(&wd_lock);
++  MOD_DEC_USE_COUNT;
++  
++  return (0);
++}           
++
++static ssize_t wd_write(struct file *file,
++                        const char  *data,
++                        size_t       len,
++                        loff_t      *ppos)
++{
++  /* Device is non-seekable. */
++  if (ppos != &file->f_pos)
++    return (-ESPIPE);
++  
++  if (len > 0)
++    reset_wd();   
++  
++  return (len);
++}
++
++static struct file_operations wd_fops=
++{
++   owner:      THIS_MODULE,
++   write:      wd_write,
++   ioctl:      wd_ioctl,
++   open:       wd_open,
++   release:    wd_release,
++};
++ 
++static struct miscdevice sc1x00wd_miscdev=
++{
++   WATCHDOG_MINOR,
++   "watchdog",
++   &wd_fops
++};
++
++static int __init wd_init(void)
++{
++   int              ret;
++   struct pci_dev  *dev;
++   unsigned int     cw;
++
++   if (timeout < 1)
++      timeout = 1;
++   else if (timeout > 65535)
++      timeout = 65535;
++
++   if (graceful != 0)
++      graceful = 1;
++
++   sysctl_wd_timeout=timeout;
++   sysctl_wd_graceful=graceful;
++
++   if ((strcmp(boot_cpu_data.x86_vendor_id, "Geode by NSC") != 0)
++   ||  ((boot_cpu_data.x86_model  != 4) && boot_cpu_data.x86_model  != 9))
++   {
++      printk(KERN_WARNING "wd1100.c: This is not an SC1100 processor!\n");
++      return (0);
++   }
++
++   /* get the CONFIG BLOCK ADDRESS from scratch pad register */ 
++   dev = pci_find_device(SC1100_F5_VENDOR_ID,SC1100_F5_DEVICE_ID,0);
++   if (dev == NULL)
++   {
++     printk(KERN_ERR "wd1100.c: Can not find bridge device.\n");
++     return (0);
++   }
++
++   pci_read_config_dword(dev, 0x64, &cw);
++   cpu_base = (unsigned short )cw;
++  
++#ifdef DEBUG_WD1100
++   printk("wd1100.c: CPU base = 0x%X\n", (unsigned int )cpu_base);
++#endif
++
++   printk(KERN_INFO "SC1x00 Watchdog driver by Inprimis Technolgies.\n");
++   /*
++    * We must call reboot_reason() to reset the flag in the WD.
++    *
++    * Even though it is available as an ioctl(), we call it during
++    * module initialization to perform the clear. You can take out
++    * the printk(), but don't take out the call to reboot_reason().
++    */
++   if (reboot_reason())
++      printk(KERN_INFO "Last reboot was by watchdog!\n");
++    
++   spin_lock_init(&wd_lock);
++        
++   ret = misc_register(&sc1x00wd_miscdev);
++   if (ret)
++     printk(KERN_ERR "wd1100.c: Can't register device.\n");
++   else
++   {
++     wd_table_header = register_sysctl_table(wd_root_table, 1); 
++      if (wd_table_header == NULL)
++        printk(KERN_ERR "wd1100.c: Can't register sysctl.\n");
++   }
++
++   return 0;
++}   
++
++static void __exit wd_exit(void)
++{
++   if (wd_table_header != NULL)
++      unregister_sysctl_table(wd_table_header);
++   
++   misc_deregister(&sc1x00wd_miscdev);
++}
++
++EXPORT_NO_SYMBOLS; 
++
++module_init(wd_init);
++module_exit(wd_exit);
++
++MODULE_LICENSE("GPL");
++

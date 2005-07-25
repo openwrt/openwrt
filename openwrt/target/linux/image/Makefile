@@ -14,6 +14,10 @@ ifeq ($(BR2_TARGET_ROOTFS_SQUASHFS_LZMA),y)
 include ./squashfs.mk
 endif
 
+ifeq ($(BR2_TARGET_ROOTFS_TGZ),y)
+include ./tgz.mk
+endif
+
 prepare:
 compile:
 install:

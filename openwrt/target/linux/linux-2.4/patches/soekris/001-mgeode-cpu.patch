@@ -1,0 +1,40 @@
+diff -Nur linux-2.4.29/arch/i386/Makefile linux-2.4.29_geode/arch/i386/Makefile
+--- linux-2.4.29/arch/i386/Makefile	Wed Nov 17 12:54:21 2004
++++ linux-2.4.29_geode/arch/i386/Makefile	Tue Feb 15 23:41:54 2005
+@@ -94,6 +94,10 @@
+ CFLAGS += $(call check_gcc,-march=c3-2,-march=i686)
+ endif
+ 
++ifdef CONFIG_MGEODE
++CFLAGS += -march=i586
++endif
++
+ # Disable unit-at-a-time mode, it makes gcc use a lot more stack
+ # due to the lack of sharing of stacklots.
+ CFLAGS += $(call check_gcc,-fno-unit-at-a-time,)
+diff -Nur linux-2.4.29/arch/i386/config.in linux-2.4.29_geode/arch/i386/config.in
+--- linux-2.4.29/arch/i386/config.in	Wed Nov 17 12:54:21 2004
++++ linux-2.4.29_geode/arch/i386/config.in	Tue Feb 15 23:41:54 2005
+@@ -42,6 +42,7 @@
+ 	 Winchip-C6				CONFIG_MWINCHIPC6 \
+ 	 Winchip-2				CONFIG_MWINCHIP2 \
+ 	 Winchip-2A/Winchip-3			CONFIG_MWINCHIP3D \
++	 MediaGX/Geode                          CONFIG_MGEODE \
+ 	 CyrixIII/VIA-C3			CONFIG_MCYRIXIII \
+ 	 VIA-C3-2				CONFIG_MVIAC3_2" Pentium-Pro
+ #
+@@ -162,6 +163,14 @@
+    define_bool CONFIG_X86_ALIGNMENT_16 y
+    define_bool CONFIG_X86_USE_PPRO_CHECKSUM y
+    define_bool CONFIG_X86_F00F_WORKS_OK y
++fi
++if [ "$CONFIG_MGEODE" = "y" ]; then
++   define_int  CONFIG_X86_L1_CACHE_SHIFT 5
++   define_bool CONFIG_X86_USE_STRING_486 y
++   define_bool CONFIG_X86_ALIGNMENT_16 y
++   define_bool CONFIG_X86_TSC y
++   define_bool CONFIG_X86_PPRO_FENCE y
++   define_bool CONFIG_X86_OOSTORE y
+ fi
+ if [ "$CONFIG_MCRUSOE" = "y" ]; then
+    define_int  CONFIG_X86_L1_CACHE_SHIFT 5
