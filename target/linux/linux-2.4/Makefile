@@ -239,7 +239,6 @@ compile: $(LINUX_DIR)/.modules_done $(TARGETS)
 install: compile $(TARGET_MODULES_DIR) $(KERNEL_IPKG)
 	rm -rf $(LINUX_BUILD_DIR)/root*
 	echo -e 'dest root /\noption offline_root $(LINUX_BUILD_DIR)/root' > $(LINUX_BUILD_DIR)/ipkg.conf
-	[ "$(INSTALL_TARGETS)" != "" ] && $(IPKG_KERNEL) install $(INSTALL_TARGETS) || true
 	$(MAKE) -C $(TOPDIR)/package \
 		TARGET_DIR="$(LINUX_TARGET_DIR)" \
 		IPKG_CONF="$(LINUX_BUILD_DIR)" \
@@ -248,6 +247,7 @@ install: compile $(TARGET_MODULES_DIR) $(KERNEL_IPKG)
 	$(MAKE) -C $(TOPDIR)/target/linux/package \
 		$(KPKG_MAKEOPTS) \
 		install
+	[ "$(INSTALL_TARGETS)" != "" ] && $(IPKG_KERNEL) install $(INSTALL_TARGETS) || true
 
 mostlyclean:
 	rm -f $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION)/.modules_done
