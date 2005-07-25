@@ -7,9 +7,9 @@
 
 DOWNLOAD_SITE=http://openwrt.org/downloads/sources
 # extracted from netgear DG834B V1.0.5 GPL release
-ATM_FIRMWARE_DIR=sangam-atm-firmware-0.1
+ATM_FIRMWARE_DIR=sangam-atm-firmware-0.2
 ATM_FIRMWARE_FILE=$(ATM_FIRMWARE_DIR).tar.gz
-ATM_FIRMWARE_MD5SUM=dc1be257dcb536b6fa02a02c81956e7e
+ATM_FIRMWARE_MD5SUM=0e37eb105070cd7296ff6d5ae29325b1
 
 $(DL_DIR)/$(ATM_FIRMWARE_FILE):
 	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(ATM_FIRMWARE_FILE) $(ATM_FIRMWARE_MD5SUM) $(DOWNLOAD_SITE)
@@ -24,10 +24,16 @@ $(LINUX_DIR)/.drivers-unpacked: $(LINUX_DIR)/.unpacked
 	touch $@
 
 
-$(eval $(call KMOD_template,SANGAM_ATM,sangam-atm,\
+$(eval $(call KMOD_template,SANGAM_ATM_A,sangam-atm-annex-a,\
 	$(MODULES_DIR)/kernel/drivers/atm/tiatm.o \
 ,CONFIG_MIPS_SANGAM_ATM,kmod-atm,60,tiatm, \
-	cp $(BUILD_DIR)/$(ATM_FIRMWARE_DIR)/*.bin $$(I_SANGAM_ATM)/lib/modules/ \
+	cp $(BUILD_DIR)/$(ATM_FIRMWARE_DIR)/ar0700xx_a.bin $$(I_SANGAM_ATM_A)/lib/modules/ar0700xx.bin \
+))
+
+$(eval $(call KMOD_template,SANGAM_ATM_B,sangam-atm-annex-b,\
+	$(MODULES_DIR)/kernel/drivers/atm/tiatm.o \
+,CONFIG_MIPS_SANGAM_ATM,kmod-atm,60,tiatm, \
+	cp $(BUILD_DIR)/$(ATM_FIRMWARE_DIR)/ar0700xx_b.bin $$(I_SANGAM_ATM_B)/lib/modules/ar0700xx.bin \
 ))
 
 $(eval $(call KMOD_template,CPMAC,cpmac,\
