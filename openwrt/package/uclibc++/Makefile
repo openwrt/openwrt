@@ -39,7 +39,8 @@ $(PKG_BUILD_DIR)/.configured:
 
 $(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR) \
-		$(TARGET_CONFIGURE_OPTS) CROSS="$(TARGET_CROSS)" \
+		$(TARGET_CONFIGURE_OPTS) \
+		CROSS="$(TARGET_CROSS)" \
 		all
 	touch $@
 
@@ -51,7 +52,7 @@ $(IPKG_UCLIBCXX):
 	$(IPKG_BUILD) $(IDIR_UCLIBCXX) $(PACKAGE_DIR)
 
 compile: install-dev
-install-dev:
+install-dev: $(PKG_BUILD_DIR)/.built
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) CROSS="$(TARGET_CROSS)" \
 		DESTDIR="$(STAGING_DIR)" \
