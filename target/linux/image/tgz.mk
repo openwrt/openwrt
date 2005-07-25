@@ -7,7 +7,8 @@ $(KDIR)/rootfs.tar.gz: $(KDIR)/vmlinux.gz
 	gzip -f9 $(KDIR)/rootfs.tar
 
 tgz-install: $(KDIR)/rootfs.tar.gz
-	$(MAKE) -C $(BOARD) install KERNEL="$(KERNEL)" FS="tgz"
+	cp $(KDIR)/vmlinux.gz $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-vmlinux.gz
+	cp $(KDIR)/rootfs.tar.gz $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-rootfs.tar.gz
 
 prepare:
 compile:
