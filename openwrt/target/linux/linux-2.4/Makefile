@@ -55,6 +55,10 @@ ifeq ($(BOARD),brcm)
 include ./broadcom.mk
 endif
 
+ifeq ($(BOARD),soekris)
+include ./soekris.mk
+endif
+
 ifeq ($(BOARD),ar7)
 include ./ar7.mk
 endif

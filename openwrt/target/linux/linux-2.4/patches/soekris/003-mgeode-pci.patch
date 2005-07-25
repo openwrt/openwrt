@@ -1,0 +1,14 @@
+diff -Nur linux-2.4.29/drivers/pci/pci.c linux-2.4.29_geode/drivers/pci/pci.c
+--- linux-2.4.29/drivers/pci/pci.c	Wed Nov 17 12:54:21 2004
++++ linux-2.4.29_geode/drivers/pci/pci.c	Tue Feb 15 23:41:54 2005
+@@ -1486,6 +1486,10 @@
+ 	for (func = 0; func < 8; func++, temp->devfn++) {
+ 		if (pci_read_config_byte(temp, PCI_HEADER_TYPE, &hdr_type))
+ 			continue;
++#ifdef CONFIG_MGEODE
++		if (hdr_type & 0x7f > PCI_HEADER_TYPE_CARDBUS)
++			continue;
++#endif
+ 		temp->hdr_type = hdr_type & 0x7f;
+ 
+ 		dev = pci_scan_device(temp);

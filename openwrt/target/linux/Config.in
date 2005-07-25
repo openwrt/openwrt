@@ -6,6 +6,7 @@ config BR2_LINUX_2_4
 config BR2_LINUX_2_4_BRCM
 	bool "Support for Broadcom based routers"
 	default y
+	depends BR2_mipsel
 	help
 	  Build firmware images for Broadcom based routers
 	  (e.g. Linksys WRT54G(S), Asus WL-500g, Motorola WR850G)
@@ -32,8 +33,28 @@ config BR2_LINUX_2_4_BRCM
 config BR2_LINUX_2_4_AR7
 	bool "Support for TI AR7 based devices"
 	default n
+	depends BR2_mipsel
 	help
 	  Build firmware images for TI AR7 based routers (w.g. Linksys WAG54G v2)
+
+config BR2_LINUX_2_4_SOEKRIS
+	bool "Support for Soekris boards"
+	default n
+	depends BR2_i386
+	help
+	  Build firmware images for Soekris based boards
+	  (e.g. net4521, net4801)
+	  
+	config BR2_TARGET_NET4521
+		default y
+		depends BR2_LINUX_2_4_SOEKRIS
+		bool "Soekris net4521"
+
+	config BR2_TARGET_NET4801
+		default y
+		depends BR2_LINUX_2_4_SOEKRIS
+		bool "Soekris net4801"
+
 
 comment "Kernel Modules"
 
@@ -292,5 +313,22 @@ config BR2_PACKAGE_KMOD_SCHED
 	default m
 	help
 	  Kernel schedulers for IP traffic
+
+
+config BR2_PACKAGE_KMOD_NATSEMI
+	tristate "Soekris net4801 ethernet driver"
+	default y
+	depends BR2_LINUX_2_4_SOEKRIS
+	help
+	  Driver for the National Semiconductor DP8381x series PCI Ethernet 
+	  found on Soekris net4801 boards
+
+config BR2_PACKAGE_KMOD_WD1100
+	tristate "Soekris net4801 watchdog"
+	default y
+	depends BR2_LINUX_2_4_SOEKRIS
+	help
+	  Driver for the NatSemi SC1x00 series Watchdog 
+	  found on Soekris net4801 boards
 
 source "target/linux/package/Config.in"
