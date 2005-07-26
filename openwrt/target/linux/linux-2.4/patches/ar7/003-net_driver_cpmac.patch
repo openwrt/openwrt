@@ -2902,7 +2902,7 @@ diff -urN linux.old/drivers/net/avalanche_cpmac/cpmac.c linux.dev/drivers/net/av
 +        /* OS Needs to supply CORRECT frequency */
 +        if(cpmac_ci_strcmp(action, "Get") == 0 && value != NULL)
 +        {
-+            *(unsigned int *)value = CONFIG_AR7_SYS_FREQUENCY * 1000 * 1000;
++            *(unsigned int *)value = CONFIG_AR7_SYS * 1000 * 1000;
 +            ret_val = 0;
 +        }
 +    }
@@ -2921,7 +2921,7 @@ diff -urN linux.old/drivers/net/avalanche_cpmac/cpmac.c linux.dev/drivers/net/av
 +        /* For Sangam MdioBusFreq is off the PBUS */
 +        if(cpmac_ci_strcmp(action, "Get") == 0 && value != NULL)
 +        {
-+            *(unsigned int *)value = CONFIG_AR7_SYS_FREQUENCY * 1000 * 1000;
++            *(unsigned int *)value = CONFIG_AR7_SYS * 1000 * 1000;
 +            ret_val = 0;
 +        }
 +    }
@@ -3143,7 +3143,7 @@ diff -urN linux.old/drivers/net/avalanche_cpmac/cpmac.c linux.dev/drivers/net/av
 +    int     instance_count = CONFIG_MIPS_CPMAC_PORTS;
 +
 +    //cpmac_cpu_freq = avalanche_clkc_get_freq(CLKC_MIPS);
-+    cpmac_cpu_freq = CONFIG_AR7_CPU_FREQUENCY * 1000 * 1000;
++    cpmac_cpu_freq = CONFIG_AR7_CPU * 1000 * 1000;
 +
 +    build_psp_config();                       
 +
@@ -11171,7 +11171,7 @@ diff -urN linux.old/drivers/net/avalanche_cpmac/psp_config_build.c linux.dev/dri
 +    unsigned int j= 0, detected_phy_map = 0, auto_select = SELECT_INT_PHY_MAC;
 +                                                                                                                   
 +    *reset_cntl |= (1 << AVALANCHE_MDIO_RESET_BIT) | (1 << AVALANCHE_LOW_CPMAC_RESET_BIT) | (1 << AVALANCHE_HIGH_CPMAC_RESET_BIT) | (1 << AVALANCHE_LOW_EPHY_RESET_BIT);                                 
-+    *mdio_cntl   = (1 << 30) | ((CONFIG_AR7_SYS_FREQUENCY * 1000)/2200);                                              
++    *mdio_cntl   = (1 << 30) | ((CONFIG_AR7_SYS * 1000)/2200);                                              
 +                                                                                                                   
 +    for(j=0;j < 300000; j++) 
 +    { 
