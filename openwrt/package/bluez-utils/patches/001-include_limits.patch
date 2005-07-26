@@ -1,0 +1,22 @@
+diff -ur bluez-utils-2.17.orig/hidd/sdp.c bluez-utils-2.17/hidd/sdp.c
+--- bluez-utils-2.17.orig/hidd/sdp.c	2005-05-09 20:33:24.000000000 +0200
++++ bluez-utils-2.17/hidd/sdp.c	2005-07-26 14:38:13.000000000 +0200
+@@ -39,6 +39,7 @@
+ #include <string.h>
+ #include <sys/stat.h>
+ #include <sys/socket.h>
++#include <linux/limits.h>
+ 
+ #include <bluetooth/bluetooth.h>
+ #include <bluetooth/l2cap.h>
+diff -ur bluez-utils-2.17.orig/tools/hciconfig.c bluez-utils-2.17/tools/hciconfig.c
+--- bluez-utils-2.17.orig/tools/hciconfig.c	2005-05-09 20:33:24.000000000 +0200
++++ bluez-utils-2.17/tools/hciconfig.c	2005-07-26 14:34:29.000000000 +0200
+@@ -40,6 +40,7 @@
+ #include <getopt.h>
+ #include <sys/ioctl.h>
+ #include <sys/socket.h>
++#include <linux/limits.h>
+ 
+ #include <bluetooth/bluetooth.h>
+ #include <bluetooth/hci.h>
