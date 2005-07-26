@@ -1,6 +1,90 @@
+diff -urN linux.old/Makefile linux.dev/Makefile
+--- linux.old/Makefile	2005-07-26 18:18:16.286577600 +0200
++++ linux.dev/Makefile	2005-07-26 18:11:03.247409000 +0200
+@@ -91,7 +91,7 @@
+ 
+ CPPFLAGS := -D__KERNEL__ -I$(HPATH)
+ 
+-CFLAGS := $(CPPFLAGS) -Wall -Wstrict-prototypes -Wno-trigraphs -O2 \
++CFLAGS := $(CPPFLAGS) -Wall -Wstrict-prototypes -Wno-trigraphs -Os \
+ 	  -fno-strict-aliasing -fno-common
+ ifndef CONFIG_FRAME_POINTER
+ CFLAGS += -fomit-frame-pointer
+diff -urN linux.old/arch/mips/Makefile linux.dev/arch/mips/Makefile
+--- linux.old/arch/mips/Makefile	2005-07-26 18:18:16.268580336 +0200
++++ linux.dev/arch/mips/Makefile	2005-07-26 18:11:03.268406000 +0200
+@@ -369,6 +369,16 @@
+ endif
+ 
+ #
++# Texas Instruments AR7
++#
++
++ifdef CONFIG_AR7
++LIBS		+= arch/mips/ar7/ar7.o arch/mips/ar7/ar7/ar7.o
++SUBDIRS		+= arch/mips/ar7 arch/mips/ar7/ar7
++LOADADDR	+= 0x94020000
++endif
++
++#
+ # DECstation family
+ #
+ ifdef CONFIG_DECSTATION
+diff -urN linux.old/arch/mips/ar7/Makefile linux.dev/arch/mips/ar7/Makefile
+--- linux.old/arch/mips/ar7/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/arch/mips/ar7/Makefile	2005-07-26 18:11:02.626503000 +0200
+@@ -0,0 +1,13 @@
++.S.s:
++	$(CPP) $(AFLAGS) $< -o $*.s
++
++.S.o:
++	$(CC) $(AFLAGS) -c $< -o $*.o
++
++EXTRA_CFLAGS := -I$(TOPDIR)/include/asm/ar7 -DLITTLE_ENDIAN -D_LINK_KSEG0_
++O_TARGET := ar7.o
++
++obj-y := tnetd73xx_misc.o
++obj-y += setup.o irq.o mipsIRQ.o reset.o init.o memory.o printf.o cmdline.o time.o
++
++include $(TOPDIR)/Rules.make
+diff -urN linux.old/arch/mips/ar7/ar7/Makefile linux.dev/arch/mips/ar7/ar7/Makefile
+--- linux.old/arch/mips/ar7/ar7/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/arch/mips/ar7/ar7/Makefile	2005-07-26 18:11:02.621504000 +0200
+@@ -0,0 +1,31 @@
++# $Id$
++# Copyright (C) $Date$  $Author$
++#
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++
++.S.s:
++	$(CPP) $(AFLAGS) $< -o $*.s
++
++.S.o:
++	$(CC) $(AFLAGS) -c $< -o $*.o
++
++EXTRA_CFLAGS := -DLITTLE_ENDIAN -D_LINK_KSEG0_
++
++O_TARGET := ar7.o
++
++export-objs := misc.o
++obj-y += paging.o jump.o misc.o
++
++include $(TOPDIR)/Rules.make
 diff -urN linux.old/arch/mips/ar7/ar7/jump.S linux.dev/arch/mips/ar7/ar7/jump.S
 --- linux.old/arch/mips/ar7/ar7/jump.S	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/ar7/ar7/jump.S	2005-07-12 02:59:26.167672328 +0200
++++ linux.dev/arch/mips/ar7/ar7/jump.S	2005-07-26 18:11:02.621504000 +0200
 @@ -0,0 +1,89 @@
 +/*
 + * $Id$
@@ -91,44 +175,9 @@ diff -urN linux.old/arch/mips/ar7/ar7/jump.S linux.dev/arch/mips/ar7/ar7/jump.S
 +END(jump_dedicated_interrupt)
 +
 +	.set at
-diff -urN linux.old/arch/mips/ar7/ar7/Makefile linux.dev/arch/mips/ar7/ar7/Makefile
---- linux.old/arch/mips/ar7/ar7/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/ar7/ar7/Makefile	2005-07-12 02:59:26.167672328 +0200
-@@ -0,0 +1,31 @@
-+# $Id$
-+# Copyright (C) $Date$  $Author$
-+#
-+# This program is free software; you can redistribute it and/or modify
-+# it under the terms of the GNU General Public License as published by
-+# the Free Software Foundation; either version 2 of the License, or
-+# (at your option) any later version.
-+#
-+# This program is distributed in the hope that it will be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write to the Free Software
-+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+
-+.S.s:
-+	$(CPP) $(AFLAGS) $< -o $*.s
-+
-+.S.o:
-+	$(CC) $(AFLAGS) -c $< -o $*.o
-+
-+EXTRA_CFLAGS := -DLITTLE_ENDIAN -D_LINK_KSEG0_
-+
-+O_TARGET := ar7.o
-+
-+export-objs := misc.o
-+obj-y += paging.o jump.o misc.o
-+
-+include $(TOPDIR)/Rules.make
 diff -urN linux.old/arch/mips/ar7/ar7/misc.c linux.dev/arch/mips/ar7/ar7/misc.c
 --- linux.old/arch/mips/ar7/ar7/misc.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/ar7/ar7/misc.c	2005-07-12 02:59:26.168672176 +0200
++++ linux.dev/arch/mips/ar7/ar7/misc.c	2005-07-26 18:11:02.622504000 +0200
 @@ -0,0 +1,319 @@
 +#include <asm/ar7/sangam.h>
 +#include <asm/ar7/avalanche_misc.h>
@@ -451,8 +500,8 @@ diff -urN linux.old/arch/mips/ar7/ar7/misc.c linux.dev/arch/mips/ar7/ar7/misc.c
 +
 diff -urN linux.old/arch/mips/ar7/ar7/paging.c linux.dev/arch/mips/ar7/ar7/paging.c
 --- linux.old/arch/mips/ar7/ar7/paging.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/ar7/ar7/paging.c	2005-07-12 02:59:26.168672176 +0200
-@@ -0,0 +1,314 @@
++++ linux.dev/arch/mips/ar7/ar7/paging.c	2005-07-26 18:38:00.086612640 +0200
+@@ -0,0 +1,265 @@
 +/*
 + *  -*- linux-c -*-
 + * This file is subject to the terms and conditions of the GNU General Public
@@ -501,13 +550,6 @@ diff -urN linux.old/arch/mips/ar7/ar7/paging.c linux.dev/arch/mips/ar7/ar7/pagin
 +#include <asm/tlb.h>
 +#include <asm/cpu.h>
 +
-+#define __MEMORY_START CONFIG_AR7_MEMORY
-+
-+#ifdef CONFIG_DISCONTIGMEM
-+pg_data_t discontig_page_data[NR_NODES];
-+bootmem_data_t discontig_node_bdata[NR_NODES];
-+#endif
-+
 +static unsigned long totalram_pages;
 +/* static unsigned long totalhigh_pages; */
 +
@@ -517,10 +559,6 @@ diff -urN linux.old/arch/mips/ar7/ar7/paging.c linux.dev/arch/mips/ar7/ar7/pagin
 +#define PFN_UP(x)  (((x) + PAGE_SIZE - 1) >> PAGE_SHIFT)
 +#define PFN_DOWN(x)        ((x) >> PAGE_SHIFT)
 +#define PFN_PHYS(x)        ((x) << PAGE_SHIFT)
-+
-+unsigned long bootmap_size;
-+
-+extern char *prom_getenv(char *envname);
 +
 +/*
 + * We have upto 8 empty zeroed pages so we can map one of the right colour
@@ -583,14 +621,7 @@ diff -urN linux.old/arch/mips/ar7/ar7/paging.c linux.dev/arch/mips/ar7/ar7/pagin
 +
 +	zones_size[ZONE_DMA] = low - start_pfn;
 +
-+	free_area_init_node(0, NODE_DATA(0), 0, zones_size, __MEMORY_START, 0);
-+
-+#ifdef CONFIG_DISCONTIGMEM
-+	zones_size[ZONE_DMA] = __MEMORY_SIZE_2ND >> PAGE_SHIFT;
-+	zones_size[ZONE_NORMAL] = 0;
-+	free_area_init_node(1, NODE_DATA(1), 0, zones_size, __MEMORY_START_2ND, 0);
-+#endif /* CONFIG_DISCONTIGMEM */
-+
++	free_area_init_node(0, NODE_DATA(0), 0, zones_size, CONFIG_AR7_MEMORY, 0);
 +}
 +
 +extern char _ftext, _etext, _fdata, _edata, _end;
@@ -600,7 +631,7 @@ diff -urN linux.old/arch/mips/ar7/ar7/paging.c linux.dev/arch/mips/ar7/ar7/pagin
 +{
 +	int codesize, reservedpages, datasize, initsize;
 +	int tmp;
-+	
++
 +	max_mapnr = num_physpages = MAX_LOW_PFN - START_PFN;
 +	high_memory = (void *)__va(MAX_LOW_PFN * PAGE_SIZE);
 +
@@ -608,8 +639,8 @@ diff -urN linux.old/arch/mips/ar7/ar7/paging.c linux.dev/arch/mips/ar7/ar7/pagin
 +	 * that is the, after the first page that is 
 +	 * reserved all the way up to the start of the kernel
 +	 */
-+	free_bootmem_node(NODE_DATA(0), (__MEMORY_START+PAGE_SIZE),
-+			(__pa(&_ftext))-(__MEMORY_START+PAGE_SIZE) );
++	free_bootmem_node(NODE_DATA(0), (CONFIG_AR7_MEMORY+PAGE_SIZE),
++			(__pa(&_ftext))-(CONFIG_AR7_MEMORY+PAGE_SIZE) );
 +
 +	/* this will put all low memory onto the freelists */
 +	totalram_pages += free_all_bootmem_node(NODE_DATA(0));
@@ -617,10 +648,6 @@ diff -urN linux.old/arch/mips/ar7/ar7/paging.c linux.dev/arch/mips/ar7/ar7/pagin
 +	/* Setup zeroed pages */
 +	totalram_pages -= setup_zero_pages();	
 +
-+
-+#ifdef CONFIG_DISCONTIGMEM
-+	totalram_pages += free_all_bootmem_node(NODE_DATA(1));
-+#endif
 +	reservedpages = 0;
 +	for (tmp = 0; tmp < num_physpages; tmp++)
 +		/*
@@ -649,19 +676,11 @@ diff -urN linux.old/arch/mips/ar7/ar7/paging.c linux.dev/arch/mips/ar7/ar7/pagin
 +{
 +	unsigned long start_pfn, max_pfn;
 +	unsigned long max_low_pfn;
-+	unsigned int memsize,memory_end,memory_start;
-+	char *memsize_str;
++	unsigned int memory_end,memory_start;
++	unsigned long bootmap_size;
 +
-+	memsize_str = prom_getenv("memsize");
-+	if (!memsize_str) {
-+		memsize = 0x02000000;
-+	} else {
-+		memsize = simple_strtol(memsize_str, NULL, 0);
-+	}
-+
-+
-+	memory_start = (unsigned long)PAGE_OFFSET+__MEMORY_START;
-+	memory_end = memory_start + memsize;
++	memory_start = (unsigned long)PAGE_OFFSET+CONFIG_AR7_MEMORY;
++	memory_end = memory_start + 0x02000000;
 +
 +	/*
 +	 * Find the highest memory page fram number we have available 
@@ -689,7 +708,7 @@ diff -urN linux.old/arch/mips/ar7/ar7/paging.c linux.dev/arch/mips/ar7/ar7/pagin
 +	 */
 +
 +	bootmap_size = init_bootmem_node(NODE_DATA(0), start_pfn,
-+			__MEMORY_START>>PAGE_SHIFT, max_low_pfn);
++			CONFIG_AR7_MEMORY>>PAGE_SHIFT, max_low_pfn);
 +
 +
 +	/* 
@@ -702,7 +721,7 @@ diff -urN linux.old/arch/mips/ar7/ar7/paging.c linux.dev/arch/mips/ar7/ar7/pagin
 +		/*
 +		 * We are rounding up the start address of usable memory:
 +		 */
-+		curr_pfn = PFN_UP(__MEMORY_START);
++		curr_pfn = PFN_UP(CONFIG_AR7_MEMORY);
 +
 +		/*
 +		 * ... and at the end of the usable range downwards:
@@ -726,33 +745,14 @@ diff -urN linux.old/arch/mips/ar7/ar7/paging.c linux.dev/arch/mips/ar7/ar7/pagin
 +	 * case of us accidentally initializing the bootmem allocator with
 +	 * an invalid RAM area.
 +	 */
-+	reserve_bootmem_node(NODE_DATA(0), __MEMORY_START+PAGE_SIZE,
-+			(PFN_PHYS(start_pfn)+bootmap_size+PAGE_SIZE-1)-__MEMORY_START);
++	reserve_bootmem_node(NODE_DATA(0), CONFIG_AR7_MEMORY+PAGE_SIZE,
++			(PFN_PHYS(start_pfn)+bootmap_size+PAGE_SIZE-1)-CONFIG_AR7_MEMORY);
 +
 +	/*
 +	 * reserve physical page 0 - it's a special BIOS page on many boxes,
 +	 * enabling clean reboots, SMP operation, laptop functions.
 +	 */
-+	reserve_bootmem_node(NODE_DATA(0), __MEMORY_START, PAGE_SIZE);
-+}
-+
-+extern char __init_begin, __init_end;
-+
-+void free_initmem(void)
-+{
-+	unsigned long addr;
-+	//	prom_free_prom_memory ();
-+
-+	addr = (unsigned long) &__init_begin;
-+	while (addr < (unsigned long) &__init_end) {
-+		ClearPageReserved(virt_to_page(addr));
-+		set_page_count(virt_to_page(addr), 1);
-+		free_page(addr);
-+		totalram_pages++;
-+		addr += PAGE_SIZE;
-+	}
-+	printk("Freeing unused kernel memory: %dk freed\n",
-+			(&__init_end - &__init_begin) >> 10);
++	reserve_bootmem_node(NODE_DATA(0), CONFIG_AR7_MEMORY, PAGE_SIZE);
 +}
 +
 +void si_meminfo(struct sysinfo *val)
@@ -769,7 +769,7 @@ diff -urN linux.old/arch/mips/ar7/ar7/paging.c linux.dev/arch/mips/ar7/ar7/pagin
 +}
 diff -urN linux.old/arch/mips/ar7/cmdline.c linux.dev/arch/mips/ar7/cmdline.c
 --- linux.old/arch/mips/ar7/cmdline.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/ar7/cmdline.c	2005-07-12 02:59:26.169672024 +0200
++++ linux.dev/arch/mips/ar7/cmdline.c	2005-07-26 18:11:02.623504000 +0200
 @@ -0,0 +1,64 @@
 +/*
 + * Carsten Langgaard, carstenl@mips.com
@@ -837,7 +837,7 @@ diff -urN linux.old/arch/mips/ar7/cmdline.c linux.dev/arch/mips/ar7/cmdline.c
 +}
 diff -urN linux.old/arch/mips/ar7/init.c linux.dev/arch/mips/ar7/init.c
 --- linux.old/arch/mips/ar7/init.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/ar7/init.c	2005-07-12 02:59:26.169672024 +0200
++++ linux.dev/arch/mips/ar7/init.c	2005-07-26 18:11:02.624504000 +0200
 @@ -0,0 +1,144 @@
 +/*
 + * Carsten Langgaard, carstenl@mips.com
@@ -985,8 +985,8 @@ diff -urN linux.old/arch/mips/ar7/init.c linux.dev/arch/mips/ar7/init.c
 +}
 diff -urN linux.old/arch/mips/ar7/irq.c linux.dev/arch/mips/ar7/irq.c
 --- linux.old/arch/mips/ar7/irq.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/ar7/irq.c	2005-07-12 02:59:26.190668832 +0200
-@@ -0,0 +1,705 @@
++++ linux.dev/arch/mips/ar7/irq.c	2005-07-26 18:38:00.087612488 +0200
+@@ -0,0 +1,709 @@
 +/*
 + * Nitin Dhingra, iamnd@ti.com
 + * Copyright (C) 2002 Texas Instruments, Inc.  All rights reserved.
@@ -1395,6 +1395,10 @@ diff -urN linux.old/arch/mips/ar7/irq.c linux.dev/arch/mips/ar7/irq.c
 +	avalanche_hw0_ecregs->excr = 0xffffffff;       /* clear secondary interrupts 0:31 */
 +
 +
++	// avalanche_hw0_ipaceregs->ipacep = (2*get_avalanche_vbus_freq()/1000000)*4;
++	/* hack for speeding up the pacing. */
++	printk("the pacing pre-scalar has been set as 600.\n");
++	avalanche_hw0_ipaceregs->ipacep = 600;
 +	/* Channel to line mapping, Line to Channel mapping */
 +
 +	for(i = 0; i < 40; i++)
@@ -1692,27 +1696,10 @@ diff -urN linux.old/arch/mips/ar7/irq.c linux.dev/arch/mips/ar7/irq.c
 +
 +    return(0);
 +}
-diff -urN linux.old/arch/mips/ar7/Makefile linux.dev/arch/mips/ar7/Makefile
---- linux.old/arch/mips/ar7/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/ar7/Makefile	2005-07-12 02:59:43.730002448 +0200
-@@ -0,0 +1,13 @@
-+.S.s:
-+	$(CPP) $(AFLAGS) $< -o $*.s
-+
-+.S.o:
-+	$(CC) $(AFLAGS) -c $< -o $*.o
-+
-+EXTRA_CFLAGS := -I$(TOPDIR)/include/asm/ar7 -DLITTLE_ENDIAN -D_LINK_KSEG0_
-+O_TARGET := ar7.o
-+
-+obj-y := tnetd73xx_misc.o
-+obj-y += setup.o irq.o mipsIRQ.o reset.o init.o memory.o printf.o cmdline.o time.o
-+
-+include $(TOPDIR)/Rules.make
 diff -urN linux.old/arch/mips/ar7/memory.c linux.dev/arch/mips/ar7/memory.c
 --- linux.old/arch/mips/ar7/memory.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/ar7/memory.c	2005-07-12 02:59:26.190668832 +0200
-@@ -0,0 +1,130 @@
++++ linux.dev/arch/mips/ar7/memory.c	2005-07-26 18:38:00.087612488 +0200
+@@ -0,0 +1,131 @@
 +/*
 + * Carsten Langgaard, carstenl@mips.com
 + * Copyright (C) 1999,2000 MIPS Technologies, Inc.  All rights reserved.
@@ -1746,7 +1733,6 @@ diff -urN linux.old/arch/mips/ar7/memory.c linux.dev/arch/mips/ar7/memory.c
 +#include <asm/bootinfo.h>
 +#include <asm/page.h>
 +#include <asm/mips-boards/prom.h>
-+#include <asm/ar7/ar7.h>
 +
 +enum yamon_memtypes {
 +	yamon_dontuse,
@@ -1823,6 +1809,7 @@ diff -urN linux.old/arch/mips/ar7/memory.c linux.dev/arch/mips/ar7/memory.c
 +
 +void __init prom_free_prom_memory (void)
 +{
++#if 0
 +	int i;
 +	unsigned long freed = 0;
 +	unsigned long addr;
@@ -1842,10 +1829,11 @@ diff -urN linux.old/arch/mips/ar7/memory.c linux.dev/arch/mips/ar7/memory.c
 +		}
 +	}
 +	printk("Freeing prom memory: %ldkb freed\n", freed >> 10);
++#endif
 +}
 diff -urN linux.old/arch/mips/ar7/mipsIRQ.S linux.dev/arch/mips/ar7/mipsIRQ.S
 --- linux.old/arch/mips/ar7/mipsIRQ.S	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/ar7/mipsIRQ.S	2005-07-12 02:59:26.191668680 +0200
++++ linux.dev/arch/mips/ar7/mipsIRQ.S	2005-07-26 18:11:02.627503000 +0200
 @@ -0,0 +1,120 @@
 +/*
 + * Carsten Langgaard, carstenl@mips.com
@@ -1969,8 +1957,8 @@ diff -urN linux.old/arch/mips/ar7/mipsIRQ.S linux.dev/arch/mips/ar7/mipsIRQ.S
 +END(mipsIRQ)
 diff -urN linux.old/arch/mips/ar7/printf.c linux.dev/arch/mips/ar7/printf.c
 --- linux.old/arch/mips/ar7/printf.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/ar7/printf.c	2005-07-12 02:59:26.191668680 +0200
-@@ -0,0 +1,54 @@
++++ linux.dev/arch/mips/ar7/printf.c	2005-07-26 18:38:00.087612488 +0200
+@@ -0,0 +1,53 @@
 +/*
 + * Carsten Langgaard, carstenl@mips.com
 + * Copyright (C) 1999,2000 MIPS Technologies, Inc.  All rights reserved.
@@ -1999,10 +1987,9 @@ diff -urN linux.old/arch/mips/ar7/printf.c linux.dev/arch/mips/ar7/printf.c
 +#include <asm/io.h>
 +#include <asm/serial.h>
 +#include <asm/addrspace.h>
-+#include <asm/ar7/ar7.h>
 +
-+#define AVALANCHE_YAMON_FUNCTION_BASE             (KSEG1ADDR(0x10000500))
-+#define AVALANCHE_YAMON_PROM_PRINT_COUNT_ADDR     (AVALANCHE_YAMON_FUNCTION_BASE + 0x4)  /* print_count function */
++#define AVALANCHE_YAMON_FUNCTION_BASE (KSEG1ADDR(0x10000500))
++#define AVALANCHE_YAMON_PROM_PRINT_COUNT_ADDR (AVALANCHE_YAMON_FUNCTION_BASE + 0x4)
 +
 +static char ppbuf[1024];
 +
@@ -2027,8 +2014,8 @@ diff -urN linux.old/arch/mips/ar7/printf.c linux.dev/arch/mips/ar7/printf.c
 +}
 diff -urN linux.old/arch/mips/ar7/reset.c linux.dev/arch/mips/ar7/reset.c
 --- linux.old/arch/mips/ar7/reset.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/ar7/reset.c	2005-07-12 02:59:26.191668680 +0200
-@@ -0,0 +1,54 @@
++++ linux.dev/arch/mips/ar7/reset.c	2005-07-26 18:38:00.088612336 +0200
+@@ -0,0 +1,56 @@
 +/*
 + * Carsten Langgaard, carstenl@mips.com
 + * Copyright (C) 1999,2000 MIPS Technologies, Inc.  All rights reserved.
@@ -2064,7 +2051,9 @@ diff -urN linux.old/arch/mips/ar7/reset.c linux.dev/arch/mips/ar7/reset.c
 +
 +static void ar7_machine_restart(char *command)
 +{
++	volatile unsigned int *softres_reg = (void *)(KSEG1ADDR(0x08611600 + 0x4));
 +
++	*softres_reg = 1;
 +}
 +
 +static void ar7_machine_halt(void)
@@ -2085,7 +2074,7 @@ diff -urN linux.old/arch/mips/ar7/reset.c linux.dev/arch/mips/ar7/reset.c
 +}
 diff -urN linux.old/arch/mips/ar7/setup.c linux.dev/arch/mips/ar7/setup.c
 --- linux.old/arch/mips/ar7/setup.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/ar7/setup.c	2005-07-12 02:59:26.191668680 +0200
++++ linux.dev/arch/mips/ar7/setup.c	2005-07-26 18:11:02.628503000 +0200
 @@ -0,0 +1,120 @@
 +/*
 + * Carsten Langgaard, carstenl@mips.com
@@ -2209,8 +2198,8 @@ diff -urN linux.old/arch/mips/ar7/setup.c linux.dev/arch/mips/ar7/setup.c
 +}
 diff -urN linux.old/arch/mips/ar7/time.c linux.dev/arch/mips/ar7/time.c
 --- linux.old/arch/mips/ar7/time.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/ar7/time.c	2005-07-12 02:59:26.192668528 +0200
-@@ -0,0 +1,125 @@
++++ linux.dev/arch/mips/ar7/time.c	2005-07-26 18:38:00.088612336 +0200
+@@ -0,0 +1,124 @@
 +/*
 + * Carsten Langgaard, carstenl@mips.com
 + * Copyright (C) 1999,2000 MIPS Technologies, Inc.  All rights reserved.
@@ -2254,7 +2243,6 @@ diff -urN linux.old/arch/mips/ar7/time.c linux.dev/arch/mips/ar7/time.c
 +
 +#include <asm/mips-boards/generic.h>
 +#include <asm/mips-boards/prom.h>
-+#include <asm/ar7/ar7.h>
 +
 +extern asmlinkage void mipsIRQ(void);
 +
@@ -2304,7 +2292,7 @@ diff -urN linux.old/arch/mips/ar7/time.c linux.dev/arch/mips/ar7/time.c
 + */
 +static unsigned long __init cal_r4koff(void)
 +{
-+	return ((CONFIG_AR7_CPU_FREQUENCY*500000)/HZ);
++	return ((CONFIG_AR7_CPU*500000)/HZ);
 +}
 +
 +void __init ar7_time_init(void)
@@ -2338,7 +2326,7 @@ diff -urN linux.old/arch/mips/ar7/time.c linux.dev/arch/mips/ar7/time.c
 +}
 diff -urN linux.old/arch/mips/ar7/tnetd73xx_misc.c linux.dev/arch/mips/ar7/tnetd73xx_misc.c
 --- linux.old/arch/mips/ar7/tnetd73xx_misc.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/ar7/tnetd73xx_misc.c	2005-07-12 02:59:43.731002296 +0200
++++ linux.dev/arch/mips/ar7/tnetd73xx_misc.c	2005-07-26 18:11:02.630503000 +0200
 @@ -0,0 +1,924 @@
 +/******************************************************************************
 + * FILE PURPOSE:    TNETD73xx Misc modules API Source
@@ -3265,8 +3253,8 @@ diff -urN linux.old/arch/mips/ar7/tnetd73xx_misc.c linux.dev/arch/mips/ar7/tnetd
 +}
 +
 diff -urN linux.old/arch/mips/config-shared.in linux.dev/arch/mips/config-shared.in
---- linux.old/arch/mips/config-shared.in	2005-07-10 03:00:44.784181376 +0200
-+++ linux.dev/arch/mips/config-shared.in	2005-07-12 02:59:26.192668528 +0200
+--- linux.old/arch/mips/config-shared.in	2005-07-26 18:18:16.263581096 +0200
++++ linux.dev/arch/mips/config-shared.in	2005-07-26 18:38:00.089612184 +0200
 @@ -20,6 +20,16 @@
  mainmenu_option next_comment
  comment 'Machine selection'
@@ -3277,8 +3265,8 @@ diff -urN linux.old/arch/mips/config-shared.in linux.dev/arch/mips/config-shared
 +      "AR7DB CONFIG_AR7DB \
 +      AR7RD CONFIG_AR7RD \
 +      AR7WRD CONFIG_AR7WRD" AR7DB
-+   int 'Texas Instruments AR7 CPU Frequency' CONFIG_AR7_CPU_FREQUENCY 150
-+   int 'Texas Instruments AR7 System Frequency' CONFIG_AR7_SYS_FREQUENCY 125
++   int 'Texas Instruments AR7 CPU Frequency' CONFIG_AR7_CPU 150
++   int 'Texas Instruments AR7 System Frequency' CONFIG_AR7_SYS 125
 +   hex 'Texas Instruments AR7 SDRAM Start' CONFIG_AR7_MEMORY 0x14000000
 +fi
  dep_bool 'Support for Alchemy Bosporus board' CONFIG_MIPS_BOSPORUS $CONFIG_MIPS32
@@ -3313,8 +3301,8 @@ diff -urN linux.old/arch/mips/config-shared.in linux.dev/arch/mips/config-shared
       "$CONFIG_DECSTATION" = "y" -o \
       "$CONFIG_IBM_WORKPAD" = "y" -o \
 diff -urN linux.old/arch/mips/kernel/irq.c linux.dev/arch/mips/kernel/irq.c
---- linux.old/arch/mips/kernel/irq.c	2005-07-10 03:00:44.784181376 +0200
-+++ linux.dev/arch/mips/kernel/irq.c	2005-07-12 02:59:26.193668376 +0200
+--- linux.old/arch/mips/kernel/irq.c	2005-07-26 18:18:16.264580944 +0200
++++ linux.dev/arch/mips/kernel/irq.c	2005-07-26 18:11:02.632503000 +0200
 @@ -76,6 +76,7 @@
   * Generic, controller-independent functions:
   */
@@ -3364,8 +3352,8 @@ diff -urN linux.old/arch/mips/kernel/irq.c linux.dev/arch/mips/kernel/irq.c
  /*
   * IRQ autodetection code..
 diff -urN linux.old/arch/mips/kernel/mips_ksyms.c linux.dev/arch/mips/kernel/mips_ksyms.c
---- linux.old/arch/mips/kernel/mips_ksyms.c	2004-02-18 14:36:30.000000000 +0100
-+++ linux.dev/arch/mips/kernel/mips_ksyms.c	2005-07-12 02:59:26.193668376 +0200
+--- linux.old/arch/mips/kernel/mips_ksyms.c	2005-07-26 18:18:16.265580792 +0200
++++ linux.dev/arch/mips/kernel/mips_ksyms.c	2005-07-26 18:11:02.633502000 +0200
 @@ -40,6 +40,12 @@
  extern long __strnlen_user_nocheck_asm(const char *s);
  extern long __strnlen_user_asm(const char *s);
@@ -3390,8 +3378,8 @@ diff -urN linux.old/arch/mips/kernel/mips_ksyms.c linux.dev/arch/mips/kernel/mip
 +#endif
 +
 diff -urN linux.old/arch/mips/kernel/setup.c linux.dev/arch/mips/kernel/setup.c
---- linux.old/arch/mips/kernel/setup.c	2005-07-10 03:00:44.785181224 +0200
-+++ linux.dev/arch/mips/kernel/setup.c	2005-07-12 02:59:26.194668224 +0200
+--- linux.old/arch/mips/kernel/setup.c	2005-07-26 18:18:16.265580792 +0200
++++ linux.dev/arch/mips/kernel/setup.c	2005-07-26 18:38:00.090612032 +0200
 @@ -109,6 +109,7 @@
  unsigned long isa_slot_offset;
  EXPORT_SYMBOL(isa_slot_offset);
@@ -3405,7 +3393,7 @@ diff -urN linux.old/arch/mips/kernel/setup.c linux.dev/arch/mips/kernel/setup.c
  
  	/* Find the highest page frame number we have available.  */
 +#ifdef CONFIG_AR7_PAGING
-+ 	avalanche_bootmem_init();
++	avalanche_bootmem_init();
 +#else
  	max_pfn = 0;
  	first_usable_pfn = -1UL;
@@ -3439,27 +3427,16 @@ diff -urN linux.old/arch/mips/kernel/setup.c linux.dev/arch/mips/kernel/setup.c
  		panic("Unsupported architecture");
  	}
 diff -urN linux.old/arch/mips/kernel/traps.c linux.dev/arch/mips/kernel/traps.c
---- linux.old/arch/mips/kernel/traps.c	2005-07-10 03:00:44.786181072 +0200
-+++ linux.dev/arch/mips/kernel/traps.c	2005-07-12 02:59:26.194668224 +0200
-@@ -40,6 +40,10 @@
- #include <asm/uaccess.h>
- #include <asm/mmu_context.h>
- 
-+#ifdef CONFIG_AR7
-+#include <asm/ar7/ar7.h>
-+#endif
-+
- extern asmlinkage void handle_mod(void);
- extern asmlinkage void handle_tlbl(void);
- extern asmlinkage void handle_tlbs(void);
-@@ -869,9 +873,15 @@
+--- linux.old/arch/mips/kernel/traps.c	2005-07-26 18:18:16.267580488 +0200
++++ linux.dev/arch/mips/kernel/traps.c	2005-07-26 18:38:00.091611880 +0200
+@@ -869,9 +869,15 @@
  
  	exception_handlers[n] = handler;
  	if (n == 0 && cpu_has_divec) {
 +#ifdef CONFIG_AR7
-+		*(volatile u32 *)(AVALANCHE_VECS_KSEG0+0x200) = 0x08000000 |
++		*(volatile u32 *)((KSEG0+CONFIG_AR7_MEMORY)+0x200) = 0x08000000 |
 +			(0x03ffffff & (handler >> 2));
-+		flush_icache_range(AVALANCHE_VECS_KSEG0+0x200, AVALANCHE_VECS_KSEG0 + 0x204);
++		flush_icache_range((KSEG0+CONFIG_AR7_MEMORY)+0x200, (KSEG0+CONFIG_AR7_MEMORY) + 0x204);
 +#else
  		*(volatile u32 *)(KSEG0+0x200) = 0x08000000 |
  		                                 (0x03ffffff & (handler >> 2));
@@ -3468,7 +3445,7 @@ diff -urN linux.old/arch/mips/kernel/traps.c linux.dev/arch/mips/kernel/traps.c
  	}
  	return (void *)old_handler;
  }
-@@ -920,14 +930,46 @@
+@@ -920,14 +926,46 @@
  void __init trap_init(void)
  {
  	extern char except_vec1_generic;
@@ -3497,10 +3474,10 @@ diff -urN linux.old/arch/mips/kernel/traps.c linux.dev/arch/mips/kernel/traps.c
 +	memcpy((void *)(KSEG0 + 0x200), &jump_dedicated_interrupt, 0x80);
 +
 +#ifdef CONFIG_AR7
-+	memcpy((void *)(AVALANCHE_VECS_KSEG0 + 0x80), &except_vec1_generic, 0x80);
-+	memcpy((void *)(AVALANCHE_VECS_KSEG0 + 0x100), &except_vec2_generic, 0x80);
-+	memcpy((void *)(AVALANCHE_VECS_KSEG0 + 0x180), &except_vec3_generic, 0x80);
-+	flush_icache_range(AVALANCHE_VECS_KSEG0, AVALANCHE_VECS_KSEG0 + 0x200);
++	memcpy((void *)((KSEG0+CONFIG_AR7_MEMORY) + 0x80), &except_vec1_generic, 0x80);
++	memcpy((void *)((KSEG0+CONFIG_AR7_MEMORY) + 0x100), &except_vec2_generic, 0x80);
++	memcpy((void *)((KSEG0+CONFIG_AR7_MEMORY) + 0x180), &except_vec3_generic, 0x80);
++	flush_icache_range((KSEG0+CONFIG_AR7_MEMORY), (KSEG0+CONFIG_AR7_MEMORY) + 0x200);
 +
 +	memcpy((void *)(KSEG0 + 0x0),   &jump_tlb_miss, 0x80);
 +	memcpy((void *)(KSEG0 + 0x80),  &jump_tlb_miss_unused, 0x80);
@@ -3515,12 +3492,12 @@ diff -urN linux.old/arch/mips/kernel/traps.c linux.dev/arch/mips/kernel/traps.c
  	/*
  	 * Setup default vectors
  	 */
-@@ -951,8 +993,12 @@
+@@ -951,8 +989,12 @@
  	 * Some MIPS CPUs have a dedicated interrupt vector which reduces the
  	 * interrupt processing overhead.  Use it where available.
  	 */
 +#ifdef CONFIG_AR7
-+	memcpy((void *)(AVALANCHE_VECS_KSEG0 + 0x200), &except_vec4, 8);
++	memcpy((void *)((KSEG0+CONFIG_AR7_MEMORY) + 0x200), &except_vec4, 8);
 +#else
  	if (cpu_has_divec)
  		memcpy((void *)(KSEG0 + 0x200), &except_vec4, 8);
@@ -3528,13 +3505,13 @@ diff -urN linux.old/arch/mips/kernel/traps.c linux.dev/arch/mips/kernel/traps.c
  
  	/*
  	 * Some CPUs can enable/disable for cache parity detection, but does
-@@ -991,12 +1037,17 @@
+@@ -991,12 +1033,17 @@
  	if (cpu_has_mcheck)
  		set_except_vector(24, handle_mcheck);
  
 +memcpy((void *)(KSEG0 + 0x180), &except_vec3_generic, 0x80);
 +#ifdef CONFIG_AR7
-+	memcpy((void *)(AVALANCHE_VECS_KSEG0 + 0x180), &except_vec3_generic, 0x80);
++	memcpy((void *)((KSEG0+CONFIG_AR7_MEMORY) + 0x180), &except_vec3_generic, 0x80);
 +#else
  	if (cpu_has_vce)
  		memcpy((void *)(KSEG0 + 0x180), &except_vec3_r4000, 0x80);
@@ -3546,12 +3523,12 @@ diff -urN linux.old/arch/mips/kernel/traps.c linux.dev/arch/mips/kernel/traps.c
  
  	if (current_cpu_data.cputype == CPU_R6000 ||
  	    current_cpu_data.cputype == CPU_R6000A) {
-@@ -1023,7 +1074,11 @@
+@@ -1023,7 +1070,11 @@
  	if (board_nmi_handler_setup)
  		board_nmi_handler_setup();
  
 +#ifdef CONFIG_AR7
-+	flush_icache_range(AVALANCHE_VECS_KSEG0, AVALANCHE_VECS_KSEG0 + 0x200);
++	flush_icache_range((KSEG0+CONFIG_AR7_MEMORY), (KSEG0+CONFIG_AR7_MEMORY) + 0x200);
 +#else
  	flush_icache_range(KSEG0, KSEG0 + 0x400);
 +#endif
@@ -3559,8 +3536,8 @@ diff -urN linux.old/arch/mips/kernel/traps.c linux.dev/arch/mips/kernel/traps.c
  	per_cpu_trap_init();
  }
 diff -urN linux.old/arch/mips/lib/promlib.c linux.dev/arch/mips/lib/promlib.c
---- linux.old/arch/mips/lib/promlib.c	2005-07-10 03:00:44.786181072 +0200
-+++ linux.dev/arch/mips/lib/promlib.c	2005-07-12 02:59:26.195668072 +0200
+--- linux.old/arch/mips/lib/promlib.c	2005-07-26 18:18:16.267580488 +0200
++++ linux.dev/arch/mips/lib/promlib.c	2005-07-26 18:11:02.635502000 +0200
 @@ -1,3 +1,4 @@
 +#ifndef CONFIG_AR7
  #include <stdarg.h>
@@ -3571,41 +3548,10 @@ diff -urN linux.old/arch/mips/lib/promlib.c linux.dev/arch/mips/lib/promlib.c
  	va_end(args);
  }
 +#endif
-diff -urN linux.old/arch/mips/Makefile linux.dev/arch/mips/Makefile
---- linux.old/arch/mips/Makefile	2005-07-10 03:00:44.786181072 +0200
-+++ linux.dev/arch/mips/Makefile	2005-07-12 02:59:26.195668072 +0200
-@@ -369,6 +369,16 @@
- endif
- 
- #
-+# Texas Instruments AR7
-+#
-+
-+ifdef CONFIG_AR7
-+LIBS		+= arch/mips/ar7/ar7.o arch/mips/ar7/ar7/ar7.o
-+SUBDIRS		+= arch/mips/ar7 arch/mips/ar7/ar7
-+LOADADDR	+= 0x94020000
-+endif
-+
-+#
- # DECstation family
- #
- ifdef CONFIG_DECSTATION
 diff -urN linux.old/arch/mips/mm/init.c linux.dev/arch/mips/mm/init.c
---- linux.old/arch/mips/mm/init.c	2005-07-10 03:00:44.787180920 +0200
-+++ linux.dev/arch/mips/mm/init.c	2005-07-12 02:59:26.195668072 +0200
-@@ -40,8 +40,10 @@
- 
- mmu_gather_t mmu_gathers[NR_CPUS];
- unsigned long highstart_pfn, highend_pfn;
-+#ifndef CONFIG_AR7_PAGING
- static unsigned long totalram_pages;
- static unsigned long totalhigh_pages;
-+#endif
- 
- void pgd_init(unsigned long page)
- {
-@@ -235,6 +237,7 @@
+--- linux.old/arch/mips/mm/init.c	2005-07-26 18:18:16.268580336 +0200
++++ linux.dev/arch/mips/mm/init.c	2005-07-26 18:38:00.091611880 +0200
+@@ -235,6 +235,7 @@
  #endif
  }
  
@@ -3613,7 +3559,7 @@ diff -urN linux.old/arch/mips/mm/init.c linux.dev/arch/mips/mm/init.c
  void __init paging_init(void)
  {
  	unsigned long zones_size[MAX_NR_ZONES] = {0, 0, 0};
-@@ -272,6 +275,7 @@
+@@ -272,6 +273,7 @@
  
  	free_area_init(zones_size);
  }
@@ -3621,7 +3567,7 @@ diff -urN linux.old/arch/mips/mm/init.c linux.dev/arch/mips/mm/init.c
  
  #define PFN_UP(x)	(((x) + PAGE_SIZE - 1) >> PAGE_SHIFT)
  #define PFN_DOWN(x)	((x) >> PAGE_SHIFT)
-@@ -298,6 +302,7 @@
+@@ -298,6 +300,7 @@
  	return 0;
  }
  
@@ -3629,7 +3575,7 @@ diff -urN linux.old/arch/mips/mm/init.c linux.dev/arch/mips/mm/init.c
  void __init mem_init(void)
  {
  	unsigned long codesize, reservedpages, datasize, initsize;
-@@ -359,6 +364,7 @@
+@@ -359,6 +362,7 @@
  	       initsize >> 10,
  	       (unsigned long) (totalhigh_pages << (PAGE_SHIFT-10)));
  }
@@ -3637,50 +3583,29 @@ diff -urN linux.old/arch/mips/mm/init.c linux.dev/arch/mips/mm/init.c
  
  #ifdef CONFIG_BLK_DEV_INITRD
  void free_initrd_mem(unsigned long start, unsigned long end)
-@@ -376,6 +382,7 @@
+@@ -397,6 +401,7 @@
+ 	       (&__init_end - &__init_begin) >> 10);
  }
- #endif
  
 +#ifndef CONFIG_AR7_PAGING
- extern char __init_begin, __init_end;
- extern void prom_free_prom_memory(void) __init;
- 
-@@ -383,7 +390,9 @@
+ void si_meminfo(struct sysinfo *val)
  {
- 	unsigned long addr;
- 
-+#ifndef CONFIG_AR7
- 	prom_free_prom_memory ();
-+#endif
- 
- 	addr = (unsigned long) &__init_begin;
- 	while (addr < (unsigned long) &__init_end) {
-@@ -409,3 +418,4 @@
+ 	val->totalram = totalram_pages;
+@@ -409,3 +414,4 @@
  
  	return;
  }
 +#endif
 diff -urN linux.old/arch/mips/mm/tlb-r4k.c linux.dev/arch/mips/mm/tlb-r4k.c
---- linux.old/arch/mips/mm/tlb-r4k.c	2005-07-10 03:00:44.787180920 +0200
-+++ linux.dev/arch/mips/mm/tlb-r4k.c	2005-07-12 02:59:26.196667920 +0200
-@@ -20,6 +20,10 @@
- #include <asm/pgtable.h>
- #include <asm/system.h>
- 
-+#ifdef CONFIG_AR7
-+#include <asm/ar7/ar7.h>
-+#endif
-+
- extern char except_vec0_nevada, except_vec0_r4000, except_vec0_r4600;
- 
- /* CP0 hazard avoidance. */
-@@ -375,7 +379,12 @@
+--- linux.old/arch/mips/mm/tlb-r4k.c	2005-07-26 18:18:16.269580184 +0200
++++ linux.dev/arch/mips/mm/tlb-r4k.c	2005-07-26 18:38:00.092611728 +0200
+@@ -375,7 +375,12 @@
  		else if (current_cpu_data.cputype == CPU_R4600)
  			memcpy((void *)KSEG0, &except_vec0_r4600, 0x80);
  		else
 +#ifdef CONFIG_AR7
-+			memcpy((void *)AVALANCHE_VECS_KSEG0, &except_vec0_r4000, 0x80);
-+		flush_icache_range(AVALANCHE_VECS_KSEG0, AVALANCHE_VECS_KSEG0 + 0x80);
++			memcpy((void *)(KSEG0+CONFIG_AR7_MEMORY), &except_vec0_r4000, 0x80);
++		flush_icache_range((KSEG0+CONFIG_AR7_MEMORY), (KSEG0+CONFIG_AR7_MEMORY) + 0x80);
 +#else
  			memcpy((void *)KSEG0, &except_vec0_r4000, 0x80);
  		flush_icache_range(KSEG0, KSEG0 + 0x80);
@@ -3688,8 +3613,8 @@ diff -urN linux.old/arch/mips/mm/tlb-r4k.c linux.dev/arch/mips/mm/tlb-r4k.c
  	}
  }
 diff -urN linux.old/drivers/char/serial.c linux.dev/drivers/char/serial.c
---- linux.old/drivers/char/serial.c	2005-07-10 03:00:44.789180616 +0200
-+++ linux.dev/drivers/char/serial.c	2005-07-12 02:59:26.198667616 +0200
+--- linux.old/drivers/char/serial.c	2005-07-26 18:18:16.274579424 +0200
++++ linux.dev/drivers/char/serial.c	2005-07-26 18:38:00.096611120 +0200
 @@ -419,7 +419,40 @@
  	return 0;
  }
@@ -3743,13 +3668,12 @@ diff -urN linux.old/drivers/char/serial.c linux.dev/drivers/char/serial.c
  
  
  /*
-@@ -1728,7 +1763,16 @@
+@@ -1728,7 +1763,15 @@
  			/* Special case since 134 is really 134.5 */
  			quot = (2*baud_base / 269);
  		else if (baud)
 +#ifdef CONFIG_AR7
-+			quot = (CONFIG_AR7_SYS_FREQUENCY*500000) / baud;
-+			//quot = get_avalanche_vbus_freq() / baud;
++			quot = (CONFIG_AR7_SYS*500000) / baud;
 +
 +		if ((quot%16)>7)
 +			quot += 8;
@@ -3760,7 +3684,7 @@ diff -urN linux.old/drivers/char/serial.c linux.dev/drivers/char/serial.c
  	}
  	/* If the quotient is zero refuse the change */
  	if (!quot && old_termios) {
-@@ -5552,8 +5596,10 @@
+@@ -5552,8 +5595,10 @@
  		state->irq = irq_cannonicalize(state->irq);
  		if (state->hub6)
  			state->io_type = SERIAL_IO_HUB6;
@@ -3771,13 +3695,12 @@ diff -urN linux.old/drivers/char/serial.c linux.dev/drivers/char/serial.c
  #ifdef CONFIG_MCA			
  		if ((state->flags & ASYNC_BOOT_ONLYMCA) && !MCA_bus)
  			continue;
-@@ -6009,7 +6055,16 @@
+@@ -6009,7 +6054,15 @@
  	info->io_type = state->io_type;
  	info->iomem_base = state->iomem_base;
  	info->iomem_reg_shift = state->iomem_reg_shift;
 +#ifdef CONFIG_AR7
-+	//quot = get_avalanche_vbus_freq() / baud;
-+	quot = (CONFIG_AR7_SYS_FREQUENCY*500000) / baud;
++	quot = (CONFIG_AR7_SYS*500000) / baud;
 +
 +	if ((quot%16)>7)
 +		quot += 8;
@@ -3790,7 +3713,7 @@ diff -urN linux.old/drivers/char/serial.c linux.dev/drivers/char/serial.c
  	cval >>= 8;
 diff -urN linux.old/include/asm-mips/ar7/ar7.h linux.dev/include/asm-mips/ar7/ar7.h
 --- linux.old/include/asm-mips/ar7/ar7.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/include/asm-mips/ar7/ar7.h	2005-07-12 02:59:26.199667464 +0200
++++ linux.dev/include/asm-mips/ar7/ar7.h	2005-07-26 18:11:02.643501000 +0200
 @@ -0,0 +1,33 @@
 +/*
 + * $Id$
@@ -3821,14 +3744,14 @@ diff -urN linux.old/include/asm-mips/ar7/ar7.h linux.dev/include/asm-mips/ar7/ar
 +#define AVALANCHE_VECS_KSEG0 (KSEG0ADDR(CONFIG_AR7_MEMORY))
 +
 +#define AR7_UART0_REGS_BASE (KSEG1ADDR(0x08610E00))
-+#define AR7_UART1_REGS_BASE (KSEG1ADDR(0x08610E00))
++#define AR7_UART1_REGS_BASE (KSEG1ADDR(0x08610F00))
 +#define AR7_BASE_BAUD ( 3686400 / 16 )
 +
 +#endif
 diff -urN linux.old/include/asm-mips/ar7/avalanche_intc.h linux.dev/include/asm-mips/ar7/avalanche_intc.h
 --- linux.old/include/asm-mips/ar7/avalanche_intc.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/include/asm-mips/ar7/avalanche_intc.h	2005-07-12 02:59:26.199667464 +0200
-@@ -0,0 +1,278 @@
++++ linux.dev/include/asm-mips/ar7/avalanche_intc.h	2005-07-26 18:38:00.097610968 +0200
+@@ -0,0 +1,283 @@
 + /*
 + * Nitin Dhingra, iamnd@ti.com
 + * Copyright (C) 2000 Texas Instruments Inc.
@@ -3856,6 +3779,16 @@ diff -urN linux.old/include/asm-mips/ar7/avalanche_intc.h linux.dev/include/asm-
 + */
 +#ifndef _AVALANCHE_INTC_H
 +#define _AVALANCHE_INTC_H
++
++/* ----- */
++
++#define KSEG1_BASE                  0xA0000000
++#define KSEG_INV_MASK               0x1FFFFFFF /* Inverted mask for kseg address */
++#define PHYS_ADDR(addr)             ((addr) & KSEG_INV_MASK)
++#define PHYS_TO_K1(addr)            (PHYS_ADDR(addr)|KSEG1_BASE)
++#define AVALANCHE_INTC_BASE PHYS_TO_K1(0x08612400)
++
++/* ----- */
 +
 +#define MIPS_EXCEPTION_OFFSET 8
 +
@@ -3886,12 +3819,7 @@ diff -urN linux.old/include/asm-mips/ar7/avalanche_intc.h linux.dev/include/asm-
 +/*
 + * Avalanche interrupt controller register base (primary)
 + */
-+#define KSEG1_BASE                  0xA0000000
-+#define KSEG_INV_MASK               0x1FFFFFFF /* Inverted mask for kseg address */
-+#define PHYS_ADDR(addr)             ((addr) & KSEG_INV_MASK)
-+#define PHYS_TO_K1(addr)            (PHYS_ADDR(addr)|KSEG1_BASE)
-+
-+#define AVALANCHE_ICTRL_REGS_BASE   KSEG1ADDR(0x08612400)// AVALANCHE_INTC_BASE
++#define AVALANCHE_ICTRL_REGS_BASE  AVALANCHE_INTC_BASE
 +
 +/******************************************************************************
 + * Avalanche exception controller register base (secondary)
@@ -4109,7 +4037,7 @@ diff -urN linux.old/include/asm-mips/ar7/avalanche_intc.h linux.dev/include/asm-
 +#endif /* _AVALANCHE_INTC_H */
 diff -urN linux.old/include/asm-mips/ar7/avalanche_misc.h linux.dev/include/asm-mips/ar7/avalanche_misc.h
 --- linux.old/include/asm-mips/ar7/avalanche_misc.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/include/asm-mips/ar7/avalanche_misc.h	2005-07-12 02:59:26.200667312 +0200
++++ linux.dev/include/asm-mips/ar7/avalanche_misc.h	2005-07-26 18:11:02.645501000 +0200
 @@ -0,0 +1,174 @@
 +#ifndef _AVALANCHE_MISC_H_
 +#define _AVALANCHE_MISC_H_
@@ -4287,7 +4215,7 @@ diff -urN linux.old/include/asm-mips/ar7/avalanche_misc.h linux.dev/include/asm-
 +#endif
 diff -urN linux.old/include/asm-mips/ar7/avalanche_regs.h linux.dev/include/asm-mips/ar7/avalanche_regs.h
 --- linux.old/include/asm-mips/ar7/avalanche_regs.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/include/asm-mips/ar7/avalanche_regs.h	2005-07-12 02:59:26.201667160 +0200
++++ linux.dev/include/asm-mips/ar7/avalanche_regs.h	2005-07-26 18:11:02.646500000 +0200
 @@ -0,0 +1,567 @@
 +/* 
 + *  $Id$
@@ -4858,7 +4786,7 @@ diff -urN linux.old/include/asm-mips/ar7/avalanche_regs.h linux.dev/include/asm-
 +
 diff -urN linux.old/include/asm-mips/ar7/if_port.h linux.dev/include/asm-mips/ar7/if_port.h
 --- linux.old/include/asm-mips/ar7/if_port.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/include/asm-mips/ar7/if_port.h	2005-07-12 02:59:26.201667160 +0200
++++ linux.dev/include/asm-mips/ar7/if_port.h	2005-07-26 18:11:02.647500000 +0200
 @@ -0,0 +1,26 @@
 +/*******************************************************************************   
 + * FILE PURPOSE:    Interface port id Header file                                      
@@ -4886,90 +4814,9 @@ diff -urN linux.old/include/asm-mips/ar7/if_port.h linux.dev/include/asm-mips/ar
 +
 +
 +#endif /* _IF_PORT_H_ */
-diff -urN linux.old/include/asm-mips/ar7/sangam_boards.h linux.dev/include/asm-mips/ar7/sangam_boards.h
---- linux.old/include/asm-mips/ar7/sangam_boards.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/include/asm-mips/ar7/sangam_boards.h	2005-07-12 02:59:26.201667160 +0200
-@@ -0,0 +1,77 @@
-+#ifndef _SANGAM_BOARDS_H
-+#define _SANGAM_BOARDS_H
-+
-+// Let us define board specific information here. 
-+
-+
-+#if defined(CONFIG_AR7DB)
-+
-+#define AFECLK_FREQ                                 35328000
-+#define REFCLK_FREQ                                 25000000
-+#define OSC3_FREQ                                   24000000
-+#define AVALANCHE_LOW_CPMAC_PHY_MASK                0x80000000
-+#define AVALANCHE_HIGH_CPMAC_PHY_MASK               0x55555555  
-+#define AVALANCHE_LOW_CPMAC_MDIX_MASK               0x80000000
-+
-+#endif
-+
-+
-+#if defined(CONFIG_AR7RD)
-+#define AFECLK_FREQ                                 35328000
-+#define REFCLK_FREQ                                 25000000
-+#define OSC3_FREQ                                   24000000
-+#define AVALANCHE_LOW_CPMAC_PHY_MASK                0x80000000
-+#define AVALANCHE_HIGH_CPMAC_PHY_MASK               0x2
-+#define AVALANCHE_LOW_CPMAC_MDIX_MASK               0x80000000
-+#endif
-+
-+
-+#if defined(CONFIG_AR7WI)
-+#define AFECLK_FREQ                                 35328000
-+#define REFCLK_FREQ                                 25000000
-+#define OSC3_FREQ                                   24000000
-+#define AVALANCHE_LOW_CPMAC_PHY_MASK                0x80000000
-+#define AVALANCHE_HIGH_CPMAC_PHY_MASK               0x2
-+#define AVALANCHE_LOW_CPMAC_MDIX_MASK               0x80000000
-+#endif
-+
-+
-+#if defined(CONFIG_AR7V)
-+#define AFECLK_FREQ                                 35328000
-+#define REFCLK_FREQ                                 25000000
-+#define OSC3_FREQ                                   24000000
-+#define AVALANCHE_LOW_CPMAC_PHY_MASK                0x80000000
-+#define AVALANCHE_HIGH_CPMAC_PHY_MASK               0x2
-+#define AVALANCHE_LOW_CPMAC_MDIX_MASK               0x80000000
-+#endif
-+
-+
-+#if defined(CONFIG_AR7WRD) 
-+#define AFECLK_FREQ                                 35328000
-+#define REFCLK_FREQ                                 25000000
-+#define OSC3_FREQ                                   24000000
-+#define AVALANCHE_LOW_CPMAC_PHY_MASK                0x80000000
-+#define AVALANCHE_HIGH_CPMAC_PHY_MASK               0x00010000
-+#define AVALANCHE_LOW_CPMAC_MDIX_MASK               0x80000000
-+#endif
-+
-+
-+#if defined(CONFIG_AR7VWI) 
-+#define AFECLK_FREQ                                 35328000
-+#define REFCLK_FREQ                                 25000000
-+#define OSC3_FREQ                                   24000000
-+#define AVALANCHE_LOW_CPMAC_PHY_MASK                0x80000000
-+#define AVALANCHE_HIGH_CPMAC_PHY_MASK               0x00010000
-+#define AVALANCHE_LOW_CPMAC_MDIX_MASK               0x80000000
-+#endif
-+
-+
-+#if defined CONFIG_SEAD2
-+#define AVALANCHE_LOW_CPMAC_PHY_MASK                0xAAAAAAAA
-+#define AVALANCHE_HIGH_CPMAC_PHY_MASK               0x55555555
-+#define AVALANCHE_LOW_CPMAC_MDIX_MASK               0
-+#include <asm/mips-boards/sead.h>
-+#endif
-+
-+
-+#endif
 diff -urN linux.old/include/asm-mips/ar7/sangam.h linux.dev/include/asm-mips/ar7/sangam.h
 --- linux.old/include/asm-mips/ar7/sangam.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/include/asm-mips/ar7/sangam.h	2005-07-12 02:59:26.201667160 +0200
++++ linux.dev/include/asm-mips/ar7/sangam.h	2005-07-26 18:11:02.648500000 +0200
 @@ -0,0 +1,180 @@
 +#ifndef _SANGAM_H_
 +#define _SANGAM_H_
@@ -5151,55 +4998,90 @@ diff -urN linux.old/include/asm-mips/ar7/sangam.h linux.dev/include/asm-mips/ar7
 +#include "sangam_boards.h"
 +
 +#endif /*_SANGAM_H_ */
-diff -urN linux.old/include/asm-mips/ar7/tnetd73xx_err.h linux.dev/include/asm-mips/ar7/tnetd73xx_err.h
---- linux.old/include/asm-mips/ar7/tnetd73xx_err.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/include/asm-mips/ar7/tnetd73xx_err.h	2005-07-12 03:01:26.109438408 +0200
-@@ -0,0 +1,42 @@
-+/******************************************************************************
-+ * FILE PURPOSE:    TNETD73xx Error Definations Header File
-+ ******************************************************************************
-+ * FILE NAME:       tnetd73xx_err.h
-+ *
-+ * DESCRIPTION:     Error definations for TNETD73XX
-+ *
-+ * REVISION HISTORY:
-+ * 27 Nov 02 - PSP TII  
-+ *
-+ * (C) Copyright 2002, Texas Instruments, Inc
-+ *******************************************************************************/
+diff -urN linux.old/include/asm-mips/ar7/sangam_boards.h linux.dev/include/asm-mips/ar7/sangam_boards.h
+--- linux.old/include/asm-mips/ar7/sangam_boards.h	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/include/asm-mips/ar7/sangam_boards.h	2005-07-26 18:11:02.647500000 +0200
+@@ -0,0 +1,77 @@
++#ifndef _SANGAM_BOARDS_H
++#define _SANGAM_BOARDS_H
 +
-+ 
-+#ifndef __TNETD73XX_ERR_H__
-+#define __TNETD73XX_ERR_H__
++// Let us define board specific information here. 
 +
-+typedef enum TNETD73XX_ERR_t
-+{
-+    TNETD73XX_ERR_OK        = 0,    /* OK or SUCCESS */
-+    TNETD73XX_ERR_ERROR     = -1,   /* Unspecified/Generic ERROR */
 +
-+    /* Pointers and args */
-+    TNETD73XX_ERR_INVARG        = -2,   /* Invaild argument to the call */
-+    TNETD73XX_ERR_NULLPTR       = -3,   /* NULL pointer */
-+    TNETD73XX_ERR_BADPTR        = -4,   /* Bad (out of mem) pointer */
++#if defined(CONFIG_AR7DB)
 +
-+    /* Memory issues */
-+    TNETD73XX_ERR_ALLOC_FAIL    = -10,  /* allocation failed */
-+    TNETD73XX_ERR_FREE_FAIL     = -11,  /* free failed */
-+    TNETD73XX_ERR_MEM_CORRUPT   = -12,  /* corrupted memory */
-+    TNETD73XX_ERR_BUF_LINK      = -13,  /* buffer linking failed */
++#define AFECLK_FREQ                                 35328000
++#define REFCLK_FREQ                                 25000000
++#define OSC3_FREQ                                   24000000
++#define AVALANCHE_LOW_CPMAC_PHY_MASK                0x80000000
++#define AVALANCHE_HIGH_CPMAC_PHY_MASK               0x55555555  
++#define AVALANCHE_LOW_CPMAC_MDIX_MASK               0x80000000
 +
-+    /* Device issues */
-+    TNETD73XX_ERR_DEVICE_TIMEOUT    = -20,  /* device timeout on read/write */
-+    TNETD73XX_ERR_DEVICE_MALFUNC    = -21,  /* device malfunction */
++#endif
 +
-+    TNETD73XX_ERR_INVID     = -30   /* Invalid ID */
 +
-+} TNETD73XX_ERR;
++#if defined(CONFIG_AR7RD)
++#define AFECLK_FREQ                                 35328000
++#define REFCLK_FREQ                                 25000000
++#define OSC3_FREQ                                   24000000
++#define AVALANCHE_LOW_CPMAC_PHY_MASK                0x80000000
++#define AVALANCHE_HIGH_CPMAC_PHY_MASK               0x2
++#define AVALANCHE_LOW_CPMAC_MDIX_MASK               0x80000000
++#endif
 +
-+#endif /* __TNETD73XX_ERR_H__ */
++
++#if defined(CONFIG_AR7WI)
++#define AFECLK_FREQ                                 35328000
++#define REFCLK_FREQ                                 25000000
++#define OSC3_FREQ                                   24000000
++#define AVALANCHE_LOW_CPMAC_PHY_MASK                0x80000000
++#define AVALANCHE_HIGH_CPMAC_PHY_MASK               0x2
++#define AVALANCHE_LOW_CPMAC_MDIX_MASK               0x80000000
++#endif
++
++
++#if defined(CONFIG_AR7V)
++#define AFECLK_FREQ                                 35328000
++#define REFCLK_FREQ                                 25000000
++#define OSC3_FREQ                                   24000000
++#define AVALANCHE_LOW_CPMAC_PHY_MASK                0x80000000
++#define AVALANCHE_HIGH_CPMAC_PHY_MASK               0x2
++#define AVALANCHE_LOW_CPMAC_MDIX_MASK               0x80000000
++#endif
++
++
++#if defined(CONFIG_AR7WRD) 
++#define AFECLK_FREQ                                 35328000
++#define REFCLK_FREQ                                 25000000
++#define OSC3_FREQ                                   24000000
++#define AVALANCHE_LOW_CPMAC_PHY_MASK                0x80000000
++#define AVALANCHE_HIGH_CPMAC_PHY_MASK               0x00010000
++#define AVALANCHE_LOW_CPMAC_MDIX_MASK               0x80000000
++#endif
++
++
++#if defined(CONFIG_AR7VWI) 
++#define AFECLK_FREQ                                 35328000
++#define REFCLK_FREQ                                 25000000
++#define OSC3_FREQ                                   24000000
++#define AVALANCHE_LOW_CPMAC_PHY_MASK                0x80000000
++#define AVALANCHE_HIGH_CPMAC_PHY_MASK               0x00010000
++#define AVALANCHE_LOW_CPMAC_MDIX_MASK               0x80000000
++#endif
++
++
++#if defined CONFIG_SEAD2
++#define AVALANCHE_LOW_CPMAC_PHY_MASK                0xAAAAAAAA
++#define AVALANCHE_HIGH_CPMAC_PHY_MASK               0x55555555
++#define AVALANCHE_LOW_CPMAC_MDIX_MASK               0
++#include <asm/mips-boards/sead.h>
++#endif
++
++
++#endif
 diff -urN linux.old/include/asm-mips/ar7/tnetd73xx.h linux.dev/include/asm-mips/ar7/tnetd73xx.h
 --- linux.old/include/asm-mips/ar7/tnetd73xx.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/include/asm-mips/ar7/tnetd73xx.h	2005-07-12 03:01:26.110438256 +0200
++++ linux.dev/include/asm-mips/ar7/tnetd73xx.h	2005-07-26 18:11:02.650500000 +0200
 @@ -0,0 +1,338 @@
 +/******************************************************************************
 + * FILE PURPOSE:    TNETD73xx Common Header File
@@ -5539,9 +5421,55 @@ diff -urN linux.old/include/asm-mips/ar7/tnetd73xx.h linux.dev/include/asm-mips/
 +
 +
 +#endif /* __TNETD73XX_H_ */
+diff -urN linux.old/include/asm-mips/ar7/tnetd73xx_err.h linux.dev/include/asm-mips/ar7/tnetd73xx_err.h
+--- linux.old/include/asm-mips/ar7/tnetd73xx_err.h	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/include/asm-mips/ar7/tnetd73xx_err.h	2005-07-26 18:11:02.649500000 +0200
+@@ -0,0 +1,42 @@
++/******************************************************************************
++ * FILE PURPOSE:    TNETD73xx Error Definations Header File
++ ******************************************************************************
++ * FILE NAME:       tnetd73xx_err.h
++ *
++ * DESCRIPTION:     Error definations for TNETD73XX
++ *
++ * REVISION HISTORY:
++ * 27 Nov 02 - PSP TII  
++ *
++ * (C) Copyright 2002, Texas Instruments, Inc
++ *******************************************************************************/
++
++ 
++#ifndef __TNETD73XX_ERR_H__
++#define __TNETD73XX_ERR_H__
++
++typedef enum TNETD73XX_ERR_t
++{
++    TNETD73XX_ERR_OK        = 0,    /* OK or SUCCESS */
++    TNETD73XX_ERR_ERROR     = -1,   /* Unspecified/Generic ERROR */
++
++    /* Pointers and args */
++    TNETD73XX_ERR_INVARG        = -2,   /* Invaild argument to the call */
++    TNETD73XX_ERR_NULLPTR       = -3,   /* NULL pointer */
++    TNETD73XX_ERR_BADPTR        = -4,   /* Bad (out of mem) pointer */
++
++    /* Memory issues */
++    TNETD73XX_ERR_ALLOC_FAIL    = -10,  /* allocation failed */
++    TNETD73XX_ERR_FREE_FAIL     = -11,  /* free failed */
++    TNETD73XX_ERR_MEM_CORRUPT   = -12,  /* corrupted memory */
++    TNETD73XX_ERR_BUF_LINK      = -13,  /* buffer linking failed */
++
++    /* Device issues */
++    TNETD73XX_ERR_DEVICE_TIMEOUT    = -20,  /* device timeout on read/write */
++    TNETD73XX_ERR_DEVICE_MALFUNC    = -21,  /* device malfunction */
++
++    TNETD73XX_ERR_INVID     = -30   /* Invalid ID */
++
++} TNETD73XX_ERR;
++
++#endif /* __TNETD73XX_ERR_H__ */
 diff -urN linux.old/include/asm-mips/ar7/tnetd73xx_misc.h linux.dev/include/asm-mips/ar7/tnetd73xx_misc.h
 --- linux.old/include/asm-mips/ar7/tnetd73xx_misc.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/include/asm-mips/ar7/tnetd73xx_misc.h	2005-07-12 03:01:26.110438256 +0200
++++ linux.dev/include/asm-mips/ar7/tnetd73xx_misc.h	2005-07-26 18:11:02.651500000 +0200
 @@ -0,0 +1,239 @@
 +/******************************************************************************
 + * FILE PURPOSE:    TNETD73xx Misc modules API Header
@@ -5783,8 +5711,8 @@ diff -urN linux.old/include/asm-mips/ar7/tnetd73xx_misc.h linux.dev/include/asm-
 +
 +#endif /* __TNETD73XX_MISC_H__ */
 diff -urN linux.old/include/asm-mips/io.h linux.dev/include/asm-mips/io.h
---- linux.old/include/asm-mips/io.h	2005-07-10 03:00:44.797179400 +0200
-+++ linux.dev/include/asm-mips/io.h	2005-07-12 02:59:26.202667008 +0200
+--- linux.old/include/asm-mips/io.h	2005-07-26 18:18:16.283578056 +0200
++++ linux.dev/include/asm-mips/io.h	2005-07-26 18:11:02.651500000 +0200
 @@ -63,8 +63,12 @@
  #ifdef CONFIG_64BIT_PHYS_ADDR
  #define page_to_phys(page)	((u64)(page - mem_map) << PAGE_SHIFT)
@@ -5799,8 +5727,8 @@ diff -urN linux.old/include/asm-mips/io.h linux.dev/include/asm-mips/io.h
  #define IO_SPACE_LIMIT 0xffff
  
 diff -urN linux.old/include/asm-mips/irq.h linux.dev/include/asm-mips/irq.h
---- linux.old/include/asm-mips/irq.h	2005-07-10 03:00:44.798179248 +0200
-+++ linux.dev/include/asm-mips/irq.h	2005-07-12 02:59:26.202667008 +0200
+--- linux.old/include/asm-mips/irq.h	2005-07-26 18:18:16.284577904 +0200
++++ linux.dev/include/asm-mips/irq.h	2005-07-26 18:11:02.652500000 +0200
 @@ -14,7 +14,12 @@
  #include <linux/config.h>
  #include <linux/linkage.h>
@@ -5815,8 +5743,8 @@ diff -urN linux.old/include/asm-mips/irq.h linux.dev/include/asm-mips/irq.h
  #ifdef CONFIG_I8259
  static inline int irq_cannonicalize(int irq)
 diff -urN linux.old/include/asm-mips/page.h linux.dev/include/asm-mips/page.h
---- linux.old/include/asm-mips/page.h	2005-07-10 03:00:44.798179248 +0200
-+++ linux.dev/include/asm-mips/page.h	2005-07-12 02:59:26.202667008 +0200
+--- linux.old/include/asm-mips/page.h	2005-07-26 18:18:16.284577904 +0200
++++ linux.dev/include/asm-mips/page.h	2005-07-26 18:11:02.652500000 +0200
 @@ -129,7 +129,11 @@
  
  #define __pa(x)		((unsigned long) (x) - PAGE_OFFSET)
@@ -5830,8 +5758,8 @@ diff -urN linux.old/include/asm-mips/page.h linux.dev/include/asm-mips/page.h
  
  #define VM_DATA_DEFAULT_FLAGS  (VM_READ | VM_WRITE | VM_EXEC | \
 diff -urN linux.old/include/asm-mips/pgtable-32.h linux.dev/include/asm-mips/pgtable-32.h
---- linux.old/include/asm-mips/pgtable-32.h	2005-07-10 03:00:44.798179248 +0200
-+++ linux.dev/include/asm-mips/pgtable-32.h	2005-07-12 02:59:26.203666856 +0200
+--- linux.old/include/asm-mips/pgtable-32.h	2005-07-26 18:18:16.284577904 +0200
++++ linux.dev/include/asm-mips/pgtable-32.h	2005-07-26 18:11:02.653499000 +0200
 @@ -108,7 +108,18 @@
   * and a page entry and page directory to the page they refer to.
   */
@@ -5873,8 +5801,8 @@ diff -urN linux.old/include/asm-mips/pgtable-32.h linux.dev/include/asm-mips/pgt
  #define __mk_pte(page_nr,pgprot) __pte(((page_nr) << (PAGE_SHIFT+2)) | pgprot_val(pgprot))
  #else
 diff -urN linux.old/include/asm-mips/serial.h linux.dev/include/asm-mips/serial.h
---- linux.old/include/asm-mips/serial.h	2005-07-10 03:00:44.799179096 +0200
-+++ linux.dev/include/asm-mips/serial.h	2005-07-12 02:59:26.203666856 +0200
+--- linux.old/include/asm-mips/serial.h	2005-07-26 18:18:16.285577752 +0200
++++ linux.dev/include/asm-mips/serial.h	2005-07-26 18:11:02.654499000 +0200
 @@ -65,6 +65,15 @@
  
  #define C_P(card,port) (((card)<<6|(port)<<3) + 1)
@@ -5899,15 +5827,3 @@ diff -urN linux.old/include/asm-mips/serial.h linux.dev/include/asm-mips/serial.
  	ATLAS_SERIAL_PORT_DEFNS			\
  	AU1000_SERIAL_PORT_DEFNS		\
  	COBALT_SERIAL_PORT_DEFNS		\
-diff -urN linux.old/Makefile linux.dev/Makefile
---- linux.old/Makefile	2005-07-10 03:00:44.799179096 +0200
-+++ linux.dev/Makefile	2005-07-12 02:59:26.204666704 +0200
-@@ -91,7 +91,7 @@
- 
- CPPFLAGS := -D__KERNEL__ -I$(HPATH)
- 
--CFLAGS := $(CPPFLAGS) -Wall -Wstrict-prototypes -Wno-trigraphs -O2 \
-+CFLAGS := $(CPPFLAGS) -Wall -Wstrict-prototypes -Wno-trigraphs -Os \
- 	  -fno-strict-aliasing -fno-common
- ifndef CONFIG_FRAME_POINTER
- CFLAGS += -fomit-frame-pointer
