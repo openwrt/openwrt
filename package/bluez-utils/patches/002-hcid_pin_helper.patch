@@ -1,0 +1,21 @@
+diff -ur bluez-utils-2.17.orig/hcid/hcid.conf bluez-utils-2.17/hcid/hcid.conf
+--- bluez-utils-2.17.orig/hcid/hcid.conf	2004-12-25 19:06:00.000000000 +0100
++++ bluez-utils-2.17/hcid/hcid.conf	2005-07-26 14:44:23.000000000 +0200
+@@ -23,7 +23,7 @@
+ 	pairing multi;
+ 
+ 	# PIN helper
+-	pin_helper /usr/bin/bluepin;
++	pin_helper /etc/bluetooth/givepin;
+ 
+ 	# D-Bus PIN helper
+ 	#dbus_pin_helper;
+@@ -34,7 +34,7 @@
+ 	# Local device name
+ 	#   %d - device id
+ 	#   %h - host name
+-	name "BlueZ (%d)";
++	name "OpenWRT";
+ 
+ 	# Local device class
+ 	class 0x3e0100;

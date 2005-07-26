@@ -78,6 +78,7 @@ $(eval $(call KMOD_template,B44,b44,\
 ,CONFIG_B44))
 $(eval $(call KMOD_template,BLUETOOTH,bluetooth,\
 	$(MODULES_DIR)/kernel/net/bluetooth/*.o \
+	$(MODULES_DIR)/kernel/net/bluetooth/rfcomm/*.o \
 	$(MODULES_DIR)/kernel/drivers/bluetooth/*.o \
 ,CONFIG_BLUEZ))
 $(eval $(call KMOD_template,ARPT,arptables,\
