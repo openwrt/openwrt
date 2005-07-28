@@ -21,7 +21,7 @@ $(PKG_BUILD_DIR)/jffs2root: jffs2root.c
 
 $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/jffs2root
 
-$(IDIR_OPENWRT)/sbin/jffs2root:
+$(IDIR_OPENWRT)/sbin/jffs2root: $(PKG_BUILD_DIR)/jffs2root
 	mkdir -p $(IDIR_OPENWRT)/sbin
 	cp $(PKG_BUILD_DIR)/jffs2root $(IDIR_OPENWRT)/sbin
 
