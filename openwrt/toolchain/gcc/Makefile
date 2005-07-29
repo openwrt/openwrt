@@ -86,7 +86,7 @@ endif
 
 $(GCC_BUILD_DIR1)/.configured: $(GCC_DIR)/.patched
 	mkdir -p $(GCC_BUILD_DIR1)
-	(cd $(GCC_BUILD_DIR1); PATH=$(TARGET_PATH) \
+	(cd $(GCC_BUILD_DIR1); rm -f config.cache; PATH=$(TARGET_PATH) \
 		$(GCC_DIR)/configure \
 		--prefix=$(STAGING_DIR) \
 		--build=$(GNU_HOST_NAME) \
@@ -133,7 +133,7 @@ $(GCC_BUILD_DIR2)/.configured: $(GCC_DIR)/.patched $(STAGING_DIR)/lib/libc.a
 	ln -sf ../include $(STAGING_DIR)/$(REAL_GNU_TARGET_NAME)/sys-include
 	rm -rf $(STAGING_DIR)/$(REAL_GNU_TARGET_NAME)/lib
 	ln -sf ../lib $(STAGING_DIR)/$(REAL_GNU_TARGET_NAME)/lib
-	(cd $(GCC_BUILD_DIR2); PATH=$(TARGET_PATH) \
+	(cd $(GCC_BUILD_DIR2); rm -f config.cache; PATH=$(TARGET_PATH) \
 		$(GCC_DIR)/configure \
 		--prefix=$(STAGING_DIR) \
 		--build=$(GNU_HOST_NAME) \
