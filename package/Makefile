@@ -191,6 +191,7 @@ openswan-compile: gmp-compile
 osiris-compile: openssl-compile
 portmap-compile: tcp_wrappers-compile
 postgresql-compile: zlib-compile
+quagga-compile: readline-compile ncurses-compile
 rsync-compile: popt-compile
 screen-compile: ncurses-compile
 siproxd-compile: libosip2-compile
