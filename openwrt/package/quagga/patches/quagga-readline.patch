@@ -1,0 +1,58 @@
+--- quagga-0.98.4/configure.orig	Mon Jun 27 19:05:31 2005
++++ quagga-0.98.4/configure	Thu Jul 28 07:02:12 2005
+@@ -10937,7 +10937,7 @@
+   echo $ECHO_N "(cached) $ECHO_C" >&6
+ else
+   ac_check_lib_save_LIBS=$LIBS
+-LIBS="-lcurses  $LIBS"
++#LIBS="-lcurses  $LIBS"
+ cat >conftest.$ac_ext <<_ACEOF
+ /* confdefs.h.  */
+ _ACEOF
+@@ -11071,7 +11071,8 @@
+ #define HAVE_LIBNCURSES 1
+ _ACEOF
+ 
+-  LIBS="-lncurses $LIBS"
++#  LIBS="-lncurses $LIBS"
++CURSES=-lncurses
+ 
+ fi
+ 
+@@ -11088,7 +11089,7 @@
+   echo $ECHO_N "(cached) $ECHO_C" >&6
+ else
+   ac_check_lib_save_LIBS=$LIBS
+-LIBS="-lreadline  $LIBS"
++LIBS="-lreadline $CURSES $LIBS"
+ cat >conftest.$ac_ext <<_ACEOF
+ /* confdefs.h.  */
+ _ACEOF
+@@ -11144,7 +11145,8 @@
+ #define HAVE_LIBREADLINE 1
+ _ACEOF
+ 
+-  LIBS="-lreadline $LIBS"
++#  LIBS="-lreadline $LIBS"
++CURSES="$CURSES -lreadline"
+ 
+ fi
+ 
+@@ -11303,7 +11305,7 @@
+   echo $ECHO_N "(cached) $ECHO_C" >&6
+ else
+   ac_check_lib_save_LIBS=$LIBS
+-LIBS="-lreadline  $LIBS"
++LIBS="-lreadline $CURSES $LIBS"
+ cat >conftest.$ac_ext <<_ACEOF
+ /* confdefs.h.  */
+ _ACEOF
+@@ -11365,7 +11367,7 @@
+ #define HAVE_LIBREADLINE 1
+ _ACEOF
+ 
+-  LIBS="-lreadline $LIBS"
++#  LIBS="-lreadline $LIBS"
+ 
+ fi
+ 
