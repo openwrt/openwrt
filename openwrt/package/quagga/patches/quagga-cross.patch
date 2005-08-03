@@ -1,17 +1,14 @@
---- quagga-0.98.2/configure.orig	Thu Feb  3 17:39:29 2005
-+++ quagga-0.98.2/configure	Sat Feb 12 06:47:14 2005
-@@ -12491,72 +12491,6 @@
+--- quagga-0.98.4/configure.orig	Mon Jun 27 19:05:31 2005
++++ quagga-0.98.4/configure	Mon Jul 11 20:32:07 2005
+@@ -12623,69 +12623,6 @@
  
  
  
 -echo "$as_me:$LINENO: checking for broken CMSG_FIRSTHDR" >&5
 -echo $ECHO_N "checking for broken CMSG_FIRSTHDR... $ECHO_C" >&6
 -if test "$cross_compiling" = yes; then
--  { { echo "$as_me:$LINENO: error: cannot run test program while cross compiling
--See \`config.log' for more details." >&5
--echo "$as_me: error: cannot run test program while cross compiling
--See \`config.log' for more details." >&2;}
--   { (exit 1); exit 1; }; }
+-  echo "$as_me:$LINENO: result: no" >&5
+-echo "${ECHO_T}no" >&6
 -else
 -  cat >conftest.$ac_ext <<_ACEOF
 -/* confdefs.h.  */
@@ -73,7 +70,7 @@
  echo "$as_me:$LINENO: checking route read method check" >&5
  echo $ECHO_N "checking route read method check... $ECHO_C" >&6
  if test "${zebra_rtread+set}" = set; then
-@@ -12654,10 +12588,7 @@
+@@ -12783,10 +12720,7 @@
  if test "${zebra_ipforward_path+set}" = set; then
    echo $ECHO_N "(cached) $ECHO_C" >&6
  else
