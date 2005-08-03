@@ -10,42 +10,31 @@ config BR2_PACKAGE_QUAGGA
 	  OSPFv3, BGP-4, and BGP-4+
 	  
 	  http://www.quagga.net/
-	  
 
 config BR2_PACKAGE_QUAGGA_BGPD
 	depends BR2_PACKAGE_QUAGGA
-	prompt "...-bgpd - BGPv4, BGPv4\+, BGPv4\- routing engine"
+	prompt "...-bgpd - BGPv4, BGPv4+, BGPv4- routing engine"
 	tristate
 	default m if CONFIG_DEVEL
 	help
-	  A BGPv4, BGPv4\+, BGPv4\- routing engine for use with Quagga routing
+	  A BGPv4, BGPv4+, BGPv4- routing engine for use with Quagga routing
 	  software.
-
-config BR2_PACKAGE_LIBOSPF
-	depends BR2_PACKAGE_QUAGGA
-	prompt "libospf - OSPF support library"
-	tristate
-	default m if CONFIG_DEVEL
-	help
-	  An OSPFv2 routing engine for use with Quagga routing software.
 
 config BR2_PACKAGE_QUAGGA_OSPFD
 	depends BR2_PACKAGE_QUAGGA
 	prompt "...-ospfd - OSPFv2 routing engine"
-	select BR2_PACKAGE_LIBOSPF
 	tristate
 	default m if CONFIG_DEVEL
 	help
-	  An OSPFv2 routing engine for use with Quagga routing software.
+	  An OSPFv2 (IPv4) routing engine for use with Quagga routing software.
 
 config BR2_PACKAGE_QUAGGA_OSPF6D
 	depends BR2_PACKAGE_QUAGGA
 	prompt "...-ospf6d - OSPFv3 routing engine"
-	select BR2_PACKAGE_LIBOSPF
 	tristate
 	default m if CONFIG_DEVEL
 	help
-	  An OSPFv3 routing engine for use with Quagga routing software.
+	  An OSPFv3 (IPv6) routing engine for use with Quagga routing software.
 
 config BR2_PACKAGE_QUAGGA_RIPD
 	depends BR2_PACKAGE_QUAGGA
@@ -53,22 +42,25 @@ config BR2_PACKAGE_QUAGGA_RIPD
 	tristate
 	default m if CONFIG_DEVEL
 	help
-	  A RIP routing engine for use with Quagga routing software.
+	  A RIP (IPv4) routing engine for use with Quagga routing software.
 
-config BR2_PACKAGE_QUAGGA_RIPD
+config BR2_PACKAGE_QUAGGA_RIPNGD
 	depends BR2_PACKAGE_QUAGGA
 	prompt "...-ripngd - RIPNG routing engine"
 	tristate
 	default m if CONFIG_DEVEL
 	help
-	  A RIPNG routing engine for use with Quagga routing software.
+	  A RIPNG (IPv6) routing engine for use with Quagga routing software.
 
-config BR2_PACKAGE_QUAGGA_ZEBRA
+config BR2_PACKAGE_QUAGGA_VTYSH
 	depends BR2_PACKAGE_QUAGGA
-	prompt "...-zebra - Routing manager"
+	select BR2_PACKAGE_LIBREADLINE
+	select BR2_PACKAGE_LIBNCURSES
+	prompt "...-vtysh - integrated shell for Quagga routing software"
 	tristate
 	default m if CONFIG_DEVEL
 	help
-	  A routing manager for use with associated Quagga components.
+	  vtysh lets you interact with all the Quagga routing daemons
+	  at once in an integrated shell.
 
 endmenu
