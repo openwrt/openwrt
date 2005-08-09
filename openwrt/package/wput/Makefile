@@ -7,7 +7,7 @@ PKG_VERSION:=0.5
 PKG_RELEASE:=1
 PKG_MD5SUM:=441b2e07219f78167b29a7ac33488fff
 
-PKG_SOURCE_URL:=http://itooktheredpill.dyndns.org/wput/
+PKG_SOURCE_URL:=@SF/wput
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tgz
 PKG_CAT:=zcat
 
