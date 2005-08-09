@@ -168,7 +168,7 @@ dsniff-compile: libnids-compile openssl-compile libgdbm-compile
 fprobe-compile: libpcap-compile
 gdbserver-compile: ncurses-compile
 gnutls-compile: libgcrypt-compile opencdk-compile libtasn1-compile
-irssi-compile: ncurses-compile
+irssi-compile: glib-compile ncurses-compile
 kismet-compile: uclibc++-compile libpcap-compile ncurses-compile
 less-compile: ncurses-compile
 lcd4linux-compile: ncurses-compile
