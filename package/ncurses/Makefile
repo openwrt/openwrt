@@ -71,7 +71,7 @@ $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.prepared
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
 		CPPFLAGS="-I$(STAGING_DIR)/usr/include" \
-		LDFLAGS="-L$(STAGING_DIR)/usr/lib" \
+		LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib" \
 		ac_cv_linux_vers="2" \
 		./configure \
 		--target=$(GNU_TARGET_NAME) \
