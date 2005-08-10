@@ -88,11 +88,11 @@ $(IPKG_PPP):
 	$(RSTRIP) $(IDIR_PPP)
 	$(IPKG_BUILD) $(IDIR_PPP) $(PACKAGE_DIR)
 	
-$(IDIR_PPP_MOD_PPPOE)/etc/init.d/S50pppoe:
+$(IDIR_PPP_MOD_PPPOE)/sbin/ifup.pppoe:
 	install -d -m0755 $(IDIR_PPP_MOD_PPPOE)/sbin
 	install -m0755 ./files/ifup.pppoe $(IDIR_PPP_MOD_PPPOE)/sbin/
 
-$(IPKG_PPP_MOD_PPPOE): $(IDIR_PPP_MOD_PPPOE)/etc/init.d/S50pppoe
+$(IPKG_PPP_MOD_PPPOE): $(IDIR_PPP_MOD_PPPOE)/sbin/ifup.pppoe
 
 $(IDIR_PPP_MOD_RADIUS)/etc/ppp/radius.conf:
 
