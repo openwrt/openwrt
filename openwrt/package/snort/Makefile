@@ -100,7 +100,7 @@ $(PKG_BUILD_DIR)/$(2): $(PKG_BUILD_DIR)/.prepared
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
 		CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/usr/include/mysql" \
-		LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/usr/lib/mysql" \
+		LDFLAGS="-L$(STAGING_DIR)/lib -L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/usr/lib/mysql" \
 		./configure \
 		  $(PKG_CONFIGURE_OPTS) \
 		  $$($(1)_CONFIGURE_OPTS) \
