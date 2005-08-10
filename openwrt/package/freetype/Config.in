@@ -1,0 +1,26 @@
+config BR2_PACKAGE_FREETYPE
+	bool
+	default n
+	depends BR2_PACKAGE_LIBFREETYPE
+
+config BR2_PACKAGE_LIBFREETYPE
+	tristate "libfreetype - A free, high-quality and portable font engine"
+#	default m if CONFIG_DEVEL
+	default n
+	select BR2_PACKAGE_FREETYPE
+	select BR2_PACKAGE_ZLIB
+	help
+	  The FreeType project is a team of volunteers who develop free,
+	  portable and high-quality software solutions for digital typography.
+	  They specifically target embedded systems and focus on bringing small,
+	  efficient and ubiquitous products.
+	  
+	  The FreeType 2 library is their new software font engine.  It has been
+	  designed to provide the following important features:
+	   * A universal and simple API to manage font files
+	   * Support for several font formats through loadable modules
+	   * High-quality anti-aliasing
+	   * High portability & performance
+	  
+	  http://www.freetype.org/
+	  
