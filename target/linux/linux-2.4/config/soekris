@@ -101,6 +101,7 @@ CONFIG_CARDBUS=y
 # CONFIG_HOTPLUG_PCI is not set
 # CONFIG_HOTPLUG_PCI_COMPAQ is not set
 # CONFIG_HOTPLUG_PCI_COMPAQ_NVRAM is not set
+# CONFIG_HOTPLUG_PCI_IBM is not set
 # CONFIG_HOTPLUG_PCI_SHPC is not set
 # CONFIG_HOTPLUG_PCI_SHPC_POLL_EVENT_MODE is not set
 # CONFIG_HOTPLUG_PCI_SHPC_PHPRM_LEGACY is not set
@@ -127,7 +128,73 @@ CONFIG_BINFMT_ELF=y
 #
 # Memory Technology Devices (MTD)
 #
-# CONFIG_MTD is not set
+CONFIG_MTD=y
+# CONFIG_MTD_DEBUG is not set
+CONFIG_MTD_PARTITIONS=y
+# CONFIG_MTD_CONCAT is not set
+# CONFIG_MTD_REDBOOT_PARTS is not set
+# CONFIG_MTD_CMDLINE_PARTS is not set
+CONFIG_MTD_CHAR=y
+CONFIG_MTD_BLOCK=y
+# CONFIG_FTL is not set
+# CONFIG_NFTL is not set
+
+#
+# RAM/ROM/Flash chip drivers
+#
+# CONFIG_MTD_CFI is not set
+# CONFIG_MTD_JEDECPROBE is not set
+# CONFIG_MTD_GEN_PROBE is not set
+# CONFIG_MTD_CFI_INTELEXT is not set
+# CONFIG_MTD_CFI_AMDSTD is not set
+# CONFIG_MTD_CFI_STAA is not set
+# CONFIG_MTD_CFI_SSTSTD is not set
+# CONFIG_MTD_RAM is not set
+# CONFIG_MTD_ROM is not set
+# CONFIG_MTD_ABSENT is not set
+# CONFIG_MTD_OBSOLETE_CHIPS is not set
+# CONFIG_MTD_AMDSTD is not set
+# CONFIG_MTD_SHARP is not set
+# CONFIG_MTD_JEDEC is not set
+
+#
+# Mapping drivers for chip access
+#
+# CONFIG_MTD_PHYSMAP is not set
+# CONFIG_MTD_PNC2000 is not set
+# CONFIG_MTD_SC520CDP is not set
+# CONFIG_MTD_NETSC520 is not set
+# CONFIG_MTD_SBC_GXX is not set
+# CONFIG_MTD_ELAN_104NC is not set
+# CONFIG_MTD_DILNETPC is not set
+# CONFIG_MTD_MIXMEM is not set
+# CONFIG_MTD_OCTAGON is not set
+# CONFIG_MTD_VMAX is not set
+# CONFIG_MTD_SCx200_DOCFLASH is not set
+# CONFIG_MTD_L440GX is not set
+# CONFIG_MTD_AMD76XROM is not set
+# CONFIG_MTD_ICH2ROM is not set
+# CONFIG_MTD_NETtel is not set
+# CONFIG_MTD_SCB2_FLASH is not set
+# CONFIG_MTD_PCI is not set
+# CONFIG_MTD_PCMCIA is not set
+
+#
+# Self-contained MTD device drivers
+#
+# CONFIG_MTD_PMC551 is not set
+# CONFIG_MTD_SLRAM is not set
+# CONFIG_MTD_MTDRAM is not set
+CONFIG_MTD_BLKMTD=y
+# CONFIG_MTD_DOC1000 is not set
+# CONFIG_MTD_DOC2000 is not set
+# CONFIG_MTD_DOC2001 is not set
+# CONFIG_MTD_DOCPROBE is not set
+
+#
+# NAND Flash Device Drivers
+#
+# CONFIG_MTD_NAND is not set
 
 #
 # Parallel port support
@@ -841,10 +908,11 @@ CONFIG_FAT_FS=m
 CONFIG_VFAT_FS=m
 # CONFIG_EFS_FS is not set
 # CONFIG_JFFS_FS is not set
-# CONFIG_JFFS2_FS is not set
+CONFIG_JFFS2_FS=y
+CONFIG_JFFS2_FS_DEBUG=0
 # CONFIG_JFFS2_BBC_ARMLIB is not set
 # CONFIG_JFFS2_BBC_LZO is not set
-# CONFIG_JFFS2_BBC_LZARI is not set
+CONFIG_JFFS2_BBC_LZARI=y
 # CONFIG_JFFS2_BBC_LZHD is not set
 # CONFIG_JFFS2_BBC_LZSS is not set
 # CONFIG_CRAMFS is not set
