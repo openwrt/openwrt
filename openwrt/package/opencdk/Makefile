@@ -90,7 +90,7 @@ uninstall-dev:
 	rm -rf \
 		$(STAGING_DIR)/usr/bin/opencdk-config \
 		$(STAGING_DIR)/usr/include/opencdk.h \
-		$(STAGING_DIR)/usr/lib/opencdk.{a,so*} \
+		$(STAGING_DIR)/usr/lib/libopencdk.{a,so*} \
 
 compile: install-dev
 
