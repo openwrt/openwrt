@@ -23,7 +23,7 @@ $(PKG_BUILD_DIR)/.configured:
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
 		CPPFLAGS="-I$(STAGING_DIR)/usr/include" \
-		LDFLAGS="-L$(STAGING_DIR)/usr/lib" \
+		LDFLAGS="-L$(STAGING_DIR)/lib -L$(STAGING_DIR)/usr/lib" \
 		ac_cv_openssldir="$(STAGING_DIR)/usr" \
 		ac_cv_have_accrights_in_msghdr=no \
 		ac_cv_have_control_in_msghdr=yes \
@@ -49,6 +49,7 @@ $(PKG_BUILD_DIR)/.configured:
 		  $(DISABLE_NLS) \
 		  --with-osiris-user=root \
 		  --with-root-dir=/var/lib/osiris \
+		  --with-readline=no \
 	);
 	touch $@
 
@@ -56,6 +57,8 @@ $(PKG_BUILD_DIR)/.built:
 	rm -rf $(PKG_INSTALL_DIR)
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
+		$(TARGET_CONFIGURE_OPTS) \
+		ar=$(TARGET_CROSS)ar \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		INTERACTIVE=0 \
 		all install
