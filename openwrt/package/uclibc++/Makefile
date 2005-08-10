@@ -32,14 +32,14 @@ UCLIBC_TARGET_ARCH:=$(shell echo $(ARCH) | sed -e s'/-.*//' \
 )
 
 $(PKG_BUILD_DIR)/.configured:
-	cp ./uclibc++.config $(PKG_BUILD_DIR)/.config
-	$(SED) 's,^.*TARGET_ARCH.*,TARGET_ARCH="$(UCLIBC_TARGET_ARCH)",g' $(PKG_BUILD_DIR)/.config
-	$(SED) 's,^.*ARCH_CFLAGS.*,ARCH_CFLAGS="-mno-split-addresses $(TARGET_CFLAGS)",g' $(PKG_BUILD_DIR)/.config
+	cp ./files/config.$(UCLIBC_TARGET_ARCH) $(PKG_BUILD_DIR)/.config
 	touch $@
 
 $(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR) \
+		TOPDIR="$(PKG_BUILD_DIR)/" \
 		$(TARGET_CONFIGURE_OPTS) \
+		ARCH_CFLAGS="$(TARGET_CFLAGS)" \
 		CROSS="$(TARGET_CROSS)" \
 		all
 	touch $@
@@ -54,6 +54,9 @@ $(IPKG_UCLIBCXX):
 compile: install-dev
 install-dev: $(PKG_BUILD_DIR)/.built
 	$(MAKE) -C $(PKG_BUILD_DIR) \
-		$(TARGET_CONFIGURE_OPTS) CROSS="$(TARGET_CROSS)" \
+		TOPDIR="$(PKG_BUILD_DIR)/" \
+		$(TARGET_CONFIGURE_OPTS) \
+		ARCH_CFLAGS="$(TARGET_CFLAGS)" \
+		CROSS="$(TARGET_CROSS)" \
 		DESTDIR="$(STAGING_DIR)" \
 		install
