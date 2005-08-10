@@ -23,6 +23,7 @@ while :; do
 	IDLETIME=$(nvram get ppp_idletime)
 	IDLETIME=${IDLETIME:+lcp-echo-failure $IDLETIME}
 	MTU=$(nvram get ppp_mtu)
+	MTU=${MTU:-1492}
 	MTU=${MTU:+ mtu $MTU mru $MTU}
 
 	ifconfig $IFNAME up
