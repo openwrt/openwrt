@@ -763,7 +763,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
  
  #check the return type of sprintf
  case $SYSTEM_TYPE in
-+  *unknown*)
++  *linux*)
 +    cat >>confdefs.h <<\_ACEOF
 +#define SPRINTF_RETURNS_INT 1
 +_ACEOF
@@ -1212,7 +1212,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
  echo "$as_me:$LINENO: checking for int8" >&5
  echo $ECHO_N "checking for int8... $ECHO_C" >&6
  case $SYSTEM_TYPE in
-+  *unknown*)
++  *linux*)
 +    echo "$as_me:$LINENO: result: no" >&5
 +echo "${ECHO_T}no" >&6
 +    ;;
@@ -2326,7 +2326,7 @@ diff -ruN mysql-4.0.24-orig/configure.in mysql-4.0.24-2/configure.in
  
  #check the return type of sprintf
  case $SYSTEM_TYPE in
-+  *unknown*)
++  *linux*)
 +    AC_DEFINE(SPRINTF_RETURNS_INT) AC_MSG_RESULT("int")
 +    ;;
    *netware*)
@@ -2382,7 +2382,7 @@ diff -ruN mysql-4.0.24-orig/configure.in mysql-4.0.24-2/configure.in
  
  AC_MSG_CHECKING([for int8])
  case $SYSTEM_TYPE in
-+  *unknown*)
++  *linux*)
 +    AC_MSG_RESULT([no])
 +    ;;
    *netware)
@@ -2408,11 +2408,7 @@ diff -ruN mysql-4.0.24-orig/configure.in mysql-4.0.24-2/configure.in
  else
    DEBUG_CXXFLAGS="-g"
    DEBUG_OPTIMIZE_CXX=""
-diff -ruN mysql-4.0.24-orig/ipkg/libmysqlclient/CONTROL/control mysql-4.0.24-2/ipkg/libmysqlclient/CONTROL/control
-diff -ruN mysql-4.0.24-orig/ipkg/libmysqlclient-dev/CONTROL/control mysql-4.0.24-2/ipkg/libmysqlclient-dev/CONTROL/control
-diff -ruN mysql-4.0.24-orig/ipkg/mysql-utils/CONTROL/control mysql-4.0.24-2/ipkg/mysql-utils/CONTROL/control
-diff -ruN mysql-4.0.24-orig/ipkg/rules mysql-4.0.24-2/ipkg/rules
-diff -ruN mysql-4.0.24-orig/ipkg/version mysql-4.0.24-2/ipkg/version
+diff -ruN mysql-4.0.24/configure.old mysql-4.0.24/configure
 --- mysql-4.0.24/configure.old	2005-04-18 08:33:00.000000000 +0200
 +++ mysql-4.0.24/configure	2005-04-18 08:34:28.000000000 +0200
 @@ -25013,7 +25013,7 @@
