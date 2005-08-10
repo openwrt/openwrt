@@ -15,6 +15,7 @@ package-$(BR2_PACKAGE_BLUEZ_UTILS) += bluez-utils
 package-$(BR2_PACKAGE_BRIDGE) += bridge
 package-$(BR2_PACKAGE_BUSYBOX) += busybox
 package-$(BR2_PACKAGE_BWM) += bwm
+package-$(BR2_PACKAGE_CGILIB) += cgilib
 package-$(BR2_PACKAGE_CHILLISPOT) += chillispot
 package-$(BR2_PACKAGE_CIFSMOUNT) += cifsmount
 package-$(BR2_PACKAGE_CUPS) += cups

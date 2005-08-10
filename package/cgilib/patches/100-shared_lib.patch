@@ -1,0 +1,41 @@
+diff -ruN cgilib-0.5-orig/Makefile cgilib-0.5-1/Makefile
+--- cgilib-0.5-orig/Makefile	1999-08-20 23:14:07.000000000 +0200
++++ cgilib-0.5-1/Makefile	2005-08-10 20:28:17.000000000 +0200
+@@ -14,14 +14,26 @@
+ #   along with this program; if not, write to the Free Software
+ #   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111, USA.
+ 
+-CFLAGS = -I. -Wall -O2 -g
++OFLAGS = -O2 -g
++CFLAGS = -I. -Wall $(OFLAGS)
+ LDFLAGS = -L.
+ LIBS = -lcgi
+ 
++SOVER_MAJ := 0
++SOVER_MIN := 0
++SOVER_REV := 0
++SONAME := libcgi.so.$(SOVER_MAJ)
++SOREAL := libcgi.so.$(SOVER_MAJ).$(SOVER_MIN).$(SOVER_REV)
++
+ OBJS = cgi.o cookies.o
+ 
+ libcgi.a: $(OBJS)
+-	ar rc $@ $^
++	$(AR) rc $@ $^
++
++libcgi.so: $(OBJS)
++	$(CC) -shared -o $(SOREAL) $(LDFLAGS) -Wl,-soname,$(SONAME) $^
++	ln -sf $(SOREAL) $(SONAME)
++	ln -sf $(SONAME) libcgi.so
+ 
+ cgitest: cgitest.o libcgi.a
+ 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
+@@ -29,7 +41,7 @@
+ jumpto: jumpto.o libcgi.a
+ 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
+ 
+-all: libcgi.a cgitest jumpto
++all: libcgi.a libcgi.so cgitest jumpto
+ 
+ install: cgitest
+ 	install -m 755 cgitest /usr/lib/cgi-bin

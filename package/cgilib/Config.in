@@ -1,0 +1,12 @@
+config BR2_PACKAGE_CGILIB
+	tristate "cgilib - Simple CGI Library"
+#	default m if CONFIG_DEVEL
+	default n
+	help
+	  This library provides a simple programming API to the Common Gateway
+	  Interface (CGI).  It features HTTP Redirect, provides read access to
+	  FORM variables, sets HTTP Cookies and reads them.
+	  
+	  http://www.infodrom.org/projects/cgilib/
+	  
+
