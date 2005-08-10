@@ -78,7 +78,7 @@ $(PKG_BUILD_DIR)/.built:
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
 		CPPFLAGS="-I$(STAGING_DIR)/usr/include" \
-		LDFLAGS="-L$(STAGING_DIR)/usr/lib" \
+		LDFLAGS="-L$(STAGING_DIR)/lib -L$(STAGING_DIR)/usr/lib" \
 		ac_cv_func_memcmp_clean="yes" \
 		./configure \
 		  --target=$(GNU_TARGET_NAME) \
@@ -128,7 +128,7 @@ $(STAGING_DIR)/usr/lib/libldap.so: $(PKG_BUILD_DIR)/.built
 	cp -fpR $(PKG_INSTALL_DIR)/usr/include/{lber,ldap}*.h $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib/
 	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/lib{lber,ldap}*.{a,so*} $(STAGING_DIR)/usr/lib/
-	touch $(STAGING_DIR)/usr/lib/libldap.so
+	touch $@
 	
 install-dev: $(STAGING_DIR)/usr/lib/libldap.so
 

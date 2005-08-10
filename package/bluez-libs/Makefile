@@ -27,7 +27,7 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
 		CPPFLAGS="-I$(STAGING_DIR)/usr/include" \
-		LDFLAGS="-L$(STAGING_DIR)/usr/lib" \
+		LDFLAGS="-L$(STAGING_DIR)/lib -L$(STAGING_DIR)/usr/lib" \
 		sys_lib_dlsearch_path_spec="$(STAGING_DIR)/lib $(STAGING_DIR)/usr/lib" \
 		sys_lib_search_path_spec="$(STAGING_DIR)/lib $(STAGING_DIR)/usr/lib" \
 		./configure \
@@ -81,6 +81,7 @@ $(STAGING_DIR)/usr/lib/libbluetooth.so: $(PKG_BUILD_DIR)/.built
 install-dev: $(STAGING_DIR)/usr/lib/libbluetooth.so
 
 uninstall-dev:
+	rm -rf $(STAGING_DIR)/usr/include/bluetooth
 	rm -rf $(STAGING_DIR)/usr/lib/libbluetooth.{a,so*}
 
 compile: install-dev
