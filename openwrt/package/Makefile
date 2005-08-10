@@ -32,6 +32,7 @@ package-$(BR2_PACKAGE_FPING) += fping
 package-$(BR2_PACKAGE_FPROBE) += fprobe
 package-$(BR2_PACKAGE_FPROBE_ULOG) += fprobe-ulog
 package-$(BR2_PACKAGE_FREERADIUS) += freeradius
+package-$(BR2_PACKAGE_FREETYPE) += freetype
 package-$(BR2_PACKAGE_FRICKIN) += frickin
 package-$(BR2_PACKAGE_FUSE) += fuse
 package-$(BR2_PACKAGE_GDBSERVER) += gdbserver
@@ -167,6 +168,7 @@ bind-compile: openssl-compile
 cyrus-sasl-compile: openssl-compile
 dropbear-compile: zlib-compile
 dsniff-compile: libnids-compile openssl-compile libgdbm-compile
+freetype-compile: zlib-compile
 fprobe-compile: libpcap-compile
 gdbserver-compile: ncurses-compile
 gnutls-compile: libgcrypt-compile opencdk-compile libtasn1-compile
