@@ -5,7 +5,7 @@
  
  
 -DB_CONFIG_ARGS="--enable-shared=no --enable-static=yes"
-+DB_CONFIG_ARGS="--target=${target} --host=${host} --build=${build} --enable-shared=no --enable-static=yes"
++DB_CONFIG_ARGS="--target=${target_alias} --host=${host_alias} --build=${build_alias} --enable-shared=no --enable-static=yes"
  
  case "${OS_NAME}" in
      MINGW32*)
@@ -16,7 +16,7 @@
  dnl configure local copy of Berkely DB:
  
 -DB_CONFIG_ARGS="--enable-shared=no --enable-static=yes"
-+DB_CONFIG_ARGS="--target=${target} --host=${host} --build=${build} --enable-shared=no --enable-static=yes"
++DB_CONFIG_ARGS="--target=${target_alias} --host=${host_alias} --build=${build_alias} --enable-shared=no --enable-static=yes"
  
  case "${OS_NAME}" in
      MINGW32*)
