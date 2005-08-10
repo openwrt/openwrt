@@ -1,0 +1,17 @@
+Package: rrdcgi
+Priority: optional
+Section: web
+Maintainer: Oliver Ertl <oliver@ertl-net.net>, OpenWrt Developers <bugs@openwrt.org>
+Source: http://openwrt.org/cgi-bin/viewcvs.cgi/openwrt/package/rrdtool/
+Depends: cgilib, librrd
+Description: Round Robin Database (RRD) CGI graphing tool. 
+ RRD is the Acronym for Round Robin Database. RRD is a system to store and
+ display time-series data (i.e. network bandwidth, machine-room temperature,
+ server load average). It stores the data in a very compact way that will
+ not expand over time, and it presents useful graphs by processing the data
+ to enforce a certain data density. It can be used either via simple wrapper
+ scripts (from shell or Perl) or via frontends that poll network devices and
+ put friendly user interface on it.
+ 
+ This package contains the rrdcgi tool used to create web pages containing 
+ RRD graphs based on templates.

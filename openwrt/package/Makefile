@@ -114,6 +114,7 @@ package-$(BR2_PACKAGE_RADVD) += radvd
 package-$(BR2_PACKAGE_READLINE) += readline
 package-$(BR2_PACKAGE_ROBOCFG) += robocfg
 package-$(BR2_PACKAGE_RP_PPPOE) += rp-pppoe
+package-$(BR2_COMPILE_RRDTOOL) += rrdtool
 package-$(BR2_PACKAGE_RSYNC) += rsync
 package-$(BR2_PACKAGE_SABLEVM) += sablevm
 package-$(BR2_PACKAGE_SABLEVM_CLASSPATH) += sablevm-classpath
@@ -197,6 +198,7 @@ osiris-compile: openssl-compile
 portmap-compile: tcp_wrappers-compile
 postgresql-compile: zlib-compile
 quagga-compile: readline-compile ncurses-compile
+rrdtool-compile: cgilib-compile freetype-compile libart-compile libpng-compile
 rsync-compile: popt-compile
 screen-compile: ncurses-compile
 siproxd-compile: libosip2-compile
