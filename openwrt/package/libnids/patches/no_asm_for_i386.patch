@@ -1,0 +1,12 @@
+diff -ruN libnids-1.18-orig/src/checksum.c libnids-1.18/src/checksum.c
+--- libnids-1.18-orig/src/checksum.c	2003-09-20 22:40:44.000000000 +0200
++++ libnids-1.18/src/checksum.c	2005-08-09 23:55:00.000000000 +0200
+@@ -4,7 +4,7 @@
+ #include <netinet/tcp.h>
+ #include <netinet/udp.h>
+ 
+-#if ( __i386__ || __i386 )
++#if 0
+ // all asm procedures are copied from Linux 2.0.36 and 2.2.10 kernels
+ 
+ /*
