@@ -157,9 +157,10 @@ source "package/usbutils/Config.in"  # lsusb
 source "package/strace/Config.in"
 
 # what are we going to do with both of you
-comment "Kernel related ---"
-source "package/fuse/Config.in"  # kmod-fuse
-source "package/shfs/Config.in"  # kmod-shfs
+comment "FileSystems related ---"
+source "package/dosfstools/Config.in"
+source "package/fuse/Config.in"
+source "package/shfs/Config.in"
 
 comment "Bluetooth related"
 source "package/bluez-libs/Config.in"
