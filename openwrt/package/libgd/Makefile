@@ -23,10 +23,8 @@ $(PKG_BUILD_DIR)/.configured:
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
 		CPPFLAGS="-I$(STAGING_DIR)/usr/include" \
-		LDFLAGS="-L$(STAGING_DIR)/usr/lib" \
+		LDFLAGS="-L$(STAGING_DIR)/lib -L$(STAGING_DIR)/usr/lib" \
 		LIBPNG12_CONFIG="$(STAGING_DIR)/usr/bin/libpng12-config" \
-		sys_lib_dlsearch_path_spec="$(STAGING_DIR)/lib $(STAGING_DIR)/usr/lib" \
-		sys_lib_search_path_spec="$(STAGING_DIR)/lib $(STAGING_DIR)/usr/lib" \
 		./configure \
 		  --target=$(GNU_TARGET_NAME) \
 		  --host=$(GNU_TARGET_NAME) \
@@ -51,6 +49,7 @@ $(PKG_BUILD_DIR)/.configured:
 		  --enable-static \
 		  --disable-rpath \
 		  --without-x \
+		  --without-freetype \
 		  --with-png=$(STAGING_DIR)/usr \
 	)
 	touch $@
