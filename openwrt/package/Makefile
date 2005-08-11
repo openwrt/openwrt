@@ -23,6 +23,7 @@ package-$(BR2_PACKAGE_CYRUS_SASL) += cyrus-sasl
 package-$(BR2_PACKAGE_DHCP) += dhcp
 package-$(BR2_PACKAGE_DHCP_FORWARDER) += dhcp-forwarder
 package-$(BR2_PACKAGE_DNSMASQ) += dnsmasq
+package-$(BR2_PACKAGE_DOSFSTOOLS) += dosfstools
 package-$(BR2_PACKAGE_DROPBEAR) += dropbear
 package-$(BR2_PACKAGE_DSNIFF) += dsniff
 package-$(BR2_PACKAGE_EBTABLES) += ebtables
