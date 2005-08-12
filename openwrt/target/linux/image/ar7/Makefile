@@ -64,14 +64,15 @@ $(BIN_DIR)/openwrt-ar7-$(KERNEL)-$(FS).bin: $(BIN_DIR)/openwrt-ar7-2.4-kernel.bi
 define pattern_template
 $(BIN_DIR)/openwrt-ar7-$(KERNEL)-$(FS)-$(1).bin: $(BIN_DIR)/openwrt-ar7-$(KERNEL)-$(FS).bin
 	(dd if=/dev/zero bs=16 count=1; cat $(BIN_DIR)/openwrt-ar7-$(KERNEL)-$(FS).bin) | \
-		$(STAGING_DIR)/bin/addpattern -p $(1) -o $(BIN_DIR)/openwrt-ar7-$(KERNEL)-$(FS)-$(1).bin
-	
+		$(STAGING_DIR)/bin/addpattern -p $(1) $(2) -o $(BIN_DIR)/openwrt-ar7-$(KERNEL)-$(FS)-$(1).bin
+
 install: $(BIN_DIR)/openwrt-ar7-$(KERNEL)-$(FS)-$(1).bin
 endef
 
 $(eval $(call pattern_template,WA22))
 $(eval $(call pattern_template,WAG2))
 $(eval $(call pattern_template,WA21))
+$(eval $(call pattern_template,WA32,-b))
 
 clean:
 	rm -rf $(PKG_BUILD_DIR)
