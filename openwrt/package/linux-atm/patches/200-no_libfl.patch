@@ -1,0 +1,193 @@
+diff -ruN linux-atm-2.4.1/src/qgen/Makefile.am linux-atm-2.4.1.new/src/qgen/Makefile.am
+--- linux-atm-2.4.1/src/qgen/Makefile.am	2001-09-03 20:41:05.000000000 +0200
++++ linux-atm-2.4.1.new/src/qgen/Makefile.am	2005-07-26 14:49:05.000000000 +0200
+@@ -3,7 +3,7 @@
+ 
+ qgen_SOURCES = common.c common.h file.c file.h first.c ql_y.y ql_l.l qgen.c \
+ 		qgen.h second.c third.c
+-qgen_LDADD = -lfl
++qgen_LDADD = 
+ 
+ q_dump_SOURCES = common.c
+ q_dump_LDADD = qd.dump.standalone.o
+diff -ruN linux-atm-2.4.1/src/qgen/Makefile.in linux-atm-2.4.1.new/src/qgen/Makefile.in
+--- linux-atm-2.4.1/src/qgen/Makefile.in	2003-04-30 16:44:01.000000000 +0200
++++ linux-atm-2.4.1.new/src/qgen/Makefile.in	2005-07-26 14:49:13.000000000 +0200
+@@ -91,7 +91,7 @@
+ qgen_SOURCES = common.c common.h file.c file.h first.c ql_y.y ql_l.l qgen.c \
+ 		qgen.h second.c third.c
+ 
+-qgen_LDADD = -lfl
++qgen_LDADD = 
+ 
+ q_dump_SOURCES = common.c
+ q_dump_LDADD = qd.dump.standalone.o
+diff -ruN linux-atm-2.4.1/src/qgen/ql_l.c linux-atm-2.4.1.new/src/qgen/ql_l.c
+--- linux-atm-2.4.1/src/qgen/ql_l.c	2003-04-24 21:46:49.000000000 +0200
++++ linux-atm-2.4.1.new/src/qgen/ql_l.c	2005-07-26 20:45:40.000000000 +0200
+@@ -11,6 +11,11 @@
+ #include <stdio.h>
+ #include <unistd.h>
+ 
++int yywrap(void)
++{
++        return 1;
++}
++
+ 
+ /* cfront 1.2 defines "c_plusplus" instead of "__cplusplus" */
+ #ifdef c_plusplus
+diff -ruN linux-atm-2.4.1/src/sigd/cfg_l.c linux-atm-2.4.1.new/src/sigd/cfg_l.c
+--- linux-atm-2.4.1/src/sigd/cfg_l.c	2003-04-24 21:47:21.000000000 +0200
++++ linux-atm-2.4.1.new/src/sigd/cfg_l.c	2005-07-26 22:04:13.000000000 +0200
+@@ -11,6 +11,10 @@
+ #include <stdio.h>
+ #include <unistd.h>
+ 
++int yywrap(void)
++{
++        return 1;
++}
+ 
+ /* cfront 1.2 defines "c_plusplus" instead of "__cplusplus" */
+ #ifdef c_plusplus
+diff -ruN linux-atm-2.4.1/src/sigd/Makefile.am linux-atm-2.4.1.new/src/sigd/Makefile.am
+--- linux-atm-2.4.1/src/sigd/Makefile.am	2001-10-04 23:17:26.000000000 +0200
++++ linux-atm-2.4.1.new/src/sigd/Makefile.am	2005-07-26 14:49:44.000000000 +0200
+@@ -8,7 +8,7 @@
+ 			$(top_builddir)/src/qgen/qd.dump.o \
+ 			$(top_builddir)/src/lib/libatm.la \
+ 			$(top_builddir)/src/saal/libsaal.a
+-atmsigd_LDADD = $(atmsigd_XTRAS) -lfl
++atmsigd_LDADD = $(atmsigd_XTRAS) 
+ atmsigd_DEPENDENCIES = mess.c $(atmsigd_XTRAS)
+ 
+ CLEANFILES = mess.c
+diff -ruN linux-atm-2.4.1/src/sigd/Makefile.in linux-atm-2.4.1.new/src/sigd/Makefile.in
+--- linux-atm-2.4.1/src/sigd/Makefile.in	2003-04-30 16:44:03.000000000 +0200
++++ linux-atm-2.4.1.new/src/sigd/Makefile.in	2005-07-26 14:49:48.000000000 +0200
+@@ -97,7 +97,7 @@
+ 			$(top_builddir)/src/lib/libatm.la \
+ 			$(top_builddir)/src/saal/libsaal.a
+ 
+-atmsigd_LDADD = $(atmsigd_XTRAS) -lfl
++atmsigd_LDADD = $(atmsigd_XTRAS) 
+ atmsigd_DEPENDENCIES = mess.c $(atmsigd_XTRAS)
+ 
+ CLEANFILES = mess.c
+diff -ruN linux-atm-2.4.1/src/switch/debug/debug.c linux-atm-2.4.1.new/src/switch/debug/debug.c
+--- linux-atm-2.4.1/src/switch/debug/debug.c	2001-09-03 20:41:06.000000000 +0200
++++ linux-atm-2.4.1.new/src/switch/debug/debug.c	2005-07-26 22:06:53.000000000 +0200
+@@ -20,6 +20,11 @@
+ 
+ #define PRV(call) ((FAB *) (call)->fab)
+ 
++int yywrap(void)
++{
++        return 1;
++}
++
+ 
+ typedef struct _fab {
+     CALL *next; /* relay.c may not keep track of calls, but WE are */
+diff -ruN linux-atm-2.4.1/src/switch/debug/Makefile.am linux-atm-2.4.1.new/src/switch/debug/Makefile.am
+--- linux-atm-2.4.1/src/switch/debug/Makefile.am	2001-10-04 23:17:26.000000000 +0200
++++ linux-atm-2.4.1.new/src/switch/debug/Makefile.am	2005-07-26 14:50:03.000000000 +0200
+@@ -5,7 +5,7 @@
+ sw_debug_SOURCES = debug.c
+ sw_debug_XTRAS = $(top_builddir)/src/switch/libsw.a \
+ 			$(top_builddir)/src/lib/libatm.la
+-sw_debug_LDADD = $(sw_debug_XTRAS) -lfl
++sw_debug_LDADD = $(sw_debug_XTRAS) 
+ 			
+ sw_debug_DEPENDENCIES = $(sw_debug_XTRAS)
+ 
+diff -ruN linux-atm-2.4.1/src/switch/debug/Makefile.in linux-atm-2.4.1.new/src/switch/debug/Makefile.in
+--- linux-atm-2.4.1/src/switch/debug/Makefile.in	2003-04-30 16:44:13.000000000 +0200
++++ linux-atm-2.4.1.new/src/switch/debug/Makefile.in	2005-07-26 14:50:08.000000000 +0200
+@@ -93,7 +93,7 @@
+ sw_debug_XTRAS = $(top_builddir)/src/switch/libsw.a \
+ 			$(top_builddir)/src/lib/libatm.la
+ 
+-sw_debug_LDADD = $(sw_debug_XTRAS) -lfl
++sw_debug_LDADD = $(sw_debug_XTRAS) 
+ 
+ sw_debug_DEPENDENCIES = $(sw_debug_XTRAS)
+ 
+diff -ruN linux-atm-2.4.1/src/switch/tcp/Makefile.am linux-atm-2.4.1.new/src/switch/tcp/Makefile.am
+--- linux-atm-2.4.1/src/switch/tcp/Makefile.am	2001-10-04 23:17:27.000000000 +0200
++++ linux-atm-2.4.1.new/src/switch/tcp/Makefile.am	2005-07-26 14:50:16.000000000 +0200
+@@ -5,7 +5,7 @@
+ sw_tcp_SOURCES = tcpsw.c
+ sw_tcp_XTRAS = $(top_builddir)/src/switch/libsw.a \
+ 		$(top_builddir)/src/lib/libatm.la
+-sw_tcp_LDADD = $(sw_tcp_XTRAS) -lfl
++sw_tcp_LDADD = $(sw_tcp_XTRAS) 
+ sw_tcp_DEPENDENCIES = $(sw_tcp_XTRAS)
+ 
+ EXTRA_DIST = mkfiles README
+diff -ruN linux-atm-2.4.1/src/switch/tcp/Makefile.in linux-atm-2.4.1.new/src/switch/tcp/Makefile.in
+--- linux-atm-2.4.1/src/switch/tcp/Makefile.in	2003-04-30 16:44:14.000000000 +0200
++++ linux-atm-2.4.1.new/src/switch/tcp/Makefile.in	2005-07-26 14:50:19.000000000 +0200
+@@ -93,7 +93,7 @@
+ sw_tcp_XTRAS = $(top_builddir)/src/switch/libsw.a \
+ 		$(top_builddir)/src/lib/libatm.la
+ 
+-sw_tcp_LDADD = $(sw_tcp_XTRAS) -lfl
++sw_tcp_LDADD = $(sw_tcp_XTRAS) 
+ sw_tcp_DEPENDENCIES = $(sw_tcp_XTRAS)
+ 
+ EXTRA_DIST = mkfiles README
+diff -ruN linux-atm-2.4.1/src/switch/tcp/tcpsw.c linux-atm-2.4.1.new/src/switch/tcp/tcpsw.c
+--- linux-atm-2.4.1/src/switch/tcp/tcpsw.c	2001-09-03 20:41:06.000000000 +0200
++++ linux-atm-2.4.1.new/src/switch/tcp/tcpsw.c	2005-07-26 22:08:25.000000000 +0200
+@@ -35,6 +35,10 @@
+ #define MAX_PACKET (ATM_MAX_AAL5_PDU+sizeof(struct atmtcp_hdr))
+ #define BUFFER_SIZE (MAX_PACKET*2)
+ 
++int yywrap(void)
++{
++        return 1;
++}
+ 
+ typedef struct _table {
+     struct _link *out;	/* output port */
+diff -ruN linux-atm-2.4.1/src/test/ispl_l.c linux-atm-2.4.1.new/src/test/ispl_l.c
+--- linux-atm-2.4.1/src/test/ispl_l.c	2003-04-24 21:46:39.000000000 +0200
++++ linux-atm-2.4.1.new/src/test/ispl_l.c	2005-07-26 20:45:19.000000000 +0200
+@@ -11,6 +11,11 @@
+ #include <stdio.h>
+ #include <unistd.h>
+ 
++int yywrap(void)
++{
++	return 1;
++}
++
+ 
+ /* cfront 1.2 defines "c_plusplus" instead of "__cplusplus" */
+ #ifdef c_plusplus
+diff -ruN linux-atm-2.4.1/src/test/Makefile.am linux-atm-2.4.1.new/src/test/Makefile.am
+--- linux-atm-2.4.1/src/test/Makefile.am	2001-10-04 23:17:27.000000000 +0200
++++ linux-atm-2.4.1.new/src/test/Makefile.am	2005-07-26 14:49:27.000000000 +0200
+@@ -15,7 +15,7 @@
+ bw_SOURCES = bw.c
+ isp_SOURCES = isp.c isp.h ispl_y.y ispl_l.l
+ isp_XTRAS = $(LDADD)
+-isp_LDADD = $(isp_XTRAS) -lfl
++isp_LDADD = $(isp_XTRAS) 
+ isp_DEPENDENCIES = $(isp_XTRAS) errnos.inc
+ window_SOURCES = window.c
+ 
+diff -ruN linux-atm-2.4.1/src/test/Makefile.in linux-atm-2.4.1.new/src/test/Makefile.in
+--- linux-atm-2.4.1/src/test/Makefile.in	2003-04-30 16:43:59.000000000 +0200
++++ linux-atm-2.4.1.new/src/test/Makefile.in	2005-07-26 14:49:32.000000000 +0200
+@@ -102,7 +102,7 @@
+ bw_SOURCES = bw.c
+ isp_SOURCES = isp.c isp.h ispl_y.y ispl_l.l
+ isp_XTRAS = $(LDADD)
+-isp_LDADD = $(isp_XTRAS) -lfl
++isp_LDADD = $(isp_XTRAS) 
+ isp_DEPENDENCIES = $(isp_XTRAS) errnos.inc
+ window_SOURCES = window.c
+ 
