@@ -71,6 +71,7 @@ package-$(BR2_PACKAGE_LIBTASN1) += libtasn1
 package-$(BR2_PACKAGE_LIBTOOL) += libtool
 package-$(BR2_PACKAGE_LIBUSB) += libusb
 package-$(BR2_PACKAGE_LIGHTTPD) += lighttpd
+package-$(BR2_PACKAGE_LINUX_ATM) += linux-atm
 package-$(BR2_PACKAGE_LUA) += lua
 package-$(BR2_PACKAGE_LZO) += lzo
 package-$(BR2_PACKAGE_MARADNS) += maradns

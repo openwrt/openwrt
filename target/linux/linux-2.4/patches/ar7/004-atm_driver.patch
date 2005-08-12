@@ -1,6 +1,6 @@
 diff -urN linux.old/drivers/atm/Config.in linux.dev/drivers/atm/Config.in
---- linux.old/drivers/atm/Config.in	2004-08-08 01:26:04.000000000 +0200
-+++ linux.dev/drivers/atm/Config.in	2005-07-10 08:02:01.417115464 +0200
+--- linux.old/drivers/atm/Config.in	2005-08-13 00:39:58.084910600 +0200
++++ linux.dev/drivers/atm/Config.in	2005-08-13 02:47:40.527042336 +0200
 @@ -99,4 +99,10 @@
      bool 'Use S/UNI PHY driver' CONFIG_ATM_HE_USE_SUNI
    fi
@@ -13,8 +13,8 @@ diff -urN linux.old/drivers/atm/Config.in linux.dev/drivers/atm/Config.in
 +fi
  endmenu
 diff -urN linux.old/drivers/atm/Makefile linux.dev/drivers/atm/Makefile
---- linux.old/drivers/atm/Makefile	2005-01-19 15:09:40.000000000 +0100
-+++ linux.dev/drivers/atm/Makefile	2005-07-10 08:02:01.417115464 +0200
+--- linux.old/drivers/atm/Makefile	2005-08-13 00:39:58.085910448 +0200
++++ linux.dev/drivers/atm/Makefile	2005-08-13 02:47:40.527042336 +0200
 @@ -14,6 +14,32 @@
  obj-$(CONFIG_ATM_NICSTAR) += nicstar.o
  obj-$(CONFIG_ATM_IDT77252) += idt77252.o
@@ -50,7 +50,7 @@ diff -urN linux.old/drivers/atm/Makefile linux.dev/drivers/atm/Makefile
  endif
 diff -urN linux.old/drivers/atm/sangam_atm/aal5sar.c linux.dev/drivers/atm/sangam_atm/aal5sar.c
 --- linux.old/drivers/atm/sangam_atm/aal5sar.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/atm/sangam_atm/aal5sar.c	2005-07-10 08:02:01.420115008 +0200
++++ linux.dev/drivers/atm/sangam_atm/aal5sar.c	2005-08-13 02:47:40.530041880 +0200
 @@ -0,0 +1,2962 @@
 +
 +/**
@@ -3016,7 +3016,7 @@ diff -urN linux.old/drivers/atm/sangam_atm/aal5sar.c linux.dev/drivers/atm/sanga
 +  }
 diff -urN linux.old/drivers/atm/sangam_atm/aal5sar.h linux.dev/drivers/atm/sangam_atm/aal5sar.h
 --- linux.old/drivers/atm/sangam_atm/aal5sar.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/atm/sangam_atm/aal5sar.h	2005-07-10 08:02:01.421114856 +0200
++++ linux.dev/drivers/atm/sangam_atm/aal5sar.h	2005-08-13 02:47:40.531041728 +0200
 @@ -0,0 +1,198 @@
 +/**@file************************************************************************
 + *  TNETDxxxx Software Support
@@ -3218,7 +3218,7 @@ diff -urN linux.old/drivers/atm/sangam_atm/aal5sar.h linux.dev/drivers/atm/sanga
 +#endif
 diff -urN linux.old/drivers/atm/sangam_atm/cpcommon_cpaal5.c linux.dev/drivers/atm/sangam_atm/cpcommon_cpaal5.c
 --- linux.old/drivers/atm/sangam_atm/cpcommon_cpaal5.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/atm/sangam_atm/cpcommon_cpaal5.c	2005-07-10 08:02:01.422114704 +0200
++++ linux.dev/drivers/atm/sangam_atm/cpcommon_cpaal5.c	2005-08-13 02:47:40.532041576 +0200
 @@ -0,0 +1,728 @@
 +#ifndef _INC_CPCOMMON_C
 +#define _INC_CPCOMMON_C
@@ -3950,7 +3950,7 @@ diff -urN linux.old/drivers/atm/sangam_atm/cpcommon_cpaal5.c linux.dev/drivers/a
 +#endif  /* _INC  */
 diff -urN linux.old/drivers/atm/sangam_atm/cpcommon_cpaal5.h linux.dev/drivers/atm/sangam_atm/cpcommon_cpaal5.h
 --- linux.old/drivers/atm/sangam_atm/cpcommon_cpaal5.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/atm/sangam_atm/cpcommon_cpaal5.h	2005-07-10 08:02:01.422114704 +0200
++++ linux.dev/drivers/atm/sangam_atm/cpcommon_cpaal5.h	2005-08-13 02:47:40.532041576 +0200
 @@ -0,0 +1,79 @@
 +#ifndef _INC_CPCOMMON_H
 +#define _INC_CPCOMMON_H
@@ -4033,7 +4033,7 @@ diff -urN linux.old/drivers/atm/sangam_atm/cpcommon_cpaal5.h linux.dev/drivers/a
 +
 diff -urN linux.old/drivers/atm/sangam_atm/cpcommon_cpsar.c linux.dev/drivers/atm/sangam_atm/cpcommon_cpsar.c
 --- linux.old/drivers/atm/sangam_atm/cpcommon_cpsar.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/atm/sangam_atm/cpcommon_cpsar.c	2005-07-10 08:02:01.423114552 +0200
++++ linux.dev/drivers/atm/sangam_atm/cpcommon_cpsar.c	2005-08-13 02:47:40.533041424 +0200
 @@ -0,0 +1,728 @@
 +#ifndef _INC_CPCOMMON_C
 +#define _INC_CPCOMMON_C
@@ -4765,7 +4765,7 @@ diff -urN linux.old/drivers/atm/sangam_atm/cpcommon_cpsar.c linux.dev/drivers/at
 +#endif  /* _INC  */
 diff -urN linux.old/drivers/atm/sangam_atm/cpcommon_cpsar.h linux.dev/drivers/atm/sangam_atm/cpcommon_cpsar.h
 --- linux.old/drivers/atm/sangam_atm/cpcommon_cpsar.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/atm/sangam_atm/cpcommon_cpsar.h	2005-07-10 08:02:01.423114552 +0200
++++ linux.dev/drivers/atm/sangam_atm/cpcommon_cpsar.h	2005-08-13 02:47:40.533041424 +0200
 @@ -0,0 +1,79 @@
 +#ifndef _INC_CPCOMMON_H
 +#define _INC_CPCOMMON_H
@@ -4848,7 +4848,7 @@ diff -urN linux.old/drivers/atm/sangam_atm/cpcommon_cpsar.h linux.dev/drivers/at
 +
 diff -urN linux.old/drivers/atm/sangam_atm/cppi_cpaal5.c linux.dev/drivers/atm/sangam_atm/cppi_cpaal5.c
 --- linux.old/drivers/atm/sangam_atm/cppi_cpaal5.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/atm/sangam_atm/cppi_cpaal5.c	2005-07-10 08:02:01.425114248 +0200
++++ linux.dev/drivers/atm/sangam_atm/cppi_cpaal5.c	2005-08-13 02:47:40.535041120 +0200
 @@ -0,0 +1,1483 @@
 +/*************************************************************************
 + *  TNETDxxxx Software Support
@@ -6335,7 +6335,7 @@ diff -urN linux.old/drivers/atm/sangam_atm/cppi_cpaal5.c linux.dev/drivers/atm/s
 +  }
 diff -urN linux.old/drivers/atm/sangam_atm/cpremap_cpaal5.c linux.dev/drivers/atm/sangam_atm/cpremap_cpaal5.c
 --- linux.old/drivers/atm/sangam_atm/cpremap_cpaal5.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/atm/sangam_atm/cpremap_cpaal5.c	2005-07-10 08:02:01.425114248 +0200
++++ linux.dev/drivers/atm/sangam_atm/cpremap_cpaal5.c	2005-08-13 02:47:40.535041120 +0200
 @@ -0,0 +1,27 @@
 +#ifndef _INC_CPREMAP_C
 +#define _INC_CPREMAP_C
@@ -6366,7 +6366,7 @@ diff -urN linux.old/drivers/atm/sangam_atm/cpremap_cpaal5.c linux.dev/drivers/at
 +#endif
 diff -urN linux.old/drivers/atm/sangam_atm/cpremap_cpsar.c linux.dev/drivers/atm/sangam_atm/cpremap_cpsar.c
 --- linux.old/drivers/atm/sangam_atm/cpremap_cpsar.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/atm/sangam_atm/cpremap_cpsar.c	2005-07-10 08:02:01.426114096 +0200
++++ linux.dev/drivers/atm/sangam_atm/cpremap_cpsar.c	2005-08-13 02:47:40.535041120 +0200
 @@ -0,0 +1,27 @@
 +#ifndef _INC_CPREMAP_C
 +#define _INC_CPREMAP_C
@@ -6397,7 +6397,7 @@ diff -urN linux.old/drivers/atm/sangam_atm/cpremap_cpsar.c linux.dev/drivers/atm
 +#endif
 diff -urN linux.old/drivers/atm/sangam_atm/cpsar.c linux.dev/drivers/atm/sangam_atm/cpsar.c
 --- linux.old/drivers/atm/sangam_atm/cpsar.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/atm/sangam_atm/cpsar.c	2005-07-10 08:02:01.427113944 +0200
++++ linux.dev/drivers/atm/sangam_atm/cpsar.c	2005-08-13 02:47:40.536040968 +0200
 @@ -0,0 +1,881 @@
 +/**
 + *  cpsar.c
@@ -7282,7 +7282,7 @@ diff -urN linux.old/drivers/atm/sangam_atm/cpsar.c linux.dev/drivers/atm/sangam_
 +  }
 diff -urN linux.old/drivers/atm/sangam_atm/cpsar_cpaal5.h linux.dev/drivers/atm/sangam_atm/cpsar_cpaal5.h
 --- linux.old/drivers/atm/sangam_atm/cpsar_cpaal5.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/atm/sangam_atm/cpsar_cpaal5.h	2005-07-10 08:02:01.427113944 +0200
++++ linux.dev/drivers/atm/sangam_atm/cpsar_cpaal5.h	2005-08-13 02:47:40.536040968 +0200
 @@ -0,0 +1,103 @@
 +/*******************************************************************************
 + *  TNETDxxxx Software Support
@@ -7389,7 +7389,7 @@ diff -urN linux.old/drivers/atm/sangam_atm/cpsar_cpaal5.h linux.dev/drivers/atm/
 +#endif
 diff -urN linux.old/drivers/atm/sangam_atm/cpsar.h linux.dev/drivers/atm/sangam_atm/cpsar.h
 --- linux.old/drivers/atm/sangam_atm/cpsar.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/atm/sangam_atm/cpsar.h	2005-07-10 08:02:01.427113944 +0200
++++ linux.dev/drivers/atm/sangam_atm/cpsar.h	2005-08-13 02:47:40.536040968 +0200
 @@ -0,0 +1,103 @@
 +/*******************************************************************************
 + *  TNETDxxxx Software Support
@@ -7496,7 +7496,7 @@ diff -urN linux.old/drivers/atm/sangam_atm/cpsar.h linux.dev/drivers/atm/sangam_
 +#endif
 diff -urN linux.old/drivers/atm/sangam_atm/cp_sar_reg.h linux.dev/drivers/atm/sangam_atm/cp_sar_reg.h
 --- linux.old/drivers/atm/sangam_atm/cp_sar_reg.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/atm/sangam_atm/cp_sar_reg.h	2005-07-10 08:02:01.428113792 +0200
++++ linux.dev/drivers/atm/sangam_atm/cp_sar_reg.h	2005-08-13 02:47:40.537040816 +0200
 @@ -0,0 +1,217 @@
 +/***************************************************************************
 +        TNETD73xx Software Support
@@ -7717,7 +7717,7 @@ diff -urN linux.old/drivers/atm/sangam_atm/cp_sar_reg.h linux.dev/drivers/atm/sa
 +#endif _INC_SAR_REG
 diff -urN linux.old/drivers/atm/sangam_atm/cpswhal_cpaal5.h linux.dev/drivers/atm/sangam_atm/cpswhal_cpaal5.h
 --- linux.old/drivers/atm/sangam_atm/cpswhal_cpaal5.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/atm/sangam_atm/cpswhal_cpaal5.h	2005-07-10 08:02:01.429113640 +0200
++++ linux.dev/drivers/atm/sangam_atm/cpswhal_cpaal5.h	2005-08-13 02:47:40.538040664 +0200
 @@ -0,0 +1,629 @@
 +/************************************************************************
 + *  TNETDxxxx Software Support
@@ -8350,7 +8350,7 @@ diff -urN linux.old/drivers/atm/sangam_atm/cpswhal_cpaal5.h linux.dev/drivers/at
 +#endif  /*  end of _INC_    */
 diff -urN linux.old/drivers/atm/sangam_atm/cpswhal_cpsar.h linux.dev/drivers/atm/sangam_atm/cpswhal_cpsar.h
 --- linux.old/drivers/atm/sangam_atm/cpswhal_cpsar.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/atm/sangam_atm/cpswhal_cpsar.h	2005-07-10 08:02:01.430113488 +0200
++++ linux.dev/drivers/atm/sangam_atm/cpswhal_cpsar.h	2005-08-13 02:47:40.539040512 +0200
 @@ -0,0 +1,629 @@
 +/************************************************************************
 + *  TNETDxxxx Software Support
@@ -8983,7 +8983,7 @@ diff -urN linux.old/drivers/atm/sangam_atm/cpswhal_cpsar.h linux.dev/drivers/atm
 +#endif  /*  end of _INC_    */
 diff -urN linux.old/drivers/atm/sangam_atm/dev_host_interface.h linux.dev/drivers/atm/sangam_atm/dev_host_interface.h
 --- linux.old/drivers/atm/sangam_atm/dev_host_interface.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/atm/sangam_atm/dev_host_interface.h	2005-07-10 08:02:01.432113184 +0200
++++ linux.dev/drivers/atm/sangam_atm/dev_host_interface.h	2005-08-13 02:47:40.540040360 +0200
 @@ -0,0 +1,1162 @@
 +#ifndef __DEV_HOST_INTERFACE_H__
 +#define __DEV_HOST_INTERFACE_H__ 1
@@ -10149,7 +10149,7 @@ diff -urN linux.old/drivers/atm/sangam_atm/dev_host_interface.h linux.dev/driver
 +#endif
 diff -urN linux.old/drivers/atm/sangam_atm/dev_host_verdef.h linux.dev/drivers/atm/sangam_atm/dev_host_verdef.h
 --- linux.old/drivers/atm/sangam_atm/dev_host_verdef.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/atm/sangam_atm/dev_host_verdef.h	2005-07-10 08:02:01.432113184 +0200
++++ linux.dev/drivers/atm/sangam_atm/dev_host_verdef.h	2005-08-13 02:47:40.541040208 +0200
 @@ -0,0 +1,102 @@
 +#ifndef __DEV_HOST_VERDEF_H__
 +#define __DEV_HOST_VERDEF_H__ 1
@@ -10255,7 +10255,7 @@ diff -urN linux.old/drivers/atm/sangam_atm/dev_host_verdef.h linux.dev/drivers/a
 +#endif // __DEV_HOST_VERDEF_H__
 diff -urN linux.old/drivers/atm/sangam_atm/dsl_hal_api.c linux.dev/drivers/atm/sangam_atm/dsl_hal_api.c
 --- linux.old/drivers/atm/sangam_atm/dsl_hal_api.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/atm/sangam_atm/dsl_hal_api.c	2005-07-10 08:02:01.436112576 +0200
++++ linux.dev/drivers/atm/sangam_atm/dsl_hal_api.c	2005-08-13 02:47:40.545039600 +0200
 @@ -0,0 +1,3339 @@
 +/*******************************************************************************
 +* FILE PURPOSE:     DSL Driver API functions for Sangam
@@ -13598,7 +13598,7 @@ diff -urN linux.old/drivers/atm/sangam_atm/dsl_hal_api.c linux.dev/drivers/atm/s
 +
 diff -urN linux.old/drivers/atm/sangam_atm/dsl_hal_api.h linux.dev/drivers/atm/sangam_atm/dsl_hal_api.h
 --- linux.old/drivers/atm/sangam_atm/dsl_hal_api.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/atm/sangam_atm/dsl_hal_api.h	2005-07-10 08:02:01.438112272 +0200
++++ linux.dev/drivers/atm/sangam_atm/dsl_hal_api.h	2005-08-13 02:47:40.552038536 +0200
 @@ -0,0 +1,1721 @@
 +#ifndef __DSL_HAL_API_H__
 +#define __DSL_HAL_API_H__ 1
@@ -15323,7 +15323,7 @@ diff -urN linux.old/drivers/atm/sangam_atm/dsl_hal_api.h linux.dev/drivers/atm/s
 +#endif /* pairs #ifndef __DSL_APPLICATION_INTERFACE_H__ */
 diff -urN linux.old/drivers/atm/sangam_atm/dsl_hal_logtable.h linux.dev/drivers/atm/sangam_atm/dsl_hal_logtable.h
 --- linux.old/drivers/atm/sangam_atm/dsl_hal_logtable.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/atm/sangam_atm/dsl_hal_logtable.h	2005-07-10 08:02:01.439112120 +0200
++++ linux.dev/drivers/atm/sangam_atm/dsl_hal_logtable.h	2005-08-13 02:47:40.574035192 +0200
 @@ -0,0 +1,259 @@
 +unsigned int log10[]=
 +{
@@ -15586,7 +15586,7 @@ diff -urN linux.old/drivers/atm/sangam_atm/dsl_hal_logtable.h linux.dev/drivers/
 +    };
 diff -urN linux.old/drivers/atm/sangam_atm/dsl_hal_register.h linux.dev/drivers/atm/sangam_atm/dsl_hal_register.h
 --- linux.old/drivers/atm/sangam_atm/dsl_hal_register.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/atm/sangam_atm/dsl_hal_register.h	2005-07-10 08:02:01.440111968 +0200
++++ linux.dev/drivers/atm/sangam_atm/dsl_hal_register.h	2005-08-13 02:47:40.574035192 +0200
 @@ -0,0 +1,337 @@
 +#ifndef ___DSL_REGISTER_DEFINES_H___
 +#define ___DSL_REGISTER_DEFINES_H___ 1
@@ -15927,7 +15927,7 @@ diff -urN linux.old/drivers/atm/sangam_atm/dsl_hal_register.h linux.dev/drivers/
 +#endif /* pairs #ifndef ___DSL_REGISTER_DEFINES_H___ */
 diff -urN linux.old/drivers/atm/sangam_atm/dsl_hal_support.c linux.dev/drivers/atm/sangam_atm/dsl_hal_support.c
 --- linux.old/drivers/atm/sangam_atm/dsl_hal_support.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/atm/sangam_atm/dsl_hal_support.c	2005-07-10 08:02:01.443111512 +0200
++++ linux.dev/drivers/atm/sangam_atm/dsl_hal_support.c	2005-08-13 02:47:40.578034584 +0200
 @@ -0,0 +1,2788 @@
 +/*******************************************************************************
 +* FILE PURPOSE:     DSL Driver API functions for Sangam
@@ -18719,7 +18719,7 @@ diff -urN linux.old/drivers/atm/sangam_atm/dsl_hal_support.c linux.dev/drivers/a
 +} /* end of dslhal_support_byteSwap32() */
 diff -urN linux.old/drivers/atm/sangam_atm/dsl_hal_support.h linux.dev/drivers/atm/sangam_atm/dsl_hal_support.h
 --- linux.old/drivers/atm/sangam_atm/dsl_hal_support.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/atm/sangam_atm/dsl_hal_support.h	2005-07-10 08:02:01.444111360 +0200
++++ linux.dev/drivers/atm/sangam_atm/dsl_hal_support.h	2005-08-13 02:47:40.579034432 +0200
 @@ -0,0 +1,718 @@
 +#ifndef DSL_HAL_SUPPORT_H__
 +#define DSL_HAL_SUPPORT_H__ 1
@@ -19441,7 +19441,7 @@ diff -urN linux.old/drivers/atm/sangam_atm/dsl_hal_support.h linux.dev/drivers/a
 +#endif /* Pairs #ifndef DSL_HAL_FUNCTIONDEFINES_H__ */
 diff -urN linux.old/drivers/atm/sangam_atm/dsl_hal_version.h linux.dev/drivers/atm/sangam_atm/dsl_hal_version.h
 --- linux.old/drivers/atm/sangam_atm/dsl_hal_version.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/atm/sangam_atm/dsl_hal_version.h	2005-07-10 08:02:01.444111360 +0200
++++ linux.dev/drivers/atm/sangam_atm/dsl_hal_version.h	2005-08-13 02:47:40.579034432 +0200
 @@ -0,0 +1,94 @@
 +#ifndef __SYSSW_VERSION_H__
 +#define __SYSSW_VERSION_H__ 1
@@ -19539,7 +19539,7 @@ diff -urN linux.old/drivers/atm/sangam_atm/dsl_hal_version.h linux.dev/drivers/a
 +#endif /* pairs with #ifndef __SYSSW_VERSION_H__ */
 diff -urN linux.old/drivers/atm/sangam_atm/ec_errors_cpaal5.h linux.dev/drivers/atm/sangam_atm/ec_errors_cpaal5.h
 --- linux.old/drivers/atm/sangam_atm/ec_errors_cpaal5.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/atm/sangam_atm/ec_errors_cpaal5.h	2005-07-10 08:02:01.445111208 +0200
++++ linux.dev/drivers/atm/sangam_atm/ec_errors_cpaal5.h	2005-08-13 02:47:40.760006920 +0200
 @@ -0,0 +1,118 @@
 +/***************************************************************************
 + Copyright(c) 2001, Texas Instruments Incorporated. All Rights Reserved.
@@ -19661,7 +19661,7 @@ diff -urN linux.old/drivers/atm/sangam_atm/ec_errors_cpaal5.h linux.dev/drivers/
 +#endif /* _INC_EC_ERRORS */
 diff -urN linux.old/drivers/atm/sangam_atm/ec_errors_cpsar.h linux.dev/drivers/atm/sangam_atm/ec_errors_cpsar.h
 --- linux.old/drivers/atm/sangam_atm/ec_errors_cpsar.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/atm/sangam_atm/ec_errors_cpsar.h	2005-07-10 08:02:01.445111208 +0200
++++ linux.dev/drivers/atm/sangam_atm/ec_errors_cpsar.h	2005-08-13 02:47:40.761006768 +0200
 @@ -0,0 +1,118 @@
 +/***************************************************************************
 + Copyright(c) 2001, Texas Instruments Incorporated. All Rights Reserved.
@@ -19783,7 +19783,7 @@ diff -urN linux.old/drivers/atm/sangam_atm/ec_errors_cpsar.h linux.dev/drivers/a
 +#endif /* _INC_EC_ERRORS */
 diff -urN linux.old/drivers/atm/sangam_atm/env_def_defines.h linux.dev/drivers/atm/sangam_atm/env_def_defines.h
 --- linux.old/drivers/atm/sangam_atm/env_def_defines.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/atm/sangam_atm/env_def_defines.h	2005-07-10 08:02:01.446111056 +0200
++++ linux.dev/drivers/atm/sangam_atm/env_def_defines.h	2005-08-13 02:47:40.762006616 +0200
 @@ -0,0 +1,926 @@
 +#ifndef __ENV_DEF_DEFINES_H__
 +#define __ENV_DEF_DEFINES_H__ 1
@@ -20713,7 +20713,7 @@ diff -urN linux.old/drivers/atm/sangam_atm/env_def_defines.h linux.dev/drivers/a
 +
 diff -urN linux.old/drivers/atm/sangam_atm/env_def_typedefs.h linux.dev/drivers/atm/sangam_atm/env_def_typedefs.h
 --- linux.old/drivers/atm/sangam_atm/env_def_typedefs.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/atm/sangam_atm/env_def_typedefs.h	2005-07-10 08:02:01.447110904 +0200
++++ linux.dev/drivers/atm/sangam_atm/env_def_typedefs.h	2005-08-13 02:47:40.763006464 +0200
 @@ -0,0 +1,228 @@
 +#ifndef __ENV_DEF_TYPEDEFS_H__
 +#define __ENV_DEF_TYPEDEFS_H__ 1
@@ -20945,7 +20945,7 @@ diff -urN linux.old/drivers/atm/sangam_atm/env_def_typedefs.h linux.dev/drivers/
 +#endif
 diff -urN linux.old/drivers/atm/sangam_atm/Makefile linux.dev/drivers/atm/sangam_atm/Makefile
 --- linux.old/drivers/atm/sangam_atm/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/atm/sangam_atm/Makefile	2005-07-10 08:02:01.448110752 +0200
++++ linux.dev/drivers/atm/sangam_atm/Makefile	2005-08-13 02:47:40.763006464 +0200
 @@ -0,0 +1,35 @@
 +# File: drivers/net/avalanche_cpmac/Makefile
 +#
@@ -20984,7 +20984,7 @@ diff -urN linux.old/drivers/atm/sangam_atm/Makefile linux.dev/drivers/atm/sangam
 +	rm -f core *.o *.a *.s
 diff -urN linux.old/drivers/atm/sangam_atm/queue.h linux.dev/drivers/atm/sangam_atm/queue.h
 --- linux.old/drivers/atm/sangam_atm/queue.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/atm/sangam_atm/queue.h	2005-07-10 08:02:01.448110752 +0200
++++ linux.dev/drivers/atm/sangam_atm/queue.h	2005-08-13 02:47:40.763006464 +0200
 @@ -0,0 +1,167 @@
 +
 +#if !defined( __QUEUE_H__ )
@@ -21155,7 +21155,7 @@ diff -urN linux.old/drivers/atm/sangam_atm/queue.h linux.dev/drivers/atm/sangam_
 +#endif
 diff -urN linux.old/drivers/atm/sangam_atm/release.txt linux.dev/drivers/atm/sangam_atm/release.txt
 --- linux.old/drivers/atm/sangam_atm/release.txt	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/atm/sangam_atm/release.txt	2005-07-10 08:02:01.449110600 +0200
++++ linux.dev/drivers/atm/sangam_atm/release.txt	2005-08-13 02:47:40.764006312 +0200
 @@ -0,0 +1,118 @@
 +This is release notes for AR7 Linux ATM driver.
 +
@@ -21277,7 +21277,7 @@ diff -urN linux.old/drivers/atm/sangam_atm/release.txt linux.dev/drivers/atm/san
 +   
 diff -urN linux.old/drivers/atm/sangam_atm/syssw_version.h linux.dev/drivers/atm/sangam_atm/syssw_version.h
 --- linux.old/drivers/atm/sangam_atm/syssw_version.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/atm/sangam_atm/syssw_version.h	2005-07-10 08:02:01.449110600 +0200
++++ linux.dev/drivers/atm/sangam_atm/syssw_version.h	2005-08-13 02:47:40.764006312 +0200
 @@ -0,0 +1,94 @@
 +#ifndef __SYSSW_VERSION_H__
 +#define __SYSSW_VERSION_H__ 1
@@ -21375,7 +21375,7 @@ diff -urN linux.old/drivers/atm/sangam_atm/syssw_version.h linux.dev/drivers/atm
 +#endif /* pairs with #ifndef __SYSSW_VERSION_H__ */
 diff -urN linux.old/drivers/atm/sangam_atm/tn7api.h linux.dev/drivers/atm/sangam_atm/tn7api.h
 --- linux.old/drivers/atm/sangam_atm/tn7api.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/atm/sangam_atm/tn7api.h	2005-07-10 08:02:01.450110448 +0200
++++ linux.dev/drivers/atm/sangam_atm/tn7api.h	2005-08-13 02:47:40.764006312 +0200
 @@ -0,0 +1,54 @@
 +/* 
 + *    Tnetd73xx ATM driver.
@@ -21433,7 +21433,7 @@ diff -urN linux.old/drivers/atm/sangam_atm/tn7api.h linux.dev/drivers/atm/sangam
 +#endif
 diff -urN linux.old/drivers/atm/sangam_atm/tn7atm.c linux.dev/drivers/atm/sangam_atm/tn7atm.c
 --- linux.old/drivers/atm/sangam_atm/tn7atm.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/atm/sangam_atm/tn7atm.c	2005-07-10 19:35:40.033466344 +0200
++++ linux.dev/drivers/atm/sangam_atm/tn7atm.c	2005-08-13 02:47:40.766006008 +0200
 @@ -0,0 +1,1212 @@
 +/* 
 + *   tn7.c
@@ -22649,7 +22649,7 @@ diff -urN linux.old/drivers/atm/sangam_atm/tn7atm.c linux.dev/drivers/atm/sangam
 +#endif /* MODULE */
 diff -urN linux.old/drivers/atm/sangam_atm/tn7atm.h linux.dev/drivers/atm/sangam_atm/tn7atm.h
 --- linux.old/drivers/atm/sangam_atm/tn7atm.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/atm/sangam_atm/tn7atm.h	2005-07-10 08:02:01.452110144 +0200
++++ linux.dev/drivers/atm/sangam_atm/tn7atm.h	2005-08-13 02:47:40.766006008 +0200
 @@ -0,0 +1,115 @@
 +/* 
 + *    Tnetd73xx ATM driver.
@@ -22768,7 +22768,7 @@ diff -urN linux.old/drivers/atm/sangam_atm/tn7atm.h linux.dev/drivers/atm/sangam
 +#endif
 diff -urN linux.old/drivers/atm/sangam_atm/tn7dsl.c linux.dev/drivers/atm/sangam_atm/tn7dsl.c
 --- linux.old/drivers/atm/sangam_atm/tn7dsl.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/atm/sangam_atm/tn7dsl.c	2005-07-10 08:27:39.683263464 +0200
++++ linux.dev/drivers/atm/sangam_atm/tn7dsl.c	2005-08-13 02:47:40.768005704 +0200
 @@ -0,0 +1,1778 @@
 +/* 
 + *  $Id$
@@ -24550,7 +24550,7 @@ diff -urN linux.old/drivers/atm/sangam_atm/tn7dsl.c linux.dev/drivers/atm/sangam
 +
 diff -urN linux.old/drivers/atm/sangam_atm/tn7sar.c linux.dev/drivers/atm/sangam_atm/tn7sar.c
 --- linux.old/drivers/atm/sangam_atm/tn7sar.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/atm/sangam_atm/tn7sar.c	2005-07-10 08:02:01.454109840 +0200
++++ linux.dev/drivers/atm/sangam_atm/tn7sar.c	2005-08-13 02:47:40.769005552 +0200
 @@ -0,0 +1,1376 @@
 +/******************************************************************************
 + * FILE PURPOSE:    OS files for CPSAR
@@ -25930,7 +25930,7 @@ diff -urN linux.old/drivers/atm/sangam_atm/tn7sar.c linux.dev/drivers/atm/sangam
 +}
 diff -urN linux.old/drivers/atm/sangam_atm/tnetd7300_sar_firm.h linux.dev/drivers/atm/sangam_atm/tnetd7300_sar_firm.h
 --- linux.old/drivers/atm/sangam_atm/tnetd7300_sar_firm.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/atm/sangam_atm/tnetd7300_sar_firm.h	2005-07-10 08:02:01.456109536 +0200
++++ linux.dev/drivers/atm/sangam_atm/tnetd7300_sar_firm.h	2005-08-13 02:47:40.771005248 +0200
 @@ -0,0 +1,988 @@
 +//SarPdspFirmware Revision:  49
 +
@@ -26922,7 +26922,7 @@ diff -urN linux.old/drivers/atm/sangam_atm/tnetd7300_sar_firm.h linux.dev/driver
 +                             0x209e0000};
 diff -urN linux.old/drivers/atm/sangam_atm/turbodsl.c linux.dev/drivers/atm/sangam_atm/turbodsl.c
 --- linux.old/drivers/atm/sangam_atm/turbodsl.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/atm/sangam_atm/turbodsl.c	2005-07-10 08:02:01.456109536 +0200
++++ linux.dev/drivers/atm/sangam_atm/turbodsl.c	2005-08-13 02:47:40.771005248 +0200
 @@ -0,0 +1,223 @@
 +
 +
@@ -27148,8 +27148,8 @@ diff -urN linux.old/drivers/atm/sangam_atm/turbodsl.c linux.dev/drivers/atm/sang
 +
 +  
 diff -urN linux.old/include/linux/atmdev.h linux.dev/include/linux/atmdev.h
---- linux.old/include/linux/atmdev.h	2004-08-08 01:26:06.000000000 +0200
-+++ linux.dev/include/linux/atmdev.h	2005-07-10 08:02:01.476106496 +0200
+--- linux.old/include/linux/atmdev.h	2005-08-13 00:39:58.131903456 +0200
++++ linux.dev/include/linux/atmdev.h	2005-08-13 03:25:29.311134728 +0200
 @@ -30,6 +30,9 @@
  #define ATM_DS3_PCR	(8000*12)
  			/* DS3: 12 cells in a 125 usec time slot */
@@ -27189,11 +27189,8 @@ diff -urN linux.old/include/linux/atmdev.h linux.dev/include/linux/atmdev.h
  	short		vpi;		/* VPI and VCI (types must be equal */
  					/* with sockaddr) */
  	int 		vci;
-@@ -285,20 +292,31 @@
- 	struct atm_dev	*dev;		/* device back pointer */
- 	struct atm_qos	qos;		/* QOS */
+@@ -287,18 +294,28 @@
  	struct atm_sap	sap;		/* SAP */
-+	atomic_t	tx_inuse,rx_inuse; /* buffer space in use */
  	void (*push)(struct atm_vcc *vcc,struct sk_buff *skb);
  	void (*pop)(struct atm_vcc *vcc,struct sk_buff *skb); /* optional */
 +	struct sk_buff *(*alloc_tx)(struct atm_vcc *vcc,unsigned int size);
@@ -27221,7 +27218,7 @@ diff -urN linux.old/include/linux/atmdev.h linux.dev/include/linux/atmdev.h
  	int		reply;		/* also used by ATMTCP */
  	/* Multipoint part ------------------------------------------------- */
  	struct atm_vcc	*session;	/* session VCC descriptor */
-@@ -324,6 +342,8 @@
+@@ -324,6 +341,8 @@
  					/* (NULL) */
  	const char	*type;		/* device type name */
  	int		number;		/* device index */
@@ -27230,7 +27227,7 @@ diff -urN linux.old/include/linux/atmdev.h linux.dev/include/linux/atmdev.h
  	void		*dev_data;	/* per-device data */
  	void		*phy_data;	/* private PHY date */
  	atm_dev_flags_t flags;		/* device flags (ATM_DF_*) */
-@@ -333,13 +353,15 @@
+@@ -333,13 +352,15 @@
  	struct k_atm_dev_stats stats;	/* statistics */
  	char		signal;		/* signal status (ATM_PHY_SIG_*) */
  	int		link_rate;	/* link rate (default: OC3) */
@@ -27249,7 +27246,7 @@ diff -urN linux.old/include/linux/atmdev.h linux.dev/include/linux/atmdev.h
  };
  
  
-@@ -375,6 +397,8 @@
+@@ -375,6 +396,8 @@
  	void (*feedback)(struct atm_vcc *vcc,struct sk_buff *skb,
  	    unsigned long start,unsigned long dest,int len);
  	int (*change_qos)(struct atm_vcc *vcc,struct atm_qos *qos,int flags);
@@ -27258,7 +27255,7 @@ diff -urN linux.old/include/linux/atmdev.h linux.dev/include/linux/atmdev.h
  	int (*proc_read)(struct atm_dev *dev,loff_t *pos,char *page);
  	struct module *owner;
  };
-@@ -389,6 +413,7 @@
+@@ -389,6 +412,7 @@
  
  struct atm_skb_data {
  	struct atm_vcc	*vcc;		/* ATM VCC */
@@ -27266,56 +27263,479 @@ diff -urN linux.old/include/linux/atmdev.h linux.dev/include/linux/atmdev.h
  	unsigned long	atm_options;	/* ATM layer options */
  };
  
-@@ -399,11 +424,10 @@
- 
- struct atm_dev *atm_dev_register(const char *type,const struct atmdev_ops *ops,
-     int number,atm_dev_flags_t *flags); /* number == -1: pick first available */
--struct atm_dev *atm_dev_lookup(int number);
-+struct atm_dev *atm_find_dev(int number);
- void atm_dev_deregister(struct atm_dev *dev);
+@@ -404,7 +428,7 @@
  void shutdown_atm_dev(struct atm_dev *dev);
--void vcc_insert_socket(struct sock *sk);
--void vcc_remove_socket(struct sock *sk);
+ void vcc_insert_socket(struct sock *sk);
+ void vcc_remove_socket(struct sock *sk);
+-
 +void bind_vcc(struct atm_vcc *vcc,struct atm_dev *dev);
  
- 
  /*
-@@ -411,54 +435,52 @@
-  *
-  */
- 
--static inline int atm_guess_pdu2truesize(int size)
+  * This is approximately the algorithm used by alloc_skb.
+diff -urN linux.old/include/linux/atmdev.h.orig linux.dev/include/linux/atmdev.h.orig
+--- linux.old/include/linux/atmdev.h.orig	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/include/linux/atmdev.h.orig	2005-08-13 03:18:36.129947816 +0200
+@@ -0,0 +1,485 @@
++/* atmdev.h - ATM device driver declarations and various related items */
++ 
++/* Written 1995-2000 by Werner Almesberger, EPFL LRC/ICA */
++ 
++
++#ifndef LINUX_ATMDEV_H
++#define LINUX_ATMDEV_H
++
++
++#include <linux/config.h>
++#include <linux/atmapi.h>
++#include <linux/atm.h>
++#include <linux/atmioc.h>
++
++
++#define ESI_LEN		6
++
++#define ATM_OC3_PCR	(155520000/270*260/8/53)
++			/* OC3 link rate:  155520000 bps
++			   SONET overhead: /270*260 (9 section, 1 path)
++			   bits per cell:  /8/53
++			   max cell rate:  353207.547 cells/sec */
++#define ATM_25_PCR	((25600000/8-8000)/54)
++			/* 25 Mbps ATM cell rate (59111) */
++#define ATM_OC12_PCR	(622080000/1080*1040/8/53)
++			/* OC12 link rate: 622080000 bps
++			   SONET overhead: /1080*1040
++			   bits per cell:  /8/53
++			   max cell rate:  1412830.188 cells/sec */
++#define ATM_DS3_PCR	(8000*12)
++			/* DS3: 12 cells in a 125 usec time slot */
++
++#define ATM_PDU_OVHD	0	/* number of bytes to charge against buffer
++				   quota per PDU */
++
++#define ATM_SD(s)	((s)->sk->protinfo.af_atm)
++
++
++#define __AAL_STAT_ITEMS \
++    __HANDLE_ITEM(tx);			/* TX okay */ \
++    __HANDLE_ITEM(tx_err);		/* TX errors */ \
++    __HANDLE_ITEM(rx);			/* RX okay */ \
++    __HANDLE_ITEM(rx_err);		/* RX errors */ \
++    __HANDLE_ITEM(rx_drop);		/* RX out of memory */
++
++struct atm_aal_stats {
++#define __HANDLE_ITEM(i) int i
++	__AAL_STAT_ITEMS
++#undef __HANDLE_ITEM
++};
++
++
++struct atm_dev_stats {
++	struct atm_aal_stats aal0;
++	struct atm_aal_stats aal34;
++	struct atm_aal_stats aal5;
++} __ATM_API_ALIGN;
++
++
++#define ATM_GETLINKRATE	_IOW('a',ATMIOC_ITF+1,struct atmif_sioc)
++					/* get link rate */
++#define ATM_GETNAMES	_IOW('a',ATMIOC_ITF+3,struct atm_iobuf)
++					/* get interface names (numbers) */
++#define ATM_GETTYPE	_IOW('a',ATMIOC_ITF+4,struct atmif_sioc)
++					/* get interface type name */
++#define ATM_GETESI	_IOW('a',ATMIOC_ITF+5,struct atmif_sioc)
++					/* get interface ESI */
++#define ATM_GETADDR	_IOW('a',ATMIOC_ITF+6,struct atmif_sioc)
++					/* get itf's local ATM addr. list */
++#define ATM_RSTADDR	_IOW('a',ATMIOC_ITF+7,struct atmif_sioc)
++					/* reset itf's ATM address list */
++#define ATM_ADDADDR	_IOW('a',ATMIOC_ITF+8,struct atmif_sioc)
++					/* add a local ATM address */
++#define ATM_DELADDR	_IOW('a',ATMIOC_ITF+9,struct atmif_sioc)
++					/* remove a local ATM address */
++#define ATM_GETCIRANGE	_IOW('a',ATMIOC_ITF+10,struct atmif_sioc)
++					/* get connection identifier range */
++#define ATM_SETCIRANGE	_IOW('a',ATMIOC_ITF+11,struct atmif_sioc)
++					/* set connection identifier range */
++#define ATM_SETESI	_IOW('a',ATMIOC_ITF+12,struct atmif_sioc)
++					/* set interface ESI */
++#define ATM_SETESIF	_IOW('a',ATMIOC_ITF+13,struct atmif_sioc)
++					/* force interface ESI */
++#define ATM_GETSTAT	_IOW('a',ATMIOC_SARCOM+0,struct atmif_sioc)
++					/* get AAL layer statistics */
++#define ATM_GETSTATZ	_IOW('a',ATMIOC_SARCOM+1,struct atmif_sioc)
++					/* get AAL layer statistics and zero */
++#define ATM_GETLOOP	_IOW('a',ATMIOC_SARCOM+2,struct atmif_sioc)
++					/* get loopback mode */
++#define ATM_SETLOOP	_IOW('a',ATMIOC_SARCOM+3,struct atmif_sioc)
++					/* set loopback mode */
++#define ATM_QUERYLOOP	_IOW('a',ATMIOC_SARCOM+4,struct atmif_sioc)
++					/* query supported loopback modes */
++#define ATM_SETSC	_IOW('a',ATMIOC_SPECIAL+1,int)
++					/* enable or disable single-copy */
++#define ATM_SETBACKEND	_IOW('a',ATMIOC_SPECIAL+2,atm_backend_t)
++					/* set backend handler */
++#define ATM_NEWBACKENDIF _IOW('a',ATMIOC_SPECIAL+3,atm_backend_t)
++					/* use backend to make new if */
++#define ATM_STOPTX      _IOW('a',ATMIOC_SPECIAL+4,struct atmif_sioc)
++					/* Stop Tx on Sangam DSL */
++/*
++ * These are backend handkers that can be set via the ATM_SETBACKEND call
++ * above.  In the future we may support dynamic loading of these - for now,
++ * they're just being used to share the ATMIOC_BACKEND ioctls
++ */
++#define ATM_BACKEND_RAW		0	
++#define ATM_BACKEND_PPP		1	/* PPPoATM - RFC2364 */
++#define ATM_BACKEND_BR2684	2	/* Bridged RFC1483/2684 */
++
++/* for ATM_GETTYPE */
++#define ATM_ITFTYP_LEN	8	/* maximum length of interface type name */
++
++/*
++ * Loopback modes for ATM_{PHY,SAR}_{GET,SET}LOOP
++ */
++
++/* Point of loopback				CPU-->SAR-->PHY-->line--> ... */
++#define __ATM_LM_NONE	0	/* no loop back     ^     ^     ^      ^      */
++#define __ATM_LM_AAL	1	/* loop back PDUs --'     |     |      |      */
++#define __ATM_LM_ATM	2	/* loop back ATM cells ---'     |      |      */
++/* RESERVED		4	loop back on PHY side  ---'		      */
++#define __ATM_LM_PHY	8	/* loop back bits (digital) ----'      |      */
++#define __ATM_LM_ANALOG 16	/* loop back the analog signal --------'      */
++
++/* Direction of loopback */
++#define __ATM_LM_MKLOC(n)	((n))	    /* Local (i.e. loop TX to RX) */
++#define __ATM_LM_MKRMT(n)	((n) << 8)  /* Remote (i.e. loop RX to TX) */
++
++#define __ATM_LM_XTLOC(n)	((n) & 0xff)
++#define __ATM_LM_XTRMT(n)	(((n) >> 8) & 0xff)
++
++#define ATM_LM_NONE	0	/* no loopback */
++
++#define ATM_LM_LOC_AAL	__ATM_LM_MKLOC(__ATM_LM_AAL)
++#define ATM_LM_LOC_ATM	__ATM_LM_MKLOC(__ATM_LM_ATM)
++#define ATM_LM_LOC_PHY	__ATM_LM_MKLOC(__ATM_LM_PHY)
++#define ATM_LM_LOC_ANALOG __ATM_LM_MKLOC(__ATM_LM_ANALOG)
++
++#define ATM_LM_RMT_AAL	__ATM_LM_MKRMT(__ATM_LM_AAL)
++#define ATM_LM_RMT_ATM	__ATM_LM_MKRMT(__ATM_LM_ATM)
++#define ATM_LM_RMT_PHY	__ATM_LM_MKRMT(__ATM_LM_PHY)
++#define ATM_LM_RMT_ANALOG __ATM_LM_MKRMT(__ATM_LM_ANALOG)
++
++/*
++ * Note: ATM_LM_LOC_* and ATM_LM_RMT_* can be combined, provided that
++ * __ATM_LM_XTLOC(x) <= __ATM_LM_XTRMT(x)
++ */
++
++
++struct atm_iobuf {
++	int length;
++	void *buffer;
++};
++
++/* for ATM_GETCIRANGE / ATM_SETCIRANGE */
++
++#define ATM_CI_MAX      -1              /* use maximum range of VPI/VCI */
++ 
++struct atm_cirange {
++	char	vpi_bits;		/* 1..8, ATM_CI_MAX (-1) for maximum */
++	char	vci_bits;		/* 1..16, ATM_CI_MAX (-1) for maximum */
++};
++
++/* for ATM_SETSC; actually taken from the ATM_VF number space */
++
++#define ATM_SC_RX	1024		/* enable RX single-copy */
++#define ATM_SC_TX	2048		/* enable TX single-copy */
++
++#define ATM_BACKLOG_DEFAULT 32 /* if we get more, we're likely to time out
++				  anyway */
++
++/* MF: change_qos (Modify) flags */
++
++#define ATM_MF_IMMED	 1	/* Block until change is effective */
++#define ATM_MF_INC_RSV	 2	/* Change reservation on increase */
++#define ATM_MF_INC_SHP	 4	/* Change shaping on increase */
++#define ATM_MF_DEC_RSV	 8	/* Change reservation on decrease */
++#define ATM_MF_DEC_SHP	16	/* Change shaping on decrease */
++#define ATM_MF_BWD	32	/* Set the backward direction parameters */
++
++#define ATM_MF_SET	(ATM_MF_INC_RSV | ATM_MF_INC_SHP | ATM_MF_DEC_RSV | \
++			  ATM_MF_DEC_SHP | ATM_MF_BWD)
++
++/*
++ * ATM_VS_* are used to express VC state in a human-friendly way.
++ */
++
++#define ATM_VS_IDLE	0	/* VC is not used */
++#define ATM_VS_CONNECTED 1	/* VC is connected */
++#define ATM_VS_CLOSING	2	/* VC is closing */
++#define ATM_VS_LISTEN	3	/* VC is listening for incoming setups */
++#define ATM_VS_INUSE	4	/* VC is in use (registered with atmsigd) */
++#define ATM_VS_BOUND	5	/* VC is bound */
++
++#define ATM_VS2TXT_MAP \
++    "IDLE", "CONNECTED", "CLOSING", "LISTEN", "INUSE", "BOUND"
++
++#define ATM_VF2TXT_MAP \
++    "ADDR",	"READY",	"PARTIAL",	"REGIS", \
++    "RELEASED", "HASQOS",	"LISTEN",	"META", \
++    "256",	"512",		"1024",		"2048", \
++    "SESSION",	"HASSAP",	"BOUND",	"CLOSE"
++
++
++#ifndef __KERNEL__
++#undef __AAL_STAT_ITEMS
++#else
++
++#include <linux/sched.h> /* wait_queue_head_t */
++#include <linux/time.h> /* struct timeval */
++#include <linux/net.h>
++#include <linux/skbuff.h> /* struct sk_buff */
++#include <linux/uio.h>
++#include <net/sock.h>
++#include <asm/atomic.h>
++
++#ifdef CONFIG_PROC_FS
++#include <linux/proc_fs.h>
++#endif
++
++
++struct k_atm_aal_stats {
++#define __HANDLE_ITEM(i) atomic_t i
++	__AAL_STAT_ITEMS
++#undef __HANDLE_ITEM
++};
++
++
++struct k_atm_dev_stats {
++	struct k_atm_aal_stats aal0;
++	struct k_atm_aal_stats aal34;
++	struct k_atm_aal_stats aal5;
++};
++
++
++enum {
++	ATM_VF_ADDR,		/* Address is in use. Set by anybody, cleared
++				   by device driver. */
++	ATM_VF_READY,		/* VC is ready to transfer data. Set by device
++				   driver, cleared by anybody. */
++	ATM_VF_PARTIAL,		/* resources are bound to PVC (partial PVC
++				   setup), controlled by socket layer */
++	ATM_VF_REGIS,		/* registered with demon, controlled by SVC
++				   socket layer */
++	ATM_VF_BOUND,		/* local SAP is set, controlled by SVC socket
++				   layer */
++	ATM_VF_RELEASED,	/* demon has indicated/requested release,
++				   controlled by SVC socket layer */
++	ATM_VF_HASQOS,		/* QOS parameters have been set */
++	ATM_VF_LISTEN,		/* socket is used for listening */
++	ATM_VF_META,		/* SVC socket isn't used for normal data
++				   traffic and doesn't depend on signaling
++				   to be available */
++	ATM_VF_SESSION,		/* VCC is p2mp session control descriptor */
++	ATM_VF_HASSAP,		/* SAP has been set */
++	ATM_VF_CLOSE,		/* asynchronous close - treat like VF_RELEASED*/
++};
++
++
++#define ATM_VF2VS(flags) \
++    (test_bit(ATM_VF_READY,&(flags)) ? ATM_VS_CONNECTED : \
++     test_bit(ATM_VF_RELEASED,&(flags)) ? ATM_VS_CLOSING : \
++     test_bit(ATM_VF_LISTEN,&(flags)) ? ATM_VS_LISTEN : \
++     test_bit(ATM_VF_REGIS,&(flags)) ? ATM_VS_INUSE : \
++     test_bit(ATM_VF_BOUND,&(flags)) ? ATM_VS_BOUND : ATM_VS_IDLE)
++
++
++enum {
++	ATM_DF_CLOSE,		/* close device when last VCC is closed */
++};
++
++
++#define ATM_PHY_SIG_LOST    0	/* no carrier/light */
++#define ATM_PHY_SIG_UNKNOWN 1	/* carrier/light status is unknown */
++#define ATM_PHY_SIG_FOUND   2	/* carrier/light okay */
++
++#define ATM_ATMOPT_CLP	1	/* set CLP bit */
++
++
++typedef struct { unsigned long bits; } atm_vcc_flags_t;
++
++
++struct atm_vcc {
++	atm_vcc_flags_t flags;		/* VCC flags (ATM_VF_*) */
++	unsigned char	family;		/* address family; 0 if unused */
++	short		vpi;		/* VPI and VCI (types must be equal */
++					/* with sockaddr) */
++	int 		vci;
++	unsigned long	aal_options;	/* AAL layer options */
++	unsigned long	atm_options;	/* ATM layer options */
++	struct atm_dev	*dev;		/* device back pointer */
++	struct atm_qos	qos;		/* QOS */
++	struct atm_sap	sap;		/* SAP */
++	void (*push)(struct atm_vcc *vcc,struct sk_buff *skb);
++	void (*pop)(struct atm_vcc *vcc,struct sk_buff *skb); /* optional */
++	struct sk_buff *(*alloc_tx)(struct atm_vcc *vcc,unsigned int size);
++					/* TX allocation routine - can be */
++					/* modified by protocol or by driver.*/
++					/* NOTE: this interface will change */
++	int (*push_oam)(struct atm_vcc *vcc,void *cell);
++	int (*send)(struct atm_vcc *vcc,struct sk_buff *skb);
++	void		*dev_data;	/* per-device data */
++	void		*proto_data;	/* per-protocol data */
++	struct timeval	timestamp;	/* AAL timestamps */
++	struct sk_buff_head recvq;	/* receive queue */
++	struct k_atm_aal_stats *stats;	/* pointer to AAL stats group */
++	wait_queue_head_t sleep;	/* if socket is busy */
++	struct sock	*sk;		/* socket backpointer */
++	struct atm_vcc	*prev,*next;
++	/* SVC part --- may move later ------------------------------------- */
++	short		itf;		/* interface number */
++	struct sockaddr_atmsvc local;
++	struct sockaddr_atmsvc remote;
++	void (*callback)(struct atm_vcc *vcc);
++	struct sk_buff_head listenq;
++	int		backlog_quota;	/* number of connection requests we */
++					/* can still accept */
++	int		reply;		/* also used by ATMTCP */
++	/* Multipoint part ------------------------------------------------- */
++	struct atm_vcc	*session;	/* session VCC descriptor */
++	/* Other stuff ----------------------------------------------------- */
++	void		*user_back;	/* user backlink - not touched by */
++					/* native ATM stack. Currently used */
++					/* by CLIP and sch_atm. */
++};
++
++
++struct atm_dev_addr {
++	struct sockaddr_atmsvc addr;	/* ATM address */
++	struct atm_dev_addr *next;	/* next address */
++};
++
++
++typedef struct { unsigned int bits; } atm_dev_flags_t;
++
++
++struct atm_dev {
++	const struct atmdev_ops *ops;	/* device operations; NULL if unused */
++	const struct atmphy_ops *phy;	/* PHY operations, may be undefined */
++					/* (NULL) */
++	const char	*type;		/* device type name */
++	int		number;		/* device index */
++	struct atm_vcc	*vccs;		/* VCC table (or NULL) */
++	struct atm_vcc	*last;		/* last VCC (or undefined) */
++	void		*dev_data;	/* per-device data */
++	void		*phy_data;	/* private PHY date */
++	atm_dev_flags_t flags;		/* device flags (ATM_DF_*) */
++	struct atm_dev_addr *local;	/* local ATM addresses */
++	unsigned char	esi[ESI_LEN];	/* ESI ("MAC" addr) */
++	struct atm_cirange ci_range;	/* VPI/VCI range */
++	struct k_atm_dev_stats stats;	/* statistics */
++	char		signal;		/* signal status (ATM_PHY_SIG_*) */
++	int		link_rate;	/* link rate (default: OC3) */
++        atomic_t        refcnt;         /* reference count */
++        spinlock_t      lock;           /* protect internal members */
++#ifdef CONFIG_PROC_FS
++	struct proc_dir_entry *proc_entry; /* proc entry */
++	char *proc_name;		/* proc entry name */
++#endif
++	struct atm_dev	*prev,*next;	/* linkage */
++	struct list_head dev_list;      /* linkage */
++
++};
++
++
++/*
++ * ioctl, getsockopt, setsockopt, and sg_send are optional and can be set to
++ * NULL. */
++
++/* OF: send_Oam Flags */
++
++#define ATM_OF_IMMED	1	/* Attempt immediate delivery */
++#define ATM_OF_INRATE	2	/* Attempt in-rate delivery */
++
++struct atmdev_ops { /* only send is required */
++	void (*dev_close)(struct atm_dev *dev);
++	int (*open)(struct atm_vcc *vcc,short vpi,int vci);
++	void (*close)(struct atm_vcc *vcc);
++	int (*ioctl)(struct atm_dev *dev,unsigned int cmd,void *arg);
++	int (*getsockopt)(struct atm_vcc *vcc,int level,int optname,
++	    void *optval,int optlen);
++	int (*setsockopt)(struct atm_vcc *vcc,int level,int optname,
++	    void *optval,int optlen);
++	int (*send)(struct atm_vcc *vcc,struct sk_buff *skb);
++	int (*sg_send)(struct atm_vcc *vcc,unsigned long start,
++	    unsigned long size);
++#if 0 /* keep the current hack for now */
++	int (*send_iovec)(struct atm_vcc *vcc,struct iovec *iov,int size,
++	    void (*discard)(struct atm_vcc *vcc,void *user),void *user);
++#endif
++	int (*send_oam)(struct atm_vcc *vcc,void *cell,int flags);
++	void (*phy_put)(struct atm_dev *dev,unsigned char value,
++	    unsigned long addr);
++	unsigned char (*phy_get)(struct atm_dev *dev,unsigned long addr);
++	void (*feedback)(struct atm_vcc *vcc,struct sk_buff *skb,
++	    unsigned long start,unsigned long dest,int len);
++	int (*change_qos)(struct atm_vcc *vcc,struct atm_qos *qos,int flags);
++	void (*free_rx_skb)(struct atm_vcc *vcc, struct sk_buff *skb);
++		/* @@@ temporary hack */
++	int (*proc_read)(struct atm_dev *dev,loff_t *pos,char *page);
++	struct module *owner;
++};
++
++
++struct atmphy_ops {
++	int (*start)(struct atm_dev *dev);
++	int (*ioctl)(struct atm_dev *dev,unsigned int cmd,void *arg);
++	void (*interrupt)(struct atm_dev *dev);
++	int (*stop)(struct atm_dev *dev);
++};
++
++struct atm_skb_data {
++	struct atm_vcc	*vcc;		/* ATM VCC */
++	int		iovcnt;		/* 0 for "normal" operation */
++	unsigned long	atm_options;	/* ATM layer options */
++};
++
++extern struct sock *vcc_sklist;
++extern rwlock_t vcc_sklist_lock;
++
++#define ATM_SKB(skb) (((struct atm_skb_data *) (skb)->cb))
++
++struct atm_dev *atm_dev_register(const char *type,const struct atmdev_ops *ops,
++    int number,atm_dev_flags_t *flags); /* number == -1: pick first available */
++struct atm_dev *atm_find_dev(int number);
++void atm_dev_deregister(struct atm_dev *dev);
++void shutdown_atm_dev(struct atm_dev *dev);
++void bind_vcc(struct atm_vcc *vcc,struct atm_dev *dev);
++
++
++/*
++ * This is approximately the algorithm used by alloc_skb.
++ *
++ */
++
 +static __inline__ int atm_guess_pdu2truesize(int pdu_size)
- {
--	return (SKB_DATA_ALIGN(size) + sizeof(struct skb_shared_info));
++{
 +	return ((pdu_size+15) & ~15) + sizeof(struct sk_buff);
- }
- 
- 
--static inline void atm_force_charge(struct atm_vcc *vcc,int truesize)
++}
++
++
 +static __inline__ void atm_force_charge(struct atm_vcc *vcc,int truesize)
- {
--	atomic_add(truesize, &vcc->sk->rmem_alloc);
++{
 +	atomic_add(truesize+ATM_PDU_OVHD,&vcc->rx_inuse);
- }
- 
- 
--static inline void atm_return(struct atm_vcc *vcc,int truesize)
++}
++
++
 +static __inline__ void atm_return(struct atm_vcc *vcc,int truesize)
- {
--	atomic_sub(truesize, &vcc->sk->rmem_alloc);
++{
 +	atomic_sub(truesize+ATM_PDU_OVHD,&vcc->rx_inuse);
- }
- 
- 
--static inline int atm_may_send(struct atm_vcc *vcc,unsigned int size)
++}
++
++
 +static __inline__ int atm_may_send(struct atm_vcc *vcc,unsigned int size)
- {
--	return (size + atomic_read(&vcc->sk->wmem_alloc)) < vcc->sk->sndbuf;
++{
 +	return size+atomic_read(&vcc->tx_inuse)+ATM_PDU_OVHD < vcc->sk->sndbuf;
- }
- 
- 
++}
++
++
 +int atm_charge(struct atm_vcc *vcc,int truesize);
 +struct sk_buff *atm_alloc_charge(struct atm_vcc *vcc,int pdu_size,
 +    int gfp_flags);
@@ -27324,41 +27744,26 @@ diff -urN linux.old/include/linux/atmdev.h linux.dev/include/linux/atmdev.h
 +
 +void atm_async_release_vcc(struct atm_vcc *vcc,int reply);
 +
- static inline void atm_dev_hold(struct atm_dev *dev)
- {
--	atomic_inc(&dev->refcnt);
++static inline void atm_dev_hold(struct atm_dev *dev)
++{
 +        atomic_inc(&dev->refcnt);
- }
- 
--
- static inline void atm_dev_put(struct atm_dev *dev)
- {
--	atomic_dec(&dev->refcnt);
++}
++
++static inline void atm_dev_put(struct atm_dev *dev)
++{
 +        atomic_dec(&dev->refcnt);
- 
--	if ((atomic_read(&dev->refcnt) == 1) &&
--	    test_bit(ATM_DF_CLOSE,&dev->flags))
--		shutdown_atm_dev(dev);
++
 +        if ((atomic_read(&dev->refcnt) == 1) &&
 +            test_bit(ATM_DF_CLOSE,&dev->flags))
 +                shutdown_atm_dev(dev);
- }
- 
--
--int atm_charge(struct atm_vcc *vcc,int truesize);
--struct sk_buff *atm_alloc_charge(struct atm_vcc *vcc,int pdu_size,
--    int gfp_flags);
--int atm_find_ci(struct atm_vcc *vcc,short *vpi,int *vci);
--int atm_pcr_goal(struct atm_trafprm *tp);
--
--void vcc_release_async(struct atm_vcc *vcc, int reply);
--
- #endif /* __KERNEL__ */
- 
- #endif
++}
++
++#endif /* __KERNEL__ */
++
++#endif
 diff -urN linux.old/include/linux/atm.h linux.dev/include/linux/atm.h
---- linux.old/include/linux/atm.h	2001-11-22 20:48:41.000000000 +0100
-+++ linux.dev/include/linux/atm.h	2005-07-10 08:02:01.476106496 +0200
+--- linux.old/include/linux/atm.h	2005-08-13 00:39:58.131903456 +0200
++++ linux.dev/include/linux/atm.h	2005-08-13 02:47:40.877988984 +0200
 @@ -135,9 +135,12 @@
  	unsigned char	traffic_class;	/* traffic class (ATM_UBR, ...) */
  	int		max_pcr;	/* maximum PCR in cells per second */
@@ -27372,3 +27777,155 @@ diff -urN linux.old/include/linux/atm.h linux.dev/include/linux/atm.h
          /* extra params for ABR */
          unsigned int 	icr;         	/* Initial Cell Rate (24-bit) */
          unsigned int	tbe;		/* Transient Buffer Exposure (24-bit) */ 
+diff -urN linux.old/net/atm/clip.c linux.dev/net/atm/clip.c
+--- linux.old/net/atm/clip.c	2004-11-17 12:54:22.000000000 +0100
++++ linux.dev/net/atm/clip.c	2005-08-13 03:26:40.842260344 +0200
+@@ -722,7 +722,7 @@
+ 	set_bit(ATM_VF_META,&vcc->flags);
+ 	set_bit(ATM_VF_READY,&vcc->flags);
+ 	    /* allow replies and avoid getting closed if signaling dies */
+-	vcc->dev = &atmarpd_dev;
++	bind_vcc(vcc, &atmarpd_dev);
+ 	vcc_insert_socket(vcc->sk);
+ 	vcc->push = NULL;
+ 	vcc->pop = NULL; /* crash */
+diff -urN linux.old/net/atm/common.c linux.dev/net/atm/common.c
+--- linux.old/net/atm/common.c	2004-02-18 14:36:32.000000000 +0100
++++ linux.dev/net/atm/common.c	2005-08-13 04:08:54.066151776 +0200
+@@ -385,7 +385,7 @@
+ 	error = 0;
+ 	if (!try_inc_mod_count(dev->ops->owner))
+ 		return -ENODEV;
+-	vcc->dev = dev;
++	bind_vcc(vcc, dev);
+ 	vcc_insert_socket(vcc->sk);
+ 	switch (vcc->qos.aal) {
+ 		case ATM_AAL0:
+@@ -427,7 +427,7 @@
+ 	if (dev->ops->owner)
+ 		__MOD_DEC_USE_COUNT(dev->ops->owner);
+ 	/* ensure we get dev module ref count correct */
+-	vcc->dev = NULL;
++	bind_vcc(vcc, NULL);
+ 	return error;
+ 	
+ }
+@@ -460,8 +460,10 @@
+ 	    vcc->qos.rxtp.max_pcr,vcc->qos.rxtp.max_sdu,
+ 	    vcc->qos.aal == ATM_AAL5 ? "" : vcc->qos.aal == ATM_AAL0 ? "" :
+ 	    " ??? code ",vcc->qos.aal == ATM_AAL0 ? 0 : vcc->qos.aal);
++#if 0
+ 	if (!test_bit(ATM_VF_HASQOS, &vcc->flags))
+ 		return -EBADFD;
++#endif
+ 	if (vcc->qos.txtp.traffic_class == ATM_ANYCLASS ||
+ 	    vcc->qos.rxtp.traffic_class == ATM_ANYCLASS)
+ 		return -EINVAL;
+diff -urN linux.old/net/atm/lec.c linux.dev/net/atm/lec.c
+--- linux.old/net/atm/lec.c	2004-11-17 12:54:22.000000000 +0100
++++ linux.dev/net/atm/lec.c	2005-08-13 03:30:50.951238000 +0200
+@@ -811,7 +811,7 @@
+         lec_arp_init(priv);
+ 	priv->itfnum = i;  /* LANE2 addition */
+         priv->lecd = vcc;
+-        vcc->dev = &lecatm_dev;
++        bind_vcc(vcc, &lecatm_dev);
+         vcc_insert_socket(vcc->sk);
+         
+         vcc->proto_data = dev_lec[i];
+diff -urN linux.old/net/atm/mpc.c linux.dev/net/atm/mpc.c
+--- linux.old/net/atm/mpc.c	2003-11-28 19:26:21.000000000 +0100
++++ linux.dev/net/atm/mpc.c	2005-08-13 03:31:04.569167760 +0200
+@@ -787,7 +787,7 @@
+ 	}
+ 
+ 	mpc->mpoad_vcc = vcc;
+-	vcc->dev = &mpc_dev;
++	bind_vcc(vcc, &mpc_dev);
+ 	vcc_insert_socket(vcc->sk);
+ 	set_bit(ATM_VF_META,&vcc->flags);
+ 	set_bit(ATM_VF_READY,&vcc->flags);
+diff -urN linux.old/net/atm/pvc.c linux.dev/net/atm/pvc.c
+--- linux.old/net/atm/pvc.c	2003-11-28 19:26:21.000000000 +0100
++++ linux.dev/net/atm/pvc.c	2005-08-13 04:03:41.850615752 +0200
+@@ -38,10 +38,12 @@
+ 	if (addr->sap_family != AF_ATMPVC) return -EAFNOSUPPORT;
+ 	lock_sock(sk);
+ 	vcc = ATM_SD(sock);
++#if 0
+ 	if (!test_bit(ATM_VF_HASQOS, &vcc->flags)) {
+ 		error = -EBADFD;
+ 		goto out;
+ 	}
++#endif
+ 	if (test_bit(ATM_VF_PARTIAL,&vcc->flags)) {
+ 		if (vcc->vpi != ATM_VPI_UNSPEC) addr->sap_addr.vpi = vcc->vpi;
+ 		if (vcc->vci != ATM_VCI_UNSPEC) addr->sap_addr.vci = vcc->vci;
+diff -urN linux.old/net/atm/resources.c linux.dev/net/atm/resources.c
+--- linux.old/net/atm/resources.c	2003-11-28 19:26:21.000000000 +0100
++++ linux.dev/net/atm/resources.c	2005-08-13 03:37:16.748587888 +0200
+@@ -398,8 +398,23 @@
+ 	return error;
+ }
+ 
++void bind_vcc(struct atm_vcc *vcc,struct atm_dev *dev)
++{
++	vcc->dev = dev;
++	if (dev) {
++		vcc->next = NULL;
++		vcc->prev = dev->last;
++		if (dev->vccs)
++			dev->last->next = vcc;
++		else
++			dev->vccs = vcc;
++		dev->last = vcc;
++	}
++}
++
+ 
+ EXPORT_SYMBOL(atm_dev_register);
+ EXPORT_SYMBOL(atm_dev_deregister);
+ EXPORT_SYMBOL(atm_dev_lookup);
++EXPORT_SYMBOL(bind_vcc);
+ EXPORT_SYMBOL(shutdown_atm_dev);
+diff -urN linux.old/net/atm/signaling.c linux.dev/net/atm/signaling.c
+--- linux.old/net/atm/signaling.c	2003-11-28 19:26:21.000000000 +0100
++++ linux.dev/net/atm/signaling.c	2005-08-13 03:36:24.880473040 +0200
+@@ -251,7 +251,7 @@
+ 	if (sigd) return -EADDRINUSE;
+ 	DPRINTK("sigd_attach\n");
+ 	sigd = vcc;
+-	vcc->dev = &sigd_dev;
++	bind_vcc(vcc, &sigd_dev);
+ 	vcc_insert_socket(vcc->sk);
+ 	set_bit(ATM_VF_META,&vcc->flags);
+ 	set_bit(ATM_VF_READY,&vcc->flags);
+diff -urN linux.old/net/atm/svc.c linux.dev/net/atm/svc.c
+--- linux.old/net/atm/svc.c	2003-11-28 19:26:21.000000000 +0100
++++ linux.dev/net/atm/svc.c	2005-08-13 04:08:16.126919416 +0200
+@@ -141,10 +141,12 @@
+ 	clear_bit(ATM_VF_BOUND,&vcc->flags);
+ 	    /* failing rebind will kill old binding */
+ 	/* @@@ check memory (de)allocation on rebind */
++#if 0
+ 	if (!test_bit(ATM_VF_HASQOS,&vcc->flags)) {
+ 		error = -EBADFD;
+ 		goto out;
+ 	}
++#endif
+ 	vcc->local = *addr;
+ 	vcc->reply = WAITING;
+ 	add_wait_queue(&vcc->sleep,&wait);
+@@ -212,10 +214,12 @@
+ 			error = -EAFNOSUPPORT;
+ 			goto out;
+ 		}
++#if 0
+ 		if (!test_bit(ATM_VF_HASQOS, &vcc->flags)) {
+ 			error = -EBADFD;
+ 			goto out;
+ 		}
++#endif
+ 		if (vcc->qos.txtp.traffic_class == ATM_ANYCLASS ||
+ 		    vcc->qos.rxtp.traffic_class == ATM_ANYCLASS) {
+ 			error = -EINVAL;
