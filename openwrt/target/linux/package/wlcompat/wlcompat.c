@@ -2,7 +2,7 @@
  * wlcompat.c
  *
  * Copyright (C) 2005 Mike Baker,
- *                    Felix Fietkau <nbd@vd-s.ath.cx>
+ *                    Felix Fietkau <openwrt@nbd.name>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -31,9 +31,9 @@
 
 #include <net/iw_handler.h>
 #include <wlioctl.h>
-#include <wlcompat.h>
 
 static struct net_device *dev;
+static unsigned short bss_force;
 char buf[WLC_IOCTL_MAXLEN];
 
 /* The frequency of each channel in MHz */
@@ -341,20 +341,53 @@ static int wlcompat_ioctl(struct net_device *dev,
 		case SIOCSIWAP:
 		{
 			int ap = 0;
-			
+			int infra = 0;
+			rw_reg_t reg;
+
+			memset(&reg, 0, sizeof(reg));
+
 			if (wrqu->ap_addr.sa_family != ARPHRD_ETHER)
 				return -EINVAL;
 
 			if (wl_ioctl(dev, WLC_GET_AP, &ap, sizeof(ap)) < 0)
 				return -EINVAL;
-			
-			if (wl_ioctl(dev, (ap ? WLC_SET_BSSID : WLC_REASSOC), wrqu->ap_addr.sa_data, 6) < 0)
+
+			if (wl_ioctl(dev, WLC_GET_INFRA, &infra, sizeof(infra)) < 0)
+				return -EINVAL;
+
+			if (!infra) {
+				wl_ioctl(dev, WLC_SET_BSSID, wrqu->ap_addr.sa_data, 6);
+
+				reg.size = 4;
+				reg.byteoff = 0x184;
+				wl_ioctl(dev, WLC_R_REG, &reg, sizeof(reg));
+				
+				reg.val &= 0x0000ffff;
+				reg.val |= bss_force << 16;
+				wl_ioctl(dev, WLC_W_REG, &reg, sizeof(reg));
+			}
+
+			if (wl_ioctl(dev, ((ap || !infra) ? WLC_SET_BSSID : WLC_REASSOC), wrqu->ap_addr.sa_data, 6) < 0)
 				return -EINVAL;
 
 			break;
 		}
 		case SIOCGIWAP:
 		{
+#ifdef DEBUG
+			rw_reg_t reg;
+			memset(&reg, 0, sizeof(reg));
+
+			reg.size = 4;
+			reg.byteoff = 0x184;
+			wl_ioctl(dev, WLC_R_REG, &reg, sizeof(reg));
+			printk("bss time = 0x%08x", reg.val);
+			
+			reg.byteoff = 0x180;
+			wl_ioctl(dev, WLC_R_REG, &reg, sizeof(reg));
+			printk("%08x\n", reg.val);
+#endif
+			
 			wrqu->ap_addr.sa_family = ARPHRD_ETHER;
 			if (wl_ioctl(dev,WLC_GET_BSSID,wrqu->ap_addr.sa_data,6) < 0)
 				return -EINVAL;
@@ -661,6 +694,19 @@ static const iw_handler	 wlcompat_handler[] = {
 	wlcompat_ioctl,		/* SIOCGIWENCODE */
 };
 
+
+#define WLCOMPAT_SET_MONITOR		SIOCIWFIRSTPRIV + 0
+#define WLCOMPAT_GET_MONITOR		SIOCIWFIRSTPRIV + 1
+#define WLCOMPAT_SET_TXPWR_LIMIT	SIOCIWFIRSTPRIV + 2
+#define WLCOMPAT_GET_TXPWR_LIMIT	SIOCIWFIRSTPRIV + 3
+#define WLCOMPAT_SET_ANTDIV		SIOCIWFIRSTPRIV + 4
+#define WLCOMPAT_GET_ANTDIV		SIOCIWFIRSTPRIV + 5
+#define WLCOMPAT_SET_TXANT		SIOCIWFIRSTPRIV + 6
+#define WLCOMPAT_GET_TXANT		SIOCIWFIRSTPRIV + 7
+#define WLCOMPAT_SET_BSS_FORCE		SIOCIWFIRSTPRIV + 8
+#define WLCOMPAT_GET_BSS_FORCE		SIOCIWFIRSTPRIV + 9
+
+
 static int wlcompat_private_ioctl(struct net_device *dev,
 			 struct iw_request_info *info,
 			 union iwreq_data *wrqu,
@@ -738,6 +784,16 @@ static int wlcompat_private_ioctl(struct net_device *dev,
 
 			break;
 		}
+		case WLCOMPAT_SET_BSS_FORCE:
+		{
+			bss_force = (unsigned short) *value;
+			break;
+		}
+		case WLCOMPAT_GET_BSS_FORCE:
+		{
+			*extra = (int) bss_force;
+			break;
+		}
 		default:
 		{
 			return -EINVAL;
@@ -788,6 +844,16 @@ static const struct iw_priv_args wlcompat_private_args[] =
 		0,
 		IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
 		"get_txant"
+	},
+	{	WLCOMPAT_SET_BSS_FORCE, 
+		IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
+		0,
+		"set_bss_force"
+	},
+	{	WLCOMPAT_GET_BSS_FORCE, 
+		0,
+		IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
+		"get_bss_force"
 	},
 };
 
@@ -861,6 +927,7 @@ static int __init wlcompat_init()
 {
 	int found = 0, i;
 	char *devname = "eth0";
+	bss_force = 0;
 	
 	while (!found && (dev = dev_get_by_name(devname))) {
 		if ((dev->wireless_handlers == NULL) && ((wl_ioctl(dev, WLC_GET_MAGIC, &i, sizeof(i)) == 0) && i == WLC_IOCTL_MAGIC))

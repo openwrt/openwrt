@@ -76,7 +76,7 @@ void usage(void) __attribute__ (( __noreturn__ ));
 
 void usage(void)
 {
-	fprintf(stderr, "Usage: addpattern [-i trxfile] [-o binfile] [-p pattern] [-g] [-b] [-v v#.#.#] [-{0|1|2}]\n");
+	fprintf(stderr, "Usage: addpattern [-i trxfile] [-o binfile] [-p pattern] [-g] [-b] [-v v#.#.#] [-{0|1|2|4}]\n");
 	exit(EXIT_FAILURE);
 }
 
@@ -135,6 +135,11 @@ int main(int argc, char **argv)
 				hdr->flags |= SUPPORT_4712_CHIP;
 				hdr->flags |= SUPPORT_INTEL_FLASH;
 				hdr->flags |= SUPPORT_5325E_SWITCH;
+				break;
+			case '4':
+				/* V4 firmware sets the flags to 0x1f */
+				hdr->hw_ver = 1;
+				hdr->flags = 0x1f;
 				break;
 
 			default:
