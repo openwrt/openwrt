@@ -121,6 +121,14 @@ config BUSYBOX_CONFIG_GZIP
 	  gzip is used to compress files.
 	  It's probably the most widely used UNIX compression program.
 
+config BUSYBOX_CONFIG_IPKG
+	bool "ipkg"
+	default y
+	select BUSYBOX_CONFIG_MD5SUM
+	select BUSYBOX_CONFIG_WGET
+	help
+	  ipkg is the itsy package management system.
+	
 config BUSYBOX_CONFIG_RPM2CPIO
 	bool "rpm2cpio"
 	default n
