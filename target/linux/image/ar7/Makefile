@@ -31,16 +31,14 @@ $(PKG_BUILD_DIR)/LzmaDecode.o: src/LzmaDecode.c
 $(PKG_BUILD_DIR)/loader.o: src/loader.c
 	$(TARGET_CC) $(CFLAGS) -c -o $@ $<
 
-$(PKG_BUILD_DIR)/srec2bin: src/srec2bin.c
+$(STAGING_DIR)/bin/srec2bin: src/srec2bin.c
 	$(HOSTCC) -o $@ $<
-
-$(KDIR)/vmlinux.gz: $(KDIR)/vmlinux
-	gzip -c -vf9 < $< > $@
 
 $(KDIR)/vmlinux.lzma: $(KDIR)/vmlinux
 	cat $^ | $(STAGING_DIR)/bin/lzma e -si -so -eos -lc1 -lp2 -pb2 > $@ || (rm -f $@ && false)
 
-$(BIN_DIR)/openwrt-ar7-2.4-kernel.bin: $(KDIR)/vmlinux.lzma compile
+ifeq ($(IB),)
+$(KDIR)/vmlinux.bin: $(KDIR)/vmlinux.lzma
 	$(TARGET_CROSS)ld -T $(PKG_BUILD_DIR)/zimage.script -r -b binary $< -o $(KDIR)/zimage.o
 	$(TARGET_CROSS)ld -static -G 0 --defsym kernel_entry=$(KERNEL_ENTRY) -T $(PKG_BUILD_DIR)/ld.script \
 		$(PKG_BUILD_DIR)/loader.o \
@@ -48,7 +46,11 @@ $(BIN_DIR)/openwrt-ar7-2.4-kernel.bin: $(KDIR)/vmlinux.lzma compile
 		$(KDIR)/zimage.o \
 		-o $(KDIR)/loader
 	$(TARGET_CROSS)objcopy -O srec $(KDIR)/loader $(KDIR)/ram_zimage.sre
-	$(PKG_BUILD_DIR)/srec2bin $(KDIR)/ram_zimage.sre $@
+	$(STAGING_DIR)/bin/srec2bin $(KDIR)/ram_zimage.sre $@
+endif
+
+$(BIN_DIR)/openwrt-ar7-2.4-kernel.bin: $(KDIR)/vmlinux.bin
+	cp $< $@
 
 ifeq ($(FS),jffs2-8MB)
 ALIGN:=bs=131072 conv=sync
@@ -79,6 +81,6 @@ clean:
 	rm -f $(BIN_DIR)/openwrt-ar7*
 
 prepare: $(PKG_BUILD_DIR) $(PKG_BUILD_DIR)/zimage.script $(PKG_BUILD_DIR)/ld.script
-compile: prepare $(PKG_BUILD_DIR)/loader.o $(PKG_BUILD_DIR)/LzmaDecode.o $(PKG_BUILD_DIR)/srec2bin
+compile: prepare $(PKG_BUILD_DIR)/loader.o $(PKG_BUILD_DIR)/LzmaDecode.o $(STAGING_DIR)/bin/srec2bin
 install: $(BIN_DIR)/openwrt-ar7-2.4-kernel.bin $(BIN_DIR)/openwrt-ar7-$(KERNEL)-$(FS).bin
 
