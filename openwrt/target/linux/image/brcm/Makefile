@@ -29,15 +29,14 @@ FSNAME:=$(patsubst jffs2-%,jffs2,$(FS))
 
 ifneq ($(FS),jffs2-8MB)
 $(BIN_DIR)/openwrt-wrt54g-$(FSNAME).bin: $(BIN_DIR)/openwrt-brcm-$(KERNEL)-$(FS).trx
-	$(STAGING_DIR)/bin/addpattern -2 -i $< -o $@ -g
-	$(SED) "1s,^W54S,W54G," $@
+	$(STAGING_DIR)/bin/addpattern -4 -p W54G -v v4.20.6 -i $< -o $@ -g
 
 install: $(BIN_DIR)/openwrt-wrt54g-$(FSNAME).bin
 endif
 
 ifneq ($(FS),jffs2-4MB)
 $(BIN_DIR)/openwrt-wrt54gs-$(FSNAME).bin: $(BIN_DIR)/openwrt-brcm-$(KERNEL)-$(FS).trx
-	$(STAGING_DIR)/bin/addpattern -2 -i $< -o $@ -g
+	$(STAGING_DIR)/bin/addpattern -4 -p W54S -v v4.70.6 -i $< -o $@ -g
 
 install: $(BIN_DIR)/openwrt-wrt54gs-$(FSNAME).bin
 endif
