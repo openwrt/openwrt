@@ -474,10 +474,15 @@ static int setup_interfaces(int skfd, char *ifname, char *args[], int count)
 	if(iw_get_ext(skfd, ifname, SIOCGIWNAME, &wrq) < 0)
 		return 0;
 
-	stop_bcom(skfd, ifname);
-	set_wext_mode(skfd, ifname);
-	setup_bcom(skfd, ifname);
-	setup_wext(skfd, ifname);
+	if (strncmp(ifname, "ath", 3) == 0) {
+		set_wext_mode(skfd, ifname);
+		setup_wext(skfd, ifname);
+	} else {
+		stop_bcom(skfd, ifname);
+		set_wext_mode(skfd, ifname);
+		setup_bcom(skfd, ifname);
+		setup_wext(skfd, ifname);
+	}
 	
 	prefix[2]++;
 }
