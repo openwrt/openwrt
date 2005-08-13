@@ -1,0 +1,22 @@
+diff -urN madwifi.old/Makefile madwifi.dev/Makefile
+--- madwifi.old/Makefile	2005-07-13 02:35:11.000000000 +0200
++++ madwifi.dev/Makefile	2005-08-13 22:39:26.973649096 +0200
+@@ -46,7 +46,7 @@
+ # NB: the order is important here
+ DIRS=	${ATH_HAL} ${ATH_RATE} ${WLAN} ${ATH}
+ 
+-all: configcheck
++all:
+ 	mkdir -p ${SYMBOLSDIR}
+ 	for i in ${DIRS}; do \
+ 		$(MAKE) -C $$i || exit 1; \
+diff -urN madwifi.old/hal/public/mips-le-elf.inc madwifi.dev/hal/public/mips-le-elf.inc
+--- madwifi.old/hal/public/mips-le-elf.inc	2005-08-13 22:36:45.646174000 +0200
++++ madwifi.dev/hal/public/mips-le-elf.inc	2005-08-13 22:37:52.506010360 +0200
+@@ -63,5 +63,5 @@
+ 
+ LDOPTS=	-EL
+ COPTS+=	-DAH_BYTE_ORDER=AH_LITTLE_ENDIAN
+-COPTS+=	-G 0 -EL -mno-abicalls -fno-pic -mips2 -Wa,--trap \
++COPTS+=	-G 0 -EL -mno-abicalls -fno-pic -mips32 -Wa,--trap \
+ 	-fno-strict-aliasing -fno-common -fomit-frame-pointer -mlong-calls
