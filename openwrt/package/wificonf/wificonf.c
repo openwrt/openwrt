@@ -80,6 +80,7 @@ void set_wext_ssid(int skfd, char *ifname);
 
 char *prefix;
 char buffer[128];
+int wpa_enc = 0;
 
 char *wl_var(char *name)
 {
@@ -191,10 +192,9 @@ void setup_bcom(int skfd, char *ifname)
 	bcom_set_val(skfd, ifname, "afterburner_override", &val, sizeof(val));
 	
 	/* Set other options */
-	if (v = nvram_get(wl_var("lazywds"))) {
-		val = atoi(v);
-		bcom_ioctl(skfd, ifname, WLC_SET_LAZYWDS, &val, sizeof(val));
-	}
+	val = nvram_enabled(wl_var("lazywds"));
+	bcom_ioctl(skfd, ifname, WLC_SET_LAZYWDS, &val, sizeof(val));
+	
 	if (v = nvram_get(wl_var("frag"))) {
 		val = atoi(v);
 		bcom_ioctl(skfd, ifname, WLC_SET_FRAG, &val, sizeof(val));
@@ -316,6 +316,8 @@ void setup_bcom(int skfd, char *ifname)
 		v = nvram_safe_get(wl_var("auth_mode"));
 	
 	if (strstr(v, "wpa") || strstr(v, "psk")) {
+		wpa_enc = 1;
+
 		/* Set up WPA */
 		if (nvram_match(wl_var("crypto"), "tkip"))
 			val = TKIP_ENABLED;
@@ -355,30 +357,29 @@ void setup_bcom(int skfd, char *ifname)
 
 		bcom_ioctl(skfd, ifname, WLC_SET_WSEC, &val, sizeof(val));
 		bcom_ioctl(skfd, ifname, WLC_SET_WPA_AUTH, &val, sizeof(val));
+		bcom_ioctl(skfd, ifname, WLC_SET_EAP_RESTRICT, &val, sizeof(val));
+		bcom_set_int(skfd, ifname, "sup_wpa", 0);
 	}
-
-
 }
 
 void set_wext_ssid(int skfd, char *ifname)
 {
 	char *buffer;
+	char essid[IW_ESSID_MAX_SIZE + 1];
 	struct iwreq wrq;
 
-	if (buffer = nvram_get(wl_var("ssid"))) {
-		if (strlen(buffer) > IW_ESSID_MAX_SIZE) {
-			ABORT_ARG_SIZE("Set ESSID", SIOCSIWESSID, IW_ESSID_MAX_SIZE);
-		} else {
-			char essid[IW_ESSID_MAX_SIZE + 1];
+	buffer = nvram_get(wl_var("ssid"));
+	
+	if (!buffer || (strlen(buffer) > IW_ESSID_MAX_SIZE)) 
+		buffer = "OpenWrt";
 
-			wrq.u.essid.flags = 1;
-			strcpy(essid, buffer);
-			wrq.u.essid.pointer = (caddr_t) essid;
-			wrq.u.essid.length = strlen(essid) + 1;
-			IW_SET_EXT_ERR(skfd, ifname, SIOCSIWESSID, &wrq, "Set ESSID");
-		}
-	}
+	wrq.u.essid.flags = 1;
+	strcpy(essid, buffer);
+	wrq.u.essid.pointer = (caddr_t) essid;
+	wrq.u.essid.length = strlen(essid) + 1;
+	IW_SET_EXT_ERR(skfd, ifname, SIOCSIWESSID, &wrq, "Set ESSID");
 }
+
 void setup_wext_wep(int skfd, char *ifname)
 {
 	int i, keylen;
@@ -386,7 +387,8 @@ void setup_wext_wep(int skfd, char *ifname)
 	char keystr[5];
 	char *keyval;
 	unsigned char key[IW_ENCODING_TOKEN_MAX];
-
+	
+	memset(&wrq, 0, sizeof(wrq));
 	strcpy(keystr, "key1");
 	for (i = 1; i <= 4; i++) {
 		if (keyval = nvram_get(wl_var(keystr))) {
@@ -402,7 +404,7 @@ void setup_wext_wep(int skfd, char *ifname)
 		keystr[3]++;
 	}
 	
-	
+	memset(&wrq, 0, sizeof(wrq));
 	i = atoi(nvram_safe_get(wl_var("key")));
 	if (i > 0 && i < 4) {
 		wrq.u.data.flags = i | IW_ENCODE_RESTRICTED;
@@ -452,7 +454,7 @@ void setup_wext(int skfd, char *ifname)
 	IW_SET_EXT_ERR(skfd, ifname, SIOCSIWTXPOW, &wrq, "Set Tx Power");
 
 	/* Set up WEP */
-	if (nvram_enabled(wl_var("wep")))
+	if (nvram_enabled(wl_var("wep")) && !wpa_enc)
 		setup_wext_wep(skfd, ifname);
 	
 	/* Set ESSID */

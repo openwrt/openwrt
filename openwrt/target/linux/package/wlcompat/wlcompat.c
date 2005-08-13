@@ -360,10 +360,12 @@ static int wlcompat_ioctl(struct net_device *dev,
 
 				reg.size = 4;
 				reg.byteoff = 0x184;
-				wl_ioctl(dev, WLC_R_REG, &reg, sizeof(reg));
+				reg.val = bss_force << 16 | bss_force;
+				wl_ioctl(dev, WLC_W_REG, &reg, sizeof(reg));
 				
-				reg.val &= 0x0000ffff;
-				reg.val |= bss_force << 16;
+				reg.byteoff = 0x180;
+				wl_ioctl(dev, WLC_R_REG, &reg, sizeof(reg));
+				reg.val = bss_force << 16;
 				wl_ioctl(dev, WLC_W_REG, &reg, sizeof(reg));
 			}
 
