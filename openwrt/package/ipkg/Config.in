@@ -1,5 +1,6 @@
 config BR2_PACKAGE_IPKG
 	tristate "ipkg - itsy package management system"
+	depends ! BUSYBOX_CONFIG_IPKG
 	default y
 	help
 	 Lightweight package management system
