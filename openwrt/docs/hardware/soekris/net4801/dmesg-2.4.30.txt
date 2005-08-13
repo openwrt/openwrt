@@ -1,0 +1,104 @@
+Linux version 2.4.30 (nthill@debian) (gcc version 3.4.4) #2 Sat Aug 13 01:30:32 CEST 2005
+BIOS-provided physical RAM map:
+ BIOS-e820: 0000000000000000 - 000000000009fc00 (usable)
+ BIOS-e820: 000000000009fc00 - 00000000000a0000 (reserved)
+ BIOS-e820: 00000000000f0000 - 0000000000100000 (reserved)
+ BIOS-e820: 0000000000100000 - 0000000008000000 (usable)
+ BIOS-e820: 00000000fff00000 - 0000000100000000 (reserved)
+128MB LOWMEM available.
+On node 0 totalpages: 32768
+zone(0): 4096 pages.
+zone(1): 28672 pages.
+zone(2): 0 pages.
+DMI not present.
+Kernel command line: blkmtd_device=/dev/hda2 root=/dev/mtdblock0 init=/etc/preinit noinitrd console=ttyS0,19200n8 
+Initializing CPU#0
+Detected 266.650 MHz processor.
+Calibrating delay loop... 532.48 BogoMIPS
+Memory: 127284k/131072k available (1238k kernel code, 3400k reserved, 248k data, 80k init, 0k highmem)
+Checking if this processor honours the WP bit even in supervisor mode... Ok.
+Dentry cache hash table entries: 16384 (order: 5, 131072 bytes)
+Inode cache hash table entries: 8192 (order: 4, 65536 bytes)
+Mount cache hash table entries: 512 (order: 0, 4096 bytes)
+Buffer cache hash table entries: 8192 (order: 3, 32768 bytes)
+Page-cache hash table entries: 32768 (order: 5, 131072 bytes)
+CPU:     After generic, caps: 00808131 00818131 00000000 00000001
+CPU:             Common caps: 00808131 00818131 00000000 00000001
+CPU: NSC Unknown stepping 01
+Checking 'hlt' instruction... OK.
+POSIX conformance testing by UNIFIX
+PCI: PCI BIOS revision 2.01 entry at 0xf7861, last bus=0
+PCI: Using configuration type 1
+PCI: Probing PCI hardware
+PCI: Probing PCI hardware (bus 00)
+Linux NET4.0 for Linux 2.4
+Based upon Swansea University Computer Society NET3.039
+Initializing RT netlink socket
+Starting kswapd
+devfs: v1.12c (20020818) Richard Gooch (rgooch@atnf.csiro.au)
+devfs: boot_options: 0x1
+JFFS2 version 2.1. (C) 2001 Red Hat, Inc., designed by Axis Communications AB.
+Squashfs 2.1-r2 (released 2004/12/15) (C) 2002-2004 Phillip Lougher
+pty: 256 Unix98 ptys configured
+Serial driver version 5.05c (2001-07-08) with MANY_PORTS SHARE_IRQ SERIAL_PCI enabled
+ttyS00 at 0x03f8 (irq = 4) is a 16550A
+ttyS01 at 0x02f8 (irq = 3) is a 16550A
+Software Watchdog Timer: 0.05, timer margin: 60 sec
+RAMDISK driver initialized: 16 RAM disks of 4096K size 1024 blocksize
+Uniform Multi-Platform E-IDE driver Revision: 7.00beta4-2.4
+ide: Assuming 33MHz system bus speed for PIO modes; override with idebus=xx
+SC1200: IDE controller at PCI slot 00:12.2
+SC1200: chipset revision 1
+SC1200: not 100% native mode: will probe irqs later
+    ide0: BM-DMA at 0xe000-0xe007, BIOS settings: hda:pio, hdb:pio
+    ide1: BM-DMA at 0xe008-0xe00f, BIOS settings: hdc:pio, hdd:pio
+hda: Transcend 256M, CFA DISK drive
+hdb: HTS424030M9AT00, ATA DISK drive
+SC1200: set xfer mode failure
+hdb: sc1200_set_xfer_mode(UDMA 2)
+blk: queue c02c421c, I/O limit 4095Mb (mask 0xffffffff)
+ide0 at 0x1f0-0x1f7,0x3f6 on irq 14
+hda: attached ide-disk driver.
+hda: 500736 sectors (256 MB) w/2KiB Cache, CHS=978/16/32
+hdb: attached ide-disk driver.
+hdb: host protected area => 1
+hdb: 58605120 sectors (30006 MB) w/1739KiB Cache, CHS=3648/255/63, UDMA(33)
+Partition check:
+ /dev/ide/host0/bus0/target0/lun0: p1 p2 p3 p4
+ /dev/ide/host0/bus0/target1/lun0: p1 p2 p3
+ /dev/ide/host0/bus0/target0/lun0: p1 p2 p3 p4
+blkmtd: mtd0: [/dev/hda2] erase_size = 128KiB 
+blkmtd: version 1.10
+Initializing Cryptographic API
+NET4: Linux TCP/IP 1.0 for NET4.0
+IP Protocols: ICMP, UDP, TCP, IGMP
+IP: routing cache hash table of 1024 buckets, 8Kbytes
+TCP: Hash tables configured (established 8192 bind 16384)
+ip_conntrack version 2.1 (5953 buckets, 5953 max) - 316 bytes per conntrack
+ip_tables: (C) 2000-2002 Netfilter core team
+NET4: Unix domain sockets 1.0/SMP for Linux NET4.0.
+NET4: Ethernet Bridge 008 for NET4.0
+802.1Q VLAN Support v1.8 Ben Greear <greearb@candelatech.com>
+All bugs added by David S. Miller <davem@redhat.com>
+VFS: Mounted root (jffs2 filesystem) readonly.
+Mounted devfs on /dev
+Freeing unused kernel memory: 80k freed
+jffs2.bbc: SIZE compression mode activated.
+natsemi dp8381x driver, version 1.07+LK1.0.17, Sep 27, 2002
+  originally by Donald Becker <becker@scyld.com>
+  http://www.scyld.com/network/natsemi.html
+  2.4.x kernel port by Jeff Garzik, Tjeerd Mulder
+eth0: NatSemi DP8381[56] at 0xc88ab000, 00:00:24:c2:45:7c, IRQ 10.
+eth1: NatSemi DP8381[56] at 0xc88ad000, 00:00:24:c2:45:7d, IRQ 10.
+eth2: NatSemi DP8381[56] at 0xc88af000, 00:00:24:c2:45:7e, IRQ 10.
+device eth0 entered promiscuous mode
+eth0: link up.
+eth0: Setting full-duplex based on negotiated link capability.
+eth0: Promiscuous mode enabled.
+eth0: Promiscuous mode enabled.
+eth0: Promiscuous mode enabled.
+eth0: Promiscuous mode enabled.
+eth0: Promiscuous mode enabled.
+br0: port 1(eth0) entering learning state
+br0: port 1(eth0) entering forwarding state
+br0: topology change detected, propagating
