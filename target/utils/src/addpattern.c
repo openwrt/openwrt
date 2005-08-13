@@ -104,7 +104,7 @@ int main(int argc, char **argv)
 	hdr = (struct code_header *) buf;
 	memset(hdr, 0, sizeof(struct code_header));
 
-	while ((c = getopt(argc, argv, "i:o:p:gbv:012")) != -1) {
+	while ((c = getopt(argc, argv, "i:o:p:gbv:0124")) != -1) {
 		switch (c) {
 			case 'i':
 				ifn = optarg;
