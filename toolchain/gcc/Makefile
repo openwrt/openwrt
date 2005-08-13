@@ -23,7 +23,8 @@ include $(TOPDIR)/rules.mk
 GCC_VERSION:=$(strip $(GCC_VERSION))
 
 #GCC_SITE:=ftp://ftp.gnu.org/gnu/gcc/releases/gcc-$(GCC_VERSION)
-GCC_SITE:=http://mirrors.rcn.net/pub/sourceware/gcc/releases/gcc-$(GCC_VERSION)
+GCC_SITE:=ftp://ftp.fu-berlin.de/unix/languages/gcc/releases/gcc-$(GCC_VERSION) \
+	http://mirrors.rcn.net/pub/sourceware/gcc/releases/gcc-$(GCC_VERSION)
 
 GCC_SOURCE:=gcc-$(GCC_VERSION).tar.bz2
 GCC_DIR:=$(TOOL_BUILD_DIR)/gcc-$(GCC_VERSION)
