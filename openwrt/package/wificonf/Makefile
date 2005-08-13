@@ -3,7 +3,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=wificonf
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/wificonf
 
