@@ -14,8 +14,6 @@ PKG_CAT:=zcat
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
-BR2_PACKAGE_DOSFSTOOLS=m
-
 include $(TOPDIR)/package/rules.mk
 
 $(eval $(call PKG_template,DOSFSTOOLS,dosfstools,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
