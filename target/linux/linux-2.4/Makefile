@@ -171,6 +171,12 @@ $(eval $(call KMOD_template,GRE,gre,\
 $(eval $(call KMOD_template,SCHED,sched,\
 	$(MODULES_DIR)/kernel/net/sched/*.o \
 ))
+$(eval $(call KMOD_template,VIDEODEV,videodev,\
+	$(MODULES_DIR)/kernel/drivers/media/video/videodev.o \
+))
+$(eval $(call KMOD_template,PWC,pwc,\
+	$(MODULES_DIR)/kernel/drivers/usb/pwc.o \
+))
 
 $(TARGETS): $(PACKAGE_DIR)
 
