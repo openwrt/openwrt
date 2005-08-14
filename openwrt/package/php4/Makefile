@@ -4,14 +4,14 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=php
 PKG_VERSION:=4.3.11
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_MD5SUM:=fbc67d240812136a9842bc1f2a217b7a
+
 PKG_SOURCE_URL:=http://fr.php.net/distributions/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_CAT:=bzcat
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
 include $(TOPDIR)/package/rules.mk
 
@@ -28,33 +28,43 @@ endef
 PKG_CONFIGURE_OPTS:= \
 	--enable-shared \
 	--disable-static \
-	--disable-ctype \
-	--disable-dom \
+	--disable-rpath \
+	--disable-debug \
+	--without-pear \
+	\
+	--with-config-file-path=/etc \
 	--disable-ipv6 \
 	--enable-magic-quotes \
 	--enable-memory-limit \
 	--disable-overload \
 	--disable-short-tags \
-	--disable-tokenizer \
+	\
+	--disable-ctype \
+	--disable-dom \
 	--enable-ftp=shared \
+	--without-gettext \
+	--without-iconv \
+	--disable-mbstring \
+	--disable-mbregex \
+	--with-openssl=shared,"$(STAGING_DIR)/usr" \
+	  --with-kerberos=no \
+	  --with-openssl-dir="$(STAGING_DIR)/usr" \
 	--enable-session=shared \
 	--enable-sockets=shared \
-	--enable-xml=shared \
-	--with-config-file-path=/etc \
-	--without-gettext \
-	--without-pear \
+	--disable-tokenizer \
 	--with-zlib="$(STAGING_DIR)/usr" \
+	  --with-zlib-dir="$(STAGING_DIR)/usr" \
 
 ifneq ($(BR2_PACKAGE_PHP4_MOD_GD),)
 PKG_CONFIGURE_OPTS+= --with-gd=shared,"$(STAGING_DIR)/usr" \
 	--enable-gd-native-ttf \
-	--with-png-dir="$(STAGING_DIR)/usr" \
-	--with-zlib-dir="$(STAGING_DIR)/usr"
+	--with-png-dir="$(STAGING_DIR)/usr"
 else
 PKG_CONFIGURE_OPTS+= --without-gd
 endif
 ifneq ($(BR2_PACKAGE_PHP4_MOD_LDAP),)
 PKG_CONFIGURE_OPTS+= --with-ldap=shared,"$(STAGING_DIR)/usr"
+	--with-ldap-sasl="$(STAGING_DIR)/usr"
 else
 PKG_CONFIGURE_OPTS+= --without-ldap
 endif
@@ -62,11 +72,6 @@ ifneq ($(BR2_PACKAGE_PHP4_MOD_MYSQL),)
 PKG_CONFIGURE_OPTS+= --with-mysql=shared,"$(STAGING_DIR)/usr"
 else
 PKG_CONFIGURE_OPTS+= --without-mysql
-endif
-ifneq ($(BR2_PACKAGE_PHP4_MOD_OPENSSL),)
-PKG_CONFIGURE_OPTS+= --with-openssl=shared,"$(STAGING_DIR)/usr"
-else
-PKG_CONFIGURE_OPTS+= --without-openssl
 endif
 ifneq ($(BR2_PACKAGE_PHP4_MOD_PCRE),)
 PKG_CONFIGURE_OPTS+= --with-pcre-regex=shared,"$(STAGING_DIR)/usr"
@@ -82,6 +87,12 @@ ifneq ($(BR2_PACKAGE_PHP4_MOD_SQLITE),)
 PKG_CONFIGURE_OPTS+= --with-sqlite=shared,"$(STAGING_DIR)/usr"
 else
 PKG_CONFIGURE_OPTS+= --without-sqlite
+endif
+ifneq ($(BR2_PACKAGE_PHP4_MOD_XML),)
+PKG_CONFIGURE_OPTS+= --enable-xml=shared \
+	--with-expat-dir="$(STAGING_DIR)/usr"
+else
+PKG_CONFIGURE_OPTS+= --disable-xml
 endif
 
 $(eval $(call PKG_template,PHP4_CLI,php4-cli,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
@@ -122,6 +133,8 @@ $(PKG_BUILD_DIR)/.built:
 		CFLAGS="$(TARGET_CFLAGS)" \
 		CPPFLAGS="-I$(STAGING_DIR)/usr/include" \
 		LDFLAGS="-L$(STAGING_DIR)/lib -L$(STAGING_DIR)/usr/lib" \
+		LIBS="-lcrypto -lssl" \
+		php_cv_cc_rpath="no" \
 		./configure \
 		  --target=$(GNU_TARGET_NAME) \
 		  --host=$(GNU_TARGET_NAME) \
@@ -130,7 +143,7 @@ $(PKG_BUILD_DIR)/.built:
 		  --program-suffix="" \
 		  --prefix=/usr \
 		  --exec-prefix=/usr \
-		  --bindir=/usr/sbin \
+		  --bindir=/usr/bin \
 		  --datadir=/usr/share \
 		  --includedir=/usr/include \
 		  --infodir=/usr/share/info \
@@ -156,6 +169,8 @@ $(PKG_BUILD_DIR)/.built:
 		CFLAGS="$(TARGET_CFLAGS)" \
 		CPPFLAGS="-I$(STAGING_DIR)/usr/include" \
 		LDFLAGS="-L$(STAGING_DIR)/lib -L$(STAGING_DIR)/usr/lib" \
+		LIBS="-lcrypto -lssl" \
+		php_cv_cc_rpath="no" \
 		./configure \
 		  --target=$(GNU_TARGET_NAME) \
 		  --host=$(GNU_TARGET_NAME) \
@@ -164,7 +179,7 @@ $(PKG_BUILD_DIR)/.built:
 		  --program-suffix="" \
 		  --prefix=/usr \
 		  --exec-prefix=/usr \
-		  --bindir=/usr/sbin \
+		  --bindir=/usr/bin \
 		  --datadir=/usr/share \
 		  --includedir=/usr/include \
 		  --infodir=/usr/share/info \
@@ -191,6 +206,8 @@ $(PKG_BUILD_DIR)/.built:
 		CFLAGS="$(TARGET_CFLAGS)" \
 		CPPFLAGS="-I$(STAGING_DIR)/usr/include" \
 		LDFLAGS="-L$(STAGING_DIR)/lib -L$(STAGING_DIR)/usr/lib" \
+		LIBS="-lcrypto -lssl" \
+		php_cv_cc_rpath="no" \
 		./configure \
 		  --target=$(GNU_TARGET_NAME) \
 		  --host=$(GNU_TARGET_NAME) \
@@ -225,16 +242,16 @@ $(PKG_BUILD_DIR)/.built:
 $(IPKG_PHP4_CLI):
 	install -m0755 -d $(IDIR_PHP4_CLI)/etc
 	install -m0644 ./files/php.ini $(IDIR_PHP4_CLI)/etc/
-	install -m0755 -d $(IDIR_PHP4_CLI)/usr/sbin
-	cp -fpR $(PKG_BUILD_DIR)/php-cli $(IDIR_PHP4_CLI)/usr/sbin/php
+	install -m0755 -d $(IDIR_PHP4_CLI)/usr/bin
+	cp -fpR $(PKG_BUILD_DIR)/php-cli $(IDIR_PHP4_CLI)/usr/bin/php
 	$(RSTRIP) $(IDIR_PHP4_CLI)
 	$(IPKG_BUILD) $(IDIR_PHP4_CLI) $(PACKAGE_DIR)
 
 $(IPKG_PHP4_CGI):
 	install -m0755 -d $(IDIR_PHP4_CGI)/etc
 	install -m0644 ./files/php.ini $(IDIR_PHP4_CGI)/etc/
-	install -m0755 -d $(IDIR_PHP4_CGI)/usr/sbin
-	cp -fpR $(PKG_BUILD_DIR)/php-cgi $(IDIR_PHP4_CGI)/usr/sbin/php
+	install -m0755 -d $(IDIR_PHP4_CGI)/usr/bin
+	cp -fpR $(PKG_BUILD_DIR)/php-cgi $(IDIR_PHP4_CGI)/usr/bin/php
 	$(RSTRIP) $(IDIR_PHP4_CGI)
 	$(IPKG_BUILD) $(IDIR_PHP4_CGI) $(PACKAGE_DIR)
 
