@@ -1,45 +1,64 @@
-menu "php4 - Hypertext preprocessor"
+menu "php4 - PHP4 Hypertext preprocessor"
 
-config BR2_PACKAGE_PHP4
-	prompt "php4 - Hypertext preprocessor"
+config BR2_COMPILE_PHP4
 	bool
+	default n
 	depends BR2_PACKAGE_PHP4_CLI || BR2_PACKAGE_PHP4_CGI || BR2_PACKAGE_PHP4_FASTCGI
-	help
-	 PHP is a widely-used general-purpose scripting language that is especially 
-	 suited for Web development and can be embedded into HTML.
 	 
-	 http://www.php.net/
-	 
+comment "Server API --"
 
 config BR2_PACKAGE_PHP4_CLI
 	prompt "...-cli - PHP4 CLI (Command Line Interface)"
 	tristate 
 #	default m if CONFIG_DEVEL
-	select BR2_PACKAGE_PHP4
+	select BR2_COMPILE_PHP4
+	select BR2_PACKAGE_LIBOPENSSL
+	select BR2_PACKAGE_ZLIB
+	help
+	 PHP is a widely-used general-purpose scripting language that is especially 
+	 suited for Web development and can be embedded into HTML.
+	 
+	 http://www.php.net/
 
 config BR2_PACKAGE_PHP4_CGI
 	prompt "...-cgi - PHP4 built for CGI"
 	tristate 
 #	default m if CONFIG_DEVEL
-	select BR2_PACKAGE_PHP4
+	select BR2_COMPILE_PHP4
+	select BR2_PACKAGE_LIBOPENSSL
+	select BR2_PACKAGE_ZLIB
+	help
+	 PHP is a widely-used general-purpose scripting language that is especially 
+	 suited for Web development and can be embedded into HTML.
+	 
+	 http://www.php.net/
 
 config BR2_PACKAGE_PHP4_FASTCGI
 	prompt "...-fastcgi - PHP4 built for FastCGI"
 	tristate 
 #	default m if CONFIG_DEVEL
-	select BR2_PACKAGE_PHP4
+	select BR2_COMPILE_PHP4
+	select BR2_PACKAGE_LIBOPENSSL
+	select BR2_PACKAGE_ZLIB
+	help
+	 PHP is a widely-used general-purpose scripting language that is especially 
+	 suited for Web development and can be embedded into HTML.
+	 
+	 http://www.php.net/
+
+comment "Extensions --"
 
 config BR2_PACKAGE_PHP4_MOD_FTP
 	prompt "...-mod-ftp - FTP module"
 	tristate 
 #	default m if CONFIG_DEVEL
-	depends BR2_PACKAGE_PHP4
+	depends BR2_COMPILE_PHP4
 
 config BR2_PACKAGE_PHP4_MOD_GD
 	prompt "...-mod-gd - GD graphics library module"
 	tristate 
 #	default m if CONFIG_DEVEL
-	depends BR2_PACKAGE_PHP4
+	depends BR2_COMPILE_PHP4
 	select BR2_PACKAGE_LIBGD
 	select BR2_PACKAGE_LIBPNG
 
@@ -47,60 +66,61 @@ config BR2_PACKAGE_PHP4_MOD_LDAP
 	prompt "...-mod-ldap - LDAP module"
 	tristate 
 #	default m if CONFIG_DEVEL
-	depends BR2_PACKAGE_PHP4
+	depends BR2_COMPILE_PHP4
 	select BR2_PACKAGE_LIBOPENLDAP
 
 config BR2_PACKAGE_PHP4_MOD_MYSQL
 	prompt "...-mod-mysql - MySQL module"
 	tristate 
 #	default m if CONFIG_DEVEL
-	depends BR2_PACKAGE_PHP4
+	depends BR2_COMPILE_PHP4
 	select BR2_PACKAGE_LIBMYSQLCLIENT
 
 config BR2_PACKAGE_PHP4_MOD_OPENSSL
 	prompt "...-mod-openssl - OpenSSL module"
 	tristate 
 #	default m if CONFIG_DEVEL
-	depends BR2_PACKAGE_PHP4
+	depends BR2_COMPILE_PHP4
 	select BR2_PACKAGE_LIBOPENSSL
 
 config BR2_PACKAGE_PHP4_MOD_PCRE
 	prompt "...-mod-pcre - PCRE module"
 	tristate 
 #	default m if CONFIG_DEVEL
-	depends BR2_PACKAGE_PHP4
+	depends BR2_COMPILE_PHP4
 	select BR2_PACKAGE_LIBPCRE
 
 config BR2_PACKAGE_PHP4_MOD_PGSQL
 	prompt "...-mod-pgsql - PostgreSQL module"
 	tristate 
 #	default m if CONFIG_DEVEL
-	depends BR2_PACKAGE_PHP4
+	depends BR2_COMPILE_PHP4
 	select BR2_PACKAGE_LIBPQ
 
 config BR2_PACKAGE_PHP4_MOD_SESSION
 	prompt "...-mod-session - Sessions module"
 	tristate 
 #	default m if CONFIG_DEVEL
-	depends BR2_PACKAGE_PHP4
+	depends BR2_COMPILE_PHP4
 
 config BR2_PACKAGE_PHP4_MOD_SQLITE
 	prompt "...-mod-sqlite - SQLite module"
 	tristate 
 #	default m if CONFIG_DEVEL
-	depends BR2_PACKAGE_PHP4
+	depends BR2_COMPILE_PHP4
 	select BR2_PACKAGE_LIBSQLITE2
 
 config BR2_PACKAGE_PHP4_MOD_SOCKETS
 	prompt "...-mod-sockets - Sockets module"
 	tristate 
 #	default m if CONFIG_DEVEL
-	depends BR2_PACKAGE_PHP4
+	depends BR2_COMPILE_PHP4
 
 config BR2_PACKAGE_PHP4_MOD_XML
 	prompt "...-mod-xml - XML module"
 	tristate 
 #	default m if CONFIG_DEVEL
-	depends BR2_PACKAGE_PHP4
+	depends BR2_COMPILE_PHP4
+	select BR2_PACKAGE_LIBEXPAT
 
 endmenu
