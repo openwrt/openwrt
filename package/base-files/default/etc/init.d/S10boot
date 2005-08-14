@@ -17,7 +17,7 @@ touch /var/log/lastlog
   # if they don't already exist 
   [  "$(nvram get boardtype)" = "bcm95365r" \
   -a "$(nvram get boardnum)" = "45" \
-  -a -z "$(nvram get vlan0ports)"
+  -a -z "$(nvram get vlan0ports)" \
   -a -z "$(nvram get vlan1ports)" ] && {
   	nvram set vlan0ports="1 2 3 4 5*"
   	nvram set vlan1ports="0 5"
