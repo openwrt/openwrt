@@ -1,0 +1,15 @@
+config BR2_PACKAGE_HOSTAPD
+	tristate "hostapd - IEEE 802.11 AP, IEEE 802.1x/WPA/WPA2/EAP/RADIUS Authenticator"
+#	default m if CONFIG_DEVEL
+	default n
+	select BR2_PACKAGE_KMOD_MADWIFI
+	select BR2_PACKAGE_OPENSSL
+	help
+	  hostapd is a user space daemon for access point and 
+	  authentication servers. It implements IEEE 802.11 access point 
+	  management, IEEE 802.1X/WPA/WPA2/EAP Authenticators, RADIUS 
+	  client, EAP server, and RADIUS authentication server.
+	  
+	  http://hostap.epitest.fi/hostapd/
+	  
+
