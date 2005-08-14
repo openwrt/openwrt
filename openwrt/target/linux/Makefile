@@ -36,11 +36,11 @@ clean: $(1)/$(2)-clean
 prepare: $(1)/$(2)-prepare
 compile: $(1)/$(2)-compile
 rebuild: $(1)/$(2)-rebuild
-install: $(1)/$(2)-image
+$(BIN_DIR)/$(IB_NAME).tar.bz2 install: $(1)/$(2)-image
 install-ib: $(1)/$(2)-install-ib
 endif
 
-.PHONY: $(1)/$(2)-clean $(1)/$(2)-prepare $(1)/$(2)-compile $(1)/$(2)-rebuild $(1)/$(2)-install $(1)/$(2)-install-ib
+.PHONY: $(1)/$(2)-clean $(1)/$(2)-prepare $(1)/$(2)-compile $(1)/$(2)-rebuild $(1)/$(2)-install $(1)/$(2)-image $(1)/$(2)-install-ib
 endef
 
 .PHONY: clean prepare compile rebuild install imagebuilder install-ib
