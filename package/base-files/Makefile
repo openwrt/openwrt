@@ -3,7 +3,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=base-files
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_BUILD_DIR:=$(BUILD_DIR)/base-files
 
 include $(TOPDIR)/package/rules.mk
@@ -50,9 +50,9 @@ $(IPKG_BASE):
 $(IPKG_LIBC):
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_LIBC) ipkg/uclibc.control $(LIBC_VERSION)-$(PKG_RELEASE) $(ARCH)
 	mkdir -p $(IDIR_LIBC)/lib
-	cp -a $(STAGING_DIR)/lib/ld-uClibc*.so* $(IDIR_LIBC)/lib/
+	cp -fpR $(STAGING_DIR)/lib/ld-uClibc*.so.* $(IDIR_LIBC)/lib/
 	for file in c crypt dl m nsl resolv rt uClibc util; do \
-		cp -a $(STAGING_DIR)/lib/lib$$file*.so* $(IDIR_LIBC)/lib/; \
+		cp -fpR $(STAGING_DIR)/lib/lib$$file*.so.* $(IDIR_LIBC)/lib/; \
 	done
 	-$(STRIP) $(IDIR_LIBC)/lib/*
 	$(IPKG_BUILD) $(IDIR_LIBC) $(PACKAGE_DIR)
@@ -60,7 +60,7 @@ $(IPKG_LIBC):
 $(IPKG_GCC):
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_GCC) ipkg/libgcc.control $(GCC_VERSION)-$(PKG_RELEASE) $(ARCH)
 	mkdir -p $(IDIR_GCC)/lib
-	cp -a $(STAGING_DIR)/lib/libgcc*.so* $(IDIR_GCC)/lib/
+	cp -fpR $(STAGING_DIR)/lib/libgcc*.so.* $(IDIR_GCC)/lib/
 	-$(STRIP) $(IDIR_GCC)/lib/*
 	$(IPKG_BUILD) $(IDIR_GCC) $(PACKAGE_DIR)
 
