@@ -54,3 +54,17 @@ $(IPKG_KMOD_MADWIFI):
 		$(IDIR_KMOD_MADWIFI)/lib/modules/$(LINUX_VERSION)/
 	$(IPKG_BUILD) $(IDIR_KMOD_MADWIFI) $(PACKAGE_DIR)
 
+$(STAGING_DIR)/usr/include/madwifi/net80211/ieee80211.h: $(PKG_BUILD_DIR)/.built
+	mkdir -p $(STAGING_DIR)/usr/include/madwifi
+	cp -fpR $(PKG_BUILD_DIR)/include $(STAGING_DIR)/usr/include/madwifi/
+	mkdir -p $(STAGING_DIR)/usr/include/madwifi/net80211
+	cp -fpR $(PKG_BUILD_DIR)/net80211/*.h $(STAGING_DIR)/usr/include/madwifi/net80211/
+	touch $@
+
+install-dev: $(STAGING_DIR)/usr/include/madwifi/net80211/ieee80211.h
+
+uninstall-dev:
+	rm -rf $(STAGING_DIR)/usr/include/madwifi
+
+compile: install-dev
+clean: uninstall-dev
