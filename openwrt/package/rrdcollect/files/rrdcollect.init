@@ -1,0 +1,24 @@
+#!/bin/sh
+
+BIN=rrdcollect
+DEFAULT=/etc/default/$BIN
+RUN_D=/var/run
+RRA_D=/var/lib/rra
+PID_F=$RUN_D/$BIN.pid
+[ -f $DEFAULT ] && . $DEFAULT
+
+case $1 in
+ start)
+  mkdir -p $RUN_D
+  mkdir -p $RRA_D
+  $BIN $OPTIONS
+  ;;
+ stop)
+  [ -f $PID_F ] && kill $(cat $PID_F)
+  ;;
+ *)
+  echo "usage: $0 (start|stop)"
+  exit 1
+esac
+
+exit $?
