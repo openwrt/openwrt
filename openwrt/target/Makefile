@@ -26,5 +26,6 @@ image_clean:
 	$(MAKE) -C $(patsubst %-rebuild,%,$@) rebuild
 %-install: %-compile
 	$(MAKE) -C $(patsubst %-install,%,$@) install
-
+linux-imagebuilder:
+	$(MAKE) -C linux imagebuilder
 

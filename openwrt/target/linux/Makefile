@@ -1,5 +1,11 @@
 include $(TOPDIR)/rules.mk
 
+PKG_OS:=$(shell uname -s)
+PKG_CPU:=$(shell uname -m)
+
+IB_NAME:=OpenWrt-ImageBuilder-$(PKG_OS)-$(PKG_CPU)
+IB_DIR:=$(BUILD_DIR)/$(IB_NAME)
+
 define kernel_template
 
 $(1)/$(2)-clean:
@@ -20,16 +26,44 @@ $(1)/$(2)-install:
 $(1)/$(2)-image: $(1)/$(2)-install
 	$(MAKE) -C image KERNEL="$(1)" BOARD="$(2)" install
 
+$(1)/$(2)-install-ib:
+	$(MAKE) -C image KERNEL="$(1)" BOARD="$(2)" IB_DIR="$(IB_DIR)" install-ib
+	echo '$$$$(eval $$$$(call image_template,$(2),$(1)))' >> $(IB_DIR)/kernel.mk
+
+
 ifeq ($(BR2_LINUX_$(3)),y)
 clean: $(1)/$(2)-clean
 prepare: $(1)/$(2)-prepare
 compile: $(1)/$(2)-compile
 rebuild: $(1)/$(2)-rebuild
 install: $(1)/$(2)-image
+install-ib: $(1)/$(2)-install-ib
 endif
 
-.PHONY: $(1)/$(2)-clean $(1)/$(2)-prepare $(1)/$(2)-compile $(1)/$(2)-rebuild $(1)/$(2)-install
+.PHONY: $(1)/$(2)-clean $(1)/$(2)-prepare $(1)/$(2)-compile $(1)/$(2)-rebuild $(1)/$(2)-install $(1)/$(2)-install-ib
 endef
+
+.PHONY: clean prepare compile rebuild install imagebuilder install-ib
+
+install-ib:
+
+$(BIN_DIR)/$(IB_NAME).tar.bz2:	
+	rm -rf $(IB_DIR)
+	mkdir -p $(IB_DIR)/packages
+	mkdir -p $(IB_DIR)/scripts
+	cp -dpR ./imagebuilder/* $(IB_DIR)/
+	cp -dpR $(TOPDIR)/bin/packages/*.ipk $(IB_DIR)/packages/
+	cp $(TOPDIR)/scripts/ipkg $(IB_DIR)/scripts/
+	$(MAKE) install-ib
+	cp $(TOPDIR)/rules.mk $(IB_DIR)
+	cp -dpR ./image $(IB_DIR)/
+	cp $(TOPDIR)/.config $(IB_DIR)/
+	find $(IB_DIR) -name CVS | xargs rm -rf
+	(cd $(BUILD_DIR); tar c $(IB_NAME) | bzip2 -c > $(BIN_DIR)/$(IB_NAME).tar.bz2)
+
+ifeq ($(BR2_PACKAGE_IMAGEBUILDER),y)
+install: $(BIN_DIR)/$(IB_NAME).tar.bz2
+endif
 
 prepare:
 	$(MAKE) -C image prepare
