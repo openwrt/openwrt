@@ -106,6 +106,7 @@ package-$(BR2_PACKAGE_OSIRIS) += osiris
 package-$(BR2_PACKAGE_PARPROUTED) += parprouted
 package-$(BR2_PACKAGE_PCRE) += pcre
 package-$(BR2_COMPILE_PHP4) += php4
+package-$(BR2_COMPILE_PHP5) += php5
 package-$(BR2_PACKAGE_PICOCOM) += picocom
 package-$(BR2_PACKAGE_PMACCT) += pmacct
 package-$(BR2_PACKAGE_POPT) += popt
@@ -271,6 +272,29 @@ php4-compile: sqlite2-compile
 endif
 ifneq ($(BR2_PACKAGE_PHP4_MOD_XML),)
 php4-compile: expat-compile
+endif
+
+php5-compile: openssl-compile zlib-compile
+ifneq ($(BR2_PACKAGE_PHP5_MOD_GD),)
+php5-compile: libgd-compile libpng-compile
+endif
+ifneq ($(BR2_PACKAGE_PHP5_MOD_LDAP),)
+php5-compile: openldap-compile
+endif
+ifneq ($(BR2_PACKAGE_PHP5_MOD_MYSQL),)
+php5-compile: mysql-compile
+endif
+ifneq ($(BR2_PACKAGE_PHP5_MOD_PCRE),)
+php5-compile: pcre-compile
+endif
+ifneq ($(BR2_PACKAGE_PHP5_MOD_PGSQL),)
+php5-compile: postgresql-compile
+endif
+ifneq ($(BR2_PACKAGE_PHP5_MOD_SQLITE),)
+php5-compile: sqlite2-compile
+endif
+ifneq ($(BR2_PACKAGE_PHP5_MOD_XML),)
+php5-compile: expat-compile
 endif
 
 pmacct-compile: libpcap-compile
