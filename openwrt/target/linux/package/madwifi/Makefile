@@ -36,6 +36,7 @@ $(PKG_BUILD_DIR)/.configured:
 
 $(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR) \
+		ARCH="$(ARCH)" \
 		TARGET="$(HAL_TARGET)" \
 		TOOLPREFIX="$(KERNEL_CROSS)" \
 		KERNELPATH="$(KERNEL_DIR)"
