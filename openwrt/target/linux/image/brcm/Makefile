@@ -15,7 +15,7 @@ ifeq ($(IB),)
 $(KDIR)/vmlinux.lzma: $(KDIR)/vmlinux
 	cat $^ | $(STAGING_DIR)/bin/lzma e -si -so -eos -lc1 -lp2 -pb2 > $@ || (rm -f $@ && false)
 
-$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx: $(KDIR)/vmlinux.lzma
+$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx: $(KDIR)/vmlinux.lzma compile
 endif
 
 ifeq ($(FS),jffs2-8MB)
@@ -54,13 +54,12 @@ ifeq ($(IB),)
 clean: lzma-loader-clean
 prepare: lzma-loader-prepare
 compile: lzma-loader-compile
-install: compile $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx
 else
 clean:
 prepare:
 compile:
-install: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx
 endif
+install: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx
 install-ib:
 	mkdir -p $(IB_DIR)/staging_dir_$(ARCH)/bin
 	cp -dpR $(STAGING_DIR)/bin/addpattern $(STAGING_DIR)/bin/trx $(STAGING_DIR)/bin/motorola-bin $(IB_DIR)/staging_dir_$(ARCH)/bin
