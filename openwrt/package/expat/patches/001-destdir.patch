@@ -1,0 +1,44 @@
+diff -ruN expat-1.95.8-orig/Makefile.in expat-1.95.8-1/Makefile.in
+--- expat-1.95.8-orig/Makefile.in	2004-05-07 22:00:48.000000000 +0200
++++ expat-1.95.8-1/Makefile.in	2005-04-04 22:53:09.000000000 +0200
+@@ -34,6 +34,8 @@
+ 
+ top_builddir = .
+ 
++DESTDIR =
++
+ 
+ INSTALL = @INSTALL@
+ INSTALL_PROGRAM = @INSTALL_PROGRAM@
+@@ -73,22 +75,22 @@
+ 	tests/runtests
+ 
+ install: xmlwf/xmlwf installlib
+-	$(mkinstalldirs) $(bindir) $(man1dir)
+-	$(LIBTOOL) --mode=install $(INSTALL_PROGRAM) xmlwf/xmlwf $(bindir)/xmlwf
+-	$(INSTALL_DATA) $(MANFILE) $(man1dir)
++	$(mkinstalldirs) $(DESTDIR)$(bindir) $(DESTDIR)$(man1dir)
++	$(LIBTOOL) --mode=install $(INSTALL_PROGRAM) xmlwf/xmlwf $(DESTDIR)$(bindir)/xmlwf
++	$(INSTALL_DATA) $(MANFILE) $(DESTDIR)$(man1dir)
+ 
+ installlib: $(LIBRARY) $(APIHEADER)
+-	$(mkinstalldirs) $(libdir) $(includedir)
+-	$(LIBTOOL) --mode=install $(INSTALL) $(LIBRARY) $(libdir)/$(LIBRARY)
+-	$(INSTALL_DATA) $(APIHEADER) $(includedir)
++	$(mkinstalldirs) $(DESTDIR)$(libdir) $(DESTDIR)$(includedir)
++	$(LIBTOOL) --mode=install $(INSTALL) $(LIBRARY) $(DESTDIR)$(libdir)/$(LIBRARY)
++	$(INSTALL_DATA) $(APIHEADER) $(DESTDIR)$(includedir)
+ 
+ uninstall: uninstalllib
+-	$(LIBTOOL) --mode=uninstall rm -f $(bindir)/xmlwf
++	$(LIBTOOL) --mode=uninstall rm -f $(DESTDIR)$(bindir)/xmlwf
+ 	rm -f $(man1dir)/xmlwf.1
+ 
+ uninstalllib:
+-	$(LIBTOOL) --mode=uninstall rm -f $(libdir)/$(LIBRARY)
+-	rm -f $(includedir)/$(APIHEADER)
++	$(LIBTOOL) --mode=uninstall rm -f $(DESTDIR)$(libdir)/$(LIBRARY)
++	rm -f $(DESTDIR)$(includedir)/$(APIHEADER)
+ 
+ # for VPATH builds (invoked by configure)
+ mkdir-init:
