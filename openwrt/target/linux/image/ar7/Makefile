@@ -1,6 +1,6 @@
 include $(TOPDIR)/rules.mk
 
-KDIR:=$(BUILD_DIR)/linux-$(KERNEL)-ar7
+KDIR:=$(BUILD_DIR)/linux-$(KERNEL)-$(BOARD)
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/ar7loader
 
@@ -47,9 +47,11 @@ $(KDIR)/vmlinux.bin: $(KDIR)/vmlinux.lzma
 		-o $(KDIR)/loader
 	$(TARGET_CROSS)objcopy -O srec $(KDIR)/loader $(KDIR)/ram_zimage.sre
 	$(STAGING_DIR)/bin/srec2bin $(KDIR)/ram_zimage.sre $@
+	
+$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-kernel.bin: $(KDIR)/vmlinux.bin
 endif
 
-$(BIN_DIR)/openwrt-ar7-2.4-kernel.bin: $(KDIR)/vmlinux.bin
+$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-kernel.bin:
 	cp $< $@
 
 ifeq ($(FS),jffs2-8MB)
@@ -59,16 +61,16 @@ ifeq ($(FS),jffs2-4MB)
 ALIGN:=bs=65536 conv=sync
 endif
 
-$(BIN_DIR)/openwrt-ar7-$(KERNEL)-$(FS).bin: $(BIN_DIR)/openwrt-ar7-2.4-kernel.bin
+$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).bin: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-kernel.bin
 	dd if=$< $(ALIGN) > $@
-	cat $(BUILD_DIR)/linux-$(KERNEL)-ar7/root.$(FS) >> $@
+	cat $(BUILD_DIR)/linux-$(KERNEL)-$(BOARD)/root.$(FS) >> $@
 
 define pattern_template
-$(BIN_DIR)/openwrt-ar7-$(KERNEL)-$(FS)-$(1).bin: $(BIN_DIR)/openwrt-ar7-$(KERNEL)-$(FS).bin
-	(dd if=/dev/zero bs=16 count=1; cat $(BIN_DIR)/openwrt-ar7-$(KERNEL)-$(FS).bin) | \
-		$(STAGING_DIR)/bin/addpattern -p $(1) $(2) -o $(BIN_DIR)/openwrt-ar7-$(KERNEL)-$(FS)-$(1).bin
+$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS)-$(1).bin: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).bin
+	(dd if=/dev/zero bs=16 count=1; cat $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).bin) | \
+		$(STAGING_DIR)/bin/addpattern -p $(1) $(2) -o $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS)-$(1).bin
 
-install: $(BIN_DIR)/openwrt-ar7-$(KERNEL)-$(FS)-$(1).bin
+install: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS)-$(1).bin
 endef
 
 $(eval $(call pattern_template,WA22))
@@ -76,11 +78,23 @@ $(eval $(call pattern_template,WAG2))
 $(eval $(call pattern_template,WA21))
 $(eval $(call pattern_template,WA32,-b))
 
+ifeq ($(IB),)
 clean:
 	rm -rf $(PKG_BUILD_DIR)
-	rm -f $(BIN_DIR)/openwrt-ar7*
+	rm -f $(BIN_DIR)/openwrt-$(BOARD)*
 
 prepare: $(PKG_BUILD_DIR) $(PKG_BUILD_DIR)/zimage.script $(PKG_BUILD_DIR)/ld.script
 compile: prepare $(PKG_BUILD_DIR)/loader.o $(PKG_BUILD_DIR)/LzmaDecode.o $(STAGING_DIR)/bin/srec2bin
-install: $(BIN_DIR)/openwrt-ar7-2.4-kernel.bin $(BIN_DIR)/openwrt-ar7-$(KERNEL)-$(FS).bin
+else
+clean:
+prepare:
+compile:
+endif
 
+install: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-kernel.bin $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).bin
+install-ib:
+	mkdir -p $(IB_DIR)/build_$(ARCH)/linux-$(KERNEL)-$(BOARD)
+	cp -dpR $(KDIR)/vmlinux.bin $(IB_DIR)/build_$(ARCH)/linux-$(KERNEL)-$(BOARD)/
+	mkdir -p $(IB_DIR)/staging_dir_$(ARCH)
+	cp -dpR $(STAGING_DIR)/bin/addpattern $(IB_DIR)/staging_dir_$(ARCH)/bin/
+	

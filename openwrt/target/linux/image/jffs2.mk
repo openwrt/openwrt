@@ -23,8 +23,13 @@ jffs2-install: $(KDIR)/root.jffs2-4MB $(KDIR)/root.jffs2-8MB
 	$(MAKE) -C $(BOARD) install KERNEL="$(KERNEL)" FS="jffs2-4MB"
 	$(MAKE) -C $(BOARD) install KERNEL="$(KERNEL)" FS="jffs2-8MB"
 
+jffs2-install-ib:
+	mkdir -p $(IB_DIR)/staging_dir_$(ARCH)/bin
+	cp $(STAGING_DIR)/bin/mkfs.jffs2 $(IB_DIR)/staging_dir_$(ARCH)/bin
+
 prepare: jffs2-prepare
 compile: jffs2-compile
 install: jffs2-install
+install-ib: jffs2-install-ib
 clean: jffs2-clean
 
