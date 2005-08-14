@@ -1,0 +1,11 @@
+config BR2_PACKAGE_E2FSPROGS
+	tristate "e2fsprogs - Ext2/3 filesystem utilities"
+#	default m if DEVELOPER
+	default n
+	help
+	  This package contains essential ext2 filesystem utilities which consists of 
+	  e2fsck, mke2fs, debugfs, dumpe2fs, tune2fs, and most of the other core ext2 
+	  filesystem utilities.
+	  
+	  http://e2fsprogs.sourceforge.net/
+	  
