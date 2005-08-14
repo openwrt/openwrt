@@ -1,0 +1,11 @@
+config BR2_PACKAGE_LIBXML2
+	tristate "libxml2 - Gnome XML library"
+#	default m if CONFIG_DEVEL
+	default n
+	select BR2_PACKAGE_LIBPTHREAD
+	select BR2_PACKAGE_ZLIB
+	help
+	  A library for manipulating XML and HTML resources.
+	  
+	  http://xmlsoft.org/
+	  
