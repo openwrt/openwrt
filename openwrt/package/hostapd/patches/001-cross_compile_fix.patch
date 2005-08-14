@@ -1,0 +1,32 @@
+diff -ruN hostapd-0.3.9-old/Makefile hostapd-0.3.9-new/Makefile
+--- hostapd-0.3.9-old/Makefile	2005-06-11 05:03:36.000000000 +0200
++++ hostapd-0.3.9-new/Makefile	2005-08-14 08:09:52.000000000 +0200
+@@ -3,7 +3,7 @@
+ DIR_HOSTAP=.
+ 
+ ifndef CFLAGS
+-CFLAGS = -MMD -O2 -Wall -g
++CFLAGS = -MMD $(OPTFLAGS) $(CPPFLAGS)
+ endif
+ 
+ # define HOSTAPD_DUMP_STATE to include SIGUSR1 handler for dumping state to
+@@ -173,7 +173,7 @@
+ 	for i in $(ALL); do cp $$i /usr/local/bin/$$i; done
+ 
+ hostapd: $(OBJS)
+-	$(CC) -o hostapd $(OBJS) $(LIBS)
++	$(CC) -o hostapd $(OBJS) $(LDFLAGS) $(LIBS)
+ 
+ driver_conf.c: Makefile .config
+ 	rm -f driver_conf.c
+diff -ruN hostapd-0.3.9-old/driver_madwifi.c hostapd-0.3.9-new/driver_madwifi.c
+--- hostapd-0.3.9-old/driver_madwifi.c	2005-05-18 05:38:57.000000000 +0200
++++ hostapd-0.3.9-new/driver_madwifi.c	2005-08-14 08:23:21.000000000 +0200
+@@ -24,6 +24,7 @@
+ #include <include/compat.h>
+ #include <net80211/ieee80211.h>
+ #include <net80211/ieee80211_crypto.h>
++#include <net80211/_ieee80211.h>
+ #include <net80211/ieee80211_ioctl.h>
+ 
+ #include <net/if_arp.h>

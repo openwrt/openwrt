@@ -43,6 +43,7 @@ package-$(BR2_PACKAGE_GLIB) += glib
 package-$(BR2_PACKAGE_GMP) += gmp
 package-$(BR2_PACKAGE_GNUTLS) += gnutls
 package-$(BR2_PACKAGE_HASERL) += haserl
+package-$(BR2_PACKAGE_HOSTAPD) += hostapd
 package-$(BR2_PACKAGE_HOWL) += howl
 package-$(BR2_PACKAGE_HTPDATE) += htpdate
 package-$(BR2_PACKAGE_IPKG) += ipkg
@@ -181,6 +182,7 @@ fprobe-compile: libpcap-compile
 gdbserver-compile: ncurses-compile
 gnutls-compile: libgcrypt-compile opencdk-compile libtasn1-compile
 irssi-compile: glib-compile ncurses-compile
+hostapd-compile: openssl-compile
 kismet-compile: uclibc++-compile libpcap-compile ncurses-compile
 less-compile: ncurses-compile
 lcd4linux-compile: ncurses-compile
