@@ -50,9 +50,9 @@ $(IPKG_BASE):
 $(IPKG_LIBC):
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_LIBC) ipkg/uclibc.control $(LIBC_VERSION)-$(PKG_RELEASE) $(ARCH)
 	mkdir -p $(IDIR_LIBC)/lib
-	cp -fpR $(STAGING_DIR)/lib/ld-uClibc*.so.* $(IDIR_LIBC)/lib/
+	cp $(STAGING_DIR)/lib/ld-uClibc*.so.* $(IDIR_LIBC)/lib/
 	for file in c crypt dl m nsl resolv rt uClibc util; do \
-		cp -fpR $(STAGING_DIR)/lib/lib$$file*.so.* $(IDIR_LIBC)/lib/; \
+		cp $(STAGING_DIR)/lib/lib$$file*.so.* $(IDIR_LIBC)/lib/; \
 	done
 	-$(STRIP) $(IDIR_LIBC)/lib/*
 	$(IPKG_BUILD) $(IDIR_LIBC) $(PACKAGE_DIR)
@@ -64,6 +64,9 @@ $(IPKG_GCC):
 	-$(STRIP) $(IDIR_GCC)/lib/*
 	$(IPKG_BUILD) $(IDIR_GCC) $(PACKAGE_DIR)
 
+package-clean:
+	rm -f $(PACKAGES)
+clean: package-clean
 prepare:
 compile: $(PACKAGES)
 install: compile
