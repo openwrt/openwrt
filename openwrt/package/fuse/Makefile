@@ -51,7 +51,7 @@ $(PKG_BUILD_DIR)/.configured:
 		  $(DISABLE_NLS) \
 		  --enable-shared \
 		  --enable-static \
-		  --enable-kernel-module \
+		  --disable-kernel-module \
 		  --enable-lib \
 		  --enable-util \
 		  --disable-example \
