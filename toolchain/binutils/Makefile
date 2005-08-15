@@ -13,29 +13,27 @@ BINUTILS_SITE:=http://www.fr.kernel.org/pub/linux/devel/binutils \
 	       http://ftp.kernel.org/pub/linux/devel/binutils \
 	       http://www.de.kernel.org/pub/linux/devel/binutils
 
-ifeq ($(BINUTILS_VERSION),2.15)
-BINUTILS_SITE:=http://ftp.gnu.org/gnu/binutils/ \
+BINUTILS_STABLE_SITE:=http://ftp.gnu.org/gnu/binutils/ \
 	ftp://gatekeeper.dec.com/pub/GNU/ \
         ftp://ftp.uu.net/archive/systems/gnu/ \
         ftp://ftp.eu.uu.net/pub/gnu/ \
         ftp://ftp.funet.fi/pub/gnu/prep/ \
         ftp://ftp.leo.org/pub/comp/os/unix/gnu/ 
+
+ifeq ($(BINUTILS_VERSION),2.16.1)
+BINUTILS_SITE:=$(BINUTILS_STABLE_SITE)
+endif
+ifeq ($(BINUTILS_VERSION),2.16)
+BINUTILS_SITE:=$(BINUTILS_STABLE_SITE)
+endif
+ifeq ($(BINUTILS_VERSION),2.15)
+BINUTILS_SITE:=$(BINUTILS_STABLE_SITE)
 endif
 ifeq ($(BINUTILS_VERSION),2.14)
-BINUTILS_SITE:=http://ftp.gnu.org/gnu/binutils/ \
-	ftp://gatekeeper.dec.com/pub/GNU/ \
-        ftp://ftp.uu.net/archive/systems/gnu/ \
-        ftp://ftp.eu.uu.net/pub/gnu/ \
-        ftp://ftp.funet.fi/pub/gnu/prep/ \
-        ftp://ftp.leo.org/pub/comp/os/unix/gnu/ 
+BINUTILS_SITE:=$(BINUTILS_STABLE_SITE)
 endif
 ifeq ($(BINUTILS_VERSION),2.13)
-BINUTILS_SITE:=http://ftp.gnu.org/gnu/binutils/ \
-	ftp://gatekeeper.dec.com/pub/GNU/ \
-        ftp://ftp.uu.net/archive/systems/gnu/ \
-        ftp://ftp.eu.uu.net/pub/gnu/ \
-        ftp://ftp.funet.fi/pub/gnu/prep/ \
-        ftp://ftp.leo.org/pub/comp/os/unix/gnu/ 
+BINUTILS_SITE:=$(BINUTILS_STABLE_SITE)
 endif
 
 BINUTILS_SOURCE:=binutils-$(BINUTILS_VERSION).tar.bz2
