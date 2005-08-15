@@ -1,3 +1,10 @@
+LINUX_KARCH:=$(shell echo $(ARCH) | sed -e 's/i[3-9]86/i386/' \
+	-e 's/mipsel/mips/' \
+	-e 's/powerpc/ppc/' \
+	-e 's/sh[234]/sh/' \
+)
+
+
 define KMOD_template
 ifeq ($$(strip $(4)),)
 KDEPEND_$(1):=m
@@ -39,3 +46,5 @@ endif
 	$(IPKG_BUILD) $$(I_$(1)) $(PACKAGE_DIR)
 
 endef
+
+
