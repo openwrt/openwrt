@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=kismet
-PKG_VERSION:=2005-04-R1
-PKG_RELEASE:=3
-PKG_MD5SUM:=19b4f192eb11a418ed3f6bf65c1226af
+PKG_VERSION:=2005-07-R1a
+PKG_RELEASE:=1
+PKG_MD5SUM:=9f59bce7d6cc8504ff602f150e578ab5
 
 PKG_SOURCE_URL:=http://www.kismetwireless.net/code
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -49,7 +49,9 @@ $(PKG_BUILD_DIR)/.configured:
 		  $(DISABLE_LARGEFILE) \
 		  $(DISABLE_NLS) \
 		  --enable-syspcap=yes \
+		  --disable-setuid \
 		  --disable-wsp100 \
+		  --disable-gpsmap \
 	);
 	touch $@
 
@@ -62,7 +64,7 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_KISMET):
 	install -d -m0755 $(IDIR_KISMET)/usr/bin/
-	cp -fpR $(PKG_BUILD_DIR)/scripts/kismet $(IDIR_KISMET)/usr/bin/
+	install -m0755 $(PKG_BUILD_DIR)/scripts/kismet $(IDIR_KISMET)/usr/bin/kismet
 	$(IPKG_BUILD) $(IDIR_KISMET) $(PACKAGE_DIR)
 
 $(IPKG_KISMET_CLIENT):
@@ -71,16 +73,16 @@ $(IPKG_KISMET_CLIENT):
 	install -m0644 ./files/client_manuf $(IDIR_KISMET_CLIENT)/etc/kismet/
 	install -m0644 ./files/kismet.conf $(IDIR_KISMET_CLIENT)/etc/kismet/
 	install -m0644 ./files/kismet_ui.conf $(IDIR_KISMET_CLIENT)/etc/kismet/
-	install -d -m0755 $(IDIR_KISMET_CLIENT)/usr/sbin
-	cp -fpR $(PKG_BUILD_DIR)/kismet_client $(IDIR_KISMET_CLIENT)/usr/sbin/
+	install -d -m0755 $(IDIR_KISMET_CLIENT)/usr/bin
+	cp -fpR $(PKG_BUILD_DIR)/kismet_client $(IDIR_KISMET_CLIENT)/usr/bin/
 	$(RSTRIP) $(IDIR_KISMET_CLIENT)
 	$(IPKG_BUILD) $(IDIR_KISMET_CLIENT) $(PACKAGE_DIR)
 
 $(IPKG_KISMET_DRONE):
 	install -d -m0755 $(IDIR_KISMET_DRONE)/etc/kismet/
 	install -m0644 ./files/kismet_drone.conf $(IDIR_KISMET_DRONE)/etc/kismet/
-	install -d -m0755 $(IDIR_KISMET_DRONE)/usr/sbin
-	cp -fpR $(PKG_BUILD_DIR)/kismet_drone $(IDIR_KISMET_DRONE)/usr/sbin/
+	install -d -m0755 $(IDIR_KISMET_DRONE)/usr/bin
+	cp -fpR $(PKG_BUILD_DIR)/kismet_drone $(IDIR_KISMET_DRONE)/usr/bin/
 	$(RSTRIP) $(IDIR_KISMET_DRONE)
 	$(IPKG_BUILD) $(IDIR_KISMET_DRONE) $(PACKAGE_DIR)
 
@@ -89,11 +91,11 @@ $(IPKG_KISMET_SERVER):
 	install -m0644 ./files/ap_manuf $(IDIR_KISMET_SERVER)/etc/kismet/
 	install -m0644 ./files/client_manuf $(IDIR_KISMET_SERVER)/etc/kismet/
 	install -m0644 ./files/kismet.conf $(IDIR_KISMET_SERVER)/etc/kismet/
-	mkdir -p $(IDIR_KISMET_SERVER)/usr/sbin
-	cp -fpR  $(PKG_BUILD_DIR)/kismet_server $(IDIR_KISMET_SERVER)/usr/sbin/
+	mkdir -p $(IDIR_KISMET_SERVER)/usr/bin
+	cp -fpR  $(PKG_BUILD_DIR)/kismet_server $(IDIR_KISMET_SERVER)/usr/bin/
 	$(RSTRIP) $(IDIR_KISMET_SERVER)
 	$(IPKG_BUILD) $(IDIR_KISMET_SERVER) $(PACKAGE_DIR)
 
 mostlyclean:
-	$(MAKE) -C $(PKG_BUILD_DIR) clean
+#	$(MAKE) -C $(PKG_BUILD_DIR) clean
 	rm -f $(PKG_BUILD_DIR)/.built
