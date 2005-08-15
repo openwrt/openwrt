@@ -1,6 +1,7 @@
 # $Id$
 
 include $(TOPDIR)/rules.mk
+include ../../rules.mk
 
 PKG_NAME:=madwifi
 PKG_VERSION:=2005-08-13
@@ -36,7 +37,7 @@ $(PKG_BUILD_DIR)/.configured:
 
 $(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR) \
-		ARCH="$(ARCH)" \
+		ARCH="$(LINUX_KARCH)" \
 		TARGET="$(HAL_TARGET)" \
 		TOOLPREFIX="$(KERNEL_CROSS)" \
 		KERNELPATH="$(KERNEL_DIR)"
