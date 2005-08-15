@@ -3,14 +3,21 @@
 BIN=rrdcollect
 DEFAULT=/etc/default/$BIN
 RUN_D=/var/run
-RRA_D=/var/lib/rra
 PID_F=$RUN_D/$BIN.pid
+LIB_D=/var/lib/rrdcollect
+CGI_S=$LIB_D/rrd.cgi
+IMG_D=$LIB_D/img
+RRD_D=$LIB_D/rrd
+RRD_F=$(find $RRD_D -name "*.rrd" 2>/dev/null)
 [ -f $DEFAULT ] && . $DEFAULT
 
 case $1 in
  start)
   mkdir -p $RUN_D
-  mkdir -p $RRA_D
+  mkdir -p $IMG_D
+  mkdir -p $RRD_D
+  [ -x $CGI_S ] || /usr/bin/rrd.sh cgi
+  [ -n "$RRD_D" ] || /usr/bin/rrd.sh init
   $BIN $OPTIONS
   ;;
  stop)
