@@ -1,0 +1,12 @@
+Package: rrdcollect-example
+Priority: optional
+Section: admin
+Maintainer: Oliver Ertl <oliver@ertl-net.net>, OpenWrt Developers <bugs@openwrt.org>
+Source: http://openwrt.org/cgi-bin/viewcvs.cgi/openwrt/package/rrdcollect/
+Depends: rrdcgi, rrdtool, rrdcollect
+Description: Example setup for Round-Robin Database (RRD) collecting daemon
+ RRDcollect is a daemon which polls certain files in /proc/
+ directory, gathering data and storing it inside RRDtool's
+ database files.  Being written in C should be both fast
+ and resources-friendly.  Supports both scanf(3)-style
+ pattern matches and perl compatible regular expressions.
