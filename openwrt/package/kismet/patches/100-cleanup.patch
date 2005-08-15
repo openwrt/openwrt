@@ -1,0 +1,3958 @@
+diff -urN kismet.old/Makefile.in kismet.dev/Makefile.in
+--- kismet.old/Makefile.in	2005-07-25 16:19:44.000000000 +0200
++++ kismet.dev/Makefile.in	2005-08-15 00:16:38.100369736 +0200
+@@ -39,26 +39,26 @@
+ DEPEND	= .depend
+ 
+ # Objects
+-PSO	= util.o ringbuf.o configfile.o speech.o ifcontrol.o iwcontrol.o packet.o \
+-		pcapsource.o prism2source.o wtapfilesource.o wsp100source.o \
+-		dronesource.o vihasource.o packetsourcetracker.o kis_packsources.o \
+-		wtapdump.o wtaplocaldump.o gpsdump.o airsnortdump.o fifodump.o \
+-		gpsd.o manuf.o \
++PSO	= util.o ringbuf.o configfile.o ifcontrol.o iwcontrol.o packet.o \
++		pcapsource.o \
++		dronesource.o packetsourcetracker.o kis_packsources.o \
++		wtaplocaldump.o fifodump.o \
++		manuf.o \
+ 		packetracker.o timetracker.o alertracker.o finitestate.o \
+ 		getopt.o \
+ 		tcpserver.o server_protocols.o server_globals.o kismet_server.o 
+ PS	= kismet_server
+ 
+ DRONEO = util.o ringbuf.o configfile.o getopt.o ifcontrol.o iwcontrol.o packet.o \
+-		tcpstreamer.o prism2source.o pcapsource.o wtapfilesource.o wsp100source.o \
+-		dronesource.o vihasource.o packetsourcetracker.o kis_packsources.o \
+-		timetracker.o gpsd.o server_globals.o kismet_drone.o
++		tcpstreamer.o pcapsource.o wtapfilesource.o \
++		dronesource.o packetsourcetracker.o kis_packsources.o \
++		timetracker.o server_globals.o kismet_drone.o
+ DRONE = kismet_drone
+ 
+ NCO	= util.o configfile.o speech.o manuf.o tcpclient.o \
+ 		frontend.o cursesfront.o \
+ 		panelfront.o panelfront_display.o panelfront_input.o \
+-		gpsd.o getopt.o kismet_client.o 
++		getopt.o kismet_client.o 
+ NC	= kismet_client
+ 
+ GPSLO = getopt.o util.o configfile.o expat.o manuf.o \
+diff -urN kismet.old/cursesfront.cc kismet.dev/cursesfront.cc
+--- kismet.old/cursesfront.cc	2005-07-25 16:19:44.000000000 +0200
++++ kismet.dev/cursesfront.cc	2005-08-15 01:08:49.461799648 +0200
+@@ -30,7 +30,6 @@
+ // Enable the protocols we can use
+ void NCurseFront::AddClient(TcpClient *in_client) {
+     client = in_client;
+-    client->EnableProtocol("GPS");
+     client->EnableProtocol("INFO");
+     client->EnableProtocol("REMOVE");
+     client->EnableProtocol("NETWORK");
+@@ -88,32 +87,8 @@
+         mvwaddstr(netborder, 1, 2, "  SSID                        T W Ch  Data   LLC  Crypt  Wk Flags");
+     }
+ 
+-    char gpsdata[1024];
+-    float lat, lon, alt, spd, heading;
+     int mode;
+ 
+-    client->FetchLoc(&lat, &lon, &alt, &spd, &heading, &mode);
+-
+-    if (!(lat == 0 && lon == 0 && alt == 0 && spd == 0 && mode == 0)) {
+-
+-        char fix[16];
+-
+-        if (mode == -1)
+-            snprintf(fix, 16, "No signal");
+-        else if (mode == 2)
+-            snprintf(fix, 5, "2D");
+-        else if (mode == 3)
+-            snprintf(fix, 5, "3D");
+-        else
+-            snprintf(fix, 5, "NONE");
+-
+-        snprintf(gpsdata, 1024, "Lat %.3f Lon %.3f Alt %.3f Spd %.3f Fix %s",
+-                 lat, lon, alt, spd, fix);
+-
+-        mvwaddstr(netborder, LINES-statheight-1, 2, gpsdata);
+-
+-    }
+-
+     box(infoborder, '|', '-');
+     mvwaddstr(infoborder, 0, 2, "Info");
+ 
+diff -urN kismet.old/dronesource.cc kismet.dev/dronesource.cc
+--- kismet.old/dronesource.cc	2005-07-25 16:19:44.000000000 +0200
++++ kismet.dev/dronesource.cc	2005-08-15 00:06:41.235746912 +0200
+@@ -201,9 +201,6 @@
+             return -1;
+         }
+ 
+-		// Grab the GPS info
+-		gps_enabled = vpkt.gps_enabled;
+-
+         stream_recv_bytes = 0;
+ 
+         // printf("debug - version packet valid\n\n");
+@@ -336,25 +333,6 @@
+     packet->encoding = (encoding_type) phdr.encoding;
+     packet->datarate = (uint32_t) ntohl(phdr.datarate);
+ 
+-	if (gps_enabled) {
+-		// If the drone is sending us GPS data, use it
+-		packet->gps_lat = Pair2Float((int16_t) ntohs(phdr.gps_lat),
+-									 (int64_t) kis_ntoh64(phdr.gps_lat_mant));
+-		packet->gps_lon = Pair2Float((int16_t) ntohs(phdr.gps_lon),
+-									 (int64_t) kis_ntoh64(phdr.gps_lon_mant));
+-		packet->gps_alt = Pair2Float((int16_t) ntohs(phdr.gps_alt),
+-									 (int64_t) kis_ntoh64(phdr.gps_alt_mant));
+-		packet->gps_spd = Pair2Float((int16_t) ntohs(phdr.gps_spd),
+-									 (int64_t) kis_ntoh64(phdr.gps_spd_mant));
+-		packet->gps_heading = Pair2Float((int16_t) ntohs(phdr.gps_heading),
+-										 (int64_t) kis_ntoh64(phdr.gps_heading_mant));
+-		packet->gps_fix = phdr.gps_fix;
+-	} else if (gpsd != NULL) {
+-		// Otherwise, no
+-		gpsd->FetchLoc(&packet->gps_lat, &packet->gps_lon, &packet->gps_alt,
+-					   &packet->gps_spd, &packet->gps_heading, &packet->gps_fix);
+-	}
+-
+     packet->data = data;
+     packet->moddata = moddata;
+     packet->modified = 0;
+diff -urN kismet.old/dronesource.h kismet.dev/dronesource.h
+--- kismet.old/dronesource.h	2005-07-25 16:19:44.000000000 +0200
++++ kismet.dev/dronesource.h	2005-08-15 00:06:56.589412800 +0200
+@@ -80,8 +80,6 @@
+ 
+     unsigned int resyncing;
+ 
+-	// Is the drone pushing GPS data to us?
+-	int gps_enabled;
+ };
+ 
+ // Nothing but a registrant for us
+diff -urN kismet.old/frontend.cc kismet.dev/frontend.cc
+--- kismet.old/frontend.cc	2005-07-25 16:19:44.000000000 +0200
++++ kismet.dev/frontend.cc	2005-08-15 01:07:50.236803216 +0200
+@@ -248,33 +248,6 @@
+ 
+             }
+ 
+-            // Aggregate the GPS data
+-            if (wnet->aggregate_points > 0) {
+-                dnet->virtnet->aggregate_lat += wnet->aggregate_lat;
+-                dnet->virtnet->aggregate_lon += wnet->aggregate_lon;
+-                dnet->virtnet->aggregate_alt += wnet->aggregate_alt;
+-                dnet->virtnet->aggregate_points += wnet->aggregate_points;
+-            }
+-
+-            if (wnet->gps_fixed > dnet->virtnet->gps_fixed)
+-                dnet->virtnet->gps_fixed = wnet->gps_fixed;
+-            if (wnet->min_lat < dnet->virtnet->min_lat || dnet->virtnet->min_lat == 0)
+-                dnet->virtnet->min_lat = wnet->min_lat;
+-            if (wnet->min_lon < dnet->virtnet->min_lon || dnet->virtnet->min_lon == 0)
+-                dnet->virtnet->min_lon = wnet->min_lon;
+-            if (wnet->min_alt < dnet->virtnet->min_alt || dnet->virtnet->min_alt == 0)
+-                dnet->virtnet->min_alt = wnet->min_alt;
+-            if (wnet->min_spd < dnet->virtnet->min_spd || dnet->virtnet->min_spd == 0)
+-                dnet->virtnet->min_spd = wnet->min_spd;
+-            if (wnet->max_lat > dnet->virtnet->max_lat || dnet->virtnet->max_lat == 0)
+-                dnet->virtnet->max_lat = wnet->max_lat;
+-            if (wnet->max_lon > dnet->virtnet->max_lon || dnet->virtnet->max_lon == 0)
+-                dnet->virtnet->max_lon = wnet->max_lon;
+-            if (wnet->max_alt > dnet->virtnet->max_alt || dnet->virtnet->max_alt == 0)
+-                dnet->virtnet->max_alt = wnet->max_alt;
+-            if (wnet->max_spd > dnet->virtnet->max_spd || dnet->virtnet->max_spd == 0)
+-                dnet->virtnet->max_spd = wnet->max_spd;
+-
+             // Aggregate the carriers and encodings
+             dnet->virtnet->carrier_set |= wnet->carrier_set;
+             dnet->virtnet->encoding_set |= wnet->encoding_set;
+diff -urN kismet.old/kis_packsources.cc kismet.dev/kis_packsources.cc
+--- kismet.old/kis_packsources.cc	2005-07-25 16:19:44.000000000 +0200
++++ kismet.dev/kis_packsources.cc	2005-08-15 00:15:11.107594648 +0200
+@@ -60,13 +60,6 @@
+ 
+ #if defined(HAVE_LIBPCAP) && defined(HAVE_LINUX_WIRELESS)
+     // Linux wext-driven cards
+-    sourcetracker->RegisterPacketsource("cisco", 1, "IEEE80211b", 6,
+-                                       pcapsource_wext_registrant,
+-                                       monitor_cisco, unmonitor_cisco, 
+-                                       chancontrol_wext, 1);
+-    sourcetracker->RegisterPacketsource("cisco_wifix", 1, "IEEE80211b", 6,
+-                                       pcapsource_ciscowifix_registrant,
+-                                       monitor_cisco_wifix, NULL, NULL, 1);
+     sourcetracker->RegisterPacketsource("hostap", 1, "IEEE80211b", 6,
+                                        pcapsource_wext_registrant,
+                                        monitor_hostap, unmonitor_hostap, 
+@@ -79,6 +72,14 @@
+                                         pcapsource_wext_registrant,
+                                         monitor_orinoco, unmonitor_orinoco,
+                                         chancontrol_orinoco, 1);
++#if 0
++    sourcetracker->RegisterPacketsource("cisco", 1, "IEEE80211b", 6,
++                                       pcapsource_wext_registrant,
++                                       monitor_cisco, unmonitor_cisco, 
++                                       chancontrol_wext, 1);
++    sourcetracker->RegisterPacketsource("cisco_wifix", 1, "IEEE80211b", 6,
++                                       pcapsource_ciscowifix_registrant,
++                                       monitor_cisco_wifix, NULL, NULL, 1);
+     sourcetracker->RegisterPacketsource("acx100", 1, "IEEE80211b", 6,
+                                        pcapsource_wextfcs_registrant,
+                                        monitor_acx100, unmonitor_acx100, 
+@@ -94,7 +95,13 @@
+                                        pcapsource_wext_registrant,
+                                        monitor_wext, unmonitor_wext, 
+                                        chancontrol_wext, 1);
+-
++#else
++    REG_EMPTY_CARD(sourcetracker, "cisco");
++    REG_EMPTY_CARD(sourcetracker, "cisco_wifix");
++    REG_EMPTY_CARD(sourcetracker, "acx100");
++    REG_EMPTY_CARD(sourcetracker, "vtar5k");
++#endif
++    
+     sourcetracker->RegisterPacketsource("madwifi_a", 1, "IEEE80211a", 36,
+                                         pcapsource_wextfcs_registrant,
+                                         monitor_madwifi_a, unmonitor_madwifi, 
+@@ -121,11 +128,12 @@
+                                         monitor_prism54g, unmonitor_prism54g,
+                                         chancontrol_prism54g, 1);
+ 
++#if 0
+     sourcetracker->RegisterPacketsource("wlanng_wext", 1, "IEEE80211b", 6,
+                                         pcapsource_wlanng_registrant,
+                                         monitor_wlanng_avs, NULL,
+                                         chancontrol_wext, 1);
+-
++    
+     sourcetracker->RegisterPacketsource("ipw2100", 1, "IEEE80211b", 6,
+                                         pcapsource_wext_registrant,
+                                         monitor_ipw2100, unmonitor_ipw2100,
+@@ -153,6 +161,16 @@
+                                         pcapsource_wext_registrant,
+                                         monitor_wext, unmonitor_wext,
+                                         chancontrol_wext, 1);
++#else
++    REG_EMPTY_CARD(sourcetracker, "wlanng_wext");
++    REG_EMPTY_CARD(sourcetracker, "ipw2100");
++    REG_EMPTY_CARD(sourcetracker, "ipw2200");
++    REG_EMPTY_CARD(sourcetracker, "ipw2915");
++
++    REG_EMPTY_CARD(sourcetracker, "rt2400");
++    REG_EMPTY_CARD(sourcetracker, "rt2500");
++    REG_EMPTY_CARD(sourcetracker, "rt8180");
++#endif
+ 
+ #else
+     // Register the linuxwireless pcap stuff as null
+@@ -183,6 +201,7 @@
+ #endif
+ 
+ #if defined(HAVE_LIBPCAP) && defined(SYS_LINUX)
++#if 0
+     sourcetracker->RegisterPacketsource("wlanng", 1, "IEEE80211b", 6,
+                                        pcapsource_wlanng_registrant,
+                                        monitor_wlanng, NULL, chancontrol_wlanng, 1);
+@@ -190,6 +209,10 @@
+                                        pcapsource_wlanng_registrant,
+                                        monitor_wlanng_avs, NULL,
+                                        chancontrol_wlanng_avs, 1);
++#else
++    REG_EMPTY_CARD(sourcetracker, "wlanng");
++    REG_EMPTY_CARD(sourcetracker, "wlanng_avs");
++#endif
+     sourcetracker->RegisterPacketsource("wrt54g", 1, "na", 0,
+                                         pcapsource_wrt54g_registrant,
+                                         monitor_wrt54g, NULL, NULL, 0);
+@@ -199,7 +222,8 @@
+     REG_EMPTY_CARD(sourcetracker, "wrt54g");
+ #endif
+ 
+-#if defined(SYS_LINUX) && defined(HAVE_LINUX_NETLINK)
++//#if defined(SYS_LINUX) && defined(HAVE_LINUX_NETLINK)
++#if 0
+     sourcetracker->RegisterPacketsource("wlanng_legacy", 1, "IEEE80211b", 6,
+                                         prism2source_registrant,
+                                         monitor_wlanng_legacy, NULL,
+@@ -240,7 +264,8 @@
+     REG_EMPTY_CARD(sourcetracker, "radiotap_bsd_b");
+ #endif
+ 
+-#if defined(HAVE_LIBWIRETAP)
++// #if defined(HAVE_LIBWIRETAP)
++#if 0
+     sourcetracker->RegisterPacketsource("wtapfile", 0, "na", 0,
+                                        wtapfilesource_registrant,
+                                        NULL, NULL, NULL, 0);
+@@ -248,7 +273,8 @@
+     REG_EMPTY_CARD(sourcetracker, "wtapfile");
+ #endif
+ 
+-#if defined(HAVE_WSP100)
++#if 0    
++//#if defined(HAVE_WSP100)
+     sourcetracker->RegisterPacketsource("wsp100", 0, "IEEE80211b", 6,
+                                         wsp100source_registrant,
+                                         monitor_wsp100, NULL, chancontrol_wsp100, 0);
+@@ -256,7 +282,9 @@
+     REG_EMPTY_CARD(sourcetracker, "wsp100");
+ #endif
+ 
+-#if defined(HAVE_VIHAHEADERS)
++
++#if 0
++//#if defined(HAVE_VIHAHEADERS)
+     sourcetracker->RegisterPacketsource("viha", 1, "IEEE80211b", 6,
+                                         vihasource_registrant,
+                                         NULL, NULL, chancontrol_viha, 0);
+diff -urN kismet.old/kis_packsources.h kismet.dev/kis_packsources.h
+--- kismet.old/kis_packsources.h	2005-07-25 16:19:44.000000000 +0200
++++ kismet.dev/kis_packsources.h	2005-08-15 00:15:54.831947536 +0200
+@@ -22,11 +22,7 @@
+ #include "config.h"
+ 
+ #include "packetsource.h"
+-#include "prism2source.h"
+ #include "pcapsource.h"
+-#include "wtapfilesource.h"
+-#include "wsp100source.h"
+-#include "vihasource.h"
+ #include "dronesource.h"
+ #include "packetsourcetracker.h"
+ 
+diff -urN kismet.old/kismet_client.cc kismet.dev/kismet_client.cc
+--- kismet.old/kismet_client.cc	2005-07-25 16:19:44.000000000 +0200
++++ kismet.dev/kismet_client.cc	2005-08-15 00:20:21.533402752 +0200
+@@ -28,7 +28,6 @@
+ #include "cursesfront.h"
+ #include "panelfront.h"
+ #include "configfile.h"
+-#include "speech.h"
+ 
+ #ifndef exec_name
+ char *exec_name;
+@@ -47,11 +46,7 @@
+ char *configfile;
+ char *uiconfigfile;
+ char *server = NULL;
+-int sound = -1;
+-int speech = -1;
+ int flite = 0;
+-int speech_encoding = 0;
+-string speech_sentence_encrypted, speech_sentence_unencrypted;
+ unsigned int metric = 0;
+ unsigned int reconnect = 0;
+ 
+@@ -59,20 +54,9 @@
+ string configdir, groupfile;
+ FILE *group_file = NULL;
+ 
+-// Pipe file descriptor pairs and fd's
+-int soundpair[2];
+-int speechpair[2];
+-pid_t soundpid = -1, speechpid = -1;
+-
+ // Catch our interrupt
+ void CatchShutdown(int sig) {
+ 
+-    // Kill our sound players
+-    if (soundpid > 0)
+-        kill(soundpid, 9);
+-    if (speechpid > 0)
+-        kill(speechpid, 9);
+-
+     if (group_track) {
+         if ((group_file = fopen(groupfile.c_str(), "w")) == NULL) {
+             fprintf(stderr, "WARNING: Unable to open '%s' for writing, groups will not be saved.\n",
+@@ -116,215 +100,6 @@
+     exit(0);
+ }
+ 
+-// Subprocess sound handler
+-void SoundHandler(int *fds, const char *player, map<string, string> soundmap) {
+-    int read_sock = fds[0];
+-
+-    close(fds[1]);
+-
+-    signal(SIGPIPE, PipeHandler);
+-
+-    fd_set rset;
+-
+-    char data[1024];
+-
+-    pid_t sndpid = -1;
+-    int harvested = 1;
+-
+-    while (1) {
+-        FD_ZERO(&rset);
+-        FD_SET(read_sock, &rset);
+-        char *end;
+-
+-        memset(data, 0, 1024);
+-
+-        if (harvested == 0) {
+-            // We consider a wait error to be a sign that the child pid died
+-            // so we flag it as harvested and keep on going
+-            pid_t harvestpid = waitpid(sndpid, NULL, WNOHANG);
+-            if (harvestpid == -1 || harvestpid == sndpid)
+-                harvested = 1;
+-        }
+-
+-        struct timeval tim;
+-        tim.tv_sec = 1;
+-        tim.tv_usec = 0;
+-
+-        if (select(read_sock + 1, &rset, NULL, NULL, &tim) < 0) {
+-            if (errno != EINTR) {
+-                exit(1);
+-            }
+-        }
+-
+-        if (FD_ISSET(read_sock, &rset)) {
+-            int ret;
+-            ret = read(read_sock, data, 1024);
+-
+-            // We'll die off if we get a read error, and we'll let kismet on the
+-            // other side detact that it died
+-            if (ret <= 0 && (errno != EAGAIN && errno != EPIPE))
+-                exit(1);
+-
+-            if ((end = strstr(data, "\n")) == NULL)
+-                continue;
+-
+-            end[0] = '\0';
+-        }
+-
+-        if (data[0] == '\0')
+-            continue;
+-
+-        // If we've harvested the process, spawn a new one and watch it
+-        // instead.  Otherwise, we just let go of the data we read
+-        if (harvested == 1) {
+-            // Only take the first line
+-            char *nl;
+-            if ((nl = strchr(data, '\n')) != NULL)
+-                *nl = '\0';
+-
+-            char snd[1024];
+-
+-            if (soundmap.size() == 0)
+-                snprintf(snd, 1024, "%s", data);
+-            if (soundmap.find(data) != soundmap.end())
+-                snprintf(snd, 1024, "%s", soundmap[data].c_str());
+-            else
+-                continue;
+-
+-            char plr[1024];
+-            snprintf(plr, 1024, "%s", player);
+-
+-            harvested = 0;
+-            if ((sndpid = fork()) == 0) {
+-                // Suppress errors
+-                int nulfd = open("/dev/null", O_RDWR);
+-                dup2(nulfd, 1);
+-                dup2(nulfd, 2);
+-
+-                char * const echoarg[] = { plr, snd, NULL };
+-                execve(echoarg[0], echoarg, NULL);
+-            }
+-        }
+-
+-        data[0] = '\0';
+-    }
+-}
+-
+-// Subprocess speech handler
+-void SpeechHandler(int *fds, const char *player) {
+-    int read_sock = fds[0];
+-    close(fds[1]);
+-
+-    fd_set rset;
+-
+-    char data[1024];
+-
+-    pid_t sndpid = -1;
+-    int harvested = 1;
+-
+-    while (1) {
+-        FD_ZERO(&rset);
+-        FD_SET(read_sock, &rset);
+-        //char *end;
+-
+-        memset(data, 0, 1024);
+-
+-        struct timeval tim;
+-        tim.tv_sec = 1;
+-        tim.tv_usec = 0;
+-
+-        if (select(read_sock + 1, &rset, NULL, NULL, &tim) < 0) {
+-            if (errno != EINTR) {
+-                exit(1);
+-            }
+-        }
+-
+-        if (harvested == 0) {
+-            // We consider a wait error to be a sign that the child pid died
+-            // so we flag it as harvested and keep on going
+-            pid_t harvestpid = waitpid(sndpid, NULL, WNOHANG);
+-            if (harvestpid == -1 || harvestpid == sndpid)
+-                harvested = 1;
+-        }
+-
+-        if (FD_ISSET(read_sock, &rset)) {
+-            int ret;
+-            ret = read(read_sock, data, 1024);
+-
+-            // We'll die off if we get a read error, and we'll let kismet on the
+-            // other side detact that it died
+-            if (ret <= 0 && (errno != EAGAIN && errno != EPIPE))
+-                exit(1);
+-
+-            data[ret] = '\0';
+-
+-        }
+-
+-        if (data[0] == '\0')
+-            continue;
+-
+-        // If we've harvested the process, spawn a new one and watch it
+-        // instead.  Otherwise, we just let go of the data we read
+-        if (harvested == 1) {
+-            harvested = 0;
+-            if ((sndpid = fork()) == 0) {
+-                // Only take the first line
+-                char *nl;
+-                if ((nl = strchr(data, '\n')) != NULL)
+-                    *nl = '\0';
+-
+-                // Make sure it's shell-clean
+-                MungeToShell(data, strlen(data));
+-                char spk_call[1024];
+-                snprintf(spk_call, 1024, "echo \"(%s\\\"%s\\\")\" | %s "
+-						 ">/dev/null 2>/dev/null",
+-						 flite ? "": "SayText ", data, player);
+-
+-                system(spk_call);
+-
+-                exit(0);
+-            }
+-        }
+-
+-        data[0] = '\0';
+-    }
+-}
+-
+-
+-int PlaySound(string in_sound) {
+-
+-    char snd[1024];
+-
+-    snprintf(snd, 1024, "%s\n", in_sound.c_str());
+-
+-    if (write(soundpair[1], snd, strlen(snd)) < 0) {
+-        char status[STATUS_MAX];
+-        snprintf(status, STATUS_MAX,
+-                 "ERROR: Could not write to sound pipe.  Stopping sound.");
+-        gui->WriteStatus(status);
+-
+-        return 0;
+-    }
+-
+-    return 1;
+-}
+-
+-int SayText(string in_text) {
+-    char snd[1024];
+-
+-    snprintf(snd, 1024, "%s\n", in_text.c_str());
+-
+-    if (write(speechpair[1], snd, strlen(snd)) < 0) {
+-        char status[STATUS_MAX];
+-        snprintf(status, STATUS_MAX,
+-                 "ERROR: Could not write to speech pipe.  Stopping speech.");
+-        gui->WriteStatus(status);
+-
+-        return 0;
+-    }
+-
+-    return 1;
+-}
+ 
+ int main(int argc, char *argv[]) {
+     exec_name = argv[0];
+@@ -345,8 +120,6 @@
+     char guihost[1024];
+     int guiport = -1;
+ 
+-    int gpsmode = -1;
+-
+     configfile = NULL;
+     uiconfigfile = NULL;
+ 
+@@ -391,7 +164,6 @@
+             fprintf(stderr, "Using alternate UI config file: %s\n", uiconfigfile);
+             break;
+         case 'q':
+-            sound = 0;
+             break;
+         case 'g':
+             reqgui = strdup(optarg);
+@@ -515,70 +287,6 @@
+         server = strdup(gui_conf->FetchOpt("host").c_str());
+     }
+ 
+-    if (gui_conf->FetchOpt("sound") == "true" && sound == -1) {
+-        if (gui_conf->FetchOpt("soundplay") != "") {
+-            sndplay = gui_conf->FetchOpt("soundplay");
+-            sound = 1;
+-
+-            if (gui_conf->FetchOpt("soundopts") != "")
+-                sndplay += " " + gui_conf->FetchOpt("soundopts");
+-
+-            if (gui_conf->FetchOpt("sound_new") != "")
+-                wav_map["new"] = gui_conf->FetchOpt("sound_new");
+-            if (gui_conf->FetchOpt("sound_new_wep") != "")
+-                wav_map["new_wep"] = gui_conf->FetchOpt("sound_new_wep");
+-            if (gui_conf->FetchOpt("sound_traffic") != "")
+-                wav_map["traffic"] = gui_conf->FetchOpt("sound_traffic");
+-            if (gui_conf->FetchOpt("sound_junktraffic") != "")
+-                wav_map["junktraffic"] = gui_conf->FetchOpt("sound_junktraffic");
+-            if (gui_conf->FetchOpt("sound_gpslock") != "")
+-                wav_map["gpslock"] = gui_conf->FetchOpt("sound_gpslock");
+-            if (gui_conf->FetchOpt("sound_gpslost") != "")
+-                wav_map["gpslost"] = gui_conf->FetchOpt("sound_gpslost");
+-            if (gui_conf->FetchOpt("sound_alert") != "")
+-                wav_map["alert"] = gui_conf->FetchOpt("sound_alert");
+-
+-        } else {
+-            fprintf(stderr, "ERROR:  Sound alerts enabled but no sound playing binary specified.\n");
+-            sound = 0;
+-        }
+-    } else if (sound == -1)
+-        sound = 0;
+-
+-    /* Added by Shaw Innes 17/2/02 */
+-    if (gui_conf->FetchOpt("speech") == "true" && speech == -1) {
+-        if (gui_conf->FetchOpt("festival") != "") {
+-            festival = strdup(gui_conf->FetchOpt("festival").c_str());
+-            speech = 1;
+-
+-			if (gui_conf->FetchOpt("flite") == "true")
+-				flite = 1;
+-
+-            string speechtype = gui_conf->FetchOpt("speech_type");
+-
+-            if (!strcasecmp(speechtype.c_str(), "nato"))
+-                speech_encoding = SPEECH_ENCODING_NATO;
+-            else if (!strcasecmp(speechtype.c_str(), "spell"))
+-                speech_encoding = SPEECH_ENCODING_SPELL;
+-            else
+-                speech_encoding = SPEECH_ENCODING_NORMAL;
+-
+-            // Make sure we have encrypted text lines
+-            if (gui_conf->FetchOpt("speech_encrypted") == "" || gui_conf->FetchOpt("speech_unencrypted") == "") {
+-                fprintf(stderr, "ERROR:  Speech request but speech_encrypted or speech_unencrypted line missing.\n");
+-                speech = 0;
+-            }
+-
+-            speech_sentence_encrypted = gui_conf->FetchOpt("speech_encrypted");
+-            speech_sentence_unencrypted = gui_conf->FetchOpt("speech_unencrypted");
+-
+-        } else {
+-            fprintf(stderr, "ERROR: Speech alerts enabled but no path to festival has been specified.\n");
+-            speech = 0;
+-        }
+-    } else if (speech == -1)
+-        speech = 0;
+-
+     if (gui_conf->FetchOpt("decay") != "") {
+         if (sscanf(gui_conf->FetchOpt("decay").c_str(), "%d", &decay) != 1) {
+             fprintf(stderr, "FATAL:  Illegal config file value for decay.\n");
+@@ -636,45 +344,6 @@
+         }
+     }
+ 
+-    // Fork and find the sound options
+-    if (sound) {
+-        if (pipe(soundpair) == -1) {
+-            fprintf(stderr, "WARNING:  Unable to create pipe for audio.  Disabling sound.\n");
+-            sound = 0;
+-        } else {
+-            soundpid = fork();
+-
+-            if (soundpid < 0) {
+-                fprintf(stderr, "WARNING:  Unable to fork for audio.  Disabling sound.\n");
+-                sound = 0;
+-            } else if (soundpid == 0) {
+-                SoundHandler(soundpair, sndplay.c_str(), wav_map);
+-                exit(0);
+-            }
+-
+-            close(soundpair[0]);
+-        }
+-    }
+-
+-    if (speech) {
+-        if (pipe(speechpair) == -1) {
+-            fprintf(stderr, "WARNING:  Unable to create pipe for speech.  Disabling speech.\n");
+-            speech = 0;
+-        } else {
+-            speechpid = fork();
+-
+-            if (speechpid < 0) {
+-                fprintf(stderr, "WARNING:  Unable to fork for speech.  Disabling speech.\n");
+-                speech = 0;
+-            } else if (speechpid == 0) {
+-                SpeechHandler(speechpair, festival);
+-                exit(0);
+-            }
+-
+-            close(speechpair[0]);
+-        }
+-    }
+-
+     if (kismet_serv.Connect(guiport, guihost) < 0) {
+         fprintf(stderr, "FATAL:  Could not connect to %s:%d.\n", guihost, guiport);
+         CatchShutdown(-1);
+@@ -884,53 +553,14 @@
+                     }
+ 
+                     if (pollret != 0) {
+-                        if (pollret == CLIENT_ALERT)
+-                            if (sound == 1)
+-                                sound = PlaySound("alert");
+ 
+                         if (strlen(tcpcli->FetchStatus()) != 0) {
+                             gui->WriteStatus(tcpcli->FetchStatus());
+                             // gui->DrawDisplay();
+                         }
+ 
+-                        // The GPS only gets updated for the primary client
+-                        if (tcpcli == primary_client) {
+-                            if (tcpcli->FetchMode() == 0 && gpsmode != 0) {
+-                                if (sound == 1 && gpsmode != -1)
+-                                    sound = PlaySound("gpslost");
+-                                gpsmode = 0;
+-                            } else if (tcpcli->FetchMode() != 0 && gpsmode == 0) {
+-                                if (sound == 1 && gpsmode != -1)
+-                                    sound = PlaySound("gpslock");
+-                                gpsmode = 1;
+-                            }
+-                        }
+-
+                         if (tcpcli->FetchDeltaNumNetworks() > 0) {
+                             wireless_network *newnet = tcpcli->FetchLastNewNetwork();
+-
+-                            if (sound == 1 && newnet != lastspoken) {
+-                                if (newnet->crypt_set && 
+-                                    wav_map.find("new_wep") != wav_map.end())
+-                                    sound = PlaySound("new_wep");
+-                                else
+-                                    sound = PlaySound("new");
+-                            }
+-
+-                            if (speech == 1 && newnet != lastspoken) {
+-                                string text;
+-
+-                                if (newnet != NULL) {
+-                                    if (newnet->crypt_set)
+-                                        text = ExpandSpeechString(speech_sentence_encrypted, newnet, speech_encoding);
+-                                    else
+-                                        text = ExpandSpeechString(speech_sentence_unencrypted, newnet, speech_encoding);
+-
+-                                    speech = SayText(text.c_str());
+-                                }
+-                            }
+-
+-                            lastspoken = newnet;
+                         }
+ 
+                         num_networks += tcpcli->FetchNumNetworks();
+@@ -938,17 +568,7 @@
+                         num_noise += tcpcli->FetchNumNoise();
+                         num_dropped += tcpcli->FetchNumDropped();
+ 
+-                        if (tcpcli->FetchDeltaNumPackets() != 0) {
+-                            if (time(0) - last_click >= decay && sound == 1) {
+-                                if (tcpcli->FetchDeltaNumPackets() > tcpcli->FetchDeltaNumDropped()) {
+-                                    sound = PlaySound("traffic");
+-                                } else {
+-                                    sound = PlaySound("junktraffic");
+-                                }
+-
+-                                last_click = time(0);
+-                            }
+-                        }
++                        tcpcli->FetchDeltaNumPackets();
+                     }
+                 }
+             } else {
+diff -urN kismet.old/kismet_drone.cc kismet.dev/kismet_drone.cc
+--- kismet.old/kismet_drone.cc	2005-07-25 16:19:44.000000000 +0200
++++ kismet.dev/kismet_drone.cc	2005-08-15 01:04:06.114874928 +0200
+@@ -32,16 +32,11 @@
+ #include "packet.h"
+ 
+ #include "packetsource.h"
+-#include "prism2source.h"
+ #include "pcapsource.h"
+-#include "wtapfilesource.h"
+-#include "wsp100source.h"
+-#include "vihasource.h"
+ #include "dronesource.h"
+ #include "packetsourcetracker.h"
+ #include "kis_packsources.h"
+ 
+-#include "gpsd.h"
+ #include "tcpstreamer.h"
+ #include "configfile.h"
+ 
+@@ -53,10 +48,6 @@
+ 
+ const char *config_base = "kismet_drone.conf";
+ 
+-GPSD *gps = NULL;
+-int gpsmode = 0;
+-int gps_enable = 0;
+-
+ // Timetracker
+ Timetracker timetracker;
+ 
+@@ -81,26 +72,6 @@
+     exit(0);
+ }
+ 
+-int GpsEvent(Timetracker::timer_event *evt, void *parm) {
+-    // The GPS only provides us a new update once per second we might
+-    // as well only update it here once a second
+-    if (gps_enable) {
+-        int gpsret;
+-        gpsret = gps->Scan();
+-        if (gpsret < 0) {
+-            if (!silent)
+-                fprintf(stderr, "GPS error fetching data: %s\n",
+-                        gps->FetchError());
+-
+-            gps_enable = 0;
+-        }
+-
+-    }
+-
+-    // We want to be rescheduled
+-    return 1;
+-}
+-
+ // Handle channel hopping... this is actually really simple.
+ int ChannelHopEvent(Timetracker::timer_event *evt, void *parm) {
+     sourcetracker.AdvanceChannel();
+@@ -148,9 +119,6 @@
+ 
+     TcpStreamer streamer;
+ 
+-    char gpshost[1024];
+-    int gpsport = -1;
+-
+     int channel_hop = -1;
+     int channel_velocity = 1;
+     int channel_dwell = 0;
+@@ -351,46 +319,7 @@
+         exit(1);
+     }
+ 
+-    if (conf->FetchOpt("gps") == "true") {
+-        if (sscanf(conf->FetchOpt("gpshost").c_str(), "%1023[^:]:%d", gpshost, &gpsport) != 2) {
+-            fprintf(stderr, "Invalid GPS host in config (host:port required)\n");
+-            exit(1);
+-        }
+-
+-        gps_enable = 1;
+-    } else {
+-            gps_enable = 0;
+-    }
+-
+-    if (gps_enable == 1) {
+-        // Open the GPS
+-        gps = new GPSD(gpshost, gpsport);
+-
+-        // Lock GPS position
+-        if (conf->FetchOpt("gpsmodelock") == "true") {
+-            fprintf(stderr, "Enabling GPS position lock override (broken GPS unit reports 0 always)\n");
+-            gps->SetOptions(GPSD_OPT_FORCEMODE);
+-        }
+-
+-        if (gps->OpenGPSD() < 0) {
+-            fprintf(stderr, "%s\n", gps->FetchError());
+-
+-            gps_enable = 0;
+-        } else {
+-            fprintf(stderr, "Opened GPS connection to %s port %d\n",
+-                    gpshost, gpsport);
+-
+-        }
+-    }
+-
+-    // Update GPS coordinates and handle signal loss if defined
+-    timetracker.RegisterTimer(SERVER_TIMESLICES_SEC, NULL, 1, &GpsEvent, NULL);
+-
+-	// Add the GPS to the tcpstreamer
+-	streamer.AddGpstracker(gps);
+-
+     // Register the gps and timetracker with the sourcetracker
+-    sourcetracker.AddGpstracker(gps);
+     sourcetracker.AddTimetracker(&timetracker);
+ 
+     // Register the sources
+diff -urN kismet.old/kismet_server.cc kismet.dev/kismet_server.cc
+--- kismet.old/kismet_server.cc	2005-07-25 16:19:44.000000000 +0200
++++ kismet.dev/kismet_server.cc	2005-08-15 01:03:15.103629816 +0200
+@@ -37,29 +37,19 @@
+ #include "packet.h"
+ 
+ #include "packetsource.h"
+-#include "prism2source.h"
+ #include "pcapsource.h"
+-#include "wtapfilesource.h"
+-#include "wsp100source.h"
+-#include "vihasource.h"
+ #include "dronesource.h"
+ #include "packetsourcetracker.h"
+ #include "kis_packsources.h"
+ 
+ #include "dumpfile.h"
+-#include "wtapdump.h"
+ #include "wtaplocaldump.h"
+-#include "airsnortdump.h"
+ #include "fifodump.h"
+-#include "gpsdump.h"
+-
+-#include "gpsd.h"
+ 
+ #include "packetracker.h"
+ #include "timetracker.h"
+ #include "alertracker.h"
+ 
+-#include "speech.h"
+ #include "tcpserver.h"
+ #include "server_globals.h"
+ #include "kismet_server.h"
+@@ -73,13 +62,13 @@
+ 
+ // Some globals for command line options
+ char *configfile = NULL;
+-int no_log = 0, noise_log = 0, data_log = 0, net_log = 0, crypt_log = 0, cisco_log = 0,
+-    gps_log = -1, gps_enable = 1, csv_log = 0, xml_log = 0, ssid_cloak_track = 0, 
+-    ip_track = 0, waypoint = 0, fifo = 0, corrupt_log = 0;
++int no_log = 0, noise_log = 0, data_log = 0, net_log = 0, cisco_log = 0,
++    csv_log = 0, xml_log = 0, ssid_cloak_track = 0, 
++    ip_track = 0, fifo = 0, corrupt_log = 0;
+ string logname, dumplogfile, netlogfile, cryptlogfile, ciscologfile,
+-    gpslogfile, csvlogfile, xmllogfile, ssidtrackfile, configdir, iptrackfile, 
+-    waypointfile, fifofile;
+-FILE *ssid_file = NULL, *ip_file = NULL, *waypoint_file = NULL, *pid_file = NULL;
++    csvlogfile, xmllogfile, ssidtrackfile, configdir, iptrackfile, 
++    fifofile;
++FILE *ssid_file = NULL, *ip_file = NULL, *pid_file = NULL;
+ 
+ DumpFile *dumpfile, *cryptfile;
+ int packnum = 0, localdropnum = 0;
+@@ -89,17 +78,8 @@
+ Alertracker alertracker;
+ Timetracker timetracker;
+ 
+-GPSD *gps = NULL;
+-int gpsmode = 0;
+-GPSDump gpsdump;
+-
+-// Last time we tried to reconnect to the gps
+-time_t last_gpsd_reconnect = 0;
+-int gpsd_reconnect_attempt = 0;
+-
+ FifoDumpFile fifodump;
+ TcpServer ui_server;
+-int sound = -1;
+ packet_info last_info;
+ int decay;
+ channel_power channel_graph[CHANNEL_MAX];
+@@ -113,16 +93,13 @@
+ macmap<wep_key_info *> bssid_wep_map;
+ 
+ // Pipe file descriptor pairs and fd's
+-int soundpair[2];
+-int speechpair[2];
+ int chanpair[2];
+-pid_t soundpid = -1, speechpid = -1, chanpid = -1;
+ 
+ // Past alerts
+ unsigned int max_alerts = 50;
+ 
+ // Reference numbers for all of our builtin protocols
+-int kismet_ref = -1, network_ref = -1, client_ref = -1, gps_ref = -1, 
++int kismet_ref = -1, network_ref = -1, client_ref = -1, 
+     time_ref = -1, error_ref = -1, info_ref = -1, cisco_ref = -1, terminate_ref = -1, 
+     remove_ref = -1, capability_ref = -1, protocols_ref = -1, status_ref = -1, 
+     alert_ref = -1, packet_ref = -1, string_ref = -1, ack_ref = -1, wepkey_ref = -1, 
+@@ -169,24 +146,12 @@
+ const char *logtypes = NULL, *dumptype = NULL;
+ int limit_logs = 0;
+ 
+-char gpshost[1024];
+-int gpsport = -1;
+-
+ string allowed_hosts;
+ string bind_addr;
+ int tcpport = -1;
+ int tcpmax;
+ 
+-//const char *sndplay = NULL;
+-string sndplay;
+-
+-const char *festival = NULL;
+-int speech = -1;
+ int flite = 0;
+-int speech_encoding = 0;
+-string speech_sentence_encrypted, speech_sentence_unencrypted;
+-
+-map<string, string> wav_map;
+ 
+ int beacon_log = 1;
+ int phy_log = 1;
+@@ -336,28 +301,6 @@
+         // delete dumpfile;
+     }
+ 
+-    if (crypt_log) {
+-        cryptfile->CloseDump();
+-
+-        if (cryptfile->FetchDumped() == 0) {
+-            fprintf(stderr, "Didn't see any weak encryption packets, unlinking weak file\n");
+-            unlink(cryptlogfile.c_str());
+-        }
+-
+-        // delete cryptfile;
+-    }
+-
+-    if (gps_log == 1) {
+-        if (gpsdump.CloseDump(1) < 0)
+-            fprintf(stderr, "Didn't log any GPS coordinates, unlinking gps file\n");
+-    }
+-
+-    // Kill our sound players
+-    if (soundpid > 0)
+-        kill(soundpid, 9);
+-    if (speechpid > 0)
+-        kill(speechpid, 9);
+-
+     // Shut down the packet sources
+     sourcetracker.CloseSources();
+ 
+@@ -368,228 +311,11 @@
+     exit(0);
+ }
+ 
+-// Subprocess sound handler
+-void SoundHandler(int *fds, const char *player, map<string, string> soundmap) {
+-    int read_sock = fds[0];
+-    close(fds[1]);
+-
+-    fd_set rset;
+-
+-    char data[1024];
+-
+-    pid_t sndpid = -1;
+-    int harvested = 1;
+-
+-    while (1) {
+-        FD_ZERO(&rset);
+-        FD_SET(read_sock, &rset);
+-        char *end;
+-
+-        memset(data, 0, 1024);
+-
+-        struct timeval tm;
+-        tm.tv_sec = 1;
+-        tm.tv_usec = 0;
+-
+-        if (select(read_sock + 1, &rset, NULL, NULL, &tm) < 0) {
+-            if (errno != EINTR) {
+-                exit(1);
+-            }
+-        }
+-
+-        if (harvested == 0) {
+-            // We consider a wait error to be a sign that the child pid died
+-            // so we flag it as harvested and keep on going
+-            pid_t harvestpid = waitpid(sndpid, NULL, WNOHANG);
+-            if (harvestpid == -1 || harvestpid == sndpid)
+-                harvested = 1;
+-        }
+-
+-        if (FD_ISSET(read_sock, &rset)) {
+-            int ret;
+-            ret = read(read_sock, data, 1024);
+-
+-            // We'll die off if we get a read error, and we'll let kismet on the
+-            // other side detact that it died
+-            if (ret <= 0 && (errno != EAGAIN && errno != EPIPE))
+-                exit(1);
+-
+-            if ((end = strstr(data, "\n")) == NULL)
+-                continue;
+-
+-            end[0] = '\0';
+-        }
+-
+-        if (data[0] == '\0')
+-            continue;
+-
+-
+-        // If we've harvested the process, spawn a new one and watch it
+-        // instead.  Otherwise, we just let go of the data we read
+-        if (harvested == 1) {
+-            // Only take the first line
+-            char *nl;
+-            if ((nl = strchr(data, '\n')) != NULL)
+-                *nl = '\0';
+-
+-            // Make sure it's shell-clean
+-
+-            char snd[1024];
+-
+-            if (soundmap.size() == 0)
+-                snprintf(snd, 1024, "%s", data);
+-            if (soundmap.find(data) != soundmap.end())
+-                snprintf(snd, 1024, "%s", soundmap[data].c_str());
+-            else
+-                continue;
+-
+-            char plr[1024];
+-            snprintf(plr, 1024, "%s", player);
+-
+-            harvested = 0;
+-            if ((sndpid = fork()) == 0) {
+-                // Suppress errors
+-                if (silent) {
+-                    int nulfd = open("/dev/null", O_RDWR);
+-                    dup2(nulfd, 1);
+-                    dup2(nulfd, 2);
+-                }
+-
+-                char * const echoarg[] = { plr, snd, NULL };
+-                execve(echoarg[0], echoarg, NULL);
+-            }
+-        }
+-        data[0] = '\0';
+-    }
+-}
+-
+-// Subprocess speech handler
+-void SpeechHandler(int *fds, const char *player) {
+-    int read_sock = fds[0];
+-    close(fds[1]);
+-
+-    fd_set rset;
+-
+-    char data[1024];
+-
+-    pid_t sndpid = -1;
+-    int harvested = 1;
+-
+-    while (1) {
+-        FD_ZERO(&rset);
+-        FD_SET(read_sock, &rset);
+-        //char *end;
+-
+-        memset(data, 0, 1024);
+-
+-        if (harvested == 0) {
+-            // We consider a wait error to be a sign that the child pid died
+-            // so we flag it as harvested and keep on going
+-            pid_t harvestpid = waitpid(sndpid, NULL, WNOHANG);
+-            if (harvestpid == -1 || harvestpid == sndpid)
+-                harvested = 1;
+-        }
+-
+-        struct timeval tm;
+-        tm.tv_sec = 1;
+-        tm.tv_usec = 0;
+-
+-        if (select(read_sock + 1, &rset, NULL, NULL, &tm) < 0) {
+-            if (errno != EINTR) {
+-                exit(1);
+-            }
+-        }
+-
+-        if (FD_ISSET(read_sock, &rset)) {
+-            int ret;
+-            ret = read(read_sock, data, 1024);
+-
+-            // We'll die off if we get a read error, and we'll let kismet on the
+-            // other side detact that it died
+-            if (ret <= 0 && (errno != EAGAIN && errno != EPIPE))
+-                exit(1);
+-
+-            data[ret] = '\0';
+-        }
+-
+-        if (data[0] == '\0')
+-            continue;
+-
+-        // If we've harvested the process, spawn a new one and watch it
+-        // instead.  Otherwise, we just let go of the data we read
+-        if (harvested == 1) {
+-            harvested = 0;
+-            if ((sndpid = fork()) == 0) {
+-                // Only take the first line
+-                char *nl;
+-                if ((nl = strchr(data, '\n')) != NULL)
+-                    *nl = '\0';
+-
+-                // Make sure it's shell-clean
+-                MungeToShell(data, strlen(data));
+-                char spk_call[1024];
+-                snprintf(spk_call, 1024, "echo \"(%s\\\"%s\\\")\" | %s "
+-						 ">/dev/null 2>/dev/null",
+-						 flite ? "" : "SayText ", data, player);
+-                system(spk_call);
+-
+-                exit(0);
+-            }
+-        }
+-
+-        data[0] = '\0';
+-    }
+-}
+-
+-
+-// Fork and run a system call to play a sound
+-int PlaySound(string in_sound) {
+-
+-    char snd[1024];
+-
+-    snprintf(snd, 1024, "%s\n", in_sound.c_str());
+-
+-    if (write(soundpair[1], snd, strlen(snd)) < 0) {
+-        char status[STATUS_MAX];
+-        if (!silent)
+-            fprintf(stderr, "ERROR:  Write error, closing sound pipe.\n");
+-        snprintf(status, STATUS_MAX, "ERROR:  Write error on sound pipe, closing sound connection");
+-        NetWriteStatus(status);
+-
+-        return 0;
+-    }
+-
+-    return 1;
+-}
+-
+-int SayText(string in_text) {
+-
+-    char snd[1024];
+-
+-    snprintf(snd, 1024, "%s\n", in_text.c_str());
+-    MungeToShell(snd, 1024);
+-
+-    if (write(speechpair[1], snd, strlen(snd)) < 0) {
+-        char status[STATUS_MAX];
+-        if (!silent)
+-            fprintf(stderr, "ERROR:  Write error, closing speech pipe.\n");
+-        snprintf(status, STATUS_MAX, "ERROR:  Write error on speech pipe, closing speech connection");
+-        NetWriteStatus(status);
+-
+-        return 0;
+-    }
+-
+-    return 1;
+-}
+-
+ void KisLocalAlert(const char *in_text) {
+     time_t now = time(0);
+     if (!silent)
+         fprintf(stderr, "ALERT %.24s %s\n", ctime(&now), in_text);
+ 
+-    if (sound == 1)
+-        sound = PlaySound("alert");
+-
+ }
+ 
+ void KisLocalStatus(const char *in_status) {
+@@ -638,37 +364,6 @@
+ 
+     char tmpstr[32];
+ 
+-    GPS_data gdata;
+-
+-    if (gps_enable) {
+-        float lat, lon, alt, spd, hed;
+-        int mode;
+-
+-        gps->FetchLoc(&lat, &lon, &alt, &spd, &hed, &mode);
+-
+-        snprintf(tmpstr, 32, "%f", lat);
+-        gdata.lat = tmpstr;
+-        snprintf(tmpstr, 32, "%f", lon);
+-        gdata.lon = tmpstr;
+-        snprintf(tmpstr, 32, "%f", alt);
+-        gdata.alt = tmpstr;
+-        snprintf(tmpstr, 32, "%f", spd);
+-        gdata.spd = tmpstr;
+-        snprintf(tmpstr, 32, "%f", hed);
+-        gdata.heading = tmpstr;
+-        snprintf(tmpstr, 32, "%d", mode);
+-        gdata.mode = tmpstr;
+-    } else {
+-        gdata.lat = "0.0";
+-        gdata.lon = "0.0";
+-        gdata.alt = "0.0";
+-        gdata.spd = "0.0";
+-        gdata.heading = "0.0";
+-        gdata.mode = "0";
+-    }
+-
+-    ui_server.SendToAll(gps_ref, (void *) &gdata);
+-
+     INFO_data idata;
+     snprintf(tmpstr, 32, "%d", tracker.FetchNumNetworks());
+     idata.networks = tmpstr;
+@@ -789,82 +484,6 @@
+     }
+ }
+ 
+-int GpsEvent(Timetracker::timer_event *evt, void *parm) {
+-    char status[STATUS_MAX];
+-
+-    // The GPS only provides us a new update once per second we might
+-    // as well only update it here once a second
+-
+-    // If we're disconnected, try to reconnect.
+-    if (gpsd_reconnect_attempt > 0) {
+-        // Increment the time between connection attempts
+-        if (last_gpsd_reconnect + ((gpsd_reconnect_attempt - 1) * 2) < time(0)) {
+-            if (gps->OpenGPSD() < 0) {
+-                last_gpsd_reconnect = time(0);
+-
+-                if (gpsd_reconnect_attempt < 20)
+-                    gpsd_reconnect_attempt++;
+-
+-                snprintf(status, STATUS_MAX, "Unable to reconnect to GPSD, trying "
+-                         "again in %d seconds.", ((gpsd_reconnect_attempt - 1) * 2));
+-
+-                if (!silent || NetWriteStatus(status) == 0)
+-                    fprintf(stderr, "WARNING: %s\n", status);
+-
+-                return 1;
+-            } else {
+-                gpsd_reconnect_attempt = 0;
+-
+-                snprintf(status, STATUS_MAX, "Reopened connection to GPSD");
+-                if (!silent || NetWriteStatus(status) == 0)
+-                    fprintf(stderr, "NOTICE: %s\n", status);
+-            }
+-        } else {
+-            // Don't process more if we haven't woken up yet
+-            return 1;
+-        }
+-
+-    }
+-    
+-    if (gps_enable) {
+-        int gpsret;
+-        gpsret = gps->Scan();
+-
+-        if (gpsret < 0) {
+-            snprintf(status, STATUS_MAX, "GPS error requesting data: %s",
+-                     gps->FetchError());
+-
+-            if (!silent || NetWriteStatus(status) == 0)
+-                fprintf(stderr, "WARNING: %s\n", status);
+-
+-            gpsd_reconnect_attempt = 1;
+-        }
+-
+-        if (gpsret == 0 && gpsmode != 0) {
+-            if (!silent || NetWriteStatus("Lost GPS signal.") == 0)
+-                fprintf(stderr, "Lost GPS signal.\n");
+-            if (sound == 1)
+-                sound = PlaySound("gpslost");
+-
+-            gpsmode = 0;
+-        } else if (gpsret != 0 && gpsmode == 0) {
+-            if (!silent || NetWriteStatus("Acquired GPS signal.") == 0)
+-                fprintf(stderr, "Acquired GPS signal.\n");
+-            if (sound == 1)
+-                sound = PlaySound("gpslock");
+-
+-            gpsmode = 1;
+-        }
+-    }
+-
+-    if (gps_log == 1 && gpsmode != 0 && gps != NULL) {
+-        gpsdump.DumpTrack(gps);
+-    }
+-
+-    // We want to be rescheduled
+-    return 1;
+-}
+-
+ // Simple redirect to the network info drawer.  We don't want to change netwriteinfo to a
+ // timer event since we call it un-timed too
+ int NetWriteEvent(Timetracker::timer_event *evt, void *parm) {
+@@ -884,13 +503,6 @@
+     return 1;
+ }
+ 
+-// Write the waypoints for gpsdrive
+-int WaypointSyncEvent(Timetracker::timer_event *evt, void *parm) {
+-    tracker.WriteGpsdriveWaypt(waypoint_file);
+-
+-    return 1;
+-}
+-
+ // Handle tracker maintenance
+ int TrackerTickEvent(Timetracker::timer_event *evt, void *parm) {
+     tracker.Tick();
+@@ -1159,11 +771,10 @@
+            "  -c, --capture-source <src>   Packet capture source line (type,interface,name)\n"
+            "  -C, --enable-capture-sources Comma separated list of named packet sources to use.\n"
+            "  -l, --log-types <types>      Comma separated list of types to log,\n"
+-           "                                (ie, dump,cisco,weak,network,gps)\n"
++           "                                (ie, dump,cisco,network)\n"
+            "  -d, --dump-type <type>       Dumpfile type (wiretap)\n"
+            "  -m, --max-packets <num>      Maximum number of packets before starting new dump\n"
+            "  -q, --quiet                  Don't play sounds\n"
+-           "  -g, --gps <host:port>        GPS server (host:port or off)\n"
+            "  -p, --port <port>            TCPIP server port for GUI connections\n"
+            "  -a, --allowed-hosts <hosts>  Comma separated list of hosts allowed to connect\n"
+            "  -b, --bind-address <address>    Bind to this address. Default INADDR_ANY\n."
+@@ -1288,18 +899,6 @@
+     }
+ 
+ 
+-    if (conf->FetchOpt("waypoints") == "true") {
+-        if(conf->FetchOpt("waypointdata") == "") {
+-            fprintf(stderr, "WARNING:  Waypoint logging requested but no waypoint data file given.\n"
+-                    "Waypoint logging will be disabled.\n");
+-            waypoint = 0;
+-        } else {
+-            waypointfile = conf->ExpandLogPath(conf->FetchOpt("waypointdata"), "", "", 0, 1);
+-            waypoint = 1;
+-        }
+-
+-    }
+-
+     if (conf->FetchOpt("metric") == "true") {
+         fprintf(stderr, "Using metric measurements.\n");
+         metric = 1;
+@@ -1379,16 +971,6 @@
+ 
+         }
+ 
+-        if (strstr(logtypes, "weak")) {
+-            crypt_log = 1;
+-
+-            if (conf->FetchOpt("logtemplate") == "") {
+-                fprintf(stderr, "FATAL:  Logging (weak packets) enabled but no logtemplate given in config.\n");
+-                ErrorShutdown();
+-            }
+-
+-        }
+-
+         if (strstr(logtypes, "csv")) {
+             csv_log = 1;
+ 
+@@ -1418,25 +1000,6 @@
+ 
+         }
+ 
+-        if (strstr(logtypes, "gps")) {
+-            if (gps_log == 0) {
+-                fprintf(stderr, "WARNING:  Disabling GPS logging.\n");
+-            } else {
+-                gps_log = 1;
+-
+-                if (conf->FetchOpt("logtemplate") == "") {
+-                    fprintf(stderr, "FATAL:  Logging (gps coordinates) enabled but no logtemplate given in config.\n");
+-                    ErrorShutdown();
+-                }
+-            }
+-
+-        }
+-
+-        if (gps_log == 1 && !net_log) {
+-            fprintf(stderr, "WARNING:  Logging (gps coordinates) enabled but XML logging (networks) was not.\n"
+-                    "It will be enabled now.\n");
+-            xml_log = 1;
+-        }
+     }
+ 
+     if (conf->FetchOpt("decay") != "") {
+@@ -1557,72 +1120,6 @@
+         legal_ipblock_vec.push_back(ipb);
+     }
+ 
+-    // Process sound stuff
+-    if (conf->FetchOpt("sound") == "true" && sound == -1) {
+-        if (conf->FetchOpt("soundplay") != "") {
+-            sndplay = conf->FetchOpt("soundplay");
+-
+-            if (conf->FetchOpt("soundopts") != "")
+-                sndplay += " " + conf->FetchOpt("soundopts");
+-
+-            sound = 1;
+-
+-            if (conf->FetchOpt("sound_new") != "")
+-                wav_map["new"] = conf->FetchOpt("sound_new");
+-            if (conf->FetchOpt("sound_new_wep") != "")
+-                wav_map["new_wep"] = conf->FetchOpt("sound_new_wep");
+-            if (conf->FetchOpt("sound_traffic") != "")
+-                wav_map["traffic"] = conf->FetchOpt("sound_traffic");
+-            if (conf->FetchOpt("sound_junktraffic") != "")
+-                wav_map["junktraffic"] = conf->FetchOpt("sound_traffic");
+-            if (conf->FetchOpt("sound_gpslock") != "")
+-                wav_map["gpslock"] = conf->FetchOpt("sound_gpslock");
+-            if (conf->FetchOpt("sound_gpslost") != "")
+-                wav_map["gpslost"] = conf->FetchOpt("sound_gpslost");
+-            if (conf->FetchOpt("sound_alert") != "")
+-                wav_map["alert"] = conf->FetchOpt("sound_alert");
+-
+-        } else {
+-            fprintf(stderr, "ERROR:  Sound alerts enabled but no sound playing binary specified.\n");
+-            sound = 0;
+-        }
+-    } else if (sound == -1)
+-        sound = 0;
+-
+-    /* Added by Shaw Innes 17/2/02 */
+-    /* Modified by Andrew Etter 15/9/02 */
+-    if (conf->FetchOpt("speech") == "true" && speech == -1) {
+-        if (conf->FetchOpt("festival") != "") {
+-            festival = strdup(conf->FetchOpt("festival").c_str());
+-            speech = 1;
+-		
+-			if (conf->FetchOpt("flite") == "true")
+-				flite = 1;
+-
+-            string speechtype = conf->FetchOpt("speech_type");
+-
+-            if (!strcasecmp(speechtype.c_str(), "nato"))
+-                speech_encoding = SPEECH_ENCODING_NATO;
+-            else if (!strcasecmp(speechtype.c_str(), "spell"))
+-                speech_encoding = SPEECH_ENCODING_SPELL;
+-            else
+-                speech_encoding = SPEECH_ENCODING_NORMAL;
+-
+-            // Make sure we have encrypted text lines
+-            if (conf->FetchOpt("speech_encrypted") == "" || conf->FetchOpt("speech_unencrypted") == "") {
+-                fprintf(stderr, "ERROR:  Speech request but speech_encrypted or speech_unencrypted line missing.\n");
+-                speech = 0;
+-            }
+-
+-            speech_sentence_encrypted = conf->FetchOpt("speech_encrypted");
+-            speech_sentence_unencrypted = conf->FetchOpt("speech_unencrypted");
+-        } else {
+-            fprintf(stderr, "ERROR: Speech alerts enabled but no path to festival has been specified.\n");
+-            speech = 0;
+-        }
+-    } else if (speech == -1)
+-        speech = 0;
+-
+     if (conf->FetchOpt("writeinterval") != "") {
+         if (sscanf(conf->FetchOpt("writeinterval").c_str(), "%d", &datainterval) != 1) {
+             fprintf(stderr, "FATAL:  Illegal config file value for data interval.\n");
+@@ -1642,45 +1139,6 @@
+         fprintf(stderr, "WARNING:  No client_manuf file specified.  Client manufacturers will not be detected.\n");
+     }
+ 
+-    // Fork and find the sound options
+-    if (sound) {
+-        if (pipe(soundpair) == -1) {
+-            fprintf(stderr, "WARNING:  Unable to create pipe for audio.  Disabling sound.\n");
+-            sound = 0;
+-        } else {
+-            soundpid = fork();
+-
+-            if (soundpid < 0) {
+-                fprintf(stderr, "WARNING:  Unable to fork for audio.  Disabling sound.\n");
+-                sound = 0;
+-            } else if (soundpid == 0) {
+-                SoundHandler(soundpair, sndplay.c_str(), wav_map);
+-                exit(0);
+-            }
+-
+-            close(soundpair[0]);
+-        }
+-    }
+-
+-    if (speech) {
+-        if (pipe(speechpair) == -1) {
+-            fprintf(stderr, "WARNING:  Unable to create pipe for speech.  Disabling speech.\n");
+-            speech = 0;
+-        } else {
+-            speechpid = fork();
+-
+-            if (speechpid < 0) {
+-                fprintf(stderr, "WARNING:  Unable to fork for speech.  Disabling speech.\n");
+-                speech = 0;
+-            } else if (speechpid == 0) {
+-                SpeechHandler(speechpair, festival);
+-                exit(0);
+-            }
+-
+-            close(speechpair[0]);
+-        }
+-    }
+-
+     // Grab the filtering
+     string filter_bit;
+ 
+@@ -1706,7 +1164,7 @@
+     }
+ 
+     if ((filter_bit = conf->FetchOpt("filter_export")) != "") {
+-        fprintf(stderr, "Enabling filtering on exported (csv, xml, network, gps) files.\n");
++        fprintf(stderr, "Enabling filtering on exported (csv, xml, network) files.\n");
+         filter_export = 1;
+         if (ConfigFile::ParseFilterLine(filter_bit, &filter_export_bssid, &filter_export_source,
+                                         &filter_export_dest, &filter_export_bssid_invert,
+@@ -1812,14 +1270,6 @@
+ 
+     }
+ 
+-    if (waypoint) {
+-        if ((waypoint_file = fopen(waypointfile.c_str(), "a")) == NULL) {
+-            fprintf(stderr, "WARNING:  Could not open waypoint file '%s' for writing: %s\n",
+-                    waypointfile.c_str(), strerror(errno));
+-            waypoint = 0;
+-        }
+-    }
+-
+     // Create all the logs and title/number them appropriately
+     // We need to save this for after we toast the conf record
+     int logfile_matched = 0;
+@@ -1839,13 +1289,6 @@
+                 continue;
+         }
+ 
+-        if (crypt_log) {
+-            cryptlogfile = conf->ExpandLogPath(conf->FetchOpt("logtemplate"), logname, "weak", run_num);
+-
+-            if (cryptlogfile == "")
+-                continue;
+-        }
+-
+         if (csv_log) {
+             csvlogfile = conf->ExpandLogPath(conf->FetchOpt("logtemplate"), logname, "csv", run_num);
+ 
+@@ -1867,13 +1310,6 @@
+                 continue;
+         }
+ 
+-        if (gps_log == 1) {
+-            gpslogfile = conf->ExpandLogPath(conf->FetchOpt("logtemplate"), logname, "gps", run_num);
+-
+-            if (gpslogfile == "")
+-                continue;
+-        }
+-
+         // if we made it this far we're cool -- all the logfiles we're writing to matched
+         // this number
+         logfile_matched = 1;
+@@ -1896,15 +1332,9 @@
+     if (xml_log)
+         fprintf(stderr, "Logging networks in XML format to %s\n", xmllogfile.c_str());
+ 
+-    if (crypt_log)
+-        fprintf(stderr, "Logging cryptographically weak packets to %s\n", cryptlogfile.c_str());
+-
+     if (cisco_log)
+         fprintf(stderr, "Logging cisco product information to %s\n", ciscologfile.c_str());
+ 
+-    if (gps_log == 1)
+-        fprintf(stderr, "Logging gps coordinates to %s\n", gpslogfile.c_str());
+-
+     if (data_log)
+         fprintf(stderr, "Logging data to %s\n", dumplogfile.c_str());
+ 
+@@ -2051,7 +1481,6 @@
+         { "dump-type", required_argument, 0, 'd' },
+         { "max-packets", required_argument, 0, 'm' },
+         { "quiet", no_argument, 0, 'q' },
+-        { "gps", required_argument, 0, 'g' },
+         { "port", required_argument, 0, 'p' },
+         { "allowed-hosts", required_argument, 0, 'a' },
+         { "bind-address", required_argument, 0, 'b'},
+@@ -2132,18 +1561,6 @@
+                 Usage(argv[0]);
+             }
+             break;
+-        case 'g':
+-            // GPS
+-            if (strcmp(optarg, "off") == 0) {
+-                gps_enable = 0;
+-            }
+-            else if (sscanf(optarg, "%1023[^:]:%d", gpshost, &gpsport) < 2) {
+-                fprintf(stderr, "Invalid GPS host '%s' (host:port or off required)\n",
+-                       optarg);
+-                gps_enable = 1;
+-                Usage(argv[0]);
+-            }
+-            break;
+         case 'p':
+             // Port
+             if (sscanf(optarg, "%d", &tcpport) != 1) {
+@@ -2165,7 +1582,6 @@
+             break;
+         case 'q':
+             // Quiet
+-            sound = 0;
+             break;
+         case 'v':
+             // version
+@@ -2319,39 +1735,7 @@
+     // And we're done
+     fclose(pid_file);
+             
+-
+-    // Set up the GPS object to give to the children
+-    if (gpsport == -1 && gps_enable) {
+-        if (conf->FetchOpt("gps") == "true") {
+-            if (sscanf(conf->FetchOpt("gpshost").c_str(), "%1023[^:]:%d", gpshost, 
+-                       &gpsport) != 2) {
+-                fprintf(stderr, "Invalid GPS host in config (host:port required)\n");
+-                exit(1);
+-            }
+-
+-            gps_enable = 1;
+-        } else {
+-            gps_enable = 0;
+-            gps_log = 0;
+-        }
+-    }
+-
+-    if (gps_enable == 1) {
+-        gps = new GPSD(gpshost, gpsport);
+-
+-        // Lock GPS position
+-        if (conf->FetchOpt("gpsmodelock") == "true") {
+-            fprintf(stderr, "Enabling GPS position lock override (broken GPS unit "
+-                    "reports 0 always)\n");
+-            gps->SetOptions(GPSD_OPT_FORCEMODE);
+-        }
+-
+-    } else {
+-        gps_log = 0;
+-    }
+-
+     // Register the gps and timetracker with the sourcetracker
+-    sourcetracker.AddGpstracker(gps);
+     sourcetracker.AddTimetracker(&timetracker);
+ 
+     // Handle errors here maybe in the future
+@@ -2518,13 +1902,6 @@
+         fprintf(stderr, "Dump file format: %s\n", dumpfile->FetchType());
+     }
+ 
+-    if (gps_enable && gps_log == 1) {
+-        if (gpsdump.OpenDump(gpslogfile.c_str(), xmllogfile.c_str()) < 0) {
+-            fprintf(stderr, "FATAL: GPS dump error: %s\n", gpsdump.FetchError());
+-            ErrorShutdown();
+-        }
+-    }
+-
+     // Open our files first to make sure we can, we'll unlink the empties later.
+     FILE *testfile = NULL;
+     if (net_log) {
+@@ -2567,18 +1944,6 @@
+         fclose(testfile);
+     }
+ 
+-    // Crypt log stays open like the dump log for continual writing
+-    if (crypt_log) {
+-        cryptfile = new AirsnortDumpFile;
+-
+-        if (cryptfile->OpenDump(cryptlogfile.c_str()) < 0) {
+-            fprintf(stderr, "FATAL: %s\n", cryptfile->FetchError());
+-            ErrorShutdown();
+-        }
+-
+-        fprintf(stderr, "Crypt file format: %s\n", cryptfile->FetchType());
+-
+-    }
+ 
+     snprintf(status, STATUS_MAX, "Kismet %s.%s.%s (%s)",
+              VERSION_MAJOR, VERSION_MINOR, VERSION_TINY, servername);
+@@ -2595,15 +1960,13 @@
+     }
+     */
+ 
+-    if (data_log || net_log || crypt_log) {
+-        snprintf(status, STATUS_MAX, "Logging%s%s%s%s%s%s%s",
++    if (data_log || net_log) {
++        snprintf(status, STATUS_MAX, "Logging%s%s%s%s%s",
+                  data_log ? " data" : "" ,
+                  net_log ? " networks" : "" ,
+                  csv_log ? " CSV" : "" ,
+                  xml_log ? " XML" : "" ,
+-                 crypt_log ? " weak" : "",
+-                 cisco_log ? " cisco" : "",
+-                 gps_log == 1 ? " gps" : "");
++                 cisco_log ? " cisco" : "");
+         fprintf(stderr, "%s\n", status);
+     } else if (no_log) {
+         snprintf(status, STATUS_MAX, "Not logging any data.");
+@@ -2621,23 +1984,6 @@
+         }
+     }
+ 
+-    if (gps_enable) {
+-        // Open the GPS
+-        if (gps->OpenGPSD() < 0) {
+-            fprintf(stderr, "%s\n", gps->FetchError());
+-
+-            gps_enable = 0;
+-            gps_log = 0;
+-        } else {
+-            fprintf(stderr, "Opened GPS connection to %s port %d\n",
+-                    gpshost, gpsport);
+-
+-            gpsmode = gps->FetchMode();
+-
+-            last_gpsd_reconnect = time(0);
+-        }
+-    }
+-
+     fprintf(stderr, "Listening on port %d.\n", tcpport);
+     for (unsigned int ipvi = 0; ipvi < legal_ipblock_vec.size(); ipvi++) {
+         char *netaddr = strdup(inet_ntoa(legal_ipblock_vec[ipvi]->network));
+@@ -2678,8 +2024,6 @@
+                                              &Protocol_NETWORK, &ProtocolNetworkEnable);
+     client_ref = ui_server.RegisterProtocol("CLIENT", 0, CLIENT_fields_text,
+                                             &Protocol_CLIENT, &ProtocolClientEnable);
+-    gps_ref = ui_server.RegisterProtocol("GPS", 0, GPS_fields_text,
+-                                         &Protocol_GPS, NULL);
+     info_ref = ui_server.RegisterProtocol("INFO", 0, INFO_fields_text,
+                                           &Protocol_INFO, NULL);
+     remove_ref = ui_server.RegisterProtocol("REMOVE", 0, REMOVE_fields_text,
+@@ -2734,14 +2078,9 @@
+     // Write network info and tick the tracker once per second
+     timetracker.RegisterTimer(SERVER_TIMESLICES_SEC, NULL, 1, &NetWriteEvent, NULL);
+     timetracker.RegisterTimer(SERVER_TIMESLICES_SEC, NULL, 1, &TrackerTickEvent, NULL);
+-    // Update GPS coordinates and handle signal loss if defined
+-    timetracker.RegisterTimer(SERVER_TIMESLICES_SEC, NULL, 1, &GpsEvent, NULL);
+     // Sync the data files if requested
+     if (datainterval > 0 && no_log == 0)
+         timetracker.RegisterTimer(datainterval * SERVER_TIMESLICES_SEC, NULL, 1, &ExportSyncEvent, NULL);
+-    // Write waypoints if requested
+-    if (waypoint)
+-        timetracker.RegisterTimer(decay * SERVER_TIMESLICES_SEC, NULL, 1, &WaypointSyncEvent, NULL);
+     // Channel hop if requested
+     if (channel_hop) {
+         if (channel_dwell)
+@@ -2765,7 +2104,6 @@
+     snprintf(status, 1024, "%s", TIMESTAMP);
+     kdata.timestamp = status;
+ 
+-    time_t last_click = 0;
+     int num_networks = 0, num_packets = 0, num_noise = 0, num_dropped = 0;
+ 
+ 
+@@ -2914,54 +2252,12 @@
+ 
+                     }
+ 
+-                    if (gps_log == 1 && info.type != packet_noise && 
+-                        info.type != packet_unknown && info.type != packet_phy && 
+-                        info.corrupt == 0) {
+-                        if (gpsdump.DumpPacket(&info) < 0) {
+-                            snprintf(status, STATUS_MAX, "%s", gpsdump.FetchError());
+-                            if (!silent || NetWriteStatus(status) == 0)
+-                                fprintf(stderr, "%s\n", status);
+-                        }
+-                    }
+-
+                     // tracker.ProcessPacket(info);
+                     tracker.ProcessPacket(&packet, &info, &bssid_wep_map, 
+ 										  wep_identity);
+-
+-                    if (tracker.FetchNumNetworks() > num_networks) {
+-                        if (sound == 1)
+-                            if (info.crypt_set && 
+-								wav_map.find("new_wep") != wav_map.end())
+-                                sound = PlaySound("new_wep");
+-                            else
+-                                sound = PlaySound("new");
+-                        if (speech == 1) {
+-                            string text;
+-
+-                            if (info.crypt_set)
+-                                text = ExpandSpeechString(speech_sentence_encrypted, &info, 
+-                                                          speech_encoding);
+-                            else
+-                                text = ExpandSpeechString(speech_sentence_unencrypted, 
+-                                                          &info, speech_encoding);
+-
+-                            speech = SayText(MungeToShell(text).c_str());
+-                        }
+-                    }
+                     num_networks = tracker.FetchNumNetworks();
+ 
+                     if (tracker.FetchNumPackets() != num_packets) {
+-                        if (cur_time - last_click >= decay && sound == 1) {
+-                            if (tracker.FetchNumPackets() - num_packets >
+-                                tracker.FetchNumDropped() + localdropnum - num_dropped) {
+-                                sound = PlaySound("traffic");
+-                            } else {
+-                                sound = PlaySound("junktraffic");
+-                            }
+-
+-                            last_click = cur_time;
+-                        }
+-
+                         num_packets = tracker.FetchNumPackets();
+                         num_noise = tracker.FetchNumNoise();
+                         num_dropped = tracker.FetchNumDropped() + localdropnum;
+@@ -3070,10 +2366,6 @@
+                         }
+                     }
+ 
+-                    if (crypt_log) {
+-                        cryptfile->DumpPacket(&info, &packet);
+-                    }
+-
+                 } else if (ret < 0) {
+                     // Fail on error
+                     snprintf(status, STATUS_MAX, "FATAL: %s",
+diff -urN kismet.old/kismet_server.h kismet.dev/kismet_server.h
+--- kismet.old/kismet_server.h	2005-07-25 16:19:44.000000000 +0200
++++ kismet.dev/kismet_server.h	2005-08-15 00:29:19.088681928 +0200
+@@ -33,10 +33,6 @@
+ void handle_command(TcpServer *tcps, client_command *cc);
+ int NetWriteStatus(const char *in_status);
+ void NetWriteInfo();
+-int SayText(string in_text);
+-int PlaySound(string in_sound);
+-void SpeechHandler(int *fds, const char *player);
+-void SoundHandler(int *fds, const char *player, map<string, string> soundmap);
+ void ProtocolAlertEnable(int in_fd);
+ void ProtocolNetworkEnable(int in_fd);
+ void ProtocolClientEnable(int in_fd);
+diff -urN kismet.old/packet.cc kismet.dev/packet.cc
+--- kismet.old/packet.cc	2005-07-25 16:19:44.000000000 +0200
++++ kismet.dev/packet.cc	2005-08-15 00:30:26.190480904 +0200
+@@ -257,14 +257,6 @@
+     ret_packinfo->encoding = packet->encoding;
+     ret_packinfo->datarate = packet->datarate;
+ 
+-    // Assign the location info
+-    ret_packinfo->gps_lat = packet->gps_lat;
+-    ret_packinfo->gps_lon = packet->gps_lon;
+-    ret_packinfo->gps_alt = packet->gps_alt;
+-    ret_packinfo->gps_spd = packet->gps_spd;
+-    ret_packinfo->gps_heading = packet->gps_heading;
+-    ret_packinfo->gps_fix = packet->gps_fix;
+-
+     // Assign a hardware channel if we're on an 802.11a carrier since the beacon doesn't
+     // carry that tag
+     if (packet->carrier == carrier_80211a)
+diff -urN kismet.old/packetracker.cc kismet.dev/packetracker.cc
+--- kismet.old/packetracker.cc	2005-07-25 16:19:44.000000000 +0200
++++ kismet.dev/packetracker.cc	2005-08-15 00:58:01.441313736 +0200
+@@ -255,19 +255,6 @@
+ 
+     client->metric = net->metric;
+ 
+-    if (info->gps_fix >= 2) {
+-        client->gps_fixed = info->gps_fix;
+-        client->min_lat = client->max_lat = info->gps_lat;
+-        client->min_lon = client->max_lon = info->gps_lon;
+-        client->min_alt = client->max_alt = info->gps_alt;
+-        client->min_spd = client->max_spd = info->gps_spd;
+-
+-        client->aggregate_lat = info->gps_lat;
+-        client->aggregate_lon = info->gps_lon;
+-        client->aggregate_alt = info->gps_alt;
+-        client->aggregate_points = 1;
+-    }
+-
+     // Classify the client.  We'll call no-distrib packets (lucent)
+     // inter-distrib clients since it's not an end-user bridge into the
+     // network, it's a lucent AP talking to another one.
+@@ -410,19 +397,6 @@
+             KisLocalStatus(status);
+         }
+ 
+-        if (info->gps_fix >= 2) {
+-            net->gps_fixed = info->gps_fix;
+-            net->min_lat = net->max_lat = info->gps_lat;
+-            net->min_lon = net->max_lon = info->gps_lon;
+-            net->min_alt = net->max_alt = info->gps_alt;
+-            net->min_spd = net->max_spd = info->gps_spd;
+-
+-            net->aggregate_lat = info->gps_lat;
+-            net->aggregate_lon = info->gps_lon;
+-            net->aggregate_alt = info->gps_alt;
+-            net->aggregate_points = 1;
+-        }
+-
+         // Find out what we can from what we know now...
+         if (net->type != network_adhoc && net->type != network_probe) {
+             net->manuf_ref = MatchBestManuf(ap_manuf_map, net->bssid, net->ssid, 
+@@ -463,11 +437,6 @@
+ 
+         if (info->signal > net->best_signal || net->best_signal == 0) {
+             net->best_signal = info->signal;
+-            if (info->gps_fix >= 2) {
+-                net->best_lat = info->gps_lat;
+-                net->best_lon = info->gps_lon;
+-                net->best_alt = info->gps_alt;
+-            }
+         }
+ 
+         net->noise = info->noise;
+@@ -477,41 +446,6 @@
+             net->best_noise = info->noise;
+     }
+ 
+-    if (info->gps_fix >= 2) {
+-        // Don't aggregate slow-moving packets to prevent average "pulling"..
+-        if (info->gps_spd <= 0.3) {
+-            net->aggregate_lat += info->gps_lat;
+-            net->aggregate_lon += info->gps_lon;
+-            net->aggregate_alt += info->gps_alt;
+-            net->aggregate_points += 1;
+-        }
+-
+-        net->gps_fixed = info->gps_fix;
+-
+-        if (info->gps_lat < net->min_lat || net->min_lat == -90)
+-            net->min_lat = info->gps_lat;
+-        if (info->gps_lat > net->max_lat || net->max_lat == 90)
+-            net->max_lat = info->gps_lat;
+-
+-        if (info->gps_lon < net->min_lon || net->min_lon == -180)
+-            net->min_lon = info->gps_lon;
+-        if (info->gps_lon > net->max_lon || net->max_lon == 180)
+-            net->max_lon = info->gps_lon;
+-
+-        if (info->gps_alt < net->min_alt || net->min_alt == 0)
+-            net->min_alt = info->gps_alt;
+-        if (info->gps_alt > net->max_alt || net->max_alt == 0)
+-            net->max_alt = info->gps_alt;
+-
+-        if (info->gps_spd < net->min_spd || net->min_spd == 0)
+-            net->min_spd = info->gps_spd;
+-        if (info->gps_spd > net->max_spd || net->max_spd == 0)
+-            net->max_spd = info->gps_spd;
+-
+-    } else {
+-        net->gps_fixed = 0;
+-    }
+-
+     // Handle the IV sets.  4-byte compare IV is fine
+     if (info->encrypted) {
+         map<uint32_t, int>::iterator ivitr = net->iv_map.find(info->ivset);
+@@ -834,50 +768,11 @@
+         }
+     }
+ 
+-    if (info->gps_fix >= 2) {
+-        if (info->gps_spd <= 0.3) {
+-            client->aggregate_lat += info->gps_lat;
+-            client->aggregate_lon += info->gps_lon;
+-            client->aggregate_alt += info->gps_alt;
+-            client->aggregate_points += 1;
+-        }
+-
+-        client->gps_fixed = info->gps_fix;
+-
+-        if (info->gps_lat < client->min_lat || client->min_lat == -90)
+-            client->min_lat = info->gps_lat;
+-        if (info->gps_lat > client->max_lat || client->max_lat == 90)
+-            client->max_lat = info->gps_lat;
+-
+-        if (info->gps_lon < client->min_lon || client->min_lon == -180)
+-            client->min_lon = info->gps_lon;
+-        if (info->gps_lon > client->max_lon == 180)
+-            client->max_lon = info->gps_lon;
+-
+-        if (info->gps_alt < client->min_alt || client->min_alt == 0)
+-            client->min_alt = info->gps_alt;
+-        if (info->gps_alt > client->max_alt || client->min_alt == 0)
+-            client->max_alt = info->gps_alt;
+-
+-        if (info->gps_spd < client->min_spd || client->min_spd == 0)
+-            client->min_spd = info->gps_spd;
+-        if (info->gps_spd > client->max_spd || client->max_spd == 0)
+-            client->max_spd = info->gps_spd;
+-
+-    } else {
+-        client->gps_fixed = 0;
+-    }
+-
+     if (info->signal >= 0) {
+         client->signal = info->signal;
+ 
+         if (info->signal > client->best_signal || client->best_signal == 0) {
+             client->best_signal = info->signal;
+-            if (info->gps_fix >= 2) {
+-                client->best_lat = info->gps_lat;
+-                client->best_lon = info->gps_lon;
+-                client->best_alt = info->gps_alt;
+-            }
+         }
+ 
+         net->noise = info->noise;
+@@ -1416,17 +1311,6 @@
+                 (net->llc_packets + net->data_packets),
+                 ft, lt);
+ 
+-        if (net->gps_fixed != -1)
+-            fprintf(netfile,
+-                    "    Min Loc: Lat %f Lon %f Alt %f Spd %f\n"
+-                    "    Max Loc: Lat %f Lon %f Alt %f Spd %f\n",
+-                    net->min_lat, net->min_lon,
+-                    metric ? net->min_alt / 3.3 : net->min_alt,
+-                    metric ? net->min_spd * 1.6093 : net->min_spd,
+-                    net->max_lat, net->max_lon,
+-                    metric ? net->max_alt / 3.3 : net->max_alt,
+-                    metric ? net->max_spd * 1.6093 : net->max_spd);
+-
+         if (net->ipdata.atype == address_dhcp)
+             fprintf(netfile, "    Address found via DHCP %d.%d.%d.%d \n",
+                     net->ipdata.range_ip[0], net->ipdata.range_ip[1],
+@@ -1634,8 +1518,7 @@
+ 
+     fprintf(netfile, "Network;NetType;ESSID;BSSID;Info;Channel;Cloaked;Encryption;Decrypted;MaxRate;MaxSeenRate;Beacon;"
+             "LLC;Data;Crypt;Weak;Total;Carrier;Encoding;FirstTime;LastTime;BestQuality;BestSignal;BestNoise;"
+-            "GPSMinLat;GPSMinLon;GPSMinAlt;GPSMinSpd;GPSMaxLat;GPSMaxLon;GPSMaxAlt;GPSMaxSpd;"
+-            "GPSBestLat;GPSBestLon;GPSBestAlt;DataSize;IPType;IP;\n\r");
++            "DataSize;IPType;IP;\n\r");
+ 
+     stable_sort(network_list.begin(), network_list.end(), SortFirstTimeLT());
+ 
+@@ -1819,9 +1702,6 @@
+                 "%d;%d;%d;%d;%d;"
+                 "%s;%s;%s;%s;"
+                 "%d;%d;%d;"
+-                "%f;%f;%f;%f;"
+-                "%f;%f;%f;%f;"
+-                "%f;%f;%f;"
+                 "%ld;%s;"
+                 "%hu.%hu.%hu.%hu;\n\r",
+                 netnum, type, SanitizeCSV(net->ssid).c_str(), 
+@@ -1835,9 +1715,6 @@
+                 (net->llc_packets + net->data_packets),
+                 carrier.c_str(), encoding.c_str(), ft, lt,
+                 net->best_quality, net->best_signal, net->best_noise,
+-                net->min_lat, net->min_lon, net->min_alt, net->min_spd,
+-                net->max_lat, net->max_lon, net->max_alt, net->max_spd,
+-                net->best_lat, net->best_lon, net->best_alt,
+                 net->datasize, iptype.c_str(),
+                 net->ipdata.range_ip[0], net->ipdata.range_ip[1], 
+ 				net->ipdata.range_ip[2], net->ipdata.range_ip[3]);
+@@ -2056,23 +1933,6 @@
+ 
+         fprintf(netfile, "    <datasize>%ld</datasize>\n", net->datasize);
+ 
+-        if (net->gps_fixed != -1) {
+-            fprintf(netfile, "    <gps-info unit=\"%s\">\n", metric ? "metric" : "english");
+-            fprintf(netfile, "      <min-lat>%f</min-lat>\n", net->min_lat);
+-            fprintf(netfile, "      <min-lon>%f</min-lon>\n", net->min_lon);
+-            fprintf(netfile, "      <min-alt>%f</min-alt>\n",
+-                    metric ? net->min_alt / 3.3 : net->min_alt);
+-            fprintf(netfile, "      <min-spd>%f</min-spd>\n",
+-                    metric ? net->min_spd * 1.6093 : net->min_spd);
+-            fprintf(netfile, "      <max-lat>%f</max-lat>\n", net->max_lat);
+-            fprintf(netfile, "      <max-lon>%f</max-lon>\n", net->max_lon);
+-            fprintf(netfile, "      <max-alt>%f</max-alt>\n",
+-                    metric ? net->max_alt / 3.3 : net->max_alt);
+-            fprintf(netfile, "      <max-spd>%f</max-spd>\n",
+-                    metric ? net->max_spd * 1.6093 : net->max_spd);
+-            fprintf(netfile, "    </gps-info>\n");
+-        }
+-
+         if (net->ipdata.atype > address_factory) {
+             char *addrtype;
+             switch (net->ipdata.atype) {
+@@ -2171,23 +2031,6 @@
+ 		if (cli->crypt_set & crypt_pptp)
+ 			fprintf(netfile, "      <client-encryption>PPTP</client-encryption>\n");
+ 
+-            if (cli->gps_fixed != -1) {
+-                fprintf(netfile, "      <client-gps-info unit=\"%s\">\n", metric ? "metric" : "english");
+-                fprintf(netfile, "        <client-min-lat>%f</client-min-lat>\n", cli->min_lat);
+-                fprintf(netfile, "        <client-min-lon>%f</client-min-lon>\n", cli->min_lon);
+-                fprintf(netfile, "        <client-min-alt>%f</client-min-alt>\n",
+-                        metric ? cli->min_alt / 3.3 : cli->min_alt);
+-                fprintf(netfile, "        <client-min-spd>%f</client-min-spd>\n",
+-                        metric ? cli->min_spd * 1.6093 : cli->min_spd);
+-                fprintf(netfile, "        <client-max-lat>%f</client-max-lat>\n", cli->max_lat);
+-                fprintf(netfile, "        <client-max-lon>%f</client-max-lon>\n", cli->max_lon);
+-                fprintf(netfile, "        <client-max-alt>%f</client-max-alt>\n",
+-                        metric ? cli->max_alt / 3.3 : cli->max_alt);
+-                fprintf(netfile, "        <client-max-spd>%f</client-max-spd>\n",
+-                        metric ? cli->max_spd * 1.6093 : cli->max_spd);
+-                fprintf(netfile, "      </client-gps-info>\n");
+-            }
+-
+             fprintf(netfile, "      <client-datasize>%ld</client-datasize>\n", cli->datasize);
+             fprintf(netfile, "      <client-maxrate>%2.1f</client-maxrate>\n", cli->maxrate);
+             fprintf(netfile, "      <client-maxseenrate>%ld</client-maxseenrate>\n", (long) cli->maxseenrate * 100);
+@@ -2437,23 +2280,3 @@
+ 
+ }
+ 
+-// Write a gpsdrive compatable waypoint file
+-int Packetracker::WriteGpsdriveWaypt(FILE *in_file) {
+-    fseek(in_file, 0L, SEEK_SET);
+-    ftruncate(fileno(in_file), 0);
+-
+-    // Convert the map to a vector and sort it
+-    for (map<mac_addr, wireless_network *>::const_iterator i = bssid_map.begin();
+-         i != bssid_map.end(); ++i) {
+-        wireless_network *net = i->second;
+-
+-        float lat, lon;
+-        lat = (net->min_lat + net->max_lat) / 2;
+-        lon = (net->min_lon + net->max_lon) / 2;
+-        fprintf(in_file, "%s\t%f  %f\n", net->bssid.Mac2String().c_str(), lat, lon);
+-    }
+-
+-    fflush(in_file);
+-
+-    return 1;
+-}
+diff -urN kismet.old/packetracker.h kismet.dev/packetracker.h
+--- kismet.old/packetracker.h	2005-07-25 16:19:44.000000000 +0200
++++ kismet.dev/packetracker.h	2005-08-15 00:32:27.876981744 +0200
+@@ -30,7 +30,6 @@
+ #include <string>
+ 
+ #include "util.h"
+-#include "gpsd.h"
+ #include "packet.h"
+ #include "tracktypes.h"
+ #include "manuf.h"
+@@ -85,8 +84,6 @@
+     int WriteXMLNetworks(string in_fname);
+     int WriteCisco(string in_fname);
+ 
+-    int WriteGpsdriveWaypt(FILE *in_file);
+-
+     void WriteSSIDMap(FILE *in_file);
+     void ReadSSIDMap(FILE *in_file);
+ 
+diff -urN kismet.old/packetsourcetracker.cc kismet.dev/packetsourcetracker.cc
+--- kismet.old/packetsourcetracker.cc	2005-07-25 16:19:44.000000000 +0200
++++ kismet.dev/packetsourcetracker.cc	2005-08-15 00:33:14.628874376 +0200
+@@ -24,7 +24,6 @@
+ Packetsourcetracker::Packetsourcetracker() {
+     next_packsource_id = 0;
+     next_meta_id = 0;
+-    gpsd = NULL;
+     timetracker = NULL;
+     chanchild_pid = 0;
+     sockpair[0] = sockpair[1] = 0;
+@@ -691,7 +690,6 @@
+         
+         // Register the trackers with it
+         meta->capsource->AddTimetracker(timetracker);
+-        meta->capsource->AddGpstracker(gpsd);
+        
+         // Open it
+         fprintf(stderr, "Source %d (%s): Opening %s source interface %s...\n",
+diff -urN kismet.old/packetsourcetracker.h kismet.dev/packetsourcetracker.h
+--- kismet.old/packetsourcetracker.h	2005-07-25 16:19:44.000000000 +0200
++++ kismet.dev/packetsourcetracker.h	2005-08-15 00:33:28.304795320 +0200
+@@ -30,7 +30,6 @@
+ #include <string>
+ 
+ #include "timetracker.h"
+-#include "gpsd.h"
+ #include "packetsource.h"
+ 
+ // Sentinel for starting a new packet
+@@ -144,9 +143,6 @@
+     // Register a timer event handler for us to use
+     void AddTimetracker(Timetracker *in_tracker) { timetracker = in_tracker; }
+ 
+-    // Register the GPS server for us to use
+-    void AddGpstracker(GPSD *in_gpsd) { gpsd = in_gpsd; }
+-    
+     // Register a packet prototype source...  Card type string, root binding requirement,
+     // function to generate an instance of the source, and function to change channel 
+     // for this card type.  This fills out the prototype. Sources that don't hop 
+@@ -221,7 +217,6 @@
+         uint16_t channel;
+     } chanchild_changepacket;
+ 
+-    GPSD *gpsd;
+     Timetracker *timetracker;
+     
+     char errstr[1024];
+diff -urN kismet.old/packetstream.h kismet.dev/packetstream.h
+--- kismet.old/packetstream.h	2005-07-25 16:19:44.000000000 +0200
++++ kismet.dev/packetstream.h	2005-08-15 00:33:45.954112216 +0200
+@@ -45,7 +45,6 @@
+ 
+ typedef struct stream_version_packet {
+     uint16_t drone_version;
+-	uint8_t gps_enabled;
+ };
+ 
+ typedef struct stream_packet_header {
+@@ -64,18 +63,6 @@
+     uint8_t encoding __attribute__ ((packed));
+     uint32_t datarate __attribute__ ((packed));
+ 
+-    int16_t gps_lat __attribute__ ((packed));
+-    int64_t gps_lat_mant __attribute__ ((packed));
+-    int16_t gps_lon __attribute__ ((packed));
+-    int64_t gps_lon_mant __attribute__ ((packed));
+-    int16_t gps_alt __attribute__ ((packed));
+-    int64_t gps_alt_mant __attribute__ ((packed));
+-    int16_t gps_spd __attribute__ ((packed));
+-    int64_t gps_spd_mant __attribute__ ((packed));
+-    int16_t gps_heading __attribute__ ((packed));
+-    int64_t gps_heading_mant __attribute__ ((packed));
+-    int8_t gps_fix __attribute__ ((packed));
+-
+     uint8_t sourcename[32] __attribute__ ((packed));
+ };
+ 
+diff -urN kismet.old/panelfront.cc kismet.dev/panelfront.cc
+--- kismet.old/panelfront.cc	2005-07-25 16:19:44.000000000 +0200
++++ kismet.dev/panelfront.cc	2005-08-15 01:09:42.017809920 +0200
+@@ -37,7 +37,6 @@
+     "  Key  Action",
+     "   e   List Kismet servers",
+     "   z   Toggle fullscreen zoom of network view",
+-    "   m   Toggle muting of sound and speech",
+     "   t   Tag (or untag) selected network",
+     "   g   Group tagged networks",
+     "   u   Ungroup current group",
+@@ -237,19 +236,6 @@
+ };
+ 
+ 
+-char *KismetHelpGps[] = {
+-    "KISMET NETWORK FOLLOW",
+-    "This panel estimates the center of a network, the current",
+-    "direction of travel, and the direction of the network center",
+-    "and distance relative to the current direction of movement.",
+-    " Key   Action",
+-    "  s    Follow location of strongest packet",
+-    "  c    Follow location of estimated network center",
+-    "  q    Close popup",
+-    NULL
+-};
+-
+-
+ char *KismetHelpStats[] = {
+     "KISMET NETWORK STATISTICS",
+     "This panel displays overall statistics about the wireless",
+@@ -678,7 +664,6 @@
+     }
+ 
+     // Enable all the protocols we handle
+-    in_client->EnableProtocol("GPS");
+     in_client->EnableProtocol("INFO");
+     in_client->EnableProtocol("REMOVE");
+     in_client->EnableProtocol("NETWORK");
+@@ -1282,27 +1267,6 @@
+         if (con->client == NULL)
+             continue;
+ 
+-        // Update GPS
+-        float newlat, newlon, newalt, newspd, newheading;
+-        int newfix;
+-        con->client->FetchLoc(&newlat, &newlon, &newalt, &newspd, &newheading, &newfix);
+-
+-        if (GPSD::EarthDistance(newlat, newlon, last_lat, last_lon) > 10) {
+-            con->last_lat = con->lat;
+-            con->last_lon = con->lon;
+-            con->last_spd = con->spd;
+-            con->last_alt = con->alt;
+-            con->last_fix = con->fix;
+-            con->last_heading = con->heading;
+-        }
+-
+-        con->lat = newlat;
+-        con->lon = newlon;
+-        con->alt = newalt;
+-        con->spd = newspd;
+-        con->heading = newheading;
+-        con->fix = newfix;
+-
+         // Update quality
+         con->quality = con->client->FetchQuality();
+         con->power = con->client->FetchPower();
+diff -urN kismet.old/panelfront.h kismet.dev/panelfront.h
+--- kismet.old/panelfront.h	2005-07-25 16:19:44.000000000 +0200
++++ kismet.dev/panelfront.h	2005-08-15 00:34:52.481998440 +0200
+@@ -65,7 +65,6 @@
+ #define SORT_SIZE 10
+ extern char *KismetHelpPower[];
+ extern char *KismetHelpRate[];
+-extern char *KismetHelpGps[];
+ extern char *KismetHelpStats[];
+ extern char *KismetHelpDump[];
+ extern char *KismetHelpPack[];
+@@ -269,7 +268,6 @@
+     int RatePrinter(void *in_window);
+     int StatsPrinter(void *in_window);
+     int PackPrinter(void *in_window);
+-    int GpsPrinter(void *in_window);
+     int AlertPrinter(void *in_window);
+ 
+     int MainClientPrinter(void *in_window);
+@@ -298,7 +296,6 @@
+     int PackInput(void *in_window, int in_chr);
+     // Help has a generic handler
+     int TextInput(void *in_window, int in_chr);
+-    int GpsInput(void *in_window, int in_chr);
+     int AlertInput(void *in_window, int in_chr);
+ 
+     int MainClientInput(void *in_window, int in_chr);
+diff -urN kismet.old/panelfront_display.cc kismet.dev/panelfront_display.cc
+--- kismet.old/panelfront_display.cc	2005-07-25 16:19:44.000000000 +0200
++++ kismet.dev/panelfront_display.cc	2005-08-15 00:35:58.199007936 +0200
+@@ -727,56 +727,6 @@
+         mvwaddstr(netwin, netwin->_maxy, netwin->_maxx - 14, ptxt);
+     }
+ 
+-#ifdef HAVE_GPS
+-
+-
+-    if (!(lat == 0 && lon == 0 && alt == 0 && spd == 0 && fix == 0)) {
+-
+-        char gpsdata[80];
+-        char fixstr[16];
+-        float show_alt = alt;
+-        float show_spd = spd;
+-
+-        if (metric) {
+-            show_alt = alt / 3.3;
+-            show_spd = spd * 1.6093;
+-        }
+-
+-        if (fix == -1)
+-            snprintf(fixstr, 16, "No signal");
+-        else if (fix == 2)
+-            snprintf(fixstr, 5, "2D");
+-        else if (fix == 3)
+-            snprintf(fixstr, 5, "3D");
+-        else
+-            snprintf(fixstr, 5, "NONE");
+-
+-        // Convert if we're less than a mile/hr or kilom/hr
+-        int spdslow = 0;
+-        if (spd < 0.5) {
+-            spdslow = 1;
+-            if (metric)
+-                show_spd = spd * 0.2778;
+-            else
+-                show_spd = spd * 1.4667;
+-        }
+-
+-        snprintf(gpsdata, 80, "Lat %.3f Lon %.3f Alt %.1f%c Spd %.3f%s Hed %.3f Fix %s",
+-                 lat, lon, show_alt,
+-                 metric ? 'm' : 'f',
+-                 show_spd,
+-                 spdslow ? (metric ? "m/s" : "f/s") : (metric ? "km/h" : "m/h"),
+-                 heading,
+-                 fixstr);
+-
+-        if (color)
+-            wattrset(kwin->win, color_map["monitor"].pair);
+-        mvwaddstr(netwin, netwin->_maxy, 2, gpsdata);
+-        if (color)
+-            wattrset(kwin->win, color_map["text"].pair);
+-
+-    }
+-#endif
+ 
+ 
+     return 1;
+@@ -1496,51 +1446,6 @@
+         snprintf(output, print_width, "Networks: %d", (int) details_network->networks.size());
+         kwin->text.push_back(output);
+ 
+-        if (details_network->virtnet->gps_fixed != -1) {
+-            if ((details_network->virtnet->min_lat == 90) && (details_network->virtnet->min_lon == 180) &&
+-                (details_network->virtnet->max_lat == -90) && (details_network->virtnet->max_lon == -180)) {
+-                   snprintf(output, print_width, "Min Loc : N/A");
+-                   kwin->text.push_back(output);
+-                   snprintf(output, print_width, "Max Loc : N/A");
+-                   kwin->text.push_back(output);
+-                   snprintf(output, print_width, "Range   : N/A");
+-                   kwin->text.push_back(output);
+-            }
+-	    else {
+-                snprintf(output, print_width, "Min Loc : Lat %f Lon %f Alt %f Spd %f",
+-                         details_network->virtnet->min_lat, details_network->virtnet->min_lon,
+-                         metric ? details_network->virtnet->min_alt / 3.3 : details_network->virtnet->min_alt,
+-                         metric ? details_network->virtnet->min_spd * 1.6093 : details_network->virtnet->min_spd);
+-                kwin->text.push_back(output);
+-                snprintf(output, print_width, "Max Loc : Lat %f Lon %f Alt %f Spd %f",
+-                         details_network->virtnet->max_lat, details_network->virtnet->max_lon,
+-                         metric ? details_network->virtnet->max_alt / 3.3 : details_network->virtnet->max_alt,
+-                         metric ? details_network->virtnet->max_spd * 1.6093 : details_network->virtnet->max_spd);
+-                kwin->text.push_back(output);
+-
+-                double diagdist = GPSD::EarthDistance(details_network->virtnet->min_lat,
+-                                                      details_network->virtnet->min_lon,
+-                                                      details_network->virtnet->max_lat,
+-                                                      details_network->virtnet->max_lon);
+-
+-                if (finite(diagdist)) {
+-                    if (metric) {
+-                        if (diagdist < 1000)
+-                            snprintf(output, print_width, "Range    : %.3f meters", diagdist);
+-                        else
+-                            snprintf(output, print_width, "Range   : %.3f kilometers", diagdist / 1000);
+-                    } else {
+-                        diagdist *= 3.3;
+-                        if (diagdist < 5280)
+-                            snprintf(output, print_width, "Range   : %.3f feet", diagdist);
+-                        else
+-                            snprintf(output, print_width, "Range   : %.3f miles", diagdist / 5280);
+-                    }
+-                    kwin->text.push_back(output);
+-                }
+-	    }
+-        }
+-
+         if (details_network->virtnet->carrier_set & (1 << (int) carrier_80211b)) {
+             snprintf(output, print_width, "Carrier : IEEE 802.11b");
+             kwin->text.push_back(output);
+@@ -1848,49 +1753,6 @@
+                      dnet->ipdata.range_ip[2], dnet->ipdata.range_ip[3]);
+             kwin->text.push_back(output);
+         }
+-    
+-        if (dnet->gps_fixed != -1) {
+-            if ((dnet->min_lat == 90) && (dnet->min_lon == 180) &&
+-	        (dnet->max_lat == -90) && (dnet->max_lon == -180)) {
+-                   snprintf(output, print_width, "Min Loc : N/A");
+-                   kwin->text.push_back(output);
+-                   snprintf(output, print_width, "Max Loc : N/A");
+-                   kwin->text.push_back(output);
+-                   snprintf(output, print_width, "Range   : N/A");
+-                   kwin->text.push_back(output);
+-	    }
+-	    else {
+-                snprintf(output, print_width, "Min Loc : Lat %f Lon %f Alt %f Spd %f",
+-                         dnet->min_lat, dnet->min_lon,
+-                         metric ? dnet->min_alt / 3.3 : dnet->min_alt,
+-                         metric ? dnet->min_spd * 1.6093 : dnet->min_spd);
+-                kwin->text.push_back(output);
+-                snprintf(output, print_width, "Max Loc : Lat %f Lon %f Alt %f Spd %f",
+-                         dnet->max_lat, dnet->max_lon,
+-                         metric ? dnet->max_alt / 3.3 : dnet->max_alt,
+-                         metric ? dnet->max_spd * 1.6093 : dnet->max_spd);
+-                kwin->text.push_back(output);
+-
+-                double diagdist = GPSD::EarthDistance(dnet->min_lat, dnet->min_lon,
+-                                                  dnet->max_lat, dnet->max_lon);
+-
+-                if (finite(diagdist)) {
+-                    if (metric) {
+-                        if (diagdist < 1000)
+-                            snprintf(output, print_width, "Range    : %f meters", diagdist);
+-                        else
+-                            snprintf(output, print_width, "Range   : %f kilometers", diagdist / 1000);
+-                    } else {
+-                        diagdist *= 3.3;
+-                        if (diagdist < 5280)
+-                            snprintf(output, print_width, "Range   : %f feet", diagdist);
+-                        else
+-                            snprintf(output, print_width, "Range   : %f miles", diagdist / 5280);
+-                    }
+-                    kwin->text.push_back(output);
+-                }
+-	    }
+-        }
+     }
+ 
+     // Now we just use the text printer to handle the rest for us
+@@ -1898,184 +1760,6 @@
+     return TextPrinter(in_window);
+ }
+ 
+-int PanelFront::GpsPrinter(void *in_window) {
+-    kis_window *kwin = (kis_window *) in_window;
+-
+-    char output[1024];
+-    kwin->text.clear();
+-
+-	if (details_network == NULL) {
+-		kwin->text.push_back("The network or group being displayed");
+-		kwin->text.push_back("has been deleted.  Please select a ");
+-		kwin->text.push_back("different network.");
+-		return TextPrinter(in_window);
+-	}
+-
+-    wireless_network *dnet = details_network->virtnet;
+-
+-    int print_width = kwin->print_width;
+-    if (print_width > 1024)
+-        print_width = 1023;
+-
+-    if (print_width < 32) {
+-        kwin->text.push_back("Display not wide enough");
+-        return TextPrinter(in_window);
+-    }
+-
+-    if (dnet->aggregate_points == 0) {
+-        kwin->text.push_back("No GPS data.");
+-        return TextPrinter(in_window);
+-    }
+-
+-    float center_lat, center_lon;
+-
+-    // We hijack the "selected" field as a toggle
+-    if (kwin->selected == 1) {
+-        center_lat = dnet->best_lat;
+-        center_lon = dnet->best_lon;
+-    } else {
+-        center_lat = dnet->aggregate_lat / dnet->aggregate_points;
+-        center_lon = dnet->aggregate_lon / dnet->aggregate_points;
+-    }
+-
+-    // Get bearing to the center
+-    float center_angle = GPSD::CalcHeading(center_lat, center_lon, lat, lon);
+-
+-    float difference_angle = heading - center_angle;
+-    if (difference_angle < 0)
+-        difference_angle += 360;
+-
+-    double diagdist = GPSD::EarthDistance(lat, lon, center_lat, center_lon);
+-
+-    // Now we know everything - where we are, where we are headed, where we SHOULD be headed
+-    // to get to the supposed center of the network, how far it is, and the orientation on our
+-    // compass to get to it.  Time to start drawing our output.
+-
+-    char compass[5][10];
+-    memset(compass, 0, sizeof(char) * 5 * 10);
+-
+-    // |  41.12345x-74.12345     .-|-/    |
+-    // | Bearing:               /  |/ \   |
+-    // |  123.23 degrees       |   O   |  |
+-    // |                        \   \ /   |
+-    // | Estimated center:       '---\    |
+-
+-
+-    // Find the orientation on our compass:
+-    if (difference_angle > 330 || difference_angle <= 22) {
+-        snprintf(compass[0], 10, "  .-|-.  ");
+-        snprintf(compass[1], 10, " /  |  \\ ");
+-        snprintf(compass[2], 10, "|   O   |");
+-        snprintf(compass[3], 10, " \\     / ");
+-        snprintf(compass[4], 10, "  '---'  ");
+-    } else if (difference_angle > 22 && difference_angle <= 66) {
+-        snprintf(compass[0], 10, "  .---/  ");
+-        snprintf(compass[1], 10, " /   / \\ ");
+-        snprintf(compass[2], 10, "|   O   |");
+-        snprintf(compass[3], 10, " \\     / ");
+-        snprintf(compass[4], 10, "  '---'  ");
+-    } else if (difference_angle > 66 && difference_angle <= 110) {
+-        snprintf(compass[0], 10, "  .---.  ");
+-        snprintf(compass[1], 10, " /     \\ ");
+-        snprintf(compass[2], 10, "|   O----");
+-        snprintf(compass[3], 10, " \\     / ");
+-        snprintf(compass[4], 10, "  '---'  ");
+-    } else if (difference_angle > 110 && difference_angle <= 154) {
+-        snprintf(compass[0], 10, "  .---.  ");
+-        snprintf(compass[1], 10, " /     \\ ");
+-        snprintf(compass[2], 10, "|   O   |");
+-        snprintf(compass[3], 10, " \\   \\ / ");
+-        snprintf(compass[4], 10, "  '---\\  ");
+-    } else if (difference_angle > 154 && difference_angle <= 198) {
+-        snprintf(compass[0], 10, "  .---.  ");
+-        snprintf(compass[1], 10, " /     \\ ");
+-        snprintf(compass[2], 10, "|   O   |");
+-        snprintf(compass[3], 10, " \\  |  / ");
+-        snprintf(compass[4], 10, "  '-|-'  ");
+-    } else if (difference_angle > 198 && difference_angle <= 242) {
+-        snprintf(compass[0], 10, "  .---.  ");
+-        snprintf(compass[1], 10, " /     \\ ");
+-        snprintf(compass[2], 10, "|   O   |");
+-        snprintf(compass[3], 10, " \\ /   / ");
+-        snprintf(compass[4], 10, "  /---'  ");
+-    } else if (difference_angle > 242 && difference_angle <= 286) {
+-        snprintf(compass[0], 10, "  .---.  ");
+-        snprintf(compass[1], 10, " /     \\ ");
+-        snprintf(compass[2], 10, "----O   |");
+-        snprintf(compass[3], 10, " \\     / ");
+-        snprintf(compass[4], 10, "  '---'  ");
+-    } else if (difference_angle > 286 && difference_angle <= 330) {
+-        snprintf(compass[0], 10, "  \\---.  ");
+-        snprintf(compass[1], 10, " / \\   \\ ");
+-        snprintf(compass[2], 10, "|   O   |");
+-        snprintf(compass[3], 10, " \\     / ");
+-        snprintf(compass[4], 10, "  '---'  ");
+-    } else {
+-        snprintf(compass[0], 10, "%f\n", difference_angle);
+-    }
+-
+-
+-    // - Network GPS ---------------------|
+-    // | Current:                         |
+-    // |  41.12345x-74.12345     .-|-.    |
+-    // | Bearing:               /  |  \   |
+-    // |  123.23 degrees       |   O   |  |
+-    // |                        \   \ /   |
+-    // | Estimated center:       '---\    |
+-    // | -73.12345x43.12345               |
+-    // |                        120 feet  |
+-    // ------------------------------------
+-    char textfrag[23];
+-
+-    snprintf(output, print_width, "Current:");
+-    kwin->text.push_back(output);
+-
+-    snprintf(textfrag, 23, "%.3f x %.3f", lat, lon);
+-    snprintf(output, print_width, "%-22s%s", textfrag, compass[0]);
+-    kwin->text.push_back(output);
+-
+-    snprintf(textfrag, 23, " Bearing:");
+-    snprintf(output, print_width, "%-22s%s", textfrag, compass[1]);
+-    kwin->text.push_back(output);
+-
+-    snprintf(textfrag, 23, " %.2f*", heading);
+-    snprintf(output, print_width, "%-22s%s", textfrag, compass[2]);
+-    kwin->text.push_back(output);
+-
+-    snprintf(textfrag, 23, " ");
+-    snprintf(output, print_width, "%-22s%s", textfrag, compass[3]);
+-    kwin->text.push_back(output);
+-
+-    if (kwin->selected == 1)
+-        snprintf(textfrag, 23, "Strongest signal:");
+-    else
+-        snprintf(textfrag, 23, "Estimated Center:");
+-    snprintf(output, print_width, "%-22s%s", textfrag, compass[4]);
+-    kwin->text.push_back(output);
+-
+-    snprintf(textfrag, 23, "%.3f x %.3f", center_lat, center_lon);
+-    snprintf(output, print_width, "%-22s%.2f*", textfrag, difference_angle);
+-    kwin->text.push_back(output);
+-
+-    if (metric) {
+-        if (diagdist < 1000)
+-            snprintf(textfrag, 23, "%.2f m", diagdist);
+-        else
+-            snprintf(textfrag, 23, "%.2f km", diagdist / 1000);
+-    } else {
+-        diagdist *= 3.3;
+-        if (diagdist < 5280)
+-            snprintf(textfrag, 23, "%.2f ft", diagdist);
+-        else
+-            snprintf(textfrag, 23, "%.2f mi", diagdist / 5280);
+-    }
+-
+-    snprintf(output, print_width, "%-22s%s", "", textfrag);
+-    kwin->text.push_back(output);
+-
+-    return TextPrinter(in_window);
+-}
+-
+ int PanelFront::PackPrinter(void *in_window) {
+     kis_window *kwin = (kis_window *) in_window;
+ 
+@@ -3044,54 +2728,6 @@
+              details_client->ipdata.ip[2], details_client->ipdata.ip[3]);
+     kwin->text.push_back(output);
+ 
+-    if (details_client->gps_fixed != -1) {
+-        kwin->text.push_back("");
+-
+-        if ((details_client->min_lat == 90) && (details_client->min_lon == 180) &&
+-            (details_client->max_lat == -90) && (details_client->max_lon == -180)) {
+-               snprintf(output, print_width, "Min Loc : N/A");
+-               kwin->text.push_back(output);
+-               snprintf(output, print_width, "Max Loc : N/A");
+-               kwin->text.push_back(output);
+-               snprintf(output, print_width, "Range   : N/A");
+-               kwin->text.push_back(output);
+-        }
+-	else {
+-            snprintf(output, print_width, "Min Loc : Lat %f Lon %f Alt %f Spd %f",
+-                     details_client->min_lat, details_client->min_lon,
+-                     metric ? details_client->min_alt / 3.3 : details_client->min_alt,
+-                     metric ? details_client->min_spd * 1.6093 : details_client->min_spd);
+-            kwin->text.push_back(output);
+-            snprintf(output, print_width, "Max Loc : Lat %f Lon %f Alt %f Spd %f",
+-                     details_client->max_lat, details_client->max_lon,
+-                     metric ? details_client->max_alt / 3.3 : details_client->max_alt,
+-                     metric ? details_client->max_spd * 1.6093 : details_client->max_spd);
+-            kwin->text.push_back(output);
+-
+-            double diagdist = GPSD::EarthDistance(details_client->min_lat,
+-                                                  details_client->min_lon,
+-                                                  details_client->max_lat,
+-                                                  details_client->max_lon);
+-
+-            if (finite(diagdist)) {
+-                if (metric) {
+-                    if (diagdist < 1000)
+-                        snprintf(output, print_width, "Range    : %f meters", diagdist);
+-                    else
+-                        snprintf(output, print_width, "Range    : %f kilometers", diagdist / 1000);
+-                } else {
+-                    diagdist *= 3.3;
+-                    if (diagdist < 5280)
+-                        snprintf(output, print_width, "Range   : %f feet", diagdist);
+-                    else
+-                        snprintf(output, print_width, "Range   : %f miles", diagdist / 5280);
+-                }
+-                kwin->text.push_back(output);
+-            }
+-        }
+-        kwin->text.push_back("");
+-    }
+-
+     snprintf(output, print_width, "Packets :");
+     kwin->text.push_back(output);
+     snprintf(output, print_width, "  Data    : %d", details_client->data_packets);
+diff -urN kismet.old/panelfront_input.cc kismet.dev/panelfront_input.cc
+--- kismet.old/panelfront_input.cc	2005-07-25 16:19:44.000000000 +0200
++++ kismet.dev/panelfront_input.cc	2005-08-15 01:10:39.680043928 +0200
+@@ -300,16 +300,9 @@
+         break;
+     case 'f':
+     case 'F':
+-        if (sortby != sort_auto && last_displayed.size() > 0) {
+-            details_network = last_displayed[kwin->selected];
+-            SpawnWindow("Network Location", &PanelFront::GpsPrinter, &PanelFront::GpsInput, 8, 34);
+-        } else {
+-            WriteStatus("Cannot view network GPS info in autofit sort mode.  Sort by a different method.");
+-        }
+         break;
+     case 'm':
+     case 'M':
+-        MuteToggle();
+         break;
+     case 'e':
+     case 'E':
+@@ -447,7 +440,6 @@
+     switch(in_chr) {
+     case 'm':
+     case 'M':
+-        MuteToggle();
+         break;
+     case 'p':
+     case 'P':
+@@ -546,32 +538,6 @@
+     return 1;
+ }
+ 
+-int PanelFront::GpsInput(void *in_window, int in_chr) {
+-    kis_window *kwin = (kis_window *) in_window;
+-
+-    switch (in_chr) {
+-    case 's':
+-    case 'S':
+-        kwin->selected = 1;
+-        break;
+-    case 'c':
+-    case 'C':
+-        kwin->selected = 0;
+-        break;
+-    case 'h':
+-    case 'H':
+-        SpawnHelp(KismetHelpGps);
+-        break;
+-    case 'x':
+-    case 'X':
+-    case 'q':
+-    case 'Q':
+-        return 0;
+-        break;
+-    }
+-
+-    return 1;
+-}
+ 
+ int PanelFront::RateInput(void *in_window, int in_chr) {
+     switch (in_chr) {
+@@ -645,24 +611,6 @@
+     return 1;
+ }
+ 
+-void PanelFront::MuteToggle() {
+-    if (muted) {
+-        speech = old_speech;
+-        sound = old_sound;
+-        muted = 0;
+-        WriteStatus("Restoring sound");
+-    } else if (sound != 0 || speech != 0) {
+-        old_speech = speech;
+-        old_sound = sound;
+-        sound = 0;
+-        speech = 0;
+-        muted = 1;
+-        WriteStatus("Muting sound");
+-    } else if (sound == 0 && speech == 0) {
+-        WriteStatus("Sound not enabled.");
+-    }
+-}
+-
+ int PanelFront::AlertInput(void *in_window, int in_chr) {
+     kis_window *kwin = (kis_window *) in_window;
+ 
+diff -urN kismet.old/pcapsource.cc kismet.dev/pcapsource.cc
+--- kismet.old/pcapsource.cc	2005-07-25 16:19:44.000000000 +0200
++++ kismet.dev/pcapsource.cc	2005-08-15 00:40:28.291416856 +0200
+@@ -296,11 +296,6 @@
+     packet->moddata = moddata;
+     packet->modified = 0;
+ 
+-    if (gpsd != NULL) {
+-        gpsd->FetchLoc(&packet->gps_lat, &packet->gps_lon, &packet->gps_alt,
+-                       &packet->gps_spd, &packet->gps_heading, &packet->gps_fix);
+-    }
+-
+     if (datalink_type == DLT_PRISM_HEADER) {
+         ret = Prism2KisPack(packet, data, moddata);
+     } else if (datalink_type == KDLT_BSD802_11) {
+@@ -1075,133 +1070,6 @@
+ 
+ // Monitor commands
+ #ifdef HAVE_LINUX_WIRELESS
+-// Cisco uses its own config file in /proc to control modes
+-int monitor_cisco(const char *in_dev, int initch, char *in_err, void **in_if, void *in_ext) {
+-    FILE *cisco_config;
+-    char cisco_path[128];
+-
+-    linux_ifparm *ifparm = (linux_ifparm *) malloc(sizeof(linux_ifparm));
+-    (*in_if) = ifparm;
+-
+-    if (Ifconfig_Get_Flags(in_dev, in_err, &ifparm->flags) < 0) {
+-        return -1;
+-    }
+-
+-    if (Iwconfig_Get_SSID(in_dev, in_err, ifparm->essid) < 0)
+-        return -1;
+-
+-    if ((ifparm->channel = Iwconfig_Get_Channel(in_dev, in_err)) < 0)
+-        return -1;
+-
+-    if (Iwconfig_Get_Mode(in_dev, in_err, &ifparm->mode) < 0)
+-        return -1;
+-
+-    if (Ifconfig_Delta_Flags(in_dev, in_err, IFF_UP | IFF_RUNNING | IFF_PROMISC) < 0)
+-        return -1;
+-
+-    // Try the iwpriv
+-    if (Iwconfig_Set_IntPriv(in_dev, "setRFMonitor", 1, 0, in_err) >= 0) {
+-        return 0;
+-    }
+-
+-    // Zero the ssid - nonfatal
+-    Iwconfig_Set_SSID(in_dev, in_err, NULL);
+-   
+-    // Build the proc control path
+-    snprintf(cisco_path, 128, "/proc/driver/aironet/%s/Config", in_dev);
+-
+-    if ((cisco_config = fopen(cisco_path, "w")) == NULL) {
+-        snprintf(in_err, STATUS_MAX, "Unable to open cisco control file '%s' %d:%s",
+-                 cisco_path, errno, strerror(errno));
+-        return -1;
+-    }
+-
+-    fprintf(cisco_config, "Mode: r\n");
+-    fprintf(cisco_config, "Mode: y\n");
+-    fprintf(cisco_config, "XmitPower: 1\n");
+-
+-    fclose(cisco_config);
+-
+-    // Channel can't be set on cisco with these drivers.
+-
+-    return 0;
+-}
+-
+-int unmonitor_cisco(const char *in_dev, int initch, char *in_err, void **in_if, void *in_ext) {
+-    linux_ifparm *ifparm = (linux_ifparm *) (*in_if);
+-    int ret = -1;
+-
+-    // Try the iwpriv
+-    if (Iwconfig_Set_IntPriv(in_dev, "setRFMonitor", 0, 0, in_err) >= 0) {
+-        // If we're the new drivers, unmonitor
+-        if (Ifconfig_Set_Flags(in_dev, in_err, ifparm->flags) < 0) {
+-            return -1;
+-        }
+-
+-        // Reset the SSID since monitor mode nukes it
+-        if (Iwconfig_Set_SSID(in_dev, in_err, ifparm->essid) < 0)
+-            return -1;
+-
+-        if (ifparm->channel > 0) {
+-            if (Iwconfig_Set_Channel(in_dev, ifparm->channel, in_err) < 0)
+-                return -1;
+-        }
+-
+-        ret = 1;
+-    }
+-
+-    free(ifparm);
+-
+-    return ret;
+-}
+-
+-// Cisco uses its own config file in /proc to control modes
+-//
+-// I was doing this with ioctls but that seems to cause lockups while
+-// this method doesn't.  I don't think I like these drivers.
+-int monitor_cisco_wifix(const char *in_dev, int initch, char *in_err, void **in_if, void *in_ext) {
+-    FILE *cisco_config;
+-    char cisco_path[128];
+-    vector<string> devbits = StrTokenize(in_dev, ":");
+-
+-    if (devbits.size() < 2) {
+-        snprintf(in_err, STATUS_MAX, "Invalid device pair '%s'.  Proper device "
+-				 "for cisco_wifix is eth?:wifi?.", in_dev);
+-        return -1;
+-    }
+-
+-    // Bring the device up, zero its ip, and set promisc
+-    if (Ifconfig_Delta_Flags(devbits[0].c_str(), in_err, 
+-                             IFF_UP | IFF_RUNNING | IFF_PROMISC) < 0)
+-        return -1;
+-    if (Ifconfig_Delta_Flags(devbits[1].c_str(), in_err, 
+-                             IFF_UP | IFF_RUNNING | IFF_PROMISC) < 0)
+-        return -1;
+-
+-    // Zero the ssid, nonfatally
+-    Iwconfig_Set_SSID(devbits[0].c_str(), in_err, NULL);
+-    Iwconfig_Set_SSID(devbits[1].c_str(), in_err, NULL);
+-    
+-    // Build the proc control path
+-    snprintf(cisco_path, 128, "/proc/driver/aironet/%s/Config", devbits[0].c_str());
+-
+-    if ((cisco_config = fopen(cisco_path, "w")) == NULL) {
+-        snprintf(in_err, STATUS_MAX, "Unable to open cisco control file '%s' %d:%s",
+-                 cisco_path, errno, strerror(errno));
+-        return -1;
+-    }
+-
+-    fprintf(cisco_config, "Mode: r\n");
+-    fprintf(cisco_config, "Mode: y\n");
+-    fprintf(cisco_config, "XmitPower: 1\n");
+-
+-    fclose(cisco_config);
+-
+-    // Channel can't be set on cisco with these drivers.
+-
+-    return 0;
+-}
+-
+ // Hostap uses iwpriv and iwcontrol settings to control monitor mode
+ int monitor_hostap(const char *in_dev, int initch, char *in_err, void **in_if, void *in_ext) {
+     int ret;
+@@ -1350,134 +1218,6 @@
+     return 1;
+ 
+ }
+-
+-// Acx100 uses the packhdr iwpriv control to set link state, rest is normal
+-int monitor_acx100(const char *in_dev, int initch, char *in_err, void **in_if, void *in_ext) {
+-    int ret;
+-
+-    // Allocate a tracking record for the interface settings and remember our
+-    // setup
+-    linux_ifparm *ifparm = (linux_ifparm *) malloc(sizeof(linux_ifparm));
+-    (*in_if) = ifparm;
+-
+-    if (Ifconfig_Get_Flags(in_dev, in_err, &ifparm->flags) < 0) {
+-        return -1;
+-    }
+-
+-    if (Iwconfig_Get_SSID(in_dev, in_err, ifparm->essid) < 0)
+-        return -1;
+-
+-    if ((ifparm->channel = Iwconfig_Get_Channel(in_dev, in_err)) < 0)
+-        return -1;
+-
+-    if (Iwconfig_Get_Mode(in_dev, in_err, &ifparm->mode) < 0)
+-        return -1;
+-
+-    // it looks like an orinoco now, apparently
+-    if ((ret = Iwconfig_Set_IntPriv(in_dev, "monitor", 1, initch, in_err)) < 0) {
+-        if (ret == -2)
+-            snprintf(in_err, 1024, "Could not find 'monitor' private ioctl "
+-                     "Make sure you have the latest ACX100 development release.");
+-        return -1;
+-    }
+-
+-    if (chancontrol_wext(in_dev, initch, in_err, NULL) < 0)
+-        return -1;
+-
+-    return 0;
+-}
+-
+-int unmonitor_acx100(const char *in_dev, int initch, char *in_err, void **in_if, void *in_ext) {
+-    // Restore the IP settings
+-    linux_ifparm *ifparm = (linux_ifparm *) (*in_if);
+-
+-    if (Ifconfig_Set_Flags(in_dev, in_err, ifparm->flags) < 0) {
+-        return -1;
+-    }
+-
+-    Iwconfig_Set_IntPriv(in_dev, "monitor", 0, ifparm->channel, in_err);
+-    Iwconfig_Set_Mode(in_dev, in_err, ifparm->mode);
+-
+-    if (Iwconfig_Set_SSID(in_dev, in_err, ifparm->essid) < 0)
+-        return -1;
+-    
+-    free(ifparm);
+-
+-    return 1;
+-}
+-
+-int monitor_admtek(const char *in_dev, int initch, char *in_err, void **in_if, void *in_ext) {
+-    // Allocate a tracking record for the interface settings and remember our
+-    // setup
+-    linux_ifparm *ifparm = (linux_ifparm *) malloc(sizeof(linux_ifparm));
+-    (*in_if) = ifparm;
+-
+-    // Try to figure out the name so we know if we have fcs bytes or not
+-    char iwname[IFNAMSIZ+1];
+-    if (Iwconfig_Get_Name(in_dev, in_err, iwname) < 0)
+-        return -1;
+-
+-    if (strncmp(iwname, "IEEE 802.11b", IFNAMSIZ) == 0) {
+-        // Looks like the GPL driver, we need to adjust the fcsbytes
+-        PcapSource *psrc = (PcapSource *) in_ext;
+-        psrc->fcsbytes = 4;
+-    }
+-
+-    if (Ifconfig_Get_Flags(in_dev, in_err, &ifparm->flags) < 0) {
+-        return -1;
+-    }
+-
+-    if ((ifparm->flags & IFF_UP)) {
+-        if ((ifparm->channel = Iwconfig_Get_Channel(in_dev, in_err)) < 0)
+-            return -1;
+-
+-        if (Iwconfig_Get_Mode(in_dev, in_err, &ifparm->mode) < 0)
+-            return -1;
+-
+-        if (Iwconfig_Get_SSID(in_dev, in_err, ifparm->essid) < 0)
+-            return -1;
+-    
+-    } else {
+-        ifparm->channel = -1;
+-        ifparm->mode = -1;
+-    }
+-
+-    int ret = monitor_wext(in_dev, initch, in_err, in_if, in_ext);
+-
+-    if (ret < 0 && ret != -2)
+-        return ret;
+-
+-    if (Iwconfig_Set_SSID(in_dev, in_err, "") < 0)
+-        return -1;
+-    
+-    return 0;
+-}
+-
+-int unmonitor_admtek(const char *in_dev, int initch, char *in_err, void **in_if, void *in_ext) {
+-    linux_ifparm *ifparm = (linux_ifparm *) (*in_if);
+-
+-    if (unmonitor_wext(in_dev, initch, in_err, in_if, in_ext))
+-        return -1;
+-
+-    if (Iwconfig_Set_SSID(in_dev, in_err, ifparm->essid) < 0)
+-        return -1;
+-   
+-    return 1;
+-}
+-// vtar5k iwpriv control to set link state, rest is normal
+-int monitor_vtar5k(const char *in_dev, int initch, char *in_err, void **in_if, void *in_ext) {
+-    // Set the prism iwpriv control to 1
+-    if (Iwconfig_Set_IntPriv(in_dev, "prism", 1, 0, in_err) < 0) {
+-        return -1;
+-    }
+-    
+-    // The rest is standard wireless extensions
+-    if (monitor_wext(in_dev, initch, in_err, in_if, in_ext) < 0)
+-        return -1;
+-
+-    return 0;
+-}
+-
+ // Madwifi stuff uses iwpriv mode
+ int monitor_madwifi_a(const char *in_dev, int initch, char *in_err, void **in_if, void *in_ext) {
+     // Allocate a tracking record for the interface settings and remember our
+@@ -1656,88 +1396,6 @@
+     return unmonitor_wext(in_dev, initch, in_err, in_if, in_ext);
+ }
+ 
+-int monitor_ipw2100(const char *in_dev, int initch, char *in_err, void **in_if, void *in_ext) {
+-    // Allocate a tracking record for the interface settings and remember our
+-    // setup
+-    linux_ifparm *ifparm = (linux_ifparm *) malloc(sizeof(linux_ifparm));
+-    (*in_if) = ifparm;
+-
+-    if (Ifconfig_Get_Flags(in_dev, in_err, &ifparm->flags) < 0) {
+-        return -1;
+-    }
+-
+-    if ((ifparm->channel = Iwconfig_Get_Channel(in_dev, in_err)) < 0)
+-        return -1;
+-
+-    if (Iwconfig_Get_Mode(in_dev, in_err, &ifparm->mode) < 0)
+-        return -1;
+-
+-    // Call the normal monitor mode
+-    return (monitor_wext(in_dev, initch, in_err, in_if, in_ext));
+-}
+-
+-int unmonitor_ipw2100(const char *in_dev, int initch, char *in_err, void **in_if, void *in_ext) {
+-    // Restore initial monitor header
+-    // linux_ifparm *ifparm = (linux_ifparm *) (*in_if);
+-
+-    linux_ifparm *ifparm = (linux_ifparm *) (*in_if);
+-
+-    if (Ifconfig_Set_Flags(in_dev, in_err, ifparm->flags) < 0) {
+-        return -1;
+-    }
+-
+-    if (Iwconfig_Set_Mode(in_dev, in_err, ifparm->mode) < 0)
+-        return -1;
+-
+-    free(ifparm);
+-
+-    return 1;
+-}
+-
+-int monitor_ipw2200(const char *in_dev, int initch, char *in_err, 
+-					void **in_if, void *in_ext) {
+-    // Allocate a tracking record for the interface settings and remember our
+-    // setup
+-    linux_ifparm *ifparm = (linux_ifparm *) malloc(sizeof(linux_ifparm));
+-    (*in_if) = ifparm;
+-
+-    if (Ifconfig_Get_Flags(in_dev, in_err, &ifparm->flags) < 0) {
+-        return -1;
+-    }
+-
+-    if ((ifparm->channel = Iwconfig_Get_Channel(in_dev, in_err)) < 0)
+-        return -1;
+-
+-    if (Iwconfig_Get_Mode(in_dev, in_err, &ifparm->mode) < 0)
+-        return -1;
+-
+-    // Call the normal monitor mode
+-    return (monitor_wext(in_dev, initch, in_err, in_if, in_ext));
+-}
+-
+-int unmonitor_ipw2200(const char *in_dev, int initch, char *in_err, 
+-					  void **in_if, void *in_ext) {
+-    // Restore initial monitor header
+-    // linux_ifparm *ifparm = (linux_ifparm *) (*in_if);
+-
+-    linux_ifparm *ifparm = (linux_ifparm *) (*in_if);
+-
+-    if (Ifconfig_Set_Flags(in_dev, in_err, ifparm->flags) < 0) {
+-        return -1;
+-    }
+-
+-    if (Iwconfig_Set_Mode(in_dev, in_err, ifparm->mode) < 0)
+-        return -1;
+-
+-	// James says this wants to be set to channel 0 for proper scanning operation
+-	if (Iwconfig_Set_Channel(in_dev, 0, in_err) < 0)
+-		return -1;
+-
+-    free(ifparm);
+-
+-    return 1;
+-}
+-
+ // "standard" wireless extension monitor mode
+ int monitor_wext(const char *in_dev, int initch, char *in_err, void **in_if, void *in_ext) {
+     int mode;
+@@ -2186,75 +1844,6 @@
+     return 0;
+ }
+ 
+-int chancontrol_ipw2100(const char *in_dev, int in_ch, char *in_err, void *in_ext) {
+-    // Introduce a slight delay to let the driver settle, a la orinoco.  I don't
+-    // like doing this at all since it introduces hiccups into the channel control
+-    // process, but....
+-
+-    int ret = 0;
+-
+-    ret = chancontrol_wext(in_dev, in_ch, in_err, in_ext);
+-    usleep(5000);
+-
+-    return ret;
+-}
+-
+-int chancontrol_ipw2200(const char *in_dev, int in_ch, char *in_err, void *in_ext) {
+-	// Lets see if this really needs the channel change delay like the 2100 did
+-    int ret = 0;
+-
+-    ret = chancontrol_wext(in_dev, in_ch, in_err, in_ext);
+-	// Drop a tiny sleep in here to let the channel set settle, otherwise we
+-	// run the risk of the card freaking out
+-	usleep(7000);
+-
+-    return ret;
+-}
+-
+-#endif
+-
+-#ifdef SYS_LINUX
+-int chancontrol_wlanng(const char *in_dev, int in_ch, char *in_err, void *in_ext) {
+-    // I really didn't want to do this...
+-    char cmdline[2048];
+-
+-    // Turn on rfmon on the initial channel
+-    snprintf(cmdline, 2048, "wlanctl-ng %s lnxreq_wlansniff channel=%d enable=true "
+-             "prismheader=true >/dev/null 2>&1", in_dev, in_ch);
+-    if (RunSysCmd(cmdline) < 0) {
+-        snprintf(in_err, 1024, "Unable to execute '%s'", cmdline);
+-        return -1;
+-    }
+-
+-    if (in_ext != NULL) {
+-        PcapSourceWlanng *src = (PcapSourceWlanng *) in_ext;
+-        src->last_channel = in_ch;
+-    }
+-    
+-    return 0;
+-}
+-
+-int chancontrol_wlanng_avs(const char *in_dev, int in_ch, char *in_err, void *in_ext) {
+-    // I really didn't want to do this...
+-    char cmdline[2048];
+-
+-    // Turn on rfmon on the initial channel
+-    snprintf(cmdline, 2048, "wlanctl-ng %s lnxreq_wlansniff channel=%d "
+-             "prismheader=false wlanheader=true stripfcs=false keepwepflags=false "
+-             "enable=true >/dev/null 2>&1", in_dev, in_ch);
+-
+-    if (RunSysCmd(cmdline) < 0) {
+-        snprintf(in_err, 1024, "Unable to execute '%s'", cmdline);
+-        return -1;
+-    }
+-
+-    if (in_ext != NULL) {
+-        PcapSourceWlanng *src = (PcapSourceWlanng *) in_ext;
+-        src->last_channel = in_ch;
+-    }
+-    
+-    return 0;
+-}
+ #endif
+ 
+ #ifdef SYS_OPENBSD
+diff -urN kismet.old/pcapsource.h kismet.dev/pcapsource.h
+--- kismet.old/pcapsource.h	2005-07-25 16:19:44.000000000 +0200
++++ kismet.dev/pcapsource.h	2005-08-15 00:42:50.849744696 +0200
+@@ -336,8 +336,6 @@
+                                             char *in_err);
+ KisPacketSource *pcapsource_wextfcs_registrant(string in_name, string in_device,
+                                                char *in_err);
+-KisPacketSource *pcapsource_ciscowifix_registrant(string in_name, string in_device, 
+-                                                  char *in_err);
+ KisPacketSource *pcapsource_11g_registrant(string in_name, string in_device,
+                                            char *in_err);
+ KisPacketSource *pcapsource_11gfcs_registrant(string in_name, string in_device,
+@@ -365,25 +363,12 @@
+ int unmonitor_pcapfile(const char *in_dev, int initch, char *in_err, void **in_if, void *in_ext);
+ 
+ #ifdef HAVE_LINUX_WIRELESS
+-// Cisco (old) 
+-int monitor_cisco(const char *in_dev, int initch, char *in_err, void **in_if, void *in_ext);
+-int unmonitor_cisco(const char *in_dev, int initch, char *in_err, void **in_if, void *in_ext);
+-// Cisco (new)
+-int monitor_cisco_wifix(const char *in_dev, int initch, char *in_err, void **in_if, void *in_ext);
+ // hostap prism2
+ int monitor_hostap(const char *in_dev, int initch, char *in_err, void **in_if, void *in_ext);
+ int unmonitor_hostap(const char *in_dev, int initch, char *in_err, void **in_if, void *in_ext);
+ // orinoco
+ int monitor_orinoco(const char *in_dev, int initch, char *in_err, void **in_if, void *in_ext);
+ int unmonitor_orinoco(const char *in_dev, int initch, char *in_err, void **in_if, void *in_ext);
+-// acx100
+-int monitor_acx100(const char *in_dev, int initch, char *in_err, void **in_if, void *in_ext);
+-int unmonitor_acx100(const char *in_dev, int initch, char *in_err, void **in_if, void *in_ext);
+-// admtek
+-int monitor_admtek(const char *in_dev, int initch, char *in_err, void **in_if, void *in_ext);
+-int unmonitor_admtek(const char *in_dev, int initch, char *in_err, void **in_if, void *in_ext);
+-// ar5k
+-int monitor_vtar5k(const char *in_dev, int initch, char *in_err, void **in_if, void *in_ext);
+ // Madwifi group of cards
+ int monitor_madwifi_a(const char *in_dev, int initch, char *in_err, void **in_if, void *in_ext);
+ int monitor_madwifi_b(const char *in_dev, int initch, char *in_err, void **in_if, void *in_ext);
+@@ -393,11 +378,6 @@
+ // prism54 needs to override the error messages it gets setting channels
+ int monitor_prism54g(const char *in_dev, int initch, char *in_err, void **in_if, void *in_ext);
+ int unmonitor_prism54g(const char *in_dev, int initch, char *in_err, void **in_if, void *in_ext);
+-// Centrino
+-int monitor_ipw2100(const char *in_dev, int initch, char *in_err, void **in_if, void *in_ext);
+-int unmonitor_ipw2100(const char *in_dev, int initch, char *in_err, void **in_if, void *in_ext);
+-int monitor_ipw2200(const char *in_dev, int initch, char *in_err, void **in_if, void *in_ext);
+-int unmonitor_ipw2200(const char *in_dev, int initch, char *in_err, void **in_if, void *in_ext);
+ // "Standard" wext monitor sequence - mostly a helper for other functions
+ // since most cards that use wext still have custom initialization that
+ // needs to be done.
+@@ -406,10 +386,6 @@
+ #endif
+ 
+ #ifdef SYS_LINUX
+-// wlan-ng modern standard
+-int monitor_wlanng(const char *in_dev, int initch, char *in_err, void **in_if, void *in_ext);
+-// wlan-ng avs
+-int monitor_wlanng_avs(const char *in_dev, int initch, char *in_err, void **in_if, void *in_ext);
+ // linksys wrt54g monitoring
+ int monitor_wrt54g(const char *in_dev, int initch, char *in_err, void **in_if, void *in_ext);
+ #endif
+@@ -434,16 +410,8 @@
+ // Prism54 apparently returns a fail code on an iwconfig channel change but
+ // then works so we need to override the wext failure code
+ int chancontrol_prism54g(const char *in_dev, int in_ch, char *in_err, void *in_ext);
+-// We need a delay in it like orinoco, apparently
+-int chancontrol_ipw2100(const char *in_dev, int in_ch, char *in_err, void *in_ext);
+-int chancontrol_ipw2200(const char *in_dev, int in_ch, char *in_err, void *in_ext);
+ #endif
+ 
+-#ifdef SYS_LINUX
+-// Modern wlan-ng and wlan-ng avs
+-int chancontrol_wlanng(const char *in_dev, int in_ch, char *in_err, void *in_ext);
+-int chancontrol_wlanng_avs(const char *in_dev, int in_ch, char *in_err, void *in_ext);
+-#endif
+ 
+ #ifdef SYS_OPENBSD
+ // openbsd prism2 controls
+diff -urN kismet.old/server_protocols.cc kismet.dev/server_protocols.cc
+--- kismet.old/server_protocols.cc	2005-07-25 16:19:44.000000000 +0200
++++ kismet.dev/server_protocols.cc	2005-08-15 00:44:07.921028080 +0200
+@@ -96,7 +96,7 @@
+     "bssid", "type", "ssid", "beaconinfo",
+     "llcpackets", "datapackets", "cryptpackets",
+     "weakpackets", "channel", "wep", "firsttime",
+-    "lasttime", "atype", "rangeip", "gpsfixed",
++    "lasttime", "atype", "rangeip",
+     "minlat", "minlon", "minalt", "minspd",
+     "maxlat", "maxlon", "maxalt", "maxspd",
+     "octets", "cloaked", "beaconrate", "maxrate",
+@@ -104,7 +104,6 @@
+     "quality", "signal", "noise",
+     "bestquality", "bestsignal", "bestnoise",
+     "bestlat", "bestlon", "bestalt",
+-    "agglat", "agglon", "aggalt", "aggpoints",
+     "datasize",
+     "turbocellnid", "turbocellmode", "turbocellsat",
+     "carrierset", "maxseenrate", "encodingset",
+@@ -116,10 +115,6 @@
+     "bssid", "mac", "type", "firsttime", "lasttime",
+     "manufkey", "manufscore",
+     "datapackets", "cryptpackets", "weakpackets",
+-    "gpsfixed",
+-    "minlat", "minlon", "minalt", "minspd",
+-    "maxlat", "maxlon", "maxalt", "maxspd",
+-    "agglat", "agglon", "aggalt", "aggpoints",
+     "maxrate",
+     "quality", "signal", "noise",
+     "bestquality", "bestsignal", "bestnoise",
+@@ -399,33 +394,6 @@
+              net->ipdata.range_ip[2], net->ipdata.range_ip[3]);
+     data->ndvec.push_back(tmpstr);
+ 
+-    snprintf(tmpstr, 128, "%d", net->gps_fixed);
+-    data->ndvec.push_back(tmpstr);
+-
+-    snprintf(tmpstr, 128, "%f", net->min_lat);
+-    data->ndvec.push_back(tmpstr);
+-
+-    snprintf(tmpstr, 128, "%f", net->min_lon);
+-    data->ndvec.push_back(tmpstr);
+-
+-    snprintf(tmpstr, 128, "%f", net->min_alt);
+-    data->ndvec.push_back(tmpstr);
+-
+-    snprintf(tmpstr, 128, "%f", net->min_spd);
+-    data->ndvec.push_back(tmpstr);
+-
+-    snprintf(tmpstr, 128, "%f", net->max_lat);
+-    data->ndvec.push_back(tmpstr);
+-
+-    snprintf(tmpstr, 128, "%f", net->max_lon);
+-    data->ndvec.push_back(tmpstr);
+-
+-    snprintf(tmpstr, 128, "%f", net->max_alt);
+-    data->ndvec.push_back(tmpstr);
+-
+-    snprintf(tmpstr, 128, "%f", net->max_spd);
+-    data->ndvec.push_back(tmpstr);
+-
+     snprintf(tmpstr, 128, "%d", net->ipdata.octets);
+     data->ndvec.push_back(tmpstr);
+ 
+@@ -476,18 +444,6 @@
+     snprintf(tmpstr, 128, "%f", net->best_alt);
+     data->ndvec.push_back(tmpstr);
+ 
+-    snprintf(tmpstr, 128, "%f", net->aggregate_lat);
+-    data->ndvec.push_back(tmpstr);
+-
+-    snprintf(tmpstr, 128, "%f", net->aggregate_lon);
+-    data->ndvec.push_back(tmpstr);
+-
+-    snprintf(tmpstr, 128, "%f", net->aggregate_alt);
+-    data->ndvec.push_back(tmpstr);
+-
+-    snprintf(tmpstr, 128, "%ld", net->aggregate_points);
+-    data->ndvec.push_back(tmpstr);
+-
+     snprintf(tmpstr, 128, "%ld", net->datasize);
+     data->ndvec.push_back(tmpstr);
+ 
+@@ -573,45 +529,6 @@
+     snprintf(tmpstr, 128, "%d", cli->interesting_packets);
+     data->cdvec.push_back(tmpstr);
+ 
+-    snprintf(tmpstr, 128, "%d", cli->gps_fixed);
+-    data->cdvec.push_back(tmpstr);
+-
+-    snprintf(tmpstr, 128, "%f", cli->min_lat);
+-    data->cdvec.push_back(tmpstr);
+-
+-    snprintf(tmpstr, 128, "%f", cli->min_lon);
+-    data->cdvec.push_back(tmpstr);
+-
+-    snprintf(tmpstr, 128, "%f", cli->min_alt);
+-    data->cdvec.push_back(tmpstr);
+-
+-    snprintf(tmpstr, 128, "%f", cli->min_spd);
+-    data->cdvec.push_back(tmpstr);
+-
+-    snprintf(tmpstr, 128, "%f", cli->max_lat);
+-    data->cdvec.push_back(tmpstr);
+-
+-    snprintf(tmpstr, 128, "%f", cli->max_lon);
+-    data->cdvec.push_back(tmpstr);
+-
+-    snprintf(tmpstr, 128, "%f", cli->max_alt);
+-    data->cdvec.push_back(tmpstr);
+-
+-    snprintf(tmpstr, 128, "%f", cli->max_spd);
+-    data->cdvec.push_back(tmpstr);
+-
+-    snprintf(tmpstr, 128, "%f", cli->aggregate_lat);
+-    data->cdvec.push_back(tmpstr);
+-
+-    snprintf(tmpstr, 128, "%f", cli->aggregate_lon);
+-    data->cdvec.push_back(tmpstr);
+-
+-    snprintf(tmpstr, 128, "%f", cli->aggregate_alt);
+-    data->cdvec.push_back(tmpstr);
+-
+-    snprintf(tmpstr, 128, "%ld", cli->aggregate_points);
+-    data->cdvec.push_back(tmpstr);
+-
+     snprintf(tmpstr, 128, "%2.1f", cli->maxrate);
+     data->cdvec.push_back(tmpstr);
+ 
+diff -urN kismet.old/tcpclient.cc kismet.dev/tcpclient.cc
+--- kismet.old/tcpclient.cc	2005-07-25 16:19:44.000000000 +0200
++++ kismet.dev/tcpclient.cc	2005-08-15 01:06:01.938267096 +0200
+@@ -29,18 +29,16 @@
+     protocol_default_map["STRING"] = "bssid,sourcemac,text";
+     protocol_default_map["KISMET"] = "version,starttime,servername,timestamp,"
+         "channelhop,newversion";
+-    protocol_default_map["GPS"] = "lat,lon,alt,spd,heading,fix";
+     protocol_default_map["NETWORK"] = "bssid,type,ssid,beaconinfo,llcpackets,datapackets,cryptpackets,"
+-        "weakpackets,channel,wep,firsttime,lasttime,atype,rangeip,gpsfixed,minlat,minlon,minalt,minspd,"
+-        "maxlat,maxlon,maxalt,maxspd,octets,cloaked,beaconrate,maxrate,"
+-        "quality,signal,noise,bestquality,bestsignal,bestnoise,bestlat,bestlon,bestalt,"
+-        "agglat,agglon,aggalt,aggpoints,datasize,turbocellnid,turbocellmode,turbocellsat,"
++        "weakpackets,channel,wep,firsttime,lasttime,atype,rangeip,"
++        "octets,cloaked,beaconrate,maxrate,"
++        "quality,signal,noise,bestquality,bestsignal,bestnoise,"
++        "datasize,turbocellnid,turbocellmode,turbocellsat,"
+         "carrierset,maxseenrate,encodingset,decrypted,dupeivpackets";
+     protocol_default_map["CLIENT"] = "bssid,mac,type,firsttime,lasttime,"
+         "datapackets,cryptpackets,weakpackets,"
+-        "gpsfixed,minlat,minlon,minalt,minspd,maxlat,maxlon,maxalt,maxspd,"
+-        "agglat,agglon,aggalt,aggpoints,maxrate,quality,signal,noise,"
+-        "bestquality,bestsignal,bestnoise,bestlat,bestlon,bestalt,"
++        "maxrate,quality,signal,noise,"
++        "bestquality,bestsignal,bestnoise,"
+         "atype,ip,datasize,maxseenrate,encodingset,decrypted,wep";
+     protocol_default_map["WEPKEY"] = "origin,bssid,key,encrypted,failed";
+     protocol_default_map["CARD"] = "interface,type,username,channel,id,packets,hopping";
+@@ -48,7 +46,6 @@
+     sv_valid = 0;
+     client_fd = 0;
+ 
+-    lat = lon = alt = spd = 0;
+     mode = 0;
+ 
+     num_networks = num_packets = num_crypt = num_interesting =
+@@ -343,14 +340,6 @@
+ 		// Bitmask set of encoding types seen in this network
+ 		int encoding_set;
+ 
+-		int gps_fixed;
+-		float min_lat, min_lon, min_alt, min_spd;
+-		float max_lat, max_lon, max_alt, max_spd;
+-
+-		// Averaged center position
+-		double aggregate_lat, aggregate_lon, aggregate_alt;
+-		long aggregate_points;
+-
+ 		// How fast we can go
+ 		float maxrate;
+ 
+@@ -359,7 +348,6 @@
+ 		// Connection information
+ 		int quality, signal, noise;
+ 		int best_quality, best_signal, best_noise;
+-		float best_lat, best_lon, best_alt;
+ 
+ 		// Amount of data, in bytes
+ 		unsigned long datasize;
+@@ -393,23 +381,20 @@
+         scanned = sscanf(in_data+hdrlen+18, "%d \001%255[^\001]\001 "
+ 						 "\001%255[^\001]\001 "
+                          "%d %d %d %d %d %d %d %d %d %hd.%hd.%hd.%hd "
+-                         "%d %f %f %f %f %f %f %f %f %d %d %d %f %d %d %d %d %d %d "
+-						 "%f %f %f %lf %lf %lf %ld %ld"
++                         "%d %d %d %f %d %d %d %d %d %d "
++					 "%ld"
+                          "%d %d %d %d %d %d %d %d",
+                          (int *) &type, ssid, beaconstr,
+                          &llc_packets, &data_packets, &crypt_packets, 
+                          &interesting_packets, &channel, &crypt_set, 
+                          (int *) &first_time, (int *) &last_time,
+                          (int *) &atype, &range[0], &range[1], &range[2], 
+-                         &range[3], &gps_fixed, &min_lat, &min_lon, 
+-                         &min_alt, &min_spd, &max_lat, &max_lon, 
+-                         &max_alt, &max_spd, &octets, 
++                         &range[3],
++                         &octets, 
+                          &cloaked, &beacon, &maxrate, &quality, 
+                          &signal, &noise, &best_quality, 
+                          &best_signal, &best_noise,
+-                         &best_lat, &best_lon, &best_alt,
+-                         &aggregate_lat, &aggregate_lon, &aggregate_alt,
+-                         &aggregate_points, &datasize,
++                         &datasize,
+                          &turbocell_nid, (int *) &turbocell_mode, 
+                          &turbocell_sat, &carrier_set, &maxseenrate, 
+                          &encoding_set, &decrypted, &dupeiv_packets);
+@@ -456,15 +441,6 @@
+ 		net->beacon = beacon;
+ 		net->carrier_set = carrier_set;
+ 		net->encoding_set = encoding_set;
+-		net->gps_fixed = gps_fixed;
+-		net->min_lat = min_lat;
+-		net->min_lon = min_lon;
+-		net->min_alt = min_alt;
+-		net->min_spd = min_spd;
+-		net->max_lat = max_lat;
+-		net->max_lon = max_lon;
+-		net->max_alt = max_alt;
+-		net->max_spd = max_spd;
+         net->maxrate = maxrate;
+ 		net->maxseenrate = maxseenrate;
+ 		net->quality = quality;
+@@ -473,13 +449,6 @@
+ 		net->best_quality = best_quality;
+ 		net->best_signal = best_signal;
+ 		net->best_noise = best_noise;
+-		net->best_lat = best_lat;
+-		net->best_lon = best_lon;
+-		net->best_alt = best_alt;
+-		net->aggregate_points = aggregate_points;
+-		net->aggregate_lat = aggregate_lat;
+-		net->aggregate_lon = aggregate_lon;
+-		net->aggregate_alt = aggregate_alt;
+ 		net->datasize = datasize;
+ 		net->dupeiv_packets = dupeiv_packets;
+ 		net->decrypted = decrypted;
+@@ -505,13 +474,6 @@
+ 		int crypt_packets;
+ 		int interesting_packets;
+ 
+-		// gps data
+-		int gps_fixed;
+-		float min_lat, min_lon, min_alt, min_spd;
+-		float max_lat, max_lon, max_alt, max_spd;
+-		double aggregate_lat, aggregate_lon, aggregate_alt;
+-		long aggregate_points;
+-
+ 		// How fast we can go
+ 		float maxrate;
+ 		// How fast we've been seen to go, in 100kbs units
+@@ -523,7 +485,6 @@
+ 		// Last seen quality for a packet from this client
+ 		int quality, signal, noise;
+ 		int best_quality, best_signal, best_noise;
+-		float best_lat, best_lon, best_alt;
+ 
+ 		// ip data
+ 		address_type atype;
+@@ -558,24 +519,16 @@
+             return 0;
+         }
+ 
+-        scanned = sscanf(in_data+hdrlen+36, "%d %d %d %d %d %d %d "
+-                         "%f %f %f %f %f %f %f %f %lf %lf "
+-                         "%lf %ld %f %d %d %d %d %d %d "
+-                         "%f %f %f %d %hd.%hd.%hd.%hd %ld %d %d %d %d",
++        scanned = sscanf(in_data+hdrlen+36, "%d %d %d %d %d %d "
++                         "%d %d %d %d %d %d "
++                         "%d %hd.%hd.%hd.%hd %ld %d %d %d %d",
+                          (int *) &type,
+                          (int *) &first_time, (int *) &last_time,
+                          &data_packets, &crypt_packets,
+                          &interesting_packets,
+-                         &gps_fixed, &min_lat, &min_lon,
+-                         &min_alt, &min_spd,
+-                         &max_lat, &max_lon, &max_alt,
+-                         &max_spd, &aggregate_lat, 
+-						 &aggregate_lon,
+-                         &aggregate_alt, &aggregate_points,
+                          &maxrate, &quality, &signal, &noise,
+                          &best_quality, &best_signal, 
+ 						 &best_noise,
+-                         &best_lat, &best_lon, &best_alt,
+                          (int *) &atype, &ip[0], &ip[1], &ip[2], &ip[3],
+                          &datasize, &maxseenrate, &encoding_set,
+                          &decrypted, &crypt_set);
+@@ -607,15 +560,6 @@
+ 		client->last_time = last_time;
+ 		client->first_time = first_time;
+ 		client->encoding_set = encoding_set;
+-		client->gps_fixed = gps_fixed;
+-		client->min_lat = min_lat;
+-		client->min_lon = min_lon;
+-		client->min_alt = min_alt;
+-		client->min_spd = min_spd;
+-		client->max_lat = max_lat;
+-		client->max_lon = max_lon;
+-		client->max_alt = max_alt;
+-		client->max_spd = max_spd;
+         client->maxrate = maxrate;
+ 		client->maxseenrate = maxseenrate;
+ 		client->quality = quality;
+@@ -624,13 +568,6 @@
+ 		client->best_quality = best_quality;
+ 		client->best_signal = best_signal;
+ 		client->best_noise = best_noise;
+-		client->best_lat = best_lat;
+-		client->best_lon = best_lon;
+-		client->best_alt = best_alt;
+-		client->aggregate_lat = aggregate_lat;
+-		client->aggregate_lon = aggregate_lon;
+-		client->aggregate_alt = aggregate_alt;
+-		client->aggregate_points = aggregate_points;
+ 		client->datasize = datasize;
+ 		client->decrypted = decrypted;
+ 
+@@ -653,10 +590,6 @@
+             net_map[bssid]->type = network_remove;
+         }
+ 
+-    } else if (!strncmp(header, "*GPS", 64)) {
+-        if (sscanf(in_data+hdrlen, "%f %f %f %f %f %d", &lat, &lon, &alt, &spd, &heading, &mode) < 5)
+-            return 0;
+-
+     } else if (!strncmp(header, "*INFO", 64)) {
+         char chan_details[1024];
+         char chan_details_sec[1024];
+@@ -843,14 +776,6 @@
+     return serv_time;
+ }
+ 
+-int TcpClient::FetchLoc(float *in_lat, float *in_lon, float *in_alt, float *in_spd, float *in_hed, int *in_mode) {
+-    *in_lat = lat; *in_lon = lon;
+-    *in_alt = alt; *in_spd = spd;
+-    *in_hed = heading;
+-    *in_mode = mode;
+-    return mode;
+-}
+-
+ vector<TcpClient::card_info *> TcpClient::FetchCardList() {
+     return card_map_vec;
+ }
+diff -urN kismet.old/tcpclient.h kismet.dev/tcpclient.h
+--- kismet.old/tcpclient.h	2005-07-25 16:19:44.000000000 +0200
++++ kismet.dev/tcpclient.h	2005-08-15 01:06:11.096874776 +0200
+@@ -125,8 +125,6 @@
+     // Disable a protocol
+     void RemoveProtocol(string in_protocol);
+ 
+-    // Fetch the location
+-    int FetchLoc(float *in_lat, float *in_lon, float *in_alt, float *in_spd, float *in_hed, int *in_mode);
+     // Fetch the mode
+     int FetchMode() { return mode; }
+ 
+@@ -236,8 +234,6 @@
+     struct hostent *client_host;
+ 
+     // Data sent to us
+-    // GPS
+-    float lat, lon, alt, spd, heading;
+     int mode;
+     // Timestampt
+     time_t serv_time;
+diff -urN kismet.old/tcpstreamer.cc kismet.dev/tcpstreamer.cc
+--- kismet.old/tcpstreamer.cc	2005-07-25 16:19:44.000000000 +0200
++++ kismet.dev/tcpstreamer.cc	2005-08-15 00:54:02.870582000 +0200
+@@ -31,7 +31,6 @@
+ 
+     max_fd = 0;
+ 
+-	gpsd = NULL;
+ }
+ 
+ TcpStreamer::~TcpStreamer()
+@@ -287,10 +286,6 @@
+     hdr.frame_len = (uint32_t) htonl(sizeof(struct stream_version_packet));
+ 
+     vpkt.drone_version = (uint16_t) htons(STREAM_DRONE_VERSION);
+-	if (gpsd != NULL)
+-		vpkt.gps_enabled = 1;
+-	else
+-		vpkt.gps_enabled = 0;
+ 
+     if (!FD_ISSET(in_fd, &client_fds))
+         return -1;
+@@ -361,22 +356,6 @@
+     packhdr.carrier = in_packet->carrier;
+     packhdr.encoding = in_packet->encoding;
+     packhdr.datarate = (uint32_t) htonl(in_packet->datarate);
+-    // GPS first-iteration
+-    Float2Pair(in_packet->gps_lat, &packhdr.gps_lat, &packhdr.gps_lat_mant);
+-    Float2Pair(in_packet->gps_lon, &packhdr.gps_lon, &packhdr.gps_lon_mant);
+-    Float2Pair(in_packet->gps_alt, &packhdr.gps_alt, &packhdr.gps_alt_mant);
+-    Float2Pair(in_packet->gps_spd, &packhdr.gps_spd, &packhdr.gps_spd_mant);
+-    packhdr.gps_fix = in_packet->gps_fix;
+-    // endianswap
+-    packhdr.gps_lat = (int16_t) htons(packhdr.gps_lat);
+-    packhdr.gps_lat_mant = (int64_t) kis_hton64(packhdr.gps_lat_mant);
+-    packhdr.gps_lon = (int16_t) htons(packhdr.gps_lon);
+-    packhdr.gps_lon_mant = (int64_t) kis_hton64(packhdr.gps_lon_mant);
+-    packhdr.gps_alt = (int16_t) htons(packhdr.gps_alt);
+-    packhdr.gps_alt_mant = (int64_t) kis_hton64(packhdr.gps_alt_mant);
+-    packhdr.gps_spd = (int16_t) htons(packhdr.gps_spd);
+-    packhdr.gps_spd_mant = (int64_t) kis_hton64(packhdr.gps_spd_mant);
+-
+     // Sourcename
+     memcpy(packhdr.sourcename, in_packet->sourcename, 32);
+ 
+diff -urN kismet.old/tcpstreamer.h kismet.dev/tcpstreamer.h
+--- kismet.old/tcpstreamer.h	2005-07-25 16:19:44.000000000 +0200
++++ kismet.dev/tcpstreamer.h	2005-08-15 00:54:22.181646272 +0200
+@@ -42,7 +42,6 @@
+ #include "ringbuf.h"
+ #include "packet.h"
+ #include "packetstream.h"
+-#include "gpsd.h"
+ 
+ // Global in kismet_drone.cc
+ extern int silent;
+@@ -76,9 +75,6 @@
+ 
+     int FetchDescriptor() { return serv_fd; }
+ 
+-    // Register the GPS server for us to use
+-    void AddGpstracker(GPSD *in_gpsd) { gpsd = in_gpsd; }
+-
+     void Kill(int in_fd);
+ 
+     int Poll(fd_set& in_rset, fd_set& in_wset);
+@@ -125,7 +121,6 @@
+ 
+     unsigned int max_fd;
+ 
+-	GPSD *gpsd;
+ };
+ 
+ #endif
+diff -urN kismet.old/tracktypes.h kismet.dev/tracktypes.h
+--- kismet.old/tracktypes.h	2005-07-25 16:19:44.000000000 +0200
++++ kismet.dev/tracktypes.h	2005-08-15 00:55:29.308441448 +0200
+@@ -104,22 +104,6 @@
+ 
+         data_packets = crypt_packets = interesting_packets = 0;
+ 
+-        gps_fixed = -1;
+-
+-        /* by setting the min to the highest possible values in the range and
+-         max to the lowest we ensure that the data is correct */
+-        min_lat = 90;
+-        max_lat = -90;
+-        min_lon = 180;
+-        max_lon = -180;
+-
+-        /* since these are not limited, we just set to 0 */
+-        min_alt = min_spd = 0;
+-        max_alt = max_spd = 0;
+-
+-        aggregate_lat = aggregate_lon = aggregate_alt = 0;
+-        aggregate_points = 0;
+-
+         maxrate = 0;
+         maxseenrate = 0;
+ 
+@@ -219,13 +203,6 @@
+     int crypt_packets;
+     int interesting_packets;
+ 
+-    // gps data
+-    int gps_fixed;
+-    float min_lat, min_lon, min_alt, min_spd;
+-    float max_lat, max_lon, max_alt, max_spd;
+-    double aggregate_lat, aggregate_lon, aggregate_alt;
+-    long aggregate_points;
+-
+     // How fast we can go
+     double maxrate;
+     // How fast we've been seen to go, in 100kbs units
+@@ -288,22 +265,6 @@
+         beacon = 0;
+         listed = 0;
+ 
+-        gps_fixed = -1;
+-
+-        /* by setting the min to the highest possible values in the range and
+-         max to the lowest we ensure that the data is correct */
+-        min_lat = 90;
+-        max_lat = -90;
+-        min_lon = 180;
+-        max_lon = -180;
+-
+-        /* since these are not limited, we just set to 0 */
+-        min_alt = min_spd = 0;
+-        max_alt = max_spd = 0;
+-
+-        aggregate_lat = aggregate_lon = aggregate_alt = 0;
+-        aggregate_points = 0;
+-
+         maxrate = 0;
+         maxseenrate = 0;
+ 
+@@ -469,14 +430,6 @@
+ 
+     map<string, cdp_packet> cisco_equip;
+ 
+-    int gps_fixed;
+-    float min_lat, min_lon, min_alt, min_spd;
+-    float max_lat, max_lon, max_alt, max_spd;
+-
+-    // Averaged center position
+-    double aggregate_lat, aggregate_lon, aggregate_alt;
+-    long aggregate_points;
+-
+     // How fast we can go
+     double maxrate;
+ 
