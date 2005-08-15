@@ -17,6 +17,7 @@ PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 include $(TOPDIR)/package/rules.mk
 
 $(eval $(call PKG_template,RRDCOLLECT,rrdcollect,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,RRDCOLLECT_EXAMPLE,rrdcollect-example,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
@@ -64,13 +65,22 @@ $(PKG_BUILD_DIR)/.built:
 	touch $@
 
 $(IPKG_RRDCOLLECT):
-	install -d -m0755 $(IDIR_RRDCOLLECT)/etc
-	install -m0644 ./files/rrdcollect.conf $(IDIR_RRDCOLLECT)/etc
-	install -d -m0755 $(IDIR_RRDCOLLECT)/etc/init.d
-	install -m0755 ./files/rrdcollect.init $(IDIR_RRDCOLLECT)/etc/init.d/rrdcollect
-	ln -sf rrdcollect $(IDIR_RRDCOLLECT)/etc/init.d/S98rrdcollect
 	install -d -m0755 $(IDIR_RRDCOLLECT)/usr/sbin
 	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/rrdcollect $(IDIR_RRDCOLLECT)/usr/sbin/
 	$(RSTRIP) $(IDIR_RRDCOLLECT)
 	$(IPKG_BUILD) $(IDIR_RRDCOLLECT) $(PACKAGE_DIR)
+
+$(IPKG_RRDCOLLECT_EXAMPLE):
+	install -d -m0755 $(IDIR_RRDCOLLECT_EXAMPLE)/etc
+	install -m0644 ./files/rrd.conf $(IDIR_RRDCOLLECT_EXAMPLE)/etc/
+	install -m0644 ./files/rrdcollect.conf $(IDIR_RRDCOLLECT_EXAMPLE)/etc/
+	install -d -m0755 $(IDIR_RRDCOLLECT_EXAMPLE)/etc/init.d
+	install -m0755 ./files/rrdcollect.init $(IDIR_RRDCOLLECT_EXAMPLE)/etc/init.d/S98rrdcollect
+	install -d -m0755 $(IDIR_RRDCOLLECT_EXAMPLE)/usr/bin
+	install -m0755 ./files/rrd.sh $(IDIR_RRDCOLLECT_EXAMPLE)/usr/bin/
+	install -d -m0755 $(IDIR_RRDCOLLECT_EXAMPLE)/www/cgi-bin
+	ln -sf /var/lib/rrdcollect/rrd.cgi $(IDIR_RRDCOLLECT_EXAMPLE)/www/cgi-bin/rrd.cgi
+	ln -sf /var/lib/rrdcollect/img $(IDIR_RRDCOLLECT_EXAMPLE)/www/img
+	$(RSTRIP) $(IDIR_RRDCOLLECT_EXAMPLE)
+	$(IPKG_BUILD) $(IDIR_RRDCOLLECT_EXAMPLE) $(PACKAGE_DIR)
 
