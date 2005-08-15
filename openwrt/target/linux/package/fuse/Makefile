@@ -1,6 +1,7 @@
 # $Id$
 
 include $(TOPDIR)/rules.mk
+include ../../rules.mk
 
 PKG_NAME:=fuse
 PKG_VERSION:=2.2.1
@@ -66,7 +67,7 @@ $(PKG_BUILD_DIR)/.configured:
 $(PKG_BUILD_DIR)/.built:
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
-		ARCH="$(ARCH)" \
+		ARCH="$(LINUX_KARCH)" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		SUBDIRS="kernel" \
 		all install

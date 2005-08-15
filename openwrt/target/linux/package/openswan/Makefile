@@ -1,6 +1,7 @@
 # $Id$
 
 include $(TOPDIR)/rules.mk
+include ../../rules.mk
 
 PKG_NAME:=openswan
 PKG_VERSION:=2.3.1
@@ -26,7 +27,7 @@ $(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
 		KERNELSRC="$(KERNEL_DIR)" \
-		ARCH="mips" \
+		ARCH="$(LINUX_KARCH)" \
 		USERCOMPILE="$(FLAGS)" \
 		module
 
