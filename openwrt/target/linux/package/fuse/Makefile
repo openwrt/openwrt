@@ -55,8 +55,8 @@ $(PKG_BUILD_DIR)/.configured:
 		  --enable-shared \
 		  --enable-static \
 		  --enable-kernel-module \
-		  --enable-lib \
-		  --enable-util \
+		  --disable-lib \
+		  --disable-util \
 		  --disable-example \
 		  --disable-auto-modprobe \
 		  --with-kernel=$(KERNEL_DIR) \
@@ -66,6 +66,7 @@ $(PKG_BUILD_DIR)/.configured:
 $(PKG_BUILD_DIR)/.built:
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
+		ARCH="$(ARCH)" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		SUBDIRS="kernel" \
 		all install
