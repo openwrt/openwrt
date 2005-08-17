@@ -168,10 +168,10 @@ $(eval $(call KMOD_template,SCHED,sched,\
 ))
 $(eval $(call KMOD_template,VIDEODEV,videodev,\
 	$(MODULES_DIR)/kernel/drivers/media/video/videodev.o \
-))
+,CONFIG_VIDEO_DEV))
 $(eval $(call KMOD_template,PWC,pwc,\
 	$(MODULES_DIR)/kernel/drivers/usb/pwc.o \
-))
+,CONFIG_USB_PWC))
 
 $(TARGETS): $(PACKAGE_DIR)
 
