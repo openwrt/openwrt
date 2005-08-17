@@ -38,7 +38,7 @@ $(KDIR)/vmlinux.lzma: $(KDIR)/vmlinux
 	cat $^ | $(STAGING_DIR)/bin/lzma e -si -so -eos -lc1 -lp2 -pb2 > $@ || (rm -f $@ && false)
 
 ifeq ($(IB),)
-$(KDIR)/vmlinux.bin: $(KDIR)/vmlinux.lzma
+$(KDIR)/vmlinux.bin: $(KDIR)/vmlinux.lzma compile
 	$(TARGET_CROSS)ld -T $(PKG_BUILD_DIR)/zimage.script -r -b binary $< -o $(KDIR)/zimage.o
 	$(TARGET_CROSS)ld -static -G 0 --defsym kernel_entry=$(KERNEL_ENTRY) -T $(PKG_BUILD_DIR)/ld.script \
 		$(PKG_BUILD_DIR)/loader.o \
@@ -48,7 +48,7 @@ $(KDIR)/vmlinux.bin: $(KDIR)/vmlinux.lzma
 	$(TARGET_CROSS)objcopy -O srec $(KDIR)/loader $(KDIR)/ram_zimage.sre
 	$(STAGING_DIR)/bin/srec2bin $(KDIR)/ram_zimage.sre $@
 	
-$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-kernel.bin: $(KDIR)/vmlinux.bin
+$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-kernel.bin: $(KDIR)/vmlinux.bin 
 endif
 
 $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-kernel.bin:
