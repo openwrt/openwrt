@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openvpn
-PKG_VERSION:=2.0
-PKG_RELEASE:=1
-PKG_MD5SUM:=7401faebc6baee9add32608709c54eec
+PKG_VERSION:=2.0.1
+PKG_RELEASE:=2
+PKG_MD5SUM:=fad7a08c0d68371c2c0e6428bcb98fa5
 
 PKG_SOURCE_URL:=http://openvpn.net/release @SF/openvpn
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
