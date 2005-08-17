@@ -16,8 +16,8 @@ case $1 in
   mkdir -p $RUN_D
   mkdir -p $IMG_D
   mkdir -p $RRD_D
-  [ -x $CGI_S ] || /usr/bin/rrd.sh cgi
   [ -n "$RRD_F" ] || /usr/bin/rrd.sh init
+  [ -x $CGI_S ] || /usr/bin/rrd.sh cgi
   $BIN $OPTIONS
   ;;
  stop)
