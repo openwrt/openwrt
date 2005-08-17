@@ -1,0 +1,12 @@
+diff -ruN ssmtp-2.60-old/arpadate.c ssmtp-2.60-new/arpadate.c
+--- ssmtp-2.60-old/arpadate.c	2002-12-08 18:30:11.000000000 +0100
++++ ssmtp-2.60-new/arpadate.c	2004-05-23 18:54:32.000000000 +0200
+@@ -79,7 +79,7 @@
+ 	time_t now;
+ 
+ 	/* RFC822 format string borrowed from GNU shellutils date.c */
+-	const char *format = "%a, %_d %b %Y %H:%M:%S %z";
++	const char *format = "%a, %d %b %Y %H:%M:%S %z";
+ 
+ 	now = time(NULL);
+ 
