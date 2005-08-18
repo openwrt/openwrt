@@ -1,4 +1,4 @@
-config BR2_PACKAGE_GNUTLS
+config BR2_COMPILE_GNUTLS
 	bool
 	default n
 	depends BR2_PACKAGE_LIBGNUTLS
@@ -7,10 +7,8 @@ config BR2_PACKAGE_LIBGNUTLS
 	tristate "libgnutls - The GNU TLS library"
 #	default m if CONFIG_DEVEL
 	default n
-	select BR2_PACKAGE_GNUTLS
+	select BR2_COMPILE_GNUTLS
 	select BR2_PACKAGE_LIBGCRYPT
-	select BR2_PACKAGE_LIBOPENCDK
-	select BR2_PACKAGE_LIBTASN1
 	help
 	 GnuTLS is a project that aims to develop a library which provides a 
 	 secure layer, over a reliable transport layer. Currently the GnuTLS 
