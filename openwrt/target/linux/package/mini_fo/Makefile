@@ -1,6 +1,7 @@
 # $Id$
 
 include $(TOPDIR)/rules.mk
+include ../../rules.mk
 
 PKG_NAME := mini_fo
 PKG_VERSION := 0.6.1-pre1
