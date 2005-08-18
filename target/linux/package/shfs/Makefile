@@ -1,6 +1,7 @@
 # $Id$
 
 include $(TOPDIR)/rules.mk
+include ../../rules.mk
 
 PKG_NAME := shfs
 PKG_VERSION := 0.35
