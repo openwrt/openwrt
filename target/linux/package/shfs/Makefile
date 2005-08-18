@@ -29,6 +29,7 @@ $(PKG_BUILD_DIR)/.built:
 	rm -rf $(PKG_INSTALL_DIR)
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
+		ARCH="$(LINUX_KARCH)" \
 		OFLAGS="$(TARGET_CFLAGS)" \
 		CC="$(TARGET_CC)" \
 		LINKER="$(TARGET_CC)" \
