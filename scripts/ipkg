@@ -121,6 +121,8 @@ Valid destinations are directories or one of the dest names from $IPKG_CONF:" >&
 		IPKG_TMP=$IPKG_ROOT/tmp/ipkg
 	fi
 
+	[ -e "$IPKG_TMP" ] || mkdir -p $IPKG_TMP
+
 	# Destination specific ipkg meta-data directory
 	IPKG_STATE_DIR=$IPKG_ROOT/$IPKG_DIR_PREFIX
 
@@ -689,8 +691,6 @@ Status: install ok not-installed" | ipkg_status_update_sd $sd $pkg
 				ipkg_status_remove_sd $sd $pkg
 				return 1;
 			fi
-
-			[ -e "$IPKG_TMP" ] || mkdir -p $IPKG_TMP
 
 			echo ""
 			local tmp_pkg_file="$IPKG_TMP/"`ipkg_file_part $filename`
