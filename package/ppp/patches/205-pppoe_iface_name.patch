@@ -6,7 +6,7 @@ diff -ruN ppp-2.4.3-orig/pppd/plugins/rp-pppoe/plugin.c ppp-2.4.3-3/pppd/plugins
  	cmd += 4;
      } else if (strlen(cmd) < 4
 -	       || (strncmp(cmd, "eth", 3) && strncmp(cmd, "nas", 3)
-+	       || (strncmp(cmd, "eth", 3) && strncmp(cmd, "nas", 3) && strncmp(cmd, "vlan", 4)
++	       || (strncmp(cmd, "eth", 3) && strncmp(cmd, "nas", 3) && strncmp(cmd, "vlan", 4) && strncmp(cmd, "ath", 3)
  		   && strncmp(cmd, "tap", 3) && strncmp(cmd, "br", 2))) {
  	return 0;
      }
