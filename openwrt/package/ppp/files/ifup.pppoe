@@ -15,7 +15,7 @@ for module in slhc ppp_generic pppox pppoe; do
 done
 
 while :; do
-	IFNAME=$(nvram get pppoe_ifname)
+	IFNAME=nic-$(nvram get pppoe_ifname)
 	USERNAME=$(nvram get ppp_username)
 	PASSWORD=$(nvram get ppp_passwd)
 	REDIAL=$(nvram get ppp_redialperiod)
