@@ -1,0 +1,351 @@
+diff -urN linux.old/include/linux/netfilter_ipv4/ip_conntrack.h linux.dev/include/linux/netfilter_ipv4/ip_conntrack.h
+--- linux.old/include/linux/netfilter_ipv4/ip_conntrack.h	2005-08-20 20:02:06.619827000 +0200
++++ linux.dev/include/linux/netfilter_ipv4/ip_conntrack.h	2005-08-20 20:19:23.302029232 +0200
+@@ -226,6 +226,9 @@
+ 		unsigned int app_data_len;
+ 	} layer7;
+ #endif
++#if defined(CONFIG_IP_NF_CONNTRACK_MARK)
++	unsigned long mark;
++#endif
+ };
+ 
+ /* get master conntrack via master expectation */
+diff -urN linux.old/include/linux/netfilter_ipv4/ipt_CONNMARK.h linux.dev/include/linux/netfilter_ipv4/ipt_CONNMARK.h
+--- linux.old/include/linux/netfilter_ipv4/ipt_CONNMARK.h	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/include/linux/netfilter_ipv4/ipt_CONNMARK.h	2005-08-20 20:19:41.058329864 +0200
+@@ -0,0 +1,25 @@
++#ifndef _IPT_CONNMARK_H_target
++#define _IPT_CONNMARK_H_target
++
++/* Copyright (C) 2002,2004 MARA Systems AB <http://www.marasystems.com>
++ * by Henrik Nordstrom <hno@marasystems.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ */
++
++enum {
++	IPT_CONNMARK_SET = 0,
++	IPT_CONNMARK_SAVE,
++	IPT_CONNMARK_RESTORE
++};
++
++struct ipt_connmark_target_info {
++	unsigned long mark;
++	unsigned long mask;
++	u_int8_t mode;
++};
++
++#endif /*_IPT_CONNMARK_H_target*/
+diff -urN linux.old/include/linux/netfilter_ipv4/ipt_connmark.h linux.dev/include/linux/netfilter_ipv4/ipt_connmark.h
+--- linux.old/include/linux/netfilter_ipv4/ipt_connmark.h	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/include/linux/netfilter_ipv4/ipt_connmark.h	2005-08-20 20:19:41.058329864 +0200
+@@ -0,0 +1,18 @@
++#ifndef _IPT_CONNMARK_H
++#define _IPT_CONNMARK_H
++
++/* Copyright (C) 2002,2004 MARA Systems AB <http://www.marasystems.com>
++ * by Henrik Nordstrom <hno@marasystems.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ */
++
++struct ipt_connmark_info {
++	unsigned long mark, mask;
++	u_int8_t invert;
++};
++
++#endif /*_IPT_CONNMARK_H*/
+diff -urN linux.old/net/ipv4/netfilter/Config.in linux.dev/net/ipv4/netfilter/Config.in
+--- linux.old/net/ipv4/netfilter/Config.in	2005-08-20 20:02:09.325416000 +0200
++++ linux.dev/net/ipv4/netfilter/Config.in	2005-08-20 20:29:11.546602464 +0200
+@@ -6,7 +6,8 @@
+ 
+ tristate 'Connection tracking (required for masq/NAT)' CONFIG_IP_NF_CONNTRACK
+ if [ "$CONFIG_IP_NF_CONNTRACK" != "n" ]; then
+-  dep_tristate '  FTP protocol support' CONFIG_IP_NF_FTP $CONFIG_IP_NF_CONNTRACK
++  bool '  Connection mark tracking support' CONFIG_IP_NF_CONNTRACK_MARK
++  dep_tristate '  FTP protocol support' CONFIG_IP_NF_FTP $CONFIG_IP_NF_CONNTRACKa
+   dep_tristate '  Amanda protocol support' CONFIG_IP_NF_AMANDA $CONFIG_IP_NF_CONNTRACK
+   dep_tristate '  TFTP protocol support' CONFIG_IP_NF_TFTP $CONFIG_IP_NF_CONNTRACK
+   dep_tristate '  IRC protocol support' CONFIG_IP_NF_IRC $CONFIG_IP_NF_CONNTRACK
+@@ -42,6 +43,9 @@
+   if [ "$CONFIG_IP_NF_CONNTRACK" != "n" ]; then
+     dep_tristate '  Connection state match support' CONFIG_IP_NF_MATCH_STATE $CONFIG_IP_NF_CONNTRACK $CONFIG_IP_NF_IPTABLES 
+     dep_tristate '  Connection tracking match support' CONFIG_IP_NF_MATCH_CONNTRACK $CONFIG_IP_NF_CONNTRACK $CONFIG_IP_NF_IPTABLES 
++	if [ "$CONFIG_IP_NF_CONNTRACK_MARK" != "n" ]; then
++	  dep_tristate '  Connection mark match support' CONFIG_IP_NF_MATCH_CONNMARK $CONFIG_IP_NF_IPTABLES
++	fi
+   fi
+   if [ "$CONFIG_EXPERIMENTAL" = "y" ]; then
+     dep_tristate '  Unclean match support (EXPERIMENTAL)' CONFIG_IP_NF_MATCH_UNCLEAN $CONFIG_IP_NF_IPTABLES
+@@ -125,6 +129,9 @@
+  
+     dep_tristate '    MARK target support' CONFIG_IP_NF_TARGET_MARK $CONFIG_IP_NF_MANGLE
+   fi
++  if [ "$CONFIG_IP_NF_CONNTRACK_MARK" != "n" ]; then
++    dep_tristate '  CONNMARK target support' CONFIG_IP_NF_TARGET_CONNMARK $CONFIG_IP_NF_IPTABLES
++  fi
+   dep_tristate '  LOG target support' CONFIG_IP_NF_TARGET_LOG $CONFIG_IP_NF_IPTABLES
+   dep_tristate '  TTL target support' CONFIG_IP_NF_TARGET_TTL $CONFIG_IP_NF_IPTABLES
+   dep_tristate '  ULOG target support' CONFIG_IP_NF_TARGET_ULOG $CONFIG_IP_NF_IPTABLES
+diff -urN linux.old/net/ipv4/netfilter/Makefile linux.dev/net/ipv4/netfilter/Makefile
+--- linux.old/net/ipv4/netfilter/Makefile	2005-08-20 20:02:09.326416000 +0200
++++ linux.dev/net/ipv4/netfilter/Makefile	2005-08-20 20:29:54.081136232 +0200
+@@ -93,6 +93,7 @@
+ 
+ obj-$(CONFIG_IP_NF_MATCH_TTL) += ipt_ttl.o
+ obj-$(CONFIG_IP_NF_MATCH_STATE) += ipt_state.o
++obj-$(CONFIG_IP_NF_MATCH_CONNMARK) += ipt_connmark.o
+ obj-$(CONFIG_IP_NF_MATCH_CONNTRACK) += ipt_conntrack.o
+ obj-$(CONFIG_IP_NF_MATCH_UNCLEAN) += ipt_unclean.o
+ obj-$(CONFIG_IP_NF_MATCH_TCPMSS) += ipt_tcpmss.o
+@@ -110,6 +111,7 @@
+ obj-$(CONFIG_IP_NF_TARGET_REDIRECT) += ipt_REDIRECT.o
+ obj-$(CONFIG_IP_NF_NAT_SNMP_BASIC) += ip_nat_snmp_basic.o
+ obj-$(CONFIG_IP_NF_TARGET_LOG) += ipt_LOG.o
++obj-$(CONFIG_IP_NF_TARGET_CONNMARK) += ipt_CONNMARK.o
+ obj-$(CONFIG_IP_NF_TARGET_TTL) += ipt_TTL.o
+ obj-$(CONFIG_IP_NF_TARGET_ULOG) += ipt_ULOG.o
+ obj-$(CONFIG_IP_NF_TARGET_TCPMSS) += ipt_TCPMSS.o
+diff -urN linux.old/net/ipv4/netfilter/ip_conntrack_core.c linux.dev/net/ipv4/netfilter/ip_conntrack_core.c
+--- linux.old/net/ipv4/netfilter/ip_conntrack_core.c	2005-08-20 20:02:06.828795000 +0200
++++ linux.dev/net/ipv4/netfilter/ip_conntrack_core.c	2005-08-20 20:33:23.308328864 +0200
+@@ -755,6 +755,9 @@
+ 		__set_bit(IPS_EXPECTED_BIT, &conntrack->status);
+ 		conntrack->master = expected;
+ 		expected->sibling = conntrack;
++#ifdef CONFIG_IP_NF_CONNTRACK_MARK
++		conntrack->mark = expected->expectant->mark;
++#endif
+ 		LIST_DELETE(&ip_conntrack_expect_list, expected);
+ 		expected->expectant->expecting--;
+ 		nf_conntrack_get(&master_ct(conntrack)->infos[0]);
+diff -urN linux.old/net/ipv4/netfilter/ip_conntrack_standalone.c linux.dev/net/ipv4/netfilter/ip_conntrack_standalone.c
+--- linux.old/net/ipv4/netfilter/ip_conntrack_standalone.c	2005-08-20 20:02:06.583833000 +0200
++++ linux.dev/net/ipv4/netfilter/ip_conntrack_standalone.c	2005-08-20 20:32:15.364657872 +0200
+@@ -107,6 +107,9 @@
+ 		len += sprintf(buffer + len, "[ASSURED] ");
+ 	len += sprintf(buffer + len, "use=%u ",
+ 		       atomic_read(&conntrack->ct_general.use));
++	#if defined(CONFIG_IP_NF_CONNTRACK_MARK)
++	len += sprintf(buffer + len, "mark=%ld ", conntrack->mark);
++	#endif
+ 
+ 	#if defined(CONFIG_IP_NF_MATCH_LAYER7) || defined(CONFIG_IP_NF_MATCH_LAYER7_MODULE)
+ 	if(conntrack->layer7.app_proto)
+diff -urN linux.old/net/ipv4/netfilter/ipt_CONNMARK.c linux.dev/net/ipv4/netfilter/ipt_CONNMARK.c
+--- linux.old/net/ipv4/netfilter/ipt_CONNMARK.c	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/net/ipv4/netfilter/ipt_CONNMARK.c	2005-08-20 20:21:28.666970864 +0200
+@@ -0,0 +1,118 @@
++/* This kernel module is used to modify the connection mark values, or
++ * to optionally restore the skb nfmark from the connection mark
++ *
++ * Copyright (C) 2002,2004 MARA Systems AB <http://www.marasystems.com>
++ * by Henrik Nordstrom <hno@marasystems.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
++#include <linux/module.h>
++#include <linux/skbuff.h>
++#include <linux/ip.h>
++#include <net/checksum.h>
++
++MODULE_AUTHOR("Henrik Nordstrom <hno@marasytems.com>");
++MODULE_DESCRIPTION("IP tables CONNMARK matching module");
++MODULE_LICENSE("GPL");
++
++#include <linux/netfilter_ipv4/ip_tables.h>
++#include <linux/netfilter_ipv4/ipt_CONNMARK.h>
++#include <linux/netfilter_ipv4/ip_conntrack.h>
++
++static unsigned int
++target(struct sk_buff **pskb,
++       unsigned int hooknum,
++       const struct net_device *in,
++       const struct net_device *out,
++       const void *targinfo,
++       void *userinfo)
++{
++	const struct ipt_connmark_target_info *markinfo = targinfo;
++	unsigned long diff;
++	unsigned long nfmark;
++	unsigned long newmark;
++
++	enum ip_conntrack_info ctinfo;
++	struct ip_conntrack *ct = ip_conntrack_get((*pskb), &ctinfo);
++	if (ct) {
++	    switch(markinfo->mode) {
++	    case IPT_CONNMARK_SET:
++		newmark = (ct->mark & ~markinfo->mask) | markinfo->mark;
++		if (newmark != ct->mark)
++		    ct->mark = newmark;
++		break;
++	    case IPT_CONNMARK_SAVE:
++		newmark = (ct->mark & ~markinfo->mask) | ((*pskb)->nfmark & markinfo->mask);
++		if (ct->mark != newmark)
++		    ct->mark = newmark;
++		break;
++	    case IPT_CONNMARK_RESTORE:
++		nfmark = (*pskb)->nfmark;
++		diff = (ct->mark ^ nfmark & markinfo->mask);
++		if (diff != 0) {
++		    (*pskb)->nfmark = nfmark ^ diff;
++		    (*pskb)->nfcache |= NFC_ALTERED;
++		}
++		break;
++	    }
++	}
++
++	return IPT_CONTINUE;
++}
++
++static int
++checkentry(const char *tablename,
++	   const struct ipt_entry *e,
++	   void *targinfo,
++	   unsigned int targinfosize,
++	   unsigned int hook_mask)
++{
++	struct ipt_connmark_target_info *matchinfo = targinfo;
++	if (targinfosize != IPT_ALIGN(sizeof(struct ipt_connmark_target_info))) {
++		printk(KERN_WARNING "CONNMARK: targinfosize %u != %Zu\n",
++		       targinfosize,
++		       IPT_ALIGN(sizeof(struct ipt_connmark_target_info)));
++		return 0;
++	}
++
++	if (matchinfo->mode == IPT_CONNMARK_RESTORE) {
++	    if (strcmp(tablename, "mangle") != 0) {
++		    printk(KERN_WARNING "CONNMARK: restore can only be called from \"mangle\" table, not \"%s\"\n", tablename);
++		    return 0;
++	    }
++	}
++
++	return 1;
++}
++
++static struct ipt_target ipt_connmark_reg = {
++	.name = "CONNMARK",
++	.target = &target,
++	.checkentry = &checkentry,
++	.me = THIS_MODULE
++};
++
++static int __init init(void)
++{
++	return ipt_register_target(&ipt_connmark_reg);
++}
++
++static void __exit fini(void)
++{
++	ipt_unregister_target(&ipt_connmark_reg);
++}
++
++module_init(init);
++module_exit(fini);
+diff -urN linux.old/net/ipv4/netfilter/ipt_connmark.c linux.dev/net/ipv4/netfilter/ipt_connmark.c
+--- linux.old/net/ipv4/netfilter/ipt_connmark.c	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/net/ipv4/netfilter/ipt_connmark.c	2005-08-20 20:21:28.666970864 +0200
+@@ -0,0 +1,83 @@
++/* This kernel module matches connection mark values set by the
++ * CONNMARK target
++ *
++ * Copyright (C) 2002,2004 MARA Systems AB <http://www.marasystems.com>
++ * by Henrik Nordstrom <hno@marasystems.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
++
++#include <linux/module.h>
++#include <linux/skbuff.h>
++
++MODULE_AUTHOR("Henrik Nordstrom <hno@marasytems.com>");
++MODULE_DESCRIPTION("IP tables connmark match module");
++MODULE_LICENSE("GPL");
++
++#include <linux/netfilter_ipv4/ip_tables.h>
++#include <linux/netfilter_ipv4/ipt_connmark.h>
++#include <linux/netfilter_ipv4/ip_conntrack.h>
++
++static int
++match(const struct sk_buff *skb,
++      const struct net_device *in,
++      const struct net_device *out,
++      const void *matchinfo,
++      int offset,
++      const void *hdr,
++      u_int16_t datalen,
++      int *hotdrop)
++{
++	const struct ipt_connmark_info *info = matchinfo;
++	enum ip_conntrack_info ctinfo;
++	struct ip_conntrack *ct = ip_conntrack_get((struct sk_buff *)skb, &ctinfo);
++	if (!ct)
++	    return 0;
++
++	return ((ct->mark & info->mask) == info->mark) ^ info->invert;
++}
++
++static int
++checkentry(const char *tablename,
++	   const struct ipt_ip *ip,
++	   void *matchinfo,
++	   unsigned int matchsize,
++	   unsigned int hook_mask)
++{
++	if (matchsize != IPT_ALIGN(sizeof(struct ipt_connmark_info)))
++		return 0;
++
++	return 1;
++}
++
++static struct ipt_match connmark_match = {
++	.name = "connmark",
++	.match = &match,
++	.checkentry = &checkentry,
++	.me = THIS_MODULE
++};
++
++static int __init init(void)
++{
++	return ipt_register_match(&connmark_match);
++}
++
++static void __exit fini(void)
++{
++	ipt_unregister_match(&connmark_match);
++}
++
++module_init(init);
++module_exit(fini);
