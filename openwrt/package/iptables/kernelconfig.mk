@@ -17,6 +17,7 @@ ext-$(CONFIG_IP_NF_MATCH_LENGTH) += length
 ext-$(CONFIG_IP_NF_MATCH_TTL) += ttl
 ext-$(CONFIG_IP_NF_MATCH_TCPMSS) += tcpmss
 ext-$(CONFIG_IP_NF_MATCH_HELPER) += helper
+ext-$(CONFIG_IP_NF_MATCH_CONNMARK) += connmark
 #ext-$(CONFIG_IP_NF_MATCH_STATE) += state
 #ext-$(CONFIG_IP_NF_MATCH_CONNTRACK) += conntrack
 ext-$(CONFIG_IP_NF_MATCH_UNCLEAN) += unclean
@@ -34,6 +35,7 @@ ext-$(CONFIG_IP_NF_TARGET_MARK) += MARK
 ext-$(CONFIG_IP_NF_TARGET_ULOG) += ULOG
 #ext-$(CONFIG_IP_NF_TARGET_TCPMSS) += TCPMSS
 ext-$(CONFIG_IP_NF_TARGET_NETMAP) += NETMAP
+ext-$(CONFIG_IP_NF_TARGET_CONNMARK) += CONNMARK
 
 # add extensions that don't depend on kernel config
 ext-m += TTL
