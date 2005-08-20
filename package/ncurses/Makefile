@@ -4,7 +4,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ncurses
 PKG_VERSION:=5.2
-PKG_RELEASE:=6
+PKG_RELEASE:=7
 PKG_MD5SUM:=464d6a49010cf2a6eb9ce59a264d4d47
 
 PKG_SOURCE_URL:=\
@@ -74,7 +74,7 @@ $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
 		CPPFLAGS="-I$(STAGING_DIR)/usr/include" \
-		LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib" \
+		LDFLAGS="-L$(STAGING_DIR)/usr/lib" \
 		ac_cv_linux_vers="2" \
 		./configure \
 		--target=$(GNU_TARGET_NAME) \
@@ -122,7 +122,7 @@ $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 
 $(IPKG_LIBNCURSES):
 	install -d -m0755 $(IDIR_LIBNCURSES)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/lib{ncurses,panel}*.so.* $(IDIR_LIBNCURSES)/usr/lib/
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/lib{ncurses,panel,menu}*.so.* $(IDIR_LIBNCURSES)/usr/lib/
 	install -d -m0755 $(IDIR_LIBNCURSES)/usr/share/terminfo
 	for f in a/ansi d/dumb l/linux s/screen v/vt100 v/vt102 x/xterm x/xterm-color; do \
 		install -d -m0755 $(IDIR_LIBNCURSES)/usr/share/terminfo/`dirname $${f}`; \
@@ -139,9 +139,10 @@ $(STAGING_DIR)/usr/lib/libncurses.so: $(PKG_BUILD_DIR)/.built
 	cp -fpR $(PKG_INSTALL_DIR)/usr/include/panel.h $(STAGING_DIR)/usr/include/
 	cp -fpR $(PKG_INSTALL_DIR)/usr/include/term{,cap}.h $(STAGING_DIR)/usr/include/
 	cp -fpR $(PKG_INSTALL_DIR)/usr/include/unctrl.h $(STAGING_DIR)/usr/include/
+	cp -fpR $(PKG_INSTALL_DIR)/usr/include/menu.h $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
 	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libcurses.so $(STAGING_DIR)/usr/lib/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/lib{ncurses,panel}.{a,so*} $(STAGING_DIR)/usr/lib/
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/lib{ncurses,panel,menu}.{a,so*} $(STAGING_DIR)/usr/lib/
 	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/libncurses.so
@@ -150,6 +151,7 @@ uninstall-dev:
 	rm -rf \
 		$(STAGING_DIR)/usr/include/curses.h \
 		$(STAGING_DIR)/usr/include/{ncurses,panel}.h \
+		$(STAGING_DIR)/usr/include/menu.h \
 		$(STAGING_DIR)/usr/include/panel.h \
 		$(STAGING_DIR)/usr/include/term{,cap}.h \
 		$(STAGING_DIR)/usr/include/unctrl.h \
