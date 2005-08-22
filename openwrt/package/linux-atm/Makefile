@@ -25,12 +25,7 @@ $(eval $(call PKG_template,LINUX_ATM,linux-atm,$(PKG_VERSION)-$(PKG_RELEASE),$(A
 $(PKG_BUILD_DIR)/.configured:
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
 		autoconf; \
-		touch configure.in ; \
-		touch acinclude.m4 ; \
-		touch aclocal.m4 ; \
-		touch Makefile.in ; \
-		touch config.h.in ; \
-		touch configure ; \
+		automake; \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
 		CPPFLAGS="-I$(STAGING_DIR)/usr/include" \
