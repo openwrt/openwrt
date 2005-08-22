@@ -1,0 +1,25 @@
+--- samba-2.0.10/source/Makefile.in.orig	2005-08-20 20:34:44.000000000 +0200
++++ samba-2.0.10/source/Makefile.in	2005-08-20 20:36:27.000000000 +0200
+@@ -475,11 +475,11 @@
+ 
+ bin/smbwrapper.@SHLIBEXT@: $(PICOBJS)
+ 	@echo Linking shared library $@
+-	@$(LD) @LDSHFLAGS@ -o $@ $(PICOBJS) $(LIBS)
++	@$(LD) @LDSHFLAGS@ -o $@ $(PICOBJS) $(LDFLAGS) $(LIBS)
+ 
+ bin/smbwrapper.32.@SHLIBEXT@: $(PICOBJS32)
+ 	@echo Linking shared library $@
+-	@$(LD) -32 @LDSHFLAGS@ -o $@ $(PICOBJS32) $(LIBS)
++	@$(LD) -32 @LDSHFLAGS@ -o $@ $(PICOBJS32) $(LDFLAGS) $(LIBS)
+ 
+ bin/smbsh: $(SMBSH_OBJ) bin/.dummy
+ 	@echo Linking $@
+@@ -487,7 +487,7 @@
+ 
+ bin/libsmb.@SHLIBEXT@: $(LIBSMB_PICOBJS) bin/.dummy
+ 	@echo Linking shared library $@
+-	@$(LD) @LDSHFLAGS@ -o $@ $(LIBSMB_PICOBJS) $(LIBS)
++	@$(LD) @LDSHFLAGS@ -o $@ $(LIBSMB_PICOBJS) $(LDFLAGS) $(LIBS)
+ 
+ install: installbin installman installscripts installcp installswat
+ 
