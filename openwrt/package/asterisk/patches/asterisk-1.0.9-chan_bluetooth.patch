@@ -1,0 +1,3194 @@
+diff -ruN asterisk-1.0.9-old/channels/Makefile asterisk-1.0.9-new/channels/Makefile
+--- asterisk-1.0.9-old/channels/Makefile	2005-08-22 20:42:22.000000000 +0200
++++ asterisk-1.0.9-new/channels/Makefile	2005-08-22 21:12:14.000000000 +0200
+@@ -37,6 +37,12 @@
+ #
+ #CHANNEL_LIBS+=chan_vofr
+ 
++#
++# Asterisk Bluetooth Support
++# http://www.crazygreek.co.uk/content/chan_bluetooth
++#
++CHANNEL_LIBS += chan_bluetooth.so
++
+ ifeq (${OSARCH},OpenBSD)
+ MYSQLLIB=-L/usr/local/lib/mysql -lmysqlclient
+ CFLAGS+=-I/usr/local/include
+@@ -202,6 +208,9 @@
+ chan_h323.so: chan_h323.o h323/libchanh323.a
+ 	$(CC) $(SOLINK) -o $@ $< h323/libchanh323.a $(CHANH323LIB) -L$(PWLIBDIR)/lib $(PTLIB) -L$(OPENH323DIR)/lib $(H323LIB) -L/usr/lib -lcrypto -lssl -lexpat
+ 
++chan_bluetooth.so: chan_bluetooth.o
++	$(CC) $(SOLINK) -o $@ $< $(LDFLAGS_EXTRA) -lbluetooth
++
+ 
+ #chan_modem.so : chan_modem.o
+ #	$(CC) -rdynamic -shared -Xlinker -x -o $@ $<
+diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channels/chan_bluetooth.c
+--- asterisk-1.0.9-old/channels/chan_bluetooth.c	1970-01-01 01:00:00.000000000 +0100
++++ asterisk-1.0.9-new/channels/chan_bluetooth.c	2004-11-06 17:35:58.000000000 +0100
+@@ -0,0 +1,3127 @@
++/*
++ * Asterisk -- A telephony toolkit for Linux.
++ *
++ * Asterisk Bluetooth Channel
++ *
++ * Author: Theo Zourzouvillys <theo@adaptive-it.co.uk>
++ *
++ * Adaptive Linux Solutions <http://www.adaptive-it.co.uk>
++ *
++ * Copyright (C) 2004 Adaptive Linux Solutions
++ *
++ * This program is free software, distributed under the terms of
++ * the GNU General Public License
++ *
++ * ******************* NOTE NOTE NOTE NOTE NOTE *********************
++ *
++ * This code is not at all tested, and only been developed with a
++ * HBH-200 headset and a Nokia 6310i right now.
++ *
++ * Expect it to crash, dial random numbers, and steal all your money.
++ *
++ * PLEASE try any headsets and phones, and let me know the results,
++ * working or not, along with all debug output!
++ *
++ * ------------------------------------------------------------------
++ *
++ * Asterisk Bluetooth Support
++ *
++ * Well, here we go - Attempt to provide Handsfree profile support in
++ * both AG and HF modes, AG (AudioGateway) mode support for using
++ * headsets, and HF (Handsfree) mode for utilising mobile/cell phones
++ *
++ * It would be nice to also provide Headset support at some time in
++ * the future, however, a working Handsfree profile is nice for now,
++ * and as far as I can see, almost all new HS devices also support HF
++ *
++ * ------------------------------------------------------------------
++ * INSTRUCTIONS
++ *
++ * You need to have bluez's bluetooth stack, along with user space
++ * tools (>=v2.10), and running hcid and sdsp.
++ *
++ * See bluetooth.conf for configuration details.
++ *
++ * - Ensure bluetooth subsystem is up and running.  'hciconfig'
++ *   should show interface as UP.
++ *
++ * - If you're trying to use a headset/HS, start up asterisk, and try
++ *   to pair it as you normally would.
++ *
++ * - If you're trying to use a Phone/AG, just make sure bluetooth is
++ *   enabled on your phone, and start up asterisk.
++ *
++ * - 'bluetooth show peers' will show all bluetooth devices states.
++ *
++ * - Send a call out by using Dial(BLT/DevName/0123456).  Call a HS 
++ *   with Dial(BLT/DevName)
++ *
++ * ------------------------------------------------------------------
++ * BUGS
++ *
++ * - What should happen when an AG is paired with asterisk and
++ *   someone uses the AG dalling a number manually?  My test phone
++ *   seems to try to open an SCO link.  Perhaps an extension to 
++ *   route the call to, or maybe drop the RFCOM link all together?
++ *
++ * ------------------------------------------------------------------
++ * COMPATIBILITY
++ *
++ * PLEASE email <theo@adaptive-it.co.uk> with the results of ANY
++ * device not listed in here (working or not), or if the device is
++ * listed and it doesn't work!  Please also email full debug output
++ * for any device not working correctly or generating errors in log.
++ * 
++ * HandsFree Profile:
++ *
++ *  HS (HeadSet):
++ *   - Ericsson HBH-200
++ *
++ *  AG (AudioGateway):
++ *   - Nokia 6310i
++ *
++ * ------------------------------------------------------------------
++ *
++ * Questions, bugs, or (preferably) patches to:
++ *
++ *  <theo@adaptive-it.co.uk>
++ *
++ * ------------------------------------------------------------------
++ */
++
++/* ---------------------------------- */
++
++#include <stdio.h>
++#include <string.h>
++#include <asterisk/lock.h>
++#include <asterisk/utils.h>
++#include <asterisk/channel.h>
++#include <asterisk/channel_pvt.h>
++#include <asterisk/config.h>
++#include <asterisk/logger.h>
++#include <asterisk/module.h>
++#include <asterisk/pbx.h>
++#include <asterisk/sched.h>
++#include <asterisk/options.h>
++#include <asterisk/cli.h>
++#include <asterisk/callerid.h>
++#include <sys/socket.h>
++#include <sys/signal.h>
++#include <sys/time.h>
++#include <errno.h>
++#include <unistd.h>
++#include <stdlib.h>
++#include <arpa/inet.h>
++#include <fcntl.h>
++#include <sys/ioctl.h>
++#include <ctype.h>
++
++#include <bluetooth/bluetooth.h>
++#include <bluetooth/hci.h>
++#include <bluetooth/hci_lib.h>
++#include <bluetooth/sco.h>
++#include <bluetooth/rfcomm.h>
++#include <bluetooth/sdp.h>
++#include <bluetooth/sdp_lib.h>
++
++/* --- Data types and definitions --- */
++
++#ifndef HANDSFREE_AUDIO_GW_SVCLASS_ID
++# define HANDSFREE_AUDIO_GW_SVCLASS_ID 0x111f
++#endif
++
++#define BLUETOOTH_FORMAT    AST_FORMAT_SLINEAR
++#define BLT_CHAN_NAME       "BLT"
++#define BLT_CONFIG_FILE     "bluetooth.conf"
++#define BLT_RDBUFF_MAX      1024
++#define BLT_DEFAULT_HCI_DEV 0
++#define BLT_SVN_REVISION    "$Rev: 38 $"
++
++/* ---------------------------------- */
++
++typedef enum {
++  BLT_ROLE_NONE = 0, // Unknown Device
++  BLT_ROLE_HS = 1,   // Device is a Headset
++  BLT_ROLE_AG = 2    // Device is an Audio Gateway
++} blt_role_t;
++
++/* State when we're in HS mode */
++
++typedef enum {
++  BLT_STATE_WANT_R   = 0,
++  BLT_STATE_WANT_N   = 1,
++  BLT_STATE_WANT_CMD = 2,
++  BLT_STATE_WANT_N2  = 3,
++} blt_state_t;
++
++typedef enum {
++  BLT_STATUS_DOWN,
++  BLT_STATUS_CONNECTING,
++  BLT_STATUS_NEGOTIATING,
++  BLT_STATUS_READY,
++  BLT_STATUS_RINGING,
++  BLT_STATUS_IN_CALL,
++} blt_status_t;
++
++/* ---------------------------------- */
++
++/* Default config settings */
++
++#define BLT_DEFAULT_CHANNEL_AG   5
++#define BLT_DEFAULT_CHANNEL_HS   6
++#define BLT_DEFAULT_ROLE         BLT_ROLE_HS
++#define BLT_OBUF_LEN             (48 * 25)
++
++#define BUFLEN 4800
++
++/* ---------------------------------- */
++
++typedef struct blt_dev blt_dev_t;
++
++// XXX:T: Tidy this lot up.
++struct blt_dev {
++
++  blt_status_t status;              /* Device Status */
++
++  struct ast_channel * owner;       /* Channel we belong to, possibly NULL */
++  blt_dev_t * dev;                  /* The bluetooth device channel is for */
++  struct ast_frame fr;              /* Recieved frame */
++
++  /* SCO Handler */
++  int sco_pipe[2];                   /* SCO alert pipe */
++  int sco;                           /* SCO fd */
++  int sco_handle;                    /* SCO Handle */
++  int sco_mtu;                       /* SCO MTU */
++  int sco_running;                   /* 1 when sCO thread should be running */
++  pthread_t sco_thread;              /* SCO thread */
++  ast_mutex_t sco_lock;              /* SCO lock */
++  int sco_pos_in;                    /* Reader in position */
++  int sco_pos_out;                   /* Reader out position */
++  int sco_sending;                   /* Sending SCO packets */
++  char buf[1024];                    /* Incoming data buffer */
++  char sco_buf_out[BUFLEN+1];          /* 24 chunks of 48 */
++  char sco_buf_in[BUFLEN+1];           /* 24 chunks of 48 */
++
++  char dnid[1024];                    /* Outgoi gncall dialed number */
++  unsigned char * obuf[BLT_OBUF_LEN]; /* Outgoing data buffer */
++  int obuf_len;                       /* Output Buffer Position */
++  int obuf_wpos;                      /* Buffer Reader */
++
++  // device
++  int autoconnect;                  /* 1 for autoconnect */
++  int outgoing_id;                  /* Outgoing connection scheduler id */
++  char * name;                      /* Devices friendly name */
++  blt_role_t role;                  /* Device role (HS or AG) */
++  bdaddr_t bdaddr;                  /* remote address */
++  int channel;                      /* remote channel */
++  int rd;                           /* RFCOMM fd */
++  int tmp_rd;                       /* RFCOMM fd */
++  int call_cnt;                     /* Number of attempted calls */
++  ast_mutex_t lock;                 /* RFCOMM socket lock */
++  char rd_buff[BLT_RDBUFF_MAX];     /* RFCOMM input buffer */
++  int rd_buff_pos;                  /* RFCOMM input buffer position */
++  int ready;                        /* 1 When ready */
++
++  /* AG mode */
++  char last_ok_cmd[BLT_RDBUFF_MAX];        /* Runtime[AG]: Last AT command that was OK */
++  int cind;                                /* Runtime[AG]: Recieved +CIND */  
++  int call_pos, service_pos, callsetup_pos;  /* Runtime[AG]: Positions in CIND/CMER */
++  int call, service, callsetup;              /* Runtime[AG]: Values */
++
++  /* HS mode */
++  blt_state_t state;                       /* Runtime: Device state (AG mode only) */
++  int ring_timer;                          /* Runtime:Ring Timer */
++  char last_err_cmd[BLT_RDBUFF_MAX];       /* Runtime: Last AT command that was OK */
++  void (*cb)(blt_dev_t * dev, char * str); /* Runtime: Callback when in HS mode */
++
++  int brsf;                                /* Runtime: Bluetooth Retrieve Supported Features */
++  int bvra;                                /* Runtime: Bluetooth Voice Recognised Activation */
++  int gain_speaker;                        /* Runtime: Gain Of Speaker */
++  int clip;                                /* Runtime: Supports CLID */
++  int colp;                                /* Runtime: Connected Line ID */
++  int elip;                                /* Runtime: (Ericsson) Supports CLID */
++  int eolp;                                /* Runtime: (Ericsson) Connected Line ID */
++  int ringing;                             /* Runtime: Device is ringing */
++
++  blt_dev_t * next;                        /* Next in linked list */
++
++};
++
++typedef struct blt_atcb {
++
++  /* The command */
++  char * str;
++
++  /* DTE callbacks: */
++  int (*set)(blt_dev_t * dev, const char * arg, int len);
++  int (*read)(blt_dev_t * dev);
++  int (*execute)(blt_dev_t * dev, const char * data);
++  int (*test)(blt_dev_t * dev);
++
++  /* DCE callbacks: */
++  int (*unsolicited)(blt_dev_t * dev, const char * value);
++
++} blt_atcb_t;
++
++/* ---------------------------------- */
++
++static void rd_close(blt_dev_t * dev, int reconnect, int err);
++static int send_atcmd(blt_dev_t * device, const char * fmt, ...);
++static int sco_connect(blt_dev_t * dev);
++
++/* ---------------------------------- */
++
++/* RFCOMM channel we listen on*/
++static int rfcomm_channel_ag = BLT_DEFAULT_CHANNEL_AG;
++static int rfcomm_channel_hs = BLT_DEFAULT_CHANNEL_HS;
++
++/* Address of local bluetooth interface */
++static int hcidev_id;
++static bdaddr_t local_bdaddr;
++
++/* All the current sockets */
++AST_MUTEX_DEFINE_STATIC(iface_lock);
++static blt_dev_t * iface_head;
++static int ifcount = 0;
++
++static int sdp_record_hs = -1;
++static int sdp_record_ag = -1;
++
++/* RFCOMM listen socket */
++static int rfcomm_sock_ag = -1;
++static int rfcomm_sock_hs = -1;
++static int sco_socket = -1;
++
++static int monitor_pid = -1;
++
++/* The socket monitoring thread */
++static pthread_t monitor_thread = AST_PTHREADT_NULL;
++AST_MUTEX_DEFINE_STATIC(monitor_lock);
++
++/* Cound how many times this module is currently in use */
++static int usecnt = 0;
++AST_MUTEX_DEFINE_STATIC(usecnt_lock);
++
++static struct sched_context * sched = NULL;
++
++/* ---------------------------------- */
++
++static const char *
++role2str(blt_role_t role)
++{
++  switch (role) {
++    case BLT_ROLE_HS:
++      return "HS";
++    case BLT_ROLE_AG:
++      return "AG";
++    case BLT_ROLE_NONE:
++      return "??";
++  }
++}
++
++static const char *
++status2str(blt_status_t status)
++{
++  switch (status) {
++    case BLT_STATUS_DOWN:
++      return "Down";
++    case BLT_STATUS_CONNECTING:
++      return "Connecting";
++    case BLT_STATUS_NEGOTIATING:
++      return "Negotiating";
++    case BLT_STATUS_READY:
++      return "Ready";
++    case BLT_STATUS_RINGING:
++      return "Ringing";
++    case BLT_STATUS_IN_CALL:
++      return "InCall";
++  };
++  return "Unknown";
++}
++
++int sock_err(int fd)
++{
++  int ret;
++  int len = sizeof(ret);
++  getsockopt(fd, SOL_SOCKET, SO_ERROR, &ret, &len);
++  return ret;
++}
++
++/* ---------------------------------- */
++
++static const char *
++parse_cind(const char * str, char * name, int name_len)
++{
++  int c = 0;
++
++  memset(name, 0, name_len);
++
++  while (*str) {
++    if (*str == '(') {
++      if (++c == 1 && *(str+1) == '"') {
++        const char * start = str + 2;
++        int len = 0;
++        str += 2;
++        while (*str && *str != '"') {
++          len++;
++          str++;
++        }
++        if (len == 0)
++          return NULL;
++        strncpy(name, start, (len > name_len) ? name_len : len);
++      }
++    } else if (*str == ')')
++      c--;
++    else if (c == 0 && *str == ',')
++      return str + 1;
++    str++;
++  }
++  return NULL;
++}
++
++static void
++set_cind(blt_dev_t * dev, int indicator, int val)
++{
++
++  ast_log(LOG_DEBUG, "CIND %d set to %d\n", indicator, val);
++
++  if (indicator == dev->callsetup_pos) {
++
++    // call progress
++
++    dev->callsetup = val;
++
++    switch (val) {
++      case 3:
++        // Outgoign ringing
++        if (dev->owner && dev->role == BLT_ROLE_AG)
++          ast_queue_control(dev->owner, AST_CONTROL_RINGING);
++        break;
++      case 2:
++        break;
++      case 1:
++        break;
++      case 0:
++        if (dev->owner && dev->role == BLT_ROLE_AG && dev->call == 0)
++          ast_queue_control(dev->owner, AST_CONTROL_CONGESTION);
++        break;
++    }
++
++  } else if (indicator == dev->service_pos) {
++
++    // Signal
++
++    if (val == 0)
++      ast_log(LOG_NOTICE, "Audio Gateway %s lost signal\n", dev->name);
++    else if (dev->service == 0 && val > 0)
++      ast_log(LOG_NOTICE, "Audio Gateway %s got signal\n", dev->name);
++
++    dev->service = val;
++
++  } else if (indicator == dev->call_pos) {
++
++    // Call
++
++    dev->call = val;
++
++    if (dev->owner) {
++      if (val == 1) {
++        ast_queue_control(dev->owner, AST_CONTROL_ANSWER);
++      } else if (val == 0)
++        ast_queue_control(dev->owner, AST_CONTROL_HANGUP);
++    }
++
++  }
++
++
++}
++
++/* ---------------------------------- */
++
++int
++set_buffer(char * ring, char * data, int circular_len, int * pos, int data_len)
++{
++  int start_pos = *(pos);
++  int done = 0;
++  int copy;
++
++  while (data_len) {
++    // Set can_do to the most we can do in this copy.
++
++    copy = MIN(circular_len - start_pos, data_len);
++    memcpy(ring + start_pos, data + done, copy);
++
++    done += copy;
++    start_pos += copy;
++    data_len -= copy;
++
++    if (start_pos == circular_len)
++      start_pos = 0;
++  }
++  *(pos) = start_pos;
++  return 0;
++}
++
++int
++get_buffer(char * dst, char * ring, int ring_size, int * head, int to_copy)
++{
++  int copy;
++
++  // |1|2|3|4|5|6|7|8|9|
++  //      |-----|
++
++  while (to_copy) {
++
++    // Set can_do to the most we can do in this copy.
++    copy = MIN(ring_size - *head, to_copy);
++
++    // ast_log(LOG_DEBUG, "Getting: %d bytes, From pos %d\n", copy, *head);
++    memcpy(dst, ring + *head, copy);
++
++    dst += copy;
++    *head += copy;
++    to_copy -= copy;
++
++    if (*head == ring_size )
++      *head = 0;
++
++  }
++
++  return 0;
++}
++
++/* Handle SCO audio sync.
++ *
++ * If we are the MASTER, then we control the timing,
++ * in 48 byte chunks.  If we're the SLAVE, we send
++ * as and when we recieve a packet.
++ *
++ * Because of packet/timing nessecity, we 
++ * start up a thread when we're passing audio, so
++ * that things are timed exactly right.
++ *
++ * sco_thread() is the function that handles it.
++ *
++ */
++
++static void *
++sco_thread(void * data)
++{
++  blt_dev_t * dev = (blt_dev_t*)data;
++  int res;
++  struct pollfd pfd[2];
++  int in_pos = 0;
++  int out_pos = 0;
++  char c = 1;
++  int sending;
++  char buf[1024];
++  int len;
++
++  // Avoid deadlock in odd circumstances
++
++  ast_log(LOG_DEBUG, "SCO thread started on fd %d, pid %d\n", dev->sco, getpid());
++
++  // dev->status = BLT_STATUS_IN_CALL;
++  // ast_queue_control(dev->owner, AST_CONTROL_ANSWER);
++  // Set buffer to silence, just incase.
++
++  ast_mutex_lock(&(dev->sco_lock));
++
++  memset(dev->sco_buf_in,  0x7f, BUFLEN);
++  memset(dev->sco_buf_out, 0x7f, BUFLEN);
++
++  dev->sco_pos_in  = 0;
++  dev->sco_pos_out = 0;
++
++  ast_mutex_unlock(&(dev->sco_lock));
++
++  while (1) {
++
++    ast_mutex_lock(&(dev->sco_lock));
++
++    if (dev->sco_running != 1) {
++      ast_log(LOG_DEBUG, "SCO stopped.\n");
++      break;
++    }
++
++    pfd[0].fd = dev->sco;
++    pfd[0].events = POLLIN;
++
++    pfd[1].fd = dev->sco_pipe[1];
++    pfd[1].events = POLLIN;
++
++    ast_mutex_unlock(&(dev->sco_lock));
++
++    res = poll(pfd, 2, 50);
++
++    if (res == -1 && errno != EINTR) {
++      ast_log(LOG_DEBUG, "SCO poll() error\n");
++      break;
++    }
++
++    if (res == 0)
++      continue;
++
++    ast_mutex_lock(&(dev->sco_lock));
++
++    if (pfd[0].revents & POLLIN) {
++
++      len = read(dev->sco, buf, 48);
++
++      if (len) {
++        ast_mutex_lock(&(dev->lock));
++        set_buffer(dev->sco_buf_in,  buf, BUFLEN, &in_pos,  len);
++        get_buffer(buf, dev->sco_buf_out, BUFLEN, &out_pos, len);
++        write(dev->sco, buf, len);
++        if (dev->owner && dev->owner->_state == AST_STATE_UP)
++          write(dev->sco_pipe[1], &c, 1);
++        ast_mutex_unlock(&(dev->lock));
++      }
++
++      ast_mutex_unlock(&(dev->sco_lock));
++
++    } else if (pfd[0].revents) {
++
++      int e = sock_err(pfd[0].fd);
++      ast_log(LOG_ERROR, "SCO connection error: %s (errno %d)\n", strerror(e), e);
++      break;
++
++    } else if (pfd[1].revents & POLLIN) {
++
++      int len;
++
++      len = read(pfd[1].fd, &c, 1);
++      sending = (sending) ? 0 : 1;
++
++      ast_mutex_unlock(&(dev->sco_lock));
++
++    } else if (pfd[1].revents) {
++
++      int e = sock_err(pfd[1].fd);
++      ast_log(LOG_ERROR, "SCO pipe connection event %d on pipe[1]=%d: %s (errno %d)\n", pfd[1].revents, pfd[1].fd, strerror(e), e);
++      break;
++
++    } else {
++      ast_log(LOG_NOTICE, "Unhandled poll output\n");
++      ast_mutex_unlock(&(dev->sco_lock));
++    }
++
++  }
++
++  ast_mutex_lock(&(dev->lock));
++  close(dev->sco);
++  dev->sco = -1;
++  dev->sco_running = -1;
++  ast_mutex_unlock(&(dev->sco_lock));
++  if (dev->owner)
++    ast_queue_control(dev->owner, AST_CONTROL_HANGUP);
++  ast_mutex_unlock(&(dev->lock));
++  ast_log(LOG_DEBUG, "SCO thread stopped\n");
++  return NULL;
++}
++
++/* Start SCO thread.  Must be called with dev->lock */
++
++static int
++sco_start(blt_dev_t * dev, int fd)
++{
++
++  if (dev->sco_pipe[1] <= 0) {
++    ast_log(LOG_ERROR, "SCO pipe[1] == %d\n", dev->sco_pipe[1]);
++    return -1;
++  }
++
++  ast_mutex_lock(&(dev->sco_lock));
++
++  if (dev->sco_running != -1) {
++    ast_log(LOG_ERROR, "Tried to start SCO thread while already running\n");
++    ast_mutex_unlock(&(dev->sco_lock));
++    return -1;
++  }
++
++  if (dev->sco == -1) {
++    if (fd > 0) {
++      dev->sco = fd;
++    } else if (sco_connect(dev) != 0) {
++      ast_log(LOG_ERROR, "SCO fd invalid\n");
++      ast_mutex_unlock(&(dev->sco_lock));
++      return -1;
++    }
++  }
++
++  dev->sco_running = 1;
++
++  if (ast_pthread_create(&(dev->sco_thread), NULL, sco_thread, dev) < 0) {
++    ast_log(LOG_ERROR, "Unable to start SCO thread.\n");
++    dev->sco_running = -1;
++    ast_mutex_unlock(&(dev->sco_lock));
++    return -1;
++  }
++
++  ast_mutex_unlock(&(dev->sco_lock));
++
++  return 0;
++}
++
++/* Stop SCO thread.  Must be called with dev->lock */
++
++static int
++sco_stop(blt_dev_t * dev)
++{
++  ast_mutex_lock(&(dev->sco_lock));
++  if (dev->sco_running == 1)
++    dev->sco_running = 0;
++  else
++    dev->sco_running = -1;
++  dev->sco_sending = 0;
++  ast_mutex_unlock(&(dev->sco_lock));
++  return 0;
++}
++
++/* ---------------------------------- */
++
++/* Answer the call.  Call with lock held on device */
++
++static int
++answer(blt_dev_t * dev)
++{
++
++  if ( (!dev->owner) || (dev->ready != 1) || (dev->status != BLT_STATUS_READY && dev->status != BLT_STATUS_RINGING)) {
++    ast_log(LOG_ERROR, "Attempt to answer() in invalid state (owner=%p, ready=%d, status=%s)\n", 
++              dev->owner, dev->ready, status2str(dev->status));
++    return -1;
++  }
++
++    // dev->sd = sco_connect(&local_bdaddr, &(dev->bdaddr), NULL, NULL, 0);
++    // dev->status = BLT_STATUS_IN_CALL;
++    // dev->owner->fds[0] = dev->sd;
++    //  if we are answering (hitting button):
++  ast_queue_control(dev->owner, AST_CONTROL_ANSWER);
++    //  if asterisk signals us to answer:
++    // ast_setstate(ast, AST_STATE_UP);
++
++  /* Start SCO link */
++  sco_start(dev, -1);
++  return 0;
++}
++
++/* ---------------------------------- */
++
++static int 
++blt_write(struct ast_channel * ast, struct ast_frame * frame)
++{
++  blt_dev_t * dev = ast->pvt->pvt; 
++
++  /* Write a frame of (presumably voice) data */
++
++  if (frame->frametype != AST_FRAME_VOICE) {
++    ast_log(LOG_WARNING, "Don't know what to do with  frame type '%d'\n", frame->frametype);
++    return 0;
++  }
++
++  if (!(frame->subclass & BLUETOOTH_FORMAT)) {
++    ast_log(LOG_WARNING, "Cannot handle frames in format %d\n", frame->subclass);
++    return 0;
++  }
++
++  if (ast->_state != AST_STATE_UP) {
++    return 0;
++  }
++
++  ast_mutex_lock(&(dev->sco_lock));
++  set_buffer(dev->sco_buf_out, frame->data, BUFLEN, &(dev->sco_pos_out), MIN(frame->datalen, BUFLEN));
++  ast_mutex_unlock(&(dev->sco_lock));
++
++  return 0;
++
++}
++
++static struct ast_frame *
++blt_read(struct ast_channel * ast)
++{
++  blt_dev_t * dev = ast->pvt->pvt;
++  char c = 1;
++  int len;
++
++  /* Some nice norms */
++
++  dev->fr.datalen = 0;
++  dev->fr.samples = 0;
++  dev->fr.data =  NULL;
++  dev->fr.src = BLT_CHAN_NAME;
++  dev->fr.offset = 0;
++  dev->fr.mallocd = 0;
++  dev->fr.delivery.tv_sec = 0;
++  dev->fr.delivery.tv_usec = 0;
++
++  ast_mutex_lock(&(dev->sco_lock));
++  dev->sco_sending = 1;
++  read(dev->sco_pipe[0], &c, 1);
++  len = get_buffer(dev->buf, dev->sco_buf_in, BUFLEN, &(dev->sco_pos_in), 48);
++  ast_mutex_unlock(&(dev->sco_lock));
++
++  dev->fr.data = dev->buf;
++  dev->fr.samples = len / 2;
++  dev->fr.datalen = len;
++  dev->fr.frametype = AST_FRAME_VOICE;
++  dev->fr.subclass = BLUETOOTH_FORMAT;
++  dev->fr.offset = 0;
++
++  return &dev->fr;
++}
++
++/* Escape Any '"' in str.  Return malloc()ed string */
++static char *
++escape_str(char * str)
++{
++  char * ptr = str;
++  char * pret;
++  char * ret;
++  int len = 0;
++
++  while (*ptr) {
++    if (*ptr == '"')
++      len++;
++    len++;
++    ptr++;
++  }
++
++  ret = malloc(len + 1);
++  pret = memset(ret, 0, len + 1);
++
++  ptr = str;
++  
++  while (*ptr) {
++    if (*ptr == '"')
++      *pret++ = '\\';
++    *pret++ = *ptr++;
++  }
++
++  return ret;
++}
++
++static int
++ring_hs(blt_dev_t * dev)
++{
++#if (ASTERISK_VERSION_NUM < 010100)
++  char tmp[AST_MAX_EXTENSION];
++  char *name, *num;
++#endif
++
++  ast_mutex_lock(&(dev->lock));
++
++  if (dev->owner == NULL) {
++    ast_mutex_unlock(&(dev->lock));
++    return 0;
++  } 
++
++  dev->ringing = 1;
++  dev->status = BLT_STATUS_RINGING;
++
++  send_atcmd(dev, "RING");
++
++  dev->owner->rings++;
++
++  // XXX:T: '"' needs to be escaped in ELIP.
++
++#if (ASTERISK_VERSION_NUM < 010100)
++
++  if (dev->owner->callerid) {
++
++    memset(tmp, 0, sizeof(tmp));
++    strncpy(tmp, dev->owner->callerid, sizeof(tmp)-1);
++
++    if (!ast_callerid_parse(tmp, &name, &num)) {
++
++      if (dev->clip && num)
++        send_atcmd(dev, "+CLIP: \"%s\",129", num);
++
++      if (dev->elip && name) {
++        char * esc = escape_str(name);
++        send_atcmd(dev, "*ELIP: \"%s\"", esc);
++        free(esc);
++      }
++    }
++  }
++
++
++#else
++
++  if (dev->clip && dev->owner->cid.cid_num)
++    send_atcmd(dev, "+CLIP: \"%s\",129", dev->owner->cid.cid_num);
++
++  if (dev->elip && dev->owner->cid.cid_name) {
++    char * esc = escape_str(dev->owner->cid.cid_name);
++    send_atcmd(dev, "*ELIP: \"%s\"", esc);
++    free(esc);
++  }
++
++#endif
++
++  ast_mutex_unlock(&(dev->lock));
++
++  return 1;
++}
++
++/*
++ * If the HS is already connected, then just send RING, otherwise, things get a
++ * little more sticky.  We first have to find the channel for HS using SDP, 
++ * then intiate the connection.  Once we've done that, we can start the call.
++ */
++
++static int
++blt_call(struct ast_channel * ast, char * dest, int timeout)
++{
++  blt_dev_t * dev = ast->pvt->pvt;
++
++  if ((ast->_state != AST_STATE_DOWN) && (ast->_state != AST_STATE_RESERVED)) {
++    ast_log(LOG_WARNING, "blt_call called on %s, neither down nor reserved\n", ast->name);
++    return -1;
++  }
++
++  ast_log(LOG_DEBUG, "Calling %s on %s [t: %d]\n", dest, ast->name, timeout);
++
++  if (ast_mutex_lock(&iface_lock)) {
++    ast_log(LOG_ERROR, "Failed to get iface_lock.\n");
++    return -1;
++  }
++
++//  ast_mutex_lock(&(dev->lock));
++
++  if (dev->ready == 0) {
++    ast_log(LOG_WARNING, "Tried to call a device not ready/connected.\n");
++    ast_setstate(ast, AST_CONTROL_CONGESTION);
++//    ast_mutex_unlock(&(dev->lock));
++    ast_mutex_unlock(&iface_lock);
++    return 0;
++  }
++
++  if (dev->role == BLT_ROLE_HS) {
++
++    send_atcmd(dev, "+CIEV: 3,1");
++
++    dev->ring_timer = ast_sched_add(sched, 5000, AST_SCHED_CB(ring_hs), dev);
++
++    ring_hs(dev);
++
++    ast_setstate(ast, AST_STATE_RINGING);
++    ast_queue_control(ast, AST_CONTROL_RINGING);
++
++  } else if (dev->role == BLT_ROLE_AG) {
++
++    send_atcmd(dev, "ATD%s;", dev->dnid);
++
++  } else {
++
++    ast_setstate(ast, AST_CONTROL_CONGESTION);
++    ast_log(LOG_ERROR, "Unknown device role\n");
++
++  }
++
++//  ast_mutex_unlock(&(dev->lock));
++  ast_mutex_unlock(&iface_lock);
++
++  return 0;
++}
++
++static int 
++blt_hangup(struct ast_channel * ast)
++{
++  blt_dev_t * dev = ast->pvt->pvt;
++
++  ast_log(LOG_DEBUG, "blt_hangup(%s)\n", ast->name);
++
++  if (!ast->pvt->pvt) {
++    ast_log(LOG_WARNING, "Asked to hangup channel not connected\n");
++    return 0;
++  }
++
++  if (ast_mutex_lock(&iface_lock)) {
++    ast_log(LOG_ERROR, "Failed to get iface_lock\n");
++    return 0;
++  }
++
++  ast_mutex_lock(&(dev->lock));
++
++  sco_stop(dev);
++  dev->sco_sending = 0;
++
++  if (dev->role == BLT_ROLE_HS) {
++
++    if (dev->ringing == 0) {
++      // Actual call in progress
++      send_atcmd(dev, "+CIEV: 2,0");
++    } else {
++
++      // Just ringing still
++
++      if (dev->role == BLT_ROLE_HS)
++        send_atcmd(dev, "+CIEV: 3,0");
++
++      if (dev->ring_timer >= 0)
++        ast_sched_del(sched, dev->ring_timer);
++
++      dev->ring_timer = -1;
++      dev->ringing = 0;
++
++    }
++
++  } else if (dev->role == BLT_ROLE_AG) {
++
++    // Cancel call.
++    send_atcmd(dev, "AT+CHUP");
++
++  }
++
++  if (dev->status == BLT_STATUS_IN_CALL || dev->status == BLT_STATUS_RINGING)
++    dev->status = BLT_STATUS_READY;
++
++  ast->pvt->pvt = NULL;
++  dev->owner = NULL;
++  ast_mutex_unlock(&(dev->lock));
++  ast_setstate(ast, AST_STATE_DOWN);
++  ast_mutex_unlock(&(iface_lock));
++
++  return 0;
++}
++
++static int 
++blt_indicate(struct ast_channel * c, int condition)
++{
++  ast_log(LOG_DEBUG, "blt_indicate (%d)\n", condition);
++
++  switch(condition) {
++    case AST_CONTROL_RINGING:
++      return -1;
++    default:
++      ast_log(LOG_WARNING, "Don't know how to condition %d\n", condition);
++      break;
++  }
++  return -1;
++}
++
++static int
++blt_answer(struct ast_channel * ast)
++{
++  blt_dev_t * dev = ast->pvt->pvt;
++
++  ast_mutex_lock(&dev->lock);
++
++  // if (dev->ring_timer >= 0)
++  //   ast_sched_del(sched, dev->ring_timer);
++  // dev->ring_timer = -1;
++
++  ast_log(LOG_DEBUG, "Answering interface\n");
++
++  if (ast->_state != AST_STATE_UP) {
++    send_atcmd(dev, "+CIEV: 2,1");
++    send_atcmd(dev, "+CIEV: 3,0");
++    sco_start(dev, -1);
++    ast_setstate(ast, AST_STATE_UP);
++  }
++
++  ast_mutex_unlock(&dev->lock);
++
++  return 0;
++}
++
++static struct ast_channel *
++blt_new(blt_dev_t * dev, int state, const char * context, const char * number)
++{
++  struct ast_channel * ast;
++  char c = 0;
++
++  if ((ast = ast_channel_alloc(1)) == NULL) {
++    ast_log(LOG_WARNING, "Unable to allocate channel structure\n");
++    return NULL;
++  }
++
++  snprintf(ast->name, sizeof(ast->name), "BLT/%s", dev->name);
++
++  // ast->fds[0] = socket(PF_BLUETOOTH, SOCK_SEQPACKET, BTPROTO_SCO);
++
++  ast->nativeformats       = BLUETOOTH_FORMAT;
++  ast->pvt->rawreadformat  = BLUETOOTH_FORMAT;
++  ast->pvt->rawwriteformat = BLUETOOTH_FORMAT;
++  ast->writeformat         = BLUETOOTH_FORMAT;
++  ast->readformat          = BLUETOOTH_FORMAT;
++
++  ast_setstate(ast, state);
++
++  ast->type = BLT_CHAN_NAME;
++
++  ast->pvt->pvt = dev;
++
++  ast->pvt->call     = blt_call;
++  ast->pvt->indicate = blt_indicate;
++  ast->pvt->hangup   = blt_hangup;
++  ast->pvt->read     = blt_read;
++  ast->pvt->write    = blt_write;
++  ast->pvt->answer   = blt_answer;
++
++  strncpy(ast->context, context, sizeof(ast->context)-1);
++  strncpy(ast->exten,   number,  sizeof(ast->exten) - 1);
++
++  ast->language[0] = '\0';
++
++  ast->fds[0] = dev->sco_pipe[0];
++  write(dev->sco_pipe[1], &c, 1);
++
++  dev->owner = ast;
++
++  ast_mutex_lock(&usecnt_lock);
++  usecnt++;
++  ast_mutex_unlock(&usecnt_lock);
++
++  ast_update_use_count();
++
++  if (state != AST_STATE_DOWN) {
++    if (ast_pbx_start(ast)) {
++      ast_log(LOG_WARNING, "Unable to start PBX on %s\n", ast->name);
++      ast_hangup(ast);
++    }
++  }
++
++  return ast;
++}
++
++static struct ast_channel *
++#if (ASTERISK_VERSION_NUM < 010100)
++blt_request(char * type, int format, void * local_data)
++#else
++blt_request(const char * type, int format, void * local_data)
++#endif
++{
++  char * data = (char*)local_data;
++  int oldformat;
++  blt_dev_t * dev = NULL;
++  struct ast_channel * ast = NULL;
++  char * number = data, * dname;
++
++  dname = strsep(&number, "/");
++
++  oldformat = format;
++
++  format &= BLUETOOTH_FORMAT;
++
++  if (!format) {
++    ast_log(LOG_NOTICE, "Asked to get a channel of unsupported format '%d'\n", oldformat);
++    return NULL;
++  }
++
++  ast_log(LOG_DEBUG, "Dialing '%s' via '%s'\n", number, dname);
++
++  if (ast_mutex_lock(&iface_lock)) {
++    ast_log(LOG_ERROR, "Unable to lock iface_list\n");
++    return NULL;
++  }
++
++  dev = iface_head;
++
++  while (dev) {
++    if (strcmp(dev->name, dname) == 0) {
++      ast_mutex_lock(&(dev->lock));
++      if (!dev->ready) {
++        ast_log(LOG_ERROR, "Device %s is not connected\n", dev->name);
++        ast_mutex_unlock(&(dev->lock));
++        ast_mutex_unlock(&iface_lock);
++        return NULL;
++      }
++      break;
++    }
++    dev = dev->next;
++  }
++
++  ast_mutex_unlock(&iface_lock);
++
++  if (!dev) {
++    ast_log(LOG_WARNING, "Failed to find device named '%s'\n", dname);
++    return NULL;
++  }
++
++  if (number && dev->role != BLT_ROLE_AG) {
++    ast_log(LOG_WARNING, "Tried to send a call out on non AG\n");
++    ast_mutex_unlock(&(dev->lock));
++    return NULL;
++  }
++
++  if (dev->role == BLT_ROLE_AG)
++    strncpy(dev->dnid, number, sizeof(dev->dnid) - 1);
++
++  ast = blt_new(dev, AST_STATE_DOWN, "bluetooth", "s");
++
++  ast_mutex_unlock(&(dev->lock));
++
++  return ast;
++}
++
++/* ---------------------------------- */
++
++
++/* ---- AT COMMAND SOCKET STUFF ---- */
++
++static int
++send_atcmd(blt_dev_t * dev, const char * fmt, ...)
++{
++  char buf[1024];
++  va_list ap;
++  int len;
++
++  va_start(ap, fmt);
++  len = vsnprintf(buf, 1023, fmt, ap);
++  va_end(ap);
++
++  if (option_verbose)
++    ast_verbose(VERBOSE_PREFIX_1 "[%s] %*s < %s\n", role2str(dev->role), 10, dev->name, buf);
++
++  write(dev->rd, "\r\n", 2);
++  len = write(dev->rd, buf, len);
++  write(dev->rd, "\r\n", 2);
++  return (len) ? 0 : -1;
++}
++
++
++static int
++send_atcmd_ok(blt_dev_t * dev, const char * cmd)
++{
++  int len;
++  strncpy(dev->last_ok_cmd, cmd, BLT_RDBUFF_MAX - 1);
++  if (option_verbose)
++    ast_verbose(VERBOSE_PREFIX_1 "[%s] %*s < OK\n", role2str(dev->role), 10, dev->name);
++  len = write(dev->rd, "\r\nOK\r\n", 6);
++  return (len) ? 0 : -1;
++}
++
++static int
++send_atcmd_error(blt_dev_t * dev)
++{
++  int len;
++
++  if (option_verbose)
++    ast_verbose(VERBOSE_PREFIX_1 "[%s] %*s < ERROR\n", role2str(dev->role), 10, dev->name);
++
++//  write(dev->rd, "\r\n", 2);
++//  len = write(dev->rd, dev->last_ok_cmd, 5);
++  write(dev->rd, "\r\n", 2);
++  len = write(dev->rd, "ERROR", 5);
++  write(dev->rd, "\r\n", 2);
++
++  return (len) ? 0 : -1;
++}
++
++
++/* ---------------------------------- */
++
++/* -- Handle negotiation when we're an AG -- */
++
++/* Bluetooth Support */
++
++static int
++atcmd_brsf_set(blt_dev_t * dev, const char * arg, int len)
++{
++  ast_log(LOG_DEBUG, "Device Supports: %s\n", arg);
++  dev->brsf = atoi(arg);
++  send_atcmd(dev, "+BRSF: %d", 23);
++  return 0;
++}
++
++/* Bluetooth Voice Recognition */
++
++static int
++atcmd_bvra_set(blt_dev_t * dev, const char * arg, int len)
++{
++  ast_log(LOG_WARNING, "+BVRA Not Yet Supported\n");
++  return -1;
++#if 0
++  // XXX:T: Fix voice recognition somehow!
++  int action = atoi(arg);
++  ast_log(LOG_DEBUG, "Voice Recognition: %s\n", (a) ? "ACTIVATED" : "DEACTIVATED");
++  if ((action == 0) & (dev->bvra == 1)) {
++    /* Disable it */
++    dev->bvra = 0;
++    // XXX:T: Shutdown any active bvra channel
++    ast_log(LOG_DEBUG, "Voice Recognition: DISABLED\n");
++  } else if ((action == 1) && (dev->bvra == 0)) {
++    /* Enable it */
++    dev->bvra = 1;
++    // XXX:T: Schedule connection to voice recognition extension/application
++    ast_log(LOG_DEBUG, "Voice Recognition: ENABLED\n");
++  } else {
++    ast_log(LOG_ERROR, "+BVRA out of sync (we think %d, but HS wants %d)\n", dev->bvra, action);
++    return -1;
++  }
++  return 0;
++#endif
++}
++
++/* Clock */
++
++static int
++atcmd_cclk_read(blt_dev_t * dev)
++{
++  struct tm t, *tp;
++  const time_t ti = time(0);
++  tp = localtime_r(&ti, &t);
++  send_atcmd(dev, "+CCLK: \"%02d/%02d/%02d,%02d:%02d:%02d+%02d\"", 
++                  (tp->tm_year % 100), (tp->tm_mon + 1), (tp->tm_mday),
++                  tp->tm_hour, tp->tm_min, tp->tm_sec, ((tp->tm_gmtoff / 60) / 15));
++  return 0;
++}
++
++/* CHUP - Hangup Call */
++
++static int
++atcmd_chup_execute(blt_dev_t * dev, const char * data)
++{
++  if (!dev->owner) {
++    ast_log(LOG_ERROR, "Request to hangup call when none in progress\n");
++    return -1;
++  }
++  ast_log(LOG_DEBUG, "Hangup Call\n");
++  ast_queue_control(dev->owner, AST_CONTROL_HANGUP);
++  return 0;
++}
++
++/* CIND - Call Indicator */
++
++static int
++atcmd_cind_read(blt_dev_t * dev)
++{
++  send_atcmd(dev, "+CIND: 1,0,0");
++  return 0;
++}
++
++static int
++atcmd_cind_test(blt_dev_t * dev)
++{
++  send_atcmd(dev, "+CIND: (\"service\",(0,1)),(\"call\",(0,1)),(\"callsetup\",(0-4))");
++  return 0;
++}
++
++/* Set Language */
++
++static int
++atcmd_clan_read(blt_dev_t * dev)
++{
++  send_atcmd(dev, "+CLAN: \"en\"");
++  return 0;
++}
++
++/* Caller Id Presentation */
++
++static int
++atcmd_clip_set(blt_dev_t * dev, const char * arg, int len)
++{
++  dev->clip = atoi(arg);
++  return 0;
++}
++
++/* Conneced Line Identification Presentation */
++
++static int
++atcmd_colp_set(blt_dev_t * dev, const char * arg, int len)
++{
++  dev->colp = atoi(arg);
++  return 0;
++}
++
++/* CMER - Mobile Equipment Event Reporting */
++
++static int
++atcmd_cmer_set(blt_dev_t * dev, const char * arg, int len)
++{
++  dev->ready = 1;
++  dev->status = BLT_STATUS_READY;
++  return 0;
++}
++
++/* PhoneBook Types:
++ *
++ *  - FD - SIM Fixed Dialing Phone Book
++ *  - ME - ME Phone book
++ *  - SM - SIM Phone Book
++ *  - DC - ME dialled-calls list
++ *  - RC - ME recieved-calls lisr
++ *  - MC - ME missed-calls list
++ *  - MV - ME Voice Activated Dialing List
++ *  - HP - Hierachial Phone Book
++ *  - BC - Own Business Card (PIN2 required)
++ *
++ */
++
++/* Read Phone Book Entry */
++
++static int
++atcmd_cpbr_set(blt_dev_t * dev, const char * arg, int len)
++{
++  // XXX:T: Fix the phone book!
++  // * Maybe add res_phonebook or something? */
++  send_atcmd(dev, "+CPBR: %d,\"%s\",128,\"%s\"", atoi(arg), arg, arg);
++  return 0;
++}
++
++/* Select Phone Book */
++
++static int
++atcmd_cpbs_set(blt_dev_t * dev, const char * arg, int len)
++{
++  // XXX:T: I guess we'll just accept any?
++  return 0;
++}
++
++static int
++atcmd_cscs_set(blt_dev_t * dev, const char * arg, int len)
++{
++  // XXX:T: Language
++  return 0;
++}
++
++static int
++atcmd_eips_set(blt_dev_t * dev, const char * arg, int len)
++{
++  ast_log(LOG_DEBUG, "Identify Presentation Set: %s=%s\n",
++                         (*(arg) == 49) ? "ELIP" : "EOLP",
++                         (*(arg+2) == 49) ? "ON" : "OFF");
++
++  if (*(arg) == 49)
++    dev->eolp = (*(arg+2) == 49) ? 1 : 0;
++  else
++    dev->elip = (*(arg+2) == 49) ? 1 : 0;
++
++  return 0;
++}
++
++/* VGS - Speaker Volume Gain */
++
++static int
++atcmd_vgs_set(blt_dev_t * dev, const char * arg, int len)
++{
++  dev->gain_speaker = atoi(arg);
++  return 0;
++}
++
++/* Dial */
++static int
++atcmd_dial_execute(blt_dev_t * dev, const char * data)
++{
++  char * number = NULL;
++
++  /* Make sure there is a ';' at the end of the line */
++  if (*(data + (strlen(data) - 1)) != ';') {
++    ast_log(LOG_WARNING, "Can't dial non-voice right now: %s\n", data);
++    return -1;
++  }
++
++  number = strndup(data, strlen(data) - 1);
++  ast_log(LOG_NOTICE, "Dial: [%s]\n", number);
++
++  send_atcmd(dev, "+CIEV: 2,1");
++  send_atcmd(dev, "+CIEV: 3,0");
++
++  sco_start(dev, -1);
++
++  if (blt_new(dev, AST_STATE_UP, "bluetooth", number) == NULL) {
++    sco_stop(dev);
++  }
++
++  free(number);
++
++  return 0;
++}
++
++/* Answer */
++
++static int
++atcmd_answer_execute(blt_dev_t * dev, const char * data)
++{
++
++  if (!dev->ringing || !dev->owner) {
++    ast_log(LOG_WARNING, "Can't answer non existant call\n");
++    return -1;
++  }
++
++  dev->ringing = 0;
++
++  if (dev->ring_timer >= 0)
++    ast_sched_del(sched, dev->ring_timer);
++
++  dev->ring_timer = -1;
++
++  send_atcmd(dev, "+CIEV: 2,1");
++  send_atcmd(dev, "+CIEV: 3,0");
++
++  return answer(dev);
++}
++
++static int
++ag_unsol_ciev(blt_dev_t * dev, const char * data)
++{
++  const char * orig = data;
++  int indicator;
++  int status;
++
++  while (*(data) && *(data) == ' ')
++    data++;
++
++  if (*(data) == 0) {
++    ast_log(LOG_WARNING, "Invalid value[1] for '+CIEV:%s'\n", orig);
++    return -1;
++  }
++
++  indicator = *(data++) - 48;
++
++  if (*(data++) != ',') {
++    ast_log(LOG_WARNING, "Invalid value[2] for '+CIEV:%s'\n", orig);
++    return -1;
++  }
++
++  if (*(data) == 0) {
++    ast_log(LOG_WARNING, "Invalid value[3] for '+CIEV:%s'\n", orig);
++    return -1;
++  }
++
++  status = *(data) - 48;
++
++  set_cind(dev, indicator, status);
++
++  return 0;
++}
++
++static int
++ag_unsol_cind(blt_dev_t * dev, const char * data)
++{
++
++  while (*(data) && *(data) == ' ')
++    data++;
++
++
++  if (dev->cind == 0)
++  {
++    int pos = 1;
++    char name[1024];
++
++    while ((data = parse_cind(data, name, 1023)) != NULL) {
++      ast_log(LOG_DEBUG, "CIND: %d=%s\n", pos, name);
++      if (strcmp(name, "call") == 0)
++        dev->call_pos = pos;
++      else if (strcmp(name, "service") == 0)
++        dev->service_pos = pos;
++      else if (strcmp(name, "call_setup") == 0 || strcmp(name, "callsetup") == 0)
++        dev->callsetup_pos = pos;
++      pos++;
++    }
++
++    ast_log(LOG_DEBUG, "CIND: %d=%s\n", pos, name);
++
++  } else {
++
++    int pos = 1, len = 0;
++    char val[128];
++    const char * start = data;
++
++    while (*data) {
++      if (*data == ',') {
++        memset(val, 0, 128);
++        strncpy(val, start, len);
++        set_cind(dev, pos, atoi(val));
++        pos++;
++        len = 0;
++        data++;
++        start = data;
++        continue;
++      }
++      len++;
++      data++;
++    }
++
++    memset(val, 0, 128);
++    strncpy(val, start, len);
++    ast_log(LOG_DEBUG, "CIND IND %d set to %d [%s]\n", pos, atoi(val), val);
++
++
++  }
++
++  return 0;
++}
++
++static blt_atcb_t
++atcmd_list[] = 
++{
++  { "A",     NULL,           NULL,            atcmd_answer_execute, NULL,             NULL },
++  { "D",     NULL,           NULL,            atcmd_dial_execute,   NULL,             NULL },
++  { "+BRSF", atcmd_brsf_set, NULL,            NULL,                 NULL,             NULL },
++  { "+BVRA", atcmd_bvra_set, NULL,            NULL,                 NULL,             NULL },
++  { "+CCLK", NULL,           atcmd_cclk_read, NULL,                 NULL,             NULL },
++  { "+CHUP", NULL,           NULL,            atcmd_chup_execute,   NULL,             NULL },
++  { "+CIEV", NULL,           NULL,            NULL,                 NULL,             ag_unsol_ciev },
++  { "+CIND", NULL,           atcmd_cind_read, NULL,                 atcmd_cind_test,  ag_unsol_cind },
++  { "+CLAN", NULL,           atcmd_clan_read, NULL,                 NULL,             NULL },
++  { "+CLIP", atcmd_clip_set, NULL,            NULL,                 NULL,             NULL },
++  { "+COLP", atcmd_colp_set, NULL,            NULL,                 NULL,             NULL },
++  { "+CMER", atcmd_cmer_set, NULL,            NULL,                 NULL,             NULL },
++  { "+CPBR", atcmd_cpbr_set, NULL,            NULL,                 NULL,             NULL },
++  { "+CPBS", atcmd_cpbs_set, NULL,            NULL,                 NULL,             NULL },
++  { "+CSCS", atcmd_cscs_set, NULL,            NULL,                 NULL,             NULL },
++  { "*EIPS", atcmd_eips_set, NULL,            NULL,                 NULL,             NULL },
++  { "+VGS",  atcmd_vgs_set,  NULL,            NULL,                 NULL,             NULL },
++};
++
++#define ATCMD_LIST_LEN (sizeof(atcmd_list) / sizeof(blt_atcb_t))
++
++/* ---------------------------------- */
++
++/* -- Handle negotiation when we're a HS -- */
++
++void
++ag_unknown_response(blt_dev_t * dev, char * cmd)
++{
++  ast_log(LOG_DEBUG, "Got UNKN response: %s\n", cmd);
++
++  // DELAYED
++  // NO CARRIER
++
++}
++
++void
++ag_cgmi_response(blt_dev_t * dev, char * cmd)
++{
++  // CGMM - Phone Model
++  // CGMR - Phone Revision
++  // CGSN - IMEI
++  // AT*
++  // VTS - send tone
++  // CREG
++  // CBC - BATTERY
++  // CSQ - SIGANL
++  // CSMS - SMS STUFFS
++  //  CMGL
++  //  CMGR
++  //  CMGS
++  // CSCA - sms CENTER NUMBER
++  // CNMI - SMS INDICATION
++  // ast_log(LOG_DEBUG, "Manufacturer: %s\n", cmd);
++  dev->cb = ag_unknown_response;
++}
++
++void
++ag_cgmi_valid_response(blt_dev_t * dev, char * cmd)
++{
++  // send_atcmd(dev, "AT+WS46?");
++  // send_atcmd(dev, "AT+CRC=1");
++  // send_atcmd(dev, "AT+CNUM");
++
++  if (strcmp(cmd, "OK") == 0) {
++    send_atcmd(dev, "AT+CGMI");
++    dev->cb = ag_cgmi_response;
++  } else {
++    dev->cb = ag_unknown_response;
++  }
++}
++
++void
++ag_clip_response(blt_dev_t * dev, char * cmd)
++{
++  send_atcmd(dev, "AT+CGMI=?");
++  dev->cb = ag_cgmi_valid_response;
++}
++
++void
++ag_cmer_response(blt_dev_t * dev, char * cmd)
++{
++  dev->cb = ag_clip_response;
++  dev->ready = 1;
++  dev->status = BLT_STATUS_READY;
++  send_atcmd(dev, "AT+CLIP=1");
++}
++
++void
++ag_cind_status_response(blt_dev_t * dev, char * cmd)
++{
++  // XXX:T: Handle response.
++  dev->cb = ag_cmer_response;
++  send_atcmd(dev, "AT+CMER=3,0,0,1");
++  // Initiase SCO link!
++}
++
++void
++ag_cind_response(blt_dev_t * dev, char * cmd)
++{
++  dev->cb = ag_cind_status_response;
++  dev->cind = 1;
++  send_atcmd(dev, "AT+CIND?");
++}
++
++void
++ag_brsf_response(blt_dev_t * dev, char * cmd)
++{
++  dev->cb = ag_cind_response;
++  ast_log(LOG_DEBUG, "Bluetooth features: %s\n", cmd);
++  dev->cind = 0;
++  send_atcmd(dev, "AT+CIND=?");
++}
++
++/* ---------------------------------- */
++
++static int
++sdp_register(sdp_session_t * session)
++{
++  // XXX:T: Fix this horrible function so it makes some sense and is extensible!
++  sdp_list_t *svclass_id, *pfseq, *apseq, *root;
++  uuid_t root_uuid, svclass_uuid, ga_svclass_uuid, l2cap_uuid, rfcomm_uuid;
++  sdp_profile_desc_t profile;
++  sdp_list_t *aproto, *proto[2];
++  sdp_record_t record;
++  uint8_t u8 = rfcomm_channel_ag;
++  uint8_t u8_hs = rfcomm_channel_hs;
++  sdp_data_t *channel;
++  int ret = 0;
++
++  memset((void *)&record, 0, sizeof(sdp_record_t));
++  record.handle = 0xffffffff;
++  sdp_uuid16_create(&root_uuid, PUBLIC_BROWSE_GROUP);
++  root = sdp_list_append(0, &root_uuid);
++  sdp_set_browse_groups(&record, root);
++
++  // Register as an AG
++
++  sdp_uuid16_create(&svclass_uuid, HANDSFREE_AUDIO_GW_SVCLASS_ID);
++  svclass_id = sdp_list_append(0, &svclass_uuid);
++  sdp_uuid16_create(&ga_svclass_uuid, GENERIC_AUDIO_SVCLASS_ID);
++  svclass_id = sdp_list_append(svclass_id, &ga_svclass_uuid);
++  sdp_set_service_classes(&record, svclass_id);
++  sdp_uuid16_create(&profile.uuid, 0x111f);
++  profile.version = 0x0100;
++  pfseq = sdp_list_append(0, &profile);
++
++  sdp_set_profile_descs(&record, pfseq);
++
++  sdp_uuid16_create(&l2cap_uuid, L2CAP_UUID);
++  proto[0] = sdp_list_append(0, &l2cap_uuid);
++  apseq = sdp_list_append(0, proto[0]);
++
++  sdp_uuid16_create(&rfcomm_uuid, RFCOMM_UUID);
++  proto[1] = sdp_list_append(0, &rfcomm_uuid);
++  channel = sdp_data_alloc(SDP_UINT8, &u8);
++  proto[1] = sdp_list_append(proto[1], channel);
++  apseq = sdp_list_append(apseq, proto[1]);
++
++  aproto = sdp_list_append(0, apseq);
++  sdp_set_access_protos(&record, aproto);
++
++  sdp_set_info_attr(&record, "Voice Gateway", 0, 0);
++
++  if (sdp_record_register(session, &record, SDP_RECORD_PERSIST) < 0) {
++    ast_log(LOG_ERROR, "Service Record registration failed\n");
++    ret = -1;
++    goto end;
++  }
++
++  sdp_record_ag = record.handle;
++
++  ast_log(LOG_NOTICE, "HeadsetAudioGateway service registered\n");
++
++  sdp_data_free(channel);
++  sdp_list_free(proto[0], 0);
++  sdp_list_free(proto[1], 0);
++  sdp_list_free(apseq, 0);
++  sdp_list_free(aproto, 0);
++
++  // -------------
++
++  memset((void *)&record, 0, sizeof(sdp_record_t));
++  record.handle = 0xffffffff;
++  sdp_uuid16_create(&root_uuid, PUBLIC_BROWSE_GROUP);
++  root = sdp_list_append(0, &root_uuid);
++  sdp_set_browse_groups(&record, root);
++
++  // Register as an HS
++
++  sdp_uuid16_create(&svclass_uuid, HANDSFREE_AUDIO_GW_SVCLASS_ID);
++  svclass_id = sdp_list_append(0, &svclass_uuid);
++  sdp_uuid16_create(&ga_svclass_uuid, GENERIC_AUDIO_SVCLASS_ID);
++  svclass_id = sdp_list_append(svclass_id, &ga_svclass_uuid);
++  sdp_set_service_classes(&record, svclass_id);
++  sdp_uuid16_create(&profile.uuid, 0x111e);
++  profile.version = 0x0100;
++  pfseq = sdp_list_append(0, &profile);
++  sdp_set_profile_descs(&record, pfseq);
++
++  sdp_uuid16_create(&l2cap_uuid, L2CAP_UUID);
++  proto[0] = sdp_list_append(0, &l2cap_uuid);
++  apseq = sdp_list_append(0, proto[0]);
++
++  sdp_uuid16_create(&rfcomm_uuid, RFCOMM_UUID);
++  proto[1] = sdp_list_append(0, &rfcomm_uuid);
++  channel = sdp_data_alloc(SDP_UINT8, &u8_hs);
++  proto[1] = sdp_list_append(proto[1], channel);
++  apseq = sdp_list_append(apseq, proto[1]);
++
++  aproto = sdp_list_append(0, apseq);
++  sdp_set_access_protos(&record, aproto);
++  sdp_set_info_attr(&record, "Voice Gateway", 0, 0);
++
++  if (sdp_record_register(session, &record, SDP_RECORD_PERSIST) < 0) {
++    ast_log(LOG_ERROR, "Service Record registration failed\n");
++    ret = -1;
++    goto end;
++  }
++
++  sdp_record_hs = record.handle;
++
++  ast_log(LOG_NOTICE, "HeadsetAudioGateway service registered\n");
++
++end:
++  sdp_data_free(channel);
++  sdp_list_free(proto[0], 0);
++  sdp_list_free(proto[1], 0);
++  sdp_list_free(apseq, 0);
++  sdp_list_free(aproto, 0);
++
++  return ret;
++}
++
++static int
++rfcomm_listen(bdaddr_t * bdaddr, int channel)
++{
++
++  int sock = -1;
++  struct sockaddr_rc loc_addr;
++  int on = 1;
++
++  if ((sock = socket(PF_BLUETOOTH, SOCK_STREAM, BTPROTO_RFCOMM)) < 0) {
++    ast_log(LOG_ERROR, "Can't create socket: %s (errno: %d)\n", strerror(errno), errno);
++    return -1;
++  }
++
++  loc_addr.rc_family = AF_BLUETOOTH;
++
++  /* Local Interface Address */
++  bacpy(&loc_addr.rc_bdaddr, bdaddr);
++
++  /* Channel */
++  loc_addr.rc_channel = channel;
++
++  if (bind(sock, (struct sockaddr *)&loc_addr, sizeof(loc_addr)) < 0) {
++    ast_log(LOG_ERROR, "Can't bind socket: %s (errno: %d)\n", strerror(errno), errno);
++    close(sock);
++    return -1;
++  }
++
++  if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) == -1) {
++    ast_log(LOG_ERROR, "Set socket SO_REUSEADDR option on failed: errno %d, %s", errno, strerror(errno));
++    close(sock);
++    return -1;
++  }
++
++  if (fcntl(sock, F_SETFL, O_RDWR|O_NONBLOCK) != 0)
++    ast_log(LOG_ERROR, "Can't set RFCOMM socket to NBIO\n");
++
++  if (listen(sock, 10) < 0) {
++    ast_log(LOG_ERROR,"Can not listen on the socket. %s(%d)\n", strerror(errno), errno);
++    close(sock);
++    return -1;
++  }
++
++  ast_log(LOG_NOTICE, "Listening for RFCOMM channel %d connections on FD %d\n", channel, sock);
++
++  return sock;
++}
++
++
++static int
++sco_listen(bdaddr_t * bdaddr)
++{
++  int sock = -1;
++  int on = 1;
++  struct sockaddr_sco loc_addr;
++
++  memset(&loc_addr, 0, sizeof(loc_addr));
++
++  if ((sock = socket(PF_BLUETOOTH, SOCK_SEQPACKET, BTPROTO_SCO)) < 0) {
++    ast_log(LOG_ERROR, "Can't create SCO socket: %s (errno: %d)\n", strerror(errno), errno);
++    return -1;
++  }
++
++  loc_addr.sco_family = AF_BLUETOOTH;
++  bacpy(&loc_addr.sco_bdaddr, BDADDR_ANY);
++
++  if (bind(sock, (struct sockaddr *)&loc_addr, sizeof(loc_addr)) < 0) {
++    ast_log(LOG_ERROR, "Can't bind SCO socket: %s (errno: %d)\n", strerror(errno), errno);
++    close(sock);
++    return -1;
++  }
++
++  if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) == -1) {
++    ast_log(LOG_ERROR, "Set SCO socket SO_REUSEADDR option on failed: errno %d, %s", errno, strerror(errno));
++    close(sock);
++    return -1;
++  }
++
++  if (fcntl(sock, F_SETFL, O_RDWR|O_NONBLOCK) != 0)
++    ast_log(LOG_ERROR, "Can't set SCO socket to NBIO\n");
++
++  if (listen(sock, 10) < 0) {
++    ast_log(LOG_ERROR,"Can not listen on SCO socket: %s(%d)\n", strerror(errno), errno);
++    close(sock);
++    return -1;
++  }
++
++  ast_log(LOG_NOTICE, "Listening for SCO connections on FD %d\n", sock);
++
++  return sock;
++}
++
++static int
++rfcomm_connect(bdaddr_t * src, bdaddr_t * dst, int channel, int nbio)
++{
++  struct sockaddr_rc addr;
++  int s;
++
++  if ((s = socket(PF_BLUETOOTH, SOCK_STREAM, BTPROTO_RFCOMM)) < 0) {
++    return -1;
++  }
++
++  memset(&addr, 0, sizeof(addr));
++  addr.rc_family = AF_BLUETOOTH;
++  bacpy(&addr.rc_bdaddr, src);
++  addr.rc_channel = 0;
++
++  if (bind(s, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
++    close(s);
++    return -1;
++  }
++
++  memset(&addr, 0, sizeof(addr));
++  addr.rc_family = AF_BLUETOOTH;
++  bacpy(&addr.rc_bdaddr, dst);
++  addr.rc_channel = channel;
++
++  if (nbio) {
++    if (fcntl(s, F_SETFL, O_RDWR|O_NONBLOCK) != 0)
++      ast_log(LOG_ERROR, "Can't set RFCOMM socket to NBIO\n");
++  }
++
++  if (connect(s, (struct sockaddr *)&addr, sizeof(addr)) < 0 && (nbio != 1 || (errno != EAGAIN))) {
++    close(s);
++    return -1;
++  }
++
++  return s;
++}
++
++/* Must be called with dev->lock held */
++
++static int
++sco_connect(blt_dev_t * dev)
++{
++  struct sockaddr_sco addr;
++  // struct sco_conninfo conn;
++  // struct sco_options opts;
++  // int size;
++  // bdaddr_t * src = &local_bdaddr;
++
++  int s;
++  bdaddr_t * dst = &(dev->bdaddr);
++
++  if (dev->sco != -1) {
++    ast_log(LOG_ERROR, "SCO fd already open.\n");
++    return -1;
++  }
++
++  if ((s = socket(PF_BLUETOOTH, SOCK_SEQPACKET, BTPROTO_SCO)) < 0) {
++    ast_log(LOG_ERROR, "Can't create SCO socket(): %s\n", strerror(errno));
++    return -1;
++  }
++
++  memset(&addr, 0, sizeof(addr));
++
++  addr.sco_family = AF_BLUETOOTH;
++  bacpy(&addr.sco_bdaddr, BDADDR_ANY);
++
++  if (bind(s, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
++    ast_log(LOG_ERROR, "Can't bind() SCO socket: %s\n", strerror(errno));
++    close(s);
++    return -1;
++  }
++
++  memset(&addr, 0, sizeof(addr));
++  addr.sco_family = AF_BLUETOOTH;
++  bacpy(&addr.sco_bdaddr, dst);
++
++  if (fcntl(s, F_SETFL, O_RDWR|O_NONBLOCK) != 0)
++    ast_log(LOG_ERROR, "Can't set SCO socket to NBIO\n");
++
++  if ((connect(s, (struct sockaddr *)&addr, sizeof(addr)) < 0) && (errno != EAGAIN)) {
++    ast_log(LOG_ERROR, "Can't connect() SCO socket: %s (errno %d)\n", strerror(errno), errno);
++    close(s);
++    return -1;
++  }
++
++  //size = sizeof(conn);
++
++
++/* XXX:T: HERE, fix getting SCO conninfo.
++
++  if (getsockopt(s, SOL_SCO, SCO_CONNINFO, &conn, &size) < 0) {
++    ast_log(LOG_ERROR, "Can't getsockopt SCO_CONNINFO on SCO socket: %s\n", strerror(errno));
++    close(s);
++    return -1;
++  }
++
++  size = sizeof(opts);
++
++  if (getsockopt(s, SOL_SCO, SCO_OPTIONS, &opts, &size) < 0) {
++    ast_log(LOG_ERROR, "Can't getsockopt SCO_OPTIONS on SCO socket: %s\n", strerror(errno));
++    close(s);
++    return -1;
++  }
++
++  dev->sco_handle = conn.hci_handle;
++  dev->sco_mtu = opts.mtu;
++
++*/
++
++  ast_log(LOG_DEBUG, "SCO: %d\n", s);
++
++  dev->sco = s;
++
++  return 0;
++}
++
++
++/* ---------------------------------- */
++
++/* Non blocking (async) outgoing bluetooth connection */
++
++static int
++try_connect(blt_dev_t * dev)
++{
++  int fd;
++  ast_mutex_lock(&(dev->lock));
++
++  if (dev->status != BLT_STATUS_CONNECTING && dev->status != BLT_STATUS_DOWN) {
++    ast_mutex_unlock(&(dev->lock));
++    return 0;
++  }
++
++  if (dev->rd != -1) {
++
++    int ret;
++    struct pollfd pfd;
++
++    if (dev->status != BLT_STATUS_CONNECTING) {
++      ast_mutex_unlock(&(dev->lock));
++      dev->outgoing_id = -1;
++      return 0;
++    }
++
++    // ret = connect(dev->rd, (struct sockaddr *)&(dev->addr), sizeof(struct sockaddr_rc)); // 
++
++    pfd.fd = dev->rd;
++    pfd.events = POLLIN | POLLOUT;
++
++    ret = poll(&pfd, 1, 0);
++
++    if (ret == -1) {
++      close(dev->rd);
++      dev->rd = -1;
++      dev->status = BLT_STATUS_DOWN;
++      dev->outgoing_id = ast_sched_add(sched, 10000, AST_SCHED_CB(try_connect), dev);
++      ast_mutex_unlock(&(dev->lock));
++      return 0;
++    }
++
++    if (ret > 0) {
++
++      int len = sizeof(ret);
++      getsockopt(dev->rd, SOL_SOCKET, SO_ERROR, &ret, &len);
++
++      if (ret == 0) {
++
++        ast_log(LOG_NOTICE, "Initialised bluetooth link to device %s\n", dev->name); 
++
++#if 0
++        {
++          struct hci_conn_info_req * cr;
++          int dd;
++          char name[248];
++
++          cr = malloc(sizeof(*cr) + sizeof(struct hci_conn_info));
++          dd = hci_open_dev(hcidev_id);
++          cr->type = ACL_LINK;
++          bacpy(&cr->bdaddr, &(dev->bdaddr));
++
++          if (ioctl(dd, HCIGETCONNINFO, (unsigned long)cr) < 0) {
++            ast_log(LOG_ERROR, "Failed to get connection info: %s\n", strerror(errno));
++          } else {
++            ast_log(LOG_DEBUG, "HCI Handle: %d\n", cr->conn_info->handle);
++          }
++
++          if (hci_read_remote_name(dd, &(dev->bdaddr), sizeof(name), name, 25000) == 0)
++            ast_log(LOG_DEBUG, "Remote Name: %s\n", name);
++          free(cr);
++        }
++#endif
++
++        dev->status = BLT_STATUS_NEGOTIATING;
++
++        /* If this device is a AG, we initiate the negotiation. */
++
++        if (dev->role == BLT_ROLE_AG) {
++          dev->cb = ag_brsf_response;
++          send_atcmd(dev, "AT+BRSF=23");
++        }
++
++        dev->outgoing_id = -1;
++        ast_mutex_unlock(&(dev->lock));
++        return 0;
++
++      } else {
++
++        if (ret != EHOSTDOWN)
++          ast_log(LOG_NOTICE, "Connect to device %s failed: %s (errno %d)\n", dev->name, strerror(ret), ret);
++
++        close(dev->rd);
++        dev->rd = -1;
++        dev->status = BLT_STATUS_DOWN;
++        dev->outgoing_id = ast_sched_add(sched, (ret == EHOSTDOWN) ? 10000 : 2500, AST_SCHED_CB(try_connect), dev);
++        ast_mutex_unlock(&(dev->lock));
++        return 0;
++
++      }
++
++    }
++
++    dev->outgoing_id = ast_sched_add(sched, 100, AST_SCHED_CB(try_connect), dev);
++    ast_mutex_unlock(&(dev->lock));
++    return 0;
++  }
++
++  fd = rfcomm_connect(&local_bdaddr, &(dev->bdaddr), dev->channel, 1);
++
++  if (fd == -1) {
++    ast_log(LOG_WARNING, "NBIO connect() to %s returned %d: %s\n", dev->name, errno, strerror(errno));
++    dev->outgoing_id = ast_sched_add(sched, 5000, AST_SCHED_CB(try_connect), dev);
++    ast_mutex_unlock(&(dev->lock));
++    return 0;
++  }
++
++  dev->rd = fd;
++  dev->status = BLT_STATUS_CONNECTING;
++  dev->outgoing_id = ast_sched_add(sched, 100, AST_SCHED_CB(try_connect), dev);
++  ast_mutex_unlock(&(dev->lock));
++  return 0;
++}
++
++
++/* Called whenever a new command is recieved while we're the AG */
++
++
++static int
++process_rfcomm_cmd(blt_dev_t * dev, char * cmd)
++{
++  int i;
++  char * fullcmd = cmd;
++
++  if (option_verbose)
++    ast_verbose(VERBOSE_PREFIX_1 "[%s] %*s > %s\n", role2str(dev->role), 10, dev->name, cmd);
++
++  /* Read the 'AT' from the start of the string */
++  if (strncmp(cmd, "AT", 2)) {
++    ast_log(LOG_WARNING, "Unknown command without 'AT': %s\n", cmd);
++    send_atcmd_error(dev);
++    return 0;
++  }
++
++  cmd += 2;
++
++  // Don't forget 'AT' on it's own is OK.
++
++  if (strlen(cmd) == 0) {
++    send_atcmd_ok(dev, fullcmd);
++    return 0;
++  }
++
++  for (i = 0 ; i < ATCMD_LIST_LEN ; i++) {
++    if (strncmp(atcmd_list[i].str, cmd, strlen(atcmd_list[i].str)) == 0) {
++      char * pos = (cmd + strlen(atcmd_list[i].str));
++      if ((strncmp(pos, "=?", 2) == 0) && (strlen(pos) == 2)) {
++        /* TEST command */
++        if (atcmd_list[i].test) {
++          if (atcmd_list[i].test(dev) == 0)
++            send_atcmd_ok(dev, fullcmd);
++          else
++            send_atcmd_error(dev);
++        } else {
++          send_atcmd_ok(dev, fullcmd);
++        }
++      } else if ((strncmp(pos, "?", 1) == 0) && (strlen(pos) == 1)) {
++        /* READ command */
++        if (atcmd_list[i].read) {
++          if (atcmd_list[i].read(dev) == 0)
++            send_atcmd_ok(dev, fullcmd);
++          else
++            send_atcmd_error(dev);
++        } else {
++          ast_log(LOG_WARNING, "AT Command: '%s' missing READ function\n", fullcmd);
++          send_atcmd_error(dev);
++        }
++      } else if (strncmp(pos, "=", 1) == 0) {
++        /* SET command */
++        if (atcmd_list[i].set) {
++          if (atcmd_list[i].set(dev, (pos + 1), (*(pos + 1)) ? strlen(pos + 1) : 0) == 0)
++            send_atcmd_ok(dev, fullcmd);
++          else
++            send_atcmd_error(dev);
++        } else {
++          ast_log(LOG_WARNING, "AT Command: '%s' missing SET function\n", fullcmd);
++          send_atcmd_error(dev);
++        }
++      } else {
++        /* EXECUTE command */
++        if (atcmd_list[i].execute) {
++          if (atcmd_list[i].execute(dev, cmd + strlen(atcmd_list[i].str)) == 0)
++            send_atcmd_ok(dev, fullcmd);
++          else
++            send_atcmd_error(dev);
++        } else {
++          ast_log(LOG_WARNING, "AT Command: '%s' missing EXECUTE function\n", fullcmd);
++          send_atcmd_error(dev);
++        }
++      }
++      return 0;
++    }
++  }
++
++  ast_log(LOG_WARNING, "Unknown AT Command: '%s' (%s)\n", fullcmd, cmd);
++  send_atcmd_error(dev);
++
++  return 0;
++}
++
++/* Called when a socket is incoming */
++
++static void
++handle_incoming(int fd, blt_role_t role)
++{
++  blt_dev_t * dev;
++  struct sockaddr_rc addr;
++  int len = sizeof(addr);
++
++  // Got a new incoming socket.
++  ast_log(LOG_DEBUG, "Incoming RFCOMM socket\n");
++
++  ast_mutex_lock(&iface_lock);
++
++  fd = accept(fd, (struct sockaddr*)&addr, &len);
++
++  dev = iface_head;
++  while (dev) {
++    if (bacmp(&(dev->bdaddr), &addr.rc_bdaddr) == 0) {
++      ast_log(LOG_DEBUG, "Connect from %s\n", dev->name);
++      ast_mutex_lock(&(dev->lock));
++      /* Kill any outstanding connect attempt. */
++      if (dev->outgoing_id > -1) {
++        ast_sched_del(sched, dev->outgoing_id);
++        dev->outgoing_id = -1;
++      }
++
++      rd_close(dev, 0, 0);
++
++      dev->status = BLT_STATUS_NEGOTIATING;
++      dev->rd = fd;
++
++      if (dev->role == BLT_ROLE_AG) {
++        dev->cb = ag_brsf_response;
++        send_atcmd(dev, "AT+BRSF=23");
++      }
++
++      ast_mutex_unlock(&(dev->lock));
++      break;
++    }
++    dev = dev->next;
++  }
++
++  if (dev == NULL) {
++    ast_log(LOG_WARNING, "Connect from unknown device\n");
++    close(fd);
++  }
++  ast_mutex_unlock(&iface_lock);
++
++  return;
++}
++
++static void
++handle_incoming_sco(int master)
++{
++
++  blt_dev_t * dev;
++  struct sockaddr_sco addr;
++  struct sco_conninfo conn;
++  struct sco_options opts;
++  int len = sizeof(addr);
++  int fd;
++
++  ast_log(LOG_DEBUG, "Incoming SCO socket\n");
++
++  fd = accept(master, (struct sockaddr*)&addr, &len);
++
++  if (fcntl(fd, F_SETFL, O_RDWR|O_NONBLOCK) != 0) {
++    ast_log(LOG_ERROR, "Can't set SCO socket to NBIO\n");
++    close(fd);
++    return;
++  }
++
++  len = sizeof(conn);
++
++  if (getsockopt(fd, SOL_SCO, SCO_CONNINFO, &conn, &len) < 0) {
++    ast_log(LOG_ERROR, "Can't getsockopt SCO_CONNINFO on SCO socket: %s\n", strerror(errno));
++    close(fd);
++    return;
++  }
++
++  len = sizeof(opts);
++
++  if (getsockopt(fd, SOL_SCO, SCO_OPTIONS, &opts, &len) < 0) {
++    ast_log(LOG_ERROR, "Can't getsockopt SCO_OPTIONS on SCO socket: %s\n", strerror(errno));
++    close(fd);
++    return;
++  }
++
++  ast_mutex_lock(&iface_lock);
++  dev = iface_head;
++  while (dev) {
++    if (bacmp(&(dev->bdaddr), &addr.sco_bdaddr) == 0) {
++      ast_log(LOG_DEBUG, "SCO Connect from %s\n", dev->name);
++      ast_mutex_lock(&(dev->lock));
++      if (dev->sco_running != -1) {
++        ast_log(LOG_ERROR, "Incoming SCO socket, but SCO thread already running.\n");
++      } else {
++        sco_start(dev, fd);
++      }
++      ast_mutex_unlock(&(dev->lock));
++      break;
++    }
++    dev = dev->next;
++  }
++
++  ast_mutex_unlock(&iface_lock);
++
++  if (dev == NULL) {
++    ast_log(LOG_WARNING, "SCO Connect from unknown device\n");
++    close(fd);
++  } else {
++    // XXX:T: We need to handle the fact we might have an outgoing connection attempt in progress.
++    ast_log(LOG_DEBUG, "SCO: %d, HCIHandle=%d, MUT=%d\n", fd, conn.hci_handle, opts.mtu);
++  }
++
++
++
++  return;
++}
++
++/* Called when there is data waiting on a socket */
++
++static int
++handle_rd_data(blt_dev_t * dev)
++{
++  char c;
++  int ret;
++
++  while ((ret = read(dev->rd, &c, 1)) == 1) {
++
++    // log_buf[i++] = c;
++
++    if (dev->role == BLT_ROLE_HS) {
++
++      if (c == '\r') {
++        ret = process_rfcomm_cmd(dev, dev->rd_buff);
++        dev->rd_buff_pos = 0;
++        memset(dev->rd_buff, 0, BLT_RDBUFF_MAX);
++        return ret;
++      }
++
++      if (dev->rd_buff_pos >= BLT_RDBUFF_MAX)
++        return 0;
++
++      dev->rd_buff[dev->rd_buff_pos++] = c;
++
++    } else if (dev->role == BLT_ROLE_AG) {
++
++      switch (dev->state) {
++
++        case BLT_STATE_WANT_R:
++          if (c == '\r') {
++            dev->state = BLT_STATE_WANT_N;
++          } else if (c == '+') {
++            dev->state = BLT_STATE_WANT_CMD;
++            dev->rd_buff[dev->rd_buff_pos++] = '+';
++          } else {
++            ast_log(LOG_ERROR, "Device %s: Expected '\\r', got %d. state=BLT_STATE_WANT_R\n", dev->name, c);
++            return -1;
++          }
++          break;
++
++        case BLT_STATE_WANT_N:
++          if (c == '\n')
++            dev->state = BLT_STATE_WANT_CMD;
++          else {
++            ast_log(LOG_ERROR, "Device %s: Expected '\\n', got %d. state=BLT_STATE_WANT_N\n", dev->name, c);
++            return -1;
++          }
++          break;
++
++        case BLT_STATE_WANT_CMD:
++          if (c == '\r')
++            dev->state = BLT_STATE_WANT_N2;
++          else {
++            if (dev->rd_buff_pos >= BLT_RDBUFF_MAX) {
++              ast_log(LOG_ERROR, "Device %s: Buffer exceeded\n", dev->name);
++              return -1;
++            }
++            dev->rd_buff[dev->rd_buff_pos++] = c;
++          }
++          break;
++
++        case BLT_STATE_WANT_N2:
++          if (c == '\n') {
++
++            dev->state = BLT_STATE_WANT_R;
++
++            if (dev->rd_buff[0] == '+') {
++              int i;
++              // find unsolicited
++              for (i = 0 ; i < ATCMD_LIST_LEN ; i++) {
++                if (strncmp(atcmd_list[i].str, dev->rd_buff, strlen(atcmd_list[i].str)) == 0) {
++                  if (atcmd_list[i].unsolicited)
++                    atcmd_list[i].unsolicited(dev, dev->rd_buff + strlen(atcmd_list[i].str) + 1);
++                  else
++                    ast_log(LOG_WARNING, "Device %s: Unhandled Unsolicited: %s\n", dev->name, dev->rd_buff);
++                  break;
++                }
++              }
++
++              if (option_verbose)
++                ast_verbose(VERBOSE_PREFIX_1 "[%s] %*s > %s\n", role2str(dev->role), 10, dev->name, dev->rd_buff);
++
++              if (i == ATCMD_LIST_LEN)
++                ast_log(LOG_DEBUG, "Device %s: Got unsolicited message: %s\n", dev->name, dev->rd_buff);
++
++            } else {
++
++              if (
++                strcmp(dev->rd_buff, "OK") != 0 && 
++                strcmp(dev->rd_buff, "CONNECT") != 0 &&
++                strcmp(dev->rd_buff, "RING") != 0 &&
++                strcmp(dev->rd_buff, "NO CARRIER") != 0 && 
++                strcmp(dev->rd_buff, "ERROR") != 0 &&
++                strcmp(dev->rd_buff, "NO DIALTONE") != 0 && 
++                strcmp(dev->rd_buff, "BUSY") != 0 && 
++                strcmp(dev->rd_buff, "NO ANSWER") != 0 && 
++                strcmp(dev->rd_buff, "DELAYED") != 0
++              ){
++                // It must be a multiline error
++                strncpy(dev->last_err_cmd, dev->rd_buff, 1023);
++                if (option_verbose)
++                  ast_verbose(VERBOSE_PREFIX_1 "[%s] %*s > %s\n", role2str(dev->role), 10, dev->name, dev->rd_buff);
++              } else if (dev->cb) {
++                if (option_verbose)
++                  ast_verbose(VERBOSE_PREFIX_1 "[%s] %*s > %s\n", role2str(dev->role), 10, dev->name, dev->rd_buff);
++                dev->cb(dev, dev->rd_buff);
++              } else {
++                ast_log(LOG_ERROR, "Device %s: Data on socket in HS mode, but no callback\n", dev->name);
++              }
++
++            }
++
++            dev->rd_buff_pos = 0;
++            memset(dev->rd_buff, 0, BLT_RDBUFF_MAX);
++
++          } else {
++
++            ast_log(LOG_ERROR, "Device %s: Expected '\\n' got %d. state = BLT_STATE_WANT_N2:\n", dev->name, c);
++            return -1;
++
++          }
++
++          break;
++
++        default:
++          ast_log(LOG_ERROR, "Device %s: Unknown device state %d\n", dev->name, dev->state);
++          return -1;
++
++      }
++
++    }
++
++  }
++
++  return 0;
++}
++
++/* Close the devices RFCOMM socket, and SCO if it exists. Must hold dev->lock */
++
++static void
++rd_close(blt_dev_t * dev, int reconnect, int e)
++{
++  dev->ready = 0;
++
++  if (dev->rd)
++    close(dev->rd);
++
++  dev->rd = -1;
++
++  dev->status = BLT_STATUS_DOWN;
++
++  sco_stop(dev);
++
++  if (dev->owner) {
++    ast_setstate(dev->owner, AST_STATE_DOWN);
++    ast_queue_control(dev->owner, AST_CONTROL_HANGUP);
++  }
++
++  /* Schedule a reconnect */
++  if (reconnect && dev->autoconnect) {
++    dev->outgoing_id = ast_sched_add(sched, 5000, AST_SCHED_CB(try_connect), dev);
++
++    if (monitor_thread == pthread_self()) {
++      // Because we're not the monitor thread, we needd to inturrupt poll().
++      pthread_kill(monitor_thread, SIGURG);
++    }
++
++    if (e)
++      ast_log(LOG_NOTICE, "Device %s disconnected, scheduled reconnect in 5 seconds: %s (errno %d)\n", dev->name, strerror(e), e);
++  } else if (e) {
++    ast_log(LOG_NOTICE, "Device %s disconnected: %s (errno %d)\n", dev->name, strerror(e), e);
++  }
++
++  return;
++}
++
++/*
++ * Remember that we can only add to the scheduler from
++ * the do_monitor thread, as it calculates time to next one from
++ * this loop.
++ */
++
++static void *
++do_monitor(void * data)
++{
++#define SRV_SOCK_CNT 3
++
++  int res = 0;
++  blt_dev_t * dev;
++  struct pollfd * pfds = malloc(sizeof(struct pollfd) * (ifcount + SRV_SOCK_CNT));
++
++  /* -- We start off by trying to connect all of our devices (non blocking) -- */
++
++  monitor_pid = getpid();
++
++  if (ast_mutex_lock(&iface_lock)) {
++    ast_log(LOG_ERROR, "Failed to get iface_lock.\n");
++    return NULL;
++  }
++
++  dev = iface_head;
++  while (dev) {
++
++    if (socketpair(PF_UNIX, SOCK_STREAM, 0, dev->sco_pipe) != 0) {
++      ast_log(LOG_ERROR, "Failed to create socket pair: %s (errno %d)\n", strerror(errno), errno);
++      ast_mutex_unlock(&iface_lock);
++      return NULL;
++    }
++
++    if (dev->autoconnect && dev->status == BLT_STATUS_DOWN)
++      dev->outgoing_id = ast_sched_add(sched, 1500, AST_SCHED_CB(try_connect), dev);
++    dev = dev->next;
++  }
++  ast_mutex_unlock(&iface_lock);
++
++  /* -- Now, Scan all sockets, and service scheduler -- */
++
++  pfds[0].fd = rfcomm_sock_ag;
++  pfds[0].events = POLLIN;
++
++  pfds[1].fd = rfcomm_sock_hs;
++  pfds[1].events = POLLIN;
++
++  pfds[2].fd = sco_socket;
++  pfds[2].events = POLLIN;
++
++  while (1) {
++    int cnt = SRV_SOCK_CNT;
++    int i;
++
++    /* -- Build pfds -- */
++
++    if (ast_mutex_lock(&iface_lock)) {
++      ast_log(LOG_ERROR, "Failed to get iface_lock.\n");
++      return NULL;
++    }
++    dev = iface_head;
++    while (dev) {
++      ast_mutex_lock(&(dev->lock));
++      if (dev->rd > 0 && ((dev->status != BLT_STATUS_DOWN) && (dev->status != BLT_STATUS_CONNECTING))) {
++        pfds[cnt].fd = dev->rd;
++        pfds[cnt].events = POLLIN;
++        cnt++;
++      }
++      ast_mutex_unlock(&(dev->lock));
++      dev = dev->next;
++    }
++    ast_mutex_unlock(&iface_lock);
++
++    /* -- End Build pfds -- */
++
++    res = ast_sched_wait(sched);
++    res = poll(pfds, cnt, MAX(100, MIN(100, res)));
++
++    if (res == 0)
++      ast_sched_runq(sched);
++
++    if (pfds[0].revents) {
++      handle_incoming(rfcomm_sock_ag, BLT_ROLE_AG);
++      res--;
++    }
++
++    if (pfds[1].revents) {
++      handle_incoming(rfcomm_sock_hs, BLT_ROLE_HS);
++      res--;
++    }
++
++    if (pfds[2].revents) {
++      handle_incoming_sco(sco_socket);
++      res--;
++    }
++
++    if (res == 0)
++      continue;
++
++    for (i = SRV_SOCK_CNT ; i < cnt ; i++) {
++
++      /* Optimise a little bit */
++      if (res == 0)
++        break;
++      else if (pfds[i].revents == 0)
++        continue;
++
++      /* -- Find the socket that has activity -- */
++
++      if (ast_mutex_lock(&iface_lock)) {
++        ast_log(LOG_ERROR, "Failed to get iface_lock.\n");
++        return NULL;
++      }
++
++      dev = iface_head;
++
++      while (dev) {
++        if (pfds[i].fd == dev->rd) {
++          ast_mutex_lock(&(dev->lock));
++          if (pfds[i].revents & POLLIN) {
++            if (handle_rd_data(dev) == -1) {
++              rd_close(dev, 0, 0);
++            }
++          } else {
++            rd_close(dev, 1, sock_err(dev->rd));
++          }
++          ast_mutex_unlock(&(dev->lock));
++          res--;
++          break;
++        }
++        dev = dev->next;
++      }
++
++      if (dev == NULL) {
++        ast_log(LOG_ERROR, "Unhandled fd from poll()\n");
++        close(pfds[i].fd);
++      }
++
++      ast_mutex_unlock(&iface_lock);
++
++      /* -- End find socket with activity -- */
++
++    }
++
++  }
++
++  return NULL;
++}
++
++static int
++restart_monitor(void)
++{
++
++  if (monitor_thread == AST_PTHREADT_STOP)
++    return 0;
++
++  if (ast_mutex_lock(&monitor_lock)) {
++    ast_log(LOG_WARNING, "Unable to lock monitor\n");
++    return -1;
++  }
++
++  if (monitor_thread == pthread_self()) {
++    ast_mutex_unlock(&monitor_lock);
++    ast_log(LOG_WARNING, "Cannot kill myself\n");
++    return -1;
++  }
++
++  if (monitor_thread != AST_PTHREADT_NULL) {
++
++    /* Just signal it to be sure it wakes up */
++    pthread_cancel(monitor_thread);
++    pthread_kill(monitor_thread, SIGURG);
++    ast_log(LOG_DEBUG, "Waiting for monitor thread to join...\n");
++    pthread_join(monitor_thread, NULL);
++    ast_log(LOG_DEBUG, "joined\n");
++
++  } else {
++
++    /* Start a new monitor */
++    if (ast_pthread_create(&monitor_thread, NULL, do_monitor, NULL) < 0) {
++      ast_mutex_unlock(&monitor_lock);
++      ast_log(LOG_ERROR, "Unable to start monitor thread.\n");
++      return -1;
++    }
++
++  }
++
++  ast_mutex_unlock(&monitor_lock);
++  return 0;
++}
++
++static int
++blt_parse_config(void)
++{
++  struct ast_config * cfg;
++  struct ast_variable * v;
++  char * cat;
++
++  cfg = ast_load(BLT_CONFIG_FILE);
++
++  if (!cfg) {
++    ast_log(LOG_NOTICE, "Unable to load Bluetooth config: %s.  Bluetooth disabled\n", BLT_CONFIG_FILE);
++    return -1;
++  }
++
++  v = ast_variable_browse(cfg, "general");
++
++  while (v) {
++    if (!strcasecmp(v->name, "rfchannel_ag")) {
++      rfcomm_channel_ag = atoi(v->value);
++    } else if (!strcasecmp(v->name, "rfchannel_hs")) {
++      rfcomm_channel_hs = atoi(v->value);
++    } else if (!strcasecmp(v->name, "interface")) {
++      hcidev_id = atoi(v->value);
++    } else {
++      ast_log(LOG_WARNING, "Unknown config key '%s' in section [general]\n", v->name);
++    }
++    v = v->next;
++  }
++  cat = ast_category_browse(cfg, NULL);
++
++  while(cat) {
++
++    char * str;
++
++    if (strcasecmp(cat, "general")) {
++      blt_dev_t * device = malloc(sizeof(blt_dev_t));
++      memset(device, 0, sizeof(blt_dev_t));
++      device->sco_running = -1;
++      device->sco = -1;
++      device->rd = -1;
++      device->outgoing_id = -1;
++      device->status = BLT_STATUS_DOWN;
++      str2ba(cat, &(device->bdaddr));
++      device->name = ast_variable_retrieve(cfg, cat, "name");
++
++      str = ast_variable_retrieve(cfg, cat, "type");
++
++      if (str == NULL) {
++        ast_log(LOG_ERROR, "Device [%s] has no role.  Specify type=<HS/AG>\n", cat);
++        return -1;
++      } else if (strcasecmp(str, "HS") == 0)
++        device->role = BLT_ROLE_HS;
++      else if (strcasecmp(str, "AG") == 0) {
++        device->role = BLT_ROLE_AG;
++      } else {
++        ast_log(LOG_ERROR, "Device [%s] has invalid role '%s'\n", cat, str);
++        return -1;
++      }
++
++      /* XXX:T: Find channel to use using SDP.
++       *        However, this needs to be non blocking, and I can't see
++       *        anything in sdp_lib.h that will allow non blocking calls.
++       */
++
++      device->channel = 1;
++
++      if ((str = ast_variable_retrieve(cfg, cat, "channel")) != NULL)
++        device->channel = atoi(str);
++
++      if ((str = ast_variable_retrieve(cfg, cat, "autoconnect")) != NULL)
++        device->autoconnect = (strcasecmp(str, "yes") == 0 || strcmp(str, "1") == 0) ? 1 : 0;
++
++      device->next = iface_head;
++      iface_head = device;
++      ifcount++;
++    }
++
++    cat = ast_category_browse(cfg, cat);
++  }
++  return 0;
++}
++
++
++static int
++blt_show_peers(int fd, int argc, char *argv[])
++{
++  blt_dev_t * dev;
++
++  if (ast_mutex_lock(&iface_lock)) {
++    ast_log(LOG_ERROR, "Failed to get Iface lock\n");
++    ast_cli(fd, "Failed to get iface lock\n");
++    return RESULT_FAILURE;
++  }
++
++  dev = iface_head;
++
++  ast_cli(fd, "BDAddr            Name       Role Status      A/C SCOCon/Fd/Th Sig\n");
++  ast_cli(fd, "----------------- ---------- ---- ----------- --- ------------ ---\n");
++
++  while (dev) {
++    char b1[18];
++    ba2str(&(dev->bdaddr), b1);
++    ast_cli(fd, "%s %-10s %-4s %-11s %-3s %2d/%02d/%-6ld %s\n",
++                b1, dev->name, (dev->role == BLT_ROLE_HS) ? "HS" : "AG", status2str(dev->status),
++                (dev->autoconnect) ? "Yes" : "No",
++                dev->sco_running,
++                dev->sco,
++                dev->sco_thread,
++                (dev->role == BLT_ROLE_AG) ? (dev->service) ? "Yes" : "No" : "N/A"
++            );
++    dev = dev->next;
++  }
++
++  ast_mutex_unlock(&iface_lock);
++  return RESULT_SUCCESS;
++}
++
++static int
++blt_show_information(int fd, int argc, char *argv[])
++{
++  char b1[18];
++  ba2str(&local_bdaddr, b1);
++  ast_cli(fd, "-------------------------------------------\n");
++  ast_cli(fd, "       Version : %s\n", BLT_SVN_REVISION);
++  ast_cli(fd, "   Monitor PID : %d\n", monitor_pid);
++  ast_cli(fd, "     RFCOMM AG : Channel %d, FD %d\n", rfcomm_channel_ag, rfcomm_sock_ag);
++  ast_cli(fd, "     RFCOMM HS : Channel %d, FD %d\n", rfcomm_channel_hs, rfcomm_sock_hs);
++  ast_cli(fd, "        Device : hci%d, MAC Address %s\n", hcidev_id, b1);
++  ast_cli(fd, "-------------------------------------------\n");
++  return RESULT_SUCCESS;
++}
++
++static int
++blt_ag_sendcmd(int fd, int argc, char *argv[])
++{
++  blt_dev_t * dev;
++
++  if (argc != 4)
++    return RESULT_SHOWUSAGE;
++
++  ast_mutex_lock(&iface_lock);
++  dev = iface_head;
++  while (dev) {
++    if (!strcasecmp(argv[2], dev->name))
++      break;
++    dev = dev->next;
++  }
++  ast_mutex_unlock(&iface_lock);
++
++  if (!dev) {
++    ast_cli(fd, "Device '%s' does not exist\n", argv[2]);
++    return RESULT_FAILURE;
++  }
++
++  if (dev->role != BLT_ROLE_AG) {
++    ast_cli(fd, "Device '%s' is not an AudioGateway\n", argv[2]);
++    return RESULT_FAILURE;
++  }
++
++  if (dev->status == BLT_STATUS_DOWN || dev->status == BLT_STATUS_NEGOTIATING) {
++    ast_cli(fd, "Device '%s' is not connected\n", argv[2]);
++    return RESULT_FAILURE;
++  }
++
++  if (*(argv[3] + strlen(argv[3]) - 1) == '.')
++    *(argv[3] + strlen(argv[3]) - 1) = '?';
++
++  ast_cli(fd, "Sending AT command to %s: %s\n", dev->name, argv[3]);
++
++  ast_mutex_lock(&(dev->lock));
++  send_atcmd(dev, argv[3]);
++  ast_mutex_unlock(&(dev->lock));
++
++  return RESULT_SUCCESS;
++}
++
++static char *
++complete_device(char * line, char * word, int pos, int state, int rpos, blt_role_t role)
++{
++  blt_dev_t * dev;
++  int which = 0;
++  char *ret;
++
++  if (pos != rpos)
++    return NULL;
++
++  ast_mutex_lock(&iface_lock);
++
++  dev = iface_head;
++
++  while (dev) {
++
++    if ((dev->role == role) && (!strncasecmp(word, dev->name, strlen(word)))) {
++      if (++which > state)
++        break;
++    }
++
++    dev = dev->next;
++  }
++
++  if (dev)
++    ret = strdup(dev->name);
++  else
++    ret = NULL;
++
++  ast_mutex_unlock(&iface_lock);
++
++  return ret;
++}
++
++static char *
++complete_device_2_ag(char * line, char * word, int pos, int state)
++{
++  return complete_device(line, word, pos, state, 2, BLT_ROLE_AG);
++}
++
++static char show_peers_usage[] =
++"Usage: bluetooth show peers\n"
++"       List all bluetooth peers and their status\n";
++
++static struct ast_cli_entry
++cli_show_peers =
++    { { "bluetooth", "show", "peers", NULL }, blt_show_peers, "List Bluetooth Peers", show_peers_usage };
++
++
++static char ag_sendcmd[] =
++"Usage: bluetooth ag <device> sendcmd <cmd>\n"
++"       Sends a AT cmd over the RFCOMM link, and print result (AG only)\n";
++
++static struct ast_cli_entry
++cli_ag_sendcmd =
++    { { "bluetooth", "sendcmd", NULL }, blt_ag_sendcmd, "Send AG an AT command", ag_sendcmd, complete_device_2_ag };
++
++static char show_information[] =
++"Usage: bluetooth show information\n"
++"       Lists information about the bluetooth subsystem\n";
++
++static struct ast_cli_entry
++cli_show_information =
++    { { "bluetooth", "show", "information", NULL }, blt_show_information, "List Bluetooth Info", show_information };
++
++void
++remove_sdp_records(void)
++{
++
++  sdp_session_t * sdp;
++  sdp_list_t * attr;
++  sdp_record_t * rec;
++  int res = -1;
++  uint32_t range = 0x0000ffff;
++
++  if (sdp_record_ag == -1 || sdp_record_hs == -1)
++    return;
++
++  ast_log(LOG_DEBUG, "Removing SDP records\n");
++
++  sdp = sdp_connect(BDADDR_ANY, BDADDR_LOCAL, SDP_RETRY_IF_BUSY);
++
++  if (!sdp)
++    return;
++
++  attr = sdp_list_append(0, &range);
++  rec = sdp_service_attr_req(sdp, sdp_record_ag, SDP_ATTR_REQ_RANGE, attr);
++  sdp_list_free(attr, 0);
++
++  if (rec)
++    if (sdp_record_unregister(sdp, rec) == 0)
++      res = 0;
++
++  attr = sdp_list_append(0, &range);
++  rec = sdp_service_attr_req(sdp, sdp_record_hs, SDP_ATTR_REQ_RANGE, attr);
++  sdp_list_free(attr, 0);
++
++  if (rec)
++    if (sdp_record_unregister(sdp, rec) == 0)
++      res = 0;
++
++  sdp_close(sdp);
++
++  if (res == 0)
++    ast_log(LOG_NOTICE, "Removed SDP records\n");
++  else
++    ast_log(LOG_ERROR, "Failed to remove SDP records\n");
++
++}
++
++static int
++__unload_module(void)
++{
++
++  ast_channel_unregister(BLT_CHAN_NAME);
++
++  if (monitor_thread != AST_PTHREADT_NULL) {
++
++    if (ast_mutex_lock(&monitor_lock)) {
++
++      if (monitor_thread && (monitor_thread != AST_PTHREADT_STOP) && (monitor_thread != AST_PTHREADT_NULL)) {
++        pthread_cancel(monitor_thread);
++        pthread_kill(monitor_thread, SIGURG);
++        fprintf(stderr, "Waiting for monitor thread to join...\n");
++        pthread_join(monitor_thread, NULL);
++        fprintf(stderr, "joined\n");
++      }
++      monitor_thread = AST_PTHREADT_STOP;
++      ast_mutex_unlock(&monitor_lock);
++
++    } else {
++
++      ast_log(LOG_WARNING, "Unable to lock the monitor\n");
++      return -1;
++
++    }
++
++  }
++
++  ast_unregister_atexit(remove_sdp_records);
++  remove_sdp_records();
++  return 0;
++}
++
++int
++load_module()
++{
++  sdp_session_t * sess;
++  int dd;
++  uint16_t vs;
++
++  hcidev_id = BLT_DEFAULT_HCI_DEV;
++
++  if (blt_parse_config() != 0) {
++    ast_log(LOG_ERROR, "Bluetooth configuration error.  Bluetooth Disabled\n");
++    return unload_module();
++  }
++
++  dd  = hci_open_dev(hcidev_id);
++  if (dd == -1) {
++    ast_log(LOG_ERROR, "Unable to open interface hci%d: %s.\n", hcidev_id, strerror(errno));
++    return -1;
++  }
++
++  hci_read_voice_setting(dd, &vs, 1000);
++  vs = htobs(vs);
++  close(dd);
++
++  if (vs != 0x0060) {
++    ast_log(LOG_ERROR, "Bluetooth voice setting must be 0x0060, not 0x%04x\n", vs);
++    unload_module();
++    return 0;
++  }
++
++  if ((sched = sched_context_create()) == NULL) {
++    ast_log(LOG_WARNING, "Unable to create schedule context\n");
++    return -1;
++  }
++
++  memset(&local_bdaddr, 0, sizeof(local_bdaddr));
++
++  hci_devba(hcidev_id, &local_bdaddr);
++
++  /* --- Add SDP record --- */
++
++  sess = sdp_connect(&local_bdaddr, BDADDR_LOCAL, SDP_RETRY_IF_BUSY);
++
++  if ((rfcomm_sock_ag = rfcomm_listen(&local_bdaddr, rfcomm_channel_ag)) < 0) {
++    return -1;
++  }
++
++  if ((rfcomm_sock_hs = rfcomm_listen(&local_bdaddr, rfcomm_channel_hs)) < 0)
++    return -1;
++
++  if ((sco_socket = sco_listen(&local_bdaddr)) < 0)
++    return -1;
++
++  if (!sess) {
++    ast_log(LOG_ERROR, "Failed to connect to SDP server: %s\n", strerror(errno));
++    return -1;
++  }
++
++  if (sdp_register(sess) != 0) {
++    ast_log(LOG_ERROR, "Failed to register HeadsetAudioGateway in SDP\n");
++    return -1;
++  }
++
++  sdp_close(sess);
++
++  if (restart_monitor() != 0)
++    return -1;
++
++  if (ast_channel_register(BLT_CHAN_NAME, "Bluetooth Driver", BLUETOOTH_FORMAT, blt_request)) {
++    ast_log(LOG_ERROR, "Unable to register channel class BTL\n");
++    __unload_module();
++    return -1;
++  }
++
++  ast_cli_register(&cli_show_information);
++  ast_cli_register(&cli_show_peers);
++  ast_cli_register(&cli_ag_sendcmd);
++
++  ast_register_atexit(remove_sdp_records);
++
++  ast_log(LOG_NOTICE, "Loaded Bluetooth support, %s\n", BLT_SVN_REVISION + 1);
++
++  return 0;
++}
++
++int
++unload_module(void)
++{
++  ast_cli_unregister(&cli_ag_sendcmd);
++  ast_cli_unregister(&cli_show_peers);
++  ast_cli_unregister(&cli_show_information);
++  return __unload_module();
++}
++
++int
++usecount()
++{
++  int res;
++  ast_mutex_lock(&usecnt_lock);
++  res = usecnt;
++  ast_mutex_unlock(&usecnt_lock);
++  return res;
++}
++
++char *description()
++{
++  return "Bluetooth Channel Driver";
++}
++
++char *
++key()
++{
++  return ASTERISK_GPL_KEY;
++}
++
++
+diff -ruN asterisk-1.0.9-old/configs/bluetooth.conf asterisk-1.0.9-new/configs/bluetooth.conf
+--- asterisk-1.0.9-old/configs/bluetooth.conf	1970-01-01 01:00:00.000000000 +0100
++++ asterisk-1.0.9-new/configs/bluetooth.conf	2004-10-22 11:10:48.000000000 +0200
+@@ -0,0 +1,33 @@
++[general]
++; Channel we listen on as a HS (Headset)
++rfchannel_hs = 2
++; Channel we listen on as an AG (AudioGateway)
++rfchannel_ag = 3
++; hci interface to use (number - e.g '0')
++interface = 0
++
++;; A HBH-500 Handsfree Kit
++[00:0A:D9:A1:AA:D2]
++; Any name to use, this is what we use to send calls to (BLT/<name>).
++name        = HBH-500
++; IS this a HS or AG?
++type        = HS
++;
++;
++; RFCOMM channel to connect to.  For a HandsSet:
++;    sdptool search --bdaddr xx:xx:xx:xx:xx:xx 0x111E
++; or,for an AudioGateway (Phone):
++;    sdptool search --bdaddr xx:xx:xx:xx:xx:xx 0x111F
++;
++; Find the 'channel' value under RFCOMM.
++;
++channel     = 2
++; Automatically conenct?
++autoconnect = yes
++
++;; A Nokia 6310i
++[00:60:57:1C:00:99]
++name        = Neil
++type        = AG
++channel     = 13
++autoconnect = yes
