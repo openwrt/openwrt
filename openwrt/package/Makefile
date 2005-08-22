@@ -126,6 +126,7 @@ package-$(BR2_COMPILE_RRDTOOL) += rrdtool
 package-$(BR2_PACKAGE_RSYNC) += rsync
 package-$(BR2_PACKAGE_SABLEVM) += sablevm
 package-$(BR2_PACKAGE_SABLEVM_CLASSPATH) += sablevm-classpath
+package-$(BR2_COMPILE_SAMBA) += samba
 package-$(BR2_PACKAGE_SCREEN) += screen
 package-$(BR2_PACKAGE_SDK) += sdk
 package-$(BR2_PACKAGE_SER) += ser
@@ -211,6 +212,7 @@ quagga-compile: readline-compile ncurses-compile
 rrdcollect-compile: rrdtool-compile
 rrdtool-compile: cgilib-compile freetype-compile libart-compile libpng-compile
 rsync-compile: popt-compile
+samba-compile: cups-compile
 screen-compile: ncurses-compile
 siproxd-compile: libosip2-compile
 sipsak-compile: openssl-compile

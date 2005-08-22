@@ -1,0 +1,26 @@
+#!/bin/sh
+
+DEFAULT=/etc/default/samba
+LOG_D=/var/log/samba
+RUN_D=/var/run/samba
+NMBD_PID_F=$RUN_D/nmbd.pid
+SMBD_PID_F=$RUN_D/smbd.pid
+[ -f $DEFAULT ] && . $DEFAULT
+
+case $1 in
+ start)
+  mkdir -p $LOG_D
+  mkdir -p $RUN_D
+  nmbd -D $NMBD_OPTIONS
+  smbd -D $SMBD_OPTIONS
+  ;;
+ stop)
+  [ -f $SMBD_PID_F ] && kill $(cat $SMBD_PID_F)
+  [ -f $NMBD_PID_F ] && kill $(cat $NMBD_PID_F)
+  ;;
+ *)
+  echo "usage: $0 (start|stop)"
+  exit 1
+esac
+
+exit $?

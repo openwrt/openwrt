@@ -1,0 +1,489 @@
+diff -ur samba-2.0.10/source/include/smb.h samba/source/include/smb.h
+--- samba-2.0.10/source/include/smb.h	2001-06-23 12:52:20.000000000 +0400
++++ samba/source/include/smb.h	2005-05-21 21:09:03.204222704 +0400
+@@ -115,6 +115,22 @@
+  *               Usage:
+  *                 DEBUGADD( 2, ("Some additional text.\n") );
+  */
++ 
++#ifdef NDEBUG
++
++#define DEBUGLVL( level ) \
++  ( (0 == (level)) \
++   && dbghdr( level, FILE_MACRO, FUNCTION_MACRO, (__LINE__) ) )
++
++#define DEBUG( level, body ) \
++  (void)( (0 == (level)) \
++       && (dbghdr( level, FILE_MACRO, FUNCTION_MACRO, (__LINE__) )) \
++       && (dbgtext body) )
++
++#define DEBUGADD( level, body )	\
++  (void)( (0 == (level)) && (dbgtext body) )
++
++#else
+ #define DEBUGLVL( level ) \
+   ( (DEBUGLEVEL >= (level)) \
+    && dbghdr( level, FILE_MACRO, FUNCTION_MACRO, (__LINE__) ) )
+@@ -140,7 +156,7 @@
+   (void)( (DEBUGLEVEL >= (level)) && (dbgtext body) )
+ 
+ #endif
+-
++#endif
+ /* End Debugging code section.
+  * -------------------------------------------------------------------------- **
+  */
+@@ -1612,7 +1628,9 @@
+ #define CAP_LOCK_AND_READ    0x0100
+ #define CAP_NT_FIND          0x0200
+ #define CAP_DFS              0x1000
++#define CAP_W2K_SMBS         0x2000
+ #define CAP_LARGE_READX      0x4000
++#define CAP_LARGE_WRITEX     0x8000
+ #define CAP_EXTENDED_SECURITY 0x80000000
+ 
+ /* protocol types. It assumes that higher protocols include lower protocols
+diff -ur samba-2.0.10/source/Makefile.in samba/source/Makefile.in
+--- samba-2.0.10/source/Makefile.in	2000-03-17 01:57:08.000000000 +0300
++++ samba/source/Makefile.in	2005-05-21 20:59:57.130238568 +0400
+@@ -37,8 +37,8 @@
+ # set these to where to find various files
+ # These can be overridden by command line switches (see smbd(8))
+ # or in smb.conf (see smb.conf(5))
+-SMBLOGFILE = $(VARDIR)/log.smb
+-NMBLOGFILE = $(VARDIR)/log.nmb
++SMBLOGFILE = $(VARDIR)/smb
++NMBLOGFILE = $(VARDIR)/nmb
+ CONFIGFILE = $(LIBDIR)/smb.conf
+ LMHOSTSFILE = $(LIBDIR)/lmhosts
+ DRIVERFILE = $(LIBDIR)/printers.def
+@@ -55,7 +55,7 @@
+ LOCKDIR = @lockdir@
+ 
+ # The directory where code page definition files go
+-CODEPAGEDIR = $(LIBDIR)/codepages
++CODEPAGEDIR = $(BASEDIR)/codepages
+ 
+ # The current codepage definition list.
+ CODEPAGELIST= 437 737 775 850 852 861 932 866 949 950 936 1251 ISO8859-1 ISO8859-2 ISO8859-5 ISO8859-7 KOI8-R
+@@ -82,6 +82,7 @@
+ PROGS2 = bin/rpcclient bin/smbpasswd bin/make_smbcodepage bin/make_unicodemap @WRAP@ @WRAP32@
+ MPROGS = @MPROGS@
+ PROGS = $(PROGS1) $(PROGS2) $(MPROGS) bin/nmblookup bin/make_printerdef 
++SHAREDPROGS = bin/smbd.shared bin/nmbd.shared bin/smbpasswd.shared
+ 
+ SCRIPTS = $(srcdir)/script/smbtar $(srcdir)/script/addtosmbpass $(srcdir)/script/convert_smbpasswd
+ 
+@@ -159,6 +160,8 @@
+            $(RPC_SERVER_OBJ) $(RPC_CLIENT_OBJ) $(RPC_PARSE_OBJ) \
+            $(LOCKING_OBJ) $(PASSDB_OBJ) $(PRINTING_OBJ) $(PROFILE_OBJ) $(LIB_OBJ)
+ 
++SMBDSHARED_OBJ = $(SMBD_OBJ1) $(RPC_SERVER_OBJ) \
++           $(LOCKING_OBJ) $(PROFILE_OBJ) #$(PRINTING_OBJ)
+ 
+ NMBD_OBJ1 = nmbd/asyncdns.o nmbd/nmbd.o nmbd/nmbd_become_dmb.o \
+             nmbd/nmbd_become_lmb.o nmbd/nmbd_browserdb.o \
+@@ -176,6 +179,8 @@
+ NMBD_OBJ = $(NMBD_OBJ1) $(PARAM_OBJ) $(LIBSMB_OBJ) $(UBIQX_OBJ) \
+            $(LIB_OBJ)
+ 
++NMBDSHARED_OBJ = $(NMBD_OBJ1)
++
+ SWAT_OBJ = web/cgi.o web/diagnose.o web/startstop.o web/statuspage.o \
+            web/swat.o $(LIBSMB_OBJ) $(LOCKING_OBJ) \
+            $(PARAM_OBJ) $(PASSDB_OBJ) $(RPC_CLIENT_OBJ) $(RPC_PARSE_OBJ) \
+@@ -207,6 +212,8 @@
+ SMBPASSWD_OBJ = utils/smbpasswd.o $(PARAM_OBJ) $(LIBSMB_OBJ) $(PASSDB_OBJ) \
+                 $(UBIQX_OBJ) $(RPC_CLIENT_OBJ) $(RPC_PARSE_OBJ) $(LIB_OBJ)
+ 
++SMBPASSWDSHARED_OBJ = utils/smbpasswd.o
++
+ RPCCLIENT_OBJ = rpcclient/rpcclient.o \
+              rpcclient/display.o \
+              rpcclient/cmd_lsarpc.o \
+@@ -265,6 +272,11 @@
+ PROTO_OBJ = $(SMBD_OBJ) $(NMBD_OBJ) $(SWAT_OBJ) $(CLIENT_OBJ) \
+ 	    $(RPCCLIENT_OBJ) $(SMBWRAPPER_OBJ) $(SMBTORTURE_OBJ)
+ 
++LIBSMBSHARED_OBJ = $(LIB_OBJ) $(LIBSMB_OBJ) $(PARAM_OBJ) $(UBIQX_OBJ) \
++		$(PASSDB_OBJ) $(RPC_PARSE_OBJ) #$(RPC_CLIENT_OBJ)
++
++LIBSMB_PICOBJS = $(LIBSMBSHARED_OBJ:.o=.po)
++
+ PICOBJS = $(SMBWRAPPER_OBJ:.o=.po)
+ PICOBJS32 = $(SMBWRAPPER_OBJ:.o=.po32)
+ 
+@@ -274,6 +286,8 @@
+ 
+ all : CHECK $(SPROGS) $(PROGS) 
+ 
++shared : CHECK $(SHAREDPROGS)
++
+ smbwrapper : CHECK bin/smbsh bin/smbwrapper.@SHLIBEXT@ @WRAP32@
+ 
+ smbtorture : CHECK bin/smbtorture
+@@ -359,10 +373,18 @@
+ 	@echo Linking $@
+ 	@$(CC) $(FLAGS) -o $@ $(SMBD_OBJ) $(LDFLAGS) $(LIBS) 
+ 
++bin/smbd.shared: $(SMBDSHARED_OBJ) bin/libsmb.@SHLIBEXT@ bin/.dummy
++	@echo Linking $@
++	@$(CC) $(FLAGS) -o $@ $(SMBDSHARED_OBJ) $(LDFLAGS) $(LIBS) -Lbin -lsmb
++
+ bin/nmbd: $(NMBD_OBJ) bin/.dummy
+ 	@echo Linking $@
+ 	@$(CC) $(FLAGS) -o $@ $(NMBD_OBJ) $(LDFLAGS) $(LIBS)
+ 
++bin/nmbd.shared: $(NMBDSHARED_OBJ) bin/libsmb.@SHLIBEXT@ bin/.dummy
++	@echo Linking $@
++	@$(CC) $(FLAGS) -o $@ $(NMBDSHARED_OBJ) $(LDFLAGS) $(LIBS) -Lbin -lsmb
++
+ bin/swat: $(SWAT_OBJ) bin/.dummy
+ 	@echo Linking $@
+ 	@$(CC) $(FLAGS) -o $@ $(SWAT_OBJ) $(LDFLAGS) $(LIBS) 
+@@ -411,6 +433,10 @@
+ 	@echo Linking $@
+ 	@$(CC) $(FLAGS) -o $@ $(SMBPASSWD_OBJ) $(LDFLAGS) $(LIBS)
+ 
++bin/smbpasswd.shared: $(SMBPASSWDSHARED_OBJ) bin/libsmb.@SHLIBEXT@ bin/.dummy
++	@echo Linking $@
++	@$(CC) $(FLAGS) -o $@ $(SMBPASSWDSHARED_OBJ) $(LDFLAGS) $(LIBS) -Lbin -lsmb
++
+ bin/make_smbcodepage: $(MAKE_SMBCODEPAGE_OBJ) bin/.dummy
+ 	@echo Linking $@
+ 	@$(CC) $(FLAGS) -o $@ $(MAKE_SMBCODEPAGE_OBJ) $(LDFLAGS) $(LIBS)
+@@ -459,6 +485,10 @@
+ 	@echo Linking $@
+ 	@$(CC) $(FLAGS) -o $@ $(SMBSH_OBJ) $(LDFLAGS) $(LIBS)
+ 
++bin/libsmb.@SHLIBEXT@: $(LIBSMB_PICOBJS) bin/.dummy
++	@echo Linking shared library $@
++	@$(LD) @LDSHFLAGS@ -o $@ $(LIBSMB_PICOBJS) $(LIBS)
++
+ install: installbin installman installscripts installcp installswat
+ 
+ installdirs:
+@@ -518,7 +548,7 @@
+ 	ctags `find . -name "*.[ch]" | grep -v /CVS/`
+ 
+ realclean: clean
+-	-rm -f config.log $(PROGS) $(SPROGS) bin/.dummy
++	-rm -f config.log $(PROGS) $(SPROGS) $(SHAREDPROGS) bin/.dummy
+ 	-rmdir bin
+ 
+ distclean: realclean
+diff -ur samba-2.0.10/source/nmbd/nmbd_mynames.c samba/source/nmbd/nmbd_mynames.c
+--- samba-2.0.10/source/nmbd/nmbd_mynames.c	2000-03-17 01:59:24.000000000 +0300
++++ samba/source/nmbd/nmbd_mynames.c	2005-05-21 20:57:26.672111680 +0400
+@@ -215,8 +215,8 @@
+          */
+         if( !is_refresh_already_queued( subrec, namerec) )
+           refresh_name( subrec, namerec, NULL, NULL, NULL );
+-        namerec->data.death_time += lp_max_ttl();
+-        namerec->data.refresh_time += MIN(lp_max_ttl(), MAX_REFRESH_TIME);
++        namerec->data.death_time = t + lp_max_ttl();
++        namerec->data.refresh_time = t + MIN(lp_max_ttl(), MAX_REFRESH_TIME);
+       }
+     }
+   }
+diff -ur samba-2.0.10/source/smbd/close.c samba/source/smbd/close.c
+--- samba-2.0.10/source/smbd/close.c	2000-04-21 21:43:13.000000000 +0400
++++ samba/source/smbd/close.c	2005-05-21 19:44:59.516979712 +0400
+@@ -122,11 +122,11 @@
+ 		last_reference = True;
+ 
+     fsp->fd_ptr = NULL;
+-
++#ifdef PRINTING
+ 	/* NT uses smbclose to start a print - weird */
+ 	if (normal_close && fsp->print_file)
+ 		print_file(conn, fsp);
+-
++#endif
+ 	/* check for magic scripts */
+ 	if (normal_close) {
+ 		check_magic(fsp,conn);
+diff -ur samba-2.0.10/source/smbd/ipc.c samba/source/smbd/ipc.c
+--- samba-2.0.10/source/smbd/ipc.c	2000-03-30 02:20:06.000000000 +0400
++++ samba/source/smbd/ipc.c	2005-05-21 19:44:59.559973176 +0400
+@@ -472,7 +472,7 @@
+   PACK(desc,t,v);
+ }
+ 
+-
++#ifdef PRINTING
+ /****************************************************************************
+   get a print queue
+   ****************************************************************************/
+@@ -1004,7 +1004,7 @@
+   
+   return True;
+ }
+-
++#endif
+ /****************************************************************************
+   get info level for a server list query
+   ****************************************************************************/
+@@ -1834,7 +1834,7 @@
+ 
+   return(True);
+ }
+-
++#ifdef PRINTING
+ /****************************************************************************
+   delete a print job
+   Form: <W> <> 
+@@ -2091,7 +2091,7 @@
+ 	
+ 	return(True);
+ }
+-
++#endif
+ 
+ /****************************************************************************
+   get info about the server
+@@ -2756,7 +2756,7 @@
+ 
+   return(True);
+ }
+-
++#ifdef PRINTING
+ /****************************************************************************
+   api_WPrintJobEnumerate
+   ****************************************************************************/
+@@ -3189,7 +3189,7 @@
+   DEBUG(4,("WPrintPortEnum: errorcode %d\n",desc.errcode));
+   return(True);
+ }
+-
++#endif
+ /****************************************************************************
+  Start the first part of an RPC reply which began with an SMBtrans request.
+ ****************************************************************************/
+@@ -3407,6 +3407,7 @@
+   {"RNetUserGetInfo",	56,	api_RNetUserGetInfo,0},
+   {"NetUserGetGroups",	59,	api_NetUserGetGroups,0},
+   {"NetWkstaGetInfo",	63,	api_NetWkstaGetInfo,0},
++#ifdef PRINTING
+   {"DosPrintQEnum",	69,	api_DosPrintQEnum,0},
+   {"DosPrintQGetInfo",	70,	api_DosPrintQGetInfo,0},
+   {"WPrintQueuePause",  74, api_WPrintQueuePurge,0},
+@@ -3418,16 +3419,21 @@
+   {"RDosPrintJobResume",83,	api_RDosPrintJobDel,0},
+   {"WPrintDestEnum",	84,	api_WPrintDestEnum,0},
+   {"WPrintDestGetInfo",	85,	api_WPrintDestGetInfo,0},
++#endif
+   {"NetRemoteTOD",	91,	api_NetRemoteTOD,0},
++#ifdef PRINTING
+   {"WPrintQueuePurge",	103,	api_WPrintQueuePurge,0},
++#endif
+   {"NetServerEnum",	104,	api_RNetServerEnum,0},
+   {"WAccessGetUserPerms",105,	api_WAccessGetUserPerms,0},
+   {"SetUserPassword",	115,	api_SetUserPassword,0},
+   {"WWkstaUserLogon",	132,	api_WWkstaUserLogon,0},
++#ifdef PRINTING
+   {"PrintJobInfo",	147,	api_PrintJobInfo,0},
+   {"WPrintDriverEnum",	205,	api_WPrintDriverEnum,0},
+   {"WPrintQProcEnum",	206,	api_WPrintQProcEnum,0},
+   {"WPrintPortEnum",	207,	api_WPrintPortEnum,0},
++#endif
+   {"SamOEMChangePassword", 214, api_SamOEMChangePassword,0},
+   {NULL,		-1,	api_Unsupported,0}};
+ 
+diff -ur samba-2.0.10/source/smbd/negprot.c samba/source/smbd/negprot.c
+--- samba-2.0.10/source/smbd/negprot.c	2000-03-17 01:59:47.000000000 +0300
++++ samba/source/smbd/negprot.c	2005-05-21 21:09:16.025273608 +0400
+@@ -160,7 +160,7 @@
+   /* dual names + lock_and_read + nt SMBs + remote API calls */
+   int capabilities = CAP_NT_FIND|CAP_LOCK_AND_READ|
+                      (lp_nt_smb_support() ? CAP_NT_SMBS | CAP_RPC_REMOTE_APIS : 0) |
+-                     (SMB_OFF_T_BITS == 64 ? CAP_LARGE_FILES : 0);
++                     (SMB_OFF_T_BITS == 64 ? CAP_LARGE_FILES | CAP_LARGE_READX | CAP_LARGE_WRITEX /*| CAP_W2K_SMBS*/ : 0);
+ 
+ 
+ /*
+diff -ur samba-2.0.10/source/smbd/password.c samba/source/smbd/password.c
+--- samba-2.0.10/source/smbd/password.c	2000-03-17 01:59:48.000000000 +0300
++++ samba/source/smbd/password.c	2005-05-21 19:44:59.562972720 +0400
+@@ -1149,7 +1149,7 @@
+ 
+   return(True);
+ }
+-
++#ifdef RPCCLIENT
+ /***********************************************************************
+  Connect to a remote machine for domain security authentication
+  given a name or IP address.
+@@ -1504,3 +1504,4 @@
+   cli_shutdown(&cli);
+   return True;
+ }
++#endif
+diff -ur samba-2.0.10/source/smbd/process.c samba/source/smbd/process.c
+--- samba-2.0.10/source/smbd/process.c	2000-04-15 04:21:27.000000000 +0400
++++ samba/source/smbd/process.c	2005-05-21 19:44:59.583969528 +0400
+@@ -343,10 +343,12 @@
+    {SMBlseek,"SMBlseek",reply_lseek,AS_USER},
+    {SMBflush,"SMBflush",reply_flush,AS_USER},
+    {SMBctemp,"SMBctemp",reply_ctemp,AS_USER | QUEUE_IN_OPLOCK },
++#ifdef PRINTING
+    {SMBsplopen,"SMBsplopen",reply_printopen,AS_USER | QUEUE_IN_OPLOCK },
+    {SMBsplclose,"SMBsplclose",reply_printclose,AS_USER},
+    {SMBsplretq,"SMBsplretq",reply_printqueue,AS_USER},
+    {SMBsplwr,"SMBsplwr",reply_printwrite,AS_USER},
++#endif
+    {SMBlock,"SMBlock",reply_lock,AS_USER},
+    {SMBunlock,"SMBunlock",reply_unlock,AS_USER},
+    
+@@ -908,7 +910,7 @@
+     DEBUG(2,("Closing idle connection 2.\n"));
+     return False;
+   }
+-
++#ifdef RPCLIENT
+   if(global_machine_password_needs_changing)
+   {
+     unsigned char trust_passwd_hash[16];
+@@ -954,7 +956,7 @@
+     trust_password_unlock();
+     global_machine_password_needs_changing = False;
+   }
+-
++#endif
+   /*
+    * Check to see if we have any blocking locks
+    * outstanding on the queue.
+diff -ur samba-2.0.10/source/smbd/reply.c samba/source/smbd/reply.c
+--- samba-2.0.10/source/smbd/reply.c	2001-06-23 12:51:24.000000000 +0400
++++ samba/source/smbd/reply.c	2005-05-21 19:44:59.628962688 +0400
+@@ -597,12 +597,12 @@
+ 
+   if (!check_domain_match(orig_user, domain))
+      return False;
+-
++#ifdef RPCCLIENT
+   ret = domain_client_validate(orig_user, domain,
+                                 smb_apasswd, smb_apasslen,
+                                 smb_ntpasswd, smb_ntpasslen,
+                                 &user_exists);
+-
++#endif
+   if(ret) {
+     /*
+      * User validated ok against Domain controller.
+@@ -2991,7 +2991,7 @@
+ 	return -1;
+ }
+ 
+-
++#ifdef PRINTING
+ /****************************************************************************
+   reply to a printopen
+ ****************************************************************************/
+@@ -3176,7 +3176,7 @@
+   
+   return(outsize);
+ }
+-
++#endif
+ 
+ /****************************************************************************
+   reply to a mkdir
+diff -ur samba-2.0.10/source/smbd/server.c samba/source/smbd/server.c
+--- samba-2.0.10/source/smbd/server.c	2000-03-17 01:59:52.000000000 +0300
++++ samba/source/smbd/server.c	2005-05-21 19:44:59.649959496 +0400
+@@ -300,9 +300,9 @@
+ 	lp_killunused(conn_snum_used);
+ 
+ 	ret = lp_load(servicesf,False,False,True);
+-
++#ifdef PRINTING
+ 	load_printers();
+-
++#endif
+ 	/* perhaps the config filename is now set */
+ 	if (!test)
+ 		reload_services(True);
+diff -ur samba-2.0.10/source/smbd/service.c samba/source/smbd/service.c
+--- samba-2.0.10/source/smbd/service.c	2000-03-17 01:59:52.000000000 +0300
++++ samba/source/smbd/service.c	2005-05-21 19:44:59.670956304 +0400
+@@ -121,7 +121,7 @@
+       }
+      }
+    }
+-
++#ifdef PRINTING
+    /* If we still don't have a service, attempt to add it as a printer. */
+    if (iService < 0)
+    {
+@@ -146,7 +146,7 @@
+             DEBUG(3,("%s is not a valid printer name\n", service));
+       }
+    }
+-
++#endif
+    /* just possibly it's a default service? */
+    if (iService < 0) 
+    {
+diff -ur samba-2.0.10/source/utils/smbpasswd.c samba/source/utils/smbpasswd.c
+--- samba-2.0.10/source/utils/smbpasswd.c	2000-03-17 01:59:57.000000000 +0300
++++ samba/source/utils/smbpasswd.c	2005-05-21 19:44:59.671956152 +0400
+@@ -71,7 +71,7 @@
+ 	}
+ 	exit(1);
+ }
+-
++#ifdef RPCCLIENT
+ /*********************************************************
+ Join a domain.
+ **********************************************************/
+@@ -143,7 +143,7 @@
+ 	
+ 	return (int)ret;
+ }
+-
++#endif
+ 
+ static void set_line_buffering(FILE *f)
+ {
+@@ -335,13 +335,13 @@
+ 	if((local_flags & (LOCAL_ADD_USER|LOCAL_DELETE_USER)) && ((remote_machine != NULL) || joining_domain)) {
+ 		usage();
+ 	}
+-	
++#ifdef RPCCLIENT	
+ 	if(joining_domain) {
+ 		if (argc != 0)
+ 			usage();
+ 		return join_domain(new_domain, remote_machine);
+ 	}
+-
++#endif
+ 	/*
+ 	 * Deal with root - can add a user, but only locally.
+ 	 */
+diff -ur samba-2.0.10/source/web/swat.c samba/source/web/swat.c
+--- samba-2.0.10/source/web/swat.c	2000-04-11 21:36:36.000000000 +0400
++++ samba/source/web/swat.c	2005-05-21 19:44:59.692952960 +0400
+@@ -357,8 +357,9 @@
+                 return 0;
+         }
+ 	iNumNonAutoPrintServices = lp_numservices();
++#ifdef PRINTING
+ 	load_printers();
+-
++#endif
+ 	return 1;
+ }
+ 
+@@ -997,8 +998,9 @@
+ 	charset_initialise();
+ 	load_config(True);
+ 	iNumNonAutoPrintServices = lp_numservices();
++#ifdef PRINTING
+ 	load_printers();
+-
++#endif
+ 	cgi_setup(SWATDIR, !demo_mode);
+ 
+ 	print_header();
