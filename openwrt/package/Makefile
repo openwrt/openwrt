@@ -228,7 +228,7 @@ vtun-compile: zlib-compile openssl-compile lzo-compile
 wificonf-compile: wireless-tools-compile nvram-compile
 wpa_supplicant-compile: openssl-compile
 
-asterisk-compile: ncurses-compile openssl-compile
+asterisk-compile: bluez-libs-compile ncurses-compile openssl-compile
 ifneq ($(BR2_PACKAGE_ASTERISK_CODEC_SPEEX),)
 asterisk-compile: speex-compile
 endif
