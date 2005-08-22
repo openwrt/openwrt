@@ -1,0 +1,25 @@
+diff -ruN samba-2.0.10-old/source/Makefile.in samba-2.0.10-new/source/Makefile.in
+--- samba-2.0.10-old/source/Makefile.in	2005-08-22 03:03:17.000000000 +0200
++++ samba-2.0.10-new/source/Makefile.in	2005-08-22 03:08:23.000000000 +0200
+@@ -31,6 +31,8 @@
+ MANDIR = @mandir@
+ SAMBABOOK = @sambabook@
+ 
++CONFIGDIR = @sysconfdir@
++
+ # The permissions to give the executables
+ INSTALLPERMS = 0755
+ 
+@@ -39,9 +41,9 @@
+ # or in smb.conf (see smb.conf(5))
+ SMBLOGFILE = $(VARDIR)/smb
+ NMBLOGFILE = $(VARDIR)/nmb
+-CONFIGFILE = $(LIBDIR)/smb.conf
+-LMHOSTSFILE = $(LIBDIR)/lmhosts
+-DRIVERFILE = $(LIBDIR)/printers.def
++CONFIGFILE = $(CONFIGDIR)/smb.conf
++LMHOSTSFILE = $(CONFIGDIR)/lmhosts
++DRIVERFILE = $(CONFIGDIR)/printers.def
+ PASSWD_PROGRAM = /bin/passwd
+ # This is where smbpasswd et al go
+ PRIVATEDIR = @privatedir@
