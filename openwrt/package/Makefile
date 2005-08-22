@@ -74,6 +74,7 @@ package-$(BR2_PACKAGE_LIBTASN1) += libtasn1
 package-$(BR2_PACKAGE_LIBTOOL) += libtool
 package-$(BR2_PACKAGE_LIBUSB) += libusb
 package-$(BR2_PACKAGE_LIBXML2) += libxml2
+package-$(BR2_PACKAGE_LIBXSLT) += libxslt
 package-$(BR2_PACKAGE_LIGHTTPD) += lighttpd
 package-$(BR2_PACKAGE_LINUX_ATM) += linux-atm
 package-$(BR2_PACKAGE_LUA) += lua
@@ -193,6 +194,7 @@ libgd-compile: libpng-compile
 libnet-compile: libpcap-compile
 libnids-compile: libnet-compile
 libxml2-compile: zlib-compile
+libxslt-compile: libxml2-compile
 lighttpd-compile: openssl-compile pcre-compile
 mini_httpd-compile: matrixssl-compile
 mysql-compile: ncurses-compile zlib-compile
