@@ -53,7 +53,7 @@ $(PKG_BUILD_DIR)/.configured:
 			--without-catalog \
 			--without-debug \
 			--without-docbook \
-			--without-html \
+			--with-html \
 			--without-ftp \
 			--without-http \
 			--without-iconv \
@@ -72,9 +72,9 @@ $(PKG_BUILD_DIR)/.configured:
 			--with-tree \
 			--with-valid \
 			--with-writer \
-			--without-xinclude \
-			--without-xpath \
-			--without-xptr \
+			--with-xinclude \
+			--with-xpath \
+			--with-xptr \
 			--with-zlib \
 	);
 	touch $@
@@ -102,13 +102,18 @@ $(STAGING_DIR)/usr/lib/libxml2.so: $(PKG_BUILD_DIR)/.built
 	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libxml2.{a,so*} $(STAGING_DIR)/usr/lib/
 	mkdir -p $(STAGING_DIR)/usr/lib/pkgconfig
 	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/libxml-2.0.pc $(STAGING_DIR)/usr/lib/pkgconfig/
+	$(SED) 's,-I$${includedir}/libxml2,,g' $(STAGING_DIR)/usr/bin/xml2-config
+	$(SED) 's,-I$${includedir},,g' $(STAGING_DIR)/usr/bin/xml2-config
+	$(SED) 's,-I$(STAGING_DIR)/usr/include,,g' $(STAGING_DIR)/usr/bin/xml2-config
+	$(SED) 's,-L$${libdir},,g' $(STAGING_DIR)/usr/bin/xml2-config
+	$(SED) 's,-L$(STAGING_DIR)/usr/lib,,g' $(STAGING_DIR)/usr/bin/xml2-config
 	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/libxml2.so
 
 uninstall-dev:
 	rm -rf \
-		$(STAGING_DIR)/usr/bin/libxml2-config \
+		$(STAGING_DIR)/usr/bin/xml2-config \
 		$(STAGING_DIR)/usr/include/libxml2 \
 		$(STAGING_DIR)/usr/lib/libxml2.{a,so*} \
 		$(STAGING_DIR)/usr/lib/pkgconfig/libxml-2.0.pc \
