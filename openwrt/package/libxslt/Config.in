@@ -1,0 +1,10 @@
+config BR2_PACKAGE_LIBXSLT
+	tristate "libxslt - Gnome XSLT library"
+#	default m if CONFIG_DEVEL
+	default n
+	select BR2_PACKAGE_LIBXML2
+	help
+	  A library for XML transformation using XSLT.
+	  
+	  http://xmlsoft.org/XSLT/
+	  
