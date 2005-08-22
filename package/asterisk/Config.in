@@ -13,6 +13,15 @@ config BR2_PACKAGE_ASTERISK
 	  http://www.asterisk.org/
 	  
 
+config BR2_PACKAGE_ASTERISK_CHAN_BLUETOOTH
+	prompt "...-chan-bluetooth - Bluetooth HandsFreeProfile support for Asterisk"
+	tristate
+	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_ASTERISK
+	select BR2_PACKAGE_BLUEZ_LIBS
+	help
+	  The Bluetooth HandsFreeProfile support for Asterisk
+
 config BR2_PACKAGE_ASTERISK_CODEC_ILBC
 	prompt "...-codec-ilbc - Internet Low Bitrate Codec (ILBC) Translator"
 	tristate

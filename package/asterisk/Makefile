@@ -19,6 +19,7 @@ $(eval $(call PKG_template,ASTERISK_PGSQL,asterisk-pgsql,$(PKG_VERSION)-$(PKG_RE
 $(eval $(call PKG_template,ASTERISK_VOICEMAIL,asterisk-voicemail,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,ASTERISK_SOUNDS,asterisk-sounds,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,ASTERISK_CODEC_ILBC,asterisk-codec-ilbc,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,ASTERISK_CHAN_BLUETOOTH,asterisk-chan-bluetooth,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,ASTERISK_CODEC_LPC10,asterisk-codec-lpc10,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,ASTERISK_CODEC_SPEEX,asterisk-codec-speex,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,ASTERISK_PBX_DUNDI,asterisk-pbx-dundi,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
@@ -85,12 +86,14 @@ $(IPKG_ASTERISK):
 			*musiconhold* *zapateller* *jpeg*; \
 		rm -f {codec,format}_ilbc.so ; \
 		rm -f codec_lpc10.so ; \
+		rm -f chan_bluetooth.so ; \
 		rm -f pbx_dundi.so ; \
 	)
 	(cd $(IDIR_ASTERISK)/etc/asterisk; \
 		rm -f 	*odbc* *mysql* *postgres* *pgsql* *voicemail* *adsi* *oss* *alsa* \
 			*festival* *modem* *meetme* *phone* *tds* *vofr* *rpt* *vpb* \
 			*zapata* *musiconhold*; \
+		rm -f bluetooth.conf ; \
 		rm -f dundi.conf ; \
 	)
 	install -d -m0755 $(IDIR_ASTERISK)/etc/default
@@ -133,6 +136,14 @@ $(IPKG_ASTERISK_VOICEMAIL):
 	install -m0755 $(PKG_BUILD_DIR)/apps/*voicemail.so $(IDIR_ASTERISK_VOICEMAIL)/usr/lib/asterisk/modules/
 	$(RSTRIP) $(IDIR_ASTERISK_VOICEMAIL)
 	$(IPKG_BUILD) $(IDIR_ASTERISK_VOICEMAIL) $(PACKAGE_DIR)
+
+$(IPKG_ASTERISK_CHAN_BLUETOOTH):
+	install -d -m0755 $(IDIR_ASTERISK_CHAN_BLUETOOTH)/etc/asterisk
+	install -m0644 $(PKG_BUILD_DIR)/configs/bluetooth.conf $(IDIR_ASTERISK_CHAN_BLUETOOTH)/etc/asterisk/bluetooth.conf
+	install -d -m0755 $(IDIR_ASTERISK_CHAN_BLUETOOTH)/usr/lib/asterisk/modules
+	install -m0755 $(PKG_BUILD_DIR)/channels/chan_bluetooth.so $(IDIR_ASTERISK_CHAN_BLUETOOTH)/usr/lib/asterisk/modules/
+	$(RSTRIP) $(IDIR_ASTERISK_CHAN_BLUETOOTH)
+	$(IPKG_BUILD) $(IDIR_ASTERISK_CHAN_BLUETOOTH) $(PACKAGE_DIR)
 
 $(IPKG_ASTERISK_CODEC_ILBC):
 	install -d -m0755 $(IDIR_ASTERISK_CODEC_ILBC)/usr/lib/asterisk/modules
