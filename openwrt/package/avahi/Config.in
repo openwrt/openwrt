@@ -1,0 +1,67 @@
+menu "avahi - An mDNS/DNS-SD (aka RendezVous/Bonjour/ZeroConf) implementation"
+
+config BR2_COMPILE_AVAHI
+	bool
+	default n
+	depends BR2_PACKAGE_AVAHI_DAEMON || BR2_PACKAGE_AVAHI_DNSCONFD || BR2_PACKAGE_LIBAVAHI
+
+config BR2_PACKAGE_AVAHI_DAEMON
+	tristate "avahi-daemon - an mDNS/DNS-SD (aka RendezVous/Bonjour/ZeroConf) implementation (daemon)"
+#	default m if CONFIG_DEVEL
+	default n
+	select BR2_COMPILE_AVAHI
+	select BR2_PACKAGE_LIBAVAHI
+	select BR2_PACKAGE_LIBDAEMON
+	help
+	  Avahi is a system which facilitates service discovery on a local network -- 
+	  this means that you can plug your laptop or computer into a network and 
+	  instantly be able to view other people who you can chat with, find printers 
+	  to print to or find files being shared. This kind of technology is already 
+	  found in MacOS X (branded 'Rendezvous', 'Bonjour' and sometimes 'ZeroConf') 
+	  and is very convenient.
+	  
+	  http://www.freedesktop.org/Software/Avahi
+	  
+	  This package contains an mDNS/DNS-SD daemon.
+	  
+
+config BR2_PACKAGE_AVAHI_DNSCONFD
+	tristate "avahi-dnsconfd - an Unicast DNS server from mDNS/DNS-SD configuration daemon"
+#	default m if CONFIG_DEVEL
+	default n
+	select BR2_COMPILE_AVAHI
+	depends BR2_PACKAGE_AVAHI_DAEMON
+	help
+	  Avahi is a system which facilitates service discovery on a local network -- 
+	  this means that you can plug your laptop or computer into a network and 
+	  instantly be able to view other people who you can chat with, find printers 
+	  to print to or find files being shared. This kind of technology is already 
+	  found in MacOS X (branded 'Rendezvous', 'Bonjour' and sometimes 'ZeroConf') 
+	  and is very convenient.
+	  
+	  http://www.freedesktop.org/Software/Avahi
+	  
+	  This package contains an Unicast DNS server from mDNS/DNS-SD configuration 
+	  daemon, which may be used to configure conventional DNS servers using mDNS 
+	  in a DHCP-like fashion. Especially useful on IPv6.
+	  
+
+config BR2_PACKAGE_LIBAVAHI
+	tristate "libavahi - an DNS-SD over mDNS (aka RendezVous/Bonjour/ZeroConf) implementation (library)"
+#	default m if CONFIG_DEVEL
+	default n
+	select BR2_COMPILE_AVAHI
+	help
+	  Avahi is a system which facilitates service discovery on a local network -- 
+	  this means that you can plug your laptop or computer into a network and 
+	  instantly be able to view other people who you can chat with, find printers 
+	  to print to or find files being shared. This kind of technology is already 
+	  found in MacOS X (branded 'Rendezvous', 'Bonjour' and sometimes 'ZeroConf') 
+	  and is very convenient.
+	  
+	  http://www.freedesktop.org/Software/Avahi
+	  
+	  This package contains the mDNS/DNS-SD shared libraries, used by other programs.
+	  
+
+endmenu
