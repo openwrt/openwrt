@@ -2,6 +2,16 @@ config BR2_PACKAGE_LINUX_ATM
 	tristate "linux-atm - ATM Library/Utilities for Linux"
 	default y if BR2_LINUX_2_4_AR7
 	help
-	  ATM Library/Utilities for linux
+	  ATM Library for linux
+	  
+	  http://ftp.debian.org/debian/pool/main/l/linux-atm/
+
+config BR2_PACKAGE_BR2684CTL
+	tristate "br2684ctl - RFC2684 bridging utility"
+	default y if BR2_LINUX_2_4_AR7
+	depends BR2_PACKAGE_LINUX_ATM
+	help
+	  Utility for setting up ATM RFC2684 bridging mode
+	  Useful for PPPoE
 	  
 	  http://ftp.debian.org/debian/pool/main/l/linux-atm/

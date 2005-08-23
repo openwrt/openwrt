@@ -18,9 +18,11 @@ include $(TOPDIR)/package/rules.mk
 
 ifneq ($(BOARD),ar7)
 BR2_PACKAGE_LINUX_ATM:=m
+BR2_PACKAGE_BR2684CTL:=m
 endif
 
 $(eval $(call PKG_template,LINUX_ATM,linux-atm,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,BR2684CTL,br2684ctl,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 $(PKG_BUILD_DIR)/.configured:
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
@@ -60,10 +62,16 @@ $(PKG_BUILD_DIR)/.built:
 $(IPKG_LINUX_ATM): 
 	install -d -m0755 $(IDIR_LINUX_ATM)/usr/lib
 	cp $(PKG_INSTALL_DIR)/usr/lib/libatm.so.1 $(IDIR_LINUX_ATM)/usr/lib
-	install -d -m0755 $(IDIR_LINUX_ATM)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/br2684ctl $(IDIR_LINUX_ATM)/usr/sbin/
 	$(RSTRIP) $(IDIR_LINUX_ATM)/
 	$(IPKG_BUILD) $(IDIR_LINUX_ATM) $(PACKAGE_DIR)
+
+$(IPKG_BR2684CTL): 
+	install -d -m0755 $(IDIR_BR2684CTL)/usr/sbin
+	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/br2684ctl $(IDIR_BR2684CTL)/usr/sbin/
+	install -d -m0755 $(IDIR_BR2684CTL)/etc/init.d
+	install -m0755 ./files/br2684.init $(IDIR_BR2684CTL)/etc/init.d/S30br2684
+	$(RSTRIP) $(IDIR_BR2684CTL)/
+	$(IPKG_BUILD) $(IDIR_BR2684CTL) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libatm.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include
