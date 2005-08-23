@@ -1,19 +1,19 @@
 diff -urN kismet.old/kis_packsources.cc kismet.dev/kis_packsources.cc
---- kismet.old/kis_packsources.cc	2005-08-15 00:15:11.107594000 +0200
-+++ kismet.dev/kis_packsources.cc	2005-08-15 01:56:36.467769104 +0200
-@@ -215,7 +215,7 @@
- #endif
+--- kismet.old/kis_packsources.cc	2005-08-16 03:22:51.000000000 +0200
++++ kismet.dev/kis_packsources.cc	2005-08-23 00:59:04.465379568 +0200
+@@ -192,7 +192,7 @@
+                                        chancontrol_wlanng_avs, 1);
      sourcetracker->RegisterPacketsource("wrt54g", 1, "na", 0,
                                          pcapsource_wrt54g_registrant,
 -                                        monitor_wrt54g, NULL, NULL, 0);
-+                                        monitor_wrt54g, unmonitor_wrt54g, chancontrol_wext, 0);
++										monitor_wrt54g, unmonitor_wrt54g, chancontrol_wext, 0);
  #else
      REG_EMPTY_CARD(sourcetracker, "wlanng");
      REG_EMPTY_CARD(sourcetracker, "wlanng_avs");
 diff -urN kismet.old/packetsourcetracker.cc kismet.dev/packetsourcetracker.cc
---- kismet.old/packetsourcetracker.cc	2005-08-15 00:33:14.628874000 +0200
-+++ kismet.dev/packetsourcetracker.cc	2005-08-15 01:20:41.284203096 +0200
-@@ -984,6 +984,7 @@
+--- kismet.old/packetsourcetracker.cc	2005-08-16 03:22:51.000000000 +0200
++++ kismet.dev/packetsourcetracker.cc	2005-08-23 00:59:39.969982048 +0200
+@@ -986,6 +986,7 @@
                      (meta_packsources[chanpak.meta_num]->device.c_str(), 
                       chanpak.channel, errstr, 
                       (void *) (meta_packsources[chanpak.meta_num]->capsource)) < 0) {
@@ -21,7 +21,7 @@ diff -urN kismet.old/packetsourcetracker.cc kismet.dev/packetsourcetracker.cc
  
  					meta_packsources[chanpak.meta_num]->consec_errors++;
  
-@@ -1005,6 +1006,7 @@
+@@ -1007,6 +1008,7 @@
  																	 CHANFLAG_FATAL));
  						continue;
  					}
@@ -30,8 +30,8 @@ diff -urN kismet.old/packetsourcetracker.cc kismet.dev/packetsourcetracker.cc
  					// Otherwise reset the error count
  					meta_packsources[chanpak.meta_num]->consec_errors = 0;
 diff -urN kismet.old/pcapsource.cc kismet.dev/pcapsource.cc
---- kismet.old/pcapsource.cc	2005-08-15 00:40:28.291416000 +0200
-+++ kismet.dev/pcapsource.cc	2005-08-15 01:55:53.972229408 +0200
+--- kismet.old/pcapsource.cc	2005-08-16 03:22:51.000000000 +0200
++++ kismet.dev/pcapsource.cc	2005-08-23 01:03:45.652632608 +0200
 @@ -115,6 +115,53 @@
  u_char callback_data[MAX_PACKET_LEN];
  
@@ -86,27 +86,28 @@ diff -urN kismet.old/pcapsource.cc kismet.dev/pcapsource.cc
  int PcapSource::OpenSource() {
      channel = 0;
  
-@@ -1561,45 +1608,39 @@
- 
+@@ -1928,63 +1975,32 @@
  int monitor_wrt54g(const char *in_dev, int initch, char *in_err, void **in_if, 
  				   void *in_ext) {
--    char cmdline[2048];
-+	char cmdline[2048];
- 	int mode;
- 	int wlmode = 0;
- 
+     char cmdline[2048];
+-	int mode;
+-	int wlmode = 0;
+-
+-#ifdef HAVE_LINUX_WIRELESS
 -    vector<string> devbits = StrTokenize(in_dev, ":");
-+	vector<string> devbits = StrTokenize(in_dev, ":");
  
 -    if (devbits.size() < 2) {
 -		snprintf(cmdline, 2048, "/usr/sbin/wl monitor 1");
--		if (RunSysCmd(cmdline) < 0) {
++		snprintf(cmdline, 2048, "/usr/sbin/iwpriv %s set_monitor 1", in_dev);
+ 		if (RunSysCmd(cmdline) < 0) {
 -			snprintf(in_err, 1024, "Unable to set mode using 'wl monitor 1'.  Some "
 -					 "custom firmware images require you to specify the origial "
--					 "device and a new dynamic device and use the iwconfig controls. "
--					 "see the README for how to configure your capture source.");
--			return -1;
--		}
++			snprintf(in_err, 1024, "Unable to set mode using 'iwpriv %s set_monitor 1'. "
++					 "Some custom firmware images require you to specify the origial "
+ 					 "device and a new dynamic device and use the iwconfig controls. "
+ 					 "see the README for how to configure your capture source.");
+ 			return -1;
+ 		}
 -    } else {
 -		// Get the mode ... If this doesn't work, try the old wl method.
 -		if (Iwconfig_Get_Mode(devbits[0].c_str(), in_err, &mode) < 0) {
@@ -114,14 +115,6 @@ diff -urN kismet.old/pcapsource.cc kismet.dev/pcapsource.cc
 -					"defaulting to trying the 'wl' command.\n");
 -			wlmode = 1;
 -		}
-+	snprintf(cmdline, 2048, "/usr/sbin/iwpriv %s set_monitor 1", in_dev);
-+	if (RunSysCmd(cmdline) < 0) {
-+		snprintf(in_err, 1024, "Unable to set mode using 'iwpriv %s set_monitor 1'.  Some "
-+				 "custom firmware images require you to specify the origial "
-+				 "device and a new dynamic device and use the iwconfig controls. "
-+				 "see the README for how to configure your capture source.", in_dev);
-+		return -1;
-+	}
  
 -		if (wlmode == 1) {
 -			snprintf(cmdline, 2048, "/usr/sbin/wl monitor 1");
@@ -138,41 +131,56 @@ diff -urN kismet.old/pcapsource.cc kismet.dev/pcapsource.cc
 -						 "only the ethernet device, not ethX:prismX");
 -				return -1;
 -			}
--		}
 +	return 1;
 +}
 +
++
 +int unmonitor_wrt54g(const char *in_dev, int initch, char *in_err, void **in_if, 
 +				   void *in_ext) {
-+	char cmdline[2048];
-+	int mode;
-+	int wlmode = 0;
++    char cmdline[2048];
 +
-+	vector<string> devbits = StrTokenize(in_dev, ":");
-+
-+	snprintf(cmdline, 2048, "/usr/sbin/iwpriv %s set_monitor 0", in_dev);
-+	if (RunSysCmd(cmdline) < 0) {
-+		snprintf(in_err, 1024, "Unable to set mode using 'iwpriv %s set_monitor 0'.  Some "
-+				 "custom firmware images require you to specify the origial "
-+				 "device and a new dynamic device and use the iwconfig controls. "
-+				 "see the README for how to configure your capture source.", in_dev);
-+		return -1;
- 	}
++		snprintf(cmdline, 2048, "/usr/sbin/iwpriv %s set_monitor 0", in_dev);
++		if (RunSysCmd(cmdline) < 0) {
++			snprintf(in_err, 1024, "Unable to set mode using 'iwpriv %s set_monitor 0'. "
++					 "Some custom firmware images require you to specify the origial "
++					 "device and a new dynamic device and use the iwconfig controls. "
++					 "see the README for how to configure your capture source.");
++			return -1;
+ 		}
+-	}
+-#else
+-	snprintf(cmdline, 2048, "/usr/sbin/wl monitor 1");
+-	if (RunSysCmd(cmdline) < 0) {
+-		snprintf(in_err, 1024, "Unable to set mode using 'wl monitor 1'.  Some "
+-				 "custom firmware images require you to specify the origial "
+-				 "device and a new dynamic device and use the iwconfig controls. "
+-				 "see the README for how to configure your capture source. "
+-				 "Support for wireless extensions was not compiled in, so more "
+-				 "advanced modes of setting monitor mode are not available.");
+-		return -1;
+-	}
+-	fprintf(stderr, "WARNING:  Support for wireless extensions was not compiled "
+-			"into this binary.  Using the iw* tools to set monitor mode will not "
+-			"be available.  This may cause opening the source to fail on some "
+-			"firmware versions.  To fix this, make sure wireless extensions are "
+-			"available and found by the configure script when building Kismet.");
+-#endif
  
  	return 1;
+ }
 diff -urN kismet.old/pcapsource.h kismet.dev/pcapsource.h
---- kismet.old/pcapsource.h	2005-08-15 00:42:50.849744000 +0200
-+++ kismet.dev/pcapsource.h	2005-08-15 01:56:07.649150200 +0200
+--- kismet.old/pcapsource.h	2005-08-16 03:22:51.000000000 +0200
++++ kismet.dev/pcapsource.h	2005-08-23 01:04:26.057490136 +0200
 @@ -265,6 +265,7 @@
      PcapSourceWrt54g(string in_name, string in_dev) : PcapSource(in_name, in_dev) { 
          fcsbytes = 4;
      }
-+    int OpenSource();
++	int OpenSource();
      int FetchPacket(kis_packet *packet, uint8_t *data, uint8_t *moddata);
  protected:
      carrier_type IEEE80211Carrier();
-@@ -388,6 +389,7 @@
- #ifdef SYS_LINUX
+@@ -412,6 +413,7 @@
+ int monitor_wlanng_avs(const char *in_dev, int initch, char *in_err, void **in_if, void *in_ext);
  // linksys wrt54g monitoring
  int monitor_wrt54g(const char *in_dev, int initch, char *in_err, void **in_if, void *in_ext);
 +int unmonitor_wrt54g(const char *in_dev, int initch, char *in_err, void **in_if, void *in_ext);
