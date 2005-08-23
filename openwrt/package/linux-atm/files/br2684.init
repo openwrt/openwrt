@@ -1,0 +1,22 @@
+#!/bin/sh
+. /etc/functions.sh
+[ -e /etc/config/network ] && . /etc/config/network
+
+killall br2684ctl 2>&- >&-
+[ "$(nvram get pppoe_atm)" = 1 ] && {
+  VPI=$(nvram get atm_vpi)
+  VCI=$(nvram get atm_vci)
+  case "$(nvram get atm_encaps)" in
+    0|vc)
+      ENCAPS=0
+      ;;
+    1|llc)
+      ENCAPS=1
+      ;;
+    *)
+      ENCAPS=0
+      ;;
+  esac
+  insmod br2684
+  br2684ctl -c0 -e${ENCAPS} -a${VPI:-8}.${VCI:-35} &
+}
