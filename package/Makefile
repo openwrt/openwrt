@@ -56,6 +56,7 @@ package-$(BR2_PACKAGE_LCD4LINUX) += lcd4linux
 package-$(BR2_PACKAGE_LESS) += less
 package-$(BR2_PACKAGE_LIBAMSEL) += libamsel
 package-$(BR2_PACKAGE_LIBART) += libart
+package-$(BR2_PACKAGE_LIBDAEMON) += libdaemon
 package-$(BR2_PACKAGE_LIBDB) += libdb
 package-$(BR2_PACKAGE_LIBELF) += libelf
 package-$(BR2_PACKAGE_LIBEVENT) += libevent
