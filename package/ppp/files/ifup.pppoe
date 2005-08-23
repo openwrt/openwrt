@@ -1,7 +1,7 @@
 #!/bin/sh
 [ $# = 0 ] && { echo "  $0 <group>"; exit; }
 . /etc/functions.sh
-. /etc/nvram.overrides
+. /etc/network.overrides
 [ -e /etc/config/network ] && . /etc/config/network
 type=$1
 
@@ -15,28 +15,31 @@ for module in slhc ppp_generic pppox pppoe; do
 done
 
 while :; do
-	IFNAME=nic-$(nvram get pppoe_ifname)
-	USERNAME=$(nvram get ppp_username)
-	PASSWORD=$(nvram get ppp_passwd)
-	REDIAL=$(nvram get ppp_redialperiod)
-	REDIAL=${REDIAL:+lcp-echo-interval $REDIAL}
-	IDLETIME=$(nvram get ppp_idletime)
-	IDLETIME=${IDLETIME:+lcp-echo-failure $IDLETIME}
-	MTU=$(nvram get ppp_mtu)
-	MTU=${MTU:-1492}
-	MTU=${MTU:+ mtu $MTU mru $MTU}
+  IFNAME=$(nvram get pppoe_ifname)
+  USERNAME=$(nvram get ppp_username)
+  PASSWORD=$(nvram get ppp_passwd)
+  REDIAL=$(nvram get ppp_redialperiod)
+  REDIAL=${REDIAL:+lcp-echo-interval $REDIAL}
+  IDLETIME=$(nvram get ppp_idletime)
+  IDLETIME=${IDLETIME:+lcp-echo-failure $IDLETIME}
+  MTU=$(nvram get ppp_mtu)
+  MTU=${MTU:-1492}
+  MTU=${MTU:+ mtu $MTU mru $MTU}
 
-	ifconfig $IFNAME up
-	/usr/sbin/pppd nodetach \
-		plugin rp-pppoe.so \
-		connect /bin/true \
-		usepeerdns \
-		defaultroute \
-		linkname $type \
-		user "$USERNAME" \
-		password "$PASSWORD" \
-		$MTU \
-		$IDLETIME \
-		$REDIAL \
-		$IFNAME
+  ifconfig $IFNAME up
+  /usr/sbin/pppd nodetach \
+  	plugin rp-pppoe.so \
+  	connect /bin/true \
+  	usepeerdns \
+  	defaultroute \
+  	linkname $type \
+  	user "$USERNAME" \
+  	password "$PASSWORD" \
+  	$MTU \
+  	$IDLETIME \
+  	$REDIAL \
+  	nic-$IFNAME
+  
+  # Read settings again (might have changed)
+  [ -e /etc/config/network ] && . /etc/config/network
 done &
