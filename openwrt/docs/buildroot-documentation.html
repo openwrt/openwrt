@@ -17,7 +17,7 @@
 
     <p>Usage and documentation by Felix Fietkau and Waldemar Brodkorb, based on uClibc Buildroot
     documentation by Thomas Petazzoni. Contributions from Karsten Kruse,
-    Ned Ludd, Martin Herren.</p>
+    Ned Ludd, Martin Herren. OpenWrt Kernel Module Creation Howto by Markus Becker.</p>
 
     <p><small>Last modification : $Id$</small></p>
 
@@ -37,6 +37,14 @@
       <li><a href="#downloaded_packages">Location of downloaded packages</a></li>
       <li><a href="#add_software">Extending OpenWrt with more Software</a></li>
       <li><a href="#links">Ressources</a></li>
+<br>
+      <li><a href="#about_module">About OpenWrt Kernel Module Compilation</a></li>
+      <li><a href="#kernel">Enable the kernel options</a></li>
+      <li><a href="#buildroot_option">Create a buildroot option</a></li>
+      <li><a href="#binary">Define the binary files for the kernel module</a></li>
+      <li><a href="#control">Specify the ipkg control file</a></li>
+      <li><a href="#compile">Compile the kernel module</a></li>
+ 
     </ul>
 
     <h2><a name="about" id="about"></a>About OpenWrt Buildroot</h2>
@@ -602,5 +610,94 @@ foo-compile: bar-compile
      <a href="http://openwrt.org/">http://openwrt.org/</a></p>
 
   </div>
+
+  <div class="main">
+    <div class="titre">
+      <h1>OpenWrt Kernel Module Creation Howto</h1>
+    </div>
+
+    <h2><a name="about_module" id="about_module"></a>About OpenWrt Kernel Module Compilation</h2>
+
+	<p>You are planning to compile a kernel module? This howto will
+explain what you have to do, to have your kernel module installable as
+an ipkg.</p>
+
+    <h2><a name="kernel" id="kernel"></a>Enable the kernel options</h2>
+
+	<p>Enable the kernel options you want by modifying
+build_mipsel/linux/.config. We are assuming, that you already had your
+kernel compiled once here. You can do the modification by hand or by 
+
+<pre>
+$ cd build_mipsel/linux
+$ make menuconfig
+</pre>
+
+And copy it, so your changes are not getting lost, when doing a 'make
+dirclean'. Here we assume that you are compiling for Broadcom chipset
+based devices:
+
+<pre> $ cp .config ../../../target/linux/linux-2.4/config/brcm </pre>
+
+</p>
+    <h2><a name="buildroot_option" id="buildroot_option"></a>Create a buildroot option</h2>
+
+	<p>Create a buildroot option by modifying/inserting into
+target/linux/Config.in, e.g.
+
+<pre>
+config BR2_PACKAGE_KMOD_USB_KEYBOARD
+        tristate "Support for USB keyboards"
+        default m
+        depends BR2_PACKAGE_KMOD_USB_CONTROLLER
+</pre>
+</p>
+
+    <h2><a name="binary" id="binary"></a>Define the binary files for the kernel module</h2>
+
+	<p>Define the binary files for the kernel module by modifying/inserting into
+target/linux/linux-2.4/Makefile, e.g.
+
+<pre>
+$(eval $(call KMOD_template,USB_KEYBOARD,usb-kbd,\
+	$(MODULES_DIR)/kernel/drivers/input/input.o \
+	$(MODULES_DIR)/kernel/drivers/input/keybdev.o \
+	$(MODULES_DIR)/kernel/drivers/usb/usbkbd.o \
+,CONFIG_USB_KEYB,kmod-usb-core,60,input keybdev usbkbd))
+</pre>
+
+Where CONFIG_USB_KEYB is the kernel option, USB_KEYBOARD is the last
+part of BR2_PACKAGE_KMOD_USB_KEYBOARD and usb-kbd is part of the
+filename of the created ipkg.</p>
+
+    <h2><a name="control" id="control"></a>Specify the ipkg control file</h2>
+
+	<p>Create e.g. target/linux/control/kmod-usb-kbd.control with content similar to this:
+
+<pre>
+Package: kmod-usb-kbd
+Priority: optional
+Section: sys
+Maintainer: Markus Becker &lt;mab@comnets.uni-bremen.de&gt;
+Source: buildroot internal
+Description: Kernel Support for USB Keyboards
+</pre>
+	</p>
+
+    <h2><a name="compile" id="compile"></a>Compile the kernel module</h2>
+
+	<p>Enable the kernel module with
+<pre>
+$ make menuconfig
+</pre>
+	in TOPDIR and selecting it.<br>
+
+	Compile with
+<pre>
+$ make dirclean && make
+</pre>
+	</p>
+  </div>
+
 </body>
 </html>
