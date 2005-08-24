@@ -23,7 +23,7 @@ $(eval $(call PKG_template,LIBAVAHI,libavahi,$(PKG_VERSION)-$(PKG_RELEASE),$(ARC
 $(PKG_BUILD_DIR)/.configured:
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
 		$(TARGET_CONFIGURE_OPTS) \
-		CFLAGS="$(TARGET_CFLAGS)" \
+		CFLAGS="$(TARGET_CFLAGS) -DNDEBUG" \
 		CPPFLAGS="-I$(STAGING_DIR)/usr/include" \
 		LDFLAGS="-L$(STAGING_DIR)/lib -L$(STAGING_DIR)/usr/lib" \
 		PKG_CONFIG_PATH="$(STAGING_DIR)/usr/lib/pkgconfig" \
@@ -66,6 +66,8 @@ $(PKG_BUILD_DIR)/.configured:
 			--disable-doxygen-pdf \
 			--disable-xmltoman \
 			--with-distro=openwrt \
+			--with-avahi-user=nobody \
+			--with-avahi-group=nogroup \
 	);
 	touch $@
 
@@ -79,8 +81,12 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_AVAHI_DAEMON):
 	install -d -m0755 $(IDIR_AVAHI_DAEMON)/etc/avahi
-	cp -fpR $(PKG_INSTALL_DIR)/etc/avahi/avahi-daemon.conf $(IDIR_AVAHI_DAEMON)/etc/avahi/
-	cp -fpR $(PKG_INSTALL_DIR)/etc/avahi/services $(IDIR_AVAHI_DAEMON)/etc/avahi/
+	install -m0644 ./files/avahi-daemon.conf $(IDIR_AVAHI_DAEMON)/etc/avahi/
+	install -d -m0755 $(IDIR_AVAHI_DAEMON)/etc/avahi/services
+	install -m0644 ./files/service-http $(IDIR_AVAHI_DAEMON)/etc/avahi/services/http.service
+	install -m0644 ./files/service-ssh $(IDIR_AVAHI_DAEMON)/etc/avahi/services/ssh.service
+	install -d -m0755 $(IDIR_AVAHI_DAEMON)/etc/init.d
+	install -m0755 ./files/avahi-daemon.init $(IDIR_AVAHI_DAEMON)/etc/init.d/avahi-daemon
 	install -d -m0755 $(IDIR_AVAHI_DAEMON)/usr/sbin
 	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/avahi-daemon $(IDIR_AVAHI_DAEMON)/usr/sbin/
 	$(RSTRIP) $(IDIR_AVAHI_DAEMON)
