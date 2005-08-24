@@ -164,4 +164,4 @@ while (($fssize > 0) and ($rbytes > 0)) {
 }
 
 $dc->close();
-$ftp->command("reboot");
+$ftp->reboot();
