@@ -1,0 +1,13 @@
+config BR2_PACKAGE_LIBID3TAG
+	tristate "libid3tag - An ID3 tag manipulation library"
+#	default m if CONFIG_DEVEL
+	default n
+	select BR2_PACKAGE_ZLIB
+	help
+	 libid3tag is a library for reading and (eventually) writing ID3 tags, both
+	 ID3v1 and the various versions of ID3v2.
+	 
+	 http://mad.sourceforge.net/
+	 
+	 Depends: zlib
+	 
