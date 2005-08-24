@@ -1,7 +1,7 @@
 diff -urN linux.old/drivers/mtd/maps/ar7-flash.c linux.dev/drivers/mtd/maps/ar7-flash.c
 --- linux.old/drivers/mtd/maps/ar7-flash.c	1970-01-01 01:00:00.000000000 +0100
 +++ linux.dev/drivers/mtd/maps/ar7-flash.c	2005-07-22 04:35:26.624453992 +0200
-@@ -0,0 +1,265 @@
+@@ -0,0 +1,267 @@
 +/*
 + * $Id$
 + *
@@ -240,8 +240,10 @@ diff -urN linux.old/drivers/mtd/maps/ar7-flash.c linux.dev/drivers/mtd/maps/ar7-
 +		ar7_partinfo[p++].mask_flags = 0;
 +	} else {
 +		printk("Unknown filesystem. Moving rootfs partition to next erase block");
-+		if ((rootfs_start % ar7_mtd_info->erasesize) > 0)
-+			rootfs_start += ar7_mtd_info->erasesize - (rootfs_start % ar7_mtd_info->erasesize);
++		if ((rootfs_start % ar7_mtd_info->erasesize) > 0) {
++			ar7_partinfo[p - 2].offset += ar7_mtd_info->erasesize - (rootfs_start % ar7_mtd_info->erasesize);
++			ar7_partinfo[p - 2].size -= ar7_mtd_info->erasesize - (rootfs_start % ar7_mtd_info->erasesize);
++		}
 +	}
 +
 +	return p;
