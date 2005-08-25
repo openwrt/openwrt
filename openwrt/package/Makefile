@@ -82,6 +82,7 @@ package-$(BR2_PACKAGE_LIGHTTPD) += lighttpd
 package-$(BR2_PACKAGE_LINUX_ATM) += linux-atm
 package-$(BR2_PACKAGE_LUA) += lua
 package-$(BR2_PACKAGE_LZO) += lzo
+package-$(BR2_PACKAGE_MADWIFI_TOOLS) += madwifi-tools
 package-$(BR2_PACKAGE_MARADNS) += maradns
 package-$(BR2_PACKAGE_MATRIXSSL) += matrixssl
 package-$(BR2_PACKAGE_MICROCOM) += microcom
