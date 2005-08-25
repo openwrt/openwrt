@@ -5,7 +5,7 @@ ${FAILSAFE:+exit}
 
 . /etc/functions.sh
 . /etc/network.overrides
-[ -e /etc/config/network ] && . /etc/config/network
+[ "$FAILSAFE" != "true" -a -e /etc/config/network ] && . /etc/config/network
 
 WAN=$(nvram get wan_ifname)
 LAN=$(nvram get lan_ifname)
