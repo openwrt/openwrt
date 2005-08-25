@@ -1,0 +1,102 @@
+# NVRAM setup
+#
+# This file handles the NVRAM quirks of various hardware.
+
+. /etc/network.overrides
+alias debug=${DEBUG:-:}
+
+remap () {
+  for type in lan wifi wan pppoe
+  do
+    for s in '' s
+    do
+      eval nvram set ${type}_ifname$s=\"$(nvram get ${type}_ifname$s|sed s/$1/$2/g)\" 
+    done
+  done
+}
+
+nvram_default() {
+  [ -z "$(nvram get $1)" ] && nvram set "$1=$2"
+}
+
+# linksys bug; remove when not using static configuration for lan
+nvram set lan_proto="static"
+
+# hacks for wrt54g 1.x hardware
+[  "$(nvram get boardnum)"  = "42" \
+-a "$(nvram get boardtype)" = "bcm94710dev" ] && {
+  debug "### wrt54g 1.x hack ###"
+  nvram set vlan1hwname="et0"
+  nvram set vlan2hwname="et0"
+  remap eth0 vlan2
+  remap eth1 vlan1
+}
+
+# hacks for asus wl-500g deluxe
+[  "$(nvram get boardtype)" = "bcm95365r" \
+-a "$(nvram get boardnum)" = "45" ] && {
+  debug "### wl-500g deluxe hacks ###"
+  nvram set vlan0hwname="et0"
+  nvram set vlan1hwname="et0"
+  remap eth0.1 vlan0
+  remap eth0 vlan1
+
+  # set up the vlan*ports variables for the asus wl-500g deluxe
+  # if they don't already exist 
+  nvram_default vlan0ports "1 2 3 4 5*"
+  nvram_default vlan1ports "0 5"
+}
+
+# hacks for asus wl-300g
+[ "$(nvram get productid)" = "WL300g" ] && {
+  debug "### wl-300g hacks ###"
+  nvram set lan_ifnames="eth0 eth2"
+  nvram set wan_ifname="none"
+}
+
+# hacks for asus wl-hdd
+[ "$(nvram get productid)" = "WLHDD" ] && {
+  debug "### wl-hdd hacks ###"
+  nvram set lan_ifnames="eth1 eth2"
+  nvram set wan_ifname="none"
+}
+
+# hacks for wap54g hardware
+[  "$(nvram get boardnum)" = "2" \
+-o "$(nvram get boardnum)" = "1024" ] && {
+  debug "### wap54g hack ###"
+  nvram set wan_ifname="none"
+}
+
+# hacks for buffalo wla2-g54l
+[  "$(nvram get boardnum)" = "00" \
+-a "$(nvram get product_name)" = "Product_name" \
+-o "$(nvram get product_name)" = "WLA2-G54L" ] && {
+  debug "### wla2-g54l hacks ###"
+  nvram set wan_ifname="none"
+  nvram set lan_ifnames="vlan0"
+}
+
+# needed at least for wrt54gs v1.1 and wrt54g v2.0, v2.2
+[ \! -z "$(nvram get boardrev)" ] && {
+  nvram set wl0id=0x4320
+}
+
+# defaults
+nvram_default lan_ifname "br0"
+nvram_default lan_ifnames "$FAILSAFE_ifnames"
+
+nvram_default wan_ifname "vlan1"
+nvram_default wan_proto "dhcp"
+
+nvram_default wl0_ssid OpenWrt
+nvram_default wl0_mode ap
+nvram_default wl0_infra 1
+nvram_default wl0_radio 1
+
+[ "$(nvram get il0macaddr)" = "00:90:4c:5f:00:2a" ] && {
+  # if default wifi mac, set two higher than the lan mac
+  nvram set il0macaddr=$(nvram get et0macaddr|
+  awk '{OFS=FS=":";for(x=7,y=2;--x;){$x=sprintf("%02x",(y+="0x"$x)%256);y/=256}print}')
+}
+
