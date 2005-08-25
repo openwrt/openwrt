@@ -13317,3 +13317,25 @@ diff -urN linux.old/drivers/net/Makefile linux.dev/drivers/net/Makefile
  # link order important here
  #
  obj-$(CONFIG_PLIP) += plip.o
+--- linux.old/drivers/net/avalanche_cpmac/cpmac.c	2005-08-25 10:56:33.702931008 +0200
++++ linux.dev/drivers/net/avalanche_cpmac/cpmac.c	2005-08-25 11:08:45.027451520 +0200
+@@ -2158,17 +2158,16 @@
+     CPMAC_PRIVATE_INFO_T *p_cpmac_priv  = p_dev->priv;
+     CPMAC_DRV_HAL_INFO_T *p_drv_hal     = p_cpmac_priv->drv_hal;
+     struct sk_buff       *p_skb         = fragList[0].OsInfo;
+-    p_skb->len                          = fragList[0].len;    
+ 
+     /* invalidate the cache. */
+     dma_cache_inv((unsigned long)p_skb->data, fragList[0].len);    
+ #ifdef CPMAC_TEST
+-    xdump(p_skb->data, p_skb->len, "recv");
++    xdump(p_skb->data, fragList[0].len, "recv");
+ #endif
+ #ifdef CPMAC_8021Q_SUPPORT
+     /* 802.1q stuff, just does the basic checking here. */
+     if(!p_cpmac_priv->enable_802_1q      &&
+-       p_skb->len > TCI_END_OFFSET       &&
++       fragList[0].len > TCI_END_OFFSET       &&
+        IS_802_1Q_FRAME(p_skb->data + TPID_START_OFFSET))
+     {
+          goto cpmac_hal_recv_frame_mismatch;
