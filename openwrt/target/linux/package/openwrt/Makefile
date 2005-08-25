@@ -36,12 +36,13 @@ $(IDIR_OPENWRT):
 	$(SED) s,base-files-arch,base-files-$(BOARD),g $(IDIR_OPENWRT)/CONTROL/control
 
 $(IPKG_OPENWRT): $(IDIR_OPENWRT)
-	mkdir -p $(IDIR_OPENWRT)/etc
-	cp files/network.overrides.$(BOARD) $(IDIR_OPENWRT)/etc/network.overrides
+	mkdir -p $(IDIR_OPENWRT)/etc/init.d
+	[ -f files/network.overrides.$(BOARD) ] && cp files/network.overrides.$(BOARD) $(IDIR_OPENWRT)/etc/network.overrides
+	[ -f files/S05nvram.$(BOARD) ] && install -m0755 files/S05nvram.$(BOARD) $(IDIR_OPENWRT)/etc/init.d/S05nvram
 	$(RSTRIP) $(IDIR_OPENWRT)
 	$(IPKG_BUILD) $(IDIR_OPENWRT) $(PACKAGE_DIR)
 
-install: $(IPKG_OPENWRT)
+install: compile
 	$(IPKG) install $(IPKG_OPENWRT)
 compile: install-dev $(IPKG_OPENWRT)
 install-dev:
