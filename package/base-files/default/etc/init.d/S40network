@@ -1,6 +1,6 @@
 #!/bin/sh
 . /etc/functions.sh
-[ -e /etc/config/network ] && . /etc/config/network
+[ "$FAILSAFE" != "true" -a -e /etc/config/network ] && . /etc/config/network
 case "$1" in
   start|restart)
     ifup lan
