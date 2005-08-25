@@ -6,82 +6,23 @@
 # Load sysconf defaults
 [ -f /etc/sysconf ] && . /etc/sysconf
 
-# linksys bug; remove when not using static configuration for lan
-lan_proto="static"
-
-remap () {
-  for type in lan wifi wan pppoe
-  do
-    for s in '' s
-    do
-      eval ${type}_ifname$s=\"$(nvram get ${type}_ifname$s|sed s/$1/$2/g)\" 
-    done
-  done
-}
-
 # hacks for wrt54g 1.x hardware
 [  "$(nvram get boardnum)"  = "42" \
--a "$(nvram get boardtype)" = "bcm94710dev" ] && {
-  debug "### wrt54g 1.x hack ###"
-  vlan1hwname="et0"
-  vlan2hwname="et0"
-  FAILSAFE_ifnames="vlan1 vlan2 eth2"
-  remap eth0 vlan2
-  remap eth1 vlan1
-}
+-a "$(nvram get boardtype)" = "bcm94710dev" ] && FAILSAFE_ifnames="vlan1 vlan2 eth2"
 
 # hacks for asus wl-500g deluxe
 [  "$(nvram get boardtype)" = "bcm95365r" \
--a "$(nvram get boardnum)" = "45" ] && {
-  debug "### wl-500g deluxe hacks ###"
-  vlan0hwname="et0"
-  vlan1hwname="et0"
-  FAILSAFE_ifnames="vlan0 eth1"
-  remap eth0.1 vlan0
-  remap eth0 vlan1
-}
-
-# hacks for asus wl-300g
-[ "$(nvram get productid)" = "WL300g" ] && {
-  debug "### wl-300g hacks ###"
-  lan_ifnames="eth0 eth2"
-  wan_ifname="none"
-}
+-a "$(nvram get boardnum)" = "45" ] && FAILSAFE_ifnames="vlan0 eth1"
 
 # hacks for wap54g hardware
 [  "$(nvram get boardnum)" = "2" \
--o "$(nvram get boardnum)" = "1024" ] && {
-  debug "### wap54g hack ###"
-  wan_ifname="none"
-  FAILSAFE_ifnames="eth0 eth1"
-}
-
-# hacks for buffalo wla2-g54l
-[  "$(nvram get boardnum)" = "00" \
--a "$(nvram get product_name)" = "Product_name" \
--o "$(nvram get product_name)" = "WLA2-G54L" ] && {
-  debug "### wla2-g54l hacks ###"
-  wan_ifname="none"
-  lan_ifnames="vlan0"
-}
+-o "$(nvram get boardnum)" = "1024" ] && FAILSAFE_ifnames="eth0 eth1"
 
 # hack for asus wl-500g hardware
-[  "$(nvram get boardnum)"  = "asusX" \
--a "$(nvram get boardtype)"  = "bcm94710dev" ] && {
-  FAILSAFE_ifnames="eth0 eth2"
-}
-
-# defaults if lan_ifname is missing
-[ -z "$(nvram get lan_ifname)" ] && {
-  lan_ifname="br0"
-  lan_ifnames=${FAILSAFE_ifnames:-"vlan0 vlan2 eth1 eth2 eth3"}
-}
-
-# defaults if wan_ifname is missing
-[ -z "$(nvram get wan_ifname)" ] && {
-   wan_ifname="vlan1"
-   wan_proto="dhcp"
-}
+[ "$(nvram get boardnum)" = "asusX" \
+-a "$(nvram get boardtype)" = "bcm94710dev" ] && FAILSAFE_ifnames="eth0 eth1 eth2"
+  
+FAILSAFE_ifnames=${FAILSAFE_ifnames:-"vlan0 vlan1 eth1 eth2 eth3"}
 
 DEFAULT_lan_ipaddr=${BR2_SYSCONF_FAILSAFE_IP:-"192.168.1.1"}
 DEFAULT_lan_netmask=${BR2_SYSCONF_FAILSAFE_NETMASK:-"255.255.255.0"}
@@ -90,11 +31,11 @@ DEFAULT_lan_hwaddr=${BR2_SYSCONF_FAILSAFE_MAC:-"00:0B:AD:0A:DD:00"}
 # failsafe if reset is held
 [ "$FAILSAFE" = "true" ] && {
   echo "### YOU ARE IN FAILSAFE MODE ####"
-  lan_ifname="br0"
-  lan_ifnames=${FAILSAFE_ifnames:-"vlan0 vlan1 eth1 eth2 eth3"}
-  lan_ipaddr=$DEFAULT_lan_ipaddr
-  lan_netmask=$DEFAULT_lan_netmask
-  lan_hwaddr=$DEFAULT_lan_hwaddr
-  wan_ifname="none"
-  wifi_ifname="none"
+  NVRAM_lan_ifname="br0"
+  NVRAM_lan_ifnames=$FAILSAFE_ifnames
+  NVRAM_lan_ipaddr=DEFAULT_lan_ipaddr
+  NVRAM_lan_netmask=DEFAULT_lan_netmask
+  NVRAM_lan_hwaddr=DEFAULT_lan_hwaddr
+  NVRAM_wan_ifname="none"
+  NVRAM_wifi_ifname="none"
 }
