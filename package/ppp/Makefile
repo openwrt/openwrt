@@ -28,12 +28,14 @@ $$(IPKG_$(1)):
 endef
 
 $(eval $(call PKG_template,PPP,ppp,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,PPP_MOD_PPPOA,ppp-mod-pppoa,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,PPP_MOD_PPPOE,ppp-mod-pppoe,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,PPP_MOD_RADIUS,ppp-mod-radius,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,CHAT,chat,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,PPPDUMP,pppdump,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,PPPSTATS,pppstats,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
+$(eval $(call PKG_mod_template,PPP_MOD_PPPOA,pppoatm))
 $(eval $(call PKG_mod_template,PPP_MOD_PPPOE,rp-pppoe))
 $(eval $(call PKG_mod_template,PPP_MOD_RADIUS,radius))
 
@@ -88,6 +90,12 @@ $(IPKG_PPP):
 	$(RSTRIP) $(IDIR_PPP)
 	$(IPKG_BUILD) $(IDIR_PPP) $(PACKAGE_DIR)
 	
+$(IDIR_PPP_MOD_PPPOA)/sbin/ifup.pppoa:
+	install -d -m0755 $(IDIR_PPP_MOD_PPPOA)/sbin
+	install -m0755 ./files/ifup.pppoa $(IDIR_PPP_MOD_PPPOA)/sbin/
+
+$(IPKG_PPP_MOD_PPPOA): $(IDIR_PPP_MOD_PPPOA)/sbin/ifup.pppoa
+
 $(IDIR_PPP_MOD_PPPOE)/sbin/ifup.pppoe:
 	install -d -m0755 $(IDIR_PPP_MOD_PPPOE)/sbin
 	install -m0755 ./files/ifup.pppoe $(IDIR_PPP_MOD_PPPOE)/sbin/
