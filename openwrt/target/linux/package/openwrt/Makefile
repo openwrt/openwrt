@@ -36,9 +36,9 @@ $(IDIR_OPENWRT):
 	$(SED) s,base-files-arch,base-files-$(BOARD),g $(IDIR_OPENWRT)/CONTROL/control
 
 $(IPKG_OPENWRT): $(IDIR_OPENWRT)
-	mkdir -p $(IDIR_OPENWRT)/etc/init.d
-	[ -f files/network.overrides.$(BOARD) ] && cp files/network.overrides.$(BOARD) $(IDIR_OPENWRT)/etc/network.overrides
-	[ -f files/S05nvram.$(BOARD) ] && install -m0755 files/S05nvram.$(BOARD) $(IDIR_OPENWRT)/etc/init.d/S05nvram
+	[ -d files/$(BOARD) ] && cp -a files/$(BOARD)/* $(IDIR_OPENWRT)/
+	find $(IDIR_OPENWRT) -name CVS | xargs rm -rf
+	find $(IDIR_OPENWRT) -name .svn | xargs rm -rf
 	$(RSTRIP) $(IDIR_OPENWRT)
 	$(IPKG_BUILD) $(IDIR_OPENWRT) $(PACKAGE_DIR)
 

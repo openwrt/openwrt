@@ -164,7 +164,7 @@ package-$(BR2_PACKAGE_WPUT) += wput
 package-$(BR2_PACKAGE_XINETD) += xinetd
 package-$(BR2_PACKAGE_ZLIB) += zlib
 
-DEV_LIBS:=tcp_wrappers glib ncurses openssl pcre popt zlib libnet libpcap mysql postgresql iptables matrixssl lzo gmp fuse portmap libelf uclibc++ speex libpng libgd wireless-tools nvram
+DEV_LIBS:=tcp_wrappers glib ncurses openssl pcre popt zlib libnet libpcap mysql postgresql iptables matrixssl lzo gmp fuse portmap libelf uclibc++ speex libpng libgd wireless-tools nvram linux-atm
 DEV_LIBS_COMPILE:=$(patsubst %,%-compile,$(DEV_LIBS))
 SDK_DEFAULT_PACKAGES:=busybox dnsmasq iptables wireless-tools dropbear bridge ipkg ppp
 SDK_DEFAULT_COMPILE:=$(patsubst %,%-compile,$(SDK_DEFAULT_PACKAGES))
@@ -217,6 +217,7 @@ openswan-compile: gmp-compile
 osiris-compile: openssl-compile
 portmap-compile: tcp_wrappers-compile
 postgresql-compile: zlib-compile
+ppp-compile: linux-atm-compile
 quagga-compile: readline-compile ncurses-compile
 rrdcollect-compile: rrdtool-compile
 rrdtool-compile: cgilib-compile freetype-compile libart-compile libpng-compile
