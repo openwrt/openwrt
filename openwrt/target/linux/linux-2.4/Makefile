@@ -152,13 +152,13 @@ $(eval $(call KMOD_template,PPP,ppp,\
 	$(MODULES_DIR)/kernel/drivers/net/ppp_async.o \
 	$(MODULES_DIR)/kernel/drivers/net/ppp_generic.o \
 	$(MODULES_DIR)/kernel/drivers/net/slhc.o \
+	$(MODULES_DIR)/kernel/drivers/net/pppox.o \
 ,CONFIG_PPP))
 $(eval $(call KMOD_template,MPPE,mppe,\
 	$(MODULES_DIR)/kernel/drivers/net/ppp_mppe_mppc.o \
 ,CONFIG_PPP_MPPE_MPPC))
 $(eval $(call KMOD_template,PPPOE,pppoe,\
 	$(MODULES_DIR)/kernel/drivers/net/pppoe.o \
-	$(MODULES_DIR)/kernel/drivers/net/pppox.o \
 ,CONFIG_PPPOE))
 $(eval $(call KMOD_template,TUN,tun,\
 	$(MODULES_DIR)/kernel/drivers/net/tun.o \
