@@ -67,6 +67,7 @@ endif
 		DEVEL_PREFIX=/usr/ \
 		RUNTIME_PREFIX=$(TOOL_BUILD_DIR)/uClibc_dev/ \
 		HOSTCC="$(HOSTCC)" \
+		CPU_CFLAGS="$(TARGET_CFLAGS)" \
 		pregen install_dev;
 	touch $(UCLIBC_DIR)/.configured
 
@@ -76,6 +77,7 @@ $(UCLIBC_DIR)/lib/libc.a: $(UCLIBC_DIR)/.configured $(LIBFLOAT_TARGET)
 		DEVEL_PREFIX=/ \
 		RUNTIME_PREFIX=/ \
 		HOSTCC="$(HOSTCC)" \
+		CPU_CFLAGS="$(TARGET_CFLAGS)" \
 		all
 	touch -c $(UCLIBC_DIR)/lib/libc.a
 
