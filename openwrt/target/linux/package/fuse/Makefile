@@ -32,7 +32,6 @@ $(PKG_BUILD_DIR)/.configured:
 		touch include/config.h.in ; \
 		touch configure ; \
 		$(TARGET_CONFIGURE_OPTS) \
-		CFLAGS="$(TARGET_CFLAGS)" \
 		./configure \
 		  --target=$(GNU_TARGET_NAME) \
 		  --host=$(GNU_TARGET_NAME) \
