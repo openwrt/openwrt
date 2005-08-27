@@ -11,6 +11,9 @@ include $(TOPDIR)/package/rules.mk
 IDIR_BASE:=$(PKG_BUILD_DIR)/base-files
 IPKG_BASE:=$(PACKAGE_DIR)/$(PKG_NAME)_$(PKG_RELEASE)_$(ARCH).ipk
 
+IDIR_HOTPLUG:=$(PKG_BUILD_DIR)/hotplug
+IPKG_HOTPLUG:=$(PACKAGE_DIR)/hotplug_$(PKG_RELEASE)_$(ARCH).ipk
+
 LIBC_VERSION:=${shell cat $(STAGING_DIR)/uclibc_version}
 IDIR_LIBC:=$(PKG_BUILD_DIR)/uclibc
 IPKG_LIBC:=$(PACKAGE_DIR)/uclibc_$(LIBC_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
@@ -19,7 +22,7 @@ GCC_VERSION:=${shell cat $(STAGING_DIR)/gcc_version}
 IDIR_GCC:=$(PKG_BUILD_DIR)/libgcc
 IPKG_GCC:=$(PACKAGE_DIR)/libgcc_$(GCC_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
 
-PACKAGES:=$(IPKG_BASE) $(IPKG_LIBC) $(IPKG_GCC)
+PACKAGES:=$(IPKG_BASE) $(IPKG_LIBC) $(IPKG_GCC) $(IPKG_HOTPLUG)
 
 $(PKG_BUILD_DIR)/.prepared:
 	mkdir -p $(PKG_BUILD_DIR) $(PACKAGE_DIR)
@@ -43,6 +46,7 @@ $(IPKG_BASE):
 	ln -sf /tmp $(IDIR_BASE)/var
 	-find $(IDIR_BASE) -type d -name CVS | xargs rm -rf
 	-find $(IDIR_BASE) -type d -name .svn | xargs rm -rf
+	-find $(IDIR_BASE) -name '.#*' | xargs rm -f
 	mkdir -p $(IDIR_BASE)/etc
 	-grep \^BR2_SYSCONF $(TOPDIR)/.config > $(IDIR_BASE)/etc/sysconf
 	$(IPKG_BUILD) $(IDIR_BASE) $(PACKAGE_DIR)
@@ -64,6 +68,12 @@ $(IPKG_GCC):
 	-$(STRIP) $(IDIR_GCC)/lib/*
 	$(IPKG_BUILD) $(IDIR_GCC) $(PACKAGE_DIR)
 
+$(IPKG_HOTPLUG):
+	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_HOTPLUG) ipkg/hotplug.control $(PKG_RELEASE) $(ARCH)
+	mkdir -p $(IDIR_HOTPLUG)/sbin
+	install -m0755 files/hotplug $(IDIR_HOTPLUG)/sbin
+	$(IPKG_BUILD) $(IDIR_HOTPLUG) $(PACKAGE_DIR)
+	
 package-clean:
 	rm -f $(PACKAGES)
 clean: package-clean
