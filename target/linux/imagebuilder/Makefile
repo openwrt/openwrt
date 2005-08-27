@@ -42,4 +42,7 @@ build:
 	if [ -d ./files ]; then \
 		cp -fpR ./files/* $(LINUX_BUILD_DIR)/root; \
 	fi
+	if [ -d ./files.$(BOARD) ]; then \
+		cp -fpR ./files.$(BOARD)/* $(LINUX_BUILD_DIR)/root; \
+	fi
 	$(MAKE) -S -C image KERNEL="$(KERNEL)" BOARD="$(BOARD)" BIN_DIR="$(BIN_DIR)/$(LIST)" install
