@@ -39,4 +39,7 @@ build:
 	for package in `cat lists/$(LIST).$(BOARD)-$(KERNEL)`; do \
 		$(IPKG_KERNEL) install `ls packages/$${package}_*`; \
 	done
+	if [ -d ./files ]; then \
+		cp -fpR ./files/* $(LINUX_BUILD_DIR)/root; \
+	fi
 	$(MAKE) -S -C image KERNEL="$(KERNEL)" BOARD="$(BOARD)" BIN_DIR="$(BIN_DIR)/$(LIST)" install
