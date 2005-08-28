@@ -1695,7 +1695,7 @@ diff -Nur linux-2.6.12.5/arch/mips/Kconfig.orig linux-2.6.12.5-brcm/arch/mips/Kc
 +	default y
 diff -Nur linux-2.6.12.5/arch/mips/Makefile linux-2.6.12.5-brcm/arch/mips/Makefile
 --- linux-2.6.12.5/arch/mips/Makefile	2005-08-15 02:20:18.000000000 +0200
-+++ linux-2.6.12.5-brcm/arch/mips/Makefile	2005-08-28 11:12:20.406862800 +0200
++++ linux-2.6.12.5-brcm/arch/mips/Makefile	2005-08-28 11:35:08.381898984 +0200
 @@ -79,7 +79,7 @@
  cflags-y			+= -I $(TOPDIR)/include/asm/gcc
  cflags-y			+= -G 0 -mno-abicalls -fno-pic -pipe
@@ -1727,7 +1727,7 @@ diff -Nur linux-2.6.12.5/arch/mips/Makefile linux-2.6.12.5-brcm/arch/mips/Makefi
 +#
 +core-$(CONFIG_BCM47XX)		+= arch/mips/bcm47xx/ arch/mips/bcm47xx/broadcom/
 +cflags-$(CONFIG_BCM47XX)	+= -Iarch/mips/bcm47xx/broadcom/include
-+load-$(CONFIG_BCM47XX)		:= 0x80001000
++load-$(CONFIG_BCM47XX)		:= 0xffffffff80001000
 +
 +
 +#
@@ -1742,7 +1742,7 @@ diff -Nur linux-2.6.12.5/arch/mips/Makefile linux-2.6.12.5-brcm/arch/mips/Makefi
 +all: bzImage
 +
 +zImage bzImage: vmlinux
-+	$(Q)$(MAKE) -C arch/mips/bcm47xx/compressed vmlinux
++	@$(MAKE) -C arch/mips/bcm47xx/compressed vmlinux
 +	
 +endif
 +
