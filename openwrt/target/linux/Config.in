@@ -7,6 +7,7 @@ config BR2_LINUX_2_4_BRCM
 	bool "Support for Broadcom based routers"
 	default y
 	depends BR2_mipsel
+	depends BR2_LINUX_2_4
 	help
 	  Build firmware images for Broadcom based routers
 	  (e.g. Linksys WRT54G(S), Asus WL-500g, Motorola WR850G)
@@ -34,6 +35,7 @@ config BR2_LINUX_2_4_AR7
 	bool "Support for TI AR7 based devices"
 	default n
 	depends BR2_mipsel
+	depends BR2_LINUX_2_4
 	help
 	  Build firmware images for TI AR7 based routers (w.g. Linksys WAG54G v2)
 
@@ -41,6 +43,7 @@ config BR2_LINUX_2_4_SOEKRIS
 	bool "Support for Soekris boards"
 	default n
 	depends BR2_i386
+	depends BR2_LINUX_2_4
 	help
 	  Build firmware images for Soekris based boards
 	  (e.g. net4521, net4801)
@@ -55,7 +58,19 @@ config BR2_LINUX_2_4_SOEKRIS
 		depends BR2_LINUX_2_4_SOEKRIS
 		bool "Soekris net4801"
 
+config BR2_LINUX_2_6
+	bool "Linux 2.6"
+	default n
 
+config BR2_LINUX_2_6_BRCM
+	bool "Support for Broadcom based routers"
+	default n
+	depends BR2_mipsel
+	depends BR2_LINUX_2_6
+	help
+	  Build firmware images for Broadcom based routers
+	  (e.g. Netgear WGT634u)
+	  
 comment "Kernel Modules"
 
 config BR2_PACKAGE_KMOD_SANGAM_ATM_A
