@@ -1,9 +1,12 @@
 #
 # Automatically generated make config: don't edit
-# Linux kernel version: 2.6.12-rc5
-# Sat Aug 27 21:25:27 2005
+# Linux kernel version: 2.6.12.5
+# Sun Aug 28 11:20:38 2005
 #
 CONFIG_MIPS=y
+# CONFIG_MIPS64 is not set
+# CONFIG_64BIT is not set
+CONFIG_MIPS32=y
 
 #
 # Code maturity level options
@@ -56,64 +59,43 @@ CONFIG_OBSOLETE_MODPARM=y
 #
 # Machine selection
 #
+# CONFIG_MACH_JAZZ is not set
 CONFIG_BCM47XX=y
-# CONFIG_MIPS_MTX1 is not set
-# CONFIG_MIPS_BOSPORUS is not set
-# CONFIG_MIPS_PB1000 is not set
-# CONFIG_MIPS_PB1100 is not set
-# CONFIG_MIPS_PB1500 is not set
-# CONFIG_MIPS_PB1550 is not set
-# CONFIG_MIPS_PB1200 is not set
-# CONFIG_MIPS_DB1000 is not set
-# CONFIG_MIPS_DB1100 is not set
-# CONFIG_MIPS_DB1500 is not set
-# CONFIG_MIPS_DB1550 is not set
-# CONFIG_MIPS_DB1200 is not set
-# CONFIG_MIPS_MIRAGE is not set
+# CONFIG_MACH_VR41XX is not set
+# CONFIG_TOSHIBA_JMR3927 is not set
 # CONFIG_MIPS_COBALT is not set
 # CONFIG_MACH_DECSTATION is not set
 # CONFIG_MIPS_EV64120 is not set
 # CONFIG_MIPS_EV96100 is not set
 # CONFIG_MIPS_IVR is not set
-# CONFIG_MIPS_ITE8172 is not set
-# CONFIG_MACH_JAZZ is not set
 # CONFIG_LASAT is not set
+# CONFIG_MIPS_ITE8172 is not set
 # CONFIG_MIPS_ATLAS is not set
 # CONFIG_MIPS_MALTA is not set
 # CONFIG_MIPS_SEAD is not set
-# CONFIG_MOMENCO_JAGUAR_ATX is not set
 # CONFIG_MOMENCO_OCELOT is not set
-# CONFIG_MOMENCO_OCELOT_3 is not set
-# CONFIG_MOMENCO_OCELOT_C is not set
 # CONFIG_MOMENCO_OCELOT_G is not set
-# CONFIG_MIPS_XXS1500 is not set
+# CONFIG_MOMENCO_OCELOT_C is not set
+# CONFIG_MOMENCO_OCELOT_3 is not set
+# CONFIG_MOMENCO_JAGUAR_ATX is not set
+# CONFIG_PMC_YOSEMITE is not set
 # CONFIG_DDB5074 is not set
 # CONFIG_DDB5476 is not set
 # CONFIG_DDB5477 is not set
-# CONFIG_MACH_VR41XX is not set
-# CONFIG_PMC_YOSEMITE is not set
+# CONFIG_NEC_OSPREY is not set
 # CONFIG_SGI_IP22 is not set
-# CONFIG_SGI_IP27 is not set
-# CONFIG_SGI_IP32 is not set
-# CONFIG_SIBYTE_SWARM is not set
-# CONFIG_SIBYTE_SENTOSA is not set
-# CONFIG_SIBYTE_RHONE is not set
-# CONFIG_SIBYTE_CARMEL is not set
-# CONFIG_SIBYTE_PTSWARM is not set
-# CONFIG_SIBYTE_LITTLESUR is not set
-# CONFIG_SIBYTE_CRHINE is not set
-# CONFIG_SIBYTE_CRHONE is not set
+# CONFIG_SOC_AU1X00 is not set
+# CONFIG_SIBYTE_SB1xxx_SOC is not set
 # CONFIG_SNI_RM200_PCI is not set
-# CONFIG_TOSHIBA_JMR3927 is not set
 # CONFIG_TOSHIBA_RBTX4927 is not set
 CONFIG_RWSEM_GENERIC_SPINLOCK=y
 CONFIG_GENERIC_CALIBRATE_DELAY=y
 CONFIG_HAVE_DEC_LOCK=y
 CONFIG_DMA_NONCOHERENT=y
-# CONFIG_CPU_BIG_ENDIAN is not set
-# CONFIG_CPU_LITTLE_ENDIAN is not set
+CONFIG_CPU_LITTLE_ENDIAN=y
 CONFIG_IRQ_CPU=y
 CONFIG_MIPS_L1_CACHE_SHIFT=5
+# CONFIG_FB is not set
 
 #
 # CPU selection
@@ -135,19 +117,14 @@ CONFIG_CPU_MIPS32=y
 # CONFIG_CPU_RM7000 is not set
 # CONFIG_CPU_RM9000 is not set
 # CONFIG_CPU_SB1 is not set
-CONFIG_CPU_SUPPORTS_32BIT_KERNEL=y
-
-#
-# Kernel type
-#
-# CONFIG_MIPS32 is not set
-# CONFIG_MIPS64 is not set
-# CONFIG_64BIT is not set
 CONFIG_PAGE_SIZE_4KB=y
 # CONFIG_PAGE_SIZE_8KB is not set
 # CONFIG_PAGE_SIZE_16KB is not set
 # CONFIG_PAGE_SIZE_64KB is not set
 CONFIG_CPU_HAS_PREFETCH=y
+# CONFIG_VTAG_ICACHE is not set
+# CONFIG_64BIT_PHYS_ADDR is not set
+# CONFIG_CPU_ADVANCED is not set
 CONFIG_CPU_HAS_LLSC=y
 CONFIG_CPU_HAS_SYNC=y
 # CONFIG_PREEMPT is not set
@@ -173,6 +150,7 @@ CONFIG_MMU=y
 #
 CONFIG_BINFMT_ELF=y
 # CONFIG_BINFMT_MISC is not set
+CONFIG_TRAD_SIGNALS=y
 
 #
 # Device Drivers
@@ -279,6 +257,7 @@ CONFIG_BLK_DEV_NBD=m
 # CONFIG_BLK_DEV_RAM is not set
 CONFIG_BLK_DEV_RAM_COUNT=16
 CONFIG_INITRAMFS_SOURCE=""
+# CONFIG_LBD is not set
 # CONFIG_CDROM_PKTCDVD is not set
 
 #
@@ -621,7 +600,6 @@ CONFIG_SERIO_SERPORT=y
 CONFIG_SERIO_LIBPS2=m
 # CONFIG_SERIO_RAW is not set
 # CONFIG_GAMEPORT is not set
-CONFIG_SOUND_GAMEPORT=y
 
 #
 # Character devices
@@ -702,7 +680,6 @@ CONFIG_RTC=y
 #
 # Graphics support
 #
-# CONFIG_FB is not set
 
 #
 # Sound
@@ -879,11 +856,6 @@ CONFIG_NLS_DEFAULT="iso8859-1"
 # CONFIG_NLS_UTF8 is not set
 
 #
-# Profiling support
-#
-# CONFIG_PROFILING is not set
-
-#
 # Kernel hacking
 #
 # CONFIG_PRINTK_TIME is not set
@@ -941,3 +913,4 @@ CONFIG_ZLIB_INFLATE=y
 CONFIG_ZLIB_DEFLATE=y
 CONFIG_GENERIC_HARDIRQS=y
 CONFIG_GENERIC_IRQ_PROBE=y
+CONFIG_ISA_DMA_API=y
