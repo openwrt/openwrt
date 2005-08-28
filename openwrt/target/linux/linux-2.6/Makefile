@@ -112,8 +112,8 @@ $(eval $(call KMOD_template,USB_STORAGE,usb-storage,\
 	$(MODULES_DIR)/kernel/drivers/usb/storage/*.ko \
 ,CONFIG_USB_STORAGE,kmod-usb-core,60,scsi_mod sd_mod usb-storage))
 $(eval $(call KMOD_template,USB_PRINTER,usb-printer,\
-	$(MODULES_DIR)/kernel/drivers/usb/printer.ko \
-,CONFIG_USB_PRINTER,kmod-usb-core,60,printer))
+	$(MODULES_DIR)/kernel/drivers/usb/class/usblp.ko \
+,CONFIG_USB_PRINTER,kmod-usb-core,60,usblp))
 $(eval $(call KMOD_template,IDE,ide,\
 	$(MODULES_DIR)/kernel/drivers/ide/*.ko \
 	$(MODULES_DIR)/kernel/drivers/ide/*/*.ko \
