@@ -1,7 +1,7 @@
-diff -Nurp linux-2.4.26-stock/Documentation/Configure.help linux-2.4.26-layer7-clean/Documentation/Configure.help
---- linux-2.4.26-stock/Documentation/Configure.help	2004-04-14 08:05:24.000000000 -0500
-+++ linux-2.4.26-layer7-clean/Documentation/Configure.help	2004-06-21 00:18:14.000000000 -0500
-@@ -28819,6 +28819,23 @@ CONFIG_SOUND_WM97XX
+diff -Nurp linux-2.4.30/Documentation/Configure.help linux-2.4.30-layer7/Documentation/Configure.help
+--- linux-2.4.30/Documentation/Configure.help	2005-04-03 20:42:19.000000000 -0500
++++ linux-2.4.30-layer7/Documentation/Configure.help	2005-05-03 18:37:03.000000000 -0500
+@@ -29056,6 +29056,23 @@ CONFIG_SOUND_WM97XX
    
    If unsure, say N.
  
@@ -25,9 +25,9 @@ diff -Nurp linux-2.4.26-stock/Documentation/Configure.help linux-2.4.26-layer7-c
  #
  # A couple of things I keep forgetting:
  #   capitalize: AppleTalk, Ethernet, DOS, DMA, FAT, FTP, Internet,
-diff -Nurp linux-2.4.26-stock/include/linux/netfilter_ipv4/ip_conntrack.h linux-2.4.26-layer7-clean/include/linux/netfilter_ipv4/ip_conntrack.h
---- linux-2.4.26-stock/include/linux/netfilter_ipv4/ip_conntrack.h	2004-04-14 08:05:40.000000000 -0500
-+++ linux-2.4.26-layer7-clean/include/linux/netfilter_ipv4/ip_conntrack.h	2004-06-21 00:18:28.000000000 -0500
+diff -Nurp linux-2.4.30/include/linux/netfilter_ipv4/ip_conntrack.h linux-2.4.30-layer7/include/linux/netfilter_ipv4/ip_conntrack.h
+--- linux-2.4.30/include/linux/netfilter_ipv4/ip_conntrack.h	2005-04-03 20:42:20.000000000 -0500
++++ linux-2.4.30-layer7/include/linux/netfilter_ipv4/ip_conntrack.h	2005-05-03 18:37:03.000000000 -0500
 @@ -207,6 +207,17 @@ struct ip_conntrack
  	} nat;
  #endif /* CONFIG_IP_NF_NAT_NEEDED */
@@ -46,9 +46,9 @@ diff -Nurp linux-2.4.26-stock/include/linux/netfilter_ipv4/ip_conntrack.h linux-
  };
  
  /* get master conntrack via master expectation */
-diff -Nurp linux-2.4.26-stock/include/linux/netfilter_ipv4/ipt_layer7.h linux-2.4.26-layer7-clean/include/linux/netfilter_ipv4/ipt_layer7.h
---- linux-2.4.26-stock/include/linux/netfilter_ipv4/ipt_layer7.h	1969-12-31 18:00:00.000000000 -0600
-+++ linux-2.4.26-layer7-clean/include/linux/netfilter_ipv4/ipt_layer7.h	2004-06-21 00:18:28.000000000 -0500
+diff -Nurp linux-2.4.30/include/linux/netfilter_ipv4/ipt_layer7.h linux-2.4.30-layer7/include/linux/netfilter_ipv4/ipt_layer7.h
+--- linux-2.4.30/include/linux/netfilter_ipv4/ipt_layer7.h	1969-12-31 18:00:00.000000000 -0600
++++ linux-2.4.30-layer7/include/linux/netfilter_ipv4/ipt_layer7.h	2005-05-03 18:37:03.000000000 -0500
 @@ -0,0 +1,26 @@
 +/* 
 +  By Matthew Strait <quadong@users.sf.net>, Dec 2003.
@@ -76,9 +76,9 @@ diff -Nurp linux-2.4.26-stock/include/linux/netfilter_ipv4/ipt_layer7.h linux-2.
 +};
 +
 +#endif /* _IPT_LAYER7_H */
-diff -Nurp linux-2.4.26-stock/net/ipv4/netfilter/Config.in linux-2.4.26-layer7-clean/net/ipv4/netfilter/Config.in
---- linux-2.4.26-stock/net/ipv4/netfilter/Config.in	2003-08-25 06:44:44.000000000 -0500
-+++ linux-2.4.26-layer7-clean/net/ipv4/netfilter/Config.in	2004-06-21 00:15:23.000000000 -0500
+diff -Nurp linux-2.4.30/net/ipv4/netfilter/Config.in linux-2.4.30-layer7/net/ipv4/netfilter/Config.in
+--- linux-2.4.30/net/ipv4/netfilter/Config.in	2005-01-19 08:10:13.000000000 -0600
++++ linux-2.4.30-layer7/net/ipv4/netfilter/Config.in	2005-05-03 18:37:03.000000000 -0500
 @@ -43,6 +43,10 @@ if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; 
    if [ "$CONFIG_EXPERIMENTAL" = "y" ]; then
      dep_tristate '  Unclean match support (EXPERIMENTAL)' CONFIG_IP_NF_MATCH_UNCLEAN $CONFIG_IP_NF_IPTABLES
@@ -90,29 +90,27 @@ diff -Nurp linux-2.4.26-stock/net/ipv4/netfilter/Config.in linux-2.4.26-layer7-c
    fi
  # The targets
    dep_tristate '  Packet filtering' CONFIG_IP_NF_FILTER $CONFIG_IP_NF_IPTABLES 
-diff -Nurp linux-2.4.26-stock/net/ipv4/netfilter/Makefile linux-2.4.26-layer7-clean/net/ipv4/netfilter/Makefile
---- linux-2.4.26-stock/net/ipv4/netfilter/Makefile	2003-08-25 06:44:44.000000000 -0500
-+++ linux-2.4.26-layer7-clean/net/ipv4/netfilter/Makefile	2004-06-21 00:15:22.000000000 -0500
-@@ -87,6 +87,8 @@ obj-$(CONFIG_IP_NF_MATCH_CONNTRACK) += i
+diff -Nurp linux-2.4.30/net/ipv4/netfilter/Makefile linux-2.4.30-layer7/net/ipv4/netfilter/Makefile
+--- linux-2.4.30/net/ipv4/netfilter/Makefile	2003-08-25 06:44:44.000000000 -0500
++++ linux-2.4.30-layer7/net/ipv4/netfilter/Makefile	2005-05-03 18:44:12.000000000 -0500
+@@ -86,6 +86,7 @@ obj-$(CONFIG_IP_NF_MATCH_STATE) += ipt_s
+ obj-$(CONFIG_IP_NF_MATCH_CONNTRACK) += ipt_conntrack.o
  obj-$(CONFIG_IP_NF_MATCH_UNCLEAN) += ipt_unclean.o
  obj-$(CONFIG_IP_NF_MATCH_TCPMSS) += ipt_tcpmss.o
- 
 +obj-$(CONFIG_IP_NF_MATCH_LAYER7) += ipt_layer7.o
-+
+ 
  # targets
  obj-$(CONFIG_IP_NF_TARGET_REJECT) += ipt_REJECT.o
- obj-$(CONFIG_IP_NF_TARGET_MIRROR) += ipt_MIRROR.o
-diff -Nurp linux-2.4.26-stock/net/ipv4/netfilter/ip_conntrack_core.c linux-2.4.26-layer7-clean/net/ipv4/netfilter/ip_conntrack_core.c
---- linux-2.4.26-stock/net/ipv4/netfilter/ip_conntrack_core.c	2004-02-18 07:36:32.000000000 -0600
-+++ linux-2.4.26-layer7-clean/net/ipv4/netfilter/ip_conntrack_core.c	2004-06-21 00:15:22.000000000 -0500
-@@ -339,6 +339,15 @@ destroy_conntrack(struct nf_conntrack *n
+diff -Nurp linux-2.4.30/net/ipv4/netfilter/ip_conntrack_core.c linux-2.4.30-layer7/net/ipv4/netfilter/ip_conntrack_core.c
+--- linux-2.4.30/net/ipv4/netfilter/ip_conntrack_core.c	2005-04-03 20:42:20.000000000 -0500
++++ linux-2.4.30-layer7/net/ipv4/netfilter/ip_conntrack_core.c	2005-05-03 18:37:03.000000000 -0500
+@@ -346,6 +346,14 @@ destroy_conntrack(struct nf_conntrack *n
  		}
  		kfree(ct->master);
  	}
 +
 +	#if defined(CONFIG_IP_NF_MATCH_LAYER7) || defined(CONFIG_IP_NF_MATCH_LAYER7_MODULE)
-+	/* This ought to get free'd somewhere.  How about here? */
-+	if(ct->layer7.app_proto) /* this is sufficient, right? */
++	if(ct->layer7.app_proto)
 +		kfree(ct->layer7.app_proto);
 +	if(ct->layer7.app_data)
 +		kfree(ct->layer7.app_data);
@@ -121,9 +119,9 @@ diff -Nurp linux-2.4.26-stock/net/ipv4/netfilter/ip_conntrack_core.c linux-2.4.2
  	WRITE_UNLOCK(&ip_conntrack_lock);
  
  	if (master)
-diff -Nurp linux-2.4.26-stock/net/ipv4/netfilter/ip_conntrack_standalone.c linux-2.4.26-layer7-clean/net/ipv4/netfilter/ip_conntrack_standalone.c
---- linux-2.4.26-stock/net/ipv4/netfilter/ip_conntrack_standalone.c	2004-02-18 07:36:32.000000000 -0600
-+++ linux-2.4.26-layer7-clean/net/ipv4/netfilter/ip_conntrack_standalone.c	2004-06-21 00:15:22.000000000 -0500
+diff -Nurp linux-2.4.30/net/ipv4/netfilter/ip_conntrack_standalone.c linux-2.4.30-layer7/net/ipv4/netfilter/ip_conntrack_standalone.c
+--- linux-2.4.30/net/ipv4/netfilter/ip_conntrack_standalone.c	2005-04-03 20:42:20.000000000 -0500
++++ linux-2.4.30-layer7/net/ipv4/netfilter/ip_conntrack_standalone.c	2005-05-03 18:37:03.000000000 -0500
 @@ -107,6 +107,13 @@ print_conntrack(char *buffer, struct ip_
  		len += sprintf(buffer + len, "[ASSURED] ");
  	len += sprintf(buffer + len, "use=%u ",
@@ -138,17 +136,17 @@ diff -Nurp linux-2.4.26-stock/net/ipv4/netfilter/ip_conntrack_standalone.c linux
  	len += sprintf(buffer + len, "\n");
  
  	return len;
-diff -Nurp linux-2.4.26-stock/net/ipv4/netfilter/ipt_layer7.c linux-2.4.26-layer7-clean/net/ipv4/netfilter/ipt_layer7.c
---- linux-2.4.26-stock/net/ipv4/netfilter/ipt_layer7.c	1969-12-31 18:00:00.000000000 -0600
-+++ linux-2.4.26-layer7-clean/net/ipv4/netfilter/ipt_layer7.c	2004-06-27 19:06:51.000000000 -0500
-@@ -0,0 +1,540 @@
+diff -Nurp linux-2.4.30/net/ipv4/netfilter/ipt_layer7.c linux-2.4.30-layer7/net/ipv4/netfilter/ipt_layer7.c
+--- linux-2.4.30/net/ipv4/netfilter/ipt_layer7.c	1969-12-31 18:00:00.000000000 -0600
++++ linux-2.4.30-layer7/net/ipv4/netfilter/ipt_layer7.c	2005-05-03 18:37:03.000000000 -0500
+@@ -0,0 +1,557 @@
 +/* 
 +  Kernel module to match application layer (OSI layer 7) 
 +  data in connections.
 +  
 +  http://l7-filter.sf.net
 +
-+  By Matthew Strait and Ethan Sommer, 2003.
++  By Matthew Strait and Ethan Sommer, 2003-2005.
 +
 +  This program is free software; you can redistribute it and/or
 +  modify it under the terms of the GNU General Public License
@@ -167,6 +165,7 @@ diff -Nurp linux-2.4.26-stock/net/ipv4/netfilter/ipt_layer7.c linux-2.4.26-layer
 +#include <linux/ctype.h>
 +#include <net/ip.h>
 +#include <net/tcp.h>
++#include <linux/netfilter_ipv4/lockhelp.h>
 +
 +#include "regexp/regexp.c"
 +
@@ -178,98 +177,40 @@ diff -Nurp linux-2.4.26-stock/net/ipv4/netfilter/ipt_layer7.c linux-2.4.26-layer
 +MODULE_DESCRIPTION("iptables application layer match module");
 +
 +#if defined(CONFIG_IP_NF_MATCH_LAYER7_DEBUG)
-+  #define DPRINTK(format,args...) printk(format,##args)
++	#define DPRINTK(format,args...) printk(format,##args)
 +#else
-+  #define DPRINTK(format,args...)
++	#define DPRINTK(format,args...)
 +#endif
++
++#define TOTAL_PACKETS master_conntrack->layer7.numpackets
 +
 +/* Number of packets whose data we look at.
 +This can be modified through /proc/net/layer7_numpackets */
 +static int num_packets = 8;
 +
 +static struct pattern_cache {
-+  char * regex_string;
-+  regexp * pattern;
-+  struct pattern_cache * next;
++	char * regex_string;
++	regexp * pattern;
++	struct pattern_cache * next;
 +} * first_pattern_cache = NULL;
 +
 +/* I'm new to locking.  Here are my assumptions:
 +
-+- No one is going to write to /proc/net/layer7_numpackets over and over
-+  within a short period of time, and if they did, nothing awful would happen.
++- No one will write to /proc/net/layer7_numpackets over and over very fast; 
++  if they did, nothing awful would happen.
 +
 +- This code will never be processing the same packet twice at the same time,
-+  because iptables rules need to be traversed in order.
++  because iptables rules are traversed in order.
 +
 +- It doesn't matter if two packets from different connections are in here at 
 +  the same time, because they don't share any data.
 +
 +- It _does_ matter if two packets from the same connection are here at the same
-+  time.  In this case, the things we have to protect are the conntracks and
-+  the list of compiled patterns.
++  time.  In this case, we have to protect the conntracks and the list of 
++  compiled patterns.
 +*/
 +DECLARE_RWLOCK(ct_lock);
 +DECLARE_LOCK(list_lock);
-+
-+/* Use instead of regcomp.  As we expect to be seeing the same regexps over and
-+over again, it make sense to cache the results. */
-+static regexp * compile_and_cache(char * regex_string, char * protocol) 
-+{
-+        struct pattern_cache * node               = first_pattern_cache;
-+        struct pattern_cache * last_pattern_cache = first_pattern_cache;
-+	struct pattern_cache * tmp;
-+        unsigned int len;
-+
-+        while (node != NULL) {
-+                if (!strcmp(node->regex_string, regex_string)) 
-+                        return node->pattern;
-+
-+                last_pattern_cache = node;/* points at the last non-NULL node */
-+                node = node->next;
-+        }
-+
-+        /* If we reach the end of the list, then we have not yet cached
-+           the pattern for this regex. Let's do that now. 
-+	   Be paranoid about running out of memory to avoid list corruption. */
-+        tmp = kmalloc(sizeof(struct pattern_cache), GFP_ATOMIC);
-+
-+	if(!tmp) {
-+		printk(KERN_ERR "layer7: out of memory in compile_and_cache, bailing.\n");
-+		return NULL;
-+	}
-+
-+        tmp->regex_string  = kmalloc(strlen(regex_string) + 1, GFP_ATOMIC);
-+        tmp->pattern       = kmalloc(sizeof(struct regexp),    GFP_ATOMIC);
-+
-+	if(!tmp->regex_string || !tmp->pattern) {
-+		printk(KERN_ERR "layer7: out of memory in compile_and_cache, bailing.\n");
-+		kfree(tmp->regex_string);
-+		kfree(tmp->pattern);
-+		kfree(tmp);
-+		return NULL;
-+	}
-+
-+        tmp->next = NULL;
-+	/* Ok.  The new node is all ready now. */
-+	node = tmp;
-+
-+        if(first_pattern_cache == NULL) /* list is empty */
-+                first_pattern_cache = node; /* make node the beginning */
-+        else
-+                last_pattern_cache->next = node; /* attach node to the end */
-+
-+        /* copy the string and compile the regex */
-+        len = strlen(regex_string);
-+	node->pattern = regcomp(regex_string, &len);
-+        if ( !node->pattern ) {
-+                printk(KERN_ERR "layer7: Error compiling regexp \"%s\" (%s)\n", 
-+			regex_string, protocol);
-+                /* pattern is now cached as NULL, so we won't try again. */
-+        }
-+
-+        strcpy(node->regex_string, regex_string);
-+        return node->pattern;
-+}
 +
 +#if CONFIG_IP_NF_MATCH_LAYER7_DEBUG
 +/* Converts an unfriendly string into a friendly one by 
@@ -280,9 +221,10 @@ diff -Nurp linux-2.4.26-stock/net/ipv4/netfilter/ipt_layer7.c linux-2.4.26-layer
 +	int i;
 +
 +	if(!f) {
-+               printk(KERN_ERR "layer7: out of memory in friendly_print, bailing.\n");
-+               return NULL;
-+        }
++		if (net_ratelimit()) 
++			printk(KERN_ERR "layer7: out of memory in friendly_print, bailing.\n");
++		return NULL;
++	}
 +
 +	for(i = 0; i < strlen(s); i++){
 +		if(isprint(s[i]) && s[i] < 128)	f[i] = s[i];
@@ -303,7 +245,8 @@ diff -Nurp linux-2.4.26-stock/net/ipv4/netfilter/ipt_layer7.c linux-2.4.26-layer
 +			return (char)(i - 10 + 'a');
 +			break;
 +		default:
-+			printk("Problem in dec2hex\n");
++			if (net_ratelimit()) 
++				printk("Problem in dec2hex\n");
 +			return '\0';
 +	}
 +}
@@ -314,9 +257,10 @@ diff -Nurp linux-2.4.26-stock/net/ipv4/netfilter/ipt_layer7.c linux-2.4.26-layer
 +	int i;
 +
 +	if(!g) {
-+               printk(KERN_ERR "layer7: out of memory in hex_print, bailing.\n");
-+               return NULL;
-+        }
++		if (net_ratelimit()) 
++			printk(KERN_ERR "layer7: out of memory in hex_print, bailing.\n");
++		return NULL;
++	}
 +
 +	for(i = 0; i < strlen(s); i++) {
 +		g[i*3    ] = dec2hex(s[i]/16);
@@ -329,17 +273,68 @@ diff -Nurp linux-2.4.26-stock/net/ipv4/netfilter/ipt_layer7.c linux-2.4.26-layer
 +}
 +#endif // DEBUG
 +
++/* Use instead of regcomp.  As we expect to be seeing the same regexps over and
++over again, it make sense to cache the results. */
++static regexp * compile_and_cache(char * regex_string, char * protocol) 
++{
++	struct pattern_cache * node               = first_pattern_cache;
++	struct pattern_cache * last_pattern_cache = first_pattern_cache;
++	struct pattern_cache * tmp;
++	unsigned int len;
 +
-+/* The following functions are here in case we get ported into an environment
-+(ebtables?) where skb->nh.iph->protocol isn't set. They assume that skb->data
-+points at the beginning of the IP datagram, which is true for iptables (but in
-+QoS it points to the beginning of the Ethernet frame). */
-+#if 0
-+#define IP_PROTO_OFFSET 9
-+static int is_tcp_over_ipv4 (const struct sk_buff *skb){return(skb->data[IP_PROTO_OFFSET]==IPPROTO_TCP );}
-+static int is_udp_over_ipv4 (const struct sk_buff *skb){return(skb->data[IP_PROTO_OFFSET]==IPPROTO_UDP );}
-+static int is_icmp_over_ipv4(const struct sk_buff *skb){return(skb->data[IP_PROTO_OFFSET]==IPPROTO_ICMP);}
-+#endif
++	while (node != NULL) {
++		if (!strcmp(node->regex_string, regex_string)) 
++			return node->pattern;
++
++		last_pattern_cache = node;/* points at the last non-NULL node */
++		node = node->next;
++	}
++
++	/* If we reach the end of the list, then we have not yet cached
++	   the pattern for this regex. Let's do that now. 
++	   Be paranoid about running out of memory to avoid list corruption. */
++	tmp = kmalloc(sizeof(struct pattern_cache), GFP_ATOMIC);
++
++	if(!tmp) {
++		if (net_ratelimit()) 
++			printk(KERN_ERR "layer7: out of memory in compile_and_cache, bailing.\n");
++		return NULL;
++	}
++
++	tmp->regex_string  = kmalloc(strlen(regex_string) + 1, GFP_ATOMIC);
++	tmp->pattern       = kmalloc(sizeof(struct regexp),    GFP_ATOMIC);
++	tmp->next = NULL;
++
++	if(!tmp->regex_string || !tmp->pattern) {
++		if (net_ratelimit()) 
++			printk(KERN_ERR "layer7: out of memory in compile_and_cache, bailing.\n");
++		kfree(tmp->regex_string);
++		kfree(tmp->pattern);
++		kfree(tmp);
++		return NULL;
++	}
++
++	/* Ok.  The new node is all ready now. */
++	node = tmp;
++
++	if(first_pattern_cache == NULL) /* list is empty */
++		first_pattern_cache = node; /* make node the beginning */
++	else
++		last_pattern_cache->next = node; /* attach node to the end */
++
++	/* copy the string and compile the regex */
++	len = strlen(regex_string);
++	DPRINTK("About to compile this: \"%s\"\n", regex_string);
++	node->pattern = regcomp(regex_string, &len);
++	if ( !node->pattern ) {
++		if (net_ratelimit()) 
++			printk(KERN_ERR "layer7: Error compiling regexp \"%s\" (%s)\n", regex_string, protocol);
++		/* pattern is now cached as NULL, so we won't try again. */
++	}
++
++	strcpy(node->regex_string, regex_string);
++	return node->pattern;
++}
 +
 +static int can_handle(const struct sk_buff *skb)
 +{
@@ -357,73 +352,86 @@ diff -Nurp linux-2.4.26-stock/net/ipv4/netfilter/ipt_layer7.c linux-2.4.26-layer
 +{
 +	/* In case we are ported somewhere (ebtables?) where skb->nh.iph 
 +	isn't set, this can be gotten from 4*(skb->data[0] & 0x0f) as well. */
-+        int ip_hl = 4*skb->nh.iph->ihl;
++	int ip_hl = 4*skb->nh.iph->ihl;
 +
-+        if( skb->nh.iph->protocol == IPPROTO_TCP ) {
-+                /* 12 == offset into TCP header for the header length field. 
++	if( skb->nh.iph->protocol == IPPROTO_TCP ) {
++		/* 12 == offset into TCP header for the header length field. 
 +		Can't get this with skb->h.th->doff because the tcphdr 
 +		struct doesn't get set when routing (this is confirmed to be 
 +		true in Netfilter as well as QoS.) */
-+                int tcp_hl = 4*(skb->data[ip_hl + 12] >> 4);
++		int tcp_hl = 4*(skb->data[ip_hl + 12] >> 4);
 +
-+                return ip_hl + tcp_hl;
-+        } else if( skb->nh.iph->protocol == IPPROTO_UDP  ) {
-+                return ip_hl + 8; /* UDP header is always 8 bytes */
-+        } else if( skb->nh.iph->protocol == IPPROTO_ICMP ) {
-+                return ip_hl + 8; /* ICMP header is 8 bytes */
-+        } else {
-+                printk(KERN_ERR "layer7: tried to handle unknown protocol!\n");
-+                return ip_hl + 8; /* something reasonable */
-+        }
++		return ip_hl + tcp_hl;
++	} else if( skb->nh.iph->protocol == IPPROTO_UDP  ) {
++		return ip_hl + 8; /* UDP header is always 8 bytes */
++	} else if( skb->nh.iph->protocol == IPPROTO_ICMP ) {
++		return ip_hl + 8; /* ICMP header is 8 bytes */
++	} else {
++		if (net_ratelimit()) 
++			printk(KERN_ERR "layer7: tried to handle unknown protocol!\n");
++		return ip_hl + 8; /* something reasonable */
++	}
 +}
 +
 +/* handles whether there's a match when we aren't appending data anymore */
-+static int match_no_append(struct ip_conntrack * conntrack, 
-+			struct ip_conntrack * master_conntrack,
++static int match_no_append(struct ip_conntrack * conntrack, struct ip_conntrack * master_conntrack,
++			enum ip_conntrack_info ctinfo, enum ip_conntrack_info master_ctinfo,
 +			struct ipt_layer7_info * info)
 +{
-+	/* If we're in here, we don't care about the app data anymore */
++	/* If we're in here, throw the app data away */
 +	WRITE_LOCK(&ct_lock);
 +	if(master_conntrack->layer7.app_data != NULL) {
 +
-+               	#ifdef CONFIG_IP_NF_MATCH_LAYER7_DEBUG
-+               	if(!master_conntrack->layer7.app_proto) {
-+                       	char * f = friendly_print(master_conntrack->layer7.app_data);
-+		       	char * g = hex_print(master_conntrack->layer7.app_data);
-+                       	DPRINTK("\nGave up on the %d length stream: \n%s\n",
-+	                       master_conntrack->layer7.app_data_len, f);
-+		       	DPRINTK("\nIn hex: %s\n", g);
-+                       	kfree(f);
-+		       	kfree(g);
-+               	}
-+               	#endif
++	#ifdef CONFIG_IP_NF_MATCH_LAYER7_DEBUG
++		if(!master_conntrack->layer7.app_proto) {
++			char * f = friendly_print(master_conntrack->layer7.app_data);
++			char * g = hex_print(master_conntrack->layer7.app_data);
++			DPRINTK("\nl7-filter gave up after %d bytes (%d packets):\n%s\n",
++				strlen(f), 
++				TOTAL_PACKETS, f);
++			kfree(f); 
++			DPRINTK("In hex: %s\n", g);
++			kfree(g);
++		}
++	#endif
 +
 +		kfree(master_conntrack->layer7.app_data);
 +		master_conntrack->layer7.app_data = NULL; /* don't free again */
 +	}
 +	WRITE_UNLOCK(&ct_lock);
 +
-+	/* Is top-level master (possibly self) classified? */
-+	if(master_conntrack->layer7.app_proto) { 
-+		if(!strcmp(master_conntrack->layer7.app_proto, info->protocol))
-+		{
-+		    	/* set own .protocol (for /proc/net/ip_conntrack) */
-+			WRITE_LOCK(&ct_lock);
-+		    	if(!conntrack->layer7.app_proto) {
-+		        	conntrack->layer7.app_proto = kmalloc(strlen(info->protocol), GFP_ATOMIC);
-+                                if(!conntrack->layer7.app_proto){
-+                                       printk(KERN_ERR "layer7: out of memory in match_no_append, bailing.\n");
-+                                       WRITE_UNLOCK(&ct_lock);
-+                                       return 1;
-+                                }
-+
-+		        	strcpy(conntrack->layer7.app_proto, info->protocol);
-+		    	}
-+			WRITE_UNLOCK(&ct_lock);
++	if(master_conntrack->layer7.app_proto){
++		/* Here child connections set their .app_proto (for /proc/net/ip_conntrack) */
++		WRITE_LOCK(&ct_lock);
++		if(!conntrack->layer7.app_proto) {
++			conntrack->layer7.app_proto = kmalloc(strlen(master_conntrack->layer7.app_proto)+1, GFP_ATOMIC);
++			if(!conntrack->layer7.app_proto){
++				if (net_ratelimit()) 
++					printk(KERN_ERR "layer7: out of memory in match_no_append, bailing.\n");
++				WRITE_UNLOCK(&ct_lock);
++				return 1;
++			}
++			strcpy(conntrack->layer7.app_proto, master_conntrack->layer7.app_proto);
++		}
++		WRITE_UNLOCK(&ct_lock);
 +	
-+		    	return 1;
-+		} else return 0;
-+	} else return 0; /* no clasification */
++		return (!strcmp(master_conntrack->layer7.app_proto, info->protocol));
++	}
++	else {
++		/* If not classified, set to "unknown" to distinguish from 
++		connections that are still being tested. */
++		WRITE_LOCK(&ct_lock);
++		master_conntrack->layer7.app_proto = kmalloc(strlen("unknown")+1, GFP_ATOMIC);
++		if(!master_conntrack->layer7.app_proto){
++			if (net_ratelimit()) 
++				printk(KERN_ERR "layer7: out of memory in match_no_append, bailing.\n");
++			WRITE_UNLOCK(&ct_lock);
++			return 1;
++		}
++		strcpy(master_conntrack->layer7.app_proto, "unknown");
++		WRITE_UNLOCK(&ct_lock);
++		return 0;
++	}
 +}
 +
 +/* add the new app data to the conntrack.  Return number of bytes added. */
@@ -433,8 +441,8 @@ diff -Nurp linux-2.4.26-stock/net/ipv4/netfilter/ipt_layer7.c linux-2.4.26-layer
 +	int length = 0, i;
 +	int oldlength = master_conntrack->layer7.app_data_len;
 +
-+        /* Strip nulls. Make everything lower case (our regex lib doesn't
-+        do case insensitivity).  Add it to the end of the current data. */
++	/* Strip nulls. Make everything lower case (our regex lib doesn't
++	do case insensitivity).  Add it to the end of the current data. */
 +	for(i = 0; i < CONFIG_IP_NF_MATCH_LAYER7_MAXDATALEN-oldlength-1 && 
 +		   i < appdatalen; i++) {
 +		if(app_data[i] != '\0') {
@@ -453,89 +461,96 @@ diff -Nurp linux-2.4.26-stock/net/ipv4/netfilter/ipt_layer7.c linux-2.4.26-layer
 +
 +/* Returns true on match and false otherwise.  */
 +static int match(/* const */struct sk_buff *skb, const struct net_device *in,
-+                 const struct net_device *out, const void *matchinfo,
-+                 int offset,                   int *hotdrop)
++		 const struct net_device *out, const void *matchinfo,
++		 int offset,		   int *hotdrop)
 +{
 +	struct ipt_layer7_info * info = (struct ipt_layer7_info *)matchinfo;
-+        enum ip_conntrack_info master_ctinfo, ctinfo;
-+        struct ip_conntrack *master_conntrack, *conntrack;
++	enum ip_conntrack_info master_ctinfo, ctinfo;
++	struct ip_conntrack *master_conntrack, *conntrack;
 +	unsigned char * app_data;  
 +	unsigned int pattern_result, appdatalen;
 +	regexp * comppattern;
 +
 +	if(!can_handle(skb)){
-+		DPRINTK("layer7: This is some protocol I can't handle\n");
++		DPRINTK("layer7: This is some protocol I can't handle.\n");
 +		return info->invert;
 +	}
 +
-+	LOCK_BH(&list_lock);
-+	comppattern = compile_and_cache(info->pattern, info->protocol);
-+	UNLOCK_BH(&list_lock);
-+	/* the return value gets checked later, when we're ready to use it */
-+
-+	app_data = skb->data + app_data_offset(skb);
-+	appdatalen = skb->tail - app_data;
-+
 +	/* Treat the parent and all its children together as one connection, 
-+	except for the purpose of setting conntrack->layer7.pattern in the 
++	except for the purpose of setting conntrack->layer7.app_proto in the 
 +	actual connection. This makes /proc/net/ip_conntrack somewhat more 
 +	satisfying. */
-+        if(!(conntrack        = ip_conntrack_get((struct sk_buff *)skb, &ctinfo)) ||
-+           !(master_conntrack = ip_conntrack_get((struct sk_buff *)skb, &master_ctinfo))) {
-+                DPRINTK("layer7: packet is not from a known connection, giving up.\n");
++	if(!(conntrack	= ip_conntrack_get((struct sk_buff *)skb, &ctinfo)) ||
++	   !(master_conntrack = ip_conntrack_get((struct sk_buff *)skb, &master_ctinfo))) {
++		DPRINTK("layer7: packet is not from a known connection, giving up.\n");
 +		return info->invert;
-+        }
++	}
 +	
-+        /* Try to get a master conntrack (and its master etc) for FTP, etc. */
-+        while (master_ct(master_conntrack) != NULL)
-+                master_conntrack = master_ct(master_conntrack);
++	/* Try to get a master conntrack (and its master etc) for FTP, etc. */
++	while (master_ct(master_conntrack) != NULL)
++		master_conntrack = master_ct(master_conntrack);
 +
-+	/* skb->cb[0] == seen. Avoid doing things twice if there are two layer7 
-+	rules. I'm not sure that using cb for this purpose is correct, although 
-+	it says "put your private variables there" and this seems to qualify.  
-+	But it doesn't look like it's being used for anything else in the 
-+	sk_buffs that make it here. I'm open to suggestions for how to be able 
-+	to write to cb without making the compiler angry.  That I can't figure 
-+	this out is an argument against this being correct. */
 +	if(!skb->cb[0]){
 +		WRITE_LOCK(&ct_lock);
 +		master_conntrack->layer7.numpackets++;/*starts at 0 via memset*/
 +		WRITE_UNLOCK(&ct_lock);
 +	}
 +
++	/* if we've classified it or seen too many packets */
++	if(TOTAL_PACKETS > num_packets || 
++	   master_conntrack->layer7.app_proto) {
++	
++		pattern_result = match_no_append(conntrack, master_conntrack, ctinfo, master_ctinfo, info);
++	
++		/* skb->cb[0] == seen. Avoid doing things twice if there are two l7 
++		rules. I'm not sure that using cb for this purpose is correct, although
++		it says "put your private variables there". But it doesn't look like it
++		is being used for anything else in the skbs that make it here. How can
++		I write to cb without making the compiler angry? */
++		skb->cb[0] = 1; /* marking it seen here is probably irrelevant, but consistant */
++
++		return (pattern_result ^ info->invert);
++	}
++
++	if(skb_is_nonlinear(skb)){
++		if(skb_linearize(skb, GFP_ATOMIC) != 0){
++			if (net_ratelimit()) 
++				printk(KERN_ERR "layer7: failed to linearize packet, bailing.\n");
++			return info->invert;
++		}
++	}
++	
++	/* now that the skb is linearized, it's safe to set these. */
++	app_data = skb->data + app_data_offset(skb);
++	appdatalen = skb->tail - app_data;
++
++	LOCK_BH(&list_lock);
++	/* the return value gets checked later, when we're ready to use it */
++	comppattern = compile_and_cache(info->pattern, info->protocol);
++	UNLOCK_BH(&list_lock);
++
 +	/* On the first packet of a connection, allocate space for app data */
 +	WRITE_LOCK(&ct_lock);
-+	if(master_conntrack->layer7.numpackets == 1 && !skb->cb[0]) {
++	if(TOTAL_PACKETS == 1 && !skb->cb[0] && !master_conntrack->layer7.app_data) {
 +		master_conntrack->layer7.app_data = kmalloc(CONFIG_IP_NF_MATCH_LAYER7_MAXDATALEN, GFP_ATOMIC);
-+                if(!master_conntrack->layer7.app_data){                                                         
-+                        printk(KERN_ERR "layer7: out of memory in match, bailing.\n");
-+                        WRITE_UNLOCK(&ct_lock);
-+                        return info->invert;
-+                }
++		if(!master_conntrack->layer7.app_data){
++			if (net_ratelimit())
++				printk(KERN_ERR "layer7: out of memory in match, bailing.\n");
++			WRITE_UNLOCK(&ct_lock);
++			return info->invert;
++		}
 +
 +		master_conntrack->layer7.app_data[0] = '\0';
 +	}
 +	WRITE_UNLOCK(&ct_lock);
 +
-+	/* if we've classified it or seen too many packets */
-+	if(master_conntrack->layer7.numpackets > num_packets || 
-+	   master_conntrack->layer7.app_proto) {
-+	
-+		pattern_result = match_no_append(conntrack, master_conntrack, info);
-+	
-+		/* mark the packet seen (probably irrelevant, but consistant) */
-+		skb->cb[0] = 1;
-+
-+	        return (pattern_result ^ info->invert);
-+	}
-+	
-+	/* Can end up here, but unallocated, if numpackets is increased during 
++	/* Can be here, but unallocated, if numpackets is increased near 
 +	the beginning of a connection */
 +	if(master_conntrack->layer7.app_data == NULL)
 +		return (info->invert); /* unmatched */
 +
-+	if(!skb->cb[0])	{
-+	 	int newbytes;
++	if(!skb->cb[0]){
++		int newbytes;
 +		WRITE_LOCK(&ct_lock);
 +		newbytes = add_data(master_conntrack, app_data, appdatalen);
 +		WRITE_UNLOCK(&ct_lock);
@@ -547,37 +562,41 @@ diff -Nurp linux-2.4.26-stock/net/ipv4/netfilter/ipt_layer7.c linux-2.4.26-layer
 +		}
 +	}
 +
++	/* If looking for "unknown", then never match.  "Unknown" means that
++	we've given up; we're still trying with these packets. */
++	if(!strcmp(info->protocol, "unknown")) {
++		pattern_result = 0;
 +	/* If the regexp failed to compile, don't bother running it */
-+	if(comppattern && regexec(comppattern, master_conntrack->layer7.app_data)) {
++	} else if(comppattern && regexec(comppattern, master_conntrack->layer7.app_data)) {
 +		DPRINTK("layer7: regexec positive: %s!\n", info->protocol);
 +		pattern_result = 1;
 +	} else pattern_result = 0;
 +
 +	if(pattern_result) {
 +		WRITE_LOCK(&ct_lock);
-+		conntrack->layer7.app_proto = kmalloc(strlen(info->protocol), GFP_ATOMIC);
-+                if(!conntrack->layer7.app_proto){
-+                        printk(KERN_ERR "layer7: out of memory in match, bailing.\n");
-+                        WRITE_UNLOCK(&ct_lock);
-+                        return (pattern_result ^ info->invert);
-+                        }
-+ 
-+		strcpy(conntrack->layer7.app_proto, info->protocol);
++		master_conntrack->layer7.app_proto = kmalloc(strlen(info->protocol)+1, GFP_ATOMIC);
++		if(!master_conntrack->layer7.app_proto){
++			if (net_ratelimit()) 
++				printk(KERN_ERR "layer7: out of memory in match, bailing.\n");
++			WRITE_UNLOCK(&ct_lock);
++			return (pattern_result ^ info->invert);
++		}
++		strcpy(master_conntrack->layer7.app_proto, info->protocol);
 +		WRITE_UNLOCK(&ct_lock);
 +	}
 +
 +	/* mark the packet seen */
 +	skb->cb[0] = 1;
 +
-+    	return (pattern_result ^ info->invert);
++	return (pattern_result ^ info->invert);
 +}
 +
 +static int checkentry(const char *tablename, const struct ipt_ip *ip,
-+           void *matchinfo, unsigned int matchsize, unsigned int hook_mask)
++	   void *matchinfo, unsigned int matchsize, unsigned int hook_mask)
 +{
-+       if (matchsize != IPT_ALIGN(sizeof(struct ipt_layer7_info))) 
-+               return 0;
-+       return 1;
++	if (matchsize != IPT_ALIGN(sizeof(struct ipt_layer7_info))) 
++		return 0;
++	return 1;
 +}
 +
 +static struct ipt_match layer7_match = { 
@@ -590,87 +609,83 @@ diff -Nurp linux-2.4.26-stock/net/ipv4/netfilter/ipt_layer7.c linux-2.4.26-layer
 +/* taken from drivers/video/modedb.c */
 +static int my_atoi(const char *s)
 +{
-+    int val = 0;
++	int val = 0;
 +
-+    for (;; s++) {
-+        switch (*s) {
-+            case '0'...'9':
-+                val = 10*val+(*s-'0');
-+                break;
-+            default:
-+                return val;
-+        }
-+    }
++	for (;; s++) {
++		switch (*s) {
++		case '0'...'9':
++			val = 10*val+(*s-'0');
++			break;
++		default:
++			return val;
++		}
++	}
 +}
 +
 +/* write out num_packets to userland. */
 +static int layer7_read_proc(char* page, char ** start, off_t off, int count, 
-+                     int* eof, void * data) 
++		     int* eof, void * data) 
 +{
-+        if(num_packets > 99)
-+                printk(KERN_ERR "layer7: NOT REACHED. num_packets too big\n");
-+        
-+        page[0] = num_packets/10 + '0';
-+        page[1] = num_packets%10 + '0';
-+        page[2] = '\n';
-+        page[3] = '\0';
-+                
-+        *eof=1;
++	if(num_packets > 99 && net_ratelimit()) 
++		printk(KERN_ERR "layer7: NOT REACHED. num_packets too big\n");
++	
++	page[0] = num_packets/10 + '0';
++	page[1] = num_packets%10 + '0';
++	page[2] = '\n';
++	page[3] = '\0';
++		
++	*eof=1;
 +
-+        return 3;
++	return 3;
 +}
 +
 +/* Read in num_packets from userland */
 +static int layer7_write_proc(struct file* file, const char* buffer, 
-+                      unsigned long count, void *data) 
++		      unsigned long count, void *data) 
 +{
-+        char * foo = kmalloc(count, GFP_ATOMIC);
++	char * foo = kmalloc(count, GFP_ATOMIC);
 +
-+        if(!foo){
-+                printk(KERN_ERR "layer7: out of memory, bailing.  num_packets unchanged.\n");
-+                return count;
-+        }
++	if(!foo){
++		if (net_ratelimit()) 
++			printk(KERN_ERR "layer7: out of memory, bailing. num_packets unchanged.\n");
++		return count;
++	}
 +
-+        /* copy in the data from userland */
-+        copy_from_user(foo, buffer, count);
++	copy_from_user(foo, buffer, count);
 +
-+        num_packets = my_atoi(foo);
++	num_packets = my_atoi(foo);
 +	kfree (foo);
 +
-+        /* This has an arbitrary limit to make the math easier. I'm lazy. 
++	/* This has an arbitrary limit to make the math easier. I'm lazy. 
 +	But anyway, 99 is a LOT! If you want more, you're doing it wrong! */
-+        if(num_packets > 99) {
-+                printk(KERN_WARNING "layer7: num_packets can't be > 99.\n");
-+                num_packets = 99;
-+        } else if(num_packets < 1) {
-+                printk(KERN_WARNING "layer7: num_packets can't be < 1.\n");
-+                num_packets = 1;
-+        }
++	if(num_packets > 99) {
++		printk(KERN_WARNING "layer7: num_packets can't be > 99.\n");
++		num_packets = 99;
++	} else if(num_packets < 1) {
++		printk(KERN_WARNING "layer7: num_packets can't be < 1.\n");
++		num_packets = 1;
++	}
 +	
-+        return count;
++	return count;
 +}
 +
 +/* register the proc file */
 +static void layer7_init_proc(void)
 +{
-+        struct proc_dir_entry* entry;
-+
-+        /* create the file */
-+        entry = create_proc_entry("layer7_numpackets", 0644, proc_net);
-+
-+        /* set the callback functions */
++	struct proc_dir_entry* entry;
++	entry = create_proc_entry("layer7_numpackets", 0644, proc_net);
 +	entry->read_proc = layer7_read_proc;
 +	entry->write_proc = layer7_write_proc;
 +}
 +
 +static void layer7_cleanup_proc(void)
 +{
-+        remove_proc_entry("layer7_numpackets", proc_net);
++	remove_proc_entry("layer7_numpackets", proc_net);
 +}
 +
 +static int __init init(void)
 +{
-+        layer7_init_proc();
++	layer7_init_proc();
 +	return ipt_register_match(&layer7_match);
 +}
 +
@@ -682,9 +697,9 @@ diff -Nurp linux-2.4.26-stock/net/ipv4/netfilter/ipt_layer7.c linux-2.4.26-layer
 +
 +module_init(init);
 +module_exit(fini);
-diff -Nurp linux-2.4.26-stock/net/ipv4/netfilter/regexp/regexp.c linux-2.4.26-layer7-clean/net/ipv4/netfilter/regexp/regexp.c
---- linux-2.4.26-stock/net/ipv4/netfilter/regexp/regexp.c	1969-12-31 18:00:00.000000000 -0600
-+++ linux-2.4.26-layer7-clean/net/ipv4/netfilter/regexp/regexp.c	2004-06-27 19:07:00.000000000 -0500
+diff -Nurp linux-2.4.30/net/ipv4/netfilter/regexp/regexp.c linux-2.4.30-layer7/net/ipv4/netfilter/regexp/regexp.c
+--- linux-2.4.30/net/ipv4/netfilter/regexp/regexp.c	1969-12-31 18:00:00.000000000 -0600
++++ linux-2.4.30-layer7/net/ipv4/netfilter/regexp/regexp.c	2005-05-03 18:37:03.000000000 -0500
 @@ -0,0 +1,1195 @@
 +/*
 + * regcomp and regexec -- regsub and regerror are elsewhere
@@ -1881,10 +1896,10 @@ diff -Nurp linux-2.4.26-stock/net/ipv4/netfilter/regexp/regexp.c linux-2.4.26-la
 +#endif
 +
 +
-diff -Nurp linux-2.4.26-stock/net/ipv4/netfilter/regexp/regexp.h linux-2.4.26-layer7-clean/net/ipv4/netfilter/regexp/regexp.h
---- linux-2.4.26-stock/net/ipv4/netfilter/regexp/regexp.h	1969-12-31 18:00:00.000000000 -0600
-+++ linux-2.4.26-layer7-clean/net/ipv4/netfilter/regexp/regexp.h	2004-06-27 19:07:00.000000000 -0500
-@@ -0,0 +1,27 @@
+diff -Nurp linux-2.4.30/net/ipv4/netfilter/regexp/regexp.h linux-2.4.30-layer7/net/ipv4/netfilter/regexp/regexp.h
+--- linux-2.4.30/net/ipv4/netfilter/regexp/regexp.h	1969-12-31 18:00:00.000000000 -0600
++++ linux-2.4.30-layer7/net/ipv4/netfilter/regexp/regexp.h	2005-05-03 18:37:03.000000000 -0500
+@@ -0,0 +1,40 @@
 +/*
 + * Definitions etc. for regexp(3) routines.
 + *
@@ -1894,6 +1909,19 @@ diff -Nurp linux-2.4.26-stock/net/ipv4/netfilter/regexp/regexp.h linux-2.4.26-la
 +
 +#ifndef REGEXP_H
 +#define REGEXP_H
++
++/* 
++http://www.opensource.apple.com/darwinsource/10.3/expect-1/expect/expect.h , 
++which contains a version of this library, says:
++
++ *
++ * NSUBEXP must be at least 10, and no greater than 117 or the parser
++ * will not work properly.
++ *
++
++However, it looks rather like this library is limited to 10.  If you think
++otherwise, let us know.
++*/
 +
 +#define NSUBEXP  10
 +typedef struct regexp {
@@ -1912,18 +1940,18 @@ diff -Nurp linux-2.4.26-stock/net/ipv4/netfilter/regexp/regexp.h linux-2.4.26-la
 +void regerror(char *s);
 +
 +#endif
-diff -Nurp linux-2.4.26-stock/net/ipv4/netfilter/regexp/regmagic.h linux-2.4.26-layer7-clean/net/ipv4/netfilter/regexp/regmagic.h
---- linux-2.4.26-stock/net/ipv4/netfilter/regexp/regmagic.h	1969-12-31 18:00:00.000000000 -0600
-+++ linux-2.4.26-layer7-clean/net/ipv4/netfilter/regexp/regmagic.h	2004-06-27 19:07:00.000000000 -0500
+diff -Nurp linux-2.4.30/net/ipv4/netfilter/regexp/regmagic.h linux-2.4.30-layer7/net/ipv4/netfilter/regexp/regmagic.h
+--- linux-2.4.30/net/ipv4/netfilter/regexp/regmagic.h	1969-12-31 18:00:00.000000000 -0600
++++ linux-2.4.30-layer7/net/ipv4/netfilter/regexp/regmagic.h	2005-05-03 18:37:03.000000000 -0500
 @@ -0,0 +1,5 @@
 +/*
 + * The first byte of the regexp internal "program" is actually this magic
 + * number; the start node begins in the second byte.
 + */
 +#define	MAGIC	0234
-diff -Nurp linux-2.4.26-stock/net/ipv4/netfilter/regexp/regsub.c linux-2.4.26-layer7-clean/net/ipv4/netfilter/regexp/regsub.c
---- linux-2.4.26-stock/net/ipv4/netfilter/regexp/regsub.c	1969-12-31 18:00:00.000000000 -0600
-+++ linux-2.4.26-layer7-clean/net/ipv4/netfilter/regexp/regsub.c	2004-06-27 19:07:00.000000000 -0500
+diff -Nurp linux-2.4.30/net/ipv4/netfilter/regexp/regsub.c linux-2.4.30-layer7/net/ipv4/netfilter/regexp/regsub.c
+--- linux-2.4.30/net/ipv4/netfilter/regexp/regsub.c	1969-12-31 18:00:00.000000000 -0600
++++ linux-2.4.30-layer7/net/ipv4/netfilter/regexp/regsub.c	2005-05-03 18:37:03.000000000 -0500
 @@ -0,0 +1,95 @@
 +/*
 + * regsub
