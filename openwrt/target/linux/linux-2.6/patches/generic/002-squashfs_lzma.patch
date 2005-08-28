@@ -780,7 +780,7 @@ diff -Nur linux-2.6.12.5-brcm-squashfs/fs/squashfs/Makefile linux-2.6.12.5-brcm-
 +squashfs-objs := inode.o LzmaDecode.o
 diff -Nur linux-2.6.12.5-brcm-squashfs/fs/squashfs/inode.c linux-2.6.12.5-brcm-squashfs-lzma/fs/squashfs/inode.c
 --- linux-2.6.12.5-brcm-squashfs/fs/squashfs/inode.c	2005-08-28 23:44:05.045246000 +0200
-+++ linux-2.6.12.5-brcm-squashfs-lzma/fs/squashfs/inode.c	2005-08-29 00:05:51.534629648 +0200
++++ linux-2.6.12.5-brcm-squashfs-lzma/fs/squashfs/inode.c	2005-08-29 00:19:48.473476904 +0200
 @@ -3,6 +3,9 @@
   *
   * Copyright (c) 2002, 2003, 2004, 2005 Phillip Lougher <phillip@lougher.demon.co.uk>
@@ -859,7 +859,7 @@ diff -Nur linux-2.6.12.5-brcm-squashfs/fs/squashfs/inode.c linux-2.6.12.5-brcm-s
  		up(&read_data_mutex);
  	}
  
-@@ -1725,12 +1759,13 @@
+@@ -1725,14 +1759,17 @@
  
  	printk(KERN_INFO "Squashfs 2.2 (released 2005/07/03) (C) 2002-2005 Phillip Lougher\n");
  
@@ -872,9 +872,13 @@ diff -Nur linux-2.6.12.5-brcm-squashfs/fs/squashfs/inode.c linux-2.6.12.5-brcm-s
 -
 +#endif
  	if((err = register_filesystem(&squashfs_fs_type))) {
++#ifndef SQUASHFS_LZMA
  		vfree(stream.workspace);
++#endif
  		destroy_inodecache();
-@@ -1742,7 +1777,9 @@
+ 	}
+ 
+@@ -1742,7 +1779,9 @@
  
  static void __exit exit_squashfs_fs(void)
  {
