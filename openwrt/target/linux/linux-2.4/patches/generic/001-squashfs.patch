@@ -1,18 +1,25 @@
-diff --new-file -ur linux-2.4.28/fs/Config.in linux-2.4.28-squashfs2.1-r2/fs/Config.in
---- linux-2.4.28/fs/Config.in	2004-11-17 11:54:21.000000000 +0000
-+++ linux-2.4.28-squashfs2.1-r2/fs/Config.in	2004-12-02 02:14:05.000000000 +0000
-@@ -51,6 +51,7 @@
+diff --new-file -urp linux-2.4.31/fs/Config.in linux-2.4.31-squashfs2.2/fs/Config.in
+--- linux-2.4.31/fs/Config.in	2004-11-17 11:54:21.000000000 +0000
++++ linux-2.4.31-squashfs2.2/fs/Config.in	2005-07-04 02:28:51.000000000 +0100
+@@ -51,6 +51,14 @@ if [ "$CONFIG_JFFS2_FS" = "y" -o "$CONFI
     int 'JFFS2 debugging verbosity (0 = quiet, 2 = noisy)' CONFIG_JFFS2_FS_DEBUG 0
  fi
  tristate 'Compressed ROM file system support' CONFIG_CRAMFS
 +tristate 'Squashed file system support' CONFIG_SQUASHFS
++if [ "$CONFIG_SQUASHFS" = "y" -o "$CONFIG_SQUASHFS" = "m" ] ; then
++bool 'Additional options for memory constrained systems ' CONFIG_SQUASHFS_EMBEDDED
++fi
++if [ "$CONFIG_SQUASHFS_EMBEDDED" = "y" ] ; then
++int 'Number of fragments cached' CONFIG_SQUASHFS_FRAGMENT_CACHE_SIZE 3
++bool 'Use Vmalloc rather than Kmalloc'  CONFIG_SQUASHFS_VMALLOC
++fi
  bool 'Virtual memory file system support (former shm fs)' CONFIG_TMPFS
  define_bool CONFIG_RAMFS y
  
-diff --new-file -ur linux-2.4.28/fs/Makefile linux-2.4.28-squashfs2.1-r2/fs/Makefile
---- linux-2.4.28/fs/Makefile	2004-02-18 13:36:31.000000000 +0000
-+++ linux-2.4.28-squashfs2.1-r2/fs/Makefile	2004-12-02 02:14:05.000000000 +0000
-@@ -65,6 +65,7 @@
+diff --new-file -urp linux-2.4.31/fs/Makefile linux-2.4.31-squashfs2.2/fs/Makefile
+--- linux-2.4.31/fs/Makefile	2004-02-18 13:36:31.000000000 +0000
++++ linux-2.4.31-squashfs2.2/fs/Makefile	2005-07-04 02:28:51.000000000 +0100
+@@ -65,6 +65,7 @@ subdir-$(CONFIG_REISERFS_FS)	+= reiserfs
  subdir-$(CONFIG_DEVPTS_FS)	+= devpts
  subdir-$(CONFIG_SUN_OPENPROMFS)	+= openpromfs
  subdir-$(CONFIG_BEFS_FS)	+= befs
@@ -20,14 +27,14 @@ diff --new-file -ur linux-2.4.28/fs/Makefile linux-2.4.28-squashfs2.1-r2/fs/Make
  subdir-$(CONFIG_JFS_FS)		+= jfs
  subdir-$(CONFIG_XFS_FS)		+= xfs
  
-diff --new-file -ur linux-2.4.28/fs/squashfs/inode.c linux-2.4.28-squashfs2.1-r2/fs/squashfs/inode.c
---- linux-2.4.28/fs/squashfs/inode.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.4.28-squashfs2.1-r2/fs/squashfs/inode.c	2004-12-15 10:13:06.000000000 +0000
-@@ -0,0 +1,1677 @@
+diff --new-file -urp linux-2.4.31/fs/squashfs/inode.c linux-2.4.31-squashfs2.2/fs/squashfs/inode.c
+--- linux-2.4.31/fs/squashfs/inode.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.31-squashfs2.2/fs/squashfs/inode.c	2005-07-04 02:28:51.000000000 +0100
+@@ -0,0 +1,1695 @@
 +/*
 + * Squashfs - a compressed read only filesystem for Linux
 + *
-+ * Copyright (c) 2002, 2003, 2004 Phillip Lougher <plougher@users.sourceforge.net>
++ * Copyright (c) 2002, 2003, 2004, 2005 Phillip Lougher <phillip@lougher.demon.co.uk>
 + *
 + * This program is free software; you can redistribute it and/or
 + * modify it under the terms of the GNU General Public License
@@ -144,56 +151,70 @@ diff --new-file -ur linux-2.4.28/fs/squashfs/inode.c linux-2.4.28-squashfs2.1-r2
 +};
 +
 +
-+static struct buffer_head *get_block_length(struct super_block *s, int *cur_index, int *offset, int *c_byte)
++static struct buffer_head *get_block_length(struct super_block *s,
++				int *cur_index, int *offset, int *c_byte)
 +{
-+	squashfs_sb_info *msBlk = &s->u.squashfs_sb;
++	squashfs_sb_info *msblk = &s->u.squashfs_sb;
 +	unsigned short temp;
 +	struct buffer_head *bh;
 +
-+	if(!(bh = sb_bread(s, *cur_index)))
-+		return NULL;
++	if (!(bh = sb_bread(s, *cur_index)))
++		goto out;
 +
-+	if(msBlk->devblksize - *offset == 1) {
-+		if(msBlk->swap)
-+			((unsigned char *) &temp)[1] = *((unsigned char *) (bh->b_data + *offset));
++	if (msblk->devblksize - *offset == 1) {
++		if (msblk->swap)
++			((unsigned char *) &temp)[1] = *((unsigned char *)
++				(bh->b_data + *offset));
 +		else
-+			((unsigned char *) &temp)[0] = *((unsigned char *) (bh->b_data + *offset));
++			((unsigned char *) &temp)[0] = *((unsigned char *)
++				(bh->b_data + *offset));
 +		brelse(bh);
-+		if(!(bh = sb_bread(s, ++(*cur_index))))
-+			return NULL;
-+		if(msBlk->swap)
-+			((unsigned char *) &temp)[0] = *((unsigned char *) bh->b_data); 
++		if (!(bh = sb_bread(s, ++(*cur_index))))
++			goto out;
++		if (msblk->swap)
++			((unsigned char *) &temp)[0] = *((unsigned char *)
++				bh->b_data); 
 +		else
-+			((unsigned char *) &temp)[1] = *((unsigned char *) bh->b_data); 
++			((unsigned char *) &temp)[1] = *((unsigned char *)
++				bh->b_data); 
 +		*c_byte = temp;
 +		*offset = 1;
-+	}
-+	else {
-+		if(msBlk->swap) {
-+			unsigned short temp;
-+			((unsigned char *) &temp)[1] = *((unsigned char *) (bh->b_data + *offset));
-+			((unsigned char *) &temp)[0] = *((unsigned char *) (bh->b_data + *offset + 1)); 
-+			*c_byte = temp;
-+		} else
-+			*c_byte = *((unsigned short *) (bh->b_data + *offset));
++	} else {
++		if (msblk->swap) {
++			((unsigned char *) &temp)[1] = *((unsigned char *)
++				(bh->b_data + *offset));
++			((unsigned char *) &temp)[0] = *((unsigned char *)
++				(bh->b_data + *offset + 1)); 
++		} else {
++			((unsigned char *) &temp)[0] = *((unsigned char *)
++				(bh->b_data + *offset));
++			((unsigned char *) &temp)[1] = *((unsigned char *)
++				(bh->b_data + *offset + 1)); 
++		}
++		*c_byte = temp;
 +		*offset += 2;
 +	}
-+	if(SQUASHFS_CHECK_DATA(msBlk->sBlk.flags)) {
-+		if(*offset == msBlk->devblksize) {
-+			brelse(bh);
-+			if(!(bh = sb_bread(s, ++(*cur_index))))
-+				return NULL;
-+			offset = 0;
-+		}
-+		if(*((unsigned char *) (bh->b_data + *offset)) != SQUASHFS_MARKER_BYTE) {
-+			ERROR("Metadata block marker corrupt @ %x\n", *cur_index);
-+			brelse(bh);
-+			return NULL;
-+		}
-+		*offset ++;
-+	}
 +
++	if (SQUASHFS_CHECK_DATA(msblk->sBlk.flags)) {
++		if (*offset == msblk->devblksize) {
++			brelse(bh);
++			if (!(bh = sb_bread(s, ++(*cur_index))))
++				goto out;
++			*offset = 0;
++		}
++		if (*((unsigned char *) (bh->b_data + *offset)) !=
++						SQUASHFS_MARKER_BYTE) {
++			ERROR("Metadata block marker corrupt @ %x\n",
++						*cur_index);
++			brelse(bh);
++			goto out;
++		}
++		(*offset)++;
++	}
 +	return bh;
++
++out:
++	return NULL;
 +}
 +
 +
@@ -250,6 +271,8 @@ diff --new-file -ur linux-2.4.28/fs/squashfs/inode.c linux-2.4.28-squashfs2.1-r2
 +	for(bytes = 0, k = 0; k < b; k++) {
 +		avail_bytes = (c_byte - bytes) > (msBlk->devblksize - offset) ? msBlk->devblksize - offset : c_byte - bytes;
 +		wait_on_buffer(bh[k]);
++		if (!buffer_uptodate(bh[k]))
++			goto block_release;
 +		memcpy(c_buffer + bytes, bh[k]->b_data + offset, avail_bytes);
 +		bytes += avail_bytes;
 +		offset = 0;
@@ -288,6 +311,8 @@ diff --new-file -ur linux-2.4.28/fs/squashfs/inode.c linux-2.4.28-squashfs2.1-r2
 +	ERROR("sb_bread failed reading block 0x%x\n", cur_index);
 +	return 0;
 +}
++
++
 +static int squashfs_get_cached_block(struct super_block *s, char *buffer,
 +		unsigned int block, unsigned int offset, int length,
 +		unsigned int *next_block, unsigned int *next_offset)
@@ -427,7 +452,7 @@ diff --new-file -ur linux-2.4.28/fs/squashfs/inode.c linux-2.4.28-squashfs2.1-r2
 +			
 +			if(msBlk->fragment[i].data == NULL)
 +				if(!(msBlk->fragment[i].data = (unsigned char *)
-+							kmalloc(SQUASHFS_FILE_MAX_SIZE, GFP_KERNEL))) {
++							SQUASHFS_ALLOC(SQUASHFS_FILE_MAX_SIZE))) {
 +					ERROR("Failed to allocate fragment cache block\n");
 +					up(&msBlk->fragment_mutex);
 +					return NULL;
@@ -1661,7 +1686,7 @@ diff --new-file -ur linux-2.4.28/fs/squashfs/inode.c linux-2.4.28-squashfs2.1-r2
 +	if(sbi->fragment) {
 +		for(i = 0; i < SQUASHFS_CACHED_FRAGMENTS; i++) 
 +			if(sbi->fragment[i].data != NULL)
-+				kfree(sbi->fragment[i].data);
++				SQUASHFS_FREE(sbi->fragment[i].data);
 +		kfree(sbi->fragment);
 +	}
 +	if(sbi->fragment_index) kfree(sbi->fragment_index);
@@ -1677,7 +1702,7 @@ diff --new-file -ur linux-2.4.28/fs/squashfs/inode.c linux-2.4.28-squashfs2.1-r2
 +static int __init init_squashfs_fs(void)
 +{
 +
-+	printk(KERN_INFO "Squashfs 2.1-r2 (released 2004/12/15) (C) 2002-2004 Phillip Lougher\n");
++	printk(KERN_INFO "Squashfs 2.2 (released 2005/07/03) (C) 2002-2004, 2005 Phillip Lougher\n");
 +
 +	if(!(stream.workspace = (char *) vmalloc(zlib_inflate_workspacesize()))) {
 +		ERROR("Failed to allocate zlib workspace\n");
@@ -1699,11 +1724,11 @@ diff --new-file -ur linux-2.4.28/fs/squashfs/inode.c linux-2.4.28-squashfs2.1-r2
 +module_init(init_squashfs_fs);
 +module_exit(exit_squashfs_fs);
 +MODULE_DESCRIPTION("squashfs, a compressed read-only filesystem");
-+MODULE_AUTHOR("Phillip Lougher <plougher@users.sourceforge.net>");
++MODULE_AUTHOR("Phillip Lougher <phillip@lougher.demon.co.uk>");
 +MODULE_LICENSE("GPL");
-diff --new-file -ur linux-2.4.28/fs/squashfs/Makefile linux-2.4.28-squashfs2.1-r2/fs/squashfs/Makefile
---- linux-2.4.28/fs/squashfs/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.4.28-squashfs2.1-r2/fs/squashfs/Makefile	2004-12-02 02:14:05.000000000 +0000
+diff --new-file -urp linux-2.4.31/fs/squashfs/Makefile linux-2.4.31-squashfs2.2/fs/squashfs/Makefile
+--- linux-2.4.31/fs/squashfs/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.31-squashfs2.2/fs/squashfs/Makefile	2005-07-04 02:28:51.000000000 +0100
 @@ -0,0 +1,11 @@
 +#
 +# Makefile for the linux squashfs routines.
@@ -1716,10 +1741,10 @@ diff --new-file -ur linux-2.4.28/fs/squashfs/Makefile linux-2.4.28-squashfs2.1-r
 +obj-m := $(O_TARGET)
 +
 +include $(TOPDIR)/Rules.make
-diff --new-file -ur linux-2.4.28/include/linux/fs.h linux-2.4.28-squashfs2.1-r2/include/linux/fs.h
---- linux-2.4.28/include/linux/fs.h	2004-11-17 11:54:22.000000000 +0000
-+++ linux-2.4.28-squashfs2.1-r2/include/linux/fs.h	2004-12-02 02:14:05.000000000 +0000
-@@ -324,6 +324,7 @@
+diff --new-file -urp linux-2.4.31/include/linux/fs.h linux-2.4.31-squashfs2.2/include/linux/fs.h
+--- linux-2.4.31/include/linux/fs.h	2005-04-04 02:42:20.000000000 +0100
++++ linux-2.4.31-squashfs2.2/include/linux/fs.h	2005-07-04 02:28:51.000000000 +0100
+@@ -324,6 +324,7 @@ extern void set_bh_page(struct buffer_he
  #include <linux/usbdev_fs_i.h>
  #include <linux/jffs2_fs_i.h>
  #include <linux/cramfs_fs_sb.h>
@@ -1727,7 +1752,7 @@ diff --new-file -ur linux-2.4.28/include/linux/fs.h linux-2.4.28-squashfs2.1-r2/
  
  /*
   * Attribute flags.  These should be or-ed together to figure out what
-@@ -519,6 +520,7 @@
+@@ -519,6 +520,7 @@ struct inode {
  		struct socket			socket_i;
  		struct usbdev_inode_info        usbdev_i;
  		struct jffs2_inode_info		jffs2_i;
@@ -1735,7 +1760,7 @@ diff --new-file -ur linux-2.4.28/include/linux/fs.h linux-2.4.28-squashfs2.1-r2/
  		void				*generic_ip;
  	} u;
  };
-@@ -733,6 +735,7 @@
+@@ -734,6 +736,7 @@ struct nameidata {
  #include <linux/usbdev_fs_sb.h>
  #include <linux/cramfs_fs_sb.h>
  #include <linux/jffs2_fs_sb.h>
@@ -1743,7 +1768,7 @@ diff --new-file -ur linux-2.4.28/include/linux/fs.h linux-2.4.28-squashfs2.1-r2/
  
  extern struct list_head super_blocks;
  extern spinlock_t sb_lock;
-@@ -792,6 +795,7 @@
+@@ -793,6 +796,7 @@ struct super_block {
  		struct usbdev_sb_info   usbdevfs_sb;
  		struct jffs2_sb_info	jffs2_sb;
  		struct cramfs_sb_info	cramfs_sb;
@@ -1751,16 +1776,16 @@ diff --new-file -ur linux-2.4.28/include/linux/fs.h linux-2.4.28-squashfs2.1-r2/
  		void			*generic_sbp;
  	} u;
  	/*
-diff --new-file -ur linux-2.4.28/include/linux/squashfs_fs.h linux-2.4.28-squashfs2.1-r2/include/linux/squashfs_fs.h
---- linux-2.4.28/include/linux/squashfs_fs.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.4.28-squashfs2.1-r2/include/linux/squashfs_fs.h	2004-12-02 02:52:36.000000000 +0000
-@@ -0,0 +1,512 @@
+diff --new-file -urp linux-2.4.31/include/linux/squashfs_fs.h linux-2.4.31-squashfs2.2/include/linux/squashfs_fs.h
+--- linux-2.4.31/include/linux/squashfs_fs.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.31-squashfs2.2/include/linux/squashfs_fs.h	2005-07-04 02:28:51.000000000 +0100
+@@ -0,0 +1,523 @@
 +#ifndef SQUASHFS_FS
 +#define SQUASHFS_FS
 +/*
 + * Squashfs
 + *
-+ * Copyright (c) 2002, 2003, 2004 Phillip Lougher <plougher@users.sourceforge.net>
++ * Copyright (c) 2002, 2003, 2004, 2005 Phillip Lougher <phillip@lougher.demon.co.uk>
 + *
 + * This program is free software; you can redistribute it and/or
 + * modify it under the terms of the GNU General Public License
@@ -1779,6 +1804,18 @@ diff --new-file -ur linux-2.4.28/include/linux/squashfs_fs.h linux-2.4.28-squash
 + * squashfs_fs.h
 + */
 +
++#ifdef	CONFIG_SQUASHFS_VMALLOC
++#define SQUASHFS_ALLOC(a)		vmalloc(a)
++#define SQUASHFS_FREE(a)		vfree(a)
++#else
++#define SQUASHFS_ALLOC(a)		kmalloc(a, GFP_KERNEL)
++#define SQUASHFS_FREE(a)		kfree(a)
++#endif
++#ifdef CONFIG_SQUASHFS_FRAGMENT_CACHE_SIZE
++#define SQUASHFS_CACHED_FRAGMENTS	CONFIG_SQUASHFS_FRAGMENT_CACHE_SIZE	
++#else
++#define SQUASHFS_CACHED_FRAGMENTS	3
++#endif
 +#define SQUASHFS_MAJOR			2
 +#define SQUASHFS_MINOR			1
 +#define SQUASHFS_MAGIC			0x73717368
@@ -1873,7 +1910,6 @@ diff --new-file -ur linux-2.4.28/include/linux/squashfs_fs.h linux-2.4.28-squash
 +#define SQUASHFS_FRAGMENT_INDEX_OFFSET(A)	(SQUASHFS_FRAGMENT_BYTES(A) % SQUASHFS_METADATA_SIZE)
 +#define SQUASHFS_FRAGMENT_INDEXES(A)	((SQUASHFS_FRAGMENT_BYTES(A) + SQUASHFS_METADATA_SIZE - 1) / SQUASHFS_METADATA_SIZE)
 +#define SQUASHFS_FRAGMENT_INDEX_BYTES(A)	(SQUASHFS_FRAGMENT_INDEXES(A) * sizeof(squashfs_fragment_index))
-+#define SQUASHFS_CACHED_FRAGMENTS	3
 +
 +/* cached data constants for filesystem */
 +#define SQUASHFS_CACHED_BLKS		8
@@ -2267,16 +2303,16 @@ diff --new-file -ur linux-2.4.28/include/linux/squashfs_fs.h linux-2.4.28-squash
 +#define SQUASHFS_MEMSET(s, d, n)	memset(s, 0, n);
 +#endif
 +#endif
-diff --new-file -ur linux-2.4.28/include/linux/squashfs_fs_i.h linux-2.4.28-squashfs2.1-r2/include/linux/squashfs_fs_i.h
---- linux-2.4.28/include/linux/squashfs_fs_i.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.4.28-squashfs2.1-r2/include/linux/squashfs_fs_i.h	2004-12-15 10:13:06.000000000 +0000
+diff --new-file -urp linux-2.4.31/include/linux/squashfs_fs_i.h linux-2.4.31-squashfs2.2/include/linux/squashfs_fs_i.h
+--- linux-2.4.31/include/linux/squashfs_fs_i.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.31-squashfs2.2/include/linux/squashfs_fs_i.h	2005-07-04 02:28:51.000000000 +0100
 @@ -0,0 +1,42 @@
 +#ifndef SQUASHFS_FS_I
 +#define SQUASHFS_FS_I
 +/*
 + * Squashfs
 + *
-+ * Copyright (c) 2002, 2003, 2004 Phillip Lougher <plougher@users.sourceforge.net>
++ * Copyright (c) 2002, 2003, 2004, 2005 Phillip Lougher <phillip@lougher.demon.co.uk>
 + *
 + * This program is free software; you can redistribute it and/or
 + * modify it under the terms of the GNU General Public License
@@ -2313,16 +2349,16 @@ diff --new-file -ur linux-2.4.28/include/linux/squashfs_fs_i.h linux-2.4.28-squa
 +	} u;
 +	} squashfs_inode_info;
 +#endif
-diff --new-file -ur linux-2.4.28/include/linux/squashfs_fs_sb.h linux-2.4.28-squashfs2.1-r2/include/linux/squashfs_fs_sb.h
---- linux-2.4.28/include/linux/squashfs_fs_sb.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.4.28-squashfs2.1-r2/include/linux/squashfs_fs_sb.h	2004-12-02 02:52:36.000000000 +0000
+diff --new-file -urp linux-2.4.31/include/linux/squashfs_fs_sb.h linux-2.4.31-squashfs2.2/include/linux/squashfs_fs_sb.h
+--- linux-2.4.31/include/linux/squashfs_fs_sb.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.31-squashfs2.2/include/linux/squashfs_fs_sb.h	2005-07-04 02:28:51.000000000 +0100
 @@ -0,0 +1,65 @@
 +#ifndef SQUASHFS_FS_SB
 +#define SQUASHFS_FS_SB
 +/*
 + * Squashfs
 + *
-+ * Copyright (c) 2002, 2003, 2004 Phillip Lougher <plougher@users.sourceforge.net>
++ * Copyright (c) 2002, 2003, 2004, 2005 Phillip Lougher <phillip@lougher.demon.co.uk>
 + *
 + * This program is free software; you can redistribute it and/or
 + * modify it under the terms of the GNU General Public License
@@ -2382,9 +2418,9 @@ diff --new-file -ur linux-2.4.28/include/linux/squashfs_fs_sb.h linux-2.4.28-squ
 +					char *block_list, unsigned short **block_p, unsigned int *bsize);
 +	} squashfs_sb_info;
 +#endif
-diff --new-file -ur linux-2.4.28/init/do_mounts.c linux-2.4.28-squashfs2.1-r2/init/do_mounts.c
---- linux-2.4.28/init/do_mounts.c	2003-11-28 18:26:21.000000000 +0000
-+++ linux-2.4.28-squashfs2.1-r2/init/do_mounts.c	2004-12-02 02:14:06.000000000 +0000
+diff --new-file -urp linux-2.4.31/init/do_mounts.c linux-2.4.31-squashfs2.2/init/do_mounts.c
+--- linux-2.4.31/init/do_mounts.c	2003-11-28 18:26:21.000000000 +0000
++++ linux-2.4.31-squashfs2.2/init/do_mounts.c	2005-07-04 02:28:51.000000000 +0100
 @@ -15,6 +15,7 @@
  #include <linux/minix_fs.h>
  #include <linux/ext2_fs.h>
@@ -2393,7 +2429,7 @@ diff --new-file -ur linux-2.4.28/init/do_mounts.c linux-2.4.28-squashfs2.1-r2/in
  #include <linux/cramfs_fs.h>
  
  #define BUILD_CRAMDISK
-@@ -476,6 +477,7 @@
+@@ -476,6 +477,7 @@ static int __init crd_load(int in_fd, in
   * 	minix
   * 	ext2
   *	romfs
@@ -2401,7 +2437,7 @@ diff --new-file -ur linux-2.4.28/init/do_mounts.c linux-2.4.28-squashfs2.1-r2/in
   *	cramfs
   * 	gzip
   */
-@@ -486,6 +488,7 @@
+@@ -486,6 +488,7 @@ identify_ramdisk_image(int fd, int start
  	struct minix_super_block *minixsb;
  	struct ext2_super_block *ext2sb;
  	struct romfs_super_block *romfsb;
@@ -2409,7 +2445,7 @@ diff --new-file -ur linux-2.4.28/init/do_mounts.c linux-2.4.28-squashfs2.1-r2/in
  	struct cramfs_super *cramfsb;
  	int nblocks = -1;
  	unsigned char *buf;
-@@ -497,6 +500,7 @@
+@@ -497,6 +500,7 @@ identify_ramdisk_image(int fd, int start
  	minixsb = (struct minix_super_block *) buf;
  	ext2sb = (struct ext2_super_block *) buf;
  	romfsb = (struct romfs_super_block *) buf;
@@ -2417,7 +2453,7 @@ diff --new-file -ur linux-2.4.28/init/do_mounts.c linux-2.4.28-squashfs2.1-r2/in
  	cramfsb = (struct cramfs_super *) buf;
  	memset(buf, 0xe5, size);
  
-@@ -535,6 +539,15 @@
+@@ -535,6 +539,15 @@ identify_ramdisk_image(int fd, int start
  		goto done;
  	}
  
@@ -2433,10 +2469,10 @@ diff --new-file -ur linux-2.4.28/init/do_mounts.c linux-2.4.28-squashfs2.1-r2/in
  	/*
  	 * Read block 1 to test for minix and ext2 superblock
  	 */
-diff --new-file -ur linux-2.4.28/lib/Config.in linux-2.4.28-squashfs2.1-r2/lib/Config.in
---- linux-2.4.28/lib/Config.in	2003-11-28 18:26:21.000000000 +0000
-+++ linux-2.4.28-squashfs2.1-r2/lib/Config.in	2004-12-02 02:14:06.000000000 +0000
-@@ -10,6 +10,7 @@
+diff --new-file -urp linux-2.4.31/lib/Config.in linux-2.4.31-squashfs2.2/lib/Config.in
+--- linux-2.4.31/lib/Config.in	2003-11-28 18:26:21.000000000 +0000
++++ linux-2.4.31-squashfs2.2/lib/Config.in	2005-07-04 02:28:51.000000000 +0100
+@@ -10,6 +10,7 @@ tristate 'CRC32 functions' CONFIG_CRC32
  # Do we need the compression support?
  #
  if [ "$CONFIG_CRAMFS" = "y" -o \
@@ -2444,7 +2480,7 @@ diff --new-file -ur linux-2.4.28/lib/Config.in linux-2.4.28-squashfs2.1-r2/lib/C
       "$CONFIG_PPP_DEFLATE" = "y" -o \
       "$CONFIG_CRYPTO_DEFLATE" = "y" -o \
       "$CONFIG_JFFS2_FS" = "y" -o \
-@@ -17,6 +18,7 @@
+@@ -17,6 +18,7 @@ if [ "$CONFIG_CRAMFS" = "y" -o \
     define_tristate CONFIG_ZLIB_INFLATE y
  else
    if [ "$CONFIG_CRAMFS" = "m" -o \
