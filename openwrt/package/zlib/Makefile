@@ -4,7 +4,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=zlib
 PKG_VERSION:=1.2.2
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_MD5SUM:=1b8aab042d40979e456194c468fd72c5
 
 PKG_SOURCE_URL:=@SF/zlib
@@ -21,6 +21,7 @@ $(eval $(call PKG_template,ZLIB,zlib,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 	(cd $(PKG_BUILD_DIR); \
 		$(TARGET_CONFIGURE_OPTS) \
+		LDSHARED="$(TARGET_CC) -shared -Wl,-soname,libz.so.1" \
 		./configure \
 		--prefix=/usr \
 		--shared \
@@ -46,16 +47,17 @@ $(IPKG_ZLIB):
 
 $(STAGING_DIR)/usr/lib/libz.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/z{conf,lib}.h $(STAGING_DIR)/usr/include
+	cp -fpR $(PKG_INSTALL_DIR)/usr/include/*.h $(STAGING_DIR)/usr/include
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libz.{a,so*} $(STAGING_DIR)/usr/lib
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/* $(STAGING_DIR)/usr/lib
 	touch $(STAGING_DIR)/usr/lib/libz.so
 	
 install-dev: $(STAGING_DIR)/usr/lib/libz.so
 
 uninstall-dev:
-	rm -rf $(STAGING_DIR)/usr/include/z{conf,lib}.h
-	rm -rf $(STAGING_DIR)/usr/lib/libz.{a,so*}
+	rm -rf $(STAGING_DIR)/usr/include/zconf.h
+	rm -rf $(STAGING_DIR)/usr/include/zlib.h
+	rm -rf $(STAGING_DIR)/usr/lib/libz.*
 
 compile: install-dev
 clean: uninstall-dev
