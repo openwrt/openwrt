@@ -27,6 +27,15 @@ endif
 $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx:
 	$(STAGING_DIR)/bin/trx -o $@ $(BUILD_DIR)/loader.gz $(KDIR)/vmlinux.lzma $(TRXALIGN) $(KDIR)/root.$(FS)
 
+ifeq ($(KERNEL),2.6)
+FSNAME:=$(patsubst jffs2-%,jffs2,$(FS))
+
+$(BIN_DIR)/openwrt-wgt634u-2.6-$(FSNAME).bin: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx
+	dd if=$(BUILD_DIR)/loader-0.04/loader.o of=$@ bs=65536 conv=sync
+	cat $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx >> $@
+
+install: $(BIN_DIR)/openwrt-wgt634u-2.6-$(FSNAME).bin
+endif
 
 ifeq ($(KERNEL),2.4)
 FSNAME:=$(patsubst jffs2-%,jffs2,$(FS))
