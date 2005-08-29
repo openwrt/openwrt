@@ -157,6 +157,7 @@ package-$(BR2_PACKAGE_USBUTILS) += usbutils
 package-$(BR2_PACKAGE_VTUN) += vtun
 package-$(BR2_PACKAGE_VSFTPD) += vsftpd
 package-$(BR2_PACKAGE_WIFICONF) += wificonf
+package-$(BR2_PACKAGE_WIVIZ) += wiviz
 package-$(BR2_PACKAGE_WIRELESS_TOOLS) += wireless-tools
 package-$(BR2_PACKAGE_WOL) += wol
 package-$(BR2_PACKAGE_WPA_SUPPLICANT) += wpa_supplicant
