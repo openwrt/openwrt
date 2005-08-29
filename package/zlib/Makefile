@@ -22,6 +22,7 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 	(cd $(PKG_BUILD_DIR); \
 		$(TARGET_CONFIGURE_OPTS) \
 		LDSHARED="$(TARGET_CC) -shared -Wl,-soname,libz.so.1" \
+		CFLAGS="$(TARGET_CFLAGS) $(CFLAGS_LARGEFILE)" \
 		./configure \
 		--prefix=/usr \
 		--shared \
