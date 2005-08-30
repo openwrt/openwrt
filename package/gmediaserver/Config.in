@@ -1,0 +1,15 @@
+config BR2_PACKAGE_GMEDIASERVER
+	prompt "gmediaserver - An UPnP music media server"
+	tristate 
+#	default m if CONFIG_DEVEL
+	default n
+	select BR2_PACKAGE_ID3LIB
+	select BR2_PACKAGE_LIBUPNP
+	help
+	 An UPnP music media server.
+	 
+	 http://www.nongnu.org/gmediaserver/
+	 
+	 Depends: id3lib, libupnp
+	 
+
