@@ -1,0 +1,112 @@
+diff -ruw fuse-2.3.0.org/lib/mount.c fuse-2.3.0/lib/mount.c
+--- fuse-2.3.0.org/lib/mount.c	2005-02-02 12:14:44.000000000 +0100
++++ fuse-2.3.0/lib/mount.c	2005-08-26 09:23:11.000000000 +0200
+@@ -6,6 +6,13 @@
+     See the file COPYING.LIB.
+ */
+ 
++#include <config.h>
++#ifdef HAVE_FEATURES_H
++#include <features.h>
++#endif
++/* Remove this when config.h is updated with HAVE_FEATURES_H */
++#include <features.h>
++
+ #include "fuse.h"
+ #include "fuse_compat.h"
+ 
+@@ -92,10 +99,11 @@
+         return -1;
+     }
+ 
+-#ifndef USE_UCLIBC
+-    pid = fork();
+-#else
++#if defined(__UCLIBC__) && \
++  (!defined(__ARCH_HAS_MMU__) && !defined(__UCLIBC_HAS_MMU__))
+     pid = vfork();
++#else
++    pid = fork();
+ #endif
+     if(pid == -1) {
+         perror("fuse: fork() failed");
+diff -ruw fuse-2.3.0.org/util/fusermount.c fuse-2.3.0/util/fusermount.c
+--- fuse-2.3.0.org/util/fusermount.c	2005-05-17 18:54:17.000000000 +0200
++++ fuse-2.3.0/util/fusermount.c	2005-08-26 09:20:12.000000000 +0200
+@@ -17,6 +17,17 @@
+  */
+ 
+ #include <config.h>
++#ifdef HAVE_FEATURES_H
++#include <features.h>
++#endif
++/* Remove this when config.h is updated with HAVE_FEATURES_H */
++#include <features.h>
++
++#ifdef __UCLIBC__
++/* Most embedded systems with uclibc have read-only root filesystem. Should
++ * replace this into a parameter --disable-mtab instead */
++#define READONLY_MTAB 1
++#endif
+ 
+ #include <stdio.h>
+ #include <stdlib.h>
+@@ -40,7 +51,12 @@
+ #define FUSE_COMMFD_ENV         "_FUSE_COMMFD"
+ 
+ #define FUSE_DEV_OLD "/proc/fs/fuse/dev"
++#ifdef __UCLIBC__
++/* /dev is mounted as devfs in OpenWRT, and device is created here */
++#define FUSE_DEV_NEW "/dev/misc/fuse"
++#else
+ #define FUSE_DEV_NEW "/dev/fuse"
++#endif
+ #define FUSE_VERSION_FILE_OLD "/proc/fs/fuse/version"
+ #define FUSE_CONF "/etc/fuse.conf"
+ #define FUSE_MAJOR 10
+@@ -89,7 +105,7 @@
+     return res;
+ }
+ 
+-#ifndef USE_UCLIBC
++#ifndef READONLY_MTAB
+ /* use a lock file so that multiple fusermount processes don't try and
+    modify the mtab file at once! */
+ static int lock_mtab()
+@@ -701,7 +717,12 @@
+     return fd;
+ }
+ 
++#ifdef __UCLIBC__
++/* /dev is writeable on openwrt distribution */
++#define FUSE_TMP_DIRNAME "/dev/.fuse_devXXXXXX"
++#else
+ #define FUSE_TMP_DIRNAME "/tmp/.fuse_devXXXXXX"
++#endif
+ #define FUSE_TMP_DEVNAME "/fuse"
+ 
+ static int try_open_new_temp(dev_t devnum, char **devp)
+@@ -761,17 +782,19 @@
+         pid_t pid;
+ 
+         fd = try_open_fuse_device(devp);
++	//fprintf(stderr, "open_fuse_device: try_open_fuse_device() ret=%d\n", fd);
+         if (fd >= 0)
+             return fd;
+ 
+-#ifndef USE_UCLIBC
+-        pid = fork();
+-#else
++#if defined(__UCLIBC__) && \
++  (!defined(__ARCH_HAS_MMU__) && !defined(__UCLIBC_HAS_MMU__))
+         pid = vfork();
++#else
++	pid = fork();
+ #endif
+         if (pid == 0) {
+             setuid(0);
+-            execl("/sbin/modprobe", "/sbin/modprobe", "fuse", NULL);
++            execl("/sbin/insmod", "/sbin/insmod", "fuse", NULL);
+             exit(1);
+         }
+         if (pid != -1)
