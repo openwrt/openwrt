@@ -77,6 +77,7 @@ package-$(BR2_PACKAGE_LIBPNG) += libpng
 package-$(BR2_PACKAGE_LIBPTHREAD) += libpthread
 package-$(BR2_PACKAGE_LIBTASN1) += libtasn1
 package-$(BR2_PACKAGE_LIBTOOL) += libtool
+package-$(BR2_PACKAGE_LIBUPNP) += libupnp
 package-$(BR2_PACKAGE_LIBUSB) += libusb
 package-$(BR2_PACKAGE_LIBXML2) += libxml2
 package-$(BR2_PACKAGE_LIBXSLT) += libxslt
