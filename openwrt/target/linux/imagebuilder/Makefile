@@ -40,9 +40,9 @@ build:
 		$(IPKG_KERNEL) install `ls packages/$${package}_*`; \
 	done
 	if [ -d ./files ]; then \
-		cp -fpR ./files/* $(LINUX_BUILD_DIR)/root; \
+		cp -a --remove-destination ./files/* $(LINUX_BUILD_DIR)/root; \
 	fi
 	if [ -d ./files.$(LIST) ]; then \
-		cp -fpR ./files.$(LIST)/* $(LINUX_BUILD_DIR)/root; \
+		cp -a --remove-destination ./files.$(LIST)/* $(LINUX_BUILD_DIR)/root; \
 	fi
 	$(MAKE) -S -C image KERNEL="$(KERNEL)" BOARD="$(BOARD)" BIN_DIR="$(BIN_DIR)/$(LIST)" install
