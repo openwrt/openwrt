@@ -1,5 +1,6 @@
---- fuse-2.2.1-orig/kernel/Makefile.in	2005-01-09 13:07:00.000000000 +0100
-+++ fuse-2.2.1-1/kernel/Makefile.in	2005-04-06 14:48:59.000000000 +0200
+diff -ruw fuse-2.3.0.org/kernel/Makefile.in fuse-2.3.0/kernel/Makefile.in
+--- fuse-2.3.0.org/kernel/Makefile.in	2005-04-21 21:00:39.000000000 +0200
++++ fuse-2.3.0/kernel/Makefile.in	2005-08-26 09:13:41.000000000 +0200
 @@ -31,11 +31,11 @@
  install-y: all
  	$(mkdir_p) $(DESTDIR)$(fusemoduledir)
@@ -20,7 +21,7 @@
  
 -CC = gcc
 -LD = ld
--CFLAGS = -O2 -Wall -Wstrict-prototypes -fno-strict-aliasing -pipe 
+-CFLAGS = -O2 -Wall -Wstrict-prototypes -fno-strict-aliasing -pipe -msoft-float
 -CPPFLAGS = -I@kernelsrc@/include -I. -D__KERNEL__ -DMODULE -D_LOOSE_KERNEL_NAMES -DFUSE_VERSION=\"$(VERSION)\" @KERNELCPPFLAGS@
 -
  fuse_objs = dev.o dir.o file.o inode.o compat/parser.o
