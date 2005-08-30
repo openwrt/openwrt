@@ -1,0 +1,106 @@
+--- gmediaserver-0.7.0/src/main.c.orig	2005-08-29 21:15:01.000000000 +0200
++++ gmediaserver-0.7.0/src/main.c	2005-08-30 12:37:40.000000000 +0200
+@@ -31,8 +31,10 @@
+ #include <stdarg.h>		/* C89 */
+ #include <stdbool.h>		/* Gnulib, C99 */
+ #include <signal.h>		/* ? */
++#ifdef HAVE_ICONV
+ #include <iconv.h>		/* Gnulib, POSIX */
+ #include "iconvme.h"		/* Gnulib */
++#endif
+ #ifdef HAVE_NL_LANGINFO
+ #include <langinfo.h>
+ #endif
+@@ -70,8 +72,10 @@
+ #ifdef HAVE_ID3LIB
+     { "disable-id3", no_argument, NULL, OPT_DISABLE_ID3 },
+ #endif
++#ifdef HAVE_ICONV
+     { "in-charset", required_argument, NULL, OPT_IN_CHARSET },
+     { "device-charset", required_argument, NULL, OPT_DEVICE_CHARSET },
++#endif
+     { "friendly-name", required_argument, NULL, OPT_FRIENDLY_NAME },
+     { "pid-file", required_argument, NULL, OPT_PIDFILE },
+     { "profile", required_argument, NULL, OPT_PROFILE, },
+@@ -89,15 +93,21 @@
+     { NULL, 0, NULL, 0 }
+ };
+ 
++#ifdef HAVE_ICONV
+ iconv_t charset_convert = (iconv_t) -1;
++#endif
+ const char version_etc_copyright[] = "Copyright (C) 2005 Oskar Liljeblad.";
+ 
+ char *
+ convert_string(const char *str)
+ {
++#ifdef HAVE_ICONV
+     if (charset_convert == (iconv_t) -1)
+         return xstrdup(str);
+     return iconv_alloc(charset_convert, str);
++#else
++    return xstrdup(str);
++#endif
+ }
+ 
+ static void
+@@ -139,13 +149,17 @@
+     char *logfilename = NULL;
+     char *timestamp_format = NULL;
+     uint32_t expire_time;
++#ifdef HAVE_ICONV
+     char *in_charset = NULL;
+     char *device_charset = NULL;
++#endif
+ 
+     set_program_name(argv[0]);
+ 
++#ifdef LOCALE
+     if (setlocale(LC_ALL, "") == NULL)
+         warn(_("cannot set locale: %s\n"), errstr);
++#endif
+ #ifdef ENABLE_NLS
+     if (bindtextdomain(PACKAGE, LOCALEDIR) == NULL)
+         warn(_("cannot bind message domain: %s\n"), errstr);
+@@ -173,12 +187,14 @@
+ 	    id3_enabled = false;
+ 	    break;
+ #endif
++#ifdef HAVE_ICONV
+         case OPT_IN_CHARSET:
+             in_charset = optarg;
+             break;
+         case OPT_DEVICE_CHARSET:
+             device_charset = optarg;
+             break;
++#endif
+ 	case OPT_FRIENDLY_NAME:
+ 	    if (optarg[0] == '\0')
+ 		die(_("friendly name cannot be empty\n"));
+@@ -319,6 +335,7 @@
+ 
+     init_logging(logfilename, timestamp_format);
+ 
++#ifdef HAVE_ICONV
+     if (device_charset != NULL) {
+         if (in_charset == NULL) {
+ #ifdef HAVE_NL_LANGINFO
+@@ -335,6 +352,7 @@
+         if (charset_convert == (iconv_t) -1)
+             die(_("cannot create character set convertor\nTry using another value for --in-charset or --device-charset\n"));
+     }
++#endif
+ 
+     /* We could write pid before initiating logging too.
+      */
+@@ -396,8 +414,10 @@
+     if (pidfilename != NULL)
+     	unlink(pidfilename); /* ignore errors */
+ 
++#ifdef HAVE_ICONV
+     if (charset_convert != (iconv_t) -1)
+         iconv_close(charset_convert); /* ignore errors (only EINVAL) */
++#endif
+ 
+     finish_logging(true);
+ 
