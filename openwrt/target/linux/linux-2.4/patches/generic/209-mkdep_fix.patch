@@ -1,0 +1,11 @@
+--- linux.old/Rules.make	2005-08-31 00:37:34.363109288 +0200
++++ linux.dev/Rules.make	2005-08-31 13:59:20.140676296 +0200
+@@ -126,7 +126,7 @@
+ # This make dependencies quickly
+ #
+ fastdep: dummy
+-	$(TOPDIR)/scripts/mkdep $(CFLAGS) $(EXTRA_CFLAGS_nostdinc) -- $(wildcard *.[chS]) > .depend
++	find -name '*.[chS]' | xargs $(TOPDIR)/scripts/mkdep $(CFLAGS) $(EXTRA_CFLAGS_nostdinc) -- > .depend
+ ifdef ALL_SUB_DIRS
+ 	$(MAKE) $(patsubst %,_sfdep_%,$(ALL_SUB_DIRS)) _FASTDEP_ALL_SUB_DIRS="$(ALL_SUB_DIRS)"
+ endif
