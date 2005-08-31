@@ -55,7 +55,7 @@ struct trx_header {
 };
 
 int
-trx_check(const char *trxfile, const char *mtd)
+trx_check(const char *trxfile, const char *mtd, int force)
 {
 	struct mtd_info_user mtdInfo;
 	int trxfd, fd;
@@ -65,33 +65,35 @@ trx_check(const char *trxfile, const char *mtd)
 
 	trxfd = open(trxfile,O_RDONLY);	
 	if(trxfd < 0) {
-		fprintf(stderr, "Could not open trx image: %s\n", trxfile);
+		fprintf(stderr, "Could not open image: %s\n", trxfile);
 		exit(1);
 	}
 
 	if (fstat(trxfd,&trxstat) < 0) {
-		fprintf(stderr, "Could not get trx image file status: %s\n", trxfile);
+		fprintf(stderr, "Could not get image file status: %s\n", trxfile);
 		close(trxfd);
 		exit(1);
 	}
 
-	count = read(trxfd, &trx, sizeof(struct trx_header));
-	if (count < sizeof(struct trx_header)) {
-		fprintf(stderr, "Could not trx header, file too small (%ld bytes)\n", count);
-		close(trxfd);
-		exit(1);
-	}
+	if (force == 0) {
+		count = read(trxfd, &trx, sizeof(struct trx_header));
+		if (count < sizeof(struct trx_header)) {
+			fprintf(stderr, "Could not get trx header, file too small (%ld bytes)\n", count);
+			close(trxfd);
+			exit(1);
+		}
 
-	if (trx.magic != TRX_MAGIC || trx.len < sizeof(struct trx_header)) {
-		fprintf(stderr, "Bad trx header\n");
-		fprintf(stderr, "If this is a firmware in bin format, like some of the\n"
-				"original firmware files are, use following command to convert to trx:\n"
-				"dd if=firmware.bin of=firmware.trx bs=32 skip=1\n");
-		close(trxfd);
-		exit(1);
-	}
+		if (trx.magic != TRX_MAGIC || trx.len < sizeof(struct trx_header)) {
+			fprintf(stderr, "Bad trx header\n");
+			fprintf(stderr, "If this is a firmware in bin format, like some of the\n"
+					"original firmware files are, use following command to convert to trx:\n"
+					"dd if=firmware.bin of=firmware.trx bs=32 skip=1\n");
+			close(trxfd);
+			exit(1);
+		}
 	
-	lseek(trxfd, 0, SEEK_SET);
+		lseek(trxfd, 0, SEEK_SET);
+	}
 
 	/* check if image fits to mtd device */
 
@@ -283,6 +285,7 @@ void usage(void)
 	"	write <imagefile>	write imagefile to device\n"
 	"Following options are available:\n"
 	"	-r			reboot after successful command\n"
+	"	-f			force write without trx checks\n"
 	"	-e <device>		erase <device> before executing the command\n\n"
 	"Example: To write linux.trx to mtd4 labeled as linux and reboot afterwards\n"
 	"         mtd -r write linux.trx linux\n\n");
@@ -291,7 +294,7 @@ void usage(void)
 
 int main (int argc, char **argv)
 {
-	int ch, i, boot, unlock, trxfd;
+	int ch, i, boot, unlock, trxfd, force;
 	char *erase[MAX_ARGS], *device;
 	enum {
 		CMD_ERASE,
@@ -301,9 +304,13 @@ int main (int argc, char **argv)
 	
 	erase[0] = NULL;
 	boot = 0;
+	force = 0;
 
-	while ((ch = getopt(argc, argv, "re:")) != -1)
+	while ((ch = getopt(argc, argv, "fre:")) != -1)
 		switch (ch) {
+			case 'f':
+				force = 1;
+				break;
 			case 'r':
 				boot = 1;
 				break;
@@ -336,7 +343,7 @@ int main (int argc, char **argv)
 		cmd = CMD_WRITE;
 		device = argv[2];
 		/* check trx file before erasing or writing anything */
-		trxfd = trx_check(argv[1], device);
+		trxfd = trx_check(argv[1], device, force);
 	} else {
 		usage();
 	}
