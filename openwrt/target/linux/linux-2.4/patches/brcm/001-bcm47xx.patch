@@ -10576,8 +10576,8 @@ diff -urN linux.old/arch/mips/bcm947xx/prom.c linux.dev/arch/mips/bcm947xx/prom.
 +}
 diff -urN linux.old/arch/mips/bcm947xx/sbmips.c linux.dev/arch/mips/bcm947xx/sbmips.c
 --- linux.old/arch/mips/bcm947xx/sbmips.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/sbmips.c	2005-08-30 14:47:52.836470168 +0200
-@@ -0,0 +1,1040 @@
++++ linux.dev/arch/mips/bcm947xx/sbmips.c	2005-09-01 01:30:26.074176728 +0200
+@@ -0,0 +1,1033 @@
 +/*
 + * BCM47XX Sonics SiliconBackplane MIPS core routines
 + *
@@ -10690,13 +10690,6 @@ diff -urN linux.old/arch/mips/bcm947xx/sbmips.c linux.dev/arch/mips/bcm947xx/sbm
 +				div = 1;
 +				/* Set the override bit so we don't divide it */
 +				W_REG(&cc->corecontrol, CC_UARTCLKO);
-+			} else if ((rev >= 3) && (pll == PLL_TYPE6)) {
-+				/* Fixed ALP clock */
-+				baud_base = 20000000;
-+				div = 2;
-+				/* Set the override bit so we don't divide it */
-+				W_REG(&cc->corecontrol, CC_UARTCLKO);
-+				W_REG(&cc->clkdiv, ((R_REG(&cc->clkdiv) & ~CLKD_UART) | div));
 +			} else if (rev >= 3) {
 +				/* Internal backplane clock */
 +				baud_base = sb_clock(sbh);
@@ -12936,7 +12929,7 @@ diff -urN linux.old/arch/mips/pci/Makefile linux.dev/arch/mips/pci/Makefile
  include $(TOPDIR)/Rules.make
 diff -urN linux.old/drivers/char/serial.c linux.dev/drivers/char/serial.c
 --- linux.old/drivers/char/serial.c	2005-08-26 13:41:41.952594192 +0200
-+++ linux.dev/drivers/char/serial.c	2005-08-26 13:44:34.340387264 +0200
++++ linux.dev/drivers/char/serial.c	2005-09-01 02:33:38.312794792 +0200
 @@ -444,6 +444,10 @@
  		return inb(info->port+1);
  #endif
@@ -12958,6 +12951,30 @@ diff -urN linux.old/drivers/char/serial.c linux.dev/drivers/char/serial.c
  		break;
  	default:
  		outb(value, info->port+offset);
+@@ -1728,7 +1735,7 @@
+ 			/* Special case since 134 is really 134.5 */
+ 			quot = (2*baud_base / 269);
+ 		else if (baud)
+-			quot = baud_base / baud;
++			quot = (baud_base + (baud / 2)) / baud;
+ 	}
+ 	/* If the quotient is zero refuse the change */
+ 	if (!quot && old_termios) {
+@@ -1745,12 +1752,12 @@
+ 				/* Special case since 134 is really 134.5 */
+ 				quot = (2*baud_base / 269);
+ 			else if (baud)
+-				quot = baud_base / baud;
++				quot = (baud_base + (baud / 2)) / baud;
+ 		}
+ 	}
+ 	/* As a last resort, if the quotient is zero, default to 9600 bps */
+ 	if (!quot)
+-		quot = baud_base / 9600;
++		quot = (baud_base + 4800) / 9600;
+ 	/*
+ 	 * Work around a bug in the Oxford Semiconductor 952 rev B
+ 	 * chip which causes it to seriously miscalculate baud rates
 @@ -5996,6 +6003,13 @@
  	 *	Divisor, bytesize and parity
  	 */
@@ -12972,6 +12989,15 @@ diff -urN linux.old/drivers/char/serial.c linux.dev/drivers/char/serial.c
  	if (doflow)
  		state->flags |= ASYNC_CONS_FLOW;
  	info = &async_sercons;
+@@ -6009,7 +6023,7 @@
+ 	info->io_type = state->io_type;
+ 	info->iomem_base = state->iomem_base;
+ 	info->iomem_reg_shift = state->iomem_reg_shift;
+-	quot = state->baud_base / baud;
++	quot = (state->baud_base + (baud / 2)) / baud;
+ 	cval = cflag & (CSIZE | CSTOPB);
+ #if defined(__powerpc__) || defined(__alpha__)
+ 	cval >>= 8;
 diff -urN linux.old/drivers/mtd/maps/Config.in linux.dev/drivers/mtd/maps/Config.in
 --- linux.old/drivers/mtd/maps/Config.in	2005-08-26 13:41:41.963592520 +0200
 +++ linux.dev/drivers/mtd/maps/Config.in	2005-08-26 13:44:34.345386504 +0200
@@ -16457,8 +16483,8 @@ diff -urN linux.old/drivers/net/hnd/linux_osl.c linux.dev/drivers/net/hnd/linux_
 +#endif	/* BINOSL */
 diff -urN linux.old/drivers/net/hnd/sbutils.c linux.dev/drivers/net/hnd/sbutils.c
 --- linux.old/drivers/net/hnd/sbutils.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/net/hnd/sbutils.c	2005-08-30 15:09:39.322854048 +0200
-@@ -0,0 +1,2063 @@
++++ linux.dev/drivers/net/hnd/sbutils.c	2005-09-01 01:33:48.212447040 +0200
+@@ -0,0 +1,2061 @@
 +/*
 + * Misc utility routines for accessing chip-specific features
 + * of the SiliconBackplane-based Broadcom chips.
@@ -16489,8 +16515,6 @@ diff -urN linux.old/drivers/net/hnd/sbutils.c linux.dev/drivers/net/hnd/sbutils.
 +/* debug/trace */
 +#define	SB_ERROR(args)
 +
-+
-+#define CLOCK_BASE_5350        12500000 /* Specific to 5350*/
 +
 +typedef uint32 (*sb_intrsoff_t)(void *intr_arg);
 +typedef void (*sb_intrsrestore_t)(void *intr_arg, uint32 arg);
