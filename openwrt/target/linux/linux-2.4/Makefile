@@ -142,7 +142,7 @@ $(eval $(call KMOD_template,VFAT,vfat,\
 	$(MODULES_DIR)/kernel/fs/vfat/vfat.o \
 	$(MODULES_DIR)/kernel/fs/fat/fat.o \
 ,CONFIG_VFAT_FS,,30,fat vfat))
-ifneq (${shell ls $(MODULES_DIR)/kernel/crypto/*.o},)
+ifneq ($(wildcard $(MODULES_DIR)/kernel/crypto/*.o),)
 CONFIG_CRYPTO:=m
 endif
 $(eval $(call KMOD_template,CRYPTO,crypto,\
@@ -166,7 +166,7 @@ $(eval $(call KMOD_template,TUN,tun,\
 $(eval $(call KMOD_template,GRE,gre,\
 	$(MODULES_DIR)/kernel/net/ipv4/ip_gre.o \
 ,CONFIG_NET_IPGRE))
-ifneq (${shell ls $(MODULES_DIR)/kernel/net/sched/*.o},)
+ifneq ($(wildcard $(MODULES_DIR)/kernel/net/sched/*.o),)
 CONFIG_SCHED:=m
 endif
 $(eval $(call KMOD_template,SCHED,sched,\

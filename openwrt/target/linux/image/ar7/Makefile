@@ -94,7 +94,7 @@ endif
 install: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-kernel.bin $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).bin
 install-ib:
 	mkdir -p $(IB_DIR)/build_$(ARCH)/linux-$(KERNEL)-$(BOARD)
-	cp -dpR $(KDIR)/vmlinux.bin $(IB_DIR)/build_$(ARCH)/linux-$(KERNEL)-$(BOARD)/
+	cp -fpR $(KDIR)/vmlinux.bin $(IB_DIR)/build_$(ARCH)/linux-$(KERNEL)-$(BOARD)/
 	mkdir -p $(IB_DIR)/staging_dir_$(ARCH)
-	cp -dpR $(STAGING_DIR)/bin/addpattern $(IB_DIR)/staging_dir_$(ARCH)/bin/
+	cp -fpR $(STAGING_DIR)/bin/addpattern $(IB_DIR)/staging_dir_$(ARCH)/bin/
 	

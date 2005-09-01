@@ -71,7 +71,7 @@ endif
 install: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx
 install-ib:
 	mkdir -p $(IB_DIR)/staging_dir_$(ARCH)/bin
-	cp -dpR $(STAGING_DIR)/bin/addpattern $(STAGING_DIR)/bin/trx $(STAGING_DIR)/bin/motorola-bin $(IB_DIR)/staging_dir_$(ARCH)/bin
+	cp -fpR $(STAGING_DIR)/bin/addpattern $(STAGING_DIR)/bin/trx $(STAGING_DIR)/bin/motorola-bin $(IB_DIR)/staging_dir_$(ARCH)/bin
 	mkdir -p $(IB_DIR)/build_$(ARCH)/linux-$(KERNEL)-$(BOARD)
-	cp -dpR $(BUILD_DIR)/loader.gz $(IB_DIR)/build_$(ARCH)/
-	cp -dpR $(KDIR)/vmlinux.lzma $(IB_DIR)/build_$(ARCH)/linux-$(KERNEL)-$(BOARD)/
+	cp -fpR $(BUILD_DIR)/loader.gz $(IB_DIR)/build_$(ARCH)/
+	cp -fpR $(KDIR)/vmlinux.lzma $(IB_DIR)/build_$(ARCH)/linux-$(KERNEL)-$(BOARD)/
