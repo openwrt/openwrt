@@ -1,0 +1,24 @@
+diff -ruN lighttpd-1.4.2-old/configure lighttpd-1.4.2-new/configure
+--- lighttpd-1.4.2-old/configure	2005-08-29 14:18:11.000000000 +0200
++++ lighttpd-1.4.2-new/configure	2005-09-01 09:06:29.000000000 +0200
+@@ -23849,7 +23849,7 @@
+ echo "$as_me:$LINENO: result: $WITH_PCRE" >&5
+ echo "${ECHO_T}$WITH_PCRE" >&6
+ 
+-if test "x$cross_compiling" = xno -a "$WITH_PCRE" != "no"; then
++if test "$WITH_PCRE" != "no"; then
+   # Extract the first word of "pcre-config", so it can be a program name with args.
+ set dummy pcre-config; ac_word=$2
+ echo "$as_me:$LINENO: checking for $ac_word" >&5
+diff -ruN lighttpd-1.4.2-old/configure.in lighttpd-1.4.2-new/configure.in
+--- lighttpd-1.4.2-old/configure.in	2005-08-29 14:06:03.000000000 +0200
++++ lighttpd-1.4.2-new/configure.in	2005-09-01 09:05:39.000000000 +0200
+@@ -222,7 +222,7 @@
+     [WITH_PCRE=$withval],[WITH_PCRE=yes])
+ AC_MSG_RESULT([$WITH_PCRE])
+ 
+-if test "x$cross_compiling" = xno -a "$WITH_PCRE" != "no"; then
++if test "$WITH_PCRE" != "no"; then
+   AC_PATH_PROG(PCRECONFIG, pcre-config)
+ 
+   if test x"$PCRECONFIG" != x; then 
