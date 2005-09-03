@@ -96,7 +96,7 @@ $(eval $(call KMOD_template,NFS,nfs,\
 	$(MODULES_DIR)/kernel/net/sunrpc/*.ko \
 ,CONFIG_NFS_FS,,30,sunrpc lockd nfs))
 $(eval $(call KMOD_template,USB,usb-core,\
-	$(MODULES_DIR)/kernel/drivers/usb/usbcore.ko \
+	$(MODULES_DIR)/kernel/drivers/usb/core/usbcore.ko \
 ,CONFIG_USB,,50,usbcore))
 $(eval $(call KMOD_template,USB_UHCI,usb-uhci,\
 	$(MODULES_DIR)/kernel/drivers/usb/host/uhci.ko \
@@ -199,7 +199,7 @@ $(LINUX_KERNEL): $(LINUX_DIR)/vmlinux
 $(LINUX_DIR)/.modules_done: $(LINUX_KERNEL) $(LINUX_IMAGE)
 	rm -rf $(LINUX_BUILD_DIR)/modules
 	$(MAKE) -C $(LINUX_DIR) CROSS_COMPILE=$(TARGET_CROSS) ARCH=$(LINUX_KARCH) PATH=$(TARGET_PATH) modules
-	$(MAKE) -C $(LINUX_DIR) CROSS_COMPILE=$(TARGET_CROSS) DEPMOD=true INSTALL_MOD_PATH=$(LINUX_BUILD_DIR)/modules modules_install
+	$(MAKE) -C $(LINUX_DIR) CROSS_COMPILE=$(TARGET_CROSS) ARCH=$(LINUX_KARCH) PATH=$(TARGET_PATH) DEPMOD=true INSTALL_MOD_PATH=$(LINUX_BUILD_DIR)/modules modules_install
 	touch $(LINUX_DIR)/.modules_done
 
 $(STAGING_DIR)/include/linux/version.h: $(LINUX_DIR)/.configured
