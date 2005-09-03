@@ -1,6 +1,6 @@
 diff -Nur linux-2.6.12.5/arch/mips/Kconfig linux-2.6.12.5-brcm/arch/mips/Kconfig
 --- linux-2.6.12.5/arch/mips/Kconfig	2005-08-15 02:20:18.000000000 +0200
-+++ linux-2.6.12.5-brcm/arch/mips/Kconfig	2005-08-28 16:21:04.700803432 +0200
++++ linux-2.6.12.5-brcm/arch/mips/Kconfig	2005-09-03 21:53:36.323284896 +0200
 @@ -40,6 +40,15 @@
  	 Members include the Acer PICA, MIPS Magnum 4000, MIPS Millenium and
  	 Olivetti M700-10 workstations.
@@ -22,13 +22,13 @@ diff -Nur linux-2.6.12.5/arch/mips/Kconfig linux-2.6.12.5-brcm/arch/mips/Kconfig
  config CPU_LITTLE_ENDIAN
  	bool "Generate little endian code"
 -	default y if ACER_PICA_61 || CASIO_E55 || DDB5074 || DDB5476 || DDB5477 || MACH_DECSTATION || IBM_WORKPAD || LASAT || MIPS_COBALT || MIPS_ITE8172 || MIPS_IVR || SOC_AU1X00 || NEC_OSPREY || OLIVETTI_M700 || SNI_RM200_PCI || VICTOR_MPC30X || ZAO_CAPCELLA
-+	default y if ACER_PICA_61 || CASIO_E55 || DDB5074 || DDB5476 || DDB5477 || MACH_DECSTATION || IBM_WORKPAD || LASAT || MIPS_COBALT || MIPS_ITE8172 || MIPS_IVR || SOC_AU1X00 || NEC_OSPREY || OLIVETTI_M700 || SNI_RM200_PCI || VICTOR_MPC30X || ZAO_CAPCELLA || BCM47XX
++	default y if ACER_PICA_61 || CASIO_E55 || DDB5074 || DDB5476 || DDB5477 || MACH_DECSTATION || IBM_WORKPAD || LASAT || MIPS_COBALT || MIPS_ITE8172 || MIPS_IVR || SOC_AU1X00 || NEC_OSPREY || OLIVETTI_M700 || SNI_RM200_PCI || VICTOR_MPC30X || ZAO_CAPCELLA || BCM947XX
  	default n if MIPS_EV64120 || MIPS_EV96100 || MOMENCO_OCELOT || MOMENCO_OCELOT_G || SGI_IP22 || SGI_IP27 || SGI_IP32 || TOSHIBA_JMR3927
  	help
  	  Some MIPS machines can be configured for either little or big endian
 diff -Nur linux-2.6.12.5/arch/mips/Makefile linux-2.6.12.5-brcm/arch/mips/Makefile
 --- linux-2.6.12.5/arch/mips/Makefile	2005-08-15 02:20:18.000000000 +0200
-+++ linux-2.6.12.5-brcm/arch/mips/Makefile	2005-08-28 16:39:59.077334424 +0200
++++ linux-2.6.12.5-brcm/arch/mips/Makefile	2005-09-03 22:24:07.794917120 +0200
 @@ -79,7 +79,7 @@
  cflags-y			+= -I $(TOPDIR)/include/asm/gcc
  cflags-y			+= -G 0 -mno-abicalls -fno-pic -pipe
@@ -38,17 +38,11 @@ diff -Nur linux-2.6.12.5/arch/mips/Makefile linux-2.6.12.5-brcm/arch/mips/Makefi
  MODFLAGS			+= -mlong-calls
  
  cflags-$(CONFIG_SB1XXX_CORELIS)	+= -mno-sched-prolog -fno-omit-frame-pointer
-@@ -167,9 +167,10 @@
- 			$(call set_gccflags,r4600,mips3,r4600,mips3,mips2)  \
+@@ -170,6 +170,7 @@
+ cflags-$(CONFIG_CPU_MIPS32)	+= \
+ 			$(call set_gccflags,mips32,mips32,r4600,mips3,mips2) \
  			-Wa,--trap
- 
--cflags-$(CONFIG_CPU_MIPS32)	+= \
--			$(call set_gccflags,mips32,mips32,r4600,mips3,mips2) \
--			-Wa,--trap
-+#cflags-$(CONFIG_CPU_MIPS32)	+= \
-+#			$(call set_gccflags,mips32,mips32,r4600,mips3,mips2) \
-+#			-Wa,--trap
-+cflags-$(CONFIG_CPU_MIPS32)	+= -mips2 -Wa,--trap
++cflags-$(CONFIG_CPU_MIPS32)	+= -Wa,--trap
  
  cflags-$(CONFIG_CPU_MIPS64)	+= \
  			$(call set_gccflags,mips64,mips64,r4600,mips3,mips2) \
@@ -67,14 +61,6 @@ diff -Nur linux-2.6.12.5/arch/mips/Makefile linux-2.6.12.5-brcm/arch/mips/Makefi
  # SNI RM200 PCI
  #
  core-$(CONFIG_SNI_RM200_PCI)	+= arch/mips/sni/
-@@ -729,6 +738,7 @@
- archclean:
- 	@$(MAKE) $(clean)=arch/mips/boot
- 	@$(MAKE) $(clean)=arch/mips/lasat
-+	@$(MAKE) -C arch/mips/bcm47xx/compressed clean
- 
- # Generate <asm/offset.h 
- #
 diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/Makefile linux-2.6.12.5-brcm/arch/mips/bcm947xx/Makefile
 --- linux-2.6.12.5/arch/mips/bcm947xx/Makefile	1970-01-01 01:00:00.000000000 +0100
 +++ linux-2.6.12.5-brcm/arch/mips/bcm947xx/Makefile	2005-08-28 11:12:20.406862800 +0200
@@ -109,7 +95,7 @@ diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/broadcom/bcmsrom.c linux-2.6.12.5-br
 + * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
 + * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
 + * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
-+ * $Id: 001-bcm947xx.patch,v 1.3 2005/09/03 17:56:50 wbx Exp $
++ * $Id: bcmsrom.c,v 1.1 2005/02/28 13:33:32 jolt Exp $
 + */
 +
 +#include <typedefs.h>
@@ -798,7 +784,7 @@ diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/broadcom/bcmutils.c linux-2.6.12.5-b
 + * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM   
 + * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS   
 + * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.   
-+ * $Id: 001-bcm947xx.patch,v 1.3 2005/09/03 17:56:50 wbx Exp $
++ * $Id: bcmutils.c,v 1.1 2005/02/28 13:33:32 jolt Exp $
 + */
 +
 +#include <typedefs.h>
@@ -1495,7 +1481,7 @@ diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/broadcom/hnddma.c linux-2.6.12.5-brc
 + * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
 + * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
 + *
-+ * $Id: 001-bcm947xx.patch,v 1.3 2005/09/03 17:56:50 wbx Exp $
++ * $Id: hnddma.c,v 1.1 2005/02/28 13:33:32 jolt Exp $
 + */
 +
 +#include <typedefs.h>
@@ -2261,7 +2247,7 @@ diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/broadcom/linux_osl.c linux-2.6.12.5-
 + * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
 + * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
 + *
-+ * $Id: 001-bcm947xx.patch,v 1.3 2005/09/03 17:56:50 wbx Exp $
++ * $Id: linux_osl.c,v 1.2 2005/02/28 13:34:25 jolt Exp $
 + */
 +
 +#define LINUX_OSL
@@ -2685,7 +2671,7 @@ diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/broadcom/sbmips.c linux-2.6.12.5-brc
 + * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
 + * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
 + *
-+ * $Id: 001-bcm947xx.patch,v 1.3 2005/09/03 17:56:50 wbx Exp $
++ * $Id: sbmips.c,v 1.1 2005/02/28 13:33:32 jolt Exp $
 + */
 +
 +#include <typedefs.h>
@@ -3639,7 +3625,7 @@ diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/broadcom/sbpci.c linux-2.6.12.5-brcm
 + * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
 + * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
 + *
-+ * $Id: 001-bcm947xx.patch,v 1.3 2005/09/03 17:56:50 wbx Exp $
++ * $Id: sbpci.c,v 1.2 2005/02/28 13:34:25 jolt Exp $
 + */
 +
 +#include <typedefs.h>
@@ -4174,7 +4160,7 @@ diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/broadcom/sbutils.c linux-2.6.12.5-br
 + * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
 + * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
 + *
-+ * $Id: 001-bcm947xx.patch,v 1.3 2005/09/03 17:56:50 wbx Exp $
++ * $Id: sbutils.c,v 1.1 2005/02/28 13:33:32 jolt Exp $
 + */
 +
 +#include <typedefs.h>
@@ -6073,7 +6059,7 @@ diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/include/bcm4710.h linux-2.6.12.5-brc
 + * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM   
 + * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS   
 + * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.   
-+ * $Id: 001-bcm947xx.patch,v 1.3 2005/09/03 17:56:50 wbx Exp $
++ * $Id$
 + */
 +
 +#ifndef _bcm4710_h_
@@ -6158,7 +6144,7 @@ diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/include/bcmdevs.h linux-2.6.12.5-brc
 +/*
 + * Broadcom device-specific manifest constants.
 + *
-+ * $Id: 001-bcm947xx.patch,v 1.3 2005/09/03 17:56:50 wbx Exp $
++ * $Id$
 + * Copyright 2001-2003, Broadcom Corporation   
 + * All Rights Reserved.   
 + *    
@@ -6398,7 +6384,7 @@ diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/include/bcmendian.h linux-2.6.12.5-b
 +++ linux-2.6.12.5-brcm/arch/mips/bcm947xx/include/bcmendian.h	2005-08-28 11:12:20.431859000 +0200
 @@ -0,0 +1,125 @@
 +/*******************************************************************************
-+ * $Id: 001-bcm947xx.patch,v 1.3 2005/09/03 17:56:50 wbx Exp $
++ * $Id$
 + * Copyright 2001-2003, Broadcom Corporation   
 + * All Rights Reserved.   
 + *    
@@ -6537,7 +6523,7 @@ diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/include/bcmenet47xx.h linux-2.6.12.5
 + * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM   
 + * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS   
 + * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.   
-+ * $Id: 001-bcm947xx.patch,v 1.3 2005/09/03 17:56:50 wbx Exp $
++ * $Id$
 + */
 +
 +#ifndef	_bcmenet_47xx_h_
@@ -6771,7 +6757,7 @@ diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/include/bcmenetmib.h linux-2.6.12.5-
 + * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM   
 + * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS   
 + * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.   
-+ * $Id: 001-bcm947xx.patch,v 1.3 2005/09/03 17:56:50 wbx Exp $
++ * $Id$
 + */
 +
 +#ifndef _bcmenetmib_h_
@@ -6856,7 +6842,7 @@ diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/include/bcmenetrxh.h linux-2.6.12.5-
 + * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM   
 + * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS   
 + * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.   
-+ * $Id: 001-bcm947xx.patch,v 1.3 2005/09/03 17:56:50 wbx Exp $
++ * $Id$
 + */
 +
 +#ifndef _bcmenetrxh_h_
@@ -6896,7 +6882,7 @@ diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/include/bcmnvram.h linux-2.6.12.5-br
 + *
 + * $Copyright Open Broadcom Corporation$
 + *
-+ * $Id: 001-bcm947xx.patch,v 1.3 2005/09/03 17:56:50 wbx Exp $
++ * $Id: bcmnvram.h,v 1.1.1.1 2004/01/21 03:50:44 gigis Exp $
 + */
 +
 +#ifndef _bcmnvram_h_
@@ -7037,7 +7023,7 @@ diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/include/bcmsrom.h linux-2.6.12.5-brc
 + * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
 + * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
 + *
-+ * $Id: 001-bcm947xx.patch,v 1.3 2005/09/03 17:56:50 wbx Exp $
++ * $Id$
 + */
 +
 +#ifndef	_bcmsrom_h_
@@ -7064,7 +7050,7 @@ diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/include/bcmutils.h linux-2.6.12.5-br
 + * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM   
 + * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS   
 + * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.   
-+ * $Id: 001-bcm947xx.patch,v 1.3 2005/09/03 17:56:50 wbx Exp $
++ * $Id$
 + */
 +
 +#ifndef	_bcmutils_h_
@@ -7204,7 +7190,7 @@ diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/include/bitfuncs.h linux-2.6.12.5-br
 + * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM   
 + * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS   
 + * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.   
-+ * $Id: 001-bcm947xx.patch,v 1.3 2005/09/03 17:56:50 wbx Exp $
++ * $Id$
 + */
 +
 +#ifndef _BITFUNCS_H
@@ -7292,7 +7278,7 @@ diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/include/epivers.h linux-2.6.12.5-brc
 + * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
 + * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
 + *
-+ * $Id: 001-bcm947xx.patch,v 1.3 2005/09/03 17:56:50 wbx Exp $
++ * $Id$
 + *
 +*/
 +
@@ -7365,7 +7351,7 @@ diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/include/epivers.h.in linux-2.6.12.5-
 + * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
 + * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
 + *
-+ * $Id: 001-bcm947xx.patch,v 1.3 2005/09/03 17:56:50 wbx Exp $
++ * $Id$
 + *
 +*/
 +
@@ -7442,7 +7428,7 @@ diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/include/etsockio.h linux-2.6.12.5-br
 + * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS   
 + * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.   
 + *
-+ * $Id: 001-bcm947xx.patch,v 1.3 2005/09/03 17:56:50 wbx Exp $
++ * $Id$
 + */
 +
 +#ifndef _etsockio_h_
@@ -7504,7 +7490,7 @@ diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/include/flash.h linux-2.6.12.5-brcm/
 + * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS   
 + * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.   
 + *
-+ * $Id: 001-bcm947xx.patch,v 1.3 2005/09/03 17:56:50 wbx Exp $
++ * $Id$
 + */
 +
 +/* Types of flashes we know about */
@@ -7691,7 +7677,7 @@ diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/include/flashutl.h linux-2.6.12.5-br
 + * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM   
 + * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS   
 + * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.   
-+ * $Id: 001-bcm947xx.patch,v 1.3 2005/09/03 17:56:50 wbx Exp $
++ * $Id$
 + */
 +
 +#ifndef _flashutl_h_
@@ -7723,7 +7709,7 @@ diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/include/hnddma.h linux-2.6.12.5-brcm
 + * Generic Broadcom Home Networking Division (HND) DMA engine definitions.
 + * This supports the following chips: BCM42xx, 44xx, 47xx .
 + *
-+ * $Id: 001-bcm947xx.patch,v 1.3 2005/09/03 17:56:50 wbx Exp $
++ * $Id$
 + * Copyright 2001-2003, Broadcom Corporation   
 + * All Rights Reserved.   
 + *    
@@ -7916,7 +7902,7 @@ diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/include/hndmips.h linux-2.6.12.5-brc
 + * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
 + * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
 + *
-+ * $Id: 001-bcm947xx.patch,v 1.3 2005/09/03 17:56:50 wbx Exp $
++ * $Id$
 + */
 +
 +#include "sbmips.h"
@@ -7935,7 +7921,7 @@ diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/include/linux_osl.h linux-2.6.12.5-b
 + * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
 + * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
 + *
-+ * $Id: 001-bcm947xx.patch,v 1.3 2005/09/03 17:56:50 wbx Exp $
++ * $Id$
 + */
 +
 +#ifndef _linux_osl_h_
@@ -8252,7 +8238,7 @@ diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/include/linuxver.h linux-2.6.12.5-br
 + * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM   
 + * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS   
 + * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.   
-+ * $Id: 001-bcm947xx.patch,v 1.3 2005/09/03 17:56:50 wbx Exp $
++ * $Id$
 + */
 +
 +#ifndef _linuxver_h_
@@ -8582,7 +8568,7 @@ diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/include/nvports.h linux-2.6.12.5-brc
 + * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
 + * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
 + * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
-+ * $Id: 001-bcm947xx.patch,v 1.3 2005/09/03 17:56:50 wbx Exp $
++ * $Id$
 + */
 +
 +#ifndef _nvports_h_
@@ -8647,7 +8633,7 @@ diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/include/osl.h linux-2.6.12.5-brcm/ar
 + * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM   
 + * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS   
 + * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.   
-+ * $Id: 001-bcm947xx.patch,v 1.3 2005/09/03 17:56:50 wbx Exp $
++ * $Id$
 + */
 +
 +#ifndef _osl_h_
@@ -8690,7 +8676,7 @@ diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/include/pcicfg.h linux-2.6.12.5-brcm
 + * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
 + * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
 + *
-+ * $Id: 001-bcm947xx.patch,v 1.3 2005/09/03 17:56:50 wbx Exp $
++ * $Id$
 + */
 +
 +#ifndef	_h_pci_
@@ -9056,7 +9042,7 @@ diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/include/proto/802.11.h linux-2.6.12.
 + *
 + * Fundamental types and constants relating to 802.11 
 + *
-+ * $Id: 001-bcm947xx.patch,v 1.3 2005/09/03 17:56:50 wbx Exp $
++ * $Id$
 + */
 +
 +#ifndef _802_11_H_
@@ -9729,7 +9715,7 @@ diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/include/proto/ethernet.h linux-2.6.1
 +++ linux-2.6.12.5-brcm/arch/mips/bcm947xx/include/proto/ethernet.h	2005-08-28 11:12:20.450856112 +0200
 @@ -0,0 +1,145 @@
 +/*******************************************************************************
-+ * $Id: 001-bcm947xx.patch,v 1.3 2005/09/03 17:56:50 wbx Exp $
++ * $Id$
 + * Copyright 2001-2003, Broadcom Corporation   
 + * All Rights Reserved.   
 + *    
@@ -9878,7 +9864,7 @@ diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/include/rts/crc.h linux-2.6.12.5-brc
 +++ linux-2.6.12.5-brcm/arch/mips/bcm947xx/include/rts/crc.h	2005-08-28 11:12:20.451855960 +0200
 @@ -0,0 +1,69 @@
 +/*******************************************************************************
-+ * $Id: 001-bcm947xx.patch,v 1.3 2005/09/03 17:56:50 wbx Exp $
++ * $Id$
 + * Copyright 2001-2003, Broadcom Corporation   
 + * All Rights Reserved.   
 + *    
@@ -9964,7 +9950,7 @@ diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/include/s5.h linux-2.6.12.5-brcm/arc
 + *   published by the Free Software Foundation, located in the file
 + *   LICENSE.
 + *
-+ *   $Id: 001-bcm947xx.patch,v 1.3 2005/09/03 17:56:50 wbx Exp $
++ *   $Id: s5.h,v 1.3 2003/06/10 18:54:51 jfd Exp $
 + * 
 + */
 +
@@ -10072,7 +10058,7 @@ diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/include/sbchipc.h linux-2.6.12.5-brc
 + * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
 + * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
 + *
-+ * $Id: 001-bcm947xx.patch,v 1.3 2005/09/03 17:56:50 wbx Exp $
++ * $Id$
 + */
 +
 +#ifndef	_SBCHIPC_H
@@ -10352,7 +10338,7 @@ diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/include/sbconfig.h linux-2.6.12.5-br
 + * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM   
 + * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS   
 + * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.   
-+ * $Id: 001-bcm947xx.patch,v 1.3 2005/09/03 17:56:50 wbx Exp $
++ * $Id$
 + */
 +
 +#ifndef	_SBCONFIG_H
@@ -10663,7 +10649,7 @@ diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/include/sbextif.h linux-2.6.12.5-brc
 + * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM   
 + * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS   
 + * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.   
-+ * $Id: 001-bcm947xx.patch,v 1.3 2005/09/03 17:56:50 wbx Exp $
++ * $Id$
 + */
 +
 +#ifndef	_SBEXTIF_H
@@ -10898,7 +10884,7 @@ diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/include/sbmemc.h linux-2.6.12.5-brcm
 + * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM   
 + * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS   
 + * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.   
-+ * $Id: 001-bcm947xx.patch,v 1.3 2005/09/03 17:56:50 wbx Exp $
++ * $Id$
 + */
 +
 +#ifndef	_SBMEMC_H
@@ -11053,7 +11039,7 @@ diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/include/sbmips.h linux-2.6.12.5-brcm
 + * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
 + * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
 + *
-+ * $Id: 001-bcm947xx.patch,v 1.3 2005/09/03 17:56:50 wbx Exp $
++ * $Id$
 + */
 +
 +#ifndef	_SBMIPS_H
@@ -11099,7 +11085,7 @@ diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/include/sbpci.h linux-2.6.12.5-brcm/
 +/*
 + * BCM47XX Sonics SiliconBackplane PCI core hardware definitions.
 + *
-+ * $Id: 001-bcm947xx.patch,v 1.3 2005/09/03 17:56:50 wbx Exp $
++ * $Id$
 + * Copyright 2001-2003, Broadcom Corporation   
 + * All Rights Reserved.   
 + *    
@@ -11216,7 +11202,7 @@ diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/include/sbpcmcia.h linux-2.6.12.5-br
 +/*
 + * BCM43XX Sonics SiliconBackplane PCMCIA core hardware definitions.
 + *
-+ * $Id: 001-bcm947xx.patch,v 1.3 2005/09/03 17:56:50 wbx Exp $
++ * $Id$
 + * Copyright 2001-2003, Broadcom Corporation   
 + * All Rights Reserved.   
 + *    
@@ -11358,7 +11344,7 @@ diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/include/sbsdram.h linux-2.6.12.5-brc
 + * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM   
 + * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS   
 + * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.   
-+ * $Id: 001-bcm947xx.patch,v 1.3 2005/09/03 17:56:50 wbx Exp $
++ * $Id$
 + */
 +
 +#ifndef	_SBSDRAM_H
@@ -11439,7 +11425,7 @@ diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/include/sbutils.h linux-2.6.12.5-brc
 + * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
 + * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
 + *
-+ * $Id: 001-bcm947xx.patch,v 1.3 2005/09/03 17:56:50 wbx Exp $
++ * $Id$
 + */
 +
 +#ifndef	_sbutils_h_
@@ -11517,56 +11503,6 @@ diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/include/sbutils.h linux-2.6.12.5-brc
 +#define	CLK_DYNAMIC	2			/* enable dynamic power control */
 +
 +#endif	/* _sbutils_h_ */
-diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/include/sflash.h linux-2.6.12.5-brcm/arch/mips/bcm947xx/include/sflash.h
---- linux-2.6.12.5/arch/mips/bcm947xx/include/sflash.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.12.5-brcm/arch/mips/bcm947xx/include/sflash.h	2005-08-28 11:12:20.473852616 +0200
-@@ -0,0 +1,46 @@
-+/*
-+ * Broadcom SiliconBackplane chipcommon serial flash interface
-+ *
-+ * Copyright 2001-2003, Broadcom Corporation   
-+ * All Rights Reserved.   
-+ *    
-+ * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY   
-+ * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM   
-+ * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS   
-+ * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.   
-+ *
-+ * $Id: 001-bcm947xx.patch,v 1.3 2005/09/03 17:56:50 wbx Exp $
-+ */
-+
-+#ifndef _sflash_h_
-+#define _sflash_h_
-+
-+#include <typedefs.h>
-+#include <sbchipc.h>
-+
-+/* GPIO based bank selection (1 GPIO bit) */
-+#define SFLASH_MAX_BANKS	1
-+#define SFLASH_GPIO_SHIFT	2
-+#define SFLASH_GPIO_MASK	((SFLASH_MAX_BANKS - 1) << SFLASH_GPIO_SHIFT)
-+
-+struct sflash_bank {
-+	uint offset;					/* Byte offset */
-+	uint erasesize;					/* Block size */
-+	uint numblocks;					/* Number of blocks */
-+	uint size;					/* Total bank size in bytes */
-+};
-+
-+struct sflash {
-+	struct sflash_bank banks[SFLASH_MAX_BANKS];	/* GPIO selectable banks */
-+	uint32 type;					/* Type */
-+	uint size;					/* Total array size in bytes */
-+};
-+
-+/* Utility functions */
-+extern int sflash_poll(chipcregs_t *cc, uint offset);
-+extern int sflash_read(chipcregs_t *cc, uint offset, uint len, uchar *buf);
-+extern int sflash_write(chipcregs_t *cc, uint offset, uint len, const uchar *buf);
-+extern int sflash_erase(chipcregs_t *cc, uint offset);
-+extern struct sflash * sflash_init(chipcregs_t *cc);
-+
-+#endif /* _sflash_h_ */
 diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/include/trxhdr.h linux-2.6.12.5-brcm/arch/mips/bcm947xx/include/trxhdr.h
 --- linux-2.6.12.5/arch/mips/bcm947xx/include/trxhdr.h	1970-01-01 01:00:00.000000000 +0100
 +++ linux-2.6.12.5-brcm/arch/mips/bcm947xx/include/trxhdr.h	2005-08-28 11:12:20.474852464 +0200
@@ -11582,7 +11518,7 @@ diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/include/trxhdr.h linux-2.6.12.5-brcm
 + * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
 + * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
 + *
-+ * $Id: 001-bcm947xx.patch,v 1.3 2005/09/03 17:56:50 wbx Exp $
++ * $Id$
 + */ 
 +
 +#include <typedefs.h>
@@ -11614,7 +11550,7 @@ diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/include/typedefs.h linux-2.6.12.5-br
 + * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM   
 + * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS   
 + * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.   
-+ * $Id: 001-bcm947xx.patch,v 1.3 2005/09/03 17:56:50 wbx Exp $
++ * $Id$
 + */
 +
 +#ifndef _TYPEDEFS_H_
@@ -11786,7 +11722,7 @@ diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/include/wlioctl.h linux-2.6.12.5-brc
 + * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
 + * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
 + *
-+ * $Id: 001-bcm947xx.patch,v 1.3 2005/09/03 17:56:50 wbx Exp $
++ * $Id$
 + */
 +
 +#ifndef _wlioctl_h_
@@ -13123,8 +13059,8 @@ diff -Nur linux-2.6.12.5/drivers/mtd/maps/Makefile linux-2.6.12.5-brcm/drivers/m
  obj-$(CONFIG_MTD_SBC_GXX)	+= sbc_gxx.o
 diff -Nur linux-2.6.12.5/drivers/mtd/maps/bcm47xx-flash.c linux-2.6.12.5-brcm/drivers/mtd/maps/bcm47xx-flash.c
 --- linux-2.6.12.5/drivers/mtd/maps/bcm47xx-flash.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.12.5-brcm/drivers/mtd/maps/bcm47xx-flash.c	2005-09-03 18:50:05.090478752 +0200
-@@ -0,0 +1,247 @@
++++ linux-2.6.12.5-brcm/drivers/mtd/maps/bcm47xx-flash.c	2005-09-03 21:42:29.384972992 +0200
+@@ -0,0 +1,240 @@
 +/*
 + *  Copyright (C) 2004 Florian Schirmer (jolt@tuxbox.org)
 + *  Copyright (C) 2005 Waldemar Brodkorb <wbx@openwrt.org>
@@ -13159,7 +13095,7 @@ diff -Nur linux-2.6.12.5/drivers/mtd/maps/bcm47xx-flash.c linux-2.6.12.5-brcm/dr
 + *  SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
 + *  FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
 + *
-+ *  $Id: 001-bcm947xx.patch,v 1.3 2005/09/03 17:56:50 wbx Exp $
++ *  $Id: bcm47xx-flash.c,v 1.1 2004/10/21 07:18:31 jolt Exp $
 + *
 + *  Flash mapping for BCM947XX boards
 + */
@@ -13236,10 +13172,6 @@ diff -Nur linux-2.6.12.5/drivers/mtd/maps/bcm47xx-flash.c linux-2.6.12.5-brcm/dr
 +
 +	trx = (struct trx_header *) buf;
 +
-+	printk(KERN_NOTICE 
-+		"MTD erasesize: %d, Size: %d\n", 
-+		mtd->erasesize, size);
-+
 +	for (off = (384*1024); off < size; off += mtd->erasesize) {
 +		memset(buf, 0xe5, sizeof(buf));
 +
@@ -13252,8 +13184,6 @@ diff -Nur linux-2.6.12.5/drivers/mtd/maps/bcm47xx-flash.c linux-2.6.12.5-brcm/dr
 +
 +		/* found a TRX header */
 +		if (le32_to_cpu(trx->magic) == TRX_MAGIC) {
-+			printk(KERN_NOTICE "Found TRX Header!\n");
-+
 +			part->offset = le32_to_cpu(trx->offsets[2]) ? : 
 +				le32_to_cpu(trx->offsets[1]);
 +			part->size = le32_to_cpu(trx->len); 
@@ -13299,7 +13229,6 @@ diff -Nur linux-2.6.12.5/drivers/mtd/maps/bcm47xx-flash.c linux-2.6.12.5-brcm/dr
 +		/* legacy setup */
 +		/* calculate leftover flash, and assign it to the jffs2 partition */
 +		bcm947xx_parts[4].offset = bcm947xx_parts[2].offset + bcm947xx_parts[2].size;
-+		bcm947xx_parts[4].offset = ROUNDUP(bcm947xx_parts[4].offset, mtd->erasesize);
 +		bcm947xx_parts[4].size = bcm947xx_parts[3].offset - bcm947xx_parts[4].offset;
 +	}
 +
