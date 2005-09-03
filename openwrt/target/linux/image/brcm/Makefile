@@ -31,7 +31,7 @@ ifeq ($(KERNEL),2.6)
 FSNAME:=$(patsubst jffs2-%,jffs2,$(FS))
 
 $(BIN_DIR)/openwrt-wgt634u-2.6-$(FSNAME).bin: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx
-	dd if=$(BUILD_DIR)/loader-0.04/loader.o of=$@ bs=65536 conv=sync
+	dd if=$(BUILD_DIR)/loader.elf of=$@ bs=131072 conv=sync
 	cat $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx >> $@
 
 install: $(BIN_DIR)/openwrt-wgt634u-2.6-$(FSNAME).bin
