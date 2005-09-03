@@ -1,6 +1,7 @@
 config BR2_PACKAGE_MTD
-	tristate "mtd - update utility for trx firmware images"
+	tristate "mtd - flash utility (always needed)"
 	default y
 	help
-	 update utility for trx firmware images.
+	 flash utility for firmware images update. 
+	 OpenWrt will not work correctly without it.
 
