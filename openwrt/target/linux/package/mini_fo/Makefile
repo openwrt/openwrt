@@ -29,6 +29,7 @@ $(PKG_BUILD_DIR)/.configured:
 
 $(PKG_BUILD_DIR)/.built: 
 	$(MAKE) -C $(PKG_BUILD_DIR) \
+		PATH="$(TARGET_PATH)" \
 		ARCH="$(LINUX_KARCH)" \
 		KERNELVERSION="$(KERNEL_VERSION)" \
 		KERNEL_SRC="$(KERNEL_DIR)" \
