@@ -20,7 +20,7 @@ config BUSYBOX_CONFIG_FEATURE_2_4_MODULES
 
 config BUSYBOX_CONFIG_FEATURE_2_6_MODULES
 	bool "  Support version 2.6.x Linux kernels"
-	default n
+	default y
 	depends on BUSYBOX_CONFIG_INSMOD
 	help
 	  Support module loading for newer 2.6.x Linux kernels.
