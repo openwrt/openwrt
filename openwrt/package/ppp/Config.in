@@ -11,7 +11,7 @@ config BR2_PACKAGE_PPP_MOD_PPPOA
 	tristate
 	default y if BR2_LINUX_2_4_AR7
 	depends on BR2_PACKAGE_PPP
-	select BR2_PACKAGE_KMOD_PPPOA
+	select BR2_PACKAGE_KMOD_PPPOATM
 
 config BR2_PACKAGE_PPP_MOD_PPPOE
 	prompt "...-mod-pppoe - PPPoE (PPP over Ethernet) plugin"
