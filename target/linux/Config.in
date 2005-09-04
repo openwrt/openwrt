@@ -191,6 +191,31 @@ config BR2_PACKAGE_KMOD_USB2
 	default m
 	depends BR2_PACKAGE_KMOD_USB_CONTROLLER
 
+config BR2_PACKAGE_KMOD_USB_SERIAL
+	tristate "kmod-usb-serial - Support for USB-to-serial converters"
+	default m
+	depends BR2_PACKAGE_KMOD_USB_CONTROLLER
+
+config BR2_PACKAGE_KMOD_USB_SERIAL_BELKIN
+	tristate "kmod-usb-serial-belkin - Support for Belkin USB-to-serial converters"
+	default m
+	depends BR2_PACKAGE_KMOD_USB_SERIAL
+
+config BR2_PACKAGE_KMOD_USB_SERIAL_FTDI
+	tristate "kmod-usb-serial-ftdi - Support for FTDI USB-to-serial converterr"
+	default m
+	depends BR2_PACKAGE_KMOD_USB_SERIAL
+
+config BR2_PACKAGE_KMOD_USB_SERIAL_MCT_U232
+	tristate "kmod-usb-serial-mct-u232 - Support for Magic Control Technology USB-to-Serial converters"
+	default m
+	depends BR2_PACKAGE_KMOD_USB_SERIAL
+
+config BR2_PACKAGE_KMOD_USB_SERIAL_PL2303
+	tristate "kmod-usb-serial-pl2303 - Support for Prolific PL2303 USB-to-Serial converters"
+	default m
+	depends BR2_PACKAGE_KMOD_USB_SERIAL
+
 config BR2_PACKAGE_KMOD_USB_STORAGE
 	tristate "Support for USB storage devices"
 	default m

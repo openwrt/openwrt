@@ -111,6 +111,23 @@ $(eval $(call KMOD_template,USB_OHCI,usb-ohci,\
 $(eval $(call KMOD_template,USB2,usb2,\
 	$(MODULES_DIR)/kernel/drivers/usb/host/ehci-hcd.o \
 ,CONFIG_USB_EHCI_HCD,kmod-usb-core,60,ehci-hcd))
+
+$(eval $(call KMOD_template,USB_SERIAL,usb-serial,\
+	$(MODULES_DIR)/kernel/drivers/usb/serial/usbserial.o \
+,CONFIG_USB_SERIAL,kmod-usb-core,60,usbserial))
+$(eval $(call KMOD_template,USB_SERIAL_BELKIN,usb-serial-belkin,\
+	$(MODULES_DIR)/kernel/drivers/usb/serial/belkin_sa.o \
+,CONFIG_USB_SERIAL_BELKIN,kmod-usb-serial,61,belkin_sa))
+$(eval $(call KMOD_template,USB_SERIAL_FTDI,usb-serial-ftdi,\
+	$(MODULES_DIR)/kernel/drivers/usb/serial/ftdi_sio.o \
+,CONFIG_USB_SERIAL_IR,kmod-usb-serial,61,ftdi_usb))
+$(eval $(call KMOD_template,USB_SERIAL_MCT_U232,usb-serial-mct-u232,\
+	$(MODULES_DIR)/kernel/drivers/usb/serial/mct_u232.o \
+,CONFIG_USB_SERIAL_MCT_U232,kmod-usb-serial,61,mct_u232))
+$(eval $(call KMOD_template,USB_SERIAL_PL2303,usb-serial-pl2303,\
+	$(MODULES_DIR)/kernel/drivers/usb/serial/pl2303.o \
+,CONFIG_USB_SERIAL_PL2303,kmod-usb-serial,61,pl2303))
+
 $(eval $(call KMOD_template,USB_STORAGE,usb-storage,\
 	$(MODULES_DIR)/kernel/drivers/scsi/*.o \
 	$(MODULES_DIR)/kernel/drivers/usb/storage/*.o \
