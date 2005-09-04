@@ -13059,8 +13059,8 @@ diff -Nur linux-2.6.12.5/drivers/mtd/maps/Makefile linux-2.6.12.5-brcm/drivers/m
  obj-$(CONFIG_MTD_SBC_GXX)	+= sbc_gxx.o
 diff -Nur linux-2.6.12.5/drivers/mtd/maps/bcm47xx-flash.c linux-2.6.12.5-brcm/drivers/mtd/maps/bcm47xx-flash.c
 --- linux-2.6.12.5/drivers/mtd/maps/bcm47xx-flash.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.12.5-brcm/drivers/mtd/maps/bcm47xx-flash.c	2005-09-03 21:42:29.384972992 +0200
-@@ -0,0 +1,240 @@
++++ linux-2.6.12.5-brcm/drivers/mtd/maps/bcm47xx-flash.c	2005-09-04 04:50:19.246786848 +0200
+@@ -0,0 +1,249 @@
 +/*
 + *  Copyright (C) 2004 Florian Schirmer (jolt@tuxbox.org)
 + *  Copyright (C) 2005 Waldemar Brodkorb <wbx@openwrt.org>
@@ -13118,6 +13118,9 @@ diff -Nur linux-2.6.12.5/drivers/mtd/maps/bcm47xx-flash.c linux-2.6.12.5-brcm/dr
 +extern struct mtd_partition * init_mtd_partitions(struct mtd_info *mtd, size_t size);
 +#endif
 +
++#define CFE_SIZE 1024*384
++#define NVRAM_SIZE 1024*128
++
 +#define WINDOW_ADDR 0x1c000000
 +#define WINDOW_SIZE (0x400000*2)
 +#define BUSWIDTH 2
@@ -13172,7 +13175,7 @@ diff -Nur linux-2.6.12.5/drivers/mtd/maps/bcm47xx-flash.c linux-2.6.12.5-brcm/dr
 +
 +	trx = (struct trx_header *) buf;
 +
-+	for (off = (384*1024); off < size; off += mtd->erasesize) {
++	for (off = (512*1024); off < size; off += mtd->erasesize) {
 +		memset(buf, 0xe5, sizeof(buf));
 +
 +		/*
@@ -13209,16 +13212,16 @@ diff -Nur linux-2.6.12.5/drivers/mtd/maps/bcm47xx-flash.c linux-2.6.12.5-brcm/dr
 +{
 +
 +	/* boot loader */
-+	bcm947xx_parts[0].offset=0;
-+	bcm947xx_parts[0].size=384*1024;
++	bcm947xx_parts[0].offset = 0;
++	bcm947xx_parts[0].size	 = CFE_SIZE;
 +
-+	/* nvram */
-+	bcm947xx_parts[3].offset = size - (128*1024);
-+	bcm947xx_parts[3].size   = size - bcm947xx_parts[3].offset;
++	/* nvram (old config partition) */
++	bcm947xx_parts[3].offset = bcm947xx_parts[0].size;
++	bcm947xx_parts[3].size   = NVRAM_SIZE;
 +
 +	/* Size linux (kernel and rootfs) */
-+	bcm947xx_parts[1].offset = bcm947xx_parts[0].size;
-+	bcm947xx_parts[1].size   = bcm947xx_parts[3].offset - bcm947xx_parts[1].offset;
++	bcm947xx_parts[1].offset = bcm947xx_parts[0].size + bcm947xx_parts[3].size;
++	bcm947xx_parts[1].size   = size - NVRAM_SIZE - bcm947xx_parts[0].size - bcm947xx_parts[3].size;
 +
 +	/* Find and size rootfs */
 +	if (find_root(mtd,size,&bcm947xx_parts[2])==0) {
@@ -13229,7 +13232,13 @@ diff -Nur linux-2.6.12.5/drivers/mtd/maps/bcm47xx-flash.c linux-2.6.12.5-brcm/dr
 +		/* legacy setup */
 +		/* calculate leftover flash, and assign it to the jffs2 partition */
 +		bcm947xx_parts[4].offset = bcm947xx_parts[2].offset + bcm947xx_parts[2].size;
-+		bcm947xx_parts[4].size = bcm947xx_parts[3].offset - bcm947xx_parts[4].offset;
++		if ((bcm947xx_parts[4].offset % mtd->erasesize) > 0) {
++			bcm947xx_parts[4].offset += mtd->erasesize - 
++				(bcm947xx_parts[4].offset % mtd->erasesize);
++			bcm947xx_parts[4].size = size - NVRAM_SIZE - bcm947xx_parts[4].offset;
++		} else {
++			bcm947xx_parts[4].size = bcm947xx_parts[3].offset - bcm947xx_parts[4].offset;
++		}
 +	}
 +
 +	return bcm947xx_parts;
