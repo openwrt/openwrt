@@ -176,6 +176,8 @@ void setup_bcom(int skfd, char *ifname)
 	if (bcom_ioctl(skfd, ifname, WLC_GET_MAGIC, &val, sizeof(val)) < 0)
 		return;
 	
+	nvram_set(wl_var("ifname"), ifname);
+	
 	stop_bcom(skfd, ifname);
 
 	/* Set Country */
