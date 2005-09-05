@@ -1,0 +1,13 @@
+config BR2_PACKAGE_NETSTAT-NAT
+	tristate "netstat-nat - a netstat variant for NAT connections"
+#	default m if CONFIG_DEVEL
+	default n
+	help
+	  Netstat-nat is a small program written in C.
+	  It displays NAT connections, managed by netfilter/iptables which comes 
+	  with the > 2.4.x linux kernels.
+	  The program reads its information from '/proc/net/ip_conntrack', which 
+	  is the temporary conntrack-storage of netfilter.
+	  
+	  http://tweegy.demon.nl/projects/netstat-nat/
+	  
