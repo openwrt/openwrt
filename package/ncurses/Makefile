@@ -4,7 +4,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ncurses
 PKG_VERSION:=5.2
-PKG_RELEASE:=7
+PKG_RELEASE:=8
 PKG_MD5SUM:=464d6a49010cf2a6eb9ce59a264d4d47
 
 PKG_SOURCE_URL:=\
@@ -124,7 +124,7 @@ $(IPKG_LIBNCURSES):
 	install -d -m0755 $(IDIR_LIBNCURSES)/usr/lib
 	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/lib{ncurses,panel,menu}*.so.* $(IDIR_LIBNCURSES)/usr/lib/
 	install -d -m0755 $(IDIR_LIBNCURSES)/usr/share/terminfo
-	for f in a/ansi d/dumb l/linux s/screen v/vt100 v/vt102 x/xterm x/xterm-color; do \
+	for f in a/ansi d/dumb l/linux r/rxvt s/screen v/vt100 v/vt102 x/xterm x/xterm-color; do \
 		install -d -m0755 $(IDIR_LIBNCURSES)/usr/share/terminfo/`dirname $${f}`; \
 		cp -fpR $(PKG_INSTALL_DIR)/usr/share/terminfo/$${f} \
 			$(IDIR_LIBNCURSES)/usr/share/terminfo/$${f}; \
