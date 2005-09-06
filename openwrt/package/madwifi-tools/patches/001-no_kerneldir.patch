@@ -1,0 +1,75 @@
+diff -urN madwifi.old/Makefile.inc madwifi.dev/Makefile.inc
+--- madwifi.old/Makefile.inc	2005-07-14 02:35:49.000000000 +0200
++++ madwifi.dev/Makefile.inc	2005-09-06 20:10:18.801794992 +0200
+@@ -74,71 +74,6 @@
+ 
+ # TOOLPATH is the path which contains the crosscompile toolchain (?)
+ 
+-ifeq ($(strip ${BUS}),AHB)
+-# Bus type AHB forces the target platform to be mipsisa32.
+-TARGET :=	mipsisa32-be-elf
+-
+-# Bus type AHB requires KERNELPATH and TOOLPATH to be set manually.
+-ifndef KERNELPATH
+-$(error KERNELPATH must be defined for bus type AHB.)
+-endif
+-ifndef TOOLPATH
+-$(error TOOLPATH must be defined for bus type AHB.)
+-endif
+-
+-else
+-
+-KERNELPATH ?= $(firstword $(wildcard $(DESTDIR)/lib/modules/$(shell uname -r)/build /usr/src/linux))
+-
+-ifeq ($(KERNELPATH),)
+-$(error KERNELPATH must be defined)
+-endif
+-
+-endif
+-
+-# sanity check: does KERNELPATH exist?
+-ifeq ($(wildcard $(KERNELPATH)),)
+-$(error KERNELPATH: $(KERNELPATH) does not exist)
+-endif
+-
+-# KERNELRELEASE is the target kernel's version.  If KERNELRELEASE
+-# is not set in the environment then it is taken from the running
+-# system.
+-# To determine the correct version a mini-Makefile is piped to make
+-# which includes the Makefile in KERNELPATH and prints out the version.
+-# This is done to come by problems recently introduced with some distros
+-# and newer kernel releases.
+-#
+-# Note: '\044' used instead of '$' in order to avoid make complaining like
+-# "Recursive variable `KERNELRELEASE' references itself (eventually)."
+-KERNELRELEASE ?= $(shell echo -e 'madwifi_$$_`date +%s`:\n\t@echo \044(KERNELRELEASE)\ninclude Makefile' | make -C $(KERNELPATH) -s -f-)
+-
+-# KERNELCONF is the name of the file that holds the configuration
+-# of the target kernel.
+-KERNELCONF ?=	${KERNELPATH}/.config
+-
+-# sanity check: does KERNELCONF exist?
+-ifeq ($(wildcard $(KERNELCONF)),)
+-$(error KERNELCONF: $(KERNELCONF) does not exist.)
+-endif
+-
+-# SYSTEMMAP is the name of the System.map file for the target
+-# kernel. This will be needed when DESTDIR is defined in order
+-# to run depmod properly.
+-SYSTEMMAP ?= 	${KERNELPATH}/System.map
+-
+-# MODULEPATH nominates the directory where the modules will be
+-# installed to
+-ifeq ($(strip ${BUS}),AHB)
+-MODULEPATH := 	${KERNELPATH}/arch/mips/ar531x/RAMDISK/rootdir/lib/modules/${KERNELRELEASE}/net
+-else
+-MODULEPATH ?=	/lib/modules/${KERNELRELEASE}/net
+-endif
+-
+-# WIRELESSEXT contains information about the version of the wireless
+-# extensions that are available in the target kernel
+-WIRELESSEXT ?=	$(shell cat $(KERNELPATH)/include/linux/wireless.h | grep "\#define WIRELESS_EXT" | cut -f2)
+-
+ # Some settings that depend on actual kernel release
+ ifneq ($(findstring 2.6,$(KERNELRELEASE)),)
+ export-objs	:=
