@@ -26,8 +26,8 @@ diff -ruN asterisk-1.0.9-old/channels/Makefile asterisk-1.0.9-new/channels/Makef
  #	$(CC) -rdynamic -shared -Xlinker -x -o $@ $<
 diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channels/chan_bluetooth.c
 --- asterisk-1.0.9-old/channels/chan_bluetooth.c	1970-01-01 01:00:00.000000000 +0100
-+++ asterisk-1.0.9-new/channels/chan_bluetooth.c	2004-11-06 17:35:58.000000000 +0100
-@@ -0,0 +1,3127 @@
++++ asterisk-1.0.9-new/channels/chan_bluetooth.c	2005-09-06 22:51:30.000000000 +0200
+@@ -0,0 +1,3598 @@
 +/*
 + * Asterisk -- A telephony toolkit for Linux.
 + *
@@ -126,7 +126,6 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +#include <asterisk/lock.h>
 +#include <asterisk/utils.h>
 +#include <asterisk/channel.h>
-+#include <asterisk/channel_pvt.h>
 +#include <asterisk/config.h>
 +#include <asterisk/logger.h>
 +#include <asterisk/module.h>
@@ -145,6 +144,7 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +#include <fcntl.h>
 +#include <sys/ioctl.h>
 +#include <ctype.h>
++#include <endian.h>
 +
 +#include <bluetooth/bluetooth.h>
 +#include <bluetooth/hci.h>
@@ -159,7 +159,6 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +#ifndef HANDSFREE_AUDIO_GW_SVCLASS_ID
 +# define HANDSFREE_AUDIO_GW_SVCLASS_ID 0x111f
 +#endif
-+
 +#define BLUETOOTH_FORMAT    AST_FORMAT_SLINEAR
 +#define BLT_CHAN_NAME       "BLT"
 +#define BLT_CONFIG_FILE     "bluetooth.conf"
@@ -172,7 +171,8 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +typedef enum {
 +  BLT_ROLE_NONE = 0, // Unknown Device
 +  BLT_ROLE_HS = 1,   // Device is a Headset
-+  BLT_ROLE_AG = 2    // Device is an Audio Gateway
++  BLT_ROLE_AG = 2,   // Device is an Audio Gateway
++  BLT_ROLE_GUI = 3   // Device is used as an GUI
 +} blt_role_t;
 +
 +/* State when we're in HS mode */
@@ -199,15 +199,39 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +
 +#define BLT_DEFAULT_CHANNEL_AG   5
 +#define BLT_DEFAULT_CHANNEL_HS   6
++#define BLT_DEFAULT_CHANNEL_GUI  1
 +#define BLT_DEFAULT_ROLE         BLT_ROLE_HS
 +#define BLT_OBUF_LEN             (48 * 25)
 +
-+#define BUFLEN 4800
++#define BUFLEN (4800)
 +
 +/* ---------------------------------- */
 +
 +typedef struct blt_dev blt_dev_t;
 +
++void ag_cgmi_response(blt_dev_t * dev, char * cmd);
++void ag_unknown_response(blt_dev_t * dev, char * cmd);
++void ag_cgmi_valid_response(blt_dev_t * dev, char * cmd);
++void ag_clip_response(blt_dev_t * dev, char * cmd);
++void ag_cmer_response(blt_dev_t * dev, char * cmd);
++void ag_cind_status_response(blt_dev_t * dev, char * cmd);
++void ag_cind_response(blt_dev_t * dev, char * cmd);
++void ag_brsf_response(blt_dev_t * dev, char * cmd);
++void remove_sdp_records(void);
++
++void gui_easm_response(blt_dev_t * dev, char * cmd);
++
++int sock_err(int fd);
++int parse_clip(const char * str, char *number, int number_len, char * name, int name_len, int *type);
++int set_buffer(char * ring, char * data, int circular_len, int * pos, int data_len);
++int get_buffer(char * dst, char * ring, int ring_size, int * head, int to_copy);
++void gui_eaid_response(blt_dev_t * dev, char * cmd);
++
++
++
++struct blt_ring {
++	unsigned char buf[BUFLEN];
++};
 +// XXX:T: Tidy this lot up.
 +struct blt_dev {
 +
@@ -225,12 +249,15 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +  int sco_running;                   /* 1 when sCO thread should be running */
 +  pthread_t sco_thread;              /* SCO thread */
 +  ast_mutex_t sco_lock;              /* SCO lock */
-+  int sco_pos_in;                    /* Reader in position */
++  int sco_pos_in;                    /* Reader in position (drain)*/
++  int sco_pos_inrcv;                 /* Reader in position (fill) */
++	int wakeread; /* blt_read() needs to be woken */
 +  int sco_pos_out;                   /* Reader out position */
 +  int sco_sending;                   /* Sending SCO packets */
-+  char buf[1024];                    /* Incoming data buffer */
-+  char sco_buf_out[BUFLEN+1];          /* 24 chunks of 48 */
-+  char sco_buf_in[BUFLEN+1];           /* 24 chunks of 48 */
++  char buf[1200];                    /* Incoming data buffer */
++  int bufpos;
++  char sco_buf_out[BUFLEN];          /* 24 chunks of 48 */
++  char sco_buf_in[BUFLEN];           /* 24 chunks of 48 */
 +
 +  char dnid[1024];                    /* Outgoi gncall dialed number */
 +  unsigned char * obuf[BLT_OBUF_LEN]; /* Outgoing data buffer */
@@ -251,12 +278,15 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +  char rd_buff[BLT_RDBUFF_MAX];     /* RFCOMM input buffer */
 +  int rd_buff_pos;                  /* RFCOMM input buffer position */
 +  int ready;                        /* 1 When ready */
++  char *context;
 +
 +  /* AG mode */
 +  char last_ok_cmd[BLT_RDBUFF_MAX];        /* Runtime[AG]: Last AT command that was OK */
 +  int cind;                                /* Runtime[AG]: Recieved +CIND */  
 +  int call_pos, service_pos, callsetup_pos;  /* Runtime[AG]: Positions in CIND/CMER */
 +  int call, service, callsetup;              /* Runtime[AG]: Values */
++  char cid_num[AST_MAX_EXTENSION];
++  char cid_name[AST_MAX_EXTENSION];
 +
 +  /* HS mode */
 +  blt_state_t state;                       /* Runtime: Device state (AG mode only) */
@@ -298,12 +328,17 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +static void rd_close(blt_dev_t * dev, int reconnect, int err);
 +static int send_atcmd(blt_dev_t * device, const char * fmt, ...);
 +static int sco_connect(blt_dev_t * dev);
++static int sco_start(blt_dev_t * dev, int fd);
 +
 +/* ---------------------------------- */
 +
 +/* RFCOMM channel we listen on*/
 +static int rfcomm_channel_ag = BLT_DEFAULT_CHANNEL_AG;
 +static int rfcomm_channel_hs = BLT_DEFAULT_CHANNEL_HS;
++static int rfcomm_channel_gui = BLT_DEFAULT_CHANNEL_GUI;
++
++static char* gui_default_sip_number = "";
++static char* gui_default_sip_address = "";
 +
 +/* Address of local bluetooth interface */
 +static int hcidev_id;
@@ -316,10 +351,13 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +
 +static int sdp_record_hs = -1;
 +static int sdp_record_ag = -1;
++static int sdp_record_gui = -1;
 +
 +/* RFCOMM listen socket */
 +static int rfcomm_sock_ag = -1;
 +static int rfcomm_sock_hs = -1;
++static int rfcomm_sock_gui = -1;
++
 +static int sco_socket = -1;
 +
 +static int monitor_pid = -1;
@@ -328,12 +366,39 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +static pthread_t monitor_thread = AST_PTHREADT_NULL;
 +AST_MUTEX_DEFINE_STATIC(monitor_lock);
 +
-+/* Cound how many times this module is currently in use */
++/* Count how many times this module is currently in use */
 +static int usecnt = 0;
 +AST_MUTEX_DEFINE_STATIC(usecnt_lock);
 +
 +static struct sched_context * sched = NULL;
 +
++/* ---------------------------------- */
++
++#if ASTERISK_VERSION_NUM <= 010107
++#include <asterisk/channel_pvt.h>
++#define tech_pvt pvt->pvt
++#else /* CVS. FIXME: Version number */
++static struct ast_channel *blt_request(const char *type, int format, void *data, int *cause);
++static int blt_hangup(struct ast_channel *c);
++static int blt_answer(struct ast_channel *c);
++static struct ast_frame *blt_read(struct ast_channel *chan);
++static int blt_call(struct ast_channel *c, char *dest, int timeout);
++static int blt_write(struct ast_channel *chan, struct ast_frame *f);
++static int blt_indicate(struct ast_channel *chan, int cond);
++
++static const struct ast_channel_tech blt_tech = {
++	.type = BLT_CHAN_NAME,
++	.description = "Bluetooth Channel Driver",
++	.capabilities = BLUETOOTH_FORMAT,
++	.requester = blt_request,
++	.hangup = blt_hangup,
++	.answer = blt_answer,
++	.read = blt_read,
++	.call = blt_call,
++	.write = blt_write,
++	.indicate = blt_indicate,
++};
++#endif
 +/* ---------------------------------- */
 +
 +static const char *
@@ -344,7 +409,10 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +      return "HS";
 +    case BLT_ROLE_AG:
 +      return "AG";
++    case BLT_ROLE_GUI:
++      return "GUI";
 +    case BLT_ROLE_NONE:
++    default:
 +      return "??";
 +  }
 +}
@@ -378,6 +446,59 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +}
 +
 +/* ---------------------------------- */
++int parse_clip(const char * str, char *number, int number_len, char * name, int name_len, int *type)
++{
++  const char *c = str;
++  const char *start;
++  int length;
++  char typestr[256];
++
++  memset(number, 0, number_len);
++  memset(name, 0, name_len);
++  *type = 0;
++
++  number[0] = '\0';
++  name[0] = '\0';
++  while(*c && *c != '"')
++    c++;
++  c++;
++  start = c;
++  while(*c && *c != '"')
++    c++;
++  length = c - start < number_len ? c - start : number_len;
++  strncpy(number, start, length);
++  number[length] = '\0';
++  c++;
++  while(*c && *c != ',')
++    c++;
++  c++;
++  start = c;
++  while(*c && *c != ',')
++    c++;
++  length = c - start < number_len ? c - start : number_len;
++  strncpy(typestr, start, length);
++  typestr[length] = '\0';
++  *type = atoi(typestr);
++  c++;
++  while(*c && *c != ',')
++    c++;
++  c++;
++  while(*c && *c != ',')
++    c++;
++  c++;
++  while(*c && *c != '"')
++    c++;
++  c++;
++  start = c;
++  while(*c && *c != '"')
++    c++;
++  length = c - start < number_len ? c - start : number_len;
++  strncpy(name, start, length);
++  name[length] = '\0';
++
++  return(1);
++}
++
 +
 +static const char *
 +parse_cind(const char * str, char * name, int name_len)
@@ -423,8 +544,9 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +
 +    switch (val) {
 +      case 3:
-+        // Outgoign ringing
-+        if (dev->owner && dev->role == BLT_ROLE_AG)
++        // Outgoing ringing
++        if ((dev->owner && dev->role == BLT_ROLE_AG) ||
++	    (dev->owner && dev->role == BLT_ROLE_GUI))
 +          ast_queue_control(dev->owner, AST_CONTROL_RINGING);
 +        break;
 +      case 2:
@@ -432,7 +554,8 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +      case 1:
 +        break;
 +      case 0:
-+        if (dev->owner && dev->role == BLT_ROLE_AG && dev->call == 0)
++        if ((dev->owner && dev->role == BLT_ROLE_AG && dev->call == 0) ||
++	    (dev->owner && dev->role == BLT_ROLE_AG && dev->call == 0))
 +          ast_queue_control(dev->owner, AST_CONTROL_CONGESTION);
 +        break;
 +    }
@@ -456,6 +579,7 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +
 +    if (dev->owner) {
 +      if (val == 1) {
++      	sco_start(dev, -1);
 +        ast_queue_control(dev->owner, AST_CONTROL_ANSWER);
 +      } else if (val == 0)
 +        ast_queue_control(dev->owner, AST_CONTROL_HANGUP);
@@ -480,13 +604,13 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +
 +    copy = MIN(circular_len - start_pos, data_len);
 +    memcpy(ring + start_pos, data + done, copy);
-+
 +    done += copy;
 +    start_pos += copy;
 +    data_len -= copy;
 +
-+    if (start_pos == circular_len)
++    if (start_pos == circular_len) {
 +      start_pos = 0;
++    }
 +  }
 +  *(pos) = start_pos;
 +  return 0;
@@ -506,14 +630,20 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +    copy = MIN(ring_size - *head, to_copy);
 +
 +    // ast_log(LOG_DEBUG, "Getting: %d bytes, From pos %d\n", copy, *head);
++#if __BYTE_ORDER == __LITTLE_ENDIAN
 +    memcpy(dst, ring + *head, copy);
-+
++#else
++    //    memcpy(dst, ring + *head, copy);
++    ast_swapcopy_samples(dst, ring+*head, copy/2);
++#endif
++    memset(ring+*head, 0, copy);
 +    dst += copy;
 +    *head += copy;
 +    to_copy -= copy;
 +
-+    if (*head == ring_size )
-+      *head = 0;
++    if (*head == ring_size ) {
++	    *head = 0;
++    }
 +
 +  }
 +
@@ -549,7 +679,11 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +
 +  // Avoid deadlock in odd circumstances
 +
-+  ast_log(LOG_DEBUG, "SCO thread started on fd %d, pid %d\n", dev->sco, getpid());
++  ast_log(LOG_WARNING, "SCO thread started on fd %d, pid %d\n", dev->sco, getpid());
++
++  if (fcntl(dev->sco_pipe[1], F_SETFL, O_RDWR|O_NONBLOCK)) {
++	  ast_log(LOG_WARNING, "fcntl failed on sco_pipe\n");
++  }
 +
 +  // dev->status = BLT_STATUS_IN_CALL;
 +  // ast_queue_control(dev->owner, AST_CONTROL_ANSWER);
@@ -557,11 +691,13 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +
 +  ast_mutex_lock(&(dev->sco_lock));
 +
-+  memset(dev->sco_buf_in,  0x7f, BUFLEN);
-+  memset(dev->sco_buf_out, 0x7f, BUFLEN);
++  memset(dev->sco_buf_in, 0, BUFLEN);
++  memset(dev->sco_buf_out, 0, BUFLEN);
 +
 +  dev->sco_pos_in  = 0;
 +  dev->sco_pos_out = 0;
++  dev->sco_pos_inrcv = 0;
++  dev->wakeread = 1;
 +
 +  ast_mutex_unlock(&(dev->sco_lock));
 +
@@ -592,7 +728,6 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +    if (res == 0)
 +      continue;
 +
-+    ast_mutex_lock(&(dev->sco_lock));
 +
 +    if (pfd[0].revents & POLLIN) {
 +
@@ -600,15 +735,26 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +
 +      if (len) {
 +        ast_mutex_lock(&(dev->lock));
-+        set_buffer(dev->sco_buf_in,  buf, BUFLEN, &in_pos,  len);
-+        get_buffer(buf, dev->sco_buf_out, BUFLEN, &out_pos, len);
-+        write(dev->sco, buf, len);
-+        if (dev->owner && dev->owner->_state == AST_STATE_UP)
-+          write(dev->sco_pipe[1], &c, 1);
++
++        if (dev->owner && dev->owner->_state == AST_STATE_UP) {
++		ast_mutex_lock(&(dev->sco_lock));
++		set_buffer(dev->sco_buf_in,  buf, BUFLEN, &in_pos,  len);
++		dev->sco_pos_inrcv = in_pos;
++
++		get_buffer(buf, dev->sco_buf_out, BUFLEN, &out_pos, len);
++		if (write(dev->sco, buf, len) != len)
++			ast_log(LOG_WARNING, "Wrote <48 to sco\n");
++
++		if (dev->wakeread) {
++			/* blt_read has caught up. Kick it */
++			dev->wakeread = 0;
++			if(write(dev->sco_pipe[1], &c, 1) != 1)
++				ast_log(LOG_WARNING, "write to kick sco_pipe failed\n");
++		}
++		ast_mutex_unlock(&(dev->sco_lock));
++	}
 +        ast_mutex_unlock(&(dev->lock));
 +      }
-+
-+      ast_mutex_unlock(&(dev->sco_lock));
 +
 +    } else if (pfd[0].revents) {
 +
@@ -642,6 +788,14 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +  close(dev->sco);
 +  dev->sco = -1;
 +  dev->sco_running = -1;
++  
++  memset(dev->sco_buf_in, 0, BUFLEN);
++  memset(dev->sco_buf_out, 0, BUFLEN);
++
++  dev->sco_pos_in  = 0;
++  dev->sco_pos_out = 0;
++  dev->sco_pos_inrcv = 0;
++  
 +  ast_mutex_unlock(&(dev->sco_lock));
 +  if (dev->owner)
 +    ast_queue_control(dev->owner, AST_CONTROL_HANGUP);
@@ -740,7 +894,7 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +static int 
 +blt_write(struct ast_channel * ast, struct ast_frame * frame)
 +{
-+  blt_dev_t * dev = ast->pvt->pvt; 
++  blt_dev_t * dev = ast->tech_pvt; 
 +
 +  /* Write a frame of (presumably voice) data */
 +
@@ -750,7 +904,11 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +  }
 +
 +  if (!(frame->subclass & BLUETOOTH_FORMAT)) {
-+    ast_log(LOG_WARNING, "Cannot handle frames in format %d\n", frame->subclass);
++	  static int fish = 5;
++	  if (fish) {
++		  ast_log(LOG_WARNING, "Cannot handle frames in format %d\n", frame->subclass);
++		  fish--;
++	  }
 +    return 0;
 +  }
 +
@@ -769,10 +927,10 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +static struct ast_frame *
 +blt_read(struct ast_channel * ast)
 +{
-+  blt_dev_t * dev = ast->pvt->pvt;
++  blt_dev_t * dev = ast->tech_pvt;
 +  char c = 1;
 +  int len;
-+
++  static int fish = 0;
 +  /* Some nice norms */
 +
 +  dev->fr.datalen = 0;
@@ -780,23 +938,36 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +  dev->fr.data =  NULL;
 +  dev->fr.src = BLT_CHAN_NAME;
 +  dev->fr.offset = 0;
-+  dev->fr.mallocd = 0;
++  dev->fr.mallocd = AST_MALLOCD_DATA;
 +  dev->fr.delivery.tv_sec = 0;
 +  dev->fr.delivery.tv_usec = 0;
-+
++  read(dev->sco_pipe[0], &c, 1);
 +  ast_mutex_lock(&(dev->sco_lock));
 +  dev->sco_sending = 1;
-+  read(dev->sco_pipe[0], &c, 1);
-+  len = get_buffer(dev->buf, dev->sco_buf_in, BUFLEN, &(dev->sco_pos_in), 48);
-+  ast_mutex_unlock(&(dev->sco_lock));
 +
-+  dev->fr.data = dev->buf;
++  if (dev->sco_pos_inrcv < dev->sco_pos_in) {
++	  /* Buffer wrapped. Read only till the end */
++	  len = BUFLEN - dev->sco_pos_in + dev->sco_pos_inrcv;
++  } else {
++	  len = dev->sco_pos_inrcv - dev->sco_pos_in;
++  }
++  dev->fr.data = malloc(AST_FRIENDLY_OFFSET+len) + AST_FRIENDLY_OFFSET;
++
++  get_buffer(dev->fr.data, dev->sco_buf_in, BUFLEN, &(dev->sco_pos_in), len);
++  dev->wakeread = 1;
++  ast_mutex_unlock(&(dev->sco_lock));
++  if (fish) {
++	  unsigned char *x = dev->fr.data;
++	  ast_log(LOG_WARNING, "blt_read  %d: %02x %02x %02x %02x %02x %02x\n",
++		  dev->fr.datalen, x[0], x[1], x[2], x[3], x[4], x[5]);
++	  fish--;
++  }
++
 +  dev->fr.samples = len / 2;
 +  dev->fr.datalen = len;
 +  dev->fr.frametype = AST_FRAME_VOICE;
 +  dev->fr.subclass = BLUETOOTH_FORMAT;
-+  dev->fr.offset = 0;
-+
++  dev->fr.offset = AST_FRIENDLY_OFFSET;
 +  return &dev->fr;
 +}
 +
@@ -896,13 +1067,13 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +/*
 + * If the HS is already connected, then just send RING, otherwise, things get a
 + * little more sticky.  We first have to find the channel for HS using SDP, 
-+ * then intiate the connection.  Once we've done that, we can start the call.
++ * then initiate the connection.  Once we've done that, we can start the call.
 + */
 +
 +static int
 +blt_call(struct ast_channel * ast, char * dest, int timeout)
 +{
-+  blt_dev_t * dev = ast->pvt->pvt;
++  blt_dev_t * dev = ast->tech_pvt;
 +
 +  if ((ast->_state != AST_STATE_DOWN) && (ast->_state != AST_STATE_RESERVED)) {
 +    ast_log(LOG_WARNING, "blt_call called on %s, neither down nor reserved\n", ast->name);
@@ -940,6 +1111,11 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +  } else if (dev->role == BLT_ROLE_AG) {
 +
 +    send_atcmd(dev, "ATD%s;", dev->dnid);
++// it does not seem like we should start the audio until the call is connected
++//    sco_start(dev, -1);
++  } else if (dev->role == BLT_ROLE_GUI) {
++
++    send_atcmd(dev, "ATD%s;", dev->dnid);
 +
 +  } else {
 +
@@ -957,11 +1133,11 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +static int 
 +blt_hangup(struct ast_channel * ast)
 +{
-+  blt_dev_t * dev = ast->pvt->pvt;
++  blt_dev_t * dev = ast->tech_pvt;
 +
 +  ast_log(LOG_DEBUG, "blt_hangup(%s)\n", ast->name);
 +
-+  if (!ast->pvt->pvt) {
++  if (!ast->tech_pvt) {
 +    ast_log(LOG_WARNING, "Asked to hangup channel not connected\n");
 +    return 0;
 +  }
@@ -999,6 +1175,7 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +  } else if (dev->role == BLT_ROLE_AG) {
 +
 +    // Cancel call.
++    send_atcmd(dev, "ATH");
 +    send_atcmd(dev, "AT+CHUP");
 +
 +  }
@@ -1006,7 +1183,7 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +  if (dev->status == BLT_STATUS_IN_CALL || dev->status == BLT_STATUS_RINGING)
 +    dev->status = BLT_STATUS_READY;
 +
-+  ast->pvt->pvt = NULL;
++  ast->tech_pvt = NULL;
 +  dev->owner = NULL;
 +  ast_mutex_unlock(&(dev->lock));
 +  ast_setstate(ast, AST_STATE_DOWN);
@@ -1033,7 +1210,7 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +static int
 +blt_answer(struct ast_channel * ast)
 +{
-+  blt_dev_t * dev = ast->pvt->pvt;
++  blt_dev_t * dev = ast->tech_pvt;
 +
 +  ast_mutex_lock(&dev->lock);
 +
@@ -1071,8 +1248,8 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +  // ast->fds[0] = socket(PF_BLUETOOTH, SOCK_SEQPACKET, BTPROTO_SCO);
 +
 +  ast->nativeformats       = BLUETOOTH_FORMAT;
-+  ast->pvt->rawreadformat  = BLUETOOTH_FORMAT;
-+  ast->pvt->rawwriteformat = BLUETOOTH_FORMAT;
++  //ast->rawreadformat  = BLUETOOTH_FORMAT;
++  //ast->rawwriteformat = BLUETOOTH_FORMAT;
 +  ast->writeformat         = BLUETOOTH_FORMAT;
 +  ast->readformat          = BLUETOOTH_FORMAT;
 +
@@ -1080,17 +1257,23 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +
 +  ast->type = BLT_CHAN_NAME;
 +
-+  ast->pvt->pvt = dev;
-+
++  ast->tech_pvt = dev;
++#if ASTERISK_VERSION_NUM > 010107
++  ast->tech = &blt_tech;
++#else
 +  ast->pvt->call     = blt_call;
 +  ast->pvt->indicate = blt_indicate;
 +  ast->pvt->hangup   = blt_hangup;
 +  ast->pvt->read     = blt_read;
 +  ast->pvt->write    = blt_write;
 +  ast->pvt->answer   = blt_answer;
-+
++#endif
 +  strncpy(ast->context, context, sizeof(ast->context)-1);
 +  strncpy(ast->exten,   number,  sizeof(ast->exten) - 1);
++  if(0 == strcmp(number, "s"))
++  {
++    //ast_set_callerid(ast, dev->cid_num, dev->cid_name, dev->cid_num);
++  }
 +
 +  ast->language[0] = '\0';
 +
@@ -1118,8 +1301,10 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +static struct ast_channel *
 +#if (ASTERISK_VERSION_NUM < 010100)
 +blt_request(char * type, int format, void * local_data)
-+#else
++#elif (ASTERISK_VERSION_NUM <= 010107)
 +blt_request(const char * type, int format, void * local_data)
++#else
++blt_request(const char * type, int format, void * local_data, int *cause)
 +#endif
 +{
 +  char * data = (char*)local_data;
@@ -1178,7 +1363,7 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +  if (dev->role == BLT_ROLE_AG)
 +    strncpy(dev->dnid, number, sizeof(dev->dnid) - 1);
 +
-+  ast = blt_new(dev, AST_STATE_DOWN, "bluetooth", "s");
++  ast = blt_new(dev, AST_STATE_DOWN, dev->context, "s");
 +
 +  ast_mutex_unlock(&(dev->lock));
 +
@@ -1346,7 +1531,7 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +  return 0;
 +}
 +
-+/* Conneced Line Identification Presentation */
++/* Connected Line Identification Presentation */
 +
 +static int
 +atcmd_colp_set(blt_dev_t * dev, const char * arg, int len)
@@ -1430,6 +1615,175 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +  return 0;
 +}
 +
++void
++gui_eaid_response(blt_dev_t * dev, char * cmd)
++{
++  ast_log(LOG_NOTICE, "Submenu displayed.\n");
++}
++
++static int
++atcmd_eami_execute(blt_dev_t * dev, const char * data)
++{
++  char * number = NULL;
++
++  number = strndup(data, strlen(data));
++  int menuitem = atoi(number);
++
++  ast_log(LOG_NOTICE, "Menu Item '%d'.\n", menuitem);
++
++  dev->cb = gui_eaid_response;
++    
++  if (menuitem == 1) {
++    char command[1024] = "";
++    const char* c1 = "AT*EAID=8,1,\"Make a SIP call\",\"Number\",\"";
++    const char* c2 = "\"";
++    
++    (void)strncat(command, c1, sizeof(command) - strlen(command) - 1);
++    (void)strncat(command, gui_default_sip_number, sizeof(command) - strlen(command) - 1);
++    (void)strncat(command, c2, sizeof(command) - strlen(command) - 1);
++    
++    //strcat(command, "AT*EAID=8,1,\"Make a SIP call\",\"Number\",\"");
++    //strcat(command, gui_default_sip_number);
++    //strcat(command, "\"");
++    send_atcmd(dev, command);
++  } else if (menuitem == 2) {
++    char command[1024] = "";
++    const char* c1 = "AT*EAID=11,1,\"Make a SIP call\",\"SIP Address\",100,\"";
++    const char* c2 = "\"";
++    
++    (void)strncat(command, c1, sizeof(command) - strlen(command) - 1);
++    (void)strncat(command, gui_default_sip_address, sizeof(command) - strlen(command) - 1);
++    (void)strncat(command, c2, sizeof(command) - strlen(command) - 1);
++
++    //strcat(command, "AT*EAID=11,1,\"Make a SIP call\",\"SIP Address\",100,\"");
++    //strcat(command, gui_default_sip_address);
++    //strcat(command, "\"");
++    send_atcmd(dev, command);
++  } else if (menuitem == 0) {
++    dev->cb = gui_easm_response;
++//    send_atcmd(dev,"AT*EASM=\"SIP Menu\",1,1,3,\"Call Number\",\"Call Address\",\"More Options\",1");
++    send_atcmd(dev,"AT*EASM=\"SIP Menu\",1,1,2,\"Call Number\",\"Call Address\",1");
++  } else {
++    ast_log(LOG_ERROR, "Menu item not implementented.\n");
++  }
++  return 0;
++}
++
++static int
++atcmd_eaii_execute(blt_dev_t * dev, const char * data)
++{
++  int pos = 1, len = 0;
++  char type[128];
++  char val[128];
++  const char * start = data;
++  struct sockaddr_in addr;
++
++  while (*data) {
++    if (*data == ',') {
++      memset(type, 0, 128);
++      strncpy(type, start, len);
++
++      ast_log(LOG_NOTICE, "Number(8)/Address(11): '%s'.\n", type);
++
++      pos++;
++      len = 0;
++      data++;
++      start = data;
++      continue;
++    }
++    len++;
++    data++;
++  }
++  
++  memset(val, 0, 128);
++  strncpy(val, start, len);
++
++  char del[]= "\"";
++  char* address;
++  address = strtok(val, del);
++  int type_int = atoi(type);
++
++  if (strcmp(address, " 0") == 0) {
++      ast_log(LOG_NOTICE, "Spurious EAII:\n");
++      ast_log(LOG_NOTICE, data);
++      return 0;
++  }
++  
++  if (type_int == 8) {
++      (void)strncat(address, "@sipgate.de", sizeof(address) - strlen(address) - 1);
++  }
++  
++  ast_log(LOG_NOTICE, "SIP number/address: '%i','%s'.\n", type_int, address);
++
++  if (type_int == 8 || type_int == 11) {
++
++    char messagebox[1024] = "";
++    const char* mb1 = "AT*EAID=1,1,\"Setting up SIP call to ";
++    const char* mb2 = "\",30";
++    
++    (void)strncat(messagebox, mb1, sizeof(messagebox) - strlen(messagebox) - 1);
++    (void)strncat(messagebox, address, sizeof(messagebox) - strlen(messagebox) - 1);
++    (void)strncat(messagebox, mb2, sizeof(messagebox) - strlen(messagebox) - 1);
++
++    //strcat(messagebox, "AT*EAID=1,1,\"Setting up SIP call to ");
++    //strcat(messagebox, address);
++    //strcat(messagebox, "\",30");
++    send_atcmd(dev, messagebox);
++
++    send_atcmd(dev, "AT*ESKS=2");
++    send_atcmd(dev, "AT*EKSP");
++    send_atcmd(dev, "AT*ESKS=0");
++
++    //Create manager connection to create call
++    int s = socket(AF_INET,SOCK_STREAM,0);
++    if (s < 0) {
++      ast_log(LOG_ERROR, "Manager connection failed.");
++
++      dev->cb = ag_cgmi_response;
++      send_atcmd(dev, "AT*EAID=1,1,\"Call failed\"");
++      return -1;
++    }
++    addr.sin_family = AF_INET;
++    addr.sin_port = htons(5038);
++    addr.sin_addr.s_addr = inet_addr("127.0.0.1");
++    memset(&(addr.sin_zero), '\0', 8);
++
++    if (connect(s, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
++      ast_log(LOG_ERROR, "Manager connection failed. (2)");
++      dev->cb = ag_cgmi_response;
++      send_atcmd(dev, "AT*EAID=1,1,\"Call failed\"");
++      return -1;
++    }
++    char* command = "Action: login\r\nUsername: markus\r\nSecret: supAEr\r\n\r\n";
++    if (write(s,command,strlen(command)) < 0) {
++      ast_log(LOG_ERROR, "Manager connection failed. (3)");
++      dev->cb = ag_cgmi_response;
++      send_atcmd(dev, "AT*EAID=1,1,\"Call failed\"");
++      return -1;
++    }
++
++    char command3[1024] = "";
++    const char* action = "Action: Originate\r\nChannel: SIP/";
++    const char* action2 = "\r\nExten: 1235\r\nPriority: 1\r\nContext: sipgate.de\r\n\r\nAction: logoff\r\n\r\n";
++
++    (void)strncat(command3, action, sizeof(command3) - strlen(command3) - 1);
++    (void)strncat(command3, address, sizeof(command3) - strlen(command3) - 1);
++    (void)strncat(command3, action2, sizeof(command3) - strlen(command3) - 1);
++
++    //strcat(command3, "Action: Originate\r\nChannel: SIP/");
++    //strcat(command3, address);
++    //strcat(command3, "\r\nExten: 1235\r\nPriority: 1\r\nContext: sipgate.de\r\n\r\n");
++    ast_log(LOG_NOTICE, command3);
++    
++    if (write(s,command3,strlen(command3)) < 0) {
++      ast_log(LOG_ERROR, "Manager connection failed. (5)");
++      return -1;
++    }
++  }
++  //dev->cb = ag_cgmi_response;
++  return 0;
++}
++
 +/* Dial */
 +static int
 +atcmd_dial_execute(blt_dev_t * dev, const char * data)
@@ -1450,13 +1804,18 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +
 +  sco_start(dev, -1);
 +
-+  if (blt_new(dev, AST_STATE_UP, "bluetooth", number) == NULL) {
++  if (blt_new(dev, AST_STATE_UP, dev->context, number) == NULL) {
 +    sco_stop(dev);
 +  }
 +
 +  free(number);
 +
 +  return 0;
++}
++
++static int atcmd_bldn_execute(blt_dev_t * dev, const char *data)
++{
++	return atcmd_dial_execute(dev, "bldn;");
 +}
 +
 +/* Answer */
@@ -1574,6 +1933,35 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +  return 0;
 +}
 +
++/*
++ * handle an incoming call
++ */
++static int
++ag_unsol_clip(blt_dev_t * dev, const char * data)
++{
++  const char * orig = data;
++  char name[256];
++  char number[64];
++  int type;
++
++  while (*(data) && *(data) == ' ')
++    data++;
++
++  if (*(data) == 0) {
++    ast_log(LOG_WARNING, "Invalid value[1] for '+CLIP:%s'\n", orig);
++    return -1;
++  }
++
++  parse_clip(data, number, sizeof(number)-1, name, sizeof(name)-1, &type);
++  ast_log(LOG_NOTICE, "Parsed '+CLIP: %s' number='%s' type='%d' name='%s'\n", data, number, type, name);
++
++  blt_new(dev, AST_STATE_RING, dev->context, "s");
++
++  return 0;
++}
++
++
++
 +static blt_atcb_t
 +atcmd_list[] = 
 +{
@@ -1585,8 +1973,11 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +  { "+CHUP", NULL,           NULL,            atcmd_chup_execute,   NULL,             NULL },
 +  { "+CIEV", NULL,           NULL,            NULL,                 NULL,             ag_unsol_ciev },
 +  { "+CIND", NULL,           atcmd_cind_read, NULL,                 atcmd_cind_test,  ag_unsol_cind },
++  { "*EAMI", NULL,           NULL,            atcmd_eami_execute,   NULL,             NULL},
++  { "*EAII", NULL,           NULL,            atcmd_eaii_execute,   NULL,             NULL},
++
 +  { "+CLAN", NULL,           atcmd_clan_read, NULL,                 NULL,             NULL },
-+  { "+CLIP", atcmd_clip_set, NULL,            NULL,                 NULL,             NULL },
++  { "+CLIP", atcmd_clip_set, NULL,            NULL,                 NULL,             ag_unsol_clip },
 +  { "+COLP", atcmd_colp_set, NULL,            NULL,                 NULL,             NULL },
 +  { "+CMER", atcmd_cmer_set, NULL,            NULL,                 NULL,             NULL },
 +  { "+CPBR", atcmd_cpbr_set, NULL,            NULL,                 NULL,             NULL },
@@ -1594,6 +1985,7 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +  { "+CSCS", atcmd_cscs_set, NULL,            NULL,                 NULL,             NULL },
 +  { "*EIPS", atcmd_eips_set, NULL,            NULL,                 NULL,             NULL },
 +  { "+VGS",  atcmd_vgs_set,  NULL,            NULL,                 NULL,             NULL },
++  { "+BLDN", NULL,           NULL,            atcmd_bldn_execute,   NULL,             NULL },
 +};
 +
 +#define ATCMD_LIST_LEN (sizeof(atcmd_list) / sizeof(blt_atcb_t))
@@ -1610,6 +2002,12 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +  // DELAYED
 +  // NO CARRIER
 +
++}
++
++void
++gui_easm_response(blt_dev_t * dev, char * cmd)
++{
++  ast_log(LOG_NOTICE, "Menu displayed.\n");
 +}
 +
 +void
@@ -1630,7 +2028,15 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +  // CSCA - sms CENTER NUMBER
 +  // CNMI - SMS INDICATION
 +  // ast_log(LOG_DEBUG, "Manufacturer: %s\n", cmd);
-+  dev->cb = ag_unknown_response;
++
++  if (dev->role == BLT_ROLE_GUI) {
++    ast_log(LOG_NOTICE, "Displaying Menu.\n");
++    dev->cb = gui_easm_response;
++//    send_atcmd(dev,"AT*EASM=\"SIP Menu\",1,1,3,\"Call Number\",\"Call Address\",\"More Options\",1");
++    send_atcmd(dev,"AT*EASM=\"SIP Menu\",1,1,2,\"Call Number\",\"Call Address\",1");
++  } else {
++    dev->cb = ag_unknown_response;
++  }
 +}
 +
 +void
@@ -1670,7 +2076,7 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +  // XXX:T: Handle response.
 +  dev->cb = ag_cmer_response;
 +  send_atcmd(dev, "AT+CMER=3,0,0,1");
-+  // Initiase SCO link!
++  // Initiliase SCO link!
 +}
 +
 +void
@@ -1747,6 +2153,7 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +  }
 +
 +  sdp_record_ag = record.handle;
++  sdp_record_gui = record.handle;
 +
 +  ast_log(LOG_NOTICE, "HeadsetAudioGateway service registered\n");
 +
@@ -2095,12 +2502,13 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +
 +        dev->status = BLT_STATUS_NEGOTIATING;
 +
-+        /* If this device is a AG, we initiate the negotiation. */
++        /* If this device is an AG/GUI, we initiate the negotiation. */
 +
-+        if (dev->role == BLT_ROLE_AG) {
++        if (dev->role == BLT_ROLE_AG ||
++	    dev->role == BLT_ROLE_GUI) {
 +          dev->cb = ag_brsf_response;
 +          send_atcmd(dev, "AT+BRSF=23");
-+        }
++        } 
 +
 +        dev->outgoing_id = -1;
 +        ast_mutex_unlock(&(dev->lock));
@@ -2127,7 +2535,9 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +    return 0;
 +  }
 +
++  ast_log(LOG_NOTICE, "RFCOMM connect start.\n");
 +  fd = rfcomm_connect(&local_bdaddr, &(dev->bdaddr), dev->channel, 1);
++  ast_log(LOG_NOTICE, "RFCOMM connect done.\n");
 +
 +  if (fd == -1) {
 +    ast_log(LOG_WARNING, "NBIO connect() to %s returned %d: %s\n", dev->name, errno, strerror(errno));
@@ -2144,7 +2554,7 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +}
 +
 +
-+/* Called whenever a new command is recieved while we're the AG */
++/* Called whenever a new command is received while we're the AG */
 +
 +
 +static int
@@ -2165,7 +2575,7 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +
 +  cmd += 2;
 +
-+  // Don't forget 'AT' on it's own is OK.
++  // Don't forget 'AT' on its own is OK.
 +
 +  if (strlen(cmd) == 0) {
 +    send_atcmd_ok(dev, fullcmd);
@@ -2223,7 +2633,7 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +    }
 +  }
 +
-+  ast_log(LOG_WARNING, "Unknown AT Command: '%s' (%s)\n", fullcmd, cmd);
++  ast_log(LOG_NOTICE, "Unknown AT Command: '%s' (%s)\n", fullcmd, cmd);
 +  send_atcmd_error(dev);
 +
 +  return 0;
@@ -2261,11 +2671,11 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +      dev->status = BLT_STATUS_NEGOTIATING;
 +      dev->rd = fd;
 +
-+      if (dev->role == BLT_ROLE_AG) {
++      if (dev->role == BLT_ROLE_AG || 
++	  dev->role == BLT_ROLE_GUI) {
 +        dev->cb = ag_brsf_response;
 +        send_atcmd(dev, "AT+BRSF=23");
 +      }
-+
 +      ast_mutex_unlock(&(dev->lock));
 +      break;
 +    }
@@ -2376,12 +2786,14 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +
 +      dev->rd_buff[dev->rd_buff_pos++] = c;
 +
-+    } else if (dev->role == BLT_ROLE_AG) {
++    } else if (dev->role == BLT_ROLE_AG ||
++	       dev->role == BLT_ROLE_GUI) {
++
++      //ast_log(LOG_ERROR, "%s: %c\n", dev->name, c);
 +
 +      switch (dev->state) {
-+
 +        case BLT_STATE_WANT_R:
-+          if (c == '\r') {
++          if (c == '\r' || c == 10) {
 +            dev->state = BLT_STATE_WANT_N;
 +          } else if (c == '+') {
 +            dev->state = BLT_STATE_WANT_CMD;
@@ -2393,7 +2805,7 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +          break;
 +
 +        case BLT_STATE_WANT_N:
-+          if (c == '\n')
++          if (c == '\n' || c == 13)
 +            dev->state = BLT_STATE_WANT_CMD;
 +          else {
 +            ast_log(LOG_ERROR, "Device %s: Expected '\\n', got %d. state=BLT_STATE_WANT_N\n", dev->name, c);
@@ -2402,7 +2814,7 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +          break;
 +
 +        case BLT_STATE_WANT_CMD:
-+          if (c == '\r')
++          if (c == '\r' || c == 10)
 +            dev->state = BLT_STATE_WANT_N2;
 +          else {
 +            if (dev->rd_buff_pos >= BLT_RDBUFF_MAX) {
@@ -2414,7 +2826,7 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +          break;
 +
 +        case BLT_STATE_WANT_N2:
-+          if (c == '\n') {
++          if (c == '\n' || c == 13) {
 +
 +            dev->state = BLT_STATE_WANT_R;
 +
@@ -2431,11 +2843,28 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +                }
 +              }
 +
-+              if (option_verbose)
++	      if (option_verbose)
 +                ast_verbose(VERBOSE_PREFIX_1 "[%s] %*s > %s\n", role2str(dev->role), 10, dev->name, dev->rd_buff);
 +
 +              if (i == ATCMD_LIST_LEN)
-+                ast_log(LOG_DEBUG, "Device %s: Got unsolicited message: %s\n", dev->name, dev->rd_buff);
++                ast_log(LOG_NOTICE, "Device %s: Got unsolicited message: %s\n", dev->name, dev->rd_buff);
++
++	    } else if (dev->rd_buff[0] == '*') {
++	      if (option_verbose)
++		ast_verbose(VERBOSE_PREFIX_1 "[%s]* %*s > %s\n", role2str(dev->role), 9, dev->name, dev->rd_buff);
++
++              int i;
++              // find execute
++              for (i = 0 ; i < ATCMD_LIST_LEN ; i++) {
++                if (strncmp(atcmd_list[i].str, dev->rd_buff, strlen(atcmd_list[i].str)) == 0) {
++                  if (atcmd_list[i].execute)
++                    atcmd_list[i].execute(dev, dev->rd_buff + strlen(atcmd_list[i].str) + 1);
++                  else
++                    ast_log(LOG_ERROR, "Device %s: Unhandled Execute: %s\n", dev->name, dev->rd_buff);
++                  break;
++                }
++              }
++
 +
 +            } else {
 +
@@ -2466,7 +2895,6 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +
 +            dev->rd_buff_pos = 0;
 +            memset(dev->rd_buff, 0, BLT_RDBUFF_MAX);
-+
 +          } else {
 +
 +            ast_log(LOG_ERROR, "Device %s: Expected '\\n' got %d. state = BLT_STATE_WANT_N2:\n", dev->name, c);
@@ -2537,7 +2965,7 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +static void *
 +do_monitor(void * data)
 +{
-+#define SRV_SOCK_CNT 3
++#define SRV_SOCK_CNT 4
 +
 +  int res = 0;
 +  blt_dev_t * dev;
@@ -2575,8 +3003,11 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +  pfds[1].fd = rfcomm_sock_hs;
 +  pfds[1].events = POLLIN;
 +
-+  pfds[2].fd = sco_socket;
++  pfds[2].fd = rfcomm_sock_gui;
 +  pfds[2].events = POLLIN;
++
++  pfds[3].fd = sco_socket;
++  pfds[3].events = POLLIN;
 +
 +  while (1) {
 +    int cnt = SRV_SOCK_CNT;
@@ -2620,6 +3051,11 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +    }
 +
 +    if (pfds[2].revents) {
++      handle_incoming(rfcomm_sock_gui, BLT_ROLE_GUI);
++      res--;
++    }
++        
++    if (pfds[3].revents) {
 +      handle_incoming_sco(sco_socket);
 +      res--;
 +    }
@@ -2740,8 +3176,14 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +      rfcomm_channel_ag = atoi(v->value);
 +    } else if (!strcasecmp(v->name, "rfchannel_hs")) {
 +      rfcomm_channel_hs = atoi(v->value);
++    } else if (!strcasecmp(v->name, "rfchannel_gui")) {
++      rfcomm_channel_gui = atoi(v->value);
 +    } else if (!strcasecmp(v->name, "interface")) {
 +      hcidev_id = atoi(v->value);
++    } else if (!strcasecmp(v->name, "gui_default_sip_number")) {
++      gui_default_sip_number = v->value;
++    } else if (!strcasecmp(v->name, "gui_default_sip_address")) {
++      gui_default_sip_address = v->value;     
 +    } else {
 +      ast_log(LOG_WARNING, "Unknown config key '%s' in section [general]\n", v->name);
 +    }
@@ -2769,10 +3211,12 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +      if (str == NULL) {
 +        ast_log(LOG_ERROR, "Device [%s] has no role.  Specify type=<HS/AG>\n", cat);
 +        return -1;
-+      } else if (strcasecmp(str, "HS") == 0)
++      } else if (strcasecmp(str, "HS") == 0) {
 +        device->role = BLT_ROLE_HS;
-+      else if (strcasecmp(str, "AG") == 0) {
++      } else if (strcasecmp(str, "AG") == 0) {
 +        device->role = BLT_ROLE_AG;
++      } else if (strcasecmp(str, "GUI") == 0) {
++        device->role = BLT_ROLE_GUI;
 +      } else {
 +        ast_log(LOG_ERROR, "Device [%s] has invalid role '%s'\n", cat, str);
 +        return -1;
@@ -2790,6 +3234,11 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +
 +      if ((str = ast_variable_retrieve(cfg, cat, "autoconnect")) != NULL)
 +        device->autoconnect = (strcasecmp(str, "yes") == 0 || strcmp(str, "1") == 0) ? 1 : 0;
++
++      if ((str = ast_variable_retrieve(cfg, cat, "context")) != NULL)
++	device->context = str;
++      else
++	device->context = "bluetooth";
 +
 +      device->next = iface_head;
 +      iface_head = device;
@@ -2822,12 +3271,15 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +    char b1[18];
 +    ba2str(&(dev->bdaddr), b1);
 +    ast_cli(fd, "%s %-10s %-4s %-11s %-3s %2d/%02d/%-6ld %s\n",
-+                b1, dev->name, (dev->role == BLT_ROLE_HS) ? "HS" : "AG", status2str(dev->status),
-+                (dev->autoconnect) ? "Yes" : "No",
-+                dev->sco_running,
-+                dev->sco,
-+                dev->sco_thread,
-+                (dev->role == BLT_ROLE_AG) ? (dev->service) ? "Yes" : "No" : "N/A"
++	    b1, dev->name,
++//	    (dev->role == BLT_ROLE_HS) ? "HS" : "AG",
++	    (dev->role == BLT_ROLE_HS) ? "HS" :  (dev->role == BLT_ROLE_AG) ? "AG" : "GUI",
++	    status2str(dev->status),
++	    (dev->autoconnect) ? "Yes" : "No",
++	    dev->sco_running,
++	    dev->sco,
++	    dev->sco_thread,
++	    (dev->role == BLT_ROLE_AG) ? (dev->service) ? "Yes" : "No" : "N/A"
 +            );
 +    dev = dev->next;
 +  }
@@ -2842,11 +3294,12 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +  char b1[18];
 +  ba2str(&local_bdaddr, b1);
 +  ast_cli(fd, "-------------------------------------------\n");
-+  ast_cli(fd, "       Version : %s\n", BLT_SVN_REVISION);
-+  ast_cli(fd, "   Monitor PID : %d\n", monitor_pid);
-+  ast_cli(fd, "     RFCOMM AG : Channel %d, FD %d\n", rfcomm_channel_ag, rfcomm_sock_ag);
-+  ast_cli(fd, "     RFCOMM HS : Channel %d, FD %d\n", rfcomm_channel_hs, rfcomm_sock_hs);
-+  ast_cli(fd, "        Device : hci%d, MAC Address %s\n", hcidev_id, b1);
++  ast_cli(fd, "       Version  : %s\n", BLT_SVN_REVISION);
++  ast_cli(fd, "   Monitor PID  : %d\n", monitor_pid);
++  ast_cli(fd, "     RFCOMM AG  : Channel %d, FD %d\n", rfcomm_channel_ag, rfcomm_sock_ag);
++  ast_cli(fd, "     RFCOMM HS  : Channel %d, FD %d\n", rfcomm_channel_hs, rfcomm_sock_hs);
++  ast_cli(fd, "     RFCOMM GUI : Channel %d, FD %d\n", rfcomm_channel_gui, rfcomm_sock_gui);
++  ast_cli(fd, "        Device  : hci%d, MAC Address %s\n", hcidev_id, b1);
 +  ast_cli(fd, "-------------------------------------------\n");
 +  return RESULT_SUCCESS;
 +}
@@ -2873,8 +3326,8 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +    return RESULT_FAILURE;
 +  }
 +
-+  if (dev->role != BLT_ROLE_AG) {
-+    ast_cli(fd, "Device '%s' is not an AudioGateway\n", argv[2]);
++  if ((dev->role != BLT_ROLE_AG) && (dev->role != BLT_ROLE_GUI)) {
++    ast_cli(fd, "Device '%s' is not an AG or GUI\n", argv[2]);
 +    return RESULT_FAILURE;
 +  }
 +
@@ -2930,7 +3383,7 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +}
 +
 +static char *
-+complete_device_2_ag(char * line, char * word, int pos, int state)
++complete_device_2_ag_gui(char * line, char * word, int pos, int state)
 +{
 +  return complete_device(line, word, pos, state, 2, BLT_ROLE_AG);
 +}
@@ -2945,12 +3398,12 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +
 +
 +static char ag_sendcmd[] =
-+"Usage: bluetooth ag <device> sendcmd <cmd>\n"
++"Usage: bluetooth <device> sendcmd <cmd>\n"
 +"       Sends a AT cmd over the RFCOMM link, and print result (AG only)\n";
 +
 +static struct ast_cli_entry
 +cli_ag_sendcmd =
-+    { { "bluetooth", "sendcmd", NULL }, blt_ag_sendcmd, "Send AG an AT command", ag_sendcmd, complete_device_2_ag };
++    { { "bluetooth", "sendcmd", NULL }, blt_ag_sendcmd, "Send AG/GUI an AT command", ag_sendcmd, complete_device_2_ag_gui };
 +
 +static char show_information[] =
 +"Usage: bluetooth show information\n"
@@ -2970,7 +3423,7 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +  int res = -1;
 +  uint32_t range = 0x0000ffff;
 +
-+  if (sdp_record_ag == -1 || sdp_record_hs == -1)
++  if (sdp_record_ag == -1 || sdp_record_gui == -1 || sdp_record_hs == -1)
 +    return;
 +
 +  ast_log(LOG_DEBUG, "Removing SDP records\n");
@@ -2982,6 +3435,13 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +
 +  attr = sdp_list_append(0, &range);
 +  rec = sdp_service_attr_req(sdp, sdp_record_ag, SDP_ATTR_REQ_RANGE, attr);
++  sdp_list_free(attr, 0);
++
++  if (rec)
++    if (sdp_record_unregister(sdp, rec) == 0)
++      res = 0;
++
++  rec = sdp_service_attr_req(sdp, sdp_record_gui, SDP_ATTR_REQ_RANGE, attr);
 +  sdp_list_free(attr, 0);
 +
 +  if (rec)
@@ -3009,7 +3469,11 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +__unload_module(void)
 +{
 +
++#if ASTERISK_VERSION_NUM <= 010107
 +  ast_channel_unregister(BLT_CHAN_NAME);
++#else
++  ast_channel_unregister(&blt_tech);
++#endif
 +
 +  if (monitor_thread != AST_PTHREADT_NULL) {
 +
@@ -3089,6 +3553,9 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +  if ((rfcomm_sock_hs = rfcomm_listen(&local_bdaddr, rfcomm_channel_hs)) < 0)
 +    return -1;
 +
++  if ((rfcomm_sock_gui = rfcomm_listen(&local_bdaddr, rfcomm_channel_gui)) < 0)
++    return -1;
++
 +  if ((sco_socket = sco_listen(&local_bdaddr)) < 0)
 +    return -1;
 +
@@ -3107,7 +3574,11 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +  if (restart_monitor() != 0)
 +    return -1;
 +
++#if ASTERISK_VERSION_NUM <= 010107
 +  if (ast_channel_register(BLT_CHAN_NAME, "Bluetooth Driver", BLUETOOTH_FORMAT, blt_request)) {
++#else
++  if (ast_channel_register(&blt_tech)) {
++#endif
 +    ast_log(LOG_ERROR, "Unable to register channel class BTL\n");
 +    __unload_module();
 +    return -1;
@@ -3157,24 +3628,18 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +
 diff -ruN asterisk-1.0.9-old/configs/bluetooth.conf asterisk-1.0.9-new/configs/bluetooth.conf
 --- asterisk-1.0.9-old/configs/bluetooth.conf	1970-01-01 01:00:00.000000000 +0100
-+++ asterisk-1.0.9-new/configs/bluetooth.conf	2004-10-22 11:10:48.000000000 +0200
-@@ -0,0 +1,33 @@
++++ asterisk-1.0.9-new/configs/bluetooth.conf	2005-09-06 22:51:38.000000000 +0200
+@@ -0,0 +1,46 @@
 +[general]
 +; Channel we listen on as a HS (Headset)
 +rfchannel_hs = 2
 +; Channel we listen on as an AG (AudioGateway)
 +rfchannel_ag = 3
++; Channel we listen on as GUI
++rfchannel_gui = 4
 +; hci interface to use (number - e.g '0')
 +interface = 0
 +
-+;; A HBH-500 Handsfree Kit
-+[00:0A:D9:A1:AA:D2]
-+; Any name to use, this is what we use to send calls to (BLT/<name>).
-+name        = HBH-500
-+; IS this a HS or AG?
-+type        = HS
-+;
-+;
 +; RFCOMM channel to connect to.  For a HandsSet:
 +;    sdptool search --bdaddr xx:xx:xx:xx:xx:xx 0x111E
 +; or,for an AudioGateway (Phone):
@@ -3182,13 +3647,32 @@ diff -ruN asterisk-1.0.9-old/configs/bluetooth.conf asterisk-1.0.9-new/configs/b
 +;
 +; Find the 'channel' value under RFCOMM.
 +;
-+channel     = 2
-+; Automatically conenct?
++;channel     = 6
++; Automatically connect?
++;autoconnect = yes
++
++;example for a SonyEricsson mobile as a GUI device
++[00:0F:DE:6E:77:6B]
++name    = T610
++type    = GUI
++channel = 6
++;channel = 1
++autoconnect     = yes
++
++;[00:0E:6D:1A:3D:86]
++;name   = Nokia
++;type   = AG
++;channel = 13
++;autoconnect    = yes
++
++[00:0E:A1:01:49:AE]
++name    = AutoBlue
++type    = HS
++channel = 2
 +autoconnect = yes
 +
-+;; A Nokia 6310i
-+[00:60:57:1C:00:99]
-+name        = Neil
-+type        = AG
-+channel     = 13
-+autoconnect = yes
++;[00:0A:D9:EB:FD:D8]
++;name    = P900
++;type    = AG
++;channel = 8
++;autoconnect = no
