@@ -21432,9 +21432,9 @@ diff -urN linux.old/drivers/atm/sangam_atm/tn7api.h linux.dev/drivers/atm/sangam
 +int tn7sar_proc_pvc_table(char* buf, char **start, off_t offset, int count,int *eof, void *data);
 +#endif
 diff -urN linux.old/drivers/atm/sangam_atm/tn7atm.c linux.dev/drivers/atm/sangam_atm/tn7atm.c
---- linux.old/drivers/atm/sangam_atm/tn7atm.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/atm/sangam_atm/tn7atm.c	2005-08-23 06:46:10.067362880 +0200
-@@ -0,0 +1,1223 @@
+--- linux.old/drivers/atm/sangam_atm/tn7atm.c	2005-08-28 01:52:26.000000000 -0600
++++ linux.dev/drivers/atm/sangam_atm/tn7atm.c	2005-08-28 02:08:07.000000000 -0600
+@@ -0,0 +1,1233 @@
 +/* 
 + *   tn7.c
 + *   Linux atm module implementation.
@@ -21910,6 +21910,15 @@ diff -urN linux.old/drivers/atm/sangam_atm/tn7atm.c linux.dev/drivers/atm/sangam
 +    case ATM_UBR: /* Unspecified Bit Rate */
 +      traffic_type = 2;
 +      break;
++
++	/* Disable ATM_VBR until pppd ppoatm plugin supports it.
++         * NOTE: Support ATM_VBR requires the addition of a scr
++         * field to the atm_trafprm structure which will cause
++	 * a change in the SO_ATMQOS ioctl. Make sure that the
++	 * revised header file becomes visible to the pppd
++	 * pppoatm plugin source, or the SO_ATMQOS ioctl will fail.
++	 */
++#if 0
 +    case ATM_VBR: /* Variable Bit Rate */
 +      traffic_type = 1;
 +      pcr = vcc->qos.txtp.pcr;
@@ -21920,6 +21929,7 @@ diff -urN linux.old/drivers/atm/sangam_atm/tn7atm.c linux.dev/drivers/atm/sangam
 +      printk("cdvt=%d\n", cdvt);
 +      printk("mbs=%d\n", mbs);
 +      break;
++#endif
 +    default:
 +        traffic_type = 2;
 +  }
@@ -27220,99 +27230,3 @@ diff -urN linux.old/include/linux/atmdev.h linux.dev/include/linux/atmdev.h
  };
  
  
-diff -urN linux.old/include/linux/atm.h linux.dev/include/linux/atm.h
---- linux.old/include/linux/atm.h	2005-08-22 23:18:50.877539920 +0200
-+++ linux.dev/include/linux/atm.h	2005-08-23 04:46:50.112841416 +0200
-@@ -135,9 +135,12 @@
- 	unsigned char	traffic_class;	/* traffic class (ATM_UBR, ...) */
- 	int		max_pcr;	/* maximum PCR in cells per second */
- 	int		pcr;		/* desired PCR in cells per second */
-+	int		scr;	        /* desired SCR in cells per second */
- 	int		min_pcr;	/* minimum PCR in cells per second */
- 	int		max_cdv;	/* maximum CDV in microseconds */
- 	int		max_sdu;	/* maximum SDU in bytes */
-+	/* Ron remove for old tiatm driver 1.00.09 */
-+        //int             mbs;            /* Maximum Burst size */
-         /* extra params for ABR */
-         unsigned int 	icr;         	/* Initial Cell Rate (24-bit) */
-         unsigned int	tbe;		/* Transient Buffer Exposure (24-bit) */ 
-diff -urN linux.old/net/atm/common.c linux.dev/net/atm/common.c
---- linux.old/net/atm/common.c	2005-08-22 23:18:50.878539768 +0200
-+++ linux.dev/net/atm/common.c	2005-08-23 08:07:15.226746232 +0200
-@@ -460,8 +460,10 @@
- 	    vcc->qos.rxtp.max_pcr,vcc->qos.rxtp.max_sdu,
- 	    vcc->qos.aal == ATM_AAL5 ? "" : vcc->qos.aal == ATM_AAL0 ? "" :
- 	    " ??? code ",vcc->qos.aal == ATM_AAL0 ? 0 : vcc->qos.aal);
-+#if 0 /* by nbd */
- 	if (!test_bit(ATM_VF_HASQOS, &vcc->flags))
- 		return -EBADFD;
-+#endif
- 	if (vcc->qos.txtp.traffic_class == ATM_ANYCLASS ||
- 	    vcc->qos.rxtp.traffic_class == ATM_ANYCLASS)
- 		return -EINVAL;
-@@ -994,9 +996,6 @@
- 	unsigned long value;
- 	int error;
- 
--	if (__SO_LEVEL_MATCH(optname, level) && optlen != __SO_SIZE(optname))
--		return -EINVAL;
--
- 	vcc = ATM_SD(sock);
- 	switch (optname) {
- 		case SO_ATMQOS:
-@@ -1044,8 +1043,10 @@
- 	vcc = ATM_SD(sock);
- 	switch (optname) {
- 		case SO_ATMQOS:
-+#if 0 /* by nbd */
- 			if (!test_bit(ATM_VF_HASQOS,&vcc->flags))
- 				return -EINVAL;
-+#endif
- 			return copy_to_user(optval,&vcc->qos,sizeof(vcc->qos)) ?
- 			    -EFAULT : 0;
- 		case SO_SETCLP:
-diff -urN linux.old/net/atm/pvc.c linux.dev/net/atm/pvc.c
---- linux.old/net/atm/pvc.c	2005-08-22 23:18:50.880539464 +0200
-+++ linux.dev/net/atm/pvc.c	2005-08-23 08:07:31.342296296 +0200
-@@ -38,10 +38,12 @@
- 	if (addr->sap_family != AF_ATMPVC) return -EAFNOSUPPORT;
- 	lock_sock(sk);
- 	vcc = ATM_SD(sock);
-+#if 0 /* by nbd */
- 	if (!test_bit(ATM_VF_HASQOS, &vcc->flags)) {
- 		error = -EBADFD;
- 		goto out;
- 	}
-+#endif
- 	if (test_bit(ATM_VF_PARTIAL,&vcc->flags)) {
- 		if (vcc->vpi != ATM_VPI_UNSPEC) addr->sap_addr.vpi = vcc->vpi;
- 		if (vcc->vci != ATM_VCI_UNSPEC) addr->sap_addr.vci = vcc->vci;
-diff -urN linux.old/net/atm/svc.c linux.dev/net/atm/svc.c
---- linux.old/net/atm/svc.c	2005-08-22 23:18:50.881539312 +0200
-+++ linux.dev/net/atm/svc.c	2005-08-23 07:46:40.730418200 +0200
-@@ -141,10 +141,12 @@
- 	clear_bit(ATM_VF_BOUND,&vcc->flags);
- 	    /* failing rebind will kill old binding */
- 	/* @@@ check memory (de)allocation on rebind */
-+#if 0 /* by nbd */
- 	if (!test_bit(ATM_VF_HASQOS,&vcc->flags)) {
- 		error = -EBADFD;
- 		goto out;
- 	}
-+#endif
- 	vcc->local = *addr;
- 	vcc->reply = WAITING;
- 	add_wait_queue(&vcc->sleep,&wait);
-@@ -212,10 +214,12 @@
- 			error = -EAFNOSUPPORT;
- 			goto out;
- 		}
-+#if 0 /* by nbd */
- 		if (!test_bit(ATM_VF_HASQOS, &vcc->flags)) {
- 			error = -EBADFD;
- 			goto out;
- 		}
-+#endif
- 		if (vcc->qos.txtp.traffic_class == ATM_ANYCLASS ||
- 		    vcc->qos.rxtp.traffic_class == ATM_ANYCLASS) {
- 			error = -EINVAL;

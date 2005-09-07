@@ -7,9 +7,9 @@
 
 DOWNLOAD_SITE=http://openwrt.org/downloads/sources
 # extracted from netgear DG834B V1.0.5 GPL release
-ATM_FIRMWARE_DIR=sangam-atm-firmware-0.2
+ATM_FIRMWARE_DIR=sangam-atm-firmware-0.3
 ATM_FIRMWARE_FILE=$(ATM_FIRMWARE_DIR).tar.gz
-ATM_FIRMWARE_MD5SUM=0e37eb105070cd7296ff6d5ae29325b1
+ATM_FIRMWARE_MD5SUM=a774d2fe7926a5f57cb9f259961e49ae
 
 $(DL_DIR)/$(ATM_FIRMWARE_FILE):
 	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(ATM_FIRMWARE_FILE) $(ATM_FIRMWARE_MD5SUM) $(DOWNLOAD_SITE)
