@@ -3,12 +3,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME := kmod-wlcompat
-PKG_RELEASE := 1
+PKG_RELEASE := 3
 PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
 
 include $(TOPDIR)/package/rules.mk
 
 $(eval $(call PKG_template,KMOD_WLCOMPAT,$(PKG_NAME),$(LINUX_VERSION)-$(BOARD)-$(PKG_RELEASE),$(ARCH),kernel ($(LINUX_VERSION)-$(BOARD)-$(KERNEL_RELEASE))))
+$(eval $(call PKG_template,KMOD_WLCOMPAT_DEBUG,$(PKG_NAME)-debug,$(LINUX_VERSION)-$(BOARD)-$(PKG_RELEASE),$(ARCH),kernel ($(LINUX_VERSION)-$(BOARD)-$(KERNEL_RELEASE))))
 
 ifeq ($(KERNEL_DIR),)
 KERNEL_DIR:=$(LINUX_DIR)
@@ -40,7 +41,7 @@ $(IPKG_KMOD_WLCOMPAT): $(PKG_BUILD_DIR)/wlcompat.o
 	$(IPKG_BUILD) $(IDIR_KMOD_WLCOMPAT) $(PACKAGE_DIR)
 
 $(IPKG_KMOD_WLCOMPAT_DEBUG): $(PKG_BUILD_DIR)/wlcompat-debug.o
-	mkdir -p $(IDIR_KMOD_WLCOMPAT)/lib/modules/$(LINUX_VERSION)
-	cp $(PKG_BUILD_DIR)/wlcompat-debug.o $(IDIR_KMOD_WLCOMPAT)/lib/modules/$(LINUX_VERSION)/
+	mkdir -p $(IDIR_KMOD_WLCOMPAT_DEBUG)/lib/modules/$(LINUX_VERSION)
+	cp $(PKG_BUILD_DIR)/wlcompat-debug.o $(IDIR_KMOD_WLCOMPAT_DEBUG)/lib/modules/$(LINUX_VERSION)/
 	$(IPKG_BUILD) $(IDIR_KMOD_WLCOMPAT_DEBUG) $(PACKAGE_DIR)
 
