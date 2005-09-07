@@ -34,6 +34,7 @@
 
 static struct net_device *dev;
 static unsigned short bss_force;
+static struct iw_statistics wstats;
 char buf[WLC_IOCTL_MAXLEN];
 
 /* The frequency of each channel in MHz */
@@ -167,6 +168,10 @@ static int wlcompat_ioctl_getiwrange(struct net_device *dev,
 	range->min_pmt = 0;
 	range->max_pmt = 65535 * 1000;
 
+	range->max_qual.qual = 0;
+	range->max_qual.level = 100;
+	range->max_qual.noise = 100;
+	
 	range->min_rts = 0;
 	if (wl_ioctl(dev, WLC_GET_RTS, &range->max_rts, sizeof(int)) < 0)
 		range->max_rts = 2347;
@@ -216,6 +221,31 @@ static int wlcompat_set_scan(struct net_device *dev,
 }
 
 
+struct iw_statistics *wlcompat_get_wireless_stats(struct net_device *dev)
+{
+	wl_bss_info_t *bss_info = (wl_bss_info_t *) buf;
+	get_pktcnt_t pkt;
+	int rssi, noise;
+	
+	memset(&wstats, 0, sizeof(wstats));
+	memset(&pkt, 0, sizeof(pkt));
+	memset(buf, 0, sizeof(buf));
+	bss_info->version = 0x2000;
+	wl_ioctl(dev, WLC_GET_BSS_INFO, bss_info, WLC_IOCTL_MAXLEN);
+	wl_ioctl(dev, WLC_GET_PKTCNTS, &pkt, sizeof(pkt));
+
+	// somehow the structure doesn't fit here
+	noise = buf[0x50];
+	rssi = buf[0x52];
+
+	wstats.qual.level = rssi;
+	wstats.qual.noise = -100 + noise;
+	wstats.discard.misc = pkt.rx_bad_pkt;
+	wstats.discard.retries = pkt.tx_bad_pkt;
+
+	return &wstats;
+}
+
 static int wlcompat_get_scan(struct net_device *dev,
 			 struct iw_request_info *info,
 			 union iwreq_data *wrqu,
@@ -229,7 +259,10 @@ static int wlcompat_get_scan(struct net_device *dev,
 	char *end_buf = extra + IW_SCAN_MAX_DATA;
 	struct iw_event iwe;
 	int i, j;
-
+	int rssi, noise;
+	
+	results->buflen = WLC_IOCTL_MAXLEN - sizeof(wl_scan_results_t);
+	
 	if (wl_ioctl(dev, WLC_SCAN_RESULTS, buf, WLC_IOCTL_MAXLEN) < 0)
 		return -EAGAIN;
 	
@@ -259,9 +292,9 @@ static int wlcompat_get_scan(struct net_device *dev,
 
 		/* add quality statistics */
 		iwe.cmd = IWEVQUAL;
+		iwe.u.qual.qual = 0;
 		iwe.u.qual.level = bss_info->RSSI;
 		iwe.u.qual.noise = bss_info->phy_noise;
-		iwe.u.qual.qual = 0;
 		current_ev = iwe_stream_add_event(current_ev, end_buf, &iwe, IW_EV_QUAL_LEN);
 	
 		/* send rate information */
@@ -946,6 +979,7 @@ static int __init wlcompat_init()
 	old_ioctl = dev->do_ioctl;
 	dev->do_ioctl = new_ioctl;
 	dev->wireless_handlers = (struct iw_handler_def *)&wlcompat_handler_def;
+	dev->get_wireless_stats = wlcompat_get_wireless_stats;
 #ifdef DEBUG
 	printk("broadcom driver private data: 0x%08x\n", dev->priv);
 #endif
@@ -954,6 +988,7 @@ static int __init wlcompat_init()
 
 static void __exit wlcompat_exit()
 {
+	dev->get_wireless_stats = NULL;
 	dev->wireless_handlers = NULL;
 	dev->do_ioctl = old_ioctl;
 	return;
