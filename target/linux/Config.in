@@ -52,6 +52,7 @@ config BR2_LINUX_2_6_BRCM
 	default n
 	depends BR2_mipsel
 	depends BR2_LINUX_2_6
+	select BR2_PACKAGE_KMOD_B44
 	help
 	  Build firmware images for Broadcom based routers
 	  (e.g. Netgear WGT634u)
