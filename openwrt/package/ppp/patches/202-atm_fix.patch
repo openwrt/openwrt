@@ -9,13 +9,3 @@
  	if (!device_got_set)
  		no_device_given_pppoatm();
  	fd = socket(AF_ATMPVC, SOCK_DGRAM, 0);
-@@ -152,8 +150,7 @@
- 	qos.txtp.max_sdu = lcp_allowoptions[0].mru + pppoatm_overhead();
- 	qos.rxtp.max_sdu = lcp_wantoptions[0].mru + pppoatm_overhead();
- 	qos.aal = ATM_AAL5;
--	if (setsockopt(fd, SOL_ATM, SO_ATMQOS, &qos, sizeof(qos)) < 0)
--		fatal("setsockopt(SO_ATMQOS): %m");
-+	setsockopt(fd, SOL_ATM, SO_ATMQOS, &qos, sizeof(qos));
- 	/* TODO: accept on SVCs... */
- 	if (connect(fd, (struct sockaddr *) &pvcaddr,
- 	    sizeof(struct sockaddr_atmpvc)))
