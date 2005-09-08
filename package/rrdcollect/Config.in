@@ -1,7 +1,7 @@
 config BR2_PACKAGE_RRDCOLLECT
 	tristate "rrdcollect - Round-Robin Database (RRD) collecting daemon"
 	default m if CONFIG_DEVEL
-	select BR2_PACKAGE_LIBRRD
+	depends BR2_PACKAGE_LIBRRD || BR2_PACKAGE_LIBRRD1
 	help
 	  RRDcollect is a daemon which polls ceratin files in /proc/
 	  directory, gathering data and storing it inside RRDtool's

@@ -22,11 +22,11 @@ $(eval $(call PKG_template,RRDTOOL,rrdtool,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)
 
 $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
-		CFLAGS="$(TARGET_CFLAGS)" \
-		CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/usr/include/freetype2 -I$(STAGING_DIR)/usr/include/libart-2.0" \
-		LDFLAGS="-L$(STAGING_DIR)/lib -L$(STAGING_DIR)/usr/lib" \
-		PKG_CONFIG_PATH="$(STAGING_DIR)/usr/lib/pkgconfig" \
 		$(TARGET_CONFIGURE_OPTS) \
+		CFLAGS="$(TARGET_CFLAGS)" \
+		CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include -I$(STAGING_DIR)/usr/include/freetype2 -I$(STAGING_DIR)/usr/include/libart-2.0" \
+		LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib " \
+		PKG_CONFIG_PATH="$(STAGING_DIR)/usr/lib/pkgconfig" \
 		rd_cv_ieee_works=yes \
 		./configure \
 			--target=$(GNU_TARGET_NAME) \
@@ -49,6 +49,7 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 			--enable-shared=yes \
 			--enable-static=yes \
 			--disable-rpath \
+			--with-gnu-ld \
 			--enable-rrdcgi \
 			--disable-mmap \
 			--disable-perl \
@@ -69,20 +70,20 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_RRDTOOL):
 	install -d -m0755 $(IDIR_RRDTOOL)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/rrdtool $(IDIR_RRDTOOL)/usr/bin/rrdtool
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/rrdupdate $(IDIR_RRDTOOL)/usr/bin/rrdupdate
+	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/rrdtool $(IDIR_RRDTOOL)/usr/bin/
+	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/rrdupdate $(IDIR_RRDTOOL)/usr/bin/
 	$(RSTRIP) $(IDIR_RRDTOOL)
 	$(IPKG_BUILD) $(IDIR_RRDTOOL) $(PACKAGE_DIR)
 
 $(IPKG_RRDCGI):
 	install -d -m0755 $(IDIR_RRDCGI)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/rrdcgi $(IDIR_RRDCGI)/usr/bin/rrdcgi
+	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/rrdcgi $(IDIR_RRDCGI)/usr/bin/
 	$(RSTRIP) $(IDIR_RRDCGI)
 	$(IPKG_BUILD) $(IDIR_RRDCGI) $(PACKAGE_DIR)
 
 $(IPKG_LIBRRD):
 	install -d -m0755 $(IDIR_LIBRRD)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/librrd.so.* $(IDIR_LIBRRD)/usr/lib
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/librrd.so.* $(IDIR_LIBRRD)/usr/lib/
 	install -d -m0755 $(IDIR_LIBRRD)/usr/share/rrdtool/fonts
 	cp -fpR $(PKG_BUILD_DIR)/src/DejaVuSansMono-Roman.ttf \
 		$(IDIR_LIBRRD)/usr/share/rrdtool/fonts/
@@ -93,7 +94,8 @@ $(STAGING_DIR)/usr/lib/librrd.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include
 	cp -fpR $(PKG_INSTALL_DIR)/usr/include/rrd.h $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/librrd.{a,so*} $(STAGING_DIR)/usr/lib/
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/librrd.a $(STAGING_DIR)/usr/lib/
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/librrd.so* $(STAGING_DIR)/usr/lib/
 	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/librrd.so
@@ -101,7 +103,8 @@ install-dev: $(STAGING_DIR)/usr/lib/librrd.so
 uninstall-dev:
 	rm -rf \
 		$(STAGING_DIR)/usr/include/rrd.h \
-		$(STAGING_DIR)/usr/lib/librrd.{a,so*} \
+		$(STAGING_DIR)/usr/lib/librrd.a \
+		$(STAGING_DIR)/usr/lib/librrd.so* \
 
 compile: install-dev
 clean: uninstall-dev
