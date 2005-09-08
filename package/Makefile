@@ -52,6 +52,7 @@ package-$(BR2_PACKAGE_HTPDATE) += htpdate
 package-$(BR2_PACKAGE_ID3LIB) += id3lib
 package-$(BR2_PACKAGE_IPKG) += ipkg
 package-$(BR2_PACKAGE_IPROUTE2) += iproute2
+package-$(BR2_PACKAGE_IPSET) += ipset
 package-$(BR2_PACKAGE_IPTABLES) += iptables
 package-$(BR2_PACKAGE_IRSSI) += irssi
 package-$(BR2_PACKAGE_KISMET) += kismet
