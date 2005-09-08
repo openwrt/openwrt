@@ -11,6 +11,7 @@ ext-$(CONFIG_IP_NF_MATCH_TOS) += tos
 ext-$(CONFIG_IP_NF_MATCH_RECENT) += recent
 ext-$(CONFIG_IP_NF_MATCH_ECN) += ecn
 ext-$(CONFIG_IP_NF_MATCH_IPP2P) += ipp2p
+ext-$(CONFIG_IP_NF_MATCH_SET) += set
 ext-$(CONFIG_IP_NF_MATCH_DSCP) += dscp
 ext-$(CONFIG_IP_NF_MATCH_AH_ESP) += ah esp
 ext-$(CONFIG_IP_NF_MATCH_LENGTH) += length
