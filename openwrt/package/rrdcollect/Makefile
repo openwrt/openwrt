@@ -14,6 +14,10 @@ PKG_CAT:=zcat
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
+ifneq ($(BR2_PACKAGE_LIBRRD),)
+RRDTOOL_LIBS:=-lart_lgpl_2 -lfreetype -lpng
+endif
+
 include $(TOPDIR)/package/rules.mk
 
 $(eval $(call PKG_template,RRDCOLLECT,rrdcollect,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
@@ -23,9 +27,9 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS) -DSOCKET_COMM" \
-		CPPFLAGS="-I$(STAGING_DIR)/usr/include" \
-		LDFLAGS="-L$(STAGING_DIR)/lib -L$(STAGING_DIR)/usr/lib" \
-		LIBS="-lart_lgpl_2 -lfreetype -lpng -lz" \
+		CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include" \
+		LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib" \
+		LIBS="$(RRDTOOL_LIBS) -lz" \
 		PKG_CONFIG_PATH="$(STAGING_DIR)/usr/lib/pkgconfig" \
 		ac_cv_func_malloc_0_nonnull=yes \
 		./configure \
@@ -48,6 +52,8 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 			$(DISABLE_LARGEFILE) \
 			--enable-shared \
 			--disable-static \
+			--disable-rpath \
+			--with-gnu-ld \
 			--enable-exec \
 			--without-rrdtool \
 			--with-librrd \

@@ -135,6 +135,7 @@ package-$(BR2_PACKAGE_ROBOCFG) += robocfg
 package-$(BR2_PACKAGE_RP_PPPOE) += rp-pppoe
 package-$(BR2_PACKAGE_RRDCOLLECT) += rrdcollect
 package-$(BR2_COMPILE_RRDTOOL) += rrdtool
+package-$(BR2_COMPILE_RRDTOOL1) += rrdtool1
 package-$(BR2_PACKAGE_RSYNC) += rsync
 package-$(BR2_PACKAGE_SABLEVM) += sablevm
 package-$(BR2_PACKAGE_SABLEVM_CLASSPATH) += sablevm-classpath
@@ -230,8 +231,14 @@ portmap-compile: tcp_wrappers-compile
 postgresql-compile: zlib-compile
 ppp-compile: linux-atm-compile
 quagga-compile: readline-compile ncurses-compile
+ifneq ($(BR2_PACKAGE_LIBRRD),)
 rrdcollect-compile: rrdtool-compile
+endif
+ifneq ($(BR2_PACKAGE_LIBRRD1),)
+rrdcollect-compile: rrdtool1-compile
+endif
 rrdtool-compile: cgilib-compile freetype-compile libart-compile libpng-compile
+rrdtool1-compile: zlib-compile
 rsync-compile: popt-compile
 samba-compile: cups-compile
 screen-compile: ncurses-compile
