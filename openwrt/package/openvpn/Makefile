@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openvpn
-PKG_VERSION:=2.0.1
-PKG_RELEASE:=2
-PKG_MD5SUM:=fad7a08c0d68371c2c0e6428bcb98fa5
+PKG_VERSION:=2.0.2
+PKG_RELEASE:=1
+PKG_MD5SUM:=862f8788f080f669b1ae00a74ef68001
 
 PKG_SOURCE_URL:=http://openvpn.net/release @SF/openvpn
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -27,6 +27,9 @@ endif
 
 ifneq ($(BR2_PACKAGE_OPENVPN_SERVER),y)
 DISABLE_SERVER:=--disable-server
+endif
+ifneq ($(BR2_PACKAGE_OPENVPN_HTTP),y)
+DISABLE_HTTP:=--disable-http
 endif
 
 $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
@@ -62,9 +65,9 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 		  --disable-plugins \
 		  --disable-management \
 		  --disable-socks \
-		  --disable-http \
 		  $(DISABLE_LZO) \
 		  $(DISABLE_SERVER) \
+		  $(DISABLE_HTTP) \
 	);
 	touch $(PKG_BUILD_DIR)/.configured
 
