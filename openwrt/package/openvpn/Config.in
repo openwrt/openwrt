@@ -1,5 +1,5 @@
 config BR2_PACKAGE_OPENVPN
-	tristate "openvpn - VPN solution using SSL"
+	tristate "openvpn - Open source VPN solution using SSL"
 	default m if CONFIG_DEVEL
 	select BR2_PACKAGE_KMOD_TUN
 	select BR2_PACKAGE_LIBOPENSSL
@@ -13,6 +13,11 @@ config BR2_PACKAGE_OPENVPN
 
 config BR2_PACKAGE_OPENVPN_SERVER
 	bool "Enable server support"
+	default y
+	depends BR2_PACKAGE_OPENVPN
+
+config BR2_PACKAGE_OPENVPN_HTTP
+	bool "Enable http proxy support"
 	default y
 	depends BR2_PACKAGE_OPENVPN
 
