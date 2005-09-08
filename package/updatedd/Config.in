@@ -1,0 +1,45 @@
+config BR2_PACKAGE_UPDATEDD
+        tristate "updatedd - a tool to update dynamic dns services"
+        default m if CONFIG_DEVEL
+        help
+		Updatedd is a small tool that will update one of many dynamic
+		dns services on boot. Please look at the /etc/init.d/S50ddns
+		script for more info.
+
+
+config BR2_PACKAGE_UPDATEDD_CHANGEIP
+	bool "changeip.com"
+	depends on BR2_PACKAGE_UPDATEDD
+	default y if CONFIG_DEVEL
+config BR2_PACKAGE_UPDATEDD_DYNDNS
+	bool "dyndns.org"
+	depends on BR2_PACKAGE_UPDATEDD
+	default y if CONFIG_DEVEL
+config BR2_PACKAGE_UPDATEDD_EURODYNDNS
+	bool "eurodyndns.org"
+	depends on BR2_PACKAGE_UPDATEDD
+	default y if CONFIG_DEVEL
+config BR2_PACKAGE_UPDATEDD_HN
+	bool "hn.org"
+	depends on BR2_PACKAGE_UPDATEDD
+	default y if CONFIG_DEVEL
+config BR2_PACKAGE_UPDATEDD_NOIP
+	bool "no-ip.com"
+	depends on BR2_PACKAGE_UPDATEDD
+	default y if CONFIG_DEVEL
+config BR2_PACKAGE_UPDATEDD_ODS
+	bool "ods.org"
+	depends on BR2_PACKAGE_UPDATEDD
+	default y if CONFIG_DEVEL
+config BR2_PACKAGE_UPDATEDD_OVH
+	bool "ovh.com"
+	depends on BR2_PACKAGE_UPDATEDD
+	default y if CONFIG_DEVEL
+config BR2_PACKAGE_UPDATEDD_REGFISH
+	bool "regfish.com"
+	depends on BR2_PACKAGE_UPDATEDD
+	default y if CONFIG_DEVEL
+config BR2_PACKAGE_UPDATEDD_TZO
+	bool "tzo.com"
+	depends on BR2_PACKAGE_UPDATEDD
+	default y if CONFIG_DEVEL

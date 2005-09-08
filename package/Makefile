@@ -159,6 +159,7 @@ package-$(BR2_PACKAGE_TOR) += tor
 package-$(BR2_PACKAGE_TTCP) += ttcp
 package-$(BR2_PACKAGE_UCLIBCXX) += uclibc++
 package-$(BR2_PACKAGE_ULOGD) += ulogd
+package-$(BR2_PACKAGE_UPDATEDD) += updatedd
 package-$(BR2_PACKAGE_USBUTILS) += usbutils
 package-$(BR2_PACKAGE_VTUN) += vtun
 package-$(BR2_PACKAGE_VSFTPD) += vsftpd
