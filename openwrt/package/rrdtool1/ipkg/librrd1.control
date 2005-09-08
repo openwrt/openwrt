@@ -1,9 +1,9 @@
-Package: librrd
+Package: librrd1
 Priority: optional
 Section: libs
-Maintainer: OpenWrt Developers Team <openwrt-devel@openwrt.org>, Oliver Ertl <oliver@ertl-net.net>
-Source: http://openwrt.org/cgi-bin/viewcvs.cgi/openwrt/package/rrdtool/
-Depends: libart, libfreetype, libpng, zlib
+Maintainer: OpenWrt Developers Team <openwrt-devel@openwrt.org>, Christian Magnusson <mag@mag.cx>
+Source: http://openwrt.org/cgi-bin/viewcvs.cgi/openwrt/package/rrdtool1/
+Depends: zlib
 Description: Round Robin Database (RRD) management library. 
  RRD is the Acronym for Round Robin Database. RRD is a system to store and
  display time-series data (i.e. network bandwidth, machine-room temperature,
@@ -14,3 +14,7 @@ Description: Round Robin Database (RRD) management library.
  put friendly user interface on it.
  .
  This package contains the shared library used to manage RRDs.
+ .
+ This is version 1.0.x with cgilib-0.4, gd1.3 and libpng-1.0.9 linked into 
+ librrd.so. The library is much smaller compared to the 1.2.x version with 
+ separate dynamic linked libraries.
