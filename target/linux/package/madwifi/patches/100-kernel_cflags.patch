@@ -18,5 +18,5 @@ diff -urN madwifi.old/hal/public/mips-le-elf.inc madwifi.dev/hal/public/mips-le-
  LDOPTS=	-EL
  COPTS+=	-DAH_BYTE_ORDER=AH_LITTLE_ENDIAN
 -COPTS+=	-G 0 -EL -mno-abicalls -fno-pic -mips2 -Wa,--trap \
-+COPTS+=	-G 0 -EL -mno-abicalls -fno-pic -mips32 -Wa,--trap \
++COPTS+=	-G 0 -mno-abicalls -fno-pic -mips32 -Wa,--trap \
  	-fno-strict-aliasing -fno-common -fomit-frame-pointer -mlong-calls

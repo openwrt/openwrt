@@ -28,6 +28,12 @@ ifeq ($(ARCH),i386)
 HAL_TARGET:=i386-elf
 endif
 
+ifeq ($(LINUX_VERSION),2.4.30)
+MODUL_SUFFIX=o
+else
+MODUL_SUFFIX=ko
+endif
+
 include $(TOPDIR)/package/rules.mk
 
 $(eval $(call PKG_template,KMOD_MADWIFI,kmod-madwifi,$(LINUX_VERSION)$(BOARD)+$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH),kernel-$(LINUX_VERSION)-$(BOARD) ($(KERNEL_RELEASE))))
@@ -50,10 +56,10 @@ $(IPKG_KMOD_MADWIFI):
 	mkdir -p $(IDIR_KMOD_MADWIFI)/lib/modules/$(LINUX_VERSION)
 	install -m0644 ./files/madwifi.modules $(IDIR_KMOD_MADWIFI)/etc/modules.d/20-madwifi
 	install -m0755 ./files/madwifi.init $(IDIR_KMOD_MADWIFI)/etc/init.d/S20madwifi
-	cp -fpR $(PKG_BUILD_DIR)/net80211/wlan*.o \
-		$(PKG_BUILD_DIR)/ath_hal/ath_hal.o \
-		$(PKG_BUILD_DIR)/ath_rate/sample/ath_rate_sample.o \
-		$(PKG_BUILD_DIR)/ath/ath_pci.o \
+	cp -fpR $(PKG_BUILD_DIR)/net80211/wlan*.$(MODUL_SUFFIX) \
+		$(PKG_BUILD_DIR)/ath_hal/ath_hal.$(MODUL_SUFFIX) \
+		$(PKG_BUILD_DIR)/ath_rate/sample/ath_rate_sample.$(MODUL_SUFFIX) \
+		$(PKG_BUILD_DIR)/ath/ath_pci.$(MODUL_SUFFIX) \
 		$(IDIR_KMOD_MADWIFI)/lib/modules/$(LINUX_VERSION)/
 	$(IPKG_BUILD) $(IDIR_KMOD_MADWIFI) $(PACKAGE_DIR)
 
