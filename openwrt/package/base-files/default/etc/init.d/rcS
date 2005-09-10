@@ -1,4 +1,5 @@
 #!/bin/sh
+. /etc/nvram.sh
 syslog_ip=$(nvram get log_ipaddr)
 ipcalc -s "$syslog_ip" || syslog_ip=""
 syslogd -C 16 ${syslog_ip:+-L -R $syslog_ip}
