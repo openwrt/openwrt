@@ -9,19 +9,19 @@ IB_DIR:=$(BUILD_DIR)/$(IB_NAME)
 define kernel_template
 
 $(1)/$(2)-clean:
-	$(MAKE) -C linux-$(1) BOARD="$(2)" clean
+	$(MAKE) -C linux-$(1) KERNEL="$(1)" BOARD="$(2)" clean
 
 $(1)/$(2)-prepare:
-	$(MAKE) -C linux-$(1) BOARD="$(2)" prepare
+	$(MAKE) -C linux-$(1) KERNEL="$(1)" BOARD="$(2)" prepare
 
 $(1)/$(2)-compile:
-	$(MAKE) -C linux-$(1) BOARD="$(2)" compile
+	$(MAKE) -C linux-$(1) KERNEL="$(1)" BOARD="$(2)" compile
 
 $(1)/$(2)-rebuild:
-	$(MAKE) -C linux-$(1) BOARD="$(2)" rebuild
+	$(MAKE) -C linux-$(1) KERNEL="$(1)" BOARD="$(2)" rebuild
 
 $(1)/$(2)-install:
-	$(MAKE) -C linux-$(1) BOARD="$(2)" install
+	$(MAKE) -C linux-$(1) KERNEL="$(1)" BOARD="$(2)" install
 
 $(1)/$(2)-image: $(1)/$(2)-install
 	$(MAKE) -C image KERNEL="$(1)" BOARD="$(2)" install
