@@ -28,7 +28,7 @@ ifeq ($(ARCH),i386)
 HAL_TARGET:=i386-elf
 endif
 
-ifeq ($(LINUX_VERSION),2.4.30)
+ifeq ($(KERNEL),2.4)
 MODUL_SUFFIX=o
 else
 MODUL_SUFFIX=ko
