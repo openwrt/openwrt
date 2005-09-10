@@ -1,8 +1,8 @@
 #!/bin/sh
 . /etc/nvram.sh
-if [ "$(uname -r|grep 2.4)" = "0" ];do
+if [ "$(uname -r|grep 2.4)" = "0" ];then
 	echo "S" > /proc/jffs2_bbc
-done
+fi
 
 mkdir -p /var/run
 mkdir -p /var/log
