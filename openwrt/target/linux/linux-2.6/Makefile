@@ -6,7 +6,7 @@ include ../rules.mk
 
 KERNEL:=2.6
 LINUX_VERSION:=2.6.12.5
-LINUX_KERNEL_MD5SUM:=x
+LINUX_KERNEL_MD5SUM:=076f0dc714112c764c790fbaef19e228
 LINUX_SITE=http://www.fi.kernel.org/pub/linux/kernel/v2.6 \
            http://www.fr.kernel.org/pub/linux/kernel/v2.6 \
            http://www.kernel.org/pub/linux/kernel/v2.6 \
