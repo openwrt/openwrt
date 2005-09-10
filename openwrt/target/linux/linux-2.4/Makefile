@@ -135,6 +135,10 @@ $(eval $(call KMOD_template,USB_STORAGE,usb-storage,\
 $(eval $(call KMOD_template,USB_PRINTER,usb-printer,\
 	$(MODULES_DIR)/kernel/drivers/usb/printer.o \
 ,CONFIG_USB_PRINTER,kmod-usb-core,60,printer))
+$(eval $(call KMOD_template,USB_AUDIO,usb-audio,\
+	$(MODULES_DIR)/kernel/drivers/sound/soundcore.o \
+	$(MODULES_DIR)/kernel/drivers/usb/audio.o \
+,CONFIG_USB_AUDIO,kmod-usb-core,60,soundcore audio))
 $(eval $(call KMOD_template,IDE,ide,\
 	$(MODULES_DIR)/kernel/drivers/ide/*.o \
 	$(MODULES_DIR)/kernel/drivers/ide/*/*.o \

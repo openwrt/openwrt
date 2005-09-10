@@ -1,0 +1,27 @@
+diff -rNu linux-2.4.30/drivers/sound/sound_core.c linux-2.4.30.new/drivers/sound/sound_core.c
+--- linux-2.4.30/drivers/sound/sound_core.c	2001-10-01 05:26:08.000000000 +1000
++++ linux-2.4.30.new/drivers/sound/sound_core.c	2005-08-27 22:52:55.061719968 +1000
+@@ -174,9 +174,9 @@
+ 	}
+ 	
+ 	if (r == low)
+-		sprintf (name_buf, "%s", name);
++		snprintf (name_buf, sizeof(name_buf), "%s", name);
+ 	else
+-		sprintf (name_buf, "%s%d", name, (r - low) / SOUND_STEP);
++		snprintf (name_buf, sizeof(name_buf), "%s%d", name, (r - low) / SOUND_STEP);
+ 	s->de = devfs_register (devfs_handle, name_buf,
+ 				DEVFS_FL_NONE, SOUND_MAJOR, s->unit_minor,
+ 				S_IFCHR | mode, fops, NULL);
+@@ -507,9 +507,9 @@
+ 		 *  ALSA toplevel modules for soundcards, thus we need
+ 		 *  load them at first.	  [Jaroslav Kysela <perex@jcu.cz>]
+ 		 */
+-		sprintf(mod, "sound-slot-%i", unit>>4);
++		snprintf(mod, sizeof(mod), "sound-slot-%i", unit>>4);
+ 		request_module(mod);
+-		sprintf(mod, "sound-service-%i-%i", unit>>4, chain);
++		snprintf(mod, sizeof(mod), "sound-service-%i-%i", unit>>4, chain);
+ 		request_module(mod);
+ 		spin_lock(&sound_loader_lock);
+ 		s = __look_for_unit(chain, unit);
