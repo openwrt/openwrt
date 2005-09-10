@@ -9,7 +9,7 @@ PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
 include $(TOPDIR)/package/rules.mk
 
 IDIR_OPENWRT:=$(PKG_BUILD_DIR)/ipkg
-IPKG_OPENWRT:=$(PACKAGE_DIR)/base-files-$(BOARD)_$(PKG_RELEASE)_$(ARCH).ipk
+IPKG_OPENWRT:=$(PACKAGE_DIR)/base-files-$(BOARD)-$(KERNEL)_$(PKG_RELEASE)_$(ARCH).ipk
 
 $(PKG_BUILD_DIR)/.prepared:
 	mkdir -p $(PKG_BUILD_DIR)
@@ -33,10 +33,10 @@ $(PKG_BUILD_DIR)/.built:
 	
 $(IDIR_OPENWRT):
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_OPENWRT) ipkg/base-files-arch.control $(PKG_RELEASE) $(ARCH)
-	$(SED) s,base-files-arch,base-files-$(BOARD),g $(IDIR_OPENWRT)/CONTROL/control
+	$(SED) s,base-files-arch,base-files-$(BOARD)-$(KERNEL),g $(IDIR_OPENWRT)/CONTROL/control
 
 $(IPKG_OPENWRT): $(IDIR_OPENWRT)
-	[ -d files/$(BOARD) ] && cp -a files/$(BOARD)/* $(IDIR_OPENWRT)/
+	[ -d files/$(BOARD)-$(KERNEL) ] && cp -a files/$(BOARD)-$(KERNEL)/* $(IDIR_OPENWRT)/
 	find $(IDIR_OPENWRT) -name CVS | xargs rm -rf
 	find $(IDIR_OPENWRT) -name .svn | xargs rm -rf
 	$(RSTRIP) $(IDIR_OPENWRT)
