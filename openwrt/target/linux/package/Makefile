@@ -8,11 +8,9 @@ package-$(BR2_PACKAGE_KMOD_OPENSWAN) += openswan
 package-$(BR2_PACKAGE_KMOD_MADWIFI) += madwifi
 package-y += openwrt
 
-ifeq ($(BOARD),brcm)
-ifeq ($(LINUX_VERSION),2.4.30)
+ifeq ($(BOARD)-$(KERNEL),brcm-2.4)
 package-$(BR2_PACKAGE_KMOD_WLCOMPAT) += wlcompat
 wlcompat-compile: openwrt-compile
-endif
 endif
 
 all: compile install
@@ -21,6 +19,7 @@ compile: $(patsubst %,%-compile,$(package-y) $(package-m))
 install: $(patsubst %,%-install,$(package-y))
 
 MAKEOPTS:=	BOARD="$(BOARD)" \
+		KERNEL="$(KERNEL)" \
 		IPKG="$(IPKG)" \
 		TARGET_DIR="$(TARGET_DIR)" \
 		BUILD_DIR="$(BUILD_DIR)" \
