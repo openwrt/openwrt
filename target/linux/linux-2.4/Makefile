@@ -1,18 +1,10 @@
-#############################################################
 # $Id$
-#
 # Linux 2.4 kernel target for the OpenWRT project
-#
-# patches are sorted by numbers
-# 0xx	needed patches for board, cpu, filesystem
-# 1xx	addon patches for new features (netfilter, ebtables, cifs,..)
-# 2xx	compile fixes, driver fixes
-#
-#############################################################
 
 include $(TOPDIR)/rules.mk
 include ../rules.mk
 
+KERNEL:=2.4
 LINUX_VERSION:=2.4.30
 MODULES_SUBDIR:=lib/modules/$(LINUX_VERSION)
 LINUX_KCONFIG:=./config/$(BOARD)

@@ -1,13 +1,10 @@
-#############################################################
 # $Id$
-#
 # Linux 2.6 kernel target for the OpenWRT project
-#
-#############################################################
 
 include $(TOPDIR)/rules.mk
 include ../rules.mk
 
+KERNEL:=2.6
 LINUX_VERSION:=2.6.12.5
 LINUX_KERNEL_MD5SUM:=x
 LINUX_SITE=http://www.fi.kernel.org/pub/linux/kernel/v2.6 \
