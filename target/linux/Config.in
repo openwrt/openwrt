@@ -227,6 +227,11 @@ config BR2_PACKAGE_KMOD_USB_PRINTER
 	default m
 	depends BR2_PACKAGE_KMOD_USB_CONTROLLER
 
+config BR2_PACKAGE_KMOD_USB_AUDIO
+	tristate "Support for USB soundcards"
+	default m
+	depends BR2_PACKAGE_KMOD_USB_CONTROLLER
+
 config BR2_PACKAGE_KMOD_USB_ACM
 	tristate "Support for USB modems/isdn controllers"
 	default m
