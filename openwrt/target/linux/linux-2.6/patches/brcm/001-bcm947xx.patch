@@ -13059,7 +13059,7 @@ diff -Nur linux-2.6.12.5/drivers/mtd/maps/Makefile linux-2.6.12.5-brcm/drivers/m
  obj-$(CONFIG_MTD_SBC_GXX)	+= sbc_gxx.o
 diff -Nur linux-2.6.12.5/drivers/mtd/maps/bcm47xx-flash.c linux-2.6.12.5-brcm/drivers/mtd/maps/bcm47xx-flash.c
 --- linux-2.6.12.5/drivers/mtd/maps/bcm47xx-flash.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.12.5-brcm/drivers/mtd/maps/bcm47xx-flash.c	2005-09-04 04:50:19.246786848 +0200
++++ linux-2.6.12.5-brcm/drivers/mtd/maps/bcm47xx-flash.c	2005-09-10 22:23:03.178338008 +0200
 @@ -0,0 +1,249 @@
 +/*
 + *  Copyright (C) 2004 Florian Schirmer (jolt@tuxbox.org)
@@ -13220,13 +13220,15 @@ diff -Nur linux-2.6.12.5/drivers/mtd/maps/bcm47xx-flash.c linux-2.6.12.5-brcm/dr
 +	bcm947xx_parts[3].size   = NVRAM_SIZE;
 +
 +	/* Size linux (kernel and rootfs) */
-+	bcm947xx_parts[1].offset = bcm947xx_parts[0].size + bcm947xx_parts[3].size;
-+	bcm947xx_parts[1].size   = size - NVRAM_SIZE - bcm947xx_parts[0].size - bcm947xx_parts[3].size;
++	/* do not count the elf loader, which is on one sector */
++	bcm947xx_parts[1].offset = bcm947xx_parts[0].size + bcm947xx_parts[3].size + mtd->erasesize;
++	bcm947xx_parts[1].size   = size - NVRAM_SIZE - bcm947xx_parts[0].size - 
++		bcm947xx_parts[3].size - mtd->erasesize;
 +
 +	/* Find and size rootfs */
 +	if (find_root(mtd,size,&bcm947xx_parts[2])==0) {
 +		/* entirely jffs2 */
-+		bcm947xx_parts[2].size = bcm947xx_parts[3].offset - bcm947xx_parts[2].offset; 
++		bcm947xx_parts[2].size = size - bcm947xx_parts[2].offset - NVRAM_SIZE; 
 +		bcm947xx_parts[4].name = NULL;
 +	} else {
 +		/* legacy setup */
@@ -13235,10 +13237,8 @@ diff -Nur linux-2.6.12.5/drivers/mtd/maps/bcm47xx-flash.c linux-2.6.12.5-brcm/dr
 +		if ((bcm947xx_parts[4].offset % mtd->erasesize) > 0) {
 +			bcm947xx_parts[4].offset += mtd->erasesize - 
 +				(bcm947xx_parts[4].offset % mtd->erasesize);
-+			bcm947xx_parts[4].size = size - NVRAM_SIZE - bcm947xx_parts[4].offset;
-+		} else {
-+			bcm947xx_parts[4].size = bcm947xx_parts[3].offset - bcm947xx_parts[4].offset;
 +		}
++		bcm947xx_parts[4].size = size - NVRAM_SIZE - bcm947xx_parts[4].offset;
 +	}
 +
 +	return bcm947xx_parts;
