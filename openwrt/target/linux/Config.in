@@ -173,7 +173,7 @@ config BR2_PACKAGE_KMOD_USB
 
 config BR2_PACKAGE_KMOD_USB_CONTROLLER
 	tristate
-	depends on BR2_PACKAGE_KMOD_USB_UHCI || BR2_PACKAGE_KMOD_USB_OHCI
+	depends on BR2_PACKAGE_KMOD_USB_UHCI || BR2_PACKAGE_KMOD_USB_OHCI || BR2_PACKAGE_KMOD_USB2
 	default n
 
 config BR2_PACKAGE_KMOD_USB_UHCI
@@ -191,7 +191,8 @@ config BR2_PACKAGE_KMOD_USB_OHCI
 config BR2_PACKAGE_KMOD_USB2
 	tristate "Support for USB 2.0 controllers"
 	default m
-	depends BR2_PACKAGE_KMOD_USB_CONTROLLER
+	depends BR2_PACKAGE_KMOD_USB
+	select BR2_PACKAGE_KMOD_USB_CONTROLLER
 
 config BR2_PACKAGE_KMOD_USB_SERIAL
 	tristate "kmod-usb-serial - Support for USB-to-serial converters"
