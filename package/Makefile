@@ -372,6 +372,7 @@ $(STAMP_DIR):
 		TARGET_DIR="$(TARGET_DIR)" \
 		IPKG_CONF="$(IPKG_CONF)" \
 		BOARD="$(BOARD)" \
+		KERNEL="$(KERNEL)" \
 		install
 
 %-rebuild: 
