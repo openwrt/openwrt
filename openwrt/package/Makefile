@@ -5,6 +5,7 @@ package-:=tcp_wrappers
 package-y:=nvram
 package-$(BR2_PACKAGE_AICCU) += aiccu
 package-$(BR2_PACKAGE_AMWALL) += amwall
+package-$(BR2_PACKAGE_ARPD) += arpd
 package-$(BR2_PACKAGE_ARPTABLES) += arptables
 package-$(BR2_PACKAGE_ARPWATCH) += arpwatch
 package-$(BR2_PACKAGE_ASTERISK) += asterisk
@@ -63,6 +64,7 @@ package-$(BR2_PACKAGE_LIBAMSEL) += libamsel
 package-$(BR2_PACKAGE_LIBART) += libart
 package-$(BR2_PACKAGE_LIBDAEMON) += libdaemon
 package-$(BR2_PACKAGE_LIBDB) += libdb
+package-$(BR2_PACKAGE_LIBDNET) += libdnet
 package-$(BR2_PACKAGE_LIBELF) += libelf
 package-$(BR2_PACKAGE_LIBEVENT) += libevent
 package-$(BR2_PACKAGE_LIBFFI_SABLE) += libffi-sable
@@ -190,6 +192,7 @@ $(COMPILE_PACKAGES): base-files-compile
 $(INSTALL_PACKAGES): base-files-install
 
 amwall-compile: libamsel-compile
+arpd-compile: libpcap-compile libdnet-compile libevent-compile
 arpwatch-compile: libpcap-compile
 avahi-compile: libdaemon-compile expat-compile
 bind-compile: openssl-compile
