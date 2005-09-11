@@ -12587,7 +12587,7 @@ diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/prom.c linux-2.6.12.5-brcm/arch/mips
 +}
 diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/setup.c linux-2.6.12.5-brcm/arch/mips/bcm947xx/setup.c
 --- linux-2.6.12.5/arch/mips/bcm947xx/setup.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.12.5-brcm/arch/mips/bcm947xx/setup.c	2005-08-28 16:57:28.317825624 +0200
++++ linux-2.6.12.5-brcm/arch/mips/bcm947xx/setup.c	2005-09-11 01:36:10.217667456 +0200
 @@ -0,0 +1,127 @@
 +/*
 + *  Copyright (C) 2004 Florian Schirmer (jolt@tuxbox.org)
@@ -12684,7 +12684,7 @@ diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/setup.c linux-2.6.12.5-brcm/arch/mip
 +static void bcm47xx_machine_restart(char *command)
 +{
 +	/* Set the watchdog timer to reset immediately */
-+	cli();
++	local_irq_disable();
 +	sb_watchdog(sbh, 1);
 +	while (1);
 +}
@@ -12692,7 +12692,7 @@ diff -Nur linux-2.6.12.5/arch/mips/bcm947xx/setup.c linux-2.6.12.5-brcm/arch/mip
 +static void bcm47xx_machine_halt(void)
 +{
 +	/* Disable interrupts and watchdog and spin forever */
-+	cli();
++	local_irq_disable();
 +	sb_watchdog(sbh, 0);
 +	while (1);
 +}
