@@ -1,0 +1,12 @@
+--- arpd/configure.orig	Sun Feb  9 19:31:28 2003
++++ arpd/configure	Thu Jul 21 16:05:16 2005
+@@ -2258,8 +2258,7 @@
+         if cd $withval; then withval=`pwd`; cd $owd; fi
+         PCAPINC="-I$withval -I$withval/bpf"
+         PCAPLIB="-L$withval -lpcap"
+-     elif test -f $withval/include/pcap.h -a \
+-               -f $withval/include/net/bpf.h; then
++     elif test -f $withval/include/pcap.h; then
+         owd=`pwd`
+         if cd $withval; then withval=`pwd`; cd $owd; fi
+         PCAPINC="-I$withval/include"

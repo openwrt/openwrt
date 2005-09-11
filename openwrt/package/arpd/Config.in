@@ -1,0 +1,10 @@
+config BR2_PACKAGE_ARPD
+	tristate "arpd - fake ARP replies"
+	default m if CONFIG_DEVEL
+	select BR2_PACKAGE_LIBPCAP
+	select BR2_PACKAGE_LIBDNET
+	select BR2_PACKAGE_LIBEVENT
+	help
+	  Generates ARP responses for (locally unused) IP addresses
+	  
+	  http://www.honeyd.org/tools.php
