@@ -1,0 +1,33 @@
+diff -rNu mpd--uclinux--1--patch-10.normalperson-05.OLD/src/audio_oss.c mpd--uclinux--1--patch-10.normalperson-05/src/audio_oss.c
+--- mpd--uclinux--1--patch-10.normalperson-05.OLD/src/audio_oss.c	2005-07-03 21:23:39.000000000 +1000
++++ mpd--uclinux--1--patch-10.normalperson-05/src/audio_oss.c	2005-09-11 13:58:44.074459376 +1000
+@@ -179,7 +179,7 @@
+ 		copyAudioFormat(&audio_format,audioFormat);
+ 
+ 	blockSignals();
+-	audio_device = open("/dev/dsp", O_WRONLY);
++	audio_device = open("/dev/sound/dsp", O_WRONLY);
+ 	
+ 	if (audio_device < 0) err |= 1;
+ 	
+@@ -199,7 +199,7 @@
+ 	unblockSignals();
+ 	
+ 	if (err)
+-		ERROR("Error opening /dev/dsp: 0x%x\n");
++		ERROR("Error opening /dev/sound/dsp: 0x%x\n");
+ 	if (!audio_device)
+ 		return -1;
+ #endif
+diff -rNu mpd--uclinux--1--patch-10.normalperson-05.OLD/src/volume.c mpd--uclinux--1--patch-10.normalperson-05/src/volume.c
+--- mpd--uclinux--1--patch-10.normalperson-05.OLD/src/volume.c	2005-05-05 18:19:03.000000000 +1000
++++ mpd--uclinux--1--patch-10.normalperson-05/src/volume.c	2005-09-11 14:04:17.013844896 +1000
+@@ -41,7 +41,7 @@
+ #define VOLUME_MIXER_TYPE_ALSA			2
+ 
+ #define VOLUME_MIXER_SOFTWARE_DEFAULT		""
+-#define VOLUME_MIXER_OSS_DEFAULT		"/dev/mixer"
++#define VOLUME_MIXER_OSS_DEFAULT		"/dev/sound/mixer"
+ #define VOLUME_MIXER_ALSA_DEFAULT		"default"
+ #define VOLUME_MIXER_ALSA_CONTROL_DEFAULT	"PCM"
+ 
