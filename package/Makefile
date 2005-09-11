@@ -168,6 +168,7 @@ package-$(BR2_PACKAGE_WIFICONF) += wificonf
 package-$(BR2_PACKAGE_WIVIZ) += wiviz
 package-$(BR2_PACKAGE_WIRELESS_TOOLS) += wireless-tools
 package-$(BR2_PACKAGE_WOL) += wol
+package-$(BR2_PACKAGE_WONDERSHAPER) += wondershaper
 package-$(BR2_PACKAGE_WPA_SUPPLICANT) += wpa_supplicant
 package-$(BR2_PACKAGE_WPUT) += wput
 package-$(BR2_PACKAGE_XINETD) += xinetd
