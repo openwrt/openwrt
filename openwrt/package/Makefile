@@ -97,6 +97,7 @@ package-$(BR2_PACKAGE_MICROPERL) += microperl
 package-$(BR2_PACKAGE_MINI_HTTPD) += mini_httpd
 package-$(BR2_PACKAGE_MINI_SENDMAIL) += mini_sendmail
 package-$(BR2_PACKAGE_MONIT) += monit
+package-$(BR2_PACKAGE_MPD) += mpd
 package-$(BR2_PACKAGE_MT_DAAPD) += mt-daapd
 package-$(BR2_PACKAGE_MTD) += mtd
 package-$(BR2_PACKAGE_MYSQL) += mysql
