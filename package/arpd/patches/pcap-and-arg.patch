@@ -1,0 +1,75 @@
+--- arpd/arpd.c	Sun Feb  9 05:20:40 2003
++++ arpd/arpd.c.new	Mon Aug  1 00:50:40 2005
+@@ -70,7 +70,7 @@
+ static void
+ usage(void)
+ {
+-	fprintf(stderr, "Usage: arpd [-d] [-i interface] [net]\n");
++	fprintf(stderr, "Usage: arpd [-d] [-i interface] [-a 'pcap_expr'] [{host|net|range} ...]\n");
+ 	exit(1);
+ }
+ 
+@@ -182,7 +182,7 @@
+ }
+ 
+ static void
+-arpd_init(char *dev, int naddresses, char **addresses)
++arpd_init(char *dev, char *and_pcap_exp, int naddresses, char **addresses)
+ {
+ 	struct bpf_program fcode;
+ 	char filter[1024], ebuf[PCAP_ERRBUF_SIZE], *dst;
+@@ -214,9 +214,13 @@
+ 		errx(1, "bad interface configuration: not IP or Ethernet");
+ 	arpd_ifent.intf_addr.addr_bits = IP_ADDR_BITS;
+ 	
+-	snprintf(filter, sizeof(filter), "arp %s%s%s and not ether src %s",
++	snprintf(filter, sizeof(filter), "arp %s%s%s and not ether src %s%s%s%s",
+ 	    dst ? "and (" : "", dst ? dst : "", dst ? ")" : "",
+-	    addr_ntoa(&arpd_ifent.intf_link_addr));
++	    addr_ntoa(&arpd_ifent.intf_link_addr),
++	    and_pcap_exp ? " and (" : "",
++	    and_pcap_exp ? and_pcap_exp : "",
++	    and_pcap_exp ? ")" : ""
++	    );
+ 	
+ 	if ((arpd_pcap = pcap_open_live(dev, 128, 0, 500, ebuf)) == NULL)
+ 		errx(1, "pcap_open_live: %s", ebuf);
+@@ -465,14 +469,14 @@
+ {
+ 	struct event recv_ev;
+ 	extern int (*event_sigcb)(void);
+-	char *dev;
++	char *dev, *and_pcap_exp;
+ 	int c, debug;
+ 	FILE *fp;
+ 
+ 	dev = NULL;
+ 	debug = 0;
+ 	
+-	while ((c = getopt(argc, argv, "di:h?")) != -1) {
++	while ((c = getopt(argc, argv, "a:di:h?")) != -1) {
+ 		switch (c) {
+ 		case 'd':
+ 			debug = 1;
+@@ -480,6 +484,9 @@
+ 		case 'i':
+ 			dev = optarg;
+ 			break;
++		case 'a':
++			and_pcap_exp = optarg;
++			break;
+ 		default:
+ 			usage();
+ 			break;
+@@ -489,9 +496,9 @@
+ 	argv += optind;
+ 
+ 	if (argc == 0)
+-		arpd_init(dev, 0, NULL);
++		arpd_init(dev, and_pcap_exp, 0, NULL);
+ 	else
+-		arpd_init(dev, argc, argv);
++		arpd_init(dev, and_pcap_exp, argc, argv);
+ 	
+ 	if ((fp = fopen(PIDFILE, "w")) == NULL)
+ 		err(1, "fopen");
