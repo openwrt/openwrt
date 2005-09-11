@@ -30,6 +30,6 @@ $(IPKG_WONDERSHAPER):
 	install -d -m0755 $(IDIR_WONDERSHAPER)/etc/init.d
 	cp -fpR $(PKG_BUILD_DIR)/wshaper.htb $(IDIR_WONDERSHAPER)/usr/sbin/wshaper
 	cp -fpR $(PKG_BUILD_DIR)/wshaper.conf $(IDIR_WONDERSHAPER)/etc/wshaper.conf
-	ln -s /usr/sbin/wshaper $(IDIR_WONDERSHAPER)/etc/init.d/S60wondershaper
+	ln -fs /usr/sbin/wshaper $(IDIR_WONDERSHAPER)/etc/init.d/S60wondershaper
 	$(IPKG_BUILD) $(IDIR_WONDERSHAPER) $(PACKAGE_DIR)
 
