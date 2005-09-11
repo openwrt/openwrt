@@ -1,67 +1,3 @@
-diff -Nur wondershaper-1.1a/wshaper wondershaper-1.1a_openwrt/wshaper
---- wondershaper-1.1a/wshaper	2002-04-16 16:26:35.000000000 +0200
-+++ wondershaper-1.1a_openwrt/wshaper	2005-09-09 00:46:22.095406568 +0200
-@@ -1,33 +1,7 @@
--#!/bin/bash 
--
-+#!/bin/sh 
- # Wonder Shaper
--# please read the README before filling out these values 
--#
--# Set the following values to somewhat less than your actual download
--# and uplink speed. In kilobits. Also set the device that is to be shaped.
--DOWNLINK=800
--UPLINK=220
--DEV=eth0
--
--# low priority OUTGOING traffic - you can leave this blank if you want
--# low priority source netmasks
--NOPRIOHOSTSRC=80
--
--# low priority destination netmasks
--NOPRIOHOSTDST=
--
--# low priority source ports
--NOPRIOPORTSRC=
--
--# low priority destination ports
--NOPRIOPORTDST=
--
--# Now remove the following two lines :-)
--
--echo Please read the documentation in 'README' first :-\)
--exit
--
--#########################################################
-+. /etc/functions.sh
-+. /etc/wshaper.conf
- 
- if [ "$1" = "status" ]
- then
-@@ -46,6 +20,8 @@
- 	exit
- fi
- 
-+
-+
- ###### uplink
- 
- # install root CBQ
-@@ -67,12 +43,12 @@
- # bulk and default class 1:20 - gets slightly less traffic, 
- #  and a lower priority:
- 
--tc class add dev $DEV parent 1:1 classid 1:20 cbq rate $[9*$UPLINK/10]kbit \
-+tc class add dev $DEV parent 1:1 classid 1:20 cbq rate $((9*$UPLINK/10))kbit \
-    allot 1600 prio 2 avpkt 1000
- 
- # 'traffic we hate'
- 
--tc class add dev $DEV parent 1:1 classid 1:30 cbq rate $[8*$UPLINK/10]kbit \
-+tc class add dev $DEV parent 1:1 classid 1:30 cbq rate $((8*$UPLINK/10))kbit \
-    allot 1600 prio 2 avpkt 1000
- 
- # all get Stochastic Fairness:
 diff -Nur wondershaper-1.1a/wshaper.conf wondershaper-1.1a_openwrt/wshaper.conf
 --- wondershaper-1.1a/wshaper.conf	1970-01-01 01:00:00.000000000 +0100
 +++ wondershaper-1.1a_openwrt/wshaper.conf	2005-09-09 00:31:54.239340744 +0200
@@ -95,7 +31,7 @@ diff -Nur wondershaper-1.1a/wshaper.conf wondershaper-1.1a_openwrt/wshaper.conf
 +
 diff -Nur wondershaper-1.1a/wshaper.htb wondershaper-1.1a_openwrt/wshaper.htb
 --- wondershaper-1.1a/wshaper.htb	2002-04-16 16:26:51.000000000 +0200
-+++ wondershaper-1.1a_openwrt/wshaper.htb	2005-09-11 12:03:39.756950000 +0200
++++ wondershaper-1.1a_openwrt/wshaper.htb	2005-09-11 13:24:56.143626544 +0200
 @@ -1,44 +1,22 @@
 -#!/bin/bash
 +#!/bin/ash 
@@ -149,7 +85,7 @@ diff -Nur wondershaper-1.1a/wshaper.htb wondershaper-1.1a_openwrt/wshaper.htb
  
  if [ "$1" = "stop" ] 
  then 
-@@ -46,50 +24,65 @@
+@@ -46,50 +24,66 @@
  fi
  
  
@@ -158,6 +94,7 @@ diff -Nur wondershaper-1.1a/wshaper.htb wondershaper-1.1a_openwrt/wshaper.htb
 +if [ $DEV = "ppp0" ] && ! grep -q wshaper /etc/ppp/ip-up
 +then
 +  echo "/usr/sbin/wshaper" >> /etc/ppp/ip-up
++  chmod 755 /etc/ppp/ip-up
 +fi
 +
 +
@@ -226,7 +163,7 @@ diff -Nur wondershaper-1.1a/wshaper.htb wondershaper-1.1a_openwrt/wshaper.htb
     match ip protocol 6 0xff \
     match u8 0x05 0x0f at 0 \
     match u16 0x0000 0xffc0 at 2 \
-@@ -101,31 +94,31 @@
+@@ -101,31 +95,31 @@
  # some traffic however suffers a worse fate
  for a in $NOPRIOPORTDST
  do
@@ -263,7 +200,7 @@ diff -Nur wondershaper-1.1a/wshaper.htb wondershaper-1.1a_openwrt/wshaper.htb
     match ip dst 0.0.0.0/0 flowid 1:20
  
  
-@@ -136,12 +129,12 @@
+@@ -136,12 +130,12 @@
  #
  # attach ingress policer:
  
