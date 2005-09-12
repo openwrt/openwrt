@@ -4,7 +4,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dsniff
 PKG_VERSION:=2.3
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_MD5SUM:=183e336a45e38013f3af840bddec44b4
 
 PKG_SOURCE_URL:=http://www.monkey.org/~dugsong/dsniff/
