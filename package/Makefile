@@ -146,6 +146,7 @@ package-$(BR2_COMPILE_SAMBA) += samba
 package-$(BR2_PACKAGE_SCREEN) += screen
 package-$(BR2_PACKAGE_SDK) += sdk
 package-$(BR2_PACKAGE_SER) += ser
+package-$(BR2_PACKAGE_SETPWC) += setpwc
 package-$(BR2_PACKAGE_SETSERIAL) += setserial
 package-$(BR2_PACKAGE_SHAT) += shat
 package-$(BR2_PACKAGE_SHFS) += shfs
