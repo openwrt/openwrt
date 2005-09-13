@@ -1,6 +1,6 @@
 #!/bin/sh
 # udhcpc script edited by Tim Riker <Tim@Rikers.org>
-# (slightly modified for openwrt)
+# (slightly modified for OpenWrt)
 
 [ -z "$1" ] && echo "Error: should be run by udhcpc" && exit 1
 
@@ -32,6 +32,10 @@ case "$1" in
                 for i in $dns ; do
                         echo adding dns $i
                         echo nameserver $i >> $RESOLV_CONF
+
+		# user rules
+		[ -f /etc/udhcpc.user ] && . /etc/udhcpc.user
+
                 done
                 ;;
 esac
