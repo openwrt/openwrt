@@ -13,6 +13,7 @@ PKG_CAT:=zcat
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
+PKG_INIT_LEVEL:=60
 
 include $(TOPDIR)/package/rules.mk
 
@@ -58,8 +59,9 @@ $(PKG_BUILD_DIR)/.built:
 $(IPKG_SRELAY):
 	install -m0755 -d $(IDIR_SRELAY)/usr/bin
 	install -m0755 -d $(IDIR_SRELAY)/etc/init.d
-	cp $(PKG_INSTALL_DIR)/srelay $(IDIR_SRELAY)/usr/bin/
-	cp files/S60srelay $(IDIR_SRELAY)/etc/init.d
-	chmod 755 $(IDIR_SRELAY)/etc/init.d/S60srelay
+	cp -fpR $(PKG_INSTALL_DIR)/srelay $(IDIR_SRELAY)/usr/bin/
+	cp -fpR files/srelay.init $(IDIR_SRELAY)/etc/init.d/S$(PKG_INIT_LEVEL)srelay
+	cp -fpR files/srelay.conf $(IDIR_SRELAY)/etc
+	chmod 755 $(IDIR_SRELAY)/etc/init.d/S$(PKG_INIT_LEVEL)srelay
 	$(RSTRIP) $(IDIR_SRELAY)
 	$(IPKG_BUILD) $(IDIR_SRELAY) $(PACKAGE_DIR)
