@@ -157,6 +157,7 @@ package-$(BR2_PACKAGE_SPEEX) += speex
 package-$(BR2_PACKAGE_SQLITE) += sqlite
 package-$(BR2_PACKAGE_SQLITE2) += sqlite2
 package-$(BR2_PACKAGE_SSMTP) += ssmtp
+package-$(BR2_PACKAGE_SRELAY) += srelay
 package-$(BR2_PACKAGE_STRACE) += strace
 package-$(BR2_PACKAGE_TCPDUMP) += tcpdump
 package-$(BR2_PACKAGE_TINC) += tinc
