@@ -13,10 +13,12 @@ PKG_CAT:=zcat
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
+PKG_INIT_LEVEL:=60
 
 include $(TOPDIR)/package/rules.mk
 
-$(eval $(call PKG_template,BIND,bind,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,BIND_SERVER,bind-server,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,BIND_CLIENT,bind-client,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
@@ -36,7 +38,7 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 		  --localstatedir=/var \
 		  --mandir=/usr/share/man \
 		  --sbindir=/usr/sbin \
-		  --sysconfdir=/etc \
+		  --sysconfdir=/etc/bind \
 		  --without-openssl \
 		  --without-ipv6 \
 		  $(DISABLE_LARGEFILE) \
@@ -91,8 +93,17 @@ $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 		install
 	touch $(PKG_BUILD_DIR)/.built
 
-$(IPKG_BIND):
-	install -d -m0755 $(IDIR_BIND)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/named $(IDIR_BIND)/usr/sbin/
-	$(RSTRIP) $(IDIR_BIND)
-	$(IPKG_BUILD) $(IDIR_BIND) $(PACKAGE_DIR)
+$(IPKG_BIND_SERVER):
+	install -d -m0755 $(IDIR_BIND_SERVER)/usr/sbin
+	install -d -m0755 $(IDIR_BIND_SERVER)/etc/init.d
+	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/named $(IDIR_BIND_SERVER)/usr/sbin/
+	cp -fpR files/bind $(IDIR_BIND_SERVER)/etc
+	cp -fpR files/named.init $(IDIR_BIND_SERVER)/etc/init.d/S$(PKG_INIT_LEVEL)named
+	$(RSTRIP) $(IDIR_BIND_SERVER)
+	$(IPKG_BUILD) $(IDIR_BIND_SERVER) $(PACKAGE_DIR)
+
+$(IPKG_BIND_CLIENT):
+	install -d -m0755 $(IDIR_BIND_CLIENT)/usr/bin
+	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/nsupdate $(IDIR_BIND_CLIENT)/usr/bin/
+	$(RSTRIP) $(IDIR_BIND_CLIENT)
+	$(IPKG_BUILD) $(IDIR_BIND_CLIENT) $(PACKAGE_DIR)
