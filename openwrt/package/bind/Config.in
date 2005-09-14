@@ -1,10 +1,25 @@
+menu "bind - DNS server implementation"
+
 config BR2_PACKAGE_BIND
-	tristate "bind - popular dns server"
-	default m if CONFIG_DEVEL
-	select BR2_PACKAGE_LIBOPENSSL
+	bool "bind - popular dns server"
+	default y if CONFIG_DEVEL
 	help
 	  DNS server implementation
 	  
 	  http://www.isc.org/
 	  
 	  Depends: openssl
+
+config BR2_PACKAGE_BIND_SERVER
+	tristate "named - popular dns server"
+	default m if CONFIG_DEVEL
+	select BR2_PACKAGE_LIBOPENSSL
+	depends BR2_PACKAGE_BIND
+
+config BR2_PACKAGE_BIND_CLIENT
+	tristate "nsupdate - dynamic dns client"
+	default m if CONFIG_DEVEL
+	select BR2_PACKAGE_LIBOPENSSL
+	depends BR2_PACKAGE_BIND
+
+endmenu
