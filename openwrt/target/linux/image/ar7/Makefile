@@ -73,6 +73,7 @@ $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS)-$(1).bin: $(BIN_DIR)/openwrt-$(BOARD
 install: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS)-$(1).bin
 endef
 
+$(eval $(call pattern_template,AG1B))
 $(eval $(call pattern_template,WA22))
 $(eval $(call pattern_template,WAG2))
 $(eval $(call pattern_template,WA21))
