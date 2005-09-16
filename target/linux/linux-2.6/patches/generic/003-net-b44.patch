@@ -1,6 +1,6 @@
 diff -Nur linux-2.6.12.5/drivers/net/b44.c linux-2.6.12.5-b44/drivers/net/b44.c
 --- linux-2.6.12.5/drivers/net/b44.c	2005-08-15 02:20:18.000000000 +0200
-+++ linux-2.6.12.5-b44/drivers/net/b44.c	2005-09-16 10:33:56.284312840 +0200
++++ linux-2.6.12.5-b44/drivers/net/b44.c	2005-09-16 12:54:43.997122712 +0200
 @@ -1,7 +1,8 @@
 -/* b44.c: Broadcom 4400 device driver.
 +/* b44.c: Broadcom 4400/47xx device driver.
@@ -230,7 +230,7 @@ diff -Nur linux-2.6.12.5/drivers/net/b44.c linux-2.6.12.5-b44/drivers/net/b44.c
  }
  
  static void b44_disable_ints(struct b44 *bp)
-@@ -280,34 +279,40 @@
+@@ -280,42 +279,59 @@
  	__b44_disable_ints(bp);
  
  	/* Flush posted writes. */
@@ -244,19 +244,18 @@ diff -Nur linux-2.6.12.5/drivers/net/b44.c linux-2.6.12.5-b44/drivers/net/b44.c
 +	bw32(B44_IMASK, bp->imask);
  }
  
- static int b44_readphy(struct b44 *bp, int reg, u32 *val)
+-static int b44_readphy(struct b44 *bp, int reg, u32 *val)
++static int __b44_readphy(struct b44 *bp, int phy_addr, int reg, u32 *val)
  {
  	int err;
  
 -	bw32(bp, B44_EMAC_ISTAT, EMAC_INT_MII);
 -	bw32(bp, B44_MDIO_DATA, (MDIO_DATA_SB_START |
-+	if (bp->phy_addr == B44_PHY_ADDR_NO_PHY)
-+		return 0;
-+
 +	bw32(B44_EMAC_ISTAT, EMAC_INT_MII);
 +	bw32(B44_MDIO_DATA, (MDIO_DATA_SB_START |
  			     (MDIO_OP_READ << MDIO_DATA_OP_SHIFT) |
- 			     (bp->phy_addr << MDIO_DATA_PMD_SHIFT) |
+-			     (bp->phy_addr << MDIO_DATA_PMD_SHIFT) |
++			     (phy_addr << MDIO_DATA_PMD_SHIFT) |
  			     (reg << MDIO_DATA_RA_SHIFT) |
  			     (MDIO_TA_VALID << MDIO_DATA_TA_SHIFT)));
  	err = b44_wait_bit(bp, B44_EMAC_ISTAT, EMAC_INT_MII, 100, 0);
@@ -266,19 +265,43 @@ diff -Nur linux-2.6.12.5/drivers/net/b44.c linux-2.6.12.5-b44/drivers/net/b44.c
  	return err;
  }
  
- static int b44_writephy(struct b44 *bp, int reg, u32 val)
- {
--	bw32(bp, B44_EMAC_ISTAT, EMAC_INT_MII);
--	bw32(bp, B44_MDIO_DATA, (MDIO_DATA_SB_START |
+-static int b44_writephy(struct b44 *bp, int reg, u32 val)
++static int b44_readphy(struct b44 *bp, int reg, u32 *val)
++{
 +	if (bp->phy_addr == B44_PHY_ADDR_NO_PHY)
 +		return 0;
 +
++	return __b44_readphy(bp, bp->phy_addr, reg, val);
++}
++
++static int __b44_writephy(struct b44 *bp, int phy_addr, int reg, u32 val)
+ {
+-	bw32(bp, B44_EMAC_ISTAT, EMAC_INT_MII);
+-	bw32(bp, B44_MDIO_DATA, (MDIO_DATA_SB_START |
 +	bw32(B44_EMAC_ISTAT, EMAC_INT_MII);
 +	bw32(B44_MDIO_DATA, (MDIO_DATA_SB_START |
  			     (MDIO_OP_WRITE << MDIO_DATA_OP_SHIFT) |
- 			     (bp->phy_addr << MDIO_DATA_PMD_SHIFT) |
+-			     (bp->phy_addr << MDIO_DATA_PMD_SHIFT) |
++			     (phy_addr << MDIO_DATA_PMD_SHIFT) |
  			     (reg << MDIO_DATA_RA_SHIFT) |
-@@ -344,6 +349,9 @@
+ 			     (MDIO_TA_VALID << MDIO_DATA_TA_SHIFT) |
+ 			     (val & MDIO_DATA_DATA)));
+ 	return b44_wait_bit(bp, B44_EMAC_ISTAT, EMAC_INT_MII, 100, 0);
+ }
+ 
++static int b44_writephy(struct b44 *bp, int reg, u32 val)
++{
++	if (bp->phy_addr == B44_PHY_ADDR_NO_PHY)
++		return 0;
++		
++	return __b44_writephy(bp, bp->phy_addr, reg, val);
++}
++
++
+ /* miilib interface */
+ /* FIXME FIXME: phy_id is ignored, bp->phy_addr use is unconditional
+  * due to code existing before miilib use was added to this driver.
+@@ -344,6 +360,9 @@
  	u32 val;
  	int err;
  
@@ -288,7 +311,7 @@ diff -Nur linux-2.6.12.5/drivers/net/b44.c linux-2.6.12.5-b44/drivers/net/b44.c
  	err = b44_writephy(bp, MII_BMCR, BMCR_RESET);
  	if (err)
  		return err;
-@@ -367,20 +375,20 @@
+@@ -367,20 +386,20 @@
  	bp->flags &= ~(B44_FLAG_TX_PAUSE | B44_FLAG_RX_PAUSE);
  	bp->flags |= pause_flags;
  
@@ -313,7 +336,7 @@ diff -Nur linux-2.6.12.5/drivers/net/b44.c linux-2.6.12.5-b44/drivers/net/b44.c
  }
  
  static void b44_set_flow_ctrl(struct b44 *bp, u32 local, u32 remote)
-@@ -414,6 +422,9 @@
+@@ -414,6 +433,9 @@
  	u32 val;
  	int err;
  
@@ -323,7 +346,7 @@ diff -Nur linux-2.6.12.5/drivers/net/b44.c linux-2.6.12.5-b44/drivers/net/b44.c
  	if ((err = b44_readphy(bp, B44_MII_ALEDCTRL, &val)) != 0)
  		goto out;
  	if ((err = b44_writephy(bp, B44_MII_ALEDCTRL,
-@@ -476,11 +487,11 @@
+@@ -476,11 +498,11 @@
  
  	val = &bp->hw_stats.tx_good_octets;
  	for (reg = B44_TX_GOOD_O; reg <= B44_TX_PAUSE; reg += 4UL) {
@@ -337,7 +360,7 @@ diff -Nur linux-2.6.12.5/drivers/net/b44.c linux-2.6.12.5-b44/drivers/net/b44.c
  	}
  }
  
-@@ -506,6 +517,19 @@
+@@ -506,6 +528,19 @@
  {
  	u32 bmsr, aux;
  
@@ -357,7 +380,7 @@ diff -Nur linux-2.6.12.5/drivers/net/b44.c linux-2.6.12.5-b44/drivers/net/b44.c
  	if (!b44_readphy(bp, MII_BMSR, &bmsr) &&
  	    !b44_readphy(bp, B44_MII_AUXCTRL, &aux) &&
  	    (bmsr != 0xffff)) {
-@@ -520,14 +544,14 @@
+@@ -520,14 +555,14 @@
  
  		if (!netif_carrier_ok(bp->dev) &&
  		    (bmsr & BMSR_LSTATUS)) {
@@ -374,7 +397,7 @@ diff -Nur linux-2.6.12.5/drivers/net/b44.c linux-2.6.12.5-b44/drivers/net/b44.c
  
  			if (!(bp->flags & B44_FLAG_FORCE_LINK) &&
  			    !b44_readphy(bp, MII_ADVERTISE, &local_adv) &&
-@@ -572,7 +596,7 @@
+@@ -572,7 +607,7 @@
  {
  	u32 cur, cons;
  
@@ -383,7 +406,7 @@ diff -Nur linux-2.6.12.5/drivers/net/b44.c linux-2.6.12.5-b44/drivers/net/b44.c
  	cur /= sizeof(struct dma_desc);
  
  	/* XXX needs updating when NETIF_F_SG is supported */
-@@ -596,7 +620,7 @@
+@@ -596,7 +631,7 @@
  	    TX_BUFFS_AVAIL(bp) > B44_TX_WAKEUP_THRESH)
  		netif_wake_queue(bp->dev);
  
@@ -392,7 +415,7 @@ diff -Nur linux-2.6.12.5/drivers/net/b44.c linux-2.6.12.5-b44/drivers/net/b44.c
  }
  
  /* Works like this.  This chip writes a 'struct rx_header" 30 bytes
-@@ -713,7 +737,7 @@
+@@ -713,7 +748,7 @@
  	u32 cons, prod;
  
  	received = 0;
@@ -401,7 +424,7 @@ diff -Nur linux-2.6.12.5/drivers/net/b44.c linux-2.6.12.5-b44/drivers/net/b44.c
  	prod /= sizeof(struct dma_desc);
  	cons = bp->rx_cons;
  
-@@ -792,7 +816,7 @@
+@@ -792,7 +827,7 @@
  	}
  
  	bp->rx_cons = cons;
@@ -410,7 +433,7 @@ diff -Nur linux-2.6.12.5/drivers/net/b44.c linux-2.6.12.5-b44/drivers/net/b44.c
  
  	return received;
  }
-@@ -856,8 +880,8 @@
+@@ -856,8 +891,8 @@
  
  	spin_lock_irqsave(&bp->lock, flags);
  
@@ -421,7 +444,7 @@ diff -Nur linux-2.6.12.5/drivers/net/b44.c linux-2.6.12.5-b44/drivers/net/b44.c
  
  	/* ??? What the fuck is the purpose of the interrupt mask
  	 * ??? register if we have to mask it out by hand anyways?
-@@ -877,8 +901,8 @@
+@@ -877,8 +912,8 @@
  			       dev->name);
  		}
  
@@ -432,7 +455,7 @@ diff -Nur linux-2.6.12.5/drivers/net/b44.c linux-2.6.12.5-b44/drivers/net/b44.c
  	}
  	spin_unlock_irqrestore(&bp->lock, flags);
  	return IRQ_RETVAL(handled);
-@@ -965,11 +989,11 @@
+@@ -965,11 +1000,11 @@
  
  	wmb();
  
@@ -447,7 +470,7 @@ diff -Nur linux-2.6.12.5/drivers/net/b44.c linux-2.6.12.5-b44/drivers/net/b44.c
  
  	if (TX_BUFFS_AVAIL(bp) < 1)
  		netif_stop_queue(dev);
-@@ -1137,32 +1161,35 @@
+@@ -1137,32 +1172,35 @@
  {
  	unsigned long reg;
  
@@ -494,7 +517,7 @@ diff -Nur linux-2.6.12.5/drivers/net/b44.c linux-2.6.12.5-b44/drivers/net/b44.c
  	}
  
  	ssb_core_reset(bp);
-@@ -1170,20 +1197,26 @@
+@@ -1170,20 +1208,26 @@
  	b44_clear_stats(bp);
  
  	/* Make PHY accessible. */
@@ -531,7 +554,7 @@ diff -Nur linux-2.6.12.5/drivers/net/b44.c linux-2.6.12.5-b44/drivers/net/b44.c
  			udelay(100);
  		}
  		bp->flags |= B44_FLAG_INTERNAL_PHY;
-@@ -1200,13 +1233,13 @@
+@@ -1200,13 +1244,13 @@
  /* bp->lock is held. */
  static void __b44_set_mac_addr(struct b44 *bp)
  {
@@ -548,7 +571,7 @@ diff -Nur linux-2.6.12.5/drivers/net/b44.c linux-2.6.12.5-b44/drivers/net/b44.c
  	}
  }
  
-@@ -1240,30 +1273,30 @@
+@@ -1240,30 +1284,30 @@
  	b44_setup_phy(bp);
  
  	/* Enable CRC32, set proper LED modes and power on PHY */
@@ -592,7 +615,7 @@ diff -Nur linux-2.6.12.5/drivers/net/b44.c linux-2.6.12.5-b44/drivers/net/b44.c
  }
  
  static int b44_open(struct net_device *dev)
-@@ -1416,11 +1449,11 @@
+@@ -1416,11 +1460,11 @@
  	int i=0;
  	unsigned char zero[6] = {0,0,0,0,0,0};
  
@@ -606,7 +629,7 @@ diff -Nur linux-2.6.12.5/drivers/net/b44.c linux-2.6.12.5-b44/drivers/net/b44.c
  	} else {
  		__b44_set_mac_addr(bp);
  
-@@ -1432,9 +1465,9 @@
+@@ -1432,9 +1476,9 @@
  		for(;i<64;i++) {
  			__b44_cam_write(bp, zero, i);			
  		}
@@ -619,7 +642,300 @@ diff -Nur linux-2.6.12.5/drivers/net/b44.c linux-2.6.12.5-b44/drivers/net/b44.c
  	}
  }
  
-@@ -1704,19 +1737,41 @@
+@@ -1675,17 +1719,288 @@
+ 	.set_msglevel		= b44_set_msglevel,
+ };
+ 
++static int b44_ethtool_ioctl (struct net_device *dev, void __user *useraddr)
++{
++	struct b44 *bp = dev->priv;
++	struct pci_dev *pci_dev = bp->pdev;
++	u32 ethcmd;
++
++	if (copy_from_user (&ethcmd, useraddr, sizeof (ethcmd)))
++		return -EFAULT;
++
++	switch (ethcmd) {
++	case ETHTOOL_GDRVINFO: {
++		struct ethtool_drvinfo info = { ETHTOOL_GDRVINFO };
++		strcpy (info.driver, DRV_MODULE_NAME);
++		strcpy (info.version, DRV_MODULE_VERSION);
++		memset(&info.fw_version, 0, sizeof(info.fw_version));
++		strcpy (info.bus_info, pci_name(pci_dev));
++		info.eedump_len = 0;
++		info.regdump_len = 0;
++		if (copy_to_user (useraddr, &info, sizeof (info)))
++			return -EFAULT;
++		return 0;
++	}
++
++	case ETHTOOL_GSET: {
++		struct ethtool_cmd cmd = { ETHTOOL_GSET };
++
++		if (!(bp->flags & B44_FLAG_INIT_COMPLETE))
++			return -EAGAIN;
++		cmd.supported = (SUPPORTED_Autoneg);
++		cmd.supported |= (SUPPORTED_100baseT_Half |
++				  SUPPORTED_100baseT_Full |
++				  SUPPORTED_10baseT_Half |
++				  SUPPORTED_10baseT_Full |
++				  SUPPORTED_MII);
++
++		cmd.advertising = 0;
++		if (bp->flags & B44_FLAG_ADV_10HALF)
++			cmd.advertising |= ADVERTISE_10HALF;
++		if (bp->flags & B44_FLAG_ADV_10FULL)
++			cmd.advertising |= ADVERTISE_10FULL;
++		if (bp->flags & B44_FLAG_ADV_100HALF)
++			cmd.advertising |= ADVERTISE_100HALF;
++		if (bp->flags & B44_FLAG_ADV_100FULL)
++			cmd.advertising |= ADVERTISE_100FULL;
++		cmd.advertising |= ADVERTISE_PAUSE_CAP | ADVERTISE_PAUSE_ASYM;
++		cmd.speed = (bp->flags & B44_FLAG_100_BASE_T) ?
++			SPEED_100 : SPEED_10;
++		cmd.duplex = (bp->flags & B44_FLAG_FULL_DUPLEX) ?
++			DUPLEX_FULL : DUPLEX_HALF;
++		cmd.port = 0;
++		cmd.phy_address = bp->phy_addr;
++		cmd.transceiver = (bp->flags & B44_FLAG_INTERNAL_PHY) ?
++			XCVR_INTERNAL : XCVR_EXTERNAL;
++		cmd.autoneg = (bp->flags & B44_FLAG_FORCE_LINK) ?
++			AUTONEG_DISABLE : AUTONEG_ENABLE;
++		cmd.maxtxpkt = 0;
++		cmd.maxrxpkt = 0;
++		if (copy_to_user(useraddr, &cmd, sizeof(cmd)))
++			return -EFAULT;
++		return 0;
++	}
++	case ETHTOOL_SSET: {
++		struct ethtool_cmd cmd;
++
++		if (!(bp->flags & B44_FLAG_INIT_COMPLETE))
++			return -EAGAIN;
++
++		if (copy_from_user(&cmd, useraddr, sizeof(cmd)))
++			return -EFAULT;
++
++		/* We do not support gigabit. */
++		if (cmd.autoneg == AUTONEG_ENABLE) {
++			if (cmd.advertising &
++			    (ADVERTISED_1000baseT_Half |
++			     ADVERTISED_1000baseT_Full))
++				return -EINVAL;
++		} else if ((cmd.speed != SPEED_100 &&
++			    cmd.speed != SPEED_10) ||
++			   (cmd.duplex != DUPLEX_HALF &&
++			    cmd.duplex != DUPLEX_FULL)) {
++				return -EINVAL;
++		}
++
++		spin_lock_irq(&bp->lock);
++
++		if (cmd.autoneg == AUTONEG_ENABLE) {
++			bp->flags &= ~B44_FLAG_FORCE_LINK;
++			bp->flags &= ~(B44_FLAG_ADV_10HALF |
++				       B44_FLAG_ADV_10FULL |
++				       B44_FLAG_ADV_100HALF |
++				       B44_FLAG_ADV_100FULL);
++			if (cmd.advertising & ADVERTISE_10HALF)
++				bp->flags |= B44_FLAG_ADV_10HALF;
++			if (cmd.advertising & ADVERTISE_10FULL)
++				bp->flags |= B44_FLAG_ADV_10FULL;
++			if (cmd.advertising & ADVERTISE_100HALF)
++				bp->flags |= B44_FLAG_ADV_100HALF;
++			if (cmd.advertising & ADVERTISE_100FULL)
++				bp->flags |= B44_FLAG_ADV_100FULL;
++		} else {
++			bp->flags |= B44_FLAG_FORCE_LINK;
++			if (cmd.speed == SPEED_100)
++				bp->flags |= B44_FLAG_100_BASE_T;
++			if (cmd.duplex == DUPLEX_FULL)
++				bp->flags |= B44_FLAG_FULL_DUPLEX;
++		}
++
++		b44_setup_phy(bp);
++
++		spin_unlock_irq(&bp->lock);
++
++		return 0;
++	}
++
++	case ETHTOOL_GMSGLVL: {
++		struct ethtool_value edata = { ETHTOOL_GMSGLVL };
++		edata.data = bp->msg_enable;
++		if (copy_to_user(useraddr, &edata, sizeof(edata)))
++			return -EFAULT;
++		return 0;
++	}
++	case ETHTOOL_SMSGLVL: {
++		struct ethtool_value edata;
++		if (copy_from_user(&edata, useraddr, sizeof(edata)))
++			return -EFAULT;
++		bp->msg_enable = edata.data;
++		return 0;
++	}
++	case ETHTOOL_NWAY_RST: {
++		u32 bmcr;
++		int r;
++
++		spin_lock_irq(&bp->lock);
++		b44_readphy(bp, MII_BMCR, &bmcr);
++		b44_readphy(bp, MII_BMCR, &bmcr);
++		r = -EINVAL;
++		if (bmcr & BMCR_ANENABLE) {
++			b44_writephy(bp, MII_BMCR,
++				     bmcr | BMCR_ANRESTART);
++			r = 0;
++		}
++		spin_unlock_irq(&bp->lock);
++
++		return r;
++	}
++	case ETHTOOL_GLINK: {
++		struct ethtool_value edata = { ETHTOOL_GLINK };
++		edata.data = netif_carrier_ok(bp->dev) ? 1 : 0;
++		if (copy_to_user(useraddr, &edata, sizeof(edata)))
++			return -EFAULT;
++		return 0;
++	}
++	case ETHTOOL_GRINGPARAM: {
++		struct ethtool_ringparam ering = { ETHTOOL_GRINGPARAM };
++
++		ering.rx_max_pending = B44_RX_RING_SIZE - 1;
++		ering.rx_pending = bp->rx_pending;
++
++		/* XXX ethtool lacks a tx_max_pending, oops... */
++
++		if (copy_to_user(useraddr, &ering, sizeof(ering)))
++			return -EFAULT;
++		return 0;
++	}
++	case ETHTOOL_SRINGPARAM: {
++		struct ethtool_ringparam ering;
++
++		if (copy_from_user(&ering, useraddr, sizeof(ering)))
++			return -EFAULT;
++
++		if ((ering.rx_pending > B44_RX_RING_SIZE - 1) ||
++		    (ering.rx_mini_pending != 0) ||
++		    (ering.rx_jumbo_pending != 0) ||
++		    (ering.tx_pending > B44_TX_RING_SIZE - 1))
++			return -EINVAL;
++
++		spin_lock_irq(&bp->lock);
++
++		bp->rx_pending = ering.rx_pending;
++		bp->tx_pending = ering.tx_pending;
++
++		b44_halt(bp);
++		b44_init_rings(bp);
++		b44_init_hw(bp);
++		netif_wake_queue(bp->dev);
++		spin_unlock_irq(&bp->lock);
++
++		b44_enable_ints(bp);
++		
++		return 0;
++	}
++	case ETHTOOL_GPAUSEPARAM: {
++		struct ethtool_pauseparam epause = { ETHTOOL_GPAUSEPARAM };
++
++		epause.autoneg =
++			(bp->flags & B44_FLAG_PAUSE_AUTO) != 0;
++		epause.rx_pause =
++			(bp->flags & B44_FLAG_RX_PAUSE) != 0;
++		epause.tx_pause =
++			(bp->flags & B44_FLAG_TX_PAUSE) != 0;
++		if (copy_to_user(useraddr, &epause, sizeof(epause)))
++			return -EFAULT;
++		return 0;
++	}
++	case ETHTOOL_SPAUSEPARAM: {
++		struct ethtool_pauseparam epause;
++
++		if (copy_from_user(&epause, useraddr, sizeof(epause)))
++			return -EFAULT;
++
++		spin_lock_irq(&bp->lock);
++		if (epause.autoneg)
++			bp->flags |= B44_FLAG_PAUSE_AUTO;
++		else
++			bp->flags &= ~B44_FLAG_PAUSE_AUTO;
++		if (epause.rx_pause)
++			bp->flags |= B44_FLAG_RX_PAUSE;
++		else
++			bp->flags &= ~B44_FLAG_RX_PAUSE;
++		if (epause.tx_pause)
++			bp->flags |= B44_FLAG_TX_PAUSE;
++		else
++			bp->flags &= ~B44_FLAG_TX_PAUSE;
++		if (bp->flags & B44_FLAG_PAUSE_AUTO) {
++			b44_halt(bp);
++			b44_init_rings(bp);
++			b44_init_hw(bp);
++		} else {
++			__b44_set_flow_ctrl(bp, bp->flags);
++		}
++		spin_unlock_irq(&bp->lock);
++
++		b44_enable_ints(bp);
++		
++		return 0;
++	}
++	};
++
++	return -EOPNOTSUPP;
++}
++
+ static int b44_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
+ {
+ 	struct mii_ioctl_data *data = if_mii(ifr);
+ 	struct b44 *bp = netdev_priv(dev);
+ 	int err;
+ 
+-	spin_lock_irq(&bp->lock);
+-	err = generic_mii_ioctl(&bp->mii_if, data, cmd, NULL);
+-	spin_unlock_irq(&bp->lock);
++	switch (cmd) {
++	case SIOCETHTOOL:
++		return b44_ethtool_ioctl(dev, (void __user*) ifr->ifr_data);
++
++	case SIOCGMIIPHY:
++		data->phy_id = bp->phy_addr;
++
++		/* fallthru */
++	case SIOCGMIIREG: {
++		u32 mii_regval;
+ 
+-	return err;
++		spin_lock_irq(&bp->lock);
++		err = __b44_readphy(bp, data->phy_id & 0x1f, data->reg_num & 0x1f, &mii_regval);
++		spin_unlock_irq(&bp->lock);
++
++		data->val_out = mii_regval;
++
++		return err;
++	}
++
++	case SIOCSMIIREG:
++		if (!capable(CAP_NET_ADMIN))
++			return -EPERM;
++
++		spin_lock_irq(&bp->lock);
++		err = __b44_writephy(bp, data->phy_id & 0x1f, data->reg_num & 0x1f, data->val_in);
++		spin_unlock_irq(&bp->lock);
++
++		return err;
++
++	default:
++		/* do nothing */
++		break;
++	};
++	return -EOPNOTSUPP;
+ }
+ 
+ /* Read 128-bytes of EEPROM. */
+@@ -1704,19 +2019,41 @@
  {
  	u8 eeprom[128];
  	int err;
@@ -673,7 +989,7 @@ diff -Nur linux-2.6.12.5/drivers/net/b44.c linux-2.6.12.5-b44/drivers/net/b44.c
  
  	/* With this, plus the rx_header prepended to the data by the
  	 * hardware, we'll land the ethernet header on a 2-byte boundary.
-@@ -1726,13 +1781,12 @@
+@@ -1726,13 +2063,12 @@
  	bp->imask = IMASK_DEF;
  
  	bp->core_unit = ssb_core_unit(bp);
@@ -689,7 +1005,7 @@ diff -Nur linux-2.6.12.5/drivers/net/b44.c linux-2.6.12.5-b44/drivers/net/b44.c
  }
  
  static int __devinit b44_init_one(struct pci_dev *pdev,
-@@ -1810,7 +1864,7 @@
+@@ -1810,7 +2146,7 @@
  
  	spin_lock_init(&bp->lock);
  
@@ -698,7 +1014,7 @@ diff -Nur linux-2.6.12.5/drivers/net/b44.c linux-2.6.12.5-b44/drivers/net/b44.c
  	if (bp->regs == 0UL) {
  		printk(KERN_ERR PFX "Cannot map device registers, "
  		       "aborting.\n");
-@@ -1871,7 +1925,8 @@
+@@ -1871,15 +2207,21 @@
  
  	pci_save_state(bp->pdev);
  
@@ -708,7 +1024,12 @@ diff -Nur linux-2.6.12.5/drivers/net/b44.c linux-2.6.12.5-b44/drivers/net/b44.c
  	for (i = 0; i < 6; i++)
  		printk("%2.2x%c", dev->dev_addr[i],
  		       i == 5 ? '\n' : ':');
-@@ -1879,7 +1934,7 @@
+ 
++	/* Initialize phy */
++	spin_lock_irq(&bp->lock);
++	b44_chip_reset(bp);
++	spin_unlock_irq(&bp->lock);
++	
  	return 0;
  
  err_out_iounmap:
@@ -717,7 +1038,7 @@ diff -Nur linux-2.6.12.5/drivers/net/b44.c linux-2.6.12.5-b44/drivers/net/b44.c
  
  err_out_free_dev:
  	free_netdev(dev);
-@@ -1901,7 +1956,7 @@
+@@ -1901,7 +2243,7 @@
  		struct b44 *bp = netdev_priv(dev);
  
  		unregister_netdev(dev);
