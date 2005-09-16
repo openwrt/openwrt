@@ -1,6 +1,6 @@
 diff -Nur linux-2.6.12.5/drivers/net/b44.c linux-2.6.12.5-b44/drivers/net/b44.c
 --- linux-2.6.12.5/drivers/net/b44.c	2005-08-15 02:20:18.000000000 +0200
-+++ linux-2.6.12.5-b44/drivers/net/b44.c	2005-09-16 12:54:43.997122712 +0200
++++ linux-2.6.12.5-b44/drivers/net/b44.c	2005-09-16 22:19:33.841633800 +0200
 @@ -1,7 +1,8 @@
 -/* b44.c: Broadcom 4400 device driver.
 +/* b44.c: Broadcom 4400/47xx device driver.
@@ -935,6 +935,15 @@ diff -Nur linux-2.6.12.5/drivers/net/b44.c linux-2.6.12.5-b44/drivers/net/b44.c
  }
  
  /* Read 128-bytes of EEPROM. */
+@@ -1695,7 +2010,7 @@
+ 	u16 *ptr = (u16 *) data;
+ 
+ 	for (i = 0; i < 128; i += 2)
+-		ptr[i / 2] = readw(bp->regs + 4096 + i);
++		ptr[i / 2] = readw((void *)bp->regs + 4096 + i);
+ 
+ 	return 0;
+ }
 @@ -1704,19 +2019,41 @@
  {
  	u8 eeprom[128];
@@ -1049,7 +1058,7 @@ diff -Nur linux-2.6.12.5/drivers/net/b44.c linux-2.6.12.5-b44/drivers/net/b44.c
  		pci_disable_device(pdev);
 diff -Nur linux-2.6.12.5/drivers/net/b44.h linux-2.6.12.5-b44/drivers/net/b44.h
 --- linux-2.6.12.5/drivers/net/b44.h	2005-08-15 02:20:18.000000000 +0200
-+++ linux-2.6.12.5-b44/drivers/net/b44.h	2005-09-16 11:06:16.393533960 +0200
++++ linux-2.6.12.5-b44/drivers/net/b44.h	2005-09-16 22:18:06.217954624 +0200
 @@ -292,6 +292,9 @@
  #define SSB_PCI_MASK1		0xfc000000
  #define SSB_PCI_MASK2		0xc0000000
