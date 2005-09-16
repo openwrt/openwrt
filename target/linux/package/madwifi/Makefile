@@ -4,11 +4,11 @@ include $(TOPDIR)/rules.mk
 include ../../rules.mk
 
 PKG_NAME:=madwifi
-PKG_VERSION:=2005-08-13
+PKG_VERSION:=2005-09-16
 PKG_RELEASE:=1
-PKG_MD5SUM:=188127127aebd8815595c025a787d729
+PKG_MD5SUM:=af6959c971ffa1b38ec171833834b845
 
-PKG_SOURCE_URL:=http://madwifi.otaku42.de/2005/08/
+PKG_SOURCE_URL:=http://madwifi.otaku42.de/2005/09/
 PKG_SOURCE:=$(PKG_NAME)-cvs-snapshot-$(PKG_VERSION).tar.bz2
 PKG_CAT:=bzcat
 
