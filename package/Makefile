@@ -51,6 +51,7 @@ package-$(BR2_PACKAGE_HOSTAPD) += hostapd
 package-$(BR2_PACKAGE_HOWL) += howl
 package-$(BR2_PACKAGE_HTPDATE) += htpdate
 package-$(BR2_PACKAGE_ID3LIB) += id3lib
+package-$(BR2_PACKAGE_IPERF) += iperf
 package-$(BR2_PACKAGE_IPKG) += ipkg
 package-$(BR2_PACKAGE_IPROUTE2) += iproute2
 package-$(BR2_PACKAGE_IPSET) += ipset
