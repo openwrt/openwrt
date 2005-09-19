@@ -55,12 +55,28 @@ PKG_CONFIGURE_OPTS:= \
 	--with-zlib="$(STAGING_DIR)/usr" \
 	  --with-zlib-dir="$(STAGING_DIR)/usr" \
 
+ifneq ($(BR2_PACKAGE_PHP4_MOD_CURL),)
+PKG_CONFIGURE_OPTS+= --with-curl=shared,"$(STAGING_DIR)/usr"
+else
+PKG_CONFIGURE_OPTS+= --without-curl
+endif
 ifneq ($(BR2_PACKAGE_PHP4_MOD_GD),)
 PKG_CONFIGURE_OPTS+= --with-gd=shared,"$(STAGING_DIR)/usr" \
+	--without-freetype-dir \
+	--without-jpeg-dir \
+	--with-png-dir="$(STAGING_DIR)/usr" \
+	--without-xpm-dir \
+	--without-ttf \
+	--without-t1lib	\
 	--enable-gd-native-ttf \
-	--with-png-dir="$(STAGING_DIR)/usr"
+	--disable-gd-jis-conv
 else
 PKG_CONFIGURE_OPTS+= --without-gd
+endif
+ifneq ($(BR2_PACKAGE_PHP4_MOD_GMP),)
+PKG_CONFIGURE_OPTS+= --with-gmp=shared,"$(STAGING_DIR)/usr"
+else
+PKG_CONFIGURE_OPTS+= --without-gmp
 endif
 ifneq ($(BR2_PACKAGE_PHP4_MOD_LDAP),)
 PKG_CONFIGURE_OPTS+= --with-ldap=shared,"$(STAGING_DIR)/usr"
@@ -99,8 +115,10 @@ $(eval $(call PKG_template,PHP4_CLI,php4-cli,$(PKG_VERSION)-$(PKG_RELEASE),$(ARC
 $(eval $(call PKG_template,PHP4_CGI,php4-cgi,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,PHP4_FASTCGI,php4-fastcgi,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
+$(eval $(call PKG_template,PHP4_MOD_CURL,php4-mod-curl,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,PHP4_MOD_FTP,php4-mod-ftp,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,PHP4_MOD_GD,php4-mod-gd,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,PHP4_MOD_GMP,php4-mod-gmp,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,PHP4_MOD_LDAP,php4-mod-ldap,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,PHP4_MOD_MYSQL,php4-mod-mysql,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,PHP4_MOD_OPENSSL,php4-mod-openssl,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
@@ -111,8 +129,10 @@ $(eval $(call PKG_template,PHP4_MOD_SOCKETS,php4-mod-sockets,$(PKG_VERSION)-$(PK
 $(eval $(call PKG_template,PHP4_MOD_SQLITE,php4-mod-sqlite,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,PHP4_MOD_XML,php4-mod-xml,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
+$(eval $(call PKG_mod_template,PHP4_MOD_CURL,curl))
 $(eval $(call PKG_mod_template,PHP4_MOD_FTP,ftp))
 $(eval $(call PKG_mod_template,PHP4_MOD_GD,gd))
+$(eval $(call PKG_mod_template,PHP4_MOD_GMP,gmp))
 $(eval $(call PKG_mod_template,PHP4_MOD_LDAP,ldap))
 $(eval $(call PKG_mod_template,PHP4_MOD_MYSQL,mysql))
 $(eval $(call PKG_mod_template,PHP4_MOD_OPENSSL,openssl))
