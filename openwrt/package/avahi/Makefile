@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=avahi
-PKG_VERSION:=0.1
+PKG_VERSION:=0.5
 PKG_RELEASE:=1
-PKG_MD5SUM:=1ccbbc46d2aedf0c864b94c58ea220e6
+PKG_MD5SUM:=8a1fcd3131364f8dce569282aab0d137
 
 PKG_SOURCE_URL:=http://www.freedesktop.org/~lennart/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -54,18 +54,29 @@ $(PKG_BUILD_DIR)/.configured:
 			--disable-rpath \
 			--with-gnu-ld \
 			--disable-glib \
+			--disable-qt3 \
+			--disable-qt4 \
 			--disable-gtk \
 			--disable-dbus \
 			--enable-expat \
 			--enable-libdaemon \
 			--disable-python \
+			--disable-pygtk \
+			--disable-python-dbus \
+			--disable-mono \
+			--disable-mono-docs \
 			--disable-doxygen-doc \
 			--disable-doxygen-dot \
+			--disable-doxygen-man \
+			--disable-doxygen-rtf \
+			--disable-doxygen-xml \
+			--disable-doxygen-chm \
+			--disable-doxygen-chi \
 			--disable-doxygen-html \
 			--disable-doxygen-ps \
 			--disable-doxygen-pdf \
 			--disable-xmltoman \
-			--with-distro=openwrt \
+			--with-distro=none \
 			--with-avahi-user=nobody \
 			--with-avahi-group=nogroup \
 	);
