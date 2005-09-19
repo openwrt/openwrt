@@ -293,8 +293,14 @@ openvpn-compile: lzo-compile
 endif
 
 php4-compile: openssl-compile zlib-compile
+ifneq ($(BR2_PACKAGE_PHP4_MOD_CURL),)
+php4-compile: curl-compile
+endif
 ifneq ($(BR2_PACKAGE_PHP4_MOD_GD),)
 php4-compile: libgd-compile libpng-compile
+endif
+ifneq ($(BR2_PACKAGE_PHP4_MOD_GMP),)
+php4-compile: gmp-compile
 endif
 ifneq ($(BR2_PACKAGE_PHP4_MOD_LDAP),)
 php4-compile: openldap-compile
