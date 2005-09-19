@@ -7,8 +7,7 @@ config BR2_PACKAGE_NDISC
 
 config BR2_PACKAGE_NDISC6
 	tristate "ndisc6 - ICMPv6 neighbour discovery tool"
-#	default m if CONFIG_DEVEL
-	default n
+	default m if CONFIG_DEVEL
 	select BR2_PACKAGE_NDISC
 	help
 	  
@@ -19,8 +18,7 @@ config BR2_PACKAGE_NDISC6
 
 config BR2_PACKAGE_RDISC6
 	tristate "rdisc6 - ICMPv6 router discovery tool"
-#	default m if CONFIG_DEVEL
-	default n
+	default m if CONFIG_DEVEL
 	select BR2_PACKAGE_NDISC
 	help
 	  
