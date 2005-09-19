@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=php
-PKG_VERSION:=5.0.4
+PKG_VERSION:=5.0.5
 PKG_RELEASE:=1
-PKG_MD5SUM:=fb1aac107870f897d26563a9cc5053c0
+PKG_MD5SUM:=b5d4ca75bbb11ee5b830fa67213d9f7f
 
 PKG_SOURCE_URL:=http://fr.php.net/distributions/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
@@ -59,12 +59,28 @@ PKG_CONFIGURE_OPTS:= \
 	--with-zlib="$(STAGING_DIR)/usr" \
 	  --with-zlib-dir="$(STAGING_DIR)/usr" \
 
+ifneq ($(BR2_PACKAGE_PHP5_MOD_CURL),)
+PKG_CONFIGURE_OPTS+= --with-curl=shared,"$(STAGING_DIR)/usr"
+else
+PKG_CONFIGURE_OPTS+= --without-curl
+endif
 ifneq ($(BR2_PACKAGE_PHP5_MOD_GD),)
 PKG_CONFIGURE_OPTS+= --with-gd=shared,"$(STAGING_DIR)/usr" \
+	--without-freetype-dir \
+	--without-jpeg-dir \
+	--with-png-dir="$(STAGING_DIR)/usr" \
+	--without-xpm-dir \
+	--without-ttf \
+	--without-t1lib	\
 	--enable-gd-native-ttf \
-	--with-png-dir="$(STAGING_DIR)/usr"
+	--disable-gd-jis-conv
 else
 PKG_CONFIGURE_OPTS+= --without-gd
+endif
+ifneq ($(BR2_PACKAGE_PHP5_MOD_GMP),)
+PKG_CONFIGURE_OPTS+= --with-gmp=shared,"$(STAGING_DIR)/usr"
+else
+PKG_CONFIGURE_OPTS+= --without-gmp
 endif
 ifneq ($(BR2_PACKAGE_PHP5_MOD_LDAP),)
 PKG_CONFIGURE_OPTS+= --with-ldap=shared,"$(STAGING_DIR)/usr" \
@@ -103,8 +119,10 @@ $(eval $(call PKG_template,PHP5_CLI,php5-cli,$(PKG_VERSION)-$(PKG_RELEASE),$(ARC
 $(eval $(call PKG_template,PHP5_CGI,php5-cgi,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,PHP5_FASTCGI,php5-fastcgi,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
+$(eval $(call PKG_template,PHP5_MOD_CURL,php5-mod-curl,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,PHP5_MOD_FTP,php5-mod-ftp,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,PHP5_MOD_GD,php5-mod-gd,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,PHP5_MOD_GMP,php5-mod-gmp,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,PHP5_MOD_LDAP,php5-mod-ldap,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,PHP5_MOD_MYSQL,php5-mod-mysql,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,PHP5_MOD_OPENSSL,php5-mod-openssl,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
@@ -115,8 +133,10 @@ $(eval $(call PKG_template,PHP5_MOD_SOCKETS,php5-mod-sockets,$(PKG_VERSION)-$(PK
 $(eval $(call PKG_template,PHP5_MOD_SQLITE,php5-mod-sqlite,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,PHP5_MOD_XML,php5-mod-xml,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
+$(eval $(call PKG_mod_template,PHP5_MOD_CURL,curl))
 $(eval $(call PKG_mod_template,PHP5_MOD_FTP,ftp))
 $(eval $(call PKG_mod_template,PHP5_MOD_GD,gd))
+$(eval $(call PKG_mod_template,PHP5_MOD_GMP,gmp))
 $(eval $(call PKG_mod_template,PHP5_MOD_LDAP,ldap))
 $(eval $(call PKG_mod_template,PHP5_MOD_MYSQL,mysql))
 $(eval $(call PKG_mod_template,PHP5_MOD_OPENSSL,openssl))
