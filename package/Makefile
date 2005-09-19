@@ -322,8 +322,14 @@ php4-compile: expat-compile
 endif
 
 php5-compile: openssl-compile zlib-compile
+ifneq ($(BR2_PACKAGE_PHP5_MOD_CURL),)
+php5-compile: curl-compile
+endif
 ifneq ($(BR2_PACKAGE_PHP5_MOD_GD),)
 php5-compile: libgd-compile libpng-compile
+endif
+ifneq ($(BR2_PACKAGE_PHP5_MOD_GMP),)
+php5-compile: gmp-compile
 endif
 ifneq ($(BR2_PACKAGE_PHP5_MOD_LDAP),)
 php5-compile: openldap-compile
