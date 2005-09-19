@@ -1,0 +1,9 @@
+config BR2_PACKAGE_NANO
+	tristate "nano - An enhanced clone of the Pico text editor"
+	default m if CONFIG_DEVEL
+	select BR2_PACKAGE_LIBNCURSES
+	help
+	  GNU nano (Nano's ANOther editor, or Not ANOther editor) is an enhanced clone of the Pico text editor..
+	  
+	  http://www.nano-editor.org/
+	  

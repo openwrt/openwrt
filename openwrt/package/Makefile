@@ -102,6 +102,7 @@ package-$(BR2_PACKAGE_MPD) += mpd
 package-$(BR2_PACKAGE_MT_DAAPD) += mt-daapd
 package-$(BR2_PACKAGE_MTD) += mtd
 package-$(BR2_PACKAGE_MYSQL) += mysql
+package-$(BR2_PACKAGE_NANO) += nano
 package-$(BR2_PACKAGE_NCURSES) += ncurses
 package-$(BR2_PACKAGE_NDISC) += ndisc
 package-$(BR2_PACKAGE_NET_SNMP) += net-snmp
@@ -225,6 +226,7 @@ lighttpd-compile: openssl-compile pcre-compile
 mini_httpd-compile: matrixssl-compile
 mt-daapd-compile: howl-compile libgdbm-compile libid3tag-compile
 mysql-compile: ncurses-compile zlib-compile
+nano-compile: ncurses-compile
 net-snmp-compile: libelf-compile
 nfs-server-compile: portmap-compile
 nmap-compile: uclibc++-compile pcre-compile libpcap-compile
