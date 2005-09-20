@@ -1,0 +1,11 @@
+config BR2_PACKAGE_PALANTIR
+	tristate "palantir - a multichannel interactive streaming solution"
+	default m if CONFIG_DEVEL
+	select LIBJPEG
+	help
+	  Palantir is a Linux-based streaming system designed to transmit live 
+	  video, audio and data over a TCP/IP network, as well as to control 
+	  remote devices.
+	  
+	  http://www.fastpath.it/products/palantir/
+	  
