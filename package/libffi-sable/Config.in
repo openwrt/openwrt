@@ -1,7 +1,6 @@
 config BR2_PACKAGE_LIBFFI_SABLE
 	tristate "libffi-sable - Foreign Function Interface library (for sablevm)"
-#	default m if CONFIG_DEVEL
-	default n
+	default m if CONFIG_DEVEL
 	help
 	  The libffi library provides a portable, high level programming
 	  interface to various calling conventions. This allows a programmer to

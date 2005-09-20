@@ -1,7 +1,6 @@
 config BR2_PACKAGE_SABLEVM
 	tristate "sablevm - A Java Virtual Machine (JVM) implementation"
-#	default m if CONFIG_DEVEL
-	default n
+	default m if CONFIG_DEVEL
 	select BR2_PACKAGE_LIBFFI_SABLE
 	select BR2_PACKAGE_LIBLTDL
 	select BR2_PACKAGE_LIBPOPT

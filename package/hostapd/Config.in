@@ -1,7 +1,6 @@
 config BR2_PACKAGE_HOSTAPD
 	tristate "hostapd - IEEE 802.11 AP, IEEE 802.1x/WPA/WPA2/EAP/RADIUS Authenticator"
-#	default m if CONFIG_DEVEL
-	default n
+	default m if CONFIG_DEVEL
 	select BR2_PACKAGE_KMOD_MADWIFI
 	select BR2_PACKAGE_OPENSSL
 	help

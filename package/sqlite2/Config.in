@@ -1,4 +1,4 @@
-config BR2_PACKAGE_SQLITE2
+config BR2_COMPILE_SQLITE2
 	bool
 	default n
 	depends BR2_PACKAGE_LIBSQLITE2
@@ -6,8 +6,7 @@ config BR2_PACKAGE_SQLITE2
 config BR2_PACKAGE_LIBSQLITE2
 	prompt "libsqlite2 - Self-contained, embeddable, zero-configuration SQL database engine (v2.x)"
 	tristate
-#	default m if CONFIG_DEVEL
-	default n
+	default m if CONFIG_DEVEL
 	select BR2_PACKAGE_SQLITE2
 	select BR2_PACKAGE_LIBNCURSES
 	select BR2_PACKAGE_LIBREADLINE
@@ -42,8 +41,7 @@ config BR2_PACKAGE_LIBSQLITE2
 config BR2_PACKAGE_SQLITE2_CLI
 	prompt "sqlite2-cli - Command line interface for SQLite (v2.x)"
 	tristate
-#	default m if CONFIG_DEVEL
-	default n
+	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_LIBSQLITE2
 	help
 	  SQLite is a small C library that implements a self-contained, embeddable, 

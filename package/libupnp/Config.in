@@ -1,7 +1,6 @@
 config BR2_PACKAGE_LIBUPNP
 	tristate "libupnp - Universal Plug and Play (UPnP) SDK library"
-#	default m if CONFIG_DEVEL
-	default n
+	default m if CONFIG_DEVEL
 	help
 	 The Universal Plug and Play (UPnP) SDK for Linux provides support 
 	 for building UPnP-compliant control points, devices, and bridges 

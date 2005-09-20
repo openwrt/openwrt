@@ -1,7 +1,6 @@
 config BR2_PACKAGE_LIBEVENT
 	tristate "libevent - Event notification library for event-driven network servers"
-#	default m if CONFIG_DEVEL
-	default n
+	default m if CONFIG_DEVEL
 	help
 	  The libevent API provides a mechanism to execute a callback function 
 	  when a specific event occurs on a file descriptor or after a timeout 

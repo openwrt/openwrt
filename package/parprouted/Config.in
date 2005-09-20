@@ -1,7 +1,6 @@
 config BR2_PACKAGE_PARPROUTED
 	tristate "parprouted - Proxy ARP daemon"
-#	default m if CONFIG_DEVEL
-	default n
+	default m if CONFIG_DEVEL
 	help
 	  parprouted is a daemon for transparent IP (Layer 3) proxy ARP bridging.
 	  This is useful for creation of transparent firewalls and bridging networks 

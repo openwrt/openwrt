@@ -1,13 +1,12 @@
-config BR2_PACKAGE_READLINE
+config BR2_COMPILE_READLINE
 	bool
 	default n
 	depends BR2_PACKAGE_LIBREADLINE
 
 config BR2_PACKAGE_LIBREADLINE
 	tristate "libreadline - Command lines edition library"
-#	default m if CONFIG_DEVEL
-	default n
-	select BR2_PACKAGE_READLINE
+	default m if CONFIG_DEVEL
+	select BR2_COMPILE_READLINE
 	help
 	  The Readline library provides a set of functions for use by applications 
 	  that allow users to edit command lines as they are typed in. Both Emacs 

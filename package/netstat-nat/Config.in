@@ -1,7 +1,6 @@
 config BR2_PACKAGE_NETSTAT-NAT
 	tristate "netstat-nat - a netstat variant for NAT connections"
-#	default m if CONFIG_DEVEL
-	default n
+	default m if CONFIG_DEVEL
 	help
 	  Netstat-nat is a small program written in C.
 	  It displays NAT connections, managed by netfilter/iptables which comes 

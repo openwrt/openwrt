@@ -5,8 +5,7 @@ config BR2_COMPILE_EXPAT
 
 config BR2_PACKAGE_LIBEXPAT
 	tristate "libexpat - a fast, non-validating, stream-oriented XML parsing library"
-#	default m if CONFIG_DEVEL
-	default n
+	default m if CONFIG_DEVEL
 	select BR2_COMPILE_EXPAT
 	help
 	  A fast, non-validating, stream-oriented XML parsing library
