@@ -1,7 +1,6 @@
 config BR2_PACKAGE_LIBGPG_ERROR
 	tristate "libgpg-error - An helper library for common error codes and descriptions"
-#	default m if CONFIG_DEVEL
-	default n
+	default m if CONFIG_DEVEL
 	help
 	 This is a library that defines common error values for all GnuPG
 	 components.  Among these are GPG, GPGSM, GPGME, GPG-Agent, libgcrypt,

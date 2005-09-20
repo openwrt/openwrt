@@ -5,8 +5,7 @@ config BR2_COMPILE_GNUTLS
 
 config BR2_PACKAGE_LIBGNUTLS
 	tristate "libgnutls - The GNU TLS library"
-#	default m if CONFIG_DEVEL
-	default n
+	default m if CONFIG_DEVEL
 	select BR2_COMPILE_GNUTLS
 	select BR2_PACKAGE_LIBGCRYPT
 	help
@@ -38,8 +37,7 @@ config BR2_PACKAGE_LIBGNUTLS
 
 config BR2_PACKAGE_GNUTLS_UTILS
 	tristate "gnutls-utils - The GNU TLS utilities"
-#	default m if CONFIG_DEVEL
-	default n
+	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_LIBGNUTLS
 	help
 	 GnuTLS is a project that aims to develop a library which provides a 
@@ -70,8 +68,7 @@ config BR2_PACKAGE_GNUTLS_UTILS
 
 config BR2_PACKAGE_LIBGNUTLS_OPENSSL
 	tristate "libgnutls-openssl - The GNU TLS OpenSSL compatibility layer library"
-#	default m if CONFIG_DEVEL
-	default n
+	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_LIBGNUTLS
 	help
 	 GnuTLS is a project that aims to develop a library which provides a 

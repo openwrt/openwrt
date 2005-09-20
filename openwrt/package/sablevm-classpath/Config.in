@@ -7,8 +7,7 @@ config BR2_PACKAGE_LIBSABLEVM_CLASSPATH
 	depends BR2_PACKAGE_SABLEVM
 	prompt "libsablevm-classpath - Essential native libraries for Java"
 	tristate
-#	default m if CONFIG_DEVEL
-	default n
+	default m if CONFIG_DEVEL
 	select BR2_PACKAGE_SABLEVM_CLASSPATH
 	help
 	  GNU Classpath, Essential Libraries for Java, is a GNU project to create 
@@ -31,6 +30,7 @@ choice
 config BR2_PACKAGE_SABLEVM_CLASSPATH_FULL
 	prompt "...-full: Full set"
 	tristate
+	default n
 	help
 	  GNU Classpath, Essential Libraries for Java, is a GNU project to create 
 	  free core class libraries for use with virtual machines and compilers for 
@@ -46,6 +46,7 @@ config BR2_PACKAGE_SABLEVM_CLASSPATH_FULL
 config BR2_PACKAGE_SABLEVM_CLASSPATH_MINI
 	prompt "...-mini: Minimal set"
 	tristate
+	default m if CONFIG_DEVEL
 	help
 	  
 	  GNU Classpath, Essential Libraries for Java, is a GNU project to create 

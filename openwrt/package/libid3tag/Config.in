@@ -1,7 +1,6 @@
 config BR2_PACKAGE_LIBID3TAG
 	tristate "libid3tag - An ID3 tag manipulation library"
-#	default m if CONFIG_DEVEL
-	default n
+	default m if CONFIG_DEVEL
 	select BR2_PACKAGE_ZLIB
 	help
 	 libid3tag is a library for reading and (eventually) writing ID3 tags, both

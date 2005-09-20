@@ -1,7 +1,6 @@
 config BR2_PACKAGE_PICOCOM
 	tristate "picocom - minimal dumb-terminal emulation program"
-#	default m if CONFIG_DEVEL
-	default n
+	default m if CONFIG_DEVEL
 	help
 	  As its name suggests, picocom is a minimal dumb-terminal emulation 
 	  program. It is, in principle, very much like minicom, only it's pico 
