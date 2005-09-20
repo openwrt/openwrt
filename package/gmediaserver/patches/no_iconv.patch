@@ -1,9 +1,10 @@
---- gmediaserver-0.7.0/src/main.c.orig	2005-08-29 21:15:01.000000000 +0200
-+++ gmediaserver-0.7.0/src/main.c	2005-08-30 12:37:40.000000000 +0200
-@@ -31,8 +31,10 @@
- #include <stdarg.h>		/* C89 */
+diff -ruN gmediaserver-0.8.0-old/src/main.c gmediaserver-0.8.0-new/src/main.c
+--- gmediaserver-0.8.0-old/src/main.c	2005-09-10 09:26:00.000000000 +0200
++++ gmediaserver-0.8.0-new/src/main.c	2005-09-17 20:48:01.000000000 +0200
+@@ -32,8 +32,10 @@
  #include <stdbool.h>		/* Gnulib, C99 */
  #include <signal.h>		/* ? */
+ #include <locale.h>		/* ? */
 +#ifdef HAVE_ICONV
  #include <iconv.h>		/* Gnulib, POSIX */
  #include "iconvme.h"		/* Gnulib */
@@ -11,7 +12,7 @@
  #ifdef HAVE_NL_LANGINFO
  #include <langinfo.h>
  #endif
-@@ -70,8 +72,10 @@
+@@ -71,8 +73,10 @@
  #ifdef HAVE_ID3LIB
      { "disable-id3", no_argument, NULL, OPT_DISABLE_ID3 },
  #endif
@@ -22,7 +23,7 @@
      { "friendly-name", required_argument, NULL, OPT_FRIENDLY_NAME },
      { "pid-file", required_argument, NULL, OPT_PIDFILE },
      { "profile", required_argument, NULL, OPT_PROFILE, },
-@@ -89,15 +93,21 @@
+@@ -90,15 +94,21 @@
      { NULL, 0, NULL, 0 }
  };
  
@@ -44,7 +45,7 @@
  }
  
  static void
-@@ -139,13 +149,17 @@
+@@ -140,13 +150,17 @@
      char *logfilename = NULL;
      char *timestamp_format = NULL;
      uint32_t expire_time;
@@ -62,7 +63,7 @@
  #ifdef ENABLE_NLS
      if (bindtextdomain(PACKAGE, LOCALEDIR) == NULL)
          warn(_("cannot bind message domain: %s\n"), errstr);
-@@ -173,12 +187,14 @@
+@@ -174,12 +188,14 @@
  	    id3_enabled = false;
  	    break;
  #endif
@@ -77,7 +78,7 @@
  	case OPT_FRIENDLY_NAME:
  	    if (optarg[0] == '\0')
  		die(_("friendly name cannot be empty\n"));
-@@ -319,6 +335,7 @@
+@@ -320,6 +336,7 @@
  
      init_logging(logfilename, timestamp_format);
  
@@ -85,7 +86,7 @@
      if (device_charset != NULL) {
          if (in_charset == NULL) {
  #ifdef HAVE_NL_LANGINFO
-@@ -335,6 +352,7 @@
+@@ -336,6 +353,7 @@
          if (charset_convert == (iconv_t) -1)
              die(_("cannot create character set convertor\nTry using another value for --in-charset or --device-charset\n"));
      }
@@ -93,7 +94,7 @@
  
      /* We could write pid before initiating logging too.
       */
-@@ -396,8 +414,10 @@
+@@ -409,8 +427,10 @@
      if (pidfilename != NULL)
      	unlink(pidfilename); /* ignore errors */
  

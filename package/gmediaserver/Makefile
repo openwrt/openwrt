@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=gmediaserver
-PKG_VERSION:=0.7.0
+PKG_VERSION:=0.8.0
 PKG_RELEASE:=1
-PKG_MD5SUM:=08d3d0274ff7b37b135d6f21b47cb3c5
+PKG_MD5SUM:=fe5d6ab36287999d7acd8aff8dc0819c
 
 PKG_SOURCE_URL:=http://savannah.nongnu.org/download/gmediaserver/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -13,8 +13,6 @@ PKG_CAT:=zcat
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
-
-BR2_PACKAGE_GMEDIASERVER=m
 
 include $(TOPDIR)/package/rules.mk
 
@@ -27,6 +25,7 @@ $(PKG_BUILD_DIR)/.configured:
 		CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include" \
 		LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib" \
 		LIBS=" -lixml -lthreadutil -lupnp -luClibc++ -lz" \
+		am_cv_func_iconv=no \
 		./configure \
 			--target=$(GNU_TARGET_NAME) \
 			--host=$(GNU_TARGET_NAME) \
@@ -50,6 +49,7 @@ $(PKG_BUILD_DIR)/.configured:
 			--enable-shared \
 			--disable-static \
 			--disable-rpath \
+			--with-gnu-ld \
 			--with-id3lib="$(STAGING_DIR)/usr" \
 			--with-libupnp="$(STAGING_DIR)/usr" \
 	)
