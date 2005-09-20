@@ -121,6 +121,7 @@ package-$(BR2_PACKAGE_OPENSSL) += openssl
 package-$(BR2_PACKAGE_OPENSWAN) += openswan
 package-$(BR2_PACKAGE_OPENVPN) += openvpn
 package-$(BR2_PACKAGE_OSIRIS) += osiris
+package-$(BR2_PACKAGE_PALANTIR) += palantir
 package-$(BR2_PACKAGE_PARPROUTED) += parprouted
 package-$(BR2_PACKAGE_PCRE) += pcre
 package-$(BR2_COMPILE_PHP4) += php4
@@ -238,6 +239,7 @@ openssh-compile: zlib-compile openssl-compile
 openssl-compile: zlib-compile
 openswan-compile: gmp-compile
 osiris-compile: openssl-compile
+palantir-compile: jpeg-compile
 portmap-compile: tcp_wrappers-compile
 postgresql-compile: zlib-compile
 ppp-compile: linux-atm-compile
