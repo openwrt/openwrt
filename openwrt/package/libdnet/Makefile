@@ -76,9 +76,10 @@ $(STAGING_DIR)/usr/lib/libdnet.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/bin
 	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/dnet-config $(STAGING_DIR)/usr/bin/
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/dnet* $(STAGING_DIR)/usr/include/
+	cp -fpR $(PKG_INSTALL_DIR)/usr/include/dnet.h $(STAGING_DIR)/usr/include/
+	cp -fpR $(PKG_INSTALL_DIR)/usr/include/dnet $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libdnet.* $(STAGING_DIR)/usr/lib/
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libdnet.{a,so*} $(STAGING_DIR)/usr/lib/
 	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/libdnet.so
@@ -86,8 +87,9 @@ install-dev: $(STAGING_DIR)/usr/lib/libdnet.so
 uninstall-dev:
 	rm -rf \
 		$(STAGING_DIR)/usr/bin/dnet-config \
-		$(STAGING_DIR)/usr/include/dnet*  \
-		$(STAGING_DIR)/usr/lib/libdnet.* \
+		$(STAGING_DIR)/usr/include/dnet.h  \
+		$(STAGING_DIR)/usr/include/dnet  \
+		$(STAGING_DIR)/usr/lib/libdnet.{a,so*} \
 
 compile: install-dev
 clean: uninstall-dev

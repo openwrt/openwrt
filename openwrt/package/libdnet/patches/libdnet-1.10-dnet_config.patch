@@ -1,0 +1,23 @@
+--- libdnet-1.10/dnet-config.in.orig	2001-10-19 03:29:00.000000000 +0200
++++ libdnet-1.10/dnet-config.in	2005-09-20 09:32:53.000000000 +0200
+@@ -45,10 +45,18 @@
+ done
+ 
+ if test "$echo_cflags" = "yes"; then
+-      echo -I@includedir@
++      includes=
++      if test "@includedir@" != "/usr/include" ; then
++             includes=-I@includedir@
++      fi
++      echo $includes
+ fi
+ 
+ if test "$echo_libs" = "yes"; then
+-      echo -L@libdir@ -ldnet @LIBS@
++      libs=
++      if test "@libdir@" != "/usr/lib" ; then
++             libs=-I@libdir@
++      fi
++      echo $libs -ldnet @LIBS@
+ fi      
+ 
