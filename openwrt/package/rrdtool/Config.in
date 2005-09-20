@@ -1,12 +1,11 @@
 config BR2_COMPILE_RRDTOOL
 	bool
-	default no
+	default n
 	depends BR2_PACKAGE_LIBRRD
 
 config BR2_PACKAGE_LIBRRD
 	tristate "librrd - Round Robin Database (RRD) management library (v1.2.x)"
 	default n
-	depends !BR2_COMPILE_RRDTOOL1
 	select BR2_COMPILE_RRDTOOL
 	select BR2_PACKAGE_LIBART
 	select BR2_PACKAGE_LIBFREETYPE
