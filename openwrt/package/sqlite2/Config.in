@@ -7,7 +7,7 @@ config BR2_PACKAGE_LIBSQLITE2
 	prompt "libsqlite2 - Self-contained, embeddable, zero-configuration SQL database engine (v2.x)"
 	tristate
 	default m if CONFIG_DEVEL
-	select BR2_PACKAGE_SQLITE2
+	select BR2_COMPILE_SQLITE2
 	select BR2_PACKAGE_LIBNCURSES
 	select BR2_PACKAGE_LIBREADLINE
 	help
