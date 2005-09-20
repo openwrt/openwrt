@@ -1,7 +1,6 @@
 config BR2_PACKAGE_LIBGCRYPT
 	tristate "libgcrypt - The GNU crypto library"
-#	default m if CONFIG_DEVEL
-	default n
+	default m if CONFIG_DEVEL
 	select BR2_PACKAGE_LIBGPG_ERROR
 	help
 	 This is a general purpose cryptographic library based on the code from 

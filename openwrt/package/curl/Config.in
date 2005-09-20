@@ -5,8 +5,7 @@ config BR2_COMPILE_CURL
 
 config BR2_PACKAGE_LIBCURL
 	tristate "libcurl - A client-side URL transfer library"
-#	default m if CONFIG_DEVEL
-	default n
+	default m if CONFIG_DEVEL
 	select BR2_COMPILE_CURL
 	select BR2_PACKAGE_LIBOPENSSL
 	select BR2_PACKAGE_ZLIB
@@ -18,8 +17,7 @@ config BR2_PACKAGE_LIBCURL
 
 config BR2_PACKAGE_CURL
 	tristate "curl - A client-side URL transfer tool"
-#	default m if CONFIG_DEVEL
-	default n
+	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_LIBCURL
 	help
 	  A client-side URL transfer tool.

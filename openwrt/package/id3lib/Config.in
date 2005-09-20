@@ -1,8 +1,7 @@
 config BR2_PACKAGE_ID3LIB
 	prompt "id3lib - An ID3v1/ID3v2 tagging library"
 	tristate
-#	default m if CONFIG_DEVEL
-	default n
+	default m if CONFIG_DEVEL
 	select BR2_PACKAGE_UCLIBCXX
 	select BR2_PACKAGE_ZLIB
 	help

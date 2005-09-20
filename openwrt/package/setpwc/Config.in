@@ -1,7 +1,6 @@
 config BR2_PACKAGE_SETPWC
 	tristate "setpwc - Philips (and compatibles) WebCams (PWC) control utility"
-#	default m if CONFIG_DEVEL
-	default n
+	default m if CONFIG_DEVEL
 	help
 	  Philips (and compatibles) WebCams (PWC) control utility.
 	  
