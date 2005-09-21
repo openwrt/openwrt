@@ -6,9 +6,6 @@
 #############################################################
 
 # broadcom specific kmod packages
-$(eval $(call KMOD_template,DIAG,diag,\
-	$(MODULES_DIR)/kernel/drivers/net/diag/diag.o \
-))
 $(eval $(call KMOD_template,BRCM_WL,brcm-wl,\
 	$(MODULES_DIR)/kernel/drivers/net/wl/wl.o \
 ,CONFIG_WL))
