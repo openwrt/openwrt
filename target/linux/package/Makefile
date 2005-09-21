@@ -10,6 +10,7 @@ package-y += openwrt
 
 ifeq ($(BOARD)-$(KERNEL),brcm-2.4)
 package-$(BR2_PACKAGE_KMOD_WLCOMPAT) += wlcompat
+package-$(BR2_PACKAGE_KMOD_DIAG) += diag
 wlcompat-compile: openwrt-compile
 endif
 
