@@ -51,7 +51,6 @@ $(PKG_BUILD_DIR)/.configured:
 		  --sbindir=/usr/sbin \
 		  --sysconfdir=/etc \
 		  $(DISABLE_LARGEFILE) \
-		  $(DISABLE_NLS) \
 		  --enable-shared \
 		  --enable-static \
 	);
