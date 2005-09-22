@@ -32,6 +32,12 @@ config BR2_PACKAGE_LIGHTTPD_MOD_CGI
 	tristate 
 	default m if CONFIG_DEVEL
 
+config BR2_PACKAGE_LIGHTTPD_MOD_EXPIRE
+	depends BR2_PACKAGE_LIGHTTPD
+	prompt "...-mod-expire - Expire module"
+	tristate 
+	default m if CONFIG_DEVEL
+
 config BR2_PACKAGE_LIGHTTPD_MOD_FASTCGI
 	depends BR2_PACKAGE_LIGHTTPD
 	prompt "...-mod-fastcgi - FastCGI module"
@@ -65,6 +71,12 @@ config BR2_PACKAGE_LIGHTTPD_MOD_SETENV
 config BR2_PACKAGE_LIGHTTPD_MOD_SIMPLE_VHOST
 	depends BR2_PACKAGE_LIGHTTPD
 	prompt "...-mod-simple-vhost - Simple virtual hosting module"
+	tristate 
+	default m if CONFIG_DEVEL
+
+config BR2_PACKAGE_LIGHTTPD_MOD_SSI
+	depends BR2_PACKAGE_LIGHTTPD
+	prompt "...-mod-ssi - SSI module"
 	tristate 
 	default m if CONFIG_DEVEL
 
