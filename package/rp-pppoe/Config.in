@@ -43,8 +43,8 @@ config BR2_PACKAGE_PPPOE_SERVER
 config BR2_PACKAGE_PPPOE_SNIFF
 	tristate
 	prompt "pppoe-sniff - PPPoE (PPP over Ethernet) frame sniffer"
-	default m if BR2_COMPILE_RP_PPPOE
-	select BR2_PACKAGE_RP_PPPOE
+	default m if DEVELOPER
+	select BR2_COMPILE_RP_PPPOE
 	help
 	  PPPoE (PPP over Ethernet) frame sniffer
 	  
