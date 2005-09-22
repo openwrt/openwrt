@@ -170,8 +170,8 @@ static int __init diag_init()
 	set_diag=ignore;
 	set_dmz=ignore;
 	
-	buf=nvram_get("boardrev");
-	if (((board_type & 0xf00) == 0x400) && strcmp(buf,"0x10")) {
+	buf=nvram_get("pmon_ver") ?: "";
+	if (((board_type & 0xf00) == 0x400) && (strncmp(buf, "CFE", 3) != 0)) {
 		buf=nvram_get("boardtype")?:"";
 		if (!strcmp(buf,"bcm94710dev")) {
 			buf=nvram_get("boardnum")?:"";
