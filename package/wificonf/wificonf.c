@@ -325,7 +325,7 @@ void setup_bcom(int skfd, char *ifname)
 			val = TKIP_ENABLED;
 		else if (nvram_match(wl_var("crypto"), "aes"))
 			val = AES_ENABLED;
-		else if (nvram_match(wl_var("crypto"), "tkip+aes"))
+		else if (nvram_match(wl_var("crypto"), "tkip+aes") || nvram_match(wl_var("crypto"), "aes+tkip"))
 			val = TKIP_ENABLED | AES_ENABLED;
 		else
 			val = 0;
