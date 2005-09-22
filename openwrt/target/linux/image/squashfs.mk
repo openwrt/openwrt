@@ -8,7 +8,7 @@ squashfs-clean:
 	$(MAKE) -C squashfs clean
 	rm -f $(KDIR)/root.squashfs
 
-$(KDIR)/root.squashfs:
+$(KDIR)/root.squashfs: install-prepare
 	@mkdir -p $(KDIR)/root/jffs
 	$(STAGING_DIR)/bin/mksquashfs-lzma $(KDIR)/root $@ -nopad -noappend -root-owned -le
 
