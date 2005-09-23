@@ -22,36 +22,6 @@ $(eval $(call PKG_template,BIND_CLIENT,bind-client,$(PKG_VERSION)-$(PKG_RELEASE)
 
 $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
-		./configure \
-		  --target=$(GNU_HOST_NAME) \
-		  --host=$(GNU_HOST_NAME) \
-		  --build=$(GNU_HOST_NAME) \
-		  --program-prefix="" \
-		  --program-suffix="" \
-		  --prefix=/usr \
-		  --exec-prefix=/usr \
-		  --bindir=/usr/bin \
-		  --datadir=/usr/share \
-		  --includedir=/usr/include \
-		  --libdir=/usr/lib \
-		  --libexecdir=/usr/lib \
-		  --localstatedir=/var \
-		  --mandir=/usr/share/man \
-		  --sbindir=/usr/sbin \
-		  --sysconfdir=/etc/bind \
-		  --without-openssl \
-		  --without-ipv6 \
-		  $(DISABLE_LARGEFILE) \
-		  $(DISABLE_NLS) \
-	);
-	
-	$(MAKE) -C $(PKG_BUILD_DIR)/lib/isc 
-	$(MAKE) -C $(PKG_BUILD_DIR)/lib/dns
-	$(MAKE) -C $(PKG_BUILD_DIR)/lib/isc clean
-	cp $(PKG_BUILD_DIR)/lib/dns/gen $(PKG_BUILD_DIR)
-	$(MAKE) -C $(PKG_BUILD_DIR)/lib/dns clean
-	cp $(PKG_BUILD_DIR)/gen $(PKG_BUILD_DIR)/lib/dns/gen
-	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(strip $(TARGET_CFLAGS))" \
 		CPPFLAGS="-I$(STAGING_DIR)/usr/include" \
@@ -79,18 +49,22 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 		  --enable-shared \
 		  --enable-static \
 		  --enable-ipv6 \
-		  --with-randomdev=/dev/random \
+		  --with-randomdev=/dev/urandom \
 		  --disable-threads \
 		  --with-openssl=$(STAGING_DIR)/usr/ \
 	);
 	touch $(PKG_BUILD_DIR)/.configured
 
 $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
-	$(MAKE) -C $(PKG_BUILD_DIR)
+	$(MAKE) -C $(PKG_BUILD_DIR)/lib/dns \
+		CC="$(HOSTCC)" \
+		CFLAGS="-O2" \
+		gen
+	rm -rf $(PKG_INSTALL_DIR)
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
-		install
+		all install
 	touch $(PKG_BUILD_DIR)/.built
 
 $(IPKG_BIND_SERVER):
