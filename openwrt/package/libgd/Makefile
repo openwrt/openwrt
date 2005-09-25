@@ -22,8 +22,8 @@ $(PKG_BUILD_DIR)/.configured:
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
-		CPPFLAGS="-I$(STAGING_DIR)/usr/include" \
-		LDFLAGS="-L$(STAGING_DIR)/lib -L$(STAGING_DIR)/usr/lib" \
+		CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include" \
+		LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib" \
 		LIBPNG12_CONFIG="$(STAGING_DIR)/usr/bin/libpng12-config" \
 		./configure \
 		  --target=$(GNU_TARGET_NAME) \
@@ -48,9 +48,12 @@ $(PKG_BUILD_DIR)/.configured:
 		  --enable-shared \
 		  --enable-static \
 		  --disable-rpath \
+		  --with-gnu-ld \
 		  --without-x \
 		  --without-freetype \
+		  --without-jpeg \
 		  --with-png=$(STAGING_DIR)/usr \
+		  --without-xpm \
 	)
 	touch $@
 
