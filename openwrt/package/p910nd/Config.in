@@ -1,0 +1,14 @@
+config BR2_PACKAGE_P910ND
+	tristate "p910nd - A small non-spooling printer server"
+	default m if CONFIG_DEVEL
+	help
+	  p910nd  is a small daemon that copies any data received on
+	  the port it is listening on to the  corresponding  printer
+	  port.   It  is primarily intended for diskless Linux hosts
+	  running as printer drivers but there is no reason  why  it
+	  could  not  be used on diskful hosts.  Port 9100 is copied
+	  to /dev/lp0, 9101 to /dev/lp1 and 9102 to  /dev/lp2.   The
+	  default is port 9100 to /dev/lp0.
+	  
+	  http://www.etherboot.org/p910nd/
+	  
