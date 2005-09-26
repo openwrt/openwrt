@@ -122,6 +122,7 @@ package-$(BR2_PACKAGE_OPENSWAN) += openswan
 package-$(BR2_PACKAGE_OPENVPN) += openvpn
 package-$(BR2_PACKAGE_OSIRIS) += osiris
 package-$(BR2_PACKAGE_PALANTIR) += palantir
+package-$(BR2_PACKAGE_P910ND) += p910nd
 package-$(BR2_PACKAGE_PARPROUTED) += parprouted
 package-$(BR2_PACKAGE_PCRE) += pcre
 package-$(BR2_COMPILE_PHP4) += php4
