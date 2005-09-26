@@ -1,0 +1,309 @@
+Only in p910nd: p910nd
+diff -u p910nd-0.7/p910nd.c p910nd/p910nd.c
+--- p910nd-0.7/p910nd.c	2004-08-09 03:25:01.000000000 +0400
++++ p910nd/p910nd.c	2005-05-11 00:37:03.385284744 +0400
+@@ -74,7 +74,6 @@
+ #define		LOCKFILE	"/var/lock/subsys/p910%cd"
+ #endif
+ #define		PRINTERFILE	"/dev/lp%c"
+-#define		LOGOPTS		LOG_ERR
+ 
+ static char	*progname;
+ static char	version[] = "p910nd Version 0.7";
+@@ -93,9 +92,9 @@
+ 	fprintf(stdout, "%s \n", version);
+ }
+ 
+-FILE *open_printer(int lpnumber)
++int open_printer(int lpnumber)
+ {
+-	FILE		*f;
++	int		lp;
+ 	char		lpname[sizeof(PRINTERFILE)];
+ 
+ #ifdef	TESTING
+@@ -105,12 +104,16 @@
+ #endif
+ 	if (device == 0)
+ 		device = lpname;
+-	if ((f = fopen(device, bidir ? "w+" : "w")) == NULL)
++	if ((lp = open(device, bidir ? O_RDWR : O_WRONLY)) == -1)
+ 	{
+-		syslog(LOGOPTS, "%s: %m\n", device);
+-		exit(1);
++		syslog(LOG_ERR, "%s: %m\n", device);
++
++		/* fallback to /dev/null if device is not available 
++		 * otherwise windows spooler will screw up
++		 */
++		lp = open("/dev/null", bidir ? O_RDWR : O_WRONLY);
+ 	}
+-	return (f);
++	return (lp);
+ }
+ 
+ int get_lock(int lpnumber)
+@@ -121,7 +124,7 @@
+ 	(void)snprintf(lockname, sizeof(lockname), LOCKFILE, lpnumber);
+ 	if ((lockfd = open(lockname, O_CREAT|O_RDWR)) < 0)
+ 	{
+-		syslog(LOGOPTS, "%s: %m\n", lockname);
++		syslog(LOG_ERR, "%s: %m\n", lockname);
+ 		return (0);
+ 	}
+ 	memset(&lplock, 0, sizeof(lplock));
+@@ -129,7 +132,7 @@
+ 	lplock.l_pid = getpid();
+ 	if (fcntl(lockfd, F_SETLKW, &lplock) < 0)
+ 	{
+-		syslog(LOGOPTS, "%s: %m\n", lockname);
++		syslog(LOG_ERR, "%s: %m\n", lockname);
+ 		return (0);
+ 	}
+ 	return (1);
+@@ -141,24 +144,36 @@
+ 		(void)close(lockfd);
+ }
+ 
++ssize_t safe_write(int fd, char *buf, size_t count)
++{
++	size_t offset = 0;
++	
++	while (offset < count) {
++		ssize_t n = write(fd, buf + offset, count - offset);
++		
++		if (n < 0 && errno != EINTR)
++			return n;
++			
++		if (n > 0)
++			offset += n;
++	}
++
++	return offset;
++}
++
+ /* Copy network socket to FILE f until EOS */
+-int copy_stream(int fd, FILE *f)
++int copy_stream(int fd, int lp)
+ {
+-	int		nread;
++	int		nread, rcvd = 0, sent = 0;
+ 	char		buffer[8192];
+ 
+ 	if (bidir) {
+-		FILE	*nf;
+-
+-		if ((nf = fdopen(fd, "w")) == NULL) {
+-			syslog(LOGOPTS, "fdopen: %m\n");
+-		}
+ 		for (;;) {
+ 			fd_set	readfds;
+ 			int result;
+-			int maxfd = fileno(f) > fd ? fileno(f) : fd;
++			int maxfd = lp > fd ? lp : fd;
+ 			FD_ZERO(&readfds);
+-			FD_SET(fileno(f), &readfds);
++			FD_SET(lp, &readfds);
+ 			FD_SET(fd, &readfds);
+ 			result = select(maxfd + 1, &readfds, 0, 0, 0);
+ 			if (result < 0)
+@@ -169,43 +184,54 @@
+ 				nread = read(fd, buffer, sizeof(buffer));
+ 				if (nread <= 0)
+ 					break;
+-				(void)fwrite(buffer, sizeof(char), nread, f);
++				if (safe_write(lp, buffer, nread) < 0) {
++					syslog(LOG_ERR, "write: %m\n");
++					break;
++				}
++				rcvd += nread;
+ 			}
+-			if (FD_ISSET(fileno(f), &readfds)) {
+-				nread = read(fileno(f), buffer, sizeof(buffer));
+-				if (nread > 0 && nf != NULL) {
+-					(void)fwrite(buffer, sizeof(char), nread, nf);
+-					(void)fflush(nf);
++			if (FD_ISSET(lp, &readfds)) {
++				nread = read(lp, buffer, sizeof(buffer));
++				if (nread > 0) {
++					safe_write(fd, buffer, nread);
++					sent += nread;
+ 				}
+ 			}
+ 		}
+-		(void)fflush(f);
+-		(void)fclose(nf);
++		syslog(LOG_NOTICE, "Finished job: %d bytes received, %d bytes sent\n",
++			rcvd, sent);
+ 		return (0);
+ 	} else {
+-		while ((nread = read(fd, buffer, sizeof(buffer))) > 0)
+-			(void)fwrite(buffer, sizeof(char), nread, f);
+-		(void)fflush(f);
++		while ((nread = read(fd, buffer, sizeof(buffer))) > 0) {
++			if (safe_write(lp, buffer, nread) < 0) {
++				syslog(LOG_ERR, "write: %m\n");
++				break;
++			}
++			rcvd += nread;
++		}
++		syslog(LOG_NOTICE, "Finished job: %d bytes received\n",	rcvd);
+ 		return (nread);
+ 	}
+ }
+ 
+ void one_job(int lpnumber)
+ {
+-	FILE		*f;
++	int		lp;
+ 	struct sockaddr_in	client;
+ 	socklen_t	clientlen = sizeof(client);
+ 
+ 	if (getpeername(0, (struct sockaddr*) &client, &clientlen) >= 0)
+-		syslog(LOGOPTS, "Connection from %s port %hu\n",
++		syslog(LOG_NOTICE, "Connection from %s port %hu\n",
+ 			inet_ntoa(client.sin_addr),
+ 			ntohs(client.sin_port));
+ 	if (get_lock(lpnumber) == 0)
+ 		return;
+-	f = open_printer(lpnumber);
+-	if (copy_stream(0, f) < 0)
+-		syslog(LOGOPTS, "copy_stream: %m\n");
+-	fclose(f);
++	if ((lp = open_printer(lpnumber)) != -1)
++	{
++    		if (copy_stream(0, lp) < 0)
++			syslog(LOG_ERR, "copy_stream: %m\n");
++		close(lp);
++	}
+ 	free_lock();
+ }
+ 
+@@ -215,7 +241,7 @@
+ #ifdef	USE_GETPROTOBYNAME
+ 	struct protoent	*proto;
+ #endif
+-	int		netfd, fd, one = 1;
++	int		netfd, fd, lp, one = 1;
+ 	socklen_t	clientlen;
+ 	struct sockaddr_in	netaddr, client;
+ 	char		pidfilename[sizeof(PIDFILE)];
+@@ -225,7 +251,7 @@
+ 	switch (fork())
+ 	{
+ 	case -1:
+-		syslog(LOGOPTS, "fork: %m\n");
++		syslog(LOG_ERR, "fork: %m\n");
+ 		exit (1);
+ 	case 0:		/* child */
+ 		break;
+@@ -236,14 +262,14 @@
+ 	resourcelimit.rlim_max = 0;
+ 	if (getrlimit(RLIMIT_NOFILE, &resourcelimit) < 0)
+ 	{
+-		syslog(LOGOPTS, "getrlimit: %m\n");
++		syslog(LOG_ERR, "getrlimit: %m\n");
+ 		exit(1);
+ 	}
+ 	for (fd = 0; fd < resourcelimit.rlim_max; ++fd)
+ 		(void)close(fd);
+ 	if (setsid() < 0)
+ 	{
+-		syslog(LOGOPTS, "setsid: %m\n");
++		syslog(LOG_ERR, "setsid: %m\n");
+ 		exit(1);
+ 	}
+ 	(void)chdir("/");
+@@ -254,7 +280,7 @@
+ 	(void)snprintf(pidfilename, sizeof(pidfilename), PIDFILE, lpnumber);
+ 	if ((f = fopen(pidfilename, "w")) == NULL)
+ 	{
+-		syslog(LOGOPTS, "%s: %m\n", pidfilename);
++		syslog(LOG_ERR, "%s: %m\n", pidfilename);
+ 		exit(1);
+ 	}
+ 	(void)fprintf(f, "%d\n", getpid());
+@@ -262,11 +288,10 @@
+ 	if (get_lock(lpnumber) == 0)
+ 		exit(1);
+ #endif
+-	f = open_printer(lpnumber);
+ #ifdef	USE_GETPROTOBYNAME
+ 	if ((proto = getprotobyname("tcp")) == NULL)
+ 	{
+-		syslog(LOGOPTS, "Cannot find protocol for TCP!\n");
++		syslog(LOG_ERR, "Cannot find protocol for TCP!\n");
+ 		exit(1);
+ 	}
+ 	if ((netfd = socket(AF_INET, SOCK_STREAM, proto->p_proto)) < 0)
+@@ -274,12 +299,12 @@
+ 	if ((netfd = socket(AF_INET, SOCK_STREAM, IPPROTO_IP)) < 0)
+ #endif
+ 	{
+-		syslog(LOGOPTS, "socket: %m\n");
++		syslog(LOG_ERR, "socket: %m\n");
+ 		exit(1);
+ 	}
+ 	if (setsockopt(netfd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one)) < 0)
+ 	{
+-		syslog(LOGOPTS, "setsocketopt: %m\n");
++		syslog(LOG_ERR, "setsocketopt: %m\n");
+ 		exit(1);
+ 	}
+ 	netaddr.sin_port = htons(BASEPORT + lpnumber - '0');
+@@ -287,12 +312,12 @@
+ 	memset(netaddr.sin_zero, 0, sizeof(netaddr.sin_zero));
+ 	if (bind(netfd, (struct sockaddr*) &netaddr, sizeof(netaddr)) < 0)
+ 	{
+-		syslog(LOGOPTS, "bind: %m\n");
++		syslog(LOG_ERR, "bind: %m\n");
+ 		exit(1);
+ 	}
+ 	if (listen(netfd, 5) < 0)
+ 	{
+-		syslog(LOGOPTS, "listen: %m\n");
++		syslog(LOG_ERR, "listen: %m\n");
+ 		exit(1);
+ 	}
+ 	clientlen = sizeof(client);
+@@ -302,22 +327,26 @@
+ #ifdef	USE_LIBWRAP
+ 		if (hosts_ctl("p910nd", STRING_UNKNOWN,
+ 			inet_ntoa(client.sin_addr), STRING_UNKNOWN) == 0) {
+-			syslog(LOGOPTS, "Connection from %s port %hd rejected\n",
++			syslog(LOG_ERR, "Connection from %s port %hu rejected\n",
+ 				inet_ntoa(client.sin_addr),
+ 				ntohs(client.sin_port));
+ 			close(fd);
+ 			continue;
+ 		}
+ #endif
+-		syslog(LOGOPTS, "Connection from %s port %hd accepted\n",
++		syslog(LOG_NOTICE, "Connection from %s port %hu accepted\n",
+ 			inet_ntoa(client.sin_addr),
+ 			ntohs(client.sin_port));
+ 		/*write(fd, "Printing", 8);*/
+-		if (copy_stream(fd, f) < 0)
+-			syslog(LOGOPTS, "copy_stream: %m\n");
++		if ((lp = open_printer(lpnumber)) != -1)
++		{
++		        if (copy_stream(fd, lp) < 0)
++				syslog(LOG_ERR, "copy_stream: %m\n");
++			close(lp);
++		}
+ 		(void)close(fd);
+ 	}
+-	syslog(LOGOPTS, "accept: %m\n");
++	syslog(LOG_ERR, "accept: %m\n");
+ 	free_lock();
+ 	exit(1);
+ }
+@@ -338,7 +367,7 @@
+ 	if (getsockname(0, (struct sockaddr*) &bind_addr, &ba_len) == 0)
+ 		return (0);		/* under inetd */
+ 	if (errno != ENOTSOCK)		/* strange... */
+-		syslog(LOGOPTS, "getsockname: %m\n");
++		syslog(LOG_ERR, "getsockname: %m\n");
+ 	return (1);
+ }
+ 
