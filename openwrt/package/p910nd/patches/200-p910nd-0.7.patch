@@ -1,12 +1,12 @@
-Only in p910nd: p910nd
-diff -u p910nd-0.7/p910nd.c p910nd/p910nd.c
---- p910nd-0.7/p910nd.c	2004-08-09 03:25:01.000000000 +0400
-+++ p910nd/p910nd.c	2005-05-11 00:37:03.385284744 +0400
-@@ -74,7 +74,6 @@
+--- p910nd-0.7/p910nd.c.orig	2005-09-29 11:31:02.442914400 +0200
++++ p910nd-0.7/p910nd.c	2005-09-29 11:31:49.236800648 +0200
+@@ -73,8 +73,7 @@
+ #else
  #define		LOCKFILE	"/var/lock/subsys/p910%cd"
  #endif
- #define		PRINTERFILE	"/dev/lp%c"
+-#define		PRINTERFILE	"/dev/lp%c"
 -#define		LOGOPTS		LOG_ERR
++#define		PRINTERFILE	"/dev/printers/%c"
  
  static char	*progname;
  static char	version[] = "p910nd Version 0.7";
