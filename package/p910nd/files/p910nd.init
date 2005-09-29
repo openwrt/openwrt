@@ -8,7 +8,7 @@ PID_F=$RUN_D/p910${PORT-0}d.pid
 case $1 in
  start)
   mkdir -p $RUN_D
-  p910nd $OPTIONS
+  p910nd $OPTIONS $PORT
   ;;
  stop)
   [ -f $PID_F ] && kill $(cat $PID_F)
