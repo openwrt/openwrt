@@ -119,6 +119,7 @@ $(PKG_BUILD_DIR)/.built:
 			$(DISABLE_NLS) \
 			--with-lockdir=/var/run/samba \
 			--with-privatedir=/etc/samba \
+			--with-syslog \
 	);
 	$(MAKE) -C $(PKG_BUILD_DIR)/source \
 		$(TARGET_CONFIGURE_OPTS) \
@@ -160,6 +161,7 @@ $(IPKG_SAMBA):
 	install -m0755 $(PKG_BUILD_DIR)/source/bin/smbd.shared $(IDIR_SAMBA)/usr/sbin/smbd
 	install -d -m0755 $(IDIR_SAMBA)/usr/share/samba
 	install -m0644 $(PKG_INSTALL_DIR)/usr/share/samba/codepage.{437,850} $(IDIR_SAMBA)/usr/share/samba/
+	install -m0644 $(PKG_INSTALL_DIR)/usr/share/samba/unicode_map.{437,850} $(IDIR_SAMBA)/usr/share/samba/
 	$(RSTRIP) $(IDIR_SAMBA)
 	$(IPKG_BUILD) $(IDIR_SAMBA) $(PACKAGE_DIR)
 
