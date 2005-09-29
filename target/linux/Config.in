@@ -162,6 +162,13 @@ config BR2_PACKAGE_KMOD_CIFS
 	help
 	  Kernel modules for CIFS support
 
+config BR2_PACKAGE_KMOD_SOUNDCORE
+	tristate "Soundcard support"
+	default n
+	help
+	  Base support for soundcards
+	  Requires either USB soundcard support (OSS) or ALSA package to be useful
+
 config BR2_PACKAGE_KMOD_USB
 	tristate "USB support"
 	default m
@@ -228,6 +235,7 @@ config BR2_PACKAGE_KMOD_USB_AUDIO
 	tristate "Support for USB soundcards"
 	default m
 	depends BR2_PACKAGE_KMOD_USB_CONTROLLER
+	select BR2_PACKAGE_KMOD_SOUNDCORE
 
 config BR2_PACKAGE_KMOD_USB_ACM
 	tristate "Support for USB modems/isdn controllers"
