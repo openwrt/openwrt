@@ -1,6 +1,7 @@
 # Main makefile for the packages
 include $(TOPDIR)/rules.mk
 
+package-$(BR2_PACKAGE_KMOD_ALSA) += alsa
 package-$(BR2_PACKAGE_KMOD_FUSE) += fuse
 package-$(BR2_PACKAGE_KMOD_MINI_FO) += mini_fo
 package-$(BR2_PACKAGE_KMOD_SHFS) += shfs
@@ -16,6 +17,7 @@ endif
 
 all: compile install
 clean: $(patsubst %,%-clean,$(package-) $(package-y) $(package-m))
+prepare: $(patsubst %,%-prepare,$(package-y) $(package-m))
 compile: $(patsubst %,%-compile,$(package-y) $(package-m))
 install: $(patsubst %,%-install,$(package-y))
 
