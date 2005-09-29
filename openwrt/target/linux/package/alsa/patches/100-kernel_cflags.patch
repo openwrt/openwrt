@@ -1,0 +1,12 @@
+diff -rNu alsa-driver-1.0.9b/Makefile.conf.in alsa-driver-1.0.9b.new/Makefile.conf.in
+--- alsa-driver-1.0.9b/Makefile.conf.in	2005-04-15 23:09:33.000000000 +1000
++++ alsa-driver-1.0.9b.new/Makefile.conf.in	2005-09-04 11:29:15.000000000 +1000
+@@ -53,6 +53,8 @@
+ INCLUDE		= -I$(TOPDIR)/include @EXTRA_INCLUDES@ @KERNEL_INC@
+ CFLAGS		= $(MODFLAGS) $(INCLUDE) $(c_opts) -Wall -Wstrict-prototypes \
+ 	-fomit-frame-pointer -Wno-trigraphs -O2 -fno-strict-aliasing -fno-common \
++        -mno-abicalls -fno-pic -finline-limit=100000 -mabi=32 -march=mips32 \
++        -Wa,-32 -Wa,-march=mips32 -Wa,-mips32 -Wa,--trap -mlong-calls \
+ 	-pipe -DALSA_BUILD -nostdinc -iwithprefix include
+ ifdef CONFIG_SND_MVERSION
+ CFLAGS += -DMODVERSIONS -include $(CONFIG_SND_KERNELDIR)/include/linux/modversions.h

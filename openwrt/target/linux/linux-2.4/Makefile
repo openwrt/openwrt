@@ -91,6 +91,9 @@ $(eval $(call KMOD_template,NFS,nfs,\
 	$(MODULES_DIR)/kernel/fs/nfs/*.o \
 	$(MODULES_DIR)/kernel/net/sunrpc/*.o \
 ,CONFIG_NFS_FS,,30,sunrpc lockd nfs))
+$(eval $(call KMOD_template,SOUNDCORE,soundcore,\
+	$(MODULES_DIR)/kernel/drivers/sound/soundcore.o \
+,CONFIG_SOUND,,30,soundcore))
 $(eval $(call KMOD_template,USB,usb-core,\
 	$(MODULES_DIR)/kernel/drivers/usb/usbcore.o \
 ,CONFIG_USB,,50,usbcore))
@@ -128,9 +131,8 @@ $(eval $(call KMOD_template,USB_PRINTER,usb-printer,\
 	$(MODULES_DIR)/kernel/drivers/usb/printer.o \
 ,CONFIG_USB_PRINTER,kmod-usb-core,60,printer))
 $(eval $(call KMOD_template,USB_AUDIO,usb-audio,\
-	$(MODULES_DIR)/kernel/drivers/sound/soundcore.o \
 	$(MODULES_DIR)/kernel/drivers/usb/audio.o \
-,CONFIG_USB_AUDIO,kmod-usb-core,60,soundcore audio))
+,CONFIG_USB_AUDIO,kmod-soundcore kmod-usb-core,61,audio))
 $(eval $(call KMOD_template,IDE,ide,\
 	$(MODULES_DIR)/kernel/drivers/ide/*.o \
 	$(MODULES_DIR)/kernel/drivers/ide/*/*.o \
