@@ -3,9 +3,9 @@
 export PATH=/bin:/sbin:/usr/bin:/usr/sbin
 mount none /proc -t proc
 insmod diag
-echo 0x01 > /proc/sys/diag
+[ -f /proc/sys/diag ] && echo 0x01 > /proc/sys/diag
 sleep 1
-if [ ! -f /proc/sys/reset ] || [ $(cat /proc/sys/reset) = 1 -o "$(nvram get failsafe)" = 1 ]; then
+if [ -f /proc/sys/reset ] && [ $(cat /proc/sys/reset) = 1 -o "$(nvram get failsafe)" = 1 ]; then
 	export FAILSAFE=true
 	[ "$(nvram get boot_wait)" != "on" ] && {
 		nvram set boot_wait=on
