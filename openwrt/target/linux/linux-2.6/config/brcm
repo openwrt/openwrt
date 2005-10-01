@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 2.6.12.5
-# Tue Sep 20 16:18:50 2005
+# Sat Oct  1 19:20:41 2005
 #
 CONFIG_MIPS=y
 # CONFIG_MIPS64 is not set
@@ -573,7 +573,6 @@ CONFIG_BT_HCIUART_BCSP_TXCRC=y
 # CONFIG_BT_HCIVHCI is not set
 CONFIG_NETDEVICES=y
 # CONFIG_DUMMY is not set
-CONFIG_DIAG_LED=m
 # CONFIG_BONDING is not set
 # CONFIG_EQUALIZER is not set
 CONFIG_TUN=m
@@ -829,12 +828,12 @@ CONFIG_UNIX98_PTYS=y
 CONFIG_USB_ARCH_HAS_HCD=y
 CONFIG_USB_ARCH_HAS_OHCI=y
 CONFIG_USB=m
-# CONFIG_USB_DEBUG is not set
+CONFIG_USB_DEBUG=y
 
 #
 # Miscellaneous USB options
 #
-# CONFIG_USB_DEVICEFS is not set
+CONFIG_USB_DEVICEFS=y
 # CONFIG_USB_BANDWIDTH is not set
 # CONFIG_USB_DYNAMIC_MINORS is not set
 # CONFIG_USB_OTG is not set
@@ -848,7 +847,7 @@ CONFIG_USB_EHCI_HCD=m
 CONFIG_USB_OHCI_HCD=m
 # CONFIG_USB_OHCI_BIG_ENDIAN is not set
 CONFIG_USB_OHCI_LITTLE_ENDIAN=y
-CONFIG_USB_UHCI_HCD=m
+# CONFIG_USB_UHCI_HCD is not set
 # CONFIG_USB_SL811_HCD is not set
 
 #
@@ -858,14 +857,14 @@ CONFIG_USB_UHCI_HCD=m
 #
 # USB Bluetooth TTY can only be used with disabled Bluetooth subsystem
 #
-# CONFIG_USB_ACM is not set
+CONFIG_USB_ACM=m
 CONFIG_USB_PRINTER=m
 
 #
 # NOTE: USB_STORAGE enables SCSI, and 'SCSI disk support' may also be needed; see USB_STORAGE Help for more information
 #
 CONFIG_USB_STORAGE=m
-# CONFIG_USB_STORAGE_DEBUG is not set
+CONFIG_USB_STORAGE_DEBUG=y
 # CONFIG_USB_STORAGE_DATAFAB is not set
 # CONFIG_USB_STORAGE_FREECOM is not set
 # CONFIG_USB_STORAGE_DPCM is not set
@@ -943,6 +942,7 @@ CONFIG_USB_MON=m
 # CONFIG_USB_PHIDGETSERVO is not set
 # CONFIG_USB_IDMOUSE is not set
 # CONFIG_USB_SISUSBVGA is not set
+# CONFIG_USB_TEST is not set
 
 #
 # USB ATM/DSL drivers

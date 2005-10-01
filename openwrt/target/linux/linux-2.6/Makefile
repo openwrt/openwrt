@@ -59,7 +59,7 @@ $(eval $(call KMOD_template,PPPOATM,pppoatm,\
 	$(MODULES_DIR)/kernel/net/atm/pppoatm.ko \
 ,CONFIG_PPPOATM))
 $(eval $(call KMOD_template,USB_ACM,usb-acm,\
-	$(MODULES_DIR)/kernel/drivers/usb/acm.ko \
+	$(MODULES_DIR)/kernel/drivers/usb/class/cdc-acm.ko \
 ,CONFIG_USB_ACM))
 $(eval $(call KMOD_template,B44,b44,\
 	$(MODULES_DIR)/kernel/drivers/net/b44.ko \
@@ -99,8 +99,8 @@ $(eval $(call KMOD_template,USB_UHCI,usb-uhci,\
 	$(MODULES_DIR)/kernel/drivers/usb/host/uhci.ko \
 ,CONFIG_USB_UHCI_ALT,kmod-usb-core,60,uhci))
 $(eval $(call KMOD_template,USB_OHCI,usb-ohci,\
-	$(MODULES_DIR)/kernel/drivers/usb/host/usb-ohci.ko \
-,CONFIG_USB_OHCI,kmod-usb-core,60,ohci))
+	$(MODULES_DIR)/kernel/drivers/usb/host/ohci-hcd.ko \
+,CONFIG_USB_OHCI_HCD,kmod-usb-core,60,ohci))
 $(eval $(call KMOD_template,USB2,usb2,\
 	$(MODULES_DIR)/kernel/drivers/usb/host/ehci-hcd.ko \
 ,CONFIG_USB_EHCI_HCD,kmod-usb-core,60,ehci-hcd))
