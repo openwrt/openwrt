@@ -172,6 +172,7 @@ void setup_bcom(int skfd, char *ifname)
 	char buf[8192];
 	char wbuf[80];
 	char *v;
+	int wds_enabled = 0;
 	
 	if (bcom_ioctl(skfd, ifname, WLC_GET_MAGIC, &val, sizeof(val)) < 0)
 		return;
@@ -185,16 +186,9 @@ void setup_bcom(int skfd, char *ifname)
 	buf[3] = 0;
 	bcom_ioctl(skfd, ifname, WLC_SET_COUNTRY, buf, 4);
 	
-	/* Set up afterburner */
-	val = ABO_AUTO;
-	if (nvram_enabled(wl_var("afterburner")))
-		val = ABO_ON;
-	if (nvram_disabled(wl_var("afterburner")))
-		val = ABO_OFF;
-	bcom_set_val(skfd, ifname, "afterburner_override", &val, sizeof(val));
-	
 	/* Set other options */
 	val = nvram_enabled(wl_var("lazywds"));
+	wds_enabled = val;
 	bcom_ioctl(skfd, ifname, WLC_SET_LAZYWDS, &val, sizeof(val));
 	
 	if (v = nvram_get(wl_var("frag"))) {
@@ -270,10 +264,24 @@ void setup_bcom(int skfd, char *ifname)
 			if (ether_atoe(wbuf, addr->ether_addr_octet)) {
 				wdslist->count++;
 				addr++;
+				wds_enabled = 1;
 			}
 		}
 		bcom_ioctl(skfd, ifname, WLC_SET_WDSLIST, buf, sizeof(buf));
 	}
+	
+	/* Set up afterburner, disabled it if WDS is enabled */
+	if (wds_enabled) {
+		val = ABO_OFF;
+	} else {
+		val = ABO_AUTO;
+		if (nvram_enabled(wl_var("afterburner")))
+			val = ABO_ON;
+		if (nvram_disabled(wl_var("afterburner")))
+			val = ABO_OFF;
+	}
+	
+	bcom_set_val(skfd, ifname, "afterburner_override", &val, sizeof(val));
 	
 	/* Set up G mode */
 	bcom_ioctl(skfd, ifname, WLC_GET_PHYTYPE, &val, sizeof(val));
