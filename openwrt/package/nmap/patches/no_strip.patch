@@ -1,0 +1,12 @@
+diff -ruN nmap-3.81-old/Makefile.in nmap-3.81-new/Makefile.in
+--- nmap-3.81-old/Makefile.in	2005-10-02 16:32:52.000000000 +0200
++++ nmap-3.81-new/Makefile.in	2005-10-02 16:34:46.000000000 +0200
+@@ -262,7 +262,7 @@
+ 
+ install-nmap: $(TARGET)
+ 	$(SHTOOL) mkdir -f -p -m 755 $(DESTDIR)$(bindir) $(DESTDIR)$(mandir)/man1 $(DESTDIR)$(nmapdatadir)
+-	$(INSTALL) -c -m 755 nmap -s $(DESTDIR)$(bindir)/nmap
++	$(INSTALL) -c -m 755 nmap $(DESTDIR)$(bindir)/nmap
+ 	$(INSTALL) -c -m 644 docs/$(TARGET).1 $(DESTDIR)$(mandir)/man1/$(TARGET).1
+ 	$(INSTALL) -c -m 644 docs/nmap.xsl $(DESTDIR)$(nmapdatadir)/
+ 	$(INSTALL) -c -m 644 docs/nmap.dtd $(DESTDIR)$(nmapdatadir)/
