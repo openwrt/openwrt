@@ -134,7 +134,8 @@ $(eval $(call KMOD_template,HFSPLUS,hfsplus,\
 $(eval $(call KMOD_template,VFAT,vfat,\
 	$(MODULES_DIR)/kernel/fs/vfat/vfat.ko \
 	$(MODULES_DIR)/kernel/fs/fat/fat.ko \
-,CONFIG_VFAT_FS,,30,fat vfat))
+	$(MODULES_DIR)/kernel/fs/nls/nls_base.ko \
+,CONFIG_VFAT_FS,,30,nls_base fat vfat))
 $(eval $(call KMOD_template,CRYPTO,crypto,\
 	$(MODULES_DIR)/kernel/crypto/*.ko \
 ))
