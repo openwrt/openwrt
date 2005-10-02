@@ -4,7 +4,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=nmap
 PKG_VERSION:=3.81
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_MD5SUM:=0713306dda85aee2c95ef31b4b7d2838
 
 PKG_SOURCE_URL:=http://download.insecure.org/nmap/dist
@@ -23,9 +23,10 @@ $(PKG_BUILD_DIR)/.configured:
 		$(TARGET_CONFIGURE_OPTS) \
 		libpcapdir="$(STAGING_DIR)/usr/lib" \
 		CFLAGS="$(TARGET_CFLAGS)" \
-		CXXFLAGS="$(TARGET_CFLAGS) -fno-builtin -nostdinc++ -nodefaultlibs " \
+		CXXFLAGS="$(TARGET_CFLAGS) -fno-builtin -nostdinc++" \
 		CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include" \
-		LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib  -fno-builtin -nostdinc++ -nodefaultlibs -luClibc++ -lc -lm -lgcc_s" \
+		LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib" \
+		LIBS="-nodefaultlibs -luClibc++ -lc -lm" \
 		ac_cv_prog_CXX="$(TARGET_CXX)" \
 		./configure \
 		  --target=$(GNU_TARGET_NAME) \
@@ -58,7 +59,7 @@ $(PKG_BUILD_DIR)/.built:
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
-		CCOPT="-fno-builtin -nostdinc++ -nodefaultlibs $(TARGET_CFLAGS)" \
+		CCOPT="$(TARGET_CFLAGS) -fno-builtin -nostdinc++" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		all install
 	touch $@
