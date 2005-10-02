@@ -4,7 +4,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=net-snmp
 PKG_VERSION:=5.1.2
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_MD5SUM:=8080555ab3f90011f25d5122042d9a8d
 
 PKG_SOURCE_URL:=@SF/net-snmp
@@ -23,7 +23,6 @@ SNMP_MIB_MODULES_INCLUDED = \
 	host/hr_proc \
 	host/hr_storage \
 	host/hr_system \
-	ieee802dot11 \
 	mibII/at \
 	mibII/icmp \
 	mibII/interfaces \
@@ -55,6 +54,7 @@ SNMP_MIB_MODULES_EXCLUDED = \
 	agent_mibs \
 	agentx \
 	host \
+	ieee802dot11 \
 	mibII \
 	notification \
 	snmpv3mibs \
@@ -102,8 +102,8 @@ $(PKG_BUILD_DIR)/.configured:
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
-		CPPFLAGS="-I$(STAGING_DIR)/usr/include" \
-		LDFLAGS="-L$(STAGING_DIR)/usr/lib" \
+		CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include" \
+		LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib" \
 		ac_cv_header_pcap_h=no \
 		./configure \
 		  --target=$(GNU_TARGET_NAME) \
