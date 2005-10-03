@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=sipsak
-PKG_VERSION:=0.9.1
+PKG_VERSION:=0.9.2
 PKG_RELEASE:=1
-PKG_MD5SUM:=8e407f149da894791f823e4561598f5a
+PKG_MD5SUM:=1e94400fdf851054dd226831f14a5e4d
 
 PKG_SOURCE_URL:=http://download.berlios.de/sipsak/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -22,31 +22,32 @@ $(PKG_BUILD_DIR)/.configured:
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
-		CPPFLAGS="-I$(STAGING_DIR)/usr/include" \
-		LDFLAGS="-L$(STAGING_DIR)/usr/lib" \
+		CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include" \
+		LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib" \
 		ac_cv_func_malloc_0_nonnull=yes \
 		./configure \
-		  --target=$(GNU_TARGET_NAME) \
-		  --host=$(GNU_TARGET_NAME) \
-		  --build=$(GNU_HOST_NAME) \
-		  --program-prefix="" \
-		  --program-suffix="" \
-		  --prefix=/usr \
-		  --exec-prefix=/usr \
-		  --bindir=/usr/bin \
-		  --datadir=/usr/share \
-		  --includedir=/usr/include \
-		  --infodir=/usr/share/info \
-		  --libdir=/usr/lib \
-		  --libexecdir=/usr/lib \
-		  --localstatedir=/var \
-		  --mandir=/usr/share/man \
-		  --sbindir=/usr/sbin \
-		  --sysconfdir=/etc \
-		  $(DISABLE_LARGEFILE) \
-		  $(DISABLE_NLS) \
-		  --enable-shared \
-		  --disable-static \
+			--target=$(GNU_TARGET_NAME) \
+			--host=$(GNU_TARGET_NAME) \
+			--build=$(GNU_HOST_NAME) \
+			--program-prefix="" \
+			--program-suffix="" \
+			--prefix=/usr \
+			--exec-prefix=/usr \
+			--bindir=/usr/bin \
+			--datadir=/usr/share \
+			--includedir=/usr/include \
+			--infodir=/usr/share/info \
+			--libdir=/usr/lib \
+			--libexecdir=/usr/lib \
+			--localstatedir=/var \
+			--mandir=/usr/share/man \
+			--sbindir=/usr/sbin \
+			--sysconfdir=/etc \
+			$(DISABLE_LARGEFILE) \
+			$(DISABLE_NLS) \
+			--enable-shared \
+			--disable-static \
+			--disable-gnutls \
 	);
 	touch $@
 
