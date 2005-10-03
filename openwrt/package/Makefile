@@ -138,6 +138,7 @@ package-$(BR2_PACKAGE_PPTP) += pptp
 package-$(BR2_PACKAGE_PPTPD) += pptpd
 package-$(BR2_PACKAGE_QUAGGA) += quagga
 package-$(BR2_PACKAGE_RADVD) += radvd
+package-$(BR2_PACKAGE_RARPD) += rarpd
 package-$(BR2_PACKAGE_READLINE) += readline
 package-$(BR2_PACKAGE_ROBOCFG) += robocfg
 package-$(BR2_PACKAGE_RP_PPPOE) += rp-pppoe
@@ -246,6 +247,7 @@ portmap-compile: tcp_wrappers-compile
 postgresql-compile: zlib-compile
 ppp-compile: linux-atm-compile
 quagga-compile: readline-compile ncurses-compile
+rarpd-compile: libnet-compile
 ifneq ($(BR2_PACKAGE_LIBRRD),)
 rrdcollect-compile: rrdtool-compile
 endif
