@@ -135,7 +135,22 @@ $(eval $(call KMOD_template,VFAT,vfat,\
 	$(MODULES_DIR)/kernel/fs/vfat/vfat.ko \
 	$(MODULES_DIR)/kernel/fs/fat/fat.ko \
 	$(MODULES_DIR)/kernel/fs/nls/nls_base.ko \
-,CONFIG_VFAT_FS,,30,nls_base fat vfat))
+,CONFIG_VFAT_FS,,30,fat vfat))
+$(eval $(call KMOD_template,NLS_BASE,nls-base,\
+	$(MODULES_DIR)/kernel/fs/nls/nls_base.ko \
+,CONFIG_NLS,,20,nls_base))
+$(eval $(call KMOD_template,NLS_UTF8,nls-utf8,\
+	$(MODULES_DIR)/kernel/fs/nls/nls_utf8.ko \
+,CONFIG_NLS_UTF8,,20,nls_utf8))
+$(eval $(call KMOD_template,NLS_ISO8859_1,nls-iso8859-1,\
+	$(MODULES_DIR)/kernel/fs/nls/nls_iso8859-1.ko \
+,CONFIG_NLS_ISO8859_1,,20,nls_iso8859-1))
+$(eval $(call KMOD_template,NLS_CP437,nls-cp437,\
+	$(MODULES_DIR)/kernel/fs/nls/nls_cp437.ko \
+,CONFIG_NLS_CODEPAGE_437,,20,nls_cp437))
+$(eval $(call KMOD_template,NLS_CP850,nls-cp850,\
+	$(MODULES_DIR)/kernel/fs/nls/nls_cp850.ko \
+,CONFIG_NLS_CODEPAGE_850,,20,nls_cp850))
 $(eval $(call KMOD_template,CRYPTO,crypto,\
 	$(MODULES_DIR)/kernel/crypto/*.ko \
 ))

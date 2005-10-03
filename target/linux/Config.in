@@ -252,6 +252,8 @@ config BR2_PACKAGE_KMOD_IDE
 config BR2_PACKAGE_KMOD_VFAT
 	tristate "VFAT filesystem support"
 	default m
+	depends on BR2_PACKAGE_KMOD_NLS_BASE
+	depends on BR2_PACKAGE_KMOD_NLS_CP437 || BR2_PACKAGE_KMOD_NLS_CP850
 	help
 	  Kernel modules for VFAT filesystem support
 	  useful for usb mass storage devices
@@ -359,6 +361,36 @@ config BR2_PACKAGE_KMOD_SCHED
 	default m
 	help
 	  Kernel schedulers for IP traffic
+
+config BR2_PACKAGE_KMOD_NLS_BASE
+	tristate "basic native language support for filesystems"
+	default m
+	help
+	  Kernel native language support
+
+config BR2_PACKAGE_KMOD_NLS_CP437
+	tristate "code page 437"
+	default m
+	help
+	  Kernel native language support
+
+config BR2_PACKAGE_KMOD_NLS_CP850
+	tristate "code page 850"
+	default m
+	help
+	  Kernel native language support
+
+config BR2_PACKAGE_KMOD_NLS_UTF8
+	tristate "utf8"
+	default m
+	help
+	  Kernel native language support
+
+config BR2_PACKAGE_KMOD_NLS_IS08859_1
+	tristate "iso8859-1"
+	default m
+	help
+	  Kernel native language support
 
 config BR2_PACKAGE_KMOD_VIDEODEV
 	tristate "Video (For Linux) kernel support"
