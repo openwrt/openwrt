@@ -20,6 +20,13 @@ endif
 
 include $(TOPDIR)/package/rules.mk
 
+ifeq ($(LINUX_KARCH),i386)
+KERNEL_C_OPTS:= -Os -mpreferred-stack-boundary=2 -march=i486 -fno-unit-at-a-time
+endif
+ifeq ($(LINUX_KARCH),mips)
+KERNEL_C_OPTS:= -Os -G 0 -mno-abicalls -fno-pic -finline-limit=100000 -mabi=32 -march=mips32 -Wa,-32 -Wa,-march=mips32 -Wa,-mips32 -Wa,--trap
+endif
+
 $(eval $(call PKG_template,KMOD_ALSA,kmod-alsa,$(LINUX_VERSION)$(BOARD)+$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH),kernel-$(LINUX_VERSION)-$(BOARD) ($(KERNEL_RELEASE))))
 
 $(PKG_BUILD_DIR)/.configured:	$(PKG_BUILD_DIR)/.prepared
@@ -35,7 +42,8 @@ $(PKG_BUILD_DIR)/.configured:	$(PKG_BUILD_DIR)/.prepared
 	touch $@
 
 $(PKG_BUILD_DIR)/.built:
-	$(MAKE) -C $(PKG_BUILD_DIR)
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		c_opts="$(KERNEL_C_OPTS)"
 	touch $@
 
 $(IPKG_KMOD_ALSA):
