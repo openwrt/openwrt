@@ -8,11 +8,12 @@ PKG_RELEASE:=2
 PKG_MD5SUM:=408d3001ed715ddc90009c247e548638
 
 PKG_SOURCE_URL:=\
+	http://netmirror.org/mirror/mysql.com/Downloads/MySQL-4.0/ \
 	http://mysql.he.net/Downloads/MySQL-4.0/ \
 	http://www.linorg.usp.br/mysql/Downloads/MySQL-4.0/ \
 	http://mysql.planetmirror.com/Downloads/MySQL-4.0/ \
-	http://mysql.holywar.net/Downloads/MySQL-4.0/ \
-	http://netmirror.org/mirror/mysql.com/Downloads/MySQL-4.0/
+	http://mysql.holywar.net/Downloads/MySQL-4.0/
+
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
