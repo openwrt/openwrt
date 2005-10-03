@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mt-daapd
-PKG_VERSION:=0.2.1.1
+PKG_VERSION:=0.2.3
 PKG_RELEASE:=1
-PKG_MD5SUM:=87356d2750ad82388a58d901aa566465
+PKG_MD5SUM:=17aa3fa0601cbe172d18f53489141e5a
 
 PKG_SOURCE_URL:=@SF/mt-daapd
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -22,8 +22,8 @@ $(PKG_BUILD_DIR)/.configured:
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
-		CPPFLAGS="-I$(STAGING_DIR)/include -I$(STAGING_DIR)/usr/include" \
-		LDFLAGS="-L$(STAGING_DIR)/usr/include -L$(STAGING_DIR)/usr/lib" \
+		CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include" \
+		LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib" \
 		ac_cv_func_setpgrp_void=yes \
 		./configure \
 			--target=$(GNU_TARGET_NAME) \
@@ -49,7 +49,11 @@ $(PKG_BUILD_DIR)/.configured:
 			--disable-static \
 			--enable-mdns \
 			--enable-howl \
+			--with-id3tag="$(STAGING_DIR)/usr" \
+			--with-gdbm-includes="$(STAGING_DIR)/usr/include" \
+			--with-gdbm-libs="$(STAGING_DIR)/usr/lib" \
 			--with-howl-includes="$(STAGING_DIR)/usr/include/howl" \
+			--with-howl-libs="$(STAGING_DIR)/usr/lib" \
 			--without-static-libs \
 	)
 	touch $@
