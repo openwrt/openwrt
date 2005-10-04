@@ -3,7 +3,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=iptraf
 PKG_VERSION:=2.7.0
 PKG_RELEASE:=1
-PKG_MD5SUM:=
+PKG_MD5SUM:=7ff0bc933a0a57a4ca9e2b0443307539
 
 PKG_SOURCE_URL:=ftp://iptraf.seul.org/pub/iptraf/ \
 	ftp://the.wiretapped.net/pub/security/network-monitoring/iptraf/
