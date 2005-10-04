@@ -56,6 +56,7 @@ package-$(BR2_PACKAGE_IPKG) += ipkg
 package-$(BR2_PACKAGE_IPROUTE2) += iproute2
 package-$(BR2_PACKAGE_IPSET) += ipset
 package-$(BR2_PACKAGE_IPTABLES) += iptables
+package-$(BR2_PACKAGE_IPTRAF) += iptraf
 package-$(BR2_PACKAGE_IRSSI) += irssi
 package-$(BR2_COMPILE_JPEG) += jpeg
 package-$(BR2_PACKAGE_KISMET) += kismet
@@ -217,6 +218,7 @@ gmediaserver-compile: id3lib-compile libupnp-compile
 gnutls-compile: libgcrypt-compile opencdk-compile libtasn1-compile
 id3lib-compile: uclibc++-compile zlib-compile
 irssi-compile: glib-compile ncurses-compile
+iptraf-compile: ncurses-compile
 hostapd-compile: openssl-compile
 kismet-compile: uclibc++-compile libpcap-compile ncurses-compile
 less-compile: ncurses-compile
