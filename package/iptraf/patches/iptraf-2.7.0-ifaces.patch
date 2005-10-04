@@ -1,0 +1,549 @@
+diff -ruN iptraf-2.7.0-old/src/dirs.h iptraf-2.7.0-new/src/dirs.h
+--- iptraf-2.7.0-old/src/dirs.h	2001-05-03 12:44:11.000000000 +0200
++++ iptraf-2.7.0-new/src/dirs.h	2005-10-04 21:51:26.000000000 +0200
+@@ -148,11 +148,10 @@
+ #define PORTFILE	get_path(T_WORKDIR, "ports.dat")
+ 
+ /*
+- * The Ethernet and FDDI host description files
++ * The Ethernet host description files
+  */
+  
+ #define ETHFILE		get_path(T_WORKDIR, "ethernet.desc")
+-#define FDDIFILE	get_path(T_WORKDIR, "fddi.desc")
+ 
+ /*
+  * The rvnamed program file
+diff -ruN iptraf-2.7.0-old/src/hostmon.c iptraf-2.7.0-new/src/hostmon.c
+--- iptraf-2.7.0-old/src/hostmon.c	2002-04-16 04:15:25.000000000 +0200
++++ iptraf-2.7.0-new/src/hostmon.c	2005-10-04 21:52:02.000000000 +0200
+@@ -30,7 +30,6 @@
+ #include <netinet/in.h>
+ #include <linux/if_packet.h>
+ #include <linux/if_ether.h>
+-#include <linux/if_fddi.h>
+ #include <linux/if_tr.h>
+ #include <net/if_arp.h>
+ #include <stdlib.h>
+@@ -294,8 +293,6 @@
+ 	    wprintw(table->tabwin, "Ethernet");
+ 	else if (entry->un.desc.linktype == LINK_PLIP)
+ 	    wprintw(table->tabwin, "PLIP");
+-	else if (entry->un.desc.linktype == LINK_FDDI)
+-	    wprintw(table->tabwin, "FDDI");
+ 
+ 	wprintw(table->tabwin, " HW addr: %s", entry->un.desc.ascaddr);
+ 
+@@ -771,7 +768,6 @@
+ 
+     initethtab(&table, options->actmode);
+     loaddesclist(&elist, LINK_ETHERNET, WITHETCETHERS);
+-    loaddesclist(&flist, LINK_FDDI, WITHETCETHERS);
+     
+     if (logging) {
+         if (strcmp(current_logfile, "") == 0)
+@@ -854,7 +850,7 @@
+ 	    }
+ 	    linktype = getlinktype(fromaddr.sll_hatype, ifname, -1, NULL);
+ 
+-	    if ((linktype == LINK_ETHERNET) || (linktype == LINK_FDDI)
++	    if ((linktype == LINK_ETHERNET)
+ 		|| (linktype == LINK_PLIP) || (linktype == LINK_TR)) {
+ 		if (fromaddr.sll_protocol == htons(ETH_P_IP))
+ 		    is_ip = 1;
+@@ -871,12 +867,6 @@
+ 		    memcpy(scratch_daddr, ((struct ethhdr *) buf)->h_dest,
+ 			   ETH_ALEN);
+ 		    list = &elist;
+-		} else if (linktype == LINK_FDDI) {
+-		    memcpy(scratch_saddr, ((struct fddihdr *) buf)->saddr,
+-			   FDDI_K_ALEN);
+-		    memcpy(scratch_daddr, ((struct fddihdr *) buf)->daddr,
+-			   FDDI_K_ALEN);
+-		    list = &flist;
+ 		} else if (linktype == LINK_TR) {
+ 		    memcpy(scratch_saddr, ((struct trh_hdr *) buf)->saddr,
+ 		           TR_ALEN);
+diff -ruN iptraf-2.7.0-old/src/ifaces.c iptraf-2.7.0-new/src/ifaces.c
+--- iptraf-2.7.0-old/src/ifaces.c	2002-05-08 11:43:27.000000000 +0200
++++ iptraf-2.7.0-new/src/ifaces.c	2005-10-04 21:54:00.000000000 +0200
+@@ -37,9 +37,9 @@
+ extern int daemonized;
+ 
+ char ifaces[][6] =
+-    { "lo", "eth", "sl", "ppp", "ippp", "plip", "fddi", "isdn", "dvb",
++    { "lo", "eth", "sl", "ppp", "ippp", "plip", "isdn", "dvb",
+       "pvc", "hdlc", "ipsec", "sbni", "tr", "wvlan", "wlan", "sm2", "sm3",
+-      "pent", "lec" };
++      "pent", "lec", "vlan" };
+ 
+ char *ltrim(char *buf)
+ {
+diff -ruN iptraf-2.7.0-old/src/landesc.c iptraf-2.7.0-new/src/landesc.c
+--- iptraf-2.7.0-old/src/landesc.c	2001-11-27 11:23:32.000000000 +0100
++++ iptraf-2.7.0-new/src/landesc.c	2005-10-04 21:57:33.000000000 +0200
+@@ -82,8 +82,6 @@
+ 
+     if (linktype == LINK_ETHERNET)
+ 	fd = fopen(ETHFILE, "r");
+-    else if (linktype == LINK_FDDI)
+-	fd = fopen(FDDIFILE, "r");
+ 
+     if (fd == NULL) {
+ 	return;
+@@ -204,8 +202,6 @@
+ 
+     if (linktype == LINK_ETHERNET)
+ 	fd = fopen(ETHFILE, "w");
+-    else if (linktype == LINK_FDDI)
+-	fd = fopen(FDDIFILE, "w");
+ 
+     if (fd < 0) {
+ 	etherr();
+diff -ruN iptraf-2.7.0-old/src/links.h iptraf-2.7.0-new/src/links.h
+--- iptraf-2.7.0-old/src/links.h	2001-12-18 03:45:16.000000000 +0100
++++ iptraf-2.7.0-new/src/links.h	2005-10-04 21:57:17.000000000 +0200
+@@ -5,7 +5,6 @@
+ #define LINK_LOOPBACK		5
+ #define LINK_ISDN_RAWIP		6
+ #define LINK_ISDN_CISCOHDLC	7
+-#define LINK_FDDI		8
+ #define LINK_FRAD		9
+ #define LINK_DLCI		10
+ #define LINK_TR			11
+diff -ruN iptraf-2.7.0-old/src/log.c iptraf-2.7.0-new/src/log.c
+--- iptraf-2.7.0-old/src/log.c	2002-04-22 05:59:15.000000000 +0200
++++ iptraf-2.7.0-new/src/log.c	2005-10-04 21:57:51.000000000 +0200
+@@ -465,8 +465,6 @@
+ 			ptmp->un.desc.ascaddr);
+ 	    else if (ptmp->un.desc.linktype == LINK_PLIP)
+ 		fprintf(fd, "\nPLIP address: %s", ptmp->un.desc.ascaddr);
+-	    else if (ptmp->un.desc.linktype == LINK_FDDI)
+-		fprintf(fd, "\nFDDI address: %s", ptmp->un.desc.ascaddr);
+ 
+ 	    if (ptmp->un.desc.withdesc)
+ 		fprintf(fd, " (%s)", ptmp->un.desc.desc);
+diff -ruN iptraf-2.7.0-old/src/options.c iptraf-2.7.0-new/src/options.c
+--- iptraf-2.7.0-old/src/options.c	2001-12-28 10:39:15.000000000 +0100
++++ iptraf-2.7.0-new/src/options.c	2005-10-04 21:58:15.000000000 +0200
+@@ -67,8 +67,6 @@
+     tx_additem(menu, NULL, NULL);
+     tx_additem(menu, " ^E^thernet/PLIP host descriptions...",
+ 	    "Manages descriptions for Ethernet and PLIP addresses");
+-    tx_additem(menu, " ^F^DDI/Token Ring host descriptions...",
+-	    "Manages descriptions for FDDI and FDDI addresses");
+     tx_additem(menu, NULL, NULL);
+     tx_additem(menu, " E^x^it configuration", "Returns to main menu");
+ }
+@@ -366,9 +364,6 @@
+ 	case 14:
+ 	    ethdescmgr(LINK_ETHERNET);
+ 	    break;
+-	case 15:
+-	    ethdescmgr(LINK_FDDI);
+-	    break;
+ 	}
+ 
+ 	indicatesetting(row, options, statwin);
+diff -ruN iptraf-2.7.0-old/src/othptab.c iptraf-2.7.0-new/src/othptab.c
+--- iptraf-2.7.0-old/src/othptab.c	2001-12-28 03:23:59.000000000 +0100
++++ iptraf-2.7.0-new/src/othptab.c	2005-10-04 21:58:33.000000000 +0200
+@@ -19,7 +19,6 @@
+ #include <asm/types.h>
+ #include <linux/if_ether.h>
+ #include <linux/if_tr.h>
+-#include <linux/if_fddi.h>
+ #include <winops.h>
+ #include "arphdr.h"
+ #include "options.h"
+@@ -139,11 +138,6 @@
+ 			new_entry->smacaddr);
+ 	    convmacaddr(((struct ethhdr *) packet)->h_dest,
+ 			new_entry->dmacaddr);
+-	} else if (linkproto == LINK_FDDI) {
+-	    convmacaddr(((struct fddihdr *) packet)->saddr,
+-			new_entry->smacaddr);
+-	    convmacaddr(((struct fddihdr *) packet)->daddr,
+-			new_entry->dmacaddr);
+         } else if (linkproto == LINK_TR) {
+             convmacaddr(((struct trh_hdr *) packet)->saddr,
+                         new_entry->smacaddr);
+@@ -373,8 +367,7 @@
+ 	strcat(msgstring, scratchpad);
+ 
+ 	if ((entry->linkproto == LINK_ETHERNET) ||
+-	    (entry->linkproto == LINK_PLIP) ||
+-	    (entry->linkproto == LINK_FDDI)) {
++	    (entry->linkproto == LINK_PLIP)) {
+ 	    sprintf(scratchpad, " from %s to %s on %s",
+ 		    entry->smacaddr, entry->dmacaddr, entry->iface);
+ 
+diff -ruN iptraf-2.7.0-old/src/packet.c iptraf-2.7.0-new/src/packet.c
+--- iptraf-2.7.0-old/src/packet.c	2002-05-08 11:44:08.000000000 +0200
++++ iptraf-2.7.0-new/src/packet.c	2005-10-04 21:59:12.000000000 +0200
+@@ -35,7 +35,6 @@
+ #include <sys/ioctl.h>
+ #include <linux/if_packet.h>
+ #include <linux/if_ether.h>
+-#include <linux/if_fddi.h>
+ #include <linux/if_tr.h>
+ #include <linux/isdn.h>
+ #include <linux/sockios.h>
+@@ -80,10 +79,10 @@
+     case ARPHRD_ETHER:
+ 	if (strncmp(ifname, "eth", 3) == 0)
+ 	    result = LINK_ETHERNET;
++	else if (strncmp(ifname, "vlan", 4) == 0)
++	    result = LINK_ETHERNET;
+ 	else if (strncmp(ifname, "plip", 4) == 0)
+ 	    result = LINK_PLIP;
+-	else if (strncmp(ifname, "fddi", 4) == 0)    /* For some Ethernet- */
+-	    result = LINK_ETHERNET;                  /* emulated FDDI ifaces */
+ 	else if (strncmp(ifname, "dvb", 3) == 0)
+ 	    result = LINK_ETHERNET;
+ 	else if (strncmp(ifname, "sbni", 4) == 0)
+@@ -127,9 +126,6 @@
+     case ARPHRD_PPP:
+ 	result = LINK_PPP;
+ 	break;
+-    case ARPHRD_FDDI:
+-	result = LINK_FDDI;
+-	break;
+     case ARPHRD_IEEE802:
+     case ARPHRD_IEEE802_TR:
+         result = LINK_TR;
+@@ -179,19 +175,6 @@
+ 	*packet = tpacket + 4;
+ 	*readlen -= 4;
+ 	break;
+-    case LINK_FDDI:
+-	*packet = tpacket + sizeof(struct fddihdr);
+-	*readlen -= sizeof(struct fddihdr);
+-
+-	/*
+-	 * Move IP data into an aligned buffer.  96 bytes should be sufficient
+-	 * for IP and TCP headers with reasonable numbers of options and some
+-	 * data.
+-	 */
+-
+-	memmove(aligned_buf, *packet, min(SNAPSHOT_LEN, *readlen));
+-	*packet = aligned_buf;
+-	break;
+     case LINK_TR:
+         /*
+          * Token Ring patch supplied by Tomas Dvorak 
+diff -ruN iptraf-2.7.0-old/src/promisc.c iptraf-2.7.0-new/src/promisc.c
+--- iptraf-2.7.0-old/src/promisc.c	2002-01-16 02:51:03.000000000 +0100
++++ iptraf-2.7.0-new/src/promisc.c	2005-10-04 22:05:25.000000000 +0200
+@@ -81,7 +81,7 @@
+ 	     */
+ 
+ 	    if ((strncmp(buf, "eth", 3) == 0) ||
+-		(strncmp(buf, "fddi", 4) == 0) ||
++	    (strncmp(buf, "vlan", 4) == 0) ||
+   	        (strncmp(ptmp->params.ifname, "wvlan", 4) == 0) ||
+ 	        (strncmp(ptmp->params.ifname, "lec", 3) == 0) ||
+ 	        (accept_unsupported_interfaces)) {
+@@ -194,7 +194,7 @@
+ 
+     while (ptmp != NULL) {
+ 	if (((strncmp(ptmp->params.ifname, "eth", 3) == 0) ||
+-	     (strncmp(ptmp->params.ifname, "fddi", 4) == 0) ||
++	     (strncmp(ptmp->params.ifname, "vlan", 4) == 0) ||
+ 	     (strncmp(ptmp->params.ifname, "wvlan", 4) == 0) ||
+ 	     (strncmp(ptmp->params.ifname, "lec", 3) == 0)) &&
+ 	     (ptmp->params.state_valid)) {
+diff -ruN iptraf-2.7.0-old/src/promisc.~c iptraf-2.7.0-new/src/promisc.~c
+--- iptraf-2.7.0-old/src/promisc.~c	1970-01-01 01:00:00.000000000 +0100
++++ iptraf-2.7.0-new/src/promisc.~c	2005-10-04 22:00:02.000000000 +0200
+@@ -0,0 +1,238 @@
++/***
++
++promisc.c	- handles the promiscuous mode flag for the Ethernet/FDDI
++		  interfaces
++		  
++Written by Gerard Paul Java
++Copyright (c) Gerard Paul Java 1997, 1998
++
++This module contains functions that manage the promiscuous states of
++the interfaces.
++
++This software is open source; you can redistribute it and/or modify
++it under the terms of the GNU General Public License as published by
++the Free Software Foundation; either version 2 of the License, or
++(at your option) any later version.
++
++This program is distributed WITHOUT ANY WARRANTY; without even the
++implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
++See the GNU General Public License in the included COPYING file for
++details.
++
++***/
++
++#include <curses.h>
++#include <panel.h>
++#include <sys/ioctl.h>
++#include <sys/socket.h>
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <fcntl.h>
++#include <unistd.h>
++#include <stdlib.h>
++#include <string.h>
++#include <netinet/in.h>
++#include <net/if.h>
++#include <linux/if_ether.h>
++#include "ifstats.h"
++#include "ifaces.h"
++#include "error.h"
++#include "promisc.h"
++#include "dirs.h"
++
++#define PROMISC_MSG_MAX 80
++
++extern int daemonized;
++extern int accept_unsupported_interfaces;
++
++void init_promisc_list(struct promisc_states **list)
++{
++    FILE *fd;
++    int ifd;
++    char buf[8];
++    struct promisc_states *ptmp;
++    struct promisc_states *tail = NULL;
++    struct ifreq ifr;
++    int istat;
++    char err_msg[80];
++
++    ifd = socket(PF_INET, SOCK_DGRAM, 0);
++
++    *list = NULL;
++    fd = open_procnetdev();
++
++    do {
++	get_next_iface(fd, buf);
++
++	if (strcmp(buf, "") != 0) {
++	    ptmp = malloc(sizeof(struct promisc_states));
++	    strcpy(ptmp->params.ifname, buf);
++
++	    if (*list == NULL) {
++		*list = ptmp;
++	    } else
++		tail->next_entry = ptmp;
++
++	    tail = ptmp;
++	    ptmp->next_entry = NULL;
++
++	    /*
++	     * Retrieve and save interface flags
++	     */
++
++	    if ((strncmp(buf, "eth", 3) == 0) ||
++	    (strncmp(buf, "vlan", 4) == 0) ||
++		(strncmp(buf, "fddi", 4) == 0) ||
++  	        (strncmp(ptmp->params.ifname, "wvlan", 4) == 0) ||
++	        (strncmp(ptmp->params.ifname, "lec", 3) == 0) ||
++	        (accept_unsupported_interfaces)) {
++		strcpy(ifr.ifr_name, buf);
++
++		istat = ioctl(ifd, SIOCGIFFLAGS, &ifr);
++
++		if (istat < 0) {
++		    sprintf(err_msg,
++			    "Unable to obtain interface parameters for %s",
++			    buf);
++		    write_error(err_msg, daemonized);
++		    ptmp->params.state_valid = 0;
++		} else {
++		    ptmp->params.saved_state = ifr.ifr_flags;
++		    ptmp->params.state_valid = 1;
++		}
++	    }
++	}
++    } while (strcmp(buf, "") != 0);
++}
++
++/*
++ * Save interfaces and their states to a temporary file.  Used only by the
++ * first IPTraf instance.  Needed in case there are subsequent, simultaneous 
++ * instances of IPTraf, which may still need promiscuous mode even after
++ * the first instance exits.  These subsequent instances will need to restore
++ * the promiscuous state from this file.
++ */
++
++void save_promisc_list(struct promisc_states *list)
++{
++    int fd;
++    struct promisc_states *ptmp = list;
++
++    fd = open(PROMISCLISTFILE, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
++
++    if (fd < 0) {
++	write_error("Unable to save interface flags", daemonized);
++	return;
++    }
++
++    while (ptmp != NULL) {
++	write(fd, &(ptmp->params), sizeof(struct promisc_params));
++	ptmp = ptmp->next_entry;
++    }
++
++    close(fd);
++}
++
++/*
++ * Load promiscuous states into list
++ */
++
++void load_promisc_list(struct promisc_states **list)
++{
++    int fd;
++    struct promisc_states *ptmp = NULL;
++    struct promisc_states *tail = NULL;
++    int br;
++
++    fd = open(PROMISCLISTFILE, O_RDONLY);
++
++    if (fd < 0) {
++	write_error("Unable to retrieve saved interface flags",
++		    daemonized);
++	*list = NULL;
++	return;
++    }
++
++    do {
++	ptmp = malloc(sizeof(struct promisc_states));
++	br = read(fd, &(ptmp->params), sizeof(struct promisc_params));
++
++	if (br > 0) {
++	    if (tail != NULL)
++		tail->next_entry = ptmp;
++	    else
++		*list = ptmp;
++
++	    ptmp->next_entry = NULL;
++	    tail = ptmp;
++	} else
++	    free(ptmp);
++    } while (br > 0);
++
++    close(fd);
++}
++
++/*
++ * Set/restore interface promiscuous mode.
++ */
++
++void srpromisc(int mode, struct promisc_states *list)
++{
++    int fd;
++    struct ifreq ifr;
++    struct promisc_states *ptmp;
++    int istat;
++    char fullmsg[PROMISC_MSG_MAX];
++
++    ptmp = list;
++
++    fd = socket(PF_INET, SOCK_DGRAM, 0);
++
++    if (fd < 0) {
++	write_error("Unable to open socket for flag change", daemonized);
++	return;
++    }
++
++    while (ptmp != NULL) {
++	if (((strncmp(ptmp->params.ifname, "eth", 3) == 0) ||
++	     (strncmp(ptmp->params.ifname, "vlan", 4) == 0) ||
++	     (strncmp(ptmp->params.ifname, "wvlan", 4) == 0) ||
++	     (strncmp(ptmp->params.ifname, "lec", 3) == 0)) &&
++	     (ptmp->params.state_valid)) {
++
++	    strcpy(ifr.ifr_name, ptmp->params.ifname);
++
++	    if (mode)
++		ifr.ifr_flags = ptmp->params.saved_state | IFF_PROMISC;
++	    else
++		ifr.ifr_flags = ptmp->params.saved_state;
++
++	    istat = ioctl(fd, SIOCSIFFLAGS, &ifr);
++
++	    if (istat < 0) {
++		sprintf(fullmsg, "Promisc change failed for %s",
++			ptmp->params.ifname);
++		write_error(fullmsg, daemonized);
++	    }
++	}
++	ptmp = ptmp->next_entry;
++    }
++
++    close(fd);
++}
++
++void destroy_promisc_list(struct promisc_states **list)
++{
++    struct promisc_states *ptmp = *list;
++    struct promisc_states *ctmp;
++
++    if (ptmp != NULL)
++	ctmp = ptmp->next_entry;
++
++    while (ptmp != NULL) {
++	free(ptmp);
++	ptmp = ctmp;
++	if (ctmp != NULL)
++	    ctmp = ctmp->next_entry;
++    }
++}
+diff -ruN iptraf-2.7.0-old/src/rvnamed.c iptraf-2.7.0-new/src/rvnamed.c
+--- iptraf-2.7.0-old/src/rvnamed.c	2002-05-02 03:37:34.000000000 +0200
++++ iptraf-2.7.0-new/src/rvnamed.c	2005-10-04 22:02:47.000000000 +0200
+@@ -48,7 +48,6 @@
+ #include <signal.h>
+ #include <sys/wait.h>
+ #include "rvnamed.h"
+-#include "dirs.h"
+ 
+ #define NUM_CACHE_ENTRIES 2048
+ #define TIME_TARGET_MAX 30
+diff -ruN iptraf-2.7.0-old/src/rvnamed.h iptraf-2.7.0-new/src/rvnamed.h
+--- iptraf-2.7.0-old/src/rvnamed.h	2002-05-02 03:36:30.000000000 +0200
++++ iptraf-2.7.0-new/src/rvnamed.h	2005-10-04 22:03:29.000000000 +0200
+@@ -1,9 +1,10 @@
+ #include <netinet/in.h>
+ #include <arpa/inet.h>
++#include "dirs.h"
+ 
+-#define CHILDSOCKNAME "/dev/rvndcldcomsk"
+-#define PARENTSOCKNAME "/dev/rvndpntcomsk"
+-#define IPTSOCKNAME "/dev/rvndiptcomsk"
++#define CHILDSOCKNAME  LOCKDIR "/rvndcldcomsk"
++#define PARENTSOCKNAME  LOCKDIR "/rvndpntcomsk"
++#define IPTSOCKNAME  LOCKDIR "/rvndiptcomsk"
+ 
+ #define SOCKET_PREFIX	"isock"
+ 
+diff -ruN iptraf-2.7.0-old/src/tcptable.c iptraf-2.7.0-new/src/tcptable.c
+--- iptraf-2.7.0-old/src/tcptable.c	2002-05-08 03:36:27.000000000 +0200
++++ iptraf-2.7.0-new/src/tcptable.c	2005-10-03 19:25:55.000000000 +0200
+@@ -598,9 +598,6 @@
+     	if ((linkproto == LINK_ETHERNET) || (linkproto == LINK_PLIP)) {
+ 	    convmacaddr(((struct ethhdr *) packet)->h_source,
+ 			newmacaddr);
+-	} else if (linkproto == LINK_FDDI) {
+-	    convmacaddr(((struct fddihdr *) packet)->saddr,
+-			newmacaddr);
+         } else if (linkproto == LINK_TR) {
+             convmacaddr(((struct trh_hdr *) packet)->saddr, newmacaddr);
+         }
+diff -ruN iptraf-2.7.0-old/src/tcptable.h iptraf-2.7.0-new/src/tcptable.h
+--- iptraf-2.7.0-old/src/tcptable.h	2001-12-28 03:16:39.000000000 +0100
++++ iptraf-2.7.0-new/src/tcptable.h	2005-10-03 19:26:01.000000000 +0200
+@@ -22,7 +22,6 @@
+ #include <asm/types.h>
+ #include <linux/if_packet.h>
+ #include <linux/if_ether.h>
+-#include <linux/if_fddi.h>
+ #include <linux/if_tr.h>
+ #include <net/if.h>
+ #include <netinet/ip.h>
