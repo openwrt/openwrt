@@ -103,6 +103,7 @@ package-$(BR2_PACKAGE_MONIT) += monit
 package-$(BR2_PACKAGE_MPD) += mpd
 package-$(BR2_PACKAGE_MT_DAAPD) += mt-daapd
 package-$(BR2_PACKAGE_MTD) += mtd
+package-$(BR2_PACKAGE_MTR) += mtr
 package-$(BR2_PACKAGE_MYSQL) += mysql
 package-$(BR2_PACKAGE_NANO) += nano
 package-$(BR2_PACKAGE_NCURSES) += ncurses
@@ -232,6 +233,7 @@ libxslt-compile: libxml2-compile
 lighttpd-compile: openssl-compile pcre-compile
 mini_httpd-compile: matrixssl-compile
 mt-daapd-compile: howl-compile libgdbm-compile libid3tag-compile
+mtr-compile: ncurses-compile
 mysql-compile: ncurses-compile zlib-compile
 nano-compile: ncurses-compile
 net-snmp-compile: libelf-compile

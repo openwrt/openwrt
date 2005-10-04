@@ -1,0 +1,17 @@
+Package: mtr
+Priority: optional
+Section: net
+Maintainer: OpenWrt Developers Team <openwrt-devel@openwrt.org>, Thomas Reifferscheid <reiffert@student.physik.uni-mainz.de>
+Depends: libncurses
+Source: http://openwrt.org/cgi-bin/viewcvs.cgi/openwrt/package/iptraf/
+Description: Full screen ncurses traceroute/ping tool
+ mtr combines the functionality of the 'traceroute' and 'ping' programs
+ in a single network diagnostic tool.
+ .
+ As mtr starts, it investigates the network connection between the host
+ mtr runs on and a user-specified destination host.  After it
+ determines the address of each network hop between the machines,
+ it sends a sequence ICMP ECHO requests to each one to determine the
+ quality of the link to each machine.  As it does this, it prints
+ running statistics about each machine.
+
