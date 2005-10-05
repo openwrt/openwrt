@@ -51,6 +51,7 @@ package-$(BR2_PACKAGE_HASERL) += haserl
 package-$(BR2_PACKAGE_HOSTAPD) += hostapd
 package-$(BR2_PACKAGE_HOWL) += howl
 package-$(BR2_PACKAGE_HTPDATE) += htpdate
+package-$(BR2_PACKAGE_ICECAST) += icecast
 package-$(BR2_PACKAGE_ID3LIB) += id3lib
 package-$(BR2_PACKAGE_IPERF) += iperf
 package-$(BR2_PACKAGE_IPKG) += ipkg
@@ -221,6 +222,7 @@ fprobe-compile: libpcap-compile
 gdbserver-compile: ncurses-compile
 gmediaserver-compile: id3lib-compile libupnp-compile
 gnutls-compile: libgcrypt-compile opencdk-compile libtasn1-compile
+icecast-compile: curl-compile libogg-compile libvorbis-compile libxml2-compile libxslt-compile
 id3lib-compile: uclibc++-compile zlib-compile
 irssi-compile: glib-compile ncurses-compile
 iptraf-compile: ncurses-compile
