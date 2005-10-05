@@ -23,6 +23,7 @@ package-$(BR2_PACKAGE_CIFSMOUNT) += cifsmount
 package-$(BR2_PACKAGE_CUPS) += cups
 package-$(BR2_COMPILE_CURL) += curl
 package-$(BR2_PACKAGE_CYRUS_SASL) += cyrus-sasl
+package-$(BR2_PACKAGE_DECO) += deco
 package-$(BR2_PACKAGE_DHCP) += dhcp
 package-$(BR2_PACKAGE_DHCP_FORWARDER) += dhcp-forwarder
 package-$(BR2_PACKAGE_DNSMASQ) += dnsmasq
@@ -210,6 +211,7 @@ avahi-compile: libdaemon-compile expat-compile
 bind-compile: openssl-compile
 curl-compile: openssl-compile zlib-compile
 cyrus-sasl-compile: openssl-compile
+deco-compile: ncurses-compile
 dropbear-compile: zlib-compile
 dsniff-compile: libnids-compile openssl-compile libgdbm-compile
 freetype-compile: zlib-compile
