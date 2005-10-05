@@ -126,11 +126,11 @@ int bcom_set_val(int skfd, char *ifname, char *var, void *val, int len)
 		return -1;
 
 	strcpy(buf, var);
+	memcpy(&buf[strlen(var) + 1], val, len);
 	
 	if ((ret = bcom_ioctl(skfd, ifname, WLC_SET_VAR, buf, sizeof(buf))))
 		return ret;
 
-	memcpy(val, buf, len);
 	return 0;	
 }
 
