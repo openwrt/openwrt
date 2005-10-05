@@ -79,6 +79,7 @@ package-$(BR2_PACKAGE_LIBGPG_ERROR) += libgpg-error
 package-$(BR2_PACKAGE_LIBID3TAG) += libid3tag
 package-$(BR2_PACKAGE_LIBNET) += libnet
 package-$(BR2_PACKAGE_LIBNIDS) += libnids
+package-$(BR2_PACKAGE_LIBOGG) += libogg
 package-$(BR2_PACKAGE_LIBOSIP2) += libosip2
 package-$(BR2_PACKAGE_LIBPCAP) += libpcap
 package-$(BR2_PACKAGE_LIBPNG) += libpng
