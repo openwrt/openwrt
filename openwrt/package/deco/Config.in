@@ -1,0 +1,11 @@
+config BR2_PACKAGE_DECO
+	tristate "deco - Text-based full featured file manager"
+	default m if CONFIG_DEVEL
+	select BR2_PACKAGE_LIBNCURSES
+	help
+	  A clone of Norton Commander for Unix. Text-based, full featured
+	  file manager.
+	  
+	  http://deco.sourceforge.net/
+	  
+

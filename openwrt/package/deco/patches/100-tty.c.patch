@@ -1,0 +1,11 @@
+--- src/tty.c	2005-09-25 00:23:41.671022039 -0700
++++ str_new/tty.c	2005-09-25 01:09:37.189119615 -0700
+@@ -14,7 +14,7 @@
+ #if HAVE_TERMIOS_H
+ #   include <sys/termios.h>
+ #   if HAVE_SYS_IOCTL_H
+-#      include <sys/ioctl.h>
++/*#      include <sys/ioctl.h>*/
+ #   endif
+ #   define HAVE_TERMIO_H 1
+ #   define termio termios
