@@ -88,6 +88,7 @@ package-$(BR2_PACKAGE_LIBTASN1) += libtasn1
 package-$(BR2_PACKAGE_LIBTOOL) += libtool
 package-$(BR2_PACKAGE_LIBUPNP) += libupnp
 package-$(BR2_PACKAGE_LIBUSB) += libusb
+package-$(BR2_PACKAGE_LIBVORBIS) += libvorbis
 package-$(BR2_PACKAGE_LIBXML2) += libxml2
 package-$(BR2_PACKAGE_LIBXSLT) += libxslt
 package-$(BR2_PACKAGE_LIGHTTPD) += lighttpd
@@ -231,6 +232,7 @@ libgcrypt-compile: libgpg-error-compile
 libgd-compile: libpng-compile
 libnet-compile: libpcap-compile
 libnids-compile: libnet-compile
+libvorbis-compile: libogg-compile
 libxml2-compile: zlib-compile
 libxslt-compile: libxml2-compile
 lighttpd-compile: openssl-compile pcre-compile

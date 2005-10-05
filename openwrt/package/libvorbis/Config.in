@@ -1,0 +1,9 @@
+config BR2_PACKAGE_LIBVORBIS
+	tristate "libvorbis - The Vorbis General Audio Compression Codec library"
+	default m if CONFIG_DEVEL
+	select BR2_PACKAGE_LIBOGG
+	help
+	  The Vorbis General Audio Compression Codec library.
+	  
+	  http://www.vorbis.com/
+	  
