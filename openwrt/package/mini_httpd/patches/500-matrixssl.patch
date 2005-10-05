@@ -123,7 +123,7 @@ diff -ruN mini_httpd-1.19-orig/mini_httpd.c mini_httpd-1.19-3/mini_httpd.c
 +# else /* HAVE_OPENSSL */
 +#  ifdef HAVE_MATRIXSSL
 +	matrixSslOpen();
-+	if ( matrixSslReadKeys( &keys, certfile, certfile, NULL, NULL < 0) )
++	if ( matrixSslReadKeys( &keys, certfile, certfile, NULL, NULL ) < 0 )
 +	    {
 +	    syslog( LOG_CRIT, "can't load certificate and/or private key\n");
 +	    (void) fprintf( stderr, "%s: can't load certificate and/or private key\n", argv0 );
