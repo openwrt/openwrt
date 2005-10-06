@@ -5,8 +5,8 @@ PKG_VERSION:=0.69
 PKG_RELEASE:=1
 PKG_MD5SUM:=58904d6d8d70114195cdeb653d56914c
 
-PKG_SOURCE_URL:=ftp://ftp.de.debian.org/debian/pool/main/m/mtr
-PKG_SOURCE:=$(PKG_NAME)_$(PKG_VERSION).orig.tar.gz
+PKG_SOURCE_URL:=ftp://ftp.bitwizard.nl/mtr/
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
