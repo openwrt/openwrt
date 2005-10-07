@@ -18,7 +18,7 @@ include $(TOPDIR)/package/rules.mk
 
 $(eval $(call PKG_template,LIBVORBIS,libvorbis,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
-# NOTE: check ./toolchain/libmissing
+# NOTE: check ./toolchain/libnotimpl
 # it implements those functions missing from the version of uClibc we're currently using
 # for libvorbis, they are cosf/sinf
 
@@ -28,7 +28,7 @@ $(PKG_BUILD_DIR)/.configured:
 		CFLAGS="$(strip $(TARGET_CFLAGS))" \
 		CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include" \
 		LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib" \
-		LIBS="-lm -logg -lmissing" \
+		LIBS="-lm -logg -lnotimpl" \
 		PKG_CONFIG_PATH="$(STAGING_DIR)/usr/lib/pkgconfig" \
 		./configure \
 			--target=$(GNU_TARGET_NAME) \
