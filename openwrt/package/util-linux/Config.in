@@ -1,0 +1,15 @@
+config BR2_COMPILE_UTIL_LINUX
+	bool
+	default n
+	depends BR2_PACKAGE_FDISK
+
+config BR2_PACKAGE_FDISK
+	tristate "fdisk - A partition table manipulation utility"
+	default m if CONFIG_DEVEL
+	select BR2_COMPILE_UTIL_LINUX
+	help
+	  A partition table manipulation utility
+	  
+	  http://www.kernel.org/pub/linux/utils/util-linux/
+	  
+
