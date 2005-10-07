@@ -185,8 +185,8 @@ source "package/irssi/Config.in"
 comment "Multimedia ---"
 source "package/gmediaserver/Config.in"
 source "package/icecast/Config.in"
-source "package/mt-daapd/Config.in"
 source "package/mpd/Config.in"
+source "package/mt-daapd/Config.in"
 source "package/palantir/Config.in"
 source "package/setpwc/Config.in"
 
@@ -201,14 +201,14 @@ source "package/madwifi-tools/Config.in"
 source "package/usbutils/Config.in"  # lsusb
 source "package/strace/Config.in"
 
-# what are we going to do with both of you
 comment "FileSystems related ---"
 source "package/dosfstools/Config.in"
 source "package/e2fsprogs/Config.in"
 source "package/fuse/Config.in"
 source "package/shfs/Config.in"
+source "package/util-linux/Config.in"
 
-comment "Bluetooth related"
+comment "Bluetooth related ---"
 source "package/bluez-libs/Config.in"
 source "package/bluez-utils/Config.in"
 
