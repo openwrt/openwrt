@@ -1,0 +1,16 @@
+diff -urN reaim-0.8/Makefile reaim-0.8/Makefile
+--- reaim-0.8/Makefile	2002-11-28 06:10:38.000000000 +0100
++++ reaim-0.8/Makefile	2005-10-07 12:07:43.000000000 +0200
+@@ -11,7 +11,10 @@
+ endif
+ 
+ reaim: reaim.c
+-	gcc -o reaim reaim.c -g -Wall $(FW_FLAGS)
+-
++	$(CC) $(CFLAGS) -o reaim reaim.c -Wall $(FW_FLAGS)
+ clean:
+ 	-rm reaim
++
++install:
++	install -d -m 0755 $(DESTDIR)/usr/sbin
++	install -m 0755 reaim $(DESTDIR)/usr/sbin/
