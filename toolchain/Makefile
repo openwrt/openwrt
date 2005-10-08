@@ -1,6 +1,6 @@
 # Main makefile for the toolchain
 include $(TOPDIR)/rules.mk
-TARGETS:=sed utils binutils gcc uClibc ipkg-utils gdb libmissing
+TARGETS:=sed utils binutils gcc uClibc ipkg-utils gdb libnotimpl
 
 TARGETS_INSTALL:=$(patsubst %,%-install,$(TARGETS))
 TARGETS_CLEAN:=$(patsubst %,%-clean,$(TARGETS))
