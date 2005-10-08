@@ -1,14 +1,9 @@
-# Port 9100 is copied to /dev/printers/0, 9101 to /dev/printers/1
-# and 9102 to /dev/printers/2. The default is port 9100 to
-# /dev/printers/0.
-# Values are 0|1|2
+# printing port list, in the form "number [options]"
+# where:
+#  - number is the port number in the range [0-9]
+#    the p910nd daemon will listen on tcp port 9100+number
+#  - options can be :
+#    -b to turn on bidirectional copying.
+#    -f to specify a different printer device.
 #
-# Port 9100 for USB connection
-# Port 9101 for LPT connection
-#
-PORT="0"
-
-# The -b option turns on bidirectional copying.
-# The -f option can be used to specify a different printer device.
-#
-#OPTIONS="-b -f /dev/usblp0"
+0  -b -f /dev/usb/lp0

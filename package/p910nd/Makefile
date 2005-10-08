@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=p910nd
 PKG_VERSION:=0.7
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_MD5SUM:=7bf752532d26c9106f8039db95df3a6b
 
 PKG_SOURCE_URL:=http://www.etherboot.org/p910nd
