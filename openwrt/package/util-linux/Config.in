@@ -13,3 +13,17 @@ config BR2_PACKAGE_FDISK
 	  http://www.kernel.org/pub/linux/utils/util-linux/
 	  
 
+config BR2_PACKAGE_SWAP_UTILS
+	tristate "swap-utils - Swap space management utilities"
+	default m if CONFIG_DEVEL
+	select BR2_COMPILE_UTIL_LINUX
+	help
+	  A collection of tools to manage swap space :
+	  
+	    * mkswap
+	    * swapon
+	    * swapoff
+	  
+	  http://www.kernel.org/pub/linux/utils/util-linux/
+	  
+
