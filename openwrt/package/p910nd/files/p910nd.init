@@ -1,17 +1,44 @@
 #!/bin/sh
 
 DEFAULT=/etc/default/p910nd
-[ -f $DEFAULT ] && . $DEFAULT
 RUN_D=/var/run
-PID_F=$RUN_D/p910${PORT-0}d.pid
+
+_start() {
+ mkdir -p $RUN_D
+ [ -f $DEFAULT ] && (
+  while read port options; do
+   case "$port" in
+    ""|\#*)
+     continue;
+   esac
+   p910nd $options $port
+   if [ $? -ne 0 ]; then
+    exit 1
+   fi
+  done
+ ) < $DEFAULT
+ exit 0
+}
+
+_stop() {
+ [ -f $DEFAULT ] && (
+  while read port options; do
+   case "$port" in
+    ""|\#*)
+     continue;
+   esac
+   PID_F=$RUN_D/p910${port}d.pid
+   [ -f $PID_F ] && kill $(cat $PID_F)
+  done
+ ) < $DEFAULT
+}
 
 case $1 in
  start)
-  mkdir -p $RUN_D
-  p910nd $OPTIONS $PORT
+  _start
   ;;
  stop)
-  [ -f $PID_F ] && kill $(cat $PID_F)
+  _stop
   ;;
  *)
   echo "usage: $0 (start|stop)"
