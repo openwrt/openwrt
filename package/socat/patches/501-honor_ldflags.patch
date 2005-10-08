@@ -1,0 +1,13 @@
+diff -ruN socat-1.4-old/Makefile.in socat-1.4-new/Makefile.in
+--- socat-1.4-old/Makefile.in	2005-09-10 22:09:11.000000000 +0200
++++ socat-1.4-new/Makefile.in	2005-10-08 17:12:45.000000000 +0200
+@@ -36,7 +36,8 @@
+ 
+ #0 CFLAGS = @CFLAGS@ $(CCOPTS) $(DEFS) $(INCLS)
+ CFLAGS = @CFLAGS@ $(CCOPTS) $(DEFS) $(CPPFLAGS)
+-CLIBS = $(LIBS)
++LDFLAGS = @LDFLAGS@
++CLIBS = $(LDFLAGS) $(LIBS)
+ #CLIBS = $(LIBS) -lm -lefence
+ XIOSRCS = xioinitialize.c xiohelp.c xioparam.c xiodiag.c xioopen.c xioopts.c \
+ 	xiosignal.c xiosigchld.c xioread.c xiowrite.c \
