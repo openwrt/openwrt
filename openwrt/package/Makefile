@@ -166,6 +166,7 @@ package-$(BR2_PACKAGE_SHFS) += shfs
 package-$(BR2_PACKAGE_SIPROXD) += siproxd
 package-$(BR2_PACKAGE_SIPSAK) += sipsak
 package-$(BR2_PACKAGE_SNORT) += snort
+package-$(BR2_PACKAGE_SOCAT) += socat
 package-$(BR2_PACKAGE_SPEEX) += speex
 package-$(BR2_PACKAGE_SQLITE) += sqlite
 package-$(BR2_PACKAGE_SQLITE2) += sqlite2
@@ -270,10 +271,10 @@ endif
 rrdtool-compile: cgilib-compile freetype-compile libart-compile libpng-compile
 rrdtool1-compile: zlib-compile
 rsync-compile: popt-compile
-samba-compile: cups-compile
 screen-compile: ncurses-compile
 siproxd-compile: libosip2-compile
 sipsak-compile: openssl-compile
+socat-compile: openssl-compile
 sqlite-compile: ncurses-compile readline-compile
 sqlite2-compile: ncurses-compile readline-compile
 tcpdump-compile: libpcap-compile
