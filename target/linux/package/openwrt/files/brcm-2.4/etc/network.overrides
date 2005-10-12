@@ -8,7 +8,7 @@
 
 # hacks for wrt54g 1.x hardware
 [  "$(nvram get boardnum)"  = "42" \
--a "$(nvram get boardtype)" = "bcm94710dev" ] && FAILSAFE_ifnames="vlan1 vlan2 eth2"
+-a "$(nvram get boardtype)" = "bcm94710dev" ] && FAILSAFE_ifnames="vlan0 vlan2 eth2"
 
 # hacks for asus wl-500g deluxe
 [  "$(nvram get boardtype)" = "bcm95365r" \
