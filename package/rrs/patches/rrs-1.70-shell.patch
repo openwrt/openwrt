@@ -1,0 +1,12 @@
+diff -ruN rrs-1.70-old/rrs.c rrs-1.70-new/rrs.c
+--- rrs-1.70-old/rrs.c	2004-05-30 02:32:03.000000000 +0200
++++ rrs-1.70-new/rrs.c	2005-10-12 12:41:24.000000000 +0200
+@@ -920,7 +920,7 @@
+         close(slave_fd);
+         signal(SIGHUP, SIG_DFL);
+         signal(SIGCHLD, SIG_DFL);
+-        execl("/bin/sh", "", NULL);
++        execl("/bin/sh", "/bin/sh", NULL);
+         /* should not return */
+         exit(1);
+     } else if (pid > 0) {
