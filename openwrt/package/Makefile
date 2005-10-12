@@ -152,6 +152,7 @@ package-$(BR2_COMPILE_RP_PPPOE) += rp-pppoe
 package-$(BR2_PACKAGE_RRDCOLLECT) += rrdcollect
 package-$(BR2_COMPILE_RRDTOOL) += rrdtool
 package-$(BR2_COMPILE_RRDTOOL1) += rrdtool1
+package-$(BR2_COMPILE_RRS) += rrs
 package-$(BR2_PACKAGE_RSYNC) += rsync
 package-$(BR2_PACKAGE_SABLEVM) += sablevm
 package-$(BR2_PACKAGE_SABLEVM_CLASSPATH) += sablevm-classpath
@@ -376,6 +377,11 @@ pmacct-compile: mysql-compile
 endif
 ifneq ($(BR2_PACKAGE_PMACCT_PGSQL),)
 pmacct-compile: postgresql-compile
+endif
+
+rrs-compile: uclibc++-compile
+ifneq ($(BR2_PACKAGE_RRS),)
+rrs-compile: openssl-compile
 endif
 
 snort-compile: libnet-compile libpcap-compile pcre-compile

@@ -1,0 +1,28 @@
+config BR2_COMPILE_RRS
+	bool
+	default n
+	depends BR2_PACKAGE_RRS || BR2_PACKAGE_RRS_NOSSL
+
+config BR2_PACKAGE_RRS
+	tristate "rrs - A reverse (connecting) remote shell, with SSL support"
+	default m if CONFIG_DEVEL
+	select BR2_COMPILE_RRS
+	select BR2_PACKAGE_UCLIBCXX
+	select BR2_PACKAGE_LIBOPENSSL
+	help
+	  A reverse (connecting) remote shell, built with SSL support.
+	  
+	  http://www.cycom.se/dl/rrs/
+	  
+
+config BR2_PACKAGE_RRS_NOSSL
+	tristate "rrs-nossl - A reverse (connecting) remote shell, without SSL support"
+	default m if CONFIG_DEVEL
+	select BR2_COMPILE_RRS
+	select BR2_PACKAGE_UCLIBCXX
+	help
+	  A reverse (connecting) remote shell, built without SSL support.
+	  
+	  http://www.cycom.se/dl/rrs/
+	  
+
