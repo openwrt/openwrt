@@ -27,6 +27,11 @@ $(PKG_BUILD_DIR)/.configured:
 		CPPFLAGS="-I$(STAGING_DIR)/usr/include" \
 		LDFLAGS="-L$(STAGING_DIR)/usr/lib" \
 		mr_cv_target_elf=yes \
+		libelf_64bit=yes \
+		libelf_cv_struct_elf64_ehdr=yes \
+		libelf_cv_type_elf64_addr=no \
+		libelf_cv_struct_elf64_rel=yes \
+		ac_cv_sizeof_long_long=8 \
 		./configure \
 		  --target=$(GNU_TARGET_NAME) \
 		  --host=$(GNU_TARGET_NAME) \
@@ -49,6 +54,7 @@ $(PKG_BUILD_DIR)/.configured:
 		  $(DISABLE_NLS) \
 		  --enable-shared \
 		  --enable-static \
+		  --enable-elf64=yes \
 	);
 	touch $@
 
