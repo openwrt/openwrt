@@ -4,7 +4,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dropbear
 PKG_VERSION:=0.45
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 PKG_MD5SUM:=2bcc46e4c239aec982bf36a723dd0b0e
 
 PKG_SOURCE_URL:=http://matt.ucc.asn.au/dropbear/releases/
