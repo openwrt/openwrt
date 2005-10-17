@@ -1,0 +1,15 @@
+config BR2_PACKAGE_AIRCRACK
+	tristate "aircrack - a set of tools for auditing wireless networks"
+	default m if CONFIG_DEVEL
+	select BR2_PACKAGE_LIBPTHREAD
+	help
+	  aircrack is a set of tools for auditing wireless networks:
+	  
+	   * aircrack: static WEP and WPA-PSK key cracker
+	   * airdecap: decrypts WEP/WPA capture files
+	   * aireplay: 802.11 packet injection program
+	   * airodump: 802.11 packet capture program
+	  
+	  http://www.cr0.net:8040/code/network/aircrack/
+	  
+

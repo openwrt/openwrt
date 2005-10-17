@@ -5,6 +5,7 @@ package-:=tcp_wrappers
 package-y:=nvram
 package-$(BR2_PACKAGE_6TUNNEL) += 6tunnel
 package-$(BR2_PACKAGE_AICCU) += aiccu
+package-$(BR2_PACKAGE_AIRCRACK) += aircrack
 package-$(BR2_PACKAGE_AMWALL) += amwall
 package-$(BR2_PACKAGE_ARPD) += arpd
 package-$(BR2_PACKAGE_ARPTABLES) += arptables
