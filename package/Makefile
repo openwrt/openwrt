@@ -94,6 +94,7 @@ package-$(BR2_PACKAGE_LIBTOOL) += libtool
 package-$(BR2_PACKAGE_LIBUPNP) += libupnp
 package-$(BR2_PACKAGE_LIBUSB) += libusb
 package-$(BR2_PACKAGE_LIBVORBIS) += libvorbis
+package-$(BR2_PACKAGE_LIBVORBISIDEC) += libvorbisidec
 package-$(BR2_PACKAGE_LIBXML2) += libxml2
 package-$(BR2_PACKAGE_LIBXSLT) += libxslt
 package-$(BR2_PACKAGE_LIGHTTPD) += lighttpd
