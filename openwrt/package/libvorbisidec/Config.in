@@ -1,0 +1,11 @@
+config BR2_PACKAGE_LIBVORBISIDEC
+	tristate "libvorbisidec - a fixed-point implementation (Tremor) of libogg/libvorbis"
+	default m if CONFIG_DEVEL
+	help
+	  libvorbisidec is "tremor", a fixed-point implementation of libvorbis.
+	  It also has libogg built-in. It is suitable as a replacement for 
+	  libvorbis and libogg in tremor-aware applications.
+	  Tremor is a decoder only.
+	  
+	  http://http://wiki.xiph.org/index.php/Tremor
+	  
