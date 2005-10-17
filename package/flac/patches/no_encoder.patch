@@ -1,0 +1,280 @@
+diff -ru flac-1.1.2.OLD/build/lib.mk flac-1.1.2.NEW/build/lib.mk
+--- flac-1.1.2.OLD/build/lib.mk	2005-01-25 15:10:47.000000000 +1100
++++ flac-1.1.2.NEW/build/lib.mk	2005-10-16 10:10:43.000000000 +1000
+@@ -58,7 +58,7 @@
+ 
+ debug   : CFLAGS = -g -O0 -DDEBUG $(CONFIG_CFLAGS) $(DEBUG_CFLAGS) -Wall -W -DVERSION=$(VERSION) $(DEFINES) $(INCLUDES)
+ valgrind: CFLAGS = -g -O0 -DDEBUG $(CONFIG_CFLAGS) $(DEBUG_CFLAGS) -DFLAC__VALGRIND_TESTING -Wall -W -DVERSION=$(VERSION) $(DEFINES) $(INCLUDES)
+-release : CFLAGS = -O3 -fomit-frame-pointer -funroll-loops -finline-functions -DNDEBUG $(CONFIG_CFLAGS) $(RELEASE_CFLAGS) -Wall -W -Winline -DFLaC__INLINE=__inline__ -DVERSION=$(VERSION) $(DEFINES) $(INCLUDES)
++release : CFLAGS = -Os -pipe -mips32 -mtune=mips32 -fomit-frame-pointer -funroll-loops -finline-functions -DNDEBUG $(CONFIG_CFLAGS) $(RELEASE_CFLAGS) -Wall -W -Winline -DFLaC__INLINE=__inline__ -DVERSION=$(VERSION) $(DEFINES) $(INCLUDES)
+ 
+ LFLAGS  = -L$(LIBPATH)
+ 
+diff -ru flac-1.1.2.OLD/src/libFLAC/lpc.c flac-1.1.2.NEW/src/libFLAC/lpc.c
+--- flac-1.1.2.OLD/src/libFLAC/lpc.c	2005-01-26 15:31:36.000000000 +1100
++++ flac-1.1.2.NEW/src/libFLAC/lpc.c	2005-10-16 10:44:58.000000000 +1000
+@@ -293,6 +293,209 @@
+ 
+ void FLAC__lpc_restore_signal(const FLAC__int32 residual[], unsigned data_len, const FLAC__int32 qlp_coeff[], unsigned order, int lp_quantization, FLAC__int32 data[])
+ {
++	register const FLAC__int32 *qlp0 = &qlp_coeff[(order-1)];
++	register FLAC__int32 sum;
++	register const FLAC__int32 *history, *qlp;
++
++	history = &data[(-order)];
++
++	switch (order) {
++	case 12:
++		for( ; data_len != 0; --data_len) {
++			sum = (qlp0[0] * history[0])
++			    + (qlp0[-1] * history[1])
++			    + (qlp0[-2] * history[2])
++			    + (qlp0[-3] * history[3])
++			    + (qlp0[-4] * history[4])
++			    + (qlp0[-5] * history[5])
++			    + (qlp0[-6] * history[6])
++			    + (qlp0[-7] * history[7])
++			    + (qlp0[-8] * history[8])
++			    + (qlp0[-9] * history[9])
++			    + (qlp0[-10] * history[10])
++			    + (qlp0[-11] * history[11])
++			    ;
++			++history;
++			*(data++) = *(residual++) + (sum >> lp_quantization);
++		}
++		return;
++	case 11:
++		for( ; data_len != 0; --data_len) {
++			sum = (qlp0[0] * history[0])
++			    + (qlp0[-1] * history[1])
++			    + (qlp0[-2] * history[2])
++			    + (qlp0[-3] * history[3])
++			    + (qlp0[-4] * history[4])
++			    + (qlp0[-5] * history[5])
++			    + (qlp0[-6] * history[6])
++			    + (qlp0[-7] * history[7])
++			    + (qlp0[-8] * history[8])
++			    + (qlp0[-9] * history[9])
++			    + (qlp0[-10] * history[10])
++			    ;
++			++history;
++			*(data++) = *(residual++) + (sum >> lp_quantization);
++		}
++		return;
++	case 10:
++		for( ; data_len != 0; --data_len) {
++			sum = (qlp0[0] * history[0])
++			    + (qlp0[-1] * history[1])
++			    + (qlp0[-2] * history[2])
++			    + (qlp0[-3] * history[3])
++			    + (qlp0[-4] * history[4])
++			    + (qlp0[-5] * history[5])
++			    + (qlp0[-6] * history[6])
++			    + (qlp0[-7] * history[7])
++			    + (qlp0[-8] * history[8])
++			    + (qlp0[-9] * history[9])
++			    ;
++			++history;
++			*(data++) = *(residual++) + (sum >> lp_quantization);
++		}
++		return;
++	case 9:
++		for( ; data_len != 0; --data_len) {
++			sum = (qlp0[0] * history[0])
++			    + (qlp0[-1] * history[1])
++			    + (qlp0[-2] * history[2])
++			    + (qlp0[-3] * history[3])
++			    + (qlp0[-4] * history[4])
++			    + (qlp0[-5] * history[5])
++			    + (qlp0[-6] * history[6])
++			    + (qlp0[-7] * history[7])
++			    + (qlp0[-8] * history[8])
++			    ;
++			++history;
++			*(data++) = *(residual++) + (sum >> lp_quantization);
++		}
++		return;
++	case 8:
++		for( ; data_len != 0; --data_len) {
++			sum = (qlp0[0] * history[0])
++			    + (qlp0[-1] * history[1])
++			    + (qlp0[-2] * history[2])
++			    + (qlp0[-3] * history[3])
++			    + (qlp0[-4] * history[4])
++			    + (qlp0[-5] * history[5])
++			    + (qlp0[-6] * history[6])
++			    + (qlp0[-7] * history[7])
++			    ;
++			++history;
++			*(data++) = *(residual++) + (sum >> lp_quantization);
++		}
++		return;
++	case 7:
++		for( ; data_len != 0; --data_len) {
++			sum = (qlp0[0] * history[0])
++			    + (qlp0[-1] * history[1])
++			    + (qlp0[-2] * history[2])
++			    + (qlp0[-3] * history[3])
++			    + (qlp0[-4] * history[4])
++			    + (qlp0[-5] * history[5])
++			    + (qlp0[-6] * history[6])
++			    ;
++			++history;
++			*(data++) = *(residual++) + (sum >> lp_quantization);
++		} 
++		return;
++	case 6:
++		for( ; data_len != 0; --data_len) {
++			sum = (qlp0[0] * history[0])
++			    + (qlp0[-1] * history[1])
++			    + (qlp0[-2] * history[2])
++			    + (qlp0[-3] * history[3])
++			    + (qlp0[-4] * history[4])
++			    + (qlp0[-5] * history[5])
++			    ;
++			++history;
++			*(data++) = *(residual++) + (sum >> lp_quantization);
++		} 
++		return;
++	case 5:
++		for( ; data_len != 0; --data_len) {
++			sum = (qlp0[0] * history[0])
++			    + (qlp0[-1] * history[1])
++			    + (qlp0[-2] * history[2])
++			    + (qlp0[-3] * history[3])
++			    + (qlp0[-4] * history[4])
++			    ;
++			++history;
++			*(data++) = *(residual++) + (sum >> lp_quantization);
++		} 
++		return;
++	case 4:
++		for( ; data_len != 0; --data_len) {
++			sum = (qlp0[0] * history[0])
++			    + (qlp0[-1] * history[1])
++			    + (qlp0[-2] * history[2])
++			    + (qlp0[-3] * history[3])
++			    ;
++			++history;
++			*(data++) = *(residual++) + (sum >> lp_quantization);
++		} 
++		return;
++	case 3:
++		for( ; data_len != 0; --data_len) {
++			sum = (qlp0[0] * history[0])
++			    + (qlp0[-1] * history[1])
++			    + (qlp0[-2] * history[2])
++			    ;
++			++history;
++			*(data++) = *(residual++) + (sum >> lp_quantization);
++		}
++		return;
++	case 2:
++		for( ; data_len != 0; --data_len) {
++			sum = (qlp0[0] * history[0])
++			    + (qlp0[-1] * history[1])
++			    ;
++			++history;
++			*(data++) = *(residual++) + (sum >> lp_quantization);
++		}
++		return;
++	case 1:
++		for( ; data_len != 0; --data_len) {
++			sum = (qlp0[0] * (*(history++)));
++			*(data++) = *(residual++) + (sum >> lp_quantization);
++		} 
++		return;
++	default:
++		{ 
++			/* handle everything else: (order > 12)
++			 * with Duff's Device to reduce jumps */
++			const unsigned n0 = (order + 7)/8;
++			const int tmp = 0 - order - 1;
++			register const FLAC__int32 *qlpd = &qlp_coeff[order];
++			for( ; data_len != 0; --data_len) {
++				register unsigned n = n0;
++				sum = 0;
++				qlp = qlpd;
++				history = &data[tmp];
++			
++				switch(order%8) {
++				case 0: do {
++					sum += (*(--qlp)) * (*(++history));
++				case 7: sum += (*(--qlp)) * (*(++history));
++				case 6: sum += (*(--qlp)) * (*(++history));
++				case 5: sum += (*(--qlp)) * (*(++history));
++				case 4: sum += (*(--qlp)) * (*(++history));
++				case 3: sum += (*(--qlp)) * (*(++history));
++				case 2: sum += (*(--qlp)) * (*(++history));
++				case 1: sum += (*(--qlp)) * (*(++history));
++					} while (--n);     
++				}
++				
++				*(data++) = *(residual++) + (sum >> lp_quantization);
++			}
++			return;
++		}
++	}
++}
++
++#if 0
++void FLAC__lpc_restore_signal_orig(const FLAC__int32 residual[], unsigned data_len, const FLAC__int32 qlp_coeff[], unsigned order, int lp_quantization, FLAC__int32 data[])
++{
+ #ifdef FLAC__OVERFLOW_DETECT
+ 	FLAC__int64 sumo;
+ #endif
+@@ -339,6 +542,7 @@
+ 	}
+ 	*/
+ }
++#endif /* 0 */
+ 
+ void FLAC__lpc_restore_signal_wide(const FLAC__int32 residual[], unsigned data_len, const FLAC__int32 qlp_coeff[], unsigned order, int lp_quantization, FLAC__int32 data[])
+ {
+diff -ru flac-1.1.2.OLD/src/libFLAC/Makefile.lite flac-1.1.2.NEW/src/libFLAC/Makefile.lite
+--- flac-1.1.2.OLD/src/libFLAC/Makefile.lite	2005-01-27 11:08:35.000000000 +1100
++++ flac-1.1.2.NEW/src/libFLAC/Makefile.lite	2005-10-16 10:13:29.000000000 +1000
+@@ -41,7 +41,7 @@
+ ifeq ($(SOLARIS_BUILD),yes)
+ DEFINES = -DFLAC__NO_ASM -DFLAC__ALIGN_MALLOC_DATA
+ else
+-DEFINES = -DFLAC__CPU_IA32 -DFLAC__USE_3DNOW -DFLAC__HAS_NASM -DFLAC__ALIGN_MALLOC_DATA
++DEFINES = -DFLAC__CPU_UNKNOWN -DFLAC__NO_ASM -DFLAC__ALIGN_MALLOC_DATA -DFLAC__INTEGER_ONLY_LIBRARY
+ endif
+ endif
+ INCLUDES = -I./include -I$(topdir)/include
+@@ -50,14 +50,6 @@
+ ifeq ($(DARWIN_BUILD),yes)
+ SRCS_S = \
+ 	ppc/as/lpc_asm.s
+-else
+-ifeq ($(SOLARIS_BUILD),yes)
+-else
+-SRCS_NASM = \
+-	ia32/cpu_asm.nasm \
+-	ia32/fixed_asm.nasm \
+-	ia32/lpc_asm.nasm
+-endif
+ endif
+ 
+ SRCS_C = \
+@@ -66,7 +58,6 @@
+ 	cpu.c \
+ 	crc.c \
+ 	file_decoder.c \
+-	file_encoder.c \
+ 	fixed.c \
+ 	float.c \
+ 	format.c \
+@@ -76,10 +67,7 @@
+ 	metadata_iterators.c \
+ 	metadata_object.c \
+ 	seekable_stream_decoder.c \
+-	seekable_stream_encoder.c \
+-	stream_decoder.c \
+-	stream_encoder.c \
+-	stream_encoder_framing.c
++	stream_decoder.c
+ 
+ include $(topdir)/build/lib.mk
+ 
