@@ -13,7 +13,7 @@ if [ "$1" != "failsafe" ]; then
 			mount -o remount,rw /dev/root /
 		fi
 	else
-		if [ -z "$(nvram get no_root_swap)" ]; then
+		if [ \! -x /usr/sbin/nvram -o -z "$(nvram get no_root_swap)" ]; then
 			mtd unlock OpenWrt
 			mount -t jffs2 /dev/mtdblock/4 /jffs
 			pivot_root /jffs /jffs/rom

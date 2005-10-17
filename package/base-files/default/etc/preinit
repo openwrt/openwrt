@@ -7,7 +7,7 @@ insmod diag
 sleep 1
 if [ -f /proc/sys/reset ] && [ $(cat /proc/sys/reset) = 1 -o "$(nvram get failsafe)" = 1 ]; then
 	export FAILSAFE=true
-	[ "$(nvram get boot_wait)" != "on" ] && {
+	[ -x /usr/sbin/nvram -a "$(nvram get boot_wait)" != "on" ] && {
 		nvram set boot_wait=on
 		nvram commit
 	}
