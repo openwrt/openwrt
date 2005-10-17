@@ -16611,22 +16611,6 @@
  };
  
  /* This works around a problem in FreeBSD linker */
-@@ -2613,13 +3455,13 @@
- 	  fi
- 
- 	  pic_flag_for_symtable=
--	  case "$host" in
-+	  case $host in
- 	  # compiling the symbol table file with pic_flag works around
- 	  # a FreeBSD bug that causes programs to crash when -lm is
- 	  # linked before any other PIC object.  But we must not use
- 	  # pic_flag when linking with -static.  The problem exists in
- 	  # FreeBSD 2.2.6 and is fixed in FreeBSD 3.1.
--	  *-*-freebsd2*|*-*-freebsd3.0*|*-*-freebsdelf3.0*)
-+	  *-*-freebsd2*|*-*-freebsd3.0*|*-*-freebsdelf3.0*)
- 	    case "$compile_command " in
- 	    *" -static "*) ;;
- 	    *) pic_flag_for_symtable=" $pic_flag -DPIC -DFREEBSD_WORKAROUND";;
 @@ -2658,7 +3500,7 @@
  	finalize_command=`$echo "X$finalize_command" | $Xsed -e "s% @SYMFILE@%%"`
        fi
