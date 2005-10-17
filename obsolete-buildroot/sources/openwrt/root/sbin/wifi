@@ -1,5 +1,0 @@
-#!/bin/ash
-alias debug=${DEBUG:-:}
-debug "### wifi $1 ###"
-if=$(awk 'sub(":","") {print $1}' /proc/net/wireless)
-$DEBUG wlconf $if $1
