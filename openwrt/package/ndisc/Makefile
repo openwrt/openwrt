@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ndisc6
-PKG_VERSION:=0.4.0
+PKG_VERSION:=0.5.0
 PKG_RELEASE:=1
-PKG_MD5SUM:=7c30f2bfdfc4bd7b7c986503083f218d
+PKG_MD5SUM:=affd992b2c797105cac4e2a478ba962d
 
 PKG_SOURCE_URL:=http://people.via.ecp.fr/~rem/ndisc6/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
@@ -17,6 +17,7 @@ include $(TOPDIR)/package/rules.mk
 
 $(eval $(call PKG_template,NDISC6,ndisc6,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,RDISC6,rdisc6,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,TCPTRACEROUTE6,tcptraceroute6,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 $(PKG_BUILD_DIR)/.configured:
 	touch $@
@@ -39,3 +40,9 @@ $(IPKG_RDISC6):
 	install -m0755 $(PKG_BUILD_DIR)/rdisc6 $(IDIR_RDISC6)/usr/bin/
 	$(RSTRIP) $(IDIR_RDISC6)
 	$(IPKG_BUILD) $(IDIR_RDISC6) $(PACKAGE_DIR)
+
+$(IPKG_TCPTRACEROUTE6):
+	install -d -m0755 $(IDIR_TCPTRACEROUTE6)/usr/bin
+	install -m0755 $(PKG_BUILD_DIR)/tcptraceroute6 $(IDIR_TCPTRACEROUTE6)/usr/bin/
+	$(RSTRIP) $(IDIR_TCPTRACEROUTE6)
+	$(IPKG_BUILD) $(IDIR_TCPTRACEROUTE6) $(PACKAGE_DIR)
