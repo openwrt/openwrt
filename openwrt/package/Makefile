@@ -3,6 +3,7 @@ include $(TOPDIR)/rules.mk
 
 package-:=tcp_wrappers
 package-y:=nvram
+package-$(BR2_PACKAGE_6TUNNEL) += 6tunnel
 package-$(BR2_PACKAGE_AICCU) += aiccu
 package-$(BR2_PACKAGE_AMWALL) += amwall
 package-$(BR2_PACKAGE_ARPD) += arpd
