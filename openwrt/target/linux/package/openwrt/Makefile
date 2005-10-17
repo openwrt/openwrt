@@ -36,7 +36,7 @@ $(IDIR_OPENWRT):
 	$(SED) s,base-files-arch,base-files-$(BOARD)-$(KERNEL),g $(IDIR_OPENWRT)/CONTROL/control
 
 $(IPKG_OPENWRT): $(IDIR_OPENWRT)
-	[ -d files/$(BOARD)-$(KERNEL) ] && cp -a files/$(BOARD)-$(KERNEL)/* $(IDIR_OPENWRT)/
+	[ -d files/$(BOARD)-$(KERNEL) ] && cp -fpR files/$(BOARD)-$(KERNEL)/* $(IDIR_OPENWRT)/
 	find $(IDIR_OPENWRT) -name CVS | xargs rm -rf
 	find $(IDIR_OPENWRT) -name .svn | xargs rm -rf
 	$(RSTRIP) $(IDIR_OPENWRT)
@@ -47,4 +47,4 @@ install: compile
 compile: install-dev $(IPKG_OPENWRT)
 install-dev:
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -a ./include/* $(STAGING_DIR)/usr/include/
+	cp -fpR ./include/[a-z]* $(STAGING_DIR)/usr/include/
