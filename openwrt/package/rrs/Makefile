@@ -3,7 +3,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=rrs
 PKG_VERSION:=1.70
 PKG_RELEASE:=1
-PKG_MD5SUM:=b400d03c0e39e3e78a7327ba78f789f0 
+PKG_MD5SUM:=b400d03c0e39e3e78a7327ba78f789f0
 
 PKG_SOURCE_URL:=http://www.cycom.se/uploads/36/19 
 
