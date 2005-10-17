@@ -1,0 +1,11 @@
+config BR2_PACKAGE_LIBMAD
+	tristate "libmad - An high-quality MPEG audio decoding library"
+	default m if CONFIG_DEVEL
+	help
+	  MAD is a high-quality MPEG audio decoder. It currently supports 
+	  MPEG-1 and the MPEG-2 extension to lower sampling frequencies, 
+	  as well as the de facto MPEG 2.5 format. All three audio layers -
+	  Layer I, Layer II, and Layer III (i.e. MP3) - are fully implemented.
+	  
+	  http://www.underbit.com/products/mad/
+	  
