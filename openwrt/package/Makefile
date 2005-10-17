@@ -37,6 +37,7 @@ package-$(BR2_PACKAGE_EBTABLES) += ebtables
 package-$(BR2_PACKAGE_ETHER_WAKE) += ether-wake
 package-$(BR2_COMPILE_EXPAT) += expat
 package-$(BR2_PACKAGE_EZIPUPDATE) += ez-ipupdate
+package-$(BR2_COMPILE_FLAC) += flac
 package-$(BR2_PACKAGE_FPING) += fping
 package-$(BR2_PACKAGE_FPROBE) += fprobe
 package-$(BR2_PACKAGE_FPROBE_ULOG) += fprobe-ulog
