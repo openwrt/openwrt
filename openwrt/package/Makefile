@@ -231,7 +231,7 @@ fprobe-compile: libpcap-compile
 gdbserver-compile: ncurses-compile
 gmediaserver-compile: id3lib-compile libupnp-compile
 gnutls-compile: libgcrypt-compile opencdk-compile libtasn1-compile
-icecast-compile: curl-compile libogg-compile libvorbis-compile libxml2-compile libxslt-compile
+icecast-compile: curl-compile libvorbisidec-compile libxml2-compile libxslt-compile
 id3lib-compile: uclibc++-compile zlib-compile
 irssi-compile: glib-compile ncurses-compile
 iptraf-compile: ncurses-compile
