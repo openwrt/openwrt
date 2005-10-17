@@ -2,8 +2,7 @@ config BR2_PACKAGE_ICECAST
 	tristate "icecast - A streaming media server for Ogg/Vorbis and MP3 audio streams"
 	default m if CONFIG_DEVEL
 	select BR2_PACKAGE_LIBCURL
-	select BR2_PACKAGE_LIBOGG
-	select BR2_PACKAGE_LIBVORBIS
+	select BR2_PACKAGE_LIBVORBISIDEC
 	select BR2_PACKAGE_LIBXML2
 	select BR2_PACKAGE_LIBXSLT
 	help
@@ -18,8 +17,7 @@ config BR2_PACKAGE_ICECAST
 	  
 	  Depends:
 	   * libcurl
-	   * libogg
-	   * libvorbis
+	   * libvorbisidec
 	   * libxml2
 	   * libxslt
 	  

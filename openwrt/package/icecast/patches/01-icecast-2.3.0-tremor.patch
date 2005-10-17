@@ -1,0 +1,153 @@
+diff -rNu icecast-2.3.0.old/configure icecast-2.3.0.new/configure
+--- icecast-2.3.0.old/configure	2005-09-24 07:18:46.000000000 +1000
++++ icecast-2.3.0.new/configure	2005-10-07 22:08:29.000000000 +1000
+@@ -21967,7 +21967,7 @@
+ if test "${xt_cv_lib_ogg+set}" = set; then
+   echo $ECHO_N "(cached) $ECHO_C" >&6
+ else
+-  OGG_LIBS="-logg"
++  OGG_LIBS="-lvorbisidec"
+ 
+ #
+ # check if the installed Ogg is sufficiently new.
+@@ -22033,7 +22033,7 @@
+ cat confdefs.h >>conftest.$ac_ext
+ cat >>conftest.$ac_ext <<_ACEOF
+ /* end confdefs.h.  */
+-#include <ogg/ogg.h>
++#include <tremor/ogg.h>
+ int
+ main ()
+ {
+@@ -22188,9 +22188,9 @@
+ 
+ fi
+ 
+-VORBIS_LIBS="-lvorbis"
+-VORBISFILE_LIBS="-lvorbisfile"
+-VORBISENC_LIBS="-lvorbisenc"
++VORBIS_LIBS="-lvorbisidec"
++VORBISFILE_LIBS="-lvorbisidec"
++VORBISENC_LIBS="-lvorbisidec"
+ 
+ xt_save_LIBS="$LIBS"
+ xt_save_LDFLAGS="$LDFLAGS"
+@@ -22327,17 +22327,18 @@
+ cat >>conftest.$ac_ext <<_ACEOF
+ /* end confdefs.h.  */
+ 
+-#include <vorbis/codec.h>
+-#include <vorbis/vorbisenc.h>
++#include <tremor/ivorbiscodec.h>
+ 
+ 
+ int
+ main ()
+ {
++/*
+ if ((struct ovectl_ratemanage_arg *) 0)
+   return 0;
+ if (sizeof (struct ovectl_ratemanage_arg))
+   return 0;
++*/
+   ;
+   return 0;
+ }
+diff -rNu icecast-2.3.0.old/src/format_flac.c icecast-2.3.0.new/src/format_flac.c
+--- icecast-2.3.0.old/src/format_flac.c	2005-08-19 12:01:58.000000000 +1000
++++ icecast-2.3.0.new/src/format_flac.c	2005-10-07 22:10:24.000000000 +1000
+@@ -18,7 +18,7 @@
+ #endif
+ 
+ #include <stdlib.h>
+-#include <ogg/ogg.h>
++#include <tremor/ogg.h>
+ #include <string.h>
+ 
+ typedef struct source_tag source_t;
+diff -rNu icecast-2.3.0.old/src/format_midi.c icecast-2.3.0.new/src/format_midi.c
+--- icecast-2.3.0.old/src/format_midi.c	2005-08-19 12:01:58.000000000 +1000
++++ icecast-2.3.0.new/src/format_midi.c	2005-10-07 22:10:12.000000000 +1000
+@@ -18,7 +18,7 @@
+ #endif
+ 
+ #include <stdlib.h>
+-#include <ogg/ogg.h>
++#include <tremor/ogg.h>
+ #include <string.h>
+ 
+ typedef struct source_tag source_t;
+diff -rNu icecast-2.3.0.old/src/format_ogg.c icecast-2.3.0.new/src/format_ogg.c
+--- icecast-2.3.0.old/src/format_ogg.c	2005-08-19 12:01:58.000000000 +1000
++++ icecast-2.3.0.new/src/format_ogg.c	2005-10-07 22:10:02.000000000 +1000
+@@ -24,7 +24,7 @@
+ #include <stdlib.h>
+ #include <string.h>
+ 
+-#include <ogg/ogg.h>
++#include <tremor/ogg.h>
+ 
+ #include "refbuf.h"
+ #include "source.h"
+diff -rNu icecast-2.3.0.old/src/format_ogg.h icecast-2.3.0.new/src/format_ogg.h
+--- icecast-2.3.0.old/src/format_ogg.h	2005-08-19 12:01:58.000000000 +1000
++++ icecast-2.3.0.new/src/format_ogg.h	2005-10-07 22:09:51.000000000 +1000
+@@ -18,7 +18,7 @@
+ #ifndef __FORMAT_OGG_H__
+ #define __FORMAT_OGG_H__
+ 
+-#include <ogg/ogg.h>
++#include <tremor/ogg.h>
+ #include "refbuf.h"
+ #include "format.h"
+ 
+diff -rNu icecast-2.3.0.old/src/format_speex.c icecast-2.3.0.new/src/format_speex.c
+--- icecast-2.3.0.old/src/format_speex.c	2005-08-19 12:01:58.000000000 +1000
++++ icecast-2.3.0.new/src/format_speex.c	2005-10-07 22:09:44.000000000 +1000
+@@ -18,7 +18,7 @@
+ #endif
+ 
+ #include <stdlib.h>
+-#include <ogg/ogg.h>
++#include <tremor/ogg.h>
+ #include <speex/speex_header.h>
+ 
+ typedef struct source_tag source_t;
+diff -rNu icecast-2.3.0.old/src/format_theora.c icecast-2.3.0.new/src/format_theora.c
+--- icecast-2.3.0.old/src/format_theora.c	2005-08-19 12:01:58.000000000 +1000
++++ icecast-2.3.0.new/src/format_theora.c	2005-10-07 22:09:38.000000000 +1000
+@@ -18,7 +18,7 @@
+ #endif
+ 
+ #include <stdlib.h>
+-#include <ogg/ogg.h>
++#include <tremor/ogg.h>
+ #include <theora/theora.h>
+ 
+ typedef struct source_tag source_t;
+diff -rNu icecast-2.3.0.old/src/format_vorbis.c icecast-2.3.0.new/src/format_vorbis.c
+--- icecast-2.3.0.old/src/format_vorbis.c	2005-08-19 12:01:58.000000000 +1000
++++ icecast-2.3.0.new/src/format_vorbis.c	2005-10-07 22:09:29.000000000 +1000
+@@ -18,8 +18,8 @@
+ #endif
+ 
+ #include <stdlib.h>
+-#include <ogg/ogg.h>
+-#include <vorbis/codec.h>
++#include <tremor/ogg.h>
++#include <tremor/ivorbiscodec.h>
+ #include <memory.h>
+ #include <string.h>
+ 
+diff -rNu icecast-2.3.0.old/src/source.c icecast-2.3.0.new/src/source.c
+--- icecast-2.3.0.old/src/source.c	2005-09-23 06:19:28.000000000 +1000
++++ icecast-2.3.0.new/src/source.c	2005-10-07 22:09:17.000000000 +1000
+@@ -19,7 +19,7 @@
+ #include <stdlib.h>
+ #include <string.h>
+ #include <sys/types.h>
+-#include <ogg/ogg.h>
++#include <tremor/ogg.h>
+ #include <errno.h>
+ 
+ #ifndef _WIN32
