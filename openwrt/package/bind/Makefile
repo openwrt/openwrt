@@ -73,6 +73,7 @@ $(IPKG_BIND_SERVER):
 	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/named $(IDIR_BIND_SERVER)/usr/sbin/
 	cp -fpR files/bind $(IDIR_BIND_SERVER)/etc
 	cp -fpR files/named.init $(IDIR_BIND_SERVER)/etc/init.d/S$(PKG_INIT_LEVEL)named
+	find $(IDIR_BIND_SERVER)/etc/bind -name ".svn" | xargs rm -rf
 	$(RSTRIP) $(IDIR_BIND_SERVER)
 	$(IPKG_BUILD) $(IDIR_BIND_SERVER) $(PACKAGE_DIR)
 
