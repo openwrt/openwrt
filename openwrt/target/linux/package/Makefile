@@ -1,7 +1,9 @@
 # Main makefile for the packages
 include $(TOPDIR)/rules.mk
 
+ifneq ($(BOARD),ar7)
 package-$(BR2_PACKAGE_KMOD_ALSA) += alsa
+endif
 package-$(BR2_PACKAGE_KMOD_FUSE) += fuse
 package-$(BR2_PACKAGE_KMOD_MINI_FO) += mini_fo
 package-$(BR2_PACKAGE_KMOD_SHFS) += shfs
