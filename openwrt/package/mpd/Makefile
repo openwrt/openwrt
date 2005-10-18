@@ -3,11 +3,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mpd
-PKG_VERSION:=-uclinux--1--patch-10.normalperson-05
+PKG_VERSION:=0.12.0
 PKG_RELEASE:=1
-PKG_MD5SUM:=c707bb24a4acaa7c6a07fd6e4cda1f7c
+PKG_MD5SUM:=65e62cc813f2186dff0f96f164a853f8
 
-PKG_SOURCE_URL:=http://mpd.bogomips.org/mpd--uclinux
+PKG_SOURCE_URL:=http://users.tpg.com.au/davico/openwrt/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
@@ -15,31 +15,48 @@ PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
 PKG_CONFIGURE_OPTIONS := \
-	--disable-http \
-	--with-audio=oss \
 	--disable-alsa \
 	--disable-shout \
-	--disable-id3 \
 	--disable-mod \
 	--disable-audiofile \
-	--enable-static --disable-shared \
-	--enable-flac --enable-mpd-flac \
-	--disable-sse --disable-3dnow \
-	--enable-uclinux
+	--disable-iconv \
+	--disable-mpc \
+	--disable-aac \
 
 ifneq ($(BR2_PACKAGE_MPD_MP3),)
+PKG_DEPENDS += libid3tag libmad
 PKG_CONFIGURE_OPTIONS += \
-	--enable-mp3 --enable-mpd-mad
+	--with-id3tag-includes=$(STAGING_DIR)/usr/include \
+	--with-id3tag-libraries=$(STAGING_DIR)/usr/lib \
+	--with-mad-includes=$(STAGING_DIR)/usr/include \
+	--with-mad-libraries=$(STAGING_DIR)/usr/lib
 else
-PKG_CONFIGURE_OPTIONS += --disable-mp3
+PKG_CONFIGURE_OPTIONS += --disable-id3 --disable-mp3
 endif
 
 ifneq ($(BR2_PACKAGE_MPD_OGG),)
+PKG_DEPENDS += libvorbisidec
 PKG_CONFIGURE_OPTIONS += \
-	--enable-ogg --enable-mpd-ivorbis
+	--with-tremor \
+	--with-tremor-includes=$(STAGING_DIR)/usr/include \
+	--with-tremor-libraries=$(STAGING_DIR)/usr/lib
 else
 PKG_CONFIGURE_OPTIONS += --disable-ogg
 endif
+
+ifneq ($(BR2_PACKAGE_MPD_FLAC),)
+PKG_DEPENDS += libflac
+PKG_CONFIGURE_OPTIONS += \
+	--with-libFLAC-includes=$(STAGING_DIR)/usr/include \
+	--with-libFLAC-libraries=$(STAGING_DIR)/usr/lib
+else
+PKG_CONFIGURE_OPTIONS += --disable-flac
+endif
+
+COMMA:= ,
+EMPTY:=
+SPACE:= $(EMPTY) $(EMPTY)
+PKG_DEPENDS:=$(subst $(SPACE),$(COMMA)$(SPACE),$(sort $(PKG_DEPENDS)))
 
 include $(TOPDIR)/package/rules.mk
 
@@ -48,14 +65,28 @@ $(eval $(call PKG_template,MPD,mpd,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 	(cd $(PKG_BUILD_DIR); \
 		$(TARGET_CONFIGURE_OPTS) \
-		CFLAGS="$(TARGET_CFLAGS)" \
+		CFLAGS="$(strip $(TARGET_CFLAGS))" \
+		CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include" \
+		LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib" \
 		./configure \
-		--target=$(GNU_TARGET_NAME) \
-		--host=$(GNU_TARGET_NAME) \
-		--build=$(GNU_HOST_NAME) \
-		--prefix=/usr \
-		--sysconfdir=/etc \
-		$(PKG_CONFIGURE_OPTIONS) \
+			--target=$(GNU_TARGET_NAME) \
+			--host=$(GNU_TARGET_NAME) \
+			--build=$(GNU_HOST_NAME) \
+			--program-prefix="" \
+			--program-suffix="" \
+			--prefix=/usr \
+			--exec-prefix=/usr \
+			--bindir=/usr/bin \
+			--datadir=/usr/share \
+			--includedir=/usr/include \
+			--infodir=/usr/share/info \
+			--libdir=/usr/lib \
+			--libexecdir=/usr/lib \
+			--localstatedir=/var \
+			--mandir=/usr/share/man \
+			--sbindir=/usr/sbin \
+			--sysconfdir=/etc \
+			$(PKG_CONFIGURE_OPTIONS) \
 	);
 	touch $@
 
@@ -73,6 +104,7 @@ $(IPKG_MPD):
 	install -d -m0755 $(IDIR_MPD)/etc
 	cp -fp $(PKG_INSTALL_DIR)/usr/bin/mpd $(IDIR_MPD)/usr/bin
 	cp -fp $(PKG_BUILD_DIR)/doc/mpdconf.example $(IDIR_MPD)/etc/mpd.conf
+	echo "Depends: $(PKG_DEPENDS)" >> $(IDIR_MPD)/CONTROL/control
 	$(RSTRIP) $(IDIR_MPD)
 	$(IPKG_BUILD) $(IDIR_MPD) $(PACKAGE_DIR)
 
