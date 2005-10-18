@@ -4,6 +4,7 @@ KDIR:=$(BUILD_DIR)/linux-$(KERNEL)-$(BOARD)
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/ar7loader
 
+ifeq ($(IB),)
 LOADADDR := 0x94020000
 KERNEL_ENTRY := 0x${shell nm $(KDIR)/linux-$(KERNEL)*/vmlinux | grep kernel_entry | cut -d' ' -f1}
 OUTPUT_FORMAT := elf32-tradlittlemips
@@ -13,6 +14,7 @@ CFLAGS := -D__KERNEL__ -Wall -Wstrict-prototypes -Wno-trigraphs -Os \
 	-pipe -mlong-calls -fno-common \
 	-mabi=32 -march=mips32 -Wa,-32 -Wa,-march=mips32 -Wa,-mips32 -Wa,--trap \
 	-DLOADADDR=$(LOADADDR)
+
 
 $(PKG_BUILD_DIR):
 	mkdir -p $(PKG_BUILD_DIR)
@@ -37,7 +39,6 @@ $(STAGING_DIR)/bin/srec2bin: src/srec2bin.c
 $(KDIR)/vmlinux.lzma: $(KDIR)/vmlinux
 	cat $^ | $(STAGING_DIR)/bin/lzma e -si -so -eos -lc1 -lp2 -pb2 > $@ || (rm -f $@ && false)
 
-ifeq ($(IB),)
 $(KDIR)/vmlinux.bin: $(KDIR)/vmlinux.lzma compile
 	$(TARGET_CROSS)ld -T $(PKG_BUILD_DIR)/zimage.script -r -b binary $< -o $(KDIR)/zimage.o
 	$(TARGET_CROSS)ld -static -G 0 --defsym kernel_entry=$(KERNEL_ENTRY) -T $(PKG_BUILD_DIR)/ld.script \
@@ -52,7 +53,7 @@ $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-kernel.bin: $(KDIR)/vmlinux.bin
 endif
 
 $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-kernel.bin:
-	cp $< $@
+	cp $(KDIR)/vmlinux.bin $@
 
 ifeq ($(FS),jffs2-8MB)
 ALIGN:=bs=131072 conv=sync
