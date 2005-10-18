@@ -314,6 +314,16 @@ ifneq ($(BR2_PACKAGE_FREERADIUS_MOD_SQL_PGSQL),)
 freeradius-compile: postgresql-compile
 endif
 
+ifneq ($(BR2_PACKAGE_MPD_MP3),)
+mpd-compile: libid3tag-compile libmad-compile
+endif
+ifneq ($(BR2_PACKAGE_MPD_OGG),)
+mpd-compile: libvorbisidec-compile
+endif
+ifneq ($(BR2_PACKAGE_MPD_FLAC),)
+mpd-compile: flac-compile
+endif
+
 openvpn-compile: openssl-compile
 ifeq ($(BR2_PACKAGE_OPENVPN_LZO),y)
 openvpn-compile: lzo-compile
