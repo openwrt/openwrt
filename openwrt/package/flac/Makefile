@@ -26,6 +26,7 @@ $(PKG_BUILD_DIR)/.built:
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) -f Makefile.lite \
 		$(TARGET_CONFIGURE_OPTS) \
+		RELEASE_CFLAGS="$(TARGET_CFLAGS)" \
 		libFLAC
 	touch $@
 
