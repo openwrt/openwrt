@@ -1,6 +1,6 @@
 config BR2_PACKAGE_ETHER_WAKE
 	tristate "ether-wake - A Wake-On-LAN (WOL) client"
-	default y if DEVELOPER=1
+	default m if CONFIG_DEVEL
 	help
 	  A Wake-On-LAN (WOL) client,
 	  This program sends a magic packet to wake up sleeping networked machines.
