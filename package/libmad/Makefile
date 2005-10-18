@@ -19,6 +19,14 @@ include $(TOPDIR)/package/rules.mk
 
 $(eval $(call PKG_template,LIBMAD,libmad,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
+FPM:=default
+ifeq ($(ARCH),i386)
+FPM:=intel
+endif
+ifeq ($(ARCH),mipsel)
+FPM:=mips
+endif
+
 $(PKG_BUILD_DIR)/.configured:
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
 		$(TARGET_CONFIGURE_OPTS) \
@@ -50,7 +58,7 @@ $(PKG_BUILD_DIR)/.configured:
 			--enable-static \
 			--disable-rpath \
 			--with-gnu-ld \
-			--enable-fpm=mips \
+			--enable-fpm=$(FPM) \
 			--disable-debugging \
 			--enable-speed \
 	);
