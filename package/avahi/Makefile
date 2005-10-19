@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=avahi
-PKG_VERSION:=0.5
+PKG_VERSION:=0.5.2
 PKG_RELEASE:=1
-PKG_MD5SUM:=8a1fcd3131364f8dce569282aab0d137
+PKG_MD5SUM:=dc7ce24ffaab251a2002bf1dfdbe256d
 
 PKG_SOURCE_URL:=http://www.freedesktop.org/~lennart/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
