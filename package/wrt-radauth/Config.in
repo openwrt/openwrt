@@ -1,0 +1,10 @@
+config BR2_PACKAGE_WRT_RADAUTH
+        tristate "wrt-radauth - a RADIUS MAC authenticator for Broadcom based access points"
+	default m if CONFIG_DEVEL
+	help
+	  This software watches the stations associating to a broadcom based
+	  AccessPoint (e.g. Linksys WRT54G) and sends an authentication request
+	  to the radius-server specified in nvram.
+	  
+	  http://www.zerfleddert.de/wrt54g/
+	  
