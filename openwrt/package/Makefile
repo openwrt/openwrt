@@ -163,6 +163,7 @@ package-$(BR2_PACKAGE_RSYNC) += rsync
 package-$(BR2_PACKAGE_SABLEVM) += sablevm
 package-$(BR2_PACKAGE_SABLEVM_CLASSPATH) += sablevm-classpath
 package-$(BR2_COMPILE_SAMBA) += samba
+package-$(BR2_PACKAGE_SCDP) += scdp
 package-$(BR2_PACKAGE_SCREEN) += screen
 package-$(BR2_PACKAGE_SDK) += sdk
 package-$(BR2_PACKAGE_SER) += ser
@@ -277,6 +278,7 @@ endif
 rrdtool-compile: cgilib-compile freetype-compile libart-compile libpng-compile
 rrdtool1-compile: zlib-compile
 rsync-compile: popt-compile
+scdp-compile: libnet-compile
 screen-compile: ncurses-compile
 siproxd-compile: libosip2-compile
 sipsak-compile: openssl-compile

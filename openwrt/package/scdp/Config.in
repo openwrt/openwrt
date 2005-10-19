@@ -1,0 +1,11 @@
+config BR2_PACKAGE_SCDP
+	tristate "scdp - an utility to send CDP (Cisco Discovery Protocol) packets"
+	default m if CONFIG_DEVEL
+	select BR2_PACKAGE_LIBNET
+	help
+	  This program sends CDP (Cisco Discovery Protocol) packets out on 
+	  selected interfaces and tells the connected switch (cisco only) 
+	  where the host is connected.
+	  
+	  http://sourceforge.net/projects/scdp
+	  
