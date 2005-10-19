@@ -107,7 +107,7 @@ package-$(BR2_PACKAGE_MARADNS) += maradns
 package-$(BR2_PACKAGE_MATRIXSSL) += matrixssl
 package-$(BR2_PACKAGE_MICROCOM) += microcom
 package-$(BR2_PACKAGE_MICROPERL) += microperl
-package-$(BR2_PACKAGE_MINI_HTTPD) += mini_httpd
+package-$(BR2_COMPILE_MINI_HTTPD) += mini_httpd
 package-$(BR2_PACKAGE_MINI_SENDMAIL) += mini_sendmail
 package-$(BR2_PACKAGE_MONIT) += monit
 package-$(BR2_PACKAGE_MPD) += mpd
@@ -248,7 +248,6 @@ libvorbis-compile: libogg-compile
 libxml2-compile: zlib-compile
 libxslt-compile: libxml2-compile
 lighttpd-compile: openssl-compile pcre-compile
-mini_httpd-compile: matrixssl-compile
 mt-daapd-compile: howl-compile libgdbm-compile libid3tag-compile
 mtr-compile: ncurses-compile
 mysql-compile: ncurses-compile zlib-compile
@@ -312,6 +311,13 @@ freeradius-compile: mysql-compile
 endif
 ifneq ($(BR2_PACKAGE_FREERADIUS_MOD_SQL_PGSQL),)
 freeradius-compile: postgresql-compile
+endif
+
+ifneq ($(BR2_PACKAGE_MINI_HTTPD_MATRIXSSL),)
+mini_httpd-compile: matrixssl-compile
+endif
+ifneq ($(BR2_PACKAGE_MINI_HTTPD_OPENSSL),)
+mini_httpd-compile: openssl-compile
 endif
 
 ifneq ($(BR2_PACKAGE_MPD_MP3),)
