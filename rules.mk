@@ -1,4 +1,7 @@
 include $(TOPDIR)/.config
+SHELL=/bin/bash
+export SHELL
+
 MAKE1=make
 MAKEFLAGS=-j$(BR2_JLEVEL)
 
