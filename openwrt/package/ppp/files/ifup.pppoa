@@ -25,7 +25,6 @@ while :; do
   IDLETIME=${IDLETIME:+lcp-echo-failure $IDLETIME}
   MTU=$(nvram get ppp_mtu)
   MTU=${MTU:-1500}
-  MTU=${MTU:+ mtu $MTU mru $MTU}
 
   /usr/sbin/pppd nodetach \
 	plugin pppoatm.so ${VPI:-8}.${VCI:-35} \
@@ -34,7 +33,7 @@ while :; do
   	linkname $type \
   	user "$USERNAME" \
   	password "$PASSWORD" \
-  	$MTU \
+  	mtu $MTU mru $MTU
   	$IDLETIME \
   	$REDIAL
   
