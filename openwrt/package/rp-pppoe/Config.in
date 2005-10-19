@@ -8,7 +8,7 @@ config BR2_COMPILE_RP_PPPOE
 config BR2_PACKAGE_PPPOE_CLIENT
 	tristate
 	prompt "pppoe-client - PPPoE (PPP over Ethernet) client"
-	default m if DEVELOPER
+	default m if CONFIG_DEVEL
 	select BR2_COMPILE_RP_PPPOE
 	select BR2_PACKAGE_PPP
 	help
@@ -20,7 +20,7 @@ config BR2_PACKAGE_PPPOE_CLIENT
 config BR2_PACKAGE_PPPOE_RELAY
 	tristate
 	prompt "pppoe-relay - PPPoE (PPP over Ethernet) relay"
-	default m if DEVELOPER
+	default m if CONFIG_DEVEL
 	select BR2_COMPILE_RP_PPPOE
 	help
 	  PPPoE (PPP over Ethernet) relay
@@ -31,7 +31,7 @@ config BR2_PACKAGE_PPPOE_RELAY
 config BR2_PACKAGE_PPPOE_SERVER
 	tristate
 	prompt "pppoe-server - PPPoE (PPP over Ethernet) server"
-	default m if DEVELOPER
+	default m if CONFIG_DEVEL
 	select BR2_COMPILE_RP_PPPOE
 	select BR2_PACKAGE_PPP
 	help
@@ -43,7 +43,7 @@ config BR2_PACKAGE_PPPOE_SERVER
 config BR2_PACKAGE_PPPOE_SNIFF
 	tristate
 	prompt "pppoe-sniff - PPPoE (PPP over Ethernet) frame sniffer"
-	default m if DEVELOPER
+	default m if CONFIG_DEVEL
 	select BR2_COMPILE_RP_PPPOE
 	help
 	  PPPoE (PPP over Ethernet) frame sniffer
