@@ -1,0 +1,16 @@
+diff -ruN mini_httpd-1.19-old/mini_httpd.c mini_httpd-1.19-new/mini_httpd.c
+--- mini_httpd-1.19-old/mini_httpd.c	2005-10-19 01:11:24.000000000 +0200
++++ mini_httpd-1.19-new/mini_httpd.c	2005-10-19 01:13:05.000000000 +0200
+@@ -138,10 +138,10 @@
+ #define CGI_NICE 10
+ #endif /* CGI_NICE */
+ #ifndef CGI_PATH
+-#define CGI_PATH "/usr/local/bin:/usr/ucb:/bin:/usr/bin"
++#define CGI_PATH "/usr/bin:/bin:/usr/sbin:/sbin"
+ #endif /* CGI_PATH */
+ #ifndef CGI_LD_LIBRARY_PATH
+-#define CGI_LD_LIBRARY_PATH "/usr/local/lib:/usr/lib"
++#define CGI_LD_LIBRARY_PATH "/usr/lib:/lib"
+ #endif /* CGI_LD_LIBRARY_PATH */
+ #ifndef AUTH_FILE
+ #define AUTH_FILE ".htpasswd"
