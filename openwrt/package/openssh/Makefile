@@ -4,7 +4,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openssh
 PKG_VERSION:=4.0p1
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_MD5SUM:=7b36f28fc16e1b7f4ba3c1dca191ac92
 
 PKG_SOURCE_URL:=ftp://ftp.openbsd.org/pub/OpenBSD/OpenSSH/portable/ \
@@ -35,39 +35,39 @@ $(PKG_BUILD_DIR)/.configured:
 		LD="$(TARGET_CC)" \
 		LDFLAGS="-L$(STAGING_DIR)/usr/lib" \
 		./configure \
-		  --target=$(GNU_TARGET_NAME) \
-		  --host=$(GNU_TARGET_NAME) \
-		  --build=$(GNU_HOST_NAME) \
-		  --program-prefix="" \
-		  --program-suffix="" \
-		  --prefix=/usr \
-		  --exec-prefix=/usr \
-		  --bindir=/usr/bin \
-		  --datadir=/usr/share \
-		  --includedir=/usr/include \
-		  --infodir=/usr/share/info \
-		  --libdir=/usr/lib \
-		  --libexecdir=/usr/lib \
-		  --localstatedir=/var \
-		  --mandir=/usr/share/man \
-		  --sbindir=/usr/sbin \
-		  --sysconfdir=/etc/ssh \
-		  $(DISABLE_LARGEFILE) \
-		  $(DISABLE_NLS) \
-		  --enable-shared \
-		  --disable-static \
-		  --disable-debug \
-		  --disable-strip \
-		  --disable-etc-default-login \
-		  --disable-lastlog \
-		  --disable-utmp \
-		  --disable-utmpx \
-		  --disable-wtmp \
-		  --disable-wtmpx \
-		  --without-bsd-auth \
-		  --without-kerberos5 \
-		  --without-pam \
-		  --without-x \
+			--target=$(GNU_TARGET_NAME) \
+			--host=$(GNU_TARGET_NAME) \
+			--build=$(GNU_HOST_NAME) \
+			--program-prefix="" \
+			--program-suffix="" \
+			--prefix=/usr \
+			--exec-prefix=/usr \
+			--bindir=/usr/bin \
+			--datadir=/usr/share \
+			--includedir=/usr/include \
+			--infodir=/usr/share/info \
+			--libdir=/usr/lib \
+			--libexecdir=/usr/lib \
+			--localstatedir=/var \
+			--mandir=/usr/share/man \
+			--sbindir=/usr/sbin \
+			--sysconfdir=/etc/ssh \
+			$(DISABLE_LARGEFILE) \
+			$(DISABLE_NLS) \
+			--enable-shared \
+			--disable-static \
+			--disable-debug \
+			--disable-strip \
+			--disable-etc-default-login \
+			--disable-lastlog \
+			--disable-utmp \
+			--disable-utmpx \
+			--disable-wtmp \
+			--disable-wtmpx \
+			--without-bsd-auth \
+			--without-kerberos5 \
+			--without-pam \
+			--without-x \
 	);
 	touch $@
 
@@ -117,6 +117,8 @@ $(IPKG_OPENSSH_SFTP_CLIENT):
 $(IPKG_OPENSSH_SFTP_SERVER):
 	install -m0755 -d $(IDIR_OPENSSH_SFTP_SERVER)/usr/lib
 	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/sftp-server $(IDIR_OPENSSH_SFTP_SERVER)/usr/lib/
+	install -m0755 -d $(IDIR_OPENSSH_SFTP_SERVER)/usr/libexec
+	ln -sf ../lib/sftp-server $(IDIR_OPENSSH_SFTP_SERVER)/usr/libexec/sftp-server
 	$(RSTRIP) $(IDIR_OPENSSH_SFTP_SERVER)
 	$(IPKG_BUILD) $(IDIR_OPENSSH_SFTP_SERVER) $(PACKAGE_DIR)
 
