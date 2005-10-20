@@ -76,6 +76,11 @@ $(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C "$(PKG_BUILD_DIR)/src/interfaces/libpq" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		all install
+	$(MAKE) -C "$(PKG_BUILD_DIR)/src/bin/pg_config" \
+		DESTDIR="$(PKG_INSTALL_DIR)" \
+		includedir="$(STAGING_DIR)/usr/include" \
+		libdir="$(STAGING_DIR)/usr/lib" \
+		all install
 	$(MAKE) -C "$(PKG_BUILD_DIR)/src/bin/psql" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		all install
@@ -94,6 +99,8 @@ $(IPKG_PGSQL_CLI):
 	$(IPKG_BUILD) $(IDIR_PGSQL_CLI) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libpq.so: $(PKG_BUILD_DIR)/.built
+	mkdir -p $(STAGING_DIR)/usr/bin
+	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/pg_config $(STAGING_DIR)/usr/bin/
 	mkdir -p $(STAGING_DIR)/usr/include
 	cp -fpR $(PKG_INSTALL_DIR)/usr/include/libpq $(STAGING_DIR)/usr/include/
 	cp -fpR $(PKG_INSTALL_DIR)/usr/include/libpq-fe.h $(STAGING_DIR)/usr/include/
@@ -108,6 +115,7 @@ install-dev: $(STAGING_DIR)/usr/lib/libpq.so
 
 uninstall-dev:
 	rm -rf \
+		$(STAGING_DIR)/usr/bin/pg_config \
 		$(STAGING_DIR)/usr/include/libpq \
 		$(STAGING_DIR)/usr/include/libpq-fe.h \
 		$(STAGING_DIR)/usr/include/pg_config.h \
