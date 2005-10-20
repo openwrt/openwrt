@@ -1,10 +1,31 @@
+config BR2_COMPILE_MONIT
+	bool
+	default n
+	depends BR2_PACKAGE_MONIT || BR2_PACKAGE_MONIT_NOSSL
+
 config BR2_PACKAGE_MONIT
-	tristate "monit - System services monitoring utility"
+	tristate "monit - System services monitoring utility, with SSL support"
+	select BR2_COMPILE_MONIT
 	select BR2_PACKAGE_LIBPTHREAD
+	select BR2_PACKAGE_LIBOPENSSL
 	default m if CONFIG_DEVEL
 	help
-	  utility for monitoring services on a Unix system
+	  An utility for monitoring services on a Unix system
+	  
+	  This package is built with SSL support.
 	  
 	  http://www.tildeslash.com/monit/
 	  
-	
+
+config BR2_PACKAGE_MONIT_NOSSL
+	tristate "monit-nossl - System services monitoring utility, without SSL support"
+	select BR2_COMPILE_MONIT
+	select BR2_PACKAGE_LIBPTHREAD
+	default m if CONFIG_DEVEL
+	help
+	  An utility for monitoring services on a Unix system.
+	  
+	  This package is built without SSL support.
+	  
+	  http://www.tildeslash.com/monit/
+	  
