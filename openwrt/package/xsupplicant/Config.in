@@ -1,0 +1,11 @@
+config BR2_PACKAGE_XSUPPLICANT
+	tristate "xsupplicant - a fully compliant 802.1x authenticator"
+	default m if CONFIG_DEVEL
+	select BR2_PACKAGE_LIBOPENSSL
+	select BR2_PACKAGE_WIRELESS_TOOLS
+	help
+	  This software allows a GNU/Linux or BSD workstation to authenticate with
+	  a RADIUS server using 802.1x and various EAP protocols.
+	  
+	  http://open1x.sourceforge.net/
+	  
