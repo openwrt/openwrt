@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=fuse
-PKG_VERSION:=2.3.0
+PKG_VERSION:=2.4.1
 PKG_RELEASE:=1
-PKG_MD5SUM:=0bee98df5b2a29841f75fc188975eabc
+PKG_MD5SUM:=553bd9c5a4f3cd27f3e2b93844711e4c
 
 PKG_SOURCE_URL:=@SF/$(PKG_NAME)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -58,6 +58,7 @@ $(PKG_BUILD_DIR)/.configured:
 			--disable-example \
 			--disable-auto-modprobe \
 			--with-kernel=$(LINUX_DIR) \
+			--disable-mtab \
 	);
 	touch $@
 

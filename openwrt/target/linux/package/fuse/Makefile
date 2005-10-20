@@ -4,9 +4,9 @@ include $(TOPDIR)/rules.mk
 include ../../rules.mk
 
 PKG_NAME:=fuse
-PKG_VERSION:=2.3.0
+PKG_VERSION:=2.4.1
 PKG_RELEASE:=1
-PKG_MD5SUM:=0bee98df5b2a29841f75fc188975eabc
+PKG_MD5SUM:=553bd9c5a4f3cd27f3e2b93844711e4c
 
 PKG_SOURCE_URL:=@SF/$(PKG_NAME)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -33,33 +33,35 @@ $(PKG_BUILD_DIR)/.configured:
 		touch configure ; \
 		$(TARGET_CONFIGURE_OPTS) \
 		./configure \
-		  --target=$(GNU_TARGET_NAME) \
-		  --host=$(GNU_TARGET_NAME) \
-		  --build=$(GNU_HOST_NAME) \
-		  --program-prefix="" \
-		  --program-suffix="" \
-		  --prefix=/usr \
-		  --exec-prefix=/usr \
-		  --bindir=/usr/bin \
-		  --datadir=/usr/share \
-		  --includedir=/usr/include \
-		  --infodir=/usr/share/info \
-		  --libdir=/usr/lib \
-		  --libexecdir=/usr/lib \
-		  --localstatedir=/var \
-		  --mandir=/usr/share/man \
-		  --sbindir=/usr/sbin \
-		  --sysconfdir=/etc \
-		  $(DISABLE_LARGEFILE) \
-		  $(DISABLE_NLS) \
-		  --enable-shared \
-		  --enable-static \
-		  --enable-kernel-module \
-		  --disable-lib \
-		  --disable-util \
-		  --disable-example \
-		  --disable-auto-modprobe \
-		  --with-kernel=$(KERNEL_DIR) \
+			--target=$(GNU_TARGET_NAME) \
+			--host=$(GNU_TARGET_NAME) \
+			--build=$(GNU_HOST_NAME) \
+			--program-prefix="" \
+			--program-suffix="" \
+			--prefix=/usr \
+			--exec-prefix=/usr \
+			--bindir=/usr/bin \
+			--datadir=/usr/share \
+			--includedir=/usr/include \
+			--infodir=/usr/share/info \
+			--libdir=/usr/lib \
+			--libexecdir=/usr/lib \
+			--localstatedir=/var \
+			--mandir=/usr/share/man \
+			--sbindir=/usr/sbin \
+			--sysconfdir=/etc \
+			$(DISABLE_LARGEFILE) \
+			$(DISABLE_NLS) \
+			--enable-shared \
+			--enable-static \
+			--disable-rpath \
+			--enable-kernel-module \
+			--disable-lib \
+			--disable-util \
+			--disable-example \
+			--disable-auto-modprobe \
+			--with-kernel=$(KERNEL_DIR) \
+			--disable-mtab \
 	);
 	touch $@
 
