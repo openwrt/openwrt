@@ -50,6 +50,7 @@ package-$(BR2_PACKAGE_GLIB) += glib
 package-$(BR2_PACKAGE_GMEDIASERVER) += gmediaserver
 package-$(BR2_PACKAGE_GMP) += gmp
 package-$(BR2_COMPILE_GNUTLS) += gnutls
+package-$(BR2_PACKAGE_GPSD) += gpsd
 package-$(BR2_PACKAGE_HASERL) += haserl
 package-$(BR2_PACKAGE_HOSTAPD) += hostapd
 package-$(BR2_PACKAGE_HOWL) += howl
@@ -235,6 +236,7 @@ fprobe-compile: libpcap-compile
 gdbserver-compile: ncurses-compile
 gmediaserver-compile: id3lib-compile libupnp-compile
 gnutls-compile: libgcrypt-compile opencdk-compile libtasn1-compile
+gpsd-compile: uclibc++-compile
 icecast-compile: curl-compile libvorbisidec-compile libxml2-compile libxslt-compile
 id3lib-compile: uclibc++-compile zlib-compile
 irssi-compile: glib-compile ncurses-compile
