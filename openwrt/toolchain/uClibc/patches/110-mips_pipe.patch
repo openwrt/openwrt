@@ -1,0 +1,27 @@
+diff -ur uClibc-0.9.28/libc/sysdeps/linux/mips/pipe.S uClibc-0.9.28.openwrt/libc/sysdeps/linux/mips/pipe.S
+--- uClibc-0.9.28/libc/sysdeps/linux/mips/pipe.S	2005-08-18 00:49:44.000000000 +0200
++++ uClibc-0.9.28.openwrt/libc/sysdeps/linux/mips/pipe.S	2005-10-20 12:34:52.000000000 +0200
+@@ -10,22 +10,17 @@
+         .globl  pipe
+         .ent    pipe, 0
+ pipe:
+-        addiu   sp,sp,-24
+-        sw      a0,16(sp)
+         li      v0,__NR_pipe
+         syscall
+         beqz    a3, 1f
+-        la      t3, errno
+-        sw      v0, (t3)
++        sw      v0, errno
+         li      v0, -1
+         b       2f
+ 1:
+-        lw      a0, 16(sp)
+         sw      v0, 0(a0)
+         sw      v1, 4(a0)
+         li      v0, 0
+ 2:
+-        addiu   sp,sp,24
+         j       ra
+         .end    pipe
+         .size   pipe,.-pipe

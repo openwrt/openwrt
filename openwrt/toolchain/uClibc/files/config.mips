@@ -17,8 +17,10 @@ TARGET_mips=y
 # TARGET_nios2 is not set
 # TARGET_powerpc is not set
 # TARGET_sh is not set
+# TARGET_sh64 is not set
 # TARGET_sparc is not set
 # TARGET_v850 is not set
+# TARGET_x86_64 is not set
 
 #
 # Target Architecture Features and Options
@@ -41,7 +43,6 @@ ARCH_HAS_MMU=y
 UCLIBC_HAS_FLOATS=y
 HAS_FPU=y
 DO_C99_MATH=y
-WARNINGS="-Wall"
 KERNEL_SOURCE="./toolchain_build_mipsel/linux"
 C_SYMBOL_PREFIX=""
 HAVE_DOT_CONFIG=y
@@ -60,11 +61,14 @@ LDSO_LDD_SUPPORT=y
 LDSO_CACHE_SUPPORT=y
 # LDSO_PRELOAD_FILE_SUPPORT is not set
 LDSO_BASE_FILENAME="ld.so"
+# LDSO_RUNPATH is not set
+# DL_FINI_CRT_COMPAT is not set
 UCLIBC_CTOR_DTOR=y
 # HAS_NO_THREADS is not set
 UCLIBC_HAS_THREADS=y
 # PTHREADS_DEBUG_SUPPORT is not set
 UCLIBC_HAS_LFS=y
+# UCLIBC_STATIC_LDCONFIG is not set
 # MALLOC is not set
 # MALLOC_SIMPLE is not set
 MALLOC_STANDARD=y
@@ -112,6 +116,7 @@ UCLIBC_HAS_STDIO_BUFSIZ_4096=y
 UCLIBC_HAS_STDIO_BUILTIN_BUFFER_NONE=y
 # UCLIBC_HAS_STDIO_BUILTIN_BUFFER_4 is not set
 # UCLIBC_HAS_STDIO_BUILTIN_BUFFER_8 is not set
+# UCLIBC_HAS_STDIO_SHUTDOWN_ON_ABORT is not set
 UCLIBC_HAS_STDIO_GETC_MACRO=y
 UCLIBC_HAS_STDIO_PUTC_MACRO=y
 UCLIBC_HAS_STDIO_AUTO_RW_TRANSITION=y
@@ -148,8 +153,11 @@ DEVEL_PREFIX="/usr/"
 #
 # uClibc development/debugging options
 #
+CROSS_COMPILER_PREFIX=""
 # DODEBUG is not set
+# DODEBUG_PT is not set
 # DOASSERTS is not set
 # SUPPORT_LD_DEBUG is not set
 # SUPPORT_LD_DEBUG_EARLY is not set
+WARNINGS="-Wall"
 # UCLIBC_MJN3_ONLY is not set

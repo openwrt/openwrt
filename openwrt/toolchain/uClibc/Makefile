@@ -14,7 +14,7 @@ UCLIBC_SOURCE:=uClibc-$(strip $(subst ",, $(BR2_USE_UCLIBC_SNAPSHOT))).tar.bz2
 UCLIBC_SITE:=http://www.uclibc.org/downloads/snapshots
 UCLIBC_VER:=PKG_VERSION:=0.${shell date +"%G%m%d"}
 else
-UCLIBC_VER:=0.9.27
+UCLIBC_VER:=0.9.28
 UCLIBC_DIR:=$(TOOL_BUILD_DIR)/uClibc-$(UCLIBC_VER)
 UCLIBC_SOURCE:=uClibc-$(UCLIBC_VER).tar.bz2
 UCLIBC_SITE:=http://www.uclibc.org/downloads
