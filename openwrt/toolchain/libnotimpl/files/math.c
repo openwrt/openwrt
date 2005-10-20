@@ -1,16 +1,16 @@
 /* vi: set sw=4 ts=4: */
 
+#include "math.h"
+
 /* cosf for uClibc
  *
  * wrapper for cos(x)
  */
 
-#include "math.h"
-
 #ifdef __STDC__
-	float cosf(float x)		/* wrapper cos */
+	float cosf(float x)
 #else
-	float cosf(x)			/* wrapper cos */
+	float cosf(x)
 	float x;
 #endif
 {
@@ -22,12 +22,25 @@
  * wrapper for sin(x)
  */
 
-#include "math.h"
+#ifdef __STDC__
+	float sinf(float x)
+#else
+	float sinf(x)
+	float x;
+#endif
+{
+	return (float) sin( (double)x );
+}
+
+/* rintf for uClibc
+ *
+ * wrapper for rint(x)
+ */
 
 #ifdef __STDC__
-	float sinf(float x)		/* wrapper sin */
+	float rintf(float x)
 #else
-	float sinf(x)			/* wrapper sin */
+	float rintf(x)
 	float x;
 #endif
 {
