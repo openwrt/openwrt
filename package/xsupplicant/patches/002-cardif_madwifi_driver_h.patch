@@ -1,0 +1,11 @@
+diff -ruN xsupplicant-1.2.2-old/src/cardif/linux/cardif_madwifi_driver.h xsupplicant-1.2.2-new/src/cardif/linux/cardif_madwifi_driver.h
+--- xsupplicant-1.2.2-old/src/cardif/linux/cardif_madwifi_driver.h	2005-04-06 04:21:53.000000000 +0200
++++ xsupplicant-1.2.2-new/src/cardif/linux/cardif_madwifi_driver.h	2005-10-17 22:03:19.000000000 +0200
+@@ -21,6 +21,7 @@
+ int cardif_madwifi_driver_set_key(char *, int, unsigned char *, int, int, 
+ 				 char *, int, char *, int);
+ int cardif_madwifi_driver_wpa_state(struct interface_data *, char);
++void cardif_madwifi_driver_associate(struct interface_data *, char *);
+ int cardif_madwifi_driver_disassociate(struct interface_data *, int);
+ 
+ #endif // _CARDIF_MADWIFI_DRIVER_H_
