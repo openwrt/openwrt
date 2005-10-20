@@ -193,6 +193,10 @@ $(eval $(call KMOD_template,VIDEODEV,videodev,\
 $(eval $(call KMOD_template,PWC,pwc,\
 	$(MODULES_DIR)/kernel/drivers/usb/pwc.o \
 ,CONFIG_USB_PWC))
+$(eval $(call KMOD_template,AX25,ax25,\
+	$(MODULES_DIR)/kernel/net/ax25/ax25.o \
+	$(MODULES_DIR)/kernel/drivers/net/hamradio/mkiss.o \
+,CONFIG_AX25))
 
 $(TARGETS): $(PACKAGE_DIR)
 
@@ -230,7 +234,7 @@ $(LINUX_DIR)/vmlinux: $(LINUX_DIR)/.depend_done
 $(LINUX_KERNEL): $(LINUX_DIR)/vmlinux
 	$(TARGET_CROSS)objcopy -O binary -R .reginfo -R .note -R .comment -R .mdebug -S $< $@ 
 	touch -c $(LINUX_KERNEL)
-	
+
 $(LINUX_DIR)/.modules_done: $(LINUX_KERNEL) $(LINUX_IMAGE)
 	rm -rf $(LINUX_BUILD_DIR)/modules
 	$(MAKE) -C $(LINUX_DIR) ARCH=$(LINUX_KARCH) PATH=$(TARGET_PATH) modules
