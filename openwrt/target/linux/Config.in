@@ -130,6 +130,14 @@ config BR2_PACKAGE_KMOD_IPTABLES_V4
 	help
 	  Kernel modules for IPv4 firewalling
 
+config BR2_PACKAGE_KMOD_AX25
+	tristate "AX25 support"
+	default m
+	help
+	  Kernel modules for AX25 protocol family
+	   - ax25.o: AX25 layer 2 support
+	   - mkiss.o: AX25 KISS driver
+
 config BR2_PACKAGE_KMOD_IPTABLES_V4_EXTRA
 	tristate "Extra modules for iptables"
 	default m
