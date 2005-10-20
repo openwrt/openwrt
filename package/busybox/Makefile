@@ -13,11 +13,11 @@ PKG_SOURCE:=$(PKG_NAME)-snapshot.tar.bz2
 PKG_SOURCE_URL:=http://www.busybox.net/downloads/snapshots
 PKG_MD5SUM:=x
 else
-PKG_VERSION:=1.00
+PKG_VERSION:=1.01
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://www.busybox.net/downloads
-PKG_MD5SUM:=5c7ea9b5d3b3677dfcdcec38b281a756
+PKG_MD5SUM:=f250842dae2854a38470ed16a46bba66
 endif
 PKG_CAT:=bzcat
 
