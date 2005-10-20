@@ -1,11 +1,21 @@
-diff -Nur openssl-0.9.7f/Makefile.org openssl-0.9.7f.new/Makefile.org
---- openssl-0.9.7f/Makefile.org	2005-03-15 10:46:13.000000000 +0100
-+++ openssl-0.9.7f.new/Makefile.org	2005-04-03 20:15:26.000000000 +0200
-@@ -229,7 +229,6 @@
+diff -ruN openssl-0.9.7h-old/Makefile.org openssl-0.9.7h-new/Makefile.org
+--- openssl-0.9.7h-old/Makefile.org	2005-10-12 23:12:38.000000000 +0200
++++ openssl-0.9.7h-new/Makefile.org	2005-10-12 23:13:38.000000000 +0200
+@@ -230,7 +230,6 @@
  libcrypto.a.sha1: libcrypto.a
  	@if egrep 'define OPENSSL_FIPS' $(TOP)/include/openssl/opensslconf.h > /dev/null; then \
  		$(RANLIB) libcrypto.a; \
--		fips/sha1/fips_standalone_sha1 libcrypto.a > libcrypto.a.sha1; \
+-		fips/sha/fips_standalone_sha1 libcrypto.a > libcrypto.a.sha1; \
  	fi
  
  sub_all:
+@@ -258,9 +257,6 @@
+ libcrypto$(SHLIB_EXT): libcrypto.a
+ 	@if [ "$(SHLIB_TARGET)" != "" ]; then \
+ 		$(MAKE) SHLIBDIRS=crypto build-shared; \
+-        	if egrep 'define OPENSSL_FIPS' $(TOP)/include/openssl/opensslconf.h > /dev/null; then \
+-                    fips/sha/fips_standalone_sha1 -binary $@ > $@.$${HMAC_EXT:-sha1}; \
+-		fi; \
+ 	else \
+ 		echo "There's no support for shared libraries on this platform" >&2; \
+ 	fi
