@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openssl
-PKG_VERSION:=0.9.7g
+PKG_VERSION:=0.9.7i
 PKG_RELEASE:=1
-PKG_MD5SUM:=991615f73338a571b6a1be7d74906934
+PKG_MD5SUM:=f69d82b206ff8bff9d0e721f97380b9e
 
 PKG_SOURCE_URL:=http://www.openssl.org/source/ \
 	ftp://ftp.funet.fi/pub/crypt/cryptography/libs/openssl/source/ \
@@ -36,7 +36,7 @@ $(PKG_BUILD_DIR)/.configured:
 		  -I$(STAGING_DIR)/usr/include \
 		  -L$(STAGING_DIR)/usr/lib -ldl \
 		  $(OPENSSL_NO_CIPHERS) \
-		  shared no-asm no-ec no-engine no-err no-fips no-hw no-krb5 no-threads zlib-dynamic \
+		  shared no-asm no-ec no-err no-fips no-hw no-krb5 no-threads zlib-dynamic \
 	)
 	touch $@
 
