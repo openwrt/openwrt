@@ -1,7 +1,7 @@
-diff -Nurb busybox-1.00/include/usage.h busybox-1.00-patched/include/usage.h
---- busybox-1.00/include/usage.h	2005-05-30 05:34:45.397776704 -0400
-+++ busybox-1.00-patched/include/usage.h	2005-05-30 05:04:29.271869808 -0400
-@@ -2629,6 +2629,7 @@
+diff -Nur busybox-1.01/include/usage.h busybox-1.01.openwrt/include/usage.h
+--- busybox-1.01/include/usage.h	2005-08-17 03:29:15.000000000 +0200
++++ busybox-1.01.openwrt/include/usage.h	2005-10-20 11:01:34.000000000 +0200
+@@ -2622,6 +2622,7 @@
  	"\t-n,\t--now\tExit with failure if lease cannot be immediately negotiated.\n" \
  	"\t-p,\t--pidfile=file\tStore process ID of daemon in file\n" \
  	"\t-q,\t--quit\tQuit after obtaining lease\n" \
@@ -9,9 +9,9 @@ diff -Nurb busybox-1.00/include/usage.h busybox-1.00-patched/include/usage.h
  	"\t-r,\t--request=IP\tIP address to request (default: none)\n" \
  	"\t-s,\t--script=file\tRun file at dhcp events (default: /usr/share/udhcpc/default.script)\n" \
  	"\t-v,\t--version\tDisplay version"
-diff -Nurb busybox-1.00/networking/udhcp/dhcpc.c busybox-1.00-patched/networking/udhcp/dhcpc.c
---- busybox-1.00/networking/udhcp/dhcpc.c	2004-05-19 04:29:05.000000000 -0400
-+++ busybox-1.00-patched/networking/udhcp/dhcpc.c	2005-05-30 05:00:47.377602864 -0400
+diff -Nur busybox-1.01/networking/udhcp/dhcpc.c busybox-1.01.openwrt/networking/udhcp/dhcpc.c
+--- busybox-1.01/networking/udhcp/dhcpc.c	2005-08-17 03:29:10.000000000 +0200
++++ busybox-1.01.openwrt/networking/udhcp/dhcpc.c	2005-10-20 11:06:17.000000000 +0200
 @@ -61,6 +61,7 @@
  	abort_if_no_lease: 0,
  	foreground: 0,
@@ -20,7 +20,7 @@ diff -Nurb busybox-1.00/networking/udhcp/dhcpc.c busybox-1.00-patched/networking
  	background_if_no_lease: 0,
  	interface: "eth0",
  	pidfile: NULL,
-@@ -87,6 +88,7 @@
+@@ -88,6 +89,7 @@
  "                                  immediately negotiated.\n"
  "  -p, --pidfile=file              Store process ID of daemon in file\n"
  "  -q, --quit                      Quit after obtaining lease\n"
@@ -28,7 +28,7 @@ diff -Nurb busybox-1.00/networking/udhcp/dhcpc.c busybox-1.00-patched/networking
  "  -r, --request=IP                IP address to request (default: none)\n"
  "  -s, --script=file               Run file at dhcp events (default:\n"
  "                                  " DEFAULT_SCRIPT ")\n"
-@@ -202,6 +204,7 @@
+@@ -205,6 +207,7 @@
  		{"now", 	no_argument,		0, 'n'},
  		{"pidfile",	required_argument,	0, 'p'},
  		{"quit",	no_argument,		0, 'q'},
@@ -36,16 +36,16 @@ diff -Nurb busybox-1.00/networking/udhcp/dhcpc.c busybox-1.00-patched/networking
  		{"request",	required_argument,	0, 'r'},
  		{"script",	required_argument,	0, 's'},
  		{"version",	no_argument,		0, 'v'},
-@@ -214,7 +214,7 @@
+@@ -214,7 +217,7 @@
  	/* get options */
  	while (1) {
  		int option_index = 0;
--		c = getopt_long(argc, argv, "c:fbH:h:i:np:qr:s:v", arg_options, &option_index);
-+		c = getopt_long(argc, argv, "c:fbH:h:i:np:qRr:s:v", arg_options, &option_index);
+-		c = getopt_long(argc, argv, "c:CfbH:h:i:np:qr:s:v", arg_options, &option_index);
++		c = getopt_long(argc, argv, "c:CfbH:h:i:np:qRr:s:v", arg_options, &option_index);
  		if (c == -1) break;
  
  		switch (c) {
-@@ -251,6 +254,9 @@
+@@ -259,6 +262,9 @@
  		case 'q':
  			client_config.quit_after_lease = 1;
  			break;
@@ -55,7 +55,7 @@ diff -Nurb busybox-1.00/networking/udhcp/dhcpc.c busybox-1.00-patched/networking
  		case 'r':
  			requested_ip = inet_addr(optarg);
  			break;
-@@ -472,8 +478,11 @@
+@@ -486,8 +492,11 @@
  
  					state = BOUND;
  					change_mode(LISTEN_NONE);
@@ -68,7 +68,7 @@ diff -Nurb busybox-1.00/networking/udhcp/dhcpc.c busybox-1.00-patched/networking
  					if (!client_config.foreground)
  						client_background();
  
-@@ -498,12 +507,13 @@
+@@ -512,12 +521,13 @@
  			case SIGUSR1:
  				perform_renew();
  				break;
@@ -85,9 +85,9 @@ diff -Nurb busybox-1.00/networking/udhcp/dhcpc.c busybox-1.00-patched/networking
  			}
  		} else if (retval == -1 && errno == EINTR) {
  			/* a signal was caught */
-diff -Nurb busybox-1.00/networking/udhcp/dhcpc.h busybox-1.00-patched/networking/udhcp/dhcpc.h
---- busybox-1.00/networking/udhcp/dhcpc.h	2004-01-30 18:45:12.000000000 -0500
-+++ busybox-1.00-patched/networking/udhcp/dhcpc.h	2005-05-30 04:53:58.681734080 -0400
+diff -Nur busybox-1.01/networking/udhcp/dhcpc.h busybox-1.01.openwrt/networking/udhcp/dhcpc.h
+--- busybox-1.01/networking/udhcp/dhcpc.h	2005-08-17 03:29:10.000000000 +0200
++++ busybox-1.01.openwrt/networking/udhcp/dhcpc.h	2005-10-20 11:01:44.000000000 +0200
 @@ -20,6 +20,7 @@
  struct client_config_t {
  	char foreground;		/* Do not fork */
