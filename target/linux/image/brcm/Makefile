@@ -15,7 +15,8 @@ ifeq ($(IB),)
 $(KDIR)/vmlinux.lzma: $(KDIR)/vmlinux
 	cat $^ | $(STAGING_DIR)/bin/lzma e -si -so -eos -lc1 -lp2 -pb2 > $@ || (rm -f $@ && false)
 
-$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx: $(KDIR)/vmlinux.lzma compile
+$(KDIR)/loader.tmp.gz: compile
+$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx: $(KDIR)/vmlinux.lzma
 endif
 
 ifeq ($(FS),jffs2-8MB)
@@ -42,11 +43,22 @@ endif
 ifeq ($(KERNEL),2.4)
 FSNAME:=$(patsubst jffs2-%,jffs2,$(FS))
 
+ifeq ($(FS),squashfs)
+$(BIN_DIR)/openwrt-wap54g-$(FSNAME).trx: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx
+	cp $< $@
+	echo -ne '\x01' >> $@
+	
+install: $(BIN_DIR)/openwrt-wap54g-$(FSNAME).trx
+endif
+
 ifneq ($(FS),jffs2-8MB)
 $(BIN_DIR)/openwrt-wrt54g-$(FSNAME).bin: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx
 	$(STAGING_DIR)/bin/addpattern -4 -p W54G -v v4.20.6 -i $< -o $@ -g
 
-install: $(BIN_DIR)/openwrt-wrt54g-$(FSNAME).bin
+$(BIN_DIR)/openwrt-wrt54gs_v4-$(FSNAME).bin: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx
+	$(STAGING_DIR)/bin/addpattern -4 -p W54s -v v1.05.0 -i $< -o $@ -g
+
+install: $(BIN_DIR)/openwrt-wrt54g-$(FSNAME).bin $(BIN_DIR)/openwrt-wrt54gs_v4-$(FSNAME).bin
 endif
 
 ifneq ($(FS),jffs2-4MB)
