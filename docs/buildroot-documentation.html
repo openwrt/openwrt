@@ -156,25 +156,13 @@
     <h2><a name="custom_targetfs" id="custom_targetfs"></a>Customizing the
     target filesystem</h2>
 
-    <p>There are two ways to customize the resulting target filesystem:</p>
-
-    <ul>
-      <li>Customize the target filesystem directly, and rebuild the image. The
-      target filesystem is available under <code>build_ARCH/root/</code> where
-      <code>ARCH</code> is the chosen target architecture, usually mipsel.
-      You can simply make your changes here, and run make target_install afterwards, 
-      which will rebuild the target filesystem image. This method allows to do
-      everything on the target filesystem, but if you decide to rebuild your toolchain,
-      tools or packages, these changes will be lost.</li>
-
-      <li>Customize the target filesystem skeleton, available under
-      <code>package/base-files/default/</code>. You can customize
-      configuration files or other stuff here. However, the full file hierarchy
-      is not yet present, because it's created during the compilation process.
-      So you can't do everything on this target filesystem skeleton, but
-      changes to it remains even when you completely rebuild the cross-compilation
-      toolchain and the tools.<br />
-    </ul>
+    <li>You can customize the target filesystem skeleton, available under
+    <code>package/base-files/default/</code>. You can change
+    configuration files or other stuff here. However, the full file hierarchy
+    is not yet present, because it's created during the compilation process.
+    So you can't do everything on this target filesystem skeleton, but
+    changes to it remains even when you completely rebuild the cross-compilation
+    toolchain and the tools.<br />
 
     <h2><a name="custom_busybox" id="custom_busybox"></a>Customizing the
     Busybox configuration</h2>
