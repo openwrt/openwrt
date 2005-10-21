@@ -47,7 +47,7 @@ $(UCLIBC_DIR)/.unpacked: $(DL_DIR)/$(UCLIBC_SOURCE)
 
 $(UCLIBC_DIR)/.configured: $(UCLIBC_DIR)/.unpacked
 	$(SED) 's,^CROSS=.*,CROSS=$(TARGET_CROSS),g' $(UCLIBC_DIR)/Rules.mak
-	cp ./files/config.$(UCLIBC_TARGET_ARCH) $(UCLIBC_DIR)/.config
+	cp ./files/config.$(ARCH) $(UCLIBC_DIR)/.config
 	$(SED) 's,^KERNEL_SOURCE=.*,KERNEL_SOURCE=\"$(LINUX_HEADERS_DIR)\",g' \
 		$(UCLIBC_DIR)/.config
 ifeq ($(BR2_LARGEFILE),y)
