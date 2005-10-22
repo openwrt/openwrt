@@ -58,6 +58,7 @@ $(BIN_DIR)/$(IB_NAME).tar.bz2:
 	cp $(TOPDIR)/rules.mk $(IB_DIR)
 	cp -fpR ./image $(IB_DIR)/
 	cp $(TOPDIR)/.config $(IB_DIR)/
+	find $(IB_DIR) -name .svn | xargs rm -rf
 	find $(IB_DIR) -name CVS | xargs rm -rf
 	(cd $(BUILD_DIR); tar c $(IB_NAME) | bzip2 -c > $(BIN_DIR)/$(IB_NAME).tar.bz2)
 
@@ -66,8 +67,10 @@ install: $(BIN_DIR)/$(IB_NAME).tar.bz2
 endif
 
 prepare:
+	@$(TRACE) target/linux/image/prepare
 	$(MAKE) -C image prepare
 compile:
+	@$(TRACE) target/linux/image/compile
 	$(MAKE) -C image compile
 install:
 rebuild:

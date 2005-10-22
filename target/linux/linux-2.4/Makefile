@@ -16,7 +16,7 @@ LINUX_BINARY_DRIVER_SITE := http://openwrt.org/downloads/sources/
 LINUX_SOURCE := linux-$(LINUX_VERSION).tar.bz2
 LINUX_SOURCE_DIR := $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION)
 MODULES_DIR := $(LINUX_BUILD_DIR)/modules/$(MODULES_SUBDIR)
-TARGET_MODULES_DIR := $(TARGET_DIR)/lib/modules/$(LINUX_VERSION)
+TARGET_MODULES_DIR := $(LINUX_TARGET_DIR)/lib/modules/$(LINUX_VERSION)
 IPKG_KERNEL:=IPKG_TMP=$(BUILD_DIR)/tmp IPKG_INSTROOT=$(LINUX_TARGET_DIR) IPKG_CONF_DIR=$(LINUX_BUILD_DIR) $(SCRIPT_DIR)/ipkg -force-defaults -force-depends
 
 PKG_BUILD_DIR := $(LINUX_BUILD_DIR)/linux-modules
@@ -250,6 +250,7 @@ $(STAMP_DIR)/.linux-compile: $(LINUX_DIR)/.modules_done
 	@mkdir -p $(STAMP_DIR)
 	@$(MAKE) $(TARGETS)
 	ln -sf $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION) $(LINUX_DIR)
+	@$(TRACE) target/linux/package
 	$(MAKE) -C $(TOPDIR)/target/linux/package \
 		$(KPKG_MAKEOPTS) \
 		compile
@@ -274,12 +275,8 @@ compile: $(STAMP_DIR)/.linux-compile
 
 install: compile $(TARGET_MODULES_DIR) $(KERNEL_IPKG)
 	rm -rf $(LINUX_BUILD_DIR)/root*
+	cp -fpR $(BUILD_DIR)/root $(LINUX_BUILD_DIR)/
 	echo -e 'dest root /\noption offline_root $(LINUX_BUILD_DIR)/root' > $(LINUX_BUILD_DIR)/ipkg.conf
-	$(MAKE) -C $(TOPDIR)/package \
-		TARGET_DIR="$(LINUX_TARGET_DIR)" \
-		IPKG_CONF="$(LINUX_BUILD_DIR)" \
-		BOARD="$(BOARD)" \
-		install
 	$(MAKE) -C $(TOPDIR)/target/linux/package \
 		$(KPKG_MAKEOPTS) \
 		install

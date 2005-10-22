@@ -12,7 +12,8 @@ $(KDIR)/root.squashfs: install-prepare
 	@mkdir -p $(KDIR)/root/jffs
 	$(STAGING_DIR)/bin/mksquashfs-lzma $(KDIR)/root $@ -nopad -noappend -root-owned -le
 
-squashfs-install: $(KDIR)/root.squashfs
+squashfs-install: $(KDIR)/root.squashfs $(BOARD)-compile
+	$(TRACE) target/linux/image/$(BOARD)/install
 	$(MAKE) -C $(BOARD) install KERNEL="$(KERNEL)" FS="squashfs"
 
 squashfs-install-ib:
