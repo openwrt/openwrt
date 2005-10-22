@@ -1,10 +1,15 @@
 #!/bin/sh
 . /etc/nvram.sh
+is_clean() {
+	OFFSET="$((0x$(dd if=/dev/mtdblock/1 bs=1 skip=$((0x14)) count=2 2>&- | hexdump | grep 0000000 | cut -d ' ' -f 2) - 1))"
+	dd if=/dev/mtdblock/1 bs=1 skip=$OFFSET count=1 2>&- | hexdump -v | grep ' 0000' > /dev/null && return 255 || return 0
+}
+
 if [ "$1" != "failsafe" ]; then 
 	mount | grep jffs2 >&-
 	if [ $? = 0 ] ; then
 		if [ $(cat /proc/mtd | wc -l) = 6 ]; then
-			[ -f /proc/sys/diag ] && echo 5 > /proc/sys/diag
+			echo 5 > /proc/sys/diag
 			mtd unlock linux
 			mtd erase OpenWrt
 			jffs2root --move
@@ -13,7 +18,11 @@ if [ "$1" != "failsafe" ]; then
 			mount -o remount,rw /dev/root /
 		fi
 	else
-		if [ \! -x /usr/sbin/nvram -o -z "$(nvram get no_root_swap)" ]; then
+		if [ -z "$(nvram get no_root_swap)" ]; then
+			is_clean || {
+				mtd erase OpenWrt
+				jffs2root --clean
+			}
 			mtd unlock OpenWrt
 			mount -t jffs2 /dev/mtdblock/4 /jffs
 			pivot_root /jffs /jffs/rom
