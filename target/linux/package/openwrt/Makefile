@@ -47,7 +47,7 @@ install: compile openwrt-install
 openwrt-install:
 	$(IPKG) install $(IPKG_OPENWRT)
 
-compile: install-dev $(IPKG_OPENWRT)
+compile-targets: install-dev $(IPKG_OPENWRT)
 install-dev:
 	mkdir -p $(STAGING_DIR)/usr/include
 	cp -fpR ./include/[a-z]* $(STAGING_DIR)/usr/include/
