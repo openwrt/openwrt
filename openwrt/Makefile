@@ -1,4 +1,4 @@
-# Makefile for OpenWRT
+# Makefile for OpenWrt
 #
 # Copyright (C) 2005 by Felix Fietkau <openwrt@nbd.name>
 # Copyright (C) 1999-2004 by Erik Andersen <andersen@codepoet.org>
@@ -24,6 +24,7 @@
 #--------------------------------------------------------------
 TOPDIR=${shell pwd}
 export TOPDIR
+
 ifneq ($(DEVELOPER),)
 CONFIG_CONFIG_IN = Config.in.devel
 else
@@ -57,7 +58,8 @@ all: world
 # In this section, we need .config
 include .config.cmd
 
-world: $(DL_DIR) $(BUILD_DIR) configtest toolchain/install target/compile package/compile target/install package_index
+world: $(DL_DIR) $(BUILD_DIR) configtest 
+	$(MAKE) toolchain/install target/compile package/compile root_clean package/install target/install package_index
 
 .PHONY: all world clean dirclean distclean image_clean target_clean source configtest
 
@@ -66,9 +68,7 @@ configtest:
 	-scripts/configtest.pl
 
 package_index:
-	(cd $(PACKAGE_DIR); \
-		$(STAGING_DIR)/usr/bin/ipkg-make-index . > Packages \
-	)
+	(cd $(PACKAGE_DIR); $(STAGING_DIR)/usr/bin/ipkg-make-index . > Packages)
 
 $(DL_DIR):
 	@mkdir -p $(DL_DIR)
@@ -76,16 +76,18 @@ $(DL_DIR):
 $(BUILD_DIR):
 	@mkdir -p $(BUILD_DIR)
 
-source: $(TARGETS_SOURCE)
-
+source: toolchain/source package/source target/source
 
 package/%:
+	@$(TRACE) $@
 	$(MAKE) -C package $(patsubst package/%,%,$@)
 
 target/%:
+	@$(TRACE) $@
 	$(MAKE) -C target $(patsubst target/%,%,$@)
 
 toolchain/%:
+	@$(TRACE) $@
 	$(MAKE) -C toolchain $(patsubst toolchain/%,%,$@)
 
 #############################################################
@@ -93,30 +95,23 @@ toolchain/%:
 # Cleanup and misc junk
 #
 #############################################################
-image_clean:
+root_clean:
+	rm -rf $(BUILD_DIR)/linux-*/root $(BUILD_DIR)/root
+
+target_clean: root_clean
 	rm -f $(STAMP_DIR)/.*-compile
 	rm -f $(STAMP_DIR)/.*-install
 	rm -rf $(BIN_DIR)
-	
-target_clean: image_clean
-	rm -rf $(BUILD_DIR)/linux-*/root
 
-clean: target_clean
+clean: dirclean
+
+dirclean:
 	@$(MAKE) -C $(CONFIG) clean
-
-dirclean: clean
 	rm -rf $(BUILD_DIR)
 
-distclean: clean
-	rm -rf $(STAMP_DIR) $(DL_DIR) $(BUILD_DIR) $(TOOL_BUILD_DIR) $(STAGING_DIR)
+distclean: dirclean
+	rm -rf $(STAMP_DIR) $(DL_DIR) $(TOOL_BUILD_DIR) $(STAGING_DIR)
 	rm -f .config* .tmpconfig.h
-
-sourceball: distclean
-	set -e; \
-	cd ..; \
-	rm -f buildroot.tar.bz2; \
-	tar -cvf buildroot.tar buildroot; \
-	bzip2 -9 buildroot.tar; \
 
 else # ifeq ($(strip $(BR2_HAVE_DOT_CONFIG)),y)
 

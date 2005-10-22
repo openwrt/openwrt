@@ -1,0 +1,7 @@
+config BR2_PACKAGE_NVRAM
+	tristate "nvram - broadcom config utility"
+	default y 
+	depends BR2_LINUX_2_4_BRCM
+	help
+	  control utility for broadcom's 'nvram' config area
+
