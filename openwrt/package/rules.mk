@@ -68,7 +68,7 @@ configure:
 	}
 
 compile-targets:
-compile:
+compile: prepare
 	@[ -f $(PKG_BUILD_DIR)/.configured ] || { \
 		$(PKG_TRACE) Configuring...; \
 		$(MAKE) $(PKG_BUILD_DIR)/.configured $(MAKE_TRACE); \
