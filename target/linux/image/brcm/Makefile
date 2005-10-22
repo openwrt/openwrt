@@ -25,8 +25,13 @@ endif
 ifeq ($(FS),jffs2-4MB)
 TRXALIGN:=-a 0x10000
 endif
-$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx:
-	$(STAGING_DIR)/bin/trx -o $@ $(BUILD_DIR)/loader.gz $(KDIR)/vmlinux.lzma $(TRXALIGN) $(KDIR)/root.$(FS)
+
+$(KDIR)/loader.tmp.gz:
+	cp $(BUILD_DIR)/loader.gz $@
+	echo -ne "\\x00" >> $@
+
+$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx: $(KDIR)/loader.tmp.gz
+	$(STAGING_DIR)/bin/trx -o $@ $(KDIR)/loader.tmp.gz $(KDIR)/vmlinux.lzma $(TRXALIGN) $(KDIR)/root.$(FS)
 
 ifeq ($(KERNEL),2.6)
 FSNAME:=$(patsubst jffs2-%,jffs2,$(FS))
