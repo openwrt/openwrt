@@ -60,6 +60,7 @@ include .config.cmd
 
 world: $(DL_DIR) $(BUILD_DIR) configtest 
 	$(MAKE) toolchain/install target/compile package/compile root_clean package/install target/install package_index
+	$(TRACE) Build complete.
 
 .PHONY: all world clean dirclean distclean image_clean target_clean source configtest
 
@@ -107,7 +108,7 @@ target_clean: root_clean
 clean: dirclean
 
 dirclean:
-	@$(TRACE) Cleaning...
+	@$(TRACE) dirclean
 	@$(MAKE) -C $(CONFIG) clean
 	rm -rf $(BUILD_DIR)
 
