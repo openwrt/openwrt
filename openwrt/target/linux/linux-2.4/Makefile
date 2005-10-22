@@ -204,7 +204,6 @@ $(PACKAGE_DIR):
 	mkdir -p $(PACKAGE_DIR)
 
 $(LINUX_DIR)/.unpacked: $(DL_DIR)/$(LINUX_SOURCE)
-	@$(PKG_TRACE) Preparing...
 	-mkdir -p $(LINUX_BUILD_DIR)
 	bzcat $(DL_DIR)/$(LINUX_SOURCE) | tar -C $(LINUX_BUILD_DIR) $(TAR_OPTIONS) -
 	rm -f $(LINUX_DIR)
@@ -217,7 +216,6 @@ $(LINUX_DIR)/.patched: $(LINUX_DIR)/.unpacked
 	touch $(LINUX_DIR)/.patched
 
 $(LINUX_DIR)/.configured: $(LINUX_DIR)/.patched
-	@$(PKG_TRACE) Configuring...
 	-cp $(LINUX_KCONFIG) $(LINUX_DIR)/.config
 	$(SED) "s,^CROSS_COMPILE.*,CROSS_COMPILE=$(KERNEL_CROSS),g;" \
 	  $(LINUX_DIR)/Makefile  \
@@ -269,7 +267,7 @@ $(KERNEL_IPKG):
 	if [ -f ./config/$(BOARD).modules ]; then \
 		cp ./config/$(BOARD).modules $(KERNEL_IDIR)/etc/modules; \
 	fi
-	$(IPKG_BUILD) $(KERNEL_IDIR) $(LINUX_BUILD_DIR)
+	$(IPKG_BUILD) $(KERNEL_IDIR) $(LINUX_BUILD_DIR) $(MAKE_TRACE)
 
 source: $(DL_DIR)/$(LINUX_SOURCE)
 prepare: $(LINUX_DIR)/.configured

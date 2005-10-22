@@ -49,7 +49,7 @@ MAKEOPTS:=	BOARD="$(BOARD)" \
 	@$(CMD_TRACE) " done"
 	@$(END_TRACE)
 
-%-install: %-compile
+%-install:
 	@$(START_TRACE) "target/linux/package/$(patsubst %-install,%,$@)-install: "
 	$(MAKE) -C $(patsubst %-install,%,$@) \
 		$(MAKEOPTS) \

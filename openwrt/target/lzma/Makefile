@@ -17,11 +17,9 @@ LZMA_ALONE_DIR=$(LZMA_DIR)/SRC/7zip/Compress/LZMA_Alone
 TARGETS=$(LZMA_LIB_DIR)/liblzma.a $(LZMA_ALONE_DIR)/lzma
 
 $(DL_DIR)/$(LZMA_SOURCE):
-	@$(PKG_TRACE) Downloading...
 	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(LZMA_SOURCE) $(LZMA_MD5) $(LZMA_SITE) $(MAKE_TRACE)
 
 $(LZMA_DIR)/.unpacked: $(DL_DIR)/$(LZMA_SOURCE) 
-	@$(PKG_TRACE) Preparing...
 	@rm -rf $(LZMA_DIR) && mkdir -p $(LZMA_DIR)
 	unzip -q $^ -d $(LZMA_DIR)
 	patch -d $(LZMA_DIR) -p1 < lzma-406-zlib-stream.patch $(MAKE_TRACE)
@@ -29,7 +27,6 @@ $(LZMA_DIR)/.unpacked: $(DL_DIR)/$(LZMA_SOURCE)
 	
 $(LZMA_ALONE_DIR)/lzma $(LZMA_LIB_DIR)/liblzma.a: $(LZMA_DIR)/.built
 $(LZMA_DIR)/.built: $(LZMA_DIR)/.unpacked
-	@$(PKG_TRACE) Compiling...
 	$(MAKE) -C $(LZMA_LIB_DIR) $(MAKE_TRACE)
 	$(MAKE) -C $(LZMA_ALONE_DIR) $(MAKE_TRACE)
 	touch $@
@@ -40,7 +37,6 @@ lzma: $(TARGETS)
 lzma-source: $(DL_DIR)/$(LZMA_SOURCE)
 
 lzma-clean:
-	@$(PKG_TRACE) Cleaining...
 	-$(MAKE) -C $(LZMA_LIB_DIR) clean $(MAKE_TRACE)
 	-$(MAKE) -C $(LZMA_ALONE_DIR) clean $(MAKE_TRACE)
 	rm -f $(LZMA_DIR)/liblzma.a $(LZMA_DIR)/lzma
