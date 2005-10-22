@@ -255,7 +255,7 @@ install: compile $(TARGET_MODULES_DIR) $(KERNEL_IPKG)
 	$(MAKE) -C $(TOPDIR)/target/linux/package \
 		$(KPKG_MAKEOPTS) \
 		install
-	@{ [ "$(INSTALL_TARGETS)" != "" ] && $(IPKG_KERNEL) install $(INSTALL_TARGETS) || true } $(MAKE_TRACE)
+	@{ [ "$(INSTALL_TARGETS)" != "" ] && $(IPKG_KERNEL) install $(INSTALL_TARGETS) || true; } $(MAKE_TRACE)
 
 mostlyclean:
 	rm -f $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION)/.modules_done
