@@ -57,7 +57,7 @@ $(PKG_BUILD_DIR)/.built:
 	rm -rf $(PKG_INSTALL_DIR)
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
-		CCOPT="$(TARGET_CFLAGS)" \
+		CCOPT="$(TARGET_CFLAGS) -I$(BUILD_DIR)/linux/include" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		all install
 	touch $@
