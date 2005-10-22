@@ -26,7 +26,7 @@ $(PKG_BUILD_DIR)/.prepared:
 	touch $@
 
 $(PKG_BUILD_DIR)/.built:
-	$(TARGET_CC) $(DIAG_FLAGS) -o $@ diag_led.c
+	$(TARGET_CC) $(DIAG_FLAGS) -o $(PKG_BUILD_DIR)/diag.o diag_led.c
 	touch $@
 	
 $(IPKG_KMOD_DIAG):
