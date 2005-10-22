@@ -96,7 +96,7 @@ toolchain/%:
 #
 #############################################################
 root_clean:
-	@$(TRACE) Cleaning...
+	@$(TRACE) root_clean
 	rm -rf $(BUILD_DIR)/linux-*/root $(BUILD_DIR)/root
 
 target_clean: root_clean

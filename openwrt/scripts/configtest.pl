@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 my %change = (
-	'BUSYBOX' => 'make package/busybox-clean',
+	'^BUSYBOX' => 'make package/busybox-clean',
 	'OPENVPN_' => 'make package/openvpn-clean',
 	'SYSCONF_' => 'make package/base-files-clean target_clean',
 	'' => 'make target_clean'

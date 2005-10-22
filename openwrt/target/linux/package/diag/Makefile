@@ -25,13 +25,11 @@ $(PKG_BUILD_DIR)/.prepared:
 	mkdir -p $(PKG_BUILD_DIR)
 	touch $@
 
-$(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/diag.o
+$(PKG_BUILD_DIR)/.built:
+	$(TARGET_CC) $(DIAG_FLAGS) -o $@ diag_led.c
 	touch $@
 	
-$(PKG_BUILD_DIR)/diag.o: $(PKG_BUILD_DIR)/.prepared
-	$(TARGET_CC) $(DIAG_FLAGS) -o $@ diag_led.c
-
-$(IPKG_KMOD_DIAG): $(PKG_BUILD_DIR)/diag.o
+$(IPKG_KMOD_DIAG):
 	mkdir -p $(IDIR_KMOD_DIAG)/lib/modules/$(LINUX_VERSION)
 	cp $(PKG_BUILD_DIR)/diag.o $(IDIR_KMOD_DIAG)/lib/modules/$(LINUX_VERSION)/
 	$(IPKG_BUILD) $(IDIR_KMOD_DIAG) $(PACKAGE_DIR)
