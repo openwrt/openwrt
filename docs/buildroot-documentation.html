@@ -478,7 +478,7 @@ foo-compile: bar-compile
     18
     19	$(eval $(call PKG_template,FOO,foo,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
     20
-    21  $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
+    21  $(PKG_BUILD_DIR)/.configured:
     22          (cd $(PKG_BUILD_DIR); \
     23                  $(TARGET_CONFIGURE_OPTS) \
     24                  CFLAGS="$(TARGET_CFLAGS)" \
@@ -587,6 +587,16 @@ foo-compile: bar-compile
     recursevily strip all binaries and libraries. 
     Finally <code>IPKG_BUILD</code> is called to create the package.</p>
 
+	<p>If you want other targets to be executed at <code>compile</code>,
+	<code>install</code> or	<code>clean</code> time (e.g. for installing
+	a library into the staging dir), just create the targets (usually 
+	<code>install-dev</code> and <code>uninstall-dev</code>) and enable
+	them like this:
+<pre>
+compile-targets: install-dev
+clean-targets: uninstall-dev
+</pre>
+	
     <h3>Conclusion</h3>
 
     <p>As you can see, adding a software to buildroot is simply a
