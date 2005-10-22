@@ -29,7 +29,7 @@ endif
 
 $(eval $(call PKG_template,KMOD_ALSA,kmod-alsa,$(LINUX_VERSION)$(BOARD)+$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH),kernel-$(LINUX_VERSION)-$(BOARD) ($(KERNEL_RELEASE))))
 
-$(PKG_BUILD_DIR)/.configured:	$(PKG_BUILD_DIR)/.prepared
+$(PKG_BUILD_DIR)/.configured:
 	(cd $(PKG_BUILD_DIR); \
 		./configure \
 		--with-kernel=$(KERNEL_DIR) \
