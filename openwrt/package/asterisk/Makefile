@@ -10,6 +10,7 @@ PKG_MD5SUM:=0d7f1c680ae53a739f26a069ef8b580a
 PKG_SOURCE_URL:=http://ftp.digium.com/pub/asterisk/ ftp://ftp.digium.com/pub/asterisk/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/install
 PKG_CAT:=zcat
 
 include $(TOPDIR)/package/rules.mk
@@ -62,12 +63,13 @@ $(PKG_BUILD_DIR)/.built:
 		EXTRA_APPS="$(APPS)" \
 		EXTRA_MODS="$(MODS)" \
 		MODSPEEX="$(SPEEX)"
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		DESTDIR="$(PKG_INSTALL_DIR)" \
+		install samples
 	touch $@
 
 $(IPKG_ASTERISK):
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		DESTDIR="$(IDIR_ASTERISK)" \
-		install samples
+	cp -fpR $(PKG_INSTALL_DIR)/* $(IDIR_ASTERISK)
 	rm -rf $(IDIR_ASTERISK)/usr/sbin/astgenkey
 	rm -rf $(IDIR_ASTERISK)/usr/bin
 	rm -rf $(IDIR_ASTERISK)/usr/share
