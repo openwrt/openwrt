@@ -39,7 +39,7 @@ MAKEOPTS:=	BOARD="$(BOARD)" \
 		$(MAKEOPTS) \
 		prepare
 
-%-compile: %-prepare 
+%-compile:
 	@$(TRACE) target/linux/package/$(patsubst %-compile,%,$@)-compile
 	$(MAKE) -C $(patsubst %-compile,%,$@) \
 		$(MAKEOPTS) \
