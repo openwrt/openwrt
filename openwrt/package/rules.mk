@@ -37,7 +37,7 @@ endef
 
 ifneq ($(strip $(PKG_SOURCE)),)
 $(DL_DIR)/$(PKG_SOURCE):
-	@$(PKG_TRACE) Downloading...
+	@$(PKG_TRACE) "downloading... "
 	$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(PKG_SOURCE)" "$(PKG_MD5SUM)" $(PKG_SOURCE_URL) $(MAKE_TRACE) 
 endif
 
@@ -57,33 +57,29 @@ all: compile
 source: $(DL_DIR)/$(PKG_SOURCE)
 prepare:
 	@[ -f $(PKG_BUILD_DIR)/.prepared ] || { \
-		$(PKG_TRACE) Preparing...; \
+		$(CMD_TRACE) "preparing... "; \
 		$(MAKE) $(PKG_BUILD_DIR)/.prepared $(MAKE_TRACE); \
 	}
 
-configure:
+configure: prepare
 	@[ -f $(PKG_BUILD_DIR)/.configured ] || { \
-		$(PKG_TRACE) Configuring...; \
+		$(CMD_TRACE) "configuring... "; \
 		$(MAKE) $(PKG_BUILD_DIR)/.configured $(MAKE_TRACE); \
 	}
 
 compile-targets:
-compile: prepare
-	@[ -f $(PKG_BUILD_DIR)/.configured ] || { \
-		$(PKG_TRACE) Configuring...; \
-		$(MAKE) $(PKG_BUILD_DIR)/.configured $(MAKE_TRACE); \
-	}
-	@$(PKG_TRACE) Compiling...
+compile: configure
+	@$(CMD_TRACE) "compiling... " 
 	@$(MAKE) compile-targets $(MAKE_TRACE)
 
 install-targets:
 install:
-	@$(PKG_TRACE) Installing...
+	@$(CMD_TRACE) "installing... "
 	@$(MAKE) install-targets $(MAKE_TRACE)
 
 mostlyclean:
 rebuild:
-	$(PKG_TRACE) Rebuilding...
+	$(CMD_TRACE) "rebuilding... "
 	@-$(MAKE) mostlyclean 2>&1 >/dev/null
 	if [ -f $(PKG_BUILD_DIR)/.built ]; then \
 		$(MAKE) clean $(MAKE_TRACE); \
@@ -98,7 +94,7 @@ $(PACKAGE_DIR):
 
 clean-targets:
 clean: 
-	@$(PKG_TRACE) Cleaning...
+	@$(CMD_TRACE) "cleaning... " 
 	@$(MAKE) clean-targets $(MAKE_TRACE)
 	rm -rf $(PKG_BUILD_DIR)
 

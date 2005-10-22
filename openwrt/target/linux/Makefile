@@ -9,24 +9,31 @@ IB_DIR:=$(BUILD_DIR)/$(IB_NAME)
 define kernel_template
 
 $(1)/$(2)-clean:
+	$(TRACE) target/linux/linux-$(2)/clean
 	$(MAKE) -C linux-$(1) KERNEL="$(1)" BOARD="$(2)" clean
 
 $(1)/$(2)-prepare:
+	$(TRACE) target/linux/linux-$(2)/prepare
 	$(MAKE) -C linux-$(1) KERNEL="$(1)" BOARD="$(2)" prepare
 
 $(1)/$(2)-compile:
+	$(TRACE) target/linux/linux-$(2)/compile
 	$(MAKE) -C linux-$(1) KERNEL="$(1)" BOARD="$(2)" compile
 
 $(1)/$(2)-rebuild:
+	$(TRACE) target/linux/linux-$(2)/rebuild
 	$(MAKE) -C linux-$(1) KERNEL="$(1)" BOARD="$(2)" rebuild
 
 $(1)/$(2)-install:
+	$(TRACE) target/linux/linux-$(2)/install
 	$(MAKE) -C linux-$(1) KERNEL="$(1)" BOARD="$(2)" install
 
 $(1)/$(2)-image: $(1)/$(2)-install
+	$(TRACE) target/linux/image/install
 	$(MAKE) -C image KERNEL="$(1)" BOARD="$(2)" install
 
 $(1)/$(2)-install-ib:
+	$(TRACE) target/linux/image/install-ib
 	$(MAKE) -C image KERNEL="$(1)" BOARD="$(2)" IB_DIR="$(IB_DIR)" install-ib
 	echo '$$$$(eval $$$$(call image_template,$(2),$(1)))' >> $(IB_DIR)/kernel.mk
 

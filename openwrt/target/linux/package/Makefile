@@ -34,24 +34,32 @@ MAKEOPTS:=	BOARD="$(BOARD)" \
 
 
 %-prepare:
-	@$(TRACE) target/linux/package/$(patsubst %-prepare,%,$@)-prepare
+	@$(START_TRACE) "target/linux/package/$(patsubst %-prepare,%,$@)/prepare: "
 	$(MAKE) -C $(patsubst %-prepare,%,$@) \
 		$(MAKEOPTS) \
 		prepare
+	@$(CMD_TRACE) " done"
+	@$(END_TRACE)
 
 %-compile:
-	@$(TRACE) target/linux/package/$(patsubst %-compile,%,$@)-compile
+	@$(START_TRACE) "target/linux/package/$(patsubst %-compile,%,$@)-compile: "
 	$(MAKE) -C $(patsubst %-compile,%,$@) \
 		$(MAKEOPTS) \
 		compile
+	@$(CMD_TRACE) " done"
+	@$(END_TRACE)
 
 %-install: %-compile
-	@$(TRACE) target/linux/package/$(patsubst %-install,%,$@)-install
+	@$(START_TRACE) "target/linux/package/$(patsubst %-install,%,$@)-install: "
 	$(MAKE) -C $(patsubst %-install,%,$@) \
 		$(MAKEOPTS) \
 		install
+	@$(CMD_TRACE) " done"
+	@$(END_TRACE)
 
 %-clean:
-	@$(TRACE) target/linux/package/$(patsubst %-clean,%,$@)-clean
+	@$(START_TRACE) "target/linux/package/$(patsubst %-clean,%,$@)-clean: "
 	@$(MAKE) -C $(patsubst %-clean,%,$@) clean
+	@$(CMD_TRACE) " done"
+	@$(END_TRACE)
 
