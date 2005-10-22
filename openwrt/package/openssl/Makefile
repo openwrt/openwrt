@@ -24,8 +24,6 @@ include $(TOPDIR)/package/rules.mk
 $(eval $(call PKG_template,LIBOPENSSL,libopenssl,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,OPENSSL_UTIL,openssl-util,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
-.NOTPARALLEL:
-
 $(PKG_BUILD_DIR)/.configured:
 	$(SED) 's,/CFLAG=,/CFLAG= $(TARGET_SOFT_FLOAT) ,g' $(PKG_BUILD_DIR)/Configure
 	(cd $(PKG_BUILD_DIR); \
@@ -94,5 +92,5 @@ uninstall-dev:
 		$(STAGING_DIR)/usr/include/openssl \
 		$(STAGING_DIR)/usr/lib/lib{crypto,ssl}.{a,so*} \
 
-compile: install-dev
-clean: uninstall-dev
+compile-targets: install-dev
+clean-targets: uninstall-dev

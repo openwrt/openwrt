@@ -90,6 +90,6 @@ uninstall-dev:
 		$(STAGING_DIR)/usr/include/gd*.h \
 		$(STAGING_DIR)/usr/lib/libgd.{a,so*} \
 
-compile: install-dev
-clean: uninstall-dev
+compile-targets: install-dev
+clean-targets: uninstall-dev
 

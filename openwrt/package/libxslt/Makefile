@@ -98,8 +98,8 @@ uninstall-dev:
 		$(STAGING_DIR)/usr/lib/libxslt.{a,so*} \
 		$(STAGING_DIR)/usr/lib/pkgconfig/libxslt.pc \
 
-compile: install-dev
-clean: uninstall-dev
+compile-targets: install-dev
+clean-targets: uninstall-dev
 
 mostlyclean:
 	make -C $(PKG_BUILD_DIR) clean

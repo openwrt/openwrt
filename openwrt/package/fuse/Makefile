@@ -104,5 +104,5 @@ uninstall-dev:
 		$(STAGING_DIR)/usr/lib/libfuse.so* \
 		$(STAGING_DIR)/usr/lib/pkgconfig/fuse.pc \
 
-compile: install-dev
-clean: uninstall-dev
+compile-targets: install-dev
+clean-targets: uninstall-dev

@@ -25,10 +25,10 @@ include $(TOPDIR)/package/rules.mk
 
 $(eval $(call PKG_template,LIBNCURSES,libncurses,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
-$(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
+$(PKG_BUILD_DIR)/.configured:
 	touch $@
 
-$(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
+$(PKG_BUILD_DIR)/.built:
 	rm -rf $(PKG_INSTALL_DIR)
 	mkdir -p $(PKG_INSTALL_DIR)
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
@@ -158,6 +158,6 @@ uninstall-dev:
 		$(STAGING_DIR)/usr/lib/libcurses.so \
 		$(STAGING_DIR)/usr/lib/lib{ncurses,panel}.{a,so*} \
 
-compile: install-dev
-clean: uninstall-dev
+compile-targets: install-dev
+clean-targets: uninstall-dev
 

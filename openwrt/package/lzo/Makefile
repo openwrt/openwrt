@@ -18,7 +18,7 @@ include $(TOPDIR)/package/rules.mk
 
 $(eval $(call PKG_template,LIBLZO,liblzo,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
-$(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
+$(PKG_BUILD_DIR)/.configured: 
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(strip $(TARGET_CFLAGS))" \
@@ -78,5 +78,5 @@ uninstall-dev:
 	  $(STAGING_DIR)/usr/include/lzo*.h \
 	  $(STAGING_DIR)/usr/lib/liblzo.{a,so*} \
 
-compile: install-dev
-clean: uninstall-dev
+compile-targets: install-dev
+clean-targets: uninstall-dev

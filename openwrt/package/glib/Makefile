@@ -21,8 +21,7 @@ include $(TOPDIR)/package/rules.mk
 
 $(eval $(call PKG_template,GLIB1,glib1,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
-
-$(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
+$(PKG_BUILD_DIR)/.configured:
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status}; \
 		glib_cv_sizeof_gmutex=24 \
 		ac_cv_sizeof_char=1 \
@@ -72,7 +71,7 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 	);
 	touch $@
 
-$(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
+$(PKG_BUILD_DIR)/.built:
 	rm -rf $(PKG_INSTALL_DIR)
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
@@ -110,5 +109,5 @@ uninstall-dev:
 	rm -rf $(STAGING_DIR)/usr/lib/glib
 	rm -rf $(STAGING_DIR)/usr/lib/pkgconfig/g{lib,module,thread}.pc
 
-compile: install-dev
-clean: uninstall-dev
+compile-targets: install-dev
+clean-targets: uninstall-dev

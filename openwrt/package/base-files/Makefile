@@ -76,9 +76,10 @@ $(IPKG_HOTPLUG):
 	
 package-clean:
 	rm -f $(PACKAGES)
-clean: package-clean
+	
+clean-targets: package-clean
 prepare:
-compile: $(PACKAGES)
-install: compile
+compile-targets: $(PACKAGES)
+install-targets: compile
 	mkdir -p $(TARGET_DIR)
 	$(IPKG) install $(PACKAGES)

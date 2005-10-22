@@ -92,10 +92,8 @@ uninstall-dev:
 		$(STAGING_DIR)/usr/include/opencdk.h \
 		$(STAGING_DIR)/usr/lib/libopencdk.{a,so*} \
 
-compile: install-dev
-
-clean: uninstall-dev
-
+compile-targets: install-dev
+clean-targets: uninstall-dev
 mostlyclean:
 	make -C $(PKG_BUILD_DIR) clean
 	rm -f $(PKG_BUILD_DIR)/.built

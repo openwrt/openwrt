@@ -200,5 +200,5 @@ uninstall-dev:
 		$(STAGING_DIR)/usr/include/net-snmp \
 		$(STAGING_DIR)/usr/lib/libnetsnmp{,agent,helpers,mibs}.{a,so*} \
 
-compile: install-dev
-clean: uninstall-dev
+compile-targets: install-dev
+clean-targets: uninstall-dev

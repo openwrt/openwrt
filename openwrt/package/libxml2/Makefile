@@ -118,8 +118,8 @@ uninstall-dev:
 		$(STAGING_DIR)/usr/lib/libxml2.{a,so*} \
 		$(STAGING_DIR)/usr/lib/pkgconfig/libxml-2.0.pc \
 
-compile: install-dev
-clean: uninstall-dev
+compile-targets: install-dev
+clean-targets: uninstall-dev
 
 mostlyclean:
 	make -C $(PKG_BUILD_DIR) clean

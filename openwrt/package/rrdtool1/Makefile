@@ -101,5 +101,5 @@ uninstall-dev:
 		$(STAGING_DIR)/usr/lib/librrd.a \
 		$(STAGING_DIR)/usr/lib/librrd.so* \
 
-compile: install-dev
-clean: uninstall-dev
+compile-targets: install-dev
+clean-targets: uninstall-dev

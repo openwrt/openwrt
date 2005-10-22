@@ -18,8 +18,6 @@ include $(TOPDIR)/package/rules.mk
 
 $(eval $(call PKG_template,LIBELF,libelf,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
-.NOTPARALLEL:
-
 $(PKG_BUILD_DIR)/.configured:
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
 		$(TARGET_CONFIGURE_OPTS) \
@@ -85,5 +83,5 @@ uninstall-dev:
 	rm -rf $(STAGING_DIR)/usr/include/libelf*
 	rm -rf $(STAGING_DIR)/usr/lib/libelf.{a,so*}
 
-compile: install-dev
-clean: uninstall-dev
+compile-targets: install-dev
+clean-targets: uninstall-dev

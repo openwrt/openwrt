@@ -89,5 +89,5 @@ uninstall-dev:
 		$(STAGING_DIR)/usr/lib/libosip{,parser}2.{a,so*} \
 		$(STAGING_DIR)/usr/lib/pkgconfig/libosip2.pc \
 
-compile: install-dev
-clean: uninstall-dev
+compile-targets: install-dev
+clean-targets: uninstall-dev
