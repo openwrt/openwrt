@@ -19,8 +19,10 @@ $(KDIR)/root.jffs2-8MB: install-prepare
 	@rm -rf $(KDIR)/root/jffs
 	$(STAGING_DIR)/bin/mkfs.jffs2 $(JFFS2OPTS) -e 0x20000 -o $@ -d $(KDIR)/root
 
-jffs2-install: $(KDIR)/root.jffs2-4MB $(KDIR)/root.jffs2-8MB
+jffs2-install: $(KDIR)/root.jffs2-4MB $(KDIR)/root.jffs2-8MB $(BOARD)-compile
+	$(TRACE) target/linux/image/$(BOARD)/install
 	$(MAKE) -C $(BOARD) install KERNEL="$(KERNEL)" FS="jffs2-4MB"
+	$(TRACE) target/linux/image/$(BOARD)/install
 	$(MAKE) -C $(BOARD) install KERNEL="$(KERNEL)" FS="jffs2-8MB"
 
 jffs2-install-ib:

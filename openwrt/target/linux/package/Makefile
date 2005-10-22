@@ -34,20 +34,24 @@ MAKEOPTS:=	BOARD="$(BOARD)" \
 
 
 %-prepare:
+	@$(TRACE) target/linux/package/$(patsubst %-prepare,%,$@)-prepare
 	$(MAKE) -C $(patsubst %-prepare,%,$@) \
 		$(MAKEOPTS) \
 		prepare
 
 %-compile: %-prepare 
+	@$(TRACE) target/linux/package/$(patsubst %-compile,%,$@)-compile
 	$(MAKE) -C $(patsubst %-compile,%,$@) \
 		$(MAKEOPTS) \
 		compile
 
 %-install: %-compile
+	@$(TRACE) target/linux/package/$(patsubst %-install,%,$@)-install
 	$(MAKE) -C $(patsubst %-install,%,$@) \
 		$(MAKEOPTS) \
 		install
 
 %-clean:
+	@$(TRACE) target/linux/package/$(patsubst %-clean,%,$@)-clean
 	@$(MAKE) -C $(patsubst %-clean,%,$@) clean
 

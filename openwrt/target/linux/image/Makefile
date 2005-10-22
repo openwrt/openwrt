@@ -17,10 +17,15 @@ endif
 prepare:
 compile:
 install:
+
+$(BOARD)-compile:
+	@$(TRACE) target/linux/image/$(BOARD)/prepare
 	$(MAKE) -C $(BOARD) prepare
+	@$(TRACE) target/linux/image/$(BOARD)/compile
 	$(MAKE) -C $(BOARD) compile
 
 install-ib:
+	@$(TRACE) target/linux/image/$(BOARD)/install-ib
 	-$(MAKE) -C $(BOARD) IB_DIR="$(IB_DIR)" install-ib
 	mkdir -p $(IB_DIR)/build_$(ARCH)/linux-$(KERNEL)-$(BOARD)
 	cp $(BUILD_DIR)/linux-$(KERNEL)-$(BOARD)/kernel[-_]*.ipk $(IB_DIR)/build_$(ARCH)/linux-$(KERNEL)-$(BOARD)/	

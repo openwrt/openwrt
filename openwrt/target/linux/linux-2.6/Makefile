@@ -25,7 +25,7 @@ LINUX_KARCH:=$(shell echo $(ARCH) | sed -e 's/i[3-9]86/i386/' \
 LINUX_SOURCE := linux-$(LINUX_VERSION).tar.bz2
 LINUX_SOURCE_DIR := $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION)
 MODULES_DIR := $(LINUX_BUILD_DIR)/modules/$(MODULES_SUBDIR)
-TARGET_MODULES_DIR := $(TARGET_DIR)/lib/modules/$(LINUX_VERSION)
+TARGET_MODULES_DIR := $(LINUX_TARGET_DIR)/lib/modules/$(LINUX_VERSION)
 IPKG_KERNEL:=IPKG_TMP=$(BUILD_DIR)/tmp IPKG_INSTROOT=$(LINUX_TARGET_DIR) IPKG_CONF_DIR=$(LINUX_BUILD_DIR) $(SCRIPT_DIR)/ipkg -force-defaults -force-depends
 
 PKG_BUILD_DIR := $(LINUX_BUILD_DIR)/linux-modules
@@ -46,10 +46,6 @@ include $(LINUX_KCONFIG)
 
 INSTALL_TARGETS := $(KERNEL_IPKG)
 TARGETS := 
-
-ifeq ($(BOARD),brcm)
-include ./broadcom.mk
-endif
 
 $(eval $(call KMOD_template,ATM,atm,\
 	$(MODULES_DIR)/kernel/net/atm/atm.ko \
@@ -238,18 +234,15 @@ source: $(DL_DIR)/$(LINUX_SOURCE)
 prepare: $(LINUX_DIR)/.configured
 compile: $(LINUX_DIR)/.modules_done $(TARGETS)
 	ln -sf $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION) $(LINUX_DIR)
+	@$(TRACE) target/linux/package
 	$(MAKE) -C $(TOPDIR)/target/linux/package \
 		$(KPKG_MAKEOPTS) \
 		compile
 
 install: compile $(TARGET_MODULES_DIR) $(KERNEL_IPKG)
 	rm -rf $(LINUX_BUILD_DIR)/root*
+	cp -fpR $(BUILD_DIR)/root $(LINUX_BUILD_DIR)/
 	echo -e 'dest root /\noption offline_root $(LINUX_BUILD_DIR)/root' > $(LINUX_BUILD_DIR)/ipkg.conf
-	$(MAKE) -C $(TOPDIR)/package \
-		TARGET_DIR="$(LINUX_TARGET_DIR)" \
-		IPKG_CONF="$(LINUX_BUILD_DIR)" \
-		BOARD="$(BOARD)" \
-		install
 	$(MAKE) -C $(TOPDIR)/target/linux/package \
 		$(KPKG_MAKEOPTS) \
 		install

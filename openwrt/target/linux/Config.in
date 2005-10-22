@@ -1,13 +1,10 @@
-
-config BR2_LINUX_2_4
-	bool "Linux 2.4 (choose only one target board)"
-	default y
-
+choice
+	prompt "Target system"
+	
 config BR2_LINUX_2_4_BRCM
-	bool "Support for Broadcom based routers"
+	bool "Support for Broadcom based routers [2.4]"
 	default y
 	depends BR2_mipsel
-	depends BR2_LINUX_2_4
 	help
 	  Build firmware images for Broadcom based routers
 	  (e.g. Linksys WRT54G(S), Asus WL-500g, Motorola WR850G)
@@ -17,48 +14,30 @@ config BR2_LINUX_2_4_BRCM
 	  with TFTP client too. 
 
 config BR2_LINUX_2_4_AR7
-	bool "Support for TI AR7 based devices"
+	bool "Support for TI AR7 based devices [2.4]"
 	default n
 	depends BR2_mipsel
-	depends BR2_LINUX_2_4
 	help
 	  Build firmware images for TI AR7 based routers (w.g. Linksys WAG54G v2)
 
 config BR2_LINUX_2_4_SOEKRIS
-	bool "Support for Soekris boards"
+	bool "Support for Soekris boards [2.4]"
 	default n
 	depends BR2_i386
-	depends BR2_LINUX_2_4
 	help
 	  Build firmware images for Soekris based boards
 	  (e.g. net4521, net4801)
-	  
-	config BR2_TARGET_NET4521
-		default y
-		depends BR2_LINUX_2_4_SOEKRIS
-		bool "Soekris net4521"
-
-	config BR2_TARGET_NET4801
-		default y
-		depends BR2_LINUX_2_4_SOEKRIS
-		bool "Soekris net4801"
-
-config BR2_LINUX_2_6
-	bool "Linux 2.6"
-	default n
-
+	 
 config BR2_LINUX_2_6_BRCM
-	bool "Support for Broadcom based routers"
+	bool "Support for Broadcom based routers [2.6]"
 	default n
 	depends BR2_mipsel
-	depends BR2_LINUX_2_6
-	select BR2_PACKAGE_KMOD_B44
-	select BR2_PACKAGE_KMOD_MADWIFI
-	select BR2_PACKAGE_ROBOCFG
 	help
 	  Build firmware images for Broadcom based routers
 	  (e.g. Netgear WGT634u)
-	  
+	
+endchoice
+	
 comment "Kernel Modules"
 
 config BR2_PACKAGE_KMOD_SANGAM_ATM_A
@@ -103,6 +82,7 @@ config BR2_PACKAGE_KMOD_BRCM_ET
 config BR2_PACKAGE_KMOD_B44
 	tristate "Broadcom 44XX, 47XX ethernet driver"
 	default m
+	default y if BR2_LINUX_2_6_BRCM
 	help
 	  Free driver for Broadcom Ethernet chipsets (without switch support)
 
@@ -347,7 +327,6 @@ config BR2_PACKAGE_KMOD_PPPOATM
 
 config BR2_PACKAGE_KMOD_ATM
 	tristate "ATM support"
-	default m
 	default y if BR2_LINUX_2_4_AR7
 	help
 	  ATM support

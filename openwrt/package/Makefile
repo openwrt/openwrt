@@ -2,7 +2,6 @@
 include $(TOPDIR)/rules.mk
 
 package-:=tcp_wrappers
-package-y:=nvram
 package-$(BR2_PACKAGE_6TUNNEL) += 6tunnel
 package-$(BR2_PACKAGE_AICCU) += aiccu
 package-$(BR2_PACKAGE_AIRCRACK) += aircrack
@@ -125,6 +124,7 @@ package-$(BR2_PACKAGE_NFS_SERVER) += nfs-server
 package-$(BR2_PACKAGE_NMAP) += nmap
 package-$(BR2_PACKAGE_NOCATSPLASH) += nocatsplash
 package-$(BR2_PACKAGE_NTPCLIENT) += ntpclient
+package-$(BR2_PACKAGE_NVRAM) += nvram
 package-$(BR2_PACKAGE_OLSRD) += olsrd
 package-$(BR2_PACKAGE_OPENCDK) += opencdk
 package-$(BR2_PACKAGE_OPENLDAP) += openldap
@@ -206,7 +206,7 @@ package-$(BR2_PACKAGE_XINETD) += xinetd
 package-$(BR2_PACKAGE_XSUPPLICANT) += xsupplicant
 package-$(BR2_PACKAGE_ZLIB) += zlib
 
-DEV_LIBS:=tcp_wrappers glib ncurses openssl pcre popt zlib libnet libpcap mysql postgresql iptables matrixssl lzo gmp fuse portmap libelf uclibc++ speex libpng libgd wireless-tools nvram linux-atm
+DEV_LIBS:=tcp_wrappers glib ncurses openssl pcre popt zlib libnet libpcap mysql postgresql iptables matrixssl lzo gmp fuse portmap libelf uclibc++ speex libpng libgd wireless-tools nvram linux-atm libamsel libao libart libdaemon libdb libdnet libevent libffi-sable libgcrypt libgdbm libgpg-error libid3tag libmad libnet libnids libogg libosip2 libpcap libtasn1 libupnp libusb libvorbis libvorbisidec libxml2 libxslt
 DEV_LIBS_COMPILE:=$(patsubst %,%-compile,$(DEV_LIBS))
 SDK_DEFAULT_PACKAGES:=busybox dnsmasq iptables wireless-tools dropbear bridge ipkg ppp
 SDK_DEFAULT_COMPILE:=$(patsubst %,%-compile,$(SDK_DEFAULT_PACKAGES))
@@ -437,27 +437,34 @@ sdk-compile: $(DEV_LIBS_COMPILE) $(SDK_DEFAULT_COMPILE)
 $(STAMP_DIR):
 	mkdir -p $@
 
-%-prepare: $(STAMP_DIR)
-	@[ -f $(STAMP_DIR)/.$@ ] || $(MAKE) -C $(patsubst %-prepare,%,$@) prepare
+$(TARGET_DIR):
+	mkdir -p $(TARGET_DIR)
+
+%-prepare: $(STAMP_DIR) $(TARGET_DIR)
+	@[ -f $(STAMP_DIR)/.$@ ] || { \
+		$(TRACE) package/$(patsubst %-prepare,%,$@)/prepare; \
+		$(MAKE) -C $(patsubst %-prepare,%,$@) prepare; \
+	}
 	@touch $(STAMP_DIR)/.$@
 
 %-compile: %-prepare 
-	@[ -f $(STAMP_DIR)/.$@ ] || $(MAKE) -C $(patsubst %-compile,%,$@) compile
+	@[ -f $(STAMP_DIR)/.$@ ] || { \
+		$(TRACE) package/$(patsubst %-compile,%,$@)/compile; \
+		$(MAKE) -C $(patsubst %-compile,%,$@) compile; \
+	}
 	@touch $(STAMP_DIR)/.$@
 
 %-install: %-compile
-	@$(MAKE) -C $(patsubst %-install,%,$@) \
-		TARGET_DIR="$(TARGET_DIR)" \
-		IPKG_CONF="$(IPKG_CONF)" \
-		BOARD="$(BOARD)" \
-		KERNEL="$(KERNEL)" \
-		install
+	@$(TRACE) package/$(patsubst %-install,%,$@)/install
+	@$(MAKE) -C $(patsubst %-install,%,$@) install
 
 %-rebuild: 
+	@$(TRACE) package/$(patsubst %-rebuild,%,$@)/rebuild
 	@rm -f $(STAMP_DIR)/.$(patsubst %-rebuild,%,$@)-*
 	$(MAKE) -C $(patsubst %-rebuild,%,$@) rebuild
 
 %-clean:
+	@$(TRACE) package/$(patsubst %-clean,%,$@)/clean
 	@$(MAKE) -C $(patsubst %-clean,%,$@) clean
 	@rm -f $(STAMP_DIR)/.$(patsubst %-clean,%,$@)-*
 
