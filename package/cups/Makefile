@@ -111,6 +111,6 @@ uninstall-dev:
 	  $(STAGING_DIR)/usr/include/cups \
 	  $(STAGING_DIR)/usr/lib/libcups.{a,so*}
 
-compile: install-dev
-clean: uninstall-dev
+compile-targets: install-dev
+clean-targets: uninstall-dev
 

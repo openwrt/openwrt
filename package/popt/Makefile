@@ -77,5 +77,5 @@ uninstall-dev:
 	  $(STAGING_DIR)/usr/include/popt.h \
 	  $(STAGING_DIR)/usr/lib/libpopt.{a,so*} \
 
-compile: install-dev
-clean: uninstall-dev
+compile-targets: install-dev
+clean-targets: uninstall-dev

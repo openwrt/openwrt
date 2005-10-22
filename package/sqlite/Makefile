@@ -94,5 +94,5 @@ uninstall-dev:
 		$(STAGING_DIR)/usr/lib/libsqlite3.{a,so*} \
 		$(STAGING_DIR)/usr/lib/pkgconfig/sqlite3.pc \
 
-compile: install-dev
-clean: uninstall-dev
+compile-targets: install-dev
+clean-targets: uninstall-dev

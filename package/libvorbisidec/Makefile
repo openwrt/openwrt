@@ -82,8 +82,8 @@ uninstall-dev:
 		$(STAGING_DIR)/usr/lib/libvorbisidec.a \
 		$(STAGING_DIR)/usr/lib/libvorbisidec.so* \
 
-compile: install-dev
-clean: uninstall-dev
+compile-targets: install-dev
+clean-targets: uninstall-dev
 
 mostlyclean:
 	-$(MAKE) -C $(PKG_BUILD_DIR) clean

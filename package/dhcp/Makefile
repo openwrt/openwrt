@@ -19,7 +19,7 @@ include $(TOPDIR)/package/rules.mk
 $(eval $(call PKG_template,DHCP_RELAY,dhcp-relay,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,DHCP_SERVER,dhcp-server,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
-$(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
+$(PKG_BUILD_DIR)/.configured:
 	(cd $(PKG_BUILD_DIR) ; \
 		./configure \
 		  --copts "$(TARGET_CFLAGS)" \

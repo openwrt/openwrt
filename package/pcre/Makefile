@@ -88,5 +88,5 @@ uninstall-dev:
 	  $(STAGING_DIR)/usr/include/pcre{,posix}.h \
 	  $(STAGING_DIR)/usr/lib/libpcre{,posix}.{a,so*} \
 
-compile: install-dev
-clean: uninstall-dev
+compile-targets: install-dev
+clean-targets: uninstall-dev

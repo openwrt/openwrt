@@ -136,5 +136,5 @@ uninstall-dev:
 	rm -rf $(STAGING_DIR)/usr/include/{lber,ldap}*.h
 	rm -rf $(STAGING_DIR)/usr/lib/lib{lber,ldap}*.{a,so*}
 
-compile: install-dev
-clean: uninstall-dev
+compile-targets: install-dev
+clean-targets: uninstall-dev

@@ -87,8 +87,8 @@ uninstall-dev:
 		$(STAGING_DIR)/usr/lib/libogg.so* \
 		$(STAGING_DIR)/usr/lib/pkgconfig/ogg.pc \
 
-compile: install-dev
-clean: uninstall-dev
+compile-targets: install-dev
+clean-targets: uninstall-dev
 
 mostlyclean:
 	-$(MAKE) -C $(PKG_BUILD_DIR) clean

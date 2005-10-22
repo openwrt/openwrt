@@ -21,7 +21,7 @@ $(eval $(call PKG_template,LIBMATRIXSSL,libmatrixssl,$(PKG_VERSION)-$(PKG_RELEAS
 $(PKG_BUILD_DIR)/.configured:
 	touch $@
 
-$(PKG_BUILD_DIR)/.built:
+$(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 	$(MAKE) -C $(PKG_BUILD_DIR)/src \
 		$(TARGET_CONFIGURE_OPTS) \
 		DFLAGS="$(TARGET_CFLAGS) -Wall"
@@ -47,5 +47,5 @@ uninstall-dev:
 	  $(STAGING_DIR)/usr/include/matrixSsl* \
 	  $(STAGING_DIR)/usr/lib/libmatrixssl.so* \
 
-compile: install-dev
-clean: uninstall-dev
+compile-targets: install-dev
+clean-targets: uninstall-dev

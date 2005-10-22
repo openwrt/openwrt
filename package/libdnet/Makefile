@@ -91,5 +91,5 @@ uninstall-dev:
 		$(STAGING_DIR)/usr/include/dnet  \
 		$(STAGING_DIR)/usr/lib/libdnet.{a,so*} \
 
-compile: install-dev
-clean: uninstall-dev
+compile-targets: install-dev
+clean-targets: uninstall-dev

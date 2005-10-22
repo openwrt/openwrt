@@ -51,7 +51,7 @@ $(IPKG_UCLIBCXX):
 	mkdir -p $(PACKAGE_DIR)
 	$(IPKG_BUILD) $(IDIR_UCLIBCXX) $(PACKAGE_DIR)
 
-compile: install-dev
+compile-targets: install-dev
 install-dev: $(PKG_BUILD_DIR)/.built
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		TOPDIR="$(PKG_BUILD_DIR)/" \

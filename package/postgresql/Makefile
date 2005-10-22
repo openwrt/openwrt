@@ -23,8 +23,8 @@ include $(TOPDIR)/package/rules.mk
 $(eval $(call PKG_template,LIBPQ,libpq,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,PGSQL_CLI,pgsql-cli,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
-$(PKG_BUILD_DIR)/.configured:
 #	./configure advertise "--infodir", but does not support it, replaced with "--docdir"
+$(PKG_BUILD_DIR)/.configured:
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS)" \
@@ -123,5 +123,5 @@ uninstall-dev:
 		$(STAGING_DIR)/usr/include/postgresql \
 		$(STAGING_DIR)/usr/lib/libpq.{a,so*} \
 
-compile: install-dev
-clean: uninstall-dev
+compile-targets: install-dev
+clean-targets: uninstall-dev

@@ -120,9 +120,8 @@ uninstall-dev:
 		$(STAGING_DIR)/usr/lib/pkgconfig/gnutls{,-extra}.pc \
 		$(STAGING_DIR)/usr/share/aclocal/libgnutls{,-extra}.m4 \
 
-compile: install-dev
-
-clean: uninstall-dev
+compile-targets: install-dev
+clean-targets: uninstall-dev
 
 mostlyclean:
 	make -C $(PKG_BUILD_DIR) clean

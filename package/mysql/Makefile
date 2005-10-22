@@ -126,5 +126,5 @@ uninstall-dev:
 	  $(STAGING_DIR)/usr/include/mysql \
 	  $(STAGING_DIR)/usr/lib/mysql \
 
-compile: install-dev
-clean: uninstall-dev
+compile-targets: install-dev
+clean-targets: uninstall-dev

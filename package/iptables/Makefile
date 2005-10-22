@@ -84,5 +84,5 @@ uninstall-dev:
 	rm -rf $(STAGING_DIR)/usr/include/libipq.h
 	rm -rf $(STAGING_DIR)/usr/lib/libipq.a
 
-compile: install-dev
-clean: uninstall-dev
+compile-targets: install-dev
+clean-targets: uninstall-dev

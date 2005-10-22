@@ -87,9 +87,8 @@ uninstall-dev:
 		$(STAGING_DIR)/usr/lib/libgpg-error.{a,so*} \
 		$(STAGING_DIR)/usr/share/aclocal/gpg-error.m4 \
 
-compile: install-dev
-
-clean: uninstall-dev
+compile-targets: install-dev
+clean-targets: uninstall-dev
 
 mostlyclean:
 	make -C $(PKG_BUILD_DIR) clean
