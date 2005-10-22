@@ -75,5 +75,5 @@ install-dev: $(STAGING_DIR)/usr/include/madwifi/net80211/ieee80211.h
 uninstall-dev:
 	rm -rf $(STAGING_DIR)/usr/include/madwifi
 
-compile: install-dev
-clean: uninstall-dev
+compile-targets: install-dev
+clean-targets: uninstall-dev
