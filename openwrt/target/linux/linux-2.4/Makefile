@@ -251,6 +251,11 @@ $(STAGING_DIR)/include/linux/version.h: $(LINUX_DIR)/.configured
 $(STAMP_DIR)/.linux-compile: $(LINUX_DIR)/.modules_done
 	@mkdir -p $(STAMP_DIR)
 	@$(MAKE) $(TARGETS)
+	ln -sf $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION) $(LINUX_DIR)
+	@$(TRACE) target/linux/package
+	$(MAKE) -C $(TOPDIR)/target/linux/package \
+		$(KPKG_MAKEOPTS) \
+		compile
 	touch $@
 
 $(TARGET_MODULES_DIR): 
@@ -271,11 +276,6 @@ prepare: $(LINUX_DIR)/.configured
 compile:
 	@$(PKG_TRACE) Compiling...
 	$(MAKE) $(STAMP_DIR)/.linux-compile $(MAKE_TRACE)
-	ln -sf $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION) $(LINUX_DIR)
-	@$(TRACE) target/linux/package
-	$(MAKE) -C $(TOPDIR)/target/linux/package \
-		$(KPKG_MAKEOPTS) \
-		compile
 
 install: compile $(TARGET_MODULES_DIR) $(KERNEL_IPKG)
 	rm -rf $(LINUX_BUILD_DIR)/root*
