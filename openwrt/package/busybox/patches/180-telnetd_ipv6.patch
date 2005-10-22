@@ -1,0 +1,12 @@
+diff -urN busybox.old/networking/telnetd.c busybox.dev/networking/telnetd.c
+--- busybox.old/networking/telnetd.c	2005-08-17 03:29:10.000000000 +0200
++++ busybox.dev/networking/telnetd.c	2005-10-22 19:37:49.976396000 +0200
+@@ -49,6 +49,8 @@
+ 
+ #define BUFSIZE 4000
+ 
++#undef CONFIG_FEATURE_IPV6
++
+ #ifdef CONFIG_FEATURE_IPV6
+ #define SOCKET_TYPE	AF_INET6
+ typedef struct sockaddr_in6 sockaddr_type;
