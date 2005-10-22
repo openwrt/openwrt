@@ -445,7 +445,6 @@ $(TARGET_DIR):
 		$(START_TRACE) "package/$(patsubst %-prepare,%,$@)/prepare: "; \
 		$(MAKE) -C $(patsubst %-prepare,%,$@) prepare && { \
 			touch $(STAMP_DIR)/.$@; \
-		} || { \
 			$(CMD_TRACE) " done"; \
 			$(END_TRACE); \
 		} \
@@ -457,7 +456,6 @@ $(TARGET_DIR):
 		$(MAKE) -C $(patsubst %-compile,%,$@) compile && { \
 			touch $(STAMP_DIR)/.$(patsubst %-compile,%,$@)-prepare; \
 			touch $(STAMP_DIR)/.$@; \
-		} || { \
 			$(CMD_TRACE) " done"; \
 			$(END_TRACE); \
 		} \
