@@ -20,7 +20,7 @@ include $(TOPDIR)/package/rules.mk
 $(eval $(call PKG_template,BIND_SERVER,bind-server,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,BIND_CLIENT,bind-client,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
-$(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
+$(PKG_BUILD_DIR)/.configured:
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(strip $(TARGET_CFLAGS))" \
@@ -55,7 +55,7 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 	);
 	touch $(PKG_BUILD_DIR)/.configured
 
-$(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
+$(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR)/lib/dns \
 		CC="$(HOSTCC)" \
 		CFLAGS="-O2" \
@@ -65,7 +65,7 @@ $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		all install
-	touch $(PKG_BUILD_DIR)/.built
+	touch $@
 
 $(IPKG_BIND_SERVER):
 	install -d -m0755 $(IDIR_BIND_SERVER)/usr/sbin
