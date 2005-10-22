@@ -37,7 +37,7 @@ endef
 
 ifneq ($(strip $(PKG_SOURCE)),)
 $(DL_DIR)/$(PKG_SOURCE):
-	@$(PKG_TRACE) "downloading... "
+	@$(CMD_TRACE) "downloading... "
 	$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(PKG_SOURCE)" "$(PKG_MD5SUM)" $(PKG_SOURCE_URL) $(MAKE_TRACE) 
 endif
 
@@ -55,7 +55,7 @@ endif
 all: compile
 
 source: $(DL_DIR)/$(PKG_SOURCE)
-prepare:
+prepare: source
 	@[ -f $(PKG_BUILD_DIR)/.prepared ] || { \
 		$(CMD_TRACE) "preparing... "; \
 		$(MAKE) $(PKG_BUILD_DIR)/.prepared $(MAKE_TRACE); \
