@@ -41,7 +41,7 @@ $(IPKG_WIRELESS_TOOLS):
 	$(RSTRIP) $(IDIR_WIRELESS_TOOLS)
 	$(IPKG_BUILD) $(IDIR_WIRELESS_TOOLS) $(PACKAGE_DIR)
 
-install-dev:
+install-dev: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/{lib,include}
 	cp -a $(PKG_BUILD_DIR)/libiw.so* $(STAGING_DIR)/usr/lib/
 	ln -sf libiw.so.28 $(STAGING_DIR)/usr/lib/libiw.so
@@ -51,5 +51,5 @@ uninstall-dev:
 	rm -f $(STAGING_DIR)/usr/lib/libiw.*
 	rm -f $(STAGING_DIR)/usr/include/{iwlib,wireless}.h
 
-compile: install-dev
-clean: uninstall-dev
+compile-targets: install-dev
+clean-targets: uninstall-dev
