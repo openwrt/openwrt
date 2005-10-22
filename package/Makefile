@@ -443,21 +443,25 @@ $(TARGET_DIR):
 %-prepare: $(STAMP_DIR) $(TARGET_DIR)
 	@[ -f $(STAMP_DIR)/.$@ ] || { \
 		$(START_TRACE) "package/$(patsubst %-prepare,%,$@)/prepare: "; \
-		$(MAKE) -C $(patsubst %-prepare,%,$@) prepare; \
-		$(CMD_TRACE) " done"; \
-		$(END_TRACE); \
+		$(MAKE) -C $(patsubst %-prepare,%,$@) prepare && { \
+			touch $(STAMP_DIR)/.$@; \
+		} || { \
+			$(CMD_TRACE) " done"; \
+			$(END_TRACE); \
+		} \
 	}
-	@touch $(STAMP_DIR)/.$@
 
 %-compile:
 	@[ -f $(STAMP_DIR)/.$@ ] || { \
 		$(START_TRACE) "package/$(patsubst %-compile,%,$@)/compile: "; \
-		$(MAKE) -C $(patsubst %-compile,%,$@) compile; \
-		$(CMD_TRACE) " done"; \
-		$(END_TRACE); \
+		$(MAKE) -C $(patsubst %-compile,%,$@) compile && { \
+			touch $(STAMP_DIR)/.$(patsubst %-compile,%,$@)-prepare; \
+			touch $(STAMP_DIR)/.$@; \
+		} || { \
+			$(CMD_TRACE) " done"; \
+			$(END_TRACE); \
+		} \
 	}
-	@touch $(STAMP_DIR)/.$(patsubst %-compile,%,$@)-prepare
-	@touch $(STAMP_DIR)/.$@
 
 %-install: %-compile
 	@$(START_TRACE) "package/$(patsubst %-install,%,$@)/install: "
