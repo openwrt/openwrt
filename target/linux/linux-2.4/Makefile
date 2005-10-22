@@ -284,7 +284,7 @@ install: compile $(TARGET_MODULES_DIR) $(KERNEL_IPKG)
 	$(MAKE) -C $(TOPDIR)/target/linux/package \
 		$(KPKG_MAKEOPTS) \
 		install
-	{ [ "$(INSTALL_TARGETS)" != "" ] && $(IPKG_KERNEL) install $(INSTALL_TARGETS) || true } $(MAKE_TRACE) 
+	@{ [ "$(INSTALL_TARGETS)" != "" ] && $(IPKG_KERNEL) install $(INSTALL_TARGETS) || true; } $(MAKE_TRACE) 
 
 mostlyclean:
 	@$(PKG_TRACE) Cleaning...
