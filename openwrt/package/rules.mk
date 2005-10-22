@@ -73,10 +73,8 @@ compile:
 		$(PKG_TRACE) Configuring...; \
 		$(MAKE) $(PKG_BUILD_DIR)/.configured $(MAKE_TRACE); \
 	}
-	@[ -f $(PKG_BUILD_DIR)/.built ] || { \
-		$(PKG_TRACE) Compiling...; \
-		$(MAKE) compile-targets $(MAKE_TRACE); \
-	}
+	@$(PKG_TRACE) Compiling...
+	@$(MAKE) compile-targets $(MAKE_TRACE)
 
 install-targets:
 install:
