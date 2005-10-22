@@ -1,7 +1,5 @@
 #!/bin/sh
 . /etc/functions.sh
-. /etc/nvram.overrides
-[ -e /etc/config/network ] && . /etc/config/network
 type=$1
 
 [ "$(nvram get ${type}_proto)" = "pptp" ] || exit
@@ -12,12 +10,10 @@ for module in slhc ppp_generic ppp_async ip_gre; do
 	/sbin/insmod $module 2>&- >&-
 done
 
-if=$(nvram get pptp_ifname)
-ip=$(nvram get ${type}_ipaddr)
-netmask=$(nvram get ${type}_netmask)
-[ -z "$ip" -o -z "$if" ] || ifconfig $if $ip ${netmask:+netmask $netmask} broadcast + up
-
 while :; do
+	PPTP_PROTO="$(nvram get pptp_proto)"
+	[ "$PPTP_PROTO" = "static" ] || PPTP_PROTO=""
+	PPTP_PROTO="${PPTP_PROTO:-dhcp}"
 	IP=$(nvram get pptp_server_ip)
 	USERNAME=$(nvram get ppp_username)
 	PASSWORD=$(nvram get ppp_passwd)
@@ -28,18 +24,25 @@ while :; do
 	MTU=$(nvram get ppp_mtu)
 	MTU=${MTU:+ mtu $MTU mru $MTU}
 
+	do_ifup $PPTP_PROTO $type
+	
+	# hack for some buggy ISPs
+	NETMASK=$(nvram get ${type}_netmask)
+	IFNAME=$(nvram get pptp_ifname)
+	[ -z "$NETMASK" -o -z "$IFNAME" ] || ifconfig $IFNAME netmask $NETMASK
+
 	/usr/sbin/pppd nodetach \
 		pty "/usr/sbin/pptp $IP --loglevel 0 --nolaunchpppd" \
 		file /etc/ppp/options.pptp \
 		connect /bin/true \
 		usepeerdns \
 		defaultroute \
+		replacedefaultroute \
 		linkname $type \
 		user "$USERNAME" \
 		password "$PASSWORD" \
 		$MTU \
 		$IDLETIME \
-		$REDIAL \
-		$IFNAME
+		$REDIAL
 done &
 
