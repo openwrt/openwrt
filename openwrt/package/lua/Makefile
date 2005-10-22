@@ -27,7 +27,7 @@ $(eval $(call PKG_template,LUA_EXAMPLES,lua-examples,$(PKG_VERSION)-$(PKG_RELEAS
 $(PKG_BUILD_DIR)/.configured:
 	touch $@
 
-$(PKG_BUILD_DIR)/.built:
+$(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CC="$(TARGET_CROSS)gcc" \
 		LD="$(TARGET_CROSS)ld" \
@@ -96,5 +96,5 @@ uninstall-dev:
 		$(STAGING_DIR)/usr/include/lauxlib.h \
 		$(STAGING_DIR)/usr/lib/liblua{,lib}.{a,so*} \
 
-compile: install-dev
-clean: uninstall-dev
+compile-targets: install-dev
+clean-targets: uninstall-dev

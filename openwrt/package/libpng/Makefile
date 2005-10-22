@@ -85,6 +85,6 @@ uninstall-dev:
 	  $(STAGING_DIR)/usr/lib/libpng{,12}.{a,so*} \
 	  $(STAGING_DIR)/usr/lib/pkgconfig/libpng{,12}.pc
 
-compile: install-dev
-clean: uninstall-dev
+compile-targets: install-dev
+clean-targets: uninstall-dev
 

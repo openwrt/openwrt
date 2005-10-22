@@ -86,5 +86,5 @@ uninstall-dev:
 		$(STAGING_DIR)/usr/lib/libid3.so \
 		$(STAGING_DIR)/usr/lib/libid3-*.so.* \
 
-compile: install-dev
-clean: uninstall-dev
+compile-targets: install-dev
+clean-targets: uninstall-dev

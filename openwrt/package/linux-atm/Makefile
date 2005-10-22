@@ -87,9 +87,8 @@ uninstall-dev:
 		$(STAGING_DIR)/usr/include/atm{,d,sap}.h \
 		$(STAGING_DIR)/usr/lib/libatm.{a,so*} \
 
-compile: install-dev
-
-clean: uninstall-dev
+compile-targets: install-dev
+clean-targets: uninstall-dev
 
 mostlyclean:
 	$(MAKE) -C $(PKG_BUILD_DIR) clean

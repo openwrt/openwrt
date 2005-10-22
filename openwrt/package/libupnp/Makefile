@@ -21,7 +21,7 @@ $(eval $(call PKG_template,LIBUPNP,libupnp,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)
 $(PKG_BUILD_DIR)/.configured:
 	touch $@
 
-$(PKG_BUILD_DIR)/.built:
+$(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 	$(MAKE) -C $(PKG_BUILD_DIR)/upnp \
 		$(TARGET_CONFIGURE_OPTS) \
 		OPT_FLAGS="$(TARGET_CFLAGS)" \
@@ -54,5 +54,5 @@ uninstall-dev:
 		$(STAGING_DIR)/usr/lib/libthreadutil.so \
 		$(STAGING_DIR)/usr/lib/libupnp.so \
 
-compile: install-dev
-clean: uninstall-dev
+compile-targets: install-dev
+clean-targets: uninstall-dev

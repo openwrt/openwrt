@@ -13,8 +13,6 @@ include $(TOPDIR)/package/rules.mk
 
 $(eval $(call PKG_template,LIBPTHREAD,libpthread,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
-.NOTPARALLEL:
-
 $(PKG_BUILD_DIR)/.prepared:
 	mkdir -p $(PKG_BUILD_DIR)
 	touch $@
@@ -25,7 +23,7 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 	touch $@
 
-$(IPKG_LIBPTHREAD):
+$(IPKG_LIBPTHREAD): $(PKG_BUILD_DIR)/.built
 	mkdir -p $(IDIR_LIBPTHREAD)/lib
 	cp -fpR $(STAGING_DIR)/lib/libpthread.so.* $(IDIR_LIBPTHREAD)/lib/
 	cp -fpR $(STAGING_DIR)/lib/libpthread-*.so $(IDIR_LIBPTHREAD)/lib/

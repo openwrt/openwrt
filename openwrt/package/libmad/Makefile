@@ -94,8 +94,8 @@ uninstall-dev:
 		$(STAGING_DIR)/usr/lib/libmad.a \
 		$(STAGING_DIR)/usr/lib/libmad.so* \
 
-compile: install-dev
-clean: uninstall-dev
+compile-targets: install-dev
+clean-targets: uninstall-dev
 
 mostlyclean:
 	-$(MAKE) -C $(PKG_BUILD_DIR) clean

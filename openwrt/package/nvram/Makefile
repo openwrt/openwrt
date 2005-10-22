@@ -34,7 +34,7 @@ $(IPKG_NVRAM):
 	$(IPKG_BUILD) $(IDIR_NVRAM) $(PACKAGE_DIR)
 
 
-compile: install-dev
+compile-targets: install-dev
 install-dev: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/lib
 	cp $(PKG_BUILD_DIR)/*.so $(STAGING_DIR)/usr/lib

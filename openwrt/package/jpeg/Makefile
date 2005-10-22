@@ -82,6 +82,6 @@ uninstall-dev:
 	  $(STAGING_DIR)/usr/include/j{config,error,morecfg}.h \
 	  $(STAGING_DIR)/usr/lib/libjpeg.{a,so*} \
 
-compile: install-dev
-clean: uninstall-dev
+compile-targets: install-dev
+clean-targets: uninstall-dev
 

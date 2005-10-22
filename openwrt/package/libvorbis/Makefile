@@ -95,8 +95,8 @@ uninstall-dev:
 		$(STAGING_DIR)/usr/lib/libvorbis{,enc,file}.so* \
 		$(STAGING_DIR)/usr/lib/pkgconfig/vorbis{,enc,file}.pc \
 
-compile: install-dev
-clean: uninstall-dev
+compile-targets: install-dev
+clean-targets: uninstall-dev
 
 mostlyclean:
 	-$(MAKE) -C $(PKG_BUILD_DIR) clean

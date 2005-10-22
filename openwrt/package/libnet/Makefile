@@ -96,5 +96,5 @@ uninstall-dev:
 		$(STAGING_DIR)/usr/include/libnet*  \
 		$(STAGING_DIR)/usr/lib/libnet.{a,so*} \
 
-compile: install-dev
-clean: uninstall-dev
+compile-targets: install-dev
+clean-targets: uninstall-dev

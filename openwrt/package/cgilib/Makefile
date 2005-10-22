@@ -20,7 +20,7 @@ $(eval $(call PKG_template,CGILIB,cgilib,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(PKG_BUILD_DIR)/.configured:
 	touch $@
 
-$(PKG_BUILD_DIR)/.built:
+$(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
 		OFLAGS="$(TARGET_CFLAGS)" \
@@ -41,11 +41,10 @@ $(STAGING_DIR)/usr/lib/libcgi.so: $(PKG_BUILD_DIR)/.built
 	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/libcgi.so
-
 uninstall-dev:
 	rm -rf \
 	  $(STAGING_DIR)/usr/include/cgi.h \
 	  $(STAGING_DIR)/usr/lib/libcgi.{a,so*} \
 
-compile: install-dev
-clean: uninstall-dev
+compile-targets: install-dev
+clean-targets: uninstall-dev

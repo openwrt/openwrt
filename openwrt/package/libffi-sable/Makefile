@@ -80,5 +80,5 @@ uninstall-dev:
 		$(STAGING_DIR)/usr/include/ffi{,target}.h \
 		$(STAGING_DIR)/usr/lib/libffi.{a,so*} \
 
-compile: install-dev
-clean: uninstall-dev
+compile-targets: install-dev
+clean-targets: uninstall-dev

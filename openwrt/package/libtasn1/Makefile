@@ -94,9 +94,8 @@ uninstall-dev:
 		$(STAGING_DIR)/usr/lib/libtasn1.{a,so*} \
 		$(STAGING_DIR)/usr/share/aclocal/libtasn1.m4 \
 
-compile: install-dev
-
-clean: uninstall-dev
+compile-targets: install-dev
+clean-targets: uninstall-dev
 
 mostlyclean:
 	make -C $(PKG_BUILD_DIR) clean

@@ -60,5 +60,5 @@ uninstall-dev:
 	  $(STAGING_DIR)/usr/include/tcpd.h \
 	  $(STAGING_DIR)/usr/lib/libwrap.{a,so*} \
 
-compile: install-dev
-clean: uninstall-dev
+compile-targets: install-dev
+clean-targets: uninstall-dev

@@ -79,5 +79,5 @@ uninstall-dev:
 	  $(STAGING_DIR)/usr/lib/libevent.{a,so} \
 	  $(STAGING_DIR)/usr/lib/libevent-$(PKG_VERSION).so* \
 
-compile: install-dev
-clean: uninstall-dev
+compile-targets: install-dev
+clean-targets: uninstall-dev

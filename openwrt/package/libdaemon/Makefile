@@ -88,8 +88,8 @@ uninstall-dev:
 		$(STAGING_DIR)/usr/lib/libdaemon.so* \
 		$(STAGING_DIR)/usr/lib/pkgconfig/libdaemon.pc \
 
-compile: install-dev
-clean: uninstall-dev
+compile-targets: install-dev
+clean-targets: uninstall-dev
 
 mostlyclean:
 	-$(MAKE) -C $(PKG_BUILD_DIR) clean
