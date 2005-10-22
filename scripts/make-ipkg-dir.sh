@@ -12,7 +12,7 @@ grep '^[^(Version|Architecture)]' "$CONTROL" > "$TARGET/CONTROL/control"
 grep '^Maintainer' "$CONTROL" 2>&1 >/dev/null || \
         echo "Maintainer: OpenWrt Developers Team <openwrt-devel@openwrt.org>" >> "$TARGET/CONTROL/control"
 grep '^Source' "$CONTROL" 2>&1 >/dev/null || {
-        pkgbase=$(echo "$WD)" | sed -e "s|^$TOPDIR/||g")
+        pkgbase=$(echo "$WD" | sed -e "s|^$TOPDIR/||g")
         [ "$pkgbase" = "$WD" ] && src="N/A" || src="$BASE/$pkgbase"
         echo "Source: $src" >> "$TARGET/CONTROL/control"
 }
