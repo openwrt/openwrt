@@ -42,8 +42,11 @@ $(IPKG_OPENWRT): $(IDIR_OPENWRT)
 	$(RSTRIP) $(IDIR_OPENWRT)
 	$(IPKG_BUILD) $(IDIR_OPENWRT) $(PACKAGE_DIR)
 
-install: compile
+install: compile openwrt-install
+
+openwrt-install:
 	$(IPKG) install $(IPKG_OPENWRT)
+
 compile: install-dev $(IPKG_OPENWRT)
 install-dev:
 	mkdir -p $(STAGING_DIR)/usr/include

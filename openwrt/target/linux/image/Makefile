@@ -15,8 +15,16 @@ include ./tgz.mk
 endif
 
 prepare:
+	@$(PKG_TRACE) Preparing...
+	$(MAKE) prepare-targets $(MAKE_TRACE)
 compile:
+	@$(PKG_TRACE) Compiling...
+	$(MAKE) compile-targets $(MAKE_TRACE)
 install:
+	@$(PKG_TRACE) Installing...
+	$(MAKE) install-targets $(MAKE_TRACE)
+
+.PHONY: prepare compile install
 
 $(BOARD)-compile:
 	@$(TRACE) target/linux/image/$(BOARD)/prepare
@@ -38,4 +46,6 @@ install-prepare:
 
 rebuild: clean prepare compile install
 clean:
+	@$(PKG_TRACE) Cleaning...
+	$(MAKE) clean-targets $(MAKE_TRACE)
 
