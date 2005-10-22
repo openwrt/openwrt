@@ -6,6 +6,8 @@
 type=$1
 debug "### ifdown $type ###"
 if=$(nvram get ${type}_ifname)
-if_valid $if || exit 
-$DEBUG ifconfig $if down
+proto=$(nvram get ${type}_proto)
+if_valid $if && $DEBUG ifconfig $if down
 kill $(cat /var/run/${if}.pid 2>&-) 2>&-
+[ "$if" = "ppp0" ] && killall pppd
+killall ifup.$proto >&- 2>&-
