@@ -43,7 +43,7 @@ ifneq ($(6),)
 	done
 endif
 	$(8)
-	$(IPKG_BUILD) $$(I_$(1)) $(PACKAGE_DIR)
+	$(IPKG_BUILD) $$(I_$(1)) $(PACKAGE_DIR) $(MAKE_TRACE)
 
 endef
 

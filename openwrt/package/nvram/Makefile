@@ -16,6 +16,9 @@ $(PKG_BUILD_DIR)/.prepared:
 	cp -a ./src/* $(PKG_BUILD_DIR)
 	touch $@
 
+$(PKG_BUILD_DIR)/.configured:
+	touch $@
+
 $(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \

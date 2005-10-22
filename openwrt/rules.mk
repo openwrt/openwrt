@@ -6,6 +6,7 @@ ifeq ($(V),)
 V=99
 endif
 
+
 ifneq ($(V),0)
 TRACE:=echo "---> "
 else
@@ -20,7 +21,7 @@ endif
 
 ifeq (${shell [ "$(V)" -ge 10 ] && echo 1},)
 EXTRA_MAKEFLAGS:=-s
-MAKE_TRACE:=>&/dev/null
+MAKE_TRACE:=2>&1 >&/dev/null || { echo "Build failed. Please re-run make with V=99 to see what's going on"; /bin/false; }
 else
 MAKE_TRACE:=
 EXTRA_MAKEFLAGS:=

@@ -6,13 +6,13 @@ IDIR_$(1):=$(PKG_BUILD_DIR)/ipkg/$(2)
 INFO_$(1):=$(IPKG_STATE_DIR)/info/$(2).list
 
 ifneq ($(BR2_PACKAGE_$(1)),)
-compile: $$(IPKG_$(1))
+compile-targets: $$(IPKG_$(1))
 endif
 ifneq ($(DEVELOPER),)
-compile: $$(IPKG_$(1))
+compile-targets: $$(IPKG_$(1))
 endif
 ifeq ($(BR2_PACKAGE_$(1)),y)
-install: $$(INFO_$(1))
+install-targets: $$(INFO_$(1))
 endif
 
 IDEPEND_$(1):=$$(strip $(5))
@@ -34,9 +34,11 @@ $(2)-clean:
 clean: $(2)-clean
 endef
 
+
 ifneq ($(strip $(PKG_SOURCE)),)
 $(DL_DIR)/$(PKG_SOURCE):
-	$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(PKG_SOURCE)" "$(PKG_MD5SUM)" $(PKG_SOURCE_URL)
+	@$(PKG_TRACE) Downloading...
+	$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(PKG_SOURCE)" "$(PKG_MD5SUM)" $(PKG_SOURCE_URL) $(MAKE_TRACE) 
 endif
 
 ifneq ($(strip $(PKG_CAT)),)
@@ -53,24 +55,53 @@ endif
 all: compile
 
 source: $(DL_DIR)/$(PKG_SOURCE)
-prepare: $(PKG_BUILD_DIR)/.prepared
+prepare:
+	@[ -f $(PKG_BUILD_DIR)/.prepared ] || { \
+		$(PKG_TRACE) Preparing...; \
+		$(MAKE) $(PKG_BUILD_DIR)/.prepared $(MAKE_TRACE); \
+	}
+
+configure:
+	@[ -f $(PKG_BUILD_DIR)/.configured ] || { \
+		$(PKG_TRACE) Configuring...; \
+		$(MAKE) $(PKG_BUILD_DIR)/.configured $(MAKE_TRACE); \
+	}
+
+compile-targets:
 compile:
+	@[ -f $(PKG_BUILD_DIR)/.configured ] || { \
+		$(PKG_TRACE) Configuring...; \
+		$(MAKE) $(PKG_BUILD_DIR)/.configured $(MAKE_TRACE); \
+	}
+	@[ -f $(PKG_BUILD_DIR)/.built ] || { \
+		$(PKG_TRACE) Compiling...; \
+		$(MAKE) compile-targets $(MAKE_TRACE); \
+	}
+
+install-targets:
 install:
+	@$(PKG_TRACE) Installing...
+	@$(MAKE) install-targets $(MAKE_TRACE)
+
 mostlyclean:
 rebuild:
-	-$(MAKE) mostlyclean
+	$(PKG_TRACE) Rebuilding...
+	@-$(MAKE) mostlyclean 2>&1 >/dev/null
 	if [ -f $(PKG_BUILD_DIR)/.built ]; then \
-		$(MAKE) clean; \
+		$(MAKE) clean $(MAKE_TRACE); \
 	fi
-	$(MAKE) compile
+	$(MAKE) compile $(MAKE_TRACE)
 
-$(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
-$(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
+$(PKG_BUILD_DIR)/.configured: prepare
+$(PKG_BUILD_DIR)/.built: configure
 
 $(PACKAGE_DIR):
 	mkdir -p $@
 
+clean-targets:
 clean: 
+	@$(PKG_TRACE) Cleaning...
+	@$(MAKE) clean-targets $(MAKE_TRACE)
 	rm -rf $(PKG_BUILD_DIR)
 
 .PHONY: all source prepare compile install clean
