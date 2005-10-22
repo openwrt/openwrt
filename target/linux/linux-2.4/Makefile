@@ -204,6 +204,7 @@ $(PACKAGE_DIR):
 	mkdir -p $(PACKAGE_DIR)
 
 $(LINUX_DIR)/.unpacked: $(DL_DIR)/$(LINUX_SOURCE)
+	@$(PKG_TRACE) Preparing...
 	-mkdir -p $(LINUX_BUILD_DIR)
 	bzcat $(DL_DIR)/$(LINUX_SOURCE) | tar -C $(LINUX_BUILD_DIR) $(TAR_OPTIONS) -
 	rm -f $(LINUX_DIR)
@@ -211,34 +212,35 @@ $(LINUX_DIR)/.unpacked: $(DL_DIR)/$(LINUX_SOURCE)
 	touch $(LINUX_DIR)/.unpacked
 
 $(LINUX_DIR)/.patched: $(LINUX_DIR)/.unpacked
-	$(PATCH) $(LINUX_DIR) ./patches/generic
-	[ -d ./patches/$(BOARD) ] && $(PATCH) $(LINUX_DIR) ./patches/$(BOARD)
+	$(PATCH) $(LINUX_DIR) ./patches/generic $(MAKE_TRACE)
+	[ -d ./patches/$(BOARD) ] && $(PATCH) $(LINUX_DIR) ./patches/$(BOARD) $(MAKE_TRACE)
 	touch $(LINUX_DIR)/.patched
 
 $(LINUX_DIR)/.configured: $(LINUX_DIR)/.patched
+	@$(PKG_TRACE) Configuring...
 	-cp $(LINUX_KCONFIG) $(LINUX_DIR)/.config
 	$(SED) "s,^CROSS_COMPILE.*,CROSS_COMPILE=$(KERNEL_CROSS),g;" \
 	  $(LINUX_DIR)/Makefile  \
 	  $(LINUX_DIR)/arch/*/Makefile
 	$(SED) "s,\-mcpu=,\-mtune=,g;" $(LINUX_DIR)/arch/mips/Makefile
-	$(MAKE) -C $(LINUX_DIR) ARCH=$(LINUX_KARCH) oldconfig include/linux/version.h
+	$(MAKE) -C $(LINUX_DIR) ARCH=$(LINUX_KARCH) oldconfig include/linux/version.h $(MAKE_TRACE)
 	touch $(LINUX_DIR)/.configured
 
 $(LINUX_DIR)/.depend_done:  $(LINUX_DIR)/.configured
-	$(MAKE) -C $(LINUX_DIR) ARCH=$(LINUX_KARCH) dep
+	$(MAKE) -C $(LINUX_DIR) ARCH=$(LINUX_KARCH) dep $(MAKE_TRACE)
 	touch $(LINUX_DIR)/.depend_done
 
 $(LINUX_DIR)/vmlinux: $(LINUX_DIR)/.depend_done
-	$(MAKE) -C $(LINUX_DIR) ARCH=$(LINUX_KARCH) PATH=$(TARGET_PATH)
+	$(MAKE) -C $(LINUX_DIR) ARCH=$(LINUX_KARCH) PATH=$(TARGET_PATH) $(MAKE_TRACE)
 
 $(LINUX_KERNEL): $(LINUX_DIR)/vmlinux
-	$(TARGET_CROSS)objcopy -O binary -R .reginfo -R .note -R .comment -R .mdebug -S $< $@ 
+	$(TARGET_CROSS)objcopy -O binary -R .reginfo -R .note -R .comment -R .mdebug -S $< $@ $(MAKE_TRACE)
 	touch -c $(LINUX_KERNEL)
 
 $(LINUX_DIR)/.modules_done: $(LINUX_KERNEL) $(LINUX_IMAGE)
 	rm -rf $(LINUX_BUILD_DIR)/modules
-	$(MAKE) -C $(LINUX_DIR) ARCH=$(LINUX_KARCH) PATH=$(TARGET_PATH) modules
-	$(MAKE) -C $(LINUX_DIR) DEPMOD=true INSTALL_MOD_PATH=$(LINUX_BUILD_DIR)/modules modules_install
+	$(MAKE) -C $(LINUX_DIR) ARCH=$(LINUX_KARCH) PATH=$(TARGET_PATH) modules $(MAKE_TRACE)
+	$(MAKE) -C $(LINUX_DIR) DEPMOD=true INSTALL_MOD_PATH=$(LINUX_BUILD_DIR)/modules modules_install $(MAKE_TRACE)
 	touch $(LINUX_DIR)/.modules_done
 
 $(STAGING_DIR)/include/linux/version.h: $(LINUX_DIR)/.configured
@@ -249,11 +251,6 @@ $(STAGING_DIR)/include/linux/version.h: $(LINUX_DIR)/.configured
 $(STAMP_DIR)/.linux-compile: $(LINUX_DIR)/.modules_done
 	@mkdir -p $(STAMP_DIR)
 	@$(MAKE) $(TARGETS)
-	ln -sf $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION) $(LINUX_DIR)
-	@$(TRACE) target/linux/package
-	$(MAKE) -C $(TOPDIR)/target/linux/package \
-		$(KPKG_MAKEOPTS) \
-		compile
 	touch $@
 
 $(TARGET_MODULES_DIR): 
@@ -262,7 +259,7 @@ $(TARGET_MODULES_DIR):
 $(KERNEL_IPKG):
 	rm -rf $(KERNEL_IDIR)
 	mkdir -p $(KERNEL_IDIR)/etc
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(KERNEL_IDIR) ../control/kernel.control $(PKG_RELEASE) $(ARCH)
+	$(SCRIPT_DIR)/make-ipkg-dir.sh $(KERNEL_IDIR) ../control/kernel.control $(PKG_RELEASE) $(ARCH) 
 	echo 'Package: kernel-$(LINUX_VERSION)-$(BOARD)' >> $(KERNEL_IDIR)/CONTROL/control
 	if [ -f ./config/$(BOARD).modules ]; then \
 		cp ./config/$(BOARD).modules $(KERNEL_IDIR)/etc/modules; \
@@ -271,7 +268,14 @@ $(KERNEL_IPKG):
 
 source: $(DL_DIR)/$(LINUX_SOURCE)
 prepare: $(LINUX_DIR)/.configured
-compile: $(STAMP_DIR)/.linux-compile
+compile:
+	@$(PKG_TRACE) Compiling...
+	$(MAKE) $(STAMP_DIR)/.linux-compile $(MAKE_TRACE)
+	ln -sf $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION) $(LINUX_DIR)
+	@$(TRACE) target/linux/package
+	$(MAKE) -C $(TOPDIR)/target/linux/package \
+		$(KPKG_MAKEOPTS) \
+		compile
 
 install: compile $(TARGET_MODULES_DIR) $(KERNEL_IPKG)
 	rm -rf $(LINUX_BUILD_DIR)/root*
@@ -280,23 +284,25 @@ install: compile $(TARGET_MODULES_DIR) $(KERNEL_IPKG)
 	$(MAKE) -C $(TOPDIR)/target/linux/package \
 		$(KPKG_MAKEOPTS) \
 		install
-	[ "$(INSTALL_TARGETS)" != "" ] && $(IPKG_KERNEL) install $(INSTALL_TARGETS) || true
+	{ [ "$(INSTALL_TARGETS)" != "" ] && $(IPKG_KERNEL) install $(INSTALL_TARGETS) || true } $(MAKE_TRACE) 
 
 mostlyclean:
+	@$(PKG_TRACE) Cleaning...
 	rm -f $(STAMP_DIR)/.linux-compile
 	rm -f $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION)/.modules_done
 	rm -f $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION)/.drivers-unpacked
-	$(MAKE) -C $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION) clean
+	$(MAKE) -C $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION) clean $(MAKE_TRACE)
 	rm -f $(LINUX_KERNEL) $(LINUX_IMAGE)
 
 rebuild:
 	-$(MAKE) mostlyclean
 	if [ -f $(LINUX_KERNEL) ]; then \
-		$(MAKE) clean; \
+		$(MAKE) clean $(MAKE_TRACE); \
 	fi
-	$(MAKE) compile
+	$(MAKE) compile $(MAKE_TRACE)
 
 clean:
+	@$(PKG_TRACE) Cleaning...
 	rm -f $(STAMP_DIR)/.linux-compile
 	rm -rf $(LINUX_BUILD_DIR)
 	rm -f $(TARGETS)

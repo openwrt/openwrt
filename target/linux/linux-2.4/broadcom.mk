@@ -27,10 +27,10 @@ LINUX_ET_DRIVER=kernel-source-et-0.11.tar.gz
 LINUX_ET_MD5SUM=bdc23ab59440793e35cab039457f6358
 
 $(DL_DIR)/$(LINUX_BINARY_WL_DRIVER):
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(LINUX_BINARY_WL_DRIVER) $(LINUX_BINARY_WL_MD5SUM) $(LINUX_BINARY_DRIVER_SITE)
+	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(LINUX_BINARY_WL_DRIVER) $(LINUX_BINARY_WL_MD5SUM) $(LINUX_BINARY_DRIVER_SITE) $(MAKE_TRACE)
 
 $(DL_DIR)/$(LINUX_ET_DRIVER):
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(LINUX_ET_DRIVER) $(LINUX_ET_MD5SUM) $(LINUX_BINARY_DRIVER_SITE)
+	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(LINUX_ET_DRIVER) $(LINUX_ET_MD5SUM) $(LINUX_BINARY_DRIVER_SITE) $(MAKE_TRACE)
 	
 $(LINUX_DIR)/.unpacked: $(DL_DIR)/$(LINUX_BINARY_WL_DRIVER) $(DL_DIR)/$(LINUX_ET_DRIVER)
 $(LINUX_DIR)/.depend_done: $(LINUX_DIR)/.drivers-unpacked
@@ -42,11 +42,11 @@ $(LINUX_DIR)/.drivers-unpacked: $(LINUX_DIR)/.unpacked
 	zcat $(DL_DIR)/$(LINUX_ET_DRIVER) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
 	# copy binary wlan driver
 	mkdir -p $(LINUX_DIR)/drivers/net/{et,wl}
-	cp -a $(BUILD_DIR)/wl/*.o $(LINUX_DIR)/drivers/net/wl
+	cp -fpR $(BUILD_DIR)/wl/*.o $(LINUX_DIR)/drivers/net/wl
 	# copy proprietary et source
-	cp -a $(BUILD_DIR)/et/* $(LINUX_DIR)/drivers/net/et
+	cp -fpR $(BUILD_DIR)/et/* $(LINUX_DIR)/drivers/net/et
 	mkdir -p $(LINUX_DIR)/arch/mips/bcm947xx/include/
-	cp -a $(BUILD_DIR)/et/*.h $(LINUX_DIR)/arch/mips/bcm947xx/include/
+	cp -fpR $(BUILD_DIR)/et/*.h $(LINUX_DIR)/arch/mips/bcm947xx/include/
 	touch $@
 
 linux-dirclean: drivers-clean

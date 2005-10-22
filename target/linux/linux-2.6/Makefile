@@ -179,9 +179,11 @@ $(PACKAGE_DIR):
 
 $(DL_DIR)/$(LINUX_SOURCE):
 	-mkdir -p $(DL_DIR)
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(LINUX_SOURCE) $(LINUX_KERNEL_MD5SUM) $(LINUX_SITE)
+	@$(PKG_TRACE) Downloading...
+	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(LINUX_SOURCE) $(LINUX_KERNEL_MD5SUM) $(LINUX_SITE) $(MAKE_TRACE)
 
 $(LINUX_DIR)/.unpacked: $(DL_DIR)/$(LINUX_SOURCE)
+	@$(PKG_TRACE) Preparing...
 	-mkdir -p $(LINUX_BUILD_DIR)
 	bzcat $(DL_DIR)/$(LINUX_SOURCE) | tar -C $(LINUX_BUILD_DIR) $(TAR_OPTIONS) -
 	rm -f $(LINUX_DIR)
@@ -189,26 +191,27 @@ $(LINUX_DIR)/.unpacked: $(DL_DIR)/$(LINUX_SOURCE)
 	touch $(LINUX_DIR)/.unpacked
 
 $(LINUX_DIR)/.patched: $(LINUX_DIR)/.unpacked
-	$(PATCH) $(LINUX_DIR) ./patches/generic
-	[ -d ./patches/$(BOARD) ] && $(PATCH) $(LINUX_DIR) ./patches/$(BOARD)
+	$(PATCH) $(LINUX_DIR) ./patches/generic $(MAKE_TRACE)
+	[ -d ./patches/$(BOARD) ] && $(PATCH) $(LINUX_DIR) ./patches/$(BOARD) $(MAKE_TRACE)
 	touch $(LINUX_DIR)/.patched
 
 $(LINUX_DIR)/.configured: $(LINUX_DIR)/.patched
+	@$(PKG_TRACE) Configuring...
 	-cp $(LINUX_KCONFIG) $(LINUX_DIR)/.config
-	$(MAKE) -C $(LINUX_DIR) ARCH=$(LINUX_KARCH) oldconfig
+	$(MAKE) -C $(LINUX_DIR) ARCH=$(LINUX_KARCH) oldconfig $(MAKE_TRACE)
 	touch $(LINUX_DIR)/.configured
 
 $(LINUX_DIR)/vmlinux: $(LINUX_DIR)/.configured
-	$(MAKE) -C $(LINUX_DIR) CROSS_COMPILE=$(TARGET_CROSS) ARCH=$(LINUX_KARCH) PATH=$(TARGET_PATH)
+	$(MAKE) -C $(LINUX_DIR) CROSS_COMPILE=$(TARGET_CROSS) ARCH=$(LINUX_KARCH) PATH=$(TARGET_PATH) $(MAKE_TRACE)
 
 $(LINUX_KERNEL): $(LINUX_DIR)/vmlinux
-	$(TARGET_CROSS)objcopy -O binary -R .reginfo -R .note -R .comment -R .mdebug -S $< $@ 
+	$(TARGET_CROSS)objcopy -O binary -R .reginfo -R .note -R .comment -R .mdebug -S $< $@ $(MAKE_TRACE)
 	touch -c $(LINUX_KERNEL)
 	
 $(LINUX_DIR)/.modules_done: $(LINUX_KERNEL) $(LINUX_IMAGE)
 	rm -rf $(LINUX_BUILD_DIR)/modules
-	$(MAKE) -C $(LINUX_DIR) CROSS_COMPILE=$(TARGET_CROSS) ARCH=$(LINUX_KARCH) PATH=$(TARGET_PATH) modules
-	$(MAKE) -C $(LINUX_DIR) CROSS_COMPILE=$(TARGET_CROSS) ARCH=$(LINUX_KARCH) PATH=$(TARGET_PATH) DEPMOD=true INSTALL_MOD_PATH=$(LINUX_BUILD_DIR)/modules modules_install
+	$(MAKE) -C $(LINUX_DIR) CROSS_COMPILE=$(TARGET_CROSS) ARCH=$(LINUX_KARCH) PATH=$(TARGET_PATH) modules $(MAKE_TRACE)
+	$(MAKE) -C $(LINUX_DIR) CROSS_COMPILE=$(TARGET_CROSS) ARCH=$(LINUX_KARCH) PATH=$(TARGET_PATH) DEPMOD=true INSTALL_MOD_PATH=$(LINUX_BUILD_DIR)/modules modules_install $(MAKE_TRACE)
 	touch $(LINUX_DIR)/.modules_done
 
 $(STAGING_DIR)/include/linux/version.h: $(LINUX_DIR)/.configured
@@ -228,11 +231,17 @@ $(KERNEL_IPKG):
 		cp ./config/$(BOARD).modules $(KERNEL_IDIR)/etc/modules; \
 	fi
 	$(IPKG_BUILD) $(KERNEL_IDIR) $(LINUX_BUILD_DIR)
-
+	
+$(STAMP_DIR)/.linux-compile: $(LINUX_DIR)/.modules_done
+	@mkdir -p $(STAMP_DIR)
+	@$(MAKE) $(TARGETS)
+	touch $@
 
 source: $(DL_DIR)/$(LINUX_SOURCE)
 prepare: $(LINUX_DIR)/.configured
-compile: $(LINUX_DIR)/.modules_done $(TARGETS)
+compile:
+	@$(PKG_TRACE) Compiling...
+	$(MAKE) $(STAMP_DIR)/.linux-compile $(MAKE_TRACE)
 	ln -sf $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION) $(LINUX_DIR)
 	@$(TRACE) target/linux/package
 	$(MAKE) -C $(TOPDIR)/target/linux/package \
@@ -246,7 +255,7 @@ install: compile $(TARGET_MODULES_DIR) $(KERNEL_IPKG)
 	$(MAKE) -C $(TOPDIR)/target/linux/package \
 		$(KPKG_MAKEOPTS) \
 		install
-	[ "$(INSTALL_TARGETS)" != "" ] && $(IPKG_KERNEL) install $(INSTALL_TARGETS) || true
+	@{ [ "$(INSTALL_TARGETS)" != "" ] && $(IPKG_KERNEL) install $(INSTALL_TARGETS) || true } $(MAKE_TRACE)
 
 mostlyclean:
 	rm -f $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION)/.modules_done
@@ -262,5 +271,7 @@ rebuild:
 	$(MAKE) compile
 
 clean:
+	@$(PKG_TRACE) Cleaning...
+	rm -f $(STAMP_DIR)/.linux-compile
 	rm -rf $(LINUX_BUILD_DIR)
 	rm -f $(TARGETS)
