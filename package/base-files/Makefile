@@ -6,6 +6,11 @@ PKG_NAME:=base-files
 PKG_RELEASE:=2
 PKG_BUILD_DIR:=$(BUILD_DIR)/base-files
 
+REV:=${shell svn info | grep Revision | cut -d ' ' -f 2}
+ifeq ($(REV),)
+REV:=0
+endif
+
 include $(TOPDIR)/package/rules.mk
 
 IDIR_BASE:=$(PKG_BUILD_DIR)/base-files
@@ -34,6 +39,7 @@ $(PKG_BUILD_DIR)/.built:
 $(IPKG_BASE):
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_BASE) ipkg/$(PKG_NAME).control $(PKG_RELEASE) $(ARCH)
 	cp -a ./default/* $(IDIR_BASE)
+	$(SED) 's,$$R,r$(REV),g' $(IDIR_BASE)/etc/banner
 	mkdir -p $(IDIR_BASE)/jffs
 	mkdir -p $(IDIR_BASE)/dev
 	mkdir -p $(IDIR_BASE)/proc
