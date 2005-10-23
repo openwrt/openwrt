@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=wpa_supplicant
-PKG_VERSION:=0.3.9
+PKG_VERSION:=0.4.5
 PKG_RELEASE:=1
-PKG_MD5SUM:=113873aafc4fcaa0515841a6f0a17fd0
+PKG_MD5SUM:=28347563119f09fc963bcdf9d16265a3
 
 PKG_SOURCE_URL:=http://hostap.epitest.fi/releases/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -24,7 +24,7 @@ $(PKG_BUILD_DIR)/.configured:
 $(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
-		CPPFLAGS="-I$(TOPDIR)/package/openwrt/include -I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include" \
+		CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include -I$(STAGING_DIR)/usr/include/madwifi" \
 		LDFLAGS="-L$(STAGING_DIR)/usr/lib" \
 		OPT_FLAGS="$(TARGET_CFLAGS)" \
 		KERNEL=$(LINUX_DIR) \
