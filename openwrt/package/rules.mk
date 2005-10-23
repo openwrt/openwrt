@@ -86,8 +86,8 @@ rebuild:
 	fi
 	$(MAKE) compile $(MAKE_TRACE)
 
-$(PKG_BUILD_DIR)/.configured: prepare
-$(PKG_BUILD_DIR)/.built: configure
+$(PKG_BUILD_DIR)/.configured:
+$(PKG_BUILD_DIR)/.built:
 
 $(PACKAGE_DIR):
 	mkdir -p $@
