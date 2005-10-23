@@ -22,7 +22,7 @@ $(PKG_BUILD_DIR)/.configured:
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)"  \
-		CXXFLAGS="$(TARGET_CFLAGS) -fno-builtin"  \
+		CXXFLAGS="$(TARGET_CFLAGS) -fno-builtin -fno-rtti"  \
 		CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(LINUX_DIR)/include" \
 		LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib" \
 		LIBS="-Wl,-Bdynamic,-luClibc++,-Bstatic,-lstdc++,-Bdynamic,-lz,-lm,-lc" \
