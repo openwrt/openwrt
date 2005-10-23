@@ -187,16 +187,53 @@ endif
 $(eval $(call KMOD_template,SCHED,sched,\
 	$(MODULES_DIR)/kernel/net/sched/*.o \
 ,CONFIG_SCHED))
+
 $(eval $(call KMOD_template,VIDEODEV,videodev,\
 	$(MODULES_DIR)/kernel/drivers/media/video/videodev.o \
-,CONFIG_VIDEO_DEV))
+,CONFIG_VIDEO_DEV,,62,videodev))
+
 $(eval $(call KMOD_template,PWC,pwc,\
 	$(MODULES_DIR)/kernel/drivers/usb/pwc.o \
-,CONFIG_USB_PWC))
+,CONFIG_USB_PWC,kmod-videodev,63,pwc))
+
 $(eval $(call KMOD_template,AX25,ax25,\
 	$(MODULES_DIR)/kernel/net/ax25/ax25.o \
 	$(MODULES_DIR)/kernel/drivers/net/hamradio/mkiss.o \
-,CONFIG_AX25))
+,CONFIG_AX25,,90,ax25 mkiss))
+
+$(eval $(call KMOD_template,NET_3C59X,net-3c59x,\
+	$(MODULES_DIR)/kernel/drivers/net/3c59x.o \
+,CONFIG_VORTEX,,10,3c59x))
+
+$(eval $(call KMOD_template,NET_8139TOO,net-8139too,\
+	$(MODULES_DIR)/kernel/drivers/net/8139too.o \
+	$(MODULES_DIR)/kernel/drivers/net/mii.o \
+,CONFIG_VORTEX,,10,mii 8139too))
+
+$(eval $(call KMOD_template,NET_AIRO,net-airo,\
+	$(MODULES_DIR)/kernel/drivers/net/wireless/airo.o \
+,CONFIG_AIRO,,10,airo))
+
+$(eval $(call KMOD_template,NET_HERMES,net-hermes,\
+	$(MODULES_DIR)/kernel/drivers/net/wireless/hermes.o \
+	$(MODULES_DIR)/kernel/drivers/net/wireless/orinoco.o \
+,CONFIG_HERMES,,10,hermes orinoco))
+
+$(eval $(call KMOD_template,NET_HERMES_PCI,net-hermes-pci,\
+	$(MODULES_DIR)/kernel/drivers/net/wireless/orinoco_pci.o \
+,CONFIG_PCI_HERMES,kmod-net-hermes,11,orinoco_pci))
+
+$(eval $(call KMOD_template,NET_HERMES_PCI,net-hermes-plx,\
+	$(MODULES_DIR)/kernel/drivers/net/wireless/orinoco_plx.o \
+,CONFIG_PLX_HERMES,kmod-net-hermes,11,orinoco_plx))
+
+$(eval $(call KMOD_template,NET_NATSEMI,net-natsemi,\
+	$(MODULES_DIR)/kernel/drivers/net/natsemi.o \
+,CONFIG_NATSEMI,,10,natsemi))
+
+$(eval $(call KMOD_template,NET_PRISM54,net-prism54,\
+	$(MODULES_DIR)/kernel/drivers/net/wireless/prism54/prism54.o \
+,CONFIG_PRISM54,,10,prism54))
 
 $(TARGETS): $(PACKAGE_DIR)
 
