@@ -1,0 +1,48 @@
+config BR2_COMPILE_MIREDO
+	tristate
+	default n
+	depends BR2_PACKAGE_MIREDO || BR2_PACKAGE_MIREDO_SERVER
+
+config BR2_PACKAGE_MIREDO
+	prompt "miredo - a Teredo (IPv6 tunneling over UDP through NAT) client and relay daemon"
+	tristate
+	default m if CONFIG_DEVEL
+	select BR2_COMPILE_MIREDO
+	select BR2_PACKAGE_KMOD_IPV6
+	select BR2_PACKAGE_KMOD_TUN
+	select BR2_PACKAGE_LIBPTHREAD
+	select BR2_PACKAGE_UCLIBCXX
+	help
+	  
+	  A Teredo (IPv6 tunneling over UDP through NAT) client and relay daemon.
+	  
+	  http://www.simphalempin.com/dev/miredo/
+	  
+	  Depends:
+	    - kmod-ipv6
+	    - kmod-tun
+	    - libpthread
+	    - uClibc++
+	  
+
+config BR2_PACKAGE_MIREDO_SERVER
+	prompt "miredo-server - a Teredo (IPv6 tunneling over UDP through NAT) server daemon"
+	tristate
+	default m if CONFIG_DEVEL
+	select BR2_COMPILE_MIREDO
+	select BR2_PACKAGE_KMOD_IPV6
+	select BR2_PACKAGE_KMOD_TUN
+	select BR2_PACKAGE_LIBPTHREAD
+	select BR2_PACKAGE_UCLIBCXX
+	help
+	  
+	  A Teredo (IPv6 tunneling over UDP through NAT) server daemon.
+	  
+	  http://www.simphalempin.com/dev/miredo/
+	  
+	  Depends:
+	    - kmod-ipv6
+	    - kmod-tun
+	    - libpthread
+	    - uClibc++
+	  

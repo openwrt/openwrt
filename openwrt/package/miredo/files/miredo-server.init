@@ -1,0 +1,28 @@
+#!/bin/sh
+
+BIN=miredo-server
+DEFAULT=/etc/default/$BIN
+RUN_D=/var/run
+PID_F=$RUN_D/$BIN.pid
+[ -f $DEFAULT ] && . $DEFAULT
+
+case $1 in
+ start)
+  [ -d $RUN_D ] || mkdir -p $RUN_D
+  insmod ipv6
+  insmod tun
+  $BIN $OPTIONS
+  ;;
+ stop)
+  [ -f $PID_F ] && kill $(cat $PID_F)
+  ;;
+ restart)
+  $0 stop
+  $0 start
+  ;;
+ *)
+  echo "usage: $0 (start|stop|restart)"
+  exit 1
+esac
+
+exit $?
