@@ -349,51 +349,202 @@ config BR2_PACKAGE_KMOD_SCHED
 	help
 	  Kernel schedulers for IP traffic
 
+comment "Multimedia devices support ---"
+
+config BR2_PACKAGE_KMOD_VIDEODEV
+	tristate "kmod-videodev - Video (For Linux) kernel support"
+	default m
+
+config BR2_PACKAGE_KMOD_PWC
+	tristate "kmod-pwc - Kernel driver for USB Philips Cameras"
+	default m
+
+comment "Native language support ---"
+
 config BR2_PACKAGE_KMOD_NLS_BASE
-	tristate "basic native language support for filesystems"
+	tristate "kmod-nls-base - Basic native language support for filesystems"
 	default m
 	help
 	  Kernel native language support
 
 config BR2_PACKAGE_KMOD_NLS_CP437
-	tristate "code page 437"
+	tristate "kmod-nls-cp437 - Codepage 437 (United States, Canada)"
 	default m
+	select BR2_PACKAGE_KMOD_NLS_BASE
 	help
 	  Kernel native language support
 
 config BR2_PACKAGE_KMOD_NLS_CP850
-	tristate "code page 850"
+	tristate "kmod-nls-cp850 - Codepage 850 (Europe)"
 	default m
-	help
-	  Kernel native language support
-
-config BR2_PACKAGE_KMOD_NLS_UTF8
-	tristate "utf8"
-	default m
+	select BR2_PACKAGE_KMOD_NLS_BASE
 	help
 	  Kernel native language support
 
 config BR2_PACKAGE_KMOD_NLS_IS08859_1
-	tristate "iso8859-1"
+	tristate "kmod-nls-iso8859-1 -  NLS ISO 8859-1  (Latin 1; Western European Languages)"
 	default m
+	select BR2_PACKAGE_KMOD_NLS_BASE
 	help
 	  Kernel native language support
 
-config BR2_PACKAGE_KMOD_VIDEODEV
-	tristate "Video (For Linux) kernel support"
+config BR2_PACKAGE_KMOD_NLS_IS08859_15
+	tristate "kmod-nls-iso8859-15 -  NLS ISO 8859-15  (Latin 15; Western European Languages with Euro)"
 	default m
-
-config BR2_PACKAGE_KMOD_PWC
-	tristate "Kernel driver for USB Philips Cameras"
-	default m
-
-config BR2_PACKAGE_KMOD_NATSEMI
-	tristate "Soekris net4801 ethernet driver"
-	default y
-	depends BR2_LINUX_2_4_X86
+	select BR2_PACKAGE_KMOD_NLS_BASE
 	help
-	  Driver for the National Semiconductor DP8381x series PCI Ethernet 
-	  found on Soekris net4801 boards
+	  Kernel native language support
+
+config BR2_PACKAGE_KMOD_NLS_UTF8
+	tristate "kmod-nls-utf8 - NLS UTF8"
+	default m
+	select BR2_PACKAGE_KMOD_NLS_BASE
+	help
+	  Kernel native language support
+
+comment "Network devices support ---"
+
+config BR2_PACKAGE_KMOD_NET_3C59X
+	tristate "kmod-net-3C59x - 3Com 3c590/3c900 series (592/595/597) \"Vortex/Boomerang\" Ethernet kernel support"
+	default m
+	help
+	  This option enables driver support for a large number of 10mbps and 
+	  10/100mbps EISA, PCI and PCMCIA 3Com network cards:
+	  
+	   * "Vortex"    (Fast EtherLink 3c590/3c592/3c595/3c597) EISA and PCI
+	   * "Boomerang" (EtherLink XL 3c900 or 3c905)            PCI
+	   * "Cyclone"   (3c540/3c900/3c905/3c980/3c575/3c656)    PCI and Cardbus
+	   * "Tornado"   (3c905)                                  PCI
+	   * "Hurricane" (3c555/3cSOHO)                           PCI
+	  
+	  This package contains the 3c59x.o kernel module.
+	  
+
+config BR2_PACKAGE_KMOD_NET_8139TOO
+	tristate "kmod-net-8139too - RealTek RTL-8139 PCI Fast Ethernet Adapter kernel support"
+	default m
+	help
+	  This is a driver for the Fast Ethernet PCI network cards based on 
+	  the RTL8139 chips.
+	  
+	  This package contains the 8139too.o and mii.o kernel modules.
+	  
+
+config BR2_PACKAGE_KMOD_NET_AIRO
+	tristate "kmod-net-airo - Cisco/Aironet 34X/35X/4500/4800 ISA and PCI cards kernel support"
+	default m
+	help
+	  This is the standard Linux driver to support Cisco/Aironet ISA and 
+	  PCI 802.11 wireless cards.
+	  It supports the new 802.11b cards from Cisco (Cisco 34X, Cisco 35X 
+	  - with or without encryption) as well as card before the Cisco 
+	  acquisition (Aironet 4500, Aironet 4800, Aironet 4800B).
+	  
+	  This driver support both the standard Linux Wireless Extensions 
+	  and Cisco proprietary API, so both the Linux Wireless Tools and the 
+	  Cisco Linux utilities can be used to configure the card.
+	  
+	  This package contains the airo.o kernel module.
+	  
+
+config BR2_PACKAGE_KMOD_NET_HERMES
+	tristate "kmod-net-hermes - Hermes chipset 802.11b support (Orinoco/Prism2/Symbol) kernel support"
+	default m
+	help
+	  A driver for 802.11b wireless cards based based on the "Hermes" or 
+	  Intersil HFA384x (Prism 2) MAC controller.  This includes the vast 
+	  majority of the PCMCIA 802.11b cards (which are nearly all rebadges) 
+	  - except for the Cisco/Aironet cards.  Cards supported include the 
+	  Apple Airport (not a PCMCIA card), WavelanIEEE/Orinoco, 
+	  Cabletron/EnteraSys Roamabout, ELSA AirLancer, MELCO Buffalo, Avaya, 
+	  IBM High Rate Wireless, Farralon Syyline, Samsung MagicLAN, Netgear 
+	  MA401, LinkSys WPC-11, D-Link DWL-650, 3Com AirConnect, Intel 
+	  PRO/Wireless, and Symbol Spectrum24 High Rate amongst others.
+	  
+	  This package contains the hermes.o and orinoco.o kernel modules.
+	  
+
+config BR2_PACKAGE_KMOD_NET_HERMES_PCI
+	tristate "kmod-net-hermes-pci - Intersil Prism 2.5 PCI 802.11b adaptor support"
+	default m
+	depends BR2_PACKAGE_KMOD_NET_HERMES
+	help
+	  Enable support for PCI and mini-PCI 802.11b wireless NICs based on 
+	  the Prism 2.5 chipset.  These are true PCI cards, not the 802.11b 
+	  PCMCIA cards bundled with PCI<->PCMCIA adaptors which are also 
+	  common.  Some of the built-in wireless adaptors in laptops are of 
+	  this variety.
+	  
+	  This package contains the orinoco_pci.o kernel module.
+	  
+
+config BR2_PACKAGE_KMOD_NET_HERMES_PLX
+	tristate "kmod-net-hermes-plx - Hermes in PLX9052 based PCI adaptor (Netgear MA301, etc.) kernel support"
+	default m
+	depends BR2_PACKAGE_KMOD_NET_HERMES
+	help
+	  Enable support for PCMCIA cards supported by the "Hermes" (aka 
+	  orinoco_cs) driver when used in PLX9052 based PCI adaptors.  These 
+	  adaptors are not a full PCMCIA controller but act as a more limited 
+	  PCI <-> PCMCIA bridge.  Several vendors sell such adaptors so that 
+	  802.11b PCMCIA cards can be used in desktop machines.  The Netgear 
+	  MA301 is such an adaptor.
+	  
+	  This package contains the orinoco_plx.o kernel module.
+	  
+
+config BR2_PACKAGE_KMOD_NET_NATSEMI
+	tristate "kmod-net-natsemi - National Semiconductor DP8381x series PCI Ethernet kernel support"
+	default m
+	help
+	  This driver is for the National Semiconductor DP83810 series, 
+	  which is used in cards from PureData, NetGear, Linksys 
+	  and others, including the 83815 chip.
+	  
+	  This package contains the natsemi.o kernel module.
+	  
+
+config BR2_PACKAGE_KMOD_NET_PRISM54
+	tristate "kmod-net-prism54 - Intersil Prism GT/Duette/Indigo PCI/PCMCIA cards kernel support"
+	default m
+	help
+	  Enable PCI and Cardbus support for the following chipset based cards: 
+	  
+	   * ISL3880 - Prism GT       802.11 b/g
+	   * ISL3877 - Prism Indigo   802.11 a
+	   * ISL3890 - Prism Duette   802.11 a/b/g
+	  
+	  For a complete list of supported cards visit <http://prism54.org>.
+	  Here is the latest confirmed list of supported cards: 
+	  
+	   * 3com OfficeConnect 11g Cardbus Card aka 3CRWE154G72
+	   * Allnet ALL0271 PCI Card
+	   * Compex WL54G Cardbus Card
+	   * Corega CG-WLCB54GT Cardbus Card
+	   * D-Link Air Plus Xtreme G A1 Cardbus Card aka DWL-g650
+	   * I-O Data WN-G54/CB Cardbus Card
+	   * Kobishi XG-300 aka Z-Com Cardbus Card
+	   * Netgear WG511 Cardbus Card
+	   * Ovislink WL-5400PCI PCI Card
+	   * Peabird WLG-PCI PCI Card
+	   * Sitecom WL-100i Cardbus Card
+	   * Sitecom WL-110i PCI Card
+	   * SMC2802W - EZ Connect g 2.4GHz 54 Mbps Wireless PCI Card
+	   * SMC2835W - EZ Connect g 2.4GHz 54 Mbps Wireless Cardbus Card
+	   * Z-Com XG-900 PCI Card
+	   * Zyxel G-100 Cardbus Card
+	  
+	  If you enable this, you require a firmware file as well.
+	  You will need to copy this to /usr/lib/hotplug/firmware/isl3890.
+	  You can get this non-GPL'd firmware file from the Prism54 project page: 
+	  <http://prism54.org>.
+	  
+	  Note: You need a motherboard with DMA support to use any of these cards.
+	  
+	  This package contains the prism54.o kernel module.
+	  
+
+comment "Misc. device support ---"
 
 config BR2_PACKAGE_KMOD_WD1100
 	tristate "Soekris net4801 watchdog"
@@ -402,5 +553,7 @@ config BR2_PACKAGE_KMOD_WD1100
 	help
 	  Driver for the NatSemi SC1x00 series Watchdog 
 	  found on Soekris net4801 boards
+
+comment "Additional kernel modules ---"
 
 source "target/linux/package/Config.in"
