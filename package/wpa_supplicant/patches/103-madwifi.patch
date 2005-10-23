@@ -1,0 +1,50 @@
+diff -ruN wpa_supplicant-0.4.5-old/driver_madwifi.c wpa_supplicant-0.4.5-new/driver_madwifi.c
+--- wpa_supplicant-0.4.5-old/driver_madwifi.c	2005-09-17 07:36:33.000000000 +0200
++++ wpa_supplicant-0.4.5-new/driver_madwifi.c	2005-10-23 14:08:45.000000000 +0200
+@@ -27,11 +27,19 @@
+ #include "wpa_supplicant.h"
+ #include "wpa.h"
+ 
++#include <sys/types.h>
++#include <sys/socket.h>
++#include <linux/types.h>
++#include <linux/socket.h>
++#include <linux/if.h>
++#include <stdint.h>
++#include <linux/if_packet.h>
++#include <linux/netlink.h>
++#include <linux/rtnetlink.h>
++
+ #include <include/compat.h>
+ #include <net80211/ieee80211.h>
+ #ifdef WME_NUM_AC
+-/* Assume this is built against BSD branch of madwifi driver. */
+-#define MADWIFI_BSD
+ #include <net80211/_ieee80211.h>
+ #endif /* WME_NUM_AC */
+ #include <net80211/ieee80211_crypto.h>
+@@ -78,19 +86,19 @@
+ 				"ioctl[IEEE80211_IOCTL_SETKEY]",
+ 				"ioctl[IEEE80211_IOCTL_GETKEY]",
+ 				"ioctl[IEEE80211_IOCTL_DELKEY]",
+-				NULL,
++				"ioctl[IEEE80211_IOCTL_SETWMMPARAMS]",
+ 				"ioctl[IEEE80211_IOCTL_SETMLME]",
+-				NULL,
++				"ioctl[IEEE80211_IOCTL_GETCHANINFO]",
+ 				"ioctl[IEEE80211_IOCTL_SETOPTIE]",
+ 				"ioctl[IEEE80211_IOCTL_GETOPTIE]",
+ 				"ioctl[IEEE80211_IOCTL_ADDMAC]",
+ 				NULL,
+ 				"ioctl[IEEE80211_IOCTL_DELMAC]",
+-				NULL,
+-				"ioctl[IEEE80211_IOCTL_CHANLIST]",
++				"ioctl[IEEE80211_IOCTL_GETCHANLIST]",
++				"ioctl[IEEE80211_IOCTL_SETCHANLIST]",
+ 			};
+ 			if (IEEE80211_IOCTL_SETPARAM <= op &&
+-			    op <= IEEE80211_IOCTL_CHANLIST)
++			    op <= IEEE80211_IOCTL_SETCHANLIST)
+ 				perror(opnames[op - SIOCIWFIRSTPRIV]);
+ 			else
+ 				perror("ioctl[unknown???]");
