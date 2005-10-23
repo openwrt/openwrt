@@ -1,0 +1,12 @@
+--- linux-2.6.12.5/Makefile.old	2005-10-23 22:56:29.017270000 +0200
++++ linux-2.6.12.5/Makefile	2005-10-23 22:57:23.226138500 +0200
+@@ -533,6 +533,9 @@
+ NOSTDINC_FLAGS += -nostdinc -isystem $(shell $(CC) -print-file-name=include)
+ CHECKFLAGS     += $(NOSTDINC_FLAGS)
+ 
++# improve gcc optimization
++CFLAGS += $(call cc-option,-funit-at-a-time,)
++
+ # warn about C99 declaration after statement
+ CFLAGS += $(call cc-option,-Wdeclaration-after-statement,)
+ 

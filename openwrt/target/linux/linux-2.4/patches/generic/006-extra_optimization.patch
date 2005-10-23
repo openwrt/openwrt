@@ -1,0 +1,24 @@
+--- linux-2.4.30/Makefile	2005-10-23 20:52:56.813948000 +0200
++++ linux.dev/Makefile	2005-10-23 20:53:12.482927250 +0200
+@@ -89,6 +89,8 @@
+ # standard CFLAGS
+ #
+ 
++check_gcc = $(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; then echo "$(1)"; else echo "$(2)"; fi)
++
+ CPPFLAGS := -D__KERNEL__ -I$(HPATH)
+ 
+ CFLAGS := $(CPPFLAGS) -Wall -Wstrict-prototypes -Wno-trigraphs -Os \
+@@ -100,6 +102,12 @@
+ endif
+ AFLAGS := -D__ASSEMBLY__ $(CPPFLAGS)
+ 
++CFLAGS += $(call check_gcc, -funit-at-a-time,)
++
++
++
++
++
+ #
+ # ROOT_DEV specifies the default root-device when making the image.
+ # This can be either FLOPPY, CURRENT, /dev/xxxx or empty, in which case
