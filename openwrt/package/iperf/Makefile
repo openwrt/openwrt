@@ -20,8 +20,8 @@ $(PKG_BUILD_DIR)/.configured:
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
 		CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include" \
-		CXXFLAGS="$(TARGET_CFLAGS) -fno-builtin -nostdinc++ -nodefaultlibs" \
-		LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib" \
+		CXXFLAGS="$(TARGET_CFLAGS) -fno-builtin -fno-rtti -nostdinc++" \
+		LDFLAGS="-nodefaultlibs -L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib" \
 		LIBS="-luClibc++ -lc -lm -lgcc_s" \
 		ac_cv_func_malloc_0_nonnull=yes \
 		./configure \
