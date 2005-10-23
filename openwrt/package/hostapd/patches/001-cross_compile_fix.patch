@@ -19,14 +19,3 @@ diff -ruN hostapd-0.3.9-old/Makefile hostapd-0.3.9-new/Makefile
  
  driver_conf.c: Makefile .config
  	rm -f driver_conf.c
-diff -ruN hostapd-0.3.9-old/driver_madwifi.c hostapd-0.3.9-new/driver_madwifi.c
---- hostapd-0.3.9-old/driver_madwifi.c	2005-05-18 05:38:57.000000000 +0200
-+++ hostapd-0.3.9-new/driver_madwifi.c	2005-08-14 08:23:21.000000000 +0200
-@@ -24,6 +24,7 @@
- #include <include/compat.h>
- #include <net80211/ieee80211.h>
- #include <net80211/ieee80211_crypto.h>
-+#include <net80211/_ieee80211.h>
- #include <net80211/ieee80211_ioctl.h>
- 
- #include <net/if_arp.h>
