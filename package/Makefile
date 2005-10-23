@@ -109,6 +109,7 @@ package-$(BR2_PACKAGE_MICROCOM) += microcom
 package-$(BR2_PACKAGE_MICROPERL) += microperl
 package-$(BR2_COMPILE_MINI_HTTPD) += mini_httpd
 package-$(BR2_PACKAGE_MINI_SENDMAIL) += mini_sendmail
+package-$(BR2_COMPILE_MIREDO) += miredo
 package-$(BR2_COMPILE_MONIT) += monit
 package-$(BR2_PACKAGE_MPD) += mpd
 package-$(BR2_PACKAGE_MT_DAAPD) += mt-daapd
@@ -253,6 +254,7 @@ libvorbis-compile: libogg-compile
 libxml2-compile: zlib-compile
 libxslt-compile: libxml2-compile
 lighttpd-compile: openssl-compile pcre-compile
+miredo-compile: uclibc++-compile
 mt-daapd-compile: howl-compile libgdbm-compile libid3tag-compile
 mtr-compile: ncurses-compile
 mysql-compile: ncurses-compile zlib-compile
