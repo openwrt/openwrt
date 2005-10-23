@@ -85,5 +85,5 @@ clean:
 
 $(eval $(call kernel_template,2.4,brcm,2_4_BRCM))
 $(eval $(call kernel_template,2.4,ar7,2_4_AR7))
-$(eval $(call kernel_template,2.4,soekris,2_4_SOEKRIS))
+$(eval $(call kernel_template,2.4,x86,2_4_X86))
 $(eval $(call kernel_template,2.6,brcm,2_6_BRCM))
