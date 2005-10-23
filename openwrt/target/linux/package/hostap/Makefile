@@ -1,4 +1,4 @@
-# $Id: Makefile 1832 2005-09-03 19:27:27Z wbx $
+# $Id$
 
 include $(TOPDIR)/rules.mk
 include ../../rules.mk
@@ -30,6 +30,7 @@ $(PKG_BUILD_DIR)/.configured:
 
 $(PKG_BUILD_DIR)/.built: 
 	$(MAKE) -C $(KERNEL_DIR)/ \
+		ARCH="$(LINUX_KARCH)" \
 		SUBDIRS="$(PKG_BUILD_DIR)/driver/modules" \
 		modules
 	touch $@
