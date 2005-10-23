@@ -1,0 +1,48 @@
+config BR2_PACKAGE_KMOD_HOSTAP
+	prompt "kmod-hostap - Host AP support for Prism2/2.5/3 IEEE 802.11b"
+	tristate
+	default m if CONFIG_DEVEL
+	help
+	  A driver for 802.11b wireless cards based on Intersil Prism2/2.5/3
+	  chipset. This driver supports so called Host AP mode that allows
+	  the card to act as an IEEE 802.11 access point.
+	  
+	  This option includes the base Host AP driver code that is shared by
+	  different hardware models. You will also need to enable support for
+	  PLX/PCI/CS version of the driver to actually use the driver.
+	  
+	  http://hostap.epitest.fi/
+	  
+	  This package contains the hostap.o and hostap_crypt_wep.o kernel modules.
+	  
+
+config BR2_PACKAGE_KMOD_HOSTAP_PCI
+	prompt "kmod-hostap-pci - Host AP driver for Prism2.5 PCI adaptors"
+	tristate
+	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_KMOD_HOSTAP
+	help
+	  Host AP support for Prism2/2.5/3 IEEE 802.11b" is required for this
+	  driver and its help text includes more information about the Host AP
+	  driver.
+	  
+	  http://hostap.epitest.fi/
+	  
+	  This package contains the hostap_pci.o kernel module.
+	  
+
+config BR2_PACKAGE_KMOD_HOSTAP_PLX
+	prompt "kmod-hostap-plx - Host AP driver for Prism2/2.5/3 in PLX9052 based PCI adaptors"
+	tristate
+	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_KMOD_HOSTAP
+	help
+	  Host AP support for Prism2/2.5/3 IEEE 802.11b" is required for this
+	  driver and its help text includes more information about the Host AP
+	  driver.
+	  
+	  http://hostap.epitest.fi/
+	  
+	  This package contains the hostap_plx.o kernel module.
+	  
+
