@@ -1,0 +1,28 @@
+diff -ruN xsupplicant-1.2.2-old/src/cardif/linux/cardif_madwifi_driver.c xsupplicant-1.2.2-new/src/cardif/linux/cardif_madwifi_driver.c
+--- xsupplicant-1.2.2-old/src/cardif/linux/cardif_madwifi_driver.c	2005-10-13 20:57:28.000000000 +0200
++++ xsupplicant-1.2.2-new/src/cardif/linux/cardif_madwifi_driver.c	2005-10-23 19:28:46.000000000 +0200
+@@ -140,19 +140,19 @@
+ 	"ioctl[IEEE80211_IOCTL_SETKEY]",
+ 	"ioctl[IEEE80211_IOCTL_GETKEY]",
+ 	"ioctl[IEEE80211_IOCTL_DELKEY]",
+-	NULL,
++	"ioctl[IEEE80211_IOCTL_SETWMMPARAMS]",
+ 	"ioctl[IEEE80211_IOCTL_SETMLME]",
+-	NULL,
++	"ioctl[IEEE80211_IOCTL_GETCHANINFO]",
+ 	"ioctl[IEEE80211_IOCTL_SETOPTIE]",
+ 	"ioctl[IEEE80211_IOCTL_GETOPTIE]",
+ 	"ioctl[IEEE80211_IOCTL_ADDMAC]",
+ 	NULL,
+ 	"ioctl[IEEE80211_IOCTL_DELMAC]",
+-	NULL,
+-	"ioctl[IEEE80211_IOCTL_CHANLIST]",
++	"ioctl[IEEE80211_IOCTL_GETCHANLIST]",
++	"ioctl[IEEE80211_IOCTL_SETCHANLIST]",
+       };
+       if (IEEE80211_IOCTL_SETPARAM <= op &&
+-	  op <= IEEE80211_IOCTL_CHANLIST)
++	  op <= IEEE80211_IOCTL_SETCHANLIST)
+ 	debug_printf(DEBUG_NORMAL, "%s\n", opnames[op - SIOCIWFIRSTPRIV]);
+       else
+ 	debug_printf(DEBUG_NORMAL, "ioctl[unknown???]");
