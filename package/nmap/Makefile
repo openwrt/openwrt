@@ -23,10 +23,10 @@ $(PKG_BUILD_DIR)/.configured:
 		$(TARGET_CONFIGURE_OPTS) \
 		libpcapdir="$(STAGING_DIR)/usr/lib" \
 		CFLAGS="$(TARGET_CFLAGS)" \
-		CXXFLAGS="$(TARGET_CFLAGS) -fno-builtin -nostdinc++" \
+		CXXFLAGS="$(TARGET_CFLAGS) -fno-builtin -fno-rtti -nostdinc++" \
 		CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include" \
-		LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib" \
-		LIBS="-nodefaultlibs -luClibc++ -lc -lm" \
+		LDFLAGS="-nodefaultlibs -L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib" \
+		LIBS="-luClibc++ -lc -lm" \
 		ac_cv_prog_CXX="$(TARGET_CXX)" \
 		./configure \
 		  --target=$(GNU_TARGET_NAME) \
