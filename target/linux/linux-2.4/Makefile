@@ -42,8 +42,8 @@ ifeq ($(BOARD),brcm)
 include ./broadcom.mk
 endif
 
-ifeq ($(BOARD),soekris)
-include ./soekris.mk
+ifeq ($(BOARD),x86)
+include ./x86.mk
 endif
 
 ifeq ($(BOARD),ar7)
