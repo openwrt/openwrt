@@ -3,7 +3,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=base-files
-PKG_RELEASE:=4
+PKG_RELEASE:=5
 PKG_BUILD_DIR:=$(BUILD_DIR)/base-files
 
 REV:=${shell svn info | grep Revision | cut -d ' ' -f 2}
