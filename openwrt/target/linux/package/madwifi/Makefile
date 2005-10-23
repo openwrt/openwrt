@@ -4,15 +4,15 @@ include $(TOPDIR)/rules.mk
 include ../../rules.mk
 
 PKG_NAME:=madwifi
-PKG_VERSION:=2005-09-16
+PKG_VERSION:=r1195-20051021
 PKG_RELEASE:=1
-PKG_MD5SUM:=af6959c971ffa1b38ec171833834b845
+PKG_MD5SUM:=5d6a52260ece434a2e3b4ff826a3c5f4
 
-PKG_SOURCE_URL:=http://madwifi.otaku42.de/2005/09/
-PKG_SOURCE:=$(PKG_NAME)-cvs-snapshot-$(PKG_VERSION).tar.bz2
-PKG_CAT:=bzcat
+PKG_SOURCE_URL:=http://snapshots.madwifi.org
+PKG_SOURCE:=$(PKG_NAME)-trunk-$(PKG_VERSION).tar.gz
+PKG_CAT:=zcat
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-trunk-$(PKG_VERSION)
 
 ifeq ($(KERNEL_DIR),)
 KERNEL_DIR:=$(LINUX_DIR)
@@ -58,7 +58,7 @@ $(IPKG_KMOD_MADWIFI):
 	install -m0755 ./files/madwifi.init $(IDIR_KMOD_MADWIFI)/etc/init.d/S20madwifi
 	cp -fpR $(PKG_BUILD_DIR)/net80211/wlan*.$(MODUL_SUFFIX) \
 		$(PKG_BUILD_DIR)/ath_hal/ath_hal.$(MODUL_SUFFIX) \
-		$(PKG_BUILD_DIR)/ath_rate/sample/ath_rate_sample.$(MODUL_SUFFIX) \
+		$(PKG_BUILD_DIR)/ath_rate/onoe/ath_rate_onoe.$(MODUL_SUFFIX) \
 		$(PKG_BUILD_DIR)/ath/ath_pci.$(MODUL_SUFFIX) \
 		$(IDIR_KMOD_MADWIFI)/lib/modules/$(LINUX_VERSION)/
 	$(IPKG_BUILD) $(IDIR_KMOD_MADWIFI) $(PACKAGE_DIR)
