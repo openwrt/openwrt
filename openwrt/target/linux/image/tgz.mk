@@ -1,7 +1,7 @@
 $(KDIR)/root.tar.gz:
 	tar -zcf $@ --owner=root --group=root -C $(KDIR)/root/ .
 
-ifeq ($(BOARD),soekris)
+ifeq ($(BOARD),x86)
 install: tgz-install
 
 tgz-install: $(KDIR)/root.tar.gz
