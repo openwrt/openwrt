@@ -57,17 +57,6 @@ $(eval $(call KMOD_template,ATM,atm,\
 $(eval $(call KMOD_template,PPPOATM,pppoatm,\
 	$(MODULES_DIR)/kernel/net/atm/pppoatm.o \
 ,CONFIG_PPPOATM))
-$(eval $(call KMOD_template,USB_ACM,usb-acm,\
-	$(MODULES_DIR)/kernel/drivers/usb/acm.o \
-,CONFIG_USB_ACM))
-$(eval $(call KMOD_template,B44,b44,\
-	$(MODULES_DIR)/kernel/drivers/net/b44.o \
-,CONFIG_B44))
-$(eval $(call KMOD_template,BLUETOOTH,bluetooth,\
-	$(MODULES_DIR)/kernel/net/bluetooth/*.o \
-	$(MODULES_DIR)/kernel/net/bluetooth/rfcomm/*.o \
-	$(MODULES_DIR)/kernel/drivers/bluetooth/*.o \
-,CONFIG_BLUEZ))
 $(eval $(call KMOD_template,ARPT,arptables,\
 	$(MODULES_DIR)/kernel/net/ipv4/netfilter/arp*.o \
 ,CONFIG_IP_NF_ARPTABLES))
@@ -83,56 +72,6 @@ $(eval $(call KMOD_template,IPTABLES_V6,ip6tables,\
 $(eval $(call KMOD_template,IPV6,ipv6,\
 	$(MODULES_DIR)/kernel/net/ipv6/ipv6.o \
 ,CONFIG_IPV6,,20,ipv6))
-$(eval $(call KMOD_template,CIFS,cifs,\
-	$(MODULES_DIR)/kernel/fs/cifs/cifs.o \
-,CONFIG_CIFS,,30,cifs))
-$(eval $(call KMOD_template,NFS,nfs,\
-	$(MODULES_DIR)/kernel/fs/lockd/*.o \
-	$(MODULES_DIR)/kernel/fs/nfs/*.o \
-	$(MODULES_DIR)/kernel/net/sunrpc/*.o \
-,CONFIG_NFS_FS,,30,sunrpc lockd nfs))
-$(eval $(call KMOD_template,SOUNDCORE,soundcore,\
-	$(MODULES_DIR)/kernel/drivers/sound/soundcore.o \
-,CONFIG_SOUND,,30,soundcore))
-$(eval $(call KMOD_template,USB,usb-core,\
-	$(MODULES_DIR)/kernel/drivers/usb/usbcore.o \
-,CONFIG_USB,,50,usbcore))
-$(eval $(call KMOD_template,USB_UHCI,usb-uhci,\
-	$(MODULES_DIR)/kernel/drivers/usb/host/uhci.o \
-,CONFIG_USB_UHCI_ALT,kmod-usb-core,60,uhci))
-$(eval $(call KMOD_template,USB_OHCI,usb-ohci,\
-	$(MODULES_DIR)/kernel/drivers/usb/host/usb-ohci.o \
-,CONFIG_USB_OHCI,kmod-usb-core,60,usb-ohci))
-$(eval $(call KMOD_template,USB2,usb2,\
-	$(MODULES_DIR)/kernel/drivers/usb/host/ehci-hcd.o \
-,CONFIG_USB_EHCI_HCD,kmod-usb-core,60,ehci-hcd))
-
-$(eval $(call KMOD_template,USB_SERIAL,usb-serial,\
-	$(MODULES_DIR)/kernel/drivers/usb/serial/usbserial.o \
-,CONFIG_USB_SERIAL,kmod-usb-core,60,usbserial))
-$(eval $(call KMOD_template,USB_SERIAL_BELKIN,usb-serial-belkin,\
-	$(MODULES_DIR)/kernel/drivers/usb/serial/belkin_sa.o \
-,CONFIG_USB_SERIAL_BELKIN,kmod-usb-serial,61,belkin_sa))
-$(eval $(call KMOD_template,USB_SERIAL_FTDI,usb-serial-ftdi,\
-	$(MODULES_DIR)/kernel/drivers/usb/serial/ftdi_sio.o \
-,CONFIG_USB_SERIAL_IR,kmod-usb-serial,61,ftdi_usb))
-$(eval $(call KMOD_template,USB_SERIAL_MCT_U232,usb-serial-mct-u232,\
-	$(MODULES_DIR)/kernel/drivers/usb/serial/mct_u232.o \
-,CONFIG_USB_SERIAL_MCT_U232,kmod-usb-serial,61,mct_u232))
-$(eval $(call KMOD_template,USB_SERIAL_PL2303,usb-serial-pl2303,\
-	$(MODULES_DIR)/kernel/drivers/usb/serial/pl2303.o \
-,CONFIG_USB_SERIAL_PL2303,kmod-usb-serial,61,pl2303))
-
-$(eval $(call KMOD_template,USB_STORAGE,usb-storage,\
-	$(MODULES_DIR)/kernel/drivers/scsi/*.o \
-	$(MODULES_DIR)/kernel/drivers/usb/storage/*.o \
-,CONFIG_USB_STORAGE,kmod-usb-core,60,scsi_mod sd_mod usb-storage))
-$(eval $(call KMOD_template,USB_PRINTER,usb-printer,\
-	$(MODULES_DIR)/kernel/drivers/usb/printer.o \
-,CONFIG_USB_PRINTER,kmod-usb-core,60,printer))
-$(eval $(call KMOD_template,USB_AUDIO,usb-audio,\
-	$(MODULES_DIR)/kernel/drivers/usb/audio.o \
-,CONFIG_USB_AUDIO,kmod-soundcore kmod-usb-core,61,audio))
 $(eval $(call KMOD_template,IDE,ide,\
 	$(MODULES_DIR)/kernel/drivers/ide/*.o \
 	$(MODULES_DIR)/kernel/drivers/ide/*/*.o \
@@ -140,23 +79,7 @@ $(eval $(call KMOD_template,IDE,ide,\
 $(eval $(call KMOD_template,LOOP,loop,\
     $(MODULES_DIR)/kernel/drivers/block/loop.o \
 ,CONFIG_BLK_DEV_LOOP,,20,loop))
-$(eval $(call KMOD_template,EXT2,ext2,\
-	$(MODULES_DIR)/kernel/fs/ext2/*.o \
-,CONFIG_EXT2_FS,,30,ext2))
-$(eval $(call KMOD_template,EXT3,ext3,\
-	$(MODULES_DIR)/kernel/fs/ext3/*.o \
-	$(MODULES_DIR)/kernel/fs/jbd/*.o \
-,CONFIG_EXT3_FS,,30,jbd ext3))
-$(eval $(call KMOD_template,XFS,xfs,\
-	$(MODULES_DIR)/kernel/fs/xfs/*.o \
-,CONFIG_XFS_FS,,30,xfs))
-$(eval $(call KMOD_template,HFSPLUS,hfsplus,\
-	$(MODULES_DIR)/kernel/fs/hfsplus/*.o \
-,CONFIG_HFSPLUS_FS,,30,hfsplus))
-$(eval $(call KMOD_template,VFAT,vfat,\
-	$(MODULES_DIR)/kernel/fs/vfat/vfat.o \
-	$(MODULES_DIR)/kernel/fs/fat/fat.o \
-,CONFIG_VFAT_FS,,30,fat vfat))
+
 ifneq ($(wildcard $(MODULES_DIR)/kernel/crypto/*.o),)
 CONFIG_CRYPTO:=m
 endif
@@ -188,18 +111,58 @@ $(eval $(call KMOD_template,SCHED,sched,\
 	$(MODULES_DIR)/kernel/net/sched/*.o \
 ,CONFIG_SCHED))
 
-$(eval $(call KMOD_template,VIDEODEV,videodev,\
-	$(MODULES_DIR)/kernel/drivers/media/video/videodev.o \
-,CONFIG_VIDEO_DEV,,62,videodev))
+
+# Filesystems
+
+$(eval $(call KMOD_template,FS_CIFS,fs-cifs,\
+	$(MODULES_DIR)/kernel/fs/cifs/cifs.o \
+,CONFIG_CIFS,,30,cifs))
+
+$(eval $(call KMOD_template,FS_EXT2,fs-ext2,\
+	$(MODULES_DIR)/kernel/fs/ext2/*.o \
+,CONFIG_EXT2_FS,,30,ext2))
+
+$(eval $(call KMOD_template,FS_EXT3,fs-ext3,\
+	$(MODULES_DIR)/kernel/fs/ext3/*.o \
+	$(MODULES_DIR)/kernel/fs/jbd/*.o \
+,CONFIG_EXT3_FS,,30,jbd ext3))
+
+$(eval $(call KMOD_template,FS_HFSPLUS,fs-hfsplus,\
+	$(MODULES_DIR)/kernel/fs/hfsplus/*.o \
+,CONFIG_HFSPLUS_FS,,30,hfsplus))
+
+$(eval $(call KMOD_template,FS_NFS,fs-nfs,\
+	$(MODULES_DIR)/kernel/fs/lockd/*.o \
+	$(MODULES_DIR)/kernel/fs/nfs/*.o \
+	$(MODULES_DIR)/kernel/net/sunrpc/*.o \
+,CONFIG_NFS_FS,,30,sunrpc lockd nfs))
+
+$(eval $(call KMOD_template,FS_VFAT,fs-vfat,\
+	$(MODULES_DIR)/kernel/fs/vfat/vfat.o \
+	$(MODULES_DIR)/kernel/fs/fat/fat.o \
+,CONFIG_VFAT_FS,,30,fat vfat))
+
+$(eval $(call KMOD_template,FS_XFS,fs-xfs,\
+	$(MODULES_DIR)/kernel/fs/xfs/*.o \
+,CONFIG_XFS_FS,,30,xfs))
+
+
+# Multimedia
 
 $(eval $(call KMOD_template,PWC,pwc,\
 	$(MODULES_DIR)/kernel/drivers/usb/pwc.o \
 ,CONFIG_USB_PWC,kmod-videodev,63,pwc))
 
-$(eval $(call KMOD_template,AX25,ax25,\
-	$(MODULES_DIR)/kernel/net/ax25/ax25.o \
-	$(MODULES_DIR)/kernel/drivers/net/hamradio/mkiss.o \
-,CONFIG_AX25,,90,ax25 mkiss))
+$(eval $(call KMOD_template,SOUNDCORE,soundcore,\
+	$(MODULES_DIR)/kernel/drivers/sound/soundcore.o \
+,CONFIG_SOUND,,30,soundcore))
+
+$(eval $(call KMOD_template,VIDEODEV,videodev,\
+	$(MODULES_DIR)/kernel/drivers/media/video/videodev.o \
+,CONFIG_VIDEO_DEV,,62,videodev))
+
+
+# Network devices
 
 $(eval $(call KMOD_template,NET_3C59X,net-3c59x,\
 	$(MODULES_DIR)/kernel/drivers/net/3c59x.o \
@@ -213,6 +176,10 @@ $(eval $(call KMOD_template,NET_8139TOO,net-8139too,\
 $(eval $(call KMOD_template,NET_AIRO,net-airo,\
 	$(MODULES_DIR)/kernel/drivers/net/wireless/airo.o \
 ,CONFIG_AIRO,,10,airo))
+
+$(eval $(call KMOD_template,NET_B44,net-b44,\
+	$(MODULES_DIR)/kernel/drivers/net/b44.o \
+,CONFIG_B44,,10,b44))
 
 $(eval $(call KMOD_template,NET_HERMES,net-hermes,\
 	$(MODULES_DIR)/kernel/drivers/net/wireless/hermes.o \
@@ -234,6 +201,77 @@ $(eval $(call KMOD_template,NET_NATSEMI,net-natsemi,\
 $(eval $(call KMOD_template,NET_PRISM54,net-prism54,\
 	$(MODULES_DIR)/kernel/drivers/net/wireless/prism54/prism54.o \
 ,CONFIG_PRISM54,,10,prism54))
+
+
+# USB
+
+$(eval $(call KMOD_template,USB,usb-core,\
+	$(MODULES_DIR)/kernel/drivers/usb/usbcore.o \
+,CONFIG_USB,,50,usbcore))
+
+$(eval $(call KMOD_template,USB_UHCI,usb-uhci,\
+	$(MODULES_DIR)/kernel/drivers/usb/host/uhci.o \
+,CONFIG_USB_UHCI_ALT,kmod-usb-core,60,uhci))
+
+$(eval $(call KMOD_template,USB_OHCI,usb-ohci,\
+	$(MODULES_DIR)/kernel/drivers/usb/host/usb-ohci.o \
+,CONFIG_USB_OHCI,kmod-usb-core,60,usb-ohci))
+
+$(eval $(call KMOD_template,USB2,usb2,\
+	$(MODULES_DIR)/kernel/drivers/usb/host/ehci-hcd.o \
+,CONFIG_USB_EHCI_HCD,kmod-usb-core,60,ehci-hcd))
+
+$(eval $(call KMOD_template,USB_ACM,usb-acm,\
+	$(MODULES_DIR)/kernel/drivers/usb/acm.o \
+,CONFIG_USB_ACM))
+
+$(eval $(call KMOD_template,USB_AUDIO,usb-audio,\
+	$(MODULES_DIR)/kernel/drivers/usb/audio.o \
+,CONFIG_USB_AUDIO,kmod-soundcore kmod-usb-core,61,audio))
+
+$(eval $(call KMOD_template,USB_PRINTER,usb-printer,\
+	$(MODULES_DIR)/kernel/drivers/usb/printer.o \
+,CONFIG_USB_PRINTER,kmod-usb-core,60,printer))
+
+$(eval $(call KMOD_template,USB_SERIAL,usb-serial,\
+	$(MODULES_DIR)/kernel/drivers/usb/serial/usbserial.o \
+,CONFIG_USB_SERIAL,kmod-usb-core,60,usbserial))
+
+$(eval $(call KMOD_template,USB_SERIAL_BELKIN,usb-serial-belkin,\
+	$(MODULES_DIR)/kernel/drivers/usb/serial/belkin_sa.o \
+,CONFIG_USB_SERIAL_BELKIN,kmod-usb-serial,61,belkin_sa))
+
+$(eval $(call KMOD_template,USB_SERIAL_FTDI,usb-serial-ftdi,\
+	$(MODULES_DIR)/kernel/drivers/usb/serial/ftdi_sio.o \
+,CONFIG_USB_SERIAL_IR,kmod-usb-serial,61,ftdi_usb))
+
+$(eval $(call KMOD_template,USB_SERIAL_MCT_U232,usb-serial-mct-u232,\
+	$(MODULES_DIR)/kernel/drivers/usb/serial/mct_u232.o \
+,CONFIG_USB_SERIAL_MCT_U232,kmod-usb-serial,61,mct_u232))
+
+$(eval $(call KMOD_template,USB_SERIAL_PL2303,usb-serial-pl2303,\
+	$(MODULES_DIR)/kernel/drivers/usb/serial/pl2303.o \
+,CONFIG_USB_SERIAL_PL2303,kmod-usb-serial,61,pl2303))
+
+$(eval $(call KMOD_template,USB_STORAGE,usb-storage,\
+	$(MODULES_DIR)/kernel/drivers/scsi/*.o \
+	$(MODULES_DIR)/kernel/drivers/usb/storage/*.o \
+,CONFIG_USB_STORAGE,kmod-usb-core,60,scsi_mod sd_mod usb-storage))
+
+
+# Misc. devices
+
+$(eval $(call KMOD_template,AX25,ax25,\
+	$(MODULES_DIR)/kernel/net/ax25/ax25.o \
+	$(MODULES_DIR)/kernel/drivers/net/hamradio/mkiss.o \
+,CONFIG_AX25,,90,ax25 mkiss))
+
+$(eval $(call KMOD_template,BLUETOOTH,bluetooth,\
+	$(MODULES_DIR)/kernel/net/bluetooth/*.o \
+	$(MODULES_DIR)/kernel/net/bluetooth/rfcomm/*.o \
+	$(MODULES_DIR)/kernel/drivers/bluetooth/*.o \
+,CONFIG_BLUEZ))
+
 
 $(TARGETS): $(PACKAGE_DIR)
 
