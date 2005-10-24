@@ -1,6 +1,5 @@
 config BR2_PACKAGE_KMOD_SHFS
-	prompt "kmod-shfs - Shell FileSystem kernel module (ShFS) kernel module"
-	tristate
+	tristate "kmod-shfs...................... Shell FileSystem kernel module (ShFS) kernel module"
 	default m if CONFIG_DEVEL
 	help
 	  ShFS is a simple and easy to use Linux kernel module which 

@@ -1,6 +1,5 @@
 config BR2_PACKAGE_KMOD_HOSTAP
-	prompt "kmod-hostap - Host AP support for Prism2/2.5/3 IEEE 802.11b"
-	tristate
+	tristate "kmod-hostap.................... Host AP support for Prism2/2.5/3 IEEE 802.11b"
 	default m if CONFIG_DEVEL
 	help
 	  A driver for 802.11b wireless cards based on Intersil Prism2/2.5/3
@@ -17,8 +16,7 @@ config BR2_PACKAGE_KMOD_HOSTAP
 	  
 
 config BR2_PACKAGE_KMOD_HOSTAP_PCI
-	prompt "kmod-hostap-pci - Host AP driver for Prism2.5 PCI adaptors"
-	tristate
+	tristate   "kmod-hostap-pci.............. Host AP driver for Prism2.5 PCI adaptors"
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_KMOD_HOSTAP
 	help
@@ -32,8 +30,7 @@ config BR2_PACKAGE_KMOD_HOSTAP_PCI
 	  
 
 config BR2_PACKAGE_KMOD_HOSTAP_PLX
-	prompt "kmod-hostap-plx - Host AP driver for Prism2/2.5/3 in PLX9052 based PCI adaptors"
-	tristate
+	tristate   "kmod-hostap-plx.............. Host AP driver for Prism2/2.5/3 in PLX9052 based PCI adaptors"
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_KMOD_HOSTAP
 	help

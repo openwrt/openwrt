@@ -79,24 +79,11 @@ config BR2_PACKAGE_KMOD_BRCM_ET
 	help
 	  Proprietary driver for Broadcom Ethernet chipsets
 
-config BR2_PACKAGE_KMOD_B44
-	tristate "Broadcom 44XX, 47XX ethernet driver"
-	default m
-	default y if BR2_LINUX_2_6_BRCM
-	help
-	  Free driver for Broadcom Ethernet chipsets (without switch support)
-
 config BR2_PACKAGE_KMOD_ARPT
 	tristate "ARP firewalling support"
 	default m
 	help
 	  Kernel modules for ARP firewalling
-
-config BR2_PACKAGE_KMOD_BLUETOOTH
-	tristate "Bluetooth drivers and network stack"
-	default m
-	help
-	  Bluetooth drivers and network stack
 
 config BR2_PACKAGE_KMOD_EBT
 	tristate "Ethernet Bridge firewalling support"
@@ -109,14 +96,6 @@ config BR2_PACKAGE_KMOD_IPTABLES_V4
 	default y
 	help
 	  Kernel modules for IPv4 firewalling
-
-config BR2_PACKAGE_KMOD_AX25
-	tristate "AX25 support"
-	default m
-	help
-	  Kernel modules for AX25 protocol family
-	   - ax25.o: AX25 layer 2 support
-	   - mkiss.o: AX25 KISS driver
 
 config BR2_PACKAGE_KMOD_IPTABLES_V4_EXTRA
 	tristate "Extra modules for iptables"
@@ -137,138 +116,12 @@ config BR2_PACKAGE_KMOD_IPTABLES_V6
 	help
 	  IPv6 firewalling support
 
-config BR2_PACKAGE_KMOD_NFS
-	tristate "NFS support"
-	default m
-	help
-	  Kernel modules for NFS support
-	  Includes lockd, nfs and sunrpc
-
-config BR2_PACKAGE_KMOD_CIFS
-	tristate "CIFS support"
-	default m
-	help
-	  Kernel modules for CIFS support
-
-config BR2_PACKAGE_KMOD_SOUNDCORE
-	tristate "Soundcard support"
-	default n
-	help
-	  Base support for soundcards
-	  Requires either USB soundcard support (OSS) or ALSA package to be useful
-
-config BR2_PACKAGE_KMOD_USB
-	tristate "USB support"
-	default m
-
-config BR2_PACKAGE_KMOD_USB_CONTROLLER
-	tristate
-	depends on BR2_PACKAGE_KMOD_USB_UHCI || BR2_PACKAGE_KMOD_USB_OHCI || BR2_PACKAGE_KMOD_USB2
-	default n
-
-config BR2_PACKAGE_KMOD_USB_UHCI
-	tristate "Support for UHCI controllers"
-	default m
-	depends BR2_PACKAGE_KMOD_USB
-	select BR2_PACKAGE_KMOD_USB_CONTROLLER
-
-config BR2_PACKAGE_KMOD_USB_OHCI
-	tristate "Support for OHCI controllers"
-	default m
-	depends BR2_PACKAGE_KMOD_USB
-	select BR2_PACKAGE_KMOD_USB_CONTROLLER
-
-config BR2_PACKAGE_KMOD_USB2
-	tristate "Support for USB 2.0 controllers"
-	default m
-	depends BR2_PACKAGE_KMOD_USB
-	select BR2_PACKAGE_KMOD_USB_CONTROLLER
-
-config BR2_PACKAGE_KMOD_USB_SERIAL
-	tristate "kmod-usb-serial - Support for USB-to-serial converters"
-	default m
-	depends BR2_PACKAGE_KMOD_USB_CONTROLLER
-
-config BR2_PACKAGE_KMOD_USB_SERIAL_BELKIN
-	tristate "kmod-usb-serial-belkin - Support for Belkin USB-to-serial converters"
-	default m
-	depends BR2_PACKAGE_KMOD_USB_SERIAL
-
-config BR2_PACKAGE_KMOD_USB_SERIAL_FTDI
-	tristate "kmod-usb-serial-ftdi - Support for FTDI USB-to-serial converterr"
-	default m
-	depends BR2_PACKAGE_KMOD_USB_SERIAL
-
-config BR2_PACKAGE_KMOD_USB_SERIAL_MCT_U232
-	tristate "kmod-usb-serial-mct-u232 - Support for Magic Control Technology USB-to-Serial converters"
-	default m
-	depends BR2_PACKAGE_KMOD_USB_SERIAL
-
-config BR2_PACKAGE_KMOD_USB_SERIAL_PL2303
-	tristate "kmod-usb-serial-pl2303 - Support for Prolific PL2303 USB-to-Serial converters"
-	default m
-	depends BR2_PACKAGE_KMOD_USB_SERIAL
-
-config BR2_PACKAGE_KMOD_USB_STORAGE
-	tristate "Support for USB storage devices"
-	default m
-	depends BR2_PACKAGE_KMOD_USB_CONTROLLER
-
-config BR2_PACKAGE_KMOD_USB_PRINTER
-	tristate "Support for USB printers"
-	default m
-	depends BR2_PACKAGE_KMOD_USB_CONTROLLER
-
-config BR2_PACKAGE_KMOD_USB_AUDIO
-	tristate "Support for USB soundcards"
-	default m
-	depends BR2_PACKAGE_KMOD_USB_CONTROLLER
-	select BR2_PACKAGE_KMOD_SOUNDCORE
-
-config BR2_PACKAGE_KMOD_USB_ACM
-	tristate "Support for USB modems/isdn controllers"
-	default m
-	depends BR2_PACKAGE_KMOD_USB_CONTROLLER
-
 config BR2_PACKAGE_KMOD_IDE
 	tristate "IDE support"
 	default m
 	help
 	  Kernel modules for IDE support
 	  useful for usb mass storage devices (e.g. on WL-HDD)
-
-config BR2_PACKAGE_KMOD_VFAT
-	tristate "VFAT filesystem support"
-	default m
-	depends on BR2_PACKAGE_KMOD_NLS_BASE
-	depends on BR2_PACKAGE_KMOD_NLS_CP437 || BR2_PACKAGE_KMOD_NLS_CP850
-	help
-	  Kernel modules for VFAT filesystem support
-	  useful for usb mass storage devices
-
-config BR2_PACKAGE_KMOD_EXT2
-	tristate "EXT2 filesystem support"
-	default m
-	help
-	  Kernel modules for EXT2 filesystem support
-
-config BR2_PACKAGE_KMOD_EXT3
-	tristate "EXT3 filesystem support"
-	default m
-	help
-	  Kernel modules for EXT3 filesystem support
-
-config BR2_PACKAGE_KMOD_XFS
-	tristate "XFS filesystem support"
-	default m
-	help
-	  Kernel modules for XFS filesystem support
-
-config BR2_PACKAGE_KMOD_HFSPLUS
-	tristate "HFS+ filesystem support"
-	default m
-	help
-	  Kernel modules for HFS+ filesystem support
 
 config BR2_PACKAGE_KMOD_LOOP
 	tristate "loop mount support"
@@ -349,63 +202,117 @@ config BR2_PACKAGE_KMOD_SCHED
 	help
 	  Kernel schedulers for IP traffic
 
-comment "Multimedia devices support ---"
+comment "Filesystems support -----------"
 
-config BR2_PACKAGE_KMOD_VIDEODEV
-	tristate "kmod-videodev - Video (For Linux) kernel support"
-	default m
-
-config BR2_PACKAGE_KMOD_PWC
-	tristate "kmod-pwc - Kernel driver for USB Philips Cameras"
-	default m
-
-comment "Native language support ---"
-
-config BR2_PACKAGE_KMOD_NLS_BASE
-	tristate "kmod-nls-base - Basic native language support for filesystems"
+config BR2_PACKAGE_KMOD_CIFS
+	tristate "kmod-fs-cifs................... CIFS support"
 	default m
 	help
-	  Kernel native language support
+	  Kernel modules for CIFS support
+
+config BR2_PACKAGE_KMOD_FS_EXT2
+	tristate "kmod-fs-ext2................... EXT2 filesystem support"
+	default m
+	help
+	  Kernel modules for EXT2 filesystem support
+
+config BR2_PACKAGE_KMOD_FS_EXT3
+	tristate "kmod-fs-ext3................... EXT3 filesystem support"
+	default m
+	help
+	  Kernel modules for EXT3 filesystem support
+
+config BR2_PACKAGE_KMOD_FS_HFSPLUS
+	tristate "kmod-fs-hfsplus................ HFS+ filesystem support"
+	default m
+	help
+	  Kernel modules for HFS+ filesystem support
+
+config BR2_PACKAGE_KMOD_FS_NFS
+	tristate "kmod-fs-nfs.................... NFS support"
+	default m
+	help
+	  Kernel modules for NFS support
+	  Includes lockd, nfs and sunrpc
+
+config BR2_PACKAGE_KMOD_FS_VFAT
+	tristate "kmod-fs-vfat................... VFAT filesystem support"
+	default m
+	help
+	  Kernel modules for VFAT filesystem support
+	  useful for usb mass storage devices
+
+config BR2_PACKAGE_KMOD_FS_XFS
+	tristate "kmod-fs-xfs.................... XFS filesystem support"
+	default m
+	help
+	  Kernel modules for XFS filesystem support
+
+comment "Multimedia devices support ----"
+
+config BR2_PACKAGE_KMOD_PWC
+	tristate "kmod-pwc....................... Kernel driver for USB Philips Cameras"
+	default m
+
+config BR2_PACKAGE_KMOD_SOUNDCORE
+	tristate "kmod-soundcore................. Soundcard support"
+	default n
+	help
+	  Base support for soundcards
+	  Requires either USB soundcard support (OSS) or ALSA package to be useful
+
+config BR2_PACKAGE_KMOD_VIDEODEV
+	tristate "kmod-videodev.................. Video (For Linux) kernel support"
+	default m
+
+comment "Native Language support -------"
 
 config BR2_PACKAGE_KMOD_NLS_CP437
-	tristate "kmod-nls-cp437 - Codepage 437 (United States, Canada)"
+	tristate "kmod-nls-cp437................. Codepage 437 (United States, Canada)"
 	default m
-	select BR2_PACKAGE_KMOD_NLS_BASE
+	select BR2_PACKAGE_KMOD_NLS
 	help
 	  Kernel native language support
 
 config BR2_PACKAGE_KMOD_NLS_CP850
-	tristate "kmod-nls-cp850 - Codepage 850 (Europe)"
+	tristate "kmod-nls-cp850................. Codepage 850 (Europe)"
 	default m
-	select BR2_PACKAGE_KMOD_NLS_BASE
+	select BR2_PACKAGE_KMOD_NLS
 	help
 	  Kernel native language support
 
 config BR2_PACKAGE_KMOD_NLS_IS08859_1
-	tristate "kmod-nls-iso8859-1 -  NLS ISO 8859-1  (Latin 1; Western European Languages)"
+	tristate "kmod-nls-iso8859-1............. NLS ISO 8859-1  (Latin 1; Western European Languages)"
 	default m
-	select BR2_PACKAGE_KMOD_NLS_BASE
+	select BR2_PACKAGE_KMOD_NLS
 	help
 	  Kernel native language support
 
 config BR2_PACKAGE_KMOD_NLS_IS08859_15
-	tristate "kmod-nls-iso8859-15 -  NLS ISO 8859-15  (Latin 15; Western European Languages with Euro)"
+	tristate "kmod-nls-iso8859-15............ NLS ISO 8859-15  (Latin 15; Western European Languages with Euro)"
 	default m
-	select BR2_PACKAGE_KMOD_NLS_BASE
+	select BR2_PACKAGE_KMOD_NLS
 	help
 	  Kernel native language support
 
 config BR2_PACKAGE_KMOD_NLS_UTF8
-	tristate "kmod-nls-utf8 - NLS UTF8"
+	tristate "kmod-nls-utf8.................. NLS UTF8"
 	default m
-	select BR2_PACKAGE_KMOD_NLS_BASE
+	select BR2_PACKAGE_KMOD_NLS
 	help
 	  Kernel native language support
 
-comment "Network devices support ---"
+config BR2_PACKAGE_KMOD_NLS
+	tristate
+	default m
+	depends BR2_PACKAGE_KMOD_NLS_CP437 || BR2_PACKAGE_KMOD_NLS_CP850 || BR2_PACKAGE_KMOD_NLS_IS08859_1 || BR2_PACKAGE_KMOD_NLS_IS08859_15 || BR2_PACKAGE_KMOD_NLS_UTF8
+	help
+	  Kernel native language support
+
+comment "Network devices support -------"
 
 config BR2_PACKAGE_KMOD_NET_3C59X
-	tristate "kmod-net-3C59x - 3Com 3c590/3c900 series (592/595/597) \"Vortex/Boomerang\" Ethernet kernel support"
+	tristate "kmod-net-3C59x................. 3Com 3c590/3c900 series (592/595/597) \"Vortex/Boomerang\" Ethernet kernel support"
 	default m
 	help
 	  This option enables driver support for a large number of 10mbps and 
@@ -421,7 +328,7 @@ config BR2_PACKAGE_KMOD_NET_3C59X
 	  
 
 config BR2_PACKAGE_KMOD_NET_8139TOO
-	tristate "kmod-net-8139too - RealTek RTL-8139 PCI Fast Ethernet Adapter kernel support"
+	tristate "kmod-net-8139too............... RealTek RTL-8139 PCI Fast Ethernet Adapter kernel support"
 	default m
 	help
 	  This is a driver for the Fast Ethernet PCI network cards based on 
@@ -431,7 +338,7 @@ config BR2_PACKAGE_KMOD_NET_8139TOO
 	  
 
 config BR2_PACKAGE_KMOD_NET_AIRO
-	tristate "kmod-net-airo - Cisco/Aironet 34X/35X/4500/4800 ISA and PCI cards kernel support"
+	tristate "kmod-net-airo.................. Cisco/Aironet 34X/35X/4500/4800 ISA and PCI cards kernel support"
 	default m
 	help
 	  This is the standard Linux driver to support Cisco/Aironet ISA and 
@@ -447,8 +354,16 @@ config BR2_PACKAGE_KMOD_NET_AIRO
 	  This package contains the airo.o kernel module.
 	  
 
+config BR2_PACKAGE_KMOD_B44
+	tristate "kmod-net-b44................... Broadcom 44XX, 47XX ethernet driver"
+	default m
+	default y if BR2_LINUX_2_6_BRCM
+	help
+	  Free driver for Broadcom Ethernet chipsets (without switch support)
+	  
+
 config BR2_PACKAGE_KMOD_NET_HERMES
-	tristate "kmod-net-hermes - Hermes chipset 802.11b support (Orinoco/Prism2/Symbol) kernel support"
+	tristate "kmod-net-hermes................ Hermes chipset 802.11b support (Orinoco/Prism2/Symbol) kernel support"
 	default m
 	help
 	  A driver for 802.11b wireless cards based based on the "Hermes" or 
@@ -465,7 +380,7 @@ config BR2_PACKAGE_KMOD_NET_HERMES
 	  
 
 config BR2_PACKAGE_KMOD_NET_HERMES_PCI
-	tristate "kmod-net-hermes-pci - Intersil Prism 2.5 PCI 802.11b adaptor support"
+	tristate   "kmod-net-hermes-pci.......... Intersil Prism 2.5 PCI 802.11b adaptor support"
 	default m
 	depends BR2_PACKAGE_KMOD_NET_HERMES
 	help
@@ -479,7 +394,7 @@ config BR2_PACKAGE_KMOD_NET_HERMES_PCI
 	  
 
 config BR2_PACKAGE_KMOD_NET_HERMES_PLX
-	tristate "kmod-net-hermes-plx - Hermes in PLX9052 based PCI adaptor (Netgear MA301, etc.) kernel support"
+	tristate   "kmod-net-hermes-plx.......... Hermes in PLX9052 based PCI adaptor (Netgear MA301, etc.) kernel support"
 	default m
 	depends BR2_PACKAGE_KMOD_NET_HERMES
 	help
@@ -494,7 +409,7 @@ config BR2_PACKAGE_KMOD_NET_HERMES_PLX
 	  
 
 config BR2_PACKAGE_KMOD_NET_NATSEMI
-	tristate "kmod-net-natsemi - National Semiconductor DP8381x series PCI Ethernet kernel support"
+	tristate "kmod-net-natsemi............... National Semiconductor DP8381x series PCI Ethernet kernel support"
 	default m
 	help
 	  This driver is for the National Semiconductor DP83810 series, 
@@ -505,7 +420,7 @@ config BR2_PACKAGE_KMOD_NET_NATSEMI
 	  
 
 config BR2_PACKAGE_KMOD_NET_PRISM54
-	tristate "kmod-net-prism54 - Intersil Prism GT/Duette/Indigo PCI/PCMCIA cards kernel support"
+	tristate "kmod-net-prism54............... Intersil Prism GT/Duette/Indigo PCI/PCMCIA cards kernel support"
 	default m
 	help
 	  Enable PCI and Cardbus support for the following chipset based cards: 
@@ -544,16 +459,108 @@ config BR2_PACKAGE_KMOD_NET_PRISM54
 	  This package contains the prism54.o kernel module.
 	  
 
-comment "Misc. device support ---"
+comment "USB support -------------------"
+
+config BR2_PACKAGE_KMOD_USB
+	tristate "kmod-usb....................... USB support"
+	default m
+
+config BR2_PACKAGE_KMOD_USB_UHCI
+	tristate   "kmod-usb-uhci................ Support for UHCI controllers"
+	default m
+	depends BR2_PACKAGE_KMOD_USB
+	select BR2_PACKAGE_KMOD_USB_CONTROLLER
+
+config BR2_PACKAGE_KMOD_USB_OHCI
+	tristate   "kmod-usb-ohci................ Support for OHCI controllers"
+	default m
+	depends BR2_PACKAGE_KMOD_USB
+	select BR2_PACKAGE_KMOD_USB_CONTROLLER
+
+config BR2_PACKAGE_KMOD_USB2
+	tristate   "kmod-usb2.................... Support for USB 2.0 controllers"
+	default m
+	depends BR2_PACKAGE_KMOD_USB
+	select BR2_PACKAGE_KMOD_USB_CONTROLLER
+
+config BR2_PACKAGE_KMOD_USB_CONTROLLER
+	tristate
+	depends on BR2_PACKAGE_KMOD_USB_UHCI || BR2_PACKAGE_KMOD_USB_OHCI || BR2_PACKAGE_KMOD_USB2
+	default n
+
+config BR2_PACKAGE_KMOD_USB_ACM
+	tristate "kmod-usb-acm................... Support for USB modems/isdn controllers"
+	default m
+	depends BR2_PACKAGE_KMOD_USB_CONTROLLER
+
+config BR2_PACKAGE_KMOD_USB_AUDIO
+	tristate "kmod-usb-audio................. Support for USB soundcards"
+	default m
+	depends BR2_PACKAGE_KMOD_USB_CONTROLLER
+	select BR2_PACKAGE_KMOD_SOUNDCORE
+
+config BR2_PACKAGE_KMOD_USB_PRINTER
+	tristate "kmod-usb-printer............... Support for USB printers"
+	default m
+	depends BR2_PACKAGE_KMOD_USB_CONTROLLER
+
+config BR2_PACKAGE_KMOD_USB_SERIAL
+	tristate "kmod-usb-serial................ Support for USB-to-serial converters"
+	default m
+	depends BR2_PACKAGE_KMOD_USB_CONTROLLER
+
+config BR2_PACKAGE_KMOD_USB_SERIAL_BELKIN
+	tristate   "kmod-usb-serial-belkin....... Support for Belkin USB-to-serial converters"
+	default m
+	depends BR2_PACKAGE_KMOD_USB_SERIAL
+
+config BR2_PACKAGE_KMOD_USB_SERIAL_FTDI
+	tristate   "kmod-usb-serial-ftdi......... Support for FTDI USB-to-serial converterr"
+	default m
+	depends BR2_PACKAGE_KMOD_USB_SERIAL
+
+config BR2_PACKAGE_KMOD_USB_SERIAL_MCT_U232
+	tristate   "kmod-usb-serial-mct-u232..... Support for Magic Control Technology USB-to-Serial converters"
+	default m
+	depends BR2_PACKAGE_KMOD_USB_SERIAL
+
+config BR2_PACKAGE_KMOD_USB_SERIAL_PL2303
+	tristate   "kmod-usb-serial-pl2303....... Support for Prolific PL2303 USB-to-Serial converters"
+	default m
+	depends BR2_PACKAGE_KMOD_USB_SERIAL
+
+config BR2_PACKAGE_KMOD_USB_STORAGE
+	tristate "kmod-usb-storage............... Support for USB storage devices"
+	default m
+	depends BR2_PACKAGE_KMOD_USB_CONTROLLER
+
+comment "Misc. device support ----------"
+
+config BR2_PACKAGE_KMOD_AX25
+	tristate "kmod-ax25...................... AX25 support"
+	default m
+	help
+	  Kernel modules for AX25 protocol family
+	   - ax25.o: AX25 layer 2 support
+	   - mkiss.o: AX25 KISS driver
+	  
+
+config BR2_PACKAGE_KMOD_BLUETOOTH
+	tristate "kmod-bluetooth................. Bluetooth drivers and network stack"
+	default m
+	help
+	  Bluetooth drivers and network stack
+	  
 
 config BR2_PACKAGE_KMOD_WD1100
-	tristate "Soekris net4801 watchdog"
+	tristate "kmod-wd1100.................... Soekris net4801 watchdog"
 	default y
 	depends BR2_LINUX_2_4_X86
 	help
 	  Driver for the NatSemi SC1x00 series Watchdog 
 	  found on Soekris net4801 boards
+	  
 
-comment "Additional kernel modules ---"
+comment "Additional kernel modules -----"
 
 source "target/linux/package/Config.in"
