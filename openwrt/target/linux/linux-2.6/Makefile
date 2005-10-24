@@ -242,7 +242,6 @@ $(STAMP_DIR)/.linux-compile: $(LINUX_DIR)/.modules_done
 source: $(DL_DIR)/$(LINUX_SOURCE)
 prepare: $(LINUX_DIR)/.configured
 compile:
-	@$(PKG_TRACE) Compiling...
 	$(MAKE) $(STAMP_DIR)/.linux-compile $(MAKE_TRACE)
 
 install: compile $(TARGET_MODULES_DIR) $(KERNEL_IPKG)
