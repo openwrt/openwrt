@@ -79,98 +79,49 @@ config BR2_PACKAGE_KMOD_BRCM_ET
 	help
 	  Proprietary driver for Broadcom Ethernet chipsets
 
-config BR2_PACKAGE_KMOD_ARPT
-	tristate "ARP firewalling support"
+comment "Networking modules ------------"
+
+config BR2_PACKAGE_KMOD_ATM
+	tristate "kmod-atm....................... ATM support"
+	default y if BR2_LINUX_2_4_AR7
+	help
+	  ATM support
+
+config BR2_PACKAGE_KMOD_GRE
+	tristate "kmod-gre....................... GRE tunneling driver"
 	default m
 	help
-	  Kernel modules for ARP firewalling
-
-config BR2_PACKAGE_KMOD_EBT
-	tristate "Ethernet Bridge firewalling support"
-	default m
-	help
-	  Kernel modules for bridge firewalling
-
-config BR2_PACKAGE_KMOD_IPTABLES_V4
-	tristate "Basic set of kernel modules for iptables"
-	default y
-	help
-	  Kernel modules for IPv4 firewalling
-
-config BR2_PACKAGE_KMOD_IPTABLES_V4_EXTRA
-	tristate "Extra modules for iptables"
-	default m
-	help
-	  Extra kernel modules for IPv4 firewalling
+	  Kernel support for GRE tunnels
 
 config BR2_PACKAGE_KMOD_IPV6
-	tristate "IPv6 support"
+	tristate "kmod-ipv6...................... IPv6 support"
 	default m
 	help
 	  Kernel modules for IPv6 protocol support
 	  
-config BR2_PACKAGE_KMOD_IPTABLES_V6
-	tristate "Kernel modules for ip6tables"
-	default m
-	depends BR2_PACKAGE_KMOD_IPV6
-	help
-	  IPv6 firewalling support
-
-config BR2_PACKAGE_KMOD_IDE
-	tristate "IDE support"
-	default m
-	help
-	  Kernel modules for IDE support
-	  useful for usb mass storage devices (e.g. on WL-HDD)
-
-config BR2_PACKAGE_KMOD_LOOP
-	tristate "loop mount support"
-	default m
-	help
-	  Kernel module for loop mount support
-
-config BR2_PACKAGE_KMOD_NBD
-	tristate "network block device"
-	default m
-	help
-	  Kernel module for network block device
-
-config BR2_PACKAGE_KMOD_LP
-	tristate "parallel port and lp support"
-	default m
-	help
-	  Kernel modules for line printer and parallel port support
-
-config BR2_PACKAGE_KMOD_CRYPTO
-	tristate "CryptoAPI modules"
-	default m
-	select BUSYBOX_CONFIG_FEATURE_CHECK_TAINTED_MODULE
-	help
-	  Kernel modules for cryptographic algorithms
-
 config BR2_PACKAGE_KMOD_PPP
-	tristate "PPP support"
+	tristate "kmod-ppp....................... PPP support"
 	default m
 	help
 	  Kernel support for PPP
 
 config BR2_PACKAGE_KMOD_MPPE
-	tristate "PPP MPPE/MPPC module"
+	tristate   "kmod-mppe.................... PPP MPPE/MPPC module"
 	default m
-	select BR2_PACKAGE_KMOD_CRYPTO
 	depends BR2_PACKAGE_KMOD_PPP
+	select BR2_PACKAGE_KMOD_CRYPTO
 	help
 	  Support for Microsoft PPP Encryption/Compression
 
 config BR2_PACKAGE_KMOD_PPPOE
-	tristate "PPPoE modules"
+	tristate   "kmod-pppoe................... PPPoE (PPP over Ethernet) kernel support"
 	default m
 	depends BR2_PACKAGE_KMOD_PPP
 	help
 	  Support for PPP over Ethernet
 
 config BR2_PACKAGE_KMOD_PPPOATM
-	tristate "PPP over ATM"
+	tristate   "kmod-pppoatm................. PPPoA (PPP over ATM) kernel support"
 	default y if BR2_LINUX_2_4_AR7
 	default m
 	depends BR2_PACKAGE_KMOD_PPP
@@ -178,29 +129,85 @@ config BR2_PACKAGE_KMOD_PPPOATM
 	help
 	  Support for PPP over ATM
 
-config BR2_PACKAGE_KMOD_ATM
-	tristate "ATM support"
-	default y if BR2_LINUX_2_4_AR7
+config BR2_PACKAGE_KMOD_SCHED
+	tristate "kmod-sched..................... Traffic schedulers"
+	default m
 	help
-	  ATM support
+	  Kernel schedulers for IP traffic
 
 config BR2_PACKAGE_KMOD_TUN
-	tristate "Universal TUN/TAP driver"
+	tristate "kmod-tun....................... Universal TUN/TAP driver"
 	default m
 	help
 	  Kernel support for the TUN/TAP tunneling device
 
-config BR2_PACKAGE_KMOD_GRE
-	tristate "GRE tunneling driver"
-	default m
-	help
-	  Kernel support for GRE tunnels
 
-config BR2_PACKAGE_KMOD_SCHED
-	tristate "Traffic schedulers"
+comment "Filtering/Firewalling ---------"
+
+config BR2_PACKAGE_KMOD_ARPTABLES
+	tristate "kmod-arptables................. ARP firewalling support"
 	default m
 	help
-	  Kernel schedulers for IP traffic
+	  Kernel modules for ARP firewalling
+
+config BR2_PACKAGE_KMOD_EBTABLES
+	tristate "kmod-ebtables.................. Ethernet Bridge firewalling support"
+	default m
+	help
+	  Kernel modules for bridge firewalling
+
+config BR2_PACKAGE_KMOD_IPTABLES_V4
+	tristate "kmod-iptables.................. Basic set of kernel modules for iptables"
+	default y
+	help
+	  Kernel modules for IPv4 firewalling
+
+config BR2_PACKAGE_KMOD_IPTABLES_V4_EXTRA
+	tristate "kmod-iptables-extra............ Extra modules for iptables"
+	default m
+	help
+	  Extra kernel modules for IPv4 firewalling
+
+config BR2_PACKAGE_KMOD_IPTABLES_V6
+	tristate "kmod-ip6tables................. Kernel modules for ip6tables"
+	default m
+	depends BR2_PACKAGE_KMOD_IPV6
+	help
+	  IPv6 firewalling support
+
+comment "Block devices support ---------"
+
+config BR2_PACKAGE_KMOD_IDE
+	tristate "kmod-ide....................... IDE support"
+	default m
+	help
+	  Kernel modules for IDE support
+	  useful for usb mass storage devices (e.g. on WL-HDD)
+	  
+
+config BR2_PACKAGE_KMOD_LOOP
+	tristate "kmod-loop...................... loop mount support"
+	default m
+	help
+	  Kernel module for loop mount support
+	  
+
+config BR2_PACKAGE_KMOD_NBD
+	tristate "kmod-nbd....................... network block device"
+	default m
+	help
+	  Kernel module for network block device
+	  
+
+comment "Cryptographic support ---------"
+
+config BR2_PACKAGE_KMOD_CRYPTO
+	tristate "kmod-crypto.................... CryptoAPI modules"
+	default m
+	select BUSYBOX_CONFIG_FEATURE_CHECK_TAINTED_MODULE
+	help
+	  Kernel modules for cryptographic algorithms
+	  
 
 comment "Filesystems support -----------"
 
@@ -209,24 +216,28 @@ config BR2_PACKAGE_KMOD_CIFS
 	default m
 	help
 	  Kernel modules for CIFS support
+	  
 
 config BR2_PACKAGE_KMOD_FS_EXT2
 	tristate "kmod-fs-ext2................... EXT2 filesystem support"
 	default m
 	help
 	  Kernel modules for EXT2 filesystem support
+	  
 
 config BR2_PACKAGE_KMOD_FS_EXT3
 	tristate "kmod-fs-ext3................... EXT3 filesystem support"
 	default m
 	help
 	  Kernel modules for EXT3 filesystem support
+	  
 
 config BR2_PACKAGE_KMOD_FS_HFSPLUS
 	tristate "kmod-fs-hfsplus................ HFS+ filesystem support"
 	default m
 	help
 	  Kernel modules for HFS+ filesystem support
+	  
 
 config BR2_PACKAGE_KMOD_FS_NFS
 	tristate "kmod-fs-nfs.................... NFS support"
@@ -550,6 +561,13 @@ config BR2_PACKAGE_KMOD_BLUETOOTH
 	default m
 	help
 	  Bluetooth drivers and network stack
+	  
+
+config BR2_PACKAGE_KMOD_LP
+	tristate "kmod-lp........................ Parallel port and lp support"
+	default m
+	help
+	  Kernel modules for line printer and parallel port support
 	  
 
 config BR2_PACKAGE_KMOD_WD1100

@@ -50,35 +50,89 @@ ifeq ($(BOARD),ar7)
 include ./ar7.mk
 endif
 
+
+# Networking
+
 $(eval $(call KMOD_template,ATM,atm,\
 	$(MODULES_DIR)/kernel/net/atm/atm.o \
 	$(MODULES_DIR)/kernel/net/atm/br2684.o \
 ,CONFIG_ATM,,50,atm))
-$(eval $(call KMOD_template,PPPOATM,pppoatm,\
-	$(MODULES_DIR)/kernel/net/atm/pppoatm.o \
-,CONFIG_PPPOATM))
-$(eval $(call KMOD_template,ARPT,arptables,\
-	$(MODULES_DIR)/kernel/net/ipv4/netfilter/arp*.o \
-,CONFIG_IP_NF_ARPTABLES))
-$(eval $(call KMOD_template,EBT,ebtables,\
-	$(MODULES_DIR)/kernel/net/bridge/netfilter/*.o \
-,CONFIG_BRIDGE_NF_EBTABLES))
-$(eval $(call KMOD_template,IPTABLES_V4_EXTRA,iptables-extra,\
-	$(MODULES_DIR)/kernel/net/ipv4/netfilter/ip*.o \
-))
-$(eval $(call KMOD_template,IPTABLES_V6,ip6tables,\
-	$(MODULES_DIR)/kernel/net/ipv6/netfilter/ip*.o \
-,CONFIG_IP6_NF_IPTABLES,kmod-ipv6))
+
+$(eval $(call KMOD_template,GRE,gre,\
+	$(MODULES_DIR)/kernel/net/ipv4/ip_gre.o \
+,CONFIG_NET_IPGRE))
+
 $(eval $(call KMOD_template,IPV6,ipv6,\
 	$(MODULES_DIR)/kernel/net/ipv6/ipv6.o \
 ,CONFIG_IPV6,,20,ipv6))
+
+$(eval $(call KMOD_template,PPP,ppp,\
+	$(MODULES_DIR)/kernel/drivers/net/ppp_async.o \
+	$(MODULES_DIR)/kernel/drivers/net/ppp_generic.o \
+	$(MODULES_DIR)/kernel/drivers/net/slhc.o \
+	$(MODULES_DIR)/kernel/drivers/net/pppox.o \
+,CONFIG_PPP))
+
+$(eval $(call KMOD_template,MPPE,mppe,\
+	$(MODULES_DIR)/kernel/drivers/net/ppp_mppe_mppc.o \
+,CONFIG_PPP_MPPE_MPPC))
+
+$(eval $(call KMOD_template,PPPOATM,pppoatm,\
+	$(MODULES_DIR)/kernel/net/atm/pppoatm.o \
+,CONFIG_PPPOATM))
+
+$(eval $(call KMOD_template,PPPOE,pppoe,\
+	$(MODULES_DIR)/kernel/drivers/net/pppoe.o \
+,CONFIG_PPPOE))
+
+ifneq ($(wildcard $(MODULES_DIR)/kernel/net/sched/*.o),)
+CONFIG_SCHED:=m
+endif
+$(eval $(call KMOD_template,SCHED,sched,\
+	$(MODULES_DIR)/kernel/net/sched/*.o \
+,CONFIG_SCHED))
+
+$(eval $(call KMOD_template,TUN,tun,\
+	$(MODULES_DIR)/kernel/drivers/net/tun.o \
+,CONFIG_TUN,,20,tun))
+
+
+# Filtering / Firewalling
+
+$(eval $(call KMOD_template,ARPTABLES,arptables,\
+	$(MODULES_DIR)/kernel/net/ipv4/netfilter/arp*.o \
+,CONFIG_IP_NF_ARPTABLES))
+
+$(eval $(call KMOD_template,EBTABLES,ebtables,\
+	$(MODULES_DIR)/kernel/net/bridge/netfilter/*.o \
+,CONFIG_BRIDGE_NF_EBTABLES))
+
+$(eval $(call KMOD_template,IPTABLES_V4_EXTRA,iptables-extra,\
+	$(MODULES_DIR)/kernel/net/ipv4/netfilter/ip*.o \
+))
+
+$(eval $(call KMOD_template,IPTABLES_V6,ip6tables,\
+	$(MODULES_DIR)/kernel/net/ipv6/netfilter/ip*.o \
+,CONFIG_IP6_NF_IPTABLES,kmod-ipv6))
+
+
+# Block devices
+
 $(eval $(call KMOD_template,IDE,ide,\
 	$(MODULES_DIR)/kernel/drivers/ide/*.o \
 	$(MODULES_DIR)/kernel/drivers/ide/*/*.o \
 ,CONFIG_IDE))
+
 $(eval $(call KMOD_template,LOOP,loop,\
     $(MODULES_DIR)/kernel/drivers/block/loop.o \
 ,CONFIG_BLK_DEV_LOOP,,20,loop))
+
+$(eval $(call KMOD_template,NBD,nbd,\
+    $(MODULES_DIR)/kernel/drivers/block/nbd.o \
+,CONFIG_BLK_DEV_NBD,,20,nbd))
+
+
+# Crypto
 
 ifneq ($(wildcard $(MODULES_DIR)/kernel/crypto/*.o),)
 CONFIG_CRYPTO:=m
@@ -86,30 +140,6 @@ endif
 $(eval $(call KMOD_template,CRYPTO,crypto,\
 	$(MODULES_DIR)/kernel/crypto/*.o \
 ,CONFIG_CRYPTO))
-$(eval $(call KMOD_template,PPP,ppp,\
-	$(MODULES_DIR)/kernel/drivers/net/ppp_async.o \
-	$(MODULES_DIR)/kernel/drivers/net/ppp_generic.o \
-	$(MODULES_DIR)/kernel/drivers/net/slhc.o \
-	$(MODULES_DIR)/kernel/drivers/net/pppox.o \
-,CONFIG_PPP))
-$(eval $(call KMOD_template,MPPE,mppe,\
-	$(MODULES_DIR)/kernel/drivers/net/ppp_mppe_mppc.o \
-,CONFIG_PPP_MPPE_MPPC))
-$(eval $(call KMOD_template,PPPOE,pppoe,\
-	$(MODULES_DIR)/kernel/drivers/net/pppoe.o \
-,CONFIG_PPPOE))
-$(eval $(call KMOD_template,TUN,tun,\
-	$(MODULES_DIR)/kernel/drivers/net/tun.o \
-,CONFIG_TUN,,20,tun))
-$(eval $(call KMOD_template,GRE,gre,\
-	$(MODULES_DIR)/kernel/net/ipv4/ip_gre.o \
-,CONFIG_NET_IPGRE))
-ifneq ($(wildcard $(MODULES_DIR)/kernel/net/sched/*.o),)
-CONFIG_SCHED:=m
-endif
-$(eval $(call KMOD_template,SCHED,sched,\
-	$(MODULES_DIR)/kernel/net/sched/*.o \
-,CONFIG_SCHED))
 
 
 # Filesystems
