@@ -321,7 +321,6 @@ install: compile $(TARGET_MODULES_DIR) $(KERNEL_IPKG)
 	@{ [ "$(INSTALL_TARGETS)" != "" ] && $(IPKG_KERNEL) install $(INSTALL_TARGETS) || true; } $(MAKE_TRACE) 
 
 mostlyclean:
-	@$(PKG_TRACE) Cleaning...
 	rm -f $(STAMP_DIR)/.linux-compile
 	rm -f $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION)/.modules_done
 	rm -f $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION)/.drivers-unpacked
@@ -336,7 +335,6 @@ rebuild:
 	$(MAKE) compile $(MAKE_TRACE)
 
 clean:
-	@$(PKG_TRACE) Cleaning...
 	rm -f $(STAMP_DIR)/.linux-compile
 	rm -rf $(LINUX_BUILD_DIR)
 	rm -f $(TARGETS)

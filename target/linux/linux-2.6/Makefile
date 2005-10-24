@@ -268,7 +268,6 @@ rebuild:
 	$(MAKE) compile
 
 clean:
-	@$(PKG_TRACE) Cleaning...
 	rm -f $(STAMP_DIR)/.linux-compile
 	rm -rf $(LINUX_BUILD_DIR)
 	rm -f $(TARGETS)
