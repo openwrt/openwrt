@@ -54,17 +54,6 @@ $(eval $(call KMOD_template,ATM,atm,\
 $(eval $(call KMOD_template,PPPOATM,pppoatm,\
 	$(MODULES_DIR)/kernel/net/atm/pppoatm.ko \
 ,CONFIG_PPPOATM))
-$(eval $(call KMOD_template,USB_ACM,usb-acm,\
-	$(MODULES_DIR)/kernel/drivers/usb/class/cdc-acm.ko \
-,CONFIG_USB_ACM))
-$(eval $(call KMOD_template,B44,b44,\
-	$(MODULES_DIR)/kernel/drivers/net/b44.ko \
-,CONFIG_B44))
-$(eval $(call KMOD_template,BLUETOOTH,bluetooth,\
-	$(MODULES_DIR)/kernel/net/bluetooth/*.ko \
-	$(MODULES_DIR)/kernel/net/bluetooth/rfcomm/*.ko \
-	$(MODULES_DIR)/kernel/drivers/bluetooth/*.ko \
-,CONFIG_BLUEZ))
 $(eval $(call KMOD_template,ARPT,arptables,\
 	$(MODULES_DIR)/kernel/net/ipv4/netfilter/arp*.ko \
 ,CONFIG_IP_NF_ARPTABLES))
@@ -80,33 +69,6 @@ $(eval $(call KMOD_template,IPTABLES_V6,ip6tables,\
 $(eval $(call KMOD_template,IPV6,ipv6,\
 	$(MODULES_DIR)/kernel/net/ipv6/ipv6.ko \
 ,CONFIG_IPV6,,20,ipv6))
-$(eval $(call KMOD_template,CIFS,cifs,\
-	$(MODULES_DIR)/kernel/fs/cifs/cifs.ko \
-,CONFIG_CIFS,,30,cifs))
-$(eval $(call KMOD_template,NFS,nfs,\
-	$(MODULES_DIR)/kernel/fs/lockd/*.ko \
-	$(MODULES_DIR)/kernel/fs/nfs/*.ko \
-	$(MODULES_DIR)/kernel/net/sunrpc/*.ko \
-,CONFIG_NFS_FS,,30,sunrpc lockd nfs))
-$(eval $(call KMOD_template,USB,usb-core,\
-	$(MODULES_DIR)/kernel/drivers/usb/core/usbcore.ko \
-,CONFIG_USB,,50,usbcore))
-$(eval $(call KMOD_template,USB_UHCI,usb-uhci,\
-	$(MODULES_DIR)/kernel/drivers/usb/host/uhci.ko \
-,CONFIG_USB_UHCI_ALT,kmod-usb-core,60,uhci))
-$(eval $(call KMOD_template,USB_OHCI,usb-ohci,\
-	$(MODULES_DIR)/kernel/drivers/usb/host/ohci-hcd.ko \
-,CONFIG_USB_OHCI_HCD,kmod-usb-core,60,ohci-hcd))
-$(eval $(call KMOD_template,USB2,usb2,\
-	$(MODULES_DIR)/kernel/drivers/usb/host/ehci-hcd.ko \
-,CONFIG_USB_EHCI_HCD,kmod-usb-core,60,ehci-hcd))
-$(eval $(call KMOD_template,USB_STORAGE,usb-storage,\
-	$(MODULES_DIR)/kernel/drivers/scsi/*.ko \
-	$(MODULES_DIR)/kernel/drivers/usb/storage/*.ko \
-,CONFIG_USB_STORAGE,kmod-usb-core,60,scsi_mod sd_mod usb-storage))
-$(eval $(call KMOD_template,USB_PRINTER,usb-printer,\
-	$(MODULES_DIR)/kernel/drivers/usb/class/usblp.ko \
-,CONFIG_USB_PRINTER,kmod-usb-core,60,usblp))
 $(eval $(call KMOD_template,IDE,ide,\
 	$(MODULES_DIR)/kernel/drivers/ide/*.ko \
 	$(MODULES_DIR)/kernel/drivers/ide/*/*.ko \
@@ -114,39 +76,6 @@ $(eval $(call KMOD_template,IDE,ide,\
 $(eval $(call KMOD_template,LOOP,loop,\
     $(MODULES_DIR)/kernel/drivers/block/loop.ko \
 ,CONFIG_BLK_DEV_LOOP,,20,loop))
-$(eval $(call KMOD_template,EXT2,ext2,\
-	$(MODULES_DIR)/kernel/fs/ext2/*.ko \
-,CONFIG_EXT2_FS,,30,ext2))
-$(eval $(call KMOD_template,EXT3,ext3,\
-	$(MODULES_DIR)/kernel/fs/ext3/*.ko \
-	$(MODULES_DIR)/kernel/fs/jbd/*.ko \
-,CONFIG_EXT3_FS,,30,jbd ext3))
-$(eval $(call KMOD_template,XFS,xfs,\
-	$(MODULES_DIR)/kernel/fs/xfs/*.ko \
-,CONFIG_XFS_FS,,30,xfs))
-$(eval $(call KMOD_template,HFSPLUS,hfsplus,\
-	$(MODULES_DIR)/kernel/fs/hfsplus/*.ko \
-,CONFIG_HFSPLUS_FS,,30,hfsplus))
-$(eval $(call KMOD_template,VFAT,vfat,\
-	$(MODULES_DIR)/kernel/fs/vfat/vfat.ko \
-	$(MODULES_DIR)/kernel/fs/fat/fat.ko \
-	$(MODULES_DIR)/kernel/fs/nls/nls_base.ko \
-,CONFIG_VFAT_FS,,30,fat vfat))
-$(eval $(call KMOD_template,NLS_BASE,nls-base,\
-	$(MODULES_DIR)/kernel/fs/nls/nls_base.ko \
-,CONFIG_NLS,,20,nls_base))
-$(eval $(call KMOD_template,NLS_UTF8,nls-utf8,\
-	$(MODULES_DIR)/kernel/fs/nls/nls_utf8.ko \
-,CONFIG_NLS_UTF8,,20,nls_utf8))
-$(eval $(call KMOD_template,NLS_ISO8859_1,nls-iso8859-1,\
-	$(MODULES_DIR)/kernel/fs/nls/nls_iso8859-1.ko \
-,CONFIG_NLS_ISO8859_1,,20,nls_iso8859-1))
-$(eval $(call KMOD_template,NLS_CP437,nls-cp437,\
-	$(MODULES_DIR)/kernel/fs/nls/nls_cp437.ko \
-,CONFIG_NLS_CODEPAGE_437,,20,nls_cp437))
-$(eval $(call KMOD_template,NLS_CP850,nls-cp850,\
-	$(MODULES_DIR)/kernel/fs/nls/nls_cp850.ko \
-,CONFIG_NLS_CODEPAGE_850,,20,nls_cp850))
 $(eval $(call KMOD_template,CRYPTO,crypto,\
 	$(MODULES_DIR)/kernel/crypto/*.ko \
 ))
@@ -171,6 +100,117 @@ $(eval $(call KMOD_template,GRE,gre,\
 $(eval $(call KMOD_template,SCHED,sched,\
 	$(MODULES_DIR)/kernel/net/sched/*.ko \
 ))
+
+
+# Filesystems
+
+$(eval $(call KMOD_template,FS_CIFS,fs-cifs,\
+	$(MODULES_DIR)/kernel/fs/cifs/cifs.ko \
+,CONFIG_CIFS,kmod-nls-base,30,cifs))
+
+$(eval $(call KMOD_template,FS_EXT2,fs-ext2,\
+	$(MODULES_DIR)/kernel/fs/ext2/*.ko \
+,CONFIG_EXT2_FS,,30,ext2))
+
+$(eval $(call KMOD_template,FS_EXT3,fs-ext3,\
+	$(MODULES_DIR)/kernel/fs/ext3/*.ko \
+	$(MODULES_DIR)/kernel/fs/jbd/*.ko \
+,CONFIG_EXT3_FS,,30,jbd ext3))
+
+$(eval $(call KMOD_template,FS_HFSPLUS,fs-hfsplus,\
+	$(MODULES_DIR)/kernel/fs/hfsplus/*.ko \
+,CONFIG_HFSPLUS_FS,kmod-nls-base,30,hfsplus))
+
+$(eval $(call KMOD_template,FS_NFS,fs-nfs,\
+	$(MODULES_DIR)/kernel/fs/lockd/*.ko \
+	$(MODULES_DIR)/kernel/fs/nfs/*.ko \
+	$(MODULES_DIR)/kernel/net/sunrpc/*.ko \
+,CONFIG_NFS_FS,,30,sunrpc lockd nfs))
+
+$(eval $(call KMOD_template,FS_VFAT,fs-vfat,\
+	$(MODULES_DIR)/kernel/fs/fat/fat.ko \
+	$(MODULES_DIR)/kernel/fs/vfat/vfat.ko \
+,CONFIG_VFAT_FS,kmod-nls-base,30,fat vfat))
+
+$(eval $(call KMOD_template,FS_XFS,fs-xfs,\
+	$(MODULES_DIR)/kernel/fs/xfs/*.ko \
+,CONFIG_XFS_FS,,30,xfs))
+
+
+# NLS
+
+$(eval $(call KMOD_template,NLS_BASE,nls-base,\
+	$(MODULES_DIR)/kernel/fs/nls/nls_base.ko \
+,CONFIG_NLS,,20,nls_base))
+
+$(eval $(call KMOD_template,NLS_CP437,nls-cp437,\
+	$(MODULES_DIR)/kernel/fs/nls/nls_cp437.ko \
+,CONFIG_NLS_CODEPAGE_437,,20,nls_cp437))
+
+$(eval $(call KMOD_template,NLS_CP850,nls-cp850,\
+	$(MODULES_DIR)/kernel/fs/nls/nls_cp850.ko \
+,CONFIG_NLS_CODEPAGE_850,,20,nls_cp850))
+
+$(eval $(call KMOD_template,NLS_ISO8859_1,nls-iso8859-1,\
+	$(MODULES_DIR)/kernel/fs/nls/nls_iso8859-1.ko \
+,CONFIG_NLS_ISO8859_1,,20,nls_iso8859-1))
+
+$(eval $(call KMOD_template,NLS_ISO8859_15,nls-iso8859-15,\
+	$(MODULES_DIR)/kernel/fs/nls/nls_iso8859-15.ko \
+,CONFIG_NLS_ISO8859_15,,20,nls_iso8859-15))
+
+$(eval $(call KMOD_template,NLS_UTF8,nls-utf8,\
+	$(MODULES_DIR)/kernel/fs/nls/nls_utf8.ko \
+,CONFIG_NLS_UTF8,,20,nls_utf8))
+
+
+# Network devices
+
+$(eval $(call KMOD_template,NET_B44,net-b44,\
+	$(MODULES_DIR)/kernel/drivers/net/b44.ko \
+,CONFIG_B44))
+
+
+# USB
+
+$(eval $(call KMOD_template,USB,usb-core,\
+	$(MODULES_DIR)/kernel/drivers/usb/core/usbcore.ko \
+,CONFIG_USB,,50,usbcore))
+
+$(eval $(call KMOD_template,USB_OHCI,usb-ohci,\
+	$(MODULES_DIR)/kernel/drivers/usb/host/ohci-hcd.ko \
+,CONFIG_USB_OHCI_HCD,kmod-usb-core,60,ohci-hcd))
+
+$(eval $(call KMOD_template,USB_UHCI,usb-uhci,\
+	$(MODULES_DIR)/kernel/drivers/usb/host/uhci.ko \
+,CONFIG_USB_UHCI_ALT,kmod-usb-core,60,uhci))
+
+$(eval $(call KMOD_template,USB2,usb2,\
+	$(MODULES_DIR)/kernel/drivers/usb/host/ehci-hcd.ko \
+,CONFIG_USB_EHCI_HCD,kmod-usb-core,60,ehci-hcd))
+
+$(eval $(call KMOD_template,USB_ACM,usb-acm,\
+	$(MODULES_DIR)/kernel/drivers/usb/class/cdc-acm.ko \
+,CONFIG_USB_ACM))
+
+$(eval $(call KMOD_template,USB_PRINTER,usb-printer,\
+	$(MODULES_DIR)/kernel/drivers/usb/class/usblp.ko \
+,CONFIG_USB_PRINTER,kmod-usb-core,60,usblp))
+
+$(eval $(call KMOD_template,USB_STORAGE,usb-storage,\
+	$(MODULES_DIR)/kernel/drivers/scsi/*.ko \
+	$(MODULES_DIR)/kernel/drivers/usb/storage/*.ko \
+,CONFIG_USB_STORAGE,kmod-usb-core,60,scsi_mod sd_mod usb-storage))
+
+
+# Misc.
+
+$(eval $(call KMOD_template,BLUETOOTH,bluetooth,\
+	$(MODULES_DIR)/kernel/net/bluetooth/*.ko \
+	$(MODULES_DIR)/kernel/net/bluetooth/rfcomm/*.ko \
+	$(MODULES_DIR)/kernel/drivers/bluetooth/*.ko \
+,CONFIG_BLUEZ))
+
 
 $(TARGETS): $(PACKAGE_DIR)
 

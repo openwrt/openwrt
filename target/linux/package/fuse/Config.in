@@ -1,6 +1,5 @@
 config BR2_PACKAGE_KMOD_FUSE
-	prompt "kmod-fuse - FUSE kernel module"
-	tristate
+	tristate "kmod-fuse...................... FUSE kernel module"
 	default m if CONFIG_DEVEL
 	select BR2_PACKAGE_FUSE
 	help
