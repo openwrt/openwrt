@@ -4,14 +4,15 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=asterisk
 PKG_VERSION:=1.0.9
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_MD5SUM:=0d7f1c680ae53a739f26a069ef8b580a
 
 PKG_SOURCE_URL:=http://ftp.digium.com/pub/asterisk/ ftp://ftp.digium.com/pub/asterisk/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/install
 PKG_CAT:=zcat
+
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
 include $(TOPDIR)/package/rules.mk
 $(eval $(call PKG_template,ASTERISK,asterisk,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
@@ -19,11 +20,14 @@ $(eval $(call PKG_template,ASTERISK_MYSQL,asterisk-mysql,$(PKG_VERSION)-$(PKG_RE
 $(eval $(call PKG_template,ASTERISK_PGSQL,asterisk-pgsql,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,ASTERISK_VOICEMAIL,asterisk-voicemail,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,ASTERISK_SOUNDS,asterisk-sounds,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
-$(eval $(call PKG_template,ASTERISK_CODEC_ILBC,asterisk-codec-ilbc,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,ASTERISK_CHAN_BLUETOOTH,asterisk-chan-bluetooth,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,ASTERISK_CHAN_MGCP,asterisk-chan-mgcp,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,ASTERISK_CHAN_SKINNY,asterisk-chan-skinny,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,ASTERISK_CODEC_ILBC,asterisk-codec-ilbc,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,ASTERISK_CODEC_LPC10,asterisk-codec-lpc10,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,ASTERISK_CODEC_SPEEX,asterisk-codec-speex,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,ASTERISK_PBX_DUNDI,asterisk-pbx-dundi,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,ASTERISK_RES_AGI,asterisk-res-agi,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 ifneq ($(DEVELOPER),)
 APPS:=app_sql_mysql.so app_sql_postgres.so
@@ -77,27 +81,33 @@ $(IPKG_ASTERISK):
 	rm -rf $(IDIR_ASTERISK)/var
 	(cd $(IDIR_ASTERISK)/usr/lib/asterisk; \
 		rm -rf agi-bin/*; \
-		rm -rf firmware; \
 		rm -rf images; \
 		rm -rf keys/*; \
-		rm -rf mohmp3; \
+		rm -rf mohmp3/*.mp3; \
 		rm -rf sounds/*; \
 		cd modules; \
 		rm -rf	*adsi* *festival* *modem* *meetme* *oss* *phone* *intercom* \
 			*mp3* *nbscat* *mysql* *postgres* *pgsql* *voicemail* *speex* \
-			*musiconhold* *zapateller* *jpeg*; \
+			*zapateller* *jpeg*; \
+		rm -f chan_bluetooth.so ; \
+		rm -f chan_mgcp.so ; \
+		rm -f chan_skinny.so ; \
 		rm -f {codec,format}_ilbc.so ; \
 		rm -f codec_lpc10.so ; \
-		rm -f chan_bluetooth.so ; \
 		rm -f pbx_dundi.so ; \
+		rm -f res_agi.so ; \
 	)
 	(cd $(IDIR_ASTERISK)/etc/asterisk; \
 		rm -f 	*odbc* *mysql* *postgres* *pgsql* *voicemail* *adsi* *oss* *alsa* \
 			*festival* *modem* *meetme* *phone* *tds* *vofr* *rpt* *vpb* \
-			*zapata* *musiconhold*; \
+			*zapata*; \
 		rm -f bluetooth.conf ; \
+		rm -f mgcp.conf ; \
+		rm -f skinny.conf ; \
 		rm -f dundi.conf ; \
 	)
+	$(SED) 's|/var/lib/asterisk|/usr/lib/asterisk|g' $(IDIR_ASTERISK)/etc/asterisk/musiconhold.conf
+	rm -f $(IDIR_ASTERISK)/etc/asterisk/*.old
 	install -d -m0755 $(IDIR_ASTERISK)/etc/default
 	install -m0644  ./files/asterisk.default $(IDIR_ASTERISK)/etc/default/asterisk
 	install -d -m0755 $(IDIR_ASTERISK)/etc/init.d
@@ -136,6 +146,9 @@ $(IPKG_ASTERISK_VOICEMAIL):
 	install -m0644 $(PKG_BUILD_DIR)/configs/voicemail.conf.sample $(IDIR_ASTERISK_VOICEMAIL)/etc/asterisk/voicemail.conf
 	install -d -m0755 $(IDIR_ASTERISK_VOICEMAIL)/usr/lib/asterisk/modules
 	install -m0755 $(PKG_BUILD_DIR)/apps/*voicemail.so $(IDIR_ASTERISK_VOICEMAIL)/usr/lib/asterisk/modules/
+	install -m0755 $(PKG_BUILD_DIR)/res/res_adsi.so $(IDIR_ASTERISK_VOICEMAIL)/usr/lib/asterisk/modules/
+	install -d -m0755 $(IDIR_ASTERISK_VOICEMAIL)/usr/lib/asterisk/sounds
+	cp -fpR $(PKG_BUILD_DIR)/sounds/vm-*.gsm $(IDIR_ASTERISK_VOICEMAIL)/usr/lib/asterisk/sounds/
 	$(RSTRIP) $(IDIR_ASTERISK_VOICEMAIL)
 	$(IPKG_BUILD) $(IDIR_ASTERISK_VOICEMAIL) $(PACKAGE_DIR)
 
@@ -146,6 +159,22 @@ $(IPKG_ASTERISK_CHAN_BLUETOOTH):
 	install -m0755 $(PKG_BUILD_DIR)/channels/chan_bluetooth.so $(IDIR_ASTERISK_CHAN_BLUETOOTH)/usr/lib/asterisk/modules/
 	$(RSTRIP) $(IDIR_ASTERISK_CHAN_BLUETOOTH)
 	$(IPKG_BUILD) $(IDIR_ASTERISK_CHAN_BLUETOOTH) $(PACKAGE_DIR)
+
+$(IPKG_ASTERISK_CHAN_MGCP):
+	install -d -m0755 $(IDIR_ASTERISK_CHAN_MGCP)/etc/asterisk
+	install -m0644 $(PKG_BUILD_DIR)/configs/mgcp.conf.sample $(IDIR_ASTERISK_CHAN_MGCP)/etc/asterisk/mgcp.conf
+	install -d -m0755 $(IDIR_ASTERISK_CHAN_MGCP)/usr/lib/asterisk/modules
+	install -m0755 $(PKG_BUILD_DIR)/channels/chan_mgcp.so $(IDIR_ASTERISK_CHAN_MGCP)/usr/lib/asterisk/modules/
+	$(RSTRIP) $(IDIR_ASTERISK_CHAN_MGCP)
+	$(IPKG_BUILD) $(IDIR_ASTERISK_CHAN_MGCP) $(PACKAGE_DIR)
+
+$(IPKG_ASTERISK_CHAN_SKINNY):
+	install -d -m0755 $(IDIR_ASTERISK_CHAN_SKINNY)/etc/asterisk
+	install -m0644 $(PKG_BUILD_DIR)/configs/skinny.conf.sample $(IDIR_ASTERISK_CHAN_SKINNY)/etc/asterisk/skinny.conf
+	install -d -m0755 $(IDIR_ASTERISK_CHAN_SKINNY)/usr/lib/asterisk/modules
+	install -m0755 $(PKG_BUILD_DIR)/channels/chan_skinny.so $(IDIR_ASTERISK_CHAN_SKINNY)/usr/lib/asterisk/modules/
+	$(RSTRIP) $(IDIR_ASTERISK_CHAN_SKINNY)
+	$(IPKG_BUILD) $(IDIR_ASTERISK_CHAN_SKINNY) $(PACKAGE_DIR)
 
 $(IPKG_ASTERISK_CODEC_ILBC):
 	install -d -m0755 $(IDIR_ASTERISK_CODEC_ILBC)/usr/lib/asterisk/modules
@@ -173,4 +202,10 @@ $(IPKG_ASTERISK_PBX_DUNDI):
 	install -m0755 $(PKG_BUILD_DIR)/pbx/pbx_dundi.so $(IDIR_ASTERISK_PBX_DUNDI)/usr/lib/asterisk/modules/
 	$(RSTRIP) $(IDIR_ASTERISK_PBX_DUNDI)
 	$(IPKG_BUILD) $(IDIR_ASTERISK_PBX_DUNDI) $(PACKAGE_DIR)
+
+$(IPKG_ASTERISK_RES_AGI):
+	install -d -m0755 $(IDIR_ASTERISK_RES_AGI)/usr/lib/asterisk/modules
+	install -m0755 $(PKG_BUILD_DIR)/res/res_agi.so $(IDIR_ASTERISK_RES_AGI)/usr/lib/asterisk/modules/
+	$(RSTRIP) $(IDIR_ASTERISK_RES_AGI)
+	$(IPKG_BUILD) $(IDIR_ASTERISK_RES_AGI) $(PACKAGE_DIR)
 
