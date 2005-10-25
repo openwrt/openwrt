@@ -1,0 +1,12 @@
+diff -ruN asterisk-1.0.7-old/channels/chan_iax2.c asterisk-1.0.7-new/channels/chan_iax2.c
+--- asterisk-1.0.7-old/channels/chan_iax2.c	2005-10-25 02:06:35.000000000 +0200
++++ asterisk-1.0.7-new/channels/chan_iax2.c	2005-10-25 04:35:11.000000000 +0200
+@@ -960,7 +960,7 @@
+ 		last++;
+ 	else
+ 		last = s;
+-	snprintf(s2, strlen(s) + 100, "/var/tmp/%s-%ld", last, (unsigned long)rand());
++	snprintf(s2, strlen(s) + 100, "/tmp/%s-%ld", last, (unsigned long)rand());
+ 	res = stat(s, &stbuf);
+ 	if (res < 0) {
+ 		ast_log(LOG_WARNING, "Failed to stat '%s': %s\n", s, strerror(errno));
