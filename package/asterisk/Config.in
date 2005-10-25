@@ -22,6 +22,22 @@ config BR2_PACKAGE_ASTERISK_CHAN_BLUETOOTH
 	help
 	  The Bluetooth HandsFreeProfile support for Asterisk
 
+config BR2_PACKAGE_ASTERISK_CHAN_MGCP
+	prompt "...-chan-mgcp - Media Gateway Control Protocol implementation"
+	tristate
+	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_ASTERISK
+	help
+	  Media Gateway Control Protocol implementation for Asterisk
+
+config BR2_PACKAGE_ASTERISK_CHAN_SKINNY
+	prompt "...-chan-skinny - Skinny Client Control Protocol implementation"
+	tristate
+	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_ASTERISK
+	help
+	  Skinny Client Control Protocol implementation for Asterisk
+
 config BR2_PACKAGE_ASTERISK_CODEC_ILBC
 	prompt "...-codec-ilbc - Internet Low Bitrate Codec (ILBC) Translator"
 	tristate
@@ -54,6 +70,14 @@ config BR2_PACKAGE_ASTERISK_PBX_DUNDI
 	depends BR2_PACKAGE_ASTERISK
 	help
 	  Distributed Universal Number Discovery (DUNDi) support for Asterisk
+
+config BR2_PACKAGE_ASTERISK_RES_AGI
+	prompt "...-res-agi - Asterisk Gateway Interface module"
+	tristate
+	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_ASTERISK
+	help
+	  Asterisk Gateway Interface module
 
 config BR2_PACKAGE_ASTERISK_MYSQL
 	prompt "...-mysql - MySQL modules"
