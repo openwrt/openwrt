@@ -21,10 +21,12 @@ $(PKG_BUILD_DIR)/.configured:
 $(PKG_BUILD_DIR)/.built: 
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CC=$(TARGET_CC) LD=$(TARGET_CROSS)ld \
-		CFLAGS="$(TARGET_CFLAGS) -Wall -I$(PKG_BUILD_DIR)/include/linux/include -I$(PKG_BUILD_DIR)/include -DARPTABLES_VERSION=\\\"$(PKG_VERSION)\\\" "
+		COPT_FLAGS="$(TARGET_CFLAGS)" \
+		KERNEL_DIR="./include/linux"
 	touch $@
 
 $(IPKG_ARPTABLES):
-	mkdir -p $(IDIR_ARPTABLES)/usr/sbin
-	cp $(PKG_BUILD_DIR)/arptables $(IDIR_ARPTABLES)/usr/sbin/
+	install -d -m0755 $(IDIR_ARPTABLES)/usr/sbin
+	install -m0755 $(PKG_BUILD_DIR)/arptables $(IDIR_ARPTABLES)/usr/sbin/
+	$(RSTRIP) $(IDIR_ARPTABLES)
 	$(IPKG_BUILD) $(IDIR_ARPTABLES) $(PACKAGE_DIR)
