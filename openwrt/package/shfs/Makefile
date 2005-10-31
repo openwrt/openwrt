@@ -2,16 +2,16 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME := shfs
-PKG_VERSION := 0.35
-PKG_RELEASE := 2
-PKG_MD5SUM := 016f49d71bc32eee2b5d11fc1600cfbe
+PKG_NAME:=shfs
+PKG_VERSION:=0.35
+PKG_RELEASE:=2
+PKG_MD5SUM:=016f49d71bc32eee2b5d11fc1600cfbe
 
-PKG_SOURCE_URL := @SF/shfs
-PKG_SOURCE := $(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_CAT := zcat
+PKG_SOURCE_URL:=@SF/shfs
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_CAT:=zcat
 
-PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
 include $(TOPDIR)/package/rules.mk
@@ -28,10 +28,9 @@ $(PKG_BUILD_DIR)/.built:
 		OFLAGS="$(TARGET_CFLAGS)" \
 		CC="$(TARGET_CC)" \
 		LINKER="$(TARGET_CC)" \
-		KERNEL="$(LINUX_VERSION)" \
 		KERNEL_SOURCES="$(LINUX_DIR)" \
 		ROOT="$(PKG_INSTALL_DIR)" \
-		all install
+		utils utils-install
 	touch $@
 
 $(IPKG_SHFS_UTILS):
