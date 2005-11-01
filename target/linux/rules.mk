@@ -4,6 +4,11 @@ LINUX_KARCH:=$(shell echo $(ARCH) | sed -e 's/i[3-9]86/i386/' \
 	-e 's/sh[234]/sh/' \
 )
 
+ifeq ($(KERNEL),2.6)
+LINUX_KMOD_SUFFIX=ko
+else
+LINUX_KMOD_SUFFIX=o
+endif
 
 define KMOD_template
 ifeq ($$(strip $(4)),)
