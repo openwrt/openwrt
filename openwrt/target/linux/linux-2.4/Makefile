@@ -211,6 +211,10 @@ $(eval $(call KMOD_template,NET_B44,net-b44,\
 	$(MODULES_DIR)/kernel/drivers/net/b44.o \
 ,CONFIG_B44,,10,b44))
 
+$(eval $(call KMOD_template,NET_E100,net-e100,\
+	$(MODULES_DIR)/kernel/drivers/net/e100.o \
+,CONFIG_E100,,10,e100))
+
 $(eval $(call KMOD_template,NET_HERMES,net-hermes,\
 	$(MODULES_DIR)/kernel/drivers/net/wireless/hermes.o \
 	$(MODULES_DIR)/kernel/drivers/net/wireless/orinoco.o \
@@ -231,6 +235,15 @@ $(eval $(call KMOD_template,NET_NATSEMI,net-natsemi,\
 $(eval $(call KMOD_template,NET_PRISM54,net-prism54,\
 	$(MODULES_DIR)/kernel/drivers/net/wireless/prism54/prism54.o \
 ,CONFIG_PRISM54,,10,prism54))
+
+
+# PCMCIA/CardBus
+
+$(eval $(call KMOD_template,PCMCIA_CORE,pcmcia-core,\
+	$(MODULES_DIR)/kernel/drivers/pcmcia/pcmcia_core.o \
+	$(MODULES_DIR)/kernel/drivers/pcmcia/ds.o \
+	$(MODULES_DIR)/kernel/drivers/pcmcia/yenta_socket.o \
+,CONFIG_PCMCIA,,50,pcmcia_core))
 
 
 # USB
