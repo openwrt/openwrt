@@ -39,7 +39,7 @@ $(PKG_BUILD_DIR)/.built:
 $(IPKG_KMOD_MINI_FO):
 	install -m0755 -d $(IDIR_KMOD_MINI_FO)/lib/modules/$(LINUX_VERSION)
 	install -m0755 -d $(IDIR_KMOD_MINI_FO)/etc/modules.d
-	cp -fpR $(PKG_BUILD_DIR)/mini_fo.o \
+	cp -fpR $(PKG_BUILD_DIR)/mini_fo.$(LINUX_KMOD_SUFFIX) \
 	 $(IDIR_KMOD_MINI_FO)/lib/modules/$(LINUX_VERSION)/
 	echo "mini_fo" > $(IDIR_KMOD_MINI_FO)/etc/modules.d/15-mini-fo
 	$(RSTRIP_KMOD) $(IDIR_KMOD_MINI_FO)
