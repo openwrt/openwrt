@@ -201,7 +201,7 @@ $(eval $(call KMOD_template,NET_3C59X,net-3c59x,\
 $(eval $(call KMOD_template,NET_8139TOO,net-8139too,\
 	$(MODULES_DIR)/kernel/drivers/net/8139too.o \
 	$(MODULES_DIR)/kernel/drivers/net/mii.o \
-,CONFIG_VORTEX,,10,mii 8139too))
+,CONFIG_8139TOO,,10,mii 8139too))
 
 $(eval $(call KMOD_template,NET_AIRO,net-airo,\
 	$(MODULES_DIR)/kernel/drivers/net/wireless/airo.o \
@@ -239,13 +239,13 @@ $(eval $(call KMOD_template,USB,usb-core,\
 	$(MODULES_DIR)/kernel/drivers/usb/usbcore.o \
 ,CONFIG_USB,,50,usbcore))
 
-$(eval $(call KMOD_template,USB_UHCI,usb-uhci,\
-	$(MODULES_DIR)/kernel/drivers/usb/host/uhci.o \
-,CONFIG_USB_UHCI_ALT,kmod-usb-core,60,uhci))
-
 $(eval $(call KMOD_template,USB_OHCI,usb-ohci,\
 	$(MODULES_DIR)/kernel/drivers/usb/host/usb-ohci.o \
 ,CONFIG_USB_OHCI,kmod-usb-core,60,usb-ohci))
+
+$(eval $(call KMOD_template,USB_UHCI,usb-uhci,\
+	$(MODULES_DIR)/kernel/drivers/usb/host/uhci.o \
+,CONFIG_USB_UHCI_ALT,kmod-usb-core,60,uhci))
 
 $(eval $(call KMOD_template,USB2,usb2,\
 	$(MODULES_DIR)/kernel/drivers/usb/host/ehci-hcd.o \
@@ -273,7 +273,7 @@ $(eval $(call KMOD_template,USB_SERIAL_BELKIN,usb-serial-belkin,\
 
 $(eval $(call KMOD_template,USB_SERIAL_FTDI,usb-serial-ftdi,\
 	$(MODULES_DIR)/kernel/drivers/usb/serial/ftdi_sio.o \
-,CONFIG_USB_SERIAL_IR,kmod-usb-serial,61,ftdi_usb))
+,CONFIG_USB_SERIAL_FTDI_SIO,kmod-usb-serial,61,ftdi_sio))
 
 $(eval $(call KMOD_template,USB_SERIAL_MCT_U232,usb-serial-mct-u232,\
 	$(MODULES_DIR)/kernel/drivers/usb/serial/mct_u232.o \
