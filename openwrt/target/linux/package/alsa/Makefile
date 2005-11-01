@@ -43,6 +43,7 @@ $(PKG_BUILD_DIR)/.configured:
 
 $(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR) \
+		ARCH="$(LINUX_KARCH)" \
 		c_opts="$(KERNEL_C_OPTS)"
 	touch $@
 
@@ -50,6 +51,6 @@ $(IPKG_KMOD_ALSA):
 	install -d -m0755 $(IDIR_KMOD_ALSA)/etc/modules.d
 	install -m0644 ./files/alsa.modules $(IDIR_KMOD_ALSA)/etc/modules.d/70-alsa
 	install -d -m0755 $(IDIR_KMOD_ALSA)/lib/modules/$(LINUX_VERSION)
-	install -m0644 $(PKG_BUILD_DIR)/modules/*.o \
+	install -m0644 $(PKG_BUILD_DIR)/modules/*.$(LINUX_KMOD_SUFFIX) \
 		$(IDIR_KMOD_ALSA)/lib/modules/$(LINUX_VERSION)/
 	$(IPKG_BUILD) $(IDIR_KMOD_ALSA) $(PACKAGE_DIR)

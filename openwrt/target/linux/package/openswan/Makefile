@@ -33,5 +33,5 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_KMOD_OPENSWAN):
 	mkdir -p $(IDIR_KMOD_OPENSWAN)/lib/modules/$(LINUX_VERSION)
-	cp $(PKG_BUILD_DIR)/modobj/ipsec.*o $(IDIR_KMOD_OPENSWAN)/lib/modules/$(LINUX_VERSION)/
+	cp -fpR $(PKG_BUILD_DIR)/modobj*/ipsec.$(LINUX_KMOD_SUFFIX) $(IDIR_KMOD_OPENSWAN)/lib/modules/$(LINUX_VERSION)/
 	$(IPKG_BUILD) $(IDIR_KMOD_OPENSWAN) $(PACKAGE_DIR)
