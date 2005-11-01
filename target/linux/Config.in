@@ -365,6 +365,12 @@ config BR2_PACKAGE_KMOD_NET_AIRO
 	  This package contains the airo.o kernel module.
 	  
 
+config BR2_PACKAGE_KMOD_E100
+	tristate "kmod-net-e100.................. Intel(R) PRO/100+ cards kernel support"
+	default m
+	help
+	  Intel(R) PRO/100+ cards kernel support
+
 config BR2_PACKAGE_KMOD_B44
 	tristate "kmod-net-b44................... Broadcom 44XX, 47XX ethernet driver"
 	default m
@@ -470,10 +476,16 @@ config BR2_PACKAGE_KMOD_NET_PRISM54
 	  This package contains the prism54.o kernel module.
 	  
 
+comment "PCMCIA/CardBus support --------"
+
+config BR2_PACKAGE_KMOD_PCMCIA_CORE
+	tristate "kmod-pcmcia-core............... PCMCIA/CardBus support"
+	default m
+
 comment "USB support -------------------"
 
 config BR2_PACKAGE_KMOD_USB
-	tristate "kmod-usb....................... USB support"
+	tristate "kmod-usb-core.................. USB support"
 	default m
 
 config BR2_PACKAGE_KMOD_USB_UHCI
