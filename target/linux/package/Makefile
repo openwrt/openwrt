@@ -6,15 +6,15 @@ package-$(BR2_PACKAGE_KMOD_ALSA) += alsa
 endif
 package-$(BR2_PACKAGE_KMOD_FUSE) += fuse
 package-$(BR2_PACKAGE_KMOD_HOSTAP) += hostap
-package-$(BR2_PACKAGE_KMOD_MINI_FO) += mini_fo
-package-$(BR2_PACKAGE_KMOD_SHFS) += shfs
-package-$(BR2_PACKAGE_KMOD_OPENSWAN) += openswan
 package-$(BR2_PACKAGE_KMOD_MADWIFI) += madwifi
+package-$(BR2_PACKAGE_KMOD_MINI_FO) += mini_fo
+package-$(BR2_PACKAGE_KMOD_OPENSWAN) += openswan
+package-$(BR2_PACKAGE_KMOD_SHFS) += shfs
 package-y += base-files
 
 ifeq ($(BOARD)-$(KERNEL),brcm-2.4)
-package-$(BR2_PACKAGE_KMOD_WLCOMPAT) += wlcompat
 package-$(BR2_PACKAGE_KMOD_DIAG) += diag
+package-$(BR2_PACKAGE_KMOD_WLCOMPAT) += wlcompat
 wlcompat-compile: base-files-compile
 endif
 
