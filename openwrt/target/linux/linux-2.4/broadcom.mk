@@ -9,11 +9,11 @@
 
 $(eval $(call KMOD_template,BRCM_WL,brcm-wl,\
 	$(MODULES_DIR)/kernel/drivers/net/wl/wl.o \
-,CONFIG_WL),,10,wl)
+,CONFIG_WL,,10,wl))
 
 $(eval $(call KMOD_template,BRCM_ET,brcm-et,\
 	$(MODULES_DIR)/kernel/drivers/net/et/et.o \
-,CONFIG_ET),,10,et)
+,CONFIG_ET,,10,et))
 
 $(eval $(call KMOD_template,LP,lp,\
 	$(MODULES_DIR)/kernel/drivers/parport/parport.o \
