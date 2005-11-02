@@ -31,6 +31,7 @@ $(PKG_BUILD_DIR)/.configured:
 $(PKG_BUILD_DIR)/.built: 
 	$(MAKE) -C $(KERNEL_DIR)/ \
 		ARCH="$(LINUX_KARCH)" \
+		CROSS_COMPILE="$(TARGET_CROSS)" \
 		SUBDIRS="$(PKG_BUILD_DIR)/driver/modules" \
 		modules
 	touch $@

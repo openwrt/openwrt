@@ -69,6 +69,7 @@ $(PKG_BUILD_DIR)/.built:
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		ARCH="$(LINUX_KARCH)" \
+		CROSS_COMPILE="$(TARGET_CROSS)" \
 		PATH="$(TARGET_PATH)" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		SUBDIRS="kernel" \
