@@ -1,5 +1,6 @@
 config BR2_PACKAGE_KMOD_ALSA
-	tristate "kmod-alsa...................... Alsa Sound Drivers"
+	prompt "kmod-alsa......................... Alsa Sound Drivers"
+	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_KMOD_USB_CONTROLLER
 	select BR2_PACKAGE_KMOD_SOUNDCORE

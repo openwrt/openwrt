@@ -1,5 +1,6 @@
 config BR2_PACKAGE_KMOD_SHFS
-	tristate "kmod-shfs...................... Shell FileSystem kernel module (ShFS) kernel module"
+	prompt "kmod-shfs......................... Shell FileSystem kernel module (ShFS) kernel module"
+	tristate
 	default m if CONFIG_DEVEL
 	help
 	  ShFS is a simple and easy to use Linux kernel module which 
@@ -19,5 +20,3 @@ config BR2_PACKAGE_KMOD_SHFS
 	   * persistent connection (reconnect after SSH dies) 
 	  
 	  http://shfs.sourceforge.net/
-	  
-	  This package contains the shfs.o kernel module.
