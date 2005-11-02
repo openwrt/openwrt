@@ -44,7 +44,9 @@ $(PKG_BUILD_DIR)/.configured:
 $(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		ARCH="$(LINUX_KARCH)" \
-		c_opts="$(KERNEL_C_OPTS)"
+		CROSS_COMPILE="$(TARGET_CROSS)" \
+		c_opts="$(KERNEL_C_OPTS)" \
+		all
 	touch $@
 
 $(IPKG_KMOD_ALSA):
