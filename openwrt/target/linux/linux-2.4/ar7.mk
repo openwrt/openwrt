@@ -23,6 +23,11 @@ $(LINUX_DIR)/.drivers-unpacked: $(LINUX_DIR)/.unpacked
 	zcat $(DL_DIR)/$(ATM_FIRMWARE_FILE) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
 	touch $@
 
+linux-dirclean: drivers-clean
+
+drivers-clean:
+	rm -rf $(BUILD_DIR)/$(ATM_FIRMWARE_DIR)
+
 
 $(eval $(call KMOD_template,SANGAM_ATM_A,sangam-atm-annex-a,\
 	$(MODULES_DIR)/kernel/drivers/atm/tiatm.o \
@@ -37,6 +42,6 @@ $(eval $(call KMOD_template,SANGAM_ATM_B,sangam-atm-annex-b,\
 ))
 
 $(eval $(call KMOD_template,CPMAC,cpmac,\
-        $(MODULES_DIR)/kernel/drivers/net/avalanche_cpmac/avalanche_cpmac.o \
-,CONFIG_MIPS_AVALANCHE_CPMAC))
+	$(MODULES_DIR)/kernel/drivers/net/avalanche_cpmac/avalanche_cpmac.o \
+,CONFIG_MIPS_AVALANCHE_CPMAC),,10,avalanche_cpmac)
 
