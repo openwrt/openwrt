@@ -1,5 +1,6 @@
 config BR2_PACKAGE_KMOD_ALSA
 	prompt "kmod-alsa......................... Alsa Sound Drivers"
+	prompt "kmod-alsa......................... Alsa Sound Drivers (FIXME, does not build on 2.6/mipsel)" if BR2_LINUX_2_6_BRCM
 	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_KMOD_USB_CONTROLLER
