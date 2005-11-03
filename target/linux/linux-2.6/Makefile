@@ -47,6 +47,10 @@ include $(LINUX_KCONFIG)
 INSTALL_TARGETS := $(KERNEL_IPKG)
 TARGETS := 
 
+ifeq ($(BOARD),x86)
+include ./x86.mk
+endif
+
 
 # Networking
 

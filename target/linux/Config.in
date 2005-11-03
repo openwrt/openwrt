@@ -36,6 +36,14 @@ config BR2_LINUX_2_6_BRCM
 	  Build firmware images for Broadcom based routers
 	  (e.g. Netgear WGT634u)
 
+config BR2_LINUX_2_6_X86
+	bool "Support for x86 boards [2.6]"
+	default n
+	depends BR2_i386
+	help
+	  Build firmware images for x86 based boards
+	  (e.g. Soekris net4521 and net4801, PC Engines WRAP...)
+
 endchoice
 	
 comment "Device specific modules"
