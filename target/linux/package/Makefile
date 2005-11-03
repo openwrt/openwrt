@@ -2,13 +2,17 @@
 include $(TOPDIR)/rules.mk
 
 ifneq ($(BOARD),ar7)
+ifneq ($(BOARD)-$(KERNEL),brcm-2.6)
 package-$(BR2_PACKAGE_KMOD_ALSA) += alsa
+endif
 endif
 package-$(BR2_PACKAGE_KMOD_FUSE) += fuse
 package-$(BR2_PACKAGE_KMOD_HOSTAP) += hostap
 package-$(BR2_PACKAGE_KMOD_MADWIFI) += madwifi
 package-$(BR2_PACKAGE_KMOD_MINI_FO) += mini_fo
+ifneq ($(BOARD)-$(KERNEL),brcm-2.6)
 package-$(BR2_PACKAGE_KMOD_OPENSWAN) += openswan
+endif
 package-$(BR2_PACKAGE_KMOD_SHFS) += shfs
 package-y += base-files
 
