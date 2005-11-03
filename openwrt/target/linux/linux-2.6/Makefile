@@ -175,7 +175,7 @@ $(eval $(call KMOD_template,FS_XFS,fs-xfs,\
 # Multimedia
 
 $(eval $(call KMOD_template,PWC,pwc,\
-	$(MODULES_DIR)/kernel/drivers/usb/pwc.ko \
+	$(MODULES_DIR)/kernel/drivers/usb/media/pwc/pwc.ko \
 ,CONFIG_USB_PWC,kmod-videodev,63,pwc))
 
 $(eval $(call KMOD_template,SOUNDCORE,soundcore,\
