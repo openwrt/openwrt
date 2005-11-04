@@ -43,5 +43,5 @@ $(eval $(call KMOD_template,SANGAM_ATM_B,sangam-atm-annex-b,\
 
 $(eval $(call KMOD_template,CPMAC,cpmac,\
 	$(MODULES_DIR)/kernel/drivers/net/avalanche_cpmac/avalanche_cpmac.o \
-,CONFIG_MIPS_AVALANCHE_CPMAC),,10,avalanche_cpmac)
+,CONFIG_MIPS_AVALANCHE_CPMAC,,10,avalanche_cpmac))
 
