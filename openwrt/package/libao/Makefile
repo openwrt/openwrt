@@ -49,6 +49,10 @@ $(PKG_BUILD_DIR)/.configured:
 			--enable-static \
 			--disable-rpath \
 			--with-gnu-ld \
+			--disable-esd \
+			--disable-arts \
+			--disable-nas \
+			--disable-polyp \
 	);
 	touch $@
 
