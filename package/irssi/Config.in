@@ -1,11 +1,11 @@
 config BR2_PACKAGE_IRSSI
-	tristate "irssi - console irc client"
+	prompt "irssi............................. console irc client"
+	tristate
 	default m if CONFIG_DEVEL
 	select BR2_PACKAGE_GLIB1
 	select BR2_PACKAGE_LIBNCURSES
-
 	help
-	IRC client for the text console
-	 
-	http://irssi.org
+	  IRC client for the text console
 	  
+	  http://irssi.org
+

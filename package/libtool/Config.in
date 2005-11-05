@@ -1,13 +1,14 @@
+config BR2_COMPILE_LIBTOOL
+	bool
+	depends BR2_PACKAGE_LIBLTDL
+
 config BR2_PACKAGE_LIBLTDL
-	tristate "libltdl - Generic dynamic object loading library"
+	prompt "libltdl........................... A generic dynamic object loading library"
+	tristate
 	default m if CONFIG_DEVEL
+	select BR2_COMPILE_LIBTOOL
 	help
 	  A generic dynamic object loading library.
 	  
 	  http://www.gnu.org/software/libtool/
-	  
-
-config BR2_PACKAGE_LIBTOOL
-	tristate
-	default BR2_PACKAGE_LIBLTDL
 

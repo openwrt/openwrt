@@ -1,5 +1,6 @@
 config BR2_PACKAGE_IPERF
-	tristate "iperf - Internet Protocol bandwidth measuring tool"
+	prompt "iperf............................. Internet Protocol bandwidth measuring tool"
+	tristate
 	default m if CONFIG_DEVEL
 	help
 	  Iperf is a modern alternative for measuring TCP and UDP bandwidth 
@@ -7,5 +8,4 @@ config BR2_PACKAGE_IPERF
 	  characteristics.
 	  
 	  http://dast.nlanr.net/Projects/Iperf/
-	  
 

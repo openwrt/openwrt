@@ -4,12 +4,12 @@ config BR2_COMPILE_JPEG
 	depends BR2_PACKAGE_LIBJPEG
 
 config BR2_PACKAGE_LIBJPEG
-	tristate "libjpeg - The Independent JPEG Group's JPEG runtime library"
+	prompt "libjpeg........................... The Independent JPEG Group's JPEG runtime library"
+	tristate
 	default m if CONFIG_DEVEL
 	select BR2_COMPILE_JPEG
 	help
 	  The Independent JPEG Group's JPEG runtime library.
 	  
 	  http://www.ijg.org/
-	  
 

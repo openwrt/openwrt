@@ -1,5 +1,6 @@
-config BR2_PACKAGE_NETSTAT-NAT
-	tristate "netstat-nat - a netstat variant for NAT connections"
+config BR2_PACKAGE_NETSTAT_NAT
+	prompt "netstat-nat....................... A netstat variant for NAT connections"
+	tristate
 	default m if CONFIG_DEVEL
 	help
 	  Netstat-nat is a small program written in C.
@@ -9,4 +10,4 @@ config BR2_PACKAGE_NETSTAT-NAT
 	  is the temporary conntrack-storage of netfilter.
 	  
 	  http://tweegy.demon.nl/projects/netstat-nat/
-	  
+

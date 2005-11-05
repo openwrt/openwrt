@@ -1,7 +1,9 @@
 config BR2_PACKAGE_SRELAY
-	tristate "srelay - socks 4/5 proxy server"
+	prompt "srelay............................ A socks 4/5 proxy server"
+	tristate
 	default m if CONFIG_DEVEL
 	help
+	  A socks 4/5 protocol proxy server
 	  
 	  http://www.c-wind.com/srelay/
 

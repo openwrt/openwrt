@@ -1,5 +1,6 @@
 config BR2_PACKAGE_6TUNNEL
-	tristate "6tunnel - IPv4 / IPv6 tunnel proxy"
+	prompt "6tunnel........................... IPv4 / IPv6 tunnel proxy"
+	tristate
 	default m if CONFIG_DEVEL
 	select BR2_PACKAGE_KMOD_IPV6
 	help
@@ -8,5 +9,4 @@ config BR2_PACKAGE_6TUNNEL
 	  or IPv6 addresses and forward all data to IPv4 or IPv6 (default) host.
 	  
 	  http://toxygen.net/6tunnel/
-	  
 

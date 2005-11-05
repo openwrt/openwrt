@@ -1,7 +1,7 @@
-menu "asterisk - Complete open source PBX"
+menu "asterisk.......................... Complete open source PBX"
 
 config BR2_PACKAGE_ASTERISK
-	prompt "asterisk - Complete open source PBX"
+	prompt "asterisk.......................... Complete open source PBX"
 	tristate
 	default m if CONFIG_DEVEL
 	help
@@ -11,10 +11,9 @@ config BR2_PACKAGE_ASTERISK
 	  equipment using relatively inexpensive hardware.
 	  
 	  http://www.asterisk.org/
-	  
 
 config BR2_PACKAGE_ASTERISK_CHAN_BLUETOOTH
-	prompt "...-chan-bluetooth - Bluetooth HandsFreeProfile support for Asterisk"
+	prompt   "asterisk-chan-bluetooth......... Bluetooth HandsFreeProfile support for Asterisk"
 	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_ASTERISK
@@ -23,7 +22,7 @@ config BR2_PACKAGE_ASTERISK_CHAN_BLUETOOTH
 	  The Bluetooth HandsFreeProfile support for Asterisk
 
 config BR2_PACKAGE_ASTERISK_CHAN_MGCP
-	prompt "...-chan-mgcp - Media Gateway Control Protocol implementation"
+	prompt   "asterisk-chan-mgcp.............. Media Gateway Control Protocol implementation"
 	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_ASTERISK
@@ -31,7 +30,7 @@ config BR2_PACKAGE_ASTERISK_CHAN_MGCP
 	  Media Gateway Control Protocol implementation for Asterisk
 
 config BR2_PACKAGE_ASTERISK_CHAN_SKINNY
-	prompt "...-chan-skinny - Skinny Client Control Protocol implementation"
+	prompt   "asterisk-chan-skinny............ Skinny Client Control Protocol implementation"
 	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_ASTERISK
@@ -39,7 +38,7 @@ config BR2_PACKAGE_ASTERISK_CHAN_SKINNY
 	  Skinny Client Control Protocol implementation for Asterisk
 
 config BR2_PACKAGE_ASTERISK_CODEC_ILBC
-	prompt "...-codec-ilbc - Internet Low Bitrate Codec (ILBC) Translator"
+	prompt   "asterisk-codec-ilbc............. Internet Low Bitrate Codec (ILBC) Translator"
 	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_ASTERISK
@@ -47,7 +46,7 @@ config BR2_PACKAGE_ASTERISK_CODEC_ILBC
 	  The Internet Low Bitrate Codec (ILBC) Translator for Asterisk
 
 config BR2_PACKAGE_ASTERISK_CODEC_LPC10
-	prompt "...-codec-lpc10 - LPC10 (Linear Predictor Code) 2.4kbps Voice Coder"
+	prompt   "asterisk-codec-lpc10............ LPC10 (Linear Predictor Code) 2.4kbps Voice Coder"
 	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_ASTERISK
@@ -55,7 +54,7 @@ config BR2_PACKAGE_ASTERISK_CODEC_LPC10
 	  The LPC10 (Linear Predictor Code) 2.4kbps Voice Coder for Asterisk
 
 config BR2_PACKAGE_ASTERISK_CODEC_SPEEX
-	prompt "...-codec-speex - Speex/PCM16 Codec Translator"
+	prompt   "asterisk-codec-speex............ Speex/PCM16 Codec Translator"
 	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_ASTERISK
@@ -64,7 +63,7 @@ config BR2_PACKAGE_ASTERISK_CODEC_SPEEX
 	  The Speex speech compression codec for Asterisk
 
 config BR2_PACKAGE_ASTERISK_PBX_DUNDI
-	prompt "...-pbx-dundi - Distributed Universal Number Discovery (DUNDi) support"
+	prompt   "asterisk-pbx-dundi.............. Distributed Universal Number Discovery (DUNDi) support"
 	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_ASTERISK
@@ -72,7 +71,7 @@ config BR2_PACKAGE_ASTERISK_PBX_DUNDI
 	  Distributed Universal Number Discovery (DUNDi) support for Asterisk
 
 config BR2_PACKAGE_ASTERISK_RES_AGI
-	prompt "...-res-agi - Asterisk Gateway Interface module"
+	prompt   "asterisk-res-agi................ Asterisk Gateway Interface module"
 	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_ASTERISK
@@ -80,7 +79,7 @@ config BR2_PACKAGE_ASTERISK_RES_AGI
 	  Asterisk Gateway Interface module
 
 config BR2_PACKAGE_ASTERISK_MYSQL
-	prompt "...-mysql - MySQL modules"
+	prompt   "asterisk-mysql.................. MySQL modules"
 	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_ASTERISK
@@ -89,7 +88,7 @@ config BR2_PACKAGE_ASTERISK_MYSQL
 	  MySQL modules for Asterisk
 
 config BR2_PACKAGE_ASTERISK_PGSQL
-	prompt "...-pgsql - PostgreSQL modules"
+	prompt   "asterisk-pgsql.................. PostgreSQL modules"
 	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_ASTERISK
@@ -98,7 +97,7 @@ config BR2_PACKAGE_ASTERISK_PGSQL
 	  PostgreSQL modules for Asterisk
 	  
 config BR2_PACKAGE_ASTERISK_SOUNDS
-	prompt "...-sounds - Sound files"
+	prompt   "asterisk-sounds................. Sound files"
 	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_ASTERISK
@@ -106,7 +105,7 @@ config BR2_PACKAGE_ASTERISK_SOUNDS
 	  Sound files for Asterisk
 
 config BR2_PACKAGE_ASTERISK_VOICEMAIL
-	prompt "...-voicemail - Voicemail support"
+	prompt   "asterisk-voicemail.............. Voicemail support"
 	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_ASTERISK

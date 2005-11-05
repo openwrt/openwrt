@@ -1,5 +1,6 @@
 config BR2_PACKAGE_LIBEVENT
-	tristate "libevent - Event notification library for event-driven network servers"
+	prompt "libevent.......................... Event notification library for event-driven network servers"
+	tristate
 	default m if CONFIG_DEVEL
 	help
 	  The libevent API provides a mechanism to execute a callback function 
@@ -13,4 +14,4 @@ config BR2_PACKAGE_LIBEVENT
 	  the event loop.
 	  
 	  http://www.monkey.org/~provos/libevent/
-	  
+

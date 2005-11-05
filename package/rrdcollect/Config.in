@@ -1,5 +1,6 @@
 config BR2_PACKAGE_RRDCOLLECT
-	tristate "rrdcollect - Round-Robin Database (RRD) collecting daemon"
+	prompt "rrdcollect........................ Round-Robin Database (RRD) collecting daemon"
+	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_LIBRRD || BR2_PACKAGE_LIBRRD1
 	help
@@ -12,10 +13,10 @@ config BR2_PACKAGE_RRDCOLLECT
 	  http://rrdcollect.sourceforge.net/
 	  
 	  This package contains only the deamon program.
-	  
-	
+
 config BR2_PACKAGE_RRDCOLLECT_EXAMPLE
-	tristate "rrdcollect-example - Example setup for RRD collecting daemon above"
+	prompt   "rrdcollect-example.............. Example setup for RRD collecting daemon above"
+	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_RRDCOLLECT
 	help
@@ -29,4 +30,4 @@ config BR2_PACKAGE_RRDCOLLECT_EXAMPLE
 	  
 	  This packages contains programs and configuration files to 
 	  start graphing a basic set of ressources on your router.
-	
+

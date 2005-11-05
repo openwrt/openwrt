@@ -4,12 +4,12 @@ config BR2_COMPILE_EXPAT
 	depends BR2_PACKAGE_LIBEXPAT
 
 config BR2_PACKAGE_LIBEXPAT
-	tristate "libexpat - a fast, non-validating, stream-oriented XML parsing library"
+	prompt "libexpat.......................... A fast, non-validating, stream-oriented XML parsing library"
+	tristate
 	default m if CONFIG_DEVEL
 	select BR2_COMPILE_EXPAT
 	help
 	  A fast, non-validating, stream-oriented XML parsing library
 	  
 	  http://expat.sourceforge.net/
-	  
 

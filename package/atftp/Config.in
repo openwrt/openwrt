@@ -1,11 +1,24 @@
+#menu "atftp............................. TFTP implementation"
+
+config BR2_COMPILE_ATFTP
+	bool
+	default n
+	depends BR2_PACKAGE_ATFTP || BR2_PACKAGE_ATFTPD
+	
 config BR2_PACKAGE_ATFTP
-	tristate "atftp - a tftp client"
+	prompt "atftp............................. TFTP client"
+	tristate
 	default m if CONFIG_DEVEL
+	select BR2_COMPILE_ATFTP
 	help
-	tftp client
+	  TFTP client
 
 config BR2_PACKAGE_ATFTPD
-	tristate "atftpd - a tftp server"
+	prompt "atftpd............................ TFTP server"
+	tristate
 	default m if CONFIG_DEVEL
+	select BR2_COMPILE_ATFTP
 	help
-	tftp server 
+	  TFTP server 
+
+#endmenu

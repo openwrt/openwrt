@@ -1,5 +1,6 @@
 config BR2_PACKAGE_AIRCRACK
-	tristate "aircrack - a set of tools for auditing wireless networks"
+	prompt "aircrack.......................... A set of tools for auditing wireless networks"
+	tristate
 	default m if CONFIG_DEVEL
 	select BR2_PACKAGE_LIBPTHREAD
 	help
@@ -11,5 +12,4 @@ config BR2_PACKAGE_AIRCRACK
 	   * airodump: 802.11 packet capture program
 	  
 	  http://www.cr0.net:8040/code/network/aircrack/
-	  
 

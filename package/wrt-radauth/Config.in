@@ -1,5 +1,6 @@
 config BR2_PACKAGE_WRT_RADAUTH
-        tristate "wrt-radauth - a RADIUS MAC authenticator for Broadcom based access points"
+	prompt "wrt-radauth....................... A Radius MAC authenticator for Broadcom based access points"
+	tristate
 	default m if CONFIG_DEVEL
 	help
 	  This software watches the stations associating to a broadcom based
@@ -7,4 +8,4 @@ config BR2_PACKAGE_WRT_RADAUTH
 	  to the radius-server specified in nvram.
 	  
 	  http://www.zerfleddert.de/wrt54g/
-	  
+

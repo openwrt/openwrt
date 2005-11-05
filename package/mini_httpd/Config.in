@@ -1,17 +1,20 @@
+menu "mini-httpd........................ A small web server"
+
 config BR2_COMPILE_MINI_HTTPD
 	bool
 	default n
 	depends BR2_PACKAGE_MINI_HTTPD || BR2_PACKAGE_MINI_HTTPD_MATRIXSSL || BR2_PACKAGE_MINI_HTTPD_OPENSSL
 
 config BR2_PACKAGE_MINI_HTTPD
-	tristate "mini-httpd - A small web server"
+	prompt "mini-httpd........................ A small web server"
+	tristate
 	default m if CONFIG_DEVEL
 	select BR2_COMPILE_MINI_HTTPD
 	help
-	 mini_httpd is a small HTTP server. Its performance is not great, but for 
-	 low or medium traffic sites it's quite adequate. It implements all the 
-	 basic features of an HTTP server, including:
-	 
+	  mini_httpd is a small HTTP server. Its performance is not great, but for 
+	  low or medium traffic sites it's quite adequate. It implements all the 
+	  basic features of an HTTP server, including:
+	  
 	     * GET, HEAD, and POST methods.
 	     * CGI.
 	     * Basic authentication.
@@ -23,22 +26,22 @@ config BR2_PACKAGE_MINI_HTTPD
 	     * Multihoming / virtual hosting.
 	     * Standard logging.
 	     * Custom error pages. 
-	 
-	 It can also be configured to do IPv6. 
-	 
-	 http://www.acme.com/software/mini_httpd/
-	 
+	  
+	  It can also be configured to do IPv6. 
+	  
+	  http://www.acme.com/software/mini_httpd/
 
 config BR2_PACKAGE_MINI_HTTPD_MATRIXSSL
-	tristate "mini-httpd-matrixssl - A small web server, built with SSL support using MatrixSSL"
+	prompt "mini-httpd-matrixssl.............. A small web server, built with SSL support using MatrixSSL"
+	tristate
 	default m if CONFIG_DEVEL
 	select BR2_COMPILE_MINI_HTTPD
 	select BR2_PACKAGE_LIBMATRIXSSL
 	help
-	 mini_httpd is a small HTTP server. Its performance is not great, but for 
-	 low or medium traffic sites it's quite adequate. It implements all the 
-	 basic features of an HTTP server, including:
-	 
+	  mini_httpd is a small HTTP server. Its performance is not great, but for 
+	  low or medium traffic sites it's quite adequate. It implements all the 
+	  basic features of an HTTP server, including:
+	  
 	     * GET, HEAD, and POST methods.
 	     * CGI.
 	     * Basic authentication.
@@ -50,22 +53,22 @@ config BR2_PACKAGE_MINI_HTTPD_MATRIXSSL
 	     * Multihoming / virtual hosting.
 	     * Standard logging.
 	     * Custom error pages. 
-	 
-	 It can also be configured to do SSL/HTTPS and IPv6. 
-	 
-	 http://www.acme.com/software/mini_httpd/
-	 
+	  
+	  It can also be configured to do SSL/HTTPS and IPv6. 
+	  
+	  http://www.acme.com/software/mini_httpd/
 
 config BR2_PACKAGE_MINI_HTTPD_OPENSSL
-	tristate "mini-httpd-openssl - A small web server, built with SSL support using OpenSSL"
+	prompt "mini-httpd-openssl................ A small web server, built with SSL support using OpenSSL"
+	tristate
 	default m if CONFIG_DEVEL
 	select BR2_COMPILE_MINI_HTTPD
 	select BR2_PACKAGE_LIBOPENSSL
 	help
-	 mini_httpd is a small HTTP server. Its performance is not great, but for 
-	 low or medium traffic sites it's quite adequate. It implements all the 
-	 basic features of an HTTP server, including:
-	 
+	  mini_httpd is a small HTTP server. Its performance is not great, but for 
+	  low or medium traffic sites it's quite adequate. It implements all the 
+	  basic features of an HTTP server, including:
+	  
 	     * GET, HEAD, and POST methods.
 	     * CGI.
 	     * Basic authentication.
@@ -77,8 +80,9 @@ config BR2_PACKAGE_MINI_HTTPD_OPENSSL
 	     * Multihoming / virtual hosting.
 	     * Standard logging.
 	     * Custom error pages. 
-	 
-	 It can also be configured to do SSL/HTTPS and IPv6. 
-	 
-	 http://www.acme.com/software/mini_httpd/
-	 
+	  
+	  It can also be configured to do SSL/HTTPS and IPv6. 
+	  
+	  http://www.acme.com/software/mini_httpd/
+
+endmenu

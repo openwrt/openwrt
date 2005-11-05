@@ -1,5 +1,6 @@
 config BR2_PACKAGE_SCDP
-	tristate "scdp - an utility to send CDP (Cisco Discovery Protocol) packets"
+	prompt "scdp.............................. An utility to send CDP (Cisco Discovery Protocol) packets"
+	tristate
 	default m if CONFIG_DEVEL
 	select BR2_PACKAGE_LIBNET
 	help
@@ -8,4 +9,4 @@ config BR2_PACKAGE_SCDP
 	  where the host is connected.
 	  
 	  http://sourceforge.net/projects/scdp
-	  
+

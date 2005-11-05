@@ -1,5 +1,6 @@
 config BR2_PACKAGE_TOR
-	tristate "tor - An anonymous Internet communication system"
+	prompt "tor............................... An anonymous Internet communication system"
+	tristate
 	default m if CONFIG_DEVEL
 	select BR2_PACKAGE_LIBEVENT
 	select BR2_PACKAGE_LIBOPENSSL
@@ -14,4 +15,4 @@ config BR2_PACKAGE_TOR
 	  and privacy features.
 	  
 	  http://tor.eff.org/
-	  
+

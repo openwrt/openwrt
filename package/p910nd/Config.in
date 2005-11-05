@@ -1,5 +1,6 @@
 config BR2_PACKAGE_P910ND
-	tristate "p910nd - A small non-spooling printer server"
+	prompt "p910nd............................ A small non-spooling printer server"
+	tristate
 	default m if CONFIG_DEVEL
 	help
 	  p910nd  is a small daemon that copies any data received on
@@ -11,4 +12,4 @@ config BR2_PACKAGE_P910ND
 	  default is port 9100 to /dev/lp0.
 	  
 	  http://www.etherboot.org/p910nd/
-	  
+

@@ -4,7 +4,8 @@ config BR2_COMPILE_READLINE
 	depends BR2_PACKAGE_LIBREADLINE
 
 config BR2_PACKAGE_LIBREADLINE
-	tristate "libreadline - Command lines edition library"
+	prompt "libreadline....................... Command lines edition library"
+	tristate
 	default m if CONFIG_DEVEL
 	select BR2_COMPILE_READLINE
 	help
@@ -16,4 +17,4 @@ config BR2_PACKAGE_LIBREADLINE
 	  history expansion on previous commands.
 	  
 	  http://cnswww.cns.cwru.edu/php/chet/readline/rltop.html
-	  
+

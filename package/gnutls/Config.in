@@ -4,96 +4,96 @@ config BR2_COMPILE_GNUTLS
 	depends BR2_PACKAGE_LIBGNUTLS
 
 config BR2_PACKAGE_LIBGNUTLS
-	tristate "libgnutls - The GNU TLS library"
+	prompt "libgnutls......................... The GNU TLS library"
+	tristate
 	default m if CONFIG_DEVEL
 	select BR2_COMPILE_GNUTLS
 	select BR2_PACKAGE_LIBGCRYPT
 	help
-	 GnuTLS is a project that aims to develop a library which provides a 
-	 secure layer, over a reliable transport layer. Currently the GnuTLS 
-	 library implements the proposed standards by the IETF's TLS working 
-	 group.
-	 
-	 Quoting from RFC2246 - the TLS 1.0 protocol specification:
-	 
-	 "The TLS protocol provides communications privacy over the Internet.
-	  The protocol allows client/server applications to communicate in a 
-	  way that is designed to prevent eavesdropping, tampering, or message 
-	  forgery."
-	 
-	 Features
-	 
-	   * Support for TLS 1.1 and SSL 3.0 protocols
-	   * Support for TLS extensions
-	   * Support for authentication using the SRP protocol
-	   * Support for authentication using both X.509 certificates
-	   * and OpenPGP keys Support for X.509 and OpenPGP certificate handling.
-	   * Supports all the strong encryption algorithms
-	 
-	 http://www.gnu.org/software/gnutls/
-	 
-	 This packages contains the GnuTLS shared libraries, needed by other programs.
-	 
+	  GnuTLS is a project that aims to develop a library which provides a 
+	  secure layer, over a reliable transport layer. Currently the GnuTLS 
+	  library implements the proposed standards by the IETF's TLS working 
+	  group.
+	  
+	  Quoting from RFC2246 - the TLS 1.0 protocol specification:
+	  
+	  "The TLS protocol provides communications privacy over the Internet.
+	   The protocol allows client/server applications to communicate in a 
+	   way that is designed to prevent eavesdropping, tampering, or message 
+	   forgery."
+	  
+	  Features
+	  
+	    * Support for TLS 1.1 and SSL 3.0 protocols
+	    * Support for TLS extensions
+	    * Support for authentication using the SRP protocol
+	    * Support for authentication using both X.509 certificates
+	    * and OpenPGP keys Support for X.509 and OpenPGP certificate handling.
+	    * Supports all the strong encryption algorithms
+	  
+	  http://www.gnu.org/software/gnutls/
+	  
+	  This packages contains the GnuTLS shared libraries, needed by other programs.
 
 config BR2_PACKAGE_GNUTLS_UTILS
-	tristate "gnutls-utils - The GNU TLS utilities"
+	prompt   "gnutls-utils.................... The GNU TLS utilities"
+	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_LIBGNUTLS
 	help
-	 GnuTLS is a project that aims to develop a library which provides a 
-	 secure layer, over a reliable transport layer. Currently the GnuTLS 
-	 library implements the proposed standards by the IETF's TLS working 
-	 group.
-	 
-	 Quoting from RFC2246 - the TLS 1.0 protocol specification:
-	 
-	 "The TLS protocol provides communications privacy over the Internet.
-	  The protocol allows client/server applications to communicate in a 
-	  way that is designed to prevent eavesdropping, tampering, or message 
-	  forgery."
-	 
-	 Features
-	 
-	   * Support for TLS 1.1 and SSL 3.0 protocols
-	   * Support for TLS extensions
-	   * Support for authentication using the SRP protocol
-	   * Support for authentication using both X.509 certificates
-	   * and OpenPGP keys Support for X.509 and OpenPGP certificate handling.
-	   * Supports all the strong encryption algorithms
-	 
-	 http://www.gnu.org/software/gnutls/
-	 
-	 This packages contains some GnuTLS utilities.
-	 
+	  GnuTLS is a project that aims to develop a library which provides a 
+	  secure layer, over a reliable transport layer. Currently the GnuTLS 
+	  library implements the proposed standards by the IETF's TLS working 
+	  group.
+	  
+	  Quoting from RFC2246 - the TLS 1.0 protocol specification:
+	  
+	  "The TLS protocol provides communications privacy over the Internet.
+	   The protocol allows client/server applications to communicate in a 
+	   way that is designed to prevent eavesdropping, tampering, or message 
+	   forgery."
+	  
+	  Features
+	  
+	    * Support for TLS 1.1 and SSL 3.0 protocols
+	    * Support for TLS extensions
+	    * Support for authentication using the SRP protocol
+	    * Support for authentication using both X.509 certificates
+	    * and OpenPGP keys Support for X.509 and OpenPGP certificate handling.
+	    * Supports all the strong encryption algorithms
+	  
+	  http://www.gnu.org/software/gnutls/
+	  
+	  This packages contains some GnuTLS utilities.
 
 config BR2_PACKAGE_LIBGNUTLS_OPENSSL
-	tristate "libgnutls-openssl - The GNU TLS OpenSSL compatibility layer library"
+	prompt   "libgnutls-openssl............... The GNU TLS OpenSSL compatibility layer library"
+	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_LIBGNUTLS
 	help
-	 GnuTLS is a project that aims to develop a library which provides a 
-	 secure layer, over a reliable transport layer. Currently the GnuTLS 
-	 library implements the proposed standards by the IETF's TLS working 
-	 group.
-	 
-	 Quoting from RFC2246 - the TLS 1.0 protocol specification:
-	 
-	 "The TLS protocol provides communications privacy over the Internet.
-	  The protocol allows client/server applications to communicate in a 
-	  way that is designed to prevent eavesdropping, tampering, or message 
-	  forgery."
-	 
-	 Features
-	 
-	   * Support for TLS 1.1 and SSL 3.0 protocols
-	   * Support for TLS extensions
-	   * Support for authentication using the SRP protocol
-	   * Support for authentication using both X.509 certificates
-	   * and OpenPGP keys Support for X.509 and OpenPGP certificate handling.
-	   * Supports all the strong encryption algorithms
-	 
-	 http://www.gnu.org/software/gnutls/
-	 
-	 This packages contains the GnuTLS OpenSSL compatibility layer shared library.
-	 
+	  GnuTLS is a project that aims to develop a library which provides a 
+	  secure layer, over a reliable transport layer. Currently the GnuTLS 
+	  library implements the proposed standards by the IETF's TLS working 
+	  group.
+	  
+	  Quoting from RFC2246 - the TLS 1.0 protocol specification:
+	  
+	  "The TLS protocol provides communications privacy over the Internet.
+	   The protocol allows client/server applications to communicate in a 
+	   way that is designed to prevent eavesdropping, tampering, or message 
+	   forgery."
+	  
+	  Features
+	  
+	    * Support for TLS 1.1 and SSL 3.0 protocols
+	    * Support for TLS extensions
+	    * Support for authentication using the SRP protocol
+	    * Support for authentication using both X.509 certificates
+	    * and OpenPGP keys Support for X.509 and OpenPGP certificate handling.
+	    * Supports all the strong encryption algorithms
+	  
+	  http://www.gnu.org/software/gnutls/
+	  
+	  This packages contains the GnuTLS OpenSSL compatibility layer shared library.
 

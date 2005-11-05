@@ -1,6 +1,12 @@
+config BR2_COMPILE_GLIB
+	bool
+	depends BR2_PACKAGE_GLIB1
+
 config BR2_PACKAGE_GLIB1
-	tristate "glib 1.2 - The GLib library of C routines"
+	prompt "glib1............................. The GLib library of C routines (v1.2)"
+	tristate
 	default m if CONFIG_DEVEL
+	select BR2_COMPILE_GLIB
 	select BR2_PACKAGE_LIBPTHREAD
 	help
 	  GLib is a library containing many useful C routines for things such
@@ -9,7 +15,4 @@ config BR2_PACKAGE_GLIB1
 	  http://www.gtk.org/
 	  
 	  Depends: libpthread
-	  
-config BR2_PACKAGE_GLIB
-	tristate
-	default BR2_PACKAGE_GLIB1
+

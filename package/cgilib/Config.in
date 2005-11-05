@@ -1,5 +1,6 @@
 config BR2_PACKAGE_CGILIB
-	tristate "cgilib - Simple CGI Library"
+	prompt "cgilib............................ Simple CGI Library"
+	tristate
 #	default m if CONFIG_DEVEL
 	default n
 	help
@@ -8,5 +9,4 @@ config BR2_PACKAGE_CGILIB
 	  FORM variables, sets HTTP Cookies and reads them.
 	  
 	  http://www.infodrom.org/projects/cgilib/
-	  
 

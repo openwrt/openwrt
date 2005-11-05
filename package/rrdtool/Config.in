@@ -1,12 +1,13 @@
 config BR2_COMPILE_RRDTOOL
+	prompt "rrdtool........................... Round Robin Database (RRD) tools (v1.2.x)"
 	bool
 	default n
-	depends BR2_PACKAGE_LIBRRD
 
 config BR2_PACKAGE_LIBRRD
-	tristate "librrd - Round Robin Database (RRD) management library (v1.2.x)"
+	prompt   "librrd.......................... Round Robin Database (RRD) management library (v1.2.x)"
+	tristate
 	default n
-	select BR2_COMPILE_RRDTOOL
+	depends BR2_COMPILE_RRDTOOL
 	select BR2_PACKAGE_LIBART
 	select BR2_PACKAGE_LIBFREETYPE
 	select BR2_PACKAGE_LIBPNG
@@ -23,12 +24,13 @@ config BR2_PACKAGE_LIBRRD
 	  http://people.ee.ethz.ch/~oetiker/webtools/rrdtool/
 	  
 	  This package contains command line tools used to manage RRDs.
-	  
 
 config BR2_PACKAGE_RRDCGI
-	tristate "rrdcgi - Round Robin Database (RRD) CGI graphing tool (v1.2.x)"
+	prompt   "rrdcgi.......................... Round Robin Database (RRD) CGI graphing tool (v1.2.x)"
+	tristate
 	default n
-	depends BR2_PACKAGE_LIBRRD
+	depends BR2_COMPILE_RRDTOOL
+	select BR2_PACKAGE_LIBRRD
 	select BR2_PACKAGE_CGILIB
 	help
 	  RRD is the Acronym for Round Robin Database. RRD is a system to store and
@@ -43,12 +45,13 @@ config BR2_PACKAGE_RRDCGI
 	  
 	  This package contains the rrdcgi tool used to create web pages containing 
 	  RRD graphs based on templates.
-	  
 
 config BR2_PACKAGE_RRDTOOL
-	tristate "rrdtool - Round Robin Database (RRD) management tools (v1.2.x)"
+	prompt   "rrdtool......................... Round Robin Database (RRD) management tools (v1.2.x)"
+	tristate
 	default n
-	depends BR2_PACKAGE_LIBRRD
+	depends BR2_COMPILE_RRDTOOL
+	select BR2_PACKAGE_LIBRRD
 	help
 	  RRD is the Acronym for Round Robin Database. RRD is a system to store and
 	  display time-series data (i.e. network bandwidth, machine-room temperature,
@@ -61,5 +64,4 @@ config BR2_PACKAGE_RRDTOOL
 	  http://people.ee.ethz.ch/~oetiker/webtools/rrdtool/
 	  
 	  This package contains command line tools used to manage RRDs.
-	  
 

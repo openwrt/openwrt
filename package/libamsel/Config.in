@@ -1,8 +1,9 @@
 config BR2_PACKAGE_LIBAMSEL
-        tristate "libamsel - amwall library"
-        default m if CONFIG_DEVEL
-        help
-          A library for amwall configuration files
-
-          http://amselinux.de/
+	prompt "libamsel.......................... The amwall library"
+	tristate
+	default m if CONFIG_DEVEL
+	help
+	  A library for amwall configuration files
+	  
+	  http://amselinux.de/
 

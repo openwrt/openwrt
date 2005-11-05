@@ -1,5 +1,6 @@
 config BR2_PACKAGE_SIPROXD
-	tristate "siproxd - SIP (Session Initiation Protocol) proxy"
+	prompt "siproxd........................... SIP (Session Initiation Protocol) proxy"
+	tristate
 	default m if CONFIG_DEVEL
 	select BR2_PACKAGE_LIBOSIP2
 	help
@@ -8,4 +9,4 @@ config BR2_PACKAGE_SIPROXD
 	  http://siproxd.sourceforge.net/
 	  
 	  Depends: libosip2
-	  
+

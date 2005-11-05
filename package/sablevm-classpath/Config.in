@@ -1,14 +1,13 @@
-config BR2_PACKAGE_SABLEVM_CLASSPATH
-	depends BR2_PACKAGE_LIBSABLEVM_CLASSPATH
+config BR2_COMPILE_SABLEVM_CLASSPATH
 	bool
 	default n
+	depends BR2_PACKAGE_LIBSABLEVM_CLASSPATH
 
 config BR2_PACKAGE_LIBSABLEVM_CLASSPATH
-	depends BR2_PACKAGE_SABLEVM
-	prompt "libsablevm-classpath - Essential native libraries for Java"
+	prompt "libsablevm-classpath.............. Essential native libraries for Java"
 	tristate
 	default m if CONFIG_DEVEL
-	select BR2_PACKAGE_SABLEVM_CLASSPATH
+	select BR2_COMPILE_SABLEVM_CLASSPATH
 	help
 	  GNU Classpath, Essential Libraries for Java, is a GNU project to create 
 	  free core class libraries for use with virtual machines and compilers for 
@@ -19,18 +18,16 @@ config BR2_PACKAGE_LIBSABLEVM_CLASSPATH
 	  http://www.gnu.org/software/classpath/
 	  
 	  This package contains the native shared libraries, needed by other packages.
-	  
 
 choice
-	depends BR2_PACKAGE_LIBSABLEVM_CLASSPATH
-	prompt "sablevm-classpath - Essential classes for Java"
+	prompt   "sablevm-classpath............... Essential classes for Java"
 	tristate
+	depends BR2_PACKAGE_LIBSABLEVM_CLASSPATH
 	optional
 
 config BR2_PACKAGE_SABLEVM_CLASSPATH_FULL
-	prompt "...-full: Full set"
+	prompt     "sablevm-classpath-full........ Full set"
 	tristate
-	default n
 	help
 	  GNU Classpath, Essential Libraries for Java, is a GNU project to create 
 	  free core class libraries for use with virtual machines and compilers for 
@@ -42,11 +39,10 @@ config BR2_PACKAGE_SABLEVM_CLASSPATH_FULL
 	  
 	  This package contains the full set of Java compiled classes.
 	  It will unlikely fit on your router as-is.
-	  
+
 config BR2_PACKAGE_SABLEVM_CLASSPATH_MINI
-	prompt "...-mini: Minimal set"
+	prompt     "sablevm-classpath-mini........ Minimal set"
 	tristate
-	default m if CONFIG_DEVEL
 	help
 	  
 	  GNU Classpath, Essential Libraries for Java, is a GNU project to create 
@@ -59,5 +55,5 @@ config BR2_PACKAGE_SABLEVM_CLASSPATH_MINI
 	  
 	  This package contains only a minimal set of Java compiled classes, just 
 	  enough to run the famous "Hello World !" test program.
-	  
+
 endchoice

@@ -1,5 +1,6 @@
 config BR2_PACKAGE_PALANTIR
-	tristate "palantir - a multichannel interactive streaming solution"
+	prompt "palantir.......................... A multichannel interactive streaming solution"
+	tristate
 	default m if CONFIG_DEVEL
 	select BR2_PACKAGE_LIBJPEG
 	help
@@ -8,4 +9,4 @@ config BR2_PACKAGE_PALANTIR
 	  remote devices.
 	  
 	  http://www.fastpath.it/products/palantir/
-	  
+

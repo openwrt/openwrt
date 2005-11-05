@@ -1,5 +1,6 @@
 config BR2_PACKAGE_ARPD
-	tristate "arpd - fake ARP replies"
+	prompt "arpd.............................. A daemon to fake ARP replies"
+	tristate
 	default m if CONFIG_DEVEL
 	select BR2_PACKAGE_LIBPCAP
 	select BR2_PACKAGE_LIBDNET

@@ -1,5 +1,6 @@
 config BR2_PACKAGE_LIBMAD
-	tristate "libmad - An high-quality MPEG audio decoding library"
+	prompt "libmad............................ An high-quality MPEG audio decoding library"
+	tristate
 	default m if CONFIG_DEVEL
 	help
 	  MAD is a high-quality MPEG audio decoder. It currently supports 
@@ -8,4 +9,4 @@ config BR2_PACKAGE_LIBMAD
 	  Layer I, Layer II, and Layer III (i.e. MP3) - are fully implemented.
 	  
 	  http://www.underbit.com/products/mad/
-	  
+

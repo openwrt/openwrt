@@ -1,31 +1,31 @@
 config BR2_PACKAGE_MT_DAAPD
-	prompt "mt-daapd - A multi-threaded DAAP (Digital Audio Access Protocol) daemon"
+	prompt "mt-daapd.......................... A multi-threaded DAAP (Digital Audio Access Protocol) daemon"
 	tristate 
 	default m if CONFIG_DEVEL
 	select BR2_PACKAGE_LIBGDBM
 	select BR2_PACKAGE_LIBHOWL
 	select BR2_PACKAGE_LIBID3TAG
 	help
-	 mt-daapd is a program which acts as an iTunes (DAAP) server for Linux and 
-	 other POSIX unixes. It may eventually support Win32 as well.
-	 
-	 Some random features that it supports:
-	 
-	   * Supports the Roku SoundBridge (query/browse/index support) 
-	   * Supports periodic rescans of the database 
-	   * Can advertise shoutcast streams 
-	   * Supports password-protected shares 
-	   * Is web-configurable and managable 
-	   * Support dynamic playlists, like iTunes "Smart playlists" 
-	   * Probably other things I've forgotten 
-	 
-	 All is not perfect, however. Currently, there are several drawbacks to it:
-	 
-	   * database is indexed by inode, so all music must be on one filesystem 
-	   * browse by artist is slow on Roku, times out (with large databases ~10K songs) 
-	   * Probably other things I've forgotten 
-	 
-	 http://www.mt-daapd.org/
-	 
-	 Depends: libgdbm, libhowl, libid3tag, libpthread
-	 
+	  mt-daapd is a program which acts as an iTunes (DAAP) server for Linux and 
+	  other POSIX unixes. It may eventually support Win32 as well.
+	  
+	  Some random features that it supports:
+	  
+	    * Supports the Roku SoundBridge (query/browse/index support) 
+	    * Supports periodic rescans of the database 
+	    * Can advertise shoutcast streams 
+	    * Supports password-protected shares 
+	    * Is web-configurable and managable 
+	    * Support dynamic playlists, like iTunes "Smart playlists" 
+	    * Probably other things I've forgotten 
+	  
+	  All is not perfect, however. Currently, there are several drawbacks to it:
+	  
+	    * database is indexed by inode, so all music must be on one filesystem 
+	    * browse by artist is slow on Roku, times out (with large databases ~10K songs) 
+	    * Probably other things I've forgotten 
+	  
+	  http://www.mt-daapd.org/
+	  
+	  Depends: libgdbm, libhowl, libid3tag, libpthread
+

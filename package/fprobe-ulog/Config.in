@@ -1,5 +1,6 @@
 config BR2_PACKAGE_FPROBE_ULOG
-	tristate "fprobe-ulog - NetFlow probe (ulog-based)"
+	prompt "fprobe-ulog....................... NetFlow probe (ulog-based)"
+	tristate
 	default m if CONFIG_DEVEL
 	select BR2_PACKAGE_LIBPTHREAD
 	help
@@ -7,4 +8,4 @@ config BR2_PACKAGE_FPROBE_ULOG
 	  (iptables ULOG target).
 	  
 	  http://fprobe.sourceforge.net/
-	  
+

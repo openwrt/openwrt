@@ -1,8 +1,10 @@
 config BR2_PACKAGE_WONDERSHAPER
-	tristate "WonderShaper - The Wonder Shaper"
+	prompt "wondershaper...................... The Wonder Shaper"
+	tristate
 	default m if CONFIG_DEVEL
 	select BR2_PACKAGE_IPROUTE2_TC
 	help
-	   WonderShaper is a tc based traffic shaping tool.
-	   
-	   Depends: tc
+	  WonderShaper is a tc based traffic shaping tool.
+	  
+	  Depends: tc
+

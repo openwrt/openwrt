@@ -1,7 +1,9 @@
 config BR2_PACKAGE_WIVIZ
-	tristate "wiviz - Wireless Network Visualization"
+	prompt "wiviz............................. Wireless Network Visualization"
+	tristate
 	default m if CONFIG_DEVEL
 	help
-	 Wireless Network Visualization
+	  Wireless Network Visualization
+	  
+	  http://students.washington.edu/natetrue/wiviz/
 
-	 http://students.washington.edu/natetrue/wiviz/

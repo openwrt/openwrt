@@ -1,12 +1,14 @@
+config BR2_COMPILE_NCURSES
+	bool
+	depends BR2_PACKAGE_LIBNCURSES
+
 config BR2_PACKAGE_LIBNCURSES
-	tristate "libncurses - Terminal handling library"
+	prompt "libncurses........................ Terminal handling library"
+	tristate
 	default m if CONFIG_DEVEL
+	select BR2_COMPILE_NCURSES
 	help
 	  A terminal handling library
 	  
 	  http://www.gnu.org/software/ncurses/
-	  
 
-config BR2_PACKAGE_NCURSES
-	tristate
-	default BR2_PACKAGE_LIBNCURSES
