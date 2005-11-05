@@ -1,5 +1,6 @@
 config BR2_PACKAGE_LIBART
-	tristate "libart - An high-performance 2D graphics library"
+	prompt "libart............................ An high-performance 2D graphics library"
+	tristate
 #	default m if CONFIG_DEVEL
 	default n
 	help
@@ -10,4 +11,4 @@ config BR2_PACKAGE_LIBART
 	  especially suitable for embedded applications.
 	  
 	  http://www.levien.com/libart/
-	  
+

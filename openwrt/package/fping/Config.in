@@ -1,5 +1,6 @@
 config BR2_PACKAGE_FPING
-	tristate "fping - Program to ping multiple hosts in parallel"
+	prompt "fping............................. A program to ping multiple hosts in parallel"
+	tristate
 	default m if CONFIG_DEVEL
 	help
 	  fping is a ping(1) like program which uses the Internet Control Message Protocol
@@ -12,4 +13,4 @@ config BR2_PACKAGE_FPING
 	  limit it will be considered unreachable.
 	  
 	  http://www.fping.com/
-	  
+

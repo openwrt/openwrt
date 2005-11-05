@@ -1,5 +1,6 @@
 config BR2_PACKAGE_GPSD
-	tristate "gpsd - An interface daemon for GPS receivers"
+	prompt "gpsd.............................. An interface daemon for GPS receivers"
+	tristate
 	default m if CONFIG_DEVEL
 	select BR2_PACKAGE_LIBPTHREAD
 	select BR2_PACKAGE_UCLIBCXX
@@ -14,4 +15,4 @@ config BR2_PACKAGE_GPSD
 	  discovers the correct port speed and protocol for it.
 	  
 	  http://gpsd.berlios.de/
-	  
+

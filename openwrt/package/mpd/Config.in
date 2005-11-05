@@ -1,32 +1,42 @@
+menu "mpd............................... Music Player Daemon"
+
 config BR2_PACKAGE_MPD
-	tristate "MPD - Music Player Daemon"
+	prompt "mpd............................... Music Player Daemon"
+	tristate
 	default m if CONFIG_DEVEL
 	help
-		MPD is a music player supporting flac, mp3 and ogg files.
-		It is typically controlled over a network using one of it's many
-		clients including mpc(console), gmpc(gnome), phpmp(php) etc.
+	  MPD is a music player supporting flac, mp3 and ogg files.
+	  It is typically controlled over a network using one of it's many
+	  clients including mpc(console), gmpc(gnome), phpmp(php) etc.
+	  
+	  http://www.musicpd.org/
 
-config BR2_PACKAGE_MPD_MP3
-	bool "MP3 Support - Enable mp3 support"
+config BR2_COMPILE_MPD_WITH_MP3
+	prompt   "MP3 support"
+	bool
 	default y
 	depends BR2_PACKAGE_MPD
 	select BR2_PACKAGE_LIBMAD
 	select BR2_PACKAGE_LIBID3TAG
 	help
-		Enable mp3 support (libmad).
+	  Enable mp3 support (libmad).
 
-config BR2_PACKAGE_MPD_OGG
-	bool "OGG Support - Enable ogg support"
+config BR2_COMPILE_MPD_WITH_OGG
+	prompt   "Ogg Support"
+	bool
 	default y
 	depends BR2_PACKAGE_MPD
 	select BR2_PACKAGE_LIBVORBISIDEC
 	help
-		Enable ogg support (tremor).
+	  Enable ogg support (tremor).
 
-config BR2_PACKAGE_MPD_FLAC
-	bool "FLAC Support - Enable flac support"
-	default n
+config BR2_COMPILE_MPD_WITH_FLAC
+	prompt   "FLAC Support"
+	bool
+	default y
 	depends BR2_PACKAGE_MPD
 	select BR2_PACKAGE_LIBFLAC
 	help
-		Enable flac support (libflac).
+	  Enable flac support (libflac).
+
+endmenu

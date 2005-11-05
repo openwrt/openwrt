@@ -1,5 +1,6 @@
 config BR2_PACKAGE_LIBFFI_SABLE
-	tristate "libffi-sable - Foreign Function Interface library (for sablevm)"
+	prompt "libffi-sable...................... Foreign Function Interface library (for sablevm)"
+	tristate
 	default m if CONFIG_DEVEL
 	help
 	  The libffi library provides a portable, high level programming
@@ -8,4 +9,4 @@ config BR2_PACKAGE_LIBFFI_SABLE
 	  time.  
 	  
 	  http://sources.redhat.com/libffi/
-	  
+

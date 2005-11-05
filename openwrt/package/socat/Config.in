@@ -1,5 +1,6 @@
 config BR2_PACKAGE_SOCAT
-	tristate "socat - A multipurpose relay (SOcket CAT)"
+	prompt "socat............................. A multipurpose relay (SOcket CAT)"
+	tristate
 	default m if CONFIG_DEVEL
 	select BR2_PACKAGE_LIBOPENSSL
 	select BR2_PACKAGE_LIBPTHREAD
@@ -14,4 +15,4 @@ config BR2_PACKAGE_SOCAT
 	  http://www.dest-unreach.org/socat/
 	  
 	  Depends: openssl
-	  
+

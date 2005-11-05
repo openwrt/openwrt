@@ -1,4 +1,4 @@
-menu "pppoe - Roaring Penguin PPPoE (PPP over Ethernet) implementation"
+#menu "rp-pppoe.......................... Roaring Penguin PPPoE (PPP over Ethernet) implementation"
 
 config BR2_COMPILE_RP_PPPOE
 	bool
@@ -6,8 +6,8 @@ config BR2_COMPILE_RP_PPPOE
 	depends BR2_PACKAGE_PPPOE_CLIENT || BR2_PACKAGE_PPPOE_RELAY || BR2_PACKAGE_PPPOE_SERVER || BR2_PACKAGE_PPPOE_SNIFF
 
 config BR2_PACKAGE_PPPOE_CLIENT
+	prompt "pppoe-client...................... PPPoE (PPP over Ethernet) client"
 	tristate
-	prompt "pppoe-client - PPPoE (PPP over Ethernet) client"
 	default m if CONFIG_DEVEL
 	select BR2_COMPILE_RP_PPPOE
 	select BR2_PACKAGE_PPP
@@ -15,22 +15,20 @@ config BR2_PACKAGE_PPPOE_CLIENT
 	  PPPoE (PPP over Ethernet) client
 	  
 	  http://roaringpenguin.com/penguin/open_source_rp-pppoe.php
-	  
 
 config BR2_PACKAGE_PPPOE_RELAY
+	prompt "pppoe-relay....................... PPPoE (PPP over Ethernet) relay"
 	tristate
-	prompt "pppoe-relay - PPPoE (PPP over Ethernet) relay"
 	default m if CONFIG_DEVEL
 	select BR2_COMPILE_RP_PPPOE
 	help
 	  PPPoE (PPP over Ethernet) relay
 	  
 	  http://roaringpenguin.com/penguin/open_source_rp-pppoe.php
-	  
 
 config BR2_PACKAGE_PPPOE_SERVER
+	prompt "pppoe-server...................... PPPoE (PPP over Ethernet) server"
 	tristate
-	prompt "pppoe-server - PPPoE (PPP over Ethernet) server"
 	default m if CONFIG_DEVEL
 	select BR2_COMPILE_RP_PPPOE
 	select BR2_PACKAGE_PPP
@@ -38,17 +36,15 @@ config BR2_PACKAGE_PPPOE_SERVER
 	  PPPoE (PPP over Ethernet) server
 	  
 	  http://roaringpenguin.com/penguin/open_source_rp-pppoe.php
-	  
 
 config BR2_PACKAGE_PPPOE_SNIFF
+	prompt "pppoe-sniff....................... PPPoE (PPP over Ethernet) frame sniffer"
 	tristate
-	prompt "pppoe-sniff - PPPoE (PPP over Ethernet) frame sniffer"
 	default m if CONFIG_DEVEL
 	select BR2_COMPILE_RP_PPPOE
 	help
 	  PPPoE (PPP over Ethernet) frame sniffer
 	  
 	  http://roaringpenguin.com/penguin/open_source_rp-pppoe.php
-	  
 
-endmenu
+#endmenu

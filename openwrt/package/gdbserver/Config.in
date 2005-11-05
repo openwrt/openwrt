@@ -1,8 +1,8 @@
 config BR2_PACKAGE_GDBSERVER
-	tristate "gdbserver - Remote Server for the GNU Debugger"
+	prompt "gdbserver......................... Remote Server for the GNU Debugger"
+	tristate
 	default m if CONFIG_DEVEL
 	help
-	 GDBSERVER is a program that allows you to run GDB on a different machine
-	 than the one which is running the program being debugged.
-	 
+	  GDBSERVER is a program that allows you to run GDB on a different machine
+	  than the one which is running the program being debugged.
 

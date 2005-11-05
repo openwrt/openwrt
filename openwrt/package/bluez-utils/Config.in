@@ -1,7 +1,8 @@
 config BR2_PACKAGE_BLUEZ_UTILS
-	tristate "bluez-utils - bluetooth utils"
+	prompt "bluez-utils....................... Bluetooth utilities"
+	tristate
 	default m if CONFIG_DEVEL
-	select BR2_PACKAGE_GLIB
+	select BR2_PACKAGE_GLIB1
 	select BR2_PACKAGE_BLUEZ_LIBS
 	help
 	  Bluez utils. 
@@ -9,3 +10,4 @@ config BR2_PACKAGE_BLUEZ_UTILS
 	  http://bluez.org
 	  
 	  Depends: libpthread, bluez-libs
+

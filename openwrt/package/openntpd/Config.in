@@ -1,9 +1,9 @@
 config BR2_PACKAGE_OPENNTPD
-	tristate "openntpd - FREE and easy to use NTP (Network Time Protocol) implementation"
+	prompt "openntpd.......................... A free and easy to use NTP (Network Time Protocol) implementation"
+	tristate
 	default m if CONFIG_DEVEL
 	help
 	  NTP server
 	  
-	  http://www.openntpd.org
-	  
+	  http://www.openntpd.org/
 

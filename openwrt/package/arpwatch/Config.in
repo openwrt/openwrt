@@ -1,6 +1,7 @@
 config BR2_PACKAGE_ARPWATCH
-	tristate "arpwatch - Ethernet station activity monitor"
+	prompt "arpwatch.......................... Ethernet station activity monitor"
+	tristate
 	default m if CONFIG_DEVEL
 	help
 	  Ethernet monitor program for keeping track of ethernet/ip address pairings
-	  
+

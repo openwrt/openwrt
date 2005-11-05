@@ -1,12 +1,13 @@
-config BR2_PACKAGE_OSIRIS
+config BR2_COMPILE_OSIRIS
 	bool
 	default n
 	depends BR2_PACKAGE_OSIRISD
 
 config BR2_PACKAGE_OSIRISD
-	tristate "osirisd - Host integrity monitoring system (scanning agent)"
+	prompt "osirisd........................... Host integrity monitoring system (scanning agent)"
+	tristate
 	default m if CONFIG_DEVEL
-	select BR2_PACKAGE_OSIRIS
+	select BR2_COMPILE_OSIRIS
 	select BR2_PACKAGE_LIBOPENSSL
 	help
 	  An host integrity monitoring system (scanning agent)
@@ -14,5 +15,4 @@ config BR2_PACKAGE_OSIRISD
 	  http://www.hostintegrity.com/osiris/
 	  
 	  Depends: openssl
-	  
 

@@ -4,7 +4,7 @@ config BR2_COMPILE_SQLITE
 	depends BR2_PACKAGE_LIBSQLITE
 
 config BR2_PACKAGE_LIBSQLITE
-	prompt "libsqlite - Self-contained, embeddable, zero-configuration SQL database engine"
+	prompt "libsqlite......................... Self-contained, embeddable, zero-configuration SQL database engine"
 	tristate
 	default m if CONFIG_DEVEL
 	select BR2_COMPILE_SQLITE
@@ -37,9 +37,9 @@ config BR2_PACKAGE_LIBSQLITE
 	  http://www.sqlite.org/
 	  
 	  This package contains the shared library, needed by other programs.
-	  
+
 config BR2_PACKAGE_SQLITE_CLI
-	prompt "sqlite-cli - Command line interface for SQLite"
+	prompt   "sqlite-cli...................... Command line interface for SQLite"
 	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_LIBSQLITE
@@ -72,4 +72,4 @@ config BR2_PACKAGE_SQLITE_CLI
 	  This package contains a terminal-based front-end to the SQLite library 
 	  that can evaluate queries interactively and display the results in 
 	  multiple formats.
-	  
+

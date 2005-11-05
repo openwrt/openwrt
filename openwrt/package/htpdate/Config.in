@@ -1,9 +1,9 @@
 config BR2_PACKAGE_HTPDATE
-	tristate "htpdate - HTP (Hypertext Time Protocol) implementation"
+	prompt "htpdate........................... HTP (Hypertext Time Protocol) implementation"
+	tristate
 	default m if CONFIG_DEVEL
 	help
 	  An HTP (Hypertext Time Protocol) implementation
 	  
 	  http://www.clevervest.com/htp/
-	  
 

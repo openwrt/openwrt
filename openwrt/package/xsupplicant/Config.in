@@ -1,5 +1,6 @@
 config BR2_PACKAGE_XSUPPLICANT
-	tristate "xsupplicant - a fully compliant 802.1x authenticator"
+	prompt "xsupplicant....................... A fully compliant 802.1x authenticator"
+	tristate
 	default m if CONFIG_DEVEL
 	select BR2_PACKAGE_LIBOPENSSL
 	select BR2_PACKAGE_WIRELESS_TOOLS
@@ -8,4 +9,4 @@ config BR2_PACKAGE_XSUPPLICANT
 	  a RADIUS server using 802.1x and various EAP protocols.
 	  
 	  http://open1x.sourceforge.net/
-	  
+

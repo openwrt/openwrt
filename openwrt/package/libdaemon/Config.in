@@ -1,5 +1,6 @@
 config BR2_PACKAGE_LIBDAEMON
-	tristate "libdaemon - A lightweight C library that eases the writing of UNIX daemons"
+	prompt "libdaemon......................... A lightweight C library that eases the writing of UNIX daemons"
+	tristate
 	default m if CONFIG_DEVEL
 	help
 	  libdaemon is a lightweight C library that eases the writing of UNIX daemons. 
@@ -14,6 +15,5 @@ config BR2_PACKAGE_LIBDAEMON
 	  APIs like these are used in most daemon software available. It is not that 
 	  simple to get it done right and code duplication is not a goal.
 	  
-	  
 	  http://0pointer.de/lennart/projects/libdaemon/
-	  
+

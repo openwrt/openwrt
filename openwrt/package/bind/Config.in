@@ -1,25 +1,34 @@
-menu "bind - DNS server implementation"
+#menu "bind.............................. A DNS server implementation"
 
-config BR2_PACKAGE_BIND
-	bool "bind - popular dns server"
-	default y if CONFIG_DEVEL
+config BR2_COMPILE_BIND
+	bool
+	default n
+	depends BR2_PACKAGE_BIND_CLIENT || BR2_PACKAGE_BIND_SERVER
+	
+config BR2_PACKAGE_BIND_CLIENT
+	prompt "bind-client....................... A dynamic DNS client"
+	tristate
+	default m if CONFIG_DEVEL
+	select BR2_COMPILE_BIND
+	select BR2_PACKAGE_LIBOPENSSL
 	help
-	  DNS server implementation
+	  A DNS dynamic client (nsupdate)
 	  
-	  http://www.isc.org/
+	  http://www.isc.org/sw/bind/
 	  
 	  Depends: openssl
 
 config BR2_PACKAGE_BIND_SERVER
-	tristate "named - popular dns server"
+	prompt "bind-server....................... A DNS server"
+	tristate
 	default m if CONFIG_DEVEL
+	select BR2_COMPILE_BIND
 	select BR2_PACKAGE_LIBOPENSSL
-	depends BR2_PACKAGE_BIND
+	help
+	  A DNS server (named)
+	  
+	  http://www.isc.org/sw/bind/
+	  
+	  Depends: openssl
 
-config BR2_PACKAGE_BIND_CLIENT
-	tristate "nsupdate - dynamic dns client"
-	default m if CONFIG_DEVEL
-	select BR2_PACKAGE_LIBOPENSSL
-	depends BR2_PACKAGE_BIND
-
-endmenu
+#endmenu

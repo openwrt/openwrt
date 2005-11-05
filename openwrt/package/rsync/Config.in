@@ -1,9 +1,10 @@
 config BR2_PACKAGE_RSYNC
-	tristate "rsync - file transfer utility"
+	prompt "rsync............................. file transfer utility"
+	tristate
 	select BR2_PACKAGE_LIBPOPT
 	default m if CONFIG_DEVEL
 	help
+	  An utility that provides fast incremental file transfer
+	  
+	  http://rsync.samba.org
 
-	utility that provides fast incremental file transfer
-
-	http://rsync.samba.org

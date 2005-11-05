@@ -1,45 +1,45 @@
-menu "ppp - PPP (Point-to-Point Protocol) daemon"
+menu "ppp............................... PPP (Point-to-Point Protocol) daemon"
 
 config BR2_PACKAGE_PPP
-	prompt "ppp - PPP (Point-to-Point Protocol) daemon"
+	prompt "ppp............................... PPP (Point-to-Point Protocol) daemon"
 	tristate
 	default y
 	select BR2_PACKAGE_KMOD_PPP
 
 config BR2_PACKAGE_PPP_MOD_PPPOA
-	prompt "...-mod-pppoa - PPPoA (PPP over ATM) plugin"
+	prompt   "ppp-mod-pppoa................... PPPoA (PPP over ATM) plugin"
 	tristate
 	default y if BR2_LINUX_2_4_AR7
 	depends on BR2_PACKAGE_PPP
 	select BR2_PACKAGE_KMOD_PPPOATM
 
 config BR2_PACKAGE_PPP_MOD_PPPOE
-	prompt "...-mod-pppoe - PPPoE (PPP over Ethernet) plugin"
+	prompt   "ppp-mod-pppoe................... PPPoE (PPP over Ethernet) plugin"
 	tristate
 	default y
 	depends on BR2_PACKAGE_PPP
 	select BR2_PACKAGE_KMOD_PPPOE
 
 config BR2_PACKAGE_PPP_MOD_RADIUS
-	prompt "...-mod-radius - RADIUS (Remote Authentication Dial-In User Service) plugin"
+	prompt   "ppp-mod-radius.................. RADIUS (Remote Authentication Dial-In User Service) plugin"
 	tristate
 	default m if CONFIG_DEVEL
 	depends on BR2_PACKAGE_PPP
 
 config BR2_PACKAGE_CHAT
-	prompt "chat - Utility to establish conversation with other PPP servers (via a modem)"
+	prompt   "chat............................ Utility to establish conversation with other PPP servers (via a modem)"
 	tristate
 	default m if CONFIG_DEVEL
 	depends on BR2_PACKAGE_PPP
 
 config BR2_PACKAGE_PPPDUMP
-	prompt "pppdump - Utility to read PPP record file"
+	prompt   "pppdump......................... Utility to read PPP record file"
 	tristate
 	default m if CONFIG_DEVEL
 	depends on BR2_PACKAGE_PPP
 
 config BR2_PACKAGE_PPPSTATS
-	prompt "pppstats - Utility to report PPP statistics"
+	prompt   "pppstats........................ Utility to report PPP statistics"
 	tristate
 	default m if CONFIG_DEVEL
 	depends on BR2_PACKAGE_PPP

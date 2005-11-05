@@ -1,7 +1,7 @@
-menu "lighttpd - Flexible and lightweight web server"
+menu "lighttpd.......................... Flexible and lightweight web server"
 
 config BR2_PACKAGE_LIGHTTPD
-	prompt "lighttpd - Flexible and lightweight web server"
+	prompt "lighttpd.......................... Flexible and lightweight web server"
 	tristate 
 	default m if CONFIG_DEVEL
 	select BR2_PACKAGE_LIBOPENSSL
@@ -12,84 +12,83 @@ config BR2_PACKAGE_LIGHTTPD
 	  http://www.lighttpd.net/
 	  
 	  Depends: libopenssl, libpcre
-	  
 
 config BR2_PACKAGE_LIGHTTPD_MOD_ALIAS
-	depends BR2_PACKAGE_LIGHTTPD
-	prompt "...-mod-alias - Directory alias module"
+	prompt   "lighttpd-mod-alias.............. Directory alias module"
 	tristate 
 	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_LIGHTTPD
 
 config BR2_PACKAGE_LIGHTTPD_MOD_AUTH
-	depends BR2_PACKAGE_LIGHTTPD
-	prompt "...-mod-auth - Authentication module"
+	prompt   "lighttpd-mod-auth............... Authentication module"
 	tristate 
 	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_LIGHTTPD
 
 config BR2_PACKAGE_LIGHTTPD_MOD_CGI
-	depends BR2_PACKAGE_LIGHTTPD
-	prompt "...-mod-cgi - CGI module"
+	prompt   "lighttpd-mod-cgi................ CGI module"
 	tristate 
 	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_LIGHTTPD
 
 config BR2_PACKAGE_LIGHTTPD_MOD_EXPIRE
-	depends BR2_PACKAGE_LIGHTTPD
-	prompt "...-mod-expire - Expire module"
+	prompt   "lighttpd-mod-expire............. Expire module"
 	tristate 
 	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_LIGHTTPD
 
 config BR2_PACKAGE_LIGHTTPD_MOD_FASTCGI
-	depends BR2_PACKAGE_LIGHTTPD
-	prompt "...-mod-fastcgi - FastCGI module"
+	prompt   "lighttpd-mod-fastcgi............ FastCGI module"
 	tristate 
 	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_LIGHTTPD
 
 config BR2_PACKAGE_LIGHTTPD_MOD_PROXY
-	depends BR2_PACKAGE_LIGHTTPD
-	prompt "...-mod-proxy - Proxy module"
+	prompt   "lighttpd-mod-proxy.............. Proxy module"
 	tristate 
 	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_LIGHTTPD
 
 config BR2_PACKAGE_LIGHTTPD_MOD_REDIRECT
-	depends BR2_PACKAGE_LIGHTTPD
-	prompt "...-mod-redirect - URL redirection module"
+	prompt   "lighttpd-mod-redirect........... URL redirection module"
 	tristate 
 	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_LIGHTTPD
 
 config BR2_PACKAGE_LIGHTTPD_MOD_REWRITE
-	depends BR2_PACKAGE_LIGHTTPD
-	prompt "...-mod-rewrite - URL rewriting module"
+	prompt   "lighttpd-mod-rewrite............ URL rewriting module"
 	tristate 
 	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_LIGHTTPD
 
 config BR2_PACKAGE_LIGHTTPD_MOD_SETENV
-	depends BR2_PACKAGE_LIGHTTPD
-	prompt "...-mod-setenv - Environment variable setting module"
+	prompt   "lighttpd-mod-setenv............. Environment variable setting module"
 	tristate 
 	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_LIGHTTPD
 
 config BR2_PACKAGE_LIGHTTPD_MOD_SIMPLE_VHOST
-	depends BR2_PACKAGE_LIGHTTPD
-	prompt "...-mod-simple-vhost - Simple virtual hosting module"
+	prompt   "lighttpd-mod-simple-vhost....... Simple virtual hosting module"
 	tristate 
 	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_LIGHTTPD
 
 config BR2_PACKAGE_LIGHTTPD_MOD_SSI
-	depends BR2_PACKAGE_LIGHTTPD
-	prompt "...-mod-ssi - SSI module"
+	prompt   "lighttpd-mod-ssi................ SSI module"
 	tristate 
 	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_LIGHTTPD
 
 config BR2_PACKAGE_LIGHTTPD_MOD_STATUS
-	depends BR2_PACKAGE_LIGHTTPD
-	prompt "...-mod-status - Server status display module"
+	prompt   "lighttpd-mod-status............. Server status display module"
 	tristate 
 	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_LIGHTTPD
 
 config BR2_PACKAGE_LIGHTTPD_MOD_USERTRACK
-	depends BR2_PACKAGE_LIGHTTPD
-	prompt "...-mod-usertrack - User tracking module"
+	prompt   "lighttpd-mod-usertrack.......... User tracking module"
 	tristate 
 	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_LIGHTTPD
 
 endmenu

@@ -1,6 +1,7 @@
 config BR2_PACKAGE_BWM
-	tristate "bwm - Very tiny BandWidth Monitor"
+	prompt "bwm............................... A very tiny BandWidth Monitor"
+	tristate
 	default m if CONFIG_DEVEL
 	help
 	  A very tiny bandwidth monitor.
-	  
+

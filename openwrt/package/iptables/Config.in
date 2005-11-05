@@ -1,32 +1,49 @@
+menu "iptables.......................... IPv4 / IPv6 firewall administration"
+
+config BR2_COMPILE_IPTABLES
+	bool
+	default n
+	depends BR2_PACKAGE_IPTABLES || BR2_PACKAGE_IP6TABLES
+
 config BR2_PACKAGE_IPTABLES
-	tristate "iptables - IPv4 firewall administration tool"
+	prompt "iptables.......................... IPv4 firewall administration tool"
+	tristate
 	default y
+	select BR2_COMPILE_IPTABLES
 	help
-	  Linux kernel (2.4+) firewall, NAT, and packet mangling tools.
+	  IPv4 firewall, NAT, and packet mangling tools.
 	  
 	  http://www.iptables.org/
-	  
 
 config BR2_PACKAGE_IPTABLES_UTILS
-	tristate "iptables - Save and restore utilities"
+	prompt   "iptables-utils.................. Save and restore utilities"
+	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_IPTABLES
 	help
 	  iptables-save and iptables-restore
+	  
+	  http://www.iptables.org/
 
 config BR2_PACKAGE_IPTABLES_EXTRA
-	tristate "extra modules - Extra modules not found elsewhere"
+	prompt   "iptables-extra.................. Extra modules not found elsewhere"
+	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_IPTABLES
 	help
 	  Extra modules for iptables (kernel and user space)
+	  
+	  http://www.iptables.org/
 
 config BR2_PACKAGE_IP6TABLES
-	tristate "ip6tables - IPv6 firewall administration tool"
+	prompt "ip6tables......................... IPv6 firewall administration tool"
+	tristate
 	default m if CONFIG_DEVEL
-	depends BR2_PACKAGE_IPTABLES
+	select BR2_COMPILE_IPTABLES
 	select BR2_PACKAGE_KMOD_IPV6
 	help
-	  IPv6 firewalling
+	  IPv6 firewall, NAT, and packet mangling tools.
+	  
+	  http://www.iptables.org/
 
-
+endmenu

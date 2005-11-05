@@ -1,13 +1,14 @@
+config BR2_COMPILE_POPT
+	bool
+	depends BR2_PACKAGE_LIBPOPT
+
 config BR2_PACKAGE_LIBPOPT
-	tristate "libpopt - Command line option parsing library"
+	prompt "libpopt........................... Command line option parsing library"
+	tristate
 	default m if CONFIG_DEVEL
+	select BR2_COMPILE_POPT
 	help
 	  A command line option parsing library
 	  
 	  ftp://ftp.rpm.org/pub/rpm/dist/rpm-4.1.x/
-	  
-
-config BR2_PACKAGE_POPT
-	tristate
-	default BR2_PACKAGE_LIBPOPT
 

@@ -1,5 +1,6 @@
 config BR2_PACKAGE_E2FSPROGS
-	tristate "e2fsprogs - Ext2/3 filesystem utilities"
+	prompt "e2fsprogs......................... Ext2/3 filesystem utilities"
+	tristate
 	default m if CONFIG_DEVEL
 	help
 	  This package contains essential ext2 filesystem utilities which consists of 
@@ -7,4 +8,4 @@ config BR2_PACKAGE_E2FSPROGS
 	  filesystem utilities.
 	  
 	  http://e2fsprogs.sourceforge.net/
-	  
+

@@ -1,14 +1,40 @@
-menu "lua - LUA programming language"
+menu "lua............................... LUA programming language"
 
-config BR2_PACKAGE_LUA
+config BR2_COMPILE_LUA
 	bool
-	default n
+	default y
 	depends BR2_PACKAGE_LUA_INTERPRETER || BR2_PACKAGE_LUA_COMPILER || BR2_PACKAGE_LIBLUA
 
+config BR2_PACKAGE_LIBLUA
+	prompt "liblua............................ LUA programming language shared libraries"
+	tristate
+	select BR2_COMPILE_LUA
+	help
+	  Lua is a powerful light-weight programming language designed for extending 
+	  applications. Lua is also frequently used as a general-purpose, stand-alone 
+	  language. Lua is free software.
+	  
+	  Lua combines simple procedural syntax with powerful data description 
+	  constructs based on associative arrays and extensible semantics. Lua is 
+	  dynamically typed, interpreted from bytecodes, and has automatic memory 
+	  management with garbage collection, making it ideal for configuration, 
+	  scripting, and rapid prototyping.
+	  
+	  Lua is implemented as a small library of C functions, written in ANSI C, and 
+	  compiles unmodified in all known platforms. The implementation goals are 
+	  simplicity, efficiency, portability, and low embedding cost. The result is a 
+	  fast language engine with small footprint, making it ideal in embedded systems 
+	  too.
+	  
+	  http://www.lua.org/
+	  
+	  This package contains the LUA shared libraries, needed by other programs.
+
 config BR2_PACKAGE_LUA_INTERPRETER
-	tristate "lua - LUA programming language interpreter"
+	prompt "lua............................... LUA programming language interpreter"
+	tristate
 	default m if CONFIG_DEVEL
-	select BR2_PACKAGE_LUA
+	select BR2_COMPILE_LUA
 	select BR2_PACKAGE_LIBLUA
 	help
 	  Lua is a powerful light-weight programming language designed for extending 
@@ -30,12 +56,12 @@ config BR2_PACKAGE_LUA_INTERPRETER
 	  http://www.lua.org/
 	  
 	  This package contains the LUA language interpreter.
-	  
 
 config BR2_PACKAGE_LUA_COMPILER
-	tristate "luac - LUA programming language compiler"
+	prompt "luac.............................. LUA programming language compiler"
+	tristate
 	default m if CONFIG_DEVEL
-	select BR2_PACKAGE_LUA
+	select BR2_COMPILE_LUA
 	select BR2_PACKAGE_LIBLUA
 	help
 	  Lua is a powerful light-weight programming language designed for extending 
@@ -57,12 +83,12 @@ config BR2_PACKAGE_LUA_COMPILER
 	  http://www.lua.org/
 	  
 	  This package contains the LUA language compiler.
-	  
 
 config BR2_PACKAGE_LUA_EXAMPLES
-	tristate "lua-examples - LUA programming language examples"
+	prompt "lua-examples...................... LUA programming language examples"
+	tristate
 	default m if CONFIG_DEVEL
-	select BR2_PACKAGE_LUA
+	select BR2_COMPILE_LUA
 	select BR2_PACKAGE_LUA_INTERPRETER
 	help
 	  Lua is a powerful light-weight programming language designed for extending 
@@ -84,32 +110,5 @@ config BR2_PACKAGE_LUA_EXAMPLES
 	  http://www.lua.org/
 	  
 	  This package contains LUA language examples.
-	  
-
-config BR2_PACKAGE_LIBLUA
-	tristate "liblua - LUA programming language shared libraries"
-	default m if CONFIG_DEVEL
-	select BR2_PACKAGE_LUA
-	help
-	  Lua is a powerful light-weight programming language designed for extending 
-	  applications. Lua is also frequently used as a general-purpose, stand-alone 
-	  language. Lua is free software.
-	  
-	  Lua combines simple procedural syntax with powerful data description 
-	  constructs based on associative arrays and extensible semantics. Lua is 
-	  dynamically typed, interpreted from bytecodes, and has automatic memory 
-	  management with garbage collection, making it ideal for configuration, 
-	  scripting, and rapid prototyping.
-	  
-	  Lua is implemented as a small library of C functions, written in ANSI C, and 
-	  compiles unmodified in all known platforms. The implementation goals are 
-	  simplicity, efficiency, portability, and low embedding cost. The result is a 
-	  fast language engine with small footprint, making it ideal in embedded systems 
-	  too.
-	  
-	  http://www.lua.org/
-	  
-	  This package contains the LUA shared libraries, needed by other programs.
-	  
 
 endmenu

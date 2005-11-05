@@ -23,7 +23,7 @@ PKG_CONFIGURE_OPTIONS := \
 	--disable-mpc \
 	--disable-aac \
 
-ifneq ($(BR2_PACKAGE_MPD_MP3),)
+ifneq ($(BR2_COMPILE_MPD_WITH_MP3),)
 PKG_DEPENDS += libid3tag libmad
 PKG_CONFIGURE_OPTIONS += \
 	--with-id3tag-includes=$(STAGING_DIR)/usr/include \
@@ -34,7 +34,7 @@ else
 PKG_CONFIGURE_OPTIONS += --disable-id3 --disable-mp3
 endif
 
-ifneq ($(BR2_PACKAGE_MPD_OGG),)
+ifneq ($(BR2_COMPILE_MPD_WITH_OGG),)
 PKG_DEPENDS += libvorbisidec
 PKG_CONFIGURE_OPTIONS += \
 	--with-tremor \
@@ -44,7 +44,7 @@ else
 PKG_CONFIGURE_OPTIONS += --disable-ogg
 endif
 
-ifneq ($(BR2_PACKAGE_MPD_FLAC),)
+ifneq ($(BR2_COMPILE_MPD_WITH_FLAC),)
 PKG_DEPENDS += libflac
 PKG_CONFIGURE_OPTIONS += \
 	--with-libFLAC-includes=$(STAGING_DIR)/usr/include \

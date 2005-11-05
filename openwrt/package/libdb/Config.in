@@ -1,7 +1,15 @@
+config BR2_COMPILE_DB
+	bool
+	default n
+	depends BR2_PACKAGE_LIBDB
+
 config BR2_PACKAGE_LIBDB
-	tristate "libdb - Berkeley DB"
+	prompt "libdb............................. Berkeley DB"
+	tristate
 	default m if CONFIG_DEVEL
+	select BR2_COMPILE_DB
 	help
-	 disk file format database which stores key/data-pairs in single files.  
+	  disk file format database which stores key/data-pairs in single files.  
 	  
 	  http://www.sleepycat.com/products/db.shtml
+

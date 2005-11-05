@@ -1,10 +1,13 @@
+#menu "samba............................. A NetBIOS/SMB implementation"
+
 config BR2_COMPILE_SAMBA
 	bool
 	default n
 	depends BR2_PACKAGE_SAMBA || BR2_PACKAGE_SAMBA_CLIENT || BR2_PACKAGE_SMBFS
 
 config BR2_PACKAGE_SAMBA
-	tristate "samba - NetBIOS/SMB file and print server"
+	prompt "samba............................. NetBIOS/SMB file and print server"
+	tristate
 	default m if CONFIG_DEVEL
 	select BR2_COMPILE_SAMBA
 	help
@@ -16,10 +19,10 @@ config BR2_PACKAGE_SAMBA
 	 http://www.samba.org/
 	 
 	 This package contains the SMB file and print server daemons.
-	 
 
 config BR2_PACKAGE_SAMBA_CLIENT
-	tristate "samba-client - NetBIOS/SMB simple client"
+	prompt "samba-client...................... NetBIOS/SMB simple client"
+	tristate
 	default m if CONFIG_DEVEL
 	select BR2_COMPILE_SAMBA
 	help
@@ -31,5 +34,5 @@ config BR2_PACKAGE_SAMBA_CLIENT
 	 http://www.samba.org/
 	 
 	 This package contains a simple command-line SMB client.
-	 
 
+#endmenu

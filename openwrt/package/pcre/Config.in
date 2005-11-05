@@ -1,13 +1,15 @@
+config BR2_COMPILE_PCRE
+	bool
+	default n
+	depends BR2_PACKAGE_LIBPCRE
+
 config BR2_PACKAGE_LIBPCRE
-	tristate "libpcre - a Perl Compatible Regular Expression library"
+	prompt "libpcre........................... A Perl Compatible Regular Expression library"
+	tristate
 	default m if CONFIG_DEVEL
+	select BR2_COMPILE_PCRE
 	help
 	  A Perl Compatible Regular Expression library
 	  
 	  http://www.pcre.org/
-	  
-
-config BR2_PACKAGE_PCRE
-	tristate
-	default BR2_PACKAGE_LIBPCRE
 

@@ -1,13 +1,13 @@
-config BR2_PACKAGE_FUSE
+config BR2_COMPILE_FUSE
 	bool
 	default n
 	depends BR2_PACKAGE_LIBFUSE
 
-
 config BR2_PACKAGE_LIBFUSE
-	prompt "libfuse - FUSE library"
+	prompt "libfuse........................... FUSE library"
 	tristate
 	default m if CONFIG_DEVEL
+	select BR2_COMPILE_FUSE
 	select BR2_PACKAGE_KMOD_FUSE
 	select BR2_PACKAGE_LIBPTHREAD
 	help
@@ -24,16 +24,14 @@ config BR2_PACKAGE_LIBFUSE
 	   * Runs on Linux kernels 2.4.X and 2.6.X
 	   * Has proven very stable over time
 	  
-	  
 	  http://fuse.sourceforge.net/
 	  
 	  This package contains the fuse shared library, needed by other programs.
 	  
 	  Depends: libpthread
-	  
 
 config BR2_PACKAGE_FUSE_UTILS
-	prompt "fuse-utils - FUSE utilities"
+	prompt   "fuse-utils...................... FUSE utilities"
 	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_LIBFUSE
@@ -52,8 +50,7 @@ config BR2_PACKAGE_FUSE_UTILS
 	   * Runs on Linux kernels 2.4.X and 2.6.X
 	   * Has proven very stable over time
 	  
-	  
 	  http://fuse.sourceforge.net/
 	  
 	  This package contains the fusermount userland utility.
-	  
+

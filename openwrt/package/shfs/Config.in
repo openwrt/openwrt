@@ -1,13 +1,13 @@
-config BR2_PACKAGE_SHFS
+config BR2_COMPILE_SHFS
 	bool
 	default n
 	depends BR2_PACKAGE_SHFS_UTILS
 
-
 config BR2_PACKAGE_SHFS_UTILS
-	select BR2_PACKAGE_KMOD_SHFS
-	prompt "shfs-utils - ShFS mount/umount utilities"
+	prompt "shfs-utils........................ ShFS mount/umount utilities"
 	tristate
+	select BR2_COMPILE_SHFS
+	select BR2_PACKAGE_KMOD_SHFS
 	default m if CONFIG_DEVEL
 	help
 	  ShFS is a simple and easy to use Linux kernel module which 
@@ -29,5 +29,4 @@ config BR2_PACKAGE_SHFS_UTILS
 	  http://shfs.sourceforge.net/
 	  
 	  This package contains the shfs mount/umount utilities.
-	  
 

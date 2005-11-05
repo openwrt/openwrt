@@ -1,9 +1,9 @@
 config BR2_PACKAGE_IPSET
-	tristate "ipset - Netfilter ip sets administration utility"
+	prompt "ipset............................. Netfilter ip sets administration utility"
+	tristate
 	default m if CONFIG_DEVEL
 	help
 	  Netfilter ip sets administration utility
 	  
 	  http://ipset.netfilter.org/
-	  
 
