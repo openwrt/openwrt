@@ -3,7 +3,7 @@ menu "lua............................... LUA programming language"
 config BR2_COMPILE_LUA
 	bool
 	default y
-	depends BR2_PACKAGE_LUA_INTERPRETER || BR2_PACKAGE_LUA_COMPILER || BR2_PACKAGE_LIBLUA
+	depends BR2_PACKAGE_LIBLUA
 
 config BR2_PACKAGE_LIBLUA
 	prompt "liblua............................ LUA programming language shared libraries"
@@ -30,11 +30,10 @@ config BR2_PACKAGE_LIBLUA
 	  
 	  This package contains the LUA shared libraries, needed by other programs.
 
-config BR2_PACKAGE_LUA_INTERPRETER
+config BR2_PACKAGE_LUA
 	prompt "lua............................... LUA programming language interpreter"
 	tristate
 	default m if CONFIG_DEVEL
-	select BR2_COMPILE_LUA
 	select BR2_PACKAGE_LIBLUA
 	help
 	  Lua is a powerful light-weight programming language designed for extending 
@@ -57,11 +56,10 @@ config BR2_PACKAGE_LUA_INTERPRETER
 	  
 	  This package contains the LUA language interpreter.
 
-config BR2_PACKAGE_LUA_COMPILER
+config BR2_PACKAGE_LUAC
 	prompt "luac.............................. LUA programming language compiler"
 	tristate
 	default m if CONFIG_DEVEL
-	select BR2_COMPILE_LUA
 	select BR2_PACKAGE_LIBLUA
 	help
 	  Lua is a powerful light-weight programming language designed for extending 
@@ -88,8 +86,7 @@ config BR2_PACKAGE_LUA_EXAMPLES
 	prompt "lua-examples...................... LUA programming language examples"
 	tristate
 	default m if CONFIG_DEVEL
-	select BR2_COMPILE_LUA
-	select BR2_PACKAGE_LUA_INTERPRETER
+	select BR2_PACKAGE_LUA
 	help
 	  Lua is a powerful light-weight programming language designed for extending 
 	  applications. Lua is also frequently used as a general-purpose, stand-alone 
