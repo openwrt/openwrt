@@ -73,6 +73,8 @@ $(PKG_BUILD_DIR)/.built:
 $(IPKG_CUPS):
 	install -d -m0755 $(IDIR_CUPS)/etc/cups
 	cp -fpR $(PKG_INSTALL_DIR)/etc/cups/* $(IDIR_CUPS)/etc/cups/
+	rm -rf $(IDIR_CUPS)/etc/cups/certs
+	ln -sf /tmp $(IDIR_CUPS)/etc/cups/certs
 	install -d -m0755 $(IDIR_CUPS)/usr/bin
 	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/* $(IDIR_CUPS)/usr/bin/
 	rm -f $(IDIR_CUPS)/usr/bin/cups-config
