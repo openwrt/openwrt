@@ -71,6 +71,7 @@ $(PKG_BUILD_DIR)/.built:
 	touch $@
 
 $(IPKG_CUPS):
+	rm -rf $(IDIR_CUPS)/etc/cups
 	install -d -m0755 $(IDIR_CUPS)/etc/cups
 	cp -fpR $(PKG_INSTALL_DIR)/etc/cups/* $(IDIR_CUPS)/etc/cups/
 	rm -rf $(IDIR_CUPS)/etc/cups/certs
