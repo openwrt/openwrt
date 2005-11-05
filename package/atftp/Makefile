@@ -53,6 +53,7 @@ $(PKG_BUILD_DIR)/.built:
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
+		CFLAGS="$(TARGET_CFLAGS) -Wall -D_REENTRANT" \
 		DESTDIR=$(PKG_INSTALL_DIR) \
 		all install
 	touch $@
