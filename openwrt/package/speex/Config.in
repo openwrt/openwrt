@@ -1,13 +1,13 @@
-config BR2_PACKAGE_SPEEX
+config BR2_COMPILE_SPEEX
 	bool
 	default n
 	depends BR2_PACKAGE_LIBSPEEX
 
 config BR2_PACKAGE_LIBSPEEX
-	prompt "libspeex - Open source patent-free speech compression codec"
+	prompt "libspeex.......................... Open source patent-free speech compression codec"
 	tristate
 	default m if CONFIG_DEVEL
-	select BR2_PACKAGE_SPEEX
+	select BR2_COMPILE_SPEEX
 	help
 	  
 	  Speex is an Open Source/Free Software patent-free audio compression 
@@ -20,4 +20,4 @@ config BR2_PACKAGE_LIBSPEEX
 	  http://www.speex.org/
 	  
 	  This package contains the shared codec library, needed by other programs.
-	  
+

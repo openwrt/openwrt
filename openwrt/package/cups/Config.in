@@ -1,8 +1,9 @@
 config BR2_PACKAGE_CUPS
-	tristate "cups - Common UNIX Printing System"
+	prompt "cups.............................. Common UNIX Printing System"
+	tristate
 	default m if CONFIG_DEVEL
 	help
 	  A printer spooling system for devices with USB or LP support
 	  
 	  http://www.cups.org/
-	  
+

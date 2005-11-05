@@ -1,5 +1,6 @@
 config BR2_PACKAGE_RARPD
-	tristate "rarpd - Reverse ARP Daemon"
+	prompt "rarpd............................. Reverse ARP Daemon"
+	tristate
 	default m if CONFIG_DEVEL
 	select BR2_PACKAGE_LIBNET
 	help
@@ -10,4 +11,4 @@ config BR2_PACKAGE_RARPD
 	  database.
 	  
 	  ftp://ftp.dementia.org/pub/net-tools/
-	  
+

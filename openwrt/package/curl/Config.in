@@ -4,7 +4,8 @@ config BR2_COMPILE_CURL
 	depends BR2_PACKAGE_LIBCURL
 
 config BR2_PACKAGE_LIBCURL
-	tristate "libcurl - A client-side URL transfer library"
+	prompt "libcurl........................... A client-side URL transfer library"
+	tristate
 	default m if CONFIG_DEVEL
 	select BR2_COMPILE_CURL
 	select BR2_PACKAGE_LIBOPENSSL
@@ -13,15 +14,14 @@ config BR2_PACKAGE_LIBCURL
 	  A client-side URL transfer library.
 	  
 	  http://curl.haxx.se/
-	  
 
 config BR2_PACKAGE_CURL
-	tristate "curl - A client-side URL transfer tool"
+	prompt   "curl............................ A client-side URL transfer tool"
+	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_LIBCURL
 	help
 	  A client-side URL transfer tool.
 	  
 	  http://curl.haxx.se/
-	  
 

@@ -1,12 +1,12 @@
-menu "snort - Ligthweight Network Intrusion Detection System (NIDS)"
+menu "snort............................. Ligthweight Network Intrusion Detection System (NIDS)"
 
-config BR2_PACKAGE_SNORT
+config BR2_COMPILE_SNORT
 	bool
-	default BR2_PACKAGE_SNORT_BASIC || BR2_PACKAGE_SNORT_MYSQL || BR2_PACKAGE_SNORT_PGSQL || BR2_PACKAGE_SNORT_CUSTOM
 	default n
+	depends BR2_PACKAGE_SNORT_BASIC || BR2_PACKAGE_SNORT_MYSQL || BR2_PACKAGE_SNORT_PGSQL || BR2_PACKAGE_SNORT_CUSTOM
 
 choice
-	prompt "snort - Ligthweight Network Intrusion Detection System (NIDS)"
+	prompt "snort............................. Ligthweight Network Intrusion Detection System (NIDS)"
 	tristate
 	optional
 	help
@@ -21,38 +21,37 @@ choice
 	    - libpcap
 	    - libpcre
 	    - libpq (for PostgreSQL database logging support)
-	  
 	
 	config BR2_PACKAGE_SNORT_BASIC
-		prompt "snort: without database support"
+		prompt   "snort...........................   without database support"
 		tristate
-		select BR2_PACKAGE_SNORT
+		select BR2_COMPILE_SNORT
 		select BR2_PACKAGE_LIBNET
 		select BR2_PACKAGE_LIBPCAP
 		select BR2_PACKAGE_LIBPCRE
 	
 	config BR2_PACKAGE_SNORT_MYSQL
-		prompt "snort-mysql: with MySQL database support"
+		prompt   "snort-mysql.....................   with MySQL database support"
 		tristate
-		select BR2_PACKAGE_SNORT
+		select BR2_COMPILE_SNORT
 		select BR2_PACKAGE_LIBNET
 		select BR2_PACKAGE_LIBPCAP
 		select BR2_PACKAGE_LIBPCRE
 		select BR2_PACKAGE_LIBMYSQLCLIENT
 	
 	config BR2_PACKAGE_SNORT_PGSQL
-		prompt "snort-pgsql: with PostgreSQL database support"
+		prompt   "snort-pgsql.....................   with PostgreSQL database support"
 		tristate
-		select BR2_PACKAGE_SNORT
+		select BR2_COMPILE_SNORT
 		select BR2_PACKAGE_LIBNET
 		select BR2_PACKAGE_LIBPCAP
 		select BR2_PACKAGE_LIBPCRE
 		select BR2_PACKAGE_LIBPQ
 	
 	config BR2_PACKAGE_SNORT_CUSTOM
-		prompt "snort-custom: customized to your needs"
+		prompt   "snort-custom....................   customized to your needs"
 		tristate
-		select BR2_PACKAGE_SNORT
+		select BR2_COMPILE_SNORT
 		select BR2_PACKAGE_LIBNET
 		select BR2_PACKAGE_LIBPCAP
 		select BR2_PACKAGE_LIBPCRE
@@ -64,7 +63,7 @@ choice
 		depends BR2_PACKAGE_SNORT_CUSTOM
 
 	config BR2_PACKAGE_SNORT_ENABLE_INLINE
-		prompt "inline mode (read packets from iptables instead of libpcap)"
+		prompt "Inline mode (read packets from iptables instead of libpcap)"
 		bool
 		default n
 		depends BR2_PACKAGE_SNORT_CUSTOM

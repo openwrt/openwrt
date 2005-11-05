@@ -1,12 +1,13 @@
 config BR2_COMPILE_RRDTOOL1
+	prompt "rrdtool1.......................... Round Robin Database (RRD) tools (v1.0.x)"
 	bool
-	default n
-	depends BR2_PACKAGE_LIBRRD1
+	default y
 
 config BR2_PACKAGE_LIBRRD1
-	tristate "librrd1 - Round Robin Database (RRD) management library (v1.0.x)"
+	prompt   "librrd1......................... Round Robin Database (RRD) management library (v1.0.x)"
+	tristate
 	default m if CONFIG_DEVEL
-	select BR2_COMPILE_RRDTOOL1
+	depends BR2_COMPILE_RRDTOOL1
 	select BR2_PACKAGE_ZLIB
 	help
 	  RRD is the Acronym for Round Robin Database. RRD is a system to store and
@@ -24,12 +25,13 @@ config BR2_PACKAGE_LIBRRD1
 	  This is version 1.0.x with cgilib-0.4, gd1.3 and libpng-1.0.9 linked into 
 	  librrd.so. The library is much smaller compared to the 1.2.x version with 
 	  separate dynamic linked libraries.
-	  
 
 config BR2_PACKAGE_RRDCGI1
-	tristate "rrdcgi1 - Round Robin Database (RRD) CGI graphing tool (v1.0.x)"
+	prompt   "rrdcgi1......................... Round Robin Database (RRD) CGI graphing tool (v1.0.x)"
+	tristate
 	default m if CONFIG_DEVEL
-	depends BR2_PACKAGE_LIBRRD1
+	depends BR2_COMPILE_RRDTOOL1
+	select BR2_PACKAGE_LIBRRD1
 	help
 	  RRD is the Acronym for Round Robin Database. RRD is a system to store and
 	  display time-series data (i.e. network bandwidth, machine-room temperature,
@@ -47,12 +49,12 @@ config BR2_PACKAGE_RRDCGI1
 	  This is version 1.0.x with cgilib-0.4, gd1.3 and libpng-1.0.9 linked into 
 	  librrd.so. The library is much smaller compared to the 1.2.x version with 
 	  separate dynamic linked libraries.
-	  
 
 config BR2_PACKAGE_RRDTOOL1
-	tristate "rrdtool1 - Round Robin Database (RRD) management tools (v1.0.x)"
-	default m if CONFIG_DEVEL
-	depends BR2_PACKAGE_LIBRRD1
+	prompt   "rrdtool1........................ Round Robin Database (RRD) management tools (v1.0.x)"
+	tristate
+	depends BR2_COMPILE_RRDTOOL1
+	select BR2_PACKAGE_LIBRRD1
 	help
 	  RRD is the Acronym for Round Robin Database. RRD is a system to store and
 	  display time-series data (i.e. network bandwidth, machine-room temperature,

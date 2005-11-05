@@ -1,9 +1,10 @@
 config BR2_PACKAGE_SCREEN
-	tristate "screen - Full-screen terminal window manager"
+	prompt "screen............................ Full-screen terminal window manager"
+	tristate
 	default m if CONFIG_DEVEL
 	help
 	  Screen is a full-screen window manager that multiplexes a physical 
 	  terminal between several processes, typically interactive shells.
 	  
 	  http://www.gnu.org/software/screen/
-	  
+

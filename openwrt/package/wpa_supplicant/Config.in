@@ -1,9 +1,9 @@
 config BR2_PACKAGE_WPA_SUPPLICANT
-	tristate "wpa_supplicant - WPA Supplicant with support for WPA and WPA2"
+	prompt "wpa_supplicant.................... WPA Supplicant with support for WPA and WPA2"
+	tristate
 	default m if CONFIG_DEVEL
 	select BR2_PACKAGE_LIBOPENSSL
 	help
-	  
 	  WPA Supplicant with support for WPA and WPA2 (IEEE 802.11i / RSN).
 	  Supplicant is the IEEE 802.1X/WPA component that is used in the client 
 	  stations. It implements key negotiation with a WPA Authenticator and it 
@@ -12,4 +12,4 @@ config BR2_PACKAGE_WPA_SUPPLICANT
 	  http://hostap.epitest.fi/wpa_supplicant/
 	  
 	  Depends: openssl
-	  
+

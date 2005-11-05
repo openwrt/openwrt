@@ -1,5 +1,6 @@
 config BR2_PACKAGE_PARPROUTED
-	tristate "parprouted - Proxy ARP daemon"
+	prompt "parprouted........................ Proxy ARP daemon"
+	tristate
 	default m if CONFIG_DEVEL
 	help
 	  parprouted is a daemon for transparent IP (Layer 3) proxy ARP bridging.
@@ -8,3 +9,5 @@ config BR2_PACKAGE_PARPROUTED
 	  bridging allows to bridge Ethernet networks behind wireless nodes without 
 	  using WDS or layer 2 bridging.
 	  
+	  http://www.hazard.maks.net/
+

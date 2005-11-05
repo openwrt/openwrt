@@ -1,5 +1,6 @@
 config BR2_PACKAGE_IPTRAF
-	tristate "iptraf - A console-based network monitoring program"
+	prompt "iptraf............................ A console-based network monitoring program"
+	tristate
 	default m if CONFIG_DEVEL
 	help
 	  IPTraf is a console-based network statistics utility for Linux. It gathers 
@@ -8,5 +9,4 @@ config BR2_PACKAGE_IPTRAF
 	  and LAN station packet and byte counts.
 	  
 	  http://iptraf.seul.org/
-	  
 

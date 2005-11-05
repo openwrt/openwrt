@@ -1,15 +1,17 @@
+config BR2_COMPILE_MATRIXSSL
+	bool
+	depends BR2_PACKAGE_LIBMATRIXSSL
+
 config BR2_PACKAGE_LIBMATRIXSSL
-	select BR2_PACKAGE_LIBPTHREAD
-	tristate "libmatrixssl - Embedded SSL implementation"
+	prompt "libmatrixssl...................... Embedded SSL implementation"
+	tristate
 	default m if CONFIG_DEVEL
+	select BR2_COMPILE_MATRIXSSL
+	select BR2_PACKAGE_LIBPTHREAD
 	help
 	  An embedded SSL implementation
 	  
 	  http://www.matrixssl.org/
 	  
 	  Depends: libpthread
-	  
 
-config BR2_PACKAGE_MATRIXSSL
-	tristate
-	default BR2_PACKAGE_LIBMATRIXSSL

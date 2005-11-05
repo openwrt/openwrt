@@ -1,11 +1,12 @@
 config BR2_PACKAGE_MINI_SENDMAIL
-	tristate "mini-sendmail - A small sendmail-compatible mail forwarder"
+	prompt "mini-sendmail..................... A small sendmail-compatible mail forwarder"
+	tristate
 	default m if CONFIG_DEVEL
 	help
-	 mini_sendmail reads its standard input up to an end-of-file and sends a 
-	 copy of the message found there to all of the addresses listed.
-	 The message is sent by connecting to a local SMTP server. This means 
-	 mini_sendmail can be used to send email from inside a chroot(2) area. 
-	 
-	 http://www.acme.com/software/mini_sendmail/
-	 
+	  mini_sendmail reads its standard input up to an end-of-file and sends a 
+	  copy of the message found there to all of the addresses listed.
+	  The message is sent by connecting to a local SMTP server. This means 
+	  mini_sendmail can be used to send email from inside a chroot(2) area. 
+	  
+	  http://www.acme.com/software/mini_sendmail/
+

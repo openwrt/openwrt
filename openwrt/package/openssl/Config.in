@@ -1,10 +1,10 @@
-config BR2_PACKAGE_OPENSSL
+config BR2_COMPILE_OPENSSL
 	bool
 	default n
 	depends BR2_PACKAGE_LIBOPENSSL
 	
 config BR2_PACKAGE_LIBOPENSSL
-	prompt "libopenssl - Open source SSL (Secure Socket Layer) libraries"
+	prompt "libopenssl........................ Open source SSL (Secure Socket Layer) libraries"
 	tristate
 	default m if CONFIG_DEVEL
 	select BR2_PACKAGE_OPENSSL
@@ -18,13 +18,12 @@ config BR2_PACKAGE_LIBOPENSSL
 	  http://www.openssl.org/
 	  
 	  This package contains the shared SSL libraries, needed by other programs.
-	  
 
 config BR2_PACKAGE_OPENSSL_UTIL
-	depends BR2_PACKAGE_LIBOPENSSL
-	prompt "openssl-util - OpenSSL command line tool"
+	prompt   "openssl-util.................... OpenSSL command line tool"
 	tristate
 	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_LIBOPENSSL
 	help
 	  	
 	  The OpenSSL Project is a collaborative effort to develop a robust, 
@@ -35,4 +34,4 @@ config BR2_PACKAGE_OPENSSL_UTIL
 	  http://www.openssl.org/
 	  
 	  This package contains the multi-purpose OpenSSL binary tool.
-	  
+

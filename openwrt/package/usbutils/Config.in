@@ -1,14 +1,15 @@
+config BR2_COMPILE_USBUTILS
+	bool
+	depends BR2_PACKAGE_LSUSB
+
 config BR2_PACKAGE_LSUSB
-	tristate "lsusb - USB devices listing program"
+	prompt "lsusb............................. USB devices listing program"
+	tristate
 	default m if CONFIG_DEVEL
+	select BR2_COMPILE_USBUTILS
 	select BR2_PACKAGE_LIBUSB
 	help
 	  A program to list Linux USB devices
 	  
 	  http://linux-usb.sourceforge.net/
-	  
-
-config BR2_PACKAGE_USBUTILS
-	tristate
-	default BR2_PACKAGE_LSUSB
 

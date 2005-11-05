@@ -1,15 +1,15 @@
-menu "kismet - an 802.11 layer2 wireless network detector, sniffer, and intrusion detection system"
+#menu "kismet............................ An 802.11 layer2 wireless network detector, sniffer, and intrusion detection system"
 
-config BR2_PACKAGE_KISMET
-	tristate
+config BR2_COMPILE_KISMET
+	bool
 	default n
 	depends BR2_PACKAGE_KISMET_CLIENT || BR2_PACKAGE_KISMET_DRONE || BR2_PACKAGE_KISMET_SERVER
 
 config BR2_PACKAGE_KISMET_CLIENT
-	prompt "kismet-client - the Kismet client"
+	prompt "kismet-client..................... The Kismet client"
 	tristate
 	default m if CONFIG_DEVEL
-	select BR2_PACKAGE_KISMET
+	select BR2_COMPILE_KISMET
 	select BR2_PACKAGE_LIBNCURSES
 	select BR2_PACKAGE_UCLIBCXX
 	help
@@ -24,13 +24,12 @@ config BR2_PACKAGE_KISMET_CLIENT
 	    - libncurses
 	    - libpcap
 	    - uClibc++
-	  
 
 config BR2_PACKAGE_KISMET_DRONE
-	prompt "kismet-drone - the Kismet drone"
+	prompt "kismet-drone...................... The Kismet drone"
 	tristate
 	default m if CONFIG_DEVEL
-	select BR2_PACKAGE_KISMET
+	select BR2_COMPILE_KISMET
 	select BR2_PACKAGE_LIBPCAP
 	select BR2_PACKAGE_UCLIBCXX
 	help
@@ -44,13 +43,12 @@ config BR2_PACKAGE_KISMET_DRONE
 	  Depends:
 	    - libpcap
 	    - uClibc++
-	  
 
 config BR2_PACKAGE_KISMET_SERVER
-	prompt "kismet-server - the Kismet server"
+	prompt "kismet-server..................... The Kismet server"
 	tristate
 	default m if CONFIG_DEVEL
-	select BR2_PACKAGE_KISMET
+	select BR2_COMPILE_KISMET
 	select BR2_PACKAGE_LIBPCAP
 	select BR2_PACKAGE_UCLIBCXX
 	help
@@ -64,6 +62,5 @@ config BR2_PACKAGE_KISMET_SERVER
 	  Depends:
 	    - libpcap
 	    - uClibc++
-	  
 
-endmenu
+#endmenu

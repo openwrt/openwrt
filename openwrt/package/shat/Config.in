@@ -1,7 +1,10 @@
 config BR2_PACKAGE_SHAT
-	tristate "shat - Source Hardware Address Translation"
+	prompt "shat.............................. Source Hardware Address Translation"
+	tristate
 	default m if CONFIG_DEVEL
 	help
 	  A tool which allows hosts with arbitrary IP configuration
 	  to connect to the internet over a SHAT gateway.
 	  
+	  http://www.teddy-net.com/cvs/Maxina/128gw/service/arpcatch/shat/
+

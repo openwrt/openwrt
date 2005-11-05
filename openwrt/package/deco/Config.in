@@ -1,5 +1,6 @@
 config BR2_PACKAGE_DECO
-	tristate "deco - Text-based full featured file manager"
+	prompt "deco.............................. Text-based full featured file manager"
+	tristate
 	default m if CONFIG_DEVEL
 	select BR2_PACKAGE_LIBNCURSES
 	help
@@ -7,5 +8,4 @@ config BR2_PACKAGE_DECO
 	  file manager.
 	  
 	  http://deco.sourceforge.net/
-	  
 

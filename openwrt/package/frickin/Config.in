@@ -1,5 +1,6 @@
 config BR2_PACKAGE_FRICKIN
-	tristate "frickin - PPTP (Point-to-Point Tunneling Protocol) proxy"
+	prompt "frickin........................... PPTP (Point-to-Point Tunneling Protocol) proxy"
+	tristate
 	default m if CONFIG_DEVEL
 	help
 	  Frickin PPTP Proxy allows a Point-to-Point Tunneling Protocol (PPTP) 
@@ -7,4 +8,4 @@ config BR2_PACKAGE_FRICKIN
 	  Translation (NAT).
 	  
 	  http://frickin.sourceforge.net/
-	  
+

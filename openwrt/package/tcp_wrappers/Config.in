@@ -1,13 +1,15 @@
+config BR2_COMPILE_TCP_WRAPPERS
+	bool
+	default n
+	depends BR2_PACKAGE_LIBWRAP
+
 config BR2_PACKAGE_LIBWRAP
-	tristate "libwrap - Security wrapper library for TCP services"
+	prompt "libwrap........................... Security wrapper library for TCP services"
+	tristate
 	default m if CONFIG_DEVEL
+	select BR2_COMPILE_TCP_WRAPPERS
 	help
 	  Security wrapper library for TCP services.
 	  
 	  ftp://ftp.porcupine.org/pub/security/index.html
-	  
-
-config BR2_PACKAGE_TCP_WRAPPERS
-	tristate
-	default BR2_PACKAGE_LIBWRAP
 

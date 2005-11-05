@@ -1,5 +1,6 @@
 config BR2_PACKAGE_PICOCOM
-	tristate "picocom - minimal dumb-terminal emulation program"
+	prompt "picocom........................... minimal dumb-terminal emulation program"
+	tristate
 	default m if CONFIG_DEVEL
 	help
 	  As its name suggests, picocom is a minimal dumb-terminal emulation 
@@ -11,4 +12,4 @@ config BR2_PACKAGE_PICOCOM
 	  similar tasks.
 	  
 	  http://efault.net/npat/hacks/picocom/
-	  
+

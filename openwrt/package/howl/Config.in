@@ -1,46 +1,62 @@
-menu "howl - Zeroconf networking implementation"
+menu "howl.............................. A Zeroconf networking implementation"
 
-config BR2_PACKAGE_HOWL
+config BR2_COMPILE_HOWL
 	bool
 	default n
 	depends BR2_PACKAGE_LIBHOWL
 
 config BR2_PACKAGE_LIBHOWL
-	prompt "libhowl - howl library"
+	prompt "libhowl........................... The howl library"
 	tristate
 	default m if CONFIG_DEVEL
-	select BR2_PACKAGE_HOWL
+	select BR2_COMPILE_HOWL
 	help
-	  
 	  A cross-platform implementation of Zeroconf networking.
 	  
 	  http://www.porchdogsoft.com/products/howl/
 	  
 	  This package contains shared libraries, needed by other programs.
-	  
 
 config BR2_PACKAGE_HOWL_UTILS
-	depends BR2_PACKAGE_LIBHOWL
-	prompt "howl-utils - howl client utilities"
+	prompt   "howl-utils...................... The howl client utilities"
 	tristate
 	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_LIBHOWL
+	help
+	  A cross-platform implementation of Zeroconf networking.
+	  
+	  http://www.porchdogsoft.com/products/howl/
+
+comment "Daemons ---"
 
 config BR2_PACKAGE_AUTOIPD
-	depends BR2_PACKAGE_LIBHOWL
-	prompt "autoipd - an IPv4 Link-Local address self-assigner daemon"
+	prompt "autoipd........................... An IPv4 Link-Local address self-assigner daemon"
 	tristate
 	default m if CONFIG_DEVEL
+	select BR2_PACKAGE_LIBHOWL
+	help
+	  A cross-platform implementation of Zeroconf networking.
+	  
+	  http://www.porchdogsoft.com/products/howl/
 
 config BR2_PACKAGE_MDNSRESPONDER
-	depends BR2_PACKAGE_LIBHOWL
-	prompt "mdnsresponder - an mDNS (Multicast DNS) service responder daemon"
+	prompt "mdnsresponder..................... An mDNS (Multicast DNS) service responder daemon"
 	tristate
 	default m if CONFIG_DEVEL
+	select BR2_PACKAGE_LIBHOWL
+	help
+	  A cross-platform implementation of Zeroconf networking.
+	  
+	  http://www.porchdogsoft.com/products/howl/
 
 config BR2_PACKAGE_NIFD
-	depends BR2_PACKAGE_LIBHOWL
-	prompt "nifd - a network interface monitor daemon"
+	prompt "nifd.............................. A network interface monitor daemon"
 	tristate
 	default m if CONFIG_DEVEL
+	select BR2_PACKAGE_LIBHOWL
+	help
+	  A cross-platform implementation of Zeroconf networking.
+	  
+	  http://www.porchdogsoft.com/products/howl/
 
 endmenu

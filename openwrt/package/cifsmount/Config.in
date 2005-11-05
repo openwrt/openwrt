@@ -1,6 +1,7 @@
 config BR2_PACKAGE_CIFSMOUNT
-	tristate "cifsmount - Helper utility for mounting remote CIFS shares"
+	prompt "cifsmount......................... Helper utility for mounting remote CIFS shares"
+	tristate
 	default m if CONFIG_DEVEL
 	help
 	  An user space helper for mounting remote CIFS shares
-	  
+

@@ -1,5 +1,7 @@
 config BR2_PACKAGE_TTCP
-	tristate "ttcp - TCP connection performance tester"
+	prompt "ttcp.............................. A TCP connection performance tester"
+	tristate
 	default m if CONFIG_DEVEL
 	help
 	  A small utility to test TCP connection performance
+
