@@ -1,0 +1,11 @@
+config BR2_PACKAGE_IPTABLES_SNMP
+	prompt "iptables-snmp..................... An snmpd plugin to access iptables rules"
+	tristate
+	default m if CONFIG_DEVEL
+	select BR2_PACKAGE_IPTABLES
+	select BR2_PACKAGE_SNMPD
+	help
+	  This is a plugin that makes iptables rules accessable from snmpd.
+	  
+	  http://www.nobiscuit.com/iptables-snmp/
+
