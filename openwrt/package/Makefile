@@ -176,6 +176,7 @@ package-$(BR2_PACKAGE_SHAT) += shat
 package-$(BR2_COMPILE_SHFS) += shfs
 package-$(BR2_PACKAGE_SIPROXD) += siproxd
 package-$(BR2_PACKAGE_SIPSAK) += sipsak
+package-$(BR2_PACKAGE_SLURM) += slurm
 package-$(BR2_COMPILE_SNORT) += snort
 package-$(BR2_COMPILE_SNORT_WIRELESS) += snort-wireless
 package-$(BR2_PACKAGE_SOCAT) += socat
