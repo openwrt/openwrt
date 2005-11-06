@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=postgresql
-PKG_VERSION:=7.4.7
-PKG_RELEASE:=3
-PKG_MD5SUM:=32dac2916d16287d95e0c958a75161fa
+PKG_VERSION:=7.4.9
+PKG_RELEASE:=1
+PKG_MD5SUM:=d7cf0f0a0e1dda19268f55cb1e124c77
 
 PKG_SOURCE_URL:=\
 	ftp://ftp3.us.postgresql.org/pub/postgresql/source/v$(PKG_VERSION)/ \
