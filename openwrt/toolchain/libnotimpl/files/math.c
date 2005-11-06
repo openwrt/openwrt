@@ -2,6 +2,7 @@
 
 #include "math.h"
 
+
 /* cosf for uClibc
  *
  * wrapper for cos(x)
@@ -16,6 +17,7 @@
 {
 	return (float) cos( (double)x );
 }
+
 
 /* sinf for uClibc
  *
@@ -32,6 +34,23 @@
 	return (float) sin( (double)x );
 }
 
+
+/* ceilf for uClibc
+ *
+ * wrapper for ceil(x)
+ */
+
+#ifdef __STDC__
+	float ceilf(float x)
+#else
+	float rintf(x)
+	float x;
+#endif
+{
+	return (float) ceil( (double)x );
+}
+
+
 /* rintf for uClibc
  *
  * wrapper for rint(x)
@@ -46,3 +65,4 @@
 {
 	return (float) sin( (double)x );
 }
+
