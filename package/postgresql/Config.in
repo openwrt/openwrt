@@ -1,4 +1,4 @@
-config BR2_PACKAGE_POSTGRESQL
+config BR2_COMPILE_POSTGRESQL
 	bool
 	default n
 	depends BR2_PACKAGE_LIBPQ
@@ -7,7 +7,7 @@ config BR2_PACKAGE_LIBPQ
 	prompt "libpq............................. PostgreSQL client library"
 	tristate
 	default m if CONFIG_DEVEL
-	select BR2_PACKAGE_POSTGRESQL
+	select BR2_COMPILE_POSTGRESQL
 	help
 	  PostgreSQL is an object-relational database management system (ORDBMS) 
 	  based on POSTGRES, Version 4.2, developed at the University of 
