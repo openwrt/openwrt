@@ -150,6 +150,7 @@ package-$(BR2_COMPILE_POSTGRESQL) += postgresql
 package-$(BR2_PACKAGE_PPP) += ppp
 package-$(BR2_PACKAGE_PPTP) += pptp
 package-$(BR2_PACKAGE_PPTPD) += pptpd
+package-$(BR2_PACKAGE_PSYBNC) += psybnc
 package-$(BR2_PACKAGE_QUAGGA) += quagga
 package-$(BR2_PACKAGE_RADVD) += radvd
 package-$(BR2_PACKAGE_RARPD) += rarpd

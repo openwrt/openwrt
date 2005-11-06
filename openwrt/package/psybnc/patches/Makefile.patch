@@ -1,0 +1,59 @@
+--- psybnc/Makefile	2005-06-04 20:22:45.000000000 +0200
++++ psybnc_patched/Makefile	2005-11-04 11:50:28.879157626 +0100
+@@ -1,16 +1,16 @@
+-CC	= gcc
++HOSTCC	= gcc
+ CCFLAGS = 
+ 
+ all:	$(OBJS)
+ 	@echo Initializing bouncer compilation
+ 	@echo [*] Running Conversion Tool for older psyBNC Data.
+-	@$(CC) tools/convconf.c -o tools/convconf
++	@$(HOSTCC) tools/convconf.c -o tools/convconf
+ 	@tools/convconf
+ 	@echo [*] Running Autoconfig.
+-	@$(CC) -I. tools/autoconf.c -o tools/autoconf
++	@$(HOSTCC) -I. tools/autoconf.c -o tools/autoconf
+ 	@tools/autoconf
+ 	@echo [*] Compiling MakeSalt for Encryption..
+-	@$(CC) -I. -o makesalt tools/makesalt.c
++	@$(HOSTCC) -I. -o makesalt tools/makesalt.c
+ 	@./makesalt
+ 	@echo [*] Compiling Bouncer..
+ 	@make -f makefile.out
+@@ -20,14 +20,14 @@
+ menuconfig:
+ 	@echo Initializing Menu-Configuration
+ 	@echo [*] Running Conversion Tool for older psyBNC Data.
+-	@$(CC) tools/convconf.c -o tools/convconf
++	@$(HOSTCC) tools/convconf.c -o tools/convconf
+ 	@tools/convconf
+ 	@echo [*] Running Autoconfig.
+-	@$(CC) -I. tools/autoconf.c -o tools/autoconf
++	@$(HOSTCC) -I. tools/autoconf.c -o tools/autoconf
+ 	@tools/autoconf
+ 	@echo [*] Creating Menu, please wait.
+ 	@echo This needs the 'ncurses' library. If it is not available, menuconf wont work. If you are using 'curses', use make menuconfig-curses instead.
+-	@$(CC) menuconf/menuconf.c menuconf/inputbox.c menuconf/util.c menuconf/checklist.c menuconf/menubox.c menuconf/textbox.c src/snprintf.c -I. -lncurses -lm -o menuconf/menuconf 2>/dev/null
++	@$(HOSTCC) menuconf/menuconf.c menuconf/inputbox.c menuconf/util.c menuconf/checklist.c menuconf/menubox.c menuconf/textbox.c src/snprintf.c -I. -lncurses -lm -o menuconf/menuconf 2>/dev/null
+ 	@menuconf/menuconf
+ 	@clear
+ 	@echo Now compile psyBNC using make, if not yet compiled, or if Options were changed.
+@@ -36,14 +36,14 @@
+ menuconfig-curses:
+ 	@echo Initializing Menu-Configuration using Curses
+ 	@echo [*] Running Conversion Tool for older psyBNC Data.
+-	@$(CC) tools/convconf.c -o tools/convconf
++	@$(HOSTCC) tools/convconf.c -o tools/convconf
+ 	@tools/convconf
+ 	@echo [*] Running Autoconfig.
+-	@$(CC) -I. tools/autoconf.c -o tools/autoconf
++	@$(HOSTCC) -I. tools/autoconf.c -o tools/autoconf
+ 	@tools/autoconf
+ 	@echo [*] Creating Menu, please wait.
+ 	@echo This needs the 'curses' library. If it is not available, menuconf wont work.
+-	@$(CC) menuconf/menuconf.c menuconf/inputbox.c menuconf/util.c menuconf/checklist.c menuconf/menubox.c menuconf/textbox.c src/snprintf.c -DNONCURSES -I. -lcurses -lm -o menuconf/menuconf 2>/dev/null
++	@$(HOSTCC) menuconf/menuconf.c menuconf/inputbox.c menuconf/util.c menuconf/checklist.c menuconf/menubox.c menuconf/textbox.c src/snprintf.c -DNONCURSES -I. -lcurses -lm -o menuconf/menuconf 2>/dev/null
+ 	@menuconf/menuconf
+ 	@clear
+ 	@echo Now compile psyBNC using make, if not yet compiled, or if Options were changed.
