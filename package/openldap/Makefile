@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openldap
-PKG_VERSION:=2.2.26
+PKG_VERSION:=2.2.29
 PKG_RELEASE:=1
-PKG_MD5SUM:=afc8700b5738da863b30208e1d3e9de8
+PKG_MD5SUM:=6c4c72a1336aa45b463e738034c078d6
 
 PKG_SOURCE_URL:=ftp://ftp.openldap.org/pub/OpenLDAP/openldap-release/ \
 	ftp://sunsite.cnlab-switch.ch/mirror/OpenLDAP/openldap-release/ \
