@@ -7,9 +7,8 @@ config BR2_PACKAGE_LIBOPENSSL
 	prompt "libopenssl........................ Open source SSL (Secure Socket Layer) libraries"
 	tristate
 	default m if CONFIG_DEVEL
-	select BR2_PACKAGE_OPENSSL
+	select BR2_COMPILE_OPENSSL
 	help
-	  	
 	  The OpenSSL Project is a collaborative effort to develop a robust, 
 	  commercial-grade, full-featured, and Open Source toolkit implementing 
 	  the Secure Sockets Layer (SSL v2/v3) and Transport Layer Security (TLS v1) 
@@ -25,7 +24,6 @@ config BR2_PACKAGE_OPENSSL_UTIL
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_LIBOPENSSL
 	help
-	  	
 	  The OpenSSL Project is a collaborative effort to develop a robust, 
 	  commercial-grade, full-featured, and Open Source toolkit implementing 
 	  the Secure Sockets Layer (SSL v2/v3) and Transport Layer Security (TLS v1) 
