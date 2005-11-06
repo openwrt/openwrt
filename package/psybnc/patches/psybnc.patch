@@ -1,0 +1,105 @@
+diff -ur psybnc/config.h psybnc_finish/config.h
+--- psybnc/config.h	2005-06-04 20:22:45.000000000 +0200
++++ psybnc_finish/config.h	2005-11-03 17:05:40.802998216 +0100
+@@ -1,40 +1,7 @@
+-/* $Id: config.h,v 1.2 2005/06/04 18:05:33 hisi Exp $ */
+ /*
+  * Configuration file for psyBNC, created by menuconf
+  */
+ 
+-/* Encryption */
+-
+-#define CRYPT
+-
+-/* Encryption Type*/
+-
+-#define BLOWFISH
+-
+-/* Allow Translation */
+-
+-#define TRANSLATE
+-
+-/* Allow internal network */
+-
+-#define INTNET
+-
+-/* Allow traffic logging */
+-
+-#define TRAFFICLOG
+-
+-/* Allow linkage of bouncers */
+-
+-#define LINKAGE
+-
+-/* Allow the dcc File-Functions */
+-
+-#define DCCFILES
+-
+-/* Pipe dcc Chats */
+-
+-#define DCCCHAT
+-
+ /* Allow to add more users */
+ 
+ #define MULTIUSER
+@@ -47,28 +14,27 @@
+ 
+ #define MAXCONN 99
+ 
+-/* Allow the usage of scripts */
++/* Use blocking DNS */
+ 
+-#define SCRIPTING
++#define BLOCKDNS
+ 
+ /* Allow multiple irc connections per user */
+ 
+ #define NETWORK
+ 
+-/* Allow Proxy Support */
++/* The logging level */
+ 
+-#define PROXYS
++#define LOGLEVEL 2
+ 
+-/* The logging level */
++/* The ctcp Version reply */
+ 
+-#define LOGLEVEL 0
++#define CTCPVERSION "psyBNC 2.3.2-7 running on mipsel, ported by piie visit www.linuX-gamers.net"
+ 
+-/* SSL-Security */
++/* The Path to SSL */
+ 
+-#define SSLSEC 2
++#define SSLPATH "/tmp/"
+ 
+-/* Blocking DNS is preferred. Non Blocking DNS is experimental */
++/* SSL-Security */
++
++#define SSLSEC 0
+ 
+-#ifndef BLOCKDNS
+-#define BLOCKDNS
+-#endif
+diff -ur psybnc/tools/autoconf.c psybnc_finish/tools/autoconf.c
+--- psybnc/tools/autoconf.c	2005-06-04 20:22:45.000000000 +0200
++++ psybnc_finish/tools/autoconf.c	2005-10-29 14:46:49.000000000 +0200
+@@ -425,7 +425,7 @@
+ 	printf("Can't create makefile.out .. aborting\n");
+ 	exit(0x1);
+     }
+-    fprintf(makefile,"CC	= gcc\n");
++    fprintf(makefile,"CC	= mipsel-linux-gcc\n");
+     fprintf(makefile,"SRC	= src/\n");
+ #ifdef BOUNDCHECK
+     fprintf(makefile,"CFLAGS  = -O -fbounds-checking -fno-builtin\n");
+@@ -450,7 +450,7 @@
+     fprintf(makefile,"\n");
+     fprintf(makefile,"all:	$(OBJS)\n");
+     fprintf(makefile,"	$(CC) -o $(TARGET) $(CFLAGS) $(OBJS) $(LIBS)\n");
+-    fprintf(makefile,"	@strip $(TARGET)\n");
++    /*fprintf(makefile,"	@strip $(TARGET)\n");*/
+     if(ssl==0)
+     {
+ 	if(!fexists("key/psybnc.cert.pem")) /* only create, if not exist */
