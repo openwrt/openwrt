@@ -7,7 +7,7 @@ config BR2_PACKAGE_LIBOPENLDAP
 	prompt "libopenldap....................... Open source LDAP (Lightweight Directory Access Protocol) client libraries"
 	tristate
 	default m if CONFIG_DEVEL
-	select BR2_PACKAGE_OPENLDAP
+	select BR2_COMPILE_OPENLDAP
 	help
 	  
 	  OpenLDAP Software is an open source implementation of the 
