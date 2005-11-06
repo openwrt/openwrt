@@ -1,0 +1,13 @@
+config BR2_PACKAGE_PSYBNC
+	prompt "psybnc............................ An IRC-Bouncer with many features"
+	tristate
+	default m if CONFIG_DEVEL
+	help
+	  psyBNC is an easy-to-use, multi-user, permanent 
+	  IRC-Bouncer with many features. Some of its features
+	  vhost- and relay support to connected bouncers and an 
+	  extensive online help system. Many other helpful 
+	  functions are included.
+	  
+	  http://www.psybnc.info/
+

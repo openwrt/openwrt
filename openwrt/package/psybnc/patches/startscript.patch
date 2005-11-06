@@ -1,0 +1,16 @@
+diff -Naur psybnc/psybnc.sh psybnc_patched/psybnc.sh
+--- psybnc/psybnc.sh	1970-01-01 01:00:00.000000000 +0100
++++ psybnc_finish/psybnc.sh	2005-11-04 12:51:26.478557377 +0100
+@@ -0,0 +1,12 @@
++#!/bin/sh
++
++PDIR=$(pwd);
++cd /usr/share/psybnc;
++./psybnc "$@";
++cd "$PDIR";
++
++echo;
++echo;
++echo "Configuration is located at /usr/share/psybnc/psybnc.conf";
++echo "everything can be configured within your chatclient,";
++echo "after logging in as psybnc_admin ( /bhelp shows bnc help )";
