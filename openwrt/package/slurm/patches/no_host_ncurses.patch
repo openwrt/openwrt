@@ -1,0 +1,67 @@
+diff -ruN slurm-0.3.3-old/configure slurm-0.3.3-new/configure
+--- slurm-0.3.3-old/configure	2004-09-28 16:34:56.000000000 +0200
++++ slurm-0.3.3-new/configure	2005-11-06 22:08:53.000000000 +0100
+@@ -4762,35 +4762,35 @@
+ _ACEOF
+ 
+ 
+-for cursespath in /usr/include/ncurses.h /usr/local/include/ncurses.h /usr/local/include/ncurses/ncurses.h /opt/include/ncurses.h /opt/include/curses.h /usr/include/curses.h /usr/local/include/curses.h /dev/null
+-do
+-  test -f "${cursespath}" && break
+-done
+-case ${cursespath} in
+-  /usr/include/*)
+-	CFLAGS="$CFLAGS -I/usr/include"
+-	LDFLAGS=""
+-	;;
+-  /usr/local/include/ncurses/*)
+-        CFLAGS="${CFLAGS} -I/usr/local/include/ncurses"
+-        LDFLAGS="-L/usr/local/lib"
+-        SOLLDFLAGS="-R/usr/local/lib"
+-        ;;
+-  /usr/local/include/*)
+-	CFLAGS="${CFLAGS} -I/usr/local/include"
+-	LDFLAGS="-L/usr/local/lib"
+-	SOLLDFLAGS="-R/usr/local/lib"
+-	;;
+-  /opt/include/*)
+-	CFLAGS="${CFLAGS} -I/opt/include"
+-	LDFLAGS="-L/opt/lib"
+-	SOLLDFLAGS="-R/opt/lib"
+-	;;
+-esac
++#for cursespath in /usr/include/ncurses.h /usr/local/include/ncurses.h /usr/local/include/ncurses/ncurses.h /opt/include/ncurses.h /opt/include/curses.h /usr/include/curses.h /usr/local/include/curses.h /dev/null
++#do
++#  test -f "${cursespath}" && break
++#done
++#case ${cursespath} in
++#  /usr/include/*)
++#	CFLAGS="$CFLAGS -I/usr/include"
++#	LDFLAGS=""
++#	;;
++#  /usr/local/include/ncurses/*)
++#        CFLAGS="${CFLAGS} -I/usr/local/include/ncurses"
++#        LDFLAGS="-L/usr/local/lib"
++#        SOLLDFLAGS="-R/usr/local/lib"
++#        ;;
++#  /usr/local/include/*)
++#	CFLAGS="${CFLAGS} -I/usr/local/include"
++#	LDFLAGS="-L/usr/local/lib"
++#	SOLLDFLAGS="-R/usr/local/lib"
++#	;;
++#  /opt/include/*)
++#	CFLAGS="${CFLAGS} -I/opt/include"
++#	LDFLAGS="-L/opt/lib"
++#	SOLLDFLAGS="-R/opt/lib"
++#	;;
++#esac
+ # add Slowlaris -R and libraries to LDFLAGS
+-if test ${OSTYPE} = "solaris" ; then
+-	LDFLAGS="${LDFLAGS} ${SOLLDFLAGS} -lnsl -lsocket -lkstat"
+-fi
++#if test ${OSTYPE} = "solaris" ; then
++#	LDFLAGS="${LDFLAGS} ${SOLLDFLAGS} -lnsl -lsocket -lkstat"
++#fi
+ 
+ echo "$as_me:$LINENO: checking for vanilla_coke in -lfridge" >&5
+ echo $ECHO_N "checking for vanilla_coke in -lfridge... $ECHO_C" >&6
