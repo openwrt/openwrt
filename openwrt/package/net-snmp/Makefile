@@ -4,7 +4,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=net-snmp
 PKG_VERSION:=5.1.2
-PKG_RELEASE:=2
+PKG_RELEASE:=2.1
 PKG_MD5SUM:=8080555ab3f90011f25d5122042d9a8d
 
 PKG_SOURCE_URL:=@SF/net-snmp
@@ -41,6 +41,7 @@ SNMP_MIB_MODULES_INCLUDED = \
 	snmpv3mibs \
 	tunnel \
 	ucd-snmp/disk \
+	ucd-snmp/dlmod \
 	ucd-snmp/extensible \
 	ucd-snmp/loadave \
 	ucd-snmp/memory \
@@ -62,9 +63,9 @@ SNMP_MIB_MODULES_EXCLUDED = \
 	ucd_snmp \
 	utilities \
 
-SNMP_TRANSPORTS_INCLUDED = UDP
+SNMP_TRANSPORTS_INCLUDED = Callback UDP
 
-SNMP_TRANSPORTS_EXCLUDED = Callback TCP TCPv6 UDPv6 Unix
+SNMP_TRANSPORTS_EXCLUDED = TCP TCPv6 UDPv6 Unix
 
 PKG_CONFIGURE_OPTIONS = \
 	--enable-shared \
