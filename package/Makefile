@@ -416,10 +416,10 @@ rrs-compile: openssl-compile
 endif
 
 snort-compile: libnet-compile libpcap-compile pcre-compile
-ifeq ($(BR2_PACKAGE_SNORT_MYSQL),y)
+ifeq ($(BR2_PACKAGE_SNORT_WITH_MYSQL),y)
 snort-compile: mysql-compile
 endif
-ifeq ($(BR2_PACKAGE_SNORT_PGSQL),y)
+ifeq ($(BR2_PACKAGE_SNORT_WITH_PGSQL),y)
 snort-compile: postgresql-compile
 endif
 ifeq ($(BR2_PACKAGE_SNORT_ENABLE_INLINE),y)
