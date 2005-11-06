@@ -1,0 +1,23 @@
+#!/bin/sh
+
+DEFAULT=/etc/default/snort
+LOG_D=/var/log/snort
+RUN_D=/var/run
+[ -f $DEFAULT ] && . $DEFAULT
+PID_F=$RUN_D/snort_$INTERFACE.pid
+
+case $1 in
+ start)
+  [ -d $LOG_D ] || mkdir -p $LOG_D
+  [ -d $RUN_D ] || mkdir -p $RUN_D
+  snort $OPTIONS
+  ;;
+ stop)
+  [ -f $PID_F ] && kill $(cat $PID_F)
+  ;;
+ *)
+  echo "usage: $0 (start|stop)"
+  exit 1
+esac
+
+exit $?

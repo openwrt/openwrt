@@ -176,6 +176,7 @@ package-$(BR2_COMPILE_SHFS) += shfs
 package-$(BR2_PACKAGE_SIPROXD) += siproxd
 package-$(BR2_PACKAGE_SIPSAK) += sipsak
 package-$(BR2_COMPILE_SNORT) += snort
+package-$(BR2_COMPILE_SNORT_WIRELESS) += snort-wireless
 package-$(BR2_PACKAGE_SOCAT) += socat
 package-$(BR2_COMPILE_SPEEX) += speex
 package-$(BR2_COMPILE_SQLITE) += sqlite
@@ -424,6 +425,17 @@ snort-compile: postgresql-compile
 endif
 ifeq ($(BR2_PACKAGE_SNORT_ENABLE_INLINE),y)
 snort-compile: iptables-compile
+endif
+
+snort-wireless-compile: libnet-compile libpcap-compile pcre-compile
+ifeq ($(BR2_PACKAGE_SNORT_WIRELESS_WITH_MYSQL),y)
+snort-wireless-compile: mysql-compile
+endif
+ifeq ($(BR2_PACKAGE_SNORT_WIRELESS_WITH_PGSQL),y)
+snort-wireless-compile: postgresql-compile
+endif
+ifeq ($(BR2_PACKAGE_SNORT_WIRELESS_ENABLE_INLINE),y)
+snort-wireless-compile: iptables-compile
 endif
 
 ulogd-compile: iptables-compile
