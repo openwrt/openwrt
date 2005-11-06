@@ -26,7 +26,7 @@ choice
 	config BR2_PACKAGE_SNORT_WIRELESS_BASIC
 		prompt   "snort-wireless..................   without database support"
 		tristate
-		select BR2_PACKAGE_SNORT_WIRELESS
+		select BR2_COMPILE_SNORT_WIRELESS
 		select BR2_PACKAGE_LIBNET
 		select BR2_PACKAGE_LIBPCAP
 		select BR2_PACKAGE_LIBPCRE
@@ -34,7 +34,7 @@ choice
 	config BR2_PACKAGE_SNORT_WIRELESS_MYSQL
 		prompt   "snort-wireless-mysql............   with MySQL database support"
 		tristate
-		select BR2_PACKAGE_SNORT_WIRELESS
+		select BR2_COMPILE_SNORT_WIRELESS
 		select BR2_PACKAGE_LIBNET
 		select BR2_PACKAGE_LIBPCAP
 		select BR2_PACKAGE_LIBPCRE
@@ -43,7 +43,7 @@ choice
 	config BR2_PACKAGE_SNORT_WIRELESS_PGSQL
 		prompt   "snort-wireless-pgsql............   with PostgreSQL database support"
 		tristate
-		select BR2_PACKAGE_SNORT_WIRELESS
+		select BR2_COMPILE_SNORT_WIRELESS
 		select BR2_PACKAGE_LIBNET
 		select BR2_PACKAGE_LIBPCAP
 		select BR2_PACKAGE_LIBPCRE
@@ -52,7 +52,7 @@ choice
 	config BR2_PACKAGE_SNORT_WIRELESS_CUSTOM
 		prompt   "snort-wireless-custom...........   customized to your needs"
 		tristate
-		select BR2_PACKAGE_SNORT_WIRELESS
+		select BR2_COMPILE_SNORT_WIRELESS
 		select BR2_PACKAGE_LIBNET
 		select BR2_PACKAGE_LIBPCAP
 		select BR2_PACKAGE_LIBPCRE
