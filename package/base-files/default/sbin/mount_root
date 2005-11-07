@@ -1,6 +1,7 @@
 #!/bin/sh
 . /etc/nvram.sh
 is_clean() {
+	grep Broadcom /proc/cpuinfo 2>&- >&- || return 0
 	OFFSET="$((0x$(dd if=/dev/mtdblock/1 bs=1 skip=$((0x14)) count=2 2>&- | hexdump | grep 0000000 | cut -d ' ' -f 2) - 1))"
 	dd if=/dev/mtdblock/1 bs=1 skip=$OFFSET count=1 2>&- | hexdump -v | grep ' 0000' > /dev/null && return 255 || return 0
 }
