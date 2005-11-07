@@ -1,7 +1,7 @@
 #menu "rrs............................... A reverse (connecting) remote shell"
 
 config BR2_COMPILE_RRS
-	bool
+	tristate
 	default n
 	depends BR2_PACKAGE_RRS || BR2_PACKAGE_RRS_NOSSL
 

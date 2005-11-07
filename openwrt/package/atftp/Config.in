@@ -1,7 +1,7 @@
 #menu "atftp............................. TFTP implementation"
 
 config BR2_COMPILE_ATFTP
-	bool
+	tristate
 	default n
 	depends BR2_PACKAGE_ATFTP || BR2_PACKAGE_ATFTPD
 	

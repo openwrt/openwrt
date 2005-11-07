@@ -1,7 +1,7 @@
 #menu "rp-pppoe.......................... Roaring Penguin PPPoE (PPP over Ethernet) implementation"
 
 config BR2_COMPILE_RP_PPPOE
-	bool
+	tristate
 	default n
 	depends BR2_PACKAGE_PPPOE_CLIENT || BR2_PACKAGE_PPPOE_RELAY || BR2_PACKAGE_PPPOE_SERVER || BR2_PACKAGE_PPPOE_SNIFF
 

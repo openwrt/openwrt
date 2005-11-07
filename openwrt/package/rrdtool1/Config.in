@@ -1,7 +1,7 @@
 config BR2_COMPILE_RRDTOOL1
 	prompt "rrdtool1.......................... Round Robin Database (RRD) tools (v1.0.x)"
-	bool
-	default y
+	tristate
+	default m if CONFIG_DEVEL
 
 config BR2_PACKAGE_LIBRRD1
 	prompt   "librrd1......................... Round Robin Database (RRD) management library (v1.0.x)"
@@ -53,6 +53,7 @@ config BR2_PACKAGE_RRDCGI1
 config BR2_PACKAGE_RRDTOOL1
 	prompt   "rrdtool1........................ Round Robin Database (RRD) management tools (v1.0.x)"
 	tristate
+	default m if CONFIG_DEVEL
 	depends BR2_COMPILE_RRDTOOL1
 	select BR2_PACKAGE_LIBRRD1
 	help

@@ -1,7 +1,7 @@
 menu "net-snmp.......................... Open source SNMP (Simple Network Management Protocol) implementation"
 
 config BR2_COMPILE_NET_SNMP
-	bool
+	tristate
 	default n
 	depends BR2_PACKAGE_LIBNETSNMP || BR2_PACKAGE_SNMPD_STATIC
 

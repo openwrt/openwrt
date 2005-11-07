@@ -1,7 +1,7 @@
 #menu "bind.............................. A DNS server implementation"
 
 config BR2_COMPILE_BIND
-	bool
+	tristate
 	default n
 	depends BR2_PACKAGE_BIND_CLIENT || BR2_PACKAGE_BIND_SERVER
 	

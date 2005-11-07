@@ -1,7 +1,7 @@
 menu "mini-httpd........................ A small web server"
 
 config BR2_COMPILE_MINI_HTTPD
-	bool
+	tristate
 	default n
 	depends BR2_PACKAGE_MINI_HTTPD || BR2_PACKAGE_MINI_HTTPD_MATRIXSSL || BR2_PACKAGE_MINI_HTTPD_OPENSSL
 

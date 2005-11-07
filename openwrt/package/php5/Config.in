@@ -1,7 +1,7 @@
 menu "php5.............................. PHP5 Hypertext preprocessor"
 
 config BR2_COMPILE_PHP5
-	bool
+	tristate
 	default n
 	depends BR2_PACKAGE_PHP5_CLI || BR2_PACKAGE_PHP5_CGI || BR2_PACKAGE_PHP5_FASTCGI
 	 

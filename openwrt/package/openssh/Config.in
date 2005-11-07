@@ -1,7 +1,7 @@
 menu "openssh........................... A free implementation of the Secure Shell protocol"
 
 config BR2_COMPILE_OPENSSH
-	bool
+	tristate
 	default n
 	depends BR2_PACKAGE_OPENSSH_CLIENT || BR2_PACKAGE_OPENSSH_SERVER || BR2_PACKAGE_OPENSSH_SFTP_CLIENT || BR2_PACKAGE_OPENSSH_SFTP_SERVER
 
