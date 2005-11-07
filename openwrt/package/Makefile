@@ -202,6 +202,7 @@ package-$(BR2_PACKAGE_WIFICONF) += wificonf
 package-$(BR2_PACKAGE_WIFIDOG) += wifidog
 package-$(BR2_PACKAGE_WIVIZ) += wiviz
 package-$(BR2_PACKAGE_WIRELESS_TOOLS) += wireless-tools
+package-$(BR2_PACKAGE_WKNOCK) += wknock
 package-$(BR2_PACKAGE_WOL) += wol
 package-$(BR2_PACKAGE_WONDERSHAPER) += wondershaper
 package-$(BR2_PACKAGE_WPA_SUPPLICANT) += wpa_supplicant
@@ -301,6 +302,7 @@ tor-compile: libevent-compile openssl-compile zlib-compile
 usbutils-compile: libusb-compile
 vtun-compile: zlib-compile openssl-compile lzo-compile
 wificonf-compile: wireless-tools-compile nvram-compile
+wknock-compile: libpcap-compile
 wpa_supplicant-compile: openssl-compile
 xsupplicant-compile: openssl-compile
 
