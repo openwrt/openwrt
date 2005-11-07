@@ -11,12 +11,16 @@ squashfs-clean:
 $(KDIR)/root.squashfs: install-prepare
 	@mkdir -p $(KDIR)/root/jffs
 	$(STAGING_DIR)/bin/mksquashfs-lzma $(KDIR)/root $@ -nopad -noappend -root-owned -le $(MAKE_TRACE)
+	
+ifeq ($(IB),)
+squashfs-install: compile-targets $(BOARD)-compile
+endif
 
-squashfs-install: install-targets $(KDIR)/root.squashfs $(BOARD)-compile
+squashfs-install: $(KDIR)/root.squashfs
 	$(TRACE) target/linux/image/$(BOARD)/install
 	$(MAKE) -C $(BOARD) install KERNEL="$(KERNEL)" FS="squashfs"
 
-squashfs-install-ib:
+squashfs-install-ib: compile-targets
 	mkdir -p $(IB_DIR)/staging_dir_$(ARCH)/bin
 	cp $(STAGING_DIR)/bin/mksquashfs-lzma $(IB_DIR)/staging_dir_$(ARCH)/bin
 	
