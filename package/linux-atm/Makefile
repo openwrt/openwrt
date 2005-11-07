@@ -16,11 +16,6 @@ PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
 include $(TOPDIR)/package/rules.mk
 
-ifneq ($(BOARD),ar7)
-BR2_PACKAGE_LINUX_ATM:=m
-BR2_PACKAGE_BR2684CTL:=m
-endif
-
 $(eval $(call PKG_template,LINUX_ATM,linux-atm,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,BR2684CTL,br2684ctl,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
