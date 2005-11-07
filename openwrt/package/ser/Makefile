@@ -21,6 +21,9 @@ SER_MODULES := sl tm rr maxfwd usrloc registrar dbtext textops nathelper
 SER_MODULE_FILES := $(foreach module,$(SER_MODULES),modules/$(module)/$(module).so)
 SER_MODULES := $(patsubst %,modules/%,$(SER_MODULES))
 
+$(PKG_BUILD_DIR)/.configured:
+	touch $@
+
 $(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		extra_defs="-DUSE_PTHREAD_MUTEX "  \
