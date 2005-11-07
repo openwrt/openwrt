@@ -39,5 +39,4 @@ $(IPKG_BUSYBOX):
 	$(MAKE) CC=$(TARGET_CC) CROSS="$(TARGET_CROSS)" PREFIX="$(IDIR_BUSYBOX)" \
 		EXTRA_CFLAGS="$(TARGET_CFLAGS)" -C $(PKG_BUILD_DIR) install
 	$(STRIP) $(IDIR_BUSYBOX)/bin/busybox
-	-chmod a+x $(IDIR_BUSYBOX)/usr/share/udhcpc/default.script
 	$(IPKG_BUILD) $(IDIR_BUSYBOX) $(PACKAGE_DIR)

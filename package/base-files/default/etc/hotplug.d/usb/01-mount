@@ -1,0 +1,49 @@
+mount_storage() {
+	cd /dev/discs
+	for dev in disc*; do
+		[ -f /tmp/.${dev}_id ] || {
+			echo ${INTERFACE}${PRODUCT} > /tmp/.${dev}_id
+			mount | grep /mnt/${dev} || (
+				[ -d /mnt/. ] || {
+					mkdir -p /tmp/mnt
+					ln -s /tmp/mnt /
+				}
+				cd $dev
+				for part in part*; do
+					path=/mnt/${dev}_${part##*part}
+					mkdir -p ${path}
+					mount ${part} ${path}
+				done
+			)
+		}
+	done
+}
+
+umount_storage() {
+	for tmp in /tmp/.*_id; do
+		id=$(cat $tmp 2>&-)
+		[ "${INTERFACE}${PRODUCT}" = "$id" ] && {
+			rm -f $tmp
+			disc=${tmp##*disc}
+			disc=${disc%%_id}
+			for disc in /mnt/disc${disc}*; do
+				umount -f $disc || umount -l $disc
+			done
+		}
+	done
+}
+
+[ -f /proc/bus/usb/devices ] || mount -t usbfs none /proc/bus/usb
+
+case "$ACTION" in
+	add)
+		case "${INTERFACE%%/*}" in
+			8) mount_storage ;;
+		esac
+	;;
+	remove)
+		case "${INTERFACE%%/*}" in
+			8) umount_storage ;;
+		esac
+	;;
+esac

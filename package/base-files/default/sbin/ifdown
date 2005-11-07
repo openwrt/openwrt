@@ -1,13 +1,19 @@
-#!/bin/ash
+#!/bin/sh
 [ $# = 0 ] && { echo "  $0 <group>"; exit; }
 . /etc/functions.sh
-. /etc/network.overrides
+. /etc/network.overrides  
 [ "$FAILSAFE" != "true" -a -e /etc/config/network ] && . /etc/config/network
+
 type=$1
 debug "### ifdown $type ###"
+
 if=$(nvram get ${type}_ifname)
 proto=$(nvram get ${type}_proto)
 if_valid $if && $DEBUG ifconfig $if down
 kill $(cat /var/run/${if}.pid 2>&-) 2>&-
-[ "$if" = "ppp0" ] && killall pppd
 killall ifup.$proto >&- 2>&-
+case "$proto" in
+	pptp|pppoe) killall pppd >&- 2>&- ;;
+	static) env -i ACTION="ifdown" INTERFACE="$if" PROTO=static /sbin/hotplug "iface" ;;
+esac
+

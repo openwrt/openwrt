@@ -41,12 +41,14 @@ do_ifup() {
 		$DEBUG ifconfig $if $ip ${netmask:+netmask $netmask} broadcast + up
 		${gateway:+$DEBUG route add default gw $gateway}
 
-		[ -f /etc/resolv.conf ] && return
-
-		debug "# --- creating /etc/resolv.conf ---"
-		for dns in $(nvram get ${2}_dns); do
-			echo "nameserver $dns" >> /etc/resolv.conf
-		done
+		[ -f /etc/resolv.conf ] || {
+			debug "# --- creating /etc/resolv.conf ---"
+			for dns in $(nvram get ${2}_dns); do
+				echo "nameserver $dns" >> /etc/resolv.conf
+			done
+		}
+		
+		env -i ACTION="ifup" INTERFACE="${2}" PROTO=static /sbin/hotplug "iface" &
 	;;
 	dhcp)
 		DHCP_IP=$(nvram get ${2}_ipaddr)
@@ -64,6 +66,7 @@ do_ifup() {
 			sleep 1
 			kill -9 $oldpid
 		}
+		# hotplug events are handled by /usr/share/udhcpc/default.script
 	;;
 	none|"")
 	;;

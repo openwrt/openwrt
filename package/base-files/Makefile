@@ -3,7 +3,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=base-files
-PKG_RELEASE:=4
+PKG_RELEASE:=6
 PKG_BUILD_DIR:=$(BUILD_DIR)/base-files
 
 REV:=${shell svn info | grep Revision | cut -d ' ' -f 2}
@@ -16,9 +16,6 @@ include $(TOPDIR)/package/rules.mk
 IDIR_BASE:=$(PKG_BUILD_DIR)/base-files
 IPKG_BASE:=$(PACKAGE_DIR)/$(PKG_NAME)_$(PKG_RELEASE)_$(ARCH).ipk
 
-IDIR_HOTPLUG:=$(PKG_BUILD_DIR)/hotplug
-IPKG_HOTPLUG:=$(PACKAGE_DIR)/hotplug_$(PKG_RELEASE)_$(ARCH).ipk
-
 UCLIBC_VERSION:=${shell cat $(STAGING_DIR)/uclibc_version}
 IDIR_UCLIBC:=$(PKG_BUILD_DIR)/uclibc
 IPKG_UCLIBC:=$(PACKAGE_DIR)/uclibc_$(UCLIBC_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
@@ -27,7 +24,7 @@ LIBGCC_VERSION:=${shell cat $(STAGING_DIR)/gcc_version}
 IDIR_LIBGCC:=$(PKG_BUILD_DIR)/libgcc
 IPKG_LIBGCC:=$(PACKAGE_DIR)/libgcc_$(LIBGCC_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
 
-PACKAGES:=$(IPKG_BASE) $(IPKG_UCLIBC) $(IPKG_LIBGCC) $(IPKG_HOTPLUG)
+PACKAGES:=$(IPKG_BASE) $(IPKG_UCLIBC) $(IPKG_LIBGCC)
 
 $(PKG_BUILD_DIR)/.prepared:
 	mkdir -p $(PKG_BUILD_DIR) $(PACKAGE_DIR)
@@ -74,12 +71,6 @@ $(IPKG_LIBGCC):
 	-$(STRIP) $(IDIR_LIBGCC)/lib/*
 	$(IPKG_BUILD) $(IDIR_LIBGCC) $(PACKAGE_DIR)
 
-$(IPKG_HOTPLUG):
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_HOTPLUG) ipkg/hotplug.control $(PKG_RELEASE) $(ARCH)
-	mkdir -p $(IDIR_HOTPLUG)/sbin
-	install -m0755 files/hotplug $(IDIR_HOTPLUG)/sbin
-	$(IPKG_BUILD) $(IDIR_HOTPLUG) $(PACKAGE_DIR)
-	
 package-clean:
 	rm -f $(PACKAGES)
 	

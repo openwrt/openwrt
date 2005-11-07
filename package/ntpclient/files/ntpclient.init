@@ -1,2 +1,11 @@
 #!/bin/sh
-/usr/sbin/ntpclient -c 1 -s -h pool.ntp.org &
+server=$(nvram get ntp_server)
+case "$ACTION" in
+	ifup)
+		ps x | grep '[n]tpclient' >&- || {
+			route -n 2>&- | grep '0.0.0.0' >&- && /usr/sbin/ntpclient -c 1 -s -h ${server:-pool.ntp.org} &
+		}
+		;;
+	ifdown)
+		route -n 2>&- | grep '0.0.0.0' >&- || killall ntpclient 2>&- >&- ;;
+esac
