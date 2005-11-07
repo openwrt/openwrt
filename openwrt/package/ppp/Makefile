@@ -4,7 +4,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ppp
 PKG_VERSION:=2.4.3
-PKG_RELEASE:=6
+PKG_RELEASE:=7
 PKG_MD5SUM:=848f6c3cafeb6074ffeb293c3af79b7c
 
 PKG_SOURCE_URL:=ftp://ftp.samba.org/pub/ppp/
@@ -82,6 +82,8 @@ $(IPKG_PPP):
 	ln -sf /tmp/resolv.conf $(IDIR_PPP)/etc/ppp/resolv.conf
 	install -m0600 ./files/etc/ppp/chap-secrets $(IDIR_PPP)/etc/ppp/
 	install -m0644 ./files/etc/ppp/options $(IDIR_PPP)/etc/ppp/
+	install -m0755 ./files/etc/ppp/ip-up $(IDIR_PPP)/etc/ppp/
+	install -m0755 ./files/etc/ppp/ip-down $(IDIR_PPP)/etc/ppp/
 	install -d -m0755 $(IDIR_PPP)/etc/ppp/peers
 	install -m0644 ./files/etc/ppp/peers/sample $(IDIR_PPP)/etc/ppp/peers/
 	install -d -m0755 $(IDIR_PPP)/usr/sbin

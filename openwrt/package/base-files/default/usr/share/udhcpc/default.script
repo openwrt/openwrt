@@ -1,42 +1,51 @@
 #!/bin/sh
-# udhcpc script edited by Tim Riker <Tim@Rikers.org>
-# (slightly modified for OpenWrt)
-
 [ -z "$1" ] && echo "Error: should be run by udhcpc" && exit 1
 
 RESOLV_CONF="/tmp/resolv.conf"
 
+hotplug_event() {
+	nvram show 2>&- | grep _proto=dhcp | {
+		while :; do
+			read FOO
+			[ -z "$FOO" ] && break
+			FOO="${FOO%%_*}"
+			[ "$(nvram get ${FOO}_ifname)" = "${interface}" ] || continue
+			env -i ACTION="$1" INTERFACE="${FOO}" PROTO=dhcp /sbin/hotplug iface
+		done
+	}
+}
+
 case "$1" in
-        deconfig)
-                ifconfig $interface 0.0.0.0
-                ;;
+	deconfig)
+		ifconfig $interface 0.0.0.0
+		hotplug_event ifdown
+	;;
+	renew|bound)
+		ifconfig $interface $ip \
+		netmask ${subnet:-255.255.255.0} \
+		broadcast ${broadcast:-+}
 
-        renew|bound)
-                ifconfig $interface $ip \
-                netmask ${subnet:-255.255.255.0} \
-                broadcast ${broadcast:-+}
+		if [ -n "$router" ] ; then
+			echo "deleting routers"
+			while route del default gw 0.0.0.0 dev $interface ; do :; done
+					
+			for i in $router ; do
+				route add default gw $i dev $interface
+			done
+		fi
 
-                if [ -n "$router" ] ; then
-                        echo "deleting routers"
-                        while route del default gw 0.0.0.0 dev $interface ; do
-                                :
-                        done
-
-                        for i in $router ; do
-                                route add default gw $i dev $interface
-                        done
-                fi
-
-                echo -n > $RESOLV_CONF
-                ${domain:+echo search $domain} >> $RESOLV_CONF
-                for i in $dns ; do
-                        echo adding dns $i
-                        echo nameserver $i >> $RESOLV_CONF
-
+		echo -n > $RESOLV_CONF
+		${domain:+echo search $domain} >> $RESOLV_CONF
+		for i in $dns ; do
+			echo adding dns $i
+			echo nameserver $i >> $RESOLV_CONF
+		done
+		
+		hotplug_event ifup
+		
 		# user rules
 		[ -f /etc/udhcpc.user ] && . /etc/udhcpc.user
-
-                done
-                ;;
+	;;
 esac
+
 exit 0

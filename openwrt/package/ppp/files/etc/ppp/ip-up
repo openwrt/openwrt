@@ -1,0 +1,2 @@
+#!/bin/sh
+[ -z "$6" ] || env -i ACTION="ifup" INTERFACE="$6" PROTO=ppp /sbin/hotplug "iface"
