@@ -22,7 +22,7 @@ while :; do
 	IDLETIME=$(nvram get ppp_idletime)
 	IDLETIME=${IDLETIME:+lcp-echo-failure $IDLETIME}
 	MTU=$(nvram get ppp_mtu)
-	MTU=${MTU:+ mtu $MTU mru $MTU}
+	MTU=${MTU:-1452}
 
 	do_ifup $PPTP_PROTO $type
 	
@@ -38,10 +38,12 @@ while :; do
 		usepeerdns \
 		defaultroute \
 		replacedefaultroute \
-		linkname $type \
+		linkname "$type" \
+		ipparam "$type" \
 		user "$USERNAME" \
 		password "$PASSWORD" \
-		$MTU \
+		mtu $MTU \
+		mru $MTU \
 		$IDLETIME \
 		$REDIAL
 done &
