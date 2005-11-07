@@ -15,6 +15,9 @@ $(PKG_BUILD_DIR)/.prepared:
 	mkdir -p $@
 	touch $@
 
+$(PKG_BUILD_DIR)/.configured:
+	touch $@
+
 $(PKG_BUILD_DIR)/.built:
 	$(TARGET_CC) $(TARGET_CFLAGS) -I$(STAGING_DIR)/usr/include -o $(PKG_BUILD_DIR)/wifi wificonf.c -L$(STAGING_DIR)/usr/lib -lnvram -lshared $(STAGING_DIR)/usr/lib/libiw.so
 	touch $@
