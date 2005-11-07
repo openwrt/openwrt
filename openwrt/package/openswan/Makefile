@@ -18,6 +18,9 @@ $(eval $(call PKG_template,OPENSWAN,openswan,$(PKG_VERSION)-$(PKG_RELEASE),$(ARC
 
 FLAGS := $(TARGET_CFLAGS) -I$(PKG_BUILD_DIR)/linux/include -L$(STAGING_DIR)/usr/lib -I$(STAGING_DIR)/usr/include
 
+$(PKG_BUILD_DIR)/.configured:
+	touch $@
+
 $(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
@@ -29,6 +32,7 @@ $(PKG_BUILD_DIR)/.built:
 		IPSECDIR="/usr/lib/ipsec" \
 		INC_USRLOCAL="/usr" \
 		programs
+	touch $@
 
 $(IPKG_OPENSWAN):
 	$(MAKE) -C $(PKG_BUILD_DIR) \
