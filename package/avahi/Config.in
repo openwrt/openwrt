@@ -1,7 +1,7 @@
 menu "avahi............................. An mDNS/DNS-SD (aka RendezVous/Bonjour/ZeroConf) implementation"
 
 config BR2_COMPILE_AVAHI
-	bool
+	tristate
 	default n
 	depends BR2_PACKAGE_AVAHI_DAEMON || BR2_PACKAGE_AVAHI_DNSCONFD || BR2_PACKAGE_LIBAVAHI
 

@@ -1,7 +1,7 @@
 #menu "dhcp.............................. ISC DHCP (Dynamic Host Configuration Protocol) implementation"
 
 config BR2_COMPILE_DHCP
-	bool
+	tristate
 	default n
 	depends BR2_PACKAGE_DHCP_RELAY || BR2_PACKAGE_DHCP_SERVER
 

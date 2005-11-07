@@ -1,7 +1,7 @@
 menu "php4.............................. PHP4 Hypertext preprocessor"
 
 config BR2_COMPILE_PHP4
-	bool
+	tristate
 	default y
 	depends BR2_PACKAGE_PHP4_CLI || BR2_PACKAGE_PHP4_CGI || BR2_PACKAGE_PHP4_FASTCGI
 	 

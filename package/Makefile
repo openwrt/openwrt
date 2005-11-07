@@ -83,6 +83,7 @@ package-$(BR2_PACKAGE_LIBGD) += libgd
 package-$(BR2_PACKAGE_LIBGDBM) += libgdbm
 package-$(BR2_PACKAGE_LIBGPG_ERROR) += libgpg-error
 package-$(BR2_PACKAGE_LIBID3TAG) += libid3tag
+package-$(BR2_PACKAGE_LIBLZO) += liblzo
 package-$(BR2_PACKAGE_LIBMAD) += libmad
 package-$(BR2_PACKAGE_LIBNET) += libnet
 package-$(BR2_PACKAGE_LIBNIDS) += libnids
@@ -102,7 +103,6 @@ package-$(BR2_PACKAGE_LIBXSLT) += libxslt
 package-$(BR2_PACKAGE_LIGHTTPD) += lighttpd
 package-$(BR2_PACKAGE_LINUX_ATM) += linux-atm
 package-$(BR2_COMPILE_LUA) += lua
-package-$(BR2_COMPILE_LZO) += lzo
 package-$(BR2_PACKAGE_MADWIFI_TOOLS) += madwifi-tools
 package-$(BR2_PACKAGE_MARADNS) += maradns
 package-$(BR2_COMPILE_MATRIXSSL) += matrixssl
@@ -212,7 +212,7 @@ package-$(BR2_PACKAGE_XINETD) += xinetd
 package-$(BR2_PACKAGE_XSUPPLICANT) += xsupplicant
 package-$(BR2_PACKAGE_ZLIB) += zlib
 
-DEV_LIBS:=tcp_wrappers glib ncurses openssl pcre popt zlib libnet libpcap mysql postgresql iptables matrixssl lzo gmp fuse portmap libelf uclibc++ speex libpng libgd wireless-tools nvram linux-atm libamsel libao libart libdaemon libdb libdnet libevent libffi-sable libgcrypt libgdbm libgpg-error libid3tag libmad libnet libnids libogg libosip2 libpcap libtasn1 libupnp libusb libvorbis libvorbisidec libxml2 libxslt id3lib
+DEV_LIBS:=tcp_wrappers glib ncurses openssl pcre popt zlib libnet libpcap mysql postgresql iptables matrixssl liblzo gmp fuse portmap libelf uclibc++ speex libpng libgd wireless-tools nvram linux-atm libamsel libao libart libdaemon libdb libdnet libevent libffi-sable libgcrypt libgdbm libgpg-error libid3tag libmad libnet libnids libogg libosip2 libpcap libtasn1 libupnp libusb libvorbis libvorbisidec libxml2 libxslt id3lib
 DEV_LIBS_COMPILE:=$(patsubst %,%-compile,$(DEV_LIBS))
 SDK_DEFAULT_PACKAGES:=busybox dnsmasq iptables wireless-tools dropbear bridge ipkg ppp
 SDK_DEFAULT_COMPILE:=$(patsubst %,%-compile,$(SDK_DEFAULT_PACKAGES))
@@ -297,10 +297,10 @@ socat-compile: openssl-compile
 sqlite-compile: ncurses-compile readline-compile
 sqlite2-compile: ncurses-compile readline-compile
 tcpdump-compile: libpcap-compile
-tinc-compile: zlib-compile openssl-compile lzo-compile
+tinc-compile: zlib-compile openssl-compile liblzo-compile
 tor-compile: libevent-compile openssl-compile zlib-compile
 usbutils-compile: libusb-compile
-vtun-compile: zlib-compile openssl-compile lzo-compile
+vtun-compile: zlib-compile openssl-compile liblzo-compile
 wificonf-compile: wireless-tools-compile nvram-compile
 wknock-compile: libpcap-compile
 wpa_supplicant-compile: openssl-compile
@@ -347,7 +347,7 @@ endif
 
 openvpn-compile: openssl-compile
 ifeq ($(BR2_PACKAGE_OPENVPN_LZO),y)
-openvpn-compile: lzo-compile
+openvpn-compile: liblzo-compile
 endif
 
 php4-compile: openssl-compile zlib-compile
