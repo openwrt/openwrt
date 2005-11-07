@@ -1,7 +1,7 @@
 config BR2_PACKAGE_WIFICONF
 	prompt "wificonf.......................... replacement utility for wlconf"
 	tristate
-	default y
+	default y if BR2_LINUX_2_4_BRCM
 	help
 	  Replacement utility for wlconf
 
