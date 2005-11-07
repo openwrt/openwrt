@@ -1,7 +1,7 @@
 menu "util-linux"
 
 config BR2_COMPILE_UTIL_LINUX
-	bool
+	tristate
 	default n
 	depends BR2_PACKAGE_FDISK || BR2_PACKAGE_SWAP_UTILS
 

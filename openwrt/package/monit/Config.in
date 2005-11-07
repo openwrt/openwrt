@@ -1,7 +1,7 @@
 #menu "monit............................. System services monitoring utility"
 
 config BR2_COMPILE_MONIT
-	bool
+	tristate
 	default n
 	depends BR2_PACKAGE_MONIT || BR2_PACKAGE_MONIT_NOSSL
 

@@ -1,7 +1,7 @@
 menu "ndisc6............................ IPv6 discovery tools"
 
 config BR2_COMPILE_NDISC6
-	bool
+	tristate
 	default n
 	depends BR2_PACKAGE_NDISC6 || BR2_PACKAGE_RDISC6 || BR2_PACKAGE_TCPTRACEROUTE6
 

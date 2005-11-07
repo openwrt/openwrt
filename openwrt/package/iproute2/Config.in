@@ -1,7 +1,7 @@
 menu "iproute2.......................... A collection of utilites for controlling TCP/IP networking and Traffic Control"
 
 config BR2_COMPILE_IPROUTE2
-	bool
+	tristate
 	default n
 	depends BR2_PACKAGE_IPROUTE2_IP || BR2_PACKAGE_IPROUTE2_TC
 

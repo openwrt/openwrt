@@ -1,13 +1,7 @@
-config BR2_COMPILE_LZO
-	bool
-	default n
-	depends BR2_PACKAGE_LIBLZO
-
 config BR2_PACKAGE_LIBLZO
 	prompt "liblzo............................ Real-time data compression library"
 	tristate
 	default m if CONFIG_DEVEL
-	select BR2_COMPILE_LZO
 	help
 	  A real-time data compression library
 	  
