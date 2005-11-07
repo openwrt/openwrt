@@ -13,7 +13,7 @@ include $(TOPDIR)/package/rules.mk
 $(eval $(call PKG_template,CIFSMOUNT,$(PKG_NAME),$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 $(PKG_BUILD_DIR)/.prepared:
-	mkdir -p $@
+	mkdir -p $(PKG_BUILD_DIR)
 	touch $@
 
 $(PKG_BUILD_DIR)/.configured:
