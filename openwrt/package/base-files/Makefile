@@ -30,6 +30,9 @@ $(PKG_BUILD_DIR)/.prepared:
 	mkdir -p $(PKG_BUILD_DIR) $(PACKAGE_DIR)
 	touch $@
 
+$(PKG_BUILD_DIR)/.configured:
+	touch $@
+
 $(PKG_BUILD_DIR)/.built:
 	touch $@
 
