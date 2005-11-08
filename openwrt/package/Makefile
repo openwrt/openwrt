@@ -246,6 +246,7 @@ gpsd-compile: uclibc++-compile
 icecast-compile: curl-compile libvorbisidec-compile libxml2-compile libxslt-compile
 id3lib-compile: uclibc++-compile zlib-compile
 irssi-compile: glib-compile ncurses-compile
+iptables-snmp-compile: net-snmp-compile
 iptraf-compile: ncurses-compile
 hostapd-compile: openssl-compile
 kismet-compile: uclibc++-compile libpcap-compile ncurses-compile
