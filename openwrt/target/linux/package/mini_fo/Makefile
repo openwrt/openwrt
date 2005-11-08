@@ -4,7 +4,7 @@ include $(TOPDIR)/rules.mk
 include ../../rules.mk
 
 PKG_NAME := mini_fo
-PKG_VERSION := 0.6.1-pre1
+PKG_VERSION := 0.6.1pre1
 PKG_RELEASE := 1
 PKG_MD5SUM := 7e192e01b08023c7f3e63bf1c796bc14
 
@@ -22,7 +22,7 @@ KERNEL_VERSION=$(shell echo "$(LINUX_VERSION)" | cut -d. -f1,2)
 
 include $(TOPDIR)/package/rules.mk
 
-$(eval $(call PKG_template,KMOD_MINI_FO,kmod-mini-fo,$(LINUX_VERSION)-$(BOARD)-$(PKG_RELEASE),$(ARCH),kernel ($(LINUX_VERSION)-$(BOARD)-$(KERNEL_RELEASE))))
+$(eval $(call PKG_template,KMOD_MINI_FO,kmod-mini-fo,$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE),$(ARCH),kernel ($(LINUX_VERSION)-$(BOARD)-$(KERNEL_RELEASE))))
 
 $(PKG_BUILD_DIR)/.configured:
 	touch $@
