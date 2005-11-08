@@ -43,6 +43,5 @@ $(IPKG_KMOD_MINI_FO):
 	cp -fpR $(PKG_BUILD_DIR)/mini_fo.$(LINUX_KMOD_SUFFIX) \
 	 $(IDIR_KMOD_MINI_FO)/lib/modules/$(LINUX_VERSION)/
 	echo "mini_fo" > $(IDIR_KMOD_MINI_FO)/etc/modules.d/15-mini-fo
-	$(RSTRIP_KMOD) $(IDIR_KMOD_MINI_FO)
 	$(IPKG_BUILD) $(IDIR_KMOD_MINI_FO) $(PACKAGE_DIR)
 

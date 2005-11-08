@@ -46,6 +46,5 @@ $(IPKG_KMOD_SHFS):
 	install -m0755 -d $(IDIR_KMOD_SHFS)/lib/modules/$(LINUX_VERSION)
 	cp -fpR $(PKG_INSTALL_DIR)/lib/modules/$(LINUX_VERSION)/kernel/fs/shfs/shfs.$(LINUX_KMOD_SUFFIX) \
 	 $(IDIR_KMOD_SHFS)/lib/modules/$(LINUX_VERSION)/
-	$(RSTRIP_KMOD) $(IDIR_KMOD_SHFS)
 	$(IPKG_BUILD) $(IDIR_KMOD_SHFS) $(PACKAGE_DIR)
 
