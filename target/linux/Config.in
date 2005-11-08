@@ -64,6 +64,15 @@ config BR2_PACKAGE_KMOD_BRCM_WL
 	help
 	  Proprietary driver for Broadcom Wireless chipsets
 
+config BR2_PACKAGE_KMOD_BRCM_WL2
+	prompt "kmod-brcm-wl2..................... Broadcom Wireless Network Driver (new)"
+	tristate
+	depends BR2_LINUX_2_4_BRCM
+	default m
+	help
+	  Proprietary driver for Broadcom Wireless chipsets
+	  New version with Multi-BSS capability
+
 config BR2_PACKAGE_KMOD_CPMAC
 	prompt "kmod-cpmac........................ AR7 CPMAC Network Driver"
 	tristate

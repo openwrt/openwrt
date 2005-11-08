@@ -36,6 +36,7 @@
 #include <linux/sysctl.h>
 #include <asm/io.h>
 #include <typedefs.h>
+#include <osl.h>
 #include <bcmdevs.h>
 #include <sbutils.h>
 
@@ -47,9 +48,9 @@ static void *sbh;
 #define DMZ_GPIO  (1<<7)
 
 static void set_gpio(uint32 mask, uint32 value) {
-	sb_gpiocontrol(sbh,mask,0);
-	sb_gpioouten(sbh,mask,mask);
-	sb_gpioout(sbh,mask,value);
+	sb_gpiocontrol(sbh,mask, 0, GPIO_DRV_PRIORITY);
+	sb_gpioouten(sbh,mask,mask,GPIO_DRV_PRIORITY);
+	sb_gpioout(sbh,mask,value,GPIO_DRV_PRIORITY);
 }
 
 static void v2_set_diag(u8 state) {
@@ -122,8 +123,8 @@ static int proc_reset(ctl_table *table, int write, struct file *filp,
 {
 
 	if (reset_gpio) {
-		sb_gpiocontrol(sbh,reset_gpio,reset_gpio);
-		sb_gpioouten(sbh,reset_gpio,0);
+		sb_gpiocontrol(sbh,reset_gpio,reset_gpio,GPIO_DRV_PRIORITY);
+		sb_gpioouten(sbh,reset_gpio,0,GPIO_DRV_PRIORITY);
 		reset=!(sb_gpioin(sbh)&reset_gpio);
 
 		if (reset_polarity) reset=!reset;
@@ -222,8 +223,8 @@ static int __init diag_init()
 	}
 
 	
-	sb_gpiocontrol(sbh,reset_gpio,reset_gpio);
-	sb_gpioouten(sbh,reset_gpio,0);
+	sb_gpiocontrol(sbh,reset_gpio,reset_gpio,GPIO_DRV_PRIORITY);
+	sb_gpioouten(sbh,reset_gpio,0,GPIO_DRV_PRIORITY);
 	reset_polarity=!(sb_gpioin(sbh)&reset_gpio);
 
 	diag_sysctl_header = register_sysctl_table(sys_diag, 0);
