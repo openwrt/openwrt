@@ -1,0 +1,77 @@
+diff -urN busybox.old/shell/ash.c busybox.dev/shell/ash.c
+--- busybox.old/shell/ash.c	2004-10-08 11:43:34.000000000 +0200
++++ busybox.dev/shell/ash.c	2005-11-09 14:06:10.800983750 +0100
+@@ -1414,6 +1414,13 @@
+ 
+ #define NUMBUILTINS  (sizeof (builtincmd) / sizeof (struct builtincmd) )
+ 
++static const char *safe_applets[] = { 
++	"[", "test", "echo", "cat",
++	"ln", "cp", "touch", "mkdir", "rm",
++	"cut", "hexdump", "awk", "sort",
++	"find", "xargs", "ls", "dd",
++	"chown", "chmod"
++};
+ 
+ 
+ struct cmdentry {
+@@ -2050,6 +2057,19 @@
+ static void exitshell(void) __attribute__((__noreturn__));
+ static int decode_signal(const char *, int);
+ 
++
++static int is_safe_applet(char *name)
++{
++	int n = sizeof(safe_applets) / sizeof(char *);
++	int i;
++	for (i = 0; i < n; i++)
++		if (strcmp(safe_applets[i], name) == 0)
++			return 1;
++
++	return 0;
++}
++
++
+ /*
+  * This routine is called when an error or an interrupt occurs in an
+  * interactive shell and control is returned to the main command loop.
+@@ -3680,6 +3700,7 @@
+ 	clearredir(1);
+ 	envp = environment();
+ 	if (strchr(argv[0], '/') != NULL
++		|| is_safe_applet(argv[0])
+ #ifdef CONFIG_FEATURE_SH_STANDALONE_SHELL
+ 		|| find_applet_by_name(argv[0])
+ #endif
+@@ -3721,6 +3742,18 @@
+ tryexec(char *cmd, char **argv, char **envp)
+ {
+ 	int repeated = 0;
++	struct BB_applet *a;
++	int argc = 0;
++	char **c;
++	
++	if(strchr(cmd, '/') == NULL && is_safe_applet(cmd) && (a = find_applet_by_name(cmd)) != NULL) {
++		c = argv;
++		while (*c != NULL) {
++			c++; argc++;
++		}
++		bb_applet_name = "[";
++		exit(a->main(argc, argv));
++	}
+ #ifdef CONFIG_FEATURE_SH_STANDALONE_SHELL
+ 	int flg_bb = 0;
+ 	char *name = cmd;
+@@ -3919,6 +3952,12 @@
+ 	}
+ #endif
+ 
++	if (is_safe_applet(name)) {
++		entry->cmdtype = CMDNORMAL;
++		entry->u.index = -1;
++		return;
++	}
++
+ 	updatetbl = (path == pathval());
+ 	if (!updatetbl) {
+ 		act |= DO_ALTPATH;
