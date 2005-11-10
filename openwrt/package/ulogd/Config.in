@@ -24,4 +24,10 @@ config BR2_PACKAGE_ULOGD_MOD_PGSQL
 	depends BR2_PACKAGE_ULOGD
 	select BR2_PACKAGE_LIBPQ
 
+config BR2_PACKAGE_ULOGD_MOD_EXTRA
+	prompt   "ulogd-mod-extra................. All other plugins"
+	tristate
+	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_ULOGD
+
 endmenu
