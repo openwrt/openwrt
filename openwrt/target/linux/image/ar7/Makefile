@@ -78,6 +78,7 @@ $(eval $(call pattern_template,AG1B))
 $(eval $(call pattern_template,WA22))
 $(eval $(call pattern_template,WAG2))
 $(eval $(call pattern_template,WA21))
+$(eval $(call pattern_template,WA31,-b))
 $(eval $(call pattern_template,WA32,-b))
 
 ifeq ($(IB),)
