@@ -1,0 +1,72 @@
+diff -urN linux.old/arch/mips/kernel/time.c linux.dev/arch/mips/kernel/time.c
+--- linux.old/arch/mips/kernel/time.c	2005-01-19 15:09:29.000000000 +0100
++++ linux.dev/arch/mips/kernel/time.c	2005-11-09 23:10:04.233756250 +0100
+@@ -151,6 +150,15 @@
+ unsigned int (*mips_hpt_read)(void);
+ void (*mips_hpt_init)(unsigned int);
+ 
++extern __u32 get_htscl(void)
++{
++	return timerhi;
++}
++
++extern __u64 get_tscll(void)
++{
++	return (((__u64) timerhi) << 32) | ((__u64) ((__u32) read_c0_count()));
++}
+ 
+ /*
+  * timeofday services, for syscalls.
+@@ -761,3 +769,5 @@
+ EXPORT_SYMBOL(to_tm);
+ EXPORT_SYMBOL(rtc_set_time);
+ EXPORT_SYMBOL(rtc_get_time);
++EXPORT_SYMBOL(get_htscl);
++EXPORT_SYMBOL(get_tscll);
+diff -urN linux.old/include/asm-mips/timex.h linux.dev/include/asm-mips/timex.h
+--- linux.old/include/asm-mips/timex.h	2003-08-25 13:44:44.000000000 +0200
++++ linux.dev/include/asm-mips/timex.h	2005-11-09 22:15:59.352633250 +0100
+@@ -31,6 +31,19 @@
+ 	return read_c0_count();
+ }
+ 
++extern __u32 get_htscl(void);
++extern __u64 get_tscll(void);
++
++#define rdtsc(low, high) \
++		high = get_htscl(); \
++		low = read_c0_count();
++
++#define rdtscl(low) \
++		low = read_c0_count();
++
++#define rdtscll(val) \
++		val = get_tscll();
++
+ #define vxtime_lock()		do {} while (0)
+ #define vxtime_unlock()		do {} while (0)
+ 
+diff -urN linux.old/include/net/pkt_sched.h linux.dev/include/net/pkt_sched.h
+--- linux.old/include/net/pkt_sched.h	2005-11-09 21:25:10.686721000 +0100
++++ linux.dev/include/net/pkt_sched.h	2005-11-09 21:54:26.063807750 +0100
+@@ -5,7 +5,11 @@
+ #define PSCHED_JIFFIES 		2
+ #define PSCHED_CPU 		3
+ 
++#ifdef __mips__
++#define PSCHED_CLOCK_SOURCE	PSCHED_CPU
++#else
+ #define PSCHED_CLOCK_SOURCE	PSCHED_JIFFIES
++#endif
+ 
+ #include <linux/config.h>
+ #include <linux/types.h>
+@@ -271,7 +275,7 @@
+ #define PSCHED_US2JIFFIE(delay) (((delay)+psched_clock_per_hz-1)/psched_clock_per_hz)
+ #define PSCHED_JIFFIE2US(delay) ((delay)*psched_clock_per_hz)
+ 
+-#ifdef CONFIG_X86_TSC
++#if defined(CONFIG_X86_TSC) || defined(__mips__)
+ 
+ #define PSCHED_GET_TIME(stamp) \
+ ({ u64 __cur; \
