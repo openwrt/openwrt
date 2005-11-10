@@ -21464,6 +21464,7 @@ diff -urN linux.old/drivers/atm/sangam_atm/tn7atm.c linux.dev/drivers/atm/sangam
 +#ifdef CONFIG_LED_MODULE
 +#include <asm/ar7/ledapp.h>
 +#endif
++#include <asm/ar7/avalanche_intc.h>
 +
 +#ifdef MODULE
 +MODULE_DESCRIPTION ("Tnetd73xx ATM Device Driver");
@@ -21472,7 +21473,6 @@ diff -urN linux.old/drivers/atm/sangam_atm/tn7atm.c linux.dev/drivers/atm/sangam
 +
 +/* Version Information */
 +//static char atm_version[] ="1.0.0.1";
-+
 +
 +#define TRUE   1
 +#define FALSE  0
