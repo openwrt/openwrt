@@ -1,15 +1,3 @@
-diff -urN linux.old/Makefile linux.dev/Makefile
---- linux.old/Makefile	2005-10-21 16:43:16.316951500 +0200
-+++ linux.dev/Makefile	2005-11-10 01:10:45.771570000 +0100
-@@ -91,7 +91,7 @@
- 
- CPPFLAGS := -D__KERNEL__ -I$(HPATH)
- 
--CFLAGS := $(CPPFLAGS) -Wall -Wstrict-prototypes -Wno-trigraphs -O2 \
-+CFLAGS := $(CPPFLAGS) -Wall -Wstrict-prototypes -Wno-trigraphs -Os \
- 	  -fno-strict-aliasing -fno-common
- ifndef CONFIG_FRAME_POINTER
- CFLAGS += -fomit-frame-pointer
 diff -urN linux.old/arch/mips/Makefile linux.dev/arch/mips/Makefile
 --- linux.old/arch/mips/Makefile	2005-10-21 16:43:16.316951500 +0200
 +++ linux.dev/arch/mips/Makefile	2005-11-10 01:10:45.775570250 +0100
