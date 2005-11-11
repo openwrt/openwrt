@@ -37,10 +37,12 @@ endif
 
 $$(PKG_$(1)): $(LINUX_DIR)/.modules_done
 	rm -rf $$(I_$(1))
-	mkdir -p $$(I_$(1))/lib/modules/$(LINUX_VERSION)
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $$(I_$(1)) ../control/kmod-$(2).control $(LINUX_VERSION)-$(BOARD)-$(PKG_RELEASE) $(ARCH)
 	echo "Depends: $$(IDEPEND_$(1))" >> $$(I_$(1))/CONTROL/control
+ifneq ($(strip $(3)),)
+	mkdir -p $$(I_$(1))/lib/modules/$(LINUX_VERSION)
 	cp $(3) $$(I_$(1))/lib/modules/$(LINUX_VERSION)
+endif
 ifneq ($(6),)
 	mkdir -p $$(I_$(1))/etc/modules.d
 	for module in $(7); do \
