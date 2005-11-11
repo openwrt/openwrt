@@ -1,11 +1,10 @@
 # $Id$
 
 include $(TOPDIR)/rules.mk
-include kernelconfig.mk
 
 PKG_NAME:=iptables
 PKG_VERSION:=1.3.3
-PKG_RELEASE:=1
+PKG_RELEASE:=2.1
 PKG_MD5SUM:=86d88455520cfdc56fd7ae27897a80a4
 
 PKG_SOURCE_URL:=http://www.netfilter.org/files \
@@ -18,18 +17,50 @@ PKG_CAT:=bzcat
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
+define IPKG_plugin_template
+
+$$(IPKG_$(1)):
+	install -m0755 -d $$(IDIR_$(1))/usr/lib/iptables
+	for m in $(2); do \
+		cp -fpR $(PKG_INSTALL_DIR)/usr/lib/iptables/lib$$$${m}.so $$(IDIR_$(1))/usr/lib/iptables/ ; \
+	done
+	$(RSTRIP) $$(IDIR_$(1))
+	$(IPKG_BUILD) $$(IDIR_$(1)) $(PACKAGE_DIR)
+
+endef
+
 include $(TOPDIR)/package/rules.mk
+include $(LINUX_DIR)/.config
+include $(TOPDIR)/target/linux/netfilter.mk
 
 $(eval $(call PKG_template,IPTABLES,iptables,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,IPTABLES_EXTRA,iptables-extra,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,IPTABLES_UTILS,iptables-utils,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,IP6TABLES,ip6tables,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
+$(eval $(call PKG_template,IPTABLES_MOD_CONNTRACK,iptables-mod-conntrack,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,IPTABLES_MOD_EXTRA,iptables-mod-extra,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,IPTABLES_MOD_FILTER,iptables-mod-filter,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,IPTABLES_MOD_IMQ,iptables-mod-img,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,IPTABLES_MOD_IPOPT,iptables-mod-ipopt,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,IPTABLES_MOD_IPSEC,iptables-mod-ipsec,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,IPTABLES_MOD_NAT,iptables-mod-nat,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,IPTABLES_MOD_ULOG,iptables-mod-ulog,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+
+$(eval $(call IPKG_plugin_template,IPTABLES_MOD_CONNTRACK,$(IPKG_IPTABLES_MOD_CONNTRACK-m)))
+$(eval $(call IPKG_plugin_template,IPTABLES_MOD_EXTRA,$(IPKG_IPTABLES_MOD_EXTRA-m)))
+$(eval $(call IPKG_plugin_template,IPTABLES_MOD_FILTER,$(IPKG_IPTABLES_MOD_FILTER-m)))
+$(eval $(call IPKG_plugin_template,IPTABLES_MOD_IMQ,$(IPKG_IPTABLES_MOD_IMQ-m)))
+$(eval $(call IPKG_plugin_template,IPTABLES_MOD_IPOPT,$(IPKG_IPTABLES_MOD_IPOPT-m)))
+$(eval $(call IPKG_plugin_template,IPTABLES_MOD_IPSEC,$(IPKG_IPTABLES_MOD_IPSEC-m)))
+$(eval $(call IPKG_plugin_template,IPTABLES_MOD_NAT,$(IPKG_IPTABLES_MOD_NAT-m)))
+$(eval $(call IPKG_plugin_template,IPTABLES_MOD_ULOG,$(IPKG_IPTABLES_MOD_ULOG-m)))
+
 $(PKG_BUILD_DIR)/.configured:
 	touch $@
 
 $(PKG_BUILD_DIR)/.built:
-	chmod a+x $(PKG_BUILD_DIR)/extensions/.*-test
+	chmod a+x $(PKG_BUILD_DIR)/extensions/.*-test*
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
@@ -44,22 +75,14 @@ $(IPKG_IPTABLES):
 	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/iptables $(IDIR_IPTABLES)/usr/sbin/
 	install -d -m0755 $(IDIR_IPTABLES)/usr/lib/iptables
 	(cd $(PKG_INSTALL_DIR)/usr/lib/iptables ; \
-	 cp -fpR $(patsubst %,libipt_%.so,$(ext-y)) $(IDIR_IPTABLES)/usr/lib/iptables \
+		cp -fpR $(patsubst %,lib%.so,$(IPKG_IPTABLES-y)) $(IDIR_IPTABLES)/usr/lib/iptables/ \
 	)
 	$(RSTRIP) $(IDIR_IPTABLES)
 	$(IPKG_BUILD) $(IDIR_IPTABLES) $(PACKAGE_DIR)
 
-$(IPKG_IPTABLES_EXTRA):
-	install -d -m0755 $(IDIR_IPTABLES_EXTRA)/usr/lib/iptables
-	(cd $(PKG_INSTALL_DIR)/usr/lib/iptables ; \
-	 cp -fpR $(patsubst %,libipt_%.so,$(ext-m)) $(IDIR_IPTABLES_EXTRA)/usr/lib/iptables \
-	)
-	$(RSTRIP) $(IDIR_IPTABLES_EXTRA)
-	$(IPKG_BUILD) $(IDIR_IPTABLES_EXTRA) $(PACKAGE_DIR)
-
 $(IPKG_IPTABLES_UTILS):
 	install -d -m0755 $(IDIR_IPTABLES_UTILS)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/iptables-{save,restore} $(IDIR_IPTABLES_UTILS)/usr/sbin
+	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/iptables-{save,restore} $(IDIR_IPTABLES_UTILS)/usr/sbin/
 	$(RSTRIP) $(IDIR_IPTABLES_UTILS)
 	$(IPKG_BUILD) $(IDIR_IPTABLES_UTILS) $(PACKAGE_DIR)
 
@@ -68,14 +91,15 @@ $(IPKG_IP6TABLES):
 	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/ip6tables $(IDIR_IP6TABLES)/usr/sbin/
 	install -d -m0755 $(IDIR_IP6TABLES)/usr/lib/iptables
 	(cd $(PKG_INSTALL_DIR)/usr/lib/iptables ; \
-	 cp -fpR libip6t_*.so $(IDIR_IP6TABLES)/usr/lib/iptables \
+		cp -fpR libip6t_*.so $(IDIR_IP6TABLES)/usr/lib/iptables/ \
 	)
 	$(RSTRIP) $(IDIR_IP6TABLES)
 	$(IPKG_BUILD) $(IDIR_IP6TABLES) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libipq.a: $(PKG_BUILD_DIR)/.built
-	mkdir -p $(STAGING_DIR)/usr/include/ $(STAGING_DIR)/usr/lib/
+	mkdir -p $(STAGING_DIR)/usr/include
 	cp -fpR $(PKG_INSTALL_DIR)/usr/include/libipq.h $(STAGING_DIR)/usr/include/
+	mkdir -p $(STAGING_DIR)/usr/lib
 	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libipq.a $(STAGING_DIR)/usr/lib/
 
 install-dev: $(STAGING_DIR)/usr/lib/libipq.a
