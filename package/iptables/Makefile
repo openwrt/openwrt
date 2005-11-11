@@ -4,7 +4,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=iptables
 PKG_VERSION:=1.3.3
-PKG_RELEASE:=2.1
+PKG_RELEASE:=2
 PKG_MD5SUM:=86d88455520cfdc56fd7ae27897a80a4
 
 PKG_SOURCE_URL:=http://www.netfilter.org/files \
@@ -75,7 +75,7 @@ $(IPKG_IPTABLES):
 	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/iptables $(IDIR_IPTABLES)/usr/sbin/
 	install -d -m0755 $(IDIR_IPTABLES)/usr/lib/iptables
 	(cd $(PKG_INSTALL_DIR)/usr/lib/iptables ; \
-		cp -fpR $(patsubst %,lib%.so,$(IPKG_IPTABLES-y)) $(IDIR_IPTABLES)/usr/lib/iptables/ \
+		cp -fpR $(patsubst %,lib%.so,$(IPKG_IPTABLES-y) ipt_standard) $(IDIR_IPTABLES)/usr/lib/iptables/ \
 	)
 	$(RSTRIP) $(IDIR_IPTABLES)
 	$(IPKG_BUILD) $(IDIR_IPTABLES) $(PACKAGE_DIR)
