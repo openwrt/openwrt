@@ -1,0 +1,48 @@
+diff -urN linux.old/Makefile linux.dev/Makefile
+--- linux.old/Makefile	2005-08-26 13:41:41.689634168 +0200
++++ linux.dev/Makefile	2005-08-26 13:44:34.233403528 +0200
+@@ -354,7 +354,7 @@
+ 	@rm -f .ver1
+ 
+ include/linux/version.h: ./Makefile
+-	@expr length "$(KERNELRELEASE)" \<= $(uts_len) > /dev/null || \
++	@-expr length "$(KERNELRELEASE)" \<= $(uts_len) > /dev/null || \
+ 	  (echo KERNELRELEASE \"$(KERNELRELEASE)\" exceeds $(uts_len) characters >&2; false)
+ 	@echo \#define UTS_RELEASE \"$(KERNELRELEASE)\" > .ver
+ 	@echo \#define LINUX_VERSION_CODE `expr $(VERSION) \\* 65536 + $(PATCHLEVEL) \\* 256 + $(SUBLEVEL)` >> .ver
+@@ -509,7 +509,7 @@
+ ifdef CONFIG_MODVERSIONS
+ 	$(MAKE) update-modverfile
+ endif
+-	scripts/mkdep -- `find $(FINDHPATH) \( -name SCCS -o -name .svn \) -prune -o -follow -name \*.h ! -name modversions.h -print` > .hdepend
++	find $(FINDHPATH) \( -name SCCS -o -name .svn \) -prune -o -follow -name \*.h ! -name modversions.h -print | xargs scripts/mkdep -- > .hdepend
+ 	scripts/mkdep -- init/*.c > .depend
+ 
+ ifdef CONFIG_MODVERSIONS
+--- linux.old/Rules.make	2005-08-31 00:37:34.363109288 +0200
++++ linux.dev/Rules.make	2005-08-31 13:59:20.140676296 +0200
+@@ -126,7 +126,7 @@
+ # This make dependencies quickly
+ #
+ fastdep: dummy
+-	$(TOPDIR)/scripts/mkdep $(CFLAGS) $(EXTRA_CFLAGS_nostdinc) -- $(wildcard *.[chS]) > .depend
++	find -name '*.[chS]' | xargs $(TOPDIR)/scripts/mkdep $(CFLAGS) $(EXTRA_CFLAGS_nostdinc) -- > .depend
+ ifdef ALL_SUB_DIRS
+ 	$(MAKE) $(patsubst %,_sfdep_%,$(ALL_SUB_DIRS)) _FASTDEP_ALL_SUB_DIRS="$(ALL_SUB_DIRS)"
+ endif
+@@ -176,7 +176,14 @@
+ _modinst__: dummy
+ ifneq "$(strip $(ALL_MOBJS))" ""
+ 	mkdir -p $(MODLIB)/kernel/$(MOD_DESTDIR)
+-	cp $(sort $(ALL_MOBJS)) $(MODLIB)/kernel/$(MOD_DESTDIR)
++	#@cp $(sort $(ALL_MOBJS)) $(MODLIB)/kernel/$(MOD_DESTDIR)
++	for f in $(ALL_MOBJS) ; do \
++		$(OBJCOPY) -R __ksymtab -R .comment -R .note -x \
++		`$(NM) $$f | cut -f3- -d' ' | sed -n \
++			-e 's/__module_parm_\(.*\)/-K \1/p' \
++			-e 's/__ks..tab_\(.*\)/-K \1/p'` \
++		$$f $(MODLIB)/kernel/$(MOD_DESTDIR)$(MOD_TARGET)$$f; \
++	done
+ endif
+ 
+ .PHONY: modules_install
