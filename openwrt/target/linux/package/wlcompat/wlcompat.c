@@ -225,7 +225,7 @@ struct iw_statistics *wlcompat_get_wireless_stats(struct net_device *dev)
 {
 	wl_bss_info_t *bss_info = (wl_bss_info_t *) buf;
 	get_pktcnt_t pkt;
-	int rssi, noise;
+	int rssi, noise, ap;
 	
 	memset(&wstats, 0, sizeof(wstats));
 	memset(&pkt, 0, sizeof(pkt));
@@ -234,12 +234,18 @@ struct iw_statistics *wlcompat_get_wireless_stats(struct net_device *dev)
 	wl_ioctl(dev, WLC_GET_BSS_INFO, bss_info, WLC_IOCTL_MAXLEN);
 	wl_ioctl(dev, WLC_GET_PKTCNTS, &pkt, sizeof(pkt));
 
-	// somehow the structure doesn't fit here
-	noise = buf[0x50];
-	rssi = buf[0x52];
+	wl_ioctl(dev, WLC_GET_AP, &ap, sizeof(ap));
+	if (!ap) {
+		// somehow the structure doesn't fit here
+		rssi = buf[82];
+		noise = buf[84];
+	} else {
+		noise = 0;
+		rssi = 0;
+	}
 
 	wstats.qual.level = rssi;
-	wstats.qual.noise = -100 + noise;
+	wstats.qual.noise = noise;
 	wstats.discard.misc = pkt.rx_bad_pkt;
 	wstats.discard.retries = pkt.tx_bad_pkt;
 
