@@ -9,3 +9,14 @@
  ifdef ALL_SUB_DIRS
  	$(MAKE) $(patsubst %,_sfdep_%,$(ALL_SUB_DIRS)) _FASTDEP_ALL_SUB_DIRS="$(ALL_SUB_DIRS)"
  endif
+--- linux-2.4.30/Makefile.old	2005-11-11 14:27:55.878482250 +0100
++++ linux-2.4.30/Makefile	2005-11-11 14:28:57.926360000 +0100
+@@ -509,7 +509,7 @@
+ ifdef CONFIG_MODVERSIONS
+ 	$(MAKE) update-modverfile
+ endif
+-	scripts/mkdep -- `find $(FINDHPATH) \( -name SCCS -o -name .svn \) -prune -o -follow -name \*.h ! -name modversions.h -print` > .hdepend
++	find $(FINDHPATH) \( -name SCCS -o -name .svn \) -prune -o -follow -name \*.h ! -name modversions.h -print | xargs scripts/mkdep -- > .hdepend
+ 	scripts/mkdep -- init/*.c > .depend
+ 
+ ifdef CONFIG_MODVERSIONS
