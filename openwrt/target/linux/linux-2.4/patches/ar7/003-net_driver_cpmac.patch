@@ -3736,14 +3736,14 @@ diff -urN linux.old/drivers/net/avalanche_cpmac/cpmacHalLx.c linux.dev/drivers/n
 +#include <asm/io.h>
 +#include <linux/string.h>
 +
++#include <asm/ar7/avalanche_intc.h>
++
 +#include "cpmacHalLx.h"
 +#include "cpmac.h"
 +
 +/* PSP config headers */
 +#include "psp_config_parse.h"
 +#include "psp_config_mgr.h"
-+
-+/* Probe Debug Section*/
 +
 +/* debug */                                 
 +extern int cpmac_debug_mode;
