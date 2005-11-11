@@ -34,15 +34,6 @@ diff -urN linux.old/Makefile linux.dev/Makefile
  	  (echo KERNELRELEASE \"$(KERNELRELEASE)\" exceeds $(uts_len) characters >&2; false)
  	@echo \#define UTS_RELEASE \"$(KERNELRELEASE)\" > .ver
  	@echo \#define LINUX_VERSION_CODE `expr $(VERSION) \\* 65536 + $(PATCHLEVEL) \\* 256 + $(SUBLEVEL)` >> .ver
-@@ -501,7 +503,7 @@
- ifdef CONFIG_MODVERSIONS
- 	$(MAKE) update-modverfile
- endif
--	scripts/mkdep -- `find $(FINDHPATH) \( -name SCCS -o -name .svn \) -prune -o -follow -name \*.h ! -name modversions.h -print` > .hdepend
-+	(find $(FINDHPATH) \( -name SCCS -o -name .svn \) -prune -o -follow -name \*.h ! -name modversions.h -print | xargs -r scripts/mkdep -- ) > .hdepend
- 	scripts/mkdep -- init/*.c > .depend
- 
- ifdef CONFIG_MODVERSIONS
 diff -urN linux.old/Rules.make linux.dev/Rules.make
 --- linux.old/Rules.make	2005-11-07 23:12:50.538884250 +0100
 +++ linux.dev/Rules.make	2005-11-07 21:57:07.837585250 +0100
