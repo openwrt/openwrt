@@ -41,7 +41,7 @@ diff -urN linux.old/Makefile linux.dev/Makefile
 +		`$(NM) $$f | cut -f3- -d' ' | sed -n \
 +			-e 's/__module_parm_\(.*\)/-K \1/p' \
 +			-e 's/__ks..tab_\(.*\)/-K \1/p'` \
-+		$$f $(MODLIB)/kernel/$(MOD_DESTDIR)$(MOD_TARGET)$$f; \
++		$$f $(MODLIB)/kernel/$(MOD_DESTDIR)$(MOD_TARGET)`basename $$f`; \
 +	done
  endif
  
