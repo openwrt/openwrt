@@ -139,6 +139,7 @@ static int wlcompat_ioctl_getiwrange(struct net_device *dev,
 	struct iw_range *range;
 
 	range = (struct iw_range *) extra;
+	bzero(extra, sizeof(struct iw_range));
 
 	range->we_version_compiled = WIRELESS_EXT;
 	range->we_version_source = WIRELESS_EXT;
@@ -169,8 +170,8 @@ static int wlcompat_ioctl_getiwrange(struct net_device *dev,
 	range->max_pmt = 65535 * 1000;
 
 	range->max_qual.qual = 0;
-	range->max_qual.level = 100;
-	range->max_qual.noise = 100;
+	range->max_qual.level = 0;
+	range->max_qual.noise = 0;
 	
 	range->min_rts = 0;
 	if (wl_ioctl(dev, WLC_GET_RTS, &range->max_rts, sizeof(int)) < 0)
@@ -225,7 +226,7 @@ struct iw_statistics *wlcompat_get_wireless_stats(struct net_device *dev)
 {
 	wl_bss_info_t *bss_info = (wl_bss_info_t *) buf;
 	get_pktcnt_t pkt;
-	int rssi, noise, ap;
+	unsigned int rssi, noise, ap;
 	
 	memset(&wstats, 0, sizeof(wstats));
 	memset(&pkt, 0, sizeof(pkt));
@@ -234,15 +235,24 @@ struct iw_statistics *wlcompat_get_wireless_stats(struct net_device *dev)
 	wl_ioctl(dev, WLC_GET_BSS_INFO, bss_info, WLC_IOCTL_MAXLEN);
 	wl_ioctl(dev, WLC_GET_PKTCNTS, &pkt, sizeof(pkt));
 
-	wl_ioctl(dev, WLC_GET_AP, &ap, sizeof(ap));
-	if (!ap) {
+	rssi = 0;
+	if ((wl_ioctl(dev, WLC_GET_AP, &ap, sizeof(ap)) < 0) || ap) {
+		if (wl_ioctl(dev, WLC_GET_PHY_NOISE, &noise, sizeof(noise)) < 0)
+			noise = 0;
+	} else {
 		// somehow the structure doesn't fit here
 		rssi = buf[82];
 		noise = buf[84];
-	} else {
-		noise = 0;
-		rssi = 0;
 	}
+	rssi = (rssi == 0 ? 1 : rssi);
+	wstats.qual.updated = 0x10;
+	if (rssi <= 1) 
+		wstats.qual.updated |= 0x20;
+	if (noise <= 1)
+		wstats.qual.updated |= 0x40;
+
+	if ((wstats.qual.updated & 0x60) == 0x60)
+		return NULL;
 
 	wstats.qual.level = rssi;
 	wstats.qual.noise = noise;
@@ -740,10 +750,10 @@ static const iw_handler	 wlcompat_handler[] = {
 #define WLCOMPAT_GET_MONITOR		SIOCIWFIRSTPRIV + 1
 #define WLCOMPAT_SET_TXPWR_LIMIT	SIOCIWFIRSTPRIV + 2
 #define WLCOMPAT_GET_TXPWR_LIMIT	SIOCIWFIRSTPRIV + 3
-#define WLCOMPAT_SET_ANTDIV		SIOCIWFIRSTPRIV + 4
-#define WLCOMPAT_GET_ANTDIV		SIOCIWFIRSTPRIV + 5
-#define WLCOMPAT_SET_TXANT		SIOCIWFIRSTPRIV + 6
-#define WLCOMPAT_GET_TXANT		SIOCIWFIRSTPRIV + 7
+#define WLCOMPAT_SET_ANTDIV			SIOCIWFIRSTPRIV + 4
+#define WLCOMPAT_GET_ANTDIV			SIOCIWFIRSTPRIV + 5
+#define WLCOMPAT_SET_TXANT			SIOCIWFIRSTPRIV + 6
+#define WLCOMPAT_GET_TXANT			SIOCIWFIRSTPRIV + 7
 #define WLCOMPAT_SET_BSS_FORCE		SIOCIWFIRSTPRIV + 8
 #define WLCOMPAT_GET_BSS_FORCE		SIOCIWFIRSTPRIV + 9
 
