@@ -15,23 +15,92 @@ config BR2_PACKAGE_IPTABLES
 	  
 	  http://www.iptables.org/
 
+config BR2_PACKAGE_IPTABLES_EXTRA
+	prompt   "iptables-extra.................. Extra Iptables extensions for IPv4 firewalling (meta-package)"
+	tristate
+	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_IPTABLES
+	select BR2_PACKAGE_KMOD_IPTABLES_EXTRA
+	select BR2_PACKAGE_IPTABLES_MOD_CONNTRACK
+	select BR2_PACKAGE_IPTABLES_MOD_EXTRA
+	select BR2_PACKAGE_IPTABLES_MOD_FILTER
+	select BR2_PACKAGE_IPTABLES_MOD_IPOPT
+	select BR2_PACKAGE_IPTABLES_MOD_IPSEC
+	select BR2_PACKAGE_IPTABLES_MOD_NAT
+	select BR2_PACKAGE_IPTABLES_MOD_ULOG
+	help
+	  Extra Iptables extensions for IPv4 firewalling (meta-package)
+
+config BR2_PACKAGE_IPTABLES_MOD_CONNTRACK
+	prompt   "iptables-mod-conntrack.......... Iptables extensions for connection tracking"
+	tristate
+	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_IPTABLES
+	select BR2_PACKAGE_KMOD_IPT_CONNTRACK
+	help
+	  Iptables (IPv4) extensions for connection tracking
+
+config BR2_PACKAGE_IPTABLES_MOD_FILTER
+	prompt   "iptables-mod-filter............. Iptables extension for packet content inspection"
+	tristate
+	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_IPTABLES
+	select BR2_PACKAGE_KMOD_IPT_FILTER
+	help
+	  Iptables (IPv4) extension for packet content inspection
+
+config BR2_PACKAGE_IPTABLES_MOD_IPOPT
+	prompt   "iptables-mod-ipopt.............. Iptables extensions for matching/changing IP packet options"
+	tristate
+	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_IPTABLES
+	select BR2_PACKAGE_KMOD_IPT_IPOPT
+	help
+	  Extra Iptables (IPv4) extensions for matching/changing IP packet options
+
+config BR2_PACKAGE_IPTABLES_MOD_IPSEC
+	prompt   "iptables-mod-ipsec.............. Iptables extensions for matching special IPsec packets"
+	tristate
+	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_IPTABLES
+	select BR2_PACKAGE_KMOD_IPT_IPSEC
+	help
+	  Iptables (IPv4) extensions for matching special IPsec packets
+
+config BR2_PACKAGE_IPTABLES_MOD_NAT
+	prompt   "iptables-mod-nat................ Iptables extensions for different NAT targets"
+	tristate
+	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_IPTABLES
+	select BR2_PACKAGE_KMOD_IPT_NAT
+	help
+	  Iptables (IPv4) extensions for different NAT targets
+
+config BR2_PACKAGE_IPTABLES_MOD_ULOG
+	prompt   "iptables-mod-ulog............... Iptables extensions for user-space packet logging"
+	tristate
+	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_IPTABLES
+	select BR2_PACKAGE_KMOD_IPT_ULOG
+	help
+	  Iptables (IPv4) extensions for user-space packet logging
+
+config BR2_PACKAGE_IPTABLES_MOD_EXTRA
+	prompt   "iptables-mod-extra.............. Other extra Iptables extensions"
+	tristate
+	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_IPTABLES
+	select BR2_PACKAGE_KMOD_IPT_EXTRA
+	help
+	  Other extra Iptables (IPv4) extensions
+
 config BR2_PACKAGE_IPTABLES_UTILS
 	prompt   "iptables-utils.................. Save and restore utilities"
 	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_IPTABLES
 	help
-	  iptables-save and iptables-restore
-	  
-	  http://www.iptables.org/
-
-config BR2_PACKAGE_IPTABLES_EXTRA
-	prompt   "iptables-extra.................. Extra modules not found elsewhere"
-	tristate
-	default m if CONFIG_DEVEL
-	depends BR2_PACKAGE_IPTABLES
-	help
-	  Extra modules for iptables (kernel and user space)
+	  iptables-save and iptables-restore for Iptables (IPv4)
 	  
 	  http://www.iptables.org/
 
