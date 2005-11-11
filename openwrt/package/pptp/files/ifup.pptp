@@ -17,10 +17,16 @@ while :; do
 	IP=$(nvram get pptp_server_ip)
 	USERNAME=$(nvram get ppp_username)
 	PASSWORD=$(nvram get ppp_passwd)
-	REDIAL=$(nvram get ppp_redialperiod)
-	REDIAL=${REDIAL:+lcp-echo-interval $REDIAL}
-	IDLETIME=$(nvram get ppp_idletime)
-	IDLETIME=${IDLETIME:+lcp-echo-failure $IDLETIME}
+	KEEPALIVE=$(nvram get ppp_redialperiod)
+	KEEPALIVE=${KEEPALIVE:+lcp-echo-interval 10 lcp-echo-failure $KEEPALIVE}
+	DEMAND=$(nvram get ppp_demand)
+	case "$DEMAND" in
+		on|1|enabled)
+			DEMAND=$(nvram get ppp_idletime)
+			DEMAND=${IDLETIME:+demand idle $IDLETIME}
+		;;
+		*) DEMAND="";;
+	esac
 	MTU=$(nvram get ppp_mtu)
 	MTU=${MTU:-1452}
 
@@ -42,9 +48,8 @@ while :; do
 		ipparam "$type" \
 		user "$USERNAME" \
 		password "$PASSWORD" \
-		mtu $MTU \
-		mru $MTU \
-		$IDLETIME \
-		$REDIAL
+		mtu $MTU mru $MTU \
+		$DEMAND \
+		$KEEPALIVE
 done &
 
