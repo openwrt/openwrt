@@ -35,7 +35,7 @@ adm_switch="$(( ($boardflags & 0x80) >> 7 ))"
 case "$(( $boardtype ))" in
 	"$((0x708))")
 		if [ "$adm_switch" = 0 ]; then
-			nvram_set sdram_init 0x010b
+			nvram_set sdram_init "$(printf 0x%04x $(( $(nvram get sdram_init) | 0x0100 )))"
 			[ "$COMMIT" = 1 ] && {
 				nvram_set sdram_config 0x0062
 				nvram_set clkfreq 216
@@ -49,7 +49,7 @@ case "$(( $boardtype ))" in
 		fi
 	;;
 	"$((0x467))")
-		nvram_set sdram_init 0x010c
+		nvram_set sdram_init "$(printf 0x%04x $(( $(nvram get sdram_init) | 0x0100 )))"
 		[ "$COMMIT" = 1 ] && {
 			nvram_set sdram_config 0x0062
 			nvram_set sdram_ncdl 0x0
