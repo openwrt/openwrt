@@ -20,6 +20,7 @@
 #include <bcmnvram.h>
 #include <shutils.h>
 #include <wlioctl.h>
+#include <signal.h>
 
 /*------------------------------------------------------------------*/
 /*
@@ -76,30 +77,30 @@
 			ifname, strerror(errno)); \
 	} } while(0)
 
-void set_wext_ssid(int skfd, char *ifname);
+static void set_wext_ssid(int skfd, char *ifname);
 
-char *prefix;
-char buffer[128];
-int wpa_enc = 0;
+static char *prefix;
+static char buffer[128];
+static int wpa_enc = 0;
 
-char *wl_var(char *name)
+static char *wl_var(char *name)
 {
 	strcpy(buffer, prefix);
 	strcat(buffer, name);
 }
 
-int nvram_enabled(char *name)
+static int nvram_enabled(char *name)
 {
 	return (nvram_match(name, "1") || nvram_match(name, "on") || nvram_match(name, "enabled") || nvram_match(name, "true") || nvram_match(name, "yes") ? 1 : 0);
 }
 
-int nvram_disabled(char *name)
+static int nvram_disabled(char *name)
 {
 	return (nvram_match(name, "0") || nvram_match(name, "off") || nvram_match(name, "disabled") || nvram_match(name, "false") || nvram_match(name, "no") ? 1 : 0);
 }
 
 
-int bcom_ioctl(int skfd, char *ifname, int cmd, void *buf, int len)
+static int bcom_ioctl(int skfd, char *ifname, int cmd, void *buf, int len)
 {
 	struct ifreq ifr;
 	wl_ioctl_t ioc;
@@ -117,7 +118,7 @@ int bcom_ioctl(int skfd, char *ifname, int cmd, void *buf, int len)
 	return ret;
 }
 
-int bcom_set_val(int skfd, char *ifname, char *var, void *val, int len)
+static int bcom_set_val(int skfd, char *ifname, char *var, void *val, int len)
 {
 	char buf[8192];
 	int ret;
@@ -134,12 +135,12 @@ int bcom_set_val(int skfd, char *ifname, char *var, void *val, int len)
 	return 0;	
 }
 
-int bcom_set_int(int skfd, char *ifname, char *var, int val)
+static int bcom_set_int(int skfd, char *ifname, char *var, int val)
 {
 	return bcom_set_val(skfd, ifname, var, &val, sizeof(val));
 }
 
-void stop_bcom(int skfd, char *ifname)
+static void stop_bcom(int skfd, char *ifname)
 {
 	int val = 0;
 	wlc_ssid_t ssid;
@@ -154,7 +155,7 @@ void stop_bcom(int skfd, char *ifname)
 
 }
 
-void start_bcom(int skfd, char *ifname)
+static void start_bcom(int skfd, char *ifname)
 {
 	int val = 0;
 	
@@ -165,10 +166,85 @@ void start_bcom(int skfd, char *ifname)
 	set_wext_ssid(skfd, ifname);
 }
 
-
-void setup_bcom(int skfd, char *ifname)
+static int setup_bcom_wds(int skfd, char *ifname)
 {
-	int val = 0;
+	char buf[8192];
+	char wbuf[80];
+	char *v;
+	int wds_enabled = 0;
+
+	if (v = nvram_get(wl_var("wds"))) {
+		struct maclist *wdslist = (struct maclist *) buf;
+		struct ether_addr *addr = wdslist->ea;
+		char *next;
+
+		memset(buf, 0, 8192);
+		foreach(wbuf, v, next) {
+			if (ether_atoe(wbuf, addr->ether_addr_octet)) {
+				wdslist->count++;
+				addr++;
+				wds_enabled = 1;
+			}
+		}
+		bcom_ioctl(skfd, ifname, WLC_SET_WDSLIST, buf, sizeof(buf));
+	}
+	return wds_enabled;
+}
+
+void start_watchdog(int skfd, char *ifname)
+{
+	FILE *f;
+	unsigned char buf[8192], buf2[8192], wbuf[80], *v, *p, *next, *tmp;
+	int wds = 0, i, restart_wds;
+
+	if (fork())
+		return;
+
+	system("kill $(cat /var/run/wifi.pid) 2>&- >&-");
+	f = fopen("/var/run/wifi.pid", "w");
+	fprintf(f, "%d\n", getpid());
+	fclose(f);
+	
+	v = nvram_safe_get(wl_var("wds"));
+	memset(buf2, 0, 8192);
+	p = buf2;
+	foreach(wbuf, v, next) {
+		if (ether_atoe(wbuf, p)) {
+			p += 6;
+			wds++;
+		}
+	}
+	v = nvram_safe_get(wl_var("ssid"));
+	
+	for (;;) {
+		sleep(5);
+		if (bcom_ioctl(skfd, ifname, WLC_GET_BSSID, buf, 6) < 0)
+			bcom_ioctl(skfd, ifname, WLC_SET_SSID, v, strlen(v));
+		p = buf2;
+		restart_wds = 0;
+		for (i = 0; i < wds; i++) {
+			memset(buf, 0, 8192);
+			strcpy(buf, "sta_info");
+			memcpy(buf + strlen(buf) + 1, p, 6);
+			if (bcom_ioctl(skfd, ifname, WLC_GET_VAR, buf, 8192) < 0) {
+			} else {
+				sta_info_t *sta = (sta_info_t *) (buf + 4);
+				if (!(sta->flags & 0x40)) {
+				} else {
+					if (sta->idle > 120)
+						restart_wds = 1;
+				}
+			}
+			p += 6;
+		}
+		if (restart_wds)
+			setup_bcom_wds(skfd, ifname);
+	}
+}
+
+static void setup_bcom(int skfd, char *ifname)
+{
+	int val = 0, ap;
 	char buf[8192];
 	char wbuf[80];
 	char *v;
@@ -254,21 +330,11 @@ void setup_bcom(int skfd, char *ifname)
 	}
 	bcom_ioctl(skfd, ifname, WLC_SET_MACMODE, &val, sizeof(val));
 
-	if (v = nvram_get(wl_var("wds"))) {
-		struct maclist *wdslist = (struct maclist *) buf;
-		struct ether_addr *addr = wdslist->ea;
-		char *next;
+	if (ap = !nvram_match(wl_var("mode"), "sta") && !nvram_match(wl_var("mode"), "wet"))
+		wds_enabled = setup_bcom_wds(skfd, ifname);
 
-		memset(buf, 0, 8192);
-		foreach(wbuf, v, next) {
-			if (ether_atoe(wbuf, addr->ether_addr_octet)) {
-				wdslist->count++;
-				addr++;
-				wds_enabled = 1;
-			}
-		}
-		bcom_ioctl(skfd, ifname, WLC_SET_WDSLIST, buf, sizeof(buf));
-	}
+	if (!ap || wds_enabled)	
+		start_watchdog(skfd, ifname);
 	
 	/* Set up afterburner, disabled it if WDS is enabled */
 	if (wds_enabled) {
@@ -372,7 +438,7 @@ void setup_bcom(int skfd, char *ifname)
 	}
 }
 
-void set_wext_ssid(int skfd, char *ifname)
+static void set_wext_ssid(int skfd, char *ifname)
 {
 	char *buffer;
 	char essid[IW_ESSID_MAX_SIZE + 1];
@@ -390,7 +456,7 @@ void set_wext_ssid(int skfd, char *ifname)
 	IW_SET_EXT_ERR(skfd, ifname, SIOCSIWESSID, &wrq, "Set ESSID");
 }
 
-void setup_wext_wep(int skfd, char *ifname)
+static void setup_wext_wep(int skfd, char *ifname)
 {
 	int i, keylen;
 	struct iwreq wrq;
@@ -422,7 +488,7 @@ void setup_wext_wep(int skfd, char *ifname)
 	}
 }
 
-void set_wext_mode(skfd, ifname)
+static void set_wext_mode(skfd, ifname)
 {
 	struct iwreq wrq;
 	int ap = 0, infra = 0, wet = 0;
@@ -430,13 +496,13 @@ void set_wext_mode(skfd, ifname)
 	/* Set operation mode */
 	ap = !nvram_match(wl_var("mode"), "sta") && !nvram_match(wl_var("mode"), "wet");
 	infra = !nvram_disabled(wl_var("infra"));
-	wet = !ap && !nvram_disabled(wl_var("wet"));
+	wet = !ap && nvram_match(wl_var("mode"), "wet");
 
 	wrq.u.mode = (!infra ? IW_MODE_ADHOC : (ap ? IW_MODE_MASTER : (wet ? IW_MODE_REPEAT : IW_MODE_INFRA)));
 	IW_SET_EXT_ERR(skfd, ifname, SIOCSIWMODE, &wrq, "Set Mode");
 }
 
-void setup_wext(int skfd, char *ifname)
+static void setup_wext(int skfd, char *ifname)
 {
 	char *buffer;
 	struct iwreq wrq;
@@ -471,7 +537,6 @@ void setup_wext(int skfd, char *ifname)
 	set_wext_ssid(skfd, ifname);
 
 }
-
 
 static int setup_interfaces(int skfd, char *ifname, char *args[], int count)
 {
