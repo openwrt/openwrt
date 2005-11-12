@@ -71,7 +71,7 @@ IPKG_KMOD_IPT_ULOG-$(CONFIG_IP_NF_TARGET_ULOG) += ipt_ULOG
 #
 
 IPKG_IPTABLES-y := ipt_standard
-IPKG_IPTABLES-y := ipt_icmp ipt_tcp ipt_udp
+IPKG_IPTABLES-y += ipt_icmp ipt_tcp ipt_udp
 
 IPKG_IPTABLES_MOD_CONNTRACK-m :=
 IPKG_IPTABLES_MOD_CONNTRACK-$(CONFIG_IP_NF_MATCH_CONNMARK) += ipt_connmark
