@@ -428,19 +428,6 @@ $(STAGING_DIR)/include/linux/version.h: $(LINUX_DIR)/.configured
 	tar -ch -C $(LINUX_DIR)/include -f - linux | tar -xf - -C $(STAGING_DIR)/include/
 	tar -ch -C $(LINUX_DIR)/include -f - asm | tar -xf - -C $(STAGING_DIR)/include/
 
-$(TARGET_MODULES_DIR): 
-	-mkdir -p $(TARGET_MODULES_DIR)
-
-$(KERNEL_IPKG):
-	rm -rf $(KERNEL_IDIR)
-	mkdir -p $(KERNEL_IDIR)/etc
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(KERNEL_IDIR) ../control/kernel.control $(PKG_RELEASE) $(ARCH)
-	echo 'Package: kernel-$(LINUX_VERSION)-$(BOARD)' >> $(KERNEL_IDIR)/CONTROL/control
-	if [ -f ./config/$(BOARD).modules ]; then \
-		cp ./config/$(BOARD).modules $(KERNEL_IDIR)/etc/modules; \
-	fi
-	$(IPKG_BUILD) $(KERNEL_IDIR) $(LINUX_BUILD_DIR) $(MAKE_TRACE)
-	
 $(STAMP_DIR)/.linux-compile: $(LINUX_DIR)/.modules_done
 	@mkdir -p $(STAMP_DIR)
 	@$(MAKE) $(TARGETS)
@@ -450,6 +437,19 @@ $(STAMP_DIR)/.linux-compile: $(LINUX_DIR)/.modules_done
 		$(KPKG_MAKEOPTS) \
 		compile
 	touch $@
+
+$(TARGET_MODULES_DIR): 
+	-mkdir -p $(TARGET_MODULES_DIR)
+
+$(KERNEL_IPKG):
+	rm -rf $(KERNEL_IDIR)
+	mkdir -p $(KERNEL_IDIR)/etc
+	$(SCRIPT_DIR)/make-ipkg-dir.sh $(KERNEL_IDIR) ../control/kernel.control $(PKG_RELEASE) $(ARCH) 
+	echo 'Package: kernel-$(LINUX_VERSION)-$(BOARD)' >> $(KERNEL_IDIR)/CONTROL/control
+	if [ -f ./config/$(BOARD).modules ]; then \
+		cp ./config/$(BOARD).modules $(KERNEL_IDIR)/etc/modules; \
+	fi
+	$(IPKG_BUILD) $(KERNEL_IDIR) $(LINUX_BUILD_DIR) $(MAKE_TRACE)
 
 source: $(DL_DIR)/$(LINUX_SOURCE)
 prepare: $(LINUX_DIR)/.configured
@@ -463,20 +463,21 @@ install: compile $(TARGET_MODULES_DIR) $(KERNEL_IPKG)
 	$(MAKE) -C $(TOPDIR)/target/linux/package \
 		$(KPKG_MAKEOPTS) \
 		install
-	@{ [ "$(INSTALL_TARGETS)" != "" ] && $(IPKG_KERNEL) install $(INSTALL_TARGETS) || true; } $(MAKE_TRACE)
+	@{ [ "$(INSTALL_TARGETS)" != "" ] && $(IPKG_KERNEL) install $(INSTALL_TARGETS) || true; } $(MAKE_TRACE) 
 
 mostlyclean:
+	rm -f $(STAMP_DIR)/.linux-compile
 	rm -f $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION)/.modules_done
 	rm -f $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION)/.drivers-unpacked
-	$(MAKE) -C $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION) clean
+	$(MAKE) -C $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION) clean $(MAKE_TRACE)
 	rm -f $(LINUX_KERNEL) $(LINUX_IMAGE)
 
 rebuild:
 	-$(MAKE) mostlyclean
 	if [ -f $(LINUX_KERNEL) ]; then \
-		$(MAKE) clean; \
+		$(MAKE) clean $(MAKE_TRACE); \
 	fi
-	$(MAKE) compile
+	$(MAKE) compile $(MAKE_TRACE)
 
 clean:
 	rm -f $(STAMP_DIR)/.linux-compile
