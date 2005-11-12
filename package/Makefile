@@ -248,7 +248,7 @@ id3lib-compile: uclibc++-compile zlib-compile
 irssi-compile: glib-compile ncurses-compile
 iptables-snmp-compile: net-snmp-compile
 iptraf-compile: ncurses-compile
-hostapd-compile: openssl-compile
+hostapd-compile: openssl-compile wireless-tools-compile
 kismet-compile: uclibc++-compile libpcap-compile ncurses-compile
 less-compile: ncurses-compile
 lcd4linux-compile: ncurses-compile
