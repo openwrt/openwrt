@@ -75,7 +75,7 @@ $(IPKG_IPTABLES):
 	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/iptables $(IDIR_IPTABLES)/usr/sbin/
 	install -d -m0755 $(IDIR_IPTABLES)/usr/lib/iptables
 	(cd $(PKG_INSTALL_DIR)/usr/lib/iptables ; \
-		cp -fpR $(patsubst %,lib%.so,$(IPKG_IPTABLES-y) ipt_standard) $(IDIR_IPTABLES)/usr/lib/iptables/ \
+		cp -fpR $(patsubst %,lib%.so,$(IPKG_IPTABLES-y)) $(IDIR_IPTABLES)/usr/lib/iptables/ \
 	)
 	$(RSTRIP) $(IDIR_IPTABLES)
 	$(IPKG_BUILD) $(IDIR_IPTABLES) $(PACKAGE_DIR)
