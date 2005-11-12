@@ -360,7 +360,7 @@ int main (int argc, char **argv)
 			}
 		}
 	
-		if (system("grep Broadcom /proc/cpuinfo >&- >&-") != 0) {
+		if (system("grep Broadcom /proc/cpuinfo >&- >&-") == 0) {
 			/* check trx file before erasing or writing anything */
 			if (!trx_check(imagefd, device)) {
 				fprintf(stderr, "TRX check failed!\n");
