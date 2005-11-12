@@ -17,7 +17,7 @@ jdev=$(mount | awk '/jffs2/ {print $3}')
 
 if [ -z "$jdev" ]; then
 	echo -n "Creating jffs2 partition... "
-	mtd erase OpenWrt >&- 
+	mtd erase OpenWrt >&- 2>&-
 	mount -t jffs2 /dev/mtdblock/4 /jffs
 	echo "done"
 	cd /jffs
