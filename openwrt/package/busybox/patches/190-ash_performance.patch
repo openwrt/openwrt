@@ -1,6 +1,6 @@
 diff -urN busybox.old/shell/ash.c busybox.dev/shell/ash.c
---- busybox.old/shell/ash.c	2004-10-08 11:43:34.000000000 +0200
-+++ busybox.dev/shell/ash.c	2005-11-09 14:06:10.800983750 +0100
+--- busybox.old/shell/ash.c	2005-11-12 22:39:19.853826250 +0100
++++ busybox.dev/shell/ash.c	2005-11-12 22:39:42.771258500 +0100
 @@ -1414,6 +1414,13 @@
  
  #define NUMBUILTINS  (sizeof (builtincmd) / sizeof (struct builtincmd) )
@@ -56,7 +56,7 @@ diff -urN busybox.old/shell/ash.c busybox.dev/shell/ash.c
 +		while (*c != NULL) {
 +			c++; argc++;
 +		}
-+		bb_applet_name = "[";
++		bb_applet_name = cmd;
 +		exit(a->main(argc, argv));
 +	}
  #ifdef CONFIG_FEATURE_SH_STANDALONE_SHELL
