@@ -3,7 +3,7 @@ SHELL=/bin/bash
 export SHELL
 
 ifeq ($(V),)
-V=99
+V=5
 endif
 
 
