@@ -1,0 +1,9 @@
+config BR2_PACKAGE_HOSTAP_UTILS
+	prompt "hostap-utils...................... Host AP driver utility programs"
+	tristate
+	default m if CONFIG_DEVEL
+	help
+	  Host AP driver utility programs
+	  
+	  http://hostap.epitest.fi/
+
