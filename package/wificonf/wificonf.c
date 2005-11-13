@@ -406,14 +406,13 @@ static void setup_bcom(int skfd, char *ifname)
 		bcom_ioctl(skfd, ifname, WLC_SET_WSEC, &val, sizeof(val));
 
 		if (val && strstr(v, "psk")) {
+			val = (strstr(v, "psk2") ? 0x84 : 0x4);
 			v = nvram_safe_get(wl_var("wpa_psk"));
-
 			if ((strlen(v) >= 8) && (strlen(v) < 63)) {
-				val = 4;
+				
 				bcom_ioctl(skfd, ifname, WLC_SET_WPA_AUTH, &val, sizeof(val));
 				
-				bcom_ioctl(skfd, ifname, WLC_GET_AP, &val, sizeof(val));
-				if (!val) {
+				if (!nvram_match(wl_var("mode"), "wet")) {
 					/* Enable in-driver WPA supplicant */
 					wsec_pmk_t pmk;
 					
