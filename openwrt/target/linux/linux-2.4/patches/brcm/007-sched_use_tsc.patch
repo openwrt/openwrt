@@ -1,7 +1,7 @@
 diff -urN linux.old/arch/mips/kernel/time.c linux.dev/arch/mips/kernel/time.c
---- linux.old/arch/mips/kernel/time.c	2005-01-19 15:09:29.000000000 +0100
-+++ linux.dev/arch/mips/kernel/time.c	2005-11-09 23:10:04.233756250 +0100
-@@ -151,6 +150,15 @@
+--- linux.old/arch/mips/kernel/time.c	2005-11-14 11:06:38.661262000 +0100
++++ linux.dev/arch/mips/kernel/time.c	2005-11-14 11:10:42.856523250 +0100
+@@ -151,6 +151,16 @@
  unsigned int (*mips_hpt_read)(void);
  void (*mips_hpt_init)(unsigned int);
  
@@ -12,20 +12,21 @@ diff -urN linux.old/arch/mips/kernel/time.c linux.dev/arch/mips/kernel/time.c
 +
 +extern __u64 get_tscll(void)
 +{
-+	return (((__u64) timerhi) << 32) | ((__u64) ((__u32) read_c0_count()));
++	__u32 c = read_c0_count();
++	return ((((__u64) timerhi) + (c < timerlo)) << 32) | ((__u64) ((__u32) c));
 +}
  
  /*
   * timeofday services, for syscalls.
-@@ -761,3 +769,5 @@
+@@ -761,3 +771,5 @@
  EXPORT_SYMBOL(to_tm);
  EXPORT_SYMBOL(rtc_set_time);
  EXPORT_SYMBOL(rtc_get_time);
 +EXPORT_SYMBOL(get_htscl);
 +EXPORT_SYMBOL(get_tscll);
 diff -urN linux.old/include/asm-mips/timex.h linux.dev/include/asm-mips/timex.h
---- linux.old/include/asm-mips/timex.h	2003-08-25 13:44:44.000000000 +0200
-+++ linux.dev/include/asm-mips/timex.h	2005-11-09 22:15:59.352633250 +0100
+--- linux.old/include/asm-mips/timex.h	2005-11-14 11:06:38.685263500 +0100
++++ linux.dev/include/asm-mips/timex.h	2005-11-14 11:02:21.069163500 +0100
 @@ -31,6 +31,19 @@
  	return read_c0_count();
  }
@@ -47,8 +48,8 @@ diff -urN linux.old/include/asm-mips/timex.h linux.dev/include/asm-mips/timex.h
  #define vxtime_unlock()		do {} while (0)
  
 diff -urN linux.old/include/net/pkt_sched.h linux.dev/include/net/pkt_sched.h
---- linux.old/include/net/pkt_sched.h	2005-11-09 21:25:10.686721000 +0100
-+++ linux.dev/include/net/pkt_sched.h	2005-11-09 21:54:26.063807750 +0100
+--- linux.old/include/net/pkt_sched.h	2005-11-14 11:06:38.709265000 +0100
++++ linux.dev/include/net/pkt_sched.h	2005-11-14 11:02:21.069163500 +0100
 @@ -5,7 +5,11 @@
  #define PSCHED_JIFFIES 		2
  #define PSCHED_CPU 		3
