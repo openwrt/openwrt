@@ -23,7 +23,7 @@
 #include <signal.h>
 
 #define	ADD_VIF_RETRIES	5
-#define DEBUG
+// #define DEBUG
 
 /*------------------------------------------------------------------*/
 /*
