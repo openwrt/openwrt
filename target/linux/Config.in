@@ -634,6 +634,12 @@ config BR2_PACKAGE_KMOD_PCMCIA_CORE
 	tristate
 	default m
 
+config BR2_PACKAGE_KMOD_PCMCIA_SERIAL
+	prompt   "kmod-pcmcia-serial.............. PCMCIA/CardBus serial device support"
+	tristate
+	default m
+	depends BR2_PACKAGE_KMOD_PCMCIA_CORE
+
 comment "USB support"
 
 config BR2_PACKAGE_KMOD_USB
