@@ -283,9 +283,9 @@ $(eval $(call KMOD_template,NET_PRISM54,net-prism54,\
 
 $(eval $(call KMOD_template,PCMCIA_CORE,pcmcia-core,\
 	$(MODULES_DIR)/kernel/drivers/pcmcia/pcmcia_core.o \
-	$(MODULES_DIR)/kernel/drivers/pcmcia/ds.o \
 	$(MODULES_DIR)/kernel/drivers/pcmcia/yenta_socket.o \
-,CONFIG_PCMCIA,,50,pcmcia_core))
+	$(MODULES_DIR)/kernel/drivers/pcmcia/ds.o \
+,CONFIG_PCMCIA,,50,pcmcia_core yenta_socket ds))
 
 $(eval $(call KMOD_template,PCMCIA_SERIAL,pcmcia-serial,\
 	$(MODULES_DIR)/kernel/drivers/char/pcmcia/serial_cs.o \
