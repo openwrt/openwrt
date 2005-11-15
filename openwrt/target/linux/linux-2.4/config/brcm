@@ -145,7 +145,11 @@ CONFIG_HOTPLUG=y
 #
 # PCMCIA/CardBus support
 #
-# CONFIG_PCMCIA is not set
+CONFIG_PCMCIA=m
+CONFIG_CARDBUS=y
+# CONFIG_TCIC is not set
+# CONFIG_I82092 is not set
+# CONFIG_I82365 is not set
 
 #
 # PCI Hotplug Support
@@ -696,6 +700,11 @@ CONFIG_SCSI_MULTI_LUN=y
 # CONFIG_SCSI_DEBUG is not set
 
 #
+# PCMCIA SCSI adapter support
+#
+# CONFIG_SCSI_PCMCIA is not set
+
+#
 # Fusion MPT device support
 #
 # CONFIG_FUSION is not set
@@ -835,6 +844,13 @@ CONFIG_WL=m
 # CONFIG_PCI_HERMES is not set
 
 #
+# Wireless Pcmcia cards support
+#
+# CONFIG_PCMCIA_HERMES is not set
+# CONFIG_AIRO_CS is not set
+# CONFIG_PCMCIA_ATMEL is not set
+
+#
 # Prism54 PCI/PCMCIA GT/Duette Driver - 802.11(a/b/g)
 #
 # CONFIG_PRISM54 is not set
@@ -852,6 +868,11 @@ CONFIG_SHAPER=m
 # Wan interfaces
 #
 # CONFIG_WAN is not set
+
+#
+# PCMCIA network device support
+#
+# CONFIG_NET_PCMCIA is not set
 
 #
 # Amateur Radio support
@@ -993,6 +1014,12 @@ CONFIG_SOFT_WATCHDOG=y
 # Direct Rendering Manager (XFree86 DRI support)
 #
 # CONFIG_DRM is not set
+
+#
+# PCMCIA character devices
+#
+CONFIG_PCMCIA_SERIAL_CS=m
+# CONFIG_SYNCLINK_CS is not set
 
 #
 # File systems

@@ -287,6 +287,10 @@ $(eval $(call KMOD_template,PCMCIA_CORE,pcmcia-core,\
 	$(MODULES_DIR)/kernel/drivers/pcmcia/yenta_socket.o \
 ,CONFIG_PCMCIA,,50,pcmcia_core))
 
+$(eval $(call KMOD_template,PCMCIA_SERIAL,pcmcia-serial,\
+	$(MODULES_DIR)/kernel/drivers/char/pcmcia/serial_cs.o \
+,CONFIG_PCMCIA_SERIAL_CS,kmod-pcmcia-core,51,serial_cs))
+
 
 # USB
 
