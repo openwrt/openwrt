@@ -17,11 +17,7 @@ else
 KDEPEND_$(1):=$($(4))
 endif
 
-ifeq ($$(strip $(5)),)
-IDEPEND_$(1):=kernel-$(LINUX_VERSION)-$(BOARD) ($(PKG_RELEASE))
-else
-IDEPEND_$(1):=kernel-$(LINUX_VERSION)-$(BOARD) ($(PKG_RELEASE)), $(5)
-endif
+IDEPEND_$(1):=kernel ($(LINUX_VERSION)-$(BOARD)-$(PKG_RELEASE)) $(foreach pkg,$(5),", $(pkg)")
 
 PKG_$(1) := $(PACKAGE_DIR)/kmod-$(2)_$(LINUX_VERSION)-$(BOARD)-$(PKG_RELEASE)_$(ARCH).ipk
 I_$(1) := $(PKG_BUILD_DIR)/ipkg/$(2)
