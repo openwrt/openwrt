@@ -1,7 +1,7 @@
 diff -urN linux.old/arch/mips/kernel/time.c linux.dev/arch/mips/kernel/time.c
 --- linux.old/arch/mips/kernel/time.c	2005-11-14 11:06:38.661262000 +0100
-+++ linux.dev/arch/mips/kernel/time.c	2005-11-15 15:21:17.890005500 +0100
-@@ -151,6 +151,20 @@
++++ linux.dev/arch/mips/kernel/time.c	2005-11-15 20:02:50.059676750 +0100
+@@ -151,6 +151,27 @@
  unsigned int (*mips_hpt_read)(void);
  void (*mips_hpt_init)(unsigned int);
  
@@ -10,19 +10,26 @@ diff -urN linux.old/arch/mips/kernel/time.c linux.dev/arch/mips/kernel/time.c
 +	return timerhi;
 +}
 +
++static __u64 tscll_last = 0;
++
 +extern __u64 get_tscll(void)
 +{
-+	__u32 c = read_c0_count();
 +	__u64 h = (__u64) timerhi;
-+	h += (c < timerlo);
++	__u32 c = read_c0_count();
++
 +	h <<= 32;
 +	h += c;
++
++	while (h < tscll_last)
++		h += (((__u64) 1) << 32);
++
++	tscll_last = h;
 +	return h;	
 +}
  
  /*
   * timeofday services, for syscalls.
-@@ -761,3 +775,5 @@
+@@ -761,3 +782,5 @@
  EXPORT_SYMBOL(to_tm);
  EXPORT_SYMBOL(rtc_set_time);
  EXPORT_SYMBOL(rtc_get_time);
