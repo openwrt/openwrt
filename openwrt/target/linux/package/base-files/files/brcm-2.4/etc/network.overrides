@@ -31,11 +31,11 @@ DEFAULT_lan_hwaddr=${BR2_SYSCONF_FAILSAFE_MAC:-"00:0B:AD:0A:DD:00"}
 # failsafe if reset is held
 [ "$FAILSAFE" = "true" ] && {
   echo "### YOU ARE IN FAILSAFE MODE ####"
-  NVRAM_lan_ifname="br0"
-  NVRAM_lan_ifnames=$FAILSAFE_ifnames
-  NVRAM_lan_ipaddr=DEFAULT_lan_ipaddr
-  NVRAM_lan_netmask=DEFAULT_lan_netmask
-  NVRAM_lan_hwaddr=DEFAULT_lan_hwaddr
-  NVRAM_wan_ifname="none"
-  NVRAM_wifi_ifname="none"
+  lan_ifname="br0"
+  lan_ifnames=$FAILSAFE_ifnames
+  lan_ipaddr=DEFAULT_lan_ipaddr
+  lan_netmask=DEFAULT_lan_netmask
+  lan_hwaddr=DEFAULT_lan_hwaddr
+  wan_ifname="none"
+  wifi_ifname="none"
 }
