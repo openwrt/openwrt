@@ -33,9 +33,9 @@ DEFAULT_lan_hwaddr=${BR2_SYSCONF_FAILSAFE_MAC:-"00:0B:AD:0A:DD:00"}
   echo "### YOU ARE IN FAILSAFE MODE ####"
   lan_ifname="br0"
   lan_ifnames=$FAILSAFE_ifnames
-  lan_ipaddr=DEFAULT_lan_ipaddr
-  lan_netmask=DEFAULT_lan_netmask
-  lan_hwaddr=DEFAULT_lan_hwaddr
+  lan_ipaddr=$DEFAULT_lan_ipaddr
+  lan_netmask=$DEFAULT_lan_netmask
+  lan_hwaddr=$DEFAULT_lan_hwaddr
   wan_ifname="none"
   wifi_ifname="none"
 }
