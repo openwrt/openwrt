@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 include ../rules.mk
 
 KERNEL:=2.4
-LINUX_VERSION:=2.4.30
+LINUX_VERSION:=2.4.32
 MODULES_SUBDIR:=lib/modules/$(LINUX_VERSION)
 LINUX_KCONFIG:=./config/$(BOARD)
 LINUX_BUILD_DIR:=$(BUILD_DIR)/linux-2.4-$(BOARD)

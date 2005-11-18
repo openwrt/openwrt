@@ -2,8 +2,8 @@ include $(TOPDIR)/rules.mk
 
 # linux kernel headers for toolchain
 
-LINUX_HEADERS_VERSION=2.4.30
-LINUX_KERNEL_MD5SUM:=75d8ce40a3668603017cd186909efe8d
+LINUX_HEADERS_VERSION=2.4.32
+LINUX_KERNEL_MD5SUM:=38f4d0830e95a20f4bfed17622d5557c
 LINUX_HEADERS_SITE= \
 		http://www.de.kernel.org/pub/linux/kernel/v2.4 \
 		http://www.fi.kernel.org/pub/linux/kernel/v2.4 \
