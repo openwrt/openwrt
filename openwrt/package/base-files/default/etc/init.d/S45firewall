@@ -11,7 +11,7 @@ WAN=$(nvram get wan_ifname)
 LAN=$(nvram get lan_ifname)
 
 ## CLEAR TABLES
-for T in filter nat mangle; do
+for T in filter nat; do
   iptables -t $T -F
   iptables -t $T -X
 done
