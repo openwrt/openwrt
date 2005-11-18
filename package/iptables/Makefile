@@ -24,6 +24,7 @@ $$(IPKG_$(1)):
 	for m in $(2); do \
 		cp -fpR $(PKG_INSTALL_DIR)/usr/lib/iptables/lib$$$${m}.so $$(IDIR_$(1))/usr/lib/iptables/ ; \
 	done
+	@[ -z "$(3)" ] || $(MAKE) $(3)
 	$(RSTRIP) $$(IDIR_$(1))
 	$(IPKG_BUILD) $$(IDIR_$(1)) $(PACKAGE_DIR)
 
@@ -49,7 +50,7 @@ $(eval $(call PKG_template,IPTABLES_MOD_ULOG,iptables-mod-ulog,$(PKG_VERSION)-$(
 
 $(eval $(call IPKG_plugin_template,IPTABLES_MOD_CONNTRACK,$(IPKG_IPTABLES_MOD_CONNTRACK-m)))
 $(eval $(call IPKG_plugin_template,IPTABLES_MOD_EXTRA,$(IPKG_IPTABLES_MOD_EXTRA-m)))
-$(eval $(call IPKG_plugin_template,IPTABLES_MOD_FILTER,$(IPKG_IPTABLES_MOD_FILTER-m)))
+$(eval $(call IPKG_plugin_template,IPTABLES_MOD_FILTER,$(IPKG_IPTABLES_MOD_FILTER-m),layer7-install))
 $(eval $(call IPKG_plugin_template,IPTABLES_MOD_IMQ,$(IPKG_IPTABLES_MOD_IMQ-m)))
 $(eval $(call IPKG_plugin_template,IPTABLES_MOD_IPOPT,$(IPKG_IPTABLES_MOD_IPOPT-m)))
 $(eval $(call IPKG_plugin_template,IPTABLES_MOD_IPSEC,$(IPKG_IPTABLES_MOD_IPSEC-m)))
@@ -101,6 +102,10 @@ $(STAGING_DIR)/usr/lib/libipq.a: $(PKG_BUILD_DIR)/.built
 	cp -fpR $(PKG_INSTALL_DIR)/usr/include/libipq.h $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
 	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libipq.a $(STAGING_DIR)/usr/lib/
+
+layer7-install:
+	mkdir -p $(IDIR_IPTABLES_MOD_FILTER)/etc/l7-protocols
+	cp files/l7/*.pat $(IDIR_IPTABLES_MOD_FILTER)/etc/l7-protocols/
 
 install-dev: $(STAGING_DIR)/usr/lib/libipq.a
 
