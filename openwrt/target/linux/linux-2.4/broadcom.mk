@@ -57,8 +57,8 @@ $(LINUX_DIR)/.drivers-unpacked: $(LINUX_DIR)/.unpacked
 	touch $@
 
 $(LINUX_DIR)/.drivers-installed: $(LINUX_DIR)/.modules_done
-	mkdir -p $(LINUX_BUILD_DIR)/modules/lib/modules/2.4.30/kernel/drivers/net/wl
-	@-[ -f $(LINUX_BUILD_DIR)/modules/lib/modules/2.4.30/kernel/drivers/net/wl/wl.o ] || cp $(LINUX_DIR)/drivers/net/wl/wl.o $(LINUX_BUILD_DIR)/modules/lib/modules/2.4.30/kernel/drivers/net/wl/
+	mkdir -p $(LINUX_BUILD_DIR)/modules/lib/modules/2.4.32/kernel/drivers/net/wl
+	@-[ -f $(LINUX_BUILD_DIR)/modules/lib/modules/2.4.32/kernel/drivers/net/wl/wl.o ] || cp $(LINUX_DIR)/drivers/net/wl/wl.o $(LINUX_BUILD_DIR)/modules/lib/modules/2.4.32/kernel/drivers/net/wl/
 	touch $@
 
 linux-dirclean: drivers-clean
