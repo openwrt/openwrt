@@ -1,5 +1,0 @@
-[ "${INTERFACE%%[0-9]*}" = "wds" ] && { 
-	ifconfig $INTERFACE 0.0.0.0 up
-	/usr/sbin/brctl addif br0 $INTERFACE
-}
-		

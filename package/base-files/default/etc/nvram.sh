@@ -4,8 +4,8 @@
 nvram () {
   if [ -x /usr/sbin/nvram ]; then
     case $1 in
-      get) eval "echo \${$2:-\$(command nvram get $2)}";;
-      *) command nvram $*;;
+      get) eval "echo \${$2:-\$(/usr/sbin/nvram get $2)}";;
+      *) /usr/sbin/nvram $*;;
     esac
   else
     case $1 in

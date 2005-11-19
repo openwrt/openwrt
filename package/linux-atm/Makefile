@@ -63,8 +63,8 @@ $(IPKG_LINUX_ATM):
 $(IPKG_BR2684CTL): 
 	install -d -m0755 $(IDIR_BR2684CTL)/usr/sbin
 	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/br2684ctl $(IDIR_BR2684CTL)/usr/sbin/
-	install -d -m0755 $(IDIR_BR2684CTL)/etc/init.d
-	install -m0755 ./files/br2684.init $(IDIR_BR2684CTL)/etc/init.d/S30br2684
+	install -d -m0755 $(IDIR_BR2684CTL)/etc/hotplug.d/net
+	install -m0644 ./files/br2684.init $(IDIR_BR2684CTL)/etc/hotplug.d/net/30-br2684
 	$(RSTRIP) $(IDIR_BR2684CTL)/
 	$(IPKG_BUILD) $(IDIR_BR2684CTL) $(PACKAGE_DIR)
 
