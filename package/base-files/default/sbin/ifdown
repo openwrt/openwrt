@@ -12,12 +12,7 @@ if=$(nvram get ${type}_ifname)
 
 case "$if_proto" in
 	pppoa) hotplug_dev unregister atm0; exit 0 ;;
-	pppoe) 
-		[ "$(nvram get pppoe_atm)" = 1 ] && {
-			hotplug_dev unregister atm0
-			exit
-		}
-	;;
+	""|none) exit 0;;
 esac
 
 if [ "${if%%[0-9]}" = "br" ]; then
