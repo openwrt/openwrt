@@ -31,7 +31,7 @@ MTU=$(nvram get ppp_mtu)
 MTU=${MTU:-1492}
 
 ifconfig $IFNAME up
-/usr/sbin/pppd nodetach \
+/usr/sbin/pppd \
 	plugin rp-pppoe.so \
 	connect /bin/true \
 	usepeerdns \
