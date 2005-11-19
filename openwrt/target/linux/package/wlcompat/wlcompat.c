@@ -494,14 +494,17 @@ static int wlcompat_ioctl(struct net_device *dev,
 		}
 		case SIOCGIWTXPOW:
 		{
-			int radio;
+			int radio, override;
 
 			wl_ioctl(dev, WLC_GET_RADIO, &radio, sizeof(int));
 			
 			if (wl_get_val(dev, "qtxpower", &(wrqu->txpower.value), sizeof(int)) < 0)
 				return -EINVAL;
 			
+			override = (wrqu->txpower.value & WL_TXPWR_OVERRIDE) == WL_TXPWR_OVERRIDE;
 			wrqu->txpower.value &= ~WL_TXPWR_OVERRIDE;
+			if (!override && (wrqu->txpower.value > 76))
+				wrqu->txpower.value = 76;
 			wrqu->txpower.value /= 4;
 				
 			wrqu->txpower.fixed = 0;
