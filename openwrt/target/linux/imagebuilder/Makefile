@@ -36,7 +36,7 @@ build:
 	mkdir -p $(LINUX_BUILD_DIR)/root
 	echo -e 'dest root /\noption offline_root $(LINUX_BUILD_DIR)/root' > $(LINUX_BUILD_DIR)/ipkg.conf
 	$(IPKG_KERNEL) install $(BUILD_DIR)/linux-$(KERNEL)-$(BOARD)/kernel[-_]*.ipk
-	for package in `cat lists/$(LIST).$(BOARD)-$(KERNEL)`; do \
+	for package in `grep -v '^#' lists/$(LIST).$(BOARD)-$(KERNEL)`; do \
 		$(IPKG_KERNEL) install `ls packages/$${package}_*`; \
 	done
 	if [ -d ./files ]; then \
