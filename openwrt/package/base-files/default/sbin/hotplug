@@ -1,7 +1,11 @@
 #!/bin/sh
+[ -e /tmp/.failsafe ] && {
+	export FAILSAFE=true
+} || {
+	[ -e /etc/config/network ] && . /etc/config/network
+}
 . /etc/functions.sh
 . /etc/network.overrides
-[ "$FAILSAFE" != "true" -a -e /etc/config/network ] && . /etc/config/network
 
 PATH=/bin:/sbin:/usr/bin:/usr/sbin
 LOGNAME=root

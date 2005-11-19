@@ -1,0 +1,190 @@
+#!/bin/sh
+setup_eth()
+{
+	[ -f /proc/net/wl0 ] && {
+		lsmod | grep wlcompat >&- || insmod wlcompat
+	}
+	iwconfig "$INTERFACE" 2>&- | grep -v 'no wireless' >&- && {
+		/sbin/wifi
+	}
+	if="$(echo "$INTERFACE" | sed s,eth,et,)"
+	ifconfig "$INTERFACE" up 2>&- >&-
+	for vlan in $(seq 0 15); do
+		[ "$(nvram get vlan${vlan}hwname)" = "$if" ] && \
+			$DEBUG vconfig add "$INTERFACE" "$vlan"
+	done
+}
+
+find_name()
+{
+	pppoa_ifname="atm0" # hack for ppp over atm, which has no ${proto}_ifname
+	interfaces="lan wan wifi $(nvram get ifnames)"
+	for ifname in $interfaces; do
+		IFTYPE="${ifname}"
+		IFPROTO="$(nvram get ${IFTYPE}_proto)"
+		IFACE="$(nvram get ${IFTYPE}_ifname)"
+		[ -z "$IFPROTO" -o "$IFPROTO" = "none" ] || {
+			[ "${IFACE}" = "$INTERFACE" ] && return 0
+			case "$IFPROTO" in
+				static|dhcp)
+					[ "${IFACE%%[0-9]*}" = "br" ] && {
+						for part in $(nvram get ${IFTYPE}_ifnames); do
+							[ "$part" = "$INTERFACE" ] && return 0
+						done
+					}
+				;;
+				*)
+					[ "$(nvram get ${IFPROTO}_ifname)" = "$INTERFACE" \
+					  -a -x /sbin/ifup.${IFPROTO} ] && return 0
+				;;
+			esac
+		}
+	done
+	IFACE=""
+	IFTYPE=""
+	IFPROTO=""
+	return 255
+}
+
+do_ifup() {
+	if="$3"
+	if_proto="$(nvram get ${2}_proto)"
+	
+	pidfile=/var/run/${if}.pid
+	[ -f $pidfile ] && $DEBUG kill $(cat $pidfile)
+
+	case "$1" in
+		static)
+			ip=$(nvram get ${2}_ipaddr)
+			netmask=$(nvram get ${2}_netmask)
+			gateway=$(nvram get ${2}_gateway)
+	
+			$DEBUG ifconfig $if $ip ${netmask:+netmask $netmask} broadcast + up
+			${gateway:+$DEBUG route add default gw $gateway}
+	
+			[ -f /etc/resolv.conf ] || {
+				debug "# --- creating /etc/resolv.conf ---"
+				for dns in $(nvram get ${2}_dns); do
+					echo "nameserver $dns" >> /etc/resolv.conf
+				done
+			}
+			
+			env -i ACTION="ifup" INTERFACE="${2}" PROTO=static /sbin/hotplug "iface" &
+		;;
+		dhcp)
+			DHCP_IP=$(nvram get ${2}_ipaddr)
+			DHCP_NETMASK=$(nvram get ${2}_netmask)
+			$DEBUG ifconfig $if $ip ${netmask:+netmask $netmask} broadcast + up
+	
+			DHCP_ARGS="-i $if ${DHCP_IP:+-r $DHCP_IP} -b -p $pidfile"
+			DHCP_HOSTNAME=$(nvram get ${2}_hostname)
+			DHCP_HOSTNAME=${DHCP_HOSTNAME%%.*}
+			[ -z $DHCP_HOSTNAME ] || DHCP_ARGS="$DHCP_ARGS -H $DHCP_HOSTNAME"
+			[ "$if_proto" = "pptp" ] && DHCP_ARGS="$DHCP_ARGS -n -q" || DHCP_ARGS="$DHCP_ARGS -R &"
+			oldpid=$(cat $pidfile)
+			${DEBUG:-eval} "udhcpc $DHCP_ARGS"
+			pidof udhcpc | grep "$oldpid" >&- 2>&- && {
+				sleep 1
+				kill -9 $oldpid
+			}
+			# hotplug events are handled by /usr/share/udhcpc/default.script
+		;;
+		*)
+			if [ -x "/sbin/ifup.$1" ]; then
+				( $DEBUG . /sbin/ifup.$1 ${2} $3 )
+			fi
+		;;
+	esac
+}
+
+do_register()
+{
+	case "${INTERFACE%%[0-9]*}" in
+		eth) setup_eth;;
+	esac
+
+	[ -z "$IFTYPE" -o -z "$IFPROTO" ] && {
+		find_name || {
+			case "${INTERFACE%%[0-9]*}" in
+				wds) 
+					for tmp in lan wifi; do
+						[ -z "$IFPROTO" ] && [ "$(nvram get ${tmp}_ifname)" = "br0" ] && {
+							IFPROTO="$(nvram get ${tmp}_proto)"
+							IFTYPE="${tmp}"
+						}
+					done
+					[ -z "$IFPROTO" ] && return 0
+				;;
+				atm)
+					for tmp in lan wan wifi $(nvram get ifnames); do
+						[ "$(nvram get ${tmp}_proto)" = "pppoa" ] && {
+							do_ifup "pppoa" "$tmp" "$INTERFACE"
+							return 0
+						}
+					done
+				;;
+				*)
+					return 0
+				;;
+			esac
+		}
+	}
+
+	case "${INTERFACE%%[0-9]*}" in 
+		ppp|atm);;
+		*)
+			mac=$(nvram get ${IFTYPE}_hwaddr)
+			${mac:+$DEBUG ifconfig $INTERFACE down hw ether $mac}
+		;;
+	esac
+
+	if="$(nvram get ${IFTYPE}_ifname)"
+	if [ "${if%%[0-9]}" = "br" ]; then
+		if_valid "$INTERFACE" && {
+			ifconfig "$if" 2>&- >&- || {
+				stp=$(nvram get ${IFTYPE}_stp)
+				$DEBUG brctl addbr "$if"
+				$DEBUG brctl setfd "$if" 0
+				$DEBUG brctl stp "$if" "${stp:-0}"
+			}
+
+			if [ "$INTERFACE" != "$if" ]; then
+				$DEBUG ifconfig "$INTERFACE" 0.0.0.0 up
+				brctl addif "$if" "$INTERFACE"
+			else
+				do_ifup "$IFPROTO" "$IFTYPE" "$if"
+			fi
+		}
+	else
+		do_ifup "$IFPROTO" "$IFTYPE" "$if"
+	fi
+}
+
+do_unregister() {
+	[ "${INTERFACE%%[0-9]*}" = "atm" ] || ifconfig "$INTERFACE" 0.0.0.0 down 2>&-
+	[ -z "$IFTYPE" -o -z "$IFPROTO" ] && find_name
+	[ -z "$IFTYPE" -o -z "$IFPROTO" ] && return 0
+	
+	[ "${IFACE%%[0-9]*}" = "br" ] && {
+		if [ "$INTERFACE" != "$IFACE" ]; then
+			brctl delif "$IFACE" "$INTERFACE" 2>&- >&-
+		else
+			brctl delbr "$IFACE" 2>&- >&-
+		fi
+	}
+	
+	case "$IFPROTO" in
+		pppoe|pppoa|pptp) 
+			killall ifup.${IFPROTO}
+			killall pppd
+		;;
+		dhcp)
+			[ -f /var/run/${INTERFACE}.pid ] && kill "$(cat /var/run/${INTERFACE}.pid)" 2>&- >&-
+		;;
+	esac
+}
+
+case "$ACTION" in
+	register) do_register;;
+	unregister) do_unregister;;
+esac

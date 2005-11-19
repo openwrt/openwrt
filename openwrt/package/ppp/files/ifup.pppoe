@@ -14,38 +14,34 @@ for module in slhc ppp_generic pppox pppoe; do
 	/sbin/insmod $module 2>&- >&-
 done
 
-while :; do
-	IFNAME=$(nvram get pppoe_ifname)
-	USERNAME=$(nvram get ppp_username)
-	PASSWORD=$(nvram get ppp_passwd)
-	KEEPALIVE=$(nvram get ppp_redialperiod)
-	KEEPALIVE=${KEEPALIVE:+lcp-echo-interval 10 lcp-echo-failure $KEEPALIVE}
-	DEMAND=$(nvram get ppp_demand)
-	case "$DEMAND" in
-		on|1|enabled)
-			DEMAND=$(nvram get ppp_idletime)
-			DEMAND=${IDLETIME:+demand idle $IDLETIME}
-		;;
-		*) DEMAND="";;
-	esac
-	MTU=$(nvram get ppp_mtu)
-	MTU=${MTU:-1492}
+IFNAME=$(nvram get pppoe_ifname)
+USERNAME=$(nvram get ppp_username)
+PASSWORD=$(nvram get ppp_passwd)
+KEEPALIVE=$(nvram get ppp_redialperiod)
+KEEPALIVE=${KEEPALIVE:+lcp-echo-interval 10 lcp-echo-failure $KEEPALIVE}
+DEMAND=$(nvram get ppp_demand)
+case "$DEMAND" in
+	on|1|enabled)
+		DEMAND=$(nvram get ppp_idletime)
+		DEMAND=${IDLETIME:+demand idle $IDLETIME}
+	;;
+	*) DEMAND="persist";;
+esac
+MTU=$(nvram get ppp_mtu)
+MTU=${MTU:-1492}
 
-	ifconfig $IFNAME up
-	/usr/sbin/pppd nodetach \
-		plugin rp-pppoe.so \
-		connect /bin/true \
-		usepeerdns \
-		defaultroute \
-		linkname $type \
-		ipparam $type \
-		user "$USERNAME" \
-		password "$PASSWORD" \
-		mtu $MTU mru $MTU \
-		$DEMAND \
-		$KEEPALIVE \
-		nic-$IFNAME
-	
-	# Read settings again (might have changed)
-	[ -e /etc/config/network ] && . /etc/config/network
-done &
+ifconfig $IFNAME up
+/usr/sbin/pppd nodetach \
+	plugin rp-pppoe.so \
+	connect /bin/true \
+	usepeerdns \
+	defaultroute \
+	linkname $type \
+	ipparam $type \
+	user "$USERNAME" \
+	password "$PASSWORD" \
+	mtu $MTU mru $MTU \
+	$DEMAND \
+	$KEEPALIVE \
+	nic-$IFNAME
+

@@ -1,36 +1,31 @@
-#!/bin/ash
+#!/bin/sh
 [ $# = 0 ] && { echo "  $0 <group>"; exit; }
-
 . /etc/functions.sh
 . /etc/network.overrides
 [ "$FAILSAFE" != "true" -a -e /etc/config/network ] && . /etc/config/network
 
-type=$1
+ifdown $1
+
 debug "### ifup $type ###"
+type=$1
 
 if_proto=$(nvram get ${type}_proto)
 if=$(nvram get ${type}_ifname)
-[ "${if%%[0-9]}" = "ppp" ] && if=$(nvram get ${if_proto}_ifname)
 
-if_valid $if || [ "$if_proto" = "pptp" ] || exit 
-mac=$(nvram get ${type}_hwaddr)
-$DEBUG ifconfig $if down 2>&-
+case "$if_proto" in
+	pppoa) hotplug_dev register atm0; exit 0 ;;
+	pppoe) 
+		[ "$(nvram get pppoe_atm)" = 1 ] && {
+			hotplug_dev register atm0
+			exit
+		}
+	;;
+esac
 
 if [ "${if%%[0-9]}" = "br" ]; then
-	stp=$(nvram get ${type}_stp)
-	$DEBUG brctl delbr $if 2>&-
-	$DEBUG brctl addbr $if
-	$DEBUG brctl setfd $if 0
-	$DEBUG brctl stp $if ${stp:-0}
-
 	for sif in $(nvram get ${type}_ifnames); do
-		if_valid $sif || continue
-		${mac:+$DEBUG ifconfig $sif down hw ether $mac}
-		$DEBUG ifconfig $sif 0.0.0.0 up
-		$DEBUG brctl addif $if $sif
+		hotplug_dev register "$sif"
 	done
 else
-	${mac:+$DEBUG ifconfig $if down hw ether $mac}
+	hotplug_dev register "$if"
 fi
-
-do_ifup $if_proto $type
