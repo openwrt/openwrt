@@ -175,8 +175,8 @@ do_unregister() {
 	
 	case "$IFPROTO" in
 		pppoe|pppoa|pptp) 
-			killall ifup.${IFPROTO}
-			killall pppd
+			killall ifup.${IFPROTO} 2>&- >&-
+			killall pppd 2>&- >&-
 		;;
 		dhcp)
 			[ -f /var/run/${INTERFACE}.pid ] && kill "$(cat /var/run/${INTERFACE}.pid)" 2>&- >&-

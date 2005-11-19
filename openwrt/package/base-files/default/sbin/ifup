@@ -14,12 +14,13 @@ if=$(nvram get ${type}_ifname)
 
 case "$if_proto" in
 	pppoa) hotplug_dev register atm0; exit 0 ;;
-	pppoe) 
-		[ "$(nvram get pppoe_atm)" = 1 ] && {
+	pppoe)
+		ifconfig nas0 2>&- >&- || {
 			hotplug_dev register atm0
-			exit
+			exit 0
 		}
 	;;
+	none|"") exit 0;;
 esac
 
 if [ "${if%%[0-9]}" = "br" ]; then
