@@ -31,7 +31,7 @@ esac
 MTU=$(nvram get ppp_mtu)
 MTU=${MTU:-1500}
 
-/usr/sbin/pppd nodetach \
+/usr/sbin/pppd \
 	plugin pppoatm.so ${VPI:-8}.${VCI:-35} \
 	usepeerdns \
 	defaultroute \

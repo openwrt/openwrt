@@ -36,7 +36,7 @@ NETMASK=$(nvram get ${type}_netmask)
 IFNAME=$(nvram get pptp_ifname)
 [ -z "$NETMASK" -o -z "$IFNAME" ] || ifconfig $IFNAME netmask $NETMASK
 
-/usr/sbin/pppd nodetach \
+/usr/sbin/pppd \
 	pty "/usr/sbin/pptp $IP --loglevel 0 --nolaunchpppd" \
 	file /etc/ppp/options.pptp \
 	connect /bin/true \
