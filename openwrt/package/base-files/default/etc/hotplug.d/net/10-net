@@ -23,22 +23,21 @@ find_name()
 		IFTYPE="${ifname}"
 		IFPROTO="$(nvram get ${IFTYPE}_proto)"
 		IFACE="$(nvram get ${IFTYPE}_ifname)"
-		[ -z "$IFPROTO" -o "$IFPROTO" = "none" ] || {
-			[ "${IFACE}" = "$INTERFACE" ] && return 0
-			case "$IFPROTO" in
-				static|dhcp)
-					[ "${IFACE%%[0-9]*}" = "br" ] && {
-						for part in $(nvram get ${IFTYPE}_ifnames); do
-							[ "$part" = "$INTERFACE" ] && return 0
-						done
-					}
-				;;
-				*)
-					[ "$(nvram get ${IFPROTO}_ifname)" = "$INTERFACE" \
-					  -a -x /sbin/ifup.${IFPROTO} ] && return 0
-				;;
-			esac
-		}
+		case "$IFPROTO" in
+			""|none);;
+			static|dhcp)
+				[ "${IFACE}" = "$INTERFACE" ] && return 0
+				[ "${IFACE%%[0-9]*}" = "br" ] && {
+					for part in $(nvram get ${IFTYPE}_ifnames); do
+						[ "$part" = "$INTERFACE" ] && return 0
+					done
+				}
+			;;
+			*)
+				[ "$(nvram get ${IFPROTO}_ifname)" = "$INTERFACE" \
+				  -a -x /sbin/ifup.${IFPROTO} ] && return 0
+			;;
+		esac
 	done
 	IFACE=""
 	IFTYPE=""
@@ -155,13 +154,12 @@ do_register()
 				do_ifup "$IFPROTO" "$IFTYPE" "$if"
 			fi
 		}
-	else
-		do_ifup "$IFPROTO" "$IFTYPE" "$if"
+	else 
+		[ "${INTERFACE%%[0-9]*}" = "ppp" ] || do_ifup "$IFPROTO" "$IFTYPE" "$if"
 	fi
 }
 
 do_unregister() {
-	[ "${INTERFACE%%[0-9]*}" = "atm" ] || ifconfig "$INTERFACE" 0.0.0.0 down 2>&-
 	[ -z "$IFTYPE" -o -z "$IFPROTO" ] && find_name
 	[ -z "$IFTYPE" -o -z "$IFPROTO" ] && return 0
 	
@@ -175,13 +173,14 @@ do_unregister() {
 	
 	case "$IFPROTO" in
 		pppoe|pppoa|pptp) 
-			killall ifup.${IFPROTO} 2>&- >&-
 			killall pppd 2>&- >&-
 		;;
 		dhcp)
 			[ -f /var/run/${INTERFACE}.pid ] && kill "$(cat /var/run/${INTERFACE}.pid)" 2>&- >&-
 		;;
 	esac
+
+	[ "${INTERFACE%%[0-9]*}" = "atm" ] || ifconfig "$INTERFACE" 0.0.0.0 down 2>&-
 }
 
 case "$ACTION" in
