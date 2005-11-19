@@ -5,10 +5,22 @@
         echo "S" > /proc/jffs2_bbc
 }
 
+vconfig set_name_type VLAN_PLUS_VID_NO_PAD
+
+HOSTNAME=$(nvram get wan_hostname)
+HOSTNAME=${HOSTNAME%%.*}
+echo ${HOSTNAME:=OpenWrt}>/proc/sys/kernel/hostname
+
+# automagically run firstboot
+[ -z "$FAILSAFE" -a -z "$(nvram get no_root_swap)" ] && {
+	{ mount|grep "on / type jffs2" 1>&-; } || firstboot
+}
+
 mkdir -p /var/run
 mkdir -p /var/log
 touch /var/log/wtmp
 touch /var/log/lastlog
+[ "$FAILSAFE" = "true" ] && touch /tmp/.failsafe
 
 sed 's/^[^#]/insmod &/' /etc/modules /etc/modules.d/* 2>&-|ash
 
@@ -20,13 +32,4 @@ ifconfig eth0 promisc
   robocfg show
 }
 
-HOSTNAME=$(nvram get wan_hostname)
-HOSTNAME=${HOSTNAME%%.*}
-echo ${HOSTNAME:=OpenWrt}>/proc/sys/kernel/hostname
 
-vconfig set_name_type VLAN_PLUS_VID_NO_PAD
-
-# automagically run firstboot
-[ -z "$FAILSAFE" -a -z "$(nvram get no_root_swap)" ] && {
-	{ mount|grep "on / type jffs2" 1>&-; } || firstboot
-}

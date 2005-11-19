@@ -10,46 +10,44 @@ for module in slhc ppp_generic ppp_async ip_gre; do
 	/sbin/insmod $module 2>&- >&-
 done
 
-while :; do
-	PPTP_PROTO="$(nvram get pptp_proto)"
-	[ "$PPTP_PROTO" = "static" ] || PPTP_PROTO=""
-	PPTP_PROTO="${PPTP_PROTO:-dhcp}"
-	IP=$(nvram get pptp_server_ip)
-	USERNAME=$(nvram get ppp_username)
-	PASSWORD=$(nvram get ppp_passwd)
-	KEEPALIVE=$(nvram get ppp_redialperiod)
-	KEEPALIVE=${KEEPALIVE:+lcp-echo-interval 10 lcp-echo-failure $KEEPALIVE}
-	DEMAND=$(nvram get ppp_demand)
-	case "$DEMAND" in
-		on|1|enabled)
-			DEMAND=$(nvram get ppp_idletime)
-			DEMAND=${IDLETIME:+demand idle $IDLETIME}
-		;;
-		*) DEMAND="";;
-	esac
-	MTU=$(nvram get ppp_mtu)
-	MTU=${MTU:-1452}
+PPTP_PROTO="$(nvram get pptp_proto)"
+[ "$PPTP_PROTO" = "static" ] || PPTP_PROTO=""
+PPTP_PROTO="${PPTP_PROTO:-dhcp}"
+IP=$(nvram get pptp_server_ip)
+USERNAME=$(nvram get ppp_username)
+PASSWORD=$(nvram get ppp_passwd)
+KEEPALIVE=$(nvram get ppp_redialperiod)
+KEEPALIVE=${KEEPALIVE:+lcp-echo-interval 10 lcp-echo-failure $KEEPALIVE}
+DEMAND=$(nvram get ppp_demand)
+case "$DEMAND" in
+	on|1|enabled)
+		DEMAND=$(nvram get ppp_idletime)
+		DEMAND=${IDLETIME:+demand idle $IDLETIME}
+	;;
+	*) DEMAND="persist";;
+esac
+MTU=$(nvram get ppp_mtu)
+MTU=${MTU:-1452}
 
-	do_ifup $PPTP_PROTO $type
-	
-	# hack for some buggy ISPs
-	NETMASK=$(nvram get ${type}_netmask)
-	IFNAME=$(nvram get pptp_ifname)
-	[ -z "$NETMASK" -o -z "$IFNAME" ] || ifconfig $IFNAME netmask $NETMASK
+do_ifup $PPTP_PROTO $type
 
-	/usr/sbin/pppd nodetach \
-		pty "/usr/sbin/pptp $IP --loglevel 0 --nolaunchpppd" \
-		file /etc/ppp/options.pptp \
-		connect /bin/true \
-		usepeerdns \
-		defaultroute \
-		replacedefaultroute \
-		linkname "$type" \
-		ipparam "$type" \
-		user "$USERNAME" \
-		password "$PASSWORD" \
-		mtu $MTU mru $MTU \
-		$DEMAND \
-		$KEEPALIVE
-done &
+# hack for some buggy ISPs
+NETMASK=$(nvram get ${type}_netmask)
+IFNAME=$(nvram get pptp_ifname)
+[ -z "$NETMASK" -o -z "$IFNAME" ] || ifconfig $IFNAME netmask $NETMASK
+
+/usr/sbin/pppd nodetach \
+	pty "/usr/sbin/pptp $IP --loglevel 0 --nolaunchpppd" \
+	file /etc/ppp/options.pptp \
+	connect /bin/true \
+	usepeerdns \
+	defaultroute \
+	replacedefaultroute \
+	linkname "$type" \
+	ipparam "$type" \
+	user "$USERNAME" \
+	password "$PASSWORD" \
+	mtu $MTU mru $MTU \
+	$DEMAND \
+	$KEEPALIVE
 
