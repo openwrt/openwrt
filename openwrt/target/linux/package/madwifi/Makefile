@@ -54,7 +54,6 @@ $(IPKG_KMOD_MADWIFI):
 	install -m0755 ./files/madwifi.init $(IDIR_KMOD_MADWIFI)/etc/init.d/S20madwifi
 	cp -fpR $(PKG_BUILD_DIR)/net80211/wlan*.$(LINUX_KMOD_SUFFIX) \
 		$(PKG_BUILD_DIR)/ath_hal/ath_hal.$(LINUX_KMOD_SUFFIX) \
-		$(PKG_BUILD_DIR)/ath_rate/onoe/ath_rate_onoe.$(LINUX_KMOD_SUFFIX) \
 		$(PKG_BUILD_DIR)/ath/ath_pci.$(LINUX_KMOD_SUFFIX) \
 		$(IDIR_KMOD_MADWIFI)/lib/modules/$(LINUX_VERSION)/
 	$(IPKG_BUILD) $(IDIR_KMOD_MADWIFI) $(PACKAGE_DIR)
