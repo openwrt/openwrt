@@ -4,9 +4,9 @@ include $(TOPDIR)/rules.mk
 include ../../rules.mk
 
 PKG_NAME:=hostap-driver
-PKG_VERSION:=0.4.5
+PKG_VERSION:=0.4.7
 PKG_RELEASE:=1
-PKG_MD5SUM:=8ee17f206e035075b20fcba96b168234
+PKG_MD5SUM:=ee495686cf27011b4e401963c2c7f62a
 
 PKG_SOURCE_URL:=http://hostap.epitest.fi/releases/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
