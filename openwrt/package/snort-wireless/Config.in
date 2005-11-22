@@ -1,9 +1,9 @@
 menu           "snort-wireless.................... Ligthweight Wireless Network Intrusion Detection System (NIDS)"
 
 config BR2_COMPILE_SNORT_WIRELESS
-	bool
-	default BR2_PACKAGE_SNORT_WIRELESS_BASIC || BR2_PACKAGE_SNORT_WIRELESS_MYSQL || BR2_PACKAGE_SNORT_WIRELESS_PGSQL || BR2_PACKAGE_SNORT_WIRELESS_CUSTOM
+	tristate
 	default n
+	depends BR2_PACKAGE_SNORT_WIRELESS_BASIC || BR2_PACKAGE_SNORT_WIRELESS_MYSQL || BR2_PACKAGE_SNORT_WIRELESS_PGSQL || BR2_PACKAGE_SNORT_WIRELESS_CUSTOM
 
 choice
 	prompt "snort-wireless.................... Ligthweight Wireless Network Intrusion Detection System (NIDS)"

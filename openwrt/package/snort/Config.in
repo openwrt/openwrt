@@ -1,7 +1,7 @@
 menu "snort............................. Ligthweight Network Intrusion Detection System (NIDS)"
 
 config BR2_COMPILE_SNORT
-	bool
+	tristate
 	default n
 	depends BR2_PACKAGE_SNORT_BASIC || BR2_PACKAGE_SNORT_MYSQL || BR2_PACKAGE_SNORT_PGSQL || BR2_PACKAGE_SNORT_CUSTOM
 
