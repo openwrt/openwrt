@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=hostap-utils
-PKG_VERSION:=0.4.0
+PKG_VERSION:=0.4.7
 PKG_RELEASE:=1
-PKG_MD5SUM:=c6775ca98721affeb336392def22289e
+PKG_MD5SUM:=afe041581b8f01666e353bec20917c85
 
 PKG_SOURCE_URL:=http://hostap.epitest.fi/releases/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
