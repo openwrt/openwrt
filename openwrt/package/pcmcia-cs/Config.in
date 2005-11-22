@@ -1,0 +1,16 @@
+config BR2_COMPILE_PCMCIA_CS
+	tristate
+	default n
+	depends BR2_PACKAGE_PCMCIA_UTILS
+
+config BR2_PACKAGE_PCMCIA_UTILS
+	prompt "pcmcia-utils...................... PCMCIA/Cardbus management utilities"
+	tristate
+	select BR2_COMPILE_PCMCIA_CS
+	select BR2_PACKAGE_KMOD_PCMCIA_CORE
+	default m if CONFIG_DEVEL
+	help
+	  PCMCIA/Cardbus management utilities
+	  
+	  http://pcmcia-cs.sourceforge.net/
+
