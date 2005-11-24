@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openswan
-PKG_VERSION:=2.4.2
+PKG_VERSION:=2.4.4
 PKG_RELEASE:=1
-PKG_MD5SUM:=38c7ad91312bdd67fa57fe987b21183e
+PKG_MD5SUM:=bd1a46c64727674149de61da2a32ca63
 
 PKG_SOURCE_URL:=http://www.openswan.org/download
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
