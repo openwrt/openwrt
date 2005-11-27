@@ -6,7 +6,7 @@ PKG_NAME:=base-files
 PKG_RELEASE:=6
 PKG_BUILD_DIR:=$(BUILD_DIR)/base-files
 
-REV:=${shell svn info | grep Revision | cut -d ' ' -f 2}
+REV:=$(shell LANG=C svn info | awk '/^Revision:/ { print$$2 }' )
 ifeq ($(REV),)
 REV:=0
 endif
