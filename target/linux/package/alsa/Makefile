@@ -4,9 +4,9 @@ include $(TOPDIR)/rules.mk
 include ../../rules.mk
 
 PKG_NAME:=alsa-driver
-PKG_VERSION:=1.0.10rc1
+PKG_VERSION:=1.0.10
 PKG_RELEASE:=1
-PKG_MD5SUM:=0fb6b4163c3ed8f4930f00791b8a25c1
+PKG_MD5SUM:=e9e7c1ca664a14275d67185049f933f9
 
 PKG_SOURCE_URL:=ftp://ftp.alsa-project.org/pub/driver/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
