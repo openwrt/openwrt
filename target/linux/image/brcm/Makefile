@@ -41,44 +41,58 @@ $(BIN_DIR)/openwrt-wgt634u-$(KERNEL)-$(FSNAME).bin: $(BIN_DIR)/openwrt-$(BOARD)-
 	dd if=$(BUILD_DIR)/loader.elf of=$@ bs=131072 conv=sync
 	cat $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx >> $@
 
-install: $(BIN_DIR)/openwrt-wgt634u-$(KERNEL)-$(FSNAME).bin
+$(BIN_DIR)/openwrt-wrt54gs-$(KERNEL)-$(FSNAME).bin: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx
+	$(STAGING_DIR)/bin/addpattern -4 -p W54S -v v4.70.6 -i $< -o $@ -g
+
+install: $(BIN_DIR)/openwrt-wgt634u-$(KERNEL)-$(FSNAME).bin $(BIN_DIR)/openwrt-wrt54gs-$(KERNEL)-$(FSNAME).bin
+
 endif
+$(BIN_DIR)/openwrt-wrt54g3g-$(KERNEL)-$(FSNAME).bin: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx
+	$(STAGING_DIR)/bin/addpattern -4 -p W54F -v v1.99.5 -i $< -o $@ -g
+	
+$(BIN_DIR)/openwrt-wrt54g-$(KERNEL)-$(FSNAME).bin: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx
+	$(STAGING_DIR)/bin/addpattern -4 -p W54G -v v4.20.6 -i $< -o $@ -g
+
+$(BIN_DIR)/openwrt-wrt54gs_v4-$(KERNEL)-$(FSNAME).bin: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx
+	$(STAGING_DIR)/bin/addpattern -4 -p W54s -v v1.05.0 -i $< -o $@ -g
+
+install: $(BIN_DIR)/openwrt-wrt54g-$(KERNEL)-$(FSNAME).bin $(BIN_DIR)/openwrt-wrt54gs_v4-$(KERNEL)-$(FSNAME).bin $(BIN_DIR)/openwrt-wrt54g3g-$(KERNEL)-$(FSNAME).bin
 endif
 
 ifeq ($(KERNEL),2.4)
 FSNAME:=$(patsubst jffs2-%,jffs2,$(FS))
 
 ifeq ($(FS),squashfs)
-$(BIN_DIR)/openwrt-wap54g-$(FSNAME).trx: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx
+$(BIN_DIR)/openwrt-wap54g-$(KERNEL)-$(FSNAME).trx: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx
 	cp $< $@
 	echo -ne '\x01' >> $@
 	
-install: $(BIN_DIR)/openwrt-wap54g-$(FSNAME).trx
+install: $(BIN_DIR)/openwrt-wap54g-$(KERNEL)-$(FSNAME).trx
 endif
 
 ifneq ($(FS),jffs2-8MB)
-$(BIN_DIR)/openwrt-wrt54g3g-$(FSNAME).bin: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx
+$(BIN_DIR)/openwrt-wrt54g3g-$(KERNEL)-$(FSNAME).bin: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx
 	$(STAGING_DIR)/bin/addpattern -4 -p W54F -v v1.99.5 -i $< -o $@ -g
 	
-$(BIN_DIR)/openwrt-wrt54g-$(FSNAME).bin: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx
+$(BIN_DIR)/openwrt-wrt54g-$(KERNEL)-$(FSNAME).bin: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx
 	$(STAGING_DIR)/bin/addpattern -4 -p W54G -v v4.20.6 -i $< -o $@ -g
 
-$(BIN_DIR)/openwrt-wrt54gs_v4-$(FSNAME).bin: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx
+$(BIN_DIR)/openwrt-wrt54gs_v4-$(KERNEL)-$(FSNAME).bin: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx
 	$(STAGING_DIR)/bin/addpattern -4 -p W54s -v v1.05.0 -i $< -o $@ -g
 
-install: $(BIN_DIR)/openwrt-wrt54g-$(FSNAME).bin $(BIN_DIR)/openwrt-wrt54gs_v4-$(FSNAME).bin $(BIN_DIR)/openwrt-wrt54g3g-$(FSNAME).bin
+install: $(BIN_DIR)/openwrt-wrt54g-$(KERNEL)-$(FSNAME).bin $(BIN_DIR)/openwrt-wrt54gs_v4-$(KERNEL)-$(FSNAME).bin $(BIN_DIR)/openwrt-wrt54g3g-$(KERNEL)-$(FSNAME).bin
 endif
 
 ifneq ($(FS),jffs2-4MB)
-$(BIN_DIR)/openwrt-wrt54gs-$(FSNAME).bin: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx
+$(BIN_DIR)/openwrt-wrt54gs-$(KERNEL)-$(FSNAME).bin: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx
 	$(STAGING_DIR)/bin/addpattern -4 -p W54S -v v4.70.6 -i $< -o $@ -g
 
-install: $(BIN_DIR)/openwrt-wrt54gs-$(FSNAME).bin
+install: $(BIN_DIR)/openwrt-wrt54gs-$(KERNEL)-$(FSNAME).bin
 endif
 
-$(BIN_DIR)/openwrt-motorola-$(FS).bin: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx
+$(BIN_DIR)/openwrt-motorola-$(KERNEL)-$(FS).bin: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx
 	$(STAGING_DIR)/bin/motorola-bin $< $@
-install: $(BIN_DIR)/openwrt-motorola-$(FS).bin
+install: $(BIN_DIR)/openwrt-motorola-$(KERNEL)-$(FS).bin
 endif
 
 ifeq ($(IB),)
