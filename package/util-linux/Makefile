@@ -19,6 +19,7 @@ PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 include $(TOPDIR)/package/rules.mk
 
 $(eval $(call PKG_template,FDISK,fdisk,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,LOSETUP,losetup,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,SWAP_UTILS,swap-utils,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 $(PKG_BUILD_DIR)/.configured:
@@ -46,6 +47,12 @@ $(IPKG_FDISK):
 	cp -fpR $(PKG_INSTALL_DIR)/sbin/fdisk $(IDIR_FDISK)/usr/sbin/
 	$(RSTRIP) $(IDIR_FDISK)
 	$(IPKG_BUILD) $(IDIR_FDISK) $(PACKAGE_DIR)
+
+$(IPKG_LOSETUP):
+	install -d -m0755 $(IDIR_LOSETUP)/usr/sbin
+	cp -fpR $(PKG_INSTALL_DIR)/sbin/losetup $(IDIR_LOSETUP)/usr/sbin/
+	$(RSTRIP) $(IDIR_LOSETUP)
+	$(IPKG_BUILD) $(IDIR_LOSETUP) $(PACKAGE_DIR)
 
 $(IPKG_SWAP_UTILS):
 	install -d -m0755 $(IDIR_SWAP_UTILS)/usr/sbin

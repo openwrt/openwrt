@@ -6,12 +6,23 @@ config BR2_COMPILE_UTIL_LINUX
 	depends BR2_PACKAGE_FDISK || BR2_PACKAGE_SWAP_UTILS
 
 config BR2_PACKAGE_FDISK
-	prompt "fdisk............................. A partition table manipulation utility"
+	prompt "fdisk............................. Partition table manipulation utility"
 	tristate
 	default m if CONFIG_DEVEL
 	select BR2_COMPILE_UTIL_LINUX
 	help
 	  A partition table manipulation utility
+	  
+	  http://www.kernel.org/pub/linux/utils/util-linux/
+
+config BR2_PACKAGE_LOSETUP
+	prompt "losetup........................... Loop devices setup and control utility"
+	tristate
+	default m if CONFIG_DEVEL
+	select BR2_COMPILE_UTIL_LINUX
+	select BR2_PACKAGE_KMOD_LOOP
+	help
+	  A loop devices setup and control utility
 	  
 	  http://www.kernel.org/pub/linux/utils/util-linux/
 
