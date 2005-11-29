@@ -44,4 +44,3 @@ install-prepare:
 rebuild: clean prepare compile install
 clean:
 	$(MAKE) clean-targets $(MAKE_TRACE)
-
