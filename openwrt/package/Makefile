@@ -68,6 +68,7 @@ package-$(BR2_PACKAGE_IPTRAF) += iptraf
 package-$(BR2_PACKAGE_IRSSI) += irssi
 package-$(BR2_COMPILE_JPEG) += jpeg
 package-$(BR2_COMPILE_KISMET) += kismet
+package-$(BR2_COMPILE_KNOCK) += knock
 package-$(BR2_PACKAGE_L2TPD) += l2tpd
 package-$(BR2_PACKAGE_LCD4LINUX) += lcd4linux
 package-$(BR2_PACKAGE_LESS) += less
