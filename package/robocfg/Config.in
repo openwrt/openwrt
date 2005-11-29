@@ -1,6 +1,7 @@
 config BR2_PACKAGE_ROBOCFG
 	prompt "robocfg........................... BCM5325E/536x switch configuration utility"
 	tristate
+	default y if BR2_LINUX_2_6_BRCM
 	default m if CONFIG_DEVEL
 	help
 	  Broadcom BCM5325E/536x switch configuration utility
