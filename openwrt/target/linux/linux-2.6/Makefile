@@ -333,9 +333,8 @@ $(eval $(call KMOD_template,USB_ACM,usb-acm,\
 ,CONFIG_USB_ACM))
 
 $(eval $(call KMOD_template,USB_AUDIO,usb-audio,\
-	$(MODULES_DIR)/kernel/drivers/sound/usb/snd-usb-audio.ko \
-	$(MODULES_DIR)/kernel/drivers/sound/usb/snd-usb-lib.ko \
-,CONFIG_USB_AUDIO,kmod-soundcore kmod-usb-core,61,snd-usb-lib snd-usb-audio))
+	$(MODULES_DIR)/kernel/drivers/usb/class/audio.ko \
+,CONFIG_USB_AUDIO,kmod-soundcore kmod-usb-core,61,audio))
 
 $(eval $(call KMOD_template,USB_PRINTER,usb-printer,\
 	$(MODULES_DIR)/kernel/drivers/usb/class/usblp.ko \
