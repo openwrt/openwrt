@@ -1,0 +1,21 @@
+--- orig/elhttp-0.22/Makefile	2004-06-18 15:32:17.000000000 +0200
++++ elhttp-0.22/Makefile	2005-11-21 18:04:23.000000000 +0100
+@@ -1,13 +1,7 @@
+-
++all: linux
+ linux:
+-	gcc -O -W -Wall -o elhttp elhttp.c
+-	strip elhttp
+-
+-sunos:
+-	gcc -O -W -Wall -o elhttp elhttp.c -lsocket -lnsl
+-	strip elhttp
+-
+-unix:
+-	cc -O -o elhttp elhttp.c
+-	strip elhttp
++	$(CC) -O -W -Wall -o elhttp elhttp.c
+ 
++install:
++	install -d -m0755 $(DESTDIR)/usr/sbin
++	install -m0755 elhttp $(DESTDIR)/usr/sbin/
