@@ -1,0 +1,24 @@
+diff -ruN miax-1.4-old/Makefile miax-1.4-new/Makefile
+--- miax-1.4-old/Makefile	2005-04-27 18:56:13.000000000 +0200
++++ miax-1.4-new/Makefile	2005-11-30 01:07:21.000000000 +0100
+@@ -1,4 +1,5 @@
+-CFLAGS= -Iiax/ -Igsm/inc -DIAXC_IAX2 -DLIBIAX -g -DPOSIXSLEEP -DLINUX -O2 
++OFLAGS= -02 -g
++CFLAGS= -Iiax/ -Igsm/inc $(CPPFLAGS) -DIAXC_IAX2 -DLIBIAX -DPOSIXSLEEP -DLINUX $(OFLAGS)
+ SYSLIBS=-lpthread -lm -lbluetooth
+ 
+ 
+@@ -32,11 +33,10 @@
+ 	miax.o
+ 
+ all: $(OBJS)
+-	gcc $(OBJS) $(CFLAGS) $(SYSLIBS)  -o miax
+-	cp miax /bin/miax
++	$(CC) $(OBJS) $(CFLAGS) $(LDFLAGS) $(SYSLIBS) -o miax
+ 
+ static: $(OBJS) bluetooth.o 
+-	gcc $(OBJS) $(CFLAGS) $(SYSLIBS)  -static -o miax
++	$(CC) $(OBJS) $(CFLAGS) $(LDFLAGS) $(SYSLIBS) -static -o miax
+ 
+ clean: 
+ 	rm -f $(OBJS) miax 
