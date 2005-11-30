@@ -1,0 +1,12 @@
+config BR2_PACKAGE_MIAX
+	prompt "miax.............................. A console iax (asterisk) client"
+	tristate
+	default m if CONFIG_DEVEL
+	select BR2_PACKAGE_BLUEZ_LIBS
+	select BR2_PACKAGE_LIBPTHREAD
+	help
+	  miax is a console iax (asterisk) client, it can work with
+	  a soundcard as a normal voip phone, taking input/output from
+	  keyboard, analog/gsm/isdn modem or bluetooth phones.
+	  
+	  http://www.eja.it/?l=gpl&testo=miax

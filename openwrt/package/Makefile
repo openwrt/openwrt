@@ -108,6 +108,7 @@ package-$(BR2_COMPILE_LUA) += lua
 package-$(BR2_PACKAGE_MADWIFI_TOOLS) += madwifi-tools
 package-$(BR2_PACKAGE_MARADNS) += maradns
 package-$(BR2_COMPILE_MATRIXSSL) += matrixssl
+package-$(BR2_PACKAGE_MIAX) += miax
 package-$(BR2_PACKAGE_MICROCOM) += microcom
 package-$(BR2_PACKAGE_MICROPERL) += microperl
 package-$(BR2_COMPILE_MINI_HTTPD) += mini_httpd
@@ -263,6 +264,7 @@ libvorbis-compile: libogg-compile
 libxml2-compile: zlib-compile
 libxslt-compile: libxml2-compile
 lighttpd-compile: openssl-compile pcre-compile
+miax-compile: bluez-libs-compile
 miredo-compile: uclibc++-compile
 mt-daapd-compile: howl-compile libgdbm-compile libid3tag-compile
 mtr-compile: ncurses-compile
