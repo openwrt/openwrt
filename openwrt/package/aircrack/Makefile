@@ -3,7 +3,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=aircrack
-PKG_VERSION:=2.3
+PKG_VERSION:=2.41
 PKG_RELEASE:=1
 PKG_MD5SUM:=8c0c88abe107ca26d019d8f43958e60a
 
