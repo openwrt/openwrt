@@ -1,0 +1,6 @@
+config BR2_PACKAGE_TMSNC
+	tristate "text-based MSN client"
+	default m if CONFIG_DEVEL
+		TMSNC is a textbased (console) MSN client written in C.
+
+		http://tmsnc.sourceforge.net
