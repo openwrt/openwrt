@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=aircrack
 PKG_VERSION:=2.41
 PKG_RELEASE:=1
-PKG_MD5SUM:=8c0c88abe107ca26d019d8f43958e60a
+PKG_MD5SUM:=05a37c8a165efb11ea226829c809deb3
 
 PKG_SOURCE_URL:=http://www.cr0.net:8040/code/network/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tgz
