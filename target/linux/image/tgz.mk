@@ -8,7 +8,7 @@ tgz-install: $(KDIR)/root.tar.gz
 	$(MAKE) -C $(BOARD) install KERNEL="$(KERNEL)" FS="tgz"
 endif
 
-prepare:
-compile:
-install: $(KDIR)/root.tar.gz
+prepare-targets:
+compile-targets:
+install-targets: $(KDIR)/root.tar.gz
 
