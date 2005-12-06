@@ -13,6 +13,12 @@ config BR2_PACKAGE_LIGHTTPD
 	  
 	  Depends: libopenssl, libpcre
 
+config BR2_PACKAGE_LIGHTTPD_MOD_ACCESSLOG
+	prompt   "lighttpd-mod-accesslog.......... Access logging module"
+	tristate 
+	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_LIGHTTPD
+
 config BR2_PACKAGE_LIGHTTPD_MOD_ALIAS
 	prompt   "lighttpd-mod-alias.............. Directory alias module"
 	tristate 
