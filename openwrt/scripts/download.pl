@@ -59,7 +59,7 @@ foreach my $mirror (@ARGV) {
 		my $sfpath = $1;
 		open SF, "wget -t1 -q -O- 'http://prdownloads.sourceforge.net/$sfpath/$filename' |";
 		while (<SF>) {
-			/RADIO NAME=use_default VALUE=(\w+) OnClick="form\.submit\(\)">/ and do {
+			/type="radio" name="use_default" value="(\w+)" onclick="form\.submit\(\)"\/>/ and do {
 				push @mirrors, "http://$1.dl.sourceforge.net/sourceforge/$sfpath";
 			};
 		}
