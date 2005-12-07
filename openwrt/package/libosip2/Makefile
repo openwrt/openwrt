@@ -7,10 +7,7 @@ PKG_VERSION:=2.2.0
 PKG_RELEASE:=1
 PKG_MD5SUM:=f1237af0250c59b318bd64a59f5750ea
 
-PKG_SOURCE_URL:=http://ftp.gnu.org/gnu/osip/ \
-	ftp://ftp.belnet.be/mirror/ftp.gnu.org/gnu/osip/ \
-	ftp://ftp.mirror.nl/pub/mirror/gnu/osip/ \
-	http://mirror.switch.ch/ftp/mirror/gnu/osip/
+PKG_SOURCE_URL:=@GNU/osip
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 

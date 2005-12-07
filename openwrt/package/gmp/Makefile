@@ -7,10 +7,7 @@ PKG_VERSION:=4.1.4
 PKG_RELEASE:=1
 PKG_MD5SUM:=0aa7d3b3f5b5ec5951e7dddd6f65e891
 
-PKG_SOURCE_URL:=ftp://ftp.gnu.org/gnu/gmp/ \
-	ftp://ftp.belnet.be/mirror/ftp.gnu.org/gnu/gmp/ \
-	ftp://ftp.mirror.nl/pub/mirror/gnu/gmp/ \
-	http://mirror.switch.ch/ftp/mirror/gnu/gmp/
+PKG_SOURCE_URL:=@GNU/gmp
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_CAT:=bzcat
 
