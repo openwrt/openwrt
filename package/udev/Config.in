@@ -1,0 +1,11 @@
+config BR2_PACKAGE_UDEV
+	prompt "udev.............................. Dynamic device management subsystem"
+	tristate
+	default m if CONFIG_DEVEL
+	select BR2_COMPILE_UTIL_LINUX
+	help
+	  udev provides a dynamic device directory containing only the files for 
+	  actually present devices. It creates or removes device node files in 
+	  the /dev directory, or it renames network interfaces.
+	  
+	  http://www.kernel.org/pub/linux/utils/kernel/hotplug/udev.html
