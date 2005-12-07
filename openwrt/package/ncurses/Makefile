@@ -7,14 +7,7 @@ PKG_VERSION:=5.2
 PKG_RELEASE:=8
 PKG_MD5SUM:=464d6a49010cf2a6eb9ce59a264d4d47
 
-PKG_SOURCE_URL:=\
-	ftp://ftp.gnu.org/pub/gnu/$(PKG_NAME) \
-	ftp://gatekeeper.dec.com/pub/GNU/$(PKG_NAME) \
-        ftp://ftp.uu.net/archive/systems/gnu/$(PKG_NAME) \
-        ftp://ftp.eu.uu.net/pub/gnu/$(PKG_NAME) \
-        ftp://ftp.funet.fi/pub/gnu/prep/$(PKG_NAME) \
-        ftp://ftp.leo.org/pub/comp/os/unix/gnu/$(PKG_NAME) \
-        ftp://ftp.digex.net/pub/gnu/$(PKG_NAME)
+PKG_SOURCE_URL:=@GNU/ncurses
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 

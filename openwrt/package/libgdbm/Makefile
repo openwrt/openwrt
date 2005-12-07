@@ -7,7 +7,7 @@ PKG_VERSION:=1.8.3
 PKG_RELEASE:=0
 PKG_MD5SUM:=1d1b1d5c0245b1c00aff92da751e9aa1
 
-PKG_SOURCE_URL:=http://ftp.gnu.org/gnu/gdbm/
+PKG_SOURCE_URL:=@GNU/gdbm
 PKG_SOURCE:=gdbm-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 

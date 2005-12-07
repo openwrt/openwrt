@@ -7,10 +7,7 @@ PKG_VERSION:=1.5.14
 PKG_RELEASE:=1
 PKG_MD5SUM:=049bf67de9b0eb75cd943dafe3d749ec
 
-PKG_SOURCE_URL:=http://ftp.gnu.org/gnu/libtool/ \
-	ftp://ftp.belnet.be/mirror/ftp.gnu.org/gnu/libtool/ \
-	ftp://ftp.mirror.nl/pub/mirror/gnu/libtool/ \
-	http://mirror.switch.ch/ftp/mirror/gnu/libtool/
+PKG_SOURCE_URL:=@GNU/libtool
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
