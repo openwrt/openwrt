@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=maradns
-PKG_VERSION:=1.0.26
+PKG_VERSION:=1.0.35
 PKG_RELEASE:=1
-PKG_MD5SUM:=b3180ad1f250a4e3820613e711ae159b
+PKG_MD5SUM:=1b2ba196ddde5f545af177b4531e0d70
 
 PKG_SOURCE_URL:=http://www.maradns.org/download
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
