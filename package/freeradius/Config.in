@@ -32,6 +32,12 @@ config BR2_PACKAGE_FREERADIUS_MOD_CHAP
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_FREERADIUS
 
+config BR2_PACKAGE_FREERADIUS_MOD_DETAIL
+	prompt   "freeradius-mod-detail........... Detailed accounting module"
+	tristate
+	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_FREERADIUS
+
 config BR2_PACKAGE_FREERADIUS_MOD_EAP
 	prompt   "freeradius-mod-eap.............. Base EAP module"
 	tristate
@@ -95,6 +101,18 @@ config BR2_PACKAGE_FREERADIUS_MOD_MSCHAP
 
 config BR2_PACKAGE_FREERADIUS_MOD_PAP
 	prompt   "freeradius-mod-pap.............. PAP module"
+	tristate
+	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_FREERADIUS
+
+config BR2_PACKAGE_FREERADIUS_MOD_PREPROCESS
+	prompt   "freeradius-mod-preprocess....... Request pre-processing module"
+	tristate
+	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_FREERADIUS
+
+config BR2_PACKAGE_FREERADIUS_MOD_REALM
+	prompt   "freeradius-mod-realm............ Realms handling module"
 	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_FREERADIUS
