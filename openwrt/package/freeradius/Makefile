@@ -99,6 +99,7 @@ endef
 $(eval $(call PKG_template,FREERADIUS,freeradius,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,FREERADIUS_DEMOCERTS,freeradius-democerts,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,FREERADIUS_MOD_CHAP,freeradius-mod-chap,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,FREERADIUS_MOD_DETAIL,freeradius-mod-detail,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,FREERADIUS_MOD_EAP,freeradius-mod-eap,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,FREERADIUS_MOD_EAP_GTC,freeradius-mod-eap-gtc,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,FREERADIUS_MOD_EAP_MD5,freeradius-mod-eap-md5,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
@@ -110,6 +111,8 @@ $(eval $(call PKG_template,FREERADIUS_MOD_FILES,freeradius-mod-files,$(PKG_VERSI
 $(eval $(call PKG_template,FREERADIUS_MOD_LDAP,freeradius-mod-ldap,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,FREERADIUS_MOD_MSCHAP,freeradius-mod-mschap,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,FREERADIUS_MOD_PAP,freeradius-mod-pap,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,FREERADIUS_MOD_PREPROCESS,freeradius-mod-preprocess,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,FREERADIUS_MOD_REALM,freeradius-mod-realm,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,FREERADIUS_MOD_SQL,freeradius-mod-sql,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,FREERADIUS_MOD_SQL_MYSQL,freeradius-mod-sql-mysql,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,FREERADIUS_MOD_SQL_PGSQL,freeradius-mod-sql-pgsql,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
@@ -117,6 +120,7 @@ $(eval $(call PKG_template,FREERADIUS_MOD_SQLCOUNTER,freeradius-mod-sqlcounter,$
 $(eval $(call PKG_template,FREERADIUS_UTILS,freeradius-utils,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 $(eval $(call PKG_mod_template,FREERADIUS_MOD_CHAP,rlm_chap,))
+$(eval $(call PKG_mod_template,FREERADIUS_MOD_DETAIL,rlm_detail,))
 $(eval $(call PKG_mod_template,FREERADIUS_MOD_EAP,libeap rlm_eap,eap.conf))
 $(eval $(call PKG_mod_template,FREERADIUS_MOD_EAP_GTC,rlm_eap_gtc,))
 $(eval $(call PKG_mod_template,FREERADIUS_MOD_EAP_MD5,rlm_eap_md5,))
@@ -128,6 +132,8 @@ $(eval $(call PKG_mod_template,FREERADIUS_MOD_FILES,rlm_files,acct_users preprox
 $(eval $(call PKG_mod_template,FREERADIUS_MOD_LDAP,rlm_ldap,ldap.attrmap))
 $(eval $(call PKG_mod_template,FREERADIUS_MOD_MSCHAP,rlm_mschap,))
 $(eval $(call PKG_mod_template,FREERADIUS_MOD_PAP,rlm_pap,))
+$(eval $(call PKG_mod_template,FREERADIUS_MOD_PREPROCESS,rlm_preprocess,hints huntgroups))
+$(eval $(call PKG_mod_template,FREERADIUS_MOD_REALM,rlm_realm,proxy.conf))
 $(eval $(call PKG_mod_template,FREERADIUS_MOD_SQL,rlm_sql,sql.conf))
 $(eval $(call PKG_mod_template,FREERADIUS_MOD_SQL_MYSQL,rlm_sql_mysql,))
 $(eval $(call PKG_mod_template,FREERADIUS_MOD_SQL_PGSQL,rlm_sql_postgresql,))
@@ -136,33 +142,33 @@ $(eval $(call PKG_mod_template,FREERADIUS_MOD_SQLCOUNTER,rlm_sqlcounter,))
 $(PKG_BUILD_DIR)/.configured:
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
 		$(TARGET_CONFIGURE_OPTS) \
-		CFLAGS="$(TARGET_CFLAGS) -I$(STAGING_DIR)/usr/include" \
-		CPPFLAGS="-I$(STAGING_DIR)/usr/include" \
-		LDFLAGS="-L$(STAGING_DIR)/usr/lib" \
-		sys_lib_dlsearch_path_spec="$(STAGING_DIR)/lib $(STAGING_DIR)/usr/lib" \
-		sys_lib_search_path_spec="$(STAGING_DIR)/lib $(STAGING_DIR)/usr/lib" \
+		CFLAGS="$(TARGET_CFLAGS) -I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include" \
+		CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include" \
+		LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib" \
+		sys_lib_dlsearch_path_spec="$(STAGING_DIR)/usr/lib $(STAGING_DIR)/lib" \
+		sys_lib_search_path_spec="$(STAGING_DIR)/usr/lib $(STAGING_DIR)/lib" \
 		MYSQL_CONFIG="no" \
 		./configure \
-		  --target=$(GNU_TARGET_NAME) \
-		  --host=$(GNU_TARGET_NAME) \
-		  --build=$(GNU_HOST_NAME) \
-		  --program-prefix="" \
-		  --program-suffix="" \
-		  --prefix=/usr \
-		  --exec-prefix=/usr \
-		  --bindir=/usr/bin \
-		  --datadir=/usr/share \
-		  --includedir=/usr/include \
-		  --infodir=/usr/share/info \
-		  --libdir=/usr/lib/freeradius \
-		  --libexecdir=/usr/lib/freeradius \
-		  --localstatedir=/var \
-		  --mandir=/usr/share/man \
-		  --sbindir=/usr/sbin \
-		  --sysconfdir=/etc \
-		  $(DISABLE_LARGEFILE) \
-		  $(DISABLE_NLS) \
-		  $(PKG_CONFIGURE_OPTIONS) \
+			--target=$(GNU_TARGET_NAME) \
+			--host=$(GNU_TARGET_NAME) \
+			--build=$(GNU_HOST_NAME) \
+			--program-prefix="" \
+			--program-suffix="" \
+			--prefix=/usr \
+			--exec-prefix=/usr \
+			--bindir=/usr/bin \
+			--datadir=/usr/share \
+			--includedir=/usr/include \
+			--infodir=/usr/share/info \
+			--libdir=/usr/lib/freeradius \
+			--libexecdir=/usr/lib/freeradius \
+			--localstatedir=/var \
+			--mandir=/usr/share/man \
+			--sbindir=/usr/sbin \
+			--sysconfdir=/etc \
+			$(DISABLE_LARGEFILE) \
+			$(DISABLE_NLS) \
+			$(PKG_CONFIGURE_OPTIONS) \
 	)
 	touch $@
 
