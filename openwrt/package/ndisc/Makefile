@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ndisc6
-PKG_VERSION:=0.5.0
+PKG_VERSION:=0.5.1
 PKG_RELEASE:=1
-PKG_MD5SUM:=affd992b2c797105cac4e2a478ba962d
+PKG_MD5SUM:=33487fe5505b195eb31468d88ba9ab56
 
 PKG_SOURCE_URL:=http://people.via.ecp.fr/~rem/ndisc6/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
