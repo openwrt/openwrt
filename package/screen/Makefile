@@ -7,10 +7,7 @@ PKG_VERSION:=4.0.2
 PKG_RELEASE:=1
 PKG_MD5SUM:=ed68ea9b43d9fba0972cb017a24940a1
 
-PKG_SOURCE_URL:=http://ftp.gnu.org/gnu/screen \
-	ftp://ftp.belnet.be/mirror/ftp.gnu.org/gnu/screen/ \
-	ftp://ftp.mirror.nl/pub/mirror/gnu/screen/ \
-	http://mirror.switch.ch/ftp/mirror/gnu/screen/
+PKG_SOURCE_URL:=@GNU/screen
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
