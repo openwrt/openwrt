@@ -48,14 +48,14 @@ $(eval $(call PKG_template,IPTABLES_MOD_IPSEC,iptables-mod-ipsec,$(PKG_VERSION)-
 $(eval $(call PKG_template,IPTABLES_MOD_NAT,iptables-mod-nat,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,IPTABLES_MOD_ULOG,iptables-mod-ulog,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
-$(eval $(call IPKG_plugin_template,IPTABLES_MOD_CONNTRACK,$(IPKG_IPTABLES_MOD_CONNTRACK-m)))
-$(eval $(call IPKG_plugin_template,IPTABLES_MOD_EXTRA,$(IPKG_IPTABLES_MOD_EXTRA-m)))
-$(eval $(call IPKG_plugin_template,IPTABLES_MOD_FILTER,$(IPKG_IPTABLES_MOD_FILTER-m),layer7-install))
-$(eval $(call IPKG_plugin_template,IPTABLES_MOD_IMQ,$(IPKG_IPTABLES_MOD_IMQ-m)))
-$(eval $(call IPKG_plugin_template,IPTABLES_MOD_IPOPT,$(IPKG_IPTABLES_MOD_IPOPT-m)))
-$(eval $(call IPKG_plugin_template,IPTABLES_MOD_IPSEC,$(IPKG_IPTABLES_MOD_IPSEC-m)))
-$(eval $(call IPKG_plugin_template,IPTABLES_MOD_NAT,$(IPKG_IPTABLES_MOD_NAT-m)))
-$(eval $(call IPKG_plugin_template,IPTABLES_MOD_ULOG,$(IPKG_IPTABLES_MOD_ULOG-m)))
+$(eval $(call IPKG_plugin_template,IPTABLES_MOD_CONNTRACK,$(IPT_CONNTRACK-m)))
+$(eval $(call IPKG_plugin_template,IPTABLES_MOD_EXTRA,$(IPT_EXTRA-m)))
+$(eval $(call IPKG_plugin_template,IPTABLES_MOD_FILTER,$(IPT_FILTER-m),layer7-install))
+$(eval $(call IPKG_plugin_template,IPTABLES_MOD_IMQ,$(IPT_IMQ-m)))
+$(eval $(call IPKG_plugin_template,IPTABLES_MOD_IPOPT,$(IPT_IPOPT-m)))
+$(eval $(call IPKG_plugin_template,IPTABLES_MOD_IPSEC,$(IPT_IPSEC-m)))
+$(eval $(call IPKG_plugin_template,IPTABLES_MOD_NAT,$(IPT_NAT-m)))
+$(eval $(call IPKG_plugin_template,IPTABLES_MOD_ULOG,$(IPT_ULOG-m)))
 
 $(PKG_BUILD_DIR)/.configured:
 	touch $@
@@ -76,7 +76,7 @@ $(IPKG_IPTABLES):
 	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/iptables $(IDIR_IPTABLES)/usr/sbin/
 	install -d -m0755 $(IDIR_IPTABLES)/usr/lib/iptables
 	(cd $(PKG_INSTALL_DIR)/usr/lib/iptables ; \
-		cp -fpR $(patsubst %,lib%.so,$(IPKG_IPTABLES-y)) $(IDIR_IPTABLES)/usr/lib/iptables/ \
+		cp -fpR $(patsubst %,lib%.so,$(IPT_BUILTIN)) $(IDIR_IPTABLES)/usr/lib/iptables/ \
 	)
 	$(RSTRIP) $(IDIR_IPTABLES)
 	$(IPKG_BUILD) $(IDIR_IPTABLES) $(PACKAGE_DIR)
