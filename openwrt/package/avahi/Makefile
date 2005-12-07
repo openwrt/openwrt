@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=avahi
-PKG_VERSION:=0.5.2
+PKG_VERSION:=0.6.1
 PKG_RELEASE:=1
-PKG_MD5SUM:=dc7ce24ffaab251a2002bf1dfdbe256d
+PKG_MD5SUM:=330613902c59bd597f140a8254e9f4ec
 
 PKG_SOURCE_URL:=http://www.freedesktop.org/~lennart/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -24,8 +24,8 @@ $(PKG_BUILD_DIR)/.configured:
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS) -DNDEBUG" \
-		CPPFLAGS="-I$(STAGING_DIR)/usr/include" \
-		LDFLAGS="-L$(STAGING_DIR)/lib -L$(STAGING_DIR)/usr/lib" \
+		CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include" \
+		LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib" \
 		PKG_CONFIG_PATH="$(STAGING_DIR)/usr/lib/pkgconfig" \
 		ac_cv_func_malloc_0_nonnull=yes \
 		ac_cv_func_realloc_0_nonnull=yes \
@@ -64,7 +64,7 @@ $(PKG_BUILD_DIR)/.configured:
 			--disable-pygtk \
 			--disable-python-dbus \
 			--disable-mono \
-			--disable-mono-docs \
+			--disable-monodoc \
 			--disable-doxygen-doc \
 			--disable-doxygen-dot \
 			--disable-doxygen-man \
