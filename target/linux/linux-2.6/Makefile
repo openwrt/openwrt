@@ -116,39 +116,39 @@ $(eval $(call KMOD_template,IPTABLES_EXTRA,iptables-extra,\
 ,,kmod-ipt-conntrack kmod-ipt-extra kmod-ipt-filter kmod-ipt-ipopt kmod-ipt-ipsec kmod-ipt-nat kmod-ipt-nat-extra kmod-ipt-queue kmod-ipt-ulogd))
 
 $(eval $(call KMOD_template,IPT_CONNTRACK,ipt-conntrack,\
-	$(foreach mod,$(IPKG_KMOD_IPT_CONNTRACK-m),$(MODULES_DIR)/kernel/net/ipv4/netfilter/$(mod).ko) \
+	$(foreach mod,$(IPT_CONNTRACK-m),$(MODULES_DIR)/kernel/net/ipv4/netfilter/$(mod).ko) \
 ))
 
 $(eval $(call KMOD_template,IPT_EXTRA,ipt-extra,\
-	$(foreach mod,$(IPKG_KMOD_IPT_EXTRA-m),$(MODULES_DIR)/kernel/net/ipv4/netfilter/$(mod).ko) \
+	$(foreach mod,$(IPT_EXTRA-m),$(MODULES_DIR)/kernel/net/ipv4/netfilter/$(mod).ko) \
 ))
 
 $(eval $(call KMOD_template,IPT_FILTER,ipt-filter,\
-	$(foreach mod,$(IPKG_KMOD_IPT_FILTER-m),$(MODULES_DIR)/kernel/net/ipv4/netfilter/$(mod).ko) \
+	$(foreach mod,$(IPT_FILTER-m),$(MODULES_DIR)/kernel/net/ipv4/netfilter/$(mod).ko) \
 ))
 
 $(eval $(call KMOD_template,IPT_IPOPT,ipt-ipopt,\
-	$(foreach mod,$(IPKG_KMOD_IPT_IPOPT-m),$(MODULES_DIR)/kernel/net/ipv4/netfilter/$(mod).ko) \
+	$(foreach mod,$(IPT_IPOPT-m),$(MODULES_DIR)/kernel/net/ipv4/netfilter/$(mod).ko) \
 ))
 
 $(eval $(call KMOD_template,IPT_IPSEC,ipt-ipsec,\
-	$(foreach mod,$(IPKG_KMOD_IPT_IPSEC-m),$(MODULES_DIR)/kernel/net/ipv4/netfilter/$(mod).ko) \
+	$(foreach mod,$(IPT_IPSEC-m),$(MODULES_DIR)/kernel/net/ipv4/netfilter/$(mod).ko) \
 ))
 
 $(eval $(call KMOD_template,IPT_NAT,ipt-nat,\
-	$(foreach mod,$(IPKG_KMOD_IPT_NAT-m),$(MODULES_DIR)/kernel/net/ipv4/netfilter/$(mod).ko) \
+	$(foreach mod,$(IPT_NAT-m),$(MODULES_DIR)/kernel/net/ipv4/netfilter/$(mod).ko) \
 ))
 
 $(eval $(call KMOD_template,IPT_NAT_EXTRA,ipt-nat-extra,\
-	$(foreach mod,$(IPKG_KMOD_IPT_NAT_EXTRA-m),$(MODULES_DIR)/kernel/net/ipv4/netfilter/$(mod).ko) \
-,,,40,$(IPKG_KMOD_IPT_NAT_EXTRA-m)))
+	$(foreach mod,$(IPT_NAT_EXTRA-m),$(MODULES_DIR)/kernel/net/ipv4/netfilter/$(mod).ko) \
+,,,40,$(IPT_NAT_EXTRA-m)))
 
 $(eval $(call KMOD_template,IPT_QUEUE,ipt-queue,\
-	$(foreach mod,$(IPKG_KMOD_IPT_QUEUE-m),$(MODULES_DIR)/kernel/net/ipv4/netfilter/$(mod).ko) \
+	$(foreach mod,$(IPT_QUEUE-m),$(MODULES_DIR)/kernel/net/ipv4/netfilter/$(mod).ko) \
 ))
 
 $(eval $(call KMOD_template,IPT_ULOG,ipt-ulog,\
-	$(foreach mod,$(IPKG_KMOD_IPT_ULOG-m),$(MODULES_DIR)/kernel/net/ipv4/netfilter/$(mod).ko) \
+	$(foreach mod,$(IPT_ULOG-m),$(MODULES_DIR)/kernel/net/ipv4/netfilter/$(mod).ko) \
 ))
 
 $(eval $(call KMOD_template,IP6TABLES,ip6tables,\
