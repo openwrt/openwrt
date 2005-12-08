@@ -1,0 +1,434 @@
+diff -ruN gsm-1.0.10-orig/Makefile gsm-1.0.10-1/Makefile
+--- gsm-1.0.10-orig/Makefile	1996-07-02 16:36:06.000000000 +0200
++++ gsm-1.0.10-1/Makefile	2005-04-08 18:47:52.000000000 +0200
+@@ -7,11 +7,13 @@
+ SASR	= -DSASR
+ ######### Define SASR if >> is a signed arithmetic shift (-1 >> 1 == -1)
+ 
+-MULHACK = -DUSE_FLOAT_MUL
++#MULHACK = -DUSE_FLOAT_MUL
++MULHACK =
+ ######### Define this if your host multiplies floats faster than integers,
+ ######### e.g. on a SPARCstation.
+ 
+-FAST	= -DFAST
++#FAST	= -DFAST
++FAST	=
+ ######### Define together with USE_FLOAT_MUL to enable the GSM library's
+ ######### approximation option for incorrect, but good-enough results.
+ 
+@@ -44,7 +46,8 @@
+ # CCFLAGS 	= -c -O
+ 
+ CC		= gcc -ansi -pedantic
+-CCFLAGS 	= -c -O2 -DNeedFunctionPrototypes=1
++COPTS		= -O2
++CCFLAGS 	= -c $(COPTS) -DNeedFunctionPrototypes=1
+ 
+ LD 		= $(CC)
+ 
+@@ -78,10 +81,10 @@
+ # Leave GSM_INSTALL_ROOT empty to not install the GSM library outside of
+ # this directory.
+ 
+-GSM_INSTALL_ROOT = $(INSTALL_ROOT)
++GSM_INSTALL_ROOT = $(INSTALL_ROOT)/usr
+ GSM_INSTALL_LIB = $(GSM_INSTALL_ROOT)/lib
+-GSM_INSTALL_INC = $(GSM_INSTALL_ROOT)/inc
+-GSM_INSTALL_MAN = $(GSM_INSTALL_ROOT)/man/man3
++GSM_INSTALL_INC = $(GSM_INSTALL_ROOT)/include
++GSM_INSTALL_MAN = $(GSM_INSTALL_ROOT)/share/man/man3
+ 
+ 
+ # Where do you want to install the toast binaries and their manpage?
+@@ -89,14 +92,14 @@
+ # Leave TOAST_INSTALL_ROOT empty to not install the toast binaries outside
+ # of this directory.
+ 
+-TOAST_INSTALL_ROOT	  = $(INSTALL_ROOT)
++TOAST_INSTALL_ROOT	  = $(INSTALL_ROOT)/usr
+ TOAST_INSTALL_BIN = $(TOAST_INSTALL_ROOT)/bin
+-TOAST_INSTALL_MAN = $(TOAST_INSTALL_ROOT)/man/man1
++TOAST_INSTALL_MAN = $(TOAST_INSTALL_ROOT)/share/man/man1
+ 
+ #  Other tools
+ 
+ SHELL		= /bin/sh
+-LN		= ln
++LN		= ln -s
+ BASENAME 	= basename
+ AR		= ar
+ ARFLAGS		= cr
+@@ -126,7 +129,7 @@
+ 
+ # Flags
+ 
+-# DEBUG	= -DNDEBUG
++DEBUG	= -DNDEBUG
+ ######### Remove -DNDEBUG to enable assertions.
+ 
+ CFLAGS	= $(CCFLAGS) $(SASR) $(DEBUG) $(MULHACK) $(FAST) $(LTP_CUT) \
+@@ -140,6 +143,7 @@
+ # Targets
+ 
+ LIBGSM	= $(LIB)/libgsm.a
++LIBGSMSO= $(LIB)/libgsm.so
+ 
+ TOAST	= $(BIN)/toast
+ UNTOAST	= $(BIN)/untoast
+@@ -258,6 +262,9 @@
+ 
+ GSM_INSTALL_TARGETS =	\
+ 		$(GSM_INSTALL_LIB)/libgsm.a		\
++		$(GSM_INSTALL_LIB)/libgsm.so		\
++		$(GSM_INSTALL_LIB)/libgsm.so.1		\
++		$(GSM_INSTALL_LIB)/libgsm.so.1.0.10	\
+ 		$(GSM_INSTALL_INC)/gsm.h		\
+ 		$(GSM_INSTALL_MAN)/gsm.3		\
+ 		$(GSM_INSTALL_MAN)/gsm_explode.3	\
+@@ -279,7 +286,7 @@
+ 
+ # Target rules
+ 
+-all:		$(LIBGSM) $(TOAST) $(TCAT) $(UNTOAST)
++all:		$(LIBGSM) $(LIBGSMSO) $(TOAST) $(TCAT) $(UNTOAST)
+ 		@-echo $(ROOT): Done.
+ 
+ tst:		$(TST)/lin2cod $(TST)/cod2lin $(TOAST) $(TST)/test-result
+@@ -299,6 +306,11 @@
+ 
+ # The basic API: libgsm
+ 
++$(LIBGSMSO):	$(LIB) $(GSM_OBJECTS)
++		$(LD) -o $@.1.0.10 -shared -Xlinker -soname -Xlinker libgsm.so.1 $(GSM_OBJECTS) -lc
++		ln -fs libgsm.so.1.0.10 lib/libgsm.so.1
++		ln -fs libgsm.so.1.0.10 lib/libgsm.so
++
+ $(LIBGSM):	$(LIB) $(GSM_OBJECTS)
+ 		-rm $(RMFLAGS) $(LIBGSM)
+ 		$(AR) $(ARFLAGS) $(LIBGSM) $(GSM_OBJECTS)
+@@ -308,15 +320,15 @@
+ # Toast, Untoast and Tcat -- the compress-like frontends to gsm.
+ 
+ $(TOAST):	$(BIN) $(TOAST_OBJECTS) $(LIBGSM)
+-		$(LD) $(LFLAGS) -o $(TOAST) $(TOAST_OBJECTS) $(LIBGSM) $(LDLIB)
++		$(LD) $(LFLAGS) -o $(TOAST) $(TOAST_OBJECTS) $(LIBGSMSO) $(LDLIB)
+ 
+ $(UNTOAST):	$(BIN) $(TOAST)
+ 		-rm $(RMFLAGS) $(UNTOAST)
+-		$(LN) $(TOAST) $(UNTOAST)
++		$(LN) toast $(UNTOAST)
+ 
+ $(TCAT):	$(BIN) $(TOAST)
+ 		-rm $(RMFLAGS) $(TCAT)
+-		$(LN) $(TOAST) $(TCAT)
++		$(LN) toast $(TCAT)
+ 
+ 
+ # The local bin and lib directories
+@@ -351,53 +363,66 @@
+ 		fi
+ 
+ $(TOAST_INSTALL_BIN)/toast:	$(TOAST)
+-		-rm $@
+-		cp $(TOAST) $@
++		mkdir -p $(TOAST_INSTALL_BIN)
++		cp -f $(TOAST) $@
+ 		chmod 755 $@
+ 
+ $(TOAST_INSTALL_BIN)/untoast:	$(TOAST_INSTALL_BIN)/toast
+-		-rm $@
+-		ln $? $@
++		mkdir -p $(TOAST_INSTALL_BIN)
++		ln -sf $? $@
+ 
+ $(TOAST_INSTALL_BIN)/tcat:	$(TOAST_INSTALL_BIN)/toast
+-		-rm $@
+-		ln $? $@
++		mkdir -p $(TOAST_INSTALL_BIN)
++		ln -sf $? $@
+ 
+ $(TOAST_INSTALL_MAN)/toast.1:	$(MAN)/toast.1
+-		-rm $@
+-		cp $? $@
++		mkdir -p $(TOAST_INSTALL_MAN)
++		cp -f $? $@
+ 		chmod 444 $@
+ 
+ $(GSM_INSTALL_MAN)/gsm.3:	$(MAN)/gsm.3
+-		-rm $@
+-		cp $? $@
++		mkdir -p $(GSM_INSTALL_MAN)
++		cp -f $? $@
+ 		chmod 444 $@
+ 
+ $(GSM_INSTALL_MAN)/gsm_option.3:	$(MAN)/gsm_option.3
+-		-rm $@
+-		cp $? $@
++		mkdir -p $(GSM_INSTALL_MAN)
++		cp -f $? $@
+ 		chmod 444 $@
+ 
+ $(GSM_INSTALL_MAN)/gsm_explode.3:	$(MAN)/gsm_explode.3
+-		-rm $@
+-		cp $? $@
++		mkdir -p $(GSM_INSTALL_MAN)
++		cp -f $? $@
+ 		chmod 444 $@
+ 
+ $(GSM_INSTALL_MAN)/gsm_print.3:	$(MAN)/gsm_print.3
+-		-rm $@
+-		cp $? $@
++		mkdir -p $(GSM_INSTALL_MAN)
++		cp -f $? $@
+ 		chmod 444 $@
+ 
+ $(GSM_INSTALL_INC)/gsm.h:	$(INC)/gsm.h
+-		-rm $@
+-		cp $? $@
++		mkdir -p $(GSM_INSTALL_INC)
++		cp -f $? $@
+ 		chmod 444 $@
+ 
+ $(GSM_INSTALL_LIB)/libgsm.a:	$(LIBGSM)
+-		-rm $@
+-		cp $? $@
++		mkdir -p $(GSM_INSTALL_LIB)
++		cp -f $? $@
+ 		chmod 444 $@
+ 
++$(GSM_INSTALL_LIB)/libgsm.so:	$(LIBGSMSO)
++		mkdir -p $(GSM_INSTALL_LIB)
++		cp -f $? $@
++
++$(GSM_INSTALL_LIB)/libgsm.so.1:	$(LIBGSMSO)
++		mkdir -p $(GSM_INSTALL_LIB)
++		cp -f $? $@
++
++$(GSM_INSTALL_LIB)/libgsm.so.1.0.10:	$(LIBGSMSO)
++		mkdir -p $(GSM_INSTALL_LIB)
++		cp -f $? $@
++		chmod 755 $@
++
+ 
+ # Distribution
+ 
+@@ -426,7 +451,9 @@
+ 
+ clean:	semi-clean
+ 		-rm $(RMFLAGS) $(LIBGSM) $(ADDTST)/add		\
+-			$(TOAST) $(TCAT) $(UNTOAST)	\
++			$(LIBGSMSO) $(LIB)/libgsm.so.1.0.10	\
++			$(LIB)libgsm.so.1			\
++			$(TOAST) $(TCAT) $(UNTOAST)		\
+ 			$(ROOT)/gsm-1.0.tar.Z
+ 
+ 
+diff -ruN gsm-1.0.10-orig/inc/config.h gsm-1.0.10-1/inc/config.h
+--- gsm-1.0.10-orig/inc/config.h	1996-07-02 16:32:27.000000000 +0200
++++ gsm-1.0.10-1/inc/config.h	2005-04-08 18:24:31.000000000 +0200
+@@ -9,29 +9,29 @@
+ #ifndef	CONFIG_H
+ #define	CONFIG_H
+ 
+-/*efine	SIGHANDLER_T	int 		/* signal handlers are void	*/
+-/*efine HAS_SYSV_SIGNAL	1		/* sigs not blocked/reset?	*/
++/*efine	SIGHANDLER_T	int 		-* signal handlers are void	*/
++/*efine HAS_SYSV_SIGNAL	1		-* sigs not blocked/reset?	*/
+ 
+ #define	HAS_STDLIB_H	1		/* /usr/include/stdlib.h	*/
+-/*efine	HAS_LIMITS_H	1		/* /usr/include/limits.h	*/
++#define	HAS_STDIO_H 	1		/* /usr/include/stdio.h 	*/
++/*efine	HAS_LIMITS_H	1		-* /usr/include/limits.h	*/
+ #define	HAS_FCNTL_H	1		/* /usr/include/fcntl.h		*/
+-/*efine	HAS_ERRNO_DECL	1		/* errno.h declares errno	*/
+ 
+ #define	HAS_FSTAT 	1		/* fstat syscall		*/
+ #define	HAS_FCHMOD 	1		/* fchmod syscall		*/
+ #define	HAS_CHMOD 	1		/* chmod syscall		*/
+ #define	HAS_FCHOWN 	1		/* fchown syscall		*/
+ #define	HAS_CHOWN 	1		/* chown syscall		*/
+-/*efine	HAS__FSETMODE 	1		/* _fsetmode -- set file mode	*/
++/*efine	HAS__FSETMODE 	1		-* _fsetmode -- set file mode	*/
+ 
+ #define	HAS_STRING_H 	1		/* /usr/include/string.h 	*/
+-/*efine	HAS_STRINGS_H	1		/* /usr/include/strings.h 	*/
++/*efine	HAS_STRINGS_H	1		-* /usr/include/strings.h 	*/
+ 
+ #define	HAS_UNISTD_H	1		/* /usr/include/unistd.h	*/
+ #define	HAS_UTIME	1		/* POSIX utime(path, times)	*/
+-/*efine	HAS_UTIMES	1		/* use utimes()	syscall instead	*/
++/*efine	HAS_UTIMES	1		-* use utimes()	syscall instead	*/
+ #define	HAS_UTIME_H	1		/* UTIME header file		*/
+-/*efine	HAS_UTIMBUF	1		/* struct utimbuf		*/
+-/*efine	HAS_UTIMEUSEC   1		/* microseconds in utimbuf?	*/
++/*efine	HAS_UTIMBUF	1		-* struct utimbuf		*/
++/*efine	HAS_UTIMEUSEC   1		-* microseconds in utimbuf?	*/
+ 
+ #endif	/* CONFIG_H */
+diff -ruN gsm-1.0.10-orig/inc/gsm.h gsm-1.0.10-1/inc/gsm.h
+--- gsm-1.0.10-orig/inc/gsm.h	1996-07-05 20:31:51.000000000 +0200
++++ gsm-1.0.10-1/inc/gsm.h	2005-04-08 18:24:31.000000000 +0200
+@@ -54,6 +54,10 @@
+ #define	GSM_OPT_FRAME_INDEX	5
+ #define	GSM_OPT_FRAME_CHAIN	6
+ 
++#ifdef __cplusplus
++extern "C" {
++#endif
++
+ extern gsm  gsm_create 	GSM_P((void));
+ extern void gsm_destroy GSM_P((gsm));	
+ 
+@@ -66,6 +70,10 @@
+ extern int  gsm_explode GSM_P((gsm, gsm_byte   *, gsm_signal *));
+ extern void gsm_implode GSM_P((gsm, gsm_signal *, gsm_byte   *));
+ 
++#ifdef __cplusplus
++}
++#endif
++
+ #undef	GSM_P
+ 
+ #endif	/* GSM_H */
+diff -ruN gsm-1.0.10-orig/inc/toast.h gsm-1.0.10-1/inc/toast.h
+--- gsm-1.0.10-orig/inc/toast.h	1996-07-02 16:32:29.000000000 +0200
++++ gsm-1.0.10-1/inc/toast.h	2005-04-08 18:24:31.000000000 +0200
+@@ -16,11 +16,12 @@
+ 
+ #include <stdio.h>
+ #include <ctype.h>
++#include <pthread.h>
+ #include <signal.h>
+ 
+ #include <errno.h>
+-#ifndef	HAS_ERRNO_DECL
+-	 extern int	errno;
++#ifndef errno
++ extern int	errno;
+ #endif
+ 
+ #ifdef	HAS_LIMITS_H
+@@ -37,6 +38,10 @@
+ # endif
+ #endif
+ 
++#ifdef  HAS_STDIO_H
++# include <stdio.h>
++#endif
++
+ #include "gsm.h"
+ 
+ #ifndef	S_ISREG
+diff -ruN gsm-1.0.10-orig/src/code.c gsm-1.0.10-1/src/code.c
+--- gsm-1.0.10-orig/src/code.c	1996-07-02 16:32:36.000000000 +0200
++++ gsm-1.0.10-1/src/code.c	2005-04-08 18:24:31.000000000 +0200
+@@ -9,8 +9,8 @@
+ #include	"config.h"
+ 
+ 
+-#ifdef	HAS_STDLIB_H
+-#include	<stdlib.h>
++#ifdef	HAS_STRING_H
++#include	<string.h>
+ #else
+ #	include "proto.h"
+ 	extern char	* memcpy P((char *, char *, int));
+diff -ruN gsm-1.0.10-orig/src/debug.c gsm-1.0.10-1/src/debug.c
+--- gsm-1.0.10-orig/src/debug.c	1996-07-02 16:32:37.000000000 +0200
++++ gsm-1.0.10-1/src/debug.c	2005-04-08 18:24:31.000000000 +0200
+@@ -49,7 +49,7 @@
+ 	fprintf( stderr, "%s [%d .. %d]: ", name, from, to );
+ 	while (from <= to) {
+ 
+-		fprintf(stderr, "%d ", ptr[ from ] );
++		fprintf(stderr, "%ld ", ptr[ from ] );
+ 		from++;
+ 		if (nprinted++ >= 7) {
+ 			nprinted = 0;
+@@ -63,14 +63,14 @@
+ 	char		* name,
+ 	longword	  value	)
+ {
+-	fprintf(stderr, "%s: %d\n", name, (long)value );
++	fprintf(stderr, "%s: %ld\n", name, (long)value );
+ }
+ 
+ void gsm_debug_word P2(  (name, value),
+ 	char	* name,
+ 	word	  value	)
+ {
+-	fprintf(stderr, "%s: %d\n", name, (long)value);
++	fprintf(stderr, "%s: %ld\n", name, (long)value);
+ }
+ 
+ #endif
+diff -ruN gsm-1.0.10-orig/src/toast.c gsm-1.0.10-1/src/toast.c
+--- gsm-1.0.10-orig/src/toast.c	1996-07-02 16:32:55.000000000 +0200
++++ gsm-1.0.10-1/src/toast.c	2005-04-08 18:24:31.000000000 +0200
+@@ -251,8 +251,8 @@
+ {
+ 	char * s;
+ 	if (!(s = malloc(len))) {
+-		fprintf(stderr, "%s: failed to malloc %d bytes -- abort\n",
+-			progname, len);
++		fprintf(stderr, "%s: failed to malloc %ld bytes -- abort\n",
++			progname, (long) len);
+ 		onintr();
+ 		exit(1);
+ 	}
+@@ -270,7 +270,7 @@
+ 	maxlen = strlen(name) + 1 + strlen(want) + strlen(cut);
+ 	p = strcpy(emalloc(maxlen), name);
+ 
+-	if (s = suffix(p, cut)) strcpy(s, want);
++	if ((s = suffix(p, cut))) strcpy(s, want);
+ 	else if (*want && !suffix(p, want)) strcat(p, want);
+ 
+ 	return p;
+@@ -386,7 +386,7 @@
+ 		ut[0] = instat.st_atime;
+ 		ut[1] = instat.st_mtime;
+ 
+-		(void) utime(outname, ut);
++		(void) utime(outname, (struct utimbuf *)ut);
+ 
+ #endif	/* UTIMBUF */
+ 	}
+@@ -416,7 +416,7 @@
+ 	}
+ 	if (st->st_nlink > 1 && !f_cat && !f_precious) {
+ 		fprintf(stderr, 
+-		      "%s: \"%s\" has %s other link%s -- unchanged.\n",
++		      "%s: \"%s\" has %d other link%s -- unchanged.\n",
+ 			progname,name,st->st_nlink - 1,"s" + (st->st_nlink<=2));
+ 		return 0;
+ 	}
+@@ -585,8 +585,8 @@
+ 
+ 		if (cc != sizeof(s)) {
+ 			if (cc >= 0) fprintf(stderr,
+-			"%s: incomplete frame (%d byte%s missing) from %s\n",
+-					progname, sizeof(s) - cc,
++			"%s: incomplete frame (%ld byte%s missing) from %s\n",
++					progname, (long) sizeof(s) - cc,
+ 					"s" + (sizeof(s) - cc == 1),
+ 					inname ? inname : "stdin" );
+ 			gsm_destroy(r);
+@@ -624,8 +624,6 @@
+ 
+ static int process P1((name), char * name)
+ {
+-	int step = 0;
+-
+ 	out     = (FILE *)0;
+ 	in      = (FILE *)0;
+ 
+@@ -779,7 +777,6 @@
+ 	case 'h': help();    exit(0);
+ 
+ 	default: 
+-	usage:
+ 		fprintf(stderr,
+ 	"Usage: %s [-fcpdhvuaslFC] [files...] (-h for help)\n",
+ 			progname);
