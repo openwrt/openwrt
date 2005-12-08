@@ -1,0 +1,56 @@
+diff -ruN ustl-0.8-old/Makefile ustl-0.8-new/Makefile
+--- ustl-0.8-old/Makefile	2005-11-10 21:06:53.000000000 +0100
++++ ustl-0.8-new/Makefile	2005-12-08 13:57:07.000000000 +0100
+@@ -39,35 +39,35 @@
+ .PHONY: install-static install-shared uninstall-static uninstall-shared
+ 
+ install-shared: ${LIBSOBLD} install-incs
+-	@echo "Installing ${LIBSOBLD} to ${LIBDIR} ..."
+-	@${INSTALLDIR} ${LIBDIR}
+-	@${INSTALLLIB} ${LIBSOBLD} ${LIBDIR}
+-	@(cd ${LIBDIR}; ${RM} ${LIBSO} ${LIBSOLNK}; ${LN} -sf ${LIBSOBLD} ${LIBSO}; ${LN} -sf ${LIBSOBLD} ${LIBSOLNK})
++	@echo "Installing ${LIBSOBLD} to ${DESTDIR}${LIBDIR} ..."
++	@${INSTALLDIR} ${DESTDIR}${LIBDIR}
++	@${INSTALLLIB} ${LIBSOBLD} ${DESTDIR}${LIBDIR}
++	@(cd ${DESTDIR}${LIBDIR}; ${RM} ${LIBSO} ${LIBSOLNK}; ${LN} -sf ${LIBSOBLD} ${LIBSO}; ${LN} -sf ${LIBSOBLD} ${LIBSOLNK})
+ 
+ uninstall-shared: uninstall-incs
+-	@echo "Removing ${LIBSOBLD} from ${LIBDIR} ..."
+-	@${RM} -f ${LIBDIR}/${LIBSO} ${LIBDIR}/${LIBSOLNK} ${LIBDIR}/${LIBSOBLD}
++	@echo "Removing ${LIBSOBLD} from ${DESTDIR}${LIBDIR} ..."
++	@${RM} -f ${DESTDIR}${LIBDIR}/${LIBSO} ${DESTDIR}${LIBDIR}/${LIBSOLNK} ${DESTDIR}${LIBDIR}/${LIBSOBLD}
+ 
+ install-static: ${LIBA} install-incs
+-	@echo "Installing ${LIBA} to ${LIBDIR} ..."
+-	@${INSTALLDIR} ${LIBDIR}
+-	@${INSTALLLIB} ${LIBA} ${LIBDIR}
++	@echo "Installing ${LIBA} to ${DESTDIR}${LIBDIR} ..."
++	@${INSTALLDIR} ${DESTDIR}${LIBDIR}
++	@${INSTALLLIB} ${LIBA} ${DESTDIR}${LIBDIR}
+ 
+ uninstall-static: uninstall-incs
+-	@echo "Removing ${LIBA} from ${LIBDIR} ..."
+-	@${RM} -f ${LIBDIR}/${LIBA}
++	@echo "Removing ${LIBA} from ${DESTDIR}${LIBDIR} ..."
++	@${RM} -f ${DESTDIR}${LIBDIR}/${LIBA}
+ 
+ install-incs: ${INCS}
+-	@echo "Installing headers to ${INCDIR} ..."
+-	@${INSTALLDIR} ${INCDIR}/${LIBNAME}
++	@echo "Installing headers to ${DESTDIR}${INCDIR} ..."
++	@${INSTALLDIR} ${DESTDIR}${INCDIR}/${LIBNAME}
+ 	@for i in $(filter-out ${LIBNAME}.h,${INCS}); do	\
+-	    ${INSTALLDATA} $$i ${INCDIR}/${LIBNAME}/$$i;	\
++	    ${INSTALLDATA} $$i ${DESTDIR}${INCDIR}/${LIBNAME}/$$i;	\
+ 	done;
+-	@${INSTALLDATA} ${LIBNAME}.h ${INCDIR}
++	@${INSTALLDATA} ${LIBNAME}.h ${DESTDIR}${INCDIR}
+ 
+ uninstall-incs:
+-	@echo "Removing headers from ${INCDIR} ..."
+-	@${RM} -rf ${INCDIR}/${LIBNAME} ${INCDIR}/${LIBNAME}.h
++	@echo "Removing headers from ${DESTDIR}${INCDIR} ..."
++	@${RM} -rf ${DESTDIR}${INCDIR}/${LIBNAME} ${DESTDIR}${INCDIR}/${LIBNAME}.h
+ 
+ 
+ %.o:	%.cc
