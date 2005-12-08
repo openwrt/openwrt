@@ -10,6 +10,7 @@ package-$(BR2_PACKAGE_KMOD_MADWIFI) += madwifi
 package-$(BR2_PACKAGE_KMOD_MINI_FO) += mini_fo
 package-$(BR2_PACKAGE_KMOD_OPENSWAN) += openswan
 package-$(BR2_PACKAGE_KMOD_SHFS) += shfs
+package-$(BR2_PACKAGE_KMOD_SPCA5XX) += spca5xx
 package-y += base-files
 
 ifeq ($(BOARD)-$(KERNEL),brcm-2.4)

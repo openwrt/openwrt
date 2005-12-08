@@ -1,0 +1,9 @@
+config BR2_PACKAGE_KMOD_SPCA5XX
+	prompt "kmod-spca5xx...................... Kernel driver for SPCA5XX based USB cameras"
+	tristate
+	default m if CONFIG_DEVEL
+	help
+	  Kernel driver for SPCA5XX based USB cameras
+	  
+	  http://mxhaard.free.fr/
+	  
