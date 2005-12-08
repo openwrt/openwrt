@@ -1,7 +1,7 @@
 /*
  *        T T C P . C
  *
- * Test TCP connection.  Makes a connection on port 5001
+ * Test TCP connection.  Makes a connection on port 5010
  * and transfers fabricated buffers or data copied from stdin.
  *
  * Usable on 4.2, 4.3, and 4.1a systems by defining one of
@@ -2327,7 +2327,7 @@ char Usage[] =
 "    -l ##   length of bufs read from or written to network (default 8192,\n"
 "            max 65535)\n"
 "    -u      use UDP instead of TCP\n"
-"    -p ##   port number to send to or listen at (default 5001)\n"
+"    -p ##   port number to send to or listen at (default 5010)\n"
 #if defined(__linux__)
 "    -P ##   link-layer priority (default 0)\n"
 #endif
