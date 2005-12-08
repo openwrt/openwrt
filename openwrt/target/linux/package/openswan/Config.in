@@ -1,6 +1,5 @@
 config BR2_PACKAGE_KMOD_OPENSWAN
 	prompt "kmod-openswan..................... Openswan kernel module"
-	prompt "kmod-openswan..................... Openswan kernel module (FIXME, does not build on 2.6/mipsel)" if BR2_LINUX_2_6_BRCM
 	tristate
 	default m if CONFIG_DEVEL
 	help
