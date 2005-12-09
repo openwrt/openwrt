@@ -112,4 +112,31 @@ config BR2_PACKAGE_ASTERISK_VOICEMAIL
 	help
 	  Voicemail related modules for Asterisk
 	  
+config BR2_PACKAGE_ASTERISK_MINI
+	prompt "asterisk-mini..................... Minimal open source PBX"
+	tristate
+	default m if CONFIG_DEVEL
+	help
+	  Asterisk is a complete PBX in software. It provides all of the features
+	  you would expect from a PBX and more. Asterisk does voice over IP in three
+	  protocols, and can interoperate with almost all standards-based telephony 
+	  equipment using relatively inexpensive hardware.
+	  
+	  http://www.asterisk.org/
+	  
+	  This package contains only the following modules:
+	    - chan_iax2
+	    - chan_local
+	    - chan_sip
+	    - codec_gsm
+	    - codec_ulaw
+	    - format_gsm
+	    - format_pcm
+	    - format_wav
+	    - format_wav_gsm
+	    - pbx_config
+	    - res_features
+	    - res_musiconhold
+	  
+
 endmenu
