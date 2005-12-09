@@ -305,9 +305,15 @@ $(eval $(call KMOD_template,NET_PRISM54,net-prism54,\
 # PCMCIA/CardBus
 
 $(eval $(call KMOD_template,PCMCIA_CORE,pcmcia-core,\
+	$(MODULES_DIR)/kernel/drivers/pcmcia/pcmcia.ko \
 	$(MODULES_DIR)/kernel/drivers/pcmcia/pcmcia_core.ko \
 	$(MODULES_DIR)/kernel/drivers/pcmcia/yenta_socket.ko \
-,CONFIG_PCMCIA,,50,pcmcia_core))
+	$(MODULES_DIR)/kernel/drivers/pcmcia/rsrc_nonstatic.ko \
+,CONFIG_PCMCIA,,50,pcmcia_core pcmcia yenta_socket rsrc_nonstatic))
+
+$(eval $(call KMOD_template,PCMCIA_SERIAL,pcmcia-serial,\
+	$(MODULES_DIR)/kernel/drivers/serial/serial_cs.ko \
+,CONFIG_SERIAL_8250_CS))
 
 
 # USB
