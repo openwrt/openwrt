@@ -141,7 +141,19 @@ CONFIG_MMU=y
 #
 # PCCARD (PCMCIA/CardBus) support
 #
-# CONFIG_PCCARD is not set
+CONFIG_PCCARD=m
+# CONFIG_PCMCIA_DEBUG is not set
+CONFIG_PCMCIA=m
+CONFIG_CARDBUS=y
+
+#
+# PC-card bridges
+#
+CONFIG_YENTA=m
+# CONFIG_PD6729 is not set
+# CONFIG_I82092 is not set
+# CONFIG_TCIC is not set
+CONFIG_PCCARD_NONSTATIC=m
 
 #
 # PCI Hotplug Support
@@ -351,6 +363,15 @@ CONFIG_SCSI_QLA2XXX=m
 # CONFIG_SCSI_DC390T is not set
 # CONFIG_SCSI_NSP32 is not set
 # CONFIG_SCSI_DEBUG is not set
+
+#
+# PCMCIA SCSI adapter support
+#
+# CONFIG_PCMCIA_AHA152X is not set
+# CONFIG_PCMCIA_FDOMAIN is not set
+# CONFIG_PCMCIA_NINJA_SCSI is not set
+# CONFIG_PCMCIA_QLOGIC is not set
+# CONFIG_PCMCIA_SYM53C500 is not set
 
 #
 # Multi-device support (RAID and LVM)
@@ -654,6 +675,10 @@ CONFIG_BT_HCIUART_BCSP_TXCRC=y
 # CONFIG_BT_HCIBCM203X is not set
 # CONFIG_BT_HCIBPA10X is not set
 # CONFIG_BT_HCIBFUSB is not set
+# CONFIG_BT_HCIDTL1 is not set
+# CONFIG_BT_HCIBT3C is not set
+# CONFIG_BT_HCIBLUECARD is not set
+# CONFIG_BT_HCIBTUART is not set
 # CONFIG_BT_HCIVHCI is not set
 CONFIG_NETDEVICES=y
 # CONFIG_DUMMY is not set
@@ -736,6 +761,13 @@ CONFIG_NET_RADIO=y
 # Obsolete Wireless cards support (pre-802.11)
 #
 # CONFIG_STRIP is not set
+# CONFIG_PCMCIA_WAVELAN is not set
+# CONFIG_PCMCIA_NETWAVE is not set
+
+#
+# Wireless 802.11 Frequency Hopping cards support
+#
+# CONFIG_PCMCIA_RAYCS is not set
 
 #
 # Wireless 802.11b ISA/PCI cards support
@@ -744,10 +776,21 @@ CONFIG_NET_RADIO=y
 # CONFIG_ATMEL is not set
 
 #
+# Wireless 802.11b Pcmcia/Cardbus cards support
+#
+# CONFIG_AIRO_CS is not set
+# CONFIG_PCMCIA_WL3501 is not set
+
+#
 # Prism GT/Duette 802.11(a/b/g) PCI/Cardbus support
 #
 # CONFIG_PRISM54 is not set
 CONFIG_NET_WIRELESS=y
+
+#
+# PCMCIA network device support
+#
+# CONFIG_NET_PCMCIA is not set
 
 #
 # Wan interfaces
@@ -819,6 +862,7 @@ CONFIG_INPUT_EVDEV=m
 #
 CONFIG_SERIAL_8250=y
 CONFIG_SERIAL_8250_CONSOLE=y
+CONFIG_SERIAL_8250_CS=m
 CONFIG_SERIAL_8250_NR_UARTS=2
 # CONFIG_SERIAL_8250_EXTENDED is not set
 
@@ -850,6 +894,11 @@ CONFIG_UNIX98_PTYS=y
 # Ftape, the floppy tape device driver
 #
 # CONFIG_DRM is not set
+
+#
+# PCMCIA character devices
+#
+# CONFIG_SYNCLINK_CS is not set
 # CONFIG_RAW_DRIVER is not set
 
 #
@@ -983,6 +1032,10 @@ CONFIG_SND_RAWMIDI=m
 # USB devices
 #
 CONFIG_SND_USB_AUDIO=m
+
+#
+# PCMCIA devices
+#
 
 #
 # Open Sound System
@@ -1127,6 +1180,7 @@ CONFIG_USB_SERIAL_PL2303=m
 # CONFIG_USB_SERIAL_TI is not set
 # CONFIG_USB_SERIAL_CYBERJACK is not set
 # CONFIG_USB_SERIAL_XIRCOM is not set
+# CONFIG_USB_SERIAL_OPTION is not set
 # CONFIG_USB_SERIAL_OMNINET is not set
 
 #
