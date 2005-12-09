@@ -1,7 +1,18 @@
 diff -ruN spca5xx-20051105-old/Makefile spca5xx-20051105-new/Makefile
 --- spca5xx-20051105-old/Makefile	2005-11-05 19:18:26.000000000 +0100
-+++ spca5xx-20051105-new/Makefile	2005-12-08 21:50:20.000000000 +0100
-@@ -68,157 +68,18 @@
++++ spca5xx-20051105-new/Makefile	2005-12-09 10:34:47.000000000 +0100
+@@ -33,7 +33,9 @@
+ DEFINES   += -DCONFIG_USB_SPCA5XX_MODULE=1 -DMODULE -D__KERNEL__
+ DEFINES   += -DVID_HARDWARE_SPCA5XX=0xFF -DSPCA5XX_VERSION=\"$(VERSION)\"
+ 
+-ifneq ($(shell uname -r | cut -d. -f1,2), 2.4)
++KERNELVERSION=$(shell uname -r | cut -d. -f1,2)
++
++ifneq ($(KERNELVERSION), 2.4)
+ 
+ ifneq ($(KERNELRELEASE),)   # We were called by kbuild
+ CFLAGS += $(DEFINES) 
+@@ -68,158 +70,19 @@
  
  else   # kernel version test
  
@@ -15,9 +26,11 @@ diff -ruN spca5xx-20051105-old/Makefile spca5xx-20051105-new/Makefile
 -# This makefile will build the spca50x driver module external to the kernel
 -# source tree. It makes it easier to swap kernels.
 -
--
++CFLAGS += $(DEFINES) 
+ 
 -KERNEL_VERSION = `uname -r`
--
++spca5xx-objs := drivers/usb/spca5xx.o drivers/usb/spcadecoder.o 
+ 
 -###
 -# Location of the header files (most importantly the config files)
 -# for the kernel you want to build the module against.
@@ -31,12 +44,15 @@ diff -ruN spca5xx-20051105-old/Makefile spca5xx-20051105-new/Makefile
 -ifneq ($(strip $(shell grep 'define CONFIG_MODVERSIONS 1' $(KERNEL_ACFILE))),)
 -	DEFINES += -DMODVERSIONS -include $(KERNEL_MODVERSIONSFILE)
 -endif
--
++obj-m += spca5xx.o
++obj-y := $(spca5xx-objs)
+ 
 -# Detect SMP support
 -ifneq ($(strip $(shell grep 'define CONFIG_SMP 1' $(KERNEL_ACFILE))),)
 -	DEFINES += -D__SMP__ -DSMP
 -endif
--
++O_TARGET := $(obj-m)
+ 
 -# Setup the tools
 -CC         = gcc
 -LD         = ld
@@ -153,19 +169,11 @@ diff -ruN spca5xx-20051105-old/Makefile spca5xx-20051105-new/Makefile
 -drivers/usb/spcadecoder.o: drivers/usb/spcadecoder.h \
 -			   drivers/usb/spcagamma.h \
 -                           drivers/usb/jpeg_header.h
-+EXTRA_CFLAGS += $(DEFINES) 
- 
--endif  # End kernel version test
-+spca5xx-objs := drivers/usb/spca5xx.o drivers/usb/spcadecoder.o 
-+
-+obj-m += spca5xx.o
-+obj-y := $(spca5xx-objs)
-+
-+O_TARGET := $(obj-m)
- 
 +-include $(TOPDIR)/Rules.make
-+
-+endif  # End kernel version test
  
+ endif  # End kernel version test
+ 
+-
  ############################################################################## 
  # OTHER TARGETS 
+ ##############################################################################
