@@ -16,6 +16,7 @@ PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
 include $(TOPDIR)/package/rules.mk
 $(eval $(call PKG_template,ASTERISK,asterisk,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,ASTERISK_MINI,asterisk-mini,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,ASTERISK_MYSQL,asterisk-mysql,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,ASTERISK_PGSQL,asterisk-pgsql,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,ASTERISK_VOICEMAIL,asterisk-voicemail,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
@@ -70,6 +71,7 @@ $(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		install samples
+	rm -f $(PKG_INSTALL_DIR)/etc/asterisk/*.old
 	touch $@
 
 $(IPKG_ASTERISK):
@@ -80,7 +82,7 @@ $(IPKG_ASTERISK):
 	rm -rf $(IDIR_ASTERISK)/usr/include
 	rm -rf $(IDIR_ASTERISK)/var
 	(cd $(IDIR_ASTERISK)/usr/lib/asterisk; \
-		rm -rf agi-bin/*; \
+		rm -rf agi-bin; \
 		rm -rf images; \
 		rm -rf keys/*; \
 		rm -rf mohmp3/*.mp3; \
@@ -106,8 +108,8 @@ $(IPKG_ASTERISK):
 		rm -f skinny.conf ; \
 		rm -f dundi.conf ; \
 	)
-	$(SED) 's|/var/lib/asterisk|/usr/lib/asterisk|g' $(IDIR_ASTERISK)/etc/asterisk/musiconhold.conf
-	rm -f $(IDIR_ASTERISK)/etc/asterisk/*.old
+	install -m0644 ./files/modules.conf $(IDIR_ASTERISK)/etc/asterisk/
+	$(SED) 's|/var/lib/asterisk|/usr/lib/asterisk|g' $(PKG_INSTALL_DIR)/etc/asterisk/musiconhold.conf
 	install -d -m0755 $(IDIR_ASTERISK)/etc/default
 	install -m0644  ./files/asterisk.default $(IDIR_ASTERISK)/etc/default/asterisk
 	install -d -m0755 $(IDIR_ASTERISK)/etc/init.d
@@ -115,6 +117,34 @@ $(IPKG_ASTERISK):
 	ln -sf asterisk $(IDIR_ASTERISK)/etc/init.d/S60asterisk
 	$(RSTRIP) $(IDIR_ASTERISK)
 	$(IPKG_BUILD) $(IDIR_ASTERISK) $(PACKAGE_DIR)
+
+$(IPKG_ASTERISK_MINI):
+	install -d -m0755 $(IDIR_ASTERISK_MINI)/etc/asterisk
+	for f in asterisk enum extconfig extensions features iax iaxprov logger manager modules musiconhold rtp sip; do \
+	  cp -fpR $(PKG_INSTALL_DIR)/etc/asterisk/$$f.conf $(IDIR_ASTERISK_MINI)/etc/asterisk/ ; \
+	done
+	install -m0644 ./files/modules.conf $(IDIR_ASTERISK)/etc/asterisk/
+	$(SED) 's|/var/lib/asterisk|/usr/lib/asterisk|g' $(PKG_INSTALL_DIR)/etc/asterisk/musiconhold.conf
+	install -d -m0755 $(IDIR_ASTERISK_MINI)/usr/lib/asterisk
+	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/asterisk/firmware $(IDIR_ASTERISK_MINI)/usr/lib/asterisk/
+	install -d -m0755 $(IDIR_ASTERISK_MINI)/usr/lib/asterisk/keys
+	install -d -m0755 $(IDIR_ASTERISK_MINI)/usr/lib/asterisk/modules
+	for f in chan_iax2 chan_local chan_sip codec_gsm codec_ulaw format_gsm format_pcm format_wav \
+	  format_wav_gsm pbx_config res_features res_musiconhold; do \
+	  cp -fpR $(PKG_INSTALL_DIR)/usr/lib/asterisk/modules/$$f.so $(IDIR_ASTERISK_MINI)/usr/lib/asterisk/modules/ ; \
+	done
+	install -d -m0755 $(IDIR_ASTERISK_MINI)/usr/lib/asterisk/mohmp3
+	install -d -m0755 $(IDIR_ASTERISK_MINI)/usr/lib/asterisk/sounds
+	install -d -m0755 $(IDIR_ASTERISK_MINI)/usr/sbin
+	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/asterisk $(IDIR_ASTERISK_MINI)/usr/sbin/
+	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/safe_asterisk $(IDIR_ASTERISK_MINI)/usr/sbin/
+	install -d -m0755 $(IDIR_ASTERISK_MINI)/etc/default
+	install -m0644  ./files/asterisk.default $(IDIR_ASTERISK_MINI)/etc/default/asterisk
+	install -d -m0755 $(IDIR_ASTERISK_MINI)/etc/init.d
+	install -m0755  ./files/asterisk.init $(IDIR_ASTERISK_MINI)/etc/init.d/asterisk
+	ln -sf asterisk $(IDIR_ASTERISK_MINI)/etc/init.d/S60asterisk
+	$(RSTRIP) $(IDIR_ASTERISK_MINI)
+	$(IPKG_BUILD) $(IDIR_ASTERISK_MINI) $(PACKAGE_DIR)
 
 $(IPKG_ASTERISK_MYSQL):
 	install -d -m0755 $(IDIR_ASTERISK_MYSQL)/etc/asterisk
@@ -204,6 +234,7 @@ $(IPKG_ASTERISK_PBX_DUNDI):
 	$(IPKG_BUILD) $(IDIR_ASTERISK_PBX_DUNDI) $(PACKAGE_DIR)
 
 $(IPKG_ASTERISK_RES_AGI):
+	install -d -m0755 $(IDIR_ASTERISK_RES_AGI)/usr/lib/asterisk/agi-bin
 	install -d -m0755 $(IDIR_ASTERISK_RES_AGI)/usr/lib/asterisk/modules
 	install -m0755 $(PKG_BUILD_DIR)/res/res_agi.so $(IDIR_ASTERISK_RES_AGI)/usr/lib/asterisk/modules/
 	$(RSTRIP) $(IDIR_ASTERISK_RES_AGI)
