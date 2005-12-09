@@ -62,6 +62,7 @@ package-$(BR2_PACKAGE_ID3LIB) += id3lib
 package-$(BR2_PACKAGE_IPERF) += iperf
 package-$(BR2_PACKAGE_IPKG) += ipkg
 package-$(BR2_COMPILE_IPROUTE2) += iproute2
+package-$(BR2_PACKAGE_IPSEC_TOOLS) += ipsec-tools
 package-$(BR2_PACKAGE_IPSET) += ipset
 package-$(BR2_COMPILE_IPTABLES) += iptables
 package-$(BR2_PACKAGE_IPTABLES_SNMP) += iptables-snmp
