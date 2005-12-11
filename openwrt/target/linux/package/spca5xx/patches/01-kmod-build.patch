@@ -26,7 +26,7 @@ diff -ruN spca5xx-20051105-old/Makefile spca5xx-20051105-new/Makefile
 -# This makefile will build the spca50x driver module external to the kernel
 -# source tree. It makes it easier to swap kernels.
 -
-+CFLAGS += $(DEFINES) 
++EXTRA_CFLAGS += $(DEFINES) 
  
 -KERNEL_VERSION = `uname -r`
 +spca5xx-objs := drivers/usb/spca5xx.o drivers/usb/spcadecoder.o 
