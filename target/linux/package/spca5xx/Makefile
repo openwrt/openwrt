@@ -18,6 +18,7 @@ PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 ifeq ($(KERNEL_DIR),)
 KERNEL_DIR:=$(LINUX_DIR)
 endif
+KERNEL_VERSION=$(shell echo "$(LINUX_VERSION)" | cut -d. -f1,2)
 
 include $(TOPDIR)/package/rules.mk
 
