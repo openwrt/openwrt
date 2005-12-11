@@ -1,0 +1,12 @@
+diff -urN busybox.old/loginutils/passwd.c busybox.dev/loginutils/passwd.c
+--- busybox.old/loginutils/passwd.c	2005-12-11 22:52:46.185150000 +0100
++++ busybox.dev/loginutils/passwd.c	2005-12-11 23:19:15.276596500 +0100
+@@ -353,7 +353,7 @@
+ 	} else {
+ 		orig[0] = '\0';
+ 	}
+-	if (! (cp=bb_askpass(0, "Enter the new password (minimum of 5, maximum of 8 characters)\n"
++	if (! (cp=bb_askpass(0, "Enter the new password (minimum of 5 characters)\n"
+ 					  "Please use a combination of upper and lower case letters and numbers.\n"
+ 					  "Enter new password: ")))
+ 	{
