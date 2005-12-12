@@ -109,13 +109,11 @@ $(PKG_BUILD_DIR)/$(2): $(PKG_BUILD_DIR)/.prepared
 	mv $(PKG_BUILD_DIR)/src/snort $(PKG_BUILD_DIR)/$(2)
 
 $$(IPKG_$(1)): $(PKG_BUILD_DIR)/.installed $(PKG_BUILD_DIR)/$(2)
-	rm -rf $$(IDIR_$(1))
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $$(IDIR_$(1)) ./ipkg/$(2).control $(3) $(4)
 	install -m0644 ./ipkg/snort.conffiles $$(IDIR_$(1))/CONTROL/conffiles
 	install -d -m0755 $$(IDIR_$(1))/etc/default
-	install -m0644 ./ipkg/snort.default $$(IDIR_$(1))/etc/default/snort
+	install -m0644 ./files/snort.default $$(IDIR_$(1))/etc/default/snort
 	install -d -m0755 $$(IDIR_$(1))/etc/init.d
-	install -m0755 ./ipkg/snort.init $$(IDIR_$(1))/etc/init.d/snort
+	install -m0755 ./files/snort.init $$(IDIR_$(1))/etc/init.d/snort
 	install -d -m0755 $$(IDIR_$(1))/etc/snort
 	install -m0644 $(PKG_BUILD_DIR)/etc/snort.conf $$(IDIR_$(1))/etc/snort/
 	install -m0644 $(PKG_BUILD_DIR)/etc/classification.config $$(IDIR_$(1))/etc/snort/
