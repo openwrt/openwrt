@@ -177,6 +177,7 @@ package-$(BR2_PACKAGE_SCDP) += scdp
 package-$(BR2_PACKAGE_SCREEN) += screen
 package-$(BR2_PACKAGE_SDK) += sdk
 package-$(BR2_PACKAGE_SER) += ser
+package-$(BR2_PACKAGE_SERDISPLIB) += serdisplib
 package-$(BR2_PACKAGE_SETPWC) += setpwc
 package-$(BR2_PACKAGE_SETSERIAL) += setserial
 package-$(BR2_PACKAGE_SHAT) += shat
