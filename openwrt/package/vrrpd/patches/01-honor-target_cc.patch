@@ -1,0 +1,11 @@
+diff -urN orig/vrrpd-1.0/Makefile vrrpd-1.0/Makefile
+--- orig/vrrpd-1.0/Makefile	2002-09-09 16:51:13.000000000 +0200
++++ vrrpd-1.0/Makefile	2005-12-12 23:31:30.000000000 +0100
+@@ -15,7 +15,6 @@
+ COMMON_CFLAGS= $(MAIN_OPT) $(INCLUDEOPT) $(PROF_OPT) $(DBG_OPT) $(MACHINEOPT)
+ 
+ # set to compile with GCC
+-CC=gcc
+ CFLAGS= $(COMMON_CFLAGS) -Wall
+ 
+ vrrpd : $(VRRPD_OBJS)
