@@ -1,0 +1,14 @@
+diff -ru serdisplib-1.96.orig/src/Makefile.in serdisplib-1.96/src/Makefile.in
+--- serdisplib-1.96.orig/src/Makefile.in	2005-10-19 01:12:42.000000000 +0200
++++ serdisplib-1.96/src/Makefile.in	2005-12-12 19:18:12.000000000 +0200
+@@ -73,8 +73,8 @@
+ 	$(CC) -fPIC -shared -o $(LIB_DIR)/$(LIB_SHARED) $(LIB_OBJECTS)
+ 	cd $(LIB_DIR) && $(LN_S) -f $(LIB_SHARED) $(LIB_NAME).so
+ 
+-testserdisp: $(LIB_DIR)/$(LIB_STATIC) $(OBJECTS)
+-	$(CC) -o testserdisp $(OBJECTS) $(LIB_DIR)/$(LIB_STATIC)
++testserdisp: $(LIB_DIR)/$(LIB_SHARED) $(OBJECTS)
++	$(CC) -o testserdisp $(OBJECTS) $(LIB_DIR)/$(LIB_SHARED)
+ 
+ clean:
+ 	/bin/rm -f $(OBJECTS) $(LIB_OBJECTS) $(LIB_DIR)/*.a $(LIB_DIR)/*.so*
