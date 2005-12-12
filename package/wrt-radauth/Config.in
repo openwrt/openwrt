@@ -2,7 +2,7 @@ config BR2_PACKAGE_WRT_RADAUTH
 	prompt "wrt-radauth....................... A Radius MAC authenticator for Broadcom based access points"
 	tristate
 	default m if CONFIG_DEVEL
-	depends BR2_LINUX_2_4_BRCM
+	depends BR2_PACKAGE_NVRAM
 	help
 	  This software watches the stations associating to a broadcom based
 	  AccessPoint (e.g. Linksys WRT54G) and sends an authentication request
