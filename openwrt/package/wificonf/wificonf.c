@@ -395,7 +395,7 @@ void start_watchdog(int skfd, char *ifname)
 	FILE *f;
 	char *v, *next;
 	unsigned char buf[8192], buf2[8192], wbuf[80], *p, *tmp;
-	int wds = 0, i, restart_wds;
+	int wds = 0, i, j, restart_wds;
 
 	if (fork())
 		return;
@@ -415,11 +415,41 @@ void start_watchdog(int skfd, char *ifname)
 		}
 	}
 	v = nvram_safe_get(wl_var("ssid"));
+	ssid.SSID_len = strlen(v);
+	strncpy(ssid.SSID, v, 32);
 	
 	for (;;) {
 		sleep(5);
-		if (bcom_ioctl(skfd, ifname, WLC_GET_BSSID, buf, 6) < 0)
-			bcom_ioctl(skfd, ifname, WLC_SET_SSID, v, strlen(v));
+
+		/* client mode */
+		bcom_ioctl(skfd, ifname, WLC_GET_AP, &i, sizeof(i));
+		if (!i) {
+			i = 0;
+			if (bcom_ioctl(skfd, ifname, WLC_GET_BSSID, buf, 6) < 0) 
+				i = 1;
+			memcpy(buf + 6, "\x00\x00\x00\x00\x00\x00", 6);
+			if (memcmp(buf, buf + 6, 6) == 0)
+				i = 1;
+			
+			memset(buf, 0, 8192);
+			strcpy(buf, "sta_info");
+			bcom_ioctl(skfd, ifname, WLC_GET_BSSID, buf + strlen(buf) + 1, 6);
+			if (bcom_ioctl(skfd, ifname, WLC_GET_VAR, buf, 8192) < 0) {
+				i = 1;
+			} else {
+				sta_info_t *sta = (sta_info_t *) (buf + 4);
+				if ((sta->flags & 0x18) != 0x18) 
+					i = 1;
+				if (sta->idle > 20)
+					i = 1;
+			}
+			
+			if (i) 
+				bcom_ioctl(skfd, ifname, WLC_SET_SSID, &ssid, sizeof(ssid));
+		}
+
+		
+		/* wds */
 		p = buf2;
 		restart_wds = 0;
 		for (i = 0; i < wds; i++) {
