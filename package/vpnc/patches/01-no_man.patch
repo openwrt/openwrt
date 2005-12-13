@@ -1,0 +1,27 @@
+diff -urN orig/vpnc-0.3.3/Makefile vpnc-0.3.3/Makefile
+--- orig/vpnc-0.3.3/Makefile	2005-05-01 22:30:35.000000000 +0200
++++ vpnc-0.3.3/Makefile	2005-12-13 10:30:56.000000000 +0100
+@@ -22,9 +22,8 @@
+ SBINDIR=$(PREFIX)/sbin
+ MANDIR=$(PREFIX)/share/man
+ 
+-CC=gcc
+-CFLAGS=-W -Wall -O -g '-DVERSION="$(shell cat VERSION)"' $(shell libgcrypt-config --cflags)
+-LDFLAGS=-g $(shell libgcrypt-config --libs)
++CFLAGS=-W -Wall -O -I$(STAGING_DIR)/usr/include '-DVERSION="$(shell cat VERSION)"' $(shell libgcrypt-config --cflags)
++LDFLAGS=-L$(STAGING_DIR)/usr/lib $(shell libgcrypt-config --libs)
+ 
+ ifeq ($(shell uname -s), Linux)
+ SYSDEP=sysdep-linux.o
+@@ -83,10 +82,9 @@
+ all : vpnc
+ 
+ install :
+-	install -d $(DESTDIR)$(ETCDIR) $(DESTDIR)$(SBINDIR) $(DESTDIR)$(MANDIR)/man8
++	install -d $(DESTDIR)$(ETCDIR) $(DESTDIR)$(SBINDIR)
+ 	install vpnc.conf vpnc-script $(DESTDIR)$(ETCDIR)
+ 	install vpnc vpnc-disconnect $(DESTDIR)$(SBINDIR)
+-	install vpnc.8 $(DESTDIR)$(MANDIR)/man8
+ 
+ install-strip :
+ 	install -d $(DESTDIR)$(ETCDIR) $(DESTDIR)$(SBINDIR) $(DESTDIR)$(MANDIR)/man8
