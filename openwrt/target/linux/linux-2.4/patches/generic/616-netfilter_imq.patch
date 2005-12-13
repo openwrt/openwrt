@@ -1,0 +1,748 @@
+diff -aurN linux-2.4.28-orig/Documentation/Configure.help linux-2.4.28/Documentation/Configure.help
+--- linux-2.4.28-orig/Documentation/Configure.help	2004-11-17 11:54:20.000000000 +0000
++++ linux-2.4.28/Documentation/Configure.help	2004-12-14 11:43:42.000000000 +0000
+@@ -3147,6 +3147,22 @@
+   If you want to compile it as a module, say M here and read
+   <file:Documentation/modules.txt>.  If unsure, say `N'.
+ 
++IMQ target support
++CONFIG_IP_NF_TARGET_IMQ
++  This option adds a `IMQ' target which is used to specify if and
++  to which imq device packets should get enqueued/dequeued.
++
++  If you want to compile it as a module, say M here and read
++  <file:Documentation/modules.txt>.  If unsure, say `N'.
++
++IMQ target support
++CONFIG_IP6_NF_TARGET_IMQ
++  This option adds a `IMQ' target which is used to specify if and
++  to which imq device packets should get enqueued/dequeued.
++
++  If you want to compile it as a module, say M here and read
++  <file:Documentation/modules.txt>.  If unsure, say `N'.
++
+ MARK target support
+ CONFIG_IP_NF_TARGET_MARK
+   This option adds a `MARK' target, which allows you to create rules
+@@ -9799,6 +9815,20 @@
+   say M here and read <file:Documentation/modules.txt>.  The module
+   will be called bonding.o.
+ 
++Intermediate queueing device support
++CONFIG_IMQ
++  The imq device(s) is used as placeholder for QoS queueing disciplines.
++  Every packet entering/leaving the ip stack can be directed through
++  the imq device where it's enqueued/dequeued to the attached qdisc.
++  This allows you to treat network devices as classes and distribute
++  bandwidth among them. Iptables is used to specify through which imq
++  device, if any, packets travel.
++
++  If you want to compile this as a module ( = code which ca be
++  inserted in and removed from the running kernel whenever you want),
++  say M here and read <file:Documentation/modules.txt>.  The module
++  will be called imq.o
++
+ SLIP (serial line) support
+ CONFIG_SLIP
+   Say Y if you intend to use SLIP or CSLIP (compressed SLIP) to
+diff -aurN linux-2.4.28-orig/drivers/net/Config.in linux-2.4.28/drivers/net/Config.in
+--- linux-2.4.28-orig/drivers/net/Config.in	2004-08-07 23:26:04.000000000 +0000
++++ linux-2.4.28/drivers/net/Config.in	2004-12-14 11:43:42.000000000 +0000
+@@ -7,6 +7,11 @@
+ tristate 'Dummy net driver support' CONFIG_DUMMY
+ tristate 'Bonding driver support' CONFIG_BONDING
+ tristate 'EQL (serial line load balancing) support' CONFIG_EQUALIZER
++if [ "$CONFIG_NETFILTER" = "y" ]; then
++  tristate 'IMQ (intermediate queueing device) support' CONFIG_IMQ
++else
++  comment 'IMQ needs CONFIG_NETFILTER enabled'
++fi
+ tristate 'Universal TUN/TAP device driver support' CONFIG_TUN
+ if [ "$CONFIG_EXPERIMENTAL" = "y" ]; then
+    tristate 'Ethertap network tap (OBSOLETE)' CONFIG_ETHERTAP
+diff -aurN linux-2.4.28-orig/drivers/net/Makefile linux-2.4.28/drivers/net/Makefile
+--- linux-2.4.28-orig/drivers/net/Makefile	2004-08-07 23:26:04.000000000 +0000
++++ linux-2.4.28/drivers/net/Makefile	2004-12-14 11:43:42.000000000 +0000
+@@ -170,6 +170,7 @@
+ 
+ obj-$(CONFIG_STRIP) += strip.o
+ obj-$(CONFIG_DUMMY) += dummy.o
++obj-$(CONFIG_IMQ) += imq.o
+ obj-$(CONFIG_DE600) += de600.o
+ obj-$(CONFIG_DE620) += de620.o
+ obj-$(CONFIG_AT1500) += lance.o
+diff -aurN linux-2.4.28-orig/drivers/net/imq.c linux-2.4.28/drivers/net/imq.c
+--- linux-2.4.28-orig/drivers/net/imq.c	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.4.28/drivers/net/imq.c	2004-12-14 11:43:42.000000000 +0000
+@@ -0,0 +1,321 @@
++/*
++ *             Pseudo-driver for the intermediate queue device.
++ *
++ *             This program is free software; you can redistribute it and/or
++ *             modify it under the terms of the GNU General Public License
++ *             as published by the Free Software Foundation; either version
++ *             2 of the License, or (at your option) any later version.
++ *
++ * Authors:    Patrick McHardy, <kaber@trash.net>
++ *
++ * 	       The first version was written by Martin Devera, <devik@cdi.cz>
++ *
++ * Credits:    Jan Rafaj <imq2t@cedric.vabo.cz>
++ *              - Update patch to 2.4.21
++ *             Sebastian Strollo <sstrollo@nortelnetworks.com>
++ *              - Fix "Dead-loop on netdevice imq"-issue
++ */
++
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/config.h>
++#include <linux/skbuff.h>
++#include <linux/netdevice.h>
++#include <linux/rtnetlink.h>
++#include <linux/if_arp.h>
++#include <linux/netfilter.h>
++#include <linux/netfilter_ipv4.h>
++#if defined(CONFIG_IPV6) || defined (CONFIG_IPV6_MODULE)
++#include <linux/netfilter_ipv6.h>
++#endif
++#include <linux/imq.h>
++#include <net/pkt_sched.h>
++
++static nf_hookfn imq_nf_hook;
++
++static struct nf_hook_ops imq_ingress_ipv4 = {
++	{ NULL, NULL},
++	imq_nf_hook,
++	PF_INET,
++	NF_IP_PRE_ROUTING,
++	NF_IP_PRI_MANGLE + 1
++};
++
++static struct nf_hook_ops imq_egress_ipv4 = {
++	{ NULL, NULL},
++	imq_nf_hook,
++	PF_INET,
++	NF_IP_POST_ROUTING,
++	NF_IP_PRI_LAST
++};
++
++#if defined(CONFIG_IPV6) || defined (CONFIG_IPV6_MODULE)
++static struct nf_hook_ops imq_ingress_ipv6 = {
++	{ NULL, NULL},
++	imq_nf_hook,
++	PF_INET6,
++	NF_IP6_PRE_ROUTING,
++	NF_IP6_PRI_MANGLE + 1
++};
++
++static struct nf_hook_ops imq_egress_ipv6 = {
++	{ NULL, NULL},
++	imq_nf_hook,
++	PF_INET6,
++	NF_IP6_POST_ROUTING,
++	NF_IP6_PRI_LAST
++};
++#endif
++
++static unsigned int numdevs = 2;
++
++MODULE_PARM(numdevs, "i");
++MODULE_PARM_DESC(numdevs, "number of imq devices");
++
++static struct net_device *imq_devs;
++
++
++static struct net_device_stats *imq_get_stats(struct net_device *dev)
++{
++	return (struct net_device_stats *)dev->priv;
++}
++
++/* called for packets kfree'd in qdiscs at places other than enqueue */
++static void imq_skb_destructor(struct sk_buff *skb)
++{
++	struct nf_info *info = skb->nf_info;
++
++	if (info) {
++		if (info->indev)
++			dev_put(info->indev);
++		if (info->outdev)
++			dev_put(info->outdev);
++		kfree(info);
++	}
++}
++
++static int imq_dev_xmit(struct sk_buff *skb, struct net_device *dev)
++{
++	struct net_device_stats *stats = (struct net_device_stats*) dev->priv;
++	
++	stats->tx_bytes += skb->len;
++	stats->tx_packets++;
++
++	skb->imq_flags = 0;
++	skb->destructor = NULL;
++	
++	dev->trans_start = jiffies;
++	nf_reinject(skb, skb->nf_info, NF_ACCEPT);
++	return 0;
++}
++
++static int imq_nf_queue(struct sk_buff *skb, struct nf_info *info,
++			void *data)
++{
++	struct net_device *dev;
++	struct net_device_stats *stats;
++	struct sk_buff *skb2 = NULL;
++	struct Qdisc *q;
++	unsigned int index = skb->imq_flags&IMQ_F_IFMASK;
++	int ret = -1;
++
++	if (index > numdevs) 
++		return -1;
++	
++	dev = imq_devs + index;
++	if (!(dev->flags & IFF_UP)) {
++		skb->imq_flags = 0;
++		nf_reinject(skb, info, NF_ACCEPT);
++		return 0;
++	}
++	dev->last_rx = jiffies;
++
++	if (skb->destructor) {
++		skb2 = skb;
++		skb = skb_clone(skb, GFP_ATOMIC);
++		if (!skb)
++			return -1;
++	}
++	skb->nf_info = info;
++
++	stats = (struct net_device_stats *)dev->priv;
++	stats->rx_bytes+= skb->len;
++	stats->rx_packets++;
++	
++	spin_lock_bh(&dev->queue_lock);
++	q = dev->qdisc;
++	if (q->enqueue) {
++		q->enqueue(skb_get(skb), q);
++		if (skb_shared(skb)) {
++			skb->destructor = imq_skb_destructor;
++			kfree_skb(skb);
++			ret = 0;
++		}
++	}
++	if (spin_is_locked(&dev->xmit_lock))
++		netif_schedule(dev);
++	else
++		qdisc_run(dev);
++	spin_unlock_bh(&dev->queue_lock);
++
++	if (skb2)
++		kfree_skb(ret ? skb : skb2);
++
++	return ret;
++}
++
++static unsigned int imq_nf_hook(unsigned int hook, struct sk_buff **pskb,
++		   const struct net_device *indev,
++		   const struct net_device *outdev,
++		   int (*okfn)(struct sk_buff *))
++{
++	if ((*pskb)->imq_flags & IMQ_F_ENQUEUE)
++		return NF_QUEUE;
++
++	return NF_ACCEPT;
++}
++
++
++static int __init imq_init_hooks(void)
++{
++	int err;
++
++	if ((err = nf_register_queue_handler(PF_INET, imq_nf_queue, NULL)))
++		goto err1;
++	if ((err = nf_register_hook(&imq_ingress_ipv4)))
++		goto err2;
++	if ((err = nf_register_hook(&imq_egress_ipv4)))
++		goto err3;
++#if defined(CONFIG_IPV6) || defined (CONFIG_IPV6_MODULE)
++	if ((err = nf_register_queue_handler(PF_INET6, imq_nf_queue, NULL)))
++		goto err4;
++	if ((err = nf_register_hook(&imq_ingress_ipv6)))
++		goto err5;
++	if ((err = nf_register_hook(&imq_egress_ipv6)))
++		goto err6;
++#endif
++	
++	return 0;
++	
++#if defined(CONFIG_IPV6) || defined (CONFIG_IPV6_MODULE)
++err6:
++	nf_unregister_hook(&imq_ingress_ipv6);
++err5:
++	nf_unregister_queue_handler(PF_INET6);
++err4:
++	nf_unregister_hook(&imq_egress_ipv4);
++#endif
++err3:
++	nf_unregister_hook(&imq_ingress_ipv4);
++err2:
++	nf_unregister_queue_handler(PF_INET);
++err1:
++	return err;
++}
++
++static void __exit imq_unhook(void)
++{
++	nf_unregister_hook(&imq_ingress_ipv4);
++	nf_unregister_hook(&imq_egress_ipv4);
++	nf_unregister_queue_handler(PF_INET);
++#if defined(CONFIG_IPV6) || defined (CONFIG_IPV6_MODULE)
++	nf_unregister_hook(&imq_ingress_ipv6);
++	nf_unregister_hook(&imq_egress_ipv6);
++	nf_unregister_queue_handler(PF_INET6);
++#endif
++}
++
++static int __init imq_dev_init(struct net_device *dev)
++{
++	dev->hard_start_xmit	= imq_dev_xmit;
++	dev->type		= ARPHRD_VOID;
++	dev->mtu		= 1500;
++	dev->tx_queue_len	= 30;
++	dev->flags		= IFF_NOARP;
++	dev->priv = kmalloc(sizeof(struct net_device_stats), GFP_KERNEL);
++	if (dev->priv == NULL)
++		return -ENOMEM;
++	memset(dev->priv, 0, sizeof(struct net_device_stats));
++	dev->get_stats		= imq_get_stats;
++
++	return 0;
++}
++
++static void imq_dev_uninit(struct net_device *dev)
++{
++	kfree(dev->priv);
++}
++
++static int __init imq_init_devs(void)
++{
++	struct net_device *dev;
++	int i;
++
++	if (!numdevs || numdevs > IMQ_MAX_DEVS) {
++		printk(KERN_ERR "numdevs has to be betweed 1 and %u\n",
++		       IMQ_MAX_DEVS);
++		return -EINVAL;
++	}
++
++	imq_devs = kmalloc(sizeof(struct net_device) * numdevs, GFP_KERNEL);
++	if (!imq_devs)
++		return -ENOMEM;
++	memset(imq_devs, 0, sizeof(struct net_device) * numdevs);
++
++	/* we start counting at zero */
++	numdevs--;
++
++	for (i = 0, dev = imq_devs; i <= numdevs; i++, dev++) {
++		SET_MODULE_OWNER(dev);
++		strcpy(dev->name, "imq%d");
++		dev->init   = imq_dev_init;
++		dev->uninit = imq_dev_uninit;
++
++		if (register_netdev(dev) < 0)
++			goto err_register;
++	}
++	return 0;
++
++err_register:
++	for (; i; i--)
++		unregister_netdev(--dev);
++	kfree(imq_devs);
++	return -EIO;
++}
++
++static void imq_cleanup_devs(void)
++{
++	int i;
++	struct net_device *dev = imq_devs;
++	
++	for (i = 0; i <= numdevs; i++)
++		unregister_netdev(dev++);
++
++	kfree(imq_devs);
++}
++
++static int __init imq_init_module(void)
++{
++	int err;
++
++	if ((err = imq_init_devs()))
++		return err;
++	if ((err = imq_init_hooks())) {
++		imq_cleanup_devs();
++		return err;
++	}
++
++	printk(KERN_INFO "imq driver loaded.\n");
++
++	return 0;
++}
++
++static void __exit imq_cleanup_module(void)
++{
++	imq_unhook();
++	imq_cleanup_devs();
++}
++
++module_init(imq_init_module);
++module_exit(imq_cleanup_module);
++MODULE_LICENSE("GPL");
+diff -aurN linux-2.4.28-orig/include/linux/imq.h linux-2.4.28/include/linux/imq.h
+--- linux-2.4.28-orig/include/linux/imq.h	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.4.28/include/linux/imq.h	2004-12-14 11:43:42.000000000 +0000
+@@ -0,0 +1,9 @@
++#ifndef _IMQ_H
++#define _IMQ_H
++
++#define IMQ_MAX_DEVS	16
++
++#define IMQ_F_IFMASK	0x7f
++#define IMQ_F_ENQUEUE	0x80
++
++#endif /* _IMQ_H */
+diff -aurN linux-2.4.28-orig/include/linux/netfilter_ipv4/ipt_IMQ.h linux-2.4.28/include/linux/netfilter_ipv4/ipt_IMQ.h
+--- linux-2.4.28-orig/include/linux/netfilter_ipv4/ipt_IMQ.h	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.4.28/include/linux/netfilter_ipv4/ipt_IMQ.h	2004-12-14 11:43:42.000000000 +0000
+@@ -0,0 +1,8 @@
++#ifndef _IPT_IMQ_H
++#define _IPT_IMQ_H
++
++struct ipt_imq_info {
++	unsigned int todev;	/* target imq device */
++};
++
++#endif /* _IPT_IMQ_H */
+diff -aurN linux-2.4.28-orig/include/linux/netfilter_ipv6/ip6t_IMQ.h linux-2.4.28/include/linux/netfilter_ipv6/ip6t_IMQ.h
+--- linux-2.4.28-orig/include/linux/netfilter_ipv6/ip6t_IMQ.h	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.4.28/include/linux/netfilter_ipv6/ip6t_IMQ.h	2004-12-14 11:43:42.000000000 +0000
+@@ -0,0 +1,8 @@
++#ifndef _IP6T_IMQ_H
++#define _IP6T_IMQ_H
++
++struct ip6t_imq_info {
++	unsigned int todev;	/* target imq device */
++};
++
++#endif /* _IP6T_IMQ_H */
+diff -aurN linux-2.4.28-orig/include/linux/skbuff.h linux-2.4.28/include/linux/skbuff.h
+--- linux-2.4.28-orig/include/linux/skbuff.h	2004-08-07 23:26:06.000000000 +0000
++++ linux-2.4.28/include/linux/skbuff.h	2004-12-14 11:43:42.000000000 +0000
+@@ -93,6 +93,9 @@
+ 	struct nf_conntrack *master;
+ };
+ #endif
++#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
++struct nf_info;
++#endif
+ 
+ struct sk_buff_head {
+ 	/* These two members must be first. */
+@@ -182,7 +185,7 @@
+ 	unsigned int 	len;			/* Length of actual data			*/
+  	unsigned int 	data_len;
+ 	unsigned int	csum;			/* Checksum 					*/
+-	unsigned char 	__unused,		/* Dead field, may be reused			*/
++	unsigned char 	imq_flags,		/* intermediate queueing device	*/
+ 			cloned, 		/* head may be cloned (check refcnt to be sure). */
+   			pkt_type,		/* Packet class					*/
+   			ip_summed;		/* Driver fed us an IP checksum			*/
+@@ -219,6 +222,9 @@
+ #ifdef CONFIG_NET_SCHED
+        __u32           tc_index;               /* traffic control index */
+ #endif
++#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
++       struct nf_info	*nf_info;
++#endif
+ };
+ 
+ #ifdef __KERNEL__
+diff -aurN linux-2.4.28-orig/net/core/skbuff.c linux-2.4.28/net/core/skbuff.c
+--- linux-2.4.28-orig/net/core/skbuff.c	2003-08-25 11:44:44.000000000 +0000
++++ linux-2.4.28/net/core/skbuff.c	2004-12-14 11:43:42.000000000 +0000
+@@ -202,6 +202,10 @@
+ 	/* Set up other state */
+ 	skb->len = 0;
+ 	skb->cloned = 0;
++#if defined(CONFIG_IMQ) || defined (CONFIG_IMQ_MODULE)
++	skb->imq_flags = 0;
++	skb->nf_info = NULL;
++#endif
+ 	skb->data_len = 0;
+ 
+ 	atomic_set(&skb->users, 1); 
+@@ -250,6 +254,10 @@
+ #ifdef CONFIG_NET_SCHED
+ 	skb->tc_index = 0;
+ #endif
++#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
++	skb->imq_flags = 0;
++	skb->nf_info = NULL;
++#endif
+ }
+ 
+ static void skb_drop_fraglist(struct sk_buff *skb)
+@@ -400,6 +408,10 @@
+ #ifdef CONFIG_NET_SCHED
+ 	C(tc_index);
+ #endif
++#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
++	C(imq_flags);
++	C(nf_info);
++#endif
+ 
+ 	atomic_inc(&(skb_shinfo(skb)->dataref));
+ 	skb->cloned = 1;
+@@ -444,6 +456,10 @@
+ #ifdef CONFIG_NET_SCHED
+ 	new->tc_index = old->tc_index;
+ #endif
++#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
++	new->imq_flags=old->imq_flags;
++	new->nf_info=old->nf_info;
++#endif
+ }
+ 
+ /**
+diff -aurN linux-2.4.28-orig/net/ipv4/netfilter/Config.in linux-2.4.28/net/ipv4/netfilter/Config.in
+--- linux-2.4.28-orig/net/ipv4/netfilter/Config.in	2003-08-25 11:44:44.000000000 +0000
++++ linux-2.4.28/net/ipv4/netfilter/Config.in	2004-12-14 11:43:43.000000000 +0000
+@@ -104,6 +104,7 @@
+     dep_tristate '    DSCP target support' CONFIG_IP_NF_TARGET_DSCP $CONFIG_IP_NF_MANGLE
+  
+     dep_tristate '    MARK target support' CONFIG_IP_NF_TARGET_MARK $CONFIG_IP_NF_MANGLE
++    dep_tristate '    IMQ target support' CONFIG_IP_NF_TARGET_IMQ $CONFIG_IP_NF_MANGLE
+   fi
+   dep_tristate '  LOG target support' CONFIG_IP_NF_TARGET_LOG $CONFIG_IP_NF_IPTABLES
+   dep_tristate '  ULOG target support' CONFIG_IP_NF_TARGET_ULOG $CONFIG_IP_NF_IPTABLES
+diff -aurN linux-2.4.28-orig/net/ipv4/netfilter/Makefile linux-2.4.28/net/ipv4/netfilter/Makefile
+--- linux-2.4.28-orig/net/ipv4/netfilter/Makefile	2003-08-25 11:44:44.000000000 +0000
++++ linux-2.4.28/net/ipv4/netfilter/Makefile	2004-12-14 11:43:43.000000000 +0000
+@@ -94,6 +94,7 @@
+ obj-$(CONFIG_IP_NF_TARGET_ECN) += ipt_ECN.o
+ obj-$(CONFIG_IP_NF_TARGET_DSCP) += ipt_DSCP.o
+ obj-$(CONFIG_IP_NF_TARGET_MARK) += ipt_MARK.o
++obj-$(CONFIG_IP_NF_TARGET_IMQ) += ipt_IMQ.o
+ obj-$(CONFIG_IP_NF_TARGET_MASQUERADE) += ipt_MASQUERADE.o
+ obj-$(CONFIG_IP_NF_TARGET_REDIRECT) += ipt_REDIRECT.o
+ obj-$(CONFIG_IP_NF_NAT_SNMP_BASIC) += ip_nat_snmp_basic.o
+diff -aurN linux-2.4.28-orig/net/ipv4/netfilter/ipt_IMQ.c linux-2.4.28/net/ipv4/netfilter/ipt_IMQ.c
+--- linux-2.4.28-orig/net/ipv4/netfilter/ipt_IMQ.c	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.4.28/net/ipv4/netfilter/ipt_IMQ.c	2004-12-14 11:43:43.000000000 +0000
+@@ -0,0 +1,78 @@
++/* This target marks packets to be enqueued to an imq device */
++#include <linux/module.h>
++#include <linux/skbuff.h>
++#include <linux/netfilter_ipv4/ip_tables.h>
++#include <linux/netfilter_ipv4/ipt_IMQ.h>
++#include <linux/imq.h>
++
++static unsigned int imq_target(struct sk_buff **pskb,
++			       unsigned int hooknum,
++			       const struct net_device *in,
++			       const struct net_device *out,
++			       const void *targinfo,
++			       void *userinfo)
++{
++	struct ipt_imq_info *mr = (struct ipt_imq_info*)targinfo;
++
++	(*pskb)->imq_flags = mr->todev | IMQ_F_ENQUEUE;
++	(*pskb)->nfcache |= NFC_ALTERED;
++
++	return IPT_CONTINUE;
++}
++
++static int imq_checkentry(const char *tablename,
++			  const struct ipt_entry *e,
++			  void *targinfo,
++			  unsigned int targinfosize,
++			  unsigned int hook_mask)
++{
++	struct ipt_imq_info *mr;
++
++	if (targinfosize != IPT_ALIGN(sizeof(struct ipt_imq_info))) {
++		printk(KERN_WARNING "IMQ: invalid targinfosize\n");
++		return 0;
++	}
++	mr = (struct ipt_imq_info*)targinfo;
++
++	if (strcmp(tablename, "mangle") != 0) {
++		printk(KERN_WARNING
++		       "IMQ: IMQ can only be called from \"mangle\" table, not \"%s\"\n",
++		       tablename);
++		return 0;
++	}
++	
++	if (mr->todev > IMQ_MAX_DEVS) {
++		printk(KERN_WARNING
++		       "IMQ: invalid device specified, highest is %u\n",
++		       IMQ_MAX_DEVS);
++		return 0;
++	}
++	
++	return 1;
++}
++
++static struct ipt_target ipt_imq_reg = {
++	{ NULL, NULL},
++	"IMQ",
++	imq_target,
++	imq_checkentry,
++	NULL,
++	THIS_MODULE
++};
++
++static int __init init(void)
++{
++	if (ipt_register_target(&ipt_imq_reg))
++		return -EINVAL;
++
++	return 0;
++}
++
++static void __exit fini(void)
++{
++	ipt_unregister_target(&ipt_imq_reg);
++}
++
++module_init(init);
++module_exit(fini);
++MODULE_LICENSE("GPL");
+diff -aurN linux-2.4.28-orig/net/ipv6/netfilter/Config.in linux-2.4.28/net/ipv6/netfilter/Config.in
+--- linux-2.4.28-orig/net/ipv6/netfilter/Config.in	2003-06-13 14:51:39.000000000 +0000
++++ linux-2.4.28/net/ipv6/netfilter/Config.in	2004-12-14 11:43:43.000000000 +0000
+@@ -71,6 +71,7 @@
+   if [ "$CONFIG_IP6_NF_MANGLE" != "n" ]; then
+ #    dep_tristate '    TOS target support' CONFIG_IP6_NF_TARGET_TOS $CONFIG_IP_NF_MANGLE
+     dep_tristate '    MARK target support' CONFIG_IP6_NF_TARGET_MARK $CONFIG_IP6_NF_MANGLE
++    dep_tristate '    IMQ target support' CONFIG_IP6_NF_TARGET_IMQ $CONFIG_IP6_NF_MANGLE
+   fi
+   #dep_tristate '  LOG target support' CONFIG_IP6_NF_TARGET_LOG $CONFIG_IP6_NF_IPTABLES
+ fi
+diff -aurN linux-2.4.28-orig/net/ipv6/netfilter/Makefile linux-2.4.28/net/ipv6/netfilter/Makefile
+--- linux-2.4.28-orig/net/ipv6/netfilter/Makefile	2003-06-13 14:51:39.000000000 +0000
++++ linux-2.4.28/net/ipv6/netfilter/Makefile	2004-12-14 11:43:43.000000000 +0000
+@@ -28,6 +28,7 @@
+ obj-$(CONFIG_IP6_NF_FILTER) += ip6table_filter.o
+ obj-$(CONFIG_IP6_NF_MANGLE) += ip6table_mangle.o
+ obj-$(CONFIG_IP6_NF_TARGET_MARK) += ip6t_MARK.o
++obj-$(CONFIG_IP6_NF_TARGET_IMQ) += ip6t_IMQ.o
+ obj-$(CONFIG_IP6_NF_QUEUE) += ip6_queue.o
+ obj-$(CONFIG_IP6_NF_TARGET_LOG) += ip6t_LOG.o
+ obj-$(CONFIG_IP6_NF_MATCH_HL) += ip6t_hl.o
+diff -aurN linux-2.4.28-orig/net/ipv6/netfilter/ip6t_IMQ.c linux-2.4.28/net/ipv6/netfilter/ip6t_IMQ.c
+--- linux-2.4.28-orig/net/ipv6/netfilter/ip6t_IMQ.c	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.4.28/net/ipv6/netfilter/ip6t_IMQ.c	2004-12-14 11:43:43.000000000 +0000
+@@ -0,0 +1,78 @@
++/* This target marks packets to be enqueued to an imq device */
++#include <linux/module.h>
++#include <linux/skbuff.h>
++#include <linux/netfilter_ipv6/ip6_tables.h>
++#include <linux/netfilter_ipv6/ip6t_IMQ.h>
++#include <linux/imq.h>
++
++static unsigned int imq_target(struct sk_buff **pskb,
++			       unsigned int hooknum,
++			       const struct net_device *in,
++			       const struct net_device *out,
++			       const void *targinfo,
++			       void *userinfo)
++{
++	struct ip6t_imq_info *mr = (struct ip6t_imq_info*)targinfo;
++
++	(*pskb)->imq_flags = mr->todev | IMQ_F_ENQUEUE;
++	(*pskb)->nfcache |= NFC_ALTERED;
++
++	return IP6T_CONTINUE;
++}
++
++static int imq_checkentry(const char *tablename,
++			  const struct ip6t_entry *e,
++			  void *targinfo,
++			  unsigned int targinfosize,
++			  unsigned int hook_mask)
++{
++	struct ip6t_imq_info *mr;
++
++	if (targinfosize != IP6T_ALIGN(sizeof(struct ip6t_imq_info))) {
++		printk(KERN_WARNING "IMQ: invalid targinfosize\n");
++		return 0;
++	}
++	mr = (struct ip6t_imq_info*)targinfo;
++
++	if (strcmp(tablename, "mangle") != 0) {
++		printk(KERN_WARNING
++		       "IMQ: IMQ can only be called from \"mangle\" table, not \"%s\"\n",
++		       tablename);
++		return 0;
++	}
++	
++	if (mr->todev > IMQ_MAX_DEVS) {
++		printk(KERN_WARNING
++		       "IMQ: invalid device specified, highest is %u\n",
++		       IMQ_MAX_DEVS);
++		return 0;
++	}
++	
++	return 1;
++}
++
++static struct ip6t_target ip6t_imq_reg = {
++	{ NULL, NULL},
++	"IMQ",
++	imq_target,
++	imq_checkentry,
++	NULL,
++	THIS_MODULE
++};
++
++static int __init init(void)
++{
++	if (ip6t_register_target(&ip6t_imq_reg))
++		return -EINVAL;
++
++	return 0;
++}
++
++static void __exit fini(void)
++{
++	ip6t_unregister_target(&ip6t_imq_reg);
++}
++
++module_init(init);
++module_exit(fini);
++MODULE_LICENSE("GPL");
+diff -aurN linux-2.4.28-orig/net/sched/sch_generic.c linux-2.4.28/net/sched/sch_generic.c
+--- linux-2.4.28-orig/net/sched/sch_generic.c	2004-11-17 11:54:22.000000000 +0000
++++ linux-2.4.28/net/sched/sch_generic.c	2004-12-14 11:44:27.000000000 +0000
+@@ -29,6 +29,9 @@
+ #include <linux/skbuff.h>
+ #include <linux/rtnetlink.h>
+ #include <linux/init.h>
++#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
++#include <linux/imq.h>
++#endif
+ #include <linux/list.h>
+ #include <net/sock.h>
+ #include <net/pkt_sched.h>
+@@ -90,7 +93,11 @@
+ 			spin_unlock(&dev->queue_lock);
+ 
+ 			if (!netif_queue_stopped(dev)) {
+-				if (netdev_nit)
++				if (netdev_nit
++#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
++				    && !(skb->imq_flags & IMQ_F_ENQUEUE)
++#endif
++				    )
+ 					dev_queue_xmit_nit(skb, dev);
+ 
+ 				if (dev->hard_start_xmit(skb, dev) == 0) {
