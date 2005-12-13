@@ -206,6 +206,7 @@ package-$(BR2_PACKAGE_USTL) += ustl
 package-$(BR2_COMPILE_UTIL_LINUX) += util-linux
 package-$(BR2_PACKAGE_UDEV) += udev
 package-$(BR2_PACKAGE_VGP) += vgp
+package_$(BR2_PACKAGE_VNC_REFLECTOR) += vnc-reflector
 package-$(BR2_PACKAGE_VPNC) += vpnc
 package-$(BR2_PACKGE_VRRPD) += vrrpd
 package-$(BR2_PACKAGE_VTUN) += vtun
@@ -315,6 +316,7 @@ tcpdump-compile: libpcap-compile
 tinc-compile: zlib-compile openssl-compile liblzo-compile
 tor-compile: libevent-compile openssl-compile zlib-compile
 usbutils-compile: libusb-compile
+vnc-reflector-compile: jpeg-compile zlib-compile
 vpnc-compile: libgcrypt-compile libgpg-error-compile
 vtun-compile: zlib-compile openssl-compile liblzo-compile
 wificonf-compile: wireless-tools-compile nvram-compile
