@@ -1,5 +1,6 @@
 config BR2_PACKAGE_VPNC
-	tristate "vpnc............................. VPN client for Cisco 3000"
+	prompt "vpnc............................. VPN client for Cisco 3000"
+	tristate
 	default m if CONFIG_DEVEL
 	depends on BR2_PACKAGE_KMOD_TUN
 	depends on BR2_PACKAGE_LIBGPG_ERROR
