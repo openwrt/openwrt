@@ -550,7 +550,7 @@ static void setup_bcom_vif_sec(int skfd, char *ifname, int vif)
 				wep = 1;
 				bcom_set_bss_int(skfd, ifname, vif, "wsec", WEP_ENABLED);
 				bcom_set_bss_int(skfd, ifname, vif, "wsec_restrict", 1);
-				bcom_set_bss_int(skfd, ifname, vif, "auth", 1);
+				bcom_set_bss_int(skfd, ifname, vif, "auth", nvram_enabled(vif_var(vif, "auth")));
 			} else {
 				wep = 0;
 			}
@@ -867,7 +867,13 @@ static void setup_bcom_old(int skfd, char *ifname)
 		bcom_ioctl(skfd, ifname, WLC_SET_EAP_RESTRICT, &val, sizeof(val));
 		bcom_set_int(skfd, ifname, "sup_wpa", 0);
 	}
+
+	if (v = nvram_get(wl_var("auth"))) {
+		val = atoi(v);
+		bcom_ioctl(skfd, ifname, WLC_SET_AUTH, &val, sizeof(val));
+	}
 }
+
 
 static void set_wext_ssid(int skfd, char *ifname)
 {
