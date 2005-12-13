@@ -27,6 +27,7 @@ package-$(BR2_COMPILE_CYRUS_SASL) += cyrus-sasl
 package-$(BR2_COMPILE_DB) += libdb
 package-$(BR2_PACKAGE_DECO) += deco
 package-$(BR2_COMPILE_DHCP) += dhcp
+package-$(BR2_PACKAGE_DHCP6) += dhcp6
 package-$(BR2_PACKAGE_DHCP_FORWARDER) += dhcp-forwarder
 package-$(BR2_PACKAGE_DNSMASQ) += dnsmasq
 package-$(BR2_PACKAGE_DOSFSTOOLS) += dosfstools
@@ -248,6 +249,7 @@ bind-compile: openssl-compile
 curl-compile: openssl-compile zlib-compile
 cyrus-sasl-compile: openssl-compile
 deco-compile: ncurses-compile
+dhcp6-compile: ncurses-compile
 dropbear-compile: zlib-compile
 dsniff-compile: libnids-compile openssl-compile libgdbm-compile
 freetype-compile: zlib-compile

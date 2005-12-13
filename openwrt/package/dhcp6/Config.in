@@ -1,0 +1,7 @@
+config BR2_PACKAGE_DHCP6
+	prompt "dhcp6............................. IPv6 DHCP server and client"
+	tristate
+	default m if CONFIG_DEVEL
+	select BR2_PACKAGE_LIBNCURSES
+	help
+		This is the first ever open source implementation of Dynamic Host Configuration Protocol for IPv6 (DHCPv6) server and client on Linux Operating System. The server provides leases (durations or lifetimes) on IPv6 addresses to the clients who request for it
