@@ -1,7 +1,12 @@
 config BR2_PACKAGE_VNC_REFLECTOR
-        tristate "vnc-reflector - VNC proxy"
+	prompt "vnc-reflector..................... VNC proxy for multiple clients"
+	tristate
 	default m if CONFIG_DEVEL
-	depends on BR2_PACKAGE_JPEG
-	depends on BR2_PACKAGE_ZLIB
+	select BR2_PACKAGE_LIBJPEG
+	select BR2_PACKAGE_ZLIB
 	help
-		VNC Reflector is a specialized VNC server which acts as a proxy sitting between real VNC server (a host) and a number of VNC clients. It was designed to work efficiently with large number of clients.
+	  VNC Reflector is a specialized VNC server which acts as
+	  a proxy sitting between real VNC server (a host) and a 
+	  number of VNC clients. It was designed to work efficiently
+	  with large number of clients.
+

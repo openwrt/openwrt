@@ -1,5 +1,6 @@
 config BR2_PACKAGE_ELHTTP
-	tristate "elhttp .................... The extra-light http proxy server."
+	prompt "elhttp............................ The extra-light http proxy server."
+	tristate
 	default m if CONFIG_DEVEL
 	help
 	  The extra-light http proxy server. Features: keep-alive
