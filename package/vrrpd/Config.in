@@ -1,8 +1,12 @@
 config BR2_PACKAGE_VRRPD
-        tristate "vrrpd............................. Virtual Router Redundancy Protocol daemon"
+        prompt "vrrpd............................. Virtual Router Redundancy Protocol daemon"
+	tristate
 	default m if CONFIG_DEVEL
 	help
-		VRRPd is an implementation of Virtual Router Redundancy Protocol as specified in rfc2338. 
-		VRRPd is interoperable with other RFC-based VRRP implementations, including Cisco and Juniper, and is included as a standard feature on ImageStream routers.
+		VRRPd is an implementation of Virtual Router Redundancy
+		Protocol as specified in rfc2338.  VRRPd is interoperable with
+		other RFC-based VRRP implementations, including Cisco and
+		Juniper, and is included as a standard feature on ImageStream
+		routers.
 		
 		http://www.sourceforge.net/projects/vrrpd
