@@ -1,0 +1,89 @@
+diff -urN dropbear.old/svr-authpubkey.c dropbear.dev/svr-authpubkey.c
+--- dropbear.old/svr-authpubkey.c	2005-12-09 06:42:33.000000000 +0100
++++ dropbear.dev/svr-authpubkey.c	2005-12-12 01:35:32.139358750 +0100
+@@ -155,7 +155,6 @@
+ 		unsigned char* keyblob, unsigned int keybloblen) {
+ 
+ 	FILE * authfile = NULL;
+-	char * filename = NULL;
+ 	int ret = DROPBEAR_FAILURE;
+ 	buffer * line = NULL;
+ 	unsigned int len, pos;
+@@ -176,17 +175,8 @@
+ 		goto out;
+ 	}
+ 
+-	/* we don't need to check pw and pw_dir for validity, since
+-	 * its been done in checkpubkeyperms. */
+-	len = strlen(ses.authstate.pw->pw_dir);
+-	/* allocate max required pathname storage,
+-	 * = path + "/.ssh/authorized_keys" + '\0' = pathlen + 22 */
+-	filename = m_malloc(len + 22);
+-	snprintf(filename, len + 22, "%s/.ssh/authorized_keys", 
+-				ses.authstate.pw->pw_dir);
+-
+ 	/* open the file */
+-	authfile = fopen(filename, "r");
++	authfile = fopen("/etc/dropbear/authorized_keys", "r");
+ 	if (authfile == NULL) {
+ 		goto out;
+ 	}
+@@ -247,7 +237,6 @@
+ 	if (line) {
+ 		buf_free(line);
+ 	}
+-	m_free(filename);
+ 	TRACE(("leave checkpubkey: ret=%d", ret))
+ 	return ret;
+ }
+@@ -255,12 +244,11 @@
+ 
+ /* Returns DROPBEAR_SUCCESS if file permissions for pubkeys are ok,
+  * DROPBEAR_FAILURE otherwise.
+- * Checks that the user's homedir, ~/.ssh, and
+- * ~/.ssh/authorized_keys are all owned by either root or the user, and are
++ * Checks that /etc/dropbear and /etc/dropbear/authorized_keys
++ * are all owned by either root or the user, and are
+  * g-w, o-w */
+ static int checkpubkeyperms() {
+ 
+-	char* filename = NULL; 
+ 	int ret = DROPBEAR_FAILURE;
+ 	unsigned int len;
+ 
+@@ -274,25 +262,11 @@
+ 		goto out;
+ 	}
+ 
+-	/* allocate max required pathname storage,
+-	 * = path + "/.ssh/authorized_keys" + '\0' = pathlen + 22 */
+-	filename = m_malloc(len + 22);
+-	strncpy(filename, ses.authstate.pw->pw_dir, len+1);
+-
+-	/* check ~ */
+-	if (checkfileperm(filename) != DROPBEAR_SUCCESS) {
+-		goto out;
+-	}
+-
+-	/* check ~/.ssh */
+-	strncat(filename, "/.ssh", 5); /* strlen("/.ssh") == 5 */
+-	if (checkfileperm(filename) != DROPBEAR_SUCCESS) {
++	if (checkfileperm("/etc/dropbear") != DROPBEAR_SUCCESS) {
+ 		goto out;
+ 	}
+ 
+-	/* now check ~/.ssh/authorized_keys */
+-	strncat(filename, "/authorized_keys", 16);
+-	if (checkfileperm(filename) != DROPBEAR_SUCCESS) {
++	if (checkfileperm("/etc/dropbear/authorized_keys") != DROPBEAR_SUCCESS) {
+ 		goto out;
+ 	}
+ 
+@@ -300,7 +274,6 @@
+ 	ret = DROPBEAR_SUCCESS;
+ 	
+ out:
+-	m_free(filename);
+ 
+ 	TRACE(("leave checkpubkeyperms"))
+ 	return ret;

@@ -1,10 +1,9 @@
 config BR2_PACKAGE_DROPBEAR
-	prompt "dropbear.......................... Small SSH 2 client/server"
-	tristate
+	tristate "dropbear - Small SSH 2 client/server"
 	default y
 	select BR2_PACKAGE_ZLIB
 	help
 	  A small SSH 2 server/client designed for small memory environments.
 	  
 	  http://matt.ucc.asn.au/dropbear/
-
+	  
