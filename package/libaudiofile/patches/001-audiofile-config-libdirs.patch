@@ -1,0 +1,13 @@
+--- libaudiofile-0.2.6/audiofile-config.in.orig	2004-03-06 07:39:23.000000000 +0100
++++ libaudiofile-0.2.6/audiofile-config.in	2005-12-13 14:15:52.000000000 +0100
+@@ -45,7 +45,9 @@
+       echo $includes
+       ;;
+     --libs)
+-      libdirs=-L@libdir@
++      if test @libdir@ != /usr/libdir ; then
++        libdirs=-L@libdir@
++      fi
+       echo $libdirs -laudiofile -lm
+       ;;
+     *)
