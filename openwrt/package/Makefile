@@ -297,6 +297,7 @@ portmap-compile: tcp_wrappers-compile
 postgresql-compile: zlib-compile
 ppp-compile: linux-atm-compile
 quagga-compile: readline-compile ncurses-compile
+raddump-compile: openssl-compile libpcap-compile
 rarpd-compile: libnet-compile
 ifneq ($(BR2_PACKAGE_LIBRRD),)
 rrdcollect-compile: rrdtool-compile
