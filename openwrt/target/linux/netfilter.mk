@@ -58,9 +58,15 @@ IPT_NAT_EXTRA-m :=
 IPT_NAT_EXTRA-$(CONFIG_IP_NF_AMANDA) += ip_conntrack_amanda
 IPT_NAT_EXTRA-$(CONFIG_IP_NF_CT_PROTO_GRE) += ip_conntrack_proto_gre
 IPT_NAT_EXTRA-$(CONFIG_IP_NF_NAT_PROTO_GRE) += ip_nat_proto_gre
+IPT_NAT_EXTRA-$(CONFIG_IP_NF_H323) += ip_conntrack_h323
+IPT_NAT_EXTRA-$(CONFIG_IP_NF_NAT_H323) += ip_nat_h323
+IPT_NAT_EXTRA-$(CONFIG_IP_NF_MMS) += ip_conntrack_mms
+IPT_NAT_EXTRA-$(CONFIG_IP_NF_NAT_MMS) += ip_nat_mms
 IPT_NAT_EXTRA-$(CONFIG_IP_NF_PPTP) += ip_conntrack_pptp
 IPT_NAT_EXTRA-$(CONFIG_IP_NF_NAT_PPTP) += ip_nat_pptp
 IPT_NAT_EXTRA-$(CONFIG_IP_NF_NAT_SNMP_BASIC) += ip_nat_snmp_basic
+IPT_NAT_EXTRA-$(CONFIG_IP_NF_SIP) += ip_conntrack_sip
+IPT_NAT_EXTRA-$(CONFIG_IP_NF_NAT_SIP) += ip_nat_sip
 IPT_NAT_EXTRA-$(CONFIG_IP_NF_TFTP) += ip_conntrack_tftp
 
 IPT_QUEUE-m :=
