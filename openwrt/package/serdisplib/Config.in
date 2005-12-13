@@ -1,5 +1,7 @@
 config BR2_PACKAGE_SERDISPLIB
-	tristate "serdisplib........................ a library for controlling displays"
+	prompt "serdisplib........................ a library for controlling displays"
+	tristate
 	default m if CONFIG_DEVEL
 	help
-		serdisplib is a library to drive serial and parallel displays with built-in controllers.
+		serdisplib is a library to drive serial and parallel displays
+		with built-in controllers.

@@ -1,8 +1,11 @@
 config BR2_PACKAGE_RADDUMP
-        tristate "raddump........................... raddump interprets captured RADIUS packets."
+        prompt "raddump........................... raddump interprets captured RADIUS packets."
+	tristate
 	default m if CONFIG_DEVEL
 	select BR2_PACKAGE_LIBOPENSSL
 	select BR2_PACKAGE_LIBPCAP
 	help
-		raddump interprets captured RADIUS packets to print a timestamp, packet length, RADIUS packet type, 
-		source and destination hosts and ports, and included attribute names and values for each packet.
+		raddump interprets captured RADIUS packets to print a
+		timestamp, packet length, RADIUS packet type, source and
+		destination hosts and ports, and included attribute names and
+		values for each packet.
