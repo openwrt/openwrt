@@ -1,0 +1,21 @@
+diff -urN orig/vnc_reflector/Makefile vnc_reflector/Makefile
+--- orig/vnc_reflector/Makefile	2003-04-16 19:32:42.000000000 +0200
++++ vnc_reflector/Makefile	2005-12-13 11:08:09.000000000 +0100
+@@ -14,7 +14,7 @@
+ #
+ # Variables you might want to edit: CFLAGS, CONFFLAGS
+ 
+-IFLAGS =	-I.
++IFLAGS =	-I. -I$(STAGING_DIR)/usr/include
+ 
+ # Production
+ CFLAGS =	-O2 $(IFLAGS)
+@@ -29,7 +29,7 @@
+ CONFFLAGS =	-DUSE_POLL
+ 
+ # Link with zlib and JPEG libraries
+-LDFLAGS =	-L/usr/local/lib -lz -ljpeg
++LDFLAGS =	-L$(STAGING_DIR)/usr/lib -lz -ljpeg
+ 
+ PROG = 	vncreflector
+ 
