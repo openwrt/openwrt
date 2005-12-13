@@ -5,6 +5,7 @@ config BR2_LINUX_2_4_BRCM
 	bool "Support for Broadcom based routers [2.4]"
 	default y
 	depends BR2_mipsel
+	select BR2_LINUX_PCMCIA_SUPPORT
 	help
 	  Build firmware images for Broadcom based routers
 	  (e.g. Linksys WRT54G(S), Asus WL-500g, Motorola WR850G)
@@ -24,6 +25,7 @@ config BR2_LINUX_2_4_X86
 	bool "Support for x86 boards [2.4]"
 	default n
 	depends BR2_i386
+	select BR2_LINUX_PCMCIA_SUPPORT
 	help
 	  Build firmware images for x86 based boards
 	  (e.g. Soekris net4521 and net4801, PC Engines WRAP...)
@@ -32,6 +34,7 @@ config BR2_LINUX_2_6_BRCM
 	bool "Support for Broadcom based routers [2.6]"
 	default n
 	depends BR2_mipsel
+	select BR2_LINUX_PCMCIA_SUPPORT
 	help
 	  Build firmware images for Broadcom based routers
 	  (e.g. Netgear WGT634u)
@@ -40,12 +43,20 @@ config BR2_LINUX_2_6_X86
 	bool "Support for x86 boards [2.6]"
 	default n
 	depends BR2_i386
+	select BR2_LINUX_PCMCIA_SUPPORT
 	help
 	  Build firmware images for x86 based boards
 	  (e.g. Soekris net4521 and net4801, PC Engines WRAP...)
 
 endchoice
-	
+
+
+config BR2_LINUX_PCMCIA_SUPPORT
+	bool
+	default n
+	depends BR2_LINUX_2_4_X86 || BR2_LINUX_2_4_BRCM || BR2_LINUX_2_6_X86 || BR2_LINUX_2_6_BRCM
+
+
 comment "Device specific modules"
 
 config BR2_PACKAGE_KMOD_BRCM_ET
@@ -631,6 +642,7 @@ comment "PCMCIA/CardBus support"
 
 config BR2_PACKAGE_KMOD_PCMCIA_CORE
 	prompt "kmod-pcmcia-core.................. PCMCIA/CardBus support"
+	depends BR2_LINUX_PCMCIA_SUPPORT
 	tristate
 	default m
 

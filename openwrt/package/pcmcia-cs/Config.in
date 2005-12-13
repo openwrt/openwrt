@@ -6,6 +6,7 @@ config BR2_COMPILE_PCMCIA_CS
 config BR2_PACKAGE_PCMCIA_UTILS
 	prompt "pcmcia-utils...................... PCMCIA/Cardbus management utilities"
 	tristate
+	depends BR2_LINUX_PCMCIA_SUPPORT
 	select BR2_COMPILE_PCMCIA_CS
 	select BR2_PACKAGE_KMOD_PCMCIA_CORE
 	default m if CONFIG_DEVEL
