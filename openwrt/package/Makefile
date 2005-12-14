@@ -73,11 +73,13 @@ package-$(BR2_COMPILE_JPEG) += jpeg
 package-$(BR2_COMPILE_KISMET) += kismet
 package-$(BR2_COMPILE_KNOCK) += knock
 package-$(BR2_PACKAGE_L2TPD) += l2tpd
+package-$(BR2_PACKAGE_L2TPNS) += l2tpns
 package-$(BR2_PACKAGE_LCD4LINUX) += lcd4linux
 package-$(BR2_PACKAGE_LESS) += less
 package-$(BR2_PACKAGE_LIBAMSEL) += libamsel
 package-$(BR2_PACKAGE_LIBAO) += libao
 package-$(BR2_PACKAGE_LIBART) += libart
+package-$(BR2_PACKAGE_LIBCLI) += libcli
 package-$(BR2_PACKAGE_LIBDAEMON) += libdaemon
 package-$(BR2_PACKAGE_LIBDNET) += libdnet
 package-$(BR2_PACKAGE_LIBELF) += libelf
@@ -209,7 +211,7 @@ package-$(BR2_PACKAGE_UDEV) += udev
 package-$(BR2_PACKAGE_VGP) += vgp
 package_$(BR2_PACKAGE_VNC_REFLECTOR) += vnc-reflector
 package-$(BR2_PACKAGE_VPNC) += vpnc
-package-$(BR2_PACKGE_VRRPD) += vrrpd
+package-$(BR2_PACKAGE_VRRPD) += vrrpd
 package-$(BR2_PACKAGE_VTUN) += vtun
 package-$(BR2_PACKAGE_VSFTPD) += vsftpd
 package-$(BR2_PACKAGE_WCCPD) += wccpd
@@ -267,6 +269,7 @@ iptables-snmp-compile: net-snmp-compile
 iptraf-compile: ncurses-compile
 hostapd-compile: openssl-compile wireless-tools-compile
 kismet-compile: uclibc++-compile libpcap-compile ncurses-compile
+l2tpns-compile: libcli-compile
 less-compile: ncurses-compile
 lcd4linux-compile: ncurses-compile
 libgcrypt-compile: libgpg-error-compile
