@@ -1,3 +1,5 @@
+# $Id$
+
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=vpnc
@@ -21,11 +23,16 @@ $(PKG_BUILD_DIR)/.configured:
 	touch $@
 
 $(PKG_BUILD_DIR)/.built:
-	$(MAKE) STAGING_DIR=$(STAGING_DIR) CC=$(TARGET_CC) DESTDIR=$(PKG_INSTALL_DIR) -C $(PKG_BUILD_DIR) all install
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		CC=$(TARGET_CC) \
+		STAGING_DIR=$(STAGING_DIR) \
+		DESTDIR=$(PKG_INSTALL_DIR) \
+		PREFIX=/usr \
+		all install
 	touch $@
 
 $(IPKG_VPNC):
-	mkdir -p $(IDIR_VPNC)
+	install -d -m0755 $(IDIR_VPNC)
 	cp -fpR $(PKG_INSTALL_DIR)/* $(IDIR_VPNC)/
 	$(RSTRIP) $(IDIR_VPNC)
 	$(IPKG_BUILD) $(IDIR_VPNC) $(PACKAGE_DIR)
