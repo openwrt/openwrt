@@ -212,6 +212,7 @@ package-$(BR2_PACKAGE_VPNC) += vpnc
 package-$(BR2_PACKGE_VRRPD) += vrrpd
 package-$(BR2_PACKAGE_VTUN) += vtun
 package-$(BR2_PACKAGE_VSFTPD) += vsftpd
+package-$(BR2_PACKAGE_WCCPD) += wccpd
 package-$(BR2_PACKAGE_WIFICONF) += wificonf
 package-$(BR2_PACKAGE_WIFIDOG) += wifidog
 package-$(BR2_PACKAGE_WIVIZ) += wiviz
