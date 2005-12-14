@@ -29,6 +29,10 @@ $(PKG_BUILD_DIR)/.built:
 	touch $@
 
 $(IPKG_VRRPD):
+	install -d -m0755 $(IDIR_VRRPD)/etc/default
+	install -m0644 ./files/vrrpd.default $(IDIR_VRRPD)/etc/default/vrrpd
+	install -d -m0755 $(IDIR_VRRPD)/etc/init.d
+	install -m0755 ./files/vrrpd.init $(IDIR_VRRPD)/etc/init.d/vrrpd
 	install -d -m0755 $(IDIR_VRRPD)/usr/sbin
 	install -m0755 $(PKG_BUILD_DIR)/vrrpd $(IDIR_VRRPD)/usr/sbin/
 	$(RSTRIP) $(IDIR_VRRPD)
