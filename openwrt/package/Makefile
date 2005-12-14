@@ -150,6 +150,7 @@ package-$(BR2_PACKAGE_P910ND) += p910nd
 package-$(BR2_PACKAGE_PARPROUTED) += parprouted
 package-$(BR2_COMPILE_PCMCIA_CS) += pcmcia-cs
 package-$(BR2_COMPILE_PCRE) += pcre
+package-$(BR2_PACKAGE_PEERCAST) += peercast
 package-$(BR2_COMPILE_PHP4) += php4
 package-$(BR2_COMPILE_PHP5) += php5
 package-$(BR2_PACKAGE_PICOCOM) += picocom
@@ -300,6 +301,7 @@ openssl-compile: zlib-compile
 openswan-compile: gmp-compile
 osiris-compile: openssl-compile
 palantir-compile: jpeg-compile
+peercast-compile: uclibc++-compile
 portmap-compile: tcp_wrappers-compile
 postgresql-compile: zlib-compile
 ppp-compile: linux-atm-compile
