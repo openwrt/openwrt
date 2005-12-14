@@ -110,6 +110,7 @@ package-$(BR2_PACKAGE_LIBXSLT) += libxslt
 package-$(BR2_PACKAGE_LIGHTTPD) += lighttpd
 package-$(BR2_PACKAGE_LINUX_ATM) += linux-atm
 package-$(BR2_COMPILE_LUA) += lua
+package-$(BR2_PACKAGE_MADPLAY) += madplay
 package-$(BR2_PACKAGE_MADWIFI_TOOLS) += madwifi-tools
 package-$(BR2_PACKAGE_MARADNS) += maradns
 package-$(BR2_COMPILE_MATRIXSSL) += matrixssl
@@ -274,12 +275,14 @@ less-compile: ncurses-compile
 lcd4linux-compile: ncurses-compile
 libgcrypt-compile: libgpg-error-compile
 libgd-compile: libpng-compile
+libid3tag-compile: zlib-compile
 libnet-compile: libpcap-compile
 libnids-compile: libnet-compile
 libvorbis-compile: libogg-compile
 libxml2-compile: zlib-compile
 libxslt-compile: libxml2-compile
 lighttpd-compile: openssl-compile pcre-compile
+madplay-compile: libid3tag-compile libmad-compile
 miax-compile: bluez-libs-compile
 miredo-compile: uclibc++-compile
 mt-daapd-compile: howl-compile libgdbm-compile libid3tag-compile
