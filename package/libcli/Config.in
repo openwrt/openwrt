@@ -1,0 +1,11 @@
+config BR2_PACKAGE_LIBCLI
+	prompt "l2tpns............................ A Cisco-like command line interface
+	tristate
+	default m if CONFIG_DEVEL
+	help
+		Provides a shared library for including a Cisco-like 
+		command-line interface into other software. It's a telnet 
+		interface which supports command-line editing, history, 
+		authentication and callbacks for a user-definable function tree
+
+		http://libcli.sourceforge.net/
