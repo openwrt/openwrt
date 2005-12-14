@@ -1,0 +1,14 @@
+config BR2_PACKAGE_PEERCAST
+	prompt "peercast........................... P2P audio and video streaming server"
+	tristate
+	default m if CONFIG_DEVEL
+	select BR2_PACKAGE_LIBPTHREAD
+	select BR2_PACKAGE_UCLIBCXX
+	help
+	  PeerCast is a fresh new P2P streaming server. It can stream music
+	  and video from a broad variety of formats. Many audio players can 
+	  listen to peercast streams, as it's been built to remain compatible 
+	  with Nullsoft Shoutcast.
+	  
+	  http://www.peercast.org/
+
