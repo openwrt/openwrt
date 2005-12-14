@@ -1,0 +1,19 @@
+diff -urN orig/libcli-1.8.5/Makefile libcli-1.8.5/Makefile
+--- orig/libcli-1.8.5/Makefile	2005-05-02 11:57:39.000000000 +0200
++++ libcli-1.8.5/Makefile	2005-12-13 17:42:46.000000000 +0100
+@@ -1,13 +1,12 @@
+ DESTDIR =
+-PREFIX = /usr/local
++PREFIX = /usr/
+ 
+ MAJOR = 1
+ MINOR = 8
+ REVISION = 5
+ LIB = libcli.so
+ 
+-CC = gcc
+-DEBUG = -g
++DEBUG = 
+ OPTIM = -O3
+ CFLAGS += $(DEBUG) $(OPTIM) -Wall -Wformat-security -Wno-format-zero-length
+ LDFLAGS += -shared -Wl,-soname,$(LIB).$(MAJOR).$(MINOR)
