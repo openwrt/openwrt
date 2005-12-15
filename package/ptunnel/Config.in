@@ -1,0 +1,14 @@
+config BR2_PACKAGE_PTUNNEL
+	prompt "ptunnel........................... Tunnel TCP connections over ICMP packets"
+	tristate 
+	default m if CONFIG_DEVEL
+	select BR2_PACKAGE_LIBPCAP
+	select BR2_PACKAGE_LIBPTHREAD
+	help
+	  ptunnel is an application that allows you to reliably tunnel TCP connections to
+	  a remote host using ICMP echo request and reply packets, commonly known as ping
+	  requests and replies. It acts as a proxy and can handle sockets and secured
+	  identification.
+
+	  http://www.cs.uit.no/~daniels/PingTunnel/
+

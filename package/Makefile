@@ -163,6 +163,7 @@ package-$(BR2_PACKAGE_PPP) += ppp
 package-$(BR2_PACKAGE_PPTP) += pptp
 package-$(BR2_PACKAGE_PPTPD) += pptpd
 package-$(BR2_PACKAGE_PSYBNC) += psybnc
+package-$(BR2_PACKAGE_PTUNNEL) += ptunnel
 package-$(BR2_PACKAGE_QUAGGA) += quagga
 package-$(BR2_PACKAGE_RADVD) += radvd
 package-$(BR2_PACKAGE_RARPD) += rarpd
@@ -305,6 +306,7 @@ peercast-compile: uclibc++-compile
 portmap-compile: tcp_wrappers-compile
 postgresql-compile: zlib-compile
 ppp-compile: linux-atm-compile
+ptunnel-compile: libpcap-compile
 quagga-compile: readline-compile ncurses-compile
 raddump-compile: openssl-compile libpcap-compile
 rarpd-compile: libnet-compile
