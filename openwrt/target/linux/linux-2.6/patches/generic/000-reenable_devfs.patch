@@ -1,0 +1,219 @@
+diff -ur linux-2.6.15-rc5/drivers/mtd/mtd_blkdevs.c linux-2.6.15-rc5-openwrt/drivers/mtd/mtd_blkdevs.c
+--- linux-2.6.15-rc5/drivers/mtd/mtd_blkdevs.c	2005-12-04 06:10:42.000000000 +0100
++++ linux-2.6.15-rc5-openwrt/drivers/mtd/mtd_blkdevs.c	2005-12-15 07:53:20.000000000 +0100
+@@ -21,6 +21,9 @@
+ #include <linux/init.h>
+ #include <asm/semaphore.h>
+ #include <asm/uaccess.h>
++#ifdef CONFIG_DEVFS_FS
++#include <linux/devfs_fs_kernel.h>
++#endif
+ 
+ static LIST_HEAD(blktrans_majors);
+ 
+@@ -302,6 +305,11 @@
+ 		snprintf(gd->disk_name, sizeof(gd->disk_name),
+ 			 "%s%d", tr->name, new->devnum);
+ 
++#ifdef CONFIG_DEVFS_FS
++		snprintf(gd->devfs_name, sizeof(gd->devfs_name),
++			 "%s/%c", tr->name, (tr->part_bits?'a':'0') + new->devnum);
++#endif
++
+ 	/* 2.5 has capacity in units of 512 bytes while still
+ 	   having BLOCK_SIZE_BITS set to 10. Just to keep us amused. */
+ 	set_capacity(gd, (new->size * new->blksize) >> 9);
+@@ -418,6 +426,10 @@
+ 		return ret;
+ 	}
+ 
++#ifdef CONFIG_DEVFS_FS
++	devfs_mk_dir(tr->name);
++#endif
++
+ 	INIT_LIST_HEAD(&tr->devs);
+ 	list_add(&tr->list, &blktrans_majors);
+ 
+@@ -450,6 +462,10 @@
+ 		tr->remove_dev(dev);
+ 	}
+ 
++#ifdef CONFIG_DEVFS_FS
++	devfs_remove(tr->name);
++#endif
++
+ 	blk_cleanup_queue(tr->blkcore_priv->rq);
+ 	unregister_blkdev(tr->major, tr->name);
+ 
+diff -ur linux-2.6.15-rc5/drivers/mtd/mtdchar.c linux-2.6.15-rc5-openwrt/drivers/mtd/mtdchar.c
+--- linux-2.6.15-rc5/drivers/mtd/mtdchar.c	2005-12-04 06:10:42.000000000 +0100
++++ linux-2.6.15-rc5-openwrt/drivers/mtd/mtdchar.c	2005-12-15 07:49:15.000000000 +0100
+@@ -6,7 +6,6 @@
+  */
+ 
+ #include <linux/config.h>
+-#include <linux/device.h>
+ #include <linux/fs.h>
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+@@ -19,19 +18,33 @@
+ 
+ #include <asm/uaccess.h>
+ 
++#ifdef CONFIG_DEVFS_FS
++#include <linux/devfs_fs_kernel.h>
++#else
++#include <linux/device.h>
++
+ static struct class *mtd_class;
++#endif
+ 
+ static void mtd_notify_add(struct mtd_info* mtd)
+ {
+ 	if (!mtd)
+ 		return;
+ 
++#ifdef CONFIG_DEVFS_FS
++	devfs_mk_cdev(MKDEV(MTD_CHAR_MAJOR, mtd->index*2),
++			S_IFCHR | S_IRUGO | S_IWUGO, "mtd/%d", mtd->index);
++
++	devfs_mk_cdev(MKDEV(MTD_CHAR_MAJOR, mtd->index*2+1),
++			S_IFCHR | S_IRUGO, "mtd/%dro", mtd->index);
++#else
+ 	class_device_create(mtd_class, NULL, MKDEV(MTD_CHAR_MAJOR, mtd->index*2),
+ 			    NULL, "mtd%d", mtd->index);
+ 
+ 	class_device_create(mtd_class, NULL,
+ 			    MKDEV(MTD_CHAR_MAJOR, mtd->index*2+1),
+ 			    NULL, "mtd%dro", mtd->index);
++#endif
+ }
+ 
+ static void mtd_notify_remove(struct mtd_info* mtd)
+@@ -39,8 +52,13 @@
+ 	if (!mtd)
+ 		return;
+ 
++#ifdef CONFIG_DEVFS_FS
++	devfs_remove("mtd/%d", mtd->index);
++	devfs_remove("mtd/%dro", mtd->index);
++#else
+ 	class_device_destroy(mtd_class, MKDEV(MTD_CHAR_MAJOR, mtd->index*2));
+ 	class_device_destroy(mtd_class, MKDEV(MTD_CHAR_MAJOR, mtd->index*2+1));
++#endif
+ }
+ 
+ static struct mtd_notifier notifier = {
+@@ -48,6 +66,22 @@
+ 	.remove	= mtd_notify_remove,
+ };
+ 
++#ifdef CONFIG_DEVFS_FS
++	static inline void mtdchar_devfs_init(void)
++	{
++		devfs_mk_dir("mtd");
++		register_mtd_user(&notifier);
++	}
++	static inline void mtdchar_devfs_exit(void)
++	{
++		unregister_mtd_user(&notifier);
++		devfs_remove("mtd");
++	}
++	#else /* !DEVFS */
++	#define mtdchar_devfs_init() do { } while(0)
++	#define mtdchar_devfs_exit() do { } while(0)
++#endif
++
+ /*
+  * We use file->private_data to store a pointer to the MTDdevice.
+  * Since alighment is at least 32 bits, we have 2 bits free for OTP
+@@ -643,6 +677,9 @@
+ 		return -EAGAIN;
+ 	}
+ 
++#ifdef CONFIG_DEVFS_FS
++	mtdchar_devfs_init();
++#else
+ 	mtd_class = class_create(THIS_MODULE, "mtd");
+ 
+ 	if (IS_ERR(mtd_class)) {
+@@ -652,13 +689,19 @@
+ 	}
+ 
+ 	register_mtd_user(&notifier);
++#endif
+ 	return 0;
+ }
+ 
+ static void __exit cleanup_mtdchar(void)
+ {
++
++#ifdef CONFIG_DEVFS_FS
++	mtdchar_devfs_exit();
++#else
+ 	unregister_mtd_user(&notifier);
+ 	class_destroy(mtd_class);
++#endif
+ 	unregister_chrdev(MTD_CHAR_MAJOR, "mtd");
+ }
+ 
+diff -ur linux-2.6.15-rc5/fs/Kconfig linux-2.6.15-rc5-openwrt/fs/Kconfig
+--- linux-2.6.15-rc5/fs/Kconfig	2005-12-04 06:10:42.000000000 +0100
++++ linux-2.6.15-rc5-openwrt/fs/Kconfig	2005-12-15 07:44:01.000000000 +0100
+@@ -772,6 +772,56 @@
+         help
+         Exports the dump image of crashed kernel in ELF format.
+ 
++config DEVFS_FS
++	bool "/dev file system support (OBSOLETE)"
++	depends on EXPERIMENTAL
++	help
++	  This is support for devfs, a virtual file system (like /proc) which
++	  provides the file system interface to device drivers, normally found
++	  in /dev. Devfs does not depend on major and minor number
++	  allocations. Device drivers register entries in /dev which then
++	  appear automatically, which means that the system administrator does
++	  not have to create character and block special device files in the
++	  /dev directory using the mknod command (or MAKEDEV script) anymore.
++
++	  This is work in progress. If you want to use this, you *must* read
++	  the material in <file:Documentation/filesystems/devfs/>, especially
++	  the file README there.
++
++	  Note that devfs no longer manages /dev/pts!  If you are using UNIX98
++	  ptys, you will also need to mount the /dev/pts filesystem (devpts).
++
++	  Note that devfs has been obsoleted by udev,
++	  <http://www.kernel.org/pub/linux/utils/kernel/hotplug/>.
++	  It has been stripped down to a bare minimum and is only provided for
++	  legacy installations that use its naming scheme which is
++	  unfortunately different from the names normal Linux installations
++	  use.
++
++	  If unsure, say N.
++
++config DEVFS_MOUNT
++	bool "Automatically mount at boot"
++	depends on DEVFS_FS
++	help
++	  This option appears if you have CONFIG_DEVFS_FS enabled. Setting
++	  this to 'Y' will make the kernel automatically mount devfs onto /dev
++	  when the system is booted, before the init thread is started.
++	  You can override this with the "devfs=nomount" boot option.
++
++	  If unsure, say N.
++
++config DEVFS_DEBUG
++	bool "Debug devfs"
++	depends on DEVFS_FS
++	help
++	  If you say Y here, then the /dev file system code will generate
++	  debugging messages. See the file
++	  <file:Documentation/filesystems/devfs/boot-options> for more
++	  details.
++
++	  If unsure, say N.
++
+ config SYSFS
+ 	bool "sysfs file system support" if EMBEDDED
+ 	default y
