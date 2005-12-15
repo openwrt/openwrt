@@ -1,0 +1,26 @@
+diff -ruN asterisk-1.2.0-old/res/Makefile asterisk-1.2.0-new/res/Makefile
+--- asterisk-1.2.0-old/res/Makefile	2005-11-16 21:49:44.000000000 +0100
++++ asterisk-1.2.0-new/res/Makefile	2005-12-04 19:18:15.000000000 +0100
+@@ -69,6 +69,9 @@
+ CFLAGS+=-DOPENSSL_NO_KRB5 -fPIC
+ endif
+ 
++CFLAGS += $(EXTRA_CFLAGS)
++MODS += $(EXTRA_RES_MODULES)
++
+ all: depend $(MODS)
+ 
+ install: all
+@@ -112,6 +112,12 @@
+ res_config_odbc.so: res_config_odbc.o
+        $(CC) $(SOLINK) -o $@ ${CYGSOLINK} $< ${CYGSOLIB} ${CYG_RES_CONFIG_ODBC_LIB}
+
++res_config_mysql.so: res_config_mysql.o
++	$(CC) $(SOLINK) -o $@ ${CYGSOLINK} $< ${CYGSOLIB} $(EXTRA_LDFLAGS) -lmysqlclient -lz
++
++res_sqlite.so: res_sqlite.o
++	$(CC) $(SOLINK) -o $@ ${CYGSOLINK} $< ${CYGSOLIB} $(EXTRA_LDFLAGS) -lsqlite
++
+ ifneq ($(wildcard .depend),)
+   include .depend
+ endif

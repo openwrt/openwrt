@@ -1,0 +1,11 @@
+--- asterisk-1.2.1/Makefile.orig	2005-12-09 10:22:06.000000000 +0100
++++ asterisk-1.2.1/Makefile	2005-12-09 10:28:46.000000000 +0100
+@@ -322,8 +322,6 @@
+   ifneq ($(wildcard .svn),)
+     ASTERISKVERSIONNUM=999999
+     ASTERISKVERSION=SVN-$(shell build_tools/make_svn_branch_name)
+-  else
+-    ASTERISKVERSIONNUM=000000
+   endif
+ endif
+ 

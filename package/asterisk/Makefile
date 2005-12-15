@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=asterisk
-PKG_VERSION:=1.0.10
+PKG_VERSION:=1.2.1
 PKG_RELEASE:=1
-PKG_MD5SUM:=f60f4c4edc36fa61dc55a5385fd82e71
+PKG_MD5SUM:=04657086791e80f319c0d728af705001
 
 PKG_SOURCE_URL:=http://ftp.digium.com/pub/asterisk/ ftp://ftp.digium.com/pub/asterisk/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -19,6 +19,7 @@ $(eval $(call PKG_template,ASTERISK,asterisk,$(PKG_VERSION)-$(PKG_RELEASE),$(ARC
 $(eval $(call PKG_template,ASTERISK_MINI,asterisk-mini,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,ASTERISK_MYSQL,asterisk-mysql,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,ASTERISK_PGSQL,asterisk-pgsql,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,ASTERISK_SQLITE,asterisk-sqlite,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,ASTERISK_VOICEMAIL,asterisk-voicemail,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,ASTERISK_SOUNDS,asterisk-sounds,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,ASTERISK_CHAN_BLUETOOTH,asterisk-chan-bluetooth,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
@@ -30,47 +31,53 @@ $(eval $(call PKG_template,ASTERISK_CODEC_SPEEX,asterisk-codec-speex,$(PKG_VERSI
 $(eval $(call PKG_template,ASTERISK_PBX_DUNDI,asterisk-pbx-dundi,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,ASTERISK_RES_AGI,asterisk-res-agi,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
-ifneq ($(DEVELOPER),)
-APPS:=app_sql_mysql.so app_sql_postgres.so
-MODS:=cdr_mysql.so cdr_pgsql.so
-SPEEX:=codec_speex.so
-else
-APPS:=
-MODS:=
+EXTRA_CFLAGS := -I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include
+EXTRA_LDFLAGS := -L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib
+
 ifneq ($(BR2_PACKAGE_ASTERISK_MYSQL),)
-APPS += app_sql_mysql.so
-MODS += cdr_mysql.so
+EXTRA_CFLAGS += -I$(STAGING_DIR)/usr/include/mysql
+EXTRA_LDFLAGS += -L$(STAGING_DIR)/usr/lib/mysql
+EXTRA_APP_MODULES += app_sql_mysql.so
+EXTRA_CDR_MODULES += cdr_mysql.so
+EXTRA_RES_MODULES += res_config_mysql.so
 endif
 ifneq ($(BR2_PACKAGE_ASTERISK_PGSQL),)
-APPS += app_sql_postgres.so
-MODS += cdr_pgsql.so
+EXTRA_APP_MODULES += app_sql_postgres.so
+EXTRA_CDR_MODULES += cdr_pgsql.so
+endif
+ifneq ($(BR2_PACKAGE_ASTERISK_SQLITE),)
+EXTRA_CDR_MODULES += cdr_sqlite.so
 endif
 ifneq ($(BR2_PACKAGE_ASTERISK_CODEC_SPEEX),)
-SPEEX:=codec_speex.so
-endif
+EXTRA_CFLAGS += -I$(STAGING_DIR)/usr/include/speex
+EXTRA_CODEC_MODULES += codec_speex.so
 endif
 
 $(PKG_BUILD_DIR)/.configured:
 	touch $@
 
 $(PKG_BUILD_DIR)/.built:
-	$(MAKE) -C "$(PKG_BUILD_DIR)/channels" \
-		CC="$(HOSTCC)" \
-		gentone 
 	$(MAKE) -C "$(PKG_BUILD_DIR)" \
-		CC_FOR_BUILD="$(HOSTCC)" \
+		CROSS_ARCH="Linux" \
+		CROSS_COMPILE="$(TARGET_CROSS)" \
+		CROSS_COMPILE_BIN="/void/" \
+		CROSS_COMPILE_TARGET="/void/" \
 		$(TARGET_CONFIGURE_OPTS) \
+		HOST_CC="$(HOSTCC)" \
 		OPTIMIZE="$(TARGET_CFLAGS)" \
 		PROC="$(ARCH)" \
-		CFLAGS_EXTRA="-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/usr/include/speex" \
-		LDFLAGS_EXTRA="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/usr/lib/mysql" \
-		CRYPTO_LIBS="-L$(STAGING_DIR)/usr/lib -Wl,-Bstatic -lssl -lcrypto -Wl,-Bdynamic" \
-		EXTRA_APPS="$(APPS)" \
-		EXTRA_MODS="$(MODS)" \
-		MODSPEEX="$(SPEEX)"
-	$(MAKE) -C $(PKG_BUILD_DIR) \
+		DEBUG="" \
+		OPTIONS="-DLOW_MEMORY -Dlinux" \
+		NOCRYPTO="yes" \
+		EXTRA_CFLAGS="$(EXTRA_CFLAGS)" \
+		EXTRA_LDFLAGS="$(EXTRA_LDFLAGS)" \
+		EXTRA_APP_MODULES="$(EXTRA_APP_MODULES)" \
+		EXTRA_CDR_MODULES="$(EXTRA_CDR_MODULES)" \
+		EXTRA_CODEC_MODULES="$(EXTRA_CODEC_MODULES)" \
+		EXTRA_RES_MODULES="$(EXTRA_RES_MODULES)" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
-		install samples
+		ASTVARLIBDIR="/usr/lib/asterisk" \
+		all install samples
 	rm -f $(PKG_INSTALL_DIR)/etc/asterisk/*.old
 	touch $@
 
@@ -163,6 +170,12 @@ $(IPKG_ASTERISK_PGSQL):
 	install -m0755 $(PKG_BUILD_DIR)/cdr/cdr_pgsql.so $(IDIR_ASTERISK_PGSQL)/usr/lib/asterisk/modules/
 	$(RSTRIP) $(IDIR_ASTERISK_PGSQL)
 	$(IPKG_BUILD) $(IDIR_ASTERISK_PGSQL) $(PACKAGE_DIR)
+
+$(IPKG_ASTERISK_SQLITE):
+	install -d -m0755 $(IDIR_ASTERISK_SQLITE)/usr/lib/asterisk/modules
+	install -m0755 $(PKG_BUILD_DIR)/cdr/cdr_sqlite.so $(IDIR_ASTERISK_SQLITE)/usr/lib/asterisk/modules/
+	$(RSTRIP) $(IDIR_ASTERISK_SQLITE)
+	$(IPKG_BUILD) $(IDIR_ASTERISK_SQLITE) $(PACKAGE_DIR)
 
 $(IPKG_ASTERISK_SOUNDS):
 	install -d -m0755 $(IDIR_ASTERISK_SOUNDS)/usr/lib/asterisk/sounds

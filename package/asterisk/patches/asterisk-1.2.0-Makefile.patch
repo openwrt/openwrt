@@ -1,0 +1,54 @@
+diff -ruN asterisk-1.2.0-old/Makefile asterisk-1.2.0-new/Makefile
+--- asterisk-1.2.0-old/Makefile	2005-11-16 21:23:53.000000000 +0100
++++ asterisk-1.2.0-new/Makefile	2005-12-04 23:01:16.000000000 +0100
+@@ -341,16 +339,6 @@
+ 	netsock.o slinfactory.o ast_expr2.o ast_expr2f.o \
+ 	cryptostub.o
+ 
+-ifeq ($(wildcard $(CROSS_COMPILE_TARGET)/usr/include/sys/poll.h),)
+-  OBJS+= poll.o
+-  ASTCFLAGS+=-DPOLLCOMPAT
+-endif
+-
+-ifeq ($(wildcard $(CROSS_COMPILE_TARGET)/usr/include/dlfcn.h),)
+-  OBJS+= dlfcn.o
+-  ASTCFLAGS+=-DDLFCNCOMPAT
+-endif
+-
+ ifeq ($(OSARCH),Linux)
+   LIBS+=-ldl -lpthread -lncurses -lm -lresolv  #-lnjamd
+ else
+@@ -401,7 +389,9 @@
+   HAVEDOT=no
+ endif
+ 
++ifneq ($(NOCRYPTO),yes)
+ LIBS+=-lssl
++endif
+ 
+ INSTALL=install
+ 
+@@ -430,12 +420,12 @@
+ 	cd editline && unset CFLAGS LIBS && ./configure ; \
+ 
+ editline/libedit.a: FORCE
+-	cd editline && unset CFLAGS LIBS && test -f config.h || ./configure
++	cd editline && unset CFLAGS LIBS && test -f config.h || CFLAGS="$(OPTIMIZE) $(EXTRA_CFLAGS)" LDFLAGS="$(EXTRA_LDFLAGS)" ./configure
+ 	$(MAKE) -C editline libedit.a
+ 
+ db1-ast/libdb1.a: FORCE
+ 	@if [ -d db1-ast ]; then \
+-		$(MAKE) -C db1-ast libdb1.a ; \
++		$(MAKE) OORG="$(OPTIMIZE)" -C db1-ast libdb1.a ; \
+ 	else \
+ 		echo "You need to do a cvs update -d not just cvs update"; \
+ 		exit 1; \
+@@ -513,7 +503,7 @@
+ 	fi
+ 	rm -f include/asterisk/build.h.tmp
+ 	$(CC) -c -o buildinfo.o $(CFLAGS) buildinfo.c
+-	$(CC) $(DEBUG) $(ASTOBJ) $(ASTLINK) $(OBJS) buildinfo.o $(LIBEDIT) db1-ast/libdb1.a stdtime/libtime.a $(LIBS)
++	$(CC) $(DEBUG) $(ASTOBJ) $(ASTLINK) $(OBJS) buildinfo.o $(LIBEDIT) db1-ast/libdb1.a stdtime/libtime.a $(EXTRA_LDFLAGS) $(LIBS)
+ 
+ muted: muted.o
+ 	$(CC) $(AUDIO_LIBS) -o muted muted.o
