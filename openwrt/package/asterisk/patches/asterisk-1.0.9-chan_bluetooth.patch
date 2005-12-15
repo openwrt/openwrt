@@ -19,7 +19,7 @@ diff -ruN asterisk-1.0.9-old/channels/Makefile asterisk-1.0.9-new/channels/Makef
  	$(CC) $(SOLINK) -o $@ $< h323/libchanh323.a $(CHANH323LIB) -L$(PWLIBDIR)/lib $(PTLIB) -L$(OPENH323DIR)/lib $(H323LIB) -L/usr/lib -lcrypto -lssl -lexpat
  
 +chan_bluetooth.so: chan_bluetooth.o
-+	$(CC) $(SOLINK) -o $@ $< $(LDFLAGS_EXTRA) -lbluetooth
++	$(CC) $(SOLINK) -o $@ $< $(EXTRA_LDFLAGS) -lbluetooth
 +
  
  #chan_modem.so : chan_modem.o
@@ -164,7 +164,7 @@ diff -ruN asterisk-1.0.9-old/channels/chan_bluetooth.c asterisk-1.0.9-new/channe
 +#define BLT_CONFIG_FILE     "bluetooth.conf"
 +#define BLT_RDBUFF_MAX      1024
 +#define BLT_DEFAULT_HCI_DEV 0
-+#define BLT_SVN_REVISION    "$Rev: 38 $"
++#define BLT_SVN_REVISION    "$Rev$"
 +
 +/* ---------------------------------- */
 +

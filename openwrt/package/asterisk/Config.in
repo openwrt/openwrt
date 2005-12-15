@@ -95,7 +95,16 @@ config BR2_PACKAGE_ASTERISK_PGSQL
 	select BR2_PACKAGE_LIBPQ
 	help
 	  PostgreSQL modules for Asterisk
-	  
+
+config BR2_PACKAGE_ASTERISK_SQLITE
+	prompt   "asterisk-sqlite................. SQLite modules"
+	tristate
+	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_ASTERISK
+	select BR2_PACKAGE_LIBSQLITE
+	help
+	  SQLite modules for Asterisk
+
 config BR2_PACKAGE_ASTERISK_SOUNDS
 	prompt   "asterisk-sounds................. Sound files"
 	tristate
@@ -111,7 +120,7 @@ config BR2_PACKAGE_ASTERISK_VOICEMAIL
 	depends BR2_PACKAGE_ASTERISK
 	help
 	  Voicemail related modules for Asterisk
-	  
+
 config BR2_PACKAGE_ASTERISK_MINI
 	prompt "asterisk-mini..................... Minimal open source PBX"
 	tristate
@@ -137,6 +146,5 @@ config BR2_PACKAGE_ASTERISK_MINI
 	    - pbx_config
 	    - res_features
 	    - res_musiconhold
-	  
 
 endmenu

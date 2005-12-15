@@ -1,0 +1,13 @@
+diff -ruN asterisk-1.2.0-old/codecs/Makefile asterisk-1.2.0-new/codecs/Makefile
+--- asterisk-1.2.0-old/codecs/Makefile	2005-11-08 05:13:18.000000000 +0100
++++ asterisk-1.2.0-new/codecs/Makefile	2005-12-04 19:24:53.000000000 +0100
+@@ -72,6 +72,9 @@
+         codec_adpcm.so codec_ulaw.so codec_alaw.so codec_a_mu.so \
+ 	codec_g726.so
+ 
++CFLAGS += $(EXTRA_CFLAGS)
++CODECS += $(EXTRA_CODEC_MODULES)
++
+ all: depend $(CODECS)
+ 
+ clean:
