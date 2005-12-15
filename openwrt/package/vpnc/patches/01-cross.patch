@@ -1,0 +1,37 @@
+diff -ruN vpnc-0.3.3-old/Makefile vpnc-0.3.3-new/Makefile
+--- vpnc-0.3.3-old/Makefile	2005-05-01 22:30:35.000000000 +0200
++++ vpnc-0.3.3-new/Makefile	2005-12-13 17:23:26.000000000 +0100
+@@ -23,25 +23,26 @@
+ MANDIR=$(PREFIX)/share/man
+ 
+ CC=gcc
+-CFLAGS=-W -Wall -O -g '-DVERSION="$(shell cat VERSION)"' $(shell libgcrypt-config --cflags)
+-LDFLAGS=-g $(shell libgcrypt-config --libs)
++CFLAGS=-W -Wall -I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include $(OFLAGS) '-DVERSION="$(shell cat VERSION)"' $(shell libgcrypt-config --cflags)
++LDFLAGS=-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib $(shell libgcrypt-config --libs)
+ 
+-ifeq ($(shell uname -s), Linux)
++OS=$(shell uname -s)
++ifeq ($(OS), Linux)
+ SYSDEP=sysdep-linux.o
+ endif
+-ifeq ($(shell uname -s), FreeBSD)
++ifeq ($(OS), FreeBSD)
+ CFLAGS += -DSOCKADDR_IN_SIN_LEN -DHAVE_SA_LEN
+ SYSDEP=sysdep-bsd.o
+ endif
+-ifeq ($(shell uname -s), NetBSD)
++ifeq ($(OS), NetBSD)
+ CFLAGS += -DSOCKADDR_IN_SIN_LEN -DHAVE_SA_LEN
+ SYSDEP=sysdep-bsd.o
+ endif
+-ifeq ($(shell uname -s), OpenBSD)
++ifeq ($(OS), OpenBSD)
+ CFLAGS += -DSOCKADDR_IN_SIN_LEN -DHAVE_SA_LEN -DNEED_IPLEN_FIX -DNEW_TUN
+ SYSDEP=sysdep-bsd.o
+ endif
+-ifeq ($(shell uname -s), SunOS)
++ifeq ($(OS), SunOS)
+ CFLAGS += -DNEED_IPLEN_FIX
+ LDFLAGS += -lnsl -lresolv -lsocket
+ SYSDEP=sysdep-svr4.o
