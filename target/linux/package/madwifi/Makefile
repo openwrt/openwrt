@@ -12,7 +12,7 @@ PKG_SOURCE_URL:=http://snapshots.madwifi.org/madwifi-ng
 PKG_SOURCE:=$(PKG_NAME)-ng-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-trunk-$(PKG_VERSION)
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-ng-$(PKG_VERSION)
 
 ifeq ($(KERNEL_DIR),)
 KERNEL_DIR:=$(LINUX_DIR)
