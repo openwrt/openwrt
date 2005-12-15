@@ -25,6 +25,8 @@ $(PKG_BUILD_DIR)/.configured:
 $(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CC=$(TARGET_CC) \
+		OFLAGS="$(TARGET_CFLAGS)" \
+		OS="Linux" \
 		STAGING_DIR=$(STAGING_DIR) \
 		DESTDIR=$(PKG_INSTALL_DIR) \
 		PREFIX=/usr \
