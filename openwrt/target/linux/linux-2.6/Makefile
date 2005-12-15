@@ -5,12 +5,12 @@ include $(TOPDIR)/rules.mk
 include ../rules.mk
 
 KERNEL:=2.6
-LINUX_VERSION:=2.6.12.5
-LINUX_KERNEL_MD5SUM:=076f0dc714112c764c790fbaef19e228
-LINUX_SITE=http://www.fi.kernel.org/pub/linux/kernel/v2.6 \
-           http://www.fr.kernel.org/pub/linux/kernel/v2.6 \
-           http://www.kernel.org/pub/linux/kernel/v2.6 \
-           http://www.de.kernel.org/pub/linux/kernel/v2.6 
+LINUX_VERSION:=2.6.15-rc5
+LINUX_KERNEL_MD5SUM:=1b430bfd22f4094bf1bdc1a5ceb6b6a2
+LINUX_SITE=http://www.fi.kernel.org/pub/linux/kernel/v2.6/testing \
+           http://www.fr.kernel.org/pub/linux/kernel/v2.6/testing \
+           http://www.kernel.org/pub/linux/kernel/v2.6/testing \
+           http://www.de.kernel.org/pub/linux/kernel/v2.6/testing 
 MODULES_SUBDIR:=lib/modules/$(LINUX_VERSION)
 LINUX_KCONFIG:=./config/$(BOARD)
 LINUX_BUILD_DIR:=$(BUILD_DIR)/linux-2.6-$(BOARD)
@@ -79,9 +79,9 @@ $(eval $(call KMOD_template,PPP,ppp,\
 	$(MODULES_DIR)/kernel/drivers/net/slhc.ko \
 ,CONFIG_PPP))
 
-$(eval $(call KMOD_template,MPPE,mppe,\
-	$(MODULES_DIR)/kernel/drivers/net/ppp_mppe_mppc.ko \
-,CONFIG_PPP_MPPE_MPPC))
+#$(eval $(call KMOD_template,MPPE,mppe,\
+#	$(MODULES_DIR)/kernel/drivers/net/ppp_mppe_mppc.ko \
+#,CONFIG_PPP_MPPE_MPPC))
 
 $(eval $(call KMOD_template,PPPOATM,pppoatm,\
 	$(MODULES_DIR)/kernel/net/atm/pppoatm.ko \
@@ -338,9 +338,9 @@ $(eval $(call KMOD_template,USB_ACM,usb-acm,\
 	$(MODULES_DIR)/kernel/drivers/usb/class/cdc-acm.ko \
 ,CONFIG_USB_ACM))
 
-$(eval $(call KMOD_template,USB_AUDIO,usb-audio,\
-	$(MODULES_DIR)/kernel/drivers/usb/class/audio.ko \
-,CONFIG_USB_AUDIO,kmod-soundcore kmod-usb-core,61,audio))
+#$(eval $(call KMOD_template,USB_AUDIO,usb-audio,\
+#	$(MODULES_DIR)/kernel/drivers/usb/class/audio.ko \
+#,CONFIG_USB_AUDIO,kmod-soundcore kmod-usb-core,61,audio))
 
 $(eval $(call KMOD_template,USB_PRINTER,usb-printer,\
 	$(MODULES_DIR)/kernel/drivers/usb/class/usblp.ko \

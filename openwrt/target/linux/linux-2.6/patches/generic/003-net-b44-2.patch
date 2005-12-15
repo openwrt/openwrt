@@ -1,6 +1,6 @@
-diff -Nur linux-2.6.12.5/drivers/net/b44.c linux-2.6.12.5-b44/drivers/net/b44.c
---- linux-2.6.12.5/drivers/net/b44.c	2005-08-15 02:20:18.000000000 +0200
-+++ linux-2.6.12.5-b44/drivers/net/b44.c	2005-09-16 22:19:33.841633800 +0200
+diff -ur linux-2.6.14.3/drivers/net/b44.c linux-2.6.14.3-openwrt/drivers/net/b44.c
+--- linux-2.6.14.3/drivers/net/b44.c	2005-11-24 23:10:21.000000000 +0100
++++ linux-2.6.14.3-openwrt/drivers/net/b44.c	2005-12-08 13:24:35.000000000 +0100
 @@ -1,7 +1,8 @@
 -/* b44.c: Broadcom 4400 device driver.
 +/* b44.c: Broadcom 4400/47xx device driver.
@@ -615,7 +615,7 @@ diff -Nur linux-2.6.12.5/drivers/net/b44.c linux-2.6.12.5-b44/drivers/net/b44.c
  }
  
  static int b44_open(struct net_device *dev)
-@@ -1416,11 +1460,11 @@
+@@ -1419,11 +1463,11 @@
  	int i=0;
  	unsigned char zero[6] = {0,0,0,0,0,0};
  
@@ -629,7 +629,7 @@ diff -Nur linux-2.6.12.5/drivers/net/b44.c linux-2.6.12.5-b44/drivers/net/b44.c
  	} else {
  		__b44_set_mac_addr(bp);
  
-@@ -1432,9 +1476,9 @@
+@@ -1435,9 +1479,9 @@
  		for(;i<64;i++) {
  			__b44_cam_write(bp, zero, i);			
  		}
@@ -642,7 +642,7 @@ diff -Nur linux-2.6.12.5/drivers/net/b44.c linux-2.6.12.5-b44/drivers/net/b44.c
  	}
  }
  
-@@ -1675,17 +1719,288 @@
+@@ -1678,17 +1722,288 @@
  	.set_msglevel		= b44_set_msglevel,
  };
  
@@ -935,7 +935,7 @@ diff -Nur linux-2.6.12.5/drivers/net/b44.c linux-2.6.12.5-b44/drivers/net/b44.c
  }
  
  /* Read 128-bytes of EEPROM. */
-@@ -1695,7 +2010,7 @@
+@@ -1698,7 +2013,7 @@
  	u16 *ptr = (u16 *) data;
  
  	for (i = 0; i < 128; i += 2)
@@ -944,7 +944,7 @@ diff -Nur linux-2.6.12.5/drivers/net/b44.c linux-2.6.12.5-b44/drivers/net/b44.c
  
  	return 0;
  }
-@@ -1704,19 +2019,41 @@
+@@ -1707,19 +2022,41 @@
  {
  	u8 eeprom[128];
  	int err;
@@ -998,7 +998,7 @@ diff -Nur linux-2.6.12.5/drivers/net/b44.c linux-2.6.12.5-b44/drivers/net/b44.c
  
  	/* With this, plus the rx_header prepended to the data by the
  	 * hardware, we'll land the ethernet header on a 2-byte boundary.
-@@ -1726,13 +2063,12 @@
+@@ -1729,13 +2066,12 @@
  	bp->imask = IMASK_DEF;
  
  	bp->core_unit = ssb_core_unit(bp);
@@ -1014,7 +1014,7 @@ diff -Nur linux-2.6.12.5/drivers/net/b44.c linux-2.6.12.5-b44/drivers/net/b44.c
  }
  
  static int __devinit b44_init_one(struct pci_dev *pdev,
-@@ -1810,7 +2146,7 @@
+@@ -1813,7 +2149,7 @@
  
  	spin_lock_init(&bp->lock);
  
@@ -1023,7 +1023,7 @@ diff -Nur linux-2.6.12.5/drivers/net/b44.c linux-2.6.12.5-b44/drivers/net/b44.c
  	if (bp->regs == 0UL) {
  		printk(KERN_ERR PFX "Cannot map device registers, "
  		       "aborting.\n");
-@@ -1871,15 +2207,21 @@
+@@ -1874,15 +2210,21 @@
  
  	pci_save_state(bp->pdev);
  
@@ -1047,7 +1047,7 @@ diff -Nur linux-2.6.12.5/drivers/net/b44.c linux-2.6.12.5-b44/drivers/net/b44.c
  
  err_out_free_dev:
  	free_netdev(dev);
-@@ -1901,7 +2243,7 @@
+@@ -1904,7 +2246,7 @@
  		struct b44 *bp = netdev_priv(dev);
  
  		unregister_netdev(dev);
@@ -1056,9 +1056,9 @@ diff -Nur linux-2.6.12.5/drivers/net/b44.c linux-2.6.12.5-b44/drivers/net/b44.c
  		free_netdev(dev);
  		pci_release_regions(pdev);
  		pci_disable_device(pdev);
-diff -Nur linux-2.6.12.5/drivers/net/b44.h linux-2.6.12.5-b44/drivers/net/b44.h
---- linux-2.6.12.5/drivers/net/b44.h	2005-08-15 02:20:18.000000000 +0200
-+++ linux-2.6.12.5-b44/drivers/net/b44.h	2005-09-16 22:18:06.217954624 +0200
+diff -ur linux-2.6.14.3/drivers/net/b44.h linux-2.6.14.3-openwrt/drivers/net/b44.h
+--- linux-2.6.14.3/drivers/net/b44.h	2005-11-24 23:10:21.000000000 +0100
++++ linux-2.6.14.3-openwrt/drivers/net/b44.h	2005-12-08 13:24:35.000000000 +0100
 @@ -292,6 +292,9 @@
  #define SSB_PCI_MASK1		0xfc000000
  #define SSB_PCI_MASK2		0xc0000000
