@@ -138,7 +138,7 @@ int main(int argc, char **argv)
 				break;
 			case '4':
 				/* V4 firmware sets the flags to 0x1f */
-				hdr->hw_ver = 1;
+				hdr->hw_ver = 0;
 				hdr->flags = 0x1f;
 				break;
 
