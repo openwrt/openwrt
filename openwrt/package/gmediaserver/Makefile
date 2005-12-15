@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=gmediaserver
-PKG_VERSION:=0.8.0
+PKG_VERSION:=0.9.0
 PKG_RELEASE:=1
-PKG_MD5SUM:=fe5d6ab36287999d7acd8aff8dc0819c
+PKG_MD5SUM:=93de0f8dcbc1353a0d0dd5b5ab4b3142
 
 PKG_SOURCE_URL:=http://savannah.nongnu.org/download/gmediaserver/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
