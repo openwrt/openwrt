@@ -1,6 +1,6 @@
-diff -ruN busybox-1.00-old/archival/libipkg/file_util.c busybox-1.00-new/archival/libipkg/file_util.c
---- busybox-1.00-old/archival/libipkg/file_util.c	2005-10-27 16:37:25.000000000 +0200
-+++ busybox-1.00-new/archival/libipkg/file_util.c	2005-10-27 16:38:03.000000000 +0200
+diff -ruN busybox-1.1.0-pre1-old/archival/libipkg/file_util.c busybox-1.1.0-pre1-new/archival/libipkg/file_util.c
+--- busybox-1.1.0-pre1-old/archival/libipkg/file_util.c	2005-12-08 09:01:04.000000000 +0100
++++ busybox-1.1.0-pre1-new/archival/libipkg/file_util.c	2005-12-08 09:04:01.000000000 +0100
 @@ -123,7 +123,7 @@
  
  int file_mkdir_hier(const char *path, long mode)
@@ -10,9 +10,9 @@ diff -ruN busybox-1.00-old/archival/libipkg/file_util.c busybox-1.00-new/archiva
  }
  
  char *file_md5sum_alloc(const char *file_name)
-diff -ruN busybox-1.00-old/archival/libipkg/ipkg_cmd.c busybox-1.00-new/archival/libipkg/ipkg_cmd.c
---- busybox-1.00-old/archival/libipkg/ipkg_cmd.c	2005-10-27 16:37:25.000000000 +0200
-+++ busybox-1.00-new/archival/libipkg/ipkg_cmd.c	2005-10-27 16:38:03.000000000 +0200
+diff -ruN busybox-1.1.0-pre1-old/archival/libipkg/ipkg_cmd.c busybox-1.1.0-pre1-new/archival/libipkg/ipkg_cmd.c
+--- busybox-1.1.0-pre1-old/archival/libipkg/ipkg_cmd.c	2005-12-08 09:01:04.000000000 +0100
++++ busybox-1.1.0-pre1-new/archival/libipkg/ipkg_cmd.c	2005-12-08 09:04:01.000000000 +0100
 @@ -251,7 +251,7 @@
  		   in = fopen (tmp_file_name, "r");
  		   out = fopen (list_file_name, "w");
@@ -56,9 +56,9 @@ diff -ruN busybox-1.00-old/archival/libipkg/ipkg_cmd.c busybox-1.00-new/archival
      
       global_conf = conf;
       signal(SIGINT, sigint_handler);
-diff -ruN busybox-1.00-old/archival/libipkg/ipkg_conf.c busybox-1.00-new/archival/libipkg/ipkg_conf.c
---- busybox-1.00-old/archival/libipkg/ipkg_conf.c	2005-10-27 16:37:25.000000000 +0200
-+++ busybox-1.00-new/archival/libipkg/ipkg_conf.c	2005-10-27 16:38:03.000000000 +0200
+diff -ruN busybox-1.1.0-pre1-old/archival/libipkg/ipkg_conf.c busybox-1.1.0-pre1-new/archival/libipkg/ipkg_conf.c
+--- busybox-1.1.0-pre1-old/archival/libipkg/ipkg_conf.c	2005-12-08 09:01:04.000000000 +0100
++++ busybox-1.1.0-pre1-new/archival/libipkg/ipkg_conf.c	2005-12-08 09:04:01.000000000 +0100
 @@ -540,14 +540,14 @@
  	  if (strcmp(type, "option") == 0) {
  	       ipkg_conf_set_option(options, name, value);
@@ -76,9 +76,9 @@ diff -ruN busybox-1.00-old/archival/libipkg/ipkg_conf.c busybox-1.00-new/archiva
  		    pkg_src_list_append (pkg_src_list, name, value, extra, 1);
  	       } else {
  		    ipkg_message(conf, IPKG_ERROR, "ERROR: duplicate src declaration.  Skipping:\n\t src %s %s\n",
-diff -ruN busybox-1.00-old/archival/libipkg/libipkg.c busybox-1.00-new/archival/libipkg/libipkg.c
---- busybox-1.00-old/archival/libipkg/libipkg.c	2005-10-27 16:37:25.000000000 +0200
-+++ busybox-1.00-new/archival/libipkg/libipkg.c	2005-10-27 16:38:03.000000000 +0200
+diff -ruN busybox-1.1.0-pre1-old/archival/libipkg/libipkg.c busybox-1.1.0-pre1-new/archival/libipkg/libipkg.c
+--- busybox-1.1.0-pre1-old/archival/libipkg/libipkg.c	2005-12-08 09:01:04.000000000 +0100
++++ busybox-1.1.0-pre1-new/archival/libipkg/libipkg.c	2005-12-08 09:04:01.000000000 +0100
 @@ -445,7 +445,7 @@
  int
  ipkg_op (int argc, char *argv[])
@@ -123,9 +123,9 @@ diff -ruN busybox-1.00-old/archival/libipkg/libipkg.c busybox-1.00-new/archival/
  
  	ipkg_conf_deinit (&ipkg_conf);
  
-diff -ruN busybox-1.00-old/archival/libipkg/md5.c busybox-1.00-new/archival/libipkg/md5.c
---- busybox-1.00-old/archival/libipkg/md5.c	2005-10-27 16:37:25.000000000 +0200
-+++ busybox-1.00-new/archival/libipkg/md5.c	2005-10-27 16:38:03.000000000 +0200
+diff -ruN busybox-1.1.0-pre1-old/archival/libipkg/md5.c busybox-1.1.0-pre1-new/archival/libipkg/md5.c
+--- busybox-1.1.0-pre1-old/archival/libipkg/md5.c	2005-12-08 09:01:04.000000000 +0100
++++ busybox-1.1.0-pre1-new/archival/libipkg/md5.c	2005-12-08 09:04:01.000000000 +0100
 @@ -25,7 +25,6 @@
  int md5_stream(FILE *stream, void *resblock)
  {
@@ -134,9 +134,9 @@ diff -ruN busybox-1.00-old/archival/libipkg/md5.c busybox-1.00-new/archival/libi
  	
  	if( (fd = fileno(stream)) == -1 ) {
  		bb_error_msg("bad file descriptor");
-diff -ruN busybox-1.00-old/archival/libipkg/pkg.c busybox-1.00-new/archival/libipkg/pkg.c
---- busybox-1.00-old/archival/libipkg/pkg.c	2005-10-27 16:37:25.000000000 +0200
-+++ busybox-1.00-new/archival/libipkg/pkg.c	2005-10-27 16:38:03.000000000 +0200
+diff -ruN busybox-1.1.0-pre1-old/archival/libipkg/pkg.c busybox-1.1.0-pre1-new/archival/libipkg/pkg.c
+--- busybox-1.1.0-pre1-old/archival/libipkg/pkg.c	2005-12-08 09:01:04.000000000 +0100
++++ busybox-1.1.0-pre1-new/archival/libipkg/pkg.c	2005-12-08 09:04:01.000000000 +0100
 @@ -527,6 +527,7 @@
  char * pkg_formatted_field(pkg_t *pkg, const char *field )
  {
@@ -289,9 +289,9 @@ diff -ruN busybox-1.00-old/archival/libipkg/pkg.c busybox-1.00-new/archival/libi
       } else {
  	  epoch_str = strdup("");
       }
-diff -ruN busybox-1.00-old/archival/libipkg/pkg.h busybox-1.00-new/archival/libipkg/pkg.h
---- busybox-1.00-old/archival/libipkg/pkg.h	2005-10-27 16:37:25.000000000 +0200
-+++ busybox-1.00-new/archival/libipkg/pkg.h	2005-10-27 16:38:03.000000000 +0200
+diff -ruN busybox-1.1.0-pre1-old/archival/libipkg/pkg.h busybox-1.1.0-pre1-new/archival/libipkg/pkg.h
+--- busybox-1.1.0-pre1-old/archival/libipkg/pkg.h	2005-12-08 09:01:04.000000000 +0100
++++ busybox-1.1.0-pre1-new/archival/libipkg/pkg.h	2005-12-08 09:04:01.000000000 +0100
 @@ -192,8 +192,8 @@
  char *pkg_version_str_alloc(pkg_t *pkg);
  
@@ -303,9 +303,9 @@ diff -ruN busybox-1.00-old/archival/libipkg/pkg.h busybox-1.00-new/archival/libi
  
  char * pkg_formatted_info(pkg_t *pkg );
  char * pkg_formatted_field(pkg_t *pkg, const char *field );
-diff -ruN busybox-1.00-old/archival/libipkg/pkg_depends.c busybox-1.00-new/archival/libipkg/pkg_depends.c
---- busybox-1.00-old/archival/libipkg/pkg_depends.c	2005-10-27 16:37:26.000000000 +0200
-+++ busybox-1.00-new/archival/libipkg/pkg_depends.c	2005-10-27 16:38:03.000000000 +0200
+diff -ruN busybox-1.1.0-pre1-old/archival/libipkg/pkg_depends.c busybox-1.1.0-pre1-new/archival/libipkg/pkg_depends.c
+--- busybox-1.1.0-pre1-old/archival/libipkg/pkg_depends.c	2005-12-08 09:01:04.000000000 +0100
++++ busybox-1.1.0-pre1-new/archival/libipkg/pkg_depends.c	2005-12-08 09:04:01.000000000 +0100
 @@ -68,7 +68,7 @@
  					    pkg_vec_t *unsatisfied, char *** unresolved)
  {
@@ -377,9 +377,9 @@ diff -ruN busybox-1.00-old/archival/libipkg/pkg_depends.c busybox-1.00-new/archi
       return NULL;
  }
  
-diff -ruN busybox-1.00-old/archival/libipkg/pkg_depends.h busybox-1.00-new/archival/libipkg/pkg_depends.h
---- busybox-1.00-old/archival/libipkg/pkg_depends.h	2005-10-27 16:37:26.000000000 +0200
-+++ busybox-1.00-new/archival/libipkg/pkg_depends.h	2005-10-27 16:38:03.000000000 +0200
+diff -ruN busybox-1.1.0-pre1-old/archival/libipkg/pkg_depends.h busybox-1.1.0-pre1-new/archival/libipkg/pkg_depends.h
+--- busybox-1.1.0-pre1-old/archival/libipkg/pkg_depends.h	2005-12-08 09:01:04.000000000 +0100
++++ busybox-1.1.0-pre1-new/archival/libipkg/pkg_depends.h	2005-12-08 09:04:01.000000000 +0100
 @@ -92,7 +92,7 @@
   */
  int pkg_conflicts(pkg_t *pkg, pkg_t *conflicts);
@@ -389,9 +389,9 @@ diff -ruN busybox-1.00-old/archival/libipkg/pkg_depends.h busybox-1.00-new/archi
  void buildDependedUponBy(pkg_t * pkg, abstract_pkg_t * ab_pkg);
  void freeDepends(pkg_t *pkg);
  void printDepends(pkg_t * pkg);
-diff -ruN busybox-1.00-old/archival/libipkg/pkg_hash.c busybox-1.00-new/archival/libipkg/pkg_hash.c
---- busybox-1.00-old/archival/libipkg/pkg_hash.c	2005-10-27 16:37:26.000000000 +0200
-+++ busybox-1.00-new/archival/libipkg/pkg_hash.c	2005-10-27 16:38:03.000000000 +0200
+diff -ruN busybox-1.1.0-pre1-old/archival/libipkg/pkg_hash.c busybox-1.1.0-pre1-new/archival/libipkg/pkg_hash.c
+--- busybox-1.1.0-pre1-old/archival/libipkg/pkg_hash.c	2005-12-08 09:01:04.000000000 +0100
++++ busybox-1.1.0-pre1-new/archival/libipkg/pkg_hash.c	2005-12-08 09:04:01.000000000 +0100
 @@ -143,7 +143,7 @@
  pkg_t *pkg_hash_fetch_best_installation_candidate(ipkg_conf_t *conf, abstract_pkg_t *apkg, 
  						  int (*constraint_fcn)(pkg_t *pkg, void *cdata), void *cdata, int quiet)
@@ -415,9 +415,9 @@ diff -ruN busybox-1.00-old/archival/libipkg/pkg_hash.c busybox-1.00-new/archival
  		    ipkg_message(conf, IPKG_DEBUG, "  %s arch=%s arch_priority=%d  \n",
  				 maybe->name, maybe->architecture, maybe->arch_priority);
  		    if (maybe->arch_priority > 0)  {
-diff -ruN busybox-1.00-old/archival/libipkg/pkg_vec.h busybox-1.00-new/archival/libipkg/pkg_vec.h
---- busybox-1.00-old/archival/libipkg/pkg_vec.h	2005-10-27 16:37:26.000000000 +0200
-+++ busybox-1.00-new/archival/libipkg/pkg_vec.h	2005-10-27 16:39:05.000000000 +0200
+diff -ruN busybox-1.1.0-pre1-old/archival/libipkg/pkg_vec.h busybox-1.1.0-pre1-new/archival/libipkg/pkg_vec.h
+--- busybox-1.1.0-pre1-old/archival/libipkg/pkg_vec.h	2005-12-08 09:01:04.000000000 +0100
++++ busybox-1.1.0-pre1-new/archival/libipkg/pkg_vec.h	2005-12-08 09:04:01.000000000 +0100
 @@ -35,6 +35,8 @@
  };
  typedef struct abstract_pkg_vec abstract_pkg_vec_t;
@@ -427,3 +427,14 @@ diff -ruN busybox-1.00-old/archival/libipkg/pkg_vec.h busybox-1.00-new/archival/
  
  pkg_vec_t * pkg_vec_alloc(void);
  void pkg_vec_free(pkg_vec_t *vec);
+diff -ruN busybox-1.1.0-pre1-old/archival/libipkg/sprintf_alloc.h busybox-1.1.0-pre1-new/archival/libipkg/sprintf_alloc.h
+--- busybox-1.1.0-pre1-old/archival/libipkg/sprintf_alloc.h	2005-12-08 09:01:04.000000000 +0100
++++ busybox-1.1.0-pre1-new/archival/libipkg/sprintf_alloc.h	2005-12-08 09:04:20.000000000 +0100
+@@ -20,6 +20,6 @@
+ 
+ #include "libbb.h"
+ 
+-#define sprintf_alloc  bb_xasprintf
++#define sprintf_alloc(format, ...)  bb_xasprintf((const char *)format, __VA_ARGS__)
+ 
+ #endif
