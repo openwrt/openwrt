@@ -3,12 +3,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=madwifi
-PKG_VERSION:=r1158-20051215
+PKG_VERSION:=r1358-20051215
 PKG_RELEASE:=1
 PKG_MD5SUM:=0ef00a095359e5af313f52446ebfbbf1
 
 PKG_SOURCE_URL:=http://snapshots.madwifi.org/madwifi-ng
-PKG_SOURCE:=$(PKG_NAME)-trunk-$(PKG_VERSION).tar.gz
+PKG_SOURCE:=$(PKG_NAME)-ng-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-ng-$(PKG_VERSION)
@@ -22,12 +22,14 @@ $(PKG_BUILD_DIR)/.configured:
 
 $(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR)/tools \
-		$(TARGET_CONFIGURE_OPTS)
+		$(TARGET_CONFIGURE_OPTS) \
+		CFLAGS="$(TARGET_CFLAGS)" \
+		all
 	touch $@
 
 $(IPKG_MADWIFI_TOOLS):
-	mkdir -p $(IDIR_MADWIFI_TOOLS)/usr/sbin
-	cp -fpR $(PKG_BUILD_DIR)/tools/athstats \
+	install -d -m0755 $(IDIR_MADWIFI_TOOLS)/usr/sbin
+	install -m0755 $(PKG_BUILD_DIR)/tools/athstats \
 		$(PKG_BUILD_DIR)/tools/athdebug \
 		$(PKG_BUILD_DIR)/tools/80211stats \
 		$(PKG_BUILD_DIR)/tools/80211debug \
