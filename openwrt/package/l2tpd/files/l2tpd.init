@@ -1,0 +1,21 @@
+#!/bin/sh
+
+BIN=l2tpd
+DEFAULT=/etc/default/$BIN
+RUN_D=/var/run
+PID_F=$RUN_D/$BIN.pid
+[ -f $DEFAULT ] && . $DEFAULT
+
+case $1 in
+ start)
+  $BIN $OPTIONS
+  ;;
+ stop)
+  [ -f $PID_F ] && kill $(cat $PID_F)
+  ;;
+ *)
+  echo "usage: $0 (start|stop)"
+  exit 1
+esac
+
+exit $?
