@@ -1,0 +1,13 @@
+--- g/gcc/config/sh/sh.h
++++ g/gcc/config/sh/sh.h
+@@ -422,6 +422,10 @@
+ do {									\
+   if (LEVEL)								\
+     flag_omit_frame_pointer = -1;					\
++  if (LEVEL <= 2)							\
++    {									\
++      flag_reorder_blocks = 0;						\
++    }									\
+   if (SIZE)								\
+     target_flags |= SPACE_BIT;						\
+   if (TARGET_SHMEDIA && LEVEL > 1)					\
