@@ -396,6 +396,7 @@ void start_watchdog(int skfd, char *ifname)
 	char *v, *next;
 	unsigned char buf[8192], buf2[8192], wbuf[80], *p, *tmp;
 	int wds = 0, i, j, restart_wds;
+	wlc_ssid_t ssid;
 
 	if (fork())
 		return;
