@@ -348,6 +348,9 @@ endif
 ifneq ($(BR2_PACKAGE_ASTERISK_MYSQL),)
 asterisk-compile: mysql-compile
 endif
+ifneq ($(BR2_PACKAGE_ASTERISK_SQLITE),)
+asterisk-compile: sqlite2-compile
+endif
 
 freeradius-compile: libtool-compile openssl-compile
 ifneq ($(BR2_PACKAGE_FREERADIUS_MOD_LDAP),)
