@@ -1,0 +1,21 @@
+diff -ruN l2tpd-0.70pre-old/l2tpd.c l2tpd-0.70pre-new/l2tpd.c
+--- l2tpd-0.70pre-old/l2tpd.c	2005-12-16 12:02:02.000000000 +0100
++++ l2tpd-0.70pre-new/l2tpd.c	2005-12-16 12:14:24.000000000 +0100
+@@ -336,17 +336,10 @@
+         tcgetattr (c->fd, &ptyconf);
+         *(c->oldptyconf) = ptyconf;
+         ptyconf.c_cflag &= ~(ICANON | ECHO);
+-		ptyconf.c_lflag &= ~ECHO;
+         tcsetattr (c->fd, TCSANOW, &ptyconf);
+ 
+         snprintf (tty, sizeof (tty), "/dev/tty%c%c", a, b);
+         fd2 = open (tty, O_RDWR);
+-		if(!fd2)
+-			log(LOG_WARN, "unable to open tty %s", tty);
+-
+-		/* XXX JEF: CHECK ME */
+-		stropt[pos++] = strdup(tty);
+-		stropt[pos] = NULL;
+ 
+ #ifdef USE_KERNEL
+     }
