@@ -1,0 +1,83 @@
+diff -ur linux-2.4.32/arch/mips/Makefile linux-2.4.32-openwrt/arch/mips/Makefile
+--- linux-2.4.32/arch/mips/Makefile	2005-12-15 13:53:59.000000000 +0100
++++ linux-2.4.32-openwrt/arch/mips/Makefile	2005-12-15 14:02:33.000000000 +0100
+@@ -44,10 +44,10 @@
+ GCCFLAGS	:= -I $(TOPDIR)/include/asm/gcc
+ GCCFLAGS	+= -G 0 -mno-abicalls -fno-pic -pipe
+ GCCFLAGS	+= $(call check_gcc, -finline-limit=100000,)
+-LINKFLAGS	+= -G 0 -static -n
+-MODFLAGS	+= -mlong-calls
++LINKFLAGS	+= -G 0 -static -n -nostdlib
++MODFLAGS	+= -mlong-calls -fno-common
+ 
+-ifdef CONFIG_DEBUG_INFO
++ifdef CONFIG_REMOTE_DEBUG
+ GCCFLAGS	+= -g
+ ifdef CONFIG_SB1XXX_CORELIS
+ GCCFLAGS	+= -mno-sched-prolog -fno-omit-frame-pointer
+@@ -69,13 +69,13 @@
+ set_gccflags = $(shell \
+ while :; do \
+ 	cpu=$(1); isa=-$(2); \
+-	for gcc_opt in -march= -mcpu=; do \
++	for gcc_opt in -march= -mtune=; do \
+ 		$(CC) $$gcc_opt$$cpu $$isa -S -o /dev/null \
+ 			-xc /dev/null > /dev/null 2>&1 && \
+ 			break 2; \
+ 	done; \
+ 	cpu=$(3); isa=-$(4); \
+-	for gcc_opt in -march= -mcpu=; do \
++	for gcc_opt in -march= -mtune=; do \
+ 		$(CC) $$gcc_opt$$cpu $$isa -S -o /dev/null \
+ 			-xc /dev/null > /dev/null 2>&1 && \
+ 			break 2; \
+@@ -90,7 +90,7 @@
+ fi; \
+ gas_abi=-Wa,-32; gas_cpu=$$cpu; gas_isa=-Wa,$$isa; \
+ while :; do \
+-	for gas_opt in -Wa,-march= -Wa,-mcpu=; do \
++	for gas_opt in -Wa,-march= -Wa,-mtune=; do \
+ 		$(CC) $$gas_abi $$gas_opt$$cpu $$gas_isa -Wa,-Z -c \
+ 			-o /dev/null -xassembler /dev/null > /dev/null 2>&1 && \
+ 			break 2; \
+@@ -172,6 +172,7 @@
+ endif
+ 
+ AFLAGS		+= $(GCCFLAGS)
++ASFLAGS		+= $(GCCFLAGS)
+ CFLAGS		+= $(GCCFLAGS)
+ 
+ LD		+= -m $(ld-emul)
+diff -ur linux-2.4.32/Makefile linux-2.4.32-openwrt/Makefile
+--- linux-2.4.32/Makefile	2005-12-15 13:53:59.000000000 +0100
++++ linux-2.4.32-openwrt/Makefile	2005-12-15 13:59:30.000000000 +0100
+@@ -17,7 +17,7 @@
+ FINDHPATH	= $(HPATH)/asm $(HPATH)/linux $(HPATH)/scsi $(HPATH)/net $(HPATH)/math-emu
+ 
+ HOSTCC  	= gcc
+-HOSTCFLAGS	= -Wall -Wstrict-prototypes -O2 -fomit-frame-pointer
++HOSTCFLAGS	= -Wall -Wstrict-prototypes -Os -fomit-frame-pointer
+ 
+ CROSS_COMPILE 	=
+ 
+@@ -88,10 +88,9 @@
+ #
+ # standard CFLAGS
+ #
+-
+ CPPFLAGS := -D__KERNEL__ -I$(HPATH)
+ 
+-CFLAGS := $(CPPFLAGS) -Wall -Wstrict-prototypes -Wno-trigraphs -O2 \
++CFLAGS := $(CPPFLAGS) -Wall -Wstrict-prototypes -Wno-trigraphs -Os \
+ 	  -fno-strict-aliasing -fno-common
+ CFLAGS += -fno-builtin-sprintf
+ ifndef CONFIG_FRAME_POINTER
+@@ -104,6 +103,8 @@
+ # disable pointer signedness warnings in gcc 4.0
+ CFLAGS += $(call check_gcc,-Wno-pointer-sign,)
+ 
++CFLAGS += $(call check_gcc, -funit-at-a-time,)
++
+ #
+ # ROOT_DEV specifies the default root-device when making the image.
+ # This can be either FLOPPY, CURRENT, /dev/xxxx or empty, in which case
