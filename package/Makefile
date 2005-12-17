@@ -60,6 +60,7 @@ package-$(BR2_COMPILE_HOWL) += howl
 package-$(BR2_PACKAGE_HTPDATE) += htpdate
 package-$(BR2_PACKAGE_ICECAST) += icecast
 package-$(BR2_PACKAGE_ID3LIB) += id3lib
+package-$(BR2_PACKAGE_IPCAD) += ipcad
 package-$(BR2_PACKAGE_IPERF) += iperf
 package-$(BR2_PACKAGE_IPKG) += ipkg
 package-$(BR2_COMPILE_IPROUTE2) += iproute2
@@ -267,6 +268,7 @@ gnutls-compile: libgcrypt-compile opencdk-compile libtasn1-compile
 gpsd-compile: uclibc++-compile
 icecast-compile: curl-compile libvorbisidec-compile libxml2-compile libxslt-compile
 id3lib-compile: uclibc++-compile zlib-compile
+ipcad-compile: libpcap-compile
 irssi-compile: glib-compile ncurses-compile
 iperf-compile: uclibc++-compile
 iptables-snmp-compile: net-snmp-compile
