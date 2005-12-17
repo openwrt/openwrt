@@ -110,6 +110,7 @@ package-$(BR2_PACKAGE_LIBXSLT) += libxslt
 package-$(BR2_PACKAGE_LIGHTTPD) += lighttpd
 package-$(BR2_PACKAGE_LINUX_ATM) += linux-atm
 package-$(BR2_COMPILE_LUA) += lua
+package-$(BR2_PACKAGE_MACCHANGER) += macchanger
 package-$(BR2_PACKAGE_MADPLAY) += madplay
 package-$(BR2_PACKAGE_MADWIFI_TOOLS) += madwifi-tools
 package-$(BR2_PACKAGE_MARADNS) += maradns
