@@ -1,0 +1,8 @@
+config BR2_PACKAGE_MACCHANGER
+        tristate "macchanger........................ utility for viewing/manipulating the MAC address"
+	default m if CONFIG_DEVEL
+	help
+		This is a GNU/Linux utility for viewing/manipulating the MAC address
+		of network interfaces.
+		
+		http://www.gnu.org/software/macchanger
