@@ -1,0 +1,10 @@
+config BR2_PACKAGE_IPCAD
+        tristate "ipcad............................. listens for traffic on the specified interfaces"
+		default m if CONFIG_DEVEL
+		select BR2_PACKAGE_LIBPCAP
+		help
+			This daemon listens for traffic on the specified interfaces.
+			It has the built-in RSH and NetFlow engines to allow exporting
+			the accounting data the same way as Cisco routers do.
+			
+			http://lionet.info/ipcad/
