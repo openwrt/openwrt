@@ -48,18 +48,18 @@ diff -urN linux.old/arch/mips/bcm947xx/Makefile linux.dev/arch/mips/bcm947xx/Mak
 +obj-y := irq.o int-handler.o prom.o setup.o time.o pci.o
 diff -urN linux.old/arch/mips/bcm947xx/broadcom/Makefile linux.dev/arch/mips/bcm947xx/broadcom/Makefile
 --- linux.old/arch/mips/bcm947xx/broadcom/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/broadcom/Makefile	2005-12-15 16:59:40.571216500 +0100
++++ linux.dev/arch/mips/bcm947xx/broadcom/Makefile	2005-12-17 20:51:17.749271000 +0100
 @@ -0,0 +1,6 @@
 +#
 +# Makefile for the BCM47xx specific kernel interface routines
 +# under Linux.
 +#
 + 
-+obj-y   := sbutils.o linux_osl.o bcmsrom.o bcmutils.o sbmips.o sbpci.o sflash.o nvram.o
++obj-y	:= sbutils.o linux_osl.o bcmsrom.o bcmutils.o sbmips.o sbpci.o sflash.o nvram.o cfe_env.o
 diff -urN linux.old/arch/mips/bcm947xx/broadcom/bcmsrom.c linux.dev/arch/mips/bcm947xx/broadcom/bcmsrom.c
 --- linux.old/arch/mips/bcm947xx/broadcom/bcmsrom.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/broadcom/bcmsrom.c	2005-12-15 17:35:21.719238750 +0100
-@@ -0,0 +1,483 @@
++++ linux.dev/arch/mips/bcm947xx/broadcom/bcmsrom.c	2005-12-17 01:21:23.007883000 +0100
+@@ -0,0 +1,481 @@
 +/*
 + *  Misc useful routines to access NIC SROM/OTP .
 + *
@@ -276,8 +276,6 @@ diff -urN linux.old/arch/mips/bcm947xx/broadcom/bcmsrom.c linux.dev/arch/mips/bc
 +	int woff, i;
 +	char *vp, *base;
 +	osl_t *osh = sb_osh(sbh);
-+	char name[SB_DEVPATH_BUFSZ+16], *value;
-+	char devpath[SB_DEVPATH_BUFSZ];
 +	int err;
 +
 +	/*
@@ -545,8 +543,8 @@ diff -urN linux.old/arch/mips/bcm947xx/broadcom/bcmsrom.c linux.dev/arch/mips/bc
 +
 diff -urN linux.old/arch/mips/bcm947xx/broadcom/bcmutils.c linux.dev/arch/mips/bcm947xx/broadcom/bcmutils.c
 --- linux.old/arch/mips/bcm947xx/broadcom/bcmutils.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/broadcom/bcmutils.c	2005-12-15 20:14:31.420035750 +0100
-@@ -0,0 +1,358 @@
++++ linux.dev/arch/mips/bcm947xx/broadcom/bcmutils.c	2005-12-17 17:53:52.387365000 +0100
+@@ -0,0 +1,356 @@
 +/*
 + * Misc useful OS-independent routines.
 + *
@@ -903,7 +901,243 @@ diff -urN linux.old/arch/mips/bcm947xx/broadcom/bcmutils.c linux.dev/arch/mips/b
 +#define CNBUFS		5
 +
 +#endif
+diff -urN linux.old/arch/mips/bcm947xx/broadcom/cfe_env.c linux.dev/arch/mips/bcm947xx/broadcom/cfe_env.c
+--- linux.old/arch/mips/bcm947xx/broadcom/cfe_env.c	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/arch/mips/bcm947xx/broadcom/cfe_env.c	2005-12-17 21:40:08.166726750 +0100
+@@ -0,0 +1,234 @@
++/*
++ * NVRAM variable manipulation (Linux kernel half)
++ *
++ * Copyright 2001-2003, Broadcom Corporation
++ * All Rights Reserved.
++ * 
++ * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
++ * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
++ * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
++ * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
++ *
++ * $Id$
++ */
 +
++#include <linux/config.h>
++#include <linux/init.h>
++#include <linux/module.h>
++#include <linux/kernel.h>
++#include <linux/string.h>
++#include <asm/io.h>
++#include <asm/uaccess.h>
++
++#include <typedefs.h>
++#include <osl.h>
++#include <bcmendian.h>
++#include <bcmutils.h>
++
++#define NVRAM_SIZE       (0x1ff0)
++static char _nvdata[NVRAM_SIZE] __initdata;
++static char _valuestr[256] __initdata;
++
++/*
++ * TLV types.  These codes are used in the "type-length-value"
++ * encoding of the items stored in the NVRAM device (flash or EEPROM)
++ *
++ * The layout of the flash/nvram is as follows:
++ *
++ * <type> <length> <data ...> <type> <length> <data ...> <type_end>
++ *
++ * The type code of "ENV_TLV_TYPE_END" marks the end of the list.
++ * The "length" field marks the length of the data section, not
++ * including the type and length fields.
++ *
++ * Environment variables are stored as follows:
++ *
++ * <type_env> <length> <flags> <name> = <value>
++ *
++ * If bit 0 (low bit) is set, the length is an 8-bit value.
++ * If bit 0 (low bit) is clear, the length is a 16-bit value
++ * 
++ * Bit 7 set indicates "user" TLVs.  In this case, bit 0 still
++ * indicates the size of the length field.  
++ *
++ * Flags are from the constants below:
++ *
++ */
++#define ENV_LENGTH_16BITS	0x00	/* for low bit */
++#define ENV_LENGTH_8BITS	0x01
++
++#define ENV_TYPE_USER		0x80
++
++#define ENV_CODE_SYS(n,l) (((n)<<1)|(l))
++#define ENV_CODE_USER(n,l) ((((n)<<1)|(l)) | ENV_TYPE_USER)
++
++/*
++ * The actual TLV types we support
++ */
++
++#define ENV_TLV_TYPE_END	0x00	
++#define ENV_TLV_TYPE_ENV	ENV_CODE_SYS(0,ENV_LENGTH_8BITS)
++
++/*
++ * Environment variable flags 
++ */
++
++#define ENV_FLG_NORMAL		0x00	/* normal read/write */
++#define ENV_FLG_BUILTIN		0x01	/* builtin - not stored in flash */
++#define ENV_FLG_READONLY	0x02	/* read-only - cannot be changed */
++
++#define ENV_FLG_MASK		0xFF	/* mask of attributes we keep */
++#define ENV_FLG_ADMIN		0x100	/* lets us internally override permissions */
++
++
++/*  *********************************************************************
++    *  _nvram_read(buffer,offset,length)
++    *  
++    *  Read data from the NVRAM device
++    *  
++    *  Input parameters: 
++    *  	   buffer - destination buffer
++    *  	   offset - offset of data to read
++    *  	   length - number of bytes to read
++    *  	   
++    *  Return value:
++    *  	   number of bytes read, or <0 if error occured
++    ********************************************************************* */
++static int
++_nvram_read(unsigned char *nv_buf, unsigned char *buffer, int offset, int length)
++{
++    int i;
++    if (offset > NVRAM_SIZE)
++	return -1; 
++
++    for ( i = 0; i < length; i++) {
++	buffer[i] = ((volatile unsigned char*)nv_buf)[offset + i];
++    }
++    return length;
++}
++
++
++static char*
++_strnchr(const char *dest,int c,size_t cnt)
++{
++	while (*dest && (cnt > 0)) {
++	if (*dest == c) return (char *) dest;
++	dest++;
++	cnt--;
++	}
++	return NULL;
++}
++
++
++
++/*
++ * Core support API: Externally visible.
++ */
++
++/*
++ * Get the value of an NVRAM variable
++ * @param	name	name of variable to get
++ * @return	value of variable or NULL if undefined
++ */
++
++char* 
++cfe_env_get(unsigned char *nv_buf, char* name)
++{
++    int size;
++    unsigned char *buffer;
++    unsigned char *ptr;
++    unsigned char *envval;
++    unsigned int reclen;
++    unsigned int rectype;
++    int offset;
++    int flg;
++    
++    size = NVRAM_SIZE;
++    buffer = &_nvdata[0];
++
++    ptr = buffer;
++    offset = 0;
++
++    /* Read the record type and length */
++    if (_nvram_read(nv_buf, ptr,offset,1) != 1) {
++	goto error;
++    }
++    
++    while ((*ptr != ENV_TLV_TYPE_END)  && (size > 1)) {
++
++	/* Adjust pointer for TLV type */
++	rectype = *(ptr);
++	offset++;
++	size--;
++
++	/* 
++	 * Read the length.  It can be either 1 or 2 bytes
++	 * depending on the code 
++	 */
++	if (rectype & ENV_LENGTH_8BITS) {
++	    /* Read the record type and length - 8 bits */
++	    if (_nvram_read(nv_buf, ptr,offset,1) != 1) {
++		goto error;
++	    }
++	    reclen = *(ptr);
++	    size--;
++	    offset++;
++	}
++	else {
++	    /* Read the record type and length - 16 bits, MSB first */
++	    if (_nvram_read(nv_buf, ptr,offset,2) != 2) {
++		goto error;
++	    }
++	    reclen = (((unsigned int) *(ptr)) << 8) + (unsigned int) *(ptr+1);
++	    size -= 2;
++	    offset += 2;
++	}
++
++	if (reclen > size)
++	    break;	/* should not happen, bad NVRAM */
++
++	switch (rectype) {
++	    case ENV_TLV_TYPE_ENV:
++		/* Read the TLV data */
++		if (_nvram_read(nv_buf, ptr,offset,reclen) != reclen)
++		    goto error;
++		flg = *ptr++;
++		envval = (unsigned char *) _strnchr(ptr,'=',(reclen-1));
++		if (envval) {
++		    *envval++ = '\0';
++		    memcpy(_valuestr,envval,(reclen-1)-(envval-ptr));
++		    _valuestr[(reclen-1)-(envval-ptr)] = '\0';
++#if 0			
++		    printk(KERN_INFO "NVRAM:%s=%s\n", ptr, _valuestr);
++#endif
++		    if(!strcmp(ptr, name)){
++			return _valuestr;
++		    }
++		    if((strlen(ptr) > 1) && !strcmp(&ptr[1], name))
++			return _valuestr;
++		}
++		break;
++		
++	    default: 
++		/* Unknown TLV type, skip it. */
++		break;
++	    }
++
++	/*
++	 * Advance to next TLV 
++	 */
++		
++	size -= (int)reclen;
++	offset += reclen;
++
++	/* Read the next record type */
++	ptr = buffer;
++	if (_nvram_read(nv_buf, ptr,offset,1) != 1)
++	    goto error;
++	}
++
++error:
++    return NULL;
++
++}
 +
 diff -urN linux.old/arch/mips/bcm947xx/broadcom/linux_osl.c linux.dev/arch/mips/bcm947xx/broadcom/linux_osl.c
 --- linux.old/arch/mips/bcm947xx/broadcom/linux_osl.c	1970-01-01 01:00:00.000000000 +0100
@@ -1013,8 +1247,8 @@ diff -urN linux.old/arch/mips/bcm947xx/broadcom/linux_osl.c linux.dev/arch/mips/
 +
 diff -urN linux.old/arch/mips/bcm947xx/broadcom/nvram.c linux.dev/arch/mips/bcm947xx/broadcom/nvram.c
 --- linux.old/arch/mips/bcm947xx/broadcom/nvram.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/broadcom/nvram.c	2005-12-15 17:36:23.151078000 +0100
-@@ -0,0 +1,145 @@
++++ linux.dev/arch/mips/bcm947xx/broadcom/nvram.c	2005-12-17 21:41:45.656819500 +0100
+@@ -0,0 +1,165 @@
 +/*
 + * NVRAM variable manipulation (Linux kernel half)
 + *
@@ -1037,7 +1271,7 @@ diff -urN linux.old/arch/mips/bcm947xx/broadcom/nvram.c linux.dev/arch/mips/bcm9
 +#include <linux/interrupt.h>
 +#include <linux/spinlock.h>
 +#include <linux/slab.h>
-+#include <linux/bootmem.h>
++#include <asm/bootinfo.h>
 +#include <asm/addrspace.h>
 +#include <asm/io.h>
 +#include <asm/uaccess.h>
@@ -1058,6 +1292,10 @@ diff -urN linux.old/arch/mips/bcm947xx/broadcom/nvram.c linux.dev/arch/mips/bcm9
 +/* Global SB handle */
 +extern void *sbh;
 +extern spinlock_t bcm947xx_sbh_lock;
++static int cfe_env;
++
++extern char *cfe_env_get(unsigned char *nv_buf, char *name);
++		
 +
 +/* Convenience */
 +#define sbh_lock bcm947xx_sbh_lock
@@ -1075,6 +1313,7 @@ diff -urN linux.old/arch/mips/bcm947xx/broadcom/nvram.c linux.dev/arch/mips/bcm9
 +	uint32 base, off, lim;
 +	u32 *src, *dst;
 +
++	cfe_env = 0;
 +	if ((cc = sb_setcore(sbh, SB_CC, 0)) != NULL) {
 +		base = KSEG1ADDR(SB_FLASH2);
 +		switch (readl(&cc->capabilities) & CAP_FLASH_MASK) {
@@ -1099,6 +1338,21 @@ diff -urN linux.old/arch/mips/bcm947xx/broadcom/nvram.c linux.dev/arch/mips/bcm9
 +		lim = SB_FLASH1_SZ;
 +	}
 +
++	/* XXX: hack for supporting the CFE environment stuff on WGT634U */
++	src = (u32 *) KSEG1ADDR(base + 8 * 1024 * 1024 - 0x2000);
++	dst = (u32 *) nvram_buf;
++	if ((lim == 0x02000000) && ((*src & 0xff00ff) == 0x000001)) {
++		printk("early_nvram_init: WGT634U NVRAM found.\n");
++
++		for (i = 0; i < 0x1ff0; i++) {
++			if (*src == 0xFFFFFFFF)
++				break;
++			*dst++ = *src++;
++		}
++		cfe_env = 1;
++		return;
++	}
++
 +	off = FLASH_MIN;
 +	while (off <= lim) {
 +		/* Windowed flash access */
@@ -1117,7 +1371,6 @@ diff -urN linux.old/arch/mips/bcm947xx/broadcom/nvram.c linux.dev/arch/mips/bcm9
 +	if (header->magic == NVRAM_MAGIC)
 +		goto found;
 +	
-+	printk("early_nvram_init: NVRAM not found\n");
 +	return;
 +
 +found:
@@ -1144,6 +1397,9 @@ diff -urN linux.old/arch/mips/bcm947xx/broadcom/nvram.c linux.dev/arch/mips/bcm9
 +	if (!nvram_buf[0])
 +		early_nvram_init();
 +
++	if (cfe_env)
++		return cfe_env_get(nvram_buf, name);
++
 +	/* Look for name=value and return value */
 +	var = &nvram_buf[sizeof(struct nvram_header)];
 +	end = nvram_buf + sizeof(nvram_buf) - 2;
@@ -1158,8 +1414,6 @@ diff -urN linux.old/arch/mips/bcm947xx/broadcom/nvram.c linux.dev/arch/mips/bcm9
 +
 +	return NULL;
 +}
-+
-+EXPORT_SYMBOL(nvram_get);
 diff -urN linux.old/arch/mips/bcm947xx/broadcom/sbmips.c linux.dev/arch/mips/bcm947xx/broadcom/sbmips.c
 --- linux.old/arch/mips/bcm947xx/broadcom/sbmips.c	1970-01-01 01:00:00.000000000 +0100
 +++ linux.dev/arch/mips/bcm947xx/broadcom/sbmips.c	2005-12-15 16:46:31.122961250 +0100
@@ -2739,8 +2993,8 @@ diff -urN linux.old/arch/mips/bcm947xx/broadcom/sbpci.c linux.dev/arch/mips/bcm9
 +
 diff -urN linux.old/arch/mips/bcm947xx/broadcom/sbutils.c linux.dev/arch/mips/bcm947xx/broadcom/sbutils.c
 --- linux.old/arch/mips/bcm947xx/broadcom/sbutils.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/broadcom/sbutils.c	2005-12-15 17:31:12.211645500 +0100
-@@ -0,0 +1,2407 @@
++++ linux.dev/arch/mips/bcm947xx/broadcom/sbutils.c	2005-12-17 01:21:12.951254500 +0100
+@@ -0,0 +1,2370 @@
 +/*
 + * Misc utility routines for accessing chip-specific features
 + * of the SiliconBackplane-based Broadcom chips.
@@ -5061,37 +5315,6 @@ diff -urN linux.old/arch/mips/bcm947xx/broadcom/sbutils.c linux.dev/arch/mips/bc
 +	*pciprogif = progif;
 +}
 +
-+#if 0
-+/* Build device path. Support SB, PCI, and JTAG for now. */
-+int
-+sb_devpath(sb_t *sbh, char *path, int size)
-+{
-+	ASSERT(path);
-+	ASSERT(size >= SB_DEVPATH_BUFSZ);
-+	
-+	switch (BUSTYPE((SB_INFO(sbh))->sb.bustype)) {
-+	case SB_BUS:
-+	case JTAG_BUS:
-+		sprintf(path, "sb/%u/", sb_coreidx(sbh));
-+		break;
-+	case PCI_BUS:
-+		ASSERT((SB_INFO(sbh))->osh);
-+		sprintf(path, "pci/%u/%u/", OSL_PCI_BUS((SB_INFO(sbh))->osh),
-+			PCI_SLOT(((struct pci_dev *)(SB_INFO(sbh))->osh)->pdev)->devfn);
-+		break;
-+	case SDIO_BUS:
-+		SB_ERROR(("sb_devpath: device 0 assumed\n"));
-+		sprintf(path, "sd/%u/", sb_coreidx(sbh));
-+		break;
-+	default:
-+		ASSERT(0);
-+		break;
-+	}
-+
-+	return 0;
-+}
-+#endif
-+
 +/* Fix chip's configuration. The current core may be changed upon return */
 +static int
 +sb_pci_fixcfg(sb_info_t *si)
@@ -5099,8 +5322,6 @@ diff -urN linux.old/arch/mips/bcm947xx/broadcom/sbutils.c linux.dev/arch/mips/bc
 +	uint origidx, pciidx;
 +	sbpciregs_t *pciregs;
 +	uint16 val16, *reg16;
-+	char name[SB_DEVPATH_BUFSZ+16], *value;
-+	char devpath[SB_DEVPATH_BUFSZ];
 +
 +	ASSERT(BUSTYPE(si->sb.bustype) == PCI_BUS);
 +
@@ -5127,27 +5348,23 @@ diff -urN linux.old/arch/mips/bcm947xx/broadcom/sbutils.c linux.dev/arch/mips/bc
 +	/* restore the original index */
 +	sb_setcoreidx(&si->sb, origidx);
 +
-+#if 0
-+	/* Fix bar0window */
-+	/* !do it last, it changes the current core! */
-+	if (sb_devpath(&si->sb, devpath, sizeof(devpath)))
-+		return -1;
-+	sprintf(name, "%sb0w", devpath);
-+	if ((value = getvar(NULL, name))) {
-+		OSL_PCI_WRITE_CONFIG(si->osh, PCI_BAR0_WIN, sizeof(uint32),
-+			bcm_strtoul(value, NULL, 16));
-+		/* update curidx since the current core is changed */
-+		si->curidx = _sb_coreidx(si);
-+		if (si->curidx == BADIDX) {
-+			SB_ERROR(("sb_pci_fixcfg: bad core index\n"));
-+			return -1;
-+		}
-+	}
-+#endif
-+
 +	return 0;
 +}
 +
++EXPORT_SYMBOL(sb_boardtype);
++EXPORT_SYMBOL(sb_boardvendor);
++EXPORT_SYMBOL(sb_gpiocontrol);
++EXPORT_SYMBOL(sb_gpioin);
++EXPORT_SYMBOL(sb_gpiointmask);
++EXPORT_SYMBOL(sb_gpiointpolarity);
++EXPORT_SYMBOL(sb_gpioled);
++EXPORT_SYMBOL(sb_gpioout);
++EXPORT_SYMBOL(sb_gpioouten);
++EXPORT_SYMBOL(sb_gpiorelease);
++EXPORT_SYMBOL(sb_gpioreserve);
++EXPORT_SYMBOL(sb_gpiosetcore);
++EXPORT_SYMBOL(sb_gpiotimerval);
++EXPORT_SYMBOL(sb_watchdog);
 diff -urN linux.old/arch/mips/bcm947xx/broadcom/sflash.c linux.dev/arch/mips/bcm947xx/broadcom/sflash.c
 --- linux.old/arch/mips/bcm947xx/broadcom/sflash.c	1970-01-01 01:00:00.000000000 +0100
 +++ linux.dev/arch/mips/bcm947xx/broadcom/sflash.c	2005-12-15 16:59:20.045933750 +0100
@@ -11002,7 +11219,7 @@ diff -urN linux.old/arch/mips/bcm947xx/irq.c linux.dev/arch/mips/bcm947xx/irq.c
 +}
 diff -urN linux.old/arch/mips/bcm947xx/pci.c linux.dev/arch/mips/bcm947xx/pci.c
 --- linux.old/arch/mips/bcm947xx/pci.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/pci.c	2005-12-15 23:25:48.489984500 +0100
++++ linux.dev/arch/mips/bcm947xx/pci.c	2005-12-17 18:11:52.350836000 +0100
 @@ -0,0 +1,92 @@
 +#include <linux/kernel.h>
 +#include <linux/init.h>
@@ -11070,7 +11287,7 @@ diff -urN linux.old/arch/mips/bcm947xx/pci.c linux.dev/arch/mips/bcm947xx/pci.c
 +static struct resource ext_pci_mem_resource = {
 +	.name   = "Ext PCI Memory resources",
 +	.start  = 0x40000000,
-+	.end    = 0x7fffffff,
++	.end    = 0x40ffffff,
 +	.flags  = IORESOURCE_MEM,
 +};
 +
@@ -11161,11 +11378,12 @@ diff -urN linux.old/arch/mips/bcm947xx/prom.c linux.dev/arch/mips/bcm947xx/prom.
 +}
 diff -urN linux.old/arch/mips/bcm947xx/setup.c linux.dev/arch/mips/bcm947xx/setup.c
 --- linux.old/arch/mips/bcm947xx/setup.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/setup.c	2005-12-15 19:17:21.508844000 +0100
-@@ -0,0 +1,107 @@
++++ linux.dev/arch/mips/bcm947xx/setup.c	2005-12-17 22:14:27.619043750 +0100
+@@ -0,0 +1,155 @@
 +/*
 + *  Copyright (C) 2004 Florian Schirmer (jolt@tuxbox.org)
 + *  Copyright (C) 2005 Waldemar Brodkorb <wbx@openwrt.org>
++ *  Copyright (C) 2005 Felix Fietkau <nbd@openwrt.org>
 + *
 + *  This program is free software; you can redistribute  it and/or modify it
 + *  under  the terms of  the GNU General  Public License as published by the
@@ -11210,13 +11428,43 @@ diff -urN linux.old/arch/mips/bcm947xx/setup.c linux.dev/arch/mips/bcm947xx/setu
 +extern void bcm47xx_time_init(void);
 +extern void bcm47xx_timer_setup(struct irqaction *irq);
 +void *sbh;
++int boardflags;
 +
 +static int ser_line = 0;
++
++typedef struct {
++	void *regs;
++	uint irq;
++	uint baud_base;
++	uint reg_shift;
++} serial_port;
++
++static serial_port ports[4];
++static int num_ports = 0;
 +
 +static void
 +serial_add(void *regs, uint irq, uint baud_base, uint reg_shift)
 +{
++	ports[num_ports].regs = regs;
++	ports[num_ports].irq = irq;
++	ports[num_ports].baud_base = baud_base;
++	ports[num_ports].reg_shift = reg_shift;
++	num_ports++;
++}
++
++static void
++do_serial_add(serial_port *port)
++{
++	void *regs;
++	uint irq;
++	uint baud_base;
++	uint reg_shift;
 +	struct uart_port s;
++	
++	regs = port->regs;
++	irq = port->irq;
++	baud_base = port->baud_base;
++	reg_shift = port->reg_shift;
 +
 +	memset(&s, 0, sizeof(s));
 +
@@ -11253,7 +11501,9 @@ diff -urN linux.old/arch/mips/bcm947xx/setup.c linux.dev/arch/mips/bcm947xx/setu
 +
 +void __init plat_setup(void)
 +{
-+
++	char *s;
++	int i;
++	
 +	sbh = sb_kattach();
 +	sb_mips_init(sbh);
 +
@@ -11262,7 +11512,19 @@ diff -urN linux.old/arch/mips/bcm947xx/setup.c linux.dev/arch/mips/bcm947xx/setu
 +	set_io_port_base((unsigned long) ioremap_nocache(SB_PCI_MEM, 0x04000000));
 +
 +	sb_serial_init(sbh, serial_add);
++	boardflags = getintvar(NULL, "boardflags");
 +
++	/* reverse serial ports if the nvram variable kernel_args starts with console=ttyS1 */
++	s = nvram_get("kernel_args");
++	if (!s)	s = "";
++	if (!strncmp(s, "console=ttyS1", 13)) {
++		for (i = num_ports; i; i--)
++			do_serial_add(&ports[i - 1]);
++	} else {
++		for (i = 0; i < num_ports; i++)
++			do_serial_add(&ports[i]);
++	}
++	
 +	_machine_restart = bcm47xx_machine_restart;
 +	_machine_halt = bcm47xx_machine_halt;
 +	_machine_power_off = bcm47xx_machine_halt;
@@ -11270,6 +11532,9 @@ diff -urN linux.old/arch/mips/bcm947xx/setup.c linux.dev/arch/mips/bcm947xx/setu
 +	board_time_init = bcm47xx_time_init;
 +	board_timer_setup = bcm47xx_timer_setup;
 +}
++
++EXPORT_SYMBOL(sbh);
++EXPORT_SYMBOL(boardflags);
 diff -urN linux.old/arch/mips/bcm947xx/time.c linux.dev/arch/mips/bcm947xx/time.c
 --- linux.old/arch/mips/bcm947xx/time.c	1970-01-01 01:00:00.000000000 +0100
 +++ linux.dev/arch/mips/bcm947xx/time.c	2005-12-15 12:57:27.877187750 +0100
@@ -11455,6 +11720,19 @@ diff -urN linux.old/arch/mips/pci/fixup-bcm47xx.c linux.dev/arch/mips/pci/fixup-
 +struct pci_fixup pcibios_fixups[] = {
 +	{ 0 }
 +};
+diff -urN linux.old/arch/mips/pci/pci.c linux.dev/arch/mips/pci/pci.c
+--- linux.old/arch/mips/pci/pci.c	2005-12-15 13:26:49.814003000 +0100
++++ linux.dev/arch/mips/pci/pci.c	2005-12-17 18:08:13.553162000 +0100
+@@ -307,7 +307,8 @@
+ 	if (res->flags & IORESOURCE_IO)
+ 		offset = hose->io_offset;
+ 	else if (res->flags & IORESOURCE_MEM)
+-		offset = hose->mem_offset;
++//		offset = hose->mem_offset;
++		offset = 0x24000000;
+ 
+ 	res->start = region->start + offset;
+ 	res->end = region->end + offset;
 diff -urN linux.old/include/asm-mips/bootinfo.h linux.dev/include/asm-mips/bootinfo.h
 --- linux.old/include/asm-mips/bootinfo.h	2005-12-15 13:26:49.818001250 +0100
 +++ linux.dev/include/asm-mips/bootinfo.h	2005-12-15 12:57:27.969147500 +0100
