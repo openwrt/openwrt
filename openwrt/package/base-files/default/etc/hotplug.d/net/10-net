@@ -184,6 +184,6 @@ do_unregister() {
 }
 
 case "$ACTION" in
-	register) do_register;;
-	unregister) do_unregister;;
+	add|register) do_register;;
+	remove|unregister) do_unregister;;
 esac
