@@ -1,7 +1,7 @@
 diff -Nur linux-2.6.15-rc5/drivers/mtd/maps/bcm47xx-flash.c linux-2.6.15-rc5-flash/drivers/mtd/maps/bcm47xx-flash.c
 --- linux-2.6.15-rc5/drivers/mtd/maps/bcm47xx-flash.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-rc5-flash/drivers/mtd/maps/bcm47xx-flash.c	2005-12-18 23:40:45.060006250 +0100
-@@ -0,0 +1,321 @@
++++ linux-2.6.15-rc5-flash/drivers/mtd/maps/bcm47xx-flash.c	2005-12-19 00:33:31.276241000 +0100
+@@ -0,0 +1,316 @@
 +/*
 + *  Copyright (C) 2004 Florian Schirmer (jolt@tuxbox.org)
 + *  Copyright (C) 2005 Waldemar Brodkorb <wbx@openwrt.org>
@@ -226,13 +226,8 @@ diff -Nur linux-2.6.15-rc5/drivers/mtd/maps/bcm47xx-flash.c linux-2.6.15-rc5-fla
 +	if (find_root(mtd,size,&bcm947xx_parts[2])==0) {
 +		/* entirely jffs2 */
 +		bcm947xx_parts[4].name = NULL;
-+		if (cfe_size_flag == 0) {
-+			bcm947xx_parts[2].size = size - bcm947xx_parts[2].offset - 
-+				bcm947xx_parts[3].size;
-+		} else {
-+			bcm947xx_parts[2].size = size - bcm947xx_parts[2].offset - 
-+				bcm947xx_parts[3].size; 
-+		}
++		bcm947xx_parts[2].size = size - bcm947xx_parts[2].offset - 
++			bcm947xx_parts[3].size;
 +	} else {
 +		/* legacy setup */
 +		/* calculate leftover flash, and assign it to the jffs2 partition */
