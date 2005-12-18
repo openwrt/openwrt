@@ -1,0 +1,78 @@
+diff -Nur openswan-2.4.4/linux/net/ipsec/ipcomp.c openswan-2.4.4.patched/linux/net/ipsec/ipcomp.c
+--- openswan-2.4.4/linux/net/ipsec/ipcomp.c	2005-08-28 01:40:00.000000000 +0200
++++ openswan-2.4.4.patched/linux/net/ipsec/ipcomp.c	2005-12-18 17:46:02.069886000 +0100
+@@ -600,7 +600,6 @@
+         memcpy(n->head,
+ 	       skb->head,
+ 	       ((char *)iph - (char *)skb->head) + iphlen);
+-        n->list=NULL;
+ 	n->next=NULL;
+ 	n->prev=NULL;
+         n->sk=NULL;
+@@ -657,7 +656,7 @@
+ 	n->pkt_bridged=skb->pkt_bridged;
+ #endif /* NETDEV_23 */
+ 	n->ip_summed=0;
+-        n->stamp=skb->stamp;
++        n->tstamp=skb->tstamp;
+ #ifndef NETDEV_23 /* this seems to have been removed in 2.4 */
+ #if defined(CONFIG_SHAPER) || defined(CONFIG_SHAPER_MODULE)
+         n->shapelatency=skb->shapelatency;       /* Latency on frame */
+diff -Nur openswan-2.4.4/linux/net/ipsec/ipsec_tunnel.c openswan-2.4.4.patched/linux/net/ipsec/ipsec_tunnel.c
+--- openswan-2.4.4/linux/net/ipsec/ipsec_tunnel.c	2005-09-22 00:57:43.000000000 +0200
++++ openswan-2.4.4.patched/linux/net/ipsec/ipsec_tunnel.c	2005-12-18 17:46:02.069886000 +0100
+@@ -34,6 +34,7 @@
+ #include <linux/interrupt.h> /* mark_bh */
+ 
+ #include <net/tcp.h>
++#include <net/inet_timewait_sock.h>
+ #include <net/udp.h>
+ #include <linux/skbuff.h>
+ 
+@@ -272,9 +273,9 @@
+ 
+ 		if(ixs->skb->sk) {
+ #ifdef NET_26
+-			struct tcp_tw_bucket *tw;
++			struct inet_timewait_sock *tw;
+ 			
+-			tw = (struct tcp_tw_bucket *)ixs->skb->sk;
++			tw = (struct inet_timewait_sock *)ixs->skb->sk;
+ 
+ 			ixs->sport = ntohs(tw->tw_sport);
+ 			ixs->dport = ntohs(tw->tw_dport);
+diff -Nur openswan-2.4.4/linux/net/ipsec/pfkey_v2.c openswan-2.4.4.patched/linux/net/ipsec/pfkey_v2.c
+--- openswan-2.4.4/linux/net/ipsec/pfkey_v2.c	2005-09-14 18:40:45.000000000 +0200
++++ openswan-2.4.4.patched/linux/net/ipsec/pfkey_v2.c	2005-12-18 18:06:21.826116000 +0100
+@@ -461,9 +461,8 @@
+ 			       "pfkey_skb contents:");
+ 			printk(" next:0p%p", skb->next);
+ 			printk(" prev:0p%p", skb->prev);
+-			printk(" list:0p%p", skb->list);
+ 			printk(" sk:0p%p", skb->sk);
+-			printk(" stamp:%ld.%ld", skb->stamp.tv_sec, skb->stamp.tv_usec);
++			printk(" tstamp:%d.%d", skb->tstamp.off_sec, skb->tstamp.off_usec);
+ 			printk(" dev:0p%p", skb->dev);
+ 			if(skb->dev) {
+ 				if(skb->dev->name) {
+@@ -1376,7 +1375,8 @@
+ #endif /* NET_21 */
+ 
+ 	skb_copy_datagram_iovec(skb, 0, msg->msg_iov, size);
+-        sk->sk_stamp=skb->stamp;
++        sk->sk_stamp.tv_sec=skb->tstamp.off_sec;
++        sk->sk_stamp.tv_usec=skb->tstamp.off_usec;
+ 
+ 	skb_free_datagram(sk, skb);
+ 	return size;
+@@ -1495,8 +1495,8 @@
+ #endif					
+ 					sk->sk_protocol,
+ 					sk->sk_sndbuf,
+-					(unsigned int)sk->sk_stamp.tv_sec,
+-					(unsigned int)sk->sk_stamp.tv_usec,
++					sk->sk_stamp.tv_sec,
++					sk->sk_stamp.tv_usec,
+ 					sk->sk_socket->flags,
+ 					sk->sk_socket->type,
+ 					sk->sk_socket->state);
