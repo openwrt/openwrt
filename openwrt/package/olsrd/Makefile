@@ -63,7 +63,7 @@ $(IPKG_OLSRD):
 	install -d -m0755 $(IDIR_OLSRD)/usr/sbin
 	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/olsrd $(IDIR_OLSRD)/usr/sbin/
 	install -d -m0755 $(IDIR_OLSRD)/etc/init.d
-	cp -fpR ./files/olsrd.init $(IDIR_OLSRD)/etc/init.d/olsrd
+	cp -fpR ./files/olsrd.init $(IDIR_OLSRD)/etc/init.d/S60olsrd
 	$(RSTRIP) $(IDIR_OLSRD)
 	$(IPKG_BUILD) $(IDIR_OLSRD) $(PACKAGE_DIR)
 
