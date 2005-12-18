@@ -1,0 +1,16 @@
+diff -urN pglinux-1.5beta/Makefile.in /Users/florian/dev/sdk/dl/pglinux-1.5beta/Makefile.in
+--- pglinux-1.5beta/Makefile.in	2005-03-31 09:40:29.000000000 +0200
++++ /Users/florian/dev/sdk/dl/pglinux-1.5beta/Makefile.in	2005-11-25 19:14:16.000000000 +0100
+@@ -83,10 +83,10 @@
+ PROGRAMS =  $(mybin_PROGRAMS)
+ 
+ 
+-DEFS = @DEFS@ -I. -I$(srcdir) -I.
++DEFS = @DEFS@ -I. -I$(srcdir) -I. -I$(STAGING_DIR)/usr/include
+ CPPFLAGS = @CPPFLAGS@
+ LDFLAGS = @LDFLAGS@
+-LIBS = @LIBS@
++LIBS = @LIBS@ -L$(STAGING_DIR)/usr/lib
+ peerguardnf_OBJECTS =  Main.o PeerGuard.o BlockList.o Blocker_Linux.o \
+ Blocker_BSD.o HttpServer.o HttpRequest.o sha1.o
+ peerguardnf_DEPENDENCIES = 
