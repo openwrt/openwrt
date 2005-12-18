@@ -1,0 +1,8 @@
+config BR2_PACKAGE_SANE_BACKENDS
+	prompt "sane-backends........................ scanner access now easy"
+	tristate
+	default m if CONFIG_DEVEL
+	help
+	  Scanner access now easy
+	  
+	  http://www.sane-project.org

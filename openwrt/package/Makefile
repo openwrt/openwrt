@@ -181,6 +181,7 @@ package-$(BR2_PACKAGE_RSYNC) += rsync
 package-$(BR2_PACKAGE_SABLEVM) += sablevm
 package-$(BR2_COMPILE_SABLEVM_CLASSPATH) += sablevm-classpath
 package-$(BR2_COMPILE_SAMBA) += samba
+package-$(BR2_PACKAGE_SANE_BACKENDS) += sane-backends
 package-$(BR2_PACKAGE_SCDP) += scdp
 package-$(BR2_PACKAGE_SCREEN) += screen
 package-$(BR2_PACKAGE_SDK) += sdk
