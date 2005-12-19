@@ -12791,7 +12791,7 @@ diff -ruN busybox-1.1.0-pre1-old/archival/libipkg/sprintf_alloc.h busybox-1.1.0-
 +
 +#include "libbb.h"
 +
-+#define sprintf_alloc  bb_xasprintf
++#define sprintf_alloc(str, fmt, args...)  *str = bb_xasprintf(fmt, ## args)
 +
 +#endif
 diff -ruN busybox-1.1.0-pre1-old/archival/libipkg/str_list.c busybox-1.1.0-pre1-new/archival/libipkg/str_list.c
