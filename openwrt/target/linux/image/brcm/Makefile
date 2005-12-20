@@ -88,10 +88,14 @@ install: $(BIN_DIR)/openwrt-wrt54g-$(KERNEL)-$(FSNAME).bin $(BIN_DIR)/openwrt-wr
 endif
 
 ifneq ($(FS),jffs2-4MB)
+$(BIN_DIR)/openwrt-wgt634u-$(KERNEL)-$(FSNAME).bin: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx
+	dd if=$(BUILD_DIR)/loader.elf of=$@ bs=131072 conv=sync
+	cat $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx >> $@
+
 $(BIN_DIR)/openwrt-wrt54gs-$(KERNEL)-$(FSNAME).bin: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx
 	$(STAGING_DIR)/bin/addpattern -4 -p W54S -v v4.70.6 -i $< -o $@ -g
 
-install: $(BIN_DIR)/openwrt-wrt54gs-$(KERNEL)-$(FSNAME).bin
+install: $(BIN_DIR)/openwrt-wrt54gs-$(KERNEL)-$(FSNAME).bin $(BIN_DIR)/openwrt-wgt634u-$(KERNEL)-$(FSNAME).bin
 endif
 
 $(BIN_DIR)/openwrt-motorola-$(KERNEL)-$(FS).bin: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx
