@@ -5,8 +5,8 @@ include $(TOPDIR)/rules.mk
 include ../rules.mk
 
 KERNEL:=2.6
-LINUX_VERSION:=2.6.15-rc5
-LINUX_KERNEL_MD5SUM:=1b430bfd22f4094bf1bdc1a5ceb6b6a2
+LINUX_VERSION:=2.6.15-rc6
+LINUX_KERNEL_MD5SUM:=eeead0b884811411fd2df8520744b253
 LINUX_SITE=http://www.fi.kernel.org/pub/linux/kernel/v2.6/testing \
            http://www.fr.kernel.org/pub/linux/kernel/v2.6/testing \
            http://www.kernel.org/pub/linux/kernel/v2.6/testing \
