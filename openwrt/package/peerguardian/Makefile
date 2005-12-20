@@ -8,7 +8,7 @@ PKG_MD5SUM:=0fb2bc5501b031604fc56eec3bd35fa4
 PKG_SOURCE_URL:=@SF/peerguardian
 PKG_SOURCE:=pglinux-$(PKG_VERSION).tar.gz
 PKG_BUILD_DIR:=$(BUILD_DIR)/pglinux-$(PKG_VERSION)
-PKG_CAT:=gzcat
+PKG_CAT:=zcat
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
 include $(TOPDIR)/package/rules.mk
