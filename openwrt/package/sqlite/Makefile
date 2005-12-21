@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=sqlite
-PKG_VERSION:=3.2.7
+PKG_VERSION:=3.2.8
 PKG_RELEASE:=1
-PKG_MD5SUM:=34c92821b3b46380f192c0aaf2b2b217
+PKG_MD5SUM:=9f2c014aaa46565b8163e047166a5686
 
 PKG_SOURCE_URL:=http://www.sqlite.org/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -96,3 +96,7 @@ uninstall-dev:
 
 compile-targets: install-dev
 clean-targets: uninstall-dev
+
+mostlyclean:
+	-$(MAKE) -C $(PKG_BUILD_DIR) clean
+	rm -f $(PKG_BUILD_DIR)/.built 
