@@ -1,3 +1,5 @@
+# $Id$
+
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=rrs
