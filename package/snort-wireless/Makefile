@@ -1,3 +1,5 @@
+# $Id$
+
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=snort-wireless
@@ -149,5 +151,5 @@ $(PKG_BUILD_DIR)/.installed: $(PKG_BUILD_DIR)/.built
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		install
-	touch $(PKG_BUILD_DIR)/.installed
+	touch $@
 
