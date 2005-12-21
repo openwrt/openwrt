@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=sqlite2
-PKG_VERSION:=2.8.16
+PKG_VERSION:=2.8.17
 PKG_RELEASE:=1
-PKG_MD5SUM:=9c79b461ff30240a6f9d70dd67f8faea
+PKG_MD5SUM:=838dbac20b56d2c4292e98848505a05b
 
 PKG_SOURCE_URL:=http://www.sqlite.org/
 PKG_SOURCE:=sqlite-$(PKG_VERSION).tar.gz
@@ -23,8 +23,8 @@ $(PKG_BUILD_DIR)/.configured:
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
-		CPPFLAGS="-I$(STAGING_DIR)/usr/include" \
-		LDFLAGS="-L$(STAGING_DIR)/usr/lib" \
+		CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include" \
+		LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib" \
 		config_BUILD_CC="$(HOSTCC)" \
 		config_BUILD_CFLAGS="-O2" \
 		config_TARGET_CC="$(TARGET_CC)" \
@@ -33,26 +33,26 @@ $(PKG_BUILD_DIR)/.configured:
 		config_TARGET_READLINE_LIBS="-L$(STAGING_DIR)/usr/lib -lreadline -lncurses" \
 		config_TARGET_TCL_INC="-DNO_TCL=1" \
 		./configure \
-		  --target=$(GNU_TARGET_NAME) \
-		  --host=$(GNU_TARGET_NAME) \
-		  --build=$(GNU_HOST_NAME) \
-		  --program-prefix="" \
-		  --program-suffix="" \
-		  --prefix=/usr \
-		  --exec-prefix=/usr \
-		  --bindir=/usr/bin \
-		  --datadir=/usr/share \
-		  --includedir=/usr/include \
-		  --infodir=/usr/share/info \
-		  --libdir=/usr/lib \
-		  --libexecdir=/usr/lib \
-		  --localstatedir=/var \
-		  --mandir=/usr/share/man \
-		  --sbindir=/usr/sbin \
-		  --sysconfdir=/etc \
-		  $(DISABLE_LARGEFILE) \
-		  --enable-shared \
-		  --enable-static \
+			--target=$(GNU_TARGET_NAME) \
+			--host=$(GNU_TARGET_NAME) \
+			--build=$(GNU_HOST_NAME) \
+			--program-prefix="" \
+			--program-suffix="" \
+			--prefix=/usr \
+			--exec-prefix=/usr \
+			--bindir=/usr/bin \
+			--datadir=/usr/share \
+			--includedir=/usr/include \
+			--infodir=/usr/share/info \
+			--libdir=/usr/lib \
+			--libexecdir=/usr/lib \
+			--localstatedir=/var \
+			--mandir=/usr/share/man \
+			--sbindir=/usr/sbin \
+			--sysconfdir=/etc \
+			$(DISABLE_LARGEFILE) \
+			--enable-shared \
+			--enable-static \
 	);
 	touch $@
 
@@ -95,3 +95,7 @@ uninstall-dev:
 
 compile-targets: install-dev
 clean-targets: uninstall-dev
+
+mostlyclean:
+	-$(MAKE) -C $(PKG_BUILD_DIR) clean
+	rm -f $(PKG_BUILD_DIR)/.built 
