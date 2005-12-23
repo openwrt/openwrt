@@ -1,78 +1,119 @@
+diff -Nur openswan-2.4.4/linux/include/openswan.h openswan-2.4.4.patched/linux/include/openswan.h
+--- openswan-2.4.4/linux/include/openswan.h	2005-04-14 22:21:51.000000000 +0200
++++ openswan-2.4.4.patched/linux/include/openswan.h	2005-12-23 20:31:58.248159750 +0100
+@@ -78,6 +78,10 @@
+ #define NET_21
+ #endif
+ 
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,15)
++#define KERNEL_2615
++#endif
++
+ #ifndef IPPROTO_COMP
+ #  define IPPROTO_COMP 108
+ #endif /* !IPPROTO_COMP */
 diff -Nur openswan-2.4.4/linux/net/ipsec/ipcomp.c openswan-2.4.4.patched/linux/net/ipsec/ipcomp.c
 --- openswan-2.4.4/linux/net/ipsec/ipcomp.c	2005-08-28 01:40:00.000000000 +0200
-+++ openswan-2.4.4.patched/linux/net/ipsec/ipcomp.c	2005-12-18 17:46:02.069886000 +0100
-@@ -600,7 +600,6 @@
++++ openswan-2.4.4.patched/linux/net/ipsec/ipcomp.c	2005-12-23 20:35:02.482256250 +0100
+@@ -600,7 +600,9 @@
          memcpy(n->head,
  	       skb->head,
  	       ((char *)iph - (char *)skb->head) + iphlen);
 -        n->list=NULL;
++#ifndef KERNEL_2615
++	n->list=NULL;
++#endif
  	n->next=NULL;
  	n->prev=NULL;
          n->sk=NULL;
-@@ -657,7 +656,7 @@
+@@ -657,7 +659,11 @@
  	n->pkt_bridged=skb->pkt_bridged;
  #endif /* NETDEV_23 */
  	n->ip_summed=0;
 -        n->stamp=skb->stamp;
++#ifdef KERNEL_2615
 +        n->tstamp=skb->tstamp;
++#else
++	n->stamp=skb->stamp;
++#endif
  #ifndef NETDEV_23 /* this seems to have been removed in 2.4 */
  #if defined(CONFIG_SHAPER) || defined(CONFIG_SHAPER_MODULE)
          n->shapelatency=skb->shapelatency;       /* Latency on frame */
 diff -Nur openswan-2.4.4/linux/net/ipsec/ipsec_tunnel.c openswan-2.4.4.patched/linux/net/ipsec/ipsec_tunnel.c
 --- openswan-2.4.4/linux/net/ipsec/ipsec_tunnel.c	2005-09-22 00:57:43.000000000 +0200
-+++ openswan-2.4.4.patched/linux/net/ipsec/ipsec_tunnel.c	2005-12-18 17:46:02.069886000 +0100
-@@ -34,6 +34,7 @@
++++ openswan-2.4.4.patched/linux/net/ipsec/ipsec_tunnel.c	2005-12-23 20:38:17.666454500 +0100
+@@ -34,6 +34,9 @@
  #include <linux/interrupt.h> /* mark_bh */
  
  #include <net/tcp.h>
++#ifdef KERNEL_2615
 +#include <net/inet_timewait_sock.h>
++#endif
  #include <net/udp.h>
  #include <linux/skbuff.h>
  
-@@ -272,9 +273,9 @@
+@@ -272,9 +275,13 @@
  
  		if(ixs->skb->sk) {
  #ifdef NET_26
--			struct tcp_tw_bucket *tw;
++#ifdef KERNEL_2615
 +			struct inet_timewait_sock *tw;
- 			
--			tw = (struct tcp_tw_bucket *)ixs->skb->sk;
 +			tw = (struct inet_timewait_sock *)ixs->skb->sk;
++#else
+ 			struct tcp_tw_bucket *tw;
+-			
+ 			tw = (struct tcp_tw_bucket *)ixs->skb->sk;
++#endif
  
  			ixs->sport = ntohs(tw->tw_sport);
  			ixs->dport = ntohs(tw->tw_dport);
 diff -Nur openswan-2.4.4/linux/net/ipsec/pfkey_v2.c openswan-2.4.4.patched/linux/net/ipsec/pfkey_v2.c
 --- openswan-2.4.4/linux/net/ipsec/pfkey_v2.c	2005-09-14 18:40:45.000000000 +0200
-+++ openswan-2.4.4.patched/linux/net/ipsec/pfkey_v2.c	2005-12-18 18:06:21.826116000 +0100
-@@ -461,9 +461,8 @@
++++ openswan-2.4.4.patched/linux/net/ipsec/pfkey_v2.c	2005-12-23 20:43:21.481441750 +0100
+@@ -459,11 +459,17 @@
+ 				    "skb=0p%p dequeued.\n", skb);
+ 			printk(KERN_INFO "klips_debug:pfkey_destroy_socket: "
  			       "pfkey_skb contents:");
++#ifndef	KERNEL_2615
++			printk(" list:0p%p", skb->list);
++#endif
  			printk(" next:0p%p", skb->next);
  			printk(" prev:0p%p", skb->prev);
 -			printk(" list:0p%p", skb->list);
  			printk(" sk:0p%p", skb->sk);
--			printk(" stamp:%ld.%ld", skb->stamp.tv_sec, skb->stamp.tv_usec);
++#ifdef KERNEL_2615
 +			printk(" tstamp:%d.%d", skb->tstamp.off_sec, skb->tstamp.off_usec);
++#else
+ 			printk(" stamp:%ld.%ld", skb->stamp.tv_sec, skb->stamp.tv_usec);
++#endif
  			printk(" dev:0p%p", skb->dev);
  			if(skb->dev) {
  				if(skb->dev->name) {
-@@ -1376,7 +1375,8 @@
+@@ -1376,7 +1382,12 @@
  #endif /* NET_21 */
  
  	skb_copy_datagram_iovec(skb, 0, msg->msg_iov, size);
 -        sk->sk_stamp=skb->stamp;
++#ifdef KERNEL_2615
 +        sk->sk_stamp.tv_sec=skb->tstamp.off_sec;
 +        sk->sk_stamp.tv_usec=skb->tstamp.off_usec;
++#else
++	sk->sk_stamp=skb->stamp;
++#endif
  
  	skb_free_datagram(sk, skb);
  	return size;
-@@ -1495,8 +1495,8 @@
+@@ -1495,8 +1506,13 @@
  #endif					
  					sk->sk_protocol,
  					sk->sk_sndbuf,
--					(unsigned int)sk->sk_stamp.tv_sec,
--					(unsigned int)sk->sk_stamp.tv_usec,
++#ifdef KERNEL_2615
 +					sk->sk_stamp.tv_sec,
 +					sk->sk_stamp.tv_usec,
++#else
+ 					(unsigned int)sk->sk_stamp.tv_sec,
+ 					(unsigned int)sk->sk_stamp.tv_usec,
++#endif
  					sk->sk_socket->flags,
  					sk->sk_socket->type,
  					sk->sk_socket->state);
