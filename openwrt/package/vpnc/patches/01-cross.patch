@@ -1,14 +1,21 @@
-diff -ruN vpnc-0.3.3-old/Makefile vpnc-0.3.3-new/Makefile
---- vpnc-0.3.3-old/Makefile	2005-05-01 22:30:35.000000000 +0200
-+++ vpnc-0.3.3-new/Makefile	2005-12-13 17:23:26.000000000 +0100
-@@ -23,25 +23,26 @@
+diff -Nur vpnc-0.3.3/Makefile vpnc-0.3.3.patched/Makefile
+--- vpnc-0.3.3/Makefile	2005-05-01 22:30:35.000000000 +0200
++++ vpnc-0.3.3.patched/Makefile	2005-12-23 23:43:55.222055250 +0100
+@@ -17,31 +17,32 @@
+ # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ 
+ DESTDIR=
+-PREFIX=/usr/local
++PREFIX=/usr
+ ETCDIR=/etc/vpnc
+ SBINDIR=$(PREFIX)/sbin
  MANDIR=$(PREFIX)/share/man
  
  CC=gcc
 -CFLAGS=-W -Wall -O -g '-DVERSION="$(shell cat VERSION)"' $(shell libgcrypt-config --cflags)
 -LDFLAGS=-g $(shell libgcrypt-config --libs)
-+CFLAGS=-W -Wall -I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include $(OFLAGS) '-DVERSION="$(shell cat VERSION)"' $(shell libgcrypt-config --cflags)
-+LDFLAGS=-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib $(shell libgcrypt-config --libs)
++CFLAGS=-W -Wall -I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include $(OFLAGS) '-DVERSION="$(shell cat VERSION)"'
++LDFLAGS=-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib -lgcrypt -lgpg-error
  
 -ifeq ($(shell uname -s), Linux)
 +OS=$(shell uname -s)
