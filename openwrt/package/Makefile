@@ -23,6 +23,7 @@ package-$(BR2_PACKAGE_CHILLISPOT) += chillispot
 package-$(BR2_PACKAGE_CIFSMOUNT) += cifsmount
 package-$(BR2_PACKAGE_CUPS) += cups
 package-$(BR2_COMPILE_CURL) += curl
+package-$(BR2_PACKAGE_CUTTER) += cutter
 package-$(BR2_COMPILE_CYRUS_SASL) += cyrus-sasl
 package-$(BR2_COMPILE_DB) += libdb
 package-$(BR2_PACKAGE_DECO) += deco
@@ -153,6 +154,7 @@ package-$(BR2_PACKAGE_PARPROUTED) += parprouted
 package-$(BR2_COMPILE_PCMCIA_CS) += pcmcia-cs
 package-$(BR2_COMPILE_PCRE) += pcre
 package-$(BR2_PACKAGE_PEERCAST) += peercast
+package-$(BR2_PACKAGE_PEERGUARDIAN) += peerguardian
 package-$(BR2_COMPILE_PHP4) += php4
 package-$(BR2_COMPILE_PHP5) += php5
 package-$(BR2_PACKAGE_PICOCOM) += picocom
@@ -307,6 +309,7 @@ openswan-compile: gmp-compile
 osiris-compile: openssl-compile
 palantir-compile: jpeg-compile
 peercast-compile: uclibc++-compile
+peerguardian-compile: libpthread-compile
 portmap-compile: tcp_wrappers-compile
 postgresql-compile: zlib-compile
 ppp-compile: linux-atm-compile
