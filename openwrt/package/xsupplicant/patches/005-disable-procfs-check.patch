@@ -1,0 +1,23 @@
+diff -Nur xsupplicant-1.2.2/configure xsupplicant-1.2.2.patched/configure
+--- xsupplicant-1.2.2/configure	2005-09-14 05:34:54.000000000 +0200
++++ xsupplicant-1.2.2.patched/configure	2005-12-23 23:51:47.031541500 +0100
+@@ -4809,19 +4809,6 @@
+   FRAMER="generic"
+ fi
+ 
+-if test $FRAMER = "linux"; then
+-   echo "$as_me:$LINENO: checking for procfs support" >&5
+-echo $ECHO_N "checking for procfs support... $ECHO_C" >&6
+-   if test -r /proc/net/dev; then
+-      echo "$as_me:$LINENO: result: okay" >&5
+-echo "${ECHO_T}okay" >&6
+-   else
+-      { { echo "$as_me:$LINENO: error: You must have ProcFS enabled in your kernel!" >&5
+-echo "$as_me: error: You must have ProcFS enabled in your kernel!" >&2;}
+-   { (exit 1); exit 1; }; };
+-   fi
+-fi
+-
+ if test "$MADWIFI_PATH" != ""; then
+    echo "$as_me:$LINENO: result: Adding MADWIFI WPA support." >&5
+ echo "${ECHO_T}Adding MADWIFI WPA support." >&6
