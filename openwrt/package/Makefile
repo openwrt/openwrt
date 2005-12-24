@@ -1,7 +1,6 @@
 # Main makefile for the packages
 include $(TOPDIR)/rules.mk
 
-package-:=tcp_wrappers
 package-$(BR2_PACKAGE_6TUNNEL) += 6tunnel
 package-$(BR2_PACKAGE_AICCU) += aiccu
 package-$(BR2_PACKAGE_AIRCRACK) += aircrack
@@ -107,6 +106,7 @@ package-$(BR2_PACKAGE_LIBUPNP) += libupnp
 package-$(BR2_PACKAGE_LIBUSB) += libusb
 package-$(BR2_PACKAGE_LIBVORBIS) += libvorbis
 package-$(BR2_PACKAGE_LIBVORBISIDEC) += libvorbisidec
+package-$(BR2_PACKAGE_LIBWRAP) += tcp_wrappers
 package-$(BR2_PACKAGE_LIBXML2) += libxml2
 package-$(BR2_PACKAGE_LIBXSLT) += libxslt
 package-$(BR2_PACKAGE_LIGHTTPD) += lighttpd
