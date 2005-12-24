@@ -2,6 +2,7 @@ config BR2_PACKAGE_LINUX_ATM
 	prompt "linux-atm......................... ATM Library/Utilities for Linux"
 	tristate
 	default y if BR2_LINUX_2_4_AR7
+	default n
 	help
 	  ATM Library for linux
 	  
@@ -11,6 +12,7 @@ config BR2_PACKAGE_BR2684CTL
 	prompt   "br2684ctl....................... RFC2684 bridging utility"
 	tristate
 	default y if BR2_LINUX_2_4_AR7
+	default n
 	depends BR2_PACKAGE_LINUX_ATM
 	help
 	  Utility for setting up ATM RFC2684 bridging mode
