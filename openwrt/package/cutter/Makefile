@@ -10,7 +10,7 @@ PKG_MD5SUM:=50093db9b64277643969ee75b83ebbd1
 PKG_SOURCE_URL:=http://www.lowth.com/cutter/software/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tgz
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-PKG_CAT:=gzcat
+PKG_CAT:=zcat
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
 include $(TOPDIR)/package/rules.mk
