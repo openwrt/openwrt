@@ -25,6 +25,11 @@ endif
 ifeq ($(FS),jffs2-4MB)
 TRXALIGN:=-a 0x10000
 endif
+# see ticket #155
+ifeq ($(FS),squashfs)
+TRXALIGN:=-a 1024
+endif
+
 
 $(KDIR)/loader.tmp.gz:
 	cp $(BUILD_DIR)/loader.gz $@
