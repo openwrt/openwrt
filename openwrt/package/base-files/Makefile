@@ -6,6 +6,11 @@ PKG_NAME:=base-files
 PKG_RELEASE:=6
 PKG_BUILD_DIR:=$(BUILD_DIR)/base-files
 
+BOARD:=$(shell LANG=C grep ^BR2_LINUX_2 $(TOPDIR)/.config|sed -e "s/=y//" \
+	-e "s/.*_//"| tr "[:upper:]" "[:lower:]")
+KERNEL:=$(shell LANG=C grep ^BR2_LINUX_2 $(TOPDIR)/.config|sed -e "s/=y//" \
+	-e "s/BR2_LINUX_//" -e "s/_BRCM//" -e "s/_/./"| tr "[:upper:]" "[:lower:]")
+
 REV:=$(shell LANG=C svn info | awk '/^Revision:/ { print$$2 }' )
 ifeq ($(REV),)
 REV:=0
@@ -40,6 +45,7 @@ $(IPKG_BASE):
 	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_BASE) ipkg/$(PKG_NAME).control $(PKG_RELEASE) $(ARCH)
 	cp -a ./default/* $(IDIR_BASE)
 	$(SED) 's,$$R,r$(REV),g' $(IDIR_BASE)/etc/banner
+	$(SED) 's,$$S,$(BOARD)-$(KERNEL),g' $(IDIR_BASE)/etc/ipkg.conf
 	mkdir -p $(IDIR_BASE)/jffs
 	mkdir -p $(IDIR_BASE)/dev
 	mkdir -p $(IDIR_BASE)/proc
