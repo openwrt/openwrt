@@ -1,6 +1,7 @@
 config BR2_PACKAGE_KMOD_SWITCH
 	prompt "kmod-switch....................... Kernel driver for ROBO and ADMTEK SWITCH"
 	tristate
+	default y if BR2_LINUX_2_6_BRCM || BR2_LINUX_2_4_BRCM
 	default m if CONFIG_DEVEL
 	help
 	  Kernel driver for ROBO and ADMTEK switches.
