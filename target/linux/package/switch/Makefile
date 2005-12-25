@@ -25,7 +25,7 @@ $(PKG_BUILD_DIR)/.configured:
 	touch $@
 
 $(PKG_BUILD_DIR)/.built:
-	$(MAKE) -C "$(LINUX_DIR)" \
+	$(MAKE) -C "$(KERNEL_DIR)" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
 		ARCH="$(LINUX_KARCH)" \
 		PATH="$(TARGET_PATH)" \
