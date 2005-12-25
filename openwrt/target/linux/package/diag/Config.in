@@ -1,6 +1,8 @@
 config BR2_PACKAGE_KMOD_DIAG
 	prompt "kmod-diag......................... Driver for router LEDs and Buttons"
 	tristate
-	default y
+	default y if BR2_LINUX_2_4_BRCM
+	default m if CONFIG_DEVEL
+	default n
 	help
 	  Driver for router LEDs and Buttons
