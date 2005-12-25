@@ -11,12 +11,11 @@ config BR2_HAVE_DOT_CONFIG
 	default y
 
 config BR2_mipsel
+	bool
 	default y
 
 choice
-	default BR2_mipsel
-	help
-	  Stuff
+	prompt "Target Architecture" if CONFIG_DEVEL
 
 config BR2_arm
 	bool "arm"
@@ -33,8 +32,8 @@ config BR2_i386
 config BR2_m68k
 	bool "m68k"
 
-config BR2_mips
-	bool "mips"
+config BR2_mipseb
+	bool "mipseb"
 
 config BR2_mipsel
 	bool "mipsel"
@@ -66,7 +65,7 @@ config BR2_ARCH
 	default "cris"    if BR2_cris
 	default "i386"    if BR2_i386
 	default "m68k"    if BR2_m68k
-	default "mips"    if BR2_mips
+	default "mipseb"  if BR2_mipseb
 	default "mipsel"  if BR2_mipsel || !CONFIG_DEVEL
 	default "powerpc" if BR2_powerpc
 	default "sh3"     if BR2_sh3

@@ -48,6 +48,14 @@ config BR2_LINUX_2_6_X86
 	  Build firmware images for x86 based boards
 	  (e.g. Soekris net4521 and net4801, PC Engines WRAP...)
 
+config BR2_LINUX_2_4_AR531X
+	bool "Support for Atheros ar531x based APs"
+	default n
+	depends BR2_mipseb
+	help
+	  Build firmware images for Atheros ar531x based boards
+	  (e.g. Netgear WGT624, Linksys WRT55AG)
+
 endchoice
 
 
