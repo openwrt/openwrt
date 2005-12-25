@@ -25,14 +25,13 @@ $(PKG_BUILD_DIR)/.configured:
 	touch $@
 
 $(PKG_BUILD_DIR)/.built:
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		PATH="$(TARGET_PATH)" \
-		ARCH="$(LINUX_KARCH)" \
+	$(MAKE) -C "$(LINUX_DIR)" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
-		KERNEL_VERSION="$(KERNEL_VERSION)" \
-		KERNEL_DIR="$(KERNEL_DIR)" \
+		ARCH="$(LINUX_KARCH)" \
+		PATH="$(TARGET_PATH)" \
+		SUBDIRS="$(PKG_BUILD_DIR)" \
 		EXTRA_CFLAGS="-DBCMGPIO2" \
-		all
+		modules
 	touch $@
 	
 $(IPKG_KMOD_SWITCH):
