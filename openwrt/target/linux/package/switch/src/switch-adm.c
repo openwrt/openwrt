@@ -28,8 +28,8 @@
 #include <linux/delay.h>
 #include <asm/uaccess.h>
 
-#include "gpio.h"
 #include "switch-core.h"
+#include "gpio.h"
 
 #define DRIVER_NAME "adm6996"
 
