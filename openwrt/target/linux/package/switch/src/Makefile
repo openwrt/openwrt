@@ -11,8 +11,9 @@
 #
 
 obj-m	:= switch-core.o switch-adm.o switch-robo.o
-export-objs := switch-core.o
 
 ifeq ($(MAKING_MODULES),1)
+export-objs := switch-core.o
+
 -include $(TOPDIR)/Rules.make
 endif
