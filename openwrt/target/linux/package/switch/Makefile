@@ -21,6 +21,9 @@ $(PKG_BUILD_DIR)/.prepared:
 	cp -fpR ./src/* $(PKG_BUILD_DIR)/
 	touch $@
 
+$(PKG_BUILD_DIR)/.configured:
+	touch $@
+
 $(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		PATH="$(TARGET_PATH)" \
@@ -33,7 +36,7 @@ $(PKG_BUILD_DIR)/.built:
 	touch $@
 	
 $(IPKG_KMOD_SWITCH):
-	install -m0755 $(IDIR_KMOD_SWITCH)/lib/modules/$(LINUX_VERSION)
+	install -m0755 -d $(IDIR_KMOD_SWITCH)/lib/modules/$(LINUX_VERSION)
 	install -m0755 -d $(IDIR_KMOD_SWITCH)/etc/modules.d
 	cp -fpR $(PKG_BUILD_DIR)/*.$(LINUX_KMOD_SUFFIX) \
 		$(IDIR_KMOD_SWITCH)/lib/modules/$(LINUX_VERSION)
