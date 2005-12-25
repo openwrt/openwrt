@@ -3,7 +3,13 @@
 
 #if defined(BCMGPIO2)
 
+#ifdef LINUX_2_4
+#define sbh bcm947xx_sbh
+extern void *bcm947xx_sbh;
+#else
 extern void *sbh;
+#endif
+
 extern __u32 sb_gpioin(void *sbh);
 extern __u32 sb_gpiointpolarity(void *sbh, __u32 mask, __u32 val, __u8 prio);
 extern __u32 sb_gpiointmask(void *sbh, __u32 mask, __u32 val, __u8 prio);
