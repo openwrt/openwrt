@@ -5,7 +5,7 @@ include ../../rules.mk
 
 PKG_NAME:=openswan
 PKG_VERSION:=2.4.4
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_MD5SUM:=bd1a46c64727674149de61da2a32ca63
 
 PKG_SOURCE_URL:=http://www.openswan.org/download
