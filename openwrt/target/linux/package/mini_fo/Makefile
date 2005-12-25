@@ -4,15 +4,15 @@ include $(TOPDIR)/rules.mk
 include ../../rules.mk
 
 PKG_NAME := mini_fo
-PKG_VERSION := 0.6.1pre1
+PKG_VERSION := 0.6.2pre1
 PKG_RELEASE := 1
-PKG_MD5SUM := 7e192e01b08023c7f3e63bf1c796bc14
+PKG_MD5SUM := acd12157be25d7b3c8df90914049403e
 
 PKG_SOURCE_URL := http://www.denx.de/twiki/pub/Know/MiniFOHome/
-PKG_SOURCE := mini_fo-0-6-1-pre1.tar.bz2
+PKG_SOURCE := mini_fo-0-6-2-pre1.tar.bz2
 PKG_CAT := bzcat
 
-PKG_BUILD_DIR := $(BUILD_DIR)/mini_fo
+PKG_BUILD_DIR := $(BUILD_DIR)/mini_fo-0-6-2-pre1
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
 ifeq ($(KERNEL_DIR),)

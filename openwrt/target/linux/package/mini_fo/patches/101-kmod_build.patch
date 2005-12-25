@@ -1,7 +1,7 @@
-diff -ruN mini_fo-old/Makefile mini_fo-new/Makefile
---- mini_fo-old/Makefile	2005-05-08 01:22:51.000000000 +0200
-+++ mini_fo-new/Makefile	2005-08-15 04:37:22.000000000 +0200
-@@ -26,36 +26,32 @@
+diff -Nur mini_fo-0-6-2-pre1/Makefile mini_fo-0-6-2-pre1.patched/Makefile
+--- mini_fo-0-6-2-pre1/Makefile	2005-10-15 12:49:43.000000000 +0200
++++ mini_fo-0-6-2-pre1.patched/Makefile	2005-12-25 14:03:36.864205250 +0100
+@@ -26,36 +26,29 @@
  # allow custom override of TOPINC for fistgen developers
  -include fistdev.mk
  
@@ -38,10 +38,10 @@ diff -ruN mini_fo-old/Makefile mini_fo-new/Makefile
 -
 -${obj-m}: ${mini_fo-objs}
 -	$(LD) -o ${obj-m} -r ${mini_fo-objs}
+-
+-tags:
+-	ctags -R -e
 +	$(MAKE) -C ${KERNEL_SRC} SUBDIRS=$(shell pwd) modules
- 
- TAGS:
- 	etags -t *.[hc]
  
  clean:
  ifeq ($(KERNELVERSION),2.6)
