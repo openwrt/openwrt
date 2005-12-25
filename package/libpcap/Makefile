@@ -4,7 +4,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libpcap
 PKG_VERSION:=0.8.3
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_MD5SUM:=56a9d4615d8354fcfe8cff8c8443c77b
 
 PKG_SOURCE_URL:=http://www.tcpdump.org/release/
@@ -48,6 +48,7 @@ $(PKG_BUILD_DIR)/.configured:
 		  --enable-shared \
 		  --enable-static \
 		  --disable-yydebug \
+		  --enable-ipv6 \
 		  --with-build-cc=$(HOSTCC) \
 		  --with-pcap=linux \
 	);
