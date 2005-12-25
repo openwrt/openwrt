@@ -1,5 +1,5 @@
 /*
- * Broadcom BCM5325E/536x switch configuration module
+ * ADMTEK Adm6996 switch configuration module
  *
  * Copyright (C) 2005 Felix Fietkau <nbd@nbd.name>
  *
