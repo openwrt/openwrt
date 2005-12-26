@@ -35,8 +35,8 @@ config BR2_i386
 config BR2_m68k
 	bool "m68k"
 
-config BR2_mipseb
-	bool "mipseb"
+config BR2_mips
+	bool "mips"
 
 config BR2_mipsel
 	bool "mipsel"
@@ -68,7 +68,7 @@ config BR2_ARCH
 	default "cris"    if BR2_cris
 	default "i386"    if BR2_i386
 	default "m68k"    if BR2_m68k
-	default "mipseb"  if BR2_mipseb
+	default "mips"    if BR2_mips
 	default "mipsel"  if BR2_mipsel
 	default "powerpc" if BR2_powerpc
 	default "sh3"     if BR2_sh3
