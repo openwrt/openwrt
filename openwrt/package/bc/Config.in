@@ -1,0 +1,22 @@
+config BR2_COMPILE_BC
+	tristate
+	depends BR2_PACKAGE_BC || BR2_PACKAGE_DC
+	default n
+	
+config BR2_PACKAGE_BC
+	prompt "bc................................ Arbitrary precision calculator language"
+	tristate
+	default m if CONFIG_DEVEL
+	select BR2_COMPILE_BC
+	help
+      bc is a language that supports arbitrary precision numbers with
+	  interactive execution of statements.
+	  
+config BR2_PACKAGE_DC
+	prompt "dc................................ Arbitrary precision calculator"
+	tristate
+	default m if CONFIG_DEVEL
+	select BR2_COMPILE_BC
+	help
+	  dc is a reverse-polish desk calculator which supports unlimited
+	  precision arithmetic.
