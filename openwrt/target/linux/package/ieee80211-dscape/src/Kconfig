@@ -1,0 +1,32 @@
+config IEEE80211
+	tristate "Generic IEEE 802.11 Networking Stack"
+	---help---
+	This option enables the hardware independent IEEE 802.11
+	networking stack.
+
+config IEEE80211_DEBUG
+	bool "Enable debugging output"
+	depends on IEEE80211
+	---help---
+	  This option will enable debug tracing output for the
+	  ieee80211 network stack.
+
+	  If you are not trying to debug or develop the ieee80211
+	  subsystem, you most likely want to say N here.
+
+config IEEE80211_VERBOSE_DEBUG
+	bool "Verbose debugging output"
+	depends on IEEE80211_DEBUG
+
+config TKIP_DEBUG
+	bool "TKIP debugging"
+	depends on IEEE80211_DEBUG
+
+config IEEE80211_DEBUG_COUNTERS
+	bool "Extra statistics for TX/RX debugging"
+	depends on IEEE80211_DEBUG
+
+config HOSTAPD_WPA_TESTING
+	bool "Support for TKIP countermeasures testing"
+	depends on IEEE80211_DEBUG
+
