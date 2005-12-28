@@ -11,6 +11,7 @@ package-$(BR2_PACKAGE_ARPWATCH) += arpwatch
 package-$(BR2_PACKAGE_ASTERISK) += asterisk
 package-$(BR2_COMPILE_ATFTP) += atftp
 package-$(BR2_COMPILE_AVAHI) += avahi
+package-$(BR2_COMPILE_BC) += bc
 package-$(BR2_COMPILE_BIND) += bind
 package-$(BR2_PACKAGE_BLUEZ_LIBS) += bluez-libs
 package-$(BR2_PACKAGE_BLUEZ_UTILS) += bluez-utils
