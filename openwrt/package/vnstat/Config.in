@@ -1,0 +1,11 @@
+config BR2_PACKAGE_VNSTAT
+	prompt "vnstat............................ Console-based network traffic monitor"
+	tristate
+	default m if CONFIG_DEVEL
+	help
+	  vnStat is a network traffic monitor for Linux that keeps a log of daily
+	  network traffic for the selected interface(s). vnStat isn't a packet
+	  sniffer. The traffic information is analyzed from the /proc -filesystem,
+	  so vnStat can be used without root permissions.
+	  .
+	  http://humdi.net/vnstat/
