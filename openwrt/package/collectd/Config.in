@@ -1,0 +1,43 @@
+menu "collectd........................... Lightweight system statistics collection daemon"
+
+config BR2_PACKAGE_COLLECTD
+	prompt "collectd........................... Lightweight system statistics collection daemon"
+	tristate
+	default m if CONFIG_DEVEL
+	help
+		collectd is a small daemon which collects system information
+		every 10 seconds. The values are then sent to a multicast group
+		to be stored in RRD files by a server process.
+		
+		http://verplant.org/collectd/
+
+config BR2_PACKAGE_COLLECTD_CPU
+        prompt "Enable cpu support"
+	bool
+	default y
+	depends BR2_PACKAGE_COLLECTD
+
+config BR2_PACKAGE_COLLECTD_LOAD
+        prompt "Enable load support"
+	bool
+	default y
+	depends BR2_PACKAGE_COLLECTD
+
+config BR2_PACKAGE_COLLECTD_MEMORY
+	prompt "Enable memory support"
+	bool
+	default y
+	depends BR2_PACKAGE_COLLECTD
+
+config BR2_PACKAGE_COLLECTD_PING
+	prompt "Enable ping support"
+	bool
+	default y
+	depends BR2_PACKAGE_COLLECTD
+
+config BR2_PACKAGE_COLLECTD_TRAFFIC
+	prompt "Enable traffic support"
+	bool
+	default y
+	depends BR2_PACKAGE_COLLECTD
+endmenu
