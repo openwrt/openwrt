@@ -21,6 +21,7 @@ package-$(BR2_PACKAGE_BWM) += bwm
 package-$(BR2_PACKAGE_CGILIB) += cgilib
 package-$(BR2_PACKAGE_CHILLISPOT) += chillispot
 package-$(BR2_PACKAGE_CIFSMOUNT) += cifsmount
+package-$(BR2_PACKAGE_COLLECTD) += collectd
 package-$(BR2_PACKAGE_CUPS) += cups
 package-$(BR2_COMPILE_CURL) += curl
 package-$(BR2_PACKAGE_CUTTER) += cutter

@@ -1,0 +1,17 @@
+#!/bin/sh
+
+BINARY="/usr/sbin/collectd"
+PIDFILE="/var/run/collectd.pid"
+DATADIR="/var/lib/collectd"
+
+[ -x "$BINARY" ] || exit 1;
+
+if [ -e "$PIDFILE" ]
+then
+	kill $(cat "$PIDFILE") 2>/dev/null
+	sleep 1
+fi
+
+[ -d "$DATADIR" ] || mkdir -p "$DATADIR";
+
+$BINARY
