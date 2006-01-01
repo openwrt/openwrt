@@ -39,8 +39,8 @@ $(IPKG_KMOD_SWITCH):
 	install -m0755 -d $(IDIR_KMOD_SWITCH)/etc/modules.d
 	cp -fpR $(PKG_BUILD_DIR)/*.$(LINUX_KMOD_SUFFIX) \
 		$(IDIR_KMOD_SWITCH)/lib/modules/$(LINUX_VERSION)
-	echo "switch-core" > $(IDIR_KMOD_SWITCH)/etc/modules.d/05-switch
-	echo "switch-robo" >> $(IDIR_KMOD_SWITCH)/etc/modules.d/05-switch
-	echo "switch-adm" >> $(IDIR_KMOD_SWITCH)/etc/modules.d/05-switch
+	echo "switch-core" > $(IDIR_KMOD_SWITCH)/etc/modules.d/50-switch
+	echo "switch-robo" >> $(IDIR_KMOD_SWITCH)/etc/modules.d/50-switch
+	echo "switch-adm" >> $(IDIR_KMOD_SWITCH)/etc/modules.d/50-switch
 	$(IPKG_BUILD) $(IDIR_KMOD_SWITCH) $(PACKAGE_DIR)
 
