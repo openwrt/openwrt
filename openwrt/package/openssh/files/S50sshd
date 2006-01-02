@@ -2,7 +2,7 @@
 
 for type in rsa dsa; do {
   # check for keys
-  key=/etc/ssh/ssh_${type}_host_key
+  key=/etc/ssh/ssh_host_${type}_key
   [ ! -f $key ] && {
     # generate missing keys
     [ -x /usr/bin/ssh-keygen ] && {
@@ -11,5 +11,5 @@ for type in rsa dsa; do {
     exit 0
   }
 }; done
-
+mkdir -p /var/emtpy
 /usr/sbin/sshd
