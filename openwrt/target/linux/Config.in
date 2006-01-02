@@ -177,6 +177,13 @@ config BR2_PACKAGE_KMOD_PPPOE
 	help
 	  Support for PPP over Ethernet
 
+config BR2_PACKAGE_KMOD_RING
+	prompt "kmod-ring......................... PF Ring"
+	tristate
+	default m
+	help
+	  PF Ring
+
 config BR2_PACKAGE_KMOD_SCHED
 	prompt "kmod-sched........................ Traffic schedulers"
 	tristate
@@ -772,6 +779,13 @@ config BR2_PACKAGE_KMOD_LP
 	default m
 	help
 	  Kernel modules for line printer and parallel port support
+
+config BR2_PACKAGE_KMOD_SOFTDOG
+	prompt "kmod-softdog..................... software watchdog"
+	tristate
+	default m
+	help
+	  Kernel modules for software watchdog driver
 
 config BR2_PACKAGE_KMOD_WD1100
 	prompt "kmod-wd1100....................... Soekris net4801 watchdog"
