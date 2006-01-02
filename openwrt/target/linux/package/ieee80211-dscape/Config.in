@@ -1,8 +1,9 @@
 config BR2_PACKAGE_KMOD_IEEE80211_DSCAPE
 	prompt "kmod-ieee80211-dscape............. IEEE 802.11 stack (devicescape)"
 	tristate
-	default y if BR2_LINUX_2_6_BRCM
-	default n
+	default m
+	depends BR2_LINUX_2_6_BRCM || BR2_LINUX_2_6_X86
+	
 	help
 	  IEEE 802.11 stack (devicescape)
 	  
