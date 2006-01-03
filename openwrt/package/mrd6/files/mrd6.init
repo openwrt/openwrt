@@ -1,0 +1,29 @@
+#!/bin/sh
+
+case $1 in
+start)
+        /sbin/lsmod | grep ipv6 > /dev/null
+        if [ "$?" != "0" ]
+        then
+          echo -n "IPv6 stack required by mrd6. Loading ipv6 module: "
+          /sbin/insmod ipv6
+          echo "Done."
+        fi
+        echo -n "Starting IPv6 multicast router (mrd6): "
+	/usr/sbin/mrd6 -f /etc/mrd6.conf -D
+        echo "Done."
+        ;;
+stop)
+        echo -n "Stopping IPv6 multicast router (mrd6): "
+	killall mrd6
+        echo "Done."
+        ;;
+restart)
+        $0 stop
+        $0 start
+        ;;
+*)
+        echo "Usage: $0 {start | stop | restart}"
+        ;;
+esac
+exit 0

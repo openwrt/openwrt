@@ -127,6 +127,7 @@ package-$(BR2_PACKAGE_MINI_SENDMAIL) += mini_sendmail
 package-$(BR2_COMPILE_MIREDO) += miredo
 package-$(BR2_COMPILE_MONIT) += monit
 package-$(BR2_PACKAGE_MPD) += mpd
+package-$(BR2_PACKAGE_MRD6) += mrd6
 package-$(BR2_PACKAGE_MT_DAAPD) += mt-daapd
 package-$(BR2_PACKAGE_MTD) += mtd
 package-$(BR2_PACKAGE_MTR) += mtr
