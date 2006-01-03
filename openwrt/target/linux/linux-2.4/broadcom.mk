@@ -8,11 +8,11 @@
 # broadcom specific kmod packages
 $(eval $(call KMOD_template,BRCM_WL,brcm-wl,\
 	$(MODULES_DIR)/kernel/drivers/net/wl/wl.o \
-,CONFIG_WL,,10,wl))
+,CONFIG_WL,,20,wl))
 
 $(eval $(call KMOD_template,BRCM_WL2,brcm-wl2,\
 	$(BUILD_DIR)/wl/wl2/wl.o \
-,CONFIG_WL,,10,wl))
+,CONFIG_WL,,20,wl))
 
 $(eval $(call KMOD_template,BRCM_ET,brcm-et,\
 	$(MODULES_DIR)/kernel/drivers/net/et/et.o \
