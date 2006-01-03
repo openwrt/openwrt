@@ -27,9 +27,3 @@ sed 's/^[^#]/insmod &/' /etc/modules /etc/modules.d/* 2>&-|ash
 ifconfig lo 127.0.0.1 up
 ifconfig eth0 promisc
 
-[ "$(uname -r|grep -c 2.6)" = "1" ] && [ -x /sbin/robocfg ] && { # FIXME: replace when the new switch driver is integrated...
-  robocfg switch disable vlans enable reset vlan 0 ports "0 1 2 3 5t" vlan 1 ports "4 5t" port 4 state enabled stp none switch enable
-  robocfg show
-}
-
-
