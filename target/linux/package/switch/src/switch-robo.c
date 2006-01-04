@@ -56,18 +56,6 @@ static int max_vlans, max_ports;
 static struct ifreq ifr;
 static struct net_device *dev;
 
-static int isspace(char c) {
-	switch(c) {
-		case ' ':
-		case 0x09:
-		case 0x0a:
-		case 0x0d:
-			return 1;
-		default:
-			return 0;
-	}
-}
-
 static int do_ioctl(int cmd, void *buf)
 {
 	mm_segment_t old_fs = get_fs();
@@ -297,7 +285,7 @@ static int robo_probe(char *devname)
 }
 
 
-static int handle_vlan_port_read(char *buf, int nr)
+static int handle_vlan_port_read(void *driver, char *buf, int nr)
 {
 	__u16 val16;
 	int len = 0;
@@ -337,45 +325,34 @@ static int handle_vlan_port_read(char *buf, int nr)
 	return len;
 }
 
-static int handle_vlan_port_write(char *buf, int nr)
+static int handle_vlan_port_write(void *driver, char *buf, int nr)
 {
-	int untag = 0;
-	int member = 0;
+	switch_driver *d = (switch_driver *) driver;
+	switch_vlan_config *c = switch_parse_vlan(d, buf);
 	int j;
 	__u16 val16;
 	
-	while (*buf >= '0' && *buf <= '9') {
-		j = *buf++ - '0';
-		member |= 1 << j;
-		
-		/* untag if needed, CPU port requires special handling */
-		if (*buf == 'u' || (j != 5 && (isspace(*buf) || *buf == 0))) {
-			untag |= 1 << j;
-			if (*buf) buf++;
+	if (c == NULL)
+		return -EINVAL;
+
+	for (j = 0; j < d->ports; j++) {
+		if ((c->untag | c->pvid) & (1 << j))
 			/* change default vlan tag */
 			robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_PORT0_DEF_TAG + (j << 1), nr);
-		} else if (*buf == '*' || *buf == 't' || isspace(*buf)) {
-			buf++;
-		} else break;
-		
-		while (isspace(*buf)) buf++;
 	}
-	
-	if (*buf) {
-		return -1;
+
+	/* write config now */
+	val16 = (nr) /* vlan */ | (1 << 12) /* write */ | (1 << 13) /* enable */;
+	if (is_5350) {
+		robo_write32(ROBO_VLAN_PAGE, ROBO_VLAN_WRITE_5350,
+			(1 << 20) /* valid */ | (c->untag << 6) | c->port);
+		robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_TABLE_ACCESS_5350, val16);
 	} else {
-		/* write config now */
-		val16 = (nr) /* vlan */ | (1 << 12) /* write */ | (1 << 13) /* enable */;
-		if (is_5350) {
-			robo_write32(ROBO_VLAN_PAGE, ROBO_VLAN_WRITE_5350,
-				(1 << 20) /* valid */ | (untag << 6) | member);
-			robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_TABLE_ACCESS_5350, val16);
-		} else {
-			robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_WRITE,
-				(1 << 14)  /* valid */ | (untag << 7) | member);
-			robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_TABLE_ACCESS, val16);
-		}
+		robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_WRITE,
+			(1 << 14)  /* valid */ | (c->untag << 7) | c->port);
+		robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_TABLE_ACCESS, val16);
 	}
+
 	return 0;
 }
 
@@ -387,6 +364,7 @@ static int __init robo_init()
 	for (device[3] = '0'; (device[3] <= '3') && notfound; device[3]++) {
 		notfound = robo_probe(device);
 	}
+	device[3]--;
 	
 	if (notfound)
 		return -ENODEV;
@@ -397,6 +375,8 @@ static int __init robo_init()
 		};
 		switch_driver driver = {
 			name: DRIVER_NAME,
+			interface: device,
+			cpuport: max_ports - 1,
 			ports: max_ports,
 			vlans: max_vlans,
 			driver_handlers: NULL,

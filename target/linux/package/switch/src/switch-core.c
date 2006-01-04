@@ -37,6 +37,7 @@ typedef struct {
 	struct list_head list;
 	struct proc_dir_entry *parent;
 	int nr;
+	void *driver;
 	switch_config handler;
 } switch_proc_handler;
 
@@ -47,7 +48,6 @@ typedef struct {
 	int nr;
 } switch_priv;
 
-
 static ssize_t switch_proc_read(struct file *file, char *buf, size_t count, loff_t *ppos);
 static ssize_t switch_proc_write(struct file *file, const char *buf, size_t count, void *data);
 
@@ -56,7 +56,7 @@ static struct file_operations switch_proc_fops = {
 	write: switch_proc_write
 };
 
-static char *strdup(char *str)
+static inline char *strdup(char *str)
 {
 	char *new = kmalloc(strlen(str) + 1, GFP_KERNEL);
 	strcpy(new, str);
@@ -80,7 +80,7 @@ static ssize_t switch_proc_read(struct file *file, char *buf, size_t count, loff
 	if (dent->data != NULL) {
 		switch_proc_handler *handler = (switch_proc_handler *) dent->data;
 		if (handler->handler.read != NULL)
-			len += handler->handler.read(page + len, handler->nr);
+			len += handler->handler.read(handler->driver, page + len, handler->nr);
 	}
 	len += 1;
 
@@ -122,7 +122,7 @@ static ssize_t switch_proc_write(struct file *file, const char *buf, size_t coun
 	if (dent->data != NULL) {
 		switch_proc_handler *handler = (switch_proc_handler *) dent->data;
 		if (handler->handler.write != NULL) {
-			if ((ret = handler->handler.write(page, handler->nr)) >= 0)
+			if ((ret = handler->handler.write(handler->driver, page, handler->nr)) >= 0)
 				ret = count;
 		}
 	}
@@ -131,8 +131,9 @@ static ssize_t switch_proc_write(struct file *file, const char *buf, size_t coun
 	return ret;
 }
 
-static void add_handlers(switch_priv *priv, switch_config *handlers, struct proc_dir_entry *parent, int nr)
+static void add_handlers(switch_driver *driver, switch_config *handlers, struct proc_dir_entry *parent, int nr)
 {
+	switch_priv *priv = (switch_priv *) driver->data;
 	switch_proc_handler *tmp;
 	int i, mode;
 	struct proc_dir_entry *p;
@@ -142,6 +143,7 @@ static void add_handlers(switch_priv *priv, switch_config *handlers, struct proc
 		INIT_LIST_HEAD(&tmp->list);
 		tmp->parent = parent;
 		tmp->nr = nr;
+		tmp->driver = driver;
 		memcpy(&tmp->handler, &(handlers[i]), sizeof(switch_config));
 		list_add(&tmp->list, &priv->data.list);
 		
@@ -192,7 +194,7 @@ static void do_unregister(switch_driver *driver)
 	kfree(priv->vlans);
 	remove_proc_entry("vlan", priv->driver_dir);
 
-	remove_proc_entry(driver->name, switch_root);
+	remove_proc_entry(driver->interface, switch_root);
 			
 	if (priv->nr == (drv_num - 1))
 		drv_num--;
@@ -213,10 +215,9 @@ static int do_register(switch_driver *driver)
 	INIT_LIST_HEAD(&priv->data.list);
 	
 	priv->nr = drv_num++;
-	sprintf(buf, "%d", priv->nr);
-	priv->driver_dir = proc_mkdir(buf, switch_root);
+	priv->driver_dir = proc_mkdir(driver->interface, switch_root);
 	if (driver->driver_handlers != NULL)
-		add_handlers(priv, driver->driver_handlers, priv->driver_dir, 0);
+		add_handlers(driver, driver->driver_handlers, priv->driver_dir, 0);
 	
 	priv->port_dir = proc_mkdir("port", priv->driver_dir);
 	priv->ports = kmalloc((driver->ports + 1) * sizeof(struct proc_dir_entry *), GFP_KERNEL);
@@ -224,7 +225,7 @@ static int do_register(switch_driver *driver)
 		sprintf(buf, "%d", i);
 		priv->ports[i] = proc_mkdir(buf, priv->port_dir);
 		if (driver->port_handlers != NULL)
-			add_handlers(priv, driver->port_handlers, priv->ports[i], i);
+			add_handlers(driver, driver->port_handlers, priv->ports[i], i);
 	}
 	priv->ports[i] = NULL;
 	
@@ -234,7 +235,7 @@ static int do_register(switch_driver *driver)
 		sprintf(buf, "%d", i);
 		priv->vlans[i] = proc_mkdir(buf, priv->vlan_dir);
 		if (driver->vlan_handlers != NULL)
-			add_handlers(priv, driver->vlan_handlers, priv->vlans[i], i);
+			add_handlers(driver, driver->vlan_handlers, priv->vlans[i], i);
 	}
 	priv->vlans[i] = NULL;
 	
@@ -242,7 +243,7 @@ static int do_register(switch_driver *driver)
 	return 0;
 }
 
-static int isspace(char c) {
+static inline int isspace(char c) {
 	switch(c) {
 		case ' ':
 		case 0x09:
@@ -298,39 +299,57 @@ int switch_print_media(char *buf, int media)
 	return len;
 }
 
-int switch_parse_vlan(char *buf)
+switch_vlan_config *switch_parse_vlan(switch_driver *driver, char *buf)
 {
-	char vlan = 0, tag = 0, pvid_port = 0;
-	int untag, j;
+	switch_vlan_config *c;
+	int j, u, p, s;
+	
+	c = kmalloc(sizeof(switch_vlan_config), GFP_KERNEL);
+	memset(c, 0, sizeof(switch_vlan_config));
 
 	while (isspace(*buf)) buf++;
-	
+	j = 0;
 	while (*buf >= '0' && *buf <= '9') {
-		j = *buf++ - '0';
-		vlan |= 1 << j;
-		
-		untag = 0;
-		/* untag if needed, CPU port requires special handling */
-		if (*buf == 'u' || (j != 5 && (isspace(*buf) || *buf == 0))) {
-			untag = 1;
-			if (*buf) buf++;
-		} else if (*buf == '*') {
-			pvid_port |= (1 << j);
-			buf++;
-		} else if (*buf == 't' || isspace(*buf)) {
-			buf++;
-		} else break;
+		j *= 10;
+		j += *buf++ - '0';
 
-		if (!untag)
-			tag |= 1 << j;
+		u = ((j == driver->cpuport) ? 0 : 1);
+		p = 0;
+		s = !(*buf >= '0' && *buf <= '9');
+	
+		if (s) {
+			while (s && !isspace(*buf) && (*buf != 0)) {
+				switch(*buf) {
+					case 'u':
+						u = 1;
+						break;
+					case 't':
+						u = 0;
+						break;
+					case '*':
+						p = 1;
+						break;
+				}
+				buf++;
+			}
+			c->port |= (1 << j);
+			if (u)
+				c->untag |= (1 << j);
+			if (p)
+				c->pvid |= (1 << j);
+
+			j = 0;
+		}
 		
 		while (isspace(*buf)) buf++;
 	}
-	
-	if (*buf)
-		return -1;
+	if (*buf != 0) return NULL;
 
-	return (pvid_port << 16) | (tag << 8) | vlan;
+	c->port &= (1 << driver->ports) - 1;
+	c->untag &= (1 << driver->ports) - 1;
+	c->pvid &= (1 << driver->ports) - 1;
+	
+	return c;
 }
 
 
@@ -345,11 +364,16 @@ int switch_register_driver(switch_driver *driver)
 			printk("Switch driver '%s' already exists in the kernel\n", driver->name);
 			return -EINVAL;
 		}
+		if (strcmp(list_entry(pos, switch_driver, list)->interface, driver->interface) == 0) {
+			printk("There is already a switch registered on the device '%s'\n", driver->interface);
+			return -EINVAL;
+		}
 	}
 
 	new = kmalloc(sizeof(switch_driver), GFP_KERNEL);
 	memcpy(new, driver, sizeof(switch_driver));
 	new->name = strdup(driver->name);
+	new->interface = strdup(driver->interface);
 	
 	if ((ret = do_register(new)) < 0) {
 		kfree(new->name);
