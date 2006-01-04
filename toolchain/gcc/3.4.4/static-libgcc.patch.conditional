@@ -1,0 +1,11 @@
+--- specs~	2005-11-21 17:22:08.000000000 +0100
++++ specs	2005-11-21 17:22:08.000000000 +0100
+@@ -51,7 +51,7 @@
+ %{shared: -lc} %{!static:-rpath-link %R/lib:%R/usr/lib} %{!shared: %{pthread:-lpthread}   %{profile:-lc_p} %{!profile: -lc}}
+ 
+ *libgcc:
+-%{static|static-libgcc:-lgcc -lgcc_eh}%{!static:%{!static-libgcc:%{!shared-libgcc:-lgcc --as-needed -lgcc_s%M --no-as-needed}%{shared-libgcc:-lgcc_s%M%{!shared: -lgcc}}}}
++%{static|static-libgcc:-lgcc -lgcc_eh}%{!static:%{!static-libgcc:%{!shared:%{!shared-libgcc:-lgcc -lgcc_eh}%{shared-libgcc:-lgcc_s%M -lgcc}}%{shared:%{shared-libgcc:-lgcc_s%M}%{!shared-libgcc:-lgcc}}}}
+ 
+ *startfile:
+ %{!shared: %{pg|p|profile:gcrt1.o%s;pie:Scrt1.o%s;:crt1.o%s}}    crti.o%s %{static:crtbeginT.o%s;shared|pie:crtbeginS.o%s;:crtbegin.o%s}
