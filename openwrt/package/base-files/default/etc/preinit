@@ -16,4 +16,9 @@ fi
 
 mount_root ${FAILSAFE:+failsafe}
 
+# automagically run firstboot
+[ -z "$FAILSAFE" -a -z "$(nvram get no_root_swap)" ] && {
+	{ mount|grep "on / type jffs2" 1>&-; } || firstboot
+}
+
 exec /sbin/init
