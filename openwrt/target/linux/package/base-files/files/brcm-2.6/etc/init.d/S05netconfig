@@ -1,0 +1,104 @@
+#!/bin/sh
+[ -e /etc/config/network ] && exit 0
+
+(
+	if [ "$(/usr/bin/head -c4 /dev/mtdblock/1 | /usr/bin/tail -c3)" = "ELF" ]; then
+		# WGT634u
+		echo boardtype=wgt634u
+	else
+		strings /dev/mtdblock/3
+	fi
+) | awk '
+function p(name) {
+	if (c[name] != "") print name "=\"" c[name] "\""
+}
+
+BEGIN {
+	FS="="
+	c["lan_ifname"]="br0"
+	c["lan_ifnames"]="vlan0 eth1"
+	c["wan_proto"]="none"
+	c["wan_ifname"]="vlan1"
+	c["vlan0ports"]="1 2 3 4 5*"
+	c["vlan1ports"]="0 5"
+}
+
+($1 == "boardnum") || ($1 == "boardtype") || ($1 == "boardflags") {
+	nvram[$1] = $2
+}
+
+END {
+	# v1 hardware
+	if (nvram["boardtype"] == "bcm4710dev") {
+		# Linksys WRT54G v1.x
+		if (nvram["boardnum"] == "42") {
+			c["vlan0ports"]=""
+			c["vlan1ports"]=""
+			c["lan_ifnames"]="vlan2 eth2"
+		}
+
+		# Asus WL-500g
+		if (nvram["boardnum"] == "asusX") {
+			c["lan_ifnames"]="eth0 eth1 eth2" # FIXME
+			# wan_ifname=eth1
+		}
+	}
+	if (nvram["boardtype"] == "wgt634u") {
+		c["vlan0ports"] = "0 1 2 3 5*"
+		c["vlan1ports"] = "4 5"
+	}
+	if (nvram["boardtype"] == "0x0467") {
+		c["vlan0ports"] = "0 1 2 3 5*"
+		c["vlan1ports"] = "4 5"
+	}
+
+	# WAP54G
+	if ((nvram["boardnum"] == "2") || \
+		(nvram["boardnum"] == "1024")) {
+		c["lan_ifnames"]="eth0 eth1"
+		c["wan_ifname"]=""
+	}
+
+	print "#### VLAN configuration "
+	print "vlan0hwname=et0"
+	print "vlan1hwname=et0"
+	p("vlan0ports")
+	p("vlan1ports")
+	print ""
+	print ""
+	
+	print "#### LAN configuration"
+	print "lan_proto=\"static\""
+	p("lan_ifname")
+	p("lan_ifnames")
+	print "lan_ipaddr=\"192.168.1.1\""
+	print "# lan_dns=\"192.168.1.1\""
+	print "# lan_gateway=\"192.168.1.1\""
+
+	print ""
+	print ""
+
+	print "#### WAN configuration"
+	print "# wan_proto: WAN protocol, available protocols:"
+	print "#   none: disable"
+	print "#   dhcp: DHCP"
+	print "#   static: Static IP"
+	print "#   pppoe: PPP over Ethernet"
+	print "#   pptp: Point-to-Point tunneling Protocol"
+	print "#     for pppoe and pptp you need to use wan_ifname=\"ppp0\""
+	print "#     and {pppoe,pptp}ifname=\"" c["wan_ifname"] "\")"
+	print ""
+	print "wan_proto=dhcp"
+	p("wan_ifname")
+	print "# wan_ipaddr=\"192.168.0.2\""
+	print "# wan_netmask=\"255.255.255.0\""
+	print "# wan_gateway=\"192.168.0.1\""
+	print "# wan_dns=\"192.168.0.1\""
+	print ""
+	print "## PPP over Ethernet and PPTP"
+	print "# wan_ifname=\"ppp0\""
+	print "# pppoe_ifname=\"" c["wan_ifname"] "\""
+	print "# pptp_ifname=\"" c["wan_ifname"] "\""
+	print "# pptp_server_ip=\"192.168.0.1\""
+}
+' > /etc/config/network
