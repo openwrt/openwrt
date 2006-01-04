@@ -240,7 +240,7 @@ static int port_conf[] = { 0x01, 0x03, 0x05, 0x07, 0x08, 0x09 };
 /* Bits in VLAN port mapping */
 static int vlan_ports[] = { 1 << 0, 1 << 2, 1 << 4, 1 << 6, 1 << 7, 1 << 8 };
 
-static int handle_vlan_port_read(char *buf, int nr)
+static int handle_vlan_port_read(void *driver, char *buf, int nr)
 {
 	int ports, i, c, len = 0;
 			
@@ -261,30 +261,33 @@ static int handle_vlan_port_read(char *buf, int nr)
 	return len;
 }
 
-static int handle_vlan_port_write(char *buf, int nr)
+static int handle_vlan_port_write(void *driver, char *buf, int nr)
 {
-	int i, c, ports;
-	int map = switch_parse_vlan(buf);
+	int i, cfg, ports;
+	switch_driver *d = (switch_driver *) driver;
+	switch_vlan_config *c = switch_parse_vlan(d, buf);
 
-	if (map == -1)
+	if (c == NULL)
 		return -1;
 
 	ports = adm_rreg(0, 0x13 + nr);
-	for (i = 0; i <= 5; i++) {
-		if (map & (1 << i)) {
+	for (i = 0; i < d->ports; i++) {
+		if (c->port & (1 << i)) {
 			ports |= vlan_ports[i];
 
-			c = adm_rreg(0, port_conf[i]);
+			cfg = adm_rreg(0, port_conf[i]);
 			
 			/* Tagging */
-			if (map & (1 << (8 + i)))
-				c |= (1 << 4);
+			if (c->untag & (1 << i))
+				cfg &= ~(1 << 4);
 			else
-				c &= ~(1 << 4);
-
-			c = (c & ~(0xf << 10)) | (nr << 10);
+				cfg |= (1 << 4);
 			
-			adm_wreg(port_conf[i], (__u16) c);
+			if ((c->untag | c->pvid) & (1 << i)) {
+				cfg = (cfg & ~(0xf << 10)) | (nr << 10);
+			}
+			
+			adm_wreg(port_conf[i], (__u16) cfg);
 		} else {
 			ports &= ~(vlan_ports[i]);
 		}
@@ -294,12 +297,12 @@ static int handle_vlan_port_write(char *buf, int nr)
 	return 0;
 }
 
-static int handle_port_enable_read(char *buf, int nr)
+static int handle_port_enable_read(void *driver, char *buf, int nr)
 {
 	return sprintf(buf, "%d\n", ((adm_rreg(0, port_conf[nr]) & (1 << 5)) ? 0 : 1));
 }
 
-static int handle_port_enable_write(char *buf, int nr)
+static int handle_port_enable_write(void *driver, char *buf, int nr)
 {
 	int reg = adm_rreg(0, port_conf[nr]);
 	
@@ -313,7 +316,7 @@ static int handle_port_enable_write(char *buf, int nr)
 	return 0;
 }
 
-static int handle_port_media_read(char *buf, int nr)
+static int handle_port_media_read(void *driver, char *buf, int nr)
 {
 	int len;
 	int media = 0;
@@ -330,7 +333,7 @@ static int handle_port_media_read(char *buf, int nr)
 	return len + sprintf(buf + len, "\n");
 }
 
-static int handle_port_media_write(char *buf, int nr)
+static int handle_port_media_write(void *driver, char *buf, int nr)
 {
 	int media = switch_parse_media(buf);
 	int reg = adm_rreg(0, port_conf[nr]);
@@ -351,12 +354,12 @@ static int handle_port_media_write(char *buf, int nr)
 	return 0;
 }
 
-static int handle_vlan_enable_read(char *buf, int nr)
+static int handle_vlan_enable_read(void *driver, char *buf, int nr)
 {
 	return sprintf(buf, "%d\n", ((adm_rreg(0, 0x11) & (1 << 5)) ? 1 : 0));
 }
 
-static int handle_vlan_enable_write(char *buf, int nr)
+static int handle_vlan_enable_write(void *driver, char *buf, int nr)
 {
 	int reg = adm_rreg(0, 0x11);
 	
@@ -370,7 +373,7 @@ static int handle_vlan_enable_write(char *buf, int nr)
 	return 0;
 }
 
-static int handle_reset(char *buf, int nr)
+static int handle_reset(void *driver, char *buf, int nr)
 {
 	int i;
 
@@ -412,7 +415,7 @@ static int handle_reset(char *buf, int nr)
 	return 0;
 }
 
-static int handle_registers(char *buf, int nr)
+static int handle_registers(void *driver, char *buf, int nr)
 {
 	int i, len = 0;
 	
@@ -423,7 +426,7 @@ static int handle_registers(char *buf, int nr)
 	return len;
 }
 
-static int handle_counters(char *buf, int nr)
+static int handle_counters(void *driver, char *buf, int nr)
 {
 	int i, len = 0;
 
@@ -451,6 +454,13 @@ static int detect_adm()
 #else
 	ret = 1;
 #endif
+	if (ret == 1) {
+		int i = adm_rreg(0, 0);
+		if ((i == 0) || (i == 0xffff)) {
+			printk("No ADM6996 chip detected.\n");
+			ret = 0;
+		}
+	}
 
 	return ret;
 }
@@ -475,7 +485,9 @@ static int __init adm_init()
 	};
 	switch_driver driver = {
 		name: DRIVER_NAME,
+		interface: "eth0",
 		ports: 6,
+		cpuport: 5,
 		vlans: 16,
 		driver_handlers: cfg,
 		port_handlers: port,
