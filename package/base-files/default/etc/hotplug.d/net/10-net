@@ -7,11 +7,19 @@ setup_eth()
 	iwconfig "$INTERFACE" 2>&- | grep -v 'no wireless' >&- && {
 		/sbin/wifi
 	}
+	[ -d /proc/switch ] || {
+		insmod switch-core
+		insmod switch-robo || insmod switch-adm
+	}
 	if="$(echo "$INTERFACE" | sed s,eth,et,)"
 	ifconfig "$INTERFACE" up 2>&- >&-
 	for vlan in $(seq 0 15); do
-		[ "$(nvram get vlan${vlan}hwname)" = "$if" ] && \
+		[ "$(nvram get vlan${vlan}hwname)" = "$if" ] && {
 			$DEBUG vconfig add "$INTERFACE" "$vlan"
+			vports="$(nvram get vlan${vlan}ports)"
+			[ \! -z "$vports" -a -d "/proc/switch/$INTERFACE" ] && \
+				echo "$vports" > "/proc/switch/$INTERFACE/vlan/$vlan/ports"
+		}
 	done
 }
 
