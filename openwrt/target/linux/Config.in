@@ -70,7 +70,7 @@ comment "Device specific modules"
 config BR2_PACKAGE_KMOD_BRCM_ET
 	prompt "kmod-brcm-et...................... Broadcom Ethernet Driver"
 	tristate
-	depends BR2_LINUX_2_4_BRCM || BR2_LINUX_2_6_BRCM
+	depends BR2_LINUX_2_4_BRCM
 	default m
 	help
 	  Proprietary driver for Broadcom Ethernet chipsets (obsolete)
@@ -561,7 +561,8 @@ config BR2_PACKAGE_KMOD_NET_E100
 config BR2_PACKAGE_KMOD_NET_B44
 	prompt "kmod-net-b44...................... Broadcom 44XX, 47XX ethernet driver"
 	tristate
-	default y if BR2_LINUX_2_6_BRCM || BR2_LINUX_2_4_BRCM
+	depends !BR2_LINUX_2_6_BRCM
+	default y if BR2_LINUX_2_4_BRCM
 	default m
 	help
 	  Free driver for Broadcom Ethernet chipsets (without switch support)
