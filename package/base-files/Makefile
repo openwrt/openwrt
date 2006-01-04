@@ -29,7 +29,15 @@ LIBGCC_VERSION:=${shell cat $(STAGING_DIR)/gcc_version}
 IDIR_LIBGCC:=$(PKG_BUILD_DIR)/libgcc
 IPKG_LIBGCC:=$(PACKAGE_DIR)/libgcc_$(LIBGCC_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
 
-PACKAGES:=$(IPKG_BASE) $(IPKG_UCLIBC) $(IPKG_LIBGCC)
+PACKAGES:=$(IPKG_BASE) $(IPKG_UCLIBC) 
+PACKAGES_INSTALL:=$(IPKG_BASE) $(IPKG_UCLIBC) 
+
+ifeq ($(BR2_PACKAGE_LIBGCC),y)
+PACKAGES_INSTALL+=$(IPKG_LIBGCC)
+endif
+ifeq ($(BR2_PACKAGE_LIBGCC),m)
+PACKAGES+=$(IPKG_LIBGCC)
+endif
 
 $(PKG_BUILD_DIR)/.prepared:
 	mkdir -p $(PKG_BUILD_DIR) $(PACKAGE_DIR)
@@ -88,4 +96,4 @@ prepare:
 compile-targets: $(PACKAGES)
 install-targets: compile
 	mkdir -p $(TARGET_DIR)
-	$(IPKG) install $(PACKAGES)
+	$(IPKG) install $(PACKAGES_INSTALL)
