@@ -22,6 +22,10 @@ touch /var/log/wtmp
 touch /var/log/lastlog
 [ "$FAILSAFE" = "true" ] && touch /tmp/.failsafe
 
+for iface in $(/sbin/ifconfig -a | awk '{print $1}' | grep eth); do
+	/usr/bin/env -i ACTION=add INTERFACE="$iface" /sbin/hotplug net
+done
+
 sed 's/^[^#]/insmod &/' /etc/modules /etc/modules.d/* 2>&-|ash
 
 ifconfig lo 127.0.0.1 up
