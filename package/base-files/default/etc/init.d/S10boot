@@ -11,11 +11,6 @@ HOSTNAME=$(nvram get wan_hostname)
 HOSTNAME=${HOSTNAME%%.*}
 echo ${HOSTNAME:=OpenWrt}>/proc/sys/kernel/hostname
 
-# automagically run firstboot
-[ -z "$FAILSAFE" -a -z "$(nvram get no_root_swap)" ] && {
-	{ mount|grep "on / type jffs2" 1>&-; } || firstboot
-}
-
 mkdir -p /var/run
 mkdir -p /var/log
 touch /var/log/wtmp
