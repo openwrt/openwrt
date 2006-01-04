@@ -28,7 +28,7 @@ $(PKG_BUILD_DIR)/.configured:
 		CXXFLAGS="$(TARGET_CFLAGS) -fno-builtin -fno-rtti -nostdinc++"  \
 		CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include -I$(LINUX_DIR)/include" \
 		LDFLAGS="-nodefaultlibs -L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib" \
-		LIBS="-luClibc++ -lc -lm" \
+		LIBS="-luClibc++ -lc -lm -lgcc" \
 		./configure \
 			--target=$(GNU_TARGET_NAME) \
 			--host=$(GNU_TARGET_NAME) \
@@ -58,7 +58,7 @@ $(PKG_BUILD_DIR)/.configured:
 
 $(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR) \
-		LIBS="-luClibc++ -lc -lm" \
+		LIBS="-luClibc++ -lc -lm -lgcc" \
 		all
 	touch $@
 

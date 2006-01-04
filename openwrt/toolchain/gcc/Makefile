@@ -188,6 +188,16 @@ ifeq ($(findstring 3.3.,$(GCC_VERSION)),3.3.)
 	cp ./$(GCC_VERSION)/specs-$(ARCH)-soft-float $(STAGING_DIR)/lib/gcc-lib/$(REAL_GNU_TARGET_NAME)/$(GCC_VERSION)/specs
 endif
 endif
+# We do another ugly hack here because the standard behaviour is
+# to include a reference to libgcc.so.1 in all binaries. For flash space
+# saving, we change the specs file to link in a static libgcc here. 
+	if [ ! -f $(STAGING_DIR)/lib/gcc/$(REAL_GNU_TARGET_NAME)/$(GCC_VERSION)/specs ] ; then \
+		echo staging dir specs file is missing ; \
+		/bin/false ; \
+	fi;
+	if grep -q as-needed $(STAGING_DIR)/lib/gcc/$(REAL_GNU_TARGET_NAME)/$(GCC_VERSION)/specs; then \
+		patch -d $(STAGING_DIR)/lib/gcc/$(REAL_GNU_TARGET_NAME)/$(GCC_VERSION)/ -p0 < ./$(GCC_VERSION)/static-libgcc.patch.conditional ; \
+	fi;
 
 source: $(DL_DIR)/$(GCC_SOURCE)
 prepare: $(STAGING_DIR)/bin/$(REAL_GNU_TARGET_NAME)-gcc

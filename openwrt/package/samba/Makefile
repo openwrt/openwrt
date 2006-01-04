@@ -58,7 +58,7 @@ $(PKG_BUILD_DIR)/.built:
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS) -D_GNU_SOURCE -DNDEBUG -DSHMEM_SIZE=524288 -Dfcntl=fcntl64" \
 		CPPFLAGS="-I$(STAGING_DIR)/usr/include" \
-		LDFLAGS="-L$(STAGING_DIR)/lib -L$(STAGING_DIR)/usr/lib" \
+		LDFLAGS="-lgcc_s -L$(STAGING_DIR)/lib -L$(STAGING_DIR)/usr/lib" \
 		ac_cv_lib_cups_httpConnect=no \
 		ac_cv_sizeof_int=4 \
 		ac_cv_sizeof_long=4 \
