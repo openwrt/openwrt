@@ -14,6 +14,7 @@ package-$(BR2_PACKAGE_KMOD_OPENSWAN) += openswan
 package-$(BR2_PACKAGE_KMOD_SHFS) += shfs
 package-$(BR2_PACKAGE_KMOD_SPCA5XX) += spca5xx
 package-$(BR2_PACKAGE_KMOD_SWITCH) += switch
+package-$(BR2_PACKAGE_KMOD_UEAGLE_ATM) += ueagle-atm
 package-y += base-files
 bcm43xx-dscape-compile: ieee80211-dscape-compile
 
