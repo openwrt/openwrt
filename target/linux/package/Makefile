@@ -6,6 +6,7 @@ package-$(BR2_PACKAGE_KMOD_ALSA) += alsa
 endif
 package-$(BR2_PACKAGE_KMOD_FUSE) += fuse
 package-$(BR2_PACKAGE_KMOD_HOSTAP) += hostap
+package-$(BR2_PACKAGE_KMOD_BCM43XX_DSCAPE) += bcm43xx-dscape
 package-$(BR2_PACKAGE_KMOD_IEEE80211_DSCAPE) += ieee80211-dscape
 package-$(BR2_PACKAGE_KMOD_MADWIFI) += madwifi
 package-$(BR2_PACKAGE_KMOD_MINI_FO) += mini_fo
@@ -14,6 +15,7 @@ package-$(BR2_PACKAGE_KMOD_SHFS) += shfs
 package-$(BR2_PACKAGE_KMOD_SPCA5XX) += spca5xx
 package-$(BR2_PACKAGE_KMOD_SWITCH) += switch
 package-y += base-files
+bcm43xx-dscape-compile: ieee80211-dscape-compile
 
 ifeq ($(BOARD)-$(KERNEL),brcm-2.4)
 package-$(BR2_PACKAGE_KMOD_DIAG) += diag
