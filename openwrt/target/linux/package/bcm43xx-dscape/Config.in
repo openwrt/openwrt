@@ -1,0 +1,13 @@
+config BR2_PACKAGE_KMOD_BCM43XX_DSCAPE
+	prompt "kmod-bcm43xx-dscape............... Free Broadcom 43xx wireless driver (devicescape stack)"
+	tristate
+	depends BR2_LINUX_2_6_BRCM
+	depends BR2_PACKAGE_KMOD_IEEE80211_DSCAPE
+	default m if CONFIG_DEVEL
+	default n
+	help
+	  Free driver for the Broadcom 43xx wireless chipset
+	  This driver uses the DeviceScape 802.11 stack
+	  
+	  http://bcm43xx.berlios.de
+	  
