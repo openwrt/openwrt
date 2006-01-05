@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=olsrd
-PKG_VERSION:=0.4.9
+PKG_VERSION:=0.4.10
 PKG_RELEASE:=1
-PKG_MD5SUM:=593c0861fa10d2a8d0e7d8617479c5cf
+PKG_MD5SUM:=9807d4451e65cb4ec385155eef7bf3cf
 
 PKG_SOURCE_URL:=http://www.olsr.org/releases/0.4
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
@@ -33,6 +33,7 @@ $(eval $(call PKG_template,OLSRD_MOD_HTTPINFO,olsrd-mod-httpinfo,$(PKG_VERSION)-
 $(eval $(call PKG_template,OLSRD_MOD_NAMESERVICE,olsrd-mod-nameservice,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,OLSRD_MOD_POWER,olsrd-mod-power,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,OLSRD_MOD_SECURE,olsrd-mod-secure,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,OLSRD_MOD_TAS,olsrd-mod-tas,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 $(eval $(call PKG_mod_template,OLSRD_MOD_DOT_DRAW,dot_draw))
 $(eval $(call PKG_mod_template,OLSRD_MOD_DYN_GW,dyn_gw))
@@ -40,6 +41,7 @@ $(eval $(call PKG_mod_template,OLSRD_MOD_HTTPINFO,httpinfo))
 $(eval $(call PKG_mod_template,OLSRD_MOD_NAMESERVICE,nameservice))
 $(eval $(call PKG_mod_template,OLSRD_MOD_POWER,power))
 $(eval $(call PKG_mod_template,OLSRD_MOD_SECURE,secure))
+$(eval $(call PKG_mod_template,OLSRD_MOD_TAS,tas))
 
 $(PKG_BUILD_DIR)/.configured:
 	touch $@
