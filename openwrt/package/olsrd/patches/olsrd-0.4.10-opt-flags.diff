@@ -1,0 +1,12 @@
+diff -ruN olsrd-0.4.10-old/Makefile.inc olsrd-0.4.10-new/Makefile.inc
+--- olsrd-0.4.10-old/Makefile.inc	2006-01-01 16:58:20.000000000 +0100
++++ olsrd-0.4.10-new/Makefile.inc	2006-01-05 17:57:23.000000000 +0100
+@@ -21,7 +21,7 @@
+ ifndef CFLAGS
+ CFLAGS +=	-Wall -Wmissing-prototypes -Wstrict-prototypes \
+ 		-Wmissing-declarations -Wsign-compare
+-CFLAGS +=	-O2 -g
++CFLAGS +=	$(OFLAGS)
+ endif
+ 
+ ifdef OLSRD_PLUGIN
