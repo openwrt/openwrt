@@ -56,6 +56,7 @@ $(IPKG_KMOD_MADWIFI):
 		$(PKG_BUILD_DIR)/ath_hal/ath_hal.$(LINUX_KMOD_SUFFIX) \
 		$(PKG_BUILD_DIR)/ath/ath_pci.$(LINUX_KMOD_SUFFIX) \
 		$(PKG_BUILD_DIR)/ath_rate/sample/ath_rate_sample.$(LINUX_KMOD_SUFFIX) \
+		$(PKG_BUILD_DIR)/net80211/*.$(LINUX_KMOD_SUFFIX) \
 		$(IDIR_KMOD_MADWIFI)/lib/modules/$(LINUX_VERSION)/
 	$(IPKG_BUILD) $(IDIR_KMOD_MADWIFI) $(PACKAGE_DIR)
 
