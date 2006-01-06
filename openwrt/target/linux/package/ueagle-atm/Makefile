@@ -22,7 +22,7 @@ KERNEL_VERSION=$(shell echo "$(LINUX_VERSION)" | cut -d. -f1,2)
 
 include $(TOPDIR)/package/rules.mk
 
-$(eval $(call PKG_template,KMOD_UEAGLE_ATM,kmod-ueagle-atm,$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE),$(ARCH),kernel ($(LINUX_VERSION)-$(BOARD)-$(KERNEL_RELEASE))))
+$(eval $(call PKG_template,KMOD_UEAGLE_ATM,kmod-ueagle-atm,$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE),$(ARCH),kernel-$(LINUX_VERSION)-$(BOARD) ($(KERNEL_RELEASE))))
 
 $(PKG_BUILD_DIR)/.configured:
 	touch $@
