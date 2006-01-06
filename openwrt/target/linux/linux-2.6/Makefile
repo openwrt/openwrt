@@ -58,6 +58,7 @@ include ../netfilter.mk
 $(eval $(call KMOD_template,ATM,atm,\
 	$(MODULES_DIR)/kernel/net/atm/atm.ko \
 	$(MODULES_DIR)/kernel/net/atm/br2684.ko \
+	$(MODULES_DIR)/kernel/drivers/atm/atmtcp.ko \
 ,CONFIG_ATM,,50,atm))
 
 $(eval $(call KMOD_template,GRE,gre,\
@@ -376,6 +377,9 @@ $(eval $(call KMOD_template,USB_STORAGE,usb-storage,\
 	$(MODULES_DIR)/kernel/drivers/usb/storage/usb-storage.ko \
 ,CONFIG_USB_STORAGE,kmod-usb-core,60,scsi_mod sd_mod usb-storage))
 
+$(eval $(call KMOD_template,USB_ATM,usb-atm,\
+        $(MODULES_DIR)/kernel/drivers/usb/atm/usbatm.ko \
+	,CONFIG_USB_ATM,kmod-usb-atm,50,usb-atm))
 
 # Misc. devices
 
