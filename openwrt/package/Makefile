@@ -113,6 +113,7 @@ package-$(BR2_PACKAGE_LIBXML2) += libxml2
 package-$(BR2_PACKAGE_LIBXSLT) += libxslt
 package-$(BR2_PACKAGE_LIGHTTPD) += lighttpd
 package-$(BR2_PACKAGE_LINUX_ATM) += linux-atm
+package-$(BR2_PACKAGE_LRZSZ) += lrzsz
 package-$(BR2_COMPILE_LUA) += lua
 package-$(BR2_PACKAGE_MACCHANGER) += macchanger
 package-$(BR2_PACKAGE_MADPLAY) += madplay
