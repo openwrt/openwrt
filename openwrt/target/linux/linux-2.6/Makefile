@@ -366,6 +366,10 @@ $(eval $(call KMOD_template,USB_SERIAL_PL2303,usb-serial-pl2303,\
 	$(MODULES_DIR)/kernel/drivers/usb/serial/pl2303.ko \
 ,CONFIG_USB_SERIAL_PL2303,kmod-usb-serial,61,pl2303))
 
+$(eval $(call KMOD_template,USB_SERIAL_VISOR,usb-serial-visor,\
+	$(MODULES_DIR)/kernel/drivers/usb/serial/visor.o \
+,CONFIG_USB_SERIAL_VISOR,kmod-usb-serial,61,visor))
+
 $(eval $(call KMOD_template,USB_STORAGE,usb-storage,\
 	$(MODULES_DIR)/kernel/drivers/scsi/scsi_mod.ko \
 	$(MODULES_DIR)/kernel/drivers/scsi/sd_mod.ko \

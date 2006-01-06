@@ -126,6 +126,7 @@ config BR2_PACKAGE_KMOD_ATM
 	prompt "kmod-atm.......................... ATM support"
 	tristate
 	default y if BR2_LINUX_2_4_AR7
+	default m if BR2_LINUX_2_6_BRCM
 	help
 	  ATM support
 
@@ -163,6 +164,7 @@ config BR2_PACKAGE_KMOD_PPPOATM
 	prompt   "kmod-pppoatm.................... PPPoA (PPP over ATM) kernel support"
 	tristate
 	default y if BR2_LINUX_2_4_AR7
+	default m if BR2_LINUX_2_6_BRCM
 	default m
 	depends BR2_PACKAGE_KMOD_PPP
 	select BR2_PACKAGE_KMOD_ATM
@@ -758,6 +760,12 @@ config BR2_PACKAGE_KMOD_USB_SERIAL_VISOR
 
 config BR2_PACKAGE_KMOD_USB_STORAGE
 	prompt "kmod-usb-storage.................. Support for USB storage devices"
+	tristate
+	default m
+	depends BR2_PACKAGE_KMOD_USB_CONTROLLER
+
+config BR2_PACKAGE_KMOD_USB_ATM
+        prompt "kmod-usb-atm...................... Support for USB ATM devices"
 	tristate
 	default m
 	depends BR2_PACKAGE_KMOD_USB_CONTROLLER
