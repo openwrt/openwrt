@@ -1,0 +1,11 @@
+config BR2_PACKAGE_LRZSZ	
+	prompt "lrsz.............................. X,Y and Z-modem protocols"
+	tristate
+	default m if CONFIG_DEVEL
+	help
+		Transfer files in your login sessions.
+		Very leightweight ans straight forward.
+		You just need a terminal client that can do 
+		either X, Y or Z-modem file transfers.
+
+		http://www.ohse.de/uwe/software/lrzsz.html
