@@ -37,7 +37,7 @@ $(PKG_BUILD_DIR)/.built:
 	touch $@
 
 $(IPKG_KMOD_UEAGLE_ATM):
-	install -m0755 -d $(IDIR_KMOD_UEAGLE_ATM)/lib/modules/$(LINUX_VERSION) $(IDIR_KMOD_MADWIFI)/etc/modules.d
+	install -m0755 -d $(IDIR_KMOD_UEAGLE_ATM)/lib/modules/$(LINUX_VERSION) $(IDIR_KMOD_UEAGLE_ATM)/etc/modules.d
 	install -m0644 ./files/$(PKG_NAME).modules $(IDIR_KMOD_UEAGLE_ATM)/etc/modules.d/10-$(PKG_NAME)
 	cp -fpR $(PKG_BUILD_DIR)/driver/ueagle-atm.$(LINUX_KMOD_SUFFIX) \
 		$(PKG_BUILD_DIR)/usbatm_iso/usbatm.$(LINUX_KMOD_SUFFIX) \
