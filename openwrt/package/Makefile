@@ -238,6 +238,7 @@ package-$(BR2_PACKAGE_WONDERSHAPER) += wondershaper
 package-$(BR2_PACKAGE_WPA_SUPPLICANT) += wpa_supplicant
 package-$(BR2_PACKAGE_WPUT) += wput
 package-$(BR2_PACKAGE_WRT_RADAUTH) += wrt-radauth
+package-$(BR2_PAKCAGE_WX200D) += wx200d
 package-$(BR2_PACKAGE_XINETD) += xinetd
 package-$(BR2_PACKAGE_XSUPPLICANT) += xsupplicant
 package-$(BR2_PACKAGE_ZLIB) += zlib
@@ -348,6 +349,7 @@ vtun-compile: zlib-compile openssl-compile liblzo-compile
 wificonf-compile: wireless-tools-compile nvram-compile
 wknock-compile: libpcap-compile
 wpa_supplicant-compile: openssl-compile
+wx200d-compile: postgresql-compile
 xsupplicant-compile: openssl-compile
 
 asterisk-compile: bluez-libs-compile ncurses-compile openssl-compile
