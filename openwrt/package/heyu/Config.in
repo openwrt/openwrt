@@ -1,0 +1,8 @@
+config BR2_PACKAGE_HEYU
+	prompt "heyu.............................. X10 home automation control using a CM11A"
+	tristate
+	default m if CONFIG_DEVEL
+	help
+	  X10 home automation control using the CM11A serial device.
+
+          See http://heyu.tanj.com/heyu2/ for details.
