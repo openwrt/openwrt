@@ -1,0 +1,86 @@
+--- busybox-1.1.0-pre1.orig/networking/httpd.c	2005-11-01 00:55:15.000000000 +0100
++++ busybox-1.1.0-pre1/networking/httpd.c	2006-01-07 00:58:45.000000000 +0100
+@@ -150,6 +150,7 @@
+ 
+ /* You can use this server as standalone, require libbb.a for linking */
+ //#define HTTPD_STANDALONE
++static const char address[16] = "127.0.0.1";
+ 
+ /* Config options, disable this for do very small module */
+ //#define CONFIG_FEATURE_HTTPD_CGI
+@@ -184,7 +185,7 @@
+ void bb_show_usage(void)
+ {
+   fprintf(stderr, "Usage: %s [-p <port>] [-c configFile] [-d/-e <string>] "
+-		  "[-r realm] [-u user] [-h homedir]\n", bb_applet_name);
++		  "[-l IP address] [-r realm] [-u user] [-h homedir]\n", bb_applet_name);
+   exit(1);
+ }
+ #endif
+@@ -234,6 +235,7 @@
+ #endif
+   unsigned port;           /* server initial port and for
+ 			      set env REMOTE_PORT */
++  char addr[16];	   /* server initial IP address */ 
+   union HTTPD_FOUND {
+ 	const char *found_mime_type;
+ 	const char *found_moved_temporarily;
+@@ -826,6 +828,13 @@
+       sprintf(buf, "%u", config->port);
+       addEnv(port_name, "PORT", buf);
+ }
++static void addEnvAddr(const char *addr_name)
++{
++	char buf[16];
++
++	sprintf(buf, "%s", config->addr);
++	addEnv(addr_name, "ADDR", buf);
++}
+ #endif
+ #endif          /* CONFIG_FEATURE_HTTPD_CGI */
+ 
+@@ -910,7 +919,14 @@
+   /* inet_addr() returns a value that is already in network order */
+   memset(&lsocket, 0, sizeof(lsocket));
+   lsocket.sin_family = AF_INET;
+-  lsocket.sin_addr.s_addr = INADDR_ANY;
++  if (inet_aton(config->addr, & (lsocket.sin_addr)) == 0) {
++	  if ((gethostbyname(config->addr)) == NULL) return -1;	
++	  lsocket.sin_addr.s_addr = ((struct in_addr *) ((gethostbyname(config->addr))->h_addr))->s_addr;
++  }
++  else
++  {
++	  lsocket.sin_addr.s_addr = htons(INADDR_ANY);
++  }
+   lsocket.sin_port = htons(config->port) ;
+   fd = socket(AF_INET, SOCK_STREAM, 0);
+   if (fd >= 0) {
+@@ -1943,7 +1959,7 @@
+ #define OPT_INC_2 0
+ #endif
+ #ifndef CONFIG_FEATURE_HTTPD_USAGE_FROM_INETD_ONLY
+-				"p:v"
++				"p:v:l"
+ #ifdef CONFIG_FEATURE_HTTPD_SETUID
+ 				"u:"
+ #endif
+@@ -1957,8 +1973,9 @@
+ #define OPT_REALM       (1<<(3+OPT_INC_1))
+ #define OPT_MD5         (1<<(4+OPT_INC_1))
+ #define OPT_PORT        (1<<(3+OPT_INC_1+OPT_INC_2))
+-#define OPT_DEBUG       (1<<(4+OPT_INC_1+OPT_INC_2))
+-#define OPT_SETUID      (1<<(5+OPT_INC_1+OPT_INC_2))
++#define OPT_ADDR	(1<<(4+OPT_INC_1+OPT_INC_2))
++#define OPT_DEBUG       (1<<(5+OPT_INC_1+OPT_INC_2))
++#define OPT_SETUID      (1<<(6+OPT_INC_1+OPT_INC_2))
+ 
+ 
+ #ifdef HTTPD_STANDALONE
+@@ -2014,6 +2031,7 @@
+ #endif
+ #ifndef CONFIG_FEATURE_HTTPD_USAGE_FROM_INETD_ONLY
+ 			, &s_port
++			, &(config->addr)
+ #ifdef CONFIG_FEATURE_HTTPD_SETUID
+ 			, &s_uid
+ #endif
