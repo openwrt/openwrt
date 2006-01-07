@@ -56,6 +56,7 @@ package-$(BR2_COMPILE_GNUTLS) += gnutls
 package-$(BR2_PACKAGE_GPSD) += gpsd
 package-$(BR2_COMPILE_GSM) += gsm
 package-$(BR2_PACKAGE_HASERL) += haserl
+package-$(BR2_PACKAGE_HEYU) += heyu
 package-$(BR2_PACKAGE_HOSTAP_UTILS) += hostap-utils
 package-$(BR2_PACKAGE_HOSTAPD) += hostapd
 package-$(BR2_COMPILE_HOWL) += howl
