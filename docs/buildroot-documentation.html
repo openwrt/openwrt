@@ -95,16 +95,16 @@
 
     <h2><a name="download" id="download"></a>Obtaining OpenWrt Buildroot</h2>
 
-    <p>OpenWrt Buildroot is available via CVS - Concurrent Version System.
-    For any kind of OpenWrt development you should get the latest version from cvs via:</p>
+    <p>OpenWrt Buildroot is available via SVN aka subversion.
+    For any kind of OpenWrt development you should get the latest version from svn via:</p>
 <pre>
- $ cvs -d:pserver:anonymous@openwrt.org:/openwrt co openwrt
+ $ svn co https://svn.openwrt.org/openwrt/trunk/
 </pre>
-    <p>If you only like to create your own custom firmware images and pakages we
-     strongely suggest to use the CVS branch of the stable version (whiterussian):
+    <p>If you only like to create your own custom firmware images and packages we
+     strongly suggest to use the SVN branch of the stable version (whiterussian):
     </p>
 <pre>
- $ cvs -d:pserver:anonymous@openwrt.org:/openwrt co -rwhiterussian openwrt
+ $ svn co https://svn.openwrt.org/openwrt/branches/whiterussian/
 </pre>
  
 
@@ -156,13 +156,25 @@
     <h2><a name="custom_targetfs" id="custom_targetfs"></a>Customizing the
     target filesystem</h2>
 
-    <li>You can customize the target filesystem skeleton, available under
-    <code>package/base-files/default/</code>. You can change
-    configuration files or other stuff here. However, the full file hierarchy
-    is not yet present, because it's created during the compilation process.
-    So you can't do everything on this target filesystem skeleton, but
-    changes to it remains even when you completely rebuild the cross-compilation
-    toolchain and the tools.<br />
+    <p>There are two ways to customize the resulting target filesystem:</p>
+
+    <ul>
+      <li>Customize the target filesystem directly, and rebuild the image. The
+      target filesystem is available under <code>build_ARCH/root/</code> where
+      <code>ARCH</code> is the chosen target architecture, usually mipsel.
+      You can simply make your changes here, and run make target_install afterwards, 
+      which will rebuild the target filesystem image. This method allows to do
+      everything on the target filesystem, but if you decide to rebuild your toolchain,
+      tools or packages, these changes will be lost.</li>
+
+      <li>Customize the target filesystem skeleton, available under
+      <code>package/base-files/default/</code>. You can customize
+      configuration files or other stuff here. However, the full file hierarchy
+      is not yet present, because it's created during the compilation process.
+      So you can't do everything on this target filesystem skeleton, but
+      changes to it remains even when you completely rebuild the cross-compilation
+      toolchain and the tools.<br />
+    </ul>
 
     <h2><a name="custom_busybox" id="custom_busybox"></a>Customizing the
     Busybox configuration</h2>
@@ -283,7 +295,7 @@
       default) and the target filesystem skeleton. This directory will contain
       the final root filesystem. To set it up, it first deletes it, then it
       copies the skeleton available in  <code>target/default/target_skeleton</code>
-      and then removes useless <code>CVS/</code> directories.</li>
+      and then removes useless <code>SVN/</code> directories.</li>
 
       <li>Call the <code>prepare</code>, <code>compile</code> and <code>install</code>
       targets for the subdirectories <code>toolchain</code>, <code>package</code>
@@ -478,7 +490,7 @@ foo-compile: bar-compile
     18
     19	$(eval $(call PKG_template,FOO,foo,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
     20
-    21  $(PKG_BUILD_DIR)/.configured:
+    21  $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
     22          (cd $(PKG_BUILD_DIR); \
     23                  $(TARGET_CONFIGURE_OPTS) \
     24                  CFLAGS="$(TARGET_CFLAGS)" \
@@ -587,16 +599,6 @@ foo-compile: bar-compile
     recursevily strip all binaries and libraries. 
     Finally <code>IPKG_BUILD</code> is called to create the package.</p>
 
-	<p>If you want other targets to be executed at <code>compile</code>,
-	<code>install</code> or	<code>clean</code> time (e.g. for installing
-	a library into the staging dir), just create the targets (usually 
-	<code>install-dev</code> and <code>uninstall-dev</code>) and enable
-	them like this:
-<pre>
-compile-targets: install-dev
-clean-targets: uninstall-dev
-</pre>
-	
     <h3>Conclusion</h3>
 
     <p>As you can see, adding a software to buildroot is simply a
@@ -611,7 +613,7 @@ clean-targets: uninstall-dev
 
      <h2><a name="links" id="links"></a>Resources</h2>
 
-    <p>To learn more about OpenWrt, you can visit this website: 
+    <p>To learn more about OpenWrt you can visit this website: 
      <a href="http://openwrt.org/">http://openwrt.org/</a></p>
 
   </div>
