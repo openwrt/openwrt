@@ -1,5 +1,22 @@
-config BR2_PACKAGE_MADWIFI_TOOLS
-	prompt "madwifi-tools..................... Utilities for configuring the Atheros Wifi driver"
+menu "madwifi.......................... Utilities for the Atheros Wifi driver"
+
+config BR2_COMPILE_MADWIFI_TOOLS
+	tristate
+	default n
+	depends BR2_PACKAGE_MADWIFI_TOOLS_BASE || BR2_PACKAGE_MADWIFI_TOOLS_STATS
+
+config BR2_PACKAGE_MADWIFI_TOOLS_BASE
+	prompt "madwifi-tools-base................ Utilities for configuring the Atheros Wifi driver"
+	tristate
+	default y if BR2_LINUX_2_6_BRCM
+	default m if CONFIG_DEVEL
+	help
+	  Driver utilities for Atheros 802.11a/b/g MiniPCI cards
+	  
+	  http://www.madwifi.org/
+
+config BR2_PACKAGE_MADWIFI_TOOLS_STATS
+	prompt "madwifi-tools-stats............... Debug and stat tools for the Atheros Wifi driver"
 	tristate
 	default m if CONFIG_DEVEL
 	help
@@ -7,3 +24,4 @@ config BR2_PACKAGE_MADWIFI_TOOLS
 	  
 	  http://www.madwifi.org/
 
+endmenu
