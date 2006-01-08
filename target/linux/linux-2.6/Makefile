@@ -5,12 +5,12 @@ include $(TOPDIR)/rules.mk
 include ../rules.mk
 
 KERNEL:=2.6
-LINUX_VERSION:=2.6.15-rc6
-LINUX_KERNEL_MD5SUM:=eeead0b884811411fd2df8520744b253
-LINUX_SITE=http://www.fi.kernel.org/pub/linux/kernel/v2.6/testing \
-           http://www.fr.kernel.org/pub/linux/kernel/v2.6/testing \
-           http://www.kernel.org/pub/linux/kernel/v2.6/testing \
-           http://www.de.kernel.org/pub/linux/kernel/v2.6/testing 
+LINUX_VERSION:=2.6.15
+LINUX_KERNEL_MD5SUM:=cdf95e00f5111e31f78e1d97304d9522
+LINUX_SITE=http://www.fi.kernel.org/pub/linux/kernel/v2.6 \
+           http://www.fr.kernel.org/pub/linux/kernel/v2.6 \
+           http://www.kernel.org/pub/linux/kernel/v2.6 \
+           http://www.de.kernel.org/pub/linux/kernel/v2.6
 MODULES_SUBDIR:=lib/modules/$(LINUX_VERSION)
 LINUX_KCONFIG:=./config/$(BOARD)
 LINUX_BUILD_DIR:=$(BUILD_DIR)/linux-2.6-$(BOARD)
