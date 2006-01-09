@@ -2,7 +2,9 @@
 include $(TOPDIR)/rules.mk
 
 ifneq ($(BOARD),ar7)
+ifneq ($(BOARD)-$(KERNEL),x86-2.6)
 package-$(BR2_PACKAGE_KMOD_ALSA) += alsa
+endif
 endif
 package-$(BR2_PACKAGE_KMOD_FUSE) += fuse
 package-$(BR2_PACKAGE_KMOD_HOSTAP) += hostap
