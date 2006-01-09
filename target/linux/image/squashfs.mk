@@ -1,3 +1,10 @@
+ifeq ($(BR2_LINUX_2_4_AR531X),)
+        endian := be
+else
+        endian := le
+endif
+
+
 squashfs-prepare:
 	$(MAKE) -C squashfs prepare $(MAKE_TRACE)
 
@@ -10,7 +17,7 @@ squashfs-clean:
 
 $(KDIR)/root.squashfs: install-prepare
 	@mkdir -p $(KDIR)/root/jffs
-	$(STAGING_DIR)/bin/mksquashfs-lzma $(KDIR)/root $@ -nopad -noappend -root-owned -le $(MAKE_TRACE)
+	$(STAGING_DIR)/bin/mksquashfs-lzma $(KDIR)/root $@ -nopad -noappend -root-owned -$(endian) $(MAKE_TRACE)
 	
 ifeq ($(IB),)
 squashfs-install: compile-targets $(BOARD)-compile
