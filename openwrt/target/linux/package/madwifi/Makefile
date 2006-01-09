@@ -28,6 +28,14 @@ ifeq ($(ARCH),i386)
 HAL_TARGET:=i386-elf
 endif
 
+ifneq ($(BR2_LINUX_2_4_AR531X),)
+	BUS := AHB
+	bus := ahb
+else
+	BUS := PCI
+	bus := pci
+endif
+
 include $(TOPDIR)/package/rules.mk
 
 $(eval $(call PKG_template,KMOD_MADWIFI,kmod-madwifi,$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE),$(ARCH),kernel-$(LINUX_VERSION)-$(BOARD) ($(KERNEL_RELEASE))))
@@ -42,7 +50,9 @@ $(PKG_BUILD_DIR)/.built:
 		CROSS_COMPILE="$(TARGET_CROSS)" \
 		TARGET="$(HAL_TARGET)" \
 		TOOLPREFIX="$(KERNEL_CROSS)" \
+		TOOLPATH="$(KERNEL_CROSS)" \
 		KERNELPATH="$(KERNEL_DIR)" \
+		BUS="$(BUS)" \
 		all
 	touch $@
 
@@ -54,7 +64,7 @@ $(IPKG_KMOD_MADWIFI):
 	install -m0755 ./files/madwifi.init $(IDIR_KMOD_MADWIFI)/etc/init.d/S20madwifi
 	cp -fpR $(PKG_BUILD_DIR)/net80211/wlan*.$(LINUX_KMOD_SUFFIX) \
 		$(PKG_BUILD_DIR)/ath_hal/ath_hal.$(LINUX_KMOD_SUFFIX) \
-		$(PKG_BUILD_DIR)/ath/ath_pci.$(LINUX_KMOD_SUFFIX) \
+		$(PKG_BUILD_DIR)/ath/ath_$(bus).$(LINUX_KMOD_SUFFIX) \
 		$(PKG_BUILD_DIR)/ath_rate/sample/ath_rate_sample.$(LINUX_KMOD_SUFFIX) \
 		$(PKG_BUILD_DIR)/net80211/*.$(LINUX_KMOD_SUFFIX) \
 		$(IDIR_KMOD_MADWIFI)/lib/modules/$(LINUX_VERSION)/
