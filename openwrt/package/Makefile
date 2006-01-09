@@ -163,6 +163,7 @@ package-$(BR2_PACKAGE_PEERGUARDIAN) += peerguardian
 package-$(BR2_COMPILE_PHP4) += php4
 package-$(BR2_COMPILE_PHP5) += php5
 package-$(BR2_PACKAGE_PICOCOM) += picocom
+package-$(BR2_PACKAGE_PIPACS) += pipacs
 package-$(BR2_COMPILE_PMACCT) += pmacct
 package-$(BR2_COMPILE_POPT) += popt
 package-$(BR2_PACKAGE_PORTMAP) += portmap
