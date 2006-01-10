@@ -1,0 +1,35 @@
+diff -pur dhcp-forwarder-0.7-orig/src/wrappers.h dhcp-forwarder-0.7-patched/src/wrappers.h
+--- dhcp-forwarder-0.7-orig/src/wrappers.h	2004-06-22 12:46:56.000000000 +0200
++++ dhcp-forwarder-0.7-patched/src/wrappers.h	2005-12-27 12:28:10.464289435 +0100
+@@ -65,7 +65,14 @@ Egetgrnam(char const *name)
+    /*@*/
+ {
+   /*@observer@*/struct group const	*res = getgrnam(name);
+-  FatalErrnoError(res==0, 1, "getgrnam()");
++
++  FatalErrnoError((res == NULL) && (errno != 0), 1, "getgrnam()");
++
++  if (res == NULL)
++  {
++    fprintf (stderr, "No such group: `%s'\n", name);
++    exit (1);
++  }
+ 
+     /*@-freshtrans@*/
+     /*@-mustfreefresh@*/
+@@ -80,7 +87,14 @@ Egetpwnam(char const *name)
+     /*@*/
+ {
+   struct passwd const	*res = getpwnam(name);
+-  FatalErrnoError(res==0, 1, "getpwnam()");
++
++  FatalErrnoError((res == NULL) && (errno != 0), 1, "getpwnam()");
++
++  if (res == NULL)
++  {
++    fprintf (stderr, "No such user: `%s'\n", name);
++    exit (1);
++  }
+ 
+   return res;
+ }
