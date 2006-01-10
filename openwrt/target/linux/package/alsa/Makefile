@@ -14,29 +14,25 @@ PKG_CAT:=bzcat
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 
-ifeq ($(KERNEL_DIR),)
-KERNEL_DIR:=$(LINUX_DIR)
-endif
-
 include $(TOPDIR)/package/rules.mk
 
 ifeq ($(LINUX_KARCH),i386)
-KERNEL_C_INCS:= -I$(KERNEL_DIR)/include/asm-i386/mach-generic
+KERNEL_C_INCS:= -I$(LINUX_DIR)/include/asm-i386/mach-generic
 KERNEL_C_OPTS:= -Os -mpreferred-stack-boundary=2 -march=i486 -fno-unit-at-a-time
 endif
 ifeq ($(LINUX_KARCH),mips)
-KERNEL_C_INCS:= -I$(KERNEL_DIR)/include/asm-mips/mach-generic
+KERNEL_C_INCS:= -I$(LINUX_DIR)/include/asm-mips/mach-generic
 KERNEL_C_OPTS:= -Os -G 0 -mno-abicalls -fno-pic -finline-limit=100000 -mabi=32 -march=mips32 -Wa,-32 -Wa,-march=mips32 -Wa,-mips32 -Wa,--trap
 endif
 
-$(eval $(call PKG_template,KMOD_ALSA,kmod-alsa,$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE),$(ARCH),kernel-$(LINUX_VERSION)-$(BOARD) ($(KERNEL_RELEASE))))
+$(eval $(call PKG_template,KMOD_ALSA,kmod-alsa,$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE),$(ARCH),kernel-$(LINUX_VERSION)-$(BOARD) ($(LINUX_RELEASE))))
 
 $(PKG_BUILD_DIR)/.configured:
 	(cd $(PKG_BUILD_DIR); \
 		CFLAGS="$(KERNEL_C_INCS)" \
 		./configure \
-		--with-build=$(KERNEL_DIR) \
-		--with-kernel=$(KERNEL_DIR) \
+		--with-build=$(LINUX_DIR) \
+		--with-kernel=$(LINUX_DIR) \
 		--with-cross=$(KERNEL_CROSS) \
 		--with-redhat=no \
 		--with-suse=no \

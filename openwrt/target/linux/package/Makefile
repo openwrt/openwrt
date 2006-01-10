@@ -1,11 +1,9 @@
 # Main makefile for the packages
 include $(TOPDIR)/rules.mk
+include ../rules.mk
 
-ifneq ($(BOARD),ar7)
-ifneq ($(BOARD)-$(KERNEL),x86-2.6)
+package-y += base-files
 package-$(BR2_PACKAGE_KMOD_ALSA) += alsa
-endif
-endif
 package-$(BR2_PACKAGE_KMOD_FUSE) += fuse
 package-$(BR2_PACKAGE_KMOD_HOSTAP) += hostap
 package-$(BR2_PACKAGE_KMOD_BCM43XX_DSCAPE) += bcm43xx-dscape
@@ -17,14 +15,11 @@ package-$(BR2_PACKAGE_KMOD_SHFS) += shfs
 package-$(BR2_PACKAGE_KMOD_SPCA5XX) += spca5xx
 package-$(BR2_PACKAGE_KMOD_SWITCH) += switch
 package-$(BR2_PACKAGE_KMOD_UEAGLE_ATM) += ueagle-atm
-package-y += base-files
-bcm43xx-dscape-compile: ieee80211-dscape-compile
-
-ifeq ($(BOARD)-$(KERNEL),brcm-2.4)
 package-$(BR2_PACKAGE_KMOD_DIAG) += diag
 package-$(BR2_PACKAGE_KMOD_WLCOMPAT) += wlcompat
+
+bcm43xx-dscape-compile: ieee80211-dscape-compile
 wlcompat-compile: base-files-compile
-endif
 
 all: compile install
 clean: $(patsubst %,%-clean,$(package-) $(package-y) $(package-m))
@@ -32,20 +27,12 @@ prepare: $(patsubst %,%-prepare,$(package-y) $(package-m))
 compile: $(patsubst %,%-compile,$(package-y) $(package-m))
 install: $(patsubst %,%-install,$(package-y))
 
-MAKEOPTS:=	BOARD="$(BOARD)" \
-		KERNEL="$(KERNEL)" \
-		IPKG="$(IPKG)" \
-		TARGET_DIR="$(TARGET_DIR)" \
-		BUILD_DIR="$(BUILD_DIR)" \
-		KERNEL_DIR="$(KERNEL_DIR)" \
-		LINUX_VERSION="$(LINUX_VERSION)" \
-		KERNEL_RELEASE="$(KERNEL_RELEASE)"
-
+KPKG_MAKEOPTS += BUILD_DIR="$(LINUX_BUILD_DIR)"
 
 %-prepare:
 	@$(START_TRACE) "target/linux/package/$(patsubst %-prepare,%,$@)/prepare: "
 	$(MAKE) -C $(patsubst %-prepare,%,$@) \
-		$(MAKEOPTS) \
+		$(KPKG_MAKEOPTS) \
 		prepare
 	@$(CMD_TRACE) " done"
 	@$(END_TRACE)
@@ -53,7 +40,7 @@ MAKEOPTS:=	BOARD="$(BOARD)" \
 %-compile:
 	@$(START_TRACE) "target/linux/package/$(patsubst %-compile,%,$@)-compile: "
 	$(MAKE) -C $(patsubst %-compile,%,$@) \
-		$(MAKEOPTS) \
+		$(KPKG_MAKEOPTS) \
 		compile
 	@$(CMD_TRACE) " done"
 	@$(END_TRACE)
@@ -61,7 +48,7 @@ MAKEOPTS:=	BOARD="$(BOARD)" \
 %-install:
 	@$(START_TRACE) "target/linux/package/$(patsubst %-install,%,$@)-install: "
 	$(MAKE) -C $(patsubst %-install,%,$@) \
-		$(MAKEOPTS) \
+		$(KPKG_MAKEOPTS) \
 		install
 	@$(CMD_TRACE) " done"
 	@$(END_TRACE)
