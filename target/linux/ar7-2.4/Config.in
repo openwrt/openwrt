@@ -1,0 +1,29 @@
+config BR2_PACKAGE_KMOD_CPMAC
+	prompt "kmod-cpmac........................ AR7 CPMAC Network Driver"
+	tristate
+	default y
+	depends BR2_LINUX_2_4_AR7
+	help
+	  Driver for the AR7 CPMAC network chip
+
+config BR2_PACKAGE_KMOD_SANGAM_ATM_A
+	prompt "kmod-sangam-atm-annex-a........... AR7 Sangam ADSL Driver (Annex A)"
+	tristate
+	default m
+	depends BR2_LINUX_2_4_AR7
+	select BR2_PACKAGE_KMOD_ATM
+	help
+	  ATM driver for the Sangam ADSL chip on AR7
+	  Annex A version
+
+config BR2_PACKAGE_KMOD_SANGAM_ATM_B
+	prompt "kmod-sangam-atm-annex-b........... AR7 Sangam ADSL Driver (Annex B)"
+	tristate
+	default y
+	depends BR2_LINUX_2_4_AR7
+	select BR2_PACKAGE_KMOD_ATM
+	help
+	  ATM driver for the Sangam ADSL chip on AR7
+	  Annex B version
+
+
