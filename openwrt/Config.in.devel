@@ -1,6 +1,9 @@
 #
+config CONFIG_DEVEL
+	bool
+	default y
 
-mainmenu "OpenWRT Configuration"
+mainmenu "OpenWrt Configuration"
 
 config MODULES
 	bool
@@ -10,15 +13,28 @@ config BR2_HAVE_DOT_CONFIG
 	bool
 	default y
 
-config CONFIG_DEVEL
+config BR2_mipsel
 	bool
 	default y
 
 choice
-	prompt "Target Architecture" if CONFIG_DEVEL
-	default BR2_mipsel
-	help
-	  Stuff
+	prompt "Target Architecture"
+
+# Supported architectures
+
+config BR2_i386
+	bool "i386"
+	
+config BR2_mips
+	bool "mips"
+
+config BR2_mipsel
+	bool "mipsel"
+
+
+if CONFIG_DEVEL
+
+# Unsupported architectures
 
 config BR2_arm
 	bool "arm"
@@ -29,17 +45,8 @@ config BR2_armeb
 config BR2_cris
 	bool "cris"
 
-config BR2_i386
-	bool "i386"
-
 config BR2_m68k
 	bool "m68k"
-
-config BR2_mips
-	bool "mips"
-
-config BR2_mipsel
-	bool "mipsel"
 
 config BR2_powerpc
 	bool "powerpc"
@@ -59,6 +66,7 @@ config BR2_sh4eb
 config BR2_sparc
 	bool "sparc"
 
+endif
 endchoice
 
 config BR2_ARCH
@@ -69,7 +77,7 @@ config BR2_ARCH
 	default "i386"    if BR2_i386
 	default "m68k"    if BR2_m68k
 	default "mips"    if BR2_mips
-	default "mipsel"  if BR2_mipsel
+	default "mipsel"  if BR2_mipsel || !CONFIG_DEVEL
 	default "powerpc" if BR2_powerpc
 	default "sh3"     if BR2_sh3
 	default "sh3eb"   if BR2_sh3eb
@@ -77,32 +85,23 @@ config BR2_ARCH
 	default "sh4eb"   if BR2_sh4eb
 	default "sparc"   if BR2_sparc
 
+source "target/Config.in"
 
 menu "Build options"
 
 config BR2_WGET
-	string "Wget command"
+	string 
+	prompt "Wget command"
 	default "wget --passive-ftp -nd"
 
 config BR2_TAR_VERBOSITY
-	bool "Tar verbose"
+	bool 
+	prompt "Tar verbose"
 	default n
 
-config BR2_STAGING_DIR
-	string "Toolchain and header file location?"
-	default "$(BASE_DIR)/staging_dir_$(ARCH)$(ARCH_FPU_SUFFIX)"
-	help
-	    This is the location where the toolchain will be installed.
-	    Since the toolchain will not work if it is moved from this
-	    location, it is important for people wishing to package up
-	    a uClibc toolchain that this be set to the location in which
-	    the toolchain will be used.
-
-	    Most people will leave this set to the default value of
-	    "$(BASE_DIR)/staging_dir_$(ARCH)$(ARCH_FPU_SUFFIX)".
-
 config BR2_JLEVEL
-	int "Number of jobs to run simultaneously"
+	int
+	prompt "Number of jobs to run simultaneously"
 	default "1"
 	help
 	    Number of jobs to run simultanesouly
@@ -111,4 +110,4 @@ endmenu
 
 source "toolchain/Config.in.devel"
 source "package/Config.in"
-source "target/Config.in"
+source "target/linux/Config.in"
