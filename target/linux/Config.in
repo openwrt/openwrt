@@ -67,58 +67,8 @@ config BR2_LINUX_PCMCIA_SUPPORT
 
 comment "Device specific modules"
 
-config BR2_PACKAGE_KMOD_BRCM_ET
-	prompt "kmod-brcm-et...................... Broadcom Ethernet Driver"
-	tristate
-	depends BR2_LINUX_2_4_BRCM
-	default m
-	help
-	  Proprietary driver for Broadcom Ethernet chipsets (obsolete)
+source "target/linux/*-2.[46]/Config.in"
 
-config BR2_PACKAGE_KMOD_BRCM_WL
-	prompt "kmod-brcm-wl...................... Broadcom Wireless Network Driver"
-	tristate
-	depends BR2_LINUX_2_4_BRCM
-	default y
-	help
-	  Proprietary driver for Broadcom Wireless chipsets
-
-config BR2_PACKAGE_KMOD_BRCM_WL2
-	prompt "kmod-brcm-wl2..................... Broadcom Wireless Network Driver (new)"
-	tristate
-	depends BR2_LINUX_2_4_BRCM
-	default m
-	help
-	  Proprietary driver for Broadcom Wireless chipsets
-	  New version with Multi-BSS capability
-
-config BR2_PACKAGE_KMOD_CPMAC
-	prompt "kmod-cpmac........................ AR7 CPMAC Network Driver"
-	tristate
-	default y
-	depends BR2_LINUX_2_4_AR7
-	help
-	  Driver for the AR7 CPMAC network chip
-
-config BR2_PACKAGE_KMOD_SANGAM_ATM_A
-	prompt "kmod-sangam-atm-annex-a........... AR7 Sangam ADSL Driver (Annex A)"
-	tristate
-	default m
-	depends BR2_LINUX_2_4_AR7
-	select BR2_PACKAGE_KMOD_ATM
-	help
-	  ATM driver for the Sangam ADSL chip on AR7
-	  Annex A version
-
-config BR2_PACKAGE_KMOD_SANGAM_ATM_B
-	prompt "kmod-sangam-atm-annex-b........... AR7 Sangam ADSL Driver (Annex B)"
-	tristate
-	default y
-	depends BR2_LINUX_2_4_AR7
-	select BR2_PACKAGE_KMOD_ATM
-	help
-	  ATM driver for the Sangam ADSL chip on AR7
-	  Annex B version
 
 comment "Networking modules"
 
@@ -126,7 +76,7 @@ config BR2_PACKAGE_KMOD_ATM
 	prompt "kmod-atm.......................... ATM support"
 	tristate
 	default y if BR2_LINUX_2_4_AR7
-	default m if BR2_LINUX_2_6_BRCM
+	default m
 	help
 	  ATM support
 
@@ -164,7 +114,6 @@ config BR2_PACKAGE_KMOD_PPPOATM
 	prompt   "kmod-pppoatm.................... PPPoA (PPP over ATM) kernel support"
 	tristate
 	default y if BR2_LINUX_2_4_AR7
-	default m if BR2_LINUX_2_6_BRCM
 	default m
 	depends BR2_PACKAGE_KMOD_PPP
 	select BR2_PACKAGE_KMOD_ATM

@@ -10,16 +10,12 @@ PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
 
 include $(TOPDIR)/package/rules.mk
 
-$(eval $(call PKG_template,KMOD_DIAG,$(PKG_NAME),$(LINUX_VERSION)-$(BOARD)-$(PKG_RELEASE),$(ARCH),kernel ($(LINUX_VERSION)-$(BOARD)-$(KERNEL_RELEASE))))
-
-ifeq ($(KERNEL_DIR),)
-KERNEL_DIR:=$(LINUX_DIR)
-endif
+$(eval $(call PKG_template,KMOD_DIAG,$(PKG_NAME),$(LINUX_VERSION)-$(BOARD)-$(PKG_RELEASE),$(ARCH),kernel ($(LINUX_VERSION)-$(BOARD)-$(LINUX_RELEASE))))
 
 DIAG_FLAGS:=$(TARGET_CFLAGS) -D__KERNEL__ -fno-strict-aliasing -fno-common -fomit-frame-pointer -G 0 \
 		-mno-abicalls -fno-pic -finline-limit=100000 -mabi=32 -march=mips32 -Wa,-32 -Wa,-march=mips32 \
 		-Wa,-mips32 -Wa,--trap -Wstrict-prototypes -Wno-trigraphs -DMODULE -mlong-calls -fno-common -I. -I linux-2.4 -nostdinc \
-		-iwithprefix include -I$(KERNEL_DIR)/include -I$(KERNEL_DIR)/include/asm/gcc -c -I$(KERNEL_DIR)/arch/mips/bcm947xx/include -DBCMDRIVER
+		-iwithprefix include -I$(LINUX_DIR)/include -I$(LINUX_DIR)/include/asm/gcc -c -I$(LINUX_DIR)/arch/mips/bcm947xx/include -DBCMDRIVER
 
 $(PKG_BUILD_DIR)/.prepared:
 	mkdir -p $(PKG_BUILD_DIR)

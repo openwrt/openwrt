@@ -1,9 +1,39 @@
+KERNEL:=unknown
+ifneq (,$(findstring 2.4.,$(LINUX_VERSION)))
+KERNEL:=2.4
+endif
+ifneq (,$(findstring 2.6.,$(LINUX_VERSION)))
+KERNEL:=2.6
+endif
+
+MODULES_SUBDIR:=lib/modules/$(LINUX_VERSION)
+
+LINUX_BUILD_DIR:=$(BUILD_DIR)/linux-$(KERNEL)-$(BOARD)
+LINUX_DIR := $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION)
+LINUX_KERNEL:=$(LINUX_BUILD_DIR)/vmlinux
+
+LINUX_TARGET_DIR:=$(LINUX_BUILD_DIR)/root
+IPKG_KERNEL:=IPKG_TMP=$(BUILD_DIR)/tmp IPKG_INSTROOT=$(LINUX_TARGET_DIR) IPKG_CONF_DIR=$(LINUX_BUILD_DIR) $(SCRIPT_DIR)/ipkg -force-defaults -force-depends
+
 LINUX_KARCH:=$(shell echo $(ARCH) | sed -e 's/i[3-9]86/i386/' \
 	-e 's/mipsel/mips/' \
 	-e 's/mipseb/mips/' \
 	-e 's/powerpc/ppc/' \
 	-e 's/sh[234]/sh/' \
 )
+
+KPKG_MAKEOPTS:=	IPKG="$(IPKG_KERNEL)" \
+		BOARD="$(BOARD)" \
+		KERNEL="$(KERNEL)" \
+		TARGET_DIR="$(LINUX_TARGET_DIR)" \
+		LINUX_BUILD_DIR="$(LINUX_BUILD_DIR)" \
+		LINUX_DIR="$(LINUX_DIR)" \
+		LINUX_VERSION="$(LINUX_VERSION)" \
+		LINUX_RELEASE="$(LINUX_RELEASE)"
+
+KMOD_BUILD_DIR := $(LINUX_BUILD_DIR)/linux-modules
+MODULES_DIR := $(LINUX_BUILD_DIR)/modules/$(MODULES_SUBDIR)
+TARGET_MODULES_DIR := $(LINUX_TARGET_DIR)/$(MODULES_SUBDIR)
 
 ifeq ($(KERNEL),2.6)
 LINUX_KMOD_SUFFIX=ko
@@ -18,10 +48,10 @@ else
 KDEPEND_$(1):=$($(4))
 endif
 
-IDEPEND_$(1):=kernel ($(LINUX_VERSION)-$(BOARD)-$(PKG_RELEASE)) $(foreach pkg,$(5),", $(pkg)")
+IDEPEND_$(1):=kernel ($(LINUX_VERSION)-$(BOARD)-$(LINUX_RELEASE)) $(foreach pkg,$(5),", $(pkg)")
 
-PKG_$(1) := $(PACKAGE_DIR)/kmod-$(2)_$(LINUX_VERSION)-$(BOARD)-$(PKG_RELEASE)_$(ARCH).ipk
-I_$(1) := $(PKG_BUILD_DIR)/ipkg/$(2)
+PKG_$(1) := $(PACKAGE_DIR)/kmod-$(2)_$(LINUX_VERSION)-$(BOARD)-$(LINUX_RELEASE)_$(ARCH).ipk
+I_$(1) := $(KMOD_BUILD_DIR)/ipkg/$(2)
 
 ifeq ($$(KDEPEND_$(1)),m)
 ifneq ($(BR2_PACKAGE_KMOD_$(1)),)
@@ -34,7 +64,7 @@ endif
 
 $$(PKG_$(1)): $(LINUX_DIR)/.modules_done
 	rm -rf $$(I_$(1))
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $$(I_$(1)) ../control/kmod-$(2).control $(LINUX_VERSION)-$(BOARD)-$(PKG_RELEASE) $(ARCH)
+	$(SCRIPT_DIR)/make-ipkg-dir.sh $$(I_$(1)) ../control/kmod-$(2).control $(LINUX_VERSION)-$(BOARD)-$(LINUX_RELEASE) $(ARCH)
 	echo "Depends: $$(IDEPEND_$(1))" >> $$(I_$(1))/CONTROL/control
 ifneq ($(strip $(3)),)
 	mkdir -p $$(I_$(1))/lib/modules/$(LINUX_VERSION)
@@ -51,4 +81,6 @@ endif
 
 endef
 
+INSTALL_TARGETS := $(KERNEL_IPKG)
+TARGETS := 
 

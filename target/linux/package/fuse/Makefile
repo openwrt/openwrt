@@ -15,13 +15,9 @@ PKG_CAT:=zcat
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
-ifeq ($(KERNEL_DIR),)
-KERNEL_DIR:=$(LINUX_DIR)
-endif
-
 include $(TOPDIR)/package/rules.mk
 
-$(eval $(call PKG_template,KMOD_FUSE,kmod-fuse,$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE),$(ARCH),kernel ($(LINUX_VERSION)-$(BOARD)-$(KERNEL_RELEASE))))
+$(eval $(call PKG_template,KMOD_FUSE,kmod-fuse,$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE),$(ARCH),kernel ($(LINUX_VERSION)-$(BOARD)-$(LINUX_RELEASE))))
 
 $(PKG_BUILD_DIR)/.configured:
 	(cd $(PKG_BUILD_DIR); \
@@ -60,7 +56,7 @@ $(PKG_BUILD_DIR)/.configured:
 			--disable-util \
 			--disable-example \
 			--disable-auto-modprobe \
-			--with-kernel=$(KERNEL_DIR) \
+			--with-kernel=$(LINUX_DIR) \
 			--disable-mtab \
 	);
 	touch $@

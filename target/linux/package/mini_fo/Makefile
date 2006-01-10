@@ -15,14 +15,9 @@ PKG_CAT := bzcat
 PKG_BUILD_DIR := $(BUILD_DIR)/mini_fo-0-6-2-pre1
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
-ifeq ($(KERNEL_DIR),)
-KERNEL_DIR:=$(LINUX_DIR)
-endif
-KERNEL_VERSION=$(shell echo "$(LINUX_VERSION)" | cut -d. -f1,2)
-
 include $(TOPDIR)/package/rules.mk
 
-$(eval $(call PKG_template,KMOD_MINI_FO,kmod-mini-fo,$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE),$(ARCH),kernel ($(LINUX_VERSION)-$(BOARD)-$(KERNEL_RELEASE))))
+$(eval $(call PKG_template,KMOD_MINI_FO,kmod-mini-fo,$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE),$(ARCH),kernel ($(LINUX_VERSION)-$(BOARD)-$(LINUX_RELEASE))))
 
 $(PKG_BUILD_DIR)/.configured:
 	touch $@
@@ -33,7 +28,7 @@ $(PKG_BUILD_DIR)/.built:
 		ARCH="$(LINUX_KARCH)" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
 		KERNELVERSION="$(KERNEL_VERSION)" \
-		KERNEL_SRC="$(KERNEL_DIR)" \
+		KERNEL_SRC="$(LINUX_DIR)" \
 		all
 	touch $@
 

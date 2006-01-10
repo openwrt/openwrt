@@ -14,10 +14,6 @@ PKG_CAT:=zcat
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-ng-$(PKG_VERSION)
 
-ifeq ($(KERNEL_DIR),)
-KERNEL_DIR:=$(LINUX_DIR)
-endif
-
 ifeq ($(ARCH),mips)
 HAL_TARGET:=mips-be-elf
 endif
@@ -38,7 +34,7 @@ endif
 
 include $(TOPDIR)/package/rules.mk
 
-$(eval $(call PKG_template,KMOD_MADWIFI,kmod-madwifi,$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE),$(ARCH),kernel-$(LINUX_VERSION)-$(BOARD) ($(KERNEL_RELEASE))))
+$(eval $(call PKG_template,KMOD_MADWIFI,kmod-madwifi,$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE),$(ARCH),kernel-$(LINUX_VERSION)-$(BOARD) ($(LINUX_RELEASE))))
 
 $(PKG_BUILD_DIR)/.configured:
 	touch $@
@@ -51,7 +47,7 @@ $(PKG_BUILD_DIR)/.built:
 		TARGET="$(HAL_TARGET)" \
 		TOOLPREFIX="$(KERNEL_CROSS)" \
 		TOOLPATH="$(KERNEL_CROSS)" \
-		KERNELPATH="$(KERNEL_DIR)" \
+		KERNELPATH="$(LINUX_DIR)" \
 		BUS="$(BUS)" \
 		all
 	touch $@
