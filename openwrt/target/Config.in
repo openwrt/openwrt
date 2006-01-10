@@ -1,27 +1,65 @@
-menu "Target Root Filesystem"
+choice
+	prompt "Target System"
+	
+config BR2_LINUX_2_4_AR531X
+	bool "Atheros AR531x [2.4]"
+	default n
+	depends BR2_mips
+	help
+	  Build firmware images for Atheros AR531x based boards
+	  (e.g. Netgear WGT624, Linksys WRT55AG)
 
-	config BR2_TARGET_ROOTFS_JFFS2
-		bool "jffs2"
-		default y
-		help
-		  Build a jffs2 root filesystem
+config BR2_LINUX_2_4_BRCM
+	bool "Broadcom BCM47xx/53xx [2.4]"
+	default y
+	depends BR2_mipsel
+	select BR2_LINUX_PCMCIA_SUPPORT
+	help
+	  Build firmware images for Broadcom based routers
+	  (e.g. Linksys WRT54G(S), Asus WL-500g, Motorola WR850G)
+	  
+	  This one builds the generic .trx images, activate one of the
+	  options below for creating device specific files for use 
+	  with TFTP client too. 
 
-	config BR2_TARGET_ROOTFS_SQUASHFS_LZMA
-		bool "squashfs-lzma"
-		default y
-		help
-		  Build a squashfs-lzma root filesystem
+config BR2_LINUX_2_6_BRCM
+	bool "Broadcom BCM47xx/53xx [2.6]"
+	default n
+	depends BR2_mipsel
+	select BR2_LINUX_PCMCIA_SUPPORT
+	help
+	  Build firmware images for Broadcom based routers
+	  (e.g. Netgear WGT634u)
 
-	config BR2_TARGET_ROOTFS_TGZ
-		bool "tgz"
-		default y
-		help
-		  Build a compressed tar archive of the the root filesystem
+config BR2_LINUX_2_4_AR7
+	bool "TI AR7 [2.4]"
+	default n
+	depends BR2_mipsel
+	help
+	  Build firmware images for TI AR7 based routers (w.g. Linksys WAG54G v2)
 
-endmenu
+config BR2_LINUX_2_4_X86
+	bool "x86 [2.4]"
+	default n
+	depends BR2_i386
+	select BR2_LINUX_PCMCIA_SUPPORT
+	help
+	  Build firmware images for x86 based boards
+	  (e.g. Soekris net4521 and net4801, PC Engines WRAP...)
 
-menu "Kernel Configuration / Device Support"
+config BR2_LINUX_2_6_X86
+	bool "x86 [2.6]"
+	default n
+	depends BR2_i386
+	select BR2_LINUX_PCMCIA_SUPPORT
+	help
+	  Build firmware images for x86 based boards
+	  (e.g. Soekris net4521 and net4801, PC Engines WRAP...)
 
-source "target/linux/Config.in"
+endchoice
 
-endmenu
+config BR2_LINUX_PCMCIA_SUPPORT
+	bool
+	default n
+	depends BR2_LINUX_2_4_X86 || BR2_LINUX_2_4_BRCM || BR2_LINUX_2_6_X86 || BR2_LINUX_2_6_BRCM
+
