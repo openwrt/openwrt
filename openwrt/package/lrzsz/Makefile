@@ -1,3 +1,5 @@
+# $Id$
+
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=lrzsz
@@ -25,36 +27,50 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 			--target=$(GNU_TARGET_NAME) \
 			--host=$(GNU_TARGET_NAME) \
 			--build=$(GNU_HOST_NAME) \
+			--program-prefix="" \
+			--program-suffix="" \
 			--prefix=/usr \
+			--exec-prefix=/usr \
+			--bindir=/usr/bin \
+			--datadir=/usr/share \
+			--includedir=/usr/include \
+			--infodir=/usr/share/info \
+			--libdir=/usr/lib \
+			--libexecdir=/usr/lib \
+			--localstatedir=/var \
+			--mandir=/usr/share/man \
+			--sbindir=/usr/sbin \
+			--sysconfdir=/etc \
+			$(DISABLE_LARGEFILE) \
+			$(DISABLE_NLS) \
 			--without-libiconv-prefix \
 			--without-libintl-prefix \
-			--disable-nls \
 	);
 	touch $@
 
 $(PKG_BUILD_DIR)/.built:
 	rm -rf $(PKG_INSTALL_DIR)
-	mkdir -p $(PKG_INSTALL_DIR)/usr/bin
+	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
-		prefix="$(PKG_INSTALL_DIR)/usr"
-	cp -fpR $(PKG_BUILD_DIR)/src/lrz $(PKG_INSTALL_DIR)/usr/bin
-	cp -fpR $(PKG_BUILD_DIR)/src/lsz $(PKG_INSTALL_DIR)/usr/bin
+		DESTDIR="$(PKG_INSTALL_DIR)" \
+		all install
 	touch $@
 
 $(IPKG_LRZSZ):
 	install -d -m0755 $(IDIR_LRZSZ)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/lrz $(IDIR_LRZSZ)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/lsz $(IDIR_LRZSZ)/usr/bin
-	(cd $(IDIR_LRZSZ)/usr/bin;\
-	 ln -s lrz lrx;\
-	 ln -s lrz lrb;\
-	 ln -s lsz lsx;\
-	 ln -s lsz lsb;);
+	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/lrz $(IDIR_LRZSZ)/usr/bin/
+	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/lsz $(IDIR_LRZSZ)/usr/bin/
+	(cd $(IDIR_LRZSZ)/usr/bin; \
+		ln -fs lrz lrx; \
+		ln -fs lrz lrb; \
+		ln -fs lsz lsx; \
+		ln -fs lsz lsb; \
+	);
 	$(RSTRIP) $(IDIR_LRZSZ)
 	$(IPKG_BUILD) $(IDIR_LRZSZ) $(PACKAGE_DIR)
 
 mostlyclean:
-	make -C $(PKG_BUILD_DIR) clean
-	rm $(PKG_BUILD_DIR)/.built
+	-$(MAKE) -C $(PKG_BUILD_DIR) clean
+	rm -f $(PKG_BUILD_DIR)/.built
 
