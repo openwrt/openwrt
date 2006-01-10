@@ -63,10 +63,13 @@ do_ifup() {
 	case "$1" in
 		static)
 			ip=$(nvram get ${2}_ipaddr)
+			ip6=$(nvram get ${2}_ip6addr)
 			netmask=$(nvram get ${2}_netmask)
 			gateway=$(nvram get ${2}_gateway)
 	
 			$DEBUG ifconfig $if $ip ${netmask:+netmask $netmask} broadcast + up
+			[ -n "$ip6" ] && $DEBUG ifconfig $if add $ip6
+
 			${gateway:+$DEBUG route add default gw $gateway}
 	
 			[ -f /tmp/resolv.conf ] || {
