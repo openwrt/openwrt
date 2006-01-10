@@ -13442,7 +13442,7 @@ diff -Nur linux-2.4.32/arch/mips/bcm947xx/sbpci.c linux-2.4.32-brcm/arch/mips/bc
 diff -Nur linux-2.4.32/arch/mips/bcm947xx/setup.c linux-2.4.32-brcm/arch/mips/bcm947xx/setup.c
 --- linux-2.4.32/arch/mips/bcm947xx/setup.c	1970-01-01 01:00:00.000000000 +0100
 +++ linux-2.4.32-brcm/arch/mips/bcm947xx/setup.c	2005-12-20 00:29:40.187416500 +0100
-@@ -0,0 +1,232 @@
+@@ -0,0 +1,234 @@
 +/*
 + *  Generic setup routines for Broadcom MIPS boards
 + *
@@ -13482,6 +13482,7 @@ diff -Nur linux-2.4.32/arch/mips/bcm947xx/setup.c linux-2.4.32-brcm/arch/mips/bc
 +#include <linux/config.h>
 +#include <linux/init.h>
 +#include <linux/kernel.h>
++#include <linux/module.h>
 +#include <linux/serialP.h>
 +#include <linux/ide.h>
 +#include <asm/bootinfo.h>
@@ -13675,6 +13676,7 @@ diff -Nur linux-2.4.32/arch/mips/bcm947xx/setup.c linux-2.4.32-brcm/arch/mips/bc
 +{
 +}
 +
++EXPORT_SYMBOL(bcm947xx_sbh);
 diff -Nur linux-2.4.32/arch/mips/bcm947xx/sflash.c linux-2.4.32-brcm/arch/mips/bcm947xx/sflash.c
 --- linux-2.4.32/arch/mips/bcm947xx/sflash.c	1970-01-01 01:00:00.000000000 +0100
 +++ linux-2.4.32-brcm/arch/mips/bcm947xx/sflash.c	2005-12-16 23:39:10.948837000 +0100
