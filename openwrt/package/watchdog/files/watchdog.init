@@ -1,0 +1,18 @@
+#!/bin/sh
+
+RUN_D=/var/run
+PID_F=$RUN_D/watchdog.pid
+
+case $1 in
+ start)
+  /usr/sbin/watchdog
+  ;;
+ stop)
+  [ -f $PID_F ] && kill $(cat $PID_F) >/dev/null 2>&1
+  ;;
+ *)
+  echo "usage: $0 (start|stop)"
+  exit 1
+esac
+
+exit $?
