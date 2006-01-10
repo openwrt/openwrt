@@ -15,7 +15,23 @@ config BR2_mipsel
 	default y
 
 choice
-	prompt "Target Architecture" if CONFIG_DEVEL
+	prompt "Target Architecture"
+
+# Supported architectures
+
+config BR2_i386
+	bool "i386"
+	
+config BR2_mips
+	bool "mips"
+
+config BR2_mipsel
+	bool "mipsel"
+
+
+if CONFIG_DEVEL
+
+# Unsupported architectures
 
 config BR2_arm
 	bool "arm"
@@ -26,17 +42,8 @@ config BR2_armeb
 config BR2_cris
 	bool "cris"
 
-config BR2_i386
-	bool "i386"
-
 config BR2_m68k
 	bool "m68k"
-
-config BR2_mips
-	bool "mips"
-
-config BR2_mipsel
-	bool "mipsel"
 
 config BR2_powerpc
 	bool "powerpc"
@@ -56,6 +63,7 @@ config BR2_sh4eb
 config BR2_sparc
 	bool "sparc"
 
+endif
 endchoice
 
 config BR2_ARCH
