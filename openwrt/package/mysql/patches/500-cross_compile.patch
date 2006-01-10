@@ -1,18 +1,23 @@
-diff -ruN mysql-4.0.24-orig/aclocal.m4 mysql-4.0.24-2/aclocal.m4
---- mysql-4.0.24-orig/aclocal.m4	2005-03-05 01:38:23.000000000 +0100
-+++ mysql-4.0.24-2/aclocal.m4	2005-03-10 22:39:02.000000000 +0100
-@@ -4058,6 +4058,7 @@
- libext="$libext"
+--- mysql.old/configure	2005-12-21 20:41:46.000000000 +0100
++++ mysql.dev/configure	2006-01-10 23:48:27.302608500 +0100
+@@ -477,7 +477,7 @@
+ #endif"
  
- # Shared library suffix (normally ".so").
-+shrext='$shrext_cmds'
- shrext_cmds='$shrext_cmds'
+ ac_subdirs_all="$ac_subdirs_all innobase"
+-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MYSQL_NO_DASH_VERSION MYSQL_BASE_VERSION MYSQL_VERSION_ID PROTOCOL_VERSION DOT_FRM_VERSION SHARED_LIB_VERSION AVAILABLE_LANGUAGES NDB_VERSION_MAJOR NDB_VERSION_MINOR NDB_VERSION_BUILD NDB_VERSION_STATUS SYSTEM_TYPE MACHINE_TYPE CONF_COMMAND SAVE_ASFLAGS SAVE_CFLAGS SAVE_CXXFLAGS SAVE_LDFLAGS SAVE_CXXLDFLAGS CXXLDFLAGS AR RANLIB DARWIN_MWCC_TRUE DARWIN_MWCC_FALSE CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CPP CC_VERSION CXX_VERSION AS ac_ct_RANLIB EGREP LN_S ECHO ac_ct_AR CXXCPP F77 FFLAGS ac_ct_F77 LIBTOOL YACC PDFMANUAL DVIS uname_prog LD ARFLAGS MYSQLD_DEFAULT_SWITCHES TARGET_LINUX LN LN_CP_F MV RM CP SED CMP CHMOD HOSTNAME TAR PERL PERL5 DOXYGEN PDFLATEX MAKEINDEX PS FIND_PROC KILL CHECK_PID CCAS CCASFLAGS NOINST_LDFLAGS MYSQL_SERVER_SUFFIX ASSEMBLER_x86_TRUE ASSEMBLER_x86_FALSE ASSEMBLER_sparc32_TRUE ASSEMBLER_sparc32_FALSE ASSEMBLER_sparc64_TRUE ASSEMBLER_sparc64_FALSE ASSEMBLER_TRUE ASSEMBLER_FALSE MYSQL_UNIX_ADDR MYSQL_TCP_PORT MYSQL_TCP_PORT_DEFAULT MYSQLD_USER GETCONF ac_ct_GETCONF zlib_dir ZLIB_LIBS ZLIB_DEPS ZLIB_INCLUDES WRAPLIBS pstack_dirs pstack_libs COMPILE_PSTACK_TRUE COMPILE_PSTACK_FALSE LIBDL MYSQLD_EXTRA_LDFLAGS CLIENT_EXTRA_LDFLAGS LIB_EXTRA_CCFLAGS LM_CFLAGS COMPILATION_COMMENT ALLOCA MAKE_SHELL TERMCAP_LIB LIBEDIT_LOBJECTS tools_dirs openssl_libs openssl_includes yassl_taocrypt_extra_cxxflags yassl_libs yassl_libs_with_path yassl_includes yassl_dir HAVE_YASSL_TRUE HAVE_YASSL_FALSE libmysqld_dirs linked_libmysqld_targets docs_dirs man_dirs man1_files bench_dirs readline_dir readline_topdir readline_basedir readline_link readline_h_ln_cmd bdb_includes bdb_libs bdb_libs_with_path innodb_includes innodb_libs innodb_system_libs NDB_SCI_INCLUDES NDB_SCI_LIBS HAVE_NDBCLUSTER_DB_TRUE HAVE_NDBCLUSTER_DB_FALSE ndbcluster_includes ndbcluster_libs ndbcluster_system_libs ndb_mgmclient_libs CLIENT_LIBS NON_THREADED_LIBS STATIC_NSS_FLAGS sql_client_dirs linked_client_targets netware_dir linked_netware_sources HAVE_NETWARE_TRUE HAVE_NETWARE_FALSE THREAD_LOBJECTS subdirs sql_server_dirs thread_dirs server_scripts sql_union_dirs GXX NDB_DEFS ndb_cxxflags_fix ndb_port ndb_transporter_opt_objs ndb_bin_am_ldflags ndb_opt_subdirs NDB_SIZEOF_CHARP NDB_SIZEOF_CHAR NDB_SIZEOF_SHORT NDB_SIZEOF_INT NDB_SIZEOF_LONG NDB_SIZEOF_LONG_LONG MAKE_BINARY_DISTRIBUTION_OPTIONS LIBOBJS LTLIBOBJS'
++ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MYSQL_NO_DASH_VERSION MYSQL_BASE_VERSION MYSQL_VERSION_ID PROTOCOL_VERSION DOT_FRM_VERSION SHARED_LIB_VERSION AVAILABLE_LANGUAGES NDB_VERSION_MAJOR NDB_VERSION_MINOR NDB_VERSION_BUILD NDB_VERSION_STATUS SYSTEM_TYPE MACHINE_TYPE CONF_COMMAND SAVE_ASFLAGS SAVE_CFLAGS SAVE_CXXFLAGS SAVE_LDFLAGS SAVE_CXXLDFLAGS CXXLDFLAGS AR RANLIB DARWIN_MWCC_TRUE DARWIN_MWCC_FALSE CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CPP CC_VERSION CXX_VERSION AS ac_ct_RANLIB EGREP LN_S ECHO ac_ct_AR CXXCPP F77 FFLAGS ac_ct_F77 LIBTOOL YACC PDFMANUAL DVIS uname_prog LD ARFLAGS MYSQLD_DEFAULT_SWITCHES TARGET_LINUX LN LN_CP_F MV RM CP SED CMP CHMOD HOSTNAME TAR PERL PERL5 DOXYGEN PDFLATEX MAKEINDEX PS FIND_PROC KILL CHECK_PID CCAS CCASFLAGS NOINST_LDFLAGS MYSQL_SERVER_SUFFIX ASSEMBLER_x86_TRUE ASSEMBLER_x86_FALSE ASSEMBLER_sparc32_TRUE ASSEMBLER_sparc32_FALSE ASSEMBLER_sparc64_TRUE ASSEMBLER_sparc64_FALSE ASSEMBLER_TRUE ASSEMBLER_FALSE MYSQL_UNIX_ADDR MYSQL_TCP_PORT MYSQL_TCP_PORT_DEFAULT MYSQLD_USER GETCONF ac_ct_GETCONF zlib_dir ZLIB_LIBS ZLIB_DEPS ZLIB_INCLUDES WRAPLIBS COMPILE_PSTACK_TRUE COMPILE_PSTACK_FALSE LIBDL MYSQLD_EXTRA_LDFLAGS CLIENT_EXTRA_LDFLAGS LIB_EXTRA_CCFLAGS LM_CFLAGS COMPILATION_COMMENT ALLOCA MAKE_SHELL TERMCAP_LIB LIBEDIT_LOBJECTS tools_dirs openssl_libs openssl_includes yassl_taocrypt_extra_cxxflags yassl_libs yassl_libs_with_path yassl_includes yassl_dir HAVE_YASSL_TRUE HAVE_YASSL_FALSE libmysqld_dirs linked_libmysqld_targets docs_dirs man_dirs man1_files bench_dirs readline_dir readline_topdir readline_basedir readline_link readline_h_ln_cmd bdb_includes bdb_libs bdb_libs_with_path innodb_includes innodb_libs innodb_system_libs NDB_SCI_INCLUDES NDB_SCI_LIBS HAVE_NDBCLUSTER_DB_TRUE HAVE_NDBCLUSTER_DB_FALSE ndbcluster_includes ndbcluster_libs ndbcluster_system_libs ndb_mgmclient_libs CLIENT_LIBS NON_THREADED_LIBS STATIC_NSS_FLAGS sql_client_dirs linked_client_targets netware_dir linked_netware_sources HAVE_NETWARE_TRUE HAVE_NETWARE_FALSE THREAD_LOBJECTS subdirs sql_server_dirs thread_dirs server_scripts sql_union_dirs GXX NDB_DEFS ndb_cxxflags_fix ndb_port ndb_transporter_opt_objs ndb_bin_am_ldflags ndb_opt_subdirs NDB_SIZEOF_CHARP NDB_SIZEOF_CHAR NDB_SIZEOF_SHORT NDB_SIZEOF_INT NDB_SIZEOF_LONG NDB_SIZEOF_LONG_LONG MAKE_BINARY_DISTRIBUTION_OPTIONS LIBOBJS LTLIBOBJS'
+ ac_subst_files=''
  
- # Executable file suffix (normally "").
-diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
---- mysql-4.0.24-orig/configure	2005-03-05 01:38:47.000000000 +0100
-+++ mysql-4.0.24-2/configure	2005-03-22 19:27:05.000000000 +0100
-@@ -1243,7 +1243,7 @@
+ # Initialize some variables set by options.
+@@ -1109,7 +1109,6 @@
+                           library. Given DIR, zlib binary is assumed to be in
+                           $DIR/lib and header files in $DIR/include.
+   --with-libwrap=DIR      Compile in libwrap (tcp_wrappers) support
+-  --with-pstack           Use the pstack backtrace library
+   --without-debug         Build a production version without debugging code
+   --with-mysqld-ldflags   Extra linking arguments for mysqld
+   --with-client-ldflags   Extra linking arguments for clients
+@@ -1295,7 +1294,7 @@
      else
        echo "$as_me: WARNING: no configuration information is in $ac_dir" >&2
      fi
@@ -21,7 +26,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    done
  fi
  
-@@ -2900,8 +2900,7 @@
+@@ -3885,8 +3884,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -31,7 +36,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -2959,8 +2958,7 @@
+@@ -3944,8 +3942,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -41,7 +46,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -3076,8 +3074,7 @@
+@@ -4061,8 +4058,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -51,7 +56,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -3131,8 +3128,7 @@
+@@ -4116,8 +4112,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -61,7 +66,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -3178,8 +3174,7 @@
+@@ -4163,8 +4158,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -71,7 +76,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -3223,8 +3218,7 @@
+@@ -4208,8 +4202,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -81,7 +86,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -3577,8 +3571,7 @@
+@@ -4562,8 +4555,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -91,7 +96,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -3636,8 +3629,7 @@
+@@ -4621,8 +4613,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -101,7 +106,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -3709,8 +3701,7 @@
+@@ -4694,8 +4685,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -111,7 +116,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -3754,8 +3745,7 @@
+@@ -4739,8 +4729,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -121,16 +126,16 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -4858,7 +4848,7 @@
+@@ -5854,7 +5843,7 @@
    ;;
  *-*-irix6*)
    # Find out which ABI we are using.
--  echo '#line 4861 "configure"' > conftest.$ac_ext
-+  echo '#line 4851 "configure"' > conftest.$ac_ext
+-  echo '#line 5857 "configure"' > conftest.$ac_ext
++  echo '#line 5846 "configure"' > conftest.$ac_ext
    if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
    (eval $ac_compile) 2>&5
    ac_status=$?
-@@ -4978,8 +4968,7 @@
+@@ -5974,8 +5963,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -140,7 +145,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -5054,8 +5043,7 @@
+@@ -6050,8 +6038,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -150,7 +155,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -5225,8 +5213,7 @@
+@@ -6221,8 +6208,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -160,7 +165,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -5293,8 +5280,7 @@
+@@ -6289,8 +6275,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -170,16 +175,16 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -5732,7 +5718,7 @@
+@@ -6728,7 +6713,7 @@
  
  
  # Provide some information about the compiler.
--echo "$as_me:5735:" \
-+echo "$as_me:5721:" \
+-echo "$as_me:6731:" \
++echo "$as_me:6716:" \
       "checking for Fortran 77 compiler version" >&5
  ac_compiler=`set X $ac_compile; echo $2`
  { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
-@@ -5778,8 +5764,7 @@
+@@ -6774,8 +6759,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -189,7 +194,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -5828,8 +5813,7 @@
+@@ -6824,8 +6808,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -199,49 +204,49 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -6766,11 +6750,11 @@
+@@ -7762,11 +7745,11 @@
     -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
     -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
     -e 's:$: $lt_compiler_flag:'`
--   (eval echo "\"\$as_me:6769: $lt_compile\"" >&5)
-+   (eval echo "\"\$as_me:6753: $lt_compile\"" >&5)
+-   (eval echo "\"\$as_me:7765: $lt_compile\"" >&5)
++   (eval echo "\"\$as_me:7748: $lt_compile\"" >&5)
     (eval "$lt_compile" 2>conftest.err)
     ac_status=$?
     cat conftest.err >&5
--   echo "$as_me:6773: \$? = $ac_status" >&5
-+   echo "$as_me:6757: \$? = $ac_status" >&5
+-   echo "$as_me:7769: \$? = $ac_status" >&5
++   echo "$as_me:7752: \$? = $ac_status" >&5
     if (exit $ac_status) && test -s "$ac_outfile"; then
       # The compiler can only warn and ignore the option if not recognized
       # So say no if there are warnings
-@@ -6999,11 +6983,11 @@
+@@ -7995,11 +7978,11 @@
     -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
     -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
     -e 's:$: $lt_compiler_flag:'`
--   (eval echo "\"\$as_me:7002: $lt_compile\"" >&5)
-+   (eval echo "\"\$as_me:6986: $lt_compile\"" >&5)
+-   (eval echo "\"\$as_me:7998: $lt_compile\"" >&5)
++   (eval echo "\"\$as_me:7981: $lt_compile\"" >&5)
     (eval "$lt_compile" 2>conftest.err)
     ac_status=$?
     cat conftest.err >&5
--   echo "$as_me:7006: \$? = $ac_status" >&5
-+   echo "$as_me:6990: \$? = $ac_status" >&5
+-   echo "$as_me:8002: \$? = $ac_status" >&5
++   echo "$as_me:7985: \$? = $ac_status" >&5
     if (exit $ac_status) && test -s "$ac_outfile"; then
       # The compiler can only warn and ignore the option if not recognized
       # So say no if there are warnings
-@@ -7059,11 +7043,11 @@
+@@ -8055,11 +8038,11 @@
     -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
     -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
     -e 's:$: $lt_compiler_flag:'`
--   (eval echo "\"\$as_me:7062: $lt_compile\"" >&5)
-+   (eval echo "\"\$as_me:7046: $lt_compile\"" >&5)
+-   (eval echo "\"\$as_me:8058: $lt_compile\"" >&5)
++   (eval echo "\"\$as_me:8041: $lt_compile\"" >&5)
     (eval "$lt_compile" 2>out/conftest.err)
     ac_status=$?
     cat out/conftest.err >&5
--   echo "$as_me:7066: \$? = $ac_status" >&5
-+   echo "$as_me:7050: \$? = $ac_status" >&5
+-   echo "$as_me:8062: \$? = $ac_status" >&5
++   echo "$as_me:8045: \$? = $ac_status" >&5
     if (exit $ac_status) && test -s out/conftest2.$ac_objext
     then
       # The compiler can only warn and ignore the option if not recognized
-@@ -7450,8 +7434,7 @@
+@@ -8446,8 +8429,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -251,7 +256,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -7511,8 +7494,7 @@
+@@ -8507,8 +8489,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -261,16 +266,16 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -8393,7 +8375,7 @@
+@@ -9389,7 +9370,7 @@
    libsuff=
    case "$host_cpu" in
    x86_64*|s390x*|powerpc64*)
--    echo '#line 8396 "configure"' > conftest.$ac_ext
-+    echo '#line 8378 "configure"' > conftest.$ac_ext
+-    echo '#line 9392 "configure"' > conftest.$ac_ext
++    echo '#line 9373 "configure"' > conftest.$ac_ext
      if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
    (eval $ac_compile) 2>&5
    ac_status=$?
-@@ -8724,8 +8706,7 @@
+@@ -9720,8 +9701,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -280,7 +285,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -8828,8 +8809,7 @@
+@@ -9824,8 +9804,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -290,7 +295,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -8894,8 +8874,7 @@
+@@ -9890,8 +9869,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -300,7 +305,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -8988,8 +8967,7 @@
+@@ -9984,8 +9962,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -310,7 +315,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -9054,8 +9032,7 @@
+@@ -10050,8 +10027,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -320,7 +325,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -9121,8 +9098,7 @@
+@@ -10117,8 +10093,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -330,7 +335,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -9188,8 +9164,7 @@
+@@ -10184,8 +10159,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -340,33 +345,25 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -9264,7 +9239,7 @@
+@@ -10260,7 +10234,7 @@
    lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
    lt_status=$lt_dlunknown
    cat > conftest.$ac_ext <<EOF
--#line 9267 "configure"
-+#line 9242 "configure"
+-#line 10263 "configure"
++#line 10237 "configure"
  #include "confdefs.h"
  
  #if HAVE_DLFCN_H
-@@ -9362,7 +9337,7 @@
+@@ -10358,7 +10332,7 @@
    lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
    lt_status=$lt_dlunknown
    cat > conftest.$ac_ext <<EOF
--#line 9365 "configure"
-+#line 9340 "configure"
+-#line 10361 "configure"
++#line 10335 "configure"
  #include "confdefs.h"
  
  #if HAVE_DLFCN_H
-@@ -9763,6 +9738,7 @@
- libext="$libext"
- 
- # Shared library suffix (normally ".so").
-+shrext='$shrext_cmds'
- shrext_cmds='$shrext_cmds'
- 
- # Executable file suffix (normally "").
-@@ -10434,8 +10410,7 @@
+@@ -11430,8 +11404,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -376,7 +373,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -10496,8 +10471,7 @@
+@@ -11492,8 +11465,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -386,44 +383,44 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -11541,11 +11515,11 @@
+@@ -12537,11 +12509,11 @@
     -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
     -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
     -e 's:$: $lt_compiler_flag:'`
--   (eval echo "\"\$as_me:11544: $lt_compile\"" >&5)
-+   (eval echo "\"\$as_me:11518: $lt_compile\"" >&5)
+-   (eval echo "\"\$as_me:12540: $lt_compile\"" >&5)
++   (eval echo "\"\$as_me:12512: $lt_compile\"" >&5)
     (eval "$lt_compile" 2>conftest.err)
     ac_status=$?
     cat conftest.err >&5
--   echo "$as_me:11548: \$? = $ac_status" >&5
-+   echo "$as_me:11522: \$? = $ac_status" >&5
+-   echo "$as_me:12544: \$? = $ac_status" >&5
++   echo "$as_me:12516: \$? = $ac_status" >&5
     if (exit $ac_status) && test -s "$ac_outfile"; then
       # The compiler can only warn and ignore the option if not recognized
       # So say no if there are warnings
-@@ -11601,11 +11575,11 @@
+@@ -12597,11 +12569,11 @@
     -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
     -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
     -e 's:$: $lt_compiler_flag:'`
--   (eval echo "\"\$as_me:11604: $lt_compile\"" >&5)
-+   (eval echo "\"\$as_me:11578: $lt_compile\"" >&5)
+-   (eval echo "\"\$as_me:12600: $lt_compile\"" >&5)
++   (eval echo "\"\$as_me:12572: $lt_compile\"" >&5)
     (eval "$lt_compile" 2>out/conftest.err)
     ac_status=$?
     cat out/conftest.err >&5
--   echo "$as_me:11608: \$? = $ac_status" >&5
-+   echo "$as_me:11582: \$? = $ac_status" >&5
+-   echo "$as_me:12604: \$? = $ac_status" >&5
++   echo "$as_me:12576: \$? = $ac_status" >&5
     if (exit $ac_status) && test -s out/conftest2.$ac_objext
     then
       # The compiler can only warn and ignore the option if not recognized
-@@ -12112,7 +12086,7 @@
+@@ -13108,7 +13080,7 @@
    libsuff=
    case "$host_cpu" in
    x86_64*|s390x*|powerpc64*)
--    echo '#line 12115 "configure"' > conftest.$ac_ext
-+    echo '#line 12089 "configure"' > conftest.$ac_ext
+-    echo '#line 13111 "configure"' > conftest.$ac_ext
++    echo '#line 13083 "configure"' > conftest.$ac_ext
      if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
    (eval $ac_compile) 2>&5
    ac_status=$?
-@@ -12443,8 +12417,7 @@
+@@ -13439,8 +13411,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -433,7 +430,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -12547,8 +12520,7 @@
+@@ -13543,8 +13514,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -443,7 +440,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -12613,8 +12585,7 @@
+@@ -13609,8 +13579,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -453,7 +450,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -12707,8 +12678,7 @@
+@@ -13703,8 +13672,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -463,7 +460,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -12773,8 +12743,7 @@
+@@ -13769,8 +13737,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -473,7 +470,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -12840,8 +12809,7 @@
+@@ -13836,8 +13803,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -483,7 +480,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -12907,8 +12875,7 @@
+@@ -13903,8 +13869,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -493,61 +490,53 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -12983,7 +12950,7 @@
+@@ -13979,7 +13944,7 @@
    lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
    lt_status=$lt_dlunknown
    cat > conftest.$ac_ext <<EOF
--#line 12986 "configure"
-+#line 12953 "configure"
+-#line 13982 "configure"
++#line 13947 "configure"
  #include "confdefs.h"
  
  #if HAVE_DLFCN_H
-@@ -13081,7 +13048,7 @@
+@@ -14077,7 +14042,7 @@
    lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
    lt_status=$lt_dlunknown
    cat > conftest.$ac_ext <<EOF
--#line 13084 "configure"
-+#line 13051 "configure"
+-#line 14080 "configure"
++#line 14045 "configure"
  #include "confdefs.h"
  
  #if HAVE_DLFCN_H
-@@ -13360,6 +13327,7 @@
- libext="$libext"
- 
- # Shared library suffix (normally ".so").
-+shrext='$shrext_cmds'
- shrext_cmds='$shrext_cmds'
- 
- # Executable file suffix (normally "").
-@@ -13908,11 +13876,11 @@
+@@ -14904,11 +14869,11 @@
     -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
     -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
     -e 's:$: $lt_compiler_flag:'`
--   (eval echo "\"\$as_me:13911: $lt_compile\"" >&5)
-+   (eval echo "\"\$as_me:13879: $lt_compile\"" >&5)
+-   (eval echo "\"\$as_me:14907: $lt_compile\"" >&5)
++   (eval echo "\"\$as_me:14872: $lt_compile\"" >&5)
     (eval "$lt_compile" 2>conftest.err)
     ac_status=$?
     cat conftest.err >&5
--   echo "$as_me:13915: \$? = $ac_status" >&5
-+   echo "$as_me:13883: \$? = $ac_status" >&5
+-   echo "$as_me:14911: \$? = $ac_status" >&5
++   echo "$as_me:14876: \$? = $ac_status" >&5
     if (exit $ac_status) && test -s "$ac_outfile"; then
       # The compiler can only warn and ignore the option if not recognized
       # So say no if there are warnings
-@@ -13968,11 +13936,11 @@
+@@ -14964,11 +14929,11 @@
     -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
     -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
     -e 's:$: $lt_compiler_flag:'`
--   (eval echo "\"\$as_me:13971: $lt_compile\"" >&5)
-+   (eval echo "\"\$as_me:13939: $lt_compile\"" >&5)
+-   (eval echo "\"\$as_me:14967: $lt_compile\"" >&5)
++   (eval echo "\"\$as_me:14932: $lt_compile\"" >&5)
     (eval "$lt_compile" 2>out/conftest.err)
     ac_status=$?
     cat out/conftest.err >&5
--   echo "$as_me:13975: \$? = $ac_status" >&5
-+   echo "$as_me:13943: \$? = $ac_status" >&5
+-   echo "$as_me:14971: \$? = $ac_status" >&5
++   echo "$as_me:14936: \$? = $ac_status" >&5
     if (exit $ac_status) && test -s out/conftest2.$ac_objext
     then
       # The compiler can only warn and ignore the option if not recognized
-@@ -14349,8 +14317,7 @@
+@@ -15345,8 +15310,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -557,7 +546,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -14400,8 +14367,7 @@
+@@ -15396,8 +15360,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -567,66 +556,58 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -15282,7 +15248,7 @@
+@@ -16278,7 +16241,7 @@
    libsuff=
    case "$host_cpu" in
    x86_64*|s390x*|powerpc64*)
--    echo '#line 15285 "configure"' > conftest.$ac_ext
-+    echo '#line 15251 "configure"' > conftest.$ac_ext
+-    echo '#line 16281 "configure"' > conftest.$ac_ext
++    echo '#line 16244 "configure"' > conftest.$ac_ext
      if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
    (eval $ac_compile) 2>&5
    ac_status=$?
-@@ -15725,6 +15691,7 @@
- libext="$libext"
- 
- # Shared library suffix (normally ".so").
-+shrext='$shrext_cmds'
- shrext_cmds='$shrext_cmds'
- 
- # Executable file suffix (normally "").
-@@ -16023,11 +15990,11 @@
+@@ -17019,11 +16982,11 @@
     -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
     -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
     -e 's:$: $lt_compiler_flag:'`
--   (eval echo "\"\$as_me:16026: $lt_compile\"" >&5)
-+   (eval echo "\"\$as_me:15993: $lt_compile\"" >&5)
+-   (eval echo "\"\$as_me:17022: $lt_compile\"" >&5)
++   (eval echo "\"\$as_me:16985: $lt_compile\"" >&5)
     (eval "$lt_compile" 2>conftest.err)
     ac_status=$?
     cat conftest.err >&5
--   echo "$as_me:16030: \$? = $ac_status" >&5
-+   echo "$as_me:15997: \$? = $ac_status" >&5
+-   echo "$as_me:17026: \$? = $ac_status" >&5
++   echo "$as_me:16989: \$? = $ac_status" >&5
     if (exit $ac_status) && test -s "$ac_outfile"; then
       # The compiler can only warn and ignore the option if not recognized
       # So say no if there are warnings
-@@ -16256,11 +16223,11 @@
+@@ -17252,11 +17215,11 @@
     -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
     -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
     -e 's:$: $lt_compiler_flag:'`
--   (eval echo "\"\$as_me:16259: $lt_compile\"" >&5)
-+   (eval echo "\"\$as_me:16226: $lt_compile\"" >&5)
+-   (eval echo "\"\$as_me:17255: $lt_compile\"" >&5)
++   (eval echo "\"\$as_me:17218: $lt_compile\"" >&5)
     (eval "$lt_compile" 2>conftest.err)
     ac_status=$?
     cat conftest.err >&5
--   echo "$as_me:16263: \$? = $ac_status" >&5
-+   echo "$as_me:16230: \$? = $ac_status" >&5
+-   echo "$as_me:17259: \$? = $ac_status" >&5
++   echo "$as_me:17222: \$? = $ac_status" >&5
     if (exit $ac_status) && test -s "$ac_outfile"; then
       # The compiler can only warn and ignore the option if not recognized
       # So say no if there are warnings
-@@ -16316,11 +16283,11 @@
+@@ -17312,11 +17275,11 @@
     -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
     -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
     -e 's:$: $lt_compiler_flag:'`
--   (eval echo "\"\$as_me:16319: $lt_compile\"" >&5)
-+   (eval echo "\"\$as_me:16286: $lt_compile\"" >&5)
+-   (eval echo "\"\$as_me:17315: $lt_compile\"" >&5)
++   (eval echo "\"\$as_me:17278: $lt_compile\"" >&5)
     (eval "$lt_compile" 2>out/conftest.err)
     ac_status=$?
     cat out/conftest.err >&5
--   echo "$as_me:16323: \$? = $ac_status" >&5
-+   echo "$as_me:16290: \$? = $ac_status" >&5
+-   echo "$as_me:17319: \$? = $ac_status" >&5
++   echo "$as_me:17282: \$? = $ac_status" >&5
     if (exit $ac_status) && test -s out/conftest2.$ac_objext
     then
       # The compiler can only warn and ignore the option if not recognized
-@@ -16707,8 +16674,7 @@
+@@ -17703,8 +17666,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -636,7 +617,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -16768,8 +16734,7 @@
+@@ -17764,8 +17726,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -646,16 +627,16 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -17650,7 +17615,7 @@
+@@ -18646,7 +18607,7 @@
    libsuff=
    case "$host_cpu" in
    x86_64*|s390x*|powerpc64*)
--    echo '#line 17653 "configure"' > conftest.$ac_ext
-+    echo '#line 17618 "configure"' > conftest.$ac_ext
+-    echo '#line 18649 "configure"' > conftest.$ac_ext
++    echo '#line 18610 "configure"' > conftest.$ac_ext
      if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
    (eval $ac_compile) 2>&5
    ac_status=$?
-@@ -17981,8 +17946,7 @@
+@@ -18977,8 +18938,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -665,7 +646,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -18085,8 +18049,7 @@
+@@ -19081,8 +19041,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -675,7 +656,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -18151,8 +18114,7 @@
+@@ -19147,8 +19106,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -685,7 +666,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -18245,8 +18207,7 @@
+@@ -19241,8 +19199,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -695,7 +676,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -18311,8 +18272,7 @@
+@@ -19307,8 +19264,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -705,7 +686,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -18378,8 +18338,7 @@
+@@ -19374,8 +19330,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -715,7 +696,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -18445,8 +18404,7 @@
+@@ -19441,8 +19396,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -725,55 +706,155 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -18521,7 +18479,7 @@
+@@ -19517,7 +19471,7 @@
    lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
    lt_status=$lt_dlunknown
    cat > conftest.$ac_ext <<EOF
--#line 18524 "configure"
-+#line 18482 "configure"
+-#line 19520 "configure"
++#line 19474 "configure"
  #include "confdefs.h"
  
  #if HAVE_DLFCN_H
-@@ -18619,7 +18577,7 @@
+@@ -19615,7 +19569,7 @@
    lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
    lt_status=$lt_dlunknown
    cat > conftest.$ac_ext <<EOF
--#line 18622 "configure"
-+#line 18580 "configure"
+-#line 19618 "configure"
++#line 19572 "configure"
  #include "confdefs.h"
  
  #if HAVE_DLFCN_H
-@@ -18898,6 +18856,7 @@
- libext="$libext"
+@@ -20834,128 +20788,13 @@
+ echo "$as_me:$LINENO: checking \"return type of sprintf\"" >&5
+ echo $ECHO_N "checking \"return type of sprintf\"... $ECHO_C" >&6
  
- # Shared library suffix (normally ".so").
-+shrext='$shrext_cmds'
- shrext_cmds='$shrext_cmds'
+-#check the return type of sprintf
+-case $SYSTEM_TYPE in
+-  *netware*)
+-    cat >>confdefs.h <<\_ACEOF
+-#define SPRINTF_RETURNS_INT 1
+-_ACEOF
+- echo "$as_me:$LINENO: result: \"int\"" >&5
+-echo "${ECHO_T}\"int\"" >&6
+-    ;;
+-  *)
+-if test "$cross_compiling" = yes; then
+-  { { echo "$as_me:$LINENO: error: cannot run test program while cross compiling
+-See \`config.log' for more details." >&5
+-echo "$as_me: error: cannot run test program while cross compiling
+-See \`config.log' for more details." >&2;}
+-   { (exit 1); exit 1; }; }
+-else
+-  cat >conftest.$ac_ext <<_ACEOF
+-/* confdefs.h.  */
+-_ACEOF
+-cat confdefs.h >>conftest.$ac_ext
+-cat >>conftest.$ac_ext <<_ACEOF
+-/* end confdefs.h.  */
+-
+-  int main()
+-    {
+-      char* s = "hello";
+-      char buf[6];
+-      if((int)sprintf(buf, s) == strlen(s))
+-	return 0;
+-
+-      return -1;
+-     }
+-
+-_ACEOF
+-rm -f conftest$ac_exeext
+-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+-  (eval $ac_link) 2>&5
+-  ac_status=$?
+-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+-  (exit $ac_status); } && { ac_try='./conftest$ac_exeext'
+-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+-  (eval $ac_try) 2>&5
+-  ac_status=$?
+-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+-  (exit $ac_status); }; }; then
  
- # Executable file suffix (normally "").
-@@ -19343,6 +19302,7 @@
- libext="$libext"
- 
- # Shared library suffix (normally ".so").
-+shrext='$shrext_cmds'
- shrext_cmds='$shrext_cmds'
- 
- # Executable file suffix (normally "").
-@@ -19840,6 +19800,13 @@
- 
- #check the return type of sprintf
- case $SYSTEM_TYPE in
-+  *linux*)
-+    cat >>confdefs.h <<\_ACEOF
-+#define SPRINTF_RETURNS_INT 1
-+_ACEOF
-+ echo "$as_me:$LINENO: result: \"int\"" >&5
-+echo "${ECHO_T}\"int\"" >&6
-+    ;;
-   *netware*)
-     cat >>confdefs.h <<\_ACEOF
+ cat >>confdefs.h <<\_ACEOF
  #define SPRINTF_RETURNS_INT 1
-@@ -20939,8 +20906,7 @@
+ _ACEOF
+ 
+-   echo "$as_me:$LINENO: result: \"int\"" >&5
++echo "$as_me:$LINENO: result: \"int\"" >&5
+ echo "${ECHO_T}\"int\"" >&6
+-else
+-  echo "$as_me: program exited with status $ac_status" >&5
+-echo "$as_me: failed program was:" >&5
+-sed 's/^/| /' conftest.$ac_ext >&5
+-
+-( exit $ac_status )
+-if test "$cross_compiling" = yes; then
+-  { { echo "$as_me:$LINENO: error: cannot run test program while cross compiling
+-See \`config.log' for more details." >&5
+-echo "$as_me: error: cannot run test program while cross compiling
+-See \`config.log' for more details." >&2;}
+-   { (exit 1); exit 1; }; }
+-else
+-  cat >conftest.$ac_ext <<_ACEOF
+-/* confdefs.h.  */
+-_ACEOF
+-cat confdefs.h >>conftest.$ac_ext
+-cat >>conftest.$ac_ext <<_ACEOF
+-/* end confdefs.h.  */
+-
+- int main()
+-   {
+-     char* s = "hello";
+-     char buf[6];
+-     if((char*)sprintf(buf,s) == buf + strlen(s))
+-       return 0;
+-     return -1;
+-   }
+-_ACEOF
+-rm -f conftest$ac_exeext
+-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+-  (eval $ac_link) 2>&5
+-  ac_status=$?
+-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+-  (exit $ac_status); } && { ac_try='./conftest$ac_exeext'
+-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+-  (eval $ac_try) 2>&5
+-  ac_status=$?
+-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+-  (exit $ac_status); }; }; then
+-
+-cat >>confdefs.h <<\_ACEOF
+-#define SPRINTF_RETURNS_PTR 1
+-_ACEOF
+-
+-                echo "$as_me:$LINENO: result: \"ptr\"" >&5
+-echo "${ECHO_T}\"ptr\"" >&6
+-else
+-  echo "$as_me: program exited with status $ac_status" >&5
+-echo "$as_me: failed program was:" >&5
+-sed 's/^/| /' conftest.$ac_ext >&5
+-
+-( exit $ac_status )
+-
+-cat >>confdefs.h <<\_ACEOF
+-#define SPRINTF_RETURNS_GARBAGE 1
+-_ACEOF
+-
+-                echo "$as_me:$LINENO: result: \"garbage\"" >&5
+-echo "${ECHO_T}\"garbage\"" >&6
+-fi
+-rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+-fi
+-
+-fi
+-rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+-fi
+-    ;;
+-esac
+ 
+ # Extract the first word of "uname", so it can be a program name with args.
+ set dummy uname; ac_word=$2
+@@ -22130,8 +21969,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -783,7 +864,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -21432,8 +21398,7 @@
+@@ -22573,8 +22411,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -793,7 +874,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -21671,8 +21636,7 @@
+@@ -22812,8 +22649,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -803,7 +884,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -21750,8 +21714,7 @@
+@@ -22891,8 +22727,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -813,7 +894,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -21823,8 +21786,7 @@
+@@ -22964,8 +22799,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -823,7 +904,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -21878,8 +21840,7 @@
+@@ -23019,8 +22853,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -833,7 +914,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -21950,8 +21911,7 @@
+@@ -23091,8 +22924,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -843,7 +924,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -22005,8 +21965,7 @@
+@@ -23146,8 +22978,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -853,7 +934,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -22073,8 +22032,7 @@
+@@ -23214,8 +23045,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -863,7 +944,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -22245,8 +22203,7 @@
+@@ -23386,8 +23216,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -873,7 +954,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -22351,8 +22308,7 @@
+@@ -23497,8 +23326,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -883,7 +964,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -22512,8 +22468,7 @@
+@@ -23658,8 +23486,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -893,7 +974,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -22585,8 +22540,7 @@
+@@ -23731,8 +23558,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -903,7 +984,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -22662,8 +22616,7 @@
+@@ -23808,8 +23634,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -913,7 +994,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -22735,8 +22688,7 @@
+@@ -23881,8 +23706,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -923,7 +1004,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -22837,8 +22789,7 @@
+@@ -23983,8 +23807,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -933,7 +1014,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -22929,8 +22880,7 @@
+@@ -24075,8 +23898,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -943,7 +1024,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -22996,8 +22946,7 @@
+@@ -24142,8 +23964,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -953,7 +1034,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -23098,8 +23047,7 @@
+@@ -24244,8 +24065,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -963,7 +1044,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -23165,8 +23113,7 @@
+@@ -24311,8 +24131,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -973,7 +1054,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -23267,8 +23214,7 @@
+@@ -24413,8 +24232,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -983,7 +1064,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -23334,8 +23280,7 @@
+@@ -24480,8 +24298,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -993,7 +1074,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -23437,8 +23382,7 @@
+@@ -24583,8 +24400,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1003,7 +1084,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -23504,8 +23448,7 @@
+@@ -24650,8 +24466,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1013,7 +1094,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -23581,8 +23524,7 @@
+@@ -24727,8 +24542,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1023,7 +1104,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -23681,8 +23623,7 @@
+@@ -24827,8 +24641,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1033,7 +1114,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -23780,8 +23721,7 @@
+@@ -24927,8 +24740,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1043,7 +1124,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -23847,8 +23787,7 @@
+@@ -24994,8 +24806,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1053,7 +1134,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -24019,8 +23958,7 @@
+@@ -25106,8 +24917,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1063,7 +1144,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -24159,8 +24097,7 @@
+@@ -25187,8 +24997,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1073,102 +1154,326 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -24209,10 +24146,13 @@
+@@ -25282,8 +25091,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -25385,8 +25193,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -25525,8 +25332,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -25576,288 +25382,6 @@
+ fi;
  
  
- if test "$IS_LINUX" = "true"; then
+-if test "$TARGET_LINUX" = "true"; then
 -  echo "$as_me:$LINENO: checking for atomic operations" >&5
 -echo $ECHO_N "checking for atomic operations... $ECHO_C" >&6
 -
-   atom_ops=
-+  echo "$as_me:$LINENO: checking for atomic add operation" >&5
-+echo $ECHO_N "checking for atomic add operation... $ECHO_C" >&6
-+if test "${ac_atomic_add+set}" = set; then
-+  echo $ECHO_N "(cached) $ECHO_C" >&6
-+else
-+
-   if test "$cross_compiling" = yes; then
-   { { echo "$as_me:$LINENO: error: cannot run test program while cross compiling
- See \`config.log' for more details." >&5
-@@ -24249,18 +24189,36 @@
-   ac_status=$?
-   echo "$as_me:$LINENO: \$? = $ac_status" >&5
-   (exit $ac_status); }; }; then
--  cat >>confdefs.h <<\_ACEOF
+-  atom_ops=
+-  if test "$cross_compiling" = yes; then
+-  { { echo "$as_me:$LINENO: error: cannot run test program while cross compiling
+-See \`config.log' for more details." >&5
+-echo "$as_me: error: cannot run test program while cross compiling
+-See \`config.log' for more details." >&2;}
+-   { (exit 1); exit 1; }; }
+-else
+-  cat >conftest.$ac_ext <<_ACEOF
+-/* confdefs.h.  */
+-_ACEOF
+-cat confdefs.h >>conftest.$ac_ext
+-cat >>conftest.$ac_ext <<_ACEOF
+-/* end confdefs.h.  */
+-
+-#include <asm/atomic.h>
+-int main()
+-{
+-  atomic_t v;
+-
+-  atomic_set(&v, 23);
+-  atomic_add(5, &v);
+-  return atomic_read(&v) == 28 ? 0 : -1;
+-}
+-
+-_ACEOF
+-rm -f conftest$ac_exeext
+-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+-  (eval $ac_link) 2>&5
+-  ac_status=$?
+-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+-  (exit $ac_status); } && { ac_try='./conftest$ac_exeext'
+-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+-  (eval $ac_try) 2>&5
+-  ac_status=$?
+-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+-  (exit $ac_status); }; }; then
+-
+-cat >>confdefs.h <<\_ACEOF
 -#define HAVE_ATOMIC_ADD 1
 -_ACEOF
-- atom_ops="${atom_ops}atomic_add "
-+  ac_atomic_add=yes
- else
-   echo "$as_me: program exited with status $ac_status" >&5
- echo "$as_me: failed program was:" >&5
- sed 's/^/| /' conftest.$ac_ext >&5
- 
-+( exit $ac_status )
-+ac_atomic_add=no
- fi
- rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
- fi
-+
-+fi
-+echo "$as_me:$LINENO: result: $ac_atomic_add" >&5
-+echo "${ECHO_T}$ac_atomic_add" >&6
-+  if test "$ac_atomic_add" = "yes"
-+  then
-+    cat >>confdefs.h <<\_ACEOF
-+#define HAVE_ATOMIC_ADD 1
-+_ACEOF
-+
-+    atom_ops="${atom_ops}atomic_add "
-+  fi
-+
-+  echo "$as_me:$LINENO: checking for atomic sub operation" >&5
-+echo $ECHO_N "checking for atomic sub operation... $ECHO_C" >&6
-+if test "${ac_atomic_sub+set}" = set; then
-+  echo $ECHO_N "(cached) $ECHO_C" >&6
-+else
-+
-   if test "$cross_compiling" = yes; then
-   { { echo "$as_me:$LINENO: error: cannot run test program while cross compiling
- See \`config.log' for more details." >&5
-@@ -24297,22 +24255,29 @@
-   ac_status=$?
-   echo "$as_me:$LINENO: \$? = $ac_status" >&5
-   (exit $ac_status); }; }; then
--  cat >>confdefs.h <<\_ACEOF
+-
+-   atom_ops="${atom_ops}atomic_add "
+-else
+-  echo "$as_me: program exited with status $ac_status" >&5
+-echo "$as_me: failed program was:" >&5
+-sed 's/^/| /' conftest.$ac_ext >&5
+-
+-fi
+-rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+-fi
+-  if test "$cross_compiling" = yes; then
+-  { { echo "$as_me:$LINENO: error: cannot run test program while cross compiling
+-See \`config.log' for more details." >&5
+-echo "$as_me: error: cannot run test program while cross compiling
+-See \`config.log' for more details." >&2;}
+-   { (exit 1); exit 1; }; }
+-else
+-  cat >conftest.$ac_ext <<_ACEOF
+-/* confdefs.h.  */
+-_ACEOF
+-cat confdefs.h >>conftest.$ac_ext
+-cat >>conftest.$ac_ext <<_ACEOF
+-/* end confdefs.h.  */
+-
+-#include <asm/atomic.h>
+-int main()
+-{
+-  atomic_t v;
+-
+-  atomic_set(&v, 23);
+-  atomic_sub(5, &v);
+-  return atomic_read(&v) == 18 ? 0 : -1;
+-}
+-
+-_ACEOF
+-rm -f conftest$ac_exeext
+-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+-  (eval $ac_link) 2>&5
+-  ac_status=$?
+-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+-  (exit $ac_status); } && { ac_try='./conftest$ac_exeext'
+-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+-  (eval $ac_try) 2>&5
+-  ac_status=$?
+-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+-  (exit $ac_status); }; }; then
+-
+-cat >>confdefs.h <<\_ACEOF
 -#define HAVE_ATOMIC_SUB 1
 -_ACEOF
-- atom_ops="${atom_ops}atomic_sub "
-+  ac_atomic_add=sub
- else
-   echo "$as_me: program exited with status $ac_status" >&5
- echo "$as_me: failed program was:" >&5
- sed 's/^/| /' conftest.$ac_ext >&5
- 
-+( exit $ac_status )
-+ac_atomic_sub=no
- fi
- rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
- fi
- 
+-
+-   atom_ops="${atom_ops}atomic_sub "
+-else
+-  echo "$as_me: program exited with status $ac_status" >&5
+-echo "$as_me: failed program was:" >&5
+-sed 's/^/| /' conftest.$ac_ext >&5
+-
+-fi
+-rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+-fi
+-
 -  if test -z "$atom_ops"; then atom_ops="no"; fi
 -  echo "$as_me:$LINENO: result: $atom_ops" >&5
 -echo "${ECHO_T}$atom_ops" >&6
-+fi
-+echo "$as_me:$LINENO: result: $ac_atomic_sub" >&5
-+echo "${ECHO_T}$ac_atomic_sub" >&6
-+  if test "$ac_atomic_sub" = "yes"
-+  then
-+    cat >>confdefs.h <<\_ACEOF
-+#define HAVE_ATOMIC_SUB 1
-+_ACEOF
-+
-+    atom_ops="${atom_ops}atomic_sub "
-+  fi
+-
+-
+-# Check whether --with-pstack or --without-pstack was given.
+-if test "${with_pstack+set}" = set; then
+-  withval="$with_pstack"
+-   USE_PSTACK=$withval
+-else
+-   USE_PSTACK=no
+-fi;
+-  pstack_libs=
+-  pstack_dirs=
+-  if test "$USE_PSTACK" = yes -a "$TARGET_LINUX" = "true" -a "$BASE_MACHINE_TYPE" = "i386"
+-  then
+-    have_libiberty= have_libbfd=
+-    my_save_LIBS="$LIBS"
+-    echo "$as_me:$LINENO: checking for fdmatch in -liberty" >&5
+-echo $ECHO_N "checking for fdmatch in -liberty... $ECHO_C" >&6
+-if test "${ac_cv_lib_iberty_fdmatch+set}" = set; then
+-  echo $ECHO_N "(cached) $ECHO_C" >&6
+-else
+-  ac_check_lib_save_LIBS=$LIBS
+-LIBS="-liberty  $LIBS"
+-cat >conftest.$ac_ext <<_ACEOF
+-/* confdefs.h.  */
+-_ACEOF
+-cat confdefs.h >>conftest.$ac_ext
+-cat >>conftest.$ac_ext <<_ACEOF
+-/* end confdefs.h.  */
+-
+-/* Override any gcc2 internal prototype to avoid an error.  */
+-#ifdef __cplusplus
+-extern "C"
+-#endif
+-/* We use char because int might match the return type of a gcc2
+-   builtin and then its argument prototype would still apply.  */
+-char fdmatch ();
+-int
+-main ()
+-{
+-fdmatch ();
+-  ;
+-  return 0;
+-}
+-_ACEOF
+-rm -f conftest.$ac_objext conftest$ac_exeext
+-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+-  (eval $ac_link) 2>conftest.er1
+-  ac_status=$?
+-  grep -v '^ *+' conftest.er1 >conftest.err
+-  rm -f conftest.er1
+-  cat conftest.err >&5
+-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+-  (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
+-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+-  (eval $ac_try) 2>&5
+-  ac_status=$?
+-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+-  (exit $ac_status); }; } &&
+-	 { ac_try='test -s conftest$ac_exeext'
+-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+-  (eval $ac_try) 2>&5
+-  ac_status=$?
+-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+-  (exit $ac_status); }; }; then
+-  ac_cv_lib_iberty_fdmatch=yes
+-else
+-  echo "$as_me: failed program was:" >&5
+-sed 's/^/| /' conftest.$ac_ext >&5
+-
+-ac_cv_lib_iberty_fdmatch=no
+-fi
+-rm -f conftest.err conftest.$ac_objext \
+-      conftest$ac_exeext conftest.$ac_ext
+-LIBS=$ac_check_lib_save_LIBS
+-fi
+-echo "$as_me:$LINENO: result: $ac_cv_lib_iberty_fdmatch" >&5
+-echo "${ECHO_T}$ac_cv_lib_iberty_fdmatch" >&6
+-if test $ac_cv_lib_iberty_fdmatch = yes; then
+-  have_libiberty=yes
+-       echo "$as_me:$LINENO: checking for bfd_openr in -lbfd" >&5
+-echo $ECHO_N "checking for bfd_openr in -lbfd... $ECHO_C" >&6
+-if test "${ac_cv_lib_bfd_bfd_openr+set}" = set; then
+-  echo $ECHO_N "(cached) $ECHO_C" >&6
+-else
+-  ac_check_lib_save_LIBS=$LIBS
+-LIBS="-lbfd -liberty $LIBS"
+-cat >conftest.$ac_ext <<_ACEOF
+-/* confdefs.h.  */
+-_ACEOF
+-cat confdefs.h >>conftest.$ac_ext
+-cat >>conftest.$ac_ext <<_ACEOF
+-/* end confdefs.h.  */
+-
+-/* Override any gcc2 internal prototype to avoid an error.  */
+-#ifdef __cplusplus
+-extern "C"
+-#endif
+-/* We use char because int might match the return type of a gcc2
+-   builtin and then its argument prototype would still apply.  */
+-char bfd_openr ();
+-int
+-main ()
+-{
+-bfd_openr ();
+-  ;
+-  return 0;
+-}
+-_ACEOF
+-rm -f conftest.$ac_objext conftest$ac_exeext
+-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+-  (eval $ac_link) 2>conftest.er1
+-  ac_status=$?
+-  grep -v '^ *+' conftest.er1 >conftest.err
+-  rm -f conftest.er1
+-  cat conftest.err >&5
+-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+-  (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
+-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+-  (eval $ac_try) 2>&5
+-  ac_status=$?
+-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+-  (exit $ac_status); }; } &&
+-	 { ac_try='test -s conftest$ac_exeext'
+-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+-  (eval $ac_try) 2>&5
+-  ac_status=$?
+-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+-  (exit $ac_status); }; }; then
+-  ac_cv_lib_bfd_bfd_openr=yes
+-else
+-  echo "$as_me: failed program was:" >&5
+-sed 's/^/| /' conftest.$ac_ext >&5
+-
+-ac_cv_lib_bfd_bfd_openr=no
+-fi
+-rm -f conftest.err conftest.$ac_objext \
+-      conftest$ac_exeext conftest.$ac_ext
+-LIBS=$ac_check_lib_save_LIBS
+-fi
+-echo "$as_me:$LINENO: result: $ac_cv_lib_bfd_bfd_openr" >&5
+-echo "${ECHO_T}$ac_cv_lib_bfd_bfd_openr" >&6
+-if test $ac_cv_lib_bfd_bfd_openr = yes; then
+-  have_libbfd=yes
+-fi
+-
+-fi
+-
+-    LIBS="$my_save_LIBS"
+-
+-    if test x"$have_libiberty" = xyes -a x"$have_libbfd" = xyes
+-    then
+-      pstack_dirs='$(top_srcdir)'/pstack
+-      pstack_libs="../pstack/libpstack.a -lbfd -liberty"
+-      # We must link staticly when using pstack
+-      with_mysqld_ldflags="-all-static"
+-
+-
+-
+-cat >>confdefs.h <<\_ACEOF
+-#define USE_PSTACK 1
+-_ACEOF
+-
+-    else
+-      USE_PSTACK="no"
+-    fi
+-  else
+-    USE_PSTACK="no"
+-  fi
+-fi
  
  
- # Check whether --with-pstack or --without-pstack was given.
-@@ -24366,8 +24331,7 @@
+ if test "$USE_PSTACK" = "yes"; then
+@@ -25941,8 +25465,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1178,7 +1483,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -24432,8 +24396,7 @@
+@@ -26008,8 +25531,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1188,38 +1493,86 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -24568,8 +24531,7 @@
-   cat conftest.err >&5
-   echo "$as_me:$LINENO: \$? = $ac_status" >&5
-   (exit $ac_status); } &&
--	 { ac_try='test -z "$ac_c_werror_flag"
--			 || test ! -s conftest.err'
-+	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
-   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-   (eval $ac_try) 2>&5
-   ac_status=$?
-@@ -24635,8 +24597,7 @@
-   cat conftest.err >&5
-   echo "$as_me:$LINENO: \$? = $ac_status" >&5
-   (exit $ac_status); } &&
--	 { ac_try='test -z "$ac_c_werror_flag"
--			 || test ! -s conftest.err'
-+	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
-   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-   (eval $ac_try) 2>&5
-   ac_status=$?
-@@ -24680,6 +24641,10 @@
+@@ -26054,78 +25576,9 @@
+ 
  echo "$as_me:$LINENO: checking for int8" >&5
  echo $ECHO_N "checking for int8... $ECHO_C" >&6
- case $SYSTEM_TYPE in
-+  *linux*)
-+    echo "$as_me:$LINENO: result: no" >&5
-+echo "${ECHO_T}no" >&6
-+    ;;
-   *netware)
-     echo "$as_me:$LINENO: result: no" >&5
+-case $SYSTEM_TYPE in
+-  *netware)
+-    echo "$as_me:$LINENO: result: no" >&5
+-echo "${ECHO_T}no" >&6
+-    ;;
+-  *)
+-if test "$cross_compiling" = yes; then
+-  { { echo "$as_me:$LINENO: error: cannot run test program while cross compiling
+-See \`config.log' for more details." >&5
+-echo "$as_me: error: cannot run test program while cross compiling
+-See \`config.log' for more details." >&2;}
+-   { (exit 1); exit 1; }; }
+-else
+-  cat >conftest.$ac_ext <<_ACEOF
+-/* confdefs.h.  */
+-_ACEOF
+-cat confdefs.h >>conftest.$ac_ext
+-cat >>conftest.$ac_ext <<_ACEOF
+-/* end confdefs.h.  */
+-
+-#ifdef HAVE_STDLIB_H
+-#include <stdlib.h>
+-#endif
+-
+-#ifdef HAVE_STDDEF_H
+-#include <stddef.h>
+-#endif
+-
+-#ifdef HAVE_SYS_TYPES_H
+-#include <sys/types.h>
+-#endif
+-
+-int main()
+-{
+-  int8 i;
+-  return 0;
+-}
+-
+-_ACEOF
+-rm -f conftest$ac_exeext
+-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+-  (eval $ac_link) 2>&5
+-  ac_status=$?
+-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+-  (exit $ac_status); } && { ac_try='./conftest$ac_exeext'
+-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+-  (eval $ac_try) 2>&5
+-  ac_status=$?
+-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+-  (exit $ac_status); }; }; then
+-
+-cat >>confdefs.h <<\_ACEOF
+-#define HAVE_INT_8_16_32 1
+-_ACEOF
+-
+-echo "$as_me:$LINENO: result: yes" >&5
+-echo "${ECHO_T}yes" >&6
+-else
+-  echo "$as_me: program exited with status $ac_status" >&5
+-echo "$as_me: failed program was:" >&5
+-sed 's/^/| /' conftest.$ac_ext >&5
+-
+-( exit $ac_status )
+ echo "$as_me:$LINENO: result: no" >&5
  echo "${ECHO_T}no" >&6
-@@ -25082,8 +25047,7 @@
+ 
+-fi
+-rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+-fi
+-    ;;
+-esac
+-
+ #
+ # Some system specific hacks
+ #
+@@ -26519,8 +25972,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1229,7 +1582,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -25481,8 +25445,7 @@
+@@ -26590,8 +26042,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1239,7 +1592,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -25537,8 +25500,7 @@
+@@ -26903,8 +26354,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1249,7 +1602,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -25591,8 +25553,7 @@
+@@ -26957,8 +26407,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1259,7 +1612,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -25646,8 +25607,7 @@
+@@ -27010,8 +26459,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1269,7 +1622,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -25726,8 +25686,7 @@
+@@ -27064,8 +26512,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1279,7 +1632,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -25803,8 +25762,7 @@
+@@ -27137,8 +26584,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1289,7 +1642,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -25913,8 +25871,7 @@
+@@ -27214,8 +26660,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1299,7 +1652,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -26016,8 +25973,7 @@
+@@ -27324,8 +26769,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1309,7 +1662,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -26097,8 +26053,7 @@
+@@ -27427,8 +26871,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1319,7 +1672,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -26174,8 +26129,7 @@
+@@ -27508,8 +26951,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1329,27 +1682,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -26393,7 +26347,9 @@
- then
-   DEBUG_CFLAGS="-g"
-   DEBUG_OPTIMIZE_CC="-O"
-+  if test -z "$OPTIMIZE_CFLAGS" ; then
-   OPTIMIZE_CFLAGS="$MAX_C_OPTIMIZE"
-+  fi
- else
-   DEBUG_CFLAGS="-g"
-   DEBUG_OPTIMIZE_CC=""
-@@ -26403,7 +26359,9 @@
- then
-   DEBUG_CXXFLAGS="-g"
-   DEBUG_OPTIMIZE_CXX="-O"
-+  if test -z "$OPTIMIZE_CXXFLAGS" ; then
-   OPTIMIZE_CXXFLAGS="$MAX_CXX_OPTIMIZE"
-+  fi
- else
-   DEBUG_CXXFLAGS="-g"
-   DEBUG_OPTIMIZE_CXX=""
-@@ -26597,8 +26555,7 @@
+@@ -27585,8 +27027,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1359,7 +1692,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -26658,8 +26615,7 @@
+@@ -28023,8 +27464,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1369,7 +1702,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -26732,8 +26688,7 @@
+@@ -28084,8 +27524,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1379,7 +1712,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -26798,8 +26753,7 @@
+@@ -28158,8 +27597,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1389,7 +1722,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -26842,8 +26796,7 @@
+@@ -28224,8 +27662,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1399,7 +1732,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -26915,8 +26868,7 @@
+@@ -28268,8 +27705,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1409,7 +1742,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -26978,8 +26930,7 @@
+@@ -28341,8 +27777,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1419,7 +1752,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -27044,8 +26995,7 @@
+@@ -28404,8 +27839,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1429,7 +1762,17 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -27107,8 +27057,7 @@
+@@ -28474,8 +27908,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_cxx_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -28549,8 +27982,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1439,7 +1782,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -27148,8 +27097,7 @@
+@@ -28612,8 +28044,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1449,7 +1792,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -27205,8 +27153,7 @@
+@@ -28653,8 +28084,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1459,7 +1802,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -27246,8 +27193,7 @@
+@@ -28710,8 +28140,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1469,7 +1812,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -27311,8 +27257,7 @@
+@@ -28751,8 +28180,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1479,7 +1822,17 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -27343,10 +27288,8 @@
+@@ -28816,8 +28244,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -28848,10 +28275,8 @@
  esac
  else
    if test "$cross_compiling" = yes; then
@@ -1492,7 +1845,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
     { (exit 1); exit 1; }; }
  else
    cat >conftest.$ac_ext <<_ACEOF
-@@ -27476,8 +27419,7 @@
+@@ -28981,8 +28406,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1502,7 +1855,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -27539,8 +27481,7 @@
+@@ -29044,8 +28468,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1512,7 +1865,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -27580,8 +27521,7 @@
+@@ -29085,8 +28508,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1522,7 +1875,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -27637,8 +27577,7 @@
+@@ -29142,8 +28564,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1532,7 +1885,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -27678,8 +27617,7 @@
+@@ -29183,8 +28604,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1542,7 +1895,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -27743,8 +27681,7 @@
+@@ -29248,8 +28668,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1552,7 +1905,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -27775,10 +27712,8 @@
+@@ -29280,10 +28699,8 @@
  esac
  else
    if test "$cross_compiling" = yes; then
@@ -1565,7 +1918,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
     { (exit 1); exit 1; }; }
  else
    cat >conftest.$ac_ext <<_ACEOF
-@@ -27890,8 +27825,7 @@
+@@ -29395,8 +28812,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1575,7 +1928,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -27953,8 +27887,7 @@
+@@ -29458,8 +28874,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1585,7 +1938,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -27994,8 +27927,7 @@
+@@ -29499,8 +28914,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1595,7 +1948,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -28051,8 +27983,7 @@
+@@ -29556,8 +28970,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1605,7 +1958,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -28092,8 +28023,7 @@
+@@ -29597,8 +29010,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1615,7 +1968,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -28157,8 +28087,7 @@
+@@ -29662,8 +29074,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1625,7 +1978,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -28189,10 +28118,8 @@
+@@ -29694,10 +29105,8 @@
  esac
  else
    if test "$cross_compiling" = yes; then
@@ -1638,7 +1991,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
     { (exit 1); exit 1; }; }
  else
    cat >conftest.$ac_ext <<_ACEOF
-@@ -28310,8 +28237,7 @@
+@@ -29809,8 +29218,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1648,7 +2001,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -28373,8 +28299,7 @@
+@@ -29872,8 +29280,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1658,7 +2011,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -28414,8 +28339,7 @@
+@@ -29913,8 +29320,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1668,7 +2021,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -28471,8 +28395,7 @@
+@@ -29970,8 +29376,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1678,7 +2031,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -28512,8 +28435,7 @@
+@@ -30011,8 +29416,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1688,7 +2041,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -28577,8 +28499,7 @@
+@@ -30076,8 +29480,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1698,7 +2051,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -28609,10 +28530,8 @@
+@@ -30108,10 +29511,8 @@
  esac
  else
    if test "$cross_compiling" = yes; then
@@ -1711,7 +2064,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
     { (exit 1); exit 1; }; }
  else
    cat >conftest.$ac_ext <<_ACEOF
-@@ -28730,8 +28649,7 @@
+@@ -30229,8 +29630,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1721,7 +2074,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -28793,8 +28711,7 @@
+@@ -30292,8 +29692,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1731,7 +2084,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -28834,8 +28751,7 @@
+@@ -30333,8 +29732,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1741,7 +2094,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -28891,8 +28807,7 @@
+@@ -30390,8 +29788,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1751,7 +2104,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -28932,8 +28847,7 @@
+@@ -30431,8 +29828,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1761,7 +2114,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -28997,8 +28911,7 @@
+@@ -30496,8 +29892,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1771,7 +2124,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -29029,10 +28942,8 @@
+@@ -30528,10 +29923,8 @@
  esac
  else
    if test "$cross_compiling" = yes; then
@@ -1784,7 +2137,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
     { (exit 1); exit 1; }; }
  else
    cat >conftest.$ac_ext <<_ACEOF
-@@ -29219,8 +29130,7 @@
+@@ -30649,8 +30042,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1794,7 +2147,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -29262,8 +29172,7 @@
+@@ -30712,8 +30104,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1804,7 +2157,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -29320,8 +29229,7 @@
+@@ -30753,8 +30144,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1814,7 +2167,80 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -29465,8 +29373,7 @@
+@@ -30810,8 +30200,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -30851,8 +30240,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -30916,8 +30304,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -30948,10 +30335,8 @@
+ esac
+ else
+   if test "$cross_compiling" = yes; then
+-  { { echo "$as_me:$LINENO: error: cannot run test program while cross compiling
+-See \`config.log' for more details." >&5
+-echo "$as_me: error: cannot run test program while cross compiling
+-See \`config.log' for more details." >&2;}
++  { { echo "$as_me:$LINENO: error: internal error: not reached in cross-compile" >&5
++echo "$as_me: error: internal error: not reached in cross-compile" >&2;}
+    { (exit 1); exit 1; }; }
+ else
+   cat >conftest.$ac_ext <<_ACEOF
+@@ -31187,8 +30572,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -31230,8 +30614,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -31288,8 +30671,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -31432,8 +30814,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1824,7 +2250,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -29516,8 +29423,7 @@
+@@ -31483,8 +30864,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1834,57 +2260,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -29657,8 +29563,7 @@
-   cat conftest.err >&5
-   echo "$as_me:$LINENO: \$? = $ac_status" >&5
-   (exit $ac_status); } &&
--	 { ac_try='test -z "$ac_c_werror_flag"
--			 || test ! -s conftest.err'
-+	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
-   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-   (eval $ac_try) 2>&5
-   ac_status=$?
-@@ -29735,8 +29640,7 @@
-   cat conftest.err >&5
-   echo "$as_me:$LINENO: \$? = $ac_status" >&5
-   (exit $ac_status); } &&
--	 { ac_try='test -z "$ac_c_werror_flag"
--			 || test ! -s conftest.err'
-+	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
-   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-   (eval $ac_try) 2>&5
-   ac_status=$?
-@@ -29875,8 +29779,7 @@
-   cat conftest.err >&5
-   echo "$as_me:$LINENO: \$? = $ac_status" >&5
-   (exit $ac_status); } &&
--	 { ac_try='test -z "$ac_c_werror_flag"
--			 || test ! -s conftest.err'
-+	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
-   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-   (eval $ac_try) 2>&5
-   ac_status=$?
-@@ -29954,8 +29857,7 @@
-   cat conftest.err >&5
-   echo "$as_me:$LINENO: \$? = $ac_status" >&5
-   (exit $ac_status); } &&
--	 { ac_try='test -z "$ac_c_werror_flag"
--			 || test ! -s conftest.err'
-+	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
-   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-   (eval $ac_try) 2>&5
-   ac_status=$?
-@@ -30022,8 +29924,7 @@
-   cat conftest.err >&5
-   echo "$as_me:$LINENO: \$? = $ac_status" >&5
-   (exit $ac_status); } &&
--	 { ac_try='test -z "$ac_c_werror_flag"
--			 || test ! -s conftest.err'
-+	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
-   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-   (eval $ac_try) 2>&5
-   ac_status=$?
-@@ -30389,8 +30290,7 @@
+@@ -31572,8 +30952,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1894,7 +2270,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -30541,8 +30441,7 @@
+@@ -31711,8 +31090,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1904,7 +2280,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -30610,8 +30509,7 @@
+@@ -31789,8 +31167,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1914,7 +2290,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -30710,8 +30608,7 @@
+@@ -31930,8 +31307,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1924,7 +2300,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -30903,8 +30800,7 @@
+@@ -32009,8 +31385,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1934,7 +2310,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -31034,8 +30930,7 @@
+@@ -32078,8 +31453,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -1944,217 +2320,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -31101,8 +30996,7 @@
-   cat conftest.err >&5
-   echo "$as_me:$LINENO: \$? = $ac_status" >&5
-   (exit $ac_status); } &&
--	 { ac_try='test -z "$ac_c_werror_flag"
--			 || test ! -s conftest.err'
-+	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
-   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-   (eval $ac_try) 2>&5
-   ac_status=$?
-@@ -31147,8 +31041,7 @@
-   cat conftest.err >&5
-   echo "$as_me:$LINENO: \$? = $ac_status" >&5
-   (exit $ac_status); } &&
--	 { ac_try='test -z "$ac_c_werror_flag"
--			 || test ! -s conftest.err'
-+	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
-   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-   (eval $ac_try) 2>&5
-   ac_status=$?
-@@ -31196,8 +31089,7 @@
-   cat conftest.err >&5
-   echo "$as_me:$LINENO: \$? = $ac_status" >&5
-   (exit $ac_status); } &&
--	 { ac_try='test -z "$ac_c_werror_flag"
--			 || test ! -s conftest.err'
-+	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
-   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-   (eval $ac_try) 2>&5
-   ac_status=$?
-@@ -31280,8 +31172,7 @@
-   cat conftest.err >&5
-   echo "$as_me:$LINENO: \$? = $ac_status" >&5
-   (exit $ac_status); } &&
--	 { ac_try='test -z "$ac_c_werror_flag"
--			 || test ! -s conftest.err'
-+	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
-   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-   (eval $ac_try) 2>&5
-   ac_status=$?
-@@ -31342,8 +31233,7 @@
-   cat conftest.err >&5
-   echo "$as_me:$LINENO: \$? = $ac_status" >&5
-   (exit $ac_status); } &&
--	 { ac_try='test -z "$ac_c_werror_flag"
--			 || test ! -s conftest.err'
-+	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
-   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-   (eval $ac_try) 2>&5
-   ac_status=$?
-@@ -31404,8 +31294,7 @@
-   cat conftest.err >&5
-   echo "$as_me:$LINENO: \$? = $ac_status" >&5
-   (exit $ac_status); } &&
--	 { ac_try='test -z "$ac_c_werror_flag"
--			 || test ! -s conftest.err'
-+	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
-   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-   (eval $ac_try) 2>&5
-   ac_status=$?
-@@ -31466,8 +31355,7 @@
-   cat conftest.err >&5
-   echo "$as_me:$LINENO: \$? = $ac_status" >&5
-   (exit $ac_status); } &&
--	 { ac_try='test -z "$ac_c_werror_flag"
--			 || test ! -s conftest.err'
-+	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
-   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-   (eval $ac_try) 2>&5
-   ac_status=$?
-@@ -31550,8 +31438,7 @@
-   cat conftest.err >&5
-   echo "$as_me:$LINENO: \$? = $ac_status" >&5
-   (exit $ac_status); } &&
--	 { ac_try='test -z "$ac_c_werror_flag"
--			 || test ! -s conftest.err'
-+	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
-   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-   (eval $ac_try) 2>&5
-   ac_status=$?
-@@ -31619,8 +31506,7 @@
-   cat conftest.err >&5
-   echo "$as_me:$LINENO: \$? = $ac_status" >&5
-   (exit $ac_status); } &&
--	 { ac_try='test -z "$ac_c_werror_flag"
--			 || test ! -s conftest.err'
-+	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
-   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-   (eval $ac_try) 2>&5
-   ac_status=$?
-@@ -31694,8 +31580,7 @@
-   cat conftest.err >&5
-   echo "$as_me:$LINENO: \$? = $ac_status" >&5
-   (exit $ac_status); } &&
--	 { ac_try='test -z "$ac_c_werror_flag"
--			 || test ! -s conftest.err'
-+	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
-   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-   (eval $ac_try) 2>&5
-   ac_status=$?
-@@ -31761,8 +31646,7 @@
-   cat conftest.err >&5
-   echo "$as_me:$LINENO: \$? = $ac_status" >&5
-   (exit $ac_status); } &&
--	 { ac_try='test -z "$ac_c_werror_flag"
--			 || test ! -s conftest.err'
-+	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
-   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-   (eval $ac_try) 2>&5
-   ac_status=$?
-@@ -31828,8 +31712,7 @@
-   cat conftest.err >&5
-   echo "$as_me:$LINENO: \$? = $ac_status" >&5
-   (exit $ac_status); } &&
--	 { ac_try='test -z "$ac_c_werror_flag"
--			 || test ! -s conftest.err'
-+	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
-   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-   (eval $ac_try) 2>&5
-   ac_status=$?
-@@ -31994,8 +31877,7 @@
-   cat conftest.err >&5
-   echo "$as_me:$LINENO: \$? = $ac_status" >&5
-   (exit $ac_status); } &&
--	 { ac_try='test -z "$ac_c_werror_flag"
--			 || test ! -s conftest.err'
-+	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
-   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-   (eval $ac_try) 2>&5
-   ac_status=$?
-@@ -32179,8 +32061,7 @@
-   cat conftest.err >&5
-   echo "$as_me:$LINENO: \$? = $ac_status" >&5
-   (exit $ac_status); } &&
--	 { ac_try='test -z "$ac_c_werror_flag"
--			 || test ! -s conftest.err'
-+	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
-   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-   (eval $ac_try) 2>&5
-   ac_status=$?
-@@ -32426,8 +32307,7 @@
-   cat conftest.err >&5
-   echo "$as_me:$LINENO: \$? = $ac_status" >&5
-   (exit $ac_status); } &&
--	 { ac_try='test -z "$ac_c_werror_flag"
--			 || test ! -s conftest.err'
-+	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
-   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-   (eval $ac_try) 2>&5
-   ac_status=$?
-@@ -32491,8 +32371,7 @@
-   cat conftest.err >&5
-   echo "$as_me:$LINENO: \$? = $ac_status" >&5
-   (exit $ac_status); } &&
--	 { ac_try='test -z "$ac_c_werror_flag"
--			 || test ! -s conftest.err'
-+	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
-   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-   (eval $ac_try) 2>&5
-   ac_status=$?
-@@ -32661,8 +32540,7 @@
-   cat conftest.err >&5
-   echo "$as_me:$LINENO: \$? = $ac_status" >&5
-   (exit $ac_status); } &&
--	 { ac_try='test -z "$ac_c_werror_flag"
--			 || test ! -s conftest.err'
-+	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
-   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-   (eval $ac_try) 2>&5
-   ac_status=$?
-@@ -32756,8 +32634,7 @@
-   cat conftest.err >&5
-   echo "$as_me:$LINENO: \$? = $ac_status" >&5
-   (exit $ac_status); } &&
--	 { ac_try='test -z "$ac_c_werror_flag"
--			 || test ! -s conftest.err'
-+	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
-   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-   (eval $ac_try) 2>&5
-   ac_status=$?
-@@ -32958,8 +32835,7 @@
-   cat conftest.err >&5
-   echo "$as_me:$LINENO: \$? = $ac_status" >&5
-   (exit $ac_status); } &&
--	 { ac_try='test -z "$ac_c_werror_flag"
--			 || test ! -s conftest.err'
-+	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
-   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-   (eval $ac_try) 2>&5
-   ac_status=$?
-@@ -33065,8 +32941,7 @@
-   cat conftest.err >&5
-   echo "$as_me:$LINENO: \$? = $ac_status" >&5
-   (exit $ac_status); } &&
--	 { ac_try='test -z "$ac_c_werror_flag"
--			 || test ! -s conftest.err'
-+	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
-   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-   (eval $ac_try) 2>&5
-   ac_status=$?
-@@ -33177,8 +33052,7 @@
-   cat conftest.err >&5
-   echo "$as_me:$LINENO: \$? = $ac_status" >&5
-   (exit $ac_status); } &&
--	 { ac_try='test -z "$ac_c_werror_flag"
--			 || test ! -s conftest.err'
-+	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
-   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-   (eval $ac_try) 2>&5
-   ac_status=$?
-@@ -33273,8 +33147,7 @@
+@@ -32451,8 +31825,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -2164,7 +2330,587 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -33369,8 +33242,7 @@
+@@ -32601,8 +31974,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -32666,8 +32038,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -32732,8 +32103,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -32797,8 +32167,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -32867,8 +32236,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -32937,8 +32305,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -33012,8 +32379,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -33160,8 +32526,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -33242,8 +32607,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -33384,8 +32748,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -33577,8 +32940,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -33678,8 +33040,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -33742,8 +33103,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -33915,8 +33275,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -34022,8 +33381,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -34124,8 +33482,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -34226,8 +33583,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -34329,8 +33685,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -34426,8 +33781,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -34619,8 +33973,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -34748,8 +34101,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -34794,8 +34146,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -34843,8 +34194,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -34930,8 +34280,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -34993,8 +34342,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -35056,8 +34404,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -35119,8 +34466,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -35204,8 +34550,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -35289,8 +34634,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -35359,8 +34703,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -35426,8 +34769,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -35576,8 +34918,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -35726,8 +35067,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -35908,8 +35248,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -36006,8 +35345,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -36104,8 +35442,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -36202,8 +35539,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -36300,8 +35636,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -36398,8 +35733,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -36466,8 +35800,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -36527,8 +35860,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -36605,8 +35937,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -36672,8 +36003,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -36739,8 +36069,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -36864,8 +36193,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -36960,8 +36288,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -37056,8 +36383,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -37152,8 +36478,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -37248,8 +36573,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -37394,8 +36718,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -37459,8 +36782,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -37631,8 +36953,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -37726,8 +37047,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -37937,8 +37257,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -38050,8 +37369,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -38113,8 +37431,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -38212,8 +37529,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -38320,8 +37636,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_c_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -38409,8 +37724,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -2174,7 +2920,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -33462,8 +33334,7 @@
+@@ -38498,8 +37812,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -2184,7 +2930,27 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -33539,8 +33410,7 @@
+@@ -38595,8 +37908,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_cxx_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -38689,8 +38001,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_cxx_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -38765,8 +38076,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -2194,7 +2960,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -33608,8 +33478,7 @@
+@@ -38835,8 +38145,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -2204,7 +2970,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -33679,8 +33548,7 @@
+@@ -38906,8 +38215,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -2214,7 +2980,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -33751,8 +33619,7 @@
+@@ -38979,8 +38287,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -2224,7 +2990,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -33824,8 +33691,7 @@
+@@ -39053,8 +38360,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -2234,7 +3000,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -33894,8 +33760,7 @@
+@@ -39124,8 +38430,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -2244,7 +3010,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -33959,8 +33824,7 @@
+@@ -39190,8 +38495,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -2254,7 +3020,37 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -34811,8 +34675,7 @@
+@@ -39782,8 +39086,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_cxx_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -39852,8 +39155,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_cxx_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -39921,8 +39223,7 @@
+   cat conftest.err >&5
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } &&
+-	 { ac_try='test -z "$ac_cxx_werror_flag"
+-			 || test ! -s conftest.err'
++	 { ac_try='test -z "$ac_cxx_werror_flag"			 || test ! -s conftest.err'
+   { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -40184,8 +39485,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -2264,7 +3060,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -34982,8 +34845,7 @@
+@@ -40358,8 +39658,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -2274,7 +3070,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -35226,8 +35088,7 @@
+@@ -40608,8 +39907,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -2284,7 +3080,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -35538,8 +35399,7 @@
+@@ -40924,8 +40222,7 @@
    cat conftest.err >&5
    echo "$as_me:$LINENO: \$? = $ac_status" >&5
    (exit $ac_status); } &&
@@ -2294,7 +3090,16 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
    (eval $ac_try) 2>&5
    ac_status=$?
-@@ -36920,11 +36780,6 @@
+@@ -42602,8 +41899,6 @@
+ s,@ZLIB_DEPS@,$ZLIB_DEPS,;t t
+ s,@ZLIB_INCLUDES@,$ZLIB_INCLUDES,;t t
+ s,@WRAPLIBS@,$WRAPLIBS,;t t
+-s,@pstack_dirs@,$pstack_dirs,;t t
+-s,@pstack_libs@,$pstack_libs,;t t
+ s,@COMPILE_PSTACK_TRUE@,$COMPILE_PSTACK_TRUE,;t t
+ s,@COMPILE_PSTACK_FALSE@,$COMPILE_PSTACK_FALSE,;t t
+ s,@LIBDL@,$LIBDL,;t t
+@@ -42848,11 +42143,6 @@
    *) ac_INSTALL=$ac_top_builddir$INSTALL ;;
    esac
  
@@ -2306,7 +3111,7 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
    # Let's still pretend it is `configure' which instantiates (i.e., don't
    # use $as_me), people would be surprised to read:
    #    /* config.h.  Generated by config.status.  */
-@@ -36963,6 +36818,12 @@
+@@ -42891,6 +42181,12 @@
  	 fi;;
        esac
      done` || { (exit 1); exit 1; }
@@ -2319,104 +3124,178 @@ diff -ruN mysql-4.0.24-orig/configure mysql-4.0.24-2/configure
  _ACEOF
  cat >>$CONFIG_STATUS <<_ACEOF
    sed "$ac_vpsub
-diff -ruN mysql-4.0.24-orig/configure.in mysql-4.0.24-2/configure.in
---- mysql-4.0.24-orig/configure.in	2005-03-05 01:38:15.000000000 +0100
-+++ mysql-4.0.24-2/configure.in	2005-03-10 22:39:02.000000000 +0100
-@@ -216,6 +216,9 @@
+@@ -43576,7 +42872,7 @@
+    { (exit 1); exit 1; }; }
+     fi
  
- #check the return type of sprintf
- case $SYSTEM_TYPE in
-+  *linux*)
-+    AC_DEFINE(SPRINTF_RETURNS_INT) AC_MSG_RESULT("int")
-+    ;;
-   *netware*)
-     AC_DEFINE(SPRINTF_RETURNS_INT) AC_MSG_RESULT("int")
-     ;;
-@@ -820,9 +823,8 @@
+-    cd $ac_popdir
++    cd "$ac_popdir"
+   done
+ fi
+ 
+--- mysql.old/configure.in	2005-12-21 20:39:48.000000000 +0100
++++ mysql.dev/configure.in	2006-01-10 23:48:12.369675250 +0100
+@@ -240,41 +240,8 @@
+ 
+ AC_MSG_CHECKING("return type of sprintf")
+ 
+-#check the return type of sprintf
+-case $SYSTEM_TYPE in
+-  *netware*)
+-    AC_DEFINE(SPRINTF_RETURNS_INT, [1]) AC_MSG_RESULT("int")
+-    ;;
+-  *)
+-AC_TRY_RUN([
+-  int main()
+-    {
+-      char* s = "hello";
+-      char buf[6];
+-      if((int)sprintf(buf, s) == strlen(s))
+-	return 0;
+-      
+-      return -1;
+-     }
+-   ],
+-   [AC_DEFINE(SPRINTF_RETURNS_INT, [1], [POSIX sprintf])
+-   AC_MSG_RESULT("int")],
+-   [AC_TRY_RUN([
+- int main()
+-   {
+-     char* s = "hello";
+-     char buf[6];
+-     if((char*)sprintf(buf,s) == buf + strlen(s))
+-       return 0;
+-     return -1;
+-   }           ],
+-               [AC_DEFINE(SPRINTF_RETURNS_PTR, [1], [Broken sprintf])
+-                AC_MSG_RESULT("ptr")],
+-               [AC_DEFINE(SPRINTF_RETURNS_GARBAGE, [1], [Broken sprintf])
+-                AC_MSG_RESULT("garbage")])
+-   ])
+-    ;;
+-esac
++AC_DEFINE(SPRINTF_RETURNS_INT, [1], [POSIX sprintf])
++AC_MSG_RESULT("int")
+ 
+ AC_PATH_PROG(uname_prog, uname, no)
+ 
+@@ -790,80 +757,6 @@
+ ])
  AC_SUBST(WRAPLIBS)
  
- if test "$IS_LINUX" = "true"; then
+-if test "$TARGET_LINUX" = "true"; then
 -  AC_MSG_CHECKING([for atomic operations])
 -
-   atom_ops=
-+  AC_CACHE_CHECK([for atomic add operation], ac_atomic_add, [
-   AC_TRY_RUN([
- #include <asm/atomic.h>
- int main()
-@@ -833,8 +835,15 @@
-   atomic_add(5, &v);
-   return atomic_read(&v) == 28 ? 0 : -1;
- }
--  ], AC_DEFINE(HAVE_ATOMIC_ADD) atom_ops="${atom_ops}atomic_add ",
-+  ], ac_atomic_add=yes, ac_atomic_add=no)]
-   )
-+  if test "$ac_atomic_add" = "yes"
-+  then
-+    AC_DEFINE(HAVE_ATOMIC_ADD)
-+    atom_ops="${atom_ops}atomic_add "
-+  fi
-+
-+  AC_CACHE_CHECK([for atomic sub operation], ac_atomic_sub, [
-   AC_TRY_RUN([
- #include <asm/atomic.h>
- int main()
-@@ -845,11 +854,13 @@
-   atomic_sub(5, &v);
-   return atomic_read(&v) == 18 ? 0 : -1;
- }
--  ], AC_DEFINE(HAVE_ATOMIC_SUB) atom_ops="${atom_ops}atomic_sub ",
-+  ], ac_atomic_add=sub, ac_atomic_sub=no)]
-   )
+-  atom_ops=
+-  AC_TRY_RUN([
+-#include <asm/atomic.h>
+-int main()
+-{
+-  atomic_t v;
+-
+-  atomic_set(&v, 23);
+-  atomic_add(5, &v);
+-  return atomic_read(&v) == 28 ? 0 : -1;
+-}
+-  ],
+-  [AC_DEFINE([HAVE_ATOMIC_ADD], [1],
+-             [atomic_add() from <asm/atomic.h> (Linux only)])
+-   atom_ops="${atom_ops}atomic_add "],
+-  )
+-  AC_TRY_RUN([
+-#include <asm/atomic.h>
+-int main()
+-{
+-  atomic_t v;
+-
+-  atomic_set(&v, 23);
+-  atomic_sub(5, &v);
+-  return atomic_read(&v) == 18 ? 0 : -1;
+-}
+-  ],
+-  [AC_DEFINE([HAVE_ATOMIC_SUB], [1],
+-             [atomic_sub() from <asm/atomic.h> (Linux only)])
+-   atom_ops="${atom_ops}atomic_sub "],
+-  )
 -
 -  if test -z "$atom_ops"; then atom_ops="no"; fi
 -  AC_MSG_RESULT($atom_ops)
-+  if test "$ac_atomic_sub" = "yes"
-+  then
-+    AC_DEFINE(HAVE_ATOMIC_SUB)
-+    atom_ops="${atom_ops}atomic_sub "
-+  fi
- 
-   AC_ARG_WITH(pstack,
-     [  --with-pstack           Use the pstack backtrace library],
-@@ -902,6 +913,9 @@
+-
+-  AC_ARG_WITH(pstack,
+-    [  --with-pstack           Use the pstack backtrace library],
+-    [ USE_PSTACK=$withval ],
+-    [ USE_PSTACK=no ])
+-  pstack_libs=
+-  pstack_dirs=
+-  if test "$USE_PSTACK" = yes -a "$TARGET_LINUX" = "true" -a "$BASE_MACHINE_TYPE" = "i386"
+-  then
+-    have_libiberty= have_libbfd=
+-    my_save_LIBS="$LIBS"
+-dnl I have no idea if this is a good test - can not find docs for libiberty  
+-    AC_CHECK_LIB([iberty], [fdmatch],
+-      [have_libiberty=yes
+-       AC_CHECK_LIB([bfd], [bfd_openr], [have_libbfd=yes], , [-liberty])])
+-    LIBS="$my_save_LIBS"
+-
+-    if test x"$have_libiberty" = xyes -a x"$have_libbfd" = xyes
+-    then
+-      pstack_dirs='$(top_srcdir)'/pstack
+-      pstack_libs="../pstack/libpstack.a -lbfd -liberty"
+-      # We must link staticly when using pstack
+-      with_mysqld_ldflags="-all-static"
+-      AC_SUBST([pstack_dirs])
+-      AC_SUBST([pstack_libs])
+-      AC_DEFINE([USE_PSTACK], [1], [the pstack backtrace library])
+-dnl This check isn't needed, but might be nice to give some feedback....
+-dnl    AC_CHECK_HEADER(libiberty.h,
+-dnl      have_libiberty_h=yes,
+-dnl      have_libiberty_h=no)
+-    else
+-      USE_PSTACK="no"
+-    fi
+-  else
+-    USE_PSTACK="no"
+-  fi
+-fi
+ AM_CONDITIONAL(COMPILE_PSTACK, test "$USE_PSTACK" = "yes")
+ AC_MSG_CHECKING([if we should use pstack])
+ AC_MSG_RESULT([$USE_PSTACK])
+@@ -880,37 +773,7 @@
+ NON_THREADED_LIBS="$LIBS"
  
  AC_MSG_CHECKING([for int8])
- case $SYSTEM_TYPE in
-+  *linux*)
-+    AC_MSG_RESULT([no])
-+    ;;
-   *netware)
-     AC_MSG_RESULT([no])
-     ;;
-@@ -1600,7 +1614,9 @@
- then
-   DEBUG_CFLAGS="-g"
-   DEBUG_OPTIMIZE_CC="-O"
-+  if test -z "$OPTIMIZE_CFLAGS" ; then
-   OPTIMIZE_CFLAGS="$MAX_C_OPTIMIZE"
-+  fi
- else
-   DEBUG_CFLAGS="-g"
-   DEBUG_OPTIMIZE_CC=""
-@@ -1610,7 +1626,9 @@
- then
-   DEBUG_CXXFLAGS="-g"
-   DEBUG_OPTIMIZE_CXX="-O"
-+  if test -z "$OPTIMIZE_CXXFLAGS" ; then
-   OPTIMIZE_CXXFLAGS="$MAX_CXX_OPTIMIZE"
-+  fi
- else
-   DEBUG_CXXFLAGS="-g"
-   DEBUG_OPTIMIZE_CXX=""
-diff -ruN mysql-4.0.24/configure.old mysql-4.0.24/configure
---- mysql-4.0.24/configure.old	2005-04-18 08:33:00.000000000 +0200
-+++ mysql-4.0.24/configure	2005-04-18 08:34:28.000000000 +0200
-@@ -25013,7 +25013,7 @@
-   # Look for LinuxThreads.
-   echo "$as_me:$LINENO: checking \"LinuxThreads\"" >&5
- echo $ECHO_N "checking \"LinuxThreads\"... $ECHO_C" >&6
--    res=`grep Linuxthreads /usr/include/pthread.h 2>/dev/null | wc -l`
-+    res=1
-     if test "$res" -gt 0
-     then
-       echo "$as_me:$LINENO: result: \"Found\"" >&5
+-case $SYSTEM_TYPE in
+-  *netware)
+-    AC_MSG_RESULT([no])
+-    ;;
+-  *)
+-AC_TRY_RUN([
+-#ifdef HAVE_STDLIB_H
+-#include <stdlib.h>
+-#endif
+-
+-#ifdef HAVE_STDDEF_H
+-#include <stddef.h>
+-#endif
+-
+-#ifdef HAVE_SYS_TYPES_H
+-#include <sys/types.h>
+-#endif
+-
+-int main()
+-{
+-  int8 i;
+-  return 0;
+-}
+-],
+-[AC_DEFINE([HAVE_INT_8_16_32], [1],
+-           [whether int8, int16 and int32 types exist])
+-AC_MSG_RESULT([yes])],
+-[AC_MSG_RESULT([no])]
+-)
+-    ;;
+-esac
++AC_MSG_RESULT([no])
+ 
+ #
+ # Some system specific hacks
