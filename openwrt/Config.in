@@ -95,6 +95,7 @@ config BR2_JLEVEL
 	int
 	default "1"
 
+source "target/Config.in"
 source "toolchain/Config.in"
 source "package/Config.in"
-source "target/Config.in"
+source "target/linux/Config.in"
