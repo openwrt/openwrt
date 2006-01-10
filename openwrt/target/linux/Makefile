@@ -10,23 +10,23 @@ define kernel_template
 
 $(1)/$(2)-clean:
 	@$(TRACE) target/linux/linux-$(1)/clean
-	$(MAKE) -C linux-$(1) KERNEL="$(1)" BOARD="$(2)" clean
+	$(MAKE) -C $(2)-$(1) BOARD="$(2)" clean
 
 $(1)/$(2)-prepare:
 	@$(TRACE) target/linux/linux-$(1)/prepare
-	$(MAKE) -C linux-$(1) KERNEL="$(1)" BOARD="$(2)" prepare
+	$(MAKE) -C $(2)-$(1) BOARD="$(2)" prepare
 
 $(1)/$(2)-compile:
 	@$(TRACE) target/linux/linux-$(1)/compile
-	$(MAKE) -C linux-$(1) KERNEL="$(1)" BOARD="$(2)" compile
+	$(MAKE) -C $(2)-$(1) BOARD="$(2)" compile
 
 $(1)/$(2)-rebuild:
 	@$(TRACE) target/linux/linux-$(1)/rebuild
-	$(MAKE) -C linux-$(1) KERNEL="$(1)" BOARD="$(2)" rebuild
+	$(MAKE) -C $(2)-$(1) BOARD="$(2)" rebuild
 
 $(1)/$(2)-install:
 	@$(TRACE) target/linux/linux-$(1)/install
-	$(MAKE) -C linux-$(1) KERNEL="$(1)" BOARD="$(2)" install
+	$(MAKE) -C $(2)-$(1) BOARD="$(2)" install
 
 $(1)/$(2)-image: $(1)/$(2)-install
 	@$(TRACE) target/linux/image/install

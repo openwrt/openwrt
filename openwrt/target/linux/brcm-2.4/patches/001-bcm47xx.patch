@@ -14673,39 +14673,6 @@ diff -Nur linux-2.4.32/drivers/net/Config.in linux-2.4.32-brcm/drivers/net/Confi
  source drivers/net/arcnet/Config.in
  
  tristate 'Dummy net driver support' CONFIG_DUMMY
-@@ -173,6 +175,7 @@
- 
-       dep_tristate '    Apricot Xen-II on board Ethernet' CONFIG_APRICOT $CONFIG_ISA
-       dep_tristate '    Broadcom 4400 ethernet support (EXPERIMENTAL)' CONFIG_B44 $CONFIG_PCI $CONFIG_EXPERIMENTAL
-+      dep_tristate '    Proprietary Broadcom 10/100 Ethernet support' CONFIG_ET $CONFIG_PCI
-       dep_tristate '    CS89x0 support' CONFIG_CS89x0 $CONFIG_ISA
-       dep_tristate '    DECchip Tulip (dc21x4x) PCI support' CONFIG_TULIP $CONFIG_PCI
-       if [ "$CONFIG_TULIP" = "y" -o "$CONFIG_TULIP" = "m" ]; then
-diff -Nur linux-2.4.32/drivers/net/et/Makefile linux-2.4.32-brcm/drivers/net/et/Makefile
---- linux-2.4.32/drivers/net/et/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.4.32-brcm/drivers/net/et/Makefile	2005-12-16 23:39:11.284858000 +0100
-@@ -0,0 +1,21 @@
-+#
-+# Makefile for the Broadcom et driver
-+#
-+# Copyright 2004, Broadcom Corporation
-+# All Rights Reserved.
-+# 
-+# THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
-+# KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
-+# SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
-+# FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
-+#
-+# $Id: Makefile,v 1.1 2005/03/16 13:50:00 wbx Exp $
-+#
-+
-+EXTRA_CFLAGS := -I$(TOPDIR)/arch/mips/bcm947xx/include -DBCM47XX_CHOPS -DDMA -DBCMDRIVER
-+
-+O_TARGET	:= et.o
-+obj-y		:= et_linux.o etc.o etc47xx.o etc_robo.o etc_adm.o
-+obj-m		:= $(O_TARGET)
-+
-+include $(TOPDIR)/Rules.make
 diff -Nur linux-2.4.32/drivers/net/hnd/bcmsrom.c linux-2.4.32-brcm/drivers/net/hnd/bcmsrom.c
 --- linux-2.4.32/drivers/net/hnd/bcmsrom.c	1970-01-01 01:00:00.000000000 +0100
 +++ linux-2.4.32-brcm/drivers/net/hnd/bcmsrom.c	2005-12-16 23:39:11.284858000 +0100
@@ -21875,25 +21842,21 @@ diff -Nur linux-2.4.32/drivers/net/Makefile linux-2.4.32-brcm/drivers/net/Makefi
  obj-y           :=
  obj-m           :=
  obj-n           :=
-@@ -39,6 +41,9 @@
+@@ -39,6 +41,8 @@
    obj-$(CONFIG_ISDN) += slhc.o
  endif
  
 +subdir-$(CONFIG_HND) += hnd
-+subdir-$(CONFIG_ET) += et
 +subdir-$(CONFIG_WL) += wl
  subdir-$(CONFIG_NET_PCMCIA) += pcmcia
  subdir-$(CONFIG_NET_WIRELESS) += wireless
  subdir-$(CONFIG_TULIP) += tulip
-@@ -69,6 +74,16 @@
+@@ -69,6 +74,13 @@
  obj-$(CONFIG_MYRI_SBUS) += myri_sbus.o
  obj-$(CONFIG_SUNGEM) += sungem.o
  
 +ifeq ($(CONFIG_HND),y)
 +  obj-y += hnd/hnd.o
-+endif
-+ifeq ($(CONFIG_ET),y)
-+  obj-y += et/et.o
 +endif
 +ifeq ($(CONFIG_WL),y)
 +  obj-y += wl/wl.o
@@ -21902,14 +21865,6 @@ diff -Nur linux-2.4.32/drivers/net/Makefile linux-2.4.32-brcm/drivers/net/Makefi
  obj-$(CONFIG_MACE) += mace.o
  obj-$(CONFIG_BMAC) += bmac.o
  obj-$(CONFIG_GMAC) += gmac.o
-@@ -265,6 +280,7 @@
- endif
- endif
- 
-+
- include $(TOPDIR)/Rules.make
- 
- clean:
 diff -Nur linux-2.4.32/drivers/net/wireless/Config.in linux-2.4.32-brcm/drivers/net/wireless/Config.in
 --- linux-2.4.32/drivers/net/wireless/Config.in	2004-11-17 12:54:21.000000000 +0100
 +++ linux-2.4.32-brcm/drivers/net/wireless/Config.in	2005-12-16 23:39:11.364863000 +0100

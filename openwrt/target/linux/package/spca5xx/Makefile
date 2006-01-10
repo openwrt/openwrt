@@ -15,20 +15,15 @@ PKG_CAT:=zcat
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
-ifeq ($(KERNEL_DIR),)
-KERNEL_DIR:=$(LINUX_DIR)
-endif
-KERNEL_VERSION=$(shell echo "$(LINUX_VERSION)" | cut -d. -f1,2)
-
 include $(TOPDIR)/package/rules.mk
 
-$(eval $(call PKG_template,KMOD_SPCA5XX,kmod-spca5xx,$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE),$(ARCH),kernel ($(LINUX_VERSION)-$(BOARD)-$(KERNEL_RELEASE))))
+$(eval $(call PKG_template,KMOD_SPCA5XX,kmod-spca5xx,$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE),$(ARCH),kernel ($(LINUX_VERSION)-$(BOARD)-$(LINUX_RELEASE))))
 
 $(PKG_BUILD_DIR)/.configured:
 	touch $@
 
 $(PKG_BUILD_DIR)/.built: 
-	$(MAKE) -C $(KERNEL_DIR) \
+	$(MAKE) -C $(LINUX_DIR) \
 		ARCH="$(LINUX_KARCH)" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
 		KERNELVERSION="$(KERNEL_VERSION)" \

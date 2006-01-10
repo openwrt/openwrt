@@ -19,12 +19,7 @@ FIRMWARE_BLOB_MD5SUM := e08665c5c5b66beb9c3b2dd54aa80cb3
 
 include $(TOPDIR)/package/rules.mk
 
-$(eval $(call PKG_template,KMOD_BCM43XX_DSCAPE,kmod-$(PKG_NAME),$(LINUX_VERSION)-$(BOARD)+0.$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH),kernel ($(LINUX_VERSION)-$(BOARD)-$(KERNEL_RELEASE))))
-
-ifeq ($(KERNEL_DIR),)
-KERNEL_DIR:=$(LINUX_DIR)
-endif
-KERNEL_VERSION=$(shell echo "$(LINUX_VERSION)" | cut -d. -f1,2)
+$(eval $(call PKG_template,KMOD_BCM43XX_DSCAPE,kmod-$(PKG_NAME),$(LINUX_VERSION)-$(BOARD)+0.$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH),kernel ($(LINUX_VERSION)-$(BOARD)-$(LINUX_RELEASE))))
 
 $(PKG_BUILD_DIR)/.configured:
 	touch $@
@@ -38,12 +33,12 @@ $(PKG_BUILD_DIR)/fwcutter/.built:
 	touch $@
 
 $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/fwcutter/.built
-	$(MAKE) -C "$(KERNEL_DIR)" \
+	$(MAKE) -C "$(LINUX_DIR)" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
 		ARCH="$(LINUX_KARCH)" \
 		PATH="$(TARGET_PATH)" \
 		SUBDIRS="$(PKG_BUILD_DIR)" \
-		LINUXINCLUDE="-I$(STAGING_DIR)/usr/include/ieee80211-dscape -I$(KERNEL_DIR)/include -DBCM47XX=1" \
+		LINUXINCLUDE="-I$(STAGING_DIR)/usr/include/ieee80211-dscape -I$(LINUX_DIR)/include -DBCM47XX=1" \
 		modules
 	touch $@
 	

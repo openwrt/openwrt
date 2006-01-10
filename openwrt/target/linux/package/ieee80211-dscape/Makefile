@@ -9,12 +9,7 @@ PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
 
 include $(TOPDIR)/package/rules.mk
 
-$(eval $(call PKG_template,KMOD_IEEE80211_DSCAPE,$(PKG_NAME),$(LINUX_VERSION)-$(BOARD)-$(PKG_RELEASE),$(ARCH),kernel ($(LINUX_VERSION)-$(BOARD)-$(KERNEL_RELEASE))))
-
-ifeq ($(KERNEL_DIR),)
-KERNEL_DIR:=$(LINUX_DIR)
-endif
-KERNEL_VERSION=$(shell echo "$(LINUX_VERSION)" | cut -d. -f1,2)
+$(eval $(call PKG_template,KMOD_IEEE80211_DSCAPE,$(PKG_NAME),$(LINUX_VERSION)-$(BOARD)-$(PKG_RELEASE),$(ARCH),kernel ($(LINUX_VERSION)-$(BOARD)-$(LINUX_RELEASE))))
 
 $(PKG_BUILD_DIR)/.prepared:
 	mkdir -p $(PKG_BUILD_DIR)
@@ -25,12 +20,12 @@ $(PKG_BUILD_DIR)/.configured:
 	touch $@
 
 $(PKG_BUILD_DIR)/.built:
-	$(MAKE) -C "$(KERNEL_DIR)" \
+	$(MAKE) -C "$(LINUX_DIR)" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
 		ARCH="$(LINUX_KARCH)" \
 		PATH="$(TARGET_PATH)" \
 		SUBDIRS="$(PKG_BUILD_DIR)" \
-		LINUXINCLUDE="-I$(shell pwd)/src/include -I$(KERNEL_DIR)/include" \
+		LINUXINCLUDE="-I$(shell pwd)/src/include -I$(LINUX_DIR)/include" \
 		modules
 	touch $@
 	
