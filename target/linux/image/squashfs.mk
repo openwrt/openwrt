@@ -1,9 +1,8 @@
-ifeq ($(BR2_LINUX_2_4_AR531X),)
-        endian := be
-else
-        endian := le
-endif
+endian := le
 
+ifeq ($(ARCH),mips)
+	endian := be
+endif
 
 squashfs-prepare:
 	$(MAKE) -C squashfs prepare $(MAKE_TRACE)
