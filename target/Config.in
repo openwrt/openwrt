@@ -3,7 +3,6 @@ choice
 	
 config BR2_LINUX_2_4_AR531X
 	bool "Atheros AR531x [2.4]"
-	default n
 	depends BR2_mips
 	help
 	  Build firmware images for Atheros AR531x based boards
@@ -11,7 +10,6 @@ config BR2_LINUX_2_4_AR531X
 
 config BR2_LINUX_2_4_BRCM
 	bool "Broadcom BCM47xx/53xx [2.4]"
-	default y
 	depends BR2_mipsel
 	select BR2_LINUX_PCMCIA_SUPPORT
 	help
@@ -24,7 +22,6 @@ config BR2_LINUX_2_4_BRCM
 
 config BR2_LINUX_2_6_BRCM
 	bool "Broadcom BCM47xx/53xx [2.6]"
-	default n
 	depends BR2_mipsel
 	select BR2_LINUX_PCMCIA_SUPPORT
 	help
@@ -33,14 +30,12 @@ config BR2_LINUX_2_6_BRCM
 
 config BR2_LINUX_2_4_AR7
 	bool "TI AR7 [2.4]"
-	default n
 	depends BR2_mipsel
 	help
 	  Build firmware images for TI AR7 based routers (w.g. Linksys WAG54G v2)
 
 config BR2_LINUX_2_4_X86
 	bool "x86 [2.4]"
-	default n
 	depends BR2_i386
 	select BR2_LINUX_PCMCIA_SUPPORT
 	help
@@ -49,7 +44,6 @@ config BR2_LINUX_2_4_X86
 
 config BR2_LINUX_2_6_X86
 	bool "x86 [2.6]"
-	default n
 	depends BR2_i386
 	select BR2_LINUX_PCMCIA_SUPPORT
 	help
