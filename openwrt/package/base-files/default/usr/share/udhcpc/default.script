@@ -26,12 +26,14 @@ case "$1" in
 		broadcast ${broadcast:-+}
 
 		if [ -n "$router" ] ; then
-			echo "deleting routers"
-			while route del default gw 0.0.0.0 dev $interface ; do :; done
-					
-			for i in $router ; do
-				route add default gw $i dev $interface
-			done
+
+			if [ "$router" != "$(route -n | grep '^0.0.0.0' | grep vlan1 | awk '{ print $2 }')" ] ; then
+				echo "deleting routers"
+				while route del default gw 0.0.0.0 dev $interface ; do :; done				
+				for i in $router ; do
+					route add default gw $i dev $interface
+				done
+			fi
 		fi
 
 		echo -n > $RESOLV_CONF
