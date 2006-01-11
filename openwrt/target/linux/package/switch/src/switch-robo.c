@@ -52,7 +52,6 @@
 
 static int use_et = 0;
 static int is_5350 = 0;
-static int max_vlans, max_ports;
 static struct ifreq ifr;
 static struct net_device *dev;
 
@@ -256,30 +255,7 @@ static int robo_probe(char *devname)
 	}
 	
 	is_5350 = robo_vlan5350();
-	max_ports = 6;
 	
-	for (i = 0; i <= (is_5350 ? VLAN_ID_MAX5350 : VLAN_ID_MAX); i++) {
-		/* issue read */
-		__u16 val16 = (i) /* vlan */ | (0 << 12) /* read */ | (1 << 13) /* enable */;
-		
-		if (is_5350) {
-			u32 val32;
-			robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_TABLE_ACCESS_5350, val16);
-			/* actual read */
-			val32 = robo_read32(ROBO_VLAN_PAGE, ROBO_VLAN_READ);
-			if ((val32 & (1 << 20)) /* valid */) {
-				max_vlans = i + 1;
-			}
-		} else {
-			robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_TABLE_ACCESS, val16);
-			/* actual read */
-			val16 = robo_read16(ROBO_VLAN_PAGE, ROBO_VLAN_READ);
-			if ((val16 & (1 << 14)) /* valid */) {
-				max_vlans = i + 1;
-			}
-		}
-	}
-
 	printk("found!\n");
 	return 0;
 }
@@ -376,9 +352,9 @@ static int __init robo_init()
 		switch_driver driver = {
 			name: DRIVER_NAME,
 			interface: device,
-			cpuport: max_ports - 1,
-			ports: max_ports,
-			vlans: max_vlans,
+			cpuport: 5,
+			ports: 6,
+			vlans: 16,
 			driver_handlers: NULL,
 			port_handlers: NULL,
 			vlan_handlers: vlan,
