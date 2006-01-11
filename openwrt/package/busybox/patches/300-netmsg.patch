@@ -1,0 +1,102 @@
+diff -urN busybox.old/include/applets.h busybox.dev/include/applets.h
+--- busybox.old/include/applets.h	2006-01-11 01:32:47.302791000 +0100
++++ busybox.dev/include/applets.h	2006-01-11 01:33:18.744756250 +0100
+@@ -475,6 +475,9 @@
+ #ifdef CONFIG_NC
+ 	APPLET(nc, nc_main, _BB_DIR_USR_BIN, _BB_SUID_NEVER)
+ #endif
++#ifdef CONFIG_NETMSG
++	APPLET_NOUSAGE("netmsg", netmsg_main, _BB_DIR_BIN, _BB_SUID_ALWAYS)
++#endif
+ #ifdef CONFIG_NETSTAT
+ 	APPLET(netstat, netstat_main, _BB_DIR_BIN, _BB_SUID_NEVER)
+ #endif
+diff -urN busybox.old/networking/Config.in busybox.dev/networking/Config.in
+--- busybox.old/networking/Config.in	2005-11-01 00:55:15.000000000 +0100
++++ busybox.dev/networking/Config.in	2006-01-11 01:33:18.744756250 +0100
+@@ -435,6 +435,12 @@
+ 	help
+ 	  A simple Unix utility which reads and writes data across network
+ 	  connections.
++	  
++config CONFIG_NETMSG
++	bool "netmsg"
++	default n
++	help
++	  simple program for sending udp broadcast messages
+ 
+ config CONFIG_NC_GAPING_SECURITY_HOLE
+ 	bool "gaping security hole"
+diff -urN busybox.old/networking/Makefile.in busybox.dev/networking/Makefile.in
+--- busybox.old/networking/Makefile.in	2005-11-01 00:55:15.000000000 +0100
++++ busybox.dev/networking/Makefile.in	2006-01-11 01:34:02.939518250 +0100
+@@ -28,6 +28,7 @@
+ NETWORKING-$(CONFIG_IPTUNNEL)     += iptunnel.o
+ NETWORKING-$(CONFIG_NAMEIF)       += nameif.o
+ NETWORKING-$(CONFIG_NC)           += nc.o
++NETWORKING-$(CONFIG_NETMSG)       += netmsg.o
+ NETWORKING-$(CONFIG_NETSTAT)      += netstat.o
+ NETWORKING-$(CONFIG_NSLOOKUP)     += nslookup.o
+ NETWORKING-$(CONFIG_PING)         += ping.o
+diff -urN busybox.old/networking/netmsg.c busybox.dev/networking/netmsg.c
+--- busybox.old/networking/netmsg.c	1970-01-01 01:00:00.000000000 +0100
++++ busybox.dev/networking/netmsg.c	2006-01-11 01:33:18.748756500 +0100
+@@ -0,0 +1,58 @@
++#include <sys/types.h>
++#include <sys/socket.h>
++#include <netinet/in.h>
++#include <netdb.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include "busybox.h"
++
++
++#ifndef CONFIG_NETMSG
++int main(int argc, char **argv)
++#else
++int netmsg_main(int argc, char **argv)
++#endif
++{
++	int s, i;
++	struct sockaddr_in addr;
++	int optval = 1;
++	unsigned char buf[1001];
++
++	if (argc != 2) {
++		fprintf(stderr, "usage: %s \"message\"\n", argv[0]);
++		exit(1);
++	}
++
++	if ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
++		perror("Opening socket");
++		exit(1);
++	}
++
++	memset(&addr, 0, sizeof(addr));
++	addr.sin_family = AF_INET;
++	addr.sin_addr.s_addr = htonl(0xffffffff);
++	addr.sin_port = htons(0x1337);
++
++	memset(buf, 0, 1001);
++	buf[0] = 0xde;
++	buf[1] = 0xad;
++
++	strncpy(buf + 2, argv[1], 998);
++
++	if (setsockopt (s, SOL_SOCKET, SO_BROADCAST, (caddr_t) &optval, sizeof (optval)) < 0) {
++		perror("setsockopt()");
++		goto fail;
++	}
++
++	if (sendto(s, buf, 1001, 0, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
++		perror("sendto()");
++		goto fail;
++	}
++
++	return 0;
++	
++fail:
++	close(s);
++	exit(1);
++}
