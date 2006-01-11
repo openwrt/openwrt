@@ -305,7 +305,7 @@ miax-compile: bluez-libs-compile
 miredo-compile: uclibc++-compile
 mt-daapd-compile: howl-compile libgdbm-compile libid3tag-compile
 mtr-compile: ncurses-compile
-mysql-compile: ncurses-compile zlib-compile
+mysql-compile: ncurses-compile zlib-compile readline-compile
 nano-compile: ncurses-compile
 net-snmp-compile: libelf-compile
 nfs-server-compile: portmap-compile
