@@ -1,6 +1,9 @@
 #!/bin/sh
 setup_eth()
 {
+    	for part in $(nvram get unused_ifnames); do
+		[ "$part" = "$INTERFACE" ] && return 0
+	done
 	[ -f /proc/net/wl0 ] && {
 		lsmod | grep wlcompat >&- || insmod wlcompat
 	}
