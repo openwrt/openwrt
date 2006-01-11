@@ -84,7 +84,7 @@ $(KERNEL_IPKG):
 	$(IPKG_BUILD) $(KERNEL_IDIR) $(LINUX_BUILD_DIR) $(MAKE_TRACE)
 
 source: $(DL_DIR)/$(LINUX_SOURCE)
-prepare: $(LINUX_DIR)/.configured
+prepare: $(PACKAGE_DIR) $(LINUX_DIR)/.configured
 compile:
 	$(MAKE) $(STAMP_DIR)/.linux-compile $(MAKE_TRACE)
 
