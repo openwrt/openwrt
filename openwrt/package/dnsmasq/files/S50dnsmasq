@@ -25,6 +25,6 @@ udhcpc -n -q -R -s /bin/true -i $ifname >&- || {
   wanproto=$(nvram get wan_proto)
   [ -z "$wanproto" -o "$wanproto" = "none" ] || wanif=$(nvram get wan_ifname)
   
-  args="-l /tmp/dhcp.leases -K -F $(int2ip $start),$(int2ip $end),$(int2ip $netmask),12h ${wanif:+-I ${wanif} }"
+  args="-K -F $(int2ip $start),$(int2ip $end),$(int2ip $netmask),12h ${wanif:+-I ${wanif} }"
 }
 dnsmasq ${args}
