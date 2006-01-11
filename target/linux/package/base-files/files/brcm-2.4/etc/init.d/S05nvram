@@ -6,6 +6,9 @@
 . /etc/network.overrides
 alias debug=${DEBUG:-:}
 
+# WGT634u
+[ "$(/usr/bin/head -c4 /dev/mtdblock/1 | /usr/bin/tail -c3)" = "ELF" ] && exit
+
 remap () {
 	for type in lan wifi wan pppoe
 	do
