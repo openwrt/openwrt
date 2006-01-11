@@ -414,6 +414,12 @@ config BUSYBOX_CONFIG_NC
 	help
 	  A simple Unix utility which reads and writes data across network
 	  connections.
+	  
+config BUSYBOX_CONFIG_NETMSG
+	bool "netmsg"
+	default y
+	help
+	  simple program for sending udp broadcast messages
 
 config BUSYBOX_CONFIG_NETSTAT
 	bool "netstat"
