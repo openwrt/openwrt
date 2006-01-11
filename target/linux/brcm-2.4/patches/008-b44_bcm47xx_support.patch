@@ -1,0 +1,89 @@
+--- linux-2.4.32.old/drivers/net/b44.c	2006-01-11 04:41:11.175458750 +0100
++++ linux-2.4.32/drivers/net/b44.c	2006-01-11 20:19:57.900822500 +0100
+@@ -3,6 +3,7 @@
+  * Copyright (C) 2002 David S. Miller (davem@redhat.com)
+  * Copyright (C) 2004 Pekka Pietikainen (pp@ee.oulu.fi)
+  * Copyright (C) 2004 Florian Schirmer (jolt@tuxbox.org)
++ * Copyright (C) 2006 Felix Fietkau (nbd@openwrt.org)
+  *
+  * Distribute under GPL.
+  */
+@@ -36,6 +37,31 @@
+ #include <sbchipc.h>
+ #include <sflash.h>
+ 
++#ifdef CONFIG_BCM947XX
++#define atoi(str) simple_strtoul(((str != NULL) ? str : ""), NULL, 0)
++ 
++static inline void e_aton(char *str, char *dest)
++{
++	int i = 0;
++	u16 *d = (u16 *) dest;
++
++	if (str == NULL) {
++		memset(dest, 0, 6);
++		return;
++	}
++	
++	for (;;) {
++		dest[i++] = (char) simple_strtoul(str, NULL, 16);
++		str += 2;
++		if (!*str++ || i == 6)
++			break;
++	}
++}
++
++static int instance = 0;
++#endif
++
++
+ #define DRV_MODULE_NAME		"b44"
+ #define PFX DRV_MODULE_NAME	": "
+ #define DRV_MODULE_VERSION	"0.93"
+@@ -285,7 +311,7 @@
+ 		== SBTMSLOW_CLOCK);
+ }
+ 
+-static void __b44_cam_read(struct b44 *bp, unsigned char *data, int index)
++static inline void __b44_cam_read(struct b44 *bp, unsigned char *data, int index)
+ {
+ 	u32 val;
+ 
+@@ -1751,10 +1777,18 @@
+ static int __devinit b44_get_invariants(struct b44 *bp)
+ {
+ 	u8 eeprom[128];
++	u8 buf[32];
+ 	int err;
+ 	unsigned long flags;
+ 
+ 	if (bp->pdev->device == PCI_DEVICE_ID_BCM4713) {
++#ifdef CONFIG_BCM947XX
++		sprintf(buf, "et%dmacaddr", instance - 1);
++		e_aton(nvram_get(buf), bp->dev->dev_addr);
++
++		sprintf(buf, "et%dphyaddr", instance - 1);
++		bp->phy_addr = B44_PHY_ADDR_NO_PHY;
++#else
+ 		/*
+ 		 * BCM47xx boards don't have a EEPROM. The MAC is stored in
+ 		 * a NVRAM area somewhere in the flash memory. As we don't
+@@ -1771,6 +1805,7 @@
+ 		 * chip with multiple PHYs connected to the PHY port.
+ 		 */
+ 		bp->phy_addr = B44_PHY_ADDR_NO_PHY;
++#endif
+ 		bp->dma_offset = 0;
+ 	} else {
+ 		err = b44_read_eeprom(bp, &eeprom[0]);
+@@ -1814,6 +1849,10 @@
+ 	struct b44 *bp;
+ 	int err, i;
+ 
++#ifdef CONFIG_BCM947XX
++	instance++;
++#endif
++
+ 	if (b44_version_printed++ == 0)
+ 		printk(KERN_INFO "%s", version);
+ 
