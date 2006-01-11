@@ -622,10 +622,6 @@ static void setup_bcom_common(int skfd, char *ifname)
 	val = nvram_enabled(wl_var("lazywds"));
 	bcom_ioctl(skfd, ifname, WLC_SET_LAZYWDS, &val, sizeof(val));
 
-	if ((val = atoi(nvram_safe_get(wl_var("rate")))) > 0) {
-		val *= 2;
-		bcom_ioctl(skfd, ifname, WLC_SET_RATE, &val, sizeof(val));
-	}
 	if (v = nvram_get(wl_var("dtim"))) {
 		val = atoi(v);
 		bcom_ioctl(skfd, ifname, WLC_SET_DTIMPRD, &val, sizeof(val));
@@ -784,6 +780,11 @@ static void setup_bcom_new(int skfd, char *ifname)
 	}
 
 	
+	if ((val = atoi(nvram_safe_get(wl_var("rate")))) > 0) {
+		val /= 500000;
+		bcom_set_int(skfd, ifname, "bg_rate", val);
+		bcom_set_int(skfd, ifname, "a_rate", val);
+	}
 	if (v = nvram_get(wl_var("rts"))) {
 		val = atoi(v);
 		bcom_set_int(skfd, ifname, "rtsthresh", val);
@@ -827,6 +828,10 @@ static void setup_bcom_old(int skfd, char *ifname)
 	
 	setup_bcom_common(skfd, ifname);
 
+	if ((val = atoi(nvram_safe_get(wl_var("rate")))) > 0) {
+		val *= 2;
+		bcom_ioctl(skfd, ifname, 13, &val, sizeof(val));
+	}
 	if (v = nvram_get(wl_var("frag"))) {
 		val = atoi(v);
 		bcom_ioctl(skfd, ifname, WLC_SET_FRAG, &val, sizeof(val));
