@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=vsftpd
-PKG_VERSION:=1.2.2
+PKG_VERSION:=2.0.4
 PKG_RELEASE:=1
-PKG_MD5SUM:=5a38e1c69062e7688fbbdae6d1196de2
+PKG_MD5SUM:=c0bf8c7b8e15ab15827172786fc56115
 
 PKG_SOURCE_URL:=ftp://vsftpd.beasts.org/users/cevans/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
