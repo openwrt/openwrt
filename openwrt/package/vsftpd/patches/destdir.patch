@@ -1,17 +1,16 @@
-diff -ruN vsftpd-1.2.2-orig/Makefile vsftpd-1.2.2-3/Makefile
---- vsftpd-1.2.2-orig/Makefile	2003-09-15 13:41:58.000000000 +0200
-+++ vsftpd-1.2.2-3/Makefile	2005-03-09 22:23:12.000000000 +0100
-@@ -16,6 +16,8 @@
-     tcpwrap.o ipv6parse.o access.o \
-     sysutil.o sysdeputil.o
+--- vsftpd-2.0.4-orig/Makefile	2005-06-29 00:24:03.000000000 +0200
++++ vsftpd-2.0.4/Makefile	2006-01-11 18:29:12.000000000 +0100
+@@ -17,6 +17,8 @@
+     ssl.o sysutil.o sysdeputil.o
+ 
  
 +DESTDIR =
 +
  .c.o:
  	$(CC) -c $*.c $(CFLAGS) $(IFLAGS)
  
-@@ -23,21 +25,20 @@
- 	$(CC) -o vsftpd $(OBJS) $(LINK) $(LIBS)
+@@ -24,21 +26,20 @@
+ 	$(CC) -o vsftpd $(OBJS) $(LINK) $(LIBS) $(LDFLAGS)
  
  install:
 -	if [ -x /usr/local/sbin ]; then \
