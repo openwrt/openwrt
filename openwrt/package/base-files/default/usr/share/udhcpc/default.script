@@ -27,7 +27,7 @@ case "$1" in
 
 		if [ -n "$router" ] ; then
 
-			if [ "$router" != "$(route -n | grep '^0.0.0.0' | grep vlan1 | awk '{ print $2 }')" ] ; then
+			if [ "$router" != "$(route -n | grep '^0.0.0.0' | grep $interface | awk '{ print $2 }')" ] ; then
 				echo "deleting routers"
 				while route del default gw 0.0.0.0 dev $interface ; do :; done				
 				for i in $router ; do
