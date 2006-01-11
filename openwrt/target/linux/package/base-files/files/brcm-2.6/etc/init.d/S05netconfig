@@ -57,7 +57,7 @@ END {
 	# WAP54G
 	if ((nvram["boardnum"] == "2") || \
 		(nvram["boardnum"] == "1024")) {
-		c["lan_ifnames"]="eth0 eth1"
+		c["lan_ifnames"]="eth1 eth2"
 		c["wan_ifname"]=""
 	}
 
@@ -78,6 +78,7 @@ END {
 	print "# lan_gateway=\"192.168.1.1\""
 
 	print ""
+	p("unused_ifnames")
 	print ""
 
 	print "#### WAN configuration"
