@@ -13,12 +13,9 @@ config BR2_HAVE_DOT_CONFIG
 	bool
 	default y
 
-config BR2_mipsel
-	bool
-	default y
-
 choice
 	prompt "Target Architecture"
+	default BR2_mipsel
 
 # Supported architectures
 
