@@ -131,30 +131,50 @@ static ssize_t switch_proc_write(struct file *file, const char *buf, size_t coun
 	return ret;
 }
 
-static void add_handlers(switch_driver *driver, switch_config *handlers, struct proc_dir_entry *parent, int nr)
+static int handle_driver_name(void *driver, char *buf, int nr)
+{
+	char *name = ((switch_driver *) driver)->name;
+	return sprintf(buf, "%s\n", name);
+}
+
+static int handle_driver_version(void *driver, char *buf, int nr)
+{
+	char *version = ((switch_driver *) driver)->version;
+	strcpy(buf, version);
+	return sprintf(buf, "%s\n", version);
+}
+
+static void add_handler(switch_driver *driver, switch_config *handler, struct proc_dir_entry *parent, int nr)
 {
 	switch_priv *priv = (switch_priv *) driver->data;
-	switch_proc_handler *tmp;
-	int i, mode;
 	struct proc_dir_entry *p;
+	int mode;
+
+	switch_proc_handler *tmp;
+	tmp = (switch_proc_handler *) kmalloc(sizeof(switch_proc_handler), GFP_KERNEL);
+	INIT_LIST_HEAD(&tmp->list);
+	tmp->parent = parent;
+	tmp->nr = nr;
+	tmp->driver = driver;
+	memcpy(&tmp->handler, handler, sizeof(switch_config));
+	list_add(&tmp->list, &priv->data.list);
+	
+	mode = 0;
+	if (handler->read != NULL) mode |= S_IRUSR;
+	if (handler->write != NULL) mode |= S_IWUSR;
+	
+	if ((p = create_proc_entry(handler->name, mode, parent)) != NULL) {
+		p->data = (void *) tmp;
+		p->proc_fops = &switch_proc_fops;
+	}
+}
+
+static inline void add_handlers(switch_driver *driver, switch_config *handlers, struct proc_dir_entry *parent, int nr)
+{
+	int i;
 	
 	for (i = 0; handlers[i].name != NULL; i++) {
-		tmp = kmalloc(sizeof(switch_proc_handler), GFP_KERNEL);
-		INIT_LIST_HEAD(&tmp->list);
-		tmp->parent = parent;
-		tmp->nr = nr;
-		tmp->driver = driver;
-		memcpy(&tmp->handler, &(handlers[i]), sizeof(switch_config));
-		list_add(&tmp->list, &priv->data.list);
-		
-		mode = 0;
-		if (handlers[i].read != NULL) mode |= S_IRUSR;
-		if (handlers[i].write != NULL) mode |= S_IWUSR;
-		
-		if ((p = create_proc_entry(handlers[i].name, mode, parent)) != NULL) {
-			p->data = (void *) tmp;
-			p->proc_fops = &switch_proc_fops;
-		}
+		add_handler(driver, &(handlers[i]), parent, nr);
 	}
 }		
 
@@ -202,6 +222,12 @@ static void do_unregister(switch_driver *driver)
 	kfree(priv);
 }
 
+switch_config global_driver_handlers[] = {
+	{"driver", handle_driver_name, NULL},
+	{"version", handle_driver_version, NULL},
+	{NULL, NULL, NULL}
+};
+
 static int do_register(switch_driver *driver)
 {
 	switch_priv *priv;
@@ -216,8 +242,10 @@ static int do_register(switch_driver *driver)
 	
 	priv->nr = drv_num++;
 	priv->driver_dir = proc_mkdir(driver->interface, switch_root);
-	if (driver->driver_handlers != NULL)
+	if (driver->driver_handlers != NULL) {
 		add_handlers(driver, driver->driver_handlers, priv->driver_dir, 0);
+		add_handlers(driver, global_driver_handlers, priv->driver_dir, 0);
+	}
 	
 	priv->port_dir = proc_mkdir("port", priv->driver_dir);
 	priv->ports = kmalloc((driver->ports + 1) * sizeof(struct proc_dir_entry *), GFP_KERNEL);

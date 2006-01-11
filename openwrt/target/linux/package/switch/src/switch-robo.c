@@ -34,6 +34,7 @@
 #include "etc53xx.h"
 
 #define DRIVER_NAME		"bcm53xx"
+#define DRIVER_VERSION	"0.01"
 
 #define ROBO_PHY_ADDR	0x1E	/* robo switch phy address */
 
@@ -332,6 +333,75 @@ static int handle_vlan_port_write(void *driver, char *buf, int nr)
 	return 0;
 }
 
+#define set_switch(state) \
+	robo_write16(ROBO_CTRL_PAGE, ROBO_SWITCH_MODE, (robo_read16(ROBO_CTRL_PAGE, ROBO_SWITCH_MODE) & ~2) | (state ? 2 : 0));
+
+static int handle_enable_read(void *driver, char *buf, int nr)
+{
+	return sprintf(buf, "%d\n", (((robo_read16(ROBO_CTRL_PAGE, ROBO_SWITCH_MODE) & 2) == 2) ? 1 : 0));
+}
+
+static int handle_enable_write(void *driver, char *buf, int nr)
+{
+	set_switch(buf[0] == '1');
+
+	return 0;
+}
+
+static int handle_enable_vlan_read(void *driver, char *buf, int nr)
+{
+	return sprintf(buf, "%d\n", (((robo_read16(ROBO_VLAN_PAGE, ROBO_VLAN_CTRL0) & (1 << 7)) == (1 << 7)) ? 1 : 0));
+}
+
+static int handle_enable_vlan_write(void *driver, char *buf, int nr)
+{
+	int disable = ((buf[0] != '1') ? 1 : 0);
+	
+	robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_CTRL0, disable ? 0 :
+		(1 << 7) /* 802.1Q VLAN */ | (3 << 5) /* mac check and hash */);
+	robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_CTRL1, disable ? 0 :
+		(1 << 1) | (1 << 2) | (1 << 3) /* RSV multicast */);
+	robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_CTRL4, disable ? 0 :
+		(1 << 6) /* drop invalid VID frames */);
+	robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_CTRL5, disable ? 0 :
+		(1 << 3) /* drop miss V table frames */);
+
+	return 0;
+}
+
+static int handle_reset(void *driver, char *buf, int nr)
+{
+	switch_driver *d = (switch_driver *) driver;
+	switch_vlan_config *c = switch_parse_vlan(d, buf);
+	int j;
+	__u16 val16;
+	
+	if (c == NULL)
+		return -EINVAL;
+
+	/* disable switching */
+	set_switch(0);
+
+	/* reset vlans */
+	for (j = 0; j <= (is_5350 ? VLAN_ID_MAX5350 : VLAN_ID_MAX); j++) {
+		/* write config now */
+		val16 = (j) /* vlan */ | (1 << 12) /* write */ | (1 << 13) /* enable */;
+		if (is_5350)
+			robo_write32(ROBO_VLAN_PAGE, ROBO_VLAN_WRITE_5350, 0);
+		else
+			robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_WRITE, 0);
+		robo_write16(ROBO_VLAN_PAGE, (is_5350 ? ROBO_VLAN_TABLE_ACCESS_5350 : ROBO_VLAN_TABLE_ACCESS), val16);
+	}
+	
+	/* enable switching */
+	set_switch(1);
+
+	/* enable vlans */
+	handle_enable_vlan_write(driver, "1", 0);
+
+	return 0;
+}
+
 static int __init robo_init()
 {
 	char *device = "ethX";
@@ -345,17 +415,24 @@ static int __init robo_init()
 	if (notfound)
 		return -ENODEV;
 	else {
+		switch_config main[] = {
+			{"enable", handle_enable_read, handle_enable_write},
+			{"enable_vlan", handle_enable_vlan_read, handle_enable_vlan_write},
+			{"reset", NULL, handle_reset},
+			{NULL, NULL, NULL}
+		};
 		switch_config vlan[] = {
 			{"ports", handle_vlan_port_read, handle_vlan_port_write},
 			{NULL, NULL, NULL}
 		};
 		switch_driver driver = {
 			name: DRIVER_NAME,
+			version: DRIVER_VERSION,
 			interface: device,
 			cpuport: 5,
 			ports: 6,
 			vlans: 16,
-			driver_handlers: NULL,
+			driver_handlers: main,
 			port_handlers: NULL,
 			vlan_handlers: vlan,
 		};

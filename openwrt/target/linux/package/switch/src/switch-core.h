@@ -27,6 +27,7 @@ typedef struct {
 typedef struct {
 	struct list_head list;
 	char *name;
+	char *version;
 	char *interface;
 	int cpuport;
 	int ports;
