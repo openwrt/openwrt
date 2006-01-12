@@ -59,6 +59,7 @@ END {
 		(nvram["boardnum"] == "1024")) {
 		c["lan_ifnames"]="eth1 eth2"
 		c["wan_ifname"]=""
+		c["unused_ifnames"]="eth0"
 	}
 
 	print "#### VLAN configuration "
