@@ -22,6 +22,7 @@ setup_eth()
 			vports="$(nvram get vlan${vlan}ports)"
 			[ \! -z "$vports" -a -d "/proc/switch/$INTERFACE" ] && \
 				echo "$vports" > "/proc/switch/$INTERFACE/vlan/$vlan/ports"
+				echo "1" > "/proc/switch/$INTERFACE/enable_vlan"
 		}
 	done
 }
