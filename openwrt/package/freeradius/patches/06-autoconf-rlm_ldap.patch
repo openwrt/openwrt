@@ -1,0 +1,576 @@
+diff -ruN freeradius-1.0.5-old/src/modules/rlm_ldap/configure.in freeradius-1.0.5-new/src/modules/rlm_ldap/configure.in
+--- freeradius-1.0.5-old/src/modules/rlm_ldap/configure.in	2005-08-22 16:50:46.000000000 +0200
++++ freeradius-1.0.5-new/src/modules/rlm_ldap/configure.in	2005-12-07 08:20:15.000000000 +0100
+@@ -90,6 +90,10 @@
+ 	dnl Static linking will probably not work, but nobody ever
+ 	dnl complained about it.
+ 	smart_try_dir=$rlm_ldap_lib_dir
++
++	AC_SMART_CHECK_LIB(sasl, sasl_encode)
++	AC_SMART_CHECK_LIB(lber, ber_init)
++
+ 	if test "x$rlm_ldap_with_threads" = "xyes"; then
+ 	    AC_SMART_CHECK_LIB(ldap_r, ldap_init)
+ 	    if test "x$ac_cv_lib_ldap_r_ldap_init" != "xyes"; then
+diff -ruN freeradius-1.0.5-old/src/modules/rlm_ldap/configure freeradius-1.0.5-new/src/modules/rlm_ldap/configure
+--- freeradius-1.0.5-old/src/modules/rlm_ldap/configure	2005-08-22 16:53:52.000000000 +0200
++++ freeradius-1.0.5-new/src/modules/rlm_ldap/configure	2005-12-07 08:20:41.000000000 +0100
+@@ -929,13 +929,311 @@
+ 	fi
+ 
+ 				smart_try_dir=$rlm_ldap_lib_dir
++
++	
++
++sm_lib_safe=`echo "sasl" | sed 'y%./+-%__p_%'`
++sm_func_safe=`echo "sasl_encode" | sed 'y%./+-%__p_%'`
++echo $ac_n "checking for sasl_encode in -lsasl""... $ac_c" 1>&6
++echo "configure:939: checking for sasl_encode in -lsasl" >&5
++
++old_LIBS="$LIBS"
++smart_lib=
++smart_lib_dir=
++
++if test "x$smart_try_dir" != "x"; then
++  for try in $smart_try_dir; do
++    LIBS="-L$try -lsasl $old_LIBS"
++    cat > conftest.$ac_ext <<EOF
++#line 949 "configure"
++#include "confdefs.h"
++extern char sasl_encode();
++int main() {
++ sasl_encode()
++; return 0; }
++EOF
++if { (eval echo configure:956: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
++  rm -rf conftest*
++  smart_lib="-L$try -lsasl"
++else
++  echo "configure: failed program was:" >&5
++  cat conftest.$ac_ext >&5
++fi
++rm -f conftest*
++    if test "x$smart_lib" != "x"; then
++      break;
++    fi
++    LIBS="$old_LIBS"
++  done
++fi
++
++if test "x$smart_lib" = "x"; then
++  LIBS="-lsasl $old_LIBS"
++  cat > conftest.$ac_ext <<EOF
++#line 974 "configure"
++#include "confdefs.h"
++extern char sasl_encode();
++int main() {
++ sasl_encode()
++; return 0; }
++EOF
++if { (eval echo configure:981: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
++  rm -rf conftest*
++  smart_lib="-lsasl"
++else
++  echo "configure: failed program was:" >&5
++  cat conftest.$ac_ext >&5
++fi
++rm -f conftest*
++  LIBS="$old_LIBS"
++fi
++
++if test "x$smart_lib" = "x"; then
++  
++
++if test "x$LOCATE" != "x"; then
++        DIRS=
++  file=libsasl${libltdl_cv_shlibext}
++
++  for x in `${LOCATE} $file 2>/dev/null`; do
++                                        base=`echo $x | sed "s%/${file}%%"`
++    if test "x$x" = "x$base"; then
++      continue;
++    fi
++
++    dir=`${DIRNAME} $x 2>/dev/null`
++                exclude=`echo ${dir} | ${GREP} /home`
++    if test "x$exclude" != "x"; then
++      continue
++    fi
++
++                    already=`echo \$smart_lib_dir ${DIRS} | ${GREP} ${dir}`
++    if test "x$already" = "x"; then
++      DIRS="$DIRS $dir"
++    fi
++  done
++fi
++
++eval "smart_lib_dir=\"\$smart_lib_dir $DIRS\""
++
++  
++
++if test "x$LOCATE" != "x"; then
++        DIRS=
++  file=libsasl.a
++
++  for x in `${LOCATE} $file 2>/dev/null`; do
++                                        base=`echo $x | sed "s%/${file}%%"`
++    if test "x$x" = "x$base"; then
++      continue;
++    fi
++
++    dir=`${DIRNAME} $x 2>/dev/null`
++                exclude=`echo ${dir} | ${GREP} /home`
++    if test "x$exclude" != "x"; then
++      continue
++    fi
++
++                    already=`echo \$smart_lib_dir ${DIRS} | ${GREP} ${dir}`
++    if test "x$already" = "x"; then
++      DIRS="$DIRS $dir"
++    fi
++  done
++fi
++
++eval "smart_lib_dir=\"\$smart_lib_dir $DIRS\""
++
++
++  for try in $smart_lib_dir /usr/local/lib /opt/lib; do
++    LIBS="-L$try -lsasl $old_LIBS"
++    cat > conftest.$ac_ext <<EOF
++#line 1051 "configure"
++#include "confdefs.h"
++extern char sasl_encode();
++int main() {
++ sasl_encode()
++; return 0; }
++EOF
++if { (eval echo configure:1058: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
++  rm -rf conftest*
++  smart_lib="-L$try -lsasl"
++else
++  echo "configure: failed program was:" >&5
++  cat conftest.$ac_ext >&5
++fi
++rm -f conftest*
++    if test "x$smart_lib" != "x"; then
++      break;
++    fi
++    LIBS="$old_LIBS"
++  done
++fi
++
++if test "x$smart_lib" != "x"; then
++  echo "$ac_t""yes" 1>&6
++  eval "ac_cv_lib_${sm_lib_safe}_${sm_func_safe}=yes"
++  LIBS="$smart_lib $old_LIBS"
++  SMART_LIBS="$smart_lib $SMART_LIBS"
++else
++  echo "$ac_t""no" 1>&6
++fi
++
++	
++
++sm_lib_safe=`echo "lber" | sed 'y%./+-%__p_%'`
++sm_func_safe=`echo "ber_init" | sed 'y%./+-%__p_%'`
++echo $ac_n "checking for ber_init in -llber""... $ac_c" 1>&6
++echo "configure:1087: checking for ber_init in -llber" >&5
++
++old_LIBS="$LIBS"
++smart_lib=
++smart_lib_dir=
++
++if test "x$smart_try_dir" != "x"; then
++  for try in $smart_try_dir; do
++    LIBS="-L$try -llber $old_LIBS"
++    cat > conftest.$ac_ext <<EOF
++#line 1097 "configure"
++#include "confdefs.h"
++extern char ber_init();
++int main() {
++ ber_init()
++; return 0; }
++EOF
++if { (eval echo configure:1104: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
++  rm -rf conftest*
++  smart_lib="-L$try -llber"
++else
++  echo "configure: failed program was:" >&5
++  cat conftest.$ac_ext >&5
++fi
++rm -f conftest*
++    if test "x$smart_lib" != "x"; then
++      break;
++    fi
++    LIBS="$old_LIBS"
++  done
++fi
++
++if test "x$smart_lib" = "x"; then
++  LIBS="-llber $old_LIBS"
++  cat > conftest.$ac_ext <<EOF
++#line 1122 "configure"
++#include "confdefs.h"
++extern char ber_init();
++int main() {
++ ber_init()
++; return 0; }
++EOF
++if { (eval echo configure:1129: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
++  rm -rf conftest*
++  smart_lib="-llber"
++else
++  echo "configure: failed program was:" >&5
++  cat conftest.$ac_ext >&5
++fi
++rm -f conftest*
++  LIBS="$old_LIBS"
++fi
++
++if test "x$smart_lib" = "x"; then
++  
++
++if test "x$LOCATE" != "x"; then
++        DIRS=
++  file=liblber${libltdl_cv_shlibext}
++
++  for x in `${LOCATE} $file 2>/dev/null`; do
++                                        base=`echo $x | sed "s%/${file}%%"`
++    if test "x$x" = "x$base"; then
++      continue;
++    fi
++
++    dir=`${DIRNAME} $x 2>/dev/null`
++                exclude=`echo ${dir} | ${GREP} /home`
++    if test "x$exclude" != "x"; then
++      continue
++    fi
++
++                    already=`echo \$smart_lib_dir ${DIRS} | ${GREP} ${dir}`
++    if test "x$already" = "x"; then
++      DIRS="$DIRS $dir"
++    fi
++  done
++fi
++
++eval "smart_lib_dir=\"\$smart_lib_dir $DIRS\""
++
++  
++
++if test "x$LOCATE" != "x"; then
++        DIRS=
++  file=liblber.a
++
++  for x in `${LOCATE} $file 2>/dev/null`; do
++                                        base=`echo $x | sed "s%/${file}%%"`
++    if test "x$x" = "x$base"; then
++      continue;
++    fi
++
++    dir=`${DIRNAME} $x 2>/dev/null`
++                exclude=`echo ${dir} | ${GREP} /home`
++    if test "x$exclude" != "x"; then
++      continue
++    fi
++
++                    already=`echo \$smart_lib_dir ${DIRS} | ${GREP} ${dir}`
++    if test "x$already" = "x"; then
++      DIRS="$DIRS $dir"
++    fi
++  done
++fi
++
++eval "smart_lib_dir=\"\$smart_lib_dir $DIRS\""
++
++
++  for try in $smart_lib_dir /usr/local/lib /opt/lib; do
++    LIBS="-L$try -llber $old_LIBS"
++    cat > conftest.$ac_ext <<EOF
++#line 1199 "configure"
++#include "confdefs.h"
++extern char ber_init();
++int main() {
++ ber_init()
++; return 0; }
++EOF
++if { (eval echo configure:1206: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
++  rm -rf conftest*
++  smart_lib="-L$try -llber"
++else
++  echo "configure: failed program was:" >&5
++  cat conftest.$ac_ext >&5
++fi
++rm -f conftest*
++    if test "x$smart_lib" != "x"; then
++      break;
++    fi
++    LIBS="$old_LIBS"
++  done
++fi
++
++if test "x$smart_lib" != "x"; then
++  echo "$ac_t""yes" 1>&6
++  eval "ac_cv_lib_${sm_lib_safe}_${sm_func_safe}=yes"
++  LIBS="$smart_lib $old_LIBS"
++  SMART_LIBS="$smart_lib $SMART_LIBS"
++else
++  echo "$ac_t""no" 1>&6
++fi
++
++
+ 	if test "x$rlm_ldap_with_threads" = "xyes"; then
+ 	    
+ 
+ sm_lib_safe=`echo "ldap_r" | sed 'y%./+-%__p_%'`
+ sm_func_safe=`echo "ldap_init" | sed 'y%./+-%__p_%'`
+ echo $ac_n "checking for ldap_init in -lldap_r""... $ac_c" 1>&6
+-echo "configure:939: checking for ldap_init in -lldap_r" >&5
++echo "configure:1237: checking for ldap_init in -lldap_r" >&5
+ 
+ old_LIBS="$LIBS"
+ smart_lib=
+@@ -945,14 +1243,14 @@
+   for try in $smart_try_dir; do
+     LIBS="-L$try -lldap_r $old_LIBS"
+     cat > conftest.$ac_ext <<EOF
+-#line 949 "configure"
++#line 1247 "configure"
+ #include "confdefs.h"
+ extern char ldap_init();
+ int main() {
+  ldap_init()
+ ; return 0; }
+ EOF
+-if { (eval echo configure:956: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
++if { (eval echo configure:1254: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+   rm -rf conftest*
+   smart_lib="-L$try -lldap_r"
+ else
+@@ -970,14 +1268,14 @@
+ if test "x$smart_lib" = "x"; then
+   LIBS="-lldap_r $old_LIBS"
+   cat > conftest.$ac_ext <<EOF
+-#line 974 "configure"
++#line 1272 "configure"
+ #include "confdefs.h"
+ extern char ldap_init();
+ int main() {
+  ldap_init()
+ ; return 0; }
+ EOF
+-if { (eval echo configure:981: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
++if { (eval echo configure:1279: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+   rm -rf conftest*
+   smart_lib="-lldap_r"
+ else
+@@ -1047,14 +1345,14 @@
+   for try in $smart_lib_dir /usr/local/lib /opt/lib; do
+     LIBS="-L$try -lldap_r $old_LIBS"
+     cat > conftest.$ac_ext <<EOF
+-#line 1051 "configure"
++#line 1349 "configure"
+ #include "confdefs.h"
+ extern char ldap_init();
+ int main() {
+  ldap_init()
+ ; return 0; }
+ EOF
+-if { (eval echo configure:1058: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
++if { (eval echo configure:1356: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+   rm -rf conftest*
+   smart_lib="-L$try -lldap_r"
+ else
+@@ -1087,7 +1385,7 @@
+ sm_lib_safe=`echo "ldap" | sed 'y%./+-%__p_%'`
+ sm_func_safe=`echo "ldap_init" | sed 'y%./+-%__p_%'`
+ echo $ac_n "checking for ldap_init in -lldap""... $ac_c" 1>&6
+-echo "configure:1091: checking for ldap_init in -lldap" >&5
++echo "configure:1389: checking for ldap_init in -lldap" >&5
+ 
+ old_LIBS="$LIBS"
+ smart_lib=
+@@ -1097,14 +1395,14 @@
+   for try in $smart_try_dir; do
+     LIBS="-L$try -lldap $old_LIBS"
+     cat > conftest.$ac_ext <<EOF
+-#line 1101 "configure"
++#line 1399 "configure"
+ #include "confdefs.h"
+ extern char ldap_init();
+ int main() {
+  ldap_init()
+ ; return 0; }
+ EOF
+-if { (eval echo configure:1108: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
++if { (eval echo configure:1406: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+   rm -rf conftest*
+   smart_lib="-L$try -lldap"
+ else
+@@ -1122,14 +1420,14 @@
+ if test "x$smart_lib" = "x"; then
+   LIBS="-lldap $old_LIBS"
+   cat > conftest.$ac_ext <<EOF
+-#line 1126 "configure"
++#line 1424 "configure"
+ #include "confdefs.h"
+ extern char ldap_init();
+ int main() {
+  ldap_init()
+ ; return 0; }
+ EOF
+-if { (eval echo configure:1133: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
++if { (eval echo configure:1431: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+   rm -rf conftest*
+   smart_lib="-lldap"
+ else
+@@ -1199,14 +1497,14 @@
+   for try in $smart_lib_dir /usr/local/lib /opt/lib; do
+     LIBS="-L$try -lldap $old_LIBS"
+     cat > conftest.$ac_ext <<EOF
+-#line 1203 "configure"
++#line 1501 "configure"
+ #include "confdefs.h"
+ extern char ldap_init();
+ int main() {
+  ldap_init()
+ ; return 0; }
+ EOF
+-if { (eval echo configure:1210: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
++if { (eval echo configure:1508: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+   rm -rf conftest*
+   smart_lib="-L$try -lldap"
+ else
+@@ -1241,7 +1539,7 @@
+ 
+ ac_safe=`echo "ldap.h" | sed 'y%./+-%__pm%'`
+ echo $ac_n "checking for ldap.h""... $ac_c" 1>&6
+-echo "configure:1245: checking for ldap.h" >&5
++echo "configure:1543: checking for ldap.h" >&5
+ 
+ old_CFLAGS="$CFLAGS"
+ smart_include=
+@@ -1251,7 +1549,7 @@
+   for try in $smart_try_dir; do
+     CFLAGS="$old_CFLAGS -I$try"
+     cat > conftest.$ac_ext <<EOF
+-#line 1255 "configure"
++#line 1553 "configure"
+ #include "confdefs.h"
+ 
+ 		    #include <ldap.h>
+@@ -1259,7 +1557,7 @@
+  int a = 1;
+ ; return 0; }
+ EOF
+-if { (eval echo configure:1263: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
++if { (eval echo configure:1561: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+   rm -rf conftest*
+   smart_include="-I$try"
+ else
+@@ -1278,7 +1576,7 @@
+ 
+ if test "x$smart_include" = "x"; then
+   cat > conftest.$ac_ext <<EOF
+-#line 1282 "configure"
++#line 1580 "configure"
+ #include "confdefs.h"
+ 
+ 		  #include <ldap.h>
+@@ -1286,7 +1584,7 @@
+  int a = 1;
+ ; return 0; }
+ EOF
+-if { (eval echo configure:1290: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
++if { (eval echo configure:1588: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+   rm -rf conftest*
+   smart_include=" "
+ else
+@@ -1330,7 +1628,7 @@
+   for try in $smart_include_dir /usr/local/include /opt/include; do
+     CFLAGS="$old_CFLAGS -I$try"
+     cat > conftest.$ac_ext <<EOF
+-#line 1334 "configure"
++#line 1632 "configure"
+ #include "confdefs.h"
+ 
+ 		    #include <ldap.h>
+@@ -1338,7 +1636,7 @@
+  int a = 1;
+ ; return 0; }
+ EOF
+-if { (eval echo configure:1342: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
++if { (eval echo configure:1640: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+   rm -rf conftest*
+   smart_include="-I$try"
+ else
+@@ -1371,12 +1669,12 @@
+ 			
+ 	if test "x$fail" = "x"; then
+ 	    echo $ac_n "checking for ldap_start_tls_s""... $ac_c" 1>&6
+-echo "configure:1375: checking for ldap_start_tls_s" >&5
++echo "configure:1673: checking for ldap_start_tls_s" >&5
+ if eval "test \"`echo '$''{'ac_cv_func_ldap_start_tls_s'+set}'`\" = set"; then
+   echo $ac_n "(cached) $ac_c" 1>&6
+ else
+   cat > conftest.$ac_ext <<EOF
+-#line 1380 "configure"
++#line 1678 "configure"
+ #include "confdefs.h"
+ /* System header to define __stub macros and hopefully few prototypes,
+     which can conflict with char ldap_start_tls_s(); below.  */
+@@ -1399,7 +1697,7 @@
+ 
+ ; return 0; }
+ EOF
+-if { (eval echo configure:1403: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
++if { (eval echo configure:1701: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+   rm -rf conftest*
+   eval "ac_cv_func_ldap_start_tls_s=yes"
+ else
+@@ -1419,12 +1717,12 @@
+ fi
+ 
+ 	    echo $ac_n "checking for ldap_initialize""... $ac_c" 1>&6
+-echo "configure:1423: checking for ldap_initialize" >&5
++echo "configure:1721: checking for ldap_initialize" >&5
+ if eval "test \"`echo '$''{'ac_cv_func_ldap_initialize'+set}'`\" = set"; then
+   echo $ac_n "(cached) $ac_c" 1>&6
+ else
+   cat > conftest.$ac_ext <<EOF
+-#line 1428 "configure"
++#line 1726 "configure"
+ #include "confdefs.h"
+ /* System header to define __stub macros and hopefully few prototypes,
+     which can conflict with char ldap_initialize(); below.  */
+@@ -1447,7 +1745,7 @@
+ 
+ ; return 0; }
+ EOF
+-if { (eval echo configure:1451: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
++if { (eval echo configure:1749: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+   rm -rf conftest*
+   eval "ac_cv_func_ldap_initialize=yes"
+ else
+@@ -1467,12 +1765,12 @@
+ fi
+ 
+ 	    echo $ac_n "checking for ldap_int_tls_config""... $ac_c" 1>&6
+-echo "configure:1471: checking for ldap_int_tls_config" >&5
++echo "configure:1769: checking for ldap_int_tls_config" >&5
+ if eval "test \"`echo '$''{'ac_cv_func_ldap_int_tls_config'+set}'`\" = set"; then
+   echo $ac_n "(cached) $ac_c" 1>&6
+ else
+   cat > conftest.$ac_ext <<EOF
+-#line 1476 "configure"
++#line 1774 "configure"
+ #include "confdefs.h"
+ /* System header to define __stub macros and hopefully few prototypes,
+     which can conflict with char ldap_int_tls_config(); below.  */
+@@ -1495,7 +1793,7 @@
+ 
+ ; return 0; }
+ EOF
+-if { (eval echo configure:1499: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
++if { (eval echo configure:1797: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+   rm -rf conftest*
+   eval "ac_cv_func_ldap_int_tls_config=yes"
+ else
