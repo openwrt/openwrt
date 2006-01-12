@@ -1,0 +1,11 @@
+--- dhcp-forwarder-0.7/src/dhcp.h	2004-06-22 03:46:56.000000000 -0700
++++ dhcp-forwarder-0.7-x/src/dhcp.h	2005-10-06 17:04:14.000000000 -0700
+@@ -89,7 +89,7 @@
+   optDHCP_COOKIE = 0x63538263u,
+   flgDHCP_BCAST	 = 0x0080u
+ #else
+-  DHCP_COOKIE  	 = 0x63825363u,
++  optDHCP_COOKIE = 0x63825363u,
+   flgDHCP_BCAST	 = 0x8000u
+ #endif
+ };
