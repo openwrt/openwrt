@@ -1,6 +1,6 @@
-diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
---- linux.old/drivers/net/b44.c	2006-01-12 01:44:42.548326000 +0100
-+++ linux.dev/drivers/net/b44.c	2006-01-12 03:07:38.209775500 +0100
+diff -urN orig/linux-2.6.15/drivers/net/b44.c linux-2.6.15/drivers/net/b44.c
+--- orig/linux-2.6.15/drivers/net/b44.c	2006-01-03 04:21:10.000000000 +0100
++++ linux-2.6.15/drivers/net/b44.c	2006-01-12 12:22:58.760883688 +0100
 @@ -1,7 +1,9 @@
 -/* b44.c: Broadcom 4400 device driver.
 +/* b44.c: Broadcom 4400/47xx device driver.
@@ -156,16 +156,38 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  	err = b44_writephy(bp, MII_BMCR, BMCR_RESET);
  	if (err)
  		return err;
-@@ -439,6 +478,8 @@
+@@ -439,6 +478,30 @@
  	u32 val;
  	int err;
  
++#ifdef CONFIG_BCM947XX
++	if (bp->pdev->device == PCI_DEVICE_ID_BCM4713) {
++		/*
++		 * workaround for bad hardware design in Linksys WAP54G v1.0
++		 * see https://dev.openwrt.org/ticket/146
++		 * check and reset bit "isolate"
++		 */
++		if (!strcmp(nvram_get("boardnum"), "2\r")) {
++			u32 val;
++			if (__b44_readphy(bp, 0, MII_BMCR, &val) != 0) {
++				printk(KERN_WARNING PFX "%s: PHY WAP54G: cannot access PHY.\n", 
++					bp->dev->name);
++			} else if (val & BMCR_ISOLATE) {
++				printk(KERN_INFO PFX "%s: PHY WAP54G: resetting isolate bit.\n",
++					bp->dev->name);
++				if (__b44_writephy(bp, 0, MII_BMCR, val & ~BMCR_ISOLATE) != 0)
++					printk(KERN_WARNING PFX "PHY WAP54G: cannot reset isolate bit.\n");
++			}
++		}
++	}
++#endif
++
 +	if (bp->phy_addr == B44_PHY_ADDR_NO_PHY)
 +		return 0;
  	if ((err = b44_readphy(bp, B44_MII_ALEDCTRL, &val)) != 0)
  		goto out;
  	if ((err = b44_writephy(bp, B44_MII_ALEDCTRL,
-@@ -534,6 +575,19 @@
+@@ -534,6 +597,19 @@
  {
  	u32 bmsr, aux;
  
@@ -185,7 +207,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  	if (!b44_readphy(bp, MII_BMSR, &bmsr) &&
  	    !b44_readphy(bp, B44_MII_AUXCTRL, &aux) &&
  	    (bmsr != 0xffff)) {
-@@ -1281,9 +1335,10 @@
+@@ -1281,9 +1357,10 @@
  		bw32(bp, B44_DMARX_CTRL, 0);
  		bp->rx_prod = bp->rx_cons = 0;
  	} else {
@@ -199,7 +221,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  	}
  
  	ssb_core_reset(bp);
-@@ -1291,8 +1346,14 @@
+@@ -1291,8 +1368,14 @@
  	b44_clear_stats(bp);
  
  	/* Make PHY accessible. */
@@ -215,7 +237,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  	br32(bp, B44_MDIO_CTRL);
  
  	if (!(br32(bp, B44_DEVCTRL) & DEVCTRL_IPP)) {
-@@ -1834,18 +1895,297 @@
+@@ -1834,18 +1917,297 @@
  	.get_perm_addr		= ethtool_op_get_perm_addr,
  };
  
@@ -517,7 +539,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  out:
  	return err;
  }
-@@ -1865,22 +2205,43 @@
+@@ -1865,22 +2227,43 @@
  static int __devinit b44_get_invariants(struct b44 *bp)
  {
  	u8 eeprom[128];
@@ -575,7 +597,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  	/* With this, plus the rx_header prepended to the data by the
  	 * hardware, we'll land the ethernet header on a 2-byte boundary.
  	 */
-@@ -1889,11 +2250,7 @@
+@@ -1889,11 +2272,7 @@
  	bp->imask = IMASK_DEF;
  
  	bp->core_unit = ssb_core_unit(bp);
@@ -587,7 +609,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  out:
  	return err;
  }
-@@ -2032,11 +2389,17 @@
+@@ -2032,11 +2411,17 @@
  
  	pci_save_state(bp->pdev);
  
@@ -606,9 +628,9 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  	return 0;
  
  err_out_iounmap:
-diff -urN linux.old/drivers/net/b44.h linux.dev/drivers/net/b44.h
---- linux.old/drivers/net/b44.h	2006-01-12 01:44:42.548326000 +0100
-+++ linux.dev/drivers/net/b44.h	2006-01-12 02:55:06.290783500 +0100
+diff -urN orig/linux-2.6.15/drivers/net/b44.h linux-2.6.15/drivers/net/b44.h
+--- orig/linux-2.6.15/drivers/net/b44.h	2006-01-03 04:21:10.000000000 +0100
++++ linux-2.6.15/drivers/net/b44.h	2006-01-12 12:16:02.403179680 +0100
 @@ -292,6 +292,10 @@
  #define SSB_PCI_MASK1		0xfc000000
  #define SSB_PCI_MASK2		0xc0000000
