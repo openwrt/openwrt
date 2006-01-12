@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=freeradius
-PKG_VERSION:=1.0.4
+PKG_VERSION:=1.0.5
 PKG_RELEASE:=1
-PKG_MD5SUM:=edb5c3af6fabeff7b8e1131b6fa33e24
+PKG_MD5SUM:=00d06fc31e3b8279f6456d25401c81cb
 
 PKG_SOURCE_URL:=ftp://ftp.freeradius.org/pub/radius/ \
 	http://freeradius.portal-to-web.de/ \

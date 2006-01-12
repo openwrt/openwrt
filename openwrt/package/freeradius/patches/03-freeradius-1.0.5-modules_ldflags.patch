@@ -1,6 +1,6 @@
-diff -ruN freeradius-1.0.2-orig/src/modules/rlm_sql/drivers/rules.mak freeradius-1.0.2-2/src/modules/rlm_sql/drivers/rules.mak
---- freeradius-1.0.2-orig/src/modules/rlm_sql/drivers/rules.mak	2003-06-05 22:16:54.000000000 +0200
-+++ freeradius-1.0.2-2/src/modules/rlm_sql/drivers/rules.mak	2005-03-13 23:53:24.000000000 +0100
+diff -ruN freeradius-1.0.5-old/src/modules/rlm_sql/drivers/rules.mak freeradius-1.0.5-new/src/modules/rlm_sql/drivers/rules.mak
+--- freeradius-1.0.5-old/src/modules/rlm_sql/drivers/rules.mak	2003-06-05 22:16:54.000000000 +0200
++++ freeradius-1.0.5-new/src/modules/rlm_sql/drivers/rules.mak	2005-10-03 05:33:39.000000000 +0200
 @@ -67,7 +67,7 @@
  #
  #######################################################################
@@ -19,23 +19,23 @@ diff -ruN freeradius-1.0.2-orig/src/modules/rlm_sql/drivers/rules.mak freeradius
  
  #######################################################################
  #
-diff -ruN freeradius-1.0.2-orig/src/modules/rules.mak freeradius-1.0.2-2/src/modules/rules.mak
---- freeradius-1.0.2-orig/src/modules/rules.mak	2002-08-06 18:11:39.000000000 +0200
-+++ freeradius-1.0.2-2/src/modules/rules.mak	2005-03-13 23:53:31.000000000 +0100
-@@ -70,7 +70,7 @@
+diff -ruN freeradius-1.0.5-old/src/modules/rules.mak freeradius-1.0.5-new/src/modules/rules.mak
+--- freeradius-1.0.5-old/src/modules/rules.mak	2005-07-31 14:48:01.000000000 +0200
++++ freeradius-1.0.5-new/src/modules/rules.mak	2005-10-03 05:35:05.000000000 +0200
+@@ -71,7 +71,7 @@
  #######################################################################
  $(TARGET).a: $(STATIC_OBJS)
  	$(LIBTOOL) --mode=link $(LD) \
 -	-module -static $(CFLAGS) $(RLM_CFLAGS) $^ -o $@ 
-+	-module -static $(CFLAGS) $(RLM_CFLAGS) $(LDFLAGS) $^ -o $@ 
++	-module -static $(CFLAGS) $(RLM_CFLAGS) $(LDFLAGS) $(RLM_LDFLAGS) $^ -o $@ 
  
  #
  #  If the module is in the list of static modules, then the "dynamic"
-@@ -95,7 +95,7 @@
+@@ -96,7 +96,7 @@
  
  $(TARGET).la: $(DYNAMIC_OBJS)
  	$(LIBTOOL) --mode=link $(CC) -release $(RADIUSD_VERSION) \
--	-module $(LINK_MODE) $(CFLAGS) $(RLM_CFLAGS) $(RLM_LDFLAGS) \
+-	-module $(LINK_MODE) $(LDFLAGS) $(RLM_LDFLAGS) \
 +	-module $(LINK_MODE) $(CFLAGS) $(RLM_CFLAGS) $(LDFLAGS) $(RLM_LDFLAGS) \
  	-o $@ -rpath $(libdir) $^ $(RLM_LIBS) $(LIBS)
  
