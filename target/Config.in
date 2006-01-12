@@ -8,6 +8,12 @@ config BR2_LINUX_2_4_AR531X
 	  Build firmware images for Atheros AR531x based boards
 	  (e.g. Netgear WGT624, Linksys WRT55AG)
 
+config BR2_LINUX_2_6_ARUBA
+	bool "Aruba [2.6]"
+	depends BR2_mips
+	help
+          Build firmware images for Aruba boards 
+
 config BR2_LINUX_2_4_BRCM
 	bool "Broadcom BCM47xx/53xx [2.4]"
 	depends BR2_mipsel

@@ -1,0 +1,15 @@
+diff -Nur linux-cvs/arch/mips/kernel/head.S linux-aruba/arch/mips/kernel/head.S
+--- linux-cvs/arch/mips/kernel/head.S	2004-12-23 00:21:39.000000000 -0800
++++ linux-aruba/arch/mips/kernel/head.S	2005-10-20 09:16:08.000000000 -0700
+@@ -122,6 +122,10 @@
+ #endif
+ 	.endm
+ 
++
++	j kernel_entry
++	nop
++
+ 	/*
+ 	 * Reserved space for exception handlers.
+ 	 * Necessary for machines which link their kernels at KSEG0.
+
