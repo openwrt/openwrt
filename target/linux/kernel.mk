@@ -4,7 +4,6 @@ LINUX_SITE=http://www.fi.kernel.org/pub/linux/kernel/v$(KERNEL) \
            http://www.kernel.org/pub/linux/kernel/v$(KERNEL) \
            http://www.de.kernel.org/pub/linux/kernel/v$(KERNEL)
 
-KERNEL_IPKG:=$(LINUX_BUILD_DIR)/kernel_$(LINUX_VERSION)-$(BOARD)-$(LINUX_RELEASE)_$(ARCH).ipk
 KERNEL_IDIR:=$(LINUX_BUILD_DIR)/kernel-ipkg
 
 $(TARGETS): $(PACKAGE_DIR)
