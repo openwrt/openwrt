@@ -1,22 +1,23 @@
 choice
 	prompt "Target System"
+	default BR2_LINUX_2_4_BRCM
 	
 config BR2_LINUX_2_4_AR531X
 	bool "Atheros AR531x [2.4]"
-	depends BR2_mips
+	select BR2_mips
 	help
 	  Build firmware images for Atheros AR531x based boards
 	  (e.g. Netgear WGT624, Linksys WRT55AG)
 
 config BR2_LINUX_2_6_ARUBA
 	bool "Aruba [2.6]"
-	depends BR2_mips
+	select BR2_mips
 	help
           Build firmware images for Aruba boards 
 
 config BR2_LINUX_2_4_BRCM
 	bool "Broadcom BCM47xx/53xx [2.4]"
-	depends BR2_mipsel
+	select BR2_mipsel
 	select BR2_LINUX_PCMCIA_SUPPORT
 	help
 	  Build firmware images for Broadcom based routers
@@ -28,7 +29,7 @@ config BR2_LINUX_2_4_BRCM
 
 config BR2_LINUX_2_6_BRCM
 	bool "Broadcom BCM47xx/53xx [2.6]"
-	depends BR2_mipsel
+	select BR2_mipsel
 	select BR2_LINUX_PCMCIA_SUPPORT
 	help
 	  Build firmware images for Broadcom based routers
@@ -36,13 +37,13 @@ config BR2_LINUX_2_6_BRCM
 
 config BR2_LINUX_2_4_AR7
 	bool "TI AR7 [2.4]"
-	depends BR2_mipsel
+	select BR2_mipsel
 	help
 	  Build firmware images for TI AR7 based routers (w.g. Linksys WAG54G v2)
 
 config BR2_LINUX_2_4_X86
 	bool "x86 [2.4]"
-	depends BR2_i386
+	select BR2_i386
 	select BR2_LINUX_PCMCIA_SUPPORT
 	help
 	  Build firmware images for x86 based boards
@@ -50,7 +51,7 @@ config BR2_LINUX_2_4_X86
 
 config BR2_LINUX_2_6_X86
 	bool "x86 [2.6]"
-	depends BR2_i386
+	select BR2_i386
 	select BR2_LINUX_PCMCIA_SUPPORT
 	help
 	  Build firmware images for x86 based boards
