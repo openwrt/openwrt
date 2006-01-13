@@ -201,10 +201,6 @@ $(eval $(call KMOD_template,NET_AIRO,net-airo,\
 	$(MODULES_DIR)/kernel/drivers/net/wireless/airo.o \
 ,CONFIG_AIRO,,10,airo))
 
-$(eval $(call KMOD_template,NET_B44,net-b44,\
-	$(MODULES_DIR)/kernel/drivers/net/b44.o \
-,CONFIG_B44,,10,b44))
-
 $(eval $(call KMOD_template,NET_E100,net-e100,\
 	$(MODULES_DIR)/kernel/drivers/net/e100.o \
 ,CONFIG_E100,,10,e100))
