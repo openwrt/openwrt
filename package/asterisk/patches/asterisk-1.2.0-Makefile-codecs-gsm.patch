@@ -1,34 +1,38 @@
 diff -ruN asterisk-1.2.0-old/codecs/gsm/Makefile asterisk-1.2.0-new/codecs/gsm/Makefile
 --- asterisk-1.2.0-old/codecs/gsm/Makefile	2005-11-08 04:31:45.000000000 +0100
 +++ asterisk-1.2.0-new/codecs/gsm/Makefile	2005-12-04 13:31:50.000000000 +0100
-@@ -236,6 +236,7 @@
+@@ -236,6 +236,8 @@
  ifneq ($(shell uname -m),armv4l)
  ifneq ($(shell uname -m),sparc64)
  ifneq (${PROC},arm)
 +ifneq (${PROC},mipsel)
++ifneq (${PROC},mips)
  GSM_SOURCES+= $(SRC)/k6opt.s
  endif
  endif
-@@ -245,6 +246,7 @@
+@@ -246,6 +247,8 @@
  endif
  endif
  endif
 +endif
++endif
  
  TOAST_SOURCES = $(SRC)/toast.c 		\
  		$(SRC)/toast_lin.c	\
-@@ -297,6 +299,7 @@
+@@ -299,6 +301,8 @@
  ifneq ($(shell uname -m), alpha)
  ifneq ($(shell uname -m), sparc64)
  ifneq ($(shell uname -m), armv4l)
 +ifneq (${PROC}, mipsel)
++ifneq (${PROC}, mips)
  GSM_OBJECTS+= $(SRC)/k6opt.o
  endif
  endif
-@@ -305,6 +308,7 @@
+@@ -308,6 +311,8 @@
  endif
  endif
  endif
++endif
 +endif
  
  TOAST_OBJECTS =	$(SRC)/toast.o 		\
