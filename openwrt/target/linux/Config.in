@@ -269,7 +269,7 @@ config BR2_PACKAGE_KMOD_IDE
 	prompt "kmod-ide.......................... IDE support"
 	tristate
 	default m
-	depends BR2_LINUX_2_4_X86 || BR2_LINUX_2_4_BRCM || BR2_LINUX_2_6_X86 || BR2_LINUX_2_6_BRCM
+	depends BR2_LINUX_2_4_X86 || BR2_LINUX_2_6_X86 || BR2_LINUX_2_4_BRCM || BR2_LINUX_2_6_BRCM
 	help
 	  Kernel modules for IDE support
 	  useful for usb mass storage devices (e.g. on WL-HDD)
@@ -356,7 +356,7 @@ comment "Multimedia devices support"
 config BR2_PACKAGE_KMOD_PWC
 	prompt "kmod-pwc.......................... Kernel driver for USB Philips Cameras"
 	tristate
-	default n if BR2_LINUX_2_4_AR531X
+	depends BR2_PACKAGE_KMOD_USB
 	default m
 
 config BR2_PACKAGE_KMOD_SOUNDCORE
@@ -426,7 +426,7 @@ comment "Network devices support"
 config BR2_PACKAGE_KMOD_NET_3C59X
 	prompt "kmod-net-3c59x.................... 3Com 3c590/3c900 series (592/595/597) \"Vortex/Boomerang\" Ethernet kernel support"
 	tristate
-	default n if BR2_LINUX_2_4_AR531X
+	depends BR2_LINUX_2_4_X86 || BR2_LINUX_2_6_X86
 	default m
 	help
 	  This option enables driver support for a large number of 10mbps and 
@@ -441,7 +441,7 @@ config BR2_PACKAGE_KMOD_NET_3C59X
 config BR2_PACKAGE_KMOD_NET_8139TOO
 	prompt "kmod-net-8139too.................. RealTek RTL-8139 PCI Fast Ethernet Adapter kernel support"
 	tristate
-	default n if BR2_LINUX_2_4_AR531X
+	depends BR2_LINUX_2_4_X86 || BR2_LINUX_2_6_X86
 	default m
 	help
 	  This is a driver for the Fast Ethernet PCI network cards based on 
@@ -450,7 +450,7 @@ config BR2_PACKAGE_KMOD_NET_8139TOO
 config BR2_PACKAGE_KMOD_NET_AIRO
 	prompt "kmod-net-airo..................... Cisco/Aironet 34X/35X/4500/4800 ISA and PCI cards kernel support"
 	tristate
-	default n if BR2_LINUX_2_4_AR531X
+	depends BR2_LINUX_2_4_X86 || BR2_LINUX_2_6_X86
 	default m
 	help
 	  This is the standard Linux driver to support Cisco/Aironet ISA and 
@@ -466,22 +466,15 @@ config BR2_PACKAGE_KMOD_NET_AIRO
 config BR2_PACKAGE_KMOD_NET_E100
 	prompt "kmod-net-e100..................... Intel(R) PRO/100+ cards kernel support"
 	tristate
+	depends BR2_LINUX_2_4_X86 || BR2_LINUX_2_6_X86
 	default m
 	help
 	  Intel(R) PRO/100+ cards kernel support
 
-config BR2_PACKAGE_KMOD_NET_B44
-	prompt "kmod-net-b44...................... Broadcom 44XX, 47XX ethernet driver"
-	tristate
-	depends !BR2_LINUX_2_6_BRCM && !BR2_LINUX_2_4_BRCM
-	default m
-	help
-	  Free driver for Broadcom Ethernet chipsets
-
 config BR2_PACKAGE_KMOD_NET_HERMES
 	prompt "kmod-net-hermes................... Hermes chipset 802.11b support (Orinoco/Prism2/Symbol) kernel support"
 	tristate
-	default n if BR2_LINUX_2_4_AR531X
+	depends BR2_LINUX_2_4_X86 || BR2_LINUX_2_6_X86
 	default m
 	help
 	  A driver for 802.11b wireless cards based based on the "Hermes" or 
@@ -522,7 +515,7 @@ config BR2_PACKAGE_KMOD_NET_HERMES_PLX
 config BR2_PACKAGE_KMOD_NET_NATSEMI
 	prompt "kmod-net-natsemi.................. National Semiconductor DP8381x series PCI Ethernet kernel support"
 	tristate
-	default n if BR2_LINUX_2_4_AR531X
+	depends BR2_LINUX_2_4_X86 || BR2_LINUX_2_6_X86 || BR2_LINUX_2_6_ARUBA
 	default m
 	help
 	  This driver is for the National Semiconductor DP83810 series, 
@@ -532,7 +525,7 @@ config BR2_PACKAGE_KMOD_NET_NATSEMI
 config BR2_PACKAGE_KMOD_NET_PRISM54
 	prompt "kmod-net-prism54.................. Intersil Prism GT/Duette/Indigo PCI/PCMCIA cards kernel support"
 	tristate
-	default n if BR2_LINUX_2_4_AR531X
+	depends BR2_LINUX_2_4_X86 || BR2_LINUX_2_6_X86 || BR2_LINUX_2_4_BRCM || BR2_LINUX_2_6_BRCM
 	default m
 	help
 	  Enable PCI and Cardbus support for the following chipset based cards: 
@@ -574,7 +567,7 @@ config BR2_PACKAGE_KMOD_PCMCIA_CORE
 	prompt "kmod-pcmcia-core.................. PCMCIA/CardBus support"
 	depends BR2_LINUX_PCMCIA_SUPPORT
 	tristate
-	default n if BR2_LINUX_2_4_AR531X
+	depends BR2_LINUX_2_4_X86 || BR2_LINUX_2_6_X86 || BR2_LINUX_2_4_BRCM || BR2_LINUX_2_6_BRCM
 	default m
 
 config BR2_PACKAGE_KMOD_PCMCIA_SERIAL
