@@ -3,11 +3,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=zlib
-PKG_VERSION:=1.2.2
-PKG_RELEASE:=2
-PKG_MD5SUM:=1b8aab042d40979e456194c468fd72c5
+PKG_VERSION:=1.2.3
+PKG_RELEASE:=3
+PKG_MD5SUM:=dee233bf288ee795ac96a98cc2e369b6
 
-PKG_SOURCE_URL:=@SF/zlib
+PKG_SOURCE_URL:=http://www.zlib.net \
+	@SF/zlib
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_CAT:=bzcat
 
