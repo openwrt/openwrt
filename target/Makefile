@@ -8,7 +8,7 @@ $(BIN_DIR):
 linux-compile: utils-install lzma-install
 linux-install: $(BIN_DIR)
 
-prepare: 
+prepare: linux-prepare
 compile: linux-compile
 install: image_clean linux-install
 clean: linux-clean utils-clean lzma-clean image_clean
