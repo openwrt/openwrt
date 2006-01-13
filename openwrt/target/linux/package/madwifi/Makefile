@@ -3,16 +3,16 @@
 include $(TOPDIR)/rules.mk
 include ../../rules.mk
 
-PKG_NAME:=madwifi
+PKG_NAME:=madwifi-ng
 PKG_VERSION:=r1394-20060113
 PKG_RELEASE:=1
 PKG_MD5SUM:=03c870933ff4a89ed520fb732c4b553d
 
-PKG_SOURCE_URL:=http://snapshots.madwifi.org/madwifi-ng
-PKG_SOURCE:=$(PKG_NAME)-ng-$(PKG_VERSION).tar.gz
+PKG_SOURCE_URL:=http://snapshots.madwifi.org/$(PKG_NAME)
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-ng-$(PKG_VERSION)
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 
 ifeq ($(ARCH),mips)
 HAL_TARGET:=mips-be-elf
@@ -34,7 +34,7 @@ endif
 
 include $(TOPDIR)/package/rules.mk
 
-$(eval $(call PKG_template,KMOD_MADWIFI,kmod-madwifi,$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE),$(ARCH),kernel-$(LINUX_VERSION)-$(BOARD) ($(LINUX_RELEASE))))
+$(eval $(call PKG_template,KMOD_MADWIFI,kmod-madwifi,$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE),$(ARCH),kernel ($(LINUX_VERSION)-$(BOARD)-$(LINUX_RELEASE))))
 
 $(PKG_BUILD_DIR)/.configured:
 	touch $@
