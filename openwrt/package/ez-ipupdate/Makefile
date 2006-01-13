@@ -46,8 +46,7 @@ $(PKG_BUILD_DIR)/.built:
 	touch $@
 
 $(IPKG_EZIPUPDATE):
-	mkdir -p $(IDIR_EZIPUPDATE)/usr/sbin 
-	install -m0755 $(IDIR_EZIPUPDATE)/etc/init.d $(IDIR_EZIPUPDATE)/etc/hotplug.d/iface
+	install -m0755 -d $(IDIR_EZIPUPDATE)/etc/init.d $(IDIR_EZIPUPDATE)/etc/hotplug.d/iface $(IDIR_EZIPUPDATE)/usr/sbin/
 	install -m0755 $(PKG_BUILD_DIR)/ez-ipupdate $(IDIR_EZIPUPDATE)/usr/sbin/
 	install -m0755 files/$(PKG_NAME).init $(IDIR_EZIPUPDATE)/etc/init.d/S80$(PKG_NAME)
 	install -m0755 files/$(PKG_NAME).conf $(IDIR_EZIPUPDATE)/etc/
