@@ -649,6 +649,9 @@ typedef struct wlc_rev_info {
 /* maximum length buffer required */
 #define WLC_IOCTL_MAXLEN	8192
 
+/* maximum length buffer required */
+#define WLC_IOCTL_SMLEN         256
+
 /* common ioctl definitions */
 #define WLC_GET_MAGIC				0
 #define WLC_GET_VERSION				1
