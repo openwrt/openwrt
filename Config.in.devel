@@ -13,55 +13,50 @@ config BR2_HAVE_DOT_CONFIG
 	bool
 	default y
 
-choice
-	prompt "Target Architecture"
-	default BR2_mipsel
-
 # Supported architectures
 
 config BR2_i386
-	bool "i386"
+	tristate
 	
 config BR2_mips
-	bool "mips"
+	tristate
 
 config BR2_mipsel
-	bool "mipsel"
-
-
-if CONFIG_DEVEL
+	tristate
 
 # Unsupported architectures
 
+if CONFIG_DEVEL
+
 config BR2_arm
-	bool "arm"
+	tristate
 
 config BR2_armeb
-	bool "armeb"
+	tristate
 
 config BR2_cris
-	bool "cris"
+	tristate
 
 config BR2_m68k
-	bool "m68k"
+	tristate
 
 config BR2_powerpc
-	bool "powerpc"
+	tristate
 
 config BR2_sh3
-	bool "sh3"
+	tristate
 
 config BR2_sh3eb
-	bool "sh3eb"
+	tristate
 
 config BR2_sh4
-	bool "sh4"
+	tristate
 
 config BR2_sh4eb
-	bool "sh4eb"
+	tristate
 
 config BR2_sparc
-	bool "sparc"
+	tristate
 
 endif
 endchoice
