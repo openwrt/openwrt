@@ -25,7 +25,7 @@ KERNEL_C_INCS:= -I$(LINUX_DIR)/include/asm-mips/mach-generic
 KERNEL_C_OPTS:= -Os -G 0 -mno-abicalls -fno-pic -finline-limit=100000 -mabi=32 -march=mips32 -Wa,-32 -Wa,-march=mips32 -Wa,-mips32 -Wa,--trap
 endif
 
-$(eval $(call PKG_template,KMOD_ALSA,kmod-alsa,$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE),$(ARCH),kernel-$(LINUX_VERSION)-$(BOARD) ($(LINUX_RELEASE))))
+$(eval $(call PKG_template,KMOD_ALSA,kmod-alsa,$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE),$(ARCH),kernel ($(LINUX_VERSION)-$(BOARD)-$(LINUX_RELEASE))))
 
 $(PKG_BUILD_DIR)/.configured:
 	(cd $(PKG_BUILD_DIR); \

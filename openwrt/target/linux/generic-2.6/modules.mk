@@ -271,8 +271,8 @@ $(eval $(call KMOD_template,USB_OHCI,usb-ohci,\
 ,CONFIG_USB_OHCI_HCD,kmod-usb-core,60,ohci-hcd))
 
 $(eval $(call KMOD_template,USB_UHCI,usb-uhci,\
-	$(MODULES_DIR)/kernel/drivers/usb/host/uhci.ko \
-,CONFIG_USB_UHCI_ALT,kmod-usb-core,60,uhci))
+	$(MODULES_DIR)/kernel/drivers/usb/host/uhci-hcd.ko \
+,CONFIG_USB_UHCI_HCD,kmod-usb-core,60,uhci-hcd))
 
 $(eval $(call KMOD_template,USB2,usb2,\
 	$(MODULES_DIR)/kernel/drivers/usb/host/ehci-hcd.ko \
@@ -282,9 +282,9 @@ $(eval $(call KMOD_template,USB_ACM,usb-acm,\
 	$(MODULES_DIR)/kernel/drivers/usb/class/cdc-acm.ko \
 ,CONFIG_USB_ACM))
 
-#$(eval $(call KMOD_template,USB_AUDIO,usb-audio,\
-#	$(MODULES_DIR)/kernel/drivers/usb/class/audio.ko \
-#,CONFIG_USB_AUDIO,kmod-soundcore kmod-usb-core,61,audio))
+$(eval $(call KMOD_template,USB_AUDIO,usb-audio,\
+	$(MODULES_DIR)/kernel/drivers/usb/class/audio.ko \
+,CONFIG_USB_AUDIO,kmod-soundcore kmod-usb-core,61,audio))
 
 $(eval $(call KMOD_template,USB_PRINTER,usb-printer,\
 	$(MODULES_DIR)/kernel/drivers/usb/class/usblp.ko \
