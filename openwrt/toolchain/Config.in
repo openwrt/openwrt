@@ -24,5 +24,6 @@ config BR2_SOFT_FLOAT
 
 config BR2_TARGET_OPTIMIZATION
 	string
-	default "-Os -pipe -mips32 -mtune=mips32 -funit-at-a-time"
-
+	default "-Os -pipe -march=i486 -funit-at-a-time" if BR2_i386
+	default "-Os -pipe -mips32 -mtune=mips32 -funit-at-a-time" if BR2_mipsel || BR2_mips
+	default "-Os -pipe -funit-at-a-time"
