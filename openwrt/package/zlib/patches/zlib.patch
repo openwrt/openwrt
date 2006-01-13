@@ -1,5 +1,6 @@
---- zlib-1.2.3-orig/Makefile.in	2005-07-18 04:25:21.000000000 +0200
-+++ zlib-1.2.3/Makefile.in	2006-01-13 15:31:04.000000000 +0100
+diff -ruN zlib-1.2.3-orig/Makefile.in zlib-1.2.3-2/Makefile.in
+--- zlib-1.2.3-orig/Makefile.in	2004-09-15 16:27:20.000000000 +0200
++++ zlib-1.2.3-2/Makefile.in	2004-11-13 13:38:12.000000000 +0100
 @@ -25,20 +25,23 @@
  #           -Wstrict-prototypes -Wmissing-prototypes
  
@@ -16,7 +17,7 @@
  SHAREDLIBM=libz.so.1
  
 -AR=ar rc
-+AR=ar
++AR=ar 
  RANLIB=ranlib
  TAR=tar
  SHELL=/bin/sh
@@ -86,3 +87,120 @@
  # The ranlib in install is needed on NeXTSTEP which checks file times
  # ldconfig is for Linux
  
+diff -ruN zlib-1.2.3-orig/configure zlib-1.2.3-2/configure
+--- zlib-1.2.3-orig/configure	2004-09-07 07:50:06.000000000 +0200
++++ zlib-1.2.3-2/configure	2004-11-13 12:37:43.000000000 +0100
+@@ -23,7 +23,7 @@
+ VER=`sed -n -e '/VERSION "/s/.*"\(.*\)".*/\1/p' < zlib.h`
+ VER2=`sed -n -e '/VERSION "/s/.*"\([0-9]*\\.[0-9]*\)\\..*/\1/p' < zlib.h`
+ VER1=`sed -n -e '/VERSION "/s/.*"\([0-9]*\)\\..*/\1/p' < zlib.h`
+-AR=${AR-"ar rc"}
++AR=${AR-"ar"}
+ RANLIB=${RANLIB-"ranlib"}
+ prefix=${prefix-/usr/local}
+ exec_prefix=${exec_prefix-'${prefix}'}
+@@ -73,7 +73,7 @@
+ 
+ if test "$gcc" -eq 1 && ($cc -c $cflags $test.c) 2>/dev/null; then
+   CC="$cc"
+-  SFLAGS=${CFLAGS-"-fPIC -O3"}
++  SFLAGS=${CFLAGS-"-D_REENTRANT -fPIC -O3"}
+   CFLAGS="$cflags"
+   case `(uname -s || echo unknown) 2>/dev/null` in
+   Linux | linux | GNU | GNU/*) LDSHARED=${LDSHARED-"$cc -shared -Wl,-soname,libz.so.1"};;
+@@ -408,6 +408,29 @@
+   echo Checking for mmap support... No.
+ fi
+ 
++cat > $test.c <<EOF
++#include <stdio.h>
++int main() { char buf[10]; snprintf(buf, sizeof(buf), "%s", "F"); return 0; }
++EOF
++if test "`($CC -c $CFLAGS $test.c) 2>&1`" = ""; then
++  echo "Checking for snprintf...	 Yes."
++  CFLAGS="$CFLAGS -DHAS_snprintf"
++else
++  echo "Checking for snprintf..	 No."
++fi
++
++cat > $test.c <<EOF
++#include <stdio.h>
++#include <stdarg.h>
++int main(void) { va_list a; vsnprintf(0, 0, "", a); return 0; }
++EOF
++if test "`($CC -c $CFLAGS $test.c) 2>&1`" = ""; then
++  echo "Checking for vsnprintf...	 Yes."
++  CFLAGS="$CFLAGS -DHAS_vsnprintf"
++else
++  echo "Checking for vsnprintf..	 No."
++fi
++
+ CPP=${CPP-"$CC -E"}
+ case $CFLAGS in
+   *ASMV*)
+@@ -424,20 +447,21 @@
+ # udpate Makefile
+ sed < Makefile.in "
+ /^CC *=/s#=.*#=$CC#
+-/^CFLAGS *=/s#=.*#=$CFLAGS#
+-/^CPP *=/s#=.*#=$CPP#
+-/^LDSHARED *=/s#=.*#=$LDSHARED#
+-/^LIBS *=/s#=.*#=$LIBS#
+-/^SHAREDLIB *=/s#=.*#=$SHAREDLIB#
+-/^SHAREDLIBV *=/s#=.*#=$SHAREDLIBV#
+-/^SHAREDLIBM *=/s#=.*#=$SHAREDLIBM#
+-/^AR *=/s#=.*#=$AR#
+-/^RANLIB *=/s#=.*#=$RANLIB#
+-/^EXE *=/s#=.*#=$EXE#
+-/^prefix *=/s#=.*#=$prefix#
+-/^exec_prefix *=/s#=.*#=$exec_prefix#
+-/^libdir *=/s#=.*#=$libdir#
+-/^includedir *=/s#=.*#=$includedir#
+-/^mandir *=/s#=.*#=$mandir#
+-/^LDFLAGS *=/s#=.*#=$LDFLAGS#
++/^CC *=/s%=.*%= $CC%
++/^CFLAGS *=/s%=.*%= $CFLAGS%
++/^CPP *=/s%=.*%= $CPP%
++/^LDSHARED *=/s%=.*%= $LDSHARED%
++/^LIBS *=/s%=.*%= $LIBS%
++/^SHAREDLIB *=/s%=.*%= $SHAREDLIB%
++/^SHAREDLIBV *=/s%=.*%= $SHAREDLIBV%
++/^SHAREDLIBM *=/s%=.*%= $SHAREDLIBM%
++/^AR *=/s%=.*%= $AR%
++/^RANLIB *=/s%=.*%= $RANLIB%
++/^EXE *=/s%=.*%= $EXE%
++/^prefix *=/s%=.*%= $prefix%
++/^exec_prefix *=/s%=.*%= $exec_prefix%
++/^libdir *=/s%=.*%= $libdir%
++/^includedir *=/s%=.*%= $includedir%
++/^mandir *=/s%=.*%= $mandir%
++/^LDFLAGS *=/s%=.*%= $LDFLAGS%
+ " > Makefile
+diff -ruN zlib-1.2.3-orig/contrib/minizip/Makefile zlib-1.2.3-2/contrib/minizip/Makefile
+--- zlib-1.2.3-orig/contrib/minizip/Makefile	2003-09-10 20:00:16.000000000 +0200
++++ zlib-1.2.3-2/contrib/minizip/Makefile	2004-11-13 12:37:43.000000000 +0100
+@@ -1,8 +1,8 @@
+ CC=cc
+-CFLAGS=-O -I../..
++CFLAGS=-O2 -g -I../.. -Dunix
+ 
+-UNZ_OBJS = miniunz.o unzip.o ioapi.o ../../libz.a
+-ZIP_OBJS = minizip.o zip.o   ioapi.o ../../libz.a
++UNZ_OBJS = miniunz.o unzip.o ioapi.o
++ZIP_OBJS = minizip.o zip.o   ioapi.o
+ 
+ .c.o:
+ 	$(CC) -c $(CFLAGS) $*.c
+@@ -10,10 +10,10 @@
+ all: miniunz minizip
+ 
+ miniunz:  $(UNZ_OBJS)
+-	$(CC) $(CFLAGS) -o $@ $(UNZ_OBJS)
++	$(CC) $(CFLAGS) -o $@ $(UNZ_OBJS) -L ../.. -lz
+ 
+ minizip:  $(ZIP_OBJS)
+-	$(CC) $(CFLAGS) -o $@ $(ZIP_OBJS)
++	$(CC) $(CFLAGS) -o $@ $(ZIP_OBJS) -L ../.. -lz
+ 
+ test:	miniunz minizip
+ 	./minizip test readme.txt
