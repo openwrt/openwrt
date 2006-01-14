@@ -278,8 +278,15 @@ static int handle_vlan_port_read(void *driver, char *buf, int nr)
 		if ((val32 & (1 << 20)) /* valid */) {
 			for (j = 0; j < 6; j++) {
 				if (val32 & (1 << j)) {
-					len += sprintf(buf + len, "%d%s\t", j, 
-						(val32 & (1 << (j + 6))) ? (j == 5 ? "u" : "") : "t");
+					len += sprintf(buf + len, "%d", j);
+					if (val32 & (1 << (j + 6))) {
+						if (j == 5) buf[len++] = 'u';
+					} else {
+						buf[len++] = 't';
+						if (robo_read16(ROBO_VLAN_PAGE, ROBO_VLAN_PORT0_DEF_TAG + (j << 1)) == nr)
+							buf[len++] = '*';
+					}
+					buf[len++] = '\t';
 				}
 			}
 			len += sprintf(buf + len, "\n");
@@ -291,8 +298,15 @@ static int handle_vlan_port_read(void *driver, char *buf, int nr)
 		if ((val16 & (1 << 14)) /* valid */) {
 			for (j = 0; j < 6; j++) {
 				if (val16 & (1 << j)) {
-					len += sprintf(buf + len, "%d%s\t", j, (val16 & (1 << (j + 7))) ? 
-						(j == 5 ? "u" : "") : "t");
+					len += sprintf(buf + len, "%d", j);
+					if (val16 & (1 << (j + 7))) {
+						if (j == 5) buf[len++] = 'u';
+					} else {
+						buf[len++] = 't';
+						if (robo_read16(ROBO_VLAN_PAGE, ROBO_VLAN_PORT0_DEF_TAG + (j << 1)) == nr)
+							buf[len++] = '*';
+					}
+					buf[len++] = '\t';
 				}
 			}
 			len += sprintf(buf + len, "\n");
@@ -415,7 +429,7 @@ static int __init robo_init()
 	if (notfound)
 		return -ENODEV;
 	else {
-		switch_config main[] = {
+		switch_config cfg[] = {
 			{"enable", handle_enable_read, handle_enable_write},
 			{"enable_vlan", handle_enable_vlan_read, handle_enable_vlan_write},
 			{"reset", NULL, handle_reset},
@@ -432,7 +446,7 @@ static int __init robo_init()
 			cpuport: 5,
 			ports: 6,
 			vlans: 16,
-			driver_handlers: main,
+			driver_handlers: cfg,
 			port_handlers: NULL,
 			vlan_handlers: vlan,
 		};
