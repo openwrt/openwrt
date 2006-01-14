@@ -55,11 +55,6 @@ $(LINUX_DIR)/.modules_done:
 	$(MAKE) -C "$(LINUX_DIR)" CROSS_COMPILE="$(KERNEL_CROSS)" DEPMOD=true INSTALL_MOD_PATH=$(LINUX_BUILD_DIR)/modules modules_install $(MAKE_TRACE)
 	touch $(LINUX_DIR)/.modules_done
 
-# $(STAGING_DIR)/include/linux/version.h: $(LINUX_DIR)/.configured
-# 	mkdir -p $(STAGING_DIR)/include
-# 	tar -ch -C $(LINUX_DIR)/include -f - linux | tar -xf - -C $(STAGING_DIR)/include/
-# 	tar -ch -C $(LINUX_DIR)/include -f - asm | tar -xf - -C $(STAGING_DIR)/include/
-
 $(STAMP_DIR)/.linux-compile:
 	@$(MAKE) $(LINUX_DIR)/.modules_done $(TARGETS) $(KERNEL_IPKG) $(MAKE_TRACE)
 	ln -sf $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION) $(BUILD_DIR)/linux $(MAKE_TRACE)
@@ -98,8 +93,8 @@ compile: prepare $(STAMP_DIR)/.linux-compile
 
 install: compile
 	@$(TRACE) target/linux/package/install
-	$(MAKE) pkg-install $(MAKE_TRACE)
-	$(MAKE) $(LINUX_KERNEL) $(MAKE_TRACE)
+	$(MAKE) $(KPKG_MAKEOPTS) pkg-install $(MAKE_TRACE)
+	$(MAKE) $(KPKG_MAKEOPTS) $(LINUX_KERNEL) $(MAKE_TRACE)
 
 mostlyclean:
 	rm -f $(STAMP_DIR)/.linux-compile
