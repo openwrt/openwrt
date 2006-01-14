@@ -351,6 +351,7 @@ vnc-reflector-compile: jpeg-compile zlib-compile
 vpnc-compile: libgcrypt-compile libgpg-error-compile
 vtun-compile: zlib-compile openssl-compile liblzo-compile
 wificonf-compile: wireless-tools-compile nvram-compile
+wiviz-compile: libpcap-compile
 wknock-compile: libpcap-compile
 wpa_supplicant-compile: openssl-compile
 wx200d-compile: postgresql-compile
