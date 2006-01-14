@@ -63,8 +63,8 @@ diff -urN busybox.old/networking/netmsg.c busybox.dev/networking/netmsg.c
 +	int optval = 1;
 +	unsigned char buf[1001];
 +
-+	if (argc != 2) {
-+		fprintf(stderr, "usage: %s \"message\"\n", argv[0]);
++	if (argc != 3) {
++		fprintf(stderr, "usage: %s <ip> \"<message>\"\n", argv[0]);
 +		exit(1);
 +	}
 +
@@ -75,14 +75,14 @@ diff -urN busybox.old/networking/netmsg.c busybox.dev/networking/netmsg.c
 +
 +	memset(&addr, 0, sizeof(addr));
 +	addr.sin_family = AF_INET;
-+	addr.sin_addr.s_addr = htonl(0xffffffff);
++	addr.sin_addr.s_addr = inet_addr(argv[1]);
 +	addr.sin_port = htons(0x1337);
 +
 +	memset(buf, 0, 1001);
 +	buf[0] = 0xde;
 +	buf[1] = 0xad;
 +
-+	strncpy(buf + 2, argv[1], 998);
++	strncpy(buf + 2, argv[2], 998);
 +
 +	if (setsockopt (s, SOL_SOCKET, SO_BROADCAST, (caddr_t) &optval, sizeof (optval)) < 0) {
 +		perror("setsockopt()");
