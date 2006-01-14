@@ -11748,3 +11748,103 @@ diff -Nur linux-2.6.15/Makefile linux-2.6.15-openwrt/Makefile
  
  # Cross compiling and selecting different set of gcc/bin-utils
  # ---------------------------------------------------------------------------
+diff -Nur linux-2.6.15/drivers/net/natsemi.c linux-2.6.15-openwrt/drivers/net/natsemi.c
+--- linux-2.6.15/drivers/net/natsemi.c	2006-01-02 19:21:10.000000000 -0800
++++ linux-2.6.15-openwrt/drivers/net/natsemi.c	2006-01-10 07:29:49.581994000 -0800
+@@ -771,6 +771,49 @@
+ static int netdev_get_eeprom(struct net_device *dev, u8 *buf);
+ static struct ethtool_ops ethtool_ops;
+ 
++#ifdef CONFIG_MACH_ARUBA
++
++#include <linux/ctype.h>
++
++#ifndef ERR
++#define ERR(fmt, args...) printk("%s: " fmt, __func__, ##args)
++#endif
++
++static int parse_mac_addr(struct net_device *dev, char* macstr)
++{
++        int i, j;
++        unsigned char result, value;
++
++        for (i=0; i<6; i++) {
++                result = 0;
++                if (i != 5 && *(macstr+2) != ':') {
++                        ERR("invalid mac address format: %d %c\n",
++                            i, *(macstr+2));
++                        return -EINVAL;
++                }
++                for (j=0; j<2; j++) {
++                        if (isxdigit(*macstr) && (value = isdigit(*macstr) ? *macstr-'0' :
++                                                  toupper(*macstr)-'A'+10) < 16) {
++                                result = result*16 + value;
++                                macstr++;
++                        }
++                        else {
++                                ERR("invalid mac address "
++                                    "character: %c\n", *macstr);
++                                return -EINVAL;
++                        }
++                }
++
++                macstr++;
++                dev->dev_addr[i] = result;
++        }
++
++	dev->dev_addr[5]++;
++        return 0;
++}
++
++#endif
++
+ static inline void __iomem *ns_ioaddr(struct net_device *dev)
+ {
+ 	return (void __iomem *) dev->base_addr;
+@@ -859,6 +902,7 @@
+ 		goto err_ioremap;
+ 	}
+ 
++#ifndef CONFIG_MACH_ARUBA
+ 	/* Work around the dropped serial bit. */
+ 	prev_eedata = eeprom_read(ioaddr, 6);
+ 	for (i = 0; i < 3; i++) {
+@@ -867,6 +911,19 @@
+ 		dev->dev_addr[i*2+1] = eedata >> 7;
+ 		prev_eedata = eedata;
+ 	}
++#else
++	{
++		char mac[32];
++		unsigned char def_mac[6] = {00, 0x0b, 0x86, 0xba, 0xdb, 0xad};
++		extern char *getenv(char *e);
++		memset(mac, 0, 32);
++		memcpy(mac, getenv("ethaddr"), 17);
++		if (parse_mac_addr(dev, mac)){
++			printk("%s: MAC address not found\n", __func__);
++			memcpy(dev->dev_addr, def_mac, 6);
++		}
++	}
++#endif
+ 
+ 	dev->base_addr = (unsigned long __force) ioaddr;
+ 	dev->irq = irq;
+diff -Nur linux-2.6.15/drivers/net/Makefile linux-2.6.15-openwrt/drivers/net/Makefile
+--- linux-2.6.15/drivers/net/Makefile	2006-01-13 09:19:55.000000000 -0800
++++ linux-2.6.15-openwrt/drivers/net/Makefile	2006-01-09 20:44:10.378339000 -0800
+@@ -35,6 +35,7 @@
+ 
+ obj-$(CONFIG_OAKNET) += oaknet.o 8390.o
+ 
++obj-$(CONFIG_IDT_RC32434_ETH) += rc32434_eth.o
+ obj-$(CONFIG_DGRS) += dgrs.o
+ obj-$(CONFIG_VORTEX) += 3c59x.o
+ obj-$(CONFIG_TYPHOON) += typhoon.o
+@@ -190,7 +189,6 @@
+ obj-$(CONFIG_SMC91X) += smc91x.o
+ obj-$(CONFIG_DM9000) += dm9000.o
+ obj-$(CONFIG_FEC_8XX) += fec_8xx/
+-obj-$(CONFIG_IDT_RC32434_ETH) += rc32434_eth.o
+ 
+ obj-$(CONFIG_ARM) += arm/
+ obj-$(CONFIG_DEV_APPLETALK) += appletalk/
