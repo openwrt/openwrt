@@ -58,7 +58,7 @@ $(LINUX_DIR)/.modules_done:
 $(STAMP_DIR)/.linux-compile:
 	@$(MAKE) $(LINUX_DIR)/.modules_done $(TARGETS) $(KERNEL_IPKG) $(MAKE_TRACE)
 	ln -sf $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION) $(BUILD_DIR)/linux $(MAKE_TRACE)
-	@$(TRACE) target/linux/package/compile
+	@$(TRACE) target/linux/package-compile
 	$(MAKE) -C $(TOPDIR)/target/linux/package \
 		$(KPKG_MAKEOPTS) \
 		compile
@@ -92,7 +92,7 @@ prepare:
 compile: prepare $(STAMP_DIR)/.linux-compile
 
 install: compile
-	@$(TRACE) target/linux/package/install
+	@$(TRACE) target/linux/package-install
 	$(MAKE) $(KPKG_MAKEOPTS) pkg-install $(MAKE_TRACE)
 	$(MAKE) $(KPKG_MAKEOPTS) $(LINUX_KERNEL) $(MAKE_TRACE)
 

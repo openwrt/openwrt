@@ -9,31 +9,31 @@ IB_DIR:=$(BUILD_DIR)/$(IB_NAME)
 define kernel_template
 
 $(1)/$(2)-clean:
-	@$(TRACE) target/linux/$(2)-$(1)/clean
+	@$(TRACE) target/linux/$(2)-$(1)-clean
 	$(MAKE) -C $(2)-$(1) BOARD="$(2)" clean
 
 $(1)/$(2)-prepare:
-	@$(TRACE) target/linux/$(2)-$(1)/prepare
+	@$(TRACE) target/linux/$(2)-$(1)-prepare
 	$(MAKE) -C $(2)-$(1) BOARD="$(2)" prepare
 
 $(1)/$(2)-compile:
-	@$(TRACE) target/linux/$(2)-$(1)/compile
+	@$(TRACE) target/linux/$(2)-$(1)-compile
 	$(MAKE) -C $(2)-$(1) BOARD="$(2)" compile
 
 $(1)/$(2)-rebuild:
-	@$(TRACE) target/linux/$(2)-$(1)/rebuild
+	@$(TRACE) target/linux/$(2)-$(1)-rebuild
 	$(MAKE) -C $(2)-$(1) BOARD="$(2)" rebuild
 
 $(1)/$(2)-install:
-	@$(TRACE) target/linux/$(2)-$(1)/install
+	@$(TRACE) target/linux/$(2)-$(1)-install
 	$(MAKE) -C $(2)-$(1) BOARD="$(2)" install
 
 $(1)/$(2)-image: $(1)/$(2)-install
-	@$(TRACE) target/linux/image/install
+	@$(TRACE) target/linux/image-install
 	$(MAKE) -C image KERNEL="$(1)" BOARD="$(2)" install
 
 $(1)/$(2)-install-ib:
-	@$(TRACE) target/linux/image/install-ib
+	@$(TRACE) target/linux/image-install-ib
 	$(MAKE) -C image KERNEL="$(1)" BOARD="$(2)" IB_DIR="$(IB_DIR)" install-ib
 	echo '$$$$(eval $$$$(call image_template,$(2),$(1)))' >> $(IB_DIR)/kernel.mk
 
@@ -74,10 +74,10 @@ install: $(BIN_DIR)/$(IB_NAME).tar.bz2
 endif
 
 prepare:
-	@$(TRACE) target/linux/image/prepare
+	@$(TRACE) target/linux/image-prepare
 	$(MAKE) -C image prepare
 compile:
-	@$(TRACE) target/linux/image/compile
+	@$(TRACE) target/linux/image-compile
 	$(MAKE) -C image compile
 install:
 rebuild:
