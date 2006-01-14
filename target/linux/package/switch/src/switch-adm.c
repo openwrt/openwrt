@@ -34,10 +34,10 @@
 #define DRIVER_NAME "adm6996"
 #define DRIVER_VERSION "0.01"
 
-static int eecs = 2;
-static int eesk = 3;
-static int eedi = 5;
-static int eerc = 6;
+static int eecs = 0;
+static int eesk = 0;
+static int eedi = 0;
+static int eerc = 0;
 static int force = 0;
 
 MODULE_AUTHOR("Felix Fietkau <openwrt@nbd.name>");
@@ -60,7 +60,33 @@ MODULE_PARM(force, "i");
 
 #define atoi(str) simple_strtoul(((str != NULL) ? str : ""), NULL, 0)
 
+#if defined(BCMGPIO2) || defined(BCMGPIO)
 extern char *nvram_get(char *name);
+
+/* Return gpio pin number assigned to the named pin */
+/*
+* Variable should be in format:
+*
+*	gpio<N>=pin_name
+*
+* 'def_pin' is returned if there is no such variable found.
+*/
+static unsigned int getgpiopin(char *pin_name, unsigned int def_pin)
+{
+	char name[] = "gpioXXXX";
+	char *val;
+	unsigned int pin;
+
+	/* Go thru all possibilities till a match in pin name */
+	for (pin = 0; pin < 16; pin ++) {
+		sprintf(name, "gpio%d", pin);
+		val = nvram_get(name);
+		if (val && !strcmp(val, pin_name))
+			return pin;
+	}
+	return def_pin;
+}
+#endif
 
 
 static void adm_write(int cs, char *buf, unsigned int bits)
@@ -255,7 +281,16 @@ static int handle_vlan_port_read(void *driver, char *buf, int nr)
 	for (i = 0; i <= 5; i++) {
 		if (ports & vlan_ports[i]) {
 			c = adm_rreg(0, port_conf[i]);
-			len += sprintf(buf + len, (c & (1 << 4) ? "%dt\t" : (i == 5 ? "%du\t" : "%d\t")), i);
+			
+			len += sprintf(buf + len, "%d", i);
+			if (c & (1 << 4)) {
+				buf[len++] = 't';
+				if (((c & (0xf << 10)) >> 10) == nr)
+					buf[len++] = '*';
+			} else if (i == 5)
+				buf[len++] = 'u';
+
+			buf[len++] = '\t';
 		}
 	}
 	len += sprintf(buf + len, "\n");
@@ -386,23 +421,24 @@ static int handle_reset(void *driver, char *buf, int nr)
 	 * reset logic therefore we must explicitly perform the
 	 * sequence in software.
 	 */
-	/* Keep RC high for at least 20ms */
-	adm_enout(eerc, eerc);
-	for (i = 0; i < 20; i ++)
-		udelay(1000);
-	/* Keep RC low for at least 100ms */
-	adm_enout(eerc, 0);
-	for (i = 0; i < 100; i++)
-		udelay(1000);
-	/* Set default configuration */
-	adm_enout((__u8)(eesk | eedi), eesk);
-	/* Keep RC high for at least 30ms */
-	adm_enout(eerc, eerc);
-	for (i = 0; i < 30; i++)
-		udelay(1000);
-	/* Leave RC high and disable GPIO outputs */
-	adm_disout((__u8)(eecs | eesk | eedi));
-
+	if (eerc) {
+		/* Keep RC high for at least 20ms */
+		adm_enout(eerc, eerc);
+		for (i = 0; i < 20; i ++)
+			udelay(1000);
+		/* Keep RC low for at least 100ms */
+		adm_enout(eerc, 0);
+		for (i = 0; i < 100; i++)
+			udelay(1000);
+		/* Set default configuration */
+		adm_enout((__u8)(eesk | eedi), eesk);
+		/* Keep RC high for at least 30ms */
+		adm_enout(eerc, eerc);
+		for (i = 0; i < 30; i++)
+			udelay(1000);
+		/* Leave RC high and disable GPIO outputs */
+		adm_disout((__u8)(eecs | eesk | eedi));
+	}
 	/* set up initial configuration for ports */
 	for (i = 0; i <= 5; i++) {
 		int cfg = 0x8000 | /* Auto MDIX */
@@ -446,10 +482,34 @@ static int detect_adm()
 #if defined(BCMGPIO2) || defined(BCMGPIO)
 	int boardflags = atoi(nvram_get("boardflags"));
 
-	if ((boardflags & 0x80) || force)
+	if ((boardflags & 0x80) || force) {
 		ret = 1;
-	else 
+
+		eecs = getgpiopin("adm_eecs", 2);
+		eesk = getgpiopin("adm_eesk", 3);
+		eedi = getgpiopin("adm_eedi", 4);
+		eerc = getgpiopin("adm_rc", 0);
+
+	} else if ((strcmp(nvram_get("boardtype"), "bcm94710dev") == 0) &&
+			(strncmp(nvram_get("boardnum"), "42", 2) == 0)) {
+		/* WRT54G v1.1 hack */
+		eecs = 2;
+		eesk = 3;
+		eedi = 5;
+		eerc = 6;
+
+		ret = 1;
+	} else
 		printk("BFL_ENETADM not set in boardflags. Use force=1 to ignore.\n");
+		
+	if (eecs)
+		eecs = (1 << eecs);
+	if (eesk)
+		eesk = (1 << eesk);
+	if (eedi)
+		eedi = (1 << eedi);
+	if (eerc)
+		eerc = (1 << eerc);
 #else
 	ret = 1;
 #endif
@@ -486,10 +546,6 @@ static int __init adm_init()
 		port_handlers: port,
 		vlan_handlers: vlan,
 	};
-
-	eecs = (1 << eecs);
-	eesk = (1 << eesk);
-	eedi = (1 << eedi);
 
 	if (!detect_adm())
 		return -ENODEV;
