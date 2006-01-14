@@ -1,0 +1,34 @@
+#!/bin/sh
+setup_eth()
+{
+	for part in $(nvram get unused_ifnames); do
+		[ "$part" = "$INTERFACE" ] && exit 0
+	done
+	[ -d /proc/switch ] || {
+		insmod switch-core
+		insmod switch-robo || insmod switch-adm
+	}
+	if="$(echo "$INTERFACE" | sed s,eth,et,)"
+	ifconfig "$INTERFACE" up 2>&- >&-
+	[ -d "/proc/switch/$INTERFACE" ] || return 0
+	echo "1" > "/proc/switch/$INTERFACE/enable_vlan"
+	for vlan in $(seq 0 15); do
+		[ "$(nvram get vlan${vlan}hwname)" = "$if" ] && {
+			vports="$(nvram get vlan${vlan}ports)"
+			[ -n "$vports" ] && echo "$vports" > "/proc/switch/$INTERFACE/vlan/$vlan/ports"
+			$DEBUG vconfig add "$INTERFACE" "$vlan"
+		}
+	done
+}
+
+do_register()
+{
+	case "${INTERFACE%%[0-9]*}" in
+		eth) setup_eth;;
+	esac
+}
+
+
+case "$ACTION" in
+	add|register) do_register;;
+esac
