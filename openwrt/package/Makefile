@@ -514,7 +514,7 @@ $(TARGET_DIR):
 
 %-prepare: $(STAMP_DIR) $(TARGET_DIR)
 	@[ -f $(STAMP_DIR)/.$@ ] || { \
-		$(START_TRACE) "package/$(patsubst %-prepare,%,$@)/prepare: "; \
+		$(START_TRACE) "package/$(patsubst %-prepare,%,$@)-prepare: "; \
 		$(MAKE) -C $(patsubst %-prepare,%,$@) prepare && { \
 			touch $(STAMP_DIR)/.$@; \
 			$(CMD_TRACE) " done"; \
@@ -524,7 +524,7 @@ $(TARGET_DIR):
 
 %-compile:
 	@[ -f $(STAMP_DIR)/.$@ ] || { \
-		$(START_TRACE) "package/$(patsubst %-compile,%,$@)/compile: "; \
+		$(START_TRACE) "package/$(patsubst %-compile,%,$@)-compile: "; \
 		$(MAKE) -C $(patsubst %-compile,%,$@) compile && { \
 			touch $(STAMP_DIR)/.$(patsubst %-compile,%,$@)-prepare; \
 			touch $(STAMP_DIR)/.$@; \
@@ -534,20 +534,20 @@ $(TARGET_DIR):
 	}
 
 %-install: %-compile
-	@$(START_TRACE) "package/$(patsubst %-install,%,$@)/install: "
+	@$(START_TRACE) "package/$(patsubst %-install,%,$@)-install: "
 	@$(MAKE) -C $(patsubst %-install,%,$@) install
 	@$(CMD_TRACE) " done"
 	@$(END_TRACE)
 
 %-rebuild: 
-	@$(START_TRACE) "package/$(patsubst %-rebuild,%,$@)/rebuild: "
+	@$(START_TRACE) "package/$(patsubst %-rebuild,%,$@)-rebuild: "
 	@rm -f $(STAMP_DIR)/.$(patsubst %-rebuild,%,$@)-*
 	$(MAKE) -C $(patsubst %-rebuild,%,$@) rebuild
 	@$(CMD_TRACE) " done"
 	@$(END_TRACE)
 
 %-clean:
-	@$(START_TRACE) "package/$(patsubst %-clean,%,$@)/clean: "
+	@$(START_TRACE) "package/$(patsubst %-clean,%,$@)-clean: "
 	@$(MAKE) -C $(patsubst %-clean,%,$@) clean
 	@rm -f $(STAMP_DIR)/.$(patsubst %-clean,%,$@)-*
 	@$(CMD_TRACE) " done"
