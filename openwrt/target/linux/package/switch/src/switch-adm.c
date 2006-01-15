@@ -413,6 +413,7 @@ static int handle_vlan_enable_write(void *driver, char *buf, int nr)
 static int handle_reset(void *driver, char *buf, int nr)
 {
 	int i;
+	u32 cfg;
 
 	/*
 	 * Reset sequence: RC high->low(100ms)->high(30ms)
@@ -438,14 +439,15 @@ static int handle_reset(void *driver, char *buf, int nr)
 			udelay(1000);
 		/* Leave RC high and disable GPIO outputs */
 		adm_disout((__u8)(eecs | eesk | eedi));
+	
 	}
-	/* set up initial configuration for ports */
-	for (i = 0; i <= 5; i++) {
-		int cfg = 0x8000 | /* Auto MDIX */
-			(((i == 5) ? 1 : 0) << 4) | /* Tagging */
-			0xf; /* full duplex, 100Mbps, auto neg, flow ctrl */
-		adm_wreg(port_conf[i], cfg);
-	}
+
+	/* set up initial configuration for cpu port */
+	cfg = (0x8000 | /* Auto MDIX */
+	      (0xf << 10) | /* PVID */
+		  (1 << 4) | /* Tagging */
+		  0xf); /* full duplex, 100Mbps, auto neg, flow ctrl */
+	adm_wreg(port_conf[5], cfg);
 	
 	/* vlan mode select register (0x11): vlan on, mac clone */
 	adm_wreg(0x11, 0xff30);
@@ -490,13 +492,12 @@ static int detect_adm()
 		eedi = getgpiopin("adm_eedi", 4);
 		eerc = getgpiopin("adm_rc", 0);
 
-	} else if ((strcmp(nvram_get("boardtype"), "bcm94710dev") == 0) &&
-			(strncmp(nvram_get("boardnum"), "42", 2) == 0)) {
+	} else if ((strcmp(nvram_get("boardtype") ?: "", "bcm94710dev") == 0) &&
+			(strncmp(nvram_get("boardnum") ?: "", "42", 2) == 0)) {
 		/* WRT54G v1.1 hack */
 		eecs = 2;
 		eesk = 3;
 		eedi = 5;
-		eerc = 6;
 
 		ret = 1;
 	} else
