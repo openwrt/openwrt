@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dnsmasq
-PKG_VERSION:=2.24
+PKG_VERSION:=2.25
 PKG_RELEASE:=1
-PKG_MD5SUM:=d269531be1f130ab642c71c593138d31
+PKG_MD5SUM:=a5a387aed551acf91990567a5e8e4fa4
 
 PKG_SOURCE_URL:=http://thekelleys.org.uk/dnsmasq
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
