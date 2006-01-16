@@ -515,8 +515,7 @@ config BR2_PACKAGE_KMOD_NET_HERMES_PLX
 config BR2_PACKAGE_KMOD_NET_NATSEMI
 	prompt "kmod-net-natsemi.................. National Semiconductor DP8381x series PCI Ethernet kernel support"
 	tristate
-	depends BR2_LINUX_2_4_X86 || BR2_LINUX_2_6_X86 || BR2_LINUX_2_6_ARUBA
-	default y if BR2_LINUX_2_6_ARUBA
+	depends BR2_LINUX_2_4_X86 || BR2_LINUX_2_6_X86
 	default m
 	help
 	  This driver is for the National Semiconductor DP83810 series, 
