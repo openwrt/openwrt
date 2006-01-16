@@ -88,10 +88,10 @@ END {
 	print "#   pppoe: PPP over Ethernet"
 	print "#   pptp: Point-to-Point tunneling Protocol"
 	print "#     for pppoe and pptp you need to use wan_ifname=\"ppp0\""
-	print "#     and {pppoe,pptp}ifname=\"" c["wan_ifname"] "\")"
 	print ""
 	print "wan_proto=dhcp"
 	p("wan_ifname")
+	print "wan_device=\"" c["wan_ifname"] "\""
 	print "# wan_ipaddr=\"192.168.0.2\""
 	print "# wan_netmask=\"255.255.255.0\""
 	print "# wan_gateway=\"192.168.0.1\""
@@ -99,8 +99,6 @@ END {
 	print ""
 	print "## PPP over Ethernet and PPTP"
 	print "# wan_ifname=\"ppp0\""
-	print "# pppoe_ifname=\"" c["wan_ifname"] "\""
-	print "# pptp_ifname=\"" c["wan_ifname"] "\""
 	print "# pptp_server_ip=\"192.168.0.1\""
 }
 ' > /etc/config/network

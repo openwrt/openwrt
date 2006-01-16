@@ -57,9 +57,8 @@ END {
 	# WAP54G
 	if ((nvram["boardnum"] == "2") || \
 		(nvram["boardnum"] == "1024")) {
-		c["lan_ifnames"]="eth1 eth2"
+		c["lan_ifnames"]="eth0 eth1"
 		c["wan_ifname"]=""
-		c["unused_ifnames"]="eth0"
 	}
 
 	print "#### VLAN configuration "
@@ -79,7 +78,6 @@ END {
 	print "# lan_gateway=\"192.168.1.1\""
 
 	print ""
-	p("unused_ifnames")
 	print ""
 
 	print "#### WAN configuration"
@@ -90,10 +88,10 @@ END {
 	print "#   pppoe: PPP over Ethernet"
 	print "#   pptp: Point-to-Point tunneling Protocol"
 	print "#     for pppoe and pptp you need to use wan_ifname=\"ppp0\""
-	print "#     and {pppoe,pptp}ifname=\"" c["wan_ifname"] "\")"
 	print ""
 	print "wan_proto=dhcp"
 	p("wan_ifname")
+	print "wan_device=\"" c["wan_ifname"] "\""
 	print "# wan_ipaddr=\"192.168.0.2\""
 	print "# wan_netmask=\"255.255.255.0\""
 	print "# wan_gateway=\"192.168.0.1\""
@@ -101,8 +99,6 @@ END {
 	print ""
 	print "## PPP over Ethernet and PPTP"
 	print "# wan_ifname=\"ppp0\""
-	print "# pppoe_ifname=\"" c["wan_ifname"] "\""
-	print "# pptp_ifname=\"" c["wan_ifname"] "\""
 	print "# pptp_server_ip=\"192.168.0.1\""
 }
 ' > /etc/config/network

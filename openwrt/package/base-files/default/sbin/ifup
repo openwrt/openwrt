@@ -23,7 +23,7 @@ case "$if_proto" in
 	none|"") exit 0;;
 esac
 
-[ "${if%%[0-9]*}" = "ppp" ] && if="$(nvram get ${if_proto}_ifname)"
+[ "${if%%[0-9]*}" = "ppp" ] && if="$(nvram get ${type}_device)"
 
 if [ "${if%%[0-9]}" = "br" ]; then
 	for sif in $(nvram get ${type}_ifnames); do
