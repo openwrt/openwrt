@@ -15,31 +15,18 @@ ifeq ($(IB),)
 $(KDIR)/vmlinux.lzma: $(KDIR)/vmlinux
 	cat $^ | $(STAGING_DIR)/bin/lzma e -si -so -eos -lc1 -lp2 -pb2 > $@ || (rm -f $@ && false)
 
-$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).ari: $(KDIR)/vmlinux.lzma
-install: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).ari
-endif
-
-ifeq ($(FS),jffs2-8MB)
-TRXALIGN:=-a 0x20000
-endif
-ifeq ($(FS),jffs2-4MB)
-TRXALIGN:=-a 0x10000
+$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL).ari: $(KDIR)/vmlinux.lzma
+install: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL).ari
 endif
 
 ifeq ($(KERNEL),2.6)
 FSNAME:=$(patsubst jffs2-%,jffs2,$(FS))
 
 ifeq ($(FS),jffs2-4MB)
-$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FSNAME).ari: $(KDIR)/loader.elf
+$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL).ari: $(KDIR)/loader.elf
 	./addVersion -n ArubaOS $(KDIR)/loader.elf $@ version
 
-$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FSNAME).bin: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FSNAME).ari $(KDIR)/root.$(FS)
-	@dd if=$< of=$@.tmp bs=655360 conv=sync
-	@cat $(KDIR)/root.$(FS) >> $@.tmp
-	@dd if=$@.tmp of=$@ bs=3604480 conv=sync
-	@rm -f $@.tmp
-
-install: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FSNAME).bin
+install: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL).ari
 endif
 endif
 
