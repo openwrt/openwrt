@@ -75,12 +75,7 @@ do_ifup() {
 			DHCP_HOSTNAME=${DHCP_HOSTNAME%%.*}
 			[ -z $DHCP_HOSTNAME ] || DHCP_ARGS="$DHCP_ARGS -H $DHCP_HOSTNAME"
 			[ "$if_proto" = "pptp" ] && DHCP_ARGS="$DHCP_ARGS -n -q" || DHCP_ARGS="$DHCP_ARGS -R &"
-			oldpid=$(cat $pidfile)
 			${DEBUG:-eval} "udhcpc $DHCP_ARGS"
-			pidof udhcpc | grep "$oldpid" >&- 2>&- && {
-				sleep 1
-				kill -9 $oldpid
-			}
 			# hotplug events are handled by /usr/share/udhcpc/default.script
 		;;
 		*)
