@@ -1,6 +1,6 @@
 diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
 --- linux.old/drivers/net/b44.c	2006-01-16 20:35:09.203794500 +0100
-+++ linux.dev/drivers/net/b44.c	2006-01-16 20:40:29.023782000 +0100
++++ linux.dev/drivers/net/b44.c	2006-01-16 22:20:45.631180500 +0100
 @@ -1,7 +1,9 @@
 -/* b44.c: Broadcom 4400 device driver.
 +/* b44.c: Broadcom 4400/47xx device driver.
@@ -562,7 +562,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  out:
  	return err;
  }
-@@ -1865,22 +2243,54 @@
+@@ -1865,22 +2243,55 @@
  static int __devinit b44_get_invariants(struct b44 *bp)
  {
  	u8 eeprom[128];
@@ -579,10 +579,12 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
 -	bp->dev->dev_addr[4] = eeprom[83];
 -	bp->dev->dev_addr[5] = eeprom[82];
 -	memcpy(bp->dev->perm_addr, bp->dev->dev_addr, bp->dev->addr_len);
+-
+-	bp->phy_addr = eeprom[90] & 0x1f;
 +	u8 buf[32];
 +	int err = 0;
- 
--	bp->phy_addr = eeprom[90] & 0x1f;
++	unsigned long flags;
++
 +#ifdef CONFIG_BCM947XX
 +	if (bp->pdev->device == PCI_DEVICE_ID_BCM4713) {
 +		/* 
@@ -631,7 +633,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  	/* With this, plus the rx_header prepended to the data by the
  	 * hardware, we'll land the ethernet header on a 2-byte boundary.
  	 */
-@@ -1889,11 +2299,7 @@
+@@ -1889,11 +2300,7 @@
  	bp->imask = IMASK_DEF;
  
  	bp->core_unit = ssb_core_unit(bp);
@@ -643,7 +645,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  out:
  	return err;
  }
-@@ -2032,11 +2438,17 @@
+@@ -2032,11 +2439,17 @@
  
  	pci_save_state(bp->pdev);
  
