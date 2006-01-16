@@ -26,7 +26,7 @@ find_name()
 				}
 			;;
 			*)
-				[ "$(nvram get ${IFPROTO}_ifname)" = "$INTERFACE" \
+				[ "$(nvram get ${IFTYPE}_device)" = "$INTERFACE" \
 				  -a -x /sbin/ifup.${IFPROTO} ] && return 0
 			;;
 		esac

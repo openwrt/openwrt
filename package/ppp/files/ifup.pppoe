@@ -14,7 +14,7 @@ for module in slhc ppp_generic pppox pppoe; do
 	/sbin/insmod $module 2>&- >&-
 done
 
-IFNAME=$(nvram get pppoe_ifname)
+IFNAME=$(nvram get ${type}_device)
 USERNAME=$(nvram get ppp_username)
 PASSWORD=$(nvram get ppp_passwd)
 KEEPALIVE=$(nvram get ppp_redialperiod)
