@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
-# Linux kernel version: 2.6.15-rc6
-# Sat Dec 24 00:37:33 2005
+# Linux kernel version: 2.6.15
+# Mon Jan 16 04:38:41 2006
 #
 CONFIG_MIPS=y
 
@@ -1467,7 +1467,7 @@ CONFIG_INOTIFY=y
 # DOS/FAT/NT Filesystems
 #
 CONFIG_FAT_FS=m
-CONFIG_MSDOS_FS=m
+# CONFIG_MSDOS_FS is not set
 CONFIG_VFAT_FS=m
 CONFIG_FAT_DEFAULT_CODEPAGE=437
 CONFIG_FAT_DEFAULT_IOCHARSET="iso8859-1"
@@ -1523,10 +1523,25 @@ CONFIG_SQUASHFS_FRAGMENT_CACHE_SIZE=3
 #
 # Network File Systems
 #
-# CONFIG_NFS_FS is not set
+CONFIG_NFS_FS=m
+CONFIG_NFS_V3=y
+# CONFIG_NFS_V3_ACL is not set
+CONFIG_NFS_V4=y
+# CONFIG_NFS_DIRECTIO is not set
 # CONFIG_NFSD is not set
-# CONFIG_SMB_FS is not set
-# CONFIG_CIFS is not set
+CONFIG_LOCKD=m
+CONFIG_LOCKD_V4=y
+CONFIG_NFS_COMMON=y
+CONFIG_SUNRPC=m
+CONFIG_SUNRPC_GSS=m
+CONFIG_RPCSEC_GSS_KRB5=m
+# CONFIG_RPCSEC_GSS_SPKM3 is not set
+CONFIG_SMB_FS=m
+# CONFIG_SMB_NLS_DEFAULT is not set
+CONFIG_CIFS=m
+# CONFIG_CIFS_STATS is not set
+# CONFIG_CIFS_XATTR is not set
+# CONFIG_CIFS_EXPERIMENTAL is not set
 # CONFIG_NCP_FS is not set
 # CONFIG_CODA_FS is not set
 # CONFIG_AFS_FS is not set
