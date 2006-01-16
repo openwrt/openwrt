@@ -1,6 +1,6 @@
 diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
---- linux.old/drivers/net/b44.c	2006-01-12 01:44:42.548326000 +0100
-+++ linux.dev/drivers/net/b44.c	2006-01-13 17:30:08.283122500 +0100
+--- linux.old/drivers/net/b44.c	2006-01-16 20:35:09.203794500 +0100
++++ linux.dev/drivers/net/b44.c	2006-01-16 20:40:29.023782000 +0100
 @@ -1,7 +1,9 @@
 -/* b44.c: Broadcom 4400 device driver.
 +/* b44.c: Broadcom 4400/47xx device driver.
@@ -93,7 +93,38 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  	return 0;
  }
  
-@@ -313,14 +334,14 @@
+@@ -277,6 +298,30 @@
+ 		== SBTMSLOW_CLOCK);
+ }
+ 
++#ifdef CONFIG_BCM947XX
++static inline void __b44_cam_read(struct b44 *bp, unsigned char *data, int index)
++{
++	u32 val;
++
++	bw32(bp, B44_CAM_CTRL, (CAM_CTRL_READ |
++			    (index << CAM_CTRL_INDEX_SHIFT)));
++
++	b44_wait_bit(bp, B44_CAM_CTRL, CAM_CTRL_BUSY, 100, 1);
++
++	val = br32(bp, B44_CAM_DATA_LO);
++
++	data[2] = (val >> 24) & 0xFF;
++	data[3] = (val >> 16) & 0xFF;
++	data[4] = (val >> 8) & 0xFF;
++	data[5] = (val >> 0) & 0xFF;
++
++	val = br32(bp, B44_CAM_DATA_HI);
++
++	data[0] = (val >> 8) & 0xFF;
++	data[1] = (val >> 0) & 0xFF;
++}
++#endif
++
+ static void __b44_cam_write(struct b44 *bp, unsigned char *data, int index)
+ {
+ 	u32 val;
+@@ -313,14 +358,14 @@
  	bw32(bp, B44_IMASK, bp->imask);
  }
  
@@ -110,7 +141,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  			     (reg << MDIO_DATA_RA_SHIFT) |
  			     (MDIO_TA_VALID << MDIO_DATA_TA_SHIFT)));
  	err = b44_wait_bit(bp, B44_EMAC_ISTAT, EMAC_INT_MII, 100, 0);
-@@ -329,18 +350,34 @@
+@@ -329,18 +374,34 @@
  	return err;
  }
  
@@ -147,7 +178,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  /* miilib interface */
  /* FIXME FIXME: phy_id is ignored, bp->phy_addr use is unconditional
   * due to code existing before miilib use was added to this driver.
-@@ -369,6 +406,8 @@
+@@ -369,6 +430,8 @@
  	u32 val;
  	int err;
  
@@ -156,16 +187,20 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  	err = b44_writephy(bp, MII_BMCR, BMCR_RESET);
  	if (err)
  		return err;
-@@ -439,6 +478,18 @@
+@@ -439,6 +502,22 @@
  	u32 val;
  	int err;
  
 +#ifdef CONFIG_BCM947XX
-+	char *s;
-+	if ((s = nvram_get("boardnum")) && (s != NULL) && \
-+			!strncmp(s, "2", 1) && \
-+			(__b44_readphy(bp, 0, MII_BMCR, &val) != 0) && \
-+			(val & BMCR_ISOLATE) && \
++	/*
++	 * workaround for bad hardware design in Linksys WAP54G v1.0
++	 * see https://dev.openwrt.org/ticket/146
++	 * check and reset bit "isolate"
++	 */
++	if ((bp->pdev->device == PCI_DEVICE_ID_BCM4713) &&
++			(atoi(nvram_get("boardnum")) == 2) &&
++			(__b44_readphy(bp, 0, MII_BMCR, &val) == 0) && 
++			(val & BMCR_ISOLATE) &&
 +			(__b44_writephy(bp, 0, MII_BMCR, val & ~BMCR_ISOLATE) != 0)) {
 +		printk(KERN_WARNING PFX "PHY: cannot reset MII transceiver isolate bit.\n");
 +	}
@@ -175,7 +210,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  	if ((err = b44_readphy(bp, B44_MII_ALEDCTRL, &val)) != 0)
  		goto out;
  	if ((err = b44_writephy(bp, B44_MII_ALEDCTRL,
-@@ -534,6 +585,19 @@
+@@ -534,6 +613,19 @@
  {
  	u32 bmsr, aux;
  
@@ -195,7 +230,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  	if (!b44_readphy(bp, MII_BMSR, &bmsr) &&
  	    !b44_readphy(bp, B44_MII_AUXCTRL, &aux) &&
  	    (bmsr != 0xffff)) {
-@@ -1281,9 +1345,10 @@
+@@ -1281,9 +1373,10 @@
  		bw32(bp, B44_DMARX_CTRL, 0);
  		bp->rx_prod = bp->rx_cons = 0;
  	} else {
@@ -209,7 +244,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  	}
  
  	ssb_core_reset(bp);
-@@ -1291,8 +1356,14 @@
+@@ -1291,8 +1384,14 @@
  	b44_clear_stats(bp);
  
  	/* Make PHY accessible. */
@@ -225,7 +260,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  	br32(bp, B44_MDIO_CTRL);
  
  	if (!(br32(bp, B44_DEVCTRL) & DEVCTRL_IPP)) {
-@@ -1834,18 +1905,297 @@
+@@ -1834,18 +1933,297 @@
  	.get_perm_addr		= ethtool_op_get_perm_addr,
  };
  
@@ -527,14 +562,12 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  out:
  	return err;
  }
-@@ -1865,22 +2215,43 @@
+@@ -1865,22 +2243,54 @@
  static int __devinit b44_get_invariants(struct b44 *bp)
  {
  	u8 eeprom[128];
 -	int err;
-+	u8 buf[32];
-+	int err = 0;
- 
+-
 -	err = b44_read_eeprom(bp, &eeprom[0]);
 -	if (err)
 -		goto out;
@@ -546,7 +579,9 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
 -	bp->dev->dev_addr[4] = eeprom[83];
 -	bp->dev->dev_addr[5] = eeprom[82];
 -	memcpy(bp->dev->perm_addr, bp->dev->dev_addr, bp->dev->addr_len);
--
++	u8 buf[32];
++	int err = 0;
+ 
 -	bp->phy_addr = eeprom[90] & 0x1f;
 +#ifdef CONFIG_BCM947XX
 +	if (bp->pdev->device == PCI_DEVICE_ID_BCM4713) {
@@ -555,7 +590,18 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
 +		 * a NVRAM area somewhere in the flash memory.
 +		 */
 +		sprintf(buf, "et%dmacaddr", b44_4713_instance);
-+		e_aton(nvram_get(buf), bp->dev->dev_addr);
++		if (nvram_get(buf)) {
++			e_aton(nvram_get(buf), bp->dev->dev_addr);
++		} else {
++			/*
++			 * Getting the MAC out of NVRAM failed. To make it work
++			 * here, we simply rely on the bootloader to write the
++			 * MAC into the CAM.
++			 */
++			spin_lock_irqsave(&bp->lock, flags);
++			__b44_cam_read(bp, bp->dev->dev_addr, 0);
++			spin_unlock_irqrestore(&bp->lock, flags);
++		}
  
 +		/* 
 +		 * BCM47xx boards don't have a PHY. Usually there is a switch
@@ -585,7 +631,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  	/* With this, plus the rx_header prepended to the data by the
  	 * hardware, we'll land the ethernet header on a 2-byte boundary.
  	 */
-@@ -1889,11 +2260,7 @@
+@@ -1889,11 +2299,7 @@
  	bp->imask = IMASK_DEF;
  
  	bp->core_unit = ssb_core_unit(bp);
@@ -597,7 +643,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  out:
  	return err;
  }
-@@ -2032,11 +2399,17 @@
+@@ -2032,11 +2438,17 @@
  
  	pci_save_state(bp->pdev);
  
@@ -617,8 +663,8 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  
  err_out_iounmap:
 diff -urN linux.old/drivers/net/b44.h linux.dev/drivers/net/b44.h
---- linux.old/drivers/net/b44.h	2006-01-12 01:44:42.548326000 +0100
-+++ linux.dev/drivers/net/b44.h	2006-01-12 02:55:06.290783500 +0100
+--- linux.old/drivers/net/b44.h	2006-01-16 20:35:09.255797750 +0100
++++ linux.dev/drivers/net/b44.h	2006-01-16 20:30:30.566380750 +0100
 @@ -292,6 +292,10 @@
  #define SSB_PCI_MASK1		0xfc000000
  #define SSB_PCI_MASK2		0xc0000000
