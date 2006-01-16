@@ -107,6 +107,14 @@ case "$(nvram get productid)" in
 		nvram set lan_ifnames="eth1 eth2"
 		nvram set wan_ifname="none"
 	;;
+	*)
+		# wl-500g defaults. these are placed here, because WL-HDD and WL-300g
+		# might have the same nvram settings.
+		[ "$(nvram get boardnum)" = "asusX" \
+		-a "$(nvram get boardtype)" = "bcm94710dev" ] && {
+			nvram_default wan_device "eth1"
+		}
+	;;
 esac
 
 # hacks for wap54g hardware
@@ -130,27 +138,25 @@ esac
 	nvram_default wl0id 0x4320
 }
 
-WAN_PROTO="$(nvram get wan_proto)"
-[  "$WAN_PROTO" = "pptp" \
--o "$WAN_PROTO" = "pppoe" ] && {
-	WAN_IFNAME="$(nvram get wan_ifname)"
-	[ "${WAN_IFNAME%%[0-9]*}" = "ppp" ] || {
-		nvram set wan_ifname=ppp0
-		nvram set ${WAN_PROTO}_ifname="$WAN_IFNAME"
-	}
-}
-
 # defaults
 nvram_default lan_ifname "br0"
 nvram_default lan_ifnames "$FAILSAFE_ifnames"
 
 nvram_default wan_ifname "vlan1"
+nvram_default wan_device "vlan1"
 nvram_default wan_proto "dhcp"
 
 nvram_default wl0_ssid OpenWrt
 nvram_default wl0_mode ap
 nvram_default wl0_infra 1
 nvram_default wl0_radio 1
+
+WAN_PROTO="$(nvram get wan_proto)"
+WAN_IFNAME="$(nvram get wan_ifname)"
+case "$WAN_PROTO" in
+	pp*) [ "${WAN_IFNAME%%[0-9]*}" = "ppp" ] || nvram set wan_ifname=ppp0;;
+	*) [ "${WAN_IFNAME%%[0-9]*}" = "ppp" ] && nvram set wan_ifname="$(nvram get wan_device)";;
+esac
 
 [ "$(nvram get il0macaddr)" = "00:90:4c:5f:00:2a" ] && {
 	# if default wifi mac, set two higher than the lan mac

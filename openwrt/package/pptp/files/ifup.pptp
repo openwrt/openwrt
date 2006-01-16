@@ -33,7 +33,7 @@ do_ifup $PPTP_PROTO $type
 
 # hack for some buggy ISPs
 NETMASK=$(nvram get ${type}_netmask)
-IFNAME=$(nvram get pptp_ifname)
+IFNAME=$(nvram get ${type}_device)
 [ -z "$NETMASK" -o -z "$IFNAME" ] || ifconfig $IFNAME netmask $NETMASK
 
 /usr/sbin/pppd \
