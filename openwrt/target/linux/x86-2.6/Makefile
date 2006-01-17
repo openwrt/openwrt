@@ -1,8 +1,8 @@
 include $(TOPDIR)/rules.mk
 
-LINUX_VERSION:=2.6.15
+LINUX_VERSION:=2.6.15.1
 LINUX_RELEASE:=1
-LINUX_KERNEL_MD5SUM:=cdf95e00f5111e31f78e1d97304d9522
+LINUX_KERNEL_MD5SUM:=3a71f70fecf25a893bb95efaa37f575c
 
 include ../rules.mk
 include ./config
