@@ -1,6 +1,6 @@
 --- shfs-0.35-orig/shfs/Linux-2.4/Makefile	2004-06-01 15:16:19.000000000 +0200
 +++ shfs-0.35-2/shfs/Linux-2.4/Makefile	2005-04-09 02:34:35.000000000 +0200
-@@ -1,3 +1,17 @@
+@@ -1,3 +1,13 @@
 +#
 +# the original Makefile was trashed and replaced by this one
 +# The main reason is that loadable modules should be built with
@@ -10,15 +10,11 @@
 +#   make -C $(KERNEL_DIR) SUBDIRS="$(shell pwd)" modules
 +#   make -C $(KERNEL_DIR) SUBDIRS="$(shell pwd)" modules_install
 +#
-+#
-+# $(TOPDIR)/lib/string.o is needed at link time because the memchr function 
-+# is not exported on mips (insmod: unresolved symbol memchr)
-+#
 +
  ifndef KERNEL
  KERNEL=$(shell uname -r)
  endif
-@@ -10,67 +24,30 @@
+@@ -10,67 +24,29 @@
  KERNEL_SOURCES=${MODULESDIR}/build
  endif
  
@@ -99,5 +95,4 @@
 +	rm -f core *.o *.a *.s
 +
 +shfs.o: $(shfs-objs)
-+	$(LD) -r -o $@ $(shfs-objs) $(TOPDIR)/lib/string.o
 +
