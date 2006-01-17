@@ -27,6 +27,15 @@ $(PKG_BUILD_DIR)/ld.script: src/ld.script.in
 	sed -e 's/@@OUTPUT_FORMAT@@/$(OUTPUT_FORMAT)/' \
 	    -e 's/@@LOADADDR@@/$(LOADADDR)/' <$< >$@
 
+$(PKG_BUILD_DIR)/cksum.o: $(PKG_BUILD_DIR)/cksum.c
+	$(HOSTCC) -o $@ $<
+
+$(PKG_BUILD_DIR)/ckmain.o: $(PKG_BUILD_DIR)/ckmain.c
+	$(HOSTCC) -o $@ $<
+
+$(PKG_BUILD_DIR)/tichksum: $(PKG_BUILD_DIR)/ckmain.o $(PKG_BUILD_DIR)/cksum.o
+	$(HOSTCC) -o $@ $<
+
 $(PKG_BUILD_DIR)/LzmaDecode.o: src/LzmaDecode.c
 	$(TARGET_CC) $(CFLAGS) -c -o $@ $<
 
