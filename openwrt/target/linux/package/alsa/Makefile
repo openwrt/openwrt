@@ -17,7 +17,7 @@ PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 include $(TOPDIR)/package/rules.mk
 
 ifeq ($(LINUX_KARCH),i386)
-KERNEL_C_INCS:= -I$(LINUX_DIR)/include/asm-i386/mach-generic
+KERNEL_C_INCS:= -I$(LINUX_DIR)/include/asm-i386/mach-generic -I$(LINUX_DIR)/include/asm-i386/mach-default
 KERNEL_C_OPTS:= -Os -mpreferred-stack-boundary=2 -march=i486 -fno-unit-at-a-time
 endif
 ifeq ($(LINUX_KARCH),mips)
