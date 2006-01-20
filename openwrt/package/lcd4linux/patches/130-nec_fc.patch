@@ -1,0 +1,435 @@
+diff -urN lcd4linux.old/Makefile.in lcd4linux.dev/Makefile.in
+--- lcd4linux.old/Makefile.in	2006-01-20 03:52:18.414424750 +0100
++++ lcd4linux.dev/Makefile.in	2006-01-20 07:59:02.782678750 +0100
+@@ -104,7 +104,7 @@
+ lcd4linux_SOURCES =  lcd4linux.c                 cfg.c         cfg.h         debug.c       debug.h       drv.c         drv.h         evaluator.c   evaluator.h   hash.c        hash.h        layout.c      layout.h      pid.c         pid.h         timer.c       timer.h       thread.c      thread.h      udelay.c      udelay.h      qprintf.c     qprintf.h                                 widget.c      widget.h      widget_text.c widget_text.h widget_bar.c  widget_bar.h  widget_icon.c widget_icon.h                             plugin.c      plugin.h      plugin_cfg.c                plugin_math.c               plugin_string.c             plugin_test.c               plugin_time.c
+ 
+ 
+-EXTRA_lcd4linux_SOURCES =  drv_generic_text.c          drv_generic_text.h          drv_generic_graphic.c       drv_generic_graphic.h       drv_generic_serial.c        drv_generic_serial.h        drv_generic_parport.c       drv_generic_parport.h       drv_generic_i2c.c           drv_generic_i2c.h           drv_BeckmannEgle.c          drv_BWCT.c                  drv_Crystalfontz.c          drv_Curses.c                drv_Cwlinux.c               drv_HD44780.c               drv_Image.c                 drv_LCDLinux.c              drv_LCDLinux.h              drv_LCDTerm.c               drv_M50530.c                drv_MatrixOrbital.c         drv_MilfordInstruments.c    drv_Noritake.c              drv_NULL.c                  drv_RouterBoard.c           drv_serdisplib.c            drv_SimpleLCD.c             drv_T6963.c                 drv_Trefon.c                drv_USBLCD.c                drv_X11.c                                               font_6x8.h                                              lcd4linux_i2c.h                                         plugin_apm.c                plugin_cpuinfo.c            plugin_diskstats.c          plugin_dvb.c                plugin_exec.c               plugin_i2c_sensors.c        plugin_imon.c               plugin_isdn.c               plugin_loadavg.c            plugin_meminfo.c            plugin_mysql.c              plugin_netdev.c             plugin_pop3.c               plugin_ppp.c                plugin_proc_stat.c          plugin_python.c             plugin_seti.c               plugin_statfs.c             plugin_uname.c              plugin_uptime.c             plugin_wireless.c           plugin_xmms.c
++EXTRA_lcd4linux_SOURCES =  drv_generic_text.c          drv_generic_text.h          drv_generic_graphic.c       drv_generic_graphic.h       drv_generic_serial.c        drv_generic_serial.h        drv_generic_parport.c       drv_generic_parport.h       drv_generic_i2c.c           drv_generic_i2c.h           drv_BeckmannEgle.c          drv_BWCT.c                  drv_Crystalfontz.c          drv_Curses.c                drv_Cwlinux.c               drv_HD44780.c               drv_Image.c                 drv_LCDLinux.c              drv_LCDLinux.h              drv_LCDTerm.c               drv_M50530.c                drv_MatrixOrbital.c          drv_FC-NEC.c             drv_MilfordInstruments.c    drv_Noritake.c              drv_NULL.c                  drv_RouterBoard.c           drv_serdisplib.c            drv_SimpleLCD.c             drv_T6963.c                 drv_Trefon.c                drv_USBLCD.c                drv_X11.c                                               font_6x8.h                                              lcd4linux_i2c.h                                         plugin_apm.c                plugin_cpuinfo.c            plugin_diskstats.c          plugin_dvb.c                plugin_exec.c               plugin_i2c_sensors.c        plugin_imon.c               plugin_isdn.c               plugin_loadavg.c            plugin_meminfo.c            plugin_mysql.c              plugin_netdev.c             plugin_pop3.c               plugin_ppp.c                plugin_proc_stat.c          plugin_python.c             plugin_seti.c               plugin_statfs.c             plugin_uname.c              plugin_uptime.c             plugin_wireless.c           plugin_xmms.c
+ 
+ 
+ EXTRA_DIST =  lcd4linux.conf.sample       lcd4kde.conf                lcd4linux.kdelnk            lcd4linux.xpm               lcd4linux.lsm               curses.m4                   AUTHORS                     CREDITS                     FAQ                         NEWS                        TODO                        README                      README.Drivers              README.Plugins              README.KDE                  plugin_sample.c
+@@ -362,6 +362,9 @@
+ drv_M50530.o: drv_M50530.c config.h debug.h cfg.h qprintf.h udelay.h \
+ 	plugin.h evaluator.h widget.h widget_text.h widget_icon.h \
+ 	widget_bar.h drv.h drv_generic_text.h drv_generic_parport.h
++drv_NEC-FC.o: drv_NEC-FC.c config.h debug.h cfg.h plugin.h \
++	evaluator.h widget.h widget_text.h widget_icon.h widget_bar.h \
++	drv.h drv_generic_text.h drv_generic_serial.h
+ drv_MatrixOrbital.o: drv_MatrixOrbital.c config.h debug.h cfg.h plugin.h \
+ 	evaluator.h widget.h widget_text.h widget_icon.h widget_bar.h \
+ 	drv.h drv_generic_text.h drv_generic_serial.h
+diff -urN lcd4linux.old/config.h.in lcd4linux.dev/config.h.in
+--- lcd4linux.old/config.h.in	2006-01-20 03:52:18.418423000 +0100
++++ lcd4linux.dev/config.h.in	2006-01-20 08:01:07.332164500 +0100
+@@ -368,6 +368,9 @@
+ /* MatrixOrbital driver */
+ #undef WITH_MATRIXORBITAL
+ 
++/* NEC-FC driver */
++#undef WITH_NEC_FC
++
+ /* Milford Instruments driver */
+ #undef WITH_MILINST
+ 
+diff -urN lcd4linux.old/configure lcd4linux.dev/configure
+--- lcd4linux.old/configure	2006-01-20 03:52:18.418423000 +0100
++++ lcd4linux.dev/configure	2006-01-20 08:00:27.973391500 +0100
+@@ -872,7 +872,7 @@
+                           HD44780, LCDLinux, LCDTerm, M50530, MatrixOrbital,
+                           MilfordInstruments, Noritake, NULL, PNG, PPM,
+                           RouterBoard, serdisplib, SimpleLCD, T6963, Trefon,
+-                          USBLCD, X11
++                          USBLCD, X11, NEC-FC
+   --with-plugins=<list>   choose which plugins to compile.
+                           type --with-plugins=list for a list
+                           of avaible plugins
+@@ -5888,6 +5888,7 @@
+          LCDTERM="yes"
+          M50530="yes"
+          MATRIXORBITAL="yes"
++         NEC_FC="yes"
+          MILINST="yes"
+          NORITAKE="yes"
+          NULL="yes"
+@@ -5930,6 +5931,9 @@
+          ;;
+       MatrixOrbital)
+          MATRIXORBITAL=$val
++		 ;;
++      NEC-FC)
++         NEC_FC=$val
+          ;;
+       MilfordInstruments)
+          MILINST=$val
+@@ -6109,6 +6113,16 @@
+ 
+ fi
+ 
++if test "$NEC_FC" = "yes"; then
++   SERIAL="yes"
++   DRIVERS="$DRIVERS drv_NEC-FC.o"
++
++cat >>confdefs.h <<\_ACEOF
++#define WITH_NEC_FC 1
++_ACEOF
++
++fi
++
+ if test "$MILINST" = "yes"; then
+    DRIVERS="$DRIVERS drv_MilfordInstruments.o"
+ 
+diff -urN lcd4linux.old/drv.c lcd4linux.dev/drv.c
+--- lcd4linux.old/drv.c	2006-01-20 03:52:18.422421250 +0100
++++ lcd4linux.dev/drv.c	2006-01-20 08:02:30.895589500 +0100
+@@ -207,6 +207,7 @@
+ extern DRIVER drv_LCDLinux;
+ extern DRIVER drv_LCDTerm;
+ extern DRIVER drv_M50530;
++extern DRIVER drv_NEC_FC;
+ extern DRIVER drv_MatrixOrbital;
+ extern DRIVER drv_MilfordInstruments;
+ extern DRIVER drv_Noritake;
+@@ -259,6 +260,9 @@
+ #ifdef WITH_MATRIXORBITAL
+     &drv_MatrixOrbital,
+ #endif
++#ifdef WITH_NEC_FC
++    &drv_NEC_FC,
++#endif
+ #ifdef WITH_MILINST
+     &drv_MilfordInstruments,
+ #endif
+diff -urN lcd4linux.old/drv_NEC-FC.c lcd4linux.dev/drv_NEC-FC.c
+--- lcd4linux.old/drv_NEC-FC.c	1970-01-01 01:00:00.000000000 +0100
++++ lcd4linux.dev/drv_NEC-FC.c	2006-01-20 09:32:19.632985000 +0100
+@@ -0,0 +1,328 @@
++/* $Id$
++ *
++ * Driver for NEC FC20X2JA
++ * Copyright (C) 2006, Felix Fietkau <nbd@openwrt.org>
++ *
++ * Based on MatrixOrbital driver
++ *
++ * LCD4Linux is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2, or (at your option)
++ * any later version.
++ *
++ * LCD4Linux is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
++ *
++ */
++
++/* 
++ *
++ * exported fuctions:
++ *
++ * struct DRIVER drv_NEC_FC_
++ *
++ */
++
++#include "config.h"
++
++#include <stdlib.h>
++#include <stdio.h>
++#include <string.h>
++#include <unistd.h>
++
++#include "debug.h"
++#include "cfg.h"
++#include "plugin.h"
++#include "widget.h"
++#include "widget_text.h"
++#include "widget_icon.h"
++#include "widget_bar.h"
++#include "drv.h"
++#include "drv_generic_text.h"
++#include "drv_generic_serial.h"
++
++
++static char Name[] = "NEC-FC";
++static int cur_pos = 0;
++static int Model;
++static int Protocol;
++
++/* Fixme: GPO's not yet implemented */
++/* static int GPO[8]; */
++static int GPOS;
++
++
++typedef struct {
++    int type;
++    char *name;
++    int rows;
++    int cols;
++    int gpos;
++    int protocol;
++} MODEL;
++
++/* Fixme #1: number of gpo's should be verified */
++/* Fixme #2: protocol should be verified */
++
++static MODEL Models[] = {
++    {0x01, "FC20X2JA", 2, 20, 0, 1},
++    {0xff, "Unknown", -1, -1, 0, 0}
++};
++
++
++/****************************************/
++/***  hardware dependant functions    ***/
++/****************************************/
++
++static void drv_FC_clear(void)
++{
++	drv_generic_serial_write("\014", 1);	/* Clear Screen */
++	cur_pos = 0;
++}
++
++
++static void drv_FC_write(const int row, const int col, const char *data, const int len)
++{
++	int i;
++	int target = (row * DCOLS) + col;
++	target -= cur_pos;
++	char *buf;
++
++	buf = malloc(len + 1);
++	memcpy(buf, data, len);
++	buf[len] = 0;
++
++	if (target < 0)
++		for (i = 0; i < -target; i++)
++    		drv_generic_serial_write("\x08", 1);
++	else
++		for (i = 0; i < target; i++)
++		    drv_generic_serial_write("\x09", 1);
++	
++	cur_pos += target + len;
++	if (cur_pos >= (DROWS * DCOLS))
++		cur_pos = 0;
++
++    drv_generic_serial_write(data, len);
++}
++
++
++static void drv_FC_defchar(const int ascii, const unsigned char *matrix)
++{
++    int i;
++    char cmd[11] = "\x1aN";
++
++    cmd[2] = (char) ascii;
++    for (i = 0; i < 8; i++) {
++	cmd[i + 3] = matrix[i] & 0x1f;
++    }
++    drv_generic_serial_write(cmd, 11);
++}
++
++
++static int drv_FC_contrast(int contrast)
++{
++	char c = (char) contrast;
++	c >>= 6;
++	c &= 2;
++	c = 4 - c;
++
++    drv_generic_serial_write(&c, 1);
++    return contrast;
++}
++
++
++static int drv_FC_start(const char *section, const int quiet)
++{
++    int i;
++    char *model;
++    char buffer[256];
++
++    model = cfg_get(section, "Model", NULL);
++    if (model != NULL && *model != '\0') {
++	for (i = 0; Models[i].type != 0xff; i++) {
++	    if (strcasecmp(Models[i].name, model) == 0)
++		break;
++	}
++	if (Models[i].type == 0xff) {
++	    error("%s: %s.Model '%s' is unknown from %s", Name, section, model, cfg_source());
++	    return -1;
++	}
++	Model = i;
++	info("%s: using model '%s'", Name, Models[Model].name);
++    } else {
++	info("%s: no '%s.Model' entry from %s, auto-dedecting", Name, section, cfg_source());
++	Model = -1;
++    }
++
++
++    if (drv_generic_serial_open(section, Name, 0) < 0)
++	return -1;
++
++    /* initialize global variables */
++    DROWS = Models[Model].rows;
++    DCOLS = Models[Model].cols;
++    GPOS = Models[Model].gpos;
++    Protocol = Models[Model].protocol;
++
++    drv_FC_clear();
++
++    drv_generic_serial_write("\x01", 1);	/* 100% lum */
++    drv_generic_serial_write("\x14", 1);	/* cursor on */
++    drv_generic_serial_write("\x11", 1);    /* scroll write */
++
++    /* set contrast */
++    if (cfg_number(section, "Contrast", 0, 0, 255, &i) > 0) {
++	drv_FC_contrast(i);
++    }
++
++    return 0;
++}
++
++
++/****************************************/
++/***            plugins               ***/
++/****************************************/
++
++
++static void plugin_contrast(RESULT * result, const int argc, RESULT * argv[])
++{
++    double contrast;
++
++    switch (argc) {
++    case 0:
++	contrast = drv_FC_contrast(-1);
++	SetResult(&result, R_NUMBER, &contrast);
++	break;
++    case 1:
++	contrast = drv_FC_contrast(R2N(argv[0]));
++	SetResult(&result, R_NUMBER, &contrast);
++	break;
++    default:
++	error("%s::contrast(): wrong number of parameters", Name);
++	SetResult(&result, R_STRING, "");
++    }
++}
++
++
++
++/****************************************/
++/***        widget callbacks          ***/
++/****************************************/
++
++/* using drv_generic_text_draw(W) */
++/* using drv_generic_text_icon_draw(W) */
++/* using drv_generic_text_bar_draw(W) */
++
++
++/****************************************/
++/***        exported functions        ***/
++/****************************************/
++
++
++/* list models */
++int drv_FC_list(void)
++{
++    int i;
++
++    for (i = 0; Models[i].type != 0xff; i++) {
++	printf("%s ", Models[i].name);
++    }
++    return 0;
++}
++
++
++/* initialize driver & display */
++int drv_FC_init(const char *section, const int quiet)
++{
++    WIDGET_CLASS wc;
++    int ret;
++
++    /* display preferences */
++    XRES = 5;			/* pixel width of one char  */
++    YRES = 8;			/* pixel height of one char  */
++    CHARS = 8;			/* number of user-defineable characters */
++    CHAR0 = 0;			/* ASCII of first user-defineable char */
++    GOTO_COST = 4;		/* number of bytes a goto command requires */
++
++    /* real worker functions */
++    drv_generic_text_real_write = drv_FC_write;
++    drv_generic_text_real_defchar = drv_FC_defchar;
++
++
++    /* start display */
++    if ((ret = drv_FC_start(section, quiet)) != 0)
++	return ret;
++
++    /* initialize generic text driver */
++    if ((ret = drv_generic_text_init(section, Name)) != 0)
++	return ret;
++
++    /* initialize generic icon driver */
++    if ((ret = drv_generic_text_icon_init()) != 0)
++	return ret;
++
++    /* initialize generic bar driver */
++    if ((ret = drv_generic_text_bar_init(0)) != 0)
++	return ret;
++
++    /* add fixed chars to the bar driver */
++    drv_generic_text_bar_add_segment(0, 0, 255, 32);	/* ASCII  32 = blank */
++    drv_generic_text_bar_add_segment(255, 255, 255, 255);	/* ASCII 255 = block */
++
++    /* register text widget */
++    wc = Widget_Text;
++    wc.draw = drv_generic_text_draw;
++    widget_register(&wc);
++
++    /* register icon widget */
++    wc = Widget_Icon;
++    wc.draw = drv_generic_text_icon_draw;
++    widget_register(&wc);
++
++    /* register bar widget */
++    wc = Widget_Bar;
++    wc.draw = drv_generic_text_bar_draw;
++    widget_register(&wc);
++
++    /* register plugins */
++    AddFunction("LCD::contrast", -1, plugin_contrast);
++
++    return 0;
++}
++
++
++/* close driver & display */
++int drv_FC_quit(const int quiet)
++{
++
++    info("%s: shutting down.", Name);
++
++    drv_generic_text_quit();
++
++    /* clear display */
++    drv_FC_clear();
++
++    /* say goodbye... */
++    if (!quiet) {
++	drv_generic_text_greet("goodbye!", NULL);
++    }
++
++    drv_generic_serial_close();
++
++    return (0);
++}
++
++
++DRIVER drv_NEC_FC = {
++  name:Name,
++  list:drv_FC_list,
++  init:drv_FC_init,
++  quit:drv_FC_quit,
++};
