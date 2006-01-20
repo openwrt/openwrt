@@ -62,6 +62,9 @@ foreach my $mirror (@ARGV) {
 			/type="radio" name="use_default" value="(\w+)" onclick="form\.submit\(\)"\/>/ and do {
 				push @mirrors, "http://$1.dl.sourceforge.net/sourceforge/$sfpath";
 			};
+			/<a href="\/.+\?use_mirror=(\w+)"><b>Download/ and do {
+				push @mirrors, "http://$1.dl.sourceforge.net/sourceforge/$sfpath";
+			};
 		}
 		push @mirrors, "http://dl.sourceforge.net/sourceforge/$sfpath";
 		close SF;
