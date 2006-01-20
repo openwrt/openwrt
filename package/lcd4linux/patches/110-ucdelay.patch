@@ -1,0 +1,12 @@
+diff -urN lcd4linux.old/udelay.h lcd4linux.dev/udelay.h
+--- lcd4linux.old/udelay.h	2005-05-08 06:32:45.000000000 +0200
++++ lcd4linux.dev/udelay.h	2006-01-20 03:50:36.806897500 +0100
+@@ -76,7 +76,7 @@
+ /* REP NOP (PAUSE) is a good thing to insert into busy-wait loops. */
+ static inline void rep_nop(void)
+ {
+-    __asm__ __volatile__("rep; nop");
++    __asm__ __volatile__("nop");
+ }
+ 
+ 
