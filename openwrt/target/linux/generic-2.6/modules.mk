@@ -133,6 +133,10 @@ $(eval $(call KMOD_template,FS_CIFS,fs-cifs,\
 	$(MODULES_DIR)/kernel/fs/cifs/cifs.ko \
 ,CONFIG_CIFS,kmod-nls-base,30,cifs))
 
+$(eval $(call KMOD_template,FS_MINIX,fs-minix,\
+	$(MODULES_DIR)/kernel/fs/minix/minix.ko \
+,CONFIG_MINIX_FS,,30,minix))
+
 $(eval $(call KMOD_template,FS_EXT2,fs-ext2,\
 	$(MODULES_DIR)/kernel/fs/ext2/ext2.ko \
 ,CONFIG_EXT2_FS,,30,ext2))
