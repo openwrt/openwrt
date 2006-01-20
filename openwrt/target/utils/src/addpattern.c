@@ -66,7 +66,8 @@ struct code_header {			/* from cyutils.h */
 	char fwvern[3];
 	char id[4];					/* U2ND */
 	char hw_ver;    			/* 0: for 4702, 1: for 4712 -- new in 2.04.3 */
-	unsigned short flags;       /* SUPPORT_ flags new for 3.37.2 (WRT54G v2.2 and WRT54GS v1.1) */
+	char unused;
+	unsigned char flags[2];       /* SUPPORT_ flags new for 3.37.2 (WRT54G v2.2 and WRT54GS v1.1) */
 	unsigned char res2[10];
 } ;
 
@@ -132,14 +133,14 @@ int main(int argc, char **argv)
 				break;
 			case '2': 			/* new 54G v2.2 and 54GS v1.1 flags */
 				hdr->hw_ver = 1;
-				hdr->flags |= SUPPORT_4712_CHIP;
-				hdr->flags |= SUPPORT_INTEL_FLASH;
-				hdr->flags |= SUPPORT_5325E_SWITCH;
+				hdr->flags[0] |= SUPPORT_4712_CHIP;
+				hdr->flags[0] |= SUPPORT_INTEL_FLASH;
+				hdr->flags[0] |= SUPPORT_5325E_SWITCH;
 				break;
 			case '4':
 				/* V4 firmware sets the flags to 0x1f */
 				hdr->hw_ver = 0;
-				hdr->flags = 0x1f;
+				hdr->flags[0] = 0x1f;
 				break;
 
 			default:
