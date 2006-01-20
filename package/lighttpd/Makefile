@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=lighttpd
-PKG_VERSION:=1.4.8
+PKG_VERSION:=1.4.9
 PKG_RELEASE:=1
-PKG_MD5SUM:=7d7790ef95ff5755f73bfcda4f13696d
+PKG_MD5SUM:=20a171774a0615069de3704db52483aa
 
 PKG_SOURCE_URL:=http://www.lighttpd.net/download/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -31,6 +31,7 @@ $(eval $(call PKG_template,LIGHTTPD_MOD_ACCESSLOG,lighttpd-mod-accesslog,$(PKG_V
 $(eval $(call PKG_template,LIGHTTPD_MOD_ALIAS,lighttpd-mod-alias,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,LIGHTTPD_MOD_AUTH,lighttpd-mod-auth,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,LIGHTTPD_MOD_CGI,lighttpd-mod-cgi,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,LIGHTTPD_MOD_EVASIVE,lighttpd-mod-evasive,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,LIGHTTPD_MOD_EXPIRE,lighttpd-mod-expire,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,LIGHTTPD_MOD_FASTCGI,lighttpd-mod-fastcgi,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,LIGHTTPD_MOD_PROXY,lighttpd-mod-proxy,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
@@ -46,6 +47,7 @@ $(eval $(call PKG_mod_template,LIGHTTPD_MOD_ACCESSLOG,accesslog))
 $(eval $(call PKG_mod_template,LIGHTTPD_MOD_ALIAS,alias))
 $(eval $(call PKG_mod_template,LIGHTTPD_MOD_AUTH,auth))
 $(eval $(call PKG_mod_template,LIGHTTPD_MOD_CGI,cgi))
+$(eval $(call PKG_mod_template,LIGHTTPD_MOD_EVASIVE,evasive))
 $(eval $(call PKG_mod_template,LIGHTTPD_MOD_EXPIRE,expire))
 $(eval $(call PKG_mod_template,LIGHTTPD_MOD_FASTCGI,fastcgi))
 $(eval $(call PKG_mod_template,LIGHTTPD_MOD_PROXY,proxy))

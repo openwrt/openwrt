@@ -37,6 +37,12 @@ config BR2_PACKAGE_LIGHTTPD_MOD_CGI
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_LIGHTTPD
 
+config BR2_PACKAGE_LIGHTTPD_MOD_EVASIVE
+	prompt   "lighttpd-mod-evasive............ Evasive module"
+	tristate 
+	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_LIGHTTPD
+
 config BR2_PACKAGE_LIGHTTPD_MOD_EXPIRE
 	prompt   "lighttpd-mod-expire............. Expire module"
 	tristate 
