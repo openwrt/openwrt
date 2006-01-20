@@ -7,7 +7,7 @@ PKG_VERSION:=1.2.1
 PKG_RELEASE:=1
 PKG_MD5SUM:=04657086791e80f319c0d728af705001
 
-PKG_SOURCE_URL:=http://ftp.digium.com/pub/asterisk/ ftp://ftp.digium.com/pub/asterisk/
+PKG_SOURCE_URL:=http://ftp.digium.com/pub/asterisk/old-releases/ ftp://ftp.digium.com/pub/asterisk/old-releases/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
