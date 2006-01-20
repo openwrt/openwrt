@@ -1,0 +1,15 @@
+diff -urN lcd4linux.old/drv_generic_parport.c lcd4linux.dev/drv_generic_parport.c
+--- lcd4linux.old/drv_generic_parport.c	2006-01-20 03:52:18.426419500 +0100
++++ lcd4linux.dev/drv_generic_parport.c	2006-01-20 03:57:59.205263500 +0100
+@@ -134,6 +134,11 @@
+ #define PARPORT_STATUS_BUSY       0x80
+ #endif
+ 
++#ifndef WITH_OUTB
++#define inb(foo) 0
++#define outb(foo,bar) 0
++#endif
++ 
+ #if !defined(WITH_OUTB) && !defined(WITH_PPDEV)
+ #error neither outb() nor ppdev() possible
+ #error cannot compile parallel port driver
