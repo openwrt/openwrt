@@ -303,6 +303,7 @@ lighttpd-compile: openssl-compile pcre-compile
 madplay-compile: libid3tag-compile libmad-compile
 miax-compile: bluez-libs-compile
 miredo-compile: uclibc++-compile
+monit-compile: openssl-compile
 mt-daapd-compile: howl-compile libgdbm-compile libid3tag-compile
 mtr-compile: ncurses-compile
 mysql-compile: ncurses-compile zlib-compile readline-compile
