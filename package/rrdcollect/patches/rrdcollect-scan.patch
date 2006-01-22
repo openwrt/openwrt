@@ -1,0 +1,66 @@
+diff -ruN rrdcollect-0.2.3.orig/src/scan.c rrdcollect-0.2.3/src/scan.c
+--- rrdcollect-0.2.3.orig/src/scan.c	2005-01-20 18:42:17.000000000 +0100
++++ rrdcollect-0.2.3/src/scan.c	2006-01-22 00:51:52.000000000 +0100
+@@ -74,6 +74,11 @@
+ 						} while (isdigit(*fmt));
+ 					}
+ 
++					/* skip white spaces like scanf does */
++					if (strchr("difuoxX", *fmt))
++						while (isspace(*buf))
++							buf++;
++					
+ 					/* FIXME: we should check afterward:
+ 					 * if (start == buf || start == '-' && buf-start == 1)
+ 					 * 	die("WTF???  zero-length number???");
+@@ -150,27 +155,22 @@
+ 								buf++, length--;
+ 							}
+ 
+-							/* ignore if value not found */
+-							if(value == 0)
+-								return 0;
+-
+ 							if (!ignore)
+-								counter[i++]->value = valuedup(value);
++								counter[i++]->value = strndup(start, buf - start);
+ 							break;
+ 							
+ 						case 'c':
++							if (length < 0)
++							     length = 1;	// default length is 1
++							
+ 							while (*buf && length > 0) {
+ 								buf++, length--;
+ 							}
+ 							if (length > 0)
+ 								return 2;
+ 
+-							/* ignore if value not found */
+-							if(value == 0)
+-								return 0;
+-							
+ 							if (!ignore)
+-								counter[i++]->value = valuedup(value);
++								counter[i++]->value = strndup(start, buf - start);
+ 							break;
+ 							
+ 							
+@@ -192,7 +192,7 @@
+ 			case '\f':
+ 			case '\v':
+ 				/* don't match if not at least one space */
+-				if(!isspace(*(buf)))
++				if(!isspace(*buf))
+ 					return 0;
+ 				else
+ 					buf++;
+@@ -208,7 +208,7 @@
+ 					case '\v':
+ 						break;
+ 					default:
+-						while (isspace(*(buf)))
++						while (isspace(*buf))
+ 							buf++;
+ 				}
+ 				fmt++;
