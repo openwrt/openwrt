@@ -210,6 +210,7 @@ package-$(BR2_COMPILE_SPEEX) += speex
 package-$(BR2_COMPILE_SQLITE) += sqlite
 package-$(BR2_COMPILE_SQLITE2) += sqlite2
 package-$(BR2_PACKAGE_SSMTP) += ssmtp
+package-$(BR2_PACKAGE_SSLTUNNEL) += ssltunnel
 package-$(BR2_PACKAGE_SRELAY) += srelay
 package-$(BR2_PACKAGE_STRACE) += strace
 package-$(BR2_PACKAGE_TCPDUMP) += tcpdump
@@ -344,6 +345,7 @@ sipsak-compile: openssl-compile
 socat-compile: openssl-compile
 sqlite-compile: ncurses-compile readline-compile
 sqlite2-compile: ncurses-compile readline-compile
+ssltunnel-compile: openssl-compile ppp-compile
 tcpdump-compile: libpcap-compile
 tinc-compile: zlib-compile openssl-compile liblzo-compile
 tor-compile: libevent-compile openssl-compile zlib-compile

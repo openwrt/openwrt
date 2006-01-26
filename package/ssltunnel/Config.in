@@ -1,0 +1,11 @@
+config BR2_PACKAGE_SSLTUNNEL
+	prompt "ssltunnel ........................A PPP over SSL vpn tool"
+	tristate
+	default m if CONFIG_DEVEL
+	select BR2_PACKAGE_OPENSSL
+	select BR2_PACKAGE_PPP
+	help
+	  A PPP over SSL vpn tool
+	  
+	  http://www.hsc.fr/ressources/outils/ssltunnel/index.html
+	  
