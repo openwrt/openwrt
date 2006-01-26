@@ -55,6 +55,7 @@ static int use_et = 0;
 static int is_5350 = 0;
 static struct ifreq ifr;
 static struct net_device *dev;
+static unsigned char port[6] = { 0, 1, 2, 3, 4, 8 };
 
 static int do_ioctl(int cmd, void *buf)
 {
@@ -406,7 +407,13 @@ static int handle_reset(void *driver, char *buf, int nr)
 			robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_WRITE, 0);
 		robo_write16(ROBO_VLAN_PAGE, (is_5350 ? ROBO_VLAN_TABLE_ACCESS_5350 : ROBO_VLAN_TABLE_ACCESS), val16);
 	}
-	
+
+	/* reset ports to a known good state */
+	for (j = 0; j < d->ports; j++) {
+		robo_write16(ROBO_CTRL_PAGE, port[j], 0x0000);
+		robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_PORT0_DEF_TAG + (j << 1), 0);
+	}
+
 	/* enable switching */
 	set_switch(1);
 
