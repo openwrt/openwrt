@@ -11,6 +11,7 @@ setup_eth()
 	if="$(echo "$INTERFACE" | sed s,eth,et,)"
 	ifconfig "$INTERFACE" up 2>&- >&-
 	[ -d "/proc/switch/$INTERFACE" ] || return 0
+	echo "1" > "/proc/switch/$INTERFACE/reset"
 	echo "1" > "/proc/switch/$INTERFACE/enable_vlan"
 	for vlan in $(seq 0 15); do
 		[ "$(nvram get vlan${vlan}hwname)" = "$if" ] && {
