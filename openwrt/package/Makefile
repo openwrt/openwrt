@@ -21,6 +21,7 @@ package-$(BR2_PACKAGE_BWM) += bwm
 package-$(BR2_PACKAGE_CGILIB) += cgilib
 package-$(BR2_PACKAGE_CHILLISPOT) += chillispot
 package-$(BR2_PACKAGE_CIFSMOUNT) += cifsmount
+package-$(BR2_PACKAGE_CLINKC) += clinkc
 package-$(BR2_PACKAGE_COLLECTD) += collectd
 package-$(BR2_PACKAGE_CUPS) += cups
 package-$(BR2_COMPILE_CURL) += curl
@@ -268,6 +269,7 @@ arpd-compile: libpcap-compile libdnet-compile libevent-compile
 arpwatch-compile: libpcap-compile
 avahi-compile: libdaemon-compile expat-compile libgdbm-compile
 bind-compile: openssl-compile
+clinkc-compile: expat-compile
 curl-compile: openssl-compile zlib-compile
 cyrus-sasl-compile: openssl-compile
 deco-compile: ncurses-compile
