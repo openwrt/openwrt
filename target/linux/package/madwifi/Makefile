@@ -4,9 +4,9 @@ include $(TOPDIR)/rules.mk
 include ../../rules.mk
 
 PKG_NAME:=madwifi-ng
-PKG_VERSION:=r1394-20060113
+PKG_VERSION:=r1416-20060126
 PKG_RELEASE:=1
-PKG_MD5SUM:=03c870933ff4a89ed520fb732c4b553d
+PKG_MD5SUM:=f308a0dbbb5d5497c0e09d86e8bde32c
 
 PKG_SOURCE_URL:=http://snapshots.madwifi.org/$(PKG_NAME)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -49,13 +49,15 @@ $(PKG_BUILD_DIR)/.built:
 		TOOLPATH="$(KERNEL_CROSS)" \
 		KERNELPATH="$(LINUX_DIR)" \
 		BUS="$(BUS)" \
-		all
+		DOMULTI=1 all
+	$(RSTRIP) $(PKG_BUILD_DIR)/tools/madwifi_multi
 	touch $@
 
 $(IPKG_KMOD_MADWIFI):
 	mkdir -p $(IDIR_KMOD_MADWIFI)/etc/modules.d
 	mkdir -p $(IDIR_KMOD_MADWIFI)/etc/init.d
 	mkdir -p $(IDIR_KMOD_MADWIFI)/lib/modules/$(LINUX_VERSION)
+	mkdir -p $(IDIR_KMOD_MADWIFI)/usr/sbin
 	install -m0644 ./files/madwifi.modules $(IDIR_KMOD_MADWIFI)/etc/modules.d/20-madwifi
 	install -m0755 ./files/madwifi.init $(IDIR_KMOD_MADWIFI)/etc/init.d/S20madwifi
 	cp -fpR $(PKG_BUILD_DIR)/net80211/wlan*.$(LINUX_KMOD_SUFFIX) \
@@ -64,6 +66,7 @@ $(IPKG_KMOD_MADWIFI):
 		$(PKG_BUILD_DIR)/ath_rate/sample/ath_rate_sample.$(LINUX_KMOD_SUFFIX) \
 		$(PKG_BUILD_DIR)/net80211/*.$(LINUX_KMOD_SUFFIX) \
 		$(IDIR_KMOD_MADWIFI)/lib/modules/$(LINUX_VERSION)/
+	cp -fpR $(PKG_BUILD_DIR)/tools/{madwifi_multi,80211debug,80211stats,athchans,athctrl,athdebug,athkey,athstats,wlanconfig} $(IDIR_KMOD_MADWIFI)/usr/sbin/
 	$(IPKG_BUILD) $(IDIR_KMOD_MADWIFI) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/include/madwifi/net80211/ieee80211.h: $(PKG_BUILD_DIR)/.built
