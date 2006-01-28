@@ -194,8 +194,8 @@ endif
 # to include a reference to libgcc.so.1 in all binaries. For flash space
 # saving, we change the specs file to link in a static libgcc here. 
 	if [ ! -f $(STAGING_DIR)/lib/gcc/$(REAL_GNU_TARGET_NAME)/$(GCC_VERSION)/specs ] ; then \
-		echo staging dir specs file is missing ; \
-		/bin/false ; \
+		echo staging dir specs file is missing, assuming GCC 4.x ; \
+		$(STAGING_DIR)/bin/$(REAL_GNU_TARGET_NAME)-gcc -dumpspecs > $(STAGING_DIR)/lib/gcc/$(REAL_GNU_TARGET_NAME)/$(GCC_VERSION)/specs; \
 	fi;
 	if grep -q as-needed $(STAGING_DIR)/lib/gcc/$(REAL_GNU_TARGET_NAME)/$(GCC_VERSION)/specs; then \
 		patch -d $(STAGING_DIR)/lib/gcc/$(REAL_GNU_TARGET_NAME)/$(GCC_VERSION)/ -p0 < ./$(GCC_VERSION)/static-libgcc.patch.conditional ; \
