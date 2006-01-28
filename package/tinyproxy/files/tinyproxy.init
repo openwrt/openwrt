@@ -1,0 +1,50 @@
+#! /bin/sh
+
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+NAME=tinyproxy
+DESC="Tiny HTTP and HTTPS proxy"
+case "$1" in
+  start)
+        if [ -e /var/run/$NAME.pid ]; then
+                echo "$DESC: $NAME already started."
+                exit 0
+        fi
+        echo -n "Starting $DESC: $NAME"
+        test -e /var/run/$NAME.pid || touch /var/run/$NAME.pid
+        /usr/sbin/$NAME
+        echo "."
+        ;;
+
+  stop)
+        if [ ! -e /var/run/$NAME.pid ]; then
+                echo "$DESC: $NAME is not running."
+                exit 0
+        fi
+        echo -n "Stopping $DESC: $NAME"
+        killall $NAME
+        rm -f /var/run/$NAME.pid
+
+        echo "."
+        ;;
+
+  restart|force-reload)
+        if [ ! -e /var/run/$NAME.pid ]; then
+                $0 start
+                exit 0
+        fi
+        echo -n "Restarting $DESC: $NAME"
+        killall $NAME
+        sleep 1
+/usr/sbin/$NAME
+        echo "."
+        ;;
+
+  *)
+        N=/etc/init.d/$NAME
+        echo "Usage: $N {start|stop|restart|force-reload}" >&2
+        exit 1
+        ;;
+
+esac
+
+exit 0
