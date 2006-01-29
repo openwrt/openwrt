@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libvorbis
-PKG_VERSION:=1.1.1
+PKG_VERSION:=1.1.2
 PKG_RELEASE:=1
-PKG_MD5SUM:=b77270c24840af4de54bea5ad1c0b252
+PKG_MD5SUM:=37847626b8e1b53ae79a34714c7b3211
 
 PKG_SOURCE_URL:=http://downloads.xiph.org/releases/vorbis/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
