@@ -3,15 +3,15 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=lcd4linux
-PKG_VERSION:=0.10.0
+PKG_VERSION:=0.10.0+cvs20051015
 PKG_RELEASE:=1
-PKG_MD5SUM:=b7fb1c24b940482cd730cf212d1b5062
+PKG_MD5SUM:=5b5ac629be4bb5c29104fb8f6b7fa444
 
-PKG_SOURCE_URL:=@SF/lcd4linux
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_SOURCE_URL:=http://ftp.debian.org/debian/pool/main/l/lcd4linux/
+PKG_SOURCE:=$(PKG_NAME)_$(PKG_VERSION).orig.tar.gz
 PKG_CAT:=zcat
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION).orig
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
 include $(TOPDIR)/package/rules.mk
