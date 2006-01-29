@@ -1,0 +1,33 @@
+Submitted By:            Randy McMurchy <randy_at_linuxfromscratch_dot_org>
+Date:                    2005-08-07
+Initial Package Version: 2.3.13
+Upstream Status:         Not submitted
+Origin:                  Fedora Development CVS
+Description:             Fixes compilation error if using GCC-4.x
+
+
+diff -Naur xinetd-2.3.13-orig/xinetd/service.c xinetd-2.3.13/xinetd/service.c
+--- xinetd-2.3.13-orig/xinetd/service.c	2003-11-16 12:44:10.000000000 +0000
++++ xinetd-2.3.13/xinetd/service.c	2005-08-07 18:37:33.395942648 +0000
+@@ -764,8 +764,8 @@
+                return FAILED;
+ 
+             if ( last == NULL ) {
+-               last = SAIN( SVC_LAST_DGRAM_ADDR(sp) ) = 
+-		  SAIN( calloc( 1, sizeof(union xsockaddr) ) );
++               SVC_LAST_DGRAM_ADDR(sp) = calloc( 1, sizeof(union xsockaddr) );
++	       last = SAIN(SVC_LAST_DGRAM_ADDR(sp));
+             }
+ 
+             (void) time( &current_time ) ;
+@@ -791,8 +791,8 @@
+                return FAILED;
+ 
+ 	    if( last == NULL ) {
+-               last = SAIN6(SVC_LAST_DGRAM_ADDR(sp)) = 
+-		  SAIN6(calloc( 1, sizeof(union xsockaddr) ) );
++               SVC_LAST_DGRAM_ADDR(sp) = calloc( 1, sizeof(union xsockaddr) );
++               last = SAIN6( SVC_LAST_DGRAM_ADDR(sp) );
+             }
+ 
+             (void) time( &current_time ) ;

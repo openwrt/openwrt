@@ -1,0 +1,11 @@
+--- cyrus-sasl-2.1.20/lib/client.c~	2003-11-11 11:26:06.000000000 -0500
++++ cyrus-sasl-2.1.20/lib/client.c	2005-05-31 22:34:14.000000000 -0400
+@@ -61,7 +61,7 @@
+ 
+ static cmech_list_t *cmechlist; /* global var which holds the list */
+ 
+-static sasl_global_callbacks_t global_callbacks;
++sasl_global_callbacks_t global_callbacks;
+ 
+ static int _sasl_client_active = 0;
+ 

@@ -1,0 +1,12 @@
+diff -urN ../tmp-orig/l2tpd-0.70-pre20031121/aaa.c ./aaa.c
+--- ../tmp-orig/l2tpd-0.70-pre20031121/aaa.c	2004-12-09 09:54:10.159417376 +0100
++++ ./aaa.c	2004-12-09 09:54:01.918670160 +0100
+@@ -27,7 +27,7 @@
+ 
+ /* FIXME: Accounting? */
+ 
+-static struct addr_ent *uaddr[ADDR_HASH_SIZE];
++struct addr_ent *uaddr[ADDR_HASH_SIZE];
+ 
+ void init_addr ()
+ {
