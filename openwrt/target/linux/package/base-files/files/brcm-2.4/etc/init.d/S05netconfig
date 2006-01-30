@@ -31,7 +31,7 @@ BEGIN {
 
 END {
 	# v1 hardware
-	if (nvram["boardtype"] == "bcm4710dev") {
+	if (nvram["boardtype"] == "bcm94710dev") {
 		# Linksys WRT54G v1.x
 		if (nvram["boardnum"] == "42") {
 			c["vlan0ports"]=""
