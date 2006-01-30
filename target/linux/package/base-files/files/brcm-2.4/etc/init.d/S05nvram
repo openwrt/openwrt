@@ -33,7 +33,7 @@ nvram_set() { # for the linksys fixup part
 # work around braindead CFE defaults in linksys routers
 boardtype=$(nvram get boardtype)
 boardflags=$(($(nvram get boardflags)))
-[ "$boardtype" = "bcm4710dev" ] && boardtype="0xdeadbeef"
+[ "$boardtype" = "bcm94710dev" ] && boardtype="0xdeadbeef"
 adm_switch="$(( ($boardflags & 0x80) >> 7 ))"
 case "$(( $boardtype ))" in
 	"$((0x708))")
