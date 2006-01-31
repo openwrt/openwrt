@@ -1,0 +1,7 @@
+config BR2_PACKAGE_OPENSER
+	tristate 
+	prompt "openser........................... Configurable, free SIP server"
+	default m if CONFIG_DEVEL
+	help
+	 Open SIP Express Router (OpenSER) is a high-performance,
+	 configurable, free SIP server.

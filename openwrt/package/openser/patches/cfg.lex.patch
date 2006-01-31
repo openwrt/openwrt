@@ -1,0 +1,13 @@
+--- openser-1.0.0-tls.orig/cfg.lex	2005-09-02 17:34:41.000000000 +0200
++++ openser-1.0.0-tls/cfg.lex	2006-01-05 01:34:50.279630928 +0100
+@@ -85,6 +85,10 @@
+ 	static char* addstr(struct str_buf *, char*, int);
+ 	static void count();
+ 
++	int yywrap(void)
++	{
++		return 1;
++	}
+ 
+ %}
+ 
