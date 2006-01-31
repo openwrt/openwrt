@@ -1,15 +1,25 @@
 include $(TOPDIR)/rules.mk
 
+LOADADDR = 0x81000000		# RAM start + 16M 
+KERNEL_ENTRY = 0x80100000
+RAMSIZE = 0x00100000		# 1MB
+
+LOADER_MAKEOPTS= \
+		KDIR=$(KDIR) \
+		LOADADDR=$(LOADADDR) \
+		KERNEL_ENTRY=$(KERNEL_ENTRY) \
+		RAMSIZE=$(RAMSIZE)
+
 KDIR:=$(BUILD_DIR)/linux-$(KERNEL)-$(BOARD)
 
 lzma-loader-clean:
-	$(MAKE) -C lzma-loader clean
+	$(MAKE) -C ../generic/lzma-loader $(LOADER_MAKEOPTS) clean
 
 lzma-loader-prepare:
-	$(MAKE) -C lzma-loader prepare
+	$(MAKE) -C ../generic/lzma-loader $(LOADER_MAKEOPTS) prepare
 
 lzma-loader-compile: $(KDIR)/vmlinux.lzma lzma-loader-prepare
-	$(MAKE) -C lzma-loader compile KDIR=$(KDIR)
+	$(MAKE) -C ../generic/lzma-loader $(LOADER_MAKEOPTS) compile
 
 ifeq ($(IB),)
 $(KDIR)/vmlinux.lzma: $(KDIR)/vmlinux
