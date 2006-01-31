@@ -1,0 +1,33 @@
+--- openser-1.0.0-tls.orig/config.h	2005-08-23 19:31:12.000000000 +0200
++++ openser-1.0.0-tls/config.h	2006-01-05 01:42:14.101159800 +0100
+@@ -48,7 +48,7 @@
+ #define MAX_LISTEN 16
+ 
+ /* default number of child processes started */
+-#define CHILD_NO    8
++#define CHILD_NO    4
+ 
+ #define RT_NO 40 /* routing tables number */
+ #define FAILURE_RT_NO RT_NO /* on_failure routing tables number */
+@@ -68,10 +68,10 @@
+ #define CONTENT_LENGTH "Content-Length: "
+ #define CONTENT_LENGTH_LEN (sizeof(CONTENT_LENGTH)-1)
+ 
+-#define USER_AGENT "User-Agent: OpenSer (" VERSION " (" ARCH "/" OS"))"
++#define USER_AGENT "User-Agent: OpenSer " VERSION " (boozy.milkfish.org)"
+ #define USER_AGENT_LEN (sizeof(USER_AGENT)-1)
+ 
+-#define SERVER_HDR "Server: OpenSer (" VERSION " (" ARCH "/" OS"))"
++#define SERVER_HDR "Server: OpenSer " VERSION " (boozy.milkfish.org)"
+ #define SERVER_HDR_LEN (sizeof(SERVER_HDR)-1)
+ 
+ #define MAX_WARNING_LEN  256
+@@ -113,7 +113,7 @@
+ #define PKG_MEM_POOL_SIZE 1024*1024
+ 
+ /*used if SH_MEM is defined*/
+-#define SHM_MEM_SIZE 32
++#define SHM_MEM_SIZE 8
+ 
+ #define TIMER_TICK 1
+ 

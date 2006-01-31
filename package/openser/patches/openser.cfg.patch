@@ -1,0 +1,33 @@
+--- openser-1.0.0-tls.orig/etc/openser.cfg	2005-10-28 21:45:33.000000000 +0200
++++ openser-1.0.0-tls/etc/openser.cfg	2006-01-07 01:39:01.077134312 +0100
+@@ -36,20 +36,20 @@
+ # ------------------ module loading ----------------------------------
+ 
+ # Uncomment this if you want to use SQL database
+-#loadmodule "/usr/local/lib/openser/modules/mysql.so"
++#loadmodule "/usr/lib/openser/modules/mysql.so"
+ 
+-loadmodule "/usr/local/lib/openser/modules/sl.so"
+-loadmodule "/usr/local/lib/openser/modules/tm.so"
+-loadmodule "/usr/local/lib/openser/modules/rr.so"
+-loadmodule "/usr/local/lib/openser/modules/maxfwd.so"
+-loadmodule "/usr/local/lib/openser/modules/usrloc.so"
+-loadmodule "/usr/local/lib/openser/modules/registrar.so"
+-loadmodule "/usr/local/lib/openser/modules/textops.so"
++loadmodule "/usr/lib/openser/modules/sl.so"
++loadmodule "/usr/lib/openser/modules/tm.so"
++loadmodule "/usr/lib/openser/modules/rr.so"
++loadmodule "/usr/lib/openser/modules/maxfwd.so"
++loadmodule "/usr/lib/openser/modules/usrloc.so"
++loadmodule "/usr/lib/openser/modules/registrar.so"
++loadmodule "/usr/lib/openser/modules/textops.so"
+ 
+ # Uncomment this if you want digest authentication
+ # mysql.so must be loaded !
+-#loadmodule "/usr/local/lib/openser/modules/auth.so"
+-#loadmodule "/usr/local/lib/openser/modules/auth_db.so"
++#loadmodule "/usr/lib/openser/modules/auth.so"
++#loadmodule "/usr/lib/openser/modules/auth_db.so"
+ 
+ # ----------------- setting module-specific parameters ---------------
+ 
