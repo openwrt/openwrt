@@ -16,6 +16,7 @@ PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 include $(TOPDIR)/package/rules.mk
 
 $(eval $(call PKG_template,DROPBEAR,$(PKG_NAME),$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,DBCONVERT,dropbearconvert,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 $(PKG_BUILD_DIR)/.configured:
 	$(SED) 's,^/\* #define PKG_MULTI.*,#define PKG_MULTI,g' $(PKG_BUILD_DIR)/options.h
@@ -58,15 +59,25 @@ $(PKG_BUILD_DIR)/.configured:
 		--disable-loginfunc \
 		--disable-pututline \
 		--disable-pututxline \
+		--disable-zlib \
 	);
 	touch $@
 
 $(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		LD=$(TARGET_CC) \
-		PROGRAMS="dropbear dbclient dropbearkey dropbearconvert scp" \
+		PROGRAMS="dropbear dbclient dropbearkey scp" \
 		MULTI=1 SCPPROGRESS=1
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		LD=$(TARGET_CC) \
+		PROGRAMS="dropbearconvert"
 	touch $@
+	
+$(IPKG_DBCONVERT):
+	mkdir -p $(IDIR_DBCONVERT)/usr/bin
+	install -m 755 $(PKG_BUILD_DIR)/dropbearconvert \
+		$(IDIR_DBCONVERT)/usr/bin/dropbearconvert
+	$(IPKG_BUILD) $(IDIR_DBCONVERT) $(PACKAGE_DIR)
 
 $(IPKG_DROPBEAR):
 	mkdir -p $(IDIR_DROPBEAR)/usr/bin
@@ -78,7 +89,6 @@ $(IPKG_DROPBEAR):
 	ln -sf ../sbin/dropbear $(IDIR_DROPBEAR)/usr/bin/ssh
 	ln -sf ../sbin/dropbear $(IDIR_DROPBEAR)/usr/bin/dbclient
 	ln -sf ../sbin/dropbear $(IDIR_DROPBEAR)/usr/bin/dropbearkey
-	ln -sf ../sbin/dropbear $(IDIR_DROPBEAR)/usr/bin/dropbearconvert
 	mkdir -p $(IDIR_DROPBEAR)/etc/init.d
 	install -m 755 ./files/S50dropbear $(IDIR_DROPBEAR)/etc/init.d/
 	$(IPKG_BUILD) $(IDIR_DROPBEAR) $(PACKAGE_DIR)
