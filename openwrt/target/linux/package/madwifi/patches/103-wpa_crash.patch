@@ -1,0 +1,27 @@
+diff -urN madwifi.old/net80211/ieee80211_ioctl.h madwifi.dev/net80211/ieee80211_ioctl.h
+--- madwifi.old/net80211/ieee80211_ioctl.h	2005-12-07 03:53:07.000000000 +0100
++++ madwifi.dev/net80211/ieee80211_ioctl.h	2006-01-31 22:33:21.282491500 +0100
+@@ -277,6 +277,7 @@
+ struct ieee80211req_wpaie {
+ 	u_int8_t	wpa_macaddr[IEEE80211_ADDR_LEN];
+ 	u_int8_t	wpa_ie[IEEE80211_MAX_OPT_IE];
++	u_int8_t	rsn_ie[IEEE80211_MAX_OPT_IE];
+ };
+ 
+ /*
+diff -urN madwifi.old/net80211/ieee80211_wireless.c madwifi.dev/net80211/ieee80211_wireless.c
+--- madwifi.old/net80211/ieee80211_wireless.c	2006-01-23 08:07:51.000000000 +0100
++++ madwifi.dev/net80211/ieee80211_wireless.c	2006-01-31 22:33:21.286491750 +0100
+@@ -3160,6 +3160,12 @@
+ 			ielen = sizeof(wpaie.wpa_ie);
+ 		memcpy(wpaie.wpa_ie, ni->ni_wpa_ie, ielen);
+ 	}
++	if (ni->ni_rsn_ie != NULL) {
++		int ielen = ni->ni_rsn_ie[1] + 2;
++		if (ielen > sizeof(wpaie.rsn_ie))
++			ielen = sizeof(wpaie.rsn_ie);
++		memcpy(wpaie.rsn_ie, ni->ni_rsn_ie, ielen);
++	}
+ 	ieee80211_free_node(ni);
+ 	return (copy_to_user(iwr->u.data.pointer, &wpaie, sizeof(wpaie)) ?
+ 			-EFAULT : 0);
