@@ -1,0 +1,22 @@
+--- openser-1.0.0-tls.orig/scripts/sc.dbtext	2005-07-29 21:05:36.000000000 +0200
++++ openser-1.0.0-tls/scripts/sc.dbtext	2006-01-29 02:30:31.795349688 +0100
+@@ -62,6 +62,10 @@
+ ##### ----------------------------------------------- #####
+ #### table names
+ 
++if [ -z "$SIP_DOMAIN" ] ; then
++	SIP_DOMAIN=$(nvram get sip_domain)
++fi
++
+ # UsrLoc Table
+ if [ -z "$UL_TABLE" ] ; then
+ 	UL_TABLE=location
+@@ -247,7 +251,7 @@
+ 	fi
+ 
+ 	if [ -z "$SERDOMAIN" ] ; then
+-		echo -e "\nDomain unknown: use usernames with domain or set default domain in SIP_DOMAIN\n"
++		echo -e "\nDomain unknown: use usernames with domain or set default domain in SIP_DOMAIN (with 'nvram set sip_domain=YOUR_SIP_DOMAIN')\n"
+ 		exit 1
+ 	fi
+ }

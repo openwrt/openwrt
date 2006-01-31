@@ -1,0 +1,41 @@
+--- openser-1.0.0-tls.orig/scripts/sc	2005-08-11 14:08:02.000000000 +0200
++++ openser-1.0.0-tls/scripts/sc	2006-01-29 02:18:43.319054456 +0100
+@@ -48,11 +48,15 @@
+ 	STARTOPTIONS= # for example -dddd
+ fi
+ if [ -z "$DIR" ] ; then
+-	DIR=`dirname $0`
++	DIR=/usr/sbin
+ fi
+ if [ -z "$SERBIN" ] ; then
+ 	SERBIN=$DIR/openser
+ fi
++if [ -z "$SIP_DOMAIN" ] ; then
++	SIP_DOMAIN=$(nvram get sip_domain)
++fi
++
+ 
+ ##### ----------------------------------------------- #####
+ ### openser's FIFO server
+@@ -415,7 +419,7 @@
+ 	fi
+ 
+ 	if [ -z "$SERDOMAIN" ] ; then
+-		echo "domain unknown: use usernames with domain or set default domain in SIP_DOMAIN"
++		echo "domain unknown: use usernames with domain or set default domain in SIP_DOMAIN (with 'nvram set sip_domain=YOUR_SIP_DOMAIN')"
+ 		exit 1
+ 	fi
+ }
+@@ -671,11 +675,7 @@
+ 				set_user $2
+ 				fifo_cmd ul_show_contact $USRLOC_TABLE "$SERUSER@$SERDOMAIN"
+ 			elif [ $# -eq 1 ] ; then
+-				printf "Dumping all contacts may take long: are you sure you want to proceed? [Y|N] " > /dev/stderr
+-				read answer
+-				if [ "$answer" = "y" -o "$answer" = "Y" ] ; then
+-					fifo_cmd ul_dump
+-				fi
++				fifo_cmd ul_dump
+ 			else
+ 				echo "wrong number of params for usrloc show"
+ 				usage
