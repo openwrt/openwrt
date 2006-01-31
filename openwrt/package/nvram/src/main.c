@@ -26,6 +26,15 @@ usage(void)
 	exit(0);
 }
 
+/* hack for some PMON default nvram values which have '\r' appended */
+void
+puts_trim_cr(char *str)
+{
+	int len= strlen(str);
+	if (len && (str[len-1] == '\r')) len--;
+	printf("%.*s\n", len, str);
+}
+
 /* NVRAM utility */
 int
 main(int argc, char **argv)
@@ -44,8 +53,9 @@ main(int argc, char **argv)
 	for (; *argv; argv++) {
 		if (!strncmp(*argv, "get", 3)) {
 			if (*++argv) {
-				if ((value = nvram_get(*argv)))
-					puts(value);
+				if ((value = nvram_get(*argv))) {
+					puts_trim_cr(value);
+				}
 			}
 		}
 		else if (!strncmp(*argv, "set", 3)) {
@@ -66,7 +76,7 @@ main(int argc, char **argv)
 			   !strncmp(*argv, "getall", 6)) {
 			nvram_getall(buf, sizeof(buf));
 			for (name = buf; *name; name += strlen(name) + 1)
-				puts(name);
+				puts_trim_cr(name);
 			size = sizeof(struct nvram_header) + (int) name - (int) buf;
 			fprintf(stderr, "size: %d bytes (%d left)\n", size, NVRAM_SPACE - size);
 		}
