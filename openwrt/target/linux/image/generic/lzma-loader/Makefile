@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME := loader
 PKG_VERSION := 0.05
 
-PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_BUILD_DIR := $(KDIR)/$(PKG_NAME)-$(PKG_VERSION)
 
 $(PKG_BUILD_DIR)/.prepared:
 	mkdir $(PKG_BUILD_DIR)
@@ -14,7 +14,11 @@ $(PKG_BUILD_DIR)/.prepared:
 
 $(PKG_BUILD_DIR)/lzma.elf: $(PKG_BUILD_DIR)/.prepared $(PKG_BUILD_DIR)/vmlinux.lzma
 	$(MAKE) -C $(PKG_BUILD_DIR) CC=$(TARGET_CC) \
-		LD=$(TARGET_CROSS)ld CROSS_COMPILE=$(TARGET_CROSS)
+		LD=$(TARGET_CROSS)ld CROSS_COMPILE=$(TARGET_CROSS) \
+		RAMSIZE=$(RAMSIZE) \
+		LOADADDR=$(LOADADDR) \
+		KERNEL_ENTRY=$(KERNEL_ENTRY)
+
 
 $(PKG_BUILD_DIR)/vmlinux.lzma: $(KDIR)/vmlinux.lzma
 	cp $< $@

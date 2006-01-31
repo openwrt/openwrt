@@ -35,7 +35,6 @@
  */
 
 #include "LzmaDecode.h"
-#define LOADADDR 0x80100000
 
 #define KSEG0			0x80000000
 #define KSEG1			0xa0000000
@@ -137,12 +136,12 @@ void entry(unsigned long icache_size, unsigned long icache_lsize,
 
 	/* decompress kernel */
 	if ((i = LzmaDecode(&vs, &callback,
-	(unsigned char*)LOADADDR, osize, &osize)) == LZMA_RESULT_OK)
+	(unsigned char*)KERNEL_ENTRY, osize, &osize)) == LZMA_RESULT_OK)
 	{
 		blast_dcache(dcache_size, dcache_lsize);
 		blast_icache(icache_size, icache_lsize);
 
 		/* Jump to load address */
-		((void (*)(void)) LOADADDR)();
+		((void (*)(void)) KERNEL_ENTRY)();
 	}
 }
