@@ -139,7 +139,8 @@ do_register()
 
 			if [ "$INTERFACE" != "$if" ]; then
 				$DEBUG ifconfig "$INTERFACE" 0.0.0.0 up
-				brctl addif "$if" "$INTERFACE"
+				$DEBUG brctl addif "$if" "$INTERFACE"
+				$DEBUG ifconfig "$INTERFACE" allmulti
 			else
 				do_ifup "$IFPROTO" "$IFTYPE" "$if"
 			fi
