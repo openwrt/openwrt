@@ -7,7 +7,7 @@
 alias debug=${DEBUG:-:}
 
 # WGT634u
-[ "$(/usr/bin/head -c4 /dev/mtdblock/1 | /usr/bin/tail -c3)" = "ELF" ] && exit
+grep 'mtd0: 00060000' /proc/mtd 2>&- >&- && exit
 
 remap () {
 	for type in lan wifi wan pppoe
