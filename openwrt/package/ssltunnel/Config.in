@@ -1,8 +1,8 @@
 config BR2_PACKAGE_SSLTUNNEL
-	prompt "ssltunnel ........................A PPP over SSL vpn tool"
+	prompt "ssltunnel ........................ A PPP over SSL vpn tool"
 	tristate
 	default m if CONFIG_DEVEL
-	select BR2_COMPILE_OPENSSL
+	select BR2_PACKAGE_LIBOPENSSL
 	select BR2_PACKAGE_PPP
 	help
 	  A PPP over SSL vpn tool
