@@ -35,3 +35,5 @@ linux-imagebuilder:
 	@$(TRACE) target/linux/imagebuilder
 	$(MAKE) -C linux imagebuilder
 
+linux/package/%:
+	$(MAKE) -C $(TOPDIR)/target/linux $(patsubst linux/%,%,$@)
