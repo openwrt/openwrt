@@ -1,7 +1,7 @@
 diff -urN linux.old/Documentation/Configure.help linux.dev/Documentation/Configure.help
---- linux.old/Documentation/Configure.help	2005-11-10 16:01:07.645540500 +0100
-+++ linux.dev/Documentation/Configure.help	2005-11-10 16:03:00.524595000 +0100
-@@ -29082,6 +29082,23 @@
+--- linux.old/Documentation/Configure.help	2006-01-31 16:55:22.467939000 +0100
++++ linux.dev/Documentation/Configure.help	2006-01-31 16:58:24.751331500 +0100
+@@ -29151,6 +29151,18 @@
    
    If unsure, say N.
  
@@ -17,17 +17,12 @@ diff -urN linux.old/Documentation/Configure.help linux.dev/Documentation/Configu
 +CONFIG_IP_NF_MATCH_LAYER7_DEBUG
 +   Say Y to get lots of debugging output.
 +
-+CONFIG_IP_NF_MATCH_LAYER7_MAXDATALEN
-+   Size of the buffer that the application layer data is stored in.
-+   Unless you know what you're doing, leave it at the default of 2048
-+   Bytes.
-+
  #
  # A couple of things I keep forgetting:
  #   capitalize: AppleTalk, Ethernet, DOS, DMA, FAT, FTP, Internet,
 diff -urN linux.old/include/linux/netfilter_ipv4/ip_conntrack.h linux.dev/include/linux/netfilter_ipv4/ip_conntrack.h
---- linux.old/include/linux/netfilter_ipv4/ip_conntrack.h	2005-04-04 03:42:20.000000000 +0200
-+++ linux.dev/include/linux/netfilter_ipv4/ip_conntrack.h	2005-11-10 16:03:00.544596250 +0100
+--- linux.old/include/linux/netfilter_ipv4/ip_conntrack.h	2005-11-16 20:12:54.000000000 +0100
++++ linux.dev/include/linux/netfilter_ipv4/ip_conntrack.h	2006-01-31 16:58:24.775333000 +0100
 @@ -207,6 +207,17 @@
  	} nat;
  #endif /* CONFIG_IP_NF_NAT_NEEDED */
@@ -48,7 +43,7 @@ diff -urN linux.old/include/linux/netfilter_ipv4/ip_conntrack.h linux.dev/includ
  /* get master conntrack via master expectation */
 diff -urN linux.old/include/linux/netfilter_ipv4/ipt_layer7.h linux.dev/include/linux/netfilter_ipv4/ipt_layer7.h
 --- linux.old/include/linux/netfilter_ipv4/ipt_layer7.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/include/linux/netfilter_ipv4/ipt_layer7.h	2005-11-10 17:22:12.777440750 +0100
++++ linux.dev/include/linux/netfilter_ipv4/ipt_layer7.h	2006-01-31 19:29:03.774017500 +0100
 @@ -0,0 +1,27 @@
 +/* 
 +  By Matthew Strait <quadong@users.sf.net>, Dec 2003.
@@ -73,27 +68,26 @@ diff -urN linux.old/include/linux/netfilter_ipv4/ipt_layer7.h linux.dev/include/
 +    char protocol[MAX_PROTOCOL_LEN];
 +    char invert:1;
 +    char pattern[MAX_PATTERN_LEN];
-+	char pkt;
++    char pkt;
 +};
 +
 +#endif /* _IPT_LAYER7_H */
 diff -urN linux.old/net/ipv4/netfilter/Config.in linux.dev/net/ipv4/netfilter/Config.in
---- linux.old/net/ipv4/netfilter/Config.in	2005-11-10 16:01:16.194074750 +0100
-+++ linux.dev/net/ipv4/netfilter/Config.in	2005-11-10 16:03:00.576598250 +0100
-@@ -44,6 +44,10 @@
+--- linux.old/net/ipv4/netfilter/Config.in	2006-01-31 16:55:32.364558000 +0100
++++ linux.dev/net/ipv4/netfilter/Config.in	2006-01-31 16:58:24.803334750 +0100
+@@ -44,6 +44,9 @@
    if [ "$CONFIG_EXPERIMENTAL" = "y" ]; then
      dep_tristate '  Unclean match support (EXPERIMENTAL)' CONFIG_IP_NF_MATCH_UNCLEAN $CONFIG_IP_NF_IPTABLES
      dep_tristate '  Owner match support (EXPERIMENTAL)' CONFIG_IP_NF_MATCH_OWNER $CONFIG_IP_NF_IPTABLES
 +    dep_tristate '  Layer 7 match support (EXPERIMENTAL)' CONFIG_IP_NF_MATCH_LAYER7 $CONFIG_IP_NF_CONNTRACK
 +    dep_mbool '  Layer 7 debugging output (EXPERIMENTAL)' CONFIG_IP_NF_MATCH_LAYER7_DEBUG $CONFIG_IP_NF_MATCH_LAYER7
-+    int  '  Buffer size for application layer data (256-65536)' CONFIG_IP_NF_MATCH_LAYER7_MAXDATALEN 2048
 + 
    fi
  # The targets
    dep_tristate '  Packet filtering' CONFIG_IP_NF_FILTER $CONFIG_IP_NF_IPTABLES 
 diff -urN linux.old/net/ipv4/netfilter/Makefile linux.dev/net/ipv4/netfilter/Makefile
---- linux.old/net/ipv4/netfilter/Makefile	2005-11-10 16:01:16.210075750 +0100
-+++ linux.dev/net/ipv4/netfilter/Makefile	2005-11-10 16:03:00.576598250 +0100
+--- linux.old/net/ipv4/netfilter/Makefile	2006-01-31 16:55:32.372558000 +0100
++++ linux.dev/net/ipv4/netfilter/Makefile	2006-01-31 16:58:24.803334750 +0100
 @@ -87,6 +87,7 @@
  obj-$(CONFIG_IP_NF_MATCH_CONNTRACK) += ipt_conntrack.o
  obj-$(CONFIG_IP_NF_MATCH_UNCLEAN) += ipt_unclean.o
@@ -104,7 +98,7 @@ diff -urN linux.old/net/ipv4/netfilter/Makefile linux.dev/net/ipv4/netfilter/Mak
  obj-$(CONFIG_IP_NF_TARGET_REJECT) += ipt_REJECT.o
 diff -urN linux.old/net/ipv4/netfilter/ip_conntrack_core.c linux.dev/net/ipv4/netfilter/ip_conntrack_core.c
 --- linux.old/net/ipv4/netfilter/ip_conntrack_core.c	2005-04-04 03:42:20.000000000 +0200
-+++ linux.dev/net/ipv4/netfilter/ip_conntrack_core.c	2005-11-10 16:03:00.584598750 +0100
++++ linux.dev/net/ipv4/netfilter/ip_conntrack_core.c	2006-01-31 16:58:24.811335250 +0100
 @@ -346,6 +346,14 @@
  		}
  		kfree(ct->master);
@@ -122,7 +116,7 @@ diff -urN linux.old/net/ipv4/netfilter/ip_conntrack_core.c linux.dev/net/ipv4/ne
  	if (master)
 diff -urN linux.old/net/ipv4/netfilter/ip_conntrack_standalone.c linux.dev/net/ipv4/netfilter/ip_conntrack_standalone.c
 --- linux.old/net/ipv4/netfilter/ip_conntrack_standalone.c	2005-04-04 03:42:20.000000000 +0200
-+++ linux.dev/net/ipv4/netfilter/ip_conntrack_standalone.c	2005-11-10 16:03:00.592599250 +0100
++++ linux.dev/net/ipv4/netfilter/ip_conntrack_standalone.c	2006-01-31 16:58:24.815335500 +0100
 @@ -107,6 +107,13 @@
  		len += sprintf(buffer + len, "[ASSURED] ");
  	len += sprintf(buffer + len, "use=%u ",
@@ -139,8 +133,8 @@ diff -urN linux.old/net/ipv4/netfilter/ip_conntrack_standalone.c linux.dev/net/i
  	return len;
 diff -urN linux.old/net/ipv4/netfilter/ipt_layer7.c linux.dev/net/ipv4/netfilter/ipt_layer7.c
 --- linux.old/net/ipv4/netfilter/ipt_layer7.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/net/ipv4/netfilter/ipt_layer7.c	2005-11-10 16:55:35.238845250 +0100
-@@ -0,0 +1,581 @@
++++ linux.dev/net/ipv4/netfilter/ipt_layer7.c	2006-01-31 19:31:38.591693000 +0100
+@@ -0,0 +1,595 @@
 +/* 
 +  Kernel module to match application layer (OSI layer 7) 
 +  data in connections.
@@ -177,6 +171,10 @@ diff -urN linux.old/net/ipv4/netfilter/ipt_layer7.c linux.dev/net/ipv4/netfilter
 +MODULE_LICENSE("GPL");
 +MODULE_DESCRIPTION("iptables application layer match module");
 +
++static int maxdatalen = 2048; // this is the default
++MODULE_PARM(maxdatalen,"i");
++MODULE_PARM_DESC(maxdatalen,"maximum bytes of data looked at by l7-filter");
++
 +#if defined(CONFIG_IP_NF_MATCH_LAYER7_DEBUG)
 +	#define DPRINTK(format,args...) printk(format,##args)
 +#else
@@ -187,7 +185,7 @@ diff -urN linux.old/net/ipv4/netfilter/ipt_layer7.c linux.dev/net/ipv4/netfilter
 +
 +/* Number of packets whose data we look at.
 +This can be modified through /proc/net/layer7_numpackets */
-+static int num_packets = 8;
++static int num_packets = 10;
 +
 +static struct pattern_cache {
 +	char * regex_string;
@@ -438,18 +436,18 @@ diff -urN linux.old/net/ipv4/netfilter/ipt_layer7.c linux.dev/net/ipv4/netfilter
 +static int add_datastr(char *target, int offset, char *app_data, int len)
 +{
 +	int length = 0, i;
-+	
++
 +	/* Strip nulls. Make everything lower case (our regex lib doesn't
 +	do case insensitivity).  Add it to the end of the current data. */
-+	for(i = 0; i < CONFIG_IP_NF_MATCH_LAYER7_MAXDATALEN-offset-1 && 
-+		   i < len; i++) {
++	for(i = 0; i < maxdatalen-offset-1 && i < len; i++) {
 +		if(app_data[i] != '\0') {
-+			target[length+offset] = 
++ 			target[length+offset] = 
 +				/* the kernel version of tolower mungs 'upper ascii' */
 +				isascii(app_data[i])? tolower(app_data[i]) : app_data[i];
 +			length++;
 +		}
 +	}
++
 +	target[length+offset] = '\0';
 +
 +	return length;
@@ -538,7 +536,7 @@ diff -urN linux.old/net/ipv4/netfilter/ipt_layer7.c linux.dev/net/ipv4/netfilter
 +	UNLOCK_BH(&list_lock);
 +
 +	if (info->pkt) {
-+		tmp_data = kmalloc(CONFIG_IP_NF_MATCH_LAYER7_MAXDATALEN, GFP_ATOMIC);
++		tmp_data = kmalloc(maxdatalen, GFP_ATOMIC);
 +		if(!tmp_data){
 +			if (net_ratelimit())
 +				printk(KERN_ERR "layer7: out of memory in match, bailing.\n");
@@ -557,7 +555,7 @@ diff -urN linux.old/net/ipv4/netfilter/ipt_layer7.c linux.dev/net/ipv4/netfilter
 +	/* On the first packet of a connection, allocate space for app data */
 +	WRITE_LOCK(&ct_lock);
 +	if(TOTAL_PACKETS == 1 && !skb->cb[0] && !master_conntrack->layer7.app_data) {
-+		master_conntrack->layer7.app_data = kmalloc(CONFIG_IP_NF_MATCH_LAYER7_MAXDATALEN, GFP_ATOMIC);
++		master_conntrack->layer7.app_data = kmalloc(maxdatalen, GFP_ATOMIC);
 +		if(!master_conntrack->layer7.app_data){
 +			if (net_ratelimit())
 +				printk(KERN_ERR "layer7: out of memory in match, bailing.\n");
@@ -711,6 +709,16 @@ diff -urN linux.old/net/ipv4/netfilter/ipt_layer7.c linux.dev/net/ipv4/netfilter
 +static int __init init(void)
 +{
 +	layer7_init_proc();
++	if(maxdatalen < 1) {
++		printk(KERN_WARNING "layer7: maxdatalen can't be < 1, using 1\n");
++		maxdatalen = 1;
++	}
++	/* This is not a hard limit.  It's just here to prevent people from     
++	bringing their slow machines to a grinding halt. */
++	else if(maxdatalen > 65536) {
++		printk(KERN_WARNING "layer7: maxdatalen can't be > 65536, using 65536\n");
++		maxdatalen = 65536;             
++	}
 +	return ipt_register_match(&layer7_match);
 +}
 +
@@ -724,7 +732,7 @@ diff -urN linux.old/net/ipv4/netfilter/ipt_layer7.c linux.dev/net/ipv4/netfilter
 +module_exit(fini);
 diff -urN linux.old/net/ipv4/netfilter/regexp/regexp.c linux.dev/net/ipv4/netfilter/regexp/regexp.c
 --- linux.old/net/ipv4/netfilter/regexp/regexp.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/net/ipv4/netfilter/regexp/regexp.c	2005-11-10 16:03:00.596599500 +0100
++++ linux.dev/net/ipv4/netfilter/regexp/regexp.c	2006-01-31 16:58:24.819335750 +0100
 @@ -0,0 +1,1195 @@
 +/*
 + * regcomp and regexec -- regsub and regerror are elsewhere
@@ -1923,7 +1931,7 @@ diff -urN linux.old/net/ipv4/netfilter/regexp/regexp.c linux.dev/net/ipv4/netfil
 +
 diff -urN linux.old/net/ipv4/netfilter/regexp/regexp.h linux.dev/net/ipv4/netfilter/regexp/regexp.h
 --- linux.old/net/ipv4/netfilter/regexp/regexp.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/net/ipv4/netfilter/regexp/regexp.h	2005-11-10 16:03:00.596599500 +0100
++++ linux.dev/net/ipv4/netfilter/regexp/regexp.h	2006-01-31 16:58:24.819335750 +0100
 @@ -0,0 +1,40 @@
 +/*
 + * Definitions etc. for regexp(3) routines.
@@ -1967,7 +1975,7 @@ diff -urN linux.old/net/ipv4/netfilter/regexp/regexp.h linux.dev/net/ipv4/netfil
 +#endif
 diff -urN linux.old/net/ipv4/netfilter/regexp/regmagic.h linux.dev/net/ipv4/netfilter/regexp/regmagic.h
 --- linux.old/net/ipv4/netfilter/regexp/regmagic.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/net/ipv4/netfilter/regexp/regmagic.h	2005-11-10 16:03:00.596599500 +0100
++++ linux.dev/net/ipv4/netfilter/regexp/regmagic.h	2006-01-31 16:58:24.823336000 +0100
 @@ -0,0 +1,5 @@
 +/*
 + * The first byte of the regexp internal "program" is actually this magic
@@ -1976,7 +1984,7 @@ diff -urN linux.old/net/ipv4/netfilter/regexp/regmagic.h linux.dev/net/ipv4/netf
 +#define	MAGIC	0234
 diff -urN linux.old/net/ipv4/netfilter/regexp/regsub.c linux.dev/net/ipv4/netfilter/regexp/regsub.c
 --- linux.old/net/ipv4/netfilter/regexp/regsub.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/net/ipv4/netfilter/regexp/regsub.c	2005-11-10 16:03:00.596599500 +0100
++++ linux.dev/net/ipv4/netfilter/regexp/regsub.c	2006-01-31 16:58:24.823336000 +0100
 @@ -0,0 +1,95 @@
 +/*
 + * regsub
