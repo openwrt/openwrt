@@ -42,7 +42,7 @@ $(eval $(call PKG_template,IP6TABLES,ip6tables,$(PKG_VERSION)-$(PKG_RELEASE),$(A
 $(eval $(call PKG_template,IPTABLES_MOD_CONNTRACK,iptables-mod-conntrack,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,IPTABLES_MOD_EXTRA,iptables-mod-extra,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,IPTABLES_MOD_FILTER,iptables-mod-filter,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
-$(eval $(call PKG_template,IPTABLES_MOD_IMQ,iptables-mod-img,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,IPTABLES_MOD_IMQ,iptables-mod-imq,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,IPTABLES_MOD_IPOPT,iptables-mod-ipopt,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,IPTABLES_MOD_IPSEC,iptables-mod-ipsec,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,IPTABLES_MOD_NAT,iptables-mod-nat,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
