@@ -1,0 +1,7 @@
+config BR2_PACKAGE_PCIUTILS
+	prompt "pciutils.......................... Linux PCI Utilities"
+	tristate
+	default m if CONFIG_DEVEL
+	help
+	  This package contains various utilities for inspecting and setting of
+	  devices connected to the PCI bus.
