@@ -50,11 +50,6 @@ $(eval $(call KMOD_template,TUN,tun,\
 	$(MODULES_DIR)/kernel/drivers/net/tun.o \
 ,CONFIG_TUN,,20,tun))
 
-$(eval $(call KMOD_template,RING,ring,\
-	$(MODULES_DIR)/kernel/net/ring/ring.o \
-,CONFIG_RING,,20,ring))
-
-
 # Filtering / Firewalling
 
 $(eval $(call KMOD_template,ARPTABLES,arptables,\
