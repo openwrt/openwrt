@@ -21,9 +21,4 @@ mount_root ${FAILSAFE:+failsafe}
 	{ mount|grep "on / type jffs2" 1>&-; } || firstboot
 }
 
-grep sysfs /proc/filesystems >&- 2>&- && {
-	mkdir -p /sys
-	mount -t sysfs none /sys
-}
-
 exec /sbin/init
