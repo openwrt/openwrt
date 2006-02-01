@@ -26,7 +26,7 @@ $(PKG_BUILD_DIR)/.configured:
 
 $(PKG_BUILD_DIR)/fwcutter/.built:
 	mkdir -p $(PKG_BUILD_DIR)/fwcutter
-	cp ./fwcutter/* $(PKG_BUILD_DIR)/fwcutter/
+	$(CP) ./fwcutter/* $(PKG_BUILD_DIR)/fwcutter/
 	$(SCRIPT_DIR)/download.pl "$(PKG_BUILD_DIR)/fwcutter" "$(FIRMWARE_BLOB)" "$(FIRMWARE_BLOB_MD5SUM)" $(FIRMWARE_BLOB_URL)
 	$(MAKE) -C $(PKG_BUILD_DIR)/fwcutter
 	$(PKG_BUILD_DIR)/fwcutter/fwcutter -w $(PKG_BUILD_DIR)/fwcutter $(PKG_BUILD_DIR)/fwcutter/$(FIRMWARE_BLOB)
@@ -50,7 +50,7 @@ $(IPKG_KMOD_BCM43XX_DSCAPE):
 		echo rate_control; \
 		echo bcm43xx; \
 	) >& $(IDIR_KMOD_BCM43XX_DSCAPE)/etc/modules.d/50-bcm43xx
-	cp -fpR $(PKG_BUILD_DIR)/*.ko $(IDIR_KMOD_BCM43XX_DSCAPE)/lib/modules/$(LINUX_VERSION)
+	$(CP) $(PKG_BUILD_DIR)/*.ko $(IDIR_KMOD_BCM43XX_DSCAPE)/lib/modules/$(LINUX_VERSION)
 	install -m0755 -d $(IDIR_KMOD_BCM43XX_DSCAPE)/lib/firmware
-	cp -fpR $(PKG_BUILD_DIR)/fwcutter/*.fw $(IDIR_KMOD_BCM43XX_DSCAPE)/lib/firmware/
+	$(CP) $(PKG_BUILD_DIR)/fwcutter/*.fw $(IDIR_KMOD_BCM43XX_DSCAPE)/lib/firmware/
 	$(IPKG_BUILD) $(IDIR_KMOD_BCM43XX_DSCAPE) $(PACKAGE_DIR)

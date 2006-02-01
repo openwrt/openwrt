@@ -33,12 +33,13 @@ install-ib:
 	@$(TRACE) target/linux/image/$(BOARD)-install-ib
 	-$(MAKE) -C $(BOARD) IB_DIR="$(IB_DIR)" install-ib
 	mkdir -p $(IB_DIR)/build_$(ARCH)/linux-$(KERNEL)-$(BOARD)
-	cp $(BUILD_DIR)/linux-$(KERNEL)-$(BOARD)/kernel[-_]*.ipk $(IB_DIR)/build_$(ARCH)/linux-$(KERNEL)-$(BOARD)/	
+	$(CP) $(BUILD_DIR)/linux-$(KERNEL)-$(BOARD)/kernel[-_]*.ipk $(IB_DIR)/build_$(ARCH)/linux-$(KERNEL)-$(BOARD)/	
 
 install-prepare:
 	find $(KDIR)/root -type f -not -perm +0100 | xargs chmod 0644
 	find $(KDIR)/root -type f -perm +0100 | xargs chmod 0755
 	find $(KDIR)/root -type d | xargs chmod 0755
+	mkdir -p $(KDIR)/root/tmp
 	chmod 0777 $(KDIR)/root/tmp
 
 rebuild: clean prepare compile install

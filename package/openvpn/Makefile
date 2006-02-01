@@ -81,7 +81,7 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_OPENVPN):
 	install -d -m0755 $(IDIR_OPENVPN)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/openvpn $(IDIR_OPENVPN)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/openvpn $(IDIR_OPENVPN)/usr/sbin/
 	$(RSTRIP) $(IDIR_OPENVPN)
 	echo "Depends: $(PKG_DEPEND)" >> $(IDIR_OPENVPN)/CONTROL/control
 	$(IPKG_BUILD) $(IDIR_OPENVPN) $(PACKAGE_DIR)

@@ -25,8 +25,8 @@ $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 
 $(IPKG_LIBPTHREAD): $(PKG_BUILD_DIR)/.built
 	mkdir -p $(IDIR_LIBPTHREAD)/lib
-	cp -fpR $(STAGING_DIR)/lib/libpthread.so.* $(IDIR_LIBPTHREAD)/lib/
-	cp -fpR $(STAGING_DIR)/lib/libpthread-*.so $(IDIR_LIBPTHREAD)/lib/
+	$(CP) $(STAGING_DIR)/lib/libpthread.so.* $(IDIR_LIBPTHREAD)/lib/
+	$(CP) $(STAGING_DIR)/lib/libpthread-*.so $(IDIR_LIBPTHREAD)/lib/
 	$(RSTRIP) $(IDIR_LIBPTHREAD)
 	$(IPKG_BUILD) $(IDIR_LIBPTHREAD) $(PACKAGE_DIR)
 

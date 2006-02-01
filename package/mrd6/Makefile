@@ -39,6 +39,6 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_MRD6): 
 	mkdir -p $(IDIR_MRD6)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/ $(IDIR_MRD6)/
+	$(CP) $(PKG_INSTALL_DIR)/ $(IDIR_MRD6)/
 	$(RSTRIP) $(IDIR_MRD6)/
 	$(IPKG_BUILD) $(IDIR_MRD6) $(PACKAGE_DIR)

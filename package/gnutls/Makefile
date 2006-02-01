@@ -80,34 +80,34 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_LIBGNUTLS):
 	install -m0755 -d $(IDIR_LIBGNUTLS)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libgnutls{,-extra}.so.* $(IDIR_LIBGNUTLS)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libgnutls{,-extra}.so.* $(IDIR_LIBGNUTLS)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBGNUTLS)
 	$(IPKG_BUILD) $(IDIR_LIBGNUTLS) $(PACKAGE_DIR)
 
 $(IPKG_LIBGNUTLS_OPENSSL):
 	install -m0755 -d $(IDIR_LIBGNUTLS_OPENSSL)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libgnutls-openssl.so.* $(IDIR_LIBGNUTLS_OPENSSL)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libgnutls-openssl.so.* $(IDIR_LIBGNUTLS_OPENSSL)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBGNUTLS_OPENSSL)
 	$(IPKG_BUILD) $(IDIR_LIBGNUTLS_OPENSSL) $(PACKAGE_DIR)
 
 $(IPKG_GNUTLS_UTILS):
 	install -m0755 -d $(IDIR_GNUTLS_UTILS)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/certtool $(IDIR_GNUTLS_UTILS)/usr/bin/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/gnutls-{cli,serv} $(IDIR_GNUTLS_UTILS)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/certtool $(IDIR_GNUTLS_UTILS)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/gnutls-{cli,serv} $(IDIR_GNUTLS_UTILS)/usr/bin/
 	$(RSTRIP) $(IDIR_GNUTLS_UTILS)
 	$(IPKG_BUILD) $(IDIR_GNUTLS_UTILS) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libgnutls.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/libgnutls{,-extra}-config $(STAGING_DIR)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/libgnutls{,-extra}-config $(STAGING_DIR)/usr/bin/
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/gnutls $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/gnutls $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libgnutls{,-extra,-openssl}.{a,so*} $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libgnutls{,-extra,-openssl}.{a,so*} $(STAGING_DIR)/usr/lib/
 	mkdir -p $(STAGING_DIR)/usr/lib/pkgconfig
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/gnutls{,-extra}.pc $(STAGING_DIR)/usr/lib/pkgconfig/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/gnutls{,-extra}.pc $(STAGING_DIR)/usr/lib/pkgconfig/
 	mkdir -p $(STAGING_DIR)/usr/share/aclocal
-	cp -fpR $(PKG_INSTALL_DIR)/usr/share/aclocal/libgnutls{,-extra}.m4 $(STAGING_DIR)/usr/share/aclocal/
+	$(CP) $(PKG_INSTALL_DIR)/usr/share/aclocal/libgnutls{,-extra}.m4 $(STAGING_DIR)/usr/share/aclocal/
 	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/libgnutls.so

@@ -27,6 +27,6 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_EBTABLES):
 	mkdir -p $(IDIR_EBTABLES)/usr/sbin
-	cp $(PKG_BUILD_DIR)/ebtables $(IDIR_EBTABLES)/usr/sbin/
+	$(CP) $(PKG_BUILD_DIR)/ebtables $(IDIR_EBTABLES)/usr/sbin/
 	$(IPKG_BUILD) $(IDIR_EBTABLES) $(PACKAGE_DIR)
 

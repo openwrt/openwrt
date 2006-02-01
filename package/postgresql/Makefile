@@ -88,27 +88,27 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_LIBPQ):
 	install -d -m0755 $(IDIR_LIBPQ)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libpq.so.* $(IDIR_LIBPQ)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libpq.so.* $(IDIR_LIBPQ)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBPQ)
 	$(IPKG_BUILD) $(IDIR_LIBPQ) $(PACKAGE_DIR)
 
 $(IPKG_PGSQL_CLI):
 	install -d -m0755 $(IDIR_PGSQL_CLI)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/psql $(IDIR_PGSQL_CLI)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/psql $(IDIR_PGSQL_CLI)/usr/bin/
 	$(RSTRIP) $(IDIR_PGSQL_CLI)
 	$(IPKG_BUILD) $(IDIR_PGSQL_CLI) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libpq.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/pg_config $(STAGING_DIR)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/pg_config $(STAGING_DIR)/usr/bin/
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/libpq $(STAGING_DIR)/usr/include/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/libpq-fe.h $(STAGING_DIR)/usr/include/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/pg_config.h $(STAGING_DIR)/usr/include/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/postgres_ext.h $(STAGING_DIR)/usr/include/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/postgresql $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/libpq $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/libpq-fe.h $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/pg_config.h $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/postgres_ext.h $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/postgresql $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libpq.{a,so*} $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libpq.{a,so*} $(STAGING_DIR)/usr/lib/
 	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/libpq.so

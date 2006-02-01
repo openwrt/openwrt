@@ -109,25 +109,25 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_LIBOPENLDAP):
 	mkdir -p $(IDIR_LIBOPENLDAP)/etc/openldap
-	cp -fpR $(PKG_INSTALL_DIR)/etc/openldap/ldap.conf $(IDIR_LIBOPENLDAP)/etc/openldap/
+	$(CP) $(PKG_INSTALL_DIR)/etc/openldap/ldap.conf $(IDIR_LIBOPENLDAP)/etc/openldap/
 	mkdir -p $(IDIR_LIBOPENLDAP)/usr/lib/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/lib{lber,ldap}*.so.* $(IDIR_LIBOPENLDAP)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/lib{lber,ldap}*.so.* $(IDIR_LIBOPENLDAP)/usr/lib/
 	mkdir -p $(IDIR_LIBOPENLDAP)/usr/share/openldap
-	cp -fpR $(PKG_INSTALL_DIR)/usr/share/openldap/* $(IDIR_LIBOPENLDAP)/usr/share/openldap/
+	$(CP) $(PKG_INSTALL_DIR)/usr/share/openldap/* $(IDIR_LIBOPENLDAP)/usr/share/openldap/
 	$(RSTRIP) $(IDIR_LIBOPENLDAP)
 	$(IPKG_BUILD) $(IDIR_LIBOPENLDAP) $(PACKAGE_DIR)
 	
 $(IPKG_OPENLDAP_UTILS):
 	mkdir -p $(IDIR_OPENLDAP_UTILS)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/ldap* $(IDIR_OPENLDAP_UTILS)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/ldap* $(IDIR_OPENLDAP_UTILS)/usr/bin/
 	$(RSTRIP) $(IDIR_OPENLDAP_UTILS)
 	$(IPKG_BUILD) $(IDIR_OPENLDAP_UTILS) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libldap.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/{lber,ldap}*.h $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/{lber,ldap}*.h $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/lib{lber,ldap}*.{a,so*} $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/lib{lber,ldap}*.{a,so*} $(STAGING_DIR)/usr/lib/
 	touch $@
 	
 install-dev: $(STAGING_DIR)/usr/lib/libldap.so

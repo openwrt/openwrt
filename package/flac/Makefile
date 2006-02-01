@@ -32,16 +32,16 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_LIBFLAC):
 	install -m0755 -d $(IDIR_LIBFLAC)/usr/lib
-	cp -fpR $(PKG_BUILD_DIR)/obj/release/lib/libFLAC.so $(IDIR_LIBFLAC)/usr/lib/
+	$(CP) $(PKG_BUILD_DIR)/obj/release/lib/libFLAC.so $(IDIR_LIBFLAC)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBFLAC)
 	$(IPKG_BUILD) $(IDIR_LIBFLAC) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libFLAC.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_BUILD_DIR)/include/FLAC $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_BUILD_DIR)/include/FLAC $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_BUILD_DIR)/obj/release/lib/libFLAC.a $(STAGING_DIR)/usr/lib/
-	cp -fpR $(PKG_BUILD_DIR)/obj/release/lib/libFLAC.so $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_BUILD_DIR)/obj/release/lib/libFLAC.a $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_BUILD_DIR)/obj/release/lib/libFLAC.so $(STAGING_DIR)/usr/lib/
 	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/libFLAC.so

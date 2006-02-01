@@ -64,15 +64,15 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_BLUEZ_LIBS):
 	install -d -m0755 $(IDIR_BLUEZ_LIBS)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libbluetooth.so.* $(IDIR_BLUEZ_LIBS)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libbluetooth.so.* $(IDIR_BLUEZ_LIBS)/usr/lib/
 	$(RSTRIP) $(IDIR_BLUEZ_LIBS)
 	$(IPKG_BUILD) $(IDIR_BLUEZ_LIBS) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libbluetooth.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include/bluetooth
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/bluetooth/*.h $(STAGING_DIR)/usr/include/bluetooth
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/bluetooth/*.h $(STAGING_DIR)/usr/include/bluetooth
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fp $(PKG_INSTALL_DIR)/usr/lib/libbluetooth.{a,so*} $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libbluetooth.{a,so*} $(STAGING_DIR)/usr/lib/
 
 install-dev: $(STAGING_DIR)/usr/lib/libbluetooth.so
 

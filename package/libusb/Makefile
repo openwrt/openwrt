@@ -61,17 +61,17 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_LIBUSB):
 	install -m0755 -d $(IDIR_LIBUSB)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libusb*.so.* $(IDIR_LIBUSB)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libusb*.so.* $(IDIR_LIBUSB)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBUSB)
 	$(IPKG_BUILD) $(IDIR_LIBUSB) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libusb.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/libusb-config $(STAGING_DIR)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/libusb-config $(STAGING_DIR)/usr/bin/
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/usb.h $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/usb.h $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libusb*.{a,so*} $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libusb*.{a,so*} $(STAGING_DIR)/usr/lib/
 	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/libusb.so

@@ -115,11 +115,11 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_LIBNCURSES):
 	install -d -m0755 $(IDIR_LIBNCURSES)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/lib{ncurses,panel,menu}*.so.* $(IDIR_LIBNCURSES)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/lib{ncurses,panel,menu}*.so.* $(IDIR_LIBNCURSES)/usr/lib/
 	install -d -m0755 $(IDIR_LIBNCURSES)/usr/share/terminfo
 	for f in a/ansi d/dumb l/linux r/rxvt s/screen v/vt100 v/vt102 x/xterm x/xterm-color; do \
 		install -d -m0755 $(IDIR_LIBNCURSES)/usr/share/terminfo/`dirname $${f}`; \
-		cp -fpR $(PKG_INSTALL_DIR)/usr/share/terminfo/$${f} \
+		$(CP) $(PKG_INSTALL_DIR)/usr/share/terminfo/$${f} \
 			$(IDIR_LIBNCURSES)/usr/share/terminfo/$${f}; \
 	done
 	$(RSTRIP) $(IDIR_LIBNCURSES)
@@ -127,15 +127,15 @@ $(IPKG_LIBNCURSES):
 
 $(STAGING_DIR)/usr/lib/libncurses.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/curses.h $(STAGING_DIR)/usr/include/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/{ncurses,panel}.h $(STAGING_DIR)/usr/include/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/panel.h $(STAGING_DIR)/usr/include/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/term{,cap}.h $(STAGING_DIR)/usr/include/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/unctrl.h $(STAGING_DIR)/usr/include/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/menu.h $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/curses.h $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/{ncurses,panel}.h $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/panel.h $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/term{,cap}.h $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/unctrl.h $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/menu.h $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libcurses.so $(STAGING_DIR)/usr/lib/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/lib{ncurses,panel,menu}.{a,so*} $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libcurses.so $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/lib{ncurses,panel,menu}.{a,so*} $(STAGING_DIR)/usr/lib/
 	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/libncurses.so

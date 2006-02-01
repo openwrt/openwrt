@@ -62,5 +62,5 @@ endif
 install-ib:
 	mkdir -p $(IB_DIR)/staging_dir_$(ARCH)/bin
 	mkdir -p $(IB_DIR)/build_$(ARCH)/linux-$(KERNEL)-$(BOARD)
-	cp -fpR $(KDIR)/loader.elf $(IB_DIR)/build_$(ARCH)/
-	cp -fpR $(KDIR)/vmlinux.lzma $(IB_DIR)/build_$(ARCH)/linux-$(KERNEL)-$(BOARD)/
+	$(CP) $(KDIR)/loader.elf $(IB_DIR)/build_$(ARCH)/
+	$(CP) $(KDIR)/vmlinux.lzma $(IB_DIR)/build_$(ARCH)/linux-$(KERNEL)-$(BOARD)/

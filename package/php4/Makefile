@@ -263,7 +263,7 @@ $(IPKG_PHP4_CLI):
 	install -m0755 -d $(IDIR_PHP4_CLI)/etc
 	install -m0644 ./files/php.ini $(IDIR_PHP4_CLI)/etc/
 	install -m0755 -d $(IDIR_PHP4_CLI)/usr/bin
-	cp -fpR $(PKG_BUILD_DIR)/php-cli $(IDIR_PHP4_CLI)/usr/bin/php
+	$(CP) $(PKG_BUILD_DIR)/php-cli $(IDIR_PHP4_CLI)/usr/bin/php
 	$(RSTRIP) $(IDIR_PHP4_CLI)
 	$(IPKG_BUILD) $(IDIR_PHP4_CLI) $(PACKAGE_DIR)
 
@@ -271,7 +271,7 @@ $(IPKG_PHP4_CGI):
 	install -m0755 -d $(IDIR_PHP4_CGI)/etc
 	install -m0644 ./files/php.ini $(IDIR_PHP4_CGI)/etc/
 	install -m0755 -d $(IDIR_PHP4_CGI)/usr/bin
-	cp -fpR $(PKG_BUILD_DIR)/php-cgi $(IDIR_PHP4_CGI)/usr/bin/php
+	$(CP) $(PKG_BUILD_DIR)/php-cgi $(IDIR_PHP4_CGI)/usr/bin/php
 	$(RSTRIP) $(IDIR_PHP4_CGI)
 	$(IPKG_BUILD) $(IDIR_PHP4_CGI) $(PACKAGE_DIR)
 
@@ -281,7 +281,7 @@ $(IPKG_PHP4_FASTCGI):
 	install -m0755 -d $(IDIR_PHP4_FASTCGI)/etc/init.d
 	install -m0755 ./files/php.init $(IDIR_PHP4_FASTCGI)/etc/init.d/php
 	install -m0755 -d $(IDIR_PHP4_FASTCGI)/usr/sbin
-	cp -fpR $(PKG_BUILD_DIR)/php-fastcgi $(IDIR_PHP4_FASTCGI)/usr/sbin/php
+	$(CP) $(PKG_BUILD_DIR)/php-fastcgi $(IDIR_PHP4_FASTCGI)/usr/sbin/php
 	$(RSTRIP) $(IDIR_PHP4_FASTCGI)
 	$(IPKG_BUILD) $(IDIR_PHP4_FASTCGI) $(PACKAGE_DIR)
 

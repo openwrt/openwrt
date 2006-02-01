@@ -30,7 +30,7 @@ define IPKG_plugin_template
 $$(IPKG_$(1)):
 	install -m0755 -d $$(IDIR_$(1))/usr/lib/ulogd
 	for m in $(2); do \
-		cp -fpR $(PKG_INSTALL_DIR)/usr/lib/ulogd/ulogd_$$$${m}.so $$(IDIR_$(1))/usr/lib/ulogd/ ; \
+		$(CP) $(PKG_INSTALL_DIR)/usr/lib/ulogd/ulogd_$$$${m}.so $$(IDIR_$(1))/usr/lib/ulogd/ ; \
 	done
 	$(RSTRIP) $$(IDIR_$(1))
 	$(IPKG_BUILD) $$(IDIR_$(1)) $(PACKAGE_DIR)
@@ -92,15 +92,15 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_ULOGD):
 	install -d -m0755 $(IDIR_ULOGD)/etc
-	cp -fpR $(PKG_INSTALL_DIR)/etc/ulogd.conf $(IDIR_ULOGD)/etc/
+	$(CP) $(PKG_INSTALL_DIR)/etc/ulogd.conf $(IDIR_ULOGD)/etc/
 	install -d -m0755 $(IDIR_ULOGD)/etc/default
 	install -m0644 ./files/ulogd.default $(IDIR_ULOGD)/etc/default/ulogd
 	install -d -m0755 $(IDIR_ULOGD)/etc/init.d
 	install -m0755 ./files/ulogd.init $(IDIR_ULOGD)/etc/init.d/ulogd
 	ln -sf ulogd $(IDIR_ULOGD)/etc/init.d/S49ulogd
 	install -d -m0755 $(IDIR_ULOGD)/usr/lib/ulogd
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/ulogd/ulogd_BASE.so $(IDIR_ULOGD)/usr/lib/ulogd/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/ulogd/ulogd_BASE.so $(IDIR_ULOGD)/usr/lib/ulogd/
 	install -d -m0755 $(IDIR_ULOGD)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/ulogd $(IDIR_ULOGD)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/ulogd $(IDIR_ULOGD)/usr/sbin/
 	$(RSTRIP) $(IDIR_ULOGD)
 	$(IPKG_BUILD) $(IDIR_ULOGD) $(PACKAGE_DIR)

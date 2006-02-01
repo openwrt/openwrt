@@ -17,7 +17,7 @@ $(LIBNOTIMPL_DIR)/libnotimpl.a: $(LIBNOTIMPL_OBJS)
 
 $(STAGING_DIR)/usr/lib/libnotimpl.a: $(LIBNOTIMPL_DIR)/libnotimpl.a
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $< $@
+	$(CP) $< $@
 	touch -c $@
 
 source:

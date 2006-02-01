@@ -14,7 +14,7 @@ $(eval $(call PKG_template,ETHER_WAKE,$(PKG_NAME),$(PKG_VERSION)-$(PKG_RELEASE),
 
 $(PKG_BUILD_DIR)/.prepared:
 	mkdir -p $(PKG_BUILD_DIR)
-	cp ./files/$(PKG_NAME).c $(PKG_BUILD_DIR)/
+	$(CP) ./files/$(PKG_NAME).c $(PKG_BUILD_DIR)/
 	$(PATCH) $(PKG_BUILD_DIR) ./patches
 	touch $@
 

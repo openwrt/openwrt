@@ -61,7 +61,7 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_IRSSI): 
 	mkdir -p $(IDIR_IRSSI)/usr/bin
-	cp $(PKG_BUILD_DIR)/src/fe-text/$(PKG_NAME) $(IDIR_IRSSI)/usr/bin/
+	$(CP) $(PKG_BUILD_DIR)/src/fe-text/$(PKG_NAME) $(IDIR_IRSSI)/usr/bin/
 	$(STRIP) $(IDIR_IRSSI)/usr/bin/*
 	$(IPKG_BUILD) $(IDIR_IRSSI) $(PACKAGE_DIR)
 

@@ -71,21 +71,21 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_MIREDO):
 	install -d -m0755 $(IDIR_MIREDO)/etc
-	cp -fpR $(PKG_INSTALL_DIR)/etc/miredo.conf-dist $(IDIR_MIREDO)/etc/miredo.conf
+	$(CP) $(PKG_INSTALL_DIR)/etc/miredo.conf-dist $(IDIR_MIREDO)/etc/miredo.conf
 	install -d -m0755 $(IDIR_MIREDO)/etc/init.d
 	install -m0755 ./files/miredo.init $(IDIR_MIREDO)/etc/init.d/miredo
 	install -d -m0755 $(IDIR_MIREDO)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/miredo $(IDIR_MIREDO)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/miredo $(IDIR_MIREDO)/usr/sbin/
 	$(RSTRIP) $(IDIR_MIREDO)
 	$(IPKG_BUILD) $(IDIR_MIREDO) $(PACKAGE_DIR)
 
 $(IPKG_MIREDO_SERVER):
 	install -d -m0755 $(IDIR_MIREDO_SERVER)/etc/
-	cp -fpR $(PKG_INSTALL_DIR)/etc/miredo-server.conf-dist $(IDIR_MIREDO_SERVER)/etc/miredo-server.conf
+	$(CP) $(PKG_INSTALL_DIR)/etc/miredo-server.conf-dist $(IDIR_MIREDO_SERVER)/etc/miredo-server.conf
 	install -d -m0755 $(IDIR_MIREDO_SERVER)/etc/init.d
 	install -m0755 ./files/miredo-server.init $(IDIR_MIREDO_SERVER)/etc/init.d/miredo-server
 	install -d -m0755 $(IDIR_MIREDO_SERVER)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/miredo-server $(IDIR_MIREDO_SERVER)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/miredo-server $(IDIR_MIREDO_SERVER)/usr/sbin/
 	$(RSTRIP) $(IDIR_MIREDO_SERVER)
 	$(IPKG_BUILD) $(IDIR_MIREDO_SERVER) $(PACKAGE_DIR)
 

@@ -99,36 +99,36 @@ $(IPKG_AVAHI_DAEMON):
 	install -d -m0755 $(IDIR_AVAHI_DAEMON)/etc/init.d
 	install -m0755 ./files/avahi-daemon.init $(IDIR_AVAHI_DAEMON)/etc/init.d/avahi-daemon
 	install -d -m0755 $(IDIR_AVAHI_DAEMON)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/avahi-daemon $(IDIR_AVAHI_DAEMON)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/avahi-daemon $(IDIR_AVAHI_DAEMON)/usr/sbin/
 	$(RSTRIP) $(IDIR_AVAHI_DAEMON)
 	$(IPKG_BUILD) $(IDIR_AVAHI_DAEMON) $(PACKAGE_DIR)
 
 $(IPKG_AVAHI_DNSCONFD):
 	install -d -m0755 $(IDIR_AVAHI_DNSCONFD)/etc/avahi
-	cp -fpR $(PKG_INSTALL_DIR)/etc/avahi/avahi-dnsconfd.action $(IDIR_AVAHI_DNSCONFD)/etc/avahi/
+	$(CP) $(PKG_INSTALL_DIR)/etc/avahi/avahi-dnsconfd.action $(IDIR_AVAHI_DNSCONFD)/etc/avahi/
 	install -d -m0755 $(IDIR_AVAHI_DNSCONFD)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/avahi-dnsconfd $(IDIR_AVAHI_DNSCONFD)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/avahi-dnsconfd $(IDIR_AVAHI_DNSCONFD)/usr/sbin/
 	$(RSTRIP) $(IDIR_AVAHI_DNSCONFD)
 	$(IPKG_BUILD) $(IDIR_AVAHI_DNSCONFD) $(PACKAGE_DIR)
 
 $(IPKG_LIBAVAHI):
 	install -d -m0755 $(IDIR_LIBAVAHI)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libavahi-common.so.* $(IDIR_LIBAVAHI)/usr/lib/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libavahi-core.so.* $(IDIR_LIBAVAHI)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libavahi-common.so.* $(IDIR_LIBAVAHI)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libavahi-core.so.* $(IDIR_LIBAVAHI)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBAVAHI)
 	$(IPKG_BUILD) $(IDIR_LIBAVAHI) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/avahi.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/avahi-common $(STAGING_DIR)/usr/include/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/avahi-core $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/avahi-common $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/avahi-core $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libavahi-common.a $(STAGING_DIR)/usr/lib/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libavahi-common.so* $(STAGING_DIR)/usr/lib/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libavahi-core.a $(STAGING_DIR)/usr/lib/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libavahi-core.so* $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libavahi-common.a $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libavahi-common.so* $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libavahi-core.a $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libavahi-core.so* $(STAGING_DIR)/usr/lib/
 	mkdir -p $(STAGING_DIR)/usr/lib/pkgconfig
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/avahi-core.pc $(STAGING_DIR)/usr/lib/pkgconfig/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/avahi-core.pc $(STAGING_DIR)/usr/lib/pkgconfig/
 	$(SED) 's,-I$${includedir},,g' $(STAGING_DIR)/usr/lib/pkgconfig/avahi-core.pc
 	$(SED) 's,-L$${libdir},,g' $(STAGING_DIR)/usr/lib/pkgconfig/avahi-core.pc
 	touch $@

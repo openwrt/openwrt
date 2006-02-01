@@ -61,17 +61,17 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_LIBSPEEX):
 	install -d -m0755 $(IDIR_LIBSPEEX)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libspeex.so.* $(IDIR_LIBSPEEX)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libspeex.so.* $(IDIR_LIBSPEEX)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBSPEEX)
 	$(IPKG_BUILD) $(IDIR_LIBSPEEX) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libspeex.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/speex $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/speex $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libspeex.{a,so*} $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libspeex.{a,so*} $(STAGING_DIR)/usr/lib/
 	mkdir -p $(STAGING_DIR)/usr/lib/pkgconfig
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/speex.pc $(STAGING_DIR)/usr/lib/pkgconfig/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/speex.pc $(STAGING_DIR)/usr/lib/pkgconfig/
 	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/libspeex.so

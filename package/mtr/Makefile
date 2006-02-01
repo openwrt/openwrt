@@ -68,7 +68,7 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_MTR):
 	install -d -m0755 $(IDIR_MTR)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/mtr $(IDIR_MTR)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/mtr $(IDIR_MTR)/usr/sbin/
 	$(RSTRIP) $(IDIR_MTR)
 	$(IPKG_BUILD) $(IDIR_MTR) $(PACKAGE_DIR)
 

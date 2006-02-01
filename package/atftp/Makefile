@@ -60,12 +60,12 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_ATFTP):
 	install -d -m0755 $(IDIR_ATFTP)/usr/bin
-	cp -fpR $(PKG_BUILD_DIR)/atftp $(IDIR_ATFTP)/usr/bin
+	$(CP) $(PKG_BUILD_DIR)/atftp $(IDIR_ATFTP)/usr/bin
 	$(RSTRIP) $(IDIR_ATFTP)
 	$(IPKG_BUILD) $(IDIR_ATFTP) $(PACKAGE_DIR)
 
 $(IPKG_ATFTPD):
 	install -d -m0755 $(IDIR_ATFTPD)/usr/sbin
-	cp -fpR $(PKG_BUILD_DIR)/atftpd $(IDIR_ATFTPD)/usr/sbin
+	$(CP) $(PKG_BUILD_DIR)/atftpd $(IDIR_ATFTPD)/usr/sbin
 	$(RSTRIP) $(IDIR_ATFTPD)
 	$(IPKG_BUILD) $(IDIR_ATFTPD) $(PACKAGE_DIR)

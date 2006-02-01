@@ -65,8 +65,8 @@ $(IPKG_XSUPPLICANT):
 	install -d -m0755 $(IDIR_XSUPPLICANT)/etc
 	install -m0644 $(PKG_BUILD_DIR)/etc/xsupplicant.conf $(IDIR_XSUPPLICANT)/etc/
 	install -d -m0755 $(IDIR_XSUPPLICANT)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/xsup_* $(IDIR_XSUPPLICANT)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/xsup_* $(IDIR_XSUPPLICANT)/usr/bin/
 	install -d -m0755 $(IDIR_XSUPPLICANT)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/xsupplicant $(IDIR_XSUPPLICANT)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/xsupplicant $(IDIR_XSUPPLICANT)/usr/sbin/
 	$(RSTRIP) $(IDIR_XSUPPLICANT)
 	$(IPKG_BUILD) $(IDIR_XSUPPLICANT) $(PACKAGE_DIR)

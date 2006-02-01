@@ -60,12 +60,12 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_WATCHDOG):
 	install -d -m0755 $(IDIR_WATCHDOG)/etc
-	cp -fpR $(PKG_INSTALL_DIR)/etc/watchdog.conf $(IDIR_WATCHDOG)/etc/
+	$(CP) $(PKG_INSTALL_DIR)/etc/watchdog.conf $(IDIR_WATCHDOG)/etc/
 	install -d -m0755 $(IDIR_WATCHDOG)/etc/init.d
 	install -m0755 ./files/watchdog.init $(IDIR_WATCHDOG)/etc/init.d/watchdog
 	ln -sf watchdog $(IDIR_WATCHDOG)/etc/init.d/S90watchdog
 	install -d -m0755 $(IDIR_WATCHDOG)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/watchdog $(IDIR_WATCHDOG)/usr/sbin/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/wd_keepalive $(IDIR_WATCHDOG)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/watchdog $(IDIR_WATCHDOG)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/wd_keepalive $(IDIR_WATCHDOG)/usr/sbin/
 	$(RSTRIP) $(IDIR_WATCHDOG)
 	$(IPKG_BUILD) $(IDIR_WATCHDOG) $(PACKAGE_DIR)

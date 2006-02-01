@@ -23,7 +23,7 @@ $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/jffs2root
 
 $(IDIR_OPENWRT)/sbin/jffs2root: $(PKG_BUILD_DIR)/jffs2root
 	mkdir -p $(IDIR_OPENWRT)/sbin
-	cp $(PKG_BUILD_DIR)/jffs2root $(IDIR_OPENWRT)/sbin
+	$(CP) $(PKG_BUILD_DIR)/jffs2root $(IDIR_OPENWRT)/sbin
 
 $(IPKG_OPENWRT): $(IDIR_OPENWRT)/sbin/jffs2root
 endif
@@ -36,7 +36,7 @@ $(IDIR_OPENWRT):
 	$(SED) s,base-files-arch,base-files-$(BOARD)-$(KERNEL),g $(IDIR_OPENWRT)/CONTROL/control
 
 $(IPKG_OPENWRT): $(IDIR_OPENWRT)
-	[ -d files/$(BOARD)-$(KERNEL) ] && cp -fpR files/$(BOARD)-$(KERNEL)/* $(IDIR_OPENWRT)/
+	[ -d files/$(BOARD)-$(KERNEL) ] && $(CP) -fpR files/$(BOARD)-$(KERNEL)/* $(IDIR_OPENWRT)/
 	find $(IDIR_OPENWRT) -name CVS | xargs rm -rf
 	find $(IDIR_OPENWRT) -name .svn | xargs rm -rf
 	$(RSTRIP) $(IDIR_OPENWRT)
@@ -50,4 +50,4 @@ openwrt-install:
 compile-targets: install-dev $(IPKG_OPENWRT)
 install-dev:
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR ./include/[a-z]* $(STAGING_DIR)/usr/include/
+	$(CP) ./include/[a-z]* $(STAGING_DIR)/usr/include/

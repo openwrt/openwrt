@@ -61,8 +61,8 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_SABLEVM):
 	install -m0755 -d $(IDIR_SABLEVM)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/{java-,}sablevm $(IDIR_SABLEVM)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/{java-,}sablevm $(IDIR_SABLEVM)/usr/bin/
 	install -m0755 -d $(IDIR_SABLEVM)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libsablevm-*.so $(IDIR_SABLEVM)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libsablevm-*.so $(IDIR_SABLEVM)/usr/lib/
 	$(RSTRIP) $(IDIR_SABLEVM)
 	$(IPKG_BUILD) $(IDIR_SABLEVM) $(PACKAGE_DIR)

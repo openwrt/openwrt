@@ -100,21 +100,21 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_LIBSASL2):
 	install -m0755 -d $(IDIR_LIBSASL2)/usr/lib/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libsasl2.so.* $(IDIR_LIBSASL2)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libsasl2.so.* $(IDIR_LIBSASL2)/usr/lib/
 	install -m0755 -d $(IDIR_LIBSASL2)/usr/lib/sasl2
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/sasl2/lib*.so.* $(IDIR_LIBSASL2)/usr/lib/sasl2/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/sasl2/lib*.so.* $(IDIR_LIBSASL2)/usr/lib/sasl2/
 	$(RSTRIP) $(IDIR_LIBSASL2)
 	$(IPKG_BUILD) $(IDIR_LIBSASL2) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libsasl2.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/sasl $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/sasl $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libsasl2.{a,so*} $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libsasl2.{a,so*} $(STAGING_DIR)/usr/lib/
 	ln -sf libsasl2.a $(STAGING_DIR)/usr/lib/libsasl.a
 	ln -sf libsasl2.so $(STAGING_DIR)/usr/lib/libsasl.so
 	mkdir -p $(STAGING_DIR)/usr/lib/sasl2
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/sasl2/lib*.{a,so*} $(STAGING_DIR)/usr/lib/sasl2/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/sasl2/lib*.{a,so*} $(STAGING_DIR)/usr/lib/sasl2/
 
 install-dev: $(STAGING_DIR)/usr/lib/libsasl2.so
 

@@ -58,20 +58,20 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_LIBFREETYPE):
 	install -d -m0755 $(IDIR_LIBFREETYPE)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libfreetype.so.* $(IDIR_LIBFREETYPE)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libfreetype.so.* $(IDIR_LIBFREETYPE)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBFREETYPE)
 	$(IPKG_BUILD) $(IDIR_LIBFREETYPE) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libfreetype.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/freetype-config $(STAGING_DIR)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/freetype-config $(STAGING_DIR)/usr/bin/
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/freetype2 $(STAGING_DIR)/usr/include/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/ft2build.h $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/freetype2 $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/ft2build.h $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libfreetype.{a,so*} $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libfreetype.{a,so*} $(STAGING_DIR)/usr/lib/
 	mkdir -p $(STAGING_DIR)/usr/lib/pkgconfig
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/freetype2.pc $(STAGING_DIR)/usr/lib/pkgconfig/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/freetype2.pc $(STAGING_DIR)/usr/lib/pkgconfig/
 	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/libfreetype.so

@@ -33,11 +33,11 @@ $(IPKG_KMOD_WLCOMPAT): $(PKG_BUILD_DIR)/wlcompat.o
 	mkdir -p $(IDIR_KMOD_WLCOMPAT)/etc/modules.d
 	echo "wlcompat" > $(IDIR_KMOD_WLCOMPAT)/etc/modules.d/30-wlcompat
 	mkdir -p $(IDIR_KMOD_WLCOMPAT)/lib/modules/$(LINUX_VERSION)
-	cp $(PKG_BUILD_DIR)/wlcompat.o $(IDIR_KMOD_WLCOMPAT)/lib/modules/$(LINUX_VERSION)/
+	$(CP) $(PKG_BUILD_DIR)/wlcompat.o $(IDIR_KMOD_WLCOMPAT)/lib/modules/$(LINUX_VERSION)/
 	$(IPKG_BUILD) $(IDIR_KMOD_WLCOMPAT) $(PACKAGE_DIR)
 
 $(IPKG_KMOD_WLCOMPAT_DEBUG): $(PKG_BUILD_DIR)/wlcompat-debug.o
 	mkdir -p $(IDIR_KMOD_WLCOMPAT_DEBUG)/lib/modules/$(LINUX_VERSION)
-	cp $(PKG_BUILD_DIR)/wlcompat-debug.o $(IDIR_KMOD_WLCOMPAT_DEBUG)/lib/modules/$(LINUX_VERSION)/
+	$(CP) $(PKG_BUILD_DIR)/wlcompat-debug.o $(IDIR_KMOD_WLCOMPAT_DEBUG)/lib/modules/$(LINUX_VERSION)/
 	$(IPKG_BUILD) $(IDIR_KMOD_WLCOMPAT_DEBUG) $(PACKAGE_DIR)
 

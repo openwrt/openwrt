@@ -33,18 +33,18 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_LIBAMSEL):
 	install -d -m0755 $(IDIR_LIBAMSEL)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/* $(IDIR_LIBAMSEL)/usr/lib
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/* $(IDIR_LIBAMSEL)/usr/lib
 	$(RSTRIP) $(IDIR_LIBAMSEL)
 	$(IPKG_BUILD) $(IDIR_LIBAMSEL) $(PACKAGE_DIR)
 
 
 $(STAGING_DIR)/usr/lib/libamsel.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/amsel/compat.h $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/amsel/compat.h $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/include/compat
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/amsel/compat/queue.h $(STAGING_DIR)/usr/include/compat
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/amsel/compat/queue.h $(STAGING_DIR)/usr/include/compat
 	mkdir -p $(STAGING_DIR)/usr/lib/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libamsel.so $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libamsel.so $(STAGING_DIR)/usr/lib/
 	touch $(STAGING_DIR)/usr/lib/libamsel.so
 	
 install-dev: $(STAGING_DIR)/usr/lib/libamsel.so

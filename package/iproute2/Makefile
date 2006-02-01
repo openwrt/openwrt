@@ -36,13 +36,13 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_IP):
 	mkdir -p $(IDIR_IP)/usr/sbin
-	cp $(PKG_BUILD_DIR)/ip/ip $(IDIR_IP)/usr/sbin/
+	$(CP) $(PKG_BUILD_DIR)/ip/ip $(IDIR_IP)/usr/sbin/
 	$(STRIP) $(IDIR_IP)/usr/sbin/*
 	$(IPKG_BUILD) $(IDIR_IP) $(PACKAGE_DIR)
 
 $(IPKG_TC):
 	mkdir -p $(IDIR_TC)/usr/sbin
-	cp $(PKG_BUILD_DIR)/tc/tc $(IDIR_TC)/usr/sbin/
+	$(CP) $(PKG_BUILD_DIR)/tc/tc $(IDIR_TC)/usr/sbin/
 	$(STRIP) $(IDIR_TC)/usr/sbin/*
 	$(IPKG_BUILD) $(IDIR_TC) $(PACKAGE_DIR)
 

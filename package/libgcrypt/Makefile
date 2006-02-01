@@ -62,19 +62,19 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_LIBGCRYPT):
 	install -m0755 -d $(IDIR_LIBGCRYPT)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libgcrypt.so.* $(IDIR_LIBGCRYPT)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libgcrypt.so.* $(IDIR_LIBGCRYPT)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBGCRYPT)
 	$(IPKG_BUILD) $(IDIR_LIBGCRYPT) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libgcrypt.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/libgcrypt-config $(STAGING_DIR)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/libgcrypt-config $(STAGING_DIR)/usr/bin/
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/gcrypt*.h $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/gcrypt*.h $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libgcrypt.{a,so*} $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libgcrypt.{a,so*} $(STAGING_DIR)/usr/lib/
 	mkdir -p $(STAGING_DIR)/usr/share/aclocal
-	cp -fpR $(PKG_INSTALL_DIR)/usr/share/aclocal/libgcrypt.m4 $(STAGING_DIR)/usr/share/aclocal/
+	$(CP) $(PKG_INSTALL_DIR)/usr/share/aclocal/libgcrypt.m4 $(STAGING_DIR)/usr/share/aclocal/
 	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/libgcrypt.so

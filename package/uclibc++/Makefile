@@ -32,7 +32,7 @@ UCLIBC_TARGET_ARCH:=$(shell echo $(ARCH) | sed -e s'/-.*//' \
 )
 
 $(PKG_BUILD_DIR)/.configured:
-	cp ./files/config.$(UCLIBC_TARGET_ARCH) $(PKG_BUILD_DIR)/.config
+	$(CP) ./files/config.$(UCLIBC_TARGET_ARCH) $(PKG_BUILD_DIR)/.config
 	touch $@
 
 $(PKG_BUILD_DIR)/.built:
@@ -46,7 +46,7 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_UCLIBCXX):
 	install -d -m0755 $(IDIR_UCLIBCXX)/usr/lib
-	cp -fpR $(PKG_BUILD_DIR)/src/libuClibc++*.so* $(IDIR_UCLIBCXX)/usr/lib/
+	$(CP) $(PKG_BUILD_DIR)/src/libuClibc++*.so* $(IDIR_UCLIBCXX)/usr/lib/
 	$(STRIP) $(IDIR_UCLIBCXX)/usr/lib/*.so*
 	mkdir -p $(PACKAGE_DIR)
 	$(IPKG_BUILD) $(IDIR_UCLIBCXX) $(PACKAGE_DIR)

@@ -35,6 +35,6 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_VPNC):
 	install -d -m0755 $(IDIR_VPNC)
-	cp -fpR $(PKG_INSTALL_DIR)/* $(IDIR_VPNC)/
+	$(CP) $(PKG_INSTALL_DIR)/* $(IDIR_VPNC)/
 	$(RSTRIP) $(IDIR_VPNC)
 	$(IPKG_BUILD) $(IDIR_VPNC) $(PACKAGE_DIR)

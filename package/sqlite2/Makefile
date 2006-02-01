@@ -66,23 +66,23 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_LIBSQLITE2):
 	install -d -m0755 $(IDIR_LIBSQLITE2)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libsqlite.so.* $(IDIR_LIBSQLITE2)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libsqlite.so.* $(IDIR_LIBSQLITE2)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBSQLITE2)
 	$(IPKG_BUILD) $(IDIR_LIBSQLITE2) $(PACKAGE_DIR)
 
 $(IPKG_SQLITE2_CLI):
 	install -d -m0755 $(IDIR_SQLITE2_CLI)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/sqlite $(IDIR_SQLITE2_CLI)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/sqlite $(IDIR_SQLITE2_CLI)/usr/bin/
 	$(RSTRIP) $(IDIR_SQLITE2_CLI)
 	$(IPKG_BUILD) $(IDIR_SQLITE2_CLI) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libsqlite.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/sqlite.h $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/sqlite.h $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libsqlite.{a,so*} $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libsqlite.{a,so*} $(STAGING_DIR)/usr/lib/
 	mkdir -p $(STAGING_DIR)/usr/lib/pkgconfig
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/sqlite.pc $(STAGING_DIR)/usr/lib/pkgconfig/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/sqlite.pc $(STAGING_DIR)/usr/lib/pkgconfig/
 	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/libsqlite.so

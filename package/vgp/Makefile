@@ -45,6 +45,6 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_VGP):
 	mkdir -p $(IDIR_VGP)
-	cp -fpR $(PKG_INSTALL_DIR)/* $(IDIR_VGP)/
+	$(CP) $(PKG_INSTALL_DIR)/* $(IDIR_VGP)/
 	$(RSTRIP) $(IDIR_VGP)
 	$(IPKG_BUILD) $(IDIR_VGP) $(PACKAGE_DIR)

@@ -36,7 +36,7 @@ $(IPKG_REAIM):
 	install -m0755 ./files/reaim.init $(IDIR_REAIM)/etc/init.d/reaim
 	ln -sf reaim $(IDIR_REAIM)/etc/init.d/S63reaim
 	install -d -m0755 $(IDIR_REAIM)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/reaim $(IDIR_REAIM)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/reaim $(IDIR_REAIM)/usr/sbin/
 	$(RSTRIP) $(IDIR_REAIM)
 	$(IPKG_BUILD) $(IDIR_REAIM) $(PACKAGE_DIR)
 

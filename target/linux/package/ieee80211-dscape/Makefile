@@ -13,7 +13,7 @@ $(eval $(call PKG_template,KMOD_IEEE80211_DSCAPE,$(PKG_NAME),$(LINUX_VERSION)-$(
 
 $(PKG_BUILD_DIR)/.prepared:
 	mkdir -p $(PKG_BUILD_DIR)
-	cp -fpR ./src/* $(PKG_BUILD_DIR)/
+	$(CP) ./src/* $(PKG_BUILD_DIR)/
 	touch $@
 
 $(PKG_BUILD_DIR)/.configured:
@@ -32,12 +32,12 @@ $(PKG_BUILD_DIR)/.built:
 $(IPKG_KMOD_IEEE80211_DSCAPE):
 	install -m0755 -d $(IDIR_KMOD_IEEE80211_DSCAPE)/lib/modules/$(LINUX_VERSION)
 	#install -m0755 -d $(IDIR_KMOD_IEEE80211_DSCAPE)/etc/modules.d
-	cp -fpR $(PKG_BUILD_DIR)/*.ko $(IDIR_KMOD_IEEE80211_DSCAPE)/lib/modules/$(LINUX_VERSION)
+	$(CP) $(PKG_BUILD_DIR)/*.ko $(IDIR_KMOD_IEEE80211_DSCAPE)/lib/modules/$(LINUX_VERSION)
 	$(IPKG_BUILD) $(IDIR_KMOD_IEEE80211_DSCAPE) $(PACKAGE_DIR)
 
 install-dev:
 	mkdir -p $(STAGING_DIR)/usr/include/ieee80211-dscape
-	cp -fpR src/include/* $(STAGING_DIR)/usr/include/ieee80211-dscape/
+	$(CP) src/include/* $(STAGING_DIR)/usr/include/ieee80211-dscape/
 
 uninstall-dev:
 	rm -rf $(STAGING_DIR)/usr/include/ieee80211-dscape

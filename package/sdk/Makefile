@@ -20,13 +20,13 @@ $(BIN_DIR)/$(SDK_NAME).tar.bz2:
 	)
 	rm -rf $(SDK_BUILD_DIR)
 	mkdir -p $(SDK_BUILD_DIR)/dl $(SDK_BUILD_DIR)/examples $(SDK_BUILD_DIR)/package
-	cp -a $(STAGING_DIR) $(SCRIPT_DIR) $(TOPDIR)/docs $(SDK_BUILD_DIR)/
-	cp -a $(TOPDIR)/package/strace $(TOPDIR)/package/iproute2 $(SDK_BUILD_DIR)/examples
-	cp $(TOPDIR)/rules.mk $(SDK_BUILD_DIR)/
-	cp ./files/Makefile.sdk $(SDK_BUILD_DIR)/Makefile
-	cp ./files/README.SDK $(SDK_BUILD_DIR)/
-	cp ./files/depend.mk $(SDK_BUILD_DIR)/package/
-	cp $(TOPDIR)/package/rules.mk $(SDK_BUILD_DIR)/package/
+	$(CP) $(STAGING_DIR) $(SCRIPT_DIR) $(TOPDIR)/docs $(SDK_BUILD_DIR)/
+	$(CP) $(TOPDIR)/package/strace $(TOPDIR)/package/iproute2 $(SDK_BUILD_DIR)/examples
+	$(CP) $(TOPDIR)/rules.mk $(SDK_BUILD_DIR)/
+	$(CP) ./files/Makefile.sdk $(SDK_BUILD_DIR)/Makefile
+	$(CP) ./files/README.SDK $(SDK_BUILD_DIR)/
+	$(CP) ./files/depend.mk $(SDK_BUILD_DIR)/package/
+	$(CP) $(TOPDIR)/package/rules.mk $(SDK_BUILD_DIR)/package/
 	egrep '^BR2_(ARCH|WGET|STAGING|JLEVEL|LARGEFILE|TARGET_OPT)' $(TOPDIR)/.config > $(SDK_BUILD_DIR)/.config
 	find $(SDK_BUILD_DIR) -name .svn | xargs rm -rf 
 	find $(SDK_BUILD_DIR) -name CVS | xargs rm -rf 

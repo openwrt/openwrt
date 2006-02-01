@@ -93,9 +93,9 @@ $(IPKG_COLLECTD):
 	install -d -m0755 $(IDIR_COLLECTD)/usr/lib/collectd
 	install -d -m0755 $(IDIR_COLLECTD)/var/lib/collectd
 	install -d -m0755 $(IDIR_COLLECTD)/var/run
-	cp -fpR ./files/S80collectd $(IDIR_COLLECTD)/etc/init.d/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/collectd $(IDIR_COLLECTD)/usr/sbin/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/collectd/*.so $(IDIR_COLLECTD)/usr/lib/collectd/
+	$(CP) ./files/S80collectd $(IDIR_COLLECTD)/etc/init.d/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/collectd $(IDIR_COLLECTD)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/collectd/*.so $(IDIR_COLLECTD)/usr/lib/collectd/
 	$(RSTRIP) $(IDIR_COLLECTD)
 	$(IPKG_BUILD) $(IDIR_COLLECTD) $(PACKAGE_DIR)
 

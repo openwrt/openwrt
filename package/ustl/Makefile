@@ -21,8 +21,8 @@ BR2_PACKAGE_USTL:=m
 $(eval $(call PKG_template,USTL,ustl,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 $(PKG_BUILD_DIR)/.configured:
-	cp ./files/config.h $(PKG_BUILD_DIR)/
-	cp ./files/Common.mk $(PKG_BUILD_DIR)/
+	$(CP) ./files/config.h $(PKG_BUILD_DIR)/
+	$(CP) ./files/Common.mk $(PKG_BUILD_DIR)/
 	touch $@
 
 $(PKG_BUILD_DIR)/.built:
@@ -37,16 +37,16 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_USTL):
 	install -d -m0755 $(IDIR_USTL)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libustl.so.* $(IDIR_USTL)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libustl.so.* $(IDIR_USTL)/usr/lib/
 	$(RSTRIP) $(IDIR_USTL)
 	$(IPKG_BUILD) $(IDIR_USTL) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libustl.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/ustl* $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/ustl* $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libustl.a $(STAGING_DIR)/usr/lib/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libustl.so* $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libustl.a $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libustl.so* $(STAGING_DIR)/usr/lib/
 	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/libustl.so

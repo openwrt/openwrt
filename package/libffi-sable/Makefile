@@ -62,15 +62,15 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_LIBFFI_SABLE):
 	install -m0755 -d $(IDIR_LIBFFI_SABLE)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libffi.so.* $(IDIR_LIBFFI_SABLE)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libffi.so.* $(IDIR_LIBFFI_SABLE)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBFFI_SABLE)
 	$(IPKG_BUILD) $(IDIR_LIBFFI_SABLE) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libffi.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/ffi{,target}.h $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/ffi{,target}.h $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libffi.{a,so*} $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libffi.{a,so*} $(STAGING_DIR)/usr/lib/
 	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/libffi.so

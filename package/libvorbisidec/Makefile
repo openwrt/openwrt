@@ -62,16 +62,16 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_LIBVORBISIDEC):
 	install -m0755 -d $(IDIR_LIBVORBISIDEC)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libvorbisidec.so.* $(IDIR_LIBVORBISIDEC)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libvorbisidec.so.* $(IDIR_LIBVORBISIDEC)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBVORBISIDEC)
 	$(IPKG_BUILD) $(IDIR_LIBVORBISIDEC) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libvorbisidec.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/tremor $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/tremor $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libvorbisidec.a $(STAGING_DIR)/usr/lib/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libvorbisidec.so* $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libvorbisidec.a $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libvorbisidec.so* $(STAGING_DIR)/usr/lib/
 	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/libvorbisidec.so

@@ -63,16 +63,16 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_LIBID3TAG):
 	install -m0755 -d $(IDIR_LIBID3TAG)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libid3tag.so.* $(IDIR_LIBID3TAG)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libid3tag.so.* $(IDIR_LIBID3TAG)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBID3TAG)
 	$(IPKG_BUILD) $(IDIR_LIBID3TAG) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libid3tag.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/id3tag.h $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/id3tag.h $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libid3tag.a $(STAGING_DIR)/usr/lib/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libid3tag.so* $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libid3tag.a $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libid3tag.so* $(STAGING_DIR)/usr/lib/
 	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/libid3tag.so

@@ -60,6 +60,6 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_WCCPD):
 	install -d -m0755 $(IDIR_WCCPD)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/wccpd $(IDIR_WCCPD)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/wccpd $(IDIR_WCCPD)/usr/sbin/
 	$(RSTRIP) $(IDIR_WCCPD)
 	$(IPKG_BUILD) $(IDIR_WCCPD) $(PACKAGE_DIR)

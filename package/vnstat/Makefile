@@ -28,6 +28,6 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_VNSTAT):
 	install -d -m0755 $(IDIR_VNSTAT)/usr/bin
-	cp $(PKG_BUILD_DIR)/src/vnstat $(IDIR_VNSTAT)/usr/bin/
+	$(CP) $(PKG_BUILD_DIR)/src/vnstat $(IDIR_VNSTAT)/usr/bin/
 	$(STRIP) $(IDIR_VNSTAT)/usr/bin/*
 	$(IPKG_BUILD) $(IDIR_VNSTAT) $(PACKAGE_DIR)

@@ -64,21 +64,21 @@ $(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		all install
-	cp ./files/mini.classlist $(PKG_BUILD_DIR)/lib/
+	$(CP) ./files/mini.classlist $(PKG_BUILD_DIR)/lib/
 	cd $(PKG_BUILD_DIR)/lib ; fastjar -Mcf mini.jar -@ < mini.classlist
 	touch $@
 
 $(IPKG_LIBSABLEVM_CLASSPATH):
 	install -d -m0755 $(IDIR_LIBSABLEVM_CLASSPATH)/usr/lib/sablevm-classpath
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/sablevm-classpath/libjava*.so $(IDIR_LIBSABLEVM_CLASSPATH)/usr/lib/sablevm-classpath/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/sablevm-classpath/libjava*.so $(IDIR_LIBSABLEVM_CLASSPATH)/usr/lib/sablevm-classpath/
 	install -d -m0755 $(IDIR_LIBSABLEVM_CLASSPATH)/usr/lib/security
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/security/classpath.security $(IDIR_LIBSABLEVM_CLASSPATH)/usr/lib/security/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/security/classpath.security $(IDIR_LIBSABLEVM_CLASSPATH)/usr/lib/security/
 	$(RSTRIP) $(IDIR_LIBSABLEVM_CLASSPATH)
 	$(IPKG_BUILD) $(IDIR_LIBSABLEVM_CLASSPATH) $(PACKAGE_DIR)
 
 $(IPKG_SABLEVM_CLASSPATH_FULL):
 	install -d -m0755 $(IDIR_SABLEVM_CLASSPATH_FULL)/usr/share/sablevm-classpath
-	cp -fpR $(PKG_INSTALL_DIR)/usr/share/sablevm-classpath/{libclasspath,resources}.jar \
+	$(CP) $(PKG_INSTALL_DIR)/usr/share/sablevm-classpath/{libclasspath,resources}.jar \
 		$(IDIR_SABLEVM_CLASSPATH_FULL)/usr/share/sablevm-classpath/
 	$(IPKG_BUILD) $(IDIR_SABLEVM_CLASSPATH_FULL) $(PACKAGE_DIR)
 	

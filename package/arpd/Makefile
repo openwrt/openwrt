@@ -59,6 +59,6 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_ARPD):
 	mkdir -p $(IDIR_ARPD)/usr/sbin
-	cp  $(PKG_BUILD_DIR)/arpd $(IDIR_ARPD)/usr/sbin/
+	$(CP)  $(PKG_BUILD_DIR)/arpd $(IDIR_ARPD)/usr/sbin/
 	$(STRIP) $(IDIR_ARPD)/usr/sbin/*
 	$(IPKG_BUILD) $(IDIR_ARPD) $(PACKAGE_DIR)

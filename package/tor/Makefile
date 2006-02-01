@@ -70,7 +70,7 @@ $(IPKG_TOR):
 	install -d -m0755 $(IDIR_TOR)/etc/tor
 	install -m0644 ./files/torrc $(IDIR_TOR)/etc/tor/torrc
 	install -d -m0755 $(IDIR_TOR)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/tor $(IDIR_TOR)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/tor $(IDIR_TOR)/usr/sbin/
 	$(RSTRIP) $(IDIR_TOR)
 	$(IPKG_BUILD) $(IDIR_TOR) $(PACKAGE_DIR)
 

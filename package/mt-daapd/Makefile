@@ -73,9 +73,9 @@ $(IPKG_MT_DAAPD):
 	install -m0755 -d $(IDIR_MT_DAAPD)/etc/init.d
 	install -m0755 ./files/mt-daapd.init $(IDIR_MT_DAAPD)/etc/init.d/mt-daapd
 	install -m0755 -d $(IDIR_MT_DAAPD)/usr/share
-	cp -fpR $(PKG_INSTALL_DIR)/usr/share/mt-daapd $(IDIR_MT_DAAPD)/usr/share/
+	$(CP) $(PKG_INSTALL_DIR)/usr/share/mt-daapd $(IDIR_MT_DAAPD)/usr/share/
 	install -m0755 -d $(IDIR_MT_DAAPD)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/mt-daapd $(IDIR_MT_DAAPD)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/mt-daapd $(IDIR_MT_DAAPD)/usr/sbin/
 	$(RSTRIP) $(IDIR_MT_DAAPD)
 	$(IPKG_BUILD) $(IDIR_MT_DAAPD) $(PACKAGE_DIR)
 

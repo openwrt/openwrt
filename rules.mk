@@ -38,6 +38,7 @@ START_TRACE:=:
 END_TRACE:=:
 endif
 
+CP=cp -fpR
 MAKE1=make
 MAKEFLAGS=-j$(BR2_JLEVEL) V=$(V) $(EXTRA_MAKEFLAGS)
 # Strip off the annoying quoting

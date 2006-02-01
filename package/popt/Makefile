@@ -59,15 +59,15 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_LIBPOPT):
 	install -d -m0755 $(IDIR_LIBPOPT)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libpopt.so.* $(IDIR_LIBPOPT)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libpopt.so.* $(IDIR_LIBPOPT)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBPOPT)
 	$(IPKG_BUILD) $(IDIR_LIBPOPT) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libpopt.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/popt.h $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/popt.h $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libpopt.{a,so*} $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libpopt.{a,so*} $(STAGING_DIR)/usr/lib/
 	touch $(STAGING_DIR)/usr/lib/libpopt.so
 
 install-dev: $(STAGING_DIR)/usr/lib/libpopt.so
