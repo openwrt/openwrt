@@ -37,3 +37,4 @@ fi
 mount none /tmp -t tmpfs -o nosuid,nodev,mode=1777,size=50%
 mkdir -p /dev/pts
 mount none /dev/pts -t devpts
+grep sysfs /proc/filesystems >&- && mount -t sysfs none /sys
