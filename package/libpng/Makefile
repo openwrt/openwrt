@@ -22,31 +22,31 @@ $(PKG_BUILD_DIR)/.configured:
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
-		CPPFLAGS="-I$(STAGING_DIR)/usr/include" \
-		LDFLAGS="-L$(STAGING_DIR)/usr/lib" \
+		CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include" \
+		LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib" \
 		./configure \
-		  --target=$(GNU_TARGET_NAME) \
-		  --host=$(GNU_TARGET_NAME) \
-		  --build=$(GNU_HOST_NAME) \
-		  --program-prefix="" \
-		  --program-suffix="" \
-		  --prefix=/usr \
-		  --exec-prefix=/usr \
-		  --bindir=/usr/bin \
-		  --datadir=/usr/share \
-		  --includedir=/usr/include \
-		  --infodir=/usr/share/info \
-		  --libdir=/usr/lib \
-		  --libexecdir=/usr/lib \
-		  --localstatedir=/var \
-		  --mandir=/usr/share/man \
-		  --sbindir=/usr/sbin \
-		  --sysconfdir=/etc \
-		  $(DISABLE_LARGEFILE) \
-		  $(DISABLE_NLS) \
-		  --enable-shared \
-		  --enable-static \
-		  --with-zlib=$(STAGING_DIR)/usr/ \
+			--target=$(GNU_TARGET_NAME) \
+			--host=$(GNU_TARGET_NAME) \
+			--build=$(GNU_HOST_NAME) \
+			--program-prefix="" \
+			--program-suffix="" \
+			--prefix=/usr \
+			--exec-prefix=/usr \
+			--bindir=/usr/bin \
+			--datadir=/usr/share \
+			--includedir=/usr/include \
+			--infodir=/usr/share/info \
+			--libdir=/usr/lib \
+			--libexecdir=/usr/lib \
+			--localstatedir=/var \
+			--mandir=/usr/share/man \
+			--sbindir=/usr/sbin \
+			--sysconfdir=/etc \
+			$(DISABLE_LARGEFILE) \
+			$(DISABLE_NLS) \
+			--enable-shared \
+			--enable-static \
+			--with-zlib=$(STAGING_DIR)/usr/ \
 	)
 	touch $@
 
@@ -74,6 +74,8 @@ $(STAGING_DIR)/usr/lib/libpng.so: $(PKG_BUILD_DIR)/.built
 	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libpng{,12}.{a,so*} $(STAGING_DIR)/usr/lib/
 	mkdir -p $(STAGING_DIR)/usr/lib/pkgconfig
 	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/libpng{,12}.pc $(STAGING_DIR)/usr/lib/pkgconfig/
+	$(SED) 's,^[ILR]_opts=".\+",,g' $(STAGING_DIR)/usr/bin/libpng*-config
+	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/libpng.so
 
