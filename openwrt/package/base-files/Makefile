@@ -55,6 +55,7 @@ $(IPKG_BASE):
 	cp -a ./default/* $(IDIR_BASE)
 	$(SED) 's,$$R,r$(REV),g' $(IDIR_BASE)/etc/banner
 	$(SED) 's,$$S,$(BOARD)-$(KERNEL),g' $(IDIR_BASE)/etc/ipkg.conf
+	mkdir -p $(IDIR_BASE)/sys
 	mkdir -p $(IDIR_BASE)/jffs
 	mkdir -p $(IDIR_BASE)/dev
 	mkdir -p $(IDIR_BASE)/proc
