@@ -71,32 +71,32 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_RRDTOOL):
 	install -d -m0755 $(IDIR_RRDTOOL)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/rrdtool $(IDIR_RRDTOOL)/usr/bin/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/rrdupdate $(IDIR_RRDTOOL)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/rrdtool $(IDIR_RRDTOOL)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/rrdupdate $(IDIR_RRDTOOL)/usr/bin/
 	$(RSTRIP) $(IDIR_RRDTOOL)
 	$(IPKG_BUILD) $(IDIR_RRDTOOL) $(PACKAGE_DIR)
 
 $(IPKG_RRDCGI):
 	install -d -m0755 $(IDIR_RRDCGI)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/rrdcgi $(IDIR_RRDCGI)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/rrdcgi $(IDIR_RRDCGI)/usr/bin/
 	$(RSTRIP) $(IDIR_RRDCGI)
 	$(IPKG_BUILD) $(IDIR_RRDCGI) $(PACKAGE_DIR)
 
 $(IPKG_LIBRRD):
 	install -d -m0755 $(IDIR_LIBRRD)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/librrd.so.* $(IDIR_LIBRRD)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/librrd.so.* $(IDIR_LIBRRD)/usr/lib/
 	install -d -m0755 $(IDIR_LIBRRD)/usr/share/rrdtool/fonts
-	cp -fpR $(PKG_BUILD_DIR)/src/DejaVuSansMono-Roman.ttf \
+	$(CP) $(PKG_BUILD_DIR)/src/DejaVuSansMono-Roman.ttf \
 		$(IDIR_LIBRRD)/usr/share/rrdtool/fonts/
 	$(RSTRIP) $(IDIR_LIBRRD)
 	$(IPKG_BUILD) $(IDIR_LIBRRD) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/librrd.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/rrd.h $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/rrd.h $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/librrd.a $(STAGING_DIR)/usr/lib/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/librrd.so* $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/librrd.a $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/librrd.so* $(STAGING_DIR)/usr/lib/
 	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/librrd.so

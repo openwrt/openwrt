@@ -30,7 +30,7 @@ include ../kernel.mk
 $(LINUX_DIR)/.patched: $(LINUX_DIR)/.unpacked
 	[ -d ../generic-$(KERNEL)/patches ] && $(PATCH) $(LINUX_DIR) ../generic-$(KERNEL)/patches $(MAKE_TRACE)
 	[ -d ./patches ] && $(PATCH) $(LINUX_DIR) ./patches $(MAKE_TRACE)
-	@cp config $(LINUX_DIR)/.config
+	@$(CP) config $(LINUX_DIR)/.config
 	touch $@
 
 
@@ -56,12 +56,12 @@ $(LINUX_DIR)/.drivers-unpacked: $(LINUX_DIR)/.unpacked
 	zcat $(DL_DIR)/$(LINUX_BINARY_WL_DRIVER) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
 	# copy binary wlan driver
 	mkdir -p $(LINUX_DIR)/drivers/net/wl
-	cp -fpR $(BUILD_DIR)/wl/*.o $(LINUX_DIR)/drivers/net/wl
+	$(CP) $(BUILD_DIR)/wl/*.o $(LINUX_DIR)/drivers/net/wl
 	touch $@
 
 $(LINUX_DIR)/.drivers-installed: $(LINUX_DIR)/.modules_done
 	mkdir -p $(LINUX_BUILD_DIR)/modules/lib/modules/2.4.32/kernel/drivers/net/wl
-	@-[ -f $(LINUX_BUILD_DIR)/modules/lib/modules/2.4.32/kernel/drivers/net/wl/wl.o ] || cp $(LINUX_DIR)/drivers/net/wl/wl.o $(LINUX_BUILD_DIR)/modules/lib/modules/2.4.32/kernel/drivers/net/wl/
+	@-[ -f $(LINUX_BUILD_DIR)/modules/lib/modules/2.4.32/kernel/drivers/net/wl/wl.o ] || $(CP) $(LINUX_DIR)/drivers/net/wl/wl.o $(LINUX_BUILD_DIR)/modules/lib/modules/2.4.32/kernel/drivers/net/wl/
 	touch $@
 
 linux-dirclean: drivers-clean

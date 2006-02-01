@@ -4,7 +4,6 @@ config BR2_COMPILE_ATFTP
 	tristate
 	default n
 	depends BR2_PACKAGE_ATFTP || BR2_PACKAGE_ATFTPD
-	select BR2_PACKAGE_LIBREADLINE
 	
 config BR2_PACKAGE_ATFTP
 	prompt "atftp............................. TFTP client"

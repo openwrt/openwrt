@@ -56,7 +56,7 @@ $(PKG_BUILD_DIR)/.built:
  
 $(IPKG_IPTABLES_SNMP):
 	install -d -m0755 $(IDIR_IPTABLES_SNMP)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/iptables-snmp.so $(IDIR_IPTABLES_SNMP)/usr/lib
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/iptables-snmp.so $(IDIR_IPTABLES_SNMP)/usr/lib
 	$(RSTRIP) $(IDIR_IPTABLES_SNMP)
 	$(IPKG_BUILD) $(IDIR_IPTABLES_SNMP) $(PACKAGE_DIR)
  

@@ -187,7 +187,7 @@ ifeq ($(findstring 3.3.,$(GCC_VERSION)),3.3.)
 		echo staging dir specs file is missing ; \
 		/bin/false ; \
 	fi;
-	cp ./$(GCC_VERSION)/specs-$(ARCH)-soft-float $(STAGING_DIR)/lib/gcc-lib/$(REAL_GNU_TARGET_NAME)/$(GCC_VERSION)/specs
+	$(CP) ./$(GCC_VERSION)/specs-$(ARCH)-soft-float $(STAGING_DIR)/lib/gcc-lib/$(REAL_GNU_TARGET_NAME)/$(GCC_VERSION)/specs
 endif
 endif
 # We do another ugly hack here because the standard behaviour is

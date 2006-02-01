@@ -49,6 +49,6 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_FPROBE): 
 	mkdir -p $(IDIR_FPROBE)/usr/bin
-	cp $(PKG_BUILD_DIR)/src/fprobe $(IDIR_FPROBE)/usr/bin/
+	$(CP) $(PKG_BUILD_DIR)/src/fprobe $(IDIR_FPROBE)/usr/bin/
 	$(STRIP) $(IDIR_FPROBE)/usr/bin/*
 	$(IPKG_BUILD) $(IDIR_FPROBE) $(PACKAGE_DIR)

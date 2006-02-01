@@ -69,11 +69,11 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_E2FSPROGS):
 	mkdir -p $(IDIR_E2FSPROGS)/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/sbin/e2fsck $(IDIR_E2FSPROGS)/sbin/
-	cp -fpR $(PKG_INSTALL_DIR)/sbin/mke2fs $(IDIR_E2FSPROGS)/sbin/
-	cp -fpR $(PKG_INSTALL_DIR)/sbin/mkfs.ext{2,3} $(IDIR_E2FSPROGS)/sbin/
-	cp -fpR $(PKG_INSTALL_DIR)/sbin/tune2fs $(IDIR_E2FSPROGS)/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/sbin/e2fsck $(IDIR_E2FSPROGS)/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/sbin/mke2fs $(IDIR_E2FSPROGS)/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/sbin/mkfs.ext{2,3} $(IDIR_E2FSPROGS)/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/sbin/tune2fs $(IDIR_E2FSPROGS)/sbin/
 	mkdir -p $(IDIR_E2FSPROGS)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/lib{blkid,com_err,e2p,ext2fs,uuid}.so.* $(IDIR_E2FSPROGS)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/lib{blkid,com_err,e2p,ext2fs,uuid}.so.* $(IDIR_E2FSPROGS)/usr/lib/
 	$(RSTRIP) $(IDIR_E2FSPROGS)
 	$(IPKG_BUILD) $(IDIR_E2FSPROGS) $(PACKAGE_DIR)

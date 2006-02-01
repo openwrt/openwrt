@@ -12,7 +12,7 @@ prepare: $(UTILS_BUILD_DIR)
 compile: prepare $(patsubst %,$(UTILS_BUILD_DIR)/%,$(TARGETS))
 install: compile
 	mkdir -p $(STAGING_DIR)/bin
-	cp -a $(UTILS_BUILD_DIR)/* $(STAGING_DIR)/bin/
+	$(CP) $(UTILS_BUILD_DIR)/* $(STAGING_DIR)/bin/
 package:
 clean:
 	rm -rf $(UTILS_BUILD_DIR)

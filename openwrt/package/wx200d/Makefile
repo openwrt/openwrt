@@ -59,12 +59,12 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_WX200D):
 	install -d -m0755 $(IDIR_WX200D)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/wx200 \
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/wx200 \
 		$(PKG_INSTALL_DIR)/usr/bin/wxstdout \
 		$(PKG_INSTALL_DIR)/usr/bin/wxfilter \
 		$(PKG_INSTALL_DIR)/usr/bin/wxdebug $(IDIR_WX200D)/usr/bin/
 	install -d -m0755 $(IDIR_WX200D)/usr/sbin/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/wx200d \
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/wx200d \
 		$(PKG_INSTALL_DIR)/usr/sbin/wxread $(IDIR_WX200D)/usr/sbin/
 	$(RSTRIP) $(IDIR_WX200D)
 	$(IPKG_BUILD) $(IDIR_WX200D) $(PACKAGE_DIR)

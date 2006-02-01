@@ -68,29 +68,29 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_RRDTOOL1):
 	install -d -m0755 $(IDIR_RRDTOOL1)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/rrdtool $(IDIR_RRDTOOL1)/usr/bin/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/rrdupdate $(IDIR_RRDTOOL1)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/rrdtool $(IDIR_RRDTOOL1)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/rrdupdate $(IDIR_RRDTOOL1)/usr/bin/
 	$(RSTRIP) $(IDIR_RRDTOOL1)
 	$(IPKG_BUILD) $(IDIR_RRDTOOL1) $(PACKAGE_DIR)
 
 $(IPKG_RRDCGI1):
 	install -d -m0755 $(IDIR_RRDCGI1)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/rrdcgi $(IDIR_RRDCGI1)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/rrdcgi $(IDIR_RRDCGI1)/usr/bin/
 	$(RSTRIP) $(IDIR_RRDCGI1)
 	$(IPKG_BUILD) $(IDIR_RRDCGI1) $(PACKAGE_DIR)
 
 $(IPKG_LIBRRD1):
 	install -d -m0755 $(IDIR_LIBRRD1)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/librrd.so.* $(IDIR_LIBRRD1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/librrd.so.* $(IDIR_LIBRRD1)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBRRD1)
 	$(IPKG_BUILD) $(IDIR_LIBRRD1) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/librrd.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/rrd.h $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/rrd.h $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/librrd.a $(STAGING_DIR)/usr/lib/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/librrd.so* $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/librrd.a $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/librrd.so* $(STAGING_DIR)/usr/lib/
 	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/librrd.so

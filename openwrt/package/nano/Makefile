@@ -66,7 +66,7 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_NANO):
 	install -d -m0755 $(IDIR_NANO)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/nano $(IDIR_NANO)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/nano $(IDIR_NANO)/usr/bin/
 	$(RSTRIP) $(IDIR_NANO)
 	$(IPKG_BUILD) $(IDIR_NANO) $(PACKAGE_DIR)
 

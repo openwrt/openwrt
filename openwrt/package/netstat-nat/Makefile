@@ -58,7 +58,7 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_NETSTAT-NAT):
 	install -d -m0755 $(IDIR_NETSTAT-NAT)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/netstat-nat $(IDIR_NETSTAT-NAT)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/netstat-nat $(IDIR_NETSTAT-NAT)/usr/bin/
 	$(RSTRIP) $(IDIR_NETSTAT-NAT)
 	$(IPKG_BUILD) $(IDIR_NETSTAT-NAT) $(PACKAGE_DIR)
 

@@ -65,17 +65,17 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_LIBOSIP2):
 	install -m0755 -d $(IDIR_LIBOSIP2)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libosip{,parser}2.so.* $(IDIR_LIBOSIP2)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libosip{,parser}2.so.* $(IDIR_LIBOSIP2)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBOSIP2)
 	$(IPKG_BUILD) $(IDIR_LIBOSIP2) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libosip2.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/osip{,parser}2 $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/osip{,parser}2 $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libosip{,parser}2.{a,so*} $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libosip{,parser}2.{a,so*} $(STAGING_DIR)/usr/lib/
 	mkdir -p $(STAGING_DIR)/usr/lib/pkgconfig
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/libosip2.pc $(STAGING_DIR)/usr/lib/pkgconfig/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/libosip2.pc $(STAGING_DIR)/usr/lib/pkgconfig/
 	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/libosip2.so

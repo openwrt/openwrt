@@ -66,8 +66,8 @@ $(PKG_BUILD_DIR)/.built:
 $(IPKG_DSNIFF):
 	install -d -m0755 $(IDIR_DSNIFF)/usr/lib
 	install -d -m0755 $(IDIR_DSNIFF)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/* $(IDIR_DSNIFF)/usr/sbin
-	cp -fpR  $(PKG_INSTALL_DIR)/usr/lib/* $(IDIR_DSNIFF)/usr/lib
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/* $(IDIR_DSNIFF)/usr/sbin
+	$(CP)  $(PKG_INSTALL_DIR)/usr/lib/* $(IDIR_DSNIFF)/usr/lib
 	$(RSTRIP) $(IDIR_DSNIFF)
 	$(IPKG_BUILD) $(IDIR_DSNIFF) $(PACKAGE_DIR)
 

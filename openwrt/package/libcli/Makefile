@@ -31,15 +31,15 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_LIBCLI):
 	install -d -m0755 $(IDIR_LIBCLI)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libcli* $(IDIR_LIBCLI)/usr/lib
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libcli* $(IDIR_LIBCLI)/usr/lib
 	$(RSTRIP) $(IDIR_LIBCLI)
 	$(IPKG_BUILD) $(IDIR_LIBCLI) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libcli.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/libcli.h $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/libcli.h $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libcli.so* $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libcli.so* $(STAGING_DIR)/usr/lib/
 
 install-dev: $(STAGING_DIR)/usr/lib/libcli.so
 

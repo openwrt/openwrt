@@ -29,15 +29,15 @@ $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 
 $(IPKG_CGILIB):
 	install -d -m0755 $(IDIR_CGILIB)/usr/lib
-	cp -fpR $(PKG_BUILD_DIR)/libcgi.so.* $(IDIR_CGILIB)/usr/lib/
+	$(CP) $(PKG_BUILD_DIR)/libcgi.so.* $(IDIR_CGILIB)/usr/lib/
 	$(RSTRIP) $(IDIR_CGILIB)
 	$(IPKG_BUILD) $(IDIR_CGILIB) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libcgi.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_BUILD_DIR)/cgi.h $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_BUILD_DIR)/cgi.h $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_BUILD_DIR)/libcgi.{a,so*} $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_BUILD_DIR)/libcgi.{a,so*} $(STAGING_DIR)/usr/lib/
 	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/libcgi.so

@@ -66,9 +66,9 @@ $(IPKG_WIFIDOG):
 	install -m0755 -d $(IDIR_WIFIDOG)/usr/bin
 	install -m0755 -d $(IDIR_WIFIDOG)/usr/lib
 	install -m0755 $(PKG_BUILD_DIR)/scripts/init.d/wifidog $(IDIR_WIFIDOG)/usr/bin/wifidog-init
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/wifidog $(IDIR_WIFIDOG)/usr/bin/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/wdctl $(IDIR_WIFIDOG)/usr/bin/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libhttpd.so* $(IDIR_WIFIDOG)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/wifidog $(IDIR_WIFIDOG)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/wdctl $(IDIR_WIFIDOG)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libhttpd.so* $(IDIR_WIFIDOG)/usr/lib/
 	$(RSTRIP) $(IDIR_WIFIDOG)
 	$(IPKG_BUILD) $(IDIR_WIFIDOG) $(PACKAGE_DIR)
 

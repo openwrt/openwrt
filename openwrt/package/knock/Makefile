@@ -62,7 +62,7 @@ $(PKG_BUILD_DIR)/.built:
 	
 $(IPKG_KNOCK):
 	install -d -m0755 $(IDIR_KNOCK)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/knock $(IDIR_KNOCK)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/knock $(IDIR_KNOCK)/usr/bin/
 	$(RSTRIP) $(IDIR_KNOCK)
 	$(IPKG_BUILD) $(IDIR_KNOCK) $(PACKAGE_DIR)
 
@@ -70,6 +70,6 @@ $(IPKG_KNOCKD):
 	install -d -m0755 $(IDIR_KNOCKD)/etc
 	install -m0600 $(PKG_INSTALL_DIR)/etc/knockd.conf $(IDIR_KNOCKD)/etc/
 	install -d -m0755 $(IDIR_KNOCKD)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/knockd $(IDIR_KNOCKD)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/knockd $(IDIR_KNOCKD)/usr/sbin/
 	$(RSTRIP) $(IDIR_KNOCKD)
 	$(IPKG_BUILD) $(IDIR_KNOCKD) $(PACKAGE_DIR)

@@ -75,9 +75,9 @@ $(IPKG_TINYPROXY):
 				$(IDIR_TINYPROXY)/etc/init.d \
 				$(IDIR_TINYPROXY)/var/log \
 				$(IDIR_TINYPROXY)/usr/share
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/tinyproxy $(IDIR_TINYPROXY)/usr/sbin/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/share/tinyproxy $(IDIR_TINYPROXY)/usr/share/
-	cp -fpR $(PKG_INSTALL_DIR)/etc/tinyproxy $(IDIR_TINYPROXY)/etc/
-	cp -fpR files/$(PKG_NAME).init $(IDIR_TINYPROXY)/etc/init.d/$(PKG_NAME)
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/tinyproxy $(IDIR_TINYPROXY)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/share/tinyproxy $(IDIR_TINYPROXY)/usr/share/
+	$(CP) $(PKG_INSTALL_DIR)/etc/tinyproxy $(IDIR_TINYPROXY)/etc/
+	$(CP) files/$(PKG_NAME).init $(IDIR_TINYPROXY)/etc/init.d/$(PKG_NAME)
 	$(RSTRIP) $(IDIR_TINYPROXY)
 	$(IPKG_BUILD) $(IDIR_TINYPROXY) $(PACKAGE_DIR)

@@ -122,10 +122,10 @@ $(IPKG_LIGHTTPD):
 	install -m0755 ./files/lighttpd.init $(IDIR_LIGHTTPD)/etc/init.d/lighttpd
 	install -m0755 -d $(IDIR_LIGHTTPD)/usr/lib/lighttpd
 	for m in dirlisting indexfile staticfile; do \
-		cp -fpR $(PKG_INSTALL_DIR)/usr/lib/lighttpd/mod_$$m.so $(IDIR_LIGHTTPD)/usr/lib/lighttpd/ ; \
+		$(CP) $(PKG_INSTALL_DIR)/usr/lib/lighttpd/mod_$$m.so $(IDIR_LIGHTTPD)/usr/lib/lighttpd/ ; \
 	done
 	install -m0755 -d $(IDIR_LIGHTTPD)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/lighttpd $(IDIR_LIGHTTPD)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/lighttpd $(IDIR_LIGHTTPD)/usr/sbin/
 	$(RSTRIP) $(IDIR_LIGHTTPD)
 	$(IPKG_BUILD) $(IDIR_LIGHTTPD) $(PACKAGE_DIR)
 

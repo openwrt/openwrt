@@ -65,7 +65,7 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_RARPD):
 	install -d -m0755 $(IDIR_RARPD)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/rarpd $(IDIR_RARPD)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/rarpd $(IDIR_RARPD)/usr/sbin/
 	install -d -m0755 $(IDIR_RARPD)/etc/default
 	install -m644 ./files/rarpd.default $(IDIR_RARPD)/etc/default/rarpd
 	install -d -m0755 $(IDIR_RARPD)/etc/init.d

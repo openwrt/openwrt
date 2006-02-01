@@ -75,17 +75,17 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_LIBNET):
 	install -m0755 -d $(IDIR_LIBNET)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libnet.so.* $(IDIR_LIBNET)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libnet.so.* $(IDIR_LIBNET)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBNET)
 	$(IPKG_BUILD) $(IDIR_LIBNET) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libnet.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/libnet-config $(STAGING_DIR)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/libnet-config $(STAGING_DIR)/usr/bin/
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/libnet* $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/libnet* $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libnet.{a,so*} $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libnet.{a,so*} $(STAGING_DIR)/usr/lib/
 	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/libnet.so

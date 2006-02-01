@@ -62,18 +62,18 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_LIBOGG):
 	install -m0755 -d $(IDIR_LIBOGG)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libogg.so.* $(IDIR_LIBOGG)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libogg.so.* $(IDIR_LIBOGG)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBOGG)
 	$(IPKG_BUILD) $(IDIR_LIBOGG) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libogg.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/ogg $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/ogg $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libogg.a $(STAGING_DIR)/usr/lib/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libogg.so* $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libogg.a $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libogg.so* $(STAGING_DIR)/usr/lib/
 	mkdir -p $(STAGING_DIR)/usr/lib/pkgconfig
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/ogg.pc $(STAGING_DIR)/usr/lib/pkgconfig/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/ogg.pc $(STAGING_DIR)/usr/lib/pkgconfig/
 	$(SED) 's,-I$${includedir},,g' $(STAGING_DIR)/usr/lib/pkgconfig/ogg.pc
 	$(SED) 's,-L$${libdir},,g' $(STAGING_DIR)/usr/lib/pkgconfig/ogg.pc
 	touch $@

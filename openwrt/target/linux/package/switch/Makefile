@@ -13,7 +13,7 @@ $(eval $(call PKG_template,KMOD_SWITCH,$(PKG_NAME),$(LINUX_VERSION)-$(BOARD)-$(P
 
 $(PKG_BUILD_DIR)/.prepared:
 	mkdir -p $(PKG_BUILD_DIR)
-	cp -fpR ./src/* $(PKG_BUILD_DIR)/
+	$(CP) ./src/* $(PKG_BUILD_DIR)/
 	touch $@
 
 $(PKG_BUILD_DIR)/.configured:
@@ -31,7 +31,7 @@ $(PKG_BUILD_DIR)/.built:
 	
 $(IPKG_KMOD_SWITCH):
 	install -m0755 -d $(IDIR_KMOD_SWITCH)/lib/modules/$(LINUX_VERSION)
-	cp -fpR $(PKG_BUILD_DIR)/*.$(LINUX_KMOD_SUFFIX) \
+	$(CP) $(PKG_BUILD_DIR)/*.$(LINUX_KMOD_SUFFIX) \
 		$(IDIR_KMOD_SWITCH)/lib/modules/$(LINUX_VERSION)
 	$(IPKG_BUILD) $(IDIR_KMOD_SWITCH) $(PACKAGE_DIR)
 

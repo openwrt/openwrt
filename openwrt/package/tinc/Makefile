@@ -63,7 +63,7 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_TINC):
 	install -m0755 -d $(IDIR_TINC)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/tincd $(IDIR_TINC)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/tincd $(IDIR_TINC)/usr/sbin/
 	$(RSTRIP) $(IDIR_TINC)
 	$(IPKG_BUILD) $(IDIR_TINC) $(PACKAGE_DIR)
 

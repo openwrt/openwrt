@@ -62,7 +62,7 @@ $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-kernel.bin: $(KDIR)/vmlinux.bin
 endif
 
 $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-kernel.bin:
-	cp $(KDIR)/vmlinux.bin $@
+	$(CP) $(KDIR)/vmlinux.bin $@
 
 ifeq ($(FS),jffs2-8MB)
 ALIGN:=bs=131072 conv=sync
@@ -106,7 +106,7 @@ endif
 install: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-kernel.bin $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).bin
 install-ib:
 	mkdir -p $(IB_DIR)/build_$(ARCH)/linux-$(KERNEL)-$(BOARD)
-	cp -fpR $(KDIR)/vmlinux.bin $(IB_DIR)/build_$(ARCH)/linux-$(KERNEL)-$(BOARD)/
+	$(CP) $(KDIR)/vmlinux.bin $(IB_DIR)/build_$(ARCH)/linux-$(KERNEL)-$(BOARD)/
 	mkdir -p $(IB_DIR)/staging_dir_$(ARCH)
-	cp -fpR $(STAGING_DIR)/bin/addpattern $(IB_DIR)/staging_dir_$(ARCH)/bin/
+	$(CP) $(STAGING_DIR)/bin/addpattern $(IB_DIR)/staging_dir_$(ARCH)/bin/
 	

@@ -18,7 +18,7 @@ $(MTD_DIR)/util/mkfs.jffs2: $(MTD_DIR)/.unpacked
 	$(MAKE) LINUXDIR=$(LINUX_DIR) -C $(MTD_DIR)/util
 
 $(STAGING_DIR)/bin/mkfs.jffs2: $(MTD_DIR)/util/mkfs.jffs2
-	cp $< $@
+	$(CP) $< $@
 
 source: $(DL_DIR)/$(MTD_SOURCE)
 prepare: $(MTD_DIR)/.unpacked

@@ -61,6 +61,6 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_WOL):
 	install -m0755 -d $(IDIR_WOL)/usr/bin
-	cp $(PKG_INSTALL_DIR)/usr/bin/wol $(IDIR_WOL)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/wol $(IDIR_WOL)/usr/bin/
 	$(RSTRIP) $(IDIR_WOL)
 	$(IPKG_BUILD) $(IDIR_WOL) $(PACKAGE_DIR)

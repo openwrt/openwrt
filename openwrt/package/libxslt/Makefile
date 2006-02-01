@@ -70,19 +70,19 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_LIBXSLT):
 	install -m0755 -d $(IDIR_LIBXSLT)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libxslt.so.* $(IDIR_LIBXSLT)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libxslt.so.* $(IDIR_LIBXSLT)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBXSLT)
 	$(IPKG_BUILD) $(IDIR_LIBXSLT) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libxslt.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/xslt-config $(STAGING_DIR)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/xslt-config $(STAGING_DIR)/usr/bin/
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/libxslt $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/libxslt $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libxslt.{a,so*} $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libxslt.{a,so*} $(STAGING_DIR)/usr/lib/
 	mkdir -p $(STAGING_DIR)/usr/lib/pkgconfig
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/libxslt.pc $(STAGING_DIR)/usr/lib/pkgconfig/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/libxslt.pc $(STAGING_DIR)/usr/lib/pkgconfig/
 	$(SED) 's,-I$${includedir},,g' $(STAGING_DIR)/usr/bin/xslt-config
 	$(SED) 's,-I$(STAGING_DIR)/usr/include,,g' $(STAGING_DIR)/usr/bin/xslt-config
 	$(SED) 's,-L$${libdir},,g' $(STAGING_DIR)/usr/bin/xslt-config

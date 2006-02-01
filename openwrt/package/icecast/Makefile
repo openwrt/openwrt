@@ -70,11 +70,11 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_ICECAST):
 	install -d -m0755 $(IDIR_ICECAST)/etc
-	cp -fpR $(PKG_INSTALL_DIR)/etc/icecast.xml $(IDIR_ICECAST)/etc/
+	$(CP) $(PKG_INSTALL_DIR)/etc/icecast.xml $(IDIR_ICECAST)/etc/
 	install -d -m0755 $(IDIR_ICECAST)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/icecast $(IDIR_ICECAST)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/icecast $(IDIR_ICECAST)/usr/bin/
 	install -d -m0755 $(IDIR_ICECAST)/usr/share/icecast
-	cp -fpR $(PKG_INSTALL_DIR)/usr/share/icecast/admin $(IDIR_ICECAST)/usr/share/icecast/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/share/icecast/web $(IDIR_ICECAST)/usr/share/icecast/
+	$(CP) $(PKG_INSTALL_DIR)/usr/share/icecast/admin $(IDIR_ICECAST)/usr/share/icecast/
+	$(CP) $(PKG_INSTALL_DIR)/usr/share/icecast/web $(IDIR_ICECAST)/usr/share/icecast/
 	$(RSTRIP) $(IDIR_ICECAST)
 	$(IPKG_BUILD) $(IDIR_ICECAST) $(PACKAGE_DIR)

@@ -33,10 +33,10 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_L2TPNS):
 	install -d -m0755 $(IDIR_L2TPNS)/etc/l2tpns
-	cp -fpR $(PKG_INSTALL_DIR)/etc/l2tpns/* $(IDIR_L2TPNS)/etc/l2tpns/
+	$(CP) $(PKG_INSTALL_DIR)/etc/l2tpns/* $(IDIR_L2TPNS)/etc/l2tpns/
 	install -d -m0755 $(IDIR_L2TPNS)/usr/lib/l2tpns
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/l2tpns/* $(IDIR_L2TPNS)/usr/lib/l2tpns/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/l2tpns/* $(IDIR_L2TPNS)/usr/lib/l2tpns/
 	install -d -m0755 $(IDIR_L2TPNS)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/* $(IDIR_L2TPNS)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/* $(IDIR_L2TPNS)/usr/sbin/
 	$(RSTRIP) $(IDIR_L2TPNS)
 	$(IPKG_BUILD) $(IDIR_L2TPNS) $(PACKAGE_DIR)

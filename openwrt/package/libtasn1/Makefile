@@ -70,19 +70,19 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_LIBTASN1):
 	install -m0755 -d $(IDIR_LIBTASN1)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libtasn1.so.* $(IDIR_LIBTASN1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libtasn1.so.* $(IDIR_LIBTASN1)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBTASN1)
 	$(IPKG_BUILD) $(IDIR_LIBTASN1) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libtasn1.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/libtasn1-config $(STAGING_DIR)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/libtasn1-config $(STAGING_DIR)/usr/bin/
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/libtasn1.h $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/libtasn1.h $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libtasn1.{a,so*} $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libtasn1.{a,so*} $(STAGING_DIR)/usr/lib/
 	mkdir -p $(STAGING_DIR)/usr/share/aclocal
-	cp -fpR $(PKG_INSTALL_DIR)/usr/share/aclocal/libtasn1.m4 $(STAGING_DIR)/usr/share/aclocal/
+	$(CP) $(PKG_INSTALL_DIR)/usr/share/aclocal/libtasn1.m4 $(STAGING_DIR)/usr/share/aclocal/
 	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/libtasn1.so

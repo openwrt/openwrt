@@ -55,9 +55,9 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_ARPWATCH):
 	mkdir -p $(IDIR_ARPWATCH)/usr/sbin
-	cp $(PKG_BUILD_DIR)/arpwatch $(IDIR_ARPWATCH)/usr/sbin/
-	cp $(PKG_BUILD_DIR)/arpsnmp $(IDIR_ARPWATCH)/usr/sbin/
+	$(CP) $(PKG_BUILD_DIR)/arpwatch $(IDIR_ARPWATCH)/usr/sbin/
+	$(CP) $(PKG_BUILD_DIR)/arpsnmp $(IDIR_ARPWATCH)/usr/sbin/
 	$(STRIP) $(IDIR_ARPWATCH)/usr/sbin/*
 	mkdir -p $(IDIR_ARPWATCH)/etc/arpwatch
-	cp $(PKG_BUILD_DIR)/arp.dat $(IDIR_ARPWATCH)/etc/arpwatch/
+	$(CP) $(PKG_BUILD_DIR)/arp.dat $(IDIR_ARPWATCH)/etc/arpwatch/
 	$(IPKG_BUILD) $(IDIR_ARPWATCH) $(PACKAGE_DIR)

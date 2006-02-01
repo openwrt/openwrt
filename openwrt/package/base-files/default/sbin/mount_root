@@ -30,7 +30,7 @@ if [ "$1" != "failsafe" ]; then
 			pivot_root /jffs /jffs/rom
 			mount none /proc -t proc
 			mount none /dev -t devfs
-			umount /rom/proc /rom/dev >&-
+			umount /rom/proc rom/dev >&-
 		fi
 	fi
 fi

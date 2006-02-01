@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dnsmasq
-PKG_VERSION:=2.26
+PKG_VERSION:=2.25
 PKG_RELEASE:=1
-PKG_MD5SUM:=ae04abb5db4a8cc43c24f432f0c44d5c
+PKG_MD5SUM:=a5a387aed551acf91990567a5e8e4fa4
 
 PKG_SOURCE_URL:=http://thekelleys.org.uk/dnsmasq
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -27,7 +27,7 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_DNSMASQ):
 	install -d -m0755 $(IDIR_DNSMASQ)/usr/sbin
-	cp $(PKG_BUILD_DIR)/src/$(PKG_NAME) $(IDIR_DNSMASQ)/usr/sbin/
+	$(CP) $(PKG_BUILD_DIR)/src/$(PKG_NAME) $(IDIR_DNSMASQ)/usr/sbin/
 	$(STRIP) $(IDIR_DNSMASQ)/usr/sbin/*
 	install -d -m0755 $(IDIR_DNSMASQ)/etc/init.d/
 	install -m0644 ./files/dnsmasq.conf $(IDIR_DNSMASQ)/etc/dnsmasq.conf

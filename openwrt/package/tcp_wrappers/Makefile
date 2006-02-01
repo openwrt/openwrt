@@ -41,16 +41,16 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_LIBWRAP):
 	install -d -m0755 $(IDIR_LIBWRAP)/usr/lib
-	cp -fpR $(PKG_BUILD_DIR)/shared/libwrap.so.* $(IDIR_LIBWRAP)/usr/lib/
+	$(CP) $(PKG_BUILD_DIR)/shared/libwrap.so.* $(IDIR_LIBWRAP)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBWRAP)
 	$(IPKG_BUILD) $(IDIR_LIBWRAP) $(PACKAGE_DIR)
 	
 $(STAGING_DIR)/usr/lib/libwrap.a: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_BUILD_DIR)/tcpd.h $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_BUILD_DIR)/tcpd.h $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_BUILD_DIR)/libwrap.a $(STAGING_DIR)/usr/lib/
-#	cp -fpR $(PKG_BUILD_DIR)/shared/libwrap.so* $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_BUILD_DIR)/libwrap.a $(STAGING_DIR)/usr/lib/
+#	$(CP) $(PKG_BUILD_DIR)/shared/libwrap.so* $(STAGING_DIR)/usr/lib/
 	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/libwrap.a

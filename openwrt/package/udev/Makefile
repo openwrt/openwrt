@@ -38,19 +38,19 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_UDEV):
 	install -d -m0775 $(IDIR_UDEV)/etc/udev
-	cp -fpR $(PKG_INSTALL_DIR)/etc/udev/* $(IDIR_UDEV)/etc/udev/
+	$(CP) $(PKG_INSTALL_DIR)/etc/udev/* $(IDIR_UDEV)/etc/udev/
 	install -d -m0775 $(IDIR_UDEV)/lib/udev
 	install -d -m0775 $(IDIR_UDEV)/sbin/
-	cp -fpR $(PKG_INSTALL_DIR)/sbin/udev $(IDIR_UDEV)/sbin/
-	cp -fpR $(PKG_INSTALL_DIR)/sbin/udevcontrol $(IDIR_UDEV)/sbin/
-	cp -fpR $(PKG_INSTALL_DIR)/sbin/udevd $(IDIR_UDEV)/sbin/
-	cp -fpR $(PKG_INSTALL_DIR)/sbin/udevsend $(IDIR_UDEV)/sbin/
-	cp -fpR $(PKG_INSTALL_DIR)/sbin/udevstart $(IDIR_UDEV)/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/sbin/udev $(IDIR_UDEV)/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/sbin/udevcontrol $(IDIR_UDEV)/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/sbin/udevd $(IDIR_UDEV)/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/sbin/udevsend $(IDIR_UDEV)/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/sbin/udevstart $(IDIR_UDEV)/sbin/
 	install -d -m0775 $(IDIR_UDEV)/usr/bin/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/udevinfo $(IDIR_UDEV)/usr/bin/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/udevtest $(IDIR_UDEV)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/udevinfo $(IDIR_UDEV)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/udevtest $(IDIR_UDEV)/usr/bin/
 	install -d -m0775 $(IDIR_UDEV)/usr/sbin/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/udevmonitor $(IDIR_UDEV)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/udevmonitor $(IDIR_UDEV)/usr/sbin/
 	$(RSTRIP) $(IDIR_UDEV)
 	$(IPKG_BUILD) $(IDIR_UDEV) $(PACKAGE_DIR)
 

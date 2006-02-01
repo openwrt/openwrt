@@ -74,7 +74,7 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_KMOD_FUSE):
 	mkdir -p $(IDIR_KMOD_FUSE)/lib/modules/$(LINUX_VERSION)
-	cp -fpR $(PKG_INSTALL_DIR)/lib/modules/$(LINUX_VERSION)/kernel/fs/fuse/fuse.$(LINUX_KMOD_SUFFIX) \
+	$(CP) $(PKG_INSTALL_DIR)/lib/modules/$(LINUX_VERSION)/kernel/fs/fuse/fuse.$(LINUX_KMOD_SUFFIX) \
 		$(IDIR_KMOD_FUSE)/lib/modules/$(LINUX_VERSION)/
 	$(IPKG_BUILD) $(IDIR_KMOD_FUSE) $(PACKAGE_DIR)
 

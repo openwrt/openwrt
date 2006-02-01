@@ -70,15 +70,15 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_LIBDB): 
 	install -m0755 -d $(IDIR_LIBDB)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libdb*.so $(IDIR_LIBDB)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libdb*.so $(IDIR_LIBDB)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBDB)
 	$(IPKG_BUILD) $(IDIR_LIBDB) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libdb.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/db.h $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/db.h $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libdb*.{a,so} $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libdb*.{a,so} $(STAGING_DIR)/usr/lib/
 	touch $(STAGING_DIR)/usr/lib/libdb.so
 
 install-dev: $(STAGING_DIR)/usr/lib/libdb.so

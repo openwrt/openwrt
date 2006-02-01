@@ -102,8 +102,8 @@ $(PKG_BUILD_DIR)/.built:
 $(IPKG_MPD):
 	install -d -m0755 $(IDIR_MPD)/usr/bin
 	install -d -m0755 $(IDIR_MPD)/etc
-	cp -fp $(PKG_INSTALL_DIR)/usr/bin/mpd $(IDIR_MPD)/usr/bin
-	cp -fp $(PKG_BUILD_DIR)/doc/mpdconf.example $(IDIR_MPD)/etc/mpd.conf
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/mpd $(IDIR_MPD)/usr/bin
+	$(CP) $(PKG_BUILD_DIR)/doc/mpdconf.example $(IDIR_MPD)/etc/mpd.conf
 	echo "Depends: $(PKG_DEPENDS)" >> $(IDIR_MPD)/CONTROL/control
 	$(RSTRIP) $(IDIR_MPD)
 	$(IPKG_BUILD) $(IDIR_MPD) $(PACKAGE_DIR)

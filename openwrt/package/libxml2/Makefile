@@ -89,19 +89,19 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_LIBXML2):
 	install -m0755 -d $(IDIR_LIBXML2)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libxml2.so.* $(IDIR_LIBXML2)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libxml2.so.* $(IDIR_LIBXML2)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBXML2)
 	$(IPKG_BUILD) $(IDIR_LIBXML2) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libxml2.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/xml2-config $(STAGING_DIR)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/xml2-config $(STAGING_DIR)/usr/bin/
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/libxml2 $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/libxml2 $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libxml2.{a,so*} $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libxml2.{a,so*} $(STAGING_DIR)/usr/lib/
 	mkdir -p $(STAGING_DIR)/usr/lib/pkgconfig
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/libxml-2.0.pc $(STAGING_DIR)/usr/lib/pkgconfig/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/libxml-2.0.pc $(STAGING_DIR)/usr/lib/pkgconfig/
 	$(SED) 's,-I$${includedir}/libxml2,,g' $(STAGING_DIR)/usr/bin/xml2-config
 	$(SED) 's,-I$${includedir},,g' $(STAGING_DIR)/usr/bin/xml2-config
 	$(SED) 's,-I$(STAGING_DIR)/usr/include,,g' $(STAGING_DIR)/usr/bin/xml2-config

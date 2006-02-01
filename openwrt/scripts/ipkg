@@ -787,7 +787,7 @@ ipkg_install_file_dest() {
 			echo "Package: $pkg
 Status: install ok pending" | ipkg_status_update_sd $sd $pkg
 			mkdir -p $IPKG_PENDING_DIR
-			cp $filename $IPKG_PENDING_DIR
+			cp -f $filename $IPKG_PENDING_DIR
 			rm -r $IPKG_TMP/$pkg/control
 			rm -r $IPKG_TMP/$pkg/data
 			rmdir $IPKG_TMP/$pkg

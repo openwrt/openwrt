@@ -77,16 +77,16 @@ lex.zconf.o: lex.zconf.c $(SHARED_DEPS)
 	$(HOSTCC) $(HOSTCFLAGS) -I. -c $< -o $@
 
 lex.zconf.c: lex.zconf.c_shipped
-	cp lex.zconf.c_shipped lex.zconf.c
+	$(CP) lex.zconf.c_shipped lex.zconf.c
 
 zconf.tab.o: zconf.tab.c lex.zconf.c confdata.c expr.c symbol.c menu.c $(SHARED_DEPS)
 	$(HOSTCC) $(HOSTCFLAGS) -I. -c $< -o $@
 
 zconf.tab.c: zconf.tab.c_shipped
-	cp zconf.tab.c_shipped zconf.tab.c
+	$(CP) zconf.tab.c_shipped zconf.tab.c
 
 zconf.tab.h: zconf.tab.h_shipped
-	cp zconf.tab.h_shipped zconf.tab.h
+	$(CP) zconf.tab.h_shipped zconf.tab.h
 endif
 
 .PHONY: ncurses

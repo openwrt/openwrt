@@ -65,15 +65,15 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_LIBPCAP):
 	install -m0755 -d $(IDIR_LIBPCAP)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libpcap.so.* $(IDIR_LIBPCAP)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libpcap.so.* $(IDIR_LIBPCAP)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBPCAP)
 	$(IPKG_BUILD) $(IDIR_LIBPCAP) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libpcap.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/pcap* $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/pcap* $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libpcap.{a,so*} $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libpcap.{a,so*} $(STAGING_DIR)/usr/lib/
 	touch $(STAGING_DIR)/usr/lib/libpcap.so
 
 install-dev: $(STAGING_DIR)/usr/lib/libpcap.so

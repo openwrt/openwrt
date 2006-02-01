@@ -59,7 +59,7 @@ $(IPKG_SSMTP):
 	install -m0644 $(PKG_BUILD_DIR)/ssmtp.conf $(IDIR_SSMTP)/etc/ssmtp/
 	install -m0644 $(PKG_BUILD_DIR)/revaliases $(IDIR_SSMTP)/etc/ssmtp/
 	install -m0755 -d $(IDIR_SSMTP)/usr/sbin
-	cp -fpR $(PKG_BUILD_DIR)/ssmtp $(IDIR_SSMTP)/usr/sbin/
+	$(CP) $(PKG_BUILD_DIR)/ssmtp $(IDIR_SSMTP)/usr/sbin/
 	ln -sf ssmtp $(IDIR_SSMTP)/usr/sbin/sendmail
 	$(RSTRIP) $(IDIR_SSMTP)
 	$(IPKG_BUILD) $(IDIR_SSMTP) $(PACKAGE_DIR)

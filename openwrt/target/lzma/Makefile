@@ -32,7 +32,7 @@ $(LZMA_DIR)/.built: $(LZMA_DIR)/.unpacked
 	touch $@
 
 lzma: $(TARGETS)
-	cp -f $^ $(LZMA_DIR)
+	$(CP) $^ $(LZMA_DIR)
 
 lzma-source: $(DL_DIR)/$(LZMA_SOURCE)
 
@@ -49,5 +49,5 @@ lzma-dirclean:
 prepare: $(LZMA_DIR)/.unpacked
 compile: lzma
 install: lzma
-	cp $(LZMA_DIR)/lzma $(STAGING_DIR)/bin/
+	$(CP) $(LZMA_DIR)/lzma $(STAGING_DIR)/bin/
 clean: lzma-dirclean

@@ -33,7 +33,7 @@ $(IPKG_P910ND):
 	install -m0755 ./files/p910nd.init $(IDIR_P910ND)/etc/init.d/p910nd
 	install -d -m0755 $(IDIR_P910ND)/usr/sbin
 	ln -sf p910nd $(IDIR_P910ND)/etc/init.d/S$(PKG_INIT_PRIO)p910nd
-	cp -fpR $(PKG_BUILD_DIR)/p910nd $(IDIR_P910ND)/usr/sbin
+	$(CP) $(PKG_BUILD_DIR)/p910nd $(IDIR_P910ND)/usr/sbin
 	$(RSTRIP) $(IDIR_P910ND)
 	$(IPKG_BUILD) $(IDIR_P910ND) $(PACKAGE_DIR)
 

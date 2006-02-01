@@ -57,19 +57,19 @@ $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 
 $(IPKG_LIBLUA):
 	install -d -m0755 $(IDIR_LIBLUA)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/liblua{,lib}.so.* $(IDIR_LIBLUA)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/liblua{,lib}.so.* $(IDIR_LIBLUA)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBLUA)
 	$(IPKG_BUILD) $(IDIR_LIBLUA) $(PACKAGE_DIR)
 
 $(IPKG_LUA):
 	install -d -m0755 $(IDIR_LUA)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/lua $(IDIR_LUA)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/lua $(IDIR_LUA)/usr/bin/
 	$(RSTRIP) $(IDIR_LUA)
 	$(IPKG_BUILD) $(IDIR_LUA) $(PACKAGE_DIR)
 
 $(IPKG_LUAC):
 	install -d -m0755 $(IDIR_LUAC)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/luac $(IDIR_LUAC)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/luac $(IDIR_LUAC)/usr/bin/
 	$(RSTRIP) $(IDIR_LUAC)
 	$(IPKG_BUILD) $(IDIR_LUAC) $(PACKAGE_DIR)
 
@@ -82,10 +82,10 @@ $(IPKG_LUA_EXAMPLES):
 
 $(STAGING_DIR)/usr/lib/liblua.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/lua{,lib}.h $(STAGING_DIR)/usr/include/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/lauxlib.h $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/lua{,lib}.h $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/lauxlib.h $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/liblua{,lib}.{a,so*} $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/liblua{,lib}.{a,so*} $(STAGING_DIR)/usr/lib/
 	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/liblua.so

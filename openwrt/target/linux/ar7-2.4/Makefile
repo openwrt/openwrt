@@ -13,13 +13,13 @@ ATM_FIRMWARE_DIR=sangam-atm-firmware-$(ATM_FIRMWARE_VERSION)
 $(eval $(call KMOD_template,SANGAM_ATM_A,sangam-atm-annex-a,\
 	$(MODULES_DIR)/kernel/drivers/atm/tiatm.o \
 ,CONFIG_MIPS_SANGAM_ATM,kmod-atm,60,tiatm, \
-	cp $(BUILD_DIR)/$(ATM_FIRMWARE_DIR)/ar0700xx_a.bin $$(I_SANGAM_ATM_A)/lib/modules/ar0700xx.bin \
+	$(CP) $(BUILD_DIR)/$(ATM_FIRMWARE_DIR)/ar0700xx_a.bin $$(I_SANGAM_ATM_A)/lib/modules/ar0700xx.bin \
 ))
 
 $(eval $(call KMOD_template,SANGAM_ATM_B,sangam-atm-annex-b,\
 	$(MODULES_DIR)/kernel/drivers/atm/tiatm.o \
 ,CONFIG_MIPS_SANGAM_ATM,kmod-atm,60,tiatm, \
-	cp $(BUILD_DIR)/$(ATM_FIRMWARE_DIR)/ar0700xx_b.bin $$(I_SANGAM_ATM_B)/lib/modules/ar0700xx.bin \
+	$(CP) $(BUILD_DIR)/$(ATM_FIRMWARE_DIR)/ar0700xx_b.bin $$(I_SANGAM_ATM_B)/lib/modules/ar0700xx.bin \
 ))
 
 $(eval $(call KMOD_template,CPMAC,cpmac,\
@@ -33,7 +33,7 @@ include ../kernel.mk
 $(LINUX_DIR)/.patched: $(LINUX_DIR)/.unpacked
 	[ -d ../generic-$(KERNEL)/patches ] && $(PATCH) $(LINUX_DIR) ../generic-$(KERNEL)/patches $(MAKE_TRACE)
 	[ -d ./patches ] && $(PATCH) $(LINUX_DIR) ./patches $(MAKE_TRACE)
-	@cp config $(LINUX_DIR)/.config
+	@$(CP) config $(LINUX_DIR)/.config
 	touch $@
 
 

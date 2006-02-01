@@ -61,6 +61,6 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_SIPSAK):
 	install -d -m0755 $(IDIR_SIPSAK)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/sipsak $(IDIR_SIPSAK)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/sipsak $(IDIR_SIPSAK)/usr/bin/
 	$(RSTRIP) $(IDIR_SIPSAK)
 	$(IPKG_BUILD) $(IDIR_SIPSAK) $(PACKAGE_DIR)

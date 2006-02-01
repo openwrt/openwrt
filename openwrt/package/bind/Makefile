@@ -70,15 +70,15 @@ $(PKG_BUILD_DIR)/.built:
 $(IPKG_BIND_SERVER):
 	install -d -m0755 $(IDIR_BIND_SERVER)/usr/sbin
 	install -d -m0755 $(IDIR_BIND_SERVER)/etc/init.d
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/named $(IDIR_BIND_SERVER)/usr/sbin/
-	cp -fpR files/bind $(IDIR_BIND_SERVER)/etc
-	cp -fpR files/named.init $(IDIR_BIND_SERVER)/etc/init.d/S$(PKG_INIT_LEVEL)named
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/named $(IDIR_BIND_SERVER)/usr/sbin/
+	$(CP) files/bind $(IDIR_BIND_SERVER)/etc
+	$(CP) files/named.init $(IDIR_BIND_SERVER)/etc/init.d/S$(PKG_INIT_LEVEL)named
 	find $(IDIR_BIND_SERVER)/etc/bind -name ".svn" | xargs rm -rf
 	$(RSTRIP) $(IDIR_BIND_SERVER)
 	$(IPKG_BUILD) $(IDIR_BIND_SERVER) $(PACKAGE_DIR)
 
 $(IPKG_BIND_CLIENT):
 	install -d -m0755 $(IDIR_BIND_CLIENT)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/nsupdate $(IDIR_BIND_CLIENT)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/nsupdate $(IDIR_BIND_CLIENT)/usr/bin/
 	$(RSTRIP) $(IDIR_BIND_CLIENT)
 	$(IPKG_BUILD) $(IDIR_BIND_CLIENT) $(PACKAGE_DIR)

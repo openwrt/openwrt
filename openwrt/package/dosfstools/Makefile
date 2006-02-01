@@ -33,10 +33,10 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_DOSFSTOOLS):
 	install -d -m0755 $(IDIR_DOSFSTOOLS)/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/sbin/dosfsck $(IDIR_DOSFSTOOLS)/sbin/
-	cp -fpR $(PKG_INSTALL_DIR)/sbin/fsck.{msdos,vfat} $(IDIR_DOSFSTOOLS)/sbin/
-	cp -fpR $(PKG_INSTALL_DIR)/sbin/mkdosfs $(IDIR_DOSFSTOOLS)/sbin/
-	cp -fpR $(PKG_INSTALL_DIR)/sbin/mkfs.{msdos,vfat} $(IDIR_DOSFSTOOLS)/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/sbin/dosfsck $(IDIR_DOSFSTOOLS)/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/sbin/fsck.{msdos,vfat} $(IDIR_DOSFSTOOLS)/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/sbin/mkdosfs $(IDIR_DOSFSTOOLS)/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/sbin/mkfs.{msdos,vfat} $(IDIR_DOSFSTOOLS)/sbin/
 	$(RSTRIP) $(IDIR_DOSFSTOOLS)
 	$(IPKG_BUILD) $(IDIR_DOSFSTOOLS) $(PACKAGE_DIR)
 

@@ -47,10 +47,10 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_PCMCIA_UTILS):
 	install -m0755 -d $(IDIR_PCMCIA_UTILS)/etc
-	cp -fpR $(PKG_INSTALL_DIR)/etc/pcmcia $(IDIR_PCMCIA_UTILS)/etc/
+	$(CP) $(PKG_INSTALL_DIR)/etc/pcmcia $(IDIR_PCMCIA_UTILS)/etc/
 	install -m0755 -d $(IDIR_PCMCIA_UTILS)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/sbin/cardctl $(IDIR_PCMCIA_UTILS)/usr/sbin/
-	cp -fpR $(PKG_INSTALL_DIR)/sbin/cardmgr $(IDIR_PCMCIA_UTILS)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/sbin/cardctl $(IDIR_PCMCIA_UTILS)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/sbin/cardmgr $(IDIR_PCMCIA_UTILS)/usr/sbin/
 	$(RSTRIP) $(IDIR_PCMCIA_UTILS)
 	$(IPKG_BUILD) $(IDIR_PCMCIA_UTILS) $(PACKAGE_DIR)
 

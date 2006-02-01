@@ -63,19 +63,19 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_LIBGPG_ERROR):
 	install -m0755 -d $(IDIR_LIBGPG_ERROR)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libgpg-error.so.* $(IDIR_LIBGPG_ERROR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libgpg-error.so.* $(IDIR_LIBGPG_ERROR)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBGPG_ERROR)
 	$(IPKG_BUILD) $(IDIR_LIBGPG_ERROR) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libgpg-error.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/gpg-error-config $(STAGING_DIR)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/gpg-error-config $(STAGING_DIR)/usr/bin/
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/gpg-error.h $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/gpg-error.h $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libgpg-error.{a,so*} $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libgpg-error.{a,so*} $(STAGING_DIR)/usr/lib/
 	mkdir -p $(STAGING_DIR)/usr/share/aclocal
-	cp -fpR $(PKG_INSTALL_DIR)/usr/share/aclocal/gpg-error.m4 $(STAGING_DIR)/usr/share/aclocal/
+	$(CP) $(PKG_INSTALL_DIR)/usr/share/aclocal/gpg-error.m4 $(STAGING_DIR)/usr/share/aclocal/
 	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/libgpg-error.so

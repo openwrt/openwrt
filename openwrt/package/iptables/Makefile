@@ -22,7 +22,7 @@ define IPKG_plugin_template
 $$(IPKG_$(1)):
 	install -m0755 -d $$(IDIR_$(1))/usr/lib/iptables
 	for m in $(2); do \
-		cp -fpR $(PKG_INSTALL_DIR)/usr/lib/iptables/lib$$$${m}.so $$(IDIR_$(1))/usr/lib/iptables/ ; \
+		$(CP) $(PKG_INSTALL_DIR)/usr/lib/iptables/lib$$$${m}.so $$(IDIR_$(1))/usr/lib/iptables/ ; \
 	done
 	@[ -z "$(3)" ] || $(MAKE) $(3)
 	$(RSTRIP) $$(IDIR_$(1))
@@ -73,10 +73,10 @@ $(PKG_BUILD_DIR)/.built:
 		
 $(IPKG_IPTABLES):
 	install -d -m0755 $(IDIR_IPTABLES)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/iptables $(IDIR_IPTABLES)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/iptables $(IDIR_IPTABLES)/usr/sbin/
 	install -d -m0755 $(IDIR_IPTABLES)/usr/lib/iptables
 	(cd $(PKG_INSTALL_DIR)/usr/lib/iptables ; \
-		cp -fpR $(patsubst %,lib%.so,$(IPT_BUILTIN)) $(IDIR_IPTABLES)/usr/lib/iptables/ \
+		$(CP) $(patsubst %,lib%.so,$(IPT_BUILTIN)) $(IDIR_IPTABLES)/usr/lib/iptables/ \
 	)
 	$(RSTRIP) $(IDIR_IPTABLES)
 	$(IPKG_BUILD) $(IDIR_IPTABLES) $(PACKAGE_DIR)
@@ -86,29 +86,29 @@ $(IPKG_IPTABLES_EXTRA):
 
 $(IPKG_IPTABLES_UTILS):
 	install -d -m0755 $(IDIR_IPTABLES_UTILS)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/iptables-{save,restore} $(IDIR_IPTABLES_UTILS)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/iptables-{save,restore} $(IDIR_IPTABLES_UTILS)/usr/sbin/
 	$(RSTRIP) $(IDIR_IPTABLES_UTILS)
 	$(IPKG_BUILD) $(IDIR_IPTABLES_UTILS) $(PACKAGE_DIR)
 
 $(IPKG_IP6TABLES):
 	install -d -m0755 $(IDIR_IP6TABLES)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/ip6tables $(IDIR_IP6TABLES)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/ip6tables $(IDIR_IP6TABLES)/usr/sbin/
 	install -d -m0755 $(IDIR_IP6TABLES)/usr/lib/iptables
 	(cd $(PKG_INSTALL_DIR)/usr/lib/iptables ; \
-		cp -fpR libip6t_*.so $(IDIR_IP6TABLES)/usr/lib/iptables/ \
+		$(CP) libip6t_*.so $(IDIR_IP6TABLES)/usr/lib/iptables/ \
 	)
 	$(RSTRIP) $(IDIR_IP6TABLES)
 	$(IPKG_BUILD) $(IDIR_IP6TABLES) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libipq.a: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/libipq.h $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/libipq.h $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libipq.a $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libipq.a $(STAGING_DIR)/usr/lib/
 
 layer7-install:
 	mkdir -p $(IDIR_IPTABLES_MOD_FILTER)/etc/l7-protocols
-	cp files/l7/*.pat $(IDIR_IPTABLES_MOD_FILTER)/etc/l7-protocols/
+	$(CP) files/l7/*.pat $(IDIR_IPTABLES_MOD_FILTER)/etc/l7-protocols/
 
 install-dev: $(STAGING_DIR)/usr/lib/libipq.a
 

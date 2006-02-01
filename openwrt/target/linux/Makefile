@@ -60,13 +60,13 @@ $(BIN_DIR)/$(IB_NAME).tar.bz2:
 	rm -rf $(IB_DIR)
 	mkdir -p $(IB_DIR)/packages
 	mkdir -p $(IB_DIR)/scripts
-	cp -fpR ./imagebuilder/* $(IB_DIR)/
-	cp -fpR $(TOPDIR)/bin/packages/*.ipk $(IB_DIR)/packages/
-	cp $(TOPDIR)/scripts/ipkg $(IB_DIR)/scripts/
+	$(CP) ./imagebuilder/* $(IB_DIR)/
+	$(CP) $(TOPDIR)/bin/packages/*.ipk $(IB_DIR)/packages/
+	$(CP) $(TOPDIR)/scripts/ipkg $(IB_DIR)/scripts/
 	$(MAKE) install-ib
-	cp $(TOPDIR)/rules.mk $(IB_DIR)
-	cp -fpR ./image $(IB_DIR)/
-	cp $(TOPDIR)/.config $(IB_DIR)/
+	$(CP) $(TOPDIR)/rules.mk $(IB_DIR)
+	$(CP) ./image $(IB_DIR)/
+	$(CP) $(TOPDIR)/.config $(IB_DIR)/
 	find $(IB_DIR) -name .svn | xargs rm -rf
 	find $(IB_DIR) -name CVS | xargs rm -rf
 	(cd $(BUILD_DIR); tar c $(IB_NAME) | bzip2 -c > $(BIN_DIR)/$(IB_NAME).tar.bz2)

@@ -56,13 +56,13 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_LINUX_ATM): 
 	install -d -m0755 $(IDIR_LINUX_ATM)/usr/lib
-	cp $(PKG_INSTALL_DIR)/usr/lib/libatm.so.1 $(IDIR_LINUX_ATM)/usr/lib
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libatm.so.1 $(IDIR_LINUX_ATM)/usr/lib
 	$(RSTRIP) $(IDIR_LINUX_ATM)/
 	$(IPKG_BUILD) $(IDIR_LINUX_ATM) $(PACKAGE_DIR)
 
 $(IPKG_BR2684CTL): 
 	install -d -m0755 $(IDIR_BR2684CTL)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/br2684ctl $(IDIR_BR2684CTL)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/br2684ctl $(IDIR_BR2684CTL)/usr/sbin/
 	install -d -m0755 $(IDIR_BR2684CTL)/etc/hotplug.d/net
 	install -m0644 ./files/br2684.init $(IDIR_BR2684CTL)/etc/hotplug.d/net/30-br2684
 	$(RSTRIP) $(IDIR_BR2684CTL)/
@@ -70,9 +70,9 @@ $(IPKG_BR2684CTL):
 
 $(STAGING_DIR)/usr/lib/libatm.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/atm{,d,sap}.h $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/atm{,d,sap}.h $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libatm.{a,so*} $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libatm.{a,so*} $(STAGING_DIR)/usr/lib/
 	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/libatm.so
