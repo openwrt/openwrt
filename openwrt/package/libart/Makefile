@@ -59,19 +59,19 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_LIBART):
 	install -d -m0755 $(IDIR_LIBART)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libart_lgpl_2.so.* $(IDIR_LIBART)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libart_lgpl_2.so.* $(IDIR_LIBART)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBART)
 	$(IPKG_BUILD) $(IDIR_LIBART) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libart_lgpl_2.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/libart2-config $(STAGING_DIR)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/libart2-config $(STAGING_DIR)/usr/bin/
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/libart-2.0 $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/libart-2.0 $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libart_lgpl_2.{a,so*} $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libart_lgpl_2.{a,so*} $(STAGING_DIR)/usr/lib/
 	mkdir -p $(STAGING_DIR)/usr/lib/pkgconfig
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/libart-2.0.pc $(STAGING_DIR)/usr/lib/pkgconfig/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/libart-2.0.pc $(STAGING_DIR)/usr/lib/pkgconfig/
 	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/libart_lgpl_2.so

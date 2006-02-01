@@ -82,7 +82,7 @@ $(PKG_BUILD_DIR)/.built:
 	touch $@
 
 $(IPKG_ASTERISK):
-	cp -fpR $(PKG_INSTALL_DIR)/* $(IDIR_ASTERISK)
+	$(CP) $(PKG_INSTALL_DIR)/* $(IDIR_ASTERISK)
 	rm -rf $(IDIR_ASTERISK)/usr/sbin/astgenkey
 	rm -rf $(IDIR_ASTERISK)/usr/bin
 	rm -rf $(IDIR_ASTERISK)/usr/share
@@ -128,23 +128,23 @@ $(IPKG_ASTERISK):
 $(IPKG_ASTERISK_MINI):
 	install -d -m0755 $(IDIR_ASTERISK_MINI)/etc/asterisk
 	for f in asterisk enum extconfig extensions features iax iaxprov logger manager modules musiconhold rtp sip; do \
-	  cp -fpR $(PKG_INSTALL_DIR)/etc/asterisk/$$f.conf $(IDIR_ASTERISK_MINI)/etc/asterisk/ ; \
+	  $(CP) $(PKG_INSTALL_DIR)/etc/asterisk/$$f.conf $(IDIR_ASTERISK_MINI)/etc/asterisk/ ; \
 	done
 	install -m0644 ./files/modules.conf $(IDIR_ASTERISK)/etc/asterisk/
 	$(SED) 's|/var/lib/asterisk|/usr/lib/asterisk|g' $(PKG_INSTALL_DIR)/etc/asterisk/musiconhold.conf
 	install -d -m0755 $(IDIR_ASTERISK_MINI)/usr/lib/asterisk
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/asterisk/firmware $(IDIR_ASTERISK_MINI)/usr/lib/asterisk/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/asterisk/firmware $(IDIR_ASTERISK_MINI)/usr/lib/asterisk/
 	install -d -m0755 $(IDIR_ASTERISK_MINI)/usr/lib/asterisk/keys
 	install -d -m0755 $(IDIR_ASTERISK_MINI)/usr/lib/asterisk/modules
 	for f in chan_iax2 chan_local chan_sip codec_gsm codec_ulaw format_gsm format_pcm format_wav \
 	  format_wav_gsm pbx_config res_features res_musiconhold; do \
-	  cp -fpR $(PKG_INSTALL_DIR)/usr/lib/asterisk/modules/$$f.so $(IDIR_ASTERISK_MINI)/usr/lib/asterisk/modules/ ; \
+	  $(CP) $(PKG_INSTALL_DIR)/usr/lib/asterisk/modules/$$f.so $(IDIR_ASTERISK_MINI)/usr/lib/asterisk/modules/ ; \
 	done
 	install -d -m0755 $(IDIR_ASTERISK_MINI)/usr/lib/asterisk/mohmp3
 	install -d -m0755 $(IDIR_ASTERISK_MINI)/usr/lib/asterisk/sounds
 	install -d -m0755 $(IDIR_ASTERISK_MINI)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/asterisk $(IDIR_ASTERISK_MINI)/usr/sbin/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/safe_asterisk $(IDIR_ASTERISK_MINI)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/asterisk $(IDIR_ASTERISK_MINI)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/safe_asterisk $(IDIR_ASTERISK_MINI)/usr/sbin/
 	install -d -m0755 $(IDIR_ASTERISK_MINI)/etc/default
 	install -m0644  ./files/asterisk.default $(IDIR_ASTERISK_MINI)/etc/default/asterisk
 	install -d -m0755 $(IDIR_ASTERISK_MINI)/etc/init.d
@@ -179,7 +179,7 @@ $(IPKG_ASTERISK_SQLITE):
 
 $(IPKG_ASTERISK_SOUNDS):
 	install -d -m0755 $(IDIR_ASTERISK_SOUNDS)/usr/lib/asterisk/sounds
-	cp -fpR $(PKG_BUILD_DIR)/sounds/* $(IDIR_ASTERISK_SOUNDS)/usr/lib/asterisk/sounds/
+	$(CP) $(PKG_BUILD_DIR)/sounds/* $(IDIR_ASTERISK_SOUNDS)/usr/lib/asterisk/sounds/
 	rm -f $(IDIR_ASTERISK_SOUNDS)/usr/lib/asterisk/sounds/*.mp3
 	rm -f $(IDIR_ASTERISK_SOUNDS)/usr/lib/asterisk/sounds/vm-*
 	$(IPKG_BUILD) $(IDIR_ASTERISK_SOUNDS) $(PACKAGE_DIR)
@@ -191,7 +191,7 @@ $(IPKG_ASTERISK_VOICEMAIL):
 	install -m0755 $(PKG_BUILD_DIR)/apps/*voicemail.so $(IDIR_ASTERISK_VOICEMAIL)/usr/lib/asterisk/modules/
 	install -m0755 $(PKG_BUILD_DIR)/res/res_adsi.so $(IDIR_ASTERISK_VOICEMAIL)/usr/lib/asterisk/modules/
 	install -d -m0755 $(IDIR_ASTERISK_VOICEMAIL)/usr/lib/asterisk/sounds
-	cp -fpR $(PKG_BUILD_DIR)/sounds/vm-*.gsm $(IDIR_ASTERISK_VOICEMAIL)/usr/lib/asterisk/sounds/
+	$(CP) $(PKG_BUILD_DIR)/sounds/vm-*.gsm $(IDIR_ASTERISK_VOICEMAIL)/usr/lib/asterisk/sounds/
 	$(RSTRIP) $(IDIR_ASTERISK_VOICEMAIL)
 	$(IPKG_BUILD) $(IDIR_ASTERISK_VOICEMAIL) $(PACKAGE_DIR)
 

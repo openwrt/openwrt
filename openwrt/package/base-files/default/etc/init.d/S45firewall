@@ -81,8 +81,11 @@ iptables -t nat -N postrouting_rule
   iptables -A FORWARD -j forwarding_rule
 
   # allow
-  iptables -A FORWARD -i br0 -o br0 -j ACCEPT
-
+  # if there is bridge splitting this workaround works too
+  for iface in $LAN; do
+  	iptables -A FORWARD -i $iface -o $iface -j ACCEPT
+	[ -z "$WAN" ] || iptables -A FORWARD -i $iface -o $WAN -j ACCEPT
+  done
   # reject (what to do with anything not allowed earlier)
   # uses the default -P DROP
 

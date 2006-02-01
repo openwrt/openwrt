@@ -116,19 +116,19 @@ $(IPKG_PPP_MOD_RADIUS): $(IDIR_PPP_MOD_RADIUS)/etc/ppp/radius.conf
 
 $(IPKG_CHAT):
 	install -d -m0755 $(IDIR_CHAT)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/chat $(IDIR_CHAT)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/chat $(IDIR_CHAT)/usr/sbin/
 	$(RSTRIP) $(IDIR_CHAT)
 	$(IPKG_BUILD) $(IDIR_CHAT) $(PACKAGE_DIR)
 
 $(IPKG_PPPDUMP):
 	install -d -m0755 $(IDIR_PPPDUMP)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/pppdump $(IDIR_PPPDUMP)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/pppdump $(IDIR_PPPDUMP)/usr/sbin/
 	$(RSTRIP) $(IDIR_PPPDUMP)
 	$(IPKG_BUILD) $(IDIR_PPPDUMP) $(PACKAGE_DIR)
 
 $(IPKG_PPPSTATS): $(IPKG_PPP)
 	install -d -m0755 $(IDIR_PPPSTATS)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/pppstats $(IDIR_PPPSTATS)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/pppstats $(IDIR_PPPSTATS)/usr/sbin/
 	$(RSTRIP) $(IDIR_PPPSTATS)
 	$(IPKG_BUILD) $(IDIR_PPPSTATS) $(PACKAGE_DIR)
 

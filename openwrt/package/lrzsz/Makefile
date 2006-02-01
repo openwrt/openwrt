@@ -59,8 +59,8 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_LRZSZ):
 	install -d -m0755 $(IDIR_LRZSZ)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/lrz $(IDIR_LRZSZ)/usr/bin/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/lsz $(IDIR_LRZSZ)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/lrz $(IDIR_LRZSZ)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/lsz $(IDIR_LRZSZ)/usr/bin/
 	(cd $(IDIR_LRZSZ)/usr/bin; \
 		ln -fs lrz lrx; \
 		ln -fs lrz lrb; \

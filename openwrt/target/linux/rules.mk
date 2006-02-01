@@ -68,7 +68,7 @@ $$(PKG_$(1)): $(LINUX_DIR)/.modules_done
 	echo "Depends: $$(IDEPEND_$(1))" >> $$(I_$(1))/CONTROL/control
 ifneq ($(strip $(3)),)
 	mkdir -p $$(I_$(1))/lib/modules/$(LINUX_VERSION)
-	cp $(3) $$(I_$(1))/lib/modules/$(LINUX_VERSION)
+	$(CP) $(3) $$(I_$(1))/lib/modules/$(LINUX_VERSION)
 endif
 ifneq ($(6),)
 	mkdir -p $$(I_$(1))/etc/modules.d

@@ -17,7 +17,7 @@ $(SQUASHFSLZMA_DIR)/squashfs-tools/mksquashfs-lzma: $(SQUASHFSLZMA_DIR)/.unpacke
 	$(MAKE) -C $(SQUASHFSLZMA_DIR)/squashfs-tools mksquashfs-lzma LZMAPATH=$(BUILD_DIR)/lzma
 
 $(STAGING_DIR)/bin/mksquashfs-lzma: $(SQUASHFSLZMA_DIR)/squashfs-tools/mksquashfs-lzma
-	cp $< $@
+	$(CP) $< $@
 
 source: $(DL_DIR)/$(SQUASHFSLZMA_SOURCE)
 prepare: $(SQUASHFSLZMA_DIR)/.unpacked

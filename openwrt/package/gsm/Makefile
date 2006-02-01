@@ -35,22 +35,22 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_LIBGSM):
 	install -d -m0755 $(IDIR_LIBGSM)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libgsm.so.* $(IDIR_LIBGSM)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libgsm.so.* $(IDIR_LIBGSM)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBGSM)
 	$(IPKG_BUILD) $(IDIR_LIBGSM) $(PACKAGE_DIR)
 
 $(IPKG_GSM_UTILS):
 	install -d -m0755 $(IDIR_GSM_UTILS)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/* $(IDIR_GSM_UTILS)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/* $(IDIR_GSM_UTILS)/usr/bin/
 	$(RSTRIP) $(IDIR_GSM_UTILS)
 	$(IPKG_BUILD) $(IDIR_GSM_UTILS) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libgsm.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/gsm.h $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/gsm.h $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libgsm.a $(STAGING_DIR)/usr/lib/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libgsm.so* $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libgsm.a $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libgsm.so* $(STAGING_DIR)/usr/lib/
 	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/libgsm.so

@@ -64,6 +64,6 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_PTUNNEL):
 	install -m0755 -d $(IDIR_PTUNNEL)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/ptunnel $(IDIR_PTUNNEL)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/ptunnel $(IDIR_PTUNNEL)/usr/sbin/
 	$(RSTRIP) $(IDIR_PTUNNEL)
 	$(IPKG_BUILD) $(IDIR_PTUNNEL) $(PACKAGE_DIR)

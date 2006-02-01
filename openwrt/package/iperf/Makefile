@@ -63,7 +63,7 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_IPERF):
 	install -d -m0755 $(IDIR_IPERF)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/iperf $(IDIR_IPERF)/usr/bin
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/iperf $(IDIR_IPERF)/usr/bin
 	$(RSTRIP) $(IDIR_IPERF)
 	$(IPKG_BUILD) $(IDIR_IPERF) $(PACKAGE_DIR)
 

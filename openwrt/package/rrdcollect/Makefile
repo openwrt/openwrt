@@ -72,7 +72,7 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_RRDCOLLECT):
 	install -d -m0755 $(IDIR_RRDCOLLECT)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/rrdcollect $(IDIR_RRDCOLLECT)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/rrdcollect $(IDIR_RRDCOLLECT)/usr/sbin/
 	$(RSTRIP) $(IDIR_RRDCOLLECT)
 	$(IPKG_BUILD) $(IDIR_RRDCOLLECT) $(PACKAGE_DIR)
 

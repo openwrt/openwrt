@@ -34,7 +34,7 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_KMOD_HOSTAP):
 	install -m0755 -d $(IDIR_KMOD_HOSTAP)/lib/modules/$(LINUX_VERSION)
-	cp -fpR \
+	$(CP) \
 		$(PKG_BUILD_DIR)/driver/modules/hostap.$(LINUX_KMOD_SUFFIX) \
 		$(PKG_BUILD_DIR)/driver/modules/hostap_crypt_ccmp.$(LINUX_KMOD_SUFFIX) \
 		$(PKG_BUILD_DIR)/driver/modules/hostap_crypt_tkip.$(LINUX_KMOD_SUFFIX) \
@@ -44,14 +44,14 @@ $(IPKG_KMOD_HOSTAP):
 
 $(IPKG_KMOD_HOSTAP_PCI):
 	install -m0755 -d $(IDIR_KMOD_HOSTAP_PCI)/lib/modules/$(LINUX_VERSION)
-	cp -fpR \
+	$(CP) \
 		$(PKG_BUILD_DIR)/driver/modules/hostap_pci.$(LINUX_KMOD_SUFFIX) \
 		$(IDIR_KMOD_HOSTAP_PCI)/lib/modules/$(LINUX_VERSION)/
 	$(IPKG_BUILD) $(IDIR_KMOD_HOSTAP_PCI) $(PACKAGE_DIR)
 
 $(IPKG_KMOD_HOSTAP_PLX):
 	install -m0755 -d $(IDIR_KMOD_HOSTAP_PLX)/lib/modules/$(LINUX_VERSION)
-	cp -fpR \
+	$(CP) \
 		$(PKG_BUILD_DIR)/driver/modules/hostap_plx.$(LINUX_KMOD_SUFFIX) \
 		$(IDIR_KMOD_HOSTAP_PLX)/lib/modules/$(LINUX_VERSION)/
 	$(IPKG_BUILD) $(IDIR_KMOD_HOSTAP_PLX) $(PACKAGE_DIR)

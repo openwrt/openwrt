@@ -24,28 +24,28 @@ $(PKG_BUILD_DIR)/.configured:
 $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CC="$(TARGET_CC)" CFLAGS="$(TARGET_CFLAGS) -I." \
-		libiw.so.28 iwmulticall
+		all iwmulticall
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		PREFIX="$(PKG_INSTALL_DIR)" \
 		INSTALL_DIR="$(PKG_INSTALL_DIR)/usr/sbin" \
 		INSTALL_LIB="$(PKG_INSTALL_DIR)/usr/lib" \
-		install-iwmulticall
+		install install-iwmulticall
 	touch $@
 
 $(IPKG_WIRELESS_TOOLS):
 	mkdir -p $(IDIR_WIRELESS_TOOLS)/usr/lib
-	cp -fpR $(PKG_BUILD_DIR)/libiw.so.28 $(IDIR_WIRELESS_TOOLS)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libiw.so.28 $(IDIR_WIRELESS_TOOLS)/usr/lib/
 	mkdir -p $(IDIR_WIRELESS_TOOLS)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/iw{config,getid,list,priv,spy} $(IDIR_WIRELESS_TOOLS)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/iw{config,getid,list,priv,spy} $(IDIR_WIRELESS_TOOLS)/usr/sbin/
 	$(RSTRIP) $(IDIR_WIRELESS_TOOLS)
 	$(IPKG_BUILD) $(IDIR_WIRELESS_TOOLS) $(PACKAGE_DIR)
 
 install-dev: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/{lib,include}
-	cp -a $(PKG_BUILD_DIR)/libiw.so* $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_BUILD_DIR)/libiw.so* $(STAGING_DIR)/usr/lib/
 	ln -sf libiw.so.28 $(STAGING_DIR)/usr/lib/libiw.so
-	cp -a $(PKG_BUILD_DIR)/{iwlib,wireless}.h $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_BUILD_DIR)/{iwlib,wireless}.h $(STAGING_DIR)/usr/include/
 	
 uninstall-dev:
 	rm -f $(STAGING_DIR)/usr/lib/libiw.*

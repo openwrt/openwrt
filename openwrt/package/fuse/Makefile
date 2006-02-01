@@ -72,25 +72,25 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_LIBFUSE):
 	mkdir -p $(IDIR_LIBFUSE)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libfuse.so.* $(IDIR_LIBFUSE)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libfuse.so.* $(IDIR_LIBFUSE)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBFUSE)
 	$(IPKG_BUILD) $(IDIR_LIBFUSE) $(PACKAGE_DIR)
 
 $(IPKG_FUSE_UTILS):
 	mkdir -p $(IDIR_FUSE_UTILS)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/fusermount $(IDIR_FUSE_UTILS)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/fusermount $(IDIR_FUSE_UTILS)/usr/bin/
 	$(RSTRIP) $(IDIR_FUSE_UTILS)
 	$(IPKG_BUILD) $(IDIR_FUSE_UTILS) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libfuse.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/fuse $(STAGING_DIR)/usr/include/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/fuse.h $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/fuse $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/fuse.h $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libfuse.a $(STAGING_DIR)/usr/lib/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libfuse.so* $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libfuse.a $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libfuse.so* $(STAGING_DIR)/usr/lib/
 	mkdir -p $(STAGING_DIR)/usr/lib/pkgconfig
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/fuse.pc $(STAGING_DIR)/usr/lib/pkgconfig/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/fuse.pc $(STAGING_DIR)/usr/lib/pkgconfig/
 	$(SED) 's,-I$${includedir}/fuse,,g' $(STAGING_DIR)/usr/lib/pkgconfig/fuse.pc
 	$(SED) 's,-L$${libdir},,g' $(STAGING_DIR)/usr/lib/pkgconfig/fuse.pc
 	

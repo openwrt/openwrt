@@ -66,18 +66,18 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_LIBAO):
 	install -m0755 -d $(IDIR_LIBAO)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libao.so.* $(IDIR_LIBAO)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libao.so.* $(IDIR_LIBAO)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBAO)
 	$(IPKG_BUILD) $(IDIR_LIBAO) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libao.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/ao $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/ao $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libao.a $(STAGING_DIR)/usr/lib/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libao.so* $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libao.a $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libao.so* $(STAGING_DIR)/usr/lib/
 	mkdir -p $(STAGING_DIR)/usr/lib/pkgconfig
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/ao.pc $(STAGING_DIR)/usr/lib/pkgconfig/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/ao.pc $(STAGING_DIR)/usr/lib/pkgconfig/
 	$(SED) 's,-I$${includedir},,g' $(STAGING_DIR)/usr/lib/pkgconfig/ao.pc
 	$(SED) 's,-L$${libdir},,g' $(STAGING_DIR)/usr/lib/pkgconfig/ao.pc
 	touch $@

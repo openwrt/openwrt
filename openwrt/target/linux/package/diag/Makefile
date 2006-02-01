@@ -27,5 +27,5 @@ $(PKG_BUILD_DIR)/.built:
 	
 $(IPKG_KMOD_DIAG):
 	mkdir -p $(IDIR_KMOD_DIAG)/lib/modules/$(LINUX_VERSION)
-	cp $(PKG_BUILD_DIR)/diag.o $(IDIR_KMOD_DIAG)/lib/modules/$(LINUX_VERSION)/
+	$(CP) $(PKG_BUILD_DIR)/diag.o $(IDIR_KMOD_DIAG)/lib/modules/$(LINUX_VERSION)/
 	$(IPKG_BUILD) $(IDIR_KMOD_DIAG) $(PACKAGE_DIR)

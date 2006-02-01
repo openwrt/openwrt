@@ -44,6 +44,6 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_BRIDGE): 
 	mkdir -p $(IDIR_BRIDGE)/usr/sbin
-	cp $(PKG_BUILD_DIR)/brctl/brctl $(IDIR_BRIDGE)/usr/sbin/
+	$(CP) $(PKG_BUILD_DIR)/brctl/brctl $(IDIR_BRIDGE)/usr/sbin/
 	$(STRIP) $(IDIR_BRIDGE)/usr/sbin/brctl
 	$(IPKG_BUILD) $(IDIR_BRIDGE) $(PACKAGE_DIR)

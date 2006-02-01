@@ -19,7 +19,7 @@ include $(TOPDIR)/package/rules.mk
 $(eval $(call PKG_template,HOSTAPD,hostapd,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 $(PKG_BUILD_DIR)/.configured:
-	cp ./files/config $(PKG_BUILD_DIR)/.config
+	$(CP) ./files/config $(PKG_BUILD_DIR)/.config
 	touch $@
 
 $(PKG_BUILD_DIR)/.built:

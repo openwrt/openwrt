@@ -38,7 +38,7 @@ $(LINUX_HEADERS_DIR)/.unpacked: $(DL_DIR)/$(LINUX_HEADERS_SOURCE)
 	touch $(LINUX_HEADERS_DIR)/.unpacked
 
 $(LINUX_HEADERS_DIR)/.configured: $(LINUX_HEADERS_DIR)/.unpacked
-	-cp -af ./files/config.$(LINUX_HEADERS_ARCH) $(LINUX_HEADERS_DIR)/.config
+	-$(CP) ./files/config.$(LINUX_HEADERS_ARCH) $(LINUX_HEADERS_DIR)/.config
 	$(MAKE) -C $(LINUX_HEADERS_DIR) ARCH=$(LINUX_HEADERS_ARCH) oldconfig include/linux/version.h
 	touch $(LINUX_HEADERS_DIR)/.configured
 

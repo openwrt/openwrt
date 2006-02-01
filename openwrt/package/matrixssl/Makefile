@@ -29,16 +29,16 @@ $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 
 $(IPKG_LIBMATRIXSSL):
 	install -d -m0755 $(IDIR_LIBMATRIXSSL)/usr/lib
-	cp -fpR $(PKG_BUILD_DIR)/src/libmatrixssl.so.* $(IDIR_LIBMATRIXSSL)/usr/lib/
+	$(CP) $(PKG_BUILD_DIR)/src/libmatrixssl.so.* $(IDIR_LIBMATRIXSSL)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBMATRIXSSL)
 	$(IPKG_BUILD) $(IDIR_LIBMATRIXSSL) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libmatrixssl.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include/matrixSsl
-	cp -fpR $(PKG_BUILD_DIR)/matrixSsl.h $(STAGING_DIR)/usr/include/matrixSsl
+	$(CP) $(PKG_BUILD_DIR)/matrixSsl.h $(STAGING_DIR)/usr/include/matrixSsl
 	ln -sf matrixSsl/matrixSsl.h $(STAGING_DIR)/usr/include/matrixSsl.h
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_BUILD_DIR)/src/libmatrixssl.so* $(STAGING_DIR)/usr/lib
+	$(CP) $(PKG_BUILD_DIR)/src/libmatrixssl.so* $(STAGING_DIR)/usr/lib
 
 install-dev: $(STAGING_DIR)/usr/lib/libmatrixssl.so
 

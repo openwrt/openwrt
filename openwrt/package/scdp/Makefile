@@ -60,6 +60,6 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_SCDP):
 	install -d -m0755 $(IDIR_SCDP)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/scdp $(IDIR_SCDP)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/scdp $(IDIR_SCDP)/usr/bin/
 	$(RSTRIP) $(IDIR_SCDP)
 	$(IPKG_BUILD) $(IDIR_SCDP) $(PACKAGE_DIR)

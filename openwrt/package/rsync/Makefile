@@ -58,6 +58,6 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_RSYNC):
 	install -d -m0755 $(IDIR_RSYNC)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/* $(IDIR_RSYNC)/usr/bin
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/* $(IDIR_RSYNC)/usr/bin
 	$(RSTRIP) $(IDIR_RSYNC)
 	$(IPKG_BUILD) $(IDIR_RSYNC) $(PACKAGE_DIR)

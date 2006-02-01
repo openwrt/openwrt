@@ -67,17 +67,17 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_LIBPCRE):
 	install -d -m0755 $(IDIR_LIBPCRE)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libpcre{,posix}.so.* $(IDIR_LIBPCRE)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libpcre{,posix}.so.* $(IDIR_LIBPCRE)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBPCRE)
 	$(IPKG_BUILD) $(IDIR_LIBPCRE) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libpcre.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/pcre-config $(STAGING_DIR)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/pcre-config $(STAGING_DIR)/usr/bin/
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/pcre{,posix}.h $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/pcre{,posix}.h $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libpcre{,posix}.{a,so*} $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libpcre{,posix}.{a,so*} $(STAGING_DIR)/usr/lib/
 	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/libpcre.so

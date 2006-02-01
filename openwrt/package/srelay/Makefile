@@ -53,15 +53,15 @@ $(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CC=$(TARGET_CC) \
 		all
-	cp $(PKG_BUILD_DIR)/srelay $(PKG_INSTALL_DIR)
+	$(CP) $(PKG_BUILD_DIR)/srelay $(PKG_INSTALL_DIR)
 	touch $@
 
 $(IPKG_SRELAY):
 	install -m0755 -d $(IDIR_SRELAY)/usr/bin
 	install -m0755 -d $(IDIR_SRELAY)/etc/init.d
-	cp -fpR $(PKG_INSTALL_DIR)/srelay $(IDIR_SRELAY)/usr/bin/
-	cp -fpR files/srelay.init $(IDIR_SRELAY)/etc/init.d/S$(PKG_INIT_LEVEL)srelay
-	cp -fpR files/srelay.conf $(IDIR_SRELAY)/etc
+	$(CP) $(PKG_INSTALL_DIR)/srelay $(IDIR_SRELAY)/usr/bin/
+	$(CP) files/srelay.init $(IDIR_SRELAY)/etc/init.d/S$(PKG_INIT_LEVEL)srelay
+	$(CP) files/srelay.conf $(IDIR_SRELAY)/etc
 	chmod 755 $(IDIR_SRELAY)/etc/init.d/S$(PKG_INIT_LEVEL)srelay
 	$(RSTRIP) $(IDIR_SRELAY)
 	$(IPKG_BUILD) $(IDIR_SRELAY) $(PACKAGE_DIR)

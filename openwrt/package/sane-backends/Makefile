@@ -63,8 +63,8 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_SANE_BACKENDS):
 	install -d -m0755 $(IDIR_SANE_BACKENDS)/etc/sane.d
-	cp -fpR $(PKG_INSTALL_DIR)/etc/sane.d/*.conf $(IDIR_SANE_BACKENDS)/etc/sane.d/
+	$(CP) $(PKG_INSTALL_DIR)/etc/sane.d/*.conf $(IDIR_SANE_BACKENDS)/etc/sane.d/
 	install -d -m0755 $(IDIR_SANE_BACKENDS)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/saned $(IDIR_SANE_BACKENDS)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/saned $(IDIR_SANE_BACKENDS)/usr/sbin/
 	$(RSTRIP) $(IDIR_SANE_BACKENDS)
 	$(IPKG_BUILD) $(IDIR_SANE_BACKENDS) $(PACKAGE_DIR)

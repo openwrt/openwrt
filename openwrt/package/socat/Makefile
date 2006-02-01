@@ -60,7 +60,7 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_SOCAT):
 	install -d -m0755 $(IDIR_SOCAT)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/socat $(IDIR_SOCAT)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/socat $(IDIR_SOCAT)/usr/bin/
 	$(RSTRIP) $(IDIR_SOCAT)
 	$(IPKG_BUILD) $(IDIR_SOCAT) $(PACKAGE_DIR)
 

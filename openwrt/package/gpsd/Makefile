@@ -63,18 +63,18 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_GPSD):
 	install -d -m0755 $(IDIR_GPSD)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libgps.so.* $(IDIR_GPSD)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libgps.so.* $(IDIR_GPSD)/usr/lib/
 	install -d -m0755 $(IDIR_GPSD)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/gpsd $(IDIR_GPSD)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/gpsd $(IDIR_GPSD)/usr/sbin/
 	$(RSTRIP) $(IDIR_GPSD)
 	$(IPKG_BUILD) $(IDIR_GPSD) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libgps.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/gps{,d}.h $(STAGING_DIR)/usr/include/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/libgpsmm.h $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/gps{,d}.h $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/libgpsmm.h $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libgps.{a,so*} $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libgps.{a,so*} $(STAGING_DIR)/usr/lib/
 	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/libgps.so

@@ -55,7 +55,7 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_HASERL):
 	install -m0755 -d $(IDIR_HASERL)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/haserl $(IDIR_HASERL)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/haserl $(IDIR_HASERL)/usr/bin/
 	$(RSTRIP) $(IDIR_HASERL)
 	$(IPKG_BUILD) $(IDIR_HASERL) $(PACKAGE_DIR)
 

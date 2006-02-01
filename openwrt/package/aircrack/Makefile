@@ -35,11 +35,11 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_AIRCRACK):
 	install -d -m0755 $(IDIR_AIRCRACK)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/aircrack $(IDIR_AIRCRACK)/usr/bin/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/airdecap $(IDIR_AIRCRACK)/usr/bin/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/aireplay $(IDIR_AIRCRACK)/usr/bin/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/airodump $(IDIR_AIRCRACK)/usr/bin/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/arpforge $(IDIR_AIRCRACK)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/aircrack $(IDIR_AIRCRACK)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/airdecap $(IDIR_AIRCRACK)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/aireplay $(IDIR_AIRCRACK)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/airodump $(IDIR_AIRCRACK)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/arpforge $(IDIR_AIRCRACK)/usr/bin/
 	$(RSTRIP) $(IDIR_AIRCRACK)
 	$(IPKG_BUILD) $(IDIR_AIRCRACK) $(PACKAGE_DIR)
 

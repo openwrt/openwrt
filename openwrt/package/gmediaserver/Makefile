@@ -69,7 +69,7 @@ $(IPKG_GMEDIASERVER):
 	install -m0755 -d $(IDIR_GMEDIASERVER)/etc/init.d
 	install -m0755 ./files/gmediaserver.init $(IDIR_GMEDIASERVER)/etc/init.d/gmediaserver
 	install -m0755 -d $(IDIR_GMEDIASERVER)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/gmediaserver $(IDIR_GMEDIASERVER)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/gmediaserver $(IDIR_GMEDIASERVER)/usr/sbin/
 	$(RSTRIP) $(IDIR_GMEDIASERVER)
 	$(IPKG_BUILD) $(IDIR_GMEDIASERVER) $(PACKAGE_DIR)
 

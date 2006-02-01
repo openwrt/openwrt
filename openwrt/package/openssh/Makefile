@@ -81,42 +81,42 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_OPENSSH_CLIENT):
 	install -m0700 -d $(IDIR_OPENSSH_CLIENT)/etc/ssh
-	cp -fpR $(PKG_INSTALL_DIR)/etc/ssh/ssh_config $(IDIR_OPENSSH_CLIENT)/etc/ssh/
+	$(CP) $(PKG_INSTALL_DIR)/etc/ssh/ssh_config $(IDIR_OPENSSH_CLIENT)/etc/ssh/
 	install -m0755 -d $(IDIR_OPENSSH_CLIENT)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/ssh $(IDIR_OPENSSH_CLIENT)/usr/bin/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/scp $(IDIR_OPENSSH_CLIENT)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/ssh $(IDIR_OPENSSH_CLIENT)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/scp $(IDIR_OPENSSH_CLIENT)/usr/bin/
 	$(RSTRIP) $(IDIR_OPENSSH_CLIENT)
 	$(IPKG_BUILD) $(IDIR_OPENSSH_CLIENT) $(PACKAGE_DIR)
 
 $(IPKG_OPENSSH_CLIENT_UTILS):
 	install -m0755 -d $(IDIR_OPENSSH_CLIENT_UTILS)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/ssh-add $(IDIR_OPENSSH_CLIENT_UTILS)/usr/bin/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/ssh-agent $(IDIR_OPENSSH_CLIENT_UTILS)/usr/bin/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/ssh-keyscan $(IDIR_OPENSSH_CLIENT_UTILS)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/ssh-add $(IDIR_OPENSSH_CLIENT_UTILS)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/ssh-agent $(IDIR_OPENSSH_CLIENT_UTILS)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/ssh-keyscan $(IDIR_OPENSSH_CLIENT_UTILS)/usr/bin/
 	$(RSTRIP) $(IDIR_OPENSSH_CLIENT_UTILS)
 	$(IPKG_BUILD) $(IDIR_OPENSSH_CLIENT_UTILS) $(PACKAGE_DIR)
 
 $(IPKG_OPENSSH_SERVER):
 	install -m0700 -d $(IDIR_OPENSSH_SERVER)/etc/ssh
-	cp -fpR $(PKG_INSTALL_DIR)/etc/ssh/sshd_config $(IDIR_OPENSSH_SERVER)/etc/ssh/
+	$(CP) $(PKG_INSTALL_DIR)/etc/ssh/sshd_config $(IDIR_OPENSSH_SERVER)/etc/ssh/
 	install -m0755 -d $(IDIR_OPENSSH_SERVER)/etc/init.d
 	install -m0755 ./files/S50sshd $(IDIR_OPENSSH_SERVER)/etc/init.d/
 	install -m0755 -d $(IDIR_OPENSSH_SERVER)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/ssh-keygen $(IDIR_OPENSSH_SERVER)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/ssh-keygen $(IDIR_OPENSSH_SERVER)/usr/bin/
 	install -m0755 -d $(IDIR_OPENSSH_SERVER)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/sshd $(IDIR_OPENSSH_SERVER)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/sshd $(IDIR_OPENSSH_SERVER)/usr/sbin/
 	$(RSTRIP) $(IDIR_OPENSSH_SERVER)
 	$(IPKG_BUILD) $(IDIR_OPENSSH_SERVER) $(PACKAGE_DIR)
 
 $(IPKG_OPENSSH_SFTP_CLIENT):
 	install -m0755 -d $(IDIR_OPENSSH_SFTP_CLIENT)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/sftp $(IDIR_OPENSSH_SFTP_CLIENT)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/sftp $(IDIR_OPENSSH_SFTP_CLIENT)/usr/bin/
 	$(RSTRIP) $(IDIR_OPENSSH_SFTP_CLIENT)
 	$(IPKG_BUILD) $(IDIR_OPENSSH_SFTP_CLIENT) $(PACKAGE_DIR)
 
 $(IPKG_OPENSSH_SFTP_SERVER):
 	install -m0755 -d $(IDIR_OPENSSH_SFTP_SERVER)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/sftp-server $(IDIR_OPENSSH_SFTP_SERVER)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/sftp-server $(IDIR_OPENSSH_SFTP_SERVER)/usr/lib/
 	install -m0755 -d $(IDIR_OPENSSH_SFTP_SERVER)/usr/libexec
 	ln -sf ../lib/sftp-server $(IDIR_OPENSSH_SFTP_SERVER)/usr/libexec/sftp-server
 	$(RSTRIP) $(IDIR_OPENSSH_SFTP_SERVER)

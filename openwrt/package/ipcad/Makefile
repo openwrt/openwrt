@@ -63,8 +63,8 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_IPCAD):
 	install -d -m0755 $(IDIR_IPCAD)/etc
-	cp -fpR $(PKG_INSTALL_DIR)/etc/ipcad.conf $(IDIR_IPCAD)/etc/
+	$(CP) $(PKG_INSTALL_DIR)/etc/ipcad.conf $(IDIR_IPCAD)/etc/
 	install -d -m0755 $(IDIR_IPCAD)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/ipcad $(IDIR_IPCAD)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/ipcad $(IDIR_IPCAD)/usr/bin/
 	$(RSTRIP) $(IDIR_IPCAD)
 	$(IPKG_BUILD) $(IDIR_IPCAD) $(PACKAGE_DIR)

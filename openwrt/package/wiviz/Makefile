@@ -14,7 +14,7 @@ $(eval $(call PKG_template,WIVIZ,wiviz,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 $(PKG_BUILD_DIR)/.prepared:
 	mkdir -p $(PKG_BUILD_DIR)
-	cp -fpR ./src/* $(PKG_BUILD_DIR)/
+	$(CP) ./src/* $(PKG_BUILD_DIR)/
 	touch $@
 
 $(PKG_BUILD_DIR)/.configured:
@@ -30,9 +30,9 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_WIVIZ): 
 	mkdir -p $(IDIR_WIVIZ)/usr/sbin
-	cp $(PKG_BUILD_DIR)/$(PKG_NAME) $(IDIR_WIVIZ)/usr/sbin/
+	$(CP) $(PKG_BUILD_DIR)/$(PKG_NAME) $(IDIR_WIVIZ)/usr/sbin/
 	$(RSTRIP) $(IDIR_WIVIZ)
-	cp -fpR ./files/* $(IDIR_WIVIZ)
+	$(CP) ./files/* $(IDIR_WIVIZ)
 	find $(IDIR_WIVIZ) -name CVS | xargs rm -rf
 	find $(IDIR_WIVIZ) -name .svn | xargs rm -rf
 	$(IPKG_BUILD) $(IDIR_WIVIZ) $(PACKAGE_DIR)

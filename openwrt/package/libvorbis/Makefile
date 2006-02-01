@@ -70,18 +70,18 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_LIBVORBIS):
 	install -m0755 -d $(IDIR_LIBVORBIS)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libvorbis.so.* $(IDIR_LIBVORBIS)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libvorbis.so.* $(IDIR_LIBVORBIS)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBVORBIS)
 	$(IPKG_BUILD) $(IDIR_LIBVORBIS) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libvorbis.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/vorbis $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/vorbis $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libvorbis.a $(STAGING_DIR)/usr/lib/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libvorbis{,enc,file}.so* $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libvorbis.a $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libvorbis{,enc,file}.so* $(STAGING_DIR)/usr/lib/
 	mkdir -p $(STAGING_DIR)/usr/lib/pkgconfig
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/vorbis{,enc,file}.pc $(STAGING_DIR)/usr/lib/pkgconfig/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/vorbis{,enc,file}.pc $(STAGING_DIR)/usr/lib/pkgconfig/
 	$(SED) 's,-I$${includedir},,g' $(STAGING_DIR)/usr/lib/pkgconfig/vorbis{,enc,file}.pc
 	$(SED) 's,-L$${libdir},,g' $(STAGING_DIR)/usr/lib/pkgconfig/vorbis{,enc,file}.pc
 	touch $@

@@ -66,20 +66,20 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_LIBDNET):
 	install -m0755 -d $(IDIR_LIBDNET)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libdnet.so.* $(IDIR_LIBDNET)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libdnet.so.* $(IDIR_LIBDNET)/usr/lib/
 	install -m0755 -d $(IDIR_LIBDNET)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/dnet $(IDIR_LIBDNET)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/dnet $(IDIR_LIBDNET)/usr/sbin/
 	$(RSTRIP) $(IDIR_LIBDNET)
 	$(IPKG_BUILD) $(IDIR_LIBDNET) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libdnet.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/dnet-config $(STAGING_DIR)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/dnet-config $(STAGING_DIR)/usr/bin/
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/dnet.h $(STAGING_DIR)/usr/include/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/dnet $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/dnet.h $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/dnet $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libdnet.{a,so*} $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libdnet.{a,so*} $(STAGING_DIR)/usr/lib/
 	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/libdnet.so

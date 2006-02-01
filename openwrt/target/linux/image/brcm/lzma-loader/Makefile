@@ -9,7 +9,7 @@ PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 
 $(PKG_BUILD_DIR)/.prepared:
 	mkdir $(PKG_BUILD_DIR)
-	cp -fpR ./src/* $(PKG_BUILD_DIR)/
+	$(CP) ./src/* $(PKG_BUILD_DIR)/
 	touch $@
 
 $(PKG_BUILD_DIR)/loader.gz: $(PKG_BUILD_DIR)/.prepared
@@ -17,10 +17,10 @@ $(PKG_BUILD_DIR)/loader.gz: $(PKG_BUILD_DIR)/.prepared
 		LD=$(TARGET_CROSS)ld CROSS_COMPILE=$(TARGET_CROSS)
 
 $(BUILD_DIR)/loader.gz: $(PKG_BUILD_DIR)/loader.gz
-	cp $< $@
+	$(CP) $< $@
 
 $(BUILD_DIR)/loader.elf: $(PKG_BUILD_DIR)/loader.o
-	cp $< $@
+	$(CP) $< $@
 
 source: 
 prepare: $(PKG_BUILD_DIR)/.prepared

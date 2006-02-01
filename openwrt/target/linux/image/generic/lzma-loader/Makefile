@@ -9,7 +9,7 @@ PKG_BUILD_DIR := $(KDIR)/$(PKG_NAME)-$(PKG_VERSION)
 
 $(PKG_BUILD_DIR)/.prepared:
 	mkdir $(PKG_BUILD_DIR)
-	cp -fpR ./src/* $(PKG_BUILD_DIR)/
+	$(CP) ./src/* $(PKG_BUILD_DIR)/
 	touch $@
 
 $(PKG_BUILD_DIR)/lzma.elf: $(PKG_BUILD_DIR)/.prepared $(PKG_BUILD_DIR)/vmlinux.lzma
@@ -21,10 +21,10 @@ $(PKG_BUILD_DIR)/lzma.elf: $(PKG_BUILD_DIR)/.prepared $(PKG_BUILD_DIR)/vmlinux.l
 
 
 $(PKG_BUILD_DIR)/vmlinux.lzma: $(KDIR)/vmlinux.lzma
-	cp $< $@
+	$(CP) $< $@
 
 $(KDIR)/loader.elf: $(PKG_BUILD_DIR)/lzma.elf
-	cp $< $@
+	$(CP) $< $@
 
 source: 
 prepare: $(PKG_BUILD_DIR)/.prepared

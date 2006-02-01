@@ -91,24 +91,24 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_CURL):
 	install -m0755 -d $(IDIR_CURL)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/curl $(IDIR_CURL)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/curl $(IDIR_CURL)/usr/bin/
 	$(RSTRIP) $(IDIR_CURL)
 	$(IPKG_BUILD) $(IDIR_CURL) $(PACKAGE_DIR)
 
 $(IPKG_LIBCURL):
 	install -m0755 -d $(IDIR_LIBCURL)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libcurl.so.* $(IDIR_LIBCURL)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libcurl.so.* $(IDIR_LIBCURL)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBCURL)
 	$(IPKG_BUILD) $(IDIR_LIBCURL) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libcurl.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/curl-config $(STAGING_DIR)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/curl-config $(STAGING_DIR)/usr/bin/
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/curl $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/curl $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libcurl.a $(STAGING_DIR)/usr/lib/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libcurl.so* $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libcurl.a $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libcurl.so* $(STAGING_DIR)/usr/lib/
 	$(SED) 's,-I/usr/include,,g' $(STAGING_DIR)/usr/bin/curl-config
 	$(SED) 's,-L/usr/lib,,g' $(STAGING_DIR)/usr/bin/curl-config
 	touch $@

@@ -71,17 +71,17 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_LIBOPENCDK):
 	install -m0755 -d $(IDIR_LIBOPENCDK)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libopencdk.so.* $(IDIR_LIBOPENCDK)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libopencdk.so.* $(IDIR_LIBOPENCDK)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBOPENCDK)
 	$(IPKG_BUILD) $(IDIR_LIBOPENCDK) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libopencdk.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/opencdk-config $(STAGING_DIR)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/opencdk-config $(STAGING_DIR)/usr/bin/
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/opencdk.h $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/opencdk.h $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libopencdk.{a,so*} $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libopencdk.{a,so*} $(STAGING_DIR)/usr/lib/
 	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/libopencdk.so

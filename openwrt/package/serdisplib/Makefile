@@ -56,15 +56,15 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_SERDISPLIB):
 	install -d -m0755 $(IDIR_SERDISPLIB)/usr/lib
-	cp -fpR $(PKG_BUILD_DIR)/lib/libserdisp.so.* $(IDIR_SERDISPLIB)/usr/lib
+	$(CP) $(PKG_BUILD_DIR)/lib/libserdisp.so.* $(IDIR_SERDISPLIB)/usr/lib
 	$(RSTRIP) $(IDIR_SERDISPLIB)
 	$(IPKG_BUILD) $(IDIR_SERDISPLIB) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libserdisp.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_BUILD_DIR)/include/serdisplib $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_BUILD_DIR)/include/serdisplib $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_BUILD_DIR)/lib/libserdisp.{a,so*} $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_BUILD_DIR)/lib/libserdisp.{a,so*} $(STAGING_DIR)/usr/lib/
 	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/libserdisp.so

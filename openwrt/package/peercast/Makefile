@@ -64,9 +64,9 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_PEERCAST):
 	install -m0755 -d $(IDIR_PEERCAST)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/peercast $(IDIR_PEERCAST)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/peercast $(IDIR_PEERCAST)/usr/sbin/
 	install -m0755 -d $(IDIR_PEERCAST)/usr/share/peercast/html
-	cp -fpR $(PKG_INSTALL_DIR)/usr/share/peercast/html/en $(IDIR_PEERCAST)/usr/share/peercast/html/
+	$(CP) $(PKG_INSTALL_DIR)/usr/share/peercast/html/en $(IDIR_PEERCAST)/usr/share/peercast/html/
 	install -m0755 -d $(IDIR_PEERCAST)/etc
 	install -m0644 ./files/peercast.ini $(IDIR_PEERCAST)/etc/
 	install -m0755 -d $(IDIR_PEERCAST)/etc/init.d

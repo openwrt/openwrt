@@ -38,11 +38,11 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_AMWALL):
 	install -d -m0755 $(IDIR_AMWALL)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/* $(IDIR_AMWALL)/usr/bin	
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/* $(IDIR_AMWALL)/usr/bin	
 	install -d -m0755 $(IDIR_AMWALL)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/* $(IDIR_AMWALL)/usr/sbin	
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/* $(IDIR_AMWALL)/usr/sbin	
 	install -d -m0755 $(IDIR_AMWALL)/etc/amsel
-	cp -fpR $(PKG_INSTALL_DIR)/etc/amsel* $(IDIR_AMWALL)/etc	
+	$(CP) $(PKG_INSTALL_DIR)/etc/amsel* $(IDIR_AMWALL)/etc	
 	$(RSTRIP) $(IDIR_AMWALL)					
 	$(IPKG_BUILD) $(IDIR_AMWALL) $(PACKAGE_DIR)
 

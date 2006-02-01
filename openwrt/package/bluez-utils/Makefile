@@ -79,12 +79,12 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_BLUEZ_UTILS):
 	install -d -m0755 $(IDIR_BLUEZ_UTILS)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/* $(IDIR_BLUEZ_UTILS)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/* $(IDIR_BLUEZ_UTILS)/usr/bin/
 	install -d -m0755 $(IDIR_BLUEZ_UTILS)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/* $(IDIR_BLUEZ_UTILS)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/* $(IDIR_BLUEZ_UTILS)/usr/sbin/
 	install -d -m0755 $(IDIR_BLUEZ_UTILS)/etc/bluetooth
-	cp -fp $(PKG_INSTALL_DIR)/../hcid/hcid.conf $(IDIR_BLUEZ_UTILS)/etc/bluetooth/
-	cp -fp $(PKG_INSTALL_DIR)/../rfcomm/rfcomm.conf $(IDIR_BLUEZ_UTILS)/etc/bluetooth/
+	$(CP) $(PKG_INSTALL_DIR)/../hcid/hcid.conf $(IDIR_BLUEZ_UTILS)/etc/bluetooth/
+	$(CP) $(PKG_INSTALL_DIR)/../rfcomm/rfcomm.conf $(IDIR_BLUEZ_UTILS)/etc/bluetooth/
 	install -m0700 ./files/givepin $(IDIR_BLUEZ_UTILS)/etc/bluetooth/
 	$(RSTRIP) $(IDIR_BLUEZ_UTILS)
 	$(IPKG_BUILD) $(IDIR_BLUEZ_UTILS) $(PACKAGE_DIR)

@@ -56,7 +56,7 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_GDBSERVER):
 	install -m0755 -d $(IDIR_GDBSERVER)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/gdbserver $(IDIR_GDBSERVER)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/gdbserver $(IDIR_GDBSERVER)/usr/bin/
 	$(RSTRIP) $(IDIR_GDBSERVER)
 	$(IPKG_BUILD) $(IDIR_GDBSERVER) $(PACKAGE_DIR)
 

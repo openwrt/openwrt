@@ -150,7 +150,7 @@ endif
 
 $(IPKG_LIBNETSNMP):
 	install -d -m0755 $(IDIR_LIBNETSNMP)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libnetsnmp{,agent,helpers,mibs}.so.* $(IDIR_LIBNETSNMP)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libnetsnmp{,agent,helpers,mibs}.so.* $(IDIR_LIBNETSNMP)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBNETSNMP)
 	$(IPKG_BUILD) $(IDIR_LIBNETSNMP) $(PACKAGE_DIR)
 
@@ -180,17 +180,17 @@ $(IPKG_SNMPD_STATIC):
 
 $(IPKG_SNMP_UTILS):
 	install -d -m0755 $(IDIR_SNMP_UTILS)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/snmp{get,set,status,test,trap,walk} $(IDIR_SNMP_UTILS)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/snmp{get,set,status,test,trap,walk} $(IDIR_SNMP_UTILS)/usr/bin/
 	$(RSTRIP) $(IDIR_SNMP_UTILS)
 	$(IPKG_BUILD) $(IDIR_SNMP_UTILS) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libnetsnmp.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/net-snmp-config $(STAGING_DIR)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/net-snmp-config $(STAGING_DIR)/usr/bin/
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/net-snmp $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/net-snmp $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libnetsnmp{,agent,helpers,mibs}.{a,so*} $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libnetsnmp{,agent,helpers,mibs}.{a,so*} $(STAGING_DIR)/usr/lib/
 	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/libnetsnmp.so

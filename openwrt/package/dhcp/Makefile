@@ -38,12 +38,12 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_DHCP_RELAY):
 	install -d -m0755 $(IDIR_DHCP_RELAY)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/dhcrelay $(IDIR_DHCP_RELAY)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/dhcrelay $(IDIR_DHCP_RELAY)/usr/sbin/
 	$(RSTRIP) $(IDIR_DHCP_RELAY)
 	$(IPKG_BUILD) $(IDIR_DHCP_RELAY) $(PACKAGE_DIR)
 
 $(IPKG_DHCP_SERVER):
 	install -d -m0755 $(IDIR_DHCP_SERVER)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/dhcpd $(IDIR_DHCP_SERVER)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/dhcpd $(IDIR_DHCP_SERVER)/usr/sbin/
 	$(RSTRIP) $(IDIR_DHCP_SERVER)
 	$(IPKG_BUILD) $(IDIR_DHCP_SERVER) $(PACKAGE_DIR)

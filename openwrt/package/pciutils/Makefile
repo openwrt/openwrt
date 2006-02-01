@@ -29,7 +29,7 @@ $(PKG_BUILD_DIR)/.built:
 $(IPKG_PCIUTILS):
 	install -d -m0755 $(IDIR_PCIUTILS)/usr/sbin
 	install -d -m0755 $(IDIR_PCIUTILS)/usr/share
-	cp -fpR $(PKG_BUILD_DIR)/{lspci,setpci} $(IDIR_PCIUTILS)/usr/sbin/
-	cp -fpR $(PKG_BUILD_DIR)/pci.ids $(IDIR_PCIUTILS)/usr/share/
+	$(CP) $(PKG_BUILD_DIR)/{lspci,setpci} $(IDIR_PCIUTILS)/usr/sbin/
+	$(CP) $(PKG_BUILD_DIR)/pci.ids $(IDIR_PCIUTILS)/usr/share/
 	$(RSTRIP) $(IDIR_PCIUTILS)/
 	$(IPKG_BUILD) $(IDIR_PCIUTILS) $(PACKAGE_DIR)

@@ -26,7 +26,7 @@ $(PKG_BUILD_DIR)/.prepared:
 	touch $@
 
 $(PKG_BUILD_DIR)/.configured:
-	cp $(PKG_BUILD_DIR)/Makefile  $(PKG_BUILD_DIR)/Makefile.tmp
+	$(CP) $(PKG_BUILD_DIR)/Makefile  $(PKG_BUILD_DIR)/Makefile.tmp
 	sed 's~gcc~$$(CC)~' $(PKG_BUILD_DIR)/Makefile.tmp > $(PKG_BUILD_DIR)/Makefile
 	touch $@
 

@@ -63,17 +63,17 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_ID3LIB):
 	install -d -m0755 $(IDIR_ID3LIB)/usr/lib/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libid3-*.so.* $(IDIR_ID3LIB)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libid3-*.so.* $(IDIR_ID3LIB)/usr/lib/
 	$(IPKG_BUILD) $(IDIR_ID3LIB) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libid3.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/id3 $(STAGING_DIR)/usr/include/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/id3.h $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/id3 $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/id3.h $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libid3.a $(STAGING_DIR)/usr/lib/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libid3.so $(STAGING_DIR)/usr/lib/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libid3-*.so.* $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libid3.a $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libid3.so $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libid3-*.so.* $(STAGING_DIR)/usr/lib/
 	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/libid3.so

@@ -74,7 +74,7 @@ $(IPKG_UPDATEDD):
 	install -d -m0755 $(IDIR_UPDATEDD)/etc/init.d
 	install -m0755 ./files/S55ddns $(IDIR_UPDATEDD)/etc/init.d/
 	install -d -m0755 $(IDIR_UPDATEDD)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/updatedd $(IDIR_UPDATEDD)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/updatedd $(IDIR_UPDATEDD)/usr/bin/
 	install -d -m0755 $(IDIR_UPDATEDD)/usr/lib/updatedd
 	$(RSTRIP) $(IDIR_UPDATEDD)
 	$(IPKG_BUILD) $(IDIR_UPDATEDD) $(PACKAGE_DIR)

@@ -59,17 +59,17 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_LIBEXPAT):
 	install -m0755 -d $(IDIR_LIBEXPAT)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libexpat.so.* $(IDIR_LIBEXPAT)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libexpat.so.* $(IDIR_LIBEXPAT)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBEXPAT)
 	$(IPKG_BUILD) $(IDIR_LIBEXPAT) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libexpat.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/xmlwf $(STAGING_DIR)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/xmlwf $(STAGING_DIR)/usr/bin/
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/expat*.h $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/expat*.h $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libexpat.{a,so*} $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libexpat.{a,so*} $(STAGING_DIR)/usr/lib/
 	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/libexpat.so

@@ -47,6 +47,6 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_FPROBE_ULOG): 
 	mkdir -p $(IDIR_FPROBE_ULOG)/usr/bin
-	cp $(PKG_BUILD_DIR)/src/fprobe-ulog $(IDIR_FPROBE_ULOG)/usr/bin/
+	$(CP) $(PKG_BUILD_DIR)/src/fprobe-ulog $(IDIR_FPROBE_ULOG)/usr/bin/
 	$(RSTRIP) $(IDIR_FPROBE_ULOG)
 	$(IPKG_BUILD) $(IDIR_FPROBE_ULOG) $(PACKAGE_DIR)

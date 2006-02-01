@@ -30,19 +30,19 @@ $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 
 $(IPKG_LIBUPNP):
 	install -m0755 -d $(IDIR_LIBUPNP)/usr/lib
-	cp -fpR $(PKG_BUILD_DIR)/upnp/bin/libixml.so $(IDIR_LIBUPNP)/usr/lib/ ; \
-	cp -fpR $(PKG_BUILD_DIR)/upnp/bin/libthreadutil.so $(IDIR_LIBUPNP)/usr/lib/ ; \
-	cp -fpR $(PKG_BUILD_DIR)/upnp/bin/libupnp.so $(IDIR_LIBUPNP)/usr/lib/ ; \
+	$(CP) $(PKG_BUILD_DIR)/upnp/bin/libixml.so $(IDIR_LIBUPNP)/usr/lib/ ; \
+	$(CP) $(PKG_BUILD_DIR)/upnp/bin/libthreadutil.so $(IDIR_LIBUPNP)/usr/lib/ ; \
+	$(CP) $(PKG_BUILD_DIR)/upnp/bin/libupnp.so $(IDIR_LIBUPNP)/usr/lib/ ; \
 	$(RSTRIP) $(IDIR_LIBUPNP)
 	$(IPKG_BUILD) $(IDIR_LIBUPNP) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libupnp.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include/upnp
-	cp -fpR $(PKG_BUILD_DIR)/upnp/inc/*.h $(STAGING_DIR)/usr/include/upnp/
+	$(CP) $(PKG_BUILD_DIR)/upnp/inc/*.h $(STAGING_DIR)/usr/include/upnp/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_BUILD_DIR)/upnp/bin/libixml.so $(STAGING_DIR)/usr/lib/ ; \
-	cp -fpR $(PKG_BUILD_DIR)/upnp/bin/libthreadutil.so $(STAGING_DIR)/usr/lib/ ; \
-	cp -fpR $(PKG_BUILD_DIR)/upnp/bin/libupnp.so $(STAGING_DIR)/usr/lib/ ; \
+	$(CP) $(PKG_BUILD_DIR)/upnp/bin/libixml.so $(STAGING_DIR)/usr/lib/ ; \
+	$(CP) $(PKG_BUILD_DIR)/upnp/bin/libthreadutil.so $(STAGING_DIR)/usr/lib/ ; \
+	$(CP) $(PKG_BUILD_DIR)/upnp/bin/libupnp.so $(STAGING_DIR)/usr/lib/ ; \
 	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/libupnp.so

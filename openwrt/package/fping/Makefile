@@ -48,8 +48,8 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_FPING):
 	mkdir -p $(IDIR_FPING)/usr/bin
-	cp $(PKG_BUILD_DIR)/$(PKG_NAME)4 $(IDIR_FPING)/usr/bin/$(PKG_NAME)
-	cp $(PKG_BUILD_DIR)/$(PKG_NAME)6 $(IDIR_FPING)/usr/bin/
+	$(CP) $(PKG_BUILD_DIR)/$(PKG_NAME)4 $(IDIR_FPING)/usr/bin/$(PKG_NAME)
+	$(CP) $(PKG_BUILD_DIR)/$(PKG_NAME)6 $(IDIR_FPING)/usr/bin/
 	$(STRIP) $(IDIR_FPING)/usr/bin/*
 	$(IPKG_BUILD) $(IDIR_FPING) $(PACKAGE_DIR)
 

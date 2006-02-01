@@ -36,7 +36,7 @@ jffs2-install: $(KDIR)/root.jffs2-4MB $(KDIR)/root.jffs2-8MB
 
 jffs2-install-ib: compile-targets
 	mkdir -p $(IB_DIR)/staging_dir_$(ARCH)/bin
-	cp $(STAGING_DIR)/bin/mkfs.jffs2 $(IB_DIR)/staging_dir_$(ARCH)/bin
+	$(CP) $(STAGING_DIR)/bin/mkfs.jffs2 $(IB_DIR)/staging_dir_$(ARCH)/bin
 
 prepare-targets: jffs2-prepare
 compile-targets: jffs2-compile

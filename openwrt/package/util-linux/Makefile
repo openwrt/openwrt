@@ -44,20 +44,20 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_FDISK):
 	install -d -m0755 $(IDIR_FDISK)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/sbin/fdisk $(IDIR_FDISK)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/sbin/fdisk $(IDIR_FDISK)/usr/sbin/
 	$(RSTRIP) $(IDIR_FDISK)
 	$(IPKG_BUILD) $(IDIR_FDISK) $(PACKAGE_DIR)
 
 $(IPKG_LOSETUP):
 	install -d -m0755 $(IDIR_LOSETUP)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/sbin/losetup $(IDIR_LOSETUP)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/sbin/losetup $(IDIR_LOSETUP)/usr/sbin/
 	$(RSTRIP) $(IDIR_LOSETUP)
 	$(IPKG_BUILD) $(IDIR_LOSETUP) $(PACKAGE_DIR)
 
 $(IPKG_SWAP_UTILS):
 	install -d -m0755 $(IDIR_SWAP_UTILS)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/sbin/mkswap $(IDIR_SWAP_UTILS)/usr/sbin/
-	cp -fpR $(PKG_INSTALL_DIR)/sbin/swap{on,off} $(IDIR_SWAP_UTILS)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/sbin/mkswap $(IDIR_SWAP_UTILS)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/sbin/swap{on,off} $(IDIR_SWAP_UTILS)/usr/sbin/
 	$(RSTRIP) $(IDIR_SWAP_UTILS)
 	$(IPKG_BUILD) $(IDIR_SWAP_UTILS) $(PACKAGE_DIR)
 

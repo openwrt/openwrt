@@ -21,7 +21,7 @@ $(eval $(call PKG_template,MINI_HTTPD_OPENSSL,mini-httpd-openssl,$(PKG_VERSION)-
 
 
 $(PKG_BUILD_DIR)/.configured:
-	cp -f ./files/matrixssl_helper.{c,h} $(PKG_BUILD_DIR)/
+	$(CP) ./files/matrixssl_helper.{c,h} $(PKG_BUILD_DIR)/
 	touch $@
 
 $(PKG_BUILD_DIR)/.built:

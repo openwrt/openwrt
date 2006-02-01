@@ -63,13 +63,13 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_LIBHOWL):
 	install -m0755 -d $(IDIR_LIBHOWL)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/lib{howl,mDNSResponder}.so.* $(IDIR_LIBHOWL)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/lib{howl,mDNSResponder}.so.* $(IDIR_LIBHOWL)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBHOWL)
 	$(IPKG_BUILD) $(IDIR_LIBHOWL) $(PACKAGE_DIR)
 
 $(IPKG_HOWL_UTILS):
 	install -m0755 -d $(IDIR_HOWL_UTILS)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/mDNS{Browse,Publish,Query,Resolve} $(IDIR_HOWL_UTILS)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/mDNS{Browse,Publish,Query,Resolve} $(IDIR_HOWL_UTILS)/usr/bin/
 	$(RSTRIP) $(IDIR_HOWL_UTILS)
 	$(IPKG_BUILD) $(IDIR_HOWL_UTILS) $(PACKAGE_DIR)
 	
@@ -79,7 +79,7 @@ $(IPKG_MDNSRESPONDER):
 	install -m0755 -d $(IDIR_MDNSRESPONDER)/etc/init.d
 	install -m0644 ./files/mDNSResponder.init $(IDIR_MDNSRESPONDER)/etc/init.d/mDNSResponder
 	install -m0755 -d $(IDIR_MDNSRESPONDER)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/mDNSResponder $(IDIR_MDNSRESPONDER)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/mDNSResponder $(IDIR_MDNSRESPONDER)/usr/sbin/
 	$(RSTRIP) $(IDIR_MDNSRESPONDER)
 	$(IPKG_BUILD) $(IDIR_MDNSRESPONDER) $(PACKAGE_DIR)
 	
@@ -87,7 +87,7 @@ $(IPKG_AUTOIPD):
 	install -m0755 -d $(IDIR_AUTOIPD)/etc/init.d
 	install -m0644 ./files/autoipd.init $(IDIR_AUTOIPD)/etc/init.d/autoipd
 	install -m0755 -d $(IDIR_AUTOIPD)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/autoipd $(IDIR_AUTOIPD)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/autoipd $(IDIR_AUTOIPD)/usr/sbin/
 	$(RSTRIP) $(IDIR_AUTOIPD)
 	$(IPKG_BUILD) $(IDIR_AUTOIPD) $(PACKAGE_DIR)
 	
@@ -95,17 +95,17 @@ $(IPKG_NIFD):
 	install -m0755 -d $(IDIR_NIFD)/etc/init.d
 	install -m0644 ./files/nifd.init $(IDIR_NIFD)/etc/init.d/nifd
 	install -m0755 -d $(IDIR_NIFD)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/nifd $(IDIR_NIFD)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/nifd $(IDIR_NIFD)/usr/sbin/
 	$(RSTRIP) $(IDIR_NIFD)
 	$(IPKG_BUILD) $(IDIR_NIFD) $(PACKAGE_DIR)
 	
 $(STAGING_DIR)/usr/lib/libhowl.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/howl $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/howl $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/lib{howl,mDNSResponder}.{a,so*} $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/lib{howl,mDNSResponder}.{a,so*} $(STAGING_DIR)/usr/lib/
 	mkdir -p $(STAGING_DIR)/usr/lib/pkgconfig
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/howl.pc $(STAGING_DIR)/usr/lib/pkgconfig/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/howl.pc $(STAGING_DIR)/usr/lib/pkgconfig/
 	touch $(STAGING_DIR)/usr/lib/libhowl.so
 
 install-dev: $(STAGING_DIR)/usr/lib/libhowl.so

@@ -64,7 +64,7 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_SLURM):
 	install -d -m0755 $(IDIR_SLURM)/usr/bin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/bin/slurm $(IDIR_SLURM)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/slurm $(IDIR_SLURM)/usr/bin/
 	$(RSTRIP) $(IDIR_SLURM)
 	$(IPKG_BUILD) $(IDIR_SLURM) $(PACKAGE_DIR)
 

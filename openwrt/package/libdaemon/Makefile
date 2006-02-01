@@ -63,18 +63,18 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_LIBDAEMON):
 	install -d -m0755 $(IDIR_LIBDAEMON)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libdaemon.so.* $(IDIR_LIBDAEMON)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libdaemon.so.* $(IDIR_LIBDAEMON)/usr/lib/
 	$(RSTRIP) $(IDIR_LIBDAEMON)
 	$(IPKG_BUILD) $(IDIR_LIBDAEMON) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/lib/libdaemon.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/libdaemon $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/libdaemon $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libdaemon.a $(STAGING_DIR)/usr/lib/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libdaemon.so* $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libdaemon.a $(STAGING_DIR)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libdaemon.so* $(STAGING_DIR)/usr/lib/
 	mkdir -p $(STAGING_DIR)/usr/lib/pkgconfig
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/libdaemon.pc $(STAGING_DIR)/usr/lib/pkgconfig/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/libdaemon.pc $(STAGING_DIR)/usr/lib/pkgconfig/
 	$(SED) 's,-I$${includedir},,g' $(STAGING_DIR)/usr/lib/pkgconfig/libdaemon.pc
 	$(SED) 's,-L$${libdir},,g' $(STAGING_DIR)/usr/lib/pkgconfig/libdaemon.pc
 	touch $@

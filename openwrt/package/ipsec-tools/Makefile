@@ -72,14 +72,14 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_IPSEC_TOOLS):
 	install -d -m0755 $(IDIR_IPSEC_TOOLS)/etc
-	cp -fpR $(PKG_BUILD_DIR)/src/racoon/samples/racoon.conf $(IDIR_IPSEC_TOOLS)/etc/
+	$(CP) $(PKG_BUILD_DIR)/src/racoon/samples/racoon.conf $(IDIR_IPSEC_TOOLS)/etc/
 	install -d -m0755 $(IDIR_IPSEC_TOOLS)/usr/lib/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libipsec.so.* $(IDIR_IPSEC_TOOLS)/usr/lib/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libracoon.so.* $(IDIR_IPSEC_TOOLS)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libipsec.so.* $(IDIR_IPSEC_TOOLS)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libracoon.so.* $(IDIR_IPSEC_TOOLS)/usr/lib/
 	install -d -m0755 $(IDIR_IPSEC_TOOLS)/usr/sbin
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/plainrsa-gen $(IDIR_IPSEC_TOOLS)/usr/sbin/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/racoon $(IDIR_IPSEC_TOOLS)/usr/sbin/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/racoonctl $(IDIR_IPSEC_TOOLS)/usr/sbin/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/sbin/setkey $(IDIR_IPSEC_TOOLS)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/plainrsa-gen $(IDIR_IPSEC_TOOLS)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/racoon $(IDIR_IPSEC_TOOLS)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/racoonctl $(IDIR_IPSEC_TOOLS)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/setkey $(IDIR_IPSEC_TOOLS)/usr/sbin/
 	$(RSTRIP) $(IDIR_IPSEC_TOOLS)
 	$(IPKG_BUILD) $(IDIR_IPSEC_TOOLS) $(PACKAGE_DIR)
