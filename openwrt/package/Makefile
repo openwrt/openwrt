@@ -215,9 +215,11 @@ package-$(BR2_PACKAGE_SRELAY) += srelay
 package-$(BR2_PACKAGE_STRACE) += strace
 package-$(BR2_PACKAGE_TCPDUMP) += tcpdump
 package-$(BR2_PACKAGE_TINC) += tinc
+package-$(BR2_PACKAGE_TINYPROXY) += tinyproxy
 package-$(BR2_PACKAGE_TOR) += tor
 package-$(BR2_PACKAGE_TTCP) += ttcp
 package-$(BR2_PACKAGE_UCLIBCXX) += uclibc++
+package-$(BR2_PACKAGE_UDP_BROADCAST_RELAY) += udp-broadcast-relay
 package-$(BR2_PACKAGE_ULOGD) += ulogd
 package-$(BR2_PACKAGE_UPDATEDD) += updatedd
 package-$(BR2_COMPILE_USBUTILS) += usbutils
@@ -266,6 +268,7 @@ $(INSTALL_PACKAGES): base-files-install
 amwall-compile: libamsel-compile
 arpd-compile: libpcap-compile libdnet-compile libevent-compile
 arpwatch-compile: libpcap-compile
+atftp-compile: readline-compile
 avahi-compile: libdaemon-compile expat-compile libgdbm-compile
 bind-compile: openssl-compile
 clinkc-compile: expat-compile
