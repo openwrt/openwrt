@@ -2,6 +2,7 @@
 #
 # Copyright (C) 2002-2004 Erik Andersen <andersen@codepoet.org>
 
+CP=cp -fpR
 
 # Select the compiler needed to build binaries for your development system
 HOSTCC    = gcc
