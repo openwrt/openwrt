@@ -25,6 +25,7 @@ $(eval $(call KMOD_template,PPP,ppp,\
 	$(MODULES_DIR)/kernel/drivers/net/ppp_async.ko \
 	$(MODULES_DIR)/kernel/drivers/net/ppp_generic.ko \
 	$(MODULES_DIR)/kernel/drivers/net/slhc.ko \
+	$(MODULES_DIR)/kernel/lib/crc-ccitt.ko \
 ,CONFIG_PPP))
 
 #$(eval $(call KMOD_template,MPPE,mppe,\
