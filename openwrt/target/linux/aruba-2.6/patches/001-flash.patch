@@ -1,0 +1,159 @@
+diff -Nur linux-2.6.15/arch/mips/aruba/flash_lock.c linux-2.6.15-openwrt/arch/mips/aruba/flash_lock.c
+--- linux-2.6.15/arch/mips/aruba/flash_lock.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.15-openwrt/arch/mips/aruba/flash_lock.c	2006-01-10 00:32:32.000000000 +0100
+@@ -0,0 +1,27 @@
++#include <linux/module.h>
++#include <linux/types.h>
++#include <asm/bootinfo.h>
++
++#define AP70_PROT_ADDR 0xb8010008
++#define AP70_PROT_DATA 0x8
++#define AP60_PROT_ADDR 0xB8400000
++#define AP60_PROT_DATA 0x04000000
++
++void unlock_ap60_70_flash(void)
++{
++	volatile __u32 val;
++	switch (mips_machtype) {
++		case MACH_ARUBA_AP70:
++			val = *(volatile __u32 *)AP70_PROT_ADDR;
++			val &= ~(AP70_PROT_DATA);
++			*(volatile __u32 *)AP70_PROT_ADDR = val;
++			break;
++		case MACH_ARUBA_AP65:
++		case MACH_ARUBA_AP60:
++		default:
++			val = *(volatile __u32 *)AP60_PROT_ADDR;
++			val &= ~(AP60_PROT_DATA);
++			*(volatile __u32 *)AP60_PROT_ADDR = val;
++			break;
++	}
++}
+diff -Nur linux-2.6.15/drivers/mtd/chips/cfi_probe.c linux-2.6.15-openwrt/drivers/mtd/chips/cfi_probe.c
+--- linux-2.6.15/drivers/mtd/chips/cfi_probe.c	2006-01-03 04:21:10.000000000 +0100
++++ linux-2.6.15-openwrt/drivers/mtd/chips/cfi_probe.c	2006-01-10 00:32:32.000000000 +0100
+@@ -26,6 +26,74 @@
+ static void print_cfi_ident(struct cfi_ident *);
+ #endif
+ 
++#if 1
++
++#define AMD_AUTOSEL_OFF1	0xAAA
++#define AMD_AUTOSEL_OFF2	0x555
++#define AMD_MANUF_ID		0x1
++#define AMD_DEVICE_ID1		0xF6 /* T */
++#define AMD_DEVICE_ID2		0xF9 /* B */
++/* Foll. are definitions for Macronix Flash Part */
++#define MCX_MANUF_ID		0xC2
++#define MCX_DEVICE_ID1		0xA7
++#define MCX_DEVICE_ID2		0xA8
++/* Foll. common to both AMD and Macronix */
++#define FACTORY_LOCKED		0x99
++#define USER_LOCKED		0x19
++
++/* NOTE: AP-70/6x use BYTE mode flash access. Therefore the
++ * lowest Addr. pin in the flash is not A0 but A-1 (A minus 1).
++ * CPU's A0 is tied to Flash's A-1, A1 to A0 and so on. This
++ * gives 4MB of byte-addressable mem. In byte mode, all addr
++ * need to be multiplied by 2 (i.e compared to word mode).
++ * NOTE: AMD_AUTOSEL_OFF1 and OFF2 are already mult. by 2
++ * Just blindly use the addr offsets suggested in the manual
++ * for byte mode and you'll be OK. Offs. in Table 6 need to
++ * be mult by 2 (for getting autosel params)
++ */
++void
++flash_detect(struct map_info *map, __u32 base, struct cfi_private *cfi)
++{
++	map_word val[3];
++	int osf = cfi->interleave * cfi->device_type; // =2 for AP70/6x
++	char *manuf, *part, *lock ;
++
++	if (osf != 1) return ;
++
++	cfi_send_gen_cmd(0xAA, AMD_AUTOSEL_OFF1, base, map, cfi, cfi->device_type, NULL);
++	cfi_send_gen_cmd(0x55, AMD_AUTOSEL_OFF2, base, map, cfi, cfi->device_type, NULL);
++	cfi_send_gen_cmd(0x90, AMD_AUTOSEL_OFF1, base, map, cfi, cfi->device_type, NULL);
++	val[0] = map_read(map, base) ; // manuf ID
++	val[1] = map_read(map, base+2) ; // device ID
++	val[2] = map_read(map, base+6) ; // lock indicator
++#if 0
++printk("v1=0x%x v2=0x%x v3=0x%x\n", val[0], val[1], val[2]) ;
++#endif
++	if (val[0].x[0] == AMD_MANUF_ID) {
++		manuf = "AMD Flash" ;
++		if (val[1].x[0] == AMD_DEVICE_ID1)
++			part = "AM29LV320D (Top)" ;
++		else if (val[1].x[0] == AMD_DEVICE_ID2)
++			part = "AM29LV320D (Bot)" ;
++		else part = "Unknown" ;
++	} else if (val[0].x[0] == MCX_MANUF_ID) {
++		manuf = "Macronix Flash" ;
++		if (val[1].x[0] == MCX_DEVICE_ID1)
++			part = "MX29LV320A (Top)" ;
++		else if (val[1].x[0] == MCX_DEVICE_ID2)
++			part = "MX29LV320A (Bot)" ;
++		else part = "Unknown" ;
++	} else
++		return ;
++	if (val[2].x[0] == FACTORY_LOCKED)
++		lock = "Factory Locked" ;
++	else if (val[2].x[0] == USER_LOCKED)
++		lock = "User Locked" ;
++	else lock = "Unknown locking" ;
++	printk("%s %s (%s)\n", manuf, part, lock) ;
++}
++#endif
++
+ static int cfi_probe_chip(struct map_info *map, __u32 base,
+ 			  unsigned long *chip_map, struct cfi_private *cfi);
+ static int cfi_chip_setup(struct map_info *map, struct cfi_private *cfi);
+@@ -118,6 +186,10 @@
+ 	}
+ 
+ 	xip_disable();
++#if 1
++	//cfi_send_gen_cmd(0xF0, 0, base, map, cfi, cfi->device_type, NULL);
++	flash_detect(map, base, cfi) ;
++#endif
+ 	cfi_send_gen_cmd(0xF0, 0, base, map, cfi, cfi->device_type, NULL);
+ 	cfi_send_gen_cmd(0xFF, 0, base, map, cfi, cfi->device_type, NULL);
+ 	cfi_send_gen_cmd(0x98, 0x55, base, map, cfi, cfi->device_type, NULL);
+diff -Nur linux-2.6.15/drivers/mtd/maps/physmap.c linux-2.6.15-openwrt/drivers/mtd/maps/physmap.c
+--- linux-2.6.15/drivers/mtd/maps/physmap.c	2006-01-03 04:21:10.000000000 +0100
++++ linux-2.6.15-openwrt/drivers/mtd/maps/physmap.c	2006-01-10 00:32:32.000000000 +0100
+@@ -34,15 +34,31 @@
+ static struct mtd_partition *mtd_parts;
+ static int                   mtd_parts_nb;
+ 
+-static int num_physmap_partitions;
+-static struct mtd_partition *physmap_partitions;
++static int num_physmap_partitions = 3;
++static struct mtd_partition physmap_partitions[] = {
++	{
++                name:           "zImage",
++                size:           0x3f0000-0x80000,
++                offset:         0x80000,
++        },
++	{
++                name:           "JFFS2",
++                size:           0x3f0000-0x120000,
++                offset:         0x120000,
++	},
++	{
++		name:		"NVRAM",
++		size:		0x2000,
++		offset:		0x3f8000,
++	}
++};
+ 
+ static const char *part_probes[] __initdata = {"cmdlinepart", "RedBoot", NULL};
+ 
+ void physmap_set_partitions(struct mtd_partition *parts, int num_parts)
+ {
+-	physmap_partitions=parts;
+-	num_physmap_partitions=num_parts;
++//	physmap_partitions=parts;
++//	num_physmap_partitions=num_parts;
+ }
+ #endif /* CONFIG_MTD_PARTITIONS */
+ 
