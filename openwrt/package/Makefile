@@ -21,6 +21,7 @@ package-$(BR2_PACKAGE_BWM) += bwm
 package-$(BR2_PACKAGE_CGILIB) += cgilib
 package-$(BR2_PACKAGE_CHILLISPOT) += chillispot
 package-$(BR2_PACKAGE_CIFSMOUNT) += cifsmount
+package-$(BR2_PACKAGE_CLINKC) += clinkc
 package-$(BR2_PACKAGE_COLLECTD) += collectd
 package-$(BR2_PACKAGE_CUPS) += cups
 package-$(BR2_COMPILE_CURL) += curl
@@ -209,6 +210,7 @@ package-$(BR2_COMPILE_SPEEX) += speex
 package-$(BR2_COMPILE_SQLITE) += sqlite
 package-$(BR2_COMPILE_SQLITE2) += sqlite2
 package-$(BR2_PACKAGE_SSMTP) += ssmtp
+package-$(BR2_PACKAGE_SSLTUNNEL) += ssltunnel
 package-$(BR2_PACKAGE_SRELAY) += srelay
 package-$(BR2_PACKAGE_STRACE) += strace
 package-$(BR2_PACKAGE_TCPDUMP) += tcpdump
@@ -269,6 +271,7 @@ arpwatch-compile: libpcap-compile
 atftp-compile: readline-compile
 avahi-compile: libdaemon-compile expat-compile libgdbm-compile
 bind-compile: openssl-compile
+clinkc-compile: expat-compile
 curl-compile: openssl-compile zlib-compile
 cyrus-sasl-compile: openssl-compile
 deco-compile: ncurses-compile
@@ -305,6 +308,7 @@ lighttpd-compile: openssl-compile pcre-compile
 madplay-compile: libid3tag-compile libmad-compile
 miax-compile: bluez-libs-compile
 miredo-compile: uclibc++-compile
+monit-compile: openssl-compile
 mt-daapd-compile: howl-compile libgdbm-compile libid3tag-compile
 mtr-compile: ncurses-compile
 mysql-compile: ncurses-compile zlib-compile readline-compile
@@ -345,6 +349,7 @@ sipsak-compile: openssl-compile
 socat-compile: openssl-compile
 sqlite-compile: ncurses-compile readline-compile
 sqlite2-compile: ncurses-compile readline-compile
+ssltunnel-compile: openssl-compile ppp-compile
 tcpdump-compile: libpcap-compile
 tinc-compile: zlib-compile openssl-compile liblzo-compile
 tor-compile: libevent-compile openssl-compile zlib-compile
