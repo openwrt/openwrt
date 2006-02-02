@@ -1,0 +1,488 @@
+diff -Nur linux-2.6.15/arch/mips/aruba/idtIRQ.S linux-2.6.15-openwrt/arch/mips/aruba/idtIRQ.S
+--- linux-2.6.15/arch/mips/aruba/idtIRQ.S	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.15-openwrt/arch/mips/aruba/idtIRQ.S	2006-01-10 00:32:32.000000000 +0100
+@@ -0,0 +1,87 @@
++/**************************************************************************
++ *
++ *  BRIEF MODULE DESCRIPTION
++ *     Intterrupt dispatcher code for IDT boards
++ *
++ *  Copyright 2004 IDT Inc. (rischelp@idt.com)
++ *         
++ *  This program is free software; you can redistribute  it and/or modify it
++ *  under  the terms of  the GNU General  Public License as published by the
++ *  Free Software Foundation;  either version 2 of the  License, or (at your
++ *  option) any later version.
++ *
++ *  THIS  SOFTWARE  IS PROVIDED   ``AS  IS'' AND   ANY  EXPRESS OR IMPLIED
++ *  WARRANTIES,   INCLUDING, BUT NOT  LIMITED  TO, THE IMPLIED WARRANTIES OF
++ *  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN
++ *  NO  EVENT  SHALL   THE AUTHOR  BE    LIABLE FOR ANY   DIRECT, INDIRECT,
++ *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
++ *  NOT LIMITED   TO, PROCUREMENT OF  SUBSTITUTE GOODS  OR SERVICES; LOSS OF
++ *  USE, DATA,  OR PROFITS; OR  BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
++ *  ANY THEORY OF LIABILITY, WHETHER IN  CONTRACT, STRICT LIABILITY, OR TORT
++ *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
++ *  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ *
++ *  You should have received a copy of the  GNU General Public License along
++ *  with this program; if not, write  to the Free Software Foundation, Inc.,
++ *  675 Mass Ave, Cambridge, MA 02139, USA.
++ *
++ *
++ **************************************************************************
++ * May 2004 rkt, neb
++ *
++ * Initial Release
++ *
++ * 
++ *
++ **************************************************************************
++ */
++		
++	
++#include <asm/asm.h>
++#include <asm/mipsregs.h>
++#include <asm/regdef.h>
++#include <asm/stackframe.h>
++
++	.text
++	.set	noreorder
++	.set	noat
++	.align	5
++	NESTED(idtIRQ, PT_SIZE, sp)
++	.set noat
++	SAVE_ALL
++	CLI
++
++	.set	at
++	.set	noreorder
++
++	/* Get the pending interrupts */
++	mfc0    t0, CP0_CAUSE
++	nop
++			 
++	/* Isolate the allowed ones by anding the irq mask */
++	mfc0    t2, CP0_STATUS
++	move	a1, sp		/* need a nop here, hence we anticipate */
++	andi    t0, CAUSEF_IP
++	and     t0, t2
++								  
++	/* check for r4k counter/timer IRQ. */
++	
++	andi    t1, t0, CAUSEF_IP7
++	beqz    t1, 1f
++	nop
++
++	jal     aruba_timer_interrupt	
++
++	li	a0, 7
++
++	j	ret_from_irq
++	nop
++1:
++	jal	aruba_irqdispatch
++	move	a0, t0
++	j	ret_from_irq
++	nop
++
++	END(idtIRQ)
++
++
+diff -Nur linux-2.6.15/arch/mips/aruba/irq.c linux-2.6.15-openwrt/arch/mips/aruba/irq.c
+--- linux-2.6.15/arch/mips/aruba/irq.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.15-openwrt/arch/mips/aruba/irq.c	2006-01-10 00:32:32.000000000 +0100
+@@ -0,0 +1,393 @@
++/**************************************************************************
++ *
++ *  BRIEF MODULE DESCRIPTION
++ *     Interrupt routines for IDT EB434 boards
++ *
++ *  Copyright 2004 IDT Inc. (rischelp@idt.com)
++ *         
++ *  This program is free software; you can redistribute  it and/or modify it
++ *  under  the terms of  the GNU General  Public License as published by the
++ *  Free Software Foundation;  either version 2 of the  License, or (at your
++ *  option) any later version.
++ *
++ *  THIS  SOFTWARE  IS PROVIDED   ``AS  IS'' AND   ANY  EXPRESS OR IMPLIED
++ *  WARRANTIES,   INCLUDING, BUT NOT  LIMITED  TO, THE IMPLIED WARRANTIES OF
++ *  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN
++ *  NO  EVENT  SHALL   THE AUTHOR  BE    LIABLE FOR ANY   DIRECT, INDIRECT,
++ *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
++ *  NOT LIMITED   TO, PROCUREMENT OF  SUBSTITUTE GOODS  OR SERVICES; LOSS OF
++ *  USE, DATA,  OR PROFITS; OR  BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
++ *  ANY THEORY OF LIABILITY, WHETHER IN  CONTRACT, STRICT LIABILITY, OR TORT
++ *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
++ *  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ *
++ *  You should have received a copy of the  GNU General Public License along
++ *  with this program; if not, write  to the Free Software Foundation, Inc.,
++ *  675 Mass Ave, Cambridge, MA 02139, USA.
++ *
++ *
++ **************************************************************************
++ * May 2004 rkt, neb
++ *
++ * Initial Release
++ *
++ * 
++ *
++ **************************************************************************
++ */
++
++#include <linux/errno.h>
++#include <linux/init.h>
++#include <linux/kernel_stat.h>
++#include <linux/module.h>
++#include <linux/signal.h>
++#include <linux/sched.h>
++#include <linux/types.h>
++#include <linux/interrupt.h>
++#include <linux/ioport.h>
++#include <linux/timex.h>
++#include <linux/slab.h>
++#include <linux/random.h>
++#include <linux/delay.h>
++
++#include <asm/bitops.h>
++#include <asm/bootinfo.h>
++#include <asm/io.h>
++#include <asm/mipsregs.h>
++#include <asm/system.h>
++#include <asm/idt-boards/rc32434/rc32434.h>
++#include <asm/idt-boards/rc32434/rc32434_gpio.h>
++
++#include <asm/irq.h>
++
++#undef DEBUG_IRQ
++#ifdef DEBUG_IRQ
++/* note: prints function name for you */
++#define DPRINTK(fmt, args...) printk("%s: " fmt, __FUNCTION__ , ## args)
++#else
++#define DPRINTK(fmt, args...)
++#endif
++
++extern asmlinkage void idtIRQ(void);
++static unsigned int startup_irq(unsigned int irq);
++static void end_irq(unsigned int irq_nr);
++static void mask_and_ack_irq(unsigned int irq_nr);
++static void aruba_enable_irq(unsigned int irq_nr);
++static void aruba_disable_irq(unsigned int irq_nr);
++
++extern void __init init_generic_irq(void);
++
++typedef struct {
++	u32 mask;
++	volatile u32 *base_addr;
++} intr_group_t;
++
++static const intr_group_t intr_group_merlot[NUM_INTR_GROUPS] = {
++	{0xffffffff, (u32 *) KSEG1ADDR(IC_GROUP0_PEND + 0)},
++};
++
++#define READ_PEND_MERLOT(base) (*((volatile unsigned long *)(0xbc003010)))
++#define READ_MASK_MERLOT(base) (*((volatile unsigned long *)(0xbc003010 + 4)))
++#define WRITE_MASK_MERLOT(base, val) ((*((volatile unsigned long *)((0xbc003010) + 4))) = (val))
++
++static const intr_group_t intr_group_muscat[NUM_INTR_GROUPS] = {
++	{0x0000efff, (u32 *) KSEG1ADDR(IC_GROUP0_PEND + 0 * IC_GROUP_OFFSET)},
++	{0x00001fff, (u32 *) KSEG1ADDR(IC_GROUP0_PEND + 1 * IC_GROUP_OFFSET)},
++	{0x00000007, (u32 *) KSEG1ADDR(IC_GROUP0_PEND + 2 * IC_GROUP_OFFSET)},
++	{0x0003ffff, (u32 *) KSEG1ADDR(IC_GROUP0_PEND + 3 * IC_GROUP_OFFSET)},
++	{0xffffffff, (u32 *) KSEG1ADDR(IC_GROUP0_PEND + 4 * IC_GROUP_OFFSET)}
++};
++
++#define READ_PEND_MUSCAT(base) (*(base))
++#define READ_MASK_MUSCAT(base) (*(base + 2))
++#define WRITE_MASK_MUSCAT(base, val) (*(base + 2) = (val))
++
++static inline int irq_to_group(unsigned int irq_nr)
++{
++	switch (mips_machtype) {
++		case MACH_ARUBA_AP70:
++			return ((irq_nr - GROUP0_IRQ_BASE) >> 5);
++		case MACH_ARUBA_AP65:
++		case MACH_ARUBA_AP60:
++		default:
++			return 0;
++	}
++}
++
++static inline int group_to_ip(unsigned int group)
++{
++	switch (mips_machtype) {
++		case MACH_ARUBA_AP70:
++			return group + 2;
++		case MACH_ARUBA_AP65:
++		case MACH_ARUBA_AP60:
++		default:
++			return 6;
++	}
++}
++
++static inline void enable_local_irq(unsigned int ip)
++{
++	int ipnum = 0x100 << ip;
++	clear_c0_cause(ipnum);
++	set_c0_status(ipnum);
++}
++
++static inline void disable_local_irq(unsigned int ip)
++{
++	int ipnum = 0x100 << ip;
++	clear_c0_status(ipnum);
++}
++
++static inline void ack_local_irq(unsigned int ip)
++{
++	int ipnum = 0x100 << ip;
++	clear_c0_cause(ipnum);
++}
++
++static void aruba_enable_irq(unsigned int irq_nr)
++{
++	int ip = irq_nr - GROUP0_IRQ_BASE;
++	unsigned int group, intr_bit;
++	volatile unsigned int *addr;
++	if (ip < 0) {
++		enable_local_irq(irq_nr);
++	} else {
++		// calculate group
++		switch (mips_machtype) {
++			case MACH_ARUBA_AP70:
++				group = ip >> 5;
++				break;
++			case MACH_ARUBA_AP65:
++			case MACH_ARUBA_AP60:
++			default:
++				group = 0;
++				break;
++		}
++
++		// calc interrupt bit within group
++		ip -= (group << 5);
++		intr_bit = 1 << ip;
++
++		// first enable the IP mapped to this IRQ
++		enable_local_irq(group_to_ip(group));
++
++		switch (mips_machtype) {
++			case MACH_ARUBA_AP70:
++				addr = intr_group_muscat[group].base_addr;
++				// unmask intr within group
++				WRITE_MASK_MUSCAT(addr, READ_MASK_MUSCAT(addr) & ~intr_bit);
++				break;
++			case MACH_ARUBA_AP65:
++			case MACH_ARUBA_AP60:
++			default:
++				addr = intr_group_merlot[group].base_addr;
++				WRITE_MASK_MERLOT(addr, READ_MASK_MERLOT(addr) | intr_bit);
++				break;
++		}
++	}
++}
++
++static void aruba_disable_irq(unsigned int irq_nr)
++{
++	int ip = irq_nr - GROUP0_IRQ_BASE;
++	unsigned int group, intr_bit, mask;
++	volatile unsigned int *addr;
++
++	// calculate group
++	switch (mips_machtype) {
++		case MACH_ARUBA_AP70:
++			group = ip >> 5;
++			break;
++		case MACH_ARUBA_AP65:
++		case MACH_ARUBA_AP60:
++		default:
++			group = 0;
++			break;
++	}
++
++	// calc interrupt bit within group
++	ip -= group << 5;
++	intr_bit = 1 << ip;
++
++	switch (mips_machtype) {
++		case MACH_ARUBA_AP70:
++			addr = intr_group_muscat[group].base_addr;
++			// mask intr within group
++			mask = READ_MASK_MUSCAT(addr);
++			mask |= intr_bit;
++			WRITE_MASK_MUSCAT(addr, mask);
++	
++			/*
++			   if there are no more interrupts enabled in this
++			   group, disable corresponding IP
++			 */
++			if (mask == intr_group_muscat[group].mask)
++				disable_local_irq(group_to_ip(group));
++			break;
++		case MACH_ARUBA_AP65:
++		case MACH_ARUBA_AP60:
++		default:
++			addr = intr_group_merlot[group].base_addr;
++			// mask intr within group
++			mask = READ_MASK_MERLOT(addr);
++			mask &= ~intr_bit;
++			WRITE_MASK_MERLOT(addr, mask);
++			if (!mask)
++				disable_local_irq(group_to_ip(group));
++			break;
++	}
++}
++
++static unsigned int startup_irq(unsigned int irq_nr)
++{
++	aruba_enable_irq(irq_nr);
++	return 0;
++}
++
++static void shutdown_irq(unsigned int irq_nr)
++{
++	aruba_disable_irq(irq_nr);
++	return;
++}
++
++static void mask_and_ack_irq(unsigned int irq_nr)
++{
++	aruba_disable_irq(irq_nr);
++	ack_local_irq(group_to_ip(irq_to_group(irq_nr)));
++}
++
++static void end_irq(unsigned int irq_nr)
++{
++
++	int ip = irq_nr - GROUP0_IRQ_BASE;
++	unsigned int intr_bit, group;
++	volatile unsigned int *addr;
++
++	if (irq_desc[irq_nr].status & (IRQ_DISABLED | IRQ_INPROGRESS)) {
++		printk("warning: end_irq %d did not enable (%x)\n",
++		       irq_nr, irq_desc[irq_nr].status);
++	}
++
++	switch (mips_machtype) {
++		case MACH_ARUBA_AP70:
++			if (irq_nr == GROUP4_IRQ_BASE + 9)       idt_gpio->gpioistat &= 0xfffffdff;
++			else if (irq_nr == GROUP4_IRQ_BASE + 10) idt_gpio->gpioistat &= 0xfffffbff;
++			else if (irq_nr == GROUP4_IRQ_BASE + 11) idt_gpio->gpioistat &= 0xfffff7ff;
++			else if (irq_nr == GROUP4_IRQ_BASE + 12) idt_gpio->gpioistat &= 0xffffefff;
++	
++			group = ip >> 5;
++	
++			// calc interrupt bit within group
++			ip -= (group << 5);
++			intr_bit = 1 << ip;
++	
++			// first enable the IP mapped to this IRQ
++			enable_local_irq(group_to_ip(group));
++	
++			addr = intr_group_muscat[group].base_addr;
++			// unmask intr within group
++			WRITE_MASK_MUSCAT(addr, READ_MASK_MUSCAT(addr) & ~intr_bit);
++			break;
++		case MACH_ARUBA_AP65:
++		case MACH_ARUBA_AP60:
++			group = 0;
++
++			// calc interrupt bit within group
++			intr_bit = 1 << ip;
++
++			// first enable the IP mapped to this IRQ
++			enable_local_irq(group_to_ip(group));
++
++			addr = intr_group_merlot[group].base_addr;
++			// unmask intr within group
++			WRITE_MASK_MERLOT(addr, READ_MASK_MERLOT(addr) | intr_bit);
++			break;
++	}
++}
++
++static struct hw_interrupt_type aruba_irq_type = {
++	.typename = "IDT434",
++	.startup = startup_irq,
++	.shutdown = shutdown_irq,
++	.enable = aruba_enable_irq,
++	.disable = aruba_disable_irq,
++	.ack = mask_and_ack_irq,
++	.end = end_irq,
++};
++
++void __init arch_init_irq(void)
++{
++	int i;
++	printk("Initializing IRQ's: %d out of %d\n", RC32434_NR_IRQS, NR_IRQS);
++	memset(irq_desc, 0, sizeof(irq_desc));
++	set_except_vector(0, idtIRQ);
++
++	for (i = 0; i < RC32434_NR_IRQS; i++) {
++		irq_desc[i].status = IRQ_DISABLED;
++		irq_desc[i].action = NULL;
++		irq_desc[i].depth = 1;
++		irq_desc[i].handler = &aruba_irq_type;
++		spin_lock_init(&irq_desc[i].lock);
++	}
++
++	switch (mips_machtype) {
++		case MACH_ARUBA_AP70:
++			break;
++		case MACH_ARUBA_AP65:
++		case MACH_ARUBA_AP60:
++		default:
++			WRITE_MASK_MERLOT(intr_group_merlot[0].base_addr, 0);
++			*((volatile unsigned long *)0xbc003014) = 0x10;
++			break;
++	}
++}
++
++/* Main Interrupt dispatcher */
++void aruba_irqdispatch(unsigned long cp0_cause, struct pt_regs *regs)
++{
++	unsigned int pend, group, ip;
++	volatile unsigned int *addr;
++	switch (mips_machtype) {
++		case MACH_ARUBA_AP70:
++			if ((ip = (cp0_cause & 0x7c00))) {
++				group = 21 - rc32434_clz(ip);
++		
++				addr = intr_group_muscat[group].base_addr;
++		
++				pend = READ_PEND_MUSCAT(addr);
++				pend &= ~READ_MASK_MUSCAT(addr);	// only unmasked interrupts
++				pend = 39 - rc32434_clz(pend);
++				do_IRQ((group << 5) + pend, regs);
++			}
++			break;
++		case MACH_ARUBA_AP65:
++		case MACH_ARUBA_AP60:
++		default:
++			if (cp0_cause & 0x4000) {
++				// Misc Interrupt
++				group = 0;
++				addr = intr_group_merlot[group].base_addr;
++				pend = READ_PEND_MERLOT(addr);
++				pend &= READ_MASK_MERLOT(addr);	// only unmasked interrupts
++				/* handle one misc interrupt at a time */
++				while (pend) {
++					unsigned int intr_bit, irq_nr;
++					intr_bit = pend ^ (pend - 1);
++					irq_nr = ((31 - rc32434_clz(pend)) + GROUP0_IRQ_BASE);
++					do_IRQ(irq_nr, regs);
++					pend &= ~intr_bit;
++				}
++			}
++			if (cp0_cause & 0x3c00) {
++				while (cp0_cause) {
++					unsigned int intr_bit, irq_nr;
++					intr_bit = cp0_cause ^ (cp0_cause - 1);
++					irq_nr = ((31 - rc32434_clz(cp0_cause)) - GROUP0_IRQ_BASE);
++					do_IRQ(irq_nr, regs);
++					cp0_cause &= ~intr_bit;
++				}
++			}
++			break;
++	}
++}
