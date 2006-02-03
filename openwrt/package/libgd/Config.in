@@ -2,6 +2,8 @@ config BR2_PACKAGE_LIBGD
 	prompt "libgd............................. The GD Graphics Library"
 	tristate
 	default m if CONFIG_DEVEL
+	select BR2_PACKAGE_LIBJPEG
+	select BR2_PACKAGE_LIBPNG
 	help
 	  The GD Graphics Library
 	  
