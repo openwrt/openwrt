@@ -415,3 +415,25 @@
 +};
 +
 +#endif
+--- linux-2.4.32/net/ipv4/netfilter/ip_conntrack_proto_gre.c	2006-02-04 19:16:25.000000000 +0100
++++ /home/florian//openwrt/trunk/openwrt/build_mipsel/linux/net/ipv4/netfilter/ip_conntrack_proto_gre.c	2006-02-04 18:19:08.000000000 +0100
+@@ -237,16 +237,16 @@
+ /* Returns verdict for packet, and may modify conntrack */
+ static int gre_packet(struct ip_conntrack *ct,
+ 		      struct iphdr *iph, size_t len,
+-		      enum ip_conntrack_info conntrackinfo)
++		      enum ip_conntrack_info ctinfo)
+ {
+ 	/* If we've seen traffic both ways, this is a GRE connection.
+ 	 * Extend timeout. */
+ 	if (ct->status & IPS_SEEN_REPLY) {
+-		ip_ct_refresh_acct(ct, ct->proto.gre.stream_timeout);
++		ip_ct_refresh_acct(ct, ctinfo, iph, ct->proto.gre.stream_timeout);
+ 		/* Also, more likely to be important, and not a probe. */
+ 		set_bit(IPS_ASSURED_BIT, &ct->status);
+ 	} else
+-		ip_ct_refresh_acct(ct, ct->proto.gre.timeout);
++		ip_ct_refresh_acct(ct, ctinfo, iph, ct->proto.gre.timeout);
+ 	
+ 	return NF_ACCEPT;
+ }
