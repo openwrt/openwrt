@@ -445,7 +445,7 @@ static int __init switch_init()
 
 static void __exit switch_exit()
 {
-	remove_proc_entry("vlan", NULL);
+	remove_proc_entry("switch", NULL);
 }
 
 MODULE_AUTHOR("Felix Fietkau <openwrt@nbd.name>");
