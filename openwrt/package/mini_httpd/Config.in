@@ -31,6 +31,14 @@ config BR2_PACKAGE_MINI_HTTPD
 	  
 	  http://www.acme.com/software/mini_httpd/
 
+config BR2_PACKAGE_MINI_HTTPD_HTPASSWD
+	prompt "mini-httpd-htpasswd............... Utility to generate HTTP access files"
+	tristate
+	default m if CONFIG_DEVEL
+	select BR2_PACKAGE_MINI_HTTPD
+	help
+		This file generates .htaccess/.htpasswd files to use HTTP access		authentication
+
 config BR2_PACKAGE_MINI_HTTPD_MATRIXSSL
 	prompt "mini-httpd-matrixssl.............. A small web server, built with SSL support using MatrixSSL"
 	tristate

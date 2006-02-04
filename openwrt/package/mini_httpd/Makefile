@@ -16,6 +16,7 @@ PKG_BUILD_DIR:=$(BUILD_DIR)/mini_httpd-$(PKG_VERSION)
 include $(TOPDIR)/package/rules.mk
 
 $(eval $(call PKG_template,MINI_HTTPD,mini-httpd,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,MINI_HTTPD_HTPASSWD,mini-httpd-htpasswd,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,MINI_HTTPD_MATRIXSSL,mini-httpd-matrixssl,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,MINI_HTTPD_OPENSSL,mini-httpd-openssl,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
@@ -70,6 +71,12 @@ $(IPKG_MINI_HTTPD):
 	install -m0755 $(PKG_BUILD_DIR)/mini_httpd $(IDIR_MINI_HTTPD)/usr/sbin/
 	$(RSTRIP) $(IDIR_MINI_HTTPD)
 	$(IPKG_BUILD) $(IDIR_MINI_HTTPD) $(PACKAGE_DIR)
+
+$(IPKG_MINI_HTTPD_HTPASSWD):
+	install -d -m0755 $(IDIR_MINI_HTTPD_HTPASSWD)/usr/sbin
+	install -m0755 $(PKG_BUILD_DIR)/htpasswd $(IDIR_MINI_HTTPD_HTPASSWD)/usr/sbin/
+	$(RSTRIP) $(IDIR_MINI_HTTPD_HTPASSWD)
+	$(IPKG_BUILD) $(IDIR_MINI_HTTPD_HTPASSWD) $(PACKAGE_DIR)
 
 $(IPKG_MINI_HTTPD_MATRIXSSL):
 	install -d -m0755 $(IDIR_MINI_HTTPD_MATRIXSSL)/etc
