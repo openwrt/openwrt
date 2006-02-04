@@ -1,23 +1,24 @@
 diff -urN linux.old/include/linux/netfilter_ipv4/ipt_multiport.h linux.dev/include/linux/netfilter_ipv4/ipt_multiport.h
 --- linux.old/include/linux/netfilter_ipv4/ipt_multiport.h	2000-12-11 22:31:30.000000000 +0100
-+++ linux.dev/include/linux/netfilter_ipv4/ipt_multiport.h	2006-02-04 05:05:51.928476750 +0100
-@@ -18,4 +18,13 @@
++++ linux.dev/include/linux/netfilter_ipv4/ipt_multiport.h	2006-02-04 05:23:54.318518250 +0100
+@@ -11,11 +11,12 @@
+ 
+ #define IPT_MULTI_PORTS	15
+ 
+-/* Must fit inside union ipt_matchinfo: 16 bytes */
+-struct ipt_multiport
++struct ipt_multiport_v1
+ {
+ 	u_int8_t flags;				/* Type of comparison */
  	u_int8_t count;				/* Number of ports */
  	u_int16_t ports[IPT_MULTI_PORTS];	/* Ports */
- };
-+
-+struct ipt_multiport_v1
-+{
-+	u_int8_t flags;				/* Type of comparison */
-+	u_int8_t count;				/* Number of ports */
-+	u_int16_t ports[IPT_MULTI_PORTS];	/* Ports */
 +	u_int8_t pflags[IPT_MULTI_PORTS];	/* Port flags */
 +	u_int8_t invert;			/* Invert flag */
-+};
+ };
  #endif /*_IPT_MULTIPORT_H*/
 diff -urN linux.old/net/ipv4/netfilter/ipt_multiport.c linux.dev/net/ipv4/netfilter/ipt_multiport.c
 --- linux.old/net/ipv4/netfilter/ipt_multiport.c	2003-06-13 16:51:39.000000000 +0200
-+++ linux.dev/net/ipv4/netfilter/ipt_multiport.c	2006-02-04 05:05:03.701462750 +0100
++++ linux.dev/net/ipv4/netfilter/ipt_multiport.c	2006-02-04 05:34:27.362081000 +0100
 @@ -1,5 +1,14 @@
  /* Kernel module to match one of a list of TCP/UDP ports: ports are in
     the same place so we can treat them as equal. */
@@ -33,7 +34,7 @@ diff -urN linux.old/net/ipv4/netfilter/ipt_multiport.c linux.dev/net/ipv4/netfil
  #include <linux/module.h>
  #include <linux/types.h>
  #include <linux/udp.h>
-@@ -8,6 +17,10 @@
+@@ -8,97 +17,136 @@
  #include <linux/netfilter_ipv4/ipt_multiport.h>
  #include <linux/netfilter_ipv4/ip_tables.h>
  
@@ -44,18 +45,45 @@ diff -urN linux.old/net/ipv4/netfilter/ipt_multiport.c linux.dev/net/ipv4/netfil
  #if 0
  #define duprintf(format, args...) printk(format , ## args)
  #else
-@@ -33,34 +46,109 @@
- 	return 0;
- }
+ #define duprintf(format, args...)
+ #endif
  
-+/* Returns 1 if the port is matched by the test, 0 otherwise. */
-+static inline int
++/* from linux 2.6 skbuff.h */
++static inline void *skb_header_pointer(const struct sk_buff *skb, int offset,
++				       int len, void *buffer)
++{
++	int hlen = skb_headlen(skb);
++
++	if (hlen - offset >= len)
++		return skb->data + offset;
++
++	if (skb_copy_bits(skb, offset, buffer, len) < 0)
++		return NULL;
++
++	return buffer;
++}
++
++
+ /* Returns 1 if the port is matched by the test, 0 otherwise. */
+ static inline int
+-ports_match(const u_int16_t *portlist, enum ipt_multiport_flags flags,
+-	    u_int8_t count, u_int16_t src, u_int16_t dst)
 +ports_match_v1(const struct ipt_multiport_v1 *minfo,
 +	       u_int16_t src, u_int16_t dst)
-+{
-+	unsigned int i;
+ {
+ 	unsigned int i;
+-	for (i=0; i<count; i++) {
+-		if (flags != IPT_MULTIPORT_DESTINATION
+-		    && portlist[i] == src)
+-			return 1;
+-
+-		if (flags != IPT_MULTIPORT_SOURCE
+-		    && portlist[i] == dst)
+-			return 1;
+-	}
 +	u_int16_t s, e;
-+
+ 
+-	return 0;
 +	for (i=0; i < minfo->count; i++) {
 +		s = minfo->ports[i];
 +
@@ -91,27 +119,34 @@ diff -urN linux.old/net/ipv4/netfilter/ipt_multiport.c linux.dev/net/ipv4/netfil
 +	}
 + 
 + 	return minfo->invert;
-+}
-+
+ }
+ 
  static int
- match(const struct sk_buff *skb,
-       const struct net_device *in,
-       const struct net_device *out,
-       const void *matchinfo,
-       int offset,
+-match(const struct sk_buff *skb,
+-      const struct net_device *in,
+-      const struct net_device *out,
+-      const void *matchinfo,
+-      int offset,
 -      const void *hdr,
 -      u_int16_t datalen,
-       int *hotdrop)
+-      int *hotdrop)
++match_v1(const struct sk_buff *skb,
++	 const struct net_device *in,
++	 const struct net_device *out,
++	 const void *matchinfo,
++	 int offset,
++	 int *hotdrop)
  {
 -	const struct udphdr *udp = hdr;
+-	const struct ipt_multiport *multiinfo = matchinfo;
 +	u16 _ports[2], *pptr;
- 	const struct ipt_multiport *multiinfo = matchinfo;
++	const struct ipt_multiport_v1 *multiinfo = matchinfo;
++
++	if (offset)
++		return 0;
  
 -	/* Must be big enough to read ports. */
 -	if (offset == 0 && datalen < sizeof(struct udphdr)) {
-+	if (offset)
-+		return 0;
-+
 +	pptr = skb_header_pointer(skb, skb->nh.iph->ihl * 4,
 +				  sizeof(_ports), _ports);
 +	if (pptr == NULL) {
@@ -134,52 +169,27 @@ diff -urN linux.old/net/ipv4/netfilter/ipt_multiport.c linux.dev/net/ipv4/netfil
 -		&& ports_match(multiinfo->ports,
 -			       multiinfo->flags, multiinfo->count,
 -			       ntohs(udp->source), ntohs(udp->dest));
-+	return ports_match(multiinfo->ports,
-+			   multiinfo->flags, multiinfo->count,
-+			   ntohs(pptr[0]), ntohs(pptr[1]));
-+}
-+
-+static int
-+match_v1(const struct sk_buff *skb,
-+	 const struct net_device *in,
-+	 const struct net_device *out,
-+	 const void *matchinfo,
-+	 int offset,
-+	 int *hotdrop)
-+{
-+	u16 _ports[2], *pptr;
-+	const struct ipt_multiport_v1 *multiinfo = matchinfo;
-+
-+	if (offset)
-+		return 0;
-+
-+	pptr = skb_header_pointer(skb, skb->nh.iph->ihl * 4,
-+				  sizeof(_ports), _ports);
-+	if (pptr == NULL) {
-+		/* We've been asked to examine this packet, and we
-+		 * can't.  Hence, no choice but to drop.
-+		 */
-+		duprintf("ipt_multiport:"
-+			 " Dropping evil offset=0 tinygram.\n");
-+		*hotdrop = 1;
-+		return 0;
-+	}
-+
 +	return ports_match_v1(multiinfo, ntohs(pptr[0]), ntohs(pptr[1]));
  }
  
- /* Called when user tries to insert an entry of this type. */
-@@ -71,34 +159,54 @@
- 	   unsigned int matchsize,
- 	   unsigned int hook_mask)
+-/* Called when user tries to insert an entry of this type. */
+ static int
+-checkentry(const char *tablename,
+-	   const struct ipt_ip *ip,
+-	   void *matchinfo,
+-	   unsigned int matchsize,
+-	   unsigned int hook_mask)
++checkentry_v1(const char *tablename,
++	      const struct ipt_ip *ip,
++	      void *matchinfo,
++	      unsigned int matchsize,
++	      unsigned int hook_mask)
  {
 -	const struct ipt_multiport *multiinfo = matchinfo;
 -
 -	if (matchsize != IPT_ALIGN(sizeof(struct ipt_multiport)))
 -		return 0;
-+	return (matchsize == IPT_ALIGN(sizeof(struct ipt_multiport)));
-+}
- 
+-
 -	/* Must specify proto == TCP/UDP, no unknown flags or bad count */
 -	return (ip->proto == IPPROTO_TCP || ip->proto == IPPROTO_UDP)
 -		&& !(ip->invflags & IPT_INV_PROTO)
@@ -188,29 +198,13 @@ diff -urN linux.old/net/ipv4/netfilter/ipt_multiport.c linux.dev/net/ipv4/netfil
 -		    || multiinfo->flags == IPT_MULTIPORT_DESTINATION
 -		    || multiinfo->flags == IPT_MULTIPORT_EITHER)
 -		&& multiinfo->count <= IPT_MULTI_PORTS;
-+static int
-+checkentry_v1(const char *tablename,
-+	      const struct ipt_ip *ip,
-+	      void *matchinfo,
-+	      unsigned int matchsize,
-+	      unsigned int hook_mask)
-+{
 +	return (matchsize == IPT_ALIGN(sizeof(struct ipt_multiport_v1)));
  }
  
 -static struct ipt_match multiport_match
 -= { { NULL, NULL }, "multiport", &match, &checkentry, NULL, THIS_MODULE };
-+static struct ipt_match multiport_match = {
-+	.name		= "multiport",
-+	.revision	= 0,
-+	.match		= &match,
-+	.checkentry	= &checkentry,
-+	.me		= THIS_MODULE,
-+};
-+
 +static struct ipt_match multiport_match_v1 = {
 +	.name		= "multiport",
-+	.revision	= 1,
 +	.match		= &match_v1,
 +	.checkentry	= &checkentry_v1,
 +	.me		= THIS_MODULE,
@@ -221,19 +215,14 @@ diff -urN linux.old/net/ipv4/netfilter/ipt_multiport.c linux.dev/net/ipv4/netfil
 -	return ipt_register_match(&multiport_match);
 +	int err;
 +
-+	err = ipt_register_match(&multiport_match);
-+	if (!err) {
-+		err = ipt_register_match(&multiport_match_v1);
-+		if (err)
-+			ipt_unregister_match(&multiport_match);
-+	}
++	err = ipt_register_match(&multiport_match_v1);
 +
 +	return err;
  }
  
  static void __exit fini(void)
  {
- 	ipt_unregister_match(&multiport_match);
+-	ipt_unregister_match(&multiport_match);
 +	ipt_unregister_match(&multiport_match_v1);
  }
  
