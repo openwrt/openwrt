@@ -1,0 +1,37 @@
+diff -urN busybox.old/networking/httpd.c busybox.dev/networking/httpd.c
+--- busybox.old/networking/httpd.c	2004-10-08 10:03:29.000000000 +0200
++++ busybox.dev/networking/httpd.c	2006-02-04 01:54:19.688016250 +0100
+@@ -1467,12 +1467,22 @@
+ 		{
+ 			char *cipher;
+ 			char *pp;
++			char *ppnew = NULL;
++			struct passwd *pwd = NULL;
+ 
+ 			if(strncmp(p, request, u-request) != 0) {
+ 				/* user uncompared */
+ 				continue;
+ 			}
+ 			pp = strchr(p, ':');
++			if(pp && pp[1] == '$' && pp[2] == 'p' &&
++						 pp[3] == '$' && pp[4] &&
++						 (pwd = getpwnam(&pp[4])) != NULL) {
++				ppnew = malloc(5 + strlen(pwd->pw_passwd));
++				ppnew[0] = ':';
++				strcpy(ppnew + 1, pwd->pw_passwd);
++				pp = ppnew;
++			}
+ 			if(pp && pp[1] == '$' && pp[2] == '1' &&
+ 						 pp[3] == '$' && pp[4]) {
+ 				pp++;
+@@ -1482,6 +1492,10 @@
+ 				/* unauthorized */
+ 				continue;
+ 			}
++			if (ppnew) {
++				free(ppnew);
++				ppnew = NULL;
++			}
+ 		}
+ #endif
+ 		if (strcmp(p, request) == 0) {
