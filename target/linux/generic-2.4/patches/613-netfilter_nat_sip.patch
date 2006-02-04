@@ -1,6 +1,6 @@
-diff -urN linux-2.4.32/net/ipv4/netfilter/Config.in linux-2.4.32/net/ipv4/netfilter/Config.in
---- linux-2.4.32/net/ipv4/netfilter/Config.in	2005-12-11 21:34:32.000000000 +0100
-+++ linux-2.4.32/net/ipv4/netfilter/Config.in	2005-12-11 21:38:12.000000000 +0100
+diff -urN linux-2.4.32/net/ipv4/netfilter/Config.in linux-2.4.32.new/net/ipv4/netfilter/Config.in
+--- linux-2.4.32/net/ipv4/netfilter/Config.in	2006-02-04 19:16:25.000000000 +0100
++++ linux-2.4.32.new/net/ipv4/netfilter/Config.in	2006-02-04 19:00:13.000000000 +0100
 @@ -15,6 +15,7 @@
    dep_tristate '  Connection byte counter support' CONFIG_IP_NF_MATCH_CONNBYTES $CONFIG_IP_NF_CT_ACCT $CONFIG_IP_NF_CONNTRACK $CONFIG_IP_NF_IPTABLES
    dep_tristate '  GRE protocol support' CONFIG_IP_NF_CT_PROTO_GRE $CONFIG_IP_NF_CONNTRACK
@@ -9,7 +9,7 @@ diff -urN linux-2.4.32/net/ipv4/netfilter/Config.in linux-2.4.32/net/ipv4/netfil
  fi
  
  if [ "$CONFIG_EXPERIMENTAL" = "y" ]; then
-@@ -104,6 +105,13 @@
+@@ -103,6 +104,13 @@
            define_tristate CONFIG_IP_NF_NAT_PROTO_GRE $CONFIG_IP_NF_NAT
          fi
        fi
@@ -23,31 +23,9 @@ diff -urN linux-2.4.32/net/ipv4/netfilter/Config.in linux-2.4.32/net/ipv4/netfil
        if [ "$CONFIG_IP_NF_AMANDA" = "m" ]; then
          define_tristate CONFIG_IP_NF_NAT_AMANDA m
        else
-diff -urN linux-2.4.32/net/ipv4/netfilter/Makefile linux-2.4.32/net/ipv4/netfilter/Makefile
---- linux-2.4.32/net/ipv4/netfilter/Makefile	2005-12-11 21:34:32.000000000 +0100
-+++ linux-2.4.32/net/ipv4/netfilter/Makefile	2005-12-11 21:39:08.000000000 +0100
-@@ -53,6 +53,10 @@
- ifdef CONFIG_IP_NF_NAT_PPTP
- 	export-objs += ip_conntrack_pptp.o
- endif
-+obj-$(CONFIG_IP_NF_SIP) += ip_conntrack_sip.o
-+ifdef CONFIG_IP_NF_NAT_SIP
-+        export-objs += ip_conntrack_sip.o
-+endif
- 
- 
- # NAT helpers 
-@@ -62,6 +66,7 @@
- obj-$(CONFIG_IP_NF_NAT_IRC) += ip_nat_irc.o
- obj-$(CONFIG_IP_NF_NAT_PROTO_GRE) += ip_nat_proto_gre.o
- obj-$(CONFIG_IP_NF_NAT_PPTP) += ip_nat_pptp.o
-+obj-$(CONFIG_IP_NF_NAT_SIP) += ip_nat_sip.o
- 
- # generic IP tables 
- obj-$(CONFIG_IP_NF_IPTABLES) += ip_tables.o
-diff -urN linux-2.4.32/net/ipv4/netfilter/ip_conntrack_sip.c linux-2.4.32/net/ipv4/netfilter/ip_conntrack_sip.c
+diff -urN linux-2.4.32/net/ipv4/netfilter/ip_conntrack_sip.c linux-2.4.32.new/net/ipv4/netfilter/ip_conntrack_sip.c
 --- linux-2.4.32/net/ipv4/netfilter/ip_conntrack_sip.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.4.32/net/ipv4/netfilter/ip_conntrack_sip.c	2005-12-11 21:35:51.000000000 +0100
++++ linux-2.4.32.new/net/ipv4/netfilter/ip_conntrack_sip.c	2006-02-04 19:06:01.000000000 +0100
 @@ -0,0 +1,312 @@
 +/*
 + * SIP extension for IP connection tracking. 
@@ -266,7 +244,7 @@ diff -urN linux-2.4.32/net/ipv4/netfilter/ip_conntrack_sip.c linux-2.4.32/net/ip
 +	ct_sip_info->mangled = 0;	
 +
 +	/* keep the connection alive */
-+	ip_ct_refresh(ct, (SIP_EXPIRES * HZ));
++	ip_ct_refresh_acct(ct, ctinfo, iph, (SIP_EXPIRES * HZ));
 +
 +	/* Don't need to set the expectation for upstream direction */
 +	if (dir == IP_CT_DIR_REPLY)
@@ -361,9 +339,9 @@ diff -urN linux-2.4.32/net/ipv4/netfilter/ip_conntrack_sip.c linux-2.4.32/net/ip
 +
 +module_init(init);
 +module_exit(fini);
-diff -urN linux-2.4.32/net/ipv4/netfilter/ip_nat_sip.c linux-2.4.32/net/ipv4/netfilter/ip_nat_sip.c
+diff -urN linux-2.4.32/net/ipv4/netfilter/ip_nat_sip.c linux-2.4.32.new/net/ipv4/netfilter/ip_nat_sip.c
 --- linux-2.4.32/net/ipv4/netfilter/ip_nat_sip.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.4.32/net/ipv4/netfilter/ip_nat_sip.c	2005-12-11 21:35:51.000000000 +0100
++++ linux-2.4.32.new/net/ipv4/netfilter/ip_nat_sip.c	2006-02-04 19:00:13.000000000 +0100
 @@ -0,0 +1,800 @@
 +/*
 + * SIP extension for TCP NAT alteration. 
@@ -1165,9 +1143,31 @@ diff -urN linux-2.4.32/net/ipv4/netfilter/ip_nat_sip.c linux-2.4.32/net/ipv4/net
 +
 +module_init(init);
 +module_exit(fini);
-diff -urN linux-2.4.32/include/linux/netfilter_ipv4/ip_conntrack.h linux-2.4.32/include/linux/netfilter_ipv4/ip_conntrack.h
---- linux-2.4.32/include/linux/netfilter_ipv4/ip_conntrack.h	2005-12-11 21:34:32.000000000 +0100
-+++ linux-2.4.32/include/linux/netfilter_ipv4/ip_conntrack.h	2005-12-11 22:06:57.000000000 +0100
+diff -urN linux-2.4.32/net/ipv4/netfilter/Makefile linux-2.4.32.new/net/ipv4/netfilter/Makefile
+--- linux-2.4.32/net/ipv4/netfilter/Makefile	2006-02-04 19:16:25.000000000 +0100
++++ linux-2.4.32.new/net/ipv4/netfilter/Makefile	2006-02-04 19:00:13.000000000 +0100
+@@ -53,6 +53,10 @@
+ ifdef CONFIG_IP_NF_NAT_PPTP
+ 	export-objs += ip_conntrack_pptp.o
+ endif
++obj-$(CONFIG_IP_NF_SIP) += ip_conntrack_sip.o
++ifdef CONFIG_IP_NF_NAT_SIP
++        export-objs += ip_conntrack_sip.o
++endif
+ 
+ 
+ # NAT helpers 
+@@ -62,6 +66,7 @@
+ obj-$(CONFIG_IP_NF_NAT_IRC) += ip_nat_irc.o
+ obj-$(CONFIG_IP_NF_NAT_PROTO_GRE) += ip_nat_proto_gre.o
+ obj-$(CONFIG_IP_NF_NAT_PPTP) += ip_nat_pptp.o
++obj-$(CONFIG_IP_NF_NAT_SIP) += ip_nat_sip.o
+ 
+ # generic IP tables 
+ obj-$(CONFIG_IP_NF_IPTABLES) += ip_tables.o
+diff -urN linux-2.4.32/include/linux/netfilter_ipv4/ip_conntrack.h linux-2.4.32.new/include/linux/netfilter_ipv4/ip_conntrack.h
+--- linux-2.4.32/include/linux/netfilter_ipv4/ip_conntrack.h	2006-02-04 19:16:25.000000000 +0100
++++ linux-2.4.32.new/include/linux/netfilter_ipv4/ip_conntrack.h	2006-02-04 19:00:13.000000000 +0100
 @@ -71,6 +71,7 @@
  #include <linux/netfilter_ipv4/ip_conntrack_ftp.h>
  #include <linux/netfilter_ipv4/ip_conntrack_irc.h>
@@ -1192,9 +1192,9 @@ diff -urN linux-2.4.32/include/linux/netfilter_ipv4/ip_conntrack.h linux-2.4.32/
  };
  
  #ifdef CONFIG_IP_NF_NAT_NEEDED
-diff -urN linux-2.4.32/include/linux/netfilter_ipv4/ip_conntrack_sip.h linux-2.4.32/include/linux/netfilter_ipv4/ip_conntrack_sip.h
+diff -urN linux-2.4.32/include/linux/netfilter_ipv4/ip_conntrack_sip.h linux-2.4.32.new/include/linux/netfilter_ipv4/ip_conntrack_sip.h
 --- linux-2.4.32/include/linux/netfilter_ipv4/ip_conntrack_sip.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.4.32/include/linux/netfilter_ipv4/ip_conntrack_sip.h	2005-12-11 21:35:51.000000000 +0100
++++ linux-2.4.32.new/include/linux/netfilter_ipv4/ip_conntrack_sip.h	2006-02-04 19:00:13.000000000 +0100
 @@ -0,0 +1,56 @@
 +#ifndef _IP_CONNTRACK_SIP_H
 +#define _IP_CONNTRACK_SIP_H
