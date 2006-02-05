@@ -1,0 +1,12 @@
+diff -urN dnsmasq.old/src/forward.c dnsmasq.dev/src/forward.c
+--- dnsmasq.old/src/forward.c	2006-01-16 20:34:04.000000000 +0100
++++ dnsmasq.dev/src/forward.c	2006-02-05 04:41:37.148190000 +0100
+@@ -164,7 +164,7 @@
+ 	if (namelen >= domainlen &&
+ 	    hostname_isequal(matchstart, serv->domain) &&
+ 	    domainlen >= matchlen &&
+-	    (namelen == domainlen || *(serv->domain) == '.' || *(matchstart-1) == '.' ))
++	    (namelen == domainlen || *(serv->domain) == '.' || *(matchstart-1) == '.' || domainlen == 0))
+ 	  {
+ 	    unsigned short sflag = serv->addr.sa.sa_family == AF_INET ? F_IPV4 : F_IPV6;
+ 	    *type = SERV_HAS_DOMAIN;
