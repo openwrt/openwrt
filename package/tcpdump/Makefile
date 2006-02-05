@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=tcpdump
-PKG_VERSION:=3.8.3
+PKG_VERSION:=3.9.4
 PKG_RELEASE:=1
-PKG_MD5SUM:=30645001f4b97019677cad88d3811904
+PKG_MD5SUM:=4b64755bbc8ba1af49c747271a6df5b8
 
 PKG_SOURCE_URL:=http://www.tcpdump.org/release/ \
 	http://ftp.gwdg.de/pub/misc/tcpdump/ \

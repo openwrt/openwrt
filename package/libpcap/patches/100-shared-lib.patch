@@ -1,12 +1,13 @@
---- libpcap-0.8.3-orig/Makefile.in	2003-12-15 02:42:23.000000000 +0100
-+++ libpcap-0.8.3-7/Makefile.in	2005-03-08 03:38:22.000000000 +0100
+diff -urN libpcap-0.9.4.orig/Makefile.in libpcap-0.9.4/Makefile.in
+--- libpcap-0.9.4.orig/Makefile.in	2003-12-15 02:35:03.000000000 +0100
++++ libpcap-0.9.4/Makefile.in	2006-02-05 16:56:18.000000000 +0100
 @@ -37,6 +37,15 @@
  srcdir = @srcdir@
  VPATH = @srcdir@
  
 +# some defines for shared library compilation
-+MAJ=0.8
-+MIN=3
++MAJ=0.9
++MIN=4
 +VERSION=$(MAJ).$(MIN)
 +LIBNAME=pcap
 +LIBRARY=lib$(LIBNAME).a
@@ -16,7 +17,7 @@
  #
  # You shouldn't need to edit anything below.
  #
-@@ -49,6 +58,7 @@
+@@ -50,6 +59,7 @@
  
  # Standard CFLAGS
  CFLAGS = $(CCOPT) $(INCLS) $(DEFS)
@@ -24,20 +25,20 @@
  
  INSTALL = @INSTALL@
  INSTALL_PROGRAM = @INSTALL_PROGRAM@
-@@ -68,7 +78,11 @@
- # problem if you don't own the file but can write to the directory.
+@@ -70,7 +80,12 @@
  .c.o:
  	@rm -f $@
--	$(CC) $(CFLAGS) -c $(srcdir)/$*.c
+ 	$(CC) $(CFLAGS) -c $(srcdir)/$*.c
 +	$(CC) $(CFLAGS) -c -o $@ $(srcdir)/$*.c
-+
+ 
 +%_pic.o: %.c
 +	@rm -f $@
 +	$(CC) -fPIC $(CFLAGS) -c -o $@ $(srcdir)/$*.c
- 
++	
  PSRC =	pcap-@V_PCAP@.c
  FSRC =  fad-@V_FINDALLDEVS@.c
-@@ -83,6 +97,7 @@
+ SSRC =  @SSRC@
+@@ -84,6 +99,7 @@
  # We would like to say "OBJ = $(SRC:.c=.o)" but Ultrix's make cannot
  # hack the extra indirection
  OBJ =	$(PSRC:.c=.o) $(FSRC:.c=.o) $(CSRC:.c=.o) $(SSRC:.c=.o) $(GENSRC:.c=.o) $(LIBOBJS)
@@ -45,7 +46,7 @@
  HDR =	pcap.h pcap-int.h pcap-namedb.h pcap-nit.h pcap-pf.h \
  	ethertype.h gencode.h gnuc.h
  GENHDR = \
-@@ -94,15 +109,22 @@
+@@ -95,15 +111,23 @@
  TAGFILES = \
  	$(SRC) $(HDR) $(TAGHDR)
  
@@ -67,20 +68,22 @@
 +	ln -s $(SHAREDLIB) $(SOLIBRARY).$(MAJ)
 +	ln -s $(SOLIBRARY).$(MAJ) $(SOLIBRARY)
 +
- scanner.c: $(srcdir)/scanner.l
- 	@rm -f $@
- 	$(LEX) -t $< > $$$$.$@; mv $$$$.$@ $@
-@@ -110,6 +132,9 @@
++       
+ shared: libpcap.$(DYEXT)
+ 
+ #
+@@ -129,6 +153,10 @@
  scanner.o: scanner.c tokdefs.h
  	$(CC) $(CFLAGS) -c scanner.c
  
 +scanner_pic.o: scanner.c tokdefs.h
 +	$(CC) -fPIC $(CFLAGS) -o $@ -c scanner.c
 +
++
  pcap.o: version.h
  
  tokdefs.h: grammar.c
-@@ -123,9 +148,17 @@
+@@ -142,9 +170,16 @@
  	@rm -f $@
  	$(CC) $(CFLAGS) -Dyylval=pcap_lval -c grammar.c
  
@@ -94,18 +97,18 @@
 +version_pic.o: version.c
 +	$(CC) -fPIC $(CFLAGS) -c version.c -o $@
 +
-+
  snprintf.o: $(srcdir)/missing/snprintf.c
  	$(CC) $(CFLAGS) -o $@ -c $(srcdir)/missing/snprintf.c
  
-@@ -151,10 +184,16 @@
+@@ -170,10 +205,17 @@
  bpf_filter.o: bpf_filter.c
  	$(CC) $(CFLAGS) -c bpf_filter.c
  
 +bpf_filter_pic.o: bpf_filter.c
 +	$(CC) -fPIC $(CFLAGS) -c bpf_filter.c -o $@
 +
- install:
++
+ install: libpcap.a 
  	[ -d $(DESTDIR)$(libdir) ] || \
  	    (mkdir -p $(DESTDIR)$(libdir); chmod 755 $(DESTDIR)$(libdir))
  	$(INSTALL_DATA) libpcap.a $(DESTDIR)$(libdir)/libpcap.a
