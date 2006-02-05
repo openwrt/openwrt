@@ -1,8 +1,8 @@
-diff -urN tcpdump-3.8.3.old/tcpdump.c tcpdump-3.8.3.dev/tcpdump.c
---- tcpdump-3.8.3.old/tcpdump.c	2004-03-17 20:47:48.000000000 +0100
-+++ tcpdump-3.8.3.dev/tcpdump.c	2005-04-29 00:53:20.000000000 +0200
-@@ -596,20 +596,6 @@
- 				error("invalid data link type %s", dlt_name);
+diff -urN tcpdump-3.9.4.orig/tcpdump.c tcpdump-3.9.4/tcpdump.c
+--- tcpdump-3.9.4.orig/tcpdump.c	2005-08-23 12:29:41.000000000 +0200
++++ tcpdump-3.9.4/tcpdump.c	2006-02-05 17:52:37.000000000 +0100
+@@ -762,20 +762,6 @@
+ 				error("invalid data link type %s", gndo->ndo_dltname);
  			break;
  
 -#if defined(HAVE_PCAP_DEBUG) || defined(HAVE_YYDEBUG)
@@ -19,6 +19,6 @@ diff -urN tcpdump-3.8.3.old/tcpdump.c tcpdump-3.8.3.dev/tcpdump.c
 -			}
 -			break;
 -#endif
- 		default:
- 			usage();
- 			/* NOTREACHED */
+ 		case 'Z':
+ 			if (optarg) {
+ 				username = strdup(optarg);

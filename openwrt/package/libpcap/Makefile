@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libpcap
-PKG_VERSION:=0.8.3
-PKG_RELEASE:=2
-PKG_MD5SUM:=56a9d4615d8354fcfe8cff8c8443c77b
+PKG_VERSION:=0.9.4
+PKG_RELEASE:=1
+PKG_MD5SUM:=79025766e8027df154cb1f32de8a7974
 
 PKG_SOURCE_URL:=http://www.tcpdump.org/release/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz

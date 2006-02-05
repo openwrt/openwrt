@@ -1,6 +1,7 @@
---- libpcap-0.8.3-orig/nametoaddr.c	2003-11-19 19:13:48.000000000 +0100
-+++ libpcap-0.8.3-7/nametoaddr.c	2005-03-08 03:38:22.000000000 +0100
-@@ -333,7 +333,7 @@
+diff -urN libpcap-0.9.4.orig/nametoaddr.c libpcap-0.9.4/nametoaddr.c
+--- libpcap-0.9.4.orig/nametoaddr.c	2005-04-20 13:13:51.000000000 +0200
++++ libpcap-0.9.4/nametoaddr.c	2006-02-05 16:58:46.000000000 +0100
+@@ -410,7 +410,7 @@
  	e = ep = (u_char *)malloc(6);
  
  	while (*s) {
@@ -9,17 +10,18 @@
  			s += 1;
  		d = xdtoi(*s++);
  		if (isxdigit((unsigned char)*s)) {
---- libpcap-0.8.3-orig/scanner.l	2004-03-28 23:45:33.000000000 +0200
-+++ libpcap-0.8.3-7/scanner.l	2005-03-08 03:38:22.000000000 +0100
+diff -urN libpcap-0.9.4.orig/scanner.l libpcap-0.9.4/scanner.l
+--- libpcap-0.9.4.orig/scanner.l	2005-09-05 11:08:07.000000000 +0200
++++ libpcap-0.9.4/scanner.l	2006-02-05 17:00:13.000000000 +0100
 @@ -80,6 +80,7 @@
  N		([0-9]+|(0X|0x)[0-9A-Fa-f]+)
  B		([0-9A-Fa-f][0-9A-Fa-f]?)
  W		([0-9A-Fa-f][0-9A-Fa-f]?[0-9A-Fa-f]?[0-9A-Fa-f]?)
-+X		[0-9A-Fa-f]
++X               [0-9A-Fa-f]
  
  %a 16000
  %o 19000
-@@ -296,7 +297,7 @@
+@@ -306,7 +307,7 @@
  {N}			{ yylval.i = stoi((char *)yytext); return NUM; }
  ({N}\.{N})|({N}\.{N}\.{N})|({N}\.{N}\.{N}\.{N})	{
  			yylval.s = sdup((char *)yytext); return HID; }
@@ -28,12 +30,11 @@
  			  return EID; }
  {V6}			{
  #ifdef INET6
-@@ -314,6 +315,8 @@
+@@ -324,6 +325,7 @@
  #endif /*INET6*/
  			}
  {B}:+({B}:+)+		{ bpf_error("bogus ethernet address %s", yytext); }
-+{X}{12}			{ yylval.e = pcap_ether_aton((char *)yytext); return EID;}
-+
++{X}{12}                        { yylval.e = pcap_ether_aton((char *)yytext); return EID;}
  icmptype		{ yylval.i = 0; return NUM; }
  icmpcode		{ yylval.i = 1; return NUM; }
  icmp-echoreply		{ yylval.i = 0; return NUM; }
