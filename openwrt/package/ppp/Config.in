@@ -6,6 +6,12 @@ config BR2_PACKAGE_PPP
 	default y
 	select BR2_PACKAGE_KMOD_PPP
 
+config BR2_PACKAGE_PPP_WITH_FILTER
+        prompt "Enable filter support"
+	bool
+	default y
+	depends BR2_PACKAGE_LIBPCAP
+
 config BR2_PACKAGE_PPP_MOD_PPPOA
 	prompt   "ppp-mod-pppoa................... PPPoA (PPP over ATM) plugin"
 	tristate
