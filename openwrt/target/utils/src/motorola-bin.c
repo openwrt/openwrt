@@ -1,8 +1,9 @@
 /*
  * motorola-bin.c
  *
- * Copyright (C) 2005 Mike Baker 
- *                    Openwrt.org
+ * Copyright (C) 2005-2006 Mike Baker,
+ *                         Imre Kaloz <kaloz@openwrt.org>
+ *                         OpenWrt.org
  *
  * $Id$
  *
@@ -20,6 +21,12 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  *
+ */
+
+/*
+ * February 1, 2006
+ *
+ * Add support for for creating WA840G and WE800G images
  */
 
 #include <stdio.h>
@@ -59,29 +66,41 @@ unsigned int crc32buf(char *buf, size_t len)
 
 struct motorola {
 	unsigned int crc;	// crc32 of the remainder
-	unsigned int flags;	// unknown, 10577050
+	unsigned int flags;	// unknown, 105770*
 	char *trx;		// standard trx
 };
+
+void usage(void) __attribute__ (( __noreturn__ ));
+
+void usage(void)
+{
+	printf("Usage: motorola-bin [-device] [trxfile] [binfile]\n\n");
+	printf("Known devices: 1 - WR850G | 2 - WA840G | 3 - WE800G\n");
+	exit(1);
+}
 
 int main(int argc, char **argv)
 {
 	unsigned int len;
 	int fd;
+	int c;
 	void *trx;
 	struct motorola *firmware;
 
-	if (argc<3) {
-		printf("%s <trx> <motorola.bin>\n",argv[0]);
-		exit(0);
+	// verify parameters
+
+	if (argc!=4)
+	{
+	usage();
 	}
 
 	// mmap trx file
-	if (((fd = open(argv[1], O_RDONLY))  < 0)
+	if (((fd = open(argv[2], O_RDONLY))  < 0)
 	|| ((len = lseek(fd, 0, SEEK_END)) < 0)
 	|| ((trx = mmap(0, len, PROT_READ, MAP_SHARED, fd, 0)) == (void *) (-1))
 	|| (close(fd) < 0)) {
 		perror("open/malloc");
-		exit(-1);
+		exit(1);
 	}
 	
 	// create a firmware image in memory
@@ -92,11 +111,29 @@ int main(int argc, char **argv)
 
 	// setup the motorola headers
 	init_crc32();
-	firmware->flags = ntohl(0x10577050);
+
+	// setup the firmware magic
+
+	while ((c = getopt(argc, argv, "123")) !=-1) {
+		switch (c) {
+			case '1':
+				firmware->flags = ntohl(0x10577050); // Motorola WR850G
+				break;
+			case '2':
+				firmware->flags = ntohl(0x10577040); // Motorola WA840G
+				break;
+			case '3':
+				firmware->flags = ntohl(0x10577000); // Motorola WE800G
+				break;
+			default:
+				usage();
+		}
+	}
+
 	firmware->crc   = htonl(crc32buf((char *)&firmware->flags,len+4));
 
 	// write the firmware
-	if (((fd = open(argv[2], O_CREAT|O_WRONLY,0644)) < 0)
+	if (((fd = open(argv[3], O_CREAT|O_WRONLY,0644)) < 0)
 	|| (write(fd,firmware,len+8) != len+8)
 	|| (close(fd) < 0)) {
 		perror("write");
