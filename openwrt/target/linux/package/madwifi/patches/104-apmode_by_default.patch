@@ -1,0 +1,12 @@
+diff -ur madwifi-ng-r1416-20060126/ath/if_ath.c madwifi-ng-r1416-20060126.openwrt/ath/if_ath.c
+--- madwifi-ng-r1416-20060126/ath/if_ath.c	2006-01-23 08:07:51.000000000 +0100
++++ madwifi-ng-r1416-20060126.openwrt/ath/if_ath.c	2006-02-06 12:29:42.000000000 +0100
+@@ -391,7 +391,7 @@
+ 	struct ath_hal *ah;
+ 	HAL_STATUS status;
+ 	int error = 0,i;
+-	int autocreatemode = IEEE80211_M_STA;
++	int autocreatemode = IEEE80211_M_HOSTAP;
+ 	u_int8_t csz;
+ 
+ 	sc->sc_debug = ath_debug;
