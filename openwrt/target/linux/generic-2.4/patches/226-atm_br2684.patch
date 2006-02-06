@@ -1,20 +1,7 @@
-diff -Nur linux.old/net/atm/br2684.c linux.new/net/atm/br2684.c
---- linux.old/net/atm/br2684.c	2004-08-08 01:26:06.000000000 +0200
-+++ linux.new/net/atm/br2684.c	2005-11-13 00:04:15.000000000 +0100
-@@ -16,12 +16,9 @@
- #include <linux/ip.h>
- #include <asm/uaccess.h>
- #include <net/arp.h>
--#include <linux/atm.h>
--#include <linux/atmdev.h>
- 
- #include <linux/atmbr2684.h>
- 
--#include "common.h"
- #include "ipcommon.h"
- 
- /*
-@@ -55,36 +52,57 @@
+diff -urN linux-2.4.32/net/atm/br2684.c linux-2.4.32.new/net/atm/br2684.c
+--- linux-2.4.32/net/atm/br2684.c	2004-08-08 01:26:06.000000000 +0200
++++ linux-2.4.32.new/net/atm/br2684.c	2006-02-06 18:59:40.000000000 +0100
+@@ -55,36 +55,55 @@
  #define skb_debug(skb)	do {} while (0)
  #endif
  
@@ -46,8 +33,6 @@ diff -Nur linux.old/net/atm/br2684.c linux.new/net/atm/br2684.c
  	e_llc = BR2684_ENCAPS_LLC,
  };
  
-+
-+
  struct br2684_vcc {
 -	struct atm_vcc  *atmvcc;
 +	struct atm_vcc *atmvcc;
@@ -78,7 +63,7 @@ diff -Nur linux.old/net/atm/br2684.c linux.new/net/atm/br2684.c
  	struct net_device_stats stats;
  	int mac_was_set;
  };
-@@ -173,24 +197,84 @@
+@@ -173,24 +192,84 @@
  		}
  		skb = skb2;
  	}
@@ -174,7 +159,7 @@ diff -Nur linux.old/net/atm/br2684.c linux.new/net/atm/br2684.c
  	atomic_add(skb->truesize, &atmvcc->sk->wmem_alloc);
  	ATM_SKB(skb)->atm_options = atmvcc->atm_options;
  	brdev->stats.tx_packets++;
-@@ -428,18 +512,39 @@
+@@ -428,18 +507,39 @@
  	atm_return(atmvcc, skb->truesize);
  	DPRINTK("skb from brdev %p\n", brdev);
  	if (brvcc->encaps == e_llc) {
@@ -219,7 +204,7 @@ diff -Nur linux.old/net/atm/br2684.c linux.new/net/atm/br2684.c
  	} else {
  		plen = PADLEN + ETH_HLEN;	/* pad, dstmac,srcmac, ethtype */
  		/* first 2 chars should be 0 */
-@@ -448,13 +553,14 @@
+@@ -448,13 +548,14 @@
  			dev_kfree_skb(skb);
  			return;
  		}
@@ -235,7 +220,7 @@ diff -Nur linux.old/net/atm/br2684.c linux.new/net/atm/br2684.c
  #ifdef FASTER_VERSION
  	/* FIXME: tcpdump shows that pointer to mac header is 2 bytes earlier,
  	   than should be. What else should I set? */
-@@ -465,30 +571,29 @@
+@@ -465,30 +566,29 @@
  	skb->protocol = ((u16 *) skb->data)[-1];
  #else				/* some protocols might require this: */
  	skb->protocol = br_type_trans(skb, &brdev->net_dev);
@@ -273,7 +258,7 @@ diff -Nur linux.old/net/atm/br2684.c linux.new/net/atm/br2684.c
  	netif_rx(skb);
  }
  
-@@ -525,10 +630,10 @@
+@@ -525,10 +625,10 @@
  		err = -EEXIST;
  		goto error;
  	}
@@ -288,7 +273,7 @@ diff -Nur linux.old/net/atm/br2684.c linux.new/net/atm/br2684.c
  		err = -EINVAL;
  		goto error;
  	}
-@@ -554,18 +659,21 @@
+@@ -554,18 +654,21 @@
  	brvcc->atmvcc = atmvcc;
  	atmvcc->user_back = brvcc;
  	brvcc->encaps = (enum br2684_encaps) be.encaps;
@@ -311,7 +296,7 @@ diff -Nur linux.old/net/atm/br2684.c linux.new/net/atm/br2684.c
  	write_unlock_irq(&devs_lock);
  	MOD_DEC_USE_COUNT;
  	return err;
-@@ -608,12 +717,25 @@
+@@ -608,12 +711,25 @@
  
  	if (ni.ifname[0] != '\0') {
  		memcpy(brdev->net_dev.name, ni.ifname,
@@ -340,7 +325,7 @@ diff -Nur linux.old/net/atm/br2684.c linux.new/net/atm/br2684.c
  	brdev->mac_was_set = 0;
  #ifdef FASTER_VERSION
  	my_eth_header = brdev->net_dev.hard_header;
-@@ -677,12 +799,11 @@
+@@ -677,12 +793,11 @@
  		err = br2684_setfilt(atmvcc, arg);
  		MOD_DEC_USE_COUNT;
  		return err;
@@ -354,7 +339,7 @@ diff -Nur linux.old/net/atm/br2684.c linux.new/net/atm/br2684.c
  /* Never put more than 256 bytes in at once */
  static int br2684_proc_engine(loff_t pos, char *buf)
  {
-@@ -692,52 +813,62 @@
+@@ -692,52 +807,62 @@
  	list_for_each(lhd, &br2684_devs) {
  		brdev = list_entry_brdev(lhd);
  		if (pos-- == 0)
@@ -442,7 +427,7 @@ diff -Nur linux.old/net/atm/br2684.c linux.new/net/atm/br2684.c
  	page = get_free_page(GFP_KERNEL);
  	if (!page)
  		return -ENOMEM;
-@@ -746,7 +877,7 @@
+@@ -746,7 +871,7 @@
  		left = count;
  	read_lock(&devs_lock);
  	for (;;) {
@@ -451,7 +436,7 @@ diff -Nur linux.old/net/atm/br2684.c linux.new/net/atm/br2684.c
  		if (x == 0)
  			break;
  		if (x > left)
-@@ -761,12 +892,11 @@
+@@ -761,12 +886,11 @@
  		}
  		len += x;
  		left -= x;
@@ -465,7 +450,7 @@ diff -Nur linux.old/net/atm/br2684.c linux.new/net/atm/br2684.c
  	if (len > 0 && copy_to_user(buf, (char *) page, len))
  		len = -EFAULT;
  	free_page(page);
-@@ -774,34 +904,32 @@
+@@ -774,23 +898,20 @@
  }
  
  static struct file_operations br2684_proc_operations = {
@@ -475,9 +460,6 @@ diff -Nur linux.old/net/atm/br2684.c linux.new/net/atm/br2684.c
  
  extern struct proc_dir_entry *atm_proc_root;	/* from proc.c */
 -#endif /* CONFIG_PROC_FS */
-+
-+extern int (*br2684_ioctl_hook) (struct atm_vcc *, unsigned int,
-+				 unsigned long);
  
  /* the following avoids some spurious warnings from the compiler */
  #define UNUSED __attribute__((unused))
@@ -490,25 +472,22 @@ diff -Nur linux.old/net/atm/br2684.c linux.new/net/atm/br2684.c
  		return -ENOMEM;
  	p->proc_fops = &br2684_proc_operations;
 -#endif /* CONFIG_PROC_FS */
--	br2684_ioctl_set(br2684_ioctl);
-+	br2684_ioctl_hook = br2684_ioctl;
+ 	br2684_ioctl_set(br2684_ioctl);
  	return 0;
  }
- 
- static void __exit UNUSED br2684_exit(void)
+@@ -799,9 +920,7 @@
  {
  	struct br2684_dev *brdev;
--	br2684_ioctl_set(NULL);
+ 	br2684_ioctl_set(NULL);
 -#ifdef CONFIG_PROC_FS
-+	br2684_ioctl_hook = NULL;
  	remove_proc_entry("br2684", atm_proc_root);
 -#endif /* CONFIG_PROC_FS */
  	while (!list_empty(&br2684_devs)) {
  		brdev = list_entry_brdev(br2684_devs.next);
  		unregister_netdev(&brdev->net_dev);
-diff -Nur linux.old/net/atm/common.c linux.new/net/atm/common.c
---- linux.old/net/atm/common.c	2004-02-18 14:36:32.000000000 +0100
-+++ linux.new/net/atm/common.c	2005-11-13 00:46:11.000000000 +0100
+diff -urN linux-2.4.32/net/atm/common.c linux-2.4.32.new/net/atm/common.c
+--- linux-2.4.32/net/atm/common.c	2004-02-18 14:36:32.000000000 +0100
++++ linux-2.4.32.new/net/atm/common.c	2006-02-06 17:26:52.000000000 +0100
 @@ -158,6 +158,7 @@
  }
  #ifdef CONFIG_ATM_BR2684_MODULE
@@ -516,10 +495,9 @@ diff -Nur linux.old/net/atm/common.c linux.new/net/atm/common.c
 +EXPORT_SYMBOL(br2684_ioctl_hook);
  #endif
  #endif
-
-diff -Nur linux.old/include/linux/atmbr2684.h linux.new/include/linux/atmbr2684.h
---- linux.old/include/linux/atmbr2684.h	2005-11-13 00:28:19.000000000 +0100
-+++ linux.new/include/linux/atmbr2684.h	2005-11-13 00:06:42.000000000 +0100
+ 
+--- linux-2.4.32/include/linux/atmbr2684.h	2002-08-03 02:39:45.000000000 +0200
++++ linux-2.4.32.new/include/linux/atmbr2684.h	2006-02-06 19:01:24.000000000 +0100
 @@ -3,6 +3,7 @@
  
  #include <linux/atm.h>
