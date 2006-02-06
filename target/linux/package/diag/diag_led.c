@@ -28,6 +28,7 @@
  * 2005/03/14 asus wl-500g deluxe and buffalo v2 support added
  * 2005/04/13 added licensing informations
  * 2005/04/18 base reset polarity off initial readings
+ * 2006/02/07 motorola wa840g/we800g support added
  */
 
 #include <linux/module.h>
@@ -185,6 +186,10 @@ static int __init diag_init()
 			if (!strcmp(buf,"asusX")) {
 				//asus wl-500g
 				reset_gpio=(1<<6);
+			}
+			if (!strcmp(buf,"2")) {
+				//wa840g v1 / we800g v1
+				reset_gpio=(1<<0);
 			}
 		}
 		if (!strcmp(buf,"bcm94710ap")) {
