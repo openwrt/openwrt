@@ -29,6 +29,7 @@ choice
 	config BR2_GCC_VERSION_4_0_2
 		bool "gcc 4.0.2"
 		select BR2_GCC_3_4
+		select BR2_PACKAGE_LIBGCC
 
 endchoice
 
