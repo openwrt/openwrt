@@ -60,6 +60,7 @@ $(PKG_BUILD_DIR)/.configured:
 		--enable-vtysh \
 		--enable-user=quagga \
 		--enable-group=quagga \
+		--enable-multipath=8 \
 	);
 	touch $@
 
@@ -81,7 +82,7 @@ $(IPKG_QUAGGA):
 	install -d -m0755 $(IDIR_QUAGGA)/etc/init.d/
 	install -m0755 ./files/quagga.init $(IDIR_QUAGGA)/etc/init.d/quagga
 	ln -sf quagga $(IDIR_QUAGGA)/etc/init.d/S49quagga
-	install -m0755 $(IDIR_QUAGGA)/var/run/quagga
+	install -d -m0755 $(IDIR_QUAGGA)/var/run/quagga
 	$(RSTRIP) $(IDIR_QUAGGA)
 	$(IPKG_BUILD) $(IDIR_QUAGGA) $(PACKAGE_DIR)
 
