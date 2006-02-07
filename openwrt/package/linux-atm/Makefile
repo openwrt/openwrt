@@ -56,7 +56,7 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_LINUX_ATM): 
 	install -d -m0755 $(IDIR_LINUX_ATM)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libatm.so.1 $(IDIR_LINUX_ATM)/usr/lib
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libatm.so.1* $(IDIR_LINUX_ATM)/usr/lib
 	$(RSTRIP) $(IDIR_LINUX_ATM)/
 	$(IPKG_BUILD) $(IDIR_LINUX_ATM) $(PACKAGE_DIR)
 
