@@ -1,6 +1,5 @@
 config BR2_PACKAGE_TCPDUMP
-	prompt "tcpdump........................... Network monitoring and data acquisition tool"
-	tristate
+	tristate "tcpdump - Network monitoring and data acquisition tool"
 	default m if CONFIG_DEVEL
 	select BR2_PACKAGE_LIBPCAP
 	help
