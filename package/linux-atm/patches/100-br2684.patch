@@ -176,10 +176,9 @@ diff -Nur linux-atm-2.4.1.orig/src/include/linux/atmbr2684.h linux-atm-2.4.1/src
 +				struct br2684_filter_set)
 +
 +#endif				/* _LINUX_ATMBR2684_H */
-diff Nur linux-atm-2.4.1.orig/src/br2684/br2684ctl.c linux-atm-2.4.1/src/br2684/br2684ctl.c
---- linux-atm-2.4.1.orig/src/br2684/br2684ctl.c
-+++ linux-atm-2.4.1/src/br2684/br2684ctl.c
-@@ -0,0 +1,302 @@
+--- linux-atm-2.4.1/src/br2684/br2684ctl.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-atm-2.4.1.new/src/br2684/br2684ctl.c	2006-02-07 14:05:14.000000000 +0100
+@@ -0,0 +1,307 @@
 +#include <stdio.h>
 +#include <stdlib.h>
 +#include <unistd.h>
@@ -270,8 +269,8 @@ diff Nur linux-atm-2.4.1.orig/src/br2684/br2684ctl.c linux-atm-2.4.1/src/br2684/
 +
 +			if (err == 0)
 +				syslog(LOG_INFO,
-+				       "Interface \"%s\" created sucessfully\n",
-+				       ni.ifname);
++				       "Interface \"%s\" (mtu=%d, payload=%s) created sucessfully\n",
++				       ni.ifname, ni.mtu,ni.payload ? "bridged" : "routed");
 +			else
 +				syslog(LOG_INFO,
 +				       "Interface \"%s\" could not be created, reason: %s\n",
@@ -369,8 +368,13 @@ diff Nur linux-atm-2.4.1.orig/src/br2684/br2684ctl.c linux-atm-2.4.1/src/br2684/
 +
 +void usage(char *s)
 +{
-+	printf
-+	    ("usage: %s [-b] [[-c number] [-e 0|1] [-p 0|1] [-t 4|6] [-a [itf.]vpi.vci]*]*\n",
++	printf("usage: %s [-b] [[-c number] [-e 0|1] [-p 0|1] [-s num] [-a			 [itf.]vpi.vci]*]*\n"
++			" -b               = run in background (daemonize)\n"
++			" -c <num>         = use interface nas<num>\n"
++			" -e 0|1           = encapsulation (0=LLC, 1=VC Mux)\n"
++			" -p 0|1           = payload type (0=routed,1=bridged)\n"
++			" -s <num>         = set sndbuf (send buffer) size (default 8192)\n"
++			" -a [itf.]vpi.vci = ATM interface no, VPI, VCI\n",
 +	     s);
 +	exit(1);
 +}
