@@ -18,7 +18,7 @@ IFNAME=$(nvram get ${type}_device)
 USERNAME=$(nvram get ppp_username)
 PASSWORD=$(nvram get ppp_passwd)
 KEEPALIVE=$(nvram get ppp_redialperiod)
-KEEPALIVE=${KEEPALIVE:+lcp-echo-interval 10 lcp-echo-failure $KEEPALIVE}
+KEEPALIVE=${KEEPALIVE:+lcp-echo-interval 1 lcp-echo-failure $KEEPALIVE}
 DEMAND=$(nvram get ppp_demand)
 case "$DEMAND" in
 	on|1|enabled)
