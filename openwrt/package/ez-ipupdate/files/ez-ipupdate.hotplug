@@ -1,1 +1,6 @@
-[ "$ACTION" = "ifup" -a "$INTERFACE" = "wan" ] && /usr/sbin/ez-ipupdate -c /etc/ez-ipupdate.conf &
+PGM=ez-ipupdate
+[ "$ACTION" = "ifup" -a "$INTERFACE" = "wan" ] && {
+	[ -e /etc/$PGM.conf ] && {
+		[ -n $(grep "user=" /etc/$PGM.conf | cut -d= -f2 | cut -d: -f1) ] && [ -n $(grep "user=" /etc/$PGM.conf | cut -d= -f2 | cut -d: -f2) ] && /usr/sbin/$PGM -c /etc/$PGM.conf &
+	}
+}

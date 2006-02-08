@@ -50,7 +50,7 @@ $(IPKG_EZIPUPDATE):
 	install -m0755 $(PKG_BUILD_DIR)/ez-ipupdate $(IDIR_EZIPUPDATE)/usr/sbin/
 	install -m0755 files/$(PKG_NAME).init $(IDIR_EZIPUPDATE)/etc/init.d/S80$(PKG_NAME)
 	install -m0755 files/$(PKG_NAME).conf $(IDIR_EZIPUPDATE)/etc/
-	install -m0755 files/$(PKG_NAME).hotplug $(IDIR_EZIPUPDATE)/etc/hotplug.d/iface/15-$(PKG_NAME)
+	install -m0755 files/$(PKG_NAME).hotplug $(IDIR_EZIPUPDATE)/etc/hotplug.d/iface/10-$(PKG_NAME)
 	$(STRIP) $(IDIR_EZIPUPDATE)/usr/sbin/*
 	$(IPKG_BUILD) $(IDIR_EZIPUPDATE) $(PACKAGE_DIR)
 
