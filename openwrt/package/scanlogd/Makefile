@@ -20,6 +20,7 @@ $(eval $(call PKG_template,SCANLOGD,scanlogd,$(PKG_VERSION)-$(PKG_RELEASE),$(ARC
 
 $(PKG_BUILD_DIR)/.configured:
 	$(SED) "s,/var/empty,/tmp/.scanlogd," $(PKG_BUILD_DIR)/params.h
+	$(SED) "s,#undef SCANLOGD_DEVICE,#define SCANLOGD_DEVICE \"all\"," $(PKG_BUILD_DIR)/params.h
 	touch $@
 
 $(PKG_BUILD_DIR)/.built:
