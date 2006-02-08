@@ -343,7 +343,7 @@ endif
 rrdtool-compile: cgilib-compile freetype-compile libart-compile libpng-compile
 rrdtool1-compile: zlib-compile
 rsync-compile: popt-compile
-scanlogd-compite: libpcap-compile libnids-compile libnet-compile
+scanlogd-compile: libpcap-compile libnids-compile libnet-compile
 scdp-compile: libnet-compile
 screen-compile: ncurses-compile
 siproxd-compile: libosip2-compile
