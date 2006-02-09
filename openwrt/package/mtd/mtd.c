@@ -331,7 +331,8 @@ void usage(void)
 	"        erase                   erase all data on device\n"
 	"        write <imagefile>|-     write <imagefile> (use - for stdin) to device\n"
 	"Following options are available:\n"
-	"        -q                      quiet mode\n"
+	"        -q                      quiet mode (once: no [w] on writing,\n"
+	"                                           twice: no status messages)\n"
 	"        -r                      reboot after successful command\n"
 	"        -f                      force write without trx checks\n"
 	"        -e <device>             erase <device> before executing the command\n\n"
@@ -365,7 +366,7 @@ int main (int argc, char **argv)
 				boot = 1;
 				break;
 			case 'q':
-				quiet = 1;
+				quiet++;
 				break;
 			case 'e':
 				i = 0;
@@ -409,7 +410,7 @@ int main (int argc, char **argv)
 	
 		/* check trx file before erasing or writing anything */
 		if (!image_check(imagefd, device)) {
-			if (!quiet && force)
+			if ((quiet < 2) || !force)
 				fprintf(stderr, "TRX check failed!\n");
 			if (!force)
 				exit(1);
@@ -428,10 +429,10 @@ int main (int argc, char **argv)
 	i = 0;
 	unlocked = 0;
 	while (erase[i] != NULL) {
-		if (!quiet)
+		if (quiet < 2)
 			fprintf(stderr, "Unlocking %s ...\n", erase[i]);
 		mtd_unlock(erase[i]);
-		if (!quiet)
+		if (quiet < 2)
 			fprintf(stderr, "Erasing %s ...\n", erase[i]);
 		mtd_erase(erase[i]);
 		if (strcmp(erase[i], device) == 0)
@@ -440,7 +441,7 @@ int main (int argc, char **argv)
 	}
 	
 	if (!unlocked) {
-		if (!quiet) 
+		if (quiet < 2) 
 			fprintf(stderr, "Unlocking %s ...\n", device);
 		mtd_unlock(device);
 	}
@@ -449,15 +450,15 @@ int main (int argc, char **argv)
 		case CMD_UNLOCK:
 			break;
 		case CMD_ERASE:
-			if (!quiet)
-				fprintf(stderr, "Erasing %s ...\n", erase[i]);
+			if (quiet < 2)
+				fprintf(stderr, "Erasing %s ...\n", device);
 			mtd_erase(device);
 			break;
 		case CMD_WRITE:
-			if (!quiet)
+			if (quiet < 2)
 				fprintf(stderr, "Writing from %s to %s ... ", imagefile, device);
 			mtd_write(imagefd, device, quiet);
-			if (!quiet)
+			if (quiet < 2)
 				fprintf(stderr, "\n");
 			break;
 	}
