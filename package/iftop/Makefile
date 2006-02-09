@@ -55,7 +55,7 @@ $(PKG_BUILD_DIR)/.built:
 	touch $@
 
 $(IPKG_IFTOP): 
-	mkdir -p $(IDIR_IFTOP)/usr/bin
+	install -d -m0755 $(IDIR_IFTOP)/usr/bin
 	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/$(PKG_NAME) $(IDIR_IFTOP)/usr/bin/
 	$(STRIP) $(IDIR_IFTOP)/usr/bin/*
 	$(IPKG_BUILD) $(IDIR_IFTOP) $(PACKAGE_DIR)
