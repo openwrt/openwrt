@@ -1,0 +1,14 @@
+config BR2_PACKAGE_IFTOP
+	prompt "iftop............................. display bandwith usage on an interface"
+	tristate
+	default m if CONFIG_DEVEL
+	select BR2_PACKAGE_LIBPCAP
+	select BR2_PACKAGE_LIBNCURSES
+	select BR2_PACKAGE_LIBPTHREAD
+	help
+	  iftop does for network usage what top(1) does for CPU usage. It
+	  listens to network traffic on a named interface and displays a
+	  table of current bandwidth usage by pairs of hosts. Handy for
+	  answering the question "why is our ADSL link so slow?".
+
+	  http://www.ex-parrot.com/~pdw/iftop/
