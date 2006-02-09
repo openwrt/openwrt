@@ -1,6 +1,6 @@
 LINUX_SOURCE:=linux-$(LINUX_VERSION).tar.bz2
-LINUX_SITE=http://www.fi.kernel.org/pub/linux/kernel/v$(KERNEL) \
-           http://www.fr.kernel.org/pub/linux/kernel/v$(KERNEL) \
+LINUX_SITE=http://www.us.kernel.org/pub/linux/kernel/v$(KERNEL) \
+           http://www.us.kernel.org/pub/linux/kernel/v$(KERNEL) \
            http://www.kernel.org/pub/linux/kernel/v$(KERNEL) \
            http://www.de.kernel.org/pub/linux/kernel/v$(KERNEL)
 
@@ -38,7 +38,7 @@ $(LINUX_DIR)/.depend_done: $(LINUX_DIR)/.configured
 $(LINUX_DIR)/vmlinux: $(LINUX_DIR)/.depend_done
 else
 $(LINUX_DIR)/.configured: $(LINUX_DIR)/.patched
-	$(MAKE) -C $(LINUX_DIR) CROSS_COMPILE="$(KERNEL_CROSS)" ARCH=$(LINUX_KARCH) oldconfig prepare $(MAKE_TRACE)
+	$(MAKE) -C $(LINUX_DIR) CROSS_COMPILE="$(KERNEL_CROSS)" ARCH=$(LINUX_KARCH) oldconfig prepare scripts $(MAKE_TRACE)
 	touch $@
 endif
 
