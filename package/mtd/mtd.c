@@ -449,6 +449,8 @@ int main (int argc, char **argv)
 		case CMD_UNLOCK:
 			break;
 		case CMD_ERASE:
+			if (!quiet)
+				fprintf(stderr, "Erasing %s ...\n", erase[i]);
 			mtd_erase(device);
 			break;
 		case CMD_WRITE:
