@@ -48,6 +48,10 @@
 
 #define DEBUG
 
+#define SYSTYPE_UNKNOWN     0
+#define SYSTYPE_BROADCOM    1
+/* to be continued */
+
 struct trx_header {
 	uint32_t magic;		/* "HDR0" */
 	uint32_t len;		/* Length of file including header */
@@ -60,20 +64,29 @@ char buf[BUFSIZE];
 int buflen;
 
 int
-trx_check(int imagefd, const char *mtd)
+image_check_bcom(int imagefd, const char *mtd)
 {
+	struct trx_header *trx = (struct trx_header *) buf;
 	struct mtd_info_user mtdInfo;
 	int fd;
-	size_t count;
-	struct trx_header *trx = (struct trx_header *) buf;
-	struct stat trxstat;
 
-	buflen = read(imagefd, buf, sizeof(struct trx_header));
-	if (buflen < sizeof(struct trx_header)) {
-		fprintf(stderr, "Could not get trx header, file too small (%ld bytes)\n", buflen);
+	buflen = read(imagefd, buf, 32);
+	if (buflen < 32) {
+		fprintf(stdout, "Could not get image header, file too small (%ld bytes)\n", buflen);
 		return 0;
 	}
 
+	switch(trx->magic) {
+		case 0x47343557: /* W54G */
+		case 0x53343557: /* W54S */
+		case 0x73343557: /* W54s */
+		case 0x46343557: /* W54F */
+		case 0x55343557: /* W54U */
+			/* ignore the first 32 bytes */
+			buflen = read(imagefd, buf, sizeof(struct trx_header));
+			break;
+	}
+	
 	if (trx->magic != TRX_MAGIC || trx->len < sizeof(struct trx_header)) {
 		fprintf(stderr, "Bad trx header\n");
 		fprintf(stderr, "If this is a firmware in bin format, like some of the\n"
@@ -101,6 +114,33 @@ trx_check(int imagefd, const char *mtd)
 	}	
 	
 	return 1;
+}
+
+int
+image_check(int imagefd, const char *mtd)
+{
+	int fd, systype;
+	size_t count;
+	char *c;
+	FILE *f;
+
+	systype = SYSTYPE_UNKNOWN;
+	f = fopen("/proc/cpuinfo", "r");
+	while (!feof(f) && (fgets(buf, BUFSIZE - 1, f) != NULL)) {
+		if ((strncmp(buf, "system type", 11) == 0) && (c = strchr(buf, ':'))) {
+			c += 2;
+			if (strncmp(c, "Broadcom BCM947XX", 17) == 0)
+				systype = SYSTYPE_BROADCOM;
+		}
+	}
+	fclose(f);
+	
+	switch(systype) {
+		case SYSTYPE_BROADCOM:
+			return image_check_bcom(imagefd, mtd);
+		default:
+			return 1;
+	}
 }
 
 int mtd_check(char *mtd)
@@ -143,7 +183,6 @@ mtd_unlock(const char *mtd)
 		exit(1);
 	}
 
-	fprintf(stderr, "Unlocking %s ...\n", mtd);
 	mtdLockInfo.start = 0;
 	mtdLockInfo.length = mtdInfo.size;
 	if(ioctl(fd, MEMUNLOCK, &mtdLockInfo)) {
@@ -195,7 +234,6 @@ mtd_erase(const char *mtd)
 		exit(1);
 	}
 
-	fprintf(stderr, "Erasing %s ...\n", mtd);
 	mtdEraseInfo.length = mtdInfo.erasesize;
 
 	for (mtdEraseInfo.start = 0;
@@ -216,7 +254,7 @@ mtd_erase(const char *mtd)
 }
 
 int
-mtd_write(int imagefd, const char *mtd)
+mtd_write(int imagefd, const char *mtd, int quiet)
 {
 	int fd, i, result;
 	size_t r, w, e;
@@ -236,7 +274,8 @@ mtd_write(int imagefd, const char *mtd)
 	}
 		
 	r = w = e = 0;
-	fprintf(stderr, " [ ]");
+	if (!quiet)
+		fprintf(stderr, " [ ]");
 
 	for (;;) {
 		/* buffer may contain data already (from trx check) */
@@ -252,7 +291,8 @@ mtd_write(int imagefd, const char *mtd)
 			mtdEraseInfo.start = e;
 			mtdEraseInfo.length = mtdInfo.erasesize;
 
-			fprintf(stderr, "\b\b\b[e]");
+			if (!quiet)
+				fprintf(stderr, "\b\b\b[e]");
 			/* erase the chunk */
 			if (ioctl (fd,MEMERASE,&mtdEraseInfo) < 0) {
 				fprintf(stderr, "Erasing mtd failed: %s\n", mtd);
@@ -261,7 +301,8 @@ mtd_write(int imagefd, const char *mtd)
 			e += mtdInfo.erasesize;
 		}
 		
-		fprintf(stderr, "\b\b\b[w]");
+		if (!quiet)
+			fprintf(stderr, "\b\b\b[w]");
 		
 		if ((result = write(fd, buf, r)) < r) {
 			if (result < 0) {
@@ -275,7 +316,8 @@ mtd_write(int imagefd, const char *mtd)
 		
 		buflen = 0;
 	}
-	fprintf(stderr, "\b\b\b\b");
+	if (!quiet)
+		fprintf(stderr, "\b\b\b\b");
 	
 	return 0;
 }
@@ -289,6 +331,7 @@ void usage(void)
 	"        erase                   erase all data on device\n"
 	"        write <imagefile>|-     write <imagefile> (use - for stdin) to device\n"
 	"Following options are available:\n"
+	"        -q                      quiet mode\n"
 	"        -r                      reboot after successful command\n"
 	"        -f                      force write without trx checks\n"
 	"        -e <device>             erase <device> before executing the command\n\n"
@@ -299,7 +342,7 @@ void usage(void)
 
 int main (int argc, char **argv)
 {
-	int ch, i, boot, unlock, imagefd, force;
+	int ch, i, boot, unlock, imagefd, force, quiet, unlocked;
 	char *erase[MAX_ARGS], *device, *imagefile;
 	enum {
 		CMD_ERASE,
@@ -311,14 +354,18 @@ int main (int argc, char **argv)
 	boot = 0;
 	force = 0;
 	buflen = 0;
+	quiet = 0;
 
-	while ((ch = getopt(argc, argv, "fre:")) != -1)
+	while ((ch = getopt(argc, argv, "frqe:")) != -1)
 		switch (ch) {
 			case 'f':
 				force = 1;
 				break;
 			case 'r':
 				boot = 1;
+				break;
+			case 'q':
+				quiet = 1;
 				break;
 			case 'e':
 				i = 0;
@@ -360,13 +407,12 @@ int main (int argc, char **argv)
 			}
 		}
 	
-		if (system("grep Broadcom /proc/cpuinfo >&- >&-") == 0) {
-			/* check trx file before erasing or writing anything */
-			if (!trx_check(imagefd, device)) {
+		/* check trx file before erasing or writing anything */
+		if (!image_check(imagefd, device)) {
+			if (!quiet && force)
 				fprintf(stderr, "TRX check failed!\n");
-				if (!force)
-					exit(1);
-			}
+			if (!force)
+				exit(1);
 		} else {
 			if (!mtd_check(device)) {
 				fprintf(stderr, "Can't open device for writing!\n");
@@ -380,14 +426,25 @@ int main (int argc, char **argv)
 	sync();
 	
 	i = 0;
+	unlocked = 0;
 	while (erase[i] != NULL) {
+		if (!quiet)
+			fprintf(stderr, "Unlocking %s ...\n", erase[i]);
 		mtd_unlock(erase[i]);
+		if (!quiet)
+			fprintf(stderr, "Erasing %s ...\n", erase[i]);
 		mtd_erase(erase[i]);
+		if (strcmp(erase[i], device) == 0)
+			unlocked = 1;
 		i++;
 	}
 	
-	mtd_unlock(device);
-
+	if (!unlocked) {
+		if (!quiet) 
+			fprintf(stderr, "Unlocking %s ...\n", device);
+		mtd_unlock(device);
+	}
+		
 	switch (cmd) {
 		case CMD_UNLOCK:
 			break;
@@ -395,9 +452,11 @@ int main (int argc, char **argv)
 			mtd_erase(device);
 			break;
 		case CMD_WRITE:
-			fprintf(stderr, "Writing from %s to %s ... ", imagefile, device);
-			mtd_write(imagefd, device);
-			fprintf(stderr, "\n");
+			if (!quiet)
+				fprintf(stderr, "Writing from %s to %s ... ", imagefile, device);
+			mtd_write(imagefd, device, quiet);
+			if (!quiet)
+				fprintf(stderr, "\n");
 			break;
 	}
 
