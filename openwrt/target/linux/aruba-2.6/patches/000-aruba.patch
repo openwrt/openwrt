@@ -1057,14 +1057,13 @@ diff -Nur linux-2.6.15/arch/mips/aruba/wdt_merlot.c linux-2.6.15-openwrt/arch/mi
 diff -Nur linux-2.6.15/arch/mips/Kconfig linux-2.6.15-openwrt/arch/mips/Kconfig
 --- linux-2.6.15/arch/mips/Kconfig	2006-01-03 04:21:10.000000000 +0100
 +++ linux-2.6.15-openwrt/arch/mips/Kconfig	2006-01-10 00:32:32.000000000 +0100
-@@ -227,6 +227,18 @@
+@@ -227,6 +227,17 @@
  	  either a NEC Vr5432 or QED RM5231. Say Y here if you wish to build
  	  a kernel for this platform.
  
 +config MACH_ARUBA
 +	bool "Support for the ARUBA product line"
 +	select DMA_NONCOHERENT
-+	select IRQ_CPU
 +	select CPU_HAS_PREFETCH
 +	select HW_HAS_PCI
 +	select SWAP_IO_SPACE
