@@ -30,6 +30,7 @@ $(PKG_BUILD_DIR)/.configured:
 		  --program-prefix="" \
 		  --program-suffix="" \
 		  --prefix=/usr \
+		  --disable-dietlibc \
 		  --exec-prefix=/usr \
 		  --bindir=/usr/bin \
 		  --datadir=/usr/share \
