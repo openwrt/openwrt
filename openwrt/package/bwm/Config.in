@@ -3,5 +3,6 @@ config BR2_PACKAGE_BWM
 	tristate
 	default m if CONFIG_DEVEL
 	help
-	  A very tiny bandwidth monitor.
-
+	 Continually displays data transfer rates (received, transmitted, and
+	 total) for each interface, measured in KiB/sec. Works by sampling
+	 values from /proc/net/dev and calculating deltas.
