@@ -331,7 +331,7 @@ peercast-compile: uclibc++-compile
 peerguardian-compile: libpthread-compile
 portmap-compile: tcp_wrappers-compile
 postgresql-compile: zlib-compile
-ppp-compile: linux-atm-compile
+ppp-compile: linux-atm-compile libpcap-compile
 ptunnel-compile: libpcap-compile
 quagga-compile: readline-compile ncurses-compile
 raddump-compile: openssl-compile libpcap-compile
