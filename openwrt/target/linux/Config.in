@@ -26,7 +26,9 @@ comment "Device specific configuration"
 
 source "target/linux/*-2.[46]/Config.in"
 
-comment "Networking modules"
+comment "Kernel modules"
+
+menu "Networking modules"
 
 config BR2_PACKAGE_KMOD_ATM
 	prompt "kmod-atm.......................... ATM support"
@@ -105,7 +107,9 @@ config BR2_PACKAGE_KMOD_TUN
 	help
 	  Kernel support for the TUN/TAP tunneling device
 
-comment "Filtering/Firewalling"
+endmenu
+
+menu "Filtering/Firewalling"
 
 config BR2_PACKAGE_KMOD_ARPTABLES
 	prompt "kmod-arptables.................... ARP firewalling support"
@@ -263,7 +267,9 @@ config BR2_PACKAGE_KMOD_IP6TABLES
 	help
 	  IPv6 firewalling support
 
-comment "Block devices support"
+endmenu
+
+menu "Block devices support"
 
 config BR2_PACKAGE_KMOD_IDE
 	prompt "kmod-ide.......................... IDE support"
@@ -288,17 +294,17 @@ config BR2_PACKAGE_KMOD_NBD
 	help
 	  Kernel module for network block device
 
-comment "Cryptographic support"
+endmenu
 
 config BR2_PACKAGE_KMOD_CRYPTO
-	prompt "kmod-crypto....................... CryptoAPI modules"
+	prompt "CryptoAPI modules"
 	tristate
 	default m
 	select BUSYBOX_CONFIG_FEATURE_CHECK_TAINTED_MODULE
 	help
 	  Kernel modules for cryptographic algorithms
 
-comment "Filesystems support"
+menu "Filesystems support"
 
 config BR2_PACKAGE_KMOD_FS_CIFS
 	prompt "kmod-fs-cifs...................... CIFS support"
@@ -351,7 +357,9 @@ config BR2_PACKAGE_KMOD_FS_XFS
 	help
 	  Kernel modules for XFS filesystem support
 
-comment "Multimedia devices support"
+endmenu
+
+menu "Multimedia devices support"
 
 config BR2_PACKAGE_KMOD_PWC
 	prompt "kmod-pwc.......................... Kernel driver for USB Philips Cameras"
@@ -372,7 +380,9 @@ config BR2_PACKAGE_KMOD_VIDEODEV
 	tristate
 	default m
 
-comment "Native Language support"
+endmenu
+
+menu "Native Language support"
 
 config BR2_PACKAGE_KMOD_NLS_BASE
 	prompt "kmod-nls-base..................... Native Language support"
@@ -421,7 +431,10 @@ config BR2_PACKAGE_KMOD_NLS_UTF8
 	help
 	  Kernel native language support
 
-comment "Network devices support"
+endmenu
+
+menu "Network devices support"
+	depends BR2_LINUX_2_4_X86 || BR2_LINUX_2_6_X86
 
 config BR2_PACKAGE_KMOD_NET_3C59X
 	prompt "kmod-net-3c59x.................... 3Com 3c590/3c900 series (592/595/597) \"Vortex/Boomerang\" Ethernet kernel support"
@@ -561,7 +574,10 @@ config BR2_PACKAGE_KMOD_NET_PRISM54
 	  
 	  Note: You need a motherboard with DMA support to use any of these cards.
 
-comment "PCMCIA/CardBus support"
+endmenu
+
+menu "PCMCIA/CardBus support"
+	depends BR2_LINUX_2_4_X86 || BR2_LINUX_2_6_X86 || BR2_LINUX_2_4_BRCM || BR2_LINUX_2_6_BRCM
 
 config BR2_PACKAGE_KMOD_PCMCIA_CORE
 	prompt "kmod-pcmcia-core.................. PCMCIA/CardBus support"
@@ -576,7 +592,9 @@ config BR2_PACKAGE_KMOD_PCMCIA_SERIAL
 	default m
 	depends BR2_PACKAGE_KMOD_PCMCIA_CORE
 
-comment "USB support"
+endmenu
+
+menu "USB support"
 
 config BR2_PACKAGE_KMOD_USB
 	prompt "kmod-usb-core..................... USB support"
@@ -677,7 +695,9 @@ config BR2_PACKAGE_KMOD_USB_ATM
 	default m
 	depends BR2_PACKAGE_KMOD_USB_CONTROLLER
 
-comment "Misc. devices support"
+endmenu
+
+menu "Misc. devices support"
 
 config BR2_PACKAGE_KMOD_AX25
 	prompt "kmod-ax25......................... AX25 support"
@@ -719,8 +739,12 @@ config BR2_PACKAGE_KMOD_WD1100
 	  Driver for the NatSemi SC1x00 series Watchdog 
 	  found on Soekris net4801 boards
 
-comment "Additional kernel modules"
+endmenu
+
+menu "Additional kernel modules"
 
 source "target/linux/package/Config.in"
+
+endmenu
 
 endmenu
