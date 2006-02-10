@@ -3,6 +3,7 @@ menu "ppp............................... PPP (Point-to-Point Protocol) daemon"
 config BR2_PACKAGE_PPP
 	prompt "ppp............................... PPP (Point-to-Point Protocol) daemon"
 	tristate
+	default n if BR2_LINUX_2_6_ARUBA
 	default y
 	select BR2_PACKAGE_KMOD_PPP
 
