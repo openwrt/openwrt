@@ -82,7 +82,7 @@ iptables -t nat -N postrouting_rule
 
   # allow
   iptables -A FORWARD -i br0 -o br0 -j ACCEPT
-  [ -z "$WAN" ] || iptables -A FORWARD -i $iface -o $WAN -j ACCEPT
+  [ -z "$WAN" ] || iptables -A FORWARD -i $LAN -o $WAN -j ACCEPT
 
   # reject (what to do with anything not allowed earlier)
   # uses the default -P DROP
