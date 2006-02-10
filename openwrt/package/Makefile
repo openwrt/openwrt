@@ -411,7 +411,9 @@ ifneq ($(BR2_PACKAGE_MPD_FLAC),)
 mpd-compile: flac-compile
 endif
 
+ifeq ($(BR2_PACKAGE_LIBOPENSSL),y)
 openvpn-compile: openssl-compile
+endif
 ifeq ($(BR2_PACKAGE_OPENVPN_LZO),y)
 openvpn-compile: liblzo-compile
 endif
