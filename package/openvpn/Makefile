@@ -18,7 +18,14 @@ include $(TOPDIR)/package/rules.mk
 
 $(eval $(call PKG_template,OPENVPN,openvpn,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
-PKG_DEPEND:="libopenssl, kmod-tun"
+PKG_DEPEND:="kmod-tun"
+
+ifneq ($(BR2_COMPILE_OPENVPN_WITH_OPENSSL),y)
+DISABLE_OPENSSL:=--disable-ssl --disable-crypto
+else
+PKG_DEPEND+=", libopenssl"
+endif
+
 ifneq ($(BR2_COMPILE_OPENVPN_WITH_LZO),y)
 DISABLE_LZO:=--disable-lzo
 else
@@ -66,6 +73,7 @@ $(PKG_BUILD_DIR)/.configured:
 		  --disable-management \
 		  --disable-socks \
 		  $(DISABLE_LZO) \
+		  $(DISABLE_OPENSSL) \
 		  $(DISABLE_SERVER) \
 		  $(DISABLE_HTTP) \
 	);
