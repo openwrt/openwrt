@@ -2,7 +2,9 @@
 
 menu "OpenWrt Package Selection"
 
-comment "The default set"
+comment "Package categories"
+
+menu "Base system"
 source "package/busybox/Config.in"
 source "package/bridge/Config.in"
 source "package/dnsmasq/Config.in"
@@ -10,8 +12,9 @@ source "package/ipkg/Config.in"
 source "package/iptables/Config.in"
 source "package/mtd/Config.in"
 source "package/nvram/Config.in"
+endmenu
 
-comment "Applications"
+menu "Applications"
 source "package/collectd/Config.in"
 source "package/deco/Config.in"
 source "package/gpsd/Config.in"
@@ -39,8 +42,9 @@ source "package/rrdtool1/Config.in"
 source "package/rrdcollect/Config.in"
 endmenu
 source "package/screen/Config.in"
+endmenu
 
-comment "Networking"
+menu "Networking"
 source "package/aircrack/Config.in"
 source "package/amwall/Config.in"
 source "package/arpd/Config.in"
@@ -165,8 +169,9 @@ source "package/wrt-radauth/Config.in"
 source "package/wx200d/Config.in"
 source "package/xinetd/Config.in"
 source "package/xsupplicant/Config.in"
+endmenu
 
-comment "IPv6"
+menu "IPv6"
 source "package/6tunnel/Config.in"
 source "package/aiccu/Config.in"
 source "package/dhcp6/Config.in"
@@ -174,8 +179,9 @@ source "package/miredo/Config.in"
 source "package/mrd6/Config.in"
 source "package/ndisc/Config.in"
 source "package/radvd/Config.in"
+endmenu
 
-comment "Libraries"
+menu "Libraries"
 source "package/cgilib/Config.in"
 source "package/glib/Config.in"
 source "package/id3lib/Config.in"
@@ -237,8 +243,9 @@ source "package/libxslt/Config.in"
 source "package/uclibc++/Config.in"
 source "package/ustl/Config.in"
 source "package/zlib/Config.in"
+endmenu
 
-comment "Multimedia"
+menu "Multimedia"
 source "package/gmediaserver/Config.in"
 source "package/icecast/Config.in"
 source "package/madplay/Config.in"
@@ -247,16 +254,18 @@ source "package/mt-daapd/Config.in"
 source "package/palantir/Config.in"
 source "package/peercast/Config.in"
 source "package/setpwc/Config.in"
+endmenu
 
-comment "Serial communications & terminal emulation"
+menu "Serial communications & terminal emulation"
 source "package/heyu/Config.in"
 source "package/lrzsz/Config.in"
 source "package/microcom/Config.in"
 source "package/picocom/Config.in"
 source "package/serdisplib/Config.in"
 source "package/setserial/Config.in"
+endmenu
 
-comment "Utilities"
+menu "Utilities"
 source "package/bc/Config.in"
 source "package/gdbserver/Config.in"
 source "package/pcmcia-cs/Config.in"  # pcmcia-utils
@@ -265,18 +274,21 @@ source "package/pciutils/Config.in"
 source "package/strace/Config.in"
 source "package/udev/Config.in"
 source "package/watchdog/Config.in"
+endmenu
 
-comment "FileSystems related"
+menu "FileSystems related"
 source "package/dosfstools/Config.in"
 source "package/e2fsprogs/Config.in"
 source "package/fuse/Config.in"
 source "package/shfs/Config.in"
 source "package/util-linux/Config.in"
+endmenu
 
-comment "Bluetooth"
+menu "Bluetooth"
 source "package/bluez-libs/Config.in"
 source "package/bluez-utils/Config.in"
 source "package/miax/Config.in"
+endmenu
 
 comment "Extra stuff"
 source "package/sdk/Config.in"

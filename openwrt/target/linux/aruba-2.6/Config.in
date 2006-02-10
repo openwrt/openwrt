@@ -1,3 +1,4 @@
 config BR2_ARUBA_RAMDISK
-	prompt "ramdisk"
+	prompt "ramdisk support"
+	depends BR2_LINUX_2_6_ARUBA
 	bool
