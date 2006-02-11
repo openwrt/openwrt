@@ -3,15 +3,16 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mrd6
-PKG_VERSION:=0.9.4-beta2
+PKG_VERSION:=0.9.5
 PKG_RELEASE:=1
-PKG_MD5SUM:=fe2e617954eccacd9b5c3d6e85f41c89
+PKG_MD5SUM:=24a08cf1407000d628a272b08a415dda
 
 PKG_SOURCE_URL:=http://hng.av.it.pt/mrd6/download/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
 include $(TOPDIR)/package/rules.mk
 
@@ -29,8 +30,8 @@ $(PKG_BUILD_DIR)/.built:
 		CXX=$(TARGET_CROSS)g++ \
 		CC=$(TARGET_CC) \
 		STAGING_DIR=$(STAGING_DIR) \
-		PREFIX=/usr \
 		DESTDIR=$(PKG_INSTALL_DIR) \
+		PREFIX=/usr/ \
 		install
 	install -d -m0755 $(PKG_INSTALL_DIR)/etc/init.d
 	install -m0644 files/$(PKG_NAME).conf $(PKG_INSTALL_DIR)/etc
