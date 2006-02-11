@@ -1,7 +1,7 @@
 config BR2_PACKAGE_MRD6
 	prompt "mrd6.............................. IPv6 multicast routing daemon"
 	tristate
-	default n
+	default m if CONFIG_DEVEL
 	help
 		Multicast is becoming a major component in next generation 
 		networks, used in several scenarios, from video broadcasting 
