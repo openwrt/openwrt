@@ -83,6 +83,19 @@ $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS)-$(1).bin: $(BIN_DIR)/openwrt-$(BOARD
 install: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS)-$(1).bin
 endef
 
+define sercomm_template
+$(BIN_DIR)/openwrt-$(1)-$(KERNEL)-$(FS).bin: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).bin
+	cat sercomm/adam2.bin "$$^" > "$$@.tmp"
+	dd if=sercomm/$(1) of="$$@.tmp" bs=$$$$((0x3e0000 - 80)) seek=1 conv=notrunc
+	$(STAGING_DIR)/bin/dgfirmware -f -w "$$@" "$$@.tmp"
+	rm -f "$$@.tmp"
+
+install: $(BIN_DIR)/openwrt-$(1)-$(KERNEL)-$(FS).bin
+endef
+
+$(eval $(call sercomm_template,dg834))
+$(eval $(call sercomm_template,jdr454wb))
+
 $(eval $(call pattern_template,AG1B))
 $(eval $(call pattern_template,WA22))
 $(eval $(call pattern_template,WAG2))
