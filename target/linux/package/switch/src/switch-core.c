@@ -18,6 +18,18 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  *
  * $Id: $
+ *
+ * Basic doc of driver's /proc interface:
+ * /proc/switch/<interface>/
+ *   registers:              read-only
+ *   counters:               read-only
+ *   reset:                  write causes hardware reset
+ *   enable_vlan:            "0", "1"
+ *   port/<port-number>/
+ *     enabled:              "0", "1"
+ *     media:                "AUTO", "100FD", "100HD", "10FD", "10HD"
+ *   vlan/<port-number>/
+ *     ports: same syntax as for nvram's vlan*ports (eg. "1 2 3 4 5*")
  */
 
 #include <linux/config.h>
