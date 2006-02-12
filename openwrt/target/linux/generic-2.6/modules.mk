@@ -327,7 +327,7 @@ $(eval $(call KMOD_template,USB_STORAGE,usb-storage,\
 
 $(eval $(call KMOD_template,USB_ATM,usb-atm,\
         $(MODULES_DIR)/kernel/drivers/usb/atm/usbatm.ko \
-	,CONFIG_USB_ATM,kmod-usb-atm,50,usb-atm))
+	,CONFIG_USB_ATM,kmod-usb-atm,50,usbatm))
 
 # Misc. devices
 
