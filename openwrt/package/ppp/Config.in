@@ -10,7 +10,7 @@ config BR2_PACKAGE_PPP
 config BR2_PACKAGE_PPP_WITH_FILTER
         prompt "Enable filter support"
 	bool
-	default y
+	default n
 	depends BR2_PACKAGE_LIBPCAP
 
 config BR2_PACKAGE_PPP_MOD_PPPOA
