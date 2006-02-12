@@ -39,20 +39,27 @@ my $probe = IO::Socket::INET->new(Proto => 'udp',
 my $setip = unpack("N", inet_aton($ip));
 $setip > 0 or usage();
 
+my @packets;
+foreach my $ver ([18, 1], [22, 2]) {
+	push @packets, pack("vCCVNV", 0, @$ver, 1, $setip, 0);
+}
 print STDERR "Looking for device: ";
-my $packet = pack("vCCVNV", 0, 22, 2, 1, $setip, 0);
 my $broadcast = sockaddr_in(5035, INADDR_BROADCAST);
 my $scanning;
 my $box;
 
 $SIG{"ALRM"} = sub {
 	return if --$scanning <= 0;
-	$probe->send($packet, 0, $broadcast);
+	foreach my $packet (@packets) {
+		$probe->send($packet, 0, $broadcast);
+	}
 	print STDERR ".";
 };
 
 $scanning = 10;
-$probe->send($packet, 0, $broadcast);
+foreach my $packet (@packets) {
+	$probe->send($packet, 0, $broadcast);
+}
 print STDERR ".";
 
 while($scanning) {
