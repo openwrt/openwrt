@@ -1,11 +1,21 @@
+menu "httping........................... Httping is like 'ping' but for http-requests."
+
 config BR2_PACKAGE_HTTPING
-	prompt "httping........................... Httping is like 'ping' but for http-requests."
+	prompt "httping.............................. Httping is like 'ping' but for http-requests."
 	tristate
 	default m if CONFIG_DEVEL
 	help
-	  Httping is like 'ping' but for http-requests.
-     	  Give it an url, and it'll show you how long it takes to connect, send a 
-	  request and retrieve the reply (only the headers). Be aware that the 
-	  transmission across the network also takes time!
+		Httping is like 'ping' but for http-requests.
+		Give it an url, and it'll show you how long it takes to connect, send a 
+		request and retrieve the reply (only the headers). Be aware that the 
+		transmission across the network also takes time!
 
-	  http://www.vanheusden.com/httping/
+		http://www.vanheusden.com/httping/
+
+config BR2_PACKAGE_HTTPING_WITH_SSL
+	prompt "Enable SSL support"
+	bool
+	default y
+	select BR2_PACKAGE_HTTPING
+
+endmenu

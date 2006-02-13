@@ -13,6 +13,12 @@ PKG_CAT:=zcat
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 
+PKG_DEPEND=libopenssl
+ifneq ($(BR2_PACKAGE_HTTPING_WITH_SSL),y)
+SSL_ENABLE:=".nossl"
+PKG_DEPEND:=""
+endif
+
 include $(TOPDIR)/package/rules.mk
 
 $(eval $(call PKG_template,HTTPING,$(PKG_NAME),$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
@@ -21,13 +27,14 @@ $(PKG_BUILD_DIR)/.configured:
 	touch $@
 
 $(PKG_BUILD_DIR)/.built:
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		CC=$(TARGET_CC)
+	$(MAKE) -C $(PKG_BUILD_DIR) -f $(PKG_BUILD_DIR)/Makefile$(SSL_ENABLE) \
+		CC=$(TARGET_CC) STAGING_DIR=$(STAGING_DIR)
 	touch $@
 
 $(IPKG_HTTPING): 
 	mkdir -p $(IDIR_HTTPING)/usr/sbin
-	$(CP) $(PKG_BUILD_DIR)/$(PKG_NAME) $(IDIR_HTTPING)/usr/sbin/
+	echo "Depends: $(PKG_DEPEND)" >> $(IDIR_HTTPING)/CONTROL/control
+	cp $(PKG_BUILD_DIR)/$(PKG_NAME) $(IDIR_HTTPING)/usr/sbin/
 	$(STRIP) $(IDIR_HTTPING)/usr/sbin/*
 	$(IPKG_BUILD) $(IDIR_HTTPING) $(PACKAGE_DIR)
 
