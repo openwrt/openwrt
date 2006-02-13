@@ -62,6 +62,7 @@ package-$(BR2_PACKAGE_HOSTAP_UTILS) += hostap-utils
 package-$(BR2_PACKAGE_HOSTAPD) += hostapd
 package-$(BR2_COMPILE_HOWL) += howl
 package-$(BR2_PACKAGE_HTPDATE) += htpdate
+package-$(BR2_PACKAGE_HTTPING) += httping
 package-$(BR2_PACKAGE_ICECAST) += icecast
 package-$(BR2_PACKAGE_ID3LIB) += id3lib
 package-$(BR2_PACKAGE_IFTOP) += iftop
