@@ -9,7 +9,6 @@ HOSTCC    = gcc
 HOSTCFLAGS= -Wall -Wstrict-prototypes -O2 -fomit-frame-pointer
 # Ensure consistent sort order, 'gcc -print-search-dirs' behavior, etc.
 LC_ALL:= C
-CP:=cp -a
 
 
 all: ncurses conf mconf
