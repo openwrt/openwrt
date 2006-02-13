@@ -7,9 +7,10 @@ PKG_VERSION:=0.22
 PKG_RELEASE:=1
 PKG_MD5SUM:=b52f68c47f709e9fc9429250eb8f954c
 
-PKG_SOURCE_URL:=http://www.cr0.net:8040/code/network/
+PKG_SOURCE_URL:=http://phadej.daug.net/files/ \
+	http://www.cr0.net:8040/code/network/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tgz
-PKG_CAT:=gzcat
+PKG_CAT:=zcat
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
