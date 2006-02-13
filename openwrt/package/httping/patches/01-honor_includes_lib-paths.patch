@@ -1,0 +1,26 @@
+diff -urN httping-1.0.10.orig/io.c httping-1.0.10/io.c
+--- httping-1.0.10.orig/io.c	2006-02-13 13:48:37.645232976 +0100
++++ httping-1.0.10/io.c	2006-02-13 13:48:24.083294704 +0100
+@@ -37,7 +37,7 @@
+ 		struct timeval to;
+ 		fd_set rfds;
+ 
+-		FD_ZERO(&rfds);
++		//FD_ZERO(&rfds);
+ 		FD_SET(fd, &rfds);
+ 
+ 		to.tv_sec  = timeout / 1000;
+diff -urN httping-1.0.10.orig/Makefile httping-1.0.10/Makefile
+--- httping-1.0.10.orig/Makefile	2006-01-02 17:07:29.000000000 +0100
++++ httping-1.0.10/Makefile	2006-02-13 13:44:45.066590304 +0100
+@@ -15,8 +15,8 @@
+ VERSION=1.0.10
+ 
+ DEBUG=-g
+-LDFLAGS+=-lssl -lcrypto $(DEBUG)
+-CFLAGS+=-O2 -Wall -DVERSION=\"$(VERSION)\" $(DEBUG)
++LDFLAGS+=-lssl -lcrypto $(DEBUG) -L$(STAGING_DIR)/usr/lib
++CFLAGS+=-O2 -Wall -DVERSION=\"$(VERSION)\" $(DEBUG) -I$(STAGING_DIR)/usr/include
+ 
+ OBJS=http.o io.o str.o error.o utils.o main.o tcp.o mssl.o res.o
+ 
