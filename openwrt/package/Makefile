@@ -160,6 +160,7 @@ package-$(BR2_COMPILE_OSIRIS) += osiris
 package-$(BR2_PACKAGE_PALANTIR) += palantir
 package-$(BR2_PACKAGE_P910ND) += p910nd
 package-$(BR2_PACKAGE_PARPROUTED) += parprouted
+package-$(BR2_PACKAGE_PCIUTILS) += pciutils
 package-$(BR2_COMPILE_PCMCIA_CS) += pcmcia-cs
 package-$(BR2_COMPILE_PCRE) += pcre
 package-$(BR2_PACKAGE_PEERCAST) += peercast
