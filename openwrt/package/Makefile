@@ -296,6 +296,7 @@ iperf-compile: uclibc++-compile
 iptables-snmp-compile: net-snmp-compile
 iptraf-compile: ncurses-compile
 hostapd-compile: openssl-compile wireless-tools-compile
+httping-compile: openssl-compile
 kismet-compile: uclibc++-compile libpcap-compile ncurses-compile
 l2tpns-compile: libcli-compile
 less-compile: ncurses-compile
