@@ -607,8 +607,7 @@ s/ \+/ /g'`
 			ipkg_set_depends $pkg $new_deps
 		done
 
-		new_deps=`echo $new_deps | sed -e 's/[[:space:]]\+/\\
-/g' | sort | uniq`
+		new_deps=`echo $new_deps | sed -e 's/[[:space:]]\+/\n/g' | sort | uniq`
 
 		local maybe_new_pkgs=
 		for pkg in $new_deps; do
