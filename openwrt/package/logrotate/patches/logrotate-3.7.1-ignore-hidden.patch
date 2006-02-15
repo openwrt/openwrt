@@ -1,0 +1,14 @@
+--- logrotate-3.7/config.c.orig	2005-04-26 22:57:53.000000000 -0400
++++ logrotate-3.7/config.c	2005-04-26 22:59:36.000000000 -0400
+@@ -142,6 +142,11 @@
+ 	(!fname[1] || (fname[1] == '.' && !fname[2])))
+ 	return 0;
+ 
++    /* Don't include 'hidden' files either; this breaks Gentoo 
++       portage config file management http://bugs.gentoo.org/87683 */
++    if (fname[0] == '.')
++	return 0;
++
+     /* Check if fname is ending in a taboo-extension; if so, return
+        false */
+     for (i = 0; i < tabooCount; i++) {

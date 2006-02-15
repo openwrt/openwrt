@@ -1,0 +1,12 @@
+diff -u -ruN logrotate-3.7.1.orig/config.c logrotate-3.7.1/config.c
+--- logrotate-3.7.1.orig/config.c	2003-08-07 07:13:14.000000000 -0400
++++ logrotate-3.7.1/config.c	2005-05-24 12:13:41.000000000 -0400
+@@ -147,7 +147,7 @@
+     for (i = 0; i < tabooCount; i++) {
+ 	if (!strcmp(fname + strlen(fname) - strlen(tabooExts[i]),
+ 	    tabooExts[i])) {
+-	    message(MESS_ERROR, "Ignoring %s, because of %s "
++	    message(MESS_DEBUG, "Ignoring %s, because of %s "
+ 		    "ending\n", fname, tabooExts[i]);
+ 
+ 	    return 0;
