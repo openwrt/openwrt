@@ -34,7 +34,7 @@ $(PKG_BUILD_DIR)/.built:
 $(IPKG_HTTPING): 
 	mkdir -p $(IDIR_HTTPING)/usr/sbin
 	echo "Depends: $(PKG_DEPEND)" >> $(IDIR_HTTPING)/CONTROL/control
-	cp $(PKG_BUILD_DIR)/$(PKG_NAME) $(IDIR_HTTPING)/usr/sbin/
+	$(CP) $(PKG_BUILD_DIR)/$(PKG_NAME) $(IDIR_HTTPING)/usr/sbin/
 	$(STRIP) $(IDIR_HTTPING)/usr/sbin/*
 	$(IPKG_BUILD) $(IDIR_HTTPING) $(PACKAGE_DIR)
 

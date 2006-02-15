@@ -117,6 +117,7 @@ package-$(BR2_PACKAGE_LIBXML2) += libxml2
 package-$(BR2_PACKAGE_LIBXSLT) += libxslt
 package-$(BR2_PACKAGE_LIGHTTPD) += lighttpd
 package-$(BR2_PACKAGE_LINUX_ATM) += linux-atm
+package-$(BR2_PACKAGE_LOGROTATE) += logrotate
 package-$(BR2_PACKAGE_LRZSZ) += lrzsz
 package-$(BR2_COMPILE_LUA) += lua
 package-$(BR2_PACKAGE_MACCHANGER) += macchanger
@@ -311,6 +312,7 @@ libvorbis-compile: libogg-compile
 libxml2-compile: zlib-compile
 libxslt-compile: libxml2-compile
 lighttpd-compile: openssl-compile pcre-compile
+logrotate-compile: popt-compile
 madplay-compile: libid3tag-compile libmad-compile
 miax-compile: bluez-libs-compile
 miredo-compile: uclibc++-compile
