@@ -19,6 +19,13 @@ include $(TOPDIR)/package/rules.mk
 
 $(eval $(call PKG_template,BIND_SERVER,bind-server,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,BIND_CLIENT,bind-client,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,BIND_TOOLS,bind-tools,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,BIND_RNDC,bind-rndc,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,BIND_CHECK,bind-check,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,BIND_DNSSEC,bind-dnssec,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,BIND_HOST,bind-host,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,BIND_DIG,bind-dig,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+
 
 $(PKG_BUILD_DIR)/.configured:
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
@@ -82,3 +89,50 @@ $(IPKG_BIND_CLIENT):
 	$(CP) $(PKG_INSTALL_DIR)/usr/bin/nsupdate $(IDIR_BIND_CLIENT)/usr/bin/
 	$(RSTRIP) $(IDIR_BIND_CLIENT)
 	$(IPKG_BUILD) $(IDIR_BIND_CLIENT) $(PACKAGE_DIR)
+
+$(IPKG_BIND_TOOLS):
+	install -d -m0755 $(IDIR_BIND_TOOLS)/usr/bin
+	install -d -m0755 $(IDIR_BIND_TOOLS)/usr/sbin
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/dig $(IDIR_BIND_TOOLS)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/host $(IDIR_BIND_TOOLS)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/dnssec-keygen $(IDIR_BIND_TOOLS)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/dnssec-signzone $(IDIR_BIND_TOOLS)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/named-checkconf $(IDIR_BIND_TOOLS)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/named-checkzone $(IDIR_BIND_TOOLS)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/rndc $(IDIR_BIND_TOOLS)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/rndc-confgen $(IDIR_BIND_TOOLS)/usr/sbin/
+	$(RSTRIP) $(IDIR_BIND_TOOLS)
+	$(IPKG_BUILD) $(IDIR_BIND_TOOLS) $(PACKAGE_DIR)
+
+$(IPKG_BIND_RNDC):
+	install -d -m0755 $(IDIR_BIND_RNDC)/usr/sbin
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/rndc $(IDIR_BIND_RNDC)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/rndc-confgen $(IDIR_BIND_RNDC)/usr/sbin/
+	$(RSTRIP) $(IDIR_BIND_RNDC)
+	$(IPKG_BUILD) $(IDIR_BIND_RNDC) $(PACKAGE_DIR)
+
+$(IPKG_BIND_CHECK):
+	install -d -m0755 $(IDIR_BIND_CHECK)/usr/sbin
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/named-checkconf $(IDIR_BIND_CHECK)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/named-checkzone $(IDIR_BIND_CHECK)/usr/sbin/
+	$(RSTRIP) $(IDIR_BIND_CHECK)
+	$(IPKG_BUILD) $(IDIR_BIND_CHECK) $(PACKAGE_DIR)
+
+$(IPKG_BIND_DNSSEC):
+	install -d -m0755 $(IDIR_BIND_DNSSEC)/usr/sbin
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/dnssec-keygen $(IDIR_BIND_DNSSEC)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/dnssec-signzone $(IDIR_BIND_DNSSEC)/usr/sbin/
+	$(RSTRIP) $(IDIR_BIND_DNSSEC)
+	$(IPKG_BUILD) $(IDIR_BIND_DNSSEC) $(PACKAGE_DIR)
+
+$(IPKG_BIND_HOST):
+	install -d -m0755 $(IDIR_BIND_HOST)/usr/bin
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/host $(IDIR_BIND_HOST)/usr/bin/
+	$(RSTRIP) $(IDIR_BIND_HOST)
+	$(IPKG_BUILD) $(IDIR_BIND_HOST) $(PACKAGE_DIR)
+
+$(IPKG_BIND_DIG):
+	install -d -m0755 $(IDIR_BIND_DIG)/usr/bin
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/dig $(IDIR_BIND_DIG)/usr/bin/
+	$(RSTRIP) $(IDIR_BIND_DIG)
+	$(IPKG_BUILD) $(IDIR_BIND_DIG) $(PACKAGE_DIR)
