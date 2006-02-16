@@ -161,9 +161,9 @@ choice
 	config BR2_PACKAGE_PMACCTD_SQLITE
 		prompt     "pmacctd-sqlite................   built with SQLite database support"
 		tristate
-		select BR2_COMPILE_PMACCT_PGSQL
+		select BR2_COMPILE_PMACCT_SQLITE
 		select BR2_PACKAGE_LIBPCAP
-		select BR2_PACKAGE_LIBPQ
+		select BR2_PACKAGE_LIBSQLITE
 
 	config BR2_PACKAGE_PMACCTD_CUSTOM
 		prompt     "pmacctd-custom................   customized to your needs"
