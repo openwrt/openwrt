@@ -488,6 +488,9 @@ endif
 ifneq ($(BR2_COMPILE_PMACCT_PGSQL),)
 pmacct-compile: postgresql-compile
 endif
+ifneq ($(BR2_COMPILE_PMACCT_SQLITE),)
+pmacct-compile: sqlite-compile
+endif
 
 rrs-compile: uclibc++-compile
 ifneq ($(BR2_PACKAGE_RRS),)

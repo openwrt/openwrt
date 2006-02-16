@@ -3,7 +3,7 @@ menu "pmacct............................ IPv4/IPv6 accounting and aggregation to
 config BR2_COMPILE_PMACCT
 	tristate
 	default n
-	depends BR2_COMPILE_PMACCT_BASIC || BR2_COMPILE_PMACCT_MYSQL || BR2_COMPILE_PMACCT_PGSQL || BR2_COMPILE_PMACCT_CUSTOM
+	depends BR2_COMPILE_PMACCT_BASIC || BR2_COMPILE_PMACCT_MYSQL || BR2_COMPILE_PMACCT_PGSQL || BR2_COMPILE_PMACCT_SQLITE || BR2_COMPILE_PMACCT_CUSTOM
 
 config BR2_COMPILE_PMACCT_BASIC
 	tristate
@@ -21,6 +21,12 @@ config BR2_COMPILE_PMACCT_PGSQL
 	tristate
 	default n
 	depends BR2_PACKAGE_NFACCTD_PGSQL || BR2_PACKAGE_PMACCTD_PGSQL
+	select BR2_COMPILE_PMACCT
+
+config BR2_COMPILE_PMACCT_SQLITE
+	tristate
+	default n
+	depends BR2_PACKAGE_NFACCTD_SQLITE || BR2_PACKAGE_PMACCTD_SQLITE
 	select BR2_COMPILE_PMACCT
 
 config BR2_COMPILE_PMACCT_CUSTOM
@@ -43,7 +49,9 @@ choice
 	  Depends:
 	    - libmysqlclient (for MySQL database logging support)
 	    - libpq (for PostgreSQL database logging support)
-	
+	    - libsqlite (for SQLite database logging support)
+
+
 	config BR2_PACKAGE_NFACCTD_BASIC
 		prompt     "nfacctd.......................   built without database support"
 		tristate
@@ -63,7 +71,14 @@ choice
 		select BR2_COMPILE_PMACCT_PGSQL
 		select BR2_PACKAGE_LIBPCAP
 		select BR2_PACKAGE_LIBPQ
-	
+
+	config BR2_PACKAGE_NFACCTD_SQLITE
+		prompt     "nfacctd-sqlite................   built with SQLite database support"
+		tristate
+		select BR2_COMPILE_PMACCT_SQLITE
+		select BR2_PACKAGE_LIBPCAP
+		select BR2_PACKAGE_LIBSQLITE
+
 	config BR2_PACKAGE_NFACCTD_CUSTOM
 		prompt     "nfacctd-custom................   customized to your needs"
 		tristate
@@ -96,6 +111,13 @@ choice
 		depends BR2_PACKAGE_NFACCTD_CUSTOM
 		select BR2_PACKAGE_LIBPQ
 
+	config BR2_COMPILE_NFACCTD_WITH_SQLITE
+		prompt "SQLite database support"
+		bool
+		default n
+		depends BR2_PACKAGE_NFACCTD_CUSTOM
+		select BR2_PACKAGE_LIBSQLITE
+
 endchoice
 
 choice
@@ -113,7 +135,8 @@ choice
 	    - libpcap
 	    - libmysqlclient (for MySQL database logging support)
 	    - libpq (for PostgreSQL database logging support)
-	
+	    - libsqlite (for SQLite database logging support)
+
 	
 	config BR2_PACKAGE_PMACCTD_BASIC
 		prompt     "pmacctd.......................   built without database support"
@@ -134,7 +157,14 @@ choice
 		select BR2_COMPILE_PMACCT_PGSQL
 		select BR2_PACKAGE_LIBPCAP
 		select BR2_PACKAGE_LIBPQ
-	
+
+	config BR2_PACKAGE_PMACCTD_SQLITE
+		prompt     "pmacctd-sqlite................   built with SQLite database support"
+		tristate
+		select BR2_COMPILE_PMACCT_PGSQL
+		select BR2_PACKAGE_LIBPCAP
+		select BR2_PACKAGE_LIBPQ
+
 	config BR2_PACKAGE_PMACCTD_CUSTOM
 		prompt     "pmacctd-custom................   customized to your needs"
 		tristate
@@ -166,6 +196,13 @@ choice
 		default n
 		depends BR2_PACKAGE_PMACCTD_CUSTOM
 		select BR2_PACKAGE_LIBPQ
+
+	config BR2_COMPILE_PMACCTD_WITH_SQLITE
+		prompt "SQLite database support"
+		bool
+		default n
+		depends BR2_PACKAGE_PMACCTD_CUSTOM
+		select BR2_PACKAGE_LIBSQLITE
 
 endchoice
 
