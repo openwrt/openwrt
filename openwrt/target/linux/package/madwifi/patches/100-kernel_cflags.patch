@@ -1,6 +1,18 @@
-diff -urN madwifi.old/hal/public/mips-be-elf.inc madwifi.new/hal/public/mips-be-elf.inc
---- madwifi.old/hal/public/mips-be-elf.inc	2005-11-02 15:33:27.000000000 +0100
-+++ madwifi.new/hal/public/mips-be-elf.inc	2006-01-13 12:15:02.000000000 +0100
+diff -ru madwifi-ng-r1451-20060212/Makefile madwifi-ng-r1451-20060212-patch/Makefile
+--- madwifi-ng-r1451-20060212/Makefile	2006-02-09 08:06:58.000000000 -0500
++++ madwifi-ng-r1451-20060212-patch/Makefile	2006-02-16 05:58:26.000000000 -0500
+@@ -52,7 +52,7 @@
+ 
+ all: modules tools
+ 
+-modules: configcheck svnversion.h 
++modules: svnversion.h 
+ 	mkdir -p ${SYMBOLSDIR}
+ 	for i in ${DIRS_MODULES}; do \
+ 		$(MAKE) -C $$i || exit 1; \
+diff -ru madwifi-ng-r1451-20060212/hal/public/mips-be-elf.inc madwifi-ng-r1451-20060212-patch/hal/public/mips-be-elf.inc
+--- madwifi-ng-r1451-20060212/hal/public/mips-be-elf.inc	2006-02-11 07:04:39.000000000 -0500
++++ madwifi-ng-r1451-20060212-patch/hal/public/mips-be-elf.inc	2006-02-16 05:56:21.000000000 -0500
 @@ -66,5 +66,5 @@
  
  LDOPTS=	-EB
@@ -8,9 +20,9 @@ diff -urN madwifi.old/hal/public/mips-be-elf.inc madwifi.new/hal/public/mips-be-
 -COPTS+=	-G 0 -EB -mno-abicalls -fno-pic -mips2 -Wa,--trap \
 +COPTS+=	-G 0 -mno-abicalls -fno-pic -mips32 -Wa,--trap \
  	-fno-strict-aliasing -fno-common -fomit-frame-pointer -mlong-calls
-diff -urN madwifi.old/hal/public/mips-le-elf.inc madwifi.new/hal/public/mips-le-elf.inc
---- madwifi.old/hal/public/mips-le-elf.inc	2005-11-02 15:33:27.000000000 +0100
-+++ madwifi.new/hal/public/mips-le-elf.inc	2006-01-13 12:15:02.000000000 +0100
+diff -ru madwifi-ng-r1451-20060212/hal/public/mips-le-elf.inc madwifi-ng-r1451-20060212-patch/hal/public/mips-le-elf.inc
+--- madwifi-ng-r1451-20060212/hal/public/mips-le-elf.inc	2006-02-11 07:04:39.000000000 -0500
++++ madwifi-ng-r1451-20060212-patch/hal/public/mips-le-elf.inc	2006-02-16 05:56:22.000000000 -0500
 @@ -63,5 +63,5 @@
  
  LDOPTS=	-EL
@@ -18,15 +30,3 @@ diff -urN madwifi.old/hal/public/mips-le-elf.inc madwifi.new/hal/public/mips-le-
 -COPTS+=	-G 0 -EL -mno-abicalls -fno-pic -mips2 -Wa,--trap \
 +COPTS+=	-G 0 -mno-abicalls -fno-pic -mips32 -Wa,--trap \
  	-fno-strict-aliasing -fno-common -fomit-frame-pointer -mlong-calls
-diff -urN madwifi.old/Makefile madwifi.new/Makefile
---- madwifi.old/Makefile	2006-01-06 23:52:45.000000000 +0100
-+++ madwifi.new/Makefile	2006-01-13 12:15:57.000000000 +0100
-@@ -53,7 +53,7 @@
- 
- all: modules tools
- 
--modules: configcheck
-+modules:
- 	mkdir -p ${SYMBOLSDIR}
- 	for i in ${DIRS_MODULES}; do \
- 		$(MAKE) -C $$i || exit 1; \
