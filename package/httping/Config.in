@@ -16,6 +16,6 @@ config BR2_PACKAGE_HTTPING_WITH_SSL
 	prompt "Enable SSL support"
 	bool
 	default y
-	select BR2_PACKAGE_HTTPING
+	depends BR2_PACKAGE_HTTPING
 
 endmenu
