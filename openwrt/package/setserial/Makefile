@@ -56,3 +56,9 @@ $(IPKG_SETSERIAL):
 	install -m0755 $(PKG_BUILD_DIR)/setserial $(IDIR_SETSERIAL)/usr/sbin/
 	$(RSTRIP) $(IDIR_SETSERIAL)
 	$(IPKG_BUILD) $(IDIR_SETSERIAL) $(PACKAGE_DIR)
+
+mostlyclean:
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		clean
+	rm -f $(PKG_BUILD_DIR)/.built
+
