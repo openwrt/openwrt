@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=tor
-PKG_VERSION:=0.1.0.16
+PKG_VERSION:=0.1.0.17
 PKG_RELEASE:=1
-PKG_MD5SUM:=13631507b8eeee5d6e8fd245dc3eef4f
+PKG_MD5SUM:=83c4afe29fa82473afcb2ec7e17771b9
 
 PKG_SOURCE_URL:=http://tor.eff.org/dist/ \
 	http://ftp.se.linux.org/crypto/tor/ \
