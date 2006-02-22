@@ -342,6 +342,7 @@ $(eval $(call KMOD_template,BLUETOOTH,bluetooth,\
 	$(MODULES_DIR)/kernel/net/bluetooth/sco.ko \
 	$(MODULES_DIR)/kernel/net/bluetooth/rfcomm/rfcomm.ko \
 	$(MODULES_DIR)/kernel/drivers/bluetooth/hci_uart.ko \
+	$(MODULES_DIR)/kernel/drivers/bluetooth/hci_usb.ko \
 ,CONFIG_BT))
 
 
