@@ -1,0 +1,177 @@
+diff -urN openntpd-3.7p1.orig/client.c openntpd-3.7p1/client.c
+--- openntpd-3.7p1.orig/client.c	2005-03-13 13:36:38.000000000 +0100
++++ openntpd-3.7p1/client.c	2006-02-23 16:27:53.686827824 +0100
+@@ -306,7 +306,7 @@
+ 	priv_adjtime();
+ 
+ 	for (i = 0; i < OFFSET_ARRAY_SIZE; i++)
+-		if (p->reply[i].rcvd <= p->reply[best].rcvd)
++		/* if (p->reply[i].rcvd <= p->reply[best].rcvd) */
+ 			p->reply[i].good = 0;
+ 
+ 	return (0);
+diff -urN openntpd-3.7p1.orig/configure.ac openntpd-3.7p1/configure.ac
+--- openntpd-3.7p1.orig/configure.ac	2005-05-23 13:11:08.000000000 +0200
++++ openntpd-3.7p1/configure.ac	2006-02-23 16:27:53.688827520 +0100
+@@ -466,6 +466,11 @@
+ 	[ builtin_arc4random=$withval ]
+ )
+ 
++AC_ARG_WITH(adjtimex,
++	[  --with-adjtimex         Use adjtimex to adjust kernel skew],
++	[ AC_DEFINE(USE_ADJTIMEX, [], [Use adjust skew with adjtimex (experimental)]) ]
++)
++
+ # Search for OpenSSL if required.
+ if test "$ac_cv_func_arc4random" != "yes" && test "x$builtin_arc4random" != "xyes"; then
+ saved_CPPFLAGS="$CPPFLAGS"
+diff -urN openntpd-3.7p1.orig/defines.h openntpd-3.7p1/defines.h
+--- openntpd-3.7p1.orig/defines.h	2005-05-23 02:16:33.000000000 +0200
++++ openntpd-3.7p1/defines.h	2006-02-23 16:27:53.688827520 +0100
+@@ -20,6 +20,10 @@
+ # define setproctitle(x)
+ #endif
+ 
++#ifdef USE_ADJTIMEX
++# define adjtime(a,b)	(_compat_adjtime((a),(b)))
++#endif
++
+ #if !defined(SA_LEN)
+ # if defined(HAVE_STRUCT_SOCKADDR_SA_LEN)
+ #  define SA_LEN(x)	((x)->sa_len)
+diff -urN openntpd-3.7p1.orig/openbsd-compat/Makefile.in openntpd-3.7p1/openbsd-compat/Makefile.in
+--- openntpd-3.7p1.orig/openbsd-compat/Makefile.in	2004-12-20 00:41:36.000000000 +0100
++++ openntpd-3.7p1/openbsd-compat/Makefile.in	2006-02-23 16:27:53.901795144 +0100
+@@ -9,7 +9,7 @@
+ OPENBSD=	asprintf.o daemon.o inet_pton.o strlcpy.o
+ COMPAT=		atomicio.o bsd-arc4random.o bsd-misc.o bsd-poll.o \
+ 		bsd-snprintf.o fake-rfc2553.o uidswap.o
+-PORT=		port-qnx.o
++PORT=		port-linux.o port-qnx.o
+ 
+ VPATH=@srcdir@
+ CC=@CC@
+diff -urN openntpd-3.7p1.orig/openbsd-compat/openbsd-compat.h openntpd-3.7p1/openbsd-compat/openbsd-compat.h
+--- openntpd-3.7p1.orig/openbsd-compat/openbsd-compat.h	2004-12-19 04:04:22.000000000 +0100
++++ openntpd-3.7p1/openbsd-compat/openbsd-compat.h	2006-02-23 16:27:53.948788000 +0100
+@@ -44,6 +44,11 @@
+                 __attribute__((__format__ (printf, 2, 3)));
+ #endif
+ 
++#ifdef USE_ADJTIMEX
++# include <sys/time.h>
++int _compat_adjtime(const struct timeval *, struct timeval *);
++#endif
++
+ #ifndef HAVE_INET_PTON
+ int inet_pton(int, const char *, void *);
+ #endif
+diff -urN openntpd-3.7p1.orig/openbsd-compat/port-linux.c openntpd-3.7p1/openbsd-compat/port-linux.c
+--- openntpd-3.7p1.orig/openbsd-compat/port-linux.c	1970-01-01 01:00:00.000000000 +0100
++++ openntpd-3.7p1/openbsd-compat/port-linux.c	2006-02-23 16:27:53.996780704 +0100
+@@ -0,0 +1,105 @@
++/* $Id$ */
++
++/*
++ * Copyright (c) 2004 Darren Tucker <dtucker at zip com au>
++ *
++ * Permission to use, copy, modify, and distribute this software for any
++ * purpose with or without fee is hereby granted, provided that the above
++ * copyright notice and this permission notice appear in all copies.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
++ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
++ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
++ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
++ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
++ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
++ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
++ */
++
++#include "includes.h"
++
++#ifdef USE_ADJTIMEX
++#include <sys/timex.h>
++#include <errno.h>
++#ifdef adjtime
++# undef adjtime
++#endif
++
++#include "ntpd.h"
++
++/* scale factor used by adjtimex freq param.  1 ppm = 65536 */
++#define ADJTIMEX_FREQ_SCALE 65536
++
++/* maximum change to skew per adjustment, in PPM */
++#define MAX_SKEW_DELTA 5.0
++
++int
++_compat_adjtime(const struct timeval *delta, struct timeval *olddelta)
++{
++	static struct timeval tlast = {0,0};
++	static double tskew = 0;
++	static int synced = -1;
++	struct timeval tnow, tdelta;
++	double skew = 0, newskew, deltaskew, adjust, interval = 0;
++	struct timex tmx;
++	int result, saved_errno;
++
++	gettimeofday(&tnow, NULL);
++	adjust = (double)delta->tv_sec;
++	adjust += (double)delta->tv_usec / 1000000;
++
++	/* Even if the caller doesn't care about the olddelta, we do */
++	if (olddelta == NULL)
++		olddelta = &tdelta;
++
++	result = adjtime(delta, olddelta);
++	saved_errno = errno;
++
++	if (olddelta->tv_sec == 0 && olddelta->tv_usec == 0 &&
++	    synced != INT_MAX)
++		synced++;
++	 else
++		synced = 0;
++
++	/*
++	 * do skew calculations if we have synced
++	 */
++	if (synced == 0 ) {
++		tmx.modes = 0;
++		if (adjtimex(&tmx) == -1)
++			log_warn("adjtimex get failed");
++		else
++			tskew = (double)tmx.freq / ADJTIMEX_FREQ_SCALE;
++	} else if (synced >= 1) {
++		interval = (double)(tnow.tv_sec - tlast.tv_sec);
++		interval += (double)(tnow.tv_usec - tlast.tv_usec) / 1000000;
++
++		skew = (adjust * 1000000) / interval;
++		newskew = ((tskew * synced) + skew) / synced;
++		deltaskew = newskew - tskew;
++
++		if (deltaskew > MAX_SKEW_DELTA) {
++			log_info("skew change %0.3lf exceeds limit", deltaskew);
++			tskew += MAX_SKEW_DELTA;
++		} else if (deltaskew < -MAX_SKEW_DELTA) {
++			log_info("skew change %0.3lf exceeds limit", deltaskew);
++			tskew -= MAX_SKEW_DELTA;
++		} else {
++			tskew = newskew;
++		}
++
++		/* Adjust the kernel skew.  */
++		tmx.freq = (long)(tskew * ADJTIMEX_FREQ_SCALE);
++		tmx.modes = ADJ_FREQUENCY;
++		if (adjtimex(&tmx) == -1)
++			log_warn("adjtimex set freq failed");
++	}
++
++	log_debug("interval %0.3lf skew %0.3lf total skew %0.3lf", interval,
++	    skew, tskew);
++
++	tlast = tnow;
++	errno = saved_errno;
++	return result;
++}
++#endif
