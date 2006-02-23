@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openssl
-PKG_VERSION:=0.9.7i
+PKG_VERSION:=0.9.8a
 PKG_RELEASE:=1
-PKG_MD5SUM:=f69d82b206ff8bff9d0e721f97380b9e
+PKG_MD5SUM:=1d16c727c10185e4d694f87f5e424ee1
 
 PKG_SOURCE_URL:=http://www.openssl.org/source/ \
 	ftp://ftp.funet.fi/pub/crypt/cryptography/libs/openssl/source/ \
@@ -28,7 +28,7 @@ $(PKG_BUILD_DIR)/.configured:
 	$(SED) 's,/CFLAG=,/CFLAG= $(TARGET_SOFT_FLOAT) ,g' $(PKG_BUILD_DIR)/Configure
 	(cd $(PKG_BUILD_DIR); \
 		PATH=$(TARGET_PATH) \
-		./Configure linux-$(ARCH) \
+		./Configure linux-generic32 \
 		  --prefix=/usr \
 		  --openssldir=/etc/ssl \
 		  -I$(STAGING_DIR)/usr/include \
