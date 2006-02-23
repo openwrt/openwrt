@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openntpd
-PKG_VERSION:=3.6.1p1
+PKG_VERSION:=3.7p1
 PKG_RELEASE:=1
-PKG_MD5SUM:=4584f226523776a3cdd2fb6f8212ba8d
+PKG_MD5SUM:=10ed8eefd760e5819efcf3277b118f47
 
 # space separated list or special @SF for sourceforge projects
 PKG_SOURCE_URL:=ftp://ftp.openbsd.org/pub/OpenBSD/OpenNTPD/ \
@@ -25,6 +25,8 @@ $(PKG_BUILD_DIR)/.configured:
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
+		autoconf ; \
+		autoheader ; \
 		./configure \
 		  --target=$(GNU_TARGET_NAME) \
 		  --host=$(GNU_TARGET_NAME) \
@@ -47,6 +49,7 @@ $(PKG_BUILD_DIR)/.configured:
 		  $(DISABLE_NLS) \
 		  --with-builtin-arc4random \
 		  --with-privsep-user=ntp \
+		  --with-adjtimex \
 	);
 	touch $@
 
