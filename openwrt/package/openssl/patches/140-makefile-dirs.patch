@@ -1,11 +1,10 @@
-diff -Nur openssl-0.9.7f/Makefile.org openssl-0.9.7f.new/Makefile.org
---- openssl-0.9.7f/Makefile.org	2005-03-15 10:46:13.000000000 +0100
-+++ openssl-0.9.7f.new/Makefile.org	2005-04-03 20:15:26.000000000 +0200
-@@ -175,7 +175,7 @@
- # we might set SHLIB_MARK to '$(SHARED_LIBS)'.
- SHLIB_MARK=
+--- openssl-0.9.8a/Makefile.org	2006-02-21 20:57:45.000000000 -0800
++++ openssl-0.9.8a-new/Makefile.org	2006-02-21 21:37:11.000000000 -0800
+@@ -100,7 +100,7 @@
+ KRB5_INCLUDES=
+ LIBKRB5=
  
--DIRS=   crypto fips ssl $(SHLIB_MARK) sigs apps test tools
+-DIRS=   crypto ssl engines apps test tools
 +DIRS=   crypto ssl apps
  SHLIBDIRS= crypto ssl
  
