@@ -55,7 +55,9 @@ KPKG_MAKEOPTS += BUILD_DIR="$(LINUX_BUILD_DIR)"
 
 %-clean:
 	@$(START_TRACE) "target/linux/package/$(patsubst %-clean,%,$@)-clean: "
-	@$(MAKE) -C $(patsubst %-clean,%,$@) clean
+	@$(MAKE) -C $(patsubst %-clean,%,$@) \
+		$(KPKG_MAKEOPTS) \
+		clean
 	@$(CMD_TRACE) " done"
 	@$(END_TRACE)
 
