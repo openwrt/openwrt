@@ -1,2 +1,3 @@
 #!/bin/sh
+[ -d /etc/maradns ] || mkdir -p /etc/maradns
 /usr/sbin/maradns >/dev/null 2>&1 &
