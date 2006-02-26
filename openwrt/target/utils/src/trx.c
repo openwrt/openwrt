@@ -44,8 +44,18 @@
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
+#if defined(__APPLE__)
+#include        <machine/endian.h>
+#include        <machine/byte_order.h>
+#define __BYTE_ORDER BYTE_ORDER
+#define __BIG_ENDIAN BIG_ENDIAN
+#define bswap_16(x) NXSwapShort(x)
+#define bswap_32(x) NXSwapInt(x)
+#define bswap_64(x) NXSwapLongLong(x)
+#else
 #include <endian.h>
 #include <byteswap.h>
+#endif
 
 #if __BYTE_ORDER == __BIG_ENDIAN
 #define STORE32_LE(X)		bswap_32(X)
