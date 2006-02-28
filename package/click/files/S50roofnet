@@ -1,0 +1,7 @@
+#!/bin/sh
+
+killall -q click
+cp /usr/bin/srcr.click /tmp
+sh /usr/bin/gen_config_roofnet.sh > /tmp/unaligned.click
+click-align /tmp/unaligned.click > /tmp/roofnet.click
+/usr/bin/click /tmp/roofnet.click > /tmp/roofnet.log 2>&1 &
