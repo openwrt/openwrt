@@ -38,6 +38,12 @@ endif
 ifneq ($(BR2_COMPILE_OPENVPN_WITH_HTTP),y)
 DISABLE_HTTP:=--disable-http
 endif
+ifeq ($(BR2_COMPILE_OPENVPN_WITH_PASSWORD_SAVE),y)
+ENABLE_PASSWORD_SAVE:=--enable-password-save
+endif
+ifeq ($(BR2_COMPILE_OPENVPN_WITH_SMALL),y)
+ENABLE_SMALL:=--enable-small
+endif
 
 $(PKG_BUILD_DIR)/.configured:
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
@@ -76,6 +82,8 @@ $(PKG_BUILD_DIR)/.configured:
 		  $(DISABLE_OPENSSL) \
 		  $(DISABLE_SERVER) \
 		  $(DISABLE_HTTP) \
+		  $(ENABLE_PASSWORD_SAVE) \
+		  $(ENABLE_SMALL) \
 	);
 	touch $(PKG_BUILD_DIR)/.configured
 

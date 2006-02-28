@@ -38,4 +38,16 @@ config BR2_COMPILE_OPENVPN_WITH_LZO
 	depends BR2_PACKAGE_OPENVPN
 	select BR2_PACKAGE_LIBLZO
 
+config BR2_COMPILE_OPENVPN_WITH_PASSWORD_SAVE
+	prompt "Enable password saving"
+	bool
+	default y
+	depends BR2_PACKAGE_OPENVPN
+
+config BR2_COMPILE_OPENVPN_WITH_SMALL
+	prompt "Enable smaller executable size (disable OCC, usage message, and verb 4 parm list)"
+	bool
+	default n
+	depends BR2_PACKAGE_OPENVPN
+
 endmenu
