@@ -15,6 +15,7 @@ config BR2_GCC_3_4
 choice
 	prompt "GCC compiler Version" if CONFIG_DEVEL
 	default BR2_GCC_VERSION_4_0_2 if BR2_LINUX_2_6_ARUBA
+	default BR2_GCC_VERSION_3_4_4 if BR2_LINUX_2_4_BRCM
 	default BR2_GCC_VERSION_3_4_5
 	help
 	  Select the version of gcc you wish to use.
