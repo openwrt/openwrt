@@ -1,0 +1,16 @@
+--- linux-2.4.32/arch/i386/kernel/i386_ksyms.c--	2006-02-26 11:11:42.000000000 +0100
++++ linux-2.4.32/arch/i386/kernel/i386_ksyms.c	2006-02-26 11:11:45.000000000 +0100
+@@ -170,10 +170,13 @@
+ 
+ #undef memcpy
+ #undef memset
++#undef memcmp
+ extern void * memset(void *,int,__kernel_size_t);
+ extern void * memcpy(void *,const void *,__kernel_size_t);
++extern int memcmp(const void *, const void *);
+ EXPORT_SYMBOL_NOVERS(memcpy);
+ EXPORT_SYMBOL_NOVERS(memset);
++EXPORT_SYMBOL_NOVERS(memcmp);
+ 
+ #ifdef CONFIG_HAVE_DEC_LOCK
+ EXPORT_SYMBOL(atomic_dec_and_lock);
