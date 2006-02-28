@@ -24,6 +24,7 @@ package-$(BR2_PACKAGE_CIFSMOUNT) += cifsmount
 package-$(BR2_PACKAGE_CLICK) += click
 package-$(BR2_PACKAGE_CLINKC) += clinkc
 package-$(BR2_PACKAGE_COLLECTD) += collectd
+package-$(BR2_PACKAGE_CTORRENT) += ctorrent
 package-$(BR2_PACKAGE_CUPS) += cups
 package-$(BR2_COMPILE_CURL) += curl
 package-$(BR2_PACKAGE_CUTTER) += cutter
@@ -206,6 +207,7 @@ package-$(BR2_PACKAGE_SETPWC) += setpwc
 package-$(BR2_PACKAGE_SETSERIAL) += setserial
 package-$(BR2_PACKAGE_SHAT) += shat
 package-$(BR2_COMPILE_SHFS) += shfs
+package-$(BR2_PACKAGE_SIPP) += sipp
 package-$(BR2_PACKAGE_SIPROXD) += siproxd
 package-$(BR2_PACKAGE_SIPSAK) += sipsak
 package-$(BR2_PACKAGE_SLURM) += slurm
@@ -354,6 +356,7 @@ rsync-compile: popt-compile
 scanlogd-compile: libpcap-compile libnids-compile libnet-compile
 scdp-compile: libnet-compile
 screen-compile: ncurses-compile
+sipp-compile: ncurses-compile uclibc++-compile libpthread-compile
 siproxd-compile: libosip2-compile
 sipsak-compile: openssl-compile
 socat-compile: openssl-compile
