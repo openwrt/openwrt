@@ -17,6 +17,7 @@ package-$(BR2_PACKAGE_KMOD_SWITCH) += switch
 package-$(BR2_PACKAGE_KMOD_UEAGLE_ATM) += ueagle-atm
 package-$(BR2_PACKAGE_KMOD_DIAG) += diag
 package-$(BR2_PACKAGE_KMOD_WLCOMPAT) += wlcompat
+package-$(BR2_PACKAGE_KMOD_ZD1211) += zd1211
 
 bcm43xx-dscape-compile: ieee80211-dscape-compile
 wlcompat-compile: base-files-compile
