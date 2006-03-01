@@ -307,7 +307,7 @@ l2tpns-compile: libcli-compile
 less-compile: ncurses-compile
 lcd4linux-compile: ncurses-compile
 libgcrypt-compile: libgpg-error-compile
-libgd-compile: libpng-compile
+libgd-compile: libpng-compile jpeg-compile
 libid3tag-compile: zlib-compile
 libnet-compile: libpcap-compile
 libnids-compile: libnet-compile
