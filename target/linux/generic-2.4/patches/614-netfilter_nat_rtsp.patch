@@ -1,390 +1,54 @@
-diff -urN linux-2.4.32.orig/arch/mips/kernel/mips_ksyms.c linux-2.4.32/arch/mips/kernel/mips_ksyms.c
---- linux-2.4.32.orig/arch/mips/kernel/mips_ksyms.c	2005-12-29 12:17:49.000000000 +0100
-+++ linux-2.4.32/arch/mips/kernel/mips_ksyms.c	2005-12-29 12:18:26.000000000 +0100
-@@ -52,6 +52,7 @@
- /*
-  * String functions
-  */
-+EXPORT_SYMBOL_NOVERS(memchr);
- EXPORT_SYMBOL_NOVERS(memcmp);
- EXPORT_SYMBOL_NOVERS(memset);
- EXPORT_SYMBOL_NOVERS(memcpy);
-diff -urN linux-2.4.32.orig/Documentation/Configure.help linux-2.4.32/Documentation/Configure.help
---- linux-2.4.32.orig/Documentation/Configure.help	2005-12-29 12:17:55.000000000 +0100
-+++ linux-2.4.32/Documentation/Configure.help	2005-12-29 12:18:26.000000000 +0100
-@@ -2817,6 +2817,14 @@
-   Documentation/modules.txt.  If unsure, say `N'.
- 
- 
-+RTSP protocol support
-+CONFIG_IP_NF_RTSP
-+  Support the RTSP protocol.  This allows UDP transports to be setup
-+  properly, including RTP and RDT.
-+
-+  If you want to compile it as a module, say 'M' here and read
-+  Documentation/modules.txt.  If unsure, say 'Y'.
-+
- IRC Send/Chat protocol support
- CONFIG_IP_NF_IRC
-   There is a commonly-used extension to IRC called
-diff -urN linux-2.4.32.orig/include/linux/netfilter_helpers.h linux-2.4.32/include/linux/netfilter_helpers.h
---- linux-2.4.32.orig/include/linux/netfilter_helpers.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.4.32/include/linux/netfilter_helpers.h	2005-12-29 12:18:26.000000000 +0100
-@@ -0,0 +1,133 @@
-+/*
-+ * Helpers for netfiler modules.  This file provides implementations for basic
-+ * functions such as strncasecmp(), etc.
-+ *
-+ * gcc will warn for defined but unused functions, so we only include the
-+ * functions requested.  The following macros are used:
-+ *   NF_NEED_STRNCASECMP        nf_strncasecmp()
-+ *   NF_NEED_STRTOU16           nf_strtou16()
-+ *   NF_NEED_STRTOU32           nf_strtou32()
-+ */
-+#ifndef _NETFILTER_HELPERS_H
-+#define _NETFILTER_HELPERS_H
-+
-+/* Only include these functions for kernel code. */
-+#ifdef __KERNEL__
-+
-+#include <linux/ctype.h>
-+#define iseol(c) ( (c) == '\r' || (c) == '\n' )
-+
-+/*
-+ * The standard strncasecmp()
-+ */
-+#ifdef NF_NEED_STRNCASECMP
-+static int
-+nf_strncasecmp(const char* s1, const char* s2, u_int32_t len)
-+{
-+    if (s1 == NULL || s2 == NULL)
-+    {
-+        if (s1 == NULL && s2 == NULL)
-+        {
-+            return 0;
-+        }
-+        return (s1 == NULL) ? -1 : 1;
-+    }
-+    while (len > 0 && tolower(*s1) == tolower(*s2))
-+    {
-+        len--;
-+        s1++;
-+        s2++;
-+    }
-+    return ( (len == 0) ? 0 : (tolower(*s1) - tolower(*s2)) );
-+}
-+#endif /* NF_NEED_STRNCASECMP */
-+
-+/*
-+ * Parse a string containing a 16-bit unsigned integer.
-+ * Returns the number of chars used, or zero if no number is found.
-+ */
-+#ifdef NF_NEED_STRTOU16
-+static int
-+nf_strtou16(const char* pbuf, u_int16_t* pval)
-+{
-+    int n = 0;
-+
-+    *pval = 0;
-+    while (isdigit(pbuf[n]))
-+    {
-+        *pval = (*pval * 10) + (pbuf[n] - '0');
-+        n++;
-+    }
-+
-+    return n;
-+}
-+#endif /* NF_NEED_STRTOU16 */
-+
-+/*
-+ * Parse a string containing a 32-bit unsigned integer.
-+ * Returns the number of chars used, or zero if no number is found.
-+ */
-+#ifdef NF_NEED_STRTOU32
-+static int
-+nf_strtou32(const char* pbuf, u_int32_t* pval)
-+{
-+    int n = 0;
-+
-+    *pval = 0;
-+    while (pbuf[n] >= '0' && pbuf[n] <= '9')
-+    {
-+        *pval = (*pval * 10) + (pbuf[n] - '0');
-+        n++;
-+    }
-+
-+    return n;
-+}
-+#endif /* NF_NEED_STRTOU32 */
-+
-+/*
-+ * Given a buffer and length, advance to the next line and mark the current
-+ * line.
-+ */
-+#ifdef NF_NEED_NEXTLINE
-+static int
-+nf_nextline(char* p, uint len, uint* poff, uint* plineoff, uint* plinelen)
-+{
-+    uint    off = *poff;
-+    uint    physlen = 0;
-+
-+    if (off >= len)
-+    {
-+        return 0;
-+    }
-+
-+    while (p[off] != '\n')
-+    {
-+        if (len-off <= 1)
-+        {
-+            return 0;
-+        }
-+
-+        physlen++;
-+        off++;
-+    }
-+
-+    /* if we saw a crlf, physlen needs adjusted */
-+    if (physlen > 0 && p[off] == '\n' && p[off-1] == '\r')
-+    {
-+        physlen--;
-+    }
-+
-+    /* advance past the newline */
-+    off++;
-+
-+    *plineoff = *poff;
-+    *plinelen = physlen;
-+    *poff = off;
-+
-+    return 1;
-+}
-+#endif /* NF_NEED_NEXTLINE */
-+
-+#endif /* __KERNEL__ */
-+
-+#endif /* _NETFILTER_HELPERS_H */
-diff -urN linux-2.4.32.orig/include/linux/netfilter_ipv4/ip_conntrack.h linux-2.4.32/include/linux/netfilter_ipv4/ip_conntrack.h
---- linux-2.4.32.orig/include/linux/netfilter_ipv4/ip_conntrack.h	2005-12-29 12:17:55.000000000 +0100
-+++ linux-2.4.32/include/linux/netfilter_ipv4/ip_conntrack.h	2005-12-29 12:18:26.000000000 +0100
-@@ -66,6 +66,7 @@
- };
- 
- /* Add protocol helper include file here */
-+#include <linux/netfilter_ipv4/ip_conntrack_rtsp.h>
- #include <linux/netfilter_ipv4/ip_conntrack_amanda.h>
- 
- #include <linux/netfilter_ipv4/ip_conntrack_ftp.h>
-@@ -78,6 +79,7 @@
- /* per expectation: application helper private data */
- union ip_conntrack_expect_help {
- 	/* insert conntrack helper private data (expect) here */
-+	struct ip_ct_rtsp_expect exp_rtsp_info;
- 	struct ip_ct_amanda_expect exp_amanda_info;
- 	struct ip_ct_ftp_expect exp_ftp_info;
- 	struct ip_ct_irc_expect exp_irc_info;
-@@ -96,6 +98,7 @@
- /* per conntrack: application helper private data */
- union ip_conntrack_help {
- 	/* insert conntrack helper private data (master) here */
-+	struct ip_ct_rtsp_master ct_rtsp_info;
- 	struct ip_ct_ftp_master ct_ftp_info;
- 	struct ip_ct_irc_master ct_irc_info;
- 	struct ip_ct_pptp_master ct_pptp_info;
-diff -urN linux-2.4.32.orig/include/linux/netfilter_ipv4/ip_conntrack_rtsp.h linux-2.4.32/include/linux/netfilter_ipv4/ip_conntrack_rtsp.h
---- linux-2.4.32.orig/include/linux/netfilter_ipv4/ip_conntrack_rtsp.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.4.32/include/linux/netfilter_ipv4/ip_conntrack_rtsp.h	2005-12-29 12:18:26.000000000 +0100
-@@ -0,0 +1,68 @@
-+/*
-+ * RTSP extension for IP connection tracking.
-+ * (C) 2003 by Tom Marshall <tmarshall@real.com>
-+ * based on ip_conntrack_irc.h
-+ *
-+ *      This program is free software; you can redistribute it and/or
-+ *      modify it under the terms of the GNU General Public License
-+ *      as published by the Free Software Foundation; either version
-+ *      2 of the License, or (at your option) any later version.
-+ */
-+#ifndef _IP_CONNTRACK_RTSP_H
-+#define _IP_CONNTRACK_RTSP_H
-+
-+/* #define IP_NF_RTSP_DEBUG */
-+#define IP_NF_RTSP_VERSION "0.01"
-+
-+/* port block types */
-+typedef enum {
-+    pb_single,  /* client_port=x */
-+    pb_range,   /* client_port=x-y */
-+    pb_discon   /* client_port=x/y (rtspbis) */
-+} portblock_t;
-+
-+/* We record seq number and length of rtsp headers here, all in host order. */
-+
-+/*
-+ * This structure is per expected connection.  It is a member of struct
-+ * ip_conntrack_expect.  The TCP SEQ for the conntrack expect is stored
-+ * there and we are expected to only store the length of the data which
-+ * needs replaced.  If a packet contains multiple RTSP messages, we create
-+ * one expected connection per message.
-+ *
-+ * We use these variables to mark the entire header block.  This may seem
-+ * like overkill, but the nature of RTSP requires it.  A header may appear
-+ * multiple times in a message.  We must treat two Transport headers the
-+ * same as one Transport header with two entries.
-+ */
-+struct ip_ct_rtsp_expect
-+{
-+    u_int32_t   len;        /* length of header block */
-+    portblock_t pbtype;     /* Type of port block that was requested */
-+    u_int16_t   loport;     /* Port that was requested, low or first */
-+    u_int16_t   hiport;     /* Port that was requested, high or second */
-+#if 0
-+    uint        method;     /* RTSP method */
-+    uint        cseq;       /* CSeq from request */
-+#endif
-+};
-+
-+/* This structure exists only once per master */
-+struct ip_ct_rtsp_master
-+{
-+    /* Empty (?) */
-+};
-+
-+
-+#ifdef __KERNEL__
-+
-+#include <linux/netfilter_ipv4/lockhelp.h>
-+
-+#define RTSP_PORT   554
-+
-+/* Protects rtsp part of conntracks */
-+DECLARE_LOCK_EXTERN(ip_rtsp_lock);
-+
-+#endif /* __KERNEL__ */
-+
-+#endif /* _IP_CONNTRACK_RTSP_H */
-diff -urN linux-2.4.32.orig/include/linux/netfilter_mime.h linux-2.4.32/include/linux/netfilter_mime.h
---- linux-2.4.32.orig/include/linux/netfilter_mime.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.4.32/include/linux/netfilter_mime.h	2005-12-29 12:18:26.000000000 +0100
-@@ -0,0 +1,90 @@
-+/*
-+ * MIME functions for netfilter modules.  This file provides implementations
-+ * for basic MIME parsing.  MIME headers are used in many protocols, such as
-+ * HTTP, RTSP, SIP, etc.
-+ *
-+ * gcc will warn for defined but unused functions, so we only include the
-+ * functions requested.  The following macros are used:
-+ *   NF_NEED_MIME_NEXTLINE      nf_mime_nextline()
-+ */
-+#ifndef _NETFILTER_MIME_H
-+#define _NETFILTER_MIME_H
-+
-+/* Only include these functions for kernel code. */
-+#ifdef __KERNEL__
-+
-+#include <linux/kernel.h>
-+#include <linux/ctype.h>
-+
-+/*
-+ * Given a buffer and length, advance to the next line and mark the current
-+ * line.  If the current line is empty, *plinelen will be set to zero.  If
-+ * not, it will be set to the actual line length (including CRLF).
-+ *
-+ * 'line' in this context means logical line (includes LWS continuations).
-+ * Returns 1 on success, 0 on failure.
-+ */
-+#ifdef NF_NEED_MIME_NEXTLINE
-+static int
-+nf_mime_nextline(char* p, uint len, uint* poff, uint* plineoff, uint* plinelen)
-+{
-+    uint    off = *poff;
-+    uint    physlen = 0;
-+    int     is_first_line = 1;
-+
-+    if (off >= len)
-+    {
-+        return 0;
-+    }
-+
-+    do
-+    {
-+        while (p[off] != '\n')
-+        {
-+            if (len-off <= 1)
-+            {
-+                return 0;
-+            }
-+
-+            physlen++;
-+            off++;
-+        }
-+
-+        /* if we saw a crlf, physlen needs adjusted */
-+        if (physlen > 0 && p[off] == '\n' && p[off-1] == '\r')
-+        {
-+            physlen--;
-+        }
-+
-+        /* advance past the newline */
-+        off++;
-+
-+        /* check for an empty line */
-+        if (physlen == 0)
-+        {
-+            break;
-+        }
-+
-+        /* check for colon on the first physical line */
-+        if (is_first_line)
-+        {
-+            is_first_line = 0;
-+            if (memchr(p+(*poff), ':', physlen) == NULL)
-+            {
-+                return 0;
-+            }
-+        }
-+    }
-+    while (p[off] == ' ' || p[off] == '\t');
-+
-+    *plineoff = *poff;
-+    *plinelen = (physlen == 0) ? 0 : (off - *poff);
-+    *poff = off;
-+
-+    return 1;
-+}
-+#endif /* NF_NEED_MIME_NEXTLINE */
-+
-+#endif /* __KERNEL__ */
-+
-+#endif /* _NETFILTER_MIME_H */
-diff -urN linux-2.4.32.orig/net/ipv4/netfilter/Config.in linux-2.4.32/net/ipv4/netfilter/Config.in
---- linux-2.4.32.orig/net/ipv4/netfilter/Config.in	2005-12-29 12:17:55.000000000 +0100
-+++ linux-2.4.32/net/ipv4/netfilter/Config.in	2005-12-29 12:20:42.000000000 +0100
-@@ -18,6 +18,7 @@
-   dep_tristate '  SIP protocol support' CONFIG_IP_NF_SIP $CONFIG_IP_NF_CONNTRACK
+diff -urN linux-2.4.32/net/ipv4/netfilter/Config.in linux-2.4.32.new/net/ipv4/netfilter/Config.in
+--- linux-2.4.32/net/ipv4/netfilter/Config.in	2006-03-01 00:53:57.884792456 +0100
++++ linux-2.4.32.new/net/ipv4/netfilter/Config.in	2006-03-01 00:55:14.462150928 +0100
+@@ -16,6 +16,7 @@
+   dep_tristate '  GRE protocol support' CONFIG_IP_NF_CT_PROTO_GRE $CONFIG_IP_NF_CONNTRACK
+   dep_tristate '   PPTP protocol support' CONFIG_IP_NF_PPTP $CONFIG_IP_NF_CT_PROTO_GRE
    dep_tristate '  H.323 (netmeeting) support' CONFIG_IP_NF_H323 $CONFIG_IP_NF_CONNTRACK
-   dep_tristate '  MMS protocol support' CONFIG_IP_NF_MMS $CONFIG_IP_NF_CONNTRACK
 +  dep_tristate '  RTSP protocol support' CONFIG_IP_NF_RTSP $CONFIG_IP_NF_CONNTRACK
  fi
  
  if [ "$CONFIG_EXPERIMENTAL" = "y" ]; then
-@@ -128,6 +129,13 @@
- 	  define_tristate CONFIG_IP_NF_NAT_MMS $CONFIG_IP_NF_NAT
- 	fi
+@@ -119,6 +120,13 @@
+          define_tristate CONFIG_IP_NF_NAT_H323 $CONFIG_IP_NF_NAT
+        fi
        fi
 +      if [ "$CONFIG_IP_NF_RTSP" = "m" ]; then
 +        define_tristate CONFIG_IP_NF_NAT_RTSP m
 +      else
-+	if [ "$CONFIG_IP_NF_RTSP" = "y" ]; then
-+	  define_tristate CONFIG_IP_NF_NAT_RTSP $CONFIG_IP_NF_NAT
-+	fi
++       if [ "$CONFIG_IP_NF_RTSP" = "y" ]; then
++         define_tristate CONFIG_IP_NF_NAT_RTSP $CONFIG_IP_NF_NAT
++       fi
 +      fi
-       if [ "$CONFIG_IP_NF_AMANDA" = "m" ]; then
-         define_tristate CONFIG_IP_NF_NAT_AMANDA m
-       else
-diff -urN linux-2.4.32.orig/net/ipv4/netfilter/ip_conntrack_rtsp.c linux-2.4.32/net/ipv4/netfilter/ip_conntrack_rtsp.c
---- linux-2.4.32.orig/net/ipv4/netfilter/ip_conntrack_rtsp.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.4.32/net/ipv4/netfilter/ip_conntrack_rtsp.c	2005-12-29 12:18:26.000000000 +0100
+       if [ "$CONFIG_EXPERIMENTAL" = "y" ]; then
+         dep_tristate '    Basic SNMP-ALG support (EXPERIMENTAL)' CONFIG_IP_NF_NAT_SNMP_BASIC $CONFIG_IP_NF_NAT
+       fi
+diff -urN linux-2.4.32/net/ipv4/netfilter/Makefile linux-2.4.32.new/net/ipv4/netfilter/Makefile
+--- linux-2.4.32/net/ipv4/netfilter/Makefile	2006-03-01 00:53:57.886792152 +0100
++++ linux-2.4.32.new/net/ipv4/netfilter/Makefile	2006-03-01 00:55:14.463150776 +0100
+@@ -57,6 +57,11 @@
+ ifdef CONFIG_IP_NF_NAT_H323
+        export-objs += ip_conntrack_h323.o
+ endif
++obj-$(CONFIG_IP_NF_RTSP) += ip_conntrack_rtsp.o
++ifdef CONFIG_IP_NF_NAT_RTSP
++       export-objs += ip_conntrack_rtsp.o
++endif
++
+ 
+ 
+ # NAT helpers 
+@@ -67,6 +72,7 @@
+ obj-$(CONFIG_IP_NF_NAT_PROTO_GRE) += ip_nat_proto_gre.o
+ obj-$(CONFIG_IP_NF_NAT_PPTP) += ip_nat_pptp.o
+ obj-$(CONFIG_IP_NF_NAT_H323) += ip_nat_h323.o
++obj-$(CONFIG_IP_NF_NAT_RTSP) += ip_nat_rtsp.o
+ 
+ # generic IP tables 
+ obj-$(CONFIG_IP_NF_IPTABLES) += ip_tables.o
+diff -urN linux-2.4.32/net/ipv4/netfilter/ip_conntrack_rtsp.c linux-2.4.32.new/net/ipv4/netfilter/ip_conntrack_rtsp.c
+--- linux-2.4.32/net/ipv4/netfilter/ip_conntrack_rtsp.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.32.new/net/ipv4/netfilter/ip_conntrack_rtsp.c	2006-03-01 00:55:14.465150472 +0100
 @@ -0,0 +1,507 @@
 +/*
 + * RTSP extension for IP connection tracking
@@ -893,9 +557,9 @@ diff -urN linux-2.4.32.orig/net/ipv4/netfilter/ip_conntrack_rtsp.c linux-2.4.32/
 +
 +module_init(init);
 +module_exit(fini);
-diff -urN linux-2.4.32.orig/net/ipv4/netfilter/ip_nat_rtsp.c linux-2.4.32/net/ipv4/netfilter/ip_nat_rtsp.c
---- linux-2.4.32.orig/net/ipv4/netfilter/ip_nat_rtsp.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.4.32/net/ipv4/netfilter/ip_nat_rtsp.c	2005-12-29 12:18:26.000000000 +0100
+diff -urN linux-2.4.32/net/ipv4/netfilter/ip_nat_rtsp.c linux-2.4.32.new/net/ipv4/netfilter/ip_nat_rtsp.c
+--- linux-2.4.32/net/ipv4/netfilter/ip_nat_rtsp.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.32.new/net/ipv4/netfilter/ip_nat_rtsp.c	2006-03-01 00:55:14.467150168 +0100
 @@ -0,0 +1,621 @@
 +/*
 + * RTSP extension for TCP NAT alteration
@@ -1518,21 +1182,342 @@ diff -urN linux-2.4.32.orig/net/ipv4/netfilter/ip_nat_rtsp.c linux-2.4.32/net/ip
 +
 +module_init(init);
 +module_exit(fini);
-diff -urN linux-2.4.32.orig/net/ipv4/netfilter/Makefile linux-2.4.32/net/ipv4/netfilter/Makefile
---- linux-2.4.32.orig/net/ipv4/netfilter/Makefile	2005-12-29 12:17:55.000000000 +0100
-+++ linux-2.4.32/net/ipv4/netfilter/Makefile	2005-12-29 12:18:26.000000000 +0100
-@@ -32,6 +32,14 @@
- obj-$(CONFIG_IP_NF_CONNTRACK) += ip_conntrack.o
+--- linux-2.4.32/arch/mips/kernel/mips_ksyms.c	2006-03-01 00:49:34.142887320 +0100
++++ linux-2.4.32.new/arch/mips/kernel/mips_ksyms.c	2006-03-01 00:55:14.469149864 +0100
+@@ -52,6 +52,7 @@
+ /*
+  * String functions
+  */
++EXPORT_SYMBOL_NOVERS(memchr);
+ EXPORT_SYMBOL_NOVERS(memcmp);
+ EXPORT_SYMBOL_NOVERS(memset);
+ EXPORT_SYMBOL_NOVERS(memcpy);
+diff -urN linux-2.4.32/include/linux/netfilter_helpers.h linux-2.4.32.new/include/linux/netfilter_helpers.h
+--- linux-2.4.32/include/linux/netfilter_helpers.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.32.new/include/linux/netfilter_helpers.h	2006-03-01 00:55:14.470149712 +0100
+@@ -0,0 +1,133 @@
++/*
++ * Helpers for netfiler modules.  This file provides implementations for basic
++ * functions such as strncasecmp(), etc.
++ *
++ * gcc will warn for defined but unused functions, so we only include the
++ * functions requested.  The following macros are used:
++ *   NF_NEED_STRNCASECMP        nf_strncasecmp()
++ *   NF_NEED_STRTOU16           nf_strtou16()
++ *   NF_NEED_STRTOU32           nf_strtou32()
++ */
++#ifndef _NETFILTER_HELPERS_H
++#define _NETFILTER_HELPERS_H
++
++/* Only include these functions for kernel code. */
++#ifdef __KERNEL__
++
++#include <linux/ctype.h>
++#define iseol(c) ( (c) == '\r' || (c) == '\n' )
++
++/*
++ * The standard strncasecmp()
++ */
++#ifdef NF_NEED_STRNCASECMP
++static int
++nf_strncasecmp(const char* s1, const char* s2, u_int32_t len)
++{
++    if (s1 == NULL || s2 == NULL)
++    {
++        if (s1 == NULL && s2 == NULL)
++        {
++            return 0;
++        }
++        return (s1 == NULL) ? -1 : 1;
++    }
++    while (len > 0 && tolower(*s1) == tolower(*s2))
++    {
++        len--;
++        s1++;
++        s2++;
++    }
++    return ( (len == 0) ? 0 : (tolower(*s1) - tolower(*s2)) );
++}
++#endif /* NF_NEED_STRNCASECMP */
++
++/*
++ * Parse a string containing a 16-bit unsigned integer.
++ * Returns the number of chars used, or zero if no number is found.
++ */
++#ifdef NF_NEED_STRTOU16
++static int
++nf_strtou16(const char* pbuf, u_int16_t* pval)
++{
++    int n = 0;
++
++    *pval = 0;
++    while (isdigit(pbuf[n]))
++    {
++        *pval = (*pval * 10) + (pbuf[n] - '0');
++        n++;
++    }
++
++    return n;
++}
++#endif /* NF_NEED_STRTOU16 */
++
++/*
++ * Parse a string containing a 32-bit unsigned integer.
++ * Returns the number of chars used, or zero if no number is found.
++ */
++#ifdef NF_NEED_STRTOU32
++static int
++nf_strtou32(const char* pbuf, u_int32_t* pval)
++{
++    int n = 0;
++
++    *pval = 0;
++    while (pbuf[n] >= '0' && pbuf[n] <= '9')
++    {
++        *pval = (*pval * 10) + (pbuf[n] - '0');
++        n++;
++    }
++
++    return n;
++}
++#endif /* NF_NEED_STRTOU32 */
++
++/*
++ * Given a buffer and length, advance to the next line and mark the current
++ * line.
++ */
++#ifdef NF_NEED_NEXTLINE
++static int
++nf_nextline(char* p, uint len, uint* poff, uint* plineoff, uint* plinelen)
++{
++    uint    off = *poff;
++    uint    physlen = 0;
++
++    if (off >= len)
++    {
++        return 0;
++    }
++
++    while (p[off] != '\n')
++    {
++        if (len-off <= 1)
++        {
++            return 0;
++        }
++
++        physlen++;
++        off++;
++    }
++
++    /* if we saw a crlf, physlen needs adjusted */
++    if (physlen > 0 && p[off] == '\n' && p[off-1] == '\r')
++    {
++        physlen--;
++    }
++
++    /* advance past the newline */
++    off++;
++
++    *plineoff = *poff;
++    *plinelen = physlen;
++    *poff = off;
++
++    return 1;
++}
++#endif /* NF_NEED_NEXTLINE */
++
++#endif /* __KERNEL__ */
++
++#endif /* _NETFILTER_HELPERS_H */
+diff -urN linux-2.4.32/include/linux/netfilter_ipv4/ip_conntrack_rtsp.h linux-2.4.32.new/include/linux/netfilter_ipv4/ip_conntrack_rtsp.h
+--- linux-2.4.32/include/linux/netfilter_ipv4/ip_conntrack_rtsp.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.32.new/include/linux/netfilter_ipv4/ip_conntrack_rtsp.h	2006-03-01 00:55:14.472149408 +0100
+@@ -0,0 +1,68 @@
++/*
++ * RTSP extension for IP connection tracking.
++ * (C) 2003 by Tom Marshall <tmarshall@real.com>
++ * based on ip_conntrack_irc.h
++ *
++ *      This program is free software; you can redistribute it and/or
++ *      modify it under the terms of the GNU General Public License
++ *      as published by the Free Software Foundation; either version
++ *      2 of the License, or (at your option) any later version.
++ */
++#ifndef _IP_CONNTRACK_RTSP_H
++#define _IP_CONNTRACK_RTSP_H
++
++/* #define IP_NF_RTSP_DEBUG */
++#define IP_NF_RTSP_VERSION "0.01"
++
++/* port block types */
++typedef enum {
++    pb_single,  /* client_port=x */
++    pb_range,   /* client_port=x-y */
++    pb_discon   /* client_port=x/y (rtspbis) */
++} portblock_t;
++
++/* We record seq number and length of rtsp headers here, all in host order. */
++
++/*
++ * This structure is per expected connection.  It is a member of struct
++ * ip_conntrack_expect.  The TCP SEQ for the conntrack expect is stored
++ * there and we are expected to only store the length of the data which
++ * needs replaced.  If a packet contains multiple RTSP messages, we create
++ * one expected connection per message.
++ *
++ * We use these variables to mark the entire header block.  This may seem
++ * like overkill, but the nature of RTSP requires it.  A header may appear
++ * multiple times in a message.  We must treat two Transport headers the
++ * same as one Transport header with two entries.
++ */
++struct ip_ct_rtsp_expect
++{
++    u_int32_t   len;        /* length of header block */
++    portblock_t pbtype;     /* Type of port block that was requested */
++    u_int16_t   loport;     /* Port that was requested, low or first */
++    u_int16_t   hiport;     /* Port that was requested, high or second */
++#if 0
++    uint        method;     /* RTSP method */
++    uint        cseq;       /* CSeq from request */
++#endif
++};
++
++/* This structure exists only once per master */
++struct ip_ct_rtsp_master
++{
++    /* Empty (?) */
++};
++
++
++#ifdef __KERNEL__
++
++#include <linux/netfilter_ipv4/lockhelp.h>
++
++#define RTSP_PORT   554
++
++/* Protects rtsp part of conntracks */
++DECLARE_LOCK_EXTERN(ip_rtsp_lock);
++
++#endif /* __KERNEL__ */
++
++#endif /* _IP_CONNTRACK_RTSP_H */
+diff -urN linux-2.4.32/include/linux/netfilter_mime.h linux-2.4.32.new/include/linux/netfilter_mime.h
+--- linux-2.4.32/include/linux/netfilter_mime.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.32.new/include/linux/netfilter_mime.h	2006-03-01 00:55:14.473149256 +0100
+@@ -0,0 +1,90 @@
++/*
++ * MIME functions for netfilter modules.  This file provides implementations
++ * for basic MIME parsing.  MIME headers are used in many protocols, such as
++ * HTTP, RTSP, SIP, etc.
++ *
++ * gcc will warn for defined but unused functions, so we only include the
++ * functions requested.  The following macros are used:
++ *   NF_NEED_MIME_NEXTLINE      nf_mime_nextline()
++ */
++#ifndef _NETFILTER_MIME_H
++#define _NETFILTER_MIME_H
++
++/* Only include these functions for kernel code. */
++#ifdef __KERNEL__
++
++#include <linux/kernel.h>
++#include <linux/ctype.h>
++
++/*
++ * Given a buffer and length, advance to the next line and mark the current
++ * line.  If the current line is empty, *plinelen will be set to zero.  If
++ * not, it will be set to the actual line length (including CRLF).
++ *
++ * 'line' in this context means logical line (includes LWS continuations).
++ * Returns 1 on success, 0 on failure.
++ */
++#ifdef NF_NEED_MIME_NEXTLINE
++static int
++nf_mime_nextline(char* p, uint len, uint* poff, uint* plineoff, uint* plinelen)
++{
++    uint    off = *poff;
++    uint    physlen = 0;
++    int     is_first_line = 1;
++
++    if (off >= len)
++    {
++        return 0;
++    }
++
++    do
++    {
++        while (p[off] != '\n')
++        {
++            if (len-off <= 1)
++            {
++                return 0;
++            }
++
++            physlen++;
++            off++;
++        }
++
++        /* if we saw a crlf, physlen needs adjusted */
++        if (physlen > 0 && p[off] == '\n' && p[off-1] == '\r')
++        {
++            physlen--;
++        }
++
++        /* advance past the newline */
++        off++;
++
++        /* check for an empty line */
++        if (physlen == 0)
++        {
++            break;
++        }
++
++        /* check for colon on the first physical line */
++        if (is_first_line)
++        {
++            is_first_line = 0;
++            if (memchr(p+(*poff), ':', physlen) == NULL)
++            {
++                return 0;
++            }
++        }
++    }
++    while (p[off] == ' ' || p[off] == '\t');
++
++    *plineoff = *poff;
++    *plinelen = (physlen == 0) ? 0 : (off - *poff);
++    *poff = off;
++
++    return 1;
++}
++#endif /* NF_NEED_MIME_NEXTLINE */
++
++#endif /* __KERNEL__ */
++
++#endif /* _NETFILTER_MIME_H */
+--- linux-2.4.32/include/linux/netfilter_ipv4/ip_conntrack.h	2006-03-01 00:53:57.889791696 +0100
++++ linux-2.4.32.new/include/linux/netfilter_ipv4/ip_conntrack.h	2006-03-01 01:06:32.178122440 +0100
+@@ -72,6 +72,7 @@
+ #include <linux/netfilter_ipv4/ip_conntrack_irc.h>
+ #include <linux/netfilter_ipv4/ip_conntrack_pptp.h>
+ #include <linux/netfilter_ipv4/ip_conntrack_h323.h>
++#include <linux/netfilter_ipv4/ip_conntrack_rtsp.h>
  
- # connection tracking helpers
-+
-+# rtsp protocol support
-+obj-$(CONFIG_IP_NF_RTSP) += ip_conntrack_rtsp.o
-+ifdef CONFIG_IP_NF_NAT_RTSP
-+       export-objs += ip_conntrack_rtsp.o
-+endif
-+obj-$(CONFIG_IP_NF_NAT_RTSP) += ip_nat_rtsp.o
-+
- obj-$(CONFIG_IP_NF_AMANDA) += ip_conntrack_amanda.o
- ifdef CONFIG_IP_NF_AMANDA
- 	export-objs += ip_conntrack_amanda.o
+ /* per expectation: application helper private data */
+ union ip_conntrack_expect_help {
+@@ -81,6 +82,7 @@
+ 	struct ip_ct_irc_expect exp_irc_info;
+ 	struct ip_ct_pptp_expect exp_pptp_info;
+ 	struct ip_ct_h225_expect exp_h225_info;
++	struct ip_ct_rtsp_expect exp_rtsp_info;
+ 
+ #ifdef CONFIG_IP_NF_NAT_NEEDED
+ 	union {
+@@ -96,6 +98,7 @@
+ 	struct ip_ct_irc_master ct_irc_info;
+ 	struct ip_ct_pptp_master ct_pptp_info;
+ 	struct ip_ct_h225_master ct_h225_info;
++	struct ip_ct_rtsp_master ct_rtsp_info;
+ };
+ 
+ #ifdef CONFIG_IP_NF_NAT_NEEDED
