@@ -68,6 +68,7 @@ package-$(BR2_PACKAGE_HTTPING) += httping
 package-$(BR2_PACKAGE_ICECAST) += icecast
 package-$(BR2_PACKAGE_ID3LIB) += id3lib
 package-$(BR2_PACKAGE_IFTOP) += iftop
+package-$(BR2_PACKAGE_IGMPPROXY) += igmpproxy
 package-$(BR2_PACKAGE_IPCAD) += ipcad
 package-$(BR2_PACKAGE_IPERF) += iperf
 package-$(BR2_PACKAGE_IPKG) += ipkg
