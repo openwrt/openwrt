@@ -4,9 +4,9 @@ include $(TOPDIR)/rules.mk
 include ../../rules.mk
 
 PKG_NAME:=spca5xx
-PKG_VERSION:=20060202
+PKG_VERSION:=20060301
 PKG_RELEASE:=1
-PKG_MD5SUM:=5cd947396b2a0ce40e51c6edb205cc39
+PKG_MD5SUM:=4160e03c408ac254111febacf058b88a
 
 PKG_SOURCE_URL:=http://mxhaard.free.fr/spca50x/Download/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
