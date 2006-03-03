@@ -63,7 +63,7 @@ endif
 ifneq ($(BR2_PACKAGE_PHP4_MOD_GD),)
 PKG_CONFIGURE_OPTS+= --with-gd=shared,"$(STAGING_DIR)/usr" \
 	--without-freetype-dir \
-	--without-jpeg-dir \
+	--with-jpeg-dir="$(STAGING_DIR)/usr" \
 	--with-png-dir="$(STAGING_DIR)/usr" \
 	--without-xpm-dir \
 	--without-ttf \
