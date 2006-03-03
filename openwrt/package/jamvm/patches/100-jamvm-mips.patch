@@ -1,0 +1,593 @@
+diff -urN jamvm-1.4.0-orig/configure jamvm-1.4.0/configure
+--- jamvm-1.4.0-orig/configure	2005-11-20 08:18:52.000000000 +0100
++++ jamvm-1.4.0/configure	2005-11-27 17:02:15.000000000 +0100
+@@ -1934,6 +1934,7 @@
+ i[456]86-*-openbsd*) host_cpu=i386 host_os=linux libdl_needed=no ;;
+ x86_64-*-linux*) host_os=linux ;;
+ arm*-*-linux*) host_cpu=arm host_os=linux ;;
++mips*-linux*) host_cpu=mips host_os=linux ;;
+ powerpc*-*-linux*) host_cpu=powerpc host_os=linux ;;
+ powerpc-*-darwin*) host_os=darwin ;;
+ *) { { echo "$as_me:$LINENO: error: $host not supported" >&5
+@@ -5742,7 +5743,7 @@
+           ac_config_links="$ac_config_links src/arch.h:src/arch/$arch.h"
+ 
+ 
+-                                                                                                                                                                                                                  ac_config_files="$ac_config_files Makefile src/Makefile src/arch/Makefile src/os/Makefile src/os/linux/Makefile src/os/darwin/Makefile src/os/linux/powerpc/Makefile src/os/linux/arm/Makefile src/os/linux/i386/Makefile src/os/linux/x86_64/Makefile src/os/darwin/powerpc/Makefile lib/Makefile lib/java/Makefile lib/java/lang/Makefile lib/jamvm/Makefile lib/jamvm/java/Makefile lib/jamvm/java/lang/Makefile lib/java/lang/reflect/Makefile lib/java/security/Makefile lib/gnu/Makefile lib/gnu/classpath/Makefile"
++                                                                                                                                                                                                                            ac_config_files="$ac_config_files Makefile src/Makefile src/arch/Makefile src/os/Makefile src/os/linux/Makefile src/os/darwin/Makefile src/os/linux/powerpc/Makefile src/os/linux/arm/Makefile src/os/linux/i386/Makefile src/os/linux/x86_64/Makefile src/os/linux/mips/Makefile src/os/darwin/powerpc/Makefile lib/Makefile lib/java/Makefile lib/java/lang/Makefile lib/jamvm/Makefile lib/jamvm/java/Makefile lib/jamvm/java/lang/Makefile lib/java/lang/reflect/Makefile lib/java/security/Makefile lib/gnu/Makefile lib/gnu/classpath/Makefile"
+ 
+ 
+ cat >confcache <<\_ACEOF
+@@ -6340,6 +6341,7 @@
+   "src/os/linux/arm/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/os/linux/arm/Makefile" ;;
+   "src/os/linux/i386/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/os/linux/i386/Makefile" ;;
+   "src/os/linux/x86_64/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/os/linux/x86_64/Makefile" ;;
++  "src/os/linux/mips/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/os/linux/mips/Makefile" ;;
+   "src/os/darwin/powerpc/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/os/darwin/powerpc/Makefile" ;;
+   "lib/Makefile" ) CONFIG_FILES="$CONFIG_FILES lib/Makefile" ;;
+   "lib/java/Makefile" ) CONFIG_FILES="$CONFIG_FILES lib/java/Makefile" ;;
+diff -urN jamvm-1.4.0-orig/configure.ac jamvm-1.4.0/configure.ac
+--- jamvm-1.4.0-orig/configure.ac	2005-11-20 08:18:33.000000000 +0100
++++ jamvm-1.4.0/configure.ac	2005-11-27 16:29:53.000000000 +0100
+@@ -60,6 +60,7 @@
+ i[[456]]86-*-openbsd*) host_cpu=i386 host_os=linux libdl_needed=no ;;
+ x86_64-*-linux*) host_os=linux ;;
+ arm*-*-linux*) host_cpu=arm host_os=linux ;;
++mips*-linux*) host_cpu=mips host_os=linux ;;
+ powerpc*-*-linux*) host_cpu=powerpc host_os=linux ;;
+ powerpc-*-darwin*) host_os=darwin ;;
+ *) AC_MSG_ERROR($host not supported) ;;
+@@ -202,6 +203,7 @@
+     src/os/linux/arm/Makefile \
+     src/os/linux/i386/Makefile \
+     src/os/linux/x86_64/Makefile \
++    src/os/linux/mips/Makefile \
+     src/os/darwin/powerpc/Makefile \
+     lib/Makefile \
+     lib/java/Makefile \
+diff -urN jamvm-1.4.0-orig/src/arch/Makefile.am jamvm-1.4.0/src/arch/Makefile.am
+--- jamvm-1.4.0-orig/src/arch/Makefile.am	2005-09-05 02:02:58.000000000 +0200
++++ jamvm-1.4.0/src/arch/Makefile.am	2005-11-24 23:09:02.000000000 +0100
+@@ -1,3 +1,3 @@
+ # used by automake to generate Makefile.in
+ 
+-EXTRA_DIST = powerpc.h arm.h i386.h x86_64.h
++EXTRA_DIST = powerpc.h arm.h i386.h x86_64.h mips.h
+diff -urN jamvm-1.4.0-orig/src/arch/Makefile.in jamvm-1.4.0/src/arch/Makefile.in
+--- jamvm-1.4.0-orig/src/arch/Makefile.in	2005-11-20 08:18:49.000000000 +0100
++++ jamvm-1.4.0/src/arch/Makefile.in	2005-11-27 17:04:08.000000000 +0100
+@@ -141,7 +141,7 @@
+ use_zip_no = @use_zip_no@
+ use_zip_yes = @use_zip_yes@
+ with_classpath_install_dir = @with_classpath_install_dir@
+-EXTRA_DIST = powerpc.h arm.h i386.h x86_64.h
++EXTRA_DIST = powerpc.h arm.h i386.h x86_64.h mips.h
+ all: all-am
+ 
+ .SUFFIXES:
+diff -urN jamvm-1.4.0-orig/src/arch/mips.h jamvm-1.4.0/src/arch/mips.h
+--- jamvm-1.4.0-orig/src/arch/mips.h	1970-01-01 01:00:00.000000000 +0100
++++ jamvm-1.4.0/src/arch/mips.h	2005-11-29 22:31:08.000000000 +0100
+@@ -0,0 +1,70 @@
++/*
++ * Copyright (C) 2003, 2004, 2005 Robert Lougher <rob@lougher.demon.co.uk>.
++ *
++ * This file is part of JamVM.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2,
++ * or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
++ */
++
++#define OS_ARCH "mips"
++
++#include <bits/atomicity.h>
++#include <asm/atomic.h>
++
++/* Override default min and max heap sizes.  mips machines are
++   usually embedded, and the standard defaults are too large. */
++#define DEFAULT_MAX_HEAP 16*MB
++#define DEFAULT_MIN_HEAP 1*MB
++
++#ifdef DIRECT
++#define HANDLER_TABLE_T static const void
++#else
++#define HANDLER_TABLE_T void
++#endif
++
++#if defined(__MIPSEL__)
++#define DOUBLE_1_BITS 0x3ff0000000000000LL
++#else
++#error  DOUBLE_1_BITS was not tested on a big endian mips!
++#define DOUBLE_1_BITS 0x000000003ff00000LL
++#endif
++
++#if  defined(__MIPSEL__)
++#define READ_DBL(v,p,l)	v = ((u8)p[0]<<56)|((u8)p[1]<<48)|((u8)p[2]<<40) \
++                            |((u8)p[3]<<32)|((u8)p[4]<<24)|((u8)p[5]<<16) \
++                            |((u8)p[6]<<8)|(u8)p[7]; p+=8
++#else
++#error  READ_DBL was not tested on a big endian mips!
++#define READ_DBL(v,p,l)	v = ((u8)p[4]<<56)|((u8)p[5]<<48)|((u8)p[6]<<40) \
++                            |((u8)p[7]<<32)|((u8)p[0]<<24)|((u8)p[1]<<16) \
++                            |((u8)p[2]<<8)|(u8)p[3]; p+=8
++#endif
++
++/* Needed for i386 -- empty here */
++#define FPU_HACK
++
++#define COMPARE_AND_SWAP(addr, old_val, new_val) compare_and_swap(addr,old_val,new_val)
++
++
++#define ATOMIC_READ(addr) *addr
++#define ATOMIC_WRITE(addr, new_val) *addr = new_val
++
++
++
++#define MBARRIER() __asm__ __volatile__ ("" ::: "memory")
++#define UNLOCK_MBARRIER() __asm__ __volatile__ ("" ::: "memory")
++#define JMM_LOCK_MBARRIER() __asm__ __volatile__ ("" ::: "memory")
++#define JMM_UNLOCK_MBARRIER() __asm__ __volatile__ ("" ::: "memory")
++
+diff -urN jamvm-1.4.0-orig/src/os/linux/Makefile.am jamvm-1.4.0/src/os/linux/Makefile.am
+--- jamvm-1.4.0-orig/src/os/linux/Makefile.am	2005-09-08 22:53:16.000000000 +0200
++++ jamvm-1.4.0/src/os/linux/Makefile.am	2005-11-24 23:05:44.000000000 +0100
+@@ -1,5 +1,5 @@
+ SUBDIRS = @arch@
+-DIST_SUBDIRS = powerpc arm i386 x86_64
++DIST_SUBDIRS = powerpc arm i386 x86_64 mips
+ 
+ noinst_LIBRARIES = libos.a
+ libos_a_SOURCES = dll_os.c
+diff -urN jamvm-1.4.0-orig/src/os/linux/Makefile.in jamvm-1.4.0/src/os/linux/Makefile.in
+--- jamvm-1.4.0-orig/src/os/linux/Makefile.in	2005-11-20 08:18:50.000000000 +0100
++++ jamvm-1.4.0/src/os/linux/Makefile.in	2005-11-27 17:04:10.000000000 +0100
+@@ -163,7 +163,7 @@
+ use_zip_yes = @use_zip_yes@
+ with_classpath_install_dir = @with_classpath_install_dir@
+ SUBDIRS = @arch@
+-DIST_SUBDIRS = powerpc arm i386 x86_64
++DIST_SUBDIRS = powerpc arm i386 x86_64 mips
+ noinst_LIBRARIES = libos.a
+ libos_a_SOURCES = dll_os.c
+ EXTRA_DIST = dll_os.c
+diff -urN jamvm-1.4.0-orig/src/os/linux/mips/init.c jamvm-1.4.0/src/os/linux/mips/init.c
+--- jamvm-1.4.0-orig/src/os/linux/mips/init.c	1970-01-01 01:00:00.000000000 +0100
++++ jamvm-1.4.0/src/os/linux/mips/init.c	2005-11-02 22:42:21.000000000 +0100
+@@ -0,0 +1,23 @@
++/*
++ * Copyright (C) 2003, 2004 Robert Lougher <rob@lougher.demon.co.uk>.
++ *
++ * This file is part of JamVM.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2,
++ * or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
++ */
++
++void initialisePlatform() {
++    /* Nothing to do for mips */
++}
+diff -urN jamvm-1.4.0-orig/src/os/linux/mips/Makefile.am jamvm-1.4.0/src/os/linux/mips/Makefile.am
+--- jamvm-1.4.0-orig/src/os/linux/mips/Makefile.am	1970-01-01 01:00:00.000000000 +0100
++++ jamvm-1.4.0/src/os/linux/mips/Makefile.am	2005-09-05 02:03:01.000000000 +0200
+@@ -0,0 +1,4 @@
++noinst_LIBRARIES = libnative.a
++libnative_a_SOURCES = init.c
++
++AM_CPPFLAGS = -I$(top_builddir)/src
+diff -urN jamvm-1.4.0-orig/src/os/linux/mips/Makefile.in jamvm-1.4.0/src/os/linux/mips/Makefile.in
+--- jamvm-1.4.0-orig/src/os/linux/mips/Makefile.in	1970-01-01 01:00:00.000000000 +0100
++++ jamvm-1.4.0/src/os/linux/mips/Makefile.in	2005-11-27 17:04:11.000000000 +0100
+@@ -0,0 +1,391 @@
++# Makefile.in generated by automake 1.9.6 from Makefile.am.
++# @configure_input@
++
++# Copyright (C) 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002,
++# 2003, 2004, 2005  Free Software Foundation, Inc.
++# This Makefile.in is free software; the Free Software Foundation
++# gives unlimited permission to copy and/or distribute it,
++# with or without modifications, as long as this notice is preserved.
++
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY, to the extent permitted by law; without
++# even the implied warranty of MERCHANTABILITY or FITNESS FOR A
++# PARTICULAR PURPOSE.
++
++@SET_MAKE@
++
++srcdir = @srcdir@
++top_srcdir = @top_srcdir@
++VPATH = @srcdir@
++pkgdatadir = $(datadir)/@PACKAGE@
++pkglibdir = $(libdir)/@PACKAGE@
++pkgincludedir = $(includedir)/@PACKAGE@
++top_builddir = ../../../..
++am__cd = CDPATH="$${ZSH_VERSION+.}$(PATH_SEPARATOR)" && cd
++INSTALL = @INSTALL@
++install_sh_DATA = $(install_sh) -c -m 644
++install_sh_PROGRAM = $(install_sh) -c
++install_sh_SCRIPT = $(install_sh) -c
++INSTALL_HEADER = $(INSTALL_DATA)
++transform = $(program_transform_name)
++NORMAL_INSTALL = :
++PRE_INSTALL = :
++POST_INSTALL = :
++NORMAL_UNINSTALL = :
++PRE_UNINSTALL = :
++POST_UNINSTALL = :
++build_triplet = @build@
++host_triplet = @host@
++subdir = src/os/linux/mips
++DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
++ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
++am__aclocal_m4_deps = $(top_srcdir)/acinclude.m4 \
++	$(top_srcdir)/configure.ac
++am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
++	$(ACLOCAL_M4)
++mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
++CONFIG_CLEAN_FILES =
++LIBRARIES = $(noinst_LIBRARIES)
++AR = ar
++ARFLAGS = cru
++libnative_a_AR = $(AR) $(ARFLAGS)
++libnative_a_LIBADD =
++am_libnative_a_OBJECTS = init.$(OBJEXT)
++libnative_a_OBJECTS = $(am_libnative_a_OBJECTS)
++DEFAULT_INCLUDES = -I. -I$(srcdir)
++depcomp = $(SHELL) $(top_srcdir)/depcomp
++am__depfiles_maybe = depfiles
++COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
++	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
++CCLD = $(CC)
++LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
++SOURCES = $(libnative_a_SOURCES)
++DIST_SOURCES = $(libnative_a_SOURCES)
++ETAGS = etags
++CTAGS = ctags
++DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
++ACLOCAL = @ACLOCAL@
++ALLOCA = @ALLOCA@
++AMDEP_FALSE = @AMDEP_FALSE@
++AMDEP_TRUE = @AMDEP_TRUE@
++AMTAR = @AMTAR@
++AUTOCONF = @AUTOCONF@
++AUTOHEADER = @AUTOHEADER@
++AUTOMAKE = @AUTOMAKE@
++AWK = @AWK@
++CC = @CC@
++CCAS = @CCAS@
++CCASFLAGS = @CCASFLAGS@
++CCDEPMODE = @CCDEPMODE@
++CFLAGS = @CFLAGS@
++CPP = @CPP@
++CPPFLAGS = @CPPFLAGS@
++CYGPATH_W = @CYGPATH_W@
++DEFS = @DEFS@
++DEPDIR = @DEPDIR@
++ECHO_C = @ECHO_C@
++ECHO_N = @ECHO_N@
++ECHO_T = @ECHO_T@
++EGREP = @EGREP@
++EXEEXT = @EXEEXT@
++INSTALL_DATA = @INSTALL_DATA@
++INSTALL_PROGRAM = @INSTALL_PROGRAM@
++INSTALL_SCRIPT = @INSTALL_SCRIPT@
++INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
++LDFLAGS = @LDFLAGS@
++LIBOBJS = @LIBOBJS@
++LIBS = @LIBS@
++LTLIBOBJS = @LTLIBOBJS@
++MAINT = @MAINT@
++MAINTAINER_MODE_FALSE = @MAINTAINER_MODE_FALSE@
++MAINTAINER_MODE_TRUE = @MAINTAINER_MODE_TRUE@
++MAKEINFO = @MAKEINFO@
++OBJEXT = @OBJEXT@
++PACKAGE = @PACKAGE@
++PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
++PACKAGE_NAME = @PACKAGE_NAME@
++PACKAGE_STRING = @PACKAGE_STRING@
++PACKAGE_TARNAME = @PACKAGE_TARNAME@
++PACKAGE_VERSION = @PACKAGE_VERSION@
++PATH_SEPARATOR = @PATH_SEPARATOR@
++RANLIB = @RANLIB@
++SET_MAKE = @SET_MAKE@
++SHELL = @SHELL@
++STRIP = @STRIP@
++VERSION = @VERSION@
++ac_ct_CC = @ac_ct_CC@
++ac_ct_RANLIB = @ac_ct_RANLIB@
++ac_ct_STRIP = @ac_ct_STRIP@
++am__fastdepCC_FALSE = @am__fastdepCC_FALSE@
++am__fastdepCC_TRUE = @am__fastdepCC_TRUE@
++am__include = @am__include@
++am__leading_dot = @am__leading_dot@
++am__quote = @am__quote@
++am__tar = @am__tar@
++am__untar = @am__untar@
++arch = @arch@
++bindir = @bindir@
++build = @build@
++build_alias = @build_alias@
++build_cpu = @build_cpu@
++build_os = @build_os@
++build_vendor = @build_vendor@
++datadir = @datadir@
++exec_prefix = @exec_prefix@
++host = @host@
++host_alias = @host_alias@
++host_cpu = @host_cpu@
++host_os = @host_os@
++host_vendor = @host_vendor@
++includedir = @includedir@
++infodir = @infodir@
++install_sh = @install_sh@
++libdir = @libdir@
++libexecdir = @libexecdir@
++localstatedir = @localstatedir@
++mandir = @mandir@
++mkdir_p = @mkdir_p@
++oldincludedir = @oldincludedir@
++os = @os@
++prefix = @prefix@
++program_transform_name = @program_transform_name@
++sbindir = @sbindir@
++sharedstatedir = @sharedstatedir@
++sysconfdir = @sysconfdir@
++target_alias = @target_alias@
++use_zip_no = @use_zip_no@
++use_zip_yes = @use_zip_yes@
++with_classpath_install_dir = @with_classpath_install_dir@
++noinst_LIBRARIES = libnative.a
++libnative_a_SOURCES = init.c
++AM_CPPFLAGS = -I$(top_builddir)/src
++all: all-am
++
++.SUFFIXES:
++.SUFFIXES: .c .o .obj
++$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
++	@for dep in $?; do \
++	  case '$(am__configure_deps)' in \
++	    *$$dep*) \
++	      cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh \
++		&& exit 0; \
++	      exit 1;; \
++	  esac; \
++	done; \
++	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  src/os/linux/mips/Makefile'; \
++	cd $(top_srcdir) && \
++	  $(AUTOMAKE) --gnu  src/os/linux/mips/Makefile
++.PRECIOUS: Makefile
++Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
++	@case '$?' in \
++	  *config.status*) \
++	    cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh;; \
++	  *) \
++	    echo ' cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe)'; \
++	    cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe);; \
++	esac;
++
++$(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
++	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
++
++$(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
++	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
++$(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
++	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
++
++clean-noinstLIBRARIES:
++	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
++libnative.a: $(libnative_a_OBJECTS) $(libnative_a_DEPENDENCIES) 
++	-rm -f libnative.a
++	$(libnative_a_AR) libnative.a $(libnative_a_OBJECTS) $(libnative_a_LIBADD)
++	$(RANLIB) libnative.a
++
++mostlyclean-compile:
++	-rm -f *.$(OBJEXT)
++
++distclean-compile:
++	-rm -f *.tab.c
++
++@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/init.Po@am__quote@
++
++.c.o:
++@am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
++@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(COMPILE) -c $<
++
++.c.obj:
++@am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ `$(CYGPATH_W) '$<'`; \
++@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(COMPILE) -c `$(CYGPATH_W) '$<'`
++uninstall-info-am:
++
++ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
++	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
++	unique=`for i in $$list; do \
++	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
++	  done | \
++	  $(AWK) '    { files[$$0] = 1; } \
++	       END { for (i in files) print i; }'`; \
++	mkid -fID $$unique
++tags: TAGS
++
++TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
++		$(TAGS_FILES) $(LISP)
++	tags=; \
++	here=`pwd`; \
++	list='$(SOURCES) $(HEADERS)  $(LISP) $(TAGS_FILES)'; \
++	unique=`for i in $$list; do \
++	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
++	  done | \
++	  $(AWK) '    { files[$$0] = 1; } \
++	       END { for (i in files) print i; }'`; \
++	if test -z "$(ETAGS_ARGS)$$tags$$unique"; then :; else \
++	  test -n "$$unique" || unique=$$empty_fix; \
++	  $(ETAGS) $(ETAGSFLAGS) $(AM_ETAGSFLAGS) $(ETAGS_ARGS) \
++	    $$tags $$unique; \
++	fi
++ctags: CTAGS
++CTAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
++		$(TAGS_FILES) $(LISP)
++	tags=; \
++	here=`pwd`; \
++	list='$(SOURCES) $(HEADERS)  $(LISP) $(TAGS_FILES)'; \
++	unique=`for i in $$list; do \
++	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
++	  done | \
++	  $(AWK) '    { files[$$0] = 1; } \
++	       END { for (i in files) print i; }'`; \
++	test -z "$(CTAGS_ARGS)$$tags$$unique" \
++	  || $(CTAGS) $(CTAGSFLAGS) $(AM_CTAGSFLAGS) $(CTAGS_ARGS) \
++	     $$tags $$unique
++
++GTAGS:
++	here=`$(am__cd) $(top_builddir) && pwd` \
++	  && cd $(top_srcdir) \
++	  && gtags -i $(GTAGS_ARGS) $$here
++
++distclean-tags:
++	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
++
++distdir: $(DISTFILES)
++	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
++	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
++	list='$(DISTFILES)'; for file in $$list; do \
++	  case $$file in \
++	    $(srcdir)/*) file=`echo "$$file" | sed "s|^$$srcdirstrip/||"`;; \
++	    $(top_srcdir)/*) file=`echo "$$file" | sed "s|^$$topsrcdirstrip/|$(top_builddir)/|"`;; \
++	  esac; \
++	  if test -f $$file || test -d $$file; then d=.; else d=$(srcdir); fi; \
++	  dir=`echo "$$file" | sed -e 's,/[^/]*$$,,'`; \
++	  if test "$$dir" != "$$file" && test "$$dir" != "."; then \
++	    dir="/$$dir"; \
++	    $(mkdir_p) "$(distdir)$$dir"; \
++	  else \
++	    dir=''; \
++	  fi; \
++	  if test -d $$d/$$file; then \
++	    if test -d $(srcdir)/$$file && test $$d != $(srcdir); then \
++	      cp -pR $(srcdir)/$$file $(distdir)$$dir || exit 1; \
++	    fi; \
++	    cp -pR $$d/$$file $(distdir)$$dir || exit 1; \
++	  else \
++	    test -f $(distdir)/$$file \
++	    || cp -p $$d/$$file $(distdir)/$$file \
++	    || exit 1; \
++	  fi; \
++	done
++check-am: all-am
++check: check-am
++all-am: Makefile $(LIBRARIES)
++installdirs:
++install: install-am
++install-exec: install-exec-am
++install-data: install-data-am
++uninstall: uninstall-am
++
++install-am: all-am
++	@$(MAKE) $(AM_MAKEFLAGS) install-exec-am install-data-am
++
++installcheck: installcheck-am
++install-strip:
++	$(MAKE) $(AM_MAKEFLAGS) INSTALL_PROGRAM="$(INSTALL_STRIP_PROGRAM)" \
++	  install_sh_PROGRAM="$(INSTALL_STRIP_PROGRAM)" INSTALL_STRIP_FLAG=-s \
++	  `test -z '$(STRIP)' || \
++	    echo "INSTALL_PROGRAM_ENV=STRIPPROG='$(STRIP)'"` install
++mostlyclean-generic:
++
++clean-generic:
++
++distclean-generic:
++	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
++
++maintainer-clean-generic:
++	@echo "This command is intended for maintainers to use"
++	@echo "it deletes files that may require special tools to rebuild."
++clean: clean-am
++
++clean-am: clean-generic clean-noinstLIBRARIES mostlyclean-am
++
++distclean: distclean-am
++	-rm -rf ./$(DEPDIR)
++	-rm -f Makefile
++distclean-am: clean-am distclean-compile distclean-generic \
++	distclean-tags
++
++dvi: dvi-am
++
++dvi-am:
++
++html: html-am
++
++info: info-am
++
++info-am:
++
++install-data-am:
++
++install-exec-am:
++
++install-info: install-info-am
++
++install-man:
++
++installcheck-am:
++
++maintainer-clean: maintainer-clean-am
++	-rm -rf ./$(DEPDIR)
++	-rm -f Makefile
++maintainer-clean-am: distclean-am maintainer-clean-generic
++
++mostlyclean: mostlyclean-am
++
++mostlyclean-am: mostlyclean-compile mostlyclean-generic
++
++pdf: pdf-am
++
++pdf-am:
++
++ps: ps-am
++
++ps-am:
++
++uninstall-am: uninstall-info-am
++
++.PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
++	clean-noinstLIBRARIES ctags distclean distclean-compile \
++	distclean-generic distclean-tags distdir dvi dvi-am html \
++	html-am info info-am install install-am install-data \
++	install-data-am install-exec install-exec-am install-info \
++	install-info-am install-man install-strip installcheck \
++	installcheck-am installdirs maintainer-clean \
++	maintainer-clean-generic mostlyclean mostlyclean-compile \
++	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
++	uninstall-am uninstall-info-am
++
++# Tell versions [3.59,3.63) of GNU make to not export all variables.
++# Otherwise a system limit (for SysV at least) may be exceeded.
++.NOEXPORT:
