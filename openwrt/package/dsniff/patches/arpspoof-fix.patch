@@ -1,25 +1,25 @@
-diff -Nur dsniff-2.3.orig/arp.c dsniff-2.3/arp.c
---- dsniff-2.3.orig/arp.c	2000-11-14 16:51:03.000000000 +0100
-+++ dsniff-2.3/arp.c	2005-09-12 16:13:44.101915800 +0200
-@@ -37,7 +37,7 @@
- #ifdef BSD
+diff -urN dsniff.old/arp.c dsniff.dev/arp.c
+--- dsniff.old/arp.c	2001-03-15 09:32:58.000000000 +0100
++++ dsniff.dev/arp.c	2006-03-03 01:41:10.000000000 +0100
+@@ -39,7 +39,7 @@
  
+ #ifdef BSD
  int
 -arp_cache_lookup(in_addr_t ip, struct ether_addr *ether)
-+arp_cache_lookup(in_addr_t ip, struct ether_addr *ether, const char* linf)
++arp_cache_lookup(in_addr_t ip, struct ether_addr *ether, const char *lif)
  {
  	int mib[6];
  	size_t len;
-@@ -89,7 +89,7 @@
+@@ -91,7 +91,7 @@
  #endif
  
  int
 -arp_cache_lookup(in_addr_t ip, struct ether_addr *ether)
-+arp_cache_lookup(in_addr_t ip, struct ether_addr *ether, const char* lif)
++arp_cache_lookup(in_addr_t ip, struct ether_addr *ether, const char *lif)
  {
  	int sock;
  	struct arpreq ar;
-@@ -97,7 +97,7 @@
+@@ -99,7 +99,7 @@
  	
  	memset((char *)&ar, 0, sizeof(ar));
  #ifdef __linux__
@@ -28,19 +28,21 @@ diff -Nur dsniff-2.3.orig/arp.c dsniff-2.3/arp.c
  #endif
  	sin = (struct sockaddr_in *)&ar.arp_pa;
  	sin->sin_family = AF_INET;
-diff -Nur dsniff-2.3.orig/arpspoof.c dsniff-2.3/arpspoof.c
---- dsniff-2.3.orig/arpspoof.c	2000-11-28 08:43:43.000000000 +0100
-+++ dsniff-2.3/arpspoof.c	2005-09-12 16:16:49.244769808 +0200
-@@ -23,7 +23,7 @@
- #include "version.h"
+diff -urN dsniff.old/arp.h dsniff.dev/arp.h
+--- dsniff.old/arp.h	2001-03-15 09:27:08.000000000 +0100
++++ dsniff.dev/arp.h	2006-03-03 01:42:23.000000000 +0100
+@@ -11,6 +11,6 @@
+ #ifndef _ARP_H_
+ #define _ARP_H_
  
- extern char *ether_ntoa(struct ether_addr *);
--extern int arp_cache_lookup(in_addr_t, struct ether_addr *);
-+extern int arp_cache_lookup(in_addr_t, struct ether_addr *, const char* intf);
+-int	arp_cache_lookup(in_addr_t ip, struct ether_addr *ether);
++int	arp_cache_lookup(in_addr_t ip, struct ether_addr *ether, const char *lif);
  
- static struct libnet_link_int *llif;
- static struct ether_addr spoof_mac, target_mac;
-@@ -111,7 +111,7 @@
+ #endif /* _ARP_H_ */
+diff -urN dsniff.old/arpspoof.c dsniff.dev/arpspoof.c
+--- dsniff.old/arpspoof.c	2001-03-15 09:32:58.000000000 +0100
++++ dsniff.dev/arpspoof.c	2006-03-03 01:42:00.000000000 +0100
+@@ -113,7 +113,7 @@
  	int i = 0;
  
  	do {
