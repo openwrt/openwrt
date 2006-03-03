@@ -16,7 +16,7 @@ diff -urN orig/heyu-2.0beta.2/Makefile heyu-2.0beta.2/Makefile
 +#          -DVOID       if compiler doesn't understand 'void'
 +
 +#This makefile is built for linux
-+DFLAGS = -DSYSV -DPOSIX -DHAS_ITIMER -DLINUX -DHASSELECT -DHASTZ
++DFLAGS = -DSYSV -DPOSIX -DHAS_ITIMER -DLINUX -DHASSELECT -DHASTZ -DHASCM17A
 +LIBS = -lm -lc
 +# # The rest of the makefile should need no changes
 +
@@ -28,16 +28,16 @@ diff -urN orig/heyu-2.0beta.2/Makefile heyu-2.0beta.2/Makefile
 +	monitor.c reset.c setclock.c stop.c \
 +	tty.c turn.c x10.c xread.c xwrite.c status.c cm11a.c \
 +	eeprom.c preset.c process.c sun.c cmd.c config.c x10state.c \
-+	poll.c modules.c
++	poll.c modules.c cm17a.c xsync.c timing.c
 +
 +OBJS =	date.o erase.o info.o message.o relay.o \
 +	monitor.o reset.o setclock.o stop.o \
 +	tty.o turn.o x10.o xread.o xwrite.o status.o cm11a.o \
 +	eeprom.o preset.o process.o sun.o cmd.o config.o x10state.o \
-+	poll.o modules.o
++	poll.o modules.o cm17a.o xsync.o timing.o
 +
 +OTHERSRC = README README2 Makefile x10config.sample protocol.txt eeprom.h \
-+	x10.sched.sample  monit x10biff heyu.1 x10.h x10config.5 \
++	x10.sched.sample  heyu.1 x10.h x10config.5 x10cm17a.5 \
 +	history.txt version.h heyufaq.txt x10sched.5 process.h sun.h \
 +	x10scripts.5 Configure Makefile.in install.sh INSTALL LICENSE
 +

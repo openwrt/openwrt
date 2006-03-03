@@ -3,10 +3,10 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=heyu
-PKG_VERSION:=2.0beta.2
-PKG_RELEASE:=2
-PKG_MD5SUM:=e8477bb068f79eb9cb81e7bb76235d22
-PKG_SOURCE_URL:=http://www.heyu.org/download
+PKG_VERSION:=2.0beta.5
+PKG_RELEASE:=1
+PKG_MD5SUM:=8289d5ca5b972333a72bc0fc3e640c13
+PKG_SOURCE_URL:=http://heyu.tanj.com/download/
 PKG_SOURCE:=heyu-$(PKG_VERSION).tgz
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_CAT:=zcat
