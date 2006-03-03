@@ -302,7 +302,7 @@ irssi-compile: glib-compile ncurses-compile
 iperf-compile: uclibc++-compile
 iptables-snmp-compile: net-snmp-compile
 iptraf-compile: ncurses-compile
-jamvm-compile: libffi-sable-compile
+jamvm-compile: libffi-sable-compile zlib-compile sablevm-classpath-compile
 hostapd-compile: openssl-compile wireless-tools-compile
 httping-compile: openssl-compile
 kismet-compile: uclibc++-compile libpcap-compile ncurses-compile
