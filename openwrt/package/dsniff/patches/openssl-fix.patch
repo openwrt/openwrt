@@ -1,0 +1,11 @@
+--- dsniff-2.4b1.orig/sshcrypto.c
++++ dsniff-2.4b1/sshcrypto.c
+@@ -14,6 +14,8 @@
+ 
+ #include <sys/types.h>
+ #include <openssl/ssl.h>
++#include <openssl/blowfish.h>
++#include <openssl/des.h>
+ 
+ #include <err.h>
+ #include <stdio.h>

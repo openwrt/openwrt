@@ -3,15 +3,15 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dsniff
-PKG_VERSION:=2.3
+PKG_VERSION:=2.4b1
 PKG_RELEASE:=2
-PKG_MD5SUM:=183e336a45e38013f3af840bddec44b4
+PKG_MD5SUM:=2f761fa3475682a7512b0b43568ee7d6
 
-PKG_SOURCE_URL:=http://www.monkey.org/~dugsong/dsniff/
+PKG_SOURCE_URL:=http://www.monkey.org/~dugsong/dsniff/beta
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-2.4
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
 include $(TOPDIR)/package/rules.mk
