@@ -79,6 +79,7 @@ package-$(BR2_COMPILE_IPTABLES) += iptables
 package-$(BR2_PACKAGE_IPTABLES_SNMP) += iptables-snmp
 package-$(BR2_PACKAGE_IPTRAF) += iptraf
 package-$(BR2_PACKAGE_IRSSI) += irssi
+package-$(BR2_PACKAGE_JAMVM) += jamvm
 package-$(BR2_COMPILE_JPEG) += jpeg
 package-$(BR2_COMPILE_KISMET) += kismet
 package-$(BR2_COMPILE_KNOCK) += knock
@@ -301,6 +302,7 @@ irssi-compile: glib-compile ncurses-compile
 iperf-compile: uclibc++-compile
 iptables-snmp-compile: net-snmp-compile
 iptraf-compile: ncurses-compile
+jamvm-compile: libffi-sable-compile
 hostapd-compile: openssl-compile wireless-tools-compile
 httping-compile: openssl-compile
 kismet-compile: uclibc++-compile libpcap-compile ncurses-compile
