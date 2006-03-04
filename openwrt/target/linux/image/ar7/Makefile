@@ -122,4 +122,5 @@ install-ib:
 	$(CP) $(KDIR)/vmlinux.bin $(IB_DIR)/build_$(ARCH)/linux-$(KERNEL)-$(BOARD)/
 	mkdir -p $(IB_DIR)/staging_dir_$(ARCH)
 	$(CP) $(STAGING_DIR)/bin/addpattern $(IB_DIR)/staging_dir_$(ARCH)/bin/
+	$(CP) $(STAGING_DIR)/bin/dgfirmware $(IB_DIR)/staging_dir_$(ARCH)/bin/
 	
