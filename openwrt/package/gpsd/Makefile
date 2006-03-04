@@ -49,6 +49,7 @@ $(PKG_BUILD_DIR)/.configured:
 			--enable-shared \
 			--enable-static \
 			--with-gnu-ld \
+			--without-x \
 	);
 	touch $@
 
