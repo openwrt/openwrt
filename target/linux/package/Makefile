@@ -9,6 +9,7 @@ package-$(BR2_PACKAGE_KMOD_HOSTAP) += hostap
 package-$(BR2_PACKAGE_KMOD_BCM43XX_DSCAPE) += bcm43xx-dscape
 package-$(BR2_PACKAGE_KMOD_IEEE80211_DSCAPE) += ieee80211-dscape
 package-$(BR2_PACKAGE_KMOD_MADWIFI) += madwifi
+package-$(BR2_PACKAGE_KMOD_MADWIFI_OLD) += madwifi-old
 package-$(BR2_PACKAGE_KMOD_MINI_FO) += mini_fo
 package-$(BR2_PACKAGE_KMOD_OPENSWAN) += openswan
 package-$(BR2_PACKAGE_KMOD_SHFS) += shfs
