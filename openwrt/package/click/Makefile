@@ -1,9 +1,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=click
-PKG_VERSION:=cvs.2006.02.27
-PKG_RELEASE:=0
-PKG_MD5SUM:=0479c7e50547cc8fdbfcc60f6eea30b4
+PKG_VERSION:=cvs.2006.03.02
+PKG_RELEASE:=1
+PKG_MD5SUM:=7aed4ba94926010d76febb797b288e98
 
 ROOFNET_VERSION:=0.0.1
 
@@ -20,7 +20,10 @@ $(eval $(call PKG_template,CLICK,$(PKG_NAME),$(PKG_VERSION)-$(PKG_RELEASE),$(ARC
 $(eval $(call PKG_template,ROOFNET,roofnet,$(ROOFNET_VERSION),$(ARCH)))
 
 $(PKG_BUILD_DIR)/.configured:
-	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
+	(cd $(PKG_BUILD_DIR); \
+		./configure; \
+		cp include/click/config.h include/click/config-host.h; \
+		rm -rf config.{cache,status} ; \
 		$(TARGET_CONFIGURE_OPTS) \
 		CXXFLAGS="-static -O2 -MD" \
 		CFLAGS="-static -MD" \
@@ -33,26 +36,32 @@ $(PKG_BUILD_DIR)/.configured:
 		  --build=$(GNU_HOST_NAME) \
 		  --enable-wifi \
 		  --disable-linuxmodule \
-		  --enable-tools=host \
-	);
+		  --enable-tools=mixed \
+	   	  --disable-dynamic-linking \
+	)
 	touch $@
 
-$(PKG_BUILD_DIR)/.built:
+
+# don't build the full click (it's huge), but only include
+# the elements needed for roofnet
+$(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 	rm -rf $(PKG_INSTALL_DIR)
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
-		$(TARGET_CONFIGURE_OPTS) \
-		DESTDIR="$(PKG_INSTALL_DIR)" \
-		all
+		BUILD_CXX="g++ -include $(PKG_BUILD_DIR)/include/click/config-host.h" \
+		tools elementmap.xml
+	(cd $(PKG_BUILD_DIR)/userlevel; \
+		../tools/click-mkmindriver/click-mkmindriver -p roofnet -C .. \
+			-f $(PKG_BUILD_DIR)/conf/wifi/sample.click \
+			-A --all -E IPNameInfo -E FromHost -E ToHost -E Discard; \
+		$(MAKE) -f Makefile.roofnet; \
+	)
 	touch $@
 
 $(IPKG_CLICK):
 	install -d -m0755 $(IDIR_CLICK)/usr/bin
-	$(CP) $(PKG_BUILD_DIR)/userlevel/click $(IDIR_CLICK)/usr/bin/click 
+	$(CP) $(PKG_BUILD_DIR)/userlevel/roofnetclick $(IDIR_CLICK)/usr/bin/click 
 	$(CP) $(PKG_BUILD_DIR)/tools/click-align/click-align $(IDIR_CLICK)/usr/bin/click-align
-	$(CP) $(PKG_BUILD_DIR)/conf/wifi/read_handler $(IDIR_CLICK)/usr/bin
-	$(CP) $(PKG_BUILD_DIR)/conf/wifi/write_handler $(IDIR_CLICK)/usr/bin
-	$(CP) $(PKG_BUILD_DIR)/conf/wifi/srcr.click $(IDIR_CLICK)/usr/bin
 	$(RSTRIP) $(IDIR_CLICK)
 	$(IPKG_BUILD) $(IDIR_CLICK) $(PACKAGE_DIR)
 
@@ -60,6 +69,9 @@ $(IPKG_CLICK):
 $(IPKG_ROOFNET):
 	install -d -m0755 $(IDIR_ROOFNET)/usr/bin
 	$(CP) $(PKG_BUILD_DIR)/conf/wifi/gen_config_roofnet.sh $(IDIR_ROOFNET)/usr/bin
+	$(CP) $(PKG_BUILD_DIR)/conf/wifi/srcr.click $(IDIR_ROOFNET)/usr/bin
+	$(CP) $(PKG_BUILD_DIR)/conf/wifi/read_handler $(IDIR_ROOFNET)/usr/bin
+	$(CP) $(PKG_BUILD_DIR)/conf/wifi/write_handler $(IDIR_ROOFNET)/usr/bin
 	mkdir -p $(IDIR_ROOFNET)/etc/init.d
 	install -m 755 ./files/S50roofnet $(IDIR_ROOFNET)/etc/init.d/
 	$(IPKG_BUILD) $(IDIR_ROOFNET) $(PACKAGE_DIR)
