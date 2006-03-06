@@ -1,0 +1,152 @@
+diff -ruN samba-2.0.10.orig/source/include/smb.h samba-2.0.10/source/include/smb.h
+--- samba-2.0.10.orig/source/include/smb.h	2006-03-06 22:25:53.000000000 +0100
++++ samba-2.0.10/source/include/smb.h	2006-03-06 22:27:31.000000000 +0100
+@@ -24,8 +24,14 @@
+ #ifndef _SMB_H
+ #define _SMB_H
+ 
++#if defined(LARGE_SMB_OFF_T)
++#define BUFFER_SIZE (128*1024)
++#else /* no large readwrite possible */
+ #define BUFFER_SIZE (0xFFFF)
++#endif
++
+ #define SAFETY_MARGIN 1024
++#define LARGE_WRITEX_HDR_SIZE 65
+ 
+ #define NMB_PORT 137
+ #define DGRAM_PORT 138
+diff -ruN samba-2.0.10.orig/source/lib/util_sock.c samba-2.0.10/source/lib/util_sock.c
+--- samba-2.0.10.orig/source/lib/util_sock.c	2000-03-16 23:59:18.000000000 +0100
++++ samba-2.0.10/source/lib/util_sock.c	2006-03-06 22:27:31.000000000 +0100
+@@ -649,19 +649,21 @@
+   memset(buffer,'\0',smb_size + 100);
+ 
+   len = read_smb_length_return_keepalive(fd,buffer,timeout);
+-  if (len < 0)
+-  {
++	if (len < 0) {
+     DEBUG(10,("receive_smb: length < 0!\n"));
+     return(False);
+   }
+ 
+-  if (len > BUFFER_SIZE) {
++	/*
++	 * A WRITEX with CAP_LARGE_WRITEX can be 64k worth of data plus 65 bytes
++     * of header. Don't print the error if this fits.... JRA.
++	 */
++
++	if (len > (BUFFER_SIZE + LARGE_WRITEX_HDR_SIZE)) {
+     DEBUG(0,("Invalid packet length! (%d bytes).\n",len));
+     if (len > BUFFER_SIZE + (SAFETY_MARGIN/2))
+-    {
+ 	exit(1);
+     }
+-  }
+ 
+   if(len > 0) {
+     ret = read_socket_data(fd,buffer+4,len);
+diff -ruN samba-2.0.10.orig/source/smbd/oplock.c samba-2.0.10/source/smbd/oplock.c
+--- samba-2.0.10.orig/source/smbd/oplock.c	2000-04-25 04:32:14.000000000 +0200
++++ samba-2.0.10/source/smbd/oplock.c	2006-03-06 22:27:31.000000000 +0100
+@@ -887,13 +887,13 @@
+      messages crossing on the wire.
+    */
+ 
+-  if((inbuf = (char *)malloc(BUFFER_SIZE + SAFETY_MARGIN))==NULL)
++  if((inbuf = (char *)malloc(BUFFER_SIZE + LARGE_WRITEX_HDR_SIZE + SAFETY_MARGIN))==NULL)
+   {
+     DEBUG(0,("oplock_break: malloc fail for input buffer.\n"));
+     return False;
+   }
+ 
+-  if((outbuf = (char *)malloc(BUFFER_SIZE + SAFETY_MARGIN))==NULL)
++  if((outbuf = (char *)malloc(BUFFER_SIZE + LARGE_WRITEX_HDR_SIZE + SAFETY_MARGIN))==NULL)
+   {
+     DEBUG(0,("oplock_break: malloc fail for output buffer.\n"));
+     free(inbuf);
+diff -ruN samba-2.0.10.orig/source/smbd/process.c samba-2.0.10/source/smbd/process.c
+--- samba-2.0.10.orig/source/smbd/process.c	2006-03-06 22:25:28.000000000 +0100
++++ samba-2.0.10/source/smbd/process.c	2006-03-06 22:27:31.000000000 +0100
+@@ -995,8 +995,8 @@
+   time_t last_timeout_processing_time = time(NULL);
+   unsigned int num_smbs = 0;
+ 
+-  InBuffer = (char *)malloc(BUFFER_SIZE + SAFETY_MARGIN);
+-  OutBuffer = (char *)malloc(BUFFER_SIZE + SAFETY_MARGIN);
++  InBuffer = (char *)malloc(BUFFER_SIZE + LARGE_WRITEX_HDR_SIZE + SAFETY_MARGIN);
++  OutBuffer = (char *)malloc(BUFFER_SIZE + LARGE_WRITEX_HDR_SIZE + SAFETY_MARGIN);
+   if ((InBuffer == NULL) || (OutBuffer == NULL)) 
+     return;
+ 
+@@ -1027,7 +1027,7 @@
+     /* free up temporary memory */
+     lp_talloc_free();
+ 
+-    while(!receive_message_or_smb(InBuffer,BUFFER_SIZE,select_timeout,&got_smb))
++    while(!receive_message_or_smb(InBuffer,BUFFER_SIZE+LARGE_WRITEX_HDR_SIZE,select_timeout,&got_smb))
+     {
+       if(!timeout_processing( deadtime, &select_timeout, &last_timeout_processing_time))
+         return;
+diff -ruN samba-2.0.10.orig/source/smbd/reply.c samba-2.0.10/source/smbd/reply.c
+--- samba-2.0.10.orig/source/smbd/reply.c	2006-03-06 22:25:53.000000000 +0100
++++ samba-2.0.10/source/smbd/reply.c	2006-03-06 22:27:31.000000000 +0100
+@@ -2551,17 +2551,28 @@
+   size_t numtowrite = SVAL(inbuf,smb_vwv10);
+   BOOL write_through = BITSETW(inbuf+smb_vwv7,0);
+   ssize_t nwritten = -1;
+-  int smb_doff = SVAL(inbuf,smb_vwv11);
++  unsigned int smb_doff = SVAL(inbuf,smb_vwv11);
++  unsigned int smblen = smb_len(inbuf);
+   char *data;
++  BOOL large_writeX = ((CVAL(inbuf,smb_wct) == 14) && (smblen > 0xFFFF));
+ 
+   /* If it's an IPC, pass off the pipe handler. */
+-  if (IS_IPC(conn))
++  if (IS_IPC(conn)) {
+     return reply_pipe_write_and_X(inbuf,outbuf,length,bufsize);
++  }
+ 
+   CHECK_FSP(fsp,conn);
+   CHECK_WRITE(fsp);
+   CHECK_ERROR(fsp);
+ 
++  /* Deal with possible LARGE_WRITEX */
++  if (large_writeX)
++    numtowrite |= ((((size_t)SVAL(inbuf,smb_vwv9)) & 1 )<<16);
++
++  if(smb_doff > smblen || (smb_doff + numtowrite > smblen)) {
++    return(ERROR(ERRDOS,ERRbadmem));
++  }
++
+   data = smb_base(inbuf) + smb_doff;
+ 
+   if(CVAL(inbuf,smb_wct) == 14) {
+@@ -2586,8 +2597,9 @@
+ #endif /* LARGE_SMB_OFF_T */
+   }
+ 
+-  if (is_locked(fsp,conn,numtowrite,startpos, F_WRLCK))
++  if (is_locked(fsp,conn,(SMB_BIG_UINT)numtowrite,(SMB_BIG_UINT)startpos, WRITE_LOCK)) {
+     return(ERROR(ERRDOS,ERRlock));
++  }
+ 
+   /* X/Open SMB protocol says that, unlike SMBwrite
+      if the length is zero then NO truncation is
+@@ -2598,12 +2610,15 @@
+   else
+     nwritten = write_file(fsp,data,startpos,numtowrite);
+   
+-  if(((nwritten == 0) && (numtowrite != 0))||(nwritten < 0))
++  if(((nwritten == 0) && (numtowrite != 0))||(nwritten < 0)) {
+     return(UNIXERROR(ERRDOS,ERRnoaccess));
++  }
+ 
+   set_message(outbuf,6,0,True);
+   
+   SSVAL(outbuf,smb_vwv2,nwritten);
++  if (large_writeX)
++    SSVAL(outbuf,smb_vwv4,(nwritten>>16)&1);
+   
+   if (nwritten < (ssize_t)numtowrite) {
+     CVAL(outbuf,smb_rcls) = ERRHRD;

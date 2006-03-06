@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=samba
 PKG_VERSION:=2.0.10
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_MD5SUM:=54870482fe036b7e69dd48c90661eec6
 
 PKG_SOURCE_URL:=ftp://se.samba.org/pub/samba/stable \
