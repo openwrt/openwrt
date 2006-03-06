@@ -1,6 +1,6 @@
-diff -ur samba-2.0.10/source/include/smb.h samba/source/include/smb.h
---- samba-2.0.10/source/include/smb.h	2001-06-23 12:52:20.000000000 +0400
-+++ samba/source/include/smb.h	2005-05-21 21:09:03.204222704 +0400
+diff -ruN samba-2.0.10.orig/source/include/smb.h samba-2.0.10/source/include/smb.h
+--- samba-2.0.10.orig/source/include/smb.h	2001-06-23 10:52:20.000000000 +0200
++++ samba-2.0.10/source/include/smb.h	2006-03-06 22:21:12.000000000 +0100
 @@ -115,6 +115,22 @@
   *               Usage:
   *                 DEBUGADD( 2, ("Some additional text.\n") );
@@ -43,9 +43,9 @@ diff -ur samba-2.0.10/source/include/smb.h samba/source/include/smb.h
  #define CAP_EXTENDED_SECURITY 0x80000000
  
  /* protocol types. It assumes that higher protocols include lower protocols
-diff -ur samba-2.0.10/source/Makefile.in samba/source/Makefile.in
---- samba-2.0.10/source/Makefile.in	2000-03-17 01:57:08.000000000 +0300
-+++ samba/source/Makefile.in	2005-05-21 20:59:57.130238568 +0400
+diff -ruN samba-2.0.10.orig/source/Makefile.in samba-2.0.10/source/Makefile.in
+--- samba-2.0.10.orig/source/Makefile.in	2000-03-16 23:57:08.000000000 +0100
++++ samba-2.0.10/source/Makefile.in	2006-03-06 22:21:12.000000000 +0100
 @@ -37,8 +37,8 @@
  # set these to where to find various files
  # These can be overridden by command line switches (see smbd(8))
@@ -172,9 +172,9 @@ diff -ur samba-2.0.10/source/Makefile.in samba/source/Makefile.in
  	-rmdir bin
  
  distclean: realclean
-diff -ur samba-2.0.10/source/nmbd/nmbd_mynames.c samba/source/nmbd/nmbd_mynames.c
---- samba-2.0.10/source/nmbd/nmbd_mynames.c	2000-03-17 01:59:24.000000000 +0300
-+++ samba/source/nmbd/nmbd_mynames.c	2005-05-21 20:57:26.672111680 +0400
+diff -ruN samba-2.0.10.orig/source/nmbd/nmbd_mynames.c samba-2.0.10/source/nmbd/nmbd_mynames.c
+--- samba-2.0.10.orig/source/nmbd/nmbd_mynames.c	2000-03-16 23:59:24.000000000 +0100
++++ samba-2.0.10/source/nmbd/nmbd_mynames.c	2006-03-06 22:21:12.000000000 +0100
 @@ -215,8 +215,8 @@
           */
          if( !is_refresh_already_queued( subrec, namerec) )
@@ -186,9 +186,9 @@ diff -ur samba-2.0.10/source/nmbd/nmbd_mynames.c samba/source/nmbd/nmbd_mynames.
        }
      }
    }
-diff -ur samba-2.0.10/source/smbd/close.c samba/source/smbd/close.c
---- samba-2.0.10/source/smbd/close.c	2000-04-21 21:43:13.000000000 +0400
-+++ samba/source/smbd/close.c	2005-05-21 19:44:59.516979712 +0400
+diff -ruN samba-2.0.10.orig/source/smbd/close.c samba-2.0.10/source/smbd/close.c
+--- samba-2.0.10.orig/source/smbd/close.c	2000-04-21 19:43:13.000000000 +0200
++++ samba-2.0.10/source/smbd/close.c	2006-03-06 22:21:12.000000000 +0100
 @@ -122,11 +122,11 @@
  		last_reference = True;
  
@@ -203,9 +203,9 @@ diff -ur samba-2.0.10/source/smbd/close.c samba/source/smbd/close.c
  	/* check for magic scripts */
  	if (normal_close) {
  		check_magic(fsp,conn);
-diff -ur samba-2.0.10/source/smbd/ipc.c samba/source/smbd/ipc.c
---- samba-2.0.10/source/smbd/ipc.c	2000-03-30 02:20:06.000000000 +0400
-+++ samba/source/smbd/ipc.c	2005-05-21 19:44:59.559973176 +0400
+diff -ruN samba-2.0.10.orig/source/smbd/ipc.c samba-2.0.10/source/smbd/ipc.c
+--- samba-2.0.10.orig/source/smbd/ipc.c	2000-03-30 00:20:06.000000000 +0200
++++ samba-2.0.10/source/smbd/ipc.c	2006-03-06 22:21:12.000000000 +0100
 @@ -472,7 +472,7 @@
    PACK(desc,t,v);
  }
@@ -290,9 +290,9 @@ diff -ur samba-2.0.10/source/smbd/ipc.c samba/source/smbd/ipc.c
    {"SamOEMChangePassword", 214, api_SamOEMChangePassword,0},
    {NULL,		-1,	api_Unsupported,0}};
  
-diff -ur samba-2.0.10/source/smbd/negprot.c samba/source/smbd/negprot.c
---- samba-2.0.10/source/smbd/negprot.c	2000-03-17 01:59:47.000000000 +0300
-+++ samba/source/smbd/negprot.c	2005-05-21 21:09:16.025273608 +0400
+diff -ruN samba-2.0.10.orig/source/smbd/negprot.c samba-2.0.10/source/smbd/negprot.c
+--- samba-2.0.10.orig/source/smbd/negprot.c	2000-03-16 23:59:47.000000000 +0100
++++ samba-2.0.10/source/smbd/negprot.c	2006-03-06 22:21:12.000000000 +0100
 @@ -160,7 +160,7 @@
    /* dual names + lock_and_read + nt SMBs + remote API calls */
    int capabilities = CAP_NT_FIND|CAP_LOCK_AND_READ|
@@ -302,9 +302,9 @@ diff -ur samba-2.0.10/source/smbd/negprot.c samba/source/smbd/negprot.c
  
  
  /*
-diff -ur samba-2.0.10/source/smbd/password.c samba/source/smbd/password.c
---- samba-2.0.10/source/smbd/password.c	2000-03-17 01:59:48.000000000 +0300
-+++ samba/source/smbd/password.c	2005-05-21 19:44:59.562972720 +0400
+diff -ruN samba-2.0.10.orig/source/smbd/password.c samba-2.0.10/source/smbd/password.c
+--- samba-2.0.10.orig/source/smbd/password.c	2000-03-16 23:59:48.000000000 +0100
++++ samba-2.0.10/source/smbd/password.c	2006-03-06 22:21:12.000000000 +0100
 @@ -1149,7 +1149,7 @@
  
    return(True);
@@ -319,9 +319,9 @@ diff -ur samba-2.0.10/source/smbd/password.c samba/source/smbd/password.c
    return True;
  }
 +#endif
-diff -ur samba-2.0.10/source/smbd/process.c samba/source/smbd/process.c
---- samba-2.0.10/source/smbd/process.c	2000-04-15 04:21:27.000000000 +0400
-+++ samba/source/smbd/process.c	2005-05-21 19:44:59.583969528 +0400
+diff -ruN samba-2.0.10.orig/source/smbd/process.c samba-2.0.10/source/smbd/process.c
+--- samba-2.0.10.orig/source/smbd/process.c	2000-04-15 02:21:27.000000000 +0200
++++ samba-2.0.10/source/smbd/process.c	2006-03-06 22:21:12.000000000 +0100
 @@ -343,10 +343,12 @@
     {SMBlseek,"SMBlseek",reply_lseek,AS_USER},
     {SMBflush,"SMBflush",reply_flush,AS_USER},
@@ -353,9 +353,9 @@ diff -ur samba-2.0.10/source/smbd/process.c samba/source/smbd/process.c
    /*
     * Check to see if we have any blocking locks
     * outstanding on the queue.
-diff -ur samba-2.0.10/source/smbd/reply.c samba/source/smbd/reply.c
---- samba-2.0.10/source/smbd/reply.c	2001-06-23 12:51:24.000000000 +0400
-+++ samba/source/smbd/reply.c	2005-05-21 19:44:59.628962688 +0400
+diff -ruN samba-2.0.10.orig/source/smbd/reply.c samba-2.0.10/source/smbd/reply.c
+--- samba-2.0.10.orig/source/smbd/reply.c	2001-06-23 10:51:24.000000000 +0200
++++ samba-2.0.10/source/smbd/reply.c	2006-03-06 22:21:12.000000000 +0100
 @@ -597,12 +597,12 @@
  
    if (!check_domain_match(orig_user, domain))
@@ -389,9 +389,9 @@ diff -ur samba-2.0.10/source/smbd/reply.c samba/source/smbd/reply.c
  
  /****************************************************************************
    reply to a mkdir
-diff -ur samba-2.0.10/source/smbd/server.c samba/source/smbd/server.c
---- samba-2.0.10/source/smbd/server.c	2000-03-17 01:59:52.000000000 +0300
-+++ samba/source/smbd/server.c	2005-05-21 19:44:59.649959496 +0400
+diff -ruN samba-2.0.10.orig/source/smbd/server.c samba-2.0.10/source/smbd/server.c
+--- samba-2.0.10.orig/source/smbd/server.c	2000-03-16 23:59:52.000000000 +0100
++++ samba-2.0.10/source/smbd/server.c	2006-03-06 22:21:12.000000000 +0100
 @@ -300,9 +300,9 @@
  	lp_killunused(conn_snum_used);
  
@@ -404,9 +404,9 @@ diff -ur samba-2.0.10/source/smbd/server.c samba/source/smbd/server.c
  	/* perhaps the config filename is now set */
  	if (!test)
  		reload_services(True);
-diff -ur samba-2.0.10/source/smbd/service.c samba/source/smbd/service.c
---- samba-2.0.10/source/smbd/service.c	2000-03-17 01:59:52.000000000 +0300
-+++ samba/source/smbd/service.c	2005-05-21 19:44:59.670956304 +0400
+diff -ruN samba-2.0.10.orig/source/smbd/service.c samba-2.0.10/source/smbd/service.c
+--- samba-2.0.10.orig/source/smbd/service.c	2000-03-16 23:59:52.000000000 +0100
++++ samba-2.0.10/source/smbd/service.c	2006-03-06 22:21:12.000000000 +0100
 @@ -121,7 +121,7 @@
        }
       }
@@ -425,9 +425,9 @@ diff -ur samba-2.0.10/source/smbd/service.c samba/source/smbd/service.c
     /* just possibly it's a default service? */
     if (iService < 0) 
     {
-diff -ur samba-2.0.10/source/utils/smbpasswd.c samba/source/utils/smbpasswd.c
---- samba-2.0.10/source/utils/smbpasswd.c	2000-03-17 01:59:57.000000000 +0300
-+++ samba/source/utils/smbpasswd.c	2005-05-21 19:44:59.671956152 +0400
+diff -ruN samba-2.0.10.orig/source/utils/smbpasswd.c samba-2.0.10/source/utils/smbpasswd.c
+--- samba-2.0.10.orig/source/utils/smbpasswd.c	2000-03-16 23:59:57.000000000 +0100
++++ samba-2.0.10/source/utils/smbpasswd.c	2006-03-06 22:21:12.000000000 +0100
 @@ -71,7 +71,7 @@
  	}
  	exit(1);
@@ -462,9 +462,9 @@ diff -ur samba-2.0.10/source/utils/smbpasswd.c samba/source/utils/smbpasswd.c
  	/*
  	 * Deal with root - can add a user, but only locally.
  	 */
-diff -ur samba-2.0.10/source/web/swat.c samba/source/web/swat.c
---- samba-2.0.10/source/web/swat.c	2000-04-11 21:36:36.000000000 +0400
-+++ samba/source/web/swat.c	2005-05-21 19:44:59.692952960 +0400
+diff -ruN samba-2.0.10.orig/source/web/swat.c samba-2.0.10/source/web/swat.c
+--- samba-2.0.10.orig/source/web/swat.c	2000-04-11 19:36:36.000000000 +0200
++++ samba-2.0.10/source/web/swat.c	2006-03-06 22:21:12.000000000 +0100
 @@ -357,8 +357,9 @@
                  return 0;
          }
