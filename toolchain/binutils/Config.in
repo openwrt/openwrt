@@ -25,6 +25,8 @@ choice
 	config BR2_BINUTILS_VERSION_2_16_91_0_2
 		bool "binutils 2.16.91.0.2"
 
+	config BR2_BINUTILS_VERSION_2_16_91_0_6
+		bool "binutils 2.16.91.0.6"
 
 endchoice
 
@@ -35,3 +37,4 @@ config BR2_BINUTILS_VERSION
 	default "2.16.90.0.3"     if BR2_BINUTILS_VERSION_2_16_90_0_3
 	default "2.16.91.0.1"     if BR2_BINUTILS_VERSION_2_16_91_0_1
 	default "2.16.91.0.2"     if BR2_BINUTILS_VERSION_2_16_91_0_2
+	default "2.16.91.0.6"     if BR2_BINUTILS_VERSION_2_16_91_0_6

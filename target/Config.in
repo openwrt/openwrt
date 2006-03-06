@@ -2,18 +2,18 @@ choice
 	prompt "Target System"
 	default BR2_LINUX_2_4_BRCM
 	
+config BR2_LINUX_2_6_ARUBA
+	bool "Aruba [2.6]"
+	select BR2_mips
+	help
+          Build firmware images for Aruba boards 
+
 config BR2_LINUX_2_4_AR531X
 	bool "Atheros AR531x [2.4]"
 	select BR2_mips
 	help
 	  Build firmware images for Atheros AR531x based boards
 	  (e.g. Netgear WGT624, Linksys WRT55AG)
-
-config BR2_LINUX_2_6_ARUBA
-	bool "Aruba [2.6]"
-	select BR2_mips
-	help
-          Build firmware images for Aruba boards 
 
 config BR2_LINUX_2_4_BRCM
 	bool "Broadcom BCM47xx/53xx [2.4]"
@@ -56,6 +56,50 @@ config BR2_LINUX_2_6_X86
 	help
 	  Build firmware images for x86 based boards
 	  (e.g. Soekris net4521 and net4801, PC Engines WRAP...)
+
+if CONFIG_DEVEL
+
+config BR2_LINUX_2_6_ARM
+	bool "UNSUPPORTED little-endian arm platform"
+	select BR2_arm
+
+config BR2_LINUX_2_6_ARMEB
+	bool "UNSUPPORTED big-endian arm platform"
+	select BR2_armeb
+
+config BR2_LINUX_2_6_CRIS
+	bool "UNSUPPORTED cris platform"
+	select BR2_cris
+
+config BR2_LINUX_2_6_M68K
+	bool "UNSUPPORTED m68k platform"
+	select BR2_m68k
+
+config BR2_LINUX_2_6_PPC
+	bool "UNSUPPORTED powerpc platform"
+	select BR2_powerpc
+
+config BR2_LINUX_2_6_SH3
+	bool "UNSUPPORTED little-endian sh3 platform"
+	select BR2_sh3
+
+config BR2_LINUX_2_6_SH3EB
+	bool "UNSUPPORTED big-endian sh3 platform"
+	select BR2_sh3eb
+
+config BR2_LINUX_2_6_SH4
+	bool "UNSUPPORTED little-endian sh4 platform"
+	select BR2_sh4
+
+config BR2_LINUX_2_6_SH4EB
+	bool "UNSUPPORTED big-endian sh4 platform"
+	select BR2_sh4eb
+
+config BR2_LINUX_2_6_SPARC
+	bool "UNSUPPORTED sparc platform"
+	select BR2_sparc
+
+endif
 
 endchoice
 
