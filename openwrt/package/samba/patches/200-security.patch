@@ -1,7 +1,7 @@
-diff -ur samba-2.0.10/source/include/smb.h samba-2.0.10-security/source/include/smb.h
---- samba-2.0.10/source/include/smb.h	2001-06-23 12:52:20.000000000 +0400
-+++ samba-2.0.10-security/source/include/smb.h	2005-05-21 21:51:17.206995728 +0400
-@@ -256,6 +256,7 @@
+diff -ruN samba-2.0.10.orig/source/include/smb.h samba-2.0.10/source/include/smb.h
+--- samba-2.0.10.orig/source/include/smb.h	2006-03-06 22:25:08.000000000 +0100
++++ samba-2.0.10/source/include/smb.h	2006-03-06 22:25:53.000000000 +0100
+@@ -272,6 +272,7 @@
  #define ERRlock 33 /* Lock request conflicts with existing lock */
  #define ERRunsup 50 /* Request unsupported, returned by Win 95, RJS 20Jun98 */
  #define ERRfilexists 80 /* File in operation already exists */
@@ -9,7 +9,7 @@ diff -ur samba-2.0.10/source/include/smb.h samba-2.0.10-security/source/include/
  #define ERRcannotopen 110 /* Cannot open the file specified */
  #define ERRunknownlevel 124
  #define ERRrename 183
-@@ -1893,4 +1894,7 @@
+@@ -1911,4 +1912,7 @@
  
  #define SAFE_NETBIOS_CHARS ". -_"
  
@@ -17,15 +17,15 @@ diff -ur samba-2.0.10/source/include/smb.h samba-2.0.10-security/source/include/
 +#define SAFE_FREE(x) do { if ((x) != NULL) {free((x)); (x)=NULL;} } while(0)
 +#endif
  #endif /* _SMB_H */
-diff -ur samba-2.0.10/source/include/version.h samba-2.0.10-security/source/include/version.h
---- samba-2.0.10/source/include/version.h	2001-06-23 17:23:59.000000000 +0400
-+++ samba-2.0.10-security/source/include/version.h	2005-05-21 21:51:17.227992536 +0400
+diff -ruN samba-2.0.10.orig/source/include/version.h samba-2.0.10/source/include/version.h
+--- samba-2.0.10.orig/source/include/version.h	2001-06-23 15:23:59.000000000 +0200
++++ samba-2.0.10/source/include/version.h	2006-03-06 22:25:53.000000000 +0100
 @@ -1 +1 @@
 -#define VERSION "2.0.10"
 +#define VERSION "2.0.10-security-rollup"
-diff -ur samba-2.0.10/source/smbd/filename.c samba-2.0.10-security/source/smbd/filename.c
---- samba-2.0.10/source/smbd/filename.c	2000-03-17 01:59:44.000000000 +0300
-+++ samba-2.0.10-security/source/smbd/filename.c	2005-05-21 21:51:17.403965784 +0400
+diff -ruN samba-2.0.10.orig/source/smbd/filename.c samba-2.0.10/source/smbd/filename.c
+--- samba-2.0.10.orig/source/smbd/filename.c	2000-03-16 23:59:44.000000000 +0100
++++ samba-2.0.10/source/smbd/filename.c	2006-03-06 22:25:53.000000000 +0100
 @@ -172,7 +172,7 @@
     * StrnCpy always null terminates.
     */
@@ -35,10 +35,10 @@ diff -ur samba-2.0.10/source/smbd/filename.c samba-2.0.10-security/source/smbd/f
    if(!case_sensitive)
      strupper( orig_name );
  
-diff -ur samba-2.0.10/source/smbd/ipc.c samba-2.0.10-security/source/smbd/ipc.c
---- samba-2.0.10/source/smbd/ipc.c	2000-03-30 02:20:06.000000000 +0400
-+++ samba-2.0.10-security/source/smbd/ipc.c	2005-05-21 21:51:17.269986152 +0400
-@@ -3550,18 +3550,18 @@
+diff -ruN samba-2.0.10.orig/source/smbd/ipc.c samba-2.0.10/source/smbd/ipc.c
+--- samba-2.0.10.orig/source/smbd/ipc.c	2006-03-06 22:25:08.000000000 +0100
++++ samba-2.0.10/source/smbd/ipc.c	2006-03-06 22:25:53.000000000 +0100
+@@ -3556,18 +3556,18 @@
  	uint16 *setup=NULL;
  	int outsize = 0;
  	uint16 vuid = SVAL(inbuf,smb_uid);
@@ -67,7 +67,7 @@ diff -ur samba-2.0.10/source/smbd/ipc.c samba-2.0.10-security/source/smbd/ipc.c
  
  	memset(name, '\0',sizeof(name));
  	fstrcpy(name,smb_buf(inbuf));
-@@ -3572,31 +3572,48 @@
+@@ -3578,26 +3578,44 @@
    
  	if (tdscnt)  {
  		if((data = (char *)malloc(tdscnt)) == NULL) {
@@ -117,12 +117,7 @@ diff -ur samba-2.0.10/source/smbd/ipc.c samba-2.0.10-security/source/smbd/ipc.c
  		for (i=0;i<suwcnt;i++)
  			setup[i] = SVAL(inbuf,smb_vwv14+i*SIZEOFWORD);
  	}
- 
--
- 	if (pscnt < tpscnt || dscnt < tdscnt) {
- 		/* We need to send an interim response then receive the rest
- 		   of the parameter/data bytes */
-@@ -3608,7 +3625,7 @@
+@@ -3614,7 +3632,7 @@
  	/* receive the rest of the trans packet */
  	while (pscnt < tpscnt || dscnt < tdscnt) {
  		BOOL ret;
@@ -131,7 +126,7 @@ diff -ur samba-2.0.10/source/smbd/ipc.c samba-2.0.10-security/source/smbd/ipc.c
        
  		ret = receive_next_smb(inbuf,bufsize,SMB_SECONDARY_WAIT);
  
-@@ -3619,19 +3636,19 @@
+@@ -3625,19 +3643,19 @@
  				DEBUG(0,("reply_trans: %s in getting secondary trans response.\n",
  					 (smb_read_error == READ_ERROR) ? "error" : "timeout" ));
  			}
@@ -159,7 +154,7 @@ diff -ur samba-2.0.10/source/smbd/ipc.c samba-2.0.10-security/source/smbd/ipc.c
  
  		pcnt = SVAL(inbuf,smb_vwv2);
  		poff = SVAL(inbuf,smb_vwv3);
-@@ -3644,17 +3661,36 @@
+@@ -3650,17 +3668,36 @@
  		pscnt += pcnt;
  		dscnt += dcnt;
  		
@@ -203,7 +198,7 @@ diff -ur samba-2.0.10/source/smbd/ipc.c samba-2.0.10-security/source/smbd/ipc.c
  	DEBUG(3,("trans <%s> data=%d params=%d setup=%d\n",
  		 name,tdscnt,tpscnt,suwcnt));
  	
-@@ -3694,4 +3730,12 @@
+@@ -3700,4 +3737,12 @@
  		return(ERROR(ERRSRV,ERRnosupport));
  	
  	return(outsize);
@@ -216,9 +211,9 @@ diff -ur samba-2.0.10/source/smbd/ipc.c samba-2.0.10-security/source/smbd/ipc.c
 +	SAFE_FREE(setup);
 +	return(ERROR(ERRSRV,ERRerror));
  }
-diff -ur samba-2.0.10/source/smbd/nttrans.c samba-2.0.10-security/source/smbd/nttrans.c
---- samba-2.0.10/source/smbd/nttrans.c	2000-04-24 21:27:30.000000000 +0400
-+++ samba-2.0.10-security/source/smbd/nttrans.c	2005-05-21 21:51:17.314979312 +0400
+diff -ruN samba-2.0.10.orig/source/smbd/nttrans.c samba-2.0.10/source/smbd/nttrans.c
+--- samba-2.0.10.orig/source/smbd/nttrans.c	2000-04-24 19:27:30.000000000 +0200
++++ samba-2.0.10/source/smbd/nttrans.c	2006-03-06 22:25:53.000000000 +0100
 @@ -2575,11 +2575,14 @@
      params = (char *)malloc(total_parameter_count);
    if (total_data_count > 0)
@@ -394,9 +389,9 @@ diff -ur samba-2.0.10/source/smbd/nttrans.c samba-2.0.10-security/source/smbd/nt
 +  SAFE_FREE(setup);
 +  return ERROR(ERRDOS,ERRinvalidparam);
  }
-diff -ur samba-2.0.10/source/smbd/password.c samba-2.0.10-security/source/smbd/password.c
---- samba-2.0.10/source/smbd/password.c	2000-03-17 01:59:48.000000000 +0300
-+++ samba-2.0.10-security/source/smbd/password.c	2005-05-21 21:51:17.336975968 +0400
+diff -ruN samba-2.0.10.orig/source/smbd/password.c samba-2.0.10/source/smbd/password.c
+--- samba-2.0.10.orig/source/smbd/password.c	2006-03-06 22:25:08.000000000 +0100
++++ samba-2.0.10/source/smbd/password.c	2006-03-06 22:25:53.000000000 +0100
 @@ -770,7 +770,7 @@
        if (!ok && lp_username(snum)) {
  	char *auser;
@@ -406,9 +401,9 @@ diff -ur samba-2.0.10/source/smbd/password.c samba-2.0.10-security/source/smbd/p
  
  	pstring_sub(user_list,"%S",lp_servicename(snum));
  	  
-diff -ur samba-2.0.10/source/smbd/reply.c samba-2.0.10-security/source/smbd/reply.c
---- samba-2.0.10/source/smbd/reply.c	2001-06-23 12:51:24.000000000 +0400
-+++ samba-2.0.10-security/source/smbd/reply.c	2005-05-21 21:51:17.378969584 +0400
+diff -ruN samba-2.0.10.orig/source/smbd/reply.c samba-2.0.10/source/smbd/reply.c
+--- samba-2.0.10.orig/source/smbd/reply.c	2006-03-06 22:25:08.000000000 +0100
++++ samba-2.0.10/source/smbd/reply.c	2006-03-06 22:25:53.000000000 +0100
 @@ -1413,6 +1413,9 @@
  
          for (i=numentries;(i<maxentries) && !finished;i++)
@@ -429,9 +424,9 @@ diff -ur samba-2.0.10/source/smbd/reply.c samba-2.0.10-security/source/smbd/repl
  			put_dos_date2(p,0,queue[i].time);
  			CVAL(p,4) = (queue[i].status==LPQ_PRINTING?2:3);
  			SSVAL(p,5,printjob_encode(SNUM(conn), 
-diff -ur samba-2.0.10/source/smbd/trans2.c samba-2.0.10-security/source/smbd/trans2.c
---- samba-2.0.10/source/smbd/trans2.c	2000-04-24 21:27:31.000000000 +0400
-+++ samba-2.0.10-security/source/smbd/trans2.c	2005-05-21 21:51:17.402965936 +0400
+diff -ruN samba-2.0.10.orig/source/smbd/trans2.c samba-2.0.10/source/smbd/trans2.c
+--- samba-2.0.10.orig/source/smbd/trans2.c	2000-04-24 19:27:31.000000000 +0200
++++ samba-2.0.10/source/smbd/trans2.c	2006-03-06 22:25:53.000000000 +0100
 @@ -201,7 +201,6 @@
    int16 open_ofun = SVAL(params,12);
    int32 open_size = IVAL(params,14);
