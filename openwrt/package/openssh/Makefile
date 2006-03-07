@@ -4,7 +4,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openssh
 PKG_VERSION:=4.2p1
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_MD5SUM:=df899194a340c933944b193477c628fa
 
 PKG_SOURCE_URL:=ftp://ftp.openbsd.org/pub/OpenBSD/OpenSSH/portable/ \
@@ -80,7 +80,8 @@ $(PKG_BUILD_DIR)/.built:
 	touch $@
 
 $(IPKG_OPENSSH_CLIENT):
-	install -m0700 -d $(IDIR_OPENSSH_CLIENT)/etc/ssh
+	install -m0755 -d $(IDIR_OPENSSH_CLIENT)/etc/ssh
+	chmod 0700 $(IDIR_OPENSSH_CLIENT)/etc/ssh
 	$(CP) $(PKG_INSTALL_DIR)/etc/ssh/ssh_config $(IDIR_OPENSSH_CLIENT)/etc/ssh/
 	install -m0755 -d $(IDIR_OPENSSH_CLIENT)/usr/bin
 	$(CP) $(PKG_INSTALL_DIR)/usr/bin/ssh $(IDIR_OPENSSH_CLIENT)/usr/bin/
@@ -97,7 +98,8 @@ $(IPKG_OPENSSH_CLIENT_UTILS):
 	$(IPKG_BUILD) $(IDIR_OPENSSH_CLIENT_UTILS) $(PACKAGE_DIR)
 
 $(IPKG_OPENSSH_SERVER):
-	install -m0700 -d $(IDIR_OPENSSH_SERVER)/etc/ssh
+	install -m0755 -d $(IDIR_OPENSSH_SERVER)/etc/ssh
+	chmod 0700 $(IDIR_OPENSSH_SERVER)/etc/ssh
 	$(CP) $(PKG_INSTALL_DIR)/etc/ssh/sshd_config $(IDIR_OPENSSH_SERVER)/etc/ssh/
 	install -m0755 -d $(IDIR_OPENSSH_SERVER)/etc/init.d
 	install -m0755 ./files/S50sshd $(IDIR_OPENSSH_SERVER)/etc/init.d/
