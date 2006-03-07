@@ -1,6 +1,6 @@
 diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
---- linux.old/drivers/net/b44.c	2006-01-16 21:10:55.873911750 +0100
-+++ linux.dev/drivers/net/b44.c	2006-01-16 21:16:02.041046000 +0100
+--- linux.old/drivers/net/b44.c	2006-02-12 13:49:59.000000000 +0100
++++ linux.dev/drivers/net/b44.c	2006-03-06 22:37:14.000000000 +0100
 @@ -1,7 +1,9 @@
  /* b44.c: Broadcom 4400 device driver.
   *
@@ -72,7 +72,21 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  	{ }	/* terminate list with empty entry */
  };
  
-@@ -236,6 +275,8 @@
+@@ -113,11 +152,13 @@
+ 		udelay(10);
+ 	}
+ 	if (i == timeout) {
++#ifdef DEBUG
+ 		printk(KERN_ERR PFX "%s: BUG!  Timeout waiting for bit %08x of register "
+ 		       "%lx to %s.\n",
+ 		       bp->dev->name,
+ 		       bit, reg,
+ 		       (clear ? "clear" : "set"));
++#endif
+ 		return -ENODEV;
+ 	}
+ 	return 0;
+@@ -236,6 +277,8 @@
  	udelay(1);
  }
  
@@ -81,7 +95,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  static int ssb_core_unit(struct b44 *bp)
  {
  #if 0
-@@ -258,6 +299,9 @@
+@@ -258,6 +301,9 @@
  		break;
  	};
  #endif
@@ -91,7 +105,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  	return 0;
  }
  
-@@ -267,6 +311,28 @@
+@@ -267,6 +313,28 @@
  		== SBTMSLOW_CLOCK);
  }
  
@@ -120,7 +134,16 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  static void __b44_cam_write(struct b44 *bp, unsigned char *data, int index)
  {
  	u32 val;
-@@ -303,14 +369,14 @@
+@@ -287,7 +355,7 @@
+ 
+ static inline void __b44_disable_ints(struct b44 *bp)
+ {
+-	bw32(B44_IMASK, 0);
++	bw32(B44_IMASK, ISTAT_TO); /* leave the timeout interrupt active */
+ }
+ 
+ static void b44_disable_ints(struct b44 *bp)
+@@ -303,14 +371,14 @@
  	bw32(B44_IMASK, bp->imask);
  }
  
@@ -137,7 +160,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  			     (reg << MDIO_DATA_RA_SHIFT) |
  			     (MDIO_TA_VALID << MDIO_DATA_TA_SHIFT)));
  	err = b44_wait_bit(bp, B44_EMAC_ISTAT, EMAC_INT_MII, 100, 0);
-@@ -319,23 +385,42 @@
+@@ -319,23 +387,42 @@
  	return err;
  }
  
@@ -182,13 +205,11 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  	err = b44_writephy(bp, MII_BMCR, BMCR_RESET);
  	if (err)
  		return err;
-@@ -405,6 +490,24 @@
- {
+@@ -406,6 +493,23 @@
  	u32 val;
  	int err;
-+	char *s;
+ 
 +
-+#ifdef CONFIG_BCM947XX
 +	/*
 +	 * workaround for bad hardware design in Linksys WAP54G v1.0
 +	 * see https://dev.openwrt.org/ticket/146
@@ -201,13 +222,14 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
 +			(__b44_writephy(bp, 0, MII_BMCR, val & ~BMCR_ISOLATE) != 0)) {
 +		printk(KERN_WARNING PFX "PHY: cannot reset MII transceiver isolate bit.\n");
 +	}
-+#endif
++	
 +	if (bp->phy_addr == B44_PHY_ADDR_NO_PHY)
 +		return 0;
- 
++
  	if ((err = b44_readphy(bp, B44_MII_ALEDCTRL, &val)) != 0)
  		goto out;
-@@ -498,6 +601,19 @@
+ 	if ((err = b44_writephy(bp, B44_MII_ALEDCTRL,
+@@ -498,6 +602,19 @@
  {
  	u32 bmsr, aux;
  
@@ -227,7 +249,123 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  	if (!b44_readphy(bp, MII_BMSR, &bmsr) &&
  	    !b44_readphy(bp, B44_MII_AUXCTRL, &aux) &&
  	    (bmsr != 0xffff)) {
-@@ -1092,6 +1208,8 @@
+@@ -765,6 +882,25 @@
+ 	return received;
+ }
+ 
++
++static inline void __b44_reset(struct b44 *bp)
++{
++	spin_lock_irq(&bp->lock);
++	b44_halt(bp);
++	b44_init_rings(bp);
++	b44_init_hw(bp);
++	spin_unlock_irq(&bp->lock);
++
++	b44_enable_ints(bp);
++	netif_wake_queue(bp->dev);
++}
++
++static inline void __b44_set_timeout(struct b44 *bp, int timeout)
++{
++	/* Set timeout for Rx to two seconds after the last Tx */
++	bw32(B44_GPTIMER, timeout ? 2 * 125000000 : 0);
++}
++
+ static int b44_poll(struct net_device *netdev, int *budget)
+ {
+ 	struct b44 *bp = netdev->priv;
+@@ -772,13 +908,13 @@
+ 
+ 	spin_lock_irq(&bp->lock);
+ 
+-	if (bp->istat & (ISTAT_TX | ISTAT_TO)) {
++	if (bp->istat & ISTAT_TX) {
+ 		/* spin_lock(&bp->tx_lock); */
+ 		b44_tx(bp);
+ 		/* spin_unlock(&bp->tx_lock); */
+ 	}
+ 	spin_unlock_irq(&bp->lock);
+-
++	
+ 	done = 1;
+ 	if (bp->istat & ISTAT_RX) {
+ 		int orig_budget = *budget;
+@@ -796,24 +932,18 @@
+ 			done = 0;
+ 	}
+ 
+-	if (bp->istat & ISTAT_ERRORS) {
+-		spin_lock_irq(&bp->lock);
+-		b44_halt(bp);
+-		b44_init_rings(bp);
+-		b44_init_hw(bp);
+-		netif_wake_queue(bp->dev);
+-		spin_unlock_irq(&bp->lock);
+-		done = 1;
+-	}
+-
+ 	if (done) {
+ 		netif_rx_complete(netdev);
+ 		b44_enable_ints(bp);
+ 	}
+ 
++	if ((bp->core_unit == 1) && (bp->istat & (ISTAT_TX | ISTAT_RX)))
++		__b44_set_timeout(bp, (bp->istat & ISTAT_TX) ? 1 : 0);
++
+ 	return (done ? 0 : 1);
+ }
+ 
++
+ static irqreturn_t b44_interrupt(int irq, void *dev_id, struct pt_regs *regs)
+ {
+ 	struct net_device *dev = dev_id;
+@@ -832,6 +962,18 @@
+ 	 */
+ 	istat &= imask;
+ 	if (istat) {
++		/* Workaround for the WL-500g WAN port hang */
++		if (istat & (ISTAT_TO | ISTAT_ERRORS)) {
++			/*
++			 * no rx before the watchdog timeout
++			 * reset the interface
++			 */
++			__b44_reset(bp);
++		} 
++		
++		if ((bp->core_unit == 1) && (bp->istat & (ISTAT_TX | ISTAT_RX)))
++			__b44_set_timeout(bp, (bp->istat & ISTAT_TX) ? 1 : 0);
++
+ 		handled = 1;
+ 		if (netif_rx_schedule_prep(dev)) {
+ 			/* NOTE: These writes are posted by the readback of
+@@ -848,6 +990,7 @@
+ 		bw32(B44_ISTAT, istat);
+ 		br32(B44_ISTAT);
+ 	}
++
+ 	spin_unlock_irqrestore(&bp->lock, flags);
+ 	return IRQ_RETVAL(handled);
+ }
+@@ -859,16 +1002,7 @@
+ 	printk(KERN_ERR PFX "%s: transmit timed out, resetting\n",
+ 	       dev->name);
+ 
+-	spin_lock_irq(&bp->lock);
+-
+-	b44_halt(bp);
+-	b44_init_rings(bp);
+-	b44_init_hw(bp);
+-
+-	spin_unlock_irq(&bp->lock);
+-
+-	b44_enable_ints(bp);
+-
++	__b44_reset(bp);
+ 	netif_wake_queue(dev);
+ }
+ 
+@@ -1092,6 +1226,8 @@
  /* bp->lock is held. */
  static void b44_chip_reset(struct b44 *bp)
  {
@@ -236,7 +374,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  	if (ssb_is_core_up(bp)) {
  		bw32(B44_RCV_LAZY, 0);
  		bw32(B44_ENET_CTRL, ENET_CTRL_DISABLE);
-@@ -1105,9 +1223,10 @@
+@@ -1105,9 +1241,10 @@
  		bw32(B44_DMARX_CTRL, 0);
  		bp->rx_prod = bp->rx_cons = 0;
  	} else {
@@ -250,7 +388,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  	}
  
  	ssb_core_reset(bp);
-@@ -1115,6 +1234,11 @@
+@@ -1115,6 +1252,11 @@
  	b44_clear_stats(bp);
  
  	/* Make PHY accessible. */
@@ -262,7 +400,28 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  	bw32(B44_MDIO_CTRL, (MDIO_CTRL_PREAMBLE |
  			     (0x0d & MDIO_CTRL_MAXF_MASK)));
  	br32(B44_MDIO_CTRL);
-@@ -1628,7 +1752,7 @@
+@@ -1215,6 +1357,8 @@
+ 	struct b44 *bp = dev->priv;
+ 	int err;
+ 
++	netif_carrier_off(dev);
++
+ 	err = b44_alloc_consistent(bp);
+ 	if (err)
+ 		return err;
+@@ -1235,9 +1379,10 @@
+ 	bp->timer.expires = jiffies + HZ;
+ 	bp->timer.data = (unsigned long) bp;
+ 	bp->timer.function = b44_timer;
+-	add_timer(&bp->timer);
++	b44_timer((unsigned long) bp);
+ 
+ 	b44_enable_ints(bp);
++	netif_start_queue(dev);
+ 
+ 	return 0;
+ 
+@@ -1628,7 +1773,7 @@
  		u32 mii_regval;
  
  		spin_lock_irq(&bp->lock);
@@ -271,7 +430,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  		spin_unlock_irq(&bp->lock);
  
  		data->val_out = mii_regval;
-@@ -1641,7 +1765,7 @@
+@@ -1641,7 +1786,7 @@
  			return -EPERM;
  
  		spin_lock_irq(&bp->lock);
@@ -280,7 +439,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  		spin_unlock_irq(&bp->lock);
  
  		return err;
-@@ -1668,21 +1792,52 @@
+@@ -1668,21 +1813,52 @@
  static int __devinit b44_get_invariants(struct b44 *bp)
  {
  	u8 eeprom[128];
@@ -291,39 +450,41 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
 -	err = b44_read_eeprom(bp, &eeprom[0]);
 -	if (err)
 -		goto out;
-+	if (bp->pdev->device == PCI_DEVICE_ID_BCM4713) {
-+		/* 
-+		 * BCM47xx boards don't have a EEPROM. The MAC is stored in
-+		 * a NVRAM area somewhere in the flash memory.
-+		 */
-+		sprintf(buf, "et%dmacaddr", b44_4713_instance);
-+		if (nvram_get(buf)) {
-+			e_aton(nvram_get(buf), bp->dev->dev_addr);
-+		} else {
-+			/*
-+			 * Getting the MAC out of NVRAM failed. To make it work
-+			 * here, we simply rely on the bootloader to write the
-+			 * MAC into the CAM.
-+			 */
-+			spin_lock_irqsave(&bp->lock, flags);
-+			__b44_cam_read(bp, bp->dev->dev_addr, 0);
-+			spin_unlock_irqrestore(&bp->lock, flags);
-+		}
- 
+-
 -	bp->dev->dev_addr[0] = eeprom[79];
 -	bp->dev->dev_addr[1] = eeprom[78];
 -	bp->dev->dev_addr[2] = eeprom[81];
 -	bp->dev->dev_addr[3] = eeprom[80];
 -	bp->dev->dev_addr[4] = eeprom[83];
 -	bp->dev->dev_addr[5] = eeprom[82];
- 
+-
 -	bp->phy_addr = eeprom[90] & 0x1f;
 -	bp->mdc_port = (eeprom[90] >> 14) & 0x1;
++	if (bp->pdev->device == PCI_DEVICE_ID_BCM4713) {
++#ifdef CONFIG_BCM947XX
++		sprintf(buf, "et%dmacaddr", instance - 1);
++		e_aton(nvram_get(buf), bp->dev->dev_addr);
++
++		sprintf(buf, "et%dphyaddr", instance - 1);
++		bp->phy_addr = B44_PHY_ADDR_NO_PHY;
++#else
++		/*
++		 * BCM47xx boards don't have a EEPROM. The MAC is stored in
++		 * a NVRAM area somewhere in the flash memory. As we don't
++		 * know the location and/or the format of the NVRAM area
++		 * here, we simply rely on the bootloader to write the
++		 * MAC into the CAM.
++		 */
++		spin_lock_irqsave(&bp->lock, flags);
++		__b44_cam_read(bp, bp->dev->dev_addr, 0);
++		spin_unlock_irqrestore(&bp->lock, flags);
++
 +		/*
 +		 * BCM47xx boards don't have a PHY. Usually there is a switch
 +		 * chip with multiple PHYs connected to the PHY port.
 +		 */
 +		bp->phy_addr = B44_PHY_ADDR_NO_PHY;
++#endif
 +		bp->dma_offset = 0;
 +	} else {
 +		err = b44_read_eeprom(bp, &eeprom[0]);
@@ -344,7 +505,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  
  	/* With this, plus the rx_header prepended to the data by the
  	 * hardware, we'll land the ethernet header on a 2-byte boundary.
-@@ -1692,13 +1847,12 @@
+@@ -1692,13 +1868,12 @@
  	bp->imask = IMASK_DEF;
  
  	bp->core_unit = ssb_core_unit(bp);
@@ -360,7 +521,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  }
  
  static int __devinit b44_init_one(struct pci_dev *pdev,
-@@ -1710,6 +1864,10 @@
+@@ -1710,6 +1885,10 @@
  	struct b44 *bp;
  	int err, i;
  
@@ -371,7 +532,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  	if (b44_version_printed++ == 0)
  		printk(KERN_INFO "%s", version);
  
-@@ -1819,11 +1977,17 @@
+@@ -1819,11 +1998,17 @@
  
  	pci_save_state(bp->pdev, bp->pci_cfg_state);
  
@@ -391,8 +552,8 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  
  err_out_iounmap:
 diff -urN linux.old/drivers/net/b44.h linux.dev/drivers/net/b44.h
---- linux.old/drivers/net/b44.h	2006-01-16 21:10:55.881912250 +0100
-+++ linux.dev/drivers/net/b44.h	2006-01-16 21:02:38.018249750 +0100
+--- linux.old/drivers/net/b44.h	2006-02-12 13:49:59.000000000 +0100
++++ linux.dev/drivers/net/b44.h	2006-01-24 20:52:08.000000000 +0100
 @@ -229,8 +229,6 @@
  #define  SBIPSFLAG_IMASK4	0x3f000000 /* Which sbflags --> mips interrupt 4 */
  #define  SBIPSFLAG_ISHIFT4	24
@@ -412,9 +573,9 @@ diff -urN linux.old/drivers/net/b44.h linux.dev/drivers/net/b44.h
  /* SW copy of device statistics, kept up to date by periodic timer
   * which probes HW values.  Must have same relative layout as HW
 diff -urN linux.old/include/linux/pci_ids.h linux.dev/include/linux/pci_ids.h
---- linux.old/include/linux/pci_ids.h	2006-01-16 21:10:55.901913500 +0100
-+++ linux.dev/include/linux/pci_ids.h	2006-01-16 21:02:38.034250750 +0100
-@@ -1741,6 +1741,7 @@
+--- linux.old/include/linux/pci_ids.h	2006-02-12 13:49:59.000000000 +0100
++++ linux.dev/include/linux/pci_ids.h	2006-01-24 20:52:08.000000000 +0100
+@@ -1735,6 +1735,7 @@
  #define PCI_DEVICE_ID_TIGON3_5901_2	0x170e
  #define PCI_DEVICE_ID_BCM4401		0x4401
  #define PCI_DEVICE_ID_BCM4401B0		0x4402
