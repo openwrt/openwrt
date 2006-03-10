@@ -1,0 +1,119 @@
+--- gcc-3.4.0/gcc/config/arm/arm.c.arm-ldm	2004-02-27 09:51:05.000000000 -0500
++++ gcc-3.4.0/gcc/config/arm/arm.c	2004-04-24 18:16:25.000000000 -0400
+@@ -8520,6 +8520,26 @@
+   return_used_this_function = 0;  
+ }
+ 
++/* Return the number (counting from 0) of
++   the least significant set bit in MASK.  */
++
++#ifdef __GNUC__
++inline
++#endif
++static int
++number_of_first_bit_set (mask)
++     int mask;
++{
++  int bit;
++
++  for (bit = 0;
++       (mask & (1 << bit)) == 0;
++       ++bit)
++    continue;
++
++  return bit;
++}
++
+ const char *
+ arm_output_epilogue (rtx sibling)
+ {
+@@ -8753,27 +8773,47 @@
+ 	  saved_regs_mask |=   (1 << PC_REGNUM);
+ 	}
+ 
+-      /* Load the registers off the stack.  If we only have one register
+-	 to load use the LDR instruction - it is faster.  */
+-      if (saved_regs_mask == (1 << LR_REGNUM))
+-	{
+-	  /* The exception handler ignores the LR, so we do
+-	     not really need to load it off the stack.  */
+-	  if (eh_ofs)
+-	    asm_fprintf (f, "\tadd\t%r, %r, #4\n", SP_REGNUM, SP_REGNUM);
+-	  else
+-	    asm_fprintf (f, "\tldr\t%r, [%r], #4\n", LR_REGNUM, SP_REGNUM);
+-	}
+-      else if (saved_regs_mask)
++      if (saved_regs_mask)
+ 	{
+-	  if (saved_regs_mask & (1 << SP_REGNUM))
+-	    /* Note - write back to the stack register is not enabled
+-	       (ie "ldmfd sp!...").  We know that the stack pointer is
+-	       in the list of registers and if we add writeback the
+-	       instruction becomes UNPREDICTABLE.  */
+-	    print_multi_reg (f, "ldmfd\t%r", SP_REGNUM, saved_regs_mask);
++	  /* Load the registers off the stack.  If we only have one register
++	     to load use the LDR instruction - it is faster.  */
++	  if (bit_count (saved_regs_mask) == 1)
++	    {
++	      int reg = number_of_first_bit_set (saved_regs_mask);
++
++	      switch (reg)
++		{
++		case SP_REGNUM:
++		  /* Mustn't use base writeback when loading SP.  */
++		  asm_fprintf (f, "\tldr\t%r, [%r]\n", SP_REGNUM, SP_REGNUM);
++		  break;
++		  
++		case LR_REGNUM:
++		  if (eh_ofs)
++		    {
++		      /* The exception handler ignores the LR, so we do
++			 not really need to load it off the stack.  */
++		      asm_fprintf (f, "\tadd\t%r, %r, #4\n", SP_REGNUM, SP_REGNUM);
++		      break;
++		    }
++		  /* else fall through */
++		  
++		default:
++		  asm_fprintf (f, "\tldr\t%r, [%r], #4\n", reg, SP_REGNUM);
++		  break;
++		}
++	    }
+ 	  else
+-	    print_multi_reg (f, "ldmfd\t%r!", SP_REGNUM, saved_regs_mask);
++	    {
++	      if (saved_regs_mask & (1 << SP_REGNUM))
++		/* Note - write back to the stack register is not enabled
++		   (ie "ldmfd sp!...").  We know that the stack pointer is
++		   in the list of registers and if we add writeback the
++		   instruction becomes UNPREDICTABLE.  */
++		print_multi_reg (f, "ldmfd\t%r", SP_REGNUM, saved_regs_mask);
++	      else
++		print_multi_reg (f, "ldmfd\t%r!", SP_REGNUM, saved_regs_mask);
++	    }
+ 	}
+ 
+       if (current_function_pretend_args_size)
+@@ -11401,22 +11441,6 @@
+     }
+ }
+ 
+-/* Return the number (counting from 0) of
+-   the least significant set bit in MASK.  */
+-
+-inline static int
+-number_of_first_bit_set (int mask)
+-{
+-  int bit;
+-
+-  for (bit = 0;
+-       (mask & (1 << bit)) == 0;
+-       ++bit)
+-    continue;
+-
+-  return bit;
+-}
+-
+ /* Generate code to return from a thumb function.
+    If 'reg_containing_return_addr' is -1, then the return address is
+    actually on the stack, at the stack pointer.  */

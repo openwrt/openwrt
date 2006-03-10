@@ -10,7 +10,7 @@ endif
 config BR2_GCC_3_4
 	bool
 	default n
-	depends BR2_GCC_VERSION_3_4_4 || BR2_GCC_VERSION_3_4_5 || BR2_GCC_VERSION_4_0_2 || BR2_GCC_VERSION_4_1_0
+	depends BR2_GCC_VERSION_3_4_4 || BR2_GCC_VERSION_3_4_5 || BR2_GCC_VERSION_3_4_6 || BR2_GCC_VERSION_4_0_2 || BR2_GCC_VERSION_4_1_0
 
 choice
 	prompt "GCC compiler Version" if CONFIG_DEVEL
@@ -26,6 +26,10 @@ choice
 
 	config BR2_GCC_VERSION_3_4_5
 		bool "gcc 3.4.5"
+		select BR2_GCC_3_4
+
+	config BR2_GCC_VERSION_3_4_6
+		bool "gcc 3.4.6"
 		select BR2_GCC_3_4
 
 	config BR2_GCC_VERSION_4_0_2
@@ -44,6 +48,7 @@ config BR2_GCC_VERSION
 	string
 	default "3.4.4"     if BR2_GCC_VERSION_3_4_4
 	default "3.4.5"     if BR2_GCC_VERSION_3_4_5 || !CONFIG_DEVEL
+	default "3.4.6"     if BR2_GCC_VERSION_3_4_6
 	default "4.0.2"     if BR2_GCC_VERSION_4_0_2
 	default "4.1.0"     if BR2_GCC_VERSION_4_1_0
 

@@ -1,0 +1,47 @@
+# DP: Build and install libstdc++_pic.a library.
+
+--- gcc/libstdc++-v3/src/Makefile.am~	2003-02-28 09:21:05.000000000 +0100
++++ gcc/libstdc++-v3/src/Makefile.am	2003-02-28 09:28:50.000000000 +0100
+@@ -224,6 +224,10 @@
+ 	  @OPT_LDFLAGS@ @SECTION_LDFLAGS@ $(AM_CXXFLAGS) $(LDFLAGS) -o $@
+ 
+ 
++install-exec-local:
++	$(AR) cru libstdc++_pic.a .libs/*.o $(top_builddir)/libsupc++/*.o
++	$(INSTALL_DATA) libstdc++_pic.a $(DESTDIR)$(toolexeclibdir)
++
+ # Added bits to build debug library.
+ if GLIBCPP_BUILD_DEBUG
+ all-local: build_debug
+
+--- gcc/libstdc++-v3/src/Makefile.in~	2004-02-21 09:55:48.000000000 +0100
++++ gcc/libstdc++-v3/src/Makefile.in	2004-02-21 09:59:34.000000000 +0100
+@@ -585,7 +585,7 @@
+ 
+ install-data-am: install-data-local
+ 
+-install-exec-am: install-toolexeclibLTLIBRARIES
++install-exec-am: install-toolexeclibLTLIBRARIES install-exec-local
+ 
+ install-info: install-info-am
+ 
+@@ -618,6 +618,7 @@
+ 	distclean-tags distdir dvi dvi-am info info-am install \
+ 	install-am install-data install-data-am install-data-local \
+ 	install-exec install-exec-am install-info install-info-am \
++	install-exec-local \
+ 	install-man install-strip install-toolexeclibLTLIBRARIES \
+ 	installcheck installcheck-am installdirs maintainer-clean \
+ 	maintainer-clean-generic mostlyclean mostlyclean-compile \
+@@ -707,6 +708,11 @@
+ install_debug:
+ 	(cd ${debugdir} && $(MAKE) \
+ 	toolexeclibdir=$(glibcxx_toolexeclibdir)/debug install)
++
++install-exec-local:
++	$(AR) cru libstdc++_pic.a .libs/*.o $(top_builddir)/libsupc++/*.o
++	$(INSTALL_DATA) libstdc++_pic.a $(DESTDIR)$(toolexeclibdir)
++
+ # Tell versions [3.59,3.63) of GNU make to not export all variables.
+ # Otherwise a system limit (for SysV at least) may be exceeded.
+ .NOEXPORT:
