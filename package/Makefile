@@ -185,6 +185,7 @@ package-$(BR2_PACKAGE_PPTPD) += pptpd
 package-$(BR2_PACKAGE_PSYBNC) += psybnc
 package-$(BR2_PACKAGE_PTUNNEL) += ptunnel
 package-$(BR2_PACKAGE_QUAGGA) += quagga
+package-$(BR2_COMPILE_RADIUSCLIENT_NG) += radiusclient-ng
 package-$(BR2_PACKAGE_RADVD) += radvd
 package-$(BR2_PACKAGE_RARPD) += rarpd
 package-$(BR2_COMPILE_READLINE) += readline
@@ -260,7 +261,7 @@ package-$(BR2_PACKAGE_XINETD) += xinetd
 package-$(BR2_PACKAGE_XSUPPLICANT) += xsupplicant
 package-$(BR2_PACKAGE_ZLIB) += zlib
 
-DEV_LIBS:=tcp_wrappers glib ncurses openssl pcre popt zlib libnet libpcap mysql postgresql iptables matrixssl liblzo gmp fuse portmap libelf uclibc++ speex libpng libgd wireless-tools nvram linux-atm libamsel libao libart libdaemon libdb libdnet libevent libffi-sable libgcrypt libgdbm libgpg-error libid3tag libmad libnet libnids libogg libosip2 libpcap libtasn1 libupnp libusb libvorbis libvorbisidec libxml2 libxslt id3lib net-snmp
+DEV_LIBS:=tcp_wrappers glib ncurses openssl pcre popt zlib libnet libpcap mysql postgresql iptables matrixssl liblzo gmp fuse portmap libelf uclibc++ speex libpng libgd wireless-tools nvram linux-atm libamsel libao libart libdaemon libdb libdnet libevent libffi-sable libgcrypt libgdbm libgpg-error libid3tag libmad libnet libnids libogg libosip2 libpcap radiusclient-ng libtasn1 libupnp libusb libvorbis libvorbisidec libxml2 libxslt id3lib net-snmp
 DEV_LIBS_COMPILE:=$(patsubst %,%-compile,$(DEV_LIBS))
 SDK_DEFAULT_PACKAGES:=busybox dnsmasq iptables wireless-tools dropbear bridge ipkg ppp
 SDK_DEFAULT_COMPILE:=$(patsubst %,%-compile,$(SDK_DEFAULT_PACKAGES))
@@ -346,6 +347,7 @@ ppp-compile: linux-atm-compile libpcap-compile
 ptunnel-compile: libpcap-compile
 quagga-compile: readline-compile ncurses-compile
 raddump-compile: openssl-compile libpcap-compile
+radiusclient-ng-compile: openssl-compile
 rarpd-compile: libnet-compile
 ifneq ($(BR2_PACKAGE_LIBRRD),)
 rrdcollect-compile: rrdtool-compile
