@@ -1,13 +1,14 @@
 config BR2_COMPILE_RADIUSCLIENT_NG
-        tristate
+	tristate
 	default n
-	select BR2_PACKAGE_LIBRADIUSCLIENT_NG
+	depends BR2_PACKAGE_LIBRADIUSCLIENT_NG
 
 config BR2_PACKAGE_RADIUSCLIENT_NG
 	prompt "radiusclient-ng................... RADIUS client"
 	tristate
 	default m if CONFIG_DEVEL
 	select BR2_PACKAGE_LIBOPENSSL
+	select BR2_PACKAGE_LIBRADIUSCLIENT_NG
 	help
 	  Purpose of this project is to build portable, easy-to-use and standard compliant 
 	  library suitable for developing free and commercial software that need support 
