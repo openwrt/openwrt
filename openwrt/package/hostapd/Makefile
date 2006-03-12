@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=hostapd
-PKG_VERSION:=0.4.7
+PKG_VERSION:=0.5.1
 PKG_RELEASE:=1
-PKG_MD5SUM:=b299211691fe8a6840e7adafda351d2b
+PKG_MD5SUM:=3e38533604187e291f45a2f6873b71cc
 
 PKG_SOURCE_URL:=http://hostap.epitest.fi/releases/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
