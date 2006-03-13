@@ -7,7 +7,8 @@ PKG_VERSION:=0.10.0+cvs20051015
 PKG_RELEASE:=1
 PKG_MD5SUM:=5b5ac629be4bb5c29104fb8f6b7fa444
 
-PKG_SOURCE_URL:=http://ftp.debian.org/debian/pool/main/l/lcd4linux/
+PKG_SOURCE_URL:=http://ftp.debian.org/debian/pool/main/l/lcd4linux/ \
+		http://ftp.de.debian.org/debian/pool/main/l/lcd4linux/
 PKG_SOURCE:=$(PKG_NAME)_$(PKG_VERSION).orig.tar.gz
 PKG_CAT:=zcat
 
