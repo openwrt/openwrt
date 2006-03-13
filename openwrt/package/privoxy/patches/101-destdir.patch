@@ -1,0 +1,32 @@
+diff -Nur privoxy-3.0.3-stable/GNUmakefile.in privoxy-3.0.3-stable.patched/GNUmakefile.in
+--- privoxy-3.0.3-stable/GNUmakefile.in	2004-01-31 02:15:33.000000000 +0100
++++ privoxy-3.0.3-stable.patched/GNUmakefile.in	2006-03-13 21:39:29.000000000 +0100
+@@ -55,17 +55,17 @@
+ USER         = @USER@
+ GROUP	   = @GROUP@
+ 
+-prefix       = @prefix@
+-exec_prefix  = @exec_prefix@
+-CONF_BASE    = @sysconfdir@
+-SBIN_DEST    = @sbindir@
+-MAN_DIR      = @mandir@
+-MAN_DEST     = $(MAN_DIR)/man1
+-SHARE_DEST   = @datadir@
+-DOC_DEST     = $(SHARE_DEST)/doc/privoxy
+-VAR_DEST     = @localstatedir@
+-LOGS_DEST    = $(VAR_DEST)/log/privoxy
+-PIDS_DEST    = $(VAR_DEST)/run
++prefix       = $(DESTDIR)@prefix@
++exec_prefix  = $(DESTDIR)@exec_prefix@
++CONF_BASE    = $(DESTDIR)@sysconfdir@
++SBIN_DEST    = $(DESTDIR)@sbindir@
++MAN_DIR      = $(DESTDIR)@mandir@
++MAN_DEST     = $(DESTDIR)$(MAN_DIR)/man1
++SHARE_DEST   = $(DESTDIR)@datadir@
++DOC_DEST     = $(DESTDIR)$(SHARE_DEST)/doc/privoxy
++VAR_DEST     = $(DESTDIR)@localstatedir@
++LOGS_DEST    = $(DESTDIR)$(VAR_DEST)/log/privoxy
++PIDS_DEST    = $(DESTDIR)$(VAR_DEST)/run
+ 
+ # if $prefix = /usr/local then the default CONFDEST change from 
+ # CONF_DEST = $(CONF_BASE) to CONF_DEST = $(CONF_BASE)/privoxy  
