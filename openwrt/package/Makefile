@@ -182,6 +182,7 @@ package-$(BR2_COMPILE_POSTGRESQL) += postgresql
 package-$(BR2_PACKAGE_PPP) += ppp
 package-$(BR2_PACKAGE_PPTP) += pptp
 package-$(BR2_PACKAGE_PPTPD) += pptpd
+package-$(BR2_PACKAGE_PRIVOXY) += privoxy
 package-$(BR2_PACKAGE_PSYBNC) += psybnc
 package-$(BR2_PACKAGE_PTUNNEL) += ptunnel
 package-$(BR2_PACKAGE_QUAGGA) += quagga
@@ -344,6 +345,7 @@ peerguardian-compile: libpthread-compile
 portmap-compile: tcp_wrappers-compile
 postgresql-compile: zlib-compile
 ppp-compile: linux-atm-compile libpcap-compile
+privoxy-compile: pcre-compile
 ptunnel-compile: libpcap-compile
 quagga-compile: readline-compile ncurses-compile
 raddump-compile: openssl-compile libpcap-compile
