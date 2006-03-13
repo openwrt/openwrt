@@ -3,11 +3,12 @@
 include $(TOPDIR)/rules.mk
 include ../../rules.mk
 
-PKG_NAME := bcm43xx-dscape
-PKG_VERSION := 20060104
+PKG_NAME := bcm43xx-standalone
+PKG_VERSION := 060313
 PKG_RELEASE := 1
+PKG_MD%SUM := 773b26a164a54f0da544764969ca019b
 
-PKG_SOURCE_URL := http://ftp.berlios.de/pub/bcm43xx/snapshots/bcm43xx
+PKG_SOURCE_URL := ftp://bu3sch.de/bcm43xx-snapshots/standalone/bcm43xx/
 PKG_SOURCE := $(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_CAT := bzcat
 
