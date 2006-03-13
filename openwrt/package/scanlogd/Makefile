@@ -3,11 +3,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=scanlogd
-PKG_VERSION:=2.2.5
+PKG_VERSION:=2.2.6
 PKG_RELEASE:=1
-PKG_MD5SUM:=6b53ad390a51f0835e66b1efa84d710a
+PKG_MD5SUM:=7b8187ea718ebe47f22805b921b909ab
 
-PKG_SOURCE_URL:=http://www.openwall.com/scanlogd/
+PKG_SOURCE_URL:=http://www.openwall.com/scanlogd/ \
+		ftp://ftp.wiretapped.net/pub/openwall/ \
+		http://distro.ibiblio.org/pub/linux/distributions/openwall/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
