@@ -7,7 +7,8 @@ PKG_VERSION:=2.2.1
 PKG_RELEASE:=1
 PKG_MD5SUM:=c18e2a5f04e9abae5a42439de294f086
 
-PKG_SOURCE_URL:=ftp://atrey.karlin.mff.cuni.cz/pub/linux/pci
+PKG_SOURCE_URL:=http://www.kernel.org/pub/software/utils/pciutils/ \
+	ftp://atrey.karlin.mff.cuni.cz/pub/linux/pci
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
