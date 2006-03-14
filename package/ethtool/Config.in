@@ -1,0 +1,9 @@
+config BR2_PACKAGE_ETHTOOL
+	prompt "ethtool........................... Display or change ethernet card settings"
+	tristate
+	default m if CONFIG_DEVEL
+	help
+	  ethtool is used for querying settings of an ethernet device and changing them
+	  
+	  http://sourceforge.net/projects/gkernel/
+
