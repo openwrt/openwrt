@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=xsupplicant
-PKG_VERSION:=1.2.2
+PKG_VERSION:=1.2.3
 PKG_RELEASE:=1
-PKG_MD5SUM:=0e9aaf83a11f8eaff7c6564a53c25d8e
+PKG_MD5SUM:=x
 
 PKG_SOURCE_URL:=@SF/open1x
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -26,7 +26,9 @@ $(PKG_BUILD_DIR)/.configured:
 		touch configure; \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
-		CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include" \
+		CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include \
+			-I$(PKG_BUILD_DIR)/lib/libxsupconfig/ \
+			-I$(STAGING_DIR)/usr/include/madwifi" \
 		LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib" \
 		./configure \
 			--target=$(GNU_TARGET_NAME) \
