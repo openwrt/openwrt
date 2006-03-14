@@ -33,6 +33,7 @@ $(LINUX_HEADERS_DIR)/.unpacked: $(DL_DIR)/$(LINUX_HEADERS_SOURCE)
 		linux-$(LINUX_HEADERS_VERSION)/arch/$(LINUX_HEADERS_ARCH)/config*.in \
 		linux-$(LINUX_HEADERS_VERSION)/*/*/Config.in \
 		linux-$(LINUX_HEADERS_VERSION)/*/Config.in
+	(cd $(LINUX_HEADERS_DIR)-$(LINUX_HEADERS_VERSION) ; patch -p1 < $(TOPDIR)/toolchain/kernel-headers/patches/include.patch)
 	ln -sf $(LINUX_HEADERS_DIR)-$(LINUX_HEADERS_VERSION) $(LINUX_HEADERS_DIR)
 	$(SED) 's/@expr length/@-expr length/' $(LINUX_HEADERS_DIR)/Makefile 
 	touch $(LINUX_HEADERS_DIR)/.unpacked
