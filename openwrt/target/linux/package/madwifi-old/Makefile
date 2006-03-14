@@ -87,17 +87,17 @@ $(IPKG_KMOD_MADWIFI):
 	$(CP) $(PKG_BUILD_DIR)/tools/{80211debug,80211stats,athchans,athctrl,athdebug,athkey,athstats} $(IDIR_KMOD_MADWIFI)/usr/sbin/
 	$(IPKG_BUILD) $(IDIR_KMOD_MADWIFI) $(PACKAGE_DIR)
 
-$(STAGING_DIR)/usr/include/madwifi/net80211/ieee80211.h: $(PKG_BUILD_DIR)/.built
-	mkdir -p $(STAGING_DIR)/usr/include/madwifi
-	$(CP) $(PKG_BUILD_DIR)/include $(STAGING_DIR)/usr/include/madwifi/
-	mkdir -p $(STAGING_DIR)/usr/include/madwifi/net80211
-	$(CP) $(PKG_BUILD_DIR)/net80211/*.h $(STAGING_DIR)/usr/include/madwifi/net80211/
+$(STAGING_DIR)/usr/include/madwifi-old/net80211/ieee80211.h: $(PKG_BUILD_DIR)/.built
+	mkdir -p $(STAGING_DIR)/usr/include/madwifi-old
+	$(CP) $(PKG_BUILD_DIR)/include $(STAGING_DIR)/usr/include/madwifi-old
+	mkdir -p $(STAGING_DIR)/usr/include/madwifi-old/net80211
+	$(CP) $(PKG_BUILD_DIR)/net80211/*.h $(STAGING_DIR)/usr/include/madwifi-old/net80211/
 	touch $@
 
-install-dev: $(STAGING_DIR)/usr/include/madwifi/net80211/ieee80211.h
+install-dev: $(STAGING_DIR)/usr/include/madwifi-old/net80211/ieee80211.h
 
 uninstall-dev:
-	rm -rf $(STAGING_DIR)/usr/include/madwifi
+	rm -rf $(STAGING_DIR)/usr/include/madwifi-old
 
 compile-targets: install-dev
 clean-targets: uninstall-dev
