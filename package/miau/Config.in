@@ -1,0 +1,11 @@
+config BR2_PACKAGE_MIAU
+	tristate "miau................................. Another IRC-bouncer/proxy"
+	default m if CONFIG_DEVEL
+	help
+	  In short, miau is an IRC-bouncer/proxy. 
+	  Being more verbose, miau is small but quite featured 
+	  IRC-bouncer - a service bit like HTTP-proxy, but
+	  for IRC-networks.
+	  
+	  http://sourceforge.net/projects/miau/
+	  

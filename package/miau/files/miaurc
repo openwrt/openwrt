@@ -1,0 +1,587 @@
+#
+# miau 0.5.3 configuration file example
+#	(C) 2003-2004 Tommi Saviranta <tsaviran@cs.helsinki.fi>
+#
+
+# About structure of this configuration file:
+#
+# - All parameters are written inside quotes (for example, "foobar")
+#
+# - Options are defined like: option = "parameter1"[:"parameter2"] ...
+#
+# - When entering multiparameter options, certain parameters have default
+#   values and can be left out.
+#
+# - When entering multiparameter options and, for example, user doesn't want
+#   to set parameter2 at all but he needs to set parameter3, parameter2 can
+#   be skipped with column (':') like: "parameter1"::"parameter3".
+#
+# - Empty lines and characters after '#' (hash) are ignored.
+#
+# - When setting permissions, switched etc. (switches (booleans) are described
+#   as "state"), everything beginning with "t", "r" and "1" are concidered as
+#   "true" or "yes" (positive). Everything else is "false" or "no" (negative).
+
+
+
+# Required settings
+################################################################################
+
+
+# nicknames = { "nick" }: Your nickname (and secondary nicknames) on IRC.
+#		If the primary nick (first nick on the list) is already on use,
+#		miau will try the others on the list.
+#
+# Default: no default
+#
+# Example:
+#nicknames = {
+#	"zak"
+#	"zakh"
+#}
+
+
+# realname = "realname": Your "real" name on IRC.
+#
+# Default: no default
+#
+# Example:
+#realname = "Prokhor Zakharov"
+
+
+# username = "username": Your ident (matters only if you don't have identd
+#		running).
+#
+# Default: no default
+#
+# Example:
+#username = "zak"
+
+
+# password = "password": The password miau will expect to receive from client
+#		when it's registering with nick. If this is 13 characters long,
+#		miau assumed it's crypted.
+#
+# If miau is compiled with ENABLE_MKPASSWD, miau can generate password-hashes
+# (from command line) with -c -switch.
+#
+# Default: no default
+#
+# Example:
+#password = "foobar"
+
+
+# listenport = "port": The port miau will wait for incoming connections.
+#
+# Default: no default
+#
+# Example:
+#listenport = "4096"
+
+
+# servers = { "server":"port":"password":"timeout" }: miau's IRC-server-list.
+#		Each line represents one server, where timeout is delay in
+#		seconds before connectiong attempt times out. Only "server"
+#		parameter is required.
+#
+# Default: no default
+#
+# Example:
+#servers = {
+#	"irc.net"
+#	"irc.foo.bar":"6662"
+#	"localhost"::"foobar"
+#	"127.0.0.1":"6670"::"5"
+#}
+
+
+# connhosts = { "host":"permitted" }: List of hosts that are allowed (or denied)
+#		to connect to miau. When boolean-value is left unset, it is
+#		assumed to be "true". This list will be processed as a chain
+#		which means latter rules can override previous ones.
+#
+# Default: no default
+#
+# Example:
+#connhosts = {
+#	"*":"yes"
+#	"client*.evil.net":"no"
+#}
+
+
+
+# Optional settings
+################################################################################
+
+
+# listenhost = "host": Host miau uses to listen on.
+#
+# If you are compiled with IPV6 and need this to listen on an IPV4 port, you
+# must use an IP in the form ::FFFF:127.0.0.1
+#
+# Default: no default
+#
+# Example:
+#listenhost = "127.0.0.1"
+
+
+# bind = "host": Host/IP miau uses for outgoing connections.
+#
+# Default: none
+#
+# Example:
+#bind = "172.16.1.1"
+
+
+# maxclients = "number": Maximum number of clients connected to miau
+#		concurrently. Set to zero for unlimited clients.
+#
+# Default: 3
+#
+#Example:
+#maxclients = "1"
+
+
+# stonedtimeout = "seconds": Time (in seconds) with no data from the server
+#		before it is declared stoned and being disconnected. Although
+#		minimum value is 30, this value has no upper limit. Watch out,
+#		though, if this value is set too high, death of servers may stay
+#		undetected for a very long time if you are idle.
+#
+# Default: 90
+#
+# Example:
+#stonedtimeout = "150"
+
+
+# connecttimeout = "seconds": Time (in seconds) before connection attampt will
+#		time out. Note that while connecting to the server miau will not
+#		respond to clients. Minimum value is 5, and many systems define
+#		maximum value.
+#
+# Default: 30
+#
+# Example:
+#connecttimeout = "60"
+
+
+# channels = { "channel":"keyword" }: List of channels to join.
+#
+# Default: none
+#
+# Example:
+#channels = {
+#	"#foobar"
+#	"#miau":"cats"
+#}
+
+
+# rejoin = "state": Rejoin channels after disconnecting from the server.
+#		If rejoin is set to true, channels defined in "channels" are
+#		also joined when client first time connects to miau.
+#
+# Default: true
+#
+# Example:
+#rejoin = "false"
+
+
+# leave = "state": Leave channels when all clients have detached from miau.
+#		If "leave" is set to "false" and "rejoin" is set to "true",
+#		channels defined at "channels" will be joined at miau startup.
+#		If both "leave" and "rejoin" is set to "true", channels that
+#		are left at client detach, are rejoined when client attached
+#		back to miau.
+#
+# Default: false
+#
+# Example:
+#leave = "false"
+
+
+# leavemsg = "message": Message miau will either use as PART-message or as an
+#		ACTION when all clients have detached from miau. If unset or
+#		set to empty, no message will be shown. Note that many people
+#		dislike event-based messages (which happens when "leave" is set
+#		to "false" and "leavemsg" is set). Also see usequitmsg.
+#
+# Note: Note that commenting this option out and rehashing after leavemsg was
+#	set, this option is _not_ reverted. To disable leavemsg afterwards you
+#	need to write an empty string here and rehash.
+#
+# Default: none
+#
+# Example:
+#leavemsg = "doh"
+
+
+# awaymsg = "message": Text that will be set to miau's away-reason when all
+#		clients have detached from miau. If unset or set to empty,
+#		AWAY-status will be left untouched. When any client attaches
+#		back to miau, AWAY-status will be reset. Also see usequitmsg.
+#
+# Note: If user sets him/herself away, miau will not touch away-status nor
+#	message neither when connecting to or disconnecting from miau.
+#
+# Note: Note that commenting this option out and rehashing after awaymsg was
+#	set, this option is _not_ reverted. To disable awaymsg afterwards you
+#	need to write an empty string here and rehash.
+#
+# Default: none
+#
+# Example:
+#awaymsg = "bouncing around - all private messages will be logged"
+
+
+# usequitmsg = "state": Use last quit-reason as away-reason and/or leave-message
+#		(if respective options are enabled) when all clients have
+#		disconnected from miau. If quit-reason is empty, default values
+#		of awaymsg and leavemsg will be used, otherwise most recent
+#		quit-message overrides values in miaurc.
+#
+# Default: true
+#
+# Example:
+# usequitmsg = "false"
+
+
+# getnick = "selection": miau can try to reclaim your primary nick when it is
+#		lost. This option may be one of the following: "never",
+#		"detached", "attached", or "always".
+#			"never" .......	miau will not try to get your nick back.
+#			"detached" ....	miau will try to get your nick when no
+#					clients are attached.
+#			"attached" .... miau will try to get your nick when
+#					there are one or more clients attached.
+#			"always" ...... miau will try to get your nick 
+#
+# Note: Do _not_ use options "attached" and "always" with clients (like
+#	irc-II EPIC) that automatically change your nick when they receive
+#	NICKINUSE from the server - you might end up chaning your nick until
+#	server drops your connection due excess flood.
+#
+# Default: detached
+#
+# Example:
+#getnick = "always"
+
+
+# getnickinterval = "seconds": Time between tries (in seconds) to obtain
+#		currently (possibly) lost primary nick. Don't set it too low
+#		or you might get kicked out the server due to excess flood.
+#
+# Default: 60
+#
+# Example:
+#getnickinterval = "30"
+
+
+# antiidle = "minutes": Time between idle-timer resets in minutes. Set to 0 to
+#		disable.
+#
+# Default: 0
+#
+# Example:
+#antiidle = "300"
+
+
+# qloglength = "minutes": Age of oldest line in quicklog in minutes. Set to zero
+#		to disable quicklog.
+#
+# This option might not be compiled in.
+#
+# Default: 30
+#
+# Example:
+#qloglength = "30"
+
+
+# timestamp = "option": Location of timestamp in quicklog events. This option
+#		may be one of the following "beginning", "end", or "none".
+#
+# This option might not be compiled in.
+#
+# Default: none
+#
+# Example:
+#timestamp = "beginning"
+
+
+# flushqlog = "state": If set to true, quicklog will be written only when no
+#		clients are connected and quicklog will be erased when client
+#		connects to miau. If you are running a single client, you
+#		probably want to leave this to "false.
+#
+# This option might not be compiled in.
+#
+# Default: true
+#
+# Example:
+#flushqlog = "true"
+
+
+# inbox = "state": Enables logging private messages when no clients are
+#		connected to miau.
+#
+# This option might not be compiled in.
+#
+# Default: true
+#
+# Example:
+#inbox = "true"
+
+
+# nevergiveup = "state": If set to true, miau will reset "working"-status of
+#		servers to working when all are set to dysfunctional.
+#		Respectively, if set to false, miau will quit when all servers
+#		on the list have been set to dysfunctional.
+#
+# Default: true
+#
+# Example:
+#nevergiveup = "false"
+
+
+# norestricted = "state": If set to true, miau will not stay on server that
+#		forces user to have restricted-status (+r).
+#
+# Default: true
+#
+# Example:
+#norestricted = "false"
+
+
+# reconnectdelay = "seconds": Time (in seconds) between connection attempts.
+#		Minumun value is set to 1.
+#
+# Default: 10
+#
+# Example:
+#reconnectdelay = "30"
+
+
+# nickfillchar = "fill character": Character used to modify your primary nick
+#		when all defined nicks are already occupied. Note character is
+#		a single octet (byte) and if longer string is fed, only the
+#		first character is used.
+#
+# Example: When nickfillchar is set to '_', primary nick is "zak" and all
+#	defined nicks are occupied, next nicks tried are "zak_", "zak__",
+#	"zak___" and so on. When nick has grown too long, it will be shifted
+#	one characted to right (where shift is cyclic) - this means
+#	"zak______" will become "_zak_____", which, again, will become
+#	"__zak____".
+#
+# Default: _
+#
+# Example:
+#nickfillchar = "^"
+
+
+# maxnicklen = "length": Maximum nick length, used with nickfillchar.
+#
+# Default: 9
+#
+# Example:
+#maxnicklen = 11
+
+
+# usermode = "usermode(s)": Usermode that miau will request (if no clients are
+#		attached at the moment) from the server when connection to the
+#		server is established. Leave unset or set to empty to disable
+#		this feature.
+#
+# Default: none
+#
+# Example:
+#usermode = "+i"
+
+
+# forwardmsg = "command": miau can collect the (private) messages within three
+#		(3) minutes and pipe them into the program specified. Leave this
+#		unset or set to empty to disable this feature.
+#
+# Default: none
+#
+# Example:
+#forwardmsg = "mail user@host"
+
+
+# ignore = { "mask":"ignored" }: List of users whose private messages (PRIVMSG)
+#		and noticies (NOTICE) are ignored when no clients are attached
+#		to miau. When "ignored" is left undefined, it is assumed to be
+#		"true". Setting "ignored" to "false" means that this user will
+#		_not_ be ignored. This list is processed as a chain.
+#
+# Default: none
+#
+# Example:
+#ignore = {
+#	"*@localhost":"yes"
+#	"zak*":"no"
+#}
+
+
+# privlog = "mode": Whatever private messages should be logged in nick-specific
+#		files. Can be one of "never", "detached", "attached", and
+#		"always".
+#
+# This option might not be compiled in.
+#
+# Default: never
+#
+# Example:
+#privlog = "always"
+
+
+# chanlog = { "channel(s)":"options":"logfile" }: List of channel logfiles.
+#
+# When channel is set to "*", line represents global log. When logging,
+# if channel doesn't have entry of it's own in this list, it will use settings
+# of global log and write log to it's own file. When defining global log,
+# "logfile" is ignored. Each line can have multiple channels
+# (like "#foobar,#miau").
+#
+# If logfile is left undefined, logfile will be named after the channel with
+# possible postfix (see logpostfix). All lofiles are written in miau's work
+# directory.
+#
+# Options consist of abritary set of following possibilities:
+#	j: log joins
+#	e: log parts (exits)
+#	q: log quits
+#	m: log messages (privmsg/notice)
+#	c: log mode changes (changes)
+#	n: log nick changes
+#	o: log misc events (other)
+#	b: log messages from miau (bouncer)
+#	a: log all of above
+#	A: log when a client is attached
+#	D: log when a client is detached
+#	C: log continuously (status of clients doesn't matter)
+#
+# This option might not be compiled in.
+#
+# Default: none
+#
+# Example:
+#chanlog = {
+#	"#foobar":"a"		# log everything on #foobar
+#	"#miau":"aD":"foo.log"	# log everything to file "foo.log" when
+#				  all clients are detached
+#	"*":"mjeq"		# log only messages, joins, parts and quits
+#				  by default
+#}
+
+
+# logpostfix = "postfix": When writing log to undefined logfile, each logfile
+#		consists of channel name followed by postfix. Postfix can be
+#		defined here.
+#
+# This option might not be compiled in.
+#
+# Default: no postfix
+#
+# Example:
+#logpostfix = ".log"
+
+
+# onconnect = { "mode":"target/data"(:"data") }: When miau connects and
+#		registers user to server, miau can send pre-defined messages.
+#		User can define miau to send normal messages (PRIVMSG), notices
+#		(NOTICE) or arbitrary messages.
+#
+# Mode can be one of the following:
+#	p: private message (PRIVMSG).
+#	n: notice (NOTICE). Should be used with services and automatons, but
+#	   unfortunately some network services can't cope with notices.
+#	r: "raw" message. This means user must provide complete message to send
+#	   to the server. Using raw message user has complete control over what
+#	   is being sent. If you don't know what this is, you don't need this.
+# When using modes "p" or "n", user must provide both message and target where
+# as with raw messages only one parameter in addition to type should be given.
+#
+# This option might not be compiled in.
+#
+# Default: none
+#
+# Example:
+#onconnect = {
+#	"p":"nickserv":"identify foobar"
+#	"n":"nickserv@services.host.net":"id raboof"
+#	"r":"OPER foo bar"
+#}
+
+
+# automodes = { "mask":"privilegded" }: List of people who are automatically
+#		given certain privilege on channel. Mask is given in form of
+#		"mode:nick!username@host/#channel" (where "mode" is a single
+#		character) and list is processed as a chain.
+#
+# This option might not be compiled in.
+#
+# Default: none
+#
+# Example:
+#automodes = {
+#	"o:zak*!zak@client*-myisp.com/#channel":"yes"
+#	"o:zak*!*@evil.impersonator.net/#foobar":"no"
+#	"v:newbie*!*@ircnet.com/#newbie":"yes"
+#}
+
+
+# automodedelay = "seconds": Time (in seconds) after first queued mode change
+#		would take effect. During this period of time miau can collect
+#		more than one mode change and commit up to three at a time.
+#		Other situation reasonaly big value (like 30) here could prove
+#		useful is channel where there are stupid "auto-oping" bots.
+#		(Stupid bots do mode changes even if someone else did that
+#		already.)
+#
+# This option might not be compiled in.
+#
+# Default: 30
+#
+# Example:
+#automodedelay = "60"
+
+
+# cmdpasswd = "password": Password for remote commands. If this is 13 characters
+#		long, miau assumes it's crypted. Comment this out or leave it
+#		empty to disable remote commands. When sending miau a remote
+#		command, password _always_ begins with column (':') (if
+#		cmdpasswd is set to "foobar" (or hash of it), you need to send
+#		miau a message beginning with ":foobar" to issue a remote
+#		command).
+#
+# This feature might not be compiled in.
+#
+# If miau is compiled with ENABLE_MKPASSWD, miau can generate password-hashes
+# (from command line) with -c -switch.
+#
+# Default: disabled
+#
+# Example:
+#cmdpasswd = ""
+
+
+# dccbounce = "state": miau can bounce DCCs. Set to true to enable bouncing.
+#		You probably don't need this.
+#
+# This option might not be compiled in.
+#
+# Default: false
+#
+# Example:
+#dccbounce = "true"
+
+
+# dccbindhost = "host": If miau has separate IPs for IRC-network and clients,
+#		you should enter IP for clients here.
+#
+# This option might not be compiled in.
+#
+# Default: no default
+#
+# Example:
+#dccbindhost = "10.0.0.1"
