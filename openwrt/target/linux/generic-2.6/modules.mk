@@ -329,6 +329,10 @@ $(eval $(call KMOD_template,USB_ATM,usb-atm,\
         $(MODULES_DIR)/kernel/drivers/usb/atm/usbatm.ko \
 	,CONFIG_USB_ATM,kmod-usb-atm,50,usbatm))
 
+$(eval $(call KMOD_template,USB_ATM_SPEEDTOUCH,usb-atm-speedtouch,\
+        $(MODULES_DIR)/kernel/drivers/usb/atm/speedtch.ko \
+	,CONFIG_USB_SPEEDTOUCH,kmod-usb-atm-speedtouch,50,speedtch))
+
 # Misc. devices
 
 $(eval $(call KMOD_template,AX25,ax25,\
