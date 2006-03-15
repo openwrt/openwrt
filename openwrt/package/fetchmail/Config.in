@@ -1,0 +1,8 @@
+config BR2_PACKAGE_FETCHMAIL
+	prompt "fetchmail......................... Remote mail retriever"
+	tristate
+	default m if CONFIG_DEVEL
+	help
+		Retrieves remote mail via POP/IMAP
+
+		Very useful in conjunction with mutt.

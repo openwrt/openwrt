@@ -1,0 +1,9 @@
+config BR2_PACKAGE_ELINKS
+	prompt "elinks............................ A text based web browser"
+	tristate
+	default m if CONFIG_DEVEL
+	help
+	  An advanced text based web browser
+
+	  http://elinks.or.cz/
+

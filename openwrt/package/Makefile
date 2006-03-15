@@ -43,9 +43,11 @@ package-$(BR2_PACKAGE_DROPBEAR) += dropbear
 package-$(BR2_PACKAGE_DSNIFF) += dsniff
 package-$(BR2_PACKAGE_E2FSPROGS) += e2fsprogs
 package-$(BR2_PACKAGE_EBTABLES) += ebtables
+package-$(BR2_PACKAGE_ELINKS) += elinks
 package-$(BR2_PACKAGE_ETHER_WAKE) += ether-wake
 package-$(BR2_COMPILE_EXPAT) += expat
 package-$(BR2_PACKAGE_EZIPUPDATE) += ez-ipupdate
+package-$(BR2_PACKAGE_FETCHMAIL) += fetchmail
 package-$(BR2_COMPILE_FLAC) += flac
 package-$(BR2_PACKAGE_FPING) += fping
 package-$(BR2_PACKAGE_FPROBE) += fprobe
@@ -145,6 +147,7 @@ package-$(BR2_PACKAGE_MRD6) += mrd6
 package-$(BR2_PACKAGE_MT_DAAPD) += mt-daapd
 package-$(BR2_PACKAGE_MTD) += mtd
 package-$(BR2_PACKAGE_MTR) += mtr
+package-$(BR2_PACKAGE_MUTT) += mutt
 package-$(BR2_COMPILE_MYSQL) += mysql
 package-$(BR2_PACKAGE_NANO) += nano
 package-$(BR2_COMPILE_NCURSES) += ncurses
@@ -188,6 +191,7 @@ package-$(BR2_PACKAGE_PPP) += ppp
 package-$(BR2_PACKAGE_PPTP) += pptp
 package-$(BR2_PACKAGE_PPTPD) += pptpd
 package-$(BR2_PACKAGE_PRIVOXY) += privoxy
+package-$(BR2_PACKAGE_PROCMAIL) += procmail
 package-$(BR2_PACKAGE_PSYBNC) += psybnc
 package-$(BR2_PACKAGE_PTUNNEL) += ptunnel
 package-$(BR2_PACKAGE_QUAGGA) += quagga
@@ -337,6 +341,7 @@ miredo-compile: uclibc++-compile
 monit-compile: openssl-compile
 mt-daapd-compile: howl-compile libgdbm-compile libid3tag-compile
 mtr-compile: ncurses-compile
+mutt-compile: ncurses-compile openssl-compile
 mysql-compile: ncurses-compile zlib-compile readline-compile
 nano-compile: ncurses-compile
 net-snmp-compile: libelf-compile
