@@ -14,6 +14,7 @@ package-$(BR2_COMPILE_AVAHI) += avahi
 package-$(BR2_COMPILE_BC) += bc
 package-$(BR2_COMPILE_BIND) += bind
 package-$(BR2_PACKAGE_BITCHX) += bitchx
+package-$(BR2_PACKAGE_BITCHX) += bitlbee
 package-$(BR2_PACKAGE_BLUEZ_LIBS) += bluez-libs
 package-$(BR2_PACKAGE_BLUEZ_UTILS) += bluez-utils
 package-$(BR2_PACKAGE_BRIDGE) += bridge
@@ -102,6 +103,7 @@ package-$(BR2_PACKAGE_LIBGCRYPT) += libgcrypt
 package-$(BR2_PACKAGE_LIBGD) += libgd
 package-$(BR2_PACKAGE_LIBGDBM) += libgdbm
 package-$(BR2_PACKAGE_LIBGPG_ERROR) += libgpg-error
+package-$(BR2_PACKAGE_LIBICONV) += libiconv
 package-$(BR2_PACKAGE_LIBID3TAG) += libid3tag
 package-$(BR2_PACKAGE_LIBLZO) += liblzo
 package-$(BR2_PACKAGE_LIBMAD) += libmad
@@ -286,6 +288,7 @@ atftp-compile: readline-compile
 avahi-compile: libdaemon-compile expat-compile libgdbm-compile
 bind-compile: openssl-compile
 bitchx-compile: ncurses-compile
+bitlbee-compile: libiconv-compile openssl-compile glib-compile
 cbtt-compile: mysql-compile zlib-compile
 clinkc-compile: expat-compile
 curl-compile: openssl-compile zlib-compile
