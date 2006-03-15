@@ -1,15 +1,17 @@
 config BR2_PACKAGE_JAMVM
-        prompt "jamvm .............................A compact Java Virtual Machine"
+        prompt "jamvm ............................A compact Java Virtual Machine"
 	tristate
         default m if CONFIG_DEVEL
 	select BR2_PACKAGE_ZLIB
 	select BR2_PACKAGE_LIBFFI_SABLE
 	select BR2_PACKAGE_LIBSABLEVM_CLASSPATH
         help
-          JamVM is a new Java Virtual Machine which conforms to the JVM specification version
-          (blue book). In comparison to most other VM's (free and commercial) it is extremely
-          small.However, unlike other small VMs (e.g. KVM) it is designed to support the full
-          specification, and includes support for object finalisation, Soft/Weak/Phantom 
-	  References, the Java Native Interface (JNI) and the Reflection API.
+	  JamVM is a new Java Virtual Machine which conforms to the JVM
+	  specification version (blue book). In comparison to most other VM's
+	  (free and commercial) it is extremely small.However, unlike other
+	  small VMs (e.g. KVM) it is designed to support the full
+	  specification, and includes support for object finalisation,
+	  Soft/Weak/Phantom References, the Java Native Interface (JNI) and the
+	  Reflection API.
 
 	  http://sourceforge.net/projects/jamvm

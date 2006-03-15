@@ -1,0 +1,11 @@
+config BR2_PACKAGE_MUTT
+	prompt "mutt.............................. console mail client"
+	tristate
+	default m if CONFIG_DEVEL
+	select BR2_PACKAGE_LIBNCURSES
+	select BR2_PACKAGE_LIBOPENSSL
+	help
+	  Mail client for the text console
+	  
+	  http://www.mutt.org
+
