@@ -1,0 +1,16 @@
+config BR2_PACKAGE_BITLBEE
+	prompt "BitlBee........................... IRC gateway to IM chat networks"
+	tristate
+	default m if CONFIG_DEVEL
+	select BR2_PACKAGE_LIBOPENSSL
+	select BR2_PACKAGE_LIBGLIB
+	select BR2_PACKAGE_LIBICONV
+	help
+
+	  BitlBee is an IRC daemon that can talk to instant messaging
+	  networks and acts as a gateway. Users can connect to the
+	  server with any normal IRC client and see their 'buddy list'
+	  in #bitlbee.
+	  
+	  http://www.bitlbee.org/
+
