@@ -1,0 +1,7 @@
+config BR2_PACKAGE_MGETTY
+	prompt "mgetty+sendfax.................... the data/fax solution for your analog modem"
+	tristate
+	default m if CONFIG_DEVEL
+	help
+	 mgetty now includes sendfax (and AutoPPP)
+	 using pppd for data and doing fax/login by itself.
