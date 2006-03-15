@@ -695,6 +695,12 @@ config BR2_PACKAGE_KMOD_USB_ATM
 	default m
 	depends BR2_PACKAGE_KMOD_USB_CONTROLLER
 
+config BR2_PACKAGE_KMOD_USB_ATM_SPEEDTOUCH
+        prompt "kmod-usb-atm-speedtouch........... Support for USB Speedtouch ADSL modem"
+	tristate
+	default m
+	depends BR2_PACKAGE_KMOD_USB_ATM
+
 endmenu
 
 menu "Misc. devices support"
