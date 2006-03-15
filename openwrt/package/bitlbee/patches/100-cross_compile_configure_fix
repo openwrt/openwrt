@@ -1,0 +1,98 @@
+diff -Nur bitlbee-1.0.1-orig/configure bitlbee-1.0.1/configure
+--- bitlbee-1.0.1-orig/configure	2006-01-14 16:14:05.000000000 +0100
++++ bitlbee-1.0.1/configure	2006-03-06 18:30:19.000000000 +0100
+@@ -21,9 +21,12 @@
+ 
+ debug=0
+ strip=1
++sizeopt=0
+ ipv6=1
+ ssl=auto
+ 
++glib1=0
++
+ arch=`uname -s`
+ cpu=`uname -m`
+ 
+@@ -52,11 +55,18 @@
+ 
+ --debug=0/1	Disable/enable debugging		$debug
+ --strip=0/1	Disable/enable binary stripping		$strip
++--sizeopt=0/1	Disable/enable size optimization        $sizeopt
++
++--arch=...	Describe Operating System ?!		$arch
++--cpu=...	Describe CPU				$cpu
+ 
+ --ipv6=0/1	IPv6 socket support			$ipv6
+ 
+ --ssl=...	SSL library to use (gnutls, nss, openssl, bogus, auto)
+ 							$ssl
++--glib1=0/1	Force usage of glib1 even if glib2 is present
++--glib1prefix=...
++
+ EOF
+ 		exit;
+ 	fi
+@@ -110,8 +120,13 @@
+ 	echo 'CFLAGS=-g' >> Makefile.settings
+ 	echo 'DEBUG=1' >> Makefile.settings
+ 	echo '#define DEBUG' >> config.h
++	if [ "$sizeopt" = "1" ]; then
++		echo "Warning: won't optimize for size since debug is on."
++	fi
++elif [ "$sizeopt" = "1" ]; then
++	echo 'CFLAGS=-Os' >> Makefile.settings
+ else
+-	echo 'CFLAGS=-O3' >> Makefile.settings
++	echo 'CFLAGS=-O2' >> Makefile.settings
+ fi
+ 
+ echo CFLAGS+=-I`pwd` -I`pwd`/protocols -I. >> Makefile.settings
+@@ -138,24 +153,33 @@
+ 	exit 1;
+ fi
+ 
+-if type pkg-config > /dev/null 2>/dev/null && pkg-config glib-2.0; then
++if [ "$glib1" != "1" ] && \
++   type pkg-config > /dev/null 2>/dev/null && pkg-config glib-2.0; then
+ 	cat<<EOF>>Makefile.settings
+ EFLAGS+=`pkg-config --libs glib-2.0`
+ CFLAGS+=`pkg-config --cflags glib-2.0`
+ EOF
+ 	echo '#define GLIB2' >> config.h
+-elif type glib-config > /dev/null 2> /dev/null; then
++elif [ "x$glib1prefix" = "x" ] && \
++     type glib-config > /dev/null 2> /dev/null; then
+ 	cat<<EOF>>Makefile.settings
+ EFLAGS+=`glib-config --libs`
+ CFLAGS+=`glib-config --cflags`
+ EOF
+ 	echo '#define GLIB1' >> config.h
++elif [ "x$glib1prefix" != "x" ] && \
++     type "$glib1prefix/bin/glib-config" > /dev/null 2> /dev/null; then
++	cat<<EOF>>Makefile.settings
++EFLAGS+=`$glib1prefix/bin/glib-config --prefix=$glib1prefix --libs`
++CFLAGS+=`$glib1prefix/bin/glib-config --prefix=$glib1prefix --cflags`
++EOF
++	echo '#define GLIB1' >> config.h
+ else
+ 	echo 'Cannot find glib development libraries, aborting. (Install libglib-dev?)'
+ 	exit 1;
+ fi
+ 
+-if [ -r /usr/include/iconv.h ]; then
++if [ -r "$STAGING_DIR/usr/include/iconv.h" ]; then
+ 	:;
+ elif [ -r /usr/local/include/iconv.h ]; then
+ 	echo CFLAGS+=-I/usr/local/include >> Makefile.settings;
+@@ -360,6 +384,10 @@
+ CYGWIN* )
+ 	echo 'Cygwin is not officially supported.'
+ ;;
++OpenWrt )
++	echo 'EFLAGS+=-liconv' >> Makefile.settings;
++	echo "CFLAGS+=\"-I$STAGING_DIR/usr/include\"" >> Makefile.settings;
++;;
+ * )
+ 	echo 'We haven'\''t tested BitlBee on many platforms yet, yours is untested. YMMV.'
+ 	echo 'Please report any problems at http://bugs.bitlbee.org/.'
