@@ -1,0 +1,7 @@
+#!/bin/sh
+# make /tmp/.bitchxrc as many servers ban root
+if [ ! -e /tmp/.bitchxrc ]
+then
+  echo "IRCUSER OpenWrt" >/tmp/.bitchxrc
+  echo "IRCNAME OpenWrt User!" >>/tmp/.bitchxrc
+fi

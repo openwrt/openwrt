@@ -13,6 +13,7 @@ package-$(BR2_COMPILE_ATFTP) += atftp
 package-$(BR2_COMPILE_AVAHI) += avahi
 package-$(BR2_COMPILE_BC) += bc
 package-$(BR2_COMPILE_BIND) += bind
+package-$(BR2_PACKAGE_BITCHX) += bitchx
 package-$(BR2_PACKAGE_BLUEZ_LIBS) += bluez-libs
 package-$(BR2_PACKAGE_BLUEZ_UTILS) += bluez-utils
 package-$(BR2_PACKAGE_BRIDGE) += bridge
@@ -284,6 +285,7 @@ arpwatch-compile: libpcap-compile
 atftp-compile: readline-compile
 avahi-compile: libdaemon-compile expat-compile libgdbm-compile
 bind-compile: openssl-compile
+bitchx-compile: ncurses-compile
 cbtt-compile: mysql-compile zlib-compile
 clinkc-compile: expat-compile
 curl-compile: openssl-compile zlib-compile
