@@ -18,6 +18,7 @@ package-$(BR2_PACKAGE_BLUEZ_UTILS) += bluez-utils
 package-$(BR2_PACKAGE_BRIDGE) += bridge
 package-$(BR2_PACKAGE_BUSYBOX) += busybox
 package-$(BR2_PACKAGE_BWM) += bwm
+package-$(BR2_PACKAGE_CBTT) += cbtt
 package-$(BR2_PACKAGE_CGILIB) += cgilib
 package-$(BR2_PACKAGE_CHILLISPOT) += chillispot
 package-$(BR2_PACKAGE_CIFSMOUNT) += cifsmount
@@ -283,6 +284,7 @@ arpwatch-compile: libpcap-compile
 atftp-compile: readline-compile
 avahi-compile: libdaemon-compile expat-compile libgdbm-compile
 bind-compile: openssl-compile
+cbtt-compile: mysql-compile zlib-compile
 clinkc-compile: expat-compile
 curl-compile: openssl-compile zlib-compile
 cyrus-sasl-compile: openssl-compile

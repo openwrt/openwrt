@@ -1,0 +1,13 @@
+config BR2_PACKAGE_CBTT
+	prompt "cbtt.............................. a C BitTorrent Tracker"
+	tristate
+	default m if CONFIG_DEVEL
+	help
+	 A C BitTorrent Tracker
+	  
+config BR2_PACKAGE_CBTT_MYSQL
+	prompt "cbtt-mysql........................ a C BitTorrent Tracker (mysql)"
+	tristate
+	default m if CONFIG_DEVEL
+	help
+	 A C BitTorrent Tracker 

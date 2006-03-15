@@ -1,0 +1,41 @@
+diff -Nur cbtt80-20060211-src/Makefile cbtt80-20060211-src.patched/Makefile
+--- cbtt80-20060211-src/Makefile	2006-02-07 18:44:58.000000000 +0100
++++ cbtt80-20060211-src.patched/Makefile	2006-03-15 09:01:35.000000000 +0100
+@@ -1,6 +1,5 @@
+ SHELL = /bin/sh
+ SYSTEM = $(shell uname)
+-C++ = g++
+ DFLAGS =
+ OFLAGS = -O2 -w
+ LFLAGS = -L. -lz
+@@ -40,19 +39,19 @@
+ all: $(OBJS) $(OBJS_BNBT) $(OBJS_BNBTMYSQL) $(PROGS)
+ 
+ ./bnbt: $(OBJS) $(OBJS_BNBT)
+-	$(C++) -o ./bnbt $(OBJS) $(OBJS_BNBT) $(LFLAGS)
++	$(CXX) -o ./bnbt $(OBJS) $(OBJS_BNBT) $(LFLAGS)
+ 
+ ./bnbtmysql: $(OBJS) $(OBJS_BNBTMYSQL)
+-	$(C++) -o ./bnbtmysql $(OBJS) $(OBJS_BNBTMYSQL) $(LFLAGS) -L/usr/lib/mysql -lmysqlclient
++	$(CXX) -o ./bnbtmysql $(OBJS) $(OBJS_BNBTMYSQL) $(LFLAGS)
+ 
+ clean:
+ 	rm -f $(OBJS) $(OBJS_BNBT) $(OBJS_BNBTMYSQL) $(PROGS)
+ 
+ %.o: %.cpp
+-	$(C++) -o $@ $(CFLAGS) -c $<
++	$(CXX) -o $@ $(CFLAGS) -c $<
+ 
+ %.mysql.o: %.cpp
+-	$(C++) -o $@ $(CFLAGS) -DBNBT_MYSQL -c $<
++	$(CXX) -o $@ $(CFLAGS) -DBNBT_MYSQL -c $<
+ 
+ ./bnbt: $(OBJS) $(OBJS_BNBT)
+ 
+@@ -91,4 +90,4 @@
+ bnbt_mysql.mysql.o: bnbt.h bnbt_mysql.h util.h
+ tracker.mysql.o: bnbt.h bnbt_mysql.h atom.h bencode.h config.h md5.h server.h sort.h tracker.h util.h
+ tracker_announce.mysql.o: bnbt.h bnbt_mysql.h atom.h bencode.h link.h tracker.h util.h
+-tracker_scrape.mysql.o: bnbt.h bnbt_mysql.h atom.h bencode.h tracker.h util.h
+\ No newline at end of file
++tracker_scrape.mysql.o: bnbt.h bnbt_mysql.h atom.h bencode.h tracker.h util.h
