@@ -45,6 +45,10 @@ $(PKG_BUILD_DIR)/.configured:
 		--glib1=1 \
 		--glib1prefix="$(STAGING_DIR)/usr" \
 	);
+	@echo 'CFLAGS+="-I$(STAGING_DIR)/usr/include/iconv"' >> \
+		$(PKG_BUILD_DIR)/Makefile.settings
+	@echo 'LFLAGS+="-L$(STAGING_DIR)/usr/lib/iconv"' >> \
+		$(PKG_BUILD_DIR)/Makefile.settings
 	touch $@
 
 $(PKG_BUILD_DIR)/.built:
@@ -58,10 +62,6 @@ $(IPKG_BITLBEE):
 		DESTDIR="$(IDIR_BITLBEE)" install 
 	install -d -m0755 $(IDIR_BITLBEE)/etc/init.d
 	install -m0755 ./files/S55bitlbee $(IDIR_BITLBEE)/etc/init.d/S55bitlbee
+	$(RSTRIP) $(IDIR_BITLBEE)
 	$(IPKG_BUILD) $(IDIR_BITLBEE) $(PACKAGE_DIR)
 	touch $@
-
-mostlyclean:
-	$(MAKE) -C $(PKG_BUILD_DIR) clean
-	rm -f $(PKG_BUILD_DIR)/.built
-

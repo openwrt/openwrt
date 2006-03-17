@@ -14,7 +14,7 @@ package-$(BR2_COMPILE_AVAHI) += avahi
 package-$(BR2_COMPILE_BC) += bc
 package-$(BR2_COMPILE_BIND) += bind
 package-$(BR2_PACKAGE_BITCHX) += bitchx
-package-$(BR2_PACKAGE_BITCHX) += bitlbee
+package-$(BR2_PACKAGE_BITLBEE) += bitlbee
 package-$(BR2_PACKAGE_BLUEZ_LIBS) += bluez-libs
 package-$(BR2_PACKAGE_BLUEZ_UTILS) += bluez-utils
 package-$(BR2_PACKAGE_BRIDGE) += bridge
@@ -163,6 +163,7 @@ package-$(BR2_PACKAGE_NTPCLIENT) += ntpclient
 package-$(BR2_PACKAGE_NVRAM) += nvram
 package-$(BR2_PACKAGE_OLSRD) += olsrd
 package-$(BR2_COMPILE_OPENCDK) += opencdk
+package-$(BR2_PACKAGE_OPENH323) += openh323
 package-$(BR2_COMPILE_OPENLDAP) += openldap
 package-$(BR2_PACKAGE_OPENNTPD) += openntpd
 package-$(BR2_PACKAGE_OPENSER) += openser
@@ -195,6 +196,7 @@ package-$(BR2_PACKAGE_PRIVOXY) += privoxy
 package-$(BR2_PACKAGE_PROCMAIL) += procmail
 package-$(BR2_PACKAGE_PSYBNC) += psybnc
 package-$(BR2_PACKAGE_PTUNNEL) += ptunnel
+package-$(BR2_PACKAGE_PWLIB) += pwlib
 package-$(BR2_PACKAGE_QUAGGA) += quagga
 package-$(BR2_COMPILE_RADIUSCLIENT_NG) += radiusclient-ng
 package-$(BR2_PACKAGE_RADVD) += radvd
@@ -350,6 +352,7 @@ nfs-server-compile: portmap-compile
 nmap-compile: uclibc++-compile pcre-compile libpcap-compile
 nocatsplash-compile: glib-compile
 opencdk-compile: libgcrypt-compile
+openh323-compile: pwlib-compile
 openldap-compile: cyrus-sasl-compile openssl-compile
 openssh-compile: zlib-compile openssl-compile
 openssl-compile: zlib-compile
@@ -363,6 +366,7 @@ postgresql-compile: zlib-compile
 ppp-compile: linux-atm-compile libpcap-compile
 privoxy-compile: pcre-compile
 ptunnel-compile: libpcap-compile
+pwlib-compile: libpthread-compile
 quagga-compile: readline-compile ncurses-compile
 raddump-compile: openssl-compile libpcap-compile
 radiusclient-ng-compile: openssl-compile
