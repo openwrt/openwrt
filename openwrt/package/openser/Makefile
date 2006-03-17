@@ -3,10 +3,10 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openser
-PKG_VERSION:=1.0.0
+PKG_VERSION:=1.0.1
 PKG_RELEASE:=1
-PKG_MD5SUM:=f60f5a51772c5b06abaa1c81e9539077
-# PKG_VARIANT:=-tls for tls version
+PKG_MD5SUM:=eebc16665003ee92daf96b216d6f9563
+# PKG_VARIANT:=-tls # for tls version
 PKG_VARIANT:=
 
 PKG_SOURCE_URL:=http://openser.org/pub/openser/$(PKG_VERSION)/src
@@ -18,7 +18,43 @@ PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
 include $(TOPDIR)/package/rules.mk
 
+define PKG_mod_template
+
+$$(IPKG_$(1)):
+	[ -z "$(2)" ] || install -d -m 0755 $$(IDIR_$(1))/usr/lib/openser/modules/
+	$(CP) $(PKG_BUILD_DIR)/modules/$(2)/$(2).so \
+			$$(IDIR_$(1))/usr/lib/openser/modules/ ; \
+	$(RSTRIP) $$(IDIR_$(1))
+	$(IPKG_BUILD) $$(IDIR_$(1)) $(PACKAGE_DIR)
+	
+endef
+
 $(eval $(call PKG_template,OPENSER,openser,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,OPENSER_MOD_ACCOUNTING,openser-mod-acc,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,OPENSER_MOD_AUTH,openser-mod-auth,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,OPENSER_MOD_AUTH_DB,openser-mod-auth-db,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,OPENSER_MOD_AUTH_RADIUS,openser-mod-auth-radius,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,OPENSER_MOD_AVPOPS,openser-mod-avpops,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,OPENSER_MOD_LCR,openser-mod-lcr,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,OPENSER_MOD_MEDIAPROXY,openser-mod-mediaproxy,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,OPENSER_MOD_MYSQL,openser-mod-mysql,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,OPENSER_MOD_NATHELPER,openser-mod-nathelper,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,OPENSER_MOD_SMS,openser-mod-sms,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,OPENSER_MOD_SPEEDDIAL,openser-mod-speeddial,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,OPENSER_MOD_XLOG,openser-mod-xlog,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+
+$(eval $(call PKG_mod_template,OPENSER_MOD_ACCOUNTING,acc))
+$(eval $(call PKG_mod_template,OPENSER_MOD_AUTH,auth))
+$(eval $(call PKG_mod_template,OPENSER_MOD_AUTH_DB,auth_db))
+$(eval $(call PKG_mod_template,OPENSER_MOD_AUTH_RADIUS,auth_radius))
+$(eval $(call PKG_mod_template,OPENSER_MOD_AVPOPS,avpops))
+$(eval $(call PKG_mod_template,OPENSER_MOD_LCR,lcr))
+$(eval $(call PKG_mod_template,OPENSER_MOD_MEDIAPROXY,mediaproxy))
+$(eval $(call PKG_mod_template,OPENSER_MOD_MYSQL,mysql))
+$(eval $(call PKG_mod_template,OPENSER_MOD_NATHELPER,nathelper))
+$(eval $(call PKG_mod_template,OPENSER_MOD_SMS,sms))
+$(eval $(call PKG_mod_template,OPENSER_MOD_SPEEDIAL,speeddial))
+$(eval $(call PKG_mod_template,OPENSER_MOD_XLOG,xlog))
 
 # Select here the modules for the ipk package
 OPENSER_MODULES := sl tm rr maxfwd usrloc registrar dbtext textops exec
