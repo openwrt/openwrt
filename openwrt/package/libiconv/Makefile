@@ -1,4 +1,4 @@
-# $Id4
+# $Id$
 
 include $(TOPDIR)/rules.mk
 
@@ -60,28 +60,24 @@ $(PKG_BUILD_DIR)/.built:
 
 $(IPKG_LIBICONV):
 	install -d -m0755 $(IDIR_LIBICONV)/usr/lib
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libiconv.so* $(IDIR_LIBICONV)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libiconv.so* $(IDIR_LIBICONV)/usr/lib/
 	chmod 0644 $(IDIR_LIBICONV)/usr/lib/*
 	$(RSTRIP) $(IDIR_LIBICONV)
 	$(IPKG_BUILD) $(IDIR_LIBICONV) $(PACKAGE_DIR)
 
-$(STAGING_DIR)/usr/lib/libiconv.so: $(PKG_BUILD_DIR)/.built
-	mkdir -p $(STAGING_DIR)/usr/include
-	cp -fpR $(PKG_INSTALL_DIR)/usr/include/iconv.h $(STAGING_DIR)/usr/include/
-	mkdir -p $(STAGING_DIR)/usr/lib/
-	cp -fpR $(PKG_INSTALL_DIR)/usr/lib/libiconv.* $(STAGING_DIR)/usr/lib/
+$(STAGING_DIR)/usr/lib/iconv/libiconv.so: $(PKG_BUILD_DIR)/.built
+	mkdir -p $(STAGING_DIR)/usr/include/iconv
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/iconv.h $(STAGING_DIR)/usr/include/iconv
+	mkdir -p $(STAGING_DIR)/usr/lib/iconv
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libiconv.* $(STAGING_DIR)/usr/lib/iconv
 	touch $@
 	
-install-dev: $(STAGING_DIR)/usr/lib/libiconv.so
+install-dev: $(STAGING_DIR)/usr/lib/iconv/libiconv.so
 
 uninstall-dev:
 	rm -rf \
-		$(STAGING_DIR)/usr/include/iconv.h \
-		$(STAGING_DIR)/usr/lib/libiconv.* \
+		$(STAGING_DIR)/usr/include/iconv \
+		$(STAGING_DIR)/usr/lib/iconv \
 
 compile: install-dev
 clean: uninstall-dev
-
-mostlyclean:
-	$(MAKE) -C $(PKG_BUILD_DIR) clean
-	rm -f $(PKG_BUILD_DIR)/.built
