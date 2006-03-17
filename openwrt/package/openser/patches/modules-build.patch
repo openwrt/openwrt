@@ -1,0 +1,57 @@
+--- openser-1.0.1/Makefile	2006-02-15 20:52:21.000000000 +0100
++++ openser-1.0.1.new/Makefile	2006-03-17 11:01:27.417488936 +0100
+@@ -46,8 +46,7 @@
+ skip_modules?=
+ 
+ # if not set on the cmd. line or the env, exclude this modules:
+-exclude_modules?= 		jabber cpl-c pa postgres mysql \
+-						avp_radius auth_radius group_radius uri_radius
++exclude_modules?= 		jabber cpl-c pa
+ # always exclude the CVS dir
+ override exclude_modules+= CVS $(skip_modules)
+ 
+diff -urN openser-1.0.1/modules/acc/Makefile openser-1.0.1.new/modules/acc/Makefile
+--- openser-1.0.1/modules/acc/Makefile	2005-09-05 21:32:02.000000000 +0200
++++ openser-1.0.1.new/modules/acc/Makefile	2006-03-17 10:38:14.333269928 +0100
+@@ -14,8 +14,8 @@
+ DEFS+=-DSQL_ACC
+ 
+ # uncomment the next two lines if you wish to enable RADIUS accounting
+-#DEFS+=-DRAD_ACC -I$(LOCALBASE)/include
+-#LIBS=-L$(LOCALBASE)/lib -lradiusclient-ng
++DEFS+=-DRAD_ACC -I$(LOCALBASE)/include
++LIBS=-L$(LOCALBASE)/lib -lradiusclient-ng
+ 
+ # uncomment the next two lines if you wish to enable DIAMETER accounting
+ #DEFS+=-DDIAM_ACC
+diff -urN openser-1.0.1/modules/mysql/Makefile openser-1.0.1.new/modules/mysql/Makefile
+--- openser-1.0.1/modules/mysql/Makefile	2005-06-13 18:47:40.000000000 +0200
++++ openser-1.0.1.new/modules/mysql/Makefile	2006-03-17 11:12:16.218856136 +0100
+@@ -9,14 +9,12 @@
+ # mysql.h locations (freebsd,openbsd  solaris)
+ DEFS +=-I$(LOCALBASE)/include -I$(LOCALBASE)/include/mysql \
+ 		-I$(LOCALBASE)/mysql/include \
+-		-I/usr/include/mysql
+ 
+ # libmysqlclient locations on RH/Suse, Solaris /OpenBSD, FreeBSD
+ # (Debian does the right thing and puts it in /usr/lib)
+ LIBS=-L/usr/lib/mysql -L$(LOCALBASE)/lib -L$(LOCALBASE)/lib/mysql \
+ 		-L$(LOCALBASE)/mysql/lib/mysql/ \
+ 		-L$(LOCALBASE)/mysql/lib \
+-		-L/usr/lib64/mysql \
+ 		-lmysqlclient -lz
+ 
+ include ../../Makefile.modules
+diff -urN openser-1.0.1/modules/postgres/Makefile openser-1.0.1.new/modules/postgres/Makefile
+--- openser-1.0.1/modules/postgres/Makefile	2005-07-01 16:52:34.000000000 +0200
++++ openser-1.0.1.new/modules/postgres/Makefile	2006-03-17 11:13:22.150832952 +0100
+@@ -7,8 +7,7 @@
+ NAME=postgres.so
+ 
+ # libpq-fe.h locations
+-DEFS +=-I$(LOCALBASE)/include -I$(LOCALBASE)/pgsql/include \
+-	 -I/usr/include/postgresql -I/usr/include/postgresql/8.0
++DEFS +=-I$(LOCALBASE)/include -I$(LOCALBASE)/pgsql/include -I$(LOCALBASE)/include/postgresql
+ LIBS=-L$(LOCALBASE)/lib -L$(LOCALBASE)/pgsql/lib -L$(LOCALBASE)/lib/pgsql \
+ 	 -lpq
+ 
