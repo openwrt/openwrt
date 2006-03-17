@@ -143,6 +143,7 @@ package-$(BR2_COMPILE_MINI_HTTPD) += mini_httpd
 package-$(BR2_PACKAGE_MINI_SENDMAIL) += mini_sendmail
 package-$(BR2_COMPILE_MIREDO) += miredo
 package-$(BR2_COMPILE_MONIT) += monit
+package-$(BR2_PACKAGE_MOTION) += motion
 package-$(BR2_PACKAGE_MPD) += mpd
 package-$(BR2_PACKAGE_MRD6) += mrd6
 package-$(BR2_PACKAGE_MT_DAAPD) += mt-daapd
@@ -435,6 +436,10 @@ mini_httpd-compile: matrixssl-compile
 endif
 ifneq ($(BR2_PACKAGE_MINI_HTTPD_OPENSSL),)
 mini_httpd-compile: openssl-compile
+endif
+
+ifneq ($(BR2_PACKAGE_MOTION),)
+motion-compile: libjpeg-compile
 endif
 
 ifneq ($(BR2_PACKAGE_MPD_MP3),)
