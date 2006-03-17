@@ -1,7 +1,7 @@
-diff -Nurd irssi-0.8.9/configure ../../build_mipsel/irssi-0.8.9/configure
---- irssi-0.8.9/configure	2003-12-10 23:23:05.000000000 +0000
-+++ ../../build_mipsel/irssi-0.8.9/configure	2005-01-28 21:55:37.605247160 +0000
-@@ -21032,13 +21032,6 @@
+diff -ruN irssi-0.8.10.orig/configure irssi-0.8.10/configure
+--- irssi-0.8.10.orig/configure	2005-12-11 23:46:06.000000000 +0100
++++ irssi-0.8.10/configure	2006-02-24 13:19:21.570891250 +0100
+@@ -21848,13 +21848,6 @@
  
  echo "$as_me:$LINENO: checking size of off_t" >&5
  echo $ECHO_N "checking size of off_t... $ECHO_C" >&6
@@ -13,9 +13,9 @@ diff -Nurd irssi-0.8.9/configure ../../build_mipsel/irssi-0.8.9/configure
 -   { (exit 1); exit 1; }; }
 -else
    cat >conftest.$ac_ext <<_ACEOF
- #line $LINENO "configure"
  /* confdefs.h.  */
-@@ -21057,35 +21050,8 @@
+ _ACEOF
+@@ -21872,35 +21865,8 @@
    }
  
  _ACEOF
@@ -47,7 +47,7 @@ diff -Nurd irssi-0.8.9/configure ../../build_mipsel/irssi-0.8.9/configure
 -
 -fi
 +  sizeof_off_t=8
- rm -f core core.* *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+ rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
 -fi
  echo "$as_me:$LINENO: result: $sizeof_off_t" >&5
  echo "${ECHO_T}$sizeof_off_t" >&6
