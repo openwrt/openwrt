@@ -1,0 +1,11 @@
+--- pwlib-cvs-20051227/make/lib.mak.orig	2005-09-25 12:51:23.000000000 +0200
++++ pwlib-cvs-20051227/make/lib.mak	2005-12-30 01:18:21.000000000 +0100
+@@ -201,7 +201,7 @@
+       LDSOOPTS += -Wl,--kill-at
+     else
+     ifneq ($(OSTYPE),Darwin)
+-      LDSOOPTS += -Wl,-soname,$(LIB_SONAME)
++      LDSOOPTS += -soname,$(LIB_SONAME)
+     endif
+     endif
+     LD = $(CPLUS)
