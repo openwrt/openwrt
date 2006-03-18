@@ -1,0 +1,231 @@
+diff -urN ppp.old/pppd/Makefile.linux ppp.dev/pppd/Makefile.linux
+--- ppp.old/pppd/Makefile.linux	2006-03-18 15:58:00.000000000 +0100
++++ ppp.dev/pppd/Makefile.linux	2006-03-18 16:52:01.000000000 +0100
+@@ -50,6 +50,9 @@
+ # and that the kernel driver support PPP packet filtering.
+ #FILTER=y
+ 
++# Support for precompiled filters
++PRECOMPILED_FILTER=y
++
+ # Uncomment the next line to enable multilink PPP (enabled by default)
+ # Linux distributions: Please leave multilink ENABLED in your builds
+ # of pppd!
+@@ -177,6 +180,14 @@
+ endif
+ endif
+ 
++ifdef PRECOMPILED_FILTER
++PPPDSRCS += pcap_pcc.c
++HEADERS  += pcap_pcc.h
++PPPDOBJS += pcap_pcc.o
++LIBS	+= $(STAGING_DIR)/usr/lib/libpcap.a
++CFLAGS	+= -DPPP_FILTER -DPPP_PRECOMPILED_FILTER -I$(STAGING_DIR)/usr/include
++endif
++
+ ifdef HAVE_INET6
+      PPPDSRCS += ipv6cp.c eui64.c
+      HEADERS  += ipv6cp.h eui64.h
+diff -urN ppp.old/pppd/demand.c ppp.dev/pppd/demand.c
+--- ppp.old/pppd/demand.c	2006-03-18 15:58:00.000000000 +0100
++++ ppp.dev/pppd/demand.c	2006-03-18 18:09:16.000000000 +0100
+@@ -438,12 +438,14 @@
+ 	return 0;
+     proto = PPP_PROTOCOL(p);
+ #ifdef PPP_FILTER
++	*p = 1; /* set outbound for the filter rule */
+     if (pass_filter.bf_len != 0
+ 	&& bpf_filter(pass_filter.bf_insns, p, len, len) == 0)
+ 	return 0;
+     if (active_filter.bf_len != 0
+ 	&& bpf_filter(active_filter.bf_insns, p, len, len) == 0)
+ 	return 0;
++	*p = 0xff; /* restore original ppp header */
+ #endif
+     for (i = 0; (protp = protocols[i]) != NULL; ++i) {
+ 	if (protp->protocol < 0xC000 && (protp->protocol & ~0x8000) == proto) {
+diff -urN ppp.old/pppd/options.c ppp.dev/pppd/options.c
+--- ppp.old/pppd/options.c	2006-03-18 15:58:00.000000000 +0100
++++ ppp.dev/pppd/options.c	2006-03-18 18:05:58.000000000 +0100
+@@ -57,14 +57,7 @@
+ 
+ #ifdef PPP_FILTER
+ #include <pcap.h>
+-/*
+- * DLT_PPP_WITH_DIRECTION is in current libpcap cvs, and should be in
+- * libpcap-0.8.4.  Until that is released, use DLT_PPP - but that means
+- * we lose the inbound and outbound qualifiers.
+- */
+-#ifndef DLT_PPP_WITH_DIRECTION
+-#define DLT_PPP_WITH_DIRECTION	DLT_PPP
+-#endif
++#include <pcap-bpf.h>
+ #endif
+ 
+ #include "pppd.h"
+@@ -155,6 +148,13 @@
+ static int loadplugin __P((char **));
+ #endif
+ 
++#ifdef PPP_PRECOMPILED_FILTER
++#include "pcap_pcc.h"
++static int setprecompiledpassfilter __P((char **));
++static int setprecompiledactivefilter __P((char **));
++#undef PPP_FILTER
++#endif
++
+ #ifdef PPP_FILTER
+ static int setpassfilter __P((char **));
+ static int setactivefilter __P((char **));
+@@ -312,6 +312,14 @@
+       "set filter for active pkts", OPT_PRIO },
+ #endif
+ 
++#ifdef PPP_PRECOMPILED_FILTER
++    { "precompiled-pass-filter", 1, setprecompiledpassfilter,
++      "set precompiled filter for packets to pass", OPT_PRIO },
++
++    { "precompiled-active-filter", 1, setprecompiledactivefilter,
++      "set precompiled filter for active pkts", OPT_PRIO },
++#endif
++
+ #ifdef MAXOCTETS
+     { "maxoctets", o_int, &maxoctets,
+       "Set connection traffic limit",
+@@ -1447,6 +1455,29 @@
+     return ok;
+ }
+ 
++#ifdef PPP_PRECOMPILED_FILTER
++/*
++ * setprecompiledpassfilter - Set the pass filter for packets using a
++ * precompiled expression
++ */
++static int
++setprecompiledpassfilter(argv)
++    char **argv;
++{
++    return pcap_pre_compiled (*argv, &pass_filter);
++}
++
++/*
++ * setactivefilter - Set the active filter for packets
++ */
++static int
++setprecompiledactivefilter(argv)
++    char **argv;
++{
++    return pcap_pre_compiled (*argv, &active_filter);
++}
++#endif
++
+ #ifdef PPP_FILTER
+ /*
+  * setpassfilter - Set the pass filter for packets
+@@ -1458,7 +1489,7 @@
+     pcap_t *pc;
+     int ret = 0;
+ 
+-    pc = pcap_open_dead(DLT_PPP_WITH_DIRECTION, 65535);
++    pc = pcap_open_dead(DLT_PPP_PPPD, 65535);
+     if (pcap_compile(pc, &pass_filter, *argv, 1, netmask) == -1) {
+ 	option_error("error in pass-filter expression: %s\n",
+ 		     pcap_geterr(pc));
+@@ -1479,7 +1510,7 @@
+     pcap_t *pc;
+     int ret = 0;
+ 
+-    pc = pcap_open_dead(DLT_PPP_WITH_DIRECTION, 65535);
++    pc = pcap_open_dead(DLT_PPP_PPPD, 65535);
+     if (pcap_compile(pc, &active_filter, *argv, 1, netmask) == -1) {
+ 	option_error("error in active-filter expression: %s\n",
+ 		     pcap_geterr(pc));
+diff -urN ppp.old/pppd/pcap_pcc.c ppp.dev/pppd/pcap_pcc.c
+--- ppp.old/pppd/pcap_pcc.c	1970-01-01 01:00:00.000000000 +0100
++++ ppp.dev/pppd/pcap_pcc.c	2006-03-18 16:51:31.000000000 +0100
+@@ -0,0 +1,74 @@
++#include <pcap.h>
++#include <pcap-bpf.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <errno.h>
++#include "pppd.h"
++
++int pcap_pre_compiled (char * fname, struct bpf_program *p)
++{
++    char buf[128];
++    int line = 0, size = 0, index=0, ret=1;
++    FILE *f = fopen (fname, "r");
++    if (!f)
++    {
++       option_error("error opening precompiled active-filter '%s': %s",
++                    fname, strerror (errno));
++       return 0;
++    }
++    while (fgets (buf, 127, f))
++    {
++       line++;
++       if (*buf == '#')
++           continue;
++       if (size)
++       {
++           /*
++             struct bpf_insn {
++             u_short   code;
++             u_char    jt;
++             u_char    jf;
++             bpf_int32 k;
++             }
++           */
++           struct bpf_insn * insn = & p->bf_insns[index];
++           unsigned code, jt, jf, k;
++           if (sscanf (buf, "%u %u %u %u", &code, &jt, &jf, &k) != 4)
++           {
++               goto err;
++           }
++           insn->code = code;
++           insn->jt = jt;
++           insn->jf = jf;
++           insn->k  = k;
++           index++;
++       }
++       else
++       {
++           if (sscanf (buf, "%u", &size) != 1)
++           {
++               goto err;
++           }
++           p->bf_len = size;
++           p->bf_insns = (struct bpf_insn *) 
++               malloc (size * sizeof (struct bpf_insn));
++       }
++    } 
++    if (size != index)
++    {
++       option_error("error in precompiled active-filter,"
++                    " expected %d expressions, got %dn",
++                    size, index);
++       ret = 0;
++    }
++    fclose(f);
++    return ret;
++
++err:
++  option_error("error in precompiled active-filter"
++              " expression line %s:%d (wrong size)\n", 
++              fname, line);
++  fclose (f);
++  return 0;
++}
+diff -urN ppp.old/pppd/pcap_pcc.h ppp.dev/pppd/pcap_pcc.h
+--- ppp.old/pppd/pcap_pcc.h	1970-01-01 01:00:00.000000000 +0100
++++ ppp.dev/pppd/pcap_pcc.h	2006-03-18 15:59:14.000000000 +0100
+@@ -0,0 +1,7 @@
++#ifndef PCAP_PCC_H
++#define PCAP_PCC_H
++
++#include <pcap.h>
++
++int pcap_pre_compiled (char * fname, struct bpf_program *p);
++#endif /* PCAP_PCC_H */
