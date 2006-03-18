@@ -43,7 +43,7 @@ ipkg_src_names() {
 
 ipkg_src_byname() {
 	local src="$1"
-	ipkg_srcs $src | head -1
+	ipkg_srcs $src | head -n 1
 }
 
 ipkg_dests() {
@@ -68,16 +68,16 @@ ipkg_state_dirs() {
 }
 
 ipkg_dest_default() {
-	ipkg_dests_all | head -1
+	ipkg_dests_all | head -n 1
 }
 
 ipkg_dest_default_name() {
-	ipkg_dest_names | head -1
+	ipkg_dest_names | head -n 1
 }
 
 ipkg_dest_byname() {
 	local dest="$1"
-	ipkg_dests $dest | head -1
+	ipkg_dests $dest | head -n 1
 }
 
 ipkg_option() {
@@ -983,7 +983,7 @@ ipkg_install_wanted() {
 
 ipkg_upgrade_pkg() {
 	local pkg="$1"
-	local avail_ver="`ipkg_info $pkg Version | ipkg_extract_value | head -1`"
+	local avail_ver="`ipkg_info $pkg Version | ipkg_extract_value | head -n 1`"
 
 	is_installed=
 	for dest_name in `ipkg_dest_names`; do
