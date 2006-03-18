@@ -41,8 +41,7 @@ $(eval $(call PKG_mod_template,PPP_MOD_RADIUS,radius))
 
 PKG_DEPEND:="kmod-ppp"
 ifeq ($(BR2_PACKAGE_PPP_WITH_FILTER),y)
-ENABLE_FILTER:="FILTER=1"
-PKG_DEPEND += ", libpcap"
+ENABLE_FILTER:="PRECOMPILED_FILTER=1"
 endif
 
 $(PKG_BUILD_DIR)/.configured:
@@ -85,11 +84,16 @@ $(PKG_BUILD_DIR)/.built:
 		all install
 	touch $@
 
+ifeq ($(BR2_PACKAGE_PPP_WITH_FILTER),y)
+INSTALL_FILTER=install -m0644 ./files/etc/ppp/filter $(IDIR_PPP)/etc/ppp/
+endif
+
 $(IPKG_PPP):
 	install -d -m0755 $(IDIR_PPP)/etc/ppp
 	ln -sf /tmp/resolv.conf $(IDIR_PPP)/etc/ppp/resolv.conf
 	install -m0600 ./files/etc/ppp/chap-secrets $(IDIR_PPP)/etc/ppp/
 	install -m0644 ./files/etc/ppp/options $(IDIR_PPP)/etc/ppp/
+	$(INSTALL_FILTER)
 	install -m0755 ./files/etc/ppp/ip-up $(IDIR_PPP)/etc/ppp/
 	install -m0755 ./files/etc/ppp/ip-down $(IDIR_PPP)/etc/ppp/
 	install -d -m0755 $(IDIR_PPP)/usr/sbin

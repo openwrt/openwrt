@@ -25,6 +25,7 @@ case "$DEMAND" in
 	on|1|enabled)
 		DEMAND=$(nvram get ppp_idletime)
 		DEMAND=${IDLETIME:+demand idle $IDLETIME}
+		[ -f /etc/ppp/filter ] && DEMAND=${DEMAND:+precompiled-active-filter /etc/ppp/filter $DEMAND}
 	;;
 	*) DEMAND="persist";;
 esac
