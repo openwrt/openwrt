@@ -2,6 +2,13 @@
  * ADMTEK Adm6996 switch configuration module
  *
  * Copyright (C) 2005 Felix Fietkau <nbd@nbd.name>
+ * 
+ * Partially based on Broadcom Home Networking Division 10/100 Mbit/s
+ * Ethernet Device Driver (from Montavista 2.4.20_mvl31 Kernel).
+ * Copyright (C) 2004 Broadcom Corporation
+ *
+ * adm_rreg function from adm6996
+ * Copyright (C) 2004 Nikki Chumakov <nikki@gattaca.ru>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
