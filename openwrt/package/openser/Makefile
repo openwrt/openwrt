@@ -57,7 +57,6 @@ $(eval $(call PKG_template,OPENSER_MOD_UAC_REDIRECT,openser-mod-uac-redirect,$(P
 $(eval $(call PKG_template,OPENSER_MOD_URI,openser-mod-uri,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,OPENSER_MOD_URI_DB,openser-mod-uri-db,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,OPENSER_MOD_URI_RADIUS,openser-mod-uri-radius,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
-$(eval $(call PKG_template,OPENSER_MOD_AUTH_RADIUS,openser-mod-auth-radius,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,OPENSER_MOD_XLOG,openser-mod-xlog,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 $(eval $(call PKG_mod_template,OPENSER_MOD_ACCOUNTING,acc))
