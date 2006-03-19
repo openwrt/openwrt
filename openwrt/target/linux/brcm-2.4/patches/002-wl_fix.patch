@@ -1,16 +1,18 @@
-diff -Nur linux-2.4.30/include/linux/netdevice.h linux-2.4.30-wl-fix/include/linux/netdevice.h
---- linux-2.4.30/include/linux/netdevice.h	2004-11-17 12:54:22.000000000 +0100
-+++ linux-2.4.30-wl-fix/include/linux/netdevice.h	2005-05-09 16:31:08.000000000 +0200
-@@ -297,7 +297,7 @@
+diff -urN linux.old/include/linux/netdevice.h linux.dev/include/linux/netdevice.h
+--- linux.old/include/linux/netdevice.h	2006-03-19 06:32:22.000000000 +0100
++++ linux.dev/include/linux/netdevice.h	2006-03-19 06:33:21.000000000 +0100
+@@ -296,10 +296,7 @@
+ 	/* List of functions to handle Wireless Extensions (instead of ioctl).
  	 * See <net/iw_handler.h> for details. Jean II */
- 	struct iw_handler_def *	wireless_handlers;
+ 	const struct iw_handler_def *	wireless_handlers;
+-	/* Instance data managed by the core of Wireless Extensions. */
+-	struct iw_public_data *	wireless_data;
  
 -	struct ethtool_ops *ethtool_ops;
-+
  
  	/*
  	 * This marks the end of the "visible" part of the structure. All
-@@ -352,8 +355,8 @@
+@@ -354,8 +351,8 @@
  
  	struct Qdisc		*qdisc;
  	struct Qdisc		*qdisc_sleeping;
@@ -20,18 +22,21 @@ diff -Nur linux-2.4.30/include/linux/netdevice.h linux-2.4.30-wl-fix/include/lin
  	unsigned long		tx_queue_len;	/* Max frames per queue allowed */
  
  	/* hard_start_xmit synchronizer */
-@@ -453,6 +460,7 @@
+@@ -455,6 +452,10 @@
  	/* this will get initialized at each interface type init routine */
  	struct divert_blk	*divert;
  #endif /* CONFIG_NET_DIVERT */
 +	struct ethtool_ops *ethtool_ops;
++
++	/* Instance data managed by the core of Wireless Extensions. */
++	struct iw_public_data *	wireless_data;
  };
  
  /* 2.6 compatibility */
-diff -Nur linux-2.4.30/include/linux/skbuff.h linux-2.4.30-wl-fix/include/linux/skbuff.h
---- linux-2.4.30/include/linux/skbuff.h	2005-04-04 03:42:20.000000000 +0200
-+++ linux-2.4.30-wl-fix/include/linux/skbuff.h	2005-05-08 00:50:55.000000000 +0200
-@@ -135,10 +135,6 @@
+diff -urN linux.old/include/linux/skbuff.h linux.dev/include/linux/skbuff.h
+--- linux.old/include/linux/skbuff.h	2006-03-19 06:32:22.000000000 +0100
++++ linux.dev/include/linux/skbuff.h	2006-03-19 06:29:41.000000000 +0100
+@@ -138,10 +138,6 @@
  	struct sock	*sk;			/* Socket we are owned by 			*/
  	struct timeval	stamp;			/* Time we arrived				*/
  	struct net_device	*dev;		/* Device we arrived on/are leaving by		*/
@@ -42,9 +47,9 @@ diff -Nur linux-2.4.30/include/linux/skbuff.h linux-2.4.30-wl-fix/include/linux/
  
  	/* Transport layer header */
  	union
-@@ -219,6 +215,10 @@
- #ifdef CONFIG_NET_SCHED
-        __u32           tc_index;               /* traffic control index */
+@@ -225,6 +221,10 @@
+ #if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
+        struct nf_info	*nf_info;
  #endif
 +	struct net_device	*real_dev;	/* For support of point to point protocols 
 +						   (e.g. 802.3ad) over bonding, we must save the
@@ -53,10 +58,10 @@ diff -Nur linux-2.4.30/include/linux/skbuff.h linux-2.4.30-wl-fix/include/linux/
  };
  
  #ifdef __KERNEL__
-diff -Nur linux-2.4.30/include/net/pkt_sched.h linux-2.4.30-wl-fix/include/net/pkt_sched.h
---- linux-2.4.30/include/net/pkt_sched.h	2004-11-17 12:54:22.000000000 +0100
-+++ linux-2.4.30-wl-fix/include/net/pkt_sched.h	2005-05-08 01:05:48.000000000 +0200
-@@ -59,8 +59,11 @@
+diff -urN linux.old/include/net/pkt_sched.h linux.dev/include/net/pkt_sched.h
+--- linux.old/include/net/pkt_sched.h	2006-03-19 06:32:22.000000000 +0100
++++ linux.dev/include/net/pkt_sched.h	2006-03-19 06:29:41.000000000 +0100
+@@ -63,8 +63,11 @@
  	int 			(*enqueue)(struct sk_buff *, struct Qdisc *);
  	struct sk_buff *	(*dequeue)(struct Qdisc *);
  	int 			(*requeue)(struct sk_buff *, struct Qdisc *);
@@ -70,7 +75,7 @@ diff -Nur linux-2.4.30/include/net/pkt_sched.h linux-2.4.30-wl-fix/include/net/p
  	int			(*init)(struct Qdisc *, struct rtattr *arg);
  	void			(*reset)(struct Qdisc *);
  	void			(*destroy)(struct Qdisc *);
-@@ -80,12 +83,19 @@
+@@ -84,12 +87,19 @@
  #define TCQ_F_THROTTLED	2
  #define TCQ_F_INGRESS	4
  	struct Qdisc_ops	*ops;
@@ -92,28 +97,9 @@ diff -Nur linux-2.4.30/include/net/pkt_sched.h linux-2.4.30-wl-fix/include/net/p
  
  	struct tc_stats		stats;
  	int			(*reshape_fail)(struct sk_buff *skb, struct Qdisc *q);
-diff -Nur linux-2.4.30/net/core/dev.c linux-2.4.30-wl-fix/net/core/dev.c
---- linux-2.4.30/net/core/dev.c	2005-04-04 03:42:20.000000000 +0200
-+++ linux-2.4.30-wl-fix/net/core/dev.c	2005-05-08 00:51:08.000000000 +0200
-@@ -2311,6 +2311,7 @@
- 			}
- 			return ret;
- 
-+#ifndef CONFIG_BCM4710
- 		case SIOCETHTOOL:
- 			dev_load(ifr.ifr_name);
- 			rtnl_lock();
-@@ -2324,6 +2325,7 @@
- 					ret = -EFAULT;
- 			}
- 			return ret;
-+#endif
- 
- 		/*
- 		 *	These ioctl calls:
-diff -Nur linux-2.4.30/net/core/Makefile linux-2.4.30-wl-fix/net/core/Makefile
---- linux-2.4.30/net/core/Makefile	2004-11-17 12:54:22.000000000 +0100
-+++ linux-2.4.30-wl-fix/net/core/Makefile	2005-05-08 00:51:02.000000000 +0200
+diff -urN linux.old/net/core/Makefile linux.dev/net/core/Makefile
+--- linux.old/net/core/Makefile	2006-03-19 06:32:22.000000000 +0100
++++ linux.dev/net/core/Makefile	2006-03-19 06:29:41.000000000 +0100
 @@ -9,7 +9,11 @@
  
  O_TARGET := core.o
@@ -140,9 +126,44 @@ diff -Nur linux-2.4.30/net/core/Makefile linux-2.4.30-wl-fix/net/core/Makefile
  
  obj-$(CONFIG_NETFILTER) += netfilter.o
  obj-$(CONFIG_NET_DIVERT) += dv.o
-diff -Nur linux-2.4.30/net/sched/sch_api.c linux-2.4.30-wl-fix/net/sched/sch_api.c
---- linux-2.4.30/net/sched/sch_api.c	2004-11-17 12:54:22.000000000 +0100
-+++ linux-2.4.30-wl-fix/net/sched/sch_api.c	2005-05-08 00:51:14.000000000 +0200
+diff -urN linux.old/net/core/dev.c linux.dev/net/core/dev.c
+--- linux.old/net/core/dev.c	2006-03-19 06:32:22.000000000 +0100
++++ linux.dev/net/core/dev.c	2006-03-19 06:29:41.000000000 +0100
+@@ -2232,6 +2232,7 @@
+ 			    cmd == SIOCGMIIPHY ||
+ 			    cmd == SIOCGMIIREG ||
+ 			    cmd == SIOCSMIIREG ||
++			    cmd == SIOCETHTOOL ||
+ 			    cmd == SIOCWANDEV) {
+ 				if (dev->do_ioctl) {
+ 					if (!netif_device_present(dev))
+@@ -2324,6 +2325,7 @@
+ 			}
+ 			return ret;
+ 
++#ifndef CONFIG_BCM4710
+ 		case SIOCETHTOOL:
+ 			dev_load(ifr.ifr_name);
+ 			rtnl_lock();
+@@ -2337,6 +2339,7 @@
+ 					ret = -EFAULT;
+ 			}
+ 			return ret;
++#endif
+ 
+ 		/*
+ 		 *	These ioctl calls:
+@@ -2412,6 +2415,7 @@
+ 		 
+ 		default:
+ 			if (cmd == SIOCWANDEV ||
++			    (cmd == SIOCETHTOOL) ||
+ 			    (cmd >= SIOCDEVPRIVATE &&
+ 			     cmd <= SIOCDEVPRIVATE + 15)) {
+ 				dev_load(ifr.ifr_name);
+diff -urN linux.old/net/sched/sch_api.c linux.dev/net/sched/sch_api.c
+--- linux.old/net/sched/sch_api.c	2006-03-19 06:32:22.000000000 +0100
++++ linux.dev/net/sched/sch_api.c	2006-03-19 06:29:41.000000000 +0100
 @@ -194,11 +194,12 @@
  {
  	struct Qdisc *q;
@@ -260,10 +281,10 @@ diff -Nur linux-2.4.30/net/sched/sch_api.c linux-2.4.30-wl-fix/net/sched/sch_api
  	read_unlock(&qdisc_tree_lock);
  
  	cb->args[0] = t;
-diff -Nur linux-2.4.30/net/sched/sch_generic.c linux-2.4.30-wl-fix/net/sched/sch_generic.c
---- linux-2.4.30/net/sched/sch_generic.c	2004-11-17 12:54:22.000000000 +0100
-+++ linux-2.4.30-wl-fix/net/sched/sch_generic.c	2005-05-08 00:51:20.000000000 +0200
-@@ -392,7 +392,6 @@
+diff -urN linux.old/net/sched/sch_generic.c linux.dev/net/sched/sch_generic.c
+--- linux.old/net/sched/sch_generic.c	2006-03-19 06:32:22.000000000 +0100
++++ linux.dev/net/sched/sch_generic.c	2006-03-19 06:29:41.000000000 +0100
+@@ -399,7 +399,6 @@
  		return NULL;
  	memset(sch, 0, size);
  
@@ -271,7 +292,7 @@ diff -Nur linux-2.4.30/net/sched/sch_generic.c linux-2.4.30-wl-fix/net/sched/sch
  	skb_queue_head_init(&sch->q);
  	sch->ops = ops;
  	sch->enqueue = ops->enqueue;
-@@ -422,11 +421,22 @@
+@@ -429,11 +428,22 @@
  void qdisc_destroy(struct Qdisc *qdisc)
  {
  	struct Qdisc_ops *ops = qdisc->ops;
@@ -295,7 +316,7 @@ diff -Nur linux-2.4.30/net/sched/sch_generic.c linux-2.4.30-wl-fix/net/sched/sch
  #ifdef CONFIG_NET_ESTIMATOR
  	qdisc_kill_estimator(&qdisc->stats);
  #endif
-@@ -455,9 +465,9 @@
+@@ -462,9 +472,9 @@
  				return;
  			}
  			write_lock(&qdisc_tree_lock);
@@ -307,7 +328,7 @@ diff -Nur linux-2.4.30/net/sched/sch_generic.c linux-2.4.30-wl-fix/net/sched/sch
  		} else {
  			qdisc =  &noqueue_qdisc;
  		}
-@@ -501,7 +511,7 @@
+@@ -508,7 +518,7 @@
  	dev->qdisc = &noop_qdisc;
  	spin_unlock_bh(&dev->queue_lock);
  	dev->qdisc_sleeping = &noop_qdisc;
@@ -316,7 +337,7 @@ diff -Nur linux-2.4.30/net/sched/sch_generic.c linux-2.4.30-wl-fix/net/sched/sch
  	write_unlock(&qdisc_tree_lock);
  
  	dev_watchdog_init(dev);
-@@ -523,7 +533,7 @@
+@@ -530,7 +540,7 @@
  		qdisc_destroy(qdisc);
          }
  #endif
@@ -325,22 +346,3 @@ diff -Nur linux-2.4.30/net/sched/sch_generic.c linux-2.4.30-wl-fix/net/sched/sch
  	BUG_TRAP(!timer_pending(&dev->watchdog_timer));
  	spin_unlock_bh(&dev->queue_lock);
  	write_unlock(&qdisc_tree_lock);
-diff -urN linux.old/net/core/dev.c linux.dev/net/core/dev.c
---- linux.old/net/core/dev.c	2005-05-28 17:42:07.000000000 +0200
-+++ linux.dev/net/core/dev.c	2005-05-28 20:38:06.000000000 +0200
-@@ -2223,6 +2223,7 @@
- 			    cmd == SIOCGMIIPHY ||
- 			    cmd == SIOCGMIIREG ||
- 			    cmd == SIOCSMIIREG ||
-+			    cmd == SIOCETHTOOL ||
- 			    cmd == SIOCWANDEV) {
- 				if (dev->do_ioctl) {
- 					if (!netif_device_present(dev))
-@@ -2405,6 +2406,7 @@
- 		 
- 		default:
- 			if (cmd == SIOCWANDEV ||
-+			    (cmd == SIOCETHTOOL) ||
- 			    (cmd >= SIOCDEVPRIVATE &&
- 			     cmd <= SIOCDEVPRIVATE + 15)) {
- 				dev_load(ifr.ifr_name);
