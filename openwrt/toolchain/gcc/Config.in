@@ -12,11 +12,19 @@ config BR2_GCC_3_4
 	default n
 	depends BR2_GCC_VERSION_3_4_4 || BR2_GCC_VERSION_3_4_5 || BR2_GCC_VERSION_3_4_6 || BR2_GCC_VERSION_4_0_2 || BR2_GCC_VERSION_4_1_0
 
+config BR2_GCC_VERSION_3_4_4
+	bool
+	default y if BR2_LINUX_2_4_BRCM
+
+config BR2_GCC_VERSION_4_0_2
+	bool
+	default y if BR2_LINUX_2_6_ARUBA
+
 choice
 	prompt "GCC compiler Version" if CONFIG_DEVEL
 	default BR2_GCC_VERSION_4_0_2 if BR2_LINUX_2_6_ARUBA
 	default BR2_GCC_VERSION_3_4_4 if BR2_LINUX_2_4_BRCM
-	default BR2_GCC_VERSION_3_4_5
+	default BR2_GCC_VERSION_3_4_6
 	help
 	  Select the version of gcc you wish to use.
 
@@ -47,10 +55,11 @@ endchoice
 config BR2_GCC_VERSION
 	string
 	default "3.4.4"     if BR2_GCC_VERSION_3_4_4
-	default "3.4.5"     if BR2_GCC_VERSION_3_4_5 || !CONFIG_DEVEL
+	default "3.4.5"     if BR2_GCC_VERSION_3_4_5
 	default "3.4.6"     if BR2_GCC_VERSION_3_4_6
 	default "4.0.2"     if BR2_GCC_VERSION_4_0_2
 	default "4.1.0"     if BR2_GCC_VERSION_4_1_0
+	default "3.4.6"
 
 
 config BR2_GCC_USE_SJLJ_EXCEPTIONS
