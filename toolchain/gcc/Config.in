@@ -6,12 +6,6 @@ if CONFIG_DEVEL
 	comment "Gcc Options"
 endif
 
-
-config BR2_GCC_3_4
-	bool
-	default n
-	depends BR2_GCC_VERSION_3_4_4 || BR2_GCC_VERSION_3_4_5 || BR2_GCC_VERSION_3_4_6 || BR2_GCC_VERSION_4_0_2 || BR2_GCC_VERSION_4_1_0
-
 config BR2_GCC_VERSION_3_4_4
 	bool
 	default y if BR2_LINUX_2_4_BRCM
@@ -30,24 +24,19 @@ choice
 
 	config BR2_GCC_VERSION_3_4_4
 		bool "gcc 3.4.4"
-		select BR2_GCC_3_4
 
 	config BR2_GCC_VERSION_3_4_5
 		bool "gcc 3.4.5"
-		select BR2_GCC_3_4
 
 	config BR2_GCC_VERSION_3_4_6
 		bool "gcc 3.4.6"
-		select BR2_GCC_3_4
 
 	config BR2_GCC_VERSION_4_0_2
 		bool "gcc 4.0.2"
-		select BR2_GCC_3_4
 		select BR2_PACKAGE_LIBGCC
 		
 	config BR2_GCC_VERSION_4_1_0
 		bool "gcc 4.1.0"
-		select BR2_GCC_3_4
 		select BR2_PACKAGE_LIBGCC
 
 endchoice
