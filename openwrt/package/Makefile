@@ -439,7 +439,7 @@ mini_httpd-compile: openssl-compile
 endif
 
 ifneq ($(BR2_PACKAGE_MOTION),)
-motion-compile: libjpeg-compile
+motion-compile: jpeg-compile
 endif
 
 ifneq ($(BR2_PACKAGE_MPD_MP3),)
