@@ -6,6 +6,10 @@ if CONFIG_DEVEL
 	comment "Gcc Options"
 endif
 
+
+# the choice option below is completely ignored
+# if CONFIG_DEVEL isn't set, so we have to set
+# these manually ... annoying.
 config BR2_GCC_VERSION_3_4_4
 	bool
 	default y if BR2_LINUX_2_4_BRCM
@@ -22,6 +26,7 @@ choice
 	help
 	  Select the version of gcc you wish to use.
 
+
 	config BR2_GCC_VERSION_3_4_4
 		bool "gcc 3.4.4"
 
@@ -33,13 +38,18 @@ choice
 
 	config BR2_GCC_VERSION_4_0_2
 		bool "gcc 4.0.2"
-		select BR2_PACKAGE_LIBGCC
 		
 	config BR2_GCC_VERSION_4_1_0
 		bool "gcc 4.1.0"
-		select BR2_PACKAGE_LIBGCC
 
 endchoice
+
+# more nasty hacks
+config BR2_PACKAGE_LIBGCC
+	tristate
+	default y if BR2_GCC_VERSION_4_0_2 || BR2_GCC_VERSION_4_1_0
+	default m if CONFIG_DEVEL
+	default n
 
 config BR2_GCC_VERSION
 	string
