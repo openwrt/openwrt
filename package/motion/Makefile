@@ -35,15 +35,15 @@ $(PKG_BUILD_DIR)/.built:
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
-		install_prefix="$(PKG_INSTALL_DIR)" \
+		DESTDIR="$(PKG_INSTALL_DIR)" \
 		all install
 	touch $@
 
-$(IPKG_FOO):
-	install -d -m0755 $(IDIR_FOO)/usr/sbin
-	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/motion $(IDIR_FOO)/usr/sbin
-	$(RSTRIP) $(IDIR_FOO)
-	$(IPKG_BUILD) $(IDIR_FOO) $(PACKAGE_DIR)
+$(IPKG_MOTION):
+	install -d -m0755 $(IDIR_MOTION)/usr/bin
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/motion $(IDIR_MOTION)/usr/bin
+	$(RSTRIP) $(IDIR_MOTION)
+	$(IPKG_BUILD) $(IDIR_MOTION) $(PACKAGE_DIR)
 
 mostlyclean:
 	make -C $(PKG_BUILD_DIR) clean
