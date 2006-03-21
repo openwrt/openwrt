@@ -1,6 +1,6 @@
-diff -Nur linux-2.6.15/arch/mips/aruba/Makefile linux-2.6.15-openwrt/arch/mips/aruba/Makefile
---- linux-2.6.15/arch/mips/aruba/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/arch/mips/aruba/Makefile	2006-01-10 00:32:32.000000000 +0100
+diff -Nur linux-2.6.16/arch/mips/aruba/Makefile linux-2.6.16-owrt/arch/mips/aruba/Makefile
+--- linux-2.6.16/arch/mips/aruba/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/aruba/Makefile	2006-03-20 14:25:10.000000000 +0100
 @@ -0,0 +1,49 @@
 +###############################################################################
 +#
@@ -51,9 +51,9 @@ diff -Nur linux-2.6.15/arch/mips/aruba/Makefile linux-2.6.15-openwrt/arch/mips/a
 +subdir-y         += nvram
 +obj-y            += nvram/built-in.o
 +
-diff -Nur linux-2.6.15/arch/mips/aruba/nvram/Makefile linux-2.6.15-openwrt/arch/mips/aruba/nvram/Makefile
---- linux-2.6.15/arch/mips/aruba/nvram/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/arch/mips/aruba/nvram/Makefile	2006-01-10 00:32:32.000000000 +0100
+diff -Nur linux-2.6.16/arch/mips/aruba/nvram/Makefile linux-2.6.16-owrt/arch/mips/aruba/nvram/Makefile
+--- linux-2.6.16/arch/mips/aruba/nvram/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/aruba/nvram/Makefile	2006-03-20 14:25:10.000000000 +0100
 @@ -0,0 +1,46 @@
 +###############################################################################
 +#
@@ -101,9 +101,9 @@ diff -Nur linux-2.6.15/arch/mips/aruba/nvram/Makefile linux-2.6.15-openwrt/arch/
 +
 +
 +
-diff -Nur linux-2.6.15/arch/mips/aruba/nvram/nvram434.c linux-2.6.15-openwrt/arch/mips/aruba/nvram/nvram434.c
---- linux-2.6.15/arch/mips/aruba/nvram/nvram434.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/arch/mips/aruba/nvram/nvram434.c	2006-01-10 00:32:32.000000000 +0100
+diff -Nur linux-2.6.16/arch/mips/aruba/nvram/nvram434.c linux-2.6.16-owrt/arch/mips/aruba/nvram/nvram434.c
+--- linux-2.6.16/arch/mips/aruba/nvram/nvram434.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/aruba/nvram/nvram434.c	2006-03-20 14:25:10.000000000 +0100
 @@ -0,0 +1,392 @@
 +/**************************************************************************
 + *
@@ -497,9 +497,9 @@ diff -Nur linux-2.6.15/arch/mips/aruba/nvram/nvram434.c linux-2.6.15-openwrt/arc
 +{
 +  nvram_mapenv(func);
 +}
-diff -Nur linux-2.6.15/arch/mips/aruba/nvram/nvram434.h linux-2.6.15-openwrt/arch/mips/aruba/nvram/nvram434.h
---- linux-2.6.15/arch/mips/aruba/nvram/nvram434.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/arch/mips/aruba/nvram/nvram434.h	2006-01-10 00:32:32.000000000 +0100
+diff -Nur linux-2.6.16/arch/mips/aruba/nvram/nvram434.h linux-2.6.16-owrt/arch/mips/aruba/nvram/nvram434.h
+--- linux-2.6.16/arch/mips/aruba/nvram/nvram434.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/aruba/nvram/nvram434.h	2006-03-20 14:25:10.000000000 +0100
 @@ -0,0 +1,66 @@
 +/**************************************************************************
 + *
@@ -567,9 +567,9 @@ diff -Nur linux-2.6.15/arch/mips/aruba/nvram/nvram434.h linux-2.6.15-openwrt/arc
 +#endif /* _NVRAM_ */
 +
 +
-diff -Nur linux-2.6.15/arch/mips/aruba/prom.c linux-2.6.15-openwrt/arch/mips/aruba/prom.c
---- linux-2.6.15/arch/mips/aruba/prom.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/arch/mips/aruba/prom.c	2006-01-10 00:32:32.000000000 +0100
+diff -Nur linux-2.6.16/arch/mips/aruba/prom.c linux-2.6.16-owrt/arch/mips/aruba/prom.c
+--- linux-2.6.16/arch/mips/aruba/prom.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/aruba/prom.c	2006-03-20 14:25:10.000000000 +0100
 @@ -0,0 +1,111 @@
 +/**************************************************************************
 + *
@@ -682,9 +682,9 @@ diff -Nur linux-2.6.15/arch/mips/aruba/prom.c linux-2.6.15-openwrt/arch/mips/aru
 +{
 +	printk("stubbed prom_free_prom_memory()\n");
 +}
-diff -Nur linux-2.6.15/arch/mips/aruba/serial.c linux-2.6.15-openwrt/arch/mips/aruba/serial.c
---- linux-2.6.15/arch/mips/aruba/serial.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/arch/mips/aruba/serial.c	2006-01-10 00:32:32.000000000 +0100
+diff -Nur linux-2.6.16/arch/mips/aruba/serial.c linux-2.6.16-owrt/arch/mips/aruba/serial.c
+--- linux-2.6.16/arch/mips/aruba/serial.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/aruba/serial.c	2006-03-20 14:25:10.000000000 +0100
 @@ -0,0 +1,94 @@
 +/**************************************************************************
 + *
@@ -780,10 +780,10 @@ diff -Nur linux-2.6.15/arch/mips/aruba/serial.c linux-2.6.15-openwrt/arch/mips/a
 +	
 +	return(0);
 +}
-diff -Nur linux-2.6.15/arch/mips/aruba/setup.c linux-2.6.15-openwrt/arch/mips/aruba/setup.c
---- linux-2.6.15/arch/mips/aruba/setup.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/arch/mips/aruba/setup.c	2006-01-10 00:32:32.000000000 +0100
-@@ -0,0 +1,124 @@
+diff -Nur linux-2.6.16/arch/mips/aruba/setup.c linux-2.6.16-owrt/arch/mips/aruba/setup.c
+--- linux-2.6.16/arch/mips/aruba/setup.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/aruba/setup.c	2006-03-20 14:30:00.000000000 +0100
+@@ -0,0 +1,125 @@
 +/**************************************************************************
 + *
 + *  BRIEF MODULE DESCRIPTION
@@ -834,6 +834,7 @@ diff -Nur linux-2.6.15/arch/mips/aruba/setup.c linux-2.6.15-openwrt/arch/mips/ar
 +#include <asm/reboot.h>
 +#include <asm/addrspace.h>	/* for KSEG1ADDR() */
 +#include <asm/idt-boards/rc32434/rc32434.h>
++#include <linux/pm.h>
 +
 +extern char *__init prom_getcmdline(void);
 +
@@ -881,7 +882,7 @@ diff -Nur linux-2.6.15/arch/mips/aruba/setup.c linux-2.6.15-openwrt/arch/mips/ar
 +
 +	_machine_restart = aruba_machine_restart;
 +	_machine_halt = aruba_machine_halt;
-+	_machine_power_off = aruba_machine_halt;
++	pm_power_off = aruba_machine_halt;
 +
 +	set_io_port_base(KSEG1);
 +
@@ -908,9 +909,9 @@ diff -Nur linux-2.6.15/arch/mips/aruba/setup.c linux-2.6.15-openwrt/arch/mips/ar
 +{
 +	return "MIPS IDT32434 - ARUBA";
 +}
-diff -Nur linux-2.6.15/arch/mips/aruba/time.c linux-2.6.15-openwrt/arch/mips/aruba/time.c
---- linux-2.6.15/arch/mips/aruba/time.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/arch/mips/aruba/time.c	2006-01-10 00:32:32.000000000 +0100
+diff -Nur linux-2.6.16/arch/mips/aruba/time.c linux-2.6.16-owrt/arch/mips/aruba/time.c
+--- linux-2.6.16/arch/mips/aruba/time.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/aruba/time.c	2006-03-20 14:25:10.000000000 +0100
 @@ -0,0 +1,108 @@
 +/**************************************************************************
 + *
@@ -1020,9 +1021,9 @@ diff -Nur linux-2.6.15/arch/mips/aruba/time.c linux-2.6.15-openwrt/arch/mips/aru
 +	timer_interrupt(irq, NULL, regs);
 +	irq_exit();
 +}
-diff -Nur linux-2.6.15/arch/mips/aruba/wdt_merlot.c linux-2.6.15-openwrt/arch/mips/aruba/wdt_merlot.c
---- linux-2.6.15/arch/mips/aruba/wdt_merlot.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/arch/mips/aruba/wdt_merlot.c	2006-01-10 00:32:32.000000000 +0100
+diff -Nur linux-2.6.16/arch/mips/aruba/wdt_merlot.c linux-2.6.16-owrt/arch/mips/aruba/wdt_merlot.c
+--- linux-2.6.16/arch/mips/aruba/wdt_merlot.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/aruba/wdt_merlot.c	2006-03-20 14:25:10.000000000 +0100
 @@ -0,0 +1,30 @@
 +#include <linux/config.h>
 +#include <linux/kernel.h>
@@ -1054,9 +1055,9 @@ diff -Nur linux-2.6.15/arch/mips/aruba/wdt_merlot.c linux-2.6.15-openwrt/arch/mi
 +			break;
 +	}
 +}
-diff -Nur linux-2.6.15/arch/mips/Kconfig linux-2.6.15-openwrt/arch/mips/Kconfig
---- linux-2.6.15/arch/mips/Kconfig	2006-01-03 04:21:10.000000000 +0100
-+++ linux-2.6.15-openwrt/arch/mips/Kconfig	2006-01-10 00:32:32.000000000 +0100
+diff -Nur linux-2.6.16/arch/mips/Kconfig linux-2.6.16-owrt/arch/mips/Kconfig
+--- linux-2.6.16/arch/mips/Kconfig	2006-03-20 06:53:29.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/Kconfig	2006-03-20 14:25:10.000000000 +0100
 @@ -227,6 +227,17 @@
  	  either a NEC Vr5432 or QED RM5231. Say Y here if you wish to build
  	  a kernel for this platform.
@@ -1075,10 +1076,10 @@ diff -Nur linux-2.6.15/arch/mips/Kconfig linux-2.6.15-openwrt/arch/mips/Kconfig
  config MACH_JAZZ
  	bool "Support for the Jazz family of machines"
  	select ARC
-diff -Nur linux-2.6.15/arch/mips/Makefile linux-2.6.15-openwrt/arch/mips/Makefile
---- linux-2.6.15/arch/mips/Makefile	2006-01-03 04:21:10.000000000 +0100
-+++ linux-2.6.15-openwrt/arch/mips/Makefile	2006-01-10 00:32:32.000000000 +0100
-@@ -258,6 +258,14 @@
+diff -Nur linux-2.6.16/arch/mips/Makefile linux-2.6.16-owrt/arch/mips/Makefile
+--- linux-2.6.16/arch/mips/Makefile	2006-03-20 06:53:29.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/Makefile	2006-03-20 14:25:10.000000000 +0100
+@@ -279,6 +279,14 @@
  #
  
  #
@@ -1093,9 +1094,9 @@ diff -Nur linux-2.6.15/arch/mips/Makefile linux-2.6.15-openwrt/arch/mips/Makefil
  # Acer PICA 61, Mips Magnum 4000 and Olivetti M700.
  #
  core-$(CONFIG_MACH_JAZZ)	+= arch/mips/jazz/
-diff -Nur linux-2.6.15/arch/mips/mm/tlbex.c linux-2.6.15-openwrt/arch/mips/mm/tlbex.c
---- linux-2.6.15/arch/mips/mm/tlbex.c	2006-01-03 04:21:10.000000000 +0100
-+++ linux-2.6.15-openwrt/arch/mips/mm/tlbex.c	2006-01-10 00:32:32.000000000 +0100
+diff -Nur linux-2.6.16/arch/mips/mm/tlbex.c linux-2.6.16-owrt/arch/mips/mm/tlbex.c
+--- linux-2.6.16/arch/mips/mm/tlbex.c	2006-03-20 06:53:29.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/mm/tlbex.c	2006-03-20 14:25:10.000000000 +0100
 @@ -852,7 +852,6 @@
  
  	case CPU_R10000:
@@ -1112,10 +1113,10 @@ diff -Nur linux-2.6.15/arch/mips/mm/tlbex.c linux-2.6.15-openwrt/arch/mips/mm/tl
  	case CPU_4KEC:
  	case CPU_24K:
  	case CPU_34K:
-diff -Nur linux-2.6.15/drivers/net/Kconfig linux-2.6.15-openwrt/drivers/net/Kconfig
---- linux-2.6.15/drivers/net/Kconfig	2006-01-03 04:21:10.000000000 +0100
-+++ linux-2.6.15-openwrt/drivers/net/Kconfig	2006-01-10 00:32:32.000000000 +0100
-@@ -176,6 +176,13 @@
+diff -Nur linux-2.6.16/drivers/net/Kconfig linux-2.6.16-owrt/drivers/net/Kconfig
+--- linux-2.6.16/drivers/net/Kconfig	2006-03-20 06:53:29.000000000 +0100
++++ linux-2.6.16-owrt/drivers/net/Kconfig	2006-03-20 14:25:10.000000000 +0100
+@@ -187,6 +187,13 @@
  
  source "drivers/net/arm/Kconfig"
  
@@ -1129,20 +1130,101 @@ diff -Nur linux-2.6.15/drivers/net/Kconfig linux-2.6.15-openwrt/drivers/net/Kcon
  config MACE
  	tristate "MACE (Power Mac ethernet) support"
  	depends on NET_ETHERNET && PPC_PMAC && PPC32
-diff -Nur linux-2.6.15/drivers/net/Makefile linux-2.6.15-openwrt/drivers/net/Makefile
---- linux-2.6.15/drivers/net/Makefile	2006-01-03 04:21:10.000000000 +0100
-+++ linux-2.6.15-openwrt/drivers/net/Makefile	2006-01-10 00:32:33.000000000 +0100
-@@ -190,6 +190,7 @@
- obj-$(CONFIG_SMC91X) += smc91x.o
- obj-$(CONFIG_DM9000) += dm9000.o
- obj-$(CONFIG_FEC_8XX) += fec_8xx/
-+obj-$(CONFIG_IDT_RC32434_ETH) += rc32434_eth.o
+diff -Nur linux-2.6.16/drivers/net/Makefile linux-2.6.16-owrt/drivers/net/Makefile
+--- linux-2.6.16/drivers/net/Makefile	2006-03-20 06:53:29.000000000 +0100
++++ linux-2.6.16-owrt/drivers/net/Makefile	2006-03-20 14:25:10.000000000 +0100
+@@ -38,6 +38,7 @@
  
- obj-$(CONFIG_ARM) += arm/
- obj-$(CONFIG_DEV_APPLETALK) += appletalk/
-diff -Nur linux-2.6.15/drivers/net/rc32434_eth.c linux-2.6.15-openwrt/drivers/net/rc32434_eth.c
---- linux-2.6.15/drivers/net/rc32434_eth.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/drivers/net/rc32434_eth.c	2006-01-10 00:32:33.000000000 +0100
+ obj-$(CONFIG_OAKNET) += oaknet.o 8390.o
+ 
++obj-$(CONFIG_IDT_RC32434_ETH) += rc32434_eth.o
+ obj-$(CONFIG_DGRS) += dgrs.o
+ obj-$(CONFIG_VORTEX) += 3c59x.o
+ obj-$(CONFIG_TYPHOON) += typhoon.o
+diff -Nur linux-2.6.16/drivers/net/natsemi.c linux-2.6.16-owrt/drivers/net/natsemi.c
+--- linux-2.6.16/drivers/net/natsemi.c	2006-03-20 06:53:29.000000000 +0100
++++ linux-2.6.16-owrt/drivers/net/natsemi.c	2006-03-20 14:25:10.000000000 +0100
+@@ -771,6 +771,49 @@
+ static int netdev_get_eeprom(struct net_device *dev, u8 *buf);
+ static struct ethtool_ops ethtool_ops;
+ 
++#ifdef CONFIG_MACH_ARUBA
++
++#include <linux/ctype.h>
++
++#ifndef ERR
++#define ERR(fmt, args...) printk("%s: " fmt, __func__, ##args)
++#endif
++
++static int parse_mac_addr(struct net_device *dev, char* macstr)
++{
++        int i, j;
++        unsigned char result, value;
++
++        for (i=0; i<6; i++) {
++                result = 0;
++                if (i != 5 && *(macstr+2) != ':') {
++                        ERR("invalid mac address format: %d %c\n",
++                            i, *(macstr+2));
++                        return -EINVAL;
++                }
++                for (j=0; j<2; j++) {
++                        if (isxdigit(*macstr) && (value = isdigit(*macstr) ? *macstr-'0' :
++                                                  toupper(*macstr)-'A'+10) < 16) {
++                                result = result*16 + value;
++                                macstr++;
++                        }
++                        else {
++                                ERR("invalid mac address "
++                                    "character: %c\n", *macstr);
++                                return -EINVAL;
++                        }
++                }
++
++                macstr++;
++                dev->dev_addr[i] = result;
++        }
++
++	dev->dev_addr[5]++;
++        return 0;
++}
++
++#endif
++
+ static inline void __iomem *ns_ioaddr(struct net_device *dev)
+ {
+ 	return (void __iomem *) dev->base_addr;
+@@ -859,6 +902,7 @@
+ 		goto err_ioremap;
+ 	}
+ 
++#ifndef CONFIG_MACH_ARUBA
+ 	/* Work around the dropped serial bit. */
+ 	prev_eedata = eeprom_read(ioaddr, 6);
+ 	for (i = 0; i < 3; i++) {
+@@ -867,6 +911,19 @@
+ 		dev->dev_addr[i*2+1] = eedata >> 7;
+ 		prev_eedata = eedata;
+ 	}
++#else
++	{
++		char mac[32];
++		unsigned char def_mac[6] = {00, 0x0b, 0x86, 0xba, 0xdb, 0xad};
++		extern char *getenv(char *e);
++		memset(mac, 0, 32);
++		memcpy(mac, getenv("ethaddr"), 17);
++		if (parse_mac_addr(dev, mac)){
++			printk("%s: MAC address not found\n", __func__);
++			memcpy(dev->dev_addr, def_mac, 6);
++		}
++	}
++#endif
+ 
+ 	dev->base_addr = (unsigned long __force) ioaddr;
+ 	dev->irq = irq;
+diff -Nur linux-2.6.16/drivers/net/rc32434_eth.c linux-2.6.16-owrt/drivers/net/rc32434_eth.c
+--- linux-2.6.16/drivers/net/rc32434_eth.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/drivers/net/rc32434_eth.c	2006-03-20 14:25:10.000000000 +0100
 @@ -0,0 +1,1268 @@
 +/**************************************************************************
 + *
@@ -2412,9 +2494,9 @@ diff -Nur linux-2.6.15/drivers/net/rc32434_eth.c linux-2.6.15-openwrt/drivers/ne
 +
 +
 +
-diff -Nur linux-2.6.15/drivers/net/rc32434_eth.h linux-2.6.15-openwrt/drivers/net/rc32434_eth.h
---- linux-2.6.15/drivers/net/rc32434_eth.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/drivers/net/rc32434_eth.h	2006-01-10 00:32:33.000000000 +0100
+diff -Nur linux-2.6.16/drivers/net/rc32434_eth.h linux-2.6.16-owrt/drivers/net/rc32434_eth.h
+--- linux-2.6.16/drivers/net/rc32434_eth.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/drivers/net/rc32434_eth.h	2006-03-20 14:25:10.000000000 +0100
 @@ -0,0 +1,187 @@
 +/**************************************************************************
 + *
@@ -2603,9 +2685,9 @@ diff -Nur linux-2.6.15/drivers/net/rc32434_eth.h linux-2.6.15-openwrt/drivers/ne
 +	rc32434_writel(0, &ch->dmadptr); 
 +	rc32434_writel(0, &ch->dmandptr); 
 +}
-diff -Nur linux-2.6.15/include/asm-mips/bootinfo.h linux-2.6.15-openwrt/include/asm-mips/bootinfo.h
---- linux-2.6.15/include/asm-mips/bootinfo.h	2006-01-03 04:21:10.000000000 +0100
-+++ linux-2.6.15-openwrt/include/asm-mips/bootinfo.h	2006-01-10 00:32:33.000000000 +0100
+diff -Nur linux-2.6.16/include/asm-mips/bootinfo.h linux-2.6.16-owrt/include/asm-mips/bootinfo.h
+--- linux-2.6.16/include/asm-mips/bootinfo.h	2006-03-20 06:53:29.000000000 +0100
++++ linux-2.6.16-owrt/include/asm-mips/bootinfo.h	2006-03-20 14:25:10.000000000 +0100
 @@ -218,6 +218,17 @@
  #define MACH_GROUP_TITAN       22	/* PMC-Sierra Titan		*/
  #define  MACH_TITAN_YOSEMITE	1	/* PMC-Sierra Yosemite		*/
@@ -2624,9 +2706,9 @@ diff -Nur linux-2.6.15/include/asm-mips/bootinfo.h linux-2.6.15-openwrt/include/
  #define CL_SIZE			COMMAND_LINE_SIZE
  
  const char *get_system_type(void);
-diff -Nur linux-2.6.15/include/asm-mips/cpu.h linux-2.6.15-openwrt/include/asm-mips/cpu.h
---- linux-2.6.15/include/asm-mips/cpu.h	2006-01-03 04:21:10.000000000 +0100
-+++ linux-2.6.15-openwrt/include/asm-mips/cpu.h	2006-01-10 00:32:33.000000000 +0100
+diff -Nur linux-2.6.16/include/asm-mips/cpu.h linux-2.6.16-owrt/include/asm-mips/cpu.h
+--- linux-2.6.16/include/asm-mips/cpu.h	2006-03-20 06:53:29.000000000 +0100
++++ linux-2.6.16-owrt/include/asm-mips/cpu.h	2006-03-20 14:25:10.000000000 +0100
 @@ -53,6 +53,9 @@
  #define PRID_IMP_R12000		0x0e00
  #define PRID_IMP_R8000		0x1000
@@ -2647,9 +2729,9 @@ diff -Nur linux-2.6.15/include/asm-mips/cpu.h linux-2.6.15-openwrt/include/asm-m
  
  /*
   * ISA Level encodings
-diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32300/rc32300.h linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32300/rc32300.h
---- linux-2.6.15/include/asm-mips/idt-boards/rc32300/rc32300.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32300/rc32300.h	2006-01-10 00:32:33.000000000 +0100
+diff -Nur linux-2.6.16/include/asm-mips/idt-boards/rc32300/rc32300.h linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32300/rc32300.h
+--- linux-2.6.16/include/asm-mips/idt-boards/rc32300/rc32300.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32300/rc32300.h	2006-03-20 14:25:10.000000000 +0100
 @@ -0,0 +1,142 @@
 +/**************************************************************************
 + *
@@ -2793,9 +2875,9 @@ diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32300/rc32300.h linux-2.6.1
 +}
 +
 +#endif  // __IDT_RC32300_H__
-diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32300/rc32334.h linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32300/rc32334.h
---- linux-2.6.15/include/asm-mips/idt-boards/rc32300/rc32334.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32300/rc32334.h	2006-01-10 00:32:33.000000000 +0100
+diff -Nur linux-2.6.16/include/asm-mips/idt-boards/rc32300/rc32334.h linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32300/rc32334.h
+--- linux-2.6.16/include/asm-mips/idt-boards/rc32300/rc32334.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32300/rc32334.h	2006-03-20 14:25:10.000000000 +0100
 @@ -0,0 +1,207 @@
 +/**************************************************************************
 + *
@@ -3004,9 +3086,9 @@ diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32300/rc32334.h linux-2.6.1
 +#define RAM_SIZE	(32*1024*1024)
 +
 +#endif // __IDT_RC32334_H__
-diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32300/rc32355_dma.h linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32300/rc32355_dma.h
---- linux-2.6.15/include/asm-mips/idt-boards/rc32300/rc32355_dma.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32300/rc32355_dma.h	2006-01-10 00:32:33.000000000 +0100
+diff -Nur linux-2.6.16/include/asm-mips/idt-boards/rc32300/rc32355_dma.h linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32300/rc32355_dma.h
+--- linux-2.6.16/include/asm-mips/idt-boards/rc32300/rc32355_dma.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32300/rc32355_dma.h	2006-03-20 14:25:10.000000000 +0100
 @@ -0,0 +1,206 @@
 +/**************************************************************************
 + *
@@ -3214,9 +3296,9 @@ diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32300/rc32355_dma.h linux-2
 +  ((count) & DMADESC_COUNT_MASK)
 +
 +#endif /* RC32355_DMA_H */
-diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32300/rc32355_eth.h linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32300/rc32355_eth.h
---- linux-2.6.15/include/asm-mips/idt-boards/rc32300/rc32355_eth.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32300/rc32355_eth.h	2006-01-10 00:32:33.000000000 +0100
+diff -Nur linux-2.6.16/include/asm-mips/idt-boards/rc32300/rc32355_eth.h linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32300/rc32355_eth.h
+--- linux-2.6.16/include/asm-mips/idt-boards/rc32300/rc32355_eth.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32300/rc32355_eth.h	2006-03-20 14:25:10.000000000 +0100
 @@ -0,0 +1,442 @@
 +/**************************************************************************
 + *
@@ -3660,9 +3742,9 @@ diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32300/rc32355_eth.h linux-2
 +
 +#endif /* RC32355_ETHER_H */
 +
-diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32300/rc32355.h linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32300/rc32355.h
---- linux-2.6.15/include/asm-mips/idt-boards/rc32300/rc32355.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32300/rc32355.h	2006-01-10 00:32:33.000000000 +0100
+diff -Nur linux-2.6.16/include/asm-mips/idt-boards/rc32300/rc32355.h linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32300/rc32355.h
+--- linux-2.6.16/include/asm-mips/idt-boards/rc32300/rc32355.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32300/rc32355.h	2006-03-20 14:25:10.000000000 +0100
 @@ -0,0 +1,177 @@
 +/**************************************************************************
 + *
@@ -3841,9 +3923,9 @@ diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32300/rc32355.h linux-2.6.1
 +#define NVRAM_ENVSTART_OFF 32
 +
 +#endif /* _RC32355_H_ */
-diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32300/rc32365_dma.h linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32300/rc32365_dma.h
---- linux-2.6.15/include/asm-mips/idt-boards/rc32300/rc32365_dma.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32300/rc32365_dma.h	2006-01-10 00:32:33.000000000 +0100
+diff -Nur linux-2.6.16/include/asm-mips/idt-boards/rc32300/rc32365_dma.h linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32300/rc32365_dma.h
+--- linux-2.6.16/include/asm-mips/idt-boards/rc32300/rc32365_dma.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32300/rc32365_dma.h	2006-03-20 14:25:10.000000000 +0100
 @@ -0,0 +1,226 @@
 +/**************************************************************************
 + *
@@ -4071,9 +4153,9 @@ diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32300/rc32365_dma.h linux-2
 +#endif	// aws - Compatibility.
 +
 +#endif	// __IDT_RC32365_DMA_H__
-diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32300/rc32365_dma_v.h linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32300/rc32365_dma_v.h
---- linux-2.6.15/include/asm-mips/idt-boards/rc32300/rc32365_dma_v.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32300/rc32365_dma_v.h	2006-01-10 00:32:33.000000000 +0100
+diff -Nur linux-2.6.16/include/asm-mips/idt-boards/rc32300/rc32365_dma_v.h linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32300/rc32365_dma_v.h
+--- linux-2.6.16/include/asm-mips/idt-boards/rc32300/rc32365_dma_v.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32300/rc32365_dma_v.h	2006-03-20 14:25:10.000000000 +0100
 @@ -0,0 +1,86 @@
 +/**************************************************************************
 + *
@@ -4161,9 +4243,9 @@ diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32300/rc32365_dma_v.h linux
 +	local_writel(dma_addr, &ch->dmandptr);
 +}
 +#endif //__IDT_RC32365_DMA_V_H__
-diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32300/rc32365_eth.h linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32300/rc32365_eth.h
---- linux-2.6.15/include/asm-mips/idt-boards/rc32300/rc32365_eth.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32300/rc32365_eth.h	2006-01-10 00:32:33.000000000 +0100
+diff -Nur linux-2.6.16/include/asm-mips/idt-boards/rc32300/rc32365_eth.h linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32300/rc32365_eth.h
+--- linux-2.6.16/include/asm-mips/idt-boards/rc32300/rc32365_eth.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32300/rc32365_eth.h	2006-03-20 14:25:10.000000000 +0100
 @@ -0,0 +1,344 @@
 +/**************************************************************************
 + *
@@ -4509,9 +4591,9 @@ diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32300/rc32365_eth.h linux-2
 +	u32 ipabmctx		;
 +}volatile *IPABM_ETH_t;
 +#endif //__IDT_RC32365_ETH_H__
-diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32300/rc32365_eth_v.h linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32300/rc32365_eth_v.h
---- linux-2.6.15/include/asm-mips/idt-boards/rc32300/rc32365_eth_v.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32300/rc32365_eth_v.h	2006-01-10 00:32:33.000000000 +0100
+diff -Nur linux-2.6.16/include/asm-mips/idt-boards/rc32300/rc32365_eth_v.h linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32300/rc32365_eth_v.h
+--- linux-2.6.16/include/asm-mips/idt-boards/rc32300/rc32365_eth_v.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32300/rc32365_eth_v.h	2006-03-20 14:25:10.000000000 +0100
 @@ -0,0 +1,72 @@
 +/**************************************************************************
 + *
@@ -4585,9 +4667,9 @@ diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32300/rc32365_eth_v.h linux
 +#define RCVPKT_LENGTH(X)     (((X) & ETHRX_length_m) >> ETHRX_length_b)   /* Length of the received packet */
 +
 +#endif //__IDT_RC32365_ETH_V_H__
-diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32300/rc32365_gpio.h linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32300/rc32365_gpio.h
---- linux-2.6.15/include/asm-mips/idt-boards/rc32300/rc32365_gpio.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32300/rc32365_gpio.h	2006-01-10 00:32:33.000000000 +0100
+diff -Nur linux-2.6.16/include/asm-mips/idt-boards/rc32300/rc32365_gpio.h linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32300/rc32365_gpio.h
+--- linux-2.6.16/include/asm-mips/idt-boards/rc32300/rc32365_gpio.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32300/rc32365_gpio.h	2006-03-20 14:25:10.000000000 +0100
 @@ -0,0 +1,181 @@
 +/**************************************************************************
 + *
@@ -4770,9 +4852,9 @@ diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32300/rc32365_gpio.h linux-
 +} GPIO_DEFS_t;
 +
 +#endif //__IDT_RC32365_GPIO_H__
-diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32300/rc32365_gpio_v.h linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32300/rc32365_gpio_v.h
---- linux-2.6.15/include/asm-mips/idt-boards/rc32300/rc32365_gpio_v.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32300/rc32365_gpio_v.h	2006-01-10 00:32:33.000000000 +0100
+diff -Nur linux-2.6.16/include/asm-mips/idt-boards/rc32300/rc32365_gpio_v.h linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32300/rc32365_gpio_v.h
+--- linux-2.6.16/include/asm-mips/idt-boards/rc32300/rc32365_gpio_v.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32300/rc32365_gpio_v.h	2006-03-20 14:25:10.000000000 +0100
 @@ -0,0 +1,91 @@
 +/**************************************************************************
 + *
@@ -4865,9 +4947,9 @@ diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32300/rc32365_gpio_v.h linu
 +
 +#endif //__IDT_RC32365_GPIO_V_H__
 +
-diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32300/rc32365.h linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32300/rc32365.h
---- linux-2.6.15/include/asm-mips/idt-boards/rc32300/rc32365.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32300/rc32365.h	2006-01-10 00:32:33.000000000 +0100
+diff -Nur linux-2.6.16/include/asm-mips/idt-boards/rc32300/rc32365.h linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32300/rc32365.h
+--- linux-2.6.16/include/asm-mips/idt-boards/rc32300/rc32365.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32300/rc32365.h	2006-03-20 14:25:10.000000000 +0100
 @@ -0,0 +1,160 @@
 +/**************************************************************************
 + *
@@ -5029,9 +5111,9 @@ diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32300/rc32365.h linux-2.6.1
 +#define RAM_SIZE	   (32 * 1024 * 1024)
 +
 +#endif //__IDT_RC32365_H__
-diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32300/rc32365_pci.h linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32300/rc32365_pci.h
---- linux-2.6.15/include/asm-mips/idt-boards/rc32300/rc32365_pci.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32300/rc32365_pci.h	2006-01-10 00:32:33.000000000 +0100
+diff -Nur linux-2.6.16/include/asm-mips/idt-boards/rc32300/rc32365_pci.h linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32300/rc32365_pci.h
+--- linux-2.6.16/include/asm-mips/idt-boards/rc32300/rc32365_pci.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32300/rc32365_pci.h	2006-03-20 14:25:10.000000000 +0100
 @@ -0,0 +1,515 @@
 +/**************************************************************************
 + *
@@ -5548,9 +5630,9 @@ diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32300/rc32365_pci.h linux-2
 +
 +
 +#endif	// __IDT_RC32365_PCI_H__
-diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32300/rc32365_pci_v.h linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32300/rc32365_pci_v.h
---- linux-2.6.15/include/asm-mips/idt-boards/rc32300/rc32365_pci_v.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32300/rc32365_pci_v.h	2006-01-10 00:32:33.000000000 +0100
+diff -Nur linux-2.6.16/include/asm-mips/idt-boards/rc32300/rc32365_pci_v.h linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32300/rc32365_pci_v.h
+--- linux-2.6.16/include/asm-mips/idt-boards/rc32300/rc32365_pci_v.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32300/rc32365_pci_v.h	2006-03-20 14:25:10.000000000 +0100
 @@ -0,0 +1,217 @@
 +/**************************************************************************
 + *
@@ -5769,9 +5851,9 @@ diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32300/rc32365_pci_v.h linux
 +#define PCITC_RTIMER_VAL	0x10
 +
 +#endif //__IDT_RC32365_PCI_V_H__
-diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32434/rc32434_dma.h linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32434/rc32434_dma.h
---- linux-2.6.15/include/asm-mips/idt-boards/rc32434/rc32434_dma.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32434/rc32434_dma.h	2006-01-10 00:32:33.000000000 +0100
+diff -Nur linux-2.6.16/include/asm-mips/idt-boards/rc32434/rc32434_dma.h linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32434/rc32434_dma.h
+--- linux-2.6.16/include/asm-mips/idt-boards/rc32434/rc32434_dma.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32434/rc32434_dma.h	2006-03-20 14:25:10.000000000 +0100
 @@ -0,0 +1,205 @@
 +/**************************************************************************
 + *
@@ -5978,9 +6060,9 @@ diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32434/rc32434_dma.h linux-2
 +
 +
 +
-diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32434/rc32434_dma_v.h linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32434/rc32434_dma_v.h
---- linux-2.6.15/include/asm-mips/idt-boards/rc32434/rc32434_dma_v.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32434/rc32434_dma_v.h	2006-01-10 00:32:33.000000000 +0100
+diff -Nur linux-2.6.16/include/asm-mips/idt-boards/rc32434/rc32434_dma_v.h linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32434/rc32434_dma_v.h
+--- linux-2.6.16/include/asm-mips/idt-boards/rc32434/rc32434_dma_v.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32434/rc32434_dma_v.h	2006-03-20 14:25:10.000000000 +0100
 @@ -0,0 +1,89 @@
 +/**************************************************************************
 + *
@@ -6071,9 +6153,9 @@ diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32434/rc32434_dma_v.h linux
 +
 +
 +
-diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32434/rc32434_eth.h linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32434/rc32434_eth.h
---- linux-2.6.15/include/asm-mips/idt-boards/rc32434/rc32434_eth.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32434/rc32434_eth.h	2006-01-10 00:32:33.000000000 +0100
+diff -Nur linux-2.6.16/include/asm-mips/idt-boards/rc32434/rc32434_eth.h linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32434/rc32434_eth.h
+--- linux-2.6.16/include/asm-mips/idt-boards/rc32434/rc32434_eth.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32434/rc32434_eth.h	2006-03-20 14:25:10.000000000 +0100
 @@ -0,0 +1,333 @@
 +/**************************************************************************
 + *
@@ -6408,9 +6490,9 @@ diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32434/rc32434_eth.h linux-2
 +
 +
 +
-diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32434/rc32434_eth_v.h linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32434/rc32434_eth_v.h
---- linux-2.6.15/include/asm-mips/idt-boards/rc32434/rc32434_eth_v.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32434/rc32434_eth_v.h	2006-01-10 00:32:33.000000000 +0100
+diff -Nur linux-2.6.16/include/asm-mips/idt-boards/rc32434/rc32434_eth_v.h linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32434/rc32434_eth_v.h
+--- linux-2.6.16/include/asm-mips/idt-boards/rc32434/rc32434_eth_v.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32434/rc32434_eth_v.h	2006-03-20 14:25:10.000000000 +0100
 @@ -0,0 +1,77 @@
 +/**************************************************************************
 + *
@@ -6489,9 +6571,9 @@ diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32434/rc32434_eth_v.h linux
 +
 +
 +
-diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32434/rc32434_gpio.h linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32434/rc32434_gpio.h
---- linux-2.6.15/include/asm-mips/idt-boards/rc32434/rc32434_gpio.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32434/rc32434_gpio.h	2006-01-10 00:32:33.000000000 +0100
+diff -Nur linux-2.6.16/include/asm-mips/idt-boards/rc32434/rc32434_gpio.h linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32434/rc32434_gpio.h
+--- linux-2.6.16/include/asm-mips/idt-boards/rc32434/rc32434_gpio.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32434/rc32434_gpio.h	2006-03-20 14:25:10.000000000 +0100
 @@ -0,0 +1,167 @@
 +/**************************************************************************
 + *
@@ -6660,9 +6742,9 @@ diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32434/rc32434_gpio.h linux-
 +
 +#endif	// __IDT_GPIO_H__
 +
-diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32434/rc32434.h linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32434/rc32434.h
---- linux-2.6.15/include/asm-mips/idt-boards/rc32434/rc32434.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32434/rc32434.h	2006-01-10 00:32:33.000000000 +0100
+diff -Nur linux-2.6.16/include/asm-mips/idt-boards/rc32434/rc32434.h linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32434/rc32434.h
+--- linux-2.6.16/include/asm-mips/idt-boards/rc32434/rc32434.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32434/rc32434.h	2006-03-20 14:25:10.000000000 +0100
 @@ -0,0 +1,199 @@
 + /**************************************************************************
 + *
@@ -6863,9 +6945,9 @@ diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32434/rc32434.h linux-2.6.1
 +
 +
 +
-diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32434/rc32434_integ.h linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32434/rc32434_integ.h
---- linux-2.6.15/include/asm-mips/idt-boards/rc32434/rc32434_integ.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32434/rc32434_integ.h	2006-01-10 00:32:33.000000000 +0100
+diff -Nur linux-2.6.16/include/asm-mips/idt-boards/rc32434/rc32434_integ.h linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32434/rc32434_integ.h
+--- linux-2.6.16/include/asm-mips/idt-boards/rc32434/rc32434_integ.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32434/rc32434_integ.h	2006-03-20 14:25:10.000000000 +0100
 @@ -0,0 +1,90 @@
 +/**************************************************************************
 + *
@@ -6957,9 +7039,9 @@ diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32434/rc32434_integ.h linux
 +} ;
 +
 +#endif	// __IDT_INTEG_H__
-diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32434/rc32434_int.h linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32434/rc32434_int.h
---- linux-2.6.15/include/asm-mips/idt-boards/rc32434/rc32434_int.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32434/rc32434_int.h	2006-01-10 00:32:33.000000000 +0100
+diff -Nur linux-2.6.16/include/asm-mips/idt-boards/rc32434/rc32434_int.h linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32434/rc32434_int.h
+--- linux-2.6.16/include/asm-mips/idt-boards/rc32434/rc32434_int.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32434/rc32434_int.h	2006-03-20 14:25:10.000000000 +0100
 @@ -0,0 +1,174 @@
 +/**************************************************************************
 + *
@@ -7135,9 +7217,9 @@ diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32434/rc32434_int.h linux-2
 +#endif	// __IDT_INT_H__
 +
 +
-diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32434/rc32434_iparb.h linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32434/rc32434_iparb.h
---- linux-2.6.15/include/asm-mips/idt-boards/rc32434/rc32434_iparb.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32434/rc32434_iparb.h	2006-01-10 00:32:33.000000000 +0100
+diff -Nur linux-2.6.16/include/asm-mips/idt-boards/rc32434/rc32434_iparb.h linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32434/rc32434_iparb.h
+--- linux-2.6.16/include/asm-mips/idt-boards/rc32434/rc32434_iparb.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32434/rc32434_iparb.h	2006-03-20 14:25:10.000000000 +0100
 @@ -0,0 +1,111 @@
 +/**************************************************************************
 + *
@@ -7250,9 +7332,9 @@ diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32434/rc32434_iparb.h linux
 +};
 +
 +#endif	// __IDT_IPARB_H__
-diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32434/rc32434_pci.h linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32434/rc32434_pci.h
---- linux-2.6.15/include/asm-mips/idt-boards/rc32434/rc32434_pci.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32434/rc32434_pci.h	2006-01-10 00:32:33.000000000 +0100
+diff -Nur linux-2.6.16/include/asm-mips/idt-boards/rc32434/rc32434_pci.h linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32434/rc32434_pci.h
+--- linux-2.6.16/include/asm-mips/idt-boards/rc32434/rc32434_pci.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32434/rc32434_pci.h	2006-03-20 14:25:10.000000000 +0100
 @@ -0,0 +1,695 @@
 +/**************************************************************************
 + *
@@ -7949,9 +8031,9 @@ diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32434/rc32434_pci.h linux-2
 +
 +
 +
-diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32434/rc32434_rst.h linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32434/rc32434_rst.h
---- linux-2.6.15/include/asm-mips/idt-boards/rc32434/rc32434_rst.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32434/rc32434_rst.h	2006-01-10 00:32:33.000000000 +0100
+diff -Nur linux-2.6.16/include/asm-mips/idt-boards/rc32434/rc32434_rst.h linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32434/rc32434_rst.h
+--- linux-2.6.16/include/asm-mips/idt-boards/rc32434/rc32434_rst.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32434/rc32434_rst.h	2006-03-20 14:25:10.000000000 +0100
 @@ -0,0 +1,119 @@
 +/**************************************************************************
 + *
@@ -8072,9 +8154,9 @@ diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32434/rc32434_rst.h linux-2
 +	BCV_res15_m		= 0x00008000,
 +} ;
 +#endif	// __IDT_RST_H__
-diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32434/rc32434_spi.h linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32434/rc32434_spi.h
---- linux-2.6.15/include/asm-mips/idt-boards/rc32434/rc32434_spi.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32434/rc32434_spi.h	2006-01-10 00:32:33.000000000 +0100
+diff -Nur linux-2.6.16/include/asm-mips/idt-boards/rc32434/rc32434_spi.h linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32434/rc32434_spi.h
+--- linux-2.6.16/include/asm-mips/idt-boards/rc32434/rc32434_spi.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32434/rc32434_spi.h	2006-03-20 14:25:10.000000000 +0100
 @@ -0,0 +1,120 @@
 +/**************************************************************************
 + *
@@ -8196,9 +8278,9 @@ diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32434/rc32434_spi.h linux-2
 +	SIOD_pci_m	 = 0x00000008,
 +} ;
 +#endif	// __IDT_SPI_H__
-diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32434/rc32434_timer.h linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32434/rc32434_timer.h
---- linux-2.6.15/include/asm-mips/idt-boards/rc32434/rc32434_timer.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32434/rc32434_timer.h	2006-01-10 00:32:33.000000000 +0100
+diff -Nur linux-2.6.16/include/asm-mips/idt-boards/rc32434/rc32434_timer.h linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32434/rc32434_timer.h
+--- linux-2.6.16/include/asm-mips/idt-boards/rc32434/rc32434_timer.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32434/rc32434_timer.h	2006-03-20 14:25:10.000000000 +0100
 @@ -0,0 +1,91 @@
 +/**************************************************************************
 + *
@@ -8291,9 +8373,9 @@ diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32434/rc32434_timer.h linux
 +} ;
 +#endif	// __IDT_TIM_H__
 +
-diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32434/rc32434_uart.h linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32434/rc32434_uart.h
---- linux-2.6.15/include/asm-mips/idt-boards/rc32434/rc32434_uart.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32434/rc32434_uart.h	2006-01-10 00:32:33.000000000 +0100
+diff -Nur linux-2.6.16/include/asm-mips/idt-boards/rc32434/rc32434_uart.h linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32434/rc32434_uart.h
+--- linux-2.6.16/include/asm-mips/idt-boards/rc32434/rc32434_uart.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32434/rc32434_uart.h	2006-03-20 14:25:10.000000000 +0100
 @@ -0,0 +1,189 @@
 +/**************************************************************************
 + *
@@ -8484,9 +8566,9 @@ diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32434/rc32434_uart.h linux-
 +} ;
 +
 +#endif	// __IDT_UART_H__
-diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32438/rc32438_dma.h linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32438/rc32438_dma.h
---- linux-2.6.15/include/asm-mips/idt-boards/rc32438/rc32438_dma.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32438/rc32438_dma.h	2006-01-10 00:32:33.000000000 +0100
+diff -Nur linux-2.6.16/include/asm-mips/idt-boards/rc32438/rc32438_dma.h linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32438/rc32438_dma.h
+--- linux-2.6.16/include/asm-mips/idt-boards/rc32438/rc32438_dma.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32438/rc32438_dma.h	2006-03-20 14:25:10.000000000 +0100
 @@ -0,0 +1,231 @@
 +/**************************************************************************
 + *
@@ -8719,9 +8801,9 @@ diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32438/rc32438_dma.h linux-2
 +#endif	// aws - Compatibility.
 +
 +#endif //__IDT_RC32438_DMA_H__
-diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32438/rc32438_dma_v.h linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32438/rc32438_dma_v.h
---- linux-2.6.15/include/asm-mips/idt-boards/rc32438/rc32438_dma_v.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32438/rc32438_dma_v.h	2006-01-10 00:32:33.000000000 +0100
+diff -Nur linux-2.6.16/include/asm-mips/idt-boards/rc32438/rc32438_dma_v.h linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32438/rc32438_dma_v.h
+--- linux-2.6.16/include/asm-mips/idt-boards/rc32438/rc32438_dma_v.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32438/rc32438_dma_v.h	2006-03-20 14:25:10.000000000 +0100
 @@ -0,0 +1,82 @@
 +/**************************************************************************
 + *
@@ -8805,9 +8887,9 @@ diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32438/rc32438_dma_v.h linux
 +	rc32438_writel(dma_addr, &ch->dmandptr);
 +}
 +#endif //__IDT_RC32438_DMA_V_H__
-diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32438/rc32438_eth.h linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32438/rc32438_eth.h
---- linux-2.6.15/include/asm-mips/idt-boards/rc32438/rc32438_eth.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32438/rc32438_eth.h	2006-01-10 00:32:33.000000000 +0100
+diff -Nur linux-2.6.16/include/asm-mips/idt-boards/rc32438/rc32438_eth.h linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32438/rc32438_eth.h
+--- linux-2.6.16/include/asm-mips/idt-boards/rc32438/rc32438_eth.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32438/rc32438_eth.h	2006-03-20 14:25:10.000000000 +0100
 @@ -0,0 +1,328 @@
 +/**************************************************************************
 + *
@@ -9137,9 +9219,9 @@ diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32438/rc32438_eth.h linux-2
 +	ETHTX_cc_m		= 0x001E0000,
 +} ;
 +#endif //__IDT_RC32438_ETH_H__
-diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32438/rc32438_eth_v.h linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32438/rc32438_eth_v.h
---- linux-2.6.15/include/asm-mips/idt-boards/rc32438/rc32438_eth_v.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32438/rc32438_eth_v.h	2006-01-10 00:32:33.000000000 +0100
+diff -Nur linux-2.6.16/include/asm-mips/idt-boards/rc32438/rc32438_eth_v.h linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32438/rc32438_eth_v.h
+--- linux-2.6.16/include/asm-mips/idt-boards/rc32438/rc32438_eth_v.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32438/rc32438_eth_v.h	2006-03-20 14:25:10.000000000 +0100
 @@ -0,0 +1,72 @@
 +/**************************************************************************
 + *
@@ -9213,9 +9295,9 @@ diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32438/rc32438_eth_v.h linux
 +#define RCVPKT_LENGTH(X)     (((X) & ETHRX_length_m) >> ETHRX_length_b)   /* Length of the received packet */
 +
 +#endif //__IDT_RC32438_ETH_V_H__
-diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32438/rc32438_gpio.h linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32438/rc32438_gpio.h
---- linux-2.6.15/include/asm-mips/idt-boards/rc32438/rc32438_gpio.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32438/rc32438_gpio.h	2006-01-10 00:32:33.000000000 +0100
+diff -Nur linux-2.6.16/include/asm-mips/idt-boards/rc32438/rc32438_gpio.h linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32438/rc32438_gpio.h
+--- linux-2.6.16/include/asm-mips/idt-boards/rc32438/rc32438_gpio.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32438/rc32438_gpio.h	2006-03-20 14:25:10.000000000 +0100
 @@ -0,0 +1,257 @@
 +/**************************************************************************
 + *
@@ -9474,9 +9556,9 @@ diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32438/rc32438_gpio.h linux-
 +} GPIO_DEFS_t;
 +
 +#endif //__IDT_RC32438_GPIO_H__
-diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32438/rc32438.h linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32438/rc32438.h
---- linux-2.6.15/include/asm-mips/idt-boards/rc32438/rc32438.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32438/rc32438.h	2006-01-10 00:32:33.000000000 +0100
+diff -Nur linux-2.6.16/include/asm-mips/idt-boards/rc32438/rc32438.h linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32438/rc32438.h
+--- linux-2.6.16/include/asm-mips/idt-boards/rc32438/rc32438.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32438/rc32438.h	2006-03-20 14:25:10.000000000 +0100
 @@ -0,0 +1,152 @@
 +/**************************************************************************
 + *
@@ -9630,9 +9712,9 @@ diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32438/rc32438.h linux-2.6.1
 +	return ret;
 +}
 +#endif //__IDT_RC32438_H__
-diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32438/rc32438_pci.h linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32438/rc32438_pci.h
---- linux-2.6.15/include/asm-mips/idt-boards/rc32438/rc32438_pci.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32438/rc32438_pci.h	2006-01-10 00:32:33.000000000 +0100
+diff -Nur linux-2.6.16/include/asm-mips/idt-boards/rc32438/rc32438_pci.h linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32438/rc32438_pci.h
+--- linux-2.6.16/include/asm-mips/idt-boards/rc32438/rc32438_pci.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32438/rc32438_pci.h	2006-03-20 14:25:10.000000000 +0100
 @@ -0,0 +1,510 @@
 +/**************************************************************************
 + *
@@ -10144,9 +10226,9 @@ diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32438/rc32438_pci.h linux-2
 +	PCIM_db_m	= 0x00000004,	// inbound or outbound doorbell
 +};
 +
-diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32438/rc32438_pci_v.h linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32438/rc32438_pci_v.h
---- linux-2.6.15/include/asm-mips/idt-boards/rc32438/rc32438_pci_v.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32438/rc32438_pci_v.h	2006-01-10 00:32:33.000000000 +0100
+diff -Nur linux-2.6.16/include/asm-mips/idt-boards/rc32438/rc32438_pci_v.h linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32438/rc32438_pci_v.h
+--- linux-2.6.16/include/asm-mips/idt-boards/rc32438/rc32438_pci_v.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32438/rc32438_pci_v.h	2006-03-20 14:25:10.000000000 +0100
 @@ -0,0 +1,190 @@
 +/**************************************************************************
 + *
@@ -10338,9 +10420,9 @@ diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32438/rc32438_pci_v.h linux
 +#define	PCITC_DTIMER_VAL	8
 +#define PCITC_RTIMER_VAL	0x10
 +
-diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32438/rc32438_timer.h linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32438/rc32438_timer.h
---- linux-2.6.15/include/asm-mips/idt-boards/rc32438/rc32438_timer.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/include/asm-mips/idt-boards/rc32438/rc32438_timer.h	2006-01-10 00:32:33.000000000 +0100
+diff -Nur linux-2.6.16/include/asm-mips/idt-boards/rc32438/rc32438_timer.h linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32438/rc32438_timer.h
+--- linux-2.6.16/include/asm-mips/idt-boards/rc32438/rc32438_timer.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/include/asm-mips/idt-boards/rc32438/rc32438_timer.h	2006-03-20 14:25:10.000000000 +0100
 @@ -0,0 +1,91 @@
 +/**************************************************************************
 + *
@@ -10433,9 +10515,9 @@ diff -Nur linux-2.6.15/include/asm-mips/idt-boards/rc32438/rc32438_timer.h linux
 +} ;
 +#endif	//__IDT_RC32438_TIM_H__
 +
-diff -Nur linux-2.6.15/include/asm-mips/mach-generic/irq.h linux-2.6.15-openwrt/include/asm-mips/mach-generic/irq.h
---- linux-2.6.15/include/asm-mips/mach-generic/irq.h	2006-01-03 04:21:10.000000000 +0100
-+++ linux-2.6.15-openwrt/include/asm-mips/mach-generic/irq.h	2006-01-10 00:32:33.000000000 +0100
+diff -Nur linux-2.6.16/include/asm-mips/mach-generic/irq.h linux-2.6.16-owrt/include/asm-mips/mach-generic/irq.h
+--- linux-2.6.16/include/asm-mips/mach-generic/irq.h	2006-03-20 06:53:29.000000000 +0100
++++ linux-2.6.16-owrt/include/asm-mips/mach-generic/irq.h	2006-03-20 14:25:10.000000000 +0100
 @@ -8,6 +8,6 @@
  #ifndef __ASM_MACH_GENERIC_IRQ_H
  #define __ASM_MACH_GENERIC_IRQ_H
@@ -10444,9 +10526,9 @@ diff -Nur linux-2.6.15/include/asm-mips/mach-generic/irq.h linux-2.6.15-openwrt/
 +#define NR_IRQS	256
  
  #endif /* __ASM_MACH_GENERIC_IRQ_H */
-diff -Nur linux-2.6.15/include/linux/init.h linux-2.6.15-openwrt/include/linux/init.h
---- linux-2.6.15/include/linux/init.h	2006-01-03 04:21:10.000000000 +0100
-+++ linux-2.6.15-openwrt/include/linux/init.h	2006-01-10 00:32:33.000000000 +0100
+diff -Nur linux-2.6.16/include/linux/init.h linux-2.6.16-owrt/include/linux/init.h
+--- linux-2.6.16/include/linux/init.h	2006-03-20 06:53:29.000000000 +0100
++++ linux-2.6.16-owrt/include/linux/init.h	2006-03-20 14:25:10.000000000 +0100
 @@ -86,6 +86,8 @@
  	static initcall_t __initcall_##fn __attribute_used__ \
  	__attribute__((__section__(".initcall" level ".init"))) = fn
@@ -10456,129 +10538,14 @@ diff -Nur linux-2.6.15/include/linux/init.h linux-2.6.15-openwrt/include/linux/i
  #define core_initcall(fn)		__define_initcall("1",fn)
  #define postcore_initcall(fn)		__define_initcall("2",fn)
  #define arch_initcall(fn)		__define_initcall("3",fn)
-diff -Nur linux-2.6.15/include/linux/kernel.h linux-2.6.15-openwrt/include/linux/kernel.h
---- linux-2.6.15/include/linux/kernel.h	2006-01-03 04:21:10.000000000 +0100
-+++ linux-2.6.15-openwrt/include/linux/kernel.h	2006-01-10 00:32:33.000000000 +0100
-@@ -307,6 +307,7 @@
+diff -Nur linux-2.6.16/include/linux/kernel.h linux-2.6.16-owrt/include/linux/kernel.h
+--- linux-2.6.16/include/linux/kernel.h	2006-03-20 06:53:29.000000000 +0100
++++ linux-2.6.16-owrt/include/linux/kernel.h	2006-03-20 14:25:10.000000000 +0100
+@@ -324,6 +324,7 @@
  };
  
  /* Force a compilation error if condition is true */
 +extern void BUILD_BUG(void);
  #define BUILD_BUG_ON(condition) ((void)sizeof(char[1 - 2*!!(condition)]))
  
- #ifdef CONFIG_SYSCTL
-diff -Nur linux-2.6.15/Makefile linux-2.6.15-openwrt/Makefile
---- linux-2.6.15/Makefile	2006-01-03 04:21:10.000000000 +0100
-+++ linux-2.6.15-openwrt/Makefile	2006-01-10 00:32:33.000000000 +0100
-@@ -166,10 +166,7 @@
- # then ARCH is assigned, getting whatever value it gets normally, and 
- # SUBARCH is subsequently ignored.
- 
--SUBARCH := $(shell uname -m | sed -e s/i.86/i386/ -e s/sun4u/sparc64/ \
--				  -e s/arm.*/arm/ -e s/sa110/arm/ \
--				  -e s/s390x/s390/ -e s/parisc64/parisc/ \
--				  -e s/ppc64/powerpc/ )
-+SUBARCH := mips
- 
- # Cross compiling and selecting different set of gcc/bin-utils
- # ---------------------------------------------------------------------------
-diff -Nur linux-2.6.15/drivers/net/natsemi.c linux-2.6.15-openwrt/drivers/net/natsemi.c
---- linux-2.6.15/drivers/net/natsemi.c	2006-01-02 19:21:10.000000000 -0800
-+++ linux-2.6.15-openwrt/drivers/net/natsemi.c	2006-01-10 07:29:49.581994000 -0800
-@@ -771,6 +771,49 @@
- static int netdev_get_eeprom(struct net_device *dev, u8 *buf);
- static struct ethtool_ops ethtool_ops;
- 
-+#ifdef CONFIG_MACH_ARUBA
-+
-+#include <linux/ctype.h>
-+
-+#ifndef ERR
-+#define ERR(fmt, args...) printk("%s: " fmt, __func__, ##args)
-+#endif
-+
-+static int parse_mac_addr(struct net_device *dev, char* macstr)
-+{
-+        int i, j;
-+        unsigned char result, value;
-+
-+        for (i=0; i<6; i++) {
-+                result = 0;
-+                if (i != 5 && *(macstr+2) != ':') {
-+                        ERR("invalid mac address format: %d %c\n",
-+                            i, *(macstr+2));
-+                        return -EINVAL;
-+                }
-+                for (j=0; j<2; j++) {
-+                        if (isxdigit(*macstr) && (value = isdigit(*macstr) ? *macstr-'0' :
-+                                                  toupper(*macstr)-'A'+10) < 16) {
-+                                result = result*16 + value;
-+                                macstr++;
-+                        }
-+                        else {
-+                                ERR("invalid mac address "
-+                                    "character: %c\n", *macstr);
-+                                return -EINVAL;
-+                        }
-+                }
-+
-+                macstr++;
-+                dev->dev_addr[i] = result;
-+        }
-+
-+	dev->dev_addr[5]++;
-+        return 0;
-+}
-+
-+#endif
-+
- static inline void __iomem *ns_ioaddr(struct net_device *dev)
- {
- 	return (void __iomem *) dev->base_addr;
-@@ -859,6 +902,7 @@
- 		goto err_ioremap;
- 	}
- 
-+#ifndef CONFIG_MACH_ARUBA
- 	/* Work around the dropped serial bit. */
- 	prev_eedata = eeprom_read(ioaddr, 6);
- 	for (i = 0; i < 3; i++) {
-@@ -867,6 +911,19 @@
- 		dev->dev_addr[i*2+1] = eedata >> 7;
- 		prev_eedata = eedata;
- 	}
-+#else
-+	{
-+		char mac[32];
-+		unsigned char def_mac[6] = {00, 0x0b, 0x86, 0xba, 0xdb, 0xad};
-+		extern char *getenv(char *e);
-+		memset(mac, 0, 32);
-+		memcpy(mac, getenv("ethaddr"), 17);
-+		if (parse_mac_addr(dev, mac)){
-+			printk("%s: MAC address not found\n", __func__);
-+			memcpy(dev->dev_addr, def_mac, 6);
-+		}
-+	}
-+#endif
- 
- 	dev->base_addr = (unsigned long __force) ioaddr;
- 	dev->irq = irq;
-diff -Nur linux-2.6.15/drivers/net/Makefile linux-2.6.15-openwrt/drivers/net/Makefile
---- linux-2.6.15/drivers/net/Makefile	2006-01-13 09:19:55.000000000 -0800
-+++ linux-2.6.15-openwrt/drivers/net/Makefile	2006-01-09 20:44:10.378339000 -0800
-@@ -35,6 +35,7 @@
- 
- obj-$(CONFIG_OAKNET) += oaknet.o 8390.o
- 
-+obj-$(CONFIG_IDT_RC32434_ETH) += rc32434_eth.o
- obj-$(CONFIG_DGRS) += dgrs.o
- obj-$(CONFIG_VORTEX) += 3c59x.o
- obj-$(CONFIG_TYPHOON) += typhoon.o
-@@ -190,7 +189,6 @@
- obj-$(CONFIG_SMC91X) += smc91x.o
- obj-$(CONFIG_DM9000) += dm9000.o
- obj-$(CONFIG_FEC_8XX) += fec_8xx/
--obj-$(CONFIG_IDT_RC32434_ETH) += rc32434_eth.o
- 
- obj-$(CONFIG_ARM) += arm/
- obj-$(CONFIG_DEV_APPLETALK) += appletalk/
+ /* Trap pasters of __FUNCTION__ at compile-time */

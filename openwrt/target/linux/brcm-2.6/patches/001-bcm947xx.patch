@@ -1,64 +1,6 @@
-diff -urN linux.old/arch/mips/Kconfig linux.dev/arch/mips/Kconfig
---- linux.old/arch/mips/Kconfig	2006-01-12 00:25:32.203973000 +0100
-+++ linux.dev/arch/mips/Kconfig	2006-01-12 00:20:30.697130000 +0100
-@@ -244,6 +244,17 @@
- 	 Members include the Acer PICA, MIPS Magnum 4000, MIPS Millenium and
- 	 Olivetti M700-10 workstations.
- 
-+config BCM947XX
-+	bool "Support for BCM947xx based boards"
-+	select DMA_NONCOHERENT
-+	select HW_HAS_PCI
-+	select IRQ_CPU
-+	select SYS_HAS_CPU_MIPS32_R1
-+	select SYS_SUPPORTS_32BIT_KERNEL
-+	select SYS_SUPPORTS_LITTLE_ENDIAN
-+	help
-+	 Support for BCM947xx based boards
-+
- config LASAT
- 	bool "Support for LASAT Networks platforms"
- 	select DMA_NONCOHERENT
-diff -urN linux.old/arch/mips/Makefile linux.dev/arch/mips/Makefile
---- linux.old/arch/mips/Makefile	2006-01-12 00:25:32.223974250 +0100
-+++ linux.dev/arch/mips/Makefile	2006-01-12 00:20:30.701130250 +0100
-@@ -689,6 +689,13 @@
- load-$(CONFIG_SIBYTE_BIGSUR)	:= 0xffffffff80100000
- 
- #
-+# Broadcom BCM47XX boards
-+#
-+core-$(CONFIG_BCM947XX)		+= arch/mips/bcm947xx/ arch/mips/bcm947xx/broadcom/
-+cflags-$(CONFIG_BCM947XX)	+= -Iarch/mips/bcm947xx/include
-+load-$(CONFIG_BCM947XX)		:= 0xffffffff80001000
-+
-+#
- # SNI RM200 PCI
- #
- core-$(CONFIG_SNI_RM200_PCI)	+= arch/mips/sni/
-diff -urN linux.old/arch/mips/bcm947xx/Makefile linux.dev/arch/mips/bcm947xx/Makefile
---- linux.old/arch/mips/bcm947xx/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/Makefile	2006-01-12 00:20:30.701130250 +0100
-@@ -0,0 +1,6 @@
-+#
-+# Makefile for the BCM47xx specific kernel interface routines
-+# under Linux.
-+#
-+
-+obj-y := irq.o int-handler.o prom.o setup.o time.o pci.o
-diff -urN linux.old/arch/mips/bcm947xx/broadcom/Makefile linux.dev/arch/mips/bcm947xx/broadcom/Makefile
---- linux.old/arch/mips/bcm947xx/broadcom/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/broadcom/Makefile	2006-01-12 00:20:30.713131000 +0100
-@@ -0,0 +1,6 @@
-+#
-+# Makefile for the BCM47xx specific kernel interface routines
-+# under Linux.
-+#
-+ 
-+obj-y	:= sbutils.o linux_osl.o bcmsrom.o bcmutils.o sbmips.o sbpci.o sflash.o nvram.o cfe_env.o
-diff -urN linux.old/arch/mips/bcm947xx/broadcom/bcmsrom.c linux.dev/arch/mips/bcm947xx/broadcom/bcmsrom.c
---- linux.old/arch/mips/bcm947xx/broadcom/bcmsrom.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/broadcom/bcmsrom.c	2006-01-12 00:20:30.717131250 +0100
+diff -Nur linux-2.6.16/arch/mips/bcm947xx/broadcom/bcmsrom.c linux-2.6.16-owrt/arch/mips/bcm947xx/broadcom/bcmsrom.c
+--- linux-2.6.16/arch/mips/bcm947xx/broadcom/bcmsrom.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/bcm947xx/broadcom/bcmsrom.c	2006-03-21 09:30:59.000000000 +0100
 @@ -0,0 +1,481 @@
 +/*
 + *  Misc useful routines to access NIC SROM/OTP .
@@ -541,9 +483,9 @@ diff -urN linux.old/arch/mips/bcm947xx/broadcom/bcmsrom.c linux.dev/arch/mips/bc
 +	return err;
 +}
 +
-diff -urN linux.old/arch/mips/bcm947xx/broadcom/bcmutils.c linux.dev/arch/mips/bcm947xx/broadcom/bcmutils.c
---- linux.old/arch/mips/bcm947xx/broadcom/bcmutils.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/broadcom/bcmutils.c	2006-01-12 00:20:30.717131250 +0100
+diff -Nur linux-2.6.16/arch/mips/bcm947xx/broadcom/bcmutils.c linux-2.6.16-owrt/arch/mips/bcm947xx/broadcom/bcmutils.c
+--- linux-2.6.16/arch/mips/bcm947xx/broadcom/bcmutils.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/bcm947xx/broadcom/bcmutils.c	2006-03-21 09:31:00.000000000 +0100
 @@ -0,0 +1,356 @@
 +/*
 + * Misc useful OS-independent routines.
@@ -901,9 +843,9 @@ diff -urN linux.old/arch/mips/bcm947xx/broadcom/bcmutils.c linux.dev/arch/mips/b
 +#define CNBUFS		5
 +
 +#endif
-diff -urN linux.old/arch/mips/bcm947xx/broadcom/cfe_env.c linux.dev/arch/mips/bcm947xx/broadcom/cfe_env.c
---- linux.old/arch/mips/bcm947xx/broadcom/cfe_env.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/broadcom/cfe_env.c	2006-01-12 00:20:30.717131250 +0100
+diff -Nur linux-2.6.16/arch/mips/bcm947xx/broadcom/cfe_env.c linux-2.6.16-owrt/arch/mips/bcm947xx/broadcom/cfe_env.c
+--- linux-2.6.16/arch/mips/bcm947xx/broadcom/cfe_env.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/bcm947xx/broadcom/cfe_env.c	2006-03-21 09:31:00.000000000 +0100
 @@ -0,0 +1,234 @@
 +/*
 + * NVRAM variable manipulation (Linux kernel half)
@@ -1139,9 +1081,9 @@ diff -urN linux.old/arch/mips/bcm947xx/broadcom/cfe_env.c linux.dev/arch/mips/bc
 +
 +}
 +
-diff -urN linux.old/arch/mips/bcm947xx/broadcom/linux_osl.c linux.dev/arch/mips/bcm947xx/broadcom/linux_osl.c
---- linux.old/arch/mips/bcm947xx/broadcom/linux_osl.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/broadcom/linux_osl.c	2006-01-12 00:20:30.717131250 +0100
+diff -Nur linux-2.6.16/arch/mips/bcm947xx/broadcom/linux_osl.c linux-2.6.16-owrt/arch/mips/bcm947xx/broadcom/linux_osl.c
+--- linux-2.6.16/arch/mips/bcm947xx/broadcom/linux_osl.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/bcm947xx/broadcom/linux_osl.c	2006-03-21 09:31:00.000000000 +0100
 @@ -0,0 +1,102 @@
 +/*
 + * Linux OS Independent Layer
@@ -1245,9 +1187,19 @@ diff -urN linux.old/arch/mips/bcm947xx/broadcom/linux_osl.c linux.dev/arch/mips/
 +	}
 +}
 +
-diff -urN linux.old/arch/mips/bcm947xx/broadcom/nvram.c linux.dev/arch/mips/bcm947xx/broadcom/nvram.c
---- linux.old/arch/mips/bcm947xx/broadcom/nvram.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/broadcom/nvram.c	2006-01-12 00:20:30.717131250 +0100
+diff -Nur linux-2.6.16/arch/mips/bcm947xx/broadcom/Makefile linux-2.6.16-owrt/arch/mips/bcm947xx/broadcom/Makefile
+--- linux-2.6.16/arch/mips/bcm947xx/broadcom/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/bcm947xx/broadcom/Makefile	2006-03-21 09:31:00.000000000 +0100
+@@ -0,0 +1,6 @@
++#
++# Makefile for the BCM47xx specific kernel interface routines
++# under Linux.
++#
++ 
++obj-y	:= sbutils.o linux_osl.o bcmsrom.o bcmutils.o sbmips.o sbpci.o sflash.o nvram.o cfe_env.o
+diff -Nur linux-2.6.16/arch/mips/bcm947xx/broadcom/nvram.c linux-2.6.16-owrt/arch/mips/bcm947xx/broadcom/nvram.c
+--- linux-2.6.16/arch/mips/bcm947xx/broadcom/nvram.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/bcm947xx/broadcom/nvram.c	2006-03-21 09:31:00.000000000 +0100
 @@ -0,0 +1,192 @@
 +/*
 + * NVRAM variable manipulation (Linux kernel half)
@@ -1441,9 +1393,9 @@ diff -urN linux.old/arch/mips/bcm947xx/broadcom/nvram.c linux.dev/arch/mips/bcm9
 +}
 +
 +EXPORT_SYMBOL(nvram_get);
-diff -urN linux.old/arch/mips/bcm947xx/broadcom/sbmips.c linux.dev/arch/mips/bcm947xx/broadcom/sbmips.c
---- linux.old/arch/mips/bcm947xx/broadcom/sbmips.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/broadcom/sbmips.c	2006-01-12 00:27:27.399172250 +0100
+diff -Nur linux-2.6.16/arch/mips/bcm947xx/broadcom/sbmips.c linux-2.6.16-owrt/arch/mips/bcm947xx/broadcom/sbmips.c
+--- linux-2.6.16/arch/mips/bcm947xx/broadcom/sbmips.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/bcm947xx/broadcom/sbmips.c	2006-03-21 09:31:00.000000000 +0100
 @@ -0,0 +1,1055 @@
 +/*
 + * BCM47XX Sonics SiliconBackplane MIPS core routines
@@ -2500,9 +2452,9 @@ diff -urN linux.old/arch/mips/bcm947xx/broadcom/sbmips.c linux.dev/arch/mips/bcm
 +	return ret;
 +}
 +
-diff -urN linux.old/arch/mips/bcm947xx/broadcom/sbpci.c linux.dev/arch/mips/bcm947xx/broadcom/sbpci.c
---- linux.old/arch/mips/bcm947xx/broadcom/sbpci.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/broadcom/sbpci.c	2006-01-12 00:52:25.864820500 +0100
+diff -Nur linux-2.6.16/arch/mips/bcm947xx/broadcom/sbpci.c linux-2.6.16-owrt/arch/mips/bcm947xx/broadcom/sbpci.c
+--- linux-2.6.16/arch/mips/bcm947xx/broadcom/sbpci.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/bcm947xx/broadcom/sbpci.c	2006-03-21 09:31:00.000000000 +0100
 @@ -0,0 +1,534 @@
 +/*
 + * Low-Level PCI and SB support for BCM47xx
@@ -3038,9 +2990,9 @@ diff -urN linux.old/arch/mips/bcm947xx/broadcom/sbpci.c linux.dev/arch/mips/bcm9
 +	return 0;
 +}
 +
-diff -urN linux.old/arch/mips/bcm947xx/broadcom/sbutils.c linux.dev/arch/mips/bcm947xx/broadcom/sbutils.c
---- linux.old/arch/mips/bcm947xx/broadcom/sbutils.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/broadcom/sbutils.c	2006-01-12 00:20:30.725131750 +0100
+diff -Nur linux-2.6.16/arch/mips/bcm947xx/broadcom/sbutils.c linux-2.6.16-owrt/arch/mips/bcm947xx/broadcom/sbutils.c
+--- linux-2.6.16/arch/mips/bcm947xx/broadcom/sbutils.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/bcm947xx/broadcom/sbutils.c	2006-03-21 09:31:00.000000000 +0100
 @@ -0,0 +1,2370 @@
 +/*
 + * Misc utility routines for accessing chip-specific features
@@ -5412,9 +5364,9 @@ diff -urN linux.old/arch/mips/bcm947xx/broadcom/sbutils.c linux.dev/arch/mips/bc
 +EXPORT_SYMBOL(sb_gpiosetcore);
 +EXPORT_SYMBOL(sb_gpiotimerval);
 +EXPORT_SYMBOL(sb_watchdog);
-diff -urN linux.old/arch/mips/bcm947xx/broadcom/sflash.c linux.dev/arch/mips/bcm947xx/broadcom/sflash.c
---- linux.old/arch/mips/bcm947xx/broadcom/sflash.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/broadcom/sflash.c	2006-01-12 00:20:30.725131750 +0100
+diff -Nur linux-2.6.16/arch/mips/bcm947xx/broadcom/sflash.c linux-2.6.16-owrt/arch/mips/bcm947xx/broadcom/sflash.c
+--- linux-2.6.16/arch/mips/bcm947xx/broadcom/sflash.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/bcm947xx/broadcom/sflash.c	2006-03-21 09:31:00.000000000 +0100
 @@ -0,0 +1,418 @@
 +/*
 + * Broadcom SiliconBackplane chipcommon serial flash interface
@@ -5834,9 +5786,9 @@ diff -urN linux.old/arch/mips/bcm947xx/broadcom/sflash.c linux.dev/arch/mips/bcm
 +	return ret;
 +}
 +
-diff -urN linux.old/arch/mips/bcm947xx/include/bcmdevs.h linux.dev/arch/mips/bcm947xx/include/bcmdevs.h
---- linux.old/arch/mips/bcm947xx/include/bcmdevs.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/bcmdevs.h	2006-01-12 00:20:30.725131750 +0100
+diff -Nur linux-2.6.16/arch/mips/bcm947xx/include/bcmdevs.h linux-2.6.16-owrt/arch/mips/bcm947xx/include/bcmdevs.h
+--- linux-2.6.16/arch/mips/bcm947xx/include/bcmdevs.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/bcm947xx/include/bcmdevs.h	2006-03-21 09:31:00.000000000 +0100
 @@ -0,0 +1,391 @@
 +/*
 + * Broadcom device-specific manifest constants.
@@ -6229,9 +6181,9 @@ diff -urN linux.old/arch/mips/bcm947xx/include/bcmdevs.h linux.dev/arch/mips/bcm
 +#define GPIO_NUMPINS		16
 +
 +#endif /* _BCMDEVS_H */
-diff -urN linux.old/arch/mips/bcm947xx/include/bcmendian.h linux.dev/arch/mips/bcm947xx/include/bcmendian.h
---- linux.old/arch/mips/bcm947xx/include/bcmendian.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/bcmendian.h	2006-01-12 00:20:30.725131750 +0100
+diff -Nur linux-2.6.16/arch/mips/bcm947xx/include/bcmendian.h linux-2.6.16-owrt/arch/mips/bcm947xx/include/bcmendian.h
+--- linux-2.6.16/arch/mips/bcm947xx/include/bcmendian.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/bcm947xx/include/bcmendian.h	2006-03-21 09:31:00.000000000 +0100
 @@ -0,0 +1,152 @@
 +/*
 + * local version of endian.h - byte order defines
@@ -6385,9 +6337,9 @@ diff -urN linux.old/arch/mips/bcm947xx/include/bcmendian.h linux.dev/arch/mips/b
 +)
 +
 +#endif /* _BCMENDIAN_H_ */
-diff -urN linux.old/arch/mips/bcm947xx/include/bcmnvram.h linux.dev/arch/mips/bcm947xx/include/bcmnvram.h
---- linux.old/arch/mips/bcm947xx/include/bcmnvram.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/bcmnvram.h	2006-01-12 00:20:30.725131750 +0100
+diff -Nur linux-2.6.16/arch/mips/bcm947xx/include/bcmnvram.h linux-2.6.16-owrt/arch/mips/bcm947xx/include/bcmnvram.h
+--- linux-2.6.16/arch/mips/bcm947xx/include/bcmnvram.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/bcm947xx/include/bcmnvram.h	2006-03-21 09:31:00.000000000 +0100
 @@ -0,0 +1,95 @@
 +/*
 + * NVRAM variable manipulation
@@ -6484,9 +6436,9 @@ diff -urN linux.old/arch/mips/bcm947xx/include/bcmnvram.h linux.dev/arch/mips/bc
 +#define NVRAM_MAX_PARAM_LEN 64
 +
 +#endif /* _bcmnvram_h_ */
-diff -urN linux.old/arch/mips/bcm947xx/include/bcmsrom.h linux.dev/arch/mips/bcm947xx/include/bcmsrom.h
---- linux.old/arch/mips/bcm947xx/include/bcmsrom.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/bcmsrom.h	2006-01-12 00:20:30.725131750 +0100
+diff -Nur linux-2.6.16/arch/mips/bcm947xx/include/bcmsrom.h linux-2.6.16-owrt/arch/mips/bcm947xx/include/bcmsrom.h
+--- linux-2.6.16/arch/mips/bcm947xx/include/bcmsrom.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/bcm947xx/include/bcmsrom.h	2006-03-21 09:31:00.000000000 +0100
 @@ -0,0 +1,23 @@
 +/*
 + * Misc useful routines to access NIC local SROM/OTP .
@@ -6511,9 +6463,9 @@ diff -urN linux.old/arch/mips/bcm947xx/include/bcmsrom.h linux.dev/arch/mips/bcm
 +extern int srom_write(uint bus, void *curmap, osl_t *osh, uint byteoff, uint nbytes, uint16 *buf);
 +
 +#endif	/* _bcmsrom_h_ */
-diff -urN linux.old/arch/mips/bcm947xx/include/bcmutils.h linux.dev/arch/mips/bcm947xx/include/bcmutils.h
---- linux.old/arch/mips/bcm947xx/include/bcmutils.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/bcmutils.h	2006-01-12 00:20:30.725131750 +0100
+diff -Nur linux-2.6.16/arch/mips/bcm947xx/include/bcmutils.h linux-2.6.16-owrt/arch/mips/bcm947xx/include/bcmutils.h
+--- linux-2.6.16/arch/mips/bcm947xx/include/bcmutils.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/bcm947xx/include/bcmutils.h	2006-03-21 09:31:00.000000000 +0100
 @@ -0,0 +1,308 @@
 +/*
 + * Misc useful os-independent macros and functions.
@@ -6823,9 +6775,9 @@ diff -urN linux.old/arch/mips/bcm947xx/include/bcmutils.h linux.dev/arch/mips/bc
 +extern uint bcm_mkiovar(char *name, char *data, uint datalen, char *buf, uint len);
 +
 +#endif	/* _bcmutils_h_ */
-diff -urN linux.old/arch/mips/bcm947xx/include/bitfuncs.h linux.dev/arch/mips/bcm947xx/include/bitfuncs.h
---- linux.old/arch/mips/bcm947xx/include/bitfuncs.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/bitfuncs.h	2006-01-12 00:20:30.729132000 +0100
+diff -Nur linux-2.6.16/arch/mips/bcm947xx/include/bitfuncs.h linux-2.6.16-owrt/arch/mips/bcm947xx/include/bitfuncs.h
+--- linux-2.6.16/arch/mips/bcm947xx/include/bitfuncs.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/bcm947xx/include/bitfuncs.h	2006-03-21 09:31:00.000000000 +0100
 @@ -0,0 +1,85 @@
 +/*
 + * bit manipulation utility functions
@@ -6912,9 +6864,9 @@ diff -urN linux.old/arch/mips/bcm947xx/include/bitfuncs.h linux.dev/arch/mips/bc
 +#endif
 +
 +#endif /* _BITFUNCS_H */
-diff -urN linux.old/arch/mips/bcm947xx/include/flash.h linux.dev/arch/mips/bcm947xx/include/flash.h
---- linux.old/arch/mips/bcm947xx/include/flash.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/flash.h	2006-01-12 00:20:30.729132000 +0100
+diff -Nur linux-2.6.16/arch/mips/bcm947xx/include/flash.h linux-2.6.16-owrt/arch/mips/bcm947xx/include/flash.h
+--- linux-2.6.16/arch/mips/bcm947xx/include/flash.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/bcm947xx/include/flash.h	2006-03-21 09:31:00.000000000 +0100
 @@ -0,0 +1,188 @@
 +/*
 + * flash.h: Common definitions for flash access.
@@ -7104,9 +7056,9 @@ diff -urN linux.old/arch/mips/bcm947xx/include/flash.h linux.dev/arch/mips/bcm94
 +extern flash_desc_t flashes[];
 +
 +#endif
-diff -urN linux.old/arch/mips/bcm947xx/include/flashutl.h linux.dev/arch/mips/bcm947xx/include/flashutl.h
---- linux.old/arch/mips/bcm947xx/include/flashutl.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/flashutl.h	2006-01-12 00:20:30.729132000 +0100
+diff -Nur linux-2.6.16/arch/mips/bcm947xx/include/flashutl.h linux-2.6.16-owrt/arch/mips/bcm947xx/include/flashutl.h
+--- linux-2.6.16/arch/mips/bcm947xx/include/flashutl.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/bcm947xx/include/flashutl.h	2006-03-21 09:31:00.000000000 +0100
 @@ -0,0 +1,27 @@
 +/*
 + * BCM47XX FLASH driver interface
@@ -7135,9 +7087,9 @@ diff -urN linux.old/arch/mips/bcm947xx/include/flashutl.h linux.dev/arch/mips/bc
 +#endif	/* _LANGUAGE_ASSEMBLY */
 +
 +#endif /* _flashutl_h_ */
-diff -urN linux.old/arch/mips/bcm947xx/include/hndmips.h linux.dev/arch/mips/bcm947xx/include/hndmips.h
---- linux.old/arch/mips/bcm947xx/include/hndmips.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/hndmips.h	2006-01-12 00:20:30.729132000 +0100
+diff -Nur linux-2.6.16/arch/mips/bcm947xx/include/hndmips.h linux-2.6.16-owrt/arch/mips/bcm947xx/include/hndmips.h
+--- linux-2.6.16/arch/mips/bcm947xx/include/hndmips.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/bcm947xx/include/hndmips.h	2006-03-21 09:31:00.000000000 +0100
 @@ -0,0 +1,16 @@
 +/*
 + * Alternate include file for HND sbmips.h since CFE also ships with
@@ -7155,9 +7107,9 @@ diff -urN linux.old/arch/mips/bcm947xx/include/hndmips.h linux.dev/arch/mips/bcm
 + */
 +
 +#include "sbmips.h"
-diff -urN linux.old/arch/mips/bcm947xx/include/linux_osl.h linux.dev/arch/mips/bcm947xx/include/linux_osl.h
---- linux.old/arch/mips/bcm947xx/include/linux_osl.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/linux_osl.h	2006-01-12 00:20:30.729132000 +0100
+diff -Nur linux-2.6.16/arch/mips/bcm947xx/include/linux_osl.h linux-2.6.16-owrt/arch/mips/bcm947xx/include/linux_osl.h
+--- linux-2.6.16/arch/mips/bcm947xx/include/linux_osl.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/bcm947xx/include/linux_osl.h	2006-03-21 09:31:00.000000000 +0100
 @@ -0,0 +1,331 @@
 +/*
 + * Linux OS Independent Layer
@@ -7490,9 +7442,9 @@ diff -urN linux.old/arch/mips/bcm947xx/include/linux_osl.h linux.dev/arch/mips/b
 +#define	PKTBUFSZ	2048
 +
 +#endif	/* _linux_osl_h_ */
-diff -urN linux.old/arch/mips/bcm947xx/include/linuxver.h linux.dev/arch/mips/bcm947xx/include/linuxver.h
---- linux.old/arch/mips/bcm947xx/include/linuxver.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/linuxver.h	2006-01-12 00:20:30.729132000 +0100
+diff -Nur linux-2.6.16/arch/mips/bcm947xx/include/linuxver.h linux-2.6.16-owrt/arch/mips/bcm947xx/include/linuxver.h
+--- linux-2.6.16/arch/mips/bcm947xx/include/linuxver.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/bcm947xx/include/linuxver.h	2006-03-21 09:31:00.000000000 +0100
 @@ -0,0 +1,389 @@
 +/*
 + * Linux-specific abstractions to gain some independence from linux kernel versions.
@@ -7883,9 +7835,9 @@ diff -urN linux.old/arch/mips/bcm947xx/include/linuxver.h linux.dev/arch/mips/bc
 +#endif
 +
 +#endif /* _linuxver_h_ */
-diff -urN linux.old/arch/mips/bcm947xx/include/mipsinc.h linux.dev/arch/mips/bcm947xx/include/mipsinc.h
---- linux.old/arch/mips/bcm947xx/include/mipsinc.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/mipsinc.h	2006-01-12 00:20:30.733132250 +0100
+diff -Nur linux-2.6.16/arch/mips/bcm947xx/include/mipsinc.h linux-2.6.16-owrt/arch/mips/bcm947xx/include/mipsinc.h
+--- linux-2.6.16/arch/mips/bcm947xx/include/mipsinc.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/bcm947xx/include/mipsinc.h	2006-03-21 09:31:00.000000000 +0100
 @@ -0,0 +1,552 @@
 +/*
 + * HND Run Time Environment for standalone MIPS programs.
@@ -8439,9 +8391,9 @@ diff -urN linux.old/arch/mips/bcm947xx/include/mipsinc.h linux.dev/arch/mips/bcm
 +#endif /* !_LANGUAGE_ASSEMBLY */
 +
 +#endif	/* _MISPINC_H */
-diff -urN linux.old/arch/mips/bcm947xx/include/osl.h linux.dev/arch/mips/bcm947xx/include/osl.h
---- linux.old/arch/mips/bcm947xx/include/osl.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/osl.h	2006-01-12 00:20:30.733132250 +0100
+diff -Nur linux-2.6.16/arch/mips/bcm947xx/include/osl.h linux-2.6.16-owrt/arch/mips/bcm947xx/include/osl.h
+--- linux-2.6.16/arch/mips/bcm947xx/include/osl.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/bcm947xx/include/osl.h	2006-03-21 09:31:00.000000000 +0100
 @@ -0,0 +1,42 @@
 +/*
 + * OS Abstraction Layer
@@ -8485,9 +8437,9 @@ diff -urN linux.old/arch/mips/bcm947xx/include/osl.h linux.dev/arch/mips/bcm947x
 +#define	MAXPRIO		7	/* 0-7 */
 +
 +#endif	/* _osl_h_ */
-diff -urN linux.old/arch/mips/bcm947xx/include/pcicfg.h linux.dev/arch/mips/bcm947xx/include/pcicfg.h
---- linux.old/arch/mips/bcm947xx/include/pcicfg.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/pcicfg.h	2006-01-12 00:20:30.733132250 +0100
+diff -Nur linux-2.6.16/arch/mips/bcm947xx/include/pcicfg.h linux-2.6.16-owrt/arch/mips/bcm947xx/include/pcicfg.h
+--- linux-2.6.16/arch/mips/bcm947xx/include/pcicfg.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/bcm947xx/include/pcicfg.h	2006-03-21 09:31:00.000000000 +0100
 @@ -0,0 +1,398 @@
 +/*
 + * pcicfg.h: PCI configuration  constants and structures.
@@ -8887,9 +8839,9 @@ diff -urN linux.old/arch/mips/bcm947xx/include/pcicfg.h linux.dev/arch/mips/bcm9
 +#define PCI_CFG_CMD_STAT_TA	0x08000000	/* target abort status */
 +
 +#endif
-diff -urN linux.old/arch/mips/bcm947xx/include/proto/ethernet.h linux.dev/arch/mips/bcm947xx/include/proto/ethernet.h
---- linux.old/arch/mips/bcm947xx/include/proto/ethernet.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/proto/ethernet.h	2006-01-12 00:20:30.733132250 +0100
+diff -Nur linux-2.6.16/arch/mips/bcm947xx/include/proto/ethernet.h linux-2.6.16-owrt/arch/mips/bcm947xx/include/proto/ethernet.h
+--- linux-2.6.16/arch/mips/bcm947xx/include/proto/ethernet.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/bcm947xx/include/proto/ethernet.h	2006-03-21 09:31:00.000000000 +0100
 @@ -0,0 +1,145 @@
 +/*******************************************************************************
 + * $Id$
@@ -9036,9 +8988,9 @@ diff -urN linux.old/arch/mips/bcm947xx/include/proto/ethernet.h linux.dev/arch/m
 +#undef PACKED
 +
 +#endif /* _NET_ETHERNET_H_ */
-diff -urN linux.old/arch/mips/bcm947xx/include/s5.h linux.dev/arch/mips/bcm947xx/include/s5.h
---- linux.old/arch/mips/bcm947xx/include/s5.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/s5.h	2006-01-12 00:20:30.733132250 +0100
+diff -Nur linux-2.6.16/arch/mips/bcm947xx/include/s5.h linux-2.6.16-owrt/arch/mips/bcm947xx/include/s5.h
+--- linux-2.6.16/arch/mips/bcm947xx/include/s5.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/bcm947xx/include/s5.h	2006-03-21 09:31:00.000000000 +0100
 @@ -0,0 +1,103 @@
 +#ifndef _S5_H_
 +#define _S5_H_
@@ -9143,9 +9095,9 @@ diff -urN linux.old/arch/mips/bcm947xx/include/s5.h linux.dev/arch/mips/bcm947xx
 +
 +
 +#endif /*!_S5_H_ */
-diff -urN linux.old/arch/mips/bcm947xx/include/sbchipc.h linux.dev/arch/mips/bcm947xx/include/sbchipc.h
---- linux.old/arch/mips/bcm947xx/include/sbchipc.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/sbchipc.h	2006-01-12 00:20:30.733132250 +0100
+diff -Nur linux-2.6.16/arch/mips/bcm947xx/include/sbchipc.h linux-2.6.16-owrt/arch/mips/bcm947xx/include/sbchipc.h
+--- linux-2.6.16/arch/mips/bcm947xx/include/sbchipc.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/bcm947xx/include/sbchipc.h	2006-03-21 09:31:00.000000000 +0100
 @@ -0,0 +1,440 @@
 +/*
 + * SiliconBackplane Chipcommon core hardware definitions.
@@ -9587,9 +9539,9 @@ diff -urN linux.old/arch/mips/bcm947xx/include/sbchipc.h linux.dev/arch/mips/bcm
 +#define	OTP_MAGIC	0x4e56
 +
 +#endif	/* _SBCHIPC_H */
-diff -urN linux.old/arch/mips/bcm947xx/include/sbconfig.h linux.dev/arch/mips/bcm947xx/include/sbconfig.h
---- linux.old/arch/mips/bcm947xx/include/sbconfig.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/sbconfig.h	2006-01-12 00:20:30.737132500 +0100
+diff -Nur linux-2.6.16/arch/mips/bcm947xx/include/sbconfig.h linux-2.6.16-owrt/arch/mips/bcm947xx/include/sbconfig.h
+--- linux-2.6.16/arch/mips/bcm947xx/include/sbconfig.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/bcm947xx/include/sbconfig.h	2006-03-21 09:31:00.000000000 +0100
 @@ -0,0 +1,342 @@
 +/*
 + * Broadcom SiliconBackplane hardware register definitions.
@@ -9933,9 +9885,9 @@ diff -urN linux.old/arch/mips/bcm947xx/include/sbconfig.h linux.dev/arch/mips/bc
 +#define BISZ_SIZE		7		/* descriptor size in 32-bit intergers */
 +
 +#endif	/* _SBCONFIG_H */
-diff -urN linux.old/arch/mips/bcm947xx/include/sbextif.h linux.dev/arch/mips/bcm947xx/include/sbextif.h
---- linux.old/arch/mips/bcm947xx/include/sbextif.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/sbextif.h	2006-01-12 00:20:30.737132500 +0100
+diff -Nur linux-2.6.16/arch/mips/bcm947xx/include/sbextif.h linux-2.6.16-owrt/arch/mips/bcm947xx/include/sbextif.h
+--- linux-2.6.16/arch/mips/bcm947xx/include/sbextif.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/bcm947xx/include/sbextif.h	2006-03-21 09:31:00.000000000 +0100
 @@ -0,0 +1,242 @@
 +/*
 + * Hardware-specific External Interface I/O core definitions
@@ -10179,9 +10131,9 @@ diff -urN linux.old/arch/mips/bcm947xx/include/sbextif.h linux.dev/arch/mips/bcm
 +#define	CC_CLOCK_BASE	24000000	/* Half the clock freq. in the 4710 */
 +
 +#endif	/* _SBEXTIF_H */
-diff -urN linux.old/arch/mips/bcm947xx/include/sbmemc.h linux.dev/arch/mips/bcm947xx/include/sbmemc.h
---- linux.old/arch/mips/bcm947xx/include/sbmemc.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/sbmemc.h	2006-01-12 00:20:30.737132500 +0100
+diff -Nur linux-2.6.16/arch/mips/bcm947xx/include/sbmemc.h linux-2.6.16-owrt/arch/mips/bcm947xx/include/sbmemc.h
+--- linux-2.6.16/arch/mips/bcm947xx/include/sbmemc.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/bcm947xx/include/sbmemc.h	2006-03-21 09:31:00.000000000 +0100
 @@ -0,0 +1,148 @@
 +/*
 + * BCM47XX Sonics SiliconBackplane DDR/SDRAM controller core hardware definitions.
@@ -10331,9 +10283,9 @@ diff -urN linux.old/arch/mips/bcm947xx/include/sbmemc.h linux.dev/arch/mips/bcm9
 +#define MEMC_CONFIG_DDR		0x00000001
 +
 +#endif	/* _SBMEMC_H */
-diff -urN linux.old/arch/mips/bcm947xx/include/sbmips.h linux.dev/arch/mips/bcm947xx/include/sbmips.h
---- linux.old/arch/mips/bcm947xx/include/sbmips.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/sbmips.h	2006-01-12 00:20:30.737132500 +0100
+diff -Nur linux-2.6.16/arch/mips/bcm947xx/include/sbmips.h linux-2.6.16-owrt/arch/mips/bcm947xx/include/sbmips.h
+--- linux-2.6.16/arch/mips/bcm947xx/include/sbmips.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/bcm947xx/include/sbmips.h	2006-03-21 09:31:00.000000000 +0100
 @@ -0,0 +1,62 @@
 +/*
 + * Broadcom SiliconBackplane MIPS definitions
@@ -10397,9 +10349,9 @@ diff -urN linux.old/arch/mips/bcm947xx/include/sbmips.h linux.dev/arch/mips/bcm9
 +#endif /* _LANGUAGE_ASSEMBLY */
 +
 +#endif	/* _SBMIPS_H */
-diff -urN linux.old/arch/mips/bcm947xx/include/sbpci.h linux.dev/arch/mips/bcm947xx/include/sbpci.h
---- linux.old/arch/mips/bcm947xx/include/sbpci.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/sbpci.h	2006-01-12 00:20:30.737132500 +0100
+diff -Nur linux-2.6.16/arch/mips/bcm947xx/include/sbpci.h linux-2.6.16-owrt/arch/mips/bcm947xx/include/sbpci.h
+--- linux-2.6.16/arch/mips/bcm947xx/include/sbpci.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/bcm947xx/include/sbpci.h	2006-03-21 09:31:00.000000000 +0100
 @@ -0,0 +1,122 @@
 +/*
 + * BCM47XX Sonics SiliconBackplane PCI core hardware definitions.
@@ -10523,9 +10475,9 @@ diff -urN linux.old/arch/mips/bcm947xx/include/sbpci.h linux.dev/arch/mips/bcm94
 +#endif /* !_LANGUAGE_ASSEMBLY */
 +
 +#endif	/* _SBPCI_H */
-diff -urN linux.old/arch/mips/bcm947xx/include/sbsdram.h linux.dev/arch/mips/bcm947xx/include/sbsdram.h
---- linux.old/arch/mips/bcm947xx/include/sbsdram.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/sbsdram.h	2006-01-12 00:20:30.737132500 +0100
+diff -Nur linux-2.6.16/arch/mips/bcm947xx/include/sbsdram.h linux-2.6.16-owrt/arch/mips/bcm947xx/include/sbsdram.h
+--- linux-2.6.16/arch/mips/bcm947xx/include/sbsdram.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/bcm947xx/include/sbsdram.h	2006-03-21 09:31:00.000000000 +0100
 @@ -0,0 +1,75 @@
 +/*
 + * BCM47XX Sonics SiliconBackplane SDRAM controller core hardware definitions.
@@ -10602,9 +10554,9 @@ diff -urN linux.old/arch/mips/bcm947xx/include/sbsdram.h linux.dev/arch/mips/bcm
 +#define MEM8MX16X2	0xc29	/* 32 MB */
 +
 +#endif	/* _SBSDRAM_H */
-diff -urN linux.old/arch/mips/bcm947xx/include/sbutils.h linux.dev/arch/mips/bcm947xx/include/sbutils.h
---- linux.old/arch/mips/bcm947xx/include/sbutils.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/sbutils.h	2006-01-12 00:20:30.737132500 +0100
+diff -Nur linux-2.6.16/arch/mips/bcm947xx/include/sbutils.h linux-2.6.16-owrt/arch/mips/bcm947xx/include/sbutils.h
+--- linux-2.6.16/arch/mips/bcm947xx/include/sbutils.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/bcm947xx/include/sbutils.h	2006-03-21 09:31:00.000000000 +0100
 @@ -0,0 +1,136 @@
 +/*
 + * Misc utility routines for accessing chip-specific features
@@ -10742,9 +10694,9 @@ diff -urN linux.old/arch/mips/bcm947xx/include/sbutils.h linux.dev/arch/mips/bcm
 +#define SB_DEVPATH_BUFSZ	16	/* min buffer size in bytes */
 +
 +#endif	/* _sbutils_h_ */
-diff -urN linux.old/arch/mips/bcm947xx/include/sflash.h linux.dev/arch/mips/bcm947xx/include/sflash.h
---- linux.old/arch/mips/bcm947xx/include/sflash.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/sflash.h	2006-01-12 00:20:30.745133000 +0100
+diff -Nur linux-2.6.16/arch/mips/bcm947xx/include/sflash.h linux-2.6.16-owrt/arch/mips/bcm947xx/include/sflash.h
+--- linux-2.6.16/arch/mips/bcm947xx/include/sflash.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/bcm947xx/include/sflash.h	2006-03-21 09:31:00.000000000 +0100
 @@ -0,0 +1,36 @@
 +/*
 + * Broadcom SiliconBackplane chipcommon serial flash interface
@@ -10782,9 +10734,9 @@ diff -urN linux.old/arch/mips/bcm947xx/include/sflash.h linux.dev/arch/mips/bcm9
 +extern struct sflash * sflash_init(chipcregs_t *cc);
 +
 +#endif /* _sflash_h_ */
-diff -urN linux.old/arch/mips/bcm947xx/include/trxhdr.h linux.dev/arch/mips/bcm947xx/include/trxhdr.h
---- linux.old/arch/mips/bcm947xx/include/trxhdr.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/trxhdr.h	2006-01-12 00:20:30.745133000 +0100
+diff -Nur linux-2.6.16/arch/mips/bcm947xx/include/trxhdr.h linux-2.6.16-owrt/arch/mips/bcm947xx/include/trxhdr.h
+--- linux-2.6.16/arch/mips/bcm947xx/include/trxhdr.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/bcm947xx/include/trxhdr.h	2006-03-21 09:31:00.000000000 +0100
 @@ -0,0 +1,33 @@
 +/*
 + * TRX image file header format.
@@ -10819,9 +10771,9 @@ diff -urN linux.old/arch/mips/bcm947xx/include/trxhdr.h linux.dev/arch/mips/bcm9
 +
 +/* Compatibility */
 +typedef struct trx_header TRXHDR, *PTRXHDR;
-diff -urN linux.old/arch/mips/bcm947xx/include/typedefs.h linux.dev/arch/mips/bcm947xx/include/typedefs.h
---- linux.old/arch/mips/bcm947xx/include/typedefs.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/typedefs.h	2006-01-12 00:20:30.745133000 +0100
+diff -Nur linux-2.6.16/arch/mips/bcm947xx/include/typedefs.h linux-2.6.16-owrt/arch/mips/bcm947xx/include/typedefs.h
+--- linux-2.6.16/arch/mips/bcm947xx/include/typedefs.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/bcm947xx/include/typedefs.h	2006-03-21 09:31:00.000000000 +0100
 @@ -0,0 +1,326 @@
 +/*
 + * Copyright 2005, Broadcom Corporation      
@@ -11149,9 +11101,9 @@ diff -urN linux.old/arch/mips/bcm947xx/include/typedefs.h linux.dev/arch/mips/bc
 +#endif /* USE_TYPEDEF_DEFAULTS */
 +
 +#endif /* _TYPEDEFS_H_ */
-diff -urN linux.old/arch/mips/bcm947xx/int-handler.S linux.dev/arch/mips/bcm947xx/int-handler.S
---- linux.old/arch/mips/bcm947xx/int-handler.S	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/int-handler.S	2006-01-12 00:20:30.745133000 +0100
+diff -Nur linux-2.6.16/arch/mips/bcm947xx/int-handler.S linux-2.6.16-owrt/arch/mips/bcm947xx/int-handler.S
+--- linux-2.6.16/arch/mips/bcm947xx/int-handler.S	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/bcm947xx/int-handler.S	2006-03-21 09:31:00.000000000 +0100
 @@ -0,0 +1,48 @@
 +/*
 + *  Copyright (C) 2004 Florian Schirmer (jolt@tuxbox.org)
@@ -11201,9 +11153,9 @@ diff -urN linux.old/arch/mips/bcm947xx/int-handler.S linux.dev/arch/mips/bcm947x
 +	nop
 +		
 +	END(bcm47xx_irq_handler)
-diff -urN linux.old/arch/mips/bcm947xx/irq.c linux.dev/arch/mips/bcm947xx/irq.c
---- linux.old/arch/mips/bcm947xx/irq.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/irq.c	2006-01-12 00:20:30.745133000 +0100
+diff -Nur linux-2.6.16/arch/mips/bcm947xx/irq.c linux-2.6.16-owrt/arch/mips/bcm947xx/irq.c
+--- linux-2.6.16/arch/mips/bcm947xx/irq.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/bcm947xx/irq.c	2006-03-21 09:31:00.000000000 +0100
 @@ -0,0 +1,67 @@
 +/*
 + *  Copyright (C) 2004 Florian Schirmer (jolt@tuxbox.org)
@@ -11272,9 +11224,19 @@ diff -urN linux.old/arch/mips/bcm947xx/irq.c linux.dev/arch/mips/bcm947xx/irq.c
 +	set_except_vector(0, bcm47xx_irq_handler);
 +	mips_cpu_irq_init(0);
 +}
-diff -urN linux.old/arch/mips/bcm947xx/pci.c linux.dev/arch/mips/bcm947xx/pci.c
---- linux.old/arch/mips/bcm947xx/pci.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/pci.c	2006-01-12 00:20:30.745133000 +0100
+diff -Nur linux-2.6.16/arch/mips/bcm947xx/Makefile linux-2.6.16-owrt/arch/mips/bcm947xx/Makefile
+--- linux-2.6.16/arch/mips/bcm947xx/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/bcm947xx/Makefile	2006-03-21 09:31:00.000000000 +0100
+@@ -0,0 +1,6 @@
++#
++# Makefile for the BCM47xx specific kernel interface routines
++# under Linux.
++#
++
++obj-y := irq.o int-handler.o prom.o setup.o time.o pci.o
+diff -Nur linux-2.6.16/arch/mips/bcm947xx/pci.c linux-2.6.16-owrt/arch/mips/bcm947xx/pci.c
+--- linux-2.6.16/arch/mips/bcm947xx/pci.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/bcm947xx/pci.c	2006-03-21 09:31:00.000000000 +0100
 @@ -0,0 +1,215 @@
 +#include <linux/kernel.h>
 +#include <linux/init.h>
@@ -11491,9 +11453,9 @@ diff -urN linux.old/arch/mips/bcm947xx/pci.c linux.dev/arch/mips/bcm947xx/pci.c
 +}
 +
 +DECLARE_PCI_FIXUP_EARLY(PCI_ANY_ID, PCI_ANY_ID, bcm47xx_fixup_bridge);
-diff -urN linux.old/arch/mips/bcm947xx/prom.c linux.dev/arch/mips/bcm947xx/prom.c
---- linux.old/arch/mips/bcm947xx/prom.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/prom.c	2006-01-12 00:20:30.745133000 +0100
+diff -Nur linux-2.6.16/arch/mips/bcm947xx/prom.c linux-2.6.16-owrt/arch/mips/bcm947xx/prom.c
+--- linux-2.6.16/arch/mips/bcm947xx/prom.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/bcm947xx/prom.c	2006-03-21 09:31:00.000000000 +0100
 @@ -0,0 +1,59 @@
 +/*
 + *  Copyright (C) 2004 Florian Schirmer (jolt@tuxbox.org)
@@ -11554,10 +11516,10 @@ diff -urN linux.old/arch/mips/bcm947xx/prom.c linux.dev/arch/mips/bcm947xx/prom.
 +{
 +	return 0;
 +}
-diff -urN linux.old/arch/mips/bcm947xx/setup.c linux.dev/arch/mips/bcm947xx/setup.c
---- linux.old/arch/mips/bcm947xx/setup.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/setup.c	2006-01-12 00:20:30.749133250 +0100
-@@ -0,0 +1,157 @@
+diff -Nur linux-2.6.16/arch/mips/bcm947xx/setup.c linux-2.6.16-owrt/arch/mips/bcm947xx/setup.c
+--- linux-2.6.16/arch/mips/bcm947xx/setup.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/bcm947xx/setup.c	2006-03-21 09:31:00.000000000 +0100
+@@ -0,0 +1,158 @@
 +/*
 + *  Copyright (C) 2004 Florian Schirmer (jolt@tuxbox.org)
 + *  Copyright (C) 2005 Waldemar Brodkorb <wbx@openwrt.org>
@@ -11593,6 +11555,7 @@ diff -urN linux.old/arch/mips/bcm947xx/setup.c linux.dev/arch/mips/bcm947xx/setu
 +#include <asm/bootinfo.h>
 +#include <asm/time.h>
 +#include <asm/reboot.h>
++#include <linux/pm.h>
 +
 +#include <typedefs.h>
 +#include <osl.h>
@@ -11706,7 +11669,7 @@ diff -urN linux.old/arch/mips/bcm947xx/setup.c linux.dev/arch/mips/bcm947xx/setu
 +	
 +	_machine_restart = bcm47xx_machine_restart;
 +	_machine_halt = bcm47xx_machine_halt;
-+	_machine_power_off = bcm47xx_machine_halt;
++	pm_power_off = bcm47xx_machine_halt;
 +	
 +	board_time_init = bcm47xx_time_init;
 +	board_timer_setup = bcm47xx_timer_setup;
@@ -11715,9 +11678,9 @@ diff -urN linux.old/arch/mips/bcm947xx/setup.c linux.dev/arch/mips/bcm947xx/setu
 +EXPORT_SYMBOL(sbh);
 +EXPORT_SYMBOL(sbh_lock);
 +EXPORT_SYMBOL(boardflags);
-diff -urN linux.old/arch/mips/bcm947xx/time.c linux.dev/arch/mips/bcm947xx/time.c
---- linux.old/arch/mips/bcm947xx/time.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/time.c	2006-01-12 00:20:30.749133250 +0100
+diff -Nur linux-2.6.16/arch/mips/bcm947xx/time.c linux-2.6.16-owrt/arch/mips/bcm947xx/time.c
+--- linux-2.6.16/arch/mips/bcm947xx/time.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/bcm947xx/time.c	2006-03-21 09:31:00.000000000 +0100
 @@ -0,0 +1,59 @@
 +/*
 + *  Copyright (C) 2004 Florian Schirmer (jolt@tuxbox.org)
@@ -11778,10 +11741,31 @@ diff -urN linux.old/arch/mips/bcm947xx/time.c linux.dev/arch/mips/bcm947xx/time.
 +	/* Enable the timer interrupt */
 +	setup_irq(7, irq);
 +}
-diff -urN linux.old/arch/mips/kernel/cpu-probe.c linux.dev/arch/mips/kernel/cpu-probe.c
---- linux.old/arch/mips/kernel/cpu-probe.c	2006-01-12 00:25:32.684003000 +0100
-+++ linux.dev/arch/mips/kernel/cpu-probe.c	2006-01-12 00:20:30.757133750 +0100
-@@ -656,6 +656,28 @@
+diff -Nur linux-2.6.16/arch/mips/Kconfig linux-2.6.16-owrt/arch/mips/Kconfig
+--- linux-2.6.16/arch/mips/Kconfig	2006-03-20 06:53:29.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/Kconfig	2006-03-21 09:31:00.000000000 +0100
+@@ -244,6 +244,17 @@
+ 	 Members include the Acer PICA, MIPS Magnum 4000, MIPS Millenium and
+ 	 Olivetti M700-10 workstations.
+ 
++config BCM947XX
++	bool "Support for BCM947xx based boards"
++	select DMA_NONCOHERENT
++	select HW_HAS_PCI
++	select IRQ_CPU
++	select SYS_HAS_CPU_MIPS32_R1
++	select SYS_SUPPORTS_32BIT_KERNEL
++	select SYS_SUPPORTS_LITTLE_ENDIAN
++	help
++	 Support for BCM947xx based boards
++
+ config LASAT
+ 	bool "Support for LASAT Networks platforms"
+ 	select DMA_NONCOHERENT
+diff -Nur linux-2.6.16/arch/mips/kernel/cpu-probe.c linux-2.6.16-owrt/arch/mips/kernel/cpu-probe.c
+--- linux-2.6.16/arch/mips/kernel/cpu-probe.c	2006-03-20 06:53:29.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/kernel/cpu-probe.c	2006-03-21 09:32:48.000000000 +0100
+@@ -678,6 +678,28 @@
  }
  
  
@@ -11791,13 +11775,13 @@ diff -urN linux.old/arch/mips/kernel/cpu-probe.c linux.dev/arch/mips/kernel/cpu-
 +	switch (c->processor_id & 0xff00) {
 +		case PRID_IMP_BCM3302:
 +			c->cputype = CPU_BCM3302;
-+			c->isa_level = MIPS_CPU_ISA_M32;
++			c->isa_level = MIPS_CPU_ISA_M32R1;
 +			c->options = MIPS_CPU_TLB | MIPS_CPU_4KEX |
 +					MIPS_CPU_4K_CACHE | MIPS_CPU_COUNTER;
 +		break;
 +		case PRID_IMP_BCM4710:
 +			c->cputype = CPU_BCM4710;
-+			c->isa_level = MIPS_CPU_ISA_M32;
++			c->isa_level = MIPS_CPU_ISA_M32R1;
 +			c->options = MIPS_CPU_TLB | MIPS_CPU_4KEX |
 +					MIPS_CPU_4K_CACHE | MIPS_CPU_COUNTER;
 +		break;
@@ -11810,7 +11794,7 @@ diff -urN linux.old/arch/mips/kernel/cpu-probe.c linux.dev/arch/mips/kernel/cpu-
  __init void cpu_probe(void)
  {
  	struct cpuinfo_mips *c = &current_cpu_data;
-@@ -678,6 +700,9 @@
+@@ -700,6 +722,9 @@
  	case PRID_COMP_SIBYTE:
  		cpu_probe_sibyte(c);
  		break;
@@ -11820,9 +11804,9 @@ diff -urN linux.old/arch/mips/kernel/cpu-probe.c linux.dev/arch/mips/kernel/cpu-
  	case PRID_COMP_SANDCRAFT:
  		cpu_probe_sandcraft(c);
  		break;
-diff -urN linux.old/arch/mips/kernel/head.S linux.dev/arch/mips/kernel/head.S
---- linux.old/arch/mips/kernel/head.S	2006-01-12 00:25:32.684003000 +0100
-+++ linux.dev/arch/mips/kernel/head.S	2006-01-12 00:20:30.761134000 +0100
+diff -Nur linux-2.6.16/arch/mips/kernel/head.S linux-2.6.16-owrt/arch/mips/kernel/head.S
+--- linux-2.6.16/arch/mips/kernel/head.S	2006-03-20 06:53:29.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/kernel/head.S	2006-03-21 09:31:00.000000000 +0100
 @@ -107,6 +107,14 @@
  #endif
  	.endm
@@ -11838,9 +11822,9 @@ diff -urN linux.old/arch/mips/kernel/head.S linux.dev/arch/mips/kernel/head.S
  	/*
  	 * Reserved space for exception handlers.
  	 * Necessary for machines which link their kernels at KSEG0.
-diff -urN linux.old/arch/mips/kernel/proc.c linux.dev/arch/mips/kernel/proc.c
---- linux.old/arch/mips/kernel/proc.c	2006-01-12 00:25:32.692003500 +0100
-+++ linux.dev/arch/mips/kernel/proc.c	2006-01-12 00:20:30.765134250 +0100
+diff -Nur linux-2.6.16/arch/mips/kernel/proc.c linux-2.6.16-owrt/arch/mips/kernel/proc.c
+--- linux-2.6.16/arch/mips/kernel/proc.c	2006-03-20 06:53:29.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/kernel/proc.c	2006-03-21 09:31:00.000000000 +0100
 @@ -82,6 +82,8 @@
  	[CPU_VR4181]	= "NEC VR4181",
  	[CPU_VR4181A]	= "NEC VR4181A",
@@ -11850,10 +11834,27 @@ diff -urN linux.old/arch/mips/kernel/proc.c linux.dev/arch/mips/kernel/proc.c
  	[CPU_PR4450]	= "Philips PR4450",
  };
  
-diff -urN linux.old/arch/mips/mm/tlbex.c linux.dev/arch/mips/mm/tlbex.c
---- linux.old/arch/mips/mm/tlbex.c	2006-01-12 00:25:32.796010000 +0100
-+++ linux.dev/arch/mips/mm/tlbex.c	2006-01-12 00:20:31.137157500 +0100
-@@ -862,6 +862,8 @@
+diff -Nur linux-2.6.16/arch/mips/Makefile linux-2.6.16-owrt/arch/mips/Makefile
+--- linux-2.6.16/arch/mips/Makefile	2006-03-20 06:53:29.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/Makefile	2006-03-21 09:31:00.000000000 +0100
+@@ -710,6 +710,13 @@
+ load-$(CONFIG_SIBYTE_BIGSUR)	:= 0xffffffff80100000
+ 
+ #
++# Broadcom BCM47XX boards
++#
++core-$(CONFIG_BCM947XX)		+= arch/mips/bcm947xx/ arch/mips/bcm947xx/broadcom/
++cflags-$(CONFIG_BCM947XX)	+= -Iarch/mips/bcm947xx/include
++load-$(CONFIG_BCM947XX)		:= 0xffffffff80001000
++
++#
+ # SNI RM200 PCI
+ #
+ core-$(CONFIG_SNI_RM200_PCI)	+= arch/mips/sni/
+diff -Nur linux-2.6.16/arch/mips/mm/tlbex.c linux-2.6.16-owrt/arch/mips/mm/tlbex.c
+--- linux-2.6.16/arch/mips/mm/tlbex.c	2006-03-20 06:53:29.000000000 +0100
++++ linux-2.6.16-owrt/arch/mips/mm/tlbex.c	2006-03-21 09:31:00.000000000 +0100
+@@ -858,6 +858,8 @@
  	case CPU_4KSC:
  	case CPU_20KC:
  	case CPU_25KF:
@@ -11862,9 +11863,9 @@ diff -urN linux.old/arch/mips/mm/tlbex.c linux.dev/arch/mips/mm/tlbex.c
  		tlbw(p);
  		break;
  
-diff -urN linux.old/include/asm-mips/bootinfo.h linux.dev/include/asm-mips/bootinfo.h
---- linux.old/include/asm-mips/bootinfo.h	2006-01-12 00:25:32.800010250 +0100
-+++ linux.dev/include/asm-mips/bootinfo.h	2006-01-12 00:20:30.777135000 +0100
+diff -Nur linux-2.6.16/include/asm-mips/bootinfo.h linux-2.6.16-owrt/include/asm-mips/bootinfo.h
+--- linux-2.6.16/include/asm-mips/bootinfo.h	2006-03-20 06:53:29.000000000 +0100
++++ linux-2.6.16-owrt/include/asm-mips/bootinfo.h	2006-03-21 09:31:00.000000000 +0100
 @@ -218,6 +218,12 @@
  #define MACH_GROUP_TITAN       22	/* PMC-Sierra Titan		*/
  #define  MACH_TITAN_YOSEMITE	1	/* PMC-Sierra Yosemite		*/
@@ -11878,9 +11879,9 @@ diff -urN linux.old/include/asm-mips/bootinfo.h linux.dev/include/asm-mips/booti
  #define CL_SIZE			COMMAND_LINE_SIZE
  
  const char *get_system_type(void);
-diff -urN linux.old/include/asm-mips/cpu.h linux.dev/include/asm-mips/cpu.h
---- linux.old/include/asm-mips/cpu.h	2006-01-12 00:25:32.800010250 +0100
-+++ linux.dev/include/asm-mips/cpu.h	2006-01-12 00:20:30.777135000 +0100
+diff -Nur linux-2.6.16/include/asm-mips/cpu.h linux-2.6.16-owrt/include/asm-mips/cpu.h
+--- linux-2.6.16/include/asm-mips/cpu.h	2006-03-20 06:53:29.000000000 +0100
++++ linux-2.6.16-owrt/include/asm-mips/cpu.h	2006-03-21 09:31:00.000000000 +0100
 @@ -102,6 +102,13 @@
  #define PRID_IMP_SR71000        0x0400
  
@@ -11906,9 +11907,9 @@ diff -urN linux.old/include/asm-mips/cpu.h linux.dev/include/asm-mips/cpu.h
  
  /*
   * ISA Level encodings
-diff -urN linux.old/include/linux/init.h linux.dev/include/linux/init.h
---- linux.old/include/linux/init.h	2006-01-12 00:25:32.828012000 +0100
-+++ linux.dev/include/linux/init.h	2006-01-12 00:20:30.777135000 +0100
+diff -Nur linux-2.6.16/include/linux/init.h linux-2.6.16-owrt/include/linux/init.h
+--- linux-2.6.16/include/linux/init.h	2006-03-20 06:53:29.000000000 +0100
++++ linux-2.6.16-owrt/include/linux/init.h	2006-03-21 09:31:00.000000000 +0100
 @@ -86,6 +86,8 @@
  	static initcall_t __initcall_##fn __attribute_used__ \
  	__attribute__((__section__(".initcall" level ".init"))) = fn
@@ -11918,10 +11919,10 @@ diff -urN linux.old/include/linux/init.h linux.dev/include/linux/init.h
  #define core_initcall(fn)		__define_initcall("1",fn)
  #define postcore_initcall(fn)		__define_initcall("2",fn)
  #define arch_initcall(fn)		__define_initcall("3",fn)
-diff -urN linux.old/include/linux/pci_ids.h linux.dev/include/linux/pci_ids.h
---- linux.old/include/linux/pci_ids.h	2006-01-12 00:25:32.828012000 +0100
-+++ linux.dev/include/linux/pci_ids.h	2006-01-12 00:20:30.781135250 +0100
-@@ -1836,6 +1836,7 @@
+diff -Nur linux-2.6.16/include/linux/pci_ids.h linux-2.6.16-owrt/include/linux/pci_ids.h
+--- linux-2.6.16/include/linux/pci_ids.h	2006-03-20 06:53:29.000000000 +0100
++++ linux-2.6.16-owrt/include/linux/pci_ids.h	2006-03-21 09:31:00.000000000 +0100
+@@ -1885,6 +1885,7 @@
  #define PCI_DEVICE_ID_TIGON3_5901_2	0x170e
  #define PCI_DEVICE_ID_BCM4401		0x4401
  #define PCI_DEVICE_ID_BCM4401B0		0x4402
