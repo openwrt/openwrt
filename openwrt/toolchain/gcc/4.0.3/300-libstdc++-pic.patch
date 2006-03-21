@@ -1,0 +1,47 @@
+diff -urN gcc-4.0.0-200/libstdc++-v3/src/Makefile.am gcc-4.0.0/libstdc++-v3/src/Makefile.am
+--- gcc-4.0.0-200/libstdc++-v3/src/Makefile.am	2004-11-15 17:33:05.000000000 -0600
++++ gcc-4.0.0/libstdc++-v3/src/Makefile.am	2005-04-28 21:42:18.614344056 -0500
+@@ -214,6 +214,10 @@
+ 	  $(OPT_LDFLAGS) $(SECTION_LDFLAGS) $(AM_CXXFLAGS) $(LDFLAGS) -o $@
+ 
+ 
++install-exec-local:
++	$(AR) cru libstdc++_pic.a *.o $(top_builddir)/libsupc++/*.o
++	$(INSTALL_DATA) libstdc++_pic.a $(DESTDIR)$(toolexeclibdir)
++
+ # Added bits to build debug library.
+ if GLIBCXX_BUILD_DEBUG
+ all-local: build_debug
+diff -urN gcc-4.0.0-200/libstdc++-v3/src/Makefile.in gcc-4.0.0/libstdc++-v3/src/Makefile.in
+--- gcc-4.0.0-200/libstdc++-v3/src/Makefile.in	2005-02-01 00:56:27.000000000 -0600
++++ gcc-4.0.0/libstdc++-v3/src/Makefile.in	2005-04-28 21:44:20.868758560 -0500
+@@ -625,7 +625,7 @@
+ 
+ install-data-am: install-data-local
+ 
+-install-exec-am: install-toolexeclibLTLIBRARIES
++install-exec-am: install-toolexeclibLTLIBRARIES install-exec-local
+ 
+ install-info: install-info-am
+ 
+@@ -664,7 +664,7 @@
+ 	maintainer-clean-generic mostlyclean mostlyclean-compile \
+ 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
+ 	tags uninstall uninstall-am uninstall-info-am \
+-	uninstall-toolexeclibLTLIBRARIES
++	uninstall-toolexeclibLTLIBRARIES install-exec-local
+ 
+ @GLIBCXX_BUILD_VERSIONED_SHLIB_TRUE@libstdc++-symbol.ver:  ${glibcxx_srcdir}/$(SYMVER_MAP)
+ @GLIBCXX_BUILD_VERSIONED_SHLIB_TRUE@	cp ${glibcxx_srcdir}/$(SYMVER_MAP) ./libstdc++-symbol.ver
+@@ -743,6 +743,11 @@
+ install_debug:
+ 	(cd ${debugdir} && $(MAKE) \
+ 	toolexeclibdir=$(glibcxx_toolexeclibdir)/debug install)
++
++install-exec-local:
++	$(AR) cru libstdc++_pic.a *.o $(top_builddir)/libsupc++/*.o
++	$(INSTALL_DATA) libstdc++_pic.a $(DESTDIR)$(toolexeclibdir)
++
+ # Tell versions [3.59,3.63) of GNU make to not export all variables.
+ # Otherwise a system limit (for SysV at least) may be exceeded.
+ .NOEXPORT:
