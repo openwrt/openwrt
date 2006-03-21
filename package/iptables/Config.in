@@ -40,6 +40,11 @@ config BR2_PACKAGE_IPTABLES_MOD_CONNTRACK
 	help
 	  Iptables (IPv4) extensions for connection tracking
 
+	  Includes:
+            * libipt_conntrack
+            * libipt_helper
+            * libipt_connmark/CONNMARK
+
 config BR2_PACKAGE_IPTABLES_MOD_FILTER
 	prompt   "iptables-mod-filter............. Iptables extension for packet content inspection"
 	tristate
@@ -48,6 +53,10 @@ config BR2_PACKAGE_IPTABLES_MOD_FILTER
 	select BR2_PACKAGE_KMOD_IPT_FILTER
 	help
 	  Iptables (IPv4) extension for packet content inspection
+
+	  Includes:
+            * libipt_ipp2p
+            * libipt_layer7
 
 config BR2_PACKAGE_IPTABLES_MOD_IPOPT
 	prompt   "iptables-mod-ipopt.............. Iptables extensions for matching/changing IP packet options"
@@ -58,6 +67,16 @@ config BR2_PACKAGE_IPTABLES_MOD_IPOPT
 	help
 	  Extra Iptables (IPv4) extensions for matching/changing IP packet options
 
+	  Includes:
+            * libipt_dscp/DSCP
+            * libipt_ecn/ECN
+            * libipt_length
+            * libipt_mac
+            * libipt_tos/TOS
+            * libipt_tcpmms
+            * libipt_ttl/TTL
+            * libipt_unclean
+
 config BR2_PACKAGE_IPTABLES_MOD_IPSEC
 	prompt   "iptables-mod-ipsec.............. Iptables extensions for matching special IPsec packets"
 	tristate
@@ -66,6 +85,10 @@ config BR2_PACKAGE_IPTABLES_MOD_IPSEC
 	select BR2_PACKAGE_KMOD_IPT_IPSEC
 	help
 	  Iptables (IPv4) extensions for matching special IPsec packets
+
+	  Includes:
+            * libipt_ah
+            * libipt_esp
 
 config BR2_PACKAGE_IPTABLES_MOD_NAT
 	prompt   "iptables-mod-nat................ Iptables extensions for different NAT targets"
@@ -76,6 +99,9 @@ config BR2_PACKAGE_IPTABLES_MOD_NAT
 	help
 	  Iptables (IPv4) extensions for different NAT targets
 
+	  Includes:
+	    * libipt_REDIRECT
+
 config BR2_PACKAGE_IPTABLES_MOD_ULOG
 	prompt   "iptables-mod-ulog............... Iptables extensions for user-space packet logging"
 	tristate
@@ -85,6 +111,9 @@ config BR2_PACKAGE_IPTABLES_MOD_ULOG
 	help
 	  Iptables (IPv4) extensions for user-space packet logging
 
+          Includes:
+            * libipt_ULOG
+
 config BR2_PACKAGE_IPTABLES_MOD_EXTRA
 	prompt   "iptables-mod-extra.............. Other extra Iptables extensions"
 	tristate
@@ -93,6 +122,13 @@ config BR2_PACKAGE_IPTABLES_MOD_EXTRA
 	select BR2_PACKAGE_KMOD_IPT_EXTRA
 	help
 	  Other extra Iptables (IPv4) extensions
+
+          Includes:
+            * libipt_limit
+            * libipt_owner
+            * libipt_physdev
+            * libipt_pkttype
+            * libipt_recent
 
 config BR2_PACKAGE_IPTABLES_UTILS
 	prompt   "iptables-utils.................. Save and restore utilities"
