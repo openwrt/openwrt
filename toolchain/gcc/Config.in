@@ -14,13 +14,13 @@ config BR2_GCC_VERSION_3_4_4
 	bool
 	default y if BR2_LINUX_2_4_BRCM
 
-config BR2_GCC_VERSION_4_0_2
+config BR2_GCC_VERSION_4_0_3
 	bool
 	default y if BR2_LINUX_2_6_ARUBA
 
 choice
 	prompt "GCC compiler Version" if CONFIG_DEVEL
-	default BR2_GCC_VERSION_4_0_2 if BR2_LINUX_2_6_ARUBA
+	default BR2_GCC_VERSION_4_0_3 if BR2_LINUX_2_6_ARUBA
 	default BR2_GCC_VERSION_3_4_4 if BR2_LINUX_2_4_BRCM
 	default BR2_GCC_VERSION_3_4_6
 	help
@@ -38,6 +38,9 @@ choice
 
 	config BR2_GCC_VERSION_4_0_2
 		bool "gcc 4.0.2"
+
+	config BR2_GCC_VERSION_4_0_3
+		bool "gcc 4.0.3"
 		
 	config BR2_GCC_VERSION_4_1_0
 		bool "gcc 4.1.0"
@@ -47,7 +50,7 @@ endchoice
 # more nasty hacks
 config BR2_PACKAGE_LIBGCC
 	tristate
-	default y if BR2_GCC_VERSION_4_0_2 || BR2_GCC_VERSION_4_1_0
+	default y if BR2_GCC_VERSION_4_0_2 || BR2_GCC_VERSION_4_0_3 || BR2_GCC_VERSION_4_1_0
 	default m if CONFIG_DEVEL
 	default n
 
@@ -57,6 +60,7 @@ config BR2_GCC_VERSION
 	default "3.4.5"     if BR2_GCC_VERSION_3_4_5
 	default "3.4.6"     if BR2_GCC_VERSION_3_4_6
 	default "4.0.2"     if BR2_GCC_VERSION_4_0_2
+	default "4.0.3"     if BR2_GCC_VERSION_4_0_3
 	default "4.1.0"     if BR2_GCC_VERSION_4_1_0
 	default "3.4.6"
 
