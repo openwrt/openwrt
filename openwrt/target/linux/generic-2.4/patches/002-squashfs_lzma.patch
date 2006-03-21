@@ -1,13 +1,9 @@
-This patch adds LZMA support to the squashfs code, you should also
-change mksquashfs appropriately.
-
-Oleg I. Vdovikin <oleg@cs.msu.su>
-
---- linuz/fs/squashfs/inode.c	2004-12-15 22:56:47.000000000 +0300
-+++ linux/fs/squashfs/inode.c	2005-01-20 20:27:27.490010968 +0300
-@@ -3,6 +3,9 @@
-  *
-  * Copyright (c) 2002, 2003, 2004 Phillip Lougher <plougher@users.sourceforge.net>
+diff -Nur linux-2.4.32/fs/squashfs/inode.c linux-2.4.32-owrt/fs/squashfs/inode.c
+--- linux-2.4.32/fs/squashfs/inode.c	2006-03-21 13:06:10.000000000 +0100
++++ linux-2.4.32-owrt/fs/squashfs/inode.c	2006-03-21 13:12:07.000000000 +0100
+@@ -4,6 +4,9 @@
+  * Copyright (c) 2002, 2003, 2004, 2005, 2006
+  * Phillip Lougher <phillip@lougher.org.uk>
   *
 + * LZMA decompressor support added by Oleg I. Vdovikin
 + * Copyright (c) 2005 Oleg I.Vdovikin <oleg@cs.msu.su>
@@ -15,21 +11,17 @@ Oleg I. Vdovikin <oleg@cs.msu.su>
   * This program is free software; you can redistribute it and/or
   * modify it under the terms of the GNU General Public License
   * as published by the Free Software Foundation; either version 2,
-@@ -21,7 +24,11 @@
+@@ -21,6 +24,7 @@
   * inode.c
   */
  
 +#define SQUASHFS_LZMA
-+
-+#ifndef SQUASHFS_LZMA
- #define SQUASHFS_1_0_COMPATIBILITY
-+#endif
- 
  #include <linux/types.h>
  #include <linux/squashfs_fs.h>
-@@ -39,6 +46,19 @@
- #include <linux/blkdev.h>
- #include <linux/vmalloc.h>
+ #include <linux/module.h>
+@@ -40,6 +44,20 @@
+ 
+ #include "squashfs.h"
  
 +#ifdef SQUASHFS_LZMA
 +#include "LzmaDecode.h"
@@ -40,16 +32,17 @@ Oleg I. Vdovikin <oleg@cs.msu.su>
 +#define LZMA_PB 2
 +
 +#define LZMA_WORKSPACE_SIZE ((LZMA_BASE_SIZE + \
-+	(LZMA_LIT_SIZE << (LZMA_LC + LZMA_LP))) * sizeof(CProb))
++      (LZMA_LIT_SIZE << (LZMA_LC + LZMA_LP))) * sizeof(CProb))
 +
 +#endif
 +
- #ifdef SQUASHFS_TRACE
- #define TRACE(s, args...)				printk(KERN_NOTICE "SQUASHFS: "s, ## args)
- #else
-@@ -77,7 +97,11 @@
- 
- DECLARE_MUTEX(read_data_mutex);
++
+ static struct super_block *squashfs_read_super(struct super_block *, void *, int);
+ static void squashfs_put_super(struct super_block *);
+ static int squashfs_statfs(struct super_block *, struct statfs *);
+@@ -53,7 +71,11 @@
+ 				int readahead_blks, char *block_list,
+ 				unsigned short **block_p, unsigned int *bsize);
  
 +#ifdef SQUASHFS_LZMA
 +static unsigned char lzma_workspace[LZMA_WORKSPACE_SIZE];
@@ -59,14 +52,14 @@ Oleg I. Vdovikin <oleg@cs.msu.su>
  
  static DECLARE_FSTYPE_DEV(squashfs_fs_type, "squashfs", squashfs_read_super);
  
-@@ -232,6 +256,15 @@
- 	if(compressed) {
+@@ -229,6 +251,15 @@
+ 	if (compressed) {
  		int zlib_err;
  
 +#ifdef SQUASHFS_LZMA
 +		if ((zlib_err = LzmaDecode(lzma_workspace, 
 +			LZMA_WORKSPACE_SIZE, LZMA_LC, LZMA_LP, LZMA_PB, 
-+			c_buffer, c_byte, buffer, msBlk->read_size, &bytes)) != LZMA_RESULT_OK)
++			c_buffer, c_byte, buffer, msblk->read_size, &bytes)) != LZMA_RESULT_OK)
 +		{
 +			ERROR("lzma returned unexpected result 0x%x\n", zlib_err);
 +			bytes = 0;
@@ -75,20 +68,20 @@ Oleg I. Vdovikin <oleg@cs.msu.su>
  		stream.next_in = c_buffer;
  		stream.avail_in = c_byte;
  		stream.next_out = buffer;
-@@ -243,6 +276,7 @@
+@@ -243,6 +274,7 @@
  			bytes = 0;
  		} else
  			bytes = stream.total_out;
 +#endif
- 		up(&read_data_mutex);
+ 		
+ 		up(&msblk->read_data_mutex);
  	}
- 
-@@ -1491,17 +1525,21 @@
- static int __init init_squashfs_fs(void)
- {
+@@ -2004,17 +2036,21 @@
+ 	printk(KERN_INFO "squashfs: version 3.0 (2006/03/15) "
+ 		"Phillip Lougher\n");
  
 +#ifndef SQUASHFS_LZMA
- 	if(!(stream.workspace = (char *) vmalloc(zlib_inflate_workspacesize()))) {
+ 	if (!(stream.workspace = vmalloc(zlib_inflate_workspacesize()))) {
  		ERROR("Failed to allocate zlib workspace\n");
  		return -ENOMEM;
  	}
@@ -105,8 +98,9 @@ Oleg I. Vdovikin <oleg@cs.msu.su>
  	unregister_filesystem(&squashfs_fs_type);
  }
  
---- linuz/fs/squashfs/LzmaDecode.c	1970-01-01 03:00:00.000000000 +0300
-+++ linux/fs/squashfs/LzmaDecode.c	2005-01-20 19:40:35.400513552 +0300
+diff -Nur linux-2.4.32/fs/squashfs/LzmaDecode.c linux-2.4.32-owrt/fs/squashfs/LzmaDecode.c
+--- linux-2.4.32/fs/squashfs/LzmaDecode.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.32-owrt/fs/squashfs/LzmaDecode.c	2006-03-21 13:06:33.000000000 +0100
 @@ -0,0 +1,663 @@
 +/*
 +  LzmaDecode.c
@@ -771,8 +765,9 @@ Oleg I. Vdovikin <oleg@cs.msu.su>
 +  *outSizeProcessed = nowPos;
 +  return LZMA_RESULT_OK;
 +}
---- linuz/fs/squashfs/LzmaDecode.h	1970-01-01 03:00:00.000000000 +0300
-+++ linux/fs/squashfs/LzmaDecode.h	2005-01-20 19:40:36.794301664 +0300
+diff -Nur linux-2.4.32/fs/squashfs/LzmaDecode.h linux-2.4.32-owrt/fs/squashfs/LzmaDecode.h
+--- linux-2.4.32/fs/squashfs/LzmaDecode.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.32-owrt/fs/squashfs/LzmaDecode.h	2006-03-21 13:06:33.000000000 +0100
 @@ -0,0 +1,100 @@
 +/* 
 +  LzmaDecode.h
@@ -874,14 +869,15 @@ Oleg I. Vdovikin <oleg@cs.msu.su>
 +    UInt32 *outSizeProcessed);
 +
 +#endif
---- linuz/fs/squashfs/Makefile	2004-12-15 22:56:47.000000000 +0300
-+++ linux/fs/squashfs/Makefile	2005-01-19 23:04:25.000000000 +0300
+diff -Nur linux-2.4.32/fs/squashfs/Makefile linux-2.4.32-owrt/fs/squashfs/Makefile
+--- linux-2.4.32/fs/squashfs/Makefile	2006-03-21 13:06:10.000000000 +0100
++++ linux-2.4.32-owrt/fs/squashfs/Makefile	2006-03-21 13:12:39.000000000 +0100
 @@ -4,7 +4,7 @@
  
  O_TARGET := squashfs.o
  
--obj-y  := inode.o
-+obj-y  := inode.o LzmaDecode.o
+-obj-y  := inode.o squashfs2_0.o
++obj-y  := inode.o squashfs2_0.o LzmaDecode.o
  
  obj-m := $(O_TARGET)
  
