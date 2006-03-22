@@ -222,7 +222,7 @@ diff -urN linux.old/drivers/mtd/maps/ar7-flash.c linux.dev/drivers/mtd/maps/ar7-
 +
 +	if (ar7_read32(&ar7_map, rootfs_start) == SQUASHFS_MAGIC) {
 +		int newsize, newoffset;
-+		squashfs_super_block sb;
++		struct squashfs_super_block sb;
 +
 +		ar7_copy_from(&ar7_map, &sb, rootfs_start, sizeof(sb));
 +		printk("Squashfs detected (size = 0x%08x)\n", sb.bytes_used);
