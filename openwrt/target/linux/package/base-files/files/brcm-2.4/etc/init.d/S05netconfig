@@ -48,6 +48,7 @@ END {
 	if (nvram["boardtype"] == "wgt634u") {
 		c["vlan0ports"] = "0 1 2 3 5*"
 		c["vlan1ports"] = "4 5"
+		c["lan_ifnames"] = "vlan0 ath0"
 	}
 	if (nvram["boardtype"] == "0x0467") {
 		c["vlan0ports"] = "0 1 2 3 5*"
@@ -74,6 +75,7 @@ END {
 	p("lan_ifname")
 	p("lan_ifnames")
 	print "lan_ipaddr=\"192.168.1.1\""
+	print "lan_netmask=\"255.255.255.0\""
 	print "# lan_dns=\"192.168.1.1\""
 	print "# lan_gateway=\"192.168.1.1\""
 
