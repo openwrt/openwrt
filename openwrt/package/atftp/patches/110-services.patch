@@ -1,0 +1,77 @@
+diff -urN atftp.old/tftp.c atftp.dev/tftp.c
+--- atftp.old/tftp.c	2004-03-16 00:55:56.000000000 +0100
++++ atftp.dev/tftp.c	2006-03-22 10:18:54.000000000 +0100
+@@ -409,7 +409,7 @@
+ int set_peer(int argc, char **argv)
+ {
+      struct hostent *host;      /* for host name lookup */
+-     struct servent *sp;        /* server entry for tftp service */
++     int port = htons(69);
+ 
+      /* sanity check */
+      if ((argc < 2) || (argc > 3))
+@@ -418,13 +418,6 @@
+           return ERR;
+      }
+ 
+-     /* get the server entry */
+-     sp = getservbyname("tftp", "udp");
+-     if (sp == 0) {
+-          fprintf(stderr, "tftp: udp/tftp, unknown service.\n");
+-          return ERR;
+-     }
+-
+      /* look up the host */
+      host = gethostbyname(argv[1]);
+      /* if valid, update s_inn structure */
+@@ -437,7 +430,7 @@
+           Strncpy(data.hostname, host->h_name,
+                   sizeof(data.hostname));
+           data.hostname[sizeof(data.hostname)-1] = 0;
+-          data.sa_peer.sin_port = sp->s_port;
++          data.sa_peer.sin_port = port;
+      } 
+      else
+      {
+@@ -448,17 +441,17 @@
+      /* get the server port */
+      if (argc == 3)
+      {
+-          sp->s_port = htons(atoi(argv[2]));
+-          if (sp->s_port < 0)
++          port = htons(atoi(argv[2]));
++          if (port < 0)
+           {
+                fprintf(stderr, "%s: bad port number.\n", argv[2]);
+                data.connected = 0;
+                return ERR;
+           }
+-          data.sa_peer.sin_port = sp->s_port;
++          data.sa_peer.sin_port = port;
+      }
+      /* copy port number to data structure */
+-     data.port = ntohs(sp->s_port);
++     data.port = ntohs(port);
+ 
+      data.connected = 1;
+      return OK;
+diff -urN atftp.old/tftpd.c atftp.dev/tftpd.c
+--- atftp.old/tftpd.c	2004-02-27 03:05:26.000000000 +0100
++++ atftp.dev/tftpd.c	2006-03-22 10:23:20.000000000 +0100
+@@ -230,14 +230,8 @@
+ 
+           /* find the port */
+           if (tftpd_port == 0)
+-          {
+-               if ((serv = getservbyname("tftp", "udp")) == NULL)
+-               {
+-                    logger(LOG_ERR, "atftpd: udp/tftp, unknown service");
+-                    exit(1);
+-               }
+-               tftpd_port = ntohs(serv->s_port);
+-          }
++               tftpd_port = htons(69);
++
+           /* initialise sockaddr_in structure */
+           memset(&sa, 0, sizeof(sa));
+           sa.sin_family = AF_INET;
