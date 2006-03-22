@@ -1,6 +1,6 @@
-packaging/utils/nattpatch 2.6
---- /dev/null   Tue Mar 11 13:02:56 2003
-+++ nat-t/include/net/xfrmudp.h     Mon Feb  9 13:51:03 2004
+diff -Nur linux-2.6.16/include/net/xfrmudp.h linux-2.6.16-owrt/include/net/xfrmudp.h
+--- linux-2.6.16/include/net/xfrmudp.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-owrt/include/net/xfrmudp.h	2006-03-22 21:39:54.000000000 +0100
 @@ -0,0 +1,10 @@
 +/*
 + * pointer to function for type that xfrm4_input wants, to permit
@@ -12,9 +12,12 @@ packaging/utils/nattpatch 2.6
 +extern int udp4_register_esp_rcvencap(xfrm4_rcv_encap_t func
 +				      , xfrm4_rcv_encap_t *oldfunc);
 +extern int udp4_unregister_esp_rcvencap(xfrm4_rcv_encap_t func);
---- /distros/kernel/linux-2.6.11.2/net/ipv4/Kconfig	2005-03-09 03:12:33.000000000 -0500
-+++ swan26/net/ipv4/Kconfig	2005-04-04 18:46:13.000000000 -0400
-@@ -351,2 +351,8 @@
+diff -Nur linux-2.6.16/net/ipv4/Kconfig linux-2.6.16-owrt/net/ipv4/Kconfig
+--- linux-2.6.16/net/ipv4/Kconfig	2006-03-20 06:53:29.000000000 +0100
++++ linux-2.6.16-owrt/net/ipv4/Kconfig	2006-03-22 21:49:04.000000000 +0100
+@@ -271,6 +271,12 @@
+ 	  Network), but can be distributed all over the Internet. If you want
+ 	  to do that, say Y here and to "IP multicast routing" below.
  
 +config IPSEC_NAT_TRAVERSAL
 +	bool "IPSEC NAT-Traversal (KLIPS compatible)"
@@ -22,19 +25,30 @@ packaging/utils/nattpatch 2.6
 +	---help---
 +          Includes support for RFC3947/RFC3948 NAT-Traversal of ESP over UDP.
 +
- config IP_TCPDIAG
---- /distros/kernel/linux-2.6.11.2/./net/ipv4/udp.c	2005-03-09 03:11:09.000000000 -0500
-+++ ./net/ipv4/udp.c	2005-04-09 20:46:46.000000000 -0400
-@@ -109,2 +109,3 @@
+ config IP_MROUTE
+ 	bool "IP: multicast routing"
+ 	depends on IP_MULTICAST
+diff -Nur linux-2.6.16/net/ipv4/udp.c linux-2.6.16-owrt/net/ipv4/udp.c
+--- linux-2.6.16/net/ipv4/udp.c	2006-03-20 06:53:29.000000000 +0100
++++ linux-2.6.16-owrt/net/ipv4/udp.c	2006-03-22 21:39:54.000000000 +0100
+@@ -109,11 +109,14 @@
+ #include <net/inet_common.h>
+ #include <net/checksum.h>
  #include <net/xfrm.h>
 +#include <net/xfrmudp.h>
  
-@@ -114,2 +115,4 @@
+ /*
+  *	Snmp MIB for the UDP layer
+  */
  
 +static xfrm4_rcv_encap_t xfrm4_rcv_encap_func;
 +
- DEFINE_SNMP_STAT(struct udp_mib, udp_statistics);
-@@ -894,2 +897,38 @@
+ DEFINE_SNMP_STAT(struct udp_mib, udp_statistics) __read_mostly;
+ 
+ struct hlist_head udp_hash[UDP_HTABLE_SIZE];
+@@ -882,6 +885,42 @@
+ 	sk_common_release(sk);
+ }
  
 +#if defined(CONFIG_XFRM) || defined(CONFIG_IPSEC_NAT_TRAVERSAL)
 +
@@ -73,7 +87,11 @@ packaging/utils/nattpatch 2.6
 +
 +
  /* return:
-@@ -901,5 +940,5 @@
+  * 	1  if the the UDP system should process it
+  *	0  if we should drop this packet
+@@ -889,9 +928,9 @@
+  */
+ static int udp_encap_rcv(struct sock * sk, struct sk_buff *skb)
  {
 -#ifndef CONFIG_XFRM
 +#if !defined(CONFIG_XFRM) && !defined(CONFIG_IPSEC_NAT_TRAVERSAL)
@@ -81,32 +99,52 @@ packaging/utils/nattpatch 2.6
 -#else
 +#else /* either CONFIG_XFRM or CONFIG_IPSEC_NAT_TRAVERSAL */
  	struct udp_sock *up = udp_sk(sk);
-@@ -915,3 +954,3 @@
+   	struct udphdr *uh = skb->h.uh;
+ 	struct iphdr *iph;
+@@ -903,11 +942,11 @@
+ 
+ 	/* if we're overly short, let UDP handle it */
  	if (udpdata > skb->tail)
 -		return 1;
 +		return 2;
  
-@@ -919,3 +958,3 @@
+ 	/* if this is not encapsulated socket, then just return now */
  	if (!encap_type)
 -		return 1;
 +		return 3;
  
-@@ -934,3 +973,3 @@
+ 	len = skb->tail - udpdata;
+ 
+@@ -922,7 +961,7 @@
+ 			len = sizeof(struct udphdr);
+ 		} else
  			/* Must be an IKE packet.. pass it through */
 -			return 1;
 +			return 4;
  		break;
-@@ -947,3 +986,3 @@
+ 	case UDP_ENCAP_ESPINUDP_NON_IKE:
+ 		/* Check if this is a keepalive packet.  If so, eat it. */
+@@ -935,7 +974,7 @@
+ 			len = sizeof(struct udphdr) + 2 * sizeof(u32);
+ 		} else
  			/* Must be an IKE packet.. pass it through */
 -			return 1;
 +			return 5;
  		break;
-@@ -956,2 +995,4 @@
+ 	}
+ 
+@@ -946,6 +985,8 @@
  	 */
+ 	if (skb_cloned(skb) && pskb_expand_head(skb, 0, 0, GFP_ATOMIC))
+ 		return 0;
 +	if (skb_cloned(skb) && pskb_expand_head(skb, 0, 0, GFP_ATOMIC))
 +		return 0;
  
-@@ -1019,5 +1060,9 @@
+ 	/* Now we can update and verify the packet length... */
+ 	iph = skb->nh.iph;
+@@ -1010,9 +1051,13 @@
+ 			return 0;
+ 		}
  		if (ret < 0) {
 -			/* process the ESP packet */
 -			ret = xfrm4_rcv_encap(skb, up->encap_type);
@@ -119,7 +157,11 @@ packaging/utils/nattpatch 2.6
 +			  ret = 1;
 +			}
  			return -ret;
-@@ -1574 +1619,7 @@
+ 		}
+ 		/* FALLTHROUGH -- it's a UDP Packet */
+@@ -1559,3 +1604,9 @@
+ EXPORT_SYMBOL(udp_proc_register);
+ EXPORT_SYMBOL(udp_proc_unregister);
  #endif
 +
 +#if defined(CONFIG_IPSEC_NAT_TRAVERSAL)
