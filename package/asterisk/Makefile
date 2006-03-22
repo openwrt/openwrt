@@ -23,6 +23,7 @@ $(eval $(call PKG_template,ASTERISK_SQLITE,asterisk-sqlite,$(PKG_VERSION)-$(PKG_
 $(eval $(call PKG_template,ASTERISK_VOICEMAIL,asterisk-voicemail,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,ASTERISK_SOUNDS,asterisk-sounds,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,ASTERISK_CHAN_BLUETOOTH,asterisk-chan-bluetooth,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,ASTERISK_CHAN_H323,asterisk-chan-h323,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,ASTERISK_CHAN_MGCP,asterisk-chan-mgcp,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,ASTERISK_CHAN_SKINNY,asterisk-chan-skinny,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,ASTERISK_CODEC_ILBC,asterisk-codec-ilbc,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
@@ -57,6 +58,21 @@ $(PKG_BUILD_DIR)/.configured:
 	touch $@
 
 $(PKG_BUILD_DIR)/.built:
+	(cd $(PKG_BUILD_DIR)/channels/h323/ ; \
+		$(MAKE) \
+		CROSS_ARCH="Linux" \
+		CROSS_COMPILE="$(TARGET_CROSS)" \
+		CROSS_COMPILE_BIN="/void/" \
+		CROSS_COMPILE_TARGET="/void/" \
+		$(TARGET_CONFIGURE_OPTS) \
+		HOST_CC="$(HOSTCC)" \
+		OPTIMIZE="$(TARGET_CFLAGS)" \
+		PROC="$(ARCH)" \
+		DEBUG="" \
+		OPTIONS="-DLOW_MEMORY -Dlinux" \
+		OPENH323DIR=$(BUILD_DIR)/openh323-cvs-20051230 \
+		opt ; \
+	);
 	$(MAKE) -C "$(PKG_BUILD_DIR)" \
 		CROSS_ARCH="Linux" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
@@ -77,6 +93,8 @@ $(PKG_BUILD_DIR)/.built:
 		EXTRA_RES_MODULES="$(EXTRA_RES_MODULES)" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		ASTVARLIBDIR="/usr/lib/asterisk" \
+		OPENH323DIR=$(BUILD_DIR)/openh323-cvs-20051230 \
+		PWLIBDIR=$(BUILD_DIR)/pwlib \
 		all install samples
 	rm -f $(PKG_INSTALL_DIR)/etc/asterisk/*.old
 	touch $@
@@ -202,6 +220,14 @@ $(IPKG_ASTERISK_CHAN_BLUETOOTH):
 	install -m0755 $(PKG_BUILD_DIR)/channels/chan_bluetooth.so $(IDIR_ASTERISK_CHAN_BLUETOOTH)/usr/lib/asterisk/modules/
 	$(RSTRIP) $(IDIR_ASTERISK_CHAN_BLUETOOTH)
 	$(IPKG_BUILD) $(IDIR_ASTERISK_CHAN_BLUETOOTH) $(PACKAGE_DIR)
+
+$(IPKG_ASTERISK_CHAN_H323):
+	install -d -m0755 $(IDIR_ASTERISK_CHAN_H323)/etc/asterisk
+	install -m0644 $(PKG_BUILD_DIR)/channels/h323/h323.conf.sample $(IDIR_ASTERISK_CHAN_H323)/etc/asterisk/h323.conf
+	install -d -m0755 $(IDIR_ASTERISK_CHAN_H323)/usr/lib/asterisk/modules
+	install -m0755 $(PKG_BUILD_DIR)/channels/chan_h323.so $(IDIR_ASTERISK_CHAN_H323)/usr/lib/asterisk/modules/
+	$(RSTRIP) $(IDIR_ASTERISK_CHAN_H323)
+	$(IPKG_BUILD) $(IDIR_ASTERISK_CHAN_H323) $(PACKAGE_DIR)
 
 $(IPKG_ASTERISK_CHAN_MGCP):
 	install -d -m0755 $(IDIR_ASTERISK_CHAN_MGCP)/etc/asterisk

@@ -21,6 +21,15 @@ config BR2_PACKAGE_ASTERISK_CHAN_BLUETOOTH
 	help
 	  The Bluetooth HandsFreeProfile support for Asterisk
 
+config BR2_PACKAGE_ASTERISK_CHAN_H323
+	prompt	"asterisk-chan-h323.............. H.323 support for Asterisk"
+	tristate
+	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_ASTERISK
+	select BR2_PACKAGE_OPENH323
+	help
+	  H.323 support for Asterisk
+
 config BR2_PACKAGE_ASTERISK_CHAN_MGCP
 	prompt   "asterisk-chan-mgcp.............. Media Gateway Control Protocol implementation"
 	tristate
