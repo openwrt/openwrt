@@ -406,7 +406,7 @@ wx200d-compile: postgresql-compile
 xsupplicant-compile: openssl-compile
 ipsec-tools-compile: openssl-compile
 
-asterisk-compile: bluez-libs-compile ncurses-compile openssl-compile
+asterisk-compile: bluez-libs-compile ncurses-compile openssl-compile openh323-compile
 ifneq ($(BR2_PACKAGE_ASTERISK_CODEC_SPEEX),)
 asterisk-compile: speex-compile
 endif
