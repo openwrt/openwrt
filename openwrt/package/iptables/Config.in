@@ -24,6 +24,7 @@ config BR2_PACKAGE_IPTABLES_EXTRA
 	select BR2_PACKAGE_IPTABLES_MOD_CONNTRACK
 	select BR2_PACKAGE_IPTABLES_MOD_EXTRA
 	select BR2_PACKAGE_IPTABLES_MOD_FILTER
+	select BR2_PACKAGE_IPTABLES_MOD_IMQ
 	select BR2_PACKAGE_IPTABLES_MOD_IPOPT
 	select BR2_PACKAGE_IPTABLES_MOD_IPSEC
 	select BR2_PACKAGE_IPTABLES_MOD_NAT
@@ -57,6 +58,18 @@ config BR2_PACKAGE_IPTABLES_MOD_FILTER
 	  Includes:
             * libipt_ipp2p
             * libipt_layer7
+
+config BR2_PACKAGE_IPTABLES_MOD_IMQ
+       	prompt "iptables-mod-imq................ Iptables extensions for Intermediate Queuing Device QoS-support"
+       	tristate
+       	default m if CONFIG_DEVEL
+       	depends BR2_PACKAGE_IPTABLES
+       	select BR2_PACKAGE_KMOD_IMQ
+       	help
+          Iptables (IPv4) extensions for Intermediate Queuing Device QoS-support
+
+          Includes:
+            * libipt_IMQ
 
 config BR2_PACKAGE_IPTABLES_MOD_IPOPT
 	prompt   "iptables-mod-ipopt.............. Iptables extensions for matching/changing IP packet options"
