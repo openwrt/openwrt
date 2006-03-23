@@ -1,7 +1,8 @@
 config BR2_PACKAGE_SYSLOG_NG
 	prompt "syslog-ng......................... A powerful syslog daemon"
 	tristate
-	default n 
+	default m if CONFIG_DEVEL
+	select BR2_PACKAGE_LIBOL
 	help
 		syslog-ng reads and logs messages to the  system  console,  log
 		files, other machines and/or users as specified by its

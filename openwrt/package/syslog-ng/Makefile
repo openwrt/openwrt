@@ -61,7 +61,7 @@ $(PKG_BUILD_DIR)/.built:
 		CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/usr/include/libol" \
 		LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/usr/lib/libol" \
 		CC=$(TARGET_CC) \
-		all install
+		install-exec install-data
 	touch $@
 
 $(IPKG_SYSLOG_NG):

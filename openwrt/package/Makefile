@@ -112,6 +112,7 @@ package-$(BR2_PACKAGE_LIBMAD) += libmad
 package-$(BR2_PACKAGE_LIBNET) += libnet
 package-$(BR2_PACKAGE_LIBNIDS) += libnids
 package-$(BR2_PACKAGE_LIBOGG) += libogg
+package-$(BR2_PACAKGE_LIBOL) += libol
 package-$(BR2_PACKAGE_LIBOSIP2) += libosip2
 package-$(BR2_PACKAGE_LIBPCAP) += libpcap
 package-$(BR2_PACKAGE_LIBPNG) += libpng
@@ -277,7 +278,7 @@ package-$(BR2_PACKAGE_XINETD) += xinetd
 package-$(BR2_PACKAGE_XSUPPLICANT) += xsupplicant
 package-$(BR2_PACKAGE_ZLIB) += zlib
 
-DEV_LIBS:=tcp_wrappers glib ncurses openssl pcre popt zlib libnet libpcap mysql postgresql iptables matrixssl liblzo gmp fuse portmap libelf uclibc++ speex libpng libgd wireless-tools nvram linux-atm libamsel libao libart libdaemon libdb libdnet libevent libffi-sable libgcrypt libgdbm libgpg-error libid3tag libmad libnet libnids libogg libosip2 libpcap radiusclient-ng libtasn1 libupnp libusb libvorbis libvorbisidec libxml2 libxslt id3lib net-snmp
+DEV_LIBS:=tcp_wrappers glib ncurses openssl pcre popt zlib libnet libpcap mysql postgresql iptables matrixssl liblzo gmp fuse portmap libelf uclibc++ speex libpng libgd wireless-tools nvram linux-atm libamsel libao libart libdaemon libdb libdnet libevent libffi-sable libgcrypt libgdbm libgpg-error libid3tag libmad libnet libnids libogg libol libosip2 libpcap radiusclient-ng libtasn1 libupnp libusb libvorbis libvorbisidec libxml2 libxslt id3lib net-snmp
 DEV_LIBS_COMPILE:=$(patsubst %,%-compile,$(DEV_LIBS))
 SDK_DEFAULT_PACKAGES:=busybox dnsmasq iptables wireless-tools dropbear bridge ipkg ppp
 SDK_DEFAULT_COMPILE:=$(patsubst %,%-compile,$(SDK_DEFAULT_PACKAGES))
@@ -391,6 +392,7 @@ socat-compile: openssl-compile
 sqlite-compile: ncurses-compile readline-compile
 sqlite2-compile: ncurses-compile readline-compile
 ssltunnel-compile: openssl-compile ppp-compile
+syslog-ng-compile: libol-compile
 tcpdump-compile: libpcap-compile
 tinc-compile: zlib-compile openssl-compile liblzo-compile
 tor-compile: libevent-compile openssl-compile zlib-compile
