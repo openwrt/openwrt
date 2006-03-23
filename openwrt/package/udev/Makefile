@@ -33,6 +33,7 @@ $(PKG_BUILD_DIR)/.built:
 		STRIP="/bin/true" \
 		OPTFLAGS="$(TARGET_CFLAGS)" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
+		INSTALL="install -c" \
 		all install
 	touch $@
 
