@@ -1,0 +1,22 @@
+diff -urN ndisc6.old/Makefile ndisc6.dev/Makefile
+--- ndisc6.old/Makefile	2005-12-01 15:34:08.000000000 +0100
++++ ndisc6.dev/Makefile	2006-03-23 13:44:32.000000000 +0100
+@@ -31,7 +31,7 @@
+ 
+ sbin_PROGRAMS = ndisc6 rdisc6 traceroute6
+ man8_MANS = $(sbin_PROGRAMS:%=%.8)
+-DOC = COPYING INSTALL NEWS README
++DOC = INSTALL NEWS README
+ 
+ AM_CPPFLAGS = -DPACKAGE_VERSION=\"$(VERSION)\" $(CPPFLAGS)
+ ndisc6_CPPFLAGS = $(AM_CPPFLAGS)
+@@ -52,9 +52,6 @@
+ tcptraceroute6: traceroute6
+ 	ln -sf traceroute6 $@
+ 
+-COPYING: /usr/share/common-licenses/GPL-2
+-	ln -s $< $@
+-
+ install: all install-man install-links
+ 	mkdir -p $(DESTDIR)$(bindir)
+ 	@for f in $(sbin_PROGRAMS); do \
