@@ -45,6 +45,13 @@ config BR2_PACKAGE_KMOD_GRE
 	default m
 	help
 	  Kernel support for GRE tunnels
+	
+config BR2_PACKAGE_KMOD_IMQ
+        prompt "kmod-imq.......................... Intermediate Queueing device"
+        tristate
+        default m
+        help
+          Kernel support for the Intermediate Queueing device
 
 config BR2_PACKAGE_KMOD_IPV6
 	prompt "kmod-ipv6......................... IPv6 support"
