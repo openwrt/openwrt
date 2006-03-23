@@ -18,11 +18,9 @@ include $(TOPDIR)/package/rules.mk
 $(eval $(call PKG_template,PROCMAIL,procmail,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 $(PKG_BUILD_DIR)/.built:
-	$(MAKE) -C $(PKG_BUILD_DIR)/ init \
+	$(MAKE) -C $(PKG_BUILD_DIR)/src -f ../Makefile.openwrt  \
 		CC=$(TARGET_CC)
 
-	echo yes | $(MAKE) -C $(PKG_BUILD_DIR)/src/ procmail formail \
-		CC=$(TARGET_CC)
 	touch $@
 
 $(IPKG_PROCMAIL): 
