@@ -4,7 +4,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openssl
 PKG_VERSION:=0.9.8a
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 PKG_MD5SUM:=1d16c727c10185e4d694f87f5e424ee1
 
 PKG_SOURCE_URL:=http://www.openssl.org/source/ \
@@ -17,7 +17,8 @@ PKG_CAT:=zcat
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
-OPENSSL_NO_CIPHERS:= no-idea no-md2 no-mdc2 no-rc2 no-rc5
+OPENSSL_NO_CIPHERS:= no-deprecated no-idea no-md2 no-mdc2 no-rc2 no-rc5 no-sha0 no-sha256 no-sha512 no-dsa no-rmd160 no-aes192 no-cast
+OPENSSL_OPTIONS:= shared no-ec no-err no-fips no-hw no-krb5 no-threads zlib-dynamic no-engines
 
 include $(TOPDIR)/package/rules.mk
 
@@ -26,15 +27,17 @@ $(eval $(call PKG_template,OPENSSL_UTIL,openssl-util,$(PKG_VERSION)-$(PKG_RELEAS
 
 $(PKG_BUILD_DIR)/.configured:
 	$(SED) 's,/CFLAG=,/CFLAG= $(TARGET_SOFT_FLOAT) ,g' $(PKG_BUILD_DIR)/Configure
+	$(SED) s/OPENWRT_OPTIMIZATION_FLAGS/$(BR2_TARGET_OPTIMIZATION)/g $(PKG_BUILD_DIR)/Configure
 	(cd $(PKG_BUILD_DIR); \
 		PATH=$(TARGET_PATH) \
-		./Configure linux-generic32 \
+		./Configure linux-openwrt \
 		  --prefix=/usr \
 		  --openssldir=/etc/ssl \
 		  -I$(STAGING_DIR)/usr/include \
 		  -L$(STAGING_DIR)/usr/lib -ldl \
+		  -DOPENSSL_SMALL_FOOTPRINT \
 		  $(OPENSSL_NO_CIPHERS) \
-		  shared no-asm no-ec no-err no-fips no-hw no-krb5 no-threads zlib-dynamic \
+		  $(OPENSSL_OPTIONS) \
 	)
 	touch $@
 
@@ -46,7 +49,6 @@ $(PKG_BUILD_DIR)/.built:
 		depend
 	$(MAKE) -C $(PKG_BUILD_DIR) -j1 \
 		CC="$(TARGET_CC)" \
-		CCOPTS="$(TARGET_CFLAGS) -fomit-frame-pointer" \
 		AR="$(TARGET_CROSS)ar r" \
 		RANLIB="$(TARGET_CROSS)ranlib" \
 		all build-shared
