@@ -1,12 +1,47 @@
-diff -Nur lzma432/C/7zip/Compress/LZMA_Lib/makefile lzma432-owrt/C/7zip/Compress/LZMA_Lib/makefile
---- lzma432/C/7zip/Compress/LZMA_Lib/makefile	1970-01-01 01:00:00.000000000 +0100
-+++ lzma432-owrt/C/7zip/Compress/LZMA_Lib/makefile	2006-03-22 14:23:38.000000000 +0100
+diff -urN lzma432/C/7zip/Compress/LZMA/LZMADecoder.cpp lzma/C/7zip/Compress/LZMA/LZMADecoder.cpp
+--- lzma432/C/7zip/Compress/LZMA/LZMADecoder.cpp	2005-09-22 12:55:34.000000000 +0400
++++ lzma/C/7zip/Compress/LZMA/LZMADecoder.cpp	2006-03-24 13:23:09.634551840 +0300
+@@ -274,12 +274,17 @@
+   Byte remainder = (Byte)(properties[0] / 9);
+   int lp = remainder % 5;
+   int pb = remainder / 5;
+-  if (pb > NLength::kNumPosStatesBitsMax)
+-    return E_INVALIDARG;
+-  _posStateMask = (1 << pb) - 1;
+   UInt32 dictionarySize = 0;
+   for (int i = 0; i < 4; i++)
+     dictionarySize += ((UInt32)(properties[1 + i])) << (i * 8);
++  return SetDecoderPropertiesRaw(lc, lp, pb, dictionarySize);
++}
++
++STDMETHODIMP CDecoder::SetDecoderPropertiesRaw(int lc, int lp, int pb, UInt32 dictionarySize)
++{
++  if (pb > NLength::kNumPosStatesBitsMax)
++    return E_INVALIDARG;
++  _posStateMask = (1 << pb) - 1;
+   if (!_outWindowStream.Create(dictionarySize))
+     return E_OUTOFMEMORY;
+   if (!_literalDecoder.Create(lp, lc))
+diff -urN lzma432/C/7zip/Compress/LZMA/LZMADecoder.h lzma/C/7zip/Compress/LZMA/LZMADecoder.h
+--- lzma432/C/7zip/Compress/LZMA/LZMADecoder.h	2005-09-19 10:10:06.000000000 +0400
++++ lzma/C/7zip/Compress/LZMA/LZMADecoder.h	2006-03-24 13:23:09.635551552 +0300
+@@ -228,6 +228,7 @@
+       ICompressProgressInfo *progress);
+ 
+   STDMETHOD(SetDecoderProperties2)(const Byte *data, UInt32 size);
++  STDMETHOD(SetDecoderPropertiesRaw)(int lc, int lp, int pb, UInt32 dictionarySize);
+ 
+   STDMETHOD(GetInStreamProcessedSize)(UInt64 *value);
+ 
+diff -urN lzma432/C/7zip/Compress/LZMA_Lib/makefile lzma/C/7zip/Compress/LZMA_Lib/makefile
+--- lzma432/C/7zip/Compress/LZMA_Lib/makefile	1970-01-01 03:00:00.000000000 +0300
++++ lzma/C/7zip/Compress/LZMA_Lib/makefile	2006-03-24 13:26:58.254841791 +0300
 @@ -0,0 +1,88 @@
 +PROG = liblzma.a
 +CXX = g++ -O3 -Wall
 +AR = ar
 +RM = rm -f
-+CFLAGS = -c
++CFLAGS = -c  -I ../../../
 +
 +OBJS = \
 +  ZLib.o \
@@ -90,15 +125,14 @@ diff -Nur lzma432/C/7zip/Compress/LZMA_Lib/makefile lzma432-owrt/C/7zip/Compress
 +clean:
 +	-$(RM) $(PROG) $(OBJS)
 +
-diff -Nur lzma432/C/7zip/Compress/LZMA_Lib/ZLib.cpp lzma432-owrt/C/7zip/Compress/LZMA_Lib/ZLib.cpp
---- lzma432/C/7zip/Compress/LZMA_Lib/ZLib.cpp	1970-01-01 01:00:00.000000000 +0100
-+++ lzma432-owrt/C/7zip/Compress/LZMA_Lib/ZLib.cpp	2006-03-22 14:23:38.000000000 +0100
-@@ -0,0 +1,283 @@
+diff -urN lzma432/C/7zip/Compress/LZMA_Lib/ZLib.cpp lzma/C/7zip/Compress/LZMA_Lib/ZLib.cpp
+--- lzma432/C/7zip/Compress/LZMA_Lib/ZLib.cpp	1970-01-01 03:00:00.000000000 +0300
++++ lzma/C/7zip/Compress/LZMA_Lib/ZLib.cpp	2006-03-24 13:23:09.638550690 +0300
+@@ -0,0 +1,273 @@
 +/*
 + * lzma zlib simplified wrapper
 + *
-+ * Copyright (c) 2005 Oleg I. Vdovikin <oleg@cs.msu.su>
-+ * Modified for LZMA 4.27 SDK Craig.Peacock@beyondlogic.org
++ * Copyright (c) 2005-2006 Oleg I. Vdovikin <oleg@cs.msu.su>
 + *
 + * This library is free software; you can redistribute 
 + * it and/or modify it under the terms of the GNU Lesser 
@@ -284,9 +318,9 @@ diff -Nur lzma432/C/7zip/Compress/LZMA_Lib/ZLib.cpp lzma432-owrt/C/7zip/Compress
 +	CInMemoryStream *inStreamSpec = new CInMemoryStream(source, sourceLen);
 +	CMyComPtr<ISequentialInStream> inStream = inStreamSpec;
 +	
-+	COutMemoryStream *outStreamSpec = new COutMemoryStream(dest+4, (*destLen)-4);
++	COutMemoryStream *outStreamSpec = new COutMemoryStream(dest, *destLen);
 +	CMyComPtr<ISequentialOutStream> outStream = outStreamSpec;
-+		
++	
 +	NCompress::NLZMA::CEncoder *encoderSpec = 
 +		new NCompress::NLZMA::CEncoder;
 +	CMyComPtr<ICompressCoder> encoder = encoderSpec;
@@ -307,12 +341,12 @@ diff -Nur lzma432/C/7zip/Compress/LZMA_Lib/ZLib.cpp lzma432-owrt/C/7zip/Compress
 +	PROPVARIANT properties[kNumProps];
 +	for (int p = 0; p < 6; p++)
 +		properties[p].vt = VT_UI4;
-+	properties[0].ulVal = UInt32(1 << 15);
++	properties[0].ulVal = UInt32(1 << (level + 14));
 +	properties[1].ulVal = UInt32(ZLIB_PB);
 +	properties[2].ulVal = UInt32(ZLIB_LC); // for normal files
 +	properties[3].ulVal = UInt32(ZLIB_LP); // for normal files
-+	properties[4].ulVal = UInt32(0);
-+	properties[5].ulVal = UInt32(0x28);
++	properties[4].ulVal = UInt32(2);
++	properties[5].ulVal = UInt32(128);
 +	
 +	properties[6].vt = VT_BSTR;
 +	properties[6].bstrVal = (BSTR)(const wchar_t *)L"BT4";
@@ -323,9 +357,6 @@ diff -Nur lzma432/C/7zip/Compress/LZMA_Lib/ZLib.cpp lzma432-owrt/C/7zip/Compress
 +	if (encoderSpec->SetCoderProperties(propIDs, properties, kNumProps) != S_OK)
 +		return Z_MEM_ERROR; // should not happen
 +	
-+	if (encoderSpec->WriteCoderProperties(outStream) != S_OK)
-+		return Z_MEM_ERROR;
-+		
 +	HRESULT result = encoder->Code(inStream, outStream, 0, 0, 0);
 +	if (result == E_OUTOFMEMORY)
 +	{
@@ -340,16 +371,13 @@ diff -Nur lzma432/C/7zip/Compress/LZMA_Lib/ZLib.cpp lzma432-owrt/C/7zip/Compress
 +	outStreamSpec->Seek(0, STREAM_SEEK_END, &fileSize);
 +	*destLen = fileSize;
 +	
-+	/* Copy size of uncompressed string into first four bytes */
-+	memcpy(dest, &sourceLen, 4);
-+		
 +	return Z_OK;
 +}
 +
 +ZEXTERN int ZEXPORT uncompress OF((Bytef *dest,   uLongf *destLen,
 +                                   const Bytef *source, uLong sourceLen))
 +{
-+	CInMemoryStream *inStreamSpec = new CInMemoryStream(source+9, sourceLen-9);
++	CInMemoryStream *inStreamSpec = new CInMemoryStream(source, sourceLen);
 +	CMyComPtr<ISequentialInStream> inStream = inStreamSpec;
 +	
 +	COutMemoryStream *outStreamSpec = new COutMemoryStream(dest, *destLen);
@@ -359,11 +387,8 @@ diff -Nur lzma432/C/7zip/Compress/LZMA_Lib/ZLib.cpp lzma432-owrt/C/7zip/Compress
 +		new NCompress::NLZMA::CDecoder;
 +	CMyComPtr<ICompressCoder> decoder = decoderSpec;
 +	
-+	//if (decoderSpec->SetDecoderPropertiesRaw(ZLIB_LC, 
-+	//	ZLIB_LP, ZLIB_PB, (1 << 23)) != S_OK) return Z_DATA_ERROR;
-+	
-+	if (decoderSpec->SetDecoderProperties2(source+4, 5) != S_OK) 
-+		return Z_DATA_ERROR;
++	if (decoderSpec->SetDecoderPropertiesRaw(ZLIB_LC, 
++		ZLIB_LP, ZLIB_PB, (1 << 23)) != S_OK) return Z_DATA_ERROR;
 +	
 +	UInt64 fileSize = *destLen;
 +	
@@ -377,39 +402,3 @@ diff -Nur lzma432/C/7zip/Compress/LZMA_Lib/ZLib.cpp lzma432-owrt/C/7zip/Compress
 +	
 +	return Z_OK;
 +}
-diff -Nur lzma432/C/Common/CommandLineParser.h lzma432-owrt/C/Common/CommandLineParser.h
---- lzma432/C/Common/CommandLineParser.h	2005-03-07 17:03:46.000000000 +0100
-+++ lzma432-owrt/C/Common/CommandLineParser.h	2006-03-22 14:23:38.000000000 +0100
-@@ -3,7 +3,7 @@
- #ifndef __COMMON_COMMANDLINEPARSER_H
- #define __COMMON_COMMANDLINEPARSER_H
- 
--#include "Common/String.h"
-+#include "String.h"
- 
- namespace NCommandLineParser {
- 
-diff -Nur lzma432/C/Common/StringConvert.h lzma432-owrt/C/Common/StringConvert.h
---- lzma432/C/Common/StringConvert.h	2005-09-16 10:19:44.000000000 +0200
-+++ lzma432-owrt/C/Common/StringConvert.h	2006-03-22 14:23:38.000000000 +0100
-@@ -4,7 +4,7 @@
- #define __COMMON_STRINGCONVERT_H
- 
- #include "MyWindows.h"
--#include "Common/String.h"
-+#include "String.h"
- #include "Types.h"
- 
- UString MultiByteToUnicodeString(const AString &srcString, UINT codePage = CP_ACP);
-diff -Nur lzma432/C/Common/String.cpp lzma432-owrt/C/Common/String.cpp
---- lzma432/C/Common/String.cpp	2005-09-28 11:44:06.000000000 +0200
-+++ lzma432-owrt/C/Common/String.cpp	2006-03-22 14:23:38.000000000 +0100
-@@ -8,7 +8,7 @@
- #include <ctype.h>
- #endif
- 
--#include "Common/String.h"
-+#include "String.h"
- 
- 
- #ifdef _WIN32
