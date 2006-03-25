@@ -254,6 +254,7 @@ package-$(BR2_COMPILE_USBUTILS) += usbutils
 package-$(BR2_PACKAGE_USTL) += ustl
 package-$(BR2_COMPILE_UTIL_LINUX) += util-linux
 package-$(BR2_PACKAGE_UDEV) += udev
+package-$(BR2_PACKAGE_VIM) += vim
 package-$(BR2_PACKAGE_VGP) += vgp
 package-$(BR2_PACKAGE_VNC_REFLECTOR) += vnc-reflector
 package-$(BR2_PACKAGE_VNSTAT) += vnstat
@@ -323,6 +324,7 @@ irssi-compile: glib-compile ncurses-compile
 iperf-compile: uclibc++-compile
 iptables-snmp-compile: net-snmp-compile
 iptraf-compile: ncurses-compile
+ipsec-tools-compile: openssl-compile
 jamvm-compile: libffi-sable-compile zlib-compile sablevm-classpath-compile
 hostapd-compile: openssl-compile wireless-tools-compile
 httping-compile: openssl-compile
@@ -397,6 +399,7 @@ tcpdump-compile: libpcap-compile
 tinc-compile: zlib-compile openssl-compile liblzo-compile
 tor-compile: libevent-compile openssl-compile zlib-compile
 usbutils-compile: libusb-compile
+vim-compile: ncurses-compile
 vnc-reflector-compile: jpeg-compile zlib-compile
 vpnc-compile: libgcrypt-compile libgpg-error-compile
 vtun-compile: zlib-compile openssl-compile liblzo-compile
@@ -406,7 +409,6 @@ wknock-compile: libpcap-compile
 wpa_supplicant-compile: openssl-compile
 wx200d-compile: postgresql-compile
 xsupplicant-compile: openssl-compile
-ipsec-tools-compile: openssl-compile
 
 asterisk-compile: bluez-libs-compile ncurses-compile openssl-compile openh323-compile
 ifneq ($(BR2_PACKAGE_ASTERISK_CODEC_SPEEX),)
