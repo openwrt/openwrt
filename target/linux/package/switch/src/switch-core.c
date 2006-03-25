@@ -68,13 +68,6 @@ static struct file_operations switch_proc_fops = {
 	write: switch_proc_write
 };
 
-static inline char *strdup(char *str)
-{
-	char *new = kmalloc(strlen(str) + 1, GFP_KERNEL);
-	strcpy(new, str);
-	return new;
-}
-
 static ssize_t switch_proc_read(struct file *file, char *buf, size_t count, loff_t *ppos)
 {
 #ifdef LINUX_2_4
