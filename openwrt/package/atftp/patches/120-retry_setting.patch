@@ -1,0 +1,117 @@
+diff -urN atftp.old/tftp.c atftp.dev/tftp.c
+--- atftp.old/tftp.c	2006-03-25 16:41:49.000000000 +0100
++++ atftp.dev/tftp.c	2006-03-25 18:10:04.000000000 +0100
+@@ -967,6 +967,7 @@
+           { "tftp-timeout", 1, NULL, 'T'},
+           { "mode", 1, NULL, 'M'},
+           { "option", 1, NULL, 'O'},
++		  { "retry", 1, NULL, 'R'},
+ #if 1
+           { "timeout", 1, NULL, 't'},
+           { "blksize", 1, NULL, 'b'},
+@@ -986,11 +987,16 @@
+      };
+ 
+      /* Support old argument until 0.8 */
+-     while ((c = getopt_long(argc, argv, /*"gpl:r:Vh"*/ "gpl:r:Vht:b:sm",
++     while ((c = getopt_long(argc, argv, /*"gpl:r:Vh"*/ "gpl:r:Vht:b:smR:",
+                              options, &option_index)) != EOF)
+      {
+           switch (c)
+           {
++		  case 'R':
++               snprintf(string, sizeof(string), "option retry %s", optarg);
++               make_arg(string, &ac, &av);
++               process_cmd(ac, av);
++		       break;
+           case 'g':
+                interactive = 0;
+                if ((action == PUT) || (action == MGET))
+diff -urN atftp.old/tftp_def.c atftp.dev/tftp_def.c
+--- atftp.old/tftp_def.c	2004-02-13 04:16:09.000000000 +0100
++++ atftp.dev/tftp_def.c	2006-03-25 18:10:04.000000000 +0100
+@@ -37,6 +37,7 @@
+      { "timeout", "5", 0, 1 },  /* 2348, 2349, 2090.  */
+      { "blksize", "512", 0, 1 }, /* This is the default option */
+      { "multicast", "", 0, 1 }, /* structure */
++	 { "retry", "5", 0, 1 },
+      { "", "", 0, 0}
+ };
+ 
+diff -urN atftp.old/tftp_def.h atftp.dev/tftp_def.h
+--- atftp.old/tftp_def.h	2004-02-13 04:16:09.000000000 +0100
++++ atftp.dev/tftp_def.h	2006-03-25 17:19:15.000000000 +0100
+@@ -40,7 +40,8 @@
+ #define OPT_TIMEOUT   3
+ #define OPT_BLKSIZE   4
+ #define OPT_MULTICAST 5
+-#define OPT_NUMBER    7
++#define OPT_RETRY     6
++#define OPT_NUMBER    8
+ 
+ #define OPT_SIZE     12
+ #define VAL_SIZE     MAXLEN
+diff -urN atftp.old/tftp_file.c atftp.dev/tftp_file.c
+--- atftp.old/tftp_file.c	2004-02-13 04:16:09.000000000 +0100
++++ atftp.dev/tftp_file.c	2006-03-25 18:10:04.000000000 +0100
+@@ -123,6 +123,7 @@
+      struct tftphdr *tftphdr = (struct tftphdr *)data->data_buffer;
+      FILE *fp = NULL;           /* the local file pointer */
+      int number_of_timeout = 0;
++	 int num_retry = atoi(data->tftp_options[OPT_RETRY].value);
+      int convert = 0;           /* if true, do netascii convertion */
+ 
+      int oacks = 0;             /* count OACK for improved error checking */
+@@ -141,7 +142,7 @@
+ 
+      int prev_block_number = 0; /* needed to support netascii convertion */
+      int temp = 0;
+-
++	 
+      data->file_size = 0;
+      tftp_cancel = 0;
+      from.sin_addr.s_addr = 0;
+@@ -288,7 +289,7 @@
+                case GET_TIMEOUT:
+                     number_of_timeout++;
+                     fprintf(stderr, "timeout: retrying...\n");
+-                    if (number_of_timeout > NB_OF_RETRY)
++                    if ((num_retry > 0) && (number_of_timeout > num_retry))
+                          state = S_ABORT;
+                     else
+                          state = timeout_state;
+@@ -325,7 +326,7 @@
+                     number_of_timeout++;
+                     fprintf(stderr, "tftp: packet discard <%s:%d>.\n",
+                             inet_ntoa(from.sin_addr), ntohs(from.sin_port));
+-                    if (number_of_timeout > NB_OF_RETRY)
++                    if ((num_retry > 0) && (number_of_timeout > num_retry))
+                          state = S_ABORT;
+                     break;
+                case ERR:
+@@ -614,6 +615,7 @@
+      struct tftphdr *tftphdr = (struct tftphdr *)data->data_buffer;
+      FILE *fp;                  /* the local file pointer */
+      int number_of_timeout = 0;
++	 int num_retry = atoi(data->tftp_options[OPT_RETRY].value);
+      struct stat file_stat;
+      int convert = 0;           /* if true, do netascii convertion */
+      char string[MAXLEN];
+@@ -751,7 +753,7 @@
+                case GET_TIMEOUT:
+                     number_of_timeout++;
+                     fprintf(stderr, "timeout: retrying...\n");
+-                    if (number_of_timeout > NB_OF_RETRY)
++                    if ((num_retry > 0) && (number_of_timeout > num_retry))
+                          state = S_ABORT;
+                     else
+                          state = timeout_state;
+@@ -797,7 +799,7 @@
+                     number_of_timeout++;
+                     fprintf(stderr, "tftp: packet discard <%s:%d>.\n",
+                             inet_ntoa(from.sin_addr), ntohs(from.sin_port));
+-                    if (number_of_timeout > NB_OF_RETRY)
++                    if ((num_retry > 0) && (number_of_timeout > num_retry))
+                          state = S_ABORT;
+                     break;
+                case ERR:
