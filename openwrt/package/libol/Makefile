@@ -7,7 +7,7 @@ PKG_VERSION:=0.3.17
 PKG_RELEASE:=1
 PKG_MD5SUM:=28cc52e84bdb472b7830f9ad120a62a7
 
-PKG_SOURCE_URL:=http://www.balabit.com/downloads/libol/0.3/
+PKG_SOURCE_URL:=http://www.balabit.com/downloads/libol/0.3
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
