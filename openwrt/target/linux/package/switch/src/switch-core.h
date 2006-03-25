@@ -48,4 +48,12 @@ extern switch_vlan_config *switch_parse_vlan(switch_driver *driver, char *buf);
 extern int switch_parse_media(char *buf);
 extern int switch_print_media(char *buf, int media);
 
+static inline char *strdup(char *str)
+{
+	char *new = kmalloc(strlen(str) + 1, GFP_KERNEL);
+	strcpy(new, str);
+	return new;
+}
+
+
 #endif
