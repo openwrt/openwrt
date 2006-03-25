@@ -1,6 +1,6 @@
-diff -urN lzma432/C/7zip/Compress/LZMA/LZMADecoder.cpp lzma/C/7zip/Compress/LZMA/LZMADecoder.cpp
---- lzma432/C/7zip/Compress/LZMA/LZMADecoder.cpp	2005-09-22 12:55:34.000000000 +0400
-+++ lzma/C/7zip/Compress/LZMA/LZMADecoder.cpp	2006-03-24 13:23:09.634551840 +0300
+diff -Nur lzma/C/7zip/Compress/LZMA/LZMADecoder.cpp lzma.patched/C/7zip/Compress/LZMA/LZMADecoder.cpp
+--- lzma/C/7zip/Compress/LZMA/LZMADecoder.cpp	2005-09-22 10:55:34.000000000 +0200
++++ lzma.patched/C/7zip/Compress/LZMA/LZMADecoder.cpp	2006-03-25 11:04:53.000000000 +0100
 @@ -274,12 +274,17 @@
    Byte remainder = (Byte)(properties[0] / 9);
    int lp = remainder % 5;
@@ -22,9 +22,9 @@ diff -urN lzma432/C/7zip/Compress/LZMA/LZMADecoder.cpp lzma/C/7zip/Compress/LZMA
    if (!_outWindowStream.Create(dictionarySize))
      return E_OUTOFMEMORY;
    if (!_literalDecoder.Create(lp, lc))
-diff -urN lzma432/C/7zip/Compress/LZMA/LZMADecoder.h lzma/C/7zip/Compress/LZMA/LZMADecoder.h
---- lzma432/C/7zip/Compress/LZMA/LZMADecoder.h	2005-09-19 10:10:06.000000000 +0400
-+++ lzma/C/7zip/Compress/LZMA/LZMADecoder.h	2006-03-24 13:23:09.635551552 +0300
+diff -Nur lzma/C/7zip/Compress/LZMA/LZMADecoder.h lzma.patched/C/7zip/Compress/LZMA/LZMADecoder.h
+--- lzma/C/7zip/Compress/LZMA/LZMADecoder.h	2005-09-19 08:10:06.000000000 +0200
++++ lzma.patched/C/7zip/Compress/LZMA/LZMADecoder.h	2006-03-25 11:04:53.000000000 +0100
 @@ -228,6 +228,7 @@
        ICompressProgressInfo *progress);
  
@@ -33,10 +33,10 @@ diff -urN lzma432/C/7zip/Compress/LZMA/LZMADecoder.h lzma/C/7zip/Compress/LZMA/L
  
    STDMETHOD(GetInStreamProcessedSize)(UInt64 *value);
  
-diff -urN lzma432/C/7zip/Compress/LZMA_Lib/makefile lzma/C/7zip/Compress/LZMA_Lib/makefile
---- lzma432/C/7zip/Compress/LZMA_Lib/makefile	1970-01-01 03:00:00.000000000 +0300
-+++ lzma/C/7zip/Compress/LZMA_Lib/makefile	2006-03-24 13:26:58.254841791 +0300
-@@ -0,0 +1,88 @@
+diff -Nur lzma/C/7zip/Compress/LZMA_Lib/makefile lzma.patched/C/7zip/Compress/LZMA_Lib/makefile
+--- lzma/C/7zip/Compress/LZMA_Lib/makefile	1970-01-01 01:00:00.000000000 +0100
++++ lzma.patched/C/7zip/Compress/LZMA_Lib/makefile	2006-03-25 11:29:46.000000000 +0100
+@@ -0,0 +1,92 @@
 +PROG = liblzma.a
 +CXX = g++ -O3 -Wall
 +AR = ar
@@ -57,6 +57,7 @@ diff -urN lzma432/C/7zip/Compress/LZMA_Lib/makefile lzma/C/7zip/Compress/LZMA_Li
 +  C_FileIO.o \
 +  CommandLineParser.o \
 +  CRC.o \
++  StreamUtils.o \
 +  String.o \
 +  StringConvert.o \
 +  StringToInt.o \
@@ -92,6 +93,9 @@ diff -urN lzma432/C/7zip/Compress/LZMA_Lib/makefile lzma/C/7zip/Compress/LZMA_Li
 +OutBuffer.o: ../../Common/OutBuffer.cpp
 +	$(CXX) $(CFLAGS) ../../Common/OutBuffer.cpp
 +
++StreamUtils.o: ../../Common/StreamUtils.cpp
++	$(CXX) $(CFLAGS) ../../Common/StreamUtils.cpp
++
 +FileStreams.o: ../../Common/FileStreams.cpp
 +	$(CXX) $(CFLAGS) ../../Common/FileStreams.cpp
 +
@@ -125,9 +129,9 @@ diff -urN lzma432/C/7zip/Compress/LZMA_Lib/makefile lzma/C/7zip/Compress/LZMA_Li
 +clean:
 +	-$(RM) $(PROG) $(OBJS)
 +
-diff -urN lzma432/C/7zip/Compress/LZMA_Lib/ZLib.cpp lzma/C/7zip/Compress/LZMA_Lib/ZLib.cpp
---- lzma432/C/7zip/Compress/LZMA_Lib/ZLib.cpp	1970-01-01 03:00:00.000000000 +0300
-+++ lzma/C/7zip/Compress/LZMA_Lib/ZLib.cpp	2006-03-24 13:23:09.638550690 +0300
+diff -Nur lzma/C/7zip/Compress/LZMA_Lib/ZLib.cpp lzma.patched/C/7zip/Compress/LZMA_Lib/ZLib.cpp
+--- lzma/C/7zip/Compress/LZMA_Lib/ZLib.cpp	1970-01-01 01:00:00.000000000 +0100
++++ lzma.patched/C/7zip/Compress/LZMA_Lib/ZLib.cpp	2006-03-25 11:04:53.000000000 +0100
 @@ -0,0 +1,273 @@
 +/*
 + * lzma zlib simplified wrapper
