@@ -1,0 +1,11 @@
+diff -Nur openssh-4.2p1/cipher.c openssh-4.2p1.patched/cipher.c
+--- openssh-4.2p1/cipher.c	2005-07-17 09:02:10.000000000 +0200
++++ openssh-4.2p1.patched/cipher.c	2006-03-26 12:43:41.000000000 +0200
+@@ -67,7 +67,6 @@
+ 
+ 	{ "3des-cbc",		SSH_CIPHER_SSH2, 8, 24, 0, EVP_des_ede3_cbc },
+ 	{ "blowfish-cbc",	SSH_CIPHER_SSH2, 8, 16, 0, EVP_bf_cbc },
+-	{ "cast128-cbc",	SSH_CIPHER_SSH2, 8, 16, 0, EVP_cast5_cbc },
+ 	{ "arcfour",		SSH_CIPHER_SSH2, 8, 16, 0, EVP_rc4 },
+ 	{ "arcfour128",		SSH_CIPHER_SSH2, 8, 16, 1536, EVP_rc4 },
+ 	{ "arcfour256",		SSH_CIPHER_SSH2, 8, 32, 1536, EVP_rc4 },
