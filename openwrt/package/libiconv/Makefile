@@ -79,5 +79,5 @@ uninstall-dev:
 		$(STAGING_DIR)/usr/include/iconv \
 		$(STAGING_DIR)/usr/lib/iconv \
 
-compile: install-dev
-clean: uninstall-dev
+compile-targets: install-dev
+clean-targets: uninstall-dev
