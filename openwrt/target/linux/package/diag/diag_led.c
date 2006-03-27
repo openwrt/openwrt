@@ -80,6 +80,13 @@ static void v1_set_dmz(u8 state) {
 	}
 }
 
+static void wap1_set_diag(u8 state) {
+       set_gpio(1<<3,state);
+}
+static void wap1_set_dmz(u8 state) {
+       set_gpio(1<<4,state);
+}
+
 // - - - - -
 static void ignore(u8 ignored) {};
 
@@ -175,13 +182,23 @@ static int __init diag_init()
 	buf=nvram_get("pmon_ver") ?: "";
 	if (((board_type & 0xf00) == 0x400) && (strncmp(buf, "CFE", 3) != 0)) {
 		buf=nvram_get("boardtype")?:"";
-		if (!strcmp(buf,"bcm94710dev")) {
+		if (!strncmp(buf,"bcm94710dev",11)) {
 			buf=nvram_get("boardnum")?:"";
 			if (!strcmp(buf,"42")) {
 				// wrt54g v1.x
 				set_diag=v1_set_diag;
 				set_dmz=v1_set_dmz;
 				reset_gpio=(1<<6);
+			}
+			if (simple_strtoul(buf, NULL, 0) == 2) {
+				// wap54g v1.0
+				// do not use strcmp as PMON v5.3.22 has some built-in nvram 
+				// defaults with trailing \r
+				set_diag=wap1_set_diag;
+				// no dmz led on wap54g, used green led 
+				// labeled "WLAN Link" instead
+				set_dmz=wap1_set_dmz;
+				reset_gpio=(1<<0);
 			}
 			if (!strcmp(buf,"asusX")) {
 				//asus wl-500g
