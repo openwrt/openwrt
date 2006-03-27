@@ -308,7 +308,6 @@ curl-compile: openssl-compile zlib-compile
 cyrus-sasl-compile: openssl-compile
 deco-compile: ncurses-compile
 dhcp6-compile: ncurses-compile
-dropbear-compile: zlib-compile
 dsniff-compile: libnids-compile openssl-compile libgdbm-compile
 freetype-compile: zlib-compile
 fprobe-compile: libpcap-compile
