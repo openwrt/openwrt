@@ -1,0 +1,22 @@
+diff -ruN dropbear-0.48-old/cli-runopts.c dropbear-0.48-new/cli-runopts.c
+--- dropbear-0.48-old/cli-runopts.c	2006-03-09 16:06:03.000000000 +0100
++++ dropbear-0.48-new/cli-runopts.c	2006-03-11 12:28:54.000000000 +0100
+@@ -188,6 +188,10 @@
+ 					debug_trace = 1;
+ 					break;
+ #endif
++				case 'o':
++					next = &dummy;
++				case 'x':
++					break;
+ 				case 'F':
+ 				case 'e':
+ 				case 'c':
+@@ -199,7 +203,6 @@
+ #ifndef ENABLE_CLI_LOCALTCPFWD
+ 				case 'L':
+ #endif
+-				case 'o':
+ 				case 'b':
+ 					next = &dummy;
+ 				default:
