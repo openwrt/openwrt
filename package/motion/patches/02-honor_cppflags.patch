@@ -1,0 +1,20 @@
+diff -ruN motion-3.2.5.1-old/Makefile.in motion-3.2.5.1-new/Makefile.in
+--- motion-3.2.5.1-old/Makefile.in	2006-03-07 22:52:49.000000000 +0100
++++ motion-3.2.5.1-new/Makefile.in	2006-03-27 22:04:34.000000000 +0200
+@@ -32,6 +32,7 @@
+ ################################################################################
+ CFLAGS       = @CFLAGS@ -Wall -DVERSION=\"$(VERSION)\" -D_REENTRANT \
+ 	       -Dsysconfdir=\"$(sysconfdir)\"
++CPPFLAGS     = @CPPFLAGS@
+ LDFLAGS      = @LDFLAGS@
+ LIBS         = @LIBS@ 
+ VIDEO_OBJ    = @VIDEO@
+@@ -115,7 +116,7 @@
+ ################################################################################
+ $(DEPEND_FILE): *.h $(SRC)
+ 	@echo "Generating dependencies, please wait..."
+-	@$(CC) $(CFLAGS) -M $(SRC) > .tmp
++	@$(CC) $(CFLAGS) $(CPPFLAGS) -M $(SRC) > .tmp
+ 	@mv -f .tmp $(DEPEND_FILE)
+ 	@echo
+ 
