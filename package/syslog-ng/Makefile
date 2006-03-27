@@ -14,42 +14,42 @@ PKG_CAT:=zcat
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
-PKG_INIT_LEVEL:=00
+PKG_INIT_LEVEL:=60
 
 include $(TOPDIR)/package/rules.mk
 
 $(eval $(call PKG_template,SYSLOG_NG,syslog-ng,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
-
 $(PKG_BUILD_DIR)/.configured:
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
+		$(TARGET_CONFIGURE_OPTS) \
+		CFLAGS="$(TARGET_CFLAGS)" \
 		CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/usr/include/libol" \
 		LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/usr/lib/libol" \
 		./configure \
-		  --target=$(GNU_TARGET_NAME) \
-		  --host=$(GNU_TARGET_NAME) \
-		  --build=$(GNU_HOST_NAME) \
-		  --program-prefix="" \
-		  --program-suffix="" \
-		  --prefix=/usr \
-		  --exec-prefix=/usr \
-		  --bindir=/usr/bin \
-		  --datadir=/usr/share \
-		  --includedir=/usr/include \
-		  --infodir=/usr/share/info \
-		  --libdir=/usr/lib \
-		  --libexecdir=/usr/lib \
-		  --localstatedir=/var \
-		  --mandir=/usr/share/man \
-		  --sbindir=/usr/sbin \
-		  --sysconfdir=/etc \
-		  $(DISABLE_LARGEFILE) \
-		  $(DISABLE_NLS) \
-		  --localstatedir=/var/lib \
-		  --disable-dependency-tracking \
-		  --disable-full-static \
-		  --enable-tcp-wrapper \
-		  --with-libol=$(STAGING_DIR)/usr/bin \
+			--target=$(GNU_TARGET_NAME) \
+			--host=$(GNU_TARGET_NAME) \
+			--build=$(GNU_HOST_NAME) \
+			--program-prefix="" \
+			--program-suffix="" \
+			--prefix=/usr \
+			--exec-prefix=/usr \
+			--bindir=/usr/bin \
+			--datadir=/usr/share \
+			--includedir=/usr/include \
+			--infodir=/usr/share/info \
+			--libdir=/usr/lib \
+			--libexecdir=/usr/lib \
+			--localstatedir=/var \
+			--mandir=/usr/share/man \
+			--sbindir=/usr/sbin \
+			--sysconfdir=/etc \
+			$(DISABLE_LARGEFILE) \
+			$(DISABLE_NLS) \
+			--disable-dependency-tracking \
+			--disable-full-static \
+			--enable-tcp-wrapper \
+			--with-libol="$(STAGING_DIR)/usr/bin" \
 	);
 	touch $(PKG_BUILD_DIR)/.configured
 
@@ -58,19 +58,16 @@ $(PKG_BUILD_DIR)/.built:
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
-		CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/usr/include/libol" \
-		LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/usr/lib/libol" \
-		CC=$(TARGET_CC) \
-		install-exec install-data
+		all install
 	touch $@
 
 $(IPKG_SYSLOG_NG):
 	install -d -m0755 $(IDIR_SYSLOG_NG)/usr/sbin
-	install -d -m0755 $(IDIR_SYSLOG_NG)/etc/syslog-ng
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/syslog-ng $(IDIR_SYSLOG_NG)/usr/sbin/
 	install -d -m0755 $(IDIR_SYSLOG_NG)/etc/init.d
-	$(CP) ${PKG_BUILD_DIR}/src/syslog-ng $(IDIR_SYSLOG_NG)/usr/sbin/
-	$(CP) files/syslog-ng.conf $(IDIR_SYSLOG_NG)/etc/syslog-ng/
-	$(CP) files/syslog-ng.init $(IDIR_SYSLOG_NG)/etc/init.d/S$(PKG_INIT_LEVEL)syslog-ng
+	install -m0755 ./files/syslog-ng.init $(IDIR_SYSLOG_NG)/etc/init.d/S$(PKG_INIT_LEVEL)syslog-ng
+	install -d -m0755 $(IDIR_SYSLOG_NG)/etc/syslog-ng
+	install -m0644 ./files/syslog-ng.conf $(IDIR_SYSLOG_NG)/etc/syslog-ng/
 	$(RSTRIP) $(IDIR_SYSLOG_NG)
 	$(IPKG_BUILD) $(IDIR_SYSLOG_NG) $(PACKAGE_DIR)
 
