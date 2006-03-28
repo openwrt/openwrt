@@ -9,7 +9,7 @@ LD		= $(CROSS)gcc
 AR		= $(CROSS)ar
 RANLIB		= $(CROSS)ranlib
 DOXYGEN		= echo
-INSTALL		= /usr/bin/install
+INSTALL		= install
 RM		= rm -f
 LN		= ln -sf
 
