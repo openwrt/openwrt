@@ -1,0 +1,392 @@
+Description: 	The mod_if module monitors various aspects of network 
+		interfaces for change, including IP, Hardware Address, 
+		broadcast, MTU, metric, and promiscuous mode.
+Version: 	0.2
+
+diff -ruN osiris-4.1.9-old/src/osirisd/modules/mod_if/Makefile osiris-4.1.9-new/src/osirisd/modules/mod_if/Makefile
+--- osiris-4.1.9-old/src/osirisd/modules/mod_if/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ osiris-4.1.9-new/src/osirisd/modules/mod_if/Makefile	2005-10-07 02:19:17.000000000 +0200
+@@ -0,0 +1,16 @@
++
++include ../Makefile
++
++SRCS=mod_if.c
++OBJS=$(SRCS:.c=.o)
++
++module: ${SRCS} ${OBJS}
++
++INCS=-I../.. -I../../../libosiris -I../../../libfileapi -I../../../..
++
++# meta-rule for compiling any "C" source file.
++$(OBJS): $(SRCS)
++	$(CC) $(DEFS) $(DEFAULT_INCLUDES) ${INCLUDES} ${INCS} $(AM_CPPFLAGS) \
++	$(CPPFLAGS) $(AM_CFLAGS)  $(CFLAGS) -c $(SRCS)
++	cp $@ ..
++
+diff -ruN osiris-4.1.9-old/src/osirisd/modules/mod_if/README osiris-4.1.9-new/src/osirisd/modules/mod_if/README
+--- osiris-4.1.9-old/src/osirisd/modules/mod_if/README	1970-01-01 01:00:00.000000000 +0100
++++ osiris-4.1.9-new/src/osirisd/modules/mod_if/README	2005-10-07 02:19:17.000000000 +0200
+@@ -0,0 +1,42 @@
++
++Module: mod_if
++Author: Brian Wotring (brian@hostintegrity.com)
++
++
++
++DESCRIPTION:
++
++The mod_if module is designed originally to monitor the promisc flag
++on network interfaces, but quickly turned into being able to monitor
++various aspects of network interfaces including hardware address,
++IP address, broadcast, MTU, and metric.
++
++This module is somewhat different in that each record is an element
++about a network interface as opposed to one record per interface. This
++will make it easier to add more elements to be monitored, easier to
++filter, and easier to understand alerts.
++
++USE:
++
++To use this module, all  that is needed is to include it in the Modules
++block of a scan configuration, e.g.:
++
++    <Modules>
++    ...
++    Include mod_if
++    ...
++    </Modules>
++
++
++PARAMETERS:
++
++There are no parameters for this module.
++
++PLATFORMS:
++
++Currently, this module is only implemented for Linux.    
++
++NOTES:
++
++
++
+diff -ruN osiris-4.1.9-old/src/osirisd/modules/mod_if/mod_if.c osiris-4.1.9-new/src/osirisd/modules/mod_if/mod_if.c
+--- osiris-4.1.9-old/src/osirisd/modules/mod_if/mod_if.c	1970-01-01 01:00:00.000000000 +0100
++++ osiris-4.1.9-new/src/osirisd/modules/mod_if/mod_if.c	2005-10-07 02:19:17.000000000 +0200
+@@ -0,0 +1,317 @@
++
++/******************************************************************************
++**
++**  Copyright (C) 2005 Brian Wotring.
++**
++**  This program is free software; you can redistribute it and/or
++**  modify it, however, you cannot sell it.
++**
++**  This program is distributed in the hope that it will be useful,
++**  but WITHOUT ANY WARRANTY; without even the implied warranty of
++**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
++**
++**  You should have received a copy of the license attached to the
++**  use of this software.  If not, view a current copy of the license
++**  file here:
++**
++**      http://www.hostintegrity.com/osiris/LICENSE
++**
++******************************************************************************/
++
++/*****************************************************************************
++**
++**  File:    mod_if.c
++**  Date:    September 23, 2005
++**
++**  Author:  Brian Wotring
++**  Purpose: platform specific methods for monitoring network devices.
++**
++******************************************************************************/
++
++
++/* CODE USED IN THIS MODULE WAS ORIGINALLY TAKEN FROM: 
++*
++*   http://mail.nl.linux.org/kernelnewbies/2003-05/msg00090.html
++*/
++
++static const char *MODULE_NAME = "mod_if";
++
++
++#ifndef WIN32
++#include "config.h"
++#endif
++
++#include <stdio.h>
++#include <stdlib.h>
++
++#ifndef WIN32
++#include <unistd.h>
++#include <string.h>
++#include <errno.h>
++
++#include <sys/socket.h>
++#include <sys/types.h>
++#include <net/if.h>
++#endif
++
++#include <sys/ioctl.h>
++#include <net/if_arp.h>
++#include <arpa/inet.h>
++
++
++#include "libosiris.h"
++#include "libfileapi.h"
++#include "rootpriv.h"
++#include "common.h"
++#include "version.h"
++
++#include "scanner.h"
++#include "logging.h"
++
++
++#define inaddrr(x) (*(struct in_addr *) &ifr->x[sizeof sa.sin_port])
++#define IFRSIZE   ((int)(size * sizeof (struct ifreq)))
++
++void process_if_unix( SCANNER *scanner )
++{
++    unsigned char*u;
++    int    sockfd, size  = 1;
++    struct ifreq *ifr;
++    struct ifconf ifc;
++    struct sockaddr_in sa;
++
++    SCAN_RECORD_TEXT_1 record;
++
++    /* Make sure we are able to create sockets */
++    
++    if ( (sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP)) < 0 )
++    {
++        log_error( "mod_if unable to create socket!" );
++        return;
++    }
++
++    ifc.ifc_len = IFRSIZE;
++    ifc.ifc_req = NULL;
++
++    do
++    {
++        ++size;
++
++        /* realloc buffer size until no overflow occurs  */
++        
++        if ((ifc.ifc_req = realloc(ifc.ifc_req, IFRSIZE)) == NULL )
++        {
++            log_error( "out of memory!!!" );
++            return;
++        }
++
++        ifc.ifc_len = IFRSIZE;
++
++        if (ioctl(sockfd, SIOCGIFCONF, &ifc))
++        {
++            log_error("ioctl failure: SIOCFIFCONF");
++            return;
++        }
++
++    } while (IFRSIZE <= ifc.ifc_len);
++
++    ifr = ifc.ifc_req;
++
++    for (;(char *) ifr < (char *) ifc.ifc_req + ifc.ifc_len; ++ifr)
++    {
++        if (ifr->ifr_addr.sa_data == (ifr+1)->ifr_addr.sa_data)
++        {
++            continue;  /* duplicate, skip it */
++        }
++
++        if (ioctl(sockfd, SIOCGIFFLAGS, ifr))
++        {
++            continue;  /* failed to get flags, skip it */
++        }
++
++        initialize_scan_record( (SCAN_RECORD *)&record,
++                                SCAN_RECORD_TYPE_TEXT_1 );
++
++        osi_strlcpy( record.module_name, MODULE_NAME,
++                     sizeof( record.module_name ) );
++
++        osi_snprintf( record.name, sizeof( record.name ),
++                      "if:%s:IP", ifr->ifr_name );
++
++        osi_snprintf( record.data, sizeof( record.data ),
++                      "%s", inet_ntoa(inaddrr(ifr_addr.sa_data)));
++
++        send_scan_data( scanner, (SCAN_RECORD *)&record );
++
++    /*
++     * This won't work on HP-UX 10.20 as there's no SIOCGIFHWADDR ioctl. You'll
++     * need to use DLPI or the NETSTAT ioctl on /dev/lan0, etc (and you'll need
++     *  to be root to use the NETSTAT ioctl. Also this is deprecated and doesn't
++     *     work on 11.00).
++     *
++     * On Digital Unix you can use the SIOCRPHYSADDR ioctl according to an old
++     * utility I have. Also on SGI I think you need to use a raw socket, e.g. s
++     * = socket(PF_RAW, SOCK_RAW, RAWPROTO_SNOOP)
++     *
++     * Dave
++     *
++     * From: David Peter <dave.peter@eu.citrix.com>
++     **/
++
++        if ( ioctl(sockfd, SIOCGIFHWADDR, ifr) == 0 )
++        {
++            /* Select which  hardware types to process.
++             **
++             **    See list in system include file included from
++             **    /usr/include/net/if_arp.h  (For example, on
++             **    Linux see file /usr/include/linux/if_arp.h to
++             **    get the list.)
++             **/
++
++            switch (ifr->ifr_hwaddr.sa_family)
++            {
++                default:
++                    continue;
++
++                case  ARPHRD_NETROM:
++                case  ARPHRD_ETHER:
++                case  ARPHRD_PPP:
++                case  ARPHRD_EETHER:
++                case  ARPHRD_IEEE802:
++                    break;
++            }
++
++            u = (unsigned char *) &ifr->ifr_addr.sa_data;
++
++            /* send record for MAC for this interface */
++
++            if (u[0] + u[1] + u[2] + u[3] + u[4] + u[5])
++            {
++                initialize_scan_record( (SCAN_RECORD *)&record,
++                                    SCAN_RECORD_TYPE_TEXT_1 );
++
++                osi_strlcpy( record.module_name, MODULE_NAME,
++                         sizeof( record.module_name ) );
++
++                osi_snprintf( record.name, sizeof( record.name ),
++                    "if:%s:MAC", ifr->ifr_name );
++
++                osi_snprintf( record.data, sizeof( record.data ),
++                        "%2.2x.%2.2x.%2.2x.%2.2x.%2.2x.%2.2x",
++                        u[0], u[1], u[2], u[3], u[4], u[5]);
++
++                send_scan_data( scanner, (SCAN_RECORD *)&record );
++            }
++        }
++
++        if ( ioctl(sockfd, SIOCGIFNETMASK, ifr) == 0 &&
++             strcmp("255.255.255.255", inet_ntoa(inaddrr(ifr_addr.sa_data))))
++        {
++            initialize_scan_record( (SCAN_RECORD *)&record,
++                                SCAN_RECORD_TYPE_TEXT_1 );
++
++            osi_strlcpy( record.module_name, MODULE_NAME,
++                         sizeof( record.module_name ) );
++
++            osi_snprintf( record.name, sizeof( record.name ),
++                "if:%s:NETMASK", ifr->ifr_name );
++
++            osi_snprintf( record.data, sizeof( record.data ),
++                "%s", inet_ntoa(inaddrr(ifr_addr.sa_data)));
++
++            send_scan_data( scanner, (SCAN_RECORD *)&record );
++        }
++
++        if (ifr->ifr_flags & IFF_BROADCAST)
++        {
++            if ( ioctl(sockfd, SIOCGIFBRDADDR, ifr) == 0 &&
++                 strcmp("0.0.0.0", inet_ntoa(inaddrr(ifr_addr.sa_data))))
++            {
++
++                initialize_scan_record( (SCAN_RECORD *)&record,
++                                        SCAN_RECORD_TYPE_TEXT_1 );
++
++                osi_strlcpy( record.module_name, MODULE_NAME,
++                     sizeof( record.module_name ) );
++
++                osi_snprintf( record.name, sizeof( record.name ),
++                    "if:%s:BROADCAST", ifr->ifr_name );
++
++                osi_snprintf( record.data, sizeof( record.data ),
++                    "%s",inet_ntoa(inaddrr(ifr_addr.sa_data)));
++
++                send_scan_data( scanner, (SCAN_RECORD *)&record );
++            }
++        }
++
++        /* Added by David Vasil to check for Promiscuous mode */
++
++        initialize_scan_record( (SCAN_RECORD *)&record,
++                                SCAN_RECORD_TYPE_TEXT_1 );
++
++        osi_strlcpy( record.module_name, MODULE_NAME,
++                     sizeof( record.module_name ) );
++
++
++        osi_snprintf( record.name, sizeof( record.name ),
++                      "if:%s:PROMISC", ifr->ifr_name );
++
++        if ( ioctl(sockfd, SIOCGIFFLAGS, ifr) == 0 &&
++             ifr->ifr_flags & IFF_PROMISC)
++        {
++            osi_strlcpy( record.data, "ENABLED", sizeof( record.data ) );
++        }
++
++        else
++        {
++            osi_strlcpy( record.data, "DISABLED", sizeof( record.data ) );
++        }
++
++        send_scan_data( scanner, (SCAN_RECORD *)&record );
++
++
++        if ( ioctl(sockfd, SIOCGIFMTU, ifr) == 0 )
++        {
++            initialize_scan_record( (SCAN_RECORD *)&record,
++                                    SCAN_RECORD_TYPE_TEXT_1 );
++
++            osi_strlcpy( record.module_name, MODULE_NAME,
++                         sizeof( record.module_name ) );
++
++            osi_snprintf( record.name, sizeof( record.name ),
++                "if:%s:MTU", ifr->ifr_name );
++
++            osi_snprintf( record.data, sizeof( record.data ),
++                "%u", ifr->ifr_mtu );
++
++            send_scan_data( scanner, (SCAN_RECORD *)&record );
++        }
++
++        if ( ioctl(sockfd, SIOCGIFMETRIC, ifr) == 0 )
++        {
++            initialize_scan_record( (SCAN_RECORD *)&record,
++                                    SCAN_RECORD_TYPE_TEXT_1 );
++
++            osi_strlcpy( record.module_name, MODULE_NAME,
++                         sizeof( record.module_name ) );
++
++            osi_snprintf( record.name, sizeof( record.name ),
++                "if:%s:METRIC", ifr->ifr_name );
++
++            osi_snprintf( record.data, sizeof( record.data ),
++                "%u", ifr->ifr_metric );
++
++            send_scan_data( scanner, (SCAN_RECORD *)&record );
++        }
++    }
++
++    close(sockfd);
++}
++
++void mod_if( SCANNER *scanner )
++{
++#if defined(SYSTEM_LINUX)
++    process_if_unix( scanner );
++#endif
++
++}
