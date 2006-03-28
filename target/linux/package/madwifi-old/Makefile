@@ -44,12 +44,12 @@ endif
 
 include $(TOPDIR)/package/rules.mk
 
-$(eval $(call PKG_template,KMOD_MADWIFI,kmod-madwifi-old,$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE),$(ARCH),kernel ($(LINUX_VERSION)-$(BOARD)-$(LINUX_RELEASE))))
+$(eval $(call PKG_template,KMOD_MADWIFI_OLD,kmod-madwifi-old,$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE),$(ARCH),kernel ($(LINUX_VERSION)-$(BOARD)-$(LINUX_RELEASE))))
 
 $(PKG_BUILD_DIR)/.configured:
 	touch $@
 
-MADWIFI_MAKEOPTS= -C $(PKG_BUILD_DIR) \
+MADWIFI_OLD_MAKEOPTS= -C $(PKG_BUILD_DIR) \
 		PATH="$(TARGET_PATH)" \
 		ARCH="$(LINUX_KARCH)" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
@@ -62,30 +62,30 @@ MADWIFI_MAKEOPTS= -C $(PKG_BUILD_DIR) \
 
 $(PKG_BUILD_DIR)/.built:
 ifeq ($(findstring AHB,$(BUS)),AHB)
-	$(MAKE) $(MADWIFI_MAKEOPTS) BUS="AHB" all
+	$(MAKE) $(MADWIFI_OLD_MAKEOPTS) BUS="AHB" all
 endif
 ifeq ($(findstring PCI,$(BUS)),PCI)
-	$(MAKE) $(MADWIFI_MAKEOPTS) BUS="PCI" all
+	$(MAKE) $(MADWIFI_OLD_MAKEOPTS) BUS="PCI" all
 endif
-	$(MAKE) $(MADWIFI_MAKEOPTS) -C tools all
+	$(MAKE) $(MADWIFI_OLD_MAKEOPTS) -C tools all
 	$(RSTRIP) $(PKG_BUILD_DIR)/tools/madwifi_multi
 	touch $@
 
-$(IPKG_KMOD_MADWIFI):
-	mkdir -p $(IDIR_KMOD_MADWIFI)/etc/modules.d
-	mkdir -p $(IDIR_KMOD_MADWIFI)/etc/init.d
-	mkdir -p $(IDIR_KMOD_MADWIFI)/lib/modules/$(LINUX_VERSION)
-	mkdir -p $(IDIR_KMOD_MADWIFI)/usr/sbin
-	install -m0644 ./files/madwifi.modules $(IDIR_KMOD_MADWIFI)/etc/modules.d/20-madwifi
-	install -m0755 ./files/madwifi.init $(IDIR_KMOD_MADWIFI)/etc/init.d/S20madwifi
+$(IPKG_KMOD_MADWIFI_OLD):
+	install -d -m0755 $(IDIR_KMOD_MADWIFI_OLD)/etc/modules.d
+	install -m0644 ./files/madwifi.modules $(IDIR_KMOD_MADWIFI_OLD)/etc/modules.d/20-madwifi
+	install -d -m0755 $(IDIR_KMOD_MADWIFI_OLD)/etc/init.d
+	install -m0755 ./files/madwifi.init $(IDIR_KMOD_MADWIFI_OLD)/etc/init.d/S20madwifi
+	install -d -m0755 $(IDIR_KMOD_MADWIFI_OLD)/lib/modules/$(LINUX_VERSION)
 	$(CP)   $(PKG_BUILD_DIR)/net80211/wlan*.$(LINUX_KMOD_SUFFIX) \
 		$(PKG_BUILD_DIR)/ath_hal/ath_hal.$(LINUX_KMOD_SUFFIX) \
 		$(BUS_MODULES) \
 		$(PKG_BUILD_DIR)/ath_rate/sample/ath_rate_sample.$(LINUX_KMOD_SUFFIX) \
 		$(PKG_BUILD_DIR)/net80211/*.$(LINUX_KMOD_SUFFIX) \
-		$(IDIR_KMOD_MADWIFI)/lib/modules/$(LINUX_VERSION)/
-	$(CP) $(PKG_BUILD_DIR)/tools/{80211debug,80211stats,athchans,athctrl,athdebug,athkey,athstats} $(IDIR_KMOD_MADWIFI)/usr/sbin/
-	$(IPKG_BUILD) $(IDIR_KMOD_MADWIFI) $(PACKAGE_DIR)
+		$(IDIR_KMOD_MADWIFI_OLD)/lib/modules/$(LINUX_VERSION)/
+	install -d -m0755 $(IDIR_KMOD_MADWIFI_OLD)/usr/sbin
+	$(CP) $(PKG_BUILD_DIR)/tools/{80211debug,80211stats,athchans,athctrl,athdebug,athkey,athstats} $(IDIR_KMOD_MADWIFI_OLD)/usr/sbin/
+	$(IPKG_BUILD) $(IDIR_KMOD_MADWIFI_OLD) $(PACKAGE_DIR)
 
 $(STAGING_DIR)/usr/include/madwifi-old/net80211/ieee80211.h: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include/madwifi-old
