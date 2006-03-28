@@ -1,15 +1,15 @@
-diff -Nur openswan-2.4.0.orig/programs/loggerfix openswan-2.4.0/programs/loggerfix
---- openswan-2.4.0.orig/programs/loggerfix	1970-01-01 01:00:00.000000000 +0100
-+++ openswan-2.4.0/programs/loggerfix	2005-09-29 13:44:43.325458750 +0200
+diff -Nur openswan-2.4.5rc5/programs/loggerfix openswan-2.4.5rc5.patched/programs/loggerfix
+--- openswan-2.4.5rc5/programs/loggerfix	1970-01-01 01:00:00.000000000 +0100
++++ openswan-2.4.5rc5.patched/programs/loggerfix	2006-03-29 01:20:44.000000000 +0200
 @@ -0,0 +1,5 @@
 +#!/bin/sh
 +# use filename instead of /dev/null to log, but dont log to flash or ram
 +# pref. log to nfs mount
 +echo "$*" >> /dev/null
 +exit 0
-diff -Nur openswan-2.4.0.orig/programs/look/look.in openswan-2.4.0/programs/look/look.in
---- openswan-2.4.0.orig/programs/look/look.in	2005-08-18 16:10:09.000000000 +0200
-+++ openswan-2.4.0/programs/look/look.in	2005-09-29 13:44:49.537847000 +0200
+diff -Nur openswan-2.4.5rc5/programs/look/look.in openswan-2.4.5rc5.patched/programs/look/look.in
+--- openswan-2.4.5rc5/programs/look/look.in	2005-08-18 16:10:09.000000000 +0200
++++ openswan-2.4.5rc5.patched/programs/look/look.in	2006-03-29 01:20:44.000000000 +0200
 @@ -84,7 +84,7 @@
  then
  	pat="$pat|$defaultroutephys\$|$defaultroutevirt\$"
@@ -19,9 +19,9 @@ diff -Nur openswan-2.4.0.orig/programs/look/look.in openswan-2.4.0/programs/look
  	do
  		pat="$pat|$i\$"
  	done
-diff -Nur openswan-2.4.0.orig/programs/manual/manual.in openswan-2.4.0/programs/manual/manual.in
---- openswan-2.4.0.orig/programs/manual/manual.in	2005-04-18 00:57:12.000000000 +0200
-+++ openswan-2.4.0/programs/manual/manual.in	2005-09-29 13:44:52.446028750 +0200
+diff -Nur openswan-2.4.5rc5/programs/manual/manual.in openswan-2.4.5rc5.patched/programs/manual/manual.in
+--- openswan-2.4.5rc5/programs/manual/manual.in	2005-11-18 06:18:33.000000000 +0100
++++ openswan-2.4.5rc5.patched/programs/manual/manual.in	2006-03-29 01:20:44.000000000 +0200
 @@ -104,7 +104,7 @@
  				sub(/:/, " ", $0)
  				if (interf != "")
@@ -31,9 +31,9 @@ diff -Nur openswan-2.4.0.orig/programs/manual/manual.in openswan-2.4.0/programs/
  	;;
  esac
  
-diff -Nur openswan-2.4.0.orig/programs/_plutorun/_plutorun.in openswan-2.4.0/programs/_plutorun/_plutorun.in
---- openswan-2.4.0.orig/programs/_plutorun/_plutorun.in	2005-04-21 23:57:16.000000000 +0200
-+++ openswan-2.4.0/programs/_plutorun/_plutorun.in	2005-09-29 13:44:53.442091000 +0200
+diff -Nur openswan-2.4.5rc5/programs/_plutorun/_plutorun.in openswan-2.4.5rc5.patched/programs/_plutorun/_plutorun.in
+--- openswan-2.4.5rc5/programs/_plutorun/_plutorun.in	2006-01-06 00:45:00.000000000 +0100
++++ openswan-2.4.5rc5.patched/programs/_plutorun/_plutorun.in	2006-03-29 01:20:44.000000000 +0200
 @@ -147,7 +147,7 @@
  			exit 1
  		fi
@@ -43,9 +43,9 @@ diff -Nur openswan-2.4.0.orig/programs/_plutorun/_plutorun.in openswan-2.4.0/pro
  		then
  			echo Cannot write to directory to create \"$stderrlog\".
  			exit 1
-diff -Nur openswan-2.4.0.orig/programs/_realsetup/_realsetup.in openswan-2.4.0/programs/_realsetup/_realsetup.in
---- openswan-2.4.0.orig/programs/_realsetup/_realsetup.in	2005-07-28 02:23:48.000000000 +0200
-+++ openswan-2.4.0/programs/_realsetup/_realsetup.in	2005-09-29 13:44:53.442091000 +0200
+diff -Nur openswan-2.4.5rc5/programs/_realsetup/_realsetup.in openswan-2.4.5rc5.patched/programs/_realsetup/_realsetup.in
+--- openswan-2.4.5rc5/programs/_realsetup/_realsetup.in	2005-07-28 02:23:48.000000000 +0200
++++ openswan-2.4.5rc5.patched/programs/_realsetup/_realsetup.in	2006-03-29 01:20:44.000000000 +0200
 @@ -235,7 +235,7 @@
  
  	# misc pre-Pluto setup
@@ -64,9 +64,9 @@ diff -Nur openswan-2.4.0.orig/programs/_realsetup/_realsetup.in openswan-2.4.0/p
  
  	perform rm -f $info $lock $plutopid
  	perform echo "...Openswan IPsec stopped" "|" $LOGONLY
-diff -Nur openswan-2.4.0.orig/programs/send-pr/send-pr.in openswan-2.4.0/programs/send-pr/send-pr.in
---- openswan-2.4.0.orig/programs/send-pr/send-pr.in	2005-04-18 01:04:46.000000000 +0200
-+++ openswan-2.4.0/programs/send-pr/send-pr.in	2005-09-29 13:44:53.442091000 +0200
+diff -Nur openswan-2.4.5rc5/programs/send-pr/send-pr.in openswan-2.4.5rc5.patched/programs/send-pr/send-pr.in
+--- openswan-2.4.5rc5/programs/send-pr/send-pr.in	2005-04-18 01:04:46.000000000 +0200
++++ openswan-2.4.5rc5.patched/programs/send-pr/send-pr.in	2006-03-29 01:20:44.000000000 +0200
 @@ -402,7 +402,7 @@
  		    else
  			if [ "$fieldname" != "Category" ]
@@ -103,9 +103,9 @@ diff -Nur openswan-2.4.0.orig/programs/send-pr/send-pr.in openswan-2.4.0/program
  			echo "/^>${fieldname}:/ s/${dpat}//" >> $FIXFIL
  		    fi
  		    echo "${fmtname}${desc}" >> $file
-diff -Nur openswan-2.4.0.orig/programs/setup/setup.in openswan-2.4.0/programs/setup/setup.in
---- openswan-2.4.0.orig/programs/setup/setup.in	2005-07-25 21:17:03.000000000 +0200
-+++ openswan-2.4.0/programs/setup/setup.in	2005-09-29 13:44:52.446028750 +0200
+diff -Nur openswan-2.4.5rc5/programs/setup/setup.in openswan-2.4.5rc5.patched/programs/setup/setup.in
+--- openswan-2.4.5rc5/programs/setup/setup.in	2005-07-25 21:17:03.000000000 +0200
++++ openswan-2.4.5rc5.patched/programs/setup/setup.in	2006-03-29 01:20:44.000000000 +0200
 @@ -117,12 +117,22 @@
  # do it
  case "$1" in
@@ -130,9 +130,9 @@ diff -Nur openswan-2.4.0.orig/programs/setup/setup.in openswan-2.4.0/programs/se
  	tmp=/var/run/pluto/ipsec_setup.st
  	outtmp=/var/run/pluto/ipsec_setup.out
  	(
-diff -Nur openswan-2.4.0.orig/programs/showhostkey/showhostkey.in openswan-2.4.0/programs/showhostkey/showhostkey.in
---- openswan-2.4.0.orig/programs/showhostkey/showhostkey.in	2004-11-14 14:40:41.000000000 +0100
-+++ openswan-2.4.0/programs/showhostkey/showhostkey.in	2005-09-29 13:44:52.446028750 +0200
+diff -Nur openswan-2.4.5rc5/programs/showhostkey/showhostkey.in openswan-2.4.5rc5.patched/programs/showhostkey/showhostkey.in
+--- openswan-2.4.5rc5/programs/showhostkey/showhostkey.in	2004-11-14 14:40:41.000000000 +0100
++++ openswan-2.4.5rc5.patched/programs/showhostkey/showhostkey.in	2006-03-29 01:20:44.000000000 +0200
 @@ -63,7 +63,7 @@
  	exit 1
  fi
@@ -142,9 +142,9 @@ diff -Nur openswan-2.4.0.orig/programs/showhostkey/showhostkey.in openswan-2.4.0
  
  awk '	BEGIN {
  		inkey = 0
-diff -Nur openswan-2.4.0.orig/programs/_startklips/_startklips.in openswan-2.4.0/programs/_startklips/_startklips.in
---- openswan-2.4.0.orig/programs/_startklips/_startklips.in	2005-03-31 23:07:27.000000000 +0200
-+++ openswan-2.4.0/programs/_startklips/_startklips.in	2005-09-29 13:44:53.442091000 +0200
+diff -Nur openswan-2.4.5rc5/programs/_startklips/_startklips.in openswan-2.4.5rc5.patched/programs/_startklips/_startklips.in
+--- openswan-2.4.5rc5/programs/_startklips/_startklips.in	2005-11-25 00:08:05.000000000 +0100
++++ openswan-2.4.5rc5.patched/programs/_startklips/_startklips.in	2006-03-29 01:23:54.000000000 +0200
 @@ -262,15 +262,15 @@
      echo "FATAL ERROR: Both KLIPS and NETKEY IPsec code is present in kernel"
      exit
@@ -164,7 +164,7 @@ diff -Nur openswan-2.4.0.orig/programs/_startklips/_startklips.in openswan-2.4.0
  fi
  
  if test -f $netkey
-@@ -278,18 +278,18 @@
+@@ -278,21 +278,21 @@
  	klips=false
  	if test -f $modules
  	then
@@ -179,7 +179,12 @@ diff -Nur openswan-2.4.0.orig/programs/_startklips/_startklips.in openswan-2.4.0
 +		insmod -qv xfrm4_tunnel
  		# xfrm_user contains netlink support for IPsec 
 -		modprobe -qv xfrm_user
+-		modprobe -qv hw_random
 +		insmod -qv xfrm_user
++		insmod -qv hw_random
+ 		# padlock must load before aes module
+-		modprobe -qv padlock
++		insmod -qv padlock
  		# load the most common ciphers/algo's
 -		modprobe -qv sha1
 -		modprobe -qv md5
@@ -192,17 +197,428 @@ diff -Nur openswan-2.4.0.orig/programs/_startklips/_startklips.in openswan-2.4.0
  	fi
  fi
  
-@@ -305,7 +305,12 @@
+@@ -308,10 +308,10 @@
  		fi
                  unset MODPATH MODULECONF        # no user overrides!
                  depmod -a >/dev/null 2>&1
+-		modprobe -qv hw_random
++		insmod -qv hw_random
+ 		# padlock must load before aes module
+-		modprobe -qv padlock
 -                modprobe -v ipsec
-+                if [ -f modprobe ]
-+									then modprobe -v ipsec
-+								elif [ -f insmod ]
-+									then insmod ipsec
-+								fi
-+									
++		insmod -qv padlock
++                insmod -v ipsec
          fi
          if test ! -f $ipsecversion
          then
+diff -Nur openswan-2.4.5rc5/programs/_startklips/_startklips.in.orig openswan-2.4.5rc5.patched/programs/_startklips/_startklips.in.orig
+--- openswan-2.4.5rc5/programs/_startklips/_startklips.in.orig	1970-01-01 01:00:00.000000000 +0100
++++ openswan-2.4.5rc5.patched/programs/_startklips/_startklips.in.orig	2005-11-25 00:08:05.000000000 +0100
+@@ -0,0 +1,407 @@
++#!/bin/sh
++# KLIPS startup script
++# Copyright (C) 1998, 1999, 2001, 2002  Henry Spencer.
++# 
++# This program is free software; you can redistribute it and/or modify it
++# under the terms of the GNU General Public License as published by the
++# Free Software Foundation; either version 2 of the License, or (at your
++# option) any later version.  See <http://www.fsf.org/copyleft/gpl.txt>.
++# 
++# This program is distributed in the hope that it will be useful, but
++# WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
++# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
++# for more details.
++#
++# RCSID $Id$
++
++me='ipsec _startklips'		# for messages
++
++# KLIPS-related paths
++sysflags=/proc/sys/net/ipsec
++modules=/proc/modules
++# full rp_filter path is $rpfilter1/interface/$rpfilter2
++rpfilter1=/proc/sys/net/ipv4/conf
++rpfilter2=rp_filter
++# %unchanged or setting (0, 1, or 2)
++rpfiltercontrol=0
++ipsecversion=/proc/net/ipsec_version
++moduleplace=/lib/modules/`uname -r`/kernel/net/ipsec
++bareversion=`uname -r | sed -e 's/\.nptl//' | sed -e 's/^\(2\.[0-9]\.[1-9][0-9]*-[1-9][0-9]*\(\.[0-9][0-9]*\)*\(\.x\)*\).*$/\1/'`
++moduleinstplace=/lib/modules/$bareversion/kernel/net/ipsec
++case $bareversion in
++	2.6*)
++		modulename=ipsec.ko
++		;;
++	*)
++		modulename=ipsec.o
++		;;
++esac
++
++klips=true
++netkey=/proc/net/pfkey
++
++info=/dev/null
++log=daemon.error
++for dummy
++do
++	case "$1" in
++	--log)		log="$2" ; shift	;;
++	--info)		info="$2" ; shift	;;
++	--debug)	debug="$2" ; shift	;;
++	--omtu)		omtu="$2" ; shift	;;
++	--fragicmp)	fragicmp="$2" ; shift	;;
++	--hidetos)	hidetos="$2" ; shift	;;
++	--rpfilter)	rpfiltercontrol="$2" ; shift	;;
++	--)	shift ; break	;;
++	-*)	echo "$me: unknown option \`$1'" >&2 ; exit 2	;;
++	*)	break	;;
++	esac
++	shift
++done
++
++
++
++# some shell functions, to clarify the actual code
++
++# set up a system flag based on a variable
++# sysflag value shortname default flagname
++sysflag() {
++	case "$1" in
++	'')	v="$3"	;;
++	*)	v="$1"	;;
++	esac
++	if test ! -f $sysflags/$4
++	then
++		if test " $v" != " $3"
++		then
++			echo "cannot do $2=$v, $sysflags/$4 does not exist"
++			exit 1
++		else
++			return	# can't set, but it's the default anyway
++		fi
++	fi
++	case "$v" in
++	yes|no)	;;
++	*)	echo "unknown (not yes/no) $2 value \`$1'"
++		exit 1
++		;;
++	esac
++	case "$v" in
++	yes)	echo 1 >$sysflags/$4	;;
++	no)	echo 0 >$sysflags/$4	;;
++	esac
++}
++
++# set up a Klips interface
++klipsinterface() {
++	# pull apart the interface spec
++	virt=`expr $1 : '\([^=]*\)=.*'`
++	phys=`expr $1 : '[^=]*=\(.*\)'`
++	case "$virt" in
++	ipsec[0-9])	;;
++	*)	echo "invalid interface \`$virt' in \`$1'" ; exit 1	;;
++	esac
++
++	# figure out ifconfig for interface
++	addr=
++	eval `ifconfig $phys |
++		awk '$1 == "inet" && $2 ~ /^addr:/ && $NF ~ /^Mask:/ {
++			gsub(/:/, " ", $0)
++			print "addr=" $3
++			other = $5
++			if ($4 == "Bcast")
++				print "type=broadcast"
++			else if ($4 == "P-t-P")
++				print "type=pointopoint"
++			else if (NF == 5) {
++				print "type="
++				other = ""
++			} else
++				print "type=unknown"
++			print "otheraddr=" other
++			print "mask=" $NF
++		}'`
++	if test " $addr" = " "
++	then
++		echo "unable to determine address of \`$phys'"
++		exit 1
++	fi
++	if test " $type" = " unknown"
++	then
++		echo "\`$phys' is of an unknown type"
++		exit 1
++	fi
++	if test " $omtu" != " "
++	then
++		mtu="mtu $omtu"
++	else
++		mtu=
++	fi
++	echo "KLIPS $virt on $phys $addr/$mask $type $otheraddr $mtu" | logonly
++
++	if $klips
++	then
++		# attach the interface and bring it up
++		ipsec tncfg --attach --virtual $virt --physical $phys
++		ifconfig $virt inet $addr $type $otheraddr netmask $mask $mtu
++	fi
++
++	# if %defaultroute, note the facts
++	if test " $2" != " "
++	then
++		(
++			echo "defaultroutephys=$phys"
++			echo "defaultroutevirt=$virt"
++			echo "defaultrouteaddr=$addr"
++			if test " $2" != " 0.0.0.0"
++			then
++				echo "defaultroutenexthop=$2"
++			fi
++		) >>$info
++	else
++		echo '#dr: no default route' >>$info
++	fi
++
++	# check for rp_filter trouble
++	checkif $phys			# thought to be a problem only on phys
++}
++
++# check an interface for problems
++checkif() {
++	$klips || return 0
++	rpf=$rpfilter1/$1/$rpfilter2
++	if test -f $rpf
++	then
++		r="`cat $rpf`"
++		if test " $r" != " 0"
++		then
++			case "$r-$rpfiltercontrol" in
++			0-%unchanged|0-0|1-1|2-2)
++				# happy state
++				;;
++			*-%unchanged)
++				echo "WARNING: $1 has route filtering turned on; KLIPS may not work ($rpf is $r)"
++				;;
++			[012]-[012])
++				echo "WARNING: changing route filtering on $1 (changing $rpf from $r to $rpfiltercontrol)"
++				echo "$rpfiltercontrol" >$rpf
++				;;
++			[012]-*)
++				echo "ERROR: unknown rpfilter setting: $rpfiltercontrol"
++				;;
++			*)
++				echo "ERROR: unknown $rpf value $r"
++				;;
++			esac
++		fi
++	fi
++}
++
++# interfaces=%defaultroute:  put ipsec0 on top of default route's interface
++defaultinterface() {
++	phys=`netstat -nr |
++		awk '$1 == "0.0.0.0" && $3 == "0.0.0.0" { print $NF }'`
++	if test " $phys" = " "
++	then
++		echo "no default route, %defaultroute cannot cope!!!"
++		exit 1
++	fi
++	if test `echo " $phys" | wc -l` -gt 1
++	then
++		echo "multiple default routes, %defaultroute cannot cope!!!"
++		exit 1
++	fi
++	next=`netstat -nr |
++		awk '$1 == "0.0.0.0" && $3 == "0.0.0.0" { print $2 }'`
++	klipsinterface "ipsec0=$phys" $next
++}
++
++# log only to syslog, not to stdout/stderr
++logonly() {
++	logger -p $log -t ipsec_setup
++}
++
++# sort out which module is appropriate, changing it if necessary
++setmodule() {
++	if [ -e /proc/kallsyms ]
++	then
++		kernelsymbols="/proc/kallsyms";
++		echo "calcgoo: warning: 2.6 kernel with kallsyms not supported yet"
++	else
++		kernelsymbols="/proc/ksyms";
++	fi	
++        wantgoo="`ipsec calcgoo $kernelsymbols`"
++        module=$moduleplace/$modulename
++        if test -f $module
++        then
++                goo="`nm -ao $module | ipsec calcgoo`"
++                if test " $wantgoo" = " $goo"
++                then
++                        return          # looks right
++                fi
++        fi
++        if test -f $moduleinstplace/$wantgoo
++        then
++                echo "modprobe failed, but found matching template module $wantgoo."
++                echo "Copying $moduleinstplace/$wantgoo to $module."
++                rm -f $module
++                mkdir -p $moduleplace
++                cp -p $moduleinstplace/$wantgoo $module
++                # "depmod -a" gets done by caller
++        fi
++}
++
++
++
++# main line
++
++# load module if possible
++if test -f $ipsecversion && test -f $netkey
++then
++    # both KLIPS and NETKEY code detected, bail out
++    echo "FATAL ERROR: Both KLIPS and NETKEY IPsec code is present in kernel"
++    exit
++fi
++if test ! -f $ipsecversion && test ! -f $netkey && modprobe -qn ipsec
++then
++    # statically compiled KLIPS/NETKEY not found; try to load the module
++    modprobe ipsec
++fi
++
++if test ! -f $ipsecversion && test ! -f $netkey
++then
++	modprobe -v af_key
++fi
++
++if test -f $netkey
++then
++	klips=false
++	if test -f $modules
++	then
++		modprobe -qv ah4
++		modprobe -qv esp4
++		modprobe -qv ipcomp
++		#  xfrm4_tunnel is needed by ipip and ipcomp
++		modprobe -qv xfrm4_tunnel
++		# xfrm_user contains netlink support for IPsec 
++		modprobe -qv xfrm_user
++		modprobe -qv hw_random
++		# padlock must load before aes module
++		modprobe -qv padlock
++		# load the most common ciphers/algo's
++		modprobe -qv sha1
++		modprobe -qv md5
++		modprobe -qv des
++		modprobe -qv aes
++	fi
++fi
++
++if test ! -f $ipsecversion && $klips
++then
++        if test -r $modules             # kernel does have modules
++        then
++		if [ ! -e /proc/ksyms -a ! -e /proc/kallsyms ]
++		then
++			echo "Broken 2.6 kernel without kallsyms, skipping calcgoo (Fedora rpm?)"
++		else
++                	setmodule
++		fi
++                unset MODPATH MODULECONF        # no user overrides!
++                depmod -a >/dev/null 2>&1
++		modprobe -qv hw_random
++		# padlock must load before aes module
++		modprobe -qv padlock
++                modprobe -v ipsec
++        fi
++        if test ! -f $ipsecversion
++        then
++                echo "kernel appears to lack IPsec support (neither CONFIG_KLIPS or CONFIG_NET_KEY are set)"
++                exit 1
++        fi
++fi
++
++# figure out debugging flags
++case "$debug" in
++'')	debug=none	;;
++esac
++if test -r /proc/net/ipsec_klipsdebug
++then
++	echo "KLIPS debug \`$debug'" | logonly
++	case "$debug" in
++	none)	ipsec klipsdebug --none	;;
++	all)	ipsec klipsdebug --all	;;
++	*)	ipsec klipsdebug --none
++		for d in $debug
++		do
++			ipsec klipsdebug --set $d
++		done
++		;;
++	esac
++elif $klips
++then
++	if test " $debug" != " none"
++	then
++		echo "klipsdebug=\`$debug' ignored, KLIPS lacks debug facilities"
++	fi
++fi
++
++# figure out misc. kernel config
++if test -d $sysflags
++then
++	sysflag "$fragicmp" "fragicmp" yes icmp
++	echo 1 >$sysflags/inbound_policy_check		# no debate
++	sysflag no "no_eroute_pass" no no_eroute_pass	# obsolete parm
++	sysflag no "opportunistic" no opportunistic	# obsolete parm
++	sysflag "$hidetos" "hidetos" yes tos
++elif $klips
++then
++	echo "WARNING: cannot adjust KLIPS flags, no $sysflags directory!"
++	# carry on
++fi
++
++if $klips
++then
++	# clear tables out in case dregs have been left over
++	ipsec eroute --clear
++	ipsec spi --clear
++elif test $netkey
++then
++	if ip xfrm state > /dev/null 2>&1
++	then
++		ip xfrm state flush
++		ip xfrm policy flush
++	elif type setkey > /dev/null 2>&1
++	then
++	 	# Check that the setkey command is available.
++         	setkeycmd= 	 
++         	PATH=$PATH:/usr/local/sbin 	 
++         	for dir in `echo $PATH | tr ':' ' '` 	 
++         	do 	 
++                	if test -f $dir/setkey -a -x $dir/setkey 	 
++                 	then
++                         	setkeycmd=$dir/setkey
++                         	break                   # NOTE BREAK OUT 
++                	fi
++         	done
++        	$setkeycmd -F
++        	$setkeycmd -FP
++	else
++	
++        	echo "WARNING: cannot flush state/policy database -- \`$1'. Install a newer version of iproute/iproute2 or install the ipsec-tools package to obtain the setkey command." |
++                	logger -s -p daemon.error -t ipsec_setup
++	fi
++fi
++
++# figure out interfaces
++for i
++do
++	case "$i" in
++	ipsec*=?*)	klipsinterface "$i"	;;
++	%defaultroute)	defaultinterface	;;
++	*)	echo "interface \`$i' not understood"
++		exit 1
++		;;
++	esac
++done
++
++exit 0
