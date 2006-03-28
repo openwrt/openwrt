@@ -1,0 +1,16 @@
+diff -ruN osiris-4.1.9-old/src/osirismd/md_control.c osiris-4.1.9-new/src/osirismd/md_control.c
+--- osiris-4.1.9-old/src/osirismd/md_control.c	2005-03-24 16:36:07.000000000 +0100
++++ osiris-4.1.9-new/src/osirismd/md_control.c	2006-03-28 01:32:32.000000000 +0200
+@@ -3262,9 +3262,9 @@
+             int index;
+             char checksum[41];
+ 
+-            SHA_Init( &context );
+-            SHA_Update( &context, key, (unsigned long)keysize );
+-            SHA_Final( &( digest[0] ), &context );
++            SHA1_Init( &context );
++            SHA1_Update( &context, key, (unsigned long)keysize );
++            SHA1_Final( &( digest[0] ), &context );
+ 
+             for ( index = 0; index < SHA_DIGEST_LENGTH; index++ )
+             {

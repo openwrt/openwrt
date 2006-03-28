@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=osiris
-PKG_VERSION:=4.1.9
+PKG_VERSION:=4.2.0
 PKG_RELEASE:=1
-PKG_MD5SUM:=a8e3720b05a8dc5d257a7effb6d68224
+PKG_MD5SUM:=ad30995660e506ee6d1d6460601f6107
 
 PKG_SOURCE_URL:=http://www.hostintegrity.com/osiris/data/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
