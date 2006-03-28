@@ -1,27 +1,13 @@
-diff -ruw fuse-2.3.0.org/kernel/Makefile.in fuse-2.3.0/kernel/Makefile.in
---- fuse-2.3.0.org/kernel/Makefile.in	2005-04-21 21:00:39.000000000 +0200
-+++ fuse-2.3.0/kernel/Makefile.in	2005-08-26 09:13:41.000000000 +0200
-@@ -31,11 +31,11 @@
- install-y: all
- 	$(mkdir_p) $(DESTDIR)$(fusemoduledir)
- 	$(INSTALL) -m 644 $(fusemodule) $(DESTDIR)$(fusemoduledir)/$(fusemodule)
--	-/sbin/depmod -a
-+#	-/sbin/depmod -a
- 
- uninstall-y:
- 	rm -f $(DESTDIR)$(fusemoduledir)/$(fusemodule)
--	-/sbin/depmod -a
-+#	-/sbin/depmod -a
- 
- clean:
- 	-rm -f $(fusemodule) *.o .*.cmd *.mod.c *.ko *.s */*.o
+diff -Nur fuse-2.5.2/kernel/Makefile.in fuse-2.5.2.patched/kernel/Makefile.in
+--- fuse-2.5.2/kernel/Makefile.in	2006-02-02 18:04:52.000000000 +0100
++++ fuse-2.5.2.patched/kernel/Makefile.in	2006-03-28 20:17:13.000000000 +0200
 @@ -54,23 +54,8 @@
  
  ifeq ($(majver), 2.4)
  
 -CC = gcc
 -LD = ld
--CFLAGS = -O2 -Wall -Wstrict-prototypes -fno-strict-aliasing -pipe -msoft-float
+-CFLAGS = -O2 -Wall -Wstrict-prototypes -fno-strict-aliasing -pipe @KERNELCFLAGS@
 -CPPFLAGS = -I@kernelsrc@/include -I. -D__KERNEL__ -DMODULE -D_LOOSE_KERNEL_NAMES -DFUSE_VERSION=\"$(VERSION)\" @KERNELCPPFLAGS@
 -
  fuse_objs = dev.o dir.o file.o inode.o compat/parser.o
@@ -39,15 +25,13 @@ diff -ruw fuse-2.3.0.org/kernel/Makefile.in fuse-2.3.0/kernel/Makefile.in
  fuse_headers = fuse_i.h fuse_kernel.h
  
  dev.o: $(fuse_headers)
-@@ -78,6 +63,18 @@
+@@ -78,6 +63,16 @@
  file.o: $(fuse_headers)
  inode.o: $(fuse_headers)
  
 +EXTRA_CFLAGS += -DFUSE_VERSION=\"$(VERSION)\"
 +
-+O_TARGET := fuse.o
-+
-+obj-y := $(fuse_objs) 
++obj-m := $(fuse_objs)
 +obj-m := $(O_TARGET)
 +
 +-include $(TOPDIR)/Rules.make
