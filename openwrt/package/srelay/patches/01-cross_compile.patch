@@ -1,0 +1,12 @@
+diff -urN srelay-0.4.6/configure srelay-0.4.6.new/configure
+--- srelay-0.4.6/configure	2003-04-14 07:36:15.000000000 +0200
++++ srelay-0.4.6.new/configure	2006-03-28 15:11:42.000000000 +0200
+@@ -1395,7 +1395,7 @@
+ 	;;
+   linux*)
+ 	case "$build_cpu" in
+-	  i*86)
++	  i*86 | mips* | powerpc* | sparc*)
+ 	    OS=LINUX
+ 	    cat >>confdefs.h <<\_ACEOF
+ #define LINUX 1
