@@ -45,4 +45,5 @@ build:
 	if [ -d ./files.$(LIST) ]; then \
 		$(CP) --remove-destination ./files.$(LIST)/* $(LINUX_BUILD_DIR)/root; \
 	fi
+	find $(LINUX_BUILD_DIR)/root -name '.svn' || 'CVS' | xargs rm -rf
 	$(MAKE) -S -C image KERNEL="$(KERNEL)" BOARD="$(BOARD)" BIN_DIR="$(BIN_DIR)/$(LIST)" install
