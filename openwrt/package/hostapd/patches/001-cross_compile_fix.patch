@@ -1,6 +1,7 @@
-diff -ruN hostapd-0.3.9-old/Makefile hostapd-0.3.9-new/Makefile
---- hostapd-0.3.9-old/Makefile	2005-06-11 05:03:36.000000000 +0200
-+++ hostapd-0.3.9-new/Makefile	2005-08-14 08:09:52.000000000 +0200
+Common subdirectories: hostapd-0.5.2/logwatch and hostapd-0.5.2.new/logwatch
+diff -u hostapd-0.5.2/Makefile hostapd-0.5.2.new/Makefile
+--- hostapd-0.5.2/Makefile	2006-03-20 03:20:09.000000000 +0000
++++ hostapd-0.5.2.new/Makefile	2006-03-21 22:25:23.803473592 +0000
 @@ -3,7 +3,7 @@
  DIR_HOSTAP=.
  
@@ -10,7 +11,7 @@ diff -ruN hostapd-0.3.9-old/Makefile hostapd-0.3.9-new/Makefile
  endif
  
  # define HOSTAPD_DUMP_STATE to include SIGUSR1 handler for dumping state to
-@@ -173,7 +173,7 @@
+@@ -266,7 +266,7 @@
  	for i in $(ALL); do cp $$i /usr/local/bin/$$i; done
  
  hostapd: $(OBJS)
@@ -19,3 +20,16 @@ diff -ruN hostapd-0.3.9-old/Makefile hostapd-0.3.9-new/Makefile
  
  driver_conf.c: Makefile .config
  	rm -f driver_conf.c
+@@ -330,10 +330,10 @@
+ endif
+ 
+ nt_password_hash: $(NOBJS)
+-	$(CC) -o nt_password_hash $(NOBJS) $(LIBS_n)
++	$(CC) -o nt_password_hash $(NOBJS) $(LDFLAGS) $(LIBS_n)
+ 
+ hlr_auc_gw: $(HOBJS)
+-	$(CC) -o hlr_auc_gw $(HOBJS) $(LIBS_h)
++	$(CC) -o hlr_auc_gw $(HOBJS) $(LDFLAGS) $(LIBS_h)
+ 
+ clean:
+ 	rm -f core *~ *.o hostapd hostapd_cli nt_password_hash hlr_auc_gw
