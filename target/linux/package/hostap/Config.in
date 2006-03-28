@@ -1,7 +1,7 @@
 config BR2_PACKAGE_KMOD_HOSTAP
 	prompt "kmod-hostap....................... Host AP support for Prism2/2.5/3 IEEE 802.11b"
 	tristate
-	depends BR2_LINUX_2_4_X86 || BR2_LINUX_2_6_X86 || BR2_LINUX_2_4_BRCM || BR2_LINUX_2_6_BRCM
+	depends BR2_LINUX_2_4_X86 || BR2_LINUX_2_4_BRCM
 	default m if CONFIG_DEVEL
 	help
 	  A driver for 802.11b wireless cards based on Intersil Prism2/2.5/3
