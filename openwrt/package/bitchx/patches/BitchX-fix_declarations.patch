@@ -1,0 +1,24 @@
+diff -urN BitchX/include/ctcp.h BitchX.new/include/ctcp.h
+--- BitchX/include/ctcp.h	2003-04-11 03:09:07.000000000 +0200
++++ BitchX.new/include/ctcp.h	2006-03-29 13:19:21.170693168 +0200
+@@ -56,7 +56,7 @@
+ extern CtcpEntryDll *dll_ctcp;
+ 
+ 
+-extern		char	*ctcp_type[];
++//extern		char	*ctcp_type[]; /* already declared in ctcp.c
+ extern		int	sed;
+ extern		int	in_ctcp_flag;
+ 
+diff -urN BitchX/include/struct.h BitchX.new/include/struct.h
+--- BitchX/include/struct.h	2003-04-11 03:09:07.000000000 +0200
++++ BitchX.new/include/struct.h	2006-03-29 13:19:26.653859600 +0200
+@@ -1064,7 +1064,7 @@
+ 	int	delete;
+ }	TimerList;
+ 
+-extern TimerList *PendingTimers;
++//extern TimerList *PendingTimers;
+ typedef struct nicktab_stru
+ {
+ 	struct nicktab_stru *next;
