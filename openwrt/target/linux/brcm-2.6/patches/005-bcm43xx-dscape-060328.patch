@@ -1,3 +1,109 @@
+diff -Nur linux-2.6.16/Documentation/networking/bcm43xx-d80211-HOWTO.txt linux-2.6.16-bcm43xx/Documentation/networking/bcm43xx-d80211-HOWTO.txt
+--- linux-2.6.16/Documentation/networking/bcm43xx-d80211-HOWTO.txt	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-bcm43xx/Documentation/networking/bcm43xx-d80211-HOWTO.txt	2006-03-28 22:16:14.000000000 +0200
+@@ -0,0 +1,67 @@
++****                                    ****
++****  HOWTO get bcm43xx-dscape running  ****
++****                                    ****
++
++This is a port of the bcm43xx driver for the devicescape ieee802.11
++stack. The devicescape ieee802.11 stack is an advanced out-of-mainline
++802.11 protocol module.
++I will call the "devicescape ieee802.11 stack" simply "dscape" in the
++following text.
++
++
++*** Setting up the bcm43xx driver with dscape is currently non-trivial,
++*** as several modifications to the kernel and the userland
++*** wpa_supplicant tool are required. We are working on it...
++
++
++1)  You need to patch the kernel with the ieee80211-devicescape stack
++    and the bcm43xx-dscape port.
++    Both are available in one cummulative at:
++    ftp://ftp.bu3sch.de/bcm43xx-snapshots/all-in-one/bcm43xx-dscape/
++    Read the instructions on http://bcm43xx.berlios.de/ for how to apply
++    this patch.
++
++    Patch the kernel, compile and install it.
++    When configuring, enable
++    "Networking/Generic IEEE 802.11 Networking Stack (dscape)"
++    and
++    "Device Drivers/Network device support/Wireless LAN (non-hamradio)/Broadcom BCM43xx wireless support (DeviceScape stack)"
++    Reboot.
++
++2)  Set up a wpa_supplicant config file in /etc/wpa_supplicant.conf
++    Here is an example for an AES WPA encrypted network:
++
++	# WPA AES encryption
++	ctrl_interface=/var/run/wpa_supplicant
++	network={
++		ssid="ACCESSPOINT_SSID"
++		key_mgmt=WPA-PSK
++		proto=WPA
++		pairwise=CCMP TKIP
++		group=CCMP TKIP
++		psk="MY PASSPHRASE"
++		priority=3
++	}
++
++3)  Take a bottle of your favourite beer, open it and take a swallow.
++
++4)  Now it's time to bring the driver up.
++    Do modprobe bcm43xx-d80211 to load the driver.
++    There is an ugly bash script to bring the driver up after insmod.
++    It is found in the "scripts" subdirectory of the patched kernel
++    tree and is called "bcm43xx-d80211-sta_up.sh".
++    Call scripts/bcm43xx-d80211-sta_up.sh --help to get some usage information.
++    It may suffice to call scripts/bcm43xx-d80211-sta_up.sh without any parameters. See
++    the help. Default parameters, which are used when called without parameters,
++    are explained there.
++
++5)  If you want to access the internet, make sure your default route
++    is correctly set up with your gateway's IP:
++    route add default gw 192.168.xxx.xxx
++
++6)  Take another swallow from your bottle of beer and test if it works:
++    ping www.kernel.org
++
++7)  If it works, drink the rest of your beer. Otherwise read this HOWTO again,
++    and again and again. Complain to bcm43xx-dev@lists.berlios.de, if it still
++    does not work.
+diff -Nur linux-2.6.16/Documentation/networking/bcm43xx-d80211.txt linux-2.6.16-bcm43xx/Documentation/networking/bcm43xx-d80211.txt
+--- linux-2.6.16/Documentation/networking/bcm43xx-d80211.txt	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16-bcm43xx/Documentation/networking/bcm43xx-d80211.txt	2006-03-28 22:16:14.000000000 +0200
+@@ -0,0 +1,31 @@
++
++			BCM43xx Linux Driver Project
++			============================
++
++About this software
++-------------------
++
++The goal of this project is to develop a linux driver for Broadcom
++BCM43xx chips, based on the specification at 
++http://bcm-specs.sipsolutions.net/
++
++The project page is http://bcm43xx.berlios.de/
++
++This is a port of the bcm43xx driver for the devicescape ieee802.11
++stack.  
++
++Requirements
++------------
++
++1)	Linux Kernel 2.6.16 or later
++	http://www.kernel.org/
++
++	See Documentation/networking/bcm43xx-d80211-HOWTO.txt for further 
++	instructions. 
++
++2)	Firmware Files
++
++	Please try bcm43xx-fwcutter. It can extract the firmware from various 
++	binary driver files and supports driver files from Windows, MacOS and 
++	Linux. You can get bcm43xx-fwcutter from http://bcm43xx.berlios.de/.
++	Also, bcm43xx-fwcutter comes with a README file for further instructions.
 diff -Nur linux-2.6.16/drivers/net/wireless/bcm43xx-d80211/bcm43xx_debugfs.c linux-2.6.16-bcm43xx/drivers/net/wireless/bcm43xx-d80211/bcm43xx_debugfs.c
 --- linux-2.6.16/drivers/net/wireless/bcm43xx-d80211/bcm43xx_debugfs.c	1970-01-01 01:00:00.000000000 +0100
 +++ linux-2.6.16-bcm43xx/drivers/net/wireless/bcm43xx-d80211/bcm43xx_debugfs.c	2006-03-28 22:16:14.000000000 +0200
@@ -16609,61 +16715,20 @@ diff -Nur linux-2.6.16/include/net/sock.h linux-2.6.16-bcm43xx/include/net/sock.
  
 diff -Nur linux-2.6.16/net/core/dev.c linux-2.6.16-bcm43xx/net/core/dev.c
 --- linux-2.6.16/net/core/dev.c	2006-03-20 06:53:29.000000000 +0100
-+++ linux-2.6.16-bcm43xx/net/core/dev.c	2006-03-28 22:16:14.000000000 +0200
++++ linux-2.6.16-bcm43xx/net/core/dev.c	2006-03-29 14:12:58.000000000 +0200
 @@ -110,10 +110,8 @@
  #include <linux/netpoll.h>
  #include <linux/rcupdate.h>
  #include <linux/delay.h>
 -#ifdef CONFIG_NET_RADIO
 -#include <linux/wireless.h>		/* Note : will define WIRELESS_EXT */
-+#include <linux/wireless.h>
++#include <linux/wireless.h>		/* Note : will define CONFIG_WIRELESS_EXT */
  #include <net/iw_handler.h>
 -#endif	/* CONFIG_NET_RADIO */
  #include <asm/current.h>
  
  /*
-@@ -1448,8 +1446,29 @@
- {
- 	struct net_device *dev = skb->dev;
- 
--	if (dev->master)
-+	if (dev->master) {
-+		/*
-+		 * On bonding slaves other than the currently active
-+		 * slave, suppress duplicates except for 802.3ad
-+		 * ETH_P_SLOW and alb non-mcast/bcast.
-+		 */
-+		if (dev->priv_flags & IFF_SLAVE_INACTIVE) {
-+			if (dev->master->priv_flags & IFF_MASTER_ALB) {
-+				if (skb->pkt_type != PACKET_BROADCAST &&
-+				    skb->pkt_type != PACKET_MULTICAST)
-+					goto keep;
-+			}
-+
-+			if (dev->master->priv_flags & IFF_MASTER_8023AD &&
-+			    skb->protocol == __constant_htons(ETH_P_SLOW))
-+				goto keep;
-+		
-+			kfree_skb(skb);
-+			return NULL;
-+		}
-+keep:
- 		skb->dev = dev->master;
-+	}
- 
- 	return dev;
- }
-@@ -1593,6 +1612,9 @@
- 
- 	orig_dev = skb_bond(skb);
- 
-+	if (!orig_dev)
-+		return NET_RX_DROP;
-+
- 	__get_cpu_var(netdev_rx_stat).total++;
- 
- 	skb->h.raw = skb->nh.raw = skb->data;
-@@ -2028,7 +2050,7 @@
+@@ -2028,7 +2026,7 @@
  	.release = seq_release,
  };
  
@@ -16672,7 +16737,7 @@ diff -Nur linux-2.6.16/net/core/dev.c linux-2.6.16-bcm43xx/net/core/dev.c
  extern int wireless_proc_init(void);
  #else
  #define wireless_proc_init() 0
-@@ -2582,7 +2604,7 @@
+@@ -2582,7 +2580,7 @@
  					ret = -EFAULT;
  				return ret;
  			}
@@ -16681,7 +16746,7 @@ diff -Nur linux-2.6.16/net/core/dev.c linux-2.6.16-bcm43xx/net/core/dev.c
  			/* Take care of Wireless Extensions */
  			if (cmd >= SIOCIWFIRST && cmd <= SIOCIWLAST) {
  				/* If command is `set a parameter', or
-@@ -2603,7 +2625,7 @@
+@@ -2603,7 +2601,7 @@
  					ret = -EFAULT;
  				return ret;
  			}
