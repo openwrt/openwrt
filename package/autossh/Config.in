@@ -1,0 +1,9 @@
+config BR2_PACKAGE_AUTOSSH
+	prompt "autossh........................... Auto handle ssh tunnels"
+	tristate
+	default m if CONFIG_DEVEL
+	help
+	      autossh is a program to start a copy of ssh and monitor it,
+	      restarting it as necessary should it die or stop passing traffic.
+
+	      http://www.harding.motd.ca/autossh/
