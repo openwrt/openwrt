@@ -44,7 +44,8 @@ $(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
 		prefix="$(PKG_INSTALL_DIR)/usr" \
-		CONFDIR=/etc/mgetty+sendfax
+		CONFDIR=/etc/mgetty+sendfax \
+		bin-all
 	$(CP) $(PKG_BUILD_DIR)/mgetty $(PKG_INSTALL_DIR)/usr/sbin
 	$(CP) $(PKG_BUILD_DIR)/sendfax $(PKG_INSTALL_DIR)/usr/sbin
 	$(CP) $(PKG_BUILD_DIR)/fax/faxrunqd $(PKG_INSTALL_DIR)/usr/sbin
