@@ -26,7 +26,7 @@ INSTALLLIB	= ${INSTALL} -p -m 644
 INSTALLEXE	= ${INSTALL} -p -m 755
 INSTALLDATA	= ${INSTALL} -p -m 644
 
-CWARNOPTS	= -Werror -Wall -W -Wpointer-arith -Wno-cast-align \
+CWARNOPTS	= -Wall -W -Wpointer-arith -Wno-cast-align \
 		-Wcast-qual -Wwrite-strings -Wredundant-decls 
 CXXWARNOPTS	= ${CWARNOPTS} -Wconversion -Wsign-promo -Wsynth -Woverloaded-virtual
 PROCESSOR_OPTS	=
