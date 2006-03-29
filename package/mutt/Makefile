@@ -3,12 +3,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mutt
-PKG_VERSION:=1.4.2.1
+PKG_VERSION:=1.5.11
 PKG_RELEASE:=1
 
-PKG_SOURCE_URL:=ftp://ftp.mutt.org/mutt/
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)i.tar.gz
-PKG_MD5SUM:=710bd56d3c4c4bcd1403bc4e053f7476
+PKG_SOURCE_URL:=@SF/mutt
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_MD5SUM:=00e6f8f7c37d4840e5e30583ebee21ce
 PKG_CAT:=zcat
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
@@ -42,8 +42,8 @@ $(PKG_BUILD_DIR)/.configured:
 		--mandir=/usr/man \
 		--infodir=/usr/info \
 		--program-prefix="" \
-		--includedir=. \
-		--oldincludedir=. \
+		--includedir=$(PKG_BUILD_DIR)/. \
+		--oldincludedir=$(PKG_BUILD_DIR)/. \
 		--enable-pop \
 		--enable-imap \
 		--with-ssl \
