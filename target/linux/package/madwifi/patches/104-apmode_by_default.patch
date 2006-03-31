@@ -1,7 +1,7 @@
-diff -ru madwifi-ng-r1451-20060212/ath/if_ath.c madwifi-ng-r1451-20060212-patch/ath/if_ath.c
---- madwifi-ng-r1451-20060212/ath/if_ath.c	2006-02-11 07:04:39.000000000 -0500
-+++ madwifi-ng-r1451-20060212-patch/ath/if_ath.c	2006-02-16 06:06:34.000000000 -0500
-@@ -387,7 +387,7 @@
+diff -ruN madwifi-ng-r1486-20060329/ath/if_ath.c madwifi-ng-r1486-20060329-patch/ath/if_ath.c
+--- madwifi-ng-r1486-20060329/ath/if_ath.c	2006-03-23 15:12:18.000000000 -0500
++++ madwifi-ng-r1486-20060329-patch/ath/if_ath.c	2006-03-31 11:00:30.000000000 -0500
+@@ -388,7 +388,7 @@
  	struct ath_hal *ah;
  	HAL_STATUS status;
  	int error = 0, i;
@@ -9,4 +9,4 @@ diff -ru madwifi-ng-r1451-20060212/ath/if_ath.c madwifi-ng-r1451-20060212-patch/
 +	int autocreatemode = IEEE80211_M_HOSTAP;
  	u_int8_t csz;
  
- 	sc->sc_debug = ath_debug;
+ 	sc->devid = devid;
