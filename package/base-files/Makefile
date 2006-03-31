@@ -64,6 +64,7 @@ $(IPKG_BASE):
 	mkdir -p $(IDIR_BASE)/usr/lib
 	mkdir -p $(IDIR_BASE)/usr/bin
 	ln -sf /tmp/resolv.conf $(IDIR_BASE)/etc/resolv.conf
+	ln -sf /proc/mounts $(IDIR_BASE)/etc/mtab
 	rm -rf $(IDIR_BASE)/var
 	ln -sf /tmp $(IDIR_BASE)/var
 	-find $(IDIR_BASE) -type d -name CVS | xargs rm -rf
