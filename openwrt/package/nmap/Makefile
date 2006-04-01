@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=nmap
-PKG_VERSION:=3.81
-PKG_RELEASE:=2
-PKG_MD5SUM:=0713306dda85aee2c95ef31b4b7d2838
+PKG_VERSION:=4.01
+PKG_RELEASE:=1
+PKG_MD5SUM:=09c259837b24f6c7385c2c1c49760a7c
 
 PKG_SOURCE_URL:=http://download.insecure.org/nmap/dist
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
@@ -50,6 +50,7 @@ $(PKG_BUILD_DIR)/.configured:
 		  $(DISABLE_NLS) \
 		  --without-openssl \
 		  --without-nmapfe \
+		  --with-libdnet="$(STAGING_DIR)/usr" \
 		  --with-libpcap="$(STAGING_DIR)/usr" \
 		  --with-libpcre="$(STAGING_DIR)/usr" \
 	);
