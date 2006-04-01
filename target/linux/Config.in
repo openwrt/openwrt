@@ -692,7 +692,7 @@ config BR2_PACKAGE_KMOD_USB_SERIAL_PL2303
 	depends BR2_PACKAGE_KMOD_USB_SERIAL
 
 config BR2_PACKAGE_KMOD_USB_SERIAL_VISOR
-	prompt   "kmod-usb-serial-visor.......... Support for Handspring Visor / Palm m50x / Sony Clie Driver"
+	prompt   "kmod-usb-serial-visor........... Support for Handspring Visor / Palm m50x / Sony Clie Driver"
 	tristate
 	default m
 	depends BR2_PACKAGE_KMOD_USB_SERIAL
@@ -710,7 +710,7 @@ config BR2_PACKAGE_KMOD_USB_ATM
 	depends BR2_PACKAGE_KMOD_USB_CONTROLLER
 
 config BR2_PACKAGE_KMOD_USB_ATM_SPEEDTOUCH
-        prompt "kmod-usb-atm-speedtouch........... Support for USB Speedtouch ADSL modem"
+        prompt   "kmod-usb-atm-speedtouch......... Support for USB Speedtouch ADSL modem"
 	tristate
 	default m
 	depends BR2_PACKAGE_KMOD_USB_ATM
@@ -744,7 +744,7 @@ config BR2_PACKAGE_KMOD_LP
 	  Kernel modules for line printer and parallel port support
 
 config BR2_PACKAGE_KMOD_SOFTDOG
-	prompt "kmod-softdog..................... software watchdog"
+	prompt "kmod-softdog...................... Software watchdog"
 	tristate
 	default m
 	help

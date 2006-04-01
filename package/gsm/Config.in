@@ -17,7 +17,7 @@ config BR2_PACKAGE_LIBGSM
 	  ftp://ftp.cs.tu-berlin.de/pub/local/kbs/tubmik/gsm/
 
 config BR2_PACKAGE_GSM_UTILS
-	prompt "gsm-utils......................... A GSM 06.10 full-rate speech transcoding implementation (utilities)"
+	prompt   "gsm-utils....................... A GSM 06.10 full-rate speech transcoding implementation (utilities)"
 	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_LIBGSM
