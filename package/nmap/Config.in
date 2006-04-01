@@ -2,6 +2,7 @@ config BR2_PACKAGE_NMAP
 	prompt "nmap.............................. Network exploration and/or security auditing utility"
 	tristate
 	default m if CONFIG_DEVEL
+	select BR2_PACKAGE_LIBDNET
 	select BR2_PACKAGE_LIBPCAP
 	select BR2_PACKAGE_LIBPCRE
 	select BR2_PACKAGE_UCLIBCXX
