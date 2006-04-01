@@ -1,11 +1,11 @@
-diff -urN nmap-3.81.old/configure nmap-3.81.dev/configure
---- nmap-3.81.old/configure	2004-10-17 05:49:33.000000000 +0200
-+++ nmap-3.81.dev/configure	2005-04-26 14:47:42.000000000 +0200
-@@ -1339,12 +1339,6 @@
+diff -urN nmap-4.01.old/configure nmap-4.01.dev/configure
+--- nmap-4.01.old/configure	2006-02-01 19:18:42.000000000 -0700
++++ nmap-4.01.dev/configure	2006-03-29 23:14:28.000000000 -0700
+@@ -1341,12 +1341,6 @@
     fi
  fi
  
--libpcapdir=libpcap-possiblymodified
+-libpcapdir=libpcap
 -
 -
 -pcredir=libpcre
@@ -14,24 +14,27 @@ diff -urN nmap-3.81.old/configure nmap-3.81.dev/configure
            ac_config_headers="$ac_config_headers config.h"
  
  
-diff -urN nmap-3.81.old/Makefile.in nmap-3.81.dev/Makefile.in
---- nmap-3.81.old/Makefile.in	2005-02-07 07:14:03.000000000 +0100
-+++ nmap-3.81.dev/Makefile.in	2005-04-26 14:52:39.000000000 +0200
+diff -urN nmap-4.01.old/Makefile.in nmap-4.01.dev/Makefile.in
+--- nmap-4.01.old/Makefile.in	2006-02-09 19:22:27.000000000 -0700
++++ nmap-4.01.dev/Makefile.in	2006-03-29 23:14:12.000000000 -0700
 @@ -29,7 +29,7 @@
  # CFLAGS = $(DEFS) $(INCLS)
  STATIC =
  LDFLAGS = @LDFLAGS@ $(STATIC)
--LIBS =  @LIBNBASE_LIBS@ @LIBNSOCK_LIBS@ @LIBPCRE_LIBS@ @LIBPCAP_LIBS@ @OPENSSL_LIBS@ @LIBS@
-+LIBS =  @LIBNBASE_LIBS@ @LIBNSOCK_LIBS@ -lpcre -lpcap @OPENSSL_LIBS@ @LIBS@
+-LIBS =  @LIBNBASE_LIBS@ @LIBNSOCK_LIBS@ @LIBPCRE_LIBS@ @LIBPCAP_LIBS@ @OPENSSL_LIBS@ @LIBDNET_LIBS@ @LIBS@
++LIBS =  @LIBNBASE_LIBS@ @LIBNSOCK_LIBS@ -lpcre -lpcap @OPENSSL_LIBS@ -ldnet @LIBS@
  # LIBS =  -lefence @LIBS@
  # LIBS =  -lrmalloc @LIBS@
  SHTOOL = ./shtool
-@@ -69,12 +69,6 @@
+@@ -68,15 +68,6 @@
  # all of the prerequisites (e.g. recursive makes and such)
  FORCE:
  
 -$(LIBPCREDIR)/libpcre.a: $(LIBPCREDIR)/Makefile FORCE
 -	@echo Compiling libpcre; cd $(LIBPCREDIR) && $(MAKE)
+-
+-$(LIBDNETDIR)/src/.libs/libdnet.a: $(LIBDNETDIR)/Makefile FORCE
+-	@echo Compiling libdnet; cd $(LIBDNETDIR) && $(MAKE)
 -
 -$(LIBPCAPDIR)/libpcap.a: $(LIBPCAPDIR)/Makefile FORCE
 -	@echo Compiling libpcap; cd $(LIBPCAPDIR) && $(MAKE)
