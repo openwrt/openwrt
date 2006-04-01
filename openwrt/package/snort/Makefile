@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=snort
-PKG_VERSION:=2.3.3
+PKG_VERSION:=2.4.4
 PKG_RELEASE:=1
-PKG_MD5SUM:=06bf140893e7cb120aaa9372d10a0100
+PKG_MD5SUM:=9dc9060d1f2e248663eceffadfc45e7e
 
 PKG_SOURCE_URL:=http://www.snort.org/dl/current/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -99,8 +99,8 @@ $(PKG_BUILD_DIR)/$(2): $(PKG_BUILD_DIR)/.prepared
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
-		CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/usr/include/mysql" \
-		LDFLAGS="-L$(STAGING_DIR)/lib -L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/usr/lib/mysql" \
+		CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include -I$(STAGING_DIR)/usr/include/mysql" \
+		LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib -L$(STAGING_DIR)/usr/lib/mysql" \
 		./configure \
 		  $(PKG_CONFIGURE_OPTS) \
 		  $$($(1)_CONFIGURE_OPTS) \
