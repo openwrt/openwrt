@@ -1,14 +1,61 @@
+config BR2_COMPILE_HOSTAPD
+	tristate
+	default n
+	depends BR2_PACKAGE_HOSTAPD || BR2_PACKAGE_HOSTAPD_MINI || BR2_PACKAGE_HOSTAPD_UTILS
+	select BR2_PACKAGE_KMOD_MADWIFI
+
 config BR2_PACKAGE_HOSTAPD
 	prompt "hostapd........................... An IEEE 802.11 AP, IEEE 802.1x/WPA/WPA2/EAP/RADIUS Authenticator"
 	tristate
 	default m if CONFIG_DEVEL
-	select BR2_PACKAGE_KMOD_MADWIFI
+	select BR2_COMPILE_HOSTAPD
 	select BR2_PACKAGE_LIBOPENSSL
 	help
+	  
 	  hostapd is a user space daemon for access point and 
 	  authentication servers. It implements IEEE 802.11 access point 
 	  management, IEEE 802.1X/WPA/WPA2/EAP Authenticators, RADIUS 
 	  client, EAP server, and RADIUS authentication server.
 	  
 	  http://hostap.epitest.fi/hostapd/
+	
+	  Includes:
+	   - hostapd
 
+config BR2_PACKAGE_HOSTAPD_MINI
+	prompt "hostapd-mini...................... An IEEE 802.11 AP, IEEE 802.1x/WPA/WPA2/EAP/RADIUS Authenticator (without EAP TLS/TTLS support)"
+	tristate
+	default m if CONFIG_DEVEL
+	select BR2_COMPILE_HOSTAPD
+	help
+	  
+	  hostapd is a user space daemon for access point and 
+	  authentication servers. It implements IEEE 802.11 access point 
+	  management, IEEE 802.1X/WPA/WPA2/EAP Authenticators, RADIUS 
+	  client, EAP server, and RADIUS authentication server.
+	  
+	  http://hostap.epitest.fi/hostapd/
+	
+	  Includes:
+	   - hostapd (built with WPA support only)
+
+config BR2_PACKAGE_HOSTAPD_UTILS
+	prompt "hostapd-utils..................... An IEEE 802.11 AP, IEEE 802.1x/WPA/WPA2/EAP/RADIUS Authenticator (CLI utility)"
+	tristate
+	default m if CONFIG_DEVEL
+	select BR2_COMPILE_HOSTAPD
+	help
+	  
+	  hostapd is a user space daemon for access point and 
+	  authentication servers. It implements IEEE 802.11 access point 
+	  management, IEEE 802.1X/WPA/WPA2/EAP Authenticators, RADIUS 
+	  client, EAP server, and RADIUS authentication server.
+	  
+	  http://hostap.epitest.fi/hostapd/
+	
+	  Includes:
+	   - hostapd_cli
+
+if (BR2_PACKAGE_HOSTAPD = y) && (BR2_PACKAGE_HOSTAPD_MINI = y)
+	comment "WARNING: both hostapd and hostapd-mini are selected for installation !"
+endif
