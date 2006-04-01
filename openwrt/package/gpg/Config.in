@@ -1,0 +1,9 @@
+config BR2_PACKAGE_GPG
+	prompt "gpg .............................. Gnu Privacy Guard"
+	tristate
+	default m if CONFIG_DEVEL
+	help
+	  GPG is an encryption program
+	  
+	  http://www.gnupg.org
+
