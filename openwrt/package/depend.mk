@@ -29,7 +29,6 @@ iptables-snmp-compile: net-snmp-compile
 iptraf-compile: ncurses-compile
 ipsec-tools-compile: openssl-compile
 jamvm-compile: libffi-sable-compile zlib-compile sablevm-classpath-compile
-hostapd-compile: openssl-compile wireless-tools-compile
 httping-compile: openssl-compile
 kismet-compile: uclibc++-compile libpcap-compile ncurses-compile
 l2tpns-compile: libcli-compile
@@ -136,6 +135,11 @@ freeradius-compile: mysql-compile
 endif
 ifneq ($(BR2_PACKAGE_FREERADIUS_MOD_SQL_PGSQL),)
 freeradius-compile: postgresql-compile
+endif
+
+hostapd-compile: wireless-tools-compile
+ifneq ($(BR2_PACKAGE_HOSTAPD),)
+hostapd-compile: openssl-compile
 endif
 
 ifneq ($(BR2_PACKAGE_MINI_HTTPD_MATRIXSSL),)
