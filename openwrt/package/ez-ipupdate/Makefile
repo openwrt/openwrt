@@ -4,7 +4,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ez-ipupdate
 PKG_VERSION:=3.0.11b8
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_MD5SUM:=000211add4c4845ffa4211841bff4fb0
 
 PKG_SOURCE_URL:=http://ftp.debian.org/debian/pool/main/e/ez-ipupdate \
@@ -46,11 +46,12 @@ $(PKG_BUILD_DIR)/.built:
 	touch $@
 
 $(IPKG_EZIPUPDATE):
-	install -m0755 -d $(IDIR_EZIPUPDATE)/etc/init.d $(IDIR_EZIPUPDATE)/etc/hotplug.d/iface $(IDIR_EZIPUPDATE)/usr/sbin/
-	install -m0755 $(PKG_BUILD_DIR)/ez-ipupdate $(IDIR_EZIPUPDATE)/usr/sbin/
-	install -m0755 files/$(PKG_NAME).init $(IDIR_EZIPUPDATE)/etc/init.d/S80$(PKG_NAME)
-	install -m0755 files/$(PKG_NAME).conf $(IDIR_EZIPUPDATE)/etc/
-	install -m0755 files/$(PKG_NAME).hotplug $(IDIR_EZIPUPDATE)/etc/hotplug.d/iface/10-$(PKG_NAME)
-	$(STRIP) $(IDIR_EZIPUPDATE)/usr/sbin/*
+	install -d -m0755 $(IDIR_EZIPUPDATE)/etc
+	install -m0600 ./files/$(PKG_NAME).conf $(IDIR_EZIPUPDATE)/etc/
+	install -d -m0755 $(IDIR_EZIPUPDATE)/etc/hotplug.d/iface
+	install -m0755 ./files/$(PKG_NAME).hotplug $(IDIR_EZIPUPDATE)/etc/hotplug.d/iface/10-$(PKG_NAME)
+	install -d -m0755 $(IDIR_EZIPUPDATE)/usr/sbin
+	install -m0755 $(PKG_BUILD_DIR)/$(PKG_NAME) $(IDIR_EZIPUPDATE)/usr/sbin/
+	$(RSTRIP) $(IDIR_EZIPUPDATE)
 	$(IPKG_BUILD) $(IDIR_EZIPUPDATE) $(PACKAGE_DIR)
 

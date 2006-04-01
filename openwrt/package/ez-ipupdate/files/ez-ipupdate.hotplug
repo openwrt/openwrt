@@ -1,6 +1,10 @@
-PGM=ez-ipupdate
+. /etc/functions.sh
+NAME=ez-ipupdate
+CONFIG=/etc/$NAME.conf
+COMMAND=/usr/sbin/$NAME
 [ "$ACTION" = "ifup" -a "$INTERFACE" = "wan" ] && {
-	[ -e /etc/$PGM.conf ] && {
-		[ -n $(grep "user=" /etc/$PGM.conf | cut -d= -f2 | cut -d: -f1) ] && [ -n $(grep "user=" /etc/$PGM.conf | cut -d= -f2 | cut -d: -f2) ] && /usr/sbin/$PGM -c /etc/$PGM.conf &
-	}
+        [ -x $COMMAND ] && [ -r $CONFIG ] && {
+                IFNAME=$(nvram get ${INTERFACE}_ifname)
+                $COMMAND -c $CONFIG -i $IFNAME 2>&1 | logger -t $NAME
+        } &
 }
