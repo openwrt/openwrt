@@ -1,0 +1,212 @@
+diff -Nur busybox-1.1.1/findutils/find.c busybox-1.1.1-owrt/findutils/find.c
+--- busybox-1.1.1/findutils/find.c	2006-03-22 22:16:25.000000000 +0100
++++ busybox-1.1.1-owrt/findutils/find.c	2006-04-01 19:23:30.000000000 +0200
+@@ -79,6 +79,15 @@
+ 
+ static int fileAction(const char *fileName, struct stat *statbuf, void* junk)
+ {
++#ifdef CONFIG_FEATURE_FIND_XDEV
++	if (S_ISDIR(statbuf->st_mode) && xdev_count) {
++		int i;
++		for (i=0; i<xdev_count; i++) {
++			if (xdev_dev[i] != statbuf->st_dev)
++				return SKIP;
++		}
++	}
++#endif
+ 	if (pattern != NULL) {
+ 		const char *tmp = strrchr(fileName, '/');
+ 
+@@ -125,21 +134,6 @@
+ 			goto no_match;
+ 	}
+ #endif
+-#ifdef CONFIG_FEATURE_FIND_XDEV
+-	if (xdev_count) {
+-		int i;
+-		for (i=0; i<xdev_count; i++) {
+-			if (xdev_dev[i] == statbuf-> st_dev)
+-				break;
+-		}
+-		if (i == xdev_count) {
+-			if(S_ISDIR(statbuf->st_mode))
+-				return SKIP;
+-			else
+-				goto no_match;
+-		}
+-	}
+-#endif
+ #ifdef CONFIG_FEATURE_FIND_NEWER
+ 	if (newer_mtime != 0) {
+ 		time_t file_age = newer_mtime - statbuf->st_mtime;
+diff -Nur busybox-1.1.1/libbb/Makefile.in busybox-1.1.1-owrt/libbb/Makefile.in
+--- busybox-1.1.1/libbb/Makefile.in	2006-03-22 22:16:22.000000000 +0100
++++ busybox-1.1.1-owrt/libbb/Makefile.in	2006-04-01 19:23:30.000000000 +0200
+@@ -39,6 +39,7 @@
+ # conditionally compiled objects:
+ LIBBB-$(CONFIG_FEATURE_SHADOWPASSWDS)+=pwd2spwd.c
+ LIBBB-$(CONFIG_FEATURE_MOUNT_LOOP)+= loop.c
++LIBBB-$(CONFIG_LOSETUP)+= loop.c
+ LIBBB-$(CONFIG_FEATURE_MTAB_SUPPORT)+= mtab.c
+ LIBBB-$(CONFIG_PASSWD)+= pw_encrypt.c
+ LIBBB-$(CONFIG_SULOGIN)+= pw_encrypt.c
+diff -Nur busybox-1.1.1/modutils/insmod.c busybox-1.1.1-owrt/modutils/insmod.c
+--- busybox-1.1.1/modutils/insmod.c	2006-03-22 22:16:20.000000000 +0100
++++ busybox-1.1.1-owrt/modutils/insmod.c	2006-04-01 19:23:30.000000000 +0200
+@@ -516,12 +516,6 @@
+ #include <elf.h>
+ #include <endian.h>
+ 
+-#if BB_LITTLE_ENDIAN
+-# define ELFDATAM	ELFDATA2LSB
+-#else
+-# define ELFDATAM	ELFDATA2MSB
+-#endif
+-
+ #ifndef ElfW
+ # if ELFCLASSM == ELFCLASS32
+ #  define ElfW(x)  Elf32_ ## x
+@@ -3331,7 +3325,8 @@
+ 		return NULL;
+ 	}
+ 	if (f->header.e_ident[EI_CLASS] != ELFCLASSM
+-			|| f->header.e_ident[EI_DATA] != ELFDATAM
++			|| f->header.e_ident[EI_DATA] != (BB_BIG_ENDIAN
++			   	? ELFDATA2MSB : ELFDATA2LSB)
+ 			|| f->header.e_ident[EI_VERSION] != EV_CURRENT
+ 			|| !MATCH_MACHINE(f->header.e_machine)) {
+ 		bb_error_msg("ELF file not for this architecture");
+diff -Nur busybox-1.1.1/util-linux/Makefile.in busybox-1.1.1-owrt/util-linux/Makefile.in
+--- busybox-1.1.1/util-linux/Makefile.in	2006-03-22 22:16:26.000000000 +0100
++++ busybox-1.1.1-owrt/util-linux/Makefile.in	2006-04-01 19:23:30.000000000 +0200
+@@ -38,6 +38,8 @@
+ UTILLINUX-$(CONFIG_SWITCH_ROOT)   +=switch_root.o
+ UTILLINUX-$(CONFIG_UMOUNT)        +=umount.o
+ 
++UTILLINUX-y:=$(sort $(UTILLINUX-y))
++
+ ifneq ($(strip $(UTILLINUX-y)),)
+ libraries-y+=$(UTILLINUX_DIR)$(UTILLINUX_AR)
+ endif
+diff -Nur busybox-1.1.1/util-linux/mount.c busybox-1.1.1-owrt/util-linux/mount.c
+--- busybox-1.1.1/util-linux/mount.c	2006-03-22 22:16:26.000000000 +0100
++++ busybox-1.1.1-owrt/util-linux/mount.c	2006-04-01 19:23:30.000000000 +0200
+@@ -184,6 +184,8 @@
+ {
+ 	llist_free(fslist);
+ }
++#else
++void delete_block_backed_filesystems(void);
+ #endif
+ 
+ #if ENABLE_FEATURE_MTAB_SUPPORT
+@@ -196,12 +198,9 @@
+ 
+ // Perform actual mount of specific filesystem at specific location.
+ 
+-static int mount_it_now(struct mntent *mp, int vfsflags)
++static int mount_it_now(struct mntent *mp, int vfsflags, char *filteropts)
+ {
+ 	int rc;
+-	char *filteropts = 0;
+-
+-	parse_mount_options(mp->mnt_opts, &filteropts);
+ 
+ 	if (fakeIt) { return 0; }
+ 
+@@ -217,8 +216,6 @@
+ 		vfsflags |= MS_RDONLY;
+ 	}
+ 
+-    free(filteropts);
+-
+ 	// Abort entirely if permission denied.
+ 
+ 	if (rc && errno == EPERM)
+@@ -266,11 +263,11 @@
+ static int singlemount(struct mntent *mp)
+ {
+ 	int rc = 1, vfsflags;
+-	char *loopFile = 0;
++	char *loopFile = 0, *filteropts = 0;
+ 	llist_t *fl = 0;
+ 	struct stat st;
+ 
+-	vfsflags = parse_mount_options(mp->mnt_opts, 0);
++	vfsflags = parse_mount_options(mp->mnt_opts, &filteropts);
+ 
+ 	// Treat fstype "auto" as unspecified.
+ 
+@@ -282,16 +279,16 @@
+ 		(!mp->mnt_type || !strcmp(mp->mnt_type,"nfs")) &&
+ 		strchr(mp->mnt_fsname, ':') != NULL)
+ 	{
+-		char *options=0;
+-		parse_mount_options(mp->mnt_opts, &options);
+-		if (nfsmount(mp->mnt_fsname, mp->mnt_dir, &vfsflags, &options, 1)) {
++		if (nfsmount(mp->mnt_fsname, mp->mnt_dir, &vfsflags, &filteropts, 1)) {
+ 			bb_perror_msg("nfsmount failed");
+ 			return 1;
++		} else {
++			// Strangely enough, nfsmount() doesn't actually mount() anything.
++			rc = mount_it_now(mp, vfsflags, filteropts);
++			if (ENABLE_FEATURE_CLEAN_UP) free(filteropts);
++			
++			return rc;
+ 		}
+-
+-		// Strangely enough, nfsmount() doesn't actually mount() anything.
+-
+-		else return mount_it_now(mp, vfsflags);
+ 	}
+ 
+ 	// Look at the file.  (Not found isn't a failure for remount.)
+@@ -324,7 +321,7 @@
+ 	 * to the actual mount. */
+ 
+ 	if (mp->mnt_type || (vfsflags & (MS_REMOUNT | MS_BIND | MS_MOVE)))
+-		rc = mount_it_now(mp, vfsflags);
++		rc = mount_it_now(mp, vfsflags, filteropts);
+ 
+ 	// Loop through filesystem types until mount succeeds or we run out
+ 
+@@ -336,25 +333,26 @@
+ 
+ 		if (!fslist) {
+ 			fslist = get_block_backed_filesystems();
+-#if ENABLE_FEATURE_CLEAN_UP
+ 			if (ENABLE_FEATURE_CLEAN_UP && fslist)
+ 				atexit(delete_block_backed_filesystems);
+-#endif
+ 		}
+ 
+ 		for (fl = fslist; fl; fl = fl->link) {
+ 			mp->mnt_type = fl->data;
+ 
+-			if (!(rc = mount_it_now(mp,vfsflags))) break;
++			if (!(rc = mount_it_now(mp,vfsflags, filteropts))) break;
+ 
+ 			mp->mnt_type = 0;
+ 		}
+ 	}
+ 
+-	// Mount failed.  Clean up
++	if (ENABLE_FEATURE_CLEAN_UP) free(filteropts);
++
++	// If mount failed, clean up loop file (if any).
++
+ 	if (rc && loopFile) {
+ 		del_loop(mp->mnt_fsname);
+-		if(ENABLE_FEATURE_CLEAN_UP) {
++		if (ENABLE_FEATURE_CLEAN_UP) {
+ 			free(loopFile);
+ 			free(mp->mnt_fsname);
+ 		}
+@@ -548,7 +546,6 @@
+ 	if (ENABLE_FEATURE_CLEAN_UP) {
+ 		free(storage_path);
+ 		free(cmdopts);
+-		free(fstype);
+ 	}
+ 
+ 	if(rc)

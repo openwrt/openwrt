@@ -1,18 +1,18 @@
-diff -Nur busybox-1.1.0-pre1/include/usage.h busybox-1.1.0-pre1.openwrt/include/usage.h
---- busybox-1.1.0-pre1/include/usage.h	2005-11-01 00:55:34.000000000 +0100
-+++ busybox-1.1.0-pre1.openwrt/include/usage.h	2005-11-30 11:10:24.000000000 +0100
-@@ -3119,6 +3119,7 @@
+diff -Nur busybox-1.1.1/include/usage.h busybox-1.1.1-owrt/include/usage.h
+--- busybox-1.1.1/include/usage.h	2006-04-01 18:26:21.000000000 +0200
++++ busybox-1.1.1-owrt/include/usage.h	2006-04-01 18:27:45.000000000 +0200
+@@ -3268,6 +3268,7 @@
  	"\t-n,\t--now\tExit with failure if lease cannot be immediately negotiated\n" \
  	"\t-p,\t--pidfile=file\tStore process ID of daemon in file\n" \
  	"\t-q,\t--quit\tQuit after obtaining lease\n" \
 +	"\t-R,\t--release\tRelease IP on quit\n" \
  	"\t-r,\t--request=IP\tIP address to request (default: none)\n" \
  	"\t-s,\t--script=file\tRun file at dhcp events (default: /usr/share/udhcpc/default.script)\n" \
- 	"\t-v,\t--version\tDisplay version"
-diff -Nur busybox-1.1.0-pre1/networking/udhcp/dhcpc.c busybox-1.1.0-pre1.openwrt/networking/udhcp/dhcpc.c
---- busybox-1.1.0-pre1/networking/udhcp/dhcpc.c	2005-11-01 00:55:15.000000000 +0100
-+++ busybox-1.1.0-pre1.openwrt/networking/udhcp/dhcpc.c	2005-11-30 11:17:22.000000000 +0100
-@@ -61,6 +61,7 @@
+ 	"\t-t,\t--retries=NUM\tSend up to NUM request packets\n"\
+diff -Nur busybox-1.1.1/networking/udhcp/dhcpc.c busybox-1.1.1-owrt/networking/udhcp/dhcpc.c
+--- busybox-1.1.1/networking/udhcp/dhcpc.c	2006-03-22 22:16:19.000000000 +0100
++++ busybox-1.1.1-owrt/networking/udhcp/dhcpc.c	2006-04-01 18:28:19.000000000 +0200
+@@ -49,6 +49,7 @@
  	.abort_if_no_lease = 0,
  	.foreground = 0,
  	.quit_after_lease = 0,
@@ -20,7 +20,7 @@ diff -Nur busybox-1.1.0-pre1/networking/udhcp/dhcpc.c busybox-1.1.0-pre1.openwrt
  	.background_if_no_lease = 0,
  	.interface = "eth0",
  	.pidfile = NULL,
-@@ -92,6 +93,7 @@
+@@ -82,6 +83,7 @@
  "                                  immediately negotiated.\n"
  "  -p, --pidfile=file              Store process ID of daemon in file\n"
  "  -q, --quit                      Quit after obtaining lease\n"
@@ -28,24 +28,24 @@ diff -Nur busybox-1.1.0-pre1/networking/udhcp/dhcpc.c busybox-1.1.0-pre1.openwrt
  "  -r, --request=IP                IP address to request (default: none)\n"
  "  -s, --script=file               Run file at dhcp events (default:\n"
  "                                  " DEFAULT_SCRIPT ")\n"
-@@ -211,6 +213,7 @@
- 		{"now", 	no_argument,		0, 'n'},
+@@ -203,6 +205,7 @@
+ 		{"now",		no_argument,		0, 'n'},
  		{"pidfile",	required_argument,	0, 'p'},
  		{"quit",	no_argument,		0, 'q'},
 +		{"release",	no_argument,		0, 'R'},
  		{"request",	required_argument,	0, 'r'},
  		{"script",	required_argument,	0, 's'},
- 		{"version",	no_argument,		0, 'v'},
-@@ -220,7 +223,7 @@
+ 		{"timeout",	required_argument,	0, 'T'},
+@@ -214,7 +217,7 @@
  	/* get options */
  	while (1) {
  		int option_index = 0;
--		c = getopt_long(argc, argv, "c:CV:fbH:h:F:i:np:qr:s:v", arg_options, &option_index);
-+		c = getopt_long(argc, argv, "c:CV:fbH:h:F:i:np:qRr:s:v", arg_options, &option_index);
+-		c = getopt_long(argc, argv, "c:CV:fbH:h:F:i:np:qr:s:T:t:v", arg_options, &option_index);
++		c = getopt_long(argc, argv, "c:CV:fbH:h:F:i:np:qRr:s:T:t:v", arg_options, &option_index);
  		if (c == -1) break;
  
  		switch (c) {
-@@ -290,6 +293,9 @@
+@@ -284,6 +287,9 @@
  		case 'q':
  			client_config.quit_after_lease = 1;
  			break;
@@ -85,9 +85,9 @@ diff -Nur busybox-1.1.0-pre1/networking/udhcp/dhcpc.c busybox-1.1.0-pre1.openwrt
  			}
  		} else if (retval == -1 && errno == EINTR) {
  			/* a signal was caught */
-diff -Nur busybox-1.1.0-pre1/networking/udhcp/dhcpc.h busybox-1.1.0-pre1.openwrt/networking/udhcp/dhcpc.h
---- busybox-1.1.0-pre1/networking/udhcp/dhcpc.h	2005-11-01 00:55:15.000000000 +0100
-+++ busybox-1.1.0-pre1.openwrt/networking/udhcp/dhcpc.h	2005-11-30 11:18:00.000000000 +0100
+diff -Nur busybox-1.1.1/networking/udhcp/dhcpc.h busybox-1.1.1-owrt/networking/udhcp/dhcpc.h
+--- busybox-1.1.1/networking/udhcp/dhcpc.h	2006-03-22 22:16:19.000000000 +0100
++++ busybox-1.1.1-owrt/networking/udhcp/dhcpc.h	2006-04-01 18:27:45.000000000 +0200
 @@ -19,6 +19,7 @@
  struct client_config_t {
  	char foreground;		/* Do not fork */
