@@ -1,14 +1,15 @@
---- busybox-1.1.0.orig/networking/httpd.c	2006-02-06 16:41:57.000000000 +0100
-+++ busybox-1.1.0/networking/httpd.c	2006-02-06 16:41:26.000000000 +0100
+diff -Nur busybox-1.1.1/networking/httpd.c busybox-1.1.1-owrt/networking/httpd.c
+--- busybox-1.1.1/networking/httpd.c	2006-04-01 19:42:36.000000000 +0200
++++ busybox-1.1.1-owrt/networking/httpd.c	2006-04-01 19:43:59.000000000 +0200
 @@ -247,6 +247,7 @@
+   const char *query;
  
- #ifdef CONFIG_FEATURE_HTTPD_CGI
-   char *referer;
-+  char *user_agent;
- #endif
+   USE_FEATURE_HTTPD_CGI(char *referer;)
++  USE_FEATURE_HTTPD_CGI(char *user_agent;)
  
    const char *configFile;
-@@ -1192,6 +1193,7 @@
+ 
+@@ -1208,6 +1209,7 @@
        addEnv("SERVER",         "PROTOCOL", "HTTP/1.0");
        addEnv("GATEWAY_INTERFACE", "",      "CGI/1.1");
        addEnv("REMOTE",         "ADDR",     config->rmt_ip_str);
@@ -16,7 +17,7 @@
  #ifdef CONFIG_FEATURE_HTTPD_SET_REMOTE_PORT_TO_ENV
        addEnvPort("REMOTE");
  #endif
-@@ -1737,6 +1739,10 @@
+@@ -1771,6 +1773,10 @@
  		  for(test = buf + 8; isspace(*test); test++)
  			  ;
  		  config->referer = strdup(test);
