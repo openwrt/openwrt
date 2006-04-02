@@ -25,13 +25,15 @@ diff -Nur fuse-2.5.2/kernel/Makefile.in fuse-2.5.2.patched/kernel/Makefile.in
  fuse_headers = fuse_i.h fuse_kernel.h
  
  dev.o: $(fuse_headers)
-@@ -78,6 +63,16 @@
+@@ -78,6 +63,18 @@
  file.o: $(fuse_headers)
  inode.o: $(fuse_headers)
  
 +EXTRA_CFLAGS += -DFUSE_VERSION=\"$(VERSION)\"
 +
-+obj-m := $(fuse_objs)
++O_TARGET := fuse.o
++
++obj-y := $(fuse_objs) 
 +obj-m := $(O_TARGET)
 +
 +-include $(TOPDIR)/Rules.make
