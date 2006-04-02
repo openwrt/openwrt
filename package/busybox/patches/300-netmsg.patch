@@ -1,20 +1,18 @@
-diff -urN busybox.old/include/applets.h busybox.dev/include/applets.h
---- busybox.old/include/applets.h	2006-01-11 01:32:47.302791000 +0100
-+++ busybox.dev/include/applets.h	2006-01-11 01:33:18.744756250 +0100
-@@ -475,6 +475,9 @@
- #ifdef CONFIG_NC
- 	APPLET(nc, nc_main, _BB_DIR_USR_BIN, _BB_SUID_NEVER)
- #endif
-+#ifdef CONFIG_NETMSG
-+	APPLET_NOUSAGE("netmsg", netmsg_main, _BB_DIR_BIN, _BB_SUID_ALWAYS)
-+#endif
- #ifdef CONFIG_NETSTAT
- 	APPLET(netstat, netstat_main, _BB_DIR_BIN, _BB_SUID_NEVER)
- #endif
-diff -urN busybox.old/networking/Config.in busybox.dev/networking/Config.in
---- busybox.old/networking/Config.in	2005-11-01 00:55:15.000000000 +0100
-+++ busybox.dev/networking/Config.in	2006-01-11 01:33:18.744756250 +0100
-@@ -435,6 +435,12 @@
+diff -Nur busybox-1.1.1/include/applets.h busybox-1.1.1-owrt/include/applets.h
+--- busybox-1.1.1/include/applets.h	2006-04-01 18:26:21.000000000 +0200
++++ busybox-1.1.1-owrt/include/applets.h	2006-04-01 18:36:28.000000000 +0200
+@@ -197,6 +197,7 @@
+ USE_MV(APPLET(mv, mv_main, _BB_DIR_BIN, _BB_SUID_NEVER))
+ USE_NAMEIF(APPLET(nameif, nameif_main, _BB_DIR_SBIN, _BB_SUID_NEVER))
+ USE_NC(APPLET(nc, nc_main, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
++USE_NETMSG(APPLET_NOUSAGE("netmsg", netmsg_main, _BB_DIR_BIN, _BB_SUID_ALWAYS))
+ USE_NETSTAT(APPLET(netstat, netstat_main, _BB_DIR_BIN, _BB_SUID_NEVER))
+ USE_NICE(APPLET(nice, nice_main, _BB_DIR_BIN, _BB_SUID_NEVER))
+ USE_NOHUP(APPLET(nohup, nohup_main, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
+diff -Nur busybox-1.1.1/networking/Config.in busybox-1.1.1-owrt/networking/Config.in
+--- busybox-1.1.1/networking/Config.in	2006-03-22 22:16:19.000000000 +0100
++++ busybox-1.1.1-owrt/networking/Config.in	2006-04-01 18:35:32.000000000 +0200
+@@ -451,6 +451,12 @@
  	help
  	  A simple Unix utility which reads and writes data across network
  	  connections.
@@ -27,10 +25,10 @@ diff -urN busybox.old/networking/Config.in busybox.dev/networking/Config.in
  
  config CONFIG_NC_GAPING_SECURITY_HOLE
  	bool "gaping security hole"
-diff -urN busybox.old/networking/Makefile.in busybox.dev/networking/Makefile.in
---- busybox.old/networking/Makefile.in	2005-11-01 00:55:15.000000000 +0100
-+++ busybox.dev/networking/Makefile.in	2006-01-11 01:34:02.939518250 +0100
-@@ -28,6 +28,7 @@
+diff -Nur busybox-1.1.1/networking/Makefile.in busybox-1.1.1-owrt/networking/Makefile.in
+--- busybox-1.1.1/networking/Makefile.in	2006-03-22 22:16:19.000000000 +0100
++++ busybox-1.1.1-owrt/networking/Makefile.in	2006-04-01 18:35:32.000000000 +0200
+@@ -30,6 +30,7 @@
  NETWORKING-$(CONFIG_IPTUNNEL)     += iptunnel.o
  NETWORKING-$(CONFIG_NAMEIF)       += nameif.o
  NETWORKING-$(CONFIG_NC)           += nc.o
@@ -38,9 +36,9 @@ diff -urN busybox.old/networking/Makefile.in busybox.dev/networking/Makefile.in
  NETWORKING-$(CONFIG_NETSTAT)      += netstat.o
  NETWORKING-$(CONFIG_NSLOOKUP)     += nslookup.o
  NETWORKING-$(CONFIG_PING)         += ping.o
-diff -urN busybox.old/networking/netmsg.c busybox.dev/networking/netmsg.c
---- busybox.old/networking/netmsg.c	1970-01-01 01:00:00.000000000 +0100
-+++ busybox.dev/networking/netmsg.c	2006-01-11 01:33:18.748756500 +0100
+diff -Nur busybox-1.1.1/networking/netmsg.c busybox-1.1.1-owrt/networking/netmsg.c
+--- busybox-1.1.1/networking/netmsg.c	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.1-owrt/networking/netmsg.c	2006-04-01 18:35:32.000000000 +0200
 @@ -0,0 +1,58 @@
 +#include <sys/types.h>
 +#include <sys/socket.h>
