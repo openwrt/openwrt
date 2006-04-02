@@ -49,6 +49,7 @@ $(PKG_BUILD_DIR)/.configured:
 			$(DISABLE_NLS) \
 			$(DISABLE_LARGEFILE) \
 			--enable-fallback=procmail \
+			--without-hesiod \
 	);
 	touch $@
 
