@@ -9,7 +9,7 @@ config BR2_PACKAGE_OPENSER
 	 configurable, free SIP server.
 
 config BR2_PACKAGE_OPENSER_MOD_AUTH
-	prompt "openser-mod-auth.................. Authentication support"
+	prompt   "openser-mod-auth................ Authentication support"
 	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_OPENSER
@@ -17,7 +17,7 @@ config BR2_PACKAGE_OPENSER_MOD_AUTH
 	  Enable authentication support
 
 config BR2_PACKAGE_OPENSER_MOD_AUTH_DB
-	prompt "openser-mod-auth-db............... Authentication with database support"
+	prompt     "openser-mod-auth-db........... Authentication with database support"
 	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_OPENSER_MOD_AUTH
@@ -25,7 +25,7 @@ config BR2_PACKAGE_OPENSER_MOD_AUTH_DB
 	  Enable authentication with database support
 
 config BR2_PACKAGE_OPENSER_MOD_AUTH_RADIUS
-	prompt "openser-mod-auth-radius........... Authentication with RADIUS support"
+	prompt     "openser-mod-auth-radius....... Authentication with RADIUS support"
 	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_OPENSER_MOD_AUTH
@@ -34,7 +34,7 @@ config BR2_PACKAGE_OPENSER_MOD_AUTH_RADIUS
 	  Authentication against RADIUS
 
 config BR2_PACKAGE_OPENSER_MOD_AVP_RADIUS
-	prompt "openser-mod-avp-radius............ AVP with RADIUS support"
+	prompt   "openser-mod-avp-radius.......... AVP with RADIUS support"
 	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_OPENSER
@@ -43,7 +43,7 @@ config BR2_PACKAGE_OPENSER_MOD_AVP_RADIUS
 	  Enable AVP with RADIUS support
 
 config BR2_PACKAGE_OPENSER_MOD_AVPOPS
-	prompt "openser-mod-avpops................ AVP options support"
+	prompt   "openser-mod-avpops.............. AVP options support"
 	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_OPENSER
@@ -51,7 +51,7 @@ config BR2_PACKAGE_OPENSER_MOD_AVPOPS
 	  Enable AVP options support
 
 config BR2_PACKAGE_OPENSER_MOD_DISPATCHER
-	prompt "openser-mod-dispatcher............ dispatcher support"
+	prompt   "openser-mod-dispatcher.......... dispatcher support"
 	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_OPENSER
@@ -59,7 +59,7 @@ config BR2_PACKAGE_OPENSER_MOD_DISPATCHER
 	  Enable dispatcher options support
 
 config BR2_PACKAGE_OPENSER_MOD_DIVERSION
-	prompt "openser-mod-diversion............. diversion support"
+	prompt   "openser-mod-diversion........... diversion support"
 	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_OPENSER
@@ -67,7 +67,7 @@ config BR2_PACKAGE_OPENSER_MOD_DIVERSION
 	  Enable diversion options support
 
 config BR2_PACKAGE_OPENSER_MOD_FLATSTORE
-	prompt "openser-mod-flatstore............. flatstore support"
+	prompt   "openser-mod-flatstore........... flatstore support"
 	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_OPENSER
@@ -75,7 +75,7 @@ config BR2_PACKAGE_OPENSER_MOD_FLATSTORE
 	  Enable flatstore support
 
 config BR2_PACKAGE_OPENSER_MOD_GFLAGS
-	prompt "openser-mod-gflags................ gflags support"
+	prompt   "openser-mod-gflags.............. gflags support"
 	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_OPENSER
@@ -83,7 +83,7 @@ config BR2_PACKAGE_OPENSER_MOD_GFLAGS
 	  Enable GFlags support
 
 config BR2_PACKAGE_OPENSER_MOD_GROUP
-	prompt "openser-mod-group................. group support"
+	prompt   "openser-mod-group............... group support"
 	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_OPENSER
@@ -91,7 +91,7 @@ config BR2_PACKAGE_OPENSER_MOD_GROUP
 	  Enable group support
 
 config BR2_PACKAGE_OPENSER_MOD_GROUP_RADIUS
-	prompt "openser-mod-group-radius.......... group with RADIUS support"
+	prompt   "openser-mod-group-radius........ group with RADIUS support"
 	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_OPENSER
@@ -99,7 +99,7 @@ config BR2_PACKAGE_OPENSER_MOD_GROUP_RADIUS
 	  Enable group with RADIUS support
 
 config BR2_PACKAGE_OPENSER_MOD_LCR
-	prompt "openser-mod-lcr................... Least Cost Routing support"
+	prompt   "openser-mod-lcr................. Least Cost Routing support"
 	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_OPENSER
@@ -108,7 +108,7 @@ config BR2_PACKAGE_OPENSER_MOD_LCR
 	  Enable Least Cost Routing support
 
 config BR2_PACKAGE_OPENSER_MOD_MEDIAPROXY
-	prompt "openser-mod-mediaproxy............ Mediaproxy support"
+	prompt   "openser-mod-mediaproxy.......... Mediaproxy support"
 	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_OPENSER
@@ -116,7 +116,7 @@ config BR2_PACKAGE_OPENSER_MOD_MEDIAPROXY
 	  Enable mediaproxy support
 
 config BR2_PACKAGE_OPENSER_MOD_MSILO
-	prompt "openser-mod-msilo................. MSilo support"
+	prompt   "openser-mod-msilo............... MSilo support"
 	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_OPENSER
@@ -124,16 +124,16 @@ config BR2_PACKAGE_OPENSER_MOD_MSILO
 	  Enable msilo support
 
 config BR2_PACKAGE_OPENSER_MOD_MYSQL
-	prompt "openser-mod-mysql................. MySQL support"
+	prompt   "openser-mod-mysql............... MySQL support"
 	tristate
 	default m if CONFIG_DEVEL
-	select BR2_PACKAGE_LIBMYSQLCLIENT
 	depends BR2_PACKAGE_OPENSER
+	select BR2_PACKAGE_LIBMYSQLCLIENT
 	help
 	  Enable MySQL support
 
 config BR2_PACKAGE_OPENSER_MOD_NATHELPER
-	prompt "openser-mod-nathelper............. NAT helper support"
+	prompt   "openser-mod-nathelper........... NAT helper support"
 	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_OPENSER
@@ -141,7 +141,7 @@ config BR2_PACKAGE_OPENSER_MOD_NATHELPER
 	  NAT helper support
 
 config BR2_PACKAGE_OPENSER_MOD_OPTIONS
-	prompt "openser-mod-options............... options support"
+	prompt   "openser-mod-options............. options support"
 	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_OPENSER
@@ -149,7 +149,7 @@ config BR2_PACKAGE_OPENSER_MOD_OPTIONS
 	  Enable options support
 
 config BR2_PACKAGE_OPENSER_MOD_PDT
-	prompt "openser-mod-pdt................... PDT support"
+	prompt   "openser-mod-pdt................. PDT support"
 	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_OPENSER
@@ -157,7 +157,7 @@ config BR2_PACKAGE_OPENSER_MOD_PDT
 	  Enable pdt support
 
 config BR2_PACKAGE_OPENSER_MOD_PERMISSIONS
-	prompt "openser-mod-permissions........... Permissions support"
+	prompt   "openser-mod-permissions......... Permissions support"
 	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_OPENSER
@@ -165,7 +165,7 @@ config BR2_PACKAGE_OPENSER_MOD_PERMISSIONS
 	  Enable permissions support
 
 config BR2_PACKAGE_OPENSER_MOD_PIKE
-	prompt "openser-mod-pike.................. PIKE support"
+	prompt   "openser-mod-pike................ PIKE support"
 	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_OPENSER
@@ -173,7 +173,7 @@ config BR2_PACKAGE_OPENSER_MOD_PIKE
 	  Enable pike support
 
 config BR2_PACKAGE_OPENSER_MOD_SMS
-	prompt "openser-mod-sms................... SMS support"
+	prompt   "openser-mod-sms................. SMS support"
 	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_OPENSER
@@ -181,7 +181,7 @@ config BR2_PACKAGE_OPENSER_MOD_SMS
 	  SMS support
 
 config BR2_PACKAGE_OPENSER_MOD_SPEEDDIAL
-	prompt "openser-mod-speeddial............. Speed Dial support"
+	prompt   "openser-mod-speeddial........... Speed Dial support"
 	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_OPENSER
@@ -189,7 +189,7 @@ config BR2_PACKAGE_OPENSER_MOD_SPEEDDIAL
 	  Speed Dial support
 
 config BR2_PACKAGE_OPENSER_MOD_UAC
-	prompt "openser-mod-uac................... UAC support"
+	prompt   "openser-mod-uac................. UAC support"
 	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_OPENSER
@@ -197,7 +197,7 @@ config BR2_PACKAGE_OPENSER_MOD_UAC
 	  Enable UAC support
 
 config BR2_PACKAGE_OPENSER_MOD_UAC_REDIRECT
-	prompt "openser-mod-uac................... UAC redirect support"
+	prompt   "openser-mod-uac................. UAC redirect support"
 	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_OPENSER
@@ -205,7 +205,7 @@ config BR2_PACKAGE_OPENSER_MOD_UAC_REDIRECT
 	  Enable UAC redirect support
 
 config BR2_PACKAGE_OPENSER_MOD_URI
-	prompt "openser-mod-uri................... URI support"
+	prompt   "openser-mod-uri................. URI support"
 	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_OPENSER
@@ -213,7 +213,7 @@ config BR2_PACKAGE_OPENSER_MOD_URI
 	  Enable URI support
 
 config BR2_PACKAGE_OPENSER_MOD_URI_DB
-	prompt "openser-mod-uri-db................ URI database support"
+	prompt   "openser-mod-uri-db.............. URI database support"
 	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_OPENSER
@@ -221,7 +221,7 @@ config BR2_PACKAGE_OPENSER_MOD_URI_DB
 	  Enable URI database support
 
 config BR2_PACKAGE_OPENSER_MOD_URI_RADIUS
-	prompt "openser-mod-uri-radius............ URI with RADIUS support"
+	prompt   "openser-mod-uri-radius.......... URI with RADIUS support"
 	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_OPENSER
@@ -229,7 +229,7 @@ config BR2_PACKAGE_OPENSER_MOD_URI_RADIUS
 	  Enable URI with RADIUS support
 
 config BR2_PACKAGE_OPENSER_MOD_XLOG
-	prompt "openser-mod-xlog.................. Logging support"
+	prompt   "openser-mod-xlog................ Logging support"
 	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_OPENSER
