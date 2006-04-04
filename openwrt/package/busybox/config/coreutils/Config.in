@@ -59,6 +59,13 @@ config BUSYBOX_CONFIG_CMP
 	  cmp is used to compare two files and returns the result
 	  to standard output.
 
+config BUSYBOX_CONFIG_COMM
+	bool "comm"
+	default n
+	help
+	  comm is used to compare two files line by line and return
+	  a three-column output.
+
 config BUSYBOX_CONFIG_CP
 	bool "cp"
 	default y
@@ -72,20 +79,12 @@ config BUSYBOX_CONFIG_CUT
 	  cut is used to print selected parts of lines from
 	  each file to stdout.
 
-if BUSYBOX_CONFIG_WATCH
-	config BUSYBOX_CONFIG_DATE
-		default y
-	comment "date (forced enabled for use with watch)"
-endif
-
-if !CONFIG_WATCH
-    config BUSYBOX_CONFIG_DATE
-	    bool "date"
-	    default y
-	    help
-	      date is used to set the system date or display the
-	      current time in the given format.
-endif
+config BUSYBOX_CONFIG_DATE
+	bool "date"
+	default y
+	help
+	  date is used to set the system date or display the
+	  current time in the given format.
 
 config BUSYBOX_CONFIG_FEATURE_DATE_ISOFMT
 	bool "  Enable ISO date format output (-I)"
@@ -144,11 +143,12 @@ config BUSYBOX_CONFIG_FEATURE_DU_DEFALT_BLOCKSIZE_1K
 	  Use a blocksize of (1K) instead of the default 512b.
 
 config BUSYBOX_CONFIG_ECHO
-	bool "echo (basic SUSv3 version taking no options)"
+	bool "echo (basic SuSv3 version taking no options)"
 	default y
 	help
 	  echo is used to print a specified string to stdout.
 
+# this entry also appears in shell/Config.in, next to the echo builtin
 config BUSYBOX_CONFIG_FEATURE_FANCY_ECHO
 	bool "  Enable echo options (-n and -e)"
 	default y
@@ -171,19 +171,20 @@ config BUSYBOX_CONFIG_EXPR
 	  expr is used to calculate numbers and print the result
 	  to standard output.
 
-if BUSYBOX_CONFIG_HUSH || BUSYBOX_CONFIG_LASH || BUSYBOX_CONFIG_MSH
-	config BUSYBOX_CONFIG_FALSE
-		default y
-	comment "false (forced enabled for use with shell)"
-endif
+config BUSYBOX_CONFIG_EXPR_MATH_SUPPORT_64
+	bool "    Extend Posix numbers support to 64 bit"
+	default n
+	depends on BUSYBOX_CONFIG_EXPR
+	help
+	  Enable 64-bit math support in the expr applet.  This will make
+	  the applet slightly larger, but will allow computation with very
+	  large numbers.
 
-if !CONFIG_HUSH && !CONFIG_LASH && !CONFIG_MSH
-    config BUSYBOX_CONFIG_FALSE
-	    bool "false"
-	    default y
-	    help
-	      false returns an exit code of FALSE (1).
-endif
+config BUSYBOX_CONFIG_FALSE
+	bool "false"
+	default y
+	help
+	  false returns an exit code of FALSE (1).
 
 config BUSYBOX_CONFIG_FOLD
 	bool "fold"
@@ -291,11 +292,22 @@ config BUSYBOX_CONFIG_FEATURE_LS_USERNAME
 	  Allow ls to display username/groupname for files.
 
 config BUSYBOX_CONFIG_FEATURE_LS_COLOR
-	bool "  Use color to identify file types"
+	bool "  Allow use of color to identify file types"
 	default y
 	depends on BUSYBOX_CONFIG_LS
 	help
-	  Allow ls to use color when displaying files.
+	  This enables the --color option to ls.
+
+config BUSYBOX_CONFIG_FEATURE_LS_COLOR_IS_DEFAULT
+	bool "  Produce colored ls output by default"
+	default y
+	depends on BUSYBOX_CONFIG_FEATURE_LS_COLOR
+	help
+	  Saying yes here will turn coloring on by default,
+	  even if no "--color" option is given to the ls command.
+	  This is not recommended, since the colors are not
+	  configurable, and the output may not be legible on
+	  many output screens.
 
 config BUSYBOX_CONFIG_MD5SUM
 	bool "md5sum"
@@ -329,11 +341,29 @@ config BUSYBOX_CONFIG_MV
 	help
 	  mv is used to move or rename files or directories.
 
+config BUSYBOX_CONFIG_NICE
+	bool "nice"
+	default n
+	help
+	  nice runs a program with modified scheduling priority.
+
+config BUSYBOX_CONFIG_NOHUP
+	bool "nohup"
+	default n
+	help
+	  run a command immune to hangups, with output to a non-tty.
+
 config BUSYBOX_CONFIG_OD
 	bool "od"
 	default n
 	help
 	  od is used to dump binary files in octal and other formats.
+
+config BUSYBOX_CONFIG_PRINTENV
+	bool "printenv"
+	default n
+	help
+	  printenv is used to print all or part of environment.
 
 config BUSYBOX_CONFIG_PRINTF
 	bool "printf"
@@ -398,11 +428,44 @@ config BUSYBOX_CONFIG_SORT
 	help
 	  sort is used to sort lines of text in specified files.
 
+config BUSYBOX_CONFIG_FEATURE_SORT_BIG
+	bool "  full SuSv3 compliant sort (Support -ktcsbdfiozgM)"
+	default n
+	depends on BUSYBOX_CONFIG_SORT
+	help
+	  Without this, sort only supports  -r, -u, and an integer version
+	  of -n.  Selecting this adds sort keys, floating point support, and
+	  more.  This adds a little over 3k to a nonstatic build on x86.
+
+	  The SuSv3 sort standard is available at:
+	  http://www.opengroup.org/onlinepubs/007904975/utilities/sort.html
+
+config BUSYBOX_CONFIG_STAT
+	bool "stat"
+	default n
+	help
+	  display file or filesystem status.
+
+config BUSYBOX_CONFIG_FEATURE_STAT_FORMAT
+	bool "  Enable custom formats (-c)"
+	default n
+	depends on BUSYBOX_CONFIG_STAT
+	help
+	  Without this, stat will not support the '-c format' option where
+	  users can pass a custom format string for output.  This adds about
+	  7k to a nonstatic build on amd64.
+
 config BUSYBOX_CONFIG_STTY
 	bool "stty"
 	default n
 	help
 	  stty is used to change and print terminal line settings.
+
+config BUSYBOX_CONFIG_SUM
+	bool "sum"
+	default n
+	help
+	  checksum and count the blocks in a file
 
 config BUSYBOX_CONFIG_SYNC
 	bool "sync"
@@ -439,21 +502,13 @@ config BUSYBOX_CONFIG_FEATURE_TEE_USE_BLOCK_IO
 	help
 	  Enable this option for a faster tee, at expense of size.
 
-if BUSYBOX_CONFIG_ASH || BUSYBOX_CONFIG_HUSH || BUSYBOX_CONFIG_LASH || BUSYBOX_CONFIG_MSH
-	config BUSYBOX_CONFIG_TEST
-		default y
-	comment "test (forced enabled for use with shell)"
-endif
-
-if !CONFIG_ASH && !CONFIG_HUSH && !CONFIG_LASH && !CONFIG_MSH
-    config BUSYBOX_CONFIG_TEST
-	    bool "test"
-	    default y
-	    help
-	      test is used to check file types and compare values,
-	      returning an appropriate exit code. The shells (ash
-	      and bash) have test builtin.
-endif
+config BUSYBOX_CONFIG_TEST
+	bool "test"
+	default y
+	help
+	  test is used to check file types and compare values,
+	  returning an appropriate exit code. The shells (ash
+	  and bash) have test builtin.
 
 config BUSYBOX_CONFIG_FEATURE_TEST_64
 	bool "  Extend test to 64 bit"
@@ -476,20 +531,30 @@ config BUSYBOX_CONFIG_TR
 	  tr is used to squeeze, and/or delete characters from standard
 	  input, writing to standard output.
 
-if BUSYBOX_CONFIG_HUSH || BUSYBOX_CONFIG_LASH || BUSYBOX_CONFIG_MSH
-	config BUSYBOX_CONFIG_TRUE
-		default y
-	comment "true (forced enabled for use with shell)"
-endif
+config BUSYBOX_CONFIG_FEATURE_TR_CLASSES
+	bool "  Enable character classes (such as [:upper:])"
+	default n
+	depends on BUSYBOX_CONFIG_TR
+	help
+	  Enable character classes, enabling commands such as:
+	  tr [:upper:] [:lower:] to convert input into lowercase.
 
-if !CONFIG_HUSH && !CONFIG_LASH && !CONFIG_MSH
-    config BUSYBOX_CONFIG_TRUE
-	    bool "true"
-	    default y
-	    help
-	      true returns an exit code of TRUE (0).
+config BUSYBOX_CONFIG_FEATURE_TR_EQUIV
+	bool "  Enable equivalence classes"
+	default n
+	depends on BUSYBOX_CONFIG_TR
+	help
+	  Enable equivalence classes, which essentially add the enclosed
+	  character to the current set. For instance, tr [=a=] xyz would
+	  replace all instances of 'a' with 'xyz'. This option is mainly
+	  useful for cases when no other way of expressing a character
+	  is possible.
 
-endif
+config BUSYBOX_CONFIG_TRUE
+	bool "true"
+	default y
+	help
+	  true returns an exit code of TRUE (0).
 
 config BUSYBOX_CONFIG_TTY
 	bool "tty"
@@ -531,6 +596,7 @@ config BUSYBOX_CONFIG_UUENCODE
 config BUSYBOX_CONFIG_WATCH
 	bool "watch"
 	default n
+	select BUSYBOX_CONFIG_DATE
 	help
 	  watch is used to execute a program periodically, showing
 	  output to the screen.
@@ -545,7 +611,7 @@ config BUSYBOX_CONFIG_WC
 config BUSYBOX_CONFIG_WHO
 	bool "who"
 	default n
-	select BUSYBOX_CONFIG_FEATURE_U_W_TMP
+	select BUSYBOX_CONFIG_FEATURE_UTMP
 	help
 	  who is used to show who is logged on.
 
@@ -564,7 +630,7 @@ config BUSYBOX_CONFIG_YES
 	  the default string `y'.
 
 comment "Common options for cp and mv"
-    depends on BUSYBOX_CONFIG_CP || BUSYBOX_CONFIG_MV
+	depends on BUSYBOX_CONFIG_CP || BUSYBOX_CONFIG_MV
 
 config BUSYBOX_CONFIG_FEATURE_PRESERVE_HARDLINKS
 	bool "  Preserve hard links"
@@ -573,22 +639,22 @@ config BUSYBOX_CONFIG_FEATURE_PRESERVE_HARDLINKS
 	help
 	  Allow cp and mv to preserve hard links.
 
-comment "Common options for ls and more"
-	depends on BUSYBOX_CONFIG_LS || BUSYBOX_CONFIG_MORE
+comment "Common options for ls, more and telnet"
+	depends on BUSYBOX_CONFIG_LS || BUSYBOX_CONFIG_MORE || BUSYBOX_CONFIG_TELNET
 
 config BUSYBOX_CONFIG_FEATURE_AUTOWIDTH
 	bool "  Calculate terminal & column widths"
 	default y
-	depends on BUSYBOX_CONFIG_LS || BUSYBOX_CONFIG_MORE
+	depends on BUSYBOX_CONFIG_LS || BUSYBOX_CONFIG_MORE || BUSYBOX_CONFIG_TELNET
 	help
-	  This option allows utilities such as 'ls' and 'more' to determine the
-	  width of the screen, which can allow them to display additional text
-	  or avoid wrapping text onto the next line.  If you leave this
-	  disabled, your utilities will be especially primitive and will be
-	  unable to determine the current screen width.
+	  This option allows utilities such as 'ls', 'more' and 'telnet'
+	  to determine the width of the screen, which can allow them to 
+	  display additional text or avoid wrapping text onto the next line.
+	  If you leave this disabled, your utilities will be especially 
+	  primitive and will be unable to determine the current screen width.
 
 comment "Common options for df, du, ls"
-    depends on BUSYBOX_CONFIG_DF || BUSYBOX_CONFIG_DU || BUSYBOX_CONFIG_LS
+	depends on BUSYBOX_CONFIG_DF || BUSYBOX_CONFIG_DU || BUSYBOX_CONFIG_LS
 
 config BUSYBOX_CONFIG_FEATURE_HUMAN_READABLE
 	bool "  Support for human readable output (example 13k, 23M, 235G)"
@@ -598,7 +664,7 @@ config BUSYBOX_CONFIG_FEATURE_HUMAN_READABLE
 	  Allow df, du, and ls to have human readable output.
 
 comment "Common options for md5sum, sha1sum"
-    depends on BUSYBOX_CONFIG_MD5SUM || BUSYBOX_CONFIG_SHA1SUM
+	depends on BUSYBOX_CONFIG_MD5SUM || BUSYBOX_CONFIG_SHA1SUM
 
 config BUSYBOX_CONFIG_FEATURE_MD5_SHA1_SUM_CHECK
 	bool "  Enable -c, -s and -w options"

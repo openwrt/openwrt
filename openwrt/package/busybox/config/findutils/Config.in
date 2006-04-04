@@ -17,7 +17,15 @@ config BUSYBOX_CONFIG_FEATURE_FIND_MTIME
 	depends on BUSYBOX_CONFIG_FIND
 	help
 	  Allow searching based on the modification time of
-	  files.
+	  files, in days.
+
+config BUSYBOX_CONFIG_FEATURE_FIND_MMIN
+	bool "  Enable modified time matching (-min) option"
+	default n
+	depends on BUSYBOX_CONFIG_FIND
+	help
+	  Allow searching based on the modification time of
+	  files, in minutes.
 
 config BUSYBOX_CONFIG_FEATURE_FIND_PERM
 	bool "  Enable permissions matching (-perm) option"
@@ -57,6 +65,14 @@ config BUSYBOX_CONFIG_FEATURE_FIND_INUM
 	help
 	  Support the 'find -inum' option for searching by inode number.
 
+config BUSYBOX_CONFIG_FEATURE_FIND_EXEC
+	bool "  Enable (-exec) option allowing execution of commands"
+	default y
+	depends on BUSYBOX_CONFIG_FIND
+	help
+	  Support the 'find -exec' option for executing commands based upon
+	  the files matched.
+
 config BUSYBOX_CONFIG_GREP
 	bool "grep"
 	default y
@@ -73,13 +89,13 @@ config BUSYBOX_CONFIG_FEATURE_GREP_EGREP_ALIAS
 	  and various repetition operators.
 
 config BUSYBOX_CONFIG_FEATURE_GREP_FGREP_ALIAS
-	bool "  Alias fgrep to grep -f"
+	bool "  Alias fgrep to grep -F"
 	default y
 	depends on BUSYBOX_CONFIG_GREP
 	help
-          fgrep sees the search pattern as a normal string rather than
+	  fgrep sees the search pattern as a normal string rather than
 	  regular expressions.
-	  grep -f is always builtin, this just creates the fgrep alias.
+	  grep -F is always builtin, this just creates the fgrep alias.
 
 config BUSYBOX_CONFIG_FEATURE_GREP_CONTEXT
 	bool "  Enable before and after context flags (-A, -B and -C)"

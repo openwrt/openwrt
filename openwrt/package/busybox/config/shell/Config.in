@@ -3,7 +3,7 @@
 # see scripts/kbuild/config-language.txt.
 #
 
-menu "Another Bourne-like Shell"
+menu "Shells"
 
 choice
 	prompt "Choose your default shell"
@@ -36,6 +36,7 @@ endchoice
 config BUSYBOX_CONFIG_ASH
 	bool "ash"
 	default y
+	select BUSYBOX_CONFIG_TEST
 	help
 	  Tha 'ash' shell adds about 60k in the default configuration and is
 	  the most complete and most pedantically correct shell included with
@@ -52,6 +53,23 @@ config BUSYBOX_CONFIG_ASH_JOB_CONTROL
 	depends on BUSYBOX_CONFIG_ASH
 	help
 	  Enable job control in the ash shell.
+
+config BUSYBOX_CONFIG_ASH_READ_NCHARS
+	bool "  Enable 'read -n N' and 'read -s' support"
+	default n
+	depends on BUSYBOX_CONFIG_ASH
+	help
+	  'read -n N' will return a value after N characters have been read.
+	  'read -s' will read without echoing the user's input.
+
+config BUSYBOX_CONFIG_ASH_READ_TIMEOUT
+	bool "  Enable 'read -t S' support."
+	default y
+	depends on BUSYBOX_CONFIG_ASH
+	help
+	  'read -t S' will return a value after S seconds have passed.
+	  This implementation will allow fractional seconds, expressed
+	  as a decimal fraction, e.g. 'read -t 2.5 foo'.
 
 config BUSYBOX_CONFIG_ASH_ALIAS
 	bool "  Enable alias support"
@@ -92,6 +110,21 @@ config BUSYBOX_CONFIG_ASH_CMDCMD
 	  you to run the specified command with the specified arguments,
 	  even when there is an ash builtin command with the same name.
 
+config BUSYBOX_CONFIG_ASH_BUILTIN_ECHO
+	bool "  Enable builtin version of 'echo'"
+	default y
+	depends on BUSYBOX_CONFIG_ASH
+	help
+	  Enable support for echo, built in to ash.
+
+# this entry also appears in coreutils/Config.in, next to the echo applet
+config BUSYBOX_CONFIG_FEATURE_FANCY_ECHO
+	bool "  Enable echo options (-n and -e)"
+	default y
+	depends on BUSYBOX_CONFIG_ASH_BUILTIN_ECHO
+	help
+	  This adds options (-n and -e) to echo.
+
 config BUSYBOX_CONFIG_ASH_MAIL
 	bool "  Check for new mail on interactive shells"
 	default n
@@ -104,7 +137,7 @@ config BUSYBOX_CONFIG_ASH_OPTIMIZE_FOR_SIZE
 	default y
 	depends on BUSYBOX_CONFIG_ASH
 	help
-	  Compile ash for reduced size at price of speed.
+	  Compile ash for reduced size at the price of speed.
 
 config BUSYBOX_CONFIG_ASH_RANDOM_SUPPORT
 	bool "  Enable pseudorandom generator and variable $RANDOM"
@@ -117,9 +150,21 @@ config BUSYBOX_CONFIG_ASH_RANDOM_SUPPORT
 	  After "unset RANDOM" then generator will switch off and this
 	  variable will no longer have special treatment.
 
+config BUSYBOX_CONFIG_ASH_EXPAND_PRMT
+	bool "  Expand prompt string"
+	default n
+	depends on BUSYBOX_CONFIG_ASH
+	help
+	  "PS#" may be contain volatile content, such as backquote commands.
+	  This option recreates the prompt string from the environment
+	  variable each time it is displayed.
+
 config BUSYBOX_CONFIG_HUSH
 	bool "hush"
 	default n
+	select BUSYBOX_CONFIG_TRUE
+	select BUSYBOX_CONFIG_FALSE
+	select BUSYBOX_CONFIG_TEST
 	help
 	  hush is a very small shell (just 18k) and it has fairly complete
 	  Bourne shell grammar.  It even handles all the normal flow control
@@ -134,6 +179,9 @@ config BUSYBOX_CONFIG_HUSH
 config BUSYBOX_CONFIG_LASH
 	bool "lash"
 	default n
+	select BUSYBOX_CONFIG_TRUE
+	select BUSYBOX_CONFIG_FALSE
+	select BUSYBOX_CONFIG_TEST
 	help
 	  lash is the very smallest shell (adds just 10k) and it is quite
 	  usable as a command prompt, but it is not suitable for any but the
@@ -146,6 +194,9 @@ config BUSYBOX_CONFIG_LASH
 config BUSYBOX_CONFIG_MSH
 	bool "msh"
 	default n
+	select BUSYBOX_CONFIG_TRUE
+	select BUSYBOX_CONFIG_FALSE
+	select BUSYBOX_CONFIG_TEST
 	help
 	  The minix shell (adds just 30k) is quite complete and handles things
 	  like for/do/done, case/esac and all the things you expect a Bourne
@@ -175,7 +226,7 @@ config BUSYBOX_CONFIG_FEATURE_SH_STANDALONE_SHELL
 	  busybox to use the ifconfig busybox applet.  Specifying the fully
 	  qualified executable name, such as '/sbin/ifconfig' will still
 	  execute the /sbin/ifconfig executable on the filesystem.  This option
-	  is generally used when creating a staticly linked version of busybox
+	  is generally used when creating a statically linked version of busybox
 	  for use as a rescue shell, in the event that you screw up your system.
 
 	  Note that when using this option, the shell will attempt to directly
@@ -189,6 +240,14 @@ config BUSYBOX_CONFIG_FEATURE_COMMAND_EDITING
 	depends on BUSYBOX_CONFIG_MSH || BUSYBOX_CONFIG_LASH || BUSYBOX_CONFIG_HUSH || BUSYBOX_CONFIG_ASH
 	help
 	  Enable command editing in shell.
+
+config BUSYBOX_CONFIG_FEATURE_COMMAND_EDITING_VI
+	bool "vi-style line editing commands"
+	default n
+	depends on BUSYBOX_CONFIG_FEATURE_COMMAND_EDITING
+	help
+	  Enable vi-style line editing in the shell.  This mode can be
+	  turned on and off with "set -o vi" and "set +o vi".
 
 config BUSYBOX_CONFIG_FEATURE_COMMAND_HISTORY
 	int "history size"

@@ -58,6 +58,13 @@ config BUSYBOX_CONFIG_RESET
 	  This program is used to reset the terminal screen, if it
 	  gets messed up.
 
+config BUSYBOX_CONFIG_SETCONSOLE
+	bool "setconsole"
+	default n
+	help
+	  This program redirects the system console to another device,
+	  like the current tty while logged in via telnet.
+
 config BUSYBOX_CONFIG_SETKEYCODES
 	bool "setkeycodes"
 	default n
