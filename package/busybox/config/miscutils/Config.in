@@ -12,6 +12,13 @@ config BUSYBOX_CONFIG_ADJTIMEX
 	  Adjtimex reads and optionally sets adjustment parameters for
 	  the Linux clock adjustment algorithm.
 
+config BUSYBOX_CONFIG_BBCONFIG
+	bool "bbconfig"
+	default n
+	help
+	  The bbconfig applet will print the config file with which
+	  busybox was built.
+
 config BUSYBOX_CONFIG_CROND
 	bool "crond"
 	default y
@@ -37,6 +44,7 @@ config BUSYBOX_CONFIG_FEATURE_CROND_CALL_SENDMAIL
 config BUSYBOX_CONFIG_CRONTAB
 	bool "crontab"
 	default y
+	select BUSYBOX_CONFIG_FEATURE_SUID
 	help
 	  Crontab manipulates the crontab for a particular user.  Only
 	  the superuser may specify a different user and/or crontab directory.
@@ -83,12 +91,65 @@ config BUSYBOX_CONFIG_DEVFSD_VERBOSE
 	help
 	  Increases logging to stderr or syslog.
 
+config BUSYBOX_CONFIG_EJECT
+	bool "eject"
+	default n
+	help
+	  Used to eject cdroms.  (defaults to /dev/cdrom)
+
 config BUSYBOX_CONFIG_LAST
 	bool "last"
 	default n
-	select BUSYBOX_CONFIG_FEATURE_U_W_TMP
+	select BUSYBOX_CONFIG_FEATURE_WTMP
 	help
 	  'last' displays a list of the last users that logged into the system.
+
+config BUSYBOX_CONFIG_LESS
+	bool "less"
+	default n
+	help
+	  'less' is a pager, meaning that it displays text files. It possesses
+	  a wide array of features, and is an improvement over 'more'.
+
+config BUSYBOX_CONFIG_FEATURE_LESS_BRACKETS
+	bool "  Enable bracket searching"
+	default n
+	depends on BUSYBOX_CONFIG_LESS
+	help
+	  This option adds the capability to search for matching left and right
+	  brackets, facilitating programming.
+
+config BUSYBOX_CONFIG_FEATURE_LESS_FLAGS
+	bool "  Enable extra flags"
+	default n
+	depends on BUSYBOX_CONFIG_LESS
+	help
+	  The extra flags provided do the following:
+
+	  The -M flag enables a more sophisticated status line.
+	  The -m flag enables a simpler status line with a percentage.
+
+config BUSYBOX_CONFIG_FEATURE_LESS_FLAGCS
+	bool "  Enable flag changes"
+	default n
+	depends on BUSYBOX_CONFIG_LESS
+	help
+	  This enables the ability to change command-line flags within
+	  less itself.
+
+config BUSYBOX_CONFIG_FEATURE_LESS_MARKS
+	bool "  Enable marks"
+	default n
+	depends on BUSYBOX_CONFIG_LESS
+	help
+	  Marks enable positions in a file to be stored for easy reference.
+
+config BUSYBOX_CONFIG_FEATURE_LESS_REGEXP
+	bool "  Enable regular expressions"
+	default n
+	depends on BUSYBOX_CONFIG_LESS
+	help
+	  Enable regular expressions, allowing complex file searches.
 
 config BUSYBOX_CONFIG_HDPARM
 	bool "hdparm"
@@ -152,10 +213,39 @@ config BUSYBOX_CONFIG_MAKEDEVS
 	bool "makedevs"
 	default n
 	help
-	  'makedevs' is a utility used and created by the Linux Router Project.
-	  It creates a large number of device special files (/dev devices)
-	  rather quickly, and can be considerably faster then running mknod a
-	  zillion times.
+	  'makedevs' is a utility used to create a batch of devices with
+	  one command.
+	  .
+	  There are two choices for command line behaviour, the interface
+	  as used by LEAF/Linux Router Project, or a device table file.
+	  .
+	  'leaf' is traditionally what busybox follows, it allows multiple
+	  devices of a particluar type to be created per command.
+	  e.g. /dev/hda[0-9]
+          Device properties are passed as command line arguments.
+	  .
+	  'table' reads device properties from a file or stdin, allowing
+	  a batch of unrelated devices to be makde with one command.
+          User/group names are allowed as an alternative to uid/gid.
+
+choice
+	prompt "Choose makedevs behaviour"
+	depends BUSYBOX_CONFIG_MAKEDEVS
+	default BUSYBOX_CONFIG_FEATURE_MAKEDEVS_TABLE
+
+config BUSYBOX_CONFIG_FEATURE_MAKEDEVS_LEAF
+        bool "leaf"
+
+config BUSYBOX_CONFIG_FEATURE_MAKEDEVS_TABLE
+	bool "table"
+
+endchoice
+
+config BUSYBOX_CONFIG_MOUNTPOINT
+	bool "mountpoint"
+	default n
+	help
+	  mountpoint checks if the directory is a mountpoint.
 
 config BUSYBOX_CONFIG_MT
 	bool "mt"
@@ -164,6 +254,15 @@ config BUSYBOX_CONFIG_MT
 	  mt is used to control tape devices.  You can use the mt utility
 	  to advance or rewind a tape past a specified number of archive
 	  files on the tape.
+
+config BUSYBOX_CONFIG_RUNLEVEL
+        bool "runlevel"
+	default n
+	help
+ 	  find the current and previous system runlevel.
+
+	  This applet uses utmp but does not rely on busybox supporing
+	  utmp on purpose. It is used by e.g. emdebian via /etc/init.d/rc.
 
 config BUSYBOX_CONFIG_RX
         bool "rx"
@@ -177,6 +276,12 @@ config BUSYBOX_CONFIG_STRINGS
 	help
 	  strings prints the printable character sequences for each file
 	  specified.
+
+config BUSYBOX_CONFIG_SETSID
+	bool "setsid"
+	default n
+	help
+	  setsid runs a program in a new session
 
 config BUSYBOX_CONFIG_TIME
 	bool "time"

@@ -11,22 +11,8 @@ config BUSYBOX_CONFIG_INSMOD
 	help
 	  insmod is used to load specified modules in the running kernel.
 
-config BUSYBOX_CONFIG_FEATURE_2_4_MODULES
-	bool "  Support version 2.2.x to 2.4.x Linux kernels"
-	default y
-	depends on BUSYBOX_CONFIG_INSMOD
-	help
-	  Support module loading for 2.2.x and 2.4.x Linux kernels.
-
-config BUSYBOX_CONFIG_FEATURE_2_6_MODULES
-	bool "  Support version 2.6.x Linux kernels"
-	default y
-	depends on BUSYBOX_CONFIG_INSMOD
-	help
-	  Support module loading for newer 2.6.x Linux kernels.
-
 config BUSYBOX_CONFIG_FEATURE_INSMOD_VERSION_CHECKING
-	bool "  Module version checking"
+	bool "Module version checking"
 	default n
 	depends on BUSYBOX_CONFIG_INSMOD && BUSYBOX_CONFIG_FEATURE_2_4_MODULES
 	help
@@ -34,7 +20,7 @@ config BUSYBOX_CONFIG_FEATURE_INSMOD_VERSION_CHECKING
 	  ensure that the kernel and module are made for each other.
 
 config BUSYBOX_CONFIG_FEATURE_INSMOD_KSYMOOPS_SYMBOLS
-	bool "  Add module symbols to kernel symbol table"
+	bool "Add module symbols to kernel symbol table"
 	default n
 	depends on BUSYBOX_CONFIG_INSMOD && BUSYBOX_CONFIG_FEATURE_2_4_MODULES
 	help
@@ -45,7 +31,7 @@ config BUSYBOX_CONFIG_FEATURE_INSMOD_KSYMOOPS_SYMBOLS
 	  Oops messages from kernel modules, say N.
 
 config BUSYBOX_CONFIG_FEATURE_INSMOD_LOADINKMEM
-	bool "  In kernel memory optimization (uClinux only)"
+	bool "In kernel memory optimization (uClinux only)"
 	default n
 	depends on BUSYBOX_CONFIG_INSMOD && BUSYBOX_CONFIG_FEATURE_2_4_MODULES
 	help
@@ -55,7 +41,7 @@ config BUSYBOX_CONFIG_FEATURE_INSMOD_LOADINKMEM
 	  being loaded into memory.
 
 config BUSYBOX_CONFIG_FEATURE_INSMOD_LOAD_MAP
-	bool "  Enable load map (-m) option"
+	bool "Enable load map (-m) option"
 	default n
 	depends on BUSYBOX_CONFIG_INSMOD && BUSYBOX_CONFIG_FEATURE_2_4_MODULES
 	help
@@ -66,7 +52,7 @@ config BUSYBOX_CONFIG_FEATURE_INSMOD_LOAD_MAP
 	  don't need this option.
 
 config BUSYBOX_CONFIG_FEATURE_INSMOD_LOAD_MAP_FULL
-	bool "  Symbols in load map"
+	bool "Symbols in load map"
 	default n
 	depends on BUSYBOX_CONFIG_FEATURE_INSMOD_LOAD_MAP
 	help
@@ -74,16 +60,25 @@ config BUSYBOX_CONFIG_FEATURE_INSMOD_LOAD_MAP_FULL
 	  load map.  With this option, -m will also output
 	  symbols load map.
 
+config BUSYBOX_CONFIG_RMMOD
+	bool "rmmod"
+	default y
+	help
+	  rmmod is used to unload specified modules from the kernel.
+
 config BUSYBOX_CONFIG_LSMOD
 	bool "lsmod"
 	default y
 	help
 	  lsmod is used to display a list of loaded modules.
 
-config BUSYBOX_CONFIG_FEATURE_QUERY_MODULE_INTERFACE
-	bool
-	default y
-	depends on BUSYBOX_CONFIG_FEATURE_2_4_MODULES && !CONFIG_FEATURE_2_6_MODULES
+config BUSYBOX_CONFIG_FEATURE_LSMOD_PRETTY_2_6_OUTPUT
+	bool "lsmod pretty output for 2.6.x Linux kernels "
+	default n
+	depends on BUSYBOX_CONFIG_LSMOD
+	help
+	  This option makes output format of lsmod adjusted to
+	  the format of module-init-tools for Linux kernel 2.6.
 
 config BUSYBOX_CONFIG_MODPROBE
 	bool "modprobe"
@@ -92,14 +87,31 @@ config BUSYBOX_CONFIG_MODPROBE
 	  Handle the loading of modules, and their dependancies on a high
 	  level.
 
-config BUSYBOX_CONFIG_RMMOD
-	bool "rmmod"
-	default y
+	  Note that in the state, modprobe does not understand multiple
+	  module options from the configuration file. See option below.
+
+config BUSYBOX_CONFIG_FEATURE_MODPROBE_MULTIPLE_OPTIONS
+	bool "Multiple options parsing"
+	default n
+	depends on BUSYBOX_CONFIG_MODPROBE
 	help
-	  rmmod is used to unload specified modules from the kernel.
+	  Allow modprobe to understand more than one option to pass to
+	  modules.
+
+	  This is a WIP, while waiting for a common argument parsing
+	  common amongst all BB applets (shell, modprobe, etc...) and
+	  adds around 600 bytes on x86, 700 bytes on ARM. The code is
+	  biggish and uggly, but just works.
+
+	  Saying Y here is not a bad idea if you're not that short
+	  on storage capacity.
+
+comment "Options common to multiple modutils"
+	depends on BUSYBOX_CONFIG_INSMOD || BUSYBOX_CONFIG_RMMOD || BUSYBOX_CONFIG_MODPROBE || BUSYBOX_CONFIG_LSMOD
 
 config BUSYBOX_CONFIG_FEATURE_CHECK_TAINTED_MODULE
-	bool "Support tainted module checking with new kernels"
+	# Simulate indentation
+	bool "  Support tainted module checking with new kernels"
 	default n
 	depends on BUSYBOX_CONFIG_INSMOD || BUSYBOX_CONFIG_LSMOD
 	help
@@ -107,6 +119,28 @@ config BUSYBOX_CONFIG_FEATURE_CHECK_TAINTED_MODULE
 	  only modules that will make the linux-kernel list ignore your
 	  support request.
 	  This option is required to support GPLONLY modules.
+
+config BUSYBOX_CONFIG_FEATURE_2_4_MODULES
+	# Simulate indentation
+	bool "  Support version 2.2.x to 2.4.x Linux kernels"
+	default y
+	depends on BUSYBOX_CONFIG_INSMOD || BUSYBOX_CONFIG_RMMOD
+	help
+	  Support module loading for 2.2.x and 2.4.x Linux kernels.
+
+config BUSYBOX_CONFIG_FEATURE_2_6_MODULES
+	# Simulate indentation
+	bool "  Support version 2.6.x Linux kernels"
+	default y
+	depends on BUSYBOX_CONFIG_INSMOD || BUSYBOX_CONFIG_RMMOD || BUSYBOX_CONFIG_MODPROBE
+	help
+	  Support module loading for newer 2.6.x Linux kernels.
+
+
+config BUSYBOX_CONFIG_FEATURE_QUERY_MODULE_INTERFACE
+	bool
+	default n
+	depends on BUSYBOX_CONFIG_FEATURE_2_4_MODULES && !CONFIG_FEATURE_2_6_MODULES
 
 
 endmenu

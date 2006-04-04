@@ -13,6 +13,14 @@ config BUSYBOX_CONFIG_FREE
 	  memory in the system, as well as the buffers used by the kernel.
 	  The shared memory column should be ignored; it is obsolete.
 
+config BUSYBOX_CONFIG_FUSER
+	bool "fuser"
+	default n
+	help
+	  fuser lists all PIDs (Process IDs) that currently have a given
+	  file open.  fuser can also list all PIDs that have a given network
+	  (TCP or UDP) port open.
+
 config BUSYBOX_CONFIG_KILL
 	bool "kill"
 	default y
@@ -42,11 +50,36 @@ config BUSYBOX_CONFIG_PIDOF
 	  Pidof finds the process id's (pids) of the named programs. It prints
 	  those id's on the standard output.
 
+config BUSYBOX_CONFIG_FEATURE_PIDOF_SINGLE
+	bool "  Enable argument for single shot (-s)"
+	default n
+	depends on BUSYBOX_CONFIG_PIDOF
+	help
+	  Support argument '-s' for returning only the first pid found.
+
+config BUSYBOX_CONFIG_FEATURE_PIDOF_OMIT
+	bool "  Enable argument for omitting pids (-o)"
+	default n
+	depends on BUSYBOX_CONFIG_PIDOF
+	help
+	  Support argument '-o' for omitting the given pids in output.
+	  The special pid %PPID can be used to name the parent process
+	  of the pidof, in other words the calling shell or shell script.
+
 config BUSYBOX_CONFIG_PS
 	bool "ps"
 	default y
 	help
 	  ps gives a snapshot of the current processes.
+
+config BUSYBOX_CONFIG_FEATURE_PS_WIDE
+	bool "  Enable argument for wide output (-w)"
+	default n
+	depends on BUSYBOX_CONFIG_PS
+	help
+	  Support argument 'w' for wide output.
+	  If given once, 132 chars are printed and given more than
+	  one, the length is unlimited.
 
 config BUSYBOX_CONFIG_RENICE
 	bool "renice"
@@ -55,6 +88,12 @@ config BUSYBOX_CONFIG_RENICE
 	  Renice alters the scheduling priority of one or more running
 	  processes.
 
+config BUSYBOX_CONFIG_BB_SYSCTL
+	bool "sysctl"
+	default y
+	help
+	  Configure kernel parameters at runtime.
+
 config BUSYBOX_CONFIG_TOP
 	bool "top"
 	default y
@@ -62,8 +101,8 @@ config BUSYBOX_CONFIG_TOP
 	  The top program provides a dynamic real-time view of a running
 	  system.
 
-config BUSYBOX_FEATURE_CPU_USAGE_PERCENTAGE
-	bool
+config BUSYBOX_CONFIG_FEATURE_TOP_CPU_USAGE_PERCENTAGE
+	bool "  Support showing CPU usage percentage (add 2k bytes)"
 	default y
 	depends on BUSYBOX_CONFIG_TOP
 	help
@@ -77,11 +116,6 @@ config BUSYBOX_CONFIG_UPTIME
 	  the system has been running, how many users are currently logged
 	  on, and the system load averages for the past 1, 5, and 15 minutes.
 
-config BUSYBOX_CONFIG_BB_SYSCTL
-	bool "sysctl"
-	default y
-	help
-	  sysctl - configure kernel parameters at runtime
 
 endmenu
 

@@ -47,10 +47,10 @@ config BUSYBOX_CONFIG_BUNZIP2
 	  is generally considerably better than that achieved by more
 	  conventional LZ77/LZ78-based compressors, and approaches the
 	  performance of the PPM family of statistical compressors.
-	
+
 	  The BusyBox bunzip2 applet is limited to de-compression only.
 	  On an x86 system, this applet adds about 11K.
-	
+
 	  Unless you have a specific application which requires bunzip2, you
 	  should probably say N here.
 
@@ -73,7 +73,7 @@ config BUSYBOX_CONFIG_DPKG
 	default n
 	help
 	  dpkg is a medium-level tool to install, build, remove and manage Debian packages.
-	
+
 	  This implementation of dpkg has a number of limitations, you should use the
 	  official dpkg if possible.
 
@@ -82,9 +82,9 @@ config BUSYBOX_CONFIG_DPKG_DEB
 	default n
 	help
 	  dpkg-deb packs, unpacks and provides information about Debian archives.
-	
+
 	  This implementation of dpkg-deb cannot pack archives.
-	
+
 	  Unless you have a specific application which requires dpkg-deb, you should
 	  probably say N here.
 
@@ -165,6 +165,14 @@ config BUSYBOX_CONFIG_FEATURE_TAR_BZIP2
 	  If you enable this option you'll be able to extract
 	  archives compressed with bzip2.
 
+config BUSYBOX_CONFIG_FEATURE_TAR_LZMA
+	bool "  Enable -a option to handle .tar.lzma files"
+	default n
+	depends on BUSYBOX_CONFIG_TAR
+	help
+	  If you enable this option you'll be able to extract
+	  archives compressed with lzma.
+
 config BUSYBOX_CONFIG_FEATURE_TAR_FROM
 	bool "  Enable -X (exclude from) and -T (include from) options)"
 	default y
@@ -220,6 +228,29 @@ config BUSYBOX_CONFIG_UNCOMPRESS
 	  uncompress is used to decompress archives created by compress.
 	  Not much used anymore, replaced by gzip/gunzip.
 
+config BUSYBOX_CONFIG_UNLZMA
+	bool "unlzma"
+	default n
+	help
+	  unlzma is a compression utility using the Lempel-Ziv-Markov chain
+	  compression algorithm, and range coding.  Compression
+	  is generally considerably better than that achieved by the bzip2
+	  compressors.
+
+	  The BusyBox unlzma applet is limited to de-compression only.
+	  On an x86 system, this applet adds about 4K.
+
+	  Unless you have a specific application which requires unlzma, you
+	  should probably say N here.
+
+config BUSYBOX_CONFIG_FEATURE_LZMA_FAST
+	bool "  Optimze unlzma for speed"
+	default n
+	depends on BUSYBOX_CONFIG_UNLZMA
+	help
+	  This option reduce decompression time by about 33% at the cost of
+	  a 2K bigger binary.
+
 config BUSYBOX_CONFIG_UNZIP
 	bool "unzip"
 	default n
@@ -249,7 +280,7 @@ config BUSYBOX_CONFIG_FEATURE_DEB_TAR_GZ
 	depends on BUSYBOX_CONFIG_DPKG || BUSYBOX_CONFIG_DPKG_DEB
 	help
 	  This is the default compression method inside the debian ar file.
-	
+
 	  If you want compatibility with standard .deb's you should say yes here.
 
 config BUSYBOX_CONFIG_FEATURE_DEB_TAR_BZ2
@@ -259,8 +290,19 @@ config BUSYBOX_CONFIG_FEATURE_DEB_TAR_BZ2
 	help
 	  This allows dpkg and dpkg-deb to extract deb's that are compressed internally
 	  with bzip2 instead of gzip.
-	
+
 	  You only want this if you are creating your own custom debian packages that
 	  use an internal control.tar.bz2 or data.tar.bz2.
+
+config BUSYBOX_CONFIG_FEATURE_DEB_TAR_LZMA
+	bool "  lzma debian packages"
+	default n
+	depends on BUSYBOX_CONFIG_DPKG || BUSYBOX_CONFIG_DPKG_DEB
+	help
+	  This allows dpkg and dpkg-deb to extract deb's that are compressed
+          internally with lzma instead of gzip.
+
+	  You only want this if you are creating your own custom debian
+          packages that use an internal control.tar.lzma or data.tar.lzma.
 
 endmenu
