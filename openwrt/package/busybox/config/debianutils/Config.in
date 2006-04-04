@@ -24,6 +24,13 @@ config BUSYBOX_CONFIG_READLINK
 	  This program reads a symbolic link and returns the name
 	  of the file it points to
 
+config BUSYBOX_CONFIG_FEATURE_READLINK_FOLLOW
+	bool "  Enable canonicalization by following all symlinks (-f)"
+	default n
+	depends on BUSYBOX_CONFIG_READLINK
+	help
+	  Enable the readlink option (-f).
+
 config BUSYBOX_CONFIG_RUN_PARTS
 	bool "run-parts"
 	default n

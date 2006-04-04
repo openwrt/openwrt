@@ -5,6 +5,33 @@
 
 menu "Login/Password Management Utilities"
 
+config BUSYBOX_CONFIG_FEATURE_SHADOWPASSWDS
+	bool "Support for shadow passwords"
+	default n
+	help
+	  Build support for shadow password in /etc/shadow.  This file is only
+	  readable by root and thus the encrypted passwords are no longer
+	  publicly readable.
+
+config BUSYBOX_CONFIG_USE_BB_SHADOW
+	bool #"  Use busybox shadow password functions"
+	default n
+	depends on BUSYBOX_CONFIG_USE_BB_PWD_GRP && BUSYBOX_CONFIG_FEATURE_SHADOWPASSWDS
+	help
+	    If you leave this disabled, busybox will use the system's shadow
+	    password handling functions.  And if you are using the GNU C library
+	    (glibc), you will then need to install the /etc/nsswitch.conf
+	    configuration file and the required /lib/libnss_* libraries in
+	    order for the shadow password functions to work.  This generally
+	    makes your embedded system quite a bit larger.
+
+	    Enabling this option will cause busybox to directly access the
+	    system's /etc/shadow file when handling shadow passwords.  This
+	    makes your system smaller and I will get fewer emails asking about
+	    how glibc NSS works).  When this option is enabled, you will not be
+	    able to use PAM to access shadow passwords from remote LDAP
+	    password servers and whatnot.
+
 config BUSYBOX_CONFIG_USE_BB_PWD_GRP
 	bool "Use internal password and group functions rather than system functions"
 	default n
@@ -25,7 +52,6 @@ config BUSYBOX_CONFIG_USE_BB_PWD_GRP
 	    /lib/libnss_* libraries.
 
 	    If you enable this option, it will add about 1.5k to busybox.
-
 
 config BUSYBOX_CONFIG_ADDGROUP
 	bool "addgroup"
@@ -57,14 +83,21 @@ config BUSYBOX_CONFIG_GETTY
 	help
 	  getty lets you log in on a tty, it is normally invoked by init.
 
-config BUSYBOX_CONFIG_FEATURE_U_W_TMP
-	bool "  Support utmp and wtmp files"
-	depends on BUSYBOX_CONFIG_GETTY || BUSYBOX_CONFIG_LOGIN || BUSYBOX_CONFIG_SU || BUSYBOX_CONFIG_WHO || BUSYBOX_CONFIG_LAST
+config BUSYBOX_CONFIG_FEATURE_UTMP
+	bool "  Support utmp file"
+	depends on BUSYBOX_CONFIG_GETTY || BUSYBOX_CONFIG_LOGIN || BUSYBOX_CONFIG_SU || BUSYBOX_CONFIG_WHO
 	default n
 	help
-	  The files /var/run/utmp and /var/run/wtmp can be used to track when
-	  user's have logged into and logged out of the system, allowing programs
-	  such as 'who' and 'last' to list who is currently logged in.
+	  The file /var/run/utmp is used to track who is currently logged in.
+
+config BUSYBOX_CONFIG_FEATURE_WTMP
+	bool "  Support wtmp file"
+	depends on BUSYBOX_CONFIG_GETTY || BUSYBOX_CONFIG_LOGIN || BUSYBOX_CONFIG_SU || BUSYBOX_CONFIG_LAST
+	default n
+	select BUSYBOX_CONFIG_FEATURE_UTMP
+	help
+	  The file /var/run/wtmp is used to track when user's have logged into
+	  and logged out of the system.
 
 config BUSYBOX_CONFIG_LOGIN
 	bool "login"
@@ -125,37 +158,6 @@ config BUSYBOX_CONFIG_VLOCK
 
 	  Note that Busybox binary must be setuid root for this applet to
 	  work properly.
-
-comment "Common options for adduser, deluser, login, su"
-	depends on BUSYBOX_CONFIG_ADDUSER || BUSYBOX_CONFIG_DELUSER || BUSYBOX_CONFIG_LOGIN || BUSYBOX_CONFIG_SU
-
-config BUSYBOX_CONFIG_FEATURE_SHADOWPASSWDS
-	bool "Support for shadow passwords"
-	default n
-	depends on BUSYBOX_CONFIG_ADDUSER || BUSYBOX_CONFIG_DELUSER || BUSYBOX_CONFIG_LOGIN || BUSYBOX_CONFIG_SU
-	help
-	  Build support for shadow password in /etc/shadow.  This file is only
-	  readable by root and thus the encrypted passwords are no longer
-	  publicly readable.
-
-config BUSYBOX_CONFIG_USE_BB_SHADOW
-	bool "  Use busybox shadow password functions"
-	default n
-	depends on BUSYBOX_CONFIG_USE_BB_PWD_GRP && BUSYBOX_CONFIG_FEATURE_SHADOWPASSWDS
-	help
-	    If you leave this disabled, busybox will use the system's shadow
-	    password handling functions.  And if you are using the GNU C library
-	    (glibc), you will then need to install the /etc/nsswitch.conf
-	    configuration file and the required /lib/libnss_* libraries in
-	    order for the shadow password functions to work.  This generally
-	    makes your embedded system quite a bit larger.
-
-	    Enabling this option will cause busybox to directly access the
-	    system's /etc/shadow file when handling shadow passwords.  This
-	    makes your system smaller and I will get fewer emails asking about
-	    how glibc NSS works).  When this option is enabled, you will not be
-	    able to use PAM to access shadow passwords from remote LDAP
-	    password servers and whatnot.
 
 endmenu
 

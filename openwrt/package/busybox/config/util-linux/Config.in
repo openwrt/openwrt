@@ -5,7 +5,6 @@
 
 menu "Linux System Utilities"
 
-
 config BUSYBOX_CONFIG_DMESG
 	bool "dmesg"
 	default y
@@ -26,7 +25,6 @@ config BUSYBOX_CONFIG_FBSET
 	  device.  The frame buffer device provides a simple and unique
 	  interface to access a graphics display.  Enable this option
 	  if you wish to enable the 'fbset' utility.
-
 
 config BUSYBOX_CONFIG_FEATURE_FBSET_FANCY
 	bool "  Turn on extra fbset options"
@@ -210,6 +208,35 @@ config BUSYBOX_CONFIG_FEATURE_HWCLOCK_LONGOPTIONS
 	  are overly fond of its long options, such as --hctosys, --utc, etc)
 	  then enable this option.
 
+config BUSYBOX_CONFIG_FEATURE_HWCLOCK_ADJTIME_FHS
+	bool "  Use FHS /var/lib/hwclock/adjtime"
+	default n
+	depends on BUSYBOX_CONFIG_HWCLOCK
+	help
+	  Starting with FHS 2.3, the adjtime state file is supposed to exist
+	  at /var/lib/hwclock/adjtime instead of /etc/adjtime.  If you wish
+	  to use the FHS behavior, answer Y here, otherwise answer N for the
+	  classic /etc/adjtime path.
+
+	  http://www.pathname.com/fhs/pub/fhs-2.3.html#VARLIBHWCLOCKSTATEDIRECTORYFORHWCLO
+
+config BUSYBOX_CONFIG_IPCRM
+	bool "ipcrm"
+	default n
+	select BUSYBOX_CONFIG_FEATURE_SUID
+	help
+	  The ipcrm utility allows the removal of System V interprocess
+	  communication (IPC) objects and the associated data structures
+	  from the system.
+
+config BUSYBOX_CONFIG_IPCS
+	bool "ipcs"
+	default n
+	select BUSYBOX_CONFIG_FEATURE_SUID
+	help
+	  The ipcs utility is used to provide information on the currently
+	  allocated System V interprocess (IPC) objects in the system.
+
 config BUSYBOX_CONFIG_LOSETUP
 	bool "losetup"
 	default n
@@ -217,6 +244,36 @@ config BUSYBOX_CONFIG_LOSETUP
 	  losetup is used to associate or detach a loop device with a regular
 	  file or block device, and to query the status of a loop device.  This
 	  version does not currently support enabling data encryption.
+
+config BUSYBOX_CONFIG_MDEV
+	bool "mdev"
+	default n
+	help
+	  mdev is a mini-udev implementation: call it with -s to populate
+	  /dev from /sys, then "echo /sbin/mdev > /proc/sys/kernel/hotplug" to
+	  have it handle hotplug events afterwards.  Device names are taken
+	  from sysfs.
+
+config BUSYBOX_CONFIG_FEATURE_MDEV_CONF
+	bool "  Support /etc/mdev.conf"
+	default n
+	depends on BUSYBOX_CONFIG_MDEV
+	help
+	  The mdev config file contains lines that look like:
+
+	    hd[a-z][0-9]* 0:3 660
+
+	  That's device name (with regex match), uid:gid, and permissions.
+
+	  Optionally, that can be followed (on the same line) by an asterisk
+	  and a command line to run after creating the corresponding device(s),
+	  ala:
+
+	    hdc root:cdrom 660  *ln -s hdc cdrom
+
+	  Config file parsing stops on the first matching line.  If no config
+	  entry is matched, devices are created with default 0:0 660.  (Make
+	  the last line match .* to override this.)
 
 config BUSYBOX_CONFIG_MKSWAP
 	bool "mkswap"
@@ -252,6 +309,24 @@ config BUSYBOX_CONFIG_FEATURE_USE_TERMIOS
 	  will be unable to determine the current screen size, and will be
 	  unable to move the cursor.
 
+config BUSYBOX_CONFIG_MOUNT
+	bool "mount"
+	default y
+	help
+	  All files and filesystems in Unix are arranged into one big directory
+	  tree.  The 'mount' utility is used to graft a filesystem onto a
+	  particular part of the tree.  A filesystem can either live on a block
+	  device, or it can be accessible over the network, as is the case with
+	  NFS filesystems.  Most people using BusyBox will also want to enable
+	  the 'mount' utility.
+
+config BUSYBOX_CONFIG_FEATURE_MOUNT_NFS
+	bool "  Support mounting NFS file systems"
+	default y
+	depends on BUSYBOX_CONFIG_MOUNT
+	help
+	 Enable mounting of NFS file systems.
+
 config BUSYBOX_CONFIG_PIVOT_ROOT
 	bool "pivot_root"
 	default y
@@ -261,6 +336,9 @@ config BUSYBOX_CONFIG_PIVOT_ROOT
 	  of wild and crazy things with your Linux system and is far more
 	  powerful than 'chroot'.
 
+	  Note: This is for initrd in linux 2.4.  Under initramfs (introduced
+	  in linux 2.6) use switch_root instead.
+
 config BUSYBOX_CONFIG_RDATE
 	bool "rdate"
 	default y
@@ -269,6 +347,21 @@ config BUSYBOX_CONFIG_RDATE
 	  system clock with the date and time of a remote networked system using
 	  the RFC868 protocol, which is built into the inetd daemon on most
 	  systems.
+
+config BUSYBOX_CONFIG_READPROFILE
+	bool "readprofile"
+	default n
+	help
+	  This allows you to parse /proc/profile for basic profiling.
+
+config BUSYBOX_CONFIG_SETARCH
+	bool "setarch"
+	default n
+	help
+	  The linux32 utility is used to create a 32bit environment for the
+	  specified program (usually a shell).  It only makes sense to have
+	  this util on a system that supports both 64bit and 32bit userland
+	  (like amd64/x86, ppc64/ppc, sparc64/sparc, etc...).
 
 config BUSYBOX_CONFIG_SWAPONOFF
 	bool "swaponoff"
@@ -281,23 +374,24 @@ config BUSYBOX_CONFIG_SWAPONOFF
 	  space.  If you are not using any swap space, you can leave this
 	  option disabled.
 
-config BUSYBOX_CONFIG_MOUNT
-	bool "mount"
+config BUSYBOX_CONFIG_SWITCH_ROOT
+	bool "switch_root"
 	default y
 	help
-	  All files and filesystems in Unix are arranged into one big directory
-	  tree.  The 'mount' utility is used to graft a filesystem onto a
-	  particular part of the tree.  A filesystem can either live on a block
-	  device, or it can be accessible over the network, as is the case with
-	  NFS filesystems.  Most people using BusyBox will also want to enable
-	  the 'mount' utility.
+	  The switch_root utility is used from initramfs to select a new
+	  root device.  Under initramfs, you have to use this instead of
+	  pivot_root.  (Stop reading here if you don't care why.)
 
-config BUSYBOX_FEATURE_MOUNT_NFS
-	bool "  Support mounting NFS file systems"
-	default y
-	depends on BUSYBOX_CONFIG_MOUNT
-	help
-	 Enable mounting of NFS file systems.
+	  Booting with initramfs extracts a gzipped cpio archive into rootfs
+	  (which is a variant of ramfs/tmpfs).  Because rootfs can't be moved
+	  or unmounted*, pivot_root will not work from initramfs.  Instead,
+	  switch_root deletes everything out of rootfs (including itself),
+	  does a mount --move that overmounts rootfs with the new root, and
+	  then execs the specified init program.
+
+	  * Because the Linux kernel uses rootfs internally as the starting
+	  and ending point for searching through the kernel's doubly linked
+	  list of active mount points.  That's why.
 
 config BUSYBOX_CONFIG_UMOUNT
 	bool "umount"
@@ -308,50 +402,50 @@ config BUSYBOX_CONFIG_UMOUNT
 	  the tool to use.  If you enabled the 'mount' utility, you almost certainly
 	  also want to enable 'umount'.
 
-config BUSYBOX_CONFIG_FEATURE_MOUNT_FORCE
-	bool "  Support forced filesystem unmounting"
+config BUSYBOX_CONFIG_FEATURE_UMOUNT_ALL
+	bool "  umount -a option"
 	default y
 	depends on BUSYBOX_CONFIG_UMOUNT
 	help
-	  This allows you to _force_ a filesystem to be umounted.  This is generally
-	  only useful when you want to get rid of an unreachable NFS system.
+	  Support -a option to unmount all currently mounted filesystems.
 
 comment "Common options for mount/umount"
 	depends on BUSYBOX_CONFIG_MOUNT || BUSYBOX_CONFIG_UMOUNT
 
 config BUSYBOX_CONFIG_FEATURE_MOUNT_LOOP
-	bool "  Support for loop devices"
+	bool "  Support loopback mounts"
 	default y
 	depends on BUSYBOX_CONFIG_MOUNT || BUSYBOX_CONFIG_UMOUNT
 	help
-	  Enabling this feature allows mount to use the '-o' loop options,
-	  which lets you loop mount files.  Mount will automagically setup and
-	  free the necessary loop devices so you do not need to mess with the
-	  'losetup' utility unless you really want to.  This is really
-	  only useful if you plan to loop mount files.
+	  Enabling this feature allows automatic mounting of files (containing
+	  filesystem images) via the linux kernel's loopback devices.  The mount
+	  command will detect you are trying to mount a file instead of a block
+	  device, and transparently associate the file with a loopback device.
+	  The umount command will also free that loopback device.
+
+	  You can still use the 'losetup' utility (to manually associate files
+          with loop devices) if you need to do something advanced, such as
+	  specify an offset or cryptographic options to the loopback device.
+	  (If you don't want umount to free the loop device, use "umount -D".)
 
 config BUSYBOX_CONFIG_FEATURE_MTAB_SUPPORT
-	bool "  Support for a real /etc/mtab (instead of /proc/mounts)"
+	bool "  Support for the old /etc/mtab file"
 	default n
 	depends on BUSYBOX_CONFIG_MOUNT || BUSYBOX_CONFIG_UMOUNT
 	help
-	  If your root filesystem is writable and you wish to have the 'mount'
-	  utility create an mtab file listing the filesystems which have been
-	  mounted then you should enable this option.  Most people that use
-	  BusyBox have a read-only root filesystem, so they will leave this
-	  option disabled and BusyBox will use the /proc/mounts file.
+	  Historically, Unix systems kept track of the currently mounted
+	  partitions in the file "/etc/mtab".  These days, the kernel exports
+	  the list of currently mounted partitions in "/proc/mounts", rendering
+	  the old mtab file obsolete.  (In modern systems, /etc/mtab should be
+	  a symlink to /proc/mounts.)
 
-config BUSYBOX_CONFIG_FEATURE_MTAB_FILENAME
-	string "  mtab file location"
-	default n
-	depends on BUSYBOX_CONFIG_FEATURE_MTAB_SUPPORT
-	help
-	  Some people have a read only root filesystem, but they also wish to
-	  have the 'mount' utility create an mtab file listing the filesystems
-	  which have been mounted.  This option allows you to specify an alternative
-	  location for the mtab file, such as /var/mtab, or /tmp/mtab.  The default
-	  value is /etc/mtab, which is where this file is located on most desktop
-	  Linux systems.
+	  The only reason to have mount maintain an /etc/mtab file itself is if
+	  your stripped-down embedded system does not have a /proc directory.
+	  If you must use this, keep in mind it's inherently brittle (for
+	  example a mount under chroot won't update it), can't handle modern
+	  features like separate per-process filesystem namespaces, requires
+	  that your /etc directory be writeable, tends to get easily confused
+	  by --bind or --move mounts, and so on.  (In brief: avoid.)
 
 endmenu
 
