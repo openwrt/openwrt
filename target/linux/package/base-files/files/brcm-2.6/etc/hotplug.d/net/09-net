@@ -1,9 +1,6 @@
 #!/bin/sh
 setup_eth()
 {
-	for part in $(nvram get unused_ifnames); do
-		[ "$part" = "$INTERFACE" ] && exit 0
-	done
 	[ -d /proc/switch ] || {
 		insmod switch-core
 		insmod switch-robo || insmod switch-adm
@@ -14,8 +11,9 @@ setup_eth()
 	echo "1" > "/proc/switch/$INTERFACE/reset"
 	echo "1" > "/proc/switch/$INTERFACE/enable_vlan"
 	for vlan in $(seq 0 15); do
-		[ "$(nvram get vlan${vlan}hwname)" = "$if" ] && {
-			vports="$(nvram get vlan${vlan}ports)"
+		eval "hwname=\"\${vlan${vlan}hwname}\""
+		[ "$hwname" = "$if" ] && {
+			eval "vports=\"\${vlan${vlan}ports}\""
 			[ -n "$vports" ] && echo "$vports" > "/proc/switch/$INTERFACE/vlan/$vlan/ports"
 			$DEBUG vconfig add "$INTERFACE" "$vlan"
 		}
