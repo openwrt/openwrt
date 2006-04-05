@@ -55,23 +55,25 @@ $(IPKG_BASE):
 	$(CP) ./default/* $(IDIR_BASE)
 	$(SED) 's,$$R,r$(REV),g' $(IDIR_BASE)/etc/banner
 	$(SED) 's,$$S,$(BOARD)-$(KERNEL),g' $(IDIR_BASE)/etc/ipkg.conf
-	mkdir -p $(IDIR_BASE)/sys
-	mkdir -p $(IDIR_BASE)/jffs
 	mkdir -p $(IDIR_BASE)/dev
+	mkdir -p $(IDIR_BASE)/etc/crontabs
+	mkdir -p $(IDIR_BASE)/jffs
+	mkdir -p $(IDIR_BASE)/lib
+	mkdir -p $(IDIR_BASE)/mnt
 	mkdir -p $(IDIR_BASE)/proc
 	mkdir -p $(IDIR_BASE)/tmp
-	mkdir -p $(IDIR_BASE)/lib
 	mkdir -p $(IDIR_BASE)/usr/lib
 	mkdir -p $(IDIR_BASE)/usr/bin
+	mkdir -p $(IDIR_BASE)/sys
+	mkdir -p $(IDIR_BASE)/www
 	ln -sf /tmp/resolv.conf $(IDIR_BASE)/etc/resolv.conf
 	ln -sf /proc/mounts $(IDIR_BASE)/etc/mtab
-	rm -rf $(IDIR_BASE)/var
+	rm -f $(IDIR_BASE)/var
 	ln -sf /tmp $(IDIR_BASE)/var
 	-find $(IDIR_BASE) -type d -name CVS | xargs rm -rf
 	-find $(IDIR_BASE) -type d -name .svn | xargs rm -rf
 	-find $(IDIR_BASE) -name '.#*' | xargs rm -f
 	mkdir -p $(IDIR_BASE)/etc
-	-grep \^BR2_SYSCONF $(TOPDIR)/.config > $(IDIR_BASE)/etc/sysconf
 	$(IPKG_BUILD) $(IDIR_BASE) $(PACKAGE_DIR)
 
 $(IPKG_UCLIBC):

@@ -1,2 +1,2 @@
 #!/bin/sh
-if awk -F: '/^root:/ && $2 !~ /\!/ {exit 1}' /etc/passwd 2>/dev/null || test $FAILSAFE; then telnetd -l /bin/login; fi
+if awk -F: '/^root:/ && $2 !~ /\!/ {exit 1}' /etc/passwd 2>/dev/null; then telnetd -l /bin/login; fi

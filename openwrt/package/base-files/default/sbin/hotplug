@@ -1,4 +1,7 @@
 #!/bin/sh
+
+# bypass the normal hotplug path for firmware loading
+# would otherwise cause problems with drivers like bcm43xx
 [ "$1" = "firmware" -a "$ACTION" = "add" ] && {
 	[ -f "/lib/firmware/$FIRMWARE" ] && {
 		echo 1 > "/sys$DEVPATH/loading"
@@ -8,13 +11,8 @@
 	exit 0
 }
 
-[ -e /tmp/.failsafe ] && {
-	export FAILSAFE=true
-} || {
-	[ -e /etc/config/network ] && . /etc/config/network
-}
 . /etc/functions.sh
-. /etc/network.overrides
+. /etc/config/network
 
 PATH=/bin:/sbin:/usr/bin:/usr/sbin
 LOGNAME=root

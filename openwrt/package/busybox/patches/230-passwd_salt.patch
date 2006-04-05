@@ -1,0 +1,13 @@
+--- busybox-1.00/loginutils/passwd.c	2006-03-26 06:07:37 -05:00
++++ busybox-1.00/loginutils/passwd.c	2006-03-26 06:09:03 -05:00
+@@ -386,7 +386,9 @@
+ 	bzero(orig, sizeof(orig));
+ 
+ 	if (algo == 1) {
+-		cp = pw_encrypt(pass, "$1$");
++		char salt[6]="$1$\0\0\0";
++		memcpy(salt+3,crypt_make_salt(),3);
++		cp = pw_encrypt(pass, salt);
+ 	} else
+ 		cp = pw_encrypt(pass, crypt_make_salt());
+ 	bzero(pass, sizeof pass);

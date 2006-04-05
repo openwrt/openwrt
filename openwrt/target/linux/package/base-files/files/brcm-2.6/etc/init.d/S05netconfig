@@ -50,7 +50,7 @@ END {
 		c["vlan1ports"] = "4 5"
 		c["lan_ifnames"] = "vlan0 ath0"
 	}
-	if (nvram["boardtype"] == "0x0467") {
+	if ((nvram["boardtype"] == "0x0467") || (nvram["boardtype"] == "0x042f")) {
 		c["vlan0ports"] = "0 1 2 3 5*"
 		c["vlan1ports"] = "4 5"
 	}
@@ -101,6 +101,8 @@ END {
 	print ""
 	print "## PPP over Ethernet and PPTP"
 	print "# wan_ifname=\"ppp0\""
+	print "# ppp_username=\"my_username\""
+	print "# ppp_passwd=\"my_password\""
 	print "# pptp_server_ip=\"192.168.0.1\""
 }
 ' > /etc/config/network

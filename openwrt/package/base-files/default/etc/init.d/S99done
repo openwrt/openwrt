@@ -1,4 +1,0 @@
-#!/bin/sh
-# set leds to normal state
-[ -f /proc/sys/diag ] && echo "0x00" > /proc/sys/diag
-sysctl -p >&-
