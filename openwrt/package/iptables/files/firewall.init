@@ -1,14 +1,10 @@
 #!/bin/sh
 
 ## Please make changes in /etc/firewall.user
-${FAILSAFE:+exit}
 
-. /etc/functions.sh
-. /etc/network.overrides
-[ "$FAILSAFE" != "true" -a -e /etc/config/network ] && . /etc/config/network
-
-WAN=$(nvram get wan_ifname)
-LAN=$(nvram get lan_ifname)
+. /etc/config/network
+WAN="$wan_ifname"
+LAN="$lan_ifname"
 
 ## CLEAR TABLES
 for T in filter nat; do
@@ -38,7 +34,7 @@ iptables -t nat -N postrouting_rule
   iptables -A INPUT -j input_rule
 
   # allow
-  iptables -A INPUT ${WAN:+-i \! $WAN}	-j ACCEPT	# allow from lan/wifi interfaces 
+  [ -z "$WAN" ] || iptables -A INPUT -i \! $WAN	-j ACCEPT	# allow from lan/wifi interfaces 
   iptables -A INPUT -p icmp	-j ACCEPT	# allow ICMP
   iptables -A INPUT -p gre	-j ACCEPT	# allow GRE
 
@@ -94,3 +90,6 @@ iptables -t nat -N postrouting_rule
 
 ## USER RULES
 [ -f /etc/firewall.user ] && . /etc/firewall.user
+[ -n "$WAN" -a -e /etc/config/firewall ] && {
+	awk -f /usr/lib/common.awk -f /usr/lib/firewall.awk /etc/config/firewall | ash
+}

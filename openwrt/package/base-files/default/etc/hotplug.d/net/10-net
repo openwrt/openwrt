@@ -1,32 +1,28 @@
 #!/bin/sh
-setup_eth()
-{
-	for part in $(nvram get unused_ifnames); do
-		[ "$part" = "$INTERFACE" ] && exit 0
-	done
-	ifconfig "$INTERFACE" up 2>&- >&-
-}
-
 find_name()
 {
-	pppoa_ifname="atm0" # hack for ppp over atm, which has no ${proto}_ifname
-	interfaces="lan wan wifi $(nvram get ifnames)"
-	for ifname in $interfaces; do
+	for ifname in lan wan wifi ${ifnames}; do
 		IFTYPE="${ifname}"
-		IFPROTO="$(nvram get ${IFTYPE}_proto)"
-		IFACE="$(nvram get ${IFTYPE}_ifname)"
+		eval "IFPROTO=\"\${${IFTYPE}_proto}\""
+		eval "IFACE=\"\${${IFTYPE}_ifname}\""
 		case "$IFPROTO" in
 			""|none);;
 			static|dhcp)
 				[ "${IFACE}" = "$INTERFACE" ] && return 0
 				[ "${IFACE%%[0-9]*}" = "br" ] && {
-					for part in $(nvram get ${IFTYPE}_ifnames); do
+					eval "ifs=\"\${${IFTYPE}_ifnames}\""
+					for part in $ifs; do
 						[ "$part" = "$INTERFACE" ] && return 0
 					done
 				}
 			;;
+			pppoa)
+				[ "$INTERFACE" = "atm0" \
+				  -a -x /sbin/ifup.${IFPROTO} ] && return 0
+			;;
 			*)
-				[ "$(nvram get ${IFTYPE}_device)" = "$INTERFACE" \
+				eval "device=\"\${${IFTYPE}_device}\""
+				[ "$device" = "$INTERFACE" \
 				  -a -x /sbin/ifup.${IFPROTO} ] && return 0
 			;;
 		esac
@@ -39,17 +35,18 @@ find_name()
 
 do_ifup() {
 	if="$3"
-	if_proto="$(nvram get ${2}_proto)"
+	eval "if_proto=\"\${${2}_proto}\""
 	
 	pidfile=/var/run/${if}.pid
 	[ -f $pidfile ] && $DEBUG kill $(cat $pidfile)
 
 	case "$1" in
 		static)
-			ip=$(nvram get ${2}_ipaddr)
-			ip6=$(nvram get ${2}_ip6addr)
-			netmask=$(nvram get ${2}_netmask)
-			gateway=$(nvram get ${2}_gateway)
+			eval "ip=\"\${${2}_ipaddr}\""
+			eval "ip6=\"\${${2}_ip6addr}\""
+			eval "netmask=\"\${${2}_netmask}\""
+			eval "gateway=\"\${${2}_gateway}\""
+			eval "dns=\"\${${2}_dns}\""
 	
 			$DEBUG ifconfig $if $ip ${netmask:+netmask $netmask} broadcast + up
 			[ -n "$ip6" ] && $DEBUG ifconfig $if add $ip6
@@ -58,24 +55,25 @@ do_ifup() {
 	
 			[ -f /tmp/resolv.conf ] || {
 				debug "# --- creating /tmp/resolv.conf ---"
-				for dns in $(nvram get ${2}_dns); do
-					echo "nameserver $dns" >> /tmp/resolv.conf
+				for ns in $dns; do
+					echo "nameserver $ns" >> /tmp/resolv.conf
 				done
 			}
 			
 			env -i ACTION="ifup" INTERFACE="${2}" PROTO=static /sbin/hotplug "iface" &
 		;;
 		dhcp)
-			DHCP_IP=$(nvram get ${2}_ipaddr)
-			DHCP_NETMASK=$(nvram get ${2}_netmask)
+			eval "ip=\"\${${2}_ipaddr}\""
+			eval "netmask=\"\${${2}_netmask}\""
+			eval "hostname=\"\${${2}_hostname}\""
+			
 			$DEBUG ifconfig $if $ip ${netmask:+netmask $netmask} broadcast + up
 	
-			DHCP_ARGS="-i $if ${DHCP_IP:+-r $DHCP_IP} -b -p $pidfile"
-			DHCP_HOSTNAME=$(nvram get ${2}_hostname)
-			DHCP_HOSTNAME=${DHCP_HOSTNAME%%.*}
-			[ -z $DHCP_HOSTNAME ] || DHCP_ARGS="$DHCP_ARGS -H $DHCP_HOSTNAME"
-			[ "$if_proto" = "pptp" ] && DHCP_ARGS="$DHCP_ARGS -n -q" || DHCP_ARGS="$DHCP_ARGS -R &"
-			${DEBUG:-eval} "udhcpc $DHCP_ARGS"
+			args="-i $if ${ip:+-r $ip} -b -p $pidfile"
+			hostname="${hostname%%.*}"
+			args="$args${hostname:+ -H $hostname}"
+			[ "$if_proto" = "pptp" ] && args="$args -n -q" || args="$args -R &"
+			${DEBUG:-eval} "udhcpc $args"
 			# hotplug events are handled by /usr/share/udhcpc/default.script
 		;;
 		*)
@@ -88,25 +86,23 @@ do_ifup() {
 
 do_register()
 {
-	case "${INTERFACE%%[0-9]*}" in
-		eth) setup_eth;;
-	esac
-
 	[ -z "$IFTYPE" -o -z "$IFPROTO" ] && {
 		find_name || {
 			case "${INTERFACE%%[0-9]*}" in
 				wds) 
-					for tmp in lan wifi; do
-						[ -z "$IFPROTO" ] && [ "$(nvram get ${tmp}_ifname)" = "br0" ] && {
-							IFPROTO="$(nvram get ${tmp}_proto)"
+					for ifname in lan wifi; do
+						eval "if=\"\${${ifname}_ifname}\""
+						[ -z "$IFPROTO" ] && [ "$if" = "br0" ] && {
+							eval "IFPROTO=\"\${${2}_proto}\""
 							IFTYPE="${tmp}"
 						}
 					done
 					[ -z "$IFPROTO" ] && return 0
 				;;
 				atm)
-					for tmp in lan wan wifi $(nvram get ifnames); do
-						[ "$(nvram get ${tmp}_proto)" = "pppoa" ] && {
+					for tmp in lan wan wifi ${ifnames}; do
+						eval "if_proto=\"\${${2}_proto}\""
+						[ "$if_proto" = "pppoa" ] && {
 							do_ifup "pppoa" "$tmp" "$INTERFACE"
 							return 0
 						}
@@ -122,16 +118,16 @@ do_register()
 	case "${INTERFACE%%[0-9]*}" in 
 		ppp|atm);;
 		*)
-			mac=$(nvram get ${IFTYPE}_hwaddr)
+			eval "mac=\"\${${IFTYPE}_hwaddr}\""
 			${mac:+$DEBUG ifconfig $INTERFACE down hw ether $mac}
 		;;
 	esac
 
-	if="$(nvram get ${IFTYPE}_ifname)"
+	eval "if=\"\${${IFTYPE}_ifname}\""
 	if [ "${if%%[0-9]}" = "br" ]; then
 		if_valid "$INTERFACE" && {
 			ifconfig "$if" 2>&- >&- || {
-				stp=$(nvram get ${IFTYPE}_stp)
+				eval "stp=\"\${${IFTYPE}_stp}\""
 				$DEBUG brctl addbr "$if"
 				$DEBUG brctl setfd "$if" 0
 				$DEBUG brctl stp "$if" "${stp:-0}"
@@ -151,8 +147,9 @@ do_register()
 }
 
 do_unregister() {
-	[ -z "$IFTYPE" -o -z "$IFPROTO" ] && find_name
-	[ -z "$IFTYPE" -o -z "$IFPROTO" ] && return 0
+	[ -z "$IFTYPE" -o -z "$IFPROTO" ] && {
+		find_name || return 0
+	}
 	
 	[ "${IFACE%%[0-9]*}" = "br" ] && {
 		if [ "$INTERFACE" != "$IFACE" ]; then

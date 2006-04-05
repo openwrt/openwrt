@@ -1,6 +1,4 @@
 #!/bin/sh
-[ -d /etc/crontabs ] || mkdir -p /etc/crontabs
-[ -e /var/spool/cron/crontabs ] || {
-        mkdir -p /var/spool/cron
-        ln -s /etc/crontabs /var/spool/cron/crontabs
-} && crond -c /etc/crontabs
+mkdir -p /var/spool/cron
+ln -s /etc/crontabs /var/spool/cron/crontabs
+crond -c /etc/crontabs

@@ -1,16 +1,14 @@
 [ "${INTERFACE%%[0-9]*}" = "atm" ] && {
 	case "$ACTION" in
 		register)
-			[ "$(nvram get pppoe_atm)" = 1 ] && {
-				VPI=$(nvram get atm_vpi)
-				VCI=$(nvram get atm_vci)
-				case "$(nvram get atm_encaps)" in
+			[ "$pppoe_atm" = 1 ] && {
+				case "$atm_encaps" in
 					0|vc) ENCAPS=0 ;;
 					1|llc) ENCAPS=1 ;;
 					*) ENCAPS=0 ;;
 				esac
 				insmod br2684 2>&- >&-
-				br2684ctl -c0 -e${ENCAPS} -a${VPI:-8}.${VCI:-35} &
+				br2684ctl -c0 -e${ENCAPS} -a${atm_vpi:-8}.${atm_vci:-35} &
 			}
 		;;
 		unregister)

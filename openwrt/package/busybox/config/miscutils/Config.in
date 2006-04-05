@@ -209,6 +209,12 @@ config BUSYBOX_CONFIG_FEATURE_HDPARM_HDIO_GETSET_DMA
 	  Enables the 'hdparm -d' option to get/set using_dma flag.
 	  This is dangerous stuff, so you should probably say N.
 
+config BUSYBOX_CONFIG_LOCK
+	bool "lock"
+	default y
+	help
+	  Small utility for using locks in scripts
+
 config BUSYBOX_CONFIG_MAKEDEVS
 	bool "makedevs"
 	default n

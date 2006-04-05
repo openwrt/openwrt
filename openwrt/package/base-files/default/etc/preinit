@@ -1,24 +1,11 @@
 #!/bin/sh
-. /etc/nvram.sh
 export PATH=/bin:/sbin:/usr/bin:/usr/sbin
 mount none /proc -t proc
-insmod diag
-[ -f /proc/sys/diag ] && echo 0x01 > /proc/sys/diag
-sleep 1
-if [ -f /proc/sys/reset ] && [ $(cat /proc/sys/reset) = 1 -o "$(nvram get failsafe)" = 1 ]; then
-	export FAILSAFE=true
-	[ -x /usr/sbin/nvram -a "$(nvram get boot_wait)" != "on" ] && {
-		nvram set boot_wait=on
-		nvram commit
-	}
-	while :; do { echo $(((X=(X+1)%8)%2)) > /proc/sys/diag; sleep $((X==0)); } done &
-fi
 
-mount_root ${FAILSAFE:+failsafe}
-
-# automagically run firstboot
-[ -z "$FAILSAFE" -a -z "$(nvram get no_root_swap)" ] && {
-	{ mount|grep "on / type jffs2" 1>&-; } || firstboot
+[ -f /etc/preinit.arch ] && . /etc/preinit.arch
+[ -z "$FAILSAFE" ] || {
+	echo /bin/true > /proc/sys/kernel/hotplug
+	telnetd -l /bin/login <> /dev/null 2>&1
 }
-
+mount_root ${FAILSAFE:+failsafe}
 exec /sbin/init

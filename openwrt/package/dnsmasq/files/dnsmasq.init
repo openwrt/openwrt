@@ -1,0 +1,45 @@
+#!/bin/sh
+. /etc/config/network
+
+# The following is to automatically configure the DHCP settings
+# based on config settings. Feel free to replace all this crap
+# with a simple "dnsmasq" and manage everything via the
+# /etc/dnsmasq.conf config file
+
+[ -f /etc/dnsmasq.conf ] || exit
+
+args=""
+iface=lan
+eval "ifname=\${${iface}_ifname}"
+
+dhcp_enable="${dhcp_enable:-1}"
+dhcp_start="${dhcp_start:-100}"
+dhcp_num="${dhcp_num:-50}"
+dhcp_lease="${dhcp_lease:-12h}"
+
+# if dhcp_enable is unset and there is a dhcp server on the network already, default to dhcp_enable=0
+[ -z "$dhcp_enable" ] && udhcpc -n -q -R -s /bin/true -i $ifname >&- && dhcp_enable="${dhcp_enable:-0}"
+
+# dhcp_enable=0 disables the dhcp server
+(
+	[ -z "$dhcp_enable" -o "$dhcp_enable" -eq 1 ] && {
+		# no existing DHCP server?
+
+		# calculate settings
+		eval "ipaddr=\${${iface}_ipaddr}"
+		eval "netmask=\${${iface}_netmask}"
+		eval $(ipcalc $ipaddr $netmask ${dhcp_start:-100} ${dhcp_num:-150})
+		
+		# and pass the args via config parser defines
+		echo "@define dhcp_enable 1"
+		echo "@define netmask $NETMASK"
+		echo "@define start $START"
+		echo "@define end $END"
+		echo "@define lease ${dhcp_lease:-12h}"
+	}
+
+	# ignore requests from wan interface
+	[ -z "$wan_proto" -o "$wan_proto" = "none" ] || echo "@define wan_ifname $wan_ifname"
+
+	cat /etc/dnsmasq.conf
+) | awk -f /usr/lib/parse-config.awk | dnsmasq -C /proc/self/fd/0

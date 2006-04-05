@@ -1,14 +1,9 @@
 #!/bin/sh
-. /etc/nvram.sh
 
-[ "$(uname -r|grep -c 2.4)" = "1" ] && {
-        echo "S" > /proc/jffs2_bbc
-}
-
+[ -f /proc/jffs2_bbc ] && echo "S" > /proc/jffs2_bbc
 vconfig set_name_type VLAN_PLUS_VID_NO_PAD
 
-HOSTNAME=$(nvram get wan_hostname)
-HOSTNAME=${HOSTNAME%%.*}
+HOSTNAME=${wan_hostname%%.*}
 echo ${HOSTNAME:=OpenWrt}>/proc/sys/kernel/hostname
 
 mkdir -p /var/run

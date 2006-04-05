@@ -1,18 +1,17 @@
 #!/bin/sh
 [ -z "$1" ] && echo "Error: should be run by udhcpc" && exit 1
+. /etc/config/network
 
 RESOLV_CONF="/tmp/resolv.conf"
 
 hotplug_event() {
-	nvram show 2>&- | grep _proto=dhcp | {
-		while :; do
-			read FOO
-			[ -z "$FOO" ] && break
-			FOO="${FOO%%_*}"
-			[ "$(nvram get ${FOO}_ifname)" = "${interface}" ] || continue
-			env -i ACTION="$1" INTERFACE="${FOO}" PROTO=dhcp /sbin/hotplug iface
-		done
-	}
+	for ifname in lan wan wifi ${ifnames}; do
+		eval "proto=\"\${${ifname}_proto}\""
+		eval "if=\"\${${ifname}_ifname}\""
+		[ "$proto" = "dhcp" ] || continue
+		[ "$if" = "$interface" ] || continue
+		env -i ACTION="$1" INTERFACE="$ifname" PROTO=dhcp /sbin/hotplug iface
+	done
 }
 
 case "$1" in
@@ -26,22 +25,20 @@ case "$1" in
 		broadcast ${broadcast:-+}
 
 		if [ -n "$router" ] ; then
-
-			if [ "$router" != "$(route -n | grep '^0.0.0.0' | grep $interface | awk '{ print $2 }')" ] ; then
-				while route del default gw 0.0.0.0 dev $interface 2>&- ; do
-					echo "removing old default route"
-				done				
-				for i in $router ; do
-					route add default gw $i dev $interface
-				done
-			fi
+			echo "deleting routers"
+			while route del default gw 0.0.0.0 dev $interface >&- 2>&- ; do :; done
+					
+			for i in $router ; do
+				echo "adding router $i"
+				route add default gw $i dev $interface
+			done
 		fi
 
 		echo -n > $RESOLV_CONF
 		${domain:+echo search $domain} >> $RESOLV_CONF
 		for i in $dns ; do
-			echo adding dns $i
-			echo nameserver $i >> $RESOLV_CONF
+			echo "adding dns $i"
+			echo "nameserver $i" >> $RESOLV_CONF
 		done
 		
 		hotplug_event ifup

@@ -1,8 +1,10 @@
 #!/bin/sh
-. /etc/nvram.sh
-syslog_ip=$(nvram get log_ipaddr)
-ipcalc -s "$syslog_ip" || syslog_ip=""
-syslogd -C 16 ${syslog_ip:+-L -R $syslog_ip}
+${FAILSAFE:+exit}
+
+[ -f /etc/config/network ] && . /etc/config/network
+eval $(ipcalc "$log_ipaddr")
+[ "$log_ipaddr" = "$IP" ] || log_ipaddr=""
+syslogd -C 16 ${log_ipaddr:+-L -R $log_ipaddr}
 klogd
 #${FAILSAFE:+telnetd -l /bin/login; ifup lan; exit}
 for i in /etc/init.d/S*; do
