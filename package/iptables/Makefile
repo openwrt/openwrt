@@ -72,6 +72,13 @@ $(PKG_BUILD_DIR)/.built:
 	touch $@
 		
 $(IPKG_IPTABLES):
+	install -d -m0755 $(IDIR_IPTABLES)/etc/config
+	install -m0644 ./files/firewall.config $(IDIR_IPTABLES)/etc/config/firewall
+	install -d -m0755 $(IDIR_IPTABLES)/etc/init.d
+	install -m0755 ./files/firewall.init $(IDIR_IPTABLES)/etc/init.d/S45firewall
+	install -m0755 ./files/firewall.user $(IDIR_IPTABLES)/etc/
+	install -d -m0755 $(IDIR_IPTABLES)/usr/lib
+	install -m0644 ./files/firewall.awk $(IDIR_IPTABLES)/usr/lib
 	install -d -m0755 $(IDIR_IPTABLES)/usr/sbin
 	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/iptables $(IDIR_IPTABLES)/usr/sbin/
 	install -d -m0755 $(IDIR_IPTABLES)/usr/lib/iptables

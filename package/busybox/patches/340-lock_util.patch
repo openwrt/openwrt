@@ -1,0 +1,167 @@
+diff -urN busybox.old/include/applets.h busybox.dev/include/applets.h
+--- busybox.old/include/applets.h	2006-04-05 01:06:29.000000000 +0200
++++ busybox.dev/include/applets.h	2006-04-05 01:19:09.000000000 +0200
+@@ -167,6 +167,7 @@
+ USE_LN(APPLET(ln, ln_main, _BB_DIR_BIN, _BB_SUID_NEVER))
+ USE_LOADFONT(APPLET(loadfont, loadfont_main, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
+ USE_LOADKMAP(APPLET(loadkmap, loadkmap_main, _BB_DIR_SBIN, _BB_SUID_NEVER))
++USE_LOCK(APPLET_NOUSAGE(lock, lock_main, _BB_DIR_BIN, _BB_SUID_NEVER))
+ USE_LOGGER(APPLET(logger, logger_main, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
+ USE_LOGIN(APPLET(login, login_main, _BB_DIR_BIN, _BB_SUID_ALWAYS))
+ USE_LOGNAME(APPLET(logname, logname_main, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
+diff -urN busybox.old/miscutils/Config.in busybox.dev/miscutils/Config.in
+--- busybox.old/miscutils/Config.in	2006-03-22 22:16:24.000000000 +0100
++++ busybox.dev/miscutils/Config.in	2006-04-05 01:07:12.000000000 +0200
+@@ -209,6 +209,12 @@
+ 	  Enables the 'hdparm -d' option to get/set using_dma flag.
+ 	  This is dangerous stuff, so you should probably say N.
+ 
++config CONFIG_LOCK
++	bool "lock"
++	default y
++	help
++	  Small utility for using locks in scripts
++
+ config CONFIG_MAKEDEVS
+ 	bool "makedevs"
+ 	default n
+diff -urN busybox.old/miscutils/Makefile.in busybox.dev/miscutils/Makefile.in
+--- busybox.old/miscutils/Makefile.in	2006-03-22 22:16:24.000000000 +0100
++++ busybox.dev/miscutils/Makefile.in	2006-04-05 01:10:50.000000000 +0200
+@@ -20,6 +20,7 @@
+ MISCUTILS-$(CONFIG_EJECT)       += eject.o
+ MISCUTILS-$(CONFIG_HDPARM)      += hdparm.o
+ MISCUTILS-$(CONFIG_LAST)        += last.o
++MISCUTILS-$(CONFIG_LOCK)        += lock.o
+ MISCUTILS-${CONFIG_LESS}        += less.o
+ MISCUTILS-$(CONFIG_MAKEDEVS)    += makedevs.o
+ MISCUTILS-$(CONFIG_MOUNTPOINT)  += mountpoint.o
+diff -urN busybox.old/miscutils/lock.c busybox.dev/miscutils/lock.c
+--- busybox.old/miscutils/lock.c	1970-01-01 01:00:00.000000000 +0100
++++ busybox.dev/miscutils/lock.c	2006-04-05 01:07:12.000000000 +0200
+@@ -0,0 +1,125 @@
++#include <sys/types.h>
++#include <sys/file.h>
++#include <sys/stat.h>
++#include <signal.h>
++#include <fcntl.h>
++#include <unistd.h>
++#include <stdio.h>
++#include "busybox.h" 
++
++static int unlock = 0;
++static int shared = 0;
++static int waitonly = 0;
++static int fd;
++static char *file;
++
++static void usage(char *name)
++{
++	fprintf(stderr, "Usage: %s [-suw] <filename>\n"
++	                "	-s	Use shared locking\n"
++	                "	-u	Unlock\n"
++	                "	-w	Wait for the lock to become free, don't acquire lock\n"
++					"\n", name);
++	exit(1);
++}
++
++static void exit_unlock(int sig)
++{
++	flock(fd, LOCK_UN);
++	unlink(file);
++	exit(0);
++}
++
++static int do_unlock(void)
++{
++	FILE *f;
++	int i;
++	
++	f = fopen(file, "r");
++	fscanf(f, "%d", &i);
++	if (i > 0)
++		kill(i, SIGTERM);
++	fclose(f);
++
++	return 0;
++}
++		
++static int do_lock(void)
++{
++	int pid;
++	char pidstr[8];
++
++	if ((fd = open(file, O_RDWR | O_CREAT, 0700)) < 0) {
++		fprintf(stderr, "Can't open %s\n", file);
++		return 1;
++	}
++
++	if (flock(fd, (shared ? LOCK_SH : LOCK_EX)) < 0) {
++		fprintf(stderr, "Can't lock %s\n", file);
++		return 1;
++	}
++
++	pid = fork();
++
++	if (pid < 0)
++		return -1;
++	
++	if (pid == 0) {
++		signal(SIGKILL, exit_unlock);
++		signal(SIGTERM, exit_unlock);
++		signal(SIGINT, exit_unlock);
++		if (waitonly)
++			exit_unlock(0);
++		else
++			while (1)
++				sleep(1);
++	} else {
++		if (!waitonly) {
++			lseek(fd, 0, SEEK_SET);
++			ftruncate(fd, 0);
++			sprintf(pidstr, "%d\n", pid);
++			write(fd, pidstr, strlen(pidstr));
++			close(fd);
++		}
++
++		return 0;
++	}
++}
++
++#ifndef CONFIG_LOCK
++int main(int argc, char **argv)
++#else
++int lock_main(int argc, char **argv)
++#endif
++{
++	char **args = &argv[1];
++	int c = argc - 1;
++
++	while ((*args != NULL) && (*args)[0] == '-') {
++		char *ch = *args;
++		while (*(++ch) > 0) {
++			switch(*ch) {
++				case 'w':
++					waitonly = 1;
++					break;
++				case 's':
++					shared = 1;
++					break;
++				case 'u':
++					unlock = 1;
++					break;
++			}
++		}
++		c--;
++		args++;
++	}
++
++	if (c != 1)
++		usage(argv[0]);
++
++	file = *args;
++	if (unlock)
++		return do_unlock();
++	else
++		return do_lock();
++}

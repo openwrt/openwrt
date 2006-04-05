@@ -96,7 +96,7 @@ image_check_bcom(int imagefd, const char *mtd)
 	}
 
 	/* check if image fits to mtd device */
-	fd = mtd_open(mtd, O_RDWR);
+	fd = mtd_open(mtd, O_RDWR | O_SYNC);
 	if(fd < 0) {
 		fprintf(stderr, "Could not open mtd device: %s\n", mtd);
 		exit(1);
@@ -113,6 +113,7 @@ image_check_bcom(int imagefd, const char *mtd)
 		return 0;
 	}	
 	
+	close(fd);
 	return 1;
 }
 
@@ -148,7 +149,7 @@ int mtd_check(char *mtd)
 	struct mtd_info_user mtdInfo;
 	int fd;
 
-	fd = mtd_open(mtd, O_RDWR);
+	fd = mtd_open(mtd, O_RDWR | O_SYNC);
 	if(fd < 0) {
 		fprintf(stderr, "Could not open mtd device: %s\n", mtd);
 		return 0;
@@ -171,7 +172,7 @@ mtd_unlock(const char *mtd)
 	struct mtd_info_user mtdInfo;
 	struct erase_info_user mtdLockInfo;
 
-	fd = mtd_open(mtd, O_RDWR);
+	fd = mtd_open(mtd, O_RDWR | O_SYNC);
 	if(fd < 0) {
 		fprintf(stderr, "Could not open mtd device: %s\n", mtd);
 		exit(1);
@@ -222,7 +223,7 @@ mtd_erase(const char *mtd)
 	struct mtd_info_user mtdInfo;
 	struct erase_info_user mtdEraseInfo;
 
-	fd = mtd_open(mtd, O_RDWR);
+	fd = mtd_open(mtd, O_RDWR | O_SYNC);
 	if(fd < 0) {
 		fprintf(stderr, "Could not open mtd device: %s\n", mtd);
 		exit(1);
@@ -260,8 +261,9 @@ mtd_write(int imagefd, const char *mtd, int quiet)
 	size_t r, w, e;
 	struct mtd_info_user mtdInfo;
 	struct erase_info_user mtdEraseInfo;
+	int ret = 0;
 
-	fd = mtd_open(mtd, O_RDWR);
+	fd = mtd_open(mtd, O_RDWR | O_SYNC);
 	if(fd < 0) {
 		fprintf(stderr, "Could not open mtd device: %s\n", mtd);
 		exit(1);
@@ -318,7 +320,8 @@ mtd_write(int imagefd, const char *mtd, int quiet)
 	}
 	if (!quiet)
 		fprintf(stderr, "\b\b\b\b");
-	
+
+	close(fd);
 	return 0;
 }
 
@@ -463,6 +466,8 @@ int main (int argc, char **argv)
 			break;
 	}
 
+	sync();
+	
 	if (boot)
 		kill(1, 15); // send SIGTERM to init for reboot
 

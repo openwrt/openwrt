@@ -1,0 +1,9 @@
+#!/bin/sh
+sysctl -p >&-
+
+# automagically run firstboot
+{ mount|grep "on / type tmpfs" 1>&-; } && {
+	lock /tmp/.switch2jffs
+	firstboot switch2jffs
+	lock -u /tmp/.switch2jffs
+}

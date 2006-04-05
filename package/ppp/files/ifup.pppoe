@@ -1,11 +1,10 @@
 #!/bin/sh
 [ $# = 0 ] && { echo "  $0 <group>"; exit; }
-. /etc/functions.sh
-. /etc/network.overrides
-[ -e /etc/config/network ] && . /etc/config/network
+. /etc/config/network
 type=$1
 
-[ "$(nvram get ${type}_proto)" = "pppoe" ] || {
+eval "proto=\"\${${type}_proto}\""
+[ "$proto" = "pppoe" ] || {
 	echo "$0: ${type}_proto isn't pppoe"
 	exit
 }
@@ -14,22 +13,16 @@ for module in slhc ppp_generic pppox pppoe; do
 	/sbin/insmod $module 2>&- >&-
 done
 
-IFNAME=$(nvram get ${type}_device)
-USERNAME=$(nvram get ppp_username)
-PASSWORD=$(nvram get ppp_passwd)
-KEEPALIVE=$(nvram get ppp_redialperiod)
-KEEPALIVE=${KEEPALIVE:+lcp-echo-interval 1 lcp-echo-failure $KEEPALIVE}
-DEMAND=$(nvram get ppp_demand)
-case "$DEMAND" in
+eval "IFNAME=\"\${${type}_device}\""
+KEEPALIVE=${ppp_redialperiod:+lcp-echo-interval $ppp_redialperiod lcp-echo-failure 5}
+case "$ppp_demand" in
 	on|1|enabled)
-		DEMAND=$(nvram get ppp_idletime)
-		DEMAND=${IDLETIME:+demand idle $IDLETIME}
+		DEMAND=${ppp_idletime:+demand idle $ppp_idletime}
 		[ -f /etc/ppp/filter ] && DEMAND=${DEMAND:+precompiled-active-filter /etc/ppp/filter $DEMAND}
 	;;
 	*) DEMAND="persist";;
 esac
-MTU=$(nvram get ppp_mtu)
-MTU=${MTU:-1492}
+MTU=${ppp_mtu:-1492}
 
 ifconfig $IFNAME up
 /usr/sbin/pppd \
@@ -39,8 +32,8 @@ ifconfig $IFNAME up
 	defaultroute \
 	linkname $type \
 	ipparam $type \
-	user "$USERNAME" \
-	password "$PASSWORD" \
+	user "$ppp_username" \
+	password "$ppp_passwd" \
 	mtu $MTU mru $MTU \
 	$DEMAND \
 	$KEEPALIVE \

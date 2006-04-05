@@ -1,20 +1,16 @@
 #!/bin/sh
-. /etc/sysconf 2>&-
-
-[ "$FAILSAFE" != "true" ] &&
-[ "$BR2_SYSCONF_TELNET_FAILSAFE_ONLY" = "y" ] &&
+grep '^root:[^!]' /etc/passwd >&- 2>&-
+[ "$?" = "0" -a -z "$FAILSAFE" ]  &&  
 {
-  grep '^root:[^!]' /etc/passwd >&- 2>&- &&
-  {
     echo "Login failed."
     exit 0
-  } || {
+} || {
 cat << EOF
  === IMPORTANT ============================
   Use 'passwd' to set your login password
   this will disable telnet and enable SSH
  ------------------------------------------
 EOF
-  }
 }
+
 exec /bin/ash --login

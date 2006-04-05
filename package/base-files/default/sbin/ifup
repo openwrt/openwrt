@@ -1,32 +1,34 @@
 #!/bin/sh
 [ $# = 0 ] && { echo "  $0 <group>"; exit; }
 . /etc/functions.sh
-. /etc/network.overrides
-[ "$FAILSAFE" != "true" -a -e /etc/config/network ] && . /etc/config/network
+. /etc/config/network
 
 ifdown $1
 
 debug "### ifup $type ###"
 type=$1
 
-if_proto=$(nvram get ${type}_proto)
-if=$(nvram get ${type}_ifname)
+eval "if_proto=\"\${${type}_proto}\""
+eval "if=\"\${${type}_ifname}\""
+[ "${if%%[0-9]}" = "ppp" ] && eval "if=\"\${${type}_device}\""
 
 case "$if_proto" in
 	pppoa) hotplug_dev register atm0; exit 0 ;;
 	pppoe)
-		ifconfig nas0 2>&- >&- || {
-			hotplug_dev register atm0
-			exit 0
+		# PPPoE over ATM
+		[ "$if" = "nas0" ] && {
+			ifconfig nas0 2>&- >&- || {
+				hotplug_dev register atm0
+				exit 0
+			}
 		}
 	;;
 	none|"") exit 0;;
 esac
 
-[ "${if%%[0-9]*}" = "ppp" ] && if="$(nvram get ${type}_device)"
-
 if [ "${if%%[0-9]}" = "br" ]; then
-	for sif in $(nvram get ${type}_ifnames); do
+	eval "ifnames=\"\${${type}_ifnames}\""
+	for sif in $ifnames; do
 		hotplug_dev register "$sif"
 	done
 else

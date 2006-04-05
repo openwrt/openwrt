@@ -395,14 +395,14 @@ endif
 
 config BUSYBOX_CONFIG_IPCALC
 	bool "ipcalc"
-	default y
+	default n
 	help
 	  ipcalc takes an IP address and netmask and calculates the
 	  resulting broadcast, network, and host range.
 
 config BUSYBOX_CONFIG_FEATURE_IPCALC_FANCY
 	bool "  Fancy IPCALC, more options, adds 1 kbyte"
-	default y
+	default n
 	depends on BUSYBOX_CONFIG_IPCALC
 	help
 	  Adds the options hostname, prefix and silent to the output of "ipcalc".
