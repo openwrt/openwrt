@@ -13,7 +13,7 @@ $(eval $(call KMOD_template,BRCM_WL,brcm-wl,\
 ,CONFIG_WL,,20,wl))
 
 $(eval $(call KMOD_template,BRCM_WL2,brcm-wl2,\
-	$(BUILD_DIR)/wl/wl2/wl.o \
+	$(MODULES_DIR)/kernel/drivers/net/wl2/wl.o \
 ,CONFIG_WL,,20,wl))
 
 $(eval $(call KMOD_template,LP,lp,\
@@ -40,8 +40,8 @@ $(LINUX_DIR)/.patched: $(LINUX_DIR)/.unpacked
 
 LINUX_BINARY_DRIVER_SITE=http://openwrt.org/downloads/sources
 # proprietary driver, extracted from Linksys GPL sourcetree WRT54GS 4.70.6
-LINUX_BINARY_WL_DRIVER=kernel-binary-wl-0.5.tar.gz
-LINUX_BINARY_WL_MD5SUM=78e839842bdc04022bb44469f92b1131
+LINUX_BINARY_WL_DRIVER=kernel-binary-wl-0.6.tar.gz
+LINUX_BINARY_WL_MD5SUM=4fc1d5b46bcb7a17d6d5dd31da9c8d7f
 
 $(DL_DIR)/$(LINUX_BINARY_WL_DRIVER):
 	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(LINUX_BINARY_WL_DRIVER) $(LINUX_BINARY_WL_MD5SUM) $(LINUX_BINARY_DRIVER_SITE) $(MAKE_TRACE)
@@ -56,12 +56,15 @@ $(LINUX_DIR)/.drivers-unpacked: $(LINUX_DIR)/.unpacked
 	zcat $(DL_DIR)/$(LINUX_BINARY_WL_DRIVER) | tar -C $(BUILD_DIR) $(TAR_OPTIONS) -
 	# copy binary wlan driver
 	mkdir -p $(LINUX_DIR)/drivers/net/wl
-	$(CP) $(BUILD_DIR)/wl/*.o $(LINUX_DIR)/drivers/net/wl
+	$(CP) $(BUILD_DIR)/kernel-binary-wl/old/*.o $(LINUX_DIR)/drivers/net/wl
+	$(CP) $(BUILD_DIR)/kernel-binary-wl/new/*.o $(LINUX_DIR)/drivers/net/wl2
 	touch $@
 
 $(LINUX_DIR)/.drivers-installed: $(LINUX_DIR)/.modules_done
 	mkdir -p $(LINUX_BUILD_DIR)/modules/lib/modules/2.4.32/kernel/drivers/net/wl
+	mkdir -p $(LINUX_BUILD_DIR)/modules/lib/modules/2.4.32/kernel/drivers/net/wl2
 	@-[ -f $(LINUX_BUILD_DIR)/modules/lib/modules/2.4.32/kernel/drivers/net/wl/wl.o ] || $(CP) $(LINUX_DIR)/drivers/net/wl/wl.o $(LINUX_BUILD_DIR)/modules/lib/modules/2.4.32/kernel/drivers/net/wl/
+	@-[ -f $(LINUX_BUILD_DIR)/modules/lib/modules/2.4.32/kernel/drivers/net/wl2/wl.o ] || $(CP) $(LINUX_DIR)/drivers/net/wl2/wl.o $(LINUX_BUILD_DIR)/modules/lib/modules/2.4.32/kernel/drivers/net/wl2/
 	touch $@
 
 linux-dirclean: drivers-clean
