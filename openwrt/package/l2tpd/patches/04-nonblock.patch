@@ -1,0 +1,26 @@
+--- l2tpd-0.70-pre20031121.orig/l2tpd.c.orig	2006-04-05 13:28:36.000000000 +0100
++++ l2tpd-0.70-pre20031121.orig/l2tpd.c	2006-04-05 13:33:39.000000000 +0100
+@@ -289,6 +289,8 @@
+ #endif
+     struct termios ptyconf;
+     char *str;
++    int flags;
++
+     p = opts;
+     stropt[0] = strdup (PPPD);
+     while (p)
+@@ -347,6 +349,14 @@
+ 		close(c->fd);
+ 		return -EINVAL;
+ 	    }
++	    flags = fcntl(c->fd, F_GETFL);
++	    if (flags < 0 || fcntl(c->fd, F_SETFL, flags | O_NONBLOCK) < 0)
++	    {
++		log (LOG_WARN, "%s: unable to fcntl(O_NONBLOCK) on pty\n",
++			__FUNCTION__);
++		close(c->fd);
++		return -EINVAL;
++	    }
+ 	    tty = ptsname(c->fd);
+ 	    if (tty == NULL)
+ 	    {

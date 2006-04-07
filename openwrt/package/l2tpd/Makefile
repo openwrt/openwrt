@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=l2tpd
 PKG_VERSION:=0.70pre
 PKG_UPSTREAM_VERSION:=0.70-pre20031121
-PKG_RELEASE:=2.1
+PKG_RELEASE:=3.1
 PKG_MD5SUM:=3f2707b6e16a8cb72e7bf64f574202fa
 
 PKG_SOURCE_URL:=http://ftp.debian.org/debian/pool/main/l/l2tpd
