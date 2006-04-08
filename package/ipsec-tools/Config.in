@@ -1,10 +1,9 @@
 config BR2_PACKAGE_IPSEC_TOOLS
 	prompt "ipsec-tools....................... IPsec management tools"
 	tristate
-	default m if BR2_LINUX_2_6_BRCM && CONFIG_DEVEL
-	default m if BR2_LINUX_2_6_X86 && CONFIG_DEVEL
+	depends BR2_LINUX_2_6
 	select BR2_PACKAGE_LIBOPENSSL
-	default n
+	default m if CONFIG_DEVEL
 	help
 	  IPsec management tools
 	  
