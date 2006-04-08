@@ -37,6 +37,8 @@ pivot() { # <new_root> <old_root>
 	pivot_root $1 $1$2 && {
 		mount -o move $2/dev /dev
 		mount -o move $2/tmp /tmp
+		mount -o move $2/sys /sys
+		return 0
 	}
 }
 
