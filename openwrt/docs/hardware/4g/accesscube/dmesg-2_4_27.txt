@@ -1,0 +1,86 @@
+CPU revision is: 01030202
+Primary instruction cache 16kB, physically tagged, 4-way, linesize 32 bytes.
+Primary data cache 16kB, 4-way, linesize 32 bytes.
+Linux version 2.4.27 (rhandorf@devel) (gcc version 3.3.4) #1 Mon Dec 5
+15:55:07 EST 2005
+4G Systems MTX-1 Board
+Au1500 AD (PRId 01030202) @ 396MHZ
+BCLK switching enabled!
+Determined physical RAM map:
+ memory: 04000000 @ 00000000 (usable)
+On node 0 totalpages: 16384
+zone(0): 16384 pages.
+zone(1): 0 pages.
+zone(2): 0 pages.
+Kernel command line: root=/dev/mtdblock/0 console=ttyS0,115200
+usb_ohci=base:0x10100000,len:0x100000,irq:26
+calculating r4koff... 003c6cc0(3960000)
+CPU frequency 396.00 MHz
+Calibrating delay loop... 395.67 BogoMIPS
+Memory: 61504k/65536k available (1769k kernel code, 4032k reserved, 260k data,
+88k init, 0k highmem)
+Dentry cache hash table entries: 8192 (order: 4, 65536 bytes)
+Inode cache hash table entries: 4096 (order: 3, 32768 bytes)
+Mount cache hash table entries: 512 (order: 0, 4096 bytes)
+Buffer cache hash table entries: 4096 (order: 2, 16384 bytes)
+Page-cache hash table entries: 16384 (order: 4, 65536 bytes)
+Checking for 'wait' instruction...  unavailable.
+POSIX conformance testing by UNIFIX
+Autoconfig PCI channel 0x80316838
+Scanning bus 00, I/O 0x00000300:0x00100000, Mem 0x40000000:0x50000000
+00:00.0 Class 0200: 168c:001b (rev 01)
+        Mem at 0x40000000 [size=0x10000]
+00:01.0 Class 0200: 168c:001b (rev 01)
+        Mem at 0x40010000 [size=0x10000]
+Non-coherent PCI accesses enabled
+Linux NET4.0 for Linux 2.4
+Based upon Swansea University Computer Society NET3.039
+Initializing RT netlink socket
+Starting kswapd
+devfs: v1.12c (20020818) Richard Gooch (rgooch@atnf.csiro.au)
+devfs: boot_options: 0x1
+Installing knfsd (copyright (C) 1996 okir@monad.swb.de).
+JFFS2 version 2.2. (C) 2001-2003 Red Hat, Inc.
+pty: 256 Unix98 ptys configured
+Serial driver version 1.01 (2001-02-08) with no serial options enabled
+ttyS00 at 0xb1100000 (irq = 0) is a 16550
+ttyS01 at 0xb1400000 (irq = 3) is a 16550
+loop: loaded (max 8 devices)
+au1000eth.c:1.4 ppopov@mvista.com
+eth0: Au1x Ethernet found at 0xb1500000, irq 28
+eth0: LSI 80227 10/100 BaseT PHY at phy address 31
+eth0: Using LSI 80227 10/100 BaseT PHY as default
+MTX-1 flash: probing 32-bit flash bus at 1e000000
+MTX-1 flash: Found 2 x16 devices at 0x0 in 32-bit mode
+ Amd/Fujitsu Extended Query Table at 0x0040
+MTX-1 flash: CFI does not contain boot bank location. Assuming top.
+number of CFI chips: 1
+cfi_cmdset_0002: Disabling fast programming due to code brokenness.
+cfi_cmdset_0002: Disabling erase-suspend-program due to code brokenness.
+Creating 4 MTD partitions on "MTX-1 flash":
+0x00000000-0x01c00000 : "user fs"
+0x01c00000-0x01d00000 : "yamon"
+0x01d00000-0x01fc0000 : "raw kernel"
+0x01fc0000-0x02000000 : "yamon environment"
+usb.c: registered new driver usbdevfs
+usb.c: registered new driver hub
+host/usb-ohci.c: USB OHCI at membase 0xb0100000, IRQ 26
+host/usb-ohci.c: usb-builtin, non-PCI OHCI
+usb.c: new USB bus registered, assigned bus number 1
+hub.c: USB hub found
+hub.c: 2 ports detected
+Initializing Cryptographic API
+NET4: Linux TCP/IP 1.0 for NET4.0
+IP Protocols: ICMP, UDP, TCP, IGMP
+IP: routing cache hash table of 512 buckets, 4Kbytes
+TCP: Hash tables configured (established 4096 bind 8192)
+Linux IP multicast router 0.06 plus PIM-SM
+NET4: Unix domain sockets 1.0/SMP for Linux NET4.0.
+MTX-1 watchdog driver
+MTX-1 System Button driver
+VFS: Mounted root (jffs2 filesystem) readonly.
+Mounted devfs on /dev
+Freeing unused kernel memory: 88k freed
+Algorithmics/MIPS FPU Emulator v1.5
+eth0: link up
+eth0: going to full duplex
