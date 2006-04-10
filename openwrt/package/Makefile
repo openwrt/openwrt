@@ -260,6 +260,7 @@ package-$(BR2_COMPILE_UTIL_LINUX) += util-linux
 package-$(BR2_PACKAGE_UDEV) += udev
 package-$(BR2_PACKAGE_VIM) += vim
 package-$(BR2_PACKAGE_VGP) += vgp
+package-$(BR2_PACKAGE_VNCREPEATER) += vncrepeater
 package-$(BR2_PACKAGE_VNC_REFLECTOR) += vnc-reflector
 package-$(BR2_PACKAGE_VNSTAT) += vnstat
 package-$(BR2_PACKAGE_VPNC) += vpnc
