@@ -1,0 +1,23 @@
+diff -urN vncrepeater-0.007/Makefile vncrepeater-0.007.new/Makefile
+--- vncrepeater-0.007/Makefile	2005-10-03 20:22:48.000000000 +0200
++++ vncrepeater-0.007.new/Makefile	2006-04-10 16:15:50.495599944 +0200
+@@ -1,15 +1,15 @@
+ CFLAGS=-Wall
+ repeater: repeater.o repeaterproc.o openbsd_stringfuncs.o
+-	g++ $(CFLAGS) -o repeater repeater.o repeaterproc.o openbsd_stringfuncs.o
++	$(CC) $(CFLAGS) -o repeater repeater.o repeaterproc.o openbsd_stringfuncs.o -nodefaultlibs -L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib -luClibc++
+ 
+ repeater.o: repeater.cpp
+-	g++ $(CFLAGS) -c repeater.cpp
++	$(CC) $(CFLAGS) -c repeater.cpp
+ 
+ repeaterproc.o: repeaterproc.cpp
+-	g++ $(CFLAGS) -c repeaterproc.cpp
++	$(CC) $(CFLAGS) -c repeaterproc.cpp
+ 
+ openbsd_stringfuncs.o: openbsd_stringfuncs.cpp
+-	g++ $(CFLAGS) -c openbsd_stringfuncs.cpp
++	$(CC) $(CFLAGS) -c openbsd_stringfuncs.cpp
+ 
+ clean:
+ 	rm -f *.o repeater
