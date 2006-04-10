@@ -10,6 +10,7 @@ config BR2_PACKAGE_SAMBA
 	tristate
 	default m if CONFIG_DEVEL
 	select BR2_COMPILE_SAMBA
+	select BR2_PACKAGE_LIBGCC
 	help
 	 The Samba software suite is a collection of programs that implements the 
 	 SMB protocol for unix systems, allowing you to serve files and printers to 
@@ -25,6 +26,7 @@ config BR2_PACKAGE_SAMBA_CLIENT
 	tristate
 	default m if CONFIG_DEVEL
 	select BR2_COMPILE_SAMBA
+	select BR2_PACKAGE_LIBGCC
 	help
 	 The Samba software suite is a collection of programs that implements the 
 	 SMB protocol for unix systems, allowing you to serve files and printers to 
