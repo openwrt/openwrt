@@ -1,9 +1,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=iftop
-PKG_VERSION:=0.17pre3
+PKG_VERSION:=0.17
 PKG_RELEASE:=1
-PKG_MD5SUM:=6d80885e0ff642222c96bb7bd3e83f96
+PKG_MD5SUM:=062bc8fb3856580319857326e0b8752d
 
 PKG_SOURCE_URL:=http://www.ex-parrot.com/~pdw/iftop/download
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
