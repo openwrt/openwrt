@@ -39,7 +39,7 @@ diff -urN busybox.old/miscutils/Makefile.in busybox.dev/miscutils/Makefile.in
 diff -urN busybox.old/miscutils/lock.c busybox.dev/miscutils/lock.c
 --- busybox.old/miscutils/lock.c	1970-01-01 01:00:00.000000000 +0100
 +++ busybox.dev/miscutils/lock.c	2006-04-05 01:07:12.000000000 +0200
-@@ -0,0 +1,125 @@
+@@ -0,0 +1,128 @@
 +#include <sys/types.h>
 +#include <sys/file.h>
 +#include <sys/stat.h>
@@ -77,10 +77,13 @@ diff -urN busybox.old/miscutils/lock.c busybox.dev/miscutils/lock.c
 +	FILE *f;
 +	int i;
 +	
-+	f = fopen(file, "r");
++	if ((f = fopen(file, "r")) == NULL)
++		return 0;
++	
 +	fscanf(f, "%d", &i);
 +	if (i > 0)
 +		kill(i, SIGTERM);
++	
 +	fclose(f);
 +
 +	return 0;
