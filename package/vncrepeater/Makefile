@@ -3,11 +3,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=vncrepeater
-PKG_VERSION:=0.007
+PKG_VERSION:=0.12
 PKG_RELEASE:=1
-PKG_MD5SUM:=7e13b0b784d683473d418f7295aff500
+PKG_MD5SUM:=bf89c31d7cb51a267a8d5ac388e0508d
 
-PKG_SOURCE_URL:=http://downloads.openwrt.org
+PKG_SOURCE_URL:=http://www.rit.edu/~reh5586/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
@@ -32,8 +32,9 @@ $(PKG_BUILD_DIR)/.built:
 	touch $@
 
 $(IPKG_VNCREPEATER):
-	install -d -m0755 $(IDIR_VNCREPEATER)/usr/sbin
+	install -d -m0755 $(IDIR_VNCREPEATER)/usr/sbin $(IDIR_VNCREPEATER)/etc
 	$(CP) $(PKG_BUILD_DIR)/repeater $(IDIR_VNCREPEATER)/usr/sbin/$(PKG_NAME)
+	$(CP) $(PKG_BUILD_DIR)/u$(PKG_NAME).ini $(IDIR_VNCREPEATER)/etc/
 	$(RSTRIP) $(IDIR_VNCREPEATER)
 	$(IPKG_BUILD) $(IDIR_VNCREPEATER) $(PACKAGE_DIR)
 
