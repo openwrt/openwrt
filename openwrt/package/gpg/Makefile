@@ -6,7 +6,8 @@ PKG_NAME:=gnupg
 PKG_VERSION:=1.4.2.1
 PKG_RELEASE:=1
 
-PKG_SOURCE_URL:=ftp://ftp.gnupg.org/gcrypt/gnupg/
+PKG_SOURCE_URL:=ftp://ftp.franken.de/pub/crypt/mirror/ftp.gnupg.org/gcrypt/gnupg \
+	ftp://ftp.gnupg.org/gcrypt/gnupg
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_MD5:=2d59ed50d92f69994dbfbe00fe1612e4
 PKG_CAT:=bzcat
