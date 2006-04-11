@@ -616,10 +616,10 @@ config BR2_PACKAGE_KMOD_USB
 	default n if BR2_LINUX_2_4_AR531X
 	default m
 
-config BR2_PACKAGE_KMOD_USB_UHCI
+config BR2_PACKAGE_KMOD_USB_UHCI 
 	prompt   "kmod-usb-uhci................... Support for UHCI controllers"
 	tristate
-	default m
+	default n if BR2_LINUX_2_6_MTX-1
 	depends BR2_PACKAGE_KMOD_USB
 	select BR2_PACKAGE_KMOD_USB_CONTROLLER
 
@@ -633,7 +633,7 @@ config BR2_PACKAGE_KMOD_USB_OHCI
 config BR2_PACKAGE_KMOD_USB2
 	prompt   "kmod-usb2....................... Support for USB 2.0 controllers"
 	tristate
-	default m
+	default n if BR2_LINUX_2_6_MTX-1
 	depends BR2_PACKAGE_KMOD_USB
 	select BR2_PACKAGE_KMOD_USB_CONTROLLER
 
