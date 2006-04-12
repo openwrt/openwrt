@@ -1,0 +1,25 @@
+Patch to stop l2tpd setting the DF bit on each of the packets it sends.
+Apart from not being useful with L2TP, this also prevents interoperating
+with Cisco IOS over IPSEC.
+
+--- l2tpd-0.70-pre20031121.orig/network.c.orig	2006-04-11 08:50:38.000000000 +0100
++++ l2tpd-0.70-pre20031121.orig/network.c	2006-04-11 08:58:18.000000000 +0100
+@@ -56,6 +56,18 @@
+              __FUNCTION__);
+         return -EINVAL;
+     };
++#ifdef IP_MTU_DISCOVER
++#ifdef IP_PMTUDISC_DONT
++    {
++        /* Don't set DF bit on outbound packets */
++        int val = IP_PMTUDISC_DONT;
++        if (setsockopt(server_socket, IPPROTO_IP, IP_MTU_DISCOVER, &val, sizeof(val)) < 0)
++        {
++            log (LOG_LOG, "Failed to disable PMTU discovery\n");
++        }
++    }
++#endif
++#endif
+     /* L2TP/IPSec: Set up SA for listening port here?  NTB 20011015
+      */
+     if (bind (server_socket, (struct sockaddr *) &server, sizeof (server)))
