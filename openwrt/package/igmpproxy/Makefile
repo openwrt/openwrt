@@ -1,4 +1,4 @@
-# $Id: Makefile 1084 2005-05-27 17:32:43Z florian $
+# $Id$
 
 include $(TOPDIR)/rules.mk
 
