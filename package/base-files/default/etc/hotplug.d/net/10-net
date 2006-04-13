@@ -47,9 +47,21 @@ do_ifup() {
 			eval "netmask=\"\${${2}_netmask}\""
 			eval "gateway=\"\${${2}_gateway}\""
 			eval "dns=\"\${${2}_dns}\""
+			eval "static_route=\"\${${2}_static_route}\""
 	
 			$DEBUG ifconfig $if $ip ${netmask:+netmask $netmask} broadcast + up
 			[ -n "$ip6" ] && $DEBUG ifconfig $if add $ip6
+
+			[ -n "$static_route" ] && {
+				for route in $static_route; do
+					if [ "$(echo $route | cut -d \/ -f2)" != "32" ];
+					then
+						route add -net $(echo $route | cut -d \/ -f1) netmask $(echo $route | cut -d \/ -f1) dev $if
+					else
+						route add -host $(echo $route | cut -d \/ -f1) dev $if
+					fi
+				done
+			}
 
 			${gateway:+$DEBUG route add default gw $gateway}
 	
