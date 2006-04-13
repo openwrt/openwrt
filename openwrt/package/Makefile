@@ -49,6 +49,7 @@ package-$(BR2_PACKAGE_ELINKS) += elinks
 package-$(BR2_PACKAGE_ETHER_WAKE) += ether-wake
 package-$(BR2_COMPILE_EXPAT) += expat
 package-$(BR2_PACKAGE_EZIPUPDATE) += ez-ipupdate
+package-$(BR2_PACKAGE_FAKEIDENTD) += fakeidentd
 package-$(BR2_PACKAGE_FETCHMAIL) += fetchmail
 package-$(BR2_COMPILE_FLAC) += flac
 package-$(BR2_PACKAGE_FPING) += fping
