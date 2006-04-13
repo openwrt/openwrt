@@ -19,10 +19,10 @@ dupe() { # <new_root> <old_root>
 	echo -n "setting up symlinks... "
 	for file in $(cd $2; find . -xdev -type f;); do
 		case "$file" in
-		"./rom/note") ;; #nothing
-		"./etc/config"|\
-		"./etc/resolv.conf"|\
-		"./usr/lib/ipkg/info") cp -af $2/$file $file;;
+		./rom/note) ;; #nothing
+		./etc/config*|\
+		./etc/resolv.conf|\
+		./usr/lib/ipkg/info) cp -af $2/$file $file;;
 		*) ln -sf /rom/${file#./*} $file;;
 		esac
 	done
