@@ -1,9 +1,0 @@
-config BR2_PACKAGE_IGMPPROXY
-	prompt "igmpproxy......................... Multicast Routing Daemon"
-	tristate
-	default m if CONFIG_DEVEL
-	help
-	  IGMPproxy is a simple dynamic Multicast Routing Daemon using 
-	  only IGMP signalling (Internet Group Management Protocol).
-
-	  http://sourceforge.net/projects/igmpproxy
