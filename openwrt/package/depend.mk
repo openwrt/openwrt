@@ -106,6 +106,7 @@ vncrepeater-compile: uclibc++-compile
 vnc-reflector-compile: jpeg-compile zlib-compile
 vpnc-compile: libgcrypt-compile libgpg-error-compile
 vtun-compile: zlib-compile openssl-compile liblzo-compile
+weechat-compile: ncurses-compile gnutls-compile lua-compile
 wificonf-compile: wireless-tools-compile nvram-compile
 wiviz-compile: libpcap-compile
 wknock-compile: libpcap-compile

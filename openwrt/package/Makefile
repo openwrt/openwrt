@@ -269,6 +269,7 @@ package-$(BR2_PACKAGE_VTUN) += vtun
 package-$(BR2_PACKAGE_VSFTPD) += vsftpd
 package-$(BR2_PACKAGE_WATCHDOG) += watchdog
 package-$(BR2_PACKAGE_WCCPD) += wccpd
+package-$(BR2_PACKAGE_WEECHAT) += weechat
 package-$(BR2_PACKAGE_WIFICONF) += wificonf
 package-$(BR2_PACKAGE_WIFIDOG) += wifidog
 package-$(BR2_PACKAGE_WIVIZ) += wiviz
