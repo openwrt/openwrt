@@ -19,18 +19,6 @@ diff -Nur openswan-2.4.5rc5/programs/look/look.in openswan-2.4.5rc5.patched/prog
  	do
  		pat="$pat|$i\$"
  	done
-diff -Nur openswan-2.4.5rc5/programs/manual/manual.in openswan-2.4.5rc5.patched/programs/manual/manual.in
---- openswan-2.4.5rc5/programs/manual/manual.in	2005-11-18 06:18:33.000000000 +0100
-+++ openswan-2.4.5rc5.patched/programs/manual/manual.in	2006-03-29 01:20:44.000000000 +0200
-@@ -104,7 +104,7 @@
- 				sub(/:/, " ", $0)
- 				if (interf != "")
- 					print $3 "@" interf
--			 }' | sed ':a;N;$!ba;s/\n/ /g'`"
-+			 }' | tr '\n' ' '`"
- 	;;
- esac
- 
 diff -Nur openswan-2.4.5rc5/programs/_plutorun/_plutorun.in openswan-2.4.5rc5.patched/programs/_plutorun/_plutorun.in
 --- openswan-2.4.5rc5/programs/_plutorun/_plutorun.in	2006-01-06 00:45:00.000000000 +0100
 +++ openswan-2.4.5rc5.patched/programs/_plutorun/_plutorun.in	2006-03-29 01:20:44.000000000 +0200
