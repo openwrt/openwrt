@@ -1,7 +1,0 @@
-#!/bin/sh
-
-RARPD=/usr/sbin/rarpd
-DEFAULT=/etc/default/rarpd
-[ -f $DEFAULT ] && . $DEFAULT
-
-$RARPD $OPTIONS
