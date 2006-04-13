@@ -7,7 +7,7 @@ PKG_VERSION:=3.2.6
 PKG_RELEASE:=1
 PKG_MD5SUM:=71e6bd13fcca70372e9b7c7806d62b30
 
-PKG_SOURCE_URL:=http://superb.dl.sourceforge.net/sourceforge/motion
+PKG_SOURCE_URL:=@SF/motion
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
