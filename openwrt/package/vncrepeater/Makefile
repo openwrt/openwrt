@@ -5,9 +5,9 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=vncrepeater
 PKG_VERSION:=0.12
 PKG_RELEASE:=1
-PKG_MD5SUM:=bf89c31d7cb51a267a8d5ac388e0508d
+PKG_MD5SUM:=5951740a8a103d7d9668558b3639c6c4
 
-PKG_SOURCE_URL:=http://www.rit.edu/~reh5586/
+PKG_SOURCE_URL:=http://www.rit.edu/~reh5586/openwrt/packages/vncrepeater/src
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
