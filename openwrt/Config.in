@@ -32,6 +32,9 @@ config BR2_armeb
 # Unsupported architectures
 
 if CONFIG_DEVEL
+config BR2_mips64
+	tristate
+	select BR2_BIG_ENDIAN
 
 config BR2_arm
 	tristate
@@ -76,6 +79,7 @@ config BR2_ARCH
 	default "m68k"    if BR2_m68k
 	default "mips"    if BR2_mips
 	default "mipsel"  if BR2_mipsel || !CONFIG_DEVEL
+	default "mips64"  if BR2_mips64
 	default "powerpc" if BR2_powerpc
 	default "sh3"     if BR2_sh3
 	default "sh3eb"   if BR2_sh3eb
