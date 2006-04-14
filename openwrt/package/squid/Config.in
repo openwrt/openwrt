@@ -1,0 +1,93 @@
+menu "squid............................ proxy and web cache"
+
+config BR2_PACKAGE_SQUID
+	prompt "squid.......................... full-featured Web proxy cache"
+	tristate
+	default m if CONFIG_DEVEL
+	select BR2_PACKAGE_LIBOPENSSL
+	help
+	  Squid is a high-performance proxy caching server for web clients, 
+	  supporting FTP, gopher, and HTTP data objects. Unlike traditional 
+	  caching software, Squid handles all requests in a single, 
+	  non-blocking, I/O-driven process.
+
+	  http://www.squid-cache.org
+
+config BR2_PACKAGE_SQUID_MOD_BASIC_AUTH_GETPWNAM
+	prompt "squid-mod-basic-auth-getpwnam... getpwnam basic authentication helper"
+	tristate
+	depends BR2_PACKAGE_SQUID
+	help
+	  Password basic authentication helper
+
+config BR2_PACKAGE_SQUID_MOD_BASIC_AUTH_NCSA
+	prompt "squid-mod-basic-auth-ncsa...... NCSA basic authentication helper"
+	tristate
+	depends BR2_PACKAGE_SQUID
+	help
+	  NCSA basic authentication helper
+
+config BR2_PACKAGE_SQUID_MOD_BASIC_AUTH_SMB
+	prompt "squid-mod-basic-auth-smb...... Samba basic authentication helper"
+	tristate
+	depends BR2_PACKAGE_SQUID
+	help
+	  Samba basic authentication helper
+
+config BR2_PACKAGE_SQUID_MOD_BASIC_AUTH_WINBIND
+	prompt "squid-mod-basic-auth-winbind.. Winbind basic authentication helper"
+	tristate
+	depends BR2_PACKAGE_SQUID
+	help
+	  Winbind basic authentication helper
+
+config BR2_PACKAGE_SQUID_MOD_DIGEST_AUTH_PASSWORD
+	prompt "squid-mod-digest-auth-password. Password digest authentication ehlper"
+	tristate
+	depends BR2_PACKAGE_SQUID
+	help
+	  Password digest authentication helper
+
+config BR2_PACKAGE_SQUID_MOD_EXTERNAL_ACL_IP_USER
+	prompt "squid-mod-external-acl-ip_user.. IP user external ACL helper"
+	tristate
+	depends BR2_PACKAGE_SQUID
+	help
+	  IP user external ACL helper
+
+config BR2_PACKAGE_SQUID_MOD_EXTERNAL_ACL_UNIX_GROUP
+	prompt "squid-mod-external-acl-unix-group Unix group external ACL helper"
+	tristate
+	depends BR2_PACKAGE_SQUID
+	help
+	  Unix group external ACL helper
+
+config BR2_PACKAGE_SQUID_MOD_EXTERNAL_ACL_WINBIND_GROUP
+	prompt "squid-mod-external-acl-winbind-group Winbind group external ACL helper"
+	tristate
+	depends BR2_PACKAGE_SQUID
+	help
+	  Winbind group external ACL helper
+
+config BR2_PACKAGE_SQUID_MOD_NTLM_AUTH_FAKEAUTH
+	prompt "squid-mod-ntlm-auth-fakeauth........ Fakeauth NTLM authentication helper"
+	tristate
+	depends BR2_PACKAGE_SQUID
+	help
+	  Fakeauth NTLM authentication helper
+
+config BR2_PACKAGE_SQUID_MOD_NTLM_AUTH_SMB_AUTH
+	prompt "squid-mod-ntlm-auth-smb-auth........ Samba NTLM authentication helper"
+	tristate
+	depends BR2_PACKAGE_SQUID
+	help
+	  Samba NTLM authentication helper
+
+config BR2_PACKAGE_SQUID_MOD_NTLM_AUTH_WINBIND_AUTH
+	prompt "squid-mod-ntlm-auth-winbind-auth.... Winbind NTLM authentication helper"
+	tristate
+	depends BR2_PACKAGE_SQUID
+	help
+	  Winbind NTLM authentication helper
+
+endmenu

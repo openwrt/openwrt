@@ -5,9 +5,9 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=fakeidentd
 PKG_VERSION:=2.2
 PKG_RELEASE:=1
-PKG_MD5SUM:=aa4133981c94c59868344cd3b02e8e19
+PKG_MD5SUM:=3aaf9d525da08ae18dd4133de4ff7be3
 
-PKG_SOURCE_URL:=http://distfiles.gentoo.org/distfiles/
+PKG_SOURCE_URL:=@openwrt/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_CAT:=bzcat
 

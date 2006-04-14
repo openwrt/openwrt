@@ -241,6 +241,7 @@ package-$(BR2_PACKAGE_SOCAT) += socat
 package-$(BR2_COMPILE_SPEEX) += speex
 package-$(BR2_COMPILE_SQLITE) += sqlite
 package-$(BR2_COMPILE_SQLITE2) += sqlite2
+package-$(BR2_PACKAGE_SQUID) += squid
 package-$(BR2_PACKAGE_SSMTP) += ssmtp
 package-$(BR2_PACKAGE_SSLTUNNEL) += ssltunnel
 package-$(BR2_PACKAGE_SRELAY) += srelay
