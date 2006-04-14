@@ -18,8 +18,7 @@ define Package/busybox
 CONFIGFILE:=config/Config.in
 SECTION:=base
 CATEGORY:=Base system
-TITLE:=Core utilities
-DESCRIPTION:=Core utilities for embedded Linux systems
+TITLE:=Core utilities for embedded Linux
 endef
 
 define Build/Configure

@@ -56,13 +56,13 @@ IPKG_$(1):=$(PACKAGE_DIR)/$(1)_$(VERSION)_$(PKGARCH).ipk
 IDIR_$(1):=$(PKG_BUILD_DIR)/ipkg/$(1)
 INFO_$(1):=$(IPKG_STATE_DIR)/info/$(1).list
 
-ifneq ($(BR2_PACKAGE_$(1)),)
+ifneq ($(PACKAGE_$(1)),)
 compile-targets: $$(IPKG_$(1))
 endif
 ifneq ($(DEVELOPER),)
 compile-targets: $$(IPKG_$(1))
 endif
-ifeq ($(BR2_PACKAGE_$(1)),y)
+ifeq ($(PACKAGE_$(1)),y)
 install-targets: $$(INFO_$(1))
 endif
 
@@ -78,7 +78,8 @@ $$(IDIR_$(1))/CONTROL/control: $(PKG_BUILD_DIR)/.prepared
 	echo "Priority: $$(PRIORITY)" >> $$(IDIR_$(1))/CONTROL/control
 	echo "Maintainer: $$(MAINTAINER)" >> $$(IDIR_$(1))/CONTROL/control
 	echo "Architecture: $$(PKGARCH)" >> $$(IDIR_$(1))/CONTROL/control
-	echo "Description: $$(DESCRIPTION)" >> $$(IDIR_$(1))/CONTROL/control
+	echo "Description: $$(TITLE)" >> $$(IDIR_$(1))/CONTROL/control
+	echo "$$(DESCRIPTION)" | sed -e 's,\\,\n ,g' >> $$(IDIR_$(1))/CONTROL/control
 	chmod 644 $$(IDIR_$(1))/CONTROL/control
 	for file in conffiles preinst postinst prerm postrm; do \
 		[ -f ./ipkg/$(1).$$$$file ] && cp ./ipkg/$(1).$$$$file $$(IDIR_$(1))/CONTROL/$$$$file || true; \
