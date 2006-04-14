@@ -10,6 +10,7 @@ menu "Target Root Filesystem"
 		bool "squashfs-lzma"
 		default y
 		depends !BR2_LINUX_2_6_ARUBA
+		depends !BR2_LINUX_2_6_XSCALE
 		help
 		  Build a squashfs-lzma root filesystem
 

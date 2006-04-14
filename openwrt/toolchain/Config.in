@@ -26,4 +26,5 @@ config BR2_TARGET_OPTIMIZATION
 	string
 	default "-Os -pipe -march=i486 -funit-at-a-time" if BR2_i386
 	default "-Os -pipe -mips32 -mtune=mips32 -funit-at-a-time" if BR2_mipsel || BR2_mips
+	default "-Os -pipe -mcpu=xscale -funit-at-a-time" if BR2_armeb
 	default "-Os -pipe -funit-at-a-time"

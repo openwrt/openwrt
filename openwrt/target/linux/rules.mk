@@ -20,6 +20,7 @@ LINUX_KARCH:=$(shell echo $(ARCH) | sed -e 's/i[3-9]86/i386/' \
 	-e 's/mipseb/mips/' \
 	-e 's/powerpc/ppc/' \
 	-e 's/sh[234]/sh/' \
+	-e 's/armeb/arm/' \
 )
 
 KPKG_MAKEOPTS:=	IPKG="$(IPKG_KERNEL)" \
