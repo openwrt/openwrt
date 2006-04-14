@@ -95,6 +95,7 @@ sipsak-compile: openssl-compile
 socat-compile: openssl-compile
 sqlite-compile: ncurses-compile readline-compile
 sqlite2-compile: ncurses-compile readline-compile
+squid-compile: openssl-compile
 ssltunnel-compile: openssl-compile ppp-compile
 syslog-ng-compile: libol-compile
 tcpdump-compile: libpcap-compile
