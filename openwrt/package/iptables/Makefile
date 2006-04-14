@@ -17,50 +17,129 @@ PKG_CAT:=bzcat
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
-define IPKG_plugin_template
-
-$$(IPKG_$(1)):
-	install -m0755 -d $$(IDIR_$(1))/usr/lib/iptables
-	for m in $$(patsubst xt_%,ipt_%,$(2)); do \
-		$(CP) $(PKG_INSTALL_DIR)/usr/lib/iptables/lib$$$${m}.so $$(IDIR_$(1))/usr/lib/iptables/ ; \
-	done
-	@[ -z "$(3)" ] || $(MAKE) $(3)
-	$(RSTRIP) $$(IDIR_$(1))
-	$(IPKG_BUILD) $$(IDIR_$(1)) $(PACKAGE_DIR)
-
-endef
+PKG_MENU:=IPv4 / IPv6 firewall administration
 
 include $(TOPDIR)/package/rules.mk
 include $(LINUX_DIR)/.config
 include $(TOPDIR)/target/linux/netfilter.mk
 
-$(eval $(call PKG_template,IPTABLES,iptables,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
-$(eval $(call PKG_template,IPTABLES_EXTRA,iptables-extra,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
-$(eval $(call PKG_template,IPTABLES_UTILS,iptables-utils,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
-$(eval $(call PKG_template,IP6TABLES,ip6tables,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+define Package/iptables
+SECTION:=net
+CATEGORY:=Base system
+TITLE:=IPv4 firewall administration tool
+endef
 
-$(eval $(call PKG_template,IPTABLES_MOD_CONNTRACK,iptables-mod-conntrack,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
-$(eval $(call PKG_template,IPTABLES_MOD_EXTRA,iptables-mod-extra,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
-$(eval $(call PKG_template,IPTABLES_MOD_FILTER,iptables-mod-filter,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
-$(eval $(call PKG_template,IPTABLES_MOD_IMQ,iptables-mod-imq,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
-$(eval $(call PKG_template,IPTABLES_MOD_IPOPT,iptables-mod-ipopt,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
-$(eval $(call PKG_template,IPTABLES_MOD_IPSEC,iptables-mod-ipsec,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
-$(eval $(call PKG_template,IPTABLES_MOD_NAT,iptables-mod-nat,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
-$(eval $(call PKG_template,IPTABLES_MOD_ULOG,iptables-mod-ulog,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+define Package/iptables-mod-conntrack
+SECTION:=net
+CATEGORY:=Base system
+DEPENDS:=iptables
+TITLE:=iptables extensions for connection tracking
+DESCRIPTION:=Includes: \\\
+	* libipt_conntrack \\\
+	* libipt_helper \\\
+	* libipt_connmark/CONNMARK
 
-$(eval $(call IPKG_plugin_template,IPTABLES_MOD_CONNTRACK,$(IPT_CONNTRACK-m)))
-$(eval $(call IPKG_plugin_template,IPTABLES_MOD_EXTRA,$(IPT_EXTRA-m)))
-$(eval $(call IPKG_plugin_template,IPTABLES_MOD_FILTER,$(IPT_FILTER-m),layer7-install))
-$(eval $(call IPKG_plugin_template,IPTABLES_MOD_IMQ,$(IPT_IMQ-m)))
-$(eval $(call IPKG_plugin_template,IPTABLES_MOD_IPOPT,$(IPT_IPOPT-m)))
-$(eval $(call IPKG_plugin_template,IPTABLES_MOD_IPSEC,$(IPT_IPSEC-m)))
-$(eval $(call IPKG_plugin_template,IPTABLES_MOD_NAT,$(IPT_NAT-m)))
-$(eval $(call IPKG_plugin_template,IPTABLES_MOD_ULOG,$(IPT_ULOG-m)))
+endef
 
-$(PKG_BUILD_DIR)/.configured:
-	touch $@
+define Package/iptables-mod-filter
+SECTION:=net
+CATEGORY:=Base system
+DEPENDS:=iptables
+TITLE:=iptables extensions for packet content inspection
+DESCRIPTION:=Includes: \\\
+	* libipt_ipp2p \\\
+	* libipt_layer7 
+						
+endef
 
-$(PKG_BUILD_DIR)/.built:
+define Package/iptables-mod-imq
+SECTION:=net
+CATEGORY:=Base system
+DEPENDS:=iptables
+TITLE:=iptables extension for IMQ support 
+DESCRIPTION:=Includes: \\\
+	* libipt_IMQ
+						
+endef
+
+define Package/iptables-mod-ipopt
+SECTION:=net
+CATEGORY:=Base system
+DEPENDS:=iptables
+TITLE:=iptables extensions for matching/changing IP packet options
+DESCRIPTION:=Includes: \\\
+	* libipt_dscp/DSCP \\\
+	* libipt_ecn/ECN \\\
+	* libipt_length \\\
+	* libipt_mac \\\
+	* libipt_tos/TOS \\\
+	* libipt_tcpmms \\\
+	* libipt_ttl/TTL \\\
+	* libipt_unclean 
+
+endef
+
+define Package/iptables-mod-ipsec
+SECTION:=net
+CATEGORY:=Base system
+DEPENDS:=iptables
+TITLE:=iptables extensions for matching ipsec traffic
+DESCRIPTION:=Includes: \\\
+	* libipt_ah \\\
+	* libipt_esp
+
+endef
+
+define Package/iptables-mod-nat
+SECTION:=net
+CATEGORY:=Base system
+DEPENDS:=iptables
+TITLE:=iptables extensions for different NAT targets
+DESCRIPTION:=Includes: \\\
+	* libipt_REDIRECT
+endef
+
+define Package/iptables-mod-ulog
+SECTION:=net
+CATEGORY:=Base system
+DEPENDS:=iptables
+TITLE:=iptables extensions for user-space packet logging
+DESCRIPTION:=Includes: \\\
+	* libipt_ULOG
+endef
+
+define Package/iptables-mod-extra
+SECTION:=net
+CATEGORY:=Base system
+DEPENDS:=iptables
+TITLE:=other extra iptables extensions
+DESCRIPTION:=Includes: \\\
+	* libipt_limit \\\
+	* libipt_owner \\\
+	* libipt_physdev \\\
+	* libipt_pkttype \\\
+	* libipt_recent
+
+endef
+
+define Package/iptables-utils
+SECTION:=net
+CATEGORY:=Base system
+DEPENDS:=iptables
+TITLE:=iptables save and restore utilities
+endef
+
+define Package/ip6tables
+SECTION:=net
+CATEGORY:=Base system
+TITLE:=IPv6 firewall administration tool
+endef
+
+
+define Build/Configure
+endef
+
+define Build/Compile
 	chmod a+x $(PKG_BUILD_DIR)/extensions/.*-test*
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
@@ -69,43 +148,70 @@ $(PKG_BUILD_DIR)/.built:
 		KERNEL_DIR=$(LINUX_DIR) PREFIX=/usr \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		all install install-devel
-	touch $@
+endef
 		
-$(IPKG_IPTABLES):
-	install -d -m0755 $(IDIR_IPTABLES)/etc/config
-	install -m0644 ./files/firewall.config $(IDIR_IPTABLES)/etc/config/firewall
-	install -d -m0755 $(IDIR_IPTABLES)/etc/init.d
-	install -m0755 ./files/firewall.init $(IDIR_IPTABLES)/etc/init.d/S45firewall
-	install -m0755 ./files/firewall.user $(IDIR_IPTABLES)/etc/
-	install -d -m0755 $(IDIR_IPTABLES)/usr/lib
-	install -m0644 ./files/firewall.awk $(IDIR_IPTABLES)/usr/lib
-	install -d -m0755 $(IDIR_IPTABLES)/usr/sbin
-	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/iptables $(IDIR_IPTABLES)/usr/sbin/
-	install -d -m0755 $(IDIR_IPTABLES)/usr/lib/iptables
+define Package/iptables/install
+	install -d -m0755 $(1)/etc/config
+	install -m0644 ./files/firewall.config $(1)/etc/config/firewall
+	install -d -m0755 $(1)/etc/init.d
+	install -m0755 ./files/firewall.init $(1)/etc/init.d/S45firewall
+	install -m0755 ./files/firewall.user $(1)/etc/
+	install -d -m0755 $(1)/usr/lib
+	install -m0644 ./files/firewall.awk $(1)/usr/lib
+	install -d -m0755 $(1)/usr/sbin
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/iptables $(1)/usr/sbin/
+	install -d -m0755 $(1)/usr/lib/iptables
 	(cd $(PKG_INSTALL_DIR)/usr/lib/iptables ; \
-		$(CP) $(patsubst %,lib%.so,$(IPT_BUILTIN:xt_%=ipt_%)) $(IDIR_IPTABLES)/usr/lib/iptables/ \
+		$(CP) $(patsubst %,lib%.so,$(IPT_BUILTIN:xt_%=ipt_%)) $(1)/usr/lib/iptables/ \
 	)
-	$(RSTRIP) $(IDIR_IPTABLES)
-	$(IPKG_BUILD) $(IDIR_IPTABLES) $(PACKAGE_DIR)
+	$(RSTRIP) $(1)
+endef
 
-$(IPKG_IPTABLES_EXTRA):
-	$(IPKG_BUILD) $(IDIR_IPTABLES_EXTRA) $(PACKAGE_DIR)
+define Package/iptables-utils/install
+	install -d -m0755 $(1)/usr/sbin
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/iptables-{save,restore} $(1)/usr/sbin/
+	$(RSTRIP) $(1)
+endef
 
-$(IPKG_IPTABLES_UTILS):
-	install -d -m0755 $(IDIR_IPTABLES_UTILS)/usr/sbin
-	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/iptables-{save,restore} $(IDIR_IPTABLES_UTILS)/usr/sbin/
-	$(RSTRIP) $(IDIR_IPTABLES_UTILS)
-	$(IPKG_BUILD) $(IDIR_IPTABLES_UTILS) $(PACKAGE_DIR)
-
-$(IPKG_IP6TABLES):
-	install -d -m0755 $(IDIR_IP6TABLES)/usr/sbin
-	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/ip6tables $(IDIR_IP6TABLES)/usr/sbin/
-	install -d -m0755 $(IDIR_IP6TABLES)/usr/lib/iptables
+define Package/ip6tables/install
+	install -d -m0755 $(1)/usr/sbin
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/ip6tables $(1)/usr/sbin/
+	install -d -m0755 $(1)/usr/lib/iptables
 	(cd $(PKG_INSTALL_DIR)/usr/lib/iptables ; \
-		$(CP) libip6t_*.so $(IDIR_IP6TABLES)/usr/lib/iptables/ \
+		$(CP) libip6t_*.so $(1)/usr/lib/iptables/ \
 	)
-	$(RSTRIP) $(IDIR_IP6TABLES)
-	$(IPKG_BUILD) $(IDIR_IP6TABLES) $(PACKAGE_DIR)
+	$(RSTRIP) $(1)
+endef
+
+$(eval $(call BuildPackage,iptables))
+$(eval $(call BuildPackage,iptables-utils))
+$(eval $(call BuildPackage,ip6tables))
+
+define BuildPlugin
+define Package/$(1)/install
+	install -m0755 -d $$(1)/usr/lib/iptables
+	for m in $$(patsubst xt_%,ipt_%,$(2)); do \
+		$(CP) $(PKG_INSTALL_DIR)/usr/lib/iptables/lib$$$$$$$${m}.so $$(1)/usr/lib/iptables/ ; \
+	done
+	$(3)
+	$(RSTRIP) $$(1)
+endef
+
+$$(eval $$(call BuildPackage,$(1)))
+endef
+
+L7_INSTALL:=mkdir -p $$(1)/etc/l7-protocols; \
+	$(CP) files/l7/*.pat $$(1)/etc/l7-protocols/
+
+$(eval $(call BuildPlugin,iptables-mod-conntrack,$(IPT_CONNTRACK-m)))
+$(eval $(call BuildPlugin,iptables-mod-extra,$(IPT_EXTRA-m)))
+$(eval $(call BuildPlugin,iptables-mod-filter,$(IPT_FILTER-m),$(L7_INSTALL)))
+$(eval $(call BuildPlugin,iptables-mod-imq,$(IPT_IMQ-m)))
+$(eval $(call BuildPlugin,iptables-mod-ipopt,$(IPT_IPOPT-m)))
+$(eval $(call BuildPlugin,iptables-mod-ipsec,$(IPT_IPSEC-m)))
+$(eval $(call BuildPlugin,iptables-mod-nat,$(IPT_NAT-m)))
+$(eval $(call BuildPlugin,iptables-mod-ulog,$(IPT_ULOG-m)))
+
 
 $(STAGING_DIR)/usr/lib/libipq.a: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include
@@ -113,15 +219,11 @@ $(STAGING_DIR)/usr/lib/libipq.a: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libipq.a $(STAGING_DIR)/usr/lib/
 
-layer7-install:
-	mkdir -p $(IDIR_IPTABLES_MOD_FILTER)/etc/l7-protocols
-	$(CP) files/l7/*.pat $(IDIR_IPTABLES_MOD_FILTER)/etc/l7-protocols/
-
 install-dev: $(STAGING_DIR)/usr/lib/libipq.a
-
 uninstall-dev:
 	rm -rf $(STAGING_DIR)/usr/include/libipq.h
 	rm -rf $(STAGING_DIR)/usr/lib/libipq.a
 
 compile-targets: install-dev
 clean-targets: uninstall-dev
+
