@@ -1,7 +1,41 @@
 # invoke ipkg with configuration in $(STAGING_DIR)/etc/ipkg.conf 
 
-define PKG_template
-IPKG_$(1):=$(PACKAGE_DIR)/$(2)_$(3)_$(4).ipk
+define BuildPackage
+CONFIGFILE:=
+NAME:=$(PKG_NAME)
+SECTION:=opt
+CATEGORY:=Extra packages
+DEPENDS:=
+MAINTAINER:=OpenWrt Developers Team <openwrt-devel@openwrt.org>
+SOURCE:=$(patsubst $(TOPDIR)/%,%,${shell pwd})
+VERSION:=$(PKG_VERSION)-$(PKG_RELEASE)
+PKGARCH:=$(ARCH)
+PRIORITY:=optional
+TITLE:=
+DESCRIPTION:=
+
+$$(eval $$(call Package/$(2)))
+
+ifeq ($$(NAME),)
+$$(error Package $(2) has no NAME)
+endif
+ifeq ($$(TITLE),)
+$$(error Package $(2) has no TITLE)
+endif
+ifeq ($$(CATEGORY),)
+$$(error Package $(2) has no CATEGORY)
+endif
+ifeq ($$(PRIORITY),)
+$$(error Package $(2) has no PRIORITY)
+endif
+ifeq ($$(VERSION),)
+$$(error Package $(2) has no VERSION)
+endif
+ifeq ($$(PKGARCH),)
+PKGARCH:=$(ARCH)
+endif
+
+IPKG_$(1):=$(PACKAGE_DIR)/$(2)_$(VERSION)_$(PKGARCH).ipk
 IDIR_$(1):=$(PKG_BUILD_DIR)/ipkg/$(2)
 INFO_$(1):=$(IPKG_STATE_DIR)/info/$(2).list
 
@@ -15,11 +49,20 @@ ifeq ($(BR2_PACKAGE_$(1)),y)
 install-targets: $$(INFO_$(1))
 endif
 
-IDEPEND_$(1):=$$(strip $(5))
+IDEPEND_$(1):=$$(strip $$(DEPENDS))
 
 $$(IDIR_$(1))/CONTROL/control: $(PKG_BUILD_DIR)/.prepared
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $$(IDIR_$(1)) ./ipkg/$(2).control $(3) $(4)
-	if [ "$$(IDEPEND_$(1))" != "" ]; then echo "Depends: $$(IDEPEND_$(1))" >> $$(IDIR_$(1))/CONTROL/control; fi
+	mkdir -p $$(IDIR_$(1))/CONTROL
+	echo "Package: $(2)" > $$(IDIR_$(1))/CONTROL/control
+	echo "Version: $$(VERSION)" >> $$(IDIR_$(1))/CONTROL/control
+	echo "Depends: $$(IDEPEND_$(1))" >> $$(IDIR_$(1))/CONTROL/control
+	echo "Source: $$(SOURCE)" >> $$(IDIR_$(1))/CONTROL/control
+	echo "Section: $$(SECTION)" >> $$(IDIR_$(1))/CONTROL/control
+	echo "Priority: $$(PRIORITY)" >> $$(IDIR_$(1))/CONTROL/control
+	echo "Maintainer: $$(MAINTAINER)" >> $$(IDIR_$(1))/CONTROL/control
+	echo "Architecture: $$(PKGARCH)" >> $$(IDIR_$(1))/CONTROL/control
+	echo "Description: $$(DESCRIPTION)" >> $$(IDIR_$(1))/CONTROL/control
+	chmod 644 $$(IDIR_$(1))/CONTROL/control
 	for file in conffiles preinst postinst prerm postrm; do \
 		[ -f ./ipkg/$(2).$$$$file ] && cp ./ipkg/$(2).$$$$file $$(IDIR_$(1))/CONTROL/$$$$file || true; \
 	done
