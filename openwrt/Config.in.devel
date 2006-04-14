@@ -27,6 +27,8 @@ config BR2_mipsel
 # Unsupported architectures
 
 if CONFIG_DEVEL
+config BR2_mips64
+	tristate
 
 config BR2_arm
 	tristate
@@ -69,6 +71,7 @@ config BR2_ARCH
 	default "m68k"    if BR2_m68k
 	default "mips"    if BR2_mips
 	default "mipsel"  if BR2_mipsel || !CONFIG_DEVEL
+	default "mips64"  if BR2_mips64
 	default "powerpc" if BR2_powerpc
 	default "sh3"     if BR2_sh3
 	default "sh3eb"   if BR2_sh3eb
@@ -99,6 +102,6 @@ config BR2_JLEVEL
 
 endmenu
 
-source "toolchain/Config.in.devel"
+source "toolchain/Config.in"
 source "package/Config.in"
 source "target/linux/Config.in"

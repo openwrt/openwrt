@@ -34,7 +34,7 @@ CONFIG_DEFCONFIG = .defconfig
 CONFIG = package/config
 
 noconfig_targets := menuconfig config oldconfig randconfig \
-	defconfig allyesconfig allnoconfig release tags
+	defconfig allyesconfig allnoconfig tags
 
 # Pull in the user's configuration file
 ifeq ($(filter $(noconfig_targets),$(MAKECMDGOALS)),)
@@ -47,6 +47,7 @@ include $(TOPDIR)/rules.mk
 all: world
 
 .NOTPARALLEL:
+.PHONY: all world clean dirclean distclean image_clean target_clean source configtest
 
 #############################################################
 #
@@ -61,8 +62,6 @@ include .config.cmd
 world: $(DL_DIR) $(BUILD_DIR) configtest 
 	$(MAKE) toolchain/install target/compile package/compile root_clean package/install target/install package_index
 	@$(TRACE) Build complete.
-
-.PHONY: all world clean dirclean distclean image_clean target_clean source configtest
 
 configtest:
 	-cp .config .config.test
@@ -177,7 +176,3 @@ defconfig: $(CONFIG)/conf
 	-./scripts/configtest.pl
 
 endif # ifeq ($(strip $(BR2_HAVE_DOT_CONFIG)),y)
-
-.PHONY: dummy subdirs release distclean clean config oldconfig \
-	menuconfig tags check test depend
-

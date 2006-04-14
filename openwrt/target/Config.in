@@ -79,6 +79,10 @@ config BR2_LINUX_2_6_X86
 
 if CONFIG_DEVEL
 
+config BR2_LINUX_2_6_MIPS64
+	bool "UNSUPPORTED mips64 platform"
+	select BR2_mips64
+
 config BR2_LINUX_2_6_ARM
 	bool "UNSUPPORTED little-endian arm platform"
 	select BR2_arm
