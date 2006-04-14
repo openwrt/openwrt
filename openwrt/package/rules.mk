@@ -1,8 +1,27 @@
-# invoke ipkg with configuration in $(STAGING_DIR)/etc/ipkg.conf 
+# default target
+all: compile
+
+define Build/DefaultTargets
+$(PKG_BUILD_DIR)/.prepared:
+	rm -rf $(PKG_BUILD_DIR)
+	mkdir -p $(PKG_BUILD_DIR)
+	$(call Build/Prepare)
+	touch $$@
+
+$(PKG_BUILD_DIR)/.configured:
+	$(call Build/Configure)
+	touch $$@
+
+$(PKG_BUILD_DIR)/.built:
+	$(call Build/Compile)
+	touch $$@
+
+DEFAULT_TARGETS:=1
+endef
+
 
 define BuildPackage
 CONFIGFILE:=
-NAME:=$(PKG_NAME)
 SECTION:=opt
 CATEGORY:=Extra packages
 DEPENDS:=
@@ -14,30 +33,27 @@ PRIORITY:=optional
 TITLE:=
 DESCRIPTION:=
 
-$$(eval $$(call Package/$(2)))
+$$(eval $$(call Package/$(1)))
 
-ifeq ($$(NAME),)
-$$(error Package $(2) has no NAME)
-endif
 ifeq ($$(TITLE),)
-$$(error Package $(2) has no TITLE)
+$$(error Package $(1) has no TITLE)
 endif
 ifeq ($$(CATEGORY),)
-$$(error Package $(2) has no CATEGORY)
+$$(error Package $(1) has no CATEGORY)
 endif
 ifeq ($$(PRIORITY),)
-$$(error Package $(2) has no PRIORITY)
+$$(error Package $(1) has no PRIORITY)
 endif
 ifeq ($$(VERSION),)
-$$(error Package $(2) has no VERSION)
+$$(error Package $(1) has no VERSION)
 endif
 ifeq ($$(PKGARCH),)
 PKGARCH:=$(ARCH)
 endif
 
-IPKG_$(1):=$(PACKAGE_DIR)/$(2)_$(VERSION)_$(PKGARCH).ipk
-IDIR_$(1):=$(PKG_BUILD_DIR)/ipkg/$(2)
-INFO_$(1):=$(IPKG_STATE_DIR)/info/$(2).list
+IPKG_$(1):=$(PACKAGE_DIR)/$(1)_$(VERSION)_$(PKGARCH).ipk
+IDIR_$(1):=$(PKG_BUILD_DIR)/ipkg/$(1)
+INFO_$(1):=$(IPKG_STATE_DIR)/info/$(1).list
 
 ifneq ($(BR2_PACKAGE_$(1)),)
 compile-targets: $$(IPKG_$(1))
@@ -53,7 +69,7 @@ IDEPEND_$(1):=$$(strip $$(DEPENDS))
 
 $$(IDIR_$(1))/CONTROL/control: $(PKG_BUILD_DIR)/.prepared
 	mkdir -p $$(IDIR_$(1))/CONTROL
-	echo "Package: $(2)" > $$(IDIR_$(1))/CONTROL/control
+	echo "Package: $(1)" > $$(IDIR_$(1))/CONTROL/control
 	echo "Version: $$(VERSION)" >> $$(IDIR_$(1))/CONTROL/control
 	echo "Depends: $$(IDEPEND_$(1))" >> $$(IDIR_$(1))/CONTROL/control
 	echo "Source: $$(SOURCE)" >> $$(IDIR_$(1))/CONTROL/control
@@ -64,30 +80,36 @@ $$(IDIR_$(1))/CONTROL/control: $(PKG_BUILD_DIR)/.prepared
 	echo "Description: $$(DESCRIPTION)" >> $$(IDIR_$(1))/CONTROL/control
 	chmod 644 $$(IDIR_$(1))/CONTROL/control
 	for file in conffiles preinst postinst prerm postrm; do \
-		[ -f ./ipkg/$(2).$$$$file ] && cp ./ipkg/$(2).$$$$file $$(IDIR_$(1))/CONTROL/$$$$file || true; \
+		[ -f ./ipkg/$(1).$$$$file ] && cp ./ipkg/$(1).$$$$file $$(IDIR_$(1))/CONTROL/$$$$file || true; \
 	done
 
 $$(IPKG_$(1)): $$(IDIR_$(1))/CONTROL/control $(PKG_BUILD_DIR)/.built $(PACKAGE_DIR)
+	$(call Package/$(1)/install,$$(IDIR_$(1)))
+	$(IPKG_BUILD) $$(IDIR_$(1)) $(PACKAGE_DIR)
 
 $$(INFO_$(1)): $$(IPKG_$(1))
 	$(IPKG) install $$(IPKG_$(1))
 
-$(2)-clean:
+$(1)-clean:
 	rm -f $$(IPKG_$(1))
-clean: $(2)-clean
-endef
+clean: $(1)-clean
 
+ifneq ($(__DEFAULT_TARGETS),1)
+$(eval $(call Build/DefaultTargets))
+endif
+
+endef
 
 ifneq ($(strip $(PKG_SOURCE)),)
 $(DL_DIR)/$(PKG_SOURCE):
 	@$(CMD_TRACE) "downloading... "
 	$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(PKG_SOURCE)" "$(PKG_MD5SUM)" $(PKG_SOURCE_URL) $(MAKE_TRACE) 
+	
+$(PKG_BUILD_DIR)/.prepared: $(DL_DIR)/$(PKG_SOURCE)
 endif
 
 ifneq ($(strip $(PKG_CAT)),)
-$(PKG_BUILD_DIR)/.prepared: $(DL_DIR)/$(PKG_SOURCE)
-	rm -rf $(PKG_BUILD_DIR)
-	mkdir -p $(PKG_BUILD_DIR)
+define Build/Prepare/Default
 	if [ "$(PKG_CAT)" = "unzip" ]; then \
 		unzip -d $(PKG_BUILD_DIR) $(DL_DIR)/$(PKG_SOURCE) ; \
 	else \
@@ -96,10 +118,28 @@ $(PKG_BUILD_DIR)/.prepared: $(DL_DIR)/$(PKG_SOURCE)
 	if [ -d ./patches ]; then \
 		$(PATCH) $(PKG_BUILD_DIR) ./patches ; \
 	fi
-	touch $(PKG_BUILD_DIR)/.prepared
+endef
 endif
 
-all: compile
+define Build/Prepare
+$(call Build/Prepare/Default)
+endef
+
+define Build/Configure/Default
+# TODO: add configurable default command
+endef
+
+define Build/Configure
+$(call Build/Configure/Default)
+endef
+
+define Build/Compile/Default
+# TODO: add configurable default command
+endef
+
+define Build/Compile
+$(call Build/Compile/Default)
+endef
 
 source: $(DL_DIR)/$(PKG_SOURCE)
 prepare: source
@@ -132,9 +172,6 @@ rebuild:
 		$(MAKE) clean $(MAKE_TRACE); \
 	fi
 	$(MAKE) compile $(MAKE_TRACE)
-
-$(PKG_BUILD_DIR)/.configured:
-$(PKG_BUILD_DIR)/.built:
 
 $(PACKAGE_DIR):
 	mkdir -p $@

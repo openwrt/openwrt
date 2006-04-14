@@ -21,20 +21,25 @@ CATEGORY:=Base system
 TITLE:=Core utilities
 DESCRIPTION:=Core utilities for embedded Linux systems
 endef
-$(eval $(call BuildPackage,BUSYBOX,busybox))
 
-$(PKG_BUILD_DIR)/.configured:
+define Build/Configure
 	$(SCRIPT_DIR)/gen_busybox_config.pl $(TOPDIR)/.config > $(PKG_BUILD_DIR)/.config
 	yes '' | $(MAKE) CC=$(TARGET_CC) CROSS="$(TARGET_CROSS)" -C $(PKG_BUILD_DIR) oldconfig
-	touch $@
+endef
 
-$(PKG_BUILD_DIR)/.built:
-	$(MAKE) CC=$(TARGET_CC) CROSS="$(TARGET_CROSS)" PREFIX="$(IDIR_BUSYBOX)" \
-		EXTRA_CFLAGS="$(TARGET_CFLAGS)" ARCH="$(ARCH)" -C $(PKG_BUILD_DIR)
-	touch $@
+define Build/Compile
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		CC=$(TARGET_CC) \
+		CROSS="$(TARGET_CROSS)" \
+		PREFIX="$(IDIR_BUSYBOX)" \
+		EXTRA_CFLAGS="$(TARGET_CFLAGS)" \
+		ARCH="$(ARCH)" 
+endef
 
-$(IPKG_BUSYBOX):
-	$(MAKE) CC=$(TARGET_CC) CROSS="$(TARGET_CROSS)" PREFIX="$(IDIR_BUSYBOX)" \
+define Package/busybox/install
+	$(MAKE) CC=$(TARGET_CC) CROSS="$(TARGET_CROSS)" PREFIX="$(1)" \
 		EXTRA_CFLAGS="$(TARGET_CFLAGS)" -C $(PKG_BUILD_DIR) install
-	$(STRIP) $(IDIR_BUSYBOX)/bin/busybox
-	$(IPKG_BUILD) $(IDIR_BUSYBOX) $(PACKAGE_DIR)
+	$(STRIP) $(1)/bin/busybox
+endef
+
+$(eval $(call BuildPackage,busybox))
