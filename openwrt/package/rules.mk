@@ -16,7 +16,8 @@ $(PKG_BUILD_DIR)/.built:
 	$(call Build/Compile)
 	touch $$@
 
-DEFAULT_TARGETS:=1
+define Build/DefaultTargets
+endef
 endef
 
 
