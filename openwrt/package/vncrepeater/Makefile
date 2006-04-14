@@ -34,7 +34,9 @@ $(PKG_BUILD_DIR)/.built:
 $(IPKG_VNCREPEATER):
 	install -d -m0755 $(IDIR_VNCREPEATER)/usr/sbin $(IDIR_VNCREPEATER)/etc
 	$(CP) $(PKG_BUILD_DIR)/repeater $(IDIR_VNCREPEATER)/usr/sbin/$(PKG_NAME)
-	$(CP) $(PKG_BUILD_DIR)/u$(PKG_NAME).ini $(IDIR_VNCREPEATER)/etc/
+	install -d -m0755 $(IDIR_VNCREPEATER)/etc
+	$(CP) $(PKG_BUILD_DIR)/uvncrepeater.ini $(IDIR_VNCREPEATER)/etc/vncrepeater.conf
+	install -d -m0755 $(IDIR_VNCREPEATER)/etc/init.d
+	$(CP) $(PKG_BUILD_DIR)/S60vncrepeater $(IDIR_VNCREPEATER)/etc/init.d/
 	$(RSTRIP) $(IDIR_VNCREPEATER)
 	$(IPKG_BUILD) $(IDIR_VNCREPEATER) $(PACKAGE_DIR)
-
