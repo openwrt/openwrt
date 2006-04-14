@@ -10,6 +10,9 @@ config BR2_HAVE_DOT_CONFIG
 	bool
 	default y
 
+config BR2_BIG_ENDIAN
+	tristate
+
 # Supported architectures
 
 config BR2_i386
@@ -17,9 +20,14 @@ config BR2_i386
 	
 config BR2_mips
 	tristate
+	select BR2_BIG_ENDIAN
 
 config BR2_mipsel
 	tristate
+
+config BR2_armeb
+	tristate
+	select BR2_BIG_ENDIAN
 
 # Unsupported architectures
 
@@ -28,32 +36,34 @@ if CONFIG_DEVEL
 config BR2_arm
 	tristate
 
-config BR2_armeb
-	tristate
-
 config BR2_cris
 	tristate
 
 config BR2_m68k
 	tristate
+	select BR2_BIG_ENDIAN
 
 config BR2_powerpc
 	tristate
+	select BR2_BIG_ENDIAN
 
 config BR2_sh3
 	tristate
 
 config BR2_sh3eb
 	tristate
+	select BR2_BIG_ENDIAN
 
 config BR2_sh4
 	tristate
 
 config BR2_sh4eb
 	tristate
+	select BR2_BIG_ENDIAN
 
 config BR2_sparc
 	tristate
+	select BR2_BIG_ENDIAN
 
 endif
 

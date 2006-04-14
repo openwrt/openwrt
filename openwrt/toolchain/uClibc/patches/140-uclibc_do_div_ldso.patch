@@ -1,0 +1,47 @@
+diff -ur uClibc-0.9.28/ldso/include/dl-string.h uClibc-0.9.28.openwrt/ldso/include/dl-string.h
+--- uClibc-0.9.28/ldso/include/dl-string.h	2005-08-18 00:49:41.000000000 +0200
++++ uClibc-0.9.28.openwrt/ldso/include/dl-string.h	2006-04-12 11:07:49.000000000 +0200
+@@ -4,6 +4,14 @@
+ #include <dl-sysdep.h> // for do_rem
+ #include <features.h>
+ 
++/* provide some sane defaults */
++#ifndef do_rem
++# define do_rem(result, n, base) ((result) = (n) % (base))
++#endif
++#ifndef do_div_10
++# define do_div_10(result, remain) ((result) /= 10)
++#endif
++
+ static size_t _dl_strlen(const char * str);
+ static char *_dl_strcat(char *dst, const char *src);
+ static char * _dl_strcpy(char * dst,const char *src);
+@@ -228,7 +236,7 @@
+ 	    char temp;
+ 	    do_rem(temp, i, 10);
+ 	    *--p = '0' + temp;
+-	    i /= 10;
++	    do_div_10(i, temp);
+ 	} while (i > 0);
+ 	return p;
+ }
+@@ -318,7 +326,7 @@
+ 	do { \
+ 		do_rem(v, (X), 10); \
+ 		*--tmp2 = '0' + v; \
+-		(X) /= 10; \
++		do_div_10((X), v); \
+ 	} while ((X) > 0); \
+ 	_dl_write(2, tmp2, tmp1 - tmp2 + sizeof(tmp) - 1); \
+ }
+diff -ur uClibc-0.9.28/ldso/ldso/arm/dl-sysdep.h uClibc-0.9.28.openwrt/ldso/ldso/arm/dl-sysdep.h
+--- uClibc-0.9.28/ldso/ldso/arm/dl-sysdep.h	2005-08-18 00:49:41.000000000 +0200
++++ uClibc-0.9.28.openwrt/ldso/ldso/arm/dl-sysdep.h	2006-04-12 11:31:58.000000000 +0200
+@@ -43,6 +43,7 @@
+ 	return m;
+ }
+ #define do_rem(result, n, base) ((result) = arm_modulus(n, base))
++#define do_div_10(result, remain) ((result) = (((result) - (remain)) / 2) * -(-1ul / 5ul))
+ 
+ /* Here we define the magic numbers that this dynamic loader should accept */
+ #define MAGIC1 EM_ARM

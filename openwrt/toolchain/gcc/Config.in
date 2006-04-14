@@ -16,11 +16,14 @@ config BR2_GCC_VERSION_3_4_4
 
 config BR2_GCC_VERSION_4_0_3
 	bool
-	default y if BR2_LINUX_2_6_ARUBA
+	default y if BR2_LINUX_2_6_ARUBA || BR2_LINUX_2_6_XSCALE
+
+config BR2_GCC_VERSION_4_1_0
+	bool
 
 choice
 	prompt "GCC compiler Version" if CONFIG_DEVEL
-	default BR2_GCC_VERSION_4_0_3 if BR2_LINUX_2_6_ARUBA
+	default BR2_GCC_VERSION_4_0_3 if BR2_LINUX_2_6_ARUBA || BR2_LINUX_2_6_XSCALE
 	default BR2_GCC_VERSION_3_4_4 if BR2_LINUX_2_4_BRCM
 	default BR2_GCC_VERSION_3_4_6
 	help
