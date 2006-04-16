@@ -1,17 +1,12 @@
-diff -ruN iptraf-2.7.0-old/support/Makefile iptraf-2.7.0-new/support/Makefile
---- iptraf-2.7.0-old/support/Makefile	2001-11-27 09:37:11.000000000 +0100
-+++ iptraf-2.7.0-new/support/Makefile	2005-10-03 18:40:40.000000000 +0200
-@@ -3,16 +3,21 @@
+diff -urN iptraf-3.0.0/support/Makefile iptraf-3.0.0.new/support/Makefile
+--- iptraf-3.0.0/support/Makefile	2002-07-19 18:31:48.000000000 +0200
++++ iptraf-3.0.0.new/support/Makefile	2006-04-16 16:07:58.000000000 +0200
+@@ -3,16 +3,14 @@
  OBJS			= input.o menurt.o listbox.o winops.o labels.o \
- 				msgboxes.o
+ 				msgboxes.o txbox.o
  
-+AR=ar
-+CC=cc
-+RANLIB=ranlib
-+CFLAGS= -O2 -g -fPIC 
-+
- all: libtextbox.a
- 
+-all: libtextbox.a
+-
  libtextbox.a: $(OBJS)
  	rm -rf libtextbox.a
 -	ar cq libtextbox.a $(OBJS)
@@ -23,7 +18,7 @@ diff -ruN iptraf-2.7.0-old/support/Makefile iptraf-2.7.0-new/support/Makefile
  
  %.o: %.c *.h
 -	gcc -O2 -g -Wall -fPIC $(INCLUDEDIR) -c -o $*.o $<
-+	$(CC) $(CFLAGS) -Wall $(INCLUDEDIR) -c -o $*.o $<
++	$(CC) -O2 -g -Wall -fPIC $(INCLUDEDIR) -c -o $*.o $<
  
  clean:
  	rm -rf *.o *~ libtextbox.a libtextbox.so
