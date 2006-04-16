@@ -36,7 +36,9 @@ $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 	touch $@
 
 $(IPKG_IPTRAF):
-	install -d -m0755 $(IDIR_IPTRAF)/usr/bin
+	install -d -m0755 $(IDIR_IPTRAF)/usr/bin \
+			  $(IDIR_IPTRAF)/var/run/iptraf \
+			  $(IDIR_IPTRAF)/var/lib/iptraf
 	install -m0755 $(PKG_BUILD_DIR)/src/iptraf $(IDIR_IPTRAF)/usr/bin/
 	$(RSTRIP) $(IDIR_IPTRAF)
 	$(IPKG_BUILD) $(IDIR_IPTRAF) $(PACKAGE_DIR)

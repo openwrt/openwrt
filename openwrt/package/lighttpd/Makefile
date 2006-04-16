@@ -42,6 +42,7 @@ $(eval $(call PKG_template,LIGHTTPD_MOD_SIMPLE_VHOST,lighttpd-mod-simple-vhost,$
 $(eval $(call PKG_template,LIGHTTPD_MOD_SSI,lighttpd-mod-ssi,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,LIGHTTPD_MOD_STATUS,lighttpd-mod-status,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,LIGHTTPD_MOD_USERTRACK,lighttpd-mod-usertrack,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,LIGHTTPD_MOD_WEBDAV,lighttpd-mod-webdav,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 $(eval $(call PKG_mod_template,LIGHTTPD_MOD_ACCESSLOG,accesslog))
 $(eval $(call PKG_mod_template,LIGHTTPD_MOD_ALIAS,alias))
@@ -58,6 +59,7 @@ $(eval $(call PKG_mod_template,LIGHTTPD_MOD_SIMPLE_VHOST,simple_vhost))
 $(eval $(call PKG_mod_template,LIGHTTPD_MOD_SSI,ssi))
 $(eval $(call PKG_mod_template,LIGHTTPD_MOD_STATUS,status))
 $(eval $(call PKG_mod_template,LIGHTTPD_MOD_USERTRACK,usertrack))
+$(eval $(call PKG_mod_template,LIGHTTPD_MOD_WEBDAV,webdav))
 
 $(PKG_BUILD_DIR)/.configured:
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
@@ -101,7 +103,7 @@ $(PKG_BUILD_DIR)/.configured:
 			--with-openssl="$(STAGING_DIR)/usr" \
 			--with-pcre \
 			--without-valgrind \
-			--without-webdav-props \
+			--with-webdav-props \
 	)
 	touch $@
 
@@ -109,6 +111,7 @@ $(PKG_BUILD_DIR)/.built:
 	rm -rf $(PKG_INSTALL_DIR)
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
+		STAGING_DIR=$(STAGING_DIR) \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		all install
 	touch $@

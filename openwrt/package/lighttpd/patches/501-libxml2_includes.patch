@@ -1,0 +1,12 @@
+diff -urN lighttpd-1.4.11/src/Makefile.in lighttpd-1.4.11.new/src/Makefile.in
+--- lighttpd-1.4.11/src/Makefile.in	2006-03-07 13:21:02.000000000 +0100
++++ lighttpd-1.4.11.new/src/Makefile.in	2006-04-17 00:16:12.000000000 +0200
+@@ -409,7 +409,7 @@
+ STRIP = @STRIP@
+ U = @U@
+ VERSION = @VERSION@
+-XML_CFLAGS = @XML_CFLAGS@
++XML_CFLAGS = -I$(STAGING_DIR)/usr/include/libxml2
+ XML_LIBS = @XML_LIBS@
+ Z_LIB = @Z_LIB@
+ ac_ct_AR = @ac_ct_AR@
