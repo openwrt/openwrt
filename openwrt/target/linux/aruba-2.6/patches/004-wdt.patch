@@ -1,7 +1,7 @@
 diff -Nur linux-2.6.15.1/drivers/char/watchdog/wdt_merlot.c linux-2.6.15.1-openwrt/drivers/char/watchdog/wdt_merlot.c
 --- linux-2.6.15.1/drivers/char/watchdog/wdt_merlot.c	2006-01-26 21:14:02.204626250 -0800
 +++ linux-2.6.15.1-openwrt/drivers/char/watchdog/wdt_merlot.c	2006-02-02 20:31:43.000000000 -0800
-@@ -0,0 +1,141 @@
+@@ -0,0 +1,110 @@
 +#include <linux/config.h>
 +#include <linux/module.h>
 +#include <linux/types.h>
@@ -14,131 +14,100 @@ diff -Nur linux-2.6.15.1/drivers/char/watchdog/wdt_merlot.c linux-2.6.15.1-openw
 +#include <asm/system.h>
 +#include <asm/bootinfo.h>
 +
-+// refresh the watchdog timer for this many seconds in kernel
-+// before letting the watchdog process take over.
-+#define WDT_COUNT 60
-+
 +extern unsigned long mips_machtype;
 +
 +static unsigned long wdt_is_open;
 +static struct timer_list wdt_timer;
-+static int wdt_count = WDT_COUNT;
 +
-+static void wdt_merlot_refresh(void){
-+  volatile __u32 *wdt;
-+  switch (mips_machtype) {
-+  case MACH_ARUBA_AP70:
-+    wdt = (__u32 *)0xb8030034;
-+    *wdt = 0x10000000;
-+    break;
-+  default:
-+    wdt = (__u32 *)0xbc00300c;
-+    *wdt = 0x40000000;
-+    break;
-+  }
-+}
-+
-+static void wdt_merlot_disable()
++static void wdt_merlot_refresh(void)
 +{
-+  volatile __u32 *wdt_errcs;
-+  volatile __u32 *wdt_wtc;
-+  volatile __u32 *wdt_ctl;
-+  volatile __u32 val ;
-+
-+  switch (mips_machtype) {
-+  case MACH_ARUBA_AP70:
-+    wdt_errcs = (__u32 *)0xb8030030 ;
-+    wdt_wtc   = (__u32 *)0xb803003c ;
-+    val = *wdt_errcs ;
-+    val &= ~0x201 ;
-+    *wdt_errcs = val ;
-+    val = *wdt_wtc ;
-+    val &= ~0x1 ;
-+    *wdt_wtc = val ;
-+    break;
-+  default:
-+    wdt_ctl = (__u32 *)0xbc003008;
-+    *wdt_ctl = 0 ;
-+    break;
-+  }
++    volatile __u32 *wdt;
++    switch (mips_machtype) {
++    case MACH_ARUBA_AP70:
++	wdt = (__u32 *) 0xb8030034;
++	*wdt = 0x10000000;
++	break;
++    default:
++	wdt = (__u32 *) 0xbc00300c;
++	*wdt = 0x40000000;
++	break;
++    }
 +}
 +
-+static void wdt_merlot_timer_fn(unsigned long data){
-+
-+  wdt_merlot_refresh();
-+  if (--wdt_count >= 0)
-+    mod_timer(&wdt_timer, jiffies + HZ);
-+  else
-+    wdt_merlot_disable();
-+
++static void wdt_merlot_timer_fn(unsigned long data)
++{
++    wdt_merlot_refresh();
++    if (!test_bit(1, &wdt_is_open))
++	mod_timer(&wdt_timer, jiffies + HZ);
 +}
 +
-+static int wdt_merlot_setup_timer(void){
++static int wdt_merlot_setup_timer(void)
++{
 +
-+  init_timer(&wdt_timer);
-+  wdt_timer.function = wdt_merlot_timer_fn;
-+  wdt_timer.data = 0;
-+  wdt_timer.expires = jiffies + HZ;
-+  add_timer(&wdt_timer);
-+  return 0;
++    init_timer(&wdt_timer);
++    wdt_timer.function = wdt_merlot_timer_fn;
++    wdt_timer.data = 0;
++    wdt_timer.expires = jiffies + HZ;
++    add_timer(&wdt_timer);
++    return 0;
 +}
 +
 +static int wdt_open(struct inode *inode, struct file *file)
 +{
-+	if(test_and_set_bit(0, &wdt_is_open))
-+		return -EBUSY;
-+	wdt_count=0;
-+	return nonseekable_open(inode, file);
++    if (test_and_set_bit(0, &wdt_is_open))
++	return -EBUSY;
++    set_bit(1, &wdt_is_open);
++    return nonseekable_open(inode, file);
 +}
 +
-+static ssize_t wdt_write(struct file *file, const char __user *buf, size_t count, loff_t *ppos)
++static ssize_t wdt_write(struct file *file, const char __user * buf, size_t count, loff_t * ppos)
 +{
-+	if (count) { /* something was written */
-+  		wdt_merlot_refresh();
-+	}
-+	return count;
++    if (count) 	/* something was written */
++	wdt_merlot_refresh();
++    return count;
 +}
 +
 +static int wdt_release(struct inode *inode, struct file *file)
 +{
-+	clear_bit(0, &wdt_is_open);
-+	return 0;
++    clear_bit(0, &wdt_is_open);
++    return 0;
 +}
 +
 +static struct file_operations wdt_fops = {
-+	.owner		= THIS_MODULE,
-+	.llseek		= no_llseek,
-+	.write		= wdt_write,
-+	.open		= wdt_open,
-+	.release	= wdt_release,
++    .owner = THIS_MODULE,
++    .llseek = no_llseek,
++    .write = wdt_write,
++    .open = wdt_open,
++    .release = wdt_release,
 +};
 +
 +static struct miscdevice wdt_miscdev = {
-+	.minor	= WATCHDOG_MINOR,
-+	.name	= "watchdog",
-+	.fops	= &wdt_fops,
++    .minor = WATCHDOG_MINOR,
++    .name = "watchdog",
++    .fops = &wdt_fops,
 +};
 +
 +static void __exit wdt_exit(void)
 +{
-+	misc_deregister(&wdt_miscdev);
++    misc_deregister(&wdt_miscdev);
 +}
 +
 +static int __init wdt_init(void)
 +{
-+	int ret;
-+	ret = misc_register(&wdt_miscdev);
-+	if (ret) {
-+		printk(KERN_ERR "wdt: cannot register miscdev on minor=%d (err=%d)\n",
-+			WATCHDOG_MINOR, ret);
-+		misc_deregister(&wdt_miscdev);
-+		goto out;
-+	}
-+	printk("wdt: registered with refresh\n");
-+	wdt_merlot_refresh();
-+	wdt_merlot_setup_timer();
-+out:
-+	return ret;
++    int ret;
++    ret = misc_register(&wdt_miscdev);
++    if (ret) {
++	printk(KERN_ERR
++	       "wdt: cannot register miscdev on minor=%d (err=%d)\n",
++	       WATCHDOG_MINOR, ret);
++	misc_deregister(&wdt_miscdev);
++	goto out;
++    }
++    printk("wdt: registered with refresh\n");
++    wdt_merlot_refresh();
++    wdt_merlot_setup_timer();
++  out:
++    return ret;
 +}
 +
 +module_init(wdt_init);
