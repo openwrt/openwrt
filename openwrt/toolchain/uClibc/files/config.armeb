@@ -45,7 +45,8 @@ ARCH_BIG_ENDIAN=y
 # ARCH_HAS_NO_MMU is not set
 ARCH_HAS_MMU=y
 UCLIBC_HAS_FLOATS=y
-HAS_FPU=y
+# HAS_FPU is not set
+UCLIBC_HAS_SOFT_FLOAT=y
 # DO_C99_MATH is not set
 KERNEL_SOURCE="./toolchain_build_armeb/linux"
 C_SYMBOL_PREFIX=""

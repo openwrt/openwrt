@@ -10,7 +10,7 @@ if CONFIG_DEVEL
 comment "Common Toolchain Options"
 endif
 if !CONFIG_DEVEL
-comment "Using defaults
+comment "Using defaults"
 endif
 
 config BR2_ENABLE_MULTILIB
@@ -42,7 +42,7 @@ config BR2_TARGET_OPTIMIZATION
 	string "Target Optimizations" if CONFIG_DEVEL
 	default "-Os -pipe -march=i486 -funit-at-a-time" if BR2_i386
 	default "-Os -pipe -mips32 -mtune=mips32 -funit-at-a-time" if BR2_mipsel || BR2_mips
-	default "-Os -pipe -mcpu=xscale -funit-at-a-time" if BR2_armeb
+	default "-Os -pipe -mcpu=xscale -mno-thumb-interwork -mno-thumb -funit-at-a-time" if BR2_armeb
 	default "-Os -pipe -funit-at-a-time"
 	help
 	  Optimizations to use when building for the target host.
