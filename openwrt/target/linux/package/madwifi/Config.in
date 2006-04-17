@@ -1,7 +1,7 @@
 config BR2_PACKAGE_KMOD_MADWIFI
 	prompt "kmod-madwifi...................... Atheros Wifi driver"
 	tristate
-	default y if BR2_LINUX_2_6_BRCM || BR2_LINUX_2_6_ARUBA || BR2_LINUX_2_4_AR531X
+	default y if BR2_LINUX_2_6_BRCM || BR2_LINUX_2_6_ARUBA || BR2_LINUX_2_4_AR531X || BR2_LINUX_2_6_XSCALE
 	default m if CONFIG_DEVEL
 	default n
 	help

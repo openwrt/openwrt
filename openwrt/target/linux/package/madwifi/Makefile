@@ -23,6 +23,9 @@ endif
 ifeq ($(ARCH),i386)
 HAL_TARGET:=i386-elf
 endif
+ifeq ($(ARCH),armeb)
+HAL_TARGET:=xscale-be-elf
+endif
 
 BUS := PCI
 
