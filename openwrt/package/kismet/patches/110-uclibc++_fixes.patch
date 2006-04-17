@@ -9,21 +9,3 @@ diff -urN kismet-2005-04-R1.old/configfile.cc kismet-2005-04-R1.dev/configfile.c
  #include "configfile.h"
  #include "util.h"
  
-diff -urN kismet-2005-04-R1.old/macaddr.h kismet-2005-04-R1.dev/macaddr.h
---- kismet-2005-04-R1.old/macaddr.h	2005-04-03 07:33:42.000000000 +0200
-+++ kismet-2005-04-R1.dev/macaddr.h	2005-04-26 01:42:38.000000000 +0200
-@@ -321,12 +321,12 @@
-         }
- 
-         // equal
--        inline bool operator==(const iterator& op) const {
-+        inline bool operator==(const iterator& op) {
-             return (singleton_itr == op.singleton_itr) && (vector_itr == op.vector_itr);
-         }
- 
-         // not
--        inline bool operator!=(const iterator& op) const {
-+        inline bool operator!=(const iterator& op) {
-             return (singleton_itr != op.singleton_itr) || (vector_itr != op.vector_itr);
-         }
- 
