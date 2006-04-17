@@ -1,45 +1,6 @@
-diff -urN kismet.dev/Makefile.in kismet.dev2/Makefile.in
---- kismet.dev/Makefile.in	2005-08-16 03:22:51.000000000 +0200
-+++ kismet.dev2/Makefile.in	2005-08-23 01:59:25.643220248 +0200
-@@ -39,26 +39,25 @@
- DEPEND	= .depend
- 
- # Objects
--PSO	= util.o ringbuf.o configfile.o speech.o ifcontrol.o iwcontrol.o packet.o \
--		pcapsource.o prism2source.o wtapfilesource.o wsp100source.o \
--		dronesource.o vihasource.o packetsourcetracker.o kis_packsources.o \
--		wtapdump.o wtaplocaldump.o gpsdump.o airsnortdump.o fifodump.o \
--		gpsd.o manuf.o \
-+PSO	= util.o ringbuf.o configfile.o ifcontrol.o iwcontrol.o packet.o \
-+		pcapsource.o manuf.o \
-+		dronesource.o packetsourcetracker.o kis_packsources.o \
-+		wtapdump.o wtaplocaldump.o airsnortdump.o fifodump.o \
- 		packetracker.o timetracker.o alertracker.o finitestate.o \
- 		getopt.o \
- 		tcpserver.o server_protocols.o server_globals.o kismet_server.o 
- PS	= kismet_server
- 
- DRONEO = util.o ringbuf.o configfile.o getopt.o ifcontrol.o iwcontrol.o packet.o \
--		tcpstreamer.o prism2source.o pcapsource.o wtapfilesource.o wsp100source.o \
--		dronesource.o vihasource.o packetsourcetracker.o kis_packsources.o \
--		timetracker.o gpsd.o server_globals.o kismet_drone.o
-+		tcpstreamer.o pcapsource.o \
-+		dronesource.o packetsourcetracker.o kis_packsources.o \
-+		timetracker.o server_globals.o kismet_drone.o
- DRONE = kismet_drone
- 
--NCO	= util.o configfile.o speech.o manuf.o tcpclient.o \
-+NCO	= util.o configfile.o manuf.o tcpclient.o \
- 		frontend.o cursesfront.o \
- 		panelfront.o panelfront_display.o panelfront_input.o \
--		gpsd.o getopt.o kismet_client.o 
-+		getopt.o kismet_client.o 
- NC	= kismet_client
- 
- GPSLO = getopt.o util.o configfile.o expat.o manuf.o \
 diff -urN kismet.dev/cursesfront.cc kismet.dev2/cursesfront.cc
---- kismet.dev/cursesfront.cc	2005-08-16 03:22:51.000000000 +0200
-+++ kismet.dev2/cursesfront.cc	2005-08-23 01:59:25.643220248 +0200
+--- kismet.dev/cursesfront.cc	2005-03-10 17:49:34.000000000 +0100
++++ kismet.dev2/cursesfront.cc	2006-04-14 19:31:55.000000000 +0200
 @@ -30,7 +30,6 @@
  // Enable the protocols we can use
  void NCurseFront::AddClient(TcpClient *in_client) {
@@ -82,8 +43,8 @@ diff -urN kismet.dev/cursesfront.cc kismet.dev2/cursesfront.cc
      mvwaddstr(infoborder, 0, 2, "Info");
  
 diff -urN kismet.dev/dronesource.cc kismet.dev2/dronesource.cc
---- kismet.dev/dronesource.cc	2005-08-16 03:22:51.000000000 +0200
-+++ kismet.dev2/dronesource.cc	2005-08-23 01:59:25.644220096 +0200
+--- kismet.dev/dronesource.cc	2005-05-26 16:51:45.000000000 +0200
++++ kismet.dev2/dronesource.cc	2006-04-14 19:31:55.000000000 +0200
 @@ -201,9 +201,6 @@
              return -1;
          }
@@ -121,8 +82,8 @@ diff -urN kismet.dev/dronesource.cc kismet.dev2/dronesource.cc
      packet->moddata = moddata;
      packet->modified = 0;
 diff -urN kismet.dev/dronesource.h kismet.dev2/dronesource.h
---- kismet.dev/dronesource.h	2005-08-16 03:22:51.000000000 +0200
-+++ kismet.dev2/dronesource.h	2005-08-23 01:59:25.644220096 +0200
+--- kismet.dev/dronesource.h	2005-05-26 16:51:45.000000000 +0200
++++ kismet.dev2/dronesource.h	2006-04-14 19:31:55.000000000 +0200
 @@ -79,9 +79,6 @@
      uint8_t databuf[MAX_PACKET_LEN];
  
@@ -134,8 +95,8 @@ diff -urN kismet.dev/dronesource.h kismet.dev2/dronesource.h
  
  // Nothing but a registrant for us
 diff -urN kismet.dev/frontend.cc kismet.dev2/frontend.cc
---- kismet.dev/frontend.cc	2005-08-16 03:22:51.000000000 +0200
-+++ kismet.dev2/frontend.cc	2005-08-23 01:59:25.645219944 +0200
+--- kismet.dev/frontend.cc	2005-06-29 20:04:43.000000000 +0200
++++ kismet.dev2/frontend.cc	2006-04-14 19:31:55.000000000 +0200
 @@ -248,33 +248,6 @@
  
              }
@@ -170,178 +131,9 @@ diff -urN kismet.dev/frontend.cc kismet.dev2/frontend.cc
              // Aggregate the carriers and encodings
              dnet->virtnet->carrier_set |= wnet->carrier_set;
              dnet->virtnet->encoding_set |= wnet->encoding_set;
-diff -urN kismet.dev/kis_packsources.cc kismet.dev2/kis_packsources.cc
---- kismet.dev/kis_packsources.cc	2005-08-23 00:59:04.465379568 +0200
-+++ kismet.dev2/kis_packsources.cc	2005-08-23 02:01:08.585570632 +0200
-@@ -60,13 +60,8 @@
- 
- #if defined(HAVE_LIBPCAP) && defined(HAVE_LINUX_WIRELESS)
-     // Linux wext-driven cards
--    sourcetracker->RegisterPacketsource("cisco", 1, "IEEE80211b", 6,
--                                       pcapsource_wext_registrant,
--                                       monitor_cisco, unmonitor_cisco, 
--                                       chancontrol_wext, 1);
--    sourcetracker->RegisterPacketsource("cisco_wifix", 1, "IEEE80211b", 6,
--                                       pcapsource_ciscowifix_registrant,
--                                       monitor_cisco_wifix, NULL, NULL, 1);
-+	REG_EMPTY_CARD(sourcetracker, "cisco");
-+	REG_EMPTY_CARD(sourcetracker, "cisco_wifix");
-     sourcetracker->RegisterPacketsource("hostap", 1, "IEEE80211b", 6,
-                                        pcapsource_wext_registrant,
-                                        monitor_hostap, unmonitor_hostap, 
-@@ -79,21 +74,9 @@
-                                         pcapsource_wext_registrant,
-                                         monitor_orinoco, unmonitor_orinoco,
-                                         chancontrol_orinoco, 1);
--    sourcetracker->RegisterPacketsource("acx100", 1, "IEEE80211b", 6,
--                                       pcapsource_wextfcs_registrant,
--                                       monitor_acx100, unmonitor_acx100, 
--                                       chancontrol_wext, 1);
--    sourcetracker->RegisterPacketsource("admtek", 1, "IEEE80211b", 6,
--                                        pcapsource_wext_registrant,
--                                        monitor_admtek, unmonitor_admtek,
--                                        chancontrol_wext, 1);
--    sourcetracker->RegisterPacketsource("vtar5k", 1, "IEEE80211a", 36,
--                                       pcapsource_wext_registrant,
--                                       monitor_vtar5k, NULL, chancontrol_wext, 1);
--    sourcetracker->RegisterPacketsource("atmel_usb", 1, "IEEE80211b", 6,
--                                       pcapsource_wext_registrant,
--                                       monitor_wext, unmonitor_wext, 
--                                       chancontrol_wext, 1);
-+	REG_EMPTY_CARD(sourcetracker, "acx100");
-+	REG_EMPTY_CARD(sourcetracker, "admtek");
-+	REG_EMPTY_CARD(sourcetracker, "vtar5k");
- 
-     sourcetracker->RegisterPacketsource("madwifi_a", 1, "IEEE80211a", 36,
-                                         pcapsource_wextfcs_registrant,
-@@ -121,38 +104,14 @@
-                                         monitor_prism54g, unmonitor_prism54g,
-                                         chancontrol_prism54g, 1);
- 
--    sourcetracker->RegisterPacketsource("wlanng_wext", 1, "IEEE80211b", 6,
--                                        pcapsource_wlanng_registrant,
--                                        monitor_wlanng_avs, NULL,
--                                        chancontrol_wext, 1);
--
--    sourcetracker->RegisterPacketsource("ipw2100", 1, "IEEE80211b", 6,
--                                        pcapsource_wext_registrant,
--                                        monitor_ipw2100, unmonitor_ipw2100,
--                                        chancontrol_ipw2100, 1);
--
--    sourcetracker->RegisterPacketsource("ipw2200", 1, "IEEE80211g", 6,
--                                        pcapsource_wext_registrant,
--                                        monitor_ipw2200, unmonitor_ipw2200,
--                                        chancontrol_ipw2200, 1);
--
--    sourcetracker->RegisterPacketsource("ipw2915", 1, "IEEE80211ab", 6,
--                                        pcapsource_wext_registrant,
--                                        monitor_ipw2200, unmonitor_ipw2200,
--                                        chancontrol_ipw2200, 1);
-+	REG_EMPTY_CARD(sourcetracker, "wlanng_wext");
-+	REG_EMPTY_CARD(sourcetracker, "ipw2100");
-+	REG_EMPTY_CARD(sourcetracker, "ipw2200");
-+	REG_EMPTY_CARD(sourcetracker, "ipw2915");
-+    REG_EMPTY_CARD(sourcetracker, "rt2400");
-+    REG_EMPTY_CARD(sourcetracker, "rt2500");
-+    REG_EMPTY_CARD(sourcetracker, "rt8180");
- 
--    sourcetracker->RegisterPacketsource("rt2400", 1, "IEEE80211b", 6,
--                                        pcapsource_wext_registrant,
--                                        monitor_wext, unmonitor_wext,
--                                        chancontrol_wext, 1);
--    sourcetracker->RegisterPacketsource("rt2500", 1, "IEEE80211g", 6,
--                                        pcapsource_11g_registrant,
--                                        monitor_wext, unmonitor_wext,
--                                        chancontrol_wext, 1);
--    sourcetracker->RegisterPacketsource("rt8180", 1, "IEEE80211b", 6,
--                                        pcapsource_wext_registrant,
--                                        monitor_wext, unmonitor_wext,
--                                        chancontrol_wext, 1);
- 
- #else
-     // Register the linuxwireless pcap stuff as null
-@@ -182,31 +141,13 @@
-     REG_EMPTY_CARD(sourcetracker, "wlanng_wext");
- #endif
- 
--#if defined(HAVE_LIBPCAP) && defined(SYS_LINUX)
--    sourcetracker->RegisterPacketsource("wlanng", 1, "IEEE80211b", 6,
--                                       pcapsource_wlanng_registrant,
--                                       monitor_wlanng, NULL, chancontrol_wlanng, 1);
--    sourcetracker->RegisterPacketsource("wlanng_avs", 1, "IEEE80211b", 6,
--                                       pcapsource_wlanng_registrant,
--                                       monitor_wlanng_avs, NULL,
--                                       chancontrol_wlanng_avs, 1);
-     sourcetracker->RegisterPacketsource("wrt54g", 1, "na", 0,
-                                         pcapsource_wrt54g_registrant,
--										monitor_wrt54g, unmonitor_wrt54g, chancontrol_wext, 0);
--#else
-+                                        monitor_wrt54g, unmonitor_wrt54g, chancontrol_wext, 0);
-+
-     REG_EMPTY_CARD(sourcetracker, "wlanng");
-     REG_EMPTY_CARD(sourcetracker, "wlanng_avs");
--    REG_EMPTY_CARD(sourcetracker, "wrt54g");
--#endif
--
--#if defined(SYS_LINUX) && defined(HAVE_LINUX_NETLINK)
--    sourcetracker->RegisterPacketsource("wlanng_legacy", 1, "IEEE80211b", 6,
--                                        prism2source_registrant,
--                                        monitor_wlanng_legacy, NULL,
--                                        chancontrol_wlanng_legacy, 1);
--#else
-     REG_EMPTY_CARD(sourcetracker, "wlanng_legacy");
--#endif
- 
- #if defined(HAVE_LIBPCAP) && defined(SYS_OPENBSD)
-     sourcetracker->RegisterPacketsource("cisco_openbsd", 1, "IEEE80211b", 6,
-@@ -240,29 +181,11 @@
-     REG_EMPTY_CARD(sourcetracker, "radiotap_bsd_b");
- #endif
- 
--#if defined(HAVE_LIBWIRETAP)
--    sourcetracker->RegisterPacketsource("wtapfile", 0, "na", 0,
--                                       wtapfilesource_registrant,
--                                       NULL, NULL, NULL, 0);
--#else
-     REG_EMPTY_CARD(sourcetracker, "wtapfile");
--#endif
- 
--#if defined(HAVE_WSP100)
--    sourcetracker->RegisterPacketsource("wsp100", 0, "IEEE80211b", 6,
--                                        wsp100source_registrant,
--                                        monitor_wsp100, NULL, chancontrol_wsp100, 0);
--#else
-     REG_EMPTY_CARD(sourcetracker, "wsp100");
--#endif
- 
--#if defined(HAVE_VIHAHEADERS)
--    sourcetracker->RegisterPacketsource("viha", 1, "IEEE80211b", 6,
--                                        vihasource_registrant,
--                                        NULL, NULL, chancontrol_viha, 0);
--#else
-     REG_EMPTY_CARD(sourcetracker, "viha");
--#endif
- 
-     return 1;
- }
-diff -urN kismet.dev/kis_packsources.h kismet.dev2/kis_packsources.h
---- kismet.dev/kis_packsources.h	2005-08-16 03:22:51.000000000 +0200
-+++ kismet.dev2/kis_packsources.h	2005-08-23 01:59:25.646219792 +0200
-@@ -22,11 +22,7 @@
- #include "config.h"
- 
- #include "packetsource.h"
--#include "prism2source.h"
- #include "pcapsource.h"
--#include "wtapfilesource.h"
--#include "wsp100source.h"
--#include "vihasource.h"
- #include "dronesource.h"
- #include "packetsourcetracker.h"
- 
 diff -urN kismet.dev/kismet_client.cc kismet.dev2/kismet_client.cc
---- kismet.dev/kismet_client.cc	2005-08-16 03:22:51.000000000 +0200
-+++ kismet.dev2/kismet_client.cc	2005-08-23 01:59:25.648219488 +0200
+--- kismet.dev/kismet_client.cc	2005-06-10 04:02:24.000000000 +0200
++++ kismet.dev2/kismet_client.cc	2006-04-14 19:31:55.000000000 +0200
 @@ -28,7 +28,6 @@
  #include "cursesfront.h"
  #include "panelfront.h"
@@ -807,8 +599,8 @@ diff -urN kismet.dev/kismet_client.cc kismet.dev2/kismet_client.cc
                  }
              } else {
 diff -urN kismet.dev/kismet_drone.cc kismet.dev2/kismet_drone.cc
---- kismet.dev/kismet_drone.cc	2005-08-16 03:22:51.000000000 +0200
-+++ kismet.dev2/kismet_drone.cc	2005-08-23 01:59:25.649219336 +0200
+--- kismet.dev/kismet_drone.cc	2006-04-13 00:42:59.000000000 +0200
++++ kismet.dev2/kismet_drone.cc	2006-04-14 20:21:46.000000000 +0200
 @@ -32,16 +32,11 @@
  #include "packet.h"
  
@@ -834,10 +626,10 @@ diff -urN kismet.dev/kismet_drone.cc kismet.dev2/kismet_drone.cc
 -int gpsmode = 0;
 -int gps_enable = 0;
 -
- // Timetracker
- Timetracker timetracker;
+ // Unused, only here to make packetsourcetracker link
+ int retain_monitor = 0;
  
-@@ -81,26 +72,6 @@
+@@ -84,26 +75,6 @@
      exit(0);
  }
  
@@ -864,7 +656,7 @@ diff -urN kismet.dev/kismet_drone.cc kismet.dev2/kismet_drone.cc
  // Handle channel hopping... this is actually really simple.
  int ChannelHopEvent(Timetracker::timer_event *evt, void *parm) {
      sourcetracker.AdvanceChannel();
-@@ -148,9 +119,6 @@
+@@ -151,9 +122,6 @@
  
      TcpStreamer streamer;
  
@@ -874,7 +666,7 @@ diff -urN kismet.dev/kismet_drone.cc kismet.dev2/kismet_drone.cc
      int channel_hop = -1;
      int channel_velocity = 1;
      int channel_dwell = 0;
-@@ -351,46 +319,6 @@
+@@ -354,46 +322,6 @@
          exit(1);
      }
  
@@ -922,8 +714,8 @@ diff -urN kismet.dev/kismet_drone.cc kismet.dev2/kismet_drone.cc
  
      // Register the sources
 diff -urN kismet.dev/kismet_server.cc kismet.dev2/kismet_server.cc
---- kismet.dev/kismet_server.cc	2005-08-16 03:22:51.000000000 +0200
-+++ kismet.dev2/kismet_server.cc	2005-08-23 01:59:25.653218728 +0200
+--- kismet.dev/kismet_server.cc	2006-04-13 00:42:59.000000000 +0200
++++ kismet.dev2/kismet_server.cc	2006-04-14 19:31:55.000000000 +0200
 @@ -37,11 +37,7 @@
  #include "packet.h"
  
@@ -1001,7 +793,7 @@ diff -urN kismet.dev/kismet_server.cc kismet.dev2/kismet_server.cc
  int beacon_log = 1;
  int phy_log = 1;
  int mangle_log = 0;
-@@ -347,17 +316,6 @@
+@@ -348,17 +317,6 @@
          // delete cryptfile;
      }
  
@@ -1019,7 +811,7 @@ diff -urN kismet.dev/kismet_server.cc kismet.dev2/kismet_server.cc
      // Shut down the packet sources
      sourcetracker.CloseSources();
  
-@@ -368,228 +326,10 @@
+@@ -369,228 +327,10 @@
      exit(0);
  }
  
@@ -1248,7 +1040,7 @@ diff -urN kismet.dev/kismet_server.cc kismet.dev2/kismet_server.cc
  }
  
  void KisLocalStatus(const char *in_status) {
-@@ -638,37 +378,6 @@
+@@ -639,37 +379,6 @@
  
      char tmpstr[32];
  
@@ -1286,7 +1078,7 @@ diff -urN kismet.dev/kismet_server.cc kismet.dev2/kismet_server.cc
      INFO_data idata;
      snprintf(tmpstr, 32, "%d", tracker.FetchNumNetworks());
      idata.networks = tmpstr;
-@@ -789,81 +498,6 @@
+@@ -790,81 +499,6 @@
      }
  }
  
@@ -1368,7 +1160,7 @@ diff -urN kismet.dev/kismet_server.cc kismet.dev2/kismet_server.cc
  
  // Simple redirect to the network info drawer.  We don't want to change netwriteinfo to a
  // timer event since we call it un-timed too
-@@ -884,13 +518,6 @@
+@@ -885,13 +519,6 @@
      return 1;
  }
  
@@ -1382,7 +1174,7 @@ diff -urN kismet.dev/kismet_server.cc kismet.dev2/kismet_server.cc
  // Handle tracker maintenance
  int TrackerTickEvent(Timetracker::timer_event *evt, void *parm) {
      tracker.Tick();
-@@ -1159,11 +786,9 @@
+@@ -1160,11 +787,9 @@
             "  -c, --capture-source <src>   Packet capture source line (type,interface,name)\n"
             "  -C, --enable-capture-sources Comma separated list of named packet sources to use.\n"
             "  -l, --log-types <types>      Comma separated list of types to log,\n"
@@ -1395,7 +1187,7 @@ diff -urN kismet.dev/kismet_server.cc kismet.dev2/kismet_server.cc
             "  -p, --port <port>            TCPIP server port for GUI connections\n"
             "  -a, --allowed-hosts <hosts>  Comma separated list of hosts allowed to connect\n"
             "  -b, --bind-address <address>    Bind to this address. Default INADDR_ANY\n."
-@@ -1287,23 +912,6 @@
+@@ -1289,23 +914,6 @@
          ip_track = 1;
      }
  
@@ -1419,7 +1211,7 @@ diff -urN kismet.dev/kismet_server.cc kismet.dev2/kismet_server.cc
      if (conf->FetchOpt("metric") == "true") {
          fprintf(stderr, "Using metric measurements.\n");
          metric = 1;
-@@ -1421,26 +1029,6 @@
+@@ -1423,26 +1031,6 @@
              }
  
          }
@@ -1446,7 +1238,7 @@ diff -urN kismet.dev/kismet_server.cc kismet.dev2/kismet_server.cc
      }
  
      if (conf->FetchOpt("decay") != "") {
-@@ -1561,72 +1149,6 @@
+@@ -1563,72 +1151,6 @@
          legal_ipblock_vec.push_back(ipb);
      }
  
@@ -1519,7 +1311,7 @@ diff -urN kismet.dev/kismet_server.cc kismet.dev2/kismet_server.cc
      if (conf->FetchOpt("writeinterval") != "") {
          if (sscanf(conf->FetchOpt("writeinterval").c_str(), "%d", &datainterval) != 1) {
              fprintf(stderr, "FATAL:  Illegal config file value for data interval.\n");
-@@ -1646,45 +1168,6 @@
+@@ -1648,45 +1170,6 @@
          fprintf(stderr, "WARNING:  No client_manuf file specified.  Client manufacturers will not be detected.\n");
      }
  
@@ -1565,7 +1357,7 @@ diff -urN kismet.dev/kismet_server.cc kismet.dev2/kismet_server.cc
      // Grab the filtering
      string filter_bit;
  
-@@ -1710,7 +1193,7 @@
+@@ -1712,7 +1195,7 @@
      }
  
      if ((filter_bit = conf->FetchOpt("filter_export")) != "") {
@@ -1574,7 +1366,7 @@ diff -urN kismet.dev/kismet_server.cc kismet.dev2/kismet_server.cc
          filter_export = 1;
          if (ConfigFile::ParseFilterLine(filter_bit, &filter_export_bssid, &filter_export_source,
                                          &filter_export_dest, &filter_export_bssid_invert,
-@@ -1816,14 +1299,6 @@
+@@ -1818,14 +1301,6 @@
  
      }
  
@@ -1589,7 +1381,7 @@ diff -urN kismet.dev/kismet_server.cc kismet.dev2/kismet_server.cc
      // Create all the logs and title/number them appropriately
      // We need to save this for after we toast the conf record
      int logfile_matched = 0;
-@@ -1871,13 +1346,6 @@
+@@ -1873,13 +1348,6 @@
                  continue;
          }
  
@@ -1603,7 +1395,7 @@ diff -urN kismet.dev/kismet_server.cc kismet.dev2/kismet_server.cc
          // if we made it this far we're cool -- all the logfiles we're writing to matched
          // this number
          logfile_matched = 1;
-@@ -1906,9 +1374,6 @@
+@@ -1908,9 +1376,6 @@
      if (cisco_log)
          fprintf(stderr, "Logging cisco product information to %s\n", ciscologfile.c_str());
  
@@ -1613,7 +1405,7 @@ diff -urN kismet.dev/kismet_server.cc kismet.dev2/kismet_server.cc
      if (data_log)
          fprintf(stderr, "Logging data to %s\n", dumplogfile.c_str());
  
-@@ -2055,7 +1520,6 @@
+@@ -2058,7 +1523,6 @@
          { "dump-type", required_argument, 0, 'd' },
          { "max-packets", required_argument, 0, 'm' },
          { "quiet", no_argument, 0, 'q' },
@@ -1621,7 +1413,7 @@ diff -urN kismet.dev/kismet_server.cc kismet.dev2/kismet_server.cc
          { "port", required_argument, 0, 'p' },
          { "allowed-hosts", required_argument, 0, 'a' },
          { "bind-address", required_argument, 0, 'b'},
-@@ -2136,18 +1600,6 @@
+@@ -2140,18 +1604,6 @@
                  Usage(argv[0]);
              }
              break;
@@ -1640,7 +1432,7 @@ diff -urN kismet.dev/kismet_server.cc kismet.dev2/kismet_server.cc
          case 'p':
              // Port
              if (sscanf(optarg, "%d", &tcpport) != 1) {
-@@ -2169,7 +1621,6 @@
+@@ -2173,7 +1625,6 @@
              break;
          case 'q':
              // Quiet
@@ -1648,7 +1440,7 @@ diff -urN kismet.dev/kismet_server.cc kismet.dev2/kismet_server.cc
              break;
          case 'v':
              // version
-@@ -2323,39 +1774,6 @@
+@@ -2331,39 +1782,6 @@
      // And we're done
      fclose(pid_file);
              
@@ -1688,7 +1480,7 @@ diff -urN kismet.dev/kismet_server.cc kismet.dev2/kismet_server.cc
      sourcetracker.AddTimetracker(&timetracker);
  
      // Handle errors here maybe in the future
-@@ -2522,13 +1940,6 @@
+@@ -2530,13 +1948,6 @@
          fprintf(stderr, "Dump file format: %s\n", dumpfile->FetchType());
      }
  
@@ -1702,7 +1494,7 @@ diff -urN kismet.dev/kismet_server.cc kismet.dev2/kismet_server.cc
      // Open our files first to make sure we can, we'll unlink the empties later.
      FILE *testfile = NULL;
      if (net_log) {
-@@ -2600,14 +2011,13 @@
+@@ -2608,14 +2019,13 @@
      */
  
      if (data_log || net_log || crypt_log) {
@@ -1719,7 +1511,7 @@ diff -urN kismet.dev/kismet_server.cc kismet.dev2/kismet_server.cc
          fprintf(stderr, "%s\n", status);
      } else if (no_log) {
          snprintf(status, STATUS_MAX, "Not logging any data.");
-@@ -2625,23 +2035,6 @@
+@@ -2633,23 +2043,6 @@
          }
      }
  
@@ -1743,7 +1535,7 @@ diff -urN kismet.dev/kismet_server.cc kismet.dev2/kismet_server.cc
      fprintf(stderr, "Listening on port %d.\n", tcpport);
      for (unsigned int ipvi = 0; ipvi < legal_ipblock_vec.size(); ipvi++) {
          char *netaddr = strdup(inet_ntoa(legal_ipblock_vec[ipvi]->network));
-@@ -2682,8 +2075,6 @@
+@@ -2690,8 +2083,6 @@
                                               &Protocol_NETWORK, &ProtocolNetworkEnable);
      client_ref = ui_server.RegisterProtocol("CLIENT", 0, CLIENT_fields_text,
                                              &Protocol_CLIENT, &ProtocolClientEnable);
@@ -1752,7 +1544,7 @@ diff -urN kismet.dev/kismet_server.cc kismet.dev2/kismet_server.cc
      info_ref = ui_server.RegisterProtocol("INFO", 0, INFO_fields_text,
                                            &Protocol_INFO, NULL);
      remove_ref = ui_server.RegisterProtocol("REMOVE", 0, REMOVE_fields_text,
-@@ -2738,14 +2129,9 @@
+@@ -2746,14 +2137,9 @@
      // Write network info and tick the tracker once per second
      timetracker.RegisterTimer(SERVER_TIMESLICES_SEC, NULL, 1, &NetWriteEvent, NULL);
      timetracker.RegisterTimer(SERVER_TIMESLICES_SEC, NULL, 1, &TrackerTickEvent, NULL);
@@ -1767,7 +1559,7 @@ diff -urN kismet.dev/kismet_server.cc kismet.dev2/kismet_server.cc
      // Channel hop if requested
      if (channel_hop) {
          if (channel_dwell)
-@@ -2769,7 +2155,6 @@
+@@ -2777,7 +2163,6 @@
      snprintf(status, 1024, "%s", TIMESTAMP);
      kdata.timestamp = status;
  
@@ -1775,7 +1567,7 @@ diff -urN kismet.dev/kismet_server.cc kismet.dev2/kismet_server.cc
      int num_networks = 0, num_packets = 0, num_noise = 0, num_dropped = 0;
  
  
-@@ -2918,54 +2303,13 @@
+@@ -2926,54 +2311,13 @@
  
                      }
  
@@ -1831,8 +1623,8 @@ diff -urN kismet.dev/kismet_server.cc kismet.dev2/kismet_server.cc
                          num_noise = tracker.FetchNumNoise();
                          num_dropped = tracker.FetchNumDropped() + localdropnum;
 diff -urN kismet.dev/kismet_server.h kismet.dev2/kismet_server.h
---- kismet.dev/kismet_server.h	2005-08-16 03:22:51.000000000 +0200
-+++ kismet.dev2/kismet_server.h	2005-08-23 01:59:25.653218728 +0200
+--- kismet.dev/kismet_server.h	2004-03-07 22:28:01.000000000 +0100
++++ kismet.dev2/kismet_server.h	2006-04-14 19:31:55.000000000 +0200
 @@ -33,10 +33,6 @@
  void handle_command(TcpServer *tcps, client_command *cc);
  int NetWriteStatus(const char *in_status);
@@ -1844,10 +1636,234 @@ diff -urN kismet.dev/kismet_server.h kismet.dev2/kismet_server.h
  void ProtocolAlertEnable(int in_fd);
  void ProtocolNetworkEnable(int in_fd);
  void ProtocolClientEnable(int in_fd);
+diff -urN kismet.dev/kis_packsources.cc kismet.dev2/kis_packsources.cc
+--- kismet.dev/kis_packsources.cc	2006-04-14 23:43:01.694817572 +0200
++++ kismet.dev2/kis_packsources.cc	2006-04-14 20:21:12.000000000 +0200
+@@ -64,13 +64,8 @@
+                                         pcapsource_11g_registrant,
+                                         monitor_wext, unmonitor_wext,
+                                         chancontrol_wext, 1);
+-    sourcetracker->RegisterPacketsource("cisco", 1, "IEEE80211b", 6,
+-                                       pcapsource_wext_registrant,
+-                                       monitor_cisco, unmonitor_cisco, 
+-                                       chancontrol_wext, 1);
+-    sourcetracker->RegisterPacketsource("cisco_wifix", 1, "IEEE80211b", 6,
+-                                       pcapsource_ciscowifix_registrant,
+-                                       monitor_cisco_wifix, NULL, NULL, 1);
++    REG_EMPTY_CARD(sourcetracker, "cisco");
++    REG_EMPTY_CARD(sourcetracker, "cisco_wifix");
+     sourcetracker->RegisterPacketsource("hostap", 1, "IEEE80211b", 6,
+                                        pcapsource_wext_registrant,
+                                        monitor_hostap, unmonitor_hostap, 
+@@ -83,21 +78,10 @@
+                                         pcapsource_wext_registrant,
+                                         monitor_orinoco, unmonitor_orinoco,
+                                         chancontrol_orinoco, 1);
+-    sourcetracker->RegisterPacketsource("acx100", 1, "IEEE80211b", 6,
+-                                       pcapsource_wext_registrant,
+-                                       monitor_acx100, unmonitor_acx100, 
+-                                       chancontrol_wext, 1);
+-    sourcetracker->RegisterPacketsource("admtek", 1, "IEEE80211b", 6,
+-                                        pcapsource_wext_registrant,
+-                                        monitor_admtek, unmonitor_admtek,
+-                                        chancontrol_wext, 1);
+-    sourcetracker->RegisterPacketsource("vtar5k", 1, "IEEE80211a", 36,
+-                                       pcapsource_wext_registrant,
+-                                       monitor_vtar5k, NULL, chancontrol_wext, 1);
+-    sourcetracker->RegisterPacketsource("atmel_usb", 1, "IEEE80211b", 6,
+-                                       pcapsource_wext_registrant,
+-                                       monitor_wext, unmonitor_wext, 
+-                                       chancontrol_wext, 1);
++    REG_EMPTY_CARD(sourcetracker, "acx100");
++    REG_EMPTY_CARD(sourcetracker, "admtek");
++    REG_EMPTY_CARD(sourcetracker, "vtar5k");
++    REG_EMPTY_CARD(sourcetracker, "atmel_usb");
+ 
+     sourcetracker->RegisterPacketsource("madwifi_a", 1, "IEEE80211a", 36,
+                                         pcapsource_wextfcs_registrant,
+@@ -146,50 +130,17 @@
+                                         monitor_prism54g, unmonitor_prism54g,
+                                         chancontrol_prism54g, 1);
+ 
+-    sourcetracker->RegisterPacketsource("wlanng_wext", 1, "IEEE80211b", 6,
+-                                        pcapsource_wlanng_registrant,
+-                                        monitor_wlanng_avs, NULL,
+-                                        chancontrol_wext, 1);
+-
+-    sourcetracker->RegisterPacketsource("ipw2100", 1, "IEEE80211b", 6,
+-                                        pcapsource_wext_registrant,
+-                                        monitor_ipw2100, unmonitor_ipw2100,
+-                                        chancontrol_ipw2100, 1);
+-
+-    sourcetracker->RegisterPacketsource("ipw2200", 1, "IEEE80211g", 6,
+-                                        pcapsource_wext_registrant,
+-                                        monitor_ipw2200, unmonitor_ipw2200,
+-                                        chancontrol_ipw2200, 1);
+-
+-    sourcetracker->RegisterPacketsource("ipw2915", 1, "IEEE80211ab", 6,
+-                                        pcapsource_wext_registrant,
+-                                        monitor_ipw2200, unmonitor_ipw2200,
+-                                        chancontrol_ipw2200, 1);
+-
+-    sourcetracker->RegisterPacketsource("ipw3945", 1, "IEEE80211ab", 6,
+-                                        pcapsource_wext_registrant,
+-                                        monitor_ipw3945, unmonitor_ipw3945,
+-                                        chancontrol_ipw2200, 1);
+-
+-    sourcetracker->RegisterPacketsource("ipwlivetap", 1, "IEEE80211b", 0,
+-                                        pcapsource_wext_registrant,
+-                                        monitor_ipwlivetap, 
+-										unmonitor_ipwlivetap,
+-                                        NULL, 1);
+-
+-    sourcetracker->RegisterPacketsource("rt2400", 1, "IEEE80211b", 6,
+-                                        pcapsource_wext_registrant,
+-                                        monitor_wext, unmonitor_wext,
+-                                        chancontrol_wext, 1);
+-    sourcetracker->RegisterPacketsource("rt2500", 1, "IEEE80211g", 6,
+-                                        pcapsource_11g_registrant,
+-                                        monitor_wext, unmonitor_wext,
+-                                        chancontrol_wext, 1);
+-    sourcetracker->RegisterPacketsource("rt8180", 1, "IEEE80211b", 6,
+-                                        pcapsource_wext_registrant,
+-                                        monitor_wext, unmonitor_wext,
+-                                        chancontrol_wext, 1);
++    REG_EMPTY_CARD(sourcetracker, "wlanng_wext");
++    REG_EMPTY_CARD(sourcetracker, "ipw2100");
++    REG_EMPTY_CARD(sourcetracker, "ipw2200");
++    REG_EMPTY_CARD(sourcetracker, "ipw2915");
++    REG_EMPTY_CARD(sourcetracker, "ipw3945");
++    REG_EMPTY_CARD(sourcetracker, "ipwlivetap");
+ 
++    REG_EMPTY_CARD(sourcetracker, "rt2400");
++    REG_EMPTY_CARD(sourcetracker, "rt2500");
++    REG_EMPTY_CARD(sourcetracker, "rt8180");
++    
+     sourcetracker->RegisterPacketsource("zd1211", 1, "IEEE80211g", 6,
+                                         pcapsource_wext_registrant,
+                                         monitor_wext, unmonitor_wext,
+@@ -233,31 +184,13 @@
+     REG_EMPTY_CARD(sourcetracker, "zd1211");
+ #endif
+ 
+-#if defined(HAVE_LIBPCAP) && defined(SYS_LINUX)
+-    sourcetracker->RegisterPacketsource("wlanng", 1, "IEEE80211b", 6,
+-                                       pcapsource_wlanng_registrant,
+-                                       monitor_wlanng, NULL, chancontrol_wlanng, 1);
+-    sourcetracker->RegisterPacketsource("wlanng_avs", 1, "IEEE80211b", 6,
+-                                       pcapsource_wlanng_registrant,
+-                                       monitor_wlanng_avs, NULL,
+-                                       chancontrol_wlanng_avs, 1);
+     sourcetracker->RegisterPacketsource("wrt54g", 1, "na", 0,
+                                         pcapsource_wrt54g_registrant,
+-										monitor_wrt54g, unmonitor_wrt54g, chancontrol_wext, 0);
+-#else
++                                        monitor_wrt54g, unmonitor_wrt54g, chancontrol_wext, 0);
++
+     REG_EMPTY_CARD(sourcetracker, "wlanng");
+     REG_EMPTY_CARD(sourcetracker, "wlanng_avs");
+-    REG_EMPTY_CARD(sourcetracker, "wrt54g");
+-#endif
+-
+-#if defined(SYS_LINUX) && defined(HAVE_LINUX_NETLINK)
+-    sourcetracker->RegisterPacketsource("wlanng_legacy", 1, "IEEE80211b", 6,
+-                                        prism2source_registrant,
+-                                        monitor_wlanng_legacy, NULL,
+-                                        chancontrol_wlanng_legacy, 1);
+-#else
+     REG_EMPTY_CARD(sourcetracker, "wlanng_legacy");
+-#endif
+ 
+ #if defined(HAVE_LIBPCAP) && defined(SYS_OPENBSD)
+     sourcetracker->RegisterPacketsource("cisco_openbsd", 1, "IEEE80211b", 6,
+@@ -291,29 +224,11 @@
+     REG_EMPTY_CARD(sourcetracker, "radiotap_bsd_b");
+ #endif
+ 
+-#if defined(HAVE_LIBWIRETAP)
+-    sourcetracker->RegisterPacketsource("wtapfile", 0, "na", 0,
+-                                       wtapfilesource_registrant,
+-                                       NULL, NULL, NULL, 0);
+-#else
+     REG_EMPTY_CARD(sourcetracker, "wtapfile");
+-#endif
+ 
+-#if defined(HAVE_WSP100)
+-    sourcetracker->RegisterPacketsource("wsp100", 0, "IEEE80211b", 6,
+-                                        wsp100source_registrant,
+-                                        monitor_wsp100, NULL, chancontrol_wsp100, 0);
+-#else
+     REG_EMPTY_CARD(sourcetracker, "wsp100");
+-#endif
+ 
+-#if defined(HAVE_VIHAHEADERS)
+-    sourcetracker->RegisterPacketsource("viha", 1, "IEEE80211b", 6,
+-                                        vihasource_registrant,
+-                                        NULL, NULL, chancontrol_viha, 0);
+-#else
+     REG_EMPTY_CARD(sourcetracker, "viha");
+-#endif
+ 
+     return 1;
+ }
+diff -urN kismet.dev/kis_packsources.h kismet.dev2/kis_packsources.h
+--- kismet.dev/kis_packsources.h	2004-06-09 21:09:29.000000000 +0200
++++ kismet.dev2/kis_packsources.h	2006-04-14 19:31:55.000000000 +0200
+@@ -22,11 +22,7 @@
+ #include "config.h"
+ 
+ #include "packetsource.h"
+-#include "prism2source.h"
+ #include "pcapsource.h"
+-#include "wtapfilesource.h"
+-#include "wsp100source.h"
+-#include "vihasource.h"
+ #include "dronesource.h"
+ #include "packetsourcetracker.h"
+ 
+diff -urN kismet.dev/Makefile.in kismet.dev2/Makefile.in
+--- kismet.dev/Makefile.in	2006-04-13 00:49:15.000000000 +0200
++++ kismet.dev2/Makefile.in	2006-04-14 19:31:55.000000000 +0200
+@@ -39,26 +39,25 @@
+ DEPEND	= .depend
+ 
+ # Objects
+-PSO	= util.o ringbuf.o configfile.o speech.o ifcontrol.o iwcontrol.o packet.o \
+-		pcapsource.o prism2source.o wtapfilesource.o wsp100source.o \
+-		dronesource.o vihasource.o packetsourcetracker.o kis_packsources.o \
+-		wtapdump.o wtaplocaldump.o gpsdump.o airsnortdump.o fifodump.o \
+-		gpsd.o manuf.o \
++PSO	= util.o ringbuf.o configfile.o ifcontrol.o iwcontrol.o packet.o \
++		pcapsource.o manuf.o \
++		dronesource.o packetsourcetracker.o kis_packsources.o \
++		wtapdump.o wtaplocaldump.o airsnortdump.o fifodump.o \
+ 		packetracker.o timetracker.o alertracker.o finitestate.o \
+ 		getopt.o \
+ 		tcpserver.o server_protocols.o server_globals.o kismet_server.o 
+ PS	= kismet_server
+ 
+ DRONEO = util.o ringbuf.o configfile.o getopt.o ifcontrol.o iwcontrol.o packet.o \
+-		tcpstreamer.o prism2source.o pcapsource.o wtapfilesource.o wsp100source.o \
+-		dronesource.o vihasource.o packetsourcetracker.o kis_packsources.o \
+-		timetracker.o gpsd.o server_globals.o kismet_drone.o
++		tcpstreamer.o pcapsource.o \
++		dronesource.o packetsourcetracker.o kis_packsources.o \
++		timetracker.o server_globals.o kismet_drone.o
+ DRONE = kismet_drone
+ 
+-NCO	= util.o configfile.o speech.o manuf.o tcpclient.o \
++NCO	= util.o configfile.o manuf.o tcpclient.o \
+ 		frontend.o cursesfront.o \
+ 		panelfront.o panelfront_display.o panelfront_input.o \
+-		gpsd.o getopt.o kismet_client.o 
++		getopt.o kismet_client.o 
+ NC	= kismet_client
+ 
+ GPSLO = getopt.o util.o configfile.o expat.o manuf.o \
 diff -urN kismet.dev/packetracker.cc kismet.dev2/packetracker.cc
---- kismet.dev/packetracker.cc	2005-08-16 03:22:51.000000000 +0200
-+++ kismet.dev2/packetracker.cc	2005-08-23 01:59:25.656218272 +0200
-@@ -2439,23 +2439,3 @@
+--- kismet.dev/packetracker.cc	2006-04-01 18:37:07.000000000 +0200
++++ kismet.dev2/packetracker.cc	2006-04-14 19:31:55.000000000 +0200
+@@ -2443,23 +2443,3 @@
  
  }
  
@@ -1872,8 +1888,8 @@ diff -urN kismet.dev/packetracker.cc kismet.dev2/packetracker.cc
 -    return 1;
 -}
 diff -urN kismet.dev/packetracker.h kismet.dev2/packetracker.h
---- kismet.dev/packetracker.h	2005-08-16 03:22:51.000000000 +0200
-+++ kismet.dev2/packetracker.h	2005-08-23 01:59:25.656218272 +0200
+--- kismet.dev/packetracker.h	2005-06-01 05:46:18.000000000 +0200
++++ kismet.dev2/packetracker.h	2006-04-14 19:31:55.000000000 +0200
 @@ -30,7 +30,6 @@
  #include <string>
  
@@ -1892,9 +1908,9 @@ diff -urN kismet.dev/packetracker.h kismet.dev2/packetracker.h
      void ReadSSIDMap(FILE *in_file);
  
 diff -urN kismet.dev/packetsourcetracker.cc kismet.dev2/packetsourcetracker.cc
---- kismet.dev/packetsourcetracker.cc	2005-08-23 00:59:39.969982048 +0200
-+++ kismet.dev2/packetsourcetracker.cc	2005-08-23 01:59:25.657218120 +0200
-@@ -24,7 +24,6 @@
+--- kismet.dev/packetsourcetracker.cc	2006-04-14 23:43:01.695817542 +0200
++++ kismet.dev2/packetsourcetracker.cc	2006-04-14 19:31:55.000000000 +0200
+@@ -27,7 +27,6 @@
  Packetsourcetracker::Packetsourcetracker() {
      next_packsource_id = 0;
      next_meta_id = 0;
@@ -1902,7 +1918,7 @@ diff -urN kismet.dev/packetsourcetracker.cc kismet.dev2/packetsourcetracker.cc
      timetracker = NULL;
      chanchild_pid = 0;
      sockpair[0] = sockpair[1] = 0;
-@@ -691,7 +690,6 @@
+@@ -694,7 +693,6 @@
          
          // Register the trackers with it
          meta->capsource->AddTimetracker(timetracker);
@@ -1911,8 +1927,8 @@ diff -urN kismet.dev/packetsourcetracker.cc kismet.dev2/packetsourcetracker.cc
          // Open it
          fprintf(stderr, "Source %d (%s): Opening %s source interface %s...\n",
 diff -urN kismet.dev/packetsourcetracker.h kismet.dev2/packetsourcetracker.h
---- kismet.dev/packetsourcetracker.h	2005-08-16 03:22:51.000000000 +0200
-+++ kismet.dev2/packetsourcetracker.h	2005-08-23 01:59:25.658217968 +0200
+--- kismet.dev/packetsourcetracker.h	2005-03-21 20:47:26.000000000 +0100
++++ kismet.dev2/packetsourcetracker.h	2006-04-14 19:31:55.000000000 +0200
 @@ -30,7 +30,6 @@
  #include <string>
  
@@ -1940,8 +1956,8 @@ diff -urN kismet.dev/packetsourcetracker.h kismet.dev2/packetsourcetracker.h
      
      char errstr[1024];
 diff -urN kismet.dev/panelfront.cc kismet.dev2/panelfront.cc
---- kismet.dev/panelfront.cc	2005-08-16 03:22:51.000000000 +0200
-+++ kismet.dev2/panelfront.cc	2005-08-23 01:59:25.659217816 +0200
+--- kismet.dev/panelfront.cc	2005-06-29 20:04:43.000000000 +0200
++++ kismet.dev2/panelfront.cc	2006-04-14 19:31:55.000000000 +0200
 @@ -37,7 +37,6 @@
      "  Key  Action",
      "   e   List Kismet servers",
@@ -2014,36 +2030,9 @@ diff -urN kismet.dev/panelfront.cc kismet.dev2/panelfront.cc
          // Update quality
          con->quality = con->client->FetchQuality();
          con->power = con->client->FetchPower();
-diff -urN kismet.dev/panelfront.h kismet.dev2/panelfront.h
---- kismet.dev/panelfront.h	2005-08-16 03:22:51.000000000 +0200
-+++ kismet.dev2/panelfront.h	2005-08-23 01:59:25.660217664 +0200
-@@ -65,7 +65,6 @@
- #define SORT_SIZE 10
- extern char *KismetHelpPower[];
- extern char *KismetHelpRate[];
--extern char *KismetHelpGps[];
- extern char *KismetHelpStats[];
- extern char *KismetHelpDump[];
- extern char *KismetHelpPack[];
-@@ -269,7 +268,6 @@
-     int RatePrinter(void *in_window);
-     int StatsPrinter(void *in_window);
-     int PackPrinter(void *in_window);
--    int GpsPrinter(void *in_window);
-     int AlertPrinter(void *in_window);
- 
-     int MainClientPrinter(void *in_window);
-@@ -298,7 +296,6 @@
-     int PackInput(void *in_window, int in_chr);
-     // Help has a generic handler
-     int TextInput(void *in_window, int in_chr);
--    int GpsInput(void *in_window, int in_chr);
-     int AlertInput(void *in_window, int in_chr);
- 
-     int MainClientInput(void *in_window, int in_chr);
 diff -urN kismet.dev/panelfront_display.cc kismet.dev2/panelfront_display.cc
---- kismet.dev/panelfront_display.cc	2005-08-16 03:22:51.000000000 +0200
-+++ kismet.dev2/panelfront_display.cc	2005-08-23 01:59:25.663217208 +0200
+--- kismet.dev/panelfront_display.cc	2005-08-15 17:52:16.000000000 +0200
++++ kismet.dev2/panelfront_display.cc	2006-04-14 19:31:55.000000000 +0200
 @@ -727,7 +727,7 @@
          mvwaddstr(netwin, netwin->_maxy, netwin->_maxx - 14, ptxt);
      }
@@ -2394,9 +2383,36 @@ diff -urN kismet.dev/panelfront_display.cc kismet.dev2/panelfront_display.cc
  
      snprintf(output, print_width, "Packets :");
      kwin->text.push_back(output);
+diff -urN kismet.dev/panelfront.h kismet.dev2/panelfront.h
+--- kismet.dev/panelfront.h	2005-06-29 14:50:09.000000000 +0200
++++ kismet.dev2/panelfront.h	2006-04-14 19:31:55.000000000 +0200
+@@ -65,7 +65,6 @@
+ #define SORT_SIZE 10
+ extern char *KismetHelpPower[];
+ extern char *KismetHelpRate[];
+-extern char *KismetHelpGps[];
+ extern char *KismetHelpStats[];
+ extern char *KismetHelpDump[];
+ extern char *KismetHelpPack[];
+@@ -269,7 +268,6 @@
+     int RatePrinter(void *in_window);
+     int StatsPrinter(void *in_window);
+     int PackPrinter(void *in_window);
+-    int GpsPrinter(void *in_window);
+     int AlertPrinter(void *in_window);
+ 
+     int MainClientPrinter(void *in_window);
+@@ -298,7 +296,6 @@
+     int PackInput(void *in_window, int in_chr);
+     // Help has a generic handler
+     int TextInput(void *in_window, int in_chr);
+-    int GpsInput(void *in_window, int in_chr);
+     int AlertInput(void *in_window, int in_chr);
+ 
+     int MainClientInput(void *in_window, int in_chr);
 diff -urN kismet.dev/panelfront_input.cc kismet.dev2/panelfront_input.cc
---- kismet.dev/panelfront_input.cc	2005-08-16 03:22:51.000000000 +0200
-+++ kismet.dev2/panelfront_input.cc	2005-08-23 01:59:25.665216904 +0200
+--- kismet.dev/panelfront_input.cc	2005-06-29 14:50:09.000000000 +0200
++++ kismet.dev2/panelfront_input.cc	2006-04-14 19:31:56.000000000 +0200
 @@ -300,16 +300,9 @@
          break;
      case 'f':
@@ -2482,8 +2498,8 @@ diff -urN kismet.dev/panelfront_input.cc kismet.dev2/panelfront_input.cc
      kis_window *kwin = (kis_window *) in_window;
  
 diff -urN kismet.dev/pcapsource.cc kismet.dev2/pcapsource.cc
---- kismet.dev/pcapsource.cc	2005-08-23 01:03:45.652632608 +0200
-+++ kismet.dev2/pcapsource.cc	2005-08-23 01:59:25.667216600 +0200
+--- kismet.dev/pcapsource.cc	2006-04-14 23:43:01.697817483 +0200
++++ kismet.dev2/pcapsource.cc	2006-04-14 20:25:06.000000000 +0200
 @@ -343,11 +343,6 @@
      packet->moddata = moddata;
      packet->modified = 0;
@@ -2496,7 +2512,7 @@ diff -urN kismet.dev/pcapsource.cc kismet.dev2/pcapsource.cc
      if (datalink_type == DLT_PRISM_HEADER) {
          ret = Prism2KisPack(packet, data, moddata);
      } else if (datalink_type == KDLT_BSD802_11) {
-@@ -1146,133 +1141,6 @@
+@@ -1157,133 +1152,6 @@
  
  // Monitor commands
  #ifdef HAVE_LINUX_WIRELESS
@@ -2630,11 +2646,10 @@ diff -urN kismet.dev/pcapsource.cc kismet.dev2/pcapsource.cc
  // Hostap uses iwpriv and iwcontrol settings to control monitor mode
  int monitor_hostap(const char *in_dev, int initch, char *in_err, void **in_if, void *in_ext) {
      int ret;
-@@ -1421,134 +1289,6 @@
-     return 1;
+@@ -1433,132 +1301,6 @@
  
  }
--
+ 
 -// Acx100 uses the packhdr iwpriv control to set link state, rest is normal
 -int monitor_acx100(const char *in_dev, int initch, char *in_err, void **in_if, void *in_ext) {
 -    int ret;
@@ -2761,15 +2776,13 @@ diff -urN kismet.dev/pcapsource.cc kismet.dev2/pcapsource.cc
 -
 -    return 0;
 -}
--
- // Madwifi stuff uses iwpriv mode
- int monitor_madwifi_a(const char *in_dev, int initch, char *in_err, void **in_if, void *in_ext) {
-     // Allocate a tracking record for the interface settings and remember our
-@@ -1726,89 +1466,6 @@
  
+ /* Madwifi NG ioctls from net80211 */
+ #define	SIOC80211IFCREATE		(SIOCDEVPRIVATE+7)
+@@ -1927,249 +1669,6 @@
      return unmonitor_wext(in_dev, initch, in_err, in_if, in_ext);
  }
--
+ 
 -int monitor_ipw2100(const char *in_dev, int initch, char *in_err, void **in_if, void *in_ext) {
 -    // Allocate a tracking record for the interface settings and remember our
 -    // setup
@@ -2852,10 +2865,171 @@ diff -urN kismet.dev/pcapsource.cc kismet.dev2/pcapsource.cc
 -    return 1;
 -}
 -
+-// (Unless we learn different) the 3945 in full rfmon acts the same as
+-// an ipw2200, so we'll use the same control mechanisms
+-int monitor_ipw3945(const char *in_dev, int initch, char *in_err, 
+-					void **in_if, void *in_ext) {
+-    // Allocate a tracking record for the interface settings and remember our
+-    // setup
+-    linux_ifparm *ifparm = (linux_ifparm *) malloc(sizeof(linux_ifparm));
+-    (*in_if) = ifparm;
+-
+-    if (Ifconfig_Get_Flags(in_dev, in_err, &ifparm->flags) < 0) {
+-        return -1;
+-    }
+-
+-    if ((ifparm->channel = Iwconfig_Get_Channel(in_dev, in_err)) < 0)
+-        return -1;
+-
+-    if (Iwconfig_Get_Mode(in_dev, in_err, &ifparm->mode) < 0)
+-        return -1;
+-
+-    // Call the normal monitor mode
+-    return (monitor_wext(in_dev, initch, in_err, in_if, in_ext));
+-}
+-
+-int unmonitor_ipw3945(const char *in_dev, int initch, char *in_err, 
+-					  void **in_if, void *in_ext) {
+-    // Restore initial monitor header
+-    // linux_ifparm *ifparm = (linux_ifparm *) (*in_if);
+-
+-    linux_ifparm *ifparm = (linux_ifparm *) (*in_if);
+-
+-    if (Ifconfig_Set_Flags(in_dev, in_err, ifparm->flags) < 0) {
+-        return -1;
+-    }
+-
+-    if (Iwconfig_Set_Mode(in_dev, in_err, ifparm->mode) < 0)
+-        return -1;
+-
+-	// James says this wants to be set to channel 0 for proper scanning operation
+-	if (Iwconfig_Set_Channel(in_dev, 0, in_err) < 0)
+-		return -1;
+-
+-    free(ifparm);
+-
+-    return 1;
+-}
+-
+-// The 3945 in "parasite" mode (until James names it) is a different
+-// beast entirely.  It uses a dynamically added tap interface to give us
+-// realtime rtap formatted frames off the interface, so we need to
+-// turn it on via sysfs and then push the new rtapX interface into the source
+-// before the open happens
+-int monitor_ipwlivetap(const char *in_dev, int initch, char *in_err, 
+-					   void **in_if, void *in_ext) {
+-	// We don't try to remember settings because we aren't going to do
+-	// anything with them, we're leeching off a dynamic interface made
+-	// just for us.
+-	char dynif[32];
+-	FILE *sysf;
+-	char path[1024];
+-	short int ifflags;
+-
+-	// Try to get the flags off the master interface
+-    if (Ifconfig_Get_Flags(in_dev, in_err, &ifflags) < 0) {
+-        return -1;
+-    }
+-
+-	// If the master interface isn't even up, blow up.
+-	if ((ifflags & IFF_UP) == 0) {
+-		snprintf(in_err, 1024, "The ipw control interface (%s) is not "
+-				 "configured as 'up'.  The ipwlivetap mode reports "
+-				 "traffic from a currently running interface.  For pure "
+-				 "rfmon monitor mode, use ipwXXXX instead.", in_dev);
+-		return -1;
+-	}
+-
+-	// Use the .../net/foo/device symlink into the .../bus/pci/drivers/
+-	// ipw3945/foo/ pci bus interface
+-	snprintf(path, 1024, "/sys/class/net/%s/device/rtap_iface",
+-			 in_dev);
+-
+-	// Open it in RO mode first and get the current state.  I'm not sure
+-	// how well frewind works on a dynamic system file so we'll just
+-	// close it off and re-open it when we go to set modes, if we need
+-	// to.
+-	if ((sysf = fopen(path, "r")) == NULL) {
+-		snprintf(in_err, 1024, "Failed to open ipw sysfs tap control file, "
+-				 "check that the version of the ipw drivers you are running "
+-				 "is recent enough, and that your system has sysfs properly "
+-				 "set up.");
+-		return -1;
+-	}
+-
+-	fgets(dynif, 32, sysf);
+-
+-	// We're done with the RO 
+-	fclose(sysf);
+-
+-	// If it's -1, we aren't turned on and we need to.
+-	if (strncmp(dynif, "-1", 32) == 0) {
+-		if ((sysf = fopen(path, "w")) == NULL) {
+-			snprintf(in_err, 1024, "Failed to open the ipw sysfs tap control "
+-					 "file for writing (%s).  Check that Kismet has the proper "
+-					 "privilege levels and that you are running a version of the "
+-					 "ipw drivers which supports associated rfmon.", strerror(errno));
+-			return -1;
+-		}
+-
+-		fprintf(sysf, "1\n");
+-		fclose(sysf);
+-
+-		// Reopen it again for reading for the last time, and get the
+-		// interface we changed to.  Do some minor error checking to make
+-		// sure the new interface isn't called -1, 0, or 1, which I'm going
+-		// to guess would imply an older driver
+-		if ((sysf = fopen(path, "r")) == NULL) {
+-			snprintf(in_err, 1024, "Failed to open the ipw sysfs tap "
+-					 "control to find the interface allocated.  Something strange "
+-					 "has happened, because the control file was available "
+-					 "previously for setting.  Check your system messages.");
+-			return -1;
+-		}
+-
+-		fgets(dynif, 32, sysf);
+-
+-		fclose(sysf);
+-
+-		// Wait for the distro to settle if its going to rename an interface
+-		sleep(1);
+-	}
+-
+-	// Sanity check the interface we were told to use.  A 0, 1, -1 probably
+-	// means a bad driver version.
+-	if (strncmp(dynif, "-1", 32) == 0 || strncmp(dynif, "0", 32) == 0 ||
+-		strncmp(dynif, "1", 32) == 0) {
+-		snprintf(in_err, 1024, "Got a nonsense interface from the ipw "
+-				 "sysfs tap control file.  This probably means your ipw "
+-				 "drivers are out of date, or that there is something strange "
+-				 "happening in the drivers.  Check your system messages.");
+-		return -1;
+-	}
+-
+-	// Now that we've gone through that nonsense, make sure the
+-	// dynamic rtap interface is up
+-	if (Ifconfig_Delta_Flags(dynif, in_err, IFF_UP | IFF_RUNNING | IFF_PROMISC) < 0)
+-        return -1;
+-
+-	// And push the config into the packetsoure
+-	((KisPacketSource *) in_ext)->SetInterface(dynif);
+-
+-	return 1;
+-}
+-
+-int unmonitor_ipwlivetap(const char *in_dev, int initch, char *in_err, 
+-						 void **in_if, void *in_ext) {
+-	// Actually there isn't anything to do here.  Right now, I don't
+-	// think I care if we leave the parasite rtap interface hanging around.
+-	// Newcore might do this better, but this isn't newcore.
+-
+-    return 1;
+-}
+-
  // "standard" wireless extension monitor mode
  int monitor_wext(const char *in_dev, int initch, char *in_err, void **in_if, void *in_ext) {
      int mode;
-@@ -1870,108 +1527,6 @@
+@@ -2231,108 +1730,6 @@
  #endif
  
  #ifdef SYS_LINUX
@@ -2964,7 +3138,7 @@ diff -urN kismet.dev/pcapsource.cc kismet.dev2/pcapsource.cc
  int monitor_wrt54g(const char *in_dev, int initch, char *in_err, void **in_if, 
  				   void *in_ext) {
      char cmdline[2048];
-@@ -1981,7 +1536,7 @@
+@@ -2342,7 +1739,7 @@
  			snprintf(in_err, 1024, "Unable to set mode using 'iwpriv %s set_monitor 1'. "
  					 "Some custom firmware images require you to specify the origial "
  					 "device and a new dynamic device and use the iwconfig controls. "
@@ -2973,7 +3147,7 @@ diff -urN kismet.dev/pcapsource.cc kismet.dev2/pcapsource.cc
  			return -1;
  		}
  
-@@ -1998,7 +1553,7 @@
+@@ -2359,7 +1756,7 @@
  			snprintf(in_err, 1024, "Unable to set mode using 'iwpriv %s set_monitor 0'. "
  					 "Some custom firmware images require you to specify the origial "
  					 "device and a new dynamic device and use the iwconfig controls. "
@@ -2982,7 +3156,7 @@ diff -urN kismet.dev/pcapsource.cc kismet.dev2/pcapsource.cc
  			return -1;
  		}
  
-@@ -2244,75 +1799,6 @@
+@@ -2607,75 +2004,6 @@
      return 0;
  }
  
@@ -3059,8 +3233,8 @@ diff -urN kismet.dev/pcapsource.cc kismet.dev2/pcapsource.cc
  
  #ifdef SYS_OPENBSD
 diff -urN kismet.dev/tcpstreamer.cc kismet.dev2/tcpstreamer.cc
---- kismet.dev/tcpstreamer.cc	2005-08-16 03:22:51.000000000 +0200
-+++ kismet.dev2/tcpstreamer.cc	2005-08-23 01:59:25.668216448 +0200
+--- kismet.dev/tcpstreamer.cc	2005-05-26 16:51:45.000000000 +0200
++++ kismet.dev2/tcpstreamer.cc	2006-04-14 19:31:56.000000000 +0200
 @@ -30,8 +30,6 @@
      serv_fd = 0;
  
@@ -3082,8 +3256,8 @@ diff -urN kismet.dev/tcpstreamer.cc kismet.dev2/tcpstreamer.cc
      if (!FD_ISSET(in_fd, &client_fds))
          return -1;
 diff -urN kismet.dev/tcpstreamer.h kismet.dev2/tcpstreamer.h
---- kismet.dev/tcpstreamer.h	2005-08-16 03:22:51.000000000 +0200
-+++ kismet.dev2/tcpstreamer.h	2005-08-23 01:59:25.669216296 +0200
+--- kismet.dev/tcpstreamer.h	2005-05-26 16:51:45.000000000 +0200
++++ kismet.dev2/tcpstreamer.h	2006-04-14 19:31:56.000000000 +0200
 @@ -42,7 +42,6 @@
  #include "ringbuf.h"
  #include "packet.h"
