@@ -1,0 +1,12 @@
+diff -urN ulogd-1.23/pcap/Makefile.in ulogd-1.23.new/pcap/Makefile.in
+--- ulogd-1.23/pcap/Makefile.in	2004-03-23 23:36:04.000000000 +0100
++++ ulogd-1.23.new/pcap/Makefile.in	2006-04-19 11:30:45.000000000 +0200
+@@ -14,7 +14,7 @@
+ distrib:
+ 
+ $(SHARED_LIBS): %.so: %_sh.o
+-	$(LD) -shared -o $@ $< -lc -lpcap
++	$(LD) -shared -o $@ $< -lc -lpcap -L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib
+ 
+ %_sh.o: %.c
+ 	$(CC) $(SH_CFLAGS) -o $@ -c $<

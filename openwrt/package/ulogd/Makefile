@@ -21,6 +21,12 @@ ifneq ($(BR2_PACKAGE_ULOGD_MOD_MYSQL),)
 ULOGD_MYSQL_OPTION:=--with-mysql=$(STAGING_DIR)/usr
 endif
 
+ifneq ($(BR2_PACKAGE_ULOGD_MOD_PCAP),)
+ULOGD_PCAP_HEADER:=yes
+else
+ULOGD_PCAP_HEADER:=no
+endif
+
 ifneq ($(BR2_PACKAGE_ULOGD_MOD_PGSQL),)
 ULOGD_PGSQL_OPTION:=--with-pgsql=$(STAGING_DIR)/usr
 endif
@@ -43,9 +49,11 @@ $(eval $(call PKG_template,ULOGD,ulogd,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,ULOGD_MOD_MYSQL,ulogd-mod-mysql,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,ULOGD_MOD_PGSQL,ulogd-mod-pgsql,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,ULOGD_MOD_EXTRA,ulogd-mod-extra,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,ULOGD_MOD_EXTRA,ulogd-mod-pcap,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 $(eval $(call IPKG_plugin_template,ULOGD_MOD_MYSQL,MYSQL))
 $(eval $(call IPKG_plugin_template,ULOGD_MOD_PGSQL,PGSQL))
+$(eval $(call IPKG_plugin_template,ULOGD_MOD_PCAP,PCAP))
 $(eval $(call IPKG_plugin_template,ULOGD_MOD_EXTRA,LOCAL LOGEMU OPRINT PWSNIFF SYSLOG))
 
 $(PKG_BUILD_DIR)/.configured:
@@ -54,7 +62,7 @@ $(PKG_BUILD_DIR)/.configured:
 		CFLAGS="$(TARGET_CFLAGS)" \
 		CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include" \
 		LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib" \
-		ac_cv_header_pcap_h=no \
+		ac_cv_header_pcap_h=$(ULOGD_PCAP_HEADER) \
 		./configure \
 			--target=$(GNU_TARGET_NAME) \
 			--host=$(GNU_TARGET_NAME) \
@@ -87,6 +95,7 @@ $(PKG_BUILD_DIR)/.built:
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
+		STAGING_DIR=$(STAGING_DIR) \
 		all install
 	touch $@
 
