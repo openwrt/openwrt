@@ -20,13 +20,16 @@ PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 PKG_MENU:=IPv4 / IPv6 firewall administration
 
 include $(TOPDIR)/package/rules.mk
+ifeq ($(DUMP),)
 include $(LINUX_DIR)/.config
 include $(TOPDIR)/target/linux/netfilter.mk
+endif
 
 define Package/iptables
 SECTION:=net
 CATEGORY:=Base system
 TITLE:=IPv4 firewall administration tool
+URL:=http://netfilter.org/
 endef
 
 define Package/iptables-mod-conntrack
