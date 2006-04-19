@@ -17,6 +17,13 @@ config BR2_PACKAGE_ULOGD_MOD_MYSQL
 	depends BR2_PACKAGE_ULOGD
 	select BR2_PACKAGE_LIBMYSQLCLIENT
 
+config BR2_PACKAGE_ULOGD_MOD_PCAP
+        prompt  "ulogd-mod-pcap................... Output plugin for logging into pcap format"
+	tristate
+	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_ULOGD
+	select BR2_PACKAGE_LIBPCAP
+
 config BR2_PACKAGE_ULOGD_MOD_PGSQL
 	prompt   "ulogd-mod-pgsql................. Output plugin for logging into a PostgreSQL database"
 	tristate
