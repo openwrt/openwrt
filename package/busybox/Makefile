@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=busybox
+PKG_VERSION:=1.1.2
 PKG_RELEASE:=1
 
-PKG_VERSION:=1.1.2
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://www.busybox.net/downloads
@@ -21,7 +21,7 @@ CATEGORY:=Base system
 TITLE:=Core utilities for embedded Linux
 DESCRIPTION:=The Swiss Army Knife of embedded Linux.  It slices, it dices, it\\\
 makes Julian Fries.
-URL:=http://busybox.net
+URL:=http://busybox.net/
 endef
 
 define Build/Configure
