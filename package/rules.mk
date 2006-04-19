@@ -1,5 +1,9 @@
 # default target
+ifneq ($(DUMP),)
+all: dumpinfo
+else
 all: compile
+endif
 
 define Build/DefaultTargets
 $(PKG_BUILD_DIR)/.prepared:
@@ -71,15 +75,15 @@ IDEPEND_$(1):=$$(strip $$(DEPENDS))
 $$(IDIR_$(1))/CONTROL/control: $(PKG_BUILD_DIR)/.prepared
 	mkdir -p $$(IDIR_$(1))/CONTROL
 	echo "Package: $(1)" > $$(IDIR_$(1))/CONTROL/control
-	echo "Version: $$(VERSION)" >> $$(IDIR_$(1))/CONTROL/control
+	echo "Version: $(VERSION)" >> $$(IDIR_$(1))/CONTROL/control
 	echo "Depends: $$(IDEPEND_$(1))" >> $$(IDIR_$(1))/CONTROL/control
-	echo "Source: $$(SOURCE)" >> $$(IDIR_$(1))/CONTROL/control
-	echo "Section: $$(SECTION)" >> $$(IDIR_$(1))/CONTROL/control
-	echo "Priority: $$(PRIORITY)" >> $$(IDIR_$(1))/CONTROL/control
-	echo "Maintainer: $$(MAINTAINER)" >> $$(IDIR_$(1))/CONTROL/control
-	echo "Architecture: $$(PKGARCH)" >> $$(IDIR_$(1))/CONTROL/control
-	echo "Description: $$(TITLE)" >> $$(IDIR_$(1))/CONTROL/control
-	echo "$$(DESCRIPTION)" | sed -e 's,\\,\n ,g' >> $$(IDIR_$(1))/CONTROL/control
+	echo "Source: $(SOURCE)" >> $$(IDIR_$(1))/CONTROL/control
+	echo "Section: $(SECTION)" >> $$(IDIR_$(1))/CONTROL/control
+	echo "Priority: $(PRIORITY)" >> $$(IDIR_$(1))/CONTROL/control
+	echo "Maintainer: $(MAINTAINER)" >> $$(IDIR_$(1))/CONTROL/control
+	echo "Architecture: $(PKGARCH)" >> $$(IDIR_$(1))/CONTROL/control
+	echo "Description: $(TITLE)" >> $$(IDIR_$(1))/CONTROL/control
+	echo "$(DESCRIPTION)" | sed -e 's,\\,\n ,g' >> $$(IDIR_$(1))/CONTROL/control
 	chmod 644 $$(IDIR_$(1))/CONTROL/control
 	for file in conffiles preinst postinst prerm postrm; do \
 		[ -f ./ipkg/$(1).$$$$file ] && cp ./ipkg/$(1).$$$$file $$(IDIR_$(1))/CONTROL/$$$$file || true; \
@@ -95,6 +99,18 @@ $$(INFO_$(1)): $$(IPKG_$(1))
 $(1)-clean:
 	rm -f $$(IPKG_$(1))
 clean: $(1)-clean
+
+DUMPINFO += \
+	echo "Package: $(1)"; \
+	echo "Version: $(VERSION)"; \
+	echo "Depends: $(IDEPEND_$(1))"; \
+	echo "Title: $(TITLE)"; \
+	echo "$(DESCRIPTION)" | sed -e 's,\\,\n,g'; \
+	echo; \
+	echo "$(URL)"; \
+	echo "@@";
+
+PACKAGES += $(1)
 
 ifneq ($(__DEFAULT_TARGETS),1)
 $(eval $(call Build/DefaultTargets))
@@ -143,6 +159,11 @@ define Build/Compile
 $(call Build/Compile/Default)
 endef
 
+ifneq ($(DUMP),)
+dumpinfo:
+	$(DUMPINFO)
+else
+
 source: $(DL_DIR)/$(PKG_SOURCE)
 prepare: source
 	@[ -f $(PKG_BUILD_DIR)/.prepared ] || { \
@@ -183,5 +204,6 @@ clean:
 	@$(CMD_TRACE) "cleaning... " 
 	@$(MAKE) clean-targets $(MAKE_TRACE)
 	rm -rf $(PKG_BUILD_DIR)
+endif
 
-.PHONY: all source prepare compile install clean
+.PHONY: all source prepare compile install clean dumpinfo
