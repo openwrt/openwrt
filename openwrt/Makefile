@@ -1,7 +1,6 @@
 # Makefile for OpenWrt
 #
-# Copyright (C) 2005 by Felix Fietkau <openwrt@nbd.name>
-# Copyright (C) 1999-2004 by Erik Andersen <andersen@codepoet.org>
+# Copyright (C) 2006 by Felix Fietkau <openwrt@nbd.name>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,6 +17,9 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
 
+RELEASE:=Kamikaze
+#VERSION:=2.0 # uncomment for final release
+
 #--------------------------------------------------------------
 # Just run 'make menuconfig', configure stuff, then run 'make'.
 # You shouldn't need to mess with anything beyond this point...
@@ -25,159 +27,48 @@
 TOPDIR=${shell pwd}
 export TOPDIR
 
-ifneq ($(DEVELOPER),)
-CONFIG_CONFIG_IN = Config.in.devel
+OPENWRTVERSION:=$(RELEASE)
+ifneq ($(VERSION),)
+OPENWRTVERSION:=$(VERSION) ($(OPENWRTVERSION))
 else
-CONFIG_CONFIG_IN = Config.in
+REV:=$(shell LANG=C svn info | awk '/^Revision:/ { print$$2 }' )
+ifneq ($(REV),)
+OPENWRTVERSION:=$(OPENWRTVERSION)/r$(REV)
 endif
-CONFIG_DEFCONFIG = .defconfig
-CONFIG = package/config
+endif
+export OPENWRTVERSION
 
-noconfig_targets := menuconfig config oldconfig randconfig \
-	defconfig allyesconfig allnoconfig release tags
-
-# Pull in the user's configuration file
-ifeq ($(filter $(noconfig_targets),$(MAKECMDGOALS)),)
--include $(TOPDIR)/.config
+ifeq ($(shell ./scripts/timestamp.pl -p .pkginfo package),package)
+.pkginfo: pkginfo-clean
 endif
 
-ifeq ($(strip $(BR2_HAVE_DOT_CONFIG)),y)
-include $(TOPDIR)/rules.mk
+.pkginfo:
+	@echo Collecting package info...
+	@-for makefile in package/*/Makefile; do \
+		echo Source-Makefile: $$makefile; \
+		$(MAKE) DUMP=1 -f $$makefile 2>&- || true; \
+	done > $@
+	
+.config.in: .pkginfo
 
-all: world
+pkginfo-clean:
+	-rm -f .pkginfo .config.in
 
-.NOTPARALLEL:
+scripts/config/mconf: .config.in
+	$(MAKE) -C scripts/config all
 
-#############################################################
-#
-# You should probably leave this stuff alone unless you know
-# what you are doing.
-#
-#############################################################
+scripts/config/conf: .config.in
+	$(MAKE) -C scripts/config conf
 
-# In this section, we need .config
-include .config.cmd
+menuconfig: scripts/config/mconf
+	$< Config.in
 
-world: $(DL_DIR) $(BUILD_DIR) configtest 
-	$(MAKE) toolchain/install target/compile package/compile root_clean package/install target/install package_index
-	@$(TRACE) Build complete.
+config: scripts/config/mconf
+	$< Config.in
 
-.PHONY: all world clean dirclean distclean image_clean target_clean source configtest
+config-clean:
+	$(MAKE) -C scripts/config clean
 
-configtest:
-	-cp .config .config.test
-	-scripts/configtest.pl
+.PHONY: pkginfo-clean
 
-package_index:
-	(cd $(PACKAGE_DIR); $(STAGING_DIR)/usr/bin/ipkg-make-index . > Packages)
-
-$(DL_DIR):
-	@mkdir -p $(DL_DIR)
-
-$(BUILD_DIR):
-	@mkdir -p $(BUILD_DIR)
-
-source: toolchain/source package/source target/source
-
-package/%:
-	@$(TRACE) $@
-	$(MAKE) -C package $(patsubst package/%,%,$@)
-
-target/%:
-	@$(TRACE) $@
-	$(MAKE) -C target $(patsubst target/%,%,$@)
-
-toolchain/%:
-	@$(TRACE) $@
-	$(MAKE) -C toolchain $(patsubst toolchain/%,%,$@)
-
-#############################################################
-#
-# Cleanup and misc junk
-#
-#############################################################
-root_clean:
-	@$(TRACE) root_clean
-	rm -rf $(BUILD_DIR)/linux-*/root $(BUILD_DIR)/root
-
-target_clean: root_clean
-	rm -f $(STAMP_DIR)/.*-compile
-	rm -f $(STAMP_DIR)/.*-install
-	rm -rf $(BIN_DIR)
-
-clean: dirclean
-
-dirclean:
-	@$(TRACE) dirclean
-	@$(MAKE) -C $(CONFIG) clean
-	rm -rf $(BUILD_DIR)
-
-distclean: dirclean
-	rm -rf $(STAMP_DIR) $(DL_DIR) $(TOOL_BUILD_DIR) $(STAGING_DIR)
-	rm -f .config* .tmpconfig.h
-
-else # ifeq ($(strip $(BR2_HAVE_DOT_CONFIG)),y)
-
-all: menuconfig
-
-# configuration
-# ---------------------------------------------------------------------------
-
-$(CONFIG)/conf:
-	$(MAKE) -C $(CONFIG) conf
-	-@if [ ! -f .config ] ; then \
-		cp $(CONFIG_DEFCONFIG) .config; \
-	fi
-$(CONFIG)/mconf:
-	$(MAKE) -C $(CONFIG) 
-	-@if [ ! -f .config ] ; then \
-		cp $(CONFIG_DEFCONFIG) .config; \
-	fi
-
-menuconfig: $(CONFIG)/mconf
-	-touch .config
-	-cp .config .config.test
-	@$(CONFIG)/mconf $(CONFIG_CONFIG_IN)
-	-./scripts/configtest.pl
-
-config: $(CONFIG)/conf
-	-touch .config
-	-cp .config .config.test
-	@$(CONFIG)/conf $(CONFIG_CONFIG_IN)
-	-./scripts/configtest.pl
-
-oldconfig: $(CONFIG)/conf
-	-touch .config
-	-cp .config .config.test
-	@$(CONFIG)/conf -o $(CONFIG_CONFIG_IN)
-	-./scripts/configtest.pl
-
-randconfig: $(CONFIG)/conf
-	-touch .config
-	-cp .config .config.test
-	@$(CONFIG)/conf -r $(CONFIG_CONFIG_IN)
-	-./scripts/configtest.pl
-
-allyesconfig: $(CONFIG)/conf
-	-touch .config
-	-cp .config .config.test
-	@$(CONFIG)/conf -o $(CONFIG_CONFIG_IN)
-	-./scripts/configtest.pl
-
-allnoconfig: $(CONFIG)/conf
-	-touch .config
-	-cp .config .config.test
-	@$(CONFIG)/conf -n $(CONFIG_CONFIG_IN)
-	-./scripts/configtest.pl
-
-defconfig: $(CONFIG)/conf
-	-touch .config
-	-cp .config .config.test
-	@$(CONFIG)/conf -d $(CONFIG_CONFIG_IN)
-	-./scripts/configtest.pl
-
-endif # ifeq ($(strip $(BR2_HAVE_DOT_CONFIG)),y)
-
-.PHONY: dummy subdirs release distclean clean config oldconfig \
-	menuconfig tags check test depend
 

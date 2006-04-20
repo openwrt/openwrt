@@ -34,12 +34,12 @@ static const char mconf_readme[] = N_(
 "may be completely removed altogether.\n"
 "\n"
 "Menu items beginning with [*], <M> or [ ] represent features\n"
-"configured to be built in, modularized or removed respectively.\n"
-"Pointed brackets <> represent module capable features.\n"
+"configured to be included, built as package or removed respectively.\n"
+"Pointed brackets <> represent packaging capable features.\n"
 "\n"
 "To change any of these features, highlight it with the cursor\n"
-"keys and press <Y> to build it in, <M> to make it a module or\n"
-"<N> to removed it.  You may also press the <Space Bar> to cycle\n"
+"keys and press <Y> to include it, <M> to make it a package or\n"
+"<N> to remove it.  You may also press the <Space Bar> to cycle\n"
 "through the available options (ie. Y->N->M->Y).\n"
 "\n"
 "Some additional keyboard hints:\n"
@@ -162,9 +162,9 @@ menu_instructions[] = N_(
 	"Arrow keys navigate the menu.  "
 	"<Enter> selects submenus --->.  "
 	"Highlighted letters are hotkeys.  "
-	"Pressing <Y> includes, <N> excludes, <M> modularizes features.  "
+	"Pressing <Y> includes, <N> excludes, <M> builds as package.  "
 	"Press <Esc><Esc> to exit, <?> for Help, </> for Search.  "
-	"Legend: [*] built-in  [ ] excluded  <M> module  < > module capable"),
+	"Legend: [*] built-in  [ ] excluded  <M> package  < > package capable"),
 radiolist_instructions[] = N_(
 	"Use the arrow keys to navigate this window or "
 	"press the hotkey of the item you wish to select "
@@ -181,8 +181,8 @@ inputbox_instructions_string[] = N_(
 	"Please enter a string value. "
 	"Use the <TAB> key to move from the input field to the buttons below it."),
 setmod_text[] = N_(
-	"This feature depends on another which has been configured as a module.\n"
-	"As a result, this feature will be built as a module."),
+	"This feature depends on another which has been configured as a package.\n"
+	"As a result, this feature will be built as a package."),
 nohelp_text[] = N_(
 	"There is no help available for this config option.\n"),
 load_config_text[] = N_(

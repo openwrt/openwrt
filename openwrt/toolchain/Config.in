@@ -1,29 +1,45 @@
 #
 
-source "toolchain/uClibc/Config.in"
+menuconfig TOOLCHAINOPTS
+	bool "Toolchain Options" if DEVEL
+
 source "toolchain/binutils/Config.in"
 source "toolchain/gcc/Config.in"
 
-if CONFIG_DEVEL
-	comment "Common Toolchain Options"
-endif
-
-config BR2_ENABLE_MULTILIB
+config ENABLE_MULTILIB
 	bool
+	prompt "Enable multilib support?" if TOOLCHAINOPTS
 	default n
+	help
+	    If you want multilib enabled, enable this...
 
-config BR2_LARGEFILE
+config LARGEFILE
 	bool
-	depends on !BR2_cris
+	prompt "Enable large file (files > 2 GB) support?" if TOOLCHAINOPTS
+	depends on !cris
 	default y
+	help
+	    Enable large file (files > 2 GB) support
 
-config BR2_SOFT_FLOAT
+config SOFT_FLOAT
 	bool
+	prompt "Use software floating point by default" if TOOLCHAINOPTS
 	default n
-	depends on BR2_arm || BR2_mips || BR2_powerpc
+	depends on arm || mips || powerpc
+	help
+	  If your target CPU does not have a Floating Point Unit (FPU) or a
+	  kernel FPU emulator, but you still wish to support floating point
+	  functions, then everything will need to be compiled with soft floating
+	  point support (-msoft-float).
 
-config BR2_TARGET_OPTIMIZATION
+	  Most people will answer N.
+
+config TARGET_OPTIMIZATION
 	string
-	default "-Os -pipe -march=i486 -funit-at-a-time" if BR2_i386
-	default "-Os -pipe -mips32 -mtune=mips32 -funit-at-a-time" if BR2_mipsel || BR2_mips
+	prompt "Target Optimizations" if TOOLCHAINOPTS
+	default "-Os -pipe -march=i486 -funit-at-a-time" if i386
+	default "-Os -pipe -mips32 -mtune=mips32 -funit-at-a-time" if mipsel || mips
 	default "-Os -pipe -funit-at-a-time"
+	help
+	  Optimizations to use when building for the target host.
+

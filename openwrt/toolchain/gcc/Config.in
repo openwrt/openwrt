@@ -1,88 +1,62 @@
 # Choose gcc version.
-# WARNING -- 2.95 currently only builds for i386, arm, mips*, and powerpc.
-# WARNING -- 2.95 does not currently build natively for the target.
-
-if CONFIG_DEVEL
-	comment "Gcc Options"
-endif
-
-
-# the choice option below is completely ignored
-# if CONFIG_DEVEL isn't set, so we have to set
-# these manually ... annoying.
-config BR2_GCC_VERSION_3_4_4
-	bool
-	default y if BR2_LINUX_2_4_BRCM
-
-config BR2_GCC_VERSION_4_0_3
-	bool
-	default y if BR2_LINUX_2_6_ARUBA
 
 choice
-	prompt "GCC compiler Version" if CONFIG_DEVEL
-	default BR2_GCC_VERSION_4_0_3 if BR2_LINUX_2_6_ARUBA
-	default BR2_GCC_VERSION_3_4_4 if BR2_LINUX_2_4_BRCM
-	default BR2_GCC_VERSION_3_4_6
+	prompt "GCC compiler Version" if TOOLCHAINOPTS
+	default GCC_VERSION_4_0_3 if LINUX_2_6_ARUBA
+	default GCC_VERSION_3_4_4 if LINUX_2_4_BRCM
+	default GCC_VERSION_3_4_6
 	help
 	  Select the version of gcc you wish to use.
 
 
-	config BR2_GCC_VERSION_3_4_4
+	config GCC_VERSION_3_4_4
 		bool "gcc 3.4.4"
 
-	config BR2_GCC_VERSION_3_4_5
+	config GCC_VERSION_3_4_5
 		bool "gcc 3.4.5"
 
-	config BR2_GCC_VERSION_3_4_6
+	config GCC_VERSION_3_4_6
 		bool "gcc 3.4.6"
 
-	config BR2_GCC_VERSION_4_0_2
+	config GCC_VERSION_4_0_2
 		bool "gcc 4.0.2"
 
-	config BR2_GCC_VERSION_4_0_3
+	config GCC_VERSION_4_0_3
 		bool "gcc 4.0.3"
 		
-	config BR2_GCC_VERSION_4_1_0
+	config GCC_VERSION_4_1_0
 		bool "gcc 4.1.0"
 
 endchoice
 
-# more nasty hacks
-config BR2_PACKAGE_LIBGCC
+config PACKAGE_LIBGCC
 	tristate
-	default y if BR2_GCC_VERSION_4_0_2 || BR2_GCC_VERSION_4_0_3 || BR2_GCC_VERSION_4_1_0
-	default m if CONFIG_DEVEL
-	default n
+	prompt "libgcc package" if TOOLCHAINOPTS
+	default y if GCC_VERSION_4_0_2 || GCC_VERSION_4_0_3 || GCC_VERSION_4_1_0
+	default m
 
-config BR2_GCC_VERSION
+config GCC_VERSION
 	string
-	default "3.4.4"     if BR2_GCC_VERSION_3_4_4
-	default "3.4.5"     if BR2_GCC_VERSION_3_4_5
-	default "3.4.6"     if BR2_GCC_VERSION_3_4_6
-	default "4.0.2"     if BR2_GCC_VERSION_4_0_2
-	default "4.0.3"     if BR2_GCC_VERSION_4_0_3
-	default "4.1.0"     if BR2_GCC_VERSION_4_1_0
+	prompt "GCC compiler Version" if (TOOLCHAINOPTS && NULL)
+	default "3.4.4"     if GCC_VERSION_3_4_4 || LINUX_2_4_BRCM
+	default "3.4.5"     if GCC_VERSION_3_4_5
+	default "3.4.6"     if GCC_VERSION_3_4_6
+	default "4.0.2"     if GCC_VERSION_4_0_2
+	default "4.0.3"     if GCC_VERSION_4_0_3 || LINUX_2_6_ARUBA
+	default "4.1.0"     if GCC_VERSION_4_1_0
 	default "3.4.6"
 
 
-config BR2_GCC_USE_SJLJ_EXCEPTIONS
+config EXTRA_GCC_CONFIG_OPTIONS
 	string
-#	default "--enable-sjlj-exceptions"
-	default ""
-	help
-	    Currently the unwind stuff seems to work for staticly linked apps
-	    but not dynamic.  So use setjmp/longjmp exceptions by default.
-
-config BR2_EXTRA_GCC_CONFIG_OPTIONS
-	string
-	prompt "Additional gcc options" if CONFIG_DEVEL
+	prompt "Additional gcc options" if TOOLCHAINOPTS
 	default ""
 	help
 	    Any additional gcc options you may want to include....
 
-config BR2_INSTALL_LIBSTDCPP
+config INSTALL_LIBSTDCPP
 	bool
-	prompt "Build/install c++ compiler and libstdc++?" if CONFIG_DEVEL
+	prompt "Build/install c++ compiler and libstdc++?" if TOOLCHAINOPTS
 	default y
 	help
 	    Build/install c++ compiler and libstdc++?

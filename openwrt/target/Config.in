@@ -1,25 +1,28 @@
 choice
 	prompt "Target System"
-	default BR2_LINUX_2_4_BRCM
+	default LINUX_2_4_BRCM
 	
-config BR2_LINUX_2_6_ARUBA
+config LINUX_2_6_ARUBA
 	bool "Aruba [2.6]"
-	select BR2_mips
-	select BR2_LINUX_2_6
+	select mips
+	select LINUX_2_6
+	select PCI_SUPPORT
 	help
           Build firmware images for Aruba boards 
 
-config BR2_LINUX_2_4_AR531X
+config LINUX_2_4_AR531X
 	bool "Atheros AR531x [2.4]"
-	select BR2_mips
+	select mips
+	select LINUX_2_4
 	help
 	  Build firmware images for Atheros AR531x based boards
 	  (e.g. Netgear WGT624, Linksys WRT55AG)
 
-config BR2_LINUX_2_4_BRCM
+config LINUX_2_4_BRCM
 	bool "Broadcom BCM47xx/53xx [2.4]"
-	select BR2_mipsel
-	select BR2_LINUX_PCMCIA_SUPPORT
+	select mipsel
+	select PCI_SUPPORT
+	select PCMCIA_SUPPORT
 	help
 	  Build firmware images for Broadcom based routers
 	  (e.g. Linksys WRT54G(S), Asus WL-500g, Motorola WR850G)
@@ -28,100 +31,176 @@ config BR2_LINUX_2_4_BRCM
 	  options below for creating device specific files for use 
 	  with TFTP client too. 
 
-config BR2_LINUX_2_6_BRCM
+config LINUX_2_6_BRCM
 	bool "Broadcom BCM47xx/53xx [2.6]"
-	select BR2_mipsel
-	select BR2_LINUX_2_6
-	select BR2_LINUX_PCMCIA_SUPPORT
+	select mipsel
+	select LINUX_2_6
+	select PCI_SUPPORT
+	#select PCMCIA_SUPPORT
 	help
 	  Build firmware images for Broadcom based routers
 	  (e.g. Netgear WGT634u)
 
-config BR2_LINUX_2_4_AR7
+config LINUX_2_4_AR7
 	bool "TI AR7 [2.4]"
-	select BR2_mipsel
+	select mipsel
 	help
 	  Build firmware images for TI AR7 based routers (w.g. Linksys WAG54G v2)
 
-config BR2_LINUX_2_4_X86
+config LINUX_2_4_X86
 	bool "x86 [2.4]"
-	select BR2_i386
-	select BR2_LINUX_PCMCIA_SUPPORT
+	select i386
+	select LINUX_2_4
+	select PCMCIA_SUPPORT
 	help
 	  Build firmware images for x86 based boards
 	  (e.g. Soekris net4521 and net4801, PC Engines WRAP...)
 
-config BR2_LINUX_2_6_X86
+config LINUX_2_6_X86
 	bool "x86 [2.6]"
-	select BR2_i386
-	select BR2_LINUX_2_6
-	select BR2_LINUX_PCMCIA_SUPPORT
+	select i386
+	select LINUX_2_6
+	select PCMCIA_SUPPORT
 	help
 	  Build firmware images for x86 based boards
 	  (e.g. Soekris net4521 and net4801, PC Engines WRAP...)
 
-config BR2_LINUX_2_6_AU1000
+config LINUX_2_6_AU1000
 	bool "au1000 [2.6]"
-	select BR2_mipsel
-	select BR2_LINUX_2_6
-	select BR2_LINUX_PCMCIA_SUPPORT
+	select mipsel
+	select LINUX_2_6
+	select LINUX_PCMCIA_SUPPORT
 	help
 	  Build firmware for AMD Alchemy 1500 boards
 	  (e.g. 4G-Systems Mesh/Access Cube ...)
 
 if CONFIG_DEVEL
 
-config BR2_LINUX_2_6_ARM
+config LINUX_2_6_ARM
 	bool "UNSUPPORTED little-endian arm platform"
-	select BR2_arm
+	select LINUX_2_6
+	select arm
 
-config BR2_LINUX_2_6_ARMEB
+config LINUX_2_6_ARMEB
 	bool "UNSUPPORTED big-endian arm platform"
-	select BR2_armeb
+	select LINUX_2_6
+	select armeb
 
-config BR2_LINUX_2_6_CRIS
+config LINUX_2_6_CRIS
 	bool "UNSUPPORTED cris platform"
-	select BR2_cris
+	select LINUX_2_6
+	select cris
 
-config BR2_LINUX_2_6_M68K
+config LINUX_2_6_M68K
 	bool "UNSUPPORTED m68k platform"
-	select BR2_m68k
+	select LINUX_2_6
+	select m68k
 
-config BR2_LINUX_2_6_PPC
+config LINUX_2_6_PPC
 	bool "UNSUPPORTED powerpc platform"
-	select BR2_powerpc
+	select LINUX_2_6
+	select powerpc
 
-config BR2_LINUX_2_6_SH3
+config LINUX_2_6_SH3
 	bool "UNSUPPORTED little-endian sh3 platform"
-	select BR2_sh3
+	select LINUX_2_6
+	select sh3
 
-config BR2_LINUX_2_6_SH3EB
+config LINUX_2_6_SH3EB
 	bool "UNSUPPORTED big-endian sh3 platform"
-	select BR2_sh3eb
+	select LINUX_2_6
+	select sh3eb
 
-config BR2_LINUX_2_6_SH4
+config LINUX_2_6_SH4
 	bool "UNSUPPORTED little-endian sh4 platform"
-	select BR2_sh4
+	select LINUX_2_6
+	select sh4
 
-config BR2_LINUX_2_6_SH4EB
+config LINUX_2_6_SH4EB
 	bool "UNSUPPORTED big-endian sh4 platform"
-	select BR2_sh4eb
+	select LINUX_2_6
+	select sh4eb
 
-config BR2_LINUX_2_6_SPARC
+config LINUX_2_6_SPARC
 	bool "UNSUPPORTED sparc platform"
-	select BR2_sparc
+	select LINUX_2_6
+	select sparc
 
 endif
 
 endchoice
 
-config BR2_LINUX_2_6
-	bool
-	default n
-	depends BR2_LINUX_2_6_X86 || BR2_LINUX_2_6_BRCM || BR2_LINUX_2_6_ARUBA
 
-config BR2_LINUX_PCMCIA_SUPPORT
+# Kernel/Hardware features
+
+config LINUX_2_4
 	bool
-	default n
-	depends BR2_LINUX_2_4_X86 || BR2_LINUX_2_4_BRCM || BR2_LINUX_2_6_X86 || BR2_LINUX_2_6_BRCM
+
+config LINUX_2_6
+	bool
+
+config PCI_SUPPORT
+	bool
+
+config PCMCIA_SUPPORT
+	bool
+
+
+# Architecture selection
+
+config i386
+	bool
+	
+config mips
+	bool
+
+config mipsel
+	bool
+
+config arm
+	bool
+
+config armeb
+	bool
+
+config cris
+	bool
+
+config m68k
+	bool
+
+config powerpc
+	bool
+
+config sh3
+	bool
+
+config sh3eb
+	bool
+
+config sh4
+	bool
+
+config sh4eb
+	bool
+
+config sparc
+	bool
+
+config ARCH
+	string
+	default "arm"     if arm
+	default "armeb"   if armeb
+	default "cris"    if cris
+	default "i386"    if i386
+	default "m68k"    if m68k
+	default "mips"    if mips
+	default "mipsel"  if mipsel || !CONFIG_DEVEL
+	default "powerpc" if powerpc
+	default "sh3"     if sh3
+	default "sh3eb"   if sh3eb
+	default "sh4"     if sh4
+	default "sh4eb"   if sh4eb
+	default "sparc"   if sparc
+
 
