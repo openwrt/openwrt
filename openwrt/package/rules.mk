@@ -3,7 +3,6 @@ ifneq ($(DUMP),)
 all: dumpinfo
 else
 all: compile
-endif
 
 define Build/DefaultTargets
 $(PKG_BUILD_DIR)/.prepared:
@@ -12,18 +11,31 @@ $(PKG_BUILD_DIR)/.prepared:
 	$(call Build/Prepare)
 	touch $$@
 
-$(PKG_BUILD_DIR)/.configured:
+$(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 	$(call Build/Configure)
 	touch $$@
 
-$(PKG_BUILD_DIR)/.built:
+ifeq ($(shell $(SCRIPT_DIR)/timestamp.pl -p $(PKG_BUILD_DIR) .),.)
+$(PKG_BUILD_DIR)/.prepared: clean
+endif
+
+$(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 	$(call Build/Compile)
 	touch $$@
+
+package-clean:
+	$(call Build/Clean)
+	rm -f $(PKG_BUILD_DIR)/.built
+
+package-recompile:
+	rm -f $(PKG_BUILD_DIR)/.built
+
+.PHONY: package-clean package-recompile
 
 define Build/DefaultTargets
 endef
 endef
-
+endif
 
 define Package/Default
 CONFIGFILE:=
@@ -64,14 +76,23 @@ IDIR_$(1):=$(PKG_BUILD_DIR)/ipkg/$(1)
 INFO_$(1):=$(IPKG_STATE_DIR)/info/$(1).list
 
 ifneq ($(PACKAGE_$(1)),)
-compile-targets: $$(IPKG_$(1))
+COMPILE_$(1):=1
 endif
 ifneq ($(DEVELOPER),)
-compile-targets: $$(IPKG_$(1))
+COMPILE_$(1):=1
 endif
 ifeq ($(PACKAGE_$(1)),y)
 install-targets: $$(INFO_$(1))
 endif
+
+ifneq ($$(COMPILE_$(1)),)
+ifeq ($$(shell $(SCRIPT_DIR)/timestamp.pl -p -x ipkg $$(IPKG_$(1)) $(PKG_BUILD_DIR)),$(PKG_BUILD_DIR))
+$(PKG_BUILD_DIR)/.built: package-recompile
+endif
+
+compile-targets: $$(IPKG_$(1))
+endif
+
 
 IDEPEND_$(1):=$$(strip $$(DEPENDS))
 
@@ -97,24 +118,23 @@ $$(IDIR_$(1))/CONTROL/control: $(PKG_BUILD_DIR)/.prepared
 	echo "Maintainer: $(MAINTAINER)" >> $$(IDIR_$(1))/CONTROL/control
 	echo "Architecture: $(PKGARCH)" >> $$(IDIR_$(1))/CONTROL/control
 	echo "Description: $(TITLE)" >> $$(IDIR_$(1))/CONTROL/control
-	echo "$(DESCRIPTION)" | sed -e 's,\\,\n ,g' >> $$(IDIR_$(1))/CONTROL/control
+	echo "  $(DESCRIPTION)" | sed -e 's,\\,\n ,g' >> $$(IDIR_$(1))/CONTROL/control
 	chmod 644 $$(IDIR_$(1))/CONTROL/control
 	for file in conffiles preinst postinst prerm postrm; do \
 		[ -f ./ipkg/$(1).$$$$file ] && cp ./ipkg/$(1).$$$$file $$(IDIR_$(1))/CONTROL/$$$$file || true; \
 	done
 
-$$(IPKG_$(1)): $$(IDIR_$(1))/CONTROL/control $(PKG_BUILD_DIR)/.built $(PACKAGE_DIR)
+$$(IPKG_$(1)): $$(IDIR_$(1))/CONTROL/control $(PKG_BUILD_DIR)/.built
 	$(call Package/$(1)/install,$$(IDIR_$(1)))
+	mkdir -p $(PACKAGE_DIR)
 	$(IPKG_BUILD) $$(IDIR_$(1)) $(PACKAGE_DIR)
 
 $$(INFO_$(1)): $$(IPKG_$(1))
 	$(IPKG) install $$(IPKG_$(1))
 
 $(1)-clean:
-	rm -f $$(IPKG_$(1))
+	rm -f $(PACKAGE_DIR)/$(1)_*
 clean: $(1)-clean
-
-PACKAGES += $(1)
 
 ifneq ($(__DEFAULT_TARGETS),1)
 $(eval $(call Build/DefaultTargets))
@@ -163,6 +183,10 @@ define Build/Compile
 $(call Build/Compile/Default)
 endef
 
+define Build/Clean
+	$(MAKE) clean
+endef
+
 ifneq ($(DUMP),)
 dumpinfo:
 	$(DUMPINFO)
@@ -191,14 +215,9 @@ install:
 	@$(CMD_TRACE) "installing... "
 	@$(MAKE) install-targets $(MAKE_TRACE)
 
-mostlyclean:
 rebuild:
 	$(CMD_TRACE) "rebuilding... "
-	@-$(MAKE) mostlyclean 2>&1 >/dev/null
-	if [ -f $(PKG_BUILD_DIR)/.built ]; then \
-		$(MAKE) clean $(MAKE_TRACE); \
-	fi
-	$(MAKE) compile $(MAKE_TRACE)
+	$(MAKE) package-clean compile $(MAKE_TRACE)
 
 $(PACKAGE_DIR):
 	mkdir -p $@
@@ -210,4 +229,4 @@ clean:
 	rm -rf $(PKG_BUILD_DIR)
 endif
 
-.PHONY: all source prepare compile install clean dumpinfo
+.PHONY: all source prepare compile install clean rebuild dumpinfo compile-targets install-targets clean-targets

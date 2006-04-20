@@ -1,31 +1,47 @@
 #!/usr/bin/perl
 use strict;
 
-sub get_ts($) {
+sub get_ts($$) {
 	my $path = shift;
+	my $options = shift;
 	my $ts = 0;
-	open FIND, "find $path -not -path \\*.svn\\* -and -not -path \\*CVS\\* 2>/dev/null |";
+	my $fn = "";
+	-d "$path" and $path .= "/*";
+	open FIND, "find $path -not -path \\*.svn\\* -and -not -path \\*CVS\\* $options 2>/dev/null |";
 	while (<FIND>) {
-		open FILE, "<$_";
+		chomp;
+		my $file = $_;
+		open FILE, "<$file";
 		my @stat = stat FILE;
 		close FILE;
-		$ts = $stat[9] if ($stat[9] > $ts);
+		if ($stat[9] > $ts) {
+			$ts = $stat[9];
+			$fn = $file;
+		}
 	}
 	close FIND;
-	return $ts;
+	return ($ts, $fn);
 }
 
 (@ARGV > 0) or push @ARGV, ".";
 my $ts = 0;
 my $n = ".";
 my %options;
-foreach my $path (@ARGV) {
-	if ($path =~ /^-/) {
+while (@ARGV > 0) {
+	my $path = shift @ARGV;
+	if ($path =~ /^-x/) {
+		my $str = shift @ARGV;
+		$options{"-x"} .= " -and -not -path \\*".$str."\\*"
+	} elsif ($path =~ /^-/) {
 		$options{$path} = 1;
 	} else {
-		my $tmp = get_ts($path);
+		my ($tmp, $fname) = get_ts($path, $options{"-x"});
 		if ($tmp > $ts) {
-			$n = $path;
+			if ($options{'-f'}) {
+				$n = $fname;
+			} else {
+				$n = $path;
+			}
 			$ts = $tmp;
 		}
 	}
