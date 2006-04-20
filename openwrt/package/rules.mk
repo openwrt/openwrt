@@ -1,8 +1,8 @@
-# default target
 ifneq ($(DUMP),)
 all: dumpinfo
 else
 all: compile
+endif
 
 define Build/DefaultTargets
 $(PKG_BUILD_DIR)/.prepared:
@@ -35,7 +35,6 @@ package-recompile:
 define Build/DefaultTargets
 endef
 endef
-endif
 
 define Package/Default
 CONFIGFILE:=
