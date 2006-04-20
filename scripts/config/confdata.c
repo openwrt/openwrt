@@ -22,13 +22,10 @@ static int conf_lineno, conf_warnings, conf_unsaved;
 
 const char conf_def_filename[] = ".config";
 
-const char conf_defname[] = "arch/$ARCH/defconfig";
+const char conf_defname[] = "scripts/config/defconfig";
 
 const char *conf_confnames[] = {
 	".config",
-	"/lib/modules/$UNAME_RELEASE/.config",
-	"/etc/kernel-config",
-	"/boot/config-$UNAME_RELEASE",
 	conf_defname,
 	NULL,
 };
@@ -375,7 +372,7 @@ int conf_write(const char *name)
 		if (!out_h)
 			return 1;
 	}
-	sym = sym_lookup("KERNELVERSION", 0);
+	sym = sym_lookup("OPENWRTVERSION", 0);
 	sym_calc_value(sym);
 	time(&now);
 	env = getenv("KCONFIG_NOTIMESTAMP");
@@ -384,7 +381,7 @@ int conf_write(const char *name)
 
 	fprintf(out, _("#\n"
 		       "# Automatically generated make config: don't edit\n"
-		       "# Linux kernel version: %s\n"
+		       "# OpenWrt version: %s\n"
 		       "%s%s"
 		       "#\n"),
 		     sym_get_string_value(sym),
@@ -393,7 +390,7 @@ int conf_write(const char *name)
 	if (out_h)
 		fprintf(out_h, "/*\n"
 			       " * Automatically generated C config: don't edit\n"
-			       " * Linux kernel version: %s\n"
+			       " * OpenWrt version: %s\n"
 			       "%s%s"
 			       " */\n"
 			       "#define AUTOCONF_INCLUDED\n",
@@ -428,8 +425,11 @@ int conf_write(const char *name)
 			type = sym->type;
 			if (type == S_TRISTATE) {
 				sym_calc_value(modules_sym);
+/* tristate always enabled */
+#if 0
 				if (modules_sym->curr.tri == no)
 					type = S_BOOLEAN;
+#endif
 			}
 			switch (type) {
 			case S_BOOLEAN:

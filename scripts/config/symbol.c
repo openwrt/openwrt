@@ -61,10 +61,10 @@ void sym_init(void)
 	if (p)
 		sym_add_default(sym, p);
 
-	sym = sym_lookup("KERNELVERSION", 0);
+	sym = sym_lookup("OPENWRTVERSION", 0);
 	sym->type = S_STRING;
 	sym->flags |= SYMBOL_AUTO;
-	p = getenv("KERNELVERSION");
+	p = getenv("OPENWRTVERSION");
 	if (p)
 		sym_add_default(sym, p);
 
@@ -81,8 +81,11 @@ enum symbol_type sym_get_type(struct symbol *sym)
 	if (type == S_TRISTATE) {
 		if (sym_is_choice_value(sym) && sym->visible == yes)
 			type = S_BOOLEAN;
+/* tristate always enabled */
+#if 0
 		else if (modules_val == no)
 			type = S_BOOLEAN;
+#endif
 	}
 	return type;
 }
@@ -201,7 +204,12 @@ static void sym_calc_visibility(struct symbol *sym)
 		prop->visible.tri = expr_calc_value(prop->visible.expr);
 		tri = E_OR(tri, prop->visible.tri);
 	}
+/* tristate always enabled */
+#if 0
 	if (tri == mod && (sym->type != S_TRISTATE || modules_val == no))
+#else
+	if (tri == mod && (sym->type != S_TRISTATE))
+#endif
 		tri = yes;
 	if (sym->visible != tri) {
 		sym->visible = tri;
@@ -354,6 +362,7 @@ void sym_calc_value(struct symbol *sym)
 
 	if (memcmp(&oldval, &sym->curr, sizeof(oldval)))
 		sym_set_changed(sym);
+
 	if (modules_sym == sym)
 		modules_val = modules_sym->curr.tri;
 

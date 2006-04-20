@@ -88,11 +88,14 @@ struct expr *menu_check_dep(struct expr *e)
 		e->left.expr = menu_check_dep(e->left.expr);
 		e->right.expr = menu_check_dep(e->right.expr);
 		break;
+/* tristate always enabled */
+#if 0
 	case E_SYMBOL:
 		/* change 'm' into 'm' && MODULES */
 		if (e->left.sym == &symbol_mod)
 			return expr_alloc_and(e, expr_alloc_symbol(modules_sym));
 		break;
+#endif
 	default:
 		break;
 	}
