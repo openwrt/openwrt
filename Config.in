@@ -2,91 +2,37 @@
 
 mainmenu "OpenWrt Configuration"
 
-config MODULES
+config HAVE_DOT_CONFIG
 	bool
 	default y
-
-config BR2_HAVE_DOT_CONFIG
-	bool
-	default y
-
-# Supported architectures
-
-config BR2_i386
-	tristate
-	
-config BR2_mips
-	tristate
-
-config BR2_mipsel
-	tristate
-
-# Unsupported architectures
-
-if CONFIG_DEVEL
-
-config BR2_arm
-	tristate
-
-config BR2_armeb
-	tristate
-
-config BR2_cris
-	tristate
-
-config BR2_m68k
-	tristate
-
-config BR2_powerpc
-	tristate
-
-config BR2_sh3
-	tristate
-
-config BR2_sh3eb
-	tristate
-
-config BR2_sh4
-	tristate
-
-config BR2_sh4eb
-	tristate
-
-config BR2_sparc
-	tristate
-
-endif
-
-config BR2_ARCH
-	string
-	default "arm"     if BR2_arm
-	default "armeb"   if BR2_armeb
-	default "cris"    if BR2_cris
-	default "i386"    if BR2_i386
-	default "m68k"    if BR2_m68k
-	default "mips"    if BR2_mips
-	default "mipsel"  if BR2_mipsel || !CONFIG_DEVEL
-	default "powerpc" if BR2_powerpc
-	default "sh3"     if BR2_sh3
-	default "sh3eb"   if BR2_sh3eb
-	default "sh4"     if BR2_sh4
-	default "sh4eb"   if BR2_sh4eb
-	default "sparc"   if BR2_sparc
-
-
-config BR2_WGET
-	string 
-	default "wget --passive-ftp -nd"
-
-config BR2_TAR_VERBOSITY
-	bool 
-	default n
-
-config BR2_JLEVEL
-	int
-	default "1"
 
 source "target/Config.in"
+
+config DEVEL
+	bool "Advanced configuration options (for developers)"
+	default n
+	select BUILDOPTS
+	select TOOLCHAINOPTS
+
+config ALL
+	bool "Select all packages by default"
+	default n
+
+menuconfig BUILDOPTS
+	bool "Build Options" if DEVEL
+
+config TAR_VERBOSITY
+	bool 
+	prompt "Tar verbose" if BUILDOPTS
+	default n
+
+config JLEVEL
+	int
+	prompt "Number of jobs to run simultaneously" if BUILDOPTS
+	default "1"
+	help
+	    Number of jobs to run simultanesouly
+
 source "toolchain/Config.in"
 source "package/Config.in"
-source "target/linux/Config.in"
+

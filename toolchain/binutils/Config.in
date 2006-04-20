@@ -1,40 +1,40 @@
 # Choose binutils version.
 
-if CONFIG_DEVEL
-	comment "Binutils Options"
-endif
-
 choice
-	prompt "Binutils Version" if CONFIG_DEVEL
-	default BR2_BINUTILS_VERSION_2_16_1
+	prompt "Binutils Version" if TOOLCHAINOPTS
+	default BINUTILS_VERSION_2_16_1
 	help
 	  Select the version of binutils you wish to use.
 
-	config BR2_BINUTILS_VERSION_2_15_94_0_2
+	config BINUTILS_VERSION_2_15_94_0_2
 		bool "binutils 2.15.94.0.2"
 
-	config BR2_BINUTILS_VERSION_2_16_1
+	config BINUTILS_VERSION_2_16_1
 		bool "binutils 2.16.1"
 
-	config BR2_BINUTILS_VERSION_2_16_90_0_3
+	config BINUTILS_VERSION_2_16_90_0_3
 		bool "binutils 2.16.90.0.3"
 
-	config BR2_BINUTILS_VERSION_2_16_91_0_1
+	config BINUTILS_VERSION_2_16_91_0_1
 		bool "binutils 2.16.91.0.1"
 
-	config BR2_BINUTILS_VERSION_2_16_91_0_2
+	config BINUTILS_VERSION_2_16_91_0_2
 		bool "binutils 2.16.91.0.2"
 
-	config BR2_BINUTILS_VERSION_2_16_91_0_6
+	config BINUTILS_VERSION_2_16_91_0_6
 		bool "binutils 2.16.91.0.6"
 
 endchoice
 
-config BR2_BINUTILS_VERSION
+config BINUTILS_VERSION
 	string
-	default "2.15.94.0.2"     if BR2_BINUTILS_VERSION_2_15_94_0_2
-	default "2.16.1"          if BR2_BINUTILS_VERSION_2_16_1 || !CONFIG_DEVEL
-	default "2.16.90.0.3"     if BR2_BINUTILS_VERSION_2_16_90_0_3
-	default "2.16.91.0.1"     if BR2_BINUTILS_VERSION_2_16_91_0_1
-	default "2.16.91.0.2"     if BR2_BINUTILS_VERSION_2_16_91_0_2
-	default "2.16.91.0.6"     if BR2_BINUTILS_VERSION_2_16_91_0_6
+	prompt "Binutils Version" if (TOOLCHAINOPTS && NULL)
+	default "2.15.94.0.2"     if BINUTILS_VERSION_2_15_94_0_2
+	default "2.16.1"          if BINUTILS_VERSION_2_16_1
+	default "2.16.90.0.3"     if BINUTILS_VERSION_2_16_90_0_3
+	default "2.16.91.0.1"     if BINUTILS_VERSION_2_16_91_0_1
+	default "2.16.91.0.2"     if BINUTILS_VERSION_2_16_91_0_2
+	default "2.16.91.0.6"     if BINUTILS_VERSION_2_16_91_0_6
+	default "2.16.1"
+
+

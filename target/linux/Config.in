@@ -25,8 +25,6 @@ menu "Kernel Configuration / Device Support"
 
 comment "Device specific configuration"
 
-source "target/linux/*-2.[46]/Config.in"
-
 comment "Kernel modules"
 
 menu "Networking modules"
@@ -760,12 +758,6 @@ config BR2_PACKAGE_KMOD_WD1100
 	help
 	  Driver for the NatSemi SC1x00 series Watchdog 
 	  found on Soekris net4801 boards
-
-endmenu
-
-menu "Additional kernel modules"
-
-source "target/linux/package/Config.in"
 
 endmenu
 
