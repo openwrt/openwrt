@@ -1,5 +1,5 @@
 # ===========================================================================
-# Kernel configuration targets
+# OpenWrt configuration targets
 # These targets are used from top-level makefile
 
 # ===========================================================================
@@ -40,10 +40,10 @@ lex.zconf.c: zconf.l
 zconf.hash.c: zconf.gperf
 
 %.tab.c: %.y
-	bison -l -b $* -p $(notdir $*) $< && cp $@ $@_shipped || cp $@_shipped $@
+	cp $@_shipped $@ || bison -l -b $* -p $(notdir $*) $<
 
 lex.%.c: %.l
-	flex -L -P$(notdir $*) -o$@ $< && cp $@ $@_shipped || cp $@_shipped $@
+	cp $@_shipped $@ || flex -L -P$(notdir $*) -o$@ $<
 
 %.hash.c: %.gperf
-	gperf < $< > $@ && cp $@ $@_shipped || cp $@_shipped $@
+	cp $@_shipped $@ || gperf < $< > $@
