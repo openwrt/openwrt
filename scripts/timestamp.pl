@@ -4,7 +4,7 @@ use strict;
 sub get_ts($) {
 	my $path = shift;
 	my $ts = 0;
-	open FIND, "find $path -not -path \\*.svn\\* -and -not -path \\*CVS\\* |";
+	open FIND, "find $path -not -path \\*.svn\\* -and -not -path \\*CVS\\* 2>/dev/null |";
 	while (<FIND>) {
 		open FILE, "<$_";
 		my @stat = stat FILE;
