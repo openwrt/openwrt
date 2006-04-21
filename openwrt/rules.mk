@@ -1,6 +1,4 @@
-ifeq ($(DUMP),)
 include $(TOPDIR)/.config
-endif
 
 SHELL=/bin/bash
 export SHELL
@@ -43,17 +41,17 @@ endif
 
 CP=cp -fpR
 MAKE1=make
-MAKEFLAGS=-j$(BR2_JLEVEL) V=$(V) $(EXTRA_MAKEFLAGS)
+MAKEFLAGS=-j$(CONFIG_JLEVEL) V=$(V) $(EXTRA_MAKEFLAGS)
 # Strip off the annoying quoting
-ARCH:=$(strip $(subst ",, $(BR2_ARCH)))
-WGET:=$(strip $(subst ",, $(BR2_WGET)))
-GCC_VERSION:=$(strip $(subst ",, $(BR2_GCC_VERSION)))
-GCC_USE_SJLJ_EXCEPTIONS:=$(strip $(subst ",, $(BR2_GCC_USE_SJLJ_EXCEPTIONS)))
-TARGET_OPTIMIZATION:=$(strip $(subst ",, $(BR2_TARGET_OPTIMIZATION)))
+ARCH:=$(strip $(subst ",, $(CONFIG_ARCH)))
+WGET:=$(strip $(subst ",, $(CONFIG_WGET)))
+GCC_VERSION:=$(strip $(subst ",, $(CONFIG_GCC_VERSION)))
+GCC_USE_SJLJ_EXCEPTIONS:=$(strip $(subst ",, $(CONFIG_GCC_USE_SJLJ_EXCEPTIONS)))
+TARGET_OPTIMIZATION:=$(strip $(subst ",, $(CONFIG_TARGET_OPTIMIZATION)))
 #"))"))"))"))")) # for vim's broken syntax highlighting :)
 
 
-ifeq ($(BR2_SOFT_FLOAT),y)
+ifeq ($(CONFIG_SOFT_FLOAT),y)
 # gcc 3.4.x soft float configuration is different than previous versions.
 ifeq ($(findstring 3.4.,$(GCC_VERSION)),3.4.)
 SOFT_FLOAT_CONFIG_OPTION:=--with-float=soft
@@ -69,13 +67,13 @@ ARCH_FPU_SUFFIX:=
 endif
 
 
-ifeq ($(BR2_TAR_VERBOSITY),y)
+ifeq ($(CONFIG_TAR_VERBOSITY),y)
 TAR_OPTIONS=-xvf
 else
 TAR_OPTIONS=-xf
 endif
 
-ifneq ($(BR2_LARGEFILE),y)
+ifneq ($(CONFIG_LARGEFILE),y)
 DISABLE_LARGEFILE= --disable-largefile
 endif
 TARGET_CFLAGS:=$(TARGET_OPTIMIZATION) $(TARGET_DEBUGGING)
@@ -136,7 +134,7 @@ else
 DISABLE_NLS:=--disable-nls
 endif
 
-ifeq ($(BR2_ENABLE_MULTILIB),y)
+ifeq ($(CONFIG_ENABLE_MULTILIB),y)
 MULTILIB:=--enable-multilib
 endif
 
