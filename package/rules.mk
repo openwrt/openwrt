@@ -187,7 +187,6 @@ $(call Build/Prepare/Default)
 endef
 
 define Build/Configure/Default
-# TODO: add configurable default command
 	(cd $(PKG_BUILD_DIR); \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
