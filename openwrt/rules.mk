@@ -1,4 +1,6 @@
+ifeq ($(DUMP),)
 include $(TOPDIR)/.config
+endif
 
 SHELL=/bin/bash
 export SHELL
