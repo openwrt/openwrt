@@ -117,9 +117,13 @@ DUMPINFO += \
 	echo "Depends: $$(IDEPEND_$(1))"; \
 	echo "Category: $(CATEGORY)"; \
 	echo "Title: $(TITLE)"; \
-	echo "Description: $(DESCRIPTION)" | sed -e 's,\\,\n,g'; \
+	echo "Description: $(DESCRIPTION)" | sed -e 's,\\,\n,g';
+ifneq ($(URL),)
+DUMPINFO += \
 	echo; \
-	echo "$(URL)"; \
+	echo "$(URL)";
+endif
+DUMPINFO += \
 	echo "@@";
 
 
