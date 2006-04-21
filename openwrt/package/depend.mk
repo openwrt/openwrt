@@ -274,7 +274,7 @@ ifneq ($(BR2_PACKAGE_ULOGD_MOD_MYSQL),)
 ulogd-compile: mysql-compile
 endif
 ifneq ($(BR2_PACKAGE_ULOGD_MOD_PCAP),)
-ulogd-compile: pcap-compile
+ulogd-compile: libpcap-compile
 endif
 ifneq ($(BR2_PACKAGE_ULOGD_MOD_PGSQL),)
 ulogd-compile: postgresql-compile
