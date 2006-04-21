@@ -6,7 +6,6 @@ sub get_ts($$) {
 	my $options = shift;
 	my $ts = 0;
 	my $fn = "";
-	-d "$path" and $path .= "/*";
 	open FIND, "find $path -not -path \\*.svn\\* -and -not -path \\*CVS\\* $options 2>/dev/null |";
 	while (<FIND>) {
 		chomp;
