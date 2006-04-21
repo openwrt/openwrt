@@ -28,6 +28,8 @@ sub print_category($) {
 			foreach my $depend (@{$pkg->{depends}}) {
 				print "\t\tdepends PACKAGE_$depend\n";
 			}
+			print "\t\thelp\n";
+			print $pkg->{description};
 			print "\n"
 		}
 	}
@@ -66,11 +68,11 @@ while ($line = <>) {
 		push @{$category{$1}->{$src}}, $pkg;
 	};
 	$line =~ /^Description: \s*(.*)\s*$/ and do {
-		my $desc = $1;
+		my $desc = "\t\t$1\n\n";
 		my $line;
-		while (<>) {
-			last if /^@@/;
-			$desc .= $1;
+		while ($line = <>) {
+			last if $line =~ /^@@/;
+			$desc .= "\t\t$line";
 		}
 		$pkg->{description} = $desc;
 	}
