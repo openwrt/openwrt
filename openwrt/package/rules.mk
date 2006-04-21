@@ -56,21 +56,26 @@ define BuildPackage
 $(eval $(call Package/Default))
 $(eval $(call Package/$(1)))
 
-ifeq ($$(TITLE),)
+ifeq ($(TITLE),)
 $$(error Package $(1) has no TITLE)
 endif
-ifeq ($$(CATEGORY),)
+ifeq ($(CATEGORY),)
 $$(error Package $(1) has no CATEGORY)
 endif
-ifeq ($$(PRIORITY),)
+ifeq ($(PRIORITY),)
 $$(error Package $(1) has no PRIORITY)
 endif
-ifeq ($$(VERSION),)
+ifeq ($(VERSION),)
 $$(error Package $(1) has no VERSION)
 endif
-ifeq ($$(PKGARCH),)
+ifeq ($(PKGARCH),)
 PKGARCH:=$(ARCH)
 endif
+$(eval 
+ifeq ($(DESCRIPTION),)
+DESCRIPTION:=$(TITLE)
+endif
+)
 
 IPKG_$(1):=$(PACKAGE_DIR)/$(1)_$(VERSION)_$(PKGARCH).ipk
 IDIR_$(1):=$(PKG_BUILD_DIR)/ipkg/$(1)
@@ -128,8 +133,7 @@ $$(IDIR_$(1))/CONTROL/control: $(PKG_BUILD_DIR)/.prepared
 	echo "Priority: $(PRIORITY)" >> $$(IDIR_$(1))/CONTROL/control
 	echo "Maintainer: $(MAINTAINER)" >> $$(IDIR_$(1))/CONTROL/control
 	echo "Architecture: $(PKGARCH)" >> $$(IDIR_$(1))/CONTROL/control
-	echo "Description: $(TITLE)" >> $$(IDIR_$(1))/CONTROL/control
-	echo "  $(DESCRIPTION)" | sed -e 's,\\,\n ,g' >> $$(IDIR_$(1))/CONTROL/control
+	echo "Description: $(DESCRIPTION)" | sed -e 's,\\,\n ,g' >> $$(IDIR_$(1))/CONTROL/control
 	chmod 644 $$(IDIR_$(1))/CONTROL/control
 	for file in conffiles preinst postinst prerm postrm; do \
 		[ -f ./ipkg/$(1).$$$$file ] && cp ./ipkg/$(1).$$$$file $$(IDIR_$(1))/CONTROL/$$$$file || true; \

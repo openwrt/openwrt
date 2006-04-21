@@ -20,8 +20,8 @@ SECTION:=base
 CATEGORY:=Base system
 DEFAULT:=y
 TITLE:=Core utilities for embedded Linux
-DESCRIPTION:=The Swiss Army Knife of embedded Linux.  It slices, it dices, it\\\
-makes Julian Fries.
+DESCRIPTION:=The Swiss Army Knife of embedded Linux. \\\
+It slices, it dices, it makes Julian Fries.
 URL:=http://busybox.net/
 endef
 

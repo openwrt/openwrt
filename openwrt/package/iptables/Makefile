@@ -38,8 +38,9 @@ define Package/iptables-mod-conntrack
 SECTION:=net
 CATEGORY:=Base system
 DEPENDS:=iptables
-TITLE:=iptables extensions for connection tracking
-DESCRIPTION:=Includes: \\\
+TITLE:=connection tracking modules
+DESCRIPTION:=iptables extensions for connection tracking \\\
+Includes: \\\
 	* libipt_conntrack \\\
 	* libipt_helper \\\
 	* libipt_connmark/CONNMARK
@@ -50,8 +51,9 @@ define Package/iptables-mod-filter
 SECTION:=net
 CATEGORY:=Base system
 DEPENDS:=iptables
-TITLE:=iptables extensions for packet content inspection
-DESCRIPTION:=Includes: \\\
+TITLE:=filter modules
+DESCRIPTION:=iptables extensions for packet content inspection\\\
+Includes: \\\
 	* libipt_ipp2p \\\
 	* libipt_layer7 
 						
@@ -61,8 +63,9 @@ define Package/iptables-mod-imq
 SECTION:=net
 CATEGORY:=Base system
 DEPENDS:=iptables
-TITLE:=iptables extension for IMQ support 
-DESCRIPTION:=Includes: \\\
+TITLE:=IMQ support
+DESCRIPTION:=iptables extension for IMQ support\\\
+Includes: \\\
 	* libipt_IMQ
 						
 endef
@@ -71,8 +74,9 @@ define Package/iptables-mod-ipopt
 SECTION:=net
 CATEGORY:=Base system
 DEPENDS:=iptables
-TITLE:=iptables extensions for matching/changing IP packet options
-DESCRIPTION:=Includes: \\\
+TITLE:=IP/Packet option modules
+DESCRIPTION:=iptables extensions for matching/changing IP packet options\\\
+Includes: \\\
 	* libipt_dscp/DSCP \\\
 	* libipt_ecn/ECN \\\
 	* libipt_length \\\
@@ -88,8 +92,9 @@ define Package/iptables-mod-ipsec
 SECTION:=net
 CATEGORY:=Base system
 DEPENDS:=iptables
-TITLE:=iptables extensions for matching ipsec traffic
-DESCRIPTION:=Includes: \\\
+TITLE:=IPSec extensions
+DESCRIPTION:=iptables extensions for matching ipsec traffic\\\
+Includes: \\\
 	* libipt_ah \\\
 	* libipt_esp
 
@@ -99,8 +104,9 @@ define Package/iptables-mod-nat
 SECTION:=net
 CATEGORY:=Base system
 DEPENDS:=iptables
-TITLE:=iptables extensions for different NAT targets
-DESCRIPTION:=Includes: \\\
+TITLE:=extra NAT targets
+DESCRIPTION:=iptables extensions for different NAT targets\\\
+Includes: \\\
 	* libipt_REDIRECT
 endef
 
@@ -108,8 +114,9 @@ define Package/iptables-mod-ulog
 SECTION:=net
 CATEGORY:=Base system
 DEPENDS:=iptables
-TITLE:=iptables extensions for user-space packet logging
-DESCRIPTION:=Includes: \\\
+TITLE:=user-space packet logging
+DESCRIPTION:=iptables extensions for user-space packet logging\\\
+Includes: \\\
 	* libipt_ULOG
 endef
 
@@ -118,7 +125,8 @@ SECTION:=net
 CATEGORY:=Base system
 DEPENDS:=iptables
 TITLE:=other extra iptables extensions
-DESCRIPTION:=Includes: \\\
+DESCRIPTION:=other extra iptables extensions\\\
+Includes: \\\
 	* libipt_limit \\\
 	* libipt_owner \\\
 	* libipt_physdev \\\
