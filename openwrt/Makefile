@@ -50,6 +50,7 @@ endif
 	done > $@
 	
 .config.in: .pkginfo
+	./scripts/gen_menuconfig.pl < $< > $@ || rm -f $@
 
 pkginfo-clean:
 	-rm -f .pkginfo .config.in
@@ -63,7 +64,7 @@ scripts/config/conf: .config.in
 menuconfig: scripts/config/mconf
 	$< Config.in
 
-config: scripts/config/mconf
+config: scripts/config/conf
 	$< Config.in
 
 config-clean:

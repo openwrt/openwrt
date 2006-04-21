@@ -18,6 +18,7 @@ define Package/busybox
 CONFIGFILE:=config/Config.in
 SECTION:=base
 CATEGORY:=Base system
+DEFAULT:=y
 TITLE:=Core utilities for embedded Linux
 DESCRIPTION:=The Swiss Army Knife of embedded Linux.  It slices, it dices, it\\\
 makes Julian Fries.
