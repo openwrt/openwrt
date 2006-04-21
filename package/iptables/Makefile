@@ -28,6 +28,8 @@ endif
 define Package/iptables
 SECTION:=net
 CATEGORY:=Base system
+MENU:=1
+DEFAULT:=y
 TITLE:=IPv4 firewall administration tool
 URL:=http://netfilter.org/
 endef
@@ -186,10 +188,6 @@ define Package/ip6tables/install
 	$(RSTRIP) $(1)
 endef
 
-$(eval $(call BuildPackage,iptables))
-$(eval $(call BuildPackage,iptables-utils))
-$(eval $(call BuildPackage,ip6tables))
-
 define BuildPlugin
 define Package/$(1)/install
 	install -m0755 -d $$(1)/usr/lib/iptables
@@ -206,6 +204,8 @@ endef
 L7_INSTALL:=mkdir -p $$(1)/etc/l7-protocols; \
 	$(CP) files/l7/*.pat $$(1)/etc/l7-protocols/
 
+$(eval $(call BuildPackage,iptables))
+$(eval $(call BuildPackage,iptables-utils))
 $(eval $(call BuildPlugin,iptables-mod-conntrack,$(IPT_CONNTRACK-m)))
 $(eval $(call BuildPlugin,iptables-mod-extra,$(IPT_EXTRA-m)))
 $(eval $(call BuildPlugin,iptables-mod-filter,$(IPT_FILTER-m),$(L7_INSTALL)))
@@ -214,6 +214,7 @@ $(eval $(call BuildPlugin,iptables-mod-ipopt,$(IPT_IPOPT-m)))
 $(eval $(call BuildPlugin,iptables-mod-ipsec,$(IPT_IPSEC-m)))
 $(eval $(call BuildPlugin,iptables-mod-nat,$(IPT_NAT-m)))
 $(eval $(call BuildPlugin,iptables-mod-ulog,$(IPT_ULOG-m)))
+$(eval $(call BuildPackage,ip6tables))
 
 
 $(STAGING_DIR)/usr/lib/libipq.a: $(PKG_BUILD_DIR)/.built

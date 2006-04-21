@@ -46,6 +46,8 @@ SOURCE:=$(patsubst $(TOPDIR)/%,%,${shell pwd})
 VERSION:=$(PKG_VERSION)-$(PKG_RELEASE)
 PKGARCH:=$(ARCH)
 PRIORITY:=optional
+DEFAULT:=
+MENU:=
 TITLE:=
 DESCRIPTION:=
 endef
@@ -96,11 +98,21 @@ endif
 IDEPEND_$(1):=$$(strip $$(DEPENDS))
 
 DUMPINFO += \
-	echo "Package: $(1)"; \
+	echo "Package: $(1)"; 
+ifneq ($(MENU),)
+DUMPINFO += \
+	echo "Menu: $(MENU)";
+endif
+ifneq ($(DEFAULT),)
+DUMPINFO += \
+	echo "Default: $(DEFAULT)";
+endif
+DUMPINFO += \
 	echo "Version: $(VERSION)"; \
-	echo "Depends: $(IDEPEND_$(1))"; \
+	echo "Depends: $$(IDEPEND_$(1))"; \
+	echo "Category: $(CATEGORY)"; \
 	echo "Title: $(TITLE)"; \
-	echo "$(DESCRIPTION)" | sed -e 's,\\,\n,g'; \
+	echo "Description: $(DESCRIPTION)" | sed -e 's,\\,\n,g'; \
 	echo; \
 	echo "$(URL)"; \
 	echo "@@";
@@ -110,7 +122,7 @@ $$(IDIR_$(1))/CONTROL/control: $(PKG_BUILD_DIR)/.prepared
 	mkdir -p $$(IDIR_$(1))/CONTROL
 	echo "Package: $(1)" > $$(IDIR_$(1))/CONTROL/control
 	echo "Version: $(VERSION)" >> $$(IDIR_$(1))/CONTROL/control
-	echo "Depends: $(IDEPEND_$(1))" >> $$(IDIR_$(1))/CONTROL/control
+	echo "Depends: $$(IDEPEND_$(1))" >> $$(IDIR_$(1))/CONTROL/control
 	echo "Source: $(SOURCE)" >> $$(IDIR_$(1))/CONTROL/control
 	echo "Section: $(SECTION)" >> $$(IDIR_$(1))/CONTROL/control
 	echo "Priority: $(PRIORITY)" >> $$(IDIR_$(1))/CONTROL/control
