@@ -1,0 +1,17 @@
+--- linux-2.6.16.4/drivers/char/Kconfig	2006-04-21 14:38:30.000000000 -0700
++++ linux-2.6.16.4/drivers/char/Kconfig	2006-04-21 14:39:29.000000000 -0700
+@@ -340,6 +340,14 @@
+ 	  To compile this driver as a module, choose M here: the
+ 	  module will be called istallion.
+ 
++config SIBYTE_SB1250_DUART
++	bool "Support for BCM1xxx onchip DUART"
++	depends on MIPS && SIBYTE_SB1xxx_SOC=y
++
++config SIBYTE_SB1250_DUART_CONSOLE
++	bool "Console on BCM1xxx DUART"
++	depends on SIBYTE_SB1250_DUART
++
+ config AU1000_UART
+ 	bool "Enable Au1000 UART Support"
+ 	depends on SERIAL_NONSTANDARD && MIPS
