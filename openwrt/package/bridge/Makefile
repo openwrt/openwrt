@@ -19,36 +19,18 @@ SECTION:=base
 CATEGORY:=Network
 DEFAULT:=y
 TITLE:=Ethernet bridging configuration utility
-DESCRIPTION:=Manage ethernet bridging; a way to connect networks together to\\\
+DESCRIPTION:=Ethernet bridging configuration utility\\\
+Manage ethernet bridging; a way to connect networks together to\\\
 form a larger network.
 URL:=http://bridge.sourceforge.net/
 endef
 
 define Build/Configure
-		$(TARGET_CONFIGURE_OPTS) \
-		CFLAGS="$(TARGET_CFLAGS)" \
-		./configure \
-		--target=$(GNU_TARGET_NAME) \
-		--host=$(GNU_TARGET_NAME) \
-		--build=$(GNU_HOST_NAME) \
-		--prefix=/usr \
-		--exec-prefix=/usr \
-		--bindir=/usr/bin \
-		--sbindir=/usr/sbin \
-		--libexecdir=/usr/lib \
-		--sysconfdir=/etc \
-		--datadir=/usr/share \
-		--localstatedir=/var \
-		--mandir=/usr/man \
-		--infodir=/usr/info \
-		$(DISABLE_NLS) \
-		--with-linux-headers=$(LINUX_DIR)
+$(call Build/Configure/Default,--with-linux-headers=$(LINUX_DIR))
 endef
-
 
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR)
-	touch $@
 endef
 
 define Package/busybox/install

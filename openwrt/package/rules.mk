@@ -81,13 +81,13 @@ IPKG_$(1):=$(PACKAGE_DIR)/$(1)_$(VERSION)_$(PKGARCH).ipk
 IDIR_$(1):=$(PKG_BUILD_DIR)/ipkg/$(1)
 INFO_$(1):=$(IPKG_STATE_DIR)/info/$(1).list
 
-ifneq ($(PACKAGE_$(1)),)
+ifneq ($(CONFIG_PACKAGE_$(1)),)
 COMPILE_$(1):=1
 endif
 ifneq ($(DEVELOPER),)
 COMPILE_$(1):=1
 endif
-ifeq ($(PACKAGE_$(1)),y)
+ifeq ($(CONFIG_PACKAGE_$(1)),y)
 install-targets: $$(INFO_$(1))
 endif
 
@@ -188,10 +188,29 @@ endef
 
 define Build/Configure/Default
 # TODO: add configurable default command
+	(cd $(PKG_BUILD_DIR); \
+		$(TARGET_CONFIGURE_OPTS) \
+		CFLAGS="$(TARGET_CFLAGS)" \
+		./configure \
+		--target=$(GNU_TARGET_NAME) \
+		--host=$(GNU_TARGET_NAME) \
+		--build=$(GNU_HOST_NAME) \
+		--prefix=/usr \
+		--exec-prefix=/usr \
+		--bindir=/usr/bin \
+		--sbindir=/usr/sbin \
+		--libexecdir=/usr/lib \
+		--sysconfdir=/etc \
+		--datadir=/usr/share \
+		--localstatedir=/var \
+		--mandir=/usr/man \
+		--infodir=/usr/info \
+		$(DISABLE_NLS) \
+		$(1); \
+	)
 endef
 
 define Build/Configure
-$(call Build/Configure/Default)
 endef
 
 define Build/Compile/Default
