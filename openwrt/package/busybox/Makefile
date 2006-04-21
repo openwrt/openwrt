@@ -30,15 +30,6 @@ define Build/Configure
 	yes '' | $(MAKE) CC=$(TARGET_CC) CROSS="$(TARGET_CROSS)" -C $(PKG_BUILD_DIR) oldconfig
 endef
 
-define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		CC=$(TARGET_CC) \
-		CROSS="$(TARGET_CROSS)" \
-		PREFIX="$(IDIR_BUSYBOX)" \
-		EXTRA_CFLAGS="$(TARGET_CFLAGS)" \
-		ARCH="$(ARCH)" 
-endef
-
 define Package/busybox/install
 	$(MAKE) CC=$(TARGET_CC) CROSS="$(TARGET_CROSS)" PREFIX="$(1)" \
 		EXTRA_CFLAGS="$(TARGET_CFLAGS)" -C $(PKG_BUILD_DIR) install

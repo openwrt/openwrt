@@ -213,7 +213,13 @@ define Build/Configure
 endef
 
 define Build/Compile/Default
-# TODO: add configurable default command
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		CC=$(TARGET_CC) \
+		CROSS="$(TARGET_CROSS)" \
+		PREFIX="$$(IDIR_$(1))" \
+		EXTRA_CFLAGS="$(TARGET_CFLAGS)" \
+		ARCH="$(ARCH)" \
+		DESTDIR="$$(IDIR_$(1))"
 endef
 
 define Build/Compile

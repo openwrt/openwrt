@@ -29,10 +29,6 @@ define Build/Configure
 $(call Build/Configure/Default,--with-linux-headers=$(LINUX_DIR))
 endef
 
-define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR)
-endef
-
 define Package/busybox/install
 	mkdir -p $(IDIR_BRIDGE)/usr/sbin
 	$(CP) $(PKG_BUILD_DIR)/brctl/brctl $(IDIR_BRIDGE)/usr/sbin/
