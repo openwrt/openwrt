@@ -17,9 +17,10 @@ $(LINUX_DIR)/.patched: $(LINUX_DIR)/.unpacked
 	@$(CP) config $(LINUX_DIR)/.config
 	touch $@
 
-$(LINUX_BUILD_DIR)/bzImage: $(LINUX_DIR)/vmlinux
-	$(MAKE) -C $(LINUX_DIR) V=1 CROSS_COMPILE=$(TARGET_CROSS) ARCH=$(LINUX_KARCH) PATH=$(TARGET_PATH) bzImage $(MAKE_TRACE)
+$(LINUX_BUILD_DIR)/zImage: $(LINUX_DIR)/vmlinux
+	$(MAKE) -C $(LINUX_DIR) V=1 CROSS_COMPILE=$(TARGET_CROSS) ARCH=$(LINUX_KARCH) PATH=$(TARGET_PATH) zImage.flash $(MAKE_TRACE)
 	$(CP) $(LINUX_DIR)/vmlinux $@
+	echo "toto"
 	touch $@
 
 compile: $(LINUX_DIR)/vmlinux
