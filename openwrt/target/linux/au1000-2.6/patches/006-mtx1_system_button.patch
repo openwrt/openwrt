@@ -1,0 +1,241 @@
+diff -urN linux-2.6.16.7/arch/mips/au1000/mtx-1/irqmap.c linux-2.6.16.7.new/arch/mips/au1000/mtx-1/irqmap.c
+--- linux-2.6.16.7/arch/mips/au1000/mtx-1/irqmap.c	2006-04-17 23:53:25.000000000 +0200
++++ linux-2.6.16.7.new/arch/mips/au1000/mtx-1/irqmap.c	2006-04-23 11:54:31.000000000 +0200
+@@ -64,6 +64,7 @@
+        { AU1500_GPIO_202, INTC_INT_LOW_LEVEL, 0 },
+        { AU1500_GPIO_203, INTC_INT_LOW_LEVEL, 0 },
+        { AU1500_GPIO_205, INTC_INT_LOW_LEVEL, 0 },
++       { AU1500_GPIO_207, INTC_INT_RISE_AND_FALL_EDGE, 0 },
+ };
+ 
+ int au1xxx_nr_irqs = sizeof(au1xxx_irq_map)/sizeof(au1xxx_irq_map_t);
+diff -urN linux-2.6.16.7/arch/mips/au1000/mtx-1/Makefile linux-2.6.16.7.new/arch/mips/au1000/mtx-1/Makefile
+--- linux-2.6.16.7/arch/mips/au1000/mtx-1/Makefile	2006-04-17 23:53:25.000000000 +0200
++++ linux-2.6.16.7.new/arch/mips/au1000/mtx-1/Makefile	2006-04-23 14:01:36.000000000 +0200
+@@ -8,3 +8,4 @@
+ #
+ 
+ lib-y := init.o board_setup.o irqmap.o
++obj-y := mtx-1_sysbtn.o
+diff -urN linux-2.6.16.7/arch/mips/au1000/mtx-1/mtx-1_sysbtn.c linux-2.6.16.7.new/arch/mips/au1000/mtx-1/mtx-1_sysbtn.c
+--- linux-2.6.16.7/arch/mips/au1000/mtx-1/mtx-1_sysbtn.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16.7.new/arch/mips/au1000/mtx-1/mtx-1_sysbtn.c	2006-04-23 14:01:17.000000000 +0200
+@@ -0,0 +1,218 @@
++/*
++ *      Driver for the MTX-1 System Button.
++ *
++ *      (c) Copyright 2005 4G Systems <info@4g-systems.biz>, All Rights Reserved.
++ *                              http://www.4g-systems.biz
++ *
++ *      This program is free software; you can redistribute it and/or
++ *      modify it under the terms of the GNU General Public License
++ *      as published by the Free Software Foundation; either version
++ *      2 of the License, or (at your option) any later version.
++ *
++ *      Neither Michael Stickel nor 4G Systeme GmbH admit liability nor provide
++ *      warranty for any of this software. This material is provided
++ *      "AS-IS" and at no charge.
++ *
++ *      (c) Copyright 2005    4G Systems <info@4g-systems.biz>
++ *
++ *      Release 0.01.
++ *
++ *      Author: Michael Stickel  michael.stickel@4g-systems.biz
++ *
++ *
++ *      After the module is loaded there is a device /dev/misc/btn
++ *      that can be read. It returns one char '1' if the button
++ *      has been pressed an '0' if it has been released.
++ */
++#include <linux/config.h>
++#include <linux/module.h>
++#include <linux/version.h>
++#include <linux/types.h>
++#include <linux/errno.h>
++#include <linux/kernel.h>
++#include <linux/poll.h>
++#include <linux/sched.h>
++#include <linux/miscdevice.h>
++#include <linux/slab.h>
++#include <linux/init.h>
++#include <linux/irq.h>
++#include <linux/interrupt.h>
++
++#include <asm/uaccess.h>
++
++#include <asm/mach-au1x00/au1000.h>
++
++
++#ifndef FALSE
++# define FALSE (0)
++#endif
++
++#ifndef TRUE
++# define TRUE (!FALSE)
++#endif
++
++
++//---------[ declarations ]-----------------
++
++
++static DECLARE_WAIT_QUEUE_HEAD(mtx1btn_wait_queue);
++static char state_changed;
++static char last_value;
++static char is_inuse;
++
++
++//---------[ Hardware Functions ]-----------------
++
++// The MTX-1 Button is attached to GPIO207.
++#define MTX1_GPIO2_SYSBTN (7)
++#define MTX1_SYSBTN_IRQ   (AU1500_GPIO_207)
++
++
++static char mtx1_getbtn (int btnno)
++{
++  if (btnno==0) {
++    return (au_readl(GPIO2_PINSTATE) & (1<<MTX1_GPIO2_SYSBTN)) ? 0 : 1;
++  }
++  return 0;
++}
++
++static void mtx1_initbuttons (void)
++{
++  au_writel (au_readl(GPIO2_DIR) & ~(1<<MTX1_GPIO2_SYSBTN), GPIO2_DIR);
++}
++
++
++//---------[ Interrupt handling ]-----------------
++
++
++static void mtx1_btn_interrupt (int irq, void *private, struct pt_regs *regs)
++{
++	char value = mtx1_getbtn(0);
++	if (last_value != value)
++	{
++		last_value = value;
++		state_changed = 1;
++		wake_up (&mtx1btn_wait_queue);
++	}
++//	kill_fasync(&async_queue, SIGIO, POLL_OUT);
++}
++
++
++static int mtx1_btn_startirq (void)
++{
++	if (!request_irq (MTX1_SYSBTN_IRQ, mtx1_btn_interrupt, 0 /* | SA_INTERRUPT */, "mtx1btn", (void *)&state_changed)) {
++		return 0;
++    }
++	return -1;
++}
++
++static int mtx1_btn_stopirq  (void)
++{
++	free_irq(MTX1_SYSBTN_IRQ, (void *)&state_changed);
++	return 0;
++}
++
++
++
++//---------[ File Functions ]-----------------
++
++
++static int mtx1sysbtn_minor = -1;
++
++
++static int mtx1sysbtn_open (struct inode *inode, struct file *file)
++{
++	if (MINOR(inode->i_rdev)!=mtx1sysbtn_minor) return -ENODEV;
++	if (is_inuse) return -EBUSY;
++	is_inuse=1;
++	last_value = mtx1_getbtn(0);
++	state_changed = 0;
++	return 0;
++}
++
++
++static int mtx1sysbtn_release (struct inode *inode, struct file *file) {
++	if (MINOR(inode->i_rdev)==mtx1sysbtn_minor) {
++		is_inuse=0;
++	}
++	return 0;
++}
++
++
++static ssize_t mtx1sysbtn_read (struct file *file, char *buf, size_t count, loff_t *ppos)
++{
++	if (count < 1)
++		return -EINVAL;
++	if (!state_changed)
++		interruptible_sleep_on (&mtx1btn_wait_queue);
++	state_changed = 0;
++	char c = last_value ? '1' : '0'; /* mtx1_getbtn(0) */
++	if(copy_to_user(buf, &c, 1))
++		return -EFAULT;
++	return 1;
++}
++
++
++static unsigned int mtx1sysbtn_poll (struct file *file, poll_table * wait)
++{
++  unsigned int mask = 0;
++
++  poll_wait (file, &mtx1btn_wait_queue, wait);
++
++  if (state_changed) // state changed since last time.
++    mask |= POLLIN | POLLRDNORM;
++
++  return mask;
++}
++
++
++static struct file_operations mtx1sysbtn_fops = {
++	.owner = THIS_MODULE,
++	.read = mtx1sysbtn_read,
++	.poll = mtx1sysbtn_poll,
++	.open = mtx1sysbtn_open,
++	.release = mtx1sysbtn_release
++};
++
++
++static struct miscdevice mtx1sysbtn_miscdev = {
++	MISC_DYNAMIC_MINOR /* SYSBTN_MINOR */ ,
++	"btn",
++	&mtx1sysbtn_fops
++};
++
++
++
++//---------[ Module Functions ]-----------------
++
++
++void __exit exit_mtx1_sysbtn (void)
++{
++	is_inuse = 1;
++	mtx1_btn_stopirq ();
++	misc_deregister(&mtx1sysbtn_miscdev);
++}
++
++
++static int __init init_mtx1_sysbtn (void)
++{
++	printk("MTX-1 System Button driver\n");
++	is_inuse = 1;
++	mtx1_initbuttons ();
++	if (misc_register (&mtx1sysbtn_miscdev) >= 0) {
++		mtx1sysbtn_minor = mtx1sysbtn_miscdev.minor;
++		if (mtx1_btn_startirq () == 0) {
++			is_inuse=0;
++			return 0;
++		}
++		misc_deregister(&mtx1sysbtn_miscdev);
++	}
++	return 1;
++}
++
++module_init(init_mtx1_sysbtn);
++module_exit(exit_mtx1_sysbtn);
++
++MODULE_AUTHOR("Michael Stickel");
++MODULE_DESCRIPTION("Driver for the MTX-1 system button");
++MODULE_LICENSE("GPL");

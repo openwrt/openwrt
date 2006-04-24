@@ -1,6 +1,6 @@
 diff -urN linux-2.6.16.7/drivers/char/watchdog/Kconfig linux-2.6.16.7.new/drivers/char/watchdog/Kconfig
 --- linux-2.6.16.7/drivers/char/watchdog/Kconfig	2006-04-17 23:53:25.000000000 +0200
-+++ linux-2.6.16.7.new/drivers/char/watchdog/Kconfig	2006-04-22 16:40:32.000000000 +0200
++++ linux-2.6.16.7.new/drivers/char/watchdog/Kconfig	2006-04-22 23:23:53.000000000 +0200
 @@ -460,6 +460,14 @@
  	  timer expired and no process has written to /dev/watchdog during
  	  that time.
@@ -18,7 +18,7 @@ diff -urN linux-2.6.16.7/drivers/char/watchdog/Kconfig linux-2.6.16.7.new/driver
  config ZVM_WATCHDOG
 diff -urN linux-2.6.16.7/drivers/char/watchdog/Makefile linux-2.6.16.7.new/drivers/char/watchdog/Makefile
 --- linux-2.6.16.7/drivers/char/watchdog/Makefile	2006-04-17 23:53:25.000000000 +0200
-+++ linux-2.6.16.7.new/drivers/char/watchdog/Makefile	2006-04-22 16:38:31.000000000 +0200
++++ linux-2.6.16.7.new/drivers/char/watchdog/Makefile	2006-04-22 23:21:18.000000000 +0200
 @@ -65,6 +65,7 @@
  
  # MIPS Architecture
@@ -29,8 +29,8 @@ diff -urN linux-2.6.16.7/drivers/char/watchdog/Makefile linux-2.6.16.7.new/drive
  
 diff -urN linux-2.6.16.7/drivers/char/watchdog/mtx-1_watchdog.c linux-2.6.16.7.new/drivers/char/watchdog/mtx-1_watchdog.c
 --- linux-2.6.16.7/drivers/char/watchdog/mtx-1_watchdog.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.16.7.new/drivers/char/watchdog/mtx-1_watchdog.c	2006-04-22 16:38:49.000000000 +0200
-@@ -0,0 +1,252 @@
++++ linux-2.6.16.7.new/drivers/char/watchdog/mtx-1_watchdog.c	2006-04-22 23:20:53.000000000 +0200
+@@ -0,0 +1,246 @@
 +/*
 + *      Driver for the MTX-1 Watchdog.
 + *
@@ -119,7 +119,7 @@ diff -urN linux-2.6.16.7/drivers/char/watchdog/mtx-1_watchdog.c linux-2.6.16.7.n
 +{
 +	if (timer_is_running)
 +		mod_timer (&wd_trigger_timer, jiffies + 5 * HZ);
-+	mtx1_trigger_wd ();
++	mtx1_trigger_wd();
 +}
 +
 +static void start_wd_timer (void)
@@ -241,17 +241,6 @@ diff -urN linux-2.6.16.7/drivers/char/watchdog/mtx-1_watchdog.c linux-2.6.16.7.n
 +//---------[ Module Functions ]-----------------
 +
 +
-+void cleanup_module (void)
-+{
-+	// stop the timer, if it is running.
-+	stop_wd_timer();
-+
-+	misc_deregister(&mtx1wd_miscdev);
-+
-+	mtx1_disable_wd ();
-+}
-+
-+
 +static int __init init_mtx1_watchdog(void)
 +{
 +	printk("MTX-1 watchdog driver\n");
@@ -274,7 +263,12 @@ diff -urN linux-2.6.16.7/drivers/char/watchdog/mtx-1_watchdog.c linux-2.6.16.7.n
 +
 +static void __exit exit_mtx1_watchdog(void) {
 +
++	// stop the timer, if it is running.
++        stop_wd_timer();
++
 +        misc_deregister(&mtx1wd_miscdev);
++
++        mtx1_disable_wd();
 +}
 +
 +module_init(init_mtx1_watchdog);
