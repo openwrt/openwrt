@@ -179,7 +179,7 @@ diff -Nur linux-2.6.15.1/lib/Makefile linux-2.6.15.1-openwrt/lib/Makefile
  	 sha1.o
  
  lib-y	+= kobject.o kref.o kobject_uevent.o klist.o
-+lib-y	+= ashldi3.o ashrdi3.o lshrdi3.o
++obj-y	+= ashldi3.o ashrdi3.o lshrdi3.o
  
  obj-y += sort.o parser.o halfmd4.o
  
