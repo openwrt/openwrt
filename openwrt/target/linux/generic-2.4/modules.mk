@@ -39,12 +39,9 @@ $(eval $(call KMOD_template,PPPOE,pppoe,\
 	$(MODULES_DIR)/kernel/drivers/net/pppoe.o \
 ,CONFIG_PPPOE))
 
-ifneq ($(wildcard $(MODULES_DIR)/kernel/net/sched/*.o),)
-CONFIG_SCHED:=m
-endif
 $(eval $(call KMOD_template,SCHED,sched,\
 	$(MODULES_DIR)/kernel/net/sched/*.o \
-,CONFIG_SCHED))
+))
 
 $(eval $(call KMOD_template,TUN,tun,\
 	$(MODULES_DIR)/kernel/drivers/net/tun.o \
