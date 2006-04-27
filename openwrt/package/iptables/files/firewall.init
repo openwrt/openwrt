@@ -34,7 +34,7 @@ iptables -t nat -N postrouting_rule
   iptables -A INPUT -j input_rule
 
   # allow
-  [ -z "$WAN" ] || iptables -A INPUT -i \! $WAN	-j ACCEPT	# allow from lan/wifi interfaces 
+  iptables -A INPUT ${WAN:+-i \! $WAN} -j ACCEPT	# allow from all interfaces except for wan
   iptables -A INPUT -p icmp	-j ACCEPT	# allow ICMP
   iptables -A INPUT -p gre	-j ACCEPT	# allow GRE
 
