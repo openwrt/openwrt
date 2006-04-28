@@ -1,0 +1,11 @@
+--- dhcp6-1.0/client/solicit.c	2025-06-28 23:21:40.000000000 -0700
++++ dhcp6-1.0-patched/client/solicit.c	2006-04-27 15:32:52.000000000 -0700
+@@ -18,7 +18,7 @@
+     dhcp_message_ptr -> opt = add_client_id_option (interface_details);
+     
+     opt_ptr = (struct OPTIONS *) dhcp_message_ptr -> opt;
+-    (struct OPTIONS *) ((struct DUID *) opt_ptr -> opt_data) -> opt = add_ia_option (interface_details);
++    ((struct DUID *) opt_ptr -> opt_data) -> opt = add_ia_option (interface_details);
+     return dhcp_message_ptr;
+ }
+ 
