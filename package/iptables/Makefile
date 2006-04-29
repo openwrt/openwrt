@@ -226,10 +226,12 @@ $(eval $(call BuildPackage,ip6tables))
 
 
 $(STAGING_DIR)/usr/lib/libipq.a: $(PKG_BUILD_DIR)/.built
-	mkdir -p $(STAGING_DIR)/usr/include
-	$(CP) $(PKG_INSTALL_DIR)/usr/include/libipq.h $(STAGING_DIR)/usr/include/
-	mkdir -p $(STAGING_DIR)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libipq.a $(STAGING_DIR)/usr/lib/
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		$(TARGET_CONFIGURE_OPTS) \
+		CC=$(TARGET_CC) COPT_FLAGS="$(TARGET_CFLAGS)" \
+		KERNEL_DIR=$(LINUX_DIR) PREFIX=/usr \
+		DESTDIR="$(STAGING_DIR)" \
+		install install-devel
 
 install-dev: $(STAGING_DIR)/usr/lib/libipq.a
 uninstall-dev:
