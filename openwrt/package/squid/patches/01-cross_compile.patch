@@ -12,64 +12,6 @@ diff -urN squid-2.5.STABLE13/configure squid-2.5.STABLE13.new/configure
    CPPFLAGS="${SSLFLAGS} $CPPFLAGS"
  fi
  
-diff -urN squid-2.5.STABLE13/helpers/basic_auth/LDAP/Makefile.in squid-2.5.STABLE13.new/helpers/basic_auth/LDAP/Makefile.in
---- squid-2.5.STABLE13/helpers/basic_auth/LDAP/Makefile.in	2005-09-28 22:57:18.000000000 +0200
-+++ squid-2.5.STABLE13.new/helpers/basic_auth/LDAP/Makefile.in	2006-04-15 10:29:39.000000000 +0200
-@@ -130,8 +130,10 @@
- EXTRA_DIST = squid_ldap_auth.8
- squid_ldap_auth_SOURCES = squid_ldap_auth.c
- 
--LDADD = -L$(top_builddir)/lib -lmiscutil -lldap $(LIB_LBER) $(XTRA_LIBS)
--INCLUDES = -I$(top_srcdir)/include
-+LDADD = -L$(top_builddir)/lib -lmiscutil -lldap $(LIB_LBER) $(XTRA_LIBS) \
-+	-L$(STAGING_DIR)/lib -L$(STAGING_DIR)/usr/lib
-+INCLUDES = -I$(top_srcdir)/include -I$(STAGING_DIR)/usr/include \
-+		-I$(STAGING_DIR)/include
- subdir = helpers/basic_auth/LDAP
- mkinstalldirs = $(SHELL) $(top_srcdir)/cfgaux/mkinstalldirs
- CONFIG_HEADER = $(top_builddir)/include/autoconf.h
-diff -urN squid-2.5.STABLE13/helpers/digest_auth/password/Makefile.in squid-2.5.STABLE13.new/helpers/digest_auth/password/Makefile.in
---- squid-2.5.STABLE13/helpers/digest_auth/password/Makefile.in	2005-09-28 22:57:20.000000000 +0200
-+++ squid-2.5.STABLE13.new/helpers/digest_auth/password/Makefile.in	2006-04-15 10:29:39.000000000 +0200
-@@ -127,10 +127,12 @@
- 
- libexec_PROGRAMS = digest_pw_auth
- INCLUDES = -I. -I$(top_builddir)/include -I$(top_srcdir)/include \
--		-I$(top_srcdir)/src/
-+		-I$(top_srcdir)/src/ -I$(STAGING_DIR)/usr/include \
-+		-I$(STAGING_DIR)/include
- 
- 
--LDADD = -L$(top_builddir)/lib -lmiscutil $(CRYPTLIB) $(XTRA_LIBS) $(SSLLIB)
-+LDADD = -L$(top_builddir)/lib -lmiscutil $(CRYPTLIB) $(XTRA_LIBS) $(SSLLIB) \
-+	-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib
- subdir = helpers/digest_auth/password
- mkinstalldirs = $(SHELL) $(top_srcdir)/cfgaux/mkinstalldirs
- CONFIG_HEADER = $(top_builddir)/include/autoconf.h
-diff -urN squid-2.5.STABLE13/helpers/external_acl/ldap_group/Makefile.in squid-2.5.STABLE13.new/helpers/external_acl/ldap_group/Makefile.in
---- squid-2.5.STABLE13/helpers/external_acl/ldap_group/Makefile.in	2005-09-28 22:57:20.000000000 +0200
-+++ squid-2.5.STABLE13.new/helpers/external_acl/ldap_group/Makefile.in	2006-04-15 10:29:39.000000000 +0200
-@@ -130,7 +130,8 @@
- EXTRA_DIST = squid_ldap_group.8
- squid_ldap_group_SOURCES = squid_ldap_group.c
- 
--LDADD = -lldap $(LIB_LBER) $(XTRA_LIBS)
-+LDADD = -lldap $(LIB_LBER) $(XTRA_LIBS) \
-+	-L$(STAGING_DIR)/lib -L$(STAGING_DIR)/usr/lib
- subdir = helpers/external_acl/ldap_group
- mkinstalldirs = $(SHELL) $(top_srcdir)/cfgaux/mkinstalldirs
- CONFIG_HEADER = $(top_builddir)/include/autoconf.h
-@@ -145,7 +146,9 @@
- squid_ldap_group_LDFLAGS =
- 
- DEFS = @DEFS@
--DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)/include
-+DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)/include \
-+			-I$(STAGING_DIR)/usr/include \
-+			-I$(STAGING_DIR)/include
- CPPFLAGS = @CPPFLAGS@
- LDFLAGS = @LDFLAGS@
- LIBS = @LIBS@
 diff -urN squid-2.5.STABLE13/include/autoconf.h.in squid-2.5.STABLE13.new/include/autoconf.h.in
 --- squid-2.5.STABLE13/include/autoconf.h.in	2005-09-13 02:12:34.000000000 +0200
 +++ squid-2.5.STABLE13.new/include/autoconf.h.in	2006-04-15 10:29:39.000000000 +0200
@@ -157,15 +99,6 @@ diff -urN squid-2.5.STABLE13/lib/Makefile.in squid-2.5.STABLE13.new/lib/Makefile
  # $(top_srcdir)/include/version.h should be a dependency
  libregex_a_SOURCES = \
  	GNUregex.c
-@@ -179,7 +209,7 @@
- 	@LIBOBJS@
- 
- 
--INCLUDES = -I$(top_builddir)/include -I$(top_srcdir)/include
-+INCLUDES = -I$(top_builddir)/include -I$(top_srcdir)/include -I$(STAGING_DIR)/include -I$(STAGING_DIR)/usr/include
- subdir = lib
- mkinstalldirs = $(SHELL) $(top_srcdir)/cfgaux/mkinstalldirs
- CONFIG_HEADER = $(top_builddir)/include/autoconf.h
 @@ -193,9 +223,11 @@
  libmiscutil_a_AR = $(AR) cru
  libmiscutil_a_DEPENDENCIES = @LIBOBJS@
@@ -277,19 +210,6 @@ diff -urN squid-2.5.STABLE13/lib/Makefile.in squid-2.5.STABLE13.new/lib/Makefile
  .c.obj:
  @AMDEP_TRUE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
  @AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
-diff -urN squid-2.5.STABLE13/src/auth/Makefile.in squid-2.5.STABLE13.new/src/auth/Makefile.in
---- squid-2.5.STABLE13/src/auth/Makefile.in	2005-09-28 22:57:24.000000000 +0200
-+++ squid-2.5.STABLE13.new/src/auth/Makefile.in	2006-04-15 10:29:39.000000000 +0200
-@@ -135,7 +135,8 @@
- libntlm_a_SOURCES = ntlm/auth_ntlm.c ntlm/auth_ntlm.h
- 
- INCLUDES = -I. -I$(top_builddir)/include -I$(top_srcdir)/include \
--	-I$(top_srcdir)/src/
-+	-I$(top_srcdir)/src/ -I$(STAGING_DIR)/include \
-+	-I$(STAGING_DIR)/usr/include
- 
- subdir = src/auth
- mkinstalldirs = $(SHELL) $(top_srcdir)/cfgaux/mkinstalldirs
 diff -urN squid-2.5.STABLE13/src/ctype.c squid-2.5.STABLE13.new/src/ctype.c
 --- squid-2.5.STABLE13/src/ctype.c	1970-01-01 01:00:00.000000000 +0100
 +++ squid-2.5.STABLE13.new/src/ctype.c	2006-04-15 10:29:39.000000000 +0200
@@ -840,60 +760,16 @@ diff -urN squid-2.5.STABLE13/src/ctype.c squid-2.5.STABLE13.new/src/ctype.c
 +const uint32_t *__ctype32_tolower = b (uint32_t, tolower, 128);
 +const uint32_t *__ctype32_toupper = b (uint32_t, toupper, 128);
 +
-diff -urN squid-2.5.STABLE13/src/fs/Makefile.in squid-2.5.STABLE13.new/src/fs/Makefile.in
---- squid-2.5.STABLE13/src/fs/Makefile.in	2005-09-28 22:57:26.000000000 +0200
-+++ squid-2.5.STABLE13.new/src/fs/Makefile.in	2006-04-15 10:29:39.000000000 +0200
-@@ -147,7 +147,8 @@
- 
- 
- INCLUDES = -I. -I$(top_builddir)/include -I$(top_srcdir)/include \
--	-I$(top_srcdir)/src/
-+	-I$(top_srcdir)/src/ -I$(STAGING_DIR)/include \
-+	-I$(STAGING_DIR)/usr/include
- 
- subdir = src/fs
- mkinstalldirs = $(SHELL) $(top_srcdir)/cfgaux/mkinstalldirs
 diff -urN squid-2.5.STABLE13/src/Makefile.in squid-2.5.STABLE13.new/src/Makefile.in
 --- squid-2.5.STABLE13/src/Makefile.in	2005-09-28 22:57:21.000000000 +0200
 +++ squid-2.5.STABLE13.new/src/Makefile.in	2006-04-15 10:29:39.000000000 +0200
-@@ -157,7 +157,8 @@
- 
- SUBDIRS = fs repl auth
- 
--INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/include -I$(top_srcdir)/include
-+INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/include -I$(top_srcdir)/include \
-+		-I$(STAGING_DIR)/include -I$(STAGING_DIR)/usr/include
- 
- EXTRA_PROGRAMS = \
- 	unlinkd \
-@@ -318,6 +319,7 @@
- 
- squid_LDADD = \
- 	-L../lib \
-+	-L$(STAGING_DIR)/usr/lib \
- 	@XTRA_OBJS@ \
- 	@REPL_OBJS@ \
- 	@STORE_OBJS@ \
 @@ -1141,6 +1143,9 @@
  	$(SHELL) -c "test -f squid.conf.default || ./cf_gen cf.data"
  
  cf_parser.h: cf.data cf_gen$(EXEEXT)
 +	rm -f cf_gen
 +	gcc -c ctype.c
-+	gcc -o cf_gen cf_gen.c -I./ -I../ -I../include/ -L../lib -lmiscutil$(shell uname -m) -lm -lbsd -lnsl -Wl,ctype.o
++	gcc -o cf_gen cf_gen.c -I./ -I../ -I../include/ -L../lib -lmiscutil$(shell uname -m) -lm -lnsl -Wl,ctype.o
  	./cf_gen cf.data 
  
  cf_gen_defines.h: $(srcdir)/cf_gen_defines $(srcdir)/cf.data.pre
-diff -urN squid-2.5.STABLE13/src/repl/Makefile.in squid-2.5.STABLE13.new/src/repl/Makefile.in
---- squid-2.5.STABLE13/src/repl/Makefile.in	2005-09-28 22:57:28.000000000 +0200
-+++ squid-2.5.STABLE13.new/src/repl/Makefile.in	2006-04-15 10:29:39.000000000 +0200
-@@ -136,7 +136,8 @@
- libheap_a_SOURCES = heap/store_heap_replacement.h heap/store_heap_replacement.c heap/store_repl_heap.c
- 
- INCLUDES = -I. -I$(top_builddir)/include -I$(top_srcdir)/include \
--	-I$(top_srcdir)/src/
-+	-I$(top_srcdir)/src/ -I$(STAGING_DIR)/include \
-+	-I$(STAGING_DIR)/usr/include
- 
- subdir = src/repl
- mkinstalldirs = $(SHELL) $(top_srcdir)/cfgaux/mkinstalldirs
