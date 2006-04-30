@@ -1,3 +1,5 @@
+# $Id$
+
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=squid
@@ -54,8 +56,10 @@ include $(TOPDIR)/package/rules.mk
 define PKG_mod_template
 
 $$(IPKG_$(1)):
-	mkdir -p $$(IDIR_$(1))/usr/lib/
-	[ -e $(PKG_BUILD_DIR)/helpers/$(2)/$(3)/$(4) ] && $(CP) $(PKG_BUILD_DIR)/helpers/$(2)/$(3)/$(4) $$(IDIR_$(1))/usr/lib
+	install -d -m0755 $$(IDIR_$(1))/usr/lib/squid
+	if [ -e $(PKG_INSTALL_DIR)/usr/lib/squid/$(2) ]; then \
+		$(CP) $(PKG_INSTALL_DIR)/usr/lib/squid/$(2) $$(IDIR_$(1))/usr/lib/squid/ ; \
+	fi
 	$(RSTRIP) $$(IDIR_$(1))
 	$(IPKG_BUILD) $$(IDIR_$(1)) $(PACKAGE_DIR)
 
@@ -75,24 +79,26 @@ $(eval $(call PKG_template,SQUID_MOD_NTLM_AUTH_FAKEAUTH,$(PKG_NAME)-mod-ntlm-aut
 $(eval $(call PKG_template,SQUID_MOD_NTLM_AUTH_SMB_AUTH,$(PKG_NAME)-mod-ntlm-auth-smb-auth,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,SQUID_MOD_NTLM_AUTH_WINBIND_AUTH,$(PKG_NAME)-mod-ntlm-auth-winbind-auth,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
-$(eval $(call PKG_mod_template,SQUID_MOD_BASIC_AUTH_GETPWNAM,basic_auth,getpwnam,getpwname_auth))
-$(eval $(call PKG_mod_template,SQUID_MOD_BASIC_AUTH_LDAP,basic_auth,LDAP,ldap))
-$(eval $(call PKG_mod_template,SQUID_MOD_BASIC_AUTH_NCSA,basic_auth,NCSA,ncsa_auth))
-$(eval $(call PKG_mod_template,SQUID_MOD_BASIC_AUTH_SMB,basic_auth,SMB,smb_auth))
-$(eval $(call PKG_mod_template,SQUID_MOD_BASIC_AUTH_WINBIND,basic_auth,winbind,wb_auth))
-$(eval $(call PKG_mod_template,SQUID_MOD_DIGEST_AUTH_PASSWORD,digest_auth,password,digest_pw_auth))
-$(eval $(call PKG_mod_template,SQUID_MOD_EXTERNAL_ACL_IP_USER,external_acl,ip_user,ip_user_check))
-$(eval $(call PKG_mod_template,SQUID_MOD_EXTERNAL_ACL_LDAP_GROUP,external_acl,ldap_group,ldap_auth))
-$(eval $(call PKG_mod_template,SQUID_MOD_EXTERNAL_ACL_UNIX_GROUP,external_acl,unix_group,squid_unix_group))
-$(eval $(call PKG_mod_template,SQUID_MOD_EXTERNAL_ACL_WINBIND_GROUP,external_acl,winbind_group,wb_group))
-$(eval $(call PKG_mod_template,SQUID_MOD_NTLM_AUTH_FAKEAUTH,ntlm_auth,fakeauth,fakeauth_auth))
-$(eval $(call PKG_mod_template,SQUID_MOD_NTLM_AUTH_SMB_AUTH,ntlm_auth,SMB,ntlm_auth))
-$(eval $(call PKG_mod_template,SQUID_MOD_NTLM_AUTH_WINBIND_AUTH,ntlm_auth,winbind,wb_ntlmauth))
+$(eval $(call PKG_mod_template,SQUID_MOD_BASIC_AUTH_GETPWNAM,getpwname_auth))
+$(eval $(call PKG_mod_template,SQUID_MOD_BASIC_AUTH_LDAP,ldap))
+$(eval $(call PKG_mod_template,SQUID_MOD_BASIC_AUTH_NCSA,ncsa_auth))
+$(eval $(call PKG_mod_template,SQUID_MOD_BASIC_AUTH_SMB,smb_auth))
+$(eval $(call PKG_mod_template,SQUID_MOD_BASIC_AUTH_WINBIND,wb_auth))
+$(eval $(call PKG_mod_template,SQUID_MOD_DIGEST_AUTH_PASSWORD,digest_pw_auth))
+$(eval $(call PKG_mod_template,SQUID_MOD_EXTERNAL_ACL_IP_USER,ip_user_check))
+$(eval $(call PKG_mod_template,SQUID_MOD_EXTERNAL_ACL_LDAP_GROUP,ldap_auth))
+$(eval $(call PKG_mod_template,SQUID_MOD_EXTERNAL_ACL_UNIX_GROUP,squid_unix_group))
+$(eval $(call PKG_mod_template,SQUID_MOD_EXTERNAL_ACL_WINBIND_GROUP,wb_group))
+$(eval $(call PKG_mod_template,SQUID_MOD_NTLM_AUTH_FAKEAUTH,fakeauth_auth))
+$(eval $(call PKG_mod_template,SQUID_MOD_NTLM_AUTH_SMB_AUTH,ntlm_auth))
+$(eval $(call PKG_mod_template,SQUID_MOD_NTLM_AUTH_WINBIND_AUTH,wb_ntlmauth))
 
 $(PKG_BUILD_DIR)/.configured:
 	(cd $(PKG_BUILD_DIR); rm -rf config.cache; \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
+		CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include" \
+		LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib" \
 		ac_cv_sizeof_void_p=4 \
 		ac_cv_sizeof_short=2 \
 		ac_cv_sizeof_int=4 \
@@ -112,63 +118,69 @@ $(PKG_BUILD_DIR)/.configured:
 		ac_cv_func_va_copy=no \
 		ac_cv_func___va_copy=no \
 		./configure \
-		--target=$(GNU_TARGET_NAME) \
-		--host=$(GNU_TARGET_NAME) \
-		--build=$(GNU_HOST_NAME) \
-		--prefix=/usr \
-		--exec-prefix=/usr \
-		--bindir=/usr/bin \
-		--sbindir=/usr/sbin \
-		--libexecdir=/usr/lib \
-		--sysconfdir=/etc \
-		--datadir=/usr/share \
-		--localstatedir=/var \
-		--mandir=/usr/man \
-		--infodir=/usr/info \
-		--with-gnu-ld \
-		--enable-x-accelerator-vary \
-		--with-pthreads \
-		--with-dl \
-		--enable-icmp \
-		--enable-kill-parent-hack \
-		--enable-arp-acl \
-		--enable-ssl \
-		--enable-htcp \
-		--enable-err-languages=English \
-		--enable-default-err-language=English \
-		--enable-linux-netfilter \
-		--enable-icmp \
-		--enable-external-acl-helpers="" \
-		--enable-underscores \
-		--enable-cache-digests \
-		--enable-referer-log \
-		--enable-delay-pools \
-		--enable-useragent-log \
-		--with-openssl=$(STAGING_DIR)/usr \
-		--enable-auth="$(AUTH_MODULES)" \
-		--enable-basic-auth-helpers="$(BASIC_AUTH_HELPERS)" \
-		--enable-ntlm-auth-helpers="$(NTLM_AUTH_HELPERS)" \
-		--enable-digest-auth-helpers="$(DIGEST_AUTH_HELPERS)" \
-		--enable-external-acl-helpers="$(EXTERNAL_ACL_HELPERS)" \
+			--target=$(GNU_TARGET_NAME) \
+			--host=$(GNU_TARGET_NAME) \
+			--build=$(GNU_HOST_NAME) \
+			--program-prefix="" \
+			--program-suffix="" \
+			--prefix=/usr \
+			--exec-prefix=/usr \
+			--bindir=/usr/bin \
+			--datadir=/usr/share/squid \
+			--includedir=/usr/include \
+			--infodir=/usr/share/info \
+			--libdir=/usr/lib \
+			--libexecdir=/usr/lib/squid \
+			--localstatedir=/var \
+			--mandir=/usr/share/man \
+			--sbindir=/usr/sbin \
+			--sysconfdir=/etc/squid \
+			$(DISABLE_LARGEFILE) \
+			--enable-shared \
+			--enable-static \
+			--with-gnu-ld \
+			--enable-x-accelerator-vary \
+			--with-pthreads \
+			--with-dl \
+			--enable-icmp \
+			--enable-kill-parent-hack \
+			--enable-arp-acl \
+			--enable-ssl \
+			--enable-htcp \
+			--enable-err-languages=English \
+			--enable-default-err-language=English \
+			--enable-linux-netfilter \
+			--enable-icmp \
+			--enable-external-acl-helpers="" \
+			--enable-underscores \
+			--enable-cache-digests \
+			--enable-referer-log \
+			--enable-delay-pools \
+			--enable-useragent-log \
+			--with-openssl=$(STAGING_DIR)/usr \
+			--enable-auth="$(AUTH_MODULES)" \
+			--enable-basic-auth-helpers="$(BASIC_AUTH_HELPERS)" \
+			--enable-ntlm-auth-helpers="$(NTLM_AUTH_HELPERS)" \
+			--enable-digest-auth-helpers="$(DIGEST_AUTH_HELPERS)" \
+			--enable-external-acl-helpers="$(EXTERNAL_ACL_HELPERS)" \
 	);
 	touch $@
 	
 $(PKG_BUILD_DIR)/.built:
-	mkdir -p $(PKG_INSTALL_DIR)/usr/
-	$(MAKE) DESTDIR=$(PKG_INSTALL_DIR) \
-		STAGING_DIR=$(STAGING_DIR) \
-		-C $(PKG_BUILD_DIR) install
-	mkdir -p $(PKG_INSTALL_DIR){/etc/init.d/,/www/cgi-bin/}
-	$(RSTRIP) $(PKG_INSTALL_DIR)/usr/sbin/*
-	$(RSTRIP) $(PKG_INSTALL_DIR)/usr/lib/*
-	(cd $(PKG_INSTALL_DIR)/usr/share/errors && ls . | grep -v English | xargs rm -rf);
-	rm -r $(PKG_INSTALL_DIR){/usr/man,/etc/*.default,/usr/bin/squidclient}
-	echo "" > $(PKG_INSTALL_DIR)/etc/squid.conf
-	(cd $(PKG_INSTALL_DIR)/www/cgi-bin/ && rm -f cachemgr.cgi && ln -s ../../usr/lib/cachemgr.cgi cachemgr.cgi);
+	rm -rf $(PKG_INSTALL_DIR)
+	mkdir -p $(PKG_INSTALL_DIR)
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		DESTDIR=$(PKG_INSTALL_DIR) \
+		all install
 	touch $@
 
 $(IPKG_SQUID):
-	mkdir -p $(IDIR_SQUID)
-	$(CP) $(PKG_INSTALL_DIR)/* $(IDIR_SQUID)/
-	$(RSTRIP) $(IDIR_SQUID)/
+	install -d -m0755 $(IDIR_SQUID)/etc/squid
+	$(CP) $(PKG_INSTALL_DIR)/etc/squid/mime.conf $(IDIR_SQUID)/etc/squid/
+	$(CP) $(PKG_INSTALL_DIR)/etc/squid/squid.conf $(IDIR_SQUID)/etc/squid/
+	install -d -m0755 $(IDIR_SQUID)/usr/share/squid
+	$(CP) $(PKG_INSTALL_DIR)/usr/share/squid/* $(IDIR_SQUID)/usr/share/squid/
+	install -d -m0755 $(IDIR_SQUID)/usr/sbin
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/squid $(IDIR_SQUID)/usr/sbin/
+	$(RSTRIP) $(IDIR_SQUID)
 	$(IPKG_BUILD) $(IDIR_SQUID) $(PACKAGE_DIR)
