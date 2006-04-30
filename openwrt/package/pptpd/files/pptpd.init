@@ -9,7 +9,7 @@ PID_F=$RUN_D/$BIN.pid
 case $1 in
  start)
   mkdir -p $RUN_D
-  for m in arc4 sha1 slhc ppp_generic ppp_async ppp_mppe_mppc; do
+  for m in arc4 sha1 slhc crc-ccitt ppp_generic ppp_async ppp_mppe_mppc; do
    insmod $m >/dev/null 2>&1
   done
   $BIN $OPTIONS
