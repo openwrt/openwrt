@@ -107,6 +107,8 @@ $(STAGING_DIR)/usr/lib/libxml2.so: $(PKG_BUILD_DIR)/.built
 	$(SED) 's,-I$(STAGING_DIR)/usr/include,,g' $(STAGING_DIR)/usr/bin/xml2-config
 	$(SED) 's,-L$${libdir},,g' $(STAGING_DIR)/usr/bin/xml2-config
 	$(SED) 's,-L$(STAGING_DIR)/usr/lib,,g' $(STAGING_DIR)/usr/bin/xml2-config
+	$(SED) 's,-I$${includedir}/libxml2,,g' $(STAGING_DIR)/usr/lib/pkgconfig/libxml-2.0.pc
+	$(SED) 's,-L$${libdir},,g' $(STAGING_DIR)/usr/lib/pkgconfig/libxml-2.0.pc
 	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/libxml2.so
