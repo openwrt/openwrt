@@ -1,6 +1,6 @@
 include $(TOPDIR)/rules.mk
 
-LOADADDR = 0x8008c8f4		# RAM start + 16M 
+LOADADDR = 0x8108c8f4		# RAM start + 16M 
 KERNEL_ENTRY = 0x80100000
 RAMSIZE = 0x04000000		# 1MB
 
@@ -31,25 +31,12 @@ endif
 ifeq ($(KERNEL),2.6)
 FSNAME:=$(patsubst jffs2-%,jffs2,$(FS))
 
-$(KDIR)/vmlinux.srec: $(KDIR)/vmlinux
-	$(TARGET_CROSS)objcopy -O srec $(LINUX_DIR)/vmlinux $(KDIR)/vmlinux.srec
-
-ifeq ($(FS),jffs2-4MB)
-
-$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FSNAME).bin: $(KDIR)/root.$(FS) $(KDIR)/vmlinux.srec
-	$(TARGET_CROSS)objcopy -O srec -I binary --adjust-vma 0xbe000000 $(KDIR)/root.$(FS) $(KDIR)/root.srec
-	grep -v S7 $(KDIR)/root.srec > $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).img
-	grep -v S0 $(KDIR)/vmlinux.srec >> $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).img
-
-install: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FSNAME).bin
-endif
-
 ifeq ($(FS),jffs2-8MB)
 
-$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FSNAME).bin: $(KDIR)/root.$(FS) $(KDIR)/vmlinux.srec
+$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FSNAME).bin: $(KDIR)/root.$(FS)
 	$(TARGET_CROSS)objcopy -O srec -I binary --adjust-vma 0xbe000000 $(KDIR)/root.$(FS) $(KDIR)/root.srec
 	grep -v S7 $(KDIR)/root.srec > $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).img
-	grep -v S0 $(KDIR)/vmlinux.srec >> $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).img
+	grep -v S0 $(LINUX_DIR)/arch/mips/boot/compressed/images/zImage.flash.srec >> $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).img
 
 install: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FSNAME).bin
 endif
@@ -64,16 +51,17 @@ install: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-rootfs.tar.gz
 endif
 
 ifeq ($(FS),squashfs)
-$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FSNAME).bin: $(KDIR)/root.$(FS) $(KDIR)/vmlinux.srec
+$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FSNAME).bin: $(KDIR)/root.$(FS)
 	$(TARGET_CROSS)objcopy -O srec -I binary --adjust-vma 0xbe000000 $(KDIR)/root.$(FS) $(KDIR)/root.srec
 	grep -v S7 $(KDIR)/root.srec > $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).img
+	grep -v S0 $(LINUX_DIR)/arch/mips/boot/compressed/images/zImage.flash.srec >> $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).img
 
 endif
 
 install: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FSNAME).bin
 endif
 
-$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-vmlinuz: $(KDIR)/vmlinux
+$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-vmlinuz: $(KDIR)/zImage.flash
 	$(CP) $^ $@
 
 ifeq ($(IB),)
