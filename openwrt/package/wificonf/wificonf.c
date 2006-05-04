@@ -281,10 +281,10 @@ static int is_new_bcom(int skfd, char *ifname)
 	bzero(buf, 8192);
 	bcom_ioctl(skfd, ifname, WLC_DUMP, buf, 8192);
 
-	if (strstr(buf, "3.130"))
-		return 1;
+	if (strstr(buf, "3.90"))
+		return 0;
 
-	return 0;
+	return 1;
 }
 
 static int bcom_get_wsec(int vif)
