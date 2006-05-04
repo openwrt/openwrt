@@ -39,6 +39,7 @@ libgd-compile: libpng-compile jpeg-compile
 libid3tag-compile: zlib-compile
 libnet-compile: libpcap-compile
 libnids-compile: libnet-compile
+libpng-compile: zlib-compile
 libvorbis-compile: libogg-compile
 libxml2-compile: zlib-compile
 libxslt-compile: libxml2-compile
