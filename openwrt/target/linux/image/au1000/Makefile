@@ -1,8 +1,8 @@
 include $(TOPDIR)/rules.mk
 
 LOADADDR = 0x8108c8f4		# RAM start + 16M 
-KERNEL_ENTRY = 0x80100000
-RAMSIZE = 0x04000000		# 1MB
+KERNEL_ENTRY = 0x80100000	# Default kernel entry in arch/mips/Makefile
+RAMSIZE = 0x04000000		# 64MB
 
 LOADER_MAKEOPTS= \
 		KDIR=$(KDIR) \
@@ -27,9 +27,6 @@ $(KDIR)/vmlinux.lzma: $(KDIR)/vmlinux
 	
 install: $(KDIR)/vmlinux.lzma
 endif
-
-ifeq ($(KERNEL),2.6)
-FSNAME:=$(patsubst jffs2-%,jffs2,$(FS))
 
 ifeq ($(FS),jffs2-8MB)
 
@@ -58,9 +55,6 @@ $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FSNAME).bin: $(KDIR)/root.$(FS)
 
 endif
 
-install: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FSNAME).bin
-endif
-
 $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-vmlinuz: $(KDIR)/zImage.flash
 	$(CP) $^ $@
 
@@ -78,5 +72,5 @@ install-ib:
 	mkdir -p $(IB_DIR)/build_$(ARCH)/linux-$(KERNEL)-$(BOARD)
 	$(CP) $(KDIR)/loader.elf $(IB_DIR)/build_$(ARCH)/
 	$(CP) $(KDIR)/vmlinux.lzma $(IB_DIR)/build_$(ARCH)/linux-$(KERNEL)-$(BOARD)/
-	$(TARGET_CROSS)objcopy -O srec $(KDIR)/loader.elf $(KDIR)/loader.srec
+	$(TARGET_CROSS)objcopy -O srec -I binary --adjust-vma 0xbe000000 $(KDIR)/loader.elf $(KDIR)/loader.srec
 	grep -v S0 $(KDIR)/loader.srec > $(KDIR)/kernel.srec
