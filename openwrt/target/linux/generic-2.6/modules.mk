@@ -14,7 +14,7 @@ $(eval $(call KMOD_template,GRE,gre,\
 ,CONFIG_NET_IPGRE))
 
 $(eval $(call KMOD_template,IMQ,imq,\
-	$(MODULES_DIR)/kernel/net/*/netfilter/*IMQ*.ko \
+	$(MODULES_DIR)/kernel/net/ipv4/netfilter/*IMQ*.ko \
 	$(MODULES_DIR)/kernel/drivers/net/imq.ko \
 ))
 
