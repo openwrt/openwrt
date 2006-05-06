@@ -16339,7 +16339,7 @@ diff -urN linux.old/drivers/net/wireless/Config.in linux.dev/drivers/net/wireles
 diff -urN linux.old/drivers/net/wl/Makefile linux.dev/drivers/net/wl/Makefile
 --- linux.old/drivers/net/wl/Makefile	1970-01-01 01:00:00.000000000 +0100
 +++ linux.dev/drivers/net/wl/Makefile	2006-04-28 01:33:52.000000000 +0200
-@@ -0,0 +1,23 @@
+@@ -0,0 +1,26 @@
 +#
 +# Makefile for the Broadcom wl driver
 +#
@@ -16357,10 +16357,13 @@ diff -urN linux.old/drivers/net/wl/Makefile linux.dev/drivers/net/wl/Makefile
 +
 +O_TARGET	:= wl.o
 +
-+obj-y		:= wl_apsta.o
++obj-y		:= wl_mod.o
 +obj-y		+= bcmutils.o hnddma.o linux_osl.o
 +
 +obj-m		:= $(O_TARGET)
++
++wl_mod.o: wl_apsta.o
++	sed -e 's,eth%d,wl%d\x00,g' < $< > $@
 +
 +include $(TOPDIR)/Rules.make
 diff -urN linux.old/drivers/net/wl/bcmip.h linux.dev/drivers/net/wl/bcmip.h
