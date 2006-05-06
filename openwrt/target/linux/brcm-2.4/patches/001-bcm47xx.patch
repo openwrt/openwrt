@@ -16336,10 +16336,68 @@ diff -urN linux.old/drivers/net/wireless/Config.in linux.dev/drivers/net/wireles
     dep_tristate '    Hermes in PLX9052 based PCI adaptor support (Netgear MA301 etc.) (EXPERIMENTAL)' CONFIG_PLX_HERMES $CONFIG_HERMES $CONFIG_EXPERIMENTAL
     dep_tristate '    Hermes in TMD7160/NCP130 based PCI adaptor support (Pheecom WL-PCI etc.) (EXPERIMENTAL)' CONFIG_TMD_HERMES $CONFIG_HERMES $CONFIG_EXPERIMENTAL
     dep_tristate '    Prism 2.5 PCI 802.11b adaptor support (EXPERIMENTAL)' CONFIG_PCI_HERMES $CONFIG_HERMES $CONFIG_EXPERIMENTAL
+diff -urN linux.old/drivers/net/wl/patchtable.pl linux.dev/drivers/net/wl/patchtable.pl
+--- linux.old/drivers/net/wl/patchtable.pl	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/drivers/net/wl/patchtable.pl	2006-04-28 01:33:52.000000000 +0200
+@@ -0,0 +1,54 @@
++#!/usr/bin/perl
++use strict;
++
++my $TABLE = pack("V", 0xbadc0ded);
++my $TABLE_SIZE = 512;
++my $SLT1 = "\x01\x00\x00\x00";
++my $SLT2 = "\x02\x00\x00\x00";
++my $ACKW = "\x03\x00\x00\x00";
++my $PTABLE_END = "\xff\xff\xff\xff";
++
++my $addr = "";
++my $opcode = "";
++my $function = "";
++
++sub add_entry {
++	my $key = shift;
++	my $value = shift;
++	my $default = shift;
++
++	$TABLE .= $key;
++	$TABLE .= pack("V", $value);
++	$TABLE .= pack("V", $default);
++}
++
++while (<>) {
++	$addr = $opcode = "";
++	/^\w{8}\s*<(.*)>:$/ and $function = $1;
++	/^\s*(\w+):\s*(\w{8})\s*/ and do {
++		$addr = $1;
++		$opcode = $2;
++	};
++
++	($function eq 'wlc_update_slot_timing') and do {
++		# li	a2,9 	-- short slot time
++		($opcode eq '24060009') and add_entry($SLT1, hex($addr), hex($opcode));
++		# li	v0,519	-- 510 + short slot time
++		($opcode eq '24020207') and add_entry($SLT2, hex($addr), hex($opcode));
++		
++		# li	a2,20	-- long slot time
++		($opcode eq '24060014') and add_entry($SLT1, hex($addr), hex($opcode));
++		# li	v0,530	-- 510 + long slot time
++		($opcode eq '24020212') and add_entry($SLT2, hex($addr), hex($opcode));
++	};
++	($function eq 'wlc_d11hdrs') and do {
++		# ori	s6,s6,0x1 -- ack flag (new)
++		($opcode eq '36d60001') and add_entry($ACKW, hex($addr), hex($opcode));
++		# ori	s3,s3,0x1 -- ack flag (old)
++		($opcode eq '36730001') and add_entry($ACKW, hex($addr), hex($opcode));
++	}
++}
++
++$TABLE .= $PTABLE_END;
++$TABLE .= ("\x00" x ($TABLE_SIZE - length($TABLE)));
++print $TABLE;
 diff -urN linux.old/drivers/net/wl/Makefile linux.dev/drivers/net/wl/Makefile
 --- linux.old/drivers/net/wl/Makefile	1970-01-01 01:00:00.000000000 +0100
 +++ linux.dev/drivers/net/wl/Makefile	2006-04-28 01:33:52.000000000 +0200
-@@ -0,0 +1,26 @@
+@@ -0,0 +1,32 @@
 +#
 +# Makefile for the Broadcom wl driver
 +#
@@ -16355,7 +16413,7 @@ diff -urN linux.old/drivers/net/wl/Makefile linux.dev/drivers/net/wl/Makefile
 +
 +EXTRA_CFLAGS += -I$(TOPDIR)/arch/mips/bcm947xx/include -DBCMDRIVER
 +
-+O_TARGET	:= wl.o
++O_TARGET	:= wl_link.o
 +
 +obj-y		:= wl_mod.o
 +obj-y		+= bcmutils.o hnddma.o linux_osl.o
@@ -16364,6 +16422,12 @@ diff -urN linux.old/drivers/net/wl/Makefile linux.dev/drivers/net/wl/Makefile
 +
 +wl_mod.o: wl_apsta.o
 +	sed -e 's,eth%d,wl%d\x00,g' < $< > $@
++
++wl.o: wl_link.o
++	$(OBJDUMP) -d $< | perl patchtable.pl > patchtable.bin
++	cat wl_link.o patchtable.bin > $@
++
++modules: wl.o
 +
 +include $(TOPDIR)/Rules.make
 diff -urN linux.old/drivers/net/wl/bcmip.h linux.dev/drivers/net/wl/bcmip.h
