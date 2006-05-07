@@ -1,6 +1,6 @@
-config BR2_PACKAGE_OPENH323
-	prompt "openh323.......................... OpenH323 implementation"
+config BR2_COMPILE_OPENH323
+#	prompt "openh323.......................... OpenH323 implementation"
 	tristate
-	select BR2_PACKAGE_PWLIB
+	select BR2_COMPILE_PWLIB
 	default n
 	help

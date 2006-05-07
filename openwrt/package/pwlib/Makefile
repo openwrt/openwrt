@@ -12,48 +12,95 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
 include $(TOPDIR)/package/rules.mk
 
 $(eval $(call PKG_template,PWLIB,pwlib,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 $(PKG_BUILD_DIR)/.configured:
-	rm -rf $(PKG_INSTALL_DIR)
-	mkdir -p $(PKG_INSTALL_DIR)
-	cd $(PKG_BUILD_DIR); rm -rf config.{cache,status}; \
-	CFLAGS="$(TARGET_CFLAGS)" \
-	CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include" \
-	LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib" \
-	$(TARGET_CONFIGURE_OPTS) \
-	    ./configure \
-	    --prefix=$(STAGING_DIR) \
-	    --target=$(GNU_TARGET_NAME) \
-	    --host=$(GNU_TARGET_NAME) \
-	    --build=$(GNU_HOST_NAME) \
-	    --enable-openh323 \
-	    --disable-openldap \
-	    --disable-openssl \
-	    --disable-ftp \
-	    --disable-qos \
-	    --disable-expat \
-	    --disable-jabber \
-	    --disable-xmlrpc \
-	    --disable-ipv6 \
-	    --disable-sdl \
-	    --disable-video \
-	    --disable-socks \
-	    --disable-ftp \
-	    --disable-snmp \
-	    --disable-telnet \
-	    --disable-serial
-	    --disable-pop3smtp \
-	    --disable-http \
-	    --disable-httpsvc
+	( cd $(PKG_BUILD_DIR); rm -rf config.{cache,status}; \
+		CFLAGS="$(TARGET_CFLAGS)" \
+		CXXFLAGS="$(TARGET_CFLAGS) -fno-builtin -fno-rtti"  \
+		CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include" \
+		LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib" \
+		$(TARGET_CONFIGURE_OPTS) \
+		./configure \
+			--target=$(GNU_TARGET_NAME) \
+			--host=$(GNU_TARGET_NAME) \
+			--build=$(GNU_HOST_NAME) \
+			--program-prefix="" \
+			--program-suffix="" \
+			--prefix=/usr \
+			--exec-prefix=/usr \
+			--bindir=/usr/bin \
+			--datadir=/usr/share \
+			--includedir=/usr/include \
+			--infodir=/usr/share/info \
+			--libdir=/usr/lib \
+			--libexecdir=/usr/lib \
+			--localstatedir=/var \
+			--mandir=/usr/share/man \
+			--sbindir=/usr/sbin \
+			--sysconfdir=/etc \
+			  $(DISABLE_LARGEFILE) \
+			  $(DISABLE_NLS) \
+			\
+			--enable-minsize \
+			--enable-openh323 \
+			--disable-opal \
+			--disable-internalregex \
+			--disable-plugins \
+			--enable-audio \
+			--disable-alsa \
+			--disable-asn \
+			--disable-avc \
+			--disable-dc \
+			--disable-dtmf \
+			--disable-expat \
+			--disable-ftp \
+			--disable-http \
+			--disable-httpsvc \
+			--disable-ipv6 \
+			--disable-jabber \
+			--disable-openldap \
+			--disable-openssl \
+			--disable-oss \
+			--disable-pipechan \
+			--disable-pop3smtp \
+			--disable-remconn \
+			--disable-resolver \
+			--disable-qos \
+			--disable-sasl \
+			--disable-sdl \
+			--disable-serial \
+			--disable-shm-video \
+			--disable-snmp \
+			--disable-soap \
+			--disable-socks \
+			--disable-stun \
+			--disable-telnet \
+			--disable-tts \
+			--disable-v4l \
+			--disable-v4l2 \
+			--disable-bsdvideo \
+			--disable-video \
+			--disable-vxml \
+			--disable-wavfile \
+			--disable-xmlrpc \
+	);
 	touch $@
 
 $(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
-		all install
+		optnoshared
 	touch $@
+
+install-link:
+	ln -s $(PKG_NAME)-$(PKG_VERSION) $(BUILD_DIR)/$(PKG_NAME)
+
+uninstall-link:
+	rm -rf $(BUILD_DIR)/$(PKG_NAME)
+
+compile-targets: $(PKG_BUILD_DIR)/.built install-link
+clean-targets: uninstall-link

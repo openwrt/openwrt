@@ -116,7 +116,13 @@ wpa_supplicant-compile: openssl-compile
 wx200d-compile: postgresql-compile
 xsupplicant-compile: openssl-compile
 
-asterisk-compile: bluez-libs-compile ncurses-compile openssl-compile openh323-compile
+asterisk-compile: ncurses-compile openssl-compile
+ifneq ($(BR2_PACKAGE_ASTERISK_CHAN_BLUETOOTH),)
+asterisk-compile: bluez-libs-compile
+endif
+ifneq ($(BR2_PACKAGE_ASTERISK_CHAN_H323),)
+asterisk-compile: openh323-compile uclibc++-compile
+endif
 ifneq ($(BR2_PACKAGE_ASTERISK_CODEC_SPEEX),)
 asterisk-compile: speex-compile
 endif

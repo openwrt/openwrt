@@ -26,7 +26,9 @@ config BR2_PACKAGE_ASTERISK_CHAN_H323
 	tristate
 	default m if CONFIG_DEVEL
 	depends BR2_PACKAGE_ASTERISK
-	select BR2_PACKAGE_OPENH323
+	select BR2_COMPILE_OPENH323
+	select BR2_PACKAGE_LIBPTHREAD
+	select BR2_PACKAGE_UCLIBCXX
 	help
 	  H.323 support for Asterisk
 
