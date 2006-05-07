@@ -783,7 +783,7 @@ diff -Nur linux-2.6.16/arch/mips/aruba/serial.c linux-2.6.16-owrt/arch/mips/arub
 diff -Nur linux-2.6.16/arch/mips/aruba/setup.c linux-2.6.16-owrt/arch/mips/aruba/setup.c
 --- linux-2.6.16/arch/mips/aruba/setup.c	1970-01-01 01:00:00.000000000 +0100
 +++ linux-2.6.16-owrt/arch/mips/aruba/setup.c	2006-03-20 14:30:00.000000000 +0100
-@@ -0,0 +1,122 @@
+@@ -0,0 +1,125 @@
 +/**************************************************************************
 + *
 + *  BRIEF MODULE DESCRIPTION
@@ -823,6 +823,7 @@ diff -Nur linux-2.6.16/arch/mips/aruba/setup.c linux-2.6.16-owrt/arch/mips/aruba
 + */
 +
 +#include <linux/init.h>
++#include <linux/module.h>
 +#include <linux/mm.h>
 +#include <linux/sched.h>
 +#include <linux/irq.h>
@@ -906,6 +907,8 @@ diff -Nur linux-2.6.16/arch/mips/aruba/setup.c linux-2.6.16-owrt/arch/mips/aruba
 +{
 +	return "MIPS IDT32434 - ARUBA";
 +}
++
++EXPORT_SYMBOL(get_system_type);
 diff -Nur linux-2.6.16/arch/mips/aruba/time.c linux-2.6.16-owrt/arch/mips/aruba/time.c
 --- linux-2.6.16/arch/mips/aruba/time.c	1970-01-01 01:00:00.000000000 +0100
 +++ linux-2.6.16-owrt/arch/mips/aruba/time.c	2006-03-20 14:25:10.000000000 +0100
