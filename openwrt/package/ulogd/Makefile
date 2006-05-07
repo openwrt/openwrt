@@ -47,13 +47,13 @@ include $(TOPDIR)/package/rules.mk
 
 $(eval $(call PKG_template,ULOGD,ulogd,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,ULOGD_MOD_MYSQL,ulogd-mod-mysql,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,ULOGD_MOD_PCAP,ulogd-mod-pcap,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,ULOGD_MOD_PGSQL,ulogd-mod-pgsql,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,ULOGD_MOD_EXTRA,ulogd-mod-extra,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
-$(eval $(call PKG_template,ULOGD_MOD_EXTRA,ulogd-mod-pcap,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 $(eval $(call IPKG_plugin_template,ULOGD_MOD_MYSQL,MYSQL))
-$(eval $(call IPKG_plugin_template,ULOGD_MOD_PGSQL,PGSQL))
 $(eval $(call IPKG_plugin_template,ULOGD_MOD_PCAP,PCAP))
+$(eval $(call IPKG_plugin_template,ULOGD_MOD_PGSQL,PGSQL))
 $(eval $(call IPKG_plugin_template,ULOGD_MOD_EXTRA,LOCAL LOGEMU OPRINT PWSNIFF SYSLOG))
 
 $(PKG_BUILD_DIR)/.configured:
@@ -113,3 +113,4 @@ $(IPKG_ULOGD):
 	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/ulogd $(IDIR_ULOGD)/usr/sbin/
 	$(RSTRIP) $(IDIR_ULOGD)
 	$(IPKG_BUILD) $(IDIR_ULOGD) $(PACKAGE_DIR)
+
