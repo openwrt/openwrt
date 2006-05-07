@@ -1,23 +1,14 @@
 diff -ruN asterisk-1.0.9-old/channels/Makefile asterisk-1.0.9-new/channels/Makefile
 --- asterisk-1.0.9-old/channels/Makefile	2005-08-22 20:42:22.000000000 +0200
 +++ asterisk-1.0.9-new/channels/Makefile	2005-08-22 21:12:14.000000000 +0200
-@@ -37,6 +37,12 @@
- #
- #CHANNEL_LIBS+=chan_vofr
+@@ -202,6 +202,13 @@
+ chan_h323.so: chan_h323.o h323/libchanh323.a
+ 	$(CC) $(SOLINK) -o $@ $< h323/libchanh323.a $(CHANH323LIB) -L$(PWLIBDIR)/lib $(PTLIB) -L$(OPENH323DIR)/lib $(H323LIB) -L/usr/lib -lcrypto -lssl -lexpat
  
 +#
 +# Asterisk Bluetooth Support
 +# http://www.crazygreek.co.uk/content/chan_bluetooth
 +#
-+CHANNEL_LIBS += chan_bluetooth.so
-+
- ifeq (${OSARCH},OpenBSD)
- MYSQLLIB=-L/usr/local/lib/mysql -lmysqlclient
- CFLAGS+=-I/usr/local/include
-@@ -202,6 +208,9 @@
- chan_h323.so: chan_h323.o h323/libchanh323.a
- 	$(CC) $(SOLINK) -o $@ $< h323/libchanh323.a $(CHANH323LIB) -L$(PWLIBDIR)/lib $(PTLIB) -L$(OPENH323DIR)/lib $(H323LIB) -L/usr/lib -lcrypto -lssl -lexpat
- 
 +chan_bluetooth.so: chan_bluetooth.o
 +	$(CC) $(SOLINK) -o $@ $< $(EXTRA_LDFLAGS) -lbluetooth
 +

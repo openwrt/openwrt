@@ -49,6 +49,16 @@ endif
 ifneq ($(BR2_PACKAGE_ASTERISK_SQLITE),)
 EXTRA_CDR_MODULES += cdr_sqlite.so
 endif
+ifneq ($(BR2_PACKAGE_ASTERISK_CHAN_BLUETOOTH),)
+EXTRA_CHAN_MODULES += chan_bluetooth.so
+endif
+ifneq ($(BR2_PACKAGE_ASTERISK_CHAN_H323),)
+EXTRA_DEFINES += \
+	OPENH323DIR="$(BUILD_DIR)/openh323" \
+	PWLIBDIR="$(BUILD_DIR)/pwlib" \
+	CXXLIBS="-nodefaultlibs -luClibc++ -lc -lm -lgcc"
+EXTRA_CHAN_MODULES += chan_h323.so
+endif
 ifneq ($(BR2_PACKAGE_ASTERISK_CODEC_SPEEX),)
 EXTRA_CFLAGS += -I$(STAGING_DIR)/usr/include/speex
 EXTRA_CODEC_MODULES += codec_speex.so
@@ -58,21 +68,12 @@ $(PKG_BUILD_DIR)/.configured:
 	touch $@
 
 $(PKG_BUILD_DIR)/.built:
-	(cd $(PKG_BUILD_DIR)/channels/h323/ ; \
-		$(MAKE) \
-		CROSS_ARCH="Linux" \
-		CROSS_COMPILE="$(TARGET_CROSS)" \
-		CROSS_COMPILE_BIN="/void/" \
-		CROSS_COMPILE_TARGET="/void/" \
+ifneq ($(BR2_PACKAGE_ASTERISK_CHAN_H323),)
+	$(MAKE) -C "$(PKG_BUILD_DIR)/channels/h323" \
 		$(TARGET_CONFIGURE_OPTS) \
-		HOST_CC="$(HOSTCC)" \
-		OPTIMIZE="$(TARGET_CFLAGS)" \
-		PROC="$(ARCH)" \
-		DEBUG="" \
-		OPTIONS="-DLOW_MEMORY -Dlinux" \
-		OPENH323DIR=$(BUILD_DIR)/openh323-cvs-20051230 \
-		opt ; \
-	);
+		$(EXTRA_DEFINES) \
+		optnoshared
+endif
 	$(MAKE) -C "$(PKG_BUILD_DIR)" \
 		CROSS_ARCH="Linux" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
@@ -89,12 +90,12 @@ $(PKG_BUILD_DIR)/.built:
 		EXTRA_LDFLAGS="$(EXTRA_LDFLAGS)" \
 		EXTRA_APP_MODULES="$(EXTRA_APP_MODULES)" \
 		EXTRA_CDR_MODULES="$(EXTRA_CDR_MODULES)" \
+		EXTRA_CHAN_MODULES="$(EXTRA_CHAN_MODULES)" \
 		EXTRA_CODEC_MODULES="$(EXTRA_CODEC_MODULES)" \
 		EXTRA_RES_MODULES="$(EXTRA_RES_MODULES)" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		ASTVARLIBDIR="/usr/lib/asterisk" \
-		OPENH323DIR=$(BUILD_DIR)/openh323-cvs-20051230 \
-		PWLIBDIR=$(BUILD_DIR)/pwlib \
+		$(EXTRA_DEFINES) \
 		all install samples
 	rm -f $(PKG_INSTALL_DIR)/etc/asterisk/*.old
 	touch $@
@@ -117,6 +118,7 @@ $(IPKG_ASTERISK):
 			*mp3* *nbscat* *mysql* *postgres* *pgsql* *voicemail* *speex* \
 			*zapateller* *jpeg*; \
 		rm -f chan_bluetooth.so ; \
+		rm -f chan_h323.so ; \
 		rm -f chan_mgcp.so ; \
 		rm -f chan_skinny.so ; \
 		rm -f {codec,format}_ilbc.so ; \
