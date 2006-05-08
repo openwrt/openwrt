@@ -286,3 +286,6 @@ endif
 ifneq ($(BR2_PACKAGE_ULOGD_MOD_PGSQL),)
 ulogd-compile: postgresql-compile
 endif
+ifneq ($(BR2_PACKAGE_ULOGD_MOD_SQLITE),)
+ulogd-compile: sqlite-compile
+endif
