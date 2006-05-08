@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ulogd
-PKG_VERSION:=1.23
-PKG_RELEASE:=2.1
-PKG_MD5SUM:=fa3dfcaacf31855626d5b731b04a077f
+PKG_VERSION:=1.24
+PKG_RELEASE:=1
+PKG_MD5SUM:=05b4ed2926b9a22aaeaf642917bbf8ff
 
 PKG_SOURCE_URL:=ftp://ftp.netfilter.org/pub/ulogd/ \
 	ftp://ftp.be.netfilter.org/pub/netfilter/ulogd/ \
@@ -31,6 +31,10 @@ ifneq ($(BR2_PACKAGE_ULOGD_MOD_PGSQL),)
 ULOGD_PGSQL_OPTION:=--with-pgsql=$(STAGING_DIR)/usr
 endif
 
+ifneq ($(BR2_PACKAGE_ULOGD_MOD_SQLITE),)
+ULOGD_SQLITE_OPTION:=--with-sqlite3=$(STAGING_DIR)/usr
+endif
+
 define IPKG_plugin_template
 
 $$(IPKG_$(1)):
@@ -49,11 +53,13 @@ $(eval $(call PKG_template,ULOGD,ulogd,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,ULOGD_MOD_MYSQL,ulogd-mod-mysql,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,ULOGD_MOD_PCAP,ulogd-mod-pcap,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,ULOGD_MOD_PGSQL,ulogd-mod-pgsql,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,ULOGD_MOD_SQLITE,ulogd-mod-sqlite,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 $(eval $(call PKG_template,ULOGD_MOD_EXTRA,ulogd-mod-extra,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 $(eval $(call IPKG_plugin_template,ULOGD_MOD_MYSQL,MYSQL))
 $(eval $(call IPKG_plugin_template,ULOGD_MOD_PCAP,PCAP))
 $(eval $(call IPKG_plugin_template,ULOGD_MOD_PGSQL,PGSQL))
+$(eval $(call IPKG_plugin_template,ULOGD_MOD_SQLITE,SQLITE3))
 $(eval $(call IPKG_plugin_template,ULOGD_MOD_EXTRA,LOCAL LOGEMU OPRINT PWSNIFF SYSLOG))
 
 $(PKG_BUILD_DIR)/.configured:
@@ -87,6 +93,7 @@ $(PKG_BUILD_DIR)/.configured:
 			--disable-static \
 			$(ULOGD_MYSQL_OPTION) \
 			$(ULOGD_PGSQL_OPTION) \
+			$(ULOGD_SQLITE_OPTION) \
 	);
 	touch $@
 
