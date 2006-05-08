@@ -2,6 +2,7 @@ config BR2_PACKAGE_WPA_SUPPLICANT
 	prompt "wpa_supplicant.................... WPA Supplicant with support for WPA and WPA2"
 	tristate
 	default m if CONFIG_DEVEL
+	select BR2_PACKAGE_KMOD_MADWIFI
 	select BR2_PACKAGE_LIBOPENSSL
 	help
 	  WPA Supplicant with support for WPA and WPA2 (IEEE 802.11i / RSN).
