@@ -188,6 +188,7 @@ endef
 
 define Build/Configure/Default
 	(cd $(PKG_BUILD_DIR); \
+	[ -x configure ] && \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
 		./configure \
