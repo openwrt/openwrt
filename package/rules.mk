@@ -211,6 +211,7 @@ define Build/Configure/Default
 endef
 
 define Build/Configure
+$(call Build/Configure/Default)
 endef
 
 define Build/Compile/Default
