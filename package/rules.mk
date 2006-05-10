@@ -240,20 +240,21 @@ else
 $(PACKAGE_DIR):
 	mkdir -p $@
 
-source: $(DL_DIR)/$(PKG_SOURCE)
-prepare: $(PKG_BUILD_DIR)/.prepared
-configure: $(PKG_BUILD_DIR)/.configured
+source: FORCE $(DL_DIR)/$(PKG_SOURCE)
+prepare: FORCE $(PKG_BUILD_DIR)/.prepared
+configure: FORCE $(PKG_BUILD_DIR)/.configured
 
-compile-targets:
-compile: compile-targets
+compile-targets: FORCE
+compile: FORCE compile-targets
 
-install-targets:
-install: install-targets
+install-targets: FORCE
+install: FORCE install-targets
 
-clean-targets:
-clean: 
+clean-targets: FORCE
+clean: FORCE
 	@$(MAKE) clean-targets
 	rm -rf $(PKG_BUILD_DIR)
 endif
 
-.PHONY: all source prepare compile install clean dumpinfo compile-targets install-targets clean-targets
+.PHONY: FORCE
+FORCE:
