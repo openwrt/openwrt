@@ -31,27 +31,23 @@ $(TOOL_BUILD_DIR):
 
 %-prepare: $(TOOLCHAIN_STAMP_DIR) $(STAGING_DIR) $(TOOL_BUILD_DIR)
 	@[ -f $(TOOLCHAIN_STAMP_DIR)/.toolchain_$@ ] || { \
-		$(TRACE) toolchain/$(patsubst %-prepare,%,$@)/prepare; \
-		$(MAKE) -C $(patsubst %-prepare,%,$@) prepare $(MAKE_TRACE); \
+		$(MAKE) -C $(patsubst %-prepare,%,$@) prepare; \
 	}
 	@touch $(TOOLCHAIN_STAMP_DIR)/.toolchain_$@
 
 %-compile: %-prepare 
 	@[ -f $(TOOLCHAIN_STAMP_DIR)/.toolchain_$@ ] || { \
-		$(TRACE) toolchain/$(patsubst %-compile,%,$@)/compile; \
-		$(MAKE) -C $(patsubst %-compile,%,$@) compile $(MAKE_TRACE); \
+		$(MAKE) -C $(patsubst %-compile,%,$@) compile; \
 	}
 	@touch $(TOOLCHAIN_STAMP_DIR)/.toolchain_$@
 
 %-install: %-compile
 	@[ -f $(TOOLCHAIN_STAMP_DIR)/.toolchain_$@ ] || { \
-		$(TRACE) toolchain/$(patsubst %-install,%,$@)/install; \
-		$(MAKE) -C $(patsubst %-install,%,$@) install $(MAKE_TRACE); \
+		$(MAKE) -C $(patsubst %-install,%,$@) install; \
 	}
 	@touch $(TOOLCHAIN_STAMP_DIR)/.toolchain_$@
 
 %-clean:
-	$(TRACE) toolchain/$(patsubst %-clean,%,$@)/clean
-	@$(MAKE) -C $(patsubst %-clean,%,$@) clean $(MAKE_TRACE)
+	@$(MAKE) -C $(patsubst %-clean,%,$@) clean
 	@rm -f $(TOOLCHAIN_STAMP_DIR)/.toolchain_$(patsubst %-clean,%,$@)-*
 
