@@ -26,6 +26,6 @@ endef
 define Package/ebtables/install
 	install -d -m0755 $(IDIR_DNSMASQ)/usr/sbin
 	install -m0755 $(PKG_BUILD_DIR)/ebtables $(IDIR_EBTABLES)/usr/sbin/ebtables
-ended
+endef
 
 $(eval $(call BuildPackage,ebtables))

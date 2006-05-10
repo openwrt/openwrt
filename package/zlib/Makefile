@@ -66,3 +66,5 @@ uninstall-dev:
 	rm -rf $(STAGING_DIR)/usr/include/zconf.h
 	rm -rf $(STAGING_DIR)/usr/include/zlib.h
 	rm -rf $(STAGING_DIR)/usr/lib/libz.*
+
+$(eval $(call BuildPackage,zlib))
