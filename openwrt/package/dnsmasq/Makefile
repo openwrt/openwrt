@@ -25,13 +25,11 @@ URL:=http://www.thekelleys.org.uk/dnsmasq/
 endef
 
 define Package/dnsmasq/install
-	install -d -m0755 $(IDIR_DNSMASQ)/usr/sbin
-	install -d -m0755 $(IDIR_DNSMASQ)/etc/init.d/
+	install -m0755 -d $(IDIR_DNSMASQ)/usr/sbin
+	install -m0755 -d $(IDIR_DNSMASQ)/etc/init.d/
 	install -m0755 $(PKG_BUILD_DIR)/src/dnsmasq $(IDIR_DNSMASQ)/usr/sbin/
 	install -m0644 ./files/dnsmasq.conf $(IDIR_DNSMASQ)/etc/dnsmasq.conf
 	install -m0755 ./files/dnsmasq.init $(IDIR_DNSMASQ)/etc/init.d/S50dnsmasq
-	$(RSTRIP) $(IDIR_DNSMASQ)
-	$(IPKG_BUILD) $(IDIR_DNSMASQ) $(PACKAGE_DIR)
 endef
 
 $(eval $(call BuildPackage,dnsmasq))

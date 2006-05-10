@@ -10,21 +10,23 @@ PKG_BUILD_DIR:=$(BUILD_DIR)/robocfg
 
 include $(TOPDIR)/package/rules.mk
 
-$(eval $(call PKG_template,ROBOCFG,$(PKG_NAME),$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+define Package/robocfg
+SECTION:=base
+# CATEGORY:=FIXME
+DEFAULT:=n
+TITLE:=BCM5325E/536x switch configuration utility
+DESCRIPTION:=Broadcom BCM5325E/536x switch configuration utility
+endef
 
-$(PKG_BUILD_DIR)/.prepared:
-	mkdir -p $(PKG_BUILD_DIR)
-	touch $@
-
-$(PKG_BUILD_DIR)/.configured:
-	touch $@
-
-$(PKG_BUILD_DIR)/.built:
+define Build/Compile
 	$(TARGET_CC) $(TARGET_CFLAGS) -o $(PKG_BUILD_DIR)/robocfg robocfg.c
-	touch $@
+endef
 
-$(IPKG_ROBOCFG):
+define Package/robocfg/install
 	install -d -m0755 $(IDIR_ROBOCFG)/sbin
 	install -m0755 $(PKG_BUILD_DIR)/robocfg $(IDIR_ROBOCFG)/sbin/
 	$(RSTRIP) $(IDIR_ROBOCFG)
 	$(IPKG_BUILD) $(IDIR_ROBOCFG) $(PACKAGE_DIR)
+endef
+
+$(eval $(call BuildPackage,robocfg))

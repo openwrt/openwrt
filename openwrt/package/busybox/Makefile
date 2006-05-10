@@ -33,7 +33,6 @@ endef
 define Package/busybox/install
 	$(MAKE) CC=$(TARGET_CC) CROSS="$(TARGET_CROSS)" PREFIX="$(1)" \
 		EXTRA_CFLAGS="$(TARGET_CFLAGS)" -C $(PKG_BUILD_DIR) install
-	$(STRIP) $(1)/bin/busybox
 endef
 
 $(eval $(call BuildPackage,busybox))

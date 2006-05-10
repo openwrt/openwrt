@@ -5,23 +5,25 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=wireless-tools
 PKG_VERSION:=28
 PKG_RELEASE:=1
-PKG_MD5SUM:=599c94497f9c9073c7b052d3dcb7cd16
-
-PKG_SOURCE_URL:=http://www.hpl.hp.com/personal/Jean_Tourrilhes/Linux
-PKG_SOURCE:=wireless_tools.$(PKG_VERSION).tar.gz
-PKG_CAT:=zcat
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/wireless_tools.28
-PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
+PKG_SOURCE:=wireless_tools.$(PKG_VERSION).tar.gz
+PKG_SOURCE_URL:=http://www.hpl.hp.com/personal/Jean_Tourrilhes/Linux
+PKG_MD5SUM:=599c94497f9c9073c7b052d3dcb7cd16
+PKG_CAT:=zcat
 
 include $(TOPDIR)/package/rules.mk
 
-$(eval $(call PKG_template,WIRELESS_TOOLS,wireless-tools,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+define Package/wireless-tools
+SECTION:=base
+CATEGORY:=Network
+DEFAULT:=y
+TITLE:=Tools for manipulating Linux Wireless Extensions
+DESCRIPTION:=Tools for configuring Wireless Adapters implementing the "Wireless Extension"
+URL:=http://hplabs.hp.com/personal/Jean_Tourrilhes/Linux/Tools.html
+endef
 
-$(PKG_BUILD_DIR)/.configured:
-	touch $@
-
-$(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
+define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CC="$(TARGET_CC)" CFLAGS="$(TARGET_CFLAGS) -I." \
 		libiw.so.28 iwmulticall
@@ -31,15 +33,14 @@ $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 		INSTALL_DIR="$(PKG_INSTALL_DIR)/usr/sbin" \
 		INSTALL_LIB="$(PKG_INSTALL_DIR)/usr/lib" \
 		install-iwmulticall
-	touch $@
+endef
 
-$(IPKG_WIRELESS_TOOLS):
-	mkdir -p $(IDIR_WIRELESS_TOOLS)/usr/lib
-	$(CP) $(PKG_BUILD_DIR)/libiw.so.28 $(IDIR_WIRELESS_TOOLS)/usr/lib/
-	mkdir -p $(IDIR_WIRELESS_TOOLS)/usr/sbin
-	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/iw{config,getid,list,priv,spy} $(IDIR_WIRELESS_TOOLS)/usr/sbin/
-	$(RSTRIP) $(IDIR_WIRELESS_TOOLS)
-	$(IPKG_BUILD) $(IDIR_WIRELESS_TOOLS) $(PACKAGE_DIR)
+define Package/wireless-tools/install
+	install -d -m0755  $(IDIR_WIRELESS_TOOLS)/usr/lib
+	install -d -m0755 $(IDIR_WIRELESS_TOOLS)/usr/sbin
+	install -m0755 $(PKG_BUILD_DIR)/libiw.so.28 $(IDIR_WIRELESS_TOOLS)/usr/lib/
+	install -m0755 $(PKG_INSTALL_DIR)/usr/sbin/iw{config,getid,list,priv,spy} $(IDIR_WIRELESS_TOOLS)/usr/sbin/
+endef
 
 install-dev: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/{lib,include}
@@ -50,6 +51,3 @@ install-dev: $(PKG_BUILD_DIR)/.built
 uninstall-dev:
 	rm -f $(STAGING_DIR)/usr/lib/libiw.*
 	rm -f $(STAGING_DIR)/usr/include/{iwlib,wireless}.h
-
-compile-targets: install-dev
-clean-targets: uninstall-dev
