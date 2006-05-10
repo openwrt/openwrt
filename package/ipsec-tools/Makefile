@@ -5,20 +5,25 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=ipsec-tools
 PKG_VERSION:=0.6.4
 PKG_RELEASE:=1
-PKG_MD5SUM:=d0242a943c82c0cbf28005966ff35e21
-
-PKG_SOURCE_URL:=@SF/ipsec-tools
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_CAT:=bzcat
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
+PKG_SOURCE_URL:=@SF/ipsec-tools
+PKG_MD5SUM:=d0242a943c82c0cbf28005966ff35e21
+PKG_CAT:=bzcat
 
 include $(TOPDIR)/package/rules.mk
 
-$(eval $(call PKG_template,IPSEC_TOOLS,ipsec-tools,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+define Package/ipsec-tools
+SECTION:=base
+CATEGORY:=Network
+DEFAULT:=y
+TITLE:=IPsec management tools
+DESCRIPTION:=IPsec management tools
+URL:=http://ipsec-tools.sourceforge.net/
+endef
 
-$(PKG_BUILD_DIR)/.configured:
+define Build/Configure
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status}; \
 		touch configure.ac; \
 		touch aclocal.m4; \
@@ -59,27 +64,19 @@ $(PKG_BUILD_DIR)/.configured:
 			--without-libradius \
 			--without-libpam \
 	);
-	touch $@
+endef
 
-$(PKG_BUILD_DIR)/.built:
-	rm -rf $(PKG_INSTALL_DIR)
-	mkdir -p $(PKG_INSTALL_DIR)
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		CFLAGS="$(TARGET_CFLAGS) -Wall" \
-		DESTDIR="$(PKG_INSTALL_DIR)" \
-		all install
-	touch $@
-
-$(IPKG_IPSEC_TOOLS):
+define Package/ipsec-tools/install
 	install -d -m0755 $(IDIR_IPSEC_TOOLS)/etc
-	$(CP) $(PKG_BUILD_DIR)/src/racoon/samples/racoon.conf $(IDIR_IPSEC_TOOLS)/etc/
 	install -d -m0755 $(IDIR_IPSEC_TOOLS)/usr/lib/
+	install -d -m0755 $(IDIR_IPSEC_TOOLS)/usr/sbin
+	$(CP) $(PKG_BUILD_DIR)/src/racoon/samples/racoon.conf $(IDIR_IPSEC_TOOLS)/etc/
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libipsec.so.* $(IDIR_IPSEC_TOOLS)/usr/lib/
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libracoon.so.* $(IDIR_IPSEC_TOOLS)/usr/lib/
-	install -d -m0755 $(IDIR_IPSEC_TOOLS)/usr/sbin
 	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/plainrsa-gen $(IDIR_IPSEC_TOOLS)/usr/sbin/
 	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/racoon $(IDIR_IPSEC_TOOLS)/usr/sbin/
 	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/racoonctl $(IDIR_IPSEC_TOOLS)/usr/sbin/
 	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/setkey $(IDIR_IPSEC_TOOLS)/usr/sbin/
-	$(RSTRIP) $(IDIR_IPSEC_TOOLS)
-	$(IPKG_BUILD) $(IDIR_IPSEC_TOOLS) $(PACKAGE_DIR)
+endef
+
+$(eval $(call BuildPackage,ipsec-tools))

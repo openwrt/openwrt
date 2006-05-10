@@ -146,6 +146,7 @@ $$(IDIR_$(1))/CONTROL/control: $(PKG_BUILD_DIR)/.prepared
 $$(IPKG_$(1)): $$(IDIR_$(1))/CONTROL/control $(PKG_BUILD_DIR)/.built
 	$(call Package/$(1)/install,$$(IDIR_$(1)))
 	mkdir -p $(PACKAGE_DIR)
+	$(RSTRIP) $$(IDIR_$(1))
 	$(IPKG_BUILD) $$(IDIR_$(1)) $(PACKAGE_DIR)
 
 $$(INFO_$(1)): $$(IPKG_$(1))

@@ -5,21 +5,28 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=zlib
 PKG_VERSION:=1.2.3
 PKG_RELEASE:=3
-PKG_MD5SUM:=dee233bf288ee795ac96a98cc2e369b6
-
-PKG_SOURCE_URL:=http://www.zlib.net \
-	@SF/zlib
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_CAT:=bzcat
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
+PKG_SOURCE_URL:=http://www.zlib.net \
+	@SF/zlib
+PKG_MD5SUM:=dee233bf288ee795ac96a98cc2e369b6
+PKG_CAT:=bzcat
+
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
 include $(TOPDIR)/package/rules.mk
 
-$(eval $(call PKG_template,ZLIB,zlib,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+define Package/zlib
+SECTION:=base
+CATEGORY:=Libraries
+DEFAULT:=n
+TITLE:=Library implementing the deflate compression method
+DESCRIPTION:=A library implementing the 'deflate' compression method
+URL:=http://www.zlib.net/
+endef
 
-$(PKG_BUILD_DIR)/.configured:
+define Build/Configure
 	(cd $(PKG_BUILD_DIR); \
 		$(TARGET_CONFIGURE_OPTS) \
 		LDSHARED="$(TARGET_CC) -shared -Wl,-soname,libz.so.1" \
@@ -28,9 +35,9 @@ $(PKG_BUILD_DIR)/.configured:
 		--prefix=/usr \
 		--shared \
 	);
-	touch $@
+endef
 
-$(PKG_BUILD_DIR)/.built:
+define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS) $(CFLAGS_LARGEFILE)" \
@@ -39,13 +46,12 @@ $(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		install
-	touch $@
+endef
 
-$(IPKG_ZLIB):
+define Package/zlib/install
 	install -m0755 -d $(IDIR_ZLIB)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libz.so.* $(IDIR_ZLIB)/usr/lib/
-	$(RSTRIP) $(IDIR_ZLIB)
-	$(IPKG_BUILD) $(IDIR_ZLIB) $(PACKAGE_DIR)
+endef
 
 $(STAGING_DIR)/usr/lib/libz.so: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/usr/include
@@ -60,6 +66,3 @@ uninstall-dev:
 	rm -rf $(STAGING_DIR)/usr/include/zconf.h
 	rm -rf $(STAGING_DIR)/usr/include/zlib.h
 	rm -rf $(STAGING_DIR)/usr/lib/libz.*
-
-compile-targets: install-dev
-clean-targets: uninstall-dev

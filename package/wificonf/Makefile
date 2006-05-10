@@ -9,21 +9,19 @@ PKG_BUILD_DIR:=$(BUILD_DIR)/wificonf
 
 include $(TOPDIR)/package/rules.mk
 
-$(eval $(call PKG_template,WIFICONF,$(PKG_NAME),$(PKG_RELEASE),$(ARCH)))
+define Package/wificonf
+SECTION:=base
+CATEGORY:=Network
+DEFAULT:=y
+TITLE:=replacement utility for wlconf
+DESCRIPTION:=Replacement utility for wlconf
+endef
 
-$(PKG_BUILD_DIR)/.prepared:
-	mkdir -p $@
-	touch $@
-
-$(PKG_BUILD_DIR)/.configured:
-	touch $@
-
-$(PKG_BUILD_DIR)/.built:
+define Build/Compile
 	$(TARGET_CC) $(TARGET_CFLAGS) -Iinclude/ -I$(STAGING_DIR)/usr/include -o $(PKG_BUILD_DIR)/wifi wificonf.c -L$(STAGING_DIR)/usr/lib -lnvram -lshared $(STAGING_DIR)/usr/lib/libiw.so
-	touch $@
+endef
 
-$(IPKG_WIFICONF):
+define Package/wificonf/install
 	install -d -m0755 $(IDIR_WIFICONF)/sbin
 	install -m0755 $(PKG_BUILD_DIR)/wifi $(IDIR_WIFICONF)/sbin/
-	$(RSTRIP) $(IDIR_WIFICONF)
-	$(IPKG_BUILD) $(IDIR_WIFICONF) $(PACKAGE_DIR)
+endef

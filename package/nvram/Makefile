@@ -9,30 +9,26 @@ PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
 
 include $(TOPDIR)/package/rules.mk
 
-$(eval $(call PKG_template,NVRAM,nvram,$(PKG_RELEASE),$(ARCH)))
+define Package/nvram
+SECTION:=base
+# CATEGORY:=FIXME
+DEFAULT:=n
+TITLE:=Broadcom config utility
+DESCRIPTION:=control utility for broadcom's 'nvram' config area
+endef
 
-$(PKG_BUILD_DIR)/.prepared:
+define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
 	$(CP) ./src/* $(PKG_BUILD_DIR)
-	touch $@
-
-$(PKG_BUILD_DIR)/.configured:
-	touch $@
-
-$(PKG_BUILD_DIR)/.built:
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		$(TARGET_CONFIGURE_OPTS) \
-		CFLAGS="$(TARGET_CFLAGS) -I $(STAGING_DIR)/usr/include"
-	touch $@
+endef
 
 $(IPKG_NVRAM):
-	mkdir -p $(IDIR_NVRAM)/usr/lib
+define Package/nvram/install
+	install -d -m0755  $(IDIR_NVRAM)/usr/lib
+	install -d -m0755 $(IDIR_NVRAM)/usr/sbin
 	$(CP) $(PKG_BUILD_DIR)/*.so $(IDIR_NVRAM)/usr/lib
-	mkdir -p $(IDIR_NVRAM)/usr/sbin
-	$(CP) $(PKG_BUILD_DIR)/nvram $(IDIR_NVRAM)/usr/sbin
-	$(RSTRIP) $(IDIR_NVRAM)
-	$(IPKG_BUILD) $(IDIR_NVRAM) $(PACKAGE_DIR)
-
+	install -m0755 $(PKG_BUILD_DIR)/nvram $(IDIR_NVRAM)/usr/sbin
+endef
 
 compile-targets: install-dev
 install-dev: $(PKG_BUILD_DIR)/.built
