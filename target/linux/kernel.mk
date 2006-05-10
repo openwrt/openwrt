@@ -13,7 +13,7 @@ $(PACKAGE_DIR):
 	
 $(DL_DIR)/$(LINUX_SOURCE):
 	-mkdir -p $(DL_DIR)
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(LINUX_SOURCE) $(LINUX_KERNEL_MD5SUM) $(LINUX_SITE) $(MAKE_TRACE)
+	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(LINUX_SOURCE) $(LINUX_KERNEL_MD5SUM) $(LINUX_SITE)
 
 $(LINUX_DIR)/.unpacked: $(DL_DIR)/$(LINUX_SOURCE)
 	-mkdir -p $(LINUX_BUILD_DIR)
@@ -28,37 +28,36 @@ $(LINUX_DIR)/.configured: $(LINUX_DIR)/.patched
 	  $(LINUX_DIR)/Makefile  \
 	  $(LINUX_DIR)/arch/*/Makefile
 	$(SED) "s,\-mcpu=,\-mtune=,g;" $(LINUX_DIR)/arch/mips/Makefile
-	$(MAKE) -C $(LINUX_DIR) ARCH=$(LINUX_KARCH) oldconfig include/linux/compile.h include/linux/version.h $(MAKE_TRACE)
+	$(MAKE) -C $(LINUX_DIR) ARCH=$(LINUX_KARCH) oldconfig include/linux/compile.h include/linux/version.h
 	touch $@
 
 $(LINUX_DIR)/.depend_done: $(LINUX_DIR)/.configured
-	$(MAKE) -C $(LINUX_DIR) CROSS_COMPILE="$(KERNEL_CROSS)" ARCH=$(LINUX_KARCH) dep $(MAKE_TRACE)
+	$(MAKE) -C $(LINUX_DIR) CROSS_COMPILE="$(KERNEL_CROSS)" ARCH=$(LINUX_KARCH) dep
 	touch $@
 
 $(LINUX_DIR)/vmlinux: $(LINUX_DIR)/.depend_done
 else
 $(LINUX_DIR)/.configured: $(LINUX_DIR)/.patched
-	$(MAKE) -C $(LINUX_DIR) CROSS_COMPILE="$(KERNEL_CROSS)" ARCH=$(LINUX_KARCH) oldconfig prepare scripts $(MAKE_TRACE)
+	$(MAKE) -C $(LINUX_DIR) CROSS_COMPILE="$(KERNEL_CROSS)" ARCH=$(LINUX_KARCH) oldconfig prepare scripts
 	touch $@
 endif
 
 $(LINUX_DIR)/vmlinux: $(STAMP_DIR)/.linux-compile
-	$(MAKE) -C $(LINUX_DIR) CROSS_COMPILE="$(KERNEL_CROSS)" ARCH=$(LINUX_KARCH) PATH=$(TARGET_PATH) $(MAKE_TRACE)
+	$(MAKE) -C $(LINUX_DIR) CROSS_COMPILE="$(KERNEL_CROSS)" ARCH=$(LINUX_KARCH) PATH=$(TARGET_PATH)
 
 $(LINUX_KERNEL): $(LINUX_DIR)/vmlinux
-	$(TARGET_CROSS)objcopy -O binary -R .reginfo -R .note -R .comment -R .mdebug -S $< $@ $(MAKE_TRACE)
+	$(TARGET_CROSS)objcopy -O binary -R .reginfo -R .note -R .comment -R .mdebug -S $< $@
 	touch -c $(LINUX_KERNEL)
 
 $(LINUX_DIR)/.modules_done:
 	rm -rf $(LINUX_BUILD_DIR)/modules
-	$(MAKE) -C "$(LINUX_DIR)" CROSS_COMPILE="$(KERNEL_CROSS)" ARCH=$(LINUX_KARCH) PATH="$(TARGET_PATH)" modules $(MAKE_TRACE)
-	$(MAKE) -C "$(LINUX_DIR)" CROSS_COMPILE="$(KERNEL_CROSS)" DEPMOD=true INSTALL_MOD_PATH=$(LINUX_BUILD_DIR)/modules modules_install $(MAKE_TRACE)
+	$(MAKE) -C "$(LINUX_DIR)" CROSS_COMPILE="$(KERNEL_CROSS)" ARCH=$(LINUX_KARCH) PATH="$(TARGET_PATH)" modules
+	$(MAKE) -C "$(LINUX_DIR)" CROSS_COMPILE="$(KERNEL_CROSS)" DEPMOD=true INSTALL_MOD_PATH=$(LINUX_BUILD_DIR)/modules modules_install
 	touch $(LINUX_DIR)/.modules_done
 
 $(STAMP_DIR)/.linux-compile:
-	@$(MAKE) $(LINUX_DIR)/.modules_done $(TARGETS) $(KERNEL_IPKG) $(MAKE_TRACE)
-	ln -sf $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION) $(BUILD_DIR)/linux $(MAKE_TRACE)
-	@$(TRACE) target/linux/package-compile
+	@$(MAKE) $(LINUX_DIR)/.modules_done $(TARGETS) $(KERNEL_IPKG)
+	ln -sf $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION) $(BUILD_DIR)/linux
 	$(MAKE) -C $(TOPDIR)/target/linux/package \
 		$(KPKG_MAKEOPTS) \
 		compile
@@ -73,7 +72,7 @@ pkg-install:
 	$(MAKE) -C $(TOPDIR)/target/linux/package \
 		$(KPKG_MAKEOPTS) \
 		install
-	@{ [ "$(INSTALL_TARGETS)" != "" ] && $(IPKG_KERNEL) install $(INSTALL_TARGETS) || true; } $(MAKE_TRACE) 
+	[ "$(INSTALL_TARGETS)" != "" ] && $(IPKG_KERNEL) install $(INSTALL_TARGETS)
 
 $(KERNEL_IPKG):
 	rm -rf $(KERNEL_IDIR)
@@ -82,33 +81,30 @@ $(KERNEL_IPKG):
 	if [ -f ./config/$(BOARD).modules ]; then \
 		cp ./config/$(BOARD).modules $(KERNEL_IDIR)/etc/modules; \
 	fi
-	$(IPKG_BUILD) $(KERNEL_IDIR) $(LINUX_BUILD_DIR) $(MAKE_TRACE)
+	$(IPKG_BUILD) $(KERNEL_IDIR) $(LINUX_BUILD_DIR)
 
 source: $(DL_DIR)/$(LINUX_SOURCE)
 prepare: 
 	@mkdir -p $(STAMP_DIR) $(PACKAGE_DIR)
-	@$(MAKE) $(LINUX_DIR)/.configured $(MAKE_TRACE)
+	@$(MAKE) $(LINUX_DIR)/.configured
 
 compile: prepare $(STAMP_DIR)/.linux-compile
 
 install: compile
-	@$(TRACE) target/linux/package-install
-	$(MAKE) $(KPKG_MAKEOPTS) pkg-install $(MAKE_TRACE)
-	$(MAKE) $(KPKG_MAKEOPTS) $(LINUX_KERNEL) $(MAKE_TRACE)
+	$(MAKE) $(KPKG_MAKEOPTS) pkg-install
+	$(MAKE) $(KPKG_MAKEOPTS) $(LINUX_KERNEL)
 
 mostlyclean:
 	rm -f $(STAMP_DIR)/.linux-compile
 	rm -f $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION)/.modules_done
 	rm -f $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION)/.drivers-unpacked
-	$(MAKE) -C $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION) clean $(MAKE_TRACE)
+	$(MAKE) -C $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION) clean
 	rm -f $(LINUX_KERNEL)
 
 rebuild:
 	-$(MAKE) mostlyclean
-	if [ -f $(LINUX_KERNEL) ]; then \
-		$(MAKE) clean $(MAKE_TRACE); \
-	fi
-	$(MAKE) compile $(MAKE_TRACE)
+	@[ -f $(LINUX_KERNEL) ] && $(MAKE) clean
+	$(MAKE) compile
 
 clean:
 	rm -f $(STAMP_DIR)/.linux-compile

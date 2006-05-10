@@ -38,10 +38,6 @@ endif
 endif
 export OPENWRTVERSION
 
-ifeq ($(shell ./scripts/timestamp.pl -p .pkginfo package),package)
-.pkginfo: pkginfo-clean
-endif
-
 .pkginfo:
 	@echo Collecting package info...
 	@-for makefile in package/*/Makefile; do \
@@ -49,6 +45,10 @@ endif
 		$(MAKE) DUMP=1 -f $$makefile 2>&- || true; \
 	done > $@
 	
+ifeq ($(shell ./scripts/timestamp.pl -p .pkginfo package),package)
+.pkginfo: pkginfo-clean
+endif
+
 .config.in: .pkginfo
 	./scripts/gen_menuconfig.pl < $< > $@ || rm -f $@
 

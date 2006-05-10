@@ -164,8 +164,7 @@ endef
 
 ifneq ($(strip $(PKG_SOURCE)),)
 $(DL_DIR)/$(PKG_SOURCE):
-	@$(CMD_TRACE) "downloading... "
-	$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(PKG_SOURCE)" "$(PKG_MD5SUM)" $(PKG_SOURCE_URL) $(MAKE_TRACE) 
+	$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(PKG_SOURCE)" "$(PKG_MD5SUM)" $(PKG_SOURCE_URL)
 	
 $(PKG_BUILD_DIR)/.prepared: $(DL_DIR)/$(PKG_SOURCE)
 endif
@@ -237,42 +236,24 @@ ifneq ($(DUMP),)
 dumpinfo:
 	$(DUMPINFO)
 else
-
-source: $(DL_DIR)/$(PKG_SOURCE)
-prepare: source
-	@[ -f $(PKG_BUILD_DIR)/.prepared ] || { \
-		$(CMD_TRACE) "preparing... "; \
-		$(MAKE) $(PKG_BUILD_DIR)/.prepared $(MAKE_TRACE); \
-	}
-
-configure: prepare
-	@[ -f $(PKG_BUILD_DIR)/.configured ] || { \
-		$(CMD_TRACE) "configuring... "; \
-		$(MAKE) $(PKG_BUILD_DIR)/.configured $(MAKE_TRACE); \
-	}
-
-compile-targets:
-compile: configure
-	@$(CMD_TRACE) "compiling... " 
-	@$(MAKE) compile-targets $(MAKE_TRACE)
-
-install-targets:
-install:
-	@$(CMD_TRACE) "installing... "
-	@$(MAKE) install-targets $(MAKE_TRACE)
-
-rebuild:
-	$(CMD_TRACE) "rebuilding... "
-	$(MAKE) package-clean compile $(MAKE_TRACE)
-
+		
 $(PACKAGE_DIR):
 	mkdir -p $@
 
+source: $(DL_DIR)/$(PKG_SOURCE)
+prepare: $(PKG_BUILD_DIR)/.prepared
+configure: $(PKG_BUILD_DIR)/.configured
+
+compile-targets:
+compile: compile-targets
+
+install-targets:
+install: install-targets
+
 clean-targets:
 clean: 
-	@$(CMD_TRACE) "cleaning... " 
-	@$(MAKE) clean-targets $(MAKE_TRACE)
+	@$(MAKE) clean-targets
 	rm -rf $(PKG_BUILD_DIR)
 endif
 
-.PHONY: all source prepare compile install clean rebuild dumpinfo compile-targets install-targets clean-targets
+.PHONY: all source prepare compile install clean dumpinfo compile-targets install-targets clean-targets

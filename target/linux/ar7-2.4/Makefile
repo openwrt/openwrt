@@ -31,8 +31,8 @@ include ../kernel.mk
 
 
 $(LINUX_DIR)/.patched: $(LINUX_DIR)/.unpacked
-	[ -d ../generic-$(KERNEL)/patches ] && $(PATCH) $(LINUX_DIR) ../generic-$(KERNEL)/patches $(MAKE_TRACE)
-	[ -d ./patches ] && $(PATCH) $(LINUX_DIR) ./patches $(MAKE_TRACE)
+	[ -d ../generic-$(KERNEL)/patches ] && $(PATCH) $(LINUX_DIR) ../generic-$(KERNEL)/patches 
+	[ -d ./patches ] && $(PATCH) $(LINUX_DIR) ./patches
 	@$(CP) config $(LINUX_DIR)/.config
 	touch $@
 
@@ -47,7 +47,7 @@ ATM_FIRMWARE_FILE=$(ATM_FIRMWARE_DIR).tar.gz
 ATM_FIRMWARE_MD5SUM=8bfcb31109796502d66b11baaeb2fba6
 
 $(DL_DIR)/$(ATM_FIRMWARE_FILE):
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(ATM_FIRMWARE_FILE) $(ATM_FIRMWARE_MD5SUM) $(DOWNLOAD_SITE) $(MAKE_TRACE)
+	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(ATM_FIRMWARE_FILE) $(ATM_FIRMWARE_MD5SUM) $(DOWNLOAD_SITE)
 
 $(LINUX_DIR)/.unpacked: $(DL_DIR)/$(ATM_FIRMWARE_FILE)
 $(LINUX_DIR)/.depend_done: $(LINUX_DIR)/.drivers-unpacked

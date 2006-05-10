@@ -12,13 +12,13 @@ include ../kernel.mk
 
 
 $(LINUX_DIR)/.patched: $(LINUX_DIR)/.unpacked
-	[ -d ../generic-$(KERNEL)/patches ] && $(PATCH) $(LINUX_DIR) ../generic-$(KERNEL)/patches $(MAKE_TRACE)
-	[ -d ./patches ] && $(PATCH) $(LINUX_DIR) ./patches $(MAKE_TRACE)
+	[ -d ../generic-$(KERNEL)/patches ] && $(PATCH) $(LINUX_DIR) ../generic-$(KERNEL)/patches
+	[ -d ./patches ] && $(PATCH) $(LINUX_DIR) ./patches
 	@$(CP) config $(LINUX_DIR)/.config
 	touch $@
 
 $(LINUX_BUILD_DIR)/bzImage: $(LINUX_DIR)/vmlinux
-	$(MAKE) -C $(LINUX_DIR) V=1 CROSS_COMPILE=$(TARGET_CROSS) ARCH=$(LINUX_KARCH) PATH=$(TARGET_PATH) bzImage $(MAKE_TRACE)
+	$(MAKE) -C $(LINUX_DIR) V=1 CROSS_COMPILE=$(TARGET_CROSS) ARCH=$(LINUX_KARCH) PATH=$(TARGET_PATH) bzImage
 	$(CP) $(LINUX_DIR)/vmlinux $@
 	touch $@
 

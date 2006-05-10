@@ -9,38 +9,6 @@ ifeq ($(V),)
 V=5
 endif
 
-
-ifneq ($(V),0)
-TRACE:=echo "---> "
-START_TRACE:=echo -n "---> "
-END_TRACE:=echo
-else
-START_TRACE:=:
-END_TRACE:=:
-TRACE:=:
-endif
-
-ifeq (${shell [ "$(V)" -ge 5 ] && echo 1},)
-CMD_TRACE:=:
-PKG_TRACE:=:
-else
-CMD_TRACE:=echo -n
-PKG_TRACE:=echo "------> "
-endif
-
-ifeq (${shell [ "$(V)" -ge 10 ] && echo 1},)
-EXTRA_MAKEFLAGS:=-s
-MAKE_TRACE:=2>&1 >&/dev/null || { echo "Build failed. Please re-run make with V=99 to see what's going on"; /bin/false; }
-else
-MAKE_TRACE:=
-EXTRA_MAKEFLAGS:=
-TRACE:=:
-PKG_TRACE:=:
-CMD_TRACE:=:
-START_TRACE:=:
-END_TRACE:=:
-endif
-
 CP=cp -fpR
 MAKE1=make
 MAKEFLAGS=-j$(CONFIG_JLEVEL) V=$(V) $(EXTRA_MAKEFLAGS)

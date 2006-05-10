@@ -5,25 +5,24 @@ ifeq ($(ARCH),mips)
 endif
 
 squashfs-prepare:
-	$(MAKE) -C squashfs prepare $(MAKE_TRACE)
+	$(MAKE) -C squashfs prepare
 
 squashfs-compile: prepare-targets
-	$(MAKE) -C squashfs compile $(MAKE_TRACE)
+	$(MAKE) -C squashfs compile
 	
 squashfs-clean:
-	$(MAKE) -C squashfs clean $(MAKE_TRACE)
+	$(MAKE) -C squashfs clean
 	rm -f $(KDIR)/root.squashfs
 
 $(KDIR)/root.squashfs: install-prepare
 	@mkdir -p $(KDIR)/root/jffs
-	$(STAGING_DIR)/bin/mksquashfs-lzma $(KDIR)/root $@ -nopad -noappend -root-owned -$(endian) $(MAKE_TRACE)
+	$(STAGING_DIR)/bin/mksquashfs-lzma $(KDIR)/root $@ -nopad -noappend -root-owned -$(endian)
 	
 ifeq ($(IB),)
 squashfs-install: compile-targets $(BOARD)-compile
 endif
 
 squashfs-install: $(KDIR)/root.squashfs
-	$(TRACE) target/linux/image/$(BOARD)/install
 	$(MAKE) -C $(BOARD) install KERNEL="$(KERNEL)" FS="squashfs"
 
 squashfs-install-ib: compile-targets
