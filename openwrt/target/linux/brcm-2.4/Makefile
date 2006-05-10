@@ -28,8 +28,8 @@ include ../kernel.mk
 
 
 $(LINUX_DIR)/.patched: $(LINUX_DIR)/.unpacked
-	[ -d ../generic-$(KERNEL)/patches ] && $(PATCH) $(LINUX_DIR) ../generic-$(KERNEL)/patches $(MAKE_TRACE)
-	[ -d ./patches ] && $(PATCH) $(LINUX_DIR) ./patches $(MAKE_TRACE)
+	[ -d ../generic-$(KERNEL)/patches ] && $(PATCH) $(LINUX_DIR) ../generic-$(KERNEL)/patches
+	[ -d ./patches ] && $(PATCH) $(LINUX_DIR) ./patches
 	@$(CP) config $(LINUX_DIR)/.config
 	touch $@
 
@@ -44,7 +44,7 @@ LINUX_BINARY_WL_DRIVER=kernel-binary-wl-0.6.tar.gz
 LINUX_BINARY_WL_MD5SUM=4fc1d5b46bcb7a17d6d5dd31da9c8d7f
 
 $(DL_DIR)/$(LINUX_BINARY_WL_DRIVER):
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(LINUX_BINARY_WL_DRIVER) $(LINUX_BINARY_WL_MD5SUM) $(LINUX_BINARY_DRIVER_SITE) $(MAKE_TRACE)
+	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(LINUX_BINARY_WL_DRIVER) $(LINUX_BINARY_WL_MD5SUM) $(LINUX_BINARY_DRIVER_SITE)
 	
 $(LINUX_DIR)/.unpacked: $(DL_DIR)/$(LINUX_BINARY_WL_DRIVER)
 $(LINUX_DIR)/.depend_done: $(LINUX_DIR)/.drivers-unpacked

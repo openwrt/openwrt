@@ -7,31 +7,29 @@ endif
 #JFFS2OPTS += -Xlzo -msize -Xlzari
 
 jffs2-prepare:
-	$(MAKE) -C jffs2 prepare $(MAKE_TRACE)
+	$(MAKE) -C jffs2 prepare
 
 jffs2-compile: prepare-targets
-	$(MAKE) -C jffs2 compile $(MAKE_TRACE)
+	$(MAKE) -C jffs2 compile
 
 jffs2-clean:
-	$(MAKE) -C jffs2 clean $(MAKE_TRACE)
+	$(MAKE) -C jffs2 clean
 	rm -f $(KDIR)/root.jffs2*
 
 $(KDIR)/root.jffs2-4MB: install-prepare
 	@rm -rf $(KDIR)/root/jffs
-	$(STAGING_DIR)/bin/mkfs.jffs2 $(JFFS2OPTS) -e 0x10000 -o $@ -d $(KDIR)/root $(MAKE_TRACE)
+	$(STAGING_DIR)/bin/mkfs.jffs2 $(JFFS2OPTS) -e 0x10000 -o $@ -d $(KDIR)/root
 
 $(KDIR)/root.jffs2-8MB: install-prepare
 	@rm -rf $(KDIR)/root/jffs
-	$(STAGING_DIR)/bin/mkfs.jffs2 $(JFFS2OPTS) -e 0x20000 -o $@ -d $(KDIR)/root $(MAKE_TRACE)
+	$(STAGING_DIR)/bin/mkfs.jffs2 $(JFFS2OPTS) -e 0x20000 -o $@ -d $(KDIR)/root
 
 ifeq ($(IB),)
 jffs2-install: compile-targets $(BOARD)-compile
 endif
 
 jffs2-install: $(KDIR)/root.jffs2-4MB $(KDIR)/root.jffs2-8MB
-	$(TRACE) target/linux/image/$(BOARD)/install
 	$(MAKE) -C $(BOARD) install KERNEL="$(KERNEL)" FS="jffs2-4MB"
-	$(TRACE) target/linux/image/$(BOARD)/install
 	$(MAKE) -C $(BOARD) install KERNEL="$(KERNEL)" FS="jffs2-8MB"
 
 jffs2-install-ib: compile-targets

@@ -10,8 +10,8 @@ include ../generic-$(KERNEL)/modules.mk
 include ../kernel.mk
 
 $(LINUX_DIR)/.patched: $(LINUX_DIR)/.unpacked
-	[ -d ../generic-$(KERNEL)/patches ] && $(PATCH) $(LINUX_DIR) ../generic-$(KERNEL)/patches $(MAKE_TRACE)
-	[ -d ./patches ] && $(PATCH) $(LINUX_DIR) ./patches $(MAKE_TRACE)
+	[ -d ../generic-$(KERNEL)/patches ] && $(PATCH) $(LINUX_DIR) ../generic-$(KERNEL)/patches
+	[ -d ./patches ] && $(PATCH) $(LINUX_DIR) ./patches
 	@$(CP) config $(LINUX_DIR)/.config
 	touch $@
 
