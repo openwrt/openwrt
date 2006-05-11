@@ -80,6 +80,7 @@ ifeq ($(CONFIG_PACKAGE_$(1)),y)
 install-targets: $$(INFO_$(1))
 endif
 
+ifneq ($$(COMPILE_$(1)),)
 compile-targets: $$(IPKG_$(1))
 endif
 
