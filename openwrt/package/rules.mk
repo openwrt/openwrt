@@ -18,6 +18,7 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 	touch $$@
 
 $(PKG_BUILD_DIR)/.built: FORCE $(PKG_BUILD_DIR)/.configured
+#$#$#(error $$(shell $(SCRIPT_DIR)/timestamp.pl -p -x ipkg $$(IPKG_$(1)) $(PKG_BUILD_DIR)))
 ifeq ($$(shell $(SCRIPT_DIR)/timestamp.pl -p -x ipkg $$(IPKG_$(1)) $(PKG_BUILD_DIR)),$(PKG_BUILD_DIR))
 	$(call Build/Compile)
 	touch $$@
@@ -62,11 +63,10 @@ $(foreach FIELD, TITLE CATEGORY PRIORITY VERSION, $(eval $(call RequiredField,$(
 ifeq ($(PKGARCH),)
 PKGARCH:=$(ARCH)
 endif
-$(eval 
+
 ifeq ($(DESCRIPTION),)
-DESCRIPTION:=$(TITLE)
+$(eval DESCRIPTION:=$(TITLE))
 endif
-)
 
 IPKG_$(1):=$(PACKAGE_DIR)/$(1)_$(VERSION)_$(PKGARCH).ipk
 IDIR_$(1):=$(PKG_BUILD_DIR)/ipkg/$(1)
@@ -80,8 +80,8 @@ ifeq ($(CONFIG_PACKAGE_$(1)),y)
 install-targets: $$(INFO_$(1))
 endif
 
-ifneq ($$(COMPILE_$(1)),)
-compile-targets: $$(IPKG_$(1))
+ifneq ($(COMPILE_$(1)),)
+compile-targets: $(IPKG_$(1))
 endif
 
 IDEPEND_$(1):=$$(strip $$(DEPENDS))
@@ -141,7 +141,7 @@ $(1)-clean:
 clean: $(1)-clean
 
 ifneq ($(__DEFAULT_TARGETS),1)
-$(eval $(call Build/DefaultTargets))
+$$(eval $$(call Build/DefaultTargets,$(1)))
 endif
 
 endef
