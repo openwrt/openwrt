@@ -87,22 +87,22 @@ define Buid/Compile
 endef
 	
 define Package/dropbear/install
-	mkdir -p $(IDIR_DROPBEAR)/usr/bin
-	mkdir -p $(IDIR_DROPBEAR)/usr/sbin
+	mkdir -p $(1)/usr/bin
+	mkdir -p $(1)/usr/sbin
 	install -m 755 $(PKG_BUILD_DIR)/dropbearmulti \
-		$(IDIR_DROPBEAR)/usr/sbin/dropbear
-	ln -sf ../sbin/dropbear $(IDIR_DROPBEAR)/usr/bin/scp
-	ln -sf ../sbin/dropbear $(IDIR_DROPBEAR)/usr/bin/ssh
-	ln -sf ../sbin/dropbear $(IDIR_DROPBEAR)/usr/bin/dbclient
-	ln -sf ../sbin/dropbear $(IDIR_DROPBEAR)/usr/bin/dropbearkey
-	mkdir -p $(IDIR_DROPBEAR)/etc/init.d
-	install -m 755 ./files/S50dropbear $(IDIR_DROPBEAR)/etc/init.d/
+		$(1)/usr/sbin/dropbear
+	ln -sf ../sbin/dropbear $(1)/usr/bin/scp
+	ln -sf ../sbin/dropbear $(1)/usr/bin/ssh
+	ln -sf ../sbin/dropbear $(1)/usr/bin/dbclient
+	ln -sf ../sbin/dropbear $(1)/usr/bin/dropbearkey
+	mkdir -p $(1)/etc/init.d
+	install -m 755 ./files/S50dropbear $(1)/etc/init.d/
 endef
 
 define Package/dropbearconvert/install
-	mkdir -p $(IDIR_DBCONVERT)/usr/bin
+	mkdir -p $(1)/usr/bin
 	install -m 755 $(PKG_BUILD_DIR)/dropbearconvert \
-		$(IDIR_DBCONVERT)/usr/bin/dropbearconvert
+		$(1)/usr/bin/dropbearconvert
 endef
 
 $(eval $(call BuildPackage,dropbear))

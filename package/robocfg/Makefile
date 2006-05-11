@@ -23,10 +23,10 @@ define Build/Compile
 endef
 
 define Package/robocfg/install
-	install -d -m0755 $(IDIR_ROBOCFG)/sbin
-	install -m0755 $(PKG_BUILD_DIR)/robocfg $(IDIR_ROBOCFG)/sbin/
-	$(RSTRIP) $(IDIR_ROBOCFG)
-	$(IPKG_BUILD) $(IDIR_ROBOCFG) $(PACKAGE_DIR)
+	install -d -m0755 $(1)/sbin
+	install -m0755 $(PKG_BUILD_DIR)/robocfg $(1)/sbin/
+	$(RSTRIP) $(1)
+	$(IPKG_BUILD) $(1) $(PACKAGE_DIR)
 endef
 
 $(eval $(call BuildPackage,robocfg))

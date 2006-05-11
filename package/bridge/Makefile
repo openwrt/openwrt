@@ -29,9 +29,9 @@ define Build/Configure
 $(call Build/Configure/Default,--with-linux-headers=$(LINUX_DIR))
 endef
 
-define Package/busybox/install
-	install -m0755 -d $(IDIR_DNSMASQ)/usr/sbin
-	install -m0755 $(PKG_BUILD_DIR)/brctl/brctl $(IDIR_BRIDGE)/usr/sbin/
+define Package/bridge/install
+	install -m0755 -d $(1)/usr/sbin
+	install -m0755 $(PKG_BUILD_DIR)/brctl/brctl $(1)/usr/sbin/
 endef
 
 $(eval $(call BuildPackage,bridge))

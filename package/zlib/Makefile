@@ -49,8 +49,8 @@ define Build/Compile
 endef
 
 define Package/zlib/install
-	install -m0755 -d $(IDIR_ZLIB)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libz.so.* $(IDIR_ZLIB)/usr/lib/
+	install -m0755 -d $(1)/usr/lib
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libz.so.* $(1)/usr/lib/
 endef
 
 $(STAGING_DIR)/usr/lib/libz.so: $(PKG_BUILD_DIR)/.built

@@ -22,12 +22,11 @@ define Build/Prepare
 	$(CP) ./src/* $(PKG_BUILD_DIR)
 endef
 
-$(IPKG_NVRAM):
 define Package/nvram/install
-	install -d -m0755  $(IDIR_NVRAM)/usr/lib
-	install -d -m0755 $(IDIR_NVRAM)/usr/sbin
-	$(CP) $(PKG_BUILD_DIR)/*.so $(IDIR_NVRAM)/usr/lib
-	install -m0755 $(PKG_BUILD_DIR)/nvram $(IDIR_NVRAM)/usr/sbin
+	install -d -m0755  $(1)/usr/lib
+	install -d -m0755 $(1)/usr/sbin
+	$(CP) $(PKG_BUILD_DIR)/*.so $(1)/usr/lib
+	install -m0755 $(PKG_BUILD_DIR)/nvram $(1)/usr/sbin
 endef
 
 compile-targets: install-dev

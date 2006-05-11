@@ -43,11 +43,11 @@ define Build/Configure
 endef
 
 define Package/pcmcia-cs/install
-	install -m0755 -d $(IDIR_PCMCIA_UTILS)/etc
-	install -m0755 -d $(IDIR_PCMCIA_UTILS)/usr/sbin
-	install -m0644 $(PKG_INSTALL_DIR)/etc/pcmcia $(IDIR_PCMCIA_UTILS)/etc/
-	install -m0755 $(PKG_INSTALL_DIR)/sbin/cardctl $(IDIR_PCMCIA_UTILS)/usr/sbin/
-	install -m0755 $(PKG_INSTALL_DIR)/sbin/cardmgr $(IDIR_PCMCIA_UTILS)/usr/sbin/
+	install -m0755 -d $(1)/etc
+	install -m0755 -d $(1)/usr/sbin
+	install -m0644 $(PKG_INSTALL_DIR)/etc/pcmcia $(1)/etc/
+	install -m0755 $(PKG_INSTALL_DIR)/sbin/cardctl $(1)/usr/sbin/
+	install -m0755 $(PKG_INSTALL_DIR)/sbin/cardmgr $(1)/usr/sbin/
 endef
 
 $(eval $(call BuildPackage,pcmcia-cs))

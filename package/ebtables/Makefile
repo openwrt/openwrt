@@ -24,8 +24,8 @@ URL:=http://ebtables.sourceforge.net/
 endef
 
 define Package/ebtables/install
-	install -d -m0755 $(IDIR_DNSMASQ)/usr/sbin
-	install -m0755 $(PKG_BUILD_DIR)/ebtables $(IDIR_EBTABLES)/usr/sbin/ebtables
+	install -d -m0755 $(1)/usr/sbin
+	install -m0755 $(PKG_BUILD_DIR)/ebtables $(1)/usr/sbin/ebtables
 endef
 
 $(eval $(call BuildPackage,ebtables))
