@@ -76,7 +76,7 @@ define Build/Configure
 	);
 endef
 
-define Buid/Compile
+define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		LD=$(TARGET_CC) \
 		PROGRAMS="dropbear dbclient dropbearkey scp" \
