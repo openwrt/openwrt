@@ -5,14 +5,18 @@ else
 endif
 
 define Build/DefaultTargets
-  prepared: FORCE $(DL_DIR)/$(PKG_SOURCE)
-   ifeq ($(shell $(SCRIPT_DIR)/timestamp.pl -p $(PKG_BUILD_DIR) .),.)
+
+  ifeq ($(shell $(SCRIPT_DIR)/timestamp.pl -p $(PKG_BUILD_DIR) .),.)
+    $(PKG_BUILD_DIR)/.prepared: package-clean
+  endif
+
+  $(PKG_BUILD_DIR)/.prepared: $(DL_DIR)/$(PKG_SOURCE)
 	@-rm -rf $(PKG_BUILD_DIR)
 	@mkdir -p $(PKG_BUILD_DIR)
 	$(call Build/Prepare)
-    endif
+	touch $$@
 
-  $(PKG_BUILD_DIR)/.configured: prepared
+  $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 	$(call Build/Configure)
 	touch $$@
 
@@ -109,7 +113,7 @@ define BuildPackage
   DUMPINFO += \
 	echo "@@";
 
-  $$(IDIR_$(1))/CONTROL/control: prepared
+  $$(IDIR_$(1))/CONTROL/control: $(PKG_BUILD_DIR)/.prepared
 	mkdir -p $$(IDIR_$(1))/CONTROL
 	echo "Package: $(1)" > $$(IDIR_$(1))/CONTROL/control
 	echo "Version: $(VERSION)" >> $$(IDIR_$(1))/CONTROL/control
@@ -221,17 +225,17 @@ else
   $(PACKAGE_DIR):
 	mkdir -p $@
 
-  source: FORCE $(DL_DIR)/$(PKG_SOURCE)
-  prepare: FORCE prepared
-  configure: FORCE $(PKG_BUILD_DIR)/.configured
+  source: $(DL_DIR)/$(PKG_SOURCE)
+  prepare: $(PKG_BUILD_DIR)/.prepared
+  configure: $(PKG_BUILD_DIR)/.configured
 
-  compile-targets: FORCE
-  compile: FORCE compile-targets
+  compile-targets:
+  compile: compile-targets
 
-  install-targets: FORCE
-  install: FORCE install-targets
+  install-targets:
+  install: install-targets
 
-  clean-targets: FORCE
+  clean-targets:
   clean: FORCE
 	@$(MAKE) clean-targets
 	rm -rf $(PKG_BUILD_DIR)
