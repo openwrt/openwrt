@@ -23,6 +23,6 @@ define Build/Compile
 endef
 
 define Package/mtd/install
-	install -d -m0755 $(IDIR_MTD)/sbin
-	install -m0755 $(PKG_BUILD_DIR)/mtd $(IDIR_MTD)/sbin
+	install -d -m0755 $(1)/sbin
+	install -m0755 $(PKG_BUILD_DIR)/mtd $(1)/sbin
 endef

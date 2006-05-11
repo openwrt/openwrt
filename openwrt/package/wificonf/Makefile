@@ -22,6 +22,6 @@ define Build/Compile
 endef
 
 define Package/wificonf/install
-	install -d -m0755 $(IDIR_WIFICONF)/sbin
-	install -m0755 $(PKG_BUILD_DIR)/wifi $(IDIR_WIFICONF)/sbin/
+	install -d -m0755 $(1)/sbin
+	install -m0755 $(PKG_BUILD_DIR)/wifi $(1)/sbin/
 endef

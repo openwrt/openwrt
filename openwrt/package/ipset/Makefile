@@ -26,8 +26,8 @@ endef
 
 define Package/ipset/install
 	$(MAKE) -C $(PKG_BUILD_DIR) \
-		DESTDIR=$(IDIR_IPSET) PREFIX=/usr install
-	rm -rf $(IDIR_IPSET)/usr/man
+		DESTDIR=$(1) PREFIX=/usr install
+	rm -rf $(1)/usr/man
 endef
 
 $(eval $(call BuildPackage,ipset))

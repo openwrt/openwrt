@@ -36,10 +36,10 @@ define Build/Compile
 endef
 
 define Package/wireless-tools/install
-	install -d -m0755  $(IDIR_WIRELESS_TOOLS)/usr/lib
-	install -d -m0755 $(IDIR_WIRELESS_TOOLS)/usr/sbin
-	install -m0755 $(PKG_BUILD_DIR)/libiw.so.28 $(IDIR_WIRELESS_TOOLS)/usr/lib/
-	install -m0755 $(PKG_INSTALL_DIR)/usr/sbin/iw{config,getid,list,priv,spy} $(IDIR_WIRELESS_TOOLS)/usr/sbin/
+	install -d -m0755  $(1)/usr/lib
+	install -d -m0755 $(1)/usr/sbin
+	install -m0755 $(PKG_BUILD_DIR)/libiw.so.28 $(1)/usr/lib/
+	install -m0755 $(PKG_INSTALL_DIR)/usr/sbin/iw{config,getid,list,priv,spy} $(1)/usr/sbin/
 endef
 
 install-dev: $(PKG_BUILD_DIR)/.built

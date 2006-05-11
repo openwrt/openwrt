@@ -67,16 +67,16 @@ define Build/Configure
 endef
 
 define Package/ipsec-tools/install
-	install -d -m0755 $(IDIR_IPSEC_TOOLS)/etc
-	install -d -m0755 $(IDIR_IPSEC_TOOLS)/usr/lib/
-	install -d -m0755 $(IDIR_IPSEC_TOOLS)/usr/sbin
-	$(CP) $(PKG_BUILD_DIR)/src/racoon/samples/racoon.conf $(IDIR_IPSEC_TOOLS)/etc/
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libipsec.so.* $(IDIR_IPSEC_TOOLS)/usr/lib/
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libracoon.so.* $(IDIR_IPSEC_TOOLS)/usr/lib/
-	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/plainrsa-gen $(IDIR_IPSEC_TOOLS)/usr/sbin/
-	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/racoon $(IDIR_IPSEC_TOOLS)/usr/sbin/
-	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/racoonctl $(IDIR_IPSEC_TOOLS)/usr/sbin/
-	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/setkey $(IDIR_IPSEC_TOOLS)/usr/sbin/
+	install -d -m0755 $(1)/etc
+	install -d -m0755 $(1)/usr/lib/
+	install -d -m0755 $(1)/usr/sbin
+	$(CP) $(PKG_BUILD_DIR)/src/racoon/samples/racoon.conf $(1)/etc/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libipsec.so.* $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libracoon.so.* $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/plainrsa-gen $(1)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/racoon $(1)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/racoonctl $(1)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/setkey $(1)/usr/sbin/
 endef
 
 $(eval $(call BuildPackage,ipsec-tools))

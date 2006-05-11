@@ -31,20 +31,20 @@ URL:=http://www.kernel.org/pub/linux/utils/kernel/hotplug/udev.html
 endef
 
 define Package/udev/install
-	install -d -m0775 $(IDIR_UDEV)/etc/udev
-	install -d -m0775 $(IDIR_UDEV)/lib/udev
-	install -d -m0775 $(IDIR_UDEV)/sbin/
-	install -d -m0775 $(IDIR_UDEV)/usr/bin/
-	install -d -m0775 $(IDIR_UDEV)/usr/sbin/
-	$(CP) $(PKG_INSTALL_DIR)/etc/udev/* $(IDIR_UDEV)/etc/udev/
-	$(CP) $(PKG_INSTALL_DIR)/sbin/udev $(IDIR_UDEV)/sbin/
-	$(CP) $(PKG_INSTALL_DIR)/sbin/udevcontrol $(IDIR_UDEV)/sbin/
-	$(CP) $(PKG_INSTALL_DIR)/sbin/udevd $(IDIR_UDEV)/sbin/
-	$(CP) $(PKG_INSTALL_DIR)/sbin/udevsend $(IDIR_UDEV)/sbin/
-	$(CP) $(PKG_INSTALL_DIR)/sbin/udevstart $(IDIR_UDEV)/sbin/
-	$(CP) $(PKG_INSTALL_DIR)/usr/bin/udevinfo $(IDIR_UDEV)/usr/bin/
-	$(CP) $(PKG_INSTALL_DIR)/usr/bin/udevtest $(IDIR_UDEV)/usr/bin/
-	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/udevmonitor $(IDIR_UDEV)/usr/sbin/
+	install -d -m0775 $(1)/etc/udev
+	install -d -m0775 $(1)/lib/udev
+	install -d -m0775 $(1)/sbin/
+	install -d -m0775 $(1)/usr/bin/
+	install -d -m0775 $(1)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/etc/udev/* $(1)/etc/udev/
+	$(CP) $(PKG_INSTALL_DIR)/sbin/udev $(1)/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/sbin/udevcontrol $(1)/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/sbin/udevd $(1)/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/sbin/udevsend $(1)/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/sbin/udevstart $(1)/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/udevinfo $(1)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/udevtest $(1)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/udevmonitor $(1)/usr/sbin/
 endef
 
 $(eval $(call BuildPackage,udev))
