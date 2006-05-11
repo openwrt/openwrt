@@ -17,21 +17,18 @@ $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 	$(call Build/Configure)
 	touch $$@
 
-$(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
+$(PKG_BUILD_DIR)/.built: FORCE $(PKG_BUILD_DIR)/.configured
+ifeq ($$(shell $(SCRIPT_DIR)/timestamp.pl -p -x ipkg $$(IPKG_$(1)) $(PKG_BUILD_DIR)),$(PKG_BUILD_DIR))
 	$(call Build/Compile)
 	touch $$@
+endif
 
-package-clean:
+package-clean: FORCE
 	$(call Build/Clean)
 	rm -f $(PKG_BUILD_DIR)/.built
 
-package-recompile:
-	rm -f $(PKG_BUILD_DIR)/.built
-
-.PHONY: package-clean package-recompile
-
-# define Build/DefaultTargets
-# endef
+define Build/DefaultTargets
+endef
 endef
 
 define Package/Default
@@ -75,24 +72,16 @@ IPKG_$(1):=$(PACKAGE_DIR)/$(1)_$(VERSION)_$(PKGARCH).ipk
 IDIR_$(1):=$(PKG_BUILD_DIR)/ipkg/$(1)
 INFO_$(1):=$(IPKG_STATE_DIR)/info/$(1).list
 
-ifneq ($(CONFIG_PACKAGE_$(1)),)
+ifneq ($(CONFIG_PACKAGE_$(1))$(DEVELOPER),)
 COMPILE_$(1):=1
 endif
-ifneq ($(DEVELOPER),)
-COMPILE_$(1):=1
-endif
+
 ifeq ($(CONFIG_PACKAGE_$(1)),y)
 install-targets: $$(INFO_$(1))
 endif
 
-ifneq ($$(COMPILE_$(1)),)
-ifeq ($$(shell $(SCRIPT_DIR)/timestamp.pl -p -x ipkg $$(IPKG_$(1)) $(PKG_BUILD_DIR)),$(PKG_BUILD_DIR))
-$(PKG_BUILD_DIR)/.built: package-recompile
-endif
-
 compile-targets: $$(IPKG_$(1))
 endif
-
 
 IDEPEND_$(1):=$$(strip $$(DEPENDS))
 
