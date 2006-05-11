@@ -31,7 +31,7 @@ $(1)/$(2)-install-ib:
 	echo '$$$$(eval $$$$(call image_template,$(2),$(1)))' >> $(IB_DIR)/kernel.mk
 
 
-ifeq ($(BR2_LINUX_$(3)),y)
+ifeq ($(CONFIG_LINUX_$(3)),y)
 clean: $(1)/$(2)-clean
 prepare: $(1)/$(2)-prepare
 compile: $(1)/$(2)-compile
@@ -64,7 +64,7 @@ $(BIN_DIR)/$(IB_NAME).tar.bz2:
 	find $(IB_DIR) -name CVS | xargs rm -rf
 	(cd $(BUILD_DIR); tar c $(IB_NAME) | bzip2 -c > $(BIN_DIR)/$(IB_NAME).tar.bz2)
 
-ifeq ($(BR2_PACKAGE_IMAGEBUILDER),y)
+ifeq ($(CONFIG_PACKAGE_IMAGEBUILDER),y)
 install: $(BIN_DIR)/$(IB_NAME).tar.bz2
 endif
 
