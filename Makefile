@@ -38,6 +38,8 @@ endif
 endif
 export OPENWRTVERSION
 
+all:
+
 .pkginfo: FORCE
 ifeq ($(shell ./scripts/timestamp.pl -p .pkginfo package),package)
 	@echo Collecting package info...

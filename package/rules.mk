@@ -5,19 +5,17 @@ all: compile
 endif
 
 define Build/DefaultTargets
-$(PKG_BUILD_DIR)/.prepared:
-	rm -rf $(PKG_BUILD_DIR)
-	mkdir -p $(PKG_BUILD_DIR)
+$(PKG_BUILD_DIR)/.prepared: FORCE $(DL_DIR)/$(PKG_SOURCE)
+ifeq ($(shell $(SCRIPT_DIR)/timestamp.pl -p $(PKG_BUILD_DIR) .),.)
+	@-rm -rf $(PKG_BUILD_DIR)
+	@mkdir -p $(PKG_BUILD_DIR)
 	$(call Build/Prepare)
-	touch $$@
+	@touch $$@
+endif
 
 $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
 	$(call Build/Configure)
 	touch $$@
-
-ifeq ($(shell $(SCRIPT_DIR)/timestamp.pl -p $(PKG_BUILD_DIR) .),.)
-$(PKG_BUILD_DIR)/.prepared: clean
-endif
 
 $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 	$(call Build/Compile)
@@ -32,8 +30,8 @@ package-recompile:
 
 .PHONY: package-clean package-recompile
 
-define Build/DefaultTargets
-endef
+# define Build/DefaultTargets
+# endef
 endef
 
 define Package/Default
@@ -52,22 +50,18 @@ TITLE:=
 DESCRIPTION:=
 endef
 
+define RequiredField
+ifeq ($$($(1)),)
+$$(error Package/$$(1) is missing the $(1) field)
+endif
+endef
+
 define BuildPackage
 $(eval $(call Package/Default))
 $(eval $(call Package/$(1)))
 
-ifeq ($(TITLE),)
-$$(error Package $(1) has no TITLE)
-endif
-ifeq ($(CATEGORY),)
-$$(error Package $(1) has no CATEGORY)
-endif
-ifeq ($(PRIORITY),)
-$$(error Package $(1) has no PRIORITY)
-endif
-ifeq ($(VERSION),)
-$$(error Package $(1) has no VERSION)
-endif
+$(foreach FIELD, TITLE CATEGORY PRIORITY VERSION, $(eval $(call RequiredField,$(FIELD))))
+
 ifeq ($(PKGARCH),)
 PKGARCH:=$(ARCH)
 endif
@@ -165,18 +159,16 @@ endef
 ifneq ($(strip $(PKG_SOURCE)),)
 $(DL_DIR)/$(PKG_SOURCE):
 	$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(PKG_SOURCE)" "$(PKG_MD5SUM)" $(PKG_SOURCE_URL)
-	
-$(PKG_BUILD_DIR)/.prepared: $(DL_DIR)/$(PKG_SOURCE)
 endif
 
 ifneq ($(strip $(PKG_CAT)),)
 define Build/Prepare/Default
-	if [ "$(PKG_CAT)" = "unzip" ]; then \
+	@if [ "$(PKG_CAT)" = "unzip" ]; then \
 		unzip -d $(PKG_BUILD_DIR) $(DL_DIR)/$(PKG_SOURCE) ; \
 	else \
 		$(PKG_CAT) $(DL_DIR)/$(PKG_SOURCE) | tar -C $(PKG_BUILD_DIR)/.. $(TAR_OPTIONS) - ; \
 	fi						  
-	if [ -d ./patches ]; then \
+	@if [ -d ./patches ]; then \
 		$(PATCH) $(PKG_BUILD_DIR) ./patches ; \
 	fi
 endef
@@ -187,7 +179,7 @@ $(call Build/Prepare/Default)
 endef
 
 define Build/Configure/Default
-	(cd $(PKG_BUILD_DIR); \
+	@(cd $(PKG_BUILD_DIR); \
 	[ -x configure ] && \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \

@@ -5,9 +5,23 @@ endif
 SHELL=/bin/bash
 export SHELL
 
-ifeq ($(V),)
-V=5
+ifdef V
+  ifeq ("$(origin V)", "command line")
+    KBUILD_VERBOSE = $(V)
+  endif
 endif
+ifndef KBUILD_VERBOSE
+  KBUILD_VERBOSE = 0
+endif
+
+ifneq ($(KBUILD_VERBOSE),0)
+  quiet =
+  Q =
+else
+  quiet=quiet_
+  Q = @
+endif
+
 
 CP=cp -fpR
 MAKE1=make
