@@ -6,11 +6,11 @@ my $l1 = '';
 my $l2 = '=y';
 while (<>) {
 	chomp;
-	/^(# )BR2_LARGEFILE(.+)$/ and do {
+	/^(# )CONFIG_LARGEFILE(.+)$/ and do {
 		$l1 = $1;
 		$l2 = $2;
 	};
-	/^(# )?BUSYBOX_(.+)/ and do {
+	/^(# )?CONFIG_BUSYBOX_(.+)/ and do {
 		my $p1 = $1;
 		my $p2 = $2;
 		$p2 =~ /(CONFIG_LFS|FDISK_SUPPORT_LARGE_DISKS)/ and do {
