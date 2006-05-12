@@ -74,7 +74,7 @@ config LINUX_2_6_AU1000
 	  Build firmware for AMD Alchemy 1500 boards
 	  (e.g. 4G-Systems Mesh/Access Cube ...)
 
-if CONFIG_DEVEL
+if DEVEL
 
 config LINUX_2_6_ARM
 	bool "UNSUPPORTED little-endian arm platform"
@@ -195,7 +195,7 @@ config ARCH
 	default "i386"    if i386
 	default "m68k"    if m68k
 	default "mips"    if mips
-	default "mipsel"  if mipsel || !CONFIG_DEVEL
+	default "mipsel"  if mipsel || !DEVEL
 	default "powerpc" if powerpc
 	default "sh3"     if sh3
 	default "sh3eb"   if sh3eb

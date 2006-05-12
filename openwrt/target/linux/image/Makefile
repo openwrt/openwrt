@@ -2,15 +2,15 @@ include $(TOPDIR)/rules.mk
 
 KDIR:=$(BUILD_DIR)/linux-$(KERNEL)-$(BOARD)
 
-ifeq ($(BR2_TARGET_ROOTFS_JFFS2),y)
+ifeq ($(CONFIG_TARGET_ROOTFS_JFFS2),y)
 include ./jffs2.mk
 endif
 
-ifeq ($(BR2_TARGET_ROOTFS_SQUASHFS_LZMA),y)
+ifeq ($(CONFIG_TARGET_ROOTFS_SQUASHFS_LZMA),y)
 include ./squashfs.mk
 endif
 
-ifeq ($(BR2_TARGET_ROOTFS_TGZ),y)
+ifeq ($(CONFIG_TARGET_ROOTFS_TGZ),y)
 include ./tgz.mk
 endif
 

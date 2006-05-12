@@ -27,7 +27,7 @@ $(BIN_DIR)/$(SDK_NAME).tar.bz2:
 	$(CP) ./files/README.SDK $(SDK_BUILD_DIR)/
 	$(CP) ./files/depend.mk $(SDK_BUILD_DIR)/package/
 	$(CP) $(TOPDIR)/package/rules.mk $(SDK_BUILD_DIR)/package/
-	egrep '^BR2_(ARCH|WGET|STAGING|JLEVEL|LARGEFILE|TARGET_OPT)' $(TOPDIR)/.config > $(SDK_BUILD_DIR)/.config
+	egrep '^CONFIG_(ARCH|WGET|STAGING|JLEVEL|LARGEFILE|TARGET_OPT)' $(TOPDIR)/.config > $(SDK_BUILD_DIR)/.config
 	find $(SDK_BUILD_DIR) -name .svn | xargs rm -rf 
 	find $(SDK_BUILD_DIR) -name CVS | xargs rm -rf 
 	(cd $(BUILD_DIR); \

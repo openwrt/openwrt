@@ -1,7 +1,7 @@
-config BR2_PACKAGE_KMOD_SHFS
+config PACKAGE_KMOD_SHFS
 	prompt "kmod-shfs......................... Shell FileSystem kernel module (ShFS) kernel module"
 	tristate
-	default m if CONFIG_DEVEL
+	default m if DEVEL
 	help
 	  ShFS is a simple and easy to use Linux kernel module which 
 	  allows you to mount remote filesystems using a plain shell 

@@ -26,10 +26,10 @@ endif
 
 BUS := PCI
 
-ifneq ($(BR2_LINUX_2_4_AR531X),)
+ifneq ($(CONFIG_LINUX_2_4_AR531X),)
 	BUS := AHB
 endif
-# ifneq ($(BR2_LINUX_2_6_ARUBA),)
+# ifneq ($(CONFIG_LINUX_2_6_ARUBA),)
 #      BUS := PCI AHB  # no suitable HAL for AHB yet.
 # endif
 

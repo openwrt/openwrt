@@ -1,8 +1,8 @@
-config BR2_PACKAGE_KMOD_UEAGLE_ATM
+config PACKAGE_KMOD_UEAGLE_ATM
 	prompt "kmod-ueagle-atm.................... Kernel driver for Eagle 8051 based USB ADSL modems"
 	tristate
-	depends BR2_LINUX_2_6_BRCM
-	default m if CONFIG_DEVEL
+	depends LINUX_2_6_BRCM
+	default m if DEVEL
 	help
 	  Kernel driver for Eagle 8051 USB ADSL modems
 	  

@@ -1,8 +1,8 @@
-config BR2_PACKAGE_KMOD_ZD1211
+config PACKAGE_KMOD_ZD1211
 	prompt "kmod-zd12111...................... Driver for Zydas 1211 based devices"
 	tristate
-	depends BR2_LINUX_2_6
-	default m if CONFIG_DEVEL
+	depends LINUX_2_6
+	default m if DEVEL
 	help
 	  Linux driver for the ZyDAS ZD1211 802.11b/g USB-WLAN-Chip. 
 	  Initially contributed by ZyDAS, this driver is actively maintained 

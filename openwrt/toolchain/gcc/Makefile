@@ -37,10 +37,10 @@ GCC_STRIP_HOST_BINARIES:=true
 #
 #############################################################
 
-ifeq ($(BR2_INSTALL_LIBGCJ),y)
+ifeq ($(CONFIG_INSTALL_LIBGCJ),y)
 TARGET_LANGUAGES:=c,c++,java
 else
-ifeq ($(BR2_INSTALL_LIBSTDCPP),y)
+ifeq ($(CONFIG_INSTALL_LIBSTDCPP),y)
 TARGET_LANGUAGES:=c,c++
 else
 TARGET_LANGUAGES:=c
@@ -71,7 +71,7 @@ $(GCC_DIR)/.patched: $(GCC_DIR)/.unpacked
 	# We can dispense with the custom spec files, as well as libfloat for the arm case.
 	# However, we still need a patch for arm.  There's a similar patch for gcc 3.3.x
 	# which needs to be integrated so we can kill of libfloat for good.
-ifeq ($(BR2_SOFT_FLOAT),y)
+ifeq ($(CONFIG_SOFT_FLOAT),y)
 ifeq ("$(strip $(ARCH))","arm")
 	$(SCRIPT_DIR)/patch-kernel.sh $(GCC_DIR) ./$(GCC_VERSION) arm-softfloat.patch.conditional
 endif
@@ -175,7 +175,7 @@ gcc-install: $(GCC_BUILD_DIR2)/.compiled
 	#
 	# Now for the ugly 3.3.x soft float hack...
 	#
-ifeq ($(BR2_SOFT_FLOAT),y)
+ifeq ($(CONFIG_SOFT_FLOAT),y)
 ifeq ($(findstring 3.3.,$(GCC_VERSION)),3.3.)
 	# Make sure we have a soft float specs file for this arch
 	if [ ! -f ./$(GCC_VERSION)/specs-$(ARCH)-soft-float ] ; then \
