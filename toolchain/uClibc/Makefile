@@ -6,10 +6,10 @@ include $(TOPDIR)/rules.mk
 #
 #############################################################
 
-ifeq ($(BR2_UCLIBC_VERSION_SNAPSHOT),y)
+ifeq ($(CONFIG_UCLIBC_VERSION_SNAPSHOT),y)
 # Be aware that this changes daily....
 UCLIBC_DIR:=$(TOOL_BUILD_DIR)/uClibc
-UCLIBC_SOURCE:=uClibc-$(strip $(subst ",, $(BR2_USE_UCLIBC_SNAPSHOT))).tar.bz2
+UCLIBC_SOURCE:=uClibc-$(strip $(subst ",, $(CONFIG_USE_UCLIBC_SNAPSHOT))).tar.bz2
 #"
 UCLIBC_SITE:=http://www.uclibc.org/downloads/snapshots
 UCLIBC_VER:=PKG_VERSION:=0.${shell date +"%G%m%d"}
@@ -50,13 +50,13 @@ $(UCLIBC_DIR)/.configured: $(UCLIBC_DIR)/.unpacked
 	$(CP) ./files/config.$(ARCH) $(UCLIBC_DIR)/.config
 	$(SED) 's,^KERNEL_SOURCE=.*,KERNEL_SOURCE=\"$(LINUX_HEADERS_DIR)\",g' \
 		$(UCLIBC_DIR)/.config
-ifeq ($(BR2_LARGEFILE),y)
+ifeq ($(CONFIG_LARGEFILE),y)
 	$(SED) 's,^.*UCLIBC_HAS_LFS.*,UCLIBC_HAS_LFS=y,g' $(UCLIBC_DIR)/.config
 else
 	$(SED) 's,^.*UCLIBC_HAS_LFS.*,UCLIBC_HAS_LFS=n,g' $(UCLIBC_DIR)/.config
 endif
 	$(SED) 's,.*UCLIBC_HAS_WCHAR.*,UCLIBC_HAS_WCHAR=y,g' $(UCLIBC_DIR)/.config
-ifeq ($(BR2_SOFT_FLOAT),y)
+ifeq ($(CONFIG_SOFT_FLOAT),y)
 	$(SED) 's,.*HAS_FPU.*,HAS_FPU=n\nUCLIBC_HAS_FLOATS=y\nUCLIBC_HAS_SOFT_FLOAT=y,g' $(UCLIBC_DIR)/.config
 endif
 	mkdir -p $(TOOL_BUILD_DIR)/uClibc_dev/usr/include

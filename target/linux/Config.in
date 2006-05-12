@@ -1,19 +1,19 @@
 menu "Target Root Filesystem"
 
-	config BR2_TARGET_ROOTFS_JFFS2
+	config TARGET_ROOTFS_JFFS2
 		bool "jffs2"
 		default y
 		help
 		  Build a jffs2 root filesystem
 
-	config BR2_TARGET_ROOTFS_SQUASHFS_LZMA
+	config TARGET_ROOTFS_SQUASHFS_LZMA
 		bool "squashfs-lzma"
 		default y
-		depends !BR2_LINUX_2_6_ARUBA
+		depends !LINUX_2_6_ARUBA
 		help
 		  Build a squashfs-lzma root filesystem
 
-	config BR2_TARGET_ROOTFS_TGZ
+	config TARGET_ROOTFS_TGZ
 		bool "tgz"
 		default y
 		help
@@ -25,88 +25,90 @@ menu "Kernel Configuration / Device Support"
 
 comment "Device specific configuration"
 
+source "target/linux/*-2.[46]/Config.in"
+
 comment "Kernel modules"
 
 menu "Networking modules"
 
-config BR2_PACKAGE_KMOD_ATM
+config PACKAGE_KMOD_ATM
 	prompt "kmod-atm.......................... ATM support"
 	tristate
-	default y if BR2_LINUX_2_4_AR7
+	default y if LINUX_2_4_AR7
 	default m
 	help
 	  ATM support
 
-config BR2_PACKAGE_KMOD_GRE
+config PACKAGE_KMOD_GRE
 	prompt "kmod-gre.......................... GRE tunneling driver"
 	tristate
 	default m
 	help
 	  Kernel support for GRE tunnels
 	
-config BR2_PACKAGE_KMOD_IMQ
+config PACKAGE_KMOD_IMQ
         prompt "kmod-imq.......................... Intermediate Queueing device"
         tristate
         default m
         help
           Kernel support for the Intermediate Queueing device
 
-config BR2_PACKAGE_KMOD_IPV6
+config PACKAGE_KMOD_IPV6
 	prompt "kmod-ipv6......................... IPv6 support"
 	tristate
 	default m
 	help
 	  Kernel modules for IPv6 protocol support
 
-config BR2_PACKAGE_KMOD_PPP
+config PACKAGE_KMOD_PPP
 	prompt "kmod-ppp.......................... PPP support"
 	tristate
 	default m
 	help
 	  Kernel support for PPP
 
-config BR2_PACKAGE_KMOD_MPPE
+config PACKAGE_KMOD_MPPE
 	prompt   "kmod-mppe....................... PPP MPPE/MPPC module"
 	tristate
 	default m
-	depends BR2_PACKAGE_KMOD_PPP
-	select BR2_PACKAGE_KMOD_CRYPTO
+	depends PACKAGE_KMOD_PPP
+	select PACKAGE_KMOD_CRYPTO
 	help
 	  Support for Microsoft PPP Encryption/Compression
 
-config BR2_PACKAGE_KMOD_PPPOATM
+config PACKAGE_KMOD_PPPOATM
 	prompt   "kmod-pppoatm.................... PPPoA (PPP over ATM) kernel support"
 	tristate
-	default y if BR2_LINUX_2_4_AR7
+	default y if LINUX_2_4_AR7
 	default m
-	depends BR2_PACKAGE_KMOD_PPP
-	select BR2_PACKAGE_KMOD_ATM
+	depends PACKAGE_KMOD_PPP
+	select PACKAGE_KMOD_ATM
 	help
 	  Support for PPP over ATM
 
-config BR2_PACKAGE_KMOD_PPPOE
+config PACKAGE_KMOD_PPPOE
 	prompt   "kmod-pppoe...................... PPPoE (PPP over Ethernet) kernel support"
 	tristate
 	default m
-	depends BR2_PACKAGE_KMOD_PPP
+	depends PACKAGE_KMOD_PPP
 	help
 	  Support for PPP over Ethernet
 
-config BR2_PACKAGE_KMOD_RING
+config PACKAGE_KMOD_RING
 	prompt "kmod-ring......................... PF Ring"
 	tristate
 	default m
 	help
 	  PF Ring
 
-config BR2_PACKAGE_KMOD_SCHED
+config PACKAGE_KMOD_SCHED
 	prompt "kmod-sched........................ Traffic schedulers"
 	tristate
 	default m
 	help
 	  Kernel schedulers for IP traffic
 
-config BR2_PACKAGE_KMOD_TUN
+config PACKAGE_KMOD_TUN
 	prompt "kmod-tun.......................... Universal TUN/TAP driver"
 	tristate
 	default m
@@ -117,44 +119,44 @@ endmenu
 
 menu "Filtering/Firewalling"
 
-config BR2_PACKAGE_KMOD_ARPTABLES
+config PACKAGE_KMOD_ARPTABLES
 	prompt "kmod-arptables.................... ARP firewalling support"
 	tristate
 	default m
 	help
 	  Kernel modules for ARP firewalling
 
-config BR2_PACKAGE_KMOD_EBTABLES
+config PACKAGE_KMOD_EBTABLES
 	prompt "kmod-ebtables..................... Ethernet Bridge firewalling support"
 	tristate
 	default m
 	help
 	  Kernel modules for bridge firewalling
 
-config BR2_PACKAGE_KMOD_IPTABLES
+config PACKAGE_KMOD_IPTABLES
 	prompt "kmod-iptables..................... Core Netfilter modules for IPv4 firewalling"
 	tristate
 	default y
 	help
 	  Kernel modules for IPv4 firewalling
 
-config BR2_PACKAGE_KMOD_IPTABLES_EXTRA
+config PACKAGE_KMOD_IPTABLES_EXTRA
 	prompt "kmod-iptables-extra............... Extra Netfilter modules for IPv4 firewalling (meta-package)"
 	tristate
 	default m
-	select BR2_PACKAGE_KMOD_IPT_CONNTRACK
-	select BR2_PACKAGE_KMOD_IPT_FILTER
-	select BR2_PACKAGE_KMOD_IPT_IPOPT
-	select BR2_PACKAGE_KMOD_IPT_IPSEC
-	select BR2_PACKAGE_KMOD_IPT_NAT
-	select BR2_PACKAGE_KMOD_IPT_NAT_EXTRA
-	select BR2_PACKAGE_KMOD_IPT_QUEUE
-	select BR2_PACKAGE_KMOD_IPT_ULOG
-	select BR2_PACKAGE_KMOD_IPT_EXTRA
+	select PACKAGE_KMOD_IPT_CONNTRACK
+	select PACKAGE_KMOD_IPT_FILTER
+	select PACKAGE_KMOD_IPT_IPOPT
+	select PACKAGE_KMOD_IPT_IPSEC
+	select PACKAGE_KMOD_IPT_NAT
+	select PACKAGE_KMOD_IPT_NAT_EXTRA
+	select PACKAGE_KMOD_IPT_QUEUE
+	select PACKAGE_KMOD_IPT_ULOG
+	select PACKAGE_KMOD_IPT_EXTRA
 	help
 	  Extra Netfilter kernel modules for IPv4 firewalling (meta-package)
 
-config BR2_PACKAGE_KMOD_IPT_CONNTRACK
+config PACKAGE_KMOD_IPT_CONNTRACK
 	prompt "kmod-ipt-conntrack................ Netfilter modules for connection tracking"
 	tristate
 	default m
@@ -166,7 +168,7 @@ config BR2_PACKAGE_KMOD_IPT_CONNTRACK
 	    * ipt_helper
 	    * ipt_connmark/CONNMARK
 
-config BR2_PACKAGE_KMOD_IPT_FILTER
+config PACKAGE_KMOD_IPT_FILTER
 	prompt "kmod-ipt-filter................... Netfilter modules for packet content inspection"
 	tristate
 	default m
@@ -177,7 +179,7 @@ config BR2_PACKAGE_KMOD_IPT_FILTER
 	    * ipt_ipp2p
 	    * ipt_layer7
 
-config BR2_PACKAGE_KMOD_IPT_IPOPT
+config PACKAGE_KMOD_IPT_IPOPT
 	prompt "kmod-ipt-ipopt.................... Netfilter modules for matching/changing IP packet options"
 	tristate
 	default m
@@ -194,7 +196,7 @@ config BR2_PACKAGE_KMOD_IPT_IPOPT
 	    * ipt_ttl/TTL
 	    * ipt_unclean
 
-config BR2_PACKAGE_KMOD_IPT_IPSEC
+config PACKAGE_KMOD_IPT_IPSEC
 	prompt "kmod-ipt-ipsec.................... Netfilter modules for matching IPsec packets"
 	tristate
 	default m
@@ -205,7 +207,7 @@ config BR2_PACKAGE_KMOD_IPT_IPSEC
 	    * ipt_ah
 	    * ipt_esp
 
-config BR2_PACKAGE_KMOD_IPT_NAT
+config PACKAGE_KMOD_IPT_NAT
 	prompt "kmod-ipt-nat...................... Netfilter modules for different NAT targets"
 	tristate
 	default m
@@ -215,7 +217,7 @@ config BR2_PACKAGE_KMOD_IPT_NAT
 	  Includes: 
 	    * ipt_REDIRECT
 
-config BR2_PACKAGE_KMOD_IPT_NAT_EXTRA
+config PACKAGE_KMOD_IPT_NAT_EXTRA
 	prompt "kmod-ipt-nat-extra................ Extra Netfilter NAT modules for special protocols"
 	tristate
 	default m
@@ -233,7 +235,7 @@ config BR2_PACKAGE_KMOD_IPT_NAT_EXTRA
 	    * ip_nat_snmp_basic
 	    * ip_conntrack_tftp
 
-config BR2_PACKAGE_KMOD_IPT_QUEUE
+config PACKAGE_KMOD_IPT_QUEUE
 	prompt "kmod-ipt-queue.................... Netfilter module for user-space packet queueing"
 	tristate
 	default m
@@ -243,7 +245,7 @@ config BR2_PACKAGE_KMOD_IPT_QUEUE
 	  Includes:
 	    * ipt_QUEUE
 
-config BR2_PACKAGE_KMOD_IPT_ULOG
+config PACKAGE_KMOD_IPT_ULOG
 	prompt "kmod-ipt-ulog..................... Netfilter module for user-space packet logging"
 	tristate
 	default m
@@ -253,7 +255,7 @@ config BR2_PACKAGE_KMOD_IPT_ULOG
 	  Includes:
 	    * ipt_ULOG
 
-config BR2_PACKAGE_KMOD_IPT_EXTRA
+config PACKAGE_KMOD_IPT_EXTRA
 	prompt "kmod-ipt-extra.................... Other extra Netfilter modules"
 	tristate
 	default m
@@ -267,11 +269,11 @@ config BR2_PACKAGE_KMOD_IPT_EXTRA
 	    * ipt_pkttype
 	    * ipt_recent
 
-config BR2_PACKAGE_KMOD_IP6TABLES
+config PACKAGE_KMOD_IP6TABLES
 	prompt "kmod-ip6tables.................... Kernel modules for ip6tables"
 	tristate
 	default m
-	depends BR2_PACKAGE_KMOD_IPV6
+	depends PACKAGE_KMOD_IPV6
 	help
 	  IPv6 firewalling support
 
@@ -279,11 +281,11 @@ endmenu
 
 menu "Block devices support"
 
-config BR2_PACKAGE_KMOD_IDE
+config PACKAGE_KMOD_IDE
 	prompt "kmod-ide.......................... IDE support"
 	tristate
 	default m
-	depends BR2_LINUX_2_4_X86 || BR2_LINUX_2_6_X86 || BR2_LINUX_2_4_BRCM || BR2_LINUX_2_6_BRCM
+	depends LINUX_2_4_X86 || LINUX_2_6_X86 || LINUX_2_4_BRCM || LINUX_2_6_BRCM
 	help
 	  Kernel modules for IDE support
 	  useful for usb mass storage devices (e.g. on WL-HDD)
@@ -292,16 +294,16 @@ config BR2_PACKAGE_KMOD_IDE
 	    - ide-core
 	    - ide-detect
 	    - ide-disk
-	    - pdc202xx_old
+	    - pdc202old
 
-config BR2_PACKAGE_KMOD_LOOP
+config PACKAGE_KMOD_LOOP
 	prompt "kmod-loop......................... Loop mount support"
 	tristate
 	default m
 	help
 	  Kernel module for loop mount support
 
-config BR2_PACKAGE_KMOD_NBD
+config PACKAGE_KMOD_NBD
 	prompt "kmod-nbd.......................... Network Block Device"
 	tristate
 	default m
@@ -310,45 +312,45 @@ config BR2_PACKAGE_KMOD_NBD
 
 endmenu
 
-config BR2_PACKAGE_KMOD_CRYPTO
+config PACKAGE_KMOD_CRYPTO
 	prompt "CryptoAPI modules"
 	tristate
 	default m
-	select BUSYBOX_CONFIG_FEATURE_CHECK_TAINTED_MODULE
+	select BUSYBOX_FEATURE_CHECK_TAINTED_MODULE
 	help
 	  Kernel modules for cryptographic algorithms
 
 menu "Filesystems support"
 
-config BR2_PACKAGE_KMOD_FS_CIFS
+config PACKAGE_KMOD_FS_CIFS
 	prompt "kmod-fs-cifs...................... CIFS support"
 	tristate
 	default m
 	help
 	  Kernel modules for CIFS support
 
-config BR2_PACKAGE_KMOD_FS_EXT2
+config PACKAGE_KMOD_FS_EXT2
 	prompt "kmod-fs-ext2...................... EXT2 filesystem support"
 	tristate
 	default m
 	help
 	  Kernel modules for EXT2 filesystem support
 
-config BR2_PACKAGE_KMOD_FS_EXT3
+config PACKAGE_KMOD_FS_EXT3
 	prompt "kmod-fs-ext3...................... EXT3 filesystem support"
 	tristate
 	default m
 	help
 	  Kernel modules for EXT3 filesystem support
 
-config BR2_PACKAGE_KMOD_FS_HFSPLUS
+config PACKAGE_KMOD_FS_HFSPLUS
 	prompt "kmod-fs-hfsplus................... HFS+ filesystem support"
 	tristate
 	default m
 	help
 	  Kernel modules for HFS+ filesystem support
 
-config BR2_PACKAGE_KMOD_FS_NFS
+config PACKAGE_KMOD_FS_NFS
 	prompt "kmod-fs-nfs....................... NFS support"
 	tristate
 	default m
@@ -356,7 +358,7 @@ config BR2_PACKAGE_KMOD_FS_NFS
 	  Kernel modules for NFS support
 	  Includes lockd, nfs and sunrpc
 
-config BR2_PACKAGE_KMOD_FS_VFAT
+config PACKAGE_KMOD_FS_VFAT
 	prompt "kmod-fs-vfat...................... VFAT filesystem support"
 	tristate
 	default m
@@ -364,7 +366,7 @@ config BR2_PACKAGE_KMOD_FS_VFAT
 	  Kernel modules for VFAT filesystem support
 	  useful for usb mass storage devices
 
-config BR2_PACKAGE_KMOD_FS_XFS
+config PACKAGE_KMOD_FS_XFS
 	prompt "kmod-fs-xfs....................... XFS filesystem support"
 	tristate
 	default m
@@ -375,13 +377,13 @@ endmenu
 
 menu "Multimedia devices support"
 
-config BR2_PACKAGE_KMOD_PWC
+config PACKAGE_KMOD_PWC
 	prompt "kmod-pwc.......................... Kernel driver for USB Philips Cameras"
 	tristate
-	depends BR2_PACKAGE_KMOD_USB
+	depends PACKAGE_KMOD_USB
 	default m
 
-config BR2_PACKAGE_KMOD_SOUNDCORE
+config PACKAGE_KMOD_SOUNDCORE
 	prompt "kmod-soundcore.................... Soundcard support"
 	tristate
 	default n
@@ -389,7 +391,7 @@ config BR2_PACKAGE_KMOD_SOUNDCORE
 	  Base support for soundcards
 	  Requires either USB soundcard support (OSS) or ALSA package to be useful
 
-config BR2_PACKAGE_KMOD_VIDEODEV
+config PACKAGE_KMOD_VIDEODEV
 	prompt "kmod-videodev..................... Video (For Linux) kernel support"
 	tristate
 	default m
@@ -398,62 +400,62 @@ endmenu
 
 menu "Native Language support"
 
-config BR2_PACKAGE_KMOD_NLS_BASE
+config PACKAGE_KMOD_NLS_BASE
 	prompt "kmod-nls-base..................... Native Language support"
 	tristate
 	default m
 	help
 	  Kernel native language support
 
-config BR2_PACKAGE_KMOD_NLS_CP437
+config PACKAGE_KMOD_NLS_CP437
 	prompt   "kmod-nls-cp437.................. Codepage 437 (United States, Canada)"
 	tristate
 	default m
-	depends BR2_PACKAGE_KMOD_NLS_BASE
+	depends PACKAGE_KMOD_NLS_BASE
 	help
 	  Kernel native language support
 
-config BR2_PACKAGE_KMOD_NLS_CP850
+config PACKAGE_KMOD_NLS_CP850
 	prompt   "kmod-nls-cp850.................. Codepage 850 (Europe)"
 	tristate
 	default m
-	depends BR2_PACKAGE_KMOD_NLS_BASE
+	depends PACKAGE_KMOD_NLS_BASE
 	help
 	  Kernel native language support
 
-config BR2_PACKAGE_KMOD_NLS_ISO8859_1
+config PACKAGE_KMOD_NLS_ISO8859_1
 	prompt   "kmod-nls-iso8859-1.............. NLS ISO 8859-1 (Latin 1; Western European Languages)"
 	tristate
 	default m
-	depends BR2_PACKAGE_KMOD_NLS_BASE
+	depends PACKAGE_KMOD_NLS_BASE
 	help
 	  Kernel native language support
 
-config BR2_PACKAGE_KMOD_NLS_ISO8859_15
+config PACKAGE_KMOD_NLS_ISO8859_15
 	prompt   "kmod-nls-iso8859-15............. NLS ISO 8859-15 (Latin 15; Western European Languages with Euro)"
 	tristate
 	default m
-	depends BR2_PACKAGE_KMOD_NLS_BASE
+	depends PACKAGE_KMOD_NLS_BASE
 	help
 	  Kernel native language support
 
-config BR2_PACKAGE_KMOD_NLS_UTF8
+config PACKAGE_KMOD_NLS_UTF8
 	prompt   "kmod-nls-utf8................... NLS UTF8"
 	tristate
 	default m
-	depends BR2_PACKAGE_KMOD_NLS_BASE
+	depends PACKAGE_KMOD_NLS_BASE
 	help
 	  Kernel native language support
 
 endmenu
 
 menu "Network devices support"
-	depends BR2_LINUX_2_4_X86 || BR2_LINUX_2_6_X86
+	depends LINUX_2_4_X86 || LINUX_2_6_X86
 
-config BR2_PACKAGE_KMOD_NET_3C59X
+config PACKAGE_KMOD_NET_3C59X
 	prompt "kmod-net-3c59x.................... 3Com 3c590/3c900 series (592/595/597) \"Vortex/Boomerang\" Ethernet kernel support"
 	tristate
-	depends BR2_LINUX_2_4_X86 || BR2_LINUX_2_6_X86
+	depends LINUX_2_4_X86 || LINUX_2_6_X86
 	default m
 	help
 	  This option enables driver support for a large number of 10mbps and 
@@ -465,19 +467,19 @@ config BR2_PACKAGE_KMOD_NET_3C59X
 	   * "Tornado"   (3c905)                                  PCI
 	   * "Hurricane" (3c555/3cSOHO)                           PCI
 
-config BR2_PACKAGE_KMOD_NET_8139TOO
+config PACKAGE_KMOD_NET_8139TOO
 	prompt "kmod-net-8139too.................. RealTek RTL-8139 PCI Fast Ethernet Adapter kernel support"
 	tristate
-	depends BR2_LINUX_2_4_X86 || BR2_LINUX_2_6_X86
+	depends LINUX_2_4_X86 || LINUX_2_6_X86
 	default m
 	help
 	  This is a driver for the Fast Ethernet PCI network cards based on 
 	  the RTL8139 chips.
 
-config BR2_PACKAGE_KMOD_NET_AIRO
+config PACKAGE_KMOD_NET_AIRO
 	prompt "kmod-net-airo..................... Cisco/Aironet 34X/35X/4500/4800 ISA and PCI cards kernel support"
 	tristate
-	depends BR2_LINUX_2_4_X86 || BR2_LINUX_2_6_X86
+	depends LINUX_2_4_X86 || LINUX_2_6_X86
 	default m
 	help
 	  This is the standard Linux driver to support Cisco/Aironet ISA and 
@@ -490,18 +492,18 @@ config BR2_PACKAGE_KMOD_NET_AIRO
 	  and Cisco proprietary API, so both the Linux Wireless Tools and the 
 	  Cisco Linux utilities can be used to configure the card.
 
-config BR2_PACKAGE_KMOD_NET_E100
+config PACKAGE_KMOD_NET_E100
 	prompt "kmod-net-e100..................... Intel(R) PRO/100+ cards kernel support"
 	tristate
-	depends BR2_LINUX_2_4_X86 || BR2_LINUX_2_6_X86
+	depends LINUX_2_4_X86 || LINUX_2_6_X86
 	default m
 	help
 	  Intel(R) PRO/100+ cards kernel support
 
-config BR2_PACKAGE_KMOD_NET_HERMES
+config PACKAGE_KMOD_NET_HERMES
 	prompt "kmod-net-hermes................... Hermes chipset 802.11b support (Orinoco/Prism2/Symbol) kernel support"
 	tristate
-	depends BR2_LINUX_2_4_X86 || BR2_LINUX_2_6_X86
+	depends LINUX_2_4_X86 || LINUX_2_6_X86
 	default m
 	help
 	  A driver for 802.11b wireless cards based based on the "Hermes" or 
@@ -514,11 +516,11 @@ config BR2_PACKAGE_KMOD_NET_HERMES
 	  MA401, LinkSys WPC-11, D-Link DWL-650, 3Com AirConnect, Intel 
 	  PRO/Wireless, and Symbol Spectrum24 High Rate amongst others.
 
-config BR2_PACKAGE_KMOD_NET_HERMES_PCI
+config PACKAGE_KMOD_NET_HERMES_PCI
 	prompt   "kmod-net-hermes-pci............. Intersil Prism 2.5 PCI 802.11b adaptor support"
 	tristate
 	default m
-	depends BR2_PACKAGE_KMOD_NET_HERMES
+	depends PACKAGE_KMOD_NET_HERMES
 	help
 	  Enable support for PCI and mini-PCI 802.11b wireless NICs based on 
 	  the Prism 2.5 chipset.  These are true PCI cards, not the 802.11b 
@@ -526,11 +528,11 @@ config BR2_PACKAGE_KMOD_NET_HERMES_PCI
 	  common.  Some of the built-in wireless adaptors in laptops are of 
 	  this variety.
 
-config BR2_PACKAGE_KMOD_NET_HERMES_PLX
+config PACKAGE_KMOD_NET_HERMES_PLX
 	prompt   "kmod-net-hermes-plx............. Hermes in PLX9052 based PCI adaptor (Netgear MA301, etc.) kernel support"
 	tristate
 	default m
-	depends BR2_PACKAGE_KMOD_NET_HERMES
+	depends PACKAGE_KMOD_NET_HERMES
 	help
 	  Enable support for PCMCIA cards supported by the "Hermes" (aka 
 	  orinoco_cs) driver when used in PLX9052 based PCI adaptors.  These 
@@ -539,20 +541,20 @@ config BR2_PACKAGE_KMOD_NET_HERMES_PLX
 	  802.11b PCMCIA cards can be used in desktop machines.  The Netgear 
 	  MA301 is such an adaptor.
 
-config BR2_PACKAGE_KMOD_NET_NATSEMI
+config PACKAGE_KMOD_NET_NATSEMI
 	prompt "kmod-net-natsemi.................. National Semiconductor DP8381x series PCI Ethernet kernel support"
 	tristate
-	depends BR2_LINUX_2_4_X86 || BR2_LINUX_2_6_X86
+	depends LINUX_2_4_X86 || LINUX_2_6_X86
 	default m
 	help
 	  This driver is for the National Semiconductor DP83810 series, 
 	  which is used in cards from PureData, NetGear, Linksys 
 	  and others, including the 83815 chip.
 
-config BR2_PACKAGE_KMOD_NET_PRISM54
+config PACKAGE_KMOD_NET_PRISM54
 	prompt "kmod-net-prism54.................. Intersil Prism GT/Duette/Indigo PCI/PCMCIA cards kernel support"
 	tristate
-	depends BR2_LINUX_2_4_X86 || BR2_LINUX_2_6_X86 || BR2_LINUX_2_4_BRCM || BR2_LINUX_2_6_BRCM
+	depends LINUX_2_4_X86 || LINUX_2_6_X86 || LINUX_2_4_BRCM || LINUX_2_6_BRCM
 	default m
 	help
 	  Enable PCI and Cardbus support for the following chipset based cards: 
@@ -591,135 +593,135 @@ config BR2_PACKAGE_KMOD_NET_PRISM54
 endmenu
 
 menu "PCMCIA/CardBus support"
-	depends BR2_LINUX_2_4_X86 || BR2_LINUX_2_6_X86 || BR2_LINUX_2_4_BRCM || BR2_LINUX_2_6_BRCM
+	depends LINUX_2_4_X86 || LINUX_2_6_X86 || LINUX_2_4_BRCM || LINUX_2_6_BRCM
 
-config BR2_PACKAGE_KMOD_PCMCIA_CORE
+config PACKAGE_KMOD_PCMCIA_CORE
 	prompt "kmod-pcmcia-core.................. PCMCIA/CardBus support"
-	depends BR2_LINUX_PCMCIA_SUPPORT
+	depends LINUX_PCMCIA_SUPPORT
 	tristate
-	depends BR2_LINUX_2_4_X86 || BR2_LINUX_2_6_X86 || BR2_LINUX_2_4_BRCM || BR2_LINUX_2_6_BRCM
+	depends LINUX_2_4_X86 || LINUX_2_6_X86 || LINUX_2_4_BRCM || LINUX_2_6_BRCM
 	default m
 
-config BR2_PACKAGE_KMOD_PCMCIA_SERIAL
+config PACKAGE_KMOD_PCMCIA_SERIAL
 	prompt   "kmod-pcmcia-serial.............. PCMCIA/CardBus serial device support"
 	tristate
 	default m
-	depends BR2_PACKAGE_KMOD_PCMCIA_CORE
+	depends PACKAGE_KMOD_PCMCIA_CORE
 
 endmenu
 
 menu "USB support"
 
-config BR2_PACKAGE_KMOD_USB
+config PACKAGE_KMOD_USB
 	prompt "kmod-usb-core..................... USB support"
 	tristate
-	default n if BR2_LINUX_2_4_AR531X
+	default n if LINUX_2_4_AR531X
 	default m
 
-config BR2_PACKAGE_KMOD_USB_UHCI 
+config PACKAGE_KMOD_USB_UHCI 
 	prompt   "kmod-usb-uhci................... Support for UHCI controllers"
 	tristate
-	default n if BR2_LINUX_2_6_AU1000
-	depends BR2_PACKAGE_KMOD_USB
-	select BR2_PACKAGE_KMOD_USB_CONTROLLER
+	default n if LINUX_2_6_AU1000
+	depends PACKAGE_KMOD_USB
+	select PACKAGE_KMOD_USB_CONTROLLER
 
-config BR2_PACKAGE_KMOD_USB_OHCI
+config PACKAGE_KMOD_USB_OHCI
 	prompt   "kmod-usb-ohci................... Support for OHCI controllers"
 	tristate
 	default m
-	depends BR2_PACKAGE_KMOD_USB
-	select BR2_PACKAGE_KMOD_USB_CONTROLLER
+	depends PACKAGE_KMOD_USB
+	select PACKAGE_KMOD_USB_CONTROLLER
 
-config BR2_PACKAGE_KMOD_USB2
+config PACKAGE_KMOD_USB2
 	prompt   "kmod-usb2....................... Support for USB 2.0 controllers"
 	tristate
-	default n if BR2_LINUX_2_6_AU1000
-	depends BR2_PACKAGE_KMOD_USB
-	select BR2_PACKAGE_KMOD_USB_CONTROLLER
+	default n if LINUX_2_6_AU1000
+	depends PACKAGE_KMOD_USB
+	select PACKAGE_KMOD_USB_CONTROLLER
 
-config BR2_PACKAGE_KMOD_USB_CONTROLLER
+config PACKAGE_KMOD_USB_CONTROLLER
 	tristate
-	depends on BR2_PACKAGE_KMOD_USB_UHCI || BR2_PACKAGE_KMOD_USB_OHCI || BR2_PACKAGE_KMOD_USB2
+	depends on PACKAGE_KMOD_USB_UHCI || PACKAGE_KMOD_USB_OHCI || PACKAGE_KMOD_USB2
 	default n
 
-config BR2_PACKAGE_KMOD_USB_ACM
+config PACKAGE_KMOD_USB_ACM
 	prompt "kmod-usb-acm...................... Support for USB modems/isdn controllers"
 	tristate
 	default m
-	depends BR2_PACKAGE_KMOD_USB_CONTROLLER
+	depends PACKAGE_KMOD_USB_CONTROLLER
 
-config BR2_PACKAGE_KMOD_USB_AUDIO
+config PACKAGE_KMOD_USB_AUDIO
 	prompt "kmod-usb-audio.................... Support for USB soundcards"
 	tristate
 	default m
-	depends BR2_PACKAGE_KMOD_USB_CONTROLLER
-	select BR2_PACKAGE_KMOD_SOUNDCORE
+	depends PACKAGE_KMOD_USB_CONTROLLER
+	select PACKAGE_KMOD_SOUNDCORE
 
-config BR2_PACKAGE_KMOD_USB_PRINTER
+config PACKAGE_KMOD_USB_PRINTER
 	prompt "kmod-usb-printer.................. Support for USB printers"
 	tristate
 	default m
-	depends BR2_PACKAGE_KMOD_USB_CONTROLLER
+	depends PACKAGE_KMOD_USB_CONTROLLER
 
-config BR2_PACKAGE_KMOD_USB_SERIAL
+config PACKAGE_KMOD_USB_SERIAL
 	prompt "kmod-usb-serial................... Support for USB-to-serial converters"
 	tristate
 	default m
-	depends BR2_PACKAGE_KMOD_USB_CONTROLLER
+	depends PACKAGE_KMOD_USB_CONTROLLER
 
-config BR2_PACKAGE_KMOD_USB_SERIAL_BELKIN
+config PACKAGE_KMOD_USB_SERIAL_BELKIN
 	prompt   "kmod-usb-serial-belkin.......... Support for Belkin USB-to-serial converters"
 	tristate
 	default m
-	depends BR2_PACKAGE_KMOD_USB_SERIAL
+	depends PACKAGE_KMOD_USB_SERIAL
 
-config BR2_PACKAGE_KMOD_USB_SERIAL_FTDI
+config PACKAGE_KMOD_USB_SERIAL_FTDI
 	prompt   "kmod-usb-serial-ftdi............ Support for FTDI USB-to-serial converterr"
 	tristate
 	default m
-	depends BR2_PACKAGE_KMOD_USB_SERIAL
+	depends PACKAGE_KMOD_USB_SERIAL
 
-config BR2_PACKAGE_KMOD_USB_SERIAL_MCT_U232
+config PACKAGE_KMOD_USB_SERIAL_MCT_U232
 	prompt   "kmod-usb-serial-mct-u232........ Support for Magic Control Technology USB-to-Serial converters"
 	tristate
 	default m
-	depends BR2_PACKAGE_KMOD_USB_SERIAL
+	depends PACKAGE_KMOD_USB_SERIAL
 
-config BR2_PACKAGE_KMOD_USB_SERIAL_PL2303
+config PACKAGE_KMOD_USB_SERIAL_PL2303
 	prompt   "kmod-usb-serial-pl2303.......... Support for Prolific PL2303 USB-to-Serial converters"
 	tristate
 	default m
-	depends BR2_PACKAGE_KMOD_USB_SERIAL
+	depends PACKAGE_KMOD_USB_SERIAL
 
-config BR2_PACKAGE_KMOD_USB_SERIAL_VISOR
+config PACKAGE_KMOD_USB_SERIAL_VISOR
 	prompt   "kmod-usb-serial-visor........... Support for Handspring Visor / Palm m50x / Sony Clie Driver"
 	tristate
 	default m
-	depends BR2_PACKAGE_KMOD_USB_SERIAL
+	depends PACKAGE_KMOD_USB_SERIAL
 
-config BR2_PACKAGE_KMOD_USB_STORAGE
+config PACKAGE_KMOD_USB_STORAGE
 	prompt "kmod-usb-storage.................. Support for USB storage devices"
 	tristate
 	default m
-	depends BR2_PACKAGE_KMOD_USB_CONTROLLER
+	depends PACKAGE_KMOD_USB_CONTROLLER
 
-config BR2_PACKAGE_KMOD_USB_ATM
+config PACKAGE_KMOD_USB_ATM
         prompt "kmod-usb-atm...................... Support for USB ATM devices"
 	tristate
 	default m
-	depends BR2_PACKAGE_KMOD_USB_CONTROLLER
+	depends PACKAGE_KMOD_USB_CONTROLLER
 
-config BR2_PACKAGE_KMOD_USB_ATM_SPEEDTOUCH
+config PACKAGE_KMOD_USB_ATM_SPEEDTOUCH
         prompt   "kmod-usb-atm-speedtouch......... Support for USB Speedtouch ADSL modem"
 	tristate
 	default m
-	depends BR2_PACKAGE_KMOD_USB_ATM
+	depends PACKAGE_KMOD_USB_ATM
 
 endmenu
 
 menu "Misc. devices support"
 
-config BR2_PACKAGE_KMOD_AX25
+config PACKAGE_KMOD_AX25
 	prompt "kmod-ax25......................... AX25 support"
 	tristate
 	default m
@@ -728,33 +730,33 @@ config BR2_PACKAGE_KMOD_AX25
 	  
 	  This package contains both the AX25 layer 2 support (ax25) and AX25 KISS driver (mkiss)
 
-config BR2_PACKAGE_KMOD_BLUETOOTH
+config PACKAGE_KMOD_BLUETOOTH
 	prompt "kmod-bluetooth.................... Bluetooth drivers and network stack"
 	tristate
 	default m
-	default n if BR2_LINUX_2_4_AR531X
+	default n if LINUX_2_4_AR531X
 	help
 	  Bluetooth drivers and network stack
 
-config BR2_PACKAGE_KMOD_LP
+config PACKAGE_KMOD_LP
 	prompt "kmod-lp........................... Parallel port and lp support"
 	tristate
 	default m
 	help
 	  Kernel modules for line printer and parallel port support
 
-config BR2_PACKAGE_KMOD_SOFTDOG
+config PACKAGE_KMOD_SOFTDOG
 	prompt "kmod-softdog...................... Software watchdog"
 	tristate
 	default m
 	help
 	  Kernel modules for software watchdog driver
 
-config BR2_PACKAGE_KMOD_WD1100
+config PACKAGE_KMOD_WD1100
 	prompt "kmod-wd1100....................... Soekris net4801 watchdog"
 	tristate
 	default y
-	depends BR2_LINUX_2_4_X86
+	depends LINUX_2_4_X86
 	help
 	  Driver for the NatSemi SC1x00 series Watchdog 
 	  found on Soekris net4801 boards

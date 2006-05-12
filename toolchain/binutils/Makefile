@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 # build binutils for use on the host system
 #
 #############################################################
-BINUTILS_VERSION:=$(strip $(subst ",, $(BR2_BINUTILS_VERSION)))
+BINUTILS_VERSION:=$(strip $(subst ",, $(CONFIG_BINUTILS_VERSION)))
 #"
 
 BINUTILS_SITE:=http://www.fr.kernel.org/pub/linux/devel/binutils \

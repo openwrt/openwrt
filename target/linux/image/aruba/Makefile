@@ -36,7 +36,7 @@ ifeq ($(FS),jffs2-4MB)
 $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL).ari: $(KDIR)/loader.elf
 	./addVersion -n ArubaOS $(KDIR)/loader.elf $@ version
 
-ifneq ($(BR2_ARUBA_RAMDISK),y)
+ifneq ($(CONFIG_ARUBA_RAMDISK),y)
 $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FSNAME).bin: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL).ari $(KDIR)/root.$(FS)
 	@dd if=$< of=$@.tmp bs=655360 conv=sync
 	@cat $(KDIR)/root.$(FS) >> $@.tmp

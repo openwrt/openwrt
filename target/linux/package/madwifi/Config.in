@@ -1,8 +1,8 @@
-config BR2_PACKAGE_KMOD_MADWIFI
+config PACKAGE_KMOD_MADWIFI
 	prompt "kmod-madwifi...................... Atheros Wifi driver"
 	tristate
-	default y if BR2_LINUX_2_6_BRCM || BR2_LINUX_2_6_ARUBA || BR2_LINUX_2_4_AR531X
-	default m if CONFIG_DEVEL
+	default y if LINUX_2_6_BRCM || LINUX_2_6_ARUBA || LINUX_2_4_AR531X
+	default m if DEVEL
 	default n
 	help
 	  Driver for Atheros 802.11a/b/g MiniPCI cards
