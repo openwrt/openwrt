@@ -239,6 +239,3 @@ else
 	@$(MAKE) clean-targets
 	rm -rf $(PKG_BUILD_DIR)
 endif
-
-.PHONY: FORCE
-FORCE:
