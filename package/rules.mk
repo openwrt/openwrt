@@ -10,6 +10,10 @@ define Build/DefaultTargets
     $(PKG_BUILD_DIR)/.prepared: package-clean
   endif
 
+  ifneq ($$(shell $(SCRIPT_DIR)/timestamp.pl -p -x ipkg $(IPKG_$(1)) $(PKG_BUILD_DIR)),$(IPKG_$(1)))
+    $(PKG_BUILD_DIR)/.built: package-rebuild
+  endif
+
   $(PKG_BUILD_DIR)/.prepared: $(DL_DIR)/$(PKG_SOURCE)
 	@-rm -rf $(PKG_BUILD_DIR)
 	@mkdir -p $(PKG_BUILD_DIR)
@@ -20,13 +24,15 @@ define Build/DefaultTargets
 	$(call Build/Configure)
 	touch $$@
 
-  built: FORCE $(PKG_BUILD_DIR)/.configured
-    ifneq ($$(shell $(SCRIPT_DIR)/timestamp.pl -p -x ipkg $(IPKG_$(1)) $(PKG_BUILD_DIR)),$(IPKG_$(1)))
+  $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 	$(call Build/Compile)
-    endif
-
+	touch $$@
+    
   package-clean: FORCE
 	$(call Build/Clean)
+
+  package-rebuild: FORCE
+	@-rm $(PKG_BUILD_DIR)/.built
 
   define Build/DefaultTargets
   endef
@@ -70,16 +76,12 @@ define BuildPackage
   IDIR_$(1):=$(PKG_BUILD_DIR)/ipkg/$(1)
   INFO_$(1):=$(IPKG_STATE_DIR)/info/$(1).list
 
-  ifneq ($(CONFIG_PACKAGE_$(1))$(DEVELOPER),)
-    COMPILE_$(1):=1
-  endif
-
   ifeq ($(CONFIG_PACKAGE_$(1)),y)
     install-targets: $$(INFO_$(1))
   endif
 
-  ifneq ($(COMPILE_$(1)),)
-    compile-targets: $(IPKG_$(1))
+  ifneq ($(CONFIG_PACKAGE_$(1))$(DEVELOPER),)
+    compile-targets: $$(IPKG_$(1))
   endif
 
   IDEPEND_$(1):=$$(strip $$(DEPENDS))
@@ -129,7 +131,7 @@ define BuildPackage
 		[ -f ./ipkg/$(1).$$$$file ] && cp ./ipkg/$(1).$$$$file $$(IDIR_$(1))/CONTROL/$$$$file || true; \
 	done
 
-  $$(IPKG_$(1)): $$(IDIR_$(1))/CONTROL/control built
+  $$(IPKG_$(1)): $$(IDIR_$(1))/CONTROL/control $(PKG_BUILD_DIR)/.built
 	$(call Package/$(1)/install,$$(IDIR_$(1)))
 	mkdir -p $(PACKAGE_DIR)
 	$(RSTRIP) $$(IDIR_$(1))
@@ -144,7 +146,7 @@ define BuildPackage
   clean: $(1)-clean
 
   ifneq ($(__DEFAULT_TARGETS),1)
-    $$(eval $$(call Build/DefaultTargets,$(1)))
+    $(eval $(call Build/DefaultTargets,$(1)))
   endif
 
 endef
