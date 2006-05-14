@@ -132,3 +132,7 @@ IPKG_STATE_DIR := $(TARGET_DIR)/usr/lib/ipkg
 RSTRIP:=STRIP="$(STRIP)" $(SCRIPT_DIR)/rstrip.sh
 RSTRIP_KMOD:=STRIP="$(TARGET_CROSS)strip --strip-unneeded --remove-section=.comment" $(SCRIPT_DIR)/rstrip.sh
 
+
+all:
+.PHONY: FORCE
+FORCE:
