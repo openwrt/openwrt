@@ -25,10 +25,15 @@ while ($line = <>) {
 }
 
 foreach $name (sort {uc($a) cmp uc($b)} keys %pkg) {
-	print "$name: ";
+	my $hasdeps = 0;
+	$line = "$pkg{$name}->{src}-compile:";
 	foreach my $dep (@{$pkg{$name}->{depends}}) {
-		print "$dep ";
+	        if (defined $pkg{$dep}->{src} && $pkg{$name}->{src} ne $pkg{$dep}->{src}) {
+			$hasdeps = 1;
+			$line .= " $pkg{$dep}->{src}-compile";
+		}
 	}
-	print "\n\tmake -C ".$pkg{$name}->{src}."\n";
-	print "\n";
+	if ($hasdeps) {
+		print "$line\n";
+	}
 }
