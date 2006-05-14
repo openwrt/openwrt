@@ -5,12 +5,11 @@ else
 endif
 
 define Build/DefaultTargets
-
   ifeq ($(shell $(SCRIPT_DIR)/timestamp.pl -p $(PKG_BUILD_DIR) .),.)
     $(PKG_BUILD_DIR)/.prepared: package-clean
   endif
 
-  ifneq ($$(shell $(SCRIPT_DIR)/timestamp.pl -p -x ipkg $(IPKG_$(1)) $(PKG_BUILD_DIR)),$(IPKG_$(1)))
+  ifneq ($(shell $(SCRIPT_DIR)/timestamp.pl -p -x ipkg $(IPKG_$(1)) $(PKG_BUILD_DIR)),$(IPKG_$(1)))
     $(PKG_BUILD_DIR)/.built: package-rebuild
   endif
 
@@ -145,9 +144,7 @@ define BuildPackage
 
   clean: $(1)-clean
 
-  ifneq ($(__DEFAULT_TARGETS),1)
-    $(eval $(call Build/DefaultTargets,$(1)))
-  endif
+  $$(eval $$(call Build/DefaultTargets,$(1)))
 
 endef
 
