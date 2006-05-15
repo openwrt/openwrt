@@ -46,6 +46,7 @@ libxslt-compile: libxml2-compile
 lighttpd-compile: openssl-compile pcre-compile libxml2-compile sqlite-compile
 logrotate-compile: popt-compile
 madplay-compile: libid3tag-compile libmad-compile
+matrixtunnel-compile: matrixssl-compile
 miax-compile: bluez-libs-compile
 miredo-compile: uclibc++-compile
 monit-compile: openssl-compile

@@ -140,6 +140,7 @@ package-$(BR2_PACKAGE_MACCHANGER) += macchanger
 package-$(BR2_PACKAGE_MADPLAY) += madplay
 package-$(BR2_PACKAGE_MARADNS) += maradns
 package-$(BR2_COMPILE_MATRIXSSL) += matrixssl
+package-$(BR2_PACKAGE_MATRIXTUNNEL) += matrixtunnel
 package-$(BR2_PACKAGE_MGETTY) += mgetty
 package-$(BR2_PACKAGE_MIAU) += miau
 package-$(BR2_PACKAGE_MIAX) += miax
