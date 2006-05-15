@@ -1,0 +1,10 @@
+config BR2_PACKAGE_MATRIXTUNNEL
+	prompt "matrixtunnel...................... stunnel based on matrixssl"
+	tristate
+	default m if CONFIG_DEVEL
+	select BR2_PACKAGE_LIBMATRIXSSL
+	help
+		matrixtunnel is a stripped down version of stunnel
+		based on matrixssl library
+		
+		Depends: libmatrixssl
