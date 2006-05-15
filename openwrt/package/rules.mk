@@ -5,12 +5,14 @@ else
 endif
 
 define Build/DefaultTargets
-  ifeq ($(shell $(SCRIPT_DIR)/timestamp.pl -p $(PKG_BUILD_DIR) .),.)
-    $(PKG_BUILD_DIR)/.prepared: package-clean
-  endif
+  ifeq ($(DUMP),)
+    ifeq ($$(shell $(SCRIPT_DIR)/timestamp.pl -p $(PKG_BUILD_DIR) . | tee /tmp/xy1),.)
+      $(PKG_BUILD_DIR)/.prepared: package-clean
+    endif
 
-  ifneq ($(shell $(SCRIPT_DIR)/timestamp.pl -p -x ipkg $(IPKG_$(1)) $(PKG_BUILD_DIR)),$(IPKG_$(1)))
-    $(PKG_BUILD_DIR)/.built: package-rebuild
+    ifneq ($$(shell $(SCRIPT_DIR)/timestamp.pl -p -x ipkg $(IPKG_$(1)) $(PKG_BUILD_DIR) | tee /tmp/xy2),$(IPKG_$(1)))
+      $(PKG_BUILD_DIR)/.built: package-rebuild
+    endif
   endif
 
   $(PKG_BUILD_DIR)/.prepared: $(DL_DIR)/$(PKG_SOURCE)
@@ -191,6 +193,7 @@ define Build/Configure/Default
 		--infodir=/usr/info \
 		$(DISABLE_NLS) \
 		$(1); \
+		true; \
 	)
 endef
 
@@ -205,11 +208,12 @@ define Build/Compile/Default
 		PREFIX="$$(IDIR_$(1))" \
 		EXTRA_CFLAGS="$(TARGET_CFLAGS)" \
 		ARCH="$(ARCH)" \
-		DESTDIR="$$(IDIR_$(1))"
+		DESTDIR="$$(IDIR_$(1))" \
+		$(1);
 endef
 
 define Build/Compile
-  $(call Build/Compile/Default)
+  $(call Build/Compile/Default,)
 endef
 
 define Build/Clean
@@ -217,7 +221,7 @@ define Build/Clean
 endef
 
 ifneq ($(DUMP),)
-  dumpinfo:
+  dumpinfo: FORCE
 	$(DUMPINFO)
 else
 		
