@@ -1,35 +1,24 @@
 #!/usr/bin/perl
 use strict;
-use File::stat;
-
-sub crawl($$) {
-	my $path = shift;
-	my $options = shift;
-	my @results = $path;
-	opendir(DIR,$path);
-	foreach my $file (readdir(DIR)) {
-		if ($file !~m/^(\.(svn|\.?)|CVS$options)$/) {
-			push @results, crawl("$path/$file",$options);
-		}
-	}
-	closedir(DIR);
-	return @results; 
-}
 
 sub get_ts($$) {
 	my $path = shift;
 	my $options = shift;
 	my $ts = 0;
 	my $fn = "";
-	my @search = crawl($path,$options);
-	while (@search) {
-		my $file = shift @search;
-		my $mtime = stat($file)->mtime;
-		if ($mtime > $ts) {
-			$ts = $mtime;
+	open FIND, "find $path -not -path \\*.svn\\* -and -not -path \\*CVS\\* $options 2>/dev/null |";
+	while (<FIND>) {
+		chomp;
+		my $file = $_;
+		open FILE, "<$file";
+		my @stat = stat FILE;
+		close FILE;
+		if ($stat[9] > $ts) {
+			$ts = $stat[9];
 			$fn = $file;
 		}
 	}
+	close FIND;
 	return ($ts, $fn);
 }
 
@@ -41,7 +30,7 @@ while (@ARGV > 0) {
 	my $path = shift @ARGV;
 	if ($path =~ /^-x/) {
 		my $str = shift @ARGV;
-		$options{"-x"} .= "|".$str;
+		$options{"-x"} .= " -and -not -path \\*".$str."\\*"
 	} elsif ($path =~ /^-/) {
 		$options{$path} = 1;
 	} else {
