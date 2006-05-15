@@ -40,7 +40,7 @@ $(eval $(call PKG_mod_template,PPP_MOD_PPPOE,rp-pppoe))
 $(eval $(call PKG_mod_template,PPP_MOD_RADIUS,radius))
 
 PKG_DEPEND:="kmod-ppp"
-ifeq ($(BR2_PACKAGE_PPP_WITH_FILTER),y)
+ifeq ($(CONFIG_PACKAGE_PPP_WITH_FILTER),y)
 ENABLE_FILTER:="PRECOMPILED_FILTER=1"
 endif
 
@@ -84,7 +84,7 @@ $(PKG_BUILD_DIR)/.built:
 		all install
 	touch $@
 
-ifeq ($(BR2_PACKAGE_PPP_WITH_FILTER),y)
+ifeq ($(CONFIG_PACKAGE_PPP_WITH_FILTER),y)
 INSTALL_FILTER=install -m0644 ./files/etc/ppp/filter $(IDIR_PPP)/etc/ppp/
 endif
 

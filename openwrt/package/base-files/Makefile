@@ -6,10 +6,10 @@ PKG_NAME:=base-files
 PKG_RELEASE:=6
 PKG_BUILD_DIR:=$(BUILD_DIR)/base-files
 
-BOARD:=$(shell LANG=C grep ^BR2_LINUX_2 $(TOPDIR)/.config|sed -e "s/=y//" \
+BOARD:=$(shell LANG=C grep ^CONFIG_LINUX_2 $(TOPDIR)/.config|sed -e "s/=y//" \
 	-e "s/.*_//"| tr "[:upper:]" "[:lower:]")
-KERNEL:=$(shell LANG=C grep ^BR2_LINUX_2 $(TOPDIR)/.config|sed -e "s/=y//" \
-	-e "s/BR2_LINUX_//" -e "s/_BRCM//" -e "s/_/./"| tr "[:upper:]" "[:lower:]")
+KERNEL:=$(shell LANG=C grep ^CONFIG_LINUX_2 $(TOPDIR)/.config|sed -e "s/=y//" \
+	-e "s/CONFIG_LINUX_//" -e "s/_BRCM//" -e "s/_/./"| tr "[:upper:]" "[:lower:]")
 
 REV:=$(shell LANG=C svn info | awk '/^Revision:/ { print$$2 }' )
 ifeq ($(REV),)
@@ -32,11 +32,11 @@ IPKG_LIBGCC:=$(PACKAGE_DIR)/libgcc_$(LIBGCC_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
 PACKAGES:=$(IPKG_BASE) $(IPKG_UCLIBC) 
 PACKAGES_INSTALL:=$(IPKG_BASE) $(IPKG_UCLIBC) 
 
-ifeq ($(BR2_PACKAGE_LIBGCC),y)
+ifeq ($(CONFIG_PACKAGE_LIBGCC),y)
 PACKAGES+=$(IPKG_LIBGCC)
 PACKAGES_INSTALL+=$(IPKG_LIBGCC)
 endif
-ifeq ($(BR2_PACKAGE_LIBGCC),m)
+ifeq ($(CONFIG_PACKAGE_LIBGCC),m)
 PACKAGES+=$(IPKG_LIBGCC)
 endif
 

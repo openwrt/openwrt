@@ -1,8 +1,8 @@
-config BR2_PACKAGE_WIFICONF
+config PACKAGE_WIFICONF
 	prompt "wificonf.......................... replacement utility for wlconf"
 	tristate
 	default y
-	depends BR2_PACKAGE_NVRAM
+	depends PACKAGE_NVRAM
 	help
 	  Replacement utility for wlconf
 
