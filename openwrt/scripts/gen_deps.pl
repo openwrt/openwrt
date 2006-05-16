@@ -24,16 +24,23 @@ while ($line = <>) {
 	};
 }
 
+$line="";
+
 foreach $name (sort {uc($a) cmp uc($b)} keys %pkg) {
+	print "package-\$(CONFIG_PACKAGE_$name) += $pkg{$name}->{src}\n";
+
 	my $hasdeps = 0;
-	$line = "$pkg{$name}->{src}-compile:";
+	my $depline = "";
 	foreach my $dep (@{$pkg{$name}->{depends}}) {
 	        if (defined $pkg{$dep}->{src} && $pkg{$name}->{src} ne $pkg{$dep}->{src}) {
-			$hasdeps = 1;
-			$line .= " $pkg{$dep}->{src}-compile";
+			$depline .= " $pkg{$dep}->{src}-compile";
 		}
 	}
-	if ($hasdeps) {
-		print "$line\n";
+	if ($depline ne "") {
+		$line .= "$pkg{$name}->{src}-compile: $depline\n";
 	}
+}
+
+if ($line ne "") {
+	print "\n$line";
 }

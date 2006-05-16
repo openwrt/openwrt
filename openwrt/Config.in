@@ -18,6 +18,10 @@ config ALL
 	bool "Select all packages by default"
 	default n
 
+config WGET
+        string
+        default "wget --passive-ftp -nd"
+
 menuconfig BUILDOPTS
 	bool "Build Options" if DEVEL
 
@@ -37,3 +41,6 @@ source "toolchain/Config.in"
 source "target/linux/Config.in"
 source ".config.in"
 
+menu "busybox"
+source "package/busybox/config/Config.in"
+endmenu

@@ -12,6 +12,8 @@ PKG_SOURCE_URL:=@SF/ipsec-tools
 PKG_MD5SUM:=d0242a943c82c0cbf28005966ff35e21
 PKG_CAT:=bzcat
 
+PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
+
 include $(TOPDIR)/package/rules.mk
 
 define Package/ipsec-tools
@@ -64,6 +66,10 @@ define Build/Configure
 			--without-libradius \
 			--without-libpam \
 	);
+endef
+
+define Build/Compile
+	$(call Build/Compile/Default,install)
 endef
 
 define Package/ipsec-tools/install
