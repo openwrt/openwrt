@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=gsm
 PKG_VERSION:=1.0.10
 PKG_RELEASE:=1
-PKG_MD5SUM:=
+PKG_MD5SUM:=4b148480f82e96d274248e13880ec873
 
 PKG_SOURCE_URL:=ftp://ftp.cs.tu-berlin.de/pub/local/kbs/tubmik/gsm/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
