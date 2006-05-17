@@ -1,0 +1,32 @@
+--- gcom-0.3.x/Makefile	2006-01-04 17:05:28.000000000 +0200
++++ gcom-0.3/Makefile	2006-02-26 13:02:07.000000000 +0200
+@@ -20,8 +20,6 @@
+ #
+ #	$Id$
+ #
+-LIB     = -L/usr/local/lib
+-INC     = -I/usr/local/include
+ EXE	= /usr/local/bin
+ MAN     = /usr/share/man/man1
+ CPROG	= gcom
+@@ -29,9 +27,6 @@
+ BIN     = $(CPROG) $(SCRIPT)
+ MANP	= gcom.1 sigmon.1
+ 
+-CFLAGS  = -c
+-LDFLAGS =
+-
+ all: $(BIN)
+ 
+ install:
+@@ -53,8 +48,8 @@
+ 
+ 
+ gcom: gcom.o
+-	cc gcom.o $(LDFLAGS) -o gcom
++	$(CC) gcom.o $(LDFLAGS) -o gcom
+ 
+ gcom.o: gcom.c gcom.h
+-	cc gcom.c $(CFLAGS) 
++	$(CC) -c $(CFLAGS) gcom.c
+ 
