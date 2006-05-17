@@ -59,6 +59,7 @@ package-$(BR2_PACKAGE_FREERADIUS) += freeradius
 package-$(BR2_COMPILE_FREETYPE) += freetype
 package-$(BR2_PACKAGE_FRICKIN) += frickin
 package-$(BR2_COMPILE_FUSE) += fuse
+package-$(BR2_PACKAGE_GCOM) += gcom
 package-$(BR2_PACKAGE_GDBSERVER) += gdbserver
 package-$(BR2_COMPILE_GLIB) += glib
 package-$(BR2_PACKAGE_GMEDIASERVER) += gmediaserver
