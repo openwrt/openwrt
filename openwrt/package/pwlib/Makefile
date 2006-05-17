@@ -88,6 +88,7 @@ $(PKG_BUILD_DIR)/.configured:
 			--disable-wavfile \
 			--disable-xmlrpc \
 	);
+	ln -sf $(PKG_NAME)-$(PKG_VERSION) $(BUILD_DIR)/$(PKG_NAME)
 	touch $@
 
 $(PKG_BUILD_DIR)/.built:
@@ -96,11 +97,8 @@ $(PKG_BUILD_DIR)/.built:
 		optnoshared
 	touch $@
 
-install-link:
-	ln -s $(PKG_NAME)-$(PKG_VERSION) $(BUILD_DIR)/$(PKG_NAME)
-
 uninstall-link:
-	rm -rf $(BUILD_DIR)/$(PKG_NAME)
+	rm -f $(BUILD_DIR)/$(PKG_NAME)
 
-compile-targets: $(PKG_BUILD_DIR)/.built install-link
+compile-targets: $(PKG_BUILD_DIR)/.built
 clean-targets: uninstall-link
