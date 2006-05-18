@@ -61,3 +61,7 @@ config_get() {
 config_set() {
 	export CONFIG_${1}_${2}="${3}"
 }
+
+load_modules() {
+	sed 's/^[^#]/insmod &/' $* | ash 2>&- || :
+}
