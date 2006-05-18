@@ -3,11 +3,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=sipsak
-PKG_VERSION:=0.9.5
+PKG_VERSION:=0.9.6
 PKG_RELEASE:=1
-PKG_MD5SUM:=5f6d8df044984061425fdbedea61a64e
+PKG_MD5SUM:=c4eb8e282902e75f4f040f09ea9d99d5
 
-PKG_SOURCE_URL:=http://download.berlios.de/sipsak/
+PKG_SOURCE_URL:=http://download.berlios.de/sipsak/ \
+	http://ftp.iptel.org/pub/sipsak/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
