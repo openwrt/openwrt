@@ -1,0 +1,33 @@
+diff -ruN axTLS-0.95-old/config/makefile.conf axTLS-0.95-new/config/makefile.conf
+--- axTLS-0.95-old/config/makefile.conf	2006-02-28 02:50:28.000000000 +0100
++++ axTLS-0.95-new/config/makefile.conf	2006-05-18 22:24:02.000000000 +0200
+@@ -87,20 +87,23 @@
+ endif
+ 
+ ifdef CONFIG_DEBUG
+-CFLAGS += -g
++OPT_CFLAGS = -g
+ else
+-LDFLAGS += -s
++OPT_LDFLAGS = -s
+ ifdef CONFIG_PLATFORM_SOLARIS
+-CFLAGS += -O 
++OPT_CFLAGS = -O 
+ else
+-CFLAGS += -O3
++OPT_CFLAGS = -O3
+ endif
+ 
+ endif	# CONFIG_DEBUG
+ endif   # WIN32
+ 
+-CFLAGS+=$(subst ",, $(strip $(CONFIG_EXTRA_CFLAGS_OPTIONS)))
+-LDFLAGS+=$(subst ",, $(strip $(CONFIG_EXTRA_LDFLAGS_OPTIONS)))
++EXTRA_CFLAGS=$(subst ",, $(strip $(CONFIG_EXTRA_CFLAGS_OPTIONS)))
++EXTRA_LDFLAGS=$(subst ",, $(strip $(CONFIG_EXTRA_LDFLAGS_OPTIONS)))
++
++CFLAGS += $(OPT_CFLAGS) $(EXTRA_CFLAGS)
++LDFLAGS += $(OPT_LDFLAGS) $(EXTRA_LDFLAGS)
+ 
+ endif   # not 'clean'
+ 

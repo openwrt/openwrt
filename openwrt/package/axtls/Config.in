@@ -1,0 +1,29 @@
+menu "axtls............................. Embedded client/server TLSv1 SSL library"
+
+config BR2_COMPILE_AXTLS
+	tristate
+	default n
+	depends BR2_PACKAGE_LIBAXTLS
+
+config BR2_PACKAGE_LIBAXTLS
+	prompt "libaxtls.......................... Embedded client/server TLSv1 SSL library"
+	tristate
+	default m if CONFIG_DEVEL
+	select BR2_COMPILE_AXTLS
+	help
+	  Embedded client/server TLSv1 SSL library
+	  
+	  http://www.axtls.co.nr/
+	  
+config BR2_PACKAGE_AWHTTPD
+	prompt   "awhttpd......................... Anti-Web webserver"
+	tristate
+	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_LIBAXTLS
+	help
+	  Anti-Web is a light-weight, single-process, non-threaded webserver 
+	  that emphasizes simplicity, efficiency, and security.
+	  
+	  http://www.axtls.co.nr/
+	  
+endmenu
