@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=siproxd
-PKG_VERSION:=0.5.11
-PKG_RELEASE:=2
-PKG_MD5SUM:=a614f60683f9ea9423573bc5d646c525
+PKG_VERSION:=0.5.12
+PKG_RELEASE:=1
+PKG_MD5SUM:=2fa02bd6f83070593bfc2d383ce614fa
 
 PKG_SOURCE_URL:=@SF/siproxd
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -22,29 +22,30 @@ $(PKG_BUILD_DIR)/.configured:
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
-		CPPFLAGS="-I$(STAGING_DIR)/usr/include" \
-		LDFLAGS="-L$(STAGING_DIR)/usr/lib" \
+		CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include" \
+		LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib" \
 		./configure \
-		  --target=$(GNU_TARGET_NAME) \
-		  --host=$(GNU_TARGET_NAME) \
-		  --build=$(GNU_HOST_NAME) \
-		  --program-prefix="" \
-		  --program-suffix="" \
-		  --prefix=/usr \
-		  --exec-prefix=/usr \
-		  --bindir=/usr/bin \
-		  --datadir=/usr/share \
-		  --includedir=/usr/include \
-		  --infodir=/usr/share/info \
-		  --libdir=/usr/lib \
-		  --libexecdir=/usr/lib \
-		  --localstatedir=/var \
-		  --mandir=/usr/share/man \
-		  --sbindir=/usr/sbin \
-		  --sysconfdir=/etc \
-		  $(DISABLE_LARGEFILE) \
-		  $(DISABLE_NLS) \
-		  --enable-shared \
+			--target=$(GNU_TARGET_NAME) \
+			--host=$(GNU_TARGET_NAME) \
+			--build=$(GNU_HOST_NAME) \
+			--program-prefix="" \
+			--program-suffix="" \
+			--prefix=/usr \
+			--exec-prefix=/usr \
+			--bindir=/usr/bin \
+			--datadir=/usr/share \
+			--includedir=/usr/include \
+			--infodir=/usr/share/info \
+			--libdir=/usr/lib \
+			--libexecdir=/usr/lib \
+			--localstatedir=/var \
+			--mandir=/usr/share/man \
+			--sbindir=/usr/sbin \
+			--sysconfdir=/etc \
+			$(DISABLE_LARGEFILE) \
+			$(DISABLE_NLS) \
+			--enable-shared \
+			--disable-static \
 	);
 	touch $@
 
@@ -66,3 +67,4 @@ $(IPKG_SIPROXD):
 	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/siproxd $(IDIR_SIPROXD)/usr/sbin/
 	$(RSTRIP) $(IDIR_SIPROXD)
 	$(IPKG_BUILD) $(IDIR_SIPROXD) $(PACKAGE_DIR)
+
