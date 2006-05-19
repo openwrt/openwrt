@@ -8,22 +8,23 @@ config HAVE_DOT_CONFIG
 
 source "target/Config.in"
 
-config DEVEL
+config ALL
+	bool "Select all packages by default"
+	default n
+
+menuconfig DEVEL
 	bool "Advanced configuration options (for developers)"
 	default n
 	select BUILDOPTS
 	select TOOLCHAINOPTS
 
-config ALL
-	bool "Select all packages by default"
-	default n
+menuconfig BUILDOPTS
+	bool "Build Options" if DEVEL
 
 config WGET
         string
+	prompt "WGET command" if BUILDOPTS
         default "wget --passive-ftp -nd"
-
-menuconfig BUILDOPTS
-	bool "Build Options" if DEVEL
 
 config TAR_VERBOSITY
 	bool 
@@ -41,6 +42,3 @@ source "toolchain/Config.in"
 source "target/linux/Config.in"
 source ".config.in"
 
-menu "busybox"
-source "package/busybox/config/Config.in"
-endmenu
