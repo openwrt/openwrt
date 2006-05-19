@@ -30,7 +30,9 @@ sub print_category($) {
 			}
 			print "\t\thelp\n";
 			print $pkg->{description};
-			print "\n"
+			print "\n";
+
+			$pkg->{config} and print $pkg->{config}."\n";
 		}
 	}
 	print "endmenu\n\n";
@@ -75,6 +77,15 @@ while ($line = <>) {
 			$desc .= "\t\t$line";
 		}
 		$pkg->{description} = $desc;
+	};
+	$line =~ /^Config: \s*(.*)\s*$/ and do {
+		my $conf = "$1\n";
+		my $line;
+		while ($line = <>) {
+			last if $line =~ /^@@/;
+			$conf .= "$line";
+		}
+		$pkg->{config} = $conf;
 	}
 }
 

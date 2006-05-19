@@ -116,6 +116,12 @@ define BuildPackage
   DUMPINFO += \
 	echo "@@";
 
+  ifneq ($(CONFIG),)
+    DUMPINFO += \
+	echo "Config: $(CONFIG)" | sed -e 's,\\,\n,g'; \
+	echo "@@";
+  endif
+
   $$(IDIR_$(1))/CONTROL/control: $(PKG_BUILD_DIR)/.prepared
 	mkdir -p $$(IDIR_$(1))/CONTROL
 	echo "Package: $(1)" > $$(IDIR_$(1))/CONTROL/control
@@ -222,7 +228,7 @@ endef
 
 ifneq ($(DUMP),)
   dumpinfo: FORCE
-	$(DUMPINFO)
+	@$(DUMPINFO)
 else
 		
   $(PACKAGE_DIR):

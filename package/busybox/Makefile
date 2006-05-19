@@ -15,14 +15,18 @@ PKG_CAT:=bzcat
 include $(TOPDIR)/package/rules.mk
 
 define Package/busybox
-CONFIGFILE:=config/Config.in
 SECTION:=base
 CATEGORY:=Base system
+MENU:=1
 DEFAULT:=y
 TITLE:=Core utilities for embedded Linux
 DESCRIPTION:=The Swiss Army Knife of embedded Linux. \\\
 It slices, it dices, it makes Julian Fries.
 URL:=http://busybox.net/
+CONFIG:=menu "Configuration" \\\
+	depends on PACKAGE_busybox \\\
+source "package/busybox/config/Config.in" \\\
+endmenu
 endef
 
 define Build/Configure
