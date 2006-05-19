@@ -19,7 +19,7 @@ $(eval $(call KMOD_template,IMQ,imq,\
 ))
 
 $(eval $(call KMOD_template,IPIP,ipip,\
-	$(MODULES_DIR)/kernel/net/ipv4/ipip.o \
+	$(MODULES_DIR)/kernel/net/ipv4/ipip.ko \
 ,CONFIG_NET_IPIP,,60,ipip))
 
 $(eval $(call KMOD_template,IPV6,ipv6,\

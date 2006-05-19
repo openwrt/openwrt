@@ -1,0 +1,159 @@
+diff -ur openvpn-2.0.7.orig/easy-rsa/2.0/build-ca openvpn-2.0.7/easy-rsa/2.0/build-ca
+--- openvpn-2.0.7.orig/easy-rsa/2.0/build-ca	2005-11-02 19:42:38.000000000 +0100
++++ openvpn-2.0.7/easy-rsa/2.0/build-ca	2006-05-09 17:47:40.000000000 +0200
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/bin/sh
+ 
+ #
+ # Build a root certificate
+diff -ur openvpn-2.0.7.orig/easy-rsa/2.0/build-dh openvpn-2.0.7/easy-rsa/2.0/build-dh
+--- openvpn-2.0.7.orig/easy-rsa/2.0/build-dh	2005-11-02 19:42:39.000000000 +0100
++++ openvpn-2.0.7/easy-rsa/2.0/build-dh	2006-05-09 17:47:40.000000000 +0200
+@@ -1,4 +1,6 @@
+-#!/bin/bash
++#!/bin/sh
++
++. /etc/easy-rsa/vars
+ 
+ # Build Diffie-Hellman parameters for the server side
+ # of an SSL/TLS connection.
+diff -ur openvpn-2.0.7.orig/easy-rsa/2.0/build-inter openvpn-2.0.7/easy-rsa/2.0/build-inter
+--- openvpn-2.0.7.orig/easy-rsa/2.0/build-inter	2005-11-02 19:42:39.000000000 +0100
++++ openvpn-2.0.7/easy-rsa/2.0/build-inter	2006-05-09 17:47:40.000000000 +0200
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/bin/sh
+ 
+ # Make an intermediate CA certificate/private key pair using a locally generated
+ # root certificate.
+diff -ur openvpn-2.0.7.orig/easy-rsa/2.0/build-key openvpn-2.0.7/easy-rsa/2.0/build-key
+--- openvpn-2.0.7.orig/easy-rsa/2.0/build-key	2005-11-02 19:42:39.000000000 +0100
++++ openvpn-2.0.7/easy-rsa/2.0/build-key	2006-05-09 17:47:40.000000000 +0200
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/bin/sh
+ 
+ # Make a certificate/private key pair using a locally generated
+ # root certificate.
+diff -ur openvpn-2.0.7.orig/easy-rsa/2.0/build-key-pass openvpn-2.0.7/easy-rsa/2.0/build-key-pass
+--- openvpn-2.0.7.orig/easy-rsa/2.0/build-key-pass	2005-11-02 19:42:39.000000000 +0100
++++ openvpn-2.0.7/easy-rsa/2.0/build-key-pass	2006-05-09 17:47:40.000000000 +0200
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/bin/sh
+ 
+ # Similar to build-key, but protect the private key
+ # with a password.
+diff -ur openvpn-2.0.7.orig/easy-rsa/2.0/build-key-pkcs12 openvpn-2.0.7/easy-rsa/2.0/build-key-pkcs12
+--- openvpn-2.0.7.orig/easy-rsa/2.0/build-key-pkcs12	2005-11-02 19:42:39.000000000 +0100
++++ openvpn-2.0.7/easy-rsa/2.0/build-key-pkcs12	2006-05-09 17:47:40.000000000 +0200
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/bin/sh
+ 
+ # Make a certificate/private key pair using a locally generated
+ # root certificate and convert it to a PKCS #12 file including the
+diff -ur openvpn-2.0.7.orig/easy-rsa/2.0/build-key-server openvpn-2.0.7/easy-rsa/2.0/build-key-server
+--- openvpn-2.0.7.orig/easy-rsa/2.0/build-key-server	2005-11-02 19:42:39.000000000 +0100
++++ openvpn-2.0.7/easy-rsa/2.0/build-key-server	2006-05-09 17:47:40.000000000 +0200
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/bin/sh
+ 
+ # Make a certificate/private key pair using a locally generated
+ # root certificate.
+diff -ur openvpn-2.0.7.orig/easy-rsa/2.0/build-req openvpn-2.0.7/easy-rsa/2.0/build-req
+--- openvpn-2.0.7.orig/easy-rsa/2.0/build-req	2005-11-02 19:42:38.000000000 +0100
++++ openvpn-2.0.7/easy-rsa/2.0/build-req	2006-05-09 17:47:40.000000000 +0200
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/bin/sh
+ 
+ # Build a certificate signing request and private key.  Use this
+ # when your root certificate and key is not available locally.
+diff -ur openvpn-2.0.7.orig/easy-rsa/2.0/build-req-pass openvpn-2.0.7/easy-rsa/2.0/build-req-pass
+--- openvpn-2.0.7.orig/easy-rsa/2.0/build-req-pass	2005-11-02 19:42:39.000000000 +0100
++++ openvpn-2.0.7/easy-rsa/2.0/build-req-pass	2006-05-09 17:47:40.000000000 +0200
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/bin/sh
+ 
+ # Like build-req, but protect your private key
+ # with a password.
+diff -ur openvpn-2.0.7.orig/easy-rsa/2.0/clean-all openvpn-2.0.7/easy-rsa/2.0/clean-all
+--- openvpn-2.0.7.orig/easy-rsa/2.0/clean-all	2005-11-02 19:42:39.000000000 +0100
++++ openvpn-2.0.7/easy-rsa/2.0/clean-all	2006-05-09 17:47:40.000000000 +0200
+@@ -1,4 +1,6 @@
+-#!/bin/bash
++#!/bin/sh
++
++. /etc/easy-rsa/vars
+ 
+ # Initialize the $KEY_DIR directory.
+ # Note that this script does a
+diff -ur openvpn-2.0.7.orig/easy-rsa/2.0/inherit-inter openvpn-2.0.7/easy-rsa/2.0/inherit-inter
+--- openvpn-2.0.7.orig/easy-rsa/2.0/inherit-inter	2005-11-02 19:42:38.000000000 +0100
++++ openvpn-2.0.7/easy-rsa/2.0/inherit-inter	2006-05-09 17:47:40.000000000 +0200
+@@ -1,4 +1,6 @@
+-#!/bin/bash
++#!/bin/sh
++
++. /etc/easy-rsa/vars
+ 
+ # Build a new PKI which is rooted on an intermediate certificate generated
+ # by ./build-inter or ./pkitool --inter from a parent PKI.  The new PKI should
+diff -ur openvpn-2.0.7.orig/easy-rsa/2.0/list-crl openvpn-2.0.7/easy-rsa/2.0/list-crl
+--- openvpn-2.0.7.orig/easy-rsa/2.0/list-crl	2005-11-02 19:42:39.000000000 +0100
++++ openvpn-2.0.7/easy-rsa/2.0/list-crl	2006-05-09 17:47:40.000000000 +0200
+@@ -1,4 +1,6 @@
+-#!/bin/bash
++#!/bin/sh
++
++. /etc/easy-rsa/vars
+ 
+ # list revoked certificates
+ 
+diff -ur openvpn-2.0.7.orig/easy-rsa/2.0/pkitool openvpn-2.0.7/easy-rsa/2.0/pkitool
+--- openvpn-2.0.7.orig/easy-rsa/2.0/pkitool	2005-11-02 19:42:38.000000000 +0100
++++ openvpn-2.0.7/easy-rsa/2.0/pkitool	2006-05-09 17:47:40.000000000 +0200
+@@ -1,5 +1,7 @@
+ #!/bin/sh
+ 
++. /etc/easy-rsa/vars
++
+ #  OpenVPN -- An application to securely tunnel IP networks
+ #             over a single TCP/UDP port, with support for SSL/TLS-based
+ #             session authentication and key exchange,
+diff -ur openvpn-2.0.7.orig/easy-rsa/2.0/revoke-full openvpn-2.0.7/easy-rsa/2.0/revoke-full
+--- openvpn-2.0.7.orig/easy-rsa/2.0/revoke-full	2005-11-02 19:42:39.000000000 +0100
++++ openvpn-2.0.7/easy-rsa/2.0/revoke-full	2006-05-09 17:47:40.000000000 +0200
+@@ -1,4 +1,6 @@
+-#!/bin/bash
++#!/bin/sh
++
++. /etc/easy-rsa/vars
+ 
+ # revoke a certificate, regenerate CRL,
+ # and verify revocation
+diff -ur openvpn-2.0.7.orig/easy-rsa/2.0/sign-req openvpn-2.0.7/easy-rsa/2.0/sign-req
+--- openvpn-2.0.7.orig/easy-rsa/2.0/sign-req	2005-11-02 19:42:39.000000000 +0100
++++ openvpn-2.0.7/easy-rsa/2.0/sign-req	2006-05-09 17:47:40.000000000 +0200
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/bin/sh
+ 
+ # Sign a certificate signing request (a .csr file)
+ # with a local root certificate and key.
+diff -ur openvpn-2.0.7.orig/easy-rsa/2.0/vars openvpn-2.0.7/easy-rsa/2.0/vars
+--- openvpn-2.0.7.orig/easy-rsa/2.0/vars	2005-11-02 19:42:39.000000000 +0100
++++ openvpn-2.0.7/easy-rsa/2.0/vars	2006-05-09 17:47:40.000000000 +0200
+@@ -12,7 +12,7 @@
+ # This variable should point to
+ # the top level of the easy-rsa
+ # tree.
+-export EASY_RSA="`pwd`"
++export EASY_RSA="/etc/easy-rsa"
+ 
+ # This variable should point to
+ # the openssl.cnf file included
