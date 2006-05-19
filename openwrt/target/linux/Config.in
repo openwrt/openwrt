@@ -54,6 +54,13 @@ config BR2_PACKAGE_KMOD_IMQ
         help
           Kernel support for the Intermediate Queueing device
 
+config BR2_PACKAGE_KMOD_IPIP
+	prompt "kmod-ipip......................... IP in IP encapsulation support"
+	tristate
+	default m
+	help
+	  Kernel module for IP in IP encapsulation
+
 config BR2_PACKAGE_KMOD_IPV6
 	prompt "kmod-ipv6......................... IPv6 support"
 	tristate
