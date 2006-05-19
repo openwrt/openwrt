@@ -15,6 +15,9 @@ $(eval $(call KMOD_template,IMQ,imq,\
 	$(MODULES_DIR)/kernel/net/ipv4/netfilter/*IMQ*.o \
 	$(MODULES_DIR)/kernel/drivers/net/imq.o \
 ))
+$(eval $(call KMOD_template,IPIP,ipip,\
+	$(MODULES_DIR)/kernel/net/ipv4/ipip.o \
+,CONFIG_NET_IPIP,,60,ipip))
 
 $(eval $(call KMOD_template,IPV6,ipv6,\
 	$(MODULES_DIR)/kernel/net/ipv6/ipv6.o \
