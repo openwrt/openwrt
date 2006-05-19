@@ -12,6 +12,17 @@ config BR2_PACKAGE_OPENVPN
 	  
 	  Depends: kmod-tun, libpthread
 
+config BR2_PACKAGE_OPENVPN_EASY_RSA
+	prompt "openvpn-easy-rsa................ simple shell scripts to manage a Certificate Authority"
+	tristate
+	default m if CONFIG_DEVEL
+	select BR2_PACKAGE_OPENSSL_UTIL
+	depends on BR2_PACKAGE_OPENVPN
+	help
+	  collection of shell scripts to manage a simple CA infrastructure
+
+	  Depends: openpvn, openssl-util
+
 config BR2_COMPILE_OPENVPN_WITH_SERVER
 	prompt "Enable server support"
 	bool

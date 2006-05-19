@@ -17,6 +17,7 @@ PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 include $(TOPDIR)/package/rules.mk
 
 $(eval $(call PKG_template,OPENVPN,openvpn,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+$(eval $(call PKG_template,OPENVPN_EASY_RSA,openvpn-easy-rsa,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
 
 PKG_DEPEND:="kmod-tun"
 
@@ -102,3 +103,9 @@ $(IPKG_OPENVPN):
 	echo "Depends: $(PKG_DEPEND)" >> $(IDIR_OPENVPN)/CONTROL/control
 	$(IPKG_BUILD) $(IDIR_OPENVPN) $(PACKAGE_DIR)
 
+$(IPKG_OPENVPN_EASY_RSA):
+	install -d -m0755 $(IDIR_OPENVPN_EASY_RSA)/usr/sbin $(IDIR_OPENVPN_EASY_RSA)/etc/easy-rsa
+	$(CP) $(PKG_BUILD_DIR)/easy-rsa/2.0/{build-*,clean-all,inherit-inter,list-crl,pkitool,revoke-full,sign-req} $(IDIR_OPENVPN_EASY_RSA)/usr/sbin
+	install -m 0644 $(PKG_BUILD_DIR)/easy-rsa/2.0/openssl.cnf $(IDIR_OPENVPN_EASY_RSA)/etc/easy-rsa/openssl.cnf
+	install -m 0644 $(PKG_BUILD_DIR)/easy-rsa/2.0/vars $(IDIR_OPENVPN_EASY_RSA)/etc/easy-rsa/vars
+	$(IPKG_BUILD) $(IDIR_OPENVPN_EASY_RSA) $(PACKAGE_DIR)
