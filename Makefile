@@ -41,11 +41,11 @@ export OPENWRTVERSION
 all:
 
 .pkginfo: FORCE
-ifeq ($(shell ./scripts/timestamp.pl -p .pkginfo package),package)
+ifneq ($(shell ./scripts/timestamp.pl -p .pkginfo package Makefile),.pkginfo)
 	@echo Collecting package info...
-	@-for makefile in package/*/Makefile; do \
-		echo Source-Makefile: $$makefile; \
-		$(MAKE) --no-print-dir DUMP=1 -f $$makefile 2>&- || true; \
+	@-for dir in package/*/; do \
+		echo Source-Makefile: $${dir}Makefile; \
+		$(MAKE) --no-print-dir DUMP=1 -C $$dir 2>&- || true; \
 	done > $@
 endif
 

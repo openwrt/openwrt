@@ -23,10 +23,11 @@ TITLE:=Core utilities for embedded Linux
 DESCRIPTION:=The Swiss Army Knife of embedded Linux. \\\
 It slices, it dices, it makes Julian Fries.
 URL:=http://busybox.net/
-CONFIG:=menu "Configuration" \\\
-	depends on PACKAGE_busybox \\\
-source "package/busybox/config/Config.in" \\\
-endmenu
+CONFIG:=\\\
+	menu "Configuration" \\\
+		depends on PACKAGE_busybox \\\
+		source "$(SOURCE)/config/Config.in" \\\
+	endmenu
 endef
 
 define Build/Configure
