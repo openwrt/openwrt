@@ -1,2 +1,9 @@
 #!/bin/sh
 [ -z "$6" ] || env -i ACTION="ifup" INTERFACE="$6" PROTO=ppp /sbin/hotplug "iface"
+
+[ -d /etc/ppp/ip-up.d ] && {
+	for SCRIPT in /etc/ppp/ip-up.d/*
+	do
+		[ -x "$SCRIPT" ] && "$SCRIPT" $@
+	done
+}
