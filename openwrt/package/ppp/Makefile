@@ -95,7 +95,9 @@ $(IPKG_PPP):
 	install -m0644 ./files/etc/ppp/options $(IDIR_PPP)/etc/ppp/
 	$(INSTALL_FILTER)
 	install -m0755 ./files/etc/ppp/ip-up $(IDIR_PPP)/etc/ppp/
+	install -d -m0755 ./files/etc/ppp/ip-up.d
 	install -m0755 ./files/etc/ppp/ip-down $(IDIR_PPP)/etc/ppp/
+	install -d -m0755 ./files/etc/ppp/ip-down.d
 	install -d -m0755 $(IDIR_PPP)/usr/sbin
 	install -m0755 $(PKG_INSTALL_DIR)/usr/sbin/pppd $(IDIR_PPP)/usr/sbin/
 	install -d -m0755 $(IDIR_PPP)/usr/lib/pppd
