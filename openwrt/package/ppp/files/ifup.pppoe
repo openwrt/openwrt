@@ -9,6 +9,8 @@ eval "proto=\"\${${type}_proto}\""
 	exit
 }
 
+[ -d "/var/lock" ] || mkdir -p /var/lock || exit 1
+
 for module in slhc ppp_generic pppox pppoe; do
 	/sbin/insmod $module 2>&- >&-
 done
