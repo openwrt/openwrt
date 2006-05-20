@@ -1,7 +1,8 @@
 #!/bin/sh
-case "$ACTION" in
+ntp_server=$(nvram get ntp_server)
+case "${ACTION:-ifup}" in
 	ifup)
-		ps x | grep '[n]tpclient' >&- || {
+		ps x | grep 'bin/[n]tpclient' >&- || {
 			route -n 2>&- | grep '^0.0.0.0' >&- && /usr/sbin/ntpclient -c 1 -s -h ${ntp_server:-pool.ntp.org} &
 		}
 		;;
