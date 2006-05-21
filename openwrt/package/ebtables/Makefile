@@ -4,13 +4,14 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ebtables
 PKG_VERSION:=2.0.6
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_MD5SUM:=c4559af2366c764c6c42a3fdd40d60d3
 
 PKG_SOURCE_URL:=@SF/ebtables
 PKG_SOURCE:=$(PKG_NAME)-v$(PKG_VERSION).tar.gz
-PKG_BUILD_DIR:=$(BUILD_DIR)/ebtables-v$(PKG_VERSION)
 PKG_CAT:=zcat
+
+PKG_BUILD_DIR:=$(BUILD_DIR)/ebtables-v$(PKG_VERSION)
 
 include $(TOPDIR)/package/rules.mk
 
@@ -26,7 +27,9 @@ $(PKG_BUILD_DIR)/.built:
 	touch $@
 
 $(IPKG_EBTABLES):
-	mkdir -p $(IDIR_EBTABLES)/usr/sbin
-	$(CP) $(PKG_BUILD_DIR)/ebtables $(IDIR_EBTABLES)/usr/sbin/
+	install -d -m0755 $(IDIR_EBTABLES)/etc
+	install -m0644 $(PKG_BUILD_DIR)/ethertypes $(IDIR_EBTABLES)/etc/
+	install -d -m0755 $(IDIR_EBTABLES)/usr/sbin
+	install -m0755 $(PKG_BUILD_DIR)/ebtables $(IDIR_EBTABLES)/usr/sbin/
+	$(RSTRIP) $(IDIR_EBTABLES)
 	$(IPKG_BUILD) $(IDIR_EBTABLES) $(PACKAGE_DIR)
-
