@@ -20,7 +20,7 @@
 
 include $(TOPDIR)/rules.mk
 
-GCC_VERSION:=$(strip $(GCC_VERSION))
+GCC_VERSION:=$(strip $(CONFIG_GCC_VERSION))
 
 #GCC_SITE:=ftp://ftp.gnu.org/gnu/gcc/releases/gcc-$(GCC_VERSION)
 GCC_SITE:=ftp://ftp.fu-berlin.de/unix/languages/gcc/releases/gcc-$(GCC_VERSION) \
