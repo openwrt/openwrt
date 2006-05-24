@@ -4,7 +4,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ebtables
 PKG_VERSION:=2.0.6
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/ebtables-v$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-v$(PKG_VERSION).tar.gz
@@ -24,8 +24,10 @@ URL:=http://ebtables.sourceforge.net/
 endef
 
 define Package/ebtables/install
+	install -d -m0755 $(1)/etc
+	install -m0644 $(PKG_BUILD_DIR)/ethertypes $(1)/etc/
 	install -d -m0755 $(1)/usr/sbin
-	install -m0755 $(PKG_BUILD_DIR)/ebtables $(1)/usr/sbin/ebtables
+	install -m0755 $(PKG_BUILD_DIR)/ebtables $(1)/usr/sbin/
 endef
 
 $(eval $(call BuildPackage,ebtables))
