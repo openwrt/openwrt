@@ -3,13 +3,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=busybox
-PKG_VERSION:=1.1.2
+PKG_VERSION:=1.1.3
 PKG_RELEASE:=1
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://www.busybox.net/downloads
-PKG_MD5SUM:=0b5d78072302fe687407956537bdb9e3
+PKG_MD5SUM:=19a0b475169335f17e421cf644616fe7
 PKG_CAT:=bzcat
 
 include $(TOPDIR)/package/rules.mk

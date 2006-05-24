@@ -5,7 +5,7 @@ diff -Nur busybox-1.1.1/include/applets.h busybox-1.1.1-owrt/include/applets.h
  USE_MV(APPLET(mv, mv_main, _BB_DIR_BIN, _BB_SUID_NEVER))
  USE_NAMEIF(APPLET(nameif, nameif_main, _BB_DIR_SBIN, _BB_SUID_NEVER))
  USE_NC(APPLET(nc, nc_main, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
-+USE_NETMSG(APPLET_NOUSAGE("netmsg", netmsg_main, _BB_DIR_BIN, _BB_SUID_ALWAYS))
++USE_NETMSG(APPLET_NOUSAGE(netmsg, netmsg_main, _BB_DIR_BIN, _BB_SUID_ALWAYS))
  USE_NETSTAT(APPLET(netstat, netstat_main, _BB_DIR_BIN, _BB_SUID_NEVER))
  USE_NICE(APPLET(nice, nice_main, _BB_DIR_BIN, _BB_SUID_NEVER))
  USE_NOHUP(APPLET(nohup, nohup_main, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
