@@ -1,0 +1,15 @@
+#
+# fix ipkg bugs
+#
+diff -ruN busybox-1.1.2+ipkg-0.99.162-no_warnings/archival/libipkg/pkg.c busybox-1.1.2+ipkg-0.99.162-fixes/archival/libipkg/pkg.c
+--- busybox-1.1.2+ipkg-0.99.162-no_warnings/archival/libipkg/pkg.c	2006-05-09 02:16:48.000000000 +0200
++++ busybox-1.1.2+ipkg-0.99.162-fixes/archival/libipkg/pkg.c	2006-05-09 05:15:29.000000000 +0200
+@@ -359,6 +359,8 @@
+      if (!oldpkg->essential)
+ 	  oldpkg->essential = newpkg->essential;
+ 
++     oldpkg->provided_by_hand |= newpkg->provided_by_hand;
++
+      return 0;
+ }
+ 

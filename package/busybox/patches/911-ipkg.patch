@@ -1,6 +1,9 @@
-diff -ruN busybox-1.1.1-old/Makefile busybox-1.1.1-new/Makefile
---- busybox-1.1.1-old/Makefile	2006-03-22 22:16:26.000000000 +0100
-+++ busybox-1.1.1-new/Makefile	2006-03-30 00:39:48.000000000 +0200
+#
+# add ipkg support to busybox
+#
+diff -ruN busybox-1.1.2-orig/Makefile busybox-1.1.2+ipkg-0.99.162/Makefile
+--- busybox-1.1.2-orig/Makefile	2006-04-10 21:45:46.000000000 +0200
++++ busybox-1.1.2+ipkg-0.99.162/Makefile	2006-05-09 02:06:48.000000000 +0200
 @@ -25,7 +25,7 @@
  export srctree=$(top_srcdir)
  vpath %/Config.in $(srctree)
@@ -10,9 +13,9 @@ diff -ruN busybox-1.1.1-old/Makefile busybox-1.1.1-new/Makefile
  	debianutils editors findutils init miscutils modutils networking \
  	networking/libiproute networking/udhcp procps loginutils shell \
  	sysklogd util-linux e2fsprogs libpwdgrp coreutils/libcoreutils libbb
-diff -ruN busybox-1.1.1-old/archival/Config.in busybox-1.1.1-new/archival/Config.in
---- busybox-1.1.1-old/archival/Config.in	2006-03-22 22:16:20.000000000 +0100
-+++ busybox-1.1.1-new/archival/Config.in	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/Config.in busybox-1.1.2+ipkg-0.99.162/archival/Config.in
+--- busybox-1.1.2-orig/archival/Config.in	2006-03-22 22:16:20.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/Config.in	2006-05-09 02:06:48.000000000 +0200
 @@ -121,6 +121,14 @@
  	  gzip is used to compress files.
  	  It's probably the most widely used UNIX compression program.
@@ -28,9 +31,9 @@ diff -ruN busybox-1.1.1-old/archival/Config.in busybox-1.1.1-new/archival/Config
  config CONFIG_RPM2CPIO
  	bool "rpm2cpio"
  	default n
-diff -ruN busybox-1.1.1-old/archival/Makefile.in busybox-1.1.1-new/archival/Makefile.in
---- busybox-1.1.1-old/archival/Makefile.in	2006-03-22 22:16:20.000000000 +0100
-+++ busybox-1.1.1-new/archival/Makefile.in	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/Makefile.in busybox-1.1.2+ipkg-0.99.162/archival/Makefile.in
+--- busybox-1.1.2-orig/archival/Makefile.in	2006-03-22 22:16:20.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/Makefile.in	2006-05-09 02:06:48.000000000 +0200
 @@ -20,6 +20,7 @@
  ARCHIVAL-$(CONFIG_DPKG_DEB)	+= dpkg_deb.o
  ARCHIVAL-$(CONFIG_GUNZIP)	+= gunzip.o
@@ -39,9 +42,9 @@ diff -ruN busybox-1.1.1-old/archival/Makefile.in busybox-1.1.1-new/archival/Make
  ARCHIVAL-$(CONFIG_RPM2CPIO)	+= rpm2cpio.o
  ARCHIVAL-$(CONFIG_RPM)		+= rpm.o
  ARCHIVAL-$(CONFIG_TAR)		+= tar.o
-diff -ruN busybox-1.1.1-old/archival/dpkg.c busybox-1.1.1-new/archival/dpkg.c
---- busybox-1.1.1-old/archival/dpkg.c	2006-03-22 22:16:20.000000000 +0100
-+++ busybox-1.1.1-new/archival/dpkg.c	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/dpkg.c busybox-1.1.2+ipkg-0.99.162/archival/dpkg.c
+--- busybox-1.1.2-orig/archival/dpkg.c	2006-03-22 22:16:20.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/dpkg.c	2006-05-09 02:06:48.000000000 +0200
 @@ -1530,6 +1530,10 @@
  	return(ar_handle->sub_archive->buffer);
  }
@@ -62,9 +65,9 @@ diff -ruN busybox-1.1.1-old/archival/dpkg.c busybox-1.1.1-new/archival/dpkg.c
  static void unpack_package(deb_file_t *deb_file)
  {
  	const char *package_name = name_hashtable[package_hashtable[deb_file->package]->name];
-diff -ruN busybox-1.1.1-old/archival/ipkg.c busybox-1.1.1-new/archival/ipkg.c
---- busybox-1.1.1-old/archival/ipkg.c	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/ipkg.c	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/ipkg.c busybox-1.1.2+ipkg-0.99.162/archival/ipkg.c
+--- busybox-1.1.2-orig/archival/ipkg.c	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/ipkg.c	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,26 @@
 +/* ipkg.c - the itsy package management system
 +
@@ -92,9 +95,9 @@ diff -ruN busybox-1.1.1-old/archival/ipkg.c busybox-1.1.1-new/archival/ipkg.c
 +{
 +	return ipkg_op(argc, argv);
 +}
-diff -ruN busybox-1.1.1-old/archival/libipkg/Makefile busybox-1.1.1-new/archival/libipkg/Makefile
---- busybox-1.1.1-old/archival/libipkg/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/Makefile	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/Makefile busybox-1.1.2+ipkg-0.99.162/archival/libipkg/Makefile
+--- busybox-1.1.2-orig/archival/libipkg/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/Makefile	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,32 @@
 +# Makefile for busybox
 +#
@@ -128,9 +131,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/Makefile busybox-1.1.1-new/archival
 +clean:
 +	rm -f *.o *.a $(AR_TARGET)
 +
-diff -ruN busybox-1.1.1-old/archival/libipkg/Makefile.in busybox-1.1.1-new/archival/libipkg/Makefile.in
---- busybox-1.1.1-old/archival/libipkg/Makefile.in	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/Makefile.in	2006-03-30 01:14:50.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/Makefile.in busybox-1.1.2+ipkg-0.99.162/archival/libipkg/Makefile.in
+--- busybox-1.1.2-orig/archival/libipkg/Makefile.in	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/Makefile.in	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,85 @@
 +# Makefile for busybox
 +#
@@ -217,10 +220,10 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/Makefile.in busybox-1.1.1-new/archi
 +$(LIBIPKG_OBJS): $(LIBIPKG_DIR)%.o : $(srcdir)/%.c
 +	$(compile.c)
 +
-diff -ruN busybox-1.1.1-old/archival/libipkg/args.c busybox-1.1.1-new/archival/libipkg/args.c
---- busybox-1.1.1-old/archival/libipkg/args.c	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/args.c	2006-03-30 00:39:48.000000000 +0200
-@@ -0,0 +1,241 @@
+diff -ruN busybox-1.1.2-orig/archival/libipkg/args.c busybox-1.1.2+ipkg-0.99.162/archival/libipkg/args.c
+--- busybox-1.1.2-orig/archival/libipkg/args.c	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/args.c	2006-05-09 02:12:03.000000000 +0200
+@@ -0,0 +1,242 @@
 +/* args.c - parse command-line args
 + 
 +  Carl D. Worth
@@ -302,6 +305,7 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/args.c busybox-1.1.1-new/archival/l
 +     args->offline_root_post_script_cmd = ARGS_DEFAULT_OFFLINE_ROOT_POST_SCRIPT_CMD;
 +     args->multiple_providers = 0;
 +     args->nocheckfordirorfile = 0;
++     args->noreadfeedsfile = 0;
 +
 +     return 1;
 +}
@@ -462,10 +466,10 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/args.c busybox-1.1.1-new/archival/l
 +{
 +	bb_error_msg("version %s\n", IPKG_VERSION);
 +}
-diff -ruN busybox-1.1.1-old/archival/libipkg/args.h busybox-1.1.1-new/archival/libipkg/args.h
---- busybox-1.1.1-old/archival/libipkg/args.h	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/args.h	2006-03-30 00:39:48.000000000 +0200
-@@ -0,0 +1,71 @@
+diff -ruN busybox-1.1.2-orig/archival/libipkg/args.h busybox-1.1.2+ipkg-0.99.162/archival/libipkg/args.h
+--- busybox-1.1.2-orig/archival/libipkg/args.h	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/args.h	2006-05-09 02:12:03.000000000 +0200
+@@ -0,0 +1,72 @@
 +/* args.h - parse command-line args
 +
 +  Carl D. Worth
@@ -506,6 +510,7 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/args.h busybox-1.1.1-new/archival/l
 +    int verbose_wget;
 +    int verbosity;
 +    int nocheckfordirorfile;
++    int noreadfeedsfile;
 +    char *offline_root;
 +    char *offline_root_pre_script_cmd;
 +    char *offline_root_post_script_cmd;
@@ -537,9 +542,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/args.h busybox-1.1.1-new/archival/l
 +void args_usage(char *complaint);
 +
 +#endif
-diff -ruN busybox-1.1.1-old/archival/libipkg/conffile.c busybox-1.1.1-new/archival/libipkg/conffile.c
---- busybox-1.1.1-old/archival/libipkg/conffile.c	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/conffile.c	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/conffile.c busybox-1.1.2+ipkg-0.99.162/archival/libipkg/conffile.c
+--- busybox-1.1.2-orig/archival/libipkg/conffile.c	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/conffile.c	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,64 @@
 +/* conffile.c - the itsy package management system
 +
@@ -605,9 +610,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/conffile.c busybox-1.1.1-new/archiv
 +
 +    return ret;
 +}
-diff -ruN busybox-1.1.1-old/archival/libipkg/conffile.h busybox-1.1.1-new/archival/libipkg/conffile.h
---- busybox-1.1.1-old/archival/libipkg/conffile.h	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/conffile.h	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/conffile.h busybox-1.1.2+ipkg-0.99.162/archival/libipkg/conffile.h
+--- busybox-1.1.2-orig/archival/libipkg/conffile.h	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/conffile.h	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,30 @@
 +/* conffile.h - the itsy package management system
 +
@@ -639,9 +644,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/conffile.h busybox-1.1.1-new/archiv
 +
 +#endif
 +
-diff -ruN busybox-1.1.1-old/archival/libipkg/conffile_list.c busybox-1.1.1-new/archival/libipkg/conffile_list.c
---- busybox-1.1.1-old/archival/libipkg/conffile_list.c	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/conffile_list.c	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/conffile_list.c busybox-1.1.2+ipkg-0.99.162/archival/libipkg/conffile_list.c
+--- busybox-1.1.2-orig/archival/libipkg/conffile_list.c	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/conffile_list.c	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,47 @@
 +/* conffile_list.c - the itsy package management system
 +
@@ -690,9 +695,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/conffile_list.c busybox-1.1.1-new/a
 +    return nv_pair_list_pop(list);
 +}
 +
-diff -ruN busybox-1.1.1-old/archival/libipkg/conffile_list.h busybox-1.1.1-new/archival/libipkg/conffile_list.h
---- busybox-1.1.1-old/archival/libipkg/conffile_list.h	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/conffile_list.h	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/conffile_list.h busybox-1.1.2+ipkg-0.99.162/archival/libipkg/conffile_list.h
+--- busybox-1.1.2-orig/archival/libipkg/conffile_list.h	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/conffile_list.h	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,36 @@
 +/* conffile_list.h - the itsy package management system
 +
@@ -730,9 +735,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/conffile_list.h busybox-1.1.1-new/a
 +
 +#endif
 +
-diff -ruN busybox-1.1.1-old/archival/libipkg/file_util.c busybox-1.1.1-new/archival/libipkg/file_util.c
---- busybox-1.1.1-old/archival/libipkg/file_util.c	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/file_util.c	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/file_util.c busybox-1.1.2+ipkg-0.99.162/archival/libipkg/file_util.c
+--- busybox-1.1.2-orig/archival/libipkg/file_util.c	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/file_util.c	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,177 @@
 +/* file_util.c - convenience routines for common stat operations
 +
@@ -911,9 +916,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/file_util.c busybox-1.1.1-new/archi
 +    return md5sum_hex;
 +}
 +
-diff -ruN busybox-1.1.1-old/archival/libipkg/file_util.h busybox-1.1.1-new/archival/libipkg/file_util.h
---- busybox-1.1.1-old/archival/libipkg/file_util.h	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/file_util.h	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/file_util.h busybox-1.1.2+ipkg-0.99.162/archival/libipkg/file_util.h
+--- busybox-1.1.2-orig/archival/libipkg/file_util.h	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/file_util.h	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,29 @@
 +/* file_util.h - convenience routines for common file operations
 +
@@ -944,9 +949,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/file_util.h busybox-1.1.1-new/archi
 +char *file_md5sum_alloc(const char *file_name);
 +
 +#endif
-diff -ruN busybox-1.1.1-old/archival/libipkg/hash_table.c busybox-1.1.1-new/archival/libipkg/hash_table.c
---- busybox-1.1.1-old/archival/libipkg/hash_table.c	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/hash_table.c	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/hash_table.c busybox-1.1.2+ipkg-0.99.162/archival/libipkg/hash_table.c
+--- busybox-1.1.2-orig/archival/libipkg/hash_table.c	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/hash_table.c	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,155 @@
 +/* hash.c - hash tables for ipkg
 +
@@ -1103,9 +1108,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/hash_table.c busybox-1.1.1-new/arch
 +    }
 +}
 +
-diff -ruN busybox-1.1.1-old/archival/libipkg/hash_table.h busybox-1.1.1-new/archival/libipkg/hash_table.h
---- busybox-1.1.1-old/archival/libipkg/hash_table.h	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/hash_table.h	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/hash_table.h busybox-1.1.2+ipkg-0.99.162/archival/libipkg/hash_table.h
+--- busybox-1.1.2-orig/archival/libipkg/hash_table.h	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/hash_table.h	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,44 @@
 +/* hash.h - hash tables for ipkg
 +
@@ -1151,9 +1156,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/hash_table.h busybox-1.1.1-new/arch
 +void hash_table_foreach(hash_table_t *hash, void (*f)(const char *key, void *entry, void *data), void *data);
 +
 +#endif /* _HASH_TABLE_H_ */
-diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg.h busybox-1.1.1-new/archival/libipkg/ipkg.h
---- busybox-1.1.1-old/archival/libipkg/ipkg.h	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/ipkg.h	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/ipkg.h busybox-1.1.2+ipkg-0.99.162/archival/libipkg/ipkg.h
+--- busybox-1.1.2-orig/archival/libipkg/ipkg.h	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/ipkg.h	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,74 @@
 +/* ipkg.h - the itsy package management system
 +
@@ -1204,7 +1209,7 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg.h busybox-1.1.1-new/archival/l
 +
 +#define IPKG_LIST_DESCRIPTION_LENGTH 128
 +
-+#define IPKG_VERSION "0.99.154"
++#define IPKG_VERSION "0.99.162"
 +
 +
 +enum ipkg_error {
@@ -1229,10 +1234,10 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg.h busybox-1.1.1-new/archival/l
 +extern ipkg_conf_t *global_conf;
 +
 +#endif
-diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_cmd.c busybox-1.1.1-new/archival/libipkg/ipkg_cmd.c
---- busybox-1.1.1-old/archival/libipkg/ipkg_cmd.c	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/ipkg_cmd.c	2006-03-30 00:39:48.000000000 +0200
-@@ -0,0 +1,1344 @@
+diff -ruN busybox-1.1.2-orig/archival/libipkg/ipkg_cmd.c busybox-1.1.2+ipkg-0.99.162/archival/libipkg/ipkg_cmd.c
+--- busybox-1.1.2-orig/archival/libipkg/ipkg_cmd.c	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/ipkg_cmd.c	2006-05-09 02:23:37.000000000 +0200
+@@ -0,0 +1,1431 @@
 +/* ipkg_cmd.c - the itsy package management system
 +
 +   Carl D. Worth
@@ -1260,6 +1265,7 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_cmd.c busybox-1.1.1-new/archiv
 +#include <unistd.h>
 +#include <signal.h>
 +#include <stdio.h>
++#include <dirent.h>
 +
 +#include "ipkg_conf.h"
 +#include "ipkg_cmd.h"
@@ -1427,13 +1433,7 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_cmd.c busybox-1.1.1-new/archiv
 +     pkg_src_t *src;
 +
 + 
-+     if (conf->offline_root) {
-+	  sprintf_alloc(&lists_dir, "%s/%s", 
-+			conf->offline_root, 
-+			conf->restrict_to_default_dest ? conf->default_dest->lists_dir : conf->lists_dir);
-+     } else {
-+	  sprintf_alloc(&lists_dir, "%s", conf->restrict_to_default_dest ? conf->default_dest->lists_dir : conf->lists_dir);
-+     }
++    sprintf_alloc(&lists_dir, "%s", conf->restrict_to_default_dest ? conf->default_dest->lists_dir : conf->lists_dir);
 + 
 +    if (! file_is_dir(lists_dir)) {
 +	  if (file_exists(lists_dir)) {
@@ -1563,6 +1563,8 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_cmd.c busybox-1.1.1-new/archiv
 +	  //if (strcmp (tmp + (tmplen - strlen (DPKG_PKG_EXTENSION)), DPKG_PKG_EXTENSION) != 0)
 +	  //     continue;
 +	
++          ipkg_message(conf, IPKG_DEBUG2, "Debug mfs: %s  \n",filename );
++
 +	  err = ipkg_prepare_url_for_install(conf, filename, &argv[i]);
 +	  if (err)
 +	    return err;
@@ -1570,11 +1572,90 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_cmd.c busybox-1.1.1-new/archiv
 +     return 0;
 +}
 +
++struct ipkg_intercept
++{
++    char *oldpath;
++    char *statedir;
++};
++
++typedef struct ipkg_intercept *ipkg_intercept_t;
++
++ipkg_intercept_t ipkg_prep_intercepts(ipkg_conf_t *conf)
++{
++    ipkg_intercept_t ctx;
++    char *newpath;
++    int gen;
++
++    ctx = malloc (sizeof (*ctx));
++    ctx->oldpath = strdup (getenv ("PATH"));
++
++    sprintf_alloc (&newpath, "%s/ipkg/intercept:%s", IPKGLIBDIR, ctx->oldpath);
++    setenv ("PATH", newpath, 1);
++    free (newpath);
++    
++    gen = 0;
++ retry:
++    sprintf_alloc (&ctx->statedir, "/tmp/ipkg-intercept-%d-%d", getpid (), gen);
++    if (mkdir (ctx->statedir, 0770) < 0) {
++	if (errno == EEXIST) {
++	    free (ctx->statedir);
++	    gen++;
++	    goto retry;
++	}
++	perror (ctx->statedir);
++	return NULL;
++    }
++    setenv ("IPKG_INTERCEPT_DIR", ctx->statedir, 1);
++    return ctx;
++}
++
++int ipkg_finalize_intercepts(ipkg_intercept_t ctx)
++{
++    char *cmd;
++    DIR *dir;
++    int err = 0;
++
++    setenv ("PATH", ctx->oldpath, 1);
++    free (ctx->oldpath);
++
++    dir = opendir (ctx->statedir);
++    if (dir) {
++	struct dirent *de;
++	while (de = readdir (dir), de != NULL) {
++	    char *path;
++	    
++	    if (de->d_name[0] == '.')
++		continue;
++	    
++	    sprintf_alloc (&path, "%s/%s", ctx->statedir, de->d_name);
++	    if (access (path, X_OK) == 0) {
++		if (system (path)) {
++		    err = errno;
++		    perror (de->d_name);
++		}
++	    }
++	    free (path);
++	}
++    } else
++	perror (ctx->statedir);
++	
++    sprintf_alloc (&cmd, "rm -rf %s", ctx->statedir);
++    system (cmd);
++    free (cmd);
++
++    free (ctx->statedir);
++    free (ctx);
++
++    return err;
++}
++
 +int ipkg_configure_packages(ipkg_conf_t *conf, char *pkg_name)
 +{
 +     pkg_vec_t *all;
 +     int i;
 +     pkg_t *pkg;
++     ipkg_intercept_t ic;
++     int r, err = 0;
 +
 +     ipkg_message(conf, IPKG_INFO,
 +		  "Configuring unpacked packages\n");
@@ -1583,6 +1664,8 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_cmd.c busybox-1.1.1-new/archiv
 +     all = pkg_vec_alloc();
 +     pkg_hash_fetch_available(&conf->pkg_hash, all);
 +
++     ic = ipkg_prep_intercepts (conf);
++    
 +     for(i = 0; i < all->len; i++) {
 +	  pkg = all->pkgs[i];
 +
@@ -1593,16 +1676,24 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_cmd.c busybox-1.1.1-new/archiv
 +	       ipkg_message(conf, IPKG_NOTICE,
 +			    "Configuring %s\n", pkg->name);
 +	       fflush( stdout );
-+	       if (ipkg_configure(conf, pkg) == 0) {
++	       r = ipkg_configure(conf, pkg);
++	       if (r == 0) {
 +		    pkg->state_status = SS_INSTALLED;
 +		    pkg->parent->state_status = SS_INSTALLED;
 +		    pkg->state_flag &= ~SF_PREFER;
++	       } else {
++		    if (!err)
++			err = r;
 +	       }
 +	  }
 +     }
 +
++     r = ipkg_finalize_intercepts (ic);
++     if (r && !err)
++	 err = r;
++
 +     pkg_vec_free(all);
-+     return 0;
++     return err;
 +}
 +
 +static void sigint_handler(int sig)
@@ -1629,6 +1720,7 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_cmd.c busybox-1.1.1-new/archiv
 +     for (i=0; i < argc; i++) {
 +	  arg = argv[i];
 +
++          ipkg_message(conf, IPKG_DEBUG2, "Debug install_cmd: %s  \n",arg );
 +          err = ipkg_prepare_url_for_install(conf, arg, &argv[i]);
 +          if (err != EINVAL && err != 0)
 +              return err;
@@ -2034,7 +2126,7 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_cmd.c busybox-1.1.1-new/archiv
 +	            ipkg_message(conf, IPKG_ERROR, "Package seems to be %s not installed (STATUS = NOT_INSTALLED).\n", pkg->name);
 +                    continue;
 +               }
-+               ipkg_remove_pkg(conf, pkg_to_remove);
++               ipkg_remove_pkg(conf, pkg_to_remove,0);
 +               done = 1;
 +           }
 +           free (pkg_name);
@@ -2074,7 +2166,7 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_cmd.c busybox-1.1.1-new/archiv
 +			&& !pkg_has_installed_dependents(conf, pkg->parent, pkg, NULL)) {
 +			 removed++;
 +			 ipkg_message(conf, IPKG_NOTICE, "Removing non-user leaf package %s\n");
-+			 ipkg_remove_pkg(conf, pkg);
++			 ipkg_remove_pkg(conf, pkg,0);
 +                         done = 1;
 +		    }
 +	       }
@@ -2577,9 +2669,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_cmd.c busybox-1.1.1-new/archiv
 +}
 +
 +
-diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_cmd.h busybox-1.1.1-new/archival/libipkg/ipkg_cmd.h
---- busybox-1.1.1-old/archival/libipkg/ipkg_cmd.h	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/ipkg_cmd.h	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/ipkg_cmd.h busybox-1.1.2+ipkg-0.99.162/archival/libipkg/ipkg_cmd.h
+--- busybox-1.1.2-orig/archival/libipkg/ipkg_cmd.h	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/ipkg_cmd.h	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,46 @@
 +/* ipkg_cmd.h - the itsy package management system
 +
@@ -2627,10 +2719,10 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_cmd.h busybox-1.1.1-new/archiv
 +int pkg_mark_provides(pkg_t *pkg);
 +
 +#endif
-diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_conf.c busybox-1.1.1-new/archival/libipkg/ipkg_conf.c
---- busybox-1.1.1-old/archival/libipkg/ipkg_conf.c	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/ipkg_conf.c	2006-03-30 00:39:48.000000000 +0200
-@@ -0,0 +1,709 @@
+diff -ruN busybox-1.1.2-orig/archival/libipkg/ipkg_conf.c busybox-1.1.2+ipkg-0.99.162/archival/libipkg/ipkg_conf.c
+--- busybox-1.1.2-orig/archival/libipkg/ipkg_conf.c	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/ipkg_conf.c	2006-05-09 02:12:04.000000000 +0200
+@@ -0,0 +1,711 @@
 +/* ipkg_conf.c - the itsy package management system
 +
 +   Carl D. Worth
@@ -2816,6 +2908,13 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_conf.c busybox-1.1.1-new/archi
 +        sprintf (lists_dir,"%s",IPKG_CONF_LISTS_DIR);
 +     }
 +
++     if (args->offline_root) {
++            char *tmp = malloc(strlen(lists_dir) + strlen(args->offline_root) + 1);
++            sprintf_alloc(&tmp, "%s/%s",args->offline_root,lists_dir);
++            free(lists_dir);
++            lists_dir = tmp;
++     }
++
 +     pending_dir = malloc(strlen(lists_dir)+strlen("/pending")+5);
 +     snprintf(pending_dir,strlen(lists_dir)+strlen("/pending") ,"%s%s",lists_dir,"/pending");
 +
@@ -2912,7 +3011,8 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_conf.c busybox-1.1.1-new/archi
 +*/
 +     if ( !(args->nocheckfordirorfile)){
 +        /* need to run load the source list before dest list -Jamey */
-+        set_and_load_pkg_src_list(conf, &conf->pkg_src_list);
++        if ( !(args->noreadfeedsfile))
++           set_and_load_pkg_src_list(conf, &conf->pkg_src_list);
 +   
 +        /* Now that we have resolved conf->offline_root, we can commit to
 +	   the directory names for the dests and load in all the package
@@ -3033,16 +3133,10 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_conf.c busybox-1.1.1-new/archi
 +	  if (src == NULL) {
 +	       continue;
 +	  }
-+ 	  if (conf->offline_root) {
-+	       sprintf_alloc(&list_file, "%s/%s/%s", 
-+			     conf->offline_root,
-+			     conf->restrict_to_default_dest ? conf->default_dest->lists_dir : conf->lists_dir, 
-+			     src->name);
-+ 	  } else {
-+	       sprintf_alloc(&list_file, "%s/%s", 
-+			     conf->restrict_to_default_dest ? conf->default_dest->lists_dir : conf->lists_dir, 
-+			     src->name);
-+ 	  }
++
++	  sprintf_alloc(&list_file, "%s/%s", 
++			  conf->restrict_to_default_dest ? conf->default_dest->lists_dir : conf->lists_dir, 
++			  src->name);
 +
 +	  if (file_exists(list_file)) {
 +	       pkg_hash_add_from_file(conf, list_file, src, NULL, 0);
@@ -3340,9 +3434,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_conf.c busybox-1.1.1-new/archi
 +     sprintf_alloc(&root_filename, "%s%s", (conf->offline_root ? conf->offline_root : ""), filename);
 +     return root_filename;
 +}
-diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_conf.h busybox-1.1.1-new/archival/libipkg/ipkg_conf.h
---- busybox-1.1.1-old/archival/libipkg/ipkg_conf.h	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/ipkg_conf.h	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/ipkg_conf.h busybox-1.1.2+ipkg-0.99.162/archival/libipkg/ipkg_conf.h
+--- busybox-1.1.2-orig/archival/libipkg/ipkg_conf.h	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/ipkg_conf.h	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,107 @@
 +/* ipkg_conf.h - the itsy package management system
 +
@@ -3451,9 +3545,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_conf.h busybox-1.1.1-new/archi
 +char *root_filename_alloc(ipkg_conf_t *conf, char *filename);
 +
 +#endif
-diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_configure.c busybox-1.1.1-new/archival/libipkg/ipkg_configure.c
---- busybox-1.1.1-old/archival/libipkg/ipkg_configure.c	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/ipkg_configure.c	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/ipkg_configure.c busybox-1.1.2+ipkg-0.99.162/archival/libipkg/ipkg_configure.c
+--- busybox-1.1.2-orig/archival/libipkg/ipkg_configure.c	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/ipkg_configure.c	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,40 @@
 +/* ipkg_configure.c - the itsy package management system
 +
@@ -3495,9 +3589,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_configure.c busybox-1.1.1-new/
 +    return 0;
 +}
 +
-diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_configure.h busybox-1.1.1-new/archival/libipkg/ipkg_configure.h
---- busybox-1.1.1-old/archival/libipkg/ipkg_configure.h	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/ipkg_configure.h	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/ipkg_configure.h busybox-1.1.2+ipkg-0.99.162/archival/libipkg/ipkg_configure.h
+--- busybox-1.1.2-orig/archival/libipkg/ipkg_configure.h	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/ipkg_configure.h	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,25 @@
 +/* ipkg_configure.h - the itsy package management system
 +
@@ -3524,10 +3618,10 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_configure.h busybox-1.1.1-new/
 +int ipkg_configure(ipkg_conf_t *ipkg_conf, pkg_t *pkg);
 +
 +#endif
-diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_download.c busybox-1.1.1-new/archival/libipkg/ipkg_download.c
---- busybox-1.1.1-old/archival/libipkg/ipkg_download.c	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/ipkg_download.c	2006-03-30 00:39:48.000000000 +0200
-@@ -0,0 +1,191 @@
+diff -ruN busybox-1.1.2-orig/archival/libipkg/ipkg_download.c busybox-1.1.2+ipkg-0.99.162/archival/libipkg/ipkg_download.c
+--- busybox-1.1.2-orig/archival/libipkg/ipkg_download.c	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/ipkg_download.c	2006-05-09 02:12:04.000000000 +0200
+@@ -0,0 +1,195 @@
 +/* ipkg_download.c - the itsy package management system
 +
 +   Carl D. Worth
@@ -3696,8 +3790,12 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_download.c busybox-1.1.1-new/a
 +	  if (err)
 +	       return err;
 +	  pkg->local_filename = strdup(url);
++	  ipkg_message(conf, IPKG_DEBUG2, "Package %s provided by hand \(%s\).\n", pkg->name,pkg->local_filename);
++          pkg->provided_by_hand = 1;
 +
 +     } else {
++       pkg_deinit(pkg);
++       free(pkg);
 +       return 0;
 +     }
 +
@@ -3715,13 +3813,13 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_download.c busybox-1.1.1-new/a
 +        return 0;
 +     }
 +     if (namep) {
-+	  *namep = pkg->name;
++	  *namep = strdup(pkg->name);
 +     }
 +     return 0;
 +}
-diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_download.h busybox-1.1.1-new/archival/libipkg/ipkg_download.h
---- busybox-1.1.1-old/archival/libipkg/ipkg_download.h	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/ipkg_download.h	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/ipkg_download.h busybox-1.1.2+ipkg-0.99.162/archival/libipkg/ipkg_download.h
+--- busybox-1.1.2-orig/archival/libipkg/ipkg_download.h	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/ipkg_download.h	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,30 @@
 +/* ipkg_download.h - the itsy package management system
 +
@@ -3753,9 +3851,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_download.h busybox-1.1.1-new/a
 +int ipkg_prepare_url_for_install(ipkg_conf_t *conf, const char *url, char **namep);
 +
 +#endif
-diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_includes.h busybox-1.1.1-new/archival/libipkg/ipkg_includes.h
---- busybox-1.1.1-old/archival/libipkg/ipkg_includes.h	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/ipkg_includes.h	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/ipkg_includes.h busybox-1.1.2+ipkg-0.99.162/archival/libipkg/ipkg_includes.h
+--- busybox-1.1.2-orig/archival/libipkg/ipkg_includes.h	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/ipkg_includes.h	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,79 @@
 +#ifndef IPKG_INCLUDES_H
 +#define IPKG_INCLUDES_H
@@ -3836,10 +3934,10 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_includes.h busybox-1.1.1-new/a
 +#endif
 +
 +#endif /* IPKG_INCLUDES_H */
-diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_install.c busybox-1.1.1-new/archival/libipkg/ipkg_install.c
---- busybox-1.1.1-old/archival/libipkg/ipkg_install.c	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/ipkg_install.c	2006-03-30 00:39:48.000000000 +0200
-@@ -0,0 +1,1823 @@
+diff -ruN busybox-1.1.2-orig/archival/libipkg/ipkg_install.c busybox-1.1.2+ipkg-0.99.162/archival/libipkg/ipkg_install.c
+--- busybox-1.1.2-orig/archival/libipkg/ipkg_install.c	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/ipkg_install.c	2006-05-09 02:12:04.000000000 +0200
+@@ -0,0 +1,1942 @@
 +/* ipkg_install.c - the itsy package management system
 +
 +   Carl D. Worth
@@ -3894,6 +3992,7 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_install.c busybox-1.1.1-new/ar
 +static int preinst_configure(ipkg_conf_t *conf, pkg_t *pkg, pkg_t *old_pkg);
 +static int preinst_configure_unwind(ipkg_conf_t *conf, pkg_t *pkg, pkg_t *old_pkg);
 +static int check_data_file_clashes(ipkg_conf_t *conf, pkg_t *pkg, pkg_t *old_pkg);
++static int check_data_file_clashes_change(ipkg_conf_t *conf, pkg_t *pkg, pkg_t *old_pkg);
 +static int check_data_file_clashes_unwind(ipkg_conf_t *conf, pkg_t *pkg, pkg_t *old_pkg);
 +static int backup_modified_conffiles(ipkg_conf_t *conf, pkg_t *pkg, pkg_t *old_pkg);
 +static int backup_modified_conffiles_unwind(ipkg_conf_t *conf, pkg_t *pkg, pkg_t *old_pkg);
@@ -3971,7 +4070,7 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_install.c busybox-1.1.1-new/ar
 +     }
 +
 +     ipkg_message(conf, IPKG_DEBUG2,"Function: %s calling ipkg_install_pkg \n",__FUNCTION__);
-+     return ipkg_install_pkg(conf, pkg);
++     return ipkg_install_pkg(conf, pkg,0);
 +}
 +
 +ipkg_error_t ipkg_install_by_name(ipkg_conf_t *conf, const char *pkg_name)
@@ -3980,9 +4079,29 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_install.c busybox-1.1.1-new/ar
 +     pkg_t *old, *new;
 +     char *old_version, *new_version;
 +
++     ipkg_message(conf, IPKG_DEBUG2, " Getting old  from pkg_hash_fetch \n" );
 +     old = pkg_hash_fetch_installed_by_name(&conf->pkg_hash, pkg_name);
++     if ( old ) 
++        ipkg_message(conf, IPKG_DEBUG2, " Old versions from pkg_hash_fetch %s \n",  old->version );
 +    
++     ipkg_message(conf, IPKG_DEBUG2, " Getting new  from pkg_hash_fetch \n" );
 +     new = pkg_hash_fetch_best_installation_candidate_by_name(conf, pkg_name);
++     if ( new ) 
++        ipkg_message(conf, IPKG_DEBUG2, " New versions from pkg_hash_fetch %s \n",  new->version );
++
++/* Pigi Basically here is broken the version stuff.
++   What's happening is that nothing provide the version to differents 
++   functions, so the returned struct is always the latest.
++   That's why the install by name don't work.
++*/
++     ipkg_message(conf, IPKG_DEBUG2, " Versions from pkg_hash_fetch in %s ", __FUNCTION__ );
++
++     if ( old ) 
++        ipkg_message(conf, IPKG_DEBUG2, " old %s ", old->version );
++     if ( new ) 
++        ipkg_message(conf, IPKG_DEBUG2, " new %s ", new->version );
++     ipkg_message(conf, IPKG_DEBUG2, " \n");
++
 +     if (new == NULL) {
 +	  return IPKG_PKG_HAS_NO_CANDIDATE;
 +     }
@@ -4000,7 +4119,7 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_install.c busybox-1.1.1-new/ar
 +                                                              /* reinstall, and some check could fail asking the "force-reinstall" option */
 +          } 
 +	  ipkg_message(conf, IPKG_DEBUG, 
-+		       "comparing visible versions of pkg %s:"
++		       "Comparing visible versions of pkg %s:"
 +		       "\n\t%s is installed "
 +		       "\n\t%s is available "
 +		       "\n\t%d was comparison result\n",
@@ -4032,7 +4151,7 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_install.c busybox-1.1.1-new/ar
 +	anyone ever wants to make a nice libipkg. */
 +
 +     ipkg_message(conf, IPKG_DEBUG2,"Function: %s calling ipkg_install_pkg \n",__FUNCTION__);
-+     return ipkg_install_pkg(conf, new);
++     return ipkg_install_pkg(conf, new,0);
 +}
 +
 +ipkg_error_t ipkg_install_multi_by_name(ipkg_conf_t *conf, const char *pkg_name)
@@ -4233,7 +4352,7 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_install.c busybox-1.1.1-new/ar
 +	  if ((dep->state_status != SS_INSTALLED)
 +	      && (dep->state_status != SS_UNPACKED)) {
 +               ipkg_message(conf, IPKG_DEBUG2,"Function: %s calling ipkg_install_pkg \n",__FUNCTION__);
-+	       err = ipkg_install_pkg(conf, dep);
++	       err = ipkg_install_pkg(conf, dep,0);
 +	       if (err) {
 +		    pkg_vec_free(depends);
 +		    return err;
@@ -4466,7 +4585,7 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_install.c busybox-1.1.1-new/ar
 +	  pkg_t *replacee = replacees->pkgs[i];
 +	  int err;
 +	  replacee->state_flag |= SF_REPLACE; /* flag it so remove won't complain */
-+	  err = ipkg_remove_pkg(conf, replacee);
++	  err = ipkg_remove_pkg(conf, replacee,0);
 +	  if (err)
 +	       return err;
 +     }
@@ -4482,7 +4601,7 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_install.c busybox-1.1.1-new/ar
 +	  pkg_t *replacee = replacees->pkgs[i];
 +	  if (replacee->state_status != SS_INSTALLED) {
 +               ipkg_message(conf, IPKG_DEBUG2,"Function: %s calling ipkg_install_pkg \n",__FUNCTION__);
-+	       err = ipkg_install_pkg(conf, replacee);
++	       err = ipkg_install_pkg(conf, replacee,0);
 +	       if (err)
 +		    return err;
 +	  }
@@ -4497,7 +4616,7 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_install.c busybox-1.1.1-new/ar
 +}
 +
 +/* compares versions of pkg and old_pkg, returns 0 if OK to proceed with installation of pkg, 1 otherwise */
-+static int ipkg_install_check_downgrade(ipkg_conf_t *conf, pkg_t *pkg, pkg_t *old_pkg)
++static int ipkg_install_check_downgrade(ipkg_conf_t *conf, pkg_t *pkg, pkg_t *old_pkg, int message)
 +{	  
 +     if (old_pkg) {
 +          char message_out[15];
@@ -4506,10 +4625,11 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_install.c busybox-1.1.1-new/ar
 +	  int cmp = pkg_compare_versions(old_pkg, pkg);
 +	  int rc = 0;
 +
-+          strncpy (message_out,"Upgrading   ",13); 
++          memset(message_out,'\x0',15);
++          strncpy (message_out,"Upgrading ",strlen("Upgrading ")); 
 +          if ( (conf->force_downgrade==1) && (cmp > 0) ){     /* We've been asked to allow downgrade  and version is precedent */
 +             cmp = -1 ;                                       /* then we force ipkg to downgrade */ 
-+             strncpy (message_out,"Downgrading ",13);                      /* We need to use a value < 0 because in the 0 case we are asking to */
++             strncpy (message_out,"Downgrading ",strlen("Downgrading "));         /* We need to use a value < 0 because in the 0 case we are asking to */
 +                                                              /* reinstall, and some check could fail asking the "force-reinstall" option */
 +          } 
 +
@@ -4520,7 +4640,7 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_install.c busybox-1.1.1-new/ar
 +	       rc = 1;
 +	  } else if (cmp < 0) {
 +	       ipkg_message(conf, IPKG_NOTICE,
-+			    "%s %s on %s from %s to %s...\n",
++			    "%s%s on %s from %s to %s...\n",
 +			    message_out, pkg->name, old_pkg->dest->name, old_version, new_version);
 +	       pkg->dest = old_pkg->dest;
 +	       rc = 0;
@@ -4542,9 +4662,16 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_install.c busybox-1.1.1-new/ar
 +	  free(new_version);
 +	  return rc;
 +     } else {
++      char message_out[15] ;
++      memset(message_out,'\x0',15);
++      if ( message ) 
++          strncpy( message_out,"Upgrading ",strlen("Upgrading ") );
++      else
++          strncpy( message_out,"Installing ",strlen("Installing ") );
 +	  char *version = pkg_version_str_alloc(pkg);
++      
 +	  ipkg_message(conf, IPKG_NOTICE,
-+		       "Installing %s (%s) to %s...\n",
++		       "%s%s (%s) to %s...\n", message_out,
 +		       pkg->name, version, pkg->dest->name);
 +	  free(version);
 +	  return 0;
@@ -4552,13 +4679,19 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_install.c busybox-1.1.1-new/ar
 +}
 +
 +/* and now the meat... */
-+int ipkg_install_pkg(ipkg_conf_t *conf, pkg_t *pkg)
++int ipkg_install_pkg(ipkg_conf_t *conf, pkg_t *pkg, int from_upgrade)
 +{
 +     int err = 0;
++     int message = 0;
 +     pkg_t *old_pkg = NULL;
 +     pkg_vec_t *replacees;
 +     abstract_pkg_t *ab_pkg = NULL;
 +     int old_state_flag;
++     char* file_md5;
++
++    
++     if ( from_upgrade ) 
++        message = 1;            /* Coming from an upgrade, and should change the output message */
 +
 +     if (!pkg) {
 +	  ipkg_message(conf, IPKG_ERROR,
@@ -4589,11 +4722,14 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_install.c busybox-1.1.1-new/ar
 +
 +     old_pkg = pkg_hash_fetch_installed_by_name(&conf->pkg_hash, pkg->name);
 +
-+     err = ipkg_install_check_downgrade(conf, pkg, old_pkg);
++     err = ipkg_install_check_downgrade(conf, pkg, old_pkg, message);
 +     if (err) { return err; }
 +
 +     pkg->state_want = SW_INSTALL;
-+     if (old_pkg) old_pkg->state_want = SW_DEINSTALL; /* needed for check_data_file_clashes of dependences */
++     if (old_pkg){                          
++         old_pkg->state_want = SW_DEINSTALL; /* needed for check_data_file_clashes of dependences */
++     }
++
 +
 +     /* Abhaya: conflicts check */
 +     err = check_conflicts_for(conf, pkg);
@@ -4618,11 +4754,29 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_install.c busybox-1.1.1-new/ar
 +	       return err;
 +	  }
 +     }
++
++/* Check for md5 values */
++     if (pkg->md5sum)
++     {
++         file_md5 = file_md5sum_alloc(pkg->local_filename);
++         if (strcmp(file_md5, pkg->md5sum))
++         {
++              ipkg_message(conf, IPKG_ERROR,
++                           "Package %s md5sum mismatch. Either the ipkg or the package index are corrupt. Try 'ipkg update'.\n",
++                           pkg->name);
++              free(file_md5);
++              return err;
++         }
++         free(file_md5);
++     }
++
 +     if (pkg->tmp_unpack_dir == NULL) {
 +	  unpack_pkg_control_files(conf, pkg);
 +     }
 +
 +     /* We should update the filelist here, so that upgrades of packages that split will not fail. -Jamey 27-MAR-03 */
++/* Pigi: check if it will pass from here when replacing. It seems to fail */
++/* That's rather strange that files don't change owner. Investigate !!!!!!*/
 +     err = update_file_ownership(conf, pkg, old_pkg);
 +     if (err) { return err; }
 +
@@ -4689,7 +4843,16 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_install.c busybox-1.1.1-new/ar
 +				 "  removing obsolesced files\n");
 +		    remove_obsolesced_files(conf, pkg, old_pkg);
 +	       }
++               /* removing files from old package, to avoid ghost files */ 
++               remove_data_files_and_list(conf, old_pkg);
++/* Pigi : It should be better to remove also maintainer and postrem scripts here, just in case*/
++               remove_maintainer_scripts_except_postrm(conf, old_pkg);
++               remove_postrm(conf, old_pkg);
++/* Pigi */
++
 +	  }
++
++
 +	  ipkg_message(conf, IPKG_INFO,
 +		       "  installing maintainer scripts\n");
 +	  install_maintainer_scripts(conf, pkg, old_pkg);
@@ -4700,6 +4863,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_install.c busybox-1.1.1-new/ar
 +	  ipkg_message(conf, IPKG_INFO,
 +		       "  installing data files\n");
 +	  install_data_files(conf, pkg);
++
++/* read comments from function for detail but I will execute this here as all other tests are ok.*/
++	  err = check_data_file_clashes_change(conf, pkg, old_pkg);
 +
 +	  ipkg_message(conf, IPKG_INFO,
 +		       "  resolving conf files\n");
@@ -4928,6 +5094,7 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_install.c busybox-1.1.1-new/ar
 +     return 0;
 +}
 +
++
 +static int check_data_file_clashes(ipkg_conf_t *conf, pkg_t *pkg, pkg_t *old_pkg)
 +{
 +     /* DPKG_INCOMPATIBILITY:
@@ -4980,8 +5147,8 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_install.c busybox-1.1.1-new/ar
 +
 +	       /* Pre-existing files are OK if owned by a package replaced by new pkg. */
 +	       if (owner) {
++                    ipkg_message(conf, IPKG_DEBUG2, "Checking for replaces for %s in package %s\n", filename, owner->name);
 +		    if (pkg_replaces(pkg, owner)) {
-+			 ipkg_message(conf, IPKG_INFO, "Replacing pre-existing file %s owned by package %s\n", filename, owner->name);
 +			 continue;
 +		    }
 +/* If the file that would be installed is owned by the same package, ( as per a reinstall or similar )
@@ -5012,6 +5179,56 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_install.c busybox-1.1.1-new/ar
 +				 "<no package>\nPlease move this file out of the way and try again.\n");
 +	       }
 +	       clashes++;
++	  }
++	  free(root_filename);
++     }
++     pkg_free_installed_files(pkg);
++
++     return clashes;
++}
++
++static int check_data_file_clashes_change(ipkg_conf_t *conf, pkg_t *pkg, pkg_t *old_pkg)
++{
++    /* Basically that's the worst hack I could do to be able to change ownership of
++       file list, but, being that we have no way to unwind the mods, due to structure
++       of hash table, probably is the quickest hack too, whishing it would not slow-up thing too much.
++       What we do here is change the ownership of file in hash if a replace ( or similar events
++       happens )
++       Only the action that are needed to change name should be considered.
++       @@@ To change after 1.0 release.
++     */
++     str_list_t *files_list;
++     str_list_elt_t *iter;
++
++     int clashes = 0;
++
++     files_list = pkg_get_installed_files(pkg);
++     for (iter = files_list->head; iter; iter = iter->next) {
++	  char *root_filename;
++	  char *filename = iter->data;
++	  root_filename = root_filename_alloc(conf, filename);
++	  if (file_exists(root_filename) && (! file_is_dir(root_filename))) {
++	       pkg_t *owner;
++
++	       if (conf->force_overwrite) {
++		    /* but we need to change who owns this file */
++		    file_hash_set_file_owner(conf, filename, pkg);
++		    continue;
++	       }
++
++	       owner = file_hash_get_file_owner(conf, filename);
++
++	       /* Pre-existing files are OK if owned by a package replaced by new pkg. */
++	       if (owner) {
++		    if (pkg_replaces(pkg, owner)) {
++/* It's now time to change the owner of that file. 
++   It has been "replaced" from the new "Replaces", then I need to inform lists file about that.  */
++			 ipkg_message(conf, IPKG_INFO, "Replacing pre-existing file %s owned by package %s\n", filename, owner->name);
++		         file_hash_set_file_owner(conf, filename, pkg);
++			 continue;
++		    }
++	       }
++
 +	  }
 +	  free(root_filename);
 +     }
@@ -5424,7 +5641,7 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_install.c busybox-1.1.1-new/ar
 +     /* first, remove the packages that need removing */
 +     for (i = 0 ; i < pkgs_to_remove->len; i++ ) {
 +	  pkg_t *pkg = pkgs_to_remove->pkgs[i];
-+	  err = ipkg_remove_pkg(conf, pkg);
++	  err = ipkg_remove_pkg(conf, pkg,0);
 +	  if (err) return err;
 +     }
 +     return 0;
@@ -5663,9 +5880,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_install.c busybox-1.1.1-new/ar
 +}
 +
 +#endif
-diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_install.h busybox-1.1.1-new/archival/libipkg/ipkg_install.h
---- busybox-1.1.1-old/archival/libipkg/ipkg_install.h	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/ipkg_install.h	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/ipkg_install.h busybox-1.1.2+ipkg-0.99.162/archival/libipkg/ipkg_install.h
+--- busybox-1.1.2-orig/archival/libipkg/ipkg_install.h	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/ipkg_install.h	2006-05-09 02:12:04.000000000 +0200
 @@ -0,0 +1,35 @@
 +/* ipkg_install.h - the itsy package management system
 +
@@ -5693,7 +5910,7 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_install.h busybox-1.1.1-new/ar
 +ipkg_error_t ipkg_install_by_name(ipkg_conf_t *conf, const char *pkg_name);
 +ipkg_error_t ipkg_install_multi_by_name(ipkg_conf_t *conf, const char *pkg_name);
 +int ipkg_install_from_file(ipkg_conf_t *conf, const char *filename);
-+int ipkg_install_pkg(ipkg_conf_t *conf, pkg_t *pkg);
++int ipkg_install_pkg(ipkg_conf_t *conf, pkg_t *pkg,int from_upgrading);
 +int satisfy_dependencies_for(ipkg_conf_t *conf, pkg_t *pkg);
 +
 +int ipkg_satisfy_all_dependences(ipkg_conf_t *conf);
@@ -5702,9 +5919,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_install.h busybox-1.1.1-new/ar
 +int name_mark_dependencies_for_installation(ipkg_conf_t *conf, const char *pkg_name, pkg_vec_t *pkgs_needed);
 +
 +#endif
-diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_message.c busybox-1.1.1-new/archival/libipkg/ipkg_message.c
---- busybox-1.1.1-old/archival/libipkg/ipkg_message.c	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/ipkg_message.c	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/ipkg_message.c busybox-1.1.2+ipkg-0.99.162/archival/libipkg/ipkg_message.c
+--- busybox-1.1.2-orig/archival/libipkg/ipkg_message.c	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/ipkg_message.c	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,61 @@
 +/* ipkg_message.c - the itsy package management system
 +
@@ -5767,9 +5984,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_message.c busybox-1.1.1-new/ar
 +	}
 +}
 +#endif
-diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_message.h busybox-1.1.1-new/archival/libipkg/ipkg_message.h
---- busybox-1.1.1-old/archival/libipkg/ipkg_message.h	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/ipkg_message.h	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/ipkg_message.h busybox-1.1.2+ipkg-0.99.162/archival/libipkg/ipkg_message.h
+--- busybox-1.1.2-orig/archival/libipkg/ipkg_message.h	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/ipkg_message.h	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,32 @@
 +/* ipkg_message.h - the itsy package management system
 +
@@ -5803,10 +6020,10 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_message.h busybox-1.1.1-new/ar
 +extern void ipkg_message(ipkg_conf_t *conf, message_level_t level, char *fmt, ...);
 +
 +#endif /* _IPKG_MESSAGE_H_ */
-diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_remove.c busybox-1.1.1-new/archival/libipkg/ipkg_remove.c
---- busybox-1.1.1-old/archival/libipkg/ipkg_remove.c	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/ipkg_remove.c	2006-03-30 00:39:48.000000000 +0200
-@@ -0,0 +1,381 @@
+diff -ruN busybox-1.1.2-orig/archival/libipkg/ipkg_remove.c busybox-1.1.2+ipkg-0.99.162/archival/libipkg/ipkg_remove.c
+--- busybox-1.1.2-orig/archival/libipkg/ipkg_remove.c	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/ipkg_remove.c	2006-05-09 02:12:04.000000000 +0200
+@@ -0,0 +1,383 @@
 +/* ipkg_remove.c - the itsy package management system
 +
 +   Carl D. Worth
@@ -5836,10 +6053,6 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_remove.c busybox-1.1.1-new/arc
 +#include "str_util.h"
 +
 +#include "ipkg_cmd.h"
-+
-+static int remove_data_files_and_list(ipkg_conf_t *conf, pkg_t *pkg);
-+static int remove_maintainer_scripts_except_postrm(ipkg_conf_t *conf, pkg_t *pkg);
-+static int remove_postrm(ipkg_conf_t *conf, pkg_t *pkg);
 +
 +/*
 + * Returns number of the number of packages depending on the packages provided by this package.
@@ -5949,7 +6162,7 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_remove.c busybox-1.1.1-new/arc
 +    
 +    
 +    for (i = 0; i < dependent_pkgs->len; i++) {
-+        int err = ipkg_remove_pkg(conf, dependent_pkgs->pkgs[i]);
++        int err = ipkg_remove_pkg(conf, dependent_pkgs->pkgs[i],0);
 +        if (err)
 +            return err;
 +    }
@@ -5974,12 +6187,16 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_remove.c busybox-1.1.1-new/arc
 +    return 0;
 +}
 +
-+int ipkg_remove_pkg(ipkg_conf_t *conf, pkg_t *pkg)
++int ipkg_remove_pkg(ipkg_conf_t *conf, pkg_t *pkg,int message)
 +{
++/* Actually, when "message == 1" I have been called from an upgrade, and not from a normal remove
++   thus I wan't check for essential, as I'm upgrading.
++   I hope it won't break anything :) 
++*/
 +     int err;
 +     abstract_pkg_t *parent_pkg = NULL;
 +	
-+     if (pkg->essential) {
++     if (pkg->essential && !message) {
 +	  if (conf->force_removal_of_essential_packages) {
 +	       fprintf(stderr, "WARNING: Removing essential package %s under your coercion.\n"
 +		       "\tIf your system breaks, you get to keep both pieces\n",
@@ -6025,9 +6242,10 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_remove.c busybox-1.1.1-new/arc
 +	  }
 +     }
 +
-+     printf("Removing package %s from %s...\n", pkg->name, pkg->dest->name);
-+     fflush(stdout);
-+
++     if ( message==0 ){
++         printf("Removing package %s from %s...\n", pkg->name, pkg->dest->name);
++         fflush(stdout);
++     }
 +     pkg->state_flag |= SF_FILELIST_CHANGED;
 +
 +     pkg->state_want = SW_DEINSTALL;
@@ -6062,11 +6280,11 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_remove.c busybox-1.1.1-new/arc
 +
 +int ipkg_purge_pkg(ipkg_conf_t *conf, pkg_t *pkg)
 +{
-+    ipkg_remove_pkg(conf, pkg);
++    ipkg_remove_pkg(conf, pkg,0);
 +    return 0;
 +}
 +
-+static int remove_data_files_and_list(ipkg_conf_t *conf, pkg_t *pkg)
++int remove_data_files_and_list(ipkg_conf_t *conf, pkg_t *pkg)
 +{
 +     str_list_t installed_dirs;
 +     str_list_t *installed_files;
@@ -6148,7 +6366,7 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_remove.c busybox-1.1.1-new/arc
 +     return 0;
 +}
 +
-+static int remove_maintainer_scripts_except_postrm(ipkg_conf_t *conf, pkg_t *pkg)
++int remove_maintainer_scripts_except_postrm(ipkg_conf_t *conf, pkg_t *pkg)
 +{
 +    int i, err;
 +    char *globpattern;
@@ -6168,6 +6386,7 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_remove.c busybox-1.1.1-new/arc
 +	if (str_ends_with(globbuf.gl_pathv[i], ".postrm")) {
 +	    continue;
 +	}
++        ipkg_message(conf, IPKG_INFO, "  deleting %s\n", globbuf.gl_pathv[i]);
 +	unlink(globbuf.gl_pathv[i]);
 +    }
 +    globfree(&globbuf);
@@ -6175,7 +6394,7 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_remove.c busybox-1.1.1-new/arc
 +    return 0;
 +}
 +
-+static int remove_postrm(ipkg_conf_t *conf, pkg_t *pkg)
++int remove_postrm(ipkg_conf_t *conf, pkg_t *pkg)
 +{
 +    char *postrm_file_name;
 +
@@ -6188,10 +6407,10 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_remove.c busybox-1.1.1-new/arc
 +
 +    return 0;
 +}
-diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_remove.h busybox-1.1.1-new/archival/libipkg/ipkg_remove.h
---- busybox-1.1.1-old/archival/libipkg/ipkg_remove.h	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/ipkg_remove.h	2006-03-30 00:39:48.000000000 +0200
-@@ -0,0 +1,29 @@
+diff -ruN busybox-1.1.2-orig/archival/libipkg/ipkg_remove.h busybox-1.1.2+ipkg-0.99.162/archival/libipkg/ipkg_remove.h
+--- busybox-1.1.2-orig/archival/libipkg/ipkg_remove.h	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/ipkg_remove.h	2006-05-09 02:12:04.000000000 +0200
+@@ -0,0 +1,33 @@
 +/* ipkg_remove.h - the itsy package management system
 +
 +   Carl D. Worth
@@ -6215,15 +6434,19 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_remove.h busybox-1.1.1-new/arc
 +#include "pkg.h"
 +#include "ipkg_conf.h"
 +
-+int ipkg_remove_pkg(ipkg_conf_t *conf, pkg_t *pkg);
++int ipkg_remove_pkg(ipkg_conf_t *conf, pkg_t *pkg,int message);
 +int ipkg_purge_pkg(ipkg_conf_t *conf, pkg_t *pkg);
 +int possible_broken_removal_of_packages (ipkg_conf_t *conf, pkg_t *pkg);
 +int pkg_has_installed_dependents(ipkg_conf_t *conf, abstract_pkg_t *parent_apkg, pkg_t *pkg, abstract_pkg_t *** pdependents);
++int remove_data_files_and_list(ipkg_conf_t *conf, pkg_t *pkg);
++int remove_maintainer_scripts_except_postrm (ipkg_conf_t *conf, pkg_t *pkg);
++int remove_postrm (ipkg_conf_t *conf, pkg_t *pkg);
++
 +
 +#endif
-diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_upgrade.c busybox-1.1.1-new/archival/libipkg/ipkg_upgrade.c
---- busybox-1.1.1-old/archival/libipkg/ipkg_upgrade.c	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/ipkg_upgrade.c	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/ipkg_upgrade.c busybox-1.1.2+ipkg-0.99.162/archival/libipkg/ipkg_upgrade.c
+--- busybox-1.1.2-orig/archival/libipkg/ipkg_upgrade.c	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/ipkg_upgrade.c	2006-05-09 02:12:04.000000000 +0200
 @@ -0,0 +1,77 @@
 +/* ipkg_upgrade.c - the itsy package management system
 +
@@ -6300,11 +6523,11 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_upgrade.c busybox-1.1.1-new/ar
 +     }
 +
 +     new->state_flag |= SF_USER;
-+     return ipkg_install_pkg(conf, new);
++     return ipkg_install_pkg(conf, new,1);
 +}
-diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_upgrade.h busybox-1.1.1-new/archival/libipkg/ipkg_upgrade.h
---- busybox-1.1.1-old/archival/libipkg/ipkg_upgrade.h	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/ipkg_upgrade.h	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/ipkg_upgrade.h busybox-1.1.2+ipkg-0.99.162/archival/libipkg/ipkg_upgrade.h
+--- busybox-1.1.2-orig/archival/libipkg/ipkg_upgrade.h	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/ipkg_upgrade.h	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,18 @@
 +/* ipkg_upgrade.c - the itsy package management system
 +
@@ -6324,9 +6547,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_upgrade.h busybox-1.1.1-new/ar
 +#include "ipkg.h"
 +
 +int ipkg_upgrade_pkg(ipkg_conf_t *conf, pkg_t *old);
-diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_utils.c busybox-1.1.1-new/archival/libipkg/ipkg_utils.c
---- busybox-1.1.1-old/archival/libipkg/ipkg_utils.c	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/ipkg_utils.c	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/ipkg_utils.c busybox-1.1.2+ipkg-0.99.162/archival/libipkg/ipkg_utils.c
+--- busybox-1.1.2-orig/archival/libipkg/ipkg_utils.c	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/ipkg_utils.c	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,181 @@
 +/* ipkg_utils.c - the itsy package management system
 +
@@ -6509,9 +6732,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_utils.c busybox-1.1.1-new/arch
 +}
 +
 +       
-diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_utils.h busybox-1.1.1-new/archival/libipkg/ipkg_utils.h
---- busybox-1.1.1-old/archival/libipkg/ipkg_utils.h	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/ipkg_utils.h	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/ipkg_utils.h busybox-1.1.2+ipkg-0.99.162/archival/libipkg/ipkg_utils.h
+--- busybox-1.1.2-orig/archival/libipkg/ipkg_utils.h	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/ipkg_utils.h	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,29 @@
 +/* ipkg_utils.h - the itsy package management system
 +
@@ -6542,10 +6765,10 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/ipkg_utils.h busybox-1.1.1-new/arch
 +int line_is_blank(const char *line);
 +
 +#endif
-diff -ruN busybox-1.1.1-old/archival/libipkg/libipkg.c busybox-1.1.1-new/archival/libipkg/libipkg.c
---- busybox-1.1.1-old/archival/libipkg/libipkg.c	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/libipkg.c	2006-03-30 00:39:48.000000000 +0200
-@@ -0,0 +1,512 @@
+diff -ruN busybox-1.1.2-orig/archival/libipkg/libipkg.c busybox-1.1.2+ipkg-0.99.162/archival/libipkg/libipkg.c
+--- busybox-1.1.2-orig/archival/libipkg/libipkg.c	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/libipkg.c	2006-05-09 02:12:05.000000000 +0200
+@@ -0,0 +1,527 @@
 +/* ipkglib.c - the itsy package management system
 +
 +   Florina Boor
@@ -7017,6 +7240,21 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/libipkg.c busybox-1.1.1-new/archiva
 +             !strcmp(cmd_name,"print_installation_architecture") )
 +           args.nocheckfordirorfile = 1;
 +
++/* Pigi: added a flag to disable the reading of feed files  if the command does not need to 
++         read anything from there.
++*/
++        if ( !strcmp(cmd_name,"flag") ||
++             !strcmp(cmd_name,"configure") ||
++             !strcmp(cmd_name,"remove") ||
++             !strcmp(cmd_name,"files") ||
++             !strcmp(cmd_name,"search") ||
++             !strcmp(cmd_name,"compare_versions") ||
++             !strcmp(cmd_name,"compare-versions") ||
++             !strcmp(cmd_name,"list_installed") ||
++             !strcmp(cmd_name,"list-installed") ||
++             !strcmp(cmd_name,"status") )
++           args.noreadfeedsfile = 1;
++
 +
 +	err = ipkg_conf_init (&ipkg_conf, &args);
 +	if (err)
@@ -7058,9 +7296,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/libipkg.c busybox-1.1.1-new/archiva
 +}
 +
 +#endif /* IPKG_LIB */
-diff -ruN busybox-1.1.1-old/archival/libipkg/libipkg.h busybox-1.1.1-new/archival/libipkg/libipkg.h
---- busybox-1.1.1-old/archival/libipkg/libipkg.h	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/libipkg.h	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/libipkg.h busybox-1.1.2+ipkg-0.99.162/archival/libipkg/libipkg.h
+--- busybox-1.1.2-orig/archival/libipkg/libipkg.h	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/libipkg.h	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,87 @@
 +/* ipkglib.h - the itsy package management system
 +
@@ -7149,9 +7387,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/libipkg.h busybox-1.1.1-new/archiva
 +
 +
 +#endif
-diff -ruN busybox-1.1.1-old/archival/libipkg/md5.c busybox-1.1.1-new/archival/libipkg/md5.c
---- busybox-1.1.1-old/archival/libipkg/md5.c	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/md5.c	2006-03-30 01:24:25.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/md5.c busybox-1.1.2+ipkg-0.99.162/archival/libipkg/md5.c
+--- busybox-1.1.2-orig/archival/libipkg/md5.c	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/md5.c	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,48 @@
 +/* md5.c - wrappers to busybox md5 functions
 + *
@@ -7201,9 +7439,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/md5.c busybox-1.1.1-new/archival/li
 +	return md5_end(resblock, &md5_cx);
 +}
 +
-diff -ruN busybox-1.1.1-old/archival/libipkg/md5.h busybox-1.1.1-new/archival/libipkg/md5.h
---- busybox-1.1.1-old/archival/libipkg/md5.h	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/md5.h	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/md5.h busybox-1.1.2+ipkg-0.99.162/archival/libipkg/md5.h
+--- busybox-1.1.2-orig/archival/libipkg/md5.h	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/md5.h	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,35 @@
 +/* md5.h - Compute MD5 checksum of files or strings according to the
 + *         definition of MD5 in RFC 1321 from April 1992.
@@ -7240,9 +7478,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/md5.h busybox-1.1.1-new/archival/li
 +
 +#endif
 +
-diff -ruN busybox-1.1.1-old/archival/libipkg/nv_pair.c busybox-1.1.1-new/archival/libipkg/nv_pair.c
---- busybox-1.1.1-old/archival/libipkg/nv_pair.c	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/nv_pair.c	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/nv_pair.c busybox-1.1.2+ipkg-0.99.162/archival/libipkg/nv_pair.c
+--- busybox-1.1.2-orig/archival/libipkg/nv_pair.c	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/nv_pair.c	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,40 @@
 +/* nv_pair.c - the itsy package management system
 +
@@ -7284,9 +7522,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/nv_pair.c busybox-1.1.1-new/archiva
 +}
 +
 +
-diff -ruN busybox-1.1.1-old/archival/libipkg/nv_pair.h busybox-1.1.1-new/archival/libipkg/nv_pair.h
---- busybox-1.1.1-old/archival/libipkg/nv_pair.h	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/nv_pair.h	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/nv_pair.h busybox-1.1.2+ipkg-0.99.162/archival/libipkg/nv_pair.h
+--- busybox-1.1.2-orig/archival/libipkg/nv_pair.h	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/nv_pair.h	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,32 @@
 +/* nv_pair.h - the itsy package management system
 +
@@ -7320,9 +7558,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/nv_pair.h busybox-1.1.1-new/archiva
 +
 +#endif
 +
-diff -ruN busybox-1.1.1-old/archival/libipkg/nv_pair_list.c busybox-1.1.1-new/archival/libipkg/nv_pair_list.c
---- busybox-1.1.1-old/archival/libipkg/nv_pair_list.c	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/nv_pair_list.c	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/nv_pair_list.c busybox-1.1.2+ipkg-0.99.162/archival/libipkg/nv_pair_list.c
+--- busybox-1.1.2-orig/archival/libipkg/nv_pair_list.c	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/nv_pair_list.c	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,98 @@
 +/* nv_pair_list.c - the itsy package management system
 +
@@ -7422,9 +7660,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/nv_pair_list.c busybox-1.1.1-new/ar
 +     }    
 +     return NULL;
 +}
-diff -ruN busybox-1.1.1-old/archival/libipkg/nv_pair_list.h busybox-1.1.1-new/archival/libipkg/nv_pair_list.h
---- busybox-1.1.1-old/archival/libipkg/nv_pair_list.h	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/nv_pair_list.h	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/nv_pair_list.h busybox-1.1.2+ipkg-0.99.162/archival/libipkg/nv_pair_list.h
+--- busybox-1.1.2-orig/archival/libipkg/nv_pair_list.h	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/nv_pair_list.h	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,60 @@
 +/* nv_pair_list.h - the itsy package management system
 +
@@ -7486,10 +7724,10 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/nv_pair_list.h busybox-1.1.1-new/ar
 +
 +#endif
 +
-diff -ruN busybox-1.1.1-old/archival/libipkg/pkg.c busybox-1.1.1-new/archival/libipkg/pkg.c
---- busybox-1.1.1-old/archival/libipkg/pkg.c	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/pkg.c	2006-03-30 00:39:48.000000000 +0200
-@@ -0,0 +1,1753 @@
+diff -ruN busybox-1.1.2-orig/archival/libipkg/pkg.c busybox-1.1.2+ipkg-0.99.162/archival/libipkg/pkg.c
+--- busybox-1.1.2-orig/archival/libipkg/pkg.c	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/pkg.c	2006-05-09 02:12:05.000000000 +0200
+@@ -0,0 +1,1754 @@
 +/* pkg.c - the itsy package management system
 +
 +   Carl D. Worth
@@ -7629,6 +7867,7 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/pkg.c busybox-1.1.1-new/archival/li
 +     pkg->installed_files = NULL;
 +     pkg->installed_files_ref_cnt = 0;
 +     pkg->essential = 0;
++     pkg->provided_by_hand = 0;
 +
 +     return 0;
 +}
@@ -9243,10 +9482,10 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/pkg.c busybox-1.1.1-new/archival/li
 +     }
 +     return 0;
 +}
-diff -ruN busybox-1.1.1-old/archival/libipkg/pkg.h busybox-1.1.1-new/archival/libipkg/pkg.h
---- busybox-1.1.1-old/archival/libipkg/pkg.h	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/pkg.h	2006-03-30 00:39:48.000000000 +0200
-@@ -0,0 +1,230 @@
+diff -ruN busybox-1.1.2-orig/archival/libipkg/pkg.h busybox-1.1.2+ipkg-0.99.162/archival/libipkg/pkg.h
+--- busybox-1.1.2-orig/archival/libipkg/pkg.h	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/pkg.h	2006-05-09 02:12:05.000000000 +0200
+@@ -0,0 +1,232 @@
 +/* pkg.h - the itsy package management system
 +
 +   Carl D. Worth
@@ -9423,6 +9662,8 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/pkg.h busybox-1.1.1-new/archival/li
 +     int installed_files_ref_cnt;
 +     int essential;
 +     int arch_priority;
++/* Adding this flag, to "force" ipkg to choose a "provided_by_hand" package, if there are multiple choice */
++     int provided_by_hand;
 +};
 +
 +pkg_t *pkg_new(void);
@@ -9477,10 +9718,10 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/pkg.h busybox-1.1.1-new/archival/li
 +int pkg_write_changed_filelists(ipkg_conf_t *conf);
 +
 +#endif
-diff -ruN busybox-1.1.1-old/archival/libipkg/pkg_depends.c busybox-1.1.1-new/archival/libipkg/pkg_depends.c
---- busybox-1.1.1-old/archival/libipkg/pkg_depends.c	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/pkg_depends.c	2006-03-30 00:39:48.000000000 +0200
-@@ -0,0 +1,1029 @@
+diff -ruN busybox-1.1.2-orig/archival/libipkg/pkg_depends.c busybox-1.1.2+ipkg-0.99.162/archival/libipkg/pkg_depends.c
+--- busybox-1.1.2-orig/archival/libipkg/pkg_depends.c	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/pkg_depends.c	2006-05-09 02:12:05.000000000 +0200
+@@ -0,0 +1,1033 @@
 +/* pkg_depends.c - the itsy package management system
 +
 +   Steven M. Ayer
@@ -9758,8 +9999,10 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/pkg_depends.c busybox-1.1.1-new/arc
 +    replaces = pkg->replaces;
 +
 +    for (i = 0; i < replaces_count; i++) {
-+        if (strcmp(pkg_scout->name,pkg->replaces[i]->name)==0)       // Found
++        if (strcmp(pkg_scout->name,pkg->replaces[i]->name)==0) {      // Found
++            ipkg_message(NULL, IPKG_DEBUG2, "Seems I've found a replace %s %s \n",pkg_scout->name,pkg->replaces[i]->name);
 +            return 1;
++        }
 +    }
 +    return 0;
 +
@@ -9989,13 +10232,15 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/pkg_depends.c busybox-1.1.1-new/arc
 +{
 +     abstract_pkg_t **replaces = pkg->replaces;
 +     int replaces_count = pkg->replaces_count;
-+     abstract_pkg_t **replacee_provides = pkg->provides;
-+     int replacee_provides_count = pkg->provides_count;
++     /* abstract_pkg_t **replacee_provides = pkg->provides;
++     int replacee_provides_count = pkg->provides_count; */
 +     int i, j;
 +     for (i = 0; i < replaces_count; i++) {
 +	  abstract_pkg_t *abstract_replacee = replaces[i];
-+	  for (j = 0; j < replacee_provides_count; j++) {
-+	       if (replacee_provides[j] == abstract_replacee)
++	  for (j = 0; j < replaces_count; j++) {
++   /*            ipkg_message(NULL, IPKG_DEBUG2, "Searching pkg-name %s repprovname %s absrepname %s \n",
++                 pkg->name,replacee->provides[j]->name, abstract_replacee->name); */
++	       if (replacee->provides[j] == abstract_replacee)
 +		    return 1;
 +	  }
 +     }
@@ -10510,9 +10755,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/pkg_depends.c busybox-1.1.1-new/arc
 +
 +     return 0;
 +}
-diff -ruN busybox-1.1.1-old/archival/libipkg/pkg_depends.h busybox-1.1.1-new/archival/libipkg/pkg_depends.h
---- busybox-1.1.1-old/archival/libipkg/pkg_depends.h	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/pkg_depends.h	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/pkg_depends.h busybox-1.1.2+ipkg-0.99.162/archival/libipkg/pkg_depends.h
+--- busybox-1.1.2-orig/archival/libipkg/pkg_depends.h	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/pkg_depends.h	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,105 @@
 +/* pkg_depends.h - the itsy package management system
 +
@@ -10619,9 +10864,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/pkg_depends.h busybox-1.1.1-new/arc
 +int pkg_dependence_satisfied(ipkg_conf_t *conf, depend_t *depend);
 +
 +#endif
-diff -ruN busybox-1.1.1-old/archival/libipkg/pkg_dest.c busybox-1.1.1-new/archival/libipkg/pkg_dest.c
---- busybox-1.1.1-old/archival/libipkg/pkg_dest.c	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/pkg_dest.c	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/pkg_dest.c busybox-1.1.2+ipkg-0.99.162/archival/libipkg/pkg_dest.c
+--- busybox-1.1.2-orig/archival/libipkg/pkg_dest.c	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/pkg_dest.c	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,92 @@
 +/* pkg_dest.c - the itsy package management system
 +
@@ -10715,9 +10960,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/pkg_dest.c busybox-1.1.1-new/archiv
 +
 +    dest->root_dir = NULL;
 +}
-diff -ruN busybox-1.1.1-old/archival/libipkg/pkg_dest.h busybox-1.1.1-new/archival/libipkg/pkg_dest.h
---- busybox-1.1.1-old/archival/libipkg/pkg_dest.h	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/pkg_dest.h	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/pkg_dest.h busybox-1.1.2+ipkg-0.99.162/archival/libipkg/pkg_dest.h
+--- busybox-1.1.2-orig/archival/libipkg/pkg_dest.h	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/pkg_dest.h	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,38 @@
 +/* pkg_dest.h - the itsy package management system
 +
@@ -10757,9 +11002,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/pkg_dest.h busybox-1.1.1-new/archiv
 +
 +#endif
 +
-diff -ruN busybox-1.1.1-old/archival/libipkg/pkg_dest_list.c busybox-1.1.1-new/archival/libipkg/pkg_dest_list.c
---- busybox-1.1.1-old/archival/libipkg/pkg_dest_list.c	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/pkg_dest_list.c	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/pkg_dest_list.c busybox-1.1.2+ipkg-0.99.162/archival/libipkg/pkg_dest_list.c
+--- busybox-1.1.2-orig/archival/libipkg/pkg_dest_list.c	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/pkg_dest_list.c	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,85 @@
 +/* pkg_dest_list.c - the itsy package management system
 +
@@ -10846,9 +11091,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/pkg_dest_list.c busybox-1.1.1-new/a
 +{
 +    return (pkg_dest_list_elt_t *) void_list_pop((void_list_t *) list);
 +}
-diff -ruN busybox-1.1.1-old/archival/libipkg/pkg_dest_list.h busybox-1.1.1-new/archival/libipkg/pkg_dest_list.h
---- busybox-1.1.1-old/archival/libipkg/pkg_dest_list.h	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/pkg_dest_list.h	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/pkg_dest_list.h busybox-1.1.2+ipkg-0.99.162/archival/libipkg/pkg_dest_list.h
+--- busybox-1.1.2-orig/archival/libipkg/pkg_dest_list.h	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/pkg_dest_list.h	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,50 @@
 +/* pkg_dest_list.h - the itsy package management system
 +
@@ -10900,9 +11145,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/pkg_dest_list.h busybox-1.1.1-new/a
 +
 +#endif
 +
-diff -ruN busybox-1.1.1-old/archival/libipkg/pkg_extract.c busybox-1.1.1-new/archival/libipkg/pkg_extract.c
---- busybox-1.1.1-old/archival/libipkg/pkg_extract.c	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/pkg_extract.c	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/pkg_extract.c busybox-1.1.2+ipkg-0.99.162/archival/libipkg/pkg_extract.c
+--- busybox-1.1.2-orig/archival/libipkg/pkg_extract.c	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/pkg_extract.c	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,224 @@
 +/* pkg_extract.c - the itsy package management system
 +
@@ -11128,9 +11373,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/pkg_extract.c busybox-1.1.1-new/arc
 +	
 +	return 0;
 +}
-diff -ruN busybox-1.1.1-old/archival/libipkg/pkg_extract.h busybox-1.1.1-new/archival/libipkg/pkg_extract.h
---- busybox-1.1.1-old/archival/libipkg/pkg_extract.h	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/pkg_extract.h	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/pkg_extract.h busybox-1.1.2+ipkg-0.99.162/archival/libipkg/pkg_extract.h
+--- busybox-1.1.2-orig/archival/libipkg/pkg_extract.h	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/pkg_extract.h	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,32 @@
 +/* pkg_extract.c - the itsy package management system
 +
@@ -11164,10 +11409,10 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/pkg_extract.h busybox-1.1.1-new/arc
 +int pkg_extract_data_file_names_to_stream(pkg_t *pkg, FILE *file);
 +
 +#endif
-diff -ruN busybox-1.1.1-old/archival/libipkg/pkg_hash.c busybox-1.1.1-new/archival/libipkg/pkg_hash.c
---- busybox-1.1.1-old/archival/libipkg/pkg_hash.c	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/pkg_hash.c	2006-03-30 00:39:48.000000000 +0200
-@@ -0,0 +1,608 @@
+diff -ruN busybox-1.1.2-orig/archival/libipkg/pkg_hash.c busybox-1.1.2+ipkg-0.99.162/archival/libipkg/pkg_hash.c
+--- busybox-1.1.2-orig/archival/libipkg/pkg_hash.c	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/pkg_hash.c	2006-05-09 02:12:05.000000000 +0200
+@@ -0,0 +1,617 @@
 +/* ipkg_hash.c - the itsy package management system
 +
 +   Steven M. Ayer
@@ -11384,8 +11629,8 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/pkg_hash.c busybox-1.1.1-new/archiv
 +	       /* count packages matching max arch priority and keep track of last one */
 +	       for (i = 0; i < vec->len; i++) {
 +		    pkg_t *maybe = vec->pkgs[i];
-+		    ipkg_message(conf, IPKG_DEBUG, "  %s arch=%s arch_priority=%d  \n",
-+				 maybe->name, maybe->architecture, maybe->arch_priority);
++		    ipkg_message(conf, IPKG_DEBUG, "  %s arch=%s arch_priority=%d version=%s  \n",
++				 maybe->name, maybe->architecture, maybe->arch_priority, maybe->version);
 +		    if (maybe->arch_priority > 0)  {
 +			 max_count++;
 +			 abstract_pkg_vec_insert(matching_apkgs, maybe->parent);
@@ -11402,12 +11647,21 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/pkg_hash.c busybox-1.1.1-new/archiv
 +
 +/* Here it is usefull, if ( matching_apkgs->len > 1 ), to test if one of this matching packages has the same name of the
 +   needed package. In this case, I would return it for install, otherwise I will continue with the procedure */
++/* The problem is what to do when there are more than a mathing package, with the same name and several version ?
++   Until now I always got the latest, but that breaks the downgrade option.
++   If I stop at the first one, I would probably miss the new ones 
++   Maybe the way is to have some kind of flag somewhere, to see if the package been asked to install is from a file,
++   or from a Packages feed.
++   It it is from a file it always need to be checked whatever version I have in feeds or everywhere, according to force-down or whatever options*/
++/*Pigi*/
 +
 +     for (i = 0; i < matching_pkgs->len; i++) {
 +	  pkg_t *matching = matching_pkgs->pkgs[i];
 +          if (constraint_fcn(matching, cdata)) {  /* We found it */
-+             ipkg_message(conf, IPKG_DEBUG, " Found a valid candidate for the install: %s   \n", matching->name) ;
++             ipkg_message(conf, IPKG_DEBUG, " Found a valid candidate for the install: %s %s  \n", matching->name, matching->version) ;
 +             good_pkg_by_name = matching;
++             if ( matching->provided_by_hand == 1 )    /* It has been provided by hand, so it is what user want */
++                break;                                 
 +          }
 +     }
 +
@@ -11480,7 +11734,7 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/pkg_hash.c busybox-1.1.1-new/archiv
 +     if (strcmp(pkg->name, name) == 0)
 +	  return 1;
 +     else
-+	  return 0;   /* Pigi */
++	  return 0;   
 +}
 +
 +pkg_t *pkg_hash_fetch_best_installation_candidate_by_name(ipkg_conf_t *conf, const char *name)
@@ -11776,9 +12030,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/pkg_hash.c busybox-1.1.1-new/archiv
 +}
 +
 +
-diff -ruN busybox-1.1.1-old/archival/libipkg/pkg_hash.h busybox-1.1.1-new/archival/libipkg/pkg_hash.h
---- busybox-1.1.1-old/archival/libipkg/pkg_hash.h	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/pkg_hash.h	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/pkg_hash.h busybox-1.1.2+ipkg-0.99.162/archival/libipkg/pkg_hash.h
+--- busybox-1.1.2-orig/archival/libipkg/pkg_hash.h	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/pkg_hash.h	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,61 @@
 +/* pkg_hash.h - the itsy package management system
 +
@@ -11841,9 +12095,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/pkg_hash.h busybox-1.1.1-new/archiv
 +
 +#endif
 +
-diff -ruN busybox-1.1.1-old/archival/libipkg/pkg_parse.c busybox-1.1.1-new/archival/libipkg/pkg_parse.c
---- busybox-1.1.1-old/archival/libipkg/pkg_parse.c	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/pkg_parse.c	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/pkg_parse.c busybox-1.1.2+ipkg-0.99.162/archival/libipkg/pkg_parse.c
+--- busybox-1.1.2-orig/archival/libipkg/pkg_parse.c	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/pkg_parse.c	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,366 @@
 +/* pkg_parse.c - the itsy package management system
 +
@@ -12211,9 +12465,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/pkg_parse.c busybox-1.1.1-new/archi
 +
 +    return 0;
 +}
-diff -ruN busybox-1.1.1-old/archival/libipkg/pkg_parse.h busybox-1.1.1-new/archival/libipkg/pkg_parse.h
---- busybox-1.1.1-old/archival/libipkg/pkg_parse.h	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/pkg_parse.h	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/pkg_parse.h busybox-1.1.2+ipkg-0.99.162/archival/libipkg/pkg_parse.h
+--- busybox-1.1.2-orig/archival/libipkg/pkg_parse.h	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/pkg_parse.h	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,31 @@
 +/* pkg_parse.h - the itsy package management system
 +
@@ -12246,9 +12500,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/pkg_parse.h busybox-1.1.1-new/archi
 +int pkg_valorize_other_field(pkg_t *pkg, char ***raw);
 +
 +#endif
-diff -ruN busybox-1.1.1-old/archival/libipkg/pkg_src.c busybox-1.1.1-new/archival/libipkg/pkg_src.c
---- busybox-1.1.1-old/archival/libipkg/pkg_src.c	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/pkg_src.c	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/pkg_src.c busybox-1.1.2+ipkg-0.99.162/archival/libipkg/pkg_src.c
+--- busybox-1.1.2-orig/archival/libipkg/pkg_src.c	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/pkg_src.c	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,43 @@
 +/* pkg_src.c - the itsy package management system
 +
@@ -12293,9 +12547,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/pkg_src.c busybox-1.1.1-new/archiva
 +}
 +
 +
-diff -ruN busybox-1.1.1-old/archival/libipkg/pkg_src.h busybox-1.1.1-new/archival/libipkg/pkg_src.h
---- busybox-1.1.1-old/archival/libipkg/pkg_src.h	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/pkg_src.h	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/pkg_src.h busybox-1.1.2+ipkg-0.99.162/archival/libipkg/pkg_src.h
+--- busybox-1.1.2-orig/archival/libipkg/pkg_src.h	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/pkg_src.h	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,34 @@
 +/* pkg_src.h - the itsy package management system
 +
@@ -12331,9 +12585,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/pkg_src.h busybox-1.1.1-new/archiva
 +void pkg_src_deinit(pkg_src_t *src);
 +
 +#endif
-diff -ruN busybox-1.1.1-old/archival/libipkg/pkg_src_list.c busybox-1.1.1-new/archival/libipkg/pkg_src_list.c
---- busybox-1.1.1-old/archival/libipkg/pkg_src_list.c	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/pkg_src_list.c	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/pkg_src_list.c busybox-1.1.2+ipkg-0.99.162/archival/libipkg/pkg_src_list.c
+--- busybox-1.1.2-orig/archival/libipkg/pkg_src_list.c	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/pkg_src_list.c	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,75 @@
 +/* pkg_src_list.c - the itsy package management system
 +
@@ -12410,9 +12664,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/pkg_src_list.c busybox-1.1.1-new/ar
 +{
 +    return (pkg_src_list_elt_t *) void_list_pop((void_list_t *) list);
 +}
-diff -ruN busybox-1.1.1-old/archival/libipkg/pkg_src_list.h busybox-1.1.1-new/archival/libipkg/pkg_src_list.h
---- busybox-1.1.1-old/archival/libipkg/pkg_src_list.h	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/pkg_src_list.h	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/pkg_src_list.h busybox-1.1.2+ipkg-0.99.162/archival/libipkg/pkg_src_list.h
+--- busybox-1.1.2-orig/archival/libipkg/pkg_src_list.h	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/pkg_src_list.h	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,57 @@
 +/* pkg_src_list.h - the itsy package management system
 +
@@ -12471,10 +12725,10 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/pkg_src_list.h busybox-1.1.1-new/ar
 +
 +#endif
 +
-diff -ruN busybox-1.1.1-old/archival/libipkg/pkg_vec.c busybox-1.1.1-new/archival/libipkg/pkg_vec.c
---- busybox-1.1.1-old/archival/libipkg/pkg_vec.c	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/pkg_vec.c	2006-03-30 00:39:48.000000000 +0200
-@@ -0,0 +1,226 @@
+diff -ruN busybox-1.1.2-orig/archival/libipkg/pkg_vec.c busybox-1.1.2+ipkg-0.99.162/archival/libipkg/pkg_vec.c
+--- busybox-1.1.2-orig/archival/libipkg/pkg_vec.c	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/pkg_vec.c	2006-05-09 02:12:05.000000000 +0200
+@@ -0,0 +1,230 @@
 +/* pkg_vec.c - the itsy package management system
 +
 +   Steven M. Ayer
@@ -12529,7 +12783,10 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/pkg_vec.c busybox-1.1.1-new/archiva
 +     int found = 0;
 +
 +     /* look for a duplicate pkg by name, version, and architecture */
-+     for (i = 0; i < vec->len; i++)
++     for (i = 0; i < vec->len; i++){
++         ipkg_message(conf, IPKG_DEBUG2, "Function: %s. Found pkg=%s version=%s arch=%s cmp=%s version=%s arch=%s \n", 
++                      __FUNCTION__, pkg->name, pkg->version, pkg->architecture, 
++                       vec->pkgs[i]->name, vec->pkgs[i]->version,vec->pkgs[i]->architecture );
 +	  if ((strcmp(pkg->name, vec->pkgs[i]->name) == 0)
 +	      && (pkg_compare_versions(pkg, vec->pkgs[i]) == 0)
 +	      && (strcmp(pkg->architecture, vec->pkgs[i]->architecture) == 0)) {
@@ -12538,6 +12795,7 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/pkg_vec.c busybox-1.1.1-new/archiva
 +                             __FUNCTION__, pkg->name, pkg->version, pkg->architecture);
 +	       break;
 +	  }
++     }
 +
 +     /* we didn't find one, add it */
 +     if (!found){   
@@ -12701,9 +12959,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/pkg_vec.c busybox-1.1.1-new/archiva
 +     qsort(vec->pkgs, vec->len, sizeof(pkg_t *), (compare_fcn_t)compar);
 +}
 +
-diff -ruN busybox-1.1.1-old/archival/libipkg/pkg_vec.h busybox-1.1.1-new/archival/libipkg/pkg_vec.h
---- busybox-1.1.1-old/archival/libipkg/pkg_vec.h	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/pkg_vec.h	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/pkg_vec.h busybox-1.1.2+ipkg-0.99.162/archival/libipkg/pkg_vec.h
+--- busybox-1.1.2-orig/archival/libipkg/pkg_vec.h	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/pkg_vec.h	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,62 @@
 +/* pkg_vec.h - the itsy package management system
 +
@@ -12767,9 +13025,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/pkg_vec.h busybox-1.1.1-new/archiva
 +void abstract_pkg_vec_sort(pkg_vec_t *vec, int (*compar)(abstract_pkg_t *, abstract_pkg_t *));
 +#endif
 +
-diff -ruN busybox-1.1.1-old/archival/libipkg/sprintf_alloc.h busybox-1.1.1-new/archival/libipkg/sprintf_alloc.h
---- busybox-1.1.1-old/archival/libipkg/sprintf_alloc.h	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/sprintf_alloc.h	2006-03-31 02:19:07.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/sprintf_alloc.h busybox-1.1.2+ipkg-0.99.162/archival/libipkg/sprintf_alloc.h
+--- busybox-1.1.2-orig/archival/libipkg/sprintf_alloc.h	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/sprintf_alloc.h	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,25 @@
 +/* sprintf_alloca.c -- like sprintf with memory allocation
 +
@@ -12796,9 +13054,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/sprintf_alloc.h busybox-1.1.1-new/a
 +#define sprintf_alloc(str, fmt, args...)  *str = bb_xasprintf(fmt, ## args)
 +
 +#endif
-diff -ruN busybox-1.1.1-old/archival/libipkg/str_list.c busybox-1.1.1-new/archival/libipkg/str_list.c
---- busybox-1.1.1-old/archival/libipkg/str_list.c	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/str_list.c	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/str_list.c busybox-1.1.2+ipkg-0.99.162/archival/libipkg/str_list.c
+--- busybox-1.1.2-orig/archival/libipkg/str_list.c	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/str_list.c	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,76 @@
 +/* str_list.c - the itsy package management system
 +
@@ -12876,9 +13134,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/str_list.c busybox-1.1.1-new/archiv
 +					 (void *)target_str,
 +					 (void_list_cmp_t)strcmp);
 +}
-diff -ruN busybox-1.1.1-old/archival/libipkg/str_list.h busybox-1.1.1-new/archival/libipkg/str_list.h
---- busybox-1.1.1-old/archival/libipkg/str_list.h	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/str_list.h	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/str_list.h busybox-1.1.2+ipkg-0.99.162/archival/libipkg/str_list.h
+--- busybox-1.1.2-orig/archival/libipkg/str_list.h	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/str_list.h	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,51 @@
 +/* str_list.h - the itsy package management system
 +
@@ -12931,9 +13189,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/str_list.h busybox-1.1.1-new/archiv
 +char *str_list_remove_elt(str_list_t *list, const char *target_str);
 +
 +#endif
-diff -ruN busybox-1.1.1-old/archival/libipkg/str_util.c busybox-1.1.1-new/archival/libipkg/str_util.c
---- busybox-1.1.1-old/archival/libipkg/str_util.c	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/str_util.c	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/str_util.c busybox-1.1.2+ipkg-0.99.162/archival/libipkg/str_util.c
+--- busybox-1.1.2-orig/archival/libipkg/str_util.c	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/str_util.c	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,73 @@
 +/* str_utils.c - the itsy package management system
 +
@@ -13008,9 +13266,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/str_util.c busybox-1.1.1-new/archiv
 +    return str ? strdup(str) : NULL;
 +}
 +
-diff -ruN busybox-1.1.1-old/archival/libipkg/str_util.h busybox-1.1.1-new/archival/libipkg/str_util.h
---- busybox-1.1.1-old/archival/libipkg/str_util.h	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/str_util.h	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/str_util.h busybox-1.1.2+ipkg-0.99.162/archival/libipkg/str_util.h
+--- busybox-1.1.2-orig/archival/libipkg/str_util.h	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/str_util.h	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,28 @@
 +/* str_utils.h - the itsy package management system
 +
@@ -13040,9 +13298,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/str_util.h busybox-1.1.1-new/archiv
 +char *str_dup_safe(const char *str);
 +
 +#endif
-diff -ruN busybox-1.1.1-old/archival/libipkg/user.c busybox-1.1.1-new/archival/libipkg/user.c
---- busybox-1.1.1-old/archival/libipkg/user.c	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/user.c	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/user.c busybox-1.1.2+ipkg-0.99.162/archival/libipkg/user.c
+--- busybox-1.1.2-orig/archival/libipkg/user.c	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/user.c	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,58 @@
 +/* user.c - the itsy package management system
 +
@@ -13102,9 +13360,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/user.c busybox-1.1.1-new/archival/l
 +
 +     return response;
 +}
-diff -ruN busybox-1.1.1-old/archival/libipkg/user.h busybox-1.1.1-new/archival/libipkg/user.h
---- busybox-1.1.1-old/archival/libipkg/user.h	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/user.h	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/user.h busybox-1.1.2+ipkg-0.99.162/archival/libipkg/user.h
+--- busybox-1.1.2-orig/archival/libipkg/user.h	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/user.h	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,23 @@
 +/* user.c - the itsy package management system
 +
@@ -13129,9 +13387,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/user.h busybox-1.1.1-new/archival/l
 +
 +char *get_user_response(const char *format, ...);
 +
-diff -ruN busybox-1.1.1-old/archival/libipkg/void_list.c busybox-1.1.1-new/archival/libipkg/void_list.c
---- busybox-1.1.1-old/archival/libipkg/void_list.c	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/void_list.c	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/void_list.c busybox-1.1.2+ipkg-0.99.162/archival/libipkg/void_list.c
+--- busybox-1.1.2-orig/archival/libipkg/void_list.c	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/void_list.c	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,194 @@
 +/* void_list.c - the itsy package management system
 +
@@ -13327,9 +13585,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/void_list.c busybox-1.1.1-new/archi
 +     else
 +	  return NULL;
 +}
-diff -ruN busybox-1.1.1-old/archival/libipkg/void_list.h busybox-1.1.1-new/archival/libipkg/void_list.h
---- busybox-1.1.1-old/archival/libipkg/void_list.h	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/void_list.h	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/void_list.h busybox-1.1.2+ipkg-0.99.162/archival/libipkg/void_list.h
+--- busybox-1.1.2-orig/archival/libipkg/void_list.h	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/void_list.h	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,59 @@
 +/* void_list.h - the itsy package management system
 +
@@ -13390,9 +13648,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/void_list.h busybox-1.1.1-new/archi
 +void *void_list_remove_elt(void_list_t *list, const void *target_data, void_list_cmp_t cmp);
 +
 +#endif
-diff -ruN busybox-1.1.1-old/archival/libipkg/xsystem.c busybox-1.1.1-new/archival/libipkg/xsystem.c
---- busybox-1.1.1-old/archival/libipkg/xsystem.c	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/xsystem.c	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/xsystem.c busybox-1.1.2+ipkg-0.99.162/archival/libipkg/xsystem.c
+--- busybox-1.1.2-orig/archival/libipkg/xsystem.c	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/xsystem.c	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,64 @@
 +/* xsystem.c - system(3) with error messages
 +
@@ -13458,9 +13716,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/xsystem.c busybox-1.1.1-new/archiva
 +    return -1;
 +}
 +	 
-diff -ruN busybox-1.1.1-old/archival/libipkg/xsystem.h busybox-1.1.1-new/archival/libipkg/xsystem.h
---- busybox-1.1.1-old/archival/libipkg/xsystem.h	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.1.1-new/archival/libipkg/xsystem.h	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libipkg/xsystem.h busybox-1.1.2+ipkg-0.99.162/archival/libipkg/xsystem.h
+--- busybox-1.1.2-orig/archival/libipkg/xsystem.h	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libipkg/xsystem.h	2006-05-09 02:06:48.000000000 +0200
 @@ -0,0 +1,34 @@
 +/* xsystem.h - system(3) with error messages
 +
@@ -13496,9 +13754,9 @@ diff -ruN busybox-1.1.1-old/archival/libipkg/xsystem.h busybox-1.1.1-new/archiva
 +
 +#endif
 +	 
-diff -ruN busybox-1.1.1-old/archival/libunarchive/Makefile.in busybox-1.1.1-new/archival/libunarchive/Makefile.in
---- busybox-1.1.1-old/archival/libunarchive/Makefile.in	2006-03-22 22:16:20.000000000 +0100
-+++ busybox-1.1.1-new/archival/libunarchive/Makefile.in	2006-03-30 00:56:59.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libunarchive/Makefile.in busybox-1.1.2+ipkg-0.99.162/archival/libunarchive/Makefile.in
+--- busybox-1.1.2-orig/archival/libunarchive/Makefile.in	2006-03-22 22:16:20.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libunarchive/Makefile.in	2006-05-09 02:06:48.000000000 +0200
 @@ -58,6 +58,7 @@
  LIBUNARCHIVE-$(CONFIG_FEATURE_DEB_TAR_LZMA) += decompress_unlzma.o get_header_tar_lzma.o
  LIBUNARCHIVE-$(CONFIG_GUNZIP) += $(GUNZIP_FILES)
@@ -13507,9 +13765,9 @@ diff -ruN busybox-1.1.1-old/archival/libunarchive/Makefile.in busybox-1.1.1-new/
  LIBUNARCHIVE-$(CONFIG_RPM2CPIO) += $(GUNZIP_FILES) get_header_cpio.o
  LIBUNARCHIVE-$(CONFIG_RPM) += $(GUNZIP_FILES) get_header_cpio.o
  LIBUNARCHIVE-$(CONFIG_TAR) += get_header_tar.o
-diff -ruN busybox-1.1.1-old/archival/libunarchive/data_extract_all.c busybox-1.1.1-new/archival/libunarchive/data_extract_all.c
---- busybox-1.1.1-old/archival/libunarchive/data_extract_all.c	2006-03-22 22:16:20.000000000 +0100
-+++ busybox-1.1.1-new/archival/libunarchive/data_extract_all.c	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/archival/libunarchive/data_extract_all.c busybox-1.1.2+ipkg-0.99.162/archival/libunarchive/data_extract_all.c
+--- busybox-1.1.2-orig/archival/libunarchive/data_extract_all.c	2006-03-22 22:16:20.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/archival/libunarchive/data_extract_all.c	2006-05-09 02:06:48.000000000 +0200
 @@ -126,3 +126,17 @@
  		utime(file_header->name, &t);
  	}
@@ -13528,9 +13786,9 @@ diff -ruN busybox-1.1.1-old/archival/libunarchive/data_extract_all.c busybox-1.1
 +	}
 +}
 +
-diff -ruN busybox-1.1.1-old/include/applets.h busybox-1.1.1-new/include/applets.h
---- busybox-1.1.1-old/include/applets.h	2006-03-22 22:16:24.000000000 +0100
-+++ busybox-1.1.1-new/include/applets.h	2006-03-30 00:42:08.000000000 +0200
+diff -ruN busybox-1.1.2-orig/include/applets.h busybox-1.1.2+ipkg-0.99.162/include/applets.h
+--- busybox-1.1.2-orig/include/applets.h	2006-03-22 22:16:24.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/include/applets.h	2006-05-09 02:06:48.000000000 +0200
 @@ -149,6 +149,7 @@
  USE_IPCALC(APPLET(ipcalc, ipcalc_main, _BB_DIR_BIN, _BB_SUID_NEVER))
  USE_IPCRM(APPLET(ipcrm, ipcrm_main, _BB_DIR_USR_BIN, _BB_SUID_ALWAYS))
@@ -13539,9 +13797,9 @@ diff -ruN busybox-1.1.1-old/include/applets.h busybox-1.1.1-new/include/applets.
  USE_IPLINK(APPLET(iplink, iplink_main, _BB_DIR_BIN, _BB_SUID_NEVER))
  USE_IPROUTE(APPLET(iproute, iproute_main, _BB_DIR_BIN, _BB_SUID_NEVER))
  USE_IPTUNNEL(APPLET(iptunnel, iptunnel_main, _BB_DIR_BIN, _BB_SUID_NEVER))
-diff -ruN busybox-1.1.1-old/include/unarchive.h busybox-1.1.1-new/include/unarchive.h
---- busybox-1.1.1-old/include/unarchive.h	2006-03-22 22:16:24.000000000 +0100
-+++ busybox-1.1.1-new/include/unarchive.h	2006-03-30 00:39:48.000000000 +0200
+diff -ruN busybox-1.1.2-orig/include/unarchive.h busybox-1.1.2+ipkg-0.99.162/include/unarchive.h
+--- busybox-1.1.2-orig/include/unarchive.h	2006-03-22 22:16:24.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/include/unarchive.h	2006-05-09 02:06:48.000000000 +0200
 @@ -74,6 +74,7 @@
  
  extern void data_skip(archive_handle_t *archive_handle);
@@ -13550,9 +13808,9 @@ diff -ruN busybox-1.1.1-old/include/unarchive.h busybox-1.1.1-new/include/unarch
  extern void data_extract_to_stdout(archive_handle_t *archive_handle);
  extern void data_extract_to_buffer(archive_handle_t *archive_handle);
  
-diff -ruN busybox-1.1.1-old/include/usage.h busybox-1.1.1-new/include/usage.h
---- busybox-1.1.1-old/include/usage.h	2006-03-22 22:16:24.000000000 +0100
-+++ busybox-1.1.1-new/include/usage.h	2006-03-30 00:42:53.000000000 +0200
+diff -ruN busybox-1.1.2-orig/include/usage.h busybox-1.1.2+ipkg-0.99.162/include/usage.h
+--- busybox-1.1.2-orig/include/usage.h	2006-03-22 22:16:24.000000000 +0100
++++ busybox-1.1.2+ipkg-0.99.162/include/usage.h	2006-05-09 02:06:48.000000000 +0200
 @@ -1013,6 +1013,82 @@
  	"$ ls -la /tmp/busybox*\n" \
  	"-rw-rw-r--    1 andersen andersen   554058 Apr 14 17:49 /tmp/busybox.tar.gz\n"
