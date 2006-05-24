@@ -5,142 +5,154 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=ppp
 PKG_VERSION:=2.4.3
 PKG_RELEASE:=7
-PKG_MD5SUM:=848f6c3cafeb6074ffeb293c3af79b7c
-
-PKG_SOURCE_URL:=ftp://ftp.samba.org/pub/ppp/
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_CAT:=zcat
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_SOURCE_URL:=ftp://ftp.samba.org/pub/ppp/
+PKG_MD5SUM:=848f6c3cafeb6074ffeb293c3af79b7c
+PKG_CAT:=zcat
+
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
 include $(TOPDIR)/package/rules.mk
 
-define PKG_mod_template
-
-$$(IPKG_$(1)):
-	install -d -m0755 $$(IDIR_$(1))/usr/lib/pppd/$(PKG_VERSION)
-	install -m0755 $(PKG_INSTALL_DIR)/usr/lib/pppd/$(PKG_VERSION)/$(2).so \
-		$$(IDIR_$(1))/usr/lib/pppd/$(PKG_VERSION)/
-	$(RSTRIP) $$(IDIR_$(1))
-	$(IPKG_BUILD) $$(IDIR_$(1)) $(PACKAGE_DIR)
-
+define Package/ppp
+ SECTION:=net
+ CATEGORY:=Network
+ NEEDS:=libpcap
+ MENU:=1
+ DEFAULT:=y
+ TITLE:=PPP daemon
+ DESCRIPTION:=PPP (Point-to-Point Protocol) daemon
+ URL:=http://ppp.samba.org/
 endef
 
-$(eval $(call PKG_template,PPP,ppp,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
-$(eval $(call PKG_template,PPP_MOD_PPPOA,ppp-mod-pppoa,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
-$(eval $(call PKG_template,PPP_MOD_PPPOE,ppp-mod-pppoe,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
-$(eval $(call PKG_template,PPP_MOD_RADIUS,ppp-mod-radius,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
-$(eval $(call PKG_template,CHAT,chat,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
-$(eval $(call PKG_template,PPPDUMP,pppdump,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
-$(eval $(call PKG_template,PPPSTATS,pppstats,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+define Package/ppp-mod-pppoa
+ SECTION:=net
+ CATEGORY:=Network
+ DEPENDS:=ppp
+ TITLE:=PPPoA plugin
+ DESCRIPTION:=PPPoA (PPP over ATM) plugin for ppp
+endef
 
-$(eval $(call PKG_mod_template,PPP_MOD_PPPOA,pppoatm))
-$(eval $(call PKG_mod_template,PPP_MOD_PPPOE,rp-pppoe))
-$(eval $(call PKG_mod_template,PPP_MOD_RADIUS,radius))
+define Package/ppp-mod-pppoe
+ SECTION:=net
+ CATEGORY:=Network
+ DEFAULT:=y
+ DEPENDS:=ppp
+ TITLE:=PPPoE plugin
+ DESCRIPTION:=PPPoE (PPP over Ethernet) plugin for ppp
+endef
 
-PKG_DEPEND:="kmod-ppp"
-ifeq ($(CONFIG_PACKAGE_PPP_WITH_FILTER),y)
-ENABLE_FILTER:="PRECOMPILED_FILTER=1"
-endif
+define Package/ppp-mod-radius
+ SECTION:=net
+ CATEGORY:=Network
+ DEPENDS:=ppp
+ TITLE:=RADIUS plugin
+ DESCRIPTION:=RADIUS (Remote Authentication Dial-In User Service) plugin for ppp
+endef
 
-$(PKG_BUILD_DIR)/.configured:
-	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
-		$(TARGET_CONFIGURE_OPTS) \
-		CFLAGS="$(TARGET_CFLAGS)" \
-		./configure \
-		  --target=$(GNU_TARGET_NAME) \
-		  --host=$(GNU_TARGET_NAME) \
-		  --build=$(GNU_HOST_NAME) \
-		  --program-prefix="" \
-		  --program-suffix="" \
-		  --prefix=/usr \
-		  --exec-prefix=/usr \
-		  --bindir=/usr/bin \
-		  --datadir=/usr/share \
-		  --includedir=/usr/include \
-		  --infodir=/usr/share/info \
-		  --libdir=/usr/lib \
-		  --libexecdir=/usr/lib \
-		  --localstatedir=/var \
-		  --mandir=/usr/share/man \
-		  --sbindir=/usr/sbin \
-		  --sysconfdir=/etc \
-		  $(DISABLE_LARGEFILE) \
-		  $(DISABLE_NLS) \
-	)
-	touch $@
+define Package/chat
+ SECTION:=net
+ CATEGORY:=Network
+ DEPENDS:=ppp
+ TITLE:=Establish conversation with a modem
+ DESCRIPTION:=Utility to establish conversation with other PPP servers (via a modem)
+endef
 
-$(PKG_BUILD_DIR)/.built:
+define Package/pppdump
+ SECTION:=net
+ CATEGORY:=Network
+ DEPENDS:=ppp
+ TITLE:=Read PPP record file
+ DESCRIPTION:=Utility to read PPP record file
+endef
+
+define Package/pppstats
+ SECTION:=net
+ CATEGORY:=Network
+ DEPENDS:=ppp
+ TITLE:=Report PPP statistics
+ DESCRIPTION:=Utility to report PPP statistics
+endef
+
+
+define Build/Compile
 	rm -rf $(PKG_INSTALL_DIR)
 	mkdir -p $(PKG_INSTALL_DIR)/usr
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CC=$(TARGET_CC) \
 		COPTS="$(TARGET_CFLAGS)" \
-		HAVE_INET6="1" \
-		$(ENABLE_FILTER) \
-		STAGING_DIR=$(STAGING_DIR) \
+		PRECOMPILED_FILTER=1 \
+		STAGING_DIR="$(STAGING_DIR)" \
 		DESTDIR="$(PKG_INSTALL_DIR)/usr" \
 		all install
-	touch $@
+endef
 
-ifeq ($(CONFIG_PACKAGE_PPP_WITH_FILTER),y)
-INSTALL_FILTER=install -m0644 ./files/etc/ppp/filter $(IDIR_PPP)/etc/ppp/
-endif
-
-$(IPKG_PPP):
-	install -d -m0755 $(IDIR_PPP)/etc/ppp
-	ln -sf /tmp/resolv.conf $(IDIR_PPP)/etc/ppp/resolv.conf
-	install -m0600 ./files/etc/ppp/chap-secrets $(IDIR_PPP)/etc/ppp/
-	install -m0644 ./files/etc/ppp/options $(IDIR_PPP)/etc/ppp/
-	$(INSTALL_FILTER)
-	install -m0755 ./files/etc/ppp/ip-up $(IDIR_PPP)/etc/ppp/
-	install -m0755 ./files/etc/ppp/ip-down $(IDIR_PPP)/etc/ppp/
-	install -d -m0755 $(IDIR_PPP)/usr/sbin
-	install -m0755 $(PKG_INSTALL_DIR)/usr/sbin/pppd $(IDIR_PPP)/usr/sbin/
-	install -d -m0755 $(IDIR_PPP)/usr/lib/pppd
-	echo "Depends: $(PKG_DEPEND)" >> $(IDIR_PPP)/CONTROL/control
-	$(RSTRIP) $(IDIR_PPP)
-	$(IPKG_BUILD) $(IDIR_PPP) $(PACKAGE_DIR)
+define Package/ppp/install
+	install -d -m0755 $(1)/etc/ppp
+	install -m0600 ./files/etc/ppp/chap-secrets $(1)/etc/ppp/
+	install -m0644 ./files/etc/ppp/filter $(1)/etc/ppp/
+	install -m0755 ./files/etc/ppp/ip-up $(1)/etc/ppp/
+	install -d -m0755 $(1)/etc/ppp/ip-up.d
+	install -m0755 ./files/etc/ppp/ip-down $(1)/etc/ppp/
+	install -d -m0755 $(1)/etc/ppp/ip-down.d
+	install -m0644 ./files/etc/ppp/options $(1)/etc/ppp/
+	ln -sf /tmp/resolv.conf $(1)/etc/ppp/resolv.conf
+	install -d -m0755 $(1)/usr/lib/pppd/$(PKG_VERSION)
+	install -d -m0755 $(1)/usr/sbin
+	install -m0755 $(PKG_INSTALL_DIR)/usr/sbin/pppd $(1)/usr/sbin/
+endef
 	
-$(IDIR_PPP_MOD_PPPOA)/sbin/ifup.pppoa:
-	install -d -m0755 $(IDIR_PPP_MOD_PPPOA)/sbin
-	install -m0755 ./files/ifup.pppoa $(IDIR_PPP_MOD_PPPOA)/sbin/
+define Package/ppp-mod-pppoa/install
+	install -d -m0755 $(1)/usr/lib/pppd/$(PKG_VERSION)
+	install -m0755 $(PKG_INSTALL_DIR)/usr/lib/pppd/$(PKG_VERSION)/pppoatm.so \
+		$(1)/usr/lib/pppd/$(PKG_VERSION)/
+	install -d -m0755 $(1)/sbin
+	install -m0755 ./files/ifup.pppoa $(1)/sbin/
+endef
 
-$(IPKG_PPP_MOD_PPPOA): $(IDIR_PPP_MOD_PPPOA)/sbin/ifup.pppoa
+define Package/ppp-mod-pppoe/install
+	install -d -m0755 $(1)/usr/lib/pppd/$(PKG_VERSION)
+	install -m0755 $(PKG_INSTALL_DIR)/usr/lib/pppd/$(PKG_VERSION)/rp-pppoe.so \
+		$(1)/usr/lib/pppd/$(PKG_VERSION)/
+	install -d -m0755 $(1)/sbin
+	install -m0755 ./files/ifup.pppoe $(1)/sbin/
+endef
 
-$(IDIR_PPP_MOD_PPPOE)/sbin/ifup.pppoe:
-	install -d -m0755 $(IDIR_PPP_MOD_PPPOE)/sbin
-	install -m0755 ./files/ifup.pppoe $(IDIR_PPP_MOD_PPPOE)/sbin/
-
-$(IPKG_PPP_MOD_PPPOE): $(IDIR_PPP_MOD_PPPOE)/sbin/ifup.pppoe
-
-$(IDIR_PPP_MOD_RADIUS)/etc/ppp/radius.conf:
-	install -d -m0755 $(IDIR_PPP_MOD_RADIUS)/etc/ppp
-	install -m644 ./files/etc/ppp/radius.conf $(IDIR_PPP_MOD_RADIUS)/etc/ppp/
-	install -d -m0755 $(IDIR_PPP_MOD_RADIUS)/etc/ppp/radius
+define Package/ppp-mod-radius/install
+	install -d -m0755 $(1)/etc/ppp
+	install -m644 ./files/etc/ppp/radius.conf $(1)/etc/ppp/
+	install -d -m0755 $(1)/etc/ppp/radius
 	install -m644 ./files/etc/ppp/radius/dictionary* \
-		$(IDIR_PPP_MOD_RADIUS)/etc/ppp/radius/
+		$(1)/etc/ppp/radius/
 	install -m600 ./files/etc/ppp/radius/servers \
-		$(IDIR_PPP_MOD_RADIUS)/etc/ppp/radius/
+		$(1)/etc/ppp/radius/
+	install -d -m0755 $(1)/usr/lib/pppd/$(PKG_VERSION)
+	install -m0755 $(PKG_INSTALL_DIR)/usr/lib/pppd/$(PKG_VERSION)/radius.so \
+		$(1)/usr/lib/pppd/$(PKG_VERSION)/
+endef
 
-$(IPKG_PPP_MOD_RADIUS): $(IDIR_PPP_MOD_RADIUS)/etc/ppp/radius.conf
+define Package/chat/install
+	install -d -m0755 $(1)/usr/sbin
+	install -m0755 $(PKG_INSTALL_DIR)/usr/sbin/chat $(1)/usr/sbin/
+endef
 
-$(IPKG_CHAT):
-	install -d -m0755 $(IDIR_CHAT)/usr/sbin
-	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/chat $(IDIR_CHAT)/usr/sbin/
-	$(RSTRIP) $(IDIR_CHAT)
-	$(IPKG_BUILD) $(IDIR_CHAT) $(PACKAGE_DIR)
+define Package/pppdump/install
+	install -d -m0755 $(1)/usr/sbin
+	install -m0755 $(PKG_INSTALL_DIR)/usr/sbin/pppdump $(1)/usr/sbin/
+endef
 
-$(IPKG_PPPDUMP):
-	install -d -m0755 $(IDIR_PPPDUMP)/usr/sbin
-	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/pppdump $(IDIR_PPPDUMP)/usr/sbin/
-	$(RSTRIP) $(IDIR_PPPDUMP)
-	$(IPKG_BUILD) $(IDIR_PPPDUMP) $(PACKAGE_DIR)
+define Package/pppstats/install
+	install -d -m0755 $(1)/usr/sbin
+	install -m0755 $(PKG_INSTALL_DIR)/usr/sbin/pppstats $(1)/usr/sbin/
+	$(RSTRIP) $(1)
+endef
 
-$(IPKG_PPPSTATS): $(IPKG_PPP)
-	install -d -m0755 $(IDIR_PPPSTATS)/usr/sbin
-	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/pppstats $(IDIR_PPPSTATS)/usr/sbin/
-	$(RSTRIP) $(IDIR_PPPSTATS)
-	$(IPKG_BUILD) $(IDIR_PPPSTATS) $(PACKAGE_DIR)
-
+$(eval $(call BuildPackage,ppp))
+$(eval $(call BuildPackage,ppp-mod-pppoa))
+$(eval $(call BuildPackage,ppp-mod-pppoe))
+$(eval $(call BuildPackage,ppp-mod-radius))
+$(eval $(call BuildPackage,chat))
+$(eval $(call BuildPackage,pppdump))
+$(eval $(call BuildPackage,pppstats))
