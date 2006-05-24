@@ -1,12 +1,12 @@
 diff -ru madwifi-ng-r1486-20060329/Makefile madwifi-ng-r1486-20060329-patch/Makefile
 --- madwifi-ng-r1486-20060329/Makefile	2006-03-13 19:23:02.000000000 -0500
 +++ madwifi-ng-r1486-20060329-patch/Makefile	2006-03-31 10:52:05.000000000 -0500
-@@ -52,7 +52,7 @@
+@@ -51,7 +51,7 @@
  
  all: modules tools
  
--modules: configcheck svnversion.h 
-+modules: svnversion.h 
+-modules: configcheck svnversion.h
++modules: svnversion.h
  	mkdir -p ${SYMBOLSDIR}
  	for i in ${DIRS_MODULES}; do \
  		$(MAKE) -C $$i || exit 1; \
