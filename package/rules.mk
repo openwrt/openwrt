@@ -29,8 +29,13 @@ define Build/DefaultTargets
 	$(call Build/Compile)
 	touch $$@
     
+  $(PKG_BUILD_DIR)/.dev-installed: $(PKG_BUILD_DIR)/.built
+	$(call Build/InstallDev)
+	touch $$@
+    
   package-clean: FORCE
 	$(call Build/Clean)
+	$(call Build/UninstallDev)
 
   package-rebuild: FORCE
 	@-rm $(PKG_BUILD_DIR)/.built
@@ -44,6 +49,7 @@ define Package/Default
   SECTION:=opt
   CATEGORY:=Extra packages
   DEPENDS:=
+  NEEDS:=
   MAINTAINER:=OpenWrt Developers Team <openwrt-devel@openwrt.org>
   SOURCE:=$(patsubst $(TOPDIR)/%,%,${shell pwd})
   VERSION:=$(PKG_VERSION)-$(PKG_RELEASE)
@@ -86,6 +92,7 @@ define BuildPackage
   endif
 
   IDEPEND_$(1):=$$(strip $$(DEPENDS))
+  INEED_$(1):=$$(strip $$(NEEDS))
 
   DUMPINFO += \
 	echo "Package: $(1)"; 
@@ -103,6 +110,7 @@ define BuildPackage
   DUMPINFO += \
 	echo "Version: $(VERSION)"; \
 	echo "Depends: $$(IDEPEND_$(1))"; \
+	echo "Needs: $$(INEED_$(1))"; \
 	echo "Category: $(CATEGORY)"; \
 	echo "Title: $(TITLE)"; \
 	echo "Description: $(DESCRIPTION)" | sed -e 's,\\,\n,g';
@@ -147,6 +155,8 @@ define BuildPackage
   $$(INFO_$(1)): $$(IPKG_$(1))
 	$(IPKG) install $$(IPKG_$(1))
 
+  compile-targets: $(PKG_BUILD_DIR)/.dev-installed
+
   $(1)-clean:
 	rm -f $(PACKAGE_DIR)/$(1)_*
 
@@ -183,10 +193,14 @@ define Build/Configure/Default
 	[ -x configure ] && \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
+		CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include" \
+		LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib" \
 		./configure \
 		--target=$(GNU_TARGET_NAME) \
 		--host=$(GNU_TARGET_NAME) \
 		--build=$(GNU_HOST_NAME) \
+		--program-prefix="" \
+		--program-suffix="" \
 		--prefix=/usr \
 		--exec-prefix=/usr \
 		--bindir=/usr/bin \
@@ -222,8 +236,14 @@ define Build/Compile
   $(call Build/Compile/Default,)
 endef
 
+define Build/InstallDev
+endef
+
 define Build/Clean
 	$(MAKE) clean
+endef
+
+define Build/UninstallDev
 endef
 
 ifneq ($(DUMP),)

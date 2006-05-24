@@ -28,6 +28,9 @@ sub print_category($) {
 			foreach my $depend (@{$pkg->{depends}}) {
 				print "\t\tdepends PACKAGE_$depend\n";
 			}
+			foreach my $need (@{$pkg->{needs}}) {
+				print "\t\tselect PACKAGE_$need\n";
+			}
 			print "\t\thelp\n";
 			print $pkg->{description};
 			print "\n";
@@ -62,6 +65,10 @@ while ($line = <>) {
 	$line =~ /^Depends: \s*(.+)\s*$/ and do {
 		my @dep = split /,\s*/, $1;
 		$pkg->{depends} = \@dep;
+	};
+	$line =~ /^Needs: \s*(.+)\s*$/ and do {
+		my @need = split /,\s*/, $1;
+		$pkg->{needs} = \@need;
 	};
 	$line =~ /^Category: \s*(.+)\s*$/ and do {
 		$pkg->{category} = $1;
