@@ -1,0 +1,27 @@
+diff -ruN freeradius-1.1.1-old/src/modules/rlm_eap/Makefile.in freeradius-1.1.1-new/src/modules/rlm_eap/Makefile.in
+--- freeradius-1.1.1-old/src/modules/rlm_eap/Makefile.in	2006-02-10 20:47:08.000000000 +0100
++++ freeradius-1.1.1-new/src/modules/rlm_eap/Makefile.in	2006-05-22 08:25:44.000000000 +0200
+@@ -10,7 +10,6 @@
+ RLM_LIBS    = libeap/libeap.la $(LIBLTDL)
+ RLM_INSTALL = install-subdirs
+ RLM_SUBDIRS = libeap @eaptypes@
+-RLM_UTILS   = radeapclient
+ 
+ #
+ # Not using shared libraries, add in ALL known static modules
+@@ -29,15 +28,8 @@
+ 
+ $(LT_OBJS): $(HEADERS)
+ 
+-radeapclient: radeapclient.lo $(CLIENTLIBS)
+-	$(LIBTOOL) --mode=link $(CC) $(LDFLAGS) $(RLM_LDFLAGS) -static -o radeapclient radeapclient.lo $(CLIENTLIBS) $(LIBS)
+-
+-radeapclient.lo: radeapclient.c $(HEADERS)
+-	$(LIBTOOL) --mode=compile $(CC) $(CFLAGS) $(RLM_CFLAGS) -c radeapclient.c
+-
+ install-subdirs:
+ 	@$(MAKE) $(MFLAGS) WHAT_TO_MAKE=install common
+-	$(LIBTOOL) --mode=install $(INSTALL) -m 755 $(INSTALLSTRIP) radeapclient$(EXEEXT) $(R)$(bindir)
+ 
+ common:
+ 	@for dir in $(RLM_SUBDIRS); do  \

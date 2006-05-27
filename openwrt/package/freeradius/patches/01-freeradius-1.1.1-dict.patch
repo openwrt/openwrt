@@ -1,100 +1,149 @@
---- freeradius-1.0.3/share/dictionary.orig	2005-06-07 09:36:04.000000000 +0200
-+++ freeradius-1.0.3/share/dictionary	2005-06-07 09:42:58.000000000 +0200
-@@ -50,56 +50,56 @@
- #	directive to the end of the file if you want to see the old names
- #	in the logfiles, INSTEAD OF the new names.
+diff -ruN freeradius-1.1.1-old/share/dictionary freeradius-1.1.1-new/share/dictionary
+--- freeradius-1.1.1-old/share/dictionary	2006-03-16 23:03:11.000000000 +0100
++++ freeradius-1.1.1-new/share/dictionary	2006-05-22 09:09:08.000000000 +0200
+@@ -52,7 +52,7 @@
+ #	this directive to the end of this file if you want to see the
+ #	old names in the logfiles, INSTEAD OF the new names.
  #
--$INCLUDE dictionary.compat	# compability issues
+-$INCLUDE dictionary.compat
++#$INCLUDE dictionary.compat
+ 
+ #
+ #	Include the RFC dictionaries next.
+@@ -73,75 +73,75 @@
+ #
+ #	Include vendor dictionaries after the standard ones.
+ #
 -$INCLUDE dictionary.3com
 -$INCLUDE dictionary.3gpp
 -$INCLUDE dictionary.3gpp2
 -$INCLUDE dictionary.acc
+-$INCLUDE dictionary.airespace
 -$INCLUDE dictionary.alcatel
 -$INCLUDE dictionary.alteon
+-$INCLUDE dictionary.aruba
 -$INCLUDE dictionary.ascend
 -$INCLUDE dictionary.bay
 -$INCLUDE dictionary.bintec
+-$INCLUDE dictionary.cablelabs
 -$INCLUDE dictionary.cabletron
-+#$INCLUDE dictionary.compat	# compability issues
+-$INCLUDE dictionary.cisco
 +#$INCLUDE dictionary.3com
 +#$INCLUDE dictionary.3gpp
 +#$INCLUDE dictionary.3gpp2
 +#$INCLUDE dictionary.acc
++#$INCLUDE dictionary.airespace
 +#$INCLUDE dictionary.alcatel
 +#$INCLUDE dictionary.alteon
++#$INCLUDE dictionary.aruba
 +#$INCLUDE dictionary.ascend
 +#$INCLUDE dictionary.bay
 +#$INCLUDE dictionary.bintec
++#$INCLUDE dictionary.cablelabs
 +#$INCLUDE dictionary.cabletron
- $INCLUDE dictionary.cisco
++#$INCLUDE dictionary.cisco
  #
- #  This is the same as the altiga dictionary.
+ #	 The Cisco VPN300 dictionary is the same as the altiga one.
+ #	 You shouldn't use both at the same time.
  #
  #$INCLUDE dictionary.cisco.vpn3000
 -$INCLUDE dictionary.cisco.vpn5000
 -$INCLUDE dictionary.cisco.bbsm
 -$INCLUDE dictionary.colubris
+-$INCLUDE dictionary.cosine
+-$INCLUDE dictionary.epygi
 -$INCLUDE dictionary.erx
+-$INCLUDE dictionary.ericsson
 -$INCLUDE dictionary.extreme
 +#$INCLUDE dictionary.cisco.vpn5000
 +#$INCLUDE dictionary.cisco.bbsm
 +#$INCLUDE dictionary.colubris
++#$INCLUDE dictionary.cosine
++#$INCLUDE dictionary.epygi
 +#$INCLUDE dictionary.erx
++#$INCLUDE dictionary.ericsson
 +#$INCLUDE dictionary.extreme
  $INCLUDE dictionary.freeradius
+-$INCLUDE dictionary.fortinet
 -$INCLUDE dictionary.foundry
 -$INCLUDE dictionary.gandalf
--$INCLUDE dictionary.garderos
 -$INCLUDE dictionary.gemtek
+-$INCLUDE dictionary.issanni
 -$INCLUDE dictionary.itk
+-$INCLUDE dictionary.ipunplugged
 -$INCLUDE dictionary.juniper
 -$INCLUDE dictionary.karlnet
 -$INCLUDE dictionary.livingston
 -$INCLUDE dictionary.localweb
+-$INCLUDE dictionary.lucent
+-$INCLUDE dictionary.hp
++#$INCLUDE dictionary.fortinet
 +#$INCLUDE dictionary.foundry
 +#$INCLUDE dictionary.gandalf
-+#$INCLUDE dictionary.garderos
 +#$INCLUDE dictionary.gemtek
++#$INCLUDE dictionary.issanni
 +#$INCLUDE dictionary.itk
++#$INCLUDE dictionary.ipunplugged
 +#$INCLUDE dictionary.juniper
 +#$INCLUDE dictionary.karlnet
 +#$INCLUDE dictionary.livingston
 +#$INCLUDE dictionary.localweb
++#$INCLUDE dictionary.lucent
++#$INCLUDE dictionary.hp
  $INCLUDE dictionary.microsoft
+-$INCLUDE dictionary.mikrotik
 -$INCLUDE dictionary.navini
+-$INCLUDE dictionary.netscreen
+-$INCLUDE dictionary.ntua
 -$INCLUDE dictionary.nomadix
+-$INCLUDE dictionary.nortel
+-$INCLUDE dictionary.packeteer
 -$INCLUDE dictionary.propel
 -$INCLUDE dictionary.quintum
 -$INCLUDE dictionary.redback
 -$INCLUDE dictionary.redcreek
+-$INCLUDE dictionary.roaringpenguin
 -$INCLUDE dictionary.shasta
 -$INCLUDE dictionary.shiva
 -$INCLUDE dictionary.sonicwall
 -$INCLUDE dictionary.springtide
+-$INCLUDE dictionary.starent
 -$INCLUDE dictionary.telebit
 -$INCLUDE dictionary.trapeze
+-$INCLUDE dictionary.t_systems_nova
+-$INCLUDE dictionary.usr
+-$INCLUDE dictionary.valemount
+-$INCLUDE dictionary.versanet
+-$INCLUDE dictionary.waverider
++#$INCLUDE dictionary.mikrotik
 +#$INCLUDE dictionary.navini
++#$INCLUDE dictionary.netscreen
++#$INCLUDE dictionary.ntua
 +#$INCLUDE dictionary.nomadix
++#$INCLUDE dictionary.nortel
++#$INCLUDE dictionary.packeteer
 +#$INCLUDE dictionary.propel
 +#$INCLUDE dictionary.quintum
 +#$INCLUDE dictionary.redback
 +#$INCLUDE dictionary.redcreek
++#$INCLUDE dictionary.roaringpenguin
 +#$INCLUDE dictionary.shasta
 +#$INCLUDE dictionary.shiva
 +#$INCLUDE dictionary.sonicwall
 +#$INCLUDE dictionary.springtide
++#$INCLUDE dictionary.starent
 +#$INCLUDE dictionary.telebit
 +#$INCLUDE dictionary.trapeze
- $INCLUDE dictionary.tunnel
--$INCLUDE dictionary.usr
--$INCLUDE dictionary.valemount
--$INCLUDE dictionary.versanet
++#$INCLUDE dictionary.t_systems_nova
 +#$INCLUDE dictionary.usr
 +#$INCLUDE dictionary.valemount
 +#$INCLUDE dictionary.versanet
++#$INCLUDE dictionary.waverider
  $INCLUDE dictionary.wispr
 -$INCLUDE dictionary.xedia
+-$INCLUDE dictionary.xylan
 +#$INCLUDE dictionary.xedia
++#$INCLUDE dictionary.xylan
  
  #
- #	The following are the proper new names. Use these.
+ #	And finally the server internal attributes.
