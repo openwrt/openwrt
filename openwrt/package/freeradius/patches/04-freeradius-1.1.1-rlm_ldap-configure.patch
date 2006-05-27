@@ -1,20 +1,6 @@
-diff -ruN freeradius-1.0.5-old/src/modules/rlm_ldap/configure.in freeradius-1.0.5-new/src/modules/rlm_ldap/configure.in
---- freeradius-1.0.5-old/src/modules/rlm_ldap/configure.in	2005-08-22 16:50:46.000000000 +0200
-+++ freeradius-1.0.5-new/src/modules/rlm_ldap/configure.in	2005-12-07 08:20:15.000000000 +0100
-@@ -90,6 +90,10 @@
- 	dnl Static linking will probably not work, but nobody ever
- 	dnl complained about it.
- 	smart_try_dir=$rlm_ldap_lib_dir
-+
-+	AC_SMART_CHECK_LIB(sasl, sasl_encode)
-+	AC_SMART_CHECK_LIB(lber, ber_init)
-+
- 	if test "x$rlm_ldap_with_threads" = "xyes"; then
- 	    AC_SMART_CHECK_LIB(ldap_r, ldap_init)
- 	    if test "x$ac_cv_lib_ldap_r_ldap_init" != "xyes"; then
-diff -ruN freeradius-1.0.5-old/src/modules/rlm_ldap/configure freeradius-1.0.5-new/src/modules/rlm_ldap/configure
---- freeradius-1.0.5-old/src/modules/rlm_ldap/configure	2005-08-22 16:53:52.000000000 +0200
-+++ freeradius-1.0.5-new/src/modules/rlm_ldap/configure	2005-12-07 08:20:41.000000000 +0100
+diff -ruN freeradius-1.1.1-old/src/modules/rlm_ldap/configure freeradius-1.1.1-new/src/modules/rlm_ldap/configure
+--- freeradius-1.1.1-old/src/modules/rlm_ldap/configure	2005-12-08 20:32:53.000000000 +0100
++++ freeradius-1.1.1-new/src/modules/rlm_ldap/configure	2006-05-21 19:54:07.000000000 +0200
 @@ -929,13 +929,311 @@
  	fi
  
@@ -53,8 +39,8 @@ diff -ruN freeradius-1.0.5-old/src/modules/rlm_ldap/configure freeradius-1.0.5-n
 +    if test "x$smart_lib" != "x"; then
 +      break;
 +    fi
-+    LIBS="$old_LIBS"
 +  done
++  LIBS="$old_LIBS"
 +fi
 +
 +if test "x$smart_lib" = "x"; then
@@ -155,8 +141,8 @@ diff -ruN freeradius-1.0.5-old/src/modules/rlm_ldap/configure freeradius-1.0.5-n
 +    if test "x$smart_lib" != "x"; then
 +      break;
 +    fi
-+    LIBS="$old_LIBS"
 +  done
++  LIBS="$old_LIBS"
 +fi
 +
 +if test "x$smart_lib" != "x"; then
@@ -201,8 +187,8 @@ diff -ruN freeradius-1.0.5-old/src/modules/rlm_ldap/configure freeradius-1.0.5-n
 +    if test "x$smart_lib" != "x"; then
 +      break;
 +    fi
-+    LIBS="$old_LIBS"
 +  done
++  LIBS="$old_LIBS"
 +fi
 +
 +if test "x$smart_lib" = "x"; then
@@ -303,8 +289,8 @@ diff -ruN freeradius-1.0.5-old/src/modules/rlm_ldap/configure freeradius-1.0.5-n
 +    if test "x$smart_lib" != "x"; then
 +      break;
 +    fi
-+    LIBS="$old_LIBS"
 +  done
++  LIBS="$old_LIBS"
 +fi
 +
 +if test "x$smart_lib" != "x"; then
@@ -574,3 +560,17 @@ diff -ruN freeradius-1.0.5-old/src/modules/rlm_ldap/configure freeradius-1.0.5-n
    rm -rf conftest*
    eval "ac_cv_func_ldap_int_tls_config=yes"
  else
+diff -ruN freeradius-1.1.1-old/src/modules/rlm_ldap/configure.in freeradius-1.1.1-new/src/modules/rlm_ldap/configure.in
+--- freeradius-1.1.1-old/src/modules/rlm_ldap/configure.in	2005-08-22 16:50:46.000000000 +0200
++++ freeradius-1.1.1-new/src/modules/rlm_ldap/configure.in	2006-05-21 19:51:25.000000000 +0200
+@@ -90,6 +90,10 @@
+ 	dnl Static linking will probably not work, but nobody ever
+ 	dnl complained about it.
+ 	smart_try_dir=$rlm_ldap_lib_dir
++
++	AC_SMART_CHECK_LIB(sasl, sasl_encode)
++	AC_SMART_CHECK_LIB(lber, ber_init)
++
+ 	if test "x$rlm_ldap_with_threads" = "xyes"; then
+ 	    AC_SMART_CHECK_LIB(ldap_r, ldap_init)
+ 	    if test "x$ac_cv_lib_ldap_r_ldap_init" != "xyes"; then

@@ -3,9 +3,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=freeradius
-PKG_VERSION:=1.0.5
+PKG_VERSION:=1.1.1
 PKG_RELEASE:=1
-PKG_MD5SUM:=00d06fc31e3b8279f6456d25401c81cb
+PKG_MD5SUM:=b38b24f6352090fdb571b9e8da52e12e
 
 PKG_SOURCE_URL:=ftp://ftp.freeradius.org/pub/radius/ \
 	http://freeradius.portal-to-web.de/ \
@@ -38,6 +38,7 @@ PKG_CONFIGURE_OPTIONS := \
 	--without-rlm_example \
 	--without-rlm_ippool \
 	--without-rlm_krb5 \
+	--without-rlm_otp \
 	--without-rlm_pam \
 	--without-rlm_perl \
 	--without-rlm_python \
@@ -51,10 +52,11 @@ PKG_CONFIGURE_OPTIONS := \
 	--without-rlm_sql_oracle \
 	--without-rlm_sql_sybase \
 	--without-rlm_sql_unixodbc \
+	--without-rlm_sql_log \
 	--without-rlm_unix \
-	--without-rlm_x99-token \
 
 ifneq ($(BR2_PACKAGE_FREERADIUS_MOD_LDAP),)
+PKG_CONFIGURE_LIBS += -lcrypto -lssl
 PKG_CONFIGURE_OPTIONS += \
 	--with-rlm_ldap-include-dir="$(STAGING_DIR)/usr/include" \
 	--with-rlm_ldap-lib-dir="$(STAGING_DIR)/usr/lib"
@@ -62,9 +64,11 @@ else
 PKG_CONFIGURE_OPTIONS += --without-rlm_ldap
 endif
 ifneq ($(BR2_PACKAGE_FREERADIUS_MOD_SQL_MYSQL),)
+PKG_CONFIGURE_LIBS += -lz
 PKG_CONFIGURE_OPTIONS += \
-	--with-mysql-include-dir="$(STAGING_DIR)/usr/include/mysql" \
-	--with-mysql-lib-dir="$(STAGING_DIR)/usr/lib/mysql"
+	--with-mysql-include-dir="$(STAGING_DIR)/usr/include" \
+	--with-mysql-lib-dir="$(STAGING_DIR)/usr/lib/mysql" \
+	--without-threads
 else
 PKG_CONFIGURE_OPTIONS += --without-rlm_sql_mysql
 endif
@@ -142,10 +146,10 @@ $(eval $(call PKG_mod_template,FREERADIUS_MOD_SQLCOUNTER,rlm_sqlcounter,))
 $(PKG_BUILD_DIR)/.configured:
 	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
 		$(TARGET_CONFIGURE_OPTS) \
-		CFLAGS="$(TARGET_CFLAGS) -I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include" \
+		CFLAGS="$(TARGET_CFLAGS)" \
 		CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include" \
-		LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib" \
-		sys_lib_dlsearch_path_spec="$(STAGING_DIR)/usr/lib $(STAGING_DIR)/lib" \
+		LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib -L$(PKG_INSTALL_DIR)/usr/lib/freeradius" \
+		LIBS="$(PKG_CONFIGURE_LIBS)" \
 		sys_lib_search_path_spec="$(STAGING_DIR)/usr/lib $(STAGING_DIR)/lib" \
 		MYSQL_CONFIG="no" \
 		./configure \
@@ -192,7 +196,7 @@ $(IPKG_FREERADIUS):
 	install -m0755 -d $(IDIR_FREERADIUS)/usr/share/freeradius
 	$(CP) $(PKG_INSTALL_DIR)/usr/share/freeradius/dictionary \
 		$(IDIR_FREERADIUS)/usr/share/freeradius/
-	for f in cisco freeradius microsoft tunnel wispr; do \
+	for f in freeradius freeradius.internal rfc2865 rfc2866 rfc2867 rfc2868 rfc2869 rfc3162 rfc3576 rfc3580 microsoft wispr; do \
 		$(CP) $(PKG_INSTALL_DIR)/usr/share/freeradius/dictionary.$${f} \
 		  $(IDIR_FREERADIUS)/usr/share/freeradius/ ; \
 	done
@@ -218,7 +222,7 @@ $(IPKG_FREERADIUS_DEMOCERTS):
 
 $(IPKG_FREERADIUS_UTILS):
 	install -m0755 -d $(IDIR_FREERADIUS_UTILS)/usr/bin
-	for f in radclient radeapclient; do \
+	for f in radclient; do \
 	  $(CP) $(PKG_INSTALL_DIR)/usr/bin/$${f} \
 	    $(IDIR_FREERADIUS_UTILS)/usr/bin/ ; \
 	done
