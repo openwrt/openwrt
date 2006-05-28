@@ -134,7 +134,8 @@ define BuildPackage
 	mkdir -p $$(IDIR_$(1))/CONTROL
 	echo "Package: $(1)" > $$(IDIR_$(1))/CONTROL/control
 	echo "Version: $(VERSION)" >> $$(IDIR_$(1))/CONTROL/control
-	echo "Depends: $$(IDEPEND_$(1))" >> $$(IDIR_$(1))/CONTROL/control
+	#FIXME: there should be a better way to do it
+	D="$$(IDEPEND_$(1))"; D="$$$${D}$$$${D:+, }$$(INEED_$(1))"; echo "Depends: $$$${D}" >> $$(IDIR_$(1))/CONTROL/control
 	echo "Source: $(SOURCE)" >> $$(IDIR_$(1))/CONTROL/control
 	echo "Section: $(SECTION)" >> $$(IDIR_$(1))/CONTROL/control
 	echo "Priority: $(PRIORITY)" >> $$(IDIR_$(1))/CONTROL/control
