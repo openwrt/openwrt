@@ -12,6 +12,8 @@ PKG_SOURCE_URL:=@SF/$(PKG_NAME)
 PKG_MD5SUM:=0d6d65be8896eff081aee996049afaa5
 PKG_CAT:=zcat
 
+PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
+
 include $(TOPDIR)/package/rules.mk
 
 define Package/pcmcia-cs
@@ -42,12 +44,20 @@ define Build/Configure
 	)
 endef
 
+define Build/Compile
+	rm -rf $(PKG_INSTALL_DIR)
+	mkdir -p $(PKG_INSTALL_DIR)
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		CFLAGS="$(TARGET_CFLAGS)" \
+		all install
+endef
+
 define Package/pcmcia-cs/install
 	install -m0755 -d $(1)/etc
+	$(CP) $(PKG_INSTALL_DIR)/etc/pcmcia $(1)/etc/
 	install -m0755 -d $(1)/usr/sbin
-	install -m0644 $(PKG_INSTALL_DIR)/etc/pcmcia $(1)/etc/
-	install -m0755 $(PKG_INSTALL_DIR)/sbin/cardctl $(1)/usr/sbin/
-	install -m0755 $(PKG_INSTALL_DIR)/sbin/cardmgr $(1)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/sbin/cardctl $(1)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/sbin/cardmgr $(1)/usr/sbin/
 endef
 
 $(eval $(call BuildPackage,pcmcia-cs))
