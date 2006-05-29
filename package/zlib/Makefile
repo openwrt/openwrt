@@ -53,18 +53,22 @@ define Package/zlib/install
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libz.so.* $(1)/usr/lib/
 endef
 
-$(STAGING_DIR)/usr/lib/libz.so: $(PKG_BUILD_DIR)/.built
+define Build/InstallDev
 	mkdir -p $(STAGING_DIR)/usr/include
-	$(CP) $(PKG_INSTALL_DIR)/usr/include/*.h $(STAGING_DIR)/usr/include
+	$(CP)	$(PKG_INSTALL_DIR)/usr/include/zconf.h \
+		$(PKG_INSTALL_DIR)/usr/include/zlib.h \
+		$(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/* $(STAGING_DIR)/usr/lib
-	touch $(STAGING_DIR)/usr/lib/libz.so
+	$(CP)	$(PKG_INSTALL_DIR)/usr/lib/libz.a \
+		$(PKG_INSTALL_DIR)/usr/lib/libz.so* \
+		$(STAGING_DIR)/usr/lib/
+endef
 	
-install-dev: $(STAGING_DIR)/usr/lib/libz.so
-
-uninstall-dev:
-	rm -rf $(STAGING_DIR)/usr/include/zconf.h
-	rm -rf $(STAGING_DIR)/usr/include/zlib.h
-	rm -rf $(STAGING_DIR)/usr/lib/libz.*
+define Build/UninstallDev
+	rm -rf	$(STAGING_DIR)/usr/include/zconf.h \
+		$(STAGING_DIR)/usr/include/zlib.h \
+		$(STAGING_DIR)/usr/lib/libz.a \
+		$(STAGING_DIR)/usr/lib/libz.so*
+endef
 
 $(eval $(call BuildPackage,zlib))
