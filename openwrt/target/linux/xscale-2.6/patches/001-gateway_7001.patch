@@ -1,0 +1,159 @@
+diff -Nur linux-2.6.16.4/arch/arm/boot/compressed/head-xscale.S linux-2.6.16.4-owrt/arch/arm/boot/compressed/head-xscale.S
+--- linux-2.6.16.4/arch/arm/boot/compressed/head-xscale.S	2006-04-11 19:19:28.000000000 +0200
++++ linux-2.6.16.4-owrt/arch/arm/boot/compressed/head-xscale.S	2006-04-16 16:51:05.000000000 +0200
+@@ -47,6 +47,11 @@
+                orr     r7, r7, #(MACH_TYPE_GTWX5715 & 0xff00)
+ #endif
+ 
++#ifdef  CONFIG_MACH_GATEWAY7001
++               mov     r7, #(MACH_TYPE_GATEWAY7001 & 0xff)
++               orr     r7, r7, #(MACH_TYPE_GATEWAY7001 & 0xff00)
++#endif
++
+ #ifdef CONFIG_ARCH_IXP2000
+ 		mov	r1, #-1
+ 		mov	r0, #0xd6000000
+diff -Nur linux-2.6.16.4/arch/arm/mach-ixp4xx/gateway7001-pci.c linux-2.6.16.4-owrt/arch/arm/mach-ixp4xx/gateway7001-pci.c
+--- linux-2.6.16.4/arch/arm/mach-ixp4xx/gateway7001-pci.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16.4-owrt/arch/arm/mach-ixp4xx/gateway7001-pci.c	2006-04-17 19:21:55.000000000 +0200
+@@ -0,0 +1,67 @@
++/*
++ * arch/arch/mach-ixp4xx/gateway7001-pci.c
++ *
++ * PCI setup routines for Gateway 7001
++ *
++ * Copyright (C) 2006 Imre Kaloz <kaloz@openwrt.org>
++ *
++ * based on coyote-pci.c:
++ *	Copyright (C) 2002 Jungo Software Technologies.
++ *	Copyright (C) 2003 MontaVista Softwrae, Inc.
++ *
++ * Maintainer: Imre Kaloz <kaloz@openwrt.org>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ *
++ */
++
++#include <linux/kernel.h>
++#include <linux/pci.h>
++#include <linux/init.h>
++
++#include <asm/mach-types.h>
++#include <asm/hardware.h>
++#include <asm/irq.h>
++
++#include <asm/mach/pci.h>
++
++extern void ixp4xx_pci_preinit(void);
++extern int ixp4xx_setup(int nr, struct pci_sys_data *sys);
++extern struct pci_bus *ixp4xx_scan_bus(int nr, struct pci_sys_data *sys);
++
++void __init gateway7001_pci_preinit(void)
++{
++	set_irq_type(IRQ_IXP4XX_GPIO10, IRQT_LOW);
++	set_irq_type(IRQ_IXP4XX_GPIO11, IRQT_LOW);
++
++	ixp4xx_pci_preinit();
++}
++
++static int __init gateway7001_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
++{
++	if (slot == 0)
++		return IRQ_IXP4XX_GPIO10;
++	else if (slot == 1)
++		return IRQ_IXP4XX_GPIO11;
++	else return -1;
++}
++
++struct hw_pci gateway7001_pci __initdata = {
++	.nr_controllers = 1,
++	.preinit =        gateway7001_pci_preinit,
++	.swizzle =        pci_std_swizzle,
++	.setup =          ixp4xx_setup,
++	.scan =           ixp4xx_scan_bus,
++	.map_irq =        gateway7001_map_irq,
++};
++
++int __init gateway7001_pci_init(void)
++{
++	if (machine_is_gateway7001())
++		pci_common_init(&gateway7001_pci);
++	return 0;
++}
++
++subsys_initcall(gateway7001_pci_init);
+diff -Nur linux-2.6.16.4/arch/arm/mach-ixp4xx/Kconfig linux-2.6.16.4-owrt/arch/arm/mach-ixp4xx/Kconfig
+--- linux-2.6.16.4/arch/arm/mach-ixp4xx/Kconfig	2006-04-11 19:19:28.000000000 +0200
++++ linux-2.6.16.4-owrt/arch/arm/mach-ixp4xx/Kconfig	2006-04-16 15:58:37.000000000 +0200
+@@ -30,6 +30,13 @@
+ 	  Engineering Coyote Gateway Reference Platform. For more
+ 	  information on this platform, see <file:Documentation/arm/IXP4xx>.
+ 
++config MACH_GATEWAY7001
++	bool "Gateway 7001"
++	help
++	  Say 'Y' here if you want your kernel to support Gateway's 
++	  7001 Access Point. For more information on this platform,
++	  see http://openwrt.org
++
+ config ARCH_IXDP425
+ 	bool "IXDP425"
+ 	help
+diff -Nur linux-2.6.16.4/arch/arm/mach-ixp4xx/Makefile linux-2.6.16.4-owrt/arch/arm/mach-ixp4xx/Makefile
+--- linux-2.6.16.4/arch/arm/mach-ixp4xx/Makefile	2006-04-11 19:19:28.000000000 +0200
++++ linux-2.6.16.4-owrt/arch/arm/mach-ixp4xx/Makefile	2006-04-16 16:03:42.000000000 +0200
+@@ -10,4 +10,5 @@
+ obj-$(CONFIG_MACH_GTWX5715)	+= gtwx5715-pci.o gtwx5715-setup.o
+ obj-$(CONFIG_MACH_NSLU2)	+= nslu2-pci.o nslu2-setup.o nslu2-power.o
+ obj-$(CONFIG_MACH_NAS100D)	+= nas100d-pci.o nas100d-setup.o nas100d-power.o
++obj-$(CONFIG_MACH_GATEWAY7001)	+= gateway7001-pci.o coyote-setup.o
+ 
+diff -Nur linux-2.6.16.4/include/asm-arm/arch-ixp4xx/uncompress.h linux-2.6.16.4-owrt/include/asm-arm/arch-ixp4xx/uncompress.h
+--- linux-2.6.16.4/include/asm-arm/arch-ixp4xx/uncompress.h	2006-04-11 19:19:28.000000000 +0200
++++ linux-2.6.16.4-owrt/include/asm-arm/arch-ixp4xx/uncompress.h	2006-04-16 16:25:34.000000000 +0200
+@@ -48,7 +48,7 @@
+ 	/*
+ 	 * Coyote and gtwx5715 only have UART2 connected
+ 	 */
+-	if (machine_is_adi_coyote() || machine_is_gtwx5715())
++	if (machine_is_adi_coyote() || machine_is_gtwx5715() || machine_is_gateway7001())
+ 		uart_base = (volatile u32*) IXP4XX_UART2_BASE_PHYS;
+ 	else
+ 		uart_base = (volatile u32*) IXP4XX_UART1_BASE_PHYS;
+diff -Nur linux-2.6.16.4/arch/arm/mach-ixp4xx/coyote-setup.c linux-2.6.16.4-owrt/arch/arm/mach-ixp4xx/coyote-setup.c
+--- linux-2.6.16.4/arch/arm/mach-ixp4xx/coyote-setup.c	2006-04-11 19:19:28.000000000 +0200
++++ linux-2.6.16.4-owrt/arch/arm/mach-ixp4xx/coyote-setup.c	2006-04-16 16:03:23.000000000 +0200
+@@ -1,9 +1,10 @@
+ /*
+  * arch/arm/mach-ixp4xx/coyote-setup.c
+  *
+- * Board setup for ADI Engineering and IXDGP425 boards
++ * Board setup for ADI Engineering, IXDGP425 and Gateway 7001 boards
+  *
+  * Copyright (C) 2003-2005 MontaVista Software, Inc.
++ * Copyright (C) 2006 Imre Kaloz <Kaloz@openwrt.org>
+  *
+  * Author: Deepak Saxena <dsaxena@plexity.net>
+  */
+@@ -111,6 +112,19 @@
+ MACHINE_END
+ #endif
+ 
++#ifdef CONFIG_MACH_GATEWAY7001
++MACHINE_START(GATEWAY7001, "Gateway 7001")
++	/* Maintainer: Imre Kaloz <kaloz@openwrt.org> */
++	.phys_io	= IXP4XX_PERIPHERAL_BASE_PHYS,
++	.io_pg_offst	= ((IXP4XX_PERIPHERAL_BASE_VIRT) >> 18) & 0xfffc,
++	.map_io		= ixp4xx_map_io,
++	.init_irq	= ixp4xx_init_irq,
++	.timer		= &ixp4xx_timer,
++	.boot_params	= 0x0100,
++	.init_machine	= coyote_init,
++MACHINE_END
++#endif
++
+ /*
+  * IXDPG425 is identical to Coyote except for which serial port
+  * is connected.

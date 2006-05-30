@@ -1,4 +1,5 @@
 BEGIN {
+	print ". /etc/config/network"
 	print "proto=\"$wan_proto\""
 	print "[ -z \"$proto\" -o \"$proto\" = \"none\" ] && exit"
 	print "ifname=\"$wan_ifname\""

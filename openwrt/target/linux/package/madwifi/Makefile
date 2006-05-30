@@ -4,9 +4,9 @@ include $(TOPDIR)/rules.mk
 include ../../rules.mk
 
 PKG_NAME:=madwifi-ng
-PKG_VERSION:=r1486-20060329
+PKG_VERSION:=r1543-20060506
 PKG_RELEASE:=1
-PKG_MD5SUM:=71f1c654531ca8516bf7cdb5e80eb10f
+PKG_MD5SUM:=3d89e5197c7e43eb37564c176140b2bf
 
 PKG_SOURCE_URL:=http://snapshots.madwifi.org/$(PKG_NAME)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -22,6 +22,9 @@ HAL_TARGET:=mips-le-elf
 endif
 ifeq ($(ARCH),i386)
 HAL_TARGET:=i386-elf
+endif
+ifeq ($(ARCH),armeb)
+HAL_TARGET:=xscale-be-elf
 endif
 
 BUS := PCI

@@ -6,8 +6,6 @@ package-y += base-files
 package-$(CONFIG_PACKAGE_KMOD_ALSA) += alsa
 package-$(CONFIG_PACKAGE_KMOD_FUSE) += fuse
 package-$(CONFIG_PACKAGE_KMOD_HOSTAP) += hostap
-package-$(CONFIG_PACKAGE_KMOD_BCM43XX_STANDALONE) += bcm43xx-standalone
-package-$(CONFIG_PACKAGE_KMOD_IEEE80211_DSCAPE) += ieee80211-dscape
 package-$(CONFIG_PACKAGE_KMOD_MADWIFI) += madwifi
 package-$(CONFIG_PACKAGE_KMOD_MADWIFI_OLD) += madwifi-old
 package-$(CONFIG_PACKAGE_KMOD_MINI_FO) += mini_fo
@@ -20,7 +18,6 @@ package-$(CONFIG_PACKAGE_KMOD_DIAG) += diag
 package-$(CONFIG_PACKAGE_KMOD_WLCOMPAT) += wlcompat
 package-$(CONFIG_PACKAGE_KMOD_ZD1211) += zd1211
 
-bcm43xx-standalone-compile: ieee80211-dscape-compile
 wlcompat-compile: base-files-compile
 
 all: compile install

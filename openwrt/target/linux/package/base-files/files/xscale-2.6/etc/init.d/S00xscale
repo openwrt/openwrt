@@ -1,0 +1,4 @@
+#!/bin/sh
+mount none /proc -t proc
+mount_root failsafe
+mount -o remount,rw /dev/root /

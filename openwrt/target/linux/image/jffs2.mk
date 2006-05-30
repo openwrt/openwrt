@@ -1,4 +1,4 @@
-ifneq ($(CONFIG_mips),y)
+ifneq ($(CONFIG_BIG_ENDIAN),y)
 JFFS2OPTS :=  --pad --little-endian --squash
 else
 JFFS2OPTS :=  --pad --big-endian --squash

@@ -980,13 +980,13 @@ static int new_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd) {
 static int __init wlcompat_init()
 {
 	int found = 0, i;
-	char *devname = "eth0";
+	char devname[4] = "wl0";
 	bss_force = 0;
 	
 	while (!found && (dev = dev_get_by_name(devname))) {
 		if ((dev->wireless_handlers == NULL) && ((wl_ioctl(dev, WLC_GET_MAGIC, &i, sizeof(i)) == 0) && i == WLC_IOCTL_MAGIC))
 			found = 1;
-		devname[3]++;
+		devname[2]++;
 	}
 	
 	if (!found) {
