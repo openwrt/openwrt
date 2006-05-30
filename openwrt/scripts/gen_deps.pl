@@ -18,8 +18,8 @@ while ($line = <>) {
 		defined $pkg{$name} or $pkg{$name} = {};
 		$pkg{$name}->{src} = $src;
 	};
-	$line =~ /^Depends: \s*(.+)\s*$/ and do {
-		my @dep = split /,\s*/, $1;
+	$line =~ /^(Build-)?Depends: \s*(.+)\s*$/ and do {
+		my @dep = split /,\s*/, $2;
 		$pkg{$name}->{depends} = \@dep;
 	};
 }

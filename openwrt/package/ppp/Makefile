@@ -5,6 +5,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=ppp
 PKG_VERSION:=2.4.3
 PKG_RELEASE:=7
+PKG_BUILDDEP:=libpcap
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -19,7 +20,6 @@ include $(TOPDIR)/package/rules.mk
 define Package/ppp
  SECTION:=net
  CATEGORY:=Network
- NEEDS:=libpcap
  MENU:=1
  DEFAULT:=y
  TITLE:=PPP daemon

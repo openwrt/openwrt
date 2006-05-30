@@ -49,7 +49,6 @@ define Package/Default
   SECTION:=opt
   CATEGORY:=Extra packages
   DEPENDS:=
-  NEEDS:=
   MAINTAINER:=OpenWrt Developers Team <openwrt-devel@openwrt.org>
   SOURCE:=$(patsubst $(TOPDIR)/%,%,${shell pwd})
   VERSION:=$(PKG_VERSION)-$(PKG_RELEASE)
@@ -92,7 +91,6 @@ define BuildPackage
   endif
 
   IDEPEND_$(1):=$$(strip $$(DEPENDS))
-  INEED_$(1):=$$(strip $$(NEEDS))
 
   DUMPINFO += \
 	echo "Package: $(1)"; 
@@ -110,7 +108,7 @@ define BuildPackage
   DUMPINFO += \
 	echo "Version: $(VERSION)"; \
 	echo "Depends: $$(IDEPEND_$(1))"; \
-	echo "Needs: $$(INEED_$(1))"; \
+	echo "Build-Depends: $(PKG_BUILDDEP)"; \
 	echo "Category: $(CATEGORY)"; \
 	echo "Title: $(TITLE)"; \
 	echo "Description: $(DESCRIPTION)" | sed -e 's,\\,\n,g';
@@ -134,8 +132,7 @@ define BuildPackage
 	mkdir -p $$(IDIR_$(1))/CONTROL
 	echo "Package: $(1)" > $$(IDIR_$(1))/CONTROL/control
 	echo "Version: $(VERSION)" >> $$(IDIR_$(1))/CONTROL/control
-	#FIXME: there should be a better way to do it
-	D="$$(IDEPEND_$(1))"; D="$$$${D}$$$${D:+, }$$(INEED_$(1))"; echo "Depends: $$$${D}" >> $$(IDIR_$(1))/CONTROL/control
+	echo "Depends: $$(IDEPEND_$(1))" >> $$(IDIR_$(1))/CONTROL/control
 	echo "Source: $(SOURCE)" >> $$(IDIR_$(1))/CONTROL/control
 	echo "Section: $(SECTION)" >> $$(IDIR_$(1))/CONTROL/control
 	echo "Priority: $(PRIORITY)" >> $$(IDIR_$(1))/CONTROL/control
@@ -155,8 +152,6 @@ define BuildPackage
 
   $$(INFO_$(1)): $$(IPKG_$(1))
 	$(IPKG) install $$(IPKG_$(1))
-
-  compile-targets: $(PKG_BUILD_DIR)/.dev-installed
 
   $(1)-clean:
 	rm -f $(PACKAGE_DIR)/$(1)_*
@@ -259,7 +254,7 @@ else
   prepare: $(PKG_BUILD_DIR)/.prepared
   configure: $(PKG_BUILD_DIR)/.configured
 
-  compile-targets:
+  compile-targets: $(PKG_BUILD_DIR)/.dev-installed
   compile: compile-targets
 
   install-targets:

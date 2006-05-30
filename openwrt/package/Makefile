@@ -20,7 +20,7 @@ $(STAMP_DIR) $(TARGET_DIR):
 	$(MAKE) -C $(patsubst %-clean,%,$@) clean
 
 
-.pkgdeps: $(TOPDIR)/.pkginfo FORCE
+.pkgdeps: $(TOPDIR)/.pkginfo
 	@$(TOPDIR)/scripts/gen_deps.pl < $< > $@ || rm -f $@
 
 all: compile
