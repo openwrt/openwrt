@@ -70,5 +70,14 @@ config: scripts/config/conf
 config-clean:
 	$(MAKE) -C scripts/config clean
 
+package/%:
+	$(MAKE) -C toolchain $(patsubst package/%,%,$@)
+
+target/%:
+	$(MAKE) -C toolchain $(patsubst target/%,%,$@)
+
+toolchain/%:
+	$(MAKE) -C toolchain $(patsubst toolchain/%,%,$@)
+
 .PHONY: FORCE
 FORCE:
