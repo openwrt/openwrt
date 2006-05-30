@@ -17,7 +17,6 @@ include $(TOPDIR)/package/rules.mk
 define Package/ebtables
 SECTION:=base
 CATEGORY:=Network
-DEFAULT:=y
 TITLE:=Ethernet bridge firewall administration utility
 DESCRIPTION:=Ethernet Bridge Firewalling (ebtables)
 URL:=http://ebtables.sourceforge.net/
