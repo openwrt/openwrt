@@ -29,12 +29,6 @@ choice
 
 endchoice
 
-config PACKAGE_LIBGCC
-	tristate
-	prompt "libgcc package" if TOOLCHAINOPTS
-	default y if GCC_VERSION_4_0_2 || GCC_VERSION_4_0_3 || GCC_VERSION_4_1_0
-	default m
-
 config GCC_VERSION
 	string
 	prompt "GCC compiler Version" if (TOOLCHAINOPTS && NULL)
