@@ -20,6 +20,7 @@ LINUX_KARCH:=$(shell echo $(ARCH) | sed -e 's/i[3-9]86/i386/' \
 	-e 's/mipseb/mips/' \
 	-e 's/powerpc/ppc/' \
 	-e 's/sh[234]/sh/' \
+	-e 's/armeb/arm/' \
 )
 
 KPKG_MAKEOPTS:=	IPKG="$(IPKG_KERNEL)" \
@@ -75,6 +76,11 @@ ifneq ($(6),)
 	for module in $(7); do \
 		echo $$$$module >> $$(I_$(1))/etc/modules.d/$(6)-$(2); \
 	done
+	echo "#!/bin/sh" >> $$(I_$(1))/CONTROL/postinst
+	echo "[ -z \"\$$$$IPKG_INSTROOT\" ] || exit" >> $$(I_$(1))/CONTROL/postinst
+	echo ". /etc/functions.sh" >> $$(I_$(1))/CONTROL/postinst
+	echo "load_modules /etc/modules.d/$(6)-$(2)" >> $$(I_$(1))/CONTROL/postinst
+	chmod 0755 $$(I_$(1))/CONTROL/postinst
 endif
 	$(8)
 	$(IPKG_BUILD) $$(I_$(1)) $(PACKAGE_DIR)

@@ -103,8 +103,10 @@ mostlyclean:
 
 rebuild:
 	-$(MAKE) mostlyclean
-	@[ -f $(LINUX_KERNEL) ] && $(MAKE) clean
-	$(MAKE) compile
+	if [ -f $(LINUX_KERNEL) ]; then \
+		$(MAKE) clean; \
+	fi
+	$(MAKE) compile $(MAKE_TRACE)
 
 clean:
 	rm -f $(STAMP_DIR)/.linux-compile

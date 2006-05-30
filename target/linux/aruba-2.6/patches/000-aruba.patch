@@ -45,7 +45,7 @@ diff -Nur linux-2.6.16/arch/mips/aruba/Makefile linux-2.6.16-owrt/arch/mips/arub
 +# .S.o:
 +# 	$(CC) $(CFLAGS) -c $< -o $*.o
 +
-+obj-y	 := prom.o setup.o idtIRQ.o irq.o time.o flash_lock.o wdt_merlot.o
++obj-y	 := prom.o setup.o idtIRQ.o irq.o time.o flash_lock.o
 +obj-$(CONFIG_SERIAL_8250) 		+= serial.o
 +
 +subdir-y         += nvram
@@ -823,6 +823,7 @@ diff -Nur linux-2.6.16/arch/mips/aruba/setup.c linux-2.6.16-owrt/arch/mips/aruba
 + */
 +
 +#include <linux/init.h>
++#include <linux/module.h>
 +#include <linux/mm.h>
 +#include <linux/sched.h>
 +#include <linux/irq.h>
@@ -872,7 +873,6 @@ diff -Nur linux-2.6.16/arch/mips/aruba/setup.c linux-2.6.16-owrt/arch/mips/aruba
 +
 +extern char * getenv(char *e);
 +extern void unlock_ap60_70_flash(void);
-+extern void wdt_merlot_disable(void);
 +
 +void __init plat_setup(void)
 +{
@@ -895,8 +895,6 @@ diff -Nur linux-2.6.16/arch/mips/aruba/setup.c linux-2.6.16-owrt/arch/mips/aruba
 +
 +	printk("BOARD - %s\n",getenv("boardname"));
 +
-+	wdt_merlot_disable();
-+
 +	return 0;
 +}
 +
@@ -909,6 +907,8 @@ diff -Nur linux-2.6.16/arch/mips/aruba/setup.c linux-2.6.16-owrt/arch/mips/aruba
 +{
 +	return "MIPS IDT32434 - ARUBA";
 +}
++
++EXPORT_SYMBOL(get_system_type);
 diff -Nur linux-2.6.16/arch/mips/aruba/time.c linux-2.6.16-owrt/arch/mips/aruba/time.c
 --- linux-2.6.16/arch/mips/aruba/time.c	1970-01-01 01:00:00.000000000 +0100
 +++ linux-2.6.16-owrt/arch/mips/aruba/time.c	2006-03-20 14:25:10.000000000 +0100
@@ -1020,40 +1020,6 @@ diff -Nur linux-2.6.16/arch/mips/aruba/time.c linux-2.6.16-owrt/arch/mips/aruba/
 +
 +	timer_interrupt(irq, NULL, regs);
 +	irq_exit();
-+}
-diff -Nur linux-2.6.16/arch/mips/aruba/wdt_merlot.c linux-2.6.16-owrt/arch/mips/aruba/wdt_merlot.c
---- linux-2.6.16/arch/mips/aruba/wdt_merlot.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.16-owrt/arch/mips/aruba/wdt_merlot.c	2006-03-20 14:25:10.000000000 +0100
-@@ -0,0 +1,30 @@
-+#include <linux/config.h>
-+#include <linux/kernel.h>
-+#include <asm/bootinfo.h>
-+
-+void wdt_merlot_disable()
-+{
-+	volatile __u32 *wdt_errcs;
-+	volatile __u32 *wdt_wtc;
-+	volatile __u32 *wdt_ctl;
-+	volatile __u32 val;
-+
-+	switch (mips_machtype) {
-+		case MACH_ARUBA_AP70:
-+			wdt_errcs = (__u32 *) 0xb8030030;
-+			wdt_wtc = (__u32 *) 0xb803003c;
-+			val = *wdt_errcs;
-+			val &= ~0x201;
-+			*wdt_errcs = val;
-+			val = *wdt_wtc;
-+			val &= ~0x1;
-+			*wdt_wtc = val;
-+			break;
-+		case MACH_ARUBA_AP65:
-+		case MACH_ARUBA_AP60:
-+		default:
-+			wdt_ctl = (__u32 *) 0xbc003008;
-+			*wdt_ctl = 0;
-+			break;
-+	}
 +}
 diff -Nur linux-2.6.16/arch/mips/Kconfig linux-2.6.16-owrt/arch/mips/Kconfig
 --- linux-2.6.16/arch/mips/Kconfig	2006-03-20 06:53:29.000000000 +0100

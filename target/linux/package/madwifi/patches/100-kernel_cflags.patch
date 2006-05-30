@@ -30,3 +30,14 @@ diff -ru madwifi-ng-r1486-20060329/hal/public/mips-le-elf.inc madwifi-ng-r1486-2
 -COPTS+=	-G 0 -EL -mno-abicalls -fno-pic -Wa,--trap \
 +COPTS+=	-G 0 -EL -mno-abicalls -fno-pic -Wa,--trap -mips32 \
  	-fno-strict-aliasing -fno-common -fomit-frame-pointer -mlong-calls
+diff -ur madwifi-ng-r1486-20060329/hal/public/xscale-be-elf.inc madwifi-ng-r1486-20060329-patch/hal/public/xscale-be-elf.inc
+--- madwifi-ng-r1486-20060329/hal/public/xscale-be-elf.inc	2006-02-11 13:04:39.000000000 +0100
++++ madwifi-ng-r1486-20060329-patch/hal/public/xscale-be-elf.inc	2006-04-16 15:07:59.000000000 +0200
+@@ -72,5 +72,5 @@
+ 
+ LDOPTS=	-EB
+ COPTS+=	-DAH_BYTE_ORDER=AH_BIG_ENDIAN -DAH_REGOPS_FUNC
+-COPTS+= -march=armv4 -mbig-endian -fno-strict-aliasing -fno-common -mapcs-32 \
+-	-mtune=xscale  -mshort-load-bytes -msoft-float -mfp=2
++COPTS+= -mcpu=xscale -mbig-endian -fno-strict-aliasing -fno-common \
++	-msoft-float -mfp=2

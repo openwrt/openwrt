@@ -1,7 +1,7 @@
+ifneq ($(CONFIG_BIG_ENDIAN),y)
 endian := le
-
-ifeq ($(ARCH),mips)
-	endian := be
+else
+endian := be
 endif
 
 squashfs-prepare:

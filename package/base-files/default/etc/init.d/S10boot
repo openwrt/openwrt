@@ -1,4 +1,5 @@
 #!/bin/sh
+. /etc/functions.sh
 
 [ -f /proc/jffs2_bbc ] && echo "S" > /proc/jffs2_bbc
 vconfig set_name_type VLAN_PLUS_VID_NO_PAD
@@ -16,7 +17,7 @@ for iface in $(/sbin/ifconfig -a | awk '{print $1}' | grep eth); do
 	/usr/bin/env -i ACTION=add INTERFACE="$iface" /sbin/hotplug net
 done
 
-sed 's/^[^#]/insmod &/' /etc/modules /etc/modules.d/* 2>&-|ash
+load_modules /etc/modules /etc/modules.d/*
 
 ifconfig lo 127.0.0.1 up
 ifconfig eth0 promisc

@@ -2,7 +2,7 @@ config PACKAGE_KMOD_WLCOMPAT
 	prompt "kmod-wlcompat..................... Wrapper providing Wireless Extensions for Broadcom wl module"
 	tristate
 	default y
-	depends PACKAGE_KMOD_BRCM_WL || PACKAGE_KMOD_BRCM_WL2
+	depends PACKAGE_KMOD_BRCM_WL
 	help
 	  A wrapper module, that provides Wireless Extension support for the
 	  proprietary Broadcom wl module.
@@ -11,7 +11,7 @@ config PACKAGE_KMOD_WLCOMPAT_DEBUG
 	prompt "kmod-wlcompat-debug............... Wrapper providing Wireless Extensions for Broadcom wl module (debug)"
 	tristate
 	default m
-	depends PACKAGE_KMOD_BRCM_WL || PACKAGE_KMOD_BRCM_WL2
+	depends PACKAGE_KMOD_BRCM_WL
 	help
 	  A wrapper module, that provides Wireless Extension support for the
 	  proprietary Broadcom wl module. (debug version)

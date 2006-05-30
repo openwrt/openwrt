@@ -7,6 +7,7 @@ config LINUX_2_6_ARUBA
 	select mips
 	select LINUX_2_6
 	select PCI_SUPPORT
+	select BIG_ENDIAN
 	help
           Build firmware images for Aruba boards 
 
@@ -14,6 +15,7 @@ config LINUX_2_4_AR531X
 	bool "Atheros AR531x [2.4]"
 	select mips
 	select LINUX_2_4
+	select BIG_ENDIAN
 	help
 	  Build firmware images for Atheros AR531x based boards
 	  (e.g. Netgear WGT624, Linksys WRT55AG)
@@ -84,6 +86,7 @@ config LINUX_2_6_ARM
 config LINUX_2_6_ARMEB
 	bool "UNSUPPORTED big-endian arm platform"
 	select LINUX_2_6
+	select BIG_ENDIAN
 	select armeb
 
 config LINUX_2_6_CRIS
@@ -99,6 +102,7 @@ config LINUX_2_6_M68K
 config LINUX_2_6_PPC
 	bool "UNSUPPORTED powerpc platform"
 	select LINUX_2_6
+	select BIG_ENDIAN
 	select powerpc
 
 config LINUX_2_6_SH3
@@ -109,6 +113,7 @@ config LINUX_2_6_SH3
 config LINUX_2_6_SH3EB
 	bool "UNSUPPORTED big-endian sh3 platform"
 	select LINUX_2_6
+	select BIG_ENDIAN
 	select sh3eb
 
 config LINUX_2_6_SH4
@@ -119,11 +124,13 @@ config LINUX_2_6_SH4
 config LINUX_2_6_SH4EB
 	bool "UNSUPPORTED big-endian sh4 platform"
 	select LINUX_2_6
+	select BIG_ENDIAN
 	select sh4eb
 
 config LINUX_2_6_SPARC
 	bool "UNSUPPORTED sparc platform"
 	select LINUX_2_6
+	select BIG_ENDIAN
 	select sparc
 
 endif
@@ -145,6 +152,8 @@ config PCI_SUPPORT
 config PCMCIA_SUPPORT
 	bool
 
+config BIG_ENDIAN
+	bool
 
 # Architecture selection
 
