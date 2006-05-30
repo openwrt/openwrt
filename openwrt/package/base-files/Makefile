@@ -3,12 +3,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=base-files
-PKG_RELEASE:=6
+PKG_RELEASE:=7
 PKG_BUILD_DIR:=$(BUILD_DIR)/base-files
 
-BOARD:=$(shell LANG=C grep ^CONFIG_LINUX_2 $(TOPDIR)/.config|sed -e "s/=y//" \
+BOARD:=$(shell LANG=C grep ^CONFIG_LINUX_2_._ $(TOPDIR)/.config|sed -e "s/=y//" \
 	-e "s/.*_//"| tr "[:upper:]" "[:lower:]")
-KERNEL:=$(shell LANG=C grep ^CONFIG_LINUX_2 $(TOPDIR)/.config|sed -e "s/=y//" \
+KERNEL:=$(shell LANG=C grep ^CONFIG_LINUX_2_._ $(TOPDIR)/.config|sed -e "s/=y//" \
 	-e "s/CONFIG_LINUX_//" -e "s/_BRCM//" -e "s/_/./"| tr "[:upper:]" "[:lower:]")
 
 REV:=$(shell LANG=C svn info | awk '/^Revision:/ { print$$2 }' )
@@ -18,87 +18,77 @@ endif
 
 include $(TOPDIR)/package/rules.mk
 
-IDIR_BASE:=$(PKG_BUILD_DIR)/base-files
-IPKG_BASE:=$(PACKAGE_DIR)/$(PKG_NAME)_$(PKG_RELEASE)_$(ARCH).ipk
+define Package/base-files
+ SECTION:=base
+ CATEGORY:=Base system
+ DEFAULT:=y
+ TITLE:=OpenWrt system scripts
+ DESCRIPTION:=OpenWrt system scripts
+endef
 
-UCLIBC_VERSION:=${shell cat $(STAGING_DIR)/uclibc_version}
-IDIR_UCLIBC:=$(PKG_BUILD_DIR)/uclibc
-IPKG_UCLIBC:=$(PACKAGE_DIR)/uclibc_$(UCLIBC_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
 
-LIBGCC_VERSION:=${shell cat $(STAGING_DIR)/gcc_version}
-IDIR_LIBGCC:=$(PKG_BUILD_DIR)/libgcc
-IPKG_LIBGCC:=$(PACKAGE_DIR)/libgcc_$(LIBGCC_VERSION)-$(PKG_RELEASE)_$(ARCH).ipk
+define Package/libgcc
+ SECTION:=libs
+ CATEGORY:=Libraries
+ DEFAULT:=m, y if GCC_VERSION_4_0_2 || GCC_VERSION_4_0_3 || GCC_VERSION_4_1_0
+ TITLE:=GCC support library
+ VERSION:=$(LIBGCC_VERSION)-$(PKG_RELEASE)
+ DESCRIPTION:=$(TITLE)
+endef
 
-PACKAGES:=$(IPKG_BASE) $(IPKG_UCLIBC) 
-PACKAGES_INSTALL:=$(IPKG_BASE) $(IPKG_UCLIBC) 
+define Package/uclibc
+ $(call Package/base-files)
+ VERSION:=$(UCLIBC_VERSION)-$(PKG_RELEASE)
+ TITLE:=C library
+ DESCRIPTION:=C library for embedded systems
+endef
 
-ifeq ($(CONFIG_PACKAGE_LIBGCC),y)
-PACKAGES+=$(IPKG_LIBGCC)
-PACKAGES_INSTALL+=$(IPKG_LIBGCC)
-endif
-ifeq ($(CONFIG_PACKAGE_LIBGCC),m)
-PACKAGES+=$(IPKG_LIBGCC)
-endif
 
-$(PKG_BUILD_DIR)/.prepared:
-	mkdir -p $(PKG_BUILD_DIR) $(PACKAGE_DIR)
-	touch $@
+define Build/Prepare
+	mkdir -p $(PKG_BUILD_DIR)
+endef
 
-$(PKG_BUILD_DIR)/.configured:
-	touch $@
+define Build/Compile
+endef
 
-$(PKG_BUILD_DIR)/.built:
-	touch $@
+define Package/base-files/install
+	$(CP) ./default/* $(1)
+	$(SED) 's,$$R,r$(REV),g' $(1)/etc/banner
+	$(SED) 's,$$S,$(BOARD)-$(KERNEL),g' $(1)/etc/ipkg.conf
+	mkdir -p $(1)/dev
+	mkdir -p $(1)/etc/crontabs
+	mkdir -p $(1)/jffs
+	mkdir -p $(1)/lib
+	mkdir -p $(1)/mnt
+	mkdir -p $(1)/proc
+	mkdir -p $(1)/tmp
+	mkdir -p $(1)/usr/lib
+	mkdir -p $(1)/usr/bin
+	mkdir -p $(1)/sys
+	mkdir -p $(1)/www
+	ln -sf /tmp/resolv.conf $(1)/etc/resolv.conf
+	ln -sf /proc/mounts $(1)/etc/mtab
+	rm -f $(1)/var
+	ln -sf /tmp $(1)/var
+	-find $(1) -type d -name CVS | xargs rm -rf
+	-find $(1) -type d -name .svn | xargs rm -rf
+	-find $(1) -name '.#*' | xargs rm -f
+	mkdir -p $(1)/etc
+endef
 
-$(IPKG_BASE):
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_BASE) ipkg/$(PKG_NAME).control $(PKG_RELEASE) $(ARCH)
-	$(CP) ./default/* $(IDIR_BASE)
-	$(SED) 's,$$R,r$(REV),g' $(IDIR_BASE)/etc/banner
-	$(SED) 's,$$S,$(BOARD)-$(KERNEL),g' $(IDIR_BASE)/etc/ipkg.conf
-	mkdir -p $(IDIR_BASE)/dev
-	mkdir -p $(IDIR_BASE)/etc/crontabs
-	mkdir -p $(IDIR_BASE)/jffs
-	mkdir -p $(IDIR_BASE)/lib
-	mkdir -p $(IDIR_BASE)/mnt
-	mkdir -p $(IDIR_BASE)/proc
-	mkdir -p $(IDIR_BASE)/tmp
-	mkdir -p $(IDIR_BASE)/usr/lib
-	mkdir -p $(IDIR_BASE)/usr/bin
-	mkdir -p $(IDIR_BASE)/sys
-	mkdir -p $(IDIR_BASE)/www
-	ln -sf /tmp/resolv.conf $(IDIR_BASE)/etc/resolv.conf
-	ln -sf /proc/mounts $(IDIR_BASE)/etc/mtab
-	rm -f $(IDIR_BASE)/var
-	ln -sf /tmp $(IDIR_BASE)/var
-	-find $(IDIR_BASE) -type d -name CVS | xargs rm -rf
-	-find $(IDIR_BASE) -type d -name .svn | xargs rm -rf
-	-find $(IDIR_BASE) -name '.#*' | xargs rm -f
-	mkdir -p $(IDIR_BASE)/etc
-	$(IPKG_BUILD) $(IDIR_BASE) $(PACKAGE_DIR)
-
-$(IPKG_UCLIBC):
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_UCLIBC) ipkg/uclibc.control $(UCLIBC_VERSION)-$(PKG_RELEASE) $(ARCH)
-	mkdir -p $(IDIR_UCLIBC)/lib
+define Package/uclibc/install
+	mkdir -p $(1)/lib
 	for file in ld-uClibc libc libcrypt libdl libm libnsl libresolv librt libuClibc libutil; do \
-		$(CP) $(STAGING_DIR)/lib/$$file.so.* $(IDIR_UCLIBC)/lib/; \
-		$(CP) $(STAGING_DIR)/lib/$$file-$(UCLIBC_VERSION).so $(IDIR_UCLIBC)/lib/; \
+		$(CP) $(STAGING_DIR)/lib/$$file.so.* $(1)/lib/; \
+		$(CP) $(STAGING_DIR)/lib/$$file-$(UCLIBC_VERSION).so $(1)/lib/; \
 	done
-	-$(STRIP) $(IDIR_UCLIBC)/lib/*
-	$(IPKG_BUILD) $(IDIR_UCLIBC) $(PACKAGE_DIR)
+endef
 
-$(IPKG_LIBGCC):
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(IDIR_LIBGCC) ipkg/libgcc.control $(LIBGCC_VERSION)-$(PKG_RELEASE) $(ARCH)
+define Package/libgcc/install
 	mkdir -p $(IDIR_LIBGCC)/lib
 	$(CP) $(STAGING_DIR)/lib/libgcc_s.so.* $(IDIR_LIBGCC)/lib/
-	-$(STRIP) $(IDIR_LIBGCC)/lib/*
-	$(IPKG_BUILD) $(IDIR_LIBGCC) $(PACKAGE_DIR)
+endef
 
-package-clean:
-	rm -f $(PACKAGES)
-	
-clean-targets: package-clean
-prepare:
-compile-targets: $(PACKAGES)
-install-targets: compile
-	mkdir -p $(TARGET_DIR)
-	$(IPKG) install $(PACKAGES_INSTALL)
+$(eval $(call BuildPackage,base-files))
+$(eval $(call BuildPackage,libgcc))
+$(eval $(call BuildPackage,uclibc))
