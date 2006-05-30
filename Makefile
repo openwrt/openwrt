@@ -71,10 +71,10 @@ config-clean:
 	$(MAKE) -C scripts/config clean
 
 package/%:
-	$(MAKE) -C toolchain $(patsubst package/%,%,$@)
+	$(MAKE) -C package $(patsubst package/%,%,$@)
 
 target/%:
-	$(MAKE) -C toolchain $(patsubst target/%,%,$@)
+	$(MAKE) -C target $(patsubst target/%,%,$@)
 
 toolchain/%:
 	$(MAKE) -C toolchain $(patsubst toolchain/%,%,$@)
