@@ -70,10 +70,10 @@ config: scripts/config/conf
 config-clean:
 	$(MAKE) -C scripts/config clean
 
-package/%:
+package/%: .pkginfo
 	$(MAKE) -C package $(patsubst package/%,%,$@)
 
-target/%:
+target/%: .pkginfo
 	$(MAKE) -C target $(patsubst target/%,%,$@)
 
 toolchain/%:

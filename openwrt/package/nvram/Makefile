@@ -11,8 +11,7 @@ include $(TOPDIR)/package/rules.mk
 
 define Package/nvram
 SECTION:=base
-# CATEGORY:=FIXME
-DEFAULT:=n
+DEPENDS:=@LINUX_2_4_BRCM
 TITLE:=Broadcom config utility
 DESCRIPTION:=control utility for broadcom's 'nvram' config area
 endef

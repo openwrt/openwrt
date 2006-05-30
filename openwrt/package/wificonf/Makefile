@@ -12,7 +12,7 @@ include $(TOPDIR)/package/rules.mk
 define Package/wificonf
 SECTION:=base
 CATEGORY:=Network
-DEFAULT:=y
+DEPENDS:=nvram +wireless-tools
 TITLE:=replacement utility for wlconf
 DESCRIPTION:=Replacement utility for wlconf
 endef

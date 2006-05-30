@@ -1,7 +1,7 @@
 # Main makefile for the packages
 include $(TOPDIR)/rules.mk
 include $(TOPDIR)/.config
-include .pkgdeps
+include $(TOPDIR)/.pkgdeps
 
 COMPILE_PACKAGES:=$(patsubst %,%-compile,$(package-y) $(package-m))
 INSTALL_PACKAGES:=$(patsubst %,%-install,$(package-y))
@@ -20,7 +20,7 @@ $(STAMP_DIR) $(TARGET_DIR):
 	$(MAKE) -C $(patsubst %-clean,%,$@) clean
 
 
-.pkgdeps: $(TOPDIR)/.pkginfo
+$(TOPDIR)/.pkgdeps: $(TOPDIR)/.pkginfo
 	@$(TOPDIR)/scripts/gen_deps.pl < $< > $@ || rm -f $@
 
 all: compile

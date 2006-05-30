@@ -12,8 +12,6 @@ include $(TOPDIR)/package/rules.mk
 
 define Package/robocfg
 SECTION:=base
-# CATEGORY:=FIXME
-DEFAULT:=n
 TITLE:=BCM5325E/536x switch configuration utility
 DESCRIPTION:=Broadcom BCM5325E/536x switch configuration utility
 endef

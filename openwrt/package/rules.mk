@@ -132,7 +132,14 @@ define BuildPackage
 	mkdir -p $$(IDIR_$(1))/CONTROL
 	echo "Package: $(1)" > $$(IDIR_$(1))/CONTROL/control
 	echo "Version: $(VERSION)" >> $$(IDIR_$(1))/CONTROL/control
-	echo "Depends: $$(IDEPEND_$(1))" >> $$(IDIR_$(1))/CONTROL/control
+	( \
+		DEPENDS=; \
+		for depend in $$(IDEPEND_$(1)); do \
+			[ "$$$${depend%%%%%%%%[A-Za-z]*}" = "@" ] && continue; \
+			DEPENDS=$$$${DEPENDS:+$$$$DEPENDS, }$$$${depend##+}; \
+		done; \
+		echo "Depends: $$$$DEPENDS" >> $$(IDIR_$(1))/CONTROL/control; \
+	)
 	echo "Source: $(SOURCE)" >> $$(IDIR_$(1))/CONTROL/control
 	echo "Section: $(SECTION)" >> $$(IDIR_$(1))/CONTROL/control
 	echo "Priority: $(PRIORITY)" >> $$(IDIR_$(1))/CONTROL/control

@@ -5,6 +5,7 @@ my $name;
 my $src;
 my $makefile;
 my %pkg;
+my %dep;
 
 my $line;
 while ($line = <>) {
@@ -19,8 +20,12 @@ while ($line = <>) {
 		$pkg{$name}->{src} = $src;
 	};
 	$line =~ /^(Build-)?Depends: \s*(.+)\s*$/ and do {
-		my @dep = split /,\s*/, $2;
-		$pkg{$name}->{depends} = \@dep;
+		$pkg{$name}->{depends} ||= [];
+		foreach my $v (split /\s+/, $2) {
+			next if $v =~ /^@/;
+			$v =~ s/^\+//;
+			push @{$pkg{$name}->{depends}}, $v;
+		}
 	};
 }
 
@@ -32,8 +37,16 @@ foreach $name (sort {uc($a) cmp uc($b)} keys %pkg) {
 	my $hasdeps = 0;
 	my $depline = "";
 	foreach my $dep (@{$pkg{$name}->{depends}}) {
+		my $idx;
 	        if (defined $pkg{$dep}->{src} && $pkg{$name}->{src} ne $pkg{$dep}->{src}) {
-			$depline .= " $pkg{$dep}->{src}-compile";
+			$idx = $pkg{$dep}->{src};
+		} elsif (defined $pkg{$dep}) {
+			$idx = $dep;
+		}
+		if ($idx) {
+			next if $dep{$pkg{$name}->{src}."->".$idx};
+			$depline .= " $idx\-compile";
+			$dep{$pkg{$name}->{src}."->".$idx} = 1;
 		}
 	}
 	if ($depline ne "") {

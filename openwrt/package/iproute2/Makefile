@@ -14,25 +14,15 @@ PKG_CAT:=zcat
 
 include $(TOPDIR)/package/rules.mk
 
-# define Package/iproute2
-# SECTION:=base
-# CATEGORY:=Network
-# DEFAULT:=n
-# MENU:=1
-# TITLE:=A collection of utilites for controlling TCP/IP networking and Traffic Control
-# endef
-
 define Package/ip
 SECTION:=base
 CATEGORY:=Network
-DEFAULT:=n
 DEPENDS:=iproute2
 TITLE:=A routing control utility
 endef
 
 define Package/tc
 $(call Package/ip)
-# DEPENDS:=kmod-sched
 TITLE:=A traffic control utility
 endef
 

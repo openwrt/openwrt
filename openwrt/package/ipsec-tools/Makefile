@@ -19,7 +19,7 @@ include $(TOPDIR)/package/rules.mk
 define Package/ipsec-tools
 SECTION:=base
 CATEGORY:=Network
-DEFAULT:=y
+DEPENDS:=@LINUX_2_6
 TITLE:=IPsec management tools
 DESCRIPTION:=IPsec management tools
 URL:=http://ipsec-tools.sourceforge.net/
