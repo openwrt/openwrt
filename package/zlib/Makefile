@@ -20,7 +20,6 @@ include $(TOPDIR)/package/rules.mk
 define Package/zlib
 SECTION:=base
 CATEGORY:=Libraries
-DEFAULT:=n
 TITLE:=Library implementing the deflate compression method
 DESCRIPTION:=A library implementing the 'deflate' compression method
 URL:=http://www.zlib.net/

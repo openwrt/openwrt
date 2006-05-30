@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=ppp
 PKG_VERSION:=2.4.3
 PKG_RELEASE:=7
-PKG_BUILDDEP:=libpcap
+PKG_BUILDDEP:=libpcap linux-atm
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -30,7 +30,7 @@ endef
 define Package/ppp-mod-pppoa
  SECTION:=net
  CATEGORY:=Network
- DEPENDS:=ppp
+ DEPENDS:=ppp +linux-atm
  TITLE:=PPPoA plugin
  DESCRIPTION:=PPPoA (PPP over ATM) plugin for ppp
 endef

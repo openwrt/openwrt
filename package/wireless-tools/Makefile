@@ -42,12 +42,16 @@ define Package/wireless-tools/install
 	install -m0755 $(PKG_INSTALL_DIR)/usr/sbin/iw{config,getid,list,priv,spy} $(1)/usr/sbin/
 endef
 
-install-dev: $(PKG_BUILD_DIR)/.built
+define Build/InstallDev
 	mkdir -p $(STAGING_DIR)/usr/{lib,include}
 	$(CP) $(PKG_BUILD_DIR)/libiw.so* $(STAGING_DIR)/usr/lib/
 	ln -sf libiw.so.28 $(STAGING_DIR)/usr/lib/libiw.so
 	$(CP) $(PKG_BUILD_DIR)/{iwlib,wireless}.h $(STAGING_DIR)/usr/include/
+endef
 	
-uninstall-dev:
+define Build/UninstallDev
 	rm -f $(STAGING_DIR)/usr/lib/libiw.*
 	rm -f $(STAGING_DIR)/usr/include/{iwlib,wireless}.h
+endef
+
+$(eval $(call BuildPackage,wireless-tools))

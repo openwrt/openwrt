@@ -26,7 +26,12 @@ sub print_category($) {
 			print "\t\ttristate \"$title\"\n";
 			print "\t\tdefault ".$pkg->{default}."\n";
 			foreach my $depend (@{$pkg->{depends}}) {
-				print "\t\tdepends PACKAGE_$depend\n";
+				my $m = "depends";
+				$depend =~ s/^([@\+])//;
+				my $flags = $1;
+				$flags =~ /@/ or $depend = "PACKAGE_$depend";
+				$flags =~ /\+/ and $m = "select";
+				print "\t\t$m $depend\n";
 			}
 			print "\t\thelp\n";
 			print $pkg->{description};
@@ -60,7 +65,7 @@ while ($line = <>) {
 	$line =~ /^Menu: \s*(.+)\s*$/ and $pkg->{menu} = $1;
 	$line =~ /^Default: \s*(.+)\s*$/ and $pkg->{default} = $1;
 	$line =~ /^Depends: \s*(.+)\s*$/ and do {
-		my @dep = split /,\s*/, $1;
+		my @dep = split /\s+/, $1;
 		$pkg->{depends} = \@dep;
 	};
 	$line =~ /^Category: \s*(.+)\s*$/ and do {

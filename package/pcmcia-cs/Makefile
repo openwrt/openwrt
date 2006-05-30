@@ -18,8 +18,7 @@ include $(TOPDIR)/package/rules.mk
 
 define Package/pcmcia-cs
 SECTION:=base
-# CATEGORY:=FIXME
-DEFAULT:=n
+DEPENDS:=@PCMCIA_SUPPORT
 TITLE:=PCMCIA/Cardbus management utilities
 DESCRIPTION:=PCMCIA/Cardbus management utilities
 URL:=http://pcmcia-cs.sourceforge.net/

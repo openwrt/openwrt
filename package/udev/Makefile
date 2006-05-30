@@ -23,8 +23,7 @@ include $(TOPDIR)/package/rules.mk
 
 define Package/udev
 SECTION:=base
-# CATEGORY:=FIXME
-DEFAULT:=n
+DEPENDS:=@LINUX_2_6
 TITLE:=Dynamic device management subsystem
 DESCRIPTION:=udev provides a dynamic device directory containing only the files for \\\
 actually present devices. It creates or removes device node files in \\\

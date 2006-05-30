@@ -17,8 +17,7 @@ include $(TOPDIR)/package/rules.mk
 define Package/ipset
 SECTION:=base
 CATEGORY:=Network
-DEFAULT:=y
-DEPENDS:=kmod-iptables-extra
+DEPENDS:=+kmod-iptables-extra
 TITLE:=Netfilter ip sets administration utility
 DESCRIPTION:=Netfilter ip sets administration utility
 URL:=http://ipset.netfilter.org/
