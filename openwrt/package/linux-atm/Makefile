@@ -16,76 +16,53 @@ PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
 include $(TOPDIR)/package/rules.mk
 
-$(eval $(call PKG_template,LINUX_ATM,linux-atm,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
-$(eval $(call PKG_template,BR2684CTL,br2684ctl,$(PKG_VERSION)-$(PKG_RELEASE),$(ARCH)))
+define Package/linux-atm
+ SECTION:=libs
+ CATEGORY:=Libraries
+ TITLE:=Linux ATM Library
+ DESCRIPTION:=Library for accessing the Linux ATM subsystem
+endef
 
-$(PKG_BUILD_DIR)/.configured:
-	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status} ; \
-		$(TARGET_CONFIGURE_OPTS) \
-		CFLAGS="$(TARGET_CFLAGS)" \
-		CPPFLAGS="-I$(STAGING_DIR)/usr/include" \
-		LDFLAGS="-L$(STAGING_DIR)/lib -L$(STAGING_DIR)/usr/lib" \
-		./configure \
-		  --target=$(GNU_TARGET_NAME) \
-		  --host=$(GNU_TARGET_NAME) \
-		  --build=$(GNU_HOST_NAME) \
-		  --program-prefix="" \
-		  --program-suffix="" \
-		  --prefix=/usr \
-		  --exec-prefix=/usr \
-		  --bindir=/usr/bin \
-		  --datadir=/usr/share \
-		  --includedir=/usr/include/ \
-		  --infodir=/usr/share/info \
-		  --libdir=/usr/lib \
-		  --libexecdir=/usr/lib \
-		  --localstatedir=/var \
-		  --mandir=/usr/share/man \
-		  --sbindir=/usr/sbin \
-		  --sysconfdir=/etc \
-	)
-	touch $@
+define Package/br2684ctl
+ SECTION:=net
+ CATEGORY:=Network
+ TITLE:=RFC2684 bridging
+ DEPENDS:=+linux-atm
+ DESCRIPTION:=ATM RFC2684 bridging utility
+endef
 
-$(PKG_BUILD_DIR)/.built:
+define Build/Compile
 	rm -rf $(PKG_INSTALL_DIR)
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		all install
-	touch $@
+endef
 
-$(IPKG_LINUX_ATM): 
-	install -d -m0755 $(IDIR_LINUX_ATM)/usr/lib
-	cp -f $(PKG_INSTALL_DIR)/usr/lib/libatm.so.1 $(IDIR_LINUX_ATM)/usr/lib
-	$(RSTRIP) $(IDIR_LINUX_ATM)/
-	$(IPKG_BUILD) $(IDIR_LINUX_ATM) $(PACKAGE_DIR)
+define Package/linux-atm/install
+	install -d -m0755 $(1)/usr/lib
+	cp -f $(PKG_INSTALL_DIR)/usr/lib/libatm.so.1 $(1)/usr/lib
+endef
 
-$(IPKG_BR2684CTL): 
-	install -d -m0755 $(IDIR_BR2684CTL)/usr/sbin
-	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/br2684ctl $(IDIR_BR2684CTL)/usr/sbin/
-	install -d -m0755 $(IDIR_BR2684CTL)/etc/hotplug.d/net
-	install -m0644 ./files/br2684.init $(IDIR_BR2684CTL)/etc/hotplug.d/net/30-br2684
-	$(RSTRIP) $(IDIR_BR2684CTL)/
-	$(IPKG_BUILD) $(IDIR_BR2684CTL) $(PACKAGE_DIR)
+define Package/br2684ctl/install
+	install -d -m0755 $(1)/usr/sbin
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/br2684ctl $(1)/usr/sbin/
+	install -d -m0755 $(1)/etc/hotplug.d/net
+	install -m0644 ./files/br2684.init $(1)/etc/hotplug.d/net/30-br2684
+endef
 
-$(STAGING_DIR)/usr/lib/libatm.so: $(PKG_BUILD_DIR)/.built
+define Build/InstallDev
 	mkdir -p $(STAGING_DIR)/usr/include
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/atm{,d,sap}.h $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libatm.{a,so*} $(STAGING_DIR)/usr/lib/
-	touch $@
+endef
 
-install-dev: $(STAGING_DIR)/usr/lib/libatm.so
-
-uninstall-dev:
+define Build/UninstallDev
 	rm -rf \
 		$(STAGING_DIR)/usr/include/atm{,d,sap}.h \
-		$(STAGING_DIR)/usr/lib/libatm.{a,so*} \
+		$(STAGING_DIR)/usr/lib/libatm.{a,so*}
+endef
 
-compile-targets: install-dev
-clean-targets: uninstall-dev
-
-mostlyclean:
-	$(MAKE) -C $(PKG_BUILD_DIR) clean
-	rm -f $(PKG_BUILD_DIR)/.built
-
+$(eval $(call BuildPackage,linux-atm))
+$(eval $(call BuildPackage,br2684ctl))
