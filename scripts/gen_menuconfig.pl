@@ -24,7 +24,9 @@ sub print_category($) {
 			$pkg->{menu} and print "menu";
 			print "config PACKAGE_".$pkg->{name}."\n";
 			print "\t\ttristate \"$title\"\n";
-			print "\t\tdefault ".$pkg->{default}."\n";
+			foreach my $default (split /\s*,\s*/, $pkg->{default}) {
+				print "\t\tdefault $default\n";
+			}
 			foreach my $depend (@{$pkg->{depends}}) {
 				my $m = "depends";
 				$depend =~ s/^([@\+])//;
