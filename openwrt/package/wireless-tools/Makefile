@@ -12,6 +12,8 @@ PKG_SOURCE_URL:=http://www.hpl.hp.com/personal/Jean_Tourrilhes/Linux
 PKG_MD5SUM:=599c94497f9c9073c7b052d3dcb7cd16
 PKG_CAT:=zcat
 
+PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
+
 include $(TOPDIR)/package/rules.mk
 
 define Package/wireless-tools
