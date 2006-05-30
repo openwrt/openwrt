@@ -29,27 +29,8 @@ MAKEFLAGS=-j$(CONFIG_JLEVEL) V=$(V) $(EXTRA_MAKEFLAGS)
 # Strip off the annoying quoting
 ARCH:=$(strip $(subst ",, $(CONFIG_ARCH)))
 WGET:=$(strip $(subst ",, $(CONFIG_WGET)))
-GCC_VERSION:=$(strip $(subst ",, $(CONFIG_GCC_VERSION)))
-GCC_USE_SJLJ_EXCEPTIONS:=$(strip $(subst ",, $(CONFIG_GCC_USE_SJLJ_EXCEPTIONS)))
 TARGET_OPTIMIZATION:=$(strip $(subst ",, $(CONFIG_TARGET_OPTIMIZATION)))
 #"))"))"))"))")) # for vim's broken syntax highlighting :)
-
-
-ifeq ($(CONFIG_SOFT_FLOAT),y)
-# gcc 3.4.x soft float configuration is different than previous versions.
-ifeq ($(findstring 3.4.,$(GCC_VERSION)),3.4.)
-SOFT_FLOAT_CONFIG_OPTION:=--with-float=soft
-else
-SOFT_FLOAT_CONFIG_OPTION:=--without-float
-endif
-TARGET_SOFT_FLOAT:=-msoft-float
-ARCH_FPU_SUFFIX:=_nofpu
-else
-SOFT_FLOAT_CONFIG_OPTION:=
-TARGET_SOFT_FLOAT:=
-ARCH_FPU_SUFFIX:=
-endif
-
 
 ifeq ($(CONFIG_TAR_VERBOSITY),y)
 TAR_OPTIONS=-xvf
@@ -66,17 +47,17 @@ OPTIMIZE_FOR_CPU=$(ARCH)
 HOSTCC:=gcc
 BASE_DIR:=$(TOPDIR)
 DL_DIR:=$(BASE_DIR)/dl
-BUILD_DIR:=$(BASE_DIR)/build_$(ARCH)$(ARCH_FPU_SUFFIX)
-STAGING_DIR:=$(BASE_DIR)/staging_dir_$(ARCH)$(ARCH_FPU_SUFFIX)
+BUILD_DIR:=$(BASE_DIR)/build_$(ARCH)
+STAGING_DIR:=$(BASE_DIR)/staging_dir_$(ARCH)
 SCRIPT_DIR:=$(BASE_DIR)/scripts
 BIN_DIR:=$(BASE_DIR)/bin
 STAMP_DIR:=$(BUILD_DIR)/stamp
 PACKAGE_DIR:=$(BIN_DIR)/packages
 STAMP_DIR:=$(BUILD_DIR)/stamp
 TARGET_DIR:=$(BUILD_DIR)/root
-TOOL_BUILD_DIR=$(BASE_DIR)/toolchain_build_$(ARCH)$(ARCH_FPU_SUFFIX)
+TOOL_BUILD_DIR=$(BASE_DIR)/toolchain_build_$(ARCH)
 TARGET_PATH=$(STAGING_DIR)/usr/bin:$(STAGING_DIR)/bin:/bin:/sbin:/usr/bin:/usr/sbin
-IMAGE:=$(BUILD_DIR)/root_fs_$(ARCH)$(ARCH_FPU_SUFFIX)
+IMAGE:=$(BUILD_DIR)/root_fs_$(ARCH)
 REAL_GNU_TARGET_NAME=$(OPTIMIZE_FOR_CPU)-linux-uclibc
 GNU_TARGET_NAME=$(OPTIMIZE_FOR_CPU)-linux
 KERNEL_CROSS:=$(STAGING_DIR)/bin/$(OPTIMIZE_FOR_CPU)-linux-uclibc-

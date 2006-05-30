@@ -20,7 +20,7 @@
 
 include $(TOPDIR)/rules.mk
 
-GCC_VERSION:=$(strip $(CONFIG_GCC_VERSION))
+GCC_VERSION:=$(strip $(subst ",, $(CONFIG_GCC_VERSION)))#"))
 
 #GCC_SITE:=ftp://ftp.gnu.org/gnu/gcc/releases/gcc-$(GCC_VERSION)
 GCC_SITE:=ftp://ftp.fu-berlin.de/unix/languages/gcc/releases/gcc-$(GCC_VERSION) \
@@ -29,7 +29,6 @@ GCC_SITE:=ftp://ftp.fu-berlin.de/unix/languages/gcc/releases/gcc-$(GCC_VERSION) 
 GCC_SOURCE:=gcc-$(GCC_VERSION).tar.bz2
 GCC_DIR:=$(TOOL_BUILD_DIR)/gcc-$(GCC_VERSION)
 GCC_CAT:=bzcat
-GCC_STRIP_HOST_BINARIES:=true
 
 #############################################################
 #
@@ -71,14 +70,6 @@ $(GCC_DIR)/.patched: $(GCC_DIR)/.unpacked
 	# We can dispense with the custom spec files, as well as libfloat for the arm case.
 	# However, we still need a patch for arm.  There's a similar patch for gcc 3.3.x
 	# which needs to be integrated so we can kill of libfloat for good.
-ifeq ($(CONFIG_SOFT_FLOAT),y)
-ifeq ("$(strip $(ARCH))","arm")
-	$(SCRIPT_DIR)/patch-kernel.sh $(GCC_DIR) ./$(GCC_VERSION) arm-softfloat.patch.conditional
-endif
-ifeq ("$(strip $(ARCH))","armeb")
-	$(SCRIPT_DIR)/patch-kernel.sh $(GCC_DIR) ./$(GCC_VERSION) arm-softfloat.patch.conditional
-endif
-endif
 	$(SED) 's,\(version_string.. = "[0-9\.]*\).*\(";\),\1 (OpenWrt-2.0)\2,' $(GCC_DIR)/gcc/version.c
 	$(SED) 's,\(bug_report_url.. = "\).*\(";\),\1<URL:https://dev.openwrt.org/>\2,' $(GCC_DIR)/gcc/version.c
 	touch $(GCC_DIR)/.patched
@@ -103,9 +94,7 @@ $(GCC_BUILD_DIR1)/.configured: $(GCC_DIR)/.patched
 		--with-gnu-ld \
 		$(DISABLE_NLS) \
 		$(MULTILIB) \
-		$(SOFT_FLOAT_CONFIG_OPTION) \
-		$(GCC_WITH_CPU) $(GCC_WITH_ARCH) $(GCC_WITH_TUNE) \
-		$(EXTRA_GCC_CONFIG_OPTIONS));
+	);
 	touch $(GCC_BUILD_DIR1)/.configured
 
 $(GCC_BUILD_DIR1)/.compiled: $(GCC_BUILD_DIR1)/.configured
@@ -149,10 +138,7 @@ $(GCC_BUILD_DIR2)/.configured: $(GCC_DIR)/.patched $(STAGING_DIR)/lib/libc.a
 		--with-gnu-ld \
 		$(DISABLE_NLS) \
 		$(MULTILIB) \
-		$(SOFT_FLOAT_CONFIG_OPTION) \
-		$(GCC_WITH_CPU) $(GCC_WITH_ARCH) $(GCC_WITH_TUNE) \
-		$(GCC_USE_SJLJ_EXCEPTIONS) \
-		$(EXTRA_GCC_CONFIG_OPTIONS));
+	);
 	touch $(GCC_BUILD_DIR2)/.configured
 
 $(GCC_BUILD_DIR2)/.compiled: $(GCC_BUILD_DIR2)/.configured
@@ -172,24 +158,6 @@ gcc-install: $(GCC_BUILD_DIR2)/.compiled
 		   	$(GNU_TARGET_NAME)$${app##$(REAL_GNU_TARGET_NAME)}; \
 		done; \
 	);
-	#
-	# Now for the ugly 3.3.x soft float hack...
-	#
-ifeq ($(CONFIG_SOFT_FLOAT),y)
-ifeq ($(findstring 3.3.,$(GCC_VERSION)),3.3.)
-	# Make sure we have a soft float specs file for this arch
-	if [ ! -f ./$(GCC_VERSION)/specs-$(ARCH)-soft-float ] ; then \
-		echo soft float configured but no specs file for this arch ; \
-		/bin/false ; \
-	fi;
-	# Replace specs file with one that defaults to soft float mode.
-	if [ ! -f $(STAGING_DIR)/lib/gcc-lib/$(REAL_GNU_TARGET_NAME)/$(GCC_VERSION)/specs ] ; then \
-		echo staging dir specs file is missing ; \
-		/bin/false ; \
-	fi;
-	$(CP) ./$(GCC_VERSION)/specs-$(ARCH)-soft-float $(STAGING_DIR)/lib/gcc-lib/$(REAL_GNU_TARGET_NAME)/$(GCC_VERSION)/specs
-endif
-endif
 # We do another ugly hack here because the standard behaviour is
 # to include a reference to libgcc.so.1 in all binaries. For flash space
 # saving, we change the specs file to link in a static libgcc here. 
