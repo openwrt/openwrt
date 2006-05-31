@@ -134,8 +134,7 @@ define BuildPackage
 	echo "Version: $(VERSION)" >> $$(IDIR_$(1))/CONTROL/control
 	( \
 		DEPENDS=; \
-		for depend in $$(IDEPEND_$(1)); do \
-			[ "$$$${depend%%%%%%%%[A-Za-z]*}" = "@" ] && continue; \
+		for depend in $$(filter-out @%,$$(IDEPEND_$(1))); do \
 			DEPENDS=$$$${DEPENDS:+$$$$DEPENDS, }$$$${depend##+}; \
 		done; \
 		echo "Depends: $$$$DEPENDS" >> $$(IDIR_$(1))/CONTROL/control; \
