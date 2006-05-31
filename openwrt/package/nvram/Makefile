@@ -28,9 +28,14 @@ define Package/nvram/install
 	install -m0755 $(PKG_BUILD_DIR)/nvram $(1)/usr/sbin
 endef
 
-compile-targets: install-dev
-install-dev: $(PKG_BUILD_DIR)/.built
+define Build/InstallDev
 	mkdir -p $(STAGING_DIR)/usr/lib
 	$(CP) $(PKG_BUILD_DIR)/*.so $(STAGING_DIR)/usr/lib
-	
+endef
 
+define Build/UninstallDev
+	rm -f $(STAGING_DIR)/usr/lib/libshared*.so \
+		$(STAGING_DIR)/usr/lib/libnvram*.so
+endef
+
+$(eval $(call BuildPackage,nvram))
