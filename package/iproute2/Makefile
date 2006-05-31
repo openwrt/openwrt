@@ -53,6 +53,5 @@ define Package/tc/install
 	install -m0755 $(PKG_BUILD_DIR)/tc/tc $(1)/usr/sbin/
 endef
 
-# $(eval $(call BuildPackage,iproute2))
-# $(eval $(call BuildPackage,ip))
-# $(eval $(call BuildPackage,tc))
+$(eval $(call BuildPackage,ip))
+$(eval $(call BuildPackage,tc))

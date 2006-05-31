@@ -162,6 +162,22 @@ define Build/Compile
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		all install install-devel
 endef
+
+
+define Build/InstallDev
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		$(TARGET_CONFIGURE_OPTS) \
+		CC=$(TARGET_CC) COPT_FLAGS="$(TARGET_CFLAGS)" \
+		KERNEL_DIR=$(LINUX_DIR) PREFIX=/usr \
+		DESTDIR="$(STAGING_DIR)" \
+		install install-devel
+endef
+
+define Build/UninstallDev
+	rm -rf $(STAGING_DIR)/usr/include/libipq.h
+	rm -rf $(STAGING_DIR)/usr/lib/libipq.a
+endef
+
 		
 define Package/iptables/install
 	install -d -m0755 $(1)/etc/config
@@ -223,21 +239,3 @@ $(eval $(call BuildPlugin,iptables-mod-ipsec,$(IPT_IPSEC-m)))
 $(eval $(call BuildPlugin,iptables-mod-nat,$(IPT_NAT-m)))
 $(eval $(call BuildPlugin,iptables-mod-ulog,$(IPT_ULOG-m)))
 $(eval $(call BuildPackage,ip6tables))
-
-
-$(STAGING_DIR)/usr/lib/libipq.a: $(PKG_BUILD_DIR)/.built
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		$(TARGET_CONFIGURE_OPTS) \
-		CC=$(TARGET_CC) COPT_FLAGS="$(TARGET_CFLAGS)" \
-		KERNEL_DIR=$(LINUX_DIR) PREFIX=/usr \
-		DESTDIR="$(STAGING_DIR)" \
-		install install-devel
-
-install-dev: $(STAGING_DIR)/usr/lib/libipq.a
-uninstall-dev:
-	rm -rf $(STAGING_DIR)/usr/include/libipq.h
-	rm -rf $(STAGING_DIR)/usr/lib/libipq.a
-
-compile-targets: install-dev
-clean-targets: uninstall-dev
-
