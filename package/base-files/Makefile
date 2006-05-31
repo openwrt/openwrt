@@ -3,13 +3,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=base-files
-PKG_RELEASE:=7
+PKG_RELEASE:=8
 PKG_BUILD_DIR:=$(BUILD_DIR)/base-files
-
-BOARD:=$(shell LANG=C grep ^CONFIG_LINUX_2_._ $(TOPDIR)/.config|sed -e "s/=y//" \
-	-e "s/.*_//"| tr "[:upper:]" "[:lower:]")
-KERNEL:=$(shell LANG=C grep ^CONFIG_LINUX_2_._ $(TOPDIR)/.config|sed -e "s/=y//" \
-	-e "s/CONFIG_LINUX_//" -e "s/_BRCM//" -e "s/_/./"| tr "[:upper:]" "[:lower:]")
 
 REV:=$(shell LANG=C svn info | awk '/^Revision:/ { print$$2 }' )
 ifeq ($(REV),)
@@ -18,16 +13,23 @@ endif
 
 include $(TOPDIR)/package/rules.mk
 
-#FIXME: use the version from ./toolchain/uclibc
-UCLIBC_VERSION:=0.9.28
-LIBGCC_VERSION:=$(CONFIG_GCC_VERSION)
+ifneq ($(DUMP),1)
+include $(BUILD_DIR)/kernel.mk
+include $(TOPDIR)/target/linux/rules.mk
+TARGET:=-$(BOARD)-$(KERNEL)
 
-define Package/base-files
+UCLIBC_VERSION:=${shell cat $(STAGING_DIR)/uclibc_version}
+LIBGCC_VERSION:=${shell cat $(STAGING_DIR)/gcc_version}
+endif
+
+CONFIG_PACKAGE_base-files$(TARGET):=CONFIG_PACKAGE_base-files
+
+define Package/base-files$(TARGET)
  SECTION:=base
  CATEGORY:=Base system
  DEFAULT:=y
  TITLE:=OpenWrt system scripts
- DESCRIPTION:=OpenWrt system scripts
+ DESCRIPTION:=Base filesystem for OpenWrt
 endef
 
 define Package/libgcc
@@ -40,7 +42,7 @@ define Package/libgcc
 endef
 
 define Package/uclibc
- $(call Package/base-files)
+ $(call Package/base-files$(TARGET))
  VERSION:=$(UCLIBC_VERSION)-$(PKG_RELEASE)
  TITLE:=C library
  DESCRIPTION:=C library for embedded systems
@@ -51,11 +53,35 @@ define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
 endef
 
-define Build/Compile
+
+define Build/Compile/ar7
+	$(TARGET_CC) -o $(PKG_BUILD_DIR)/adam2patcher src/adam2patcher.c
 endef
 
-define Package/base-files/install
+define Build/Compile/brcm
+	$(TARGET_CC) -o $(PKG_BUILD_DIR)/jffs2root src/jffs2root.c
+endef
+
+define Build/Compile
+$(call Build/Compile/$(BOARD))
+endef
+
+
+define Package/base-files$(TARGET)/install-ar7
+	mkdir -p $(1)/sbin
+	$(CP) $(PKG_BUILD_DIR)/adam2patcher $(1)/sbin
+endef
+define Package/base-files$(TARGET)/install-brcm
+	mkdir -p $(1)/sbin
+	$(CP) $(PKG_BUILD_DIR)/jffs2root $(1)/sbin
+endef
+
+define Package/base-files$(TARGET)/install
+$(call Package/base-files$(TARGET)/install-$(BOARD),$(1))
 	$(CP) ./default/* $(1)
+	if [ -d $(BOARD)-$(KERNEL) ]; then \
+		$(CP) $(BOARD)-$(KERNEL)/* $(1)/; \
+	fi
 	$(SED) 's,$$$$R,r$(REV),g' $(1)/etc/banner
 	$(SED) 's,$$$$S,$(BOARD)-$(KERNEL),g' $(1)/etc/ipkg.conf
 	mkdir -p $(1)/dev
@@ -92,6 +118,6 @@ define Package/libgcc/install
 	$(CP) $(STAGING_DIR)/lib/libgcc_s.so.* $(1)/lib/
 endef
 
-$(eval $(call BuildPackage,base-files))
+$(eval $(call BuildPackage,base-files$(TARGET)))
 $(eval $(call BuildPackage,libgcc))
 $(eval $(call BuildPackage,uclibc))
