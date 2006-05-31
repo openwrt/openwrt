@@ -40,7 +40,7 @@ $(LINUX_DIR)/.configured: $(LINUX_DIR)/.patched
 	touch $@
 endif
 
-$(LINUX_DIR)/vmlinux: $(STAMP_DIR)/.linux-compile
+$(LINUX_DIR)/vmlinux: $(STAMP_DIR)/.linux-compile FORCE
 	$(MAKE) -C $(LINUX_DIR) CROSS_COMPILE="$(KERNEL_CROSS)" ARCH=$(LINUX_KARCH) PATH=$(TARGET_PATH)
 
 $(LINUX_KERNEL): $(LINUX_DIR)/vmlinux
@@ -56,21 +56,7 @@ $(LINUX_DIR)/.modules_done:
 $(STAMP_DIR)/.linux-compile:
 	@$(MAKE) $(LINUX_DIR)/.modules_done $(TARGETS) $(KERNEL_IPKG)
 	ln -sf $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION) $(BUILD_DIR)/linux
-	$(MAKE) -C $(TOPDIR)/target/linux/package \
-		$(KPKG_MAKEOPTS) \
-		compile
 	touch $@
-
-.PHONY: pkg-install
-pkg-install:
-	@mkdir -p $(TARGET_MODULES_DIR)
-	@rm -rf $(LINUX_BUILD_DIR)/root*
-	@cp -fpR $(BUILD_DIR)/root $(LINUX_BUILD_DIR)/
-	echo -e 'dest root /\noption offline_root $(LINUX_BUILD_DIR)/root' > $(LINUX_BUILD_DIR)/ipkg.conf
-	$(MAKE) -C $(TOPDIR)/target/linux/package \
-		$(KPKG_MAKEOPTS) \
-		install
-	[ "$(INSTALL_TARGETS)" != "" ] && $(IPKG_KERNEL) install $(INSTALL_TARGETS)
 
 $(KERNEL_IPKG):
 	rm -rf $(KERNEL_IDIR)
@@ -93,9 +79,7 @@ prepare: $(BUILD_DIR)/kernel.mk
 
 compile: prepare $(STAMP_DIR)/.linux-compile
 
-install: compile
-	$(MAKE) $(KPKG_MAKEOPTS) pkg-install
-	$(MAKE) $(KPKG_MAKEOPTS) $(LINUX_KERNEL)
+install: compile $(LINUX_KERNEL)
 
 mostlyclean:
 	rm -f $(STAMP_DIR)/.linux-compile
@@ -116,7 +100,3 @@ clean:
 	rm -rf $(LINUX_BUILD_DIR)
 	rm -f $(TARGETS)
 
-package/%:
-	$(MAKE) -C $(TOPDIR)/target/linux/package \
-		$(KPKG_MAKEOPTS) \
-		$(patsubst package/%,%,$@)

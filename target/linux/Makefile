@@ -38,8 +38,6 @@ compile: $(1)/$(2)-compile
 rebuild: $(1)/$(2)-rebuild
 $(BIN_DIR)/$(IB_NAME).tar.bz2 install: $(1)/$(2)-image
 install-ib: $(1)/$(2)-install-ib
-package/%:
-	$(MAKE) -C $(2)-$(1) BOARD="$(2)" $$@
 endif
 
 .PHONY: $(1)/$(2)-clean $(1)/$(2)-prepare $(1)/$(2)-compile $(1)/$(2)-rebuild $(1)/$(2)-install $(1)/$(2)-image $(1)/$(2)-install-ib
