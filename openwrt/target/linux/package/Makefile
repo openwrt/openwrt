@@ -26,22 +26,22 @@ install: $(patsubst %,%-install,$(package-y))
 
 KPKG_MAKEOPTS += BUILD_DIR="$(LINUX_BUILD_DIR)"
 
-%-prepare:
+%-prepare: FORCE
 	$(MAKE) -C $(patsubst %-prepare,%,$@) \
 		$(KPKG_MAKEOPTS) \
 		prepare
 
-%-compile:
+%-compile: FORCE
 	$(MAKE) -C $(patsubst %-compile,%,$@) \
 		$(KPKG_MAKEOPTS) \
 		compile
 
-%-install:
+%-install: FORCE
 	$(MAKE) -C $(patsubst %-install,%,$@) \
 		$(KPKG_MAKEOPTS) \
 		install
 
-%-clean:
+%-clean: FORCE
 	@$(MAKE) -C $(patsubst %-clean,%,$@) \
 		$(KPKG_MAKEOPTS) \
 		clean

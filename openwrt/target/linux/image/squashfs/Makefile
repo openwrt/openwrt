@@ -23,5 +23,5 @@ source: $(DL_DIR)/$(SQUASHFSLZMA_SOURCE)
 prepare: $(SQUASHFSLZMA_DIR)/.unpacked
 compile: $(SQUASHFSLZMA_DIR)/squashfs-tools/mksquashfs-lzma $(STAGING_DIR)/bin/mksquashfs-lzma
 install:
-clean: 
+clean: FORCE
 	rm -rf $(SQUASHFSLZMA_DIR)

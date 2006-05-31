@@ -5,12 +5,12 @@ TARGETS := addpattern trx motorola-bin dgfirmware
 UTILS_BUILD_DIR:=$(BUILD_DIR)/target-utils
 
 prepare: $(UTILS_BUILD_DIR)
-compile: prepare $(patsubst %,$(UTILS_BUILD_DIR)/%,$(TARGETS))
+compile: prepare $(patsubst %,$(UTILS_BUILD_DIR)/%,$(TARGETS)) FORCE
 	mkdir -p $(STAGING_DIR)/bin
 	$(CP) $(UTILS_BUILD_DIR)/* $(STAGING_DIR)/bin/
 install: compile
 package:
-clean:
+clean: FORCE
 	rm -rf $(UTILS_BUILD_DIR)
 	for f in $(TARGETS); do \
 		rm -f $(STAGING_DIR)/bin/$$f ; \

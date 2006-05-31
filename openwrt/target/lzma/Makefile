@@ -36,18 +36,18 @@ lzma: $(TARGETS)
 
 lzma-source: $(DL_DIR)/$(LZMA_SOURCE)
 
-lzma-clean:
+lzma-clean: FORCE
 	-$(MAKE) -C $(LZMA_LIB_DIR) clean
 	-$(MAKE) -C $(LZMA_ALONE_DIR) clean
 	rm -f $(LZMA_DIR)/liblzma.a $(LZMA_DIR)/lzma
 
-lzma-dirclean:
+lzma-dirclean: FORCE
 	rm -rf $(LZMA_DIR)
 
 #############################################################
 
 prepare: $(LZMA_DIR)/.unpacked
 compile: lzma
-install: lzma
+install: lzma FORCE
 	$(CP) $(LZMA_DIR)/lzma $(STAGING_DIR)/bin/
 clean: lzma-dirclean

@@ -4,13 +4,13 @@ else
 endian := be
 endif
 
-squashfs-prepare:
+squashfs-prepare: FORCE
 	$(MAKE) -C squashfs prepare
 
 squashfs-compile: prepare-targets
 	$(MAKE) -C squashfs compile
 	
-squashfs-clean:
+squashfs-clean: FORCE
 	$(MAKE) -C squashfs clean
 	rm -f $(KDIR)/root.squashfs
 
@@ -22,7 +22,7 @@ ifeq ($(IB),)
 squashfs-install: compile-targets $(BOARD)-compile
 endif
 
-squashfs-install: $(KDIR)/root.squashfs
+squashfs-install: $(KDIR)/root.squashfs FORCE
 	$(MAKE) -C $(BOARD) install KERNEL="$(KERNEL)" FS="squashfs"
 
 squashfs-install-ib: compile-targets

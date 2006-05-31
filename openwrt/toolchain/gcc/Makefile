@@ -145,7 +145,7 @@ $(GCC_BUILD_DIR2)/.compiled: $(GCC_BUILD_DIR2)/.configured
 	PATH=$(TARGET_PATH) $(MAKE) -C $(GCC_BUILD_DIR2) all
 	touch $(GCC_BUILD_DIR2)/.compiled
 
-gcc-install: $(GCC_BUILD_DIR2)/.compiled
+gcc-install: $(GCC_BUILD_DIR2)/.compiled FORCE
 	PATH=$(TARGET_PATH) $(MAKE) -C $(GCC_BUILD_DIR2) install
 	echo $(GCC_VERSION) > $(STAGING_DIR)/gcc_version
 	# Set up the symlinks to enable lying about target name.

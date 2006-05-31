@@ -9,15 +9,16 @@ include $(TOPDIR)/rules.mk
 ifeq ($(CONFIG_UCLIBC_VERSION_SNAPSHOT),y)
 # Be aware that this changes daily....
 UCLIBC_DIR:=$(TOOL_BUILD_DIR)/uClibc
-UCLIBC_SOURCE:=uClibc-$(strip $(subst ",, $(CONFIG_USE_UCLIBC_SNAPSHOT))).tar.bz2
-#"
+UCLIBC_SOURCE:=uClibc-$(strip $(subst ",, $(CONFIG_USE_UCLIBC_SNAPSHOT))).tar.bz2#"))
 UCLIBC_SITE:=http://www.uclibc.org/downloads/snapshots
 UCLIBC_VER:=PKG_VERSION:=0.${shell date +"%G%m%d"}
+UCLIBC_MD5SUM:=x
 else
 UCLIBC_VER:=0.9.28
 UCLIBC_DIR:=$(TOOL_BUILD_DIR)/uClibc-$(UCLIBC_VER)
 UCLIBC_SOURCE:=uClibc-$(UCLIBC_VER).tar.bz2
 UCLIBC_SITE:=http://www.uclibc.org/downloads
+UCLIBC_MD5SUM:=1ada58d919a82561061e4741fb6abd29
 endif
 
 UCLIBC_TARGET_ARCH:=$(shell echo $(ARCH) | sed -e s'/-.*//' \
@@ -37,7 +38,7 @@ UCLIBC_TARGET_ARCH:=$(shell echo $(ARCH) | sed -e s'/-.*//' \
 
 $(DL_DIR)/$(UCLIBC_SOURCE):
 	mkdir -p $(DL_DIR)
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(UCLIBC_SOURCE) x $(UCLIBC_SITE)
+	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(UCLIBC_SOURCE) $(UCLIBC_MD5SUM) $(UCLIBC_SITE)
 
 $(UCLIBC_DIR)/.unpacked: $(DL_DIR)/$(UCLIBC_SOURCE)
 	mkdir -p $(TOOL_BUILD_DIR)
@@ -99,5 +100,5 @@ source: $(DL_DIR)/$(UCLIBC_SOURCE)
 prepare: $(UCLIBC_DIR)/.configured
 compile: $(UCLIBC_DIR)/lib/libc.a
 install: $(STAGING_DIR)/lib/libc.a $(UCLIBC_TARGETS)
-clean: 
+clean:  FORCE
 	rm -rf $(UCLIBC_DIR) $(TOOL_BUILD_DIR)/uClibc_dev

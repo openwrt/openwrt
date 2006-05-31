@@ -24,7 +24,7 @@ source:
 prepare: $(LIBNOTIMPL_DIR)/.prepared
 compile: $(LIBNOTIMPL_DIR)/libnotimpl.a
 install: $(STAGING_DIR)/usr/lib/libnotimpl.a
-clean: 
+clean:  FORCE
 	rm -rf \
 		$(STAGING_DIR)/usr/lib/libnotimpl.a \
 		$(LIBNOTIMPL_DIR) \

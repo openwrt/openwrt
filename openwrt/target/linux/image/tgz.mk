@@ -1,4 +1,4 @@
-$(KDIR)/root.tar.gz:
+$(KDIR)/root.tar.gz: FORCE
 	tar -zcf $@ --owner=root --group=root -C $(BUILD_DIR)/root/ .
 
 ifeq ($(BOARD),x86)

@@ -46,7 +46,7 @@ $(SED_DIR1)/$(SED_BINARY): $(SED_DIR1)/.configured
 	$(MAKE) -C $(SED_DIR1)
 
 # This stuff is needed to work around GNU make deficiencies
-build-sed-host-binary: $(SED_DIR1)/$(SED_BINARY)
+build-sed-host-binary: $(SED_DIR1)/$(SED_BINARY) FORCE
 	@if [ -L $(STAGING_DIR)/$(SED_TARGET_BINARY) ] ; then \
 		rm -f $(STAGING_DIR)/$(SED_TARGET_BINARY); fi;
 	@if [ ! -f $(STAGING_DIR)/$(SED_TARGET_BINARY) -o $(STAGING_DIR)/$(SED_TARGET_BINARY) \
@@ -58,7 +58,7 @@ build-sed-host-binary: $(SED_DIR1)/$(SED_BINARY)
 	    rm -rf $(STAGING_DIR)/share/locale $(STAGING_DIR)/usr/info \
 		    $(STAGING_DIR)/usr/man $(STAGING_DIR)/usr/share/doc; fi
 
-use-sed-host-binary:
+use-sed-host-binary: FORCE
 	@if [ -x /usr/bin/sed ]; then SED="/usr/bin/sed"; else \
 	    if [ -x /bin/sed ]; then SED="/bin/sed"; fi; fi; \
 	    mkdir -p $(STAGING_DIR)/bin; \
@@ -69,7 +69,7 @@ source:
 prepare: 
 compile: 
 install: $(HOST_SED_TARGET)
-clean: 
+clean: FORCE
 	rm -rf $(SED_DIR1)
 	rm -f $(STAGING_DIR)/$(SED_TARGET_BINARY)
 

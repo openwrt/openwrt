@@ -6,13 +6,13 @@ endif
 
 #JFFS2OPTS += -Xlzo -msize -Xlzari
 
-jffs2-prepare:
+jffs2-prepare: FORCE
 	$(MAKE) -C jffs2 prepare
 
 jffs2-compile: prepare-targets
 	$(MAKE) -C jffs2 compile
 
-jffs2-clean:
+jffs2-clean: FORCE
 	$(MAKE) -C jffs2 clean
 	rm -f $(KDIR)/root.jffs2*
 
@@ -28,11 +28,11 @@ ifeq ($(IB),)
 jffs2-install: compile-targets $(BOARD)-compile
 endif
 
-jffs2-install: $(KDIR)/root.jffs2-4MB $(KDIR)/root.jffs2-8MB
+jffs2-install: $(KDIR)/root.jffs2-4MB $(KDIR)/root.jffs2-8MB FORCE
 	$(MAKE) -C $(BOARD) install KERNEL="$(KERNEL)" FS="jffs2-4MB"
 	$(MAKE) -C $(BOARD) install KERNEL="$(KERNEL)" FS="jffs2-8MB"
 
-jffs2-install-ib: compile-targets
+jffs2-install-ib: compile-targets FORCE
 	mkdir -p $(IB_DIR)/staging_dir_$(ARCH)/bin
 	$(CP) $(STAGING_DIR)/bin/mkfs.jffs2 $(IB_DIR)/staging_dir_$(ARCH)/bin
 

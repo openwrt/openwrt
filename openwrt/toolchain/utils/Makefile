@@ -14,7 +14,7 @@ install: compile
 	mkdir -p $(STAGING_DIR)/bin
 	$(CP) $(UTILS_BUILD_DIR)/* $(STAGING_DIR)/bin/
 package:
-clean:
+clean: FORCE
 	rm -rf $(UTILS_BUILD_DIR)
 
 $(UTILS_BUILD_DIR):

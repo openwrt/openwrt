@@ -40,14 +40,11 @@ $(STAGING_DIR)/usr/bin/ipkg-build: $(PKG_BUILD_DIR)/.patched
 	install -m0755 $(PKG_BUILD_DIR)/ipkg.py $(STAGING_DIR)/usr/bin
 
 source: $(DL_DIR)/$(PKG_SOURCE_FILE)
-
 prepare: $(PKG_BUILD_DIR)/.patched
-
 compile:
-
 install: $(STAGING_DIR)/usr/bin/ipkg-build
 
-clean:
+clean: FORCE
 	rm -f $(STAGING_DIR)/etc/ipkg.conf
 	rm -f $(STAGING_DIR)/usr/bin/ipkg*
 	rm -rf $(PKG_BUILD_DIR)

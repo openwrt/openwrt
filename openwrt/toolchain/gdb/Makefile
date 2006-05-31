@@ -55,5 +55,5 @@ source: $(DL_DIR)/$(GDB_SOURCE)
 prepare: $(GDB_DIR)/.patched
 compile: 
 install: $(TARGET_CROSS)gdb
-clean:
+clean: FORCE
 	rm -rf $(GDB_CLIENT_DIR) $(GDB_DIR)

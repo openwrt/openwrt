@@ -12,10 +12,10 @@ LOADER_MAKEOPTS= \
 
 KDIR:=$(BUILD_DIR)/linux-$(KERNEL)-$(BOARD)
 
-lzma-loader-clean:
+lzma-loader-clean: FORCE
 	$(MAKE) -C ../generic/lzma-loader $(LOADER_MAKEOPTS) clean
 
-lzma-loader-prepare:
+lzma-loader-prepare: FORCE
 	$(MAKE) -C ../generic/lzma-loader $(LOADER_MAKEOPTS) prepare
 
 lzma-loader-compile: $(KDIR)/vmlinux.lzma lzma-loader-prepare

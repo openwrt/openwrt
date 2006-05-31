@@ -5,8 +5,7 @@ include $(TOPDIR)/rules.mk
 # build binutils for use on the host system
 #
 #############################################################
-BINUTILS_VERSION:=$(strip $(subst ",, $(CONFIG_BINUTILS_VERSION)))
-#"
+BINUTILS_VERSION:=$(strip $(subst ",, $(CONFIG_BINUTILS_VERSION)))#"))
 
 BINUTILS_SITE:=http://www.fr.kernel.org/pub/linux/devel/binutils \
 	       http://www.fi.kernel.org/pub/linux/devel/binutils \
@@ -99,7 +98,7 @@ source: $(DL_DIR)/$(BINUTILS_SOURCE)
 prepare: $(BINUTILS_DIR)/.patched
 compile: $(BINUTILS_DIR1)/binutils/objdump
 install: $(STAGING_DIR)/bin/$(REAL_GNU_TARGET_NAME)-ld
-clean:
+clean: FORCE
 	rm -f $(STAGING_DIR)/bin/$(REAL_GNU_TARGET_NAME)*
 	rm -rf $(BINUTILS_DIR) $(BINUTILS_DIR1)
 
