@@ -2,7 +2,6 @@
 include $(TOPDIR)/rules.mk
 include ../rules.mk
 
-package-y += base-files
 package-$(CONFIG_PACKAGE_KMOD_ALSA) += alsa
 package-$(CONFIG_PACKAGE_KMOD_FUSE) += fuse
 package-$(CONFIG_PACKAGE_KMOD_HOSTAP) += hostap

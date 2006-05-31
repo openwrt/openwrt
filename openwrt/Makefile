@@ -38,7 +38,7 @@ endif
 endif
 export OPENWRTVERSION
 
-all:
+all: world
 
 .pkginfo: FORCE
 ifneq ($(shell ./scripts/timestamp.pl -p .pkginfo package Makefile),.pkginfo)
@@ -78,6 +78,13 @@ target/%: .pkginfo
 
 toolchain/%:
 	$(MAKE) -C toolchain $(patsubst toolchain/%,%,$@)
+
+world:
+	$(MAKE) toolchain/install
+	$(MAKE) target/compile
+	$(MAKE) package/compile
+	$(MAKE) package/install
+	$(MAKE) target/install
 
 .PHONY: FORCE
 FORCE:

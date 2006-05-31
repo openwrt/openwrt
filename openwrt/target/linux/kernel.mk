@@ -18,8 +18,6 @@ $(DL_DIR)/$(LINUX_SOURCE):
 $(LINUX_DIR)/.unpacked: $(DL_DIR)/$(LINUX_SOURCE)
 	-mkdir -p $(LINUX_BUILD_DIR)
 	bzcat $(DL_DIR)/$(LINUX_SOURCE) | tar -C $(LINUX_BUILD_DIR) $(TAR_OPTIONS) -
-	rm -f $(BUILD_DIR)/linux
-	ln -s $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION) $(BUILD_DIR)/linux
 	touch $@
 
 ifeq ($(KERNEL),2.4)
@@ -83,8 +81,13 @@ $(KERNEL_IPKG):
 	fi
 	$(IPKG_BUILD) $(KERNEL_IDIR) $(LINUX_BUILD_DIR)
 
+$(BUILD_DIR)/kernel.mk: FORCE
+	echo "BOARD:=$(BOARD)" > $@
+	echo "LINUX_VERSION:=$(LINUX_VERSION)" >> $@
+	echo "LINUX_RELEASE:=$(LINUX_RELEASE)" >> $@
+
 source: $(DL_DIR)/$(LINUX_SOURCE)
-prepare: 
+prepare: $(BUILD_DIR)/kernel.mk
 	@mkdir -p $(STAMP_DIR) $(PACKAGE_DIR)
 	@$(MAKE) $(LINUX_DIR)/.configured
 
