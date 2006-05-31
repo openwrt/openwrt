@@ -90,6 +90,7 @@ define Package/kmod-madwifi
  TITLE:=Driver for Atheros wireless chipsets
  DESCRIPTION:=Driver for Atheros 802.11a/b/g chipsets
  URL:=http://madwifi.org/
+ VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
 endef
 
 define Package/kmod-madwifi/install
