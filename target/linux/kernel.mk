@@ -72,7 +72,7 @@ $(BUILD_DIR)/kernel.mk: FORCE
 	echo "LINUX_VERSION:=$(LINUX_VERSION)" >> $@
 	echo "LINUX_RELEASE:=$(LINUX_RELEASE)" >> $@
 
-pkg-install:
+pkg-install: FORCE
 	@{ [ "$(INSTALL_TARGETS)" != "" ] && $(IPKG) install $(INSTALL_TARGETS) || true; }
 
 source: $(DL_DIR)/$(LINUX_SOURCE)
@@ -84,24 +84,21 @@ compile: prepare $(STAMP_DIR)/.linux-compile
 
 install: compile $(LINUX_KERNEL)
 
-mostlyclean:
+mostlyclean: FORCE
 	rm -f $(STAMP_DIR)/.linux-compile
 	rm -f $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION)/.modules_done
 	rm -f $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION)/.drivers-unpacked
 	$(MAKE) -C $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION) clean
 	rm -f $(LINUX_KERNEL)
 
-rebuild:
+rebuild: FORCE
 	-$(MAKE) mostlyclean
 	if [ -f $(LINUX_KERNEL) ]; then \
 		$(MAKE) clean; \
 	fi
 	$(MAKE) compile $(MAKE_TRACE)
 
-clean:
+clean: FORCE
 	rm -f $(STAMP_DIR)/.linux-compile
 	rm -rf $(LINUX_BUILD_DIR)
 	rm -f $(TARGETS)
-	
-.PHONY: source prepare compile install mostlyclean rebuild clean pkg-install
-

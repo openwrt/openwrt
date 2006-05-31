@@ -6,6 +6,13 @@ menuconfig TOOLCHAINOPTS
 source "toolchain/binutils/Config.in"
 source "toolchain/gcc/Config.in"
 
+config GDB
+	bool
+	prompt "Build gdb" if TOOLCHAINOPTS
+	default n
+	help
+		Enable if you want to build the gdb
+
 config ENABLE_MULTILIB
 	bool
 	prompt "Enable multilib support?" if TOOLCHAINOPTS

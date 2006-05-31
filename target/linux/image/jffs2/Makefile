@@ -24,6 +24,6 @@ source: $(DL_DIR)/$(MTD_SOURCE)
 prepare: $(MTD_DIR)/.unpacked
 compile: $(MTD_DIR)/util/mkfs.jffs2 $(STAGING_DIR)/bin/mkfs.jffs2
 install: 
-clean:
+clean: FORCE
 	rm -rf $(MTD_DIR)
 

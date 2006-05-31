@@ -14,25 +14,23 @@ ifeq ($(CONFIG_TARGET_ROOTFS_TGZ),y)
 include ./tgz.mk
 endif
 
-prepare:
+prepare: FORCE
 	$(MAKE) prepare-targets
-compile:
+compile: FORCE
 	$(MAKE) compile-targets
-install:
+install: FORCE
 	$(MAKE) install-targets
 
-.PHONY: prepare compile install
-
-$(BOARD)-compile:
+$(BOARD)-compile: FORCE
 	$(MAKE) -C $(BOARD) prepare
 	$(MAKE) -C $(BOARD) compile
 
-install-ib:
+install-ib: FORCE
 	-$(MAKE) -C $(BOARD) IB_DIR="$(IB_DIR)" install-ib
 	mkdir -p $(IB_DIR)/build_$(ARCH)/linux-$(KERNEL)-$(BOARD)
 	$(CP) $(BUILD_DIR)/linux-$(KERNEL)-$(BOARD)/kernel[-_]*.ipk $(IB_DIR)/build_$(ARCH)/linux-$(KERNEL)-$(BOARD)/	
 
-install-prepare:
+install-prepare: FORCE
 	find $(BUILD_DIR)/root -type f -not -perm +0100 | xargs chmod 0644
 	find $(BUILD_DIR)/root -type f -perm +0100 | xargs chmod 0755
 	find $(BUILD_DIR)/root -type d | xargs chmod 0755
@@ -40,5 +38,5 @@ install-prepare:
 	chmod 0777 $(BUILD_DIR)/root/tmp
 
 rebuild: clean prepare compile install
-clean:
+clean: FORCE
 	$(MAKE) clean-targets

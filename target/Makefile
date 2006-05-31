@@ -13,20 +13,20 @@ compile: linux-compile
 install: image_clean linux-install
 clean: linux-clean utils-clean lzma-clean image_clean
 
-image_clean:
+image_clean: FORCE
 	rm -f $(BIN_DIR)/openwrt-*
 
-%-clean:
+%-clean: FORCE
 	$(MAKE) -C $(patsubst %-clean,%,$@) clean
-%-prepare:
+%-prepare: FORCE
 	$(MAKE) -C $(patsubst %-prepare,%,$@) prepare
 %-compile: %-prepare
 	$(MAKE) -C $(patsubst %-compile,%,$@) compile
-%-rebuild: 
+%-rebuild: FORCE
 	$(MAKE) -C $(patsubst %-rebuild,%,$@) rebuild
 %-install: %-compile
 	$(MAKE) -C $(patsubst %-install,%,$@) install
-linux-imagebuilder:
+linux-imagebuilder: FORCE
 	$(MAKE) -C linux imagebuilder
 
 

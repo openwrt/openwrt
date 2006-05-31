@@ -62,5 +62,5 @@ $(LINUX_DIR)/.drivers-installed: $(LINUX_DIR)/.modules_done
 
 linux-dirclean: drivers-clean
 
-drivers-clean:
+drivers-clean: FORCE
 	rm -rf $(BUILD_DIR)/kernel-binary-wl

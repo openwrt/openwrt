@@ -21,12 +21,12 @@ endef
 
 include ./kernel.mk
 
-clean:
+clean: FORCE
 	@rm -rf $(LINUX_BUILD_DIR)/root*
 	@rm -rf $(BIN_DIR)
 all:
 
-build:
+build: FORCE
 	echo
 	echo '### BUILDING IMAGE FROM lists/$(LIST).$(BOARD)-$(KERNEL)'
 	echo

@@ -2,10 +2,10 @@ include $(TOPDIR)/rules.mk
 
 KDIR:=$(BUILD_DIR)/linux-$(KERNEL)-$(BOARD)
 
-lzma-loader-clean:
+lzma-loader-clean: FORCE
 	$(MAKE) -C lzma-loader clean
 
-lzma-loader-prepare:
+lzma-loader-prepare: FORCE
 	$(MAKE) -C lzma-loader prepare
 
 lzma-loader-compile: lzma-loader-prepare

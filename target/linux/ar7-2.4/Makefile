@@ -60,7 +60,7 @@ $(LINUX_DIR)/.drivers-unpacked: $(LINUX_DIR)/.unpacked
 
 linux-dirclean: drivers-clean
 
-drivers-clean:
+drivers-clean: FORCE
 	rm -rf $(BUILD_DIR)/$(ATM_FIRMWARE_DIR)
 
 

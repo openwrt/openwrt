@@ -1,9 +1,10 @@
 # Main makefile for the toolchain
 include $(TOPDIR)/rules.mk
-TARGETS:=sed utils binutils gcc uClibc ipkg-utils gdb libnotimpl
+TARGETS-y:=sed utils binutils gcc uClibc ipkg-utils libnotimpl
+TARGETS-$(CONFIG_GDB) += gdb
 
-TARGETS_INSTALL:=$(patsubst %,%-install,$(TARGETS))
-TARGETS_CLEAN:=$(patsubst %,%-clean,$(TARGETS))
+TARGETS_INSTALL:=$(patsubst %,%-install,$(TARGETS-y))
+TARGETS_CLEAN:=$(patsubst %,%-clean,$(TARGETS-y))
 
 all: install
 install: $(TARGETS_INSTALL)
@@ -18,18 +19,18 @@ gcc-compile: uClibc-install
 TOOLCHAIN_STAMP_DIR:=$(STAGING_DIR)/stampfiles
 
 $(TOOLCHAIN_STAMP_DIR):
-	mkdir -p $(TOOLCHAIN_STAMP_DIR)
+	mkdir -p $@
 
 $(STAGING_DIR):
-	@mkdir -p $(STAGING_DIR)/lib
-	@mkdir -p $(STAGING_DIR)/include
-	@mkdir -p $(STAGING_DIR)/$(REAL_GNU_TARGET_NAME)
-	@ln -sf ../lib $(STAGING_DIR)/$(REAL_GNU_TARGET_NAME)/lib
+	@mkdir -p $@/lib
+	@mkdir -p $@/include
+	@mkdir -p $@/$(REAL_GNU_TARGET_NAME)
+	@ln -sf ../lib $@/$(REAL_GNU_TARGET_NAME)/lib
 
 $(TOOL_BUILD_DIR):
-	@mkdir -p $(TOOL_BUILD_DIR)
+	@mkdir -p $@
 
-%-prepare: $(TOOLCHAIN_STAMP_DIR) $(STAGING_DIR) $(TOOL_BUILD_DIR)
+%-prepare: $(TOOLCHAIN_STAMP_DIR) $(STAGING_DIR) $(TOOL_BUILD_DIR) FORCE
 	@[ -f $(TOOLCHAIN_STAMP_DIR)/.toolchain_$@ ] || { \
 		$(MAKE) -C $(patsubst %-prepare,%,$@) prepare; \
 	}
@@ -47,7 +48,7 @@ $(TOOL_BUILD_DIR):
 	}
 	@touch $(TOOLCHAIN_STAMP_DIR)/.toolchain_$@
 
-%-clean:
+%-clean: FORCE
 	@$(MAKE) -C $(patsubst %-clean,%,$@) clean
 	@rm -f $(TOOLCHAIN_STAMP_DIR)/.toolchain_$(patsubst %-clean,%,$@)-*
 
