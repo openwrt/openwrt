@@ -7,7 +7,6 @@ package-$(CONFIG_PACKAGE_KMOD_ALSA) += alsa
 package-$(CONFIG_PACKAGE_KMOD_FUSE) += fuse
 package-$(CONFIG_PACKAGE_KMOD_HOSTAP) += hostap
 package-$(CONFIG_PACKAGE_KMOD_MADWIFI) += madwifi
-package-$(CONFIG_PACKAGE_KMOD_MADWIFI_OLD) += madwifi-old
 package-$(CONFIG_PACKAGE_KMOD_MINI_FO) += mini_fo
 package-$(CONFIG_PACKAGE_KMOD_OPENSWAN) += openswan
 package-$(CONFIG_PACKAGE_KMOD_SHFS) += shfs
