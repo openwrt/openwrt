@@ -17,12 +17,12 @@ jffs2-clean:
 	rm -f $(KDIR)/root.jffs2*
 
 $(KDIR)/root.jffs2-4MB: install-prepare
-	@rm -rf $(KDIR)/root/jffs
-	$(STAGING_DIR)/bin/mkfs.jffs2 $(JFFS2OPTS) -e 0x10000 -o $@ -d $(KDIR)/root
+	@rm -rf $(BUILD_DIR)/root/jffs
+	$(STAGING_DIR)/bin/mkfs.jffs2 $(JFFS2OPTS) -e 0x10000 -o $@ -d $(BUILD_DIR)/root
 
 $(KDIR)/root.jffs2-8MB: install-prepare
-	@rm -rf $(KDIR)/root/jffs
-	$(STAGING_DIR)/bin/mkfs.jffs2 $(JFFS2OPTS) -e 0x20000 -o $@ -d $(KDIR)/root
+	@rm -rf $(BUILD_DIR)/root/jffs
+	$(STAGING_DIR)/bin/mkfs.jffs2 $(JFFS2OPTS) -e 0x20000 -o $@ -d $(BUILD_DIR)/root
 
 ifeq ($(IB),)
 jffs2-install: compile-targets $(BOARD)-compile

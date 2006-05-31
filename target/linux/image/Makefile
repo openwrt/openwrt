@@ -33,11 +33,11 @@ install-ib:
 	$(CP) $(BUILD_DIR)/linux-$(KERNEL)-$(BOARD)/kernel[-_]*.ipk $(IB_DIR)/build_$(ARCH)/linux-$(KERNEL)-$(BOARD)/	
 
 install-prepare:
-	find $(KDIR)/root -type f -not -perm +0100 | xargs chmod 0644
-	find $(KDIR)/root -type f -perm +0100 | xargs chmod 0755
-	find $(KDIR)/root -type d | xargs chmod 0755
-	mkdir -p $(KDIR)/root/tmp
-	chmod 0777 $(KDIR)/root/tmp
+	find $(BUILD_DIR)/root -type f -not -perm +0100 | xargs chmod 0644
+	find $(BUILD_DIR)/root -type f -perm +0100 | xargs chmod 0755
+	find $(BUILD_DIR)/root -type d | xargs chmod 0755
+	mkdir -p $(BUILD_DIR)/root/tmp
+	chmod 0777 $(BUILD_DIR)/root/tmp
 
 rebuild: clean prepare compile install
 clean:
