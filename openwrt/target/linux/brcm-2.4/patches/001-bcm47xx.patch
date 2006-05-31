@@ -15751,7 +15751,7 @@ diff -urN linux.old/arch/mips/bcm947xx/sflash.c linux.dev/arch/mips/bcm947xx/sfl
 diff -urN linux.old/arch/mips/bcm947xx/time.c linux.dev/arch/mips/bcm947xx/time.c
 --- linux.old/arch/mips/bcm947xx/time.c	1970-01-01 01:00:00.000000000 +0100
 +++ linux.dev/arch/mips/bcm947xx/time.c	2006-04-28 00:45:40.000000000 +0200
-@@ -0,0 +1,119 @@
+@@ -0,0 +1,104 @@
 +/*
 + * Copyright 2006, Broadcom Corporation
 + * All Rights Reserved.
@@ -15828,13 +15828,6 @@ diff -urN linux.old/arch/mips/bcm947xx/time.c linux.dev/arch/mips/bcm947xx/time.
 +
 +	/* Set panic timeout in seconds */
 +	panic_timeout = watchdog / 1000;
-+
-+	/* Setup blink */
-+	if ((eir = sb_setcore(sbh, SB_EXTIF, 0))) {
-+		sbconfig_t *sb = (sbconfig_t *)((unsigned int) eir + SBCONFIGOFF);
-+		unsigned long base = EXTIF_CFGIF_BASE(sb_base(readl(&sb->sbadmatch1)));
-+		mcr = (u8 *) ioremap_nocache(base + UART_MCR, 1);
-+	}
 +}
 +
 +static void
@@ -15846,14 +15839,6 @@ diff -urN linux.old/arch/mips/bcm947xx/time.c linux.dev/arch/mips/bcm947xx/time.
 +	/* Set the watchdog timer to reset after the specified number of ms */
 +	if (watchdog > 0)
 +		sb_watchdog(sbh, WATCHDOG_CLOCK / 1000 * watchdog);
-+
-+#ifdef	CONFIG_HWSIM
-+	(*((int *)0xa0000f1c))++;
-+#else
-+	/* Blink one of the LEDs in the external UART */
-+	if (mcr && !(jiffies % (HZ/2)))
-+		writeb(readb(mcr) ^ UART_MCR_OUT2, mcr);
-+#endif
 +}
 +
 +static struct irqaction bcm947xx_timer_irqaction = {
