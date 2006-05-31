@@ -24,8 +24,8 @@ endif
 
 
 CP=cp -fpR
-MAKE1=make
-MAKEFLAGS=-j$(CONFIG_JLEVEL) V=$(V) $(EXTRA_MAKEFLAGS)
+BUILD_MAKEFLAGS= V=$(V) $(EXTRA_MAKEFLAGS)
+MAKEFLAGS=$(BUILD_MAKEFLAGS)
 # Strip off the annoying quoting
 ARCH:=$(strip $(subst ",, $(CONFIG_ARCH)))
 WGET:=$(strip $(subst ",, $(CONFIG_WGET)))
