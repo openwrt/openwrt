@@ -40,7 +40,7 @@ $(LINUX_DIR)/.configured: $(LINUX_DIR)/.patched
 	touch $@
 endif
 
-$(LINUX_DIR)/vmlinux: $(STAMP_DIR)/.linux-compile pkg-install FORCE
+$(LINUX_DIR)/vmlinux: $(STAMP_DIR)/.linux-compile pkg-install
 	$(MAKE) -C $(LINUX_DIR) CROSS_COMPILE="$(KERNEL_CROSS)" ARCH=$(LINUX_KARCH) PATH=$(TARGET_PATH)
 
 $(LINUX_KERNEL): $(LINUX_DIR)/vmlinux
