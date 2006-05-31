@@ -59,12 +59,12 @@ $(BINUTILS_DIR1)/.configured: $(BINUTILS_DIR)/.patched
 	touch $(BINUTILS_DIR1)/.configured
 
 $(BINUTILS_DIR1)/binutils/objdump: $(BINUTILS_DIR1)/.configured
-	$(MAKE) -C $(BINUTILS_DIR1) all
+	$(MAKE) -C $(BINUTILS_DIR1) -j $(CONFIG_JLEVEL) all
 
 # Make install will put gettext data in staging_dir/share/locale.
 # Unfortunatey, it isn't configureable.
 $(STAGING_DIR)/bin/$(REAL_GNU_TARGET_NAME)-ld: $(BINUTILS_DIR1)/binutils/objdump
-	$(MAKE) -C $(BINUTILS_DIR1) install
+	$(MAKE) -C $(BINUTILS_DIR1) -j $(CONFIG_JLEVEL) install
 
 
 #############################################################
@@ -92,7 +92,7 @@ $(BINUTILS_DIR2)/.configured: $(BINUTILS_DIR)/.patched
 
 $(BINUTILS_DIR2)/binutils/objdump: $(BINUTILS_DIR2)/.configured
 	PATH=$(TARGET_PATH) \
-	$(MAKE) -C $(BINUTILS_DIR2) all
+	$(MAKE) -C $(BINUTILS_DIR2) -j $(CONFIG_JLEVEL) all
 
 source: $(DL_DIR)/$(BINUTILS_SOURCE)
 prepare: $(BINUTILS_DIR)/.patched
