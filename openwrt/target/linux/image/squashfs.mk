@@ -15,8 +15,8 @@ squashfs-clean:
 	rm -f $(KDIR)/root.squashfs
 
 $(KDIR)/root.squashfs: install-prepare
-	@mkdir -p $(KDIR)/root/jffs
-	$(STAGING_DIR)/bin/mksquashfs-lzma $(KDIR)/root $@ -nopad -noappend -root-owned -$(endian)
+	@mkdir -p $(BUILD_DIR)/root/jffs
+	$(STAGING_DIR)/bin/mksquashfs-lzma $(BUILD_DIR)/root $@ -nopad -noappend -root-owned -$(endian)
 	
 ifeq ($(IB),)
 squashfs-install: compile-targets $(BOARD)-compile

@@ -1,5 +1,5 @@
 $(KDIR)/root.tar.gz:
-	tar -zcf $@ --owner=root --group=root -C $(KDIR)/root/ .
+	tar -zcf $@ --owner=root --group=root -C $(BUILD_DIR)/root/ .
 
 ifeq ($(BOARD),x86)
 install: tgz-install
