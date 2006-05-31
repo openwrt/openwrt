@@ -18,6 +18,10 @@ endif
 
 include $(TOPDIR)/package/rules.mk
 
+#FIXME: use the version from ./toolchain/uclibc
+UCLIBC_VERSION:=0.9.28
+LIBGCC_VERSION:=$(CONFIG_GCC_VERSION)
+
 define Package/base-files
  SECTION:=base
  CATEGORY:=Base system
@@ -25,7 +29,6 @@ define Package/base-files
  TITLE:=OpenWrt system scripts
  DESCRIPTION:=OpenWrt system scripts
 endef
-
 
 define Package/libgcc
  SECTION:=libs
@@ -53,8 +56,8 @@ endef
 
 define Package/base-files/install
 	$(CP) ./default/* $(1)
-	$(SED) 's,$$R,r$(REV),g' $(1)/etc/banner
-	$(SED) 's,$$S,$(BOARD)-$(KERNEL),g' $(1)/etc/ipkg.conf
+	$(SED) 's,$$$$R,r$(REV),g' $(1)/etc/banner
+	$(SED) 's,$$$$S,$(BOARD)-$(KERNEL),g' $(1)/etc/ipkg.conf
 	mkdir -p $(1)/dev
 	mkdir -p $(1)/etc/crontabs
 	mkdir -p $(1)/jffs
@@ -79,14 +82,14 @@ endef
 define Package/uclibc/install
 	mkdir -p $(1)/lib
 	for file in ld-uClibc libc libcrypt libdl libm libnsl libresolv librt libuClibc libutil; do \
-		$(CP) $(STAGING_DIR)/lib/$$file.so.* $(1)/lib/; \
-		$(CP) $(STAGING_DIR)/lib/$$file-$(UCLIBC_VERSION).so $(1)/lib/; \
+		$(CP) $(STAGING_DIR)/lib/$$$$file.so.* $(1)/lib/; \
+		$(CP) $(STAGING_DIR)/lib/$$$$file-$(UCLIBC_VERSION).so $(1)/lib/; \
 	done
 endef
 
 define Package/libgcc/install
-	mkdir -p $(IDIR_LIBGCC)/lib
-	$(CP) $(STAGING_DIR)/lib/libgcc_s.so.* $(IDIR_LIBGCC)/lib/
+	mkdir -p $(1)/lib
+	$(CP) $(STAGING_DIR)/lib/libgcc_s.so.* $(1)/lib/
 endef
 
 $(eval $(call BuildPackage,base-files))
