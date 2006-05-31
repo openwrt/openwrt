@@ -61,10 +61,16 @@ scripts/config/mconf: .config.in
 scripts/config/conf: .config.in
 	$(MAKE) -C scripts/config conf
 
-menuconfig: scripts/config/mconf
+config: scripts/config/conf
 	$< Config.in
 
-config: scripts/config/conf
+defdconfig: scripts/config/conf
+	$< -d Config.in
+
+oldconfig: scripts/config/conf
+	$< -o Config.in
+
+menuconfig: scripts/config/mconf
 	$< Config.in
 
 config-clean:

@@ -1,20 +1,11 @@
 # $Id$
 
 include $(TOPDIR)/rules.mk
-
-ifneq ($(DUMP),1)
-include $(BUILD_DIR)/kernel.mk
-include $(TOPDIR)/target/linux/rules.mk
-TARGET:=-$(BOARD)-$(KERNEL)
-BUILD_DIR:=$(BUILD_DIR)/linux-$(KERNEL)-$(BOARD)
-
-UCLIBC_VERSION:=${shell cat $(STAGING_DIR)/uclibc_version}
-LIBGCC_VERSION:=${shell cat $(STAGING_DIR)/gcc_version}
-endif
+include $(TOPDIR)/package/kernel.mk
 
 PKG_NAME:=base-files
 PKG_RELEASE:=8
-PKG_BUILD_DIR:=$(BUILD_DIR)/base-files
+PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/base-files
 
 REV:=$(shell LANG=C svn info | awk '/^Revision:/ { print$$2 }' )
 ifeq ($(REV),)
@@ -22,6 +13,12 @@ REV:=0
 endif
 
 include $(TOPDIR)/package/rules.mk
+
+ifneq ($(DUMP),1)
+TARGET:=-$(BOARD)-$(KERNEL)
+UCLIBC_VERSION:=${shell cat $(STAGING_DIR)/uclibc_version}
+LIBGCC_VERSION:=${shell cat $(STAGING_DIR)/gcc_version}
+endif
 
 CONFIG_PACKAGE_base-files$(TARGET):=CONFIG_PACKAGE_base-files
 
@@ -48,7 +45,6 @@ define Package/uclibc
  TITLE:=C library
  DESCRIPTION:=C library for embedded systems
 endef
-
 
 define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
