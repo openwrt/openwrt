@@ -16,9 +16,6 @@ clean: linux-clean utils-clean lzma-clean image_clean
 image_clean:
 	rm -f $(BIN_DIR)/openwrt-*
 
-linux/package/%:
-	$(MAKE) -C $(TOPDIR)/target/linux $(patsubst linux/%,%,$@)
-
 %-clean:
 	$(MAKE) -C $(patsubst %-clean,%,$@) clean
 %-prepare:
