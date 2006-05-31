@@ -28,11 +28,11 @@ define Build/DefaultTargets
   $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
 	$(call Build/Compile)
 	touch $$@
-    
+
   $(PKG_BUILD_DIR)/.dev-installed: $(PKG_BUILD_DIR)/.built
 	$(call Build/InstallDev)
 	touch $$@
-    
+
   package-clean: FORCE
 	$(call Build/Clean)
 	$(call Build/UninstallDev)
@@ -263,7 +263,11 @@ else
   prepare: $(PKG_BUILD_DIR)/.prepared
   configure: $(PKG_BUILD_DIR)/.configured
 
+ifdef Build/InstallDev
   compile-targets: $(PKG_BUILD_DIR)/.dev-installed
+else
+  compile-targets:
+endif
   compile: compile-targets
 
   install-targets:
