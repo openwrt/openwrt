@@ -1,6 +1,7 @@
 # $Id$
 
 include $(TOPDIR)/rules.mk
+include $(TOPDIR)/package/kernel.mk
 
 PKG_NAME:=iptables
 PKG_VERSION:=1.3.5
