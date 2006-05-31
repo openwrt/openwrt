@@ -154,6 +154,8 @@ define BuildPackage
   $$(IPKG_$(1)): $$(IDIR_$(1))/CONTROL/control $(PKG_BUILD_DIR)/.built
 	$(call Package/$(1)/install,$$(IDIR_$(1)))
 	mkdir -p $(PACKAGE_DIR)
+	find $$(IDIR_$(1)) -name CVS | xargs rm -rf
+	find $$(IDIR_$(1)) -name .svn | xargs rm -rf
 	$(RSTRIP) $$(IDIR_$(1))
 	$(IPKG_BUILD) $$(IDIR_$(1)) $(PACKAGE_DIR)
 
