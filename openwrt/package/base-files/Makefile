@@ -2,6 +2,16 @@
 
 include $(TOPDIR)/rules.mk
 
+ifneq ($(DUMP),1)
+include $(BUILD_DIR)/kernel.mk
+include $(TOPDIR)/target/linux/rules.mk
+TARGET:=-$(BOARD)-$(KERNEL)
+BUILD_DIR:=$(BUILD_DIR)/linux-$(KERNEL)-$(BOARD)
+
+UCLIBC_VERSION:=${shell cat $(STAGING_DIR)/uclibc_version}
+LIBGCC_VERSION:=${shell cat $(STAGING_DIR)/gcc_version}
+endif
+
 PKG_NAME:=base-files
 PKG_RELEASE:=8
 PKG_BUILD_DIR:=$(BUILD_DIR)/base-files
@@ -12,15 +22,6 @@ REV:=0
 endif
 
 include $(TOPDIR)/package/rules.mk
-
-ifneq ($(DUMP),1)
-include $(BUILD_DIR)/kernel.mk
-include $(TOPDIR)/target/linux/rules.mk
-TARGET:=-$(BOARD)-$(KERNEL)
-
-UCLIBC_VERSION:=${shell cat $(STAGING_DIR)/uclibc_version}
-LIBGCC_VERSION:=${shell cat $(STAGING_DIR)/gcc_version}
-endif
 
 CONFIG_PACKAGE_base-files$(TARGET):=CONFIG_PACKAGE_base-files
 
@@ -99,9 +100,6 @@ $(call Package/base-files$(TARGET)/install-$(BOARD),$(1))
 	ln -sf /proc/mounts $(1)/etc/mtab
 	rm -f $(1)/var
 	ln -sf /tmp $(1)/var
-	-find $(1) -type d -name CVS | xargs rm -rf
-	-find $(1) -type d -name .svn | xargs rm -rf
-	-find $(1) -name '.#*' | xargs rm -f
 	mkdir -p $(1)/etc
 endef
 
