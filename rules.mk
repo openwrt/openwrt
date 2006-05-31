@@ -110,9 +110,7 @@ IPKG_TARGET_DIR := $(PACKAGE_DIR)
 IPKG:=IPKG_TMP=$(BUILD_DIR)/tmp IPKG_INSTROOT=$(TARGET_DIR) IPKG_CONF_DIR=$(STAGING_DIR)/etc IPKG_OFFLINE_ROOT=$(BUILD_DIR)/root $(SCRIPT_DIR)/ipkg -force-defaults -force-depends
 IPKG_STATE_DIR := $(TARGET_DIR)/usr/lib/ipkg
 
-RSTRIP:=STRIP="$(STRIP)" $(SCRIPT_DIR)/rstrip.sh
-RSTRIP_KMOD:=STRIP="$(TARGET_CROSS)strip --strip-unneeded --remove-section=.comment" $(SCRIPT_DIR)/rstrip.sh
-
+RSTRIP:=STRIP="$(STRIP)" STRIP_KMOD="$(TARGET_CROSS)strip --strip-unneeded --remove-section=.comment" $(SCRIPT_DIR)/rstrip.sh
 
 all:
 .PHONY: FORCE
