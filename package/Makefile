@@ -10,18 +10,18 @@ $(STAMP_DIR) $(TARGET_DIR):
 	mkdir -p $@
 
 %-prepare: $(STAMP_DIR) $(TARGET_DIR)
-	$(MAKE) -C $(patsubst %-prepare,%,$@) prepare
+	$(MAKE) -C $(patsubst %-prepare,%,$@) prepare MAKEFLAGS="$(BUILD_MAKEFLAGS)"
 
 %-compile: $(STAMP_DIR) $(TARGET_DIR)
 	@echo "-> make $@"
-	$(MAKE) -C $(patsubst %-compile,%,$@) compile
+	$(MAKE) -C $(patsubst %-compile,%,$@) compile MAKEFLAGS="$(BUILD_MAKEFLAGS)"
 
 %-install: $(STAMP_DIR) $(TARGET_DIR)
 	@echo "-> make $@"
-	$(MAKE) -C $(patsubst %-install,%,$@) install
+	$(MAKE) -C $(patsubst %-install,%,$@) install MAKEFLAGS="$(BUILD_MAKEFLAGS)"
 
 %-clean: $(STAMP_DIR) $(TARGET_DIR)
-	$(MAKE) -C $(patsubst %-clean,%,$@) clean
+	$(MAKE) -C $(patsubst %-clean,%,$@) clean MAKEFLAGS="$(BUILD_MAKEFLAGS)"
 
 
 $(TOPDIR)/.pkgdeps: $(TOPDIR)/.pkginfo
@@ -29,7 +29,11 @@ $(TOPDIR)/.pkgdeps: $(TOPDIR)/.pkginfo
 
 all: compile
 clean: $(patsubst %,%-clean,$(package-) $(package-y) $(package-m))
-compile: $(COMPILE_PACKAGES)
-install: base-files-install $(INSTALL_PACKAGES)
-
+compile-targets: $(COMPILE_PACKAGES)
+compile:
+	$(MAKE) -j$(CONFIG_JLEVEL) compile-targets
+install-targets: base-files-install $(INSTALL_PACKAGES)
+install:
+	rm -rf $(BUILD_DIR)/root
+	$(MAKE) install-targets
 
