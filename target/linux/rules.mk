@@ -13,7 +13,6 @@ LINUX_DIR := $(LINUX_BUILD_DIR)/linux-$(LINUX_VERSION)
 LINUX_KERNEL:=$(LINUX_BUILD_DIR)/vmlinux
 
 LINUX_TARGET_DIR:=$(LINUX_BUILD_DIR)/root
-IPKG_KERNEL:=IPKG_TMP=$(BUILD_DIR)/tmp IPKG_INSTROOT=$(LINUX_TARGET_DIR) IPKG_CONF_DIR=$(LINUX_BUILD_DIR) $(SCRIPT_DIR)/ipkg -force-defaults -force-depends
 
 LINUX_KARCH:=$(shell echo $(ARCH) | sed -e 's/i[3-9]86/i386/' \
 	-e 's/mipsel/mips/' \
@@ -75,7 +74,6 @@ ifneq ($(6),)
 endif
 	$(8)
 	$(IPKG_BUILD) $$(I_$(1)) $(PACKAGE_DIR)
-
 endef
 
 KERNEL_IPKG:=$(LINUX_BUILD_DIR)/kernel_$(LINUX_VERSION)-$(BOARD)-$(LINUX_RELEASE)_$(ARCH).ipk

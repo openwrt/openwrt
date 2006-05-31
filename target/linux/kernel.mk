@@ -40,7 +40,7 @@ $(LINUX_DIR)/.configured: $(LINUX_DIR)/.patched
 	touch $@
 endif
 
-$(LINUX_DIR)/vmlinux: $(STAMP_DIR)/.linux-compile FORCE
+$(LINUX_DIR)/vmlinux: $(STAMP_DIR)/.linux-compile pkg-install FORCE
 	$(MAKE) -C $(LINUX_DIR) CROSS_COMPILE="$(KERNEL_CROSS)" ARCH=$(LINUX_KARCH) PATH=$(TARGET_PATH)
 
 $(LINUX_KERNEL): $(LINUX_DIR)/vmlinux
@@ -72,6 +72,9 @@ $(BUILD_DIR)/kernel.mk: FORCE
 	echo "LINUX_VERSION:=$(LINUX_VERSION)" >> $@
 	echo "LINUX_RELEASE:=$(LINUX_RELEASE)" >> $@
 
+pkg-install:
+	@{ [ "$(INSTALL_TARGETS)" != "" ] && $(IPKG) install $(INSTALL_TARGETS) || true; }
+
 source: $(DL_DIR)/$(LINUX_SOURCE)
 prepare: $(BUILD_DIR)/kernel.mk
 	@mkdir -p $(STAMP_DIR) $(PACKAGE_DIR)
@@ -99,4 +102,6 @@ clean:
 	rm -f $(STAMP_DIR)/.linux-compile
 	rm -rf $(LINUX_BUILD_DIR)
 	rm -f $(TARGETS)
+	
+.PHONY: source prepare compile install mostlyclean rebuild clean pkg-install
 
