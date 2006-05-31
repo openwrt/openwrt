@@ -16,6 +16,10 @@ $(STAMP_DIR) $(TARGET_DIR):
 	@echo "-> make $@"
 	$(MAKE) -C $(patsubst %-compile,%,$@) compile
 
+%-install: $(STAMP_DIR) $(TARGET_DIR)
+	@echo "-> make $@"
+	$(MAKE) -C $(patsubst %-install,%,$@) install
+
 %-clean: $(STAMP_DIR) $(TARGET_DIR)
 	$(MAKE) -C $(patsubst %-clean,%,$@) clean
 
