@@ -28,6 +28,7 @@ define Package/base-files$(TARGET)
  DEFAULT:=y
  TITLE:=OpenWrt system scripts
  DESCRIPTION:=Base filesystem for OpenWrt
+ VERSION:=$(PKG_RELEASE)
 endef
 
 define Package/libgcc
