@@ -6,11 +6,11 @@ endif
 
 define Build/DefaultTargets
   ifeq ($(DUMP),)
-    ifeq ($$(shell $(SCRIPT_DIR)/timestamp.pl -p $(PKG_BUILD_DIR) . | tee /tmp/xy1),.)
+    ifneq ($$(shell $(SCRIPT_DIR)/timestamp.pl -p $(PKG_BUILD_DIR) . $(TOPDIR)/package/rules.mk),$(PKG_BUILD_DIR))
       $(PKG_BUILD_DIR)/.prepared: package-clean
     endif
 
-    ifneq ($$(shell $(SCRIPT_DIR)/timestamp.pl -p -x ipkg $(IPKG_$(1)) $(PKG_BUILD_DIR) | tee /tmp/xy2),$(IPKG_$(1)))
+    ifneq ($$(shell $(SCRIPT_DIR)/timestamp.pl -p -x ipkg $(IPKG_$(1)) $(PKG_BUILD_DIR)),$(IPKG_$(1)))
       $(PKG_BUILD_DIR)/.built: package-rebuild
     endif
   endif
