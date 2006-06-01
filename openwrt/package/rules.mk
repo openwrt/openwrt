@@ -235,10 +235,8 @@ define Build/Compile/Default
 		$(TARGET_CONFIGURE_OPTS) \
 		CC=$(TARGET_CC) \
 		CROSS="$(TARGET_CROSS)" \
-		PREFIX="$$(IDIR_$(1))" \
-		EXTRA_CFLAGS="$(TARGET_CFLAGS)" \
+		EXTRA_CFLAGS="$(TARGET_CFLAGS) -I$(STAGING_DIR)/include -I$(STAGING_DIR)/usr/include" \
 		ARCH="$(ARCH)" \
-		DESTDIR="$$(IDIR_$(1))" \
 		$(1);
 endef
 
