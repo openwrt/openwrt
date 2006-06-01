@@ -61,36 +61,45 @@ scripts/config/mconf: .config.in
 scripts/config/conf: .config.in
 	$(MAKE) -C scripts/config conf
 
-config: scripts/config/conf
+config: scripts/config/conf FORCE
 	$< Config.in
 
-defdconfig: scripts/config/conf
+defdconfig: scripts/config/conf FORCE
 	$< -d Config.in
 
-oldconfig: scripts/config/conf
+oldconfig: scripts/config/conf FORCE
 	$< -o Config.in
 
-menuconfig: scripts/config/mconf
+menuconfig: scripts/config/mconf FORCE
 	$< Config.in
 
-config-clean:
+config-clean: FORCE
 	$(MAKE) -C scripts/config clean
 
-package/%: .pkginfo
+package/%: .pkginfo FORCE
 	$(MAKE) -C package $(patsubst package/%,%,$@)
 
-target/%: .pkginfo
+target/%: .pkginfo FORCE
 	$(MAKE) -C target $(patsubst target/%,%,$@)
 
-toolchain/%:
+toolchain/%: FORCE
 	$(MAKE) -C toolchain $(patsubst toolchain/%,%,$@)
 
-world:
+world: FORCE
 	$(MAKE) toolchain/install
 	$(MAKE) target/compile
 	$(MAKE) package/compile
 	$(MAKE) package/install
 	$(MAKE) target/install
+
+clean: FORCE
+	rm -rf build_* bin
+
+dirclean: clean FORCE
+	rm -rf staging_dir_* toolchain_build_*
+
+distclean: dirclean FORCE
+	rm -rf .* dl
 
 .PHONY: FORCE
 FORCE:
