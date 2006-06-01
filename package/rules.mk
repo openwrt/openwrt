@@ -232,6 +232,7 @@ endef
 
 define Build/Compile/Default
 	$(MAKE) -C $(PKG_BUILD_DIR) \
+		$(TARGET_CONFIGURE_OPTS) \
 		CC=$(TARGET_CC) \
 		CROSS="$(TARGET_CROSS)" \
 		PREFIX="$$(IDIR_$(1))" \
