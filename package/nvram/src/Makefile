@@ -1,13 +1,12 @@
 # $Id$
 
-EXTRA_CFLAGS := -c -I. -I../include
 LIBSHARED_OBJS := shutils.o wl.o wl_linux.o defaults.o linux_timer.o
 LIBNVRAM_OBJS := nvram_linux.o nvram_convert.o
 
 all: libshared.so libnvram.so nvram
 
 %.o: %.c
-	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -o $@ $^
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -c -I. -Iinclude -o $@ $^
 
 libshared.so: $(LIBSHARED_OBJS)
 	$(CC) -shared -o $@ $^
