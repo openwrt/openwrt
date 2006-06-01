@@ -32,6 +32,10 @@ define Build/DefaultTargets
   $(PKG_BUILD_DIR)/.dev-installed: $(PKG_BUILD_DIR)/.built
 	$(call Build/InstallDev)
 	touch $$@
+	
+  ifdef Build/InstallDev
+    compile-targets: $(PKG_BUILD_DIR)/.dev-installed
+  endif
 
   package-clean: FORCE
 	$(call Build/Clean)
@@ -241,14 +245,8 @@ define Build/Compile
   $(call Build/Compile/Default,)
 endef
 
-define Build/InstallDev
-endef
-
 define Build/Clean
 	$(MAKE) clean
-endef
-
-define Build/UninstallDev
 endef
 
 ifneq ($(DUMP),)
@@ -263,11 +261,7 @@ else
   prepare: $(PKG_BUILD_DIR)/.prepared
   configure: $(PKG_BUILD_DIR)/.configured
 
-ifdef Build/InstallDev
-  compile-targets: $(PKG_BUILD_DIR)/.dev-installed
-else
   compile-targets:
-endif
   compile: compile-targets
 
   install-targets:
