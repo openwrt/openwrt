@@ -8,9 +8,12 @@ KERNEL_IDIR:=$(LINUX_BUILD_DIR)/kernel-ipkg
 
 $(TARGETS): $(PACKAGE_DIR)
 
+$(LINUX_DIR):
+	mkdir -p $@
+
 $(PACKAGE_DIR):
-	mkdir -p $(PACKAGE_DIR)
-	
+	mkdir -p $@
+
 $(DL_DIR)/$(LINUX_SOURCE):
 	-mkdir -p $(DL_DIR)
 	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(LINUX_SOURCE) $(LINUX_KERNEL_MD5SUM) $(LINUX_SITE)
@@ -67,7 +70,7 @@ $(KERNEL_IPKG):
 	fi
 	$(IPKG_BUILD) $(KERNEL_IDIR) $(LINUX_BUILD_DIR)
 
-$(BUILD_DIR)/kernel.mk: FORCE
+$(BUILD_DIR)/kernel.mk: $(LINUX_DIR) FORCE
 	echo "BOARD:=$(BOARD)" > $@
 	echo "LINUX_VERSION:=$(LINUX_VERSION)" >> $@
 	echo "LINUX_RELEASE:=$(LINUX_RELEASE)" >> $@
