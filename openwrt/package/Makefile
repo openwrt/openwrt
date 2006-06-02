@@ -116,6 +116,7 @@ package-$(BR2_PACKAGE_LIBICONV) += libiconv
 package-$(BR2_PACKAGE_LIBID3TAG) += libid3tag
 package-$(BR2_PACKAGE_LIBLZO) += liblzo
 package-$(BR2_PACKAGE_LIBMAD) += libmad
+package-$(BR2_PACKAGE_LIBMCRYPT) += libmcrypt
 package-$(BR2_PACKAGE_LIBNET) += libnet
 package-$(BR2_PACKAGE_LIBNIDS) += libnids
 package-$(BR2_PACKAGE_LIBOGG) += libogg
