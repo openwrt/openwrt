@@ -102,7 +102,7 @@ dirclean: clean FORCE
 	rm -rf staging_dir_* toolchain_build_*
 
 distclean: dirclean FORCE
-	rm -rf .* dl
+	rm -rf dl .*config* .pkg*
 
 .PHONY: FORCE
 FORCE:
