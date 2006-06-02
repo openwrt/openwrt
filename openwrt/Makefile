@@ -55,22 +55,23 @@ endif
 pkginfo-clean: FORCE
 	-rm -f .pkginfo .config.in
 
-scripts/config/mconf: .config.in
+./scripts/config/mconf: .config.in
 	$(MAKE) -C scripts/config all
 
-scripts/config/conf: .config.in
+./scripts/config/conf: .config.in
 	$(MAKE) -C scripts/config conf
 
-config: scripts/config/conf FORCE
+config: ./scripts/config/conf FORCE
 	$< Config.in
 
-defdconfig: scripts/config/conf FORCE
-	$< -d Config.in
+defconfig: ./scripts/config/conf FORCE
+	touch .config
+	$< -D .config Config.in
 
-oldconfig: scripts/config/conf FORCE
+oldconfig: ./scripts/config/conf FORCE
 	$< -o Config.in
 
-menuconfig: scripts/config/mconf FORCE
+menuconfig: ./scripts/config/mconf FORCE
 	$< Config.in
 
 config-clean: FORCE
@@ -85,7 +86,9 @@ target/%: .pkginfo FORCE
 toolchain/%: FORCE
 	$(MAKE) -C toolchain $(patsubst toolchain/%,%,$@)
 
-world: FORCE
+world: ./scripts/config/conf FORCE
+	touch .config
+	$< -D .config Config.in >/dev/null 2>/dev/null
 	$(MAKE) toolchain/install
 	$(MAKE) target/compile
 	$(MAKE) package/compile
