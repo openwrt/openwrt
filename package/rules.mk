@@ -7,12 +7,16 @@ endif
 define Build/DefaultTargets
   ifeq ($(DUMP),)
     ifneq ($$(shell $(SCRIPT_DIR)/timestamp.pl -p $(PKG_BUILD_DIR) . $(TOPDIR)/package/rules.mk),$(PKG_BUILD_DIR))
-      $(PKG_BUILD_DIR)/.prepared: package-clean
+	  ifeq ($(CONFIG_AUTOREBUILD),y)
+        $(PKG_BUILD_DIR)/.prepared: package-clean
+      endif
     endif
 
     ifneq ($$(shell $(SCRIPT_DIR)/timestamp.pl -p -x ipkg $(IPKG_$(1)) $(PKG_BUILD_DIR)),$(IPKG_$(1)))
-      $(PKG_BUILD_DIR)/.built: package-rebuild
-    endif
+	  ifeq ($(CONFIG_AUTOREBUILD),y)
+        $(PKG_BUILD_DIR)/.built: package-rebuild
+      endif
+	endif
   endif
 
   $(PKG_BUILD_DIR)/.prepared: $(DL_DIR)/$(PKG_SOURCE)

@@ -21,10 +21,12 @@ menuconfig DEVEL
 menuconfig BUILDOPTS
 	bool "Build Options" if DEVEL
 
-config WGET
-        string
-	prompt "WGET command" if BUILDOPTS
-        default "wget --passive-ftp -nd"
+config AUTOREBUILD
+	bool
+	prompt "Automatic rebuild of packages" if BUILDOPTS
+	default y
+	help
+		Automatically rebuild packages when their files change
 
 config TAR_VERBOSITY
 	bool 
