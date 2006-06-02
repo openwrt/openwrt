@@ -20,7 +20,7 @@ UCLIBC_VERSION:=${shell cat $(STAGING_DIR)/uclibc_version}
 LIBGCC_VERSION:=${shell cat $(STAGING_DIR)/gcc_version}
 endif
 
-CONFIG_PACKAGE_base-files$(TARGET):=CONFIG_PACKAGE_base-files
+CONFIG_PACKAGE_base-files$(TARGET):=$(CONFIG_PACKAGE_base-files)
 
 define Package/base-files$(TARGET)
  SECTION:=base
@@ -76,7 +76,7 @@ endef
 
 define Package/base-files$(TARGET)/install
 $(call Package/base-files$(TARGET)/install-$(BOARD),$(1))
-	$(CP) ./default/* $(1)
+	$(CP) ./default/* $(1)/
 	if [ -d $(BOARD)-$(KERNEL) ]; then \
 		$(CP) $(BOARD)-$(KERNEL)/* $(1)/; \
 	fi
