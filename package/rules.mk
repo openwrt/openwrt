@@ -29,17 +29,18 @@ define Build/DefaultTargets
 	$(call Build/Compile)
 	touch $$@
 
-  $(PKG_BUILD_DIR)/.dev-installed: $(PKG_BUILD_DIR)/.built
+  $(STAGING_DIR)/stampfiles/.$(PKG_NAME)-installed: $(PKG_BUILD_DIR)/.built
 	$(call Build/InstallDev)
 	touch $$@
 	
   ifdef Build/InstallDev
-    compile-targets: $(PKG_BUILD_DIR)/.dev-installed
+    compile-targets: $(STAGING_DIR)/stampfiles/.$(PKG_NAME)-installed
   endif
 
   package-clean: FORCE
 	$(call Build/Clean)
 	$(call Build/UninstallDev)
+	rm -f $(STAGING_DIR)/stampfiles/.$(PKG_NAME)-installed
 
   package-rebuild: FORCE
 	@-rm $(PKG_BUILD_DIR)/.built
