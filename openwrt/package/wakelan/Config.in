@@ -1,0 +1,7 @@
+config BR2_PACKAGE_WAKELAN
+	prompt "wakelan........................... Send a wake-on-lan packet"
+	tristate
+	default m if CONFIG_DEVEL
+	help
+	  WakeLan sends a properly formatted UDP packet across the network 
+	  which will cause a wake-on-lan enabled computer to power on.
