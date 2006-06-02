@@ -55,7 +55,15 @@ define Package/Default
   DEPENDS:=
   MAINTAINER:=OpenWrt Developers Team <openwrt-devel@openwrt.org>
   SOURCE:=$(patsubst $(TOPDIR)/%,%,${shell pwd})
-  VERSION:=$(PKG_VERSION)-$(PKG_RELEASE)
+  ifneq ($(PKG_VERSION),)
+    ifneq ($(PKG_RELEASE),)
+      VERSION:=$(PKG_VERSION)-$(PKG_RELEASE)
+    else
+      VERSION:=$(PKG_VERSION)
+    endif
+  else
+    VERSION:=$(PKG_RELEASE)
+  endif
   PKGARCH:=$(ARCH)
   PRIORITY:=optional
   DEFAULT:=
