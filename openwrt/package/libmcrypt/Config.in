@@ -1,0 +1,9 @@
+config BR2_PACKAGE_LIBMCRYPT
+        prompt "libmcrypt....................... Cryptographic library"
+	tristate
+        default m if CONFIG_DEVEL
+        help
+	  libmcrypt is a cryptographic library that conveniently brings 
+	  together a variety of ciphers for convenient use.
+
+	  http://mcrypt.sourceforge.net/
