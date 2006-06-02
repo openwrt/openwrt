@@ -3,11 +3,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=avahi
-PKG_VERSION:=0.6.1
+PKG_VERSION:=0.6.10
 PKG_RELEASE:=1
-PKG_MD5SUM:=330613902c59bd597f140a8254e9f4ec
+PKG_MD5SUM:=cfb9e05c138dff4c430a35eee6229e8a
 
-PKG_SOURCE_URL:=http://www.freedesktop.org/~lennart/
+PKG_SOURCE_URL:=http://avahi.org/download/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
@@ -29,6 +29,7 @@ $(PKG_BUILD_DIR)/.configured:
 		PKG_CONFIG_PATH="$(STAGING_DIR)/usr/lib/pkgconfig" \
 		ac_cv_func_malloc_0_nonnull=yes \
 		ac_cv_func_realloc_0_nonnull=yes \
+		ac_cv_func_memcmp_working=yes \
 		./configure \
 			--target=$(GNU_TARGET_NAME) \
 			--host=$(GNU_TARGET_NAME) \
