@@ -273,6 +273,7 @@ package-$(BR2_PACKAGE_VPNC) += vpnc
 package-$(BR2_PACKAGE_VRRPD) += vrrpd
 package-$(BR2_PACKAGE_VTUN) += vtun
 package-$(BR2_PACKAGE_VSFTPD) += vsftpd
+package-$(BR2_PACKAGE_WAKELAN) += wakelan
 package-$(BR2_PACKAGE_WATCHDOG) += watchdog
 package-$(BR2_PACKAGE_WCCPD) += wccpd
 package-$(BR2_PACKAGE_WEECHAT) += weechat
