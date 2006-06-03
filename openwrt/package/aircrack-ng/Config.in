@@ -1,0 +1,13 @@
+config BR2_PACKAGE_AIRCRACK_NG
+	prompt "aircrack-ng....................... Next generation of aircrack with new features"
+	tristate
+	default n
+	help
+	  aircrack-ng is an 802.11 WEP and WPA-PSK keys cracking program 
+	  that can recover this keys once enough encrypted packets have 
+	  been captured. It implements the standard FMS attack along with 
+	  some optimizations like KoreK attacks, thus making the attack 
+	  much faster compared to other WEP cracking tools. In fact 
+	  aircrack is a set of tools for auditing wireless networks.
+	  
+	  http://www.aircrack-ng.org/
