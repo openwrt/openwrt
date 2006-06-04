@@ -25,5 +25,5 @@ prepare: $(MTD_DIR)/.unpacked
 compile: $(MTD_DIR)/util/mkfs.jffs2 $(STAGING_DIR)/bin/mkfs.jffs2
 install: 
 clean: FORCE
-	rm -rf $(MTD_DIR)
+	rm -rf $(MTD_DIR) $(STAGING_DIR)/bin/mkfs.jffs2
 

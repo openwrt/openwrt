@@ -1,30 +1,10 @@
-include $(TOPDIR)/rules.mk
+include ../image.mk
 
-KDIR:=$(BUILD_DIR)/linux-$(KERNEL)-$(BOARD)
-
-ifeq ($(FS),jffs2-8MB)
-$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).img: $(KDIR)/root.$(FS)
-	$(CP) $^ $@
-
-install: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).img
+define Image/Build
+ifneq ($(FS),jffs2-64k)
+	cp $(KDIR)/root.$(1) $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).img
+	cp $(KDIR)/vmlinux $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-vmlinuz
 endif
+endef
 
-
-ifeq ($(FS),tgz)
-$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-rootfs.tar.gz: $(KDIR)/root.tar.gz
-	$(CP) $^ $@
-
-install: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-rootfs.tar.gz
-endif
-
-
-$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-vmlinuz: $(KDIR)/vmlinux
-	$(CP) $^ $@
-
-clean:
-prepare:
-compile:
-install: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-vmlinuz
-install-ib: FORCE
-	mkdir -p $(IB_DIR)/build_$(ARCH)/linux-$(KERNEL)-$(BOARD)
-	$(CP) $(KDIR)/bzImage $(IB_DIR)/build_$(ARCH)/linux-$(KERNEL)-$(BOARD)/
+$(eval $(call BuildImage))

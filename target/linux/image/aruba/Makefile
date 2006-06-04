@@ -1,4 +1,4 @@
-include $(TOPDIR)/rules.mk
+include ../image.mk
 
 LOADADDR = 0x81000000		# RAM start + 16M 
 KERNEL_ENTRY = 0x80100000
@@ -10,57 +10,25 @@ LOADER_MAKEOPTS= \
 		KERNEL_ENTRY=$(KERNEL_ENTRY) \
 		RAMSIZE=$(RAMSIZE)
 
-KDIR:=$(BUILD_DIR)/linux-$(KERNEL)-$(BOARD)
-
-lzma-loader-clean: FORCE
+define Build/Clean
 	$(MAKE) -C ../generic/lzma-loader $(LOADER_MAKEOPTS) clean
+endef
 
-lzma-loader-prepare: FORCE
-	$(MAKE) -C ../generic/lzma-loader $(LOADER_MAKEOPTS) prepare
-
-lzma-loader-compile: $(KDIR)/vmlinux.lzma lzma-loader-prepare
+define Image/Prepare
+	cat $(KDIR)/vmlinux | $(STAGING_DIR)/bin/lzma e -si -so -eos -lc1 -lp2 -pb2 > $(KDIR)/vmlinux.lzma
 	$(MAKE) -C ../generic/lzma-loader $(LOADER_MAKEOPTS) compile
+endef
 
-ifeq ($(IB),)
-$(KDIR)/vmlinux.lzma: $(KDIR)/vmlinux
-	cat $^ | $(STAGING_DIR)/bin/lzma e -si -so -eos -lc1 -lp2 -pb2 > $@ || (rm -f $@ && false)
-
-$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL).ari: $(KDIR)/vmlinux.lzma
-install: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL).ari
-endif
-
-ifeq ($(KERNEL),2.6)
-FSNAME:=$(patsubst jffs2-%,jffs2,$(FS))
-
-ifeq ($(FS),jffs2-4MB)
-$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL).ari: $(KDIR)/loader.elf
-	./addVersion -n ArubaOS $(KDIR)/loader.elf $@ version
-
+define Image/Build
+	./addVersion -n ArubaOS $(KDIR)/loader.elf $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL).ari version
 ifneq ($(CONFIG_ARUBA_RAMDISK),y)
-$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FSNAME).bin: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL).ari $(KDIR)/root.$(FS)
-	@dd if=$< of=$@.tmp bs=655360 conv=sync
-	@cat $(KDIR)/root.$(FS) >> $@.tmp
-	@dd if=$@.tmp of=$@ bs=3604480 conv=sync
-	@rm -f $@.tmp
+ifeq ($(1),jffs2-64k)
+endif
+	@dd if=$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL).ari of=$(KDIR)/image.tmp bs=655360 conv=sync
+	@cat $(KDIR)/root.$(FS) >> $(KDIR)/image.tmp
+	@dd if=$(KDIR)/image.tmp of=$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(patsubst jffs2-%,jffs2,$(1)).bin bs=3604480 conv=sync
+	@rm -f $(KDIR)/image.tmp
+endif
+endef
 
-install: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FSNAME).bin
-endif
-
-install: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL).ari
-endif
-endif
-
-ifeq ($(IB),)
-clean: lzma-loader-clean
-prepare: lzma-loader-prepare
-compile: lzma-loader-compile
-else
-clean:
-prepare:
-compile:
-endif
-install-ib:
-	mkdir -p $(IB_DIR)/staging_dir_$(ARCH)/bin
-	mkdir -p $(IB_DIR)/build_$(ARCH)/linux-$(KERNEL)-$(BOARD)
-	$(CP) $(KDIR)/loader.elf $(IB_DIR)/build_$(ARCH)/
-	$(CP) $(KDIR)/vmlinux.lzma $(IB_DIR)/build_$(ARCH)/linux-$(KERNEL)-$(BOARD)/
+$(eval $(call BuildImage))

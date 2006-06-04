@@ -2,10 +2,8 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME := loader
-PKG_VERSION := 0.04
-
-PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_NAME := lzma-loader
+PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
 
 $(PKG_BUILD_DIR)/.prepared:
 	mkdir $(PKG_BUILD_DIR)
@@ -16,17 +14,15 @@ $(PKG_BUILD_DIR)/loader.gz: $(PKG_BUILD_DIR)/.prepared
 	$(MAKE) -C $(PKG_BUILD_DIR) CC=$(TARGET_CC) \
 		LD=$(TARGET_CROSS)ld CROSS_COMPILE=$(TARGET_CROSS)
 
-$(BUILD_DIR)/loader.gz: $(PKG_BUILD_DIR)/loader.gz
-	$(CP) $< $@
-
-$(BUILD_DIR)/loader.elf: $(PKG_BUILD_DIR)/loader.o
-	$(CP) $< $@
-
 source: 
 prepare: $(PKG_BUILD_DIR)/.prepared
-compile: $(BUILD_DIR)/loader.gz $(BUILD_DIR)/loader.elf
+compile: $(PKG_BUILD_DIR)/loader.gz
 install:
+
+ifneq ($(TARGET),)
+install: compile
+	$(CP) $(PKG_BUILD_DIR)/loader.gz $(PKG_BUILD_DIR)/loader.elf $(TARGET)/
+endif
 
 clean:
 	rm -rf $(PKG_BUILD_DIR)
-	rm -f $(BUILD_DIR)/loader.gz

@@ -34,7 +34,7 @@ SEDFLAGS	:= s/BZ_TEXT_START/$(BZ_TEXT_START)/;s/TEXT_START/$(TEXT_START)/
 
 OBJECTS		:= head.o data.o
 
-all: loader.gz
+all: loader.gz loader.elf
 
 # Don't build dependencies, this may die if $(CC) isn't gcc
 dep:
@@ -43,6 +43,9 @@ install:
 
 loader.gz: loader
 	gzip -nc9 $< > $@
+
+loader.elf: loader.o
+	cp $< $@
 
 loader: loader.o
 	$(OBJCOPY) $< $@
