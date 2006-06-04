@@ -1,4 +1,10 @@
 menu "Target Root Filesystem"
+	config TARGET_ROOTFS_INITRAMFS
+		bool "ramdisk"
+		default n
+		depends LINUX_2_6
+		help
+		  Embed the rootfs into the kernel (initramfs)
 
 	config TARGET_ROOTFS_JFFS2
 		bool "jffs2"
@@ -16,7 +22,7 @@ menu "Target Root Filesystem"
 
 	config TARGET_ROOTFS_TGZ
 		bool "tgz"
-		default y
+		default y if !LINUX_2_4_BRCM && !LINUX_2_6_BRCM && !LINUX_2_6_ARUBA && !LINUX_2_4_AR531X
 		help
 		  Build a compressed tar archive of the the root filesystem
 

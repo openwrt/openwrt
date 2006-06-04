@@ -4,41 +4,23 @@ else
 JFFS2OPTS :=  --pad --big-endian --squash
 endif
 
-#JFFS2OPTS += -Xlzo -msize -Xlzari
+define Image/mkfs/jffs2
+	rm -rf $(BUILD_DIR)/root/jffs
+	
+	$(STAGING_DIR)/bin/mkfs.jffs2 $(JFFS2OPTS) -e 0x10000 -o $(KDIR)/root.jffs2-64k -d $(BUILD_DIR)/root
+	$(STAGING_DIR)/bin/mkfs.jffs2 $(JFFS2OPTS) -e 0x20000 -o $(KDIR)/root.jffs2-128k -d $(BUILD_DIR)/root
 
-jffs2-prepare: FORCE
-	$(MAKE) -C jffs2 prepare
+	$(call Image/Build,jffs2-64k)
+	$(call Image/Build,jffs2-128k)
+endef
 
-jffs2-compile: prepare-targets
-	$(MAKE) -C jffs2 compile
+$(STAGING_DIR)/bin/mkfs.jffs2:
+	$(MAKE) -C $(TOPDIR)/target/linux/image/jffs2 compile
 
 jffs2-clean: FORCE
-	$(MAKE) -C jffs2 clean
+	$(MAKE) -C $(TOPDIR)/target/linux/image/jffs2 clean
 	rm -f $(KDIR)/root.jffs2*
 
-$(KDIR)/root.jffs2-4MB: install-prepare
-	@rm -rf $(BUILD_DIR)/root/jffs
-	$(STAGING_DIR)/bin/mkfs.jffs2 $(JFFS2OPTS) -e 0x10000 -o $@ -d $(BUILD_DIR)/root
-
-$(KDIR)/root.jffs2-8MB: install-prepare
-	@rm -rf $(BUILD_DIR)/root/jffs
-	$(STAGING_DIR)/bin/mkfs.jffs2 $(JFFS2OPTS) -e 0x20000 -o $@ -d $(BUILD_DIR)/root
-
-ifeq ($(IB),)
-jffs2-install: compile-targets $(BOARD)-compile
-endif
-
-jffs2-install: $(KDIR)/root.jffs2-4MB $(KDIR)/root.jffs2-8MB FORCE
-	$(MAKE) -C $(BOARD) install KERNEL="$(KERNEL)" FS="jffs2-4MB"
-	$(MAKE) -C $(BOARD) install KERNEL="$(KERNEL)" FS="jffs2-8MB"
-
-jffs2-install-ib: compile-targets FORCE
-	mkdir -p $(IB_DIR)/staging_dir_$(ARCH)/bin
-	$(CP) $(STAGING_DIR)/bin/mkfs.jffs2 $(IB_DIR)/staging_dir_$(ARCH)/bin
-
-prepare-targets: jffs2-prepare
-compile-targets: jffs2-compile
-install-targets: jffs2-install
-install-ib: jffs2-install-ib
+compile-targets: $(STAGING_DIR)/bin/mkfs.jffs2
 clean-targets: jffs2-clean
 

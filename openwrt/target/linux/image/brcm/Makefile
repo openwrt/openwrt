@@ -1,23 +1,4 @@
-include $(TOPDIR)/rules.mk
-
-KDIR:=$(BUILD_DIR)/linux-$(KERNEL)-$(BOARD)
-
-lzma-loader-clean: FORCE
-	$(MAKE) -C lzma-loader clean
-
-lzma-loader-prepare: FORCE
-	$(MAKE) -C lzma-loader prepare
-
-lzma-loader-compile: lzma-loader-prepare
-	$(MAKE) -C lzma-loader compile
-
-ifeq ($(IB),)
-$(KDIR)/vmlinux.lzma: $(KDIR)/vmlinux
-	cat $^ | $(STAGING_DIR)/bin/lzma e -si -so -eos -lc1 -lp2 -pb2 > $@ || (rm -f $@ && false)
-
-$(KDIR)/loader.tmp.gz: compile
-$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx: $(KDIR)/vmlinux.lzma
-endif
+include ../image.mk
 
 ifeq ($(FS),jffs2-8MB)
 TRXALIGN:=-a 0x20000
@@ -25,111 +6,56 @@ endif
 ifeq ($(FS),jffs2-4MB)
 TRXALIGN:=-a 0x10000
 endif
-# see ticket #155
 ifeq ($(FS),squashfs)
+# see ticket #155
 TRXALIGN:=-a 1024
 endif
 
+define Build/Compile
+	rm -f $(KDIR)/loader.gz
+	$(MAKE) -C lzma-loader \
+		BUILD_DIR="$(KDIR)" \
+		TARGET="$(KDIR)" \
+		install
+	echo -ne "\\x00" >> $(KDIR)/loader.gz
+endef
 
-$(KDIR)/loader.tmp.gz:
-	$(CP) $(BUILD_DIR)/loader.gz $@
-	echo -ne "\\x00" >> $@
+define Build/Clean
+	$(MAKE) -C lzma-loader clean
+endef
 
-$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx: $(KDIR)/loader.tmp.gz
-	$(STAGING_DIR)/bin/trx -o $@ $(KDIR)/loader.tmp.gz $(KDIR)/vmlinux.lzma $(TRXALIGN) $(KDIR)/root.$(FS)
+define Image/Prepare
+	cat $(KDIR)/vmlinux | $(STAGING_DIR)/bin/lzma e -si -so -eos -lc1 -lp2 -pb2 > $(KDIR)/vmlinux.lzma
+endef
 
-ifeq ($(KERNEL),2.6)
-FSNAME:=$(patsubst jffs2-%,jffs2,$(FS))
+define Image/Build/wgt634u
+	dd if=$(KDIR)/loader.elf of=$(BIN_DIR)/openwrt-wgt634u-$(KERNEL)-$(2).bin bs=131072 conv=sync
+	cat $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).trx >> $(BIN_DIR)/openwrt-wgt634u-$(KERNEL)-$(2).bin
+endef
 
-ifneq ($(FS),jffs2-4MB)
-$(BIN_DIR)/openwrt-wgt634u-$(KERNEL)-$(FSNAME).bin: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx
-	dd if=$(BUILD_DIR)/loader.elf of=$@ bs=131072 conv=sync
-	cat $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx >> $@
+define Image/Build/CyberTAN
+	$(STAGING_DIR)/bin/addpattern -4 -p $(3) -v v$(4) -i $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).trx -o $(BIN_DIR)/openwrt-$(2)-$(KERNEL)-$(5).bin
+endef
 
-$(BIN_DIR)/openwrt-wrt54gs-$(KERNEL)-$(FSNAME).bin: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx
-	$(STAGING_DIR)/bin/addpattern -4 -p W54S -v v4.70.6 -i $< -o $@ -g
+define Image/Build/Motorola
+	$(STAGING_DIR)/bin/motorola-bin -$(3) $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).trx $(BIN_DIR)/openwrt-$(2)-$(4).bin
+endef
 
-install: $(BIN_DIR)/openwrt-wgt634u-$(KERNEL)-$(FSNAME).bin $(BIN_DIR)/openwrt-wrt54gs-$(KERNEL)-$(FSNAME).bin
-
+define Image/Build
+	$(STAGING_DIR)/bin/trx -o $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).trx $(KDIR)/loader.gz $(KDIR)/vmlinux.lzma $(TRXALIGN) $(KDIR)/root.$(1)
+ifneq ($(1),jffs2-128k)
+	$(call Image/Build/CyberTAN,$(1),wrt54g3g,W54F,1.99.5,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/CyberTAN,$(1),wrt54g,W54G,4.40.1,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/CyberTAN,$(1),wrt54gs_v4,W54s,1.09.1,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/Motorola,$(1),wa840g,2,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/Motorola,$(1),we800g,3,$(patsubst jffs2-%,jffs2,$(1)))
 endif
-
-ifneq ($(FS),jffs2-8MB)
-$(BIN_DIR)/openwrt-wrt54g3g-$(KERNEL)-$(FSNAME).bin: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx
-	$(STAGING_DIR)/bin/addpattern -4 -p W54F -v v1.99.5 -i $< -o $@ -g
-	
-$(BIN_DIR)/openwrt-wrt54g-$(KERNEL)-$(FSNAME).bin: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx
-	$(STAGING_DIR)/bin/addpattern -4 -p W54G -v v4.20.6 -i $< -o $@ -g
-
-$(BIN_DIR)/openwrt-wrt54gs_v4-$(KERNEL)-$(FSNAME).bin: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx
-	$(STAGING_DIR)/bin/addpattern -4 -p W54s -v v1.05.2 -i $< -o $@ -g
-
-install: $(BIN_DIR)/openwrt-wrt54g-$(KERNEL)-$(FSNAME).bin $(BIN_DIR)/openwrt-wrt54gs_v4-$(KERNEL)-$(FSNAME).bin $(BIN_DIR)/openwrt-wrt54g3g-$(KERNEL)-$(FSNAME).bin
-
+ifneq ($(1),jffs2-64k)
+	$(call Image/Build/CyberTAN,$(1),wrt54gs,W54S,4.80.1,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/CyberTAN,$(1),wrtsl54gs,W54U,2.00.5,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/wgt634u,$(1),$(patsubst jffs2-%,jffs2,$(1)))
 endif
-endif
+	$(call Image/Build/Motorola,$(1),wr850g,1,$(1))
+endef
 
-ifeq ($(KERNEL),2.4)
-FSNAME:=$(patsubst jffs2-%,jffs2,$(FS))
-
-# ifeq ($(FS),squashfs)
-# $(BIN_DIR)/openwrt-wap54g-$(KERNEL)-$(FSNAME).trx: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx
-# 	$(CP) $< $@
-# 	echo -ne '\x01' >> $@
-# 	
-# install: $(BIN_DIR)/openwrt-wap54g-$(KERNEL)-$(FSNAME).trx
-# endif
-
-ifneq ($(FS),jffs2-8MB)
-$(BIN_DIR)/openwrt-wrt54g3g-$(KERNEL)-$(FSNAME).bin: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx
-	$(STAGING_DIR)/bin/addpattern -4 -p W54F -v v1.99.5 -i $< -o $@ -g
-	
-$(BIN_DIR)/openwrt-wrt54g-$(KERNEL)-$(FSNAME).bin: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx
-	$(STAGING_DIR)/bin/addpattern -4 -p W54G -v v4.20.6 -i $< -o $@ -g
-
-$(BIN_DIR)/openwrt-wrt54gs_v4-$(KERNEL)-$(FSNAME).bin: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx
-	$(STAGING_DIR)/bin/addpattern -4 -p W54s -v v1.05.2 -i $< -o $@ -g
-
-$(BIN_DIR)/openwrt-wr850g-$(FSNAME).bin: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx
-	$(STAGING_DIR)/bin/motorola-bin -1 $< $@
-
-$(BIN_DIR)/openwrt-wa840g-$(FSNAME).bin: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx
-	$(STAGING_DIR)/bin/motorola-bin -2 $< $@
-
-$(BIN_DIR)/openwrt-we800g-$(FSNAME).bin: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx
-	$(STAGING_DIR)/bin/motorola-bin -3 $< $@
-
-install: $(BIN_DIR)/openwrt-wrt54g-$(KERNEL)-$(FSNAME).bin $(BIN_DIR)/openwrt-wrt54gs_v4-$(KERNEL)-$(FSNAME).bin $(BIN_DIR)/openwrt-wrt54g3g-$(KERNEL)-$(FSNAME).bin $(BIN_DIR)/openwrt-wr850g-$(FSNAME).bin $(BIN_DIR)/openwrt-wa840g-$(FSNAME).bin $(BIN_DIR)/openwrt-we800g-$(FSNAME).bin
-endif
-
-ifneq ($(FS),jffs2-4MB)
-$(BIN_DIR)/openwrt-wgt634u-$(KERNEL)-$(FSNAME).bin: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx
-	dd if=$(BUILD_DIR)/loader.elf of=$@ bs=131072 conv=sync
-	cat $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx >> $@
-
-$(BIN_DIR)/openwrt-wrt54gs-$(KERNEL)-$(FSNAME).bin: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx
-	$(STAGING_DIR)/bin/addpattern -4 -p W54S -v v4.70.6 -i $< -o $@ -g
-
-$(BIN_DIR)/openwrt-wrtsl54gs-$(FSNAME).bin: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx
-	$(STAGING_DIR)/bin/addpattern -4 -p W54U -v v2.00.0 -i $< -o $@ -g
-
-install: $(BIN_DIR)/openwrt-wrt54gs-$(KERNEL)-$(FSNAME).bin $(BIN_DIR)/openwrt-wgt634u-$(KERNEL)-$(FSNAME).bin $(BIN_DIR)/openwrt-wrtsl54gs-$(FSNAME).bin
-endif
-endif
-
-ifeq ($(IB),)
-clean: lzma-loader-clean
-prepare: lzma-loader-prepare
-compile: lzma-loader-compile
-else
-clean:
-prepare:
-compile:
-endif
-install: $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(FS).trx
-install-ib:
-	mkdir -p $(IB_DIR)/staging_dir_$(ARCH)/bin
-	$(CP) $(STAGING_DIR)/bin/addpattern $(STAGING_DIR)/bin/trx $(STAGING_DIR)/bin/motorola-bin $(IB_DIR)/staging_dir_$(ARCH)/bin
-	mkdir -p $(IB_DIR)/build_$(ARCH)/linux-$(KERNEL)-$(BOARD)
-	$(CP) $(BUILD_DIR)/loader.gz $(IB_DIR)/build_$(ARCH)/
-	$(CP) $(BUILD_DIR)/loader.elf $(IB_DIR)/build_$(ARCH)/
-	$(CP) $(KDIR)/vmlinux.lzma $(IB_DIR)/build_$(ARCH)/linux-$(KERNEL)-$(BOARD)/
+$(eval $(call BuildImage))
