@@ -1,0 +1,235 @@
+diff -ruN rp-l2tp-0.4-orig/Makefile.in rp-l2tp-0.4-4/Makefile.in
+--- rp-l2tp-0.4-orig/Makefile.in	2004-07-01 17:17:11.000000000 +0200
++++ rp-l2tp-0.4-4/Makefile.in	2005-03-09 16:26:49.000000000 +0100
+@@ -27,10 +27,10 @@
+ sbindir=@sbindir@
+ 
+ OBJS=auth.o debug.o dgram.o main.o md5.o network.o options.o peer.o session.o tunnel.o utils.o
+-EXTRA_LIBS=@LIBEVENT@/*.o -ldl
++EXTRA_LIBS=@LIBEVENT@/*.o -lc -ldl
+ 
+ SRCS=$(OBJS:.o=.c)
+-CFLAGS=-g -I.. -I@LIBEVENT@ -Wall -Wstrict-prototypes -ansi -pedantic -D_GNU_SOURCE -DVERSION=\"$(VERSION)\" -DPREFIX=\"$(prefix)\"
++CFLAGS=@CFLAGS@ -I@LIBEVENT@ -Wall -Wstrict-prototypes -ansi -pedantic -D_GNU_SOURCE -DVERSION=\"$(VERSION)\" -DPREFIX=\"$(prefix)\"
+ 
+ TARGETS=l2tpd libl2tp.a handlers
+ 
+@@ -38,12 +38,12 @@
+ 
+ libl2tp.a: $(OBJS)
+ 	rm -f $@
+-	ar -rc $@ $^
+-	ranlib $@ || true
++	$(AR) -rc $@ $^
++	@RANLIB@ $@ || true
+ 
+ l2tpd: libl2tp.a libevent/libevent.a
+ 	$(MAKE) -C handlers
+-	@CC@ -o l2tpd -rdynamic $(OBJS) $(EXTRA_LIBS)
++	@CC@ $(CFLAGS) -o l2tpd -rdynamic $(OBJS) $(EXTRA_LIBS)
+ 
+ libevent/libevent.a:
+ 	test -d libevent || ln -s ../libevent .
+@@ -72,18 +72,20 @@
+ 	rm -f *.o *.a *~
+ 	rm -f l2tpd
+ 	$(MAKE) -C handlers clean
++	$(MAKE) -C libevent clean
+ 
+ distclean: clean
+-	rm -f Makefile config.cache
++	rm -f Makefile config.cache config.log config.status .depend
+ 	$(MAKE) -C handlers distclean
++	$(MAKE) -C libevent distclean
+ 
+ -include .depend
+ 
+ install: all
+ 	-mkdir -p $(RPM_INSTALL_ROOT)$(DESTDIR)$(sbindir)
+-	$(install) -m 755 -s l2tpd $(RPM_INSTALL_ROOT)$(DESTDIR)$(sbindir)
++	$(install) -m 755 l2tpd $(RPM_INSTALL_ROOT)$(DESTDIR)$(sbindir)
+ 	-mkdir -p $(RPM_INSTALL_ROOT)$(DESTDIR)/etc/l2tp
+-	$(install) -m 644 l2tp.conf $(RPM_INSTALL_ROOT)$(DESTDIR)/etc/l2tp/l2tp.conf.example
++	$(install) -m 644 l2tp.conf $(RPM_INSTALL_ROOT)$(DESTDIR)/etc/l2tp.conf.example
+ 	-mkdir -p $(RPM_INSTALL_ROOT)$(DESTDIR)$(mandir)/man8
+ 	-mkdir -p $(RPM_INSTALL_ROOT)$(DESTDIR)$(mandir)/man5
+ 	$(install) -m 644 man/l2tpd.8 $(RPM_INSTALL_ROOT)$(DESTDIR)$(mandir)/man8
+diff -ruN rp-l2tp-0.4-orig/handlers/Makefile.in rp-l2tp-0.4-4/handlers/Makefile.in
+--- rp-l2tp-0.4-orig/handlers/Makefile.in	2002-09-30 21:45:00.000000000 +0200
++++ rp-l2tp-0.4-4/handlers/Makefile.in	2005-03-09 16:26:49.000000000 +0100
+@@ -14,32 +14,34 @@
+ 
+ OBJS=pty.o sync-pppd.o dstring.o
+ SRCS=$(OBJS:.o=.c)
+-CFLAGS=-g -O2 -I.. -I../libevent -I../../libevent -Wall
++CFLAGS=@CFLAGS@ -I.. -I../libevent -I../../libevent -Wall
+ 
+ all: $(HANDLERS) l2tp-control
+ 
+ l2tp-control: cmd-control.o
+-	gcc -o l2tp-control cmd-control.o
++	$(CC) $(CFLAGS) -o l2tp-control cmd-control.o
+ 
+ cmd-control.o: cmd-control.c
+-	gcc -c -o $@ $^
++	$(CC) $(CFLAGS) -c -o $@ $^
+ 
+ %.o: %.c
+-	gcc $(CFLAGS) -fPIC -c -o $@ $<
++	$(CC) $(CFLAGS) -fPIC -c -o $@ $<
+ 
+ sync-pppd.so: pty.o sync-pppd.o
+-	gcc -shared -o $@ $^
++	$(CC) $(CFLAGS) -shared -o $@ $^
+ 
+ cmd.so: cmd.o dstring.o
+-	gcc -shared -o $@ $^
++	$(CC) $(CFLAGS) -shared -o $@ $^
+ 
+ clean:
+ 	rm -f *.so *.o *~
+ 	rm -f l2tp-control
+ 
+ install: all
+-	-mkdir -p $(RPM_INSTALL_ROOT)$(sbindir)
+-	-mkdir -p $(RPM_INSTALL_ROOT)$(prefix)/lib/l2tp/plugins
+-	$(install) -m 755 -s l2tp-control $(RPM_INSTALL_ROOT)$(sbindir)
+-	$(install) -m 755 $(HANDLERS) $(RPM_INSTALL_ROOT)$(prefix)/lib/l2tp/plugins
++	-mkdir -p $(RPM_INSTALL_ROOT)$(DESTDIR)$(sbindir)
++	-mkdir -p $(RPM_INSTALL_ROOT)$(DESTDIR)$(prefix)/lib/l2tp
++	$(install) -m 755 l2tp-control $(RPM_INSTALL_ROOT)$(DESTDIR)$(sbindir)
++	$(install) -m 755 $(HANDLERS) $(RPM_INSTALL_ROOT)$(DESTDIR)$(prefix)/lib/l2tp
++
+ distclean: clean
++	rm -f Makefile
+diff -ruN rp-l2tp-0.4-orig/handlers/cmd-control.c rp-l2tp-0.4-4/handlers/cmd-control.c
+--- rp-l2tp-0.4-orig/handlers/cmd-control.c	2002-09-30 21:45:00.000000000 +0200
++++ rp-l2tp-0.4-4/handlers/cmd-control.c	2005-03-09 16:26:49.000000000 +0100
+@@ -52,7 +52,7 @@
+ 
+     memset(&addr, 0, sizeof(addr));
+     addr.sun_family = AF_LOCAL;
+-    strncpy(addr.sun_path, "/var/run/l2tpctrl", sizeof(addr.sun_path) - 1);
++    strncpy(addr.sun_path, "/var/run/l2tp.sock", sizeof(addr.sun_path) - 1);
+ 
+     fd = socket(AF_LOCAL, SOCK_STREAM, 0);
+     if (fd < 0) {
+diff -ruN rp-l2tp-0.4-orig/handlers/cmd.c rp-l2tp-0.4-4/handlers/cmd.c
+--- rp-l2tp-0.4-orig/handlers/cmd.c	2004-07-01 16:58:56.000000000 +0200
++++ rp-l2tp-0.4-4/handlers/cmd.c	2005-03-09 16:26:49.000000000 +0100
+@@ -162,7 +162,7 @@
+ 
+     /* We have hit the end of our options.  Open command socket */
+     if (!sockname) {
+-	sockname = "/var/run/l2tpctrl";
++	sockname = "/var/run/l2tp.sock";
+     }
+ 
+     (void) remove(sockname);
+diff -ruN rp-l2tp-0.4-orig/libevent/Makefile.in rp-l2tp-0.4-4/libevent/Makefile.in
+--- rp-l2tp-0.4-orig/libevent/Makefile.in	2002-09-30 21:45:00.000000000 +0200
++++ rp-l2tp-0.4-4/libevent/Makefile.in	2005-03-09 16:26:49.000000000 +0100
+@@ -18,24 +18,27 @@
+ 
+ libevent.a: $(OBJS)
+ 	rm -f libevent.a
+-	ar -cq libevent.a $(OBJS)
++	$(AR) r libevent.a $(OBJS)
+ 	@RANLIB@ libevent.a
+ 
+ event.o: event.c $(HDRS)
+-	gcc $(CFLAGS) -c -o event.o event.c
++	$(CC) $(CFLAGS) -c -o event.o event.c
+ 
+ hash.o: hash.c $(HDRS)
+-	gcc $(CFLAGS) -c -o hash.o hash.c
++	$(CC) $(CFLAGS) -c -o hash.o hash.c
+ 
+ event_sig.o: event_sig.c $(HDRS)
+-	gcc $(CFLAGS) -c -o event_sig.o event_sig.c
++	$(CC) $(CFLAGS) -c -o event_sig.o event_sig.c
+ 
+ event_tcp.o: event_tcp.c $(HDRS)
+-	gcc $(CFLAGS) -c -o event_tcp.o event_tcp.c
++	$(CC) $(CFLAGS) -c -o event_tcp.o event_tcp.c
+ 
+ clean: FORCE
+ 	rm -f *.a *.o *~
+ 
++distclean: clean
++	rm -f Makefile
++
+ FORCE:
+ 
+-.phony: FORCE
+\ No newline at end of file
++.phony: FORCE
+diff -ruN rp-l2tp-0.4-orig/main.c rp-l2tp-0.4-4/main.c
+--- rp-l2tp-0.4-orig/main.c	2002-09-30 21:45:00.000000000 +0200
++++ rp-l2tp-0.4-4/main.c	2005-03-09 16:26:49.000000000 +0100
+@@ -68,7 +68,7 @@
+     l2tp_peer_init();
+     l2tp_debug_set_bitmask(debugmask);
+ 
+-    if (l2tp_parse_config_file(es, "/etc/l2tp/l2tp.conf") < 0) {
++    if (l2tp_parse_config_file(es, "/etc/l2tp.conf") < 0) {
+ 	l2tp_die();
+     }
+ 
+diff -ruN rp-l2tp-0.4-orig/man/l2tp.conf.5 rp-l2tp-0.4-4/man/l2tp.conf.5
+--- rp-l2tp-0.4-orig/man/l2tp.conf.5	2004-07-01 16:58:56.000000000 +0200
++++ rp-l2tp-0.4-4/man/l2tp.conf.5	2005-03-09 16:26:49.000000000 +0100
+@@ -155,7 +155,7 @@
+ in the global section.  The only option available is:
+ .IP "\fBsocket-path\fP \fIpathname\fR"
+ Specifies the path name of the UNIX-domain socket for controlling the
+-daemon.  Defaults to \fI/var/run/l2tpctrl\fR.
++daemon.  Defaults to \fI/var/run/l2tp.sock\fR.
+ .PP
+ Even if you do not supply any options to cmd, you \fImust\fR have
+ a \fBsection cmd\fR line to activate the handler.
+diff -ruN rp-l2tp-0.4-orig/man/l2tpd.8 rp-l2tp-0.4-4/man/l2tpd.8
+--- rp-l2tp-0.4-orig/man/l2tpd.8	2002-09-30 21:45:00.000000000 +0200
++++ rp-l2tp-0.4-4/man/l2tpd.8	2005-03-09 16:26:49.000000000 +0100
+@@ -47,17 +47,17 @@
+ fairly lightweight and efficient.
+ 
+ .SH L2TPD CONFIGURATION
+-On startup, \fBl2tpd\fR reads the configuration file \fB/etc/l2tp/l2tp.conf\fR.
++On startup, \fBl2tpd\fR reads the configuration file \fB/etc/l2tp.conf\fR.
+ This configuration file sets operating parameters, describes peers and loads
+ and configures handlers.  See \fBl2tp.conf\fR(5) for configuration
+ file details.
+ 
+ .SH FILES
+ .TP
+-.B /etc/l2tp/l2tp.conf
++.B /etc/l2tp.conf
+ Main configuration file.
+ .TP
+-.B /var/run/l2tpctrl
++.B /var/run/l2tp.sock
+ Control socket for \fBcmd.so\fR handler.
+ 
+ .SH AUTHORS
+diff -ruN rp-l2tp-0.4-orig/utils.c rp-l2tp-0.4-4/utils.c
+--- rp-l2tp-0.4-orig/utils.c	2002-09-30 21:45:00.000000000 +0200
++++ rp-l2tp-0.4-4/utils.c	2005-03-09 16:26:49.000000000 +0100
+@@ -182,7 +182,7 @@
+ *  -1 on error, 0 if OK
+ * %DESCRIPTION:
+ *  Dynamically-loads a handler and initializes it.  If fname is not
+-*  an absolute path name, we load the handler from /usr/lib/l2tp/plugins
++*  an absolute path name, we load the handler from /usr/lib/l2tp
+ ***********************************************************************/
+ int
+ l2tp_load_handler(EventSelector *es,
+@@ -196,7 +196,7 @@
+     if (*fname == '/') {
+ 	handle = dlopen(fname, RTLD_NOW);
+     } else {
+-	snprintf(buf, sizeof(buf), "%s/lib/l2tp/plugins/%s", PREFIX, fname);
++	snprintf(buf, sizeof(buf), "%s/lib/l2tp/%s", PREFIX, fname);
+ 	buf[sizeof(buf)-1] = 0;
+ 	handle = dlopen(buf, RTLD_NOW);
+     }

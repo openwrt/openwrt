@@ -216,6 +216,7 @@ package-$(BR2_PACKAGE_RARPD) += rarpd
 package-$(BR2_COMPILE_READLINE) += readline
 package-$(BR2_PACKAGE_REAIM) += reaim
 package-$(BR2_PACKAGE_ROBOCFG) += robocfg
+package-$(BR2_COMPILE_RP_L2TP) += rp-l2tp
 package-$(BR2_COMPILE_RP_PPPOE) += rp-pppoe
 package-$(BR2_PACKAGE_RRDCOLLECT) += rrdcollect
 package-$(BR2_COMPILE_RRDTOOL) += rrdtool
