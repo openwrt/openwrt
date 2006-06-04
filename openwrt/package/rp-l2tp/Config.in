@@ -1,0 +1,34 @@
+#menu "rp-l2tp............................ Roaring Penguin PPPoE (PPP over Ethernet) implementation"
+
+config BR2_COMPILE_RP_L2TP
+	tristate
+	default n
+	depends BR2_PACKAGE_RP_L2TPD
+
+config BR2_PACKAGE_RP_L2TPD
+	prompt "rp-l2tpd.......................... an L2TP (Layer 2 Tunneling Protocol) daemon"
+	tristate
+	default m if CONFIG_DEVEL
+	select BR2_COMPILE_RP_L2TP
+	help
+	  An L2TP (Layer 2 Tunneling Protocol) daemon.
+	  
+	  http://sourceforge.net/projects/rp-l2tp/
+
+config BR2_PACKAGE_RP_L2TPD_MOD_CMD
+	prompt   "rp-l2tpd-mod-cmd................ a simple command handler for the L2TP daemon"
+	tristate
+	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_RP_L2TPD
+	help
+	  A simple command handler for the L2TP daemon.
+
+config BR2_PACKAGE_RP_L2TPD_MOD_PPP
+	prompt   "rp-l2tpd-mod-ppp................ a PPP handler for the L2TP daeomon"
+	tristate
+	default m if CONFIG_DEVEL
+	depends BR2_PACKAGE_RP_L2TPD
+	help
+	  A PPP handler for the L2TP daeomon.
+
+#endmenu
