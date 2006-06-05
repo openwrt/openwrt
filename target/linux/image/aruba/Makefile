@@ -25,7 +25,7 @@ ifneq ($(CONFIG_ARUBA_RAMDISK),y)
 ifeq ($(1),jffs2-64k)
 endif
 	@dd if=$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL).ari of=$(KDIR)/image.tmp bs=655360 conv=sync
-	@cat $(KDIR)/root.$(FS) >> $(KDIR)/image.tmp
+	@cat $(KDIR)/root.$(1) >> $(KDIR)/image.tmp
 	@dd if=$(KDIR)/image.tmp of=$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(patsubst jffs2-%,jffs2,$(1)).bin bs=3604480 conv=sync
 	@rm -f $(KDIR)/image.tmp
 endif
