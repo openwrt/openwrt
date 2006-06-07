@@ -106,6 +106,13 @@ void entry(unsigned long icache_size, unsigned long icache_lsize,
 {
 	unsigned int i;  /* temp value */
 	unsigned int osize; /* uncompressed size */
+	volatile unsigned int arg0, arg1, arg2, arg3;
+
+	/* restore argument registers */
+	__asm__ __volatile__ ("ori %0, $12, 0":"=r"(arg0));
+	__asm__ __volatile__ ("ori %0, $13, 0":"=r"(arg1));
+	__asm__ __volatile__ ("ori %0, $14, 0":"=r"(arg2));
+	__asm__ __volatile__ ("ori %0, $15, 0":"=r"(arg3));
 
 	ILzmaInCallback callback;
 	CLzmaDecoderState vs;
@@ -142,6 +149,6 @@ void entry(unsigned long icache_size, unsigned long icache_lsize,
 		blast_icache(icache_size, icache_lsize);
 
 		/* Jump to load address */
-		((void (*)(void)) KERNEL_ENTRY)();
+		((void (*)(int a0, int a1, int a2, int a3)) KERNEL_ENTRY)(arg0, arg1, arg2, arg3);
 	}
 }

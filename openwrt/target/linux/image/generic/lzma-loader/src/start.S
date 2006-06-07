@@ -34,10 +34,30 @@ LEAF(_start)
 	.set	mips32
 	.set noreorder
 
+	/* save argument registers */
+	move t4, a0
+	move t5, a1
+	move t6, a2
+	move t7, a3
+	
 	/* set up stack */
 	li	sp, 0xa0000000 + RAMSIZE - 16
-	
-	
+
+#ifdef IMAGE_COPY
+	/* Copy decompressor code to the right place */
+	li  t2, LOADADDR
+	add a0, t2, 0
+	la  a1, code_start
+	la  a2, code_stop
+$L1:
+	lw  t0, 0(a1)
+	sw  t0, 0(a0)
+	add a1, 4
+	add a0, 4
+	blt a1, a2, $L1
+	nop
+#endif
+
 	/* At this point we need to invalidate dcache and */
 	/* icache before jumping to new code */
 
@@ -128,7 +148,11 @@ noic:
 	move    a0,s3                   /* icache line size */
 	move    a1,s4                   /* icache size */
 	move    a2,s1                   /* dcache line size */
+#ifdef IMAGE_COPY
+	jal		t2
+#else
 	jal     entry
+#endif
 	move    a3,s2                   /* dcache size */
 
 	.set reorder

@@ -1,5 +1,5 @@
 OUTPUT_ARCH(mips)
-ENTRY(@ENTRY@)
+ENTRY(_start)
 SECTIONS
 {
   /* Read-only sections, merged into text segment: */
@@ -7,12 +7,8 @@ SECTIONS
   .text      :
   {
     _ftext = . ;
-    *(.text.entry)
     *(.text)
     *(.rodata)
-    lzma_start = .;
-    kernel.o
-    lzma_end = .;
   } =0
 
   .reginfo : { *(.reginfo) }
