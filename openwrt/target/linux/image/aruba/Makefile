@@ -16,7 +16,7 @@ endef
 
 define Image/Prepare
 	cat $(KDIR)/vmlinux | $(STAGING_DIR)/bin/lzma e -si -so -eos -lc1 -lp2 -pb2 > $(KDIR)/vmlinux.lzma
-	$(MAKE) -C ../generic/lzma-loader $(LOADER_MAKEOPTS) compile
+	$(MAKE) -C ../generic/lzma-loader $(LOADER_MAKEOPTS) clean compile
 endef
 
 define Image/Build

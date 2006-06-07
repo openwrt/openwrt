@@ -1,4 +1,4 @@
-LINUX_SOURCE:=linux-$(LINUX_VERSION).tar.bz2
+LINUX_SOURCE:=$(LINUX_NAME).tar.bz2
 LINUX_SITE=http://www.us.kernel.org/pub/linux/kernel/v$(KERNEL) \
            http://www.us.kernel.org/pub/linux/kernel/v$(KERNEL) \
            http://www.kernel.org/pub/linux/kernel/v$(KERNEL) \
@@ -43,7 +43,22 @@ $(LINUX_DIR)/.configured: $(LINUX_DIR)/.patched
 	touch $@
 endif
 
-$(LINUX_DIR)/vmlinux: $(STAMP_DIR)/.linux-compile pkg-install
+ramdisk-config: $(LINUX_DIR)/.configured FORCE
+	mv $(LINUX_DIR)/.config $(LINUX_DIR)/.config.old
+	grep -v INITRAMFS $(LINUX_DIR)/.config.old > $(LINUX_DIR)/.config
+ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
+	echo 'CONFIG_INITRAMFS_SOURCE="../../root"' >> $(LINUX_DIR)/.config
+	echo 'CONFIG_INITRAMFS_ROOT_UID=0' >> $(LINUX_DIR)/.config
+	echo 'CONFIG_INITRAMFS_ROOT_GID=0' >> $(LINUX_DIR)/.config
+	mkdir -p $(BUILD_DIR)/root/etc/init.d
+	$(CP) ../generic-2.6/files/init $(BUILD_DIR)/root/
+	$(CP) ../generic-2.6/files/init.d/S00initramfs $(BUILD_DIR)/root/etc/init.d/
+else
+	rm -f $(BUILD_DIR)/root/init $(BUILD_DIR)/root/etc/init.d/S00initramfs
+	echo 'CONFIG_INITRAMFS_SOURCE=""' >> $(LINUX_DIR)/.config
+endif
+
+$(LINUX_DIR)/vmlinux: $(STAMP_DIR)/.linux-compile pkg-install ramdisk-config
 	$(MAKE) -C $(LINUX_DIR) CROSS_COMPILE="$(KERNEL_CROSS)" ARCH=$(LINUX_KARCH) PATH=$(TARGET_PATH)
 
 $(LINUX_KERNEL): $(LINUX_DIR)/vmlinux
@@ -72,6 +87,7 @@ $(KERNEL_IPKG):
 
 $(BUILD_DIR)/kernel.mk: $(LINUX_DIR) FORCE
 	echo "BOARD:=$(BOARD)" > $@
+	echo "LINUX_NAME:=$(LINUX_NAME)" >> $@
 	echo "LINUX_VERSION:=$(LINUX_VERSION)" >> $@
 	echo "LINUX_RELEASE:=$(LINUX_RELEASE)" >> $@
 
