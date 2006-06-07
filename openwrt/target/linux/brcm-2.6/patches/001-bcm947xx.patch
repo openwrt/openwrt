@@ -11807,7 +11807,7 @@ diff -Nur linux-2.6.16/arch/mips/kernel/cpu-probe.c linux-2.6.16-owrt/arch/mips/
 diff -Nur linux-2.6.16/arch/mips/kernel/head.S linux-2.6.16-owrt/arch/mips/kernel/head.S
 --- linux-2.6.16/arch/mips/kernel/head.S	2006-03-20 06:53:29.000000000 +0100
 +++ linux-2.6.16-owrt/arch/mips/kernel/head.S	2006-03-21 09:31:00.000000000 +0100
-@@ -107,6 +107,14 @@
+@@ -107,6 +107,11 @@
  #endif
  	.endm
  
@@ -11815,9 +11815,6 @@ diff -Nur linux-2.6.16/arch/mips/kernel/head.S linux-2.6.16-owrt/arch/mips/kerne
 +#undef eret
 +#define eret nop; nop; eret
 +#endif
-+
-+	j	kernel_entry
-+	nop
 +
  	/*
  	 * Reserved space for exception handlers.
