@@ -1,0 +1,12 @@
+diff -urN madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
+--- madwifi.old/ath/if_ath.c	2006-06-08 17:20:12.000000000 +0200
++++ madwifi.dev/ath/if_ath.c	2006-06-08 18:30:10.000000000 +0200
+@@ -252,7 +252,7 @@
+ static int ath_outdoor = AH_FALSE;		/* enable outdoor use */
+ static int ath_xchanmode = AH_TRUE;		/* enable extended channels */
+ static char *autocreate = NULL;
+-static int rfkill = -1;
++static int rfkill = 0;
+ static int countrycode = -1;
+ static int outdoor = -1;
+ static int xchanmode = -1;
