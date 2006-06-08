@@ -98,10 +98,10 @@ world: ./scripts/config/conf FORCE
 clean: FORCE
 	rm -rf build_* bin
 
-dirclean: clean FORCE
+dirclean: clean
 	rm -rf staging_dir_* toolchain_build_*
 
-distclean: dirclean FORCE
+distclean: dirclean config-clean
 	rm -rf dl .*config* .pkg*
 
 .PHONY: FORCE
