@@ -29,7 +29,13 @@ $(PKG_BUILD_DIR)/.built:
 $(IPKG_EBTABLES):
 	install -d -m0755 $(IDIR_EBTABLES)/etc
 	install -m0644 $(PKG_BUILD_DIR)/ethertypes $(IDIR_EBTABLES)/etc/
+	install -d -m0755 $(IDIR_EBTABLES)/usr/lib
+	install -m0755 $(PKG_BUILD_DIR)/lib*.so $(IDIR_EBTABLES)/usr/lib/
+	install -d -m0755 $(IDIR_EBTABLES)/usr/lib/ebtables
+	install -m0755 $(PKG_BUILD_DIR)/extensions/*.so $(IDIR_EBTABLES)/usr/lib/ebtables/
 	install -d -m0755 $(IDIR_EBTABLES)/usr/sbin
 	install -m0755 $(PKG_BUILD_DIR)/ebtables $(IDIR_EBTABLES)/usr/sbin/
+	install -m0755 $(PKG_BUILD_DIR)/ebtables-save $(IDIR_EBTABLES)/usr/sbin/
+	install -m0755 $(PKG_BUILD_DIR)/ebtables-restore $(IDIR_EBTABLES)/usr/sbin/
 	$(RSTRIP) $(IDIR_EBTABLES)
 	$(IPKG_BUILD) $(IDIR_EBTABLES) $(PACKAGE_DIR)
