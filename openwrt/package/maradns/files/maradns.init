@@ -1,3 +1,5 @@
 #!/bin/sh
 [ -d /etc/maradns ] || mkdir -p /etc/maradns
-/usr/sbin/maradns >/dev/null 2>&1 &
+[ -d /etc/maradns/logger ] || mkdir -p /etc/maradns/logger
+duende /usr/sbin/maradns
+duende /usr/sbin/zoneserver
