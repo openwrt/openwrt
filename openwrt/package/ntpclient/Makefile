@@ -22,7 +22,7 @@ $(PKG_BUILD_DIR)/.configured:
 
 $(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR) \
-		CC=$(TARGET_CC) CFLAGS="$(TARGET_CFLAGS)"
+		CC=$(TARGET_CC) CFLAGS="$(TARGET_CFLAGS)" all adjtimex
 	touch $@
 
 $(IPKG_NTPCLIENT):
@@ -30,6 +30,8 @@ $(IPKG_NTPCLIENT):
 	install -m0755 ./files/ntpclient.init $(IDIR_NTPCLIENT)/etc/hotplug.d/iface/10-ntpclient
 	install -d -m0755 $(IDIR_NTPCLIENT)/usr/sbin
 	install -m0755 $(PKG_BUILD_DIR)/ntpclient $(IDIR_NTPCLIENT)/usr/sbin/
+	install -m0755 $(PKG_BUILD_DIR)/adjtimex $(IDIR_NTPCLIENT)/usr/sbin/
+	install -m0755 $(PKG_BUILD_DIR)/rate.awk $(IDIR_NTPCLIENT)/usr/sbin/
 	$(RSTRIP) $(IDIR_NTPCLIENT)
 	$(IPKG_BUILD) $(IDIR_NTPCLIENT) $(PACKAGE_DIR)
 
