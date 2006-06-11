@@ -38,8 +38,8 @@ foreach $name (sort {uc($a) cmp uc($b)} keys %pkg) {
 	my $depline = "";
 	foreach my $dep (@{$pkg{$name}->{depends}}) {
 		my $idx;
-	        if (defined $pkg{$dep}->{src} && $pkg{$name}->{src} ne $pkg{$dep}->{src}) {
-			$idx = $pkg{$dep}->{src};
+		if (defined $pkg{$dep}->{src}) {
+			($pkg{$name}->{src} ne $pkg{$dep}->{src}) and $idx = $pkg{$dep}->{src};
 		} elsif (defined $pkg{$dep}) {
 			$idx = $dep;
 		}
