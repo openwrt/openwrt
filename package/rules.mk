@@ -257,10 +257,6 @@ define Build/Compile
   $(call Build/Compile/Default,)
 endef
 
-define Build/Clean
-	$(MAKE) clean
-endef
-
 ifneq ($(DUMP),)
   dumpinfo: FORCE
 	@$(DUMPINFO)
@@ -282,5 +278,6 @@ else
   clean-targets:
   clean: FORCE
 	@$(MAKE) clean-targets
+	$(call Build/Clean)
 	rm -rf $(PKG_BUILD_DIR)
 endif
