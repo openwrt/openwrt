@@ -1,0 +1,52 @@
+diff -ur hostapd.old/driver_madwifi.c hostapd.dev/driver_madwifi.c
+--- hostapd.old/driver_madwifi.c	2006-03-25 20:55:18.000000000 +0100
++++ hostapd.dev/driver_madwifi.c	2006-06-12 21:54:22.000000000 +0200
+@@ -20,11 +20,6 @@
+ 
+ #include <include/compat.h>
+ #include <net80211/ieee80211.h>
+-#ifdef WME_NUM_AC
+-/* Assume this is built against BSD branch of madwifi driver. */
+-#define MADWIFI_BSD
+-#include <net80211/_ieee80211.h>
+-#endif /* WME_NUM_AC */
+ #include <net80211/ieee80211_crypto.h>
+ #include <net80211/ieee80211_ioctl.h>
+ 
+@@ -168,7 +164,10 @@
+ 	}
+ 	return 0;
+ }
+-
++static int madwifi_get_inact_sec(void *priv, const u8 *addr)
++{
++return 0;
++}
+ static int
+ set80211param(struct madwifi_driver_data *drv, int op, int arg)
+ {
+@@ -1204,8 +1203,6 @@
+ 		goto bad;
+ 	}
+ 
+-	madwifi_set_iface_flags(drv, 0);	/* mark down during setup */
+-
+ 	hapd->driver = &drv->ops;
+ 	return 0;
+ bad:
+@@ -1226,7 +1223,6 @@
+ 
+ 	drv->hapd->driver = NULL;
+ 
+-	(void) madwifi_set_iface_flags(drv, 0);
+ 	if (drv->ioctl_sock >= 0)
+ 		close(drv->ioctl_sock);
+ 	if (drv->sock_recv != NULL && drv->sock_recv != drv->sock_xmit)
+@@ -1306,6 +1452,7 @@
+ 	.get_ssid		= madwifi_get_ssid,
+ 	.set_countermeasures	= madwifi_set_countermeasures,
+ 	.sta_clear_stats        = madwifi_sta_clear_stats,
++	.get_inact_sec 		= madwifi_get_inact_sec,
+ };
+ 
+ void madwifi_driver_register(void)
