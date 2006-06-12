@@ -35,6 +35,7 @@ compile:
 install:
 	$(call Image/Prepare)
 	$(call Image/mkfs/prepare)
+	$(call Image/BuildKernel)
 	$(call Image/mkfs/jffs2)
 	$(call Image/mkfs/squashfs)
 	$(call Image/mkfs/tgz)
