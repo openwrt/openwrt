@@ -21,7 +21,7 @@ endef
 
 define Image/Build
 	./addVersion -n ArubaOS $(KDIR)/loader.elf $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL).ari version
-ifneq ($(CONFIG_ARUBA_RAMDISK),y)
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 ifeq ($(1),jffs2-64k)
 endif
 	@dd if=$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL).ari of=$(KDIR)/image.tmp bs=655360 conv=sync
