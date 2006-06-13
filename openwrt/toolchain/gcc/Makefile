@@ -158,12 +158,6 @@ gcc-install: $(GCC_BUILD_DIR2)/.compiled FORCE
 		   	$(GNU_TARGET_NAME)$${app##$(REAL_GNU_TARGET_NAME)}; \
 		done; \
 	);
-# We do another ugly hack here because the standard behaviour is
-# to include a reference to libgcc.so.1 in all binaries. For flash space
-# saving, we change the specs file to link in a static libgcc here. 
-	if [ -f $(STAGING_DIR)/lib/gcc/$(REAL_GNU_TARGET_NAME)/$(GCC_VERSION)/specs ] ; then \
-		patch -d $(STAGING_DIR)/lib/gcc/$(REAL_GNU_TARGET_NAME)/$(GCC_VERSION)/ -p0 < ./$(GCC_VERSION)/static-libgcc.patch.conditional ; \
-	fi;
 
 source: $(DL_DIR)/$(GCC_SOURCE)
 prepare: $(STAGING_DIR)/bin/$(REAL_GNU_TARGET_NAME)-gcc
