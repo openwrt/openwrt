@@ -34,7 +34,7 @@ endef
 define Package/libgcc
  SECTION:=libs
  CATEGORY:=Libraries
- DEFAULT:=m, y if GCC_VERSION_4_0_2 || GCC_VERSION_4_0_3 || GCC_VERSION_4_1_0
+ DEFAULT:=y
  TITLE:=GCC support library
  VERSION:=$(LIBGCC_VERSION)-$(PKG_RELEASE)
  DESCRIPTION:=$(TITLE)
