@@ -23,13 +23,15 @@ define Image/BuildKernel
 	./addVersion -n ArubaOS $(KDIR)/loader.elf $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL).ari version
 endef
 
-ifeq ($(1),jffs2-64k)
-define Image/Build
+define Image/Build/jffs2-64k
 	@dd if=$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL).ari of=$(KDIR)/image.tmp bs=655360 conv=sync
 	@cat $(KDIR)/root.$(1) >> $(KDIR)/image.tmp
 	@dd if=$(KDIR)/image.tmp of=$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(patsubst jffs2-%,jffs2,$(1)).bin bs=3604480 conv=sync
 	@rm -f $(KDIR)/image.tmp
 endef
-endif
+
+define Image/Build
+	$(call Image/Build/$(1),$(1))
+endef
 
 $(eval $(call BuildImage))
