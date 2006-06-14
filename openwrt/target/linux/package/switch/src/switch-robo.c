@@ -315,6 +315,8 @@ static int handle_vlan_port_read(void *driver, char *buf, int nr)
 		}
 	}
 
+	buf[len] = '\0';
+
 	return len;
 }
 
