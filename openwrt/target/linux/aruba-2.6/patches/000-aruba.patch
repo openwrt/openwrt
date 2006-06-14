@@ -10492,18 +10492,6 @@ diff -Nur linux-2.6.16/include/asm-mips/mach-generic/irq.h linux-2.6.16-owrt/inc
 +#define NR_IRQS	256
  
  #endif /* __ASM_MACH_GENERIC_IRQ_H */
-diff -Nur linux-2.6.16/include/linux/init.h linux-2.6.16-owrt/include/linux/init.h
---- linux-2.6.16/include/linux/init.h	2006-03-20 06:53:29.000000000 +0100
-+++ linux-2.6.16-owrt/include/linux/init.h	2006-03-20 14:25:10.000000000 +0100
-@@ -86,6 +86,8 @@
- 	static initcall_t __initcall_##fn __attribute_used__ \
- 	__attribute__((__section__(".initcall" level ".init"))) = fn
- 
-+#define early_initcall(fn)              __define_initcall(".early1",fn)
-+
- #define core_initcall(fn)		__define_initcall("1",fn)
- #define postcore_initcall(fn)		__define_initcall("2",fn)
- #define arch_initcall(fn)		__define_initcall("3",fn)
 diff -Nur linux-2.6.16/include/linux/kernel.h linux-2.6.16-owrt/include/linux/kernel.h
 --- linux-2.6.16/include/linux/kernel.h	2006-03-20 06:53:29.000000000 +0100
 +++ linux-2.6.16-owrt/include/linux/kernel.h	2006-03-20 14:25:10.000000000 +0100
