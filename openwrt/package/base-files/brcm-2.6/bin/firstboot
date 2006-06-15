@@ -1,0 +1,90 @@
+#!/bin/sh
+# $Id$
+
+rom=$(awk '/squashfs/ {print $2}' /proc/mounts)
+jffs=$(awk '/jffs2/ {print $2}' /proc/mounts)
+
+dupe() { # <new_root> <old_root>
+	cd $1
+	echo -n "creating directories... "
+	{
+		cd $2 
+		find . -xdev -type d
+		echo "./dev ./jffs ./mnt ./proc ./tmp ./sys"
+		# xdev skips mounted directories
+		cd $1 
+	} | xargs mkdir -p
+	echo "done"
+
+	echo -n "setting up symlinks... "
+	for file in $(cd $2; find . -xdev -type f;); do
+		case "$file" in
+		./rom/note) ;; #nothing
+		./etc/config*|\
+		./etc/resolv.conf|\
+		./usr/lib/ipkg/info) cp -af $2/$file $file;;
+		*) ln -sf /rom/${file#./*} $file;;
+		esac
+	done
+	for file in $(cd $2; find . -xdev -type l;); do
+		cp -af $2/${file#./*} $file
+	done
+	echo "done"
+}
+
+pivot() { # <new_root> <old_root>
+	mount -o move /proc $1/proc && \
+	pivot_root $1 $1$2 && {
+		mount -o move $2/dev /dev
+		mount -o move $2/tmp /tmp
+		mount -o move $2/sys /sys
+		return 0
+	}
+}
+
+mountdp() { # <device> <mount_point> <ignored> <fs>
+        dev=$1; mnt=$2; shift 2; opt=$*
+	mount $dev $mnt $opt
+	dupe $mnt $rom
+	pivot $mnt /rom
+}
+
+ramoverlay() {
+	mkdir -p /tmp/root
+	mountdp /tmp/root /mnt -o bind
+}
+
+[ "${0##*/}" = "firstboot" ] && {
+	[ -z "$rom" ] && {
+		echo "You do not have a squashfs partition; aborting"
+		echo "(firstboot cannot be run on jffs2 based firmwares)"
+		exit 1
+	}
+
+	[ "$1" = "switch2jffs" ] && {
+		mtd erase OpenWrt
+		mount -o remount,ro none / # try to avoid fs changing while copying
+		mount -o bind / /mnt
+		mount /dev/mtdblock/4 /rom/jffs -t jffs2
+		echo -n "copying files ... "
+		cp -a /mnt/* /rom/jffs
+		umount /mnt
+		echo "done"
+		pivot /rom /mnt
+		mount -o move /mnt /tmp/root
+		pivot /jffs /rom
+		jffs2root --clean
+		exit 0
+	}
+
+	# script run manually
+	[ \! -z "$jffs" ] && {
+		echo "firstboot has already been run"
+		echo "jffs2 partition is mounted, only resetting files"
+		dupe $jffs $rom
+		exit 0
+	}
+
+	mtd erase OpenWrt
+	mountdp /dev/mtdblock/4 /jffs -t jffs2
+}

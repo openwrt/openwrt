@@ -1,6 +1,7 @@
 #!/bin/sh
 . /etc/functions.sh
 
+[ -f /proc/mounts ] || /sbin/mount_root
 [ -f /proc/jffs2_bbc ] && echo "S" > /proc/jffs2_bbc
 vconfig set_name_type VLAN_PLUS_VID_NO_PAD
 
