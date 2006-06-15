@@ -52,7 +52,6 @@ ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 	echo 'CONFIG_INITRAMFS_ROOT_GID=0' >> $(LINUX_DIR)/.config
 	mkdir -p $(BUILD_DIR)/root/etc/init.d
 	$(CP) ../generic-2.6/files/init $(BUILD_DIR)/root/
-	$(CP) ../generic-2.6/files/init.d/S00initramfs $(BUILD_DIR)/root/etc/init.d/
 else
 	rm -f $(BUILD_DIR)/root/init $(BUILD_DIR)/root/etc/init.d/S00initramfs
 	echo 'CONFIG_INITRAMFS_SOURCE=""' >> $(LINUX_DIR)/.config
