@@ -43,6 +43,12 @@ config LINUX_2_6_BRCM
 	  Build firmware images for Broadcom based routers
 	  (e.g. Netgear WGT634u)
 
+config LINUX_2_6_RB532
+	bool "Mikrotik RB532 [2.6]"
+	select mipsel
+	select LINUX_2_6
+	select PCI_SUPPORT
+
 config LINUX_2_4_AR7
 	bool "TI AR7 [2.4]"
 	select mipsel

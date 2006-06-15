@@ -1,0 +1,48 @@
+diff -ur linux.old/fs/jffs2/scan.c linux.dev/fs/jffs2/scan.c
+--- linux.old/fs/jffs2/scan.c	2006-05-31 02:31:44.000000000 +0200
++++ linux.dev/fs/jffs2/scan.c	2006-06-15 02:20:32.000000000 +0200
+@@ -120,8 +120,11 @@
+ 		/* reset summary info for next eraseblock scan */
+ 		jffs2_sum_reset_collected(s);
+ 
+-		ret = jffs2_scan_eraseblock(c, jeb, buf_size?flashbuf:(flashbuf+jeb->offset),
+-						buf_size, s);
++		if (c->flags & (1 << 7))
++			ret = BLK_STATE_ALLFF;
++		else
++			ret = jffs2_scan_eraseblock(c, jeb, buf_size?flashbuf:(flashbuf+jeb->offset),
++							buf_size, s);
+ 
+ 		if (ret < 0)
+ 			goto out;
+@@ -222,6 +225,12 @@
+ 		}
+ 	}
+ 
++	if (c->flags & (1 << 7)) {
++		printk("jffs2_scan_medium(): erasing all blocks after the end marker...\n");
++		jffs2_erase_pending_blocks(c, -1);
++		printk("jffs2_scan_medium(): done.\n");
++	}
++
+ 	if (jffs2_sum_active() && s)
+ 		kfree(s);
+ 
+@@ -389,6 +398,17 @@
+ 			return err;
+ 	}
+ 
++	if ((buf[0] == 0xde) &&
++		(buf[1] == 0xad) &&
++		(buf[2] == 0xc0) &&
++		(buf[3] == 0xde)) {
++		/* end of filesystem. erase everything after this point */
++		printk("jffs2_scan_eraseblock(): End of filesystem marker found at 0x%x\n", jeb->offset);
++		c->flags |= (1 << 7);
++
++		return BLK_STATE_ALLFF;
++	}
++	
+ 	/* We temporarily use 'ofs' as a pointer into the buffer/jeb */
+ 	ofs = 0;
+ 

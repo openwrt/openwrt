@@ -1,0 +1,18 @@
+diff -urN linux.old/drivers/serial/8250.c linux.dev/drivers/serial/8250.c
+--- linux.old/drivers/serial/8250.c	2006-06-08 20:21:20.000000000 +0200
++++ linux.dev/drivers/serial/8250.c	2006-06-08 20:19:40.000000000 +0200
+@@ -351,6 +351,13 @@
+ 	default:
+ 		outb(value, up->port.iobase + offset);
+ 	}
++
++#if defined(CONFIG_IDT_EB434) || defined(CONFIG_MIKROTIK_RB500)
++	__SLOW_DOWN_IO;
++	__SLOW_DOWN_IO;
++	__SLOW_DOWN_IO;
++	__SLOW_DOWN_IO;
++#endif
+ }
+ 
+ /*
+
