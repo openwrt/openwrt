@@ -78,6 +78,7 @@ define Package/libopenssl
  SECTION:=base
  CATEGORY:=Libraries
  TITLE:=Open source SSL libraries
+ DEPENDS:=+zlib
  DESCRIPTION:=Open source SSL (Secure Socket Layer) libraries
  URL:=http://www.openssl.org/
 endef
