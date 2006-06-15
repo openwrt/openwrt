@@ -26,8 +26,8 @@ endef
 define Package/dropbearconvert
 $(call Package/dropbear)
 TITLE:=Utility for converting SSH keys
+DEFAULT:=m if ALL
 DESCRIPTION:=Utility for converting SSH keys
-DEPENDS:=+zlib
 endef
 
 define Build/Configure
