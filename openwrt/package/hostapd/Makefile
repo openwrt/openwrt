@@ -6,7 +6,7 @@ PKG_NAME:=hostapd
 PKG_VERSION:=0.5.3
 PKG_RELEASE:=1
 PKG_MD5SUM:=4e3134e8b0d86e831230f8c620fd81bb
-PKG_BUILDDEP:=madwifi openssl
+PKG_BUILDDEP:=madwifi
 
 PKG_SOURCE_URL:=http://hostap.epitest.fi/releases/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
