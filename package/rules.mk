@@ -47,7 +47,7 @@ define Build/DefaultTargets
 	rm -f $(STAGING_DIR)/stampfiles/.$(PKG_NAME)-installed
 
   package-rebuild: FORCE
-	@-rm $(PKG_BUILD_DIR)/.built
+	@-rm -f $(PKG_BUILD_DIR)/.built
 
   define Build/DefaultTargets
   endef
@@ -211,8 +211,9 @@ define Build/Prepare
 endef
 
 define Build/Configure/Default
-	@(cd $(PKG_BUILD_DIR); \
+	@(cd $(PKG_BUILD_DIR)/$(3); \
 	[ -x configure ] && \
+		$(2) \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
 		CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include" \
