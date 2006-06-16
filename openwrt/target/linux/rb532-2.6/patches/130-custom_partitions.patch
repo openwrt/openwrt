@@ -49,7 +49,7 @@ diff -urN linux.old/fs/partitions/Makefile linux.dev/fs/partitions/Makefile
 diff -urN linux.old/fs/partitions/openwrt.c linux.dev/fs/partitions/openwrt.c
 --- linux.old/fs/partitions/openwrt.c	1970-01-01 01:00:00.000000000 +0100
 +++ linux.dev/fs/partitions/openwrt.c	2006-06-15 01:27:17.000000000 +0200
-@@ -0,0 +1,246 @@
+@@ -0,0 +1,249 @@
 +/*
 + *  fs/partitions/openwrt.c
 + *
@@ -285,6 +285,8 @@ diff -urN linux.old/fs/partitions/openwrt.c linux.dev/fs/partitions/openwrt.c
 +			printk(" >");
 +			continue;
 +		}
++		if ((start + size) > get_capacity(bdev->bd_disk))
++			size = get_capacity(bdev->bd_disk) - start;
 +		last_block = start + size;
 +		put_partition(state, slot, start, size);
 +	}
@@ -296,6 +298,7 @@ diff -urN linux.old/fs/partitions/openwrt.c linux.dev/fs/partitions/openwrt.c
 +	put_dev_sector(sect);
 +	return 1;
 +}
++
 diff -urN linux.old/fs/partitions/openwrt.h linux.dev/fs/partitions/openwrt.h
 --- linux.old/fs/partitions/openwrt.h	1970-01-01 01:00:00.000000000 +0100
 +++ linux.dev/fs/partitions/openwrt.h	2006-06-15 01:27:17.000000000 +0200
