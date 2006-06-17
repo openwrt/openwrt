@@ -1,7 +1,7 @@
 # $Id$
 
 include $(TOPDIR)/rules.mk
-include ../../rules.mk
+include $(TOPDIR)/package/kernel.mk
 
 PKG_NAME:=shfs
 PKG_VERSION:=0.35
@@ -17,12 +17,21 @@ PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
 include $(TOPDIR)/package/rules.mk
 
-$(eval $(call PKG_template,KMOD_SHFS,kmod-shfs,$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE),$(ARCH),kernel ($(LINUX_VERSION)-$(BOARD)-$(LINUX_RELEASE))))
+define Package/kmod-shfs
+ SECTION:=drivers
+ CATEGORY:=Drivers
+ DEPENDS:=
+ TITLE:=Shell FileSystem (ShFS)
+ DESCRIPTION:=Shell FileSystem (ShFS) \\\
+ShFS is a simple and easy to use Linux kernel module which allows you to \\\
+mount remote filesystems using a plain shell (SSH) connection. When using \\\
+ShFS, you can access all remote files just like the local ones, only the \\\
+access is governed through the transport security of SSH.
+ URL:=http://shfs.sourceforge.net/
+ VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
+endef
 
-$(PKG_BUILD_DIR)/.configured:
-	touch $@
-
-$(PKG_BUILD_DIR)/.built: 
+define Build/Compile
 	rm -rf $(PKG_INSTALL_DIR)
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
@@ -36,11 +45,12 @@ $(PKG_BUILD_DIR)/.built:
 		KERNEL_SOURCES="$(LINUX_DIR)" \
 		ROOT="$(PKG_INSTALL_DIR)" \
 		module module-install
-	touch $@
+endef
 
-$(IPKG_KMOD_SHFS):
-	install -m0755 -d $(IDIR_KMOD_SHFS)/lib/modules/$(LINUX_VERSION)
+define Package/kmod-shfs/install
+	install -m0755 -d $(1)/lib/modules/$(LINUX_VERSION)
 	$(CP) $(PKG_INSTALL_DIR)/lib/modules/$(LINUX_VERSION)/kernel/fs/shfs/shfs.$(LINUX_KMOD_SUFFIX) \
-	 $(IDIR_KMOD_SHFS)/lib/modules/$(LINUX_VERSION)/
-	$(IPKG_BUILD) $(IDIR_KMOD_SHFS) $(PACKAGE_DIR)
+		$(1)/lib/modules/$(LINUX_VERSION)/
+endef
 
+$(eval $(call BuildPackage,kmod-shfs))
