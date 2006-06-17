@@ -1,0 +1,16 @@
+diff -ruw fuse-2.4.0/util/fusermount.c.org fuse-2.4.0/util/fusermount.c
+--- fuse-2.4.0/util/fusermount.c.org	2005-10-14 11:34:06.000000000 +0200
++++ fuse-2.4.0/util/fusermount.c	2005-10-14 11:56:26.000000000 +0200
+@@ -42,7 +42,12 @@
+ #define FUSE_COMMFD_ENV         "_FUSE_COMMFD"
+ 
+ #define FUSE_DEV_OLD "/proc/fs/fuse/dev"
++#ifdef __UCLIBC__
++/* /dev is mounted as devfs in OpenWRT, and device is created here */
++#define FUSE_DEV_NEW "/dev/misc/fuse"
++#else
+ #define FUSE_DEV_NEW "/dev/fuse"
++#endif
+ #define FUSE_VERSION_FILE_OLD "/proc/fs/fuse/version"
+ #define FUSE_CONF "/etc/fuse.conf"
+ 
