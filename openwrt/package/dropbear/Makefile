@@ -34,44 +34,42 @@ define Build/Configure
 	$(SED) 's,^/\* #define PKG_MULTI.*,#define PKG_MULTI,g' $(PKG_BUILD_DIR)/options.h
 	$(SED) 's,^#define DO_HOST_LOOKUP,/* & */,g' $(PKG_BUILD_DIR)/options.h
 	(cd $(PKG_BUILD_DIR); rm -rf config.cache; \
-		autoconf; \
 		$(TARGET_CONFIGURE_OPTS) \
-		CFLAGS="$(TARGET_CFLAGS) -I$(STAGING_DIR)/usr/include" \
-		LDFLAGS="-L$(STAGING_DIR)/usr/lib" \
+		CFLAGS="$(TARGET_CFLAGS)" \
 		./configure \
-		--target=$(GNU_TARGET_NAME) \
-		--host=$(GNU_TARGET_NAME) \
-		--build=$(GNU_HOST_NAME) \
-		--program-prefix="" \
-		--program-suffix="" \
-		--prefix=/usr \
-		--exec-prefix=/usr \
-		--bindir=/usr/bin \
-		--datadir=/usr/share \
-		--includedir=/usr/include \
-		--infodir=/usr/share/info \
-		--libdir=/usr/lib \
-		--libexecdir=/usr/lib \
-		--localstatedir=/var \
-		--mandir=/usr/share/man \
-		--sbindir=/usr/sbin \
-		--sysconfdir=/etc \
-		$(DISABLE_LARGEFILE) \
-		$(DISABLE_NLS) \
-		--with-shared \
-		--disable-pam \
-		--enable-openpty \
-		--enable-syslog \
-		--disable-shadow \
-		--disable-lastlog \
-		--disable-utmp \
-		--disable-utmpx \
-		--disable-wtmp \
-		--disable-wtmpx \
-		--disable-loginfunc \
-		--disable-pututline \
-		--disable-pututxline \
-		--disable-zlib \
+			--target=$(GNU_TARGET_NAME) \
+			--host=$(GNU_TARGET_NAME) \
+			--build=$(GNU_HOST_NAME) \
+			--program-prefix="" \
+			--program-suffix="" \
+			--prefix=/usr \
+			--exec-prefix=/usr \
+			--bindir=/usr/bin \
+			--datadir=/usr/share \
+			--includedir=/usr/include \
+			--infodir=/usr/share/info \
+			--libdir=/usr/lib \
+			--libexecdir=/usr/lib \
+			--localstatedir=/var \
+			--mandir=/usr/share/man \
+			--sbindir=/usr/sbin \
+			--sysconfdir=/etc \
+			$(DISABLE_LARGEFILE) \
+			$(DISABLE_NLS) \
+			--with-shared \
+			--disable-pam \
+			--enable-openpty \
+			--enable-syslog \
+			--disable-shadow \
+			--disable-lastlog \
+			--disable-utmp \
+			--disable-utmpx \
+			--disable-wtmp \
+			--disable-wtmpx \
+			--disable-loginfunc \
+			--disable-pututline \
+			--disable-pututxline \
+			--disable-zlib \
 	);
 endef
 
@@ -86,21 +84,21 @@ define Build/Compile
 endef
 	
 define Package/dropbear/install
-	mkdir -p $(1)/usr/bin
-	mkdir -p $(1)/usr/sbin
-	install -m 755 $(PKG_BUILD_DIR)/dropbearmulti \
+	install -d -m0755 $(1)/usr/sbin
+	install -m0755 $(PKG_BUILD_DIR)/dropbearmulti \
 		$(1)/usr/sbin/dropbear
+	install -d -m0755 $(1)/usr/bin
 	ln -sf ../sbin/dropbear $(1)/usr/bin/scp
 	ln -sf ../sbin/dropbear $(1)/usr/bin/ssh
 	ln -sf ../sbin/dropbear $(1)/usr/bin/dbclient
 	ln -sf ../sbin/dropbear $(1)/usr/bin/dropbearkey
-	mkdir -p $(1)/etc/init.d
-	install -m 755 ./files/S50dropbear $(1)/etc/init.d/
+	install -d -m0755 $(1)/etc/init.d
+	install -m0755 ./files/dropbear.init $(1)/etc/init.d/S50dropbear
 endef
 
 define Package/dropbearconvert/install
-	mkdir -p $(1)/usr/bin
-	install -m 755 $(PKG_BUILD_DIR)/dropbearconvert \
+	install -d -m0755 $(1)/usr/bin
+	install -m0755 $(PKG_BUILD_DIR)/dropbearconvert \
 		$(1)/usr/bin/dropbearconvert
 endef
 
