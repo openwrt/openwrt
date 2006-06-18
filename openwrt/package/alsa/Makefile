@@ -8,11 +8,10 @@ PKG_VERSION:=1.0.11
 PKG_RELEASE:=1
 PKG_MD5SUM:=57534e4297cd683371402220e3753885
 
+PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE_URL:=ftp://ftp.alsa-project.org/pub/driver/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_CAT:=bzcat
-
-PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 
 include $(TOPDIR)/package/rules.mk
 
@@ -24,6 +23,16 @@ ifeq ($(LINUX_KARCH),mips)
 KERNEL_C_INCS:= -I$(LINUX_DIR)/include/asm-mips/mach-generic
 KERNEL_C_OPTS:= -Os -G 0 -mno-abicalls -fno-pic -finline-limit=100000 -mabi=32 -march=mips32 -Wa,-32 -Wa,-march=mips32 -Wa,-mips32 -Wa,--trap
 endif
+
+define Package/kmod-alsa
+SECTION:=drivers
+CATEGORY:=Drivers
+DEPENDS:=@PCI_SUPPORT
+TITLE:=Advanced Linux Sound Architecture
+DESCRIPTION:=Advanced Linux Sound Architecture
+URL:=http://alsa-project.org/
+VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
+endef
 
 define Build/Configure
 	(cd $(PKG_BUILD_DIR); \
@@ -49,22 +58,12 @@ define Build/Compile
 		all
 endef
 
-define Package/kmod-alsa
- SECTION:=drivers
- CATEGORY:=Drivers
- DEPENDS:=@PCI_SUPPORT
- TITLE:=Advanced Linux Sound Architecture
- DESCRIPTION:=Advanced Linux Sound Architecture
- URL:=http://alsa-project.org/
- VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
-endef
-
 define Package/kmod-alsa/install
-	install -d -m0755 $(1)/etc/modules.d
-	install -m0644 ./files/alsa.modules $(1)/etc/modules.d/70-alsa
 	install -d -m0755 $(1)/lib/modules/$(LINUX_VERSION)
 	install -m0644 $(PKG_BUILD_DIR)/modules/*.$(LINUX_KMOD_SUFFIX) \
 		$(1)/lib/modules/$(LINUX_VERSION)/
+	install -d -m0755 $(1)/etc/modules.d
+	install -m0644 ./files/alsa.modules $(1)/etc/modules.d/70-alsa
 endef
 
 $(eval $(call BuildPackage,kmod-alsa))
