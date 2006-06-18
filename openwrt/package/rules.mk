@@ -78,9 +78,9 @@ define Package/Default
 endef
 
 define BuildIPKGVariable
-pkg_$(subst -,_,$(1))_$(2) = $$(Package/$(1)/$(2))
-export pkg_$(subst -,_,$(1))_$(2)
-COMMANDS += if [ -n "$$$$$$$$pkg_$(subst -,_,$(1))_$(2)" ]; then echo "$$$$$$$$pkg_$(subst -,_,$(1))_$(2)" > $(2); fi;
+pkg_$(subst .,_,$(subst -,_,$(1)))_$(2) = $$(Package/$(1)/$(2))
+export pkg_$(subst .,_,$(subst -,_,$(1))_$(2))
+$(1)_COMMANDS += if [ -n "$$$$$$$$pkg_$(subst .,_,$(subst -,_,$(1)))_$(2)" ]; then echo "$$$$$$$$pkg_$(subst .,_,$(subst -,_,$(1)))_$(2)" > $(2); fi;
 endef
 
 define BuildPackage
@@ -175,7 +175,7 @@ define BuildPackage
 	echo "Description: $(DESCRIPTION)" | sed -e 's,\\,\n ,g' >> $$(IDIR_$(1))/CONTROL/control
 	chmod 644 $$(IDIR_$(1))/CONTROL/control
 	(cd $$(IDIR_$(1))/CONTROL; \
-		$(COMMANDS) \
+		$($(1)_COMMANDS) \
 	)
 
   $$(IPKG_$(1)): $$(IDIR_$(1))/CONTROL/control $(PKG_BUILD_DIR)/.built
