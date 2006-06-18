@@ -16,6 +16,36 @@ PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 
 include $(TOPDIR)/package/rules.mk
 
+define Package/hostapd
+SECTION:=net
+CATEGORY:=Network
+DEPENDS:=+libopenssl
+TITLE:=IEEE 802.1x Authenticator
+DESCRIPTION:=IEEE 802.1x/WPA/EAP/RADIUS Authenticator
+URL:=http://hostap.epitest.fi/
+endef
+
+define Package/hostapd/conffiles
+/etc/hostapd.conf
+endef
+
+define Package/hostapd-mini
+$(call Package/hostapd)
+TITLE:=IEEE 802.1x Authenticator (WPA-PSK only)
+DEPENDS:=
+DESCRIPTION:=IEEE 802.1x/WPA/EAP/RADIUS Authenticator (WPA-PSK only)
+endef
+
+define Package/hostapd-mini/conffiles
+/etc/hostapd.conf
+endef
+
+define Package/hostapd-utils
+$(call Package/hostapd)
+DEPENDS:=@PACKAGE_hostapd||PACKAGE_hostapd-mini
+TITLE:=IEEE 802.1x Authenticator (utils)
+DESCRIPTION:=IEEE 802.1x/WPA/EAP/RADIUS Authenticator (command line utils)
+endef
 
 define Build/ConfigureTarget
 	$(CP) $(PKG_BUILD_DIR) $(PKG_BUILD_DIR)_$(1)
@@ -73,34 +103,10 @@ define Build/Clean
 	rm -rf $(PKG_BUILD_DIR)_mini
 endef
 
-define Package/hostapd
-SECTION:=net
-CATEGORY:=Network
-DEPENDS:=+libopenssl
-TITLE:=IEEE 802.1x Authenticator
-DESCRIPTION:=IEEE 802.1x/WPA/EAP/RADIUS Authenticator
-URL:=http://hostap.epitest.fi/
-endef
-
-define Package/hostapd-mini
-$(call Package/hostapd)
-TITLE:=IEEE 802.1x Authenticator (WPA-PSK only)
-DEPENDS:=
-DESCRIPTION:=IEEE 802.1x/WPA/EAP/RADIUS Authenticator (WPA-PSK only)
-endef
-
-define Package/hostapd-utils
-$(call Package/hostapd)
-DEPENDS:=@PACKAGE_hostapd||PACKAGE_hostapd-mini
-TITLE:=IEEE 802.1x Authenticator (utils)
-DESCRIPTION:=IEEE 802.1x/WPA/EAP/RADIUS Authenticator (command line utils)
-endef
-
 define Package/hostapd-utils/install
 	install -m0755 -d $(1)/usr/sbin
 	install -m0755 $(PKG_BUILD_DIR)/hostapd_cli $(1)/usr/sbin/
 endef
-
 
 $(eval $(call Package/Template,hostapd,default))
 $(eval $(call Package/Template,hostapd-mini,mini))
@@ -108,4 +114,3 @@ $(eval $(call Package/Template,hostapd-mini,mini))
 $(eval $(call BuildPackage,hostapd))
 $(eval $(call BuildPackage,hostapd-mini))
 $(eval $(call BuildPackage,hostapd-utils))
-
