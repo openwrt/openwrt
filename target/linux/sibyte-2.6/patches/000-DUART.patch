@@ -1,5 +1,6 @@
---- linux-2.6.16.7/drivers/char/Kconfig	2006-04-21 14:38:30.000000000 -0700
-+++ linux-2.6.16.7/drivers/char/Kconfig	2006-04-21 14:39:29.000000000 -0700
+diff -Nur linux-2.6.17/drivers/char/Kconfig linux-2.6.17-owrt/drivers/char/Kconfig
+--- linux-2.6.17/drivers/char/Kconfig	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17-owrt/drivers/char/Kconfig	2006-06-18 12:41:36.000000000 +0200
 @@ -340,6 +340,14 @@
  	  To compile this driver as a module, choose M here: the
  	  module will be called istallion.
@@ -15,20 +16,20 @@
  config AU1000_UART
  	bool "Enable Au1000 UART Support"
  	depends on SERIAL_NONSTANDARD && MIPS
-diff -Nurb linux-2.6.16.7/drivers/char/Makefile linux-2.6.16.7/drivers/char/Makefile
---- linux-2.6.16.7/drivers/char/Makefile	2006-04-17 14:53:25.000000000 -0700
-+++ linux-2.6.16.7/drivers/char/Makefile	2006-04-28 12:14:24.000000000 -0700
+diff -Nur linux-2.6.17/drivers/char/Makefile linux-2.6.17-owrt/drivers/char/Makefile
+--- linux-2.6.17/drivers/char/Makefile	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17-owrt/drivers/char/Makefile	2006-06-18 12:42:57.000000000 +0200
 @@ -31,6 +31,7 @@
  obj-$(CONFIG_A2232)		+= ser_a2232.o generic_serial.o
  obj-$(CONFIG_ATARI_DSP56K)	+= dsp56k.o
  obj-$(CONFIG_MOXA_SMARTIO)	+= mxser.o
 +obj-$(CONFIG_SIBYTE_SB1250_DUART) += sb1250_duart.o
- obj-$(CONFIG_COMPUTONE)		+= ip2.o ip2main.o
+ obj-$(CONFIG_COMPUTONE)		+= ip2/
  obj-$(CONFIG_RISCOM8)		+= riscom8.o
  obj-$(CONFIG_ISI)		+= isicom.o
-diff -Nurb linux-2.6.16.7/drivers/char/sb1250_duart.c linux-2.6.16.7/drivers/char/sb1250_duart.c
---- linux-2.6.16.7/drivers/char/sb1250_duart.c	1969-12-31 16:00:00.000000000 -0800
-+++ linux-2.6.16.7/drivers/char/sb1250_duart.c	2006-04-28 12:13:49.000000000 -0700
+diff -Nur linux-2.6.17/drivers/char/sb1250_duart.c linux-2.6.17-owrt/drivers/char/sb1250_duart.c
+--- linux-2.6.17/drivers/char/sb1250_duart.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-owrt/drivers/char/sb1250_duart.c	2006-06-18 12:41:36.000000000 +0200
 @@ -0,0 +1,911 @@
 +/*
 + * Copyright (C) 2000,2001,2002,2003,2004 Broadcom Corporation
@@ -941,9 +942,9 @@ diff -Nurb linux-2.6.16.7/drivers/char/sb1250_duart.c linux-2.6.16.7/drivers/cha
 +console_initcall(sb1250_serial_console_init);
 +
 +#endif /* CONFIG_SIBYTE_SB1250_DUART_CONSOLE */
-diff -Nurb linux-2.6.16.7/include/linux/serial.h linux-2.6.16.7/include/linux/serial.h
---- linux-2.6.16.7/include/linux/serial.h	2006-04-17 14:53:25.000000000 -0700
-+++ linux-2.6.16.7/include/linux/serial.h	2006-04-28 12:25:19.000000000 -0700
+diff -Nur linux-2.6.17/include/linux/serial.h linux-2.6.17-owrt/include/linux/serial.h
+--- linux-2.6.17/include/linux/serial.h	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17-owrt/include/linux/serial.h	2006-06-18 12:41:36.000000000 +0200
 @@ -76,7 +76,8 @@
  #define PORT_16654	11
  #define PORT_16850	12

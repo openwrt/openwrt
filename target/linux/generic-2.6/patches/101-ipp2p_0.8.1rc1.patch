@@ -1,6 +1,6 @@
-diff -urN linux.old/include/linux/netfilter_ipv4/ipt_ipp2p.h linux.dev/include/linux/netfilter_ipv4/ipt_ipp2p.h
---- linux.old/include/linux/netfilter_ipv4/ipt_ipp2p.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/include/linux/netfilter_ipv4/ipt_ipp2p.h	2006-03-23 15:24:47.000000000 +0100
+diff -Nur linux-2.6.17/include/linux/netfilter_ipv4/ipt_ipp2p.h linux-2.6.17-owrt/include/linux/netfilter_ipv4/ipt_ipp2p.h
+--- linux-2.6.17/include/linux/netfilter_ipv4/ipt_ipp2p.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-owrt/include/linux/netfilter_ipv4/ipt_ipp2p.h	2006-06-18 12:37:14.000000000 +0200
 @@ -0,0 +1,31 @@
 +#ifndef __IPT_IPP2P_H
 +#define __IPT_IPP2P_H
@@ -33,36 +33,9 @@ diff -urN linux.old/include/linux/netfilter_ipv4/ipt_ipp2p.h linux.dev/include/l
 +#define IPP2P_MUTE		(1 << 14)
 +#define IPP2P_WASTE		(1 << 15)
 +#define IPP2P_XDCC		(1 << 16)
-diff -urN linux.old/net/ipv4/netfilter/Kconfig linux.dev/net/ipv4/netfilter/Kconfig
---- linux.old/net/ipv4/netfilter/Kconfig	2006-03-23 15:21:19.000000000 +0100
-+++ linux.dev/net/ipv4/netfilter/Kconfig	2006-03-23 15:26:29.000000000 +0100
-@@ -229,6 +229,12 @@
- 
- 	  To compile it as a module, choose M here.  If unsure, say N.
- 
-+config IP_NF_MATCH_IPP2P
-+	tristate "IPP2P"
-+	depends on IP_NF_IPTABLES
-+	help
-+	  Module for matching traffic of various Peer-to-Peer applications
-+
- config IP_NF_MATCH_TOS
- 	tristate "TOS match support"
- 	depends on IP_NF_IPTABLES
-diff -urN linux.old/net/ipv4/netfilter/Makefile linux.dev/net/ipv4/netfilter/Makefile
---- linux.old/net/ipv4/netfilter/Makefile	2006-03-23 15:21:19.000000000 +0100
-+++ linux.dev/net/ipv4/netfilter/Makefile	2006-03-23 15:27:00.000000000 +0100
-@@ -49,6 +49,7 @@
- obj-$(CONFIG_IP_NF_MATCH_HASHLIMIT) += ipt_hashlimit.o
- obj-$(CONFIG_IP_NF_MATCH_SET) += ipt_set.o
- obj-$(CONFIG_IP_NF_MATCH_IPRANGE) += ipt_iprange.o
-+obj-$(CONFIG_IP_NF_MATCH_IPP2P) += ipt_ipp2p.o
- obj-$(CONFIG_IP_NF_MATCH_MULTIPORT) += ipt_multiport.o
- obj-$(CONFIG_IP_NF_MATCH_OWNER) += ipt_owner.o
- obj-$(CONFIG_IP_NF_MATCH_TOS) += ipt_tos.o
-diff -urN linux.old/net/ipv4/netfilter/ipt_ipp2p.c linux.dev/net/ipv4/netfilter/ipt_ipp2p.c
---- linux.old/net/ipv4/netfilter/ipt_ipp2p.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/net/ipv4/netfilter/ipt_ipp2p.c	2006-03-23 15:24:47.000000000 +0100
+diff -Nur linux-2.6.17/net/ipv4/netfilter/ipt_ipp2p.c linux-2.6.17-owrt/net/ipv4/netfilter/ipt_ipp2p.c
+--- linux-2.6.17/net/ipv4/netfilter/ipt_ipp2p.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-owrt/net/ipv4/netfilter/ipt_ipp2p.c	2006-06-18 12:37:14.000000000 +0200
 @@ -0,0 +1,868 @@
 +#if defined(MODVERSIONS)
 +#include <linux/modversions.h>
@@ -932,3 +905,31 @@ diff -urN linux.old/net/ipv4/netfilter/ipt_ipp2p.c linux.dev/net/ipv4/netfilter/
 +module_exit(fini);
 +
 +
+diff -Nur linux-2.6.17/net/ipv4/netfilter/Kconfig linux-2.6.17-owrt/net/ipv4/netfilter/Kconfig
+--- linux-2.6.17/net/ipv4/netfilter/Kconfig	2006-06-18 12:36:55.000000000 +0200
++++ linux-2.6.17-owrt/net/ipv4/netfilter/Kconfig	2006-06-18 12:37:14.000000000 +0200
+@@ -222,6 +222,12 @@
+ 
+ 	  To compile it as a module, choose M here.  If unsure, say N.
+ 
++config IP_NF_MATCH_IPP2P
++	tristate "IPP2P"
++	depends on IP_NF_IPTABLES
++	help
++	  Module for matching traffic of various Peer-to-Peer applications
++
+ config IP_NF_MATCH_TOS
+ 	tristate "TOS match support"
+ 	depends on IP_NF_IPTABLES
+diff -Nur linux-2.6.17/net/ipv4/netfilter/Makefile linux-2.6.17-owrt/net/ipv4/netfilter/Makefile
+--- linux-2.6.17/net/ipv4/netfilter/Makefile	2006-06-18 12:36:55.000000000 +0200
++++ linux-2.6.17-owrt/net/ipv4/netfilter/Makefile	2006-06-18 12:38:11.000000000 +0200
+@@ -61,7 +61,7 @@
+ obj-$(CONFIG_IP_NF_MATCH_AH) += ipt_ah.o
+ obj-$(CONFIG_IP_NF_MATCH_TTL) += ipt_ttl.o
+ obj-$(CONFIG_IP_NF_MATCH_ADDRTYPE) += ipt_addrtype.o
+-
++obj-$(CONFIG_IP_NF_MATCH_IPP2P) += ipt_ipp2p.o
+ obj-$(CONFIG_IP_NF_MATCH_LAYER7) += ipt_layer7.o
+ 
+ # targets

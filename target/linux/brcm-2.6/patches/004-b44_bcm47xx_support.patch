@@ -1,6 +1,6 @@
-diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
---- linux.old/drivers/net/b44.c	2006-01-16 20:35:09.203794500 +0100
-+++ linux.dev/drivers/net/b44.c	2006-01-16 22:20:45.631180500 +0100
+diff -Nur linux-2.6.17/drivers/net/b44.c linux-2.6.17-owrt/drivers/net/b44.c
+--- linux-2.6.17/drivers/net/b44.c	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17-owrt/drivers/net/b44.c	2006-06-18 16:24:14.000000000 +0200
 @@ -1,7 +1,9 @@
 -/* b44.c: Broadcom 4400 device driver.
 +/* b44.c: Broadcom 4400/47xx device driver.
@@ -10,12 +10,12 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
 + * Copyright (C) 2004 Pekka Pietikainen (pp@ee.oulu.fi)
 + * Copyright (C) 2004 Florian Schirmer (jolt@tuxbox.org)
 + * Copyright (C) 2006 Felix Fietkau (nbd@openwrt.org)
+  * Copyright (C) 2006 Broadcom Corporation.
   *
   * Distribute under GPL.
-  */
-@@ -31,6 +33,28 @@
- #define DRV_MODULE_VERSION	"0.97"
- #define DRV_MODULE_RELDATE	"Nov 30, 2005"
+@@ -32,6 +34,28 @@
+ #define DRV_MODULE_VERSION	"1.00"
+ #define DRV_MODULE_RELDATE	"Apr 7, 2006"
  
 +#ifdef CONFIG_BCM947XX
 +extern char *nvram_get(char *name);
@@ -42,7 +42,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  #define B44_DEF_MSG_ENABLE	  \
  	(NETIF_MSG_DRV		| \
  	 NETIF_MSG_PROBE	| \
-@@ -77,8 +101,8 @@
+@@ -78,8 +102,8 @@
  static char version[] __devinitdata =
  	DRV_MODULE_NAME ".c:v" DRV_MODULE_VERSION " (" DRV_MODULE_RELDATE ")\n";
  
@@ -53,7 +53,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  MODULE_LICENSE("GPL");
  MODULE_VERSION(DRV_MODULE_VERSION);
  
-@@ -93,6 +117,10 @@
+@@ -94,6 +118,10 @@
  	  PCI_ANY_ID, PCI_ANY_ID, 0, 0, 0UL },
  	{ PCI_VENDOR_ID_BROADCOM, PCI_DEVICE_ID_BCM4401B1,
  	  PCI_ANY_ID, PCI_ANY_ID, 0, 0, 0UL },
@@ -64,7 +64,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  	{ }	/* terminate list with empty entry */
  };
  
-@@ -131,17 +159,6 @@
+@@ -132,17 +160,6 @@
  	                              dma_desc_sync_size, dir);
  }
  
@@ -73,7 +73,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
 -	return readl(bp->regs + reg);
 -}
 -
--static inline void bw32(const struct b44 *bp, 
+-static inline void bw32(const struct b44 *bp,
 -			unsigned long reg, unsigned long val)
 -{
 -	writel(val, bp->regs + reg);
@@ -82,7 +82,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  static int b44_wait_bit(struct b44 *bp, unsigned long reg,
  			u32 bit, unsigned long timeout, const int clear)
  {
-@@ -268,6 +285,10 @@
+@@ -269,6 +286,10 @@
  		break;
  	};
  #endif
@@ -93,7 +93,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  	return 0;
  }
  
-@@ -277,6 +298,30 @@
+@@ -278,6 +299,30 @@
  		== SBTMSLOW_CLOCK);
  }
  
@@ -124,7 +124,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  static void __b44_cam_write(struct b44 *bp, unsigned char *data, int index)
  {
  	u32 val;
-@@ -313,14 +358,14 @@
+@@ -314,14 +359,14 @@
  	bw32(bp, B44_IMASK, bp->imask);
  }
  
@@ -141,7 +141,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  			     (reg << MDIO_DATA_RA_SHIFT) |
  			     (MDIO_TA_VALID << MDIO_DATA_TA_SHIFT)));
  	err = b44_wait_bit(bp, B44_EMAC_ISTAT, EMAC_INT_MII, 100, 0);
-@@ -329,18 +374,34 @@
+@@ -330,18 +375,34 @@
  	return err;
  }
  
@@ -178,7 +178,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  /* miilib interface */
  /* FIXME FIXME: phy_id is ignored, bp->phy_addr use is unconditional
   * due to code existing before miilib use was added to this driver.
-@@ -369,6 +430,8 @@
+@@ -370,6 +431,8 @@
  	u32 val;
  	int err;
  
@@ -187,7 +187,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  	err = b44_writephy(bp, MII_BMCR, BMCR_RESET);
  	if (err)
  		return err;
-@@ -439,6 +502,22 @@
+@@ -433,6 +496,22 @@
  	u32 val;
  	int err;
  
@@ -210,7 +210,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  	if ((err = b44_readphy(bp, B44_MII_ALEDCTRL, &val)) != 0)
  		goto out;
  	if ((err = b44_writephy(bp, B44_MII_ALEDCTRL,
-@@ -534,6 +613,19 @@
+@@ -528,6 +607,19 @@
  {
  	u32 bmsr, aux;
  
@@ -230,7 +230,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  	if (!b44_readphy(bp, MII_BMSR, &bmsr) &&
  	    !b44_readphy(bp, B44_MII_AUXCTRL, &aux) &&
  	    (bmsr != 0xffff)) {
-@@ -1281,9 +1373,10 @@
+@@ -1282,9 +1374,10 @@
  		bw32(bp, B44_DMARX_CTRL, 0);
  		bp->rx_prod = bp->rx_cons = 0;
  	} else {
@@ -244,7 +244,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  	}
  
  	ssb_core_reset(bp);
-@@ -1291,8 +1384,14 @@
+@@ -1292,8 +1385,14 @@
  	b44_clear_stats(bp);
  
  	/* Make PHY accessible. */
@@ -260,7 +260,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  	br32(bp, B44_MDIO_CTRL);
  
  	if (!(br32(bp, B44_DEVCTRL) & DEVCTRL_IPP)) {
-@@ -1834,18 +1933,297 @@
+@@ -1837,18 +1936,297 @@
  	.get_perm_addr		= ethtool_op_get_perm_addr,
  };
  
@@ -562,32 +562,18 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  out:
  	return err;
  }
-@@ -1865,22 +2243,55 @@
+@@ -1868,27 +2246,60 @@
  static int __devinit b44_get_invariants(struct b44 *bp)
  {
  	u8 eeprom[128];
 -	int err;
--
--	err = b44_read_eeprom(bp, &eeprom[0]);
--	if (err)
--		goto out;
--
--	bp->dev->dev_addr[0] = eeprom[79];
--	bp->dev->dev_addr[1] = eeprom[78];
--	bp->dev->dev_addr[2] = eeprom[81];
--	bp->dev->dev_addr[3] = eeprom[80];
--	bp->dev->dev_addr[4] = eeprom[83];
--	bp->dev->dev_addr[5] = eeprom[82];
--	memcpy(bp->dev->perm_addr, bp->dev->dev_addr, bp->dev->addr_len);
--
--	bp->phy_addr = eeprom[90] & 0x1f;
 +	u8 buf[32];
 +	int err = 0;
 +	unsigned long flags;
 +
 +#ifdef CONFIG_BCM947XX
 +	if (bp->pdev->device == PCI_DEVICE_ID_BCM4713) {
-+		/* 
++		/*
 +		 * BCM47xx boards don't have a EEPROM. The MAC is stored in
 +		 * a NVRAM area somewhere in the flash memory.
 +		 */
@@ -605,7 +591,10 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
 +			spin_unlock_irqrestore(&bp->lock, flags);
 +		}
  
-+		/* 
+-	err = b44_read_eeprom(bp, &eeprom[0]);
+-	if (err)
+-		goto out;
++		/*
 +		 * BCM47xx boards don't have a PHY. Usually there is a switch
 +		 * chip with multiple PHYs connected to the PHY port.
 +		 */
@@ -617,37 +606,50 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
 +		err = b44_read_eeprom(bp, &eeprom[0]);
 +		if (err)
 +			goto out;
-+	
+ 
+-	bp->dev->dev_addr[0] = eeprom[79];
+-	bp->dev->dev_addr[1] = eeprom[78];
+-	bp->dev->dev_addr[2] = eeprom[81];
+-	bp->dev->dev_addr[3] = eeprom[80];
+-	bp->dev->dev_addr[4] = eeprom[83];
+-	bp->dev->dev_addr[5] = eeprom[82];
 +		bp->dev->dev_addr[0] = eeprom[79];
 +		bp->dev->dev_addr[1] = eeprom[78];
 +		bp->dev->dev_addr[2] = eeprom[81];
 +		bp->dev->dev_addr[3] = eeprom[80];
 +		bp->dev->dev_addr[4] = eeprom[83];
 +		bp->dev->dev_addr[5] = eeprom[82];
+ 
+-	if (!is_valid_ether_addr(&bp->dev->dev_addr[0])){
+-		printk(KERN_ERR PFX "Invalid MAC address found in EEPROM\n");
+-		return -EINVAL;
+-	}
++		if (!is_valid_ether_addr(&bp->dev->dev_addr[0])){
++			printk(KERN_ERR PFX "Invalid MAC address found in EEPROM\n");
++			return -EINVAL;
++		}
+ 
+-	memcpy(bp->dev->perm_addr, bp->dev->dev_addr, bp->dev->addr_len);
 +		memcpy(bp->dev->perm_addr, bp->dev->dev_addr, bp->dev->addr_len);
-+	
+ 
+-	bp->phy_addr = eeprom[90] & 0x1f;
 +		bp->phy_addr = eeprom[90] & 0x1f;
 +		bp->dma_offset = SB_PCI_DMA;
 +	}
-+	
+ 
  	/* With this, plus the rx_header prepended to the data by the
  	 * hardware, we'll land the ethernet header on a 2-byte boundary.
- 	 */
-@@ -1889,11 +2300,7 @@
+@@ -1898,7 +2309,6 @@
  	bp->imask = IMASK_DEF;
  
  	bp->core_unit = ssb_core_unit(bp);
 -	bp->dma_offset = SB_PCI_DMA;
  
--	/* XXX - really required? 
--	   bp->flags |= B44_FLAG_BUGGY_TXPTR;
--         */
- out:
- 	return err;
- }
-@@ -2032,11 +2439,17 @@
- 
- 	pci_save_state(bp->pdev);
+ 	/* XXX - really required?
+ 	   bp->flags |= B44_FLAG_BUGGY_TXPTR;
+@@ -2048,11 +2458,17 @@
+ 	 */
+ 	b44_chip_reset(bp);
  
 -	printk(KERN_INFO "%s: Broadcom 4400 10/100BaseT Ethernet ", dev->name);
 +	printk(KERN_INFO "%s: Broadcom %s 10/100BaseT Ethernet ", dev->name,
@@ -664,9 +666,9 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  	return 0;
  
  err_out_iounmap:
-diff -urN linux.old/drivers/net/b44.h linux.dev/drivers/net/b44.h
---- linux.old/drivers/net/b44.h	2006-01-16 20:35:09.255797750 +0100
-+++ linux.dev/drivers/net/b44.h	2006-01-16 20:30:30.566380750 +0100
+diff -Nur linux-2.6.17/drivers/net/b44.h linux-2.6.17-owrt/drivers/net/b44.h
+--- linux-2.6.17/drivers/net/b44.h	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17-owrt/drivers/net/b44.h	2006-06-18 16:01:10.000000000 +0200
 @@ -292,6 +292,10 @@
  #define SSB_PCI_MASK1		0xfc000000
  #define SSB_PCI_MASK2		0xc0000000
