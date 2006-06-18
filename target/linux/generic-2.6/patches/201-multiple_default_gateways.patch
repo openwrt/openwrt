@@ -1,6 +1,6 @@
-diff -ur v2.6.14/linux/include/linux/netfilter_ipv4/ip_nat.h linux/include/linux/netfilter_ipv4/ip_nat.h
---- v2.6.14/linux/include/linux/netfilter_ipv4/ip_nat.h	2005-10-29 14:15:09.000000000 +0300
-+++ linux/include/linux/netfilter_ipv4/ip_nat.h	2005-10-29 18:11:32.885759304 +0300
+diff -Nur linux-2.6.17/include/linux/netfilter_ipv4/ip_nat.h linux-2.6.17-owrt/include/linux/netfilter_ipv4/ip_nat.h
+--- linux-2.6.17/include/linux/netfilter_ipv4/ip_nat.h	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17-owrt/include/linux/netfilter_ipv4/ip_nat.h	2006-06-18 16:53:21.000000000 +0200
 @@ -63,6 +63,13 @@
  
  struct ip_conntrack;
@@ -15,10 +15,10 @@ diff -ur v2.6.14/linux/include/linux/netfilter_ipv4/ip_nat.h linux/include/linux
  /* Set up the info structure to map into this range. */
  extern unsigned int ip_nat_setup_info(struct ip_conntrack *conntrack,
  				      const struct ip_nat_range *range,
-diff -ur v2.6.14/linux/include/linux/rtnetlink.h linux/include/linux/rtnetlink.h
---- v2.6.14/linux/include/linux/rtnetlink.h	2005-10-29 14:15:09.000000000 +0300
-+++ linux/include/linux/rtnetlink.h	2005-10-29 18:11:21.299520680 +0300
-@@ -292,6 +292,8 @@
+diff -Nur linux-2.6.17/include/linux/rtnetlink.h linux-2.6.17-owrt/include/linux/rtnetlink.h
+--- linux-2.6.17/include/linux/rtnetlink.h	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17-owrt/include/linux/rtnetlink.h	2006-06-18 16:53:21.000000000 +0200
+@@ -293,6 +293,8 @@
  #define RTNH_F_DEAD		1	/* Nexthop is dead (used by multipath)	*/
  #define RTNH_F_PERVASIVE	2	/* Do recursive gateway lookup	*/
  #define RTNH_F_ONLINK		4	/* Gateway is forced on link	*/
@@ -27,9 +27,9 @@ diff -ur v2.6.14/linux/include/linux/rtnetlink.h linux/include/linux/rtnetlink.h
  
  /* Macros to handle hexthops */
  
-diff -ur v2.6.14/linux/include/net/flow.h linux/include/net/flow.h
---- v2.6.14/linux/include/net/flow.h	2005-06-18 08:50:52.000000000 +0300
-+++ linux/include/net/flow.h	2005-10-29 18:11:32.885759304 +0300
+diff -Nur linux-2.6.17/include/net/flow.h linux-2.6.17-owrt/include/net/flow.h
+--- linux-2.6.17/include/net/flow.h	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17-owrt/include/net/flow.h	2006-06-18 16:53:21.000000000 +0200
 @@ -19,6 +19,8 @@
  			__u32			daddr;
  			__u32			saddr;
@@ -48,9 +48,9 @@ diff -ur v2.6.14/linux/include/net/flow.h linux/include/net/flow.h
  #define fl4_tos		nl_u.ip4_u.tos
  #define fl4_scope	nl_u.ip4_u.scope
  
-diff -ur v2.6.14/linux/include/net/ip_fib.h linux/include/net/ip_fib.h
---- v2.6.14/linux/include/net/ip_fib.h	2005-10-29 14:15:09.000000000 +0300
-+++ linux/include/net/ip_fib.h	2005-10-29 18:11:21.300520528 +0300
+diff -Nur linux-2.6.17/include/net/ip_fib.h linux-2.6.17-owrt/include/net/ip_fib.h
+--- linux-2.6.17/include/net/ip_fib.h	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17-owrt/include/net/ip_fib.h	2006-06-18 16:53:21.000000000 +0200
 @@ -195,7 +195,8 @@
  
  static inline void fib_select_default(const struct flowi *flp, struct fib_result *res)
@@ -69,16 +69,16 @@ diff -ur v2.6.14/linux/include/net/ip_fib.h linux/include/net/ip_fib.h
  
  static inline struct fib_table *fib_get_table(int id)
  {
-@@ -300,4 +302,6 @@
+@@ -302,4 +304,6 @@
  extern void fib_proc_exit(void);
  #endif
  
 +extern rwlock_t fib_nhflags_lock;
 +
  #endif  /* _NET_FIB_H */
-diff -ur v2.6.14/linux/include/net/route.h linux/include/net/route.h
---- v2.6.14/linux/include/net/route.h	2005-10-29 14:15:09.000000000 +0300
-+++ linux/include/net/route.h	2005-10-29 18:11:32.885759304 +0300
+diff -Nur linux-2.6.17/include/net/route.h linux-2.6.17-owrt/include/net/route.h
+--- linux-2.6.17/include/net/route.h	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17-owrt/include/net/route.h	2006-06-18 16:53:21.000000000 +0200
 @@ -117,6 +117,7 @@
  extern int		ip_route_output_key(struct rtable **, struct flowi *flp);
  extern int		ip_route_output_flow(struct rtable **rp, struct flowi *flp, struct sock *sk, int flags);
@@ -87,10 +87,10 @@ diff -ur v2.6.14/linux/include/net/route.h linux/include/net/route.h
  extern unsigned short	ip_rt_frag_needed(struct iphdr *iph, unsigned short new_mtu);
  extern void		ip_rt_send_redirect(struct sk_buff *skb);
  
-diff -ur v2.6.14/linux/net/ipv4/fib_frontend.c linux/net/ipv4/fib_frontend.c
---- v2.6.14/linux/net/ipv4/fib_frontend.c	2005-10-29 14:15:09.000000000 +0300
-+++ linux/net/ipv4/fib_frontend.c	2005-10-29 18:11:21.300520528 +0300
-@@ -54,6 +54,8 @@
+diff -Nur linux-2.6.17/net/ipv4/fib_frontend.c linux-2.6.17-owrt/net/ipv4/fib_frontend.c
+--- linux-2.6.17/net/ipv4/fib_frontend.c	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17-owrt/net/ipv4/fib_frontend.c	2006-06-18 16:53:21.000000000 +0200
+@@ -56,6 +56,8 @@
  struct fib_table *ip_fib_local_table;
  struct fib_table *ip_fib_main_table;
  
@@ -99,7 +99,7 @@ diff -ur v2.6.14/linux/net/ipv4/fib_frontend.c linux/net/ipv4/fib_frontend.c
  #else
  
  #define RT_TABLE_MIN 1
-@@ -71,6 +73,7 @@
+@@ -73,6 +75,7 @@
  	return tb;
  }
  
@@ -107,7 +107,7 @@ diff -ur v2.6.14/linux/net/ipv4/fib_frontend.c linux/net/ipv4/fib_frontend.c
  
  #endif /* CONFIG_IP_MULTIPLE_TABLES */
  
-@@ -168,6 +171,9 @@
+@@ -170,6 +173,9 @@
  					.tos = tos } },
  			    .iif = oif };
  	struct fib_result res;
@@ -117,7 +117,7 @@ diff -ur v2.6.14/linux/net/ipv4/fib_frontend.c linux/net/ipv4/fib_frontend.c
  	int no_addr, rpf;
  	int ret;
  
-@@ -189,31 +195,35 @@
+@@ -191,31 +197,35 @@
  		goto e_inval_res;
  	*spec_dst = FIB_RES_PREFSRC(res);
  	fib_combine_itag(itag, &res);
@@ -160,7 +160,7 @@ diff -ur v2.6.14/linux/net/ipv4/fib_frontend.c linux/net/ipv4/fib_frontend.c
  	return ret;
  
  last_resort:
-@@ -584,9 +594,7 @@
+@@ -589,9 +599,7 @@
  	switch (event) {
  	case NETDEV_UP:
  		fib_add_ifaddr(ifa);
@@ -170,7 +170,7 @@ diff -ur v2.6.14/linux/net/ipv4/fib_frontend.c linux/net/ipv4/fib_frontend.c
  		rt_cache_flush(-1);
  		break;
  	case NETDEV_DOWN:
-@@ -622,9 +630,7 @@
+@@ -627,9 +635,7 @@
  		for_ifa(in_dev) {
  			fib_add_ifaddr(ifa);
  		} endfor_ifa(in_dev);
@@ -180,10 +180,10 @@ diff -ur v2.6.14/linux/net/ipv4/fib_frontend.c linux/net/ipv4/fib_frontend.c
  		rt_cache_flush(-1);
  		break;
  	case NETDEV_DOWN:
-diff -ur v2.6.14/linux/net/ipv4/fib_hash.c linux/net/ipv4/fib_hash.c
---- v2.6.14/linux/net/ipv4/fib_hash.c	2005-10-29 14:15:09.000000000 +0300
-+++ linux/net/ipv4/fib_hash.c	2005-10-29 18:11:21.301520376 +0300
-@@ -276,30 +276,38 @@
+diff -Nur linux-2.6.17/net/ipv4/fib_hash.c linux-2.6.17-owrt/net/ipv4/fib_hash.c
+--- linux-2.6.17/net/ipv4/fib_hash.c	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17-owrt/net/ipv4/fib_hash.c	2006-06-18 16:53:21.000000000 +0200
+@@ -277,30 +277,38 @@
  	return err;
  }
  
@@ -227,7 +227,7 @@ diff -ur v2.6.14/linux/net/ipv4/fib_hash.c linux/net/ipv4/fib_hash.c
  		list_for_each_entry(fa, &f->fn_alias, fa_list) {
  			struct fib_info *next_fi = fa->fa_info;
  
-@@ -307,41 +315,52 @@
+@@ -308,41 +316,52 @@
  			    fa->fa_type != RTN_UNICAST)
  				continue;
  
@@ -292,7 +292,7 @@ diff -ur v2.6.14/linux/net/ipv4/fib_hash.c linux/net/ipv4/fib_hash.c
  		goto out;
  	}
  
-@@ -351,8 +370,11 @@
+@@ -352,8 +371,11 @@
  		res->fi = last_resort;
  		if (last_resort)
  			atomic_inc(&last_resort->fib_clntref);
@@ -305,7 +305,7 @@ diff -ur v2.6.14/linux/net/ipv4/fib_hash.c linux/net/ipv4/fib_hash.c
  out:
  	read_unlock(&fib_hash_lock);
  }
-@@ -451,6 +473,7 @@
+@@ -452,6 +474,7 @@
  			write_lock_bh(&fib_hash_lock);
  			fi_drop = fa->fa_info;
  			fa->fa_info = fi;
@@ -313,7 +313,7 @@ diff -ur v2.6.14/linux/net/ipv4/fib_hash.c linux/net/ipv4/fib_hash.c
  			fa->fa_type = type;
  			fa->fa_scope = r->rtm_scope;
  			state = fa->fa_state;
-@@ -510,6 +533,7 @@
+@@ -511,6 +534,7 @@
  	new_fa->fa_type = type;
  	new_fa->fa_scope = r->rtm_scope;
  	new_fa->fa_state = 0;
@@ -321,9 +321,9 @@ diff -ur v2.6.14/linux/net/ipv4/fib_hash.c linux/net/ipv4/fib_hash.c
  
  	/*
  	 * Insert new entry to the list.
-diff -ur v2.6.14/linux/net/ipv4/fib_lookup.h linux/net/ipv4/fib_lookup.h
---- v2.6.14/linux/net/ipv4/fib_lookup.h	2005-10-29 14:15:09.000000000 +0300
-+++ linux/net/ipv4/fib_lookup.h	2005-10-29 18:11:21.302520224 +0300
+diff -Nur linux-2.6.17/net/ipv4/fib_lookup.h linux-2.6.17-owrt/net/ipv4/fib_lookup.h
+--- linux-2.6.17/net/ipv4/fib_lookup.h	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17-owrt/net/ipv4/fib_lookup.h	2006-06-18 16:53:21.000000000 +0200
 @@ -9,6 +9,7 @@
  	struct list_head	fa_list;
  	struct rcu_head rcu;
@@ -341,10 +341,10 @@ diff -ur v2.6.14/linux/net/ipv4/fib_lookup.h linux/net/ipv4/fib_lookup.h
 +			    const struct flowi *flp);
  
  #endif /* _FIB_LOOKUP_H */
-diff -ur v2.6.14/linux/net/ipv4/fib_rules.c linux/net/ipv4/fib_rules.c
---- v2.6.14/linux/net/ipv4/fib_rules.c	2005-08-29 07:51:29.000000000 +0300
-+++ linux/net/ipv4/fib_rules.c	2005-10-29 18:11:21.302520224 +0300
-@@ -280,6 +280,11 @@
+diff -Nur linux-2.6.17/net/ipv4/fib_rules.c linux-2.6.17-owrt/net/ipv4/fib_rules.c
+--- linux-2.6.17/net/ipv4/fib_rules.c	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17-owrt/net/ipv4/fib_rules.c	2006-06-18 16:53:21.000000000 +0200
+@@ -296,6 +296,11 @@
  	}
  }
  
@@ -356,7 +356,7 @@ diff -ur v2.6.14/linux/net/ipv4/fib_rules.c linux/net/ipv4/fib_rules.c
  int fib_lookup(const struct flowi *flp, struct fib_result *res)
  {
  	int err;
-@@ -342,7 +347,8 @@
+@@ -361,7 +366,8 @@
  void fib_select_default(const struct flowi *flp, struct fib_result *res)
  {
  	if (res->r && res->r->r_action == RTN_UNICAST &&
@@ -366,10 +366,10 @@ diff -ur v2.6.14/linux/net/ipv4/fib_rules.c linux/net/ipv4/fib_rules.c
  		struct fib_table *tb;
  		if ((tb = fib_get_table(res->r->r_table)) != NULL)
  			tb->tb_select_default(tb, flp, res);
-diff -ur v2.6.14/linux/net/ipv4/fib_semantics.c linux/net/ipv4/fib_semantics.c
---- v2.6.14/linux/net/ipv4/fib_semantics.c	2005-10-29 14:15:09.000000000 +0300
-+++ linux/net/ipv4/fib_semantics.c	2005-10-29 18:11:32.886759152 +0300
-@@ -53,6 +53,7 @@
+diff -Nur linux-2.6.17/net/ipv4/fib_semantics.c linux-2.6.17-owrt/net/ipv4/fib_semantics.c
+--- linux-2.6.17/net/ipv4/fib_semantics.c	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17-owrt/net/ipv4/fib_semantics.c	2006-06-18 16:53:21.000000000 +0200
+@@ -55,6 +55,7 @@
  static struct hlist_head *fib_info_laddrhash;
  static unsigned int fib_hash_size;
  static unsigned int fib_info_cnt;
@@ -377,7 +377,7 @@ diff -ur v2.6.14/linux/net/ipv4/fib_semantics.c linux/net/ipv4/fib_semantics.c
  
  #define DEVINDEX_HASHBITS 8
  #define DEVINDEX_HASHSIZE (1U << DEVINDEX_HASHBITS)
-@@ -188,7 +189,7 @@
+@@ -190,7 +191,7 @@
  #ifdef CONFIG_NET_CLS_ROUTE
  		    nh->nh_tclassid != onh->nh_tclassid ||
  #endif
@@ -386,7 +386,7 @@ diff -ur v2.6.14/linux/net/ipv4/fib_semantics.c linux/net/ipv4/fib_semantics.c
  			return -1;
  		onh++;
  	} endfor_nexthops(fi);
-@@ -225,7 +226,7 @@
+@@ -227,7 +228,7 @@
  		    nfi->fib_priority == fi->fib_priority &&
  		    memcmp(nfi->fib_metrics, fi->fib_metrics,
  			   sizeof(fi->fib_metrics)) == 0 &&
@@ -395,7 +395,7 @@ diff -ur v2.6.14/linux/net/ipv4/fib_semantics.c linux/net/ipv4/fib_semantics.c
  		    (nfi->fib_nhs == 0 || nh_comp(fi, nfi) == 0))
  			return fi;
  	}
-@@ -317,26 +318,70 @@
+@@ -319,26 +320,70 @@
  }
  
  int fib_detect_death(struct fib_info *fi, int order,
@@ -482,7 +482,7 @@ diff -ur v2.6.14/linux/net/ipv4/fib_semantics.c linux/net/ipv4/fib_semantics.c
  }
  
  #ifdef CONFIG_IP_ROUTE_MULTIPATH
-@@ -507,8 +552,11 @@
+@@ -509,8 +554,11 @@
  				return -EINVAL;
  			if ((dev = __dev_get_by_index(nh->nh_oif)) == NULL)
  				return -ENODEV;
@@ -496,7 +496,7 @@ diff -ur v2.6.14/linux/net/ipv4/fib_semantics.c linux/net/ipv4/fib_semantics.c
  			nh->nh_dev = dev;
  			dev_hold(dev);
  			nh->nh_scope = RT_SCOPE_LINK;
-@@ -523,24 +571,48 @@
+@@ -525,24 +573,48 @@
  			/* It is not necessary, but requires a bit of thinking */
  			if (fl.fl4_scope < RT_SCOPE_LINK)
  				fl.fl4_scope = RT_SCOPE_LINK;
@@ -561,7 +561,7 @@ diff -ur v2.6.14/linux/net/ipv4/fib_semantics.c linux/net/ipv4/fib_semantics.c
  	} else {
  		struct in_device *in_dev;
  
-@@ -551,8 +623,11 @@
+@@ -553,8 +625,11 @@
  		if (in_dev == NULL)
  			return -ENODEV;
  		if (!(in_dev->dev->flags&IFF_UP)) {
@@ -575,7 +575,7 @@ diff -ur v2.6.14/linux/net/ipv4/fib_semantics.c linux/net/ipv4/fib_semantics.c
  		}
  		nh->nh_dev = in_dev->dev;
  		dev_hold(nh->nh_dev);
-@@ -890,8 +965,12 @@
+@@ -892,8 +967,12 @@
  				for_nexthops(fi) {
  					if (nh->nh_flags&RTNH_F_DEAD)
  						continue;
@@ -590,7 +590,7 @@ diff -ur v2.6.14/linux/net/ipv4/fib_semantics.c linux/net/ipv4/fib_semantics.c
  				}
  #ifdef CONFIG_IP_ROUTE_MULTIPATH
  				if (nhsel < fi->fib_nhs) {
-@@ -1197,18 +1276,29 @@
+@@ -1199,18 +1278,29 @@
  			prev_fi = fi;
  			dead = 0;
  			change_nexthops(fi) {
@@ -628,7 +628,7 @@ diff -ur v2.6.14/linux/net/ipv4/fib_semantics.c linux/net/ipv4/fib_semantics.c
  				}
  #ifdef CONFIG_IP_ROUTE_MULTIPATH
  				if (force > 1 && nh->nh_dev == dev) {
-@@ -1227,11 +1317,8 @@
+@@ -1229,11 +1319,8 @@
  	return ret;
  }
  
@@ -641,7 +641,7 @@ diff -ur v2.6.14/linux/net/ipv4/fib_semantics.c linux/net/ipv4/fib_semantics.c
   */
  
  int fib_sync_up(struct net_device *dev)
-@@ -1241,8 +1328,10 @@
+@@ -1243,8 +1330,10 @@
  	struct hlist_head *head;
  	struct hlist_node *node;
  	struct fib_nh *nh;
@@ -653,7 +653,7 @@ diff -ur v2.6.14/linux/net/ipv4/fib_semantics.c linux/net/ipv4/fib_semantics.c
  	if (!(dev->flags&IFF_UP))
  		return 0;
  
-@@ -1250,6 +1339,7 @@
+@@ -1252,6 +1341,7 @@
  	hash = fib_devindex_hashfn(dev->ifindex);
  	head = &fib_info_devhash[hash];
  	ret = 0;
@@ -661,7 +661,7 @@ diff -ur v2.6.14/linux/net/ipv4/fib_semantics.c linux/net/ipv4/fib_semantics.c
  
  	hlist_for_each_entry(nh, node, head, nh_hash) {
  		struct fib_info *fi = nh->nh_parent;
-@@ -1262,19 +1352,37 @@
+@@ -1264,19 +1354,37 @@
  		prev_fi = fi;
  		alive = 0;
  		change_nexthops(fi) {
@@ -702,7 +702,7 @@ diff -ur v2.6.14/linux/net/ipv4/fib_semantics.c linux/net/ipv4/fib_semantics.c
  		} endfor_nexthops(fi)
  
  		if (alive > 0) {
-@@ -1282,10 +1390,14 @@
+@@ -1284,10 +1392,14 @@
  			ret++;
  		}
  	}
@@ -717,7 +717,7 @@ diff -ur v2.6.14/linux/net/ipv4/fib_semantics.c linux/net/ipv4/fib_semantics.c
  /*
     The algorithm is suboptimal, but it provides really
     fair weighted route distribution.
-@@ -1294,24 +1406,45 @@
+@@ -1296,24 +1408,45 @@
  void fib_select_multipath(const struct flowi *flp, struct fib_result *res)
  {
  	struct fib_info *fi = res->fi;
@@ -771,7 +771,7 @@ diff -ur v2.6.14/linux/net/ipv4/fib_semantics.c linux/net/ipv4/fib_semantics.c
  	}
  
  
-@@ -1321,20 +1454,40 @@
+@@ -1323,20 +1456,40 @@
  
  	w = jiffies % fi->fib_power;
  
@@ -815,10 +815,10 @@ diff -ur v2.6.14/linux/net/ipv4/fib_semantics.c linux/net/ipv4/fib_semantics.c
  	spin_unlock_bh(&fib_multipath_lock);
  }
  #endif
-diff -ur v2.6.14/linux/net/ipv4/netfilter/ip_nat_core.c linux/net/ipv4/netfilter/ip_nat_core.c
---- v2.6.14/linux/net/ipv4/netfilter/ip_nat_core.c	2005-10-29 14:15:09.000000000 +0300
-+++ linux/net/ipv4/netfilter/ip_nat_core.c	2005-10-29 18:11:32.887759000 +0300
-@@ -591,6 +591,53 @@
+diff -Nur linux-2.6.17/net/ipv4/netfilter/ip_nat_core.c linux-2.6.17-owrt/net/ipv4/netfilter/ip_nat_core.c
+--- linux-2.6.17/net/ipv4/netfilter/ip_nat_core.c	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17-owrt/net/ipv4/netfilter/ip_nat_core.c	2006-06-18 16:53:21.000000000 +0200
+@@ -589,6 +589,53 @@
  EXPORT_SYMBOL_GPL(ip_nat_port_range_to_nfattr);
  #endif
  
@@ -872,54 +872,28 @@ diff -ur v2.6.14/linux/net/ipv4/netfilter/ip_nat_core.c linux/net/ipv4/netfilter
  static int __init ip_nat_init(void)
  {
  	size_t i;
-diff -ur v2.6.14/linux/net/ipv4/netfilter/ip_nat_standalone.c linux/net/ipv4/netfilter/ip_nat_standalone.c
---- v2.6.14/linux/net/ipv4/netfilter/ip_nat_standalone.c	2005-10-29 14:15:09.000000000 +0300
-+++ linux/net/ipv4/netfilter/ip_nat_standalone.c	2005-10-29 18:11:32.887759000 +0300
-@@ -266,6 +266,14 @@
- 	.priority	= NF_IP_PRI_NAT_DST,
- };
- 
-+/* Before routing, route before mangling */
-+static struct nf_hook_ops ip_nat_inr_ops = {
-+	.hook		= ip_nat_route_input,
-+	.pf		= PF_INET,
-+	.hooknum	= NF_IP_PRE_ROUTING,
-+	.priority	= NF_IP_PRI_LAST-1,
-+};
-+
- /* After packet filtering, change source */
- static struct nf_hook_ops ip_nat_out_ops = {
- 	.hook		= ip_nat_out,
-@@ -330,10 +338,15 @@
- 		printk("ip_nat_init: can't register in hook.\n");
- 		goto cleanup_rule_init;
- 	}
-+	ret = nf_register_hook(&ip_nat_inr_ops);
-+	if (ret < 0) {
-+		printk("ip_nat_init: can't register inr hook.\n");
-+		goto cleanup_inops;
-+	}
- 	ret = nf_register_hook(&ip_nat_out_ops);
- 	if (ret < 0) {
- 		printk("ip_nat_init: can't register out hook.\n");
--		goto cleanup_inops;
-+		goto cleanup_inrops;
- 	}
- 	ret = nf_register_hook(&ip_nat_adjust_in_ops);
- 	if (ret < 0) {
-@@ -367,6 +380,8 @@
- 	nf_unregister_hook(&ip_nat_adjust_in_ops);
-  cleanup_outops:
- 	nf_unregister_hook(&ip_nat_out_ops);
-+ cleanup_inrops:
-+	nf_unregister_hook(&ip_nat_inr_ops);
-  cleanup_inops:
- 	nf_unregister_hook(&ip_nat_in_ops);
-  cleanup_rule_init:
-diff -ur v2.6.14/linux/net/ipv4/netfilter/ipt_MASQUERADE.c linux/net/ipv4/netfilter/ipt_MASQUERADE.c
---- v2.6.14/linux/net/ipv4/netfilter/ipt_MASQUERADE.c	2005-10-29 14:15:09.000000000 +0300
-+++ linux/net/ipv4/netfilter/ipt_MASQUERADE.c	2005-10-29 18:11:32.887759000 +0300
-@@ -97,13 +97,31 @@
+diff -Nur linux-2.6.17/net/ipv4/netfilter/ip_nat_standalone.c linux-2.6.17-owrt/net/ipv4/netfilter/ip_nat_standalone.c
+--- linux-2.6.17/net/ipv4/netfilter/ip_nat_standalone.c	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17-owrt/net/ipv4/netfilter/ip_nat_standalone.c	2006-06-18 17:12:03.000000000 +0200
+@@ -334,6 +334,14 @@
+ 		.hooknum	= NF_IP_LOCAL_OUT,
+ 		.priority	= NF_IP_PRI_NAT_DST,
+ 	},
++	/* Before routing, route before mangling */
++	{
++		.hook		= ip_nat_route_input,
++		.owner		= THIS_MODULE,
++		.pf		= PF_INET,
++		.hooknum	= NF_IP_PRE_ROUTING,
++		.priority	= NF_IP_PRI_LAST-1,
++	},
+ 	/* After packet filtering, change source */
+ 	{
+ 		.hook		= ip_nat_fn,
+diff -Nur linux-2.6.17/net/ipv4/netfilter/ipt_MASQUERADE.c linux-2.6.17-owrt/net/ipv4/netfilter/ipt_MASQUERADE.c
+--- linux-2.6.17/net/ipv4/netfilter/ipt_MASQUERADE.c	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17-owrt/net/ipv4/netfilter/ipt_MASQUERADE.c	2006-06-18 16:53:21.000000000 +0200
+@@ -88,13 +88,31 @@
  		return NF_ACCEPT;
  
  	mr = targinfo;
@@ -956,10 +930,10 @@ diff -ur v2.6.14/linux/net/ipv4/netfilter/ipt_MASQUERADE.c linux/net/ipv4/netfil
  	write_lock_bh(&masq_lock);
  	ct->nat.masq_index = out->ifindex;
  	write_unlock_bh(&masq_lock);
-diff -ur v2.6.14/linux/net/ipv4/route.c linux/net/ipv4/route.c
---- v2.6.14/linux/net/ipv4/route.c	2005-10-29 14:15:09.000000000 +0300
-+++ linux/net/ipv4/route.c	2005-10-29 18:11:32.889758696 +0300
-@@ -1197,6 +1197,7 @@
+diff -Nur linux-2.6.17/net/ipv4/route.c linux-2.6.17-owrt/net/ipv4/route.c
+--- linux-2.6.17/net/ipv4/route.c	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17-owrt/net/ipv4/route.c	2006-06-18 16:53:21.000000000 +0200
+@@ -1195,6 +1195,7 @@
  
  				/* Gateway is different ... */
  				rt->rt_gateway		= new_gw;
@@ -967,7 +941,7 @@ diff -ur v2.6.14/linux/net/ipv4/route.c linux/net/ipv4/route.c
  
  				/* Redirect received -> path was valid */
  				dst_confirm(&rth->u.dst);
-@@ -1632,6 +1633,7 @@
+@@ -1626,6 +1627,7 @@
  	rth->fl.fl4_fwmark= skb->nfmark;
  #endif
  	rth->fl.fl4_src	= saddr;
@@ -975,7 +949,7 @@ diff -ur v2.6.14/linux/net/ipv4/route.c linux/net/ipv4/route.c
  	rth->rt_src	= saddr;
  #ifdef CONFIG_NET_CLS_ROUTE
  	rth->u.dst.tclassid = itag;
-@@ -1642,6 +1644,7 @@
+@@ -1636,6 +1638,7 @@
  	dev_hold(rth->u.dst.dev);
  	rth->idev	= in_dev_get(rth->u.dst.dev);
  	rth->fl.oif	= 0;
@@ -983,7 +957,7 @@ diff -ur v2.6.14/linux/net/ipv4/route.c linux/net/ipv4/route.c
  	rth->rt_gateway	= daddr;
  	rth->rt_spec_dst= spec_dst;
  	rth->rt_type	= RTN_MULTICAST;
-@@ -1706,7 +1709,7 @@
+@@ -1700,7 +1703,7 @@
  				  struct fib_result* res, 
  				  struct in_device *in_dev, 
  				  u32 daddr, u32 saddr, u32 tos, 
@@ -992,7 +966,7 @@ diff -ur v2.6.14/linux/net/ipv4/route.c linux/net/ipv4/route.c
  {
  
  	struct rtable *rth;
-@@ -1739,6 +1742,7 @@
+@@ -1733,6 +1736,7 @@
  		flags |= RTCF_DIRECTSRC;
  
  	if (out_dev == in_dev && err && !(flags & (RTCF_NAT | RTCF_MASQ)) &&
@@ -1000,7 +974,7 @@ diff -ur v2.6.14/linux/net/ipv4/route.c linux/net/ipv4/route.c
  	    (IN_DEV_SHARED_MEDIA(out_dev) ||
  	     inet_addr_onlink(out_dev, saddr, FIB_RES_GW(*res))))
  		flags |= RTCF_DOREDIRECT;
-@@ -1778,6 +1782,7 @@
+@@ -1772,6 +1776,7 @@
  #endif
  	rth->fl.fl4_src	= saddr;
  	rth->rt_src	= saddr;
@@ -1008,7 +982,7 @@ diff -ur v2.6.14/linux/net/ipv4/route.c linux/net/ipv4/route.c
  	rth->rt_gateway	= daddr;
  	rth->rt_iif 	=
  		rth->fl.iif	= in_dev->dev->ifindex;
-@@ -1785,6 +1790,7 @@
+@@ -1779,6 +1784,7 @@
  	dev_hold(rth->u.dst.dev);
  	rth->idev	= in_dev_get(rth->u.dst.dev);
  	rth->fl.oif 	= 0;
@@ -1016,7 +990,7 @@ diff -ur v2.6.14/linux/net/ipv4/route.c linux/net/ipv4/route.c
  	rth->rt_spec_dst= spec_dst;
  
  	rth->u.dst.input = ip_forward;
-@@ -1806,19 +1812,20 @@
+@@ -1800,19 +1806,20 @@
  				       struct fib_result* res, 
  				       const struct flowi *fl,
  				       struct in_device *in_dev,
@@ -1040,7 +1014,7 @@ diff -ur v2.6.14/linux/net/ipv4/route.c linux/net/ipv4/route.c
  	if (err)
  		return err;
  
-@@ -1831,7 +1838,7 @@
+@@ -1825,7 +1832,7 @@
  				   struct fib_result* res, 
  				   const struct flowi *fl,
  				   struct in_device *in_dev,
@@ -1049,7 +1023,7 @@ diff -ur v2.6.14/linux/net/ipv4/route.c linux/net/ipv4/route.c
  {
  #ifdef CONFIG_IP_ROUTE_MULTIPATH_CACHED
  	struct rtable* rth = NULL, *rtres;
-@@ -1847,7 +1854,7 @@
+@@ -1841,7 +1848,7 @@
  	/* distinguish between multipath and singlepath */
  	if (hopcount < 2)
  		return ip_mkroute_input_def(skb, res, fl, in_dev, daddr,
@@ -1058,7 +1032,7 @@ diff -ur v2.6.14/linux/net/ipv4/route.c linux/net/ipv4/route.c
  	
  	/* add all alternatives to the routing cache */
  	for (hop = 0; hop < hopcount; hop++) {
-@@ -1859,7 +1866,7 @@
+@@ -1853,7 +1860,7 @@
  
  		/* create a routing cache entry */
  		err = __mkroute_input(skb, res, in_dev, daddr, saddr, tos,
@@ -1067,7 +1041,7 @@ diff -ur v2.6.14/linux/net/ipv4/route.c linux/net/ipv4/route.c
  		if (err)
  			return err;
  
-@@ -1879,7 +1886,7 @@
+@@ -1873,7 +1880,7 @@
  	skb->dst = &rtres->u.dst;
  	return err;
  #else /* CONFIG_IP_ROUTE_MULTIPATH_CACHED  */
@@ -1076,7 +1050,7 @@ diff -ur v2.6.14/linux/net/ipv4/route.c linux/net/ipv4/route.c
  #endif /* CONFIG_IP_ROUTE_MULTIPATH_CACHED  */
  }
  
-@@ -1895,20 +1902,20 @@
+@@ -1889,20 +1896,20 @@
   */
  
  static int ip_route_input_slow(struct sk_buff *skb, u32 daddr, u32 saddr,
@@ -1100,7 +1074,7 @@ diff -ur v2.6.14/linux/net/ipv4/route.c linux/net/ipv4/route.c
  	unsigned	flags = 0;
  	u32		itag = 0;
  	struct rtable * rth;
-@@ -1941,6 +1948,12 @@
+@@ -1935,6 +1942,12 @@
  	if (BADCLASS(daddr) || ZERONET(daddr) || LOOPBACK(daddr))
  		goto martian_destination;
  
@@ -1113,7 +1087,7 @@ diff -ur v2.6.14/linux/net/ipv4/route.c linux/net/ipv4/route.c
  	/*
  	 *	Now we are ready to route packet.
  	 */
-@@ -1950,6 +1963,10 @@
+@@ -1944,6 +1957,10 @@
  		goto no_route;
  	}
  	free_res = 1;
@@ -1124,7 +1098,7 @@ diff -ur v2.6.14/linux/net/ipv4/route.c linux/net/ipv4/route.c
  
  	RT_CACHE_STAT_INC(in_slow_tot);
  
-@@ -1974,7 +1991,7 @@
+@@ -1968,7 +1985,7 @@
  	if (res.type != RTN_UNICAST)
  		goto martian_destination;
  
@@ -1133,7 +1107,7 @@ diff -ur v2.6.14/linux/net/ipv4/route.c linux/net/ipv4/route.c
  	if (err == -ENOBUFS)
  		goto e_nobufs;
  	if (err == -EINVAL)
-@@ -1989,6 +2006,8 @@
+@@ -1983,6 +2000,8 @@
  brd_input:
  	if (skb->protocol != htons(ETH_P_IP))
  		goto e_inval;
@@ -1142,7 +1116,7 @@ diff -ur v2.6.14/linux/net/ipv4/route.c linux/net/ipv4/route.c
  
  	if (ZERONET(saddr))
  		spec_dst = inet_select_addr(dev, 0, RT_SCOPE_LINK);
-@@ -2031,6 +2050,7 @@
+@@ -2025,6 +2044,7 @@
  	rth->u.dst.dev	= &loopback_dev;
  	dev_hold(rth->u.dst.dev);
  	rth->idev	= in_dev_get(rth->u.dst.dev);
@@ -1150,7 +1124,7 @@ diff -ur v2.6.14/linux/net/ipv4/route.c linux/net/ipv4/route.c
  	rth->rt_gateway	= daddr;
  	rth->rt_spec_dst= spec_dst;
  	rth->u.dst.input= ip_local_deliver;
-@@ -2080,8 +2100,9 @@
+@@ -2074,8 +2094,9 @@
  	goto e_inval;
  }
  
@@ -1162,7 +1136,7 @@ diff -ur v2.6.14/linux/net/ipv4/route.c linux/net/ipv4/route.c
  {
  	struct rtable * rth;
  	unsigned	hash;
-@@ -2096,6 +2117,7 @@
+@@ -2090,6 +2111,7 @@
  		if (rth->fl.fl4_dst == daddr &&
  		    rth->fl.fl4_src == saddr &&
  		    rth->fl.iif == iif &&
@@ -1170,7 +1144,7 @@ diff -ur v2.6.14/linux/net/ipv4/route.c linux/net/ipv4/route.c
  		    rth->fl.oif == 0 &&
  #ifdef CONFIG_IP_ROUTE_FWMARK
  		    rth->fl.fl4_fwmark == skb->nfmark &&
-@@ -2144,7 +2166,19 @@
+@@ -2138,7 +2160,19 @@
  		rcu_read_unlock();
  		return -EINVAL;
  	}
@@ -1191,7 +1165,7 @@ diff -ur v2.6.14/linux/net/ipv4/route.c linux/net/ipv4/route.c
  }
  
  static inline int __mkroute_output(struct rtable **result,
-@@ -2223,6 +2257,7 @@
+@@ -2217,6 +2251,7 @@
  	rth->fl.fl4_tos	= tos;
  	rth->fl.fl4_src	= oldflp->fl4_src;
  	rth->fl.oif	= oldflp->oif;
@@ -1199,7 +1173,7 @@ diff -ur v2.6.14/linux/net/ipv4/route.c linux/net/ipv4/route.c
  #ifdef CONFIG_IP_ROUTE_FWMARK
  	rth->fl.fl4_fwmark= oldflp->fl4_fwmark;
  #endif
-@@ -2370,6 +2405,7 @@
+@@ -2361,6 +2396,7 @@
  	struct flowi fl = { .nl_u = { .ip4_u =
  				      { .daddr = oldflp->fl4_dst,
  					.saddr = oldflp->fl4_src,
@@ -1207,7 +1181,7 @@ diff -ur v2.6.14/linux/net/ipv4/route.c linux/net/ipv4/route.c
  					.tos = tos & IPTOS_RT_MASK,
  					.scope = ((tos & RTO_ONLINK) ?
  						  RT_SCOPE_LINK :
-@@ -2475,6 +2511,7 @@
+@@ -2466,6 +2502,7 @@
  		dev_out = &loopback_dev;
  		dev_hold(dev_out);
  		fl.oif = loopback_dev.ifindex;
@@ -1215,7 +1189,7 @@ diff -ur v2.6.14/linux/net/ipv4/route.c linux/net/ipv4/route.c
  		res.type = RTN_LOCAL;
  		flags |= RTCF_LOCAL;
  		goto make_route;
-@@ -2482,7 +2519,7 @@
+@@ -2473,7 +2510,7 @@
  
  	if (fib_lookup(&fl, &res)) {
  		res.fi = NULL;
@@ -1224,7 +1198,7 @@ diff -ur v2.6.14/linux/net/ipv4/route.c linux/net/ipv4/route.c
  			/* Apparently, routing tables are wrong. Assume,
  			   that the destination is on link.
  
-@@ -2522,6 +2559,7 @@
+@@ -2513,6 +2550,7 @@
  		dev_out = &loopback_dev;
  		dev_hold(dev_out);
  		fl.oif = dev_out->ifindex;
@@ -1232,7 +1206,7 @@ diff -ur v2.6.14/linux/net/ipv4/route.c linux/net/ipv4/route.c
  		if (res.fi)
  			fib_info_put(res.fi);
  		res.fi = NULL;
-@@ -2529,13 +2567,12 @@
+@@ -2520,13 +2558,12 @@
  		goto make_route;
  	}
  
@@ -1249,7 +1223,7 @@ diff -ur v2.6.14/linux/net/ipv4/route.c linux/net/ipv4/route.c
  
  	if (!fl.fl4_src)
  		fl.fl4_src = FIB_RES_PREFSRC(res);
-@@ -2572,6 +2609,7 @@
+@@ -2563,6 +2600,7 @@
  		    rth->fl.fl4_src == flp->fl4_src &&
  		    rth->fl.iif == 0 &&
  		    rth->fl.oif == flp->oif &&
@@ -1257,7 +1231,7 @@ diff -ur v2.6.14/linux/net/ipv4/route.c linux/net/ipv4/route.c
  #ifdef CONFIG_IP_ROUTE_FWMARK
  		    rth->fl.fl4_fwmark == flp->fl4_fwmark &&
  #endif
-@@ -3211,3 +3249,4 @@
+@@ -3199,3 +3237,4 @@
  EXPORT_SYMBOL(__ip_select_ident);
  EXPORT_SYMBOL(ip_route_input);
  EXPORT_SYMBOL(ip_route_output_key);
