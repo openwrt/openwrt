@@ -77,6 +77,12 @@ define Package/Default
   DESCRIPTION:=
 endef
 
+define BuildIPKGVariable
+pkg_$(subst -,_,$(1))_$(2) = $$(Package/$(1)/$(2))
+export pkg_$(subst -,_,$(1))_$(2)
+COMMANDS += if [ -n "$$$$$$$$pkg_$(subst -,_,$(1))_$(2)" ]; then echo "$$$$$$$$pkg_$(subst -,_,$(1))_$(2)" > $(2); fi;
+endef
+
 define BuildPackage
   $(eval $(call Package/Default))
   $(eval $(call Package/$(1)))
@@ -145,6 +151,11 @@ define BuildPackage
 	echo "@@";
   endif
 
+  $(eval $(call BuildIPKGVariable,$(1),conffiles))
+  $(eval $(call BuildIPKGVariable,$(1),preinst))
+  $(eval $(call BuildIPKGVariable,$(1),postinst))
+  $(eval $(call BuildIPKGVariable,$(1),prerm))
+  $(eval $(call BuildIPKGVariable,$(1),postrm))
   $$(IDIR_$(1))/CONTROL/control: $(PKG_BUILD_DIR)/.prepared
 	mkdir -p $$(IDIR_$(1))/CONTROL
 	echo "Package: $(1)" > $$(IDIR_$(1))/CONTROL/control
@@ -163,9 +174,9 @@ define BuildPackage
 	echo "Architecture: $(PKGARCH)" >> $$(IDIR_$(1))/CONTROL/control
 	echo "Description: $(DESCRIPTION)" | sed -e 's,\\,\n ,g' >> $$(IDIR_$(1))/CONTROL/control
 	chmod 644 $$(IDIR_$(1))/CONTROL/control
-	for file in conffiles preinst postinst prerm postrm; do \
-		[ -f ./ipkg/$(1).$$$$file ] && cp ./ipkg/$(1).$$$$file $$(IDIR_$(1))/CONTROL/$$$$file || true; \
-	done
+	(cd $$(IDIR_$(1))/CONTROL; \
+		$(COMMANDS) \
+	)
 
   $$(IPKG_$(1)): $$(IDIR_$(1))/CONTROL/control $(PKG_BUILD_DIR)/.built
 	$(call Package/$(1)/install,$$(IDIR_$(1)))
