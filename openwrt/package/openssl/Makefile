@@ -22,6 +22,26 @@ OPENSSL_OPTIONS:= shared no-ec no-err no-fips no-hw no-krb5 no-threads zlib-dyna
 
 include $(TOPDIR)/package/rules.mk
 
+define Package/libopenssl
+SECTION:=base
+CATEGORY:=Libraries
+TITLE:=Open source SSL libraries
+DEPENDS:=+zlib
+DESCRIPTION:=Open source SSL (Secure Socket Layer) libraries
+URL:=http://www.openssl.org/
+endef
+
+define Package/openssl-util
+$(call Package/libopenssl)
+DEPENDS:=libopenssl
+TITLE:=OpenSSL command line utilities
+DESCRIPTION:=OpenSSL command line utilities
+endef
+
+define Package/openssl-util/conffiles
+/etc/ssl/openssl.cnf
+endef
+
 define Build/Configure
 	$(SED) 's,/CFLAG=,/CFLAG= $(TARGET_SOFT_FLOAT) ,g' $(PKG_BUILD_DIR)/Configure
 	$(SED) s/OPENWRT_OPTIMIZATION_FLAGS/$(BR2_TARGET_OPTIMIZATION)/g $(PKG_BUILD_DIR)/Configure
@@ -68,28 +88,9 @@ define Build/InstallDev
 endef
 	
 define Build/UninstallDev
-	rm -rf \
-		$(STAGING_DIR)/usr/include/openssl \
+	rm -rf	$(STAGING_DIR)/usr/include/openssl \
 		$(STAGING_DIR)/usr/lib/lib{crypto,ssl}.{a,so*}
 endef
-
-
-define Package/libopenssl
- SECTION:=base
- CATEGORY:=Libraries
- TITLE:=Open source SSL libraries
- DEPENDS:=+zlib
- DESCRIPTION:=Open source SSL (Secure Socket Layer) libraries
- URL:=http://www.openssl.org/
-endef
-
-define Package/openssl-util
- $(call Package/libopenssl)
- DEPENDS:=libopenssl
- TITLE:=OpenSSL command line utilities
- DESCRIPTION:=OpenSSL command line utilities
-endef
-
 
 define Package/libopenssl/install
 	install -d -m0755 $(1)/usr/lib
@@ -106,7 +107,6 @@ define Package/openssl-util/install
 	install -d -m0755 $(1)/usr/bin
 	$(CP) $(PKG_INSTALL_DIR)/usr/bin/openssl $(1)/usr/bin/
 endef
-
 
 $(eval $(call BuildPackage,libopenssl))
 $(eval $(call BuildPackage,openssl-util))
