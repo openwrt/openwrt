@@ -31,6 +31,48 @@ define Package/base-files$(TARGET)
  VERSION:=$(PKG_RELEASE)
 endef
 
+define -ar7-2.4/conffiles
+/etc/config/network
+endef
+
+define -aruba-2.6/conffiles
+/etc/config/network
+endef
+
+define -au1000-2.6/conffiles
+/etc/config/network
+endef
+
+define -rb532-2.6/conffiles
+/etc/config/network
+endef
+
+define -sibyte-2.6/conffiles
+/etc/config/network
+endef
+
+define -x86-2.6/conffiles
+/etc/config/network
+endef
+
+define -xscale-2.6/conffiles
+/etc/config/network
+endef
+
+
+define Package/base-files$(TARGET)/conffiles
+/etc/banner
+/etc/hosts
+/etc/inittab
+/etc/group
+/etc/passwd
+/etc/profile
+/etc/shells
+/etc/ipkg.conf
+/etc/sysctl.conf
+$(call $(TARGET)/conffiles)
+endef
+
 define Package/libgcc
  SECTION:=libs
  CATEGORY:=Libraries
