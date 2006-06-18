@@ -35,6 +35,11 @@ TITLE:=IPv4 firewall administration tool
 URL:=http://netfilter.org/
 endef
 
+define Package/iptables/conffiles
+/etc/config/firewall
+/etc/firewall.user
+endef
+
 define Package/iptables-mod-conntrack
 SECTION:=net
 CATEGORY:=Base system
