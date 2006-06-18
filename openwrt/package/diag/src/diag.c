@@ -99,7 +99,7 @@ void (*set_dmz)(u8 state);
 
 static unsigned int diag = 0;
 
-static void diag_change()
+static void diag_change(void)
 {
 	set_diag(0xFF); // off
 	set_dmz(0xFF); // off
@@ -166,11 +166,11 @@ static ctl_table sys_diag[] = {
          { 0 }
 };
 
-static int __init diag_init()
+static int __init diag_init(void)
 {
 	char *buf;
 	u32 board_type;
-	sbh = sb_kattach();
+	sbh = (void *)sb_kattach();
 	sb_gpiosetcore(sbh);
 
 	board_type = sb_boardtype(sbh);
@@ -255,7 +255,7 @@ static int __init diag_init()
 	return 0;
 }
 
-static void __exit diag_exit()
+static void __exit diag_exit(void)
 {
 	unregister_sysctl_table(diag_sysctl_header);
 }
