@@ -17,18 +17,18 @@ PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 include $(TOPDIR)/package/rules.mk
 
 define Package/linux-atm
- SECTION:=libs
- CATEGORY:=Libraries
- TITLE:=Linux ATM Library
- DESCRIPTION:=Library for accessing the Linux ATM subsystem
+SECTION:=libs
+CATEGORY:=Libraries
+TITLE:=Linux ATM Library
+DESCRIPTION:=Library for accessing the Linux ATM subsystem
 endef
 
 define Package/br2684ctl
- SECTION:=net
- CATEGORY:=Network
- TITLE:=RFC2684 bridging
- DEPENDS:=+linux-atm
- DESCRIPTION:=ATM RFC2684 bridging utility
+SECTION:=net
+CATEGORY:=Network
+TITLE:=RFC2684 bridging
+DEPENDS:=+linux-atm
+DESCRIPTION:=ATM RFC2684 bridging utility
 endef
 
 define Build/Configure
@@ -51,22 +51,23 @@ define Package/linux-atm/install
 endef
 
 define Package/br2684ctl/install
+	install -d -m0755 $(1)/etc/hotplug.d/net
+	install -m0644 ./files/br2684.hotplug $(1)/etc/hotplug.d/net/30-br2684
 	install -d -m0755 $(1)/usr/sbin
 	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/br2684ctl $(1)/usr/sbin/
-	install -d -m0755 $(1)/etc/hotplug.d/net
-	install -m0644 ./files/br2684.init $(1)/etc/hotplug.d/net/30-br2684
 endef
 
 define Build/InstallDev
 	mkdir -p $(STAGING_DIR)/usr/include
-	$(CP) $(PKG_INSTALL_DIR)/usr/include/atm{,d,sap}.h $(STAGING_DIR)/usr/include/
+	$(CP)	$(PKG_INSTALL_DIR)/usr/include/atm{,d,sap}.h \
+		$(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libatm.{a,so*} $(STAGING_DIR)/usr/lib/
+	$(CP)	$(PKG_INSTALL_DIR)/usr/lib/libatm.{a,so*} \
+		$(STAGING_DIR)/usr/lib/
 endef
 
 define Build/UninstallDev
-	rm -rf \
-		$(STAGING_DIR)/usr/include/atm{,d,sap}.h \
+	rm -rf	$(STAGING_DIR)/usr/include/atm{,d,sap}.h \
 		$(STAGING_DIR)/usr/lib/libatm.{a,so*}
 endef
 
