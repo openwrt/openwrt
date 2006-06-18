@@ -1,7 +1,7 @@
-diff -urN linux.old/arch/mips/kernel/genex.S linux.dev/arch/mips/kernel/genex.S
---- linux.old/arch/mips/kernel/genex.S	2006-03-20 06:53:29.000000000 +0100
-+++ linux.dev/arch/mips/kernel/genex.S	2006-03-21 12:19:26.000000000 +0100
-@@ -72,6 +72,10 @@
+diff -Nur linux-2.6.17/arch/mips/kernel/genex.S linux-2.6.17-owrt/arch/mips/kernel/genex.S
+--- linux-2.6.17/arch/mips/kernel/genex.S	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17-owrt/arch/mips/kernel/genex.S	2006-06-18 15:36:58.000000000 +0200
+@@ -73,6 +73,10 @@
  	.set	push
  	.set	mips3
  	.set	noat
@@ -12,9 +12,9 @@ diff -urN linux.old/arch/mips/kernel/genex.S linux.dev/arch/mips/kernel/genex.S
  	mfc0	k1, CP0_CAUSE
  	li	k0, 31<<2
  	andi	k1, k1, 0x7c
-diff -urN linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
---- linux.old/arch/mips/mm/c-r4k.c	2006-03-20 06:53:29.000000000 +0100
-+++ linux.dev/arch/mips/mm/c-r4k.c	2006-03-21 12:19:26.000000000 +0100
+diff -Nur linux-2.6.17/arch/mips/mm/c-r4k.c linux-2.6.17-owrt/arch/mips/mm/c-r4k.c
+--- linux-2.6.17/arch/mips/mm/c-r4k.c	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17-owrt/arch/mips/mm/c-r4k.c	2006-06-18 15:36:58.000000000 +0200
 @@ -14,6 +14,12 @@
  #include <linux/mm.h>
  #include <linux/bitops.h>
@@ -28,17 +28,17 @@ diff -urN linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
  #include <asm/bcache.h>
  #include <asm/bootinfo.h>
  #include <asm/cache.h>
-@@ -29,6 +35,9 @@
- #include <asm/war.h>
+@@ -30,6 +36,9 @@
  #include <asm/cacheflush.h> /* for run_uncached() */
+ 
  
 +/* For enabling BCM4710 cache workarounds */
 +int bcm4710 = 0;
 +
  /*
-  * Must die.
-  */
-@@ -73,7 +82,9 @@
+  * Special Variant of smp_call_function for use by cache functions:
+  *
+@@ -94,7 +103,9 @@
  {
  	unsigned long  dc_lsize = cpu_dcache_line_size();
  
@@ -49,7 +49,7 @@ diff -urN linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
  		r4k_blast_dcache_page = blast_dcache16_page;
  	else if (dc_lsize == 32)
  		r4k_blast_dcache_page = r4k_blast_dcache_page_dc32;
-@@ -85,7 +96,9 @@
+@@ -106,7 +117,9 @@
  {
  	unsigned long dc_lsize = cpu_dcache_line_size();
  
@@ -60,7 +60,7 @@ diff -urN linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
  		r4k_blast_dcache_page_indexed = blast_dcache16_page_indexed;
  	else if (dc_lsize == 32)
  		r4k_blast_dcache_page_indexed = blast_dcache32_page_indexed;
-@@ -97,7 +110,9 @@
+@@ -118,7 +131,9 @@
  {
  	unsigned long dc_lsize = cpu_dcache_line_size();
  
@@ -71,7 +71,7 @@ diff -urN linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
  		r4k_blast_dcache = blast_dcache16;
  	else if (dc_lsize == 32)
  		r4k_blast_dcache = blast_dcache32;
-@@ -660,6 +675,8 @@
+@@ -683,6 +698,8 @@
  	unsigned long addr = (unsigned long) arg;
  
  	R4600_HIT_CACHEOP_WAR_IMPL;
@@ -80,7 +80,7 @@ diff -urN linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
  	protected_writeback_dcache_line(addr & ~(dc_lsize - 1));
  	if (!cpu_icache_snoops_remote_store && scache_size)
  		protected_writeback_scache_line(addr & ~(sc_lsize - 1));
-@@ -1136,6 +1153,16 @@
+@@ -1189,6 +1206,16 @@
  static inline void coherency_setup(void)
  {
  	change_c0_config(CONF_CM_CMASK, CONF_CM_DEFAULT);
@@ -97,7 +97,7 @@ diff -urN linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
  
  	/*
  	 * c0_status.cu=0 specifies that updates by the sc instruction use
-@@ -1165,6 +1192,15 @@
+@@ -1227,6 +1254,15 @@
  
  	/* Default cache error handler for R4000 and R5000 family */
  	set_uncached_handler (0x100, &except_vec2_generic, 0x80);
@@ -113,10 +113,10 @@ diff -urN linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
  
  	probe_pcache();
  	setup_scache();
-diff -urN linux.old/arch/mips/mm/tlbex.c linux.dev/arch/mips/mm/tlbex.c
---- linux.old/arch/mips/mm/tlbex.c	2006-03-21 12:12:38.000000000 +0100
-+++ linux.dev/arch/mips/mm/tlbex.c	2006-03-21 12:19:26.000000000 +0100
-@@ -28,6 +28,10 @@
+diff -Nur linux-2.6.17/arch/mips/mm/tlbex.c linux-2.6.17-owrt/arch/mips/mm/tlbex.c
+--- linux-2.6.17/arch/mips/mm/tlbex.c	2006-06-18 15:34:19.000000000 +0200
++++ linux-2.6.17-owrt/arch/mips/mm/tlbex.c	2006-06-18 15:36:58.000000000 +0200
+@@ -38,6 +38,10 @@
  
  /* #define DEBUG_TLB */
  
@@ -127,7 +127,7 @@ diff -urN linux.old/arch/mips/mm/tlbex.c linux.dev/arch/mips/mm/tlbex.c
  static __init int __attribute__((unused)) r45k_bvahwbug(void)
  {
  	/* XXX: We should probe for the presence of this bug, but we don't. */
-@@ -1152,6 +1156,12 @@
+@@ -1184,6 +1188,12 @@
  	memset(relocs, 0, sizeof(relocs));
  	memset(final_handler, 0, sizeof(final_handler));
  
@@ -140,12 +140,12 @@ diff -urN linux.old/arch/mips/mm/tlbex.c linux.dev/arch/mips/mm/tlbex.c
  	/*
  	 * create the plain linear handler
  	 */
-diff -urN linux.old/include/asm-mips/r4kcache.h linux.dev/include/asm-mips/r4kcache.h
---- linux.old/include/asm-mips/r4kcache.h	2006-03-20 06:53:29.000000000 +0100
-+++ linux.dev/include/asm-mips/r4kcache.h	2006-03-21 18:40:32.000000000 +0100
-@@ -16,6 +16,18 @@
- #include <asm/cacheops.h>
+diff -Nur linux-2.6.17/include/asm-mips/r4kcache.h linux-2.6.17-owrt/include/asm-mips/r4kcache.h
+--- linux-2.6.17/include/asm-mips/r4kcache.h	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17-owrt/include/asm-mips/r4kcache.h	2006-06-18 15:56:57.000000000 +0200
+@@ -17,6 +17,18 @@
  #include <asm/cpu-features.h>
+ #include <asm/mipsmtregs.h>
  
 +#ifdef CONFIG_BCM4710
 +#define BCM4710_DUMMY_RREG() (((sbconfig_t *)(KSEG1ADDR(SB_ENUM_BASE + SBCONFIGOFF)))->sbimstate)
@@ -162,29 +162,31 @@ diff -urN linux.old/include/asm-mips/r4kcache.h linux.dev/include/asm-mips/r4kca
  /*
   * This macro return a properly sign-extended address suitable as base address
   * for indexed cache operations.  Two issues here:
-@@ -46,6 +58,7 @@
- 
+@@ -150,6 +162,7 @@
  static inline void flush_dcache_line_indexed(unsigned long addr)
  {
+ 	__dflush_prologue
 +	BCM4710_DUMMY_RREG();
  	cache_op(Index_Writeback_Inv_D, addr);
+ 	__dflush_epilogue
  }
- 
-@@ -61,11 +74,13 @@
- 
+@@ -169,6 +182,7 @@
  static inline void flush_dcache_line(unsigned long addr)
  {
+ 	__dflush_prologue
 +	BCM4710_DUMMY_RREG();
  	cache_op(Hit_Writeback_Inv_D, addr);
+ 	__dflush_epilogue
  }
- 
+@@ -176,6 +190,7 @@
  static inline void invalidate_dcache_line(unsigned long addr)
  {
+ 	__dflush_prologue
 +	BCM4710_DUMMY_RREG();
  	cache_op(Hit_Invalidate_D, addr);
+ 	__dflush_epilogue
  }
- 
-@@ -97,6 +112,7 @@
+@@ -208,6 +223,7 @@
   */
  static inline void protected_flush_icache_line(unsigned long addr)
  {
@@ -192,7 +194,7 @@ diff -urN linux.old/include/asm-mips/r4kcache.h linux.dev/include/asm-mips/r4kca
  	protected_cache_op(Hit_Invalidate_I, addr);
  }
  
-@@ -108,6 +124,7 @@
+@@ -219,6 +235,7 @@
   */
  static inline void protected_writeback_dcache_line(unsigned long addr)
  {
@@ -200,7 +202,7 @@ diff -urN linux.old/include/asm-mips/r4kcache.h linux.dev/include/asm-mips/r4kca
  	protected_cache_op(Hit_Writeback_Inv_D, addr);
  }
  
-@@ -228,8 +245,52 @@
+@@ -339,8 +356,52 @@
  		: "r" (base),						\
  		  "i" (op));
  
@@ -254,30 +256,33 @@ diff -urN linux.old/include/asm-mips/r4kcache.h linux.dev/include/asm-mips/r4kca
  static inline void blast_##pfx##cache##lsize(void)			\
  {									\
  	unsigned long start = INDEX_BASE;				\
-@@ -239,6 +300,7 @@
- 	                       current_cpu_data.desc.waybit;		\
- 	unsigned long ws, addr;						\
+@@ -352,6 +413,7 @@
+ 									\
+ 	__##pfx##flush_prologue						\
  									\
 +	war								\
  	for (ws = 0; ws < ws_end; ws += ws_inc)				\
  		for (addr = start; addr < end; addr += lsize * 32)	\
  			cache##lsize##_unroll32(addr|ws,indexop);	\
-@@ -249,6 +311,7 @@
- 	unsigned long start = page;					\
- 	unsigned long end = page + PAGE_SIZE;				\
+@@ -366,6 +428,7 @@
+ 									\
+ 	__##pfx##flush_prologue						\
  									\
 +	war								\
  	do {								\
  		cache##lsize##_unroll32(start,hitop);			\
  		start += lsize * 32;					\
-@@ -265,29 +328,31 @@
+@@ -384,6 +447,8 @@
  	                       current_cpu_data.desc.waybit;		\
  	unsigned long ws, addr;						\
  									\
 +	war								\
++									\
+ 	__##pfx##flush_prologue						\
+ 									\
  	for (ws = 0; ws < ws_end; ws += ws_inc)				\
- 		for (addr = start; addr < end; addr += lsize * 32)	\
- 			cache##lsize##_unroll32(addr|ws,indexop);	\
+@@ -393,24 +458,25 @@
+ 	__##pfx##flush_epilogue						\
  }
  
 -__BUILD_BLAST_CACHE(d, dcache, Index_Writeback_Inv_D, Hit_Writeback_Inv_D, 16)
@@ -309,11 +314,11 @@ diff -urN linux.old/include/asm-mips/r4kcache.h linux.dev/include/asm-mips/r4kca
  	unsigned long addr = start & ~(lsize - 1);			\
  	unsigned long aend = (end - 1) & ~(lsize - 1);			\
 +	war								\
- 	while (1) {							\
- 		prot##cache_op(hitop, addr);				\
- 		if (addr == aend)					\
-@@ -296,12 +361,12 @@
- 	}								\
+ 									\
+ 	__##pfx##flush_prologue						\
+ 									\
+@@ -424,13 +490,13 @@
+ 	__##pfx##flush_epilogue						\
  }
  
 -__BUILD_BLAST_CACHE_RANGE(d, dcache, Hit_Writeback_Inv_D, protected_)
@@ -328,13 +333,15 @@ diff -urN linux.old/include/asm-mips/r4kcache.h linux.dev/include/asm-mips/r4kca
 +__BUILD_BLAST_CACHE_RANGE(s, scache, Hit_Writeback_Inv_SD, , )
  /* blast_inv_dcache_range */
 -__BUILD_BLAST_CACHE_RANGE(inv_d, dcache, Hit_Invalidate_D, )
+-__BUILD_BLAST_CACHE_RANGE(inv_s, scache, Hit_Invalidate_SD, )
 +__BUILD_BLAST_CACHE_RANGE(inv_d, dcache, Hit_Invalidate_D, , )
++__BUILD_BLAST_CACHE_RANGE(inv_s, scache, Hit_Invalidate_SD, , )
  
  #endif /* _ASM_R4KCACHE_H */
-diff -urN linux.old/include/asm-mips/stackframe.h linux.dev/include/asm-mips/stackframe.h
---- linux.old/include/asm-mips/stackframe.h	2006-03-20 06:53:29.000000000 +0100
-+++ linux.dev/include/asm-mips/stackframe.h	2006-03-21 12:19:26.000000000 +0100
-@@ -285,6 +285,10 @@
+diff -Nur linux-2.6.17/include/asm-mips/stackframe.h linux-2.6.17-owrt/include/asm-mips/stackframe.h
+--- linux-2.6.17/include/asm-mips/stackframe.h	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17-owrt/include/asm-mips/stackframe.h	2006-06-18 15:36:58.000000000 +0200
+@@ -361,6 +361,10 @@
  		.macro	RESTORE_SP_AND_RET
  		LONG_L	sp, PT_R29(sp)
  		.set	mips3
