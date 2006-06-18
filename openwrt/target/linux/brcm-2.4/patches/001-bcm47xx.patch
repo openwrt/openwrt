@@ -11723,7 +11723,7 @@ diff -urN linux.old/arch/mips/bcm947xx/sbpci.c linux.dev/arch/mips/bcm947xx/sbpc
 +		return -1;
 +	}
 +
-+	if ((chip == 0x4710) && (chiprev == 0))
++	if ((chip == 0x4310) && (chiprev == 0))
 +		pci_disabled = TRUE;
 +	
 +	sb = (sbconfig_t *)((ulong) pci + SBCONFIGOFF);
