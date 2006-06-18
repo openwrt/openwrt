@@ -8,27 +8,27 @@ PKG_VERSION:=0.35
 PKG_RELEASE:=2
 PKG_MD5SUM:=016f49d71bc32eee2b5d11fc1600cfbe
 
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE_URL:=@SF/shfs
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
 include $(TOPDIR)/package/rules.mk
 
 define Package/kmod-shfs
- SECTION:=drivers
- CATEGORY:=Drivers
- DEPENDS:=
- TITLE:=Shell FileSystem (ShFS)
- DESCRIPTION:=Shell FileSystem (ShFS) \\\
+SECTION:=drivers
+CATEGORY:=Drivers
+DEPENDS:=
+TITLE:=Shell FileSystem (ShFS)
+DESCRIPTION:=Shell FileSystem (ShFS) \\\
 ShFS is a simple and easy to use Linux kernel module which allows you to \\\
 mount remote filesystems using a plain shell (SSH) connection. When using \\\
 ShFS, you can access all remote files just like the local ones, only the \\\
 access is governed through the transport security of SSH.
- URL:=http://shfs.sourceforge.net/
- VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
+URL:=http://shfs.sourceforge.net/
+VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
 endef
 
 define Build/Compile

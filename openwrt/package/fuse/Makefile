@@ -8,23 +8,23 @@ PKG_VERSION:=2.5.3
 PKG_RELEASE:=1
 PKG_MD5SUM:=9c7e8b6606b9f158ae20b8521ba2867c
 
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE_URL:=@SF/$(PKG_NAME)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
 include $(TOPDIR)/package/rules.mk
 
 define Package/kmod-fuse
- SECTION:=drivers
- CATEGORY:=Drivers
- DEPENDS:=
- TITLE:=FUSE (Filesystem in UserSpacE)
- DESCRIPTION:=FUSE (Filesystem in UserSpacE)
- URL:=http://fuse.sourceforge.net/
- VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
+SECTION:=drivers
+CATEGORY:=Drivers
+DEPENDS:=
+TITLE:=FUSE (Filesystem in UserSpacE)
+DESCRIPTION:=FUSE (Filesystem in UserSpacE)
+URL:=http://fuse.sourceforge.net/
+VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
 endef
 
 define Build/Configure
@@ -81,6 +81,25 @@ define Build/Compile
 		all install
 endef
 
+define Build/InstallDev
+	mkdir -p $(STAGING_DIR)/usr/include
+	$(CP)	$(PKG_INSTALL_DIR)/usr/include/fuse{,.h} \
+		$(STAGING_DIR)/usr/include/
+	mkdir -p $(STAGING_DIR)/usr/lib
+	$(CP)	$(PKG_INSTALL_DIR)/usr/lib/libfuse.{a,so*} \
+		$(STAGING_DIR)/usr/lib/
+	mkdir -p $(STAGING_DIR)/usr/lib/pkgconfig
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/fuse.pc $(STAGING_DIR)/usr/lib/pkgconfig/
+	$(SED) 's,-I$${includedir}/fuse,,g' $(STAGING_DIR)/usr/lib/pkgconfig/fuse.pc
+	$(SED) 's,-L$${libdir},,g' $(STAGING_DIR)/usr/lib/pkgconfig/fuse.pc
+endef
+	
+define Build/UninstallDev
+	rm -rf	$(STAGING_DIR)/usr/include/fuse{,.h} \
+		$(STAGING_DIR)/usr/lib/libfuse.{a,so*} \
+		$(STAGING_DIR)/usr/lib/pkgconfig/fuse.pc
+endef
+
 define Package/kmod-fuse/install
 	install -d -m0755 $(1)/lib/modules/$(LINUX_VERSION)
 	$(CP) $(PKG_INSTALL_DIR)/lib/modules/$(LINUX_VERSION)/kernel/fs/fuse/fuse.$(LINUX_KMOD_SUFFIX) \
@@ -90,29 +109,5 @@ define Package/kmod-fuse/install
 	install -d -m0755 $(1)/usr/bin
 	$(CP) $(PKG_INSTALL_DIR)/usr/bin/fusermount $(1)/usr/bin/
 endef
-
-
-define Build/InstallDev
-	mkdir -p $(STAGING_DIR)/usr/include
-	$(CP) $(PKG_INSTALL_DIR)/usr/include/fuse $(STAGING_DIR)/usr/include/
-	$(CP) $(PKG_INSTALL_DIR)/usr/include/fuse.h $(STAGING_DIR)/usr/include/
-	mkdir -p $(STAGING_DIR)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libfuse.a $(STAGING_DIR)/usr/lib/
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libfuse.so* $(STAGING_DIR)/usr/lib/
-	mkdir -p $(STAGING_DIR)/usr/lib/pkgconfig
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/fuse.pc $(STAGING_DIR)/usr/lib/pkgconfig/
-	$(SED) 's,-I$${includedir}/fuse,,g' $(STAGING_DIR)/usr/lib/pkgconfig/fuse.pc
-	$(SED) 's,-L$${libdir},,g' $(STAGING_DIR)/usr/lib/pkgconfig/fuse.pc
-endef
-	
-define Build/UninstallDev
-	rm -rf \
-		$(STAGING_DIR)/usr/include/fuse \
-		$(STAGING_DIR)/usr/include/fuse.h \
-		$(STAGING_DIR)/usr/lib/libfuse.a \
-		$(STAGING_DIR)/usr/lib/libfuse.so* \
-		$(STAGING_DIR)/usr/lib/pkgconfig/fuse.pc
-endef
-
 
 $(eval $(call BuildPackage,kmod-fuse))

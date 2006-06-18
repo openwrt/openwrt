@@ -8,22 +8,21 @@ PKG_VERSION:=0.6.2pre1
 PKG_RELEASE:=1
 PKG_MD5SUM:=acd12157be25d7b3c8df90914049403e
 
+PKG_BUILD_DIR:=$(BUILD_DIR)/mini_fo-0-6-2-pre1
 PKG_SOURCE_URL:=http://www.denx.de/twiki/pub/Know/MiniFOHome/
 PKG_SOURCE:=mini_fo-0-6-2-pre1.tar.bz2
 PKG_CAT:=bzcat
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/mini_fo-0-6-2-pre1
-
 include $(TOPDIR)/package/rules.mk
 
 define Package/kmod-mini-fo
- SECTION:=drivers
- CATEGORY:=Drivers
- DEPENDS:=
- TITLE:=The mini fanout overlay file system
- DESCRIPTION:=The mini fanout overlay file system
- URL:=http://www.denx.de/wiki/Know.MiniFOHome
- VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
+SECTION:=drivers
+CATEGORY:=Drivers
+DEPENDS:=
+TITLE:=The mini fanout overlay file system
+DESCRIPTION:=The mini fanout overlay file system
+URL:=http://www.denx.de/wiki/Know.MiniFOHome
+VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
 endef
 
 define Build/Compile

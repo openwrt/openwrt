@@ -26,10 +26,11 @@ URL:=http://hplabs.hp.com/personal/Jean_Tourrilhes/Linux/Tools.html
 endef
 
 define Build/Compile
+	rm -rf $(PKG_INSTALL_DIR)
+	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CC="$(TARGET_CC)" CFLAGS="$(TARGET_CFLAGS) -I." \
 		libiw.so.28 iwmulticall
-	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		PREFIX="$(PKG_INSTALL_DIR)" \
 		INSTALL_DIR="$(PKG_INSTALL_DIR)/usr/sbin" \
@@ -37,23 +38,24 @@ define Build/Compile
 		install-iwmulticall
 endef
 
-define Package/wireless-tools/install
-	install -d -m0755  $(1)/usr/lib
-	install -d -m0755 $(1)/usr/sbin
-	install -m0755 $(PKG_BUILD_DIR)/libiw.so.28 $(1)/usr/lib/
-	install -m0755 $(PKG_INSTALL_DIR)/usr/sbin/iw{config,getid,list,priv,spy} $(1)/usr/sbin/
-endef
-
 define Build/InstallDev
-	mkdir -p $(STAGING_DIR)/usr/{lib,include}
+	mkdir -p $(STAGING_DIR)/usr/include
+	$(CP) $(PKG_BUILD_DIR)/{iwlib,wireless}.h $(STAGING_DIR)/usr/include/
+	mkdir -p $(STAGING_DIR)/usr/lib
 	$(CP) $(PKG_BUILD_DIR)/libiw.so* $(STAGING_DIR)/usr/lib/
 	ln -sf libiw.so.28 $(STAGING_DIR)/usr/lib/libiw.so
-	$(CP) $(PKG_BUILD_DIR)/{iwlib,wireless}.h $(STAGING_DIR)/usr/include/
 endef
 	
 define Build/UninstallDev
-	rm -f $(STAGING_DIR)/usr/lib/libiw.*
-	rm -f $(STAGING_DIR)/usr/include/{iwlib,wireless}.h
+	rm -f	$(STAGING_DIR)/usr/include/{iwlib,wireless}.h \
+		$(STAGING_DIR)/usr/lib/libiw.so*
+endef
+
+define Package/wireless-tools/install
+	install -d -m0755  $(1)/usr/lib
+	install -m0755 $(PKG_BUILD_DIR)/libiw.so.28 $(1)/usr/lib/
+	install -d -m0755 $(1)/usr/sbin
+	install -m0755 $(PKG_INSTALL_DIR)/usr/sbin/iw{config,getid,list,priv,spy} $(1)/usr/sbin/
 endef
 
 $(eval $(call BuildPackage,wireless-tools))

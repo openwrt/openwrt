@@ -22,20 +22,19 @@ define Build/Prepare
 endef
 
 define Package/nvram/install
-	install -d -m0755  $(1)/usr/lib
+	install -d -m0755 $(1)/usr/lib
+	$(CP) $(PKG_BUILD_DIR)/lib{nvram,shared}*.so $(1)/usr/lib/
 	install -d -m0755 $(1)/usr/sbin
-	$(CP) $(PKG_BUILD_DIR)/*.so $(1)/usr/lib
-	install -m0755 $(PKG_BUILD_DIR)/nvram $(1)/usr/sbin
+	install -m0755 $(PKG_BUILD_DIR)/nvram $(1)/usr/sbin/
 endef
 
 define Build/InstallDev
 	mkdir -p $(STAGING_DIR)/usr/lib
-	$(CP) $(PKG_BUILD_DIR)/*.so $(STAGING_DIR)/usr/lib
+	$(CP) $(PKG_BUILD_DIR)/lib{nvram,shared}*.so $(STAGING_DIR)/usr/lib/
 endef
 
 define Build/UninstallDev
-	rm -f $(STAGING_DIR)/usr/lib/libshared*.so \
-		$(STAGING_DIR)/usr/lib/libnvram*.so
+	rm -f $(STAGING_DIR)/usr/lib/lib{nvram,shared}*.so
 endef
 
 $(eval $(call BuildPackage,nvram))
