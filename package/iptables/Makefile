@@ -50,7 +50,6 @@ Includes: \\\
 	* libipt_conntrack \\\
 	* libipt_helper \\\
 	* libipt_connmark/CONNMARK
-
 endef
 
 define Package/iptables-mod-filter
@@ -62,7 +61,6 @@ DESCRIPTION:=iptables extensions for packet content inspection\\\
 Includes: \\\
 	* libipt_ipp2p \\\
 	* libipt_layer7 
-						
 endef
 
 define Package/iptables-mod-imq
@@ -73,7 +71,6 @@ TITLE:=IMQ support
 DESCRIPTION:=iptables extension for IMQ support\\\
 Includes: \\\
 	* libipt_IMQ
-						
 endef
 
 define Package/iptables-mod-ipopt
@@ -91,7 +88,6 @@ Includes: \\\
 	* libipt_tcpmms \\\
 	* libipt_ttl/TTL \\\
 	* libipt_unclean 
-
 endef
 
 define Package/iptables-mod-ipsec
@@ -103,7 +99,6 @@ DESCRIPTION:=iptables extensions for matching ipsec traffic\\\
 Includes: \\\
 	* libipt_ah \\\
 	* libipt_esp
-
 endef
 
 define Package/iptables-mod-nat
@@ -138,7 +133,6 @@ Includes: \\\
 	* libipt_physdev \\\
 	* libipt_pkttype \\\
 	* libipt_recent
-
 endef
 
 define Package/iptables-utils

@@ -8,23 +8,22 @@ PKG_VERSION:=2.4.5
 PKG_RELEASE:=1
 PKG_MD5SUM:=a9a8e88313faceebfc5ceb1a9da9a3c4
 
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE_URL:=http://www.openswan.org/download
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-
 include $(TOPDIR)/package/rules.mk
 
 define Package/kmod-openswan
- SECTION:=drivers
- CATEGORY:=Drivers
- DEPENDS:=
- TITLE:=Openswan kernel module
- DESCRIPTION:=Openswan kernel module \\\
+SECTION:=drivers
+CATEGORY:=Drivers
+DEPENDS:=
+TITLE:=Openswan kernel module
+DESCRIPTION:=Openswan kernel module \\\
 Openswan is an implementation of IPsec for Linux.
- URL:=http://www.openswan.org/
- VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
+URL:=http://www.openswan.org/
+VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
 endef
 
 define Build/Compile

@@ -8,24 +8,24 @@ PKG_VERSION:=1.0d1
 PKG_RELEASE:=1
 PKG_MD5SUM:=5da1fceb15168f4c7ad407a3e38ddecb
 
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE_URL:=http://castet.matthieu.free.fr/eagle/release/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
 include $(TOPDIR)/package/rules.mk
 
 #FIXME: add dependency on kmod-usb-core
 define Package/kmod-ueagle-atm
- SECTION:=drivers
- CATEGORY:=Drivers
- DEPENDS:=@LINUX_2_6_BRCM
- TITLE:=Driver for Eagle 8051 based USB ADSL modems
- DESCRIPTION:=Driver for Eagle 8051 based USB ADSL modems
- URL:=http://www.eagle-usb.org/
- VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
+SECTION:=drivers
+CATEGORY:=Drivers
+DEPENDS:=@LINUX_2_6_BRCM @PACKAGE_KMOD_USB
+TITLE:=Driver for Eagle 8051 based USB ADSL modems
+DESCRIPTION:=Driver for Eagle 8051 based USB ADSL modems
+URL:=http://www.eagle-usb.org/
+VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
 endef
 
 define Build/Compile

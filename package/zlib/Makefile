@@ -8,8 +8,7 @@ PKG_RELEASE:=3
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=http://www.zlib.net \
-	@SF/zlib
+PKG_SOURCE_URL:=http://www.zlib.net @SF/zlib
 PKG_MD5SUM:=dee233bf288ee795ac96a98cc2e369b6
 PKG_CAT:=bzcat
 
@@ -47,27 +46,23 @@ define Build/Compile
 		install
 endef
 
-define Package/zlib/install
-	install -m0755 -d $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libz.so.* $(1)/usr/lib/
-endef
-
 define Build/InstallDev
 	mkdir -p $(STAGING_DIR)/usr/include
-	$(CP)	$(PKG_INSTALL_DIR)/usr/include/zconf.h \
-		$(PKG_INSTALL_DIR)/usr/include/zlib.h \
+	$(CP)	$(PKG_INSTALL_DIR)/usr/include/z{conf,lib}.h \
 		$(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	$(CP)	$(PKG_INSTALL_DIR)/usr/lib/libz.a \
-		$(PKG_INSTALL_DIR)/usr/lib/libz.so* \
+	$(CP)	$(PKG_INSTALL_DIR)/usr/lib/libz.{a,so*} \
 		$(STAGING_DIR)/usr/lib/
 endef
 	
 define Build/UninstallDev
-	rm -rf	$(STAGING_DIR)/usr/include/zconf.h \
-		$(STAGING_DIR)/usr/include/zlib.h \
-		$(STAGING_DIR)/usr/lib/libz.a \
-		$(STAGING_DIR)/usr/lib/libz.so*
+	rm -rf	$(STAGING_DIR)/usr/include/z{conf,lib}.h \
+		$(STAGING_DIR)/usr/lib/libz.{a,so*}
+endef
+
+define Package/zlib/install
+	install -m0755 -d $(1)/usr/lib
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libz.so.* $(1)/usr/lib/
 endef
 
 $(eval $(call BuildPackage,zlib))

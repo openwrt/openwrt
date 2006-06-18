@@ -23,12 +23,12 @@ endif
 CONFIG_PACKAGE_base-files$(TARGET):=$(CONFIG_PACKAGE_base-files)
 
 define Package/base-files$(TARGET)
- SECTION:=base
- CATEGORY:=Base system
- DEFAULT:=y
- TITLE:=OpenWrt system scripts
- DESCRIPTION:=Base filesystem for OpenWrt
- VERSION:=$(PKG_RELEASE)
+SECTION:=base
+CATEGORY:=Base system
+DEFAULT:=y
+TITLE:=OpenWrt system scripts
+DESCRIPTION:=Base filesystem for OpenWrt
+VERSION:=$(PKG_RELEASE)
 endef
 
 define -ar7-2.4/conffiles
@@ -74,19 +74,19 @@ $(call $(TARGET)/conffiles)
 endef
 
 define Package/libgcc
- SECTION:=libs
- CATEGORY:=Libraries
- DEFAULT:=y
- TITLE:=GCC support library
- VERSION:=$(LIBGCC_VERSION)-$(PKG_RELEASE)
- DESCRIPTION:=$(TITLE)
+SECTION:=libs
+CATEGORY:=Libraries
+DEFAULT:=y
+TITLE:=GCC support library
+VERSION:=$(LIBGCC_VERSION)-$(PKG_RELEASE)
+DESCRIPTION:=$(TITLE)
 endef
 
 define Package/uclibc
- $(call Package/base-files$(TARGET))
- VERSION:=$(UCLIBC_VERSION)-$(PKG_RELEASE)
- TITLE:=C library
- DESCRIPTION:=C library for embedded systems
+$(call Package/base-files$(TARGET))
+VERSION:=$(UCLIBC_VERSION)-$(PKG_RELEASE)
+TITLE:=C library
+DESCRIPTION:=C library for embedded systems
 endef
 
 define Build/Prepare

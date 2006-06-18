@@ -17,11 +17,11 @@ PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 include $(TOPDIR)/package/rules.mk
 
 define Package/libpcap
- SECTION:=base
- CATEGORY:=Libraries
- TITLE:=Low-level packet capture library
- DESCRIPTION:=A system-independent library for user-level network packet capture.
- URL:=http://www.tcpdump.org/
+SECTION:=base
+CATEGORY:=Libraries
+TITLE:=Low-level packet capture library
+DESCRIPTION:=A system-independent library for user-level network packet capture.
+URL:=http://www.tcpdump.org/
 endef
 
 define Build/Configure
@@ -69,29 +69,23 @@ define Build/Compile
 		all install
 endef
 
-define Package/libpcap/install
-	install -m0755 -d $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libpcap.so.* $(1)/usr/lib/
-endef
-
 define Build/InstallDev
 	mkdir -p $(STAGING_DIR)/usr/include
-	$(CP)	$(PKG_INSTALL_DIR)/usr/include/pcap.h \
-		$(PKG_INSTALL_DIR)/usr/include/pcap-bpf.h \
-		$(PKG_INSTALL_DIR)/usr/include/pcap-namedb.h \
+	$(CP)	$(PKG_INSTALL_DIR)/usr/include/pcap{,-bpf,-namedb}.h \
 		$(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	$(CP)	$(PKG_INSTALL_DIR)/usr/lib/libpcap.a \
-		$(PKG_INSTALL_DIR)/usr/lib/libpcap.so* \
+	$(CP)	$(PKG_INSTALL_DIR)/usr/lib/libpcap.{a,so*} \
 		$(STAGING_DIR)/usr/lib/
 endef
 
 define Build/UninstallDev
-	rm -rf	$(STAGING_DIR)/usr/include/pcap.h \
-		$(STAGING_DIR)/usr/include/pcap-bpf.h \
-		$(STAGING_DIR)/usr/include/pcap-namedb.h \
-		$(STAGING_DIR)/usr/lib/libpcap.a \
-		$(STAGING_DIR)/usr/lib/libpcap.so*
+	rm -rf	$(STAGING_DIR)/usr/include/pcap{,-bpf,-named}.h \
+		$(STAGING_DIR)/usr/lib/libpcap.{a,so*}
+endef
+
+define Package/libpcap/install
+	install -m0755 -d $(1)/usr/lib
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libpcap.so.* $(1)/usr/lib/
 endef
 
 $(eval $(call BuildPackage,libpcap))

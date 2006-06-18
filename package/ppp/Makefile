@@ -18,64 +18,63 @@ PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 include $(TOPDIR)/package/rules.mk
 
 define Package/ppp
- SECTION:=net
- CATEGORY:=Network
- MENU:=1
- DEFAULT:=y
- TITLE:=PPP daemon
- DESCRIPTION:=PPP (Point-to-Point Protocol) daemon
- URL:=http://ppp.samba.org/
+SECTION:=net
+CATEGORY:=Network
+MENU:=1
+DEFAULT:=y
+TITLE:=PPP daemon
+DESCRIPTION:=PPP (Point-to-Point Protocol) daemon
+URL:=http://ppp.samba.org/
 endef
 
 define Package/ppp-mod-pppoa
- SECTION:=net
- CATEGORY:=Network
- DEPENDS:=ppp +linux-atm
- TITLE:=PPPoA plugin
- DESCRIPTION:=PPPoA (PPP over ATM) plugin for ppp
+SECTION:=net
+CATEGORY:=Network
+DEPENDS:=ppp +linux-atm
+TITLE:=PPPoA plugin
+DESCRIPTION:=PPPoA (PPP over ATM) plugin for ppp
 endef
 
 define Package/ppp-mod-pppoe
- SECTION:=net
- CATEGORY:=Network
- DEFAULT:=y
- DEPENDS:=ppp
- TITLE:=PPPoE plugin
- DESCRIPTION:=PPPoE (PPP over Ethernet) plugin for ppp
+SECTION:=net
+CATEGORY:=Network
+DEFAULT:=y
+DEPENDS:=ppp
+TITLE:=PPPoE plugin
+DESCRIPTION:=PPPoE (PPP over Ethernet) plugin for ppp
 endef
 
 define Package/ppp-mod-radius
- SECTION:=net
- CATEGORY:=Network
- DEPENDS:=ppp
- TITLE:=RADIUS plugin
- DESCRIPTION:=RADIUS (Remote Authentication Dial-In User Service) plugin for ppp
+SECTION:=net
+CATEGORY:=Network
+DEPENDS:=ppp
+TITLE:=RADIUS plugin
+DESCRIPTION:=RADIUS (Remote Authentication Dial-In User Service) plugin for ppp
 endef
 
 define Package/chat
- SECTION:=net
- CATEGORY:=Network
- DEPENDS:=ppp
- TITLE:=Establish conversation with a modem
- DESCRIPTION:=Utility to establish conversation with other PPP servers (via a modem)
+SECTION:=net
+CATEGORY:=Network
+DEPENDS:=ppp
+TITLE:=Establish conversation with a modem
+DESCRIPTION:=Utility to establish conversation with other PPP servers (via a modem)
 endef
 
 define Package/pppdump
- SECTION:=net
- CATEGORY:=Network
- DEPENDS:=ppp
- TITLE:=Read PPP record file
- DESCRIPTION:=Utility to read PPP record file
+SECTION:=net
+CATEGORY:=Network
+DEPENDS:=ppp
+TITLE:=Read PPP record file
+DESCRIPTION:=Utility to read PPP record file
 endef
 
 define Package/pppstats
- SECTION:=net
- CATEGORY:=Network
- DEPENDS:=ppp
- TITLE:=Report PPP statistics
- DESCRIPTION:=Utility to report PPP statistics
+SECTION:=net
+CATEGORY:=Network
+DEPENDS:=ppp
+TITLE:=Report PPP statistics
+DESCRIPTION:=Utility to report PPP statistics
 endef
-
 
 define Build/Compile
 	rm -rf $(PKG_INSTALL_DIR)
