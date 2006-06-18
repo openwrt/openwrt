@@ -1,0 +1,68 @@
+--- util-linux-2.12r-orig/MCONFIG	2004-12-13 00:15:48.000000000 +0100
++++ util-linux-2.12r/MCONFIG	2005-10-03 17:54:15.945049312 +0200
+@@ -16,8 +16,8 @@
+ # Select for ARCH one of intel, alpha, sparc, arm, m68k, mips
+ # Select for CPU i386 if the binaries must be able to run on an intel 386
+ # (by default i486 code is generated, see below)
+-CPU=$(shell uname -m)
+-ARCH=$(shell echo $(CPU) | sed 's/i.86/intel/;s/arm.*/arm/')
++CPU=
++ARCH=mips
+ 
+ # If HAVE_PAM is set to "yes", then login, chfn, chsh, and newgrp
+ # will use PAM for authentication. Additionally, passwd will not be
+@@ -64,12 +64,12 @@
+ # If HAVE_WRITE is set to "yes", then write will not be built or
+ # installed from the misc-utils subdirectory.
+ # (There is a network aware write in netwrite from NetKit 0.16 or later.)
+-HAVE_WRITE=no
++HAVE_WRITE=yes
+ 
+ # If HAVE_GETTY is set to "yes", then agetty will not be built or
+ # installed from the login-utils subdirectory.  Note that agetty can
+ # co-exist with other gettys, so this option should never be used.
+-HAVE_GETTY=no
++HAVE_GETTY=yes
+ 
+ # If USE_TTY_GROUP is set to "yes", then wall and write will be installed
+ # setgid to the "tty" group, and mesg will only set the group write bit.
+@@ -82,13 +82,13 @@
+ # If HAVE_KILL is set to "yes", then kill will not be built or
+ # installed from the misc-utils subdirectory.
+ # (There is also a kill in the procps package.)
+-HAVE_KILL=no
++HAVE_KILL=yes
+ 
+ # If ALLOW_VCS_USE is set to "yes", then login will chown /dev/vcsN
+ # to the current user, allowing her to make a screendump and do other
+ # nifty things on the console, but also allowing him to keep an open
+ # file descriptor after logging out to trick the next user.
+-ALLOW_VCS_USE=yes
++ALLOW_VCS_USE=no
+ 
+ # If DO_STAT_MAIL is set to "yes", then login will stat() the mailbox
+ # and tell the user that she has new mail. This can hang the login if
+@@ -102,19 +102,19 @@
+ # If HAVE_SLN is set to "yes", then sln won't be installed
+ # (but the man page sln.8 will be installed anyway).
+ # sln also comes with libc and glibc.
+-HAVE_SLN=no
++HAVE_SLN=yes
+ 
+ # If HAVE_FDUTILS is set to "yes", then setfdprm won't be installed.
+-HAVE_FDUTILS=no
++HAVE_FDUTILS=yes
+ 
+ # If SILENT_PG is set to "yes", then pg will not ring the bell
+ # when an invalid key is pressed
+-SILENT_PG=no
++SILENT_PG=yes
+ 
+ # If configure decides that Native Language Support (NLS) is available,
+ # it sets MAY_ENABLE_NLS in defines.h. If you don't want NLS, set
+ # DISABLE_NLS to "yes".
+-DISABLE_NLS=no
++DISABLE_NLS=yes
+ 
+ # Different optimizations for different cpus.
+ # Before gcc 2.8.0 only -m486
