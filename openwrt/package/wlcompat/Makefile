@@ -1,6 +1,7 @@
 # $Id$
 
 include $(TOPDIR)/rules.mk
+include $(TOPDIR)/package/kernel.mk
 
 PKG_NAME:=kmod-wlcompat
 PKG_RELEASE:=3
@@ -8,11 +9,6 @@ PKG_RELEASE:=3
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
 
 include $(TOPDIR)/package/rules.mk
-
-WLCOMPAT_FLAGS:=$(TARGET_CFLAGS) -D__KERNEL__ -fno-strict-aliasing -fno-common -fomit-frame-pointer -G 0 \
-		-mno-abicalls -fno-pic -finline-limit=100000 -mabi=32 -march=mips32 -Wa,-32 -Wa,-march=mips32 \
-		-Wa,-mips32 -Wa,--trap -DMODULE -mlong-calls -fno-common -I. -I linux-2.4 -funsigned-char -nostdinc \
-		-iwithprefix include -I$(LINUX_DIR)/include -I$(LINUX_DIR)/include/asm/gcc -I$(LINUX_DIR)/arch/mips/bcm947xx/include -I$(STAGING_DIR)/usr/include -I./src/include
 
 define Package/kmod-wlcompat
 SECTION:=drivers
@@ -33,9 +29,27 @@ A wrapper module, that provides Wireless Extension support for the \\\
 proprietary Broadcom wl module.
 endef
 
+define Build/Prepare
+	mkdir -p $(PKG_BUILD_DIR)
+	$(CP) ./src/* $(PKG_BUILD_DIR)/
+endef
+
 define Build/Compile
-	$(TARGET_CC) -c -o $(PKG_BUILD_DIR)/wlcompat.o $(WLCOMPAT_FLAGS) wlcompat.c
-	$(TARGET_CC) -c -o $(PKG_BUILD_DIR)/wlcompat-debug.o $(WLCOMPAT_FLAGS) -DDEBUG wlcompat.c
+	$(MAKE) -C "$(LINUX_DIR)" \
+		CROSS_COMPILE="$(TARGET_CROSS)" \
+		ARCH="$(LINUX_KARCH)" \
+		PATH="$(TARGET_PATH)" \
+		SUBDIRS="$(PKG_BUILD_DIR)" \
+		EXTRA_CFLAGS="-DDEBUG -I$(LINUX_DIR)/arch/mips/bcm947xx/include -I$(PKG_BUILD_DIR)/include" \
+		modules
+	mv $(PKG_BUILD_DIR)/wlcompat.o $(PKG_BUILD_DIR)/wlcompat-debug.o
+	$(MAKE) -C "$(LINUX_DIR)" \
+		CROSS_COMPILE="$(TARGET_CROSS)" \
+		ARCH="$(LINUX_KARCH)" \
+		PATH="$(TARGET_PATH)" \
+		SUBDIRS="$(PKG_BUILD_DIR)" \
+		EXTRA_CFLAGS="-I$(LINUX_DIR)/arch/mips/bcm947xx/include -I$(PKG_BUILD_DIR)/include" \
+		modules
 endef
 
 define Package/kmod-wlcompat/install
