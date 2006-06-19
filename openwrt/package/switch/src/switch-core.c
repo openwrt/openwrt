@@ -64,8 +64,8 @@ static ssize_t switch_proc_read(struct file *file, char *buf, size_t count, loff
 static ssize_t switch_proc_write(struct file *file, const char *buf, size_t count, void *data);
 
 static struct file_operations switch_proc_fops = {
-	read: switch_proc_read,
-	write: switch_proc_write
+	.read = (ssize_t (*) (struct file *, char __user *, size_t, loff_t *))switch_proc_read,
+	.write = (ssize_t (*) (struct file *, const char __user *, size_t, loff_t *))switch_proc_write
 };
 
 static ssize_t switch_proc_read(struct file *file, char *buf, size_t count, loff_t *ppos)
@@ -436,7 +436,7 @@ void switch_unregister_driver(char *name) {
 	}
 }
 
-static int __init switch_init()
+static int __init switch_init(void)
 {
 	if ((switch_root = proc_mkdir("switch", NULL)) == NULL) {
 		printk("%s: proc_mkdir failed.\n", __FILE__);
@@ -448,7 +448,7 @@ static int __init switch_init()
 	return 0;
 }
 
-static void __exit switch_exit()
+static void __exit switch_exit(void)
 {
 	remove_proc_entry("switch", NULL);
 }

@@ -162,6 +162,7 @@ static int robo_reg(__u8 page, __u8 reg, __u8 op)
 	return 0;
 }
 
+/*
 static void robo_read(__u8 page, __u8 reg, __u16 *val, int count)
 {
 	int i;
@@ -171,6 +172,7 @@ static void robo_read(__u8 page, __u8 reg, __u16 *val, int count)
 	for (i = 0; i < count; i++)
 		val[i] = mdio_read(ROBO_PHY_ADDR, REG_MII_DATA0 + i);
 }
+*/
 
 static __u16 robo_read16(__u8 page, __u8 reg)
 {
@@ -205,7 +207,7 @@ static void robo_write32(__u8 page, __u8 reg, __u32 val32)
 }
 
 /* checks that attached switch is 5325E/5350 */
-static int robo_vlan5350()
+static int robo_vlan5350(void)
 {
 	/* set vlan access id to 15 and read it back */
 	__u16 val16 = 15;
@@ -220,7 +222,9 @@ static int robo_vlan5350()
 static int robo_probe(char *devname)
 {
 	struct ethtool_drvinfo info;
+/*
 	int i;
+*/
 	__u32 phyid;
 
 	printk("Probing device %s: ", devname);
@@ -426,7 +430,7 @@ static int handle_reset(void *driver, char *buf, int nr)
 	return 0;
 }
 
-static int __init robo_init()
+static int __init robo_init(void)
 {
 	int notfound = 1;
 
@@ -466,7 +470,7 @@ static int __init robo_init()
 	}
 }
 
-static void __exit robo_exit()
+static void __exit robo_exit(void)
 {
 	switch_unregister_driver(DRIVER_NAME);
 	kfree(device);

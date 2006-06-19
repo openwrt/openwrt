@@ -49,11 +49,19 @@ static int force = 0;
 
 MODULE_AUTHOR("Felix Fietkau <openwrt@nbd.name>");
 MODULE_LICENSE("GPL");
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,17)
+module_param(eecs, int, 0);
+module_param(eesk, int, 0);
+module_param(eedi, int, 0);
+module_param(eerc, int, 0);
+module_param(force, int, 0);
+#else
 MODULE_PARM(eecs, "i");
 MODULE_PARM(eesk, "i");
 MODULE_PARM(eedi, "i");
 MODULE_PARM(eerc, "i");
 MODULE_PARM(force, "i");
+#endif
 
 /* Minimum timing constants */
 #define EECK_EDGE_TIME  3   /* 3us - max(adm 2.5us, 93c 1us) */
@@ -484,7 +492,7 @@ static int handle_counters(void *driver, char *buf, int nr)
 	return len;
 }
 
-static int detect_adm()
+static int detect_adm(void)
 {
 	int ret = 0;
 
@@ -525,7 +533,7 @@ static int detect_adm()
 	return ret;
 }
 
-static int __init adm_init()
+static int __init adm_init(void)
 {
 	switch_config cfg[] = {
 		{"registers", handle_registers, NULL},
@@ -561,7 +569,7 @@ static int __init adm_init()
 	return switch_register_driver(&driver);
 }
 
-static void __exit adm_exit()
+static void __exit adm_exit(void)
 {
 	switch_unregister_driver(DRIVER_NAME);
 }
