@@ -1,0 +1,37 @@
+diff -ruN openswan-2.4.5-old/linux/net/ipsec/aes/ipsec_alg_aes.c openswan-2.4.5-new/linux/net/ipsec/aes/ipsec_alg_aes.c
+--- openswan-2.4.5-old/linux/net/ipsec/aes/ipsec_alg_aes.c	2005-05-20 18:48:55.000000000 +0200
++++ openswan-2.4.5-new/linux/net/ipsec/aes/ipsec_alg_aes.c	2006-06-20 00:17:57.000000000 +0200
+@@ -59,12 +59,20 @@
+ static int keymaxbits=0;
+ #if defined(CONFIG_KLIPS_ENC_AES_MODULE)
+ MODULE_AUTHOR("JuanJo Ciarlante <jjo-ipsec@mendoza.gov.ar>");
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,17)
++module_param(debug_aes, int, 0);
++module_param(test_aes, int, 0);
++module_param(excl_aes, int, 0);
++module_param(keyminbits, int, 0);
++module_param(keymaxbits, int, 0);
++#else
+ MODULE_PARM(debug_aes, "i");
+ MODULE_PARM(test_aes, "i");
+ MODULE_PARM(excl_aes, "i");
+ MODULE_PARM(keyminbits, "i");
+ MODULE_PARM(keymaxbits, "i");
+ #endif
++#endif
+ 
+ #if CONFIG_KLIPS_ENC_AES_MAC
+ #include "crypto/aes_xcbc_mac.h"
+@@ -79,8 +87,12 @@
+ #else
+ static int auth_id=9;
+ #endif
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,17)
++module_param(auth_id, int, 0);
++#else
+ MODULE_PARM(auth_id, "i");
+ #endif
++#endif
+ 
+ #define ESP_AES			12	/* truely _constant_  :)  */
+ 
