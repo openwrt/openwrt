@@ -71,6 +71,8 @@ define Build/Compile
 endef
 
 define Package/kmod-brcm-wl/install
+	install -d -m0755 $(1)/etc/modules.d
+	echo "wl" > $(1)/etc/modules.d/20-wl
 	install -d -m0755 $(1)/lib/modules/$(LINUX_VERSION)
 	install -m0644 $(PKG_BUILD_DIR)/kmod/wl.o $(1)/lib/modules/$(LINUX_VERSION)/
 endef
