@@ -1,525 +1,12 @@
-diff -urN linux.old/drivers/net/Kconfig linux.net/drivers/net/Kconfig
---- linux.old/drivers/net/Kconfig	2006-01-21 20:15:08.279272000 +0100
-+++ linux.net/drivers/net/Kconfig	2006-01-30 01:18:34.910315000 +0100
-@@ -176,6 +176,13 @@
- 
- source "drivers/net/arm/Kconfig"
- 
-+
-+config AR2313
-+		tristate "AR2313 Ethernet support"
-+		depends on NET_ETHERNET && MACH_ARUBA
-+		help
-+		Support for the AR2313 Ethernet part on Aruba AP60/61
-+
- config IDT_RC32434_ETH
-         tristate "IDT RC32434 Local Ethernet support"
-         depends on NET_ETHERNET
-diff -urN linux.old/drivers/net/Makefile linux.net/drivers/net/Makefile
---- linux.old/drivers/net/Makefile	2006-01-21 20:15:08.383226000 +0100
-+++ linux.net/drivers/net/Makefile	2006-01-30 01:18:34.914315250 +0100
-@@ -35,6 +35,7 @@
- 
- obj-$(CONFIG_OAKNET) += oaknet.o 8390.o
- 
-+obj-$(CONFIG_AR2313) += ar2313.o
- obj-$(CONFIG_IDT_RC32434_ETH) += rc32434_eth.o
- obj-$(CONFIG_DGRS) += dgrs.o
- obj-$(CONFIG_VORTEX) += 3c59x.o
-diff -urN linux.old/drivers/net/ar2313/ar2313.h linux.net/drivers/net/ar2313/ar2313.h
---- linux.old/drivers/net/ar2313/ar2313.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.net/drivers/net/ar2313/ar2313.h	2006-01-25 00:35:55.000000000 +0100
-@@ -0,0 +1,190 @@
-+#ifndef _AR2313_H_
-+#define _AR2313_H_
-+
-+#include <linux/config.h>
-+#include <asm/bootinfo.h>
-+#include "platform.h"
-+
-+extern unsigned long mips_machtype;
-+
-+#undef ETHERNET_BASE
-+#define ETHERNET_BASE ar_eth_base
-+#define ETHERNET_SIZE 0x00100000
-+#define ETHERNET_MACS 2
-+
-+#undef DMA_BASE
-+#define DMA_BASE      ar_dma_base
-+#define DMA_SIZE      0x00100000
-+
-+
-+/*
-+ * probe link timer - 5 secs
-+ */
-+#define LINK_TIMER    (5*HZ) 
-+
-+/*
-+ * Interrupt register base address
-+ */
-+#define INTERRUPT_BASE    PHYS_TO_K1(ar_int_base)
-+
-+/*
-+ * Reset Register
-+ */
-+#define AR531X_RESET    (AR531X_RESETTMR + 0x0020)
-+#define RESET_SYSTEM         0x00000001      /* cold reset full system */
-+#define RESET_PROC           0x00000002      /* cold reset MIPS core */
-+#define RESET_WLAN0          0x00000004      /* cold reset WLAN MAC and BB */
-+#define RESET_EPHY0          0x00000008      /* cold reset ENET0 phy */
-+#define RESET_EPHY1          0x00000010      /* cold reset ENET1 phy */
-+#define RESET_ENET0          0x00000020      /* cold reset ENET0 mac */
-+#define RESET_ENET1          0x00000040      /* cold reset ENET1 mac */
-+
-+#define IS_DMA_TX_INT(X)   (((X) & (DMA_STATUS_TI)) != 0)
-+#define IS_DMA_RX_INT(X)   (((X) & (DMA_STATUS_RI)) != 0)
-+#define IS_DRIVER_OWNED(X) (((X) & (DMA_TX_OWN))    == 0)
-+
-+#ifndef K1_TO_PHYS
-+// hack
-+#define K1_TO_PHYS(x)   (((unsigned int)(x)) & 0x1FFFFFFF)        /* kseg1 to physical */
-+#endif
-+
-+#ifndef PHYS_TO_K1
-+// hack
-+#define  PHYS_TO_K1(x)   (((unsigned int)(x)) | 0xA0000000)   /* physical to kseg1 */
-+#endif
-+
-+#define AR2313_TX_TIMEOUT (HZ/4)
-+
-+/*
-+ * Rings
-+ */
-+#define DSC_RING_ENTRIES_SIZE	(AR2313_DESCR_ENTRIES * sizeof(struct desc))
-+#define DSC_NEXT(idx)	        ((idx + 1) & (AR2313_DESCR_ENTRIES - 1))
-+
-+static inline int tx_space (u32 csm, u32 prd)
-+{
-+	return (csm - prd - 1) & (AR2313_DESCR_ENTRIES - 1);
-+}
-+
-+#if MAX_SKB_FRAGS
-+#define TX_RESERVED	(MAX_SKB_FRAGS+1) /* +1 for message header */
-+#define tx_ring_full(csm, prd)	(tx_space(csm, prd) <= TX_RESERVED)
-+#else
-+#define tx_ring_full		0
-+#endif
-+
-+#define AR2313_MBGET		2
-+#define AR2313_MBSET    	3
-+#define AR2313_PCI_RECONFIG	4
-+#define AR2313_PCI_DUMP  	5
-+#define AR2313_TEST_PANIC	6
-+#define AR2313_TEST_NULLPTR	7
-+#define AR2313_READ_DATA	8
-+#define AR2313_WRITE_DATA	9
-+#define AR2313_GET_VERSION	10
-+#define AR2313_TEST_HANG	11
-+#define AR2313_SYNC		12
-+
-+
-+struct ar2313_cmd {
-+	u32	cmd;
-+        u32     address;      /* virtual address of image */
-+        u32     length;       /* size of image to download */
-+        u32     mailbox;      /* mailbox to get/set */
-+        u32     data[2];      /* contents of mailbox to read/write */
-+};
-+
-+
-+/*
-+ * Struct private for the Sibyte.
-+ *
-+ * Elements are grouped so variables used by the tx handling goes
-+ * together, and will go into the same cache lines etc. in order to
-+ * avoid cache line contention between the rx and tx handling on SMP.
-+ *
-+ * Frequently accessed variables are put at the beginning of the
-+ * struct to help the compiler generate better/shorter code.
-+ */
-+struct ar2313_private
-+{
-+        int			version;
-+        u32                     mb[2];
-+	
-+	volatile ETHERNET_STRUCT	*eth_regs;
-+	volatile DMA			*dma_regs;
-+        volatile u32		        *int_regs;
-+
-+	spinlock_t lock; 	/* Serialise access to device */
-+
-+        /*
-+	 * RX and TX descriptors, must be adjacent
-+	 */
-+        ar2313_descr_t	        *rx_ring;
-+        ar2313_descr_t	        *tx_ring;
-+
-+
-+        struct sk_buff		**rx_skb;
-+        struct sk_buff		**tx_skb;
-+
-+	/*
-+	 * RX elements
-+	 */
-+        u32			rx_skbprd;
-+	u32			cur_rx;
-+
-+	/*
-+	 * TX elements
-+	 */
-+	u32			tx_prd;
-+        u32		        tx_csm;
-+
-+        /*
-+	 * Misc elements
-+	 */
-+	int			board_idx;
-+	char			name[48];
-+	struct net_device_stats stats;
-+        struct {
-+	    u32 address;
-+	    u32 length;
-+	    char *mapping;
-+	} desc;
-+
-+
-+	struct timer_list link_timer;
-+	unsigned short phy;  /* merlot phy = 1,  samsung phy = 0x1f */
-+        unsigned short mac;
-+	unsigned short link; /* 0 - link down,  1 - link up */
-+        u16 phyData;
-+
-+	struct tasklet_struct rx_tasklet;
-+	int unloading;
-+};
-+
-+
-+/*
-+ * Prototypes
-+ */
-+static int  ar2313_init(struct net_device *dev);
-+#ifdef TX_TIMEOUT
-+static void ar2313_tx_timeout(struct net_device *dev);
-+#endif
-+#if 0
-+static void ar2313_multicast_list(struct net_device *dev);
-+#endif
-+static int ar2313_restart(struct net_device *dev);
-+#if DEBUG
-+static void  ar2313_dump_regs(struct net_device *dev);
-+#endif
-+static void ar2313_load_rx_ring(struct net_device *dev, int bufs);
-+static irqreturn_t ar2313_interrupt(int irq, void *dev_id, struct pt_regs *regs);
-+static int  ar2313_open(struct net_device *dev);
-+static int  ar2313_start_xmit(struct sk_buff *skb, struct net_device *dev);
-+static int  ar2313_close(struct net_device *dev);
-+static int  ar2313_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd);
-+static void ar2313_init_cleanup(struct net_device *dev);
-+static int  ar2313_setup_timer(struct net_device *dev);
-+static void ar2313_link_timer_fn(unsigned long data);
-+static void ar2313_check_link(struct net_device *dev);
-+static struct net_device_stats *ar2313_get_stats(struct net_device *dev);
-+#endif /* _AR2313_H_ */
-diff -urN linux.old/drivers/net/ar2313/ar2313_msg.h linux.net/drivers/net/ar2313/ar2313_msg.h
---- linux.old/drivers/net/ar2313/ar2313_msg.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.net/drivers/net/ar2313/ar2313_msg.h	2006-01-24 22:57:25.000000000 +0100
-@@ -0,0 +1,17 @@
-+#ifndef _AR2313_MSG_H_
-+#define _AR2313_MSG_H_
-+
-+#define AR2313_MTU                     1692
-+#define AR2313_PRIOS                   1
-+#define AR2313_QUEUES                  (2*AR2313_PRIOS)
-+
-+#define AR2313_DESCR_ENTRIES           64
-+
-+typedef struct {
-+    volatile unsigned int	status;		// OWN, Device control and status.
-+    volatile unsigned int	devcs;		// pkt Control bits + Length
-+    volatile unsigned int	addr;		// Current Address.
-+    volatile unsigned int	descr;		// Next descriptor in chain.
-+} ar2313_descr_t;
-+
-+#endif /* _AR2313_MSG_H_ */
-diff -urN linux.old/drivers/net/ar2313/dma.h linux.net/drivers/net/ar2313/dma.h
---- linux.old/drivers/net/ar2313/dma.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.net/drivers/net/ar2313/dma.h	2006-01-24 22:58:45.000000000 +0100
-@@ -0,0 +1,135 @@
-+#ifndef __ARUBA_DMA_H__
-+#define __ARUBA_DMA_H__
-+
-+/*******************************************************************************
-+ *
-+ * Copyright 2002 Integrated Device Technology, Inc.
-+ *		All rights reserved.
-+ *
-+ * DMA register definition.
-+ *
-+ * File   : $Id: dma.h,v 1.3 2002/06/06 18:34:03 astichte Exp $
-+ *
-+ * Author : ryan.holmQVist@idt.com
-+ * Date   : 20011005
-+ * Update :
-+ *	    $Log: dma.h,v $
-+ *	    Revision 1.3  2002/06/06 18:34:03  astichte
-+ *	    Added XXX_PhysicalAddress and XXX_VirtualAddress
-+ *	
-+ *	    Revision 1.2  2002/06/05 18:30:46  astichte
-+ *	    Removed IDTField
-+ *	
-+ *	    Revision 1.1  2002/05/29 17:33:21  sysarch
-+ *	    jba File moved from vcode/include/idt/acacia
-+ *	
-+ *
-+ ******************************************************************************/
-+
-+#define AR_BIT(x)            (1 << (x))
-+#define DMA_RX_ERR_CRC       AR_BIT(1)
-+#define DMA_RX_ERR_DRIB      AR_BIT(2)
-+#define DMA_RX_ERR_MII       AR_BIT(3)
-+#define DMA_RX_EV2           AR_BIT(5)
-+#define DMA_RX_ERR_COL       AR_BIT(6)
-+#define DMA_RX_LONG          AR_BIT(7)
-+#define DMA_RX_LS            AR_BIT(8)  /* last descriptor */
-+#define DMA_RX_FS            AR_BIT(9)  /* first descriptor */
-+#define DMA_RX_MF            AR_BIT(10) /* multicast frame */
-+#define DMA_RX_ERR_RUNT      AR_BIT(11) /* runt frame */
-+#define DMA_RX_ERR_LENGTH    AR_BIT(12) /* length error */
-+#define DMA_RX_ERR_DESC      AR_BIT(14) /* descriptor error */
-+#define DMA_RX_ERROR         AR_BIT(15) /* error summary */
-+#define DMA_RX_LEN_MASK      0x3fff0000
-+#define DMA_RX_LEN_SHIFT     16
-+#define DMA_RX_FILT          AR_BIT(30)
-+#define DMA_RX_OWN           AR_BIT(31) /* desc owned by DMA controller */
-+
-+#define DMA_RX1_BSIZE_MASK   0x000007ff
-+#define DMA_RX1_BSIZE_SHIFT  0
-+#define DMA_RX1_CHAINED      AR_BIT(24)
-+#define DMA_RX1_RER          AR_BIT(25)
-+
-+#define DMA_TX_ERR_UNDER     AR_BIT(1)  /* underflow error */
-+#define DMA_TX_ERR_DEFER     AR_BIT(2)  /* excessive deferral */
-+#define DMA_TX_COL_MASK      0x78
-+#define DMA_TX_COL_SHIFT     3
-+#define DMA_TX_ERR_HB        AR_BIT(7)  /* hearbeat failure */
-+#define DMA_TX_ERR_COL       AR_BIT(8)  /* excessive collisions */
-+#define DMA_TX_ERR_LATE      AR_BIT(9)  /* late collision */
-+#define DMA_TX_ERR_LINK      AR_BIT(10) /* no carrier */
-+#define DMA_TX_ERR_LOSS      AR_BIT(11) /* loss of carrier */
-+#define DMA_TX_ERR_JABBER    AR_BIT(14) /* transmit jabber timeout */
-+#define DMA_TX_ERROR         AR_BIT(15) /* frame aborted */
-+#define DMA_TX_OWN           AR_BIT(31) /* descr owned by DMA controller */
-+
-+#define DMA_TX1_BSIZE_MASK   0x000007ff
-+#define DMA_TX1_BSIZE_SHIFT  0
-+#define DMA_TX1_CHAINED      AR_BIT(24) /* chained descriptors */
-+#define DMA_TX1_TER          AR_BIT(25) /* transmit end of ring */
-+#define DMA_TX1_FS           AR_BIT(29) /* first segment */
-+#define DMA_TX1_LS           AR_BIT(30) /* last segment */
-+#define DMA_TX1_IC           AR_BIT(31) /* interrupt on completion */
-+
-+#define RCVPKT_LENGTH(X)     (X  >> 16)               /* Received pkt Length  */
-+
-+#define MAC_CONTROL_RE       AR_BIT(2)  /* receive enable */
-+#define MAC_CONTROL_TE       AR_BIT(3)  /* transmit enable */
-+#define MAC_CONTROL_DC       AR_BIT(5)  /* Deferral check*/
-+#define MAC_CONTROL_ASTP     AR_BIT(8)  /* Auto pad strip */
-+#define MAC_CONTROL_DRTY     AR_BIT(10) /* Disable retry */
-+#define MAC_CONTROL_DBF      AR_BIT(11) /* Disable bcast frames */
-+#define MAC_CONTROL_LCC      AR_BIT(12) /* late collision ctrl */
-+#define MAC_CONTROL_HP       AR_BIT(13) /* Hash Perfect filtering */
-+#define MAC_CONTROL_HASH     AR_BIT(14) /* Unicast hash filtering */
-+#define MAC_CONTROL_HO       AR_BIT(15) /* Hash only filtering */
-+#define MAC_CONTROL_PB       AR_BIT(16) /* Pass Bad frames */
-+#define MAC_CONTROL_IF       AR_BIT(17) /* Inverse filtering */
-+#define MAC_CONTROL_PR       AR_BIT(18) /* promiscuous mode (valid frames only) */
-+#define MAC_CONTROL_PM       AR_BIT(19) /* pass multicast */
-+#define MAC_CONTROL_F        AR_BIT(20) /* full-duplex */
-+#define MAC_CONTROL_DRO      AR_BIT(23) /* Disable Receive Own */
-+#define MAC_CONTROL_HBD      AR_BIT(28) /* heart-beat disabled (MUST BE SET) */
-+#define MAC_CONTROL_BLE      AR_BIT(30) /* big endian mode */
-+#define MAC_CONTROL_RA       AR_BIT(31) /* receive all (valid and invalid frames) */
-+
-+#define MII_ADDR_BUSY        AR_BIT(0)
-+#define MII_ADDR_WRITE       AR_BIT(1)
-+#define MII_ADDR_REG_SHIFT   6
-+#define MII_ADDR_PHY_SHIFT   11
-+#define MII_DATA_SHIFT       0
-+
-+#define FLOW_CONTROL_FCE     AR_BIT(1)
-+
-+#define DMA_BUS_MODE_SWR       AR_BIT(0)  /* software reset */
-+#define DMA_BUS_MODE_BLE       AR_BIT(7)  /* big endian mode */
-+#define DMA_BUS_MODE_PBL_SHIFT 8          /* programmable burst length 32 */
-+#define DMA_BUS_MODE_DBO       AR_BIT(20) /* big-endian descriptors */
-+
-+#define DMA_STATUS_TI        AR_BIT(0)  /* transmit interrupt */
-+#define DMA_STATUS_TPS       AR_BIT(1)  /* transmit process stopped */
-+#define DMA_STATUS_TU        AR_BIT(2)  /* transmit buffer unavailable */
-+#define DMA_STATUS_TJT       AR_BIT(3)  /* transmit buffer timeout */
-+#define DMA_STATUS_UNF       AR_BIT(5)  /* transmit underflow */
-+#define DMA_STATUS_RI        AR_BIT(6)  /* receive interrupt */
-+#define DMA_STATUS_RU        AR_BIT(7)  /* receive buffer unavailable */
-+#define DMA_STATUS_RPS       AR_BIT(8)  /* receive process stopped */
-+#define DMA_STATUS_ETI       AR_BIT(10) /* early transmit interrupt */
-+#define DMA_STATUS_FBE       AR_BIT(13) /* fatal bus interrupt */
-+#define DMA_STATUS_ERI       AR_BIT(14) /* early receive interrupt */
-+#define DMA_STATUS_AIS       AR_BIT(15) /* abnormal interrupt summary */
-+#define DMA_STATUS_NIS       AR_BIT(16) /* normal interrupt summary */
-+#define DMA_STATUS_RS_SHIFT  17         /* receive process state */
-+#define DMA_STATUS_TS_SHIFT  20         /* transmit process state */
-+#define DMA_STATUS_EB_SHIFT  23         /* error bits */
-+
-+#define DMA_CONTROL_SR       AR_BIT(1)  /* start receive */
-+#define DMA_CONTROL_ST       AR_BIT(13) /* start transmit */
-+#define DMA_CONTROL_SF       AR_BIT(21) /* store and forward */
-+
-+#endif	// __ARUBA_DMA_H__
-+
-+
-+
-+
-+
-diff -urN linux.old/drivers/net/ar2313/platform.h linux.net/drivers/net/ar2313/platform.h
---- linux.old/drivers/net/ar2313/platform.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.net/drivers/net/ar2313/platform.h	2006-01-25 00:10:25.000000000 +0100
-@@ -0,0 +1,128 @@
-+/********************************************************************************
-+   Title:   $Source: platform.h,v $
-+
-+   Author:  Dan Steinberg
-+            Copyright Integrated Device Technology 2001
-+
-+   Purpose: AR2313 Register/Bit Definitions
-+   
-+   Update:
-+            $Log: platform.h,v $
-+      
-+   Notes:   See Merlot architecture spec for complete details.  Note, all
-+            addresses are virtual addresses in kseg1 (Uncached, Unmapped).
-+ 
-+********************************************************************************/
-+
-+#ifndef PLATFORM_H
-+#define PLATFORM_H
-+
-+#define BIT(x) (1 << (x))
-+
-+#define RESET_BASE        0xBC003020
-+#define RESET_VALUE       0x00000001
-+
-+/********************************************************************
-+ * Device controller 
-+ ********************************************************************/
-+typedef struct {
-+  volatile unsigned int flash0;
-+} DEVICE;
-+
-+#define device (*((volatile DEVICE *) DEV_CTL_BASE))
-+
-+// DDRC register
-+#define DEV_WP        (1<<26)
-+
-+/********************************************************************
-+ * DDR controller 
-+ ********************************************************************/
-+typedef struct {
-+  volatile unsigned int ddrc0;
-+  volatile unsigned int ddrc1;
-+  volatile unsigned int ddrrefresh;
-+} DDR;
-+
-+#define ddr (*((volatile DDR *) DDR_BASE))
-+
-+// DDRC register
-+#define DDRC_CS(i)     ((i&0x3)<<0)
-+#define DDRC_WE        (1<<2)
-+
-+/********************************************************************
-+ * Ethernet interfaces
-+ ********************************************************************/
-+#define ETHERNET_BASE    0xB8200000
-+
-+//
-+// New Combo structure for Both Eth0 AND eth1
-+//
-+typedef struct {
-+  volatile unsigned int mac_control;    /* 0x00 */
-+  volatile unsigned int mac_addr[2];    /* 0x04 - 0x08*/
-+  volatile unsigned int mcast_table[2]; /* 0x0c - 0x10 */
-+  volatile unsigned int mii_addr;       /* 0x14 */
-+  volatile unsigned int mii_data;       /* 0x18 */
-+  volatile unsigned int flow_control;   /* 0x1c */
-+  volatile unsigned int vlan_tag;       /* 0x20 */
-+  volatile unsigned int pad[7];         /* 0x24 - 0x3c */
-+  volatile unsigned int ucast_table[8]; /* 0x40-0x5c */
-+  
-+} ETHERNET_STRUCT;
-+
-+/********************************************************************
-+ * Interrupt controller 
-+ ********************************************************************/
-+
-+typedef struct {
-+  volatile unsigned int wdog_control;		/* 0x08 */
-+  volatile unsigned int wdog_timer;		/* 0x0c */
-+  volatile unsigned int misc_status;		/* 0x10 */
-+  volatile unsigned int misc_mask;		/* 0x14 */
-+  volatile unsigned int global_status;		/* 0x18 */
-+  volatile unsigned int reserved;		/* 0x1c */
-+  volatile unsigned int reset_control;		/* 0x20 */
-+} INTERRUPT;
-+
-+#define interrupt (*((volatile INTERRUPT *) INTERRUPT_BASE))
-+
-+#define INTERRUPT_MISC_TIMER    BIT(0)
-+#define INTERRUPT_MISC_AHBPROC  BIT(1)
-+#define INTERRUPT_MISC_AHBDMA   BIT(2)
-+#define INTERRUPT_MISC_GPIO     BIT(3)
-+#define INTERRUPT_MISC_UART     BIT(4)
-+#define INTERRUPT_MISC_UARTDMA  BIT(5)
-+#define INTERRUPT_MISC_WATCHDOG BIT(6)
-+#define INTERRUPT_MISC_LOCAL    BIT(7)
-+
-+#define INTERRUPT_GLOBAL_ETH    BIT(2)
-+#define INTERRUPT_GLOBAL_WLAN   BIT(3)
-+#define INTERRUPT_GLOBAL_MISC   BIT(4)
-+#define INTERRUPT_GLOBAL_ITIMER BIT(5)
-+
-+/********************************************************************
-+ * DMA controller
-+ ********************************************************************/
-+#define DMA_BASE          0xB8201000
-+
-+typedef struct {
-+  volatile unsigned int bus_mode;        /* 0x00 (CSR0) */
-+  volatile unsigned int xmt_poll;        /* 0x04 (CSR1) */
-+  volatile unsigned int rcv_poll;        /* 0x08 (CSR2) */
-+  volatile unsigned int rcv_base;        /* 0x0c (CSR3) */
-+  volatile unsigned int xmt_base;        /* 0x10 (CSR4) */
-+  volatile unsigned int status;          /* 0x14 (CSR5) */
-+  volatile unsigned int control;         /* 0x18 (CSR6) */
-+  volatile unsigned int intr_ena;        /* 0x1c (CSR7) */
-+  volatile unsigned int rcv_missed;      /* 0x20 (CSR8) */
-+  volatile unsigned int reserved[11];    /* 0x24-0x4c (CSR9-19) */
-+  volatile unsigned int cur_tx_buf_addr; /* 0x50 (CSR20) */
-+  volatile unsigned int cur_rx_buf_addr; /* 0x50 (CSR21) */
-+} DMA;
-+
-+#define dma (*((volatile DMA *) DMA_BASE))
-+
-+// macro to convert from virtual to physical address  
-+#define phys_addr(x)      (x & 0x1fffffff) 
-+
-+#endif /* PLATFORM_H */
-diff -urN linux.old/drivers/net/ar2313.c linux.net/drivers/net/ar2313.c
---- linux.old/drivers/net/ar2313.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.net/drivers/net/ar2313.c	2006-01-30 01:21:56.822933750 +0100
-@@ -0,0 +1,1642 @@
+diff -Nur linux-2.6.17/drivers/net/ar2313/ar2313.c linux-2.6.17-owrt/drivers/net/ar2313/ar2313.c
+--- linux-2.6.17/drivers/net/ar2313/ar2313.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-owrt/drivers/net/ar2313/ar2313.c	2006-06-19 12:57:27.000000000 +0200
+@@ -0,0 +1,1649 @@
 +/*
 + * ar2313.c: Linux driver for the Atheros AR2313 Ethernet device.
 + *
 + * Copyright 2004 by Sameer Dekate, <sdekate@arubanetworks.com>.
++ * Copyright (C) 2006 Imre Kaloz <kaloz@openwrt.org>
 + *
 + * Thanks to Atheros for providing hardware and documentation
 + * enabling me to write this driver.
@@ -599,10 +86,16 @@ diff -urN linux.old/drivers/net/ar2313.c linux.net/drivers/net/ar2313.c
 +
 +#define PHYSADDR(a)		((_ACAST32_ (a)) & 0x1fffffff)
 +
-+MODULE_PARM(ethaddr, "s");
-+static char *ethaddr = "00:00:00:00:00:00";
-+MODULE_PARM(ifname, "s");
-+static char *ifname = "bond" ;
++static char ethaddr[18] = "00:00:00:00:00:00";
++static char ifname[5] = "bond";
++
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,17)
++module_param_string(ethaddr, ethaddr, 18, 0);
++module_param_string(ifname, ifname, 5, 0);
++#else
++MODULE_PARM(ethaddr, "c18");
++MODULE_PARM(ifname, "c5");
++#endif
 +
 +#define AR2313_MBOX_SET_BIT  0x8
 +
@@ -612,10 +105,10 @@ diff -urN linux.old/drivers/net/ar2313.c linux.net/drivers/net/ar2313.c
 +/* margot includes */
 +#include <asm/idt-boards/rc32434/rc32434.h>
 +
-+#include "ar2313/ar2313_msg.h"
-+#include "ar2313/platform.h"
-+#include "ar2313/dma.h"
-+#include "ar2313/ar2313.h"
++#include "ar2313_msg.h"
++#include "platform.h"
++#include "dma.h"
++#include "ar2313.h"
 +
 +/*
 + * New interrupt handler strategy:
@@ -680,7 +173,7 @@ diff -urN linux.old/drivers/net/ar2313.c linux.net/drivers/net/ar2313.c
 +
 +#if DEBUG
 +static char version[] __initdata = 
-+  "ar2313.c: v0.01 2004/01/06  sdekate@arubanetworks.com\n";
++  "ar2313.c: v0.02 2006/06/19  sdekate@arubanetworks.com\n";
 +#endif /* DEBUG */
 +
 +#define virt_to_phys(x) ((u32)(x) & 0x1fffffff)
@@ -2158,3 +1651,525 @@ diff -urN linux.old/drivers/net/ar2313.c linux.net/drivers/net/ar2313.c
 +                        MII_ADDR_WRITE);
 +}
 +
+diff -Nur linux-2.6.17/drivers/net/ar2313/ar2313.h linux-2.6.17-owrt/drivers/net/ar2313/ar2313.h
+--- linux-2.6.17/drivers/net/ar2313/ar2313.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-owrt/drivers/net/ar2313/ar2313.h	2006-06-19 12:05:29.000000000 +0200
+@@ -0,0 +1,190 @@
++#ifndef _AR2313_H_
++#define _AR2313_H_
++
++#include <linux/config.h>
++#include <asm/bootinfo.h>
++#include "platform.h"
++
++extern unsigned long mips_machtype;
++
++#undef ETHERNET_BASE
++#define ETHERNET_BASE ar_eth_base
++#define ETHERNET_SIZE 0x00100000
++#define ETHERNET_MACS 2
++
++#undef DMA_BASE
++#define DMA_BASE      ar_dma_base
++#define DMA_SIZE      0x00100000
++
++
++/*
++ * probe link timer - 5 secs
++ */
++#define LINK_TIMER    (5*HZ) 
++
++/*
++ * Interrupt register base address
++ */
++#define INTERRUPT_BASE    PHYS_TO_K1(ar_int_base)
++
++/*
++ * Reset Register
++ */
++#define AR531X_RESET    (AR531X_RESETTMR + 0x0020)
++#define RESET_SYSTEM         0x00000001      /* cold reset full system */
++#define RESET_PROC           0x00000002      /* cold reset MIPS core */
++#define RESET_WLAN0          0x00000004      /* cold reset WLAN MAC and BB */
++#define RESET_EPHY0          0x00000008      /* cold reset ENET0 phy */
++#define RESET_EPHY1          0x00000010      /* cold reset ENET1 phy */
++#define RESET_ENET0          0x00000020      /* cold reset ENET0 mac */
++#define RESET_ENET1          0x00000040      /* cold reset ENET1 mac */
++
++#define IS_DMA_TX_INT(X)   (((X) & (DMA_STATUS_TI)) != 0)
++#define IS_DMA_RX_INT(X)   (((X) & (DMA_STATUS_RI)) != 0)
++#define IS_DRIVER_OWNED(X) (((X) & (DMA_TX_OWN))    == 0)
++
++#ifndef K1_TO_PHYS
++// hack
++#define K1_TO_PHYS(x)   (((unsigned int)(x)) & 0x1FFFFFFF)        /* kseg1 to physical */
++#endif
++
++#ifndef PHYS_TO_K1
++// hack
++#define  PHYS_TO_K1(x)   (((unsigned int)(x)) | 0xA0000000)   /* physical to kseg1 */
++#endif
++
++#define AR2313_TX_TIMEOUT (HZ/4)
++
++/*
++ * Rings
++ */
++#define DSC_RING_ENTRIES_SIZE	(AR2313_DESCR_ENTRIES * sizeof(struct desc))
++#define DSC_NEXT(idx)	        ((idx + 1) & (AR2313_DESCR_ENTRIES - 1))
++
++static inline int tx_space (u32 csm, u32 prd)
++{
++	return (csm - prd - 1) & (AR2313_DESCR_ENTRIES - 1);
++}
++
++#if MAX_SKB_FRAGS
++#define TX_RESERVED	(MAX_SKB_FRAGS+1) /* +1 for message header */
++#define tx_ring_full(csm, prd)	(tx_space(csm, prd) <= TX_RESERVED)
++#else
++#define tx_ring_full		0
++#endif
++
++#define AR2313_MBGET		2
++#define AR2313_MBSET    	3
++#define AR2313_PCI_RECONFIG	4
++#define AR2313_PCI_DUMP  	5
++#define AR2313_TEST_PANIC	6
++#define AR2313_TEST_NULLPTR	7
++#define AR2313_READ_DATA	8
++#define AR2313_WRITE_DATA	9
++#define AR2313_GET_VERSION	10
++#define AR2313_TEST_HANG	11
++#define AR2313_SYNC		12
++
++
++struct ar2313_cmd {
++	u32	cmd;
++        u32     address;      /* virtual address of image */
++        u32     length;       /* size of image to download */
++        u32     mailbox;      /* mailbox to get/set */
++        u32     data[2];      /* contents of mailbox to read/write */
++};
++
++
++/*
++ * Struct private for the Sibyte.
++ *
++ * Elements are grouped so variables used by the tx handling goes
++ * together, and will go into the same cache lines etc. in order to
++ * avoid cache line contention between the rx and tx handling on SMP.
++ *
++ * Frequently accessed variables are put at the beginning of the
++ * struct to help the compiler generate better/shorter code.
++ */
++struct ar2313_private
++{
++        int			version;
++        u32                     mb[2];
++	
++	volatile ETHERNET_STRUCT	*eth_regs;
++	volatile DMA			*dma_regs;
++        volatile u32		        *int_regs;
++
++	spinlock_t lock; 	/* Serialise access to device */
++
++        /*
++	 * RX and TX descriptors, must be adjacent
++	 */
++        ar2313_descr_t	        *rx_ring;
++        ar2313_descr_t	        *tx_ring;
++
++
++        struct sk_buff		**rx_skb;
++        struct sk_buff		**tx_skb;
++
++	/*
++	 * RX elements
++	 */
++        u32			rx_skbprd;
++	u32			cur_rx;
++
++	/*
++	 * TX elements
++	 */
++	u32			tx_prd;
++        u32		        tx_csm;
++
++        /*
++	 * Misc elements
++	 */
++	int			board_idx;
++	char			name[48];
++	struct net_device_stats stats;
++        struct {
++	    u32 address;
++	    u32 length;
++	    char *mapping;
++	} desc;
++
++
++	struct timer_list link_timer;
++	unsigned short phy;  /* merlot phy = 1,  samsung phy = 0x1f */
++        unsigned short mac;
++	unsigned short link; /* 0 - link down,  1 - link up */
++        u16 phyData;
++
++	struct tasklet_struct rx_tasklet;
++	int unloading;
++};
++
++
++/*
++ * Prototypes
++ */
++static int  ar2313_init(struct net_device *dev);
++#ifdef TX_TIMEOUT
++static void ar2313_tx_timeout(struct net_device *dev);
++#endif
++#if 0
++static void ar2313_multicast_list(struct net_device *dev);
++#endif
++static int ar2313_restart(struct net_device *dev);
++#if DEBUG
++static void  ar2313_dump_regs(struct net_device *dev);
++#endif
++static void ar2313_load_rx_ring(struct net_device *dev, int bufs);
++static irqreturn_t ar2313_interrupt(int irq, void *dev_id, struct pt_regs *regs);
++static int  ar2313_open(struct net_device *dev);
++static int  ar2313_start_xmit(struct sk_buff *skb, struct net_device *dev);
++static int  ar2313_close(struct net_device *dev);
++static int  ar2313_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd);
++static void ar2313_init_cleanup(struct net_device *dev);
++static int  ar2313_setup_timer(struct net_device *dev);
++static void ar2313_link_timer_fn(unsigned long data);
++static void ar2313_check_link(struct net_device *dev);
++static struct net_device_stats *ar2313_get_stats(struct net_device *dev);
++#endif /* _AR2313_H_ */
+diff -Nur linux-2.6.17/drivers/net/ar2313/ar2313_msg.h linux-2.6.17-owrt/drivers/net/ar2313/ar2313_msg.h
+--- linux-2.6.17/drivers/net/ar2313/ar2313_msg.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-owrt/drivers/net/ar2313/ar2313_msg.h	2006-06-19 12:05:29.000000000 +0200
+@@ -0,0 +1,17 @@
++#ifndef _AR2313_MSG_H_
++#define _AR2313_MSG_H_
++
++#define AR2313_MTU                     1692
++#define AR2313_PRIOS                   1
++#define AR2313_QUEUES                  (2*AR2313_PRIOS)
++
++#define AR2313_DESCR_ENTRIES           64
++
++typedef struct {
++    volatile unsigned int	status;		// OWN, Device control and status.
++    volatile unsigned int	devcs;		// pkt Control bits + Length
++    volatile unsigned int	addr;		// Current Address.
++    volatile unsigned int	descr;		// Next descriptor in chain.
++} ar2313_descr_t;
++
++#endif /* _AR2313_MSG_H_ */
+diff -Nur linux-2.6.17/drivers/net/ar2313/dma.h linux-2.6.17-owrt/drivers/net/ar2313/dma.h
+--- linux-2.6.17/drivers/net/ar2313/dma.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-owrt/drivers/net/ar2313/dma.h	2006-06-19 12:05:29.000000000 +0200
+@@ -0,0 +1,135 @@
++#ifndef __ARUBA_DMA_H__
++#define __ARUBA_DMA_H__
++
++/*******************************************************************************
++ *
++ * Copyright 2002 Integrated Device Technology, Inc.
++ *		All rights reserved.
++ *
++ * DMA register definition.
++ *
++ * File   : $Id: dma.h,v 1.3 2002/06/06 18:34:03 astichte Exp $
++ *
++ * Author : ryan.holmQVist@idt.com
++ * Date   : 20011005
++ * Update :
++ *	    $Log: dma.h,v $
++ *	    Revision 1.3  2002/06/06 18:34:03  astichte
++ *	    Added XXX_PhysicalAddress and XXX_VirtualAddress
++ *	
++ *	    Revision 1.2  2002/06/05 18:30:46  astichte
++ *	    Removed IDTField
++ *	
++ *	    Revision 1.1  2002/05/29 17:33:21  sysarch
++ *	    jba File moved from vcode/include/idt/acacia
++ *	
++ *
++ ******************************************************************************/
++
++#define AR_BIT(x)            (1 << (x))
++#define DMA_RX_ERR_CRC       AR_BIT(1)
++#define DMA_RX_ERR_DRIB      AR_BIT(2)
++#define DMA_RX_ERR_MII       AR_BIT(3)
++#define DMA_RX_EV2           AR_BIT(5)
++#define DMA_RX_ERR_COL       AR_BIT(6)
++#define DMA_RX_LONG          AR_BIT(7)
++#define DMA_RX_LS            AR_BIT(8)  /* last descriptor */
++#define DMA_RX_FS            AR_BIT(9)  /* first descriptor */
++#define DMA_RX_MF            AR_BIT(10) /* multicast frame */
++#define DMA_RX_ERR_RUNT      AR_BIT(11) /* runt frame */
++#define DMA_RX_ERR_LENGTH    AR_BIT(12) /* length error */
++#define DMA_RX_ERR_DESC      AR_BIT(14) /* descriptor error */
++#define DMA_RX_ERROR         AR_BIT(15) /* error summary */
++#define DMA_RX_LEN_MASK      0x3fff0000
++#define DMA_RX_LEN_SHIFT     16
++#define DMA_RX_FILT          AR_BIT(30)
++#define DMA_RX_OWN           AR_BIT(31) /* desc owned by DMA controller */
++
++#define DMA_RX1_BSIZE_MASK   0x000007ff
++#define DMA_RX1_BSIZE_SHIFT  0
++#define DMA_RX1_CHAINED      AR_BIT(24)
++#define DMA_RX1_RER          AR_BIT(25)
++
++#define DMA_TX_ERR_UNDER     AR_BIT(1)  /* underflow error */
++#define DMA_TX_ERR_DEFER     AR_BIT(2)  /* excessive deferral */
++#define DMA_TX_COL_MASK      0x78
++#define DMA_TX_COL_SHIFT     3
++#define DMA_TX_ERR_HB        AR_BIT(7)  /* hearbeat failure */
++#define DMA_TX_ERR_COL       AR_BIT(8)  /* excessive collisions */
++#define DMA_TX_ERR_LATE      AR_BIT(9)  /* late collision */
++#define DMA_TX_ERR_LINK      AR_BIT(10) /* no carrier */
++#define DMA_TX_ERR_LOSS      AR_BIT(11) /* loss of carrier */
++#define DMA_TX_ERR_JABBER    AR_BIT(14) /* transmit jabber timeout */
++#define DMA_TX_ERROR         AR_BIT(15) /* frame aborted */
++#define DMA_TX_OWN           AR_BIT(31) /* descr owned by DMA controller */
++
++#define DMA_TX1_BSIZE_MASK   0x000007ff
++#define DMA_TX1_BSIZE_SHIFT  0
++#define DMA_TX1_CHAINED      AR_BIT(24) /* chained descriptors */
++#define DMA_TX1_TER          AR_BIT(25) /* transmit end of ring */
++#define DMA_TX1_FS           AR_BIT(29) /* first segment */
++#define DMA_TX1_LS           AR_BIT(30) /* last segment */
++#define DMA_TX1_IC           AR_BIT(31) /* interrupt on completion */
++
++#define RCVPKT_LENGTH(X)     (X  >> 16)               /* Received pkt Length  */
++
++#define MAC_CONTROL_RE       AR_BIT(2)  /* receive enable */
++#define MAC_CONTROL_TE       AR_BIT(3)  /* transmit enable */
++#define MAC_CONTROL_DC       AR_BIT(5)  /* Deferral check*/
++#define MAC_CONTROL_ASTP     AR_BIT(8)  /* Auto pad strip */
++#define MAC_CONTROL_DRTY     AR_BIT(10) /* Disable retry */
++#define MAC_CONTROL_DBF      AR_BIT(11) /* Disable bcast frames */
++#define MAC_CONTROL_LCC      AR_BIT(12) /* late collision ctrl */
++#define MAC_CONTROL_HP       AR_BIT(13) /* Hash Perfect filtering */
++#define MAC_CONTROL_HASH     AR_BIT(14) /* Unicast hash filtering */
++#define MAC_CONTROL_HO       AR_BIT(15) /* Hash only filtering */
++#define MAC_CONTROL_PB       AR_BIT(16) /* Pass Bad frames */
++#define MAC_CONTROL_IF       AR_BIT(17) /* Inverse filtering */
++#define MAC_CONTROL_PR       AR_BIT(18) /* promiscuous mode (valid frames only) */
++#define MAC_CONTROL_PM       AR_BIT(19) /* pass multicast */
++#define MAC_CONTROL_F        AR_BIT(20) /* full-duplex */
++#define MAC_CONTROL_DRO      AR_BIT(23) /* Disable Receive Own */
++#define MAC_CONTROL_HBD      AR_BIT(28) /* heart-beat disabled (MUST BE SET) */
++#define MAC_CONTROL_BLE      AR_BIT(30) /* big endian mode */
++#define MAC_CONTROL_RA       AR_BIT(31) /* receive all (valid and invalid frames) */
++
++#define MII_ADDR_BUSY        AR_BIT(0)
++#define MII_ADDR_WRITE       AR_BIT(1)
++#define MII_ADDR_REG_SHIFT   6
++#define MII_ADDR_PHY_SHIFT   11
++#define MII_DATA_SHIFT       0
++
++#define FLOW_CONTROL_FCE     AR_BIT(1)
++
++#define DMA_BUS_MODE_SWR       AR_BIT(0)  /* software reset */
++#define DMA_BUS_MODE_BLE       AR_BIT(7)  /* big endian mode */
++#define DMA_BUS_MODE_PBL_SHIFT 8          /* programmable burst length 32 */
++#define DMA_BUS_MODE_DBO       AR_BIT(20) /* big-endian descriptors */
++
++#define DMA_STATUS_TI        AR_BIT(0)  /* transmit interrupt */
++#define DMA_STATUS_TPS       AR_BIT(1)  /* transmit process stopped */
++#define DMA_STATUS_TU        AR_BIT(2)  /* transmit buffer unavailable */
++#define DMA_STATUS_TJT       AR_BIT(3)  /* transmit buffer timeout */
++#define DMA_STATUS_UNF       AR_BIT(5)  /* transmit underflow */
++#define DMA_STATUS_RI        AR_BIT(6)  /* receive interrupt */
++#define DMA_STATUS_RU        AR_BIT(7)  /* receive buffer unavailable */
++#define DMA_STATUS_RPS       AR_BIT(8)  /* receive process stopped */
++#define DMA_STATUS_ETI       AR_BIT(10) /* early transmit interrupt */
++#define DMA_STATUS_FBE       AR_BIT(13) /* fatal bus interrupt */
++#define DMA_STATUS_ERI       AR_BIT(14) /* early receive interrupt */
++#define DMA_STATUS_AIS       AR_BIT(15) /* abnormal interrupt summary */
++#define DMA_STATUS_NIS       AR_BIT(16) /* normal interrupt summary */
++#define DMA_STATUS_RS_SHIFT  17         /* receive process state */
++#define DMA_STATUS_TS_SHIFT  20         /* transmit process state */
++#define DMA_STATUS_EB_SHIFT  23         /* error bits */
++
++#define DMA_CONTROL_SR       AR_BIT(1)  /* start receive */
++#define DMA_CONTROL_ST       AR_BIT(13) /* start transmit */
++#define DMA_CONTROL_SF       AR_BIT(21) /* store and forward */
++
++#endif	// __ARUBA_DMA_H__
++
++
++
++
++
+diff -Nur linux-2.6.17/drivers/net/ar2313/Makefile linux-2.6.17-owrt/drivers/net/ar2313/Makefile
+--- linux-2.6.17/drivers/net/ar2313/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-owrt/drivers/net/ar2313/Makefile	2006-06-19 12:25:58.000000000 +0200
+@@ -0,0 +1,5 @@
++#
++# Makefile for the AR2313 ethernet driver
++#
++
++obj-$(CONFIG_AR2313) += ar2313.o
+diff -Nur linux-2.6.17/drivers/net/ar2313/platform.h linux-2.6.17-owrt/drivers/net/ar2313/platform.h
+--- linux-2.6.17/drivers/net/ar2313/platform.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-owrt/drivers/net/ar2313/platform.h	2006-06-19 12:05:29.000000000 +0200
+@@ -0,0 +1,128 @@
++/********************************************************************************
++   Title:   $Source: platform.h,v $
++
++   Author:  Dan Steinberg
++            Copyright Integrated Device Technology 2001
++
++   Purpose: AR2313 Register/Bit Definitions
++   
++   Update:
++            $Log: platform.h,v $
++      
++   Notes:   See Merlot architecture spec for complete details.  Note, all
++            addresses are virtual addresses in kseg1 (Uncached, Unmapped).
++ 
++********************************************************************************/
++
++#ifndef PLATFORM_H
++#define PLATFORM_H
++
++#define BIT(x) (1 << (x))
++
++#define RESET_BASE        0xBC003020
++#define RESET_VALUE       0x00000001
++
++/********************************************************************
++ * Device controller 
++ ********************************************************************/
++typedef struct {
++  volatile unsigned int flash0;
++} DEVICE;
++
++#define device (*((volatile DEVICE *) DEV_CTL_BASE))
++
++// DDRC register
++#define DEV_WP        (1<<26)
++
++/********************************************************************
++ * DDR controller 
++ ********************************************************************/
++typedef struct {
++  volatile unsigned int ddrc0;
++  volatile unsigned int ddrc1;
++  volatile unsigned int ddrrefresh;
++} DDR;
++
++#define ddr (*((volatile DDR *) DDR_BASE))
++
++// DDRC register
++#define DDRC_CS(i)     ((i&0x3)<<0)
++#define DDRC_WE        (1<<2)
++
++/********************************************************************
++ * Ethernet interfaces
++ ********************************************************************/
++#define ETHERNET_BASE    0xB8200000
++
++//
++// New Combo structure for Both Eth0 AND eth1
++//
++typedef struct {
++  volatile unsigned int mac_control;    /* 0x00 */
++  volatile unsigned int mac_addr[2];    /* 0x04 - 0x08*/
++  volatile unsigned int mcast_table[2]; /* 0x0c - 0x10 */
++  volatile unsigned int mii_addr;       /* 0x14 */
++  volatile unsigned int mii_data;       /* 0x18 */
++  volatile unsigned int flow_control;   /* 0x1c */
++  volatile unsigned int vlan_tag;       /* 0x20 */
++  volatile unsigned int pad[7];         /* 0x24 - 0x3c */
++  volatile unsigned int ucast_table[8]; /* 0x40-0x5c */
++  
++} ETHERNET_STRUCT;
++
++/********************************************************************
++ * Interrupt controller 
++ ********************************************************************/
++
++typedef struct {
++  volatile unsigned int wdog_control;		/* 0x08 */
++  volatile unsigned int wdog_timer;		/* 0x0c */
++  volatile unsigned int misc_status;		/* 0x10 */
++  volatile unsigned int misc_mask;		/* 0x14 */
++  volatile unsigned int global_status;		/* 0x18 */
++  volatile unsigned int reserved;		/* 0x1c */
++  volatile unsigned int reset_control;		/* 0x20 */
++} INTERRUPT;
++
++#define interrupt (*((volatile INTERRUPT *) INTERRUPT_BASE))
++
++#define INTERRUPT_MISC_TIMER    BIT(0)
++#define INTERRUPT_MISC_AHBPROC  BIT(1)
++#define INTERRUPT_MISC_AHBDMA   BIT(2)
++#define INTERRUPT_MISC_GPIO     BIT(3)
++#define INTERRUPT_MISC_UART     BIT(4)
++#define INTERRUPT_MISC_UARTDMA  BIT(5)
++#define INTERRUPT_MISC_WATCHDOG BIT(6)
++#define INTERRUPT_MISC_LOCAL    BIT(7)
++
++#define INTERRUPT_GLOBAL_ETH    BIT(2)
++#define INTERRUPT_GLOBAL_WLAN   BIT(3)
++#define INTERRUPT_GLOBAL_MISC   BIT(4)
++#define INTERRUPT_GLOBAL_ITIMER BIT(5)
++
++/********************************************************************
++ * DMA controller
++ ********************************************************************/
++#define DMA_BASE          0xB8201000
++
++typedef struct {
++  volatile unsigned int bus_mode;        /* 0x00 (CSR0) */
++  volatile unsigned int xmt_poll;        /* 0x04 (CSR1) */
++  volatile unsigned int rcv_poll;        /* 0x08 (CSR2) */
++  volatile unsigned int rcv_base;        /* 0x0c (CSR3) */
++  volatile unsigned int xmt_base;        /* 0x10 (CSR4) */
++  volatile unsigned int status;          /* 0x14 (CSR5) */
++  volatile unsigned int control;         /* 0x18 (CSR6) */
++  volatile unsigned int intr_ena;        /* 0x1c (CSR7) */
++  volatile unsigned int rcv_missed;      /* 0x20 (CSR8) */
++  volatile unsigned int reserved[11];    /* 0x24-0x4c (CSR9-19) */
++  volatile unsigned int cur_tx_buf_addr; /* 0x50 (CSR20) */
++  volatile unsigned int cur_rx_buf_addr; /* 0x50 (CSR21) */
++} DMA;
++
++#define dma (*((volatile DMA *) DMA_BASE))
++
++// macro to convert from virtual to physical address  
++#define phys_addr(x)      (x & 0x1fffffff) 
++
++#endif /* PLATFORM_H */
+diff -Nur linux-2.6.17/drivers/net/Kconfig linux-2.6.17-owrt/drivers/net/Kconfig
+--- linux-2.6.17/drivers/net/Kconfig	2006-06-19 12:05:01.000000000 +0200
++++ linux-2.6.17-owrt/drivers/net/Kconfig	2006-06-19 12:26:35.000000000 +0200
+@@ -310,6 +310,12 @@
+ 
+ source "drivers/net/arm/Kconfig"
+ 
++config AR2313
++	tristate "AR2313 Ethernet support"
++	depends on NET_ETHERNET && MACH_ARUBA
++	help
++	  Support for the AR2313 Ethernet part on Aruba AP60/61
++
+ config IDT_RC32434_ETH
+         tristate "IDT RC32434 Local Ethernet support"
+         depends on NET_ETHERNET
+diff -Nur linux-2.6.17/drivers/net/Makefile linux-2.6.17-owrt/drivers/net/Makefile
+--- linux-2.6.17/drivers/net/Makefile	2006-06-19 12:05:01.000000000 +0200
++++ linux-2.6.17-owrt/drivers/net/Makefile	2006-06-19 12:27:02.000000000 +0200
+@@ -12,6 +12,7 @@
+ obj-$(CONFIG_CHELSIO_T1) += chelsio/
+ obj-$(CONFIG_BONDING) += bonding/
+ obj-$(CONFIG_GIANFAR) += gianfar_driver.o
++obj-$(CONFIG_AR2313) += ar2313/
+ 
+ gianfar_driver-objs := gianfar.o \
+ 		gianfar_ethtool.o \

@@ -1200,7 +1200,7 @@ diff -Nur linux-2.6.17/drivers/net/natsemi.c linux-2.6.17-owrt/drivers/net/natse
 diff -Nur linux-2.6.17/drivers/net/rc32434_eth.c linux-2.6.17-owrt/drivers/net/rc32434_eth.c
 --- linux-2.6.17/drivers/net/rc32434_eth.c	1970-01-01 01:00:00.000000000 +0100
 +++ linux-2.6.17-owrt/drivers/net/rc32434_eth.c	2006-06-18 12:44:28.000000000 +0200
-@@ -0,0 +1,1268 @@
+@@ -0,0 +1,1273 @@
 +/**************************************************************************
 + *
 + *  BRIEF MODULE DESCRIPTION
@@ -1242,6 +1242,7 @@ diff -Nur linux-2.6.17/drivers/net/rc32434_eth.c linux-2.6.17-owrt/drivers/net/r
 + */
 +
 +#include <linux/config.h>
++#include <linux/version.h>
 +#include <linux/module.h>
 +#include <linux/kernel.h>
 +#include <linux/moduleparam.h>
@@ -1287,7 +1288,11 @@ diff -Nur linux-2.6.17/drivers/net/rc32434_eth.c linux-2.6.17-owrt/drivers/net/r
 +#define MII_CLOCK 1250000 				/* no more than 2.5MHz */
 +static char mac0[18] = "08:00:06:05:40:01"; 
 +
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,17)
++module_param_string(mac0, mac0, 18, 0);
++#else
 +MODULE_PARM(mac0, "c18");
++#endif
 +MODULE_PARM_DESC(mac0, "MAC address for RC32434 ethernet0");
 +
 +static struct rc32434_if_t {
