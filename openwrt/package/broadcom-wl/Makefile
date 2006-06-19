@@ -27,8 +27,16 @@ define Package/kmod-brcm-wl
   VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(PKG_RELEASE)
 endef
 
-define Package/wlc
+define Package/kmod-brcm-wl-mimo
   $(call Package/kmod-brcm-wl)
+  DEFAULT:=m if ALL
+  MENU:=
+  TITLE:=Proprietary BCM43xx WiFi driver (MIMO version)
+  DESCRIPTION:=Proprietary Wireless driver for the Broadcom BCM43xx chipset (MIMO version)
+endef
+
+define Package/wlc
+  $(call Package/kmod-brcm-wl-mimo)
   DEPENDS:=kmod-brcm-wl
   TITLE:=Setup utility
   DESCRIPTION:=Utility for initializing the Broadcom wl driver
@@ -53,13 +61,18 @@ define Build/Prepare
 	$(CP) src/* $(PKG_BUILD_DIR)/
 endef
 
-define Build/Compile
-	# Compile the kernel part
-	$(MAKE) -C "$(LINUX_DIR)" \
+MAKEFLAGS_KMOD = -C "$(LINUX_DIR)" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
 		ARCH="$(LINUX_KARCH)" \
 		PATH="$(TARGET_PATH)" \
-		SUBDIRS="$(PKG_BUILD_DIR)/kmod" \
+		SUBDIRS="$(PKG_BUILD_DIR)/kmod"
+
+
+define Build/Compile
+	# Compile the kernel part
+	$(MAKE) $(MAKEFLAGS_KMOD) \
+		modules
+	$(MAKE) $(MAKEFLAGS_KMOD) MOD_NAME="_mimo" \
 		modules
 
 	# Compile wlc
@@ -70,11 +83,19 @@ define Build/Compile
 		all
 endef
 
-define Package/kmod-brcm-wl/install
+define wl_template
 	install -d -m0755 $(1)/etc/modules.d
-	echo "wl" > $(1)/etc/modules.d/20-wl
+	echo "wl$(2)" > $(1)/etc/modules.d/20-wl$(2)
 	install -d -m0755 $(1)/lib/modules/$(LINUX_VERSION)
-	install -m0644 $(PKG_BUILD_DIR)/kmod/wl.o $(1)/lib/modules/$(LINUX_VERSION)/
+	install -m0644 $(PKG_BUILD_DIR)/kmod/wl$(2).o $(1)/lib/modules/$(LINUX_VERSION)/
+endef
+
+define Package/kmod-brcm-wl/install
+	$(call wl_template,$(1))
+endef
+
+define Package/kmod-brcm-wl-mimo/install
+	$(call wl_template,$(1),_mimo)
 endef
 
 define Package/wlc/install
@@ -93,6 +114,7 @@ define Package/nas/install
 endef
 
 $(eval $(call BuildPackage,kmod-brcm-wl))
+$(eval $(call BuildPackage,kmod-brcm-wl-mimo))
 $(eval $(call BuildPackage,wlc))
 $(eval $(call BuildPackage,wl))
 $(eval $(call BuildPackage,nas))

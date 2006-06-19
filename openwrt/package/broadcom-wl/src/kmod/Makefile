@@ -13,20 +13,20 @@
 
 EXTRA_CFLAGS += -I$(TOPDIR)/arch/mips/bcm947xx/include -DBCMDRIVER
 
-O_TARGET	:= wl_link.o
+O_TARGET	:= wl_link$(MOD_NAME).o
 
-obj-y		:= wl_mod.o
+obj-y		:= wl_mod$(MOD_NAME).o
 obj-y		+= bcmutils.o hnddma.o linux_osl.o
 
 obj-m		:= $(O_TARGET)
 
-wl_mod.o: wl_apsta.o
+wl_mod$(MOD_NAME).o: wl_apsta$(MOD_NAME).o
 	sed -e 's,eth%d,wl%d\x00,g' < $< > $@
 
-wl.o: wl_link.o
+wl$(MOD_NAME).o: wl_link$(MOD_NAME).o
 	$(OBJDUMP) -d $< | perl patchtable.pl > patchtable.bin
-	cat wl_link.o patchtable.bin > $@
+	cat wl_link$(MOD_NAME).o patchtable.bin > $@
 
-modules: wl.o
+modules: wl$(MOD_NAME).o
 
 include $(TOPDIR)/Rules.make
