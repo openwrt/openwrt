@@ -13,7 +13,8 @@ include $(TOPDIR)/package/rules.mk
 define Package/kmod-wlcompat
 SECTION:=drivers
 CATEGORY:=Drivers
-DEPENDS:=
+DEPENDS:=kmod-brcm-wl
+DEFAULT:=y
 TITLE:=Wrapper providing Wireless Extensions for Broadcom wl module
 DESCRIPTION:= \\\
 A wrapper module, that provides Wireless Extension support for the \\\
@@ -23,6 +24,7 @@ endef
 
 define Package/kmod-wlcompat-debug
 $(call Package/kmod-wlcompat)
+DEFAULT:=m
 TITLE:=Wrapper providing Wireless Extensions for Broadcom wl module (debug)
 DESCRIPTION:= \\\
 A wrapper module, that provides Wireless Extension support for the \\\
