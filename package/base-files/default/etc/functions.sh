@@ -1,6 +1,10 @@
 #!/bin/sh
 alias debug=${DEBUG:-:}
 
+# newline
+N="
+"
+
 # valid interface?
 if_valid () (
   ifconfig "$1" >&- 2>&- ||
@@ -10,6 +14,13 @@ if_valid () (
 
 hotplug_dev() {
 	env -i ACTION=$1 INTERFACE=$2 /sbin/hotplug net
+}
+
+append() {
+	local var="$1"
+	local value="$2"
+	local sep="${3:- }"
+	eval "export ${var}=\"\${${var}:+\${${var}}${value:+$sep}}$value\""
 }
 
 config_cb() {
