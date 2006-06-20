@@ -19,7 +19,8 @@ define Build/DefaultTargets
     endif
   endif
 
-  $(PKG_BUILD_DIR)/.prepared: $(DL_DIR)/$(PKG_SOURCE)
+
+  $(PKG_BUILD_DIR)/.prepared:
 	@-rm -rf $(PKG_BUILD_DIR)
 	@mkdir -p $(PKG_BUILD_DIR)
 	$(call Build/Prepare)
@@ -199,11 +200,6 @@ define BuildPackage
 
 endef
 
-ifneq ($(strip $(PKG_SOURCE)),)
-  $(DL_DIR)/$(PKG_SOURCE):
-	$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(PKG_SOURCE)" "$(PKG_MD5SUM)" $(PKG_SOURCE_URL)
-endif
-
 ifneq ($(strip $(PKG_CAT)),)
   define Build/Prepare/Default
 	@if [ "$(PKG_CAT)" = "unzip" ]; then \
@@ -273,11 +269,20 @@ ifneq ($(DUMP),)
   dumpinfo: FORCE
 	@$(DUMPINFO)
 else
-		
   $(PACKAGE_DIR):
 	mkdir -p $@
+		
+  ifneq ($(strip $(PKG_SOURCE)),)
+    source: $(DL_DIR)/$(PKG_SOURCE)
 
-  source: $(DL_DIR)/$(PKG_SOURCE)
+    $(DL_DIR)/$(PKG_SOURCE):
+		mkdir -p $(DL_DIR)
+		$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(PKG_SOURCE)" "$(PKG_MD5SUM)" $(PKG_SOURCE_URL)
+
+    $(PKG_BUILD_DIR)/.prepared: $(DL_DIR)/$(PKG_SOURCE)
+  endif
+
+  source:
   prepare: $(PKG_BUILD_DIR)/.prepared
   configure: $(PKG_BUILD_DIR)/.configured
 
