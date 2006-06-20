@@ -48,6 +48,7 @@ compile-targets:
 install-targets:
 clean-targets:
 
+source:
 prepare:
 compile: compile-targets
 install: compile install-targets

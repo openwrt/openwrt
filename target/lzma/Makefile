@@ -34,7 +34,6 @@ $(LZMA_DIR)/.built: $(LZMA_DIR)/.unpacked
 lzma: $(TARGETS)
 	$(CP) $^ $(LZMA_DIR)
 
-lzma-source: $(DL_DIR)/$(LZMA_SOURCE)
 
 lzma-clean: FORCE
 	-$(MAKE) -C $(LZMA_LIB_DIR) clean
@@ -46,6 +45,7 @@ lzma-dirclean: FORCE
 
 #############################################################
 
+source: $(DL_DIR)/$(LZMA_SOURCE)
 prepare: $(LZMA_DIR)/.unpacked
 compile: lzma
 install: lzma FORCE
