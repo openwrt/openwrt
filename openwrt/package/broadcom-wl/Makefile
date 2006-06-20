@@ -11,7 +11,7 @@ WLC_VERSION:=0.1
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://downloads.openwrt.org/sources
-PKG_MD5SUM:=8ff7481425e0b04fc66f2bf950474cbc
+PKG_MD5SUM:=7d9fab2c611369bbe075c3924ea77450
 PKG_CAT:=bzcat
 
 include $(TOPDIR)/package/rules.mk
@@ -109,8 +109,12 @@ define Package/wl/install
 endef
 
 define Package/nas/install
+	install -d -m0755 $(1)/usr/lib
+	install -m0755 $(PKG_BUILD_DIR)/libbcmcrypto.so $(1)/usr/lib/
 	install -d -m0755 $(1)/usr/sbin
 	install -m0755 $(PKG_BUILD_DIR)/nas $(1)/usr/sbin/
+	ln -sf nas $(1)/usr/sbin/nas4not
+	ln -sf nas $(1)/usr/sbin/nas4wds
 endef
 
 $(eval $(call BuildPackage,kmod-brcm-wl))
