@@ -86,9 +86,16 @@ target/%: .pkginfo FORCE
 toolchain/%: FORCE
 	$(MAKE) -C toolchain $(patsubst toolchain/%,%,$@)
 
-world: ./scripts/config/conf FORCE
-	touch .config
+.config: ./scripts/config/conf FORCE
+	@[ -f .config ] || $(MAKE) menuconfig
 	$< -D .config Config.in >/dev/null 2>/dev/null
+
+download: .config FORCE
+	$(MAKE) toolchain/download
+	$(MAKE) package/download
+	$(MAKE) target/download
+
+world: .config FORCE
 	$(MAKE) toolchain/install
 	$(MAKE) target/compile
 	$(MAKE) package/compile
