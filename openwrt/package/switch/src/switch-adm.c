@@ -49,7 +49,7 @@ static int force = 0;
 
 MODULE_AUTHOR("Felix Fietkau <openwrt@nbd.name>");
 MODULE_LICENSE("GPL");
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,17)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,5,52)
 module_param(eecs, int, 0);
 module_param(eesk, int, 0);
 module_param(eedi, int, 0);
