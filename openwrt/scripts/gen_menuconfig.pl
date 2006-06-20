@@ -29,7 +29,7 @@ sub print_category($) {
 			}
 			foreach my $depend (@{$pkg->{depends}}) {
 				my $m = "depends";
-				$depend =~ s/^([@\+])//;
+				$depend =~ s/^([@\+]+)//;
 				my $flags = $1;
 				$flags =~ /@/ or $depend = "PACKAGE_$depend";
 				$flags =~ /\+/ and $m = "select";
