@@ -45,7 +45,7 @@ diff -Nur linux-2.6.17/arch/mips/aruba/Makefile linux-2.6.17-owrt/arch/mips/arub
 +# .S.o:
 +# 	$(CC) $(CFLAGS) -c $< -o $*.o
 +
-+obj-y	 := prom.o setup.o idtIRQ.o irq.o time.o flash_lock.o
++obj-y	 := prom.o setup.o irq.o time.o flash_lock.o
 +obj-$(CONFIG_SERIAL_8250) 		+= serial.o
 +
 +subdir-y         += nvram
@@ -921,7 +921,7 @@ diff -Nur linux-2.6.17/arch/mips/aruba/setup.c linux-2.6.17-owrt/arch/mips/aruba
 diff -Nur linux-2.6.17/arch/mips/aruba/time.c linux-2.6.17-owrt/arch/mips/aruba/time.c
 --- linux-2.6.17/arch/mips/aruba/time.c	1970-01-01 01:00:00.000000000 +0100
 +++ linux-2.6.17-owrt/arch/mips/aruba/time.c	2006-06-18 12:44:28.000000000 +0200
-@@ -0,0 +1,108 @@
+@@ -0,0 +1,110 @@
 +/**************************************************************************
 + *
 + *  BRIEF MODULE DESCRIPTION
@@ -1022,8 +1022,10 @@ diff -Nur linux-2.6.17/arch/mips/aruba/time.c linux-2.6.17-owrt/arch/mips/aruba/
 +
 +}
 +
-+asmlinkage void aruba_timer_interrupt(int irq, struct pt_regs *regs)
++asmlinkage void aruba_timer_interrupt(struct pt_regs *regs)
 +{
++	int irq = MIPS_CPU_TIMER_IRQ;
++
 +	irq_enter();
 +	kstat_this_cpu.irqs[irq]++;
 +

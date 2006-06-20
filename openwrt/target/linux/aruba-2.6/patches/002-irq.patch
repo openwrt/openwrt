@@ -1,98 +1,7 @@
-diff -Nur linux-2.6.15/arch/mips/aruba/idtIRQ.S linux-2.6.15-openwrt/arch/mips/aruba/idtIRQ.S
---- linux-2.6.15/arch/mips/aruba/idtIRQ.S	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/arch/mips/aruba/idtIRQ.S	2006-01-10 00:32:32.000000000 +0100
-@@ -0,0 +1,87 @@
-+/**************************************************************************
-+ *
-+ *  BRIEF MODULE DESCRIPTION
-+ *     Intterrupt dispatcher code for IDT boards
-+ *
-+ *  Copyright 2004 IDT Inc. (rischelp@idt.com)
-+ *         
-+ *  This program is free software; you can redistribute  it and/or modify it
-+ *  under  the terms of  the GNU General  Public License as published by the
-+ *  Free Software Foundation;  either version 2 of the  License, or (at your
-+ *  option) any later version.
-+ *
-+ *  THIS  SOFTWARE  IS PROVIDED   ``AS  IS'' AND   ANY  EXPRESS OR IMPLIED
-+ *  WARRANTIES,   INCLUDING, BUT NOT  LIMITED  TO, THE IMPLIED WARRANTIES OF
-+ *  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN
-+ *  NO  EVENT  SHALL   THE AUTHOR  BE    LIABLE FOR ANY   DIRECT, INDIRECT,
-+ *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-+ *  NOT LIMITED   TO, PROCUREMENT OF  SUBSTITUTE GOODS  OR SERVICES; LOSS OF
-+ *  USE, DATA,  OR PROFITS; OR  BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-+ *  ANY THEORY OF LIABILITY, WHETHER IN  CONTRACT, STRICT LIABILITY, OR TORT
-+ *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
-+ *  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-+ *
-+ *  You should have received a copy of the  GNU General Public License along
-+ *  with this program; if not, write  to the Free Software Foundation, Inc.,
-+ *  675 Mass Ave, Cambridge, MA 02139, USA.
-+ *
-+ *
-+ **************************************************************************
-+ * May 2004 rkt, neb
-+ *
-+ * Initial Release
-+ *
-+ * 
-+ *
-+ **************************************************************************
-+ */
-+		
-+	
-+#include <asm/asm.h>
-+#include <asm/mipsregs.h>
-+#include <asm/regdef.h>
-+#include <asm/stackframe.h>
-+
-+	.text
-+	.set	noreorder
-+	.set	noat
-+	.align	5
-+	NESTED(idtIRQ, PT_SIZE, sp)
-+	.set noat
-+	SAVE_ALL
-+	CLI
-+
-+	.set	at
-+	.set	noreorder
-+
-+	/* Get the pending interrupts */
-+	mfc0    t0, CP0_CAUSE
-+	nop
-+			 
-+	/* Isolate the allowed ones by anding the irq mask */
-+	mfc0    t2, CP0_STATUS
-+	move	a1, sp		/* need a nop here, hence we anticipate */
-+	andi    t0, CAUSEF_IP
-+	and     t0, t2
-+								  
-+	/* check for r4k counter/timer IRQ. */
-+	
-+	andi    t1, t0, CAUSEF_IP7
-+	beqz    t1, 1f
-+	nop
-+
-+	jal     aruba_timer_interrupt	
-+
-+	li	a0, 7
-+
-+	j	ret_from_irq
-+	nop
-+1:
-+	jal	aruba_irqdispatch
-+	move	a0, t0
-+	j	ret_from_irq
-+	nop
-+
-+	END(idtIRQ)
-+
-+
-diff -Nur linux-2.6.15/arch/mips/aruba/irq.c linux-2.6.15-openwrt/arch/mips/aruba/irq.c
---- linux-2.6.15/arch/mips/aruba/irq.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-openwrt/arch/mips/aruba/irq.c	2006-01-10 00:32:32.000000000 +0100
-@@ -0,0 +1,429 @@
+diff -Nur linux-2.6.17/arch/mips/aruba/irq.c linux-2.6.17-openwrt/arch/mips/aruba/irq.c
+--- linux-2.6.17/arch/mips/aruba/irq.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-openwrt/arch/mips/aruba/irq.c	2006-01-10 00:32:32.000000000 +0100
+@@ -0,0 +1,433 @@
 +/**************************************************************************
 + *
 + *  BRIEF MODULE DESCRIPTION
@@ -164,7 +73,7 @@ diff -Nur linux-2.6.15/arch/mips/aruba/irq.c linux-2.6.15-openwrt/arch/mips/arub
 +#define DPRINTK(fmt, args...)
 +#endif
 +
-+extern asmlinkage void idtIRQ(void);
++extern void aruba_timer_interrupt(struct pt_regs *regs);
 +static unsigned int startup_irq(unsigned int irq);
 +static void end_irq(unsigned int irq_nr);
 +static void mask_and_ack_irq(unsigned int irq_nr);
@@ -436,7 +345,6 @@ diff -Nur linux-2.6.15/arch/mips/aruba/irq.c linux-2.6.15-openwrt/arch/mips/arub
 +	int i;
 +	printk("Initializing IRQ's: %d out of %d\n", RC32434_NR_IRQS, NR_IRQS);
 +	memset(irq_desc, 0, sizeof(irq_desc));
-+	set_except_vector(0, idtIRQ);
 +
 +	set_c0_status(0xFF00);
 +
@@ -450,10 +358,15 @@ diff -Nur linux-2.6.15/arch/mips/aruba/irq.c linux-2.6.15-openwrt/arch/mips/arub
 +}
 +
 +/* Main Interrupt dispatcher */
-+void aruba_irqdispatch(unsigned long cp0_cause, struct pt_regs *regs)
++
++void plat_irq_dispatch(struct pt_regs *regs)
 +{
 +	unsigned int pend, group, ip;
 +	volatile unsigned int *addr;
++	unsigned long cp0_cause = read_c0_cause() & read_c0_status() & CAUSEF_IP;
++
++	if (cp0_cause & CAUSEF_IP7)
++		aruba_timer_interrupt(regs);
 +
 +	if(cp0_cause == 0) {
 +		printk("INTERRUPT(S) FIRED WHILE MASKED\n");
