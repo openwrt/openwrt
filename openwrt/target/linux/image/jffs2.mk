@@ -14,6 +14,9 @@ define Image/mkfs/jffs2
 	$(call Image/Build,jffs2-128k)
 endef
 
+jffs2-source: FORCE
+	$(MAKE) -C $(TOPDIR)/target/linux/image/jffs2 source
+
 $(STAGING_DIR)/bin/mkfs.jffs2:
 	$(MAKE) -C $(TOPDIR)/target/linux/image/jffs2 compile
 
@@ -21,6 +24,7 @@ jffs2-clean: FORCE
 	$(MAKE) -C $(TOPDIR)/target/linux/image/jffs2 clean
 	rm -f $(KDIR)/root.jffs2*
 
+source: jffs2-source
 compile-targets: $(STAGING_DIR)/bin/mkfs.jffs2
 clean-targets: jffs2-clean
 

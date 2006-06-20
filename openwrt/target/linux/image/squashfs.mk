@@ -4,6 +4,9 @@ else
 ENDIAN := be
 endif
 
+squashfs-source: FORCE
+	$(MAKE) -C $(TOPDIR)/target/linux/image/squashfs source
+
 $(STAGING_DIR)/bin/mksquashfs-lzma:
 	$(MAKE) -C $(TOPDIR)/target/linux/image/squashfs compile
 	

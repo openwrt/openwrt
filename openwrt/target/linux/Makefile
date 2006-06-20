@@ -25,6 +25,10 @@ $(eval $(call kernel_template,2.6,sibyte,2_6_SIBYTE))
 export BOARD
 export KERNEL
 
+source:
+	$(MAKE) -C $(BOARD)-$(KERNEL) source
+	$(MAKE) -C image/$(BOARD) source
+
 prepare:
 	$(MAKE) -C $(BOARD)-$(KERNEL) prepare
 
