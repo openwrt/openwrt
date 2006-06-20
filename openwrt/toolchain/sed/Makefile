@@ -13,14 +13,16 @@ SED_DIR1:=$(TOOL_BUILD_DIR)/sed-$(SED_VER)
 SED_DIR2:=$(BUILD_DIR)/sed-$(SED_VER)
 SED_BINARY:=sed/sed
 SED_TARGET_BINARY:=bin/sed
+SED_MD5SUM:=928f0e06422f414091917401f1a834d0
 ifeq ($(strip $(BUILD_WITH_LARGEFILE)),true)
 SED_CPPFLAGS=-D_FILE_OFFSET_BITS=64
 endif
 HOST_SED_TARGET=$(shell ./sedcheck.sh)
+DOWNLOAD_TARGET=$(shell ./sedcheck.sh)
 
 $(DL_DIR)/$(SED_SOURCE):
 	mkdir -p $(DL_DIR)
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(SED_SOURCE) x $(SED_SITE)
+	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(SED_SOURCE) $(SED_MD5SUM) $(SED_SITE)
 
 #############################################################
 #
@@ -65,7 +67,9 @@ use-sed-host-binary: FORCE
 	    rm -f $(STAGING_DIR)/$(SED_TARGET_BINARY); \
 	    ln -s $$SED $(STAGING_DIR)/$(SED_TARGET_BINARY)
 
-source: 
+download-sed-binary: sed-$(SED_VER).tar.gz
+
+source: $(DOWNLOAD_TARGET)
 prepare: 
 compile: 
 install: $(HOST_SED_TARGET)
