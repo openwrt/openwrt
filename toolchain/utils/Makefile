@@ -8,6 +8,7 @@ ifeq ($(OS),Darwin)
 CFLAGS += -I./include
 endif
 
+source:
 prepare: $(UTILS_BUILD_DIR)
 compile: prepare $(patsubst %,$(UTILS_BUILD_DIR)/%,$(TARGETS))
 install: compile

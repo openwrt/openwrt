@@ -1,12 +1,14 @@
 # Main makefile for the toolchain
 include $(TOPDIR)/rules.mk
-TARGETS-y:=sed utils binutils gcc uClibc ipkg-utils libnotimpl
+TARGETS-y:=sed kernel-headers utils binutils gcc uClibc ipkg-utils libnotimpl
 TARGETS-$(CONFIG_GDB) += gdb
 
+TARGETS_DOWNLOAD:=$(patsubst %,%-source,$(TARGETS-y))
 TARGETS_INSTALL:=$(patsubst %,%-install,$(TARGETS-y))
 TARGETS_CLEAN:=$(patsubst %,%-clean,$(TARGETS-y))
 
 all: install
+download: $(TARGETS_DOWNLOAD)
 install: $(TARGETS_INSTALL)
 clean: $(TARGETS_CLEAN)
 
@@ -29,6 +31,9 @@ $(STAGING_DIR):
 
 $(TOOL_BUILD_DIR):
 	@mkdir -p $@
+
+%-source: FORCE
+	$(MAKE) -C $(patsubst %-source,%,$@) source
 
 %-prepare: $(TOOLCHAIN_STAMP_DIR) $(STAGING_DIR) $(TOOL_BUILD_DIR) FORCE
 	@[ -f $(TOOLCHAIN_STAMP_DIR)/.toolchain_$@ ] || { \
