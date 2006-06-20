@@ -5,7 +5,7 @@ diff -ruN openswan-2.4.5-old/linux/net/ipsec/aes/ipsec_alg_aes.c openswan-2.4.5-
  static int keymaxbits=0;
  #if defined(CONFIG_KLIPS_ENC_AES_MODULE)
  MODULE_AUTHOR("JuanJo Ciarlante <jjo-ipsec@mendoza.gov.ar>");
-+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,17)
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,5,52)
 +module_param(debug_aes, int, 0);
 +module_param(test_aes, int, 0);
 +module_param(excl_aes, int, 0);
@@ -26,7 +26,7 @@ diff -ruN openswan-2.4.5-old/linux/net/ipsec/aes/ipsec_alg_aes.c openswan-2.4.5-
  #else
  static int auth_id=9;
  #endif
-+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,17)
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,5,52)
 +module_param(auth_id, int, 0);
 +#else
  MODULE_PARM(auth_id, "i");

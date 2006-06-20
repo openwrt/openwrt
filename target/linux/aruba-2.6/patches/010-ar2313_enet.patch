@@ -89,7 +89,7 @@ diff -Nur linux-2.6.17/drivers/net/ar2313/ar2313.c linux-2.6.17-owrt/drivers/net
 +static char ethaddr[18] = "00:00:00:00:00:00";
 +static char ifname[5] = "bond";
 +
-+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,17)
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,5,52)
 +module_param_string(ethaddr, ethaddr, 18, 0);
 +module_param_string(ifname, ifname, 5, 0);
 +#else

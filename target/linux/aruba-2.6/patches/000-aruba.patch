@@ -1290,7 +1290,7 @@ diff -Nur linux-2.6.17/drivers/net/rc32434_eth.c linux-2.6.17-owrt/drivers/net/r
 +#define MII_CLOCK 1250000 				/* no more than 2.5MHz */
 +static char mac0[18] = "08:00:06:05:40:01"; 
 +
-+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,17)
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,5,52)
 +module_param_string(mac0, mac0, 18, 0);
 +#else
 +MODULE_PARM(mac0, "c18");
