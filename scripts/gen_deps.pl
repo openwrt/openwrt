@@ -22,7 +22,7 @@ while ($line = <>) {
 	$line =~ /^(Build-)?Depends: \s*(.+)\s*$/ and do {
 		$pkg{$name}->{depends} ||= [];
 		foreach my $v (split /\s+/, $2) {
-			next if $v =~ /^@/;
+			next if $v =~ /^[\+]?@/;
 			$v =~ s/^\+//;
 			push @{$pkg{$name}->{depends}}, $v;
 		}
