@@ -40,8 +40,8 @@ config JLEVEL
 	help
 	    Number of jobs to run simultanesouly
 
-source "target/sdk/Config.in"
 source "toolchain/Config.in"
+source "target/sdk/Config.in"
 
 menu "Target Images"
 	config TARGET_ROOTFS_INITRAMFS
