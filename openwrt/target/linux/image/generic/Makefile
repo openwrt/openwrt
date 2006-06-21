@@ -1,3 +1,4 @@
+include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 # use default targets for everything
