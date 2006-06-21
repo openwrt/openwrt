@@ -1,0 +1,23 @@
+include $(TOPDIR)/rules.mk
+include $(INCLUDE_DIR)/host-build.mk
+
+PKG_BUILD_DIR := $(TOOL_BUILD_DIR)/sstrip
+
+OS:=$(shell uname)
+ifeq ($(OS),Darwin)
+CFLAGS += -I./include
+endif
+
+define Build/Compile
+	$(CC) $(CFLAGS) -o $(PKG_BUILD_DIR)/sstrip src/sstrip.c
+endef
+
+define Build/Install
+	$(CP) $(PKG_BUILD_DIR)/sstrip $(STAGING_DIR)/bin
+endef
+
+define Build/Clean
+	rm -f $(STAGING_DIR)/bin/sstrip
+endef
+
+$(eval $(call HostBuild))

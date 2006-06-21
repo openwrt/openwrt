@@ -1,27 +1,23 @@
 include $(TOPDIR)/rules.mk
 
-SQUASHFSLZMA_DIR=$(BUILD_DIR)/squashfs3.0
-SQUASHFSLZMA_SOURCE=squashfs3.0.tar.gz
-SQUASHFSLZMA_SITE=@SF/squashfs
-SQUASHFSLZMA_MD5SUM=9fd05d0bfbb712f5fb95edafea5bc733
+PKG_NAME := squashfs
+PKG_VERSION := 3.0
 
-$(DL_DIR)/$(SQUASHFSLZMA_SOURCE):
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(SQUASHFSLZMA_SOURCE) $(SQUASHFSLZMA_MD5SUM) $(SQUASHFSLZMA_SITE)
+PKG_SOURCE := $(PKG_NAME)$(PKG_VERSION).tar.gz
+PKG_SOURCE_URL := @SF/squashfs
+PKG_MD5SUM := 9fd05d0bfbb712f5fb95edafea5bc733
+PKG_CAT := zcat
 
-$(SQUASHFSLZMA_DIR)/.unpacked: $(DL_DIR)/$(SQUASHFSLZMA_SOURCE) 
-	zcat $(DL_DIR)/$(SQUASHFSLZMA_SOURCE) | tar -C $(BUILD_DIR) -xvf -
-	$(PATCH) $(SQUASHFSLZMA_DIR) ./patches
-	touch $(SQUASHFSLZMA_DIR)/.unpacked
+PKG_BUILD_DIR := $(TOOL_BUILD_DIR)/squashfs$(PKG_VERSION)
 
-$(SQUASHFSLZMA_DIR)/squashfs-tools/mksquashfs-lzma: $(SQUASHFSLZMA_DIR)/.unpacked
-	$(MAKE) -C $(SQUASHFSLZMA_DIR)/squashfs-tools mksquashfs-lzma LZMAPATH=$(BUILD_DIR)/lzma
+include $(INCLUDE_DIR)/host-build.mk
 
-$(STAGING_DIR)/bin/mksquashfs-lzma: $(SQUASHFSLZMA_DIR)/squashfs-tools/mksquashfs-lzma
-	$(CP) $< $@
+define Build/Compile
+	$(MAKE) -C $(PKG_BUILD_DIR)/squashfs-tools mksquashfs-lzma LZMAPATH=$(STAGING_DIR)/host/lib
+endef
 
-source: $(DL_DIR)/$(SQUASHFSLZMA_SOURCE)
-prepare: $(SQUASHFSLZMA_DIR)/.unpacked
-compile: $(SQUASHFSLZMA_DIR)/squashfs-tools/mksquashfs-lzma $(STAGING_DIR)/bin/mksquashfs-lzma
-install:
-clean: FORCE
-	rm -rf $(SQUASHFSLZMA_DIR)
+define Build/Install
+	$(CP) $(PKG_BUILD_DIR)/squashfs-tools/mksquashfs-lzma $(STAGING_DIR)/bin/
+endef
+
+$(eval $(call HostBuild))

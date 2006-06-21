@@ -1,79 +1,56 @@
 include $(TOPDIR)/rules.mk
 
-#############################################################
-#
-# sed
-#
-#############################################################
-SED_VER:=4.1.2
-SED_SOURCE:=sed-$(SED_VER).tar.gz
-SED_SITE:=ftp://ftp.gnu.org/gnu/sed
-SED_CAT:=zcat
-SED_DIR1:=$(TOOL_BUILD_DIR)/sed-$(SED_VER)
-SED_DIR2:=$(BUILD_DIR)/sed-$(SED_VER)
-SED_BINARY:=sed/sed
-SED_TARGET_BINARY:=bin/sed
-SED_MD5SUM:=928f0e06422f414091917401f1a834d0
-ifeq ($(strip $(BUILD_WITH_LARGEFILE)),true)
-SED_CPPFLAGS=-D_FILE_OFFSET_BITS=64
+PKG_NAME := sed
+PKG_VERSION := 4.1.2
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_SOURCE_URL:=ftp://ftp.gnu.org/gnu/$(PKG_NAME)
+PKG_MD5SUM:=928f0e06422f414091917401f1a834d0
+PKG_CAT:=zcat
+
+PKG_BUILD_DIR:=$(TOOL_BUILD_DIR)/sed-$(PKG_VERSION)
+
+HOST_SED_TARGET=$(strip $(shell ./sedcheck.sh))
+
+ifneq ($(HOST_SED_TARGET),build-sed-host-binary)
+  PKG_SOURCE:=
+  PKG_CAT:=
 endif
-HOST_SED_TARGET=$(shell ./sedcheck.sh)
-DOWNLOAD_TARGET=$(shell ./sedcheck.sh)
 
-$(DL_DIR)/$(SED_SOURCE):
-	mkdir -p $(DL_DIR)
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(SED_SOURCE) $(SED_MD5SUM) $(SED_SITE)
+include $(INCLUDE_DIR)/host-build.mk
 
-#############################################################
-#
-# build sed for use on the host system
-#
-#############################################################
-
-$(SED_DIR1)/.unpacked: $(DL_DIR)/$(SED_SOURCE)
-	mkdir -p $(TOOL_BUILD_DIR)
-	mkdir -p $(STAGING_DIR)/bin;
-	$(SED_CAT) $(DL_DIR)/$(SED_SOURCE) | tar -C $(TOOL_BUILD_DIR) $(TAR_OPTIONS) -
-	touch $(SED_DIR1)/.unpacked
-
-$(SED_DIR1)/.configured: $(SED_DIR1)/.unpacked
-	(cd $(SED_DIR1); rm -rf config.cache; \
+ifeq ($(HOST_SED_TARGET),build-sed-host-binary)
+  define Build/Configure
+	(cd $(PKG_BUILD_DIR); rm -rf config.cache; \
 		./configure \
 		--prefix=$(STAGING_DIR) \
 		--prefix=/usr \
 	);
-	touch  $(SED_DIR1)/.configured
+  endef
 
-$(SED_DIR1)/$(SED_BINARY): $(SED_DIR1)/.configured
-	$(MAKE) -C $(SED_DIR1)
+  define Build/Compile
+	$(MAKE) -C $(PKG_BUILD_DIR)
+  endef
 
-# This stuff is needed to work around GNU make deficiencies
-build-sed-host-binary: $(SED_DIR1)/$(SED_BINARY) FORCE
-	@if [ -L $(STAGING_DIR)/$(SED_TARGET_BINARY) ] ; then \
-		rm -f $(STAGING_DIR)/$(SED_TARGET_BINARY); fi;
-	@if [ ! -f $(STAGING_DIR)/$(SED_TARGET_BINARY) -o $(STAGING_DIR)/$(SED_TARGET_BINARY) \
-	-ot $(SED_DIR1)/$(SED_BINARY) ] ; then \
+  define Build/Install
+	@if [ -L $(STAGING_DIR)/bin/sed ] ; then \
+		rm -f $(STAGING_DIR)/bin/sed; fi;
+	@if [ ! -f $(STAGING_DIR)/bin/sed -o $(STAGING_DIR)/bin/sed -ot $(PKG_BUILD_DIR)/sed/sed ]; then \
 	    set -x; \
 	    mkdir -p $(STAGING_DIR)/bin; \
-	    $(MAKE) DESTDIR=$(STAGING_DIR) -C $(SED_DIR1) install; \
+	    $(MAKE) DESTDIR=$(STAGING_DIR) -C $(PKG_BUILD_DIR) install; \
 	    mv $(STAGING_DIR)/usr/bin/sed $(STAGING_DIR)/bin/; \
 	    rm -rf $(STAGING_DIR)/share/locale $(STAGING_DIR)/usr/info \
-		    $(STAGING_DIR)/usr/man $(STAGING_DIR)/usr/share/doc; fi
+		    $(STAGING_DIR)/usr/man $(STAGING_DIR)/usr/share/doc; \
+	fi
+  endef
+else
+  define Build/Compile
+  endef
+  define Build/Install
+    rm -rf $(STAGING_DIR)/bin/sed
+	mkdir -p $(STAGING_DIR)/bin
+	ln -s `which sed` $(STAGING_DIR)/bin/sed
+  endef
+endif
 
-use-sed-host-binary: FORCE
-	@if [ -x /usr/bin/sed ]; then SED="/usr/bin/sed"; else \
-	    if [ -x /bin/sed ]; then SED="/bin/sed"; fi; fi; \
-	    mkdir -p $(STAGING_DIR)/bin; \
-	    rm -f $(STAGING_DIR)/$(SED_TARGET_BINARY); \
-	    ln -s $$SED $(STAGING_DIR)/$(SED_TARGET_BINARY)
-
-download-sed-binary: sed-$(SED_VER).tar.gz
-
-source: $(DOWNLOAD_TARGET)
-prepare: 
-compile: 
-install: $(HOST_SED_TARGET)
-clean: FORCE
-	rm -rf $(SED_DIR1)
-	rm -f $(STAGING_DIR)/$(SED_TARGET_BINARY)
-
+$(eval $(call HostBuild))
