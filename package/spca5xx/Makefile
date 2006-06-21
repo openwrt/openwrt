@@ -1,7 +1,7 @@
 # $Id$
 
 include $(TOPDIR)/rules.mk
-include $(TOPDIR)/include/kernel.mk
+include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=spca5xx
 PKG_VERSION:=20060301
@@ -13,7 +13,7 @@ PKG_SOURCE_URL:=http://mxhaard.free.fr/spca50x/Download/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
-include $(TOPDIR)/include/package.mk
+include $(INCLUDE_DIR)/package.mk
 
 #FIXME: add proper dependency handling on kmod-usb-core & kmod-videodev packages
 define Package/kmod-spca5xx

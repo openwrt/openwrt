@@ -1,4 +1,4 @@
-include $(TOPDIR)/include/image.mk
+include $(INCLUDE_DIR)/image.mk
 
 LOADADDR = 0x8108c8f4		# RAM start + 16M 
 KERNEL_ENTRY = 0x80100000	# Default kernel entry in arch/mips/Makefile

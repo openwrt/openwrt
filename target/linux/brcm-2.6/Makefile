@@ -5,8 +5,8 @@ LINUX_RELEASE:=1
 LINUX_KERNEL_MD5SUM:=37ddefe96625502161f075b9d907f21e
 
 include ./config
-include $(TOPDIR)/include/kernel.mk
-include $(TOPDIR)/include/kernel-build.mk
+include $(INCLUDE_DIR)/kernel.mk
+include $(INCLUDE_DIR)/kernel-build.mk
 
 
 $(LINUX_DIR)/.patched: $(LINUX_DIR)/.unpacked

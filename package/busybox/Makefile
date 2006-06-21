@@ -12,7 +12,7 @@ PKG_SOURCE_URL:=http://www.busybox.net/downloads
 PKG_MD5SUM:=19a0b475169335f17e421cf644616fe7
 PKG_CAT:=bzcat
 
-include $(TOPDIR)/include/package.mk
+include $(INCLUDE_DIR)/package.mk
 
 define Package/busybox
 SECTION:=base

@@ -1,4 +1,4 @@
-include $(TOPDIR)/include/image.mk
+include $(INCLUDE_DIR)/image.mk
 
 define Image/Build
 	cp $(KDIR)/root.$(1) $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).img
