@@ -21,10 +21,6 @@ PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 PKG_MENU:=IPv4 / IPv6 firewall administration
 
 include $(INCLUDE_DIR)/package.mk
-ifeq ($(DUMP),)
-include $(LINUX_DIR)/.config
-include $(INCLUDE_DIR)/netfilter.mk
-endif
 
 define Package/iptables
 SECTION:=net
@@ -213,6 +209,9 @@ define Package/ip6tables/install
 endef
 
 define BuildPlugin
+include $(LINUX_DIR)/.config
+include $(INCLUDE_DIR)/netfilter.mk
+
 define Package/$(1)/install
 	install -m0755 -d $$(1)/usr/lib/iptables
 	for m in $$(patsubst xt_%,ipt_%,$(2)); do \
