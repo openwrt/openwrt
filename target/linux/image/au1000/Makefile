@@ -1,3 +1,4 @@
+include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 LOADADDR = 0x8108c8f4		# RAM start + 16M 
