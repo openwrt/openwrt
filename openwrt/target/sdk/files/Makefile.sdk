@@ -1,42 +1,66 @@
-# OpenWrt SDK Makefile
-TOPDIR:=${shell pwd}
+# Makefile for OpenWrt
+#
+# Copyright (C) 2006 by Felix Fietkau <openwrt@nbd.name>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+#
+
+RELEASE:=Kamikaze
+#VERSION:=2.0 # uncomment for final release
+
+#--------------------------------------------------------------
+# Just run 'make menuconfig', configure stuff, then run 'make'.
+# You shouldn't need to mess with anything beyond this point...
+#--------------------------------------------------------------
+TOPDIR=${shell pwd}
 export TOPDIR
-DEVELOPER:=1
+
+include $(TOPDIR)/.version.mk
+export OPENWRTVERSION
+
+DEVELOPER=1
 export DEVELOPER
 
-include $(TOPDIR)/rules.mk
-include $(TOPDIR)/package/depend.mk
+all: world
 
-PACKAGES:=$(filter-out %.mk,$(shell ls $(TOPDIR)/package))
-PACKAGES_PREPARE:=$(foreach package,$(PACKAGES),$(package)-prepare)
-PACKAGES_COMPILE:=$(foreach package,$(PACKAGES),$(package)-compile)
-PACKAGES_CLEAN:=$(foreach package,$(PACKAGES),$(package)-clean)
+.pkginfo: FORCE
+ifneq ($(shell ./scripts/timestamp.pl -p .pkginfo package Makefile),.pkginfo)
+	@echo Collecting package info...
+	@-for dir in package/*/; do \
+		echo Source-Makefile: $${dir}Makefile; \
+		$(MAKE) --no-print-dir DUMP=1 -C $$dir 2>&- || true; \
+	done > $@
+endif
 
-all: compile package_index
-compile: $(PACKAGES_COMPILE)
-clean: $(PACKAGES_CLEAN)
-	rm -rf $(BUILD_DIR)
-	rm -rf bin
+pkginfo-clean: FORCE
+	-rm -f .pkginfo .config.in
+
+package/%: .pkginfo FORCE
+	$(MAKE) -C package $(patsubst package/%,%,$@) SDK=1
+
+download: FORCE
+	$(MAKE) package/download
+
+world: FORCE
+	$(MAKE) package/compile
+
+clean: FORCE
+	rm -rf build_* bin
 
 distclean: clean
-	rm -rf $(DL_DIR)
+	rm -rf dl .pkg*
 
-%-prepare: $(BUILD_DIR)
-	@$(MAKE) -C package/$(patsubst %-prepare,%,$@) prepare
-
-%-compile: %-prepare 
-	@$(MAKE) -C package/$(patsubst %-compile,%,$@) compile
-
-%-clean:
-	@$(MAKE) -C package/$(patsubst %-clean,%,$@) clean
-
-
-$(BUILD_DIR):
-	mkdir -p $@
-	mkdir -p $(DL_DIR)
-	
-package_index:
-	(cd $(PACKAGE_DIR); \
-		$(STAGING_DIR)/usr/bin/ipkg-make-index . > Packages \
-	)
-
+.PHONY: FORCE
+FORCE:

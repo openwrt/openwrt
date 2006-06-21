@@ -27,9 +27,12 @@ $(STAMP_DIR) $(TARGET_DIR):
 %-clean: $(STAMP_DIR) $(TARGET_DIR)
 	$(MAKE) -C $(patsubst %-clean,%,$@) clean MAKEFLAGS="$(BUILD_MAKEFLAGS)"
 
+ifeq ($(SDK),1)
+GENDEP_OPTS := -s
+endif
 
 $(TOPDIR)/.pkgdeps: $(TOPDIR)/.pkginfo
-	@$(TOPDIR)/scripts/gen_deps.pl < $< > $@ || rm -f $@
+	@$(TOPDIR)/scripts/gen_deps.pl $(GENDEP_OPTS) < $< > $@ || rm -f $@
 
 all: compile
 clean: $(patsubst %,%-clean,$(package-) $(package-y) $(package-m))

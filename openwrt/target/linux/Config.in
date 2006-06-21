@@ -1,36 +1,3 @@
-menu "Target Root Filesystem"
-	config TARGET_ROOTFS_INITRAMFS
-		bool "ramdisk"
-		default n
-		depends LINUX_2_6
-		help
-		  Embed the rootfs into the kernel (initramfs)
-
-	config TARGET_ROOTFS_JFFS2
-		bool "jffs2"
-		default y
-		depends !TARGET_ROOTFS_INITRAMFS
-		help
-		  Build a jffs2 root filesystem
-
-	config TARGET_ROOTFS_SQUASHFS
-		bool "squashfs"
-		default y
-		depends !LINUX_2_6_ARUBA
-		depends !LINUX_2_6_XSCALE
-		depends !TARGET_ROOTFS_INITRAMFS
-		help
-		  Build a squashfs-lzma root filesystem
-
-	config TARGET_ROOTFS_TGZ
-		bool "tgz"
-		default y if !LINUX_2_4_BRCM && !LINUX_2_6_BRCM && !LINUX_2_6_ARUBA && !LINUX_2_4_AR531X
-		depends !TARGET_ROOTFS_INITRAMFS
-		help
-		  Build a compressed tar archive of the the root filesystem
-
-endmenu
-
 menu "Kernel Configuration / Device Support"
 
 comment "Device specific configuration"
