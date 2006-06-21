@@ -13,8 +13,8 @@ menu "Target Root Filesystem"
 		help
 		  Build a jffs2 root filesystem
 
-	config TARGET_ROOTFS_SQUASHFS_LZMA
-		bool "squashfs-lzma"
+	config TARGET_ROOTFS_SQUASHFS
+		bool "squashfs"
 		default y
 		depends !LINUX_2_6_ARUBA
 		depends !LINUX_2_6_XSCALE

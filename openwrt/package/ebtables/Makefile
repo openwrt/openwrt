@@ -12,7 +12,7 @@ PKG_SOURCE_URL:=@SF/ebtables
 PKG_MD5SUM:=f07111fcc1966be669278433c35dcc28
 PKG_CAT:=zcat
 
-include $(TOPDIR)/package/rules.mk
+include $(TOPDIR)/include/package.mk
 
 define Package/ebtables
 SECTION:=base

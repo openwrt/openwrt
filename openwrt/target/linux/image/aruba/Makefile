@@ -1,4 +1,4 @@
-include ../image.mk
+include $(TOPDIR)/include/image.mk
 
 LOADADDR = 0x81000000		# RAM start + 16M 
 KERNEL_ENTRY = 0x80100000

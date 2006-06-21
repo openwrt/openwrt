@@ -1,5 +1,5 @@
 NF_2_6:=1
-include ../netfilter.mk
+include $(TOPDIR)/include/netfilter.mk
 
 # Networking
 

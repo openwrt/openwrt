@@ -30,6 +30,7 @@ source:
 	$(MAKE) -C image/$(BOARD) source
 
 prepare:
+	rm -f $(TOPDIR)/.kernel.mk
 	$(MAKE) -C $(BOARD)-$(KERNEL) prepare
 
 compile:

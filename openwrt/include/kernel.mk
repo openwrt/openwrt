@@ -1,21 +1,15 @@
+ifneq ($(DUMP),1)
+include $(TOPDIR)/.kernel.mk
+
 KERNEL:=unknown
 ifneq (,$(findstring 2.4.,$(LINUX_VERSION)))
 KERNEL:=2.4
+LINUX_KMOD_SUFFIX=o
 endif
 ifneq (,$(findstring 2.6.,$(LINUX_VERSION)))
 KERNEL:=2.6
+LINUX_KMOD_SUFFIX=ko
 endif
-
-MODULES_SUBDIR:=lib/modules/$(LINUX_VERSION)
-
-LINUX_BUILD_DIR:=$(BUILD_DIR)/linux-$(KERNEL)-$(BOARD)
-ifeq ($(LINUX_NAME),)
-LINUX_NAME:=linux-$(LINUX_VERSION)
-endif
-LINUX_DIR := $(LINUX_BUILD_DIR)/$(LINUX_NAME)
-LINUX_KERNEL:=$(LINUX_BUILD_DIR)/vmlinux
-
-LINUX_TARGET_DIR:=$(LINUX_BUILD_DIR)/root
 
 LINUX_KARCH:=$(shell echo $(ARCH) | sed -e 's/i[3-9]86/i386/' \
 	-e 's/mipsel/mips/' \
@@ -25,16 +19,18 @@ LINUX_KARCH:=$(shell echo $(ARCH) | sed -e 's/i[3-9]86/i386/' \
 	-e 's/armeb/arm/' \
 )
 
-KMOD_BUILD_DIR := $(LINUX_BUILD_DIR)/linux-modules
-MODULES_DIR := $(LINUX_BUILD_DIR)/modules/$(MODULES_SUBDIR)
-TARGET_MODULES_DIR := $(LINUX_TARGET_DIR)/$(MODULES_SUBDIR)
+KERNEL_BUILD_DIR:=$(BUILD_DIR)/linux-$(KERNEL)-$(BOARD)
+LINUX_DIR := $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION)
 
-ifeq ($(KERNEL),2.6)
-LINUX_KMOD_SUFFIX=ko
-else
-LINUX_KMOD_SUFFIX=o
+MODULES_SUBDIR:=lib/modules/$(LINUX_VERSION)
+MODULES_DIR := $(KERNEL_BUILD_DIR)/modules/$(MODULES_SUBDIR)
+TARGET_MODULES_DIR := $(LINUX_TARGET_DIR)/$(MODULES_SUBDIR)
+KMOD_BUILD_DIR := $(KERNEL_BUILD_DIR)/linux-modules
+
+LINUX_KERNEL:=$(KERNEL_BUILD_DIR)/vmlinux
 endif
 
+# FIXME: remove this crap
 define KMOD_template
 ifeq ($$(strip $(4)),)
 KDEPEND_$(1):=m
@@ -78,8 +74,4 @@ endif
 	$(8)
 	$(IPKG_BUILD) $$(I_$(1)) $(PACKAGE_DIR)
 endef
-
-KERNEL_IPKG:=$(LINUX_BUILD_DIR)/kernel_$(LINUX_VERSION)-$(BOARD)-$(LINUX_RELEASE)_$(ARCH).ipk
-INSTALL_TARGETS := $(KERNEL_IPKG)
-TARGETS := 
 

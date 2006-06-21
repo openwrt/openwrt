@@ -12,7 +12,7 @@ PKG_SOURCE_URL:=http://ipset.netfilter.org
 PKG_MD5SUM:=1709424cc2cdb925d4fb6fd5fcaefc26
 PKG_CAT:=bzcat
 
-include $(TOPDIR)/package/rules.mk
+include $(TOPDIR)/include/package.mk
 
 define Package/ipset
 SECTION:=base

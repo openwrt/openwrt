@@ -22,7 +22,7 @@ $(DL_DIR)/$(LZMA_SOURCE):
 $(LZMA_DIR)/.unpacked: $(DL_DIR)/$(LZMA_SOURCE) 
 	@rm -rf $(LZMA_DIR) && mkdir -p $(LZMA_DIR)
 	tar xjf $^ -C $(LZMA_DIR)
-	patch -d $(LZMA_DIR) -p1 < lzma-zlib.patch
+	$(PATCH) $(LZMA_DIR) ./patches
 	touch $(LZMA_DIR)/.unpacked
 	
 $(LZMA_ALONE_DIR)/lzma $(LZMA_LIB_DIR)/liblzma.a: $(LZMA_DIR)/.built

@@ -1,7 +1,7 @@
 # $Id$
 
 include $(TOPDIR)/rules.mk
-include $(TOPDIR)/package/kernel.mk
+include $(TOPDIR)/include/kernel.mk
 
 PKG_NAME:=iptables
 PKG_VERSION:=1.3.5
@@ -20,10 +20,10 @@ PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
 PKG_MENU:=IPv4 / IPv6 firewall administration
 
-include $(TOPDIR)/package/rules.mk
+include $(TOPDIR)/include/package.mk
 ifeq ($(DUMP),)
 include $(LINUX_DIR)/.config
-include $(TOPDIR)/target/linux/netfilter.mk
+include $(TOPDIR)/include/netfilter.mk
 endif
 
 define Package/iptables

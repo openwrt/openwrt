@@ -5,9 +5,9 @@ all: install
 $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
 
-TARGETS:=linux utils lzma
+TARGETS:=linux utils
 
-linux-compile: utils-install lzma-install
+linux-compile: utils-install
 linux-install: $(BIN_DIR)
 
 download: $(patsubst %,%-source,$(TARGETS))
@@ -27,11 +27,6 @@ image_clean: FORCE
 	$(MAKE) -C $(patsubst %-prepare,%,$@) prepare
 %-compile: %-prepare
 	$(MAKE) -C $(patsubst %-compile,%,$@) compile
-%-rebuild: FORCE
-	$(MAKE) -C $(patsubst %-rebuild,%,$@) rebuild
 %-install: %-compile
 	$(MAKE) -C $(patsubst %-install,%,$@) install
-linux-imagebuilder: FORCE
-	$(MAKE) -C linux imagebuilder
-
 

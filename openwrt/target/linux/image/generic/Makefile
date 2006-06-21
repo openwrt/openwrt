@@ -1,4 +1,4 @@
-include ../image.mk
+include $(TOPDIR)/include/image.mk
 
 # use default targets for everything
 

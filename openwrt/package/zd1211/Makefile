@@ -1,7 +1,7 @@
 # $Id: Makefile 3297 2006-03-02 23:42:52Z florian $
 
 include $(TOPDIR)/rules.mk
-include $(TOPDIR)/package/kernel.mk
+include $(TOPDIR)/include/kernel.mk
 
 PKG_NAME:=zd1211
 PKG_VERSION:=r69
@@ -13,7 +13,7 @@ PKG_SOURCE_URL:=http://zd1211.ath.cx/download/
 PKG_SOURCE:=$(PKG_NAME)-driver-$(PKG_VERSION).tgz
 PKG_CAT:=zcat
 
-include $(TOPDIR)/package/rules.mk
+include $(TOPDIR)/include/package.mk
 
 #FIXME: add proper dependency handling on kmod-usb-core packages
 define Package/kmod-zd1211
