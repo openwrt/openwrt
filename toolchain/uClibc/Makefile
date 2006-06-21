@@ -1,4 +1,5 @@
 include $(TOPDIR)/rules.mk
+include $(INCLUDE_DIR)/target.mk
 
 PKG_NAME:=uClibc
 PKG_VERSION:=0.9.28
@@ -29,7 +30,11 @@ UCLIBC_TARGET_ARCH:=$(shell echo $(ARCH) | sed -e s'/-.*//' \
 define Build/Prepare
 	$(call Build/Prepare/Default)
 	$(SED) 's,^CROSS=.*,CROSS=$(TARGET_CROSS),g' $(PKG_BUILD_DIR)/Rules.mak
-	$(CP) ./files/config.$(ARCH) $(PKG_BUILD_DIR)/.config
+	if [ -e config/$(ARCH).$(BOARD) ]; then \
+		$(CP) config/$(ARCH).$(BOARD) $(PKG_BUILD_DIR)/.config; \
+	else \
+		$(CP) config/$(ARCH) $(PKG_BUILD_DIR)/.config; \
+	fi
 	$(SED) 's,^KERNEL_SOURCE=.*,KERNEL_SOURCE=\"$(LINUX_HEADERS_DIR)\",g' \
 		$(PKG_BUILD_DIR)/.config
 ifeq ($(CONFIG_LARGEFILE),y)
