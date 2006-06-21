@@ -1,7 +1,7 @@
 # $Id$
 
 include $(TOPDIR)/rules.mk
-include $(TOPDIR)/include/kernel.mk
+include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=mini_fo
 PKG_VERSION:=0.6.2pre1
@@ -13,7 +13,7 @@ PKG_SOURCE_URL:=http://www.denx.de/twiki/pub/Know/MiniFOHome/
 PKG_SOURCE:=mini_fo-0-6-2-pre1.tar.bz2
 PKG_CAT:=bzcat
 
-include $(TOPDIR)/include/package.mk
+include $(INCLUDE_DIR)/package.mk
 
 define Package/kmod-mini-fo
 SECTION:=drivers

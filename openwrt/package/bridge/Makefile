@@ -12,7 +12,7 @@ PKG_SOURCE_URL:=@SF/bridge
 PKG_MD5SUM:=9b7dc52656f5cbec846a7ba3299f73bd
 PKG_CAT:=zcat
 
-include $(TOPDIR)/include/package.mk
+include $(INCLUDE_DIR)/package.mk
 
 define Package/bridge
 SECTION:=base

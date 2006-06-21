@@ -1,7 +1,7 @@
 # $Id$
 
 include $(TOPDIR)/rules.mk
-include $(TOPDIR)/include/kernel.mk
+include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=openswan
 PKG_VERSION:=2.4.5
@@ -13,7 +13,7 @@ PKG_SOURCE_URL:=http://www.openswan.org/download
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_CAT:=zcat
 
-include $(TOPDIR)/include/package.mk
+include $(INCLUDE_DIR)/package.mk
 
 define Package/kmod-openswan
 SECTION:=drivers

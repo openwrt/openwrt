@@ -7,7 +7,7 @@ PKG_RELEASE:=4
 
 PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
 
-include $(TOPDIR)/include/package.mk
+include $(INCLUDE_DIR)/package.mk
 
 define Package/mtd
 SECTION:=base

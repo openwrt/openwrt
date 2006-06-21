@@ -1,4 +1,4 @@
-include $(TOPDIR)/include/image.mk
+include $(INCLUDE_DIR)/image.mk
 
 define Image/Build
 ifneq ($(FS),jffs2-64k)

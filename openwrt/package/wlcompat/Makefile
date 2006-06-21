@@ -1,14 +1,14 @@
 # $Id$
 
 include $(TOPDIR)/rules.mk
-include $(TOPDIR)/include/kernel.mk
+include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=kmod-wlcompat
 PKG_RELEASE:=3
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
 
-include $(TOPDIR)/include/package.mk
+include $(INCLUDE_DIR)/package.mk
 
 define Package/kmod-wlcompat
 SECTION:=drivers

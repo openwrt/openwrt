@@ -1,7 +1,7 @@
 # $Id: Makefile 2480 2005-11-14 02:07:33Z nbd $
 
 include $(TOPDIR)/rules.mk
-include $(TOPDIR)/include/kernel.mk
+include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=broadcom-wl
 PKG_VERSION:=4.80.9.2
@@ -14,7 +14,7 @@ PKG_SOURCE_URL:=http://downloads.openwrt.org/sources
 PKG_MD5SUM:=7d9fab2c611369bbe075c3924ea77450
 PKG_CAT:=bzcat
 
-include $(TOPDIR)/include/package.mk
+include $(INCLUDE_DIR)/package.mk
 
 define Package/kmod-brcm-wl
   SECTION:=drivers

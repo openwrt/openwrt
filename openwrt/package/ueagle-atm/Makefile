@@ -1,7 +1,7 @@
 # $Id: Makefile 2767 2005-12-25 02:10:14Z wbx $
 
 include $(TOPDIR)/rules.mk
-include $(TOPDIR)/include/kernel.mk
+include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ueagle-atm
 PKG_VERSION:=1.0d1
@@ -15,7 +15,7 @@ PKG_CAT:=zcat
 
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
-include $(TOPDIR)/include/package.mk
+include $(INCLUDE_DIR)/package.mk
 
 #FIXME: add dependency on kmod-usb-core
 define Package/kmod-ueagle-atm

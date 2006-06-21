@@ -12,7 +12,7 @@ PKG_SOURCE_URL:=http://thekelleys.org.uk/dnsmasq
 PKG_MD5SUM:=489198ec87101087043adc98bbe062dc
 PKG_CAT:=zcat
 
-include $(TOPDIR)/include/package.mk
+include $(INCLUDE_DIR)/package.mk
 
 define Package/dnsmasq
 SECTION:=base

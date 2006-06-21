@@ -1,4 +1,4 @@
-include $(TOPDIR)/include/image.mk
+include $(INCLUDE_DIR)/image.mk
 
 define Build/Compile
 	rm -f $(KDIR)/loader.gz
