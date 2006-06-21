@@ -1,4 +1,5 @@
 include $(TOPDIR)/rules.mk
+include $(INCLUDE_DIR)/target.mk
 
 all: install
 
@@ -11,15 +12,23 @@ TARGETS-$(CONFIG_SDK) += sdk
 linux-compile: utils-install
 linux-install: $(BIN_DIR)
 sdk-compile: linux-install
+image_install: linux-install
 
 download: $(patsubst %,%-source,$(TARGETS-y))
 prepare: linux-prepare
-compile: linux-compile
-install: image_clean $(patsubst %,%-install,$(TARGETS-y))
+compile: linux-compile image_compile
+install: image_clean $(patsubst %,%-install,$(TARGETS-y)) image_install
 clean: $(patsubst %,%-clean,$(TARGETS-y)) image_clean
 
 image_clean: FORCE
+	$(MAKE) -C image/$(BOARD) clean
 	rm -f $(BIN_DIR)/openwrt-*
+	
+image_compile: FORCE
+	$(MAKE) -C image/$(BOARD) compile
+
+image_install: image_compile
+	$(MAKE) -C image/$(BOARD) install
 
 %-clean: FORCE
 	$(MAKE) -C $(patsubst %-clean,%,$@) clean
