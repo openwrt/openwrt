@@ -52,7 +52,7 @@ foreach $name (sort {uc($a) cmp uc($b)} keys %pkg) {
 		my $idx;
 		if (defined $pkg{$dep}->{src}) {
 			($pkg{$name}->{src} ne $pkg{$dep}->{src}) and $idx = $pkg{$dep}->{src};
-		} elsif (defined $pkg{$dep}) {
+		} elsif (defined($pkg{$dep}) && !$options{SDK}) {
 			$idx = $dep;
 		}
 		if ($idx) {
