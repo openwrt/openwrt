@@ -4,8 +4,15 @@ use strict;
 my $name;
 my $src;
 my $makefile;
+my %conf;
 my %pkg;
 my %dep;
+my %options;
+my $opt;
+
+while ($opt = shift @ARGV) {
+	$opt =~ /^-s/ and $options{SDK} = 1;
+}
 
 my $line;
 while ($line = <>) {
@@ -32,7 +39,12 @@ while ($line = <>) {
 $line="";
 
 foreach $name (sort {uc($a) cmp uc($b)} keys %pkg) {
-	print "package-\$(CONFIG_PACKAGE_$name) += $pkg{$name}->{src}\n";
+	if ($options{SDK}) {
+		$conf{$pkg{$name}->{src}} or print "package-m += $pkg{$name}->{src}\n";
+		$conf{$pkg{$name}->{src}} = 1;
+	} else {
+		print "package-\$(CONFIG_PACKAGE_$name) += $pkg{$name}->{src}\n";
+	}
 
 	my $hasdeps = 0;
 	my $depline = "";
