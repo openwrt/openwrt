@@ -5,16 +5,18 @@ all: install
 $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
 
-TARGETS:=linux utils
+TARGETS-y := linux utils
+TARGETS-$(CONFIG_SDK) += sdk
 
 linux-compile: utils-install
 linux-install: $(BIN_DIR)
+sdk-compile: linux-install
 
-download: $(patsubst %,%-source,$(TARGETS))
+download: $(patsubst %,%-source,$(TARGETS-y))
 prepare: linux-prepare
 compile: linux-compile
-install: image_clean linux-install
-clean: $(patsubst %,%-clean,$(TARGETS)) image_clean
+install: image_clean $(patsubst %,%-install,$(TARGETS-y))
+clean: $(patsubst %,%-clean,$(TARGETS-y)) image_clean
 
 image_clean: FORCE
 	rm -f $(BIN_DIR)/openwrt-*
