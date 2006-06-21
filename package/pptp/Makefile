@@ -12,7 +12,7 @@ PKG_SOURCE_URL:=@SF/pptpclient
 PKG_MD5SUM:=9a706327fb9827541d7c86d48ceb9631
 PKG_CAT:=zcat
 
-include $(TOPDIR)/package/rules.mk
+include $(TOPDIR)/include/package.mk
 
 define Package/pptp
 SECTION:=base

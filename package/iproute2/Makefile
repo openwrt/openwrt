@@ -12,7 +12,7 @@ PKG_SOURCE_URL:=http://developer.osdl.org/dev/iproute2/download/
 PKG_MD5SUM:=04f57a6d366d36426d276178b600f5c5
 PKG_CAT:=zcat
 
-include $(TOPDIR)/package/rules.mk
+include $(TOPDIR)/include/package.mk
 
 define Package/ip
 SECTION:=base

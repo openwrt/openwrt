@@ -1,4 +1,4 @@
-include ../netfilter.mk
+include $(TOPDIR)/include/netfilter.mk
 
 # Networking
 

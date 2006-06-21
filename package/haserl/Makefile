@@ -12,7 +12,7 @@ PKG_SOURCE_URL:=@SF/haserl
 PKG_MD5SUM:=bd9195d086566f56634c0bcbbbcbebea
 PKG_CAT:=zcat
 
-include $(TOPDIR)/package/rules.mk
+include $(TOPDIR)/include/package.mk
 
 define Package/haserl
 SECTION:=base

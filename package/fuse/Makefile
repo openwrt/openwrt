@@ -1,7 +1,7 @@
 # $Id$
 
 include $(TOPDIR)/rules.mk
-include $(TOPDIR)/package/kernel.mk
+include $(TOPDIR)/include/kernel.mk
 
 PKG_NAME:=fuse
 PKG_VERSION:=2.5.3
@@ -15,7 +15,7 @@ PKG_CAT:=zcat
 
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
-include $(TOPDIR)/package/rules.mk
+include $(TOPDIR)/include/package.mk
 
 define Package/kmod-fuse
 SECTION:=drivers

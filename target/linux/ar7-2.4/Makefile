@@ -4,8 +4,8 @@ LINUX_VERSION:=2.4.32
 LINUX_RELEASE:=1
 LINUX_KERNEL_MD5SUM:=38f4d0830e95a20f4bfed17622d5557c
 
-include ../rules.mk
 include ./config
+include $(TOPDIR)/include/kernel.mk
 
 ATM_FIRMWARE_VERSION:=0.4
 ATM_FIRMWARE_DIR=sangam-atm-firmware-$(ATM_FIRMWARE_VERSION)
@@ -26,8 +26,7 @@ $(eval $(call KMOD_template,CPMAC,cpmac,\
 	$(MODULES_DIR)/kernel/drivers/net/avalanche_cpmac/avalanche_cpmac.o \
 ,CONFIG_MIPS_AVALANCHE_CPMAC,,10,avalanche_cpmac))
 
-include ../generic-$(KERNEL)/modules.mk
-include ../kernel.mk
+include $(TOPDIR)/include/kernel-build.mk
 
 
 $(LINUX_DIR)/.patched: $(LINUX_DIR)/.unpacked

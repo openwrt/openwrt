@@ -1,7 +1,7 @@
 # $Id$
 
 include $(TOPDIR)/rules.mk
-include $(TOPDIR)/package/kernel.mk
+include $(TOPDIR)/include/kernel.mk
 
 PKG_NAME:=base-files
 PKG_RELEASE:=8
@@ -12,7 +12,7 @@ ifeq ($(REV),)
 REV:=0
 endif
 
-include $(TOPDIR)/package/rules.mk
+include $(TOPDIR)/include/package.mk
 
 ifneq ($(DUMP),1)
 TARGET:=-$(BOARD)-$(KERNEL)

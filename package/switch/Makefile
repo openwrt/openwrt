@@ -1,14 +1,14 @@
 # $Id$
 
 include $(TOPDIR)/rules.mk
-include $(TOPDIR)/package/kernel.mk
+include $(TOPDIR)/include/kernel.mk
 
 PKG_NAME:=kmod-switch
 PKG_RELEASE:=1
 
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)
 
-include $(TOPDIR)/package/rules.mk
+include $(TOPDIR)/include/package.mk
 
 define Package/kmod-switch
 SECTION:=drivers

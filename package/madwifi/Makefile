@@ -1,7 +1,7 @@
 # $Id$
 
 include $(TOPDIR)/rules.mk
-include $(TOPDIR)/package/kernel.mk
+include $(TOPDIR)/include/kernel.mk
 
 PKG_NAME:=madwifi
 PKG_VERSION:=0.9.0
@@ -54,7 +54,7 @@ MADWIFI_MAKEOPTS= -C $(PKG_BUILD_DIR) \
 		LDOPTS="" \
 		DOMULTI=1
 
-include $(TOPDIR)/package/rules.mk
+include $(TOPDIR)/include/package.mk
 
 ifeq ($(findstring AHB,$(BUS)),AHB)
 define Build/Compile/ahb

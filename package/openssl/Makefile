@@ -20,7 +20,7 @@ PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 OPENSSL_NO_CIPHERS:= no-idea no-md2 no-mdc2 no-rc5 no-sha0 no-rmd160 no-aes192
 OPENSSL_OPTIONS:= shared no-ec no-err no-fips no-hw no-krb5 no-threads zlib-dynamic no-engines
 
-include $(TOPDIR)/package/rules.mk
+include $(TOPDIR)/include/package.mk
 
 define Package/libopenssl
 SECTION:=base

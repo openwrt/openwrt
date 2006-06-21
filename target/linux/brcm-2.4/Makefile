@@ -4,8 +4,8 @@ LINUX_VERSION:=2.4.32
 LINUX_RELEASE:=1
 LINUX_KERNEL_MD5SUM:=38f4d0830e95a20f4bfed17622d5557c
 
-include ../rules.mk
 include ./config
+include $(TOPDIR)/include/kernel.mk
 
 # broadcom specific kmod packages
 $(eval $(call KMOD_template,LP,lp,\
@@ -15,8 +15,7 @@ $(eval $(call KMOD_template,LP,lp,\
 	$(MODULES_DIR)/kernel/drivers/char/ppdev.o \
 ,CONFIG_PARPORT,,50,parport parport_splink lp))
 
-include ../generic-$(KERNEL)/modules.mk
-include ../kernel.mk
+include $(TOPDIR)/include/kernel-build.mk
 
 
 $(LINUX_DIR)/.patched: $(LINUX_DIR)/.unpacked

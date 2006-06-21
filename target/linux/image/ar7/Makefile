@@ -1,4 +1,4 @@
-include ../image.mk
+include $(TOPDIR)/include/image.mk
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/ar7loader
 

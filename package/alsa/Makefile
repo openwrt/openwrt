@@ -1,7 +1,7 @@
 # $Id$
 
 include $(TOPDIR)/rules.mk
-include $(TOPDIR)/package/kernel.mk
+include $(TOPDIR)/include/kernel.mk
 
 PKG_NAME:=alsa-driver
 PKG_VERSION:=1.0.11
@@ -13,7 +13,7 @@ PKG_SOURCE_URL:=ftp://ftp.alsa-project.org/pub/driver/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_CAT:=bzcat
 
-include $(TOPDIR)/package/rules.mk
+include $(TOPDIR)/include/package.mk
 
 ifeq ($(LINUX_KARCH),i386)
 KERNEL_C_INCS:= -I$(LINUX_DIR)/include/asm-i386/mach-generic -I$(LINUX_DIR)/include/asm-i386/mach-default
