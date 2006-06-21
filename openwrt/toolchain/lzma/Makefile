@@ -1,53 +1,37 @@
-#############################################################
-#
-# lzma target 
-# 
-#############################################################
-
 include $(TOPDIR)/rules.mk
 
-LZMA_DIR=$(BUILD_DIR)/lzma
-LZMA_SOURCE=lzma432.tar.bz2
-LZMA_SITE=@SF/sevenzip
-LZMA_MD5=155c1ebce5bc6710ae7ecc926226d9d7
+PKG_NAME := lzma
+PKG_VERSION := 432
 
-LZMA_LIB_DIR=$(LZMA_DIR)/C/7zip/Compress/LZMA_Lib
-LZMA_ALONE_DIR=$(LZMA_DIR)/C/7zip/Compress/LZMA_Alone
+PKG_SOURCE := $(PKG_NAME)$(PKG_VERSION).tar.bz2
+PKG_MD5SUM := 155c1ebce5bc6710ae7ecc926226d9d7
+PKG_SOURCE_URL := @SF/sevenzip
 
-TARGETS=$(LZMA_LIB_DIR)/liblzma.a $(LZMA_ALONE_DIR)/lzma
+PKG_BUILD_DIR=$(TOOL_BUILD_DIR)/lzma-$(PKG_VERSION)/lzma
 
-$(DL_DIR)/$(LZMA_SOURCE):
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(LZMA_SOURCE) $(LZMA_MD5) $(LZMA_SITE)
+include $(INCLUDE_DIR)/host-build.mk
 
-$(LZMA_DIR)/.unpacked: $(DL_DIR)/$(LZMA_SOURCE) 
-	@rm -rf $(LZMA_DIR) && mkdir -p $(LZMA_DIR)
-	tar xjf $^ -C $(LZMA_DIR)
-	$(PATCH) $(LZMA_DIR) ./patches
-	touch $(LZMA_DIR)/.unpacked
-	
-$(LZMA_ALONE_DIR)/lzma $(LZMA_LIB_DIR)/liblzma.a: $(LZMA_DIR)/.built
-$(LZMA_DIR)/.built: $(LZMA_DIR)/.unpacked
-	$(MAKE) -C $(LZMA_LIB_DIR)
-	$(MAKE) -f makefile.gcc -C $(LZMA_ALONE_DIR)
-	touch $@
+LIB_DIR=$(PKG_BUILD_DIR)/C/7zip/Compress/LZMA_Lib
+ALONE_DIR=$(PKG_BUILD_DIR)/C/7zip/Compress/LZMA_Alone
 
-lzma: $(TARGETS)
-	$(CP) $^ $(LZMA_DIR)
+define Build/Prepare
+	bzcat $(DL_DIR)/$(PKG_SOURCE) | tar -C $(PKG_BUILD_DIR)/ $(TAR_OPTIONS) -
+	$(PATCH) $(PKG_BUILD_DIR) ./patches
+endef
 
+define Build/Compile
+	$(MAKE) -C $(LIB_DIR)
+	$(MAKE) -f makefile.gcc -C $(ALONE_DIR)
+endef
 
-lzma-clean: FORCE
-	-$(MAKE) -C $(LZMA_LIB_DIR) clean
-	-$(MAKE) -C $(LZMA_ALONE_DIR) clean
-	rm -f $(LZMA_DIR)/liblzma.a $(LZMA_DIR)/lzma
+define Build/Install
+	mkdir -p $(STAGING_DIR)/host/lib
+	$(CP) $(LIB_DIR)/liblzma.a $(STAGING_DIR)/host/lib/
+	$(CP) $(ALONE_DIR)/lzma $(STAGING_DIR)/bin/
+endef
 
-lzma-dirclean: FORCE
-	rm -rf $(LZMA_DIR)
+define Build/Clean
+	rm -f $(PKG_BUILD_DIR)/liblzma.a $(PKG_BUILD_DIR)/lzma
+endef
 
-#############################################################
-
-source: $(DL_DIR)/$(LZMA_SOURCE)
-prepare: $(LZMA_DIR)/.unpacked
-compile: lzma
-install: lzma FORCE
-	$(CP) $(LZMA_DIR)/lzma $(STAGING_DIR)/bin/
-clean: lzma-dirclean
+$(eval $(call HostBuild))

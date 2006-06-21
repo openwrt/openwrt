@@ -201,14 +201,15 @@ define BuildPackage
 endef
 
 ifneq ($(strip $(PKG_CAT)),)
+  ifeq ($(PKG_CAT),unzip)
+    UNPACK=unzip -d $(PKG_BUILD_DIR) $(DL_DIR)/$(PKG_SOURCE)
+  else
+    UNPACK=$(PKG_CAT) $(DL_DIR)/$(PKG_SOURCE) | tar -C $(PKG_BUILD_DIR)/.. $(TAR_OPTIONS) -
+  endif
   define Build/Prepare/Default
-	@if [ "$(PKG_CAT)" = "unzip" ]; then \
-		unzip -d $(PKG_BUILD_DIR) $(DL_DIR)/$(PKG_SOURCE) ; \
-	else \
-		$(PKG_CAT) $(DL_DIR)/$(PKG_SOURCE) | tar -C $(PKG_BUILD_DIR)/.. $(TAR_OPTIONS) - ; \
-	fi						  
+  	$(UNPACK)
 	@if [ -d ./patches ]; then \
-		$(PATCH) $(PKG_BUILD_DIR) ./patches ; \
+		$(PATCH) $(PKG_BUILD_DIR) ./patches; \
 	fi
   endef
 endif

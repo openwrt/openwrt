@@ -1,29 +1,23 @@
 include $(TOPDIR)/rules.mk
 
-MTD_DIR:=$(BUILD_DIR)/mtd-20050122.orig
-MTD_SOURCE=mtd_20050122.orig.tar.gz
-MTD_SITE=http://ftp.debian.org/debian/pool/main/m/mtd
-MTD_MD5SUM:=1f42c2cae08eb9e7b52d0c188f8d6338
-MKFS_JFFS2=$(MTD_DIR)/util/mkfs.jffs2
+PKG_NAME:=mtd
+PKG_VERSION:=20050122
 
-$(DL_DIR)/$(MTD_SOURCE):
-	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(MTD_SOURCE) $(MTD_MD5SUM) $(MTD_SITE)
+PKG_SOURCE=$(PKG_NAME)_$(PKG_VERSION).orig.tar.gz
+PKG_MD5SUM:=1f42c2cae08eb9e7b52d0c188f8d6338
+PKG_SOURCE_URL=http://ftp.debian.org/debian/pool/main/m/mtd
+PKG_CAT:=zcat
 
-$(MTD_DIR)/.unpacked: $(DL_DIR)/$(MTD_SOURCE)
-	zcat $(DL_DIR)/$(MTD_SOURCE) | tar -C $(BUILD_DIR) -xvf -
-	$(PATCH) $(MTD_DIR) ./patches
-	touch $(MTD_DIR)/.unpacked
+PKG_BUILD_DIR:=$(TOOL_BUILD_DIR)/mtd-20050122.orig
 
-$(MTD_DIR)/util/mkfs.jffs2: $(MTD_DIR)/.unpacked
-	$(MAKE) LINUXDIR=$(LINUX_DIR) -C $(MTD_DIR)/util
+include $(INCLUDE_DIR)/host-build.mk
 
-$(STAGING_DIR)/bin/mkfs.jffs2: $(MTD_DIR)/util/mkfs.jffs2
-	$(CP) $< $@
+define Build/Compile
+	$(MAKE) LINUXDIR=$(LINUX_HEADERS_DIR) -C $(PKG_BUILD_DIR)/util
+endef
 
-source: $(DL_DIR)/$(MTD_SOURCE)
-prepare: $(MTD_DIR)/.unpacked
-compile: $(MTD_DIR)/util/mkfs.jffs2 $(STAGING_DIR)/bin/mkfs.jffs2
-install: 
-clean: FORCE
-	rm -rf $(MTD_DIR) $(STAGING_DIR)/bin/mkfs.jffs2
+define Build/Install
+	$(CP) $(PKG_BUILD_DIR)/util/mkfs.jffs2 $(STAGING_DIR)/bin/
+endef
 
+$(eval $(call HostBuild))

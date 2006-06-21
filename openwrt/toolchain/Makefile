@@ -1,6 +1,6 @@
 # Main makefile for the toolchain
 include $(TOPDIR)/rules.mk
-TARGETS-y:=sed kernel-headers utils binutils gcc uClibc ipkg-utils libnotimpl squashfs jffs2 lzma
+TARGETS-y:=sed kernel-headers sstrip binutils gcc uClibc ipkg-utils libnotimpl squashfs jffs2 lzma
 TARGETS-$(CONFIG_GDB) += gdb
 
 TARGETS_DOWNLOAD:=$(patsubst %,%-source,$(TARGETS-y))
@@ -12,12 +12,13 @@ download: $(TARGETS_DOWNLOAD)
 install: $(TARGETS_INSTALL)
 clean: $(TARGETS_CLEAN)
 
-uClibc-prepare: kernel-headers-prepare sed-install utils-install
+kernel-headers-prepare: sed-install
+uClibc-prepare: kernel-headers-prepare sstrip-install
 binutils-prepare: uClibc-prepare
 gcc-prepare: binutils-install
-uClibc-compile: gcc-prepare
-gcc-compile: uClibc-install
-squashfs-compile: lzma-compile
+uClibc-compile: gcc-compile
+gcc-install: uClibc-install
+squashfs-compile: lzma-install
 
 TOOLCHAIN_STAMP_DIR:=$(STAGING_DIR)/stampfiles
 
