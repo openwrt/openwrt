@@ -366,7 +366,7 @@ diff -Nur linux-2.6.17/arch/mips/aruba/irq.c linux-2.6.17-openwrt/arch/mips/arub
 +	unsigned long cp0_cause = read_c0_cause() & read_c0_status() & CAUSEF_IP;
 +
 +	if (cp0_cause & CAUSEF_IP7)
-+		aruba_timer_interrupt(regs);
++		return aruba_timer_interrupt(regs);
 +
 +	if(cp0_cause == 0) {
 +		printk("INTERRUPT(S) FIRED WHILE MASKED\n");
