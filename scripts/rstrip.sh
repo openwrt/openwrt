@@ -16,7 +16,7 @@ TARGETS=$*
 }
 
 find $TARGETS -type f -a -exec file {} \; | \
-  sed -n -e 's/^\(.*\):.*ELF.*\(executable\|relocatable\|shared object\).*, not stripped/\1:\2/p' | \
+  sed -n -e 's/^\(.*\):.*ELF.*\(executable\|relocatable\|shared object\).*,.* stripped/\1:\2/p' | \
 (
   IFS=":"
   while read F S; do
