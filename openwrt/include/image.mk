@@ -17,6 +17,10 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 		
 		$(STAGING_DIR)/bin/mkfs.jffs2 $(JFFS2OPTS) -e 0x10000 -o $(KDIR)/root.jffs2-64k -d $(BUILD_DIR)/root
 		$(STAGING_DIR)/bin/mkfs.jffs2 $(JFFS2OPTS) -e 0x20000 -o $(KDIR)/root.jffs2-128k -d $(BUILD_DIR)/root
+
+		# add End-of-Filesystem markers
+		echo -ne '\xde\xad\xc0\xde' >> $(KDIR)/root.jffs2-64k
+		echo -ne '\xde\xad\xc0\xde' >> $(KDIR)/root.jffs2-128k
 	
 		$(call Image/Build,jffs2-64k)
 		$(call Image/Build,jffs2-128k)
