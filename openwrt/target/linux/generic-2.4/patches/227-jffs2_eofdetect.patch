@@ -26,7 +26,7 @@ diff -ur linux.old/fs/jffs2/scan.c linux.dev/fs/jffs2/scan.c
  		if (ret < 0)
  			return ret;
  
-@@ -145,15 +154,22 @@
+@@ -145,15 +154,23 @@
  			c->nr_erasing_blocks++;
  		}
  	}
@@ -40,6 +40,7 @@ diff -ur linux.old/fs/jffs2/scan.c linux.dev/fs/jffs2/scan.c
 +	if (c->flags & (1 << 7)) {
 +		printk("jffs2_scan_medium(): erasing all blocks after the end marker...\n");
 +		jffs2_erase_pending_blocks(c);
++		jffs2_mark_erased_blocks(c);
 +		printk("jffs2_scan_medium(): done.\n");
 +	} else {
 +		/* Rotate the lists by some number to ensure wear levelling */
