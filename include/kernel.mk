@@ -1,7 +1,10 @@
+KERNEL:=kernel
+BOARD:=board
+LINUX_VERSION:=kernel
+
 ifneq ($(DUMP),1)
 include $(TOPDIR)/.kernel.mk
 
-KERNEL:=unknown
 ifneq (,$(findstring 2.4.,$(LINUX_VERSION)))
 KERNEL:=2.4
 LINUX_KMOD_SUFFIX=o
