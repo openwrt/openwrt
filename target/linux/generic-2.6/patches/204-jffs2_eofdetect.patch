@@ -1,12 +1,35 @@
-diff -ur linux.old/fs/jffs2/scan.c linux.dev/fs/jffs2/scan.c
---- linux.old/fs/jffs2/scan.c	2006-05-31 02:31:44.000000000 +0200
-+++ linux.dev/fs/jffs2/scan.c	2006-06-15 02:20:32.000000000 +0200
-@@ -120,8 +120,11 @@
+diff -urN linux.old/fs/jffs2/build.c linux.dev/fs/jffs2/build.c
+--- linux.old/fs/jffs2/build.c	2006-06-18 03:49:35.000000000 +0200
++++ linux.dev/fs/jffs2/build.c	2006-06-23 21:46:48.000000000 +0200
+@@ -107,6 +107,17 @@
+ 	dbg_fsbuild("scanned flash completely\n");
+ 	jffs2_dbg_dump_block_lists_nolock(c);
+ 
++	if (c->flags & (1 << 7)) {
++		printk("%s(): unlocking the mtd device... ", __func__);
++		if (c->mtd->unlock)
++			c->mtd->unlock(c->mtd, 0, c->mtd->size);
++		printk("done.\n");
++		
++		printk("%s(): erasing all blocks after the end marker... ", __func__);
++		jffs2_erase_pending_blocks(c, -1);
++		printk("done.\n");
++	}
++
+ 	dbg_fsbuild("pass 1 starting\n");
+ 	c->flags |= JFFS2_SB_FLAG_BUILDING;
+ 	/* Now scan the directory tree, increasing nlink according to every dirent found. */
+diff -urN linux.old/fs/jffs2/scan.c linux.dev/fs/jffs2/scan.c
+--- linux.old/fs/jffs2/scan.c	2006-06-23 21:39:38.000000000 +0200
++++ linux.dev/fs/jffs2/scan.c	2006-06-23 21:42:18.000000000 +0200
+@@ -119,9 +119,12 @@
+ 
  		/* reset summary info for next eraseblock scan */
  		jffs2_sum_reset_collected(s);
- 
+-
 -		ret = jffs2_scan_eraseblock(c, jeb, buf_size?flashbuf:(flashbuf+jeb->offset),
 -						buf_size, s);
++		
 +		if (c->flags & (1 << 7))
 +			ret = BLK_STATE_ALLFF;
 +		else
@@ -15,20 +38,7 @@ diff -ur linux.old/fs/jffs2/scan.c linux.dev/fs/jffs2/scan.c
  
  		if (ret < 0)
  			goto out;
-@@ -222,6 +225,12 @@
- 		}
- 	}
- 
-+	if (c->flags & (1 << 7)) {
-+		printk("jffs2_scan_medium(): erasing all blocks after the end marker...\n");
-+		jffs2_erase_pending_blocks(c, -1);
-+		printk("jffs2_scan_medium(): done.\n");
-+	}
-+
- 	if (jffs2_sum_active() && s)
- 		kfree(s);
- 
-@@ -389,6 +398,17 @@
+@@ -389,6 +392,17 @@
  			return err;
  	}
  
@@ -37,7 +47,7 @@ diff -ur linux.old/fs/jffs2/scan.c linux.dev/fs/jffs2/scan.c
 +		(buf[2] == 0xc0) &&
 +		(buf[3] == 0xde)) {
 +		/* end of filesystem. erase everything after this point */
-+		printk("jffs2_scan_eraseblock(): End of filesystem marker found at 0x%x\n", jeb->offset);
++		printk("%s(): End of filesystem marker found at 0x%x\n", __func__, jeb->offset);
 +		c->flags |= (1 << 7);
 +
 +		return BLK_STATE_ALLFF;
