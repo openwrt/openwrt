@@ -12,12 +12,7 @@ if [ "$1" != "failsafe" ]; then
 	mtd unlock linux
 	mount | grep jffs2 >&-
 	if [ $? = 0 ] ; then
-		if [ $(cat /proc/mtd | wc -l) = 6 ]; then
-			mtd erase OpenWrt
-			jffs2root --move
-		else
-			mount -o remount,rw /dev/root /
-		fi
+		mount -o remount,rw /dev/root /
 	else
 		. /bin/firstboot
 		is_dirty 
