@@ -46,7 +46,7 @@ ifneq ($(shell ./scripts/timestamp.pl -p .pkginfo package Makefile),.pkginfo)
 	@echo Collecting package info...
 	@-for dir in package/*/; do \
 		echo Source-Makefile: $${dir}Makefile; \
-		$(MAKE) --no-print-dir DUMP=1 -C $$dir 2>&- || true; \
+		$(NO_TRACE_MAKE) --no-print-dir DUMP=1 -C $$dir 2>&- || true; \
 	done > $@
 endif
 
