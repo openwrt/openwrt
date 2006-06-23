@@ -1,9 +1,9 @@
-KERNEL:=kernel
-BOARD:=board
-LINUX_VERSION:=kernel
-
-ifneq ($(DUMP),1)
-include $(TOPDIR)/.kernel.mk
+ifeq ($(DUMP),1)
+  KERNEL:=<KERNEL>
+  BOARD:=<BOARD>
+  LINUX_VERSION:=<LINUX_VERSION>
+else
+-include $(TOPDIR)/.kernel.mk
 
 ifneq (,$(findstring 2.4.,$(LINUX_VERSION)))
 KERNEL:=2.4

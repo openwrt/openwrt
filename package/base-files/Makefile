@@ -18,6 +18,9 @@ ifneq ($(DUMP),1)
 TARGET:=-$(BOARD)-$(KERNEL)
 UCLIBC_VERSION:=${shell cat $(STAGING_DIR)/uclibc_version}
 LIBGCC_VERSION:=${shell cat $(STAGING_DIR)/gcc_version}
+else
+UCLIBC_VERSION:=<UCLIBC_VERSION>
+LIBGCC_VERSION:=<LIBGCC_VERSION>
 endif
 
 CONFIG_PACKAGE_base-files$(TARGET):=$(CONFIG_PACKAGE_base-files)
