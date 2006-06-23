@@ -69,7 +69,7 @@ define Build/Configure
 endef
 
 define Build/Compile
-	$(call Build/Compile/Default,install)
+	$(call Build/Compile/Default,DESTDIR="$(PKG_INSTALL_DIR)" all install)
 endef
 
 define Package/ipsec-tools/install
