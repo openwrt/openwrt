@@ -17,11 +17,9 @@ $(STAMP_DIR) $(TARGET_DIR):
 	$(MAKE) -C $(patsubst %-prepare,%,$@) prepare MAKEFLAGS="$(BUILD_MAKEFLAGS)"
 
 %-compile: $(STAMP_DIR) $(TARGET_DIR)
-	@echo "-> make $@"
 	$(MAKE) -C $(patsubst %-compile,%,$@) compile MAKEFLAGS="$(BUILD_MAKEFLAGS)"
 
 %-install: $(STAMP_DIR) $(TARGET_DIR)
-	@echo "-> make $@"
 	$(MAKE) -C $(patsubst %-install,%,$@) install MAKEFLAGS="$(BUILD_MAKEFLAGS)"
 
 %-clean: $(STAMP_DIR) $(TARGET_DIR)

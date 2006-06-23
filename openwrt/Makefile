@@ -26,6 +26,7 @@ RELEASE:=Kamikaze
 #--------------------------------------------------------------
 TOPDIR=${shell pwd}
 export TOPDIR
+include $(TOPDIR)/include/verbose.mk
 
 OPENWRTVERSION:=$(RELEASE)
 ifneq ($(VERSION),)

@@ -1,14 +1,19 @@
 # OpenWrt.org 2006
 # $Id:$
 
-ifeq ($(DUMP),)
-  ifndef KBUILD_VERBOSE
-    KBUILD_VERBOSE=0
-    ifeq ("$(origin V)", "command line")
-      KBUILD_VERBOSE=$(V)
-    endif
+ifndef KBUILD_VERBOSE
+  ifeq ($(DUMP),)
+    KBUILD_VERBOSE=1
+  else
+    KBUILD_VERBOSE=99
   endif
+  ifeq ("$(origin V)", "command line")
+    KBUILD_VERBOSE=$(V)
+  endif
+endif
 
+
+ifneq ($(KBUILD_VERBOSE),99)
   ifeq ($(QUIET),1)
     $(MAKECMDGOALS): trace
     trace: FORCE
@@ -18,6 +23,9 @@ ifeq ($(DUMP),)
 	}
   else
     export QUIET:=1
+    ifeq ($(KBUILD_VERBOSE),0)
+      MAKE:=&>/dev/null $(MAKE)
+    endif
     MAKE:=3>&1 4>&2 $(MAKE)
   endif
 

@@ -1,5 +1,3 @@
-include $(TOPDIR)/rules.mk
-
 KDIR:=$(BUILD_DIR)/linux-$(KERNEL)-$(BOARD)
 
 ifneq ($(CONFIG_BIG_ENDIAN),y)

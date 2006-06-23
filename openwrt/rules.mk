@@ -1,4 +1,5 @@
 -include $(TOPDIR)/.config
+include $(TOPDIR)/include/verbose.mk
 
 export SHELL=/bin/bash
 
