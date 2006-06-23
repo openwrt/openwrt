@@ -3,7 +3,7 @@
 
 ifndef KBUILD_VERBOSE
   ifeq ($(DUMP),)
-    KBUILD_VERBOSE=1
+    KBUILD_VERBOSE=0
   else
     KBUILD_VERBOSE=99
   endif
