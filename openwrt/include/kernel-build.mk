@@ -1,4 +1,4 @@
-include $(INCLUDE_DIR)/modules-$(KERNEL).mk
+-include $(INCLUDE_DIR)/modules-$(KERNEL).mk
 
 LINUX_SOURCE:=linux-$(LINUX_VERSION).tar.bz2
 LINUX_SITE=http://www.us.kernel.org/pub/linux/kernel/v$(KERNEL) \
