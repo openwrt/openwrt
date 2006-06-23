@@ -2,16 +2,11 @@
 # $Id:$
 
 ifndef KBUILD_VERBOSE
-  ifeq ($(DUMP),)
-    KBUILD_VERBOSE=0
-  else
-    KBUILD_VERBOSE=99
-  endif
+  KBUILD_VERBOSE=0
   ifeq ("$(origin V)", "command line")
     KBUILD_VERBOSE=$(V)
   endif
 endif
-
 
 ifneq ($(KBUILD_VERBOSE),99)
   ifeq ($(QUIET),1)
@@ -23,6 +18,7 @@ ifneq ($(KBUILD_VERBOSE),99)
 	}
   else
     export QUIET:=1
+    NO_TRACE_MAKE:=$(MAKE) V=99
     ifeq ($(KBUILD_VERBOSE),0)
       MAKE:=&>/dev/null $(MAKE)
     endif
