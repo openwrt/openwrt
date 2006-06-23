@@ -97,9 +97,8 @@ pkg-install: FORCE
 	@{ [ "$(INSTALL_TARGETS)" != "" ] && $(IPKG) install $(INSTALL_TARGETS) || true; }
 
 source: $(DL_DIR)/$(LINUX_SOURCE)
-prepare:
+prepare: $(LINUX_DIR)/.configured
 	@mkdir -p $(STAMP_DIR) $(PACKAGE_DIR)
-	@$(MAKE) $(LINUX_DIR)/.configured
 
 compile: prepare $(STAMP_DIR)/.linux-compile
 
