@@ -106,7 +106,9 @@ $(STAGING_DIR)/usr/lib/libhowl.so: $(PKG_BUILD_DIR)/.built
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/lib{howl,mDNSResponder}.{a,so*} $(STAGING_DIR)/usr/lib/
 	mkdir -p $(STAGING_DIR)/usr/lib/pkgconfig
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/howl.pc $(STAGING_DIR)/usr/lib/pkgconfig/
-	touch $(STAGING_DIR)/usr/lib/libhowl.so
+	$(SED) 's,-I/usr/include/howl,,g' $(STAGING_DIR)/usr/lib/pkgconfig/howl.pc
+	$(SED) 's,-L/usr/lib,,g' $(STAGING_DIR)/usr/lib/pkgconfig/howl.pc
+	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/libhowl.so
 
