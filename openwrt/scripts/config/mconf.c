@@ -737,6 +737,8 @@ static void conf(struct menu *menu)
 		if (menu == &rootmenu) {
 			cprint(":");
 			cprint("--- ");
+			cprint("D");
+			cprint(_("    Reset to defaults"));
 			cprint("L");
 			cprint(_("    Load an Alternate Configuration File"));
 			cprint("S");
@@ -782,6 +784,9 @@ static void conf(struct menu *menu)
 				break;
 			case 's':
 				conf_string(submenu);
+				break;
+			case 'D':
+				conf_reset();
 				break;
 			case 'L':
 				conf_load();
