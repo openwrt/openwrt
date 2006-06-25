@@ -21,8 +21,8 @@ define Package/kmod-brcm-wl
   CATEGORY:=Drivers
   DEPENDS:=@LINUX_2_4_BRCM
   DEFAULT:=y
-  MENU:=1
-  TITLE:=Proprietary BCM43xx WiFi driver
+  SUBMENU:=Proprietary BCM43xx WiFi driver
+  TITLE:=Kernel driver (normal version)
   DESCRIPTION:=Proprietary Wireless driver for the Broadcom BCM43xx chipset
   VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(PKG_RELEASE)
 endef
@@ -30,8 +30,7 @@ endef
 define Package/kmod-brcm-wl-mimo
   $(call Package/kmod-brcm-wl)
   DEFAULT:=m if ALL
-  MENU:=
-  TITLE:=Proprietary BCM43xx WiFi driver (MIMO version)
+  TITLE:=Kernel driver (MIMO version)
   DESCRIPTION:=Proprietary Wireless driver for the Broadcom BCM43xx chipset (MIMO version)
 endef
 

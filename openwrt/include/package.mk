@@ -74,6 +74,7 @@ define Package/Default
   PRIORITY:=optional
   DEFAULT:=
   MENU:=
+  SUBMENU:=
   TITLE:=
   DESCRIPTION:=
 endef
@@ -122,6 +123,11 @@ define BuildPackage
   ifneq ($(MENU),)
     DUMPINFO += \
 	echo "Menu: $(MENU)";
+  endif
+
+  ifneq ($(SUBMENU),)
+    DUMPINFO += \
+	echo "Submenu: $(SUBMENU)";
   endif
 
   ifneq ($(DEFAULT),)
