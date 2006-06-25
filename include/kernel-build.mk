@@ -8,6 +8,7 @@ LINUX_SITE=http://www.us.kernel.org/pub/linux/kernel/v$(KERNEL) \
 
 KERNEL_IDIR:=$(KERNEL_BUILD_DIR)/kernel-ipkg
 KERNEL_IPKG:=$(KERNEL_BUILD_DIR)/kernel_$(LINUX_VERSION)-$(BOARD)-$(LINUX_RELEASE)_$(ARCH).ipk
+TARGETS += $(KERNEL_IPKG)
 INSTALL_TARGETS += $(KERNEL_IPKG)
 
 $(TARGETS): $(PACKAGE_DIR)
@@ -74,8 +75,12 @@ $(LINUX_DIR)/.modules_done:
 	$(MAKE) -C "$(LINUX_DIR)" CROSS_COMPILE="$(KERNEL_CROSS)" DEPMOD=true INSTALL_MOD_PATH=$(KERNEL_BUILD_DIR)/modules modules_install
 	touch $(LINUX_DIR)/.modules_done
 
+modules: $(LINUX_DIR)/.modules_done
+packages: $(TARGETS)
+
 $(STAMP_DIR)/.linux-compile:
-	@$(MAKE) $(LINUX_DIR)/.modules_done $(TARGETS) $(KERNEL_IPKG)
+	@$(MAKE) modules
+	@$(MAKE) packages
 	ln -sf $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION) $(BUILD_DIR)/linux
 	touch $@
 
