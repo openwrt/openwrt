@@ -87,6 +87,9 @@ $(STAGING_DIR)/usr/lib/libxslt.so: $(PKG_BUILD_DIR)/.built
 	$(SED) 's,-I$(STAGING_DIR)/usr/include,,g' $(STAGING_DIR)/usr/bin/xslt-config
 	$(SED) 's,-L$${libdir},,g' $(STAGING_DIR)/usr/bin/xslt-config
 	$(SED) 's,-L$(STAGING_DIR)/usr/lib,,g' $(STAGING_DIR)/usr/bin/xslt-config
+	$(SED) 's,-I$${includedir},,g' $(STAGING_DIR)/usr/lib/pkgconfig/libxslt.pc
+	$(SED) 's,-L$${libdir},,g' $(STAGING_DIR)/usr/lib/pkgconfig/libxslt.pc
+	$(SED) 's,-L$(STAGING_DIR)/usr/lib,,g' $(STAGING_DIR)/usr/lib/pkgconfig/libxslt.pc
 	touch $@
 
 install-dev: $(STAGING_DIR)/usr/lib/libxslt.so
