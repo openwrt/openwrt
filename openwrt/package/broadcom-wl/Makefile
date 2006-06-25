@@ -37,6 +37,7 @@ endef
 
 define Package/wlc
   $(call Package/kmod-brcm-wl-mimo)
+  DEFAULT:=y
   DEPENDS:=kmod-brcm-wl
   TITLE:=Setup utility
   DESCRIPTION:=Utility for initializing the Broadcom wl driver
