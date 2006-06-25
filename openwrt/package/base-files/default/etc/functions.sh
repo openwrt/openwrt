@@ -5,6 +5,8 @@ alias debug=${DEBUG:-:}
 N="
 "
 
+_C=0
+
 # valid interface?
 if_valid () (
   ifconfig "$1" >&- 2>&- ||
@@ -23,18 +25,24 @@ append() {
 	eval "export ${var}=\"\${${var}:+\${${var}}${value:+$sep}}$value\""
 }
 
-config_cb() {
-	return 0
+reset_cb() {
+	config_cb() {
+		return 0
+	}
+	option_cb() {
+		return 0
+	}
 }
-option_cb() {
-	return 0
-}
+reset_cb
 
 config () {
-	config_cb "$@"
-	_C=$((${_C:-0} + 1))
-	export CONFIG_SECTION="${2:-cfg${_C}}"
-	export CONFIG_${CONFIG_SECTION}_TYPE="$1"
+	local type="$1"
+	local name="$2"
+	_C=$(($_C + 1))
+	name="${name:-cfg${_C}}"
+	config_cb "$type" "$name"
+	export CONFIG_SECTION="$name"
+	export CONFIG_${CONFIG_SECTION}_TYPE="$type"
 }
 
 option () {
@@ -53,12 +61,16 @@ config_clear() {
 }
 
 config_load() {
-	local CD=""
-	if [ \! -e "$1" -a -e "/etc/config/$1" ]; then
-		cd /etc/config && local CD=1
-	fi
-	[ -e "$1" ] && . $1
-	${CD:+cd - >/dev/null}
+	local DIR="./"
+	_C=0
+	[ \! -e "$1" -a -e "/etc/config/$1" ] && {
+		DIR="/etc/config/"
+	}
+	[ -e "$DIR$1" ] && {
+		CONFIG_FILENAME="$DIR$1"
+		. ${CONFIG_FILENAME}
+	} || return 1
+	${CD:+cd -} >/dev/null
 	${CONFIG_SECTION:+config_cb}
 }
 
