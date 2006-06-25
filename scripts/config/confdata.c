@@ -83,6 +83,29 @@ char *conf_get_default_confname(void)
 	return name;
 }
 
+void conf_reset(void)
+{
+	struct symbol *sym;
+	int i;
+	
+	for_all_symbols(i, sym) {
+		sym->flags |= SYMBOL_NEW | SYMBOL_CHANGED;
+		if (sym_is_choice(sym))
+			sym->flags &= ~SYMBOL_NEW;
+		sym->flags &= ~SYMBOL_VALID;
+		switch (sym->type) {
+		case S_INT:
+		case S_HEX:
+		case S_STRING:
+			if (sym->user.val)
+				free(sym->user.val);
+		default:
+			sym->user.val = NULL;
+			sym->user.tri = no;
+		}
+	}
+}
+
 int conf_read_simple(const char *name)
 {
 	FILE *in = NULL;
