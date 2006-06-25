@@ -69,6 +69,7 @@ setup_broadcom() {
 	_c=0
 	nas="$(which nas)"
 	nas_cmd=
+	if_up=
 	for vif in ${adhoc_if:-$sta_if $ap_if}; do
 		append vif_pre_up "vif $_c" "$N"
 		append vif_post_up "vif $_c" "$N"
@@ -123,8 +124,9 @@ setup_broadcom() {
 		append vif_post_up "ssid $ssid" "$N"
 		append vif_post_up "enabled 1" "$N"
 		
+		config_get ifname "$vif" ifname
+		append if_up "ifconfig $ifname up" ";$N"
 		[ -z "$nasopts" ] || {
-			config_get ifname "$vif" ifname
 			config_get bridge "$vif" bridge # XXX: integrate with /etc/config/network later
 			eval "${vif}_ssid=\"\$ssid\""
 			mode="-A"
@@ -134,7 +136,7 @@ setup_broadcom() {
 		_c=$(($_c + 1))
 	done
 	killall -KILL nas >&- 2>&-
-	cat <<EOF
+	wlc stdin <<EOF
 $ifdown
 
 mssid $mssid
@@ -156,6 +158,7 @@ up
 $vif_post_up
 EOF
 	eval "$nas_cmd"
+	eval "$if_up"
 }
 
 
