@@ -88,7 +88,7 @@ toolchain/%: FORCE
 	$(MAKE) -C toolchain $(patsubst toolchain/%,%,$@)
 
 .config: ./scripts/config/conf FORCE
-	@[ -f .config ] || $(MAKE) menuconfig
+	@[ -f .config ] || $(NO_TRACE_MAKE) menuconfig
 	$< -D .config Config.in >/dev/null 2>/dev/null
 
 download: .config FORCE
