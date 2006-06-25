@@ -131,7 +131,7 @@ setup_broadcom() {
 			eval "${vif}_ssid=\"\$ssid\""
 			mode="-A"
 			[ "$vif" = "$sta_if" ] && mode="-S"
-			[ -z "$nas" ] || nas_cmd="${nas_cmd:+$nas_cmd$N}$nas -P /var/run/nas.$ifname.pid -H 34954 -i $ifname${bridge:+ -l $bridge} $mode -m $auth -w $crypto -s \"\$${vif}_ssid\" -g 3600 $nasopts &"
+			[ -z "$nas" ] || nas_cmd="${nas_cmd:+$nas_cmd$N}$nas -P /var/run/nas.$ifname.pid -H 34954 ${bridge:+ -l $bridge} -i $ifname $mode -m $auth -w $crypto -s \"\$${vif}_ssid\" -g 3600 $nasopts &"
 		}
 		_c=$(($_c + 1))
 	done
