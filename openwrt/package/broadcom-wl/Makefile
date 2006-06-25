@@ -52,6 +52,7 @@ endef
 
 define Package/nas
   $(call Package/wl)
+  DEPENDS:=nvram
   TITLE:=Proprietary WPA/WPA2 authenticator
   DESCRIPTION:=Proprietary WPA/WPA2 authenticator for the Broadcom wl driver
 endef
