@@ -100,6 +100,7 @@ define Package/kmod-brcm-wl-mimo/install
 endef
 
 define Package/wlc/install
+	$(CP) ./files/* $(1)/
 	install -d -m0755 $(1)/sbin
 	install -m0755 $(PKG_BUILD_DIR)/wlc/wlc $(1)/sbin/
 endef

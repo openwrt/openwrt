@@ -1,0 +1,12 @@
+config wifi-device	wl0
+	option type 	broadcom
+	option channel	5
+
+config wifi-iface
+	option device	wl0
+	option mode		ap
+	option ssid 	OpenWrt
+	option hidden	0
+	option encryption none
+
+

@@ -1,0 +1,47 @@
+#!/bin/sh
+. /etc/functions.sh
+
+config_get_bool() {
+	local _tmp
+	config_get "$1" "$2" "$3"
+	eval "_tmp=\$$1"
+	case "$_tmp" in
+		1|on|enabled) eval "$1=1";;
+		0|off|disabled) eval "$1=0";;
+		*) eval "$1=${4:-0}";;
+	esac
+}
+
+config_cb() {
+	config_get TYPE "$CONFIG_SECTION" TYPE
+	case "$TYPE" in
+		wifi-device)
+			append DEVICES "$CONFIG_SECTION"
+		;;
+		wifi-iface)
+			config_get device "$CONFIG_SECTION" device
+			config_get vifs "$device" vifs 
+			append vifs "$CONFIG_SECTION"
+			config_set "$device" vifs "$vifs"
+		;;
+	esac
+}
+
+config_load wireless
+
+[ -d /lib/wifi -a -n "$(ls /lib/wifi/*.sh 2>&-)" ] && {
+	for script in /lib/wifi/*.sh; do
+		. $script
+	done
+}
+
+for device in $DEVICES; do (
+	config_get type "$device" type
+	eval "type setup_$type 2>&- >&-" && {
+		eval "scan_$type '$device'"
+		eval "setup_$type '$device'" && {
+			# TODO: set up network settings
+			/bin/true
+		} || echo "$device($type): Setup failed" || true
+	} || echo "$device($type): Interface type not supported"
+); done
