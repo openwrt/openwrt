@@ -37,7 +37,7 @@ config_load wireless
 
 for device in $DEVICES; do (
 	config_get type "$device" type
-	eval "type setup_$type 2>&- >&-" && {
+	eval "type setup_$type" 2>/dev/null >/dev/null && {
 		eval "scan_$type '$device'"
 		eval "setup_$type '$device'" && {
 			# TODO: set up network settings
