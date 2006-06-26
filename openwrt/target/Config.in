@@ -43,6 +43,16 @@ config LINUX_2_6_BRCM
 	  Build firmware images for Broadcom based routers
 	  (e.g. Netgear WGT634u)
 
+config LINUX_2_6_BRCM63XX
+	bool "Broadcom BCM63xx [2.6]"
+	select mips
+	select LINUX_2_6
+	select PCI_SUPPORT
+	select PCMCIA_SUPPORT
+	help
+	  Build firmware images for Broadcom based xDSL/routers
+	  (e.g. Inventel Livebox, Siemens SE515)
+
 config LINUX_2_6_RB532
 	bool "Mikrotik RB532 [2.6]"
 	select mipsel
