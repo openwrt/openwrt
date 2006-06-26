@@ -36,13 +36,11 @@ reset_cb() {
 reset_cb
 
 config () {
-	local type="$1"
-	local name="$2"
 	_C=$(($_C + 1))
 	name="${name:-cfg${_C}}"
-	config_cb "$type" "$name"
-	export CONFIG_SECTION="$name"
-	export CONFIG_${CONFIG_SECTION}_TYPE="$type"
+	config_cb "$1" "$2"
+	export CONFIG_SECTION="$2"
+	export CONFIG_${CONFIG_SECTION}_TYPE="$1"
 }
 
 option () {
