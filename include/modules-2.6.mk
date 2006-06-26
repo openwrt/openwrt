@@ -112,11 +112,6 @@ $(eval $(call KMOD_template,IP6TABLES,ip6tables,\
 
 # Block devices
 
-$(eval $(call KMOD_template,IDE,ide,\
-	$(MODULES_DIR)/kernel/drivers/ide/*.ko \
-	$(MODULES_DIR)/kernel/drivers/ide/*/*.ko \
-,CONFIG_IDE))
-
 $(eval $(call KMOD_template,LOOP,loop,\
     $(MODULES_DIR)/kernel/drivers/block/loop.ko \
 ,CONFIG_BLK_DEV_LOOP,,20,loop))

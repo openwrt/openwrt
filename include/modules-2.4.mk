@@ -107,11 +107,6 @@ $(eval $(call KMOD_template,IP6TABLES,ip6tables,\
 
 # Block devices
 
-$(eval $(call KMOD_template,IDE,ide,\
-	$(MODULES_DIR)/kernel/drivers/ide/*.o \
-	$(MODULES_DIR)/kernel/drivers/ide/*/*.o \
-,CONFIG_IDE,,20,pdc202xx_old ide-core ide-detect ide-disk))
-
 $(eval $(call KMOD_template,LOOP,loop,\
     $(MODULES_DIR)/kernel/drivers/block/loop.o \
 ,CONFIG_BLK_DEV_LOOP,,20,loop))

@@ -265,8 +265,8 @@ endmenu
 
 menu "Block devices support"
 
-config PACKAGE_KMOD_IDE
-	prompt "kmod-ide.......................... IDE support"
+config PACKAGE_kmod-ide-core
+	prompt "kmod-ide-core..................... IDE support"
 	tristate
 	default m
 	depends LINUX_2_4_X86 || LINUX_2_6_X86 || LINUX_2_4_BRCM || LINUX_2_6_BRCM
@@ -278,7 +278,21 @@ config PACKAGE_KMOD_IDE
 	    - ide-core
 	    - ide-detect
 	    - ide-disk
-	    - pdc202xx_old
+
+config PACKAGE_kmod-ide-pdc202xx
+	prompt "kmod-ide-pdc202xx................. PDC202xx driver"
+	tristate
+	default m
+	depends PACKAGE_kmod-ide-core
+	depends LINUX_2_4_X86 || LINUX_2_6_X86 || LINUX_2_4_BRCM || LINUX_2_6_BRCM
+	help
+	  Kernel modules for IDE support
+	  useful for usb mass storage devices (e.g. on WL-HDD)
+	  
+	  Includes:
+	    - ide-core
+	    - ide-detect
+	    - ide-disk
 
 config PACKAGE_KMOD_LOOP
 	prompt "kmod-loop......................... Loop mount support"
