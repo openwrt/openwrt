@@ -1,3 +1,5 @@
+# Copyright (C) 2006 OpenWrt.org
+
 BEGIN {
 	print ". /etc/config/network"
 	print "proto=\"$wan_proto\""
