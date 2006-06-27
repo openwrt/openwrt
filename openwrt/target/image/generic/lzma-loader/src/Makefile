@@ -1,3 +1,9 @@
+# 
+# Copyright (C) 2006 OpenWrt.org
+#
+# This is free software, licensed under the GNU General Public License v2.
+# See /LICENSE for more information.
+#
 LOADADDR = 0x80400000		# RAM start + 4M
 KERNEL_ENTRY = 0x80001000
 RAMSIZE = 0x00100000		# 1MB
