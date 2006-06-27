@@ -1,3 +1,9 @@
+# 
+# Copyright (C) 2006 OpenWrt.org
+#
+# This is free software, licensed under the GNU General Public License v2.
+# See /LICENSE for more information.
+#
 # $Id: Makefile 3822 2006-05-24 07:01:52Z nico $
 
 include $(TOPDIR)/rules.mk
