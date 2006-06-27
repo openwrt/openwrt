@@ -1,5 +1,5 @@
 #!/bin/sh
-# $Id$
+# Copyright (C) 2006 OpenWrt.org
 
 rom=$(awk '/squashfs/ {print $2}' /proc/mounts)
 jffs=$(awk '/jffs2/ {print $2}' /proc/mounts)

@@ -1,3 +1,5 @@
+# Copyright (C) 2006 OpenWrt.org
+
 {
 	line=$0
 	gsub(/^[ \t]*/, "")

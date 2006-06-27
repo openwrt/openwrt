@@ -1,2 +1,4 @@
 #!/bin/sh
+# Copyright (C) 2006 OpenWrt.org
+
 if awk -F: '/^root:/ && $2 !~ /\!/ {exit 1}' /etc/passwd 2>/dev/null; then telnetd -l /bin/login; fi
