@@ -1,3 +1,6 @@
+
+	Copyright (C) 2006 OpenWrt.org
+
 diff -Nur busybox-1.1.1/include/applets.h busybox-1.1.1-owrt/include/applets.h
 --- busybox-1.1.1/include/applets.h	2006-04-01 18:26:21.000000000 +0200
 +++ busybox-1.1.1-owrt/include/applets.h	2006-04-01 18:36:28.000000000 +0200
@@ -39,7 +42,12 @@ diff -Nur busybox-1.1.1/networking/Makefile.in busybox-1.1.1-owrt/networking/Mak
 diff -Nur busybox-1.1.1/networking/netmsg.c busybox-1.1.1-owrt/networking/netmsg.c
 --- busybox-1.1.1/networking/netmsg.c	1970-01-01 01:00:00.000000000 +0100
 +++ busybox-1.1.1-owrt/networking/netmsg.c	2006-04-01 18:35:32.000000000 +0200
-@@ -0,0 +1,58 @@
+@@ -0,0 +1,63 @@
++/*
++ * Copyright (C) 2006 Felix Fietkau <nbd@openwrt.org>
++ *
++ * This is free software, licensed under the GNU General Public License v2.
++ */
 +#include <sys/types.h>
 +#include <sys/socket.h>
 +#include <netinet/in.h>

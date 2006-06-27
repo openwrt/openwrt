@@ -1,3 +1,6 @@
+
+	Copyright (C) 2006 OpenWrt.org
+
 diff -urN busybox.old/include/applets.h busybox.dev/include/applets.h
 --- busybox.old/include/applets.h	2006-04-05 01:06:29.000000000 +0200
 +++ busybox.dev/include/applets.h	2006-04-05 01:19:09.000000000 +0200
@@ -39,7 +42,12 @@ diff -urN busybox.old/miscutils/Makefile.in busybox.dev/miscutils/Makefile.in
 diff -urN busybox.old/miscutils/lock.c busybox.dev/miscutils/lock.c
 --- busybox.old/miscutils/lock.c	1970-01-01 01:00:00.000000000 +0100
 +++ busybox.dev/miscutils/lock.c	2006-04-05 01:07:12.000000000 +0200
-@@ -0,0 +1,128 @@
+@@ -0,0 +1,133 @@
++/*
++ * Copyright (C) 2006 Felix Fietkau <nbd@openwrt.org>
++ *
++ * This is free software, licensed under the GNU General Public License v2.
++ */
 +#include <sys/types.h>
 +#include <sys/file.h>
 +#include <sys/stat.h>
