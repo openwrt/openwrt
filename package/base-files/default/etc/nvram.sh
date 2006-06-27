@@ -1,4 +1,6 @@
 #!/bin/ash
+# Copyright (C) 2006 OpenWrt.org
+
 
 # allow env to override nvram
 nvram () {

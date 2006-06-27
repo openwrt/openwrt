@@ -1,4 +1,6 @@
 #!/bin/sh
+# Copyright (C) 2006 OpenWrt.org
+
 mount none /proc -t proc
 size=$(awk '/Mem:/ {l=5242880;print((s=$2/2)<l)?$2-l:s}' /proc/meminfo)
 mount none /tmp -t tmpfs -o size=$size
