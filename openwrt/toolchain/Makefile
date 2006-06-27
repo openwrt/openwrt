@@ -1,4 +1,11 @@
+# 
+# Copyright (C) 2006 OpenWrt.org
+#
+# This is free software, licensed under the GNU General Public License v2.
+# See /LICENSE for more information.
+#
 # Main makefile for the toolchain
+#
 include $(TOPDIR)/rules.mk
 TARGETS-y:=sed kernel-headers sstrip binutils gcc uClibc ipkg-utils libnotimpl squashfs jffs2 lzma
 TARGETS-$(CONFIG_GDB) += gdb
