@@ -27,7 +27,7 @@ ifneq ($(KBUILD_VERBOSE),99)
     ifeq ($(KBUILD_VERBOSE),0)
       MAKE:=&>/dev/null $(MAKE)
     endif
-    MAKE:=3>&1 4>&2 $(MAKE)
+    MAKE:=cmd() { $(MAKE) $$* || {  echo "Build failed. Please re-run make with V=99 to see what's going on"; /bin/false; } } 3>&1 4>&2; cmd
   endif
 
   .SILENT: $(MAKECMDGOALS)
