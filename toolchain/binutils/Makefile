@@ -9,23 +9,12 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=binutils
 PKG_VERSION:=$(strip $(subst ",, $(CONFIG_BINUTILS_VERSION)))#"))
 
-STABLE_SITE:=http://ftp.gnu.org/gnu/binutils/ \
+PKG_SOURCE_URL:=http://ftp.gnu.org/gnu/binutils/ \
 	ftp://gatekeeper.dec.com/pub/GNU/ \
         ftp://ftp.uu.net/archive/systems/gnu/ \
         ftp://ftp.eu.uu.net/pub/gnu/ \
         ftp://ftp.funet.fi/pub/gnu/prep/ \
         ftp://ftp.leo.org/pub/comp/os/unix/gnu/ 
-
-DEVEL_SITE:=http://www.fr.kernel.org/pub/linux/devel/binutils \
-	       http://www.fi.kernel.org/pub/linux/devel/binutils \
-	       http://ftp.kernel.org/pub/linux/devel/binutils \
-	       http://www.de.kernel.org/pub/linux/devel/binutils
-
-ifeq ($(BINUTILS_VERSION),2.16.1)
-PKG_SOURCE_URL:=$(STABLE_SITE)
-else
-PKG_SOURCE_URL:=$(DEVEL_SITE)
-endif
 
 PKG_SOURCE:=binutils-$(PKG_VERSION).tar.bz2
 PKG_MD5SUM:=unknown
