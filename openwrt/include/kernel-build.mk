@@ -105,7 +105,9 @@ $(TOPDIR)/.kernel.mk:
 	echo "LINUX_RELEASE:=$(LINUX_RELEASE)" >> $@
 
 pkg-install: FORCE
-	@{ [ "$(INSTALL_TARGETS)" != "" ] && $(IPKG) install $(INSTALL_TARGETS) || true; }
+	@for pkg in $(INSTALL_TARGETS); do \
+		$(IPKG) install $$pkg || echo; \
+	done
 
 source: $(DL_DIR)/$(LINUX_SOURCE)
 prepare: $(LINUX_DIR)/.configured
