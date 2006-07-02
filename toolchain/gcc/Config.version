@@ -1,20 +1,18 @@
 config GCC_VERSION
 	string
-	default "3.4.4"     if GCC_VERSION_3_4_4
+	default "3.4.4"     if GCC_VERSION_3_4_4 || LINUX_2_4_BRCM
 	default "3.4.5"     if GCC_VERSION_3_4_5
 	default "3.4.6"     if GCC_VERSION_3_4_6
 	default "4.0.2"     if GCC_VERSION_4_0_2
-	default "4.0.3"     if GCC_VERSION_4_0_3
+	default "4.0.3"     if GCC_VERSION_4_0_3 || LINUX_2_6_ARUBA
 	default "4.1.0"     if GCC_VERSION_4_1_0
 	default "4.1.1"     if GCC_VERSION_4_1_1
 	default "3.4.6"
 
 if !TOOLCHAINOPTS
 	config GCC_VERSION_3_4_4
-		default y if LINUX_2_4_BRCM
 		
 	config GCC_VERSION_4_0_3
-		default y if LINUX_2_6_ARUBA
 
 endif
 
