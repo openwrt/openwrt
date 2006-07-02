@@ -6,6 +6,8 @@
 #
 # $Id:$
 
+NO_TRACE_MAKE:=$(MAKE) V=99
+
 ifndef KBUILD_VERBOSE
   KBUILD_VERBOSE=0
   ifeq ("$(origin V)", "command line")
@@ -23,7 +25,6 @@ ifneq ($(KBUILD_VERBOSE),99)
 	}
   else
     export QUIET:=1
-    NO_TRACE_MAKE:=$(MAKE) V=99
     ifeq ($(KBUILD_VERBOSE),0)
       MAKE:=&>/dev/null $(MAKE)
     endif
