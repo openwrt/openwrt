@@ -32,12 +32,12 @@ endif
 CONFIG_PACKAGE_base-files$(TARGET):=$(CONFIG_PACKAGE_base-files)
 
 define Package/base-files$(TARGET)
-SECTION:=base
-CATEGORY:=Base system
-DEFAULT:=y
-TITLE:=OpenWrt system scripts
-DESCRIPTION:=Base filesystem for OpenWrt
-VERSION:=$(PKG_RELEASE)
+  SECTION:=base
+  CATEGORY:=Base system
+  DEFAULT:=y
+  TITLE:=OpenWrt system scripts
+  DESCRIPTION:=Base filesystem for OpenWrt
+  VERSION:=$(PKG_RELEASE)
 endef
 
 define -ar7-2.4/conffiles
@@ -83,19 +83,28 @@ $(call $(TARGET)/conffiles)
 endef
 
 define Package/libgcc
-SECTION:=libs
-CATEGORY:=Libraries
-DEFAULT:=y
-TITLE:=GCC support library
-VERSION:=$(LIBGCC_VERSION)-$(PKG_RELEASE)
-DESCRIPTION:=$(TITLE)
+  SECTION:=libs
+  CATEGORY:=Libraries
+  DEFAULT:=y
+  TITLE:=GCC support library
+  VERSION:=$(LIBGCC_VERSION)-$(PKG_RELEASE)
+  DESCRIPTION:=$(TITLE)
 endef
 
+define Package/libpthread
+  $(call Package/base-files$(TARGET))
+  DEFAULT:=n
+  VERSION:=$(UCLIBC_VERSION)-$(PKG_RELEASE)
+  TITLE:=POSIX thread library
+  DESCRIPTION:=POSIX thread library
+endef
+
+
 define Package/uclibc
-$(call Package/base-files$(TARGET))
-VERSION:=$(UCLIBC_VERSION)-$(PKG_RELEASE)
-TITLE:=C library
-DESCRIPTION:=C library for embedded systems
+  $(call Package/base-files$(TARGET))
+  VERSION:=$(UCLIBC_VERSION)-$(PKG_RELEASE)
+  TITLE:=C library
+  DESCRIPTION:=C library for embedded systems
 endef
 
 define Build/Prepare
@@ -112,7 +121,7 @@ define Build/Compile/brcm
 endef
 
 define Build/Compile
-$(call Build/Compile/$(BOARD))
+  $(call Build/Compile/$(BOARD))
 endef
 
 
@@ -126,7 +135,7 @@ define Package/base-files$(TARGET)/install-brcm
 endef
 
 define Package/base-files$(TARGET)/install
-$(call Package/base-files$(TARGET)/install-$(BOARD),$(1))
+  $(call Package/base-files$(TARGET)/install-$(BOARD),$(1))
 	$(CP) ./default/* $(1)/
 	if [ -d $(BOARD)-$(KERNEL) ]; then \
 		$(CP) $(BOARD)-$(KERNEL)/* $(1)/; \
@@ -151,19 +160,26 @@ $(call Package/base-files$(TARGET)/install-$(BOARD),$(1))
 	mkdir -p $(1)/etc
 endef
 
+define Package/libgcc/install
+	install -m0755 -d $(1)/lib
+	$(CP) $(STAGING_DIR)/lib/libgcc_s.so.* $(1)/lib/
+endef
+
+define Package/libpthread/install
+	install -m0755 -d $(1)/lib
+	$(CP) $(STAGING_DIR)/lib/libpthread.so.* $(1)/lib/
+	$(CP) $(STAGING_DIR)/lib/libpthread-$(UCLIBC_VERSION).so $(1)/lib/
+endef
+
 define Package/uclibc/install
-	mkdir -p $(1)/lib
+	install -m0755 -d $(1)/lib
 	for file in ld-uClibc libc libcrypt libdl libm libnsl libresolv librt libuClibc libutil; do \
 		$(CP) $(STAGING_DIR)/lib/$$$$file.so.* $(1)/lib/; \
 		$(CP) $(STAGING_DIR)/lib/$$$$file-$(UCLIBC_VERSION).so $(1)/lib/; \
 	done
 endef
 
-define Package/libgcc/install
-	mkdir -p $(1)/lib
-	$(CP) $(STAGING_DIR)/lib/libgcc_s.so.* $(1)/lib/
-endef
-
 $(eval $(call BuildPackage,base-files$(TARGET)))
 $(eval $(call BuildPackage,libgcc))
+$(eval $(call BuildPackage,libpthread))
 $(eval $(call BuildPackage,uclibc))
