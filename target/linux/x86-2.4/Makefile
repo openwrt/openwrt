@@ -24,10 +24,3 @@ $(LINUX_DIR)/.patched: $(LINUX_DIR)/.unpacked
 	[ -d ./patches ] && $(PATCH) $(LINUX_DIR) ./patches
 	@$(CP) config $(LINUX_DIR)/.config
 	touch $@
-
-$(LINUX_BUILD_DIR)/bzImage: $(LINUX_DIR)/vmlinux
-	$(MAKE) -C $(LINUX_DIR) TOPDIR=$(LINUX_DIR) ARCH=$(LINUX_KARCH) PATH=$(TARGET_PATH) bzImage
-	$(CP) $(LINUX_DIR)/arch/i386/boot/bzImage $@
-	touch $@
-
-compile: $(LINUX_BUILD_DIR)/bzImage
