@@ -199,13 +199,11 @@ define Package/iptables/install
 	(cd $(PKG_INSTALL_DIR)/usr/lib/iptables ; \
 		$(CP) $(patsubst %,lib%.so,$(IPT_BUILTIN:xt_%=ipt_%)) $(1)/usr/lib/iptables/ \
 	)
-	$(RSTRIP) $(1)
 endef
 
 define Package/iptables-utils/install
 	install -d -m0755 $(1)/usr/sbin
 	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/iptables-{save,restore} $(1)/usr/sbin/
-	$(RSTRIP) $(1)
 endef
 
 define Package/ip6tables/install
@@ -215,7 +213,6 @@ define Package/ip6tables/install
 	(cd $(PKG_INSTALL_DIR)/usr/lib/iptables ; \
 		$(CP) libip6t_*.so $(1)/usr/lib/iptables/ \
 	)
-	$(RSTRIP) $(1)
 endef
 
 define BuildPlugin
@@ -225,7 +222,6 @@ define Package/$(1)/install
 		$(CP) $(PKG_INSTALL_DIR)/usr/lib/iptables/lib$$$$$$$${m}.so $$(1)/usr/lib/iptables/ ; \
 	done
 	$(3)
-	$(RSTRIP) $$(1)
 endef
 
 $$(eval $$(call BuildPackage,$(1)))

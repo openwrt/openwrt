@@ -151,7 +151,6 @@ endef
 define Package/pppstats/install
 	install -d -m0755 $(1)/usr/sbin
 	install -m0755 $(PKG_INSTALL_DIR)/usr/sbin/pppstats $(1)/usr/sbin/
-	$(RSTRIP) $(1)
 endef
 
 $(eval $(call BuildPackage,ppp))
