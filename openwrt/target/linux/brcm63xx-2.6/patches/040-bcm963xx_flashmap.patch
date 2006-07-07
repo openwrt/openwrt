@@ -1,0 +1,135 @@
+diff -urN linux-2.6.16.7/drivers/mtd/maps/bcm963xx.c linux-2.6.16.7-brcm63xx/drivers/mtd/maps/bcm963xx.c
+--- linux-2.6.16.7/drivers/mtd/maps/bcm963xx.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.16.7-brcm63xx/drivers/mtd/maps/bcm963xx.c	2006-07-07 22:00:36.000000000 +0200
+@@ -0,0 +1,106 @@
++/*
++ * A simple flash mapping code for BCM963xx board flash memory
++ * It is simple because it only treats all the flash memory as ROM
++ * It is used with chips/map_rom.c
++ *
++ *  Song Wang (songw@broadcom.com)
++ */
++
++#include <linux/module.h>
++#include <linux/types.h>
++#include <linux/kernel.h>
++#include <linux/init.h>
++#include <asm/io.h>
++#include <linux/mtd/mtd.h>
++#include <linux/mtd/map.h>
++#include <linux/config.h>
++
++#include <board.h>
++#include <bcmTag.h>
++#define  VERSION	"1.0"
++
++extern PFILE_TAG kerSysImageTagGet(void);
++
++static struct mtd_info *mymtd;
++
++static map_word brcm_physmap_read16(struct map_info *map, unsigned long ofs)
++{
++	map_word val;
++	
++	val.x[0] = __raw_readw(map->map_priv_1 + ofs);
++	
++	return val;
++}
++
++static void brcm_physmap_copy_from(struct map_info *map, void *to, unsigned long from, ssize_t len)
++{
++	memcpy_fromio(to, map->map_priv_1 + from, len);
++}
++
++static struct map_info brcm_physmap_map = {
++	.name		= "Physically mapped flash",
++	.bankwidth	= 2,
++	.read		= brcm_physmap_read16,
++	.copy_from	= brcm_physmap_copy_from
++};
++
++static int __init init_brcm_physmap(void)
++{
++        PFILE_TAG pTag = NULL;
++        u_int32_t rootfs_addr, kernel_addr;
++        FLASH_ADDR_INFO info;
++
++	printk("bcm963xx_mtd driver v%s\n", VERSION);
++        kerSysFlashAddrInfoGet( &info );
++
++        /* Read the flash memory map from flash memory. */
++        if (!(pTag = kerSysImageTagGet())) {
++                printk("Failed to read image tag from flash\n");
++                return -EIO;
++        }
++
++        rootfs_addr = (u_int32_t) simple_strtoul(pTag->rootfsAddress, NULL, 10);
++        kernel_addr = (u_int32_t) simple_strtoul(pTag->kernelAddress, NULL, 10);
++	
++	brcm_physmap_map.size = kernel_addr - rootfs_addr;
++	brcm_physmap_map.map_priv_1 = (unsigned long)rootfs_addr;
++
++	if (!brcm_physmap_map.map_priv_1) {
++		printk("Wrong rootfs starting address\n");
++		return -EIO;
++	}
++	
++	if (brcm_physmap_map.size <= 0) {
++		printk("Wrong rootfs size\n");
++		return -EIO;
++	}	
++	
++	mymtd = do_map_probe("map_rom", &brcm_physmap_map);
++	if (mymtd) {
++		mymtd->owner = THIS_MODULE;
++		add_mtd_device(mymtd);
++
++		return 0;
++	}
++
++	return -ENXIO;
++}
++
++static void __exit cleanup_brcm_physmap(void)
++{
++	if (mymtd) {
++		del_mtd_device(mymtd);
++		map_destroy(mymtd);
++	}
++	if (brcm_physmap_map.map_priv_1) {
++		brcm_physmap_map.map_priv_1 = 0;
++	}
++}
++
++module_init(init_brcm_physmap);
++module_exit(cleanup_brcm_physmap);
++
++
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("Song Wang songw@broadcom.com");
++MODULE_DESCRIPTION("Configurable MTD map driver for read-only root file system");
+diff -urN linux-2.6.16.7/drivers/mtd/maps/Kconfig linux-2.6.16.7-brcm63xx/drivers/mtd/maps/Kconfig
+--- linux-2.6.16.7/drivers/mtd/maps/Kconfig	2006-04-17 23:53:25.000000000 +0200
++++ linux-2.6.16.7-brcm63xx/drivers/mtd/maps/Kconfig	2006-07-07 22:02:13.000000000 +0200
+@@ -224,6 +224,13 @@
+ 	  Flash memory access on 4G Systems MTX-1 Board. If you have one of
+ 	  these boards and would like to use the flash chips on it, say 'Y'.
+ 
++config MTD_BCM963XX
++	tristate "BCM963xx Flash device"
++	depends on MIPS && MIPS_BRCM
++	help
++	  This driver seems to detect and provide a valid flash map to the system
++	  of course, it needs checking and testing.
++
+ config MTD_DILNETPC
+ 	tristate "CFI Flash device mapped on DIL/Net PC"
+ 	depends on X86 && MTD_CONCAT && MTD_PARTITIONS && MTD_CFI_INTELEXT
+diff -urN linux-2.6.16.7/drivers/mtd/maps/Makefile linux-2.6.16.7-brcm63xx/drivers/mtd/maps/Makefile
+--- linux-2.6.16.7/drivers/mtd/maps/Makefile	2006-04-17 23:53:25.000000000 +0200
++++ linux-2.6.16.7-brcm63xx/drivers/mtd/maps/Makefile	2006-07-07 22:01:29.000000000 +0200
+@@ -71,3 +71,4 @@
+ obj-$(CONFIG_MTD_OMAP_NOR)	+= omap_nor.o
+ obj-$(CONFIG_MTD_MTX1)		+= mtx-1_flash.o
+ obj-$(CONFIG_MTD_TQM834x)	+= tqm834x.o
++obj-$(CONFIG_MTD_BCM963XX)      += bcm963xx.o
