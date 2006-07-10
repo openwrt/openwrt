@@ -121,6 +121,10 @@ define BuildPackage
     compile-targets: $$(IPKG_$(1))
   endif
 
+  ifeq ($(FORCEREBUILD),y)
+    $$(IPKG_$(1)): FORCE
+  endif
+
   IDEPEND_$(1):=$$(strip $$(DEPENDS))
 
   DUMPINFO += \
