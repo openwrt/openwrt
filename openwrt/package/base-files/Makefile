@@ -37,8 +37,7 @@ define Package/base-files$(TARGET)
   DEFAULT:=y
   TITLE:=OpenWrt system scripts
   DESCRIPTION:=Base filesystem for OpenWrt
-  VERSION:=$(PKG_RELEASE)
-  FORCEREBUILD:=y
+  VERSION:=$(PKG_RELEASE)-$(REV)
 endef
 
 define -ar7-2.4/conffiles
@@ -90,7 +89,6 @@ define Package/libgcc
   TITLE:=GCC support library
   VERSION:=$(LIBGCC_VERSION)-$(PKG_RELEASE)
   DESCRIPTION:=$(TITLE)
-  FORCEREBUILD:=n
 endef
 
 define Package/libpthread
@@ -99,7 +97,6 @@ define Package/libpthread
   VERSION:=$(UCLIBC_VERSION)-$(PKG_RELEASE)
   TITLE:=POSIX thread library
   DESCRIPTION:=POSIX thread library
-  FORCEREBUILD:=n
 endef
 
 
@@ -108,7 +105,6 @@ define Package/uclibc
   VERSION:=$(UCLIBC_VERSION)-$(PKG_RELEASE)
   TITLE:=C library
   DESCRIPTION:=C library for embedded systems
-  FORCEREBUILD:=n
 endef
 
 define Build/Prepare
