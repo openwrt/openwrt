@@ -32,4 +32,6 @@ ifneq ($(KBUILD_VERBOSE),99)
   endif
 
   .SILENT: $(MAKECMDGOALS)
+else
+   NO_TRACE_MAKE:=$(MAKE)
 endif
