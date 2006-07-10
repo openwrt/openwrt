@@ -173,7 +173,7 @@ define BuildPackage
   $(eval $(call BuildIPKGVariable,$(1),postinst))
   $(eval $(call BuildIPKGVariable,$(1),prerm))
   $(eval $(call BuildIPKGVariable,$(1),postrm))
-  $$(IDIR_$(1))/CONTROL/control: $(PKG_BUILD_DIR)/.prepared
+  $$(IDIR_$(1))/CONTROL/control: Makefile $(PKG_BUILD_DIR)/.prepared
 	mkdir -p $$(IDIR_$(1))/CONTROL
 	echo "Package: $(1)" > $$(IDIR_$(1))/CONTROL/control
 	echo "Version: $(VERSION)" >> $$(IDIR_$(1))/CONTROL/control
