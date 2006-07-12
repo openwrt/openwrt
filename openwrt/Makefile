@@ -41,16 +41,16 @@ ifneq ($(shell ./scripts/timestamp.pl -p .pkginfo package Makefile),.pkginfo)
 endif
 
 .config.in: .pkginfo
-	./scripts/gen_menuconfig.pl < $< > $@ || rm -f $@
+	@./scripts/gen_menuconfig.pl < $< > $@ || rm -f $@
 
 pkginfo-clean: FORCE
 	-rm -f .pkginfo .config.in
 
 ./scripts/config/mconf: .config.in
-	$(MAKE) -C scripts/config all
+	@$(MAKE) -C scripts/config all
 
 ./scripts/config/conf: .config.in
-	$(MAKE) -C scripts/config conf
+	@$(MAKE) -C scripts/config conf
 
 config: ./scripts/config/conf FORCE
 	$< Config.in
@@ -79,7 +79,7 @@ toolchain/%: FORCE
 
 .config: ./scripts/config/conf FORCE
 	@[ -f .config ] || $(NO_TRACE_MAKE) menuconfig
-	$< -D .config Config.in >/dev/null 2>/dev/null
+	@$< -D .config Config.in &> /dev/null
 
 download: .config FORCE
 	$(MAKE) toolchain/download
