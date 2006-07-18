@@ -59,7 +59,9 @@ endif
 ifneq ($(1),jffs2-64k)
 	$(call Image/Build/CyberTAN,$(1),wrt54gs,W54S,4.80.1,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/CyberTAN,$(1),wrtsl54gs,W54U,2.00.5,$(patsubst jffs2-%,jffs2,$(1)))
+ifeq ($(KERNEL),2.6)
 	$(call Image/Build/wgt634u,$(1),$(patsubst jffs2-%,jffs2,$(1)))
+endif
 endif
 	$(call Image/Build/Motorola,$(1),wr850g,1,$(1))
 endef
