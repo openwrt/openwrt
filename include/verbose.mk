@@ -9,7 +9,10 @@
 NO_TRACE_MAKE:=$(MAKE) V=99
 
 ifndef KBUILD_VERBOSE
-  KBUILD_VERBOSE=$(V)
+  KBUILD_VERBOSE=0
+  ifdef V
+    KBUILD_VERBOSE=$(V)
+  endif
 endif
 
 ifneq ($(KBUILD_VERBOSE),99)
