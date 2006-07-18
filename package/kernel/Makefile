@@ -42,14 +42,14 @@ define ModuleAutoLoad
 		modules="$$$$$$$${modules:+$$$$$$$$modules }$$$$$$$$1-$(1)"; \
 	}; \
 	$(3) \
-	[ -n "$$$$$$$$modules" ] && { \
+	if [ -n "$$$$$$$$modules" ]; then \
 		mkdir -p $(2)/etc/modules.d; \
 		echo "#!/bin/sh" >> $(2)/CONTROL/postinst; \
 		echo "[ -z \"\$$$$$$$$IPKG_INSTROOT\" ] || exit" >> $(2)/CONTROL/postinst; \
 		echo ". /etc/functions.sh" >> $(2)/CONTROL/postinst; \
 		echo "load_modules $$$$$$$$modules" >> $(2)/CONTROL/postinst; \
 		chmod 0755 $(2)/CONTROL/postinst; \
-	}
+	fi
 endef
  
 
