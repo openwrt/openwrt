@@ -59,7 +59,7 @@ define KernelPackage
   $(eval $(call KernelPackage/$(1)))
   $(eval $(call KernelPackage/$(1)/$(KERNEL)))
 
-  ifneq ($(KCONFIG),m)
+  ifneq ($(findstring m,$(KCONFIG)),m)
     CONFIG_PACKAGE_kmod-$(1):=
   endif
 
