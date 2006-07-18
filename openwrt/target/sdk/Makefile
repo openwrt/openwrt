@@ -28,8 +28,9 @@ $(BIN_DIR)/$(SDK_NAME).tar.bz2:
 	$(CP) $(STAGING_DIR) $(INCLUDE_DIR) $(SCRIPT_DIR) $(TOPDIR)/docs $(SDK_BUILD_DIR)/
 	$(CP) $(TOPDIR)/rules.mk $(TOPDIR)/.config $(SDK_BUILD_DIR)/
 	$(CP) $(TOPDIR)/package/Makefile $(SDK_BUILD_DIR)/package/
-	$(CP) ./files/Makefile.sdk $(SDK_BUILD_DIR)/Makefile
+	$(CP) ./files/Makefile $(SDK_BUILD_DIR)/
 	$(CP) ./files/README.SDK $(SDK_BUILD_DIR)/
+	$(CP) ./files/package/rules.mk $(SDK_BUILD_DIR)/package/
 	echo OPENWRTVERSION:=$(OPENWRTVERSION) > $(SDK_BUILD_DIR)/.version.mk
 	find $(SDK_BUILD_DIR) -name .svn | xargs rm -rf 
 	find $(SDK_BUILD_DIR) -name CVS | xargs rm -rf 

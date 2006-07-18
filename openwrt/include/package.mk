@@ -41,6 +41,7 @@ define Build/DefaultTargets
 	touch $$@
 
   $(STAGING_DIR)/stampfiles/.$(PKG_NAME)-installed: $(PKG_BUILD_DIR)/.built
+	mkdir -p $(STAGING_DIR)/stampfiles
 	$(call Build/InstallDev)
 	touch $$@
 	
