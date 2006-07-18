@@ -27,9 +27,6 @@ RELEASE:=Kamikaze
 TOPDIR=${shell pwd}
 export TOPDIR
 
-include $(TOPDIR)/.version.mk
-export OPENWRTVERSION
-
 DEVELOPER=1
 export DEVELOPER
 
@@ -55,6 +52,12 @@ download: FORCE
 
 world: FORCE
 	$(MAKE) package/compile
+	-( \
+		cd package; \
+		find . -maxdepth 2 -name Config.in | \
+			sed -e 's,/Config.in,,g' | \
+			xargs -r -n1 make compile -C; \
+	)
 
 clean: FORCE
 	rm -rf build_* bin
