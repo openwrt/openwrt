@@ -56,7 +56,7 @@ config PACKAGE_KMOD_MPPE
 	tristate
 	default m
 	depends PACKAGE_KMOD_PPP
-	select PACKAGE_KMOD_CRYPTO
+	select PACKAGE_kmod-crypto
 	help
 	  Support for Microsoft PPP Encryption/Compression
 
@@ -309,14 +309,6 @@ config PACKAGE_KMOD_NBD
 	  Kernel module for network block device
 
 endmenu
-
-config PACKAGE_KMOD_CRYPTO
-	prompt "CryptoAPI modules"
-	tristate
-	default m
-	select BUSYBOX_CONFIG_FEATURE_CHECK_TAINTED_MODULE
-	help
-	  Kernel modules for cryptographic algorithms
 
 menu "Filesystems support"
 

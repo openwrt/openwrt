@@ -126,14 +126,6 @@ $(eval $(call KMOD_template,NBD,nbd,\
     $(MODULES_DIR)/kernel/drivers/block/nbd.ko \
 ,CONFIG_BLK_DEV_NBD,,20,nbd))
 
-
-# Crypto
-
-$(eval $(call KMOD_template,CRYPTO,crypto,\
-	$(MODULES_DIR)/kernel/crypto/*.ko \
-))
-
-
 # Filesystems
 
 $(eval $(call KMOD_template,FS_CIFS,fs-cifs,\

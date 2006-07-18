@@ -122,16 +122,6 @@ $(eval $(call KMOD_template,NBD,nbd,\
 ,CONFIG_BLK_DEV_NBD,,20,nbd))
 
 
-# Crypto
-
-ifneq ($(wildcard $(MODULES_DIR)/kernel/crypto/*.o),)
-CONFIG_CRYPTO:=m
-endif
-$(eval $(call KMOD_template,CRYPTO,crypto,\
-	$(MODULES_DIR)/kernel/crypto/*.o \
-,CONFIG_CRYPTO))
-
-
 # Filesystems
 
 $(eval $(call KMOD_template,FS_CIFS,fs-cifs,\
