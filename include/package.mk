@@ -65,6 +65,7 @@ define Package/Default
   SECTION:=opt
   CATEGORY:=Extra packages
   DEPENDS:=
+  EXTRA_DEPENDS:=
   MAINTAINER:=OpenWrt Developers Team <openwrt-devel@openwrt.org>
   SOURCE:=$(patsubst $(TOPDIR)/%,%,${shell pwd})
   ifneq ($(PKG_VERSION),)
@@ -113,12 +114,14 @@ define BuildPackage
   IDIR_$(1):=$(PKG_BUILD_DIR)/ipkg/$(1)
   INFO_$(1):=$(IPKG_STATE_DIR)/info/$(1).list
 
-  ifeq ($(CONFIG_PACKAGE_$(1)),y)
-    install-targets: $$(INFO_$(1))
-  endif
+  ifdef Package/$(1)/install
+    ifeq ($(CONFIG_PACKAGE_$(1)),y)
+      install-targets: $$(INFO_$(1))
+    endif
 
-  ifneq ($(CONFIG_PACKAGE_$(1))$(DEVELOPER),)
-    compile-targets: $$(IPKG_$(1))
+    ifneq ($(CONFIG_PACKAGE_$(1))$(DEVELOPER),)
+      compile-targets: $$(IPKG_$(1))
+    endif
   endif
 
   ifeq ($(FORCEREBUILD),y)
@@ -182,7 +185,7 @@ define BuildPackage
 		for depend in $$(filter-out @%,$$(IDEPEND_$(1))); do \
 			DEPENDS=$$$${DEPENDS:+$$$$DEPENDS, }$$$${depend##+}; \
 		done; \
-		echo "Depends: $$$$DEPENDS" >> $$(IDIR_$(1))/CONTROL/control; \
+		echo "Depends: $(EXTRA_DEPENDS) $$$$DEPENDS" >> $$(IDIR_$(1))/CONTROL/control; \
 	)
 	echo "Source: $(SOURCE)" >> $$(IDIR_$(1))/CONTROL/control
 	echo "Section: $(SECTION)" >> $$(IDIR_$(1))/CONTROL/control
