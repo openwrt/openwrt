@@ -83,7 +83,7 @@ $(eval $(call Require,working-g++, \
 
 define Require/zlib
 	echo 'int main(int argc, char **argv) { gzdopen(0, "rb"); return 0; }' | \
-		gcc -x c -o $(TMP_DIR)/a.out -lz -
+		gcc -include zlib.h -x c -o $(TMP_DIR)/a.out -lz -
 endef
 
 $(eval $(call Require,zlib, \
