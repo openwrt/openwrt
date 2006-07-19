@@ -81,10 +81,23 @@ toolchain/%: FORCE
 	@[ -f .config ] || $(NO_TRACE_MAKE) menuconfig
 	@$< -D .config Config.in &> /dev/null
 
+.prereq: $(TOPDIR)/include/prereq.mk .pkginfo
+	@$(NO_TRACE_MAKE) -s -f $(TOPDIR)/include/prereq.mk prereq 2>/dev/null || { \
+		echo "Prerequisite check failed. Use FORCE=1 to override."; \
+		false; \
+	}
+	@touch $@
+
+prereq: .prereq FORCE
+
 download: .config FORCE
 	$(MAKE) toolchain/download
 	$(MAKE) package/download
 	$(MAKE) target/download
+
+ifeq ($(FORCE),)
+world: .prereq
+endif
 
 world: .config FORCE
 	$(MAKE) toolchain/install
