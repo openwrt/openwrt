@@ -4,7 +4,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=elinks
 PKG_VERSION:=0.11.1
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_MD5SUM:=c09d726075e4b5810fa07f8654088755
 
 PKG_SOURCE_URL:=http://elinks.or.cz/download/
