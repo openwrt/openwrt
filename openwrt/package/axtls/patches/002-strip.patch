@@ -1,0 +1,12 @@
+diff -ruN axTLS-0.95-old/httpd/Makefile axTLS-0.95-new/httpd/Makefile
+--- axTLS-0.95-old/httpd/Makefile	2006-02-28 02:50:28.000000000 +0100
++++ axTLS-0.95-new/httpd/Makefile	2006-05-18 22:24:02.000000000 +0200
+@@ -87,7 +87,7 @@
+ 	$(LD) $(LDFLAGS) -o $@ $(OBJ) $(LIBS)
+ ifndef CONFIG_DEBUG
+ ifndef CONFIG_PLATFORM_SOLARIS
+-	strip --remove-section=.comment $(TARGET)
++	$(STRIP) --remove-section=.comment $(TARGET)
+ endif
+ endif
+ else    # Win32

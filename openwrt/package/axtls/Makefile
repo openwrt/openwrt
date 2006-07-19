@@ -26,6 +26,7 @@ $(PKG_BUILD_DIR)/.configured:
 $(PKG_BUILD_DIR)/.built:
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CC=$(TARGET_CC) \
+		STRIP=/bin/true \
 		OPT_CFLAGS="$(TARGET_CFLAGS)" OPT_LDFLAGS=""
 	touch $@
 
