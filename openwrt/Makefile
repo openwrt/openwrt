@@ -113,7 +113,7 @@ dirclean: clean
 	rm -rf staging_dir_* toolchain_build_*
 
 distclean: dirclean config-clean
-	rm -rf dl .*config* .pkg*
+	rm -rf dl .*config* .pkg* .prereq
 
 .PHONY: FORCE
 FORCE:
