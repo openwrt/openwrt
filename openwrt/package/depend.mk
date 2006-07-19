@@ -13,6 +13,7 @@ cyrus-sasl-compile: openssl-compile
 deco-compile: ncurses-compile
 dhcp6-compile: ncurses-compile
 dsniff-compile: libnids-compile openssl-compile libgdbm-compile
+elinks-compile: openssl-compile
 freetype-compile: zlib-compile
 fprobe-compile: libpcap-compile
 gdbserver-compile: ncurses-compile
