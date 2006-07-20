@@ -19,9 +19,6 @@ INSTALL_TARGETS += $(KERNEL_IPKG)
 
 $(TARGETS): $(PACKAGE_DIR)
 
-$(LINUX_DIR):
-	mkdir -p $@
-
 $(PACKAGE_DIR):
 	mkdir -p $@
 
@@ -68,7 +65,7 @@ else
 	echo 'CONFIG_INITRAMFS_SOURCE=""' >> $(LINUX_DIR)/.config
 endif
 
-$(LINUX_DIR)/vmlinux: $(STAMP_DIR)/.linux-compile pkg-install ramdisk-config
+$(LINUX_DIR)/vmlinux: $(LINUX_DIR)/.linux-compile pkg-install ramdisk-config
 	$(MAKE) -C $(LINUX_DIR) CROSS_COMPILE="$(KERNEL_CROSS)" ARCH=$(LINUX_KARCH) PATH=$(TARGET_PATH)
 
 $(LINUX_KERNEL): $(LINUX_DIR)/vmlinux
@@ -84,10 +81,10 @@ $(LINUX_DIR)/.modules_done:
 modules: $(LINUX_DIR)/.modules_done
 packages: $(TARGETS)
 
-$(STAMP_DIR)/.linux-compile:
+$(LINUX_DIR)/.linux-compile:
+	ln -sf $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION) $(BUILD_DIR)/linux
 	@$(MAKE) modules
 	@$(MAKE) packages
-	ln -sf $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION) $(BUILD_DIR)/linux
 	touch $@
 
 $(KERNEL_IPKG):
@@ -111,14 +108,14 @@ pkg-install: FORCE
 
 source: $(DL_DIR)/$(LINUX_SOURCE)
 prepare: $(LINUX_DIR)/.configured
-	@mkdir -p $(STAMP_DIR) $(PACKAGE_DIR)
+	@mkdir -p $(LINUX_DIR) $(PACKAGE_DIR)
 
-compile: prepare $(STAMP_DIR)/.linux-compile
+compile: prepare $(LINUX_DIR)/.linux-compile
 
 install: compile $(LINUX_KERNEL)
 
 mostlyclean: FORCE
-	rm -f $(STAMP_DIR)/.linux-compile
+	rm -f $(LINUX_DIR)/.linux-compile
 	rm -f $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION)/.modules_done
 	rm -f $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION)/.drivers-unpacked
 	$(MAKE) -C $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION) clean
