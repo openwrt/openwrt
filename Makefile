@@ -116,6 +116,6 @@ distclean: dirclean config-clean
 	rm -rf dl .*config* .pkg* .prereq
 
 
-.SILENT: clean dirclean distclean config-clean
+.SILENT: clean dirclean distclean config-clean download world
 .PHONY: FORCE
 FORCE:
