@@ -83,6 +83,14 @@ config LINUX_2_6_X86
 	  Build firmware images for x86 based boards
 	  (e.g. Soekris net4521 and net4801, PC Engines WRAP...)
 
+config LINUX_2_6_UML
+	bool "x86 [uml]"
+	select i386
+	select LINUX_2_6
+	help
+	  Build uml targetted images
+
+
 config LINUX_2_6_AU1000
 	bool "AMD Alchemy AUxx [2.6]"
 	select mipsel
