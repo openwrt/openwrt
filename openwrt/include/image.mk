@@ -44,6 +44,14 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 		tar -zcf $(BIN_DIR)/openwrt-rootfs.tgz --owner=root --group=root -C $(BUILD_DIR)/root/ .
     endef
   endif
+  
+  ifeq ($(CONFIG_TARGET_ROOTFS_EXT2FS),y)
+    define Image/mkfs/ext2
+		genext2fs -q -b 4096 -I 1500 -d $(BUILD_DIR)/root/ $(KDIR)/root.ext2
+		$(call Image/Build,ext2)
+    endef
+  endif
+  
 endif
 
 define Image/mkfs/prepare/default
@@ -69,6 +77,7 @@ install:
 	$(call Image/mkfs/jffs2)
 	$(call Image/mkfs/squashfs)
 	$(call Image/mkfs/tgz)
+	$(call Image/mkfs/ext2)
 	
 clean:
 	$(call Build/Clean)
