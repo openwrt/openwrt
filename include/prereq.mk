@@ -6,29 +6,30 @@
 #
 
 include $(TOPDIR)/rules.mk
-include $(INCLUDE_DIR)/verbose.mk
 
 $(TMP_DIR):
 	mkdir -p $@
 
 prereq:
-	@echo
-	@if [ -f $(TMP_DIR)/.prereq-error ]; then \
+	echo
+	if [ -f $(TMP_DIR)/.prereq-error ]; then \
 		cat $(TMP_DIR)/.prereq-error; \
 		echo; \
 		rm -rf $(TMP_DIR); \
 		false; \
 	fi
-	@rm -rf $(TMP_DIR)
-	@mkdir -p $(TMP_DIR)
+	rm -rf $(TMP_DIR)
+	mkdir -p $(TMP_DIR)
+
+.SILENT: $(TMP_DIR) prereq
 
 define Require
   ifeq ($$(CHECK_$(1)),)
     prereq: prereq-$(1)
 
     prereq-$(1): $(TMP_DIR) FORCE
-		@echo -n "Checking '$(1)'... "
-		@if $(NO_TRACE_MAKE) -f $(INCLUDE_DIR)/prereq.mk check-$(1) >/dev/null 2>/dev/null; then \
+		echo -n "Checking '$(1)'... "
+		if $(NO_TRACE_MAKE) -f $(INCLUDE_DIR)/prereq.mk check-$(1) >/dev/null 2>/dev/null; then \
 			echo 'ok.'; \
 		else \
 			echo 'failed.'; \
@@ -38,6 +39,8 @@ define Require
     check-$(1): FORCE
 	  $(call Require/$(1))
     CHECK_$(1):=1
+
+    .SILENT: prereq-$(1) check-$(1)
   endif
 endef
 
@@ -69,7 +72,7 @@ define Require/working-gcc
 endef
 
 $(eval $(call Require,working-gcc, \
-	No working GNU C Compiler was found on your system. \
+	No working GNU C Compiler (gcc) was found on your system. \
 ))
 
 define Require/working-g++
@@ -78,7 +81,7 @@ define Require/working-g++
 endef
 
 $(eval $(call Require,working-g++, \
-	No working GNU C++ Compiler was found on your system. \
+	No working GNU C++ Compiler (g++) was found on your system. \
 ))
 
 define Require/zlib
@@ -87,7 +90,7 @@ define Require/zlib
 endef
 
 $(eval $(call Require,zlib, \
-	The development version of zlib was not found on your system. \
+	No zlib development files were not found on your system. \
 ))
 
 
@@ -115,4 +118,6 @@ $(eval $(call RequireCommand,patch, \
 	Please install patch. \
 ))
 
-
+$(eval $(call RequireCommand,perl, \
+	Please install perl. \
+))
