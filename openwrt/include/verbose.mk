@@ -6,11 +6,11 @@
 #
 # $Id:$
 
-NO_TRACE_MAKE:=$(MAKE) V=99
+export NO_TRACE_MAKE:=$(MAKE) V=99
 
 ifndef KBUILD_VERBOSE
   KBUILD_VERBOSE=0
-  ifdef V
+  ifeq ("$(origin V)", "command line")
     KBUILD_VERBOSE=$(V)
   endif
 endif
@@ -32,6 +32,4 @@ ifneq ($(KBUILD_VERBOSE),99)
   endif
 
   .SILENT: $(MAKECMDGOALS)
-else
-   NO_TRACE_MAKE:=$(MAKE)
 endif
