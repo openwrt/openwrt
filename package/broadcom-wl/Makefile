@@ -58,7 +58,7 @@ endef
 
 define Package/nas
   $(call Package/wl)
-  DEPENDS:=kmod-brcm-wl nvram
+  DEPENDS:=@PACKAGE_kmod-brcm-wl||PACKAGE_kmod-brcm-wl-mimo +nvram
   DEFAULT:=m
   TITLE:=Proprietary WPA/WPA2 authenticator
   DESCRIPTION:=Proprietary WPA/WPA2 authenticator for the Broadcom wl driver
