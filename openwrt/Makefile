@@ -115,5 +115,7 @@ dirclean: clean
 distclean: dirclean config-clean
 	rm -rf dl .*config* .pkg* .prereq
 
+
+.SILENT: clean dirclean distclean config-clean
 .PHONY: FORCE
 FORCE:
