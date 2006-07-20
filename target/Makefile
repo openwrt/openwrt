@@ -20,7 +20,7 @@ linux-install: $(BIN_DIR)
 sdk-compile: linux-install
 image_install: linux-install
 
-download: $(patsubst %,%-source,$(TARGETS-y))
+download: $(patsubst %,%-download,$(TARGETS-y))
 prepare: linux-prepare
 compile: linux-compile image_compile
 install: image_clean $(patsubst %,%-install,$(TARGETS-y)) image_install
@@ -38,8 +38,8 @@ image_install: image_compile
 
 %-clean: FORCE
 	$(MAKE) -C $(patsubst %-clean,%,$@) clean
-%-source: FORCE
-	$(MAKE) -C $(patsubst %-source,%,$@) source
+%-download: FORCE
+	$(MAKE) -C $(patsubst %-download,%,$@) download
 %-prepare: FORCE
 	$(MAKE) -C $(patsubst %-prepare,%,$@) prepare
 %-compile: %-prepare

@@ -294,7 +294,7 @@ else
 	mkdir -p $@
 		
   ifneq ($(strip $(PKG_SOURCE)),)
-    source: $(DL_DIR)/$(PKG_SOURCE)
+    download: $(DL_DIR)/$(PKG_SOURCE)
 
     $(DL_DIR)/$(PKG_SOURCE):
 		mkdir -p $(DL_DIR)
@@ -303,7 +303,7 @@ else
     $(PKG_BUILD_DIR)/.prepared: $(DL_DIR)/$(PKG_SOURCE)
   endif
 
-  source:
+  download:
   prepare: $(PKG_BUILD_DIR)/.prepared
   configure: $(PKG_BUILD_DIR)/.configured
 

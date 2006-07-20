@@ -3,15 +3,15 @@ include $(TOPDIR)/rules.mk
 include $(TOPDIR)/.config
 include $(TOPDIR)/.pkgdeps
 
-SOURCE_PACKAGES:=$(patsubst %,%-source,$(package-y) $(package-m))
+SOURCE_PACKAGES:=$(patsubst %,%-download,$(package-y) $(package-m))
 COMPILE_PACKAGES:=$(patsubst %,%-compile,$(package-y) $(package-m))
 INSTALL_PACKAGES:=$(patsubst %,%-install,$(package-y))
 
 $(STAMP_DIR) $(TARGET_DIR):
 	mkdir -p $@
 
-%-source: $(STAMP_DIR) $(TARGET_DIR)
-	$(MAKE) -C $(patsubst %-source,%,$@) source MAKEFLAGS="$(BUILD_MAKEFLAGS)"
+%-download: $(STAMP_DIR) $(TARGET_DIR)
+	$(MAKE) -C $(patsubst %-download,%,$@) download MAKEFLAGS="$(BUILD_MAKEFLAGS)"
 
 %-prepare: $(STAMP_DIR) $(TARGET_DIR)
 	$(MAKE) -C $(patsubst %-prepare,%,$@) prepare MAKEFLAGS="$(BUILD_MAKEFLAGS)"
