@@ -10,7 +10,7 @@ include $(TOPDIR)/rules.mk
 TARGETS-y:=sed kernel-headers sstrip binutils gcc uClibc ipkg-utils libnotimpl squashfs jffs2 lzma
 TARGETS-$(CONFIG_GDB) += gdb
 
-TARGETS_DOWNLOAD:=$(patsubst %,%-source,$(TARGETS-y))
+TARGETS_DOWNLOAD:=$(patsubst %,%-download,$(TARGETS-y))
 TARGETS_INSTALL:=$(patsubst %,%-install,$(TARGETS-y))
 TARGETS_CLEAN:=$(patsubst %,%-clean,$(TARGETS-y))
 
@@ -41,8 +41,8 @@ $(STAGING_DIR):
 $(TOOL_BUILD_DIR):
 	@mkdir -p $@
 
-%-source: FORCE
-	$(MAKE) -C $(patsubst %-source,%,$@) source
+%-download: FORCE
+	$(MAKE) -C $(patsubst %-download,%,$@) download
 
 %-prepare: $(TOOLCHAIN_STAMP_DIR) $(STAGING_DIR) $(TOOL_BUILD_DIR) FORCE
 	@[ -f $(TOOLCHAIN_STAMP_DIR)/.toolchain_$@ ] || { \
