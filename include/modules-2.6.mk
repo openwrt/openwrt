@@ -22,7 +22,7 @@ $(eval $(call KMOD_template,GRE,gre,\
 $(eval $(call KMOD_template,IMQ,imq,\
 	$(MODULES_DIR)/kernel/net/ipv4/netfilter/*IMQ*.ko \
 	$(MODULES_DIR)/kernel/drivers/net/imq.ko \
-))
+,CONFIG_IMQ))
 
 $(eval $(call KMOD_template,IPIP,ipip,\
 	$(MODULES_DIR)/kernel/net/ipv4/ipip.ko \
@@ -54,7 +54,7 @@ $(eval $(call KMOD_template,PPPOE,pppoe,\
 
 $(eval $(call KMOD_template,SCHED,sched,\
 	$(MODULES_DIR)/kernel/net/sched/*.ko \
-))
+,CONFIG_NET_SCHED))
 
 $(eval $(call KMOD_template,TUN,tun,\
 	$(MODULES_DIR)/kernel/drivers/net/tun.ko \
