@@ -13,6 +13,7 @@ my $makefile;
 my $pkg;
 my %category;
 my $cur_menu;
+my $cur_menu_dep;
 
 sub print_category($) {
 	my $cat = shift;
@@ -26,10 +27,15 @@ sub print_category($) {
 			if ($cur_menu ne $pkg->{submenu}) {
 				if ($cur_menu) {
 					print "endmenu\n";
+					$cur_menu_dep and do {
+						print "endif\n";
+						$cur_menu_dep = undef;
+					};
 					undef $cur_menu;
 				} 
 				if ($pkg->{submenu}) {
 					$cur_menu = $pkg->{submenu};
+					$cur_menu_dep = $pkg->{submenudep} and print "if $cur_menu_dep\n";
 					print "menu \"$cur_menu\"\n";
 				}
 			}
@@ -84,6 +90,7 @@ while ($line = <>) {
 	$line =~ /^Title: \s*(.+)\s*$/ and $pkg->{title} = $1;
 	$line =~ /^Menu: \s*(.+)\s*$/ and $pkg->{menu} = $1;
 	$line =~ /^Submenu: \s*(.+)\s*$/ and $pkg->{submenu} = $1;
+	$line =~ /^Submenu-Depends: \s*(.+)\s*$/ and $pkg->{submenudep} = $1;
 	$line =~ /^Default: \s*(.+)\s*$/ and $pkg->{default} = $1;
 	$line =~ /^Depends: \s*(.+)\s*$/ and do {
 		my @dep = split /\s+/, $1;
