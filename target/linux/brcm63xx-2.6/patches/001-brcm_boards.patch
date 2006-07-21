@@ -1,6 +1,6 @@
-diff -urN linux-2.6.16.7/arch/mips/brcm-boards/bcm963xx/bcm63xx_flash.c linux-2.6.16.7-brcm63xx/arch/mips/brcm-boards/bcm963xx/bcm63xx_flash.c
---- linux-2.6.16.7/arch/mips/brcm-boards/bcm963xx/bcm63xx_flash.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.16.7-brcm63xx/arch/mips/brcm-boards/bcm963xx/bcm63xx_flash.c	2006-07-07 22:16:32.000000000 +0200
+diff -urN linux-2.6.17/arch/mips/brcm-boards/bcm963xx/bcm63xx_flash.c linux-2.6.17-brcm63xx/arch/mips/brcm-boards/bcm963xx/bcm63xx_flash.c
+--- linux-2.6.17/arch/mips/brcm-boards/bcm963xx/bcm63xx_flash.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-brcm63xx/arch/mips/brcm-boards/bcm963xx/bcm63xx_flash.c	2006-07-13 19:11:33.000000000 +0200
 @@ -0,0 +1,775 @@
 +/*
 +<:copyright-gpl
@@ -777,9 +777,9 @@ diff -urN linux-2.6.16.7/arch/mips/brcm-boards/bcm963xx/bcm63xx_flash.c linux-2.
 +   return flash_get_total_size();
 +}
 +
-diff -urN linux-2.6.16.7/arch/mips/brcm-boards/bcm963xx/bcm63xx_led.c linux-2.6.16.7-brcm63xx/arch/mips/brcm-boards/bcm963xx/bcm63xx_led.c
---- linux-2.6.16.7/arch/mips/brcm-boards/bcm963xx/bcm63xx_led.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.16.7-brcm63xx/arch/mips/brcm-boards/bcm963xx/bcm63xx_led.c	2006-07-07 22:16:32.000000000 +0200
+diff -urN linux-2.6.17/arch/mips/brcm-boards/bcm963xx/bcm63xx_led.c linux-2.6.17-brcm63xx/arch/mips/brcm-boards/bcm963xx/bcm63xx_led.c
+--- linux-2.6.17/arch/mips/brcm-boards/bcm963xx/bcm63xx_led.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-brcm63xx/arch/mips/brcm-boards/bcm963xx/bcm63xx_led.c	2006-07-13 19:11:33.000000000 +0200
 @@ -0,0 +1,582 @@
 +/*
 +<:copyright-gpl 
@@ -1363,10 +1363,10 @@ diff -urN linux-2.6.16.7/arch/mips/brcm-boards/bcm963xx/bcm63xx_led.c linux-2.6.
 +    }
 +}
 +
-diff -urN linux-2.6.16.7/arch/mips/brcm-boards/bcm963xx/board.c linux-2.6.16.7-brcm63xx/arch/mips/brcm-boards/bcm963xx/board.c
---- linux-2.6.16.7/arch/mips/brcm-boards/bcm963xx/board.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.16.7-brcm63xx/arch/mips/brcm-boards/bcm963xx/board.c	2006-07-07 22:16:43.000000000 +0200
-@@ -0,0 +1,1614 @@
+diff -urN linux-2.6.17/arch/mips/brcm-boards/bcm963xx/board.c linux-2.6.17-brcm63xx/arch/mips/brcm-boards/bcm963xx/board.c
+--- linux-2.6.17/arch/mips/brcm-boards/bcm963xx/board.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-brcm63xx/arch/mips/brcm-boards/bcm963xx/board.c	2006-07-14 15:39:56.000000000 +0200
+@@ -0,0 +1,1615 @@
 +/*
 +<:copyright-gpl 
 + Copyright 2002 Broadcom Corp. All Rights Reserved. 
@@ -2494,8 +2494,9 @@ diff -urN linux-2.6.16.7/arch/mips/brcm-boards/bcm963xx/board.c linux-2.6.16.7-b
 +                     * state.
 +                     */
 +                    g_monitor_task = current;
-+                    g_orig_fop_poll = g_monitor_file->f_op->poll;
-+                    g_monitor_file->f_op->poll = kerSysMonitorPollHook;
++		    g_orig_fop_poll = kerSysMonitorPollHook;
++                    /*g_orig_fop_poll = g_monitor_file->f_op->poll;
++                    g_monitor_file->f_op->poll = kerSysMonitorPollHook;*/
 +                }
 +            }
 +            break;
@@ -2981,9 +2982,9 @@ diff -urN linux-2.6.16.7/arch/mips/brcm-boards/bcm963xx/board.c linux-2.6.16.7-b
 +EXPORT_SYMBOL(kerSysSetWdTimer);
 +EXPORT_SYMBOL(kerSysWakeupMonitorTask);
 +
-diff -urN linux-2.6.16.7/arch/mips/brcm-boards/bcm963xx/boardparms.c linux-2.6.16.7-brcm63xx/arch/mips/brcm-boards/bcm963xx/boardparms.c
---- linux-2.6.16.7/arch/mips/brcm-boards/bcm963xx/boardparms.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.16.7-brcm63xx/arch/mips/brcm-boards/bcm963xx/boardparms.c	2006-07-07 22:16:11.000000000 +0200
+diff -urN linux-2.6.17/arch/mips/brcm-boards/bcm963xx/boardparms.c linux-2.6.17-brcm63xx/arch/mips/brcm-boards/bcm963xx/boardparms.c
+--- linux-2.6.17/arch/mips/brcm-boards/bcm963xx/boardparms.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-brcm63xx/arch/mips/brcm-boards/bcm963xx/boardparms.c	2006-07-13 19:11:33.000000000 +0200
 @@ -0,0 +1,2391 @@
 +/*
 +<:copyright-gpl 
@@ -5376,9 +5377,9 @@ diff -urN linux-2.6.16.7/arch/mips/brcm-boards/bcm963xx/boardparms.c linux-2.6.1
 +    return( nRet );
 +} /* BpGetVoipChipSelect */
 +
-diff -urN linux-2.6.16.7/arch/mips/brcm-boards/bcm963xx/boardparms.h linux-2.6.16.7-brcm63xx/arch/mips/brcm-boards/bcm963xx/boardparms.h
---- linux-2.6.16.7/arch/mips/brcm-boards/bcm963xx/boardparms.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.16.7-brcm63xx/arch/mips/brcm-boards/bcm963xx/boardparms.h	2006-07-07 22:16:11.000000000 +0200
+diff -urN linux-2.6.17/arch/mips/brcm-boards/bcm963xx/boardparms.h linux-2.6.17-brcm63xx/arch/mips/brcm-boards/bcm963xx/boardparms.h
+--- linux-2.6.17/arch/mips/brcm-boards/bcm963xx/boardparms.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-brcm63xx/arch/mips/brcm-boards/bcm963xx/boardparms.h	2006-07-13 19:11:33.000000000 +0200
 @@ -0,0 +1,766 @@
 +/*
 +<:copyright-gpl 
@@ -6146,9 +6147,9 @@ diff -urN linux-2.6.16.7/arch/mips/brcm-boards/bcm963xx/boardparms.h linux-2.6.1
 +
 +#endif /* _BOARDPARMS_H */
 +
-diff -urN linux-2.6.16.7/arch/mips/brcm-boards/bcm963xx/cfiflash.c linux-2.6.16.7-brcm63xx/arch/mips/brcm-boards/bcm963xx/cfiflash.c
---- linux-2.6.16.7/arch/mips/brcm-boards/bcm963xx/cfiflash.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.16.7-brcm63xx/arch/mips/brcm-boards/bcm963xx/cfiflash.c	2006-07-07 22:17:24.000000000 +0200
+diff -urN linux-2.6.17/arch/mips/brcm-boards/bcm963xx/cfiflash.c linux-2.6.17-brcm63xx/arch/mips/brcm-boards/bcm963xx/cfiflash.c
+--- linux-2.6.17/arch/mips/brcm-boards/bcm963xx/cfiflash.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-brcm63xx/arch/mips/brcm-boards/bcm963xx/cfiflash.c	2006-07-13 19:11:33.000000000 +0200
 @@ -0,0 +1,692 @@
 +/************************************************************************/
 +/*                                                                      */
@@ -6842,9 +6843,9 @@ diff -urN linux-2.6.16.7/arch/mips/brcm-boards/bcm963xx/cfiflash.c linux-2.6.16.
 +    flash_command(FLASH_RESET, 0, 0, 0);
 +    return(1);
 +}
-diff -urN linux-2.6.16.7/arch/mips/brcm-boards/bcm963xx/cfiflash.h linux-2.6.16.7-brcm63xx/arch/mips/brcm-boards/bcm963xx/cfiflash.h
---- linux-2.6.16.7/arch/mips/brcm-boards/bcm963xx/cfiflash.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.16.7-brcm63xx/arch/mips/brcm-boards/bcm963xx/cfiflash.h	2006-07-07 22:17:24.000000000 +0200
+diff -urN linux-2.6.17/arch/mips/brcm-boards/bcm963xx/cfiflash.h linux-2.6.17-brcm63xx/arch/mips/brcm-boards/bcm963xx/cfiflash.h
+--- linux-2.6.17/arch/mips/brcm-boards/bcm963xx/cfiflash.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-brcm63xx/arch/mips/brcm-boards/bcm963xx/cfiflash.h	2006-07-13 19:11:33.000000000 +0200
 @@ -0,0 +1,150 @@
 +/************************************************************************/
 +/*                                                                      */
@@ -6996,10 +6997,10 @@ diff -urN linux-2.6.16.7/arch/mips/brcm-boards/bcm963xx/cfiflash.h linux-2.6.16.
 +#endif
 +
 +#endif
-diff -urN linux-2.6.16.7/arch/mips/brcm-boards/bcm963xx/irq.c linux-2.6.16.7-brcm63xx/arch/mips/brcm-boards/bcm963xx/irq.c
---- linux-2.6.16.7/arch/mips/brcm-boards/bcm963xx/irq.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.16.7-brcm63xx/arch/mips/brcm-boards/bcm963xx/irq.c	2006-07-07 22:15:18.000000000 +0200
-@@ -0,0 +1,274 @@
+diff -urN linux-2.6.17/arch/mips/brcm-boards/bcm963xx/irq.c linux-2.6.17-brcm63xx/arch/mips/brcm-boards/bcm963xx/irq.c
+--- linux-2.6.17/arch/mips/brcm-boards/bcm963xx/irq.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-brcm63xx/arch/mips/brcm-boards/bcm963xx/irq.c	2006-07-14 15:31:35.000000000 +0200
+@@ -0,0 +1,294 @@
 +/*
 +<:copyright-gpl 
 + Copyright 2002 Broadcom Corp. All Rights Reserved. 
@@ -7094,6 +7095,26 @@ diff -urN linux-2.6.16.7/arch/mips/brcm-boards/bcm963xx/irq.c linux-2.6.16.7-brc
 +	else if (cause & CAUSEF_IP6)
 +		irq_dispatch_ext(INTERRUPT_ID_EXTERNAL_3, regs);
 +	cli();
++    }
++}
++
++void plat_irq_dispatch(struct pt_regs *regs)
++{
++    u32 cause;
++    while((cause = (read_c0_cause()& CAUSEF_IP))) {
++        if (cause & CAUSEF_IP7)
++                do_IRQ(MIPS_TIMER_INT, regs);
++        else if (cause & CAUSEF_IP2)
++                irq_dispatch_int(regs);
++        else if (cause & CAUSEF_IP3)
++                irq_dispatch_ext(INTERRUPT_ID_EXTERNAL_0, regs);
++        else if (cause & CAUSEF_IP4)
++                irq_dispatch_ext(INTERRUPT_ID_EXTERNAL_1, regs);
++        else if (cause & CAUSEF_IP5)
++                irq_dispatch_ext(INTERRUPT_ID_EXTERNAL_2, regs);
++        else if (cause & CAUSEF_IP6)
++                irq_dispatch_ext(INTERRUPT_ID_EXTERNAL_3, regs);
++        cli();
 +    }
 +}
 +
@@ -7274,9 +7295,9 @@ diff -urN linux-2.6.16.7/arch/mips/brcm-boards/bcm963xx/irq.c linux-2.6.16.7-brc
 +EXPORT_SYMBOL(request_external_irq);
 +EXPORT_SYMBOL(BcmHalMapInterrupt);
 +
-diff -urN linux-2.6.16.7/arch/mips/brcm-boards/bcm963xx/Kconfig linux-2.6.16.7-brcm63xx/arch/mips/brcm-boards/bcm963xx/Kconfig
---- linux-2.6.16.7/arch/mips/brcm-boards/bcm963xx/Kconfig	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.16.7-brcm63xx/arch/mips/brcm-boards/bcm963xx/Kconfig	2006-07-07 22:15:18.000000000 +0200
+diff -urN linux-2.6.17/arch/mips/brcm-boards/bcm963xx/Kconfig linux-2.6.17-brcm63xx/arch/mips/brcm-boards/bcm963xx/Kconfig
+--- linux-2.6.17/arch/mips/brcm-boards/bcm963xx/Kconfig	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-brcm63xx/arch/mips/brcm-boards/bcm963xx/Kconfig	2006-07-13 19:11:33.000000000 +0200
 @@ -0,0 +1,172 @@
 +# Kernel and Driver configuration for Broadcom Commengine ADSL board
 +choice
@@ -7450,9 +7471,9 @@ diff -urN linux-2.6.16.7/arch/mips/brcm-boards/bcm963xx/Kconfig linux-2.6.16.7-b
 +	default "/opt/bcm96348/targets/96348R/fs" if BCM96348 = y  
 +	help
 +	  This is the path of NFS server (host system)
-diff -urN linux-2.6.16.7/arch/mips/brcm-boards/bcm963xx/Makefile linux-2.6.16.7-brcm63xx/arch/mips/brcm-boards/bcm963xx/Makefile
---- linux-2.6.16.7/arch/mips/brcm-boards/bcm963xx/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.16.7-brcm63xx/arch/mips/brcm-boards/bcm963xx/Makefile	2006-07-07 22:18:20.000000000 +0200
+diff -urN linux-2.6.17/arch/mips/brcm-boards/bcm963xx/Makefile linux-2.6.17-brcm63xx/arch/mips/brcm-boards/bcm963xx/Makefile
+--- linux-2.6.17/arch/mips/brcm-boards/bcm963xx/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-brcm63xx/arch/mips/brcm-boards/bcm963xx/Makefile	2006-07-13 19:11:33.000000000 +0200
 @@ -0,0 +1,23 @@
 +#
 +# Makefile for generic Broadcom MIPS boards
@@ -7477,9 +7498,9 @@ diff -urN linux-2.6.16.7/arch/mips/brcm-boards/bcm963xx/Makefile linux-2.6.16.7-
 +EXTRA_CFLAGS += -DADSL_ANNEXC
 +endif
 +
-diff -urN linux-2.6.16.7/arch/mips/brcm-boards/bcm963xx/prom.c linux-2.6.16.7-brcm63xx/arch/mips/brcm-boards/bcm963xx/prom.c
---- linux-2.6.16.7/arch/mips/brcm-boards/bcm963xx/prom.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.16.7-brcm63xx/arch/mips/brcm-boards/bcm963xx/prom.c	2006-07-07 22:15:18.000000000 +0200
+diff -urN linux-2.6.17/arch/mips/brcm-boards/bcm963xx/prom.c linux-2.6.17-brcm63xx/arch/mips/brcm-boards/bcm963xx/prom.c
+--- linux-2.6.17/arch/mips/brcm-boards/bcm963xx/prom.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-brcm63xx/arch/mips/brcm-boards/bcm963xx/prom.c	2006-07-13 19:11:33.000000000 +0200
 @@ -0,0 +1,236 @@
 +/*
 +<:copyright-gpl 
@@ -7717,9 +7738,9 @@ diff -urN linux-2.6.16.7/arch/mips/brcm-boards/bcm963xx/prom.c linux-2.6.16.7-br
 +}
 +#endif
 +
-diff -urN linux-2.6.16.7/arch/mips/brcm-boards/bcm963xx/ser_init.c linux-2.6.16.7-brcm63xx/arch/mips/brcm-boards/bcm963xx/ser_init.c
---- linux-2.6.16.7/arch/mips/brcm-boards/bcm963xx/ser_init.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.16.7-brcm63xx/arch/mips/brcm-boards/bcm963xx/ser_init.c	2006-07-07 22:15:18.000000000 +0200
+diff -urN linux-2.6.17/arch/mips/brcm-boards/bcm963xx/ser_init.c linux-2.6.17-brcm63xx/arch/mips/brcm-boards/bcm963xx/ser_init.c
+--- linux-2.6.17/arch/mips/brcm-boards/bcm963xx/ser_init.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-brcm63xx/arch/mips/brcm-boards/bcm963xx/ser_init.c	2006-07-13 19:11:33.000000000 +0200
 @@ -0,0 +1,180 @@
 +/*
 +<:copyright-gpl 
@@ -7901,9 +7922,9 @@ diff -urN linux-2.6.16.7/arch/mips/brcm-boards/bcm963xx/ser_init.c linux-2.6.16.
 +	prom_puts(ptr);
 +}
 +#endif
-diff -urN linux-2.6.16.7/arch/mips/brcm-boards/bcm963xx/setup.c linux-2.6.16.7-brcm63xx/arch/mips/brcm-boards/bcm963xx/setup.c
---- linux-2.6.16.7/arch/mips/brcm-boards/bcm963xx/setup.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.16.7-brcm63xx/arch/mips/brcm-boards/bcm963xx/setup.c	2006-07-07 22:15:18.000000000 +0200
+diff -urN linux-2.6.17/arch/mips/brcm-boards/bcm963xx/setup.c linux-2.6.17-brcm63xx/arch/mips/brcm-boards/bcm963xx/setup.c
+--- linux-2.6.17/arch/mips/brcm-boards/bcm963xx/setup.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-brcm63xx/arch/mips/brcm-boards/bcm963xx/setup.c	2006-07-13 19:11:33.000000000 +0200
 @@ -0,0 +1,523 @@
 +/*
 +<:copyright-gpl 
@@ -8428,15 +8449,15 @@ diff -urN linux-2.6.16.7/arch/mips/brcm-boards/bcm963xx/setup.c linux-2.6.16.7-b
 +EXPORT_SYMBOL(_ZdlPv);
 +EXPORT_SYMBOL(_ZdaPv);
 +
-diff -urN linux-2.6.16.7/arch/mips/brcm-boards/bcm963xx/softdsl/AdslCoreDefs.h linux-2.6.16.7-brcm63xx/arch/mips/brcm-boards/bcm963xx/softdsl/AdslCoreDefs.h
---- linux-2.6.16.7/arch/mips/brcm-boards/bcm963xx/softdsl/AdslCoreDefs.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.16.7-brcm63xx/arch/mips/brcm-boards/bcm963xx/softdsl/AdslCoreDefs.h	2006-07-07 22:15:18.000000000 +0200
+diff -urN linux-2.6.17/arch/mips/brcm-boards/bcm963xx/softdsl/AdslCoreDefs.h linux-2.6.17-brcm63xx/arch/mips/brcm-boards/bcm963xx/softdsl/AdslCoreDefs.h
+--- linux-2.6.17/arch/mips/brcm-boards/bcm963xx/softdsl/AdslCoreDefs.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-brcm63xx/arch/mips/brcm-boards/bcm963xx/softdsl/AdslCoreDefs.h	2006-07-13 19:11:33.000000000 +0200
 @@ -0,0 +1,2 @@
 +#define ADSL_SDRAM_IMAGE_SIZE (384*1024)
 +
-diff -urN linux-2.6.16.7/arch/mips/brcm-boards/bcm963xx/time.c linux-2.6.16.7-brcm63xx/arch/mips/brcm-boards/bcm963xx/time.c
---- linux-2.6.16.7/arch/mips/brcm-boards/bcm963xx/time.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.16.7-brcm63xx/arch/mips/brcm-boards/bcm963xx/time.c	2006-07-07 22:15:18.000000000 +0200
+diff -urN linux-2.6.17/arch/mips/brcm-boards/bcm963xx/time.c linux-2.6.17-brcm63xx/arch/mips/brcm-boards/bcm963xx/time.c
+--- linux-2.6.17/arch/mips/brcm-boards/bcm963xx/time.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-brcm63xx/arch/mips/brcm-boards/bcm963xx/time.c	2006-07-13 19:11:33.000000000 +0200
 @@ -0,0 +1,277 @@
 +/*
 +<:copyright-gpl
@@ -8715,9 +8736,9 @@ diff -urN linux-2.6.16.7/arch/mips/brcm-boards/bcm963xx/time.c linux-2.6.16.7-br
 +EXPORT_SYMBOL(do_settimeofday);
 +
 +#endif
-diff -urN linux-2.6.16.7/arch/mips/brcm-boards/generic/dbg_io.c linux-2.6.16.7-brcm63xx/arch/mips/brcm-boards/generic/dbg_io.c
---- linux-2.6.16.7/arch/mips/brcm-boards/generic/dbg_io.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.16.7-brcm63xx/arch/mips/brcm-boards/generic/dbg_io.c	2006-07-07 22:15:18.000000000 +0200
+diff -urN linux-2.6.17/arch/mips/brcm-boards/generic/dbg_io.c linux-2.6.17-brcm63xx/arch/mips/brcm-boards/generic/dbg_io.c
+--- linux-2.6.17/arch/mips/brcm-boards/generic/dbg_io.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-brcm63xx/arch/mips/brcm-boards/generic/dbg_io.c	2006-07-13 19:11:33.000000000 +0200
 @@ -0,0 +1,260 @@
 +/*
 +<:copyright-gpl 
@@ -8979,9 +9000,9 @@ diff -urN linux-2.6.16.7/arch/mips/brcm-boards/generic/dbg_io.c linux-2.6.16.7-b
 +}
 +
 +
-diff -urN linux-2.6.16.7/arch/mips/brcm-boards/generic/int-handler.S linux-2.6.16.7-brcm63xx/arch/mips/brcm-boards/generic/int-handler.S
---- linux-2.6.16.7/arch/mips/brcm-boards/generic/int-handler.S	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.16.7-brcm63xx/arch/mips/brcm-boards/generic/int-handler.S	2006-07-07 22:15:18.000000000 +0200
+diff -urN linux-2.6.17/arch/mips/brcm-boards/generic/int-handler.S linux-2.6.17-brcm63xx/arch/mips/brcm-boards/generic/int-handler.S
+--- linux-2.6.17/arch/mips/brcm-boards/generic/int-handler.S	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-brcm63xx/arch/mips/brcm-boards/generic/int-handler.S	2006-07-13 19:11:33.000000000 +0200
 @@ -0,0 +1,59 @@
 +/*
 +<:copyright-gpl 
@@ -9042,9 +9063,9 @@ diff -urN linux-2.6.16.7/arch/mips/brcm-boards/generic/int-handler.S linux-2.6.1
 +	nop
 +		
 +	END(brcmIRQ)
-diff -urN linux-2.6.16.7/arch/mips/brcm-boards/generic/Makefile linux-2.6.16.7-brcm63xx/arch/mips/brcm-boards/generic/Makefile
---- linux-2.6.16.7/arch/mips/brcm-boards/generic/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.16.7-brcm63xx/arch/mips/brcm-boards/generic/Makefile	2006-07-07 22:15:18.000000000 +0200
+diff -urN linux-2.6.17/arch/mips/brcm-boards/generic/Makefile linux-2.6.17-brcm63xx/arch/mips/brcm-boards/generic/Makefile
+--- linux-2.6.17/arch/mips/brcm-boards/generic/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-brcm63xx/arch/mips/brcm-boards/generic/Makefile	2006-07-13 19:11:33.000000000 +0200
 @@ -0,0 +1,11 @@
 +#
 +# Makefile for generic Broadcom MIPS boards

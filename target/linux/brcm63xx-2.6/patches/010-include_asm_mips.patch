@@ -1,56 +1,50 @@
-diff -Naurp -x mach-bcm963xx linux-2.6.16.7-generic-patched/include/asm-mips/bootinfo.h linux-2.6.16.7-patched/include/asm-mips/bootinfo.h
---- linux-2.6.16.7-generic-patched/include/asm-mips/bootinfo.h	2006-04-17 23:53:25.000000000 +0200
-+++ linux-2.6.16.7-patched/include/asm-mips/bootinfo.h	2006-07-05 15:21:58.000000000 +0200
-@@ -218,6 +218,15 @@
+--- linux-2.6.17/include/asm-mips/bootinfo.h	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17-brcm63xx/include/asm-mips/bootinfo.h	2006-07-13 19:14:01.000000000 +0200
+@@ -218,6 +218,14 @@
  #define MACH_GROUP_TITAN       22	/* PMC-Sierra Titan		*/
  #define  MACH_TITAN_YOSEMITE	1	/* PMC-Sierra Yosemite		*/
  
 +/*
 + * Valid machtype for group BRCM
 + */
-+#define MACH_GROUP_BRCM        23	/* Broadcom boards              */
-+#define MACH_BCM96338		0
-+#define MACH_BCM96345		1
-+#define MACH_BCM96348		2
-+
++#define MACH_GROUP_BRCM        23      /* Broadcom boards              */
++#define MACH_BCM96338          0
++#define MACH_BCM96345          1
++#define MACH_BCM96348          2
 +
  #define CL_SIZE			COMMAND_LINE_SIZE
  
  const char *get_system_type(void);
-diff -Naurp -x mach-bcm963xx linux-2.6.16.7-generic-patched/include/asm-mips/cpu.h linux-2.6.16.7-patched/include/asm-mips/cpu.h
---- linux-2.6.16.7-generic-patched/include/asm-mips/cpu.h	2006-04-17 23:53:25.000000000 +0200
-+++ linux-2.6.16.7-patched/include/asm-mips/cpu.h	2006-07-05 15:21:58.000000000 +0200
-@@ -102,6 +102,15 @@
+--- linux-2.6.17/include/asm-mips/cpu.h	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17-brcm63xx/include/asm-mips/cpu.h	2006-07-13 19:15:17.000000000 +0200
+@@ -103,6 +103,13 @@
+ 
  #define PRID_IMP_SR71000        0x0400
  
- /*
-+ * These are the PRID's for when 23:16 == PRID_COMP_BROADCOM
++/* These are the PRID's for when 23:16 == PRID_COMP_BROADCOM
 + */
 +
-+#define PRID_IMP_BCM6338	0x9000
-+#define PRID_IMP_BCM6345	0x8000
-+#define PRID_IMP_BCM6348	0x9100
++#define PRID_IMP_BCM6338       	0x9000
++#define PRID_IMP_BCM6345       	0x8000
++#define PRID_IMP_BCM6348       	0x9100
 +
-+
-+/*
+ /*
   * Definitions for 7:0 on legacy processors
   */
- 
-@@ -196,7 +205,10 @@
- #define CPU_34K			60
- #define CPU_PR4450		61
+@@ -200,7 +207,10 @@
  #define CPU_SB1A		62
--#define CPU_LAST		62
-+#define CPU_BCM6338		63
-+#define CPU_BCM6345		64
-+#define CPU_BCM6348		65
-+#define CPU_LAST		65
+ #define CPU_74K			63
+ #define CPU_R14000		64
+-#define CPU_LAST		64
++#define CPU_BCM6338             65
++#define CPU_BCM6345             66
++#define CPU_BCM6348             67
++#define CPU_LAST		67
  
  /*
   * ISA Level encodings
-diff -Naurp -x mach-bcm963xx linux-2.6.16.7-generic-patched/include/asm-mips/mach-generic/param.h linux-2.6.16.7-patched/include/asm-mips/mach-generic/param.h
---- linux-2.6.16.7-generic-patched/include/asm-mips/mach-generic/param.h	2006-04-17 23:53:25.000000000 +0200
-+++ linux-2.6.16.7-patched/include/asm-mips/mach-generic/param.h	2006-07-05 15:21:58.000000000 +0200
+--- linux-2.6.17/include/asm-mips/mach-generic/param.h	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17-brcm63xx/include/asm-mips/mach-generic/param.h	2006-07-13 19:17:26.000000000 +0200
 @@ -8,6 +8,6 @@
  #ifndef __ASM_MACH_GENERIC_PARAM_H
  #define __ASM_MACH_GENERIC_PARAM_H
@@ -59,10 +53,9 @@ diff -Naurp -x mach-bcm963xx linux-2.6.16.7-generic-patched/include/asm-mips/mac
 +#define HZ		200		/* Internal kernel timer frequency */
  
  #endif /* __ASM_MACH_GENERIC_PARAM_H */
-diff -Naurp -x mach-bcm963xx linux-2.6.16.7-generic-patched/include/asm-mips/module.h linux-2.6.16.7-patched/include/asm-mips/module.h
---- linux-2.6.16.7-generic-patched/include/asm-mips/module.h	2006-04-17 23:53:25.000000000 +0200
-+++ linux-2.6.16.7-patched/include/asm-mips/module.h	2006-07-05 15:21:58.000000000 +0200
-@@ -113,6 +113,12 @@ search_module_dbetables(unsigned long ad
+--- linux-2.6.17/include/asm-mips/module.h	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17-brcm63xx/include/asm-mips/module.h	2006-07-13 19:18:34.000000000 +0200
+@@ -113,6 +113,12 @@
  #define MODULE_PROC_FAMILY "RM9000 "
  #elif defined CONFIG_CPU_SB1
  #define MODULE_PROC_FAMILY "SB1 "

@@ -1,13 +1,9 @@
-diff -Naurp -x brcm-boards -x pci linux-2.6.16.7-generic-patched/arch/mips/Kconfig linux-2.6.16.7-patched/arch/mips/Kconfig
---- linux-2.6.16.7-generic-patched/arch/mips/Kconfig	2006-04-17 23:53:25.000000000 +0200
-+++ linux-2.6.16.7-patched/arch/mips/Kconfig	2006-07-05 15:21:58.000000000 +0200
-@@ -10,7 +10,16 @@ menu "Machine selection"
- 
- choice
+--- linux-2.6.17/arch/mips/Kconfig	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17-brcm63xx/arch/mips/Kconfig	2006-07-13 19:08:11.000000000 +0200
+@@ -12,6 +12,15 @@
  	prompt "System type"
--	default SGI_IP22
-+	default MIPS_BRCM
-+
+ 	default SGI_IP22
+ 
 +config MIPS_BRCM
 +	bool "Support for the Broadcom boards"
 +	select SYS_SUPPORTS_32BIT_KERNEL
@@ -16,10 +12,11 @@ diff -Naurp -x brcm-boards -x pci linux-2.6.16.7-generic-patched/arch/mips/Kconf
 +	select IRQ_CPU
 +	help
 +	 This is a fmaily of boards based on the Broadcom MIPS32
- 
++
  config MIPS_MTX1
- 	bool "Support for 4G Systems MTX-1 board"
-@@ -777,6 +786,7 @@ config TOSHIBA_RBTX4938
+ 	bool "4G Systems MTX-1 board"
+ 	select DMA_NONCOHERENT
+@@ -780,6 +789,7 @@
  
  endchoice
  
@@ -27,19 +24,9 @@ diff -Naurp -x brcm-boards -x pci linux-2.6.16.7-generic-patched/arch/mips/Kconf
  source "arch/mips/ddb5xxx/Kconfig"
  source "arch/mips/gt64120/ev64120/Kconfig"
  source "arch/mips/jazz/Kconfig"
-@@ -1046,7 +1056,7 @@ menu "CPU selection"
- 
- choice
- 	prompt "CPU type"
--	default CPU_R4X00
-+	default CPU_MIPS32_R1
- 
- config CPU_MIPS32_R1
- 	bool "MIPS32 Release 1"
-diff -Naurp -x brcm-boards -x pci linux-2.6.16.7-generic-patched/arch/mips/Makefile linux-2.6.16.7-patched/arch/mips/Makefile
---- linux-2.6.16.7-generic-patched/arch/mips/Makefile	2006-04-17 23:53:25.000000000 +0200
-+++ linux-2.6.16.7-patched/arch/mips/Makefile	2006-07-05 15:21:58.000000000 +0200
-@@ -279,6 +279,20 @@ libs-$(CONFIG_SIBYTE_CFE)	+= arch/mips/s
+--- linux-2.6.17/arch/mips/Makefile	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17-brcm63xx/arch/mips/Makefile	2006-07-13 18:55:59.000000000 +0200
+@@ -145,6 +145,20 @@
  #
  
  #
@@ -60,78 +47,79 @@ diff -Naurp -x brcm-boards -x pci linux-2.6.16.7-generic-patched/arch/mips/Makef
  # Acer PICA 61, Mips Magnum 4000 and Olivetti M700.
  #
  core-$(CONFIG_MACH_JAZZ)	+= arch/mips/jazz/
-diff -Naurp -x brcm-boards -x pci linux-2.6.16.7-generic-patched/arch/mips/kernel/cpu-probe.c linux-2.6.16.7-patched/arch/mips/kernel/cpu-probe.c
---- linux-2.6.16.7-generic-patched/arch/mips/kernel/cpu-probe.c	2006-04-17 23:53:25.000000000 +0200
-+++ linux-2.6.16.7-patched/arch/mips/kernel/cpu-probe.c	2006-07-05 15:21:58.000000000 +0200
-@@ -558,6 +558,25 @@ static inline void decode_configs(struct
+diff -urN linux-2.6.17/arch/mips/kernel/cpu-probe.c linux-2.6.17-brcm63xx/arch/mips/kernel/cpu-probe.c
+--- linux-2.6.17/arch/mips/kernel/cpu-probe.c	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17-brcm63xx/arch/mips/kernel/cpu-probe.c	2006-07-13 18:59:04.000000000 +0200
+@@ -568,6 +568,25 @@
  		return;
  }
  
 +static inline void cpu_probe_broadcom(struct cpuinfo_mips *c)
 +{
-+	decode_configs(c);
-+	switch (c->processor_id & 0xff00) {
-+	case PRID_IMP_BCM6338:          
-+		c->cputype = CPU_BCM6338;
-+		break;
-+	case PRID_IMP_BCM6345:
-+		c->cputype = CPU_BCM6345;
-+		break;
-+	case PRID_IMP_BCM6348:
-+		c->cputype = CPU_BCM6348;
-+		break;
-+	default:
-+		c->cputype = CPU_UNKNOWN;
-+		break;
-+	}
++       decode_configs(c);
++       switch (c->processor_id & 0xff00) {
++       case PRID_IMP_BCM6338:
++               c->cputype = CPU_BCM6338;
++               break;
++       case PRID_IMP_BCM6345:
++               c->cputype = CPU_BCM6345;
++               break;
++       case PRID_IMP_BCM6348:
++               c->cputype = CPU_BCM6348;
++               break;
++       default:
++               c->cputype = CPU_UNKNOWN;
++               break;
++       }
 +}
 +
  static inline void cpu_probe_mips(struct cpuinfo_mips *c)
  {
  	decode_configs(c);
-@@ -691,6 +710,9 @@ __init void cpu_probe(void)
+@@ -704,6 +723,9 @@
  	case PRID_COMP_LEGACY:
  		cpu_probe_legacy(c);
  		break;
-+	case PRID_COMP_BROADCOM:
-+		cpu_probe_broadcom(c);
-+		break;
++        case PRID_COMP_BROADCOM:
++                cpu_probe_broadcom(c);
++                break;
  	case PRID_COMP_MIPS:
  		cpu_probe_mips(c);
  		break;
-diff -Naurp -x brcm-boards -x pci linux-2.6.16.7-generic-patched/arch/mips/kernel/proc.c linux-2.6.16.7-patched/arch/mips/kernel/proc.c
---- linux-2.6.16.7-generic-patched/arch/mips/kernel/proc.c	2006-04-17 23:53:25.000000000 +0200
-+++ linux-2.6.16.7-patched/arch/mips/kernel/proc.c	2006-07-05 15:21:58.000000000 +0200
-@@ -81,6 +81,9 @@ static const char *cpu_name[] = {
- 	[CPU_VR4133]	= "NEC VR4133",
- 	[CPU_VR4181]	= "NEC VR4181",
+diff -urN linux-2.6.17/arch/mips/kernel/proc.c linux-2.6.17-brcm63xx/arch/mips/kernel/proc.c
+--- linux-2.6.17/arch/mips/kernel/proc.c	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17-brcm63xx/arch/mips/kernel/proc.c	2006-07-13 19:00:53.000000000 +0200
+@@ -85,6 +85,9 @@
  	[CPU_VR4181A]	= "NEC VR4181A",
+ 	[CPU_SR71000]	= "Sandcraft SR71000",
+ 	[CPU_PR4450]	= "Philips PR4450",
 +	[CPU_BCM6338]   = "BCM6338",
 +	[CPU_BCM6345]   = "BCM6345",
 +	[CPU_BCM6348]   = "BCM6348",
- 	[CPU_SR71000]	= "Sandcraft SR71000",
- 	[CPU_PR4450]	= "Philips PR4450",
  };
-diff -Naurp -x brcm-boards -x pci linux-2.6.16.7-generic-patched/arch/mips/mm/c-r4k.c linux-2.6.16.7-patched/arch/mips/mm/c-r4k.c
---- linux-2.6.16.7-generic-patched/arch/mips/mm/c-r4k.c	2006-04-17 23:53:25.000000000 +0200
-+++ linux-2.6.16.7-patched/arch/mips/mm/c-r4k.c	2006-07-05 15:21:58.000000000 +0200
-@@ -889,6 +889,12 @@ static void __init probe_pcache(void)
+ 
+ 
+diff -urN linux-2.6.17/arch/mips/mm/c-r4k.c linux-2.6.17-brcm63xx/arch/mips/mm/c-r4k.c
+--- linux-2.6.17/arch/mips/mm/c-r4k.c	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17-brcm63xx/arch/mips/mm/c-r4k.c	2006-07-13 19:03:23.000000000 +0200
+@@ -914,6 +914,13 @@
  		if (!(config & MIPS_CONF_M))
  			panic("Don't know how to probe P-caches on this cpu.");
  
-+        	if (c->cputype == CPU_BCM6338 || c->cputype == CPU_BCM6345 || c->cputype == CPU_BCM6348){
++		if (c->cputype == CPU_BCM6338 || c->cputype == CPU_BCM6345 || c->cputype == CPU_BCM6348)
++		{
 +			printk("brcm mips: enabling icache and dcache...\n");
-+        	        /* Enable caches */
-+        	        write_c0_diag(read_c0_diag() | 0xC0000000);
-+        	}
++			/* Enable caches */
++			write_c0_diag(read_c0_diag() | 0xC0000000);
++		}
 +
  		/*
  		 * So we seem to be a MIPS32 or MIPS64 CPU
  		 * So let's probe the I-cache ...
-diff -Naurp -x brcm-boards -x pci linux-2.6.16.7-generic-patched/arch/mips/mm/tlbex.c linux-2.6.16.7-patched/arch/mips/mm/tlbex.c
---- linux-2.6.16.7-generic-patched/arch/mips/mm/tlbex.c	2006-04-17 23:53:25.000000000 +0200
-+++ linux-2.6.16.7-patched/arch/mips/mm/tlbex.c	2006-07-05 15:21:58.000000000 +0200
-@@ -858,6 +858,9 @@ static __init void build_tlb_write_entry
+diff -urN linux-2.6.17/arch/mips/mm/tlbex.c linux-2.6.17-brcm63xx/arch/mips/mm/tlbex.c
+--- linux-2.6.17/arch/mips/mm/tlbex.c	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17-brcm63xx/arch/mips/mm/tlbex.c	2006-07-13 19:03:57.000000000 +0200
+@@ -882,6 +882,9 @@
  	case CPU_4KSC:
  	case CPU_20KC:
  	case CPU_25KF:
