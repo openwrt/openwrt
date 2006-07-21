@@ -9,13 +9,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dnsmasq
-PKG_VERSION:=2.27
+PKG_VERSION:=2.32
 PKG_RELEASE:=1
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://thekelleys.org.uk/dnsmasq
-PKG_MD5SUM:=489198ec87101087043adc98bbe062dc
+PKG_MD5SUM:=d1f593a8352db1d6ad3dccc9b775295d
 PKG_CAT:=zcat
 
 include $(INCLUDE_DIR)/package.mk
