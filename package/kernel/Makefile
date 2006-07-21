@@ -30,7 +30,7 @@ endef
 
 define KernelPackage/Defaults
 FILES:=
-KCONFIG:=
+KCONFIG:=m
 AUTOLOAD:=
 endef
 
@@ -67,8 +67,11 @@ define KernelPackage
     TITLE:=$(TITLE)
     SECTION:=kernel
     CATEGORY:=Kernel modules
+    DEFAULT:=m
     DESCRIPTION:=$(DESCRIPTION)
     EXTRA_DEPENDS:='kernel (=$(PKG_VERSION))'
+    $(call KernelPackage/$(1))
+    $(call KernelPackage/$(1)/$(KERNEL))
   endef
 
   define Package/kmod-$(1)/install
