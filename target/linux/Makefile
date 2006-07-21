@@ -7,8 +7,8 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/target.mk
 
-source:
-	$(MAKE) -C $(BOARD)-$(KERNEL) source
+download:
+	$(MAKE) -C $(BOARD)-$(KERNEL) download
 
 prepare:
 	rm -f $(TOPDIR)/.kernel.mk

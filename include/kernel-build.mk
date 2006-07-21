@@ -106,7 +106,7 @@ pkg-install: FORCE
 		$(IPKG) install $$pkg || echo; \
 	done
 
-source: $(DL_DIR)/$(LINUX_SOURCE)
+download: $(DL_DIR)/$(LINUX_SOURCE)
 prepare: $(LINUX_DIR)/.configured
 	@mkdir -p $(LINUX_DIR) $(PACKAGE_DIR)
 
