@@ -64,7 +64,7 @@ endef
 
 		
 ifneq ($(strip $(PKG_SOURCE)),)
-  source: $(DL_DIR)/$(PKG_SOURCE)
+  download: $(DL_DIR)/$(PKG_SOURCE)
 
   $(DL_DIR)/$(PKG_SOURCE):
 	mkdir -p $(DL_DIR)
@@ -101,7 +101,7 @@ define HostBuild
 	$(call Build/Uninstall)
 	rm -f $(STAGING_DIR)/stampfiles/.host_$(PKG_NAME)-installed
 
-  source:
+  download:
   prepare: $(PKG_BUILD_DIR)/.prepared
   configure: $(PKG_BUILD_DIR)/.configured
 

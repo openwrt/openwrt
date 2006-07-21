@@ -87,7 +87,7 @@ compile-targets:
 install-targets:
 clean-targets:
 
-source:
+download:
 prepare:
 compile: compile-targets
 install: compile install-targets

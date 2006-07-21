@@ -66,7 +66,7 @@ menuconfig: ./scripts/config/mconf FORCE
 	$< Config.in
 
 config-clean: FORCE
-	$(MAKE) -C scripts/config clean
+	$(NO_TRACE_MAKE) -C scripts/config clean
 
 package/%: .pkginfo FORCE
 	$(MAKE) -C package $(patsubst package/%,%,$@)

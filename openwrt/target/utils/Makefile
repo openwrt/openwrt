@@ -10,7 +10,7 @@ TARGETS := addpattern trx motorola-bin dgfirmware
 
 UTILS_BUILD_DIR:=$(BUILD_DIR)/target-utils
 
-source:
+download:
 prepare: $(UTILS_BUILD_DIR)
 compile: prepare $(patsubst %,$(UTILS_BUILD_DIR)/%,$(TARGETS)) FORCE
 	mkdir -p $(STAGING_DIR)/bin

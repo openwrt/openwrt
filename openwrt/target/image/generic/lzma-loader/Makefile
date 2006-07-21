@@ -33,7 +33,7 @@ $(PKG_BUILD_DIR)/vmlinux.lzma: $(KDIR)/vmlinux.lzma
 $(KDIR)/loader.elf: $(PKG_BUILD_DIR)/lzma.elf
 	$(CP) $< $@
 
-source: 
+download: 
 prepare: $(PKG_BUILD_DIR)/.prepared
 compile: $(KDIR)/loader.elf
 install:

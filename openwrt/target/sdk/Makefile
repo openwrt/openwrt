@@ -38,7 +38,7 @@ $(BIN_DIR)/$(SDK_NAME).tar.bz2:
 		tar cfj $@ $(SDK_NAME); \
 	)
 
-source:
+download:
 prepare:
 compile: $(BIN_DIR)/$(SDK_NAME).tar.bz2
 install:

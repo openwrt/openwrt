@@ -46,7 +46,7 @@ $(LINUX_DIR)/.patched: $(LINUX_DIR)/.unpacked
 # ATM firmware for the DSL modem
 ###############################################
 
-DOWNLOAD_SITE=http://openwrt.org/downloads/sources
+DOWNLOAD_SITE=http://openwrt.org/downloads/downloads
 # extracted from netgear DG834B V1.0.5 GPL release
 ATM_FIRMWARE_FILE=$(ATM_FIRMWARE_DIR).tar.gz
 ATM_FIRMWARE_MD5SUM=8bfcb31109796502d66b11baaeb2fba6
@@ -54,7 +54,7 @@ ATM_FIRMWARE_MD5SUM=8bfcb31109796502d66b11baaeb2fba6
 $(DL_DIR)/$(ATM_FIRMWARE_FILE):
 	$(SCRIPT_DIR)/download.pl $(DL_DIR) $(ATM_FIRMWARE_FILE) $(ATM_FIRMWARE_MD5SUM) $(DOWNLOAD_SITE)
 
-source: $(DL_DIR)/$(ATM_FIRMWARE_FILE)
+download: $(DL_DIR)/$(ATM_FIRMWARE_FILE)
 $(LINUX_DIR)/.unpacked: $(DL_DIR)/$(ATM_FIRMWARE_FILE)
 $(LINUX_DIR)/.depend_done: $(LINUX_DIR)/.drivers-unpacked
 $(LINUX_DIR)/.modules_done: $(LINUX_DIR)/.drivers-unpacked
