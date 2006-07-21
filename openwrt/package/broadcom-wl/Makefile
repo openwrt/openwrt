@@ -28,6 +28,7 @@ define Package/kmod-brcm-wl
   DEPENDS:=@LINUX_2_4_BRCM
   DEFAULT:=y
   SUBMENU:=Proprietary BCM43xx WiFi driver
+  SUBMENUDEP:=@LINUX_2_4_BRCM
   TITLE:=Kernel driver (normal version)
   DESCRIPTION:=Proprietary Wireless driver for the Broadcom BCM43xx chipset
   VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(PKG_RELEASE)
