@@ -15,6 +15,17 @@ my %category;
 my $cur_menu;
 my $cur_menu_dep;
 
+sub close_submenu {
+	if ($cur_menu) {
+		print "endmenu\n";
+		$cur_menu_dep and do {
+			print "endif\n";
+			$cur_menu_dep = undef;
+		};
+		undef $cur_menu;
+	} 
+}
+
 sub print_category($) {
 	my $cat = shift;
 	
@@ -25,14 +36,7 @@ sub print_category($) {
 	foreach my $spkg (sort {uc($a) cmp uc($b)} keys %spkg) {
 		foreach my $pkg (@{$spkg{$spkg}}) {
 			if ($cur_menu ne $pkg->{submenu}) {
-				if ($cur_menu) {
-					print "endmenu\n";
-					$cur_menu_dep and do {
-						print "endif\n";
-						$cur_menu_dep = undef;
-					};
-					undef $cur_menu;
-				} 
+				close_submenu();
 				if ($pkg->{submenu}) {
 					$cur_menu = $pkg->{submenu};
 					$cur_menu_dep = $pkg->{submenudep} and print "if $cur_menu_dep\n";
@@ -66,6 +70,7 @@ sub print_category($) {
 			$pkg->{config} and print $pkg->{config}."\n";
 		}
 	}
+	close_submenu();
 	print "endmenu\n\n";
 	
 	undef $category{$cat};
