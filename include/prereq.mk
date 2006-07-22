@@ -29,7 +29,7 @@ define Require
 
     prereq-$(1): $(TMP_DIR) FORCE
 		echo -n "Checking '$(1)'... "
-		if $(NO_TRACE_MAKE) -f $(INCLUDE_DIR)/prereq.mk check-$(1) >/dev/null 2>/dev/null; then \
+		if $(MAKE) -f $(INCLUDE_DIR)/prereq.mk check-$(1) >/dev/null 2>/dev/null; then \
 			echo 'ok.'; \
 		else \
 			echo 'failed.'; \
@@ -59,7 +59,7 @@ define Require/working-make
 	echo 'e0 = $$$$(foreach s,foobar,$$$$(eval $$$$s:))' >> $(TMP_DIR)/check.mk
 	echo 'e1 = $$$$(foreach s,foobar, $$$$(eval $$$$s:))' >> $(TMP_DIR)/check.mk
 	echo 'test: $$$$(strip $$$$(e0)) $$$$(strip $$$$(e1))' >> $(TMP_DIR)/check.mk
-	$(NO_TRACE_MAKE) -f $(TMP_DIR)/check.mk
+	$(MAKE) -f $(TMP_DIR)/check.mk
 endef
 
 $(eval $(call Require,working-make, \
