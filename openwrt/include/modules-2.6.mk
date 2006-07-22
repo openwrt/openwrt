@@ -19,11 +19,6 @@ $(eval $(call KMOD_template,GRE,gre,\
 	$(MODULES_DIR)/kernel/net/ipv4/ip_gre.ko \
 ,CONFIG_NET_IPGRE))
 
-$(eval $(call KMOD_template,IMQ,imq,\
-	$(MODULES_DIR)/kernel/net/ipv4/netfilter/*IMQ*.ko \
-	$(MODULES_DIR)/kernel/drivers/net/imq.ko \
-,CONFIG_IMQ))
-
 $(eval $(call KMOD_template,IPIP,ipip,\
 	$(MODULES_DIR)/kernel/net/ipv4/ipip.ko \
 ,CONFIG_NET_IPIP,,60,ipip))
@@ -59,62 +54,6 @@ $(eval $(call KMOD_template,SCHED,sched,\
 $(eval $(call KMOD_template,TUN,tun,\
 	$(MODULES_DIR)/kernel/drivers/net/tun.ko \
 ,CONFIG_TUN,,20,tun))
-
-
-# Filtering / Firewalling
-
-$(eval $(call KMOD_template,ARPTABLES,arptables,\
-	$(MODULES_DIR)/kernel/net/ipv4/netfilter/arp*.ko \
-,CONFIG_IP_NF_ARPTABLES))
-
-$(eval $(call KMOD_template,EBTABLES,ebtables,\
-	$(MODULES_DIR)/kernel/net/bridge/netfilter/*.ko \
-,CONFIG_BRIDGE_NF_EBTABLES))
-
-# metapackage for compatibility ...
-$(eval $(call KMOD_template,IPTABLES_EXTRA,iptables-extra,\
-,,kmod-ipt-conntrack kmod-ipt-extra kmod-ipt-filter kmod-ipt-ipopt kmod-ipt-ipsec kmod-ipt-nat kmod-ipt-nat-extra kmod-ipt-queue kmod-ipt-ulogd))
-
-$(eval $(call KMOD_template,IPT_CONNTRACK,ipt-conntrack,\
-	$(foreach mod,$(IPT_CONNTRACK-m),$(MODULES_DIR)/kernel/net/$(mod).ko) \
-))
-
-$(eval $(call KMOD_template,IPT_EXTRA,ipt-extra,\
-	$(foreach mod,$(IPT_EXTRA-m),$(MODULES_DIR)/kernel/net/$(mod).ko) \
-))
-
-$(eval $(call KMOD_template,IPT_FILTER,ipt-filter,\
-	$(foreach mod,$(IPT_FILTER-m),$(MODULES_DIR)/kernel/net/$(mod).ko) \
-))
-
-$(eval $(call KMOD_template,IPT_IPOPT,ipt-ipopt,\
-	$(foreach mod,$(IPT_IPOPT-m),$(MODULES_DIR)/kernel/net/$(mod).ko) \
-))
-
-$(eval $(call KMOD_template,IPT_IPSEC,ipt-ipsec,\
-	$(foreach mod,$(IPT_IPSEC-m),$(MODULES_DIR)/kernel/net/$(mod).ko) \
-))
-
-$(eval $(call KMOD_template,IPT_NAT,ipt-nat,\
-	$(foreach mod,$(IPT_NAT-m),$(MODULES_DIR)/kernel/net/$(mod).ko) \
-))
-
-$(eval $(call KMOD_template,IPT_NAT_EXTRA,ipt-nat-extra,\
-	$(foreach mod,$(IPT_NAT_EXTRA-m),$(MODULES_DIR)/kernel/net/$(mod).ko) \
-,,,40,$(IPT_NAT_EXTRA-m)))
-
-$(eval $(call KMOD_template,IPT_QUEUE,ipt-queue,\
-	$(foreach mod,$(IPT_QUEUE-m),$(MODULES_DIR)/kernel/net/$(mod).ko) \
-))
-
-$(eval $(call KMOD_template,IPT_ULOG,ipt-ulog,\
-	$(foreach mod,$(IPT_ULOG-m),$(MODULES_DIR)/kernel/net/$(mod).ko) \
-))
-
-$(eval $(call KMOD_template,IP6TABLES,ip6tables,\
-	$(MODULES_DIR)/kernel/net/ipv6/netfilter/ip*.ko \
-,CONFIG_IP6_NF_IPTABLES,kmod-ipv6))
-
 
 # Block devices
 
