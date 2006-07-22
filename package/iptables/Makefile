@@ -49,7 +49,7 @@ endef
 define Package/iptables-mod-conntrack
 SECTION:=net
 CATEGORY:=Base system
-DEPENDS:=iptables
+DEPENDS:=iptables +kmod-ipt-conntrack
 TITLE:=connection tracking modules
 DESCRIPTION:=iptables extensions for connection tracking \\\
 Includes: \\\
@@ -61,7 +61,7 @@ endef
 define Package/iptables-mod-filter
 SECTION:=net
 CATEGORY:=Base system
-DEPENDS:=iptables
+DEPENDS:=iptables +kmod-ipt-filter
 TITLE:=filter modules
 DESCRIPTION:=iptables extensions for packet content inspection\\\
 Includes: \\\
@@ -73,7 +73,7 @@ define Package/iptables-mod-imq
 SECTION:=net
 CATEGORY:=Base system
 DEPENDS:=iptables
-TITLE:=IMQ support
+TITLE:=IMQ support +kmod-imq
 DESCRIPTION:=iptables extension for IMQ support\\\
 Includes: \\\
 	* libipt_IMQ
@@ -82,7 +82,7 @@ endef
 define Package/iptables-mod-ipopt
 SECTION:=net
 CATEGORY:=Base system
-DEPENDS:=iptables
+DEPENDS:=iptables +kmod-ipt-ipopt
 TITLE:=IP/Packet option modules
 DESCRIPTION:=iptables extensions for matching/changing IP packet options\\\
 Includes: \\\
@@ -99,7 +99,7 @@ endef
 define Package/iptables-mod-ipsec
 SECTION:=net
 CATEGORY:=Base system
-DEPENDS:=iptables
+DEPENDS:=iptables +kmod-ipt-ipsec
 TITLE:=IPSec extensions
 DESCRIPTION:=iptables extensions for matching ipsec traffic\\\
 Includes: \\\
@@ -110,7 +110,7 @@ endef
 define Package/iptables-mod-nat
 SECTION:=net
 CATEGORY:=Base system
-DEPENDS:=iptables
+DEPENDS:=iptables +kmod-ipt-nat
 TITLE:=extra NAT targets
 DESCRIPTION:=iptables extensions for different NAT targets\\\
 Includes: \\\
@@ -120,7 +120,7 @@ endef
 define Package/iptables-mod-ulog
 SECTION:=net
 CATEGORY:=Base system
-DEPENDS:=iptables
+DEPENDS:=iptables +kmod-ipt-ulog
 TITLE:=user-space packet logging
 DESCRIPTION:=iptables extensions for user-space packet logging\\\
 Includes: \\\
@@ -130,7 +130,7 @@ endef
 define Package/iptables-mod-extra
 SECTION:=net
 CATEGORY:=Base system
-DEPENDS:=iptables
+DEPENDS:=iptables +kmod-ipt-extra
 TITLE:=other extra iptables extensions
 DESCRIPTION:=other extra iptables extensions\\\
 Includes: \\\
