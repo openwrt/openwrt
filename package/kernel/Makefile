@@ -60,10 +60,6 @@ define KernelPackage
   $(eval $(call KernelPackage/$(1)))
   $(eval $(call KernelPackage/$(1)/$(KERNEL)))
 
-  ifneq ($(findstring m,$(KCONFIG)),m)
-    CONFIG_PACKAGE_kmod-$(1):=
-  endif
-
   define Package/kmod-$(1)
     TITLE:=$(TITLE)
     SECTION:=kernel
@@ -75,11 +71,13 @@ define KernelPackage
     $(call KernelPackage/$(1)/$(KERNEL))
   endef
 
-  define Package/kmod-$(1)/install
-	mkdir -p $$(1)/lib/modules/$(LINUX_VERSION)
-	$(CP) $(FILES) $$(1)/lib/modules/$(LINUX_VERSION)/
-	$(call ModuleAutoLoad,$(1),$$(1),$(AUTOLOAD))
-  endef
+  ifeq ($(findstring m,$(KCONFIG)),m)
+    define Package/kmod-$(1)/install
+		mkdir -p $$(1)/lib/modules/$(LINUX_VERSION)
+		$(CP) $$(FILES) $$(1)/lib/modules/$(LINUX_VERSION)/
+		$(call ModuleAutoLoad,$(1),$$(1),$(AUTOLOAD))
+    endef
+  endif
   $$(eval $$(call BuildPackage,kmod-$(1)))
 endef
 

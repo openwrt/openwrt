@@ -152,13 +152,11 @@ $(eval $(call KernelPackage,ipt-nathelper))
 define KernelPackage/ipt-imq
 TITLE:=Intermediate Queueing support
 DESCRIPTION:=Kernel support for Intermediate Queueing devices
-KCONFIG:=$(CONFIG_IMQ)
+KCONFIG:=$(CONFIG_IP_NF_TARGET_IMQ)
 SUBMENU:=$(NFMENU)
-FILES:= \
-	$(MODULES_DIR)/kernel/net/ipv4/netfilter/*IMQ*.$(LINUX_KMOD_SUFFIX) \
-	$(MODULES_DIR)/kernel/drivers/net/imq.$(LINUX_KMOD_SUFFIX)
+FILES:=$(MODULES_DIR)/kernel/net/ipv4/netfilter/*IMQ*.$(LINUX_KMOD_SUFFIX) $(MODULES_DIR)/kernel/drivers/net/imq.$(LINUX_KMOD_SUFFIX)
 endef
-$(eval $(call KernelPackage,imq))
+$(eval $(call KernelPackage,ipt-imq))
 
 
 define KernelPackage/ipt-queue
