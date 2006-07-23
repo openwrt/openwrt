@@ -84,6 +84,16 @@ $(eval $(call Require,working-g++, \
 	No working GNU C++ Compiler (g++) was found on your system. \
 ))
 
+define Require/ncurses
+	echo 'int main(int argc, char **argv) { initscr(); return 0; }' | \
+		gcc -include ncurses.h -x c -o $(TMP_DIR)/a.out -lncurses -
+endef
+
+$(eval $(call Require,ncurses, \
+	No ncurses development files were not found on your system. \
+))
+
+
 define Require/zlib
 	echo 'int main(int argc, char **argv) { gzdopen(0, "rb"); return 0; }' | \
 		gcc -include zlib.h -x c -o $(TMP_DIR)/a.out -lz -
