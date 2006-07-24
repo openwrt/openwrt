@@ -96,7 +96,7 @@ define wl_template
 	install -d -m0755 $(1)/etc/modules.d
 	echo "wl$(2)" > $(1)/etc/modules.d/20-wl$(2)
 	install -d -m0755 $(1)/lib/modules/$(LINUX_VERSION)
-	install -m0644 $(PKG_BUILD_DIR)/kmod/wl$(2).o $(1)/lib/modules/$(LINUX_VERSION)/
+	install -m0644 $(PKG_BUILD_DIR)/kmod/wl$(2).o $(PKG_BUILD_DIR)/kmod/wl$(2).o.patch $(1)/lib/modules/$(LINUX_VERSION)/
 endef
 
 define Package/kmod-brcm-wl/install
