@@ -128,7 +128,7 @@ static int ptable_init(void)
 	if (ptable[0] == PTABLE_MAGIC)
 		return 0;
 	
-	glob("/lib/modules/2.4.*/wl.o", 0, NULL, &globbuf);
+	glob("/lib/modules/2.4.*/wl.o.patch", 0, NULL, &globbuf);
 	
 	if (globbuf.gl_pathv[0] == NULL)
 		return -1;
@@ -139,13 +139,8 @@ static int ptable_init(void)
 	if (fstat(fd, &statbuf) < 0)
 		goto failed;
 
-	if (statbuf.st_size <= 512)
+	if (statbuf.st_size < 512)
 		goto failed;
-	
-	if (lseek(fd, statbuf.st_size - 512, SEEK_SET) < 0) {
-		perror("lseek");
-		goto failed;
-	}
 
 	if (read(fd, ptable, 512) < 512)
 		goto failed;
