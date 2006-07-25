@@ -197,6 +197,7 @@ define KernelPackage/ip6tables
 TITLE:=IPv6 modules
 DESCRIPTION:=Netfilter IPv6 firewalling support
 SUBMENU:=$(NFMENU)
+KCONFIG:=$(CONFIG_IP6_NF_IPTABLES)
 FILES:=$(MODULES_DIR)/kernel/net/ipv6/netfilter/ip*.$(LINUX_KMOD_SUFFIX)
 endef
 $(eval $(call KernelPackage,ip6tables))
