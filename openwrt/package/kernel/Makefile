@@ -72,11 +72,13 @@ define KernelPackage
   endef
 
   ifeq ($(findstring m,$(KCONFIG)),m)
+  ifneq ($(strip $(FILES)),)
     define Package/kmod-$(1)/install
 		mkdir -p $$(1)/lib/modules/$(LINUX_VERSION)
 		$(CP) $$(FILES) $$(1)/lib/modules/$(LINUX_VERSION)/
 		$(call ModuleAutoLoad,$(1),$$(1),$(AUTOLOAD))
     endef
+  endif
   endif
   $$(eval $$(call BuildPackage,kmod-$(1)))
 endef
