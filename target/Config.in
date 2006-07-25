@@ -13,6 +13,7 @@ config LINUX_2_6_ARUBA
 
 config LINUX_2_4_AR531X
 	bool "Atheros AR531x [2.4]"
+	depends BROKEN
 	select mips
 	select LINUX_2_4
 	select BIG_ENDIAN
@@ -104,55 +105,65 @@ if DEVEL
 
 config LINUX_2_6_ARM
 	bool "UNSUPPORTED little-endian arm platform"
+	depends BROKEN
 	select LINUX_2_6
 	select arm
 
 config LINUX_2_6_ARMEB
 	bool "UNSUPPORTED big-endian arm platform"
+	depends BROKEN
 	select LINUX_2_6
 	select BIG_ENDIAN
 	select armeb
 
 config LINUX_2_6_CRIS
 	bool "UNSUPPORTED cris platform"
+	depends BROKEN
 	select LINUX_2_6
 	select cris
 
 config LINUX_2_6_M68K
 	bool "UNSUPPORTED m68k platform"
+	depends BROKEN
 	select LINUX_2_6
 	select m68k
 
 config LINUX_2_6_PPC
 	bool "UNSUPPORTED powerpc platform"
+	depends BROKEN
 	select LINUX_2_6
 	select BIG_ENDIAN
 	select powerpc
 
 config LINUX_2_6_SH3
 	bool "UNSUPPORTED little-endian sh3 platform"
+	depends BROKEN
 	select LINUX_2_6
 	select sh3
 
 config LINUX_2_6_SH3EB
 	bool "UNSUPPORTED big-endian sh3 platform"
+	depends BROKEN
 	select LINUX_2_6
 	select BIG_ENDIAN
 	select sh3eb
 
 config LINUX_2_6_SH4
 	bool "UNSUPPORTED little-endian sh4 platform"
+	depends BROKEN
 	select LINUX_2_6
 	select sh4
 
 config LINUX_2_6_SH4EB
 	bool "UNSUPPORTED big-endian sh4 platform"
+	depends BROKEN
 	select LINUX_2_6
 	select BIG_ENDIAN
 	select sh4eb
 
 config LINUX_2_6_SPARC
 	bool "UNSUPPORTED sparc platform"
+	depends BROKEN
 	select LINUX_2_6
 	select BIG_ENDIAN
 	select sparc
