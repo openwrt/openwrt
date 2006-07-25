@@ -153,7 +153,6 @@ define Package/base-files$(TARGET)/install
 	mkdir -p $(1)/usr/bin
 	mkdir -p $(1)/sys
 	mkdir -p $(1)/www
-	ln -sf /tmp/resolv.conf $(1)/etc/resolv.conf
 	ln -sf /proc/mounts $(1)/etc/mtab
 	rm -f $(1)/var
 	ln -sf /tmp $(1)/var
