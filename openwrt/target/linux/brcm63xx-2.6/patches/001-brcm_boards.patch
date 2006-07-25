@@ -1365,8 +1365,8 @@ diff -urN linux-2.6.17/arch/mips/brcm-boards/bcm963xx/bcm63xx_led.c linux-2.6.17
 +
 diff -urN linux-2.6.17/arch/mips/brcm-boards/bcm963xx/board.c linux-2.6.17-brcm63xx/arch/mips/brcm-boards/bcm963xx/board.c
 --- linux-2.6.17/arch/mips/brcm-boards/bcm963xx/board.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.17-brcm63xx/arch/mips/brcm-boards/bcm963xx/board.c	2006-07-14 15:39:56.000000000 +0200
-@@ -0,0 +1,1615 @@
++++ linux-2.6.17-brcm63xx/arch/mips/brcm-boards/bcm963xx/board.c	2006-07-25 10:59:34.000000000 +0200
+@@ -0,0 +1,1619 @@
 +/*
 +<:copyright-gpl 
 + Copyright 2002 Broadcom Corp. All Rights Reserved. 
@@ -1413,6 +1413,7 @@ diff -urN linux-2.6.17/arch/mips/brcm-boards/bcm963xx/board.c linux-2.6.17-brcm6
 +#include <linux/sched.h>
 +#include <linux/list.h>
 +#include <linux/if.h>
++#include <linux/spinlock.h>
 +
 +#include <bcm_map_part.h>
 +#include <board.h>
@@ -1422,6 +1423,8 @@ diff -urN linux-2.6.17/arch/mips/brcm-boards/bcm963xx/board.c linux-2.6.17-brcm6
 +#include "bcm_intr.h"
 +#include "board.h"
 +#include "bcm_map_part.h"
++
++static DEFINE_SPINLOCK(board_lock);
 +
 +/* Typedefs. */
 +#if defined (NON_CONSECUTIVE_MAC)
@@ -1827,8 +1830,9 @@ diff -urN linux-2.6.17/arch/mips/brcm-boards/bcm963xx/board.c linux-2.6.17-brcm6
 +        int i;
 +
 +        /* Disable interrupts. */
-+        cli();
-+
++        //cli();
++	spin_lock_irq(&board_lock);
++	
 +        /* Reset all blocks. */
 +        PERF->BlockSoftReset &= ~BSR_ALL_BLOCKS;
 +        for( i = 0; i < 1000000; i++ )
@@ -5379,8 +5383,8 @@ diff -urN linux-2.6.17/arch/mips/brcm-boards/bcm963xx/boardparms.c linux-2.6.17-
 +
 diff -urN linux-2.6.17/arch/mips/brcm-boards/bcm963xx/boardparms.h linux-2.6.17-brcm63xx/arch/mips/brcm-boards/bcm963xx/boardparms.h
 --- linux-2.6.17/arch/mips/brcm-boards/bcm963xx/boardparms.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.17-brcm63xx/arch/mips/brcm-boards/bcm963xx/boardparms.h	2006-07-13 19:11:33.000000000 +0200
-@@ -0,0 +1,766 @@
++++ linux-2.6.17-brcm63xx/arch/mips/brcm-boards/bcm963xx/boardparms.h	2006-07-25 10:18:49.000000000 +0200
+@@ -0,0 +1,758 @@
 +/*
 +<:copyright-gpl 
 +
@@ -5412,10 +5416,6 @@ diff -urN linux-2.6.17/arch/mips/brcm-boards/bcm963xx/boardparms.h linux-2.6.17-
 +
 +#if !defined(_BOARDPARMS_H)
 +#define _BOARDPARMS_H
-+
-+#if __cplusplus
-+extern "C" {
-+#endif
 +
 +/* Return codes. */
 +#define BP_SUCCESS                              0
@@ -6141,10 +6141,6 @@ diff -urN linux-2.6.17/arch/mips/brcm-boards/bcm963xx/boardparms.h linux-2.6.17-
 +
 +#endif /* __ASSEMBLER__ */
 +
-+#if __cplusplus
-+}
-+#endif
-+
 +#endif /* _BOARDPARMS_H */
 +
 diff -urN linux-2.6.17/arch/mips/brcm-boards/bcm963xx/cfiflash.c linux-2.6.17-brcm63xx/arch/mips/brcm-boards/bcm963xx/cfiflash.c
@@ -6845,8 +6841,8 @@ diff -urN linux-2.6.17/arch/mips/brcm-boards/bcm963xx/cfiflash.c linux-2.6.17-br
 +}
 diff -urN linux-2.6.17/arch/mips/brcm-boards/bcm963xx/cfiflash.h linux-2.6.17-brcm63xx/arch/mips/brcm-boards/bcm963xx/cfiflash.h
 --- linux-2.6.17/arch/mips/brcm-boards/bcm963xx/cfiflash.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.17-brcm63xx/arch/mips/brcm-boards/bcm963xx/cfiflash.h	2006-07-13 19:11:33.000000000 +0200
-@@ -0,0 +1,150 @@
++++ linux-2.6.17-brcm63xx/arch/mips/brcm-boards/bcm963xx/cfiflash.h	2006-07-25 10:19:20.000000000 +0200
+@@ -0,0 +1,142 @@
 +/************************************************************************/
 +/*                                                                      */
 +/*  AMD CFI Enabled Flash Memory Drivers                                */
@@ -6880,10 +6876,6 @@ diff -urN linux-2.6.17/arch/mips/brcm-boards/bcm963xx/cfiflash.h linux-2.6.17-br
 +/************************************************************************/
 +#ifndef _CFIFLASH_H
 +#define _CFIFLASH_H
-+
-+#if defined __cplusplus
-+extern "C" {
-+#endif
 +
 +/* include board/CPU specific definitions */
 +#include "bcmtypes.h"
@@ -6992,15 +6984,11 @@ diff -urN linux-2.6.17/arch/mips/brcm-boards/bcm963xx/cfiflash.h linux-2.6.17-br
 +extern unsigned char *flash_get_memptr(WORD sector);
 +extern int flash_get_blk(int addr);
 +
-+#if defined __cplusplus
-+}
-+#endif
-+
 +#endif
 diff -urN linux-2.6.17/arch/mips/brcm-boards/bcm963xx/irq.c linux-2.6.17-brcm63xx/arch/mips/brcm-boards/bcm963xx/irq.c
 --- linux-2.6.17/arch/mips/brcm-boards/bcm963xx/irq.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.17-brcm63xx/arch/mips/brcm-boards/bcm963xx/irq.c	2006-07-14 15:31:35.000000000 +0200
-@@ -0,0 +1,294 @@
++++ linux-2.6.17-brcm63xx/arch/mips/brcm-boards/bcm963xx/irq.c	2006-07-25 10:58:52.000000000 +0200
+@@ -0,0 +1,299 @@
 +/*
 +<:copyright-gpl 
 + Copyright 2002 Broadcom Corp. All Rights Reserved. 
@@ -7033,6 +7021,7 @@ diff -urN linux-2.6.17/arch/mips/brcm-boards/bcm963xx/irq.c linux-2.6.17-brcm63x
 +#include <linux/kernel.h>
 +#include <linux/slab.h>
 +#include <linux/module.h>
++#include <linux/spinlock.h>
 +
 +#include <asm/irq.h>
 +#include <asm/mipsregs.h>
@@ -7040,6 +7029,8 @@ diff -urN linux-2.6.17/arch/mips/brcm-boards/bcm963xx/irq.c linux-2.6.17-brcm63x
 +#include <asm/signal.h>
 +#include <bcm_map_part.h>
 +#include <bcm_intr.h>
++
++static DEFINE_SPINLOCK(irq_lock);
 +
 +static void irq_dispatch_int(struct pt_regs *regs)
 +{
@@ -7094,7 +7085,8 @@ diff -urN linux-2.6.17/arch/mips/brcm-boards/bcm963xx/irq.c linux-2.6.17-brcm63x
 +		irq_dispatch_ext(INTERRUPT_ID_EXTERNAL_2, regs);
 +	else if (cause & CAUSEF_IP6)
 +		irq_dispatch_ext(INTERRUPT_ID_EXTERNAL_3, regs);
-+	cli();
++	//cli();
++	spin_lock_irq(&irq_lock);
 +    }
 +}
 +
@@ -7114,7 +7106,8 @@ diff -urN linux-2.6.17/arch/mips/brcm-boards/bcm963xx/irq.c linux-2.6.17-brcm63x
 +                irq_dispatch_ext(INTERRUPT_ID_EXTERNAL_2, regs);
 +        else if (cause & CAUSEF_IP6)
 +                irq_dispatch_ext(INTERRUPT_ID_EXTERNAL_3, regs);
-+        cli();
++        //cli();
++	spin_lock_irq(&irq_lock);
 +    }
 +}
 +
@@ -7740,7 +7733,7 @@ diff -urN linux-2.6.17/arch/mips/brcm-boards/bcm963xx/prom.c linux-2.6.17-brcm63
 +
 diff -urN linux-2.6.17/arch/mips/brcm-boards/bcm963xx/ser_init.c linux-2.6.17-brcm63xx/arch/mips/brcm-boards/bcm963xx/ser_init.c
 --- linux-2.6.17/arch/mips/brcm-boards/bcm963xx/ser_init.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.17-brcm63xx/arch/mips/brcm-boards/bcm963xx/ser_init.c	2006-07-13 19:11:33.000000000 +0200
++++ linux-2.6.17-brcm63xx/arch/mips/brcm-boards/bcm963xx/ser_init.c	2006-07-25 10:51:12.000000000 +0200
 @@ -0,0 +1,180 @@
 +/*
 +<:copyright-gpl 
@@ -7909,7 +7902,7 @@ diff -urN linux-2.6.17/arch/mips/brcm-boards/bcm963xx/ser_init.c linux-2.6.17-br
 +     return (uStatus & RXFIFONE);
 +}
 +
-+#if CONFIG_REMOTE_DEBUG
++#if defined (CONFIG_REMOTE_DEBUG)
 +/* Prevent other code from writing to the serial port */
 +void _putc(char c) { }
 +void _puts(const char *ptr) { }

@@ -1,48 +1,7 @@
-diff -Naurp linux-2.6.16.7-generic-patched/bcmdrivers/opensource/Makefile linux-2.6.16.7-patched/bcmdrivers/opensource/Makefile
---- linux-2.6.16.7-generic-patched/bcmdrivers/opensource/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.16.7-patched/bcmdrivers/opensource/Makefile	2006-07-05 15:21:58.000000000 +0200
-@@ -0,0 +1,20 @@
-+# File: modules/drivers/Makefile
-+#
-+# Makefile for the GPLed Linux kernel modules.
-+#
-+
-+LN_NAME=bcm9$(BRCM_CHIP)
-+LN_DRIVER_DIRS =
-+
-+-include $(KERNEL_DIR)/.config
-+
-+ifneq ($(CONFIG_BCM_SERIAL),)
-+  LN_DRIVER_DIRS +=ln -sn impl$(CONFIG_BCM_SERIAL_IMPL) char/serial/$(LN_NAME);
-+endif
-+
-+obj-$(CONFIG_BCM_SERIAL) += char/serial/impl$(CONFIG_BCM_SERIAL_IMPL)/
-+
-+
-+symlinks:
-+	find . -lname "*" -name "$(LN_NAME)" -print -exec rm -f "{}" ";"	
-+	$(CONFIG_SHELL) -c "$(LN_DRIVER_DIRS)"
-diff -Naurp linux-2.6.16.7-generic-patched/bcmdrivers/opensource/char/serial/impl1/Makefile linux-2.6.16.7-patched/bcmdrivers/opensource/char/serial/impl1/Makefile
---- linux-2.6.16.7-generic-patched/bcmdrivers/opensource/char/serial/impl1/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.16.7-patched/bcmdrivers/opensource/char/serial/impl1/Makefile	2006-07-05 15:21:58.000000000 +0200
-@@ -0,0 +1,13 @@
-+# File: bcmdrivers/opensource/char/serial
-+#
-+# Makefile for the BCM63xx serial/console driver
-+
-+obj-$(CONFIG_BCM_SERIAL) += bcm63xx_cons.o
-+
-+EXTRA_CFLAGS += -I$(INC_BRCMDRIVER_PUB_PATH)/$(BRCM_BOARD)
-+
-+-include $(TOPDIR)/Rules.make
-+
-+clean:
-+	rm -f core *.o *.a *.s
-+
-diff -Naurp linux-2.6.16.7-generic-patched/bcmdrivers/opensource/char/serial/impl1/bcm63xx_cons.c linux-2.6.16.7-patched/bcmdrivers/opensource/char/serial/impl1/bcm63xx_cons.c
---- linux-2.6.16.7-generic-patched/bcmdrivers/opensource/char/serial/impl1/bcm63xx_cons.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.16.7-patched/bcmdrivers/opensource/char/serial/impl1/bcm63xx_cons.c	2006-07-05 15:21:58.000000000 +0200
-@@ -0,0 +1,1038 @@
+diff -urN linux-2.6.17/bcmdrivers/opensource/char/serial/impl1/bcm63xx_cons.c linux-2.6.17-brcm63xx/bcmdrivers/opensource/char/serial/impl1/bcm63xx_cons.c
+--- linux-2.6.17/bcmdrivers/opensource/char/serial/impl1/bcm63xx_cons.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-brcm63xx/bcmdrivers/opensource/char/serial/impl1/bcm63xx_cons.c	2006-07-25 12:57:09.000000000 +0200
+@@ -0,0 +1,1056 @@
 +/*
 +<:copyright-gpl 
 + Copyright 2002 Broadcom Corp. All Rights Reserved. 
@@ -75,6 +34,7 @@ diff -Naurp linux-2.6.16.7-generic-patched/bcmdrivers/opensource/char/serial/imp
 +#include <linux/init.h> 
 +#include <linux/slab.h>
 +#include <linux/interrupt.h>
++#include <linux/spinlock.h>
 +
 +/* for definition of struct console */
 +#include <linux/console.h>
@@ -87,6 +47,8 @@ diff -Naurp linux-2.6.16.7-generic-patched/bcmdrivers/opensource/char/serial/imp
 +#include <board.h>
 +#include <bcm_map_part.h>
 +#include <bcm_intr.h>
++
++static DEFINE_SPINLOCK(bcm963xx_serial_lock);
 +
 +extern void _putc(char);
 +extern void _puts(const char *);
@@ -349,15 +311,18 @@ diff -Naurp linux-2.6.16.7-generic-patched/bcmdrivers/opensource/char/serial/imp
 +    if (!info->is_initialized)
 +        return;
 +
-+    save_flags (flags);
-+    cli ();
++	
++    /*save_flags (flags);
++    cli ();*/
++    spin_lock_irqsave(&bcm963xx_serial_lock, flags);
 +
 +    info->port->control &= ~(BRGEN|TXEN|RXEN);
 +    if (info->tty)
 +        set_bit (TTY_IO_ERROR, &info->tty->flags);
 +    info->is_initialized = 0;
 +
-+    restore_flags (flags);
++    //restore_flags (flags);
++    spin_unlock_irqrestore(&bcm963xx_serial_lock, flags);
 +}
 +/* 
 + * -------------------------------------------------------------------
@@ -369,8 +334,10 @@ diff -Naurp linux-2.6.16.7-generic-patched/bcmdrivers/opensource/char/serial/imp
 +static void change_speed( volatile Uart *pUart, tcflag_t cFlag )
 +{
 +    unsigned long ulFlags, ulBaud, ulClockFreqHz, ulTmp;
-+    save_flags(ulFlags);
-+    cli();
++    /*save_flags(ulFlags);
++    cli();*/
++    spin_lock_irqsave(&bcm963xx_serial_lock, ulFlags);
++
 +    switch( cFlag & (CBAUD | CBAUDEX) )
 +    {
 +    case B115200:
@@ -478,7 +445,8 @@ diff -Naurp linux-2.6.16.7-generic-patched/bcmdrivers/opensource/char/serial/imp
 +
 +    /* Reset and flush uart */
 +    pUart->fifoctl = RSTTXFIFOS | RSTRXFIFOS;
-+    restore_flags( ulFlags );
++    //restore_flags( ulFlags );
++    spin_unlock_irqrestore(&bcm963xx_serial_lock, ulFlags);
 +}
 +
 +
@@ -664,14 +632,16 @@ diff -Naurp linux-2.6.16.7-generic-patched/bcmdrivers/opensource/char/serial/imp
 +
 +    current->state = TASK_INTERRUPTIBLE;
 +
-+    save_flags (flags);
-+    cli();
++    /*save_flags (flags);
++    cli();*/
++    spin_lock_irqsave(&bcm963xx_serial_lock, flags);
 +
 +    info->port->control |= XMITBREAK;
 +    schedule_timeout(duration);
 +    info->port->control &= ~XMITBREAK;
 +
-+    restore_flags (flags);
++    spin_unlock_irqrestore(&bcm963xx_serial_lock, flags);
++    //restore_flags (flags);
 +}
 +
 +static int bcm_ioctl (struct tty_struct * tty, struct file * file,
@@ -783,12 +753,14 @@ diff -Naurp linux-2.6.16.7-generic-patched/bcmdrivers/opensource/char/serial/imp
 +    if (!info)
 +        return;
 +
-+    save_flags (flags); 
-+    cli();
++    /*save_flags (flags); 
++    cli();*/
++    spin_lock_irqsave(&bcm963xx_serial_lock, flags);
 +
 +    if (tty_hung_up_p (filp))
 +    {
-+        restore_flags (flags);
++        spin_unlock_irqrestore(&bcm963xx_serial_lock, flags);
++        //restore_flags (flags);
 +        return;
 +    }
 +
@@ -815,7 +787,8 @@ diff -Naurp linux-2.6.16.7-generic-patched/bcmdrivers/opensource/char/serial/imp
 +
 +    if (info->count)
 +    {
-+        restore_flags (flags);
++        //restore_flags (flags);
++	spin_unlock_irqrestore(&bcm963xx_serial_lock, flags);
 +        return;
 +    }
 +
@@ -861,7 +834,8 @@ diff -Naurp linux-2.6.16.7-generic-patched/bcmdrivers/opensource/char/serial/imp
 +    }
 +    wake_up_interruptible (&info->close_wait);
 +
-+    restore_flags (flags);
++    //restore_flags (flags);
++    spin_unlock_irqrestore(&bcm963xx_serial_lock, flags);
 +}
 +
 +/*
@@ -997,7 +971,9 @@ diff -Naurp linux-2.6.16.7-generic-patched/bcmdrivers/opensource/char/serial/imp
 +    if (tty_register_driver (&serial_driver))
 +        panic("Couldn't register serial driver\n");
 +
-+    save_flags(flags); cli();
++    //save_flags(flags); cli();
++    spin_lock_irqsave(&bcm963xx_serial_lock, flags);
++    
 +    for (i = 0; i < BCM_NUM_UARTS; i++)
 +    {
 +        info = &multi[i]; 
@@ -1028,7 +1004,8 @@ diff -Naurp linux-2.6.16.7-generic-patched/bcmdrivers/opensource/char/serial/imp
 +     * is updated... in request_irq - to immediatedly obliterate
 +     * it is unwise. 
 +     */
-+    restore_flags(flags);
++    //restore_flags(flags);
++    spin_unlock_irqrestore(&bcm963xx_serial_lock, flags);
 +    return 0;
 +}
 +
@@ -1081,10 +1058,27 @@ diff -Naurp linux-2.6.16.7-generic-patched/bcmdrivers/opensource/char/serial/imp
 +}
 +
 +console_initcall(bcm63xx_console_init);
-diff -Naurp linux-2.6.16.7-generic-patched/bcmdrivers/opensource/include/bcm963xx/6338_intr.h linux-2.6.16.7-patched/bcmdrivers/opensource/include/bcm963xx/6338_intr.h
---- linux-2.6.16.7-generic-patched/bcmdrivers/opensource/include/bcm963xx/6338_intr.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.16.7-patched/bcmdrivers/opensource/include/bcm963xx/6338_intr.h	2006-07-05 15:21:58.000000000 +0200
-@@ -0,0 +1,72 @@
+diff -urN linux-2.6.17/bcmdrivers/opensource/char/serial/impl1/Makefile linux-2.6.17-brcm63xx/bcmdrivers/opensource/char/serial/impl1/Makefile
+--- linux-2.6.17/bcmdrivers/opensource/char/serial/impl1/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-brcm63xx/bcmdrivers/opensource/char/serial/impl1/Makefile	2006-07-25 10:43:50.000000000 +0200
+@@ -0,0 +1,13 @@
++# File: bcmdrivers/opensource/char/serial
++#
++# Makefile for the BCM63xx serial/console driver
++
++obj-$(CONFIG_BCM_SERIAL) += bcm63xx_cons.o
++
++EXTRA_CFLAGS += -I$(INC_BRCMDRIVER_PUB_PATH)/$(BRCM_BOARD)
++
++-include $(TOPDIR)/Rules.make
++
++clean:
++	rm -f core *.o *.a *.s
++
+diff -urN linux-2.6.17/bcmdrivers/opensource/include/bcm963xx/6338_intr.h linux-2.6.17-brcm63xx/bcmdrivers/opensource/include/bcm963xx/6338_intr.h
+--- linux-2.6.17/bcmdrivers/opensource/include/bcm963xx/6338_intr.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-brcm63xx/bcmdrivers/opensource/include/bcm963xx/6338_intr.h	2006-07-25 10:44:46.000000000 +0200
+@@ -0,0 +1,64 @@
 +/*
 +<:copyright-gpl 
 + Copyright 2003 Broadcom Corp. All Rights Reserved. 
@@ -1106,10 +1100,6 @@ diff -Naurp linux-2.6.16.7-generic-patched/bcmdrivers/opensource/include/bcm963x
 +
 +#ifndef __6338_INTR_H
 +#define __6338_INTR_H
-+
-+#ifdef __cplusplus
-+    extern "C" {
-+#endif
 +
 +/*=====================================================================*/
 +/* BCM6338 External Interrupt Level Assignments                       */
@@ -1151,16 +1141,12 @@ diff -Naurp linux-2.6.16.7-generic-patched/bcmdrivers/opensource/include/bcm963x
 +#define INTERRUPT_ID_EMAC1_TX_DMA        (INTERNAL_ISR_TABLE_OFFSET + 16)
 +#define INTERRUPT_ID_SDIO                (INTERNAL_ISR_TABLE_OFFSET + 17)
 +
-+#ifdef __cplusplus
-+    }
-+#endif                    
-+
 +#endif  /* __BCM6338_H */
 +
-diff -Naurp linux-2.6.16.7-generic-patched/bcmdrivers/opensource/include/bcm963xx/6338_map_part.h linux-2.6.16.7-patched/bcmdrivers/opensource/include/bcm963xx/6338_map_part.h
---- linux-2.6.16.7-generic-patched/bcmdrivers/opensource/include/bcm963xx/6338_map_part.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.16.7-patched/bcmdrivers/opensource/include/bcm963xx/6338_map_part.h	2006-07-05 15:21:58.000000000 +0200
-@@ -0,0 +1,341 @@
+diff -urN linux-2.6.17/bcmdrivers/opensource/include/bcm963xx/6338_map_part.h linux-2.6.17-brcm63xx/bcmdrivers/opensource/include/bcm963xx/6338_map_part.h
+--- linux-2.6.17/bcmdrivers/opensource/include/bcm963xx/6338_map_part.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-brcm63xx/bcmdrivers/opensource/include/bcm963xx/6338_map_part.h	2006-07-25 10:44:59.000000000 +0200
+@@ -0,0 +1,334 @@
 +/*
 +<:copyright-gpl 
 + Copyright 2004 Broadcom Corp. All Rights Reserved. 
@@ -1182,10 +1168,6 @@ diff -Naurp linux-2.6.16.7-generic-patched/bcmdrivers/opensource/include/bcm963x
 +
 +#ifndef __BCM6338_MAP_H
 +#define __BCM6338_MAP_H
-+
-+#if __cplusplus
-+extern "C" {
-+#endif
 +
 +#include "bcmtypes.h"
 +
@@ -1496,16 +1478,13 @@ diff -Naurp linux-2.6.16.7-generic-patched/bcmdrivers/opensource/include/bcm963x
 +
 +#define MPI ((volatile MpiRegisters * const) MPI_BASE)
 +
-+#if __cplusplus
-+}
-+#endif
 +
 +#endif
 +
-diff -Naurp linux-2.6.16.7-generic-patched/bcmdrivers/opensource/include/bcm963xx/6345_intr.h linux-2.6.16.7-patched/bcmdrivers/opensource/include/bcm963xx/6345_intr.h
---- linux-2.6.16.7-generic-patched/bcmdrivers/opensource/include/bcm963xx/6345_intr.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.16.7-patched/bcmdrivers/opensource/include/bcm963xx/6345_intr.h	2006-07-05 15:21:58.000000000 +0200
-@@ -0,0 +1,78 @@
+diff -urN linux-2.6.17/bcmdrivers/opensource/include/bcm963xx/6345_intr.h linux-2.6.17-brcm63xx/bcmdrivers/opensource/include/bcm963xx/6345_intr.h
+--- linux-2.6.17/bcmdrivers/opensource/include/bcm963xx/6345_intr.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-brcm63xx/bcmdrivers/opensource/include/bcm963xx/6345_intr.h	2006-07-25 10:45:09.000000000 +0200
+@@ -0,0 +1,72 @@
 +/*
 +<:copyright-gpl 
 + Copyright 2002 Broadcom Corp. All Rights Reserved. 
@@ -1528,9 +1507,6 @@ diff -Naurp linux-2.6.16.7-generic-patched/bcmdrivers/opensource/include/bcm963x
 +#ifndef __6345_INTR_H
 +#define __6345_INTR_H
 +
-+#ifdef __cplusplus
-+    extern "C" {
-+#endif
 +
 +/*=====================================================================*/
 +/* BCM6345 External Interrupt Level Assignments                       */
@@ -1578,16 +1554,13 @@ diff -Naurp linux-2.6.16.7-generic-patched/bcmdrivers/opensource/include/bcm963x
 +#define INTERRUPT_ID_USB_ISO_RX_CHAN    (DMA_ISR_TABLE_OFFSET + USB_ISO_RX_CHAN)
 +#define INTERRUPT_ID_USB_ISO_TX_CHAN    (DMA_ISR_TABLE_OFFSET + USB_ISO_TX_CHAN)
 +
-+#ifdef __cplusplus
-+    }
-+#endif                    
 +
 +#endif  /* __BCM6345_H */
 +
-diff -Naurp linux-2.6.16.7-generic-patched/bcmdrivers/opensource/include/bcm963xx/6345_map_part.h linux-2.6.16.7-patched/bcmdrivers/opensource/include/bcm963xx/6345_map_part.h
---- linux-2.6.16.7-generic-patched/bcmdrivers/opensource/include/bcm963xx/6345_map_part.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.16.7-patched/bcmdrivers/opensource/include/bcm963xx/6345_map_part.h	2006-07-05 15:21:58.000000000 +0200
-@@ -0,0 +1,169 @@
+diff -urN linux-2.6.17/bcmdrivers/opensource/include/bcm963xx/6345_map_part.h linux-2.6.17-brcm63xx/bcmdrivers/opensource/include/bcm963xx/6345_map_part.h
+--- linux-2.6.17/bcmdrivers/opensource/include/bcm963xx/6345_map_part.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-brcm63xx/bcmdrivers/opensource/include/bcm963xx/6345_map_part.h	2006-07-25 10:45:19.000000000 +0200
+@@ -0,0 +1,163 @@
 +/*
 +<:copyright-gpl 
 + Copyright 2002 Broadcom Corp. All Rights Reserved. 
@@ -1610,9 +1583,6 @@ diff -Naurp linux-2.6.16.7-generic-patched/bcmdrivers/opensource/include/bcm963x
 +#ifndef __BCM6345_MAP_H
 +#define __BCM6345_MAP_H
 +
-+#if __cplusplus
-+extern "C" {
-+#endif
 +
 +#include "bcmtypes.h"
 +#include "6345_intr.h"
@@ -1751,16 +1721,13 @@ diff -Naurp linux-2.6.16.7-generic-patched/bcmdrivers/opensource/include/bcm963x
 +#define GPIO_NUM_MAX_BITS_MASK          0x0f
 +#define GPIO_NUM_TO_MASK(X)             (1 << ((X) & GPIO_NUM_MAX_BITS_MASK))
 +
-+#if __cplusplus
-+}
-+#endif
 +
 +#endif
 +
-diff -Naurp linux-2.6.16.7-generic-patched/bcmdrivers/opensource/include/bcm963xx/6348_intr.h linux-2.6.16.7-patched/bcmdrivers/opensource/include/bcm963xx/6348_intr.h
---- linux-2.6.16.7-generic-patched/bcmdrivers/opensource/include/bcm963xx/6348_intr.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.16.7-patched/bcmdrivers/opensource/include/bcm963xx/6348_intr.h	2006-07-05 15:21:58.000000000 +0200
-@@ -0,0 +1,80 @@
+diff -urN linux-2.6.17/bcmdrivers/opensource/include/bcm963xx/6348_intr.h linux-2.6.17-brcm63xx/bcmdrivers/opensource/include/bcm963xx/6348_intr.h
+--- linux-2.6.17/bcmdrivers/opensource/include/bcm963xx/6348_intr.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-brcm63xx/bcmdrivers/opensource/include/bcm963xx/6348_intr.h	2006-07-25 10:45:33.000000000 +0200
+@@ -0,0 +1,74 @@
 +/*
 +<:copyright-gpl 
 + Copyright 2003 Broadcom Corp. All Rights Reserved. 
@@ -1783,9 +1750,6 @@ diff -Naurp linux-2.6.16.7-generic-patched/bcmdrivers/opensource/include/bcm963x
 +#ifndef __6348_INTR_H
 +#define __6348_INTR_H
 +
-+#ifdef __cplusplus
-+    extern "C" {
-+#endif
 +
 +/*=====================================================================*/
 +/* BCM6348 External Interrupt Level Assignments                       */
@@ -1835,16 +1799,13 @@ diff -Naurp linux-2.6.16.7-generic-patched/bcmdrivers/opensource/include/bcm963x
 +#define INTERRUPT_ID_MPI                 (INTERNAL_ISR_TABLE_OFFSET + 24)
 +#define INTERRUPT_ID_DG                  (INTERNAL_ISR_TABLE_OFFSET + 25)
 +
-+#ifdef __cplusplus
-+    }
-+#endif                    
 +
 +#endif  /* __BCM6348_H */
 +
-diff -Naurp linux-2.6.16.7-generic-patched/bcmdrivers/opensource/include/bcm963xx/6348_map_part.h linux-2.6.16.7-patched/bcmdrivers/opensource/include/bcm963xx/6348_map_part.h
---- linux-2.6.16.7-generic-patched/bcmdrivers/opensource/include/bcm963xx/6348_map_part.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.16.7-patched/bcmdrivers/opensource/include/bcm963xx/6348_map_part.h	2006-07-05 15:21:58.000000000 +0200
-@@ -0,0 +1,508 @@
+diff -urN linux-2.6.17/bcmdrivers/opensource/include/bcm963xx/6348_map_part.h linux-2.6.17-brcm63xx/bcmdrivers/opensource/include/bcm963xx/6348_map_part.h
+--- linux-2.6.17/bcmdrivers/opensource/include/bcm963xx/6348_map_part.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-brcm63xx/bcmdrivers/opensource/include/bcm963xx/6348_map_part.h	2006-07-25 10:44:21.000000000 +0200
+@@ -0,0 +1,500 @@
 +/*
 +<:copyright-gpl 
 + Copyright 2002 Broadcom Corp. All Rights Reserved. 
@@ -1866,10 +1827,6 @@ diff -Naurp linux-2.6.16.7-generic-patched/bcmdrivers/opensource/include/bcm963x
 +
 +#ifndef __BCM6348_MAP_H
 +#define __BCM6348_MAP_H
-+
-+#if __cplusplus
-+extern "C" {
-+#endif
 +
 +#include "bcmtypes.h"
 +
@@ -2347,15 +2304,203 @@ diff -Naurp linux-2.6.16.7-generic-patched/bcmdrivers/opensource/include/bcm963x
 +
 +#define USBH_NON_OHCI ((volatile unsigned long * const) USB_HOST_NON_OHCI)
 +
-+#if __cplusplus
-+}
++#endif
++
+diff -urN linux-2.6.17/bcmdrivers/opensource/include/bcm963xx/bcm_intr.h linux-2.6.17-brcm63xx/bcmdrivers/opensource/include/bcm963xx/bcm_intr.h
+--- linux-2.6.17/bcmdrivers/opensource/include/bcm963xx/bcm_intr.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-brcm63xx/bcmdrivers/opensource/include/bcm963xx/bcm_intr.h	2006-07-25 10:43:50.000000000 +0200
+@@ -0,0 +1,59 @@
++/*
++<:copyright-gpl 
++ Copyright 2003 Broadcom Corp. All Rights Reserved. 
++ 
++ This program is free software; you can distribute it and/or modify it 
++ under the terms of the GNU General Public License (Version 2) as 
++ published by the Free Software Foundation. 
++ 
++ This program is distributed in the hope it will be useful, but WITHOUT 
++ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
++ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License 
++ for more details. 
++ 
++ You should have received a copy of the GNU General Public License along 
++ with this program; if not, write to the Free Software Foundation, Inc., 
++ 59 Temple Place - Suite 330, Boston MA 02111-1307, USA. 
++:>
++*/
++
++#ifndef __BCM_INTR_H
++#define __BCM_INTR_H
++
++#ifdef __cplusplus
++    extern "C" {
++#endif
++
++#if defined(CONFIG_BCM96338)
++#include <6338_intr.h>
++#endif
++#if defined(CONFIG_BCM96345)
++#include <6345_intr.h>
++#endif
++#if defined(CONFIG_BCM96348)
++#include <6348_intr.h>
++#endif
++
++/* defines */
++struct pt_regs;
++typedef int (*FN_HANDLER) (int, void *, struct pt_regs *);
++
++/* prototypes */
++extern void enable_brcm_irq(unsigned int irq);
++extern void disable_brcm_irq(unsigned int irq);
++extern int request_external_irq(unsigned int irq,
++    FN_HANDLER handler, unsigned long irqflags, 
++    const char * devname, void *dev_id);
++extern unsigned int BcmHalMapInterrupt(FN_HANDLER isr, unsigned int param,
++    unsigned int interruptId);
++extern void dump_intr_regs(void);
++
++/* compatibility definitions */
++#define BcmHalInterruptEnable(irq)      enable_brcm_irq( irq )
++#define BcmHalInterruptDisable(irq)     disable_brcm_irq( irq )
++
++#ifdef __cplusplus
++    }
++#endif
++
++#endif
+diff -urN linux-2.6.17/bcmdrivers/opensource/include/bcm963xx/bcm_map_part.h linux-2.6.17-brcm63xx/bcmdrivers/opensource/include/bcm963xx/bcm_map_part.h
+--- linux-2.6.17/bcmdrivers/opensource/include/bcm963xx/bcm_map_part.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-brcm63xx/bcmdrivers/opensource/include/bcm963xx/bcm_map_part.h	2006-07-25 10:43:50.000000000 +0200
+@@ -0,0 +1,34 @@
++/*
++<:copyright-gpl 
++ Copyright 2004 Broadcom Corp. All Rights Reserved. 
++ 
++ This program is free software; you can distribute it and/or modify it 
++ under the terms of the GNU General Public License (Version 2) as 
++ published by the Free Software Foundation. 
++ 
++ This program is distributed in the hope it will be useful, but WITHOUT 
++ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
++ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License 
++ for more details. 
++ 
++ You should have received a copy of the GNU General Public License along 
++ with this program; if not, write to the Free Software Foundation, Inc., 
++ 59 Temple Place - Suite 330, Boston MA 02111-1307, USA. 
++:>
++*/
++
++#ifndef __BCM_MAP_PART_H
++#define __BCM_MAP_PART_H
++
++#if defined(CONFIG_BCM96338)
++#include <6338_map_part.h>
++#endif
++#if defined(CONFIG_BCM96345)
++#include <6345_map_part.h>
++#endif
++#if defined(CONFIG_BCM96348)
++#include <6348_map_part.h>
 +#endif
 +
 +#endif
 +
-diff -Naurp linux-2.6.16.7-generic-patched/bcmdrivers/opensource/include/bcm963xx/bcmTag.h linux-2.6.16.7-patched/bcmdrivers/opensource/include/bcm963xx/bcmTag.h
---- linux-2.6.16.7-generic-patched/bcmdrivers/opensource/include/bcm963xx/bcmTag.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.16.7-patched/bcmdrivers/opensource/include/bcm963xx/bcmTag.h	2006-07-05 15:21:58.000000000 +0200
+diff -urN linux-2.6.17/bcmdrivers/opensource/include/bcm963xx/bcmpci.h linux-2.6.17-brcm63xx/bcmdrivers/opensource/include/bcm963xx/bcmpci.h
+--- linux-2.6.17/bcmdrivers/opensource/include/bcm963xx/bcmpci.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-brcm63xx/bcmdrivers/opensource/include/bcm963xx/bcmpci.h	2006-07-25 10:43:50.000000000 +0200
+@@ -0,0 +1,87 @@
++/*
++<:copyright-gpl 
++ Copyright 2004 Broadcom Corp. All Rights Reserved. 
++ 
++ This program is free software; you can distribute it and/or modify it 
++ under the terms of the GNU General Public License (Version 2) as 
++ published by the Free Software Foundation. 
++ 
++ This program is distributed in the hope it will be useful, but WITHOUT 
++ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
++ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License 
++ for more details. 
++ 
++ You should have received a copy of the GNU General Public License along 
++ with this program; if not, write to the Free Software Foundation, Inc., 
++ 59 Temple Place - Suite 330, Boston MA 02111-1307, USA. 
++:>
++*/
++
++//
++// bcmpci.h - bcm96348 PCI, Cardbus, and PCMCIA definition
++//
++#ifndef BCMPCI_H
++#define BCMPCI_H
++
++/* Memory window in internal system bus address space */ 
++#define BCM_PCI_MEM_BASE        0x08000000
++/* IO window in internal system bus address space */ 
++#define BCM_PCI_IO_BASE         0x0C000000
++
++#define BCM_PCI_ADDR_MASK       0x1fffffff
++
++/* Memory window size (range) */
++#define BCM_PCI_MEM_SIZE_16MB   0x01000000
++/* IO window size (range) */
++#define BCM_PCI_IO_SIZE_64KB    0x00010000
++
++/* PCI Configuration and I/O space acesss */
++#define BCM_PCI_CFG(d, f, o)    ( (d << 11) | (f << 8) | (o/4 << 2) )
++
++/* fake USB PCI slot */
++#define USB_HOST_SLOT           9
++#define USB_BAR0_MEM_SIZE       0x0800
++
++#define BCM_HOST_MEM_SPACE1     0x10000000
++#define BCM_HOST_MEM_SPACE2     0x00000000
++
++/* 
++ * EBI bus clock is 33MHz and share with PCI bus
++ * each clock cycle is 30ns.
++ */
++/* attribute memory access wait cnt for 4306 */
++#define PCMCIA_ATTR_CE_HOLD     3  // data hold time 70ns
++#define PCMCIA_ATTR_CE_SETUP    3  // data setup time 50ns
++#define PCMCIA_ATTR_INACTIVE    6  // time between read/write cycles 180ns. For the total cycle time 600ns (cnt1+cnt2+cnt3+cnt4)
++#define PCMCIA_ATTR_ACTIVE      10 // OE/WE pulse width 300ns
++
++/* common memory access wait cnt for 4306 */
++#define PCMCIA_MEM_CE_HOLD      1  // data hold time 30ns
++#define PCMCIA_MEM_CE_SETUP     1  // data setup time 30ns
++#define PCMCIA_MEM_INACTIVE     2  // time between read/write cycles 40ns. For the total cycle time 250ns (cnt1+cnt2+cnt3+cnt4)
++#define PCMCIA_MEM_ACTIVE       5  // OE/WE pulse width 150ns
++
++#define PCCARD_VCC_MASK     0x00070000  // Mask Reset also
++#define PCCARD_VCC_33V      0x00010000
++#define PCCARD_VCC_50V      0x00020000
++
++typedef enum {
++    MPI_CARDTYPE_NONE,      // No Card in slot
++    MPI_CARDTYPE_PCMCIA,    // 16-bit PCMCIA card in slot    
++    MPI_CARDTYPE_CARDBUS,   // 32-bit CardBus card in slot
++}   CardType;
++
++#define CARDBUS_SLOT        0    // Slot 0 is default for CardBus
++
++#define pcmciaAttrOffset    0x00200000
++#define pcmciaMemOffset     0x00000000
++// Needs to be right above PCI I/O space. Give 0x8000 (32K) to PCMCIA. 
++#define pcmciaIoOffset      (BCM_PCI_IO_BASE + 0x80000)
++// Base Address is that mapped into the MPI ChipSelect registers. 
++// UBUS bridge MemoryWindow 0 outputs a 0x00 for the base.
++#define pcmciaBase          0xbf000000
++#define pcmciaAttr          (pcmciaAttrOffset | pcmciaBase)
++#define pcmciaMem           (pcmciaMemOffset  | pcmciaBase)
++#define pcmciaIo            (pcmciaIoOffset   | pcmciaBase)
++
++#endif
+diff -urN linux-2.6.17/bcmdrivers/opensource/include/bcm963xx/bcmTag.h linux-2.6.17-brcm63xx/bcmdrivers/opensource/include/bcm963xx/bcmTag.h
+--- linux-2.6.17/bcmdrivers/opensource/include/bcm963xx/bcmTag.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-brcm63xx/bcmdrivers/opensource/include/bcm963xx/bcmTag.h	2006-07-25 10:43:50.000000000 +0200
 @@ -0,0 +1,153 @@
 +/*
 +<:copyright-gpl 
@@ -2510,201 +2655,9 @@ diff -Naurp linux-2.6.16.7-generic-patched/bcmdrivers/opensource/include/bcm963x
 +
 +#endif // _BCMTAG_H_
 +
-diff -Naurp linux-2.6.16.7-generic-patched/bcmdrivers/opensource/include/bcm963xx/bcm_intr.h linux-2.6.16.7-patched/bcmdrivers/opensource/include/bcm963xx/bcm_intr.h
---- linux-2.6.16.7-generic-patched/bcmdrivers/opensource/include/bcm963xx/bcm_intr.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.16.7-patched/bcmdrivers/opensource/include/bcm963xx/bcm_intr.h	2006-07-05 15:21:58.000000000 +0200
-@@ -0,0 +1,59 @@
-+/*
-+<:copyright-gpl 
-+ Copyright 2003 Broadcom Corp. All Rights Reserved. 
-+ 
-+ This program is free software; you can distribute it and/or modify it 
-+ under the terms of the GNU General Public License (Version 2) as 
-+ published by the Free Software Foundation. 
-+ 
-+ This program is distributed in the hope it will be useful, but WITHOUT 
-+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-+ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License 
-+ for more details. 
-+ 
-+ You should have received a copy of the GNU General Public License along 
-+ with this program; if not, write to the Free Software Foundation, Inc., 
-+ 59 Temple Place - Suite 330, Boston MA 02111-1307, USA. 
-+:>
-+*/
-+
-+#ifndef __BCM_INTR_H
-+#define __BCM_INTR_H
-+
-+#ifdef __cplusplus
-+    extern "C" {
-+#endif
-+
-+#if defined(CONFIG_BCM96338)
-+#include <6338_intr.h>
-+#endif
-+#if defined(CONFIG_BCM96345)
-+#include <6345_intr.h>
-+#endif
-+#if defined(CONFIG_BCM96348)
-+#include <6348_intr.h>
-+#endif
-+
-+/* defines */
-+struct pt_regs;
-+typedef int (*FN_HANDLER) (int, void *, struct pt_regs *);
-+
-+/* prototypes */
-+extern void enable_brcm_irq(unsigned int irq);
-+extern void disable_brcm_irq(unsigned int irq);
-+extern int request_external_irq(unsigned int irq,
-+    FN_HANDLER handler, unsigned long irqflags, 
-+    const char * devname, void *dev_id);
-+extern unsigned int BcmHalMapInterrupt(FN_HANDLER isr, unsigned int param,
-+    unsigned int interruptId);
-+extern void dump_intr_regs(void);
-+
-+/* compatibility definitions */
-+#define BcmHalInterruptEnable(irq)      enable_brcm_irq( irq )
-+#define BcmHalInterruptDisable(irq)     disable_brcm_irq( irq )
-+
-+#ifdef __cplusplus
-+    }
-+#endif
-+
-+#endif
-diff -Naurp linux-2.6.16.7-generic-patched/bcmdrivers/opensource/include/bcm963xx/bcm_map_part.h linux-2.6.16.7-patched/bcmdrivers/opensource/include/bcm963xx/bcm_map_part.h
---- linux-2.6.16.7-generic-patched/bcmdrivers/opensource/include/bcm963xx/bcm_map_part.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.16.7-patched/bcmdrivers/opensource/include/bcm963xx/bcm_map_part.h	2006-07-05 15:21:58.000000000 +0200
-@@ -0,0 +1,34 @@
-+/*
-+<:copyright-gpl 
-+ Copyright 2004 Broadcom Corp. All Rights Reserved. 
-+ 
-+ This program is free software; you can distribute it and/or modify it 
-+ under the terms of the GNU General Public License (Version 2) as 
-+ published by the Free Software Foundation. 
-+ 
-+ This program is distributed in the hope it will be useful, but WITHOUT 
-+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-+ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License 
-+ for more details. 
-+ 
-+ You should have received a copy of the GNU General Public License along 
-+ with this program; if not, write to the Free Software Foundation, Inc., 
-+ 59 Temple Place - Suite 330, Boston MA 02111-1307, USA. 
-+:>
-+*/
-+
-+#ifndef __BCM_MAP_PART_H
-+#define __BCM_MAP_PART_H
-+
-+#if defined(CONFIG_BCM96338)
-+#include <6338_map_part.h>
-+#endif
-+#if defined(CONFIG_BCM96345)
-+#include <6345_map_part.h>
-+#endif
-+#if defined(CONFIG_BCM96348)
-+#include <6348_map_part.h>
-+#endif
-+
-+#endif
-+
-diff -Naurp linux-2.6.16.7-generic-patched/bcmdrivers/opensource/include/bcm963xx/bcmpci.h linux-2.6.16.7-patched/bcmdrivers/opensource/include/bcm963xx/bcmpci.h
---- linux-2.6.16.7-generic-patched/bcmdrivers/opensource/include/bcm963xx/bcmpci.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.16.7-patched/bcmdrivers/opensource/include/bcm963xx/bcmpci.h	2006-07-05 15:21:58.000000000 +0200
-@@ -0,0 +1,87 @@
-+/*
-+<:copyright-gpl 
-+ Copyright 2004 Broadcom Corp. All Rights Reserved. 
-+ 
-+ This program is free software; you can distribute it and/or modify it 
-+ under the terms of the GNU General Public License (Version 2) as 
-+ published by the Free Software Foundation. 
-+ 
-+ This program is distributed in the hope it will be useful, but WITHOUT 
-+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-+ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License 
-+ for more details. 
-+ 
-+ You should have received a copy of the GNU General Public License along 
-+ with this program; if not, write to the Free Software Foundation, Inc., 
-+ 59 Temple Place - Suite 330, Boston MA 02111-1307, USA. 
-+:>
-+*/
-+
-+//
-+// bcmpci.h - bcm96348 PCI, Cardbus, and PCMCIA definition
-+//
-+#ifndef BCMPCI_H
-+#define BCMPCI_H
-+
-+/* Memory window in internal system bus address space */ 
-+#define BCM_PCI_MEM_BASE        0x08000000
-+/* IO window in internal system bus address space */ 
-+#define BCM_PCI_IO_BASE         0x0C000000
-+
-+#define BCM_PCI_ADDR_MASK       0x1fffffff
-+
-+/* Memory window size (range) */
-+#define BCM_PCI_MEM_SIZE_16MB   0x01000000
-+/* IO window size (range) */
-+#define BCM_PCI_IO_SIZE_64KB    0x00010000
-+
-+/* PCI Configuration and I/O space acesss */
-+#define BCM_PCI_CFG(d, f, o)    ( (d << 11) | (f << 8) | (o/4 << 2) )
-+
-+/* fake USB PCI slot */
-+#define USB_HOST_SLOT           9
-+#define USB_BAR0_MEM_SIZE       0x0800
-+
-+#define BCM_HOST_MEM_SPACE1     0x10000000
-+#define BCM_HOST_MEM_SPACE2     0x00000000
-+
-+/* 
-+ * EBI bus clock is 33MHz and share with PCI bus
-+ * each clock cycle is 30ns.
-+ */
-+/* attribute memory access wait cnt for 4306 */
-+#define PCMCIA_ATTR_CE_HOLD     3  // data hold time 70ns
-+#define PCMCIA_ATTR_CE_SETUP    3  // data setup time 50ns
-+#define PCMCIA_ATTR_INACTIVE    6  // time between read/write cycles 180ns. For the total cycle time 600ns (cnt1+cnt2+cnt3+cnt4)
-+#define PCMCIA_ATTR_ACTIVE      10 // OE/WE pulse width 300ns
-+
-+/* common memory access wait cnt for 4306 */
-+#define PCMCIA_MEM_CE_HOLD      1  // data hold time 30ns
-+#define PCMCIA_MEM_CE_SETUP     1  // data setup time 30ns
-+#define PCMCIA_MEM_INACTIVE     2  // time between read/write cycles 40ns. For the total cycle time 250ns (cnt1+cnt2+cnt3+cnt4)
-+#define PCMCIA_MEM_ACTIVE       5  // OE/WE pulse width 150ns
-+
-+#define PCCARD_VCC_MASK     0x00070000  // Mask Reset also
-+#define PCCARD_VCC_33V      0x00010000
-+#define PCCARD_VCC_50V      0x00020000
-+
-+typedef enum {
-+    MPI_CARDTYPE_NONE,      // No Card in slot
-+    MPI_CARDTYPE_PCMCIA,    // 16-bit PCMCIA card in slot    
-+    MPI_CARDTYPE_CARDBUS,   // 32-bit CardBus card in slot
-+}   CardType;
-+
-+#define CARDBUS_SLOT        0    // Slot 0 is default for CardBus
-+
-+#define pcmciaAttrOffset    0x00200000
-+#define pcmciaMemOffset     0x00000000
-+// Needs to be right above PCI I/O space. Give 0x8000 (32K) to PCMCIA. 
-+#define pcmciaIoOffset      (BCM_PCI_IO_BASE + 0x80000)
-+// Base Address is that mapped into the MPI ChipSelect registers. 
-+// UBUS bridge MemoryWindow 0 outputs a 0x00 for the base.
-+#define pcmciaBase          0xbf000000
-+#define pcmciaAttr          (pcmciaAttrOffset | pcmciaBase)
-+#define pcmciaMem           (pcmciaMemOffset  | pcmciaBase)
-+#define pcmciaIo            (pcmciaIoOffset   | pcmciaBase)
-+
-+#endif
-diff -Naurp linux-2.6.16.7-generic-patched/bcmdrivers/opensource/include/bcm963xx/bcmtypes.h linux-2.6.16.7-patched/bcmdrivers/opensource/include/bcm963xx/bcmtypes.h
---- linux-2.6.16.7-generic-patched/bcmdrivers/opensource/include/bcm963xx/bcmtypes.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.16.7-patched/bcmdrivers/opensource/include/bcm963xx/bcmtypes.h	2006-07-05 15:21:58.000000000 +0200
+diff -urN linux-2.6.17/bcmdrivers/opensource/include/bcm963xx/bcmtypes.h linux-2.6.17-brcm63xx/bcmdrivers/opensource/include/bcm963xx/bcmtypes.h
+--- linux-2.6.17/bcmdrivers/opensource/include/bcm963xx/bcmtypes.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-brcm63xx/bcmdrivers/opensource/include/bcm963xx/bcmtypes.h	2006-07-25 10:43:50.000000000 +0200
 @@ -0,0 +1,163 @@
 +/*
 +<:copyright-gpl 
@@ -2869,10 +2822,10 @@ diff -Naurp linux-2.6.16.7-generic-patched/bcmdrivers/opensource/include/bcm963x
 +#define READ8(addr)         (*(volatile UINT8  *)((ULONG)&addr))
 +
 +#endif
-diff -Naurp linux-2.6.16.7-generic-patched/bcmdrivers/opensource/include/bcm963xx/board.h linux-2.6.16.7-patched/bcmdrivers/opensource/include/bcm963xx/board.h
---- linux-2.6.16.7-generic-patched/bcmdrivers/opensource/include/bcm963xx/board.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.16.7-patched/bcmdrivers/opensource/include/bcm963xx/board.h	2006-07-05 15:21:58.000000000 +0200
-@@ -0,0 +1,374 @@
+diff -urN linux-2.6.17/bcmdrivers/opensource/include/bcm963xx/board.h linux-2.6.17-brcm63xx/bcmdrivers/opensource/include/bcm963xx/board.h
+--- linux-2.6.17/bcmdrivers/opensource/include/bcm963xx/board.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-brcm63xx/bcmdrivers/opensource/include/bcm963xx/board.h	2006-07-25 11:00:10.000000000 +0200
+@@ -0,0 +1,368 @@
 +/*
 +<:copyright-gpl 
 + Copyright 2002 Broadcom Corp. All Rights Reserved. 
@@ -2902,9 +2855,6 @@ diff -Naurp linux-2.6.16.7-generic-patched/bcmdrivers/opensource/include/bcm963x
 +#ifndef _BOARD_H
 +#define _BOARD_H
 +
-+#if __cplusplus
-+extern "C" {
-+#endif
 +/*****************************************************************************/
 +/*                    Misc board definitions                                 */
 +/*****************************************************************************/
@@ -3241,9 +3191,30 @@ diff -Naurp linux-2.6.16.7-generic-patched/bcmdrivers/opensource/include/bcm963x
 +void kerSysWakeupMonitorTask( void );
 +#endif
 +
-+#if __cplusplus
-+}
-+#endif
 +
 +#endif /* _BOARD_H */
 +
+diff -urN linux-2.6.17/bcmdrivers/opensource/Makefile linux-2.6.17-brcm63xx/bcmdrivers/opensource/Makefile
+--- linux-2.6.17/bcmdrivers/opensource/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-brcm63xx/bcmdrivers/opensource/Makefile	2006-07-25 10:43:50.000000000 +0200
+@@ -0,0 +1,20 @@
++# File: modules/drivers/Makefile
++#
++# Makefile for the GPLed Linux kernel modules.
++#
++
++LN_NAME=bcm9$(BRCM_CHIP)
++LN_DRIVER_DIRS =
++
++-include $(KERNEL_DIR)/.config
++
++ifneq ($(CONFIG_BCM_SERIAL),)
++  LN_DRIVER_DIRS +=ln -sn impl$(CONFIG_BCM_SERIAL_IMPL) char/serial/$(LN_NAME);
++endif
++
++obj-$(CONFIG_BCM_SERIAL) += char/serial/impl$(CONFIG_BCM_SERIAL_IMPL)/
++
++
++symlinks:
++	find . -lname "*" -name "$(LN_NAME)" -print -exec rm -f "{}" ";"	
++	$(CONFIG_SHELL) -c "$(LN_DRIVER_DIRS)"
