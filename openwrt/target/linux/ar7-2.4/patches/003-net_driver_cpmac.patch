@@ -3187,7 +3187,7 @@ diff -urN linux.old/drivers/net/avalanche_cpmac/cpmac.c linux.dev/drivers/net/av
 +	 * replace the default MACRO. */
 +	{
 +	    char *mac_port = prom_getenv("MAC_PORT"); /* Internal: 0, External: 1 */
-+	    if(!mac_port || (0 != strcmp(mac_port, "0"))) {
++	    if(0 == strcmp(mac_port, "1")) {
 +		printk("Using the MAC with external PHY\n");
 +		cfg_start_link_speed = _CPMDIO_NOPHY;
 +		cpmac_max_frame_size = CPMAC_MAX_FRAME_SIZE + 4;
@@ -11249,7 +11249,7 @@ diff -urN linux.old/drivers/net/avalanche_cpmac/psp_config_build.c linux.dev/dri
 +        }
 +
 +        //if(phy_sel == auto_detect_cpmac_phy())
-+        if(!mac_port || (0 != strcmp(mac_port, "0")))
++        if(0 == strcmp(mac_port, "1"))
 +        {
 +            printk("Using the MAC with external PHY\n");
 +            psp_config_add("cpmdio", s3, psp_config_strlen(s3), en_compile);
