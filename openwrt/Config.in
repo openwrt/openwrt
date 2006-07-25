@@ -18,6 +18,10 @@ menuconfig DEVEL
 	select BUILDOPTS
 	select TOOLCHAINOPTS
 
+config BROKEN
+	bool "Show broken platforms / packages" if DEVEL
+	default n
+
 menuconfig BUILDOPTS
 	bool "Build Options" if DEVEL
 
