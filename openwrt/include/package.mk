@@ -12,14 +12,12 @@ endif
 
 define Build/DefaultTargets
   ifeq ($(DUMP),)
-    ifneq ($$(shell $(SCRIPT_DIR)/timestamp.pl -p $(PKG_BUILD_DIR) .),$(PKG_BUILD_DIR))
-      ifeq ($(CONFIG_AUTOREBUILD),y)
+    ifeq ($(CONFIG_AUTOREBUILD),y)
+      ifneq ($$(shell $(SCRIPT_DIR)/timestamp.pl -p $(PKG_BUILD_DIR) .),$(PKG_BUILD_DIR))
         $(PKG_BUILD_DIR)/.prepared: package-clean
       endif
-    endif
 
-    ifneq ($$(shell $(SCRIPT_DIR)/timestamp.pl -p -x ipkg $(IPKG_$(1)) $(PKG_BUILD_DIR)),$(IPKG_$(1)))
-      ifeq ($(CONFIG_AUTOREBUILD),y)
+      ifneq ($$(shell $(SCRIPT_DIR)/timestamp.pl -p -x ipkg $(IPKG_$(1)) $(PKG_BUILD_DIR)),$(IPKG_$(1)))
         $(PKG_BUILD_DIR)/.built: package-rebuild
       endif
     endif
@@ -182,7 +180,7 @@ define BuildPackage
   $(eval $(call BuildIPKGVariable,$(1),postinst))
   $(eval $(call BuildIPKGVariable,$(1),prerm))
   $(eval $(call BuildIPKGVariable,$(1),postrm))
-  $$(IDIR_$(1))/CONTROL/control: Makefile $(PKG_BUILD_DIR)/.prepared
+  $$(IDIR_$(1))/CONTROL/control: Makefile $(PKG_BUILD_DIR)/.prepared $(PKG_BUILD_DIR)/.version-$(1)_$(VERSION)_$(PKGARCH)
 	mkdir -p $$(IDIR_$(1))/CONTROL
 	echo "Package: $(1)" > $$(IDIR_$(1))/CONTROL/control
 	echo "Version: $(VERSION)" >> $$(IDIR_$(1))/CONTROL/control
@@ -212,6 +210,7 @@ define BuildPackage
 	-find $$(IDIR_$(1)) -name '.#*' | xargs rm -f
 	$(RSTRIP) $$(IDIR_$(1))
 	$(IPKG_BUILD) $$(IDIR_$(1)) $(PACKAGE_DIR)
+	@[ -f $$(IPKG_$(1)) ] || false 
 
   $$(INFO_$(1)): $$(IPKG_$(1))
 	$(IPKG) install $$(IPKG_$(1))
@@ -220,6 +219,10 @@ define BuildPackage
 	rm -f $(PACKAGE_DIR)/$(1)_*
 
   clean: $(1)-clean
+
+  $(PKG_BUILD_DIR)/.version-$(1)_$(VERSION)_$(PKGARCH):
+	-rm $(PKG_BUILD_DIR)/.version-$(1)_*
+	@touch $$@
 
   $$(eval $$(call Build/DefaultTargets,$(1)))
 
