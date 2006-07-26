@@ -923,11 +923,7 @@ ipkg_install() {
 				ipkg_install_file $ipkg_filename
 			;;
 		*.ipk  | *.deb)
-			if [ -f "$pkg" ]; then
 				ipkg_install_file $pkg
-			else
-				echo "File not found $pkg" >&2
-			fi
 			;;
 		*)
 			ipkg_get_install $pkg || true
