@@ -17,7 +17,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define Package/mtd
 SECTION:=base
-CATEGORY:=Util
+CATEGORY:=Utilities
 DEFAULT:=y
 TITLE:=Update utility for trx firmware images
 DESCRIPTION:=Update utility for trx firmware images. To update \\\
