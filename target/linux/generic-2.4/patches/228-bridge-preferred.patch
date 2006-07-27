@@ -1,0 +1,61 @@
+diff -rup linux-rb24/net/bridge/br_device.c linux-rb24bpatch/net/bridge/br_device.c
+--- linux-rb24/net/bridge/br_device.c	2002-02-25 11:38:14.000000000 -0800
++++ linux-rb24bpatch/net/bridge/br_device.c	2005-07-05 02:09:17.000000000 -0700
+@@ -121,6 +121,23 @@ static int br_dev_accept_fastpath(struct
+ 	return -1;
+ }
+ 
++static int
++br_set_mac_address(struct net_device *dev, void *addr)
++{
++	struct net_bridge *br = dev->priv;
++	struct sockaddr *sa = (struct sockaddr *) addr;
++
++	write_lock_bh(&br->lock);
++
++	memcpy(br->preferred_id.addr, sa->sa_data, ETH_ALEN);
++
++	br_stp_recalculate_bridge_id(br);
++
++	write_unlock_bh(&br->lock);
++
++	return 0;
++}
++
+ void br_dev_setup(struct net_device *dev)
+ {
+ 	memset(dev->dev_addr, 0, ETH_ALEN);
+@@ -133,5 +150,5 @@ void br_dev_setup(struct net_device *dev
+ 	dev->stop = br_dev_stop;
+ 	dev->accept_fastpath = br_dev_accept_fastpath;
+ 	dev->tx_queue_len = 0;
+-	dev->set_mac_address = NULL;
++	dev->set_mac_address = br_set_mac_address;
+ }
+diff -rup linux-rb24/net/bridge/br_private.h linux-rb24bpatch/net/bridge/br_private.h
+--- linux-rb24/net/bridge/br_private.h	2004-08-07 16:26:06.000000000 -0700
++++ linux-rb24bpatch/net/bridge/br_private.h	2005-07-05 02:12:56.000000000 -0700
+@@ -95,6 +95,7 @@ struct net_bridge
+ 	int				hello_time;
+ 	int				forward_delay;
+ 	bridge_id			bridge_id;
++	bridge_id			preferred_id;
+ 	int				bridge_max_age;
+ 	int				bridge_hello_time;
+ 	int				bridge_forward_delay;
+diff -rup linux-rb24/net/bridge/br_stp_if.c linux-rb24bpatch/net/bridge/br_stp_if.c
+--- linux-rb24/net/bridge/br_stp_if.c	2001-04-19 08:38:50.000000000 -0700
++++ linux-rb24bpatch/net/bridge/br_stp_if.c	2005-07-05 02:22:11.000000000 -0700
+@@ -162,6 +162,12 @@ void br_stp_recalculate_bridge_id(struct
+ 
+ 	p = br->port_list;
+ 	while (p != NULL) {
++		/* match against preferred address first */
++		if (memcmp(p->dev->dev_addr,br->preferred_id.addr,ETH_ALEN) == 0) {
++			addr = p->dev->dev_addr;
++			break;
++		}
++
+ 		if (addr == br_mac_zero ||
+ 		    memcmp(p->dev->dev_addr, addr, ETH_ALEN) < 0)
+ 			addr = p->dev->dev_addr;
