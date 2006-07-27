@@ -22,7 +22,7 @@ dupe() { # <new_root> <old_root>
 		./rom/note) ;; #nothing
 		./etc/config*|\
 		./etc/resolv.conf|\
-		./usr/lib/ipkg/info) cp -af $2/$file $file;;
+		./usr/lib/ipkg/info/*) cp -af $2/$file $file;;
 		*) ln -sf /rom/${file#./*} $file;;
 		esac
 	done
