@@ -1,5 +1,6 @@
 #!/bin/sh
 # Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006 Fokus Fraunhofer <carsten.tittel@fokus.fraunhofer.de>
 
 alias debug=${DEBUG:-:}
 
@@ -38,15 +39,17 @@ reset_cb() {
 reset_cb
 
 config () {
-	_C=$(($_C + 1))
-	name="${name:-cfg${_C}}"
-	config_cb "$1" "$2"
-	export CONFIG_SECTION="$2"
-	export CONFIG_${CONFIG_SECTION}_TYPE="$1"
+    local type="$1"
+    local name="$2"
+    _C=$(($_C + 1))
+    name="${name:-cfg${_C}}"
+    config_cb "$type" "$name"
+    export CONFIG_SECTION="$name"
+    export CONFIG_${CONFIG_SECTION}_TYPE="$type"
 }
 
 option () {
-	local varname="$1" ; shift
+	local varname="$1"; shift
 	export CONFIG_${CONFIG_SECTION}_${varname}="$*"
 	option_cb "$varname" "$*"
 }
@@ -87,4 +90,10 @@ config_set() {
 
 load_modules() {
 	sed 's/^[^#]/insmod &/' $* | ash 2>&- || :
+}
+
+include() {
+	for file in $(ls /lib/$1/*.sh 2>/dev/null); do
+		. $file
+	done
 }
