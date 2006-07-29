@@ -22,8 +22,8 @@ include $(INCLUDE_DIR)/package.mk
 
 ifneq ($(DUMP),1)
 TARGET:=-$(BOARD)-$(KERNEL)
-UCLIBC_VERSION:=${shell cat $(STAGING_DIR)/uclibc_version}
-LIBGCC_VERSION:=${shell cat $(STAGING_DIR)/gcc_version}
+UCLIBC_VERSION:=${shell cat $(STAGING_DIR)/uclibc_version 2>/dev/null}
+LIBGCC_VERSION:=${shell cat $(STAGING_DIR)/gcc_version 2>/dev/null}
 else
 UCLIBC_VERSION:=<UCLIBC_VERSION>
 LIBGCC_VERSION:=<LIBGCC_VERSION>

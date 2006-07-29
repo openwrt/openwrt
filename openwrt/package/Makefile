@@ -10,12 +10,16 @@ include $(TOPDIR)/rules.mk
 include $(TOPDIR)/.config
 include $(TOPDIR)/.pkgdeps
 
-SOURCE_PACKAGES:=$(patsubst %,%-download,$(package-y) $(package-m))
+PREREQ_PACKAGES:=$(patsubst %,%-prereq,$(package-y) $(package-m))
+DOWNLOAD_PACKAGES:=$(patsubst %,%-download,$(package-y) $(package-m))
 COMPILE_PACKAGES:=$(patsubst %,%-compile,$(package-y) $(package-m))
 INSTALL_PACKAGES:=$(patsubst %,%-install,$(package-y))
 
 $(STAMP_DIR) $(TARGET_DIR):
 	mkdir -p $@
+
+%-prereq: $(STAMP_DIR) $(TARGET_DIR)
+	$(MAKE) -C $(patsubst %-prereq,%,$@) prereq MAKEFLAGS="$(BUILD_MAKEFLAGS)"
 
 %-download: $(STAMP_DIR) $(TARGET_DIR)
 	$(MAKE) -C $(patsubst %-download,%,$@) download MAKEFLAGS="$(BUILD_MAKEFLAGS)"
@@ -41,7 +45,8 @@ $(TOPDIR)/.pkgdeps: $(TOPDIR)/.pkginfo
 
 all: compile
 clean: $(patsubst %,%-clean,$(package-) $(package-y) $(package-m))
-download: $(SOURCE_PACKAGES)
+prereq: $(PREREQ_PACKAGES)
+download: $(DOWNLOAD_PACKAGES)
 compile-targets: $(COMPILE_PACKAGES)
 compile:
 	$(MAKE) -j$(CONFIG_JLEVEL) compile-targets

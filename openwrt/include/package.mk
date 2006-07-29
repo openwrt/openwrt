@@ -10,6 +10,8 @@ else
   all: compile
 endif
 
+include $(INCLUDE_DIR)/prereq.mk
+
 define Build/DefaultTargets
   ifeq ($(DUMP),)
     ifeq ($(CONFIG_AUTOREBUILD),y)

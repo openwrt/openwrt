@@ -31,14 +31,17 @@ export OPENWRTVERSION
 
 all: world
 
-.pkginfo: FORCE
 ifneq ($(shell ./scripts/timestamp.pl -p .pkginfo package Makefile),.pkginfo)
+.pkginfo: FORCE
+.config: FORCE
+endif
+
+.pkginfo:
 	@echo Collecting package info...
 	@-for dir in package/*/; do \
 		echo Source-Makefile: $${dir}Makefile; \
 		$(NO_TRACE_MAKE) --no-print-dir DUMP=1 -C $$dir 2>&- || true; \
 	done > $@
-endif
 
 .config.in: .pkginfo
 	@./scripts/gen_menuconfig.pl < $< > $@ || rm -f $@
@@ -77,18 +80,25 @@ target/%: .pkginfo FORCE
 toolchain/%: FORCE
 	$(MAKE) -C toolchain $(patsubst toolchain/%,%,$@)
 
-.config: ./scripts/config/conf FORCE
+.config: ./scripts/config/conf
 	@[ -f .config ] || $(NO_TRACE_MAKE) menuconfig
 	@$< -D .config Config.in &> /dev/null
 
-.prereq: $(TOPDIR)/include/prereq.mk .pkginfo
-	@$(NO_TRACE_MAKE) -s -f $(TOPDIR)/include/prereq.mk prereq 2>/dev/null || { \
+.prereq-build: $(TOPDIR)/include/prereq-build.mk
+	@$(NO_TRACE_MAKE) -s -f $(TOPDIR)/include/prereq-build.mk prereq 2>/dev/null || { \
 		echo "Prerequisite check failed. Use FORCE=1 to override."; \
 		false; \
 	}
 	@touch $@
 
-prereq: .prereq FORCE
+.prereq-packages: $(TOPDIR)/include/prereq.mk .pkginfo .config
+	@$(NO_TRACE_MAKE) -s -C package prereq 2>/dev/null || { \
+		echo "Prerequisite check failed. Use FORCE=1 to override."; \
+		false; \
+	}
+	@touch $@
+	
+prereq: .prereq-build .prereq-packages FORCE
 
 download: .config FORCE
 	$(MAKE) toolchain/download
@@ -96,7 +106,8 @@ download: .config FORCE
 	$(MAKE) target/download
 
 ifeq ($(FORCE),)
-world: .prereq
+.config ./scripts/config/conf ./scripts/config/mconf: .prereq-build
+world: .prereq-packages
 endif
 
 world: .config FORCE
