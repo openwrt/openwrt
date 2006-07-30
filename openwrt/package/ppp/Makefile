@@ -28,6 +28,7 @@ SECTION:=net
 CATEGORY:=Network
 MENU:=1
 DEFAULT:=y
+DEPENDS:=+kmod-ppp
 TITLE:=PPP daemon
 DESCRIPTION:=PPP (Point-to-Point Protocol) daemon
 URL:=http://ppp.samba.org/
@@ -36,7 +37,7 @@ endef
 define Package/ppp-mod-pppoa
 SECTION:=net
 CATEGORY:=Network
-DEPENDS:=ppp +linux-atm
+DEPENDS:=ppp +linux-atm +kmod-pppoa
 TITLE:=PPPoA plugin
 DESCRIPTION:=PPPoA (PPP over ATM) plugin for ppp
 endef
@@ -45,7 +46,7 @@ define Package/ppp-mod-pppoe
 SECTION:=net
 CATEGORY:=Network
 DEFAULT:=y
-DEPENDS:=ppp
+DEPENDS:=ppp +kmod-pppoe
 TITLE:=PPPoE plugin
 DESCRIPTION:=PPPoE (PPP over Ethernet) plugin for ppp
 endef

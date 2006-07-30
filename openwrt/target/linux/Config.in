@@ -37,40 +37,6 @@ config PACKAGE_KMOD_IPV6
 	help
 	  Kernel modules for IPv6 protocol support
 
-config PACKAGE_KMOD_PPP
-	prompt "kmod-ppp.......................... PPP support"
-	tristate
-	default m
-	help
-	  Kernel support for PPP
-
-config PACKAGE_KMOD_MPPE
-	prompt   "kmod-mppe....................... PPP MPPE/MPPC module"
-	tristate
-	default m
-	depends PACKAGE_KMOD_PPP
-	select PACKAGE_kmod-crypto
-	help
-	  Support for Microsoft PPP Encryption/Compression
-
-config PACKAGE_KMOD_PPPOATM
-	prompt   "kmod-pppoatm.................... PPPoA (PPP over ATM) kernel support"
-	tristate
-	default y if LINUX_2_4_AR7
-	default m
-	depends PACKAGE_KMOD_PPP
-	select PACKAGE_KMOD_ATM
-	help
-	  Support for PPP over ATM
-
-config PACKAGE_KMOD_PPPOE
-	prompt   "kmod-pppoe...................... PPPoE (PPP over Ethernet) kernel support"
-	tristate
-	default m
-	depends PACKAGE_KMOD_PPP
-	help
-	  Support for PPP over Ethernet
-
 config PACKAGE_KMOD_RING
 	prompt "kmod-ring......................... PF Ring"
 	tristate

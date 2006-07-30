@@ -27,26 +27,6 @@ $(eval $(call KMOD_template,IPV6,ipv6,\
 	$(MODULES_DIR)/kernel/net/ipv6/ipv6.ko \
 ,CONFIG_IPV6,,20,ipv6))
 
-$(eval $(call KMOD_template,PPP,ppp,\
-	$(MODULES_DIR)/kernel/drivers/net/ppp_async.ko \
-	$(MODULES_DIR)/kernel/drivers/net/ppp_generic.ko \
-	$(MODULES_DIR)/kernel/drivers/net/slhc.ko \
-	$(MODULES_DIR)/kernel/lib/crc-ccitt.ko \
-,CONFIG_PPP))
-
-#$(eval $(call KMOD_template,MPPE,mppe,\
-#	$(MODULES_DIR)/kernel/drivers/net/ppp_mppe_mppc.ko \
-#,CONFIG_PPP_MPPE_MPPC))
-
-$(eval $(call KMOD_template,PPPOATM,pppoatm,\
-	$(MODULES_DIR)/kernel/net/atm/pppoatm.ko \
-,CONFIG_PPPOATM))
-
-$(eval $(call KMOD_template,PPPOE,pppoe,\
-	$(MODULES_DIR)/kernel/drivers/net/pppoe.ko \
-	$(MODULES_DIR)/kernel/drivers/net/pppox.ko \
-,CONFIG_PPPOE))
-
 $(eval $(call KMOD_template,SCHED,sched,\
 	$(MODULES_DIR)/kernel/net/sched/*.ko \
 ,CONFIG_NET_SCHED))
