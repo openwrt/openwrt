@@ -13,8 +13,9 @@ scan_interfaces
 args=""
 iface=lan
 config_get ifname "$iface" ifname
+config_get proto "$iface" proto
 
-dhcp_enable="${dhcp_enable:-1}"
+[ "$proto" = static ] && dhcp_enable="${dhcp_enable:-1}"
 dhcp_start="${dhcp_start:-100}"
 dhcp_num="${dhcp_num:-50}"
 dhcp_lease="${dhcp_lease:-12h}"
@@ -33,7 +34,7 @@ dhcp_lease="${dhcp_lease:-12h}"
 		eval $(ipcalc $ipaddr $netmask ${dhcp_start:-100} ${dhcp_num:-150})
 		
 		# and pass the args via config parser defines
-		echo "@define dhcp_enable 1"
+		echo "${dhcp_enable:+@define dhcp_enable 1}"
 		echo "@define netmask $NETMASK"
 		echo "@define start $START"
 		echo "@define end $END"
