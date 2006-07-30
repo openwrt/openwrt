@@ -253,7 +253,7 @@ TITLE:=PPPoA modules
 DESCRIPTION:=Kernel modules for PPP over ATM support
 DEPENDS:=kmod-ppp
 KCONFIG:=$(CONFIG_PPPOATM)
-FILES:=$(MODULES_DIR)/kernel/drivers/net/pppoatm.$(LINUX_KMOD_SUFFIX)
+FILES:=$(MODULES_DIR)/kernel/drivers/net/atm/pppoatm.$(LINUX_KMOD_SUFFIX)
 endef
 $(eval $(call KernelPackage,pppoa))
 
