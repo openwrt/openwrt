@@ -33,12 +33,12 @@ config_load wireless
 include wifi
 
 for device in $DEVICES; do (
-	config_get type "$device" type
-	eval "type setup_$type" 2>/dev/null >/dev/null && {
-		eval "scan_$type '$device'"
-		eval "setup_$type '$device'" && {
+	config_get iftype "$device" type
+	eval "type setup_$iftype" 2>/dev/null >/dev/null && {
+		eval "scan_$iftype '$device'"
+		eval "setup_$iftype '$device'" && {
 			# TODO: set up network settings
 			/bin/true
-		} || echo "$device($type): Setup failed" || true
-	} || echo "$device($type): Interface type not supported"
+		} || echo "$device($iftype): Setup failed" || true
+	} || echo "$device($iftype): Interface type not supported"
 ); done

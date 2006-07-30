@@ -8,8 +8,8 @@ addif() {
 	
 	# find all vlan configurations for this interface and set them up as well
 	for ifc in $interfaces; do
-		config_get type "$ifc" type
-		case "$type" in
+		config_get iftype "$ifc" type
+		case "$iftype" in
 			bridge) config_get ifs "$ifc" ifnames;;
 			*) config_get ifs "$ifc" ifname;;
 		esac

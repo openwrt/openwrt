@@ -6,14 +6,14 @@
 include network
 scan_interfaces
 
-debug "### ifdown $type ###"
-type=$1
+cfg=$1
+debug "### ifdown $cfg ###"
 
-config_get proto "$type" proto
+config_get proto "$cfg" proto
 [ -z "$proto" ] && { echo "interface not found."; exit; }
 
 # kill active ppp daemon
-pid="$(cat /var/run/ppp-${type}.pid 2>/dev/null)"
+pid="$(cat /var/run/ppp-${cfg}.pid 2>/dev/null)"
 [ -n "$pid" -a -d "/proc/$pid" ] && {
 	kill $pid
 	sleep 1
@@ -21,14 +21,14 @@ pid="$(cat /var/run/ppp-${type}.pid 2>/dev/null)"
 }
 
 # kill any other process associated with the interface
-config_get ifname "$type" ifname
+config_get ifname "$cfg" ifname
 pid="$(cat /var/run/${ifname}.pid 2>/dev/null)"
 [ -n "$pid" -a -d "/proc/$pid" ] && kill -9 $pid
 
-config_get ifname "$type" ifname
+config_get ifname "$cfg" ifname
 ifconfig "$ifname" >/dev/null 2>/dev/null && {
 	ifconfig "$ifname" 0.0.0.0 down
 
-	config_get iftype "$type" type
+	config_get iftype "$cfg" type
 	[ "$iftype" = "bridge" ] && brctl delbr "$ifname"
 }

@@ -4,11 +4,11 @@
 # DEBUG="echo"
 
 find_config() {
-	local type iface ifn
+	local iftype iface ifn
 	for ifn in $interfaces; do
-		config_get type "$ifn" type
+		config_get iftype "$ifn" type
 		config_get iface "$ifn" ifname
-		case "$type" in
+		case "$iftype" in
 			bridge)
 				config_get iface "$ifn" ifnames
 			;;
@@ -25,15 +25,15 @@ find_config() {
 }
 
 scan_interfaces() {
-	local mode type iface
+	local mode iftype iface
 	interfaces=
 	config_cb() {
-		config_get type "$CONFIG_SECTION" TYPE
-		case "$type" in
+		config_get iftype "$CONFIG_SECTION" TYPE
+		case "$iftype" in
 			interface)
-				config_get type "$CONFIG_SECTION" type
+				config_get iftype "$CONFIG_SECTION" type
 				config_get mode "$CONFIG_SECTION" proto
-				case "$type" in
+				case "$iftype" in
 					bridge)
 						config_get iface "$CONFIG_SECTION" ifname
 						iface="${iface:-br-$CONFIG_SECTION}"

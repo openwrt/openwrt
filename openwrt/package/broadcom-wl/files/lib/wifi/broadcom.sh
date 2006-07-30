@@ -5,8 +5,8 @@ bridge_interface() {
 		scan_interfaces
 		cfg="$(find_config "$1")"
 		[ -z "$cfg" ] && return 0
-		config_get type "$cfg" type
-		[ "$type" = bridge ] && config_get "$type" bridge
+		config_get iftype "$cfg" type
+		[ "$iftype" = bridge ] && config_get "$iftype" bridge
 	)
 }
 
