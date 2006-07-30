@@ -1,6 +1,5 @@
 # Network configuration file
-# Copyright (C) 2006 OpenWrt.org
 
-## LAN configuration
-lan_ifname="eth0"
-lan_proto="dhcp"
+config interface lan
+	option ifname	eth0
+	option proto	dhcp

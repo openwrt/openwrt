@@ -13,16 +13,16 @@ mkdir -p /etc/config
 		strings /dev/mtdblock/3
 	fi
 ) | awk '
-function p(name) {
-	if (c[name] != "") print name "=\"" c[name] "\""
+function p(cfgname, name) {
+	if (c[name] != "") print "	option " cfgname "	\"" c[name] "\""
 }
 
 BEGIN {
 	FS="="
 	c["lan_ifname"]="br0"
-	c["lan_ifnames"]="vlan0 eth1"
+	c["lan_ifnames"]="eth0.0 wl0"
 	c["wan_proto"]="none"
-	c["wan_ifname"]="vlan1"
+	c["wan_ifname"]="eth0.1"
 	c["vlan0ports"]="1 2 3 4 5*"
 	c["vlan1ports"]="0 5"
 }
@@ -34,23 +34,16 @@ BEGIN {
 END {
 	# v1 hardware
 	if (nvram["boardtype"] == "bcm94710dev") {
-		# Linksys WRT54G v1.x
-		if (nvram["boardnum"] == "42") {
-			c["vlan0ports"]=""
-			c["vlan1ports"]=""
-			c["lan_ifnames"]="vlan2 eth2"
-		}
-
 		# Asus WL-500g
 		if (nvram["boardnum"] == "asusX") {
-			c["lan_ifnames"]="eth0 eth1 eth2" # FIXME
-			# wan_ifname=eth1
+			c["lan_ifnames"]="eth0 eth1 wl0" # FIXME
+			c["wan_ifname"]=""
 		}
 	}
 	if (nvram["boardtype"] == "wgt634u") {
 		c["vlan0ports"] = "0 1 2 3 5*"
 		c["vlan1ports"] = "4 5"
-		c["lan_ifnames"] = "vlan0 ath0"
+		c["lan_ifnames"] = "eth0.0 ath0"
 	}
 	if ((nvram["boardtype"] == "0x0467") || (nvram["boardtype"] == "0x042f")) {
 		c["vlan0ports"] = "0 1 2 3 5*"
@@ -60,51 +53,28 @@ END {
 	# WAP54G
 	if ((nvram["boardnum"] == "2") || \
 		(nvram["boardnum"] == "1024")) {
-		c["lan_ifnames"]="eth0 eth1"
+		c["lan_ifnames"]="eth0 wl0"
 		c["wan_ifname"]=""
 	}
 
 	print "#### VLAN configuration "
-	print "vlan0hwname=et0"
-	print "vlan1hwname=et0"
-	p("vlan0ports")
-	p("vlan1ports")
+	print "config switch eth0"
+	p("vlan0", "vlan0ports")
+	p("vlan1", "vlan1ports")
 	print ""
 	print ""
-	
 	print "#### LAN configuration"
-	print "lan_proto=\"static\""
-	p("lan_ifname")
-	p("lan_ifnames")
-	print "lan_ipaddr=\"192.168.1.1\""
-	print "lan_netmask=\"255.255.255.0\""
-	print "# lan_dns=\"192.168.1.1\""
-	print "# lan_gateway=\"192.168.1.1\""
-
+	print "config interface lan"
+	print "	option type 	bridge"
+	p("ifnames", "lan_ifnames")
+	print "	option proto	static"
+	print "	option ipaddr	192.168.1.1"
+	print "	option netmask	255.255.255.0"
 	print ""
 	print ""
-
 	print "#### WAN configuration"
-	print "# wan_proto: WAN protocol, available protocols:"
-	print "#   none: disable"
-	print "#   dhcp: DHCP"
-	print "#   static: Static IP"
-	print "#   pppoe: PPP over Ethernet"
-	print "#   pptp: Point-to-Point tunneling Protocol"
-	print "#     for pppoe and pptp you need to use wan_ifname=\"ppp0\""
-	print ""
-	print "wan_proto=dhcp"
-	p("wan_ifname")
-	print "wan_device=\"" c["wan_ifname"] "\""
-	print "# wan_ipaddr=\"192.168.0.2\""
-	print "# wan_netmask=\"255.255.255.0\""
-	print "# wan_gateway=\"192.168.0.1\""
-	print "# wan_dns=\"192.168.0.1\""
-	print ""
-	print "## PPP over Ethernet and PPTP"
-	print "# wan_ifname=\"ppp0\""
-	print "# ppp_username=\"my_username\""
-	print "# ppp_passwd=\"my_password\""
-	print "# pptp_server_ip=\"192.168.0.1\""
+	print "config interface	wan"
+	p("ifname", "wan_ifname")
+	print "	option proto	dhcp"
 }
 ' > /etc/config/network

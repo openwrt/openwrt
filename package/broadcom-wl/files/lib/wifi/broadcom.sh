@@ -1,3 +1,15 @@
+bridge_interface() {
+	(
+		. /etc/functions.sh
+		include network
+		scan_interfaces
+		cfg="$(find_config "$1")"
+		[ -z "$cfg" ] && return 0
+		config_get type "$cfg" type
+		[ "$type" = bridge ] && config_get "$type" bridge
+	)
+}
+
 scan_broadcom() {
 	local device="$1"
 
@@ -127,7 +139,7 @@ setup_broadcom() {
 		config_get ifname "$vif" ifname
 		append if_up "ifconfig $ifname up" ";$N"
 		[ -z "$nasopts" ] || {
-			config_get bridge "$vif" bridge # XXX: integrate with /etc/config/network later
+			bridge="$(bridge_interface "$ifname")"
 			eval "${vif}_ssid=\"\$ssid\""
 			mode="-A"
 			[ "$vif" = "$sta_if" ] && mode="-S"

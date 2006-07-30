@@ -1,15 +1,19 @@
 #!/bin/sh
 [ -z "$1" ] && echo "Error: should be run by udhcpc" && exit 1
-. /etc/config/network
+. /etc/functions.sh
+include network
 
 RESOLV_CONF="/tmp/resolv.conf"
 
 hotplug_event() {
-	for ifname in lan wan wifi ${ifnames}; do
-		eval "proto=\"\${${ifname}_proto}\""
-		eval "if=\"\${${ifname}_ifname}\""
+	scan_interfaces
+	for ifc in $interfaces; do
+		config_get ifname $ifc ifname
+		[ "$ifname" = "$interface" ] || continue
+
+		config_get proto $ifc proto
 		[ "$proto" = "dhcp" ] || continue
-		[ "$if" = "$interface" ] || continue
+
 		env -i ACTION="$1" INTERFACE="$ifname" PROTO=dhcp /sbin/hotplug iface
 	done
 }

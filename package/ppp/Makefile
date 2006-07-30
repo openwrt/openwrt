@@ -95,6 +95,8 @@ define Build/Compile
 endef
 
 define Package/ppp/install
+	install -d -m0755 $(1)/lib/network
+	install -m0755 ./files/ppp.sh $(1)/lib/network/
 	install -d -m0755 $(1)/etc/ppp
 	install -m0600 ./files/etc/ppp/chap-secrets $(1)/etc/ppp/
 	install -m0644 ./files/etc/ppp/filter $(1)/etc/ppp/
@@ -110,19 +112,19 @@ define Package/ppp/install
 endef
 	
 define Package/ppp-mod-pppoa/install
+	install -d -m0755 $(1)/lib/network
+	install -m0755 ./files/pppoa.sh $(1)/lib/network/
 	install -d -m0755 $(1)/usr/lib/pppd/$(PKG_VERSION)
 	install -m0755 $(PKG_INSTALL_DIR)/usr/lib/pppd/$(PKG_VERSION)/pppoatm.so \
 		$(1)/usr/lib/pppd/$(PKG_VERSION)/
-	install -d -m0755 $(1)/sbin
-	install -m0755 ./files/ifup.pppoa $(1)/sbin/
 endef
 
 define Package/ppp-mod-pppoe/install
+	install -d -m0755 $(1)/lib/network
+	install -m0755 ./files/pppoe.sh $(1)/lib/network/
 	install -d -m0755 $(1)/usr/lib/pppd/$(PKG_VERSION)
 	install -m0755 $(PKG_INSTALL_DIR)/usr/lib/pppd/$(PKG_VERSION)/rp-pppoe.so \
 		$(1)/usr/lib/pppd/$(PKG_VERSION)/
-	install -d -m0755 $(1)/sbin
-	install -m0755 ./files/ifup.pppoe $(1)/sbin/
 endef
 
 define Package/ppp-mod-radius/install

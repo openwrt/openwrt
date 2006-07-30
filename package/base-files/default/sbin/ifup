@@ -1,38 +1,18 @@
 #!/bin/sh
 # Copyright (C) 2006 OpenWrt.org
 
-[ $# = 0 ] && { echo "  $0 <group>"; exit; }
-. /etc/functions.sh
-. /etc/config/network
+. /sbin/ifdown "$@"
 
-ifdown $1
-
-debug "### ifup $type ###"
-type=$1
-
-eval "if_proto=\"\${${type}_proto}\""
-eval "if=\"\${${type}_ifname}\""
-[ "${if%%[0-9]}" = "ppp" ] && eval "if=\"\${${type}_device}\""
-
-case "$if_proto" in
-	pppoa) hotplug_dev register atm0; exit 0 ;;
-	pppoe)
-		# PPPoE over ATM
-		[ "$if" = "nas0" ] && {
-			ifconfig nas0 2>&- >&- || {
-				hotplug_dev register atm0
-				exit 0
-			}
-		}
+config_get iftype "$1" type
+case "$iftype" in
+	bridge)
+		config_get ifname "$1" ifnames
 	;;
-	none|"") exit 0;;
+	*)
+		config_get ifname "$1" ifname
+	;;
 esac
 
-if [ "${if%%[0-9]}" = "br" ]; then
-	eval "ifnames=\"\${${type}_ifnames}\""
-	for sif in $ifnames; do
-		hotplug_dev register "$sif"
-	done
-else
-	hotplug_dev register "$if"
-fi
+for dev in $ifname; do
+	setup_interface "$dev" "$1"
+done

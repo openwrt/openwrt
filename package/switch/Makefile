@@ -42,6 +42,10 @@ define Build/Compile
 endef
 	
 define Package/kmod-switch/install
+	install -m0755 -d $(1)/lib/network/
+	install -m0755 ./files/switch.sh $(1)/lib/network/
+	install -m0755 -d $(1)/etc/modules.d/
+	printf 'switch-core\nswitch-robo\nswitch-adm\n' > $(1)/etc/modules.d/20-switch
 	install -m0755 -d $(1)/lib/modules/$(LINUX_VERSION)
 	$(CP) $(PKG_BUILD_DIR)/*.$(LINUX_KMOD_SUFFIX) \
 		$(1)/lib/modules/$(LINUX_VERSION)

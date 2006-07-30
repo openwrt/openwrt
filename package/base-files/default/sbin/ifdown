@@ -3,18 +3,32 @@
 
 [ $# = 0 ] && { echo "  $0 <group>"; exit; }
 . /etc/functions.sh
-. /etc/config/network
+include network
+scan_interfaces
 
 debug "### ifdown $type ###"
 type=$1
 
-eval "if_proto=\"\${${type}_proto}\""
-eval "if=\"\${${type}_ifname}\""
-[ "${if%%[0-9]}" = "ppp" ] && eval "if=\"\${${type}_device}\""
+config_get proto "$type" proto
+[ -z "$proto" ] && { echo "interface not found."; exit; }
 
-case "$if_proto" in
-	pppoa) hotplug_dev unregister atm0; exit 0 ;;
-	""|none) exit 0;;
-esac
+# kill active ppp daemon
+pid="$(cat /var/run/ppp-${type}.pid 2>/dev/null)"
+[ -n "$pid" -a -d "/proc/$pid" ] && {
+	kill $pid
+	sleep 1
+	[ -d "/proc/$pid" ] && kill -9 $pid
+}
 
-hotplug_dev unregister "$if"
+# kill any other process associated with the interface
+config_get ifname "$type" ifname
+pid="$(cat /var/run/${ifname}.pid 2>/dev/null)"
+[ -n "$pid" -a -d "/proc/$pid" ] && kill -9 $pid
+
+config_get ifname "$type" ifname
+ifconfig "$ifname" >/dev/null 2>/dev/null && {
+	ifconfig "$ifname" 0.0.0.0 down
+
+	config_get iftype "$type" type
+	[ "$iftype" = "bridge" ] && brctl delbr "$ifname"
+}

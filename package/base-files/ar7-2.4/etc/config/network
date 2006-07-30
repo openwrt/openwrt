@@ -1,27 +1,8 @@
 # Network configuration file
-# Uncomment the following statements to change the network configuration
 
-## LAN configuration
-lan_ifname="eth0"
-lan_proto="static"
-lan_ipaddr="192.168.1.1"
-lan_netmask="255.255.255.0"
-# lan_gateway=""
-# lan_dns=""
-
-## WAN configuration
-# wan_proto=pppoe
-wan_ifname=ppp0
-wan_device=nas0
-atm_vpi=8
-atm_vci=35
-# ppp_username=my_username
-# ppp_passwd=my_passwd
-
-## WAN configuration (pppoe)
-pppoe_atm=1
-ppp_mtu=1492
-
-## WAN configuration (pppoa)
-# ppp_mtu=1500
+config interface lan
+	option ifname	eth0
+	option proto	static
+	option ipaddr	192.168.1.1
+	option netmask	255.255.255.0
 

@@ -30,12 +30,7 @@ config_cb() {
 }
 
 config_load wireless
-
-[ -d /lib/wifi -a -n "$(ls /lib/wifi/*.sh 2>&-)" ] && {
-	for script in /lib/wifi/*.sh; do
-		. $script
-	done
-}
+include wifi
 
 for device in $DEVICES; do (
 	config_get type "$device" type

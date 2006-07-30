@@ -3,9 +3,12 @@
 
 ## Please make changes in /etc/firewall.user
 
-. /etc/config/network
-WAN="$wan_ifname"
-LAN="$lan_ifname"
+. /etc/functions.sh
+include network
+
+scan_interfaces
+config_get WAN wan ifname
+config_get LAN lan ifname
 
 ## CLEAR TABLES
 for T in filter nat; do
@@ -35,7 +38,7 @@ iptables -t nat -N postrouting_rule
   iptables -A INPUT -j input_rule
 
   # allow
-  [ -z "$WAN" ] || iptables -A INPUT -i \! $WAN	-j ACCEPT	# allow from lan/wifi interfaces 
+  iptables -A INPUT ${WAN:+-i \! $WAN}	-j ACCEPT	# allow from lan/wifi interfaces 
   iptables -A INPUT -p icmp	-j ACCEPT	# allow ICMP
   iptables -A INPUT -p gre	-j ACCEPT	# allow GRE
 

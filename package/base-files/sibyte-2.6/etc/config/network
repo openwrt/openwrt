@@ -1,13 +1,8 @@
-# Network configuration file
 # Copyright (C) 2006 OpenWrt.org
 
-## LAN configuration
-lan_ifname="br0"
-lan_ifnames="eth0 ath0"
-lan_proto="static"
-lan_ipaddr="192.168.1.1"
-lan_netmask="255.255.255.0"
-
-## WAN configuration
-wan_ifname=""
-wan_proto="none"
+config interface lan
+	option type 	bridge
+	option ifnames	"eth0 ath0"
+	option proto	static
+	option ipaddr	192.168.1.1
+	option netmask	255.255.255.0

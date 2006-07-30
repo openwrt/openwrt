@@ -1,5 +1,7 @@
 #!/bin/sh
-. /etc/config/network
+. /etc/functions.sh
+include network
+scan_interfaces
 
 # The following is to automatically configure the DHCP settings
 # based on config settings. Feel free to replace all this crap
@@ -10,7 +12,7 @@
 
 args=""
 iface=lan
-eval "ifname=\${${iface}_ifname}"
+config_get ifname "$iface" ifname
 
 dhcp_enable="${dhcp_enable:-1}"
 dhcp_start="${dhcp_start:-100}"
@@ -26,8 +28,8 @@ dhcp_lease="${dhcp_lease:-12h}"
 		# no existing DHCP server?
 
 		# calculate settings
-		eval "ipaddr=\${${iface}_ipaddr}"
-		eval "netmask=\${${iface}_netmask}"
+		config_get ipaddr "$iface" ipaddr
+		config_get netmask "$iface" netmask
 		eval $(ipcalc $ipaddr $netmask ${dhcp_start:-100} ${dhcp_num:-150})
 		
 		# and pass the args via config parser defines
@@ -39,6 +41,8 @@ dhcp_lease="${dhcp_lease:-12h}"
 	}
 
 	# ignore requests from wan interface
+	config_get wan_proto wan proto
+	config_get wan_ifname wan ifname
 	[ -z "$wan_proto" -o "$wan_proto" = "none" ] || echo "@define wan_ifname $wan_ifname"
 
 	cat /etc/dnsmasq.conf

@@ -1,191 +1,28 @@
-#!/bin/sh
 # Copyright (C) 2006 OpenWrt.org
 
-find_name()
-{
-	for ifname in lan wan wifi ${ifnames}; do
-		IFTYPE="${ifname}"
-		eval "IFPROTO=\"\${${IFTYPE}_proto}\""
-		eval "IFACE=\"\${${IFTYPE}_ifname}\""
-		case "$IFPROTO" in
-			""|none);;
-			static|dhcp)
-				[ "${IFACE}" = "$INTERFACE" ] && return 0
-				[ "${IFACE%%[0-9]*}" = "br" ] && {
-					eval "ifs=\"\${${IFTYPE}_ifnames}\""
-					for part in $ifs; do
-						[ "$part" = "$INTERFACE" ] && return 0
-					done
-				}
-			;;
-			pppoa)
-				[ "$INTERFACE" = "atm0" \
-				  -a -x /sbin/ifup.${IFPROTO} ] && return 0
-			;;
-			*)
-				eval "device=\"\${${IFTYPE}_device}\""
-				[ "$device" = "$INTERFACE" \
-				  -a -x /sbin/ifup.${IFPROTO} ] && return 0
-			;;
+include network
+
+addif() {
+	scan_interfaces
+	setup_interface "$INTERFACE"
+	
+	# find all vlan configurations for this interface and set them up as well
+	for ifc in $interfaces; do
+		config_get type "$ifc" type
+		case "$type" in
+			bridge) config_get ifs "$ifc" ifnames;;
+			*) config_get ifs "$ifc" ifname;;
 		esac
+		for dev in $ifs; do
+			[ "${dev%%\.*}" = "$INTERFACE" -a "$dev" != "$INTERFACE" ] && {
+				add_vlan "$dev"
+			}
+		done
 	done
-	IFACE=""
-	IFTYPE=""
-	IFPROTO=""
-	return 255
-}
-
-do_ifup() {
-	if="$3"
-	eval "if_proto=\"\${${2}_proto}\""
-	
-	pidfile=/var/run/${if}.pid
-	[ -f $pidfile ] && $DEBUG kill $(cat $pidfile)
-
-	case "$1" in
-		static)
-			eval "ip=\"\${${2}_ipaddr}\""
-			eval "ip6=\"\${${2}_ip6addr}\""
-			eval "netmask=\"\${${2}_netmask}\""
-			eval "gateway=\"\${${2}_gateway}\""
-			eval "dns=\"\${${2}_dns}\""
-			eval "static_route=\"\${${2}_static_route}\""
-	
-			$DEBUG ifconfig $if $ip ${netmask:+netmask $netmask} broadcast + up
-			[ -n "$ip6" ] && $DEBUG ifconfig $if add $ip6
-
-			[ -n "$static_route" ] && {
-				for route in $static_route; do
-					if [ "$(echo $route | cut -d \/ -f2)" != "32" ];
-					then
-						route add -net $(echo $route | cut -d \/ -f1) netmask $(echo $route | cut -d \/ -f1) dev $if
-					else
-						route add -host $(echo $route | cut -d \/ -f1) dev $if
-					fi
-				done
-			}
-
-			${gateway:+$DEBUG route add default gw $gateway}
-	
-			[ -f /tmp/resolv.conf ] || {
-				debug "# --- creating /tmp/resolv.conf ---"
-				for ns in $dns; do
-					echo "nameserver $ns" >> /tmp/resolv.conf
-				done
-			}
-			
-			env -i ACTION="ifup" INTERFACE="${2}" PROTO=static /sbin/hotplug "iface" &
-		;;
-		dhcp)
-			eval "ip=\"\${${2}_ipaddr}\""
-			eval "netmask=\"\${${2}_netmask}\""
-			eval "hostname=\"\${${2}_hostname}\""
-			
-			$DEBUG ifconfig $if $ip ${netmask:+netmask $netmask} broadcast + up
-	
-			args="-i $if ${ip:+-r $ip} -b -p $pidfile"
-			hostname="${hostname%%.*}"
-			args="$args${hostname:+ -H $hostname}"
-			[ "$if_proto" = "pptp" ] && args="$args -n -q" || args="$args -R &"
-			${DEBUG:-eval} "udhcpc $args"
-			# hotplug events are handled by /usr/share/udhcpc/default.script
-		;;
-		*)
-			if [ -x "/sbin/ifup.$1" ]; then
-				( $DEBUG . /sbin/ifup.$1 ${2} $3 )
-			fi
-		;;
-	esac
-}
-
-do_register()
-{
-	[ -z "$IFTYPE" -o -z "$IFPROTO" ] && {
-		find_name || {
-			case "${INTERFACE%%[0-9]*}" in
-				wds) 
-					for ifname in lan wifi; do
-						eval "if=\"\${${ifname}_ifname}\""
-						[ -z "$IFPROTO" ] && [ "$if" = "br0" ] && {
-							eval "IFPROTO=\"\${${2}_proto}\""
-							IFTYPE="${tmp}"
-						}
-					done
-					[ -z "$IFPROTO" ] && return 0
-				;;
-				atm)
-					for tmp in lan wan wifi ${ifnames}; do
-						eval "if_proto=\"\${${2}_proto}\""
-						[ "$if_proto" = "pppoa" ] && {
-							do_ifup "pppoa" "$tmp" "$INTERFACE"
-							return 0
-						}
-					done
-				;;
-				*)
-					return 0
-				;;
-			esac
-		}
-	}
-
-	case "${INTERFACE%%[0-9]*}" in 
-		ppp|atm);;
-		*)
-			eval "mac=\"\${${IFTYPE}_hwaddr}\""
-			${mac:+$DEBUG ifconfig $INTERFACE down hw ether $mac}
-		;;
-	esac
-
-	eval "if=\"\${${IFTYPE}_ifname}\""
-	if [ "${if%%[0-9]}" = "br" ]; then
-		if_valid "$INTERFACE" && {
-			ifconfig "$if" 2>&- >&- || {
-				eval "stp=\"\${${IFTYPE}_stp}\""
-				$DEBUG brctl addbr "$if"
-				$DEBUG brctl setfd "$if" 0
-				$DEBUG brctl stp "$if" "${stp:-0}"
-			}
-
-			if [ "$INTERFACE" != "$if" ]; then
-				$DEBUG ifconfig "$INTERFACE" 0.0.0.0 up
-				$DEBUG brctl addif "$if" "$INTERFACE"
-				$DEBUG ifconfig "$INTERFACE" allmulti
-			else
-				do_ifup "$IFPROTO" "$IFTYPE" "$if"
-			fi
-		}
-	else 
-		[ "${INTERFACE%%[0-9]*}" = "ppp" ] || do_ifup "$IFPROTO" "$IFTYPE" "$if"
-	fi
-}
-
-do_unregister() {
-	[ -z "$IFTYPE" -o -z "$IFPROTO" ] && {
-		find_name || return 0
-	}
-	
-	[ "${IFACE%%[0-9]*}" = "br" ] && {
-		if [ "$INTERFACE" != "$IFACE" ]; then
-			brctl delif "$IFACE" "$INTERFACE" 2>&- >&-
-		else
-			brctl delbr "$IFACE" 2>&- >&-
-		fi
-	}
-	
-	case "$IFPROTO" in
-		pppoe|pppoa|pptp) 
-			killall pppd 2>&- >&-
-		;;
-		dhcp)
-			[ -f /var/run/${INTERFACE}.pid ] && kill "$(cat /var/run/${INTERFACE}.pid)" 2>&- >&-
-		;;
-	esac
-
-	[ "${INTERFACE%%[0-9]*}" = "atm" ] || ifconfig "$INTERFACE" 0.0.0.0 down 2>&-
 }
 
 case "$ACTION" in
-	add|register) do_register;;
-	remove|unregister) do_unregister;;
+	add|register)
+		addif
+	;;
 esac
