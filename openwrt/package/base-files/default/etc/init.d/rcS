@@ -3,12 +3,13 @@
 
 ${FAILSAFE:+exit}
 
-[ -f /etc/config/network ] && . /etc/config/network
-eval $(ipcalc "$log_ipaddr")
-[ "$log_ipaddr" = "$IP" ] || log_ipaddr=""
-syslogd -C 16 ${log_ipaddr:+-L -R $log_ipaddr}
+# FIXME: add logging configuration
+#[ -f /etc/config/network ] && . /etc/config/network
+#eval $(ipcalc "$log_ipaddr")
+#[ "$log_ipaddr" = "$IP" ] || log_ipaddr=""
+syslogd -C 16 #${log_ipaddr:+-L -R $log_ipaddr}
 klogd
-#${FAILSAFE:+telnetd -l /bin/login; ifup lan; exit}
+
 for i in /etc/init.d/S*; do
   $i start 2>&1
 done | logger -s -p 6 -t '' &

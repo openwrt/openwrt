@@ -1,0 +1,9 @@
+#!/bin/sh
+# Copyright (C) 2006 OpenWrt.orga
+
+setup_switch() { return 0; }
+
+. /etc/functions.sh
+include network
+setup_switch
+/sbin/wifi

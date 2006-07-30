@@ -1,10 +1,7 @@
 # Copyright (C) 2006 OpenWrt.org
 
 BEGIN {
-	print ". /etc/config/network"
-	print "proto=\"$wan_proto\""
-	print "[ -z \"$proto\" -o \"$proto\" = \"none\" ] && exit"
-	print "ifname=\"$wan_ifname\""
+	print "ifname=\"$WAN\""
 	print "[ -z \"$ifname\" ] && exit"
 	print ""
 	print "iptables -X input_$ifname 2>&- >&-"

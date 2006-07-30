@@ -5,13 +5,14 @@
 
 [ -f /proc/mounts ] || /sbin/mount_root
 [ -f /proc/jffs2_bbc ] && echo "S" > /proc/jffs2_bbc
-vconfig set_name_type VLAN_PLUS_VID_NO_PAD
+vconfig set_name_type DEV_PLUS_VID_NO_PAD
 
 HOSTNAME=${wan_hostname%%.*}
 echo ${HOSTNAME:=OpenWrt}>/proc/sys/kernel/hostname
 
 mkdir -p /var/run
 mkdir -p /var/log
+mkdir -p /var/lock
 touch /var/log/wtmp
 touch /var/log/lastlog
 [ "$FAILSAFE" = "true" ] && touch /tmp/.failsafe
