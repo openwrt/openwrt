@@ -223,3 +223,47 @@ endef
 $(eval $(call KernelPackage,ebtables))
 
 
+define KernelPackage/ppp
+TITLE:=PPP modules
+DESCRIPTION:=Kernel modules for PPP support
+KCONFIG:=$(CONFIG_PPP)
+endef
+
+define KernelPackage/ppp/2.6
+FILES:=$(MODULES_DIR)/kernel/drivers/net/ppp_async.ko $(MODULES_DIR)/kernel/drivers/net/ppp_generic.ko $(MODULES_DIR)/kernel/drivers/net/slhc.ko $(MODULES_DIR)/kernel/lib/crc-ccitt.ko
+AUTOLOAD:=$(call AutoLoad,30,crc-ccitt)
+endef
+
+define KernelPackage/ppp/2.4
+FILES:=$(MODULES_DIR)/kernel/drivers/net/ppp_async.o $(MODULES_DIR)/kernel/drivers/net/ppp_generic.o $(MODULES_DIR)/kernel/drivers/net/slhc.o
+endef
+$(eval $(call KernelPackage,ppp))
+
+define KernelPackage/pppoe
+TITLE:=PPPoE modules
+DESCRIPTION:=Kernel modules for PPP over Ethernet support
+DEPENDS:=kmod-ppp
+KCONFIG:=$(CONFIG_PPPOE)
+FILES:=$(MODULES_DIR)/kernel/drivers/net/pppoe.$(LINUX_KMOD_SUFFIX) $(MODULES_DIR)/kernel/drivers/net/pppox.$(LINUX_KMOD_SUFFIX)
+endef
+$(eval $(call KernelPackage,pppoe))
+
+define KernelPackage/pppoa
+TITLE:=PPPoA modules
+DESCRIPTION:=Kernel modules for PPP over ATM support
+DEPENDS:=kmod-ppp
+KCONFIG:=$(CONFIG_PPPOATM)
+FILES:=$(MODULES_DIR)/kernel/drivers/net/pppoatm.$(LINUX_KMOD_SUFFIX)
+endef
+$(eval $(call KernelPackage,pppoa))
+
+define KernelPackage/mppe
+TITLE:=Microsoft PPP compression/encryption
+DESCRIPTION:=Kernel modules for Microsoft PPP compression/encryption
+DEPENDS:=@LINUX_2_4 kmod-ppp
+KCONFIG:=$(CONFIG_PPPOE)
+FILES:=$(MODULES_DIR)/kernel/drivers/net/ppp_mppe_mppc.$(LINUX_KMOD_SUFFIX)
+endef
+$(eval $(call KernelPackage,mppe))
+
+
