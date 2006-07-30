@@ -1,0 +1,9 @@
+config BR2_PACKAGE_ARPTABLES
+	prompt "arptables......................... ARP firewall administration utility"
+	tristate
+	default m if CONFIG_DEVEL
+	help
+	  ARP Firewalling (arptables)
+	  
+	  http://ebtables.sourceforge.net/
+
