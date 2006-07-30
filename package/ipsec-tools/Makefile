@@ -21,11 +21,12 @@ PKG_CAT:=bzcat
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
 include $(INCLUDE_DIR)/package.mk
+include $(INCLUDE_DIR)/kernel.mk
 
 define Package/ipsec-tools
 SECTION:=base
 CATEGORY:=Network
-DEPENDS:=@LINUX_2_6
+DEPENDS:=@LINUX_2_6 +libopenssl
 TITLE:=IPsec management tools
 DESCRIPTION:=IPsec management tools
 URL:=http://ipsec-tools.sourceforge.net/
