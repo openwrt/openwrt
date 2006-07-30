@@ -116,6 +116,7 @@ world: .config FORCE
 	$(MAKE) package/compile
 	$(MAKE) package/install
 	$(MAKE) target/install
+	$(MAKE) package/index
 
 clean: FORCE
 	rm -rf build_* bin
