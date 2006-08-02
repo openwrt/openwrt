@@ -14,6 +14,9 @@ RELEASE:=Kamikaze
 # Just run 'make menuconfig', configure stuff, then run 'make'.
 # You shouldn't need to mess with anything beyond this point...
 #--------------------------------------------------------------
+
+all: world
+
 export TOPDIR=${shell pwd}
 include $(TOPDIR)/include/verbose.mk
 
@@ -28,47 +31,53 @@ else
 endif
 export OPENWRTVERSION
 
-all: world
-
 ifneq ($(shell ./scripts/timestamp.pl -p .pkginfo package Makefile),.pkginfo)
-.pkginfo: FORCE
-.config: FORCE
+  .pkginfo .config: FORCE
+endif
+
+ifeq ($(FORCE),)
+  .config scripts/config/conf scripts/config/mconf: .prereq-build
+  world: .prereq-packages
 endif
 
 .pkginfo:
 	@echo Collecting package info...
 	@-for dir in package/*/; do \
 		echo Source-Makefile: $${dir}Makefile; \
-		$(NO_TRACE_MAKE) --no-print-dir DUMP=1 -C $$dir 2>&- || echo "ERROR: please fix package/$${dir}/Makefile" >&2; \
+		$(NO_TRACE_MAKE) --no-print-dir DUMP=1 -C $$dir 2>&- || echo "ERROR: please fix package/$${dir}Makefile" >&2; \
 	done > $@
-
-.config.in: .pkginfo
-	@./scripts/gen_menuconfig.pl < $< > $@ || rm -f $@
 
 pkginfo-clean: FORCE
 	-rm -f .pkginfo .config.in
 
-./scripts/config/mconf: .config.in
+.config.in: .pkginfo
+	@./scripts/gen_menuconfig.pl < $< > $@ || rm -f $@
+
+.config: ./scripts/config/conf
+	@[ -f .config ] || $(NO_TRACE_MAKE) menuconfig
+	@$< -D .config Config.in &> /dev/null
+
+scripts/config/mconf:
 	@$(MAKE) -C scripts/config all
 
-./scripts/config/conf: .config.in
+scripts/config/conf:
 	@$(MAKE) -C scripts/config conf
 
-config: ./scripts/config/conf FORCE
-	$< Config.in
-
-defconfig: ./scripts/config/conf FORCE
-	touch .config
-	$< -D .config Config.in
-
-oldconfig: ./scripts/config/conf FORCE
-	$< -o Config.in
-
-menuconfig: ./scripts/config/mconf FORCE
+config: scripts/config/conf .config.in FORCE
 	$< Config.in
 
 config-clean: FORCE
 	$(NO_TRACE_MAKE) -C scripts/config clean
+
+defconfig: scripts/config/conf .config.in FORCE
+	touch .config
+	$< -D .config Config.in
+
+oldconfig: scripts/config/conf .config.in FORCE
+	$< -o Config.in
+
+menuconfig: scripts/config/mconf .config.in FORCE
+	$< Config.in
 
 package/%: .pkginfo FORCE
 	$(MAKE) -C package $(patsubst package/%,%,$@)
@@ -79,18 +88,14 @@ target/%: .pkginfo FORCE
 toolchain/%: FORCE
 	$(MAKE) -C toolchain $(patsubst toolchain/%,%,$@)
 
-.config: ./scripts/config/conf
-	@[ -f .config ] || $(NO_TRACE_MAKE) menuconfig
-	@$< -D .config Config.in &> /dev/null
-
-.prereq-build: $(TOPDIR)/include/prereq-build.mk
+.prereq-build: include/prereq-build.mk
 	@$(NO_TRACE_MAKE) -s -f $(TOPDIR)/include/prereq-build.mk prereq 2>/dev/null || { \
 		echo "Prerequisite check failed. Use FORCE=1 to override."; \
 		false; \
 	}
 	@touch $@
 
-.prereq-packages: $(TOPDIR)/include/prereq.mk .pkginfo .config
+.prereq-packages: include/prereq.mk .pkginfo .config
 	@$(NO_TRACE_MAKE) -s -C package prereq 2>/dev/null || { \
 		echo "Prerequisite check failed. Use FORCE=1 to override."; \
 		false; \
@@ -103,11 +108,6 @@ download: .config FORCE
 	$(MAKE) toolchain/download
 	$(MAKE) package/download
 	$(MAKE) target/download
-
-ifeq ($(FORCE),)
-.config ./scripts/config/conf ./scripts/config/mconf: .prereq-build
-world: .prereq-packages
-endif
 
 world: .config FORCE
 	$(MAKE) toolchain/install
@@ -125,7 +125,6 @@ dirclean: clean
 
 distclean: dirclean config-clean
 	rm -rf dl .*config* .pkg* .prereq
-
 
 .SILENT: clean dirclean distclean config-clean download world
 FORCE: ;
