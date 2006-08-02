@@ -9,6 +9,15 @@
 #         Utilizes the lxdialog package
 # object files used by all kconfig flavours
 
+
+# Platform specific fixes
+#
+# FreeBSD
+ifeq ($(shell uname -s),FreeBSD)
+export CFLAGS+=-I/usr/local/include
+export LDFLAGS+=-L/usr/local/lib -lintl
+endif
+
 conf-objs	:= conf.o zconf.tab.o
 mconf-objs	:= mconf.o zconf.tab.o
 
