@@ -55,6 +55,8 @@ install:
 	rm -rf $(BUILD_DIR)/root
 	$(MAKE) install-targets
 
-index: FORCE
+index: $(PACKAGE_DIR)/Packages
+
+$(PACKAGE_DIR)/Packages: $(PACKAGE_DIR)/*.ipk
 	(cd $(PACKAGE_DIR); $(STAGING_DIR)/usr/bin/ipkg-make-index . > Packages)
 
