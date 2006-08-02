@@ -24,7 +24,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/hostap-utils
   SECTION:=utils
   CATEGORY:=Utilities
-  DEPENDS:=+hostap
+  DEPENDS:=+kmod-hostap
   TITLE:=Host AP driver utility programs
   DESCRIPTION:=Host AP driver utility programs
   URL:=http://hostap.epitest.fi/
