@@ -19,7 +19,7 @@ define Build/DefaultTargets
         $(PKG_BUILD_DIR)/.prepared: package-clean
       endif
 
-      ifneq ($$(shell $(SCRIPT_DIR)/timestamp.pl -p -x ipkg $(IPKG_$(1)) $(PKG_BUILD_DIR)),$(IPKG_$(1)))
+      ifneq ($$(shell $(SCRIPT_DIR)/timestamp.pl -p -x ipkg -x ipkg-install $(IPKG_$(1)) $(PKG_BUILD_DIR) | tee /tmp/check_$(1)),$(IPKG_$(1)))
         $(PKG_BUILD_DIR)/.built: package-rebuild
       endif
     endif
@@ -121,7 +121,7 @@ define BuildPackage
       install-targets: $$(INFO_$(1))
     endif
 
-    ifneq ($(CONFIG_PACKAGE_$(1))$(DEVELOPER),)
+    ifneq ($(CONFIG_PACKAGE_$(1))$(CONFIG_ALL),)
       compile-targets: $$(IPKG_$(1))
     endif
   endif
