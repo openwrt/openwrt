@@ -40,19 +40,19 @@ define Build/DefaultTargets
 	$(call Build/Compile)
 	touch $$@
 
-  $(STAGING_DIR)/stampfiles/.$(PKG_NAME)-installed: $(PKG_BUILD_DIR)/.built
+  ifdef Build/InstallDev
+    $(STAGING_DIR)/stampfiles/.$(PKG_NAME)-installed: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/stampfiles
 	$(call Build/InstallDev)
 	touch $$@
 	
-  ifdef Build/InstallDev
     compile-targets: $(STAGING_DIR)/stampfiles/.$(PKG_NAME)-installed
   endif
 
   package-clean: FORCE
 	$(call Build/Clean)
 	$(call Build/UninstallDev)
-	rm -f $(STAGING_DIR)/stampfiles/.$(PKG_NAME)-installed
+	-rm -f $(STAGING_DIR)/stampfiles/.$(PKG_NAME)-installed
 
   package-rebuild: FORCE
 	@-rm -f $(PKG_BUILD_DIR)/.built
@@ -89,9 +89,9 @@ define Package/Default
 endef
 
 define BuildIPKGVariable
-pkg_$(subst .,_,$(subst -,_,$(1)))_$(2) = $$(Package/$(1)/$(2))
-export pkg_$(subst .,_,$(subst -,_,$(1))_$(2))
-$(1)_COMMANDS += if [ -n "$$$$$$$$pkg_$(subst .,_,$(subst -,_,$(1)))_$(2)" ]; then echo "$$$$$$$$pkg_$(subst .,_,$(subst -,_,$(1)))_$(2)" > $(2); fi;
+  pkg_$(subst .,_,$(subst -,_,$(1)))_$(2) = $$(Package/$(1)/$(2))
+  export pkg_$(subst .,_,$(subst -,_,$(1))_$(2))
+  $(1)_COMMANDS += if [ -n "$$$$$$$$pkg_$(subst .,_,$(subst -,_,$(1)))_$(2)" ]; then echo "$$$$$$$$pkg_$(subst .,_,$(subst -,_,$(1)))_$(2)" > $(2); fi;
 endef
 
 define BuildPackage
@@ -132,29 +132,30 @@ define BuildPackage
 
   IDEPEND_$(1):=$$(strip $$(DEPENDS))
 
-  DUMPINFO += \
+  ifneq ($(DUMP),)
+    DUMPINFO += \
 	echo "Package: $(1)"; 
 
-  ifneq ($(MENU),)
-    DUMPINFO += \
-	echo "Menu: $(MENU)";
-  endif
-
-  ifneq ($(SUBMENU),)
-    DUMPINFO += \
-	echo "Submenu: $(SUBMENU)";
-    ifneq ($(SUBMENUDEP),)
+    ifneq ($(MENU),)
       DUMPINFO += \
-	  echo "Submenu-Depends: $(SUBMENUDEP)";
+	echo "Menu: $(MENU)";
     endif
-  endif
 
-  ifneq ($(DEFAULT),)
-    DUMPINFO += \
+    ifneq ($(SUBMENU),)
+      DUMPINFO += \
+	echo "Submenu: $(SUBMENU)";
+      ifneq ($(SUBMENUDEP),)
+        DUMPINFO += \
+	  echo "Submenu-Depends: $(SUBMENUDEP)";
+      endif
+    endif
+
+    ifneq ($(DEFAULT),)
+      DUMPINFO += \
 	echo "Default: $(DEFAULT)";
-  endif
+    endif
 
-  DUMPINFO += \
+    DUMPINFO += \
 	echo "Version: $(VERSION)"; \
 	echo "Depends: $$(IDEPEND_$(1))"; \
 	echo "Build-Depends: $(PKG_BUILDDEP)"; \
@@ -162,19 +163,20 @@ define BuildPackage
 	echo "Title: $(TITLE)"; \
 	echo "Description: $(DESCRIPTION)" | sed -e 's,\\,\n,g';
 
-  ifneq ($(URL),)
-    DUMPINFO += \
+    ifneq ($(URL),)
+      DUMPINFO += \
 	echo; \
 	echo "$(URL)";
-  endif
+    endif
 
-  DUMPINFO += \
+    DUMPINFO += \
 	echo "@@";
 
-  ifneq ($(CONFIG),)
-    DUMPINFO += \
+    ifneq ($(CONFIG),)
+      DUMPINFO += \
 	echo "Config: $(CONFIG)" | sed -e 's,\\,\n,g'; \
 	echo "@@";
+    endif
   endif
 
   $(eval $(call BuildIPKGVariable,$(1),conffiles))
@@ -182,7 +184,7 @@ define BuildPackage
   $(eval $(call BuildIPKGVariable,$(1),postinst))
   $(eval $(call BuildIPKGVariable,$(1),prerm))
   $(eval $(call BuildIPKGVariable,$(1),postrm))
-  $$(IDIR_$(1))/CONTROL/control: Makefile $(PKG_BUILD_DIR)/.prepared $(PKG_BUILD_DIR)/.version-$(1)_$(VERSION)_$(PKGARCH)
+  $$(IDIR_$(1))/CONTROL/control: $(PKG_BUILD_DIR)/.version-$(1)_$(VERSION)_$(PKGARCH)
 	mkdir -p $$(IDIR_$(1))/CONTROL
 	echo "Package: $(1)" > $$(IDIR_$(1))/CONTROL/control
 	echo "Version: $(VERSION)" >> $$(IDIR_$(1))/CONTROL/control
@@ -204,7 +206,7 @@ define BuildPackage
 		$($(1)_COMMANDS) \
 	)
 
-  $$(IPKG_$(1)): $$(IDIR_$(1))/CONTROL/control $(PKG_BUILD_DIR)/.built
+  $$(IPKG_$(1)): $(PKG_BUILD_DIR)/.built $$(IDIR_$(1))/CONTROL/control
 	$(call Package/$(1)/install,$$(IDIR_$(1)))
 	mkdir -p $(PACKAGE_DIR)
 	-find $$(IDIR_$(1)) -name CVS | xargs rm -rf
@@ -227,7 +229,6 @@ define BuildPackage
 	@touch $$@
 
   $$(eval $$(call Build/DefaultTargets,$(1)))
-
 endef
 
 ifneq ($(strip $(PKG_CAT)),)

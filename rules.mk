@@ -117,3 +117,4 @@ endif
 all:
 FORCE: ;
 .PHONY: FORCE
+%: ;
