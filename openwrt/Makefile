@@ -14,18 +14,17 @@ RELEASE:=Kamikaze
 # Just run 'make menuconfig', configure stuff, then run 'make'.
 # You shouldn't need to mess with anything beyond this point...
 #--------------------------------------------------------------
-TOPDIR=${shell pwd}
-export TOPDIR
+export TOPDIR=${shell pwd}
 include $(TOPDIR)/include/verbose.mk
 
 OPENWRTVERSION:=$(RELEASE)
 ifneq ($(VERSION),)
-OPENWRTVERSION:=$(VERSION) ($(OPENWRTVERSION))
+  OPENWRTVERSION:=$(VERSION) ($(OPENWRTVERSION))
 else
-REV:=$(shell LANG=C svn info | awk '/^Revision:/ { print$$2 }' )
-ifneq ($(REV),)
-OPENWRTVERSION:=$(OPENWRTVERSION)/r$(REV)
-endif
+  REV:=$(shell LANG=C svn info | awk '/^Revision:/ { print$$2 }' )
+  ifneq ($(REV),)
+    OPENWRTVERSION:=$(OPENWRTVERSION)/r$(REV)
+  endif
 endif
 export OPENWRTVERSION
 
@@ -40,7 +39,7 @@ endif
 	@echo Collecting package info...
 	@-for dir in package/*/; do \
 		echo Source-Makefile: $${dir}Makefile; \
-		$(NO_TRACE_MAKE) --no-print-dir DUMP=1 -C $$dir 2>&- || true; \
+		$(NO_TRACE_MAKE) --no-print-dir DUMP=1 -C $$dir 2>&- || echo "ERROR: please fix package/$${dir}/Makefile" >&2; \
 	done > $@
 
 .config.in: .pkginfo
@@ -129,5 +128,6 @@ distclean: dirclean config-clean
 
 
 .SILENT: clean dirclean distclean config-clean download world
+FORCE: ;
 .PHONY: FORCE
-FORCE:
+%: ;
