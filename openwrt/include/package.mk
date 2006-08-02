@@ -121,7 +121,7 @@ define BuildPackage
       install-targets: $$(INFO_$(1))
     endif
 
-    ifneq ($(CONFIG_PACKAGE_$(1))$(CONFIG_ALL),)
+    ifneq ($(CONFIG_PACKAGE_$(1)),)
       compile-targets: $$(IPKG_$(1))
     endif
   endif
