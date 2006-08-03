@@ -19,22 +19,22 @@ $(STAMP_DIR) $(TARGET_DIR):
 	mkdir -p $@
 
 %-prereq: $(STAMP_DIR) $(TARGET_DIR)
-	$(MAKE) -C $(patsubst %-prereq,%,$@) prereq MAKEFLAGS="$(BUILD_MAKEFLAGS)"
+	$(MAKE) -C $(patsubst %-prereq,%,$@) prereq
 
 %-download: $(STAMP_DIR) $(TARGET_DIR)
-	$(MAKE) -C $(patsubst %-download,%,$@) download MAKEFLAGS="$(BUILD_MAKEFLAGS)"
+	$(MAKE) -C $(patsubst %-download,%,$@) download
 
 %-prepare: $(STAMP_DIR) $(TARGET_DIR)
-	$(MAKE) -C $(patsubst %-prepare,%,$@) prepare MAKEFLAGS="$(BUILD_MAKEFLAGS)"
+	$(MAKE) -C $(patsubst %-prepare,%,$@) prepare
 
 %-compile: $(STAMP_DIR) $(TARGET_DIR)
-	$(MAKE) -C $(patsubst %-compile,%,$@) compile MAKEFLAGS="$(BUILD_MAKEFLAGS)"
+	$(MAKE) -C $(patsubst %-compile,%,$@) compile
 
 %-install: $(STAMP_DIR) $(TARGET_DIR)
-	$(MAKE) -C $(patsubst %-install,%,$@) install MAKEFLAGS="$(BUILD_MAKEFLAGS)"
+	$(MAKE) -C $(patsubst %-install,%,$@) install
 
 %-clean: $(STAMP_DIR) $(TARGET_DIR)
-	$(MAKE) -C $(patsubst %-clean,%,$@) clean MAKEFLAGS="$(BUILD_MAKEFLAGS)"
+	$(MAKE) -C $(patsubst %-clean,%,$@) clean
 
 ifeq ($(SDK),1)
 GENDEP_OPTS := -s
@@ -49,7 +49,7 @@ prereq: $(PREREQ_PACKAGES)
 download: $(DOWNLOAD_PACKAGES)
 compile-targets: $(COMPILE_PACKAGES)
 compile:
-	$(MAKE) -j$(CONFIG_JLEVEL) compile-targets
+	$(MAKE) compile-targets
 install-targets: base-files-install $(INSTALL_PACKAGES)
 install:
 	rm -rf $(BUILD_DIR)/root
@@ -60,3 +60,9 @@ index: $(PACKAGE_DIR)/Packages
 $(PACKAGE_DIR)/Packages: $(PACKAGE_DIR)/*.ipk
 	(cd $(PACKAGE_DIR); $(STAGING_DIR)/usr/bin/ipkg-make-index . > Packages)
 
+
+ifeq ($(MAKECMDGOALS),compile-targets)
+MAKEFLAGS:=$(MAKEFLAGS) -j$(CONFIG_JLEVEL)
+else
+.NOTPARALLEL:
+endif
