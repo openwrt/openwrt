@@ -1,135 +1,194 @@
-diff -urN linux-2.6.16.7/drivers/mtd/maps/bcm963xx.c linux-2.6.16.7-brcm63xx/drivers/mtd/maps/bcm963xx.c
---- linux-2.6.16.7/drivers/mtd/maps/bcm963xx.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.16.7-brcm63xx/drivers/mtd/maps/bcm963xx.c	2006-07-07 22:00:36.000000000 +0200
-@@ -0,0 +1,106 @@
+diff -urN linux-2.6.17/drivers/mtd/maps/bcm963xx-flash.c linux-2.6.17-brcm63xx/drivers/mtd/maps/bcm963xx-flash.c
+--- linux-2.6.17/drivers/mtd/maps/bcm963xx-flash.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-brcm63xx/drivers/mtd/maps/bcm963xx-flash.c	2006-08-03 16:29:52.000000000 +0200
+@@ -0,0 +1,116 @@
 +/*
-+ * A simple flash mapping code for BCM963xx board flash memory
-+ * It is simple because it only treats all the flash memory as ROM
-+ * It is used with chips/map_rom.c
++ * $Id$
++ * Copyright (C) 2006  Florian Fainelli
++ * Copyright (C) $Date$  $Author$
 + *
-+ *  Song Wang (songw@broadcom.com)
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ * 
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ * 
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 + */
 +
-+#include <linux/module.h>
-+#include <linux/types.h>
-+#include <linux/kernel.h>
-+#include <linux/init.h>
++/* This is the BCM963xx flash map driver, in its actual state it only supports BCM96348 devices
++ * this driver is able to manage both bootloader we found on these boards : CFE and RedBoot
++ * 
++ * RedBoot :
++ *  - this bootloader allows us to parse partitions and therefore deduce the MTD partition table
++ *
++ * CFE :
++ *   - we have to use a "physically mapped flash" defined bellow
++ *
++ */
++
 +#include <asm/io.h>
-+#include <linux/mtd/mtd.h>
++#include <linux/init.h>
 +#include <linux/mtd/map.h>
-+#include <linux/config.h>
++#include <linux/mtd/mtd.h>
++#include <linux/mtd/partitions.h>
 +
-+#include <board.h>
-+#include <bcmTag.h>
-+#define  VERSION	"1.0"
++#define WINDOW_ADDR 0x1e400000 		/* Real address of the flash */
++#define WINDOW_SIZE 0x800000		/* Size of flash */
++#define BUSWIDTH 2			/* Buswidth */
 +
-+extern PFILE_TAG kerSysImageTagGet(void);
++extern int boot_loader_type;		/* For RedBoot / CFE detection */
++extern int parse_redboot_partitions(struct mtd_info *master, struct mtd_partition **pparts, unsigned long fis_origin);
++static struct mtd_partition *parsed_parts;
 +
-+static struct mtd_info *mymtd;
++static void __exit bcm963xx_mtd_cleanup(void);
 +
-+static map_word brcm_physmap_read16(struct map_info *map, unsigned long ofs)
-+{
-+	map_word val;
-+	
-+	val.x[0] = __raw_readw(map->map_priv_1 + ofs);
-+	
-+	return val;
-+}
++static struct mtd_info *bcm963xx_mtd_info;
 +
-+static void brcm_physmap_copy_from(struct map_info *map, void *to, unsigned long from, ssize_t len)
-+{
-+	memcpy_fromio(to, map->map_priv_1 + from, len);
-+}
-+
-+static struct map_info brcm_physmap_map = {
-+	.name		= "Physically mapped flash",
-+	.bankwidth	= 2,
-+	.read		= brcm_physmap_read16,
-+	.copy_from	= brcm_physmap_copy_from
++static struct map_info bcm963xx_map = {
++	.name = "bcm963xx",
++	.size = WINDOW_SIZE,
++	.bankwidth = BUSWIDTH,
++	.phys = WINDOW_ADDR,
 +};
 +
-+static int __init init_brcm_physmap(void)
++static struct mtd_partition bcm963xx_parts[] = {
++        { name: "bootloader",  size: 0,        offset: 0,      mask_flags: MTD_WRITEABLE },
++        { name: "rootfs",              size: 0,        offset: 0},
++        { name: "jffs2",        size: 5 * 0x10000,      offset: 57*0x10000}
++};
++
++static int __init bcm963xx_mtd_init(void)
 +{
-+        PFILE_TAG pTag = NULL;
-+        u_int32_t rootfs_addr, kernel_addr;
-+        FLASH_ADDR_INFO info;
++	printk("bcm963xx: 0x%08x at 0x%08x\n", WINDOW_SIZE, WINDOW_ADDR);
++	bcm963xx_map.virt = ioremap(WINDOW_ADDR, WINDOW_SIZE);
 +
-+	printk("bcm963xx_mtd driver v%s\n", VERSION);
-+        kerSysFlashAddrInfoGet( &info );
-+
-+        /* Read the flash memory map from flash memory. */
-+        if (!(pTag = kerSysImageTagGet())) {
-+                printk("Failed to read image tag from flash\n");
-+                return -EIO;
-+        }
-+
-+        rootfs_addr = (u_int32_t) simple_strtoul(pTag->rootfsAddress, NULL, 10);
-+        kernel_addr = (u_int32_t) simple_strtoul(pTag->kernelAddress, NULL, 10);
-+	
-+	brcm_physmap_map.size = kernel_addr - rootfs_addr;
-+	brcm_physmap_map.map_priv_1 = (unsigned long)rootfs_addr;
-+
-+	if (!brcm_physmap_map.map_priv_1) {
-+		printk("Wrong rootfs starting address\n");
++	if (!bcm963xx_map.virt) {
++		printk("bcm963xx: Failed to ioremap\n");
 +		return -EIO;
 +	}
-+	
-+	if (brcm_physmap_map.size <= 0) {
-+		printk("Wrong rootfs size\n");
-+		return -EIO;
-+	}	
-+	
-+	mymtd = do_map_probe("map_rom", &brcm_physmap_map);
-+	if (mymtd) {
-+		mymtd->owner = THIS_MODULE;
-+		add_mtd_device(mymtd);
++
++	simple_map_init(&bcm963xx_map);
++
++	bcm963xx_mtd_info = do_map_probe("cfi_probe", &bcm963xx_map);
++
++	if (bcm963xx_mtd_info) {
++		bcm963xx_mtd_info->owner = THIS_MODULE;
++		int parsed_nr_parts = 0;
++		char * part_type;
++
++#ifdef CONFIG_MTD_REDBOOT_PARTS	
++		if (parsed_nr_parts == 0) {
++			int ret = parse_redboot_partitions(bcm963xx_mtd_info, &parsed_parts, 0);
++			if (ret > 0) {
++				part_type = "RedBoot";
++				parsed_nr_parts = ret;
++			}
++		}
++#endif
++		add_mtd_partitions(bcm963xx_mtd_info, parsed_parts, parsed_nr_parts);
 +
 +		return 0;
-+	}
-+
++        }
++	iounmap(bcm963xx_map.virt);
 +	return -ENXIO;
 +}
 +
-+static void __exit cleanup_brcm_physmap(void)
++static void __exit bcm963xx_mtd_cleanup(void)
 +{
-+	if (mymtd) {
-+		del_mtd_device(mymtd);
-+		map_destroy(mymtd);
++	if (bcm963xx_mtd_info) {
++		del_mtd_partitions(bcm963xx_mtd_info);
++		map_destroy(bcm963xx_mtd_info);
 +	}
-+	if (brcm_physmap_map.map_priv_1) {
-+		brcm_physmap_map.map_priv_1 = 0;
++
++	if (bcm963xx_map.virt) {
++		iounmap(bcm963xx_map.virt);
++		bcm963xx_map.virt = 0;
 +	}
 +}
 +
-+module_init(init_brcm_physmap);
-+module_exit(cleanup_brcm_physmap);
-+
++module_init(bcm963xx_mtd_init);
++module_exit(bcm963xx_mtd_cleanup);
 +
 +MODULE_LICENSE("GPL");
-+MODULE_AUTHOR("Song Wang songw@broadcom.com");
-+MODULE_DESCRIPTION("Configurable MTD map driver for read-only root file system");
-diff -urN linux-2.6.16.7/drivers/mtd/maps/Kconfig linux-2.6.16.7-brcm63xx/drivers/mtd/maps/Kconfig
---- linux-2.6.16.7/drivers/mtd/maps/Kconfig	2006-04-17 23:53:25.000000000 +0200
-+++ linux-2.6.16.7-brcm63xx/drivers/mtd/maps/Kconfig	2006-07-07 22:02:13.000000000 +0200
++MODULE_AUTHOR("Florian Fainelli");
+diff -urN linux-2.6.17/drivers/mtd/maps/Kconfig linux-2.6.17-brcm63xx/drivers/mtd/maps/Kconfig
+--- linux-2.6.17/drivers/mtd/maps/Kconfig	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17-brcm63xx/drivers/mtd/maps/Kconfig	2006-08-03 16:32:05.000000000 +0200
 @@ -224,6 +224,13 @@
  	  Flash memory access on 4G Systems MTX-1 Board. If you have one of
  	  these boards and would like to use the flash chips on it, say 'Y'.
  
 +config MTD_BCM963XX
-+	tristate "BCM963xx Flash device"
-+	depends on MIPS && MIPS_BRCM
-+	help
-+	  This driver seems to detect and provide a valid flash map to the system
-+	  of course, it needs checking and testing.
++        tristate "BCM963xx Flash device"
++        depends on MIPS && MIPS_BRCM
++        help
++	  Flash memory access on BCM963xx boards. Currently only works with
++	  RedBoot, CFE support coming soon.
 +
  config MTD_DILNETPC
  	tristate "CFI Flash device mapped on DIL/Net PC"
  	depends on X86 && MTD_CONCAT && MTD_PARTITIONS && MTD_CFI_INTELEXT
-diff -urN linux-2.6.16.7/drivers/mtd/maps/Makefile linux-2.6.16.7-brcm63xx/drivers/mtd/maps/Makefile
---- linux-2.6.16.7/drivers/mtd/maps/Makefile	2006-04-17 23:53:25.000000000 +0200
-+++ linux-2.6.16.7-brcm63xx/drivers/mtd/maps/Makefile	2006-07-07 22:01:29.000000000 +0200
+diff -urN linux-2.6.17/drivers/mtd/maps/Makefile linux-2.6.17-brcm63xx/drivers/mtd/maps/Makefile
+--- linux-2.6.17/drivers/mtd/maps/Makefile	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17-brcm63xx/drivers/mtd/maps/Makefile	2006-08-03 16:32:27.000000000 +0200
 @@ -71,3 +71,4 @@
  obj-$(CONFIG_MTD_OMAP_NOR)	+= omap_nor.o
  obj-$(CONFIG_MTD_MTX1)		+= mtx-1_flash.o
  obj-$(CONFIG_MTD_TQM834x)	+= tqm834x.o
-+obj-$(CONFIG_MTD_BCM963XX)      += bcm963xx.o
++obj-$(CONFIG_MTD_BCM963XX)      += bcm963xx-flash.o
+diff -urN linux-2.6.17/drivers/mtd/redboot.c linux-2.6.17-brcm63xx/drivers/mtd/redboot.c
+--- linux-2.6.17/drivers/mtd/redboot.c	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17-brcm63xx/drivers/mtd/redboot.c	2006-08-03 16:32:39.000000000 +0200
+@@ -39,7 +39,7 @@
+ 	return 1;
+ }
+ 
+-static int parse_redboot_partitions(struct mtd_info *master,
++int parse_redboot_partitions(struct mtd_info *master,
+                              struct mtd_partition **pparts,
+                              unsigned long fis_origin)
+ {
+@@ -120,11 +120,19 @@
+ 		goto out;
+ 	}
+ 
++	if (!fis_origin) {
++		for (i = 0; i < numslots; i++) {
++			if (!strncmp(buf[i].name, "RedBoot", 8)) {
++				fis_origin = (buf[i].flash_base & (master->size << 1) - 1);
++			}
++		}
++	}
++
+ 	for (i = 0; i < numslots; i++) {
+ 		struct fis_list *new_fl, **prev;
+ 
+ 		if (buf[i].name[0] == 0xff)
+-			continue;
++			break;
+ 		if (!redboot_checksum(&buf[i]))
+ 			break;
+ 
+@@ -135,11 +143,10 @@
+ 			goto out;
+ 		}
+ 		new_fl->img = &buf[i];
+-                if (fis_origin) {
+-                        buf[i].flash_base -= fis_origin;
+-                } else {
+-                        buf[i].flash_base &= master->size-1;
+-                }
++		if (fis_origin) {
++				buf[i].flash_base -= fis_origin;
++		}
++		buf[i].flash_base &= (master->size << 1) - 1;
+ 
+ 		/* I'm sure the JFFS2 code has done me permanent damage.
+ 		 * I now think the following is _normal_
