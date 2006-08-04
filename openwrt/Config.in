@@ -44,6 +44,13 @@ config JLEVEL
 	help
 	    Number of jobs to run simultanesouly
 
+config CCACHE
+	bool
+	prompt "Use ccache" if BUILDOPTS
+	default n
+	help
+		Compiler cache; see http://ccache.samba.org/
+
 source "toolchain/Config.in"
 source "target/sdk/Config.in"
 
