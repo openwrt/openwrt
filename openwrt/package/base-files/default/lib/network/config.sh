@@ -13,7 +13,8 @@ find_config() {
 				config_get iface "$ifn" ifnames
 			;;
 		esac
-		for ifc in $iface; do
+		config_get device "$ifn" device
+		for ifc in ${device:-iface}; do
 			[ "$ifc" = "$1" ] && {
 				echo "$ifn"
 				return 0
