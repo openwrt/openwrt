@@ -37,11 +37,13 @@ while (@ARGV > 0) {
 	my $path = shift @ARGV;
 	if ($path =~ /^-x/) {
 		my $str = shift @ARGV;
-		$options{"-x"} .= " -and -not -path \\*".$str."\\*"
+		$options{"findopts"} .= " -and -not -path \\*".$str."\\*"
+	} elsif ($path =~ /^-f/) {
+		$options{"findopts"} .= " -follow";
 	} elsif ($path =~ /^-/) {
 		$options{$path} = 1;
 	} else {
-		my ($tmp, $fname) = get_ts($path, $options{"-x"});
+		my ($tmp, $fname) = get_ts($path, $options{"findopts"});
 		if ($tmp > $ts) {
 			if ($options{'-f'}) {
 				$n = $fname;
