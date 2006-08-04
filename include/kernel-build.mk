@@ -33,11 +33,8 @@ $(LINUX_DIR)/.unpacked: $(DL_DIR)/$(LINUX_SOURCE)
 
 ifeq ($(KERNEL),2.4)
 $(LINUX_DIR)/.configured: $(LINUX_DIR)/.patched
-	$(SED) "s,^CROSS_COMPILE.*,CROSS_COMPILE=$(KERNEL_CROSS),g;" \
-	  $(LINUX_DIR)/Makefile  \
-	  $(LINUX_DIR)/arch/*/Makefile
 	$(SED) "s,\-mcpu=,\-mtune=,g;" $(LINUX_DIR)/arch/mips/Makefile
-	$(MAKE) -C $(LINUX_DIR) ARCH=$(LINUX_KARCH) oldconfig include/linux/compile.h include/linux/version.h
+	PATH="$(TARGET_PATH)" $(MAKE) -C $(LINUX_DIR) CROSS_COMPILE="$(KERNEL_CROSS)" CC="$(TARGET_CC)" ARCH=$(LINUX_KARCH) oldconfig include/linux/compile.h include/linux/version.h
 	touch $@
 
 $(LINUX_DIR)/.depend_done: $(LINUX_DIR)/.configured
@@ -47,7 +44,7 @@ $(LINUX_DIR)/.depend_done: $(LINUX_DIR)/.configured
 $(LINUX_DIR)/vmlinux: $(LINUX_DIR)/.depend_done
 else
 $(LINUX_DIR)/.configured: $(LINUX_DIR)/.patched
-	$(MAKE) -C $(LINUX_DIR) CROSS_COMPILE="$(KERNEL_CROSS)" ARCH=$(LINUX_KARCH) oldconfig prepare scripts
+	PATH="$(TARGET_PATH)" $(MAKE) -C $(LINUX_DIR) CROSS_COMPILE="$(KERNEL_CROSS)" CC="$(TARGET_CC)" ARCH=$(LINUX_KARCH) oldconfig prepare scripts
 	touch $@
 endif
 
@@ -66,16 +63,16 @@ else
 endif
 
 $(LINUX_DIR)/vmlinux: $(LINUX_DIR)/.linux-compile pkg-install ramdisk-config
-	$(MAKE) -C $(LINUX_DIR) CROSS_COMPILE="$(KERNEL_CROSS)" ARCH=$(LINUX_KARCH) PATH="$(TARGET_PATH)"
+	PATH="$(TARGET_PATH)" $(MAKE) -C $(LINUX_DIR) CROSS_COMPILE="$(KERNEL_CROSS)" CC="$(TARGET_CC)" ARCH=$(LINUX_KARCH)
 
 $(LINUX_KERNEL): $(LINUX_DIR)/vmlinux
-	$(KERNEL_CROSS)objcopy -O binary -R .reginfo -R .note -R .comment -R .mdebug -S $< $@
+	PATH="$(TARGET_PATH)" $(KERNEL_CROSS)objcopy -O binary -R .reginfo -R .note -R .comment -R .mdebug -S $< $@
 	touch -c $(LINUX_KERNEL)
 
 $(LINUX_DIR)/.modules_done:
 	rm -rf $(KERNEL_BUILD_DIR)/modules
-	$(MAKE) -C "$(LINUX_DIR)" CROSS_COMPILE="$(KERNEL_CROSS)" ARCH=$(LINUX_KARCH) PATH="$(TARGET_PATH)" modules
-	$(MAKE) -C "$(LINUX_DIR)" CROSS_COMPILE="$(KERNEL_CROSS)" ARCH=$(LINUX_KARCH) PATH="$(TARGET_PATH)" DEPMOD=true INSTALL_MOD_PATH=$(KERNEL_BUILD_DIR)/modules modules_install
+	PATH="$(TARGET_PATH)" $(MAKE) -C "$(LINUX_DIR)" CROSS_COMPILE="$(KERNEL_CROSS)" CC="$(TARGET_CC)" ARCH=$(LINUX_KARCH) modules
+	PATH="$(TARGET_PATH)" $(MAKE) -C "$(LINUX_DIR)" CROSS_COMPILE="$(KERNEL_CROSS)" CC="$(TARGET_CC)" ARCH=$(LINUX_KARCH) DEPMOD=true INSTALL_MOD_PATH=$(KERNEL_BUILD_DIR)/modules modules_install
 	touch $(LINUX_DIR)/.modules_done
 
 modules: $(LINUX_DIR)/.modules_done
