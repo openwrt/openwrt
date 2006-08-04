@@ -45,7 +45,7 @@ define Build/Configure
 endef
 
 define Build/Compile
-	$(MAKE) -j1 -C $(PKG_BUILD_DIR)/netem HOSTCC=$(HOSTCC) CFLAGS="-D_GNU_SOURCE -O2 -Wstrict-prototypes -Wall -I ../include -DRESOLVE_HOSTNAMES"
+	$(MAKE) -j1 -C $(PKG_BUILD_DIR)/netem HOSTCC="$(HOSTCC)" CFLAGS="-D_GNU_SOURCE -O2 -Wstrict-prototypes -Wall -I ../include -DRESOLVE_HOSTNAMES"
 	$(MAKE) -j1 -C $(PKG_BUILD_DIR) $(TARGET_CONFIGURE_OPTS) KERNEL_INCLUDE=$(LINUX_DIR)/include all tc/tc ip/ip
 endef
 

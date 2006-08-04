@@ -87,7 +87,7 @@ define Build/Compile
 	rm -rf $(PKG_INSTALL_DIR)
 	mkdir -p $(PKG_INSTALL_DIR)/usr
 	$(MAKE) -C $(PKG_BUILD_DIR) \
-		CC=$(TARGET_CC) \
+		CC="$(TARGET_CC)" \
 		COPTS="$(TARGET_CFLAGS)" \
 		PRECOMPILED_FILTER=1 \
 		STAGING_DIR="$(STAGING_DIR)" \
