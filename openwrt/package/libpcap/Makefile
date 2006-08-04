@@ -71,6 +71,7 @@ define Build/Compile
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CCOPT="$(TARGET_CFLAGS) -I$(BUILD_DIR)/linux/include" \
+		PATH=$(TARGET_PATH) \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		all install
 endef

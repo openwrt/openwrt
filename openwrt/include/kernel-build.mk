@@ -66,7 +66,7 @@ else
 endif
 
 $(LINUX_DIR)/vmlinux: $(LINUX_DIR)/.linux-compile pkg-install ramdisk-config
-	$(MAKE) -C $(LINUX_DIR) CROSS_COMPILE="$(KERNEL_CROSS)" ARCH=$(LINUX_KARCH) PATH=$(TARGET_PATH)
+	$(MAKE) -C $(LINUX_DIR) CROSS_COMPILE="$(KERNEL_CROSS)" ARCH=$(LINUX_KARCH) PATH="$(TARGET_PATH)"
 
 $(LINUX_KERNEL): $(LINUX_DIR)/vmlinux
 	$(KERNEL_CROSS)objcopy -O binary -R .reginfo -R .note -R .comment -R .mdebug -S $< $@
@@ -75,7 +75,7 @@ $(LINUX_KERNEL): $(LINUX_DIR)/vmlinux
 $(LINUX_DIR)/.modules_done:
 	rm -rf $(KERNEL_BUILD_DIR)/modules
 	$(MAKE) -C "$(LINUX_DIR)" CROSS_COMPILE="$(KERNEL_CROSS)" ARCH=$(LINUX_KARCH) PATH="$(TARGET_PATH)" modules
-	$(MAKE) -C "$(LINUX_DIR)" CROSS_COMPILE="$(KERNEL_CROSS)" ARCH=$(LINUX_KARCH) DEPMOD=true INSTALL_MOD_PATH=$(KERNEL_BUILD_DIR)/modules modules_install
+	$(MAKE) -C "$(LINUX_DIR)" CROSS_COMPILE="$(KERNEL_CROSS)" ARCH=$(LINUX_KARCH) PATH="$(TARGET_PATH)" DEPMOD=true INSTALL_MOD_PATH=$(KERNEL_BUILD_DIR)/modules modules_install
 	touch $(LINUX_DIR)/.modules_done
 
 modules: $(LINUX_DIR)/.modules_done

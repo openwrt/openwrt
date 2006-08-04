@@ -36,7 +36,7 @@ endef
 
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
-		CC="$(TARGET_CC)" CFLAGS="$(TARGET_CFLAGS)" \
+		$(TARGET_CONFIGURE_OPTS) \
 		BINDIR="/usr/sbin" MANDIR="/usr/man" \
 		all
 endef
