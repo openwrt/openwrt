@@ -163,8 +163,8 @@ define Build/Compile
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
-		CC=$(TARGET_CC) COPT_FLAGS="$(TARGET_CFLAGS)" \
-		KERNEL_DIR=$(LINUX_DIR) PREFIX=/usr \
+		CC="$(TARGET_CC)" COPT_FLAGS="$(TARGET_CFLAGS)" \
+		KERNEL_DIR="$(LINUX_DIR)" PREFIX=/usr \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		all install install-devel
 endef
@@ -173,8 +173,8 @@ endef
 define Build/InstallDev
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
-		CC=$(TARGET_CC) COPT_FLAGS="$(TARGET_CFLAGS)" \
-		KERNEL_DIR=$(LINUX_DIR) PREFIX=/usr \
+		CC="$(TARGET_CC)" COPT_FLAGS="$(TARGET_CFLAGS)" \
+		KERNEL_DIR="$(LINUX_DIR)" PREFIX=/usr \
 		DESTDIR="$(STAGING_DIR)" \
 		install install-devel
 endef

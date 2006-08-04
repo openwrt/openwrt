@@ -61,7 +61,7 @@ define Build/Configure
 			--enable-static \
 			--disable-yydebug \
 			--enable-ipv6 \
-			--with-build-cc=$(HOSTCC) \
+			--with-build-cc="$(HOSTCC)" \
 			--with-pcap=linux \
 	);
 endef
