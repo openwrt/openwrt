@@ -35,7 +35,6 @@ define Build/Compile
 	$(MAKE) -C "$(LINUX_DIR)" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
 		ARCH="$(LINUX_KARCH)" \
-		PATH="$(TARGET_PATH)" \
 		SUBDIRS="$(PKG_BUILD_DIR)" \
 		EXTRA_CFLAGS="-DBCMDRIVER -I$(LINUX_DIR)/arch/mips/bcm947xx/include" \
 		modules

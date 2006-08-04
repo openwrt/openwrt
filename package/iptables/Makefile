@@ -161,9 +161,9 @@ endef
 define Build/Compile
 	chmod a+x $(PKG_BUILD_DIR)/extensions/.*-test*
 	mkdir -p $(PKG_INSTALL_DIR)
-	PATH="$(TARGET_PATH)" $(MAKE) -C $(PKG_BUILD_DIR) \
+	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
-		CC="$(TARGET_CC)" COPT_FLAGS="$(TARGET_CFLAGS)" \
+		COPT_FLAGS="$(TARGET_CFLAGS)" \
 		KERNEL_DIR="$(LINUX_DIR)" PREFIX=/usr \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		all install install-devel
@@ -171,9 +171,9 @@ endef
 
 
 define Build/InstallDev
-	PATH="$(TARGET_PATH)" $(MAKE) -C $(PKG_BUILD_DIR) \
+	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
-		CC="$(TARGET_CC)" COPT_FLAGS="$(TARGET_CFLAGS)" \
+		COPT_FLAGS="$(TARGET_CFLAGS)" \
 		KERNEL_DIR="$(LINUX_DIR)" PREFIX=/usr \
 		DESTDIR="$(STAGING_DIR)" \
 		install install-devel

@@ -33,7 +33,6 @@ endef
 
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
-		PATH="$(TARGET_PATH)" \
 		ARCH="$(LINUX_KARCH)" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
 		KERNELVERSION="$(KERNEL)" \
