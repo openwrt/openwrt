@@ -283,7 +283,7 @@ define Build/Configure
 endef
 
 define Build/Compile/Default
-	$(MAKE) -C $(PKG_BUILD_DIR) \
+	PATH=$(TARGET_PATH) $(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
 		CROSS="$(TARGET_CROSS)" \
 		EXTRA_CFLAGS="$(TARGET_CFLAGS) -I$(STAGING_DIR)/include -I$(STAGING_DIR)/usr/include" \

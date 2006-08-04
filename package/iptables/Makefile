@@ -161,7 +161,7 @@ endef
 define Build/Compile
 	chmod a+x $(PKG_BUILD_DIR)/extensions/.*-test*
 	mkdir -p $(PKG_INSTALL_DIR)
-	$(MAKE) -C $(PKG_BUILD_DIR) \
+	PATH="$(TARGET_PATH)" $(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
 		CC="$(TARGET_CC)" COPT_FLAGS="$(TARGET_CFLAGS)" \
 		KERNEL_DIR="$(LINUX_DIR)" PREFIX=/usr \
@@ -171,7 +171,7 @@ endef
 
 
 define Build/InstallDev
-	$(MAKE) -C $(PKG_BUILD_DIR) \
+	PATH="$(TARGET_PATH)" $(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
 		CC="$(TARGET_CC)" COPT_FLAGS="$(TARGET_CFLAGS)" \
 		KERNEL_DIR="$(LINUX_DIR)" PREFIX=/usr \
