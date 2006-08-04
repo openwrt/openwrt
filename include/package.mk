@@ -285,7 +285,6 @@ endef
 define Build/Compile/Default
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
-		CC=$(TARGET_CC) \
 		CROSS="$(TARGET_CROSS)" \
 		EXTRA_CFLAGS="$(TARGET_CFLAGS) -I$(STAGING_DIR)/include -I$(STAGING_DIR)/usr/include" \
 		ARCH="$(ARCH)" \

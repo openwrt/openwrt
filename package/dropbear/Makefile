@@ -81,11 +81,11 @@ endef
 
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
-		LD="$(TARGET_CC)" \
+		$(TARGET_CONFIGURE_OPTS) \
 		PROGRAMS="dropbear dbclient dropbearkey scp" \
 		MULTI=1 SCPPROGRESS=1
 	$(MAKE) -C $(PKG_BUILD_DIR) \
-		LD="$(TARGET_CC)" \
+		$(TARGET_CONFIGURE_OPTS) \
 		PROGRAMS="dropbearconvert"
 endef
 	
