@@ -35,8 +35,8 @@ IPKG_STATE_DIR:=$(TARGET_DIR)/usr/lib/ipkg
 
 REAL_GNU_TARGET_NAME=$(OPTIMIZE_FOR_CPU)-linux-uclibc
 GNU_TARGET_NAME=$(OPTIMIZE_FOR_CPU)-linux
-KERNEL_CROSS:=$(STAGING_DIR)/bin/$(OPTIMIZE_FOR_CPU)-linux-uclibc-
-TARGET_CROSS:=$(STAGING_DIR)/bin/$(OPTIMIZE_FOR_CPU)-linux-uclibc-
+KERNEL_CROSS:=$(OPTIMIZE_FOR_CPU)-linux-uclibc-
+TARGET_CROSS:=$(OPTIMIZE_FOR_CPU)-linux-uclibc-
 IMAGE:=$(BUILD_DIR)/root_fs_$(ARCH)
 
 TARGET_PATH:=$(STAGING_DIR)/usr/bin:$(STAGING_DIR)/bin:/bin:/sbin:/usr/bin:/usr/sbin
@@ -52,6 +52,11 @@ STRIP:=$(STAGING_DIR)/bin/sstrip
 PATCH:=$(SCRIPT_DIR)/patch-kernel.sh
 SED:=$(STAGING_DIR)/bin/sed -i -e
 CP:=cp -fpR
+
+ifneq ($(CONFIG_CCACHE),)
+  export CCACHE_DIR:=$(TOPDIR)/ccache_$(ARCH)
+  TARGET_CC:=ccache $(TARGET_CC)
+endif
 
 HOST_ARCH:=$(shell $(HOSTCC) -dumpmachine | sed -e s'/-.*//' \
 	-e 's/sparc.*/sparc/' \
@@ -74,8 +79,8 @@ TARGET_CONFIGURE_OPTS:= \
   AS=$(TARGET_CROSS)as \
   LD=$(TARGET_CROSS)ld \
   NM=$(TARGET_CROSS)nm \
-  CC=$(TARGET_CROSS)gcc \
-  GCC=$(TARGET_CROSS)gcc \
+  CC="$(TARGET_CC)" \
+  GCC="$(TARGET_CC)" \
   CXX=$(TARGET_CROSS)g++ \
   RANLIB=$(TARGET_CROSS)ranlib \
   STRIP=$(TARGET_CROSS)strip
@@ -84,6 +89,7 @@ TARGET_CONFIGURE_OPTS:= \
 RSTRIP:= \
   STRIP="$(STRIP)" \
   STRIP_KMOD="$(TARGET_CROSS)strip --strip-unneeded --remove-section=.comment" \
+  PATH=$(TARGET_PATH) \
   $(SCRIPT_DIR)/rstrip.sh
 
 # where to build (and put) .ipk packages
