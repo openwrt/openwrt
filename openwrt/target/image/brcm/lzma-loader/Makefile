@@ -17,8 +17,8 @@ $(PKG_BUILD_DIR)/.prepared:
 	touch $@
 
 $(PKG_BUILD_DIR)/loader.gz: $(PKG_BUILD_DIR)/.prepared
-	$(MAKE) -C $(PKG_BUILD_DIR) CC=$(TARGET_CC) \
-		LD=$(TARGET_CROSS)ld CROSS_COMPILE=$(TARGET_CROSS)
+	$(MAKE) -C $(PKG_BUILD_DIR) CC="$(TARGET_CC)" \
+		LD="$(TARGET_CROSS)ld" CROSS_COMPILE="$(TARGET_CROSS)"
 
 download: 
 prepare: $(PKG_BUILD_DIR)/.prepared
