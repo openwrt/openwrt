@@ -38,12 +38,12 @@ endef
 
 define Build/Configure
 	$(SCRIPT_DIR)/gen_busybox_config.pl $(TOPDIR)/.config > $(PKG_BUILD_DIR)/.config
-	yes '' | PATH="$(TARGET_PATH)" $(MAKE) CC="$(TARGET_CC)" CROSS="$(TARGET_CROSS)" \
+	yes '' | $(MAKE) CC="$(TARGET_CC)" CROSS="$(TARGET_CROSS)" \
 	-C $(PKG_BUILD_DIR) oldconfig
 endef
 
 define Package/busybox/install
-	PATH="$(TARGET_PATH)" $(MAKE) CC="$(TARGET_CC)" CROSS="$(TARGET_CROSS)" \
+	$(MAKE) CC="$(TARGET_CC)" CROSS="$(TARGET_CROSS)" \
 	PREFIX="$(1)" EXTRA_CFLAGS="$(TARGET_CFLAGS)" -C $(PKG_BUILD_DIR) install
 	-rm -rf $(1)/lib64
 endef

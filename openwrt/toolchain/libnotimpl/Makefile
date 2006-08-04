@@ -12,7 +12,7 @@ PKG_BUILD_DIR := $(TOOL_BUILD_DIR)/libnotimpl
 include $(INCLUDE_DIR)/host-build.mk
 
 define cc
-	PATH="$(TARGET_PATH)" $(TARGET_CC) $(TARGET_CFLAGS) -c src/$(1).c -o $(PKG_BUILD_DIR)/$(1).o
+	$(TARGET_CC) $(TARGET_CFLAGS) -c src/$(1).c -o $(PKG_BUILD_DIR)/$(1).o
 endef
 
 define Build/Prepare
@@ -22,7 +22,7 @@ endef
 
 define Build/Compile
 	$(call cc,math)
-	PATH="$(TARGET_PATH)" $(TARGET_CROSS)ar rc $(PKG_BUILD_DIR)/libnotimpl.a $(PKG_BUILD_DIR)/*.o
+	$(TARGET_CROSS)ar rc $(PKG_BUILD_DIR)/libnotimpl.a $(PKG_BUILD_DIR)/*.o
 endef
 
 define Build/Install

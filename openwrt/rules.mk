@@ -39,8 +39,10 @@ KERNEL_CROSS:=$(OPTIMIZE_FOR_CPU)-linux-uclibc-
 TARGET_CROSS:=$(OPTIMIZE_FOR_CPU)-linux-uclibc-
 IMAGE:=$(BUILD_DIR)/root_fs_$(ARCH)
 
-TARGET_PATH:=$(STAGING_DIR)/usr/bin:$(STAGING_DIR)/bin:/bin:/sbin:/usr/bin:/usr/sbin
+TARGET_PATH:=$(STAGING_DIR)/usr/bin:$(STAGING_DIR)/bin:$(PATH)
 TARGET_CFLAGS:=$(TARGET_OPTIMIZATION)
+
+export PATH:=$(TARGET_PATH)
 
 LINUX_DIR:=$(BUILD_DIR)/linux
 LINUX_HEADERS_DIR:=$(TOOL_BUILD_DIR)/linux
@@ -54,7 +56,9 @@ SED:=$(STAGING_DIR)/bin/sed -i -e
 CP:=cp -fpR
 
 ifneq ($(CONFIG_CCACHE),)
-  TARGET_CC:=CCACHE_DIR=$(TOPDIR)/ccache_$(ARCH) ccache $(TARGET_CC)
+  # FIXME: move this variable to a better location
+  export CCACHE_DIR=$(TOPDIR)/ccache_$(ARCH)
+  TARGET_CC:= ccache $(TARGET_CC)
 endif
 
 HOST_ARCH:=$(shell $(HOSTCC) -dumpmachine | sed -e s'/-.*//' \
@@ -73,9 +77,8 @@ HOST_ARCH:=$(shell $(HOSTCC) -dumpmachine | sed -e s'/-.*//' \
 GNU_HOST_NAME:=$(HOST_ARCH)-pc-linux-gnu
 
 TARGET_CONFIGURE_OPTS:= \
-  PATH=$(TARGET_PATH) \
   AR=$(TARGET_CROSS)ar \
-  AS=$(TARGET_CROSS)as \
+  AS="$(TARGET_CC) -c $(TARGET_CFLAGS)" \
   LD=$(TARGET_CROSS)ld \
   NM=$(TARGET_CROSS)nm \
   CC="$(TARGET_CC)" \
@@ -88,7 +91,6 @@ TARGET_CONFIGURE_OPTS:= \
 RSTRIP:= \
   STRIP="$(STRIP)" \
   STRIP_KMOD="$(TARGET_CROSS)strip --strip-unneeded --remove-section=.comment" \
-  PATH=$(TARGET_PATH) \
   $(SCRIPT_DIR)/rstrip.sh
 
 # where to build (and put) .ipk packages
@@ -101,7 +103,7 @@ IPKG:= \
 
 # invoke ipkg-build with some default options
 IPKG_BUILD:= \
-  PATH="$(TARGET_PATH)" ipkg-build -c -o root -g root
+  ipkg-build -c -o root -g root
 
 ifeq ($(CONFIG_ENABLE_LOCALE),true)
   DISABLE_NLS:=

@@ -50,7 +50,6 @@ ifeq ($(findstring PCI,$(BUS)),PCI)
 endif
 
 MADWIFI_MAKEOPTS= -C $(PKG_BUILD_DIR) \
-		PATH="$(TARGET_PATH)" \
 		ARCH="$(LINUX_KARCH)" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
 		CC="$(TARGET_CC)" \

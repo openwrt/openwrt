@@ -52,7 +52,6 @@ define Build/Configure
 	$(SED) 's,/CFLAG=,/CFLAG= $(TARGET_SOFT_FLOAT) ,g' $(PKG_BUILD_DIR)/Configure
 	$(SED) s/OPENWRT_OPTIMIZATION_FLAGS/$(BR2_TARGET_OPTIMIZATION)/g $(PKG_BUILD_DIR)/Configure
 	(cd $(PKG_BUILD_DIR); \
-		PATH=$(TARGET_PATH) \
 		./Configure linux-openwrt \
 		  --prefix=/usr \
 		  --openssldir=/etc/ssl \
