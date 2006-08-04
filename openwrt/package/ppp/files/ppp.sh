@@ -21,7 +21,7 @@ start_pppd() {
 		usepeerdns \
 		defaultroute \
 		replacedefaultroute \
-		${username:+username "$username" password "$password"} \
+		${username:+user "$username" password "$password"} \
 		linkname "$cfg" \
 		ipparam "$cfg"
 }
