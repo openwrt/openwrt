@@ -18,13 +18,18 @@ ifeq ("$(origin V)", "command line")
   KBUILD_VERBOSE:=$(V)
 endif
 
+ifneq ($(shell tty -s <&3 || echo x),x)
+  _Y:="\\33[33m"# yellow
+  _N:="\\33[m"#	normal
+endif
+
 ifneq ($(KBUILD_VERBOSE),99)
   ifeq ($(QUIET),1)
     $(MAKECMDGOALS): trace
     trace: FORCE
 	@[ -f "$(MAKECMDGOALS)" ] || { \
 		[ -z "$${PWD##$$TOPDIR}" ] || DIR=" -C $${PWD##$$TOPDIR/}"; \
-		echo -e "\33[33mmake[$$(($(MAKELEVEL)+1))]$$DIR $(MAKECMDGOALS)\33[m" >&3; \
+		echo -e "$(_Y)make[$$(($(MAKELEVEL)+1))]$$DIR $(MAKECMDGOALS)$(_N)" >&3; \
 	}
   else
     export QUIET:=1
