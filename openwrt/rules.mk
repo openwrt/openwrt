@@ -54,8 +54,7 @@ SED:=$(STAGING_DIR)/bin/sed -i -e
 CP:=cp -fpR
 
 ifneq ($(CONFIG_CCACHE),)
-  export CCACHE_DIR:=$(TOPDIR)/ccache_$(ARCH)
-  TARGET_CC:=ccache $(TARGET_CC)
+  TARGET_CC:=CCACHE_DIR=$(TOPDIR)/ccache_$(ARCH) ccache $(TARGET_CC)
 endif
 
 HOST_ARCH:=$(shell $(HOSTCC) -dumpmachine | sed -e s'/-.*//' \
