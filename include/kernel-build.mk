@@ -79,6 +79,7 @@ modules: $(LINUX_DIR)/.modules_done
 packages: $(TARGETS)
 
 $(LINUX_DIR)/.linux-compile:
+	@rm -f $(BUILD_DIR)/linux
 	ln -sf $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION) $(BUILD_DIR)/linux
 	@$(MAKE) modules
 	@$(MAKE) packages
