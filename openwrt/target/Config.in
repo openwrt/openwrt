@@ -2,6 +2,15 @@ choice
 	prompt "Target System"
 	default LINUX_2_4_BRCM
 	
+config LINUX_2_6_AU1000
+	bool "AMD Alchemy AUxx [2.6]"
+	select mipsel
+	select LINUX_2_6
+	select PCI_SUPPORT
+	help
+	  Build firmware for AMD Alchemy 1500 boards
+	  (e.g. 4G-Systems Mesh/Access Cube ...)
+
 config LINUX_2_6_ARUBA
 	bool "Aruba [2.6]"
 	select mips
@@ -54,6 +63,13 @@ config LINUX_2_6_BRCM63XX
 	  Build firmware images for Broadcom based xDSL/routers
 	  (e.g. Inventel Livebox, Siemens SE515)
 
+config LINUX_2_6_XSCALE
+	bool "Intel XScale [2.6]"
+	select armeb
+	select LINUX_2_6
+	select BIG_ENDIAN
+	select PCI_SUPPORT
+
 config LINUX_2_6_RB532
 	bool "Mikrotik RB532 [2.6]"
 	select mipsel
@@ -91,16 +107,6 @@ config LINUX_2_6_UML
 	help
 	  Build uml targetted images
 
-
-config LINUX_2_6_AU1000
-	bool "AMD Alchemy AUxx [2.6]"
-	select mipsel
-	select LINUX_2_6
-	select PCI_SUPPORT
-	help
-	  Build firmware for AMD Alchemy 1500 boards
-	  (e.g. 4G-Systems Mesh/Access Cube ...)
-
 if DEVEL
 
 config LINUX_2_6_ARM
@@ -108,13 +114,6 @@ config LINUX_2_6_ARM
 	depends BROKEN
 	select LINUX_2_6
 	select arm
-
-config LINUX_2_6_ARMEB
-	bool "UNSUPPORTED big-endian arm platform"
-	depends BROKEN
-	select LINUX_2_6
-	select BIG_ENDIAN
-	select armeb
 
 config LINUX_2_6_CRIS
 	bool "UNSUPPORTED cris platform"
