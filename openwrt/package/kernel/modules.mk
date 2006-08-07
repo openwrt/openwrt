@@ -72,8 +72,8 @@ Includes: \\\
 	* ieee80211_crypt_wep \\\
 	* ieee80211_crypt_tkip \\\
 	* ieee80211_crytp_ccmp \\\
-	* ieee80211softmac\\\
-KCONFIG:=$(CONFIG_IEEE80211SOFTMAC)
+	* ieee80211softmac
+KCONFIG:=$(CONFIG_IEEE80211_SOFTMAC)
 FILES:=$(MODULES_DIR)/kernel/net/ieee80211/*.$(LINUX_KMOD_SUFFIX) $(MODULES_DIR)/kernel/net/ieee80211/softmac/*.$(LINUX_KMOD_SUFFIX)
 AUTOLOAD:=$(call AutoLoad,10,ieee80211_crypt \
 	ieee80211 \
