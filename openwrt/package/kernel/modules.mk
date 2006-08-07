@@ -63,6 +63,65 @@ AUTOLOAD:=$(call AutoLoad,30,pdc202xx_old)
 endef
 $(eval $(call KernelPackage,ide-pdc202xx))
 
+define KernelPackage/ieee80211softmac
+TITLE:=802.11 Networking stack
+DESCRIPTION:=802.11 Networking stack\\\
+Includes: \\\
+	* ieee80211_crypt \\\
+	* ieee80211 \\\
+	* ieee80211_crypt_wep \\\
+	* ieee80211_crypt_tkip \\\
+	* ieee80211_crytp_ccmp \\\
+	* ieee80211softmac\\\
+KCONFIG:=$(CONFIG_IEEE80211SOFTMAC)
+FILES:=$(MODULES_DIR)/kernel/net/ieee80211/*.$(LINUX_KMOD_SUFFIX) $(MODULES_DIR)/kernel/net/ieee80211/softmac/*.$(LINUX_KMOD_SUFFIX)
+AUTOLOAD:=$(call AutoLoad,10,ieee80211_crypt \
+	ieee80211 \
+	ieee80211_crypt_wep \
+	ieee80211_crypt_tkip \
+	ieee80211_crypt_ccmp \
+	ieee80211softmac)
+endef
+$(eval $(call KernelPackage,ieee80211softmac))
+
+WIMENU:=Wireless drivers
+
+define KernelPackage/bcm43xx
+TITLE:=Broadcom BCM43xx driver
+DESCRIPTION:=Open source BCM43xx driver\\\
+Includes: \\\
+	* bcm43xx
+KCONFIG:=$(CONFIG_BCM43XX)
+SUBMENU:=$(WIMENU)
+FILES:=$(MODULES_DIR)/kernel/drivers/net/wireless/bcm43xx/bcm43xx.$(LINUX_KMOD_SUFFIX)
+AUTOLOAD:=$(call Autoload,50,bcm43xx)
+endef
+$(eval $(call KernelPackage,bcm43xx))
+
+define KernelPackage/ipw2100
+TITLE:=Intel IPw2100 driver
+DESCRIPTION:=Intel IPW2100 driver\\\
+Includes: \\\
+        * ipw2100
+KCONFIG:=$(CONFIG_IPW2100)
+SUBMENU:=$(WIMENU)
+FILES:=$(MODULES_DIR)/kernel/drivers/net/wireless/ipw2100.$(LINUX_KMOD_SUFFIX)
+AUTOLOAD:=$(call Autoload,50,ipw2100)
+endef
+$(eval $(call KernelPackage,ipw2100))
+
+define KernelPackage/ipw2200
+TITLE:=Intel IPw2200 driver
+DESCRIPTION:=Intel IPW2200 driver\\\
+Includes: \\\
+        * ipw2200
+KCONFIG:=$(CONFIG_IPW2200)
+SUBMENU:=$(WIMENU)
+FILES:=$(MODULES_DIR)/kernel/drivers/net/wireless/ipw2200.$(LINUX_KMOD_SUFFIX)
+AUTOLOAD:=$(call Autoload,50,ipw2200)
+endef
+$(eval $(call KernelPackage,ipw2200))
+
 NFMENU:=Netfilter Extensions
 
 define KernelPackage/ipt-conntrack
