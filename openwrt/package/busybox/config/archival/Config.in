@@ -29,7 +29,7 @@ config BUSYBOX_CONFIG_AR
 	  probably say N here.
 
 config BUSYBOX_CONFIG_FEATURE_AR_LONG_FILENAMES
-	bool "  Enable support for long filenames (not need for debs)"
+	bool "Enable support for long filenames (not need for debs)"
 	default n
 	depends on BUSYBOX_CONFIG_AR
 	help
@@ -89,7 +89,7 @@ config BUSYBOX_CONFIG_DPKG_DEB
 	  probably say N here.
 
 config BUSYBOX_CONFIG_FEATURE_DPKG_DEB_EXTRACT_ONLY
-	bool "  extract only (-x)"
+	bool "extract only (-x)"
 	default n
 	depends on BUSYBOX_CONFIG_DPKG_DEB
 	help
@@ -106,7 +106,7 @@ config BUSYBOX_CONFIG_GUNZIP
 	  an archive, without decompressing it.
 
 config BUSYBOX_CONFIG_FEATURE_GUNZIP_UNCOMPRESS
-	bool "  Uncompress support"
+	bool "Uncompress support"
 	default y
 	depends on BUSYBOX_CONFIG_GUNZIP
 	help
@@ -150,7 +150,7 @@ config BUSYBOX_CONFIG_TAR
 	  UNIX archive program.
 
 config BUSYBOX_CONFIG_FEATURE_TAR_CREATE
-	bool "  Enable archive creation"
+	bool "Enable archive creation"
 	default y
 	depends on BUSYBOX_CONFIG_TAR
 	help
@@ -158,7 +158,7 @@ config BUSYBOX_CONFIG_FEATURE_TAR_CREATE
 	  tar archives using the `-c' option.
 
 config BUSYBOX_CONFIG_FEATURE_TAR_BZIP2
-	bool "  Enable -j option to handle .tar.bz2 files"
+	bool "Enable -j option to handle .tar.bz2 files"
 	default y
 	depends on BUSYBOX_CONFIG_TAR
 	help
@@ -166,7 +166,7 @@ config BUSYBOX_CONFIG_FEATURE_TAR_BZIP2
 	  archives compressed with bzip2.
 
 config BUSYBOX_CONFIG_FEATURE_TAR_LZMA
-	bool "  Enable -a option to handle .tar.lzma files"
+	bool "Enable -a option to handle .tar.lzma files"
 	default n
 	depends on BUSYBOX_CONFIG_TAR
 	help
@@ -174,7 +174,7 @@ config BUSYBOX_CONFIG_FEATURE_TAR_LZMA
 	  archives compressed with lzma.
 
 config BUSYBOX_CONFIG_FEATURE_TAR_FROM
-	bool "  Enable -X (exclude from) and -T (include from) options)"
+	bool "Enable -X (exclude from) and -T (include from) options)"
 	default y
 	depends on BUSYBOX_CONFIG_TAR
 	help
@@ -182,7 +182,7 @@ config BUSYBOX_CONFIG_FEATURE_TAR_FROM
 	  a list of files to include or exclude from an archive.
 
 config BUSYBOX_CONFIG_FEATURE_TAR_GZIP
-	bool "  Enable -z option"
+	bool "Enable -z option"
 	default y
 	depends on BUSYBOX_CONFIG_TAR
 	help
@@ -190,15 +190,15 @@ config BUSYBOX_CONFIG_FEATURE_TAR_GZIP
 	  when creating or extracting tar gziped archives.
 
 config BUSYBOX_CONFIG_FEATURE_TAR_COMPRESS
-	bool "  Enable -Z option"
+	bool "Enable -Z option"
 	default n
 	depends on BUSYBOX_CONFIG_TAR
 	help
 	  If you enable this option tar will be able to call uncompress,
 	  when extracting .tar.Z archives.
 
-config BUSYBOX_CONFIG_FEATURE_TAR_OLDGNU_COMPATABILITY
-	bool "  Enable support for old tar header format"
+config BUSYBOX_CONFIG_FEATURE_TAR_OLDGNU_COMPATIBILITY
+	bool "Enable support for old tar header format"
 	default n
 	depends on BUSYBOX_CONFIG_TAR
 	help
@@ -207,7 +207,7 @@ config BUSYBOX_CONFIG_FEATURE_TAR_OLDGNU_COMPATABILITY
 	  repacking your ancient archives with the new format.
 
 config BUSYBOX_CONFIG_FEATURE_TAR_GNU_EXTENSIONS
-	bool "  Enable support for some GNU tar extensions"
+	bool "Enable support for some GNU tar extensions"
 	default y
 	depends on BUSYBOX_CONFIG_TAR
 	help
@@ -215,9 +215,9 @@ config BUSYBOX_CONFIG_FEATURE_TAR_GNU_EXTENSIONS
 	  linknames.
 
 config BUSYBOX_CONFIG_FEATURE_TAR_LONG_OPTIONS
-	bool "  Enable long options"
+	bool "Enable long options"
 	default n
-	depends on BUSYBOX_CONFIG_TAR
+	depends on BUSYBOX_CONFIG_TAR && BUSYBOX_CONFIG_GETOPT_LONG
 	help
 		Enable use of long options, increases size by about 400 Bytes
 
@@ -244,11 +244,11 @@ config BUSYBOX_CONFIG_UNLZMA
 	  should probably say N here.
 
 config BUSYBOX_CONFIG_FEATURE_LZMA_FAST
-	bool "  Optimze unlzma for speed"
+	bool "Optimze unlzma for speed"
 	default n
 	depends on BUSYBOX_CONFIG_UNLZMA
 	help
-	  This option reduce decompression time by about 33% at the cost of
+	  This option reduces decompression time by about 33% at the cost of
 	  a 2K bigger binary.
 
 config BUSYBOX_CONFIG_UNZIP
@@ -265,7 +265,7 @@ comment "Common options for cpio and tar"
 	depends on BUSYBOX_CONFIG_CPIO || BUSYBOX_CONFIG_TAR
 
 config BUSYBOX_CONFIG_FEATURE_UNARCHIVE_TAPE
-	bool "  Enable tape drive support"
+	bool "Enable tape drive support"
 	default n
 	depends on BUSYBOX_CONFIG_CPIO || BUSYBOX_CONFIG_TAR
 	help
@@ -275,7 +275,7 @@ comment "Common options for dpkg and dpkg_deb"
 	depends on BUSYBOX_CONFIG_DPKG || BUSYBOX_CONFIG_DPKG_DEB
 
 config BUSYBOX_CONFIG_FEATURE_DEB_TAR_GZ
-	bool "  gzip debian packages (normal)"
+	bool "gzip debian packages (normal)"
 	default n if BUSYBOX_CONFIG_DPKG || BUSYBOX_CONFIG_DPKG_DEB
 	depends on BUSYBOX_CONFIG_DPKG || BUSYBOX_CONFIG_DPKG_DEB
 	help
@@ -284,7 +284,7 @@ config BUSYBOX_CONFIG_FEATURE_DEB_TAR_GZ
 	  If you want compatibility with standard .deb's you should say yes here.
 
 config BUSYBOX_CONFIG_FEATURE_DEB_TAR_BZ2
-	bool "  bzip2 debian packages"
+	bool "bzip2 debian packages"
 	default n
 	depends on BUSYBOX_CONFIG_DPKG || BUSYBOX_CONFIG_DPKG_DEB
 	help
@@ -295,7 +295,7 @@ config BUSYBOX_CONFIG_FEATURE_DEB_TAR_BZ2
 	  use an internal control.tar.bz2 or data.tar.bz2.
 
 config BUSYBOX_CONFIG_FEATURE_DEB_TAR_LZMA
-	bool "  lzma debian packages"
+	bool "lzma debian packages"
 	default n
 	depends on BUSYBOX_CONFIG_DPKG || BUSYBOX_CONFIG_DPKG_DEB
 	help

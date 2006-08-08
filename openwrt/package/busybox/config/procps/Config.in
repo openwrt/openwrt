@@ -51,14 +51,14 @@ config BUSYBOX_CONFIG_PIDOF
 	  those id's on the standard output.
 
 config BUSYBOX_CONFIG_FEATURE_PIDOF_SINGLE
-	bool "  Enable argument for single shot (-s)"
+	bool "Enable argument for single shot (-s)"
 	default n
 	depends on BUSYBOX_CONFIG_PIDOF
 	help
 	  Support argument '-s' for returning only the first pid found.
 
 config BUSYBOX_CONFIG_FEATURE_PIDOF_OMIT
-	bool "  Enable argument for omitting pids (-o)"
+	bool "Enable argument for omitting pids (-o)"
 	default n
 	depends on BUSYBOX_CONFIG_PIDOF
 	help
@@ -73,7 +73,7 @@ config BUSYBOX_CONFIG_PS
 	  ps gives a snapshot of the current processes.
 
 config BUSYBOX_CONFIG_FEATURE_PS_WIDE
-	bool "  Enable argument for wide output (-w)"
+	bool "Enable argument for wide output (-w)"
 	default n
 	depends on BUSYBOX_CONFIG_PS
 	help
@@ -102,7 +102,7 @@ config BUSYBOX_CONFIG_TOP
 	  system.
 
 config BUSYBOX_CONFIG_FEATURE_TOP_CPU_USAGE_PERCENTAGE
-	bool "  Support showing CPU usage percentage (add 2k bytes)"
+	bool "Support showing CPU usage percentage (add 2k bytes)"
 	default y
 	depends on BUSYBOX_CONFIG_TOP
 	help

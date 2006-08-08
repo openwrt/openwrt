@@ -9,8 +9,8 @@ config BUSYBOX_CONFIG_FEATURE_IPV6
 	bool "Enable IPv6 support"
 	default y
 	help
-	  Enable IPv6 support to busybox. This makes applets that talk IP
-	  able to work with IPv6.
+	  Enable IPv6 support in busybox.
+	  This adds IPv6 support in the networking applets.
 
 config BUSYBOX_CONFIG_ARPING
 	bool "arping"
@@ -22,7 +22,7 @@ config BUSYBOX_CONFIG_DNSD
 	bool "dnsd"
 	default n
 	help
-	  Small and static DNS server deamon. 
+	  Small and static DNS server daemon. 
 
 config BUSYBOX_CONFIG_ETHER_WAKE
 	bool "ether-wake"
@@ -34,8 +34,8 @@ config BUSYBOX_CONFIG_FAKEIDENTD
 	bool "fakeidentd"
 	default n
 	help
-	  fakeidentd listens to the ident port and returns a set fake
-	  value whatever it gets.
+	  fakeidentd listens on the ident port and returns a predefined
+	  fake value on any query.
 
 config BUSYBOX_CONFIG_FTPGET
 	bool "ftpget"
@@ -49,6 +49,13 @@ config BUSYBOX_CONFIG_FTPPUT
 	help
 	  Store a remote file via FTP.
 
+config BUSYBOX_CONFIG_FEATURE_FTPGETPUT_LONG_OPTIONS
+	bool "Enable long options in ftpget/ftpput"
+	default n
+	depends on BUSYBOX_CONFIG_GETOPT_LONG && (CONFIG_FTPGET || BUSYBOX_CONFIG_FTPPUT)
+	help
+	  Support long options for the ftpget/ftpput applet.
+
 config BUSYBOX_CONFIG_HOSTNAME
 	bool "hostname"
 	default n
@@ -61,16 +68,34 @@ config BUSYBOX_CONFIG_HTTPD
 	help
 	  Serve web pages via an HTTP server.
 
-config BUSYBOX_CONFIG_FEATURE_HTTPD_USAGE_FROM_INETD_ONLY
-	bool "  Support using httpd only from inetd"
-	default n
+config BUSYBOX_CONFIG_FEATURE_HTTPD_WITHOUT_INETD
+	bool "Support using httpd as a daemon (not from inetd)"
+	default y
 	depends on BUSYBOX_CONFIG_HTTPD
 	help
-	  This option disables uid and port options for the httpd applet
-	  but requires inetd server daemon.
+	  This option enables uid and port options for the httpd applet,
+	  and eliminates the need to be called from the inetd server daemon.
+
+config BUSYBOX_CONFIG_FEATURE_HTTPD_RELOAD_CONFIG_SIGHUP
+	bool "Support reloading the global config file using hup signal"
+	default n
+	depends on BUSYBOX_CONFIG_HTTPD && BUSYBOX_CONFIG_FEATURE_HTTPD_WITHOUT_INETD
+	help
+	  This option enables processing of SIGHUP to reload cached
+	  configuration settings.
+
+config BUSYBOX_CONFIG_FEATURE_HTTPD_SETUID
+	bool "Enable support -u <user> option"
+	default n
+	depends on BUSYBOX_CONFIG_HTTPD && BUSYBOX_CONFIG_FEATURE_HTTPD_WITHOUT_INETD
+	help
+	  This option allows the server to run as a specific user
+	  rather than defaulting to the user that starts the server.
+	  Use of this option requires special privileges to change to a
+	  different user.
 
 config BUSYBOX_CONFIG_FEATURE_HTTPD_BASIC_AUTH
-	bool "  Enable Basic http Authentication"
+	bool "Enable Basic http Authentication"
 	default y
 	depends on BUSYBOX_CONFIG_HTTPD
 	help
@@ -78,35 +103,15 @@ config BUSYBOX_CONFIG_FEATURE_HTTPD_BASIC_AUTH
 	  authentication on a per url basis.
 
 config BUSYBOX_CONFIG_FEATURE_HTTPD_AUTH_MD5
-	bool "  Support MD5 crypted passwords for http Authentication"
+	bool "Support MD5 crypted passwords for http Authentication"
 	default y
 	depends on BUSYBOX_CONFIG_FEATURE_HTTPD_BASIC_AUTH
 	help
-	  Enables basic per url authentication from /etc/httpd.conf
+	  Enables basic per URL authentication from /etc/httpd.conf
 	  using md5 passwords.
 
-if !CONFIG_FEATURE_HTTPD_USAGE_FROM_INETD_ONLY
-config BUSYBOX_CONFIG_FEATURE_HTTPD_RELOAD_CONFIG_SIGHUP
-	bool "  Support reloading the global config file using hup signal"
-	default y
-	depends on BUSYBOX_CONFIG_HTTPD
-	help
-	  This option enables processing of SIGHUP to reload cached
-	  configuration settings.
-
-config BUSYBOX_CONFIG_FEATURE_HTTPD_SETUID
-	bool "  Enable support -u <user> option"
-	default n
-	depends on BUSYBOX_CONFIG_HTTPD
-	help
-	  This option allows the server to run as a specific user
-	  rather than defaulting to the user that starts the server.
-	  Use of this option requires special privileges to change to a
-	  different user.
-endif
-
 config BUSYBOX_CONFIG_FEATURE_HTTPD_CONFIG_WITH_MIME_TYPES
-	bool "  Support loading additional MIME types at run-time"
+	bool "Support loading additional MIME types at run-time"
 	default y
 	depends on BUSYBOX_CONFIG_HTTPD
 	help
@@ -114,26 +119,26 @@ config BUSYBOX_CONFIG_FEATURE_HTTPD_CONFIG_WITH_MIME_TYPES
 	  run-time to be specified in the configuration file.
 
 config BUSYBOX_CONFIG_FEATURE_HTTPD_CGI
-	bool "  Support Common Gateway Interface (CGI)"
+	bool "Support Common Gateway Interface (CGI)"
 	default y
 	depends on BUSYBOX_CONFIG_HTTPD
 	help
 	  This option allows scripts and executables to be invoked
-	  when specific urls are requested.
+	  when specific URLs are requested.
 
 config BUSYBOX_CONFIG_FEATURE_HTTPD_CONFIG_WITH_SCRIPT_INTERPR
-	bool "  Enable support for running scripts through an interpreter"
+	bool "Enable support for running scripts through an interpreter"
 	default n
 	depends on BUSYBOX_CONFIG_FEATURE_HTTPD_CGI
 	help
 	  This option enables support for running scripts through an 
-	  interpreter. Turn this on, if you want PHP scripts to work 
+	  interpreter. Turn this on if you want PHP scripts to work 
 	  properly. You need to supply an addition line in your httpd 
 	  config file:
 	  *.php:/path/to/your/php
 
 config BUSYBOX_CONFIG_FEATURE_HTTPD_SET_REMOTE_PORT_TO_ENV
-	bool "  Support the REMOTE_PORT environment variable for CGI"
+	bool "Support the REMOTE_PORT environment variable for CGI"
 	default y
 	depends on BUSYBOX_CONFIG_FEATURE_HTTPD_CGI
 	help
@@ -141,11 +146,11 @@ config BUSYBOX_CONFIG_FEATURE_HTTPD_SET_REMOTE_PORT_TO_ENV
 	  references that contain a unique port number.
 
 config BUSYBOX_CONFIG_FEATURE_HTTPD_ENCODE_URL_STR
-	bool "  Enable the -e option for shell script CGI simplification."
+	bool "Enable the -e option for shell script CGI simplification."
 	default y
 	depends on BUSYBOX_CONFIG_HTTPD
 	help
-	  After set, this option allows html encoding arbitrary
+	  This option allows html encoding arbitrary
 	  strings for display of the browser.  Output goes to stdout.
 	  For example, httpd -e "<Hello World>" as
 	  "&#60Hello&#32World&#62".
@@ -157,7 +162,7 @@ config BUSYBOX_CONFIG_IFCONFIG
 	  Ifconfig is used to configure the kernel-resident network interfaces.
 
 config BUSYBOX_CONFIG_FEATURE_IFCONFIG_STATUS
-	bool "  Enable status reporting output (+7k)"
+	bool "Enable status reporting output (+7k)"
 	default y
 	depends on BUSYBOX_CONFIG_IFCONFIG
 	help
@@ -165,7 +170,7 @@ config BUSYBOX_CONFIG_FEATURE_IFCONFIG_STATUS
 	  of the currently active interfaces.
 
 config BUSYBOX_CONFIG_FEATURE_IFCONFIG_SLIP
-	bool "  Enable slip-specific options \"keepalive\" and \"outfill\""
+	bool "Enable slip-specific options \"keepalive\" and \"outfill\""
 	default n
 	depends on BUSYBOX_CONFIG_IFCONFIG
 	help
@@ -173,7 +178,7 @@ config BUSYBOX_CONFIG_FEATURE_IFCONFIG_SLIP
 	  planning on using serial lines, leave this unchecked.
 
 config BUSYBOX_CONFIG_FEATURE_IFCONFIG_MEMSTART_IOADDR_IRQ
-	bool "  Enable options \"mem_start\", \"io_addr\", and \"irq\""
+	bool "Enable options \"mem_start\", \"io_addr\", and \"irq\""
 	default n
 	depends on BUSYBOX_CONFIG_IFCONFIG
 	help
@@ -181,7 +186,7 @@ config BUSYBOX_CONFIG_FEATURE_IFCONFIG_MEMSTART_IOADDR_IRQ
 	  and/or the interrupt line used by the specified device.
 
 config BUSYBOX_CONFIG_FEATURE_IFCONFIG_HW
-	bool "  Enable option \"hw\" (ether only)"
+	bool "Enable option \"hw\" (ether only)"
 	default y
 	depends on BUSYBOX_CONFIG_IFCONFIG
 	help
@@ -190,7 +195,7 @@ config BUSYBOX_CONFIG_FEATURE_IFCONFIG_HW
 	  class.
 
 config BUSYBOX_CONFIG_FEATURE_IFCONFIG_BROADCAST_PLUS
-	bool "  Set the broadcast automatically"
+	bool "Set the broadcast automatically"
 	default y
 	depends on BUSYBOX_CONFIG_IFCONFIG
 	help
@@ -215,7 +220,7 @@ config BUSYBOX_CONFIG_IFUPDOWN
 	  standalone utilities.
 
 config BUSYBOX_CONFIG_FEATURE_IFUPDOWN_IP
-	bool "  Use ip applet"
+	bool "Use ip applet"
 	default n
 	depends on BUSYBOX_CONFIG_IFUPDOWN
 	help
@@ -223,7 +228,7 @@ config BUSYBOX_CONFIG_FEATURE_IFUPDOWN_IP
 	  than the default of using the older 'ifconfig' and 'route' utilities.
 
 config BUSYBOX_CONFIG_FEATURE_IFUPDOWN_IP_BUILTIN
-	bool "  Use busybox ip applet"
+	bool "Use busybox ip applet"
 	default n
 	depends on BUSYBOX_CONFIG_FEATURE_IFUPDOWN_IP
 	select BUSYBOX_CONFIG_IP
@@ -237,7 +242,7 @@ config BUSYBOX_CONFIG_FEATURE_IFUPDOWN_IP_BUILTIN
 	  utility or the  "ifup" and "ifdown" applets will not work.
 
 config BUSYBOX_CONFIG_FEATURE_IFUPDOWN_IP_BUILTIN
-	bool "  Use busybox ifconfig and route applets"
+	bool "Use busybox ifconfig and route applets"
 	default n
 	depends on BUSYBOX_CONFIG_IFUPDOWN && !CONFIG_FEATURE_IFUPDOWN_IP
 	select BUSYBOX_CONFIG_IFCONFIG
@@ -251,21 +256,21 @@ config BUSYBOX_CONFIG_FEATURE_IFUPDOWN_IP_BUILTIN
 	  work.
 
 config BUSYBOX_CONFIG_FEATURE_IFUPDOWN_IPV4
-	bool "  Enable support for IPv4"
+	bool "Enable support for IPv4"
 	default n
 	depends on BUSYBOX_CONFIG_IFUPDOWN
 	help
 	  If you want busybox to talk IPv4, leave this on.
 
 config BUSYBOX_CONFIG_FEATURE_IFUPDOWN_IPV6
-	bool "  Enable support for IPv6"
+	bool "Enable support for IPv6"
 	default n
-	depends on BUSYBOX_CONFIG_IFUPDOWN
+	depends on BUSYBOX_CONFIG_IFUPDOWN && BUSYBOX_CONFIG_FEATURE_IPV6
 	help
 	  If you need support for IPv6, turn this option on.
 
 config BUSYBOX_CONFIG_FEATURE_IFUPDOWN_IPX
-	bool "  Enable support for IPX"
+	bool "Enable support for IPX"
 	default n
 	depends on BUSYBOX_CONFIG_IFUPDOWN
 	help
@@ -273,7 +278,7 @@ config BUSYBOX_CONFIG_FEATURE_IFUPDOWN_IPX
 	  networks.
 
 config BUSYBOX_CONFIG_FEATURE_IFUPDOWN_MAPPING
-	bool "  Enable mapping support"
+	bool "Enable mapping support"
 	default n
 	depends on BUSYBOX_CONFIG_IFUPDOWN
 	help
@@ -286,43 +291,43 @@ config BUSYBOX_CONFIG_INETD
 	help
 	  Internet superserver daemon
 
-config BUSYBOX_CONFIG_FEATURE_INETD_SUPPORT_BILTIN_ECHO
-	bool "  Support echo service"
+config BUSYBOX_CONFIG_FEATURE_INETD_SUPPORT_BUILTIN_ECHO
+	bool "Support echo service"
 	default n
 	depends on BUSYBOX_CONFIG_INETD
 	help
 	  Echo received data internal inetd service
 
-config BUSYBOX_CONFIG_FEATURE_INETD_SUPPORT_BILTIN_DISCARD
-	bool "  Support discard service"
+config BUSYBOX_CONFIG_FEATURE_INETD_SUPPORT_BUILTIN_DISCARD
+	bool "Support discard service"
 	default n
 	depends on BUSYBOX_CONFIG_INETD
 	help
 	  Internet /dev/null internal inetd service
 
-config BUSYBOX_CONFIG_FEATURE_INETD_SUPPORT_BILTIN_TIME
-	bool "  Support time service"
+config BUSYBOX_CONFIG_FEATURE_INETD_SUPPORT_BUILTIN_TIME
+	bool "Support time service"
 	default n
 	depends on BUSYBOX_CONFIG_INETD
 	help
 	  Return 32 bit time since 1900 internal inetd service
 
-config BUSYBOX_CONFIG_FEATURE_INETD_SUPPORT_BILTIN_DAYTIME
-	bool "  Support daytime service"
+config BUSYBOX_CONFIG_FEATURE_INETD_SUPPORT_BUILTIN_DAYTIME
+	bool "Support daytime service"
 	default n
 	depends on BUSYBOX_CONFIG_INETD
 	help
 	  Return human-readable time internal inetd service
 
-config BUSYBOX_CONFIG_FEATURE_INETD_SUPPORT_BILTIN_CHARGEN
-	bool "  Support chargen service"
+config BUSYBOX_CONFIG_FEATURE_INETD_SUPPORT_BUILTIN_CHARGEN
+	bool "Support chargen service"
 	default n
 	depends on BUSYBOX_CONFIG_INETD
 	help
 	  Familiar character generator internal inetd service
 
 config BUSYBOX_CONFIG_FEATURE_INETD_RPC
-	bool "  Support RPC services"
+	bool "Support RPC services"
 	default n
 	depends on BUSYBOX_CONFIG_INETD
 	help
@@ -337,61 +342,67 @@ config BUSYBOX_CONFIG_IP
 	  utility.  You generally don't need "ip" to use busybox with
 	  TCP/IP.
 
-if BUSYBOX_CONFIG_IP && BUSYBOX_CONFIG_IPADDR
-	config BUSYBOX_CONFIG_FEATURE_IP_ADDRESS
-		default n
-	comment "  address (forced enabled for ipaddr)"
-endif
-if ! (CONFIG_IP && BUSYBOX_CONFIG_IPADDR)
-	config BUSYBOX_CONFIG_FEATURE_IP_ADDRESS
-		bool "  address"
-		default n
-		depends on BUSYBOX_CONFIG_IP
-		help
-		  Address manipulation support for the "ip" applet.
-endif
+config BUSYBOX_CONFIG_FEATURE_IP_ADDRESS
+	bool "ip address"
+	default n
+	depends on BUSYBOX_CONFIG_IP
+	help
+	  Address manipulation support for the "ip" applet.
 
-if BUSYBOX_CONFIG_IP && BUSYBOX_CONFIG_IPLINK
-	config BUSYBOX_CONFIG_FEATURE_IP_LINK
-		default n
-	comment "  link (forced enabled for iplink)"
-endif
-if !(CONFIG_IP && BUSYBOX_CONFIG_IPLINK)
-	config BUSYBOX_CONFIG_FEATURE_IP_LINK
-		bool "  link"
-		default n
-		depends on BUSYBOX_CONFIG_IP
-		help
-		  Configure network devices with "ip".
-endif
+config BUSYBOX_CONFIG_FEATURE_IP_LINK
+	bool "ip link"
+	default n
+	depends on BUSYBOX_CONFIG_IP
+	help
+	  Configure network devices with "ip".
 
-if BUSYBOX_CONFIG_IP && BUSYBOX_CONFIG_IPROUTE
-	config BUSYBOX_CONFIG_FEATURE_IP_ROUTE
-		default n
-	comment "  route (forced enabled for iproute)"
-endif
-if !(CONFIG_IP && BUSYBOX_CONFIG_IPROUTE)
-	config BUSYBOX_CONFIG_FEATURE_IP_ROUTE
-		bool "  route"
-		default n
-		depends on BUSYBOX_CONFIG_IP
-		help
-		  Add support for routing table management to "ip".
-endif
+config BUSYBOX_CONFIG_FEATURE_IP_ROUTE
+	bool "ip route"
+	default n
+	depends on BUSYBOX_CONFIG_IP
+	help
+	  Add support for routing table management to "ip".
 
-if BUSYBOX_CONFIG_IP && BUSYBOX_CONFIG_IPTUNNEL
-	config BUSYBOX_CONFIG_FEATURE_IP_TUNNEL
-		default n
-	comment "  tunnel (forced enabled for iptunnel)"
-endif
-if !(CONFIG_IP && BUSYBOX_CONFIG_IPTUNNEL)
-	config BUSYBOX_CONFIG_FEATURE_IP_TUNNEL
-		bool "  tunnel"
-		default n
-		depends on BUSYBOX_CONFIG_IP
-		help
-		  Add support for tunneling commands to "ip".
-endif
+config BUSYBOX_CONFIG_FEATURE_IP_TUNNEL
+	bool "ip tunnel"
+	default n
+	depends on BUSYBOX_CONFIG_IP
+	help
+	  Add support for tunneling commands to "ip".
+
+config BUSYBOX_CONFIG_FEATURE_IP_SHORT_FORMS
+	bool "Support short forms of ip commands."
+	default n
+	depends on BUSYBOX_CONFIG_IP
+	help
+	  Also support short-form of ip <OBJECT> commands:
+	  ip addr   -> ipaddr
+	  ip link   -> iplink
+	  ip route  -> iproute
+	  ip tunnel -> iptunnel
+
+	  Say N unless you desparately need the short form of the ip
+	  object commands.
+
+config BUSYBOX_CONFIG_IPADDR
+	bool
+	default n
+	depends on BUSYBOX_CONFIG_FEATURE_IP_SHORT_FORMS && BUSYBOX_CONFIG_FEATURE_IP_ADDRESS
+
+config BUSYBOX_CONFIG_IPLINK
+	bool
+	default n
+	depends on BUSYBOX_CONFIG_FEATURE_IP_SHORT_FORMS && BUSYBOX_CONFIG_FEATURE_IP_LINK
+
+config BUSYBOX_CONFIG_IPROUTE
+	bool
+	default n
+	depends on BUSYBOX_CONFIG_FEATURE_IP_SHORT_FORMS && BUSYBOX_CONFIG_FEATURE_IP_ROUTE
+
+config BUSYBOX_CONFIG_IPTUNNEL
+	bool
+	default n
+	depends on BUSYBOX_CONFIG_FEATURE_IP_SHORT_FORMS && BUSYBOX_CONFIG_FEATURE_IP_TUNNEL
 
 config BUSYBOX_CONFIG_IPCALC
 	bool "ipcalc"
@@ -401,35 +412,18 @@ config BUSYBOX_CONFIG_IPCALC
 	  resulting broadcast, network, and host range.
 
 config BUSYBOX_CONFIG_FEATURE_IPCALC_FANCY
-	bool "  Fancy IPCALC, more options, adds 1 kbyte"
+	bool "Fancy IPCALC, more options, adds 1 kbyte"
 	default n
 	depends on BUSYBOX_CONFIG_IPCALC
 	help
 	  Adds the options hostname, prefix and silent to the output of "ipcalc".
 
-config BUSYBOX_CONFIG_IPADDR
-	bool "ipaddr"
+config BUSYBOX_CONFIG_FEATURE_IPCALC_LONG_OPTIONS
+	bool "Enable long options"
 	default n
+	depends on BUSYBOX_CONFIG_IPCALC && BUSYBOX_CONFIG_GETOPT_LONG
 	help
-	  Equivalent to selecting address support to "ip", above.
-
-config BUSYBOX_CONFIG_IPLINK
-	bool "iplink"
-	default n
-	help
-	  Equivalent to selecting link support to "ip", above.
-
-config BUSYBOX_CONFIG_IPROUTE
-	bool "iproute"
-	default n
-	help
-	  Equivalent to selecting route support to "ip", above.
-
-config BUSYBOX_CONFIG_IPTUNNEL
-	bool "iptunnel"
-	default n
-	help
-	  Equivalent to selecting tunnel support to "ip", above.
+	  Support long options for the ipcalc applet.
 
 config BUSYBOX_CONFIG_NAMEIF
 	bool "nameif"
@@ -486,7 +480,7 @@ config BUSYBOX_CONFIG_PING
 	  elicit an ICMP ECHO_RESPONSE from a host or gateway.
 
 config BUSYBOX_CONFIG_FEATURE_FANCY_PING
-	bool "  Enable fancy ping output"
+	bool "Enable fancy ping output"
 	default y
 	depends on BUSYBOX_CONFIG_PING
 	help
@@ -501,7 +495,7 @@ config BUSYBOX_CONFIG_PING6
 	  This will give you a ping that can talk IPv6.
 
 config BUSYBOX_CONFIG_FEATURE_FANCY_PING6
-	bool "  Enable fancy ping6 output"
+	bool "Enable fancy ping6 output"
 	default y
 	depends on BUSYBOX_CONFIG_PING6
 	help
@@ -522,7 +516,7 @@ config BUSYBOX_CONFIG_TELNET
 	  used to test other simple protocols.
 
 config BUSYBOX_CONFIG_FEATURE_TELNET_TTYPE
-	bool "  Pass TERM type to remote host"
+	bool "Pass TERM type to remote host"
 	default y
 	depends on BUSYBOX_CONFIG_TELNET
 	help
@@ -531,7 +525,7 @@ config BUSYBOX_CONFIG_FEATURE_TELNET_TTYPE
 	  things like ANSI colors and other control sequences behave.
 
 config BUSYBOX_CONFIG_FEATURE_TELNET_AUTOLOGIN
-	bool "  Pass USER type to remote host"
+	bool "Pass USER type to remote host"
 	default n
 	depends on BUSYBOX_CONFIG_TELNET
 	help
@@ -583,7 +577,7 @@ config BUSYBOX_CONFIG_TELNETD
 
 
 config BUSYBOX_CONFIG_FEATURE_TELNETD_INETD
-	bool "  Support call from inetd only"
+	bool "Support call from inetd only"
 	default n
 	depends on BUSYBOX_CONFIG_TELNETD
 	help
@@ -599,7 +593,7 @@ config BUSYBOX_CONFIG_TFTP
 	  for a network-enabled bootloader.
 
 config BUSYBOX_CONFIG_FEATURE_TFTP_GET
-	bool "  Enable \"get\" command"
+	bool "Enable \"get\" command"
 	default n
 	depends on BUSYBOX_CONFIG_TFTP
 	help
@@ -607,7 +601,7 @@ config BUSYBOX_CONFIG_FEATURE_TFTP_GET
 	  a client to retrieve a file from a TFTP server.
 
 config BUSYBOX_CONFIG_FEATURE_TFTP_PUT
-	bool "  Enable \"put\" command"
+	bool "Enable \"put\" command"
 	default n
 	depends on BUSYBOX_CONFIG_TFTP
 	help
@@ -615,14 +609,14 @@ config BUSYBOX_CONFIG_FEATURE_TFTP_PUT
 	  a client to transfer a file to a TFTP server.
 
 config BUSYBOX_CONFIG_FEATURE_TFTP_BLOCKSIZE
-	bool "  Enable \"blocksize\" command"
+	bool "Enable \"blocksize\" command"
 	default n
 	depends on BUSYBOX_CONFIG_TFTP
 	help
 	  Allow the client to specify the desired block size for transfers.
 
-config BUSYBOX_CONFIG_FEATURE_TFTP_DEBUG
-	bool "  Enable debug"
+config BUSYBOX_CONFIG_DEBUG_TFTP
+	bool "Enable debug"
 	default n
 	depends on BUSYBOX_CONFIG_TFTP
 	help
@@ -637,7 +631,7 @@ config BUSYBOX_CONFIG_TRACEROUTE
 	  Utility to trace the route of IP packets
 
 config BUSYBOX_CONFIG_FEATURE_TRACEROUTE_VERBOSE
-	bool "  Enable verbose output"
+	bool "Enable verbose output"
 	default y
 	depends on BUSYBOX_CONFIG_TRACEROUTE
 	help
@@ -645,7 +639,7 @@ config BUSYBOX_CONFIG_FEATURE_TRACEROUTE_VERBOSE
 	  hostnames and ICMP response types.
 
 config BUSYBOX_CONFIG_FEATURE_TRACEROUTE_SOURCE_ROUTE
-	bool "  Enable loose source route"
+	bool "Enable loose source route"
 	default n
 	depends on BUSYBOX_CONFIG_TRACEROUTE
 	help
@@ -653,12 +647,13 @@ config BUSYBOX_CONFIG_FEATURE_TRACEROUTE_SOURCE_ROUTE
 	  (8 maximum).
 
 config BUSYBOX_CONFIG_FEATURE_TRACEROUTE_USE_ICMP
-	bool "  Use ICMP instead of UDP"
+	bool "Use ICMP instead of UDP"
 	default n
 	depends on BUSYBOX_CONFIG_TRACEROUTE
 	help
 	  Add feature to allow for ICMP ECHO instead of UDP datagrams.
 
+source package/busybox/config/networking/udhcp/Config.in
 
 config BUSYBOX_CONFIG_VCONFIG
 	bool "vconfig"
@@ -674,27 +669,32 @@ config BUSYBOX_CONFIG_WGET
 	  HTTPS, and FTP servers.
 
 config BUSYBOX_CONFIG_FEATURE_WGET_STATUSBAR
-	bool "  Enable a nifty process meter (+2k)"
+	bool "Enable a nifty process meter (+2k)"
 	default y
 	depends on BUSYBOX_CONFIG_WGET
 	help
 	  Enable the transfer progress bar for wget transfers.
 
 config BUSYBOX_CONFIG_FEATURE_WGET_AUTHENTICATION
-	bool "  Enable HTTP authentication"
+	bool "Enable HTTP authentication"
 	default y
 	depends on BUSYBOX_CONFIG_WGET
 	help
 	  Support authenticated HTTP transfers.
 
 config BUSYBOX_CONFIG_FEATURE_WGET_IP6_LITERAL
-	bool "  Enable IPv6 literal addresses"
+	bool "Enable IPv6 literal addresses"
 	default y
-	depends on BUSYBOX_CONFIG_WGET
+	depends on BUSYBOX_CONFIG_WGET && BUSYBOX_CONFIG_FEATURE_IPV6
 	help
 	  Support IPv6 address literal notation in URLs.
 
-source package/busybox/config/networking/udhcp/Config.in
+config BUSYBOX_CONFIG_FEATURE_WGET_LONG_OPTIONS
+	bool "Enable long options"
+	default y
+	depends on BUSYBOX_CONFIG_WGET && BUSYBOX_CONFIG_GETOPT_LONG
+	help
+	  Support long options for the wget applet.
 
 config BUSYBOX_CONFIG_ZCIP
 	bool "zcip"
@@ -708,4 +708,3 @@ config BUSYBOX_CONFIG_ZCIP
 	  in the busybox examples.
 
 endmenu
-

@@ -1,21 +1,23 @@
-
-	Copyright (C) 2006 OpenWrt.org
-
-diff -urN busybox.old/include/applets.h busybox.dev/include/applets.h
---- busybox.old/include/applets.h	2006-04-05 01:06:29.000000000 +0200
-+++ busybox.dev/include/applets.h	2006-04-05 01:19:09.000000000 +0200
-@@ -167,6 +167,7 @@
- USE_LN(APPLET(ln, ln_main, _BB_DIR_BIN, _BB_SUID_NEVER))
- USE_LOADFONT(APPLET(loadfont, loadfont_main, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
- USE_LOADKMAP(APPLET(loadkmap, loadkmap_main, _BB_DIR_SBIN, _BB_SUID_NEVER))
-+USE_LOCK(APPLET_NOUSAGE(lock, lock_main, _BB_DIR_BIN, _BB_SUID_NEVER))
- USE_LOGGER(APPLET(logger, logger_main, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
- USE_LOGIN(APPLET(login, login_main, _BB_DIR_BIN, _BB_SUID_ALWAYS))
- USE_LOGNAME(APPLET(logname, logname_main, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
-diff -urN busybox.old/miscutils/Config.in busybox.dev/miscutils/Config.in
---- busybox.old/miscutils/Config.in	2006-03-22 22:16:24.000000000 +0100
-+++ busybox.dev/miscutils/Config.in	2006-04-05 01:07:12.000000000 +0200
-@@ -209,6 +209,12 @@
+# Copyright (C) 2006 OpenWrt.org
+#
+# This is free software, licensed under the GNU General Public License v2.
+# See /LICENSE for more information.
+#
+diff -ruN busybox-1.2.0-old/include/applets.h busybox-1.2.0-new/include/applets.h
+--- busybox-1.2.0-old/include/applets.h	2006-07-31 11:21:00.000000000 +0200
++++ busybox-1.2.0-new/include/applets.h	2006-08-01 10:21:15.000000000 +0200
+@@ -169,6 +169,7 @@
+ USE_LN(APPLET(ln, _BB_DIR_BIN, _BB_SUID_NEVER))
+ USE_LOADFONT(APPLET(loadfont, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
+ USE_LOADKMAP(APPLET(loadkmap, _BB_DIR_SBIN, _BB_SUID_NEVER))
++USE_LOCK(APPLET_NOUSAGE(lock, lock, _BB_DIR_BIN, _BB_SUID_NEVER))
+ USE_LOGGER(APPLET(logger, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
+ USE_LOGIN(APPLET(login, _BB_DIR_BIN, _BB_SUID_ALWAYS))
+ USE_LOGNAME(APPLET(logname, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
+diff -ruN busybox-1.2.0-old/miscutils/Config.in busybox-1.2.0-new/miscutils/Config.in
+--- busybox-1.2.0-old/miscutils/Config.in	2006-07-01 00:42:09.000000000 +0200
++++ busybox-1.2.0-new/miscutils/Config.in	2006-08-01 10:21:15.000000000 +0200
+@@ -231,6 +231,12 @@
  	  Enables the 'hdparm -d' option to get/set using_dma flag.
  	  This is dangerous stuff, so you should probably say N.
  
@@ -28,20 +30,9 @@ diff -urN busybox.old/miscutils/Config.in busybox.dev/miscutils/Config.in
  config CONFIG_MAKEDEVS
  	bool "makedevs"
  	default n
-diff -urN busybox.old/miscutils/Makefile.in busybox.dev/miscutils/Makefile.in
---- busybox.old/miscutils/Makefile.in	2006-03-22 22:16:24.000000000 +0100
-+++ busybox.dev/miscutils/Makefile.in	2006-04-05 01:10:50.000000000 +0200
-@@ -20,6 +20,7 @@
- MISCUTILS-$(CONFIG_EJECT)       += eject.o
- MISCUTILS-$(CONFIG_HDPARM)      += hdparm.o
- MISCUTILS-$(CONFIG_LAST)        += last.o
-+MISCUTILS-$(CONFIG_LOCK)        += lock.o
- MISCUTILS-${CONFIG_LESS}        += less.o
- MISCUTILS-$(CONFIG_MAKEDEVS)    += makedevs.o
- MISCUTILS-$(CONFIG_MOUNTPOINT)  += mountpoint.o
-diff -urN busybox.old/miscutils/lock.c busybox.dev/miscutils/lock.c
---- busybox.old/miscutils/lock.c	1970-01-01 01:00:00.000000000 +0100
-+++ busybox.dev/miscutils/lock.c	2006-04-05 01:07:12.000000000 +0200
+diff -ruN busybox-1.2.0-old/miscutils/lock.c busybox-1.2.0-new/miscutils/lock.c
+--- busybox-1.2.0-old/miscutils/lock.c	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.2.0-new/miscutils/lock.c	2006-08-01 10:21:15.000000000 +0200
 @@ -0,0 +1,133 @@
 +/*
 + * Copyright (C) 2006 Felix Fietkau <nbd@openwrt.org>
@@ -176,3 +167,14 @@ diff -urN busybox.old/miscutils/lock.c busybox.dev/miscutils/lock.c
 +	else
 +		return do_lock();
 +}
+diff -ruN busybox-1.2.0-old/miscutils/Makefile.in busybox-1.2.0-new/miscutils/Makefile.in
+--- busybox-1.2.0-old/miscutils/Makefile.in	2006-07-01 00:42:09.000000000 +0200
++++ busybox-1.2.0-new/miscutils/Makefile.in	2006-08-01 10:21:15.000000000 +0200
+@@ -20,6 +20,7 @@
+ MISCUTILS-$(CONFIG_EJECT)       += eject.o
+ MISCUTILS-$(CONFIG_HDPARM)      += hdparm.o
+ MISCUTILS-$(CONFIG_LAST)        += last.o
++MISCUTILS-$(CONFIG_LOCK)        += lock.o
+ MISCUTILS-${CONFIG_LESS}        += less.o
+ MISCUTILS-$(CONFIG_MAKEDEVS)    += makedevs.o
+ MISCUTILS-$(CONFIG_MOUNTPOINT)  += mountpoint.o

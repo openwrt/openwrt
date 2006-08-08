@@ -84,7 +84,7 @@ config BUSYBOX_CONFIG_MODPROBE
 	bool "modprobe"
 	default n
 	help
-	  Handle the loading of modules, and their dependancies on a high
+	  Handle the loading of modules, and their dependencies on a high
 	  level.
 
 	  Note that in the state, modprobe does not understand multiple
@@ -111,7 +111,7 @@ comment "Options common to multiple modutils"
 
 config BUSYBOX_CONFIG_FEATURE_CHECK_TAINTED_MODULE
 	# Simulate indentation
-	bool "  Support tainted module checking with new kernels"
+	bool "Support tainted module checking with new kernels"
 	default n
 	depends on BUSYBOX_CONFIG_INSMOD || BUSYBOX_CONFIG_LSMOD
 	help
@@ -122,7 +122,7 @@ config BUSYBOX_CONFIG_FEATURE_CHECK_TAINTED_MODULE
 
 config BUSYBOX_CONFIG_FEATURE_2_4_MODULES
 	# Simulate indentation
-	bool "  Support version 2.2.x to 2.4.x Linux kernels"
+	bool "Support version 2.2.x to 2.4.x Linux kernels"
 	default y
 	depends on BUSYBOX_CONFIG_INSMOD || BUSYBOX_CONFIG_RMMOD
 	help
@@ -130,7 +130,7 @@ config BUSYBOX_CONFIG_FEATURE_2_4_MODULES
 
 config BUSYBOX_CONFIG_FEATURE_2_6_MODULES
 	# Simulate indentation
-	bool "  Support version 2.6.x Linux kernels"
+	bool "Support version 2.6.x Linux kernels"
 	default y
 	depends on BUSYBOX_CONFIG_INSMOD || BUSYBOX_CONFIG_RMMOD || BUSYBOX_CONFIG_MODPROBE
 	help

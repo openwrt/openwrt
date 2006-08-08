@@ -34,8 +34,15 @@ config BUSYBOX_CONFIG_CROND
 	  Note that Busybox binary must be setuid root for this applet to
 	  work properly.
 
+config BUSYBOX_CONFIG_DEBUG_CROND_OPTION
+	bool "Support debug option -d"
+	depends on BUSYBOX_CONFIG_CROND
+	default n
+	help
+	  Support option -d to enter debug mode.
+
 config BUSYBOX_CONFIG_FEATURE_CROND_CALL_SENDMAIL
-	bool "  Using /usr/sbin/sendmail?"
+	bool "Using /usr/sbin/sendmail?"
 	default n
 	depends on BUSYBOX_CONFIG_CROND
 	help
@@ -57,9 +64,11 @@ config BUSYBOX_CONFIG_DC
 	  precision arithmetic.
 
 config BUSYBOX_CONFIG_DEVFSD
-	bool "devfsd"
+	bool "devfsd (obsolete)"
 	default n
 	help
+	  This is deprecated, and will be going away in a future release.
+
 	  Provides compatibility with old device names on a devfs systems.
 	  You should set it to true if you have devfs enabled.
 	  The following keywords in devsfd.conf are supported:
@@ -74,7 +83,8 @@ config BUSYBOX_CONFIG_DEVFSD_MODLOAD
 	default n
 	depends on BUSYBOX_CONFIG_DEVFSD
 	help
-	  This actually doesn't work with busybox  modutils but needs the real modutils.
+	  This actually doesn't work with busybox modutils but needs
+	  the external modutils.
 
 config BUSYBOX_CONFIG_DEVFSD_FG_NP
 	bool "Enables the -fg and -np options"
@@ -90,6 +100,17 @@ config BUSYBOX_CONFIG_DEVFSD_VERBOSE
 	depends on BUSYBOX_CONFIG_DEVFSD
 	help
 	  Increases logging to stderr or syslog.
+
+config BUSYBOX_CONFIG_FEATURE_DEVFS
+	bool "  Use devfs names for all devices (obsolete)"
+	default y
+	help
+	  This tells busybox to look for names like /dev/loop/0 instead of
+	  /dev/loop0.  If your /dev directory has normal names instead of
+	  devfs names, you don't want this.
+
+	  This is obsolete and will be going away someday.  Consider it
+	  deprecated.
 
 config BUSYBOX_CONFIG_EJECT
 	bool "eject"
@@ -112,7 +133,7 @@ config BUSYBOX_CONFIG_LESS
 	  a wide array of features, and is an improvement over 'more'.
 
 config BUSYBOX_CONFIG_FEATURE_LESS_BRACKETS
-	bool "  Enable bracket searching"
+	bool "Enable bracket searching"
 	default n
 	depends on BUSYBOX_CONFIG_LESS
 	help
@@ -120,7 +141,7 @@ config BUSYBOX_CONFIG_FEATURE_LESS_BRACKETS
 	  brackets, facilitating programming.
 
 config BUSYBOX_CONFIG_FEATURE_LESS_FLAGS
-	bool "  Enable extra flags"
+	bool "Enable extra flags"
 	default n
 	depends on BUSYBOX_CONFIG_LESS
 	help
@@ -130,7 +151,7 @@ config BUSYBOX_CONFIG_FEATURE_LESS_FLAGS
 	  The -m flag enables a simpler status line with a percentage.
 
 config BUSYBOX_CONFIG_FEATURE_LESS_FLAGCS
-	bool "  Enable flag changes"
+	bool "Enable flag changes"
 	default n
 	depends on BUSYBOX_CONFIG_LESS
 	help
@@ -138,14 +159,14 @@ config BUSYBOX_CONFIG_FEATURE_LESS_FLAGCS
 	  less itself.
 
 config BUSYBOX_CONFIG_FEATURE_LESS_MARKS
-	bool "  Enable marks"
+	bool "Enable marks"
 	default n
 	depends on BUSYBOX_CONFIG_LESS
 	help
 	  Marks enable positions in a file to be stored for easy reference.
 
 config BUSYBOX_CONFIG_FEATURE_LESS_REGEXP
-	bool "  Enable regular expressions"
+	bool "Enable regular expressions"
 	default n
 	depends on BUSYBOX_CONFIG_LESS
 	help
@@ -160,16 +181,17 @@ config BUSYBOX_CONFIG_HDPARM
 	  BUSYBOX_CONFIG_FEATURE_HDPARM_GET_IDENTITY option)....
 
 config BUSYBOX_CONFIG_FEATURE_HDPARM_GET_IDENTITY
-	bool "  Support obtaining detailed information directly from drives"
+	bool "Support obtaining detailed information directly from drives"
 	default n
 	depends on BUSYBOX_CONFIG_HDPARM
 	help
-	  Enables the -I and -Istdin options to obtain detailed information
+	  Enables the -I and -i options to obtain detailed information
 	  directly from drives about their capabilities and supported ATA
-	  feature set.  Enabling this option will add about 16k...
+	  feature set. If no device name is specified, hdparm will read
+	  identify data from stdin. Enabling this option will add about 16k...
 
 config BUSYBOX_CONFIG_FEATURE_HDPARM_HDIO_SCAN_HWIF
-	bool "  Register an IDE interface (DANGEROUS)"
+	bool "Register an IDE interface (DANGEROUS)"
 	default n
 	depends on BUSYBOX_CONFIG_HDPARM
 	help
@@ -177,7 +199,7 @@ config BUSYBOX_CONFIG_FEATURE_HDPARM_HDIO_SCAN_HWIF
 	  This is dangerous stuff, so you should probably say N.
 
 config BUSYBOX_CONFIG_FEATURE_HDPARM_HDIO_UNREGISTER_HWIF
-	bool "  Un-register an IDE interface (DANGEROUS)"
+	bool "Un-register an IDE interface (DANGEROUS)"
 	default n
 	depends on BUSYBOX_CONFIG_HDPARM
 	help
@@ -185,7 +207,7 @@ config BUSYBOX_CONFIG_FEATURE_HDPARM_HDIO_UNREGISTER_HWIF
 	  This is dangerous stuff, so you should probably say N.
 
 config BUSYBOX_CONFIG_FEATURE_HDPARM_HDIO_DRIVE_RESET
-	bool "  perform device reset (DANGEROUS)"
+	bool "perform device reset (DANGEROUS)"
 	default n
 	depends on BUSYBOX_CONFIG_HDPARM
 	help
@@ -193,7 +215,7 @@ config BUSYBOX_CONFIG_FEATURE_HDPARM_HDIO_DRIVE_RESET
 	  This is dangerous stuff, so you should probably say N.
 
 config BUSYBOX_CONFIG_FEATURE_HDPARM_HDIO_TRISTATE_HWIF
-	bool "  tristate device for hotswap (DANGEROUS)"
+	bool "tristate device for hotswap (DANGEROUS)"
 	default n
 	depends on BUSYBOX_CONFIG_HDPARM
 	help
@@ -202,7 +224,7 @@ config BUSYBOX_CONFIG_FEATURE_HDPARM_HDIO_TRISTATE_HWIF
 	  stuff, so you should probably say N.
 
 config BUSYBOX_CONFIG_FEATURE_HDPARM_HDIO_GETSET_DMA
-	bool "  get/set using_dma flag (DANGEROUS)"
+	bool "get/set using_dma flag (DANGEROUS)"
 	default n
 	depends on BUSYBOX_CONFIG_HDPARM
 	help
@@ -231,7 +253,7 @@ config BUSYBOX_CONFIG_MAKEDEVS
           Device properties are passed as command line arguments.
 	  .
 	  'table' reads device properties from a file or stdin, allowing
-	  a batch of unrelated devices to be makde with one command.
+	  a batch of unrelated devices to be made with one command.
           User/group names are allowed as an alternative to uid/gid.
 
 choice
@@ -288,6 +310,18 @@ config BUSYBOX_CONFIG_SETSID
 	default n
 	help
 	  setsid runs a program in a new session
+
+config BUSYBOX_CONFIG_TASKSET
+	bool "taskset"
+	default n
+	help
+	  Retrieve or set a processes's CPU affinity
+
+config BUSYBOX_CONFIG_TASKSET
+	bool "taskset"
+	default n
+	help
+	  Retrieve or set a processes's CPU affinity (on linux)
 
 config BUSYBOX_CONFIG_TIME
 	bool "time"

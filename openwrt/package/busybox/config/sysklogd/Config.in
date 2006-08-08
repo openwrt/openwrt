@@ -21,7 +21,7 @@ config BUSYBOX_CONFIG_SYSLOGD
 	  you wait long enough....
 
 config BUSYBOX_CONFIG_FEATURE_ROTATE_LOGFILE
-	bool "  Rotate message files"
+	bool "Rotate message files"
 	default y
 	depends on BUSYBOX_CONFIG_SYSLOGD
 	help
@@ -29,7 +29,7 @@ config BUSYBOX_CONFIG_FEATURE_ROTATE_LOGFILE
 	  on his own. No need to use an external rotatescript.
 
 config BUSYBOX_CONFIG_FEATURE_REMOTE_LOG
-	bool "  Remote Log support"
+	bool "Remote Log support"
 	default y
 	depends on BUSYBOX_CONFIG_SYSLOGD
 	help
@@ -43,7 +43,7 @@ config BUSYBOX_CONFIG_FEATURE_REMOTE_LOG
 	  by an intruder.
 
 config BUSYBOX_CONFIG_FEATURE_IPC_SYSLOG
-	bool "  Circular Buffer support"
+	bool "Circular Buffer support"
 	default y
 	depends on BUSYBOX_CONFIG_SYSLOGD
 	help
@@ -65,7 +65,7 @@ config BUSYBOX_CONFIG_FEATURE_IPC_SYSLOG_BUFFER_SIZE
 	  used to record system log messages.
 
 config BUSYBOX_CONFIG_LOGREAD
-	bool "  logread"
+	bool "logread"
 	default y
 	depends on BUSYBOX_CONFIG_FEATURE_IPC_SYSLOG
 	help
@@ -75,7 +75,7 @@ config BUSYBOX_CONFIG_LOGREAD
 	  stored in the syslogd circular buffer.
 
 config BUSYBOX_CONFIG_FEATURE_LOGREAD_REDUCED_LOCKING
-	bool "    logread double buffering"
+	bool "logread double buffering"
 	default n
 	depends on BUSYBOX_CONFIG_LOGREAD
 	help

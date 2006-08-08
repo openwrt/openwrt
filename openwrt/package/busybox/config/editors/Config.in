@@ -13,12 +13,20 @@ config BUSYBOX_CONFIG_AWK
 	  the BusyBox implementation of that programming language.
 
 config BUSYBOX_CONFIG_FEATURE_AWK_MATH
-	bool "  Enable math functions (requires libm)"
+	bool "Enable math functions (requires libm)"
 	default y
 	depends on BUSYBOX_CONFIG_AWK
 	help
 	  Enable math functions of the Awk programming language.
 	  NOTE: This will require libm to be present for linking.
+
+config BUSYBOX_CONFIG_ED
+	bool "ed"
+	default n
+	help
+	  The original 1970's Unix text editor, from the days of teletypes.
+	  Small, simple, evil.  Part of SUSv3.  If you're not already using
+	  this, you don't need it.
 
 config BUSYBOX_CONFIG_PATCH
 	bool "patch"
@@ -43,7 +51,7 @@ config BUSYBOX_CONFIG_VI
 	  you may wish to use something else.
 
 config BUSYBOX_CONFIG_FEATURE_VI_COLON
-	bool "  Enable \":\" colon commands (no \"ex\" mode)"
+	bool "Enable \":\" colon commands (no \"ex\" mode)"
 	default y
 	depends on BUSYBOX_CONFIG_VI
 	help
@@ -51,7 +59,7 @@ config BUSYBOX_CONFIG_FEATURE_VI_COLON
 	  provide an "ex" mode.
 
 config BUSYBOX_CONFIG_FEATURE_VI_YANKMARK
-	bool "  Enable yank/put commands and mark cmds"
+	bool "Enable yank/put commands and mark cmds"
 	default y
 	depends on BUSYBOX_CONFIG_VI
 	help
@@ -59,7 +67,7 @@ config BUSYBOX_CONFIG_FEATURE_VI_YANKMARK
 	  busybox vi.
 
 config BUSYBOX_CONFIG_FEATURE_VI_SEARCH
-	bool "  Enable search and replace cmds"
+	bool "Enable search and replace cmds"
 	default y
 	depends on BUSYBOX_CONFIG_VI
 	help
@@ -67,7 +75,7 @@ config BUSYBOX_CONFIG_FEATURE_VI_SEARCH
 	  busybox vi.
 
 config BUSYBOX_CONFIG_FEATURE_VI_USE_SIGNALS
-	bool "  Catch signals"
+	bool "Catch signals"
 	default y
 	depends on BUSYBOX_CONFIG_VI
 	help
@@ -76,14 +84,14 @@ config BUSYBOX_CONFIG_FEATURE_VI_USE_SIGNALS
 	  Ctrl-Z and Ctrl-C and alarms.
 
 config BUSYBOX_CONFIG_FEATURE_VI_DOT_CMD
-	bool "  Remember previous cmd and \".\" cmd"
+	bool "Remember previous cmd and \".\" cmd"
 	default y
 	depends on BUSYBOX_CONFIG_VI
 	help
 	  Make busybox vi remember the last command and be able to repeat it.
 
 config BUSYBOX_CONFIG_FEATURE_VI_READONLY
-	bool "  Enable -R option and \"view\" mode"
+	bool "Enable -R option and \"view\" mode"
 	default y
 	depends on BUSYBOX_CONFIG_VI
 	help
@@ -91,28 +99,28 @@ config BUSYBOX_CONFIG_FEATURE_VI_READONLY
 	  open a file in read-only mode.
 
 config BUSYBOX_CONFIG_FEATURE_VI_SETOPTS
-	bool "  Enable set-able options, ai ic showmatch"
+	bool "Enable set-able options, ai ic showmatch"
 	default y
 	depends on BUSYBOX_CONFIG_VI
 	help
 	  Enable the editor to set some (ai, ic, showmatch) options.
 
 config BUSYBOX_CONFIG_FEATURE_VI_SET
-	bool "  Support for :set"
+	bool "Support for :set"
 	default y
 	depends on BUSYBOX_CONFIG_VI
 	help
 	  Support for ":set".
 
 config BUSYBOX_CONFIG_FEATURE_VI_WIN_RESIZE
-	bool "  Handle window resize"
+	bool "Handle window resize"
 	default y
 	depends on BUSYBOX_CONFIG_VI
 	help
 	  Make busybox vi behave nicely with terminals that get resized.
 
 config BUSYBOX_CONFIG_FEATURE_VI_OPTIMIZE_CURSOR
-	bool "  Optimize cursor movement"
+	bool "Optimize cursor movement"
 	default y
 	depends on BUSYBOX_CONFIG_VI
 	help

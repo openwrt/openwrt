@@ -11,8 +11,18 @@ config BUSYBOX_CONFIG_FIND
 	help
 	  find is used to search your system to find specified files.
 
+config BUSYBOX_CONFIG_FEATURE_FIND_PRINT0
+	bool "Enable -print0 option"
+	default y
+	depends on BUSYBOX_CONFIG_FIND
+	help
+	  Causes output names to be separated by a null character
+	  rather than a newline.  This allows names that contain
+	  newlines and other whitespace to be more easily
+	  interpreted by other programs.
+
 config BUSYBOX_CONFIG_FEATURE_FIND_MTIME
-	bool "  Enable modified time matching (-mtime) option"
+	bool "Enable modified time matching (-mtime) option"
 	default n
 	depends on BUSYBOX_CONFIG_FIND
 	help
@@ -20,7 +30,7 @@ config BUSYBOX_CONFIG_FEATURE_FIND_MTIME
 	  files, in days.
 
 config BUSYBOX_CONFIG_FEATURE_FIND_MMIN
-	bool "  Enable modified time matching (-min) option"
+	bool "Enable modified time matching (-min) option"
 	default n
 	depends on BUSYBOX_CONFIG_FIND
 	help
@@ -28,14 +38,14 @@ config BUSYBOX_CONFIG_FEATURE_FIND_MMIN
 	  files, in minutes.
 
 config BUSYBOX_CONFIG_FEATURE_FIND_PERM
-	bool "  Enable permissions matching (-perm) option"
+	bool "Enable permissions matching (-perm) option"
 	default y
 	depends on BUSYBOX_CONFIG_FIND
 	help
 	  Enable searching based on file permissions.
 
 config BUSYBOX_CONFIG_FEATURE_FIND_TYPE
-	bool "  Enable filetype matching (-type) option"
+	bool "Enable filetype matching (-type) option"
 	default y
 	depends on BUSYBOX_CONFIG_FIND
 	help
@@ -43,7 +53,7 @@ config BUSYBOX_CONFIG_FEATURE_FIND_TYPE
 	  directory, socket, device, etc.).
 
 config BUSYBOX_CONFIG_FEATURE_FIND_XDEV
-	bool "  Enable stay in filesystem (-xdev) option"
+	bool "Enable stay in filesystem (-xdev) option"
 	default y
 	depends on BUSYBOX_CONFIG_FIND
 	help
@@ -51,7 +61,7 @@ config BUSYBOX_CONFIG_FEATURE_FIND_XDEV
 	  filesystem.
 
 config BUSYBOX_CONFIG_FEATURE_FIND_NEWER
-	bool "  Enable -newer option for comparing file mtimes"
+	bool "Enable -newer option for comparing file mtimes"
 	default n
 	depends on BUSYBOX_CONFIG_FIND
 	help
@@ -59,14 +69,14 @@ config BUSYBOX_CONFIG_FEATURE_FIND_NEWER
 	  a modified time that is more recent than the specified FILE.
 
 config BUSYBOX_CONFIG_FEATURE_FIND_INUM
-	bool "  Enable inode number matching (-inum) option"
+	bool "Enable inode number matching (-inum) option"
 	default n
 	depends on BUSYBOX_CONFIG_FIND
 	help
 	  Support the 'find -inum' option for searching by inode number.
 
 config BUSYBOX_CONFIG_FEATURE_FIND_EXEC
-	bool "  Enable (-exec) option allowing execution of commands"
+	bool "Enable (-exec) option allowing execution of commands"
 	default y
 	depends on BUSYBOX_CONFIG_FIND
 	help
@@ -80,7 +90,7 @@ config BUSYBOX_CONFIG_GREP
 	  grep is used to search files for a specified pattern.
 
 config BUSYBOX_CONFIG_FEATURE_GREP_EGREP_ALIAS
-	bool "  Support extended regular expressions (egrep & grep -E)"
+	bool "Support extended regular expressions (egrep & grep -E)"
 	default y
 	depends on BUSYBOX_CONFIG_GREP
 	help
@@ -89,7 +99,7 @@ config BUSYBOX_CONFIG_FEATURE_GREP_EGREP_ALIAS
 	  and various repetition operators.
 
 config BUSYBOX_CONFIG_FEATURE_GREP_FGREP_ALIAS
-	bool "  Alias fgrep to grep -F"
+	bool "Alias fgrep to grep -F"
 	default y
 	depends on BUSYBOX_CONFIG_GREP
 	help
@@ -98,7 +108,7 @@ config BUSYBOX_CONFIG_FEATURE_GREP_FGREP_ALIAS
 	  grep -F is always builtin, this just creates the fgrep alias.
 
 config BUSYBOX_CONFIG_FEATURE_GREP_CONTEXT
-	bool "  Enable before and after context flags (-A, -B and -C)"
+	bool "Enable before and after context flags (-A, -B and -C)"
 	default y
 	depends on BUSYBOX_CONFIG_GREP
 	help
@@ -114,7 +124,7 @@ config BUSYBOX_CONFIG_XARGS
 	  every item from standard input.
 
 config BUSYBOX_CONFIG_FEATURE_XARGS_SUPPORT_CONFIRMATION
-	bool "  Enable prompt and confirmation option -p"
+	bool "Enable prompt and confirmation option -p"
 	default y
 	depends on BUSYBOX_CONFIG_XARGS
 	help
@@ -122,7 +132,7 @@ config BUSYBOX_CONFIG_FEATURE_XARGS_SUPPORT_CONFIRMATION
 	  line and read a line from the terminal.
 
 config BUSYBOX_CONFIG_FEATURE_XARGS_SUPPORT_QUOTES
-	bool "  Enable support single and double quotes and backslash"
+	bool "Enable support single and double quotes and backslash"
 	default y
 	depends on BUSYBOX_CONFIG_XARGS
 	help
@@ -130,7 +140,7 @@ config BUSYBOX_CONFIG_FEATURE_XARGS_SUPPORT_QUOTES
 	  and backslash for can use aruments with spaces.
 
 config BUSYBOX_CONFIG_FEATURE_XARGS_SUPPORT_TERMOPT
-	bool "  Enable support options -x"
+	bool "Enable support options -x"
 	default y
 	depends on BUSYBOX_CONFIG_XARGS
 	help
@@ -138,7 +148,7 @@ config BUSYBOX_CONFIG_FEATURE_XARGS_SUPPORT_TERMOPT
 	  is exceeded.
 
 config BUSYBOX_CONFIG_FEATURE_XARGS_SUPPORT_ZERO_TERM
-	bool "  Enable options -0"
+	bool "Enable options -0"
 	default y
 	depends on BUSYBOX_CONFIG_XARGS
 	help
