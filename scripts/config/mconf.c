@@ -22,6 +22,7 @@
 #include <unistd.h>
 #include <locale.h>
 
+#define BUFSIZE 32768
 #define LKC_DIRECT_LINK
 #include "lkc.h"
 
@@ -254,10 +255,10 @@ search_help[] = N_(
 	"          USB$ => find all CONFIG_ symbols ending with USB\n"
 	"\n");
 
-static char buf[4096], *bufptr = buf;
-static char input_buf[4096];
+static char buf[BUFSIZE], *bufptr = buf;
+static char input_buf[BUFSIZE];
 static char filename[PATH_MAX+1] = ".config";
-static char *args[1024], **argptr = args;
+static char *args[BUFSIZE], **argptr = args;
 static int indent;
 static struct termios ios_org;
 static int rows = 0, cols = 0;
