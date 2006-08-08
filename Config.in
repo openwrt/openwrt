@@ -88,7 +88,7 @@ menu "Target Images"
 		  
 	config TARGET_ROOTFS_EXT2FS
 		bool "ext2"
-		default n
+		default y if LINUX_2_6_UML
 		depends !TARGET_ROOTFS_INITRAMFS
 		help
 		  Ext2 file system with some free space for uml images
