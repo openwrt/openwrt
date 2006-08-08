@@ -12,27 +12,27 @@ include $(INCLUDE_DIR)/kernel.mk
 PKG_NAME:=zd1211
 PKG_VERSION:=r69
 PKG_RELEASE:=1
-PKG_MD5SUM:=c14133a3d5b27927402a492e84d2467a
 
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-driver-$(PKG_VERSION)
-PKG_SOURCE_URL:=http://zd1211.ath.cx/download/
 PKG_SOURCE:=$(PKG_NAME)-driver-$(PKG_VERSION).tgz
+PKG_SOURCE_URL:=http://zd1211.ath.cx/download/
+PKG_MD5SUM:=c14133a3d5b27927402a492e84d2467a
 PKG_CAT:=zcat
 
 include $(INCLUDE_DIR)/package.mk
 
 #FIXME: add proper dependency handling on kmod-usb-core packages
 define Package/kmod-zd1211
-SECTION:=drivers
-CATEGORY:=Drivers
-DEPENDS:=@LINUX_2_6
-TITLE:=Driver for Zydas 1211 based USB devices
-DESCRIPTION:=Driver for Zydas 1211 based USB devices \\\
-Linux driver for the ZyDAS ZD1211 802.11b/g USB-WLAN-Chip.\\\
-Initially contributed by ZyDAS, this driver is actively maintained by the \\\
-open source community.
-URL:=http://zd1211.ath.cx/
-VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
+  SECTION:=drivers
+  CATEGORY:=Drivers
+  DEPENDS:=@LINUX_2_6&&!LINUX_2_6_UML
+  TITLE:=Driver for Zydas 1211 based USB devices
+  DESCRIPTION:=Driver for Zydas 1211 based USB devices \\\
+    Linux driver for the ZyDAS ZD1211 802.11b/g USB-WLAN-Chip.\\\
+    Initially contributed by ZyDAS, this driver is actively maintained by the \\\
+    open source community.
+  URL:=http://zd1211.ath.cx/
+  VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
 endef
 
 define Build/Compile
