@@ -27,7 +27,7 @@ config BUSYBOX_CONFIG_FBSET
 	  if you wish to enable the 'fbset' utility.
 
 config BUSYBOX_CONFIG_FEATURE_FBSET_FANCY
-	bool "  Turn on extra fbset options"
+	bool "Turn on extra fbset options"
 	default n
 	depends on BUSYBOX_CONFIG_FBSET
 	help
@@ -37,7 +37,7 @@ config BUSYBOX_CONFIG_FEATURE_FBSET_FANCY
 	  options.
 
 config BUSYBOX_CONFIG_FEATURE_FBSET_READMODE
-	bool "  Turn on fbset readmode support"
+	bool "Turn on fbset readmode support"
 	default n
 	depends on BUSYBOX_CONFIG_FBSET
 	help
@@ -80,7 +80,7 @@ config BUSYBOX_FDISK_SUPPORT_LARGE_DISKS
 	  Enable this option to support large disks > 4GB.
 
 config BUSYBOX_CONFIG_FEATURE_FDISK_WRITABLE
-	bool "  Write support"
+	bool "Write support"
 	default n
 	depends on BUSYBOX_CONFIG_FDISK
 	help
@@ -89,7 +89,7 @@ config BUSYBOX_CONFIG_FEATURE_FDISK_WRITABLE
 	  disabled, you will only be able to view the partition table.
 
 config BUSYBOX_CONFIG_FEATURE_AIX_LABEL
-	bool "  Support AIX disklabels"
+	bool "Support AIX disklabels"
 	default n
 	depends on BUSYBOX_CONFIG_FDISK && BUSYBOX_CONFIG_FEATURE_FDISK_WRITABLE
 	help
@@ -97,7 +97,7 @@ config BUSYBOX_CONFIG_FEATURE_AIX_LABEL
 	  Most people can safely leave this option disabled.
 
 config BUSYBOX_CONFIG_FEATURE_SGI_LABEL
-	bool "  Support SGI disklabels"
+	bool "Support SGI disklabels"
 	default n
 	depends on BUSYBOX_CONFIG_FDISK && BUSYBOX_CONFIG_FEATURE_FDISK_WRITABLE
 	help
@@ -105,7 +105,7 @@ config BUSYBOX_CONFIG_FEATURE_SGI_LABEL
 	  Most people can safely leave this option disabled.
 
 config BUSYBOX_CONFIG_FEATURE_SUN_LABEL
-	bool "  Support SUN disklabels"
+	bool "Support SUN disklabels"
 	default n
  	depends on BUSYBOX_CONFIG_FDISK && BUSYBOX_CONFIG_FEATURE_FDISK_WRITABLE
 	help
@@ -113,7 +113,7 @@ config BUSYBOX_CONFIG_FEATURE_SUN_LABEL
 	  Most people can safely leave this option disabled.
 
 config BUSYBOX_CONFIG_FEATURE_OSF_LABEL
-	bool "  Support BSD disklabels"
+	bool "Support BSD disklabels"
 	default n
 	depends on BUSYBOX_CONFIG_FDISK && BUSYBOX_CONFIG_FEATURE_FDISK_WRITABLE
 	help
@@ -121,7 +121,7 @@ config BUSYBOX_CONFIG_FEATURE_OSF_LABEL
 	  and define and edit BSD disk slices.
 
 config BUSYBOX_CONFIG_FEATURE_FDISK_ADVANCED
-	bool "  Support expert mode"
+	bool "Support expert mode"
 	default n
 	depends on BUSYBOX_CONFIG_FDISK && BUSYBOX_CONFIG_FEATURE_FDISK_WRITABLE
 	help
@@ -164,7 +164,7 @@ comment "Minix filesystem support"
     depends on BUSYBOX_CONFIG_FSCK_MINIX || BUSYBOX_CONFIG_MKFS_MINIX
 
 config BUSYBOX_CONFIG_FEATURE_MINIX2
-	bool "  Support Minix fs v2 (fsck_minix/mkfs_minix)"
+	bool "Support Minix fs v2 (fsck_minix/mkfs_minix)"
 	default n
 	depends on BUSYBOX_CONFIG_FSCK_MINIX || BUSYBOX_CONFIG_MKFS_MINIX
 	help
@@ -199,17 +199,17 @@ config BUSYBOX_CONFIG_HWCLOCK
 	  shutdown in the hardware clock, so the hardware will keep the
 	  correct time when Linux is _not_ running.
 
-config BUSYBOX_CONFIG_FEATURE_HWCLOCK_LONGOPTIONS
-	bool "  Support long options (--hctosys,...)"
+config BUSYBOX_CONFIG_FEATURE_HWCLOCK_LONG_OPTIONS
+	bool "Support long options (--hctosys,...)"
 	default n
-	depends on BUSYBOX_CONFIG_HWCLOCK
+	depends on BUSYBOX_CONFIG_HWCLOCK && BUSYBOX_CONFIG_GETOPT_LONG
 	help
 	  By default, the hwclock utility only uses short options.  If you
 	  are overly fond of its long options, such as --hctosys, --utc, etc)
 	  then enable this option.
 
 config BUSYBOX_CONFIG_FEATURE_HWCLOCK_ADJTIME_FHS
-	bool "  Use FHS /var/lib/hwclock/adjtime"
+	bool "Use FHS /var/lib/hwclock/adjtime"
 	default n
 	depends on BUSYBOX_CONFIG_HWCLOCK
 	help
@@ -255,7 +255,7 @@ config BUSYBOX_CONFIG_MDEV
 	  from sysfs.
 
 config BUSYBOX_CONFIG_FEATURE_MDEV_CONF
-	bool "  Support /etc/mdev.conf"
+	bool "Support /etc/mdev.conf"
 	default n
 	depends on BUSYBOX_CONFIG_MDEV
 	help
@@ -265,15 +265,30 @@ config BUSYBOX_CONFIG_FEATURE_MDEV_CONF
 
 	  That's device name (with regex match), uid:gid, and permissions.
 
-	  Optionally, that can be followed (on the same line) by an asterisk
-	  and a command line to run after creating the corresponding device(s),
-	  ala:
-
-	    hdc root:cdrom 660  *ln -s hdc cdrom
-
 	  Config file parsing stops on the first matching line.  If no config
 	  entry is matched, devices are created with default 0:0 660.  (Make
 	  the last line match .* to override this.)
+
+config BUSYBOX_CONFIG_FEATURE_MDEV_EXEC
+	bool "Support command execution at device addition/removal"
+	default n
+	depends on BUSYBOX_CONFIG_FEATURE_MDEV_CONF
+	help
+	  This adds support for an optional field to /etc/mdev.conf, consisting
+	  of a special character and a command line to run after creating the
+	  corresponding device(s) and before removing, ala:
+
+	    hdc root:cdrom 660  *ln -s $MDEV cdrom
+
+	  The $MDEV environment variable is set to the name of the device.
+
+	  The special characters and their meanings are:
+	    @ Run after creating the device.
+	    $ Run before removing the device.
+	    * Run both after creating and before removing the device.
+
+	  Commands are executed via system() so you need /bin/sh, meaning you
+	  probably want to select a default shell in the Shells menu.
 
 config BUSYBOX_CONFIG_MKSWAP
 	bool "mkswap"
@@ -288,6 +303,16 @@ config BUSYBOX_CONFIG_MKSWAP
 	  Once you have created swap space using 'mkswap' you need to enable
 	  the swap space using the 'swapon' utility.
 
+config BUSYBOX_CONFIG_FEATURE_MKSWAP_V0
+	bool "version 0 support"
+	default n
+	depends on BUSYBOX_CONFIG_MKSWAP
+#	depends on BUSYBOX_CONFIG_MKSWAP && BUSYBOX_CONFIG_DEPRECATED
+	help
+	  Enable support for the old v0 style.
+	  If your kernel is older than 2.1.117, then v0 support is the
+	  only option.
+
 config BUSYBOX_CONFIG_MORE
 	bool "more"
 	default y
@@ -299,7 +324,7 @@ config BUSYBOX_CONFIG_MORE
 	  any need to reading text files, you can leave this disabled.
 
 config BUSYBOX_CONFIG_FEATURE_USE_TERMIOS
-	bool "  Use termios to manipulate the screen"
+	bool "Use termios to manipulate the screen"
 	default y
 	depends on BUSYBOX_CONFIG_MORE
 	help
@@ -321,7 +346,7 @@ config BUSYBOX_CONFIG_MOUNT
 	  the 'mount' utility.
 
 config BUSYBOX_CONFIG_FEATURE_MOUNT_NFS
-	bool "  Support mounting NFS file systems"
+	bool "Support mounting NFS file systems"
 	default y
 	depends on BUSYBOX_CONFIG_MOUNT
 	help
@@ -403,7 +428,7 @@ config BUSYBOX_CONFIG_UMOUNT
 	  also want to enable 'umount'.
 
 config BUSYBOX_CONFIG_FEATURE_UMOUNT_ALL
-	bool "  umount -a option"
+	bool "umount -a option"
 	default y
 	depends on BUSYBOX_CONFIG_UMOUNT
 	help
@@ -413,7 +438,7 @@ comment "Common options for mount/umount"
 	depends on BUSYBOX_CONFIG_MOUNT || BUSYBOX_CONFIG_UMOUNT
 
 config BUSYBOX_CONFIG_FEATURE_MOUNT_LOOP
-	bool "  Support loopback mounts"
+	bool "Support loopback mounts"
 	default y
 	depends on BUSYBOX_CONFIG_MOUNT || BUSYBOX_CONFIG_UMOUNT
 	help
@@ -429,7 +454,7 @@ config BUSYBOX_CONFIG_FEATURE_MOUNT_LOOP
 	  (If you don't want umount to free the loop device, use "umount -D".)
 
 config BUSYBOX_CONFIG_FEATURE_MTAB_SUPPORT
-	bool "  Support for the old /etc/mtab file"
+	bool "Support for the old /etc/mtab file"
 	default n
 	depends on BUSYBOX_CONFIG_MOUNT || BUSYBOX_CONFIG_UMOUNT
 	help
@@ -445,7 +470,11 @@ config BUSYBOX_CONFIG_FEATURE_MTAB_SUPPORT
 	  example a mount under chroot won't update it), can't handle modern
 	  features like separate per-process filesystem namespaces, requires
 	  that your /etc directory be writeable, tends to get easily confused
-	  by --bind or --move mounts, and so on.  (In brief: avoid.)
+	  by --bind or --move mounts, won't update if you rename a directory
+	  that contains a mount point, and so on.  (In brief: avoid.)
+
+	  About the only reason to use this is if you've removed /proc from
+	  your kernel.
 
 endmenu
 

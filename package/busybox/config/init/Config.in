@@ -11,15 +11,23 @@ config BUSYBOX_CONFIG_INIT
 	help
 	  init is the first program run when the system boots.
 
+config BUSYBOX_CONFIG_DEBUG_INIT
+	bool "debugging aid"
+	default n
+	depends on BUSYBOX_CONFIG_INIT
+	help
+	  Turn this on to disable all the dangerous
+	  rebooting stuff when debugging.
+
 config BUSYBOX_CONFIG_FEATURE_USE_INITTAB
-	bool "  Support reading an inittab file"
+	bool "Support reading an inittab file"
 	default y
 	depends on BUSYBOX_CONFIG_INIT
 	help
 	  Allow init to read an inittab file when the system boot.
 
 config BUSYBOX_CONFIG_FEATURE_INIT_SCTTY
-	bool "  Support running commands with a controlling-tty"
+	bool "Support running commands with a controlling-tty"
 	default n
 	depends on BUSYBOX_CONFIG_INIT
 	help
@@ -30,14 +38,14 @@ config BUSYBOX_CONFIG_FEATURE_INIT_SCTTY
 	  the console is only accessed during development or for maintenance.
 
 config BUSYBOX_CONFIG_FEATURE_EXTRA_QUIET
-	bool "  Be _extra_ quiet on boot"
+	bool "Be _extra_ quiet on boot"
 	default n
 	depends on BUSYBOX_CONFIG_INIT
 	help
 	  Prevent init from logging some messages to the console during boot.
 
 config BUSYBOX_CONFIG_FEATURE_INIT_COREDUMPS
-	bool "  Support dumping core for child processes (debugging only)"
+	bool "Support dumping core for child processes (debugging only)"
 	default n
 	depends on BUSYBOX_CONFIG_INIT
 	help
@@ -49,7 +57,7 @@ config BUSYBOX_CONFIG_FEATURE_INIT_COREDUMPS
 
 
 config BUSYBOX_CONFIG_FEATURE_INITRD
-	bool "  Support running init from within an initrd (not initramfs)"
+	bool "Support running init from within an initrd (not initramfs)"
 	default n
 	depends on BUSYBOX_CONFIG_INIT
 	help
@@ -72,9 +80,4 @@ config BUSYBOX_CONFIG_MESG
 	  Mesg controls access to your terminal by others.  It is typically
 	  used to allow or disallow other users to write to your terminal
 
-	default y
-	help
-	  Stop all processes and (try to) power off the system.
-
 endmenu
-

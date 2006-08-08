@@ -65,11 +65,24 @@ config BUSYBOX_CONFIG_SETCONSOLE
 	  This program redirects the system console to another device,
 	  like the current tty while logged in via telnet.
 
+config BUSYBOX_CONFIG_FEATURE_SETCONSOLE_LONG_OPTIONS
+	bool "Enable long options"
+	default n
+	depends on BUSYBOX_CONFIG_SET_CONSOLE && BUSYBOX_CONFIG_GETOPT_LONG
+	help
+	  Support long options for the setconsole applet.
+
 config BUSYBOX_CONFIG_SETKEYCODES
 	bool "setkeycodes"
 	default n
 	help
 	  This program loads entries into the kernel's scancode-to-keycode
 	  map, allowing unusual keyboards to generate usable keycodes.
+
+config BUSYBOX_CONFIG_SETLOGCONS
+	bool "setlogcons"
+	default n
+	help
+	  This program redirects the output console of kernel messages.
 
 endmenu

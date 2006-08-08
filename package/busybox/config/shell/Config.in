@@ -48,14 +48,14 @@ comment "Ash Shell Options"
 	depends on BUSYBOX_CONFIG_ASH
 
 config BUSYBOX_CONFIG_ASH_JOB_CONTROL
-	bool "  Enable Job control"
+	bool "Job control"
 	default y
 	depends on BUSYBOX_CONFIG_ASH
 	help
 	  Enable job control in the ash shell.
 
 config BUSYBOX_CONFIG_ASH_READ_NCHARS
-	bool "  Enable 'read -n N' and 'read -s' support"
+	bool "'read -n N' and 'read -s' support"
 	default n
 	depends on BUSYBOX_CONFIG_ASH
 	help
@@ -63,7 +63,7 @@ config BUSYBOX_CONFIG_ASH_READ_NCHARS
 	  'read -s' will read without echoing the user's input.
 
 config BUSYBOX_CONFIG_ASH_READ_TIMEOUT
-	bool "  Enable 'read -t S' support."
+	bool "'read -t S' support."
 	default y
 	depends on BUSYBOX_CONFIG_ASH
 	help
@@ -72,21 +72,21 @@ config BUSYBOX_CONFIG_ASH_READ_TIMEOUT
 	  as a decimal fraction, e.g. 'read -t 2.5 foo'.
 
 config BUSYBOX_CONFIG_ASH_ALIAS
-	bool "  Enable alias support"
+	bool "alias support"
 	default y
 	depends on BUSYBOX_CONFIG_ASH
 	help
 	  Enable alias support in the ash shell.
 
 config BUSYBOX_CONFIG_ASH_MATH_SUPPORT
-	bool "  Enable Posix math support"
+	bool "Posix math support"
 	default y
 	depends on BUSYBOX_CONFIG_ASH
 	help
 	  Enable math support in the ash shell.
 
 config BUSYBOX_CONFIG_ASH_MATH_SUPPORT_64
-	bool "    Extend Posix math support to 64 bit"
+	bool "Extend Posix math support to 64 bit"
 	default n
 	depends on BUSYBOX_CONFIG_ASH_MATH_SUPPORT
 	help
@@ -95,14 +95,30 @@ config BUSYBOX_CONFIG_ASH_MATH_SUPPORT_64
 	  large numbers.
 
 config BUSYBOX_CONFIG_ASH_GETOPTS
-	bool "  Enable getopts builtin to parse positional parameters"
+	bool "Builtin getopt to parse positional parameters"
 	default y
 	depends on BUSYBOX_CONFIG_ASH
 	help
 	  Enable getopts builtin in the ash shell.
 
+config BUSYBOX_CONFIG_ASH_BUILTIN_ECHO
+	bool "Builtin version of 'echo'"
+	default y
+	select BUSYBOX_CONFIG_ECHO
+	depends on BUSYBOX_CONFIG_ASH
+	help
+	  Enable support for echo, built in to ash.
+
+config BUSYBOX_CONFIG_ASH_BUILTIN_TEST
+	bool "Builtin version of 'test'"
+	default y
+	select BUSYBOX_CONFIG_TEST
+	depends on BUSYBOX_CONFIG_ASH
+	help
+	  Enable support for test, built in to ash.
+
 config BUSYBOX_CONFIG_ASH_CMDCMD
-	bool "  Enable cmdcmd to override shell builtins"
+	bool "'command' command to override shell builtins"
 	default y
 	depends on BUSYBOX_CONFIG_ASH
 	help
@@ -110,37 +126,22 @@ config BUSYBOX_CONFIG_ASH_CMDCMD
 	  you to run the specified command with the specified arguments,
 	  even when there is an ash builtin command with the same name.
 
-config BUSYBOX_CONFIG_ASH_BUILTIN_ECHO
-	bool "  Enable builtin version of 'echo'"
-	default y
-	depends on BUSYBOX_CONFIG_ASH
-	help
-	  Enable support for echo, built in to ash.
-
-# this entry also appears in coreutils/Config.in, next to the echo applet
-config BUSYBOX_CONFIG_FEATURE_FANCY_ECHO
-	bool "  Enable echo options (-n and -e)"
-	default y
-	depends on BUSYBOX_CONFIG_ASH_BUILTIN_ECHO
-	help
-	  This adds options (-n and -e) to echo.
-
 config BUSYBOX_CONFIG_ASH_MAIL
-	bool "  Check for new mail on interactive shells"
+	bool "Check for new mail on interactive shells"
 	default n
 	depends on BUSYBOX_CONFIG_ASH
 	help
 	  Enable "check for new mail" in the ash shell.
 
 config BUSYBOX_CONFIG_ASH_OPTIMIZE_FOR_SIZE
-	bool "  Optimize for size instead of speed"
+	bool "Optimize for size instead of speed"
 	default y
 	depends on BUSYBOX_CONFIG_ASH
 	help
 	  Compile ash for reduced size at the price of speed.
 
 config BUSYBOX_CONFIG_ASH_RANDOM_SUPPORT
-	bool "  Enable pseudorandom generator and variable $RANDOM"
+	bool "Pseudorandom generator and variable $RANDOM"
 	default n
 	depends on BUSYBOX_CONFIG_ASH
 	help
@@ -151,7 +152,7 @@ config BUSYBOX_CONFIG_ASH_RANDOM_SUPPORT
 	  variable will no longer have special treatment.
 
 config BUSYBOX_CONFIG_ASH_EXPAND_PRMT
-	bool "  Expand prompt string"
+	bool "Expand prompt string"
 	default n
 	depends on BUSYBOX_CONFIG_ASH
 	help
@@ -229,13 +230,18 @@ config BUSYBOX_CONFIG_FEATURE_SH_STANDALONE_SHELL
 	  is generally used when creating a statically linked version of busybox
 	  for use as a rescue shell, in the event that you screw up your system.
 
+	  Note that this will *also* cause applets to take precedence
+	  over shell builtins of the same name.  So turning this on will
+	  eliminate any performance gained by turning on the builtin "echo"
+	  and "test" commands in ash.
+
 	  Note that when using this option, the shell will attempt to directly
 	  run '/bin/busybox'.  If you do not have the busybox binary sitting in
 	  that exact location with that exact name, this option will not work at
 	  all.
 
 config BUSYBOX_CONFIG_FEATURE_COMMAND_EDITING
-	bool "command line editing"
+	bool "Command line editing"
 	default y
 	depends on BUSYBOX_CONFIG_MSH || BUSYBOX_CONFIG_LASH || BUSYBOX_CONFIG_HUSH || BUSYBOX_CONFIG_ASH
 	help
@@ -250,28 +256,28 @@ config BUSYBOX_CONFIG_FEATURE_COMMAND_EDITING_VI
 	  turned on and off with "set -o vi" and "set +o vi".
 
 config BUSYBOX_CONFIG_FEATURE_COMMAND_HISTORY
-	int "history size"
+	int "History size"
 	default 15
 	depends on BUSYBOX_CONFIG_FEATURE_COMMAND_EDITING
 	help
 	  Specify command history size in shell.
 
 config BUSYBOX_CONFIG_FEATURE_COMMAND_SAVEHISTORY
-	bool "history saving"
+	bool "History saving"
 	default n
 	depends on BUSYBOX_CONFIG_ASH && BUSYBOX_CONFIG_FEATURE_COMMAND_EDITING
 	help
 	  Enable history saving in ash shell.
 
 config BUSYBOX_CONFIG_FEATURE_COMMAND_TAB_COMPLETION
-	bool "tab completion"
+	bool "Tab completion"
 	default y
 	depends on BUSYBOX_CONFIG_FEATURE_COMMAND_EDITING
 	help
 	  Enable tab completion in shell.
 
 config BUSYBOX_CONFIG_FEATURE_COMMAND_USERNAME_COMPLETION
-	bool "username completion"
+	bool "Username completion"
 	default n
 	depends on BUSYBOX_CONFIG_FEATURE_COMMAND_TAB_COMPLETION
 	help

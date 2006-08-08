@@ -84,14 +84,14 @@ config BUSYBOX_CONFIG_GETTY
 	  getty lets you log in on a tty, it is normally invoked by init.
 
 config BUSYBOX_CONFIG_FEATURE_UTMP
-	bool "  Support utmp file"
+	bool "Support utmp file"
 	depends on BUSYBOX_CONFIG_GETTY || BUSYBOX_CONFIG_LOGIN || BUSYBOX_CONFIG_SU || BUSYBOX_CONFIG_WHO
 	default n
 	help
 	  The file /var/run/utmp is used to track who is currently logged in.
 
 config BUSYBOX_CONFIG_FEATURE_WTMP
-	bool "  Support wtmp file"
+	bool "Support wtmp file"
 	depends on BUSYBOX_CONFIG_GETTY || BUSYBOX_CONFIG_LOGIN || BUSYBOX_CONFIG_SU || BUSYBOX_CONFIG_LAST
 	default n
 	select BUSYBOX_CONFIG_FEATURE_UTMP
@@ -110,7 +110,7 @@ config BUSYBOX_CONFIG_LOGIN
 	  work properly.
 
 config BUSYBOX_CONFIG_FEATURE_SECURETTY
-	bool "  Support for /etc/securetty"
+	bool "Support for /etc/securetty"
 	default n
 	depends on BUSYBOX_CONFIG_LOGIN
 	help

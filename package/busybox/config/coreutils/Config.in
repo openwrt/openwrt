@@ -26,6 +26,13 @@ config BUSYBOX_CONFIG_CAT
 	  cat is used to concatenate files and print them to the standard
 	  output.  Enable this option if you wish to enable the 'cat' utility.
 
+config BUSYBOX_CONFIG_CATV
+	bool "catv"
+	default n
+	help
+	  Display nonprinting characters as escape sequences (like some
+	  implementations' cat -v option).
+
 config BUSYBOX_CONFIG_CHGRP
 	bool "chgrp"
 	default y
@@ -51,6 +58,12 @@ config BUSYBOX_CONFIG_CHROOT
 	help
 	  chroot is used to change the root directory and run a command.
 	  The default command is `/bin/sh'.
+
+config BUSYBOX_CONFIG_CKSUM
+	bool "cksum"
+	default n
+	help
+	  cksum is used to calculate the CRC32 checksum of a file.
 
 config BUSYBOX_CONFIG_CMP
 	bool "cmp"
@@ -87,7 +100,7 @@ config BUSYBOX_CONFIG_DATE
 	  current time in the given format.
 
 config BUSYBOX_CONFIG_FEATURE_DATE_ISOFMT
-	bool "  Enable ISO date format output (-I)"
+	bool "Enable ISO date format output (-I)"
 	default y
 	depends on BUSYBOX_CONFIG_DATE
 	help
@@ -102,12 +115,64 @@ config BUSYBOX_CONFIG_DD
 	  by default) using specific input and output blocksizes,
 	  while optionally performing conversions on it.
 
+config BUSYBOX_CONFIG_FEATURE_DD_SIGNAL_HANDLING
+	bool "Enable DD signal handling for status reporting"
+	default y
+	depends on BUSYBOX_CONFIG_DD
+	help
+	  sending a SIGUSR1 signal to a running `dd' process makes it 
+	  print to standard error the number of records read and written 
+	  so far, then to resume copying.
+
+	  $ dd if=/dev/zero of=/dev/null& pid=$! $ kill -USR1 $pid; sleep 1; kill $pid 
+	  10899206+0 records in 10899206+0 records out
+
+config BUSYBOX_CONFIG_FEATURE_DD_IBS_OBS
+	bool "Enable ibs, obs and conv options"
+	default n
+	depends on BUSYBOX_CONFIG_DD
+	help
+	  Enables support for writing a certain number of bytes in and out,
+	  at a time, and performing conversions on the data stream.
+
 config BUSYBOX_CONFIG_DF
 	bool "df"
 	default y
 	help
 	  df reports the amount of disk space used and available
 	  on filesystems.
+
+config BUSYBOX_CONFIG_DIFF
+	bool "diff"
+	default n
+	help
+	  diff compares two files or directories and outputs the
+	  differences between them in a form that can be given to
+	  the patch command.
+
+config BUSYBOX_CONFIG_FEATURE_DIFF_BINARY
+	bool "Enable checks for binary files"
+	default n
+	depends on BUSYBOX_CONFIG_DIFF
+	help
+	  This option enables support for checking for binary files
+	  before a comparison is carried out.
+
+config BUSYBOX_CONFIG_FEATURE_DIFF_DIR
+	bool "Enable directory support"
+	default n
+	depends on BUSYBOX_CONFIG_DIFF
+	help
+	  This option enables support for directory and subdirectory
+	  comparison.
+
+config BUSYBOX_CONFIG_FEATURE_DIFF_MINIMAL
+	bool "Enable -d option to find smaller sets of changes"
+	default n
+	depends on BUSYBOX_CONFIG_DIFF
+	help
+	  Enabling this option allows the use of -d to make diff
+	  try hard to find the smallest possible set of changes.
 
 config BUSYBOX_CONFIG_DIRNAME
 	bool "dirname"
@@ -127,6 +192,9 @@ config BUSYBOX_CONFIG_UNIX2DOS
 	bool
 	default n
 	depends on BUSYBOX_CONFIG_DOS2UNIX
+	help
+	  unix2dos is used to convert a text file from UNIX format to
+	  DOS format, and vice versa.
 
 config BUSYBOX_CONFIG_DU
 	bool "du (default blocksize of 512 bytes)"
@@ -135,8 +203,8 @@ config BUSYBOX_CONFIG_DU
 	  du is used to report the amount of disk space used
 	  for specified files.
 
-config BUSYBOX_CONFIG_FEATURE_DU_DEFALT_BLOCKSIZE_1K
-	bool "  Use a default blocksize of 1024 bytes (1K)"
+config BUSYBOX_CONFIG_FEATURE_DU_DEFAULT_BLOCKSIZE_1K
+	bool "Use a default blocksize of 1024 bytes (1K)"
 	default y
 	depends on BUSYBOX_CONFIG_DU
 	help
@@ -150,7 +218,7 @@ config BUSYBOX_CONFIG_ECHO
 
 # this entry also appears in shell/Config.in, next to the echo builtin
 config BUSYBOX_CONFIG_FEATURE_FANCY_ECHO
-	bool "  Enable echo options (-n and -e)"
+	bool "Enable echo options (-n and -e)"
 	default y
 	depends on BUSYBOX_CONFIG_ECHO
 	help
@@ -164,6 +232,13 @@ config BUSYBOX_CONFIG_ENV
 	  a command; without options it displays the current
 	  environment.
 
+config BUSYBOX_CONFIG_FEATURE_ENV_LONG_OPTIONS
+	bool "Enable long options"
+	default n
+	depends on BUSYBOX_CONFIG_ENV && BUSYBOX_CONFIG_GETOPT_LONG
+	help
+	  Support long options for the env applet.
+
 config BUSYBOX_CONFIG_EXPR
 	bool "expr"
 	default y
@@ -172,7 +247,7 @@ config BUSYBOX_CONFIG_EXPR
 	  to standard output.
 
 config BUSYBOX_CONFIG_EXPR_MATH_SUPPORT_64
-	bool "    Extend Posix numbers support to 64 bit"
+	bool "Extend Posix numbers support to 64 bit"
 	default n
 	depends on BUSYBOX_CONFIG_EXPR
 	help
@@ -200,7 +275,7 @@ config BUSYBOX_CONFIG_HEAD
 	  from files.
 
 config BUSYBOX_CONFIG_FEATURE_FANCY_HEAD
-	bool "  Enable head options (-c, -q, and -v)"
+	bool "Enable head options (-c, -q, and -v)"
 	default y
 	depends on BUSYBOX_CONFIG_HEAD
 	help
@@ -224,6 +299,13 @@ config BUSYBOX_CONFIG_INSTALL
 	default n
 	help
 	  Copy files and set attributes.
+
+config BUSYBOX_CONFIG_FEATURE_INSTALL_LONG_OPTIONS
+	bool "Enable long options"
+	default n
+	depends on BUSYBOX_CONFIG_INSTALL && BUSYBOX_CONFIG_GETOPT_LONG
+	help
+	  Support long options for the install applet.
 
 config BUSYBOX_CONFIG_LENGTH
 	bool "length"
@@ -250,56 +332,56 @@ config BUSYBOX_CONFIG_LS
 	  ls is used to list the contents of directories.
 
 config BUSYBOX_CONFIG_FEATURE_LS_FILETYPES
-	bool "  Enable filetyping options (-p and -F)"
+	bool "Enable filetyping options (-p and -F)"
 	default y
 	depends on BUSYBOX_CONFIG_LS
 	help
 	  Enable the ls options (-p and -F).
 
 config BUSYBOX_CONFIG_FEATURE_LS_FOLLOWLINKS
-	bool "  Enable symlinks dereferencing (-L)"
+	bool "Enable symlinks dereferencing (-L)"
 	default y
 	depends on BUSYBOX_CONFIG_LS
 	help
 	  Enable the ls option (-L).
 
 config BUSYBOX_CONFIG_FEATURE_LS_RECURSIVE
-	bool "  Enable recursion (-R)"
+	bool "Enable recursion (-R)"
 	default y
 	depends on BUSYBOX_CONFIG_LS
 	help
 	  Enable the ls option (-R).
 
 config BUSYBOX_CONFIG_FEATURE_LS_SORTFILES
-	bool "  Sort the file names"
+	bool "Sort the file names"
 	default y
 	depends on BUSYBOX_CONFIG_LS
 	help
 	  Allow ls to sort file names alphabetically.
 
 config BUSYBOX_CONFIG_FEATURE_LS_TIMESTAMPS
-	bool "  Show file timestamps"
+	bool "Show file timestamps"
 	default y
 	depends on BUSYBOX_CONFIG_LS
 	help
 	  Allow ls to display timestamps for files.
 
 config BUSYBOX_CONFIG_FEATURE_LS_USERNAME
-	bool "  Show username/groupnames"
+	bool "Show username/groupnames"
 	default y
 	depends on BUSYBOX_CONFIG_LS
 	help
 	  Allow ls to display username/groupname for files.
 
 config BUSYBOX_CONFIG_FEATURE_LS_COLOR
-	bool "  Allow use of color to identify file types"
+	bool "Allow use of color to identify file types"
 	default y
-	depends on BUSYBOX_CONFIG_LS
+	depends on BUSYBOX_CONFIG_LS && BUSYBOX_CONFIG_GETOPT_LONG
 	help
 	  This enables the --color option to ls.
 
 config BUSYBOX_CONFIG_FEATURE_LS_COLOR_IS_DEFAULT
-	bool "  Produce colored ls output by default"
+	bool "Produce colored ls output by default"
 	default y
 	depends on BUSYBOX_CONFIG_FEATURE_LS_COLOR
 	help
@@ -321,6 +403,13 @@ config BUSYBOX_CONFIG_MKDIR
 	help
 	  mkdir is used to create directories with the specified names.
 
+config BUSYBOX_CONFIG_FEATURE_MKDIR_LONG_OPTIONS
+	bool "Enable long options"
+	default n
+	depends on BUSYBOX_CONFIG_MKDIR && BUSYBOX_CONFIG_GETOPT_LONG
+	help
+	  Support long options for the mkdir applet.
+
 config BUSYBOX_CONFIG_MKFIFO
 	bool "mkfifo"
 	default y
@@ -340,6 +429,13 @@ config BUSYBOX_CONFIG_MV
 	default y
 	help
 	  mv is used to move or rename files or directories.
+
+config BUSYBOX_CONFIG_FEATURE_MV_LONG_OPTIONS
+	bool "Enable long options"
+	default n
+	depends on BUSYBOX_CONFIG_MV && BUSYBOX_CONFIG_GETOPT_LONG
+	help
+	  Support long options for the mv applet.
 
 config BUSYBOX_CONFIG_NICE
 	bool "nice"
@@ -416,7 +512,7 @@ config BUSYBOX_CONFIG_SLEEP
 	  sleep is used to pause for a specified number of seconds,
 
 config BUSYBOX_CONFIG_FEATURE_FANCY_SLEEP
-	bool "  Enable multiple integer args and optional time suffixes"
+	bool "Enable multiple integer args and optional time suffixes"
 	default y
 	depends on BUSYBOX_CONFIG_SLEEP
 	help
@@ -429,7 +525,7 @@ config BUSYBOX_CONFIG_SORT
 	  sort is used to sort lines of text in specified files.
 
 config BUSYBOX_CONFIG_FEATURE_SORT_BIG
-	bool "  full SuSv3 compliant sort (Support -ktcsbdfiozgM)"
+	bool "full SuSv3 compliant sort (Support -ktcsbdfiozgM)"
 	default n
 	depends on BUSYBOX_CONFIG_SORT
 	help
@@ -447,7 +543,7 @@ config BUSYBOX_CONFIG_STAT
 	  display file or filesystem status.
 
 config BUSYBOX_CONFIG_FEATURE_STAT_FORMAT
-	bool "  Enable custom formats (-c)"
+	bool "Enable custom formats (-c)"
 	default n
 	depends on BUSYBOX_CONFIG_STAT
 	help
@@ -481,7 +577,7 @@ config BUSYBOX_CONFIG_TAIL
 	  from files.
 
 config BUSYBOX_CONFIG_FEATURE_FANCY_TAIL
-	bool "  Enable extra tail options (-q, -s, and -v)"
+	bool "Enable extra tail options (-q, -s, and -v)"
 	default y
 	depends on BUSYBOX_CONFIG_TAIL
 	help
@@ -496,7 +592,7 @@ config BUSYBOX_CONFIG_TEE
 	  to standard output and files.
 
 config BUSYBOX_CONFIG_FEATURE_TEE_USE_BLOCK_IO
-	bool "  Enable block i/o (larger/faster) instead of byte i/o."
+	bool "Enable block i/o (larger/faster) instead of byte i/o."
 	default y
 	depends on BUSYBOX_CONFIG_TEE
 	help
@@ -507,11 +603,11 @@ config BUSYBOX_CONFIG_TEST
 	default y
 	help
 	  test is used to check file types and compare values,
-	  returning an appropriate exit code. The shells (ash
-	  and bash) have test builtin.
+	  returning an appropriate exit code.  The bash shell
+	  has test built in, ash can build it in optionally.
 
 config BUSYBOX_CONFIG_FEATURE_TEST_64
-	bool "  Extend test to 64 bit"
+	bool "Extend test to 64 bit"
 	default n
 	depends on BUSYBOX_CONFIG_TEST
 	help
@@ -532,7 +628,7 @@ config BUSYBOX_CONFIG_TR
 	  input, writing to standard output.
 
 config BUSYBOX_CONFIG_FEATURE_TR_CLASSES
-	bool "  Enable character classes (such as [:upper:])"
+	bool "Enable character classes (such as [:upper:])"
 	default n
 	depends on BUSYBOX_CONFIG_TR
 	help
@@ -540,7 +636,7 @@ config BUSYBOX_CONFIG_FEATURE_TR_CLASSES
 	  tr [:upper:] [:lower:] to convert input into lowercase.
 
 config BUSYBOX_CONFIG_FEATURE_TR_EQUIV
-	bool "  Enable equivalence classes"
+	bool "Enable equivalence classes"
 	default n
 	depends on BUSYBOX_CONFIG_TR
 	help
@@ -633,7 +729,7 @@ comment "Common options for cp and mv"
 	depends on BUSYBOX_CONFIG_CP || BUSYBOX_CONFIG_MV
 
 config BUSYBOX_CONFIG_FEATURE_PRESERVE_HARDLINKS
-	bool "  Preserve hard links"
+	bool "Preserve hard links"
 	default y
 	depends on BUSYBOX_CONFIG_CP || BUSYBOX_CONFIG_MV
 	help
@@ -643,7 +739,7 @@ comment "Common options for ls, more and telnet"
 	depends on BUSYBOX_CONFIG_LS || BUSYBOX_CONFIG_MORE || BUSYBOX_CONFIG_TELNET
 
 config BUSYBOX_CONFIG_FEATURE_AUTOWIDTH
-	bool "  Calculate terminal & column widths"
+	bool "Calculate terminal & column widths"
 	default y
 	depends on BUSYBOX_CONFIG_LS || BUSYBOX_CONFIG_MORE || BUSYBOX_CONFIG_TELNET
 	help
@@ -657,7 +753,7 @@ comment "Common options for df, du, ls"
 	depends on BUSYBOX_CONFIG_DF || BUSYBOX_CONFIG_DU || BUSYBOX_CONFIG_LS
 
 config BUSYBOX_CONFIG_FEATURE_HUMAN_READABLE
-	bool "  Support for human readable output (example 13k, 23M, 235G)"
+	bool "Support for human readable output (example 13k, 23M, 235G)"
 	default y
 	depends on BUSYBOX_CONFIG_DF || BUSYBOX_CONFIG_DU || BUSYBOX_CONFIG_LS
 	help
@@ -667,7 +763,7 @@ comment "Common options for md5sum, sha1sum"
 	depends on BUSYBOX_CONFIG_MD5SUM || BUSYBOX_CONFIG_SHA1SUM
 
 config BUSYBOX_CONFIG_FEATURE_MD5_SHA1_SUM_CHECK
-	bool "  Enable -c, -s and -w options"
+	bool "Enable -c, -s and -w options"
 	default y
 	depends on BUSYBOX_CONFIG_MD5SUM || BUSYBOX_CONFIG_SHA1SUM
 	help
