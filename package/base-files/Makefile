@@ -86,6 +86,7 @@ define Package/libgcc
   SECTION:=libs
   CATEGORY:=Libraries
   DEFAULT:=y
+  DEPENDS:=@!NATIVE_TOOLCHAIN
   TITLE:=GCC support library
   VERSION:=$(LIBGCC_VERSION)-$(PKG_RELEASE)
   DESCRIPTION:=$(TITLE)
@@ -94,6 +95,7 @@ endef
 define Package/libpthread
   $(call Package/base-files$(TARGET))
   DEFAULT:=n
+  DEPENDS:=@!NATIVE_TOOLCHAIN
   VERSION:=$(UCLIBC_VERSION)-$(PKG_RELEASE)
   TITLE:=POSIX thread library
   DESCRIPTION:=POSIX thread library
@@ -103,6 +105,7 @@ endef
 define Package/uclibc
   $(call Package/base-files$(TARGET))
   VERSION:=$(UCLIBC_VERSION)-$(PKG_RELEASE)
+  DEPENDS:=@!NATIVE_TOOLCHAIN
   TITLE:=C library
   DESCRIPTION:=C library for embedded systems
 endef
