@@ -29,8 +29,12 @@ LINUX_KARCH:=$(shell echo $(ARCH) | sed -e 's/i[3-9]86/i386/' \
 )
 
 ifneq (,$(findstring uml,$(BOARD)))
-LINUX_KARCH="um"
-KERNEL_CROSS=
+  LINUX_KARCH:=um
+  KERNEL_CC:=$(HOSTCC)
+  KERNEL_CROSS:=
+else
+  KERNEL_CC:=$(TARGET_CC)
+  KERNEL_CROSS:=$(TARGET_CROSS)
 endif
 
 KERNEL_BUILD_DIR:=$(BUILD_DIR)/linux-$(KERNEL)-$(BOARD)
