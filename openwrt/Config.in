@@ -16,7 +16,7 @@ menuconfig DEVEL
 	bool "Advanced configuration options (for developers)"
 	default n
 	select BUILDOPTS
-	select TOOLCHAINOPTS
+	select TOOLCHAINOPTS if !NATIVE_TOOLCHAIN
 
 config BROKEN
 	bool "Show broken platforms / packages" if DEVEL

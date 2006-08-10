@@ -1,7 +1,14 @@
 #
+config NATIVE_TOOLCHAIN
+	bool
+	prompt "Use host's toolchain" if DEVEL && BROKEN
+	default n
+	help
+		If enabled, OpenWrt will compile using your existing toolchain instead of compiling one
 
 menuconfig TOOLCHAINOPTS
 	bool "Toolchain Options" if DEVEL
+	depends !NATIVE_TOOLCHAIN
 
 source "toolchain/binutils/Config.in"
 source "toolchain/gcc/Config.in"

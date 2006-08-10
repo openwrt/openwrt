@@ -7,7 +7,12 @@
 # Main makefile for the toolchain
 #
 include $(TOPDIR)/rules.mk
-TARGETS-y:=sed kernel-headers sstrip binutils gcc uClibc ipkg-utils libnotimpl ext2fs squashfs jffs2 lzma
+TARGETS-y:=sed kernel-headers sstrip
+ifeq ($(CONFIG_NATIVE_TOOLCHAIN),)
+  TARGETS-y+=binutils gcc uClibc
+endif
+TARGETS-y+=ipkg-utils libnotimpl ext2fs squashfs jffs2 lzma
+
 TARGETS-$(CONFIG_GDB) += gdb
 
 TARGETS_DOWNLOAD:=$(patsubst %,%-download,$(TARGETS-y))
@@ -21,9 +26,11 @@ clean: $(TARGETS_CLEAN)
 
 kernel-headers-prepare: sed-install
 uClibc-prepare: kernel-headers-prepare sstrip-install
-binutils-prepare: uClibc-prepare
-gcc-prepare: binutils-install
-uClibc-compile: gcc-compile
+ifeq ($(CONFIG_NATIVE_TOOLCHAIN),)
+  binutils-prepare: uClibc-prepare
+  gcc-prepare: binutils-install
+  uClibc-compile: gcc-compile
+endif
 gcc-install: uClibc-install
 squashfs-compile: lzma-install
 
