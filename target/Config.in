@@ -55,6 +55,7 @@ config LINUX_2_6_BRCM
 
 config LINUX_2_6_BRCM63XX
 	bool "Broadcom BCM63xx [2.6]"
+	depends BROKEN
 	select mips
 	select LINUX_2_6
 	select PCI_SUPPORT
