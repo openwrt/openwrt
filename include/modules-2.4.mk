@@ -130,10 +130,6 @@ $(eval $(call KMOD_template,NET_HERMES_PCI,net-hermes-plx,\
 	$(MODULES_DIR)/kernel/drivers/net/wireless/orinoco_plx.o \
 ,CONFIG_PLX_HERMES,kmod-net-hermes,11,orinoco_plx))
 
-$(eval $(call KMOD_template,NET_NATSEMI,net-natsemi,\
-	$(MODULES_DIR)/kernel/drivers/net/natsemi.o \
-,CONFIG_NATSEMI,,10,natsemi))
-
 $(eval $(call KMOD_template,NET_PRISM54,net-prism54,\
 	$(MODULES_DIR)/kernel/drivers/net/wireless/prism54/prism54.o \
 ,CONFIG_PRISM54,,10,prism54))

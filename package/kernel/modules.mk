@@ -334,3 +334,78 @@ endef
 $(eval $(call KernelPackage,mppe))
 
 
+
+NDMENU:=Network Devices
+
+
+define KernelPackage/natsemi
+TITLE:=National Semiconductor DP8381x series 
+DESCRIPTION:=National Semiconductor DP8381x series PCI Ethernet kernel support
+SUBMENU:=$(NDMENU)
+FILES:=$(MODULES_DIR)/kernel/drivers/net/natsemi.$(LINUX_KMOD_SUFFIX)
+KCONFIG:=$(CONFIG_NATSEMI)
+DEPENDS:=@LINUX_2_6_X86||LINUX_2_4_X86
+endef
+$(eval $(call KernelPackage,natsemi))
+
+define KernelPackage/sis900
+TITLE:=SiS 900 Ethernet support
+DESCRIPTION:=Sis 900 kernel ethernet support
+SUBMENU:=$(NDMENU)
+FILES:=$(MODULES_DIR)/kernel/drivers/net/sis900.$(LINUX_KMOD_SUFFIX)
+KCONFIG:=$(CONFIG_SIS900)
+DEPENDS:=@LINUX_2_6_X86||LINUX_2_4_X86
+endef
+$(eval $(call KernelPackage,sis900))
+
+
+define KernelPackage/via-rhine
+TITLE:=Via Rhine ethernet support
+DESCRIPTION:=Kernel modules for Via Rhine ethernet chipsets
+SUBMENU:=$(NDMENU)
+FILES:=$(MODULES_DIR)/kernel/drivers/net/via-rhine.$(LINUX_KMOD_SUFFIX)
+KCONFIG:=$(CONFIG_VIA_RHINE)
+DEPENDS:=@LINUX_2_6_X86||LINUX_2_4_X86
+endef
+$(eval $(call KernelPackage,via-rhine))
+
+define KernelPackage/8139too
+TITLE:=RealTek RTL-8139 PCI Fast Ethernet Adapter kernel support
+DESCRIPTION:=Kernel modules for RealTek RTL-8139 PCI Fast Ethernet Adapter kernel support
+SUBMENU:=$(NDMENU)
+FILES:=$(MODULES_DIR)/kernel/drivers/net/8139too.$(LINUX_KMOD_SUFFIX)
+KCONFIG:=$(CONFIG_8139TOO)
+DEPENDS:=@LINUX_2_6_X86||LINUX_2_4_X86
+endef
+$(eval $(call KernelPackage,8139too))
+
+define KernelPackage/e100
+TITLE:=Intel(R) PRO/100+ cards kernel support
+DESCRIPTION:=Kernel modules for Intel(R) PRO/100+ cards kernel support
+SUBMENU:=$(NDMENU)
+FILES:=$(MODULES_DIR)/kernel/drivers/net/e100.$(LINUX_KMOD_SUFFIX)
+KCONFIG:=$(CONFIG_E100)
+DEPENDS:=@LINUX_2_6_X86||LINUX_2_4_X86
+endef
+$(eval $(call KernelPackage,e100))
+
+define KernelPackage/3c59x
+TITLE:=3Com 3c590/3c900 series (592/595/597) Vortex/Boomerang
+DESCRIPTION:= \
+	  This option enables driver support for a large number of 10mbps and \
+	  10/100mbps EISA, PCI and PCMCIA 3Com network cards: \
+	  \
+	   * "Vortex"    (Fast EtherLink 3c590/3c592/3c595/3c597) EISA and PCI \
+	   * "Boomerang" (EtherLink XL 3c900 or 3c905)            PCI	\
+	   * "Cyclone"   (3c540/3c900/3c905/3c980/3c575/3c656)    PCI and Cardbus \
+	   * "Tornado"   (3c905)                                  PCI \
+	   * "Hurricane" (3c555/3cSOHO)                           PCI 
+SUBMENU:=$(NDMENU)
+FILES:=$(MODULES_DIR)/kernel/drivers/net/3c59x.$(LINUX_KMOD_SUFFIX)
+KCONFIG:=$(CONFIG_3C59X)
+DEPENDS:=@LINUX_2_6_X86||LINUX_2_4_X86
+endef
+$(eval $(call KernelPackage,3c59x))
+
+
+
