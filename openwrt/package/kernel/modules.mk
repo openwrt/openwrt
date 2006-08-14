@@ -316,12 +316,20 @@ FILES:=$(MODULES_DIR)/kernel/net/atm/pppoatm.$(LINUX_KMOD_SUFFIX)
 endef
 $(eval $(call KernelPackage,pppoa))
 
+
 define KernelPackage/mppe
 TITLE:=Microsoft PPP compression/encryption
 DESCRIPTION:=Kernel modules for Microsoft PPP compression/encryption
-DEPENDS:=@LINUX_2_4 kmod-ppp
-KCONFIG:=$(CONFIG_PPPOE)
+DEPENDS:=kmod-ppp
+KCONFIG:=$(CONFIG_PPP_MPPE)
+endef
+
+define KernelPackage/mppe/2.4
 FILES:=$(MODULES_DIR)/kernel/drivers/net/ppp_mppe_mppc.$(LINUX_KMOD_SUFFIX)
+endef
+
+define KernelPackage/mppe/2.6
+FILES:=$(MODULES_DIR)/kernel/drivers/net/ppp_mppe.$(LINUX_KMOD_SUFFIX)
 endef
 $(eval $(call KernelPackage,mppe))
 
