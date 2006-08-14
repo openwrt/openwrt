@@ -239,29 +239,6 @@ endmenu
 menu "Network devices support"
 	depends LINUX_2_4_X86 || LINUX_2_6_X86
 
-config PACKAGE_KMOD_NET_3C59X
-	prompt "kmod-net-3c59x.................... 3Com 3c590/3c900 series (592/595/597) \"Vortex/Boomerang\" Ethernet kernel support"
-	tristate
-	depends LINUX_2_4_X86 || LINUX_2_6_X86
-	default m
-	help
-	  This option enables driver support for a large number of 10mbps and 
-	  10/100mbps EISA, PCI and PCMCIA 3Com network cards:
-	  
-	   * "Vortex"    (Fast EtherLink 3c590/3c592/3c595/3c597) EISA and PCI
-	   * "Boomerang" (EtherLink XL 3c900 or 3c905)            PCI
-	   * "Cyclone"   (3c540/3c900/3c905/3c980/3c575/3c656)    PCI and Cardbus
-	   * "Tornado"   (3c905)                                  PCI
-	   * "Hurricane" (3c555/3cSOHO)                           PCI
-
-config PACKAGE_KMOD_NET_8139TOO
-	prompt "kmod-net-8139too.................. RealTek RTL-8139 PCI Fast Ethernet Adapter kernel support"
-	tristate
-	depends LINUX_2_4_X86 || LINUX_2_6_X86
-	default m
-	help
-	  This is a driver for the Fast Ethernet PCI network cards based on 
-	  the RTL8139 chips.
 
 config PACKAGE_KMOD_NET_AIRO
 	prompt "kmod-net-airo..................... Cisco/Aironet 34X/35X/4500/4800 ISA and PCI cards kernel support"
@@ -279,13 +256,6 @@ config PACKAGE_KMOD_NET_AIRO
 	  and Cisco proprietary API, so both the Linux Wireless Tools and the 
 	  Cisco Linux utilities can be used to configure the card.
 
-config PACKAGE_KMOD_NET_E100
-	prompt "kmod-net-e100..................... Intel(R) PRO/100+ cards kernel support"
-	tristate
-	depends LINUX_2_4_X86 || LINUX_2_6_X86
-	default m
-	help
-	  Intel(R) PRO/100+ cards kernel support
 
 config PACKAGE_KMOD_NET_HERMES
 	prompt "kmod-net-hermes................... Hermes chipset 802.11b support (Orinoco/Prism2/Symbol) kernel support"
@@ -328,15 +298,7 @@ config PACKAGE_KMOD_NET_HERMES_PLX
 	  802.11b PCMCIA cards can be used in desktop machines.  The Netgear 
 	  MA301 is such an adaptor.
 
-config PACKAGE_KMOD_NET_NATSEMI
-	prompt "kmod-net-natsemi.................. National Semiconductor DP8381x series PCI Ethernet kernel support"
-	tristate
-	depends LINUX_2_4_X86 || LINUX_2_6_X86
-	default m
-	help
-	  This driver is for the National Semiconductor DP83810 series, 
-	  which is used in cards from PureData, NetGear, Linksys 
-	  and others, including the 83815 chip.
+
 
 config PACKAGE_KMOD_NET_PRISM54
 	prompt "kmod-net-prism54.................. Intersil Prism GT/Duette/Indigo PCI/PCMCIA cards kernel support"
@@ -384,7 +346,7 @@ menu "PCMCIA/CardBus support"
 
 config PACKAGE_KMOD_PCMCIA_CORE
 	prompt "kmod-pcmcia-core.................. PCMCIA/CardBus support"
-	depends LINUX_PCMCIA_SUPPORT
+	depends PCMCIA_SUPPORT
 	tristate
 	depends LINUX_2_4_X86 || LINUX_2_6_X86 || LINUX_2_4_BRCM || LINUX_2_6_BRCM
 	default m

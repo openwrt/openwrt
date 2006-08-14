@@ -134,10 +134,6 @@ $(eval $(call KMOD_template,NET_3C59X,net-3c59x,\
 	$(MODULES_DIR)/kernel/drivers/net/3c59x.ko \
 ,CONFIG_VORTEX,,10,3c59x))
 
-$(eval $(call KMOD_template,NET_8139TOO,net-8139too,\
-	$(MODULES_DIR)/kernel/drivers/net/8139too.ko \
-,CONFIG_8139TOO,,10,8139too))
-
 $(eval $(call KMOD_template,NET_AIRO,net-airo,\
 	$(MODULES_DIR)/kernel/drivers/net/wireless/airo.ko \
 ,CONFIG_AIRO,,10,airo))
@@ -158,10 +154,6 @@ $(eval $(call KMOD_template,NET_HERMES_PCI,net-hermes-pci,\
 $(eval $(call KMOD_template,NET_HERMES_PCI,net-hermes-plx,\
 	$(MODULES_DIR)/kernel/drivers/net/wireless/orinoco_plx.ko \
 ,CONFIG_PLX_HERMES,kmod-net-hermes,11,orinoco_plx))
-
-$(eval $(call KMOD_template,NET_NATSEMI,net-natsemi,\
-	$(MODULES_DIR)/kernel/drivers/net/natsemi.ko \
-,CONFIG_NATSEMI,,10,natsemi))
 
 $(eval $(call KMOD_template,NET_PRISM54,net-prism54,\
 	$(MODULES_DIR)/kernel/drivers/net/wireless/prism54/prism54.ko \
