@@ -37,6 +37,8 @@ define Build/Compile
 		ARCH="$(LINUX_KARCH)" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
 		KERNELVERSION="$(KERNEL)" \
+		KERNEL_VERSION="$(LINUX_VERSION)" \
+		KERNELDIR="$(LINUX_DIR)" \
 		SUBDIRS="$(PKG_BUILD_DIR)" \
 		modules
 endef
