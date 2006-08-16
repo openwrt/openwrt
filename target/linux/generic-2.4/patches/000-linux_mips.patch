@@ -27932,15 +27932,6 @@ diff -Nur linux-2.4.32-rc1/lib/Makefile linux-2.4.32-rc1.mips/lib/Makefile
 diff -Nur linux-2.4.32-rc1/Makefile linux-2.4.32-rc1.mips/Makefile
 --- linux-2.4.32-rc1/Makefile	2005-10-24 11:33:30.000000000 +0200
 +++ linux-2.4.32-rc1.mips/Makefile	2005-09-23 22:41:15.000000000 +0200
-@@ -5,7 +5,7 @@
- 
- KERNELRELEASE=$(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
- 
--ARCH := $(shell uname -m | sed -e s/i.86/i386/ -e s/sun4u/sparc64/ -e s/arm.*/arm/ -e s/sa110/arm/)
-+ARCH = mips
- KERNELPATH=kernel-$(shell echo $(KERNELRELEASE) | sed -e "s/-//g")
- 
- CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 @@ -462,10 +462,11 @@
  	$(MAKE) -C Documentation/DocBook mrproper
  
