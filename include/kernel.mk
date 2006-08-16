@@ -9,43 +9,53 @@ ifeq ($(DUMP),1)
   BOARD:=<BOARD>
   LINUX_VERSION:=<LINUX_VERSION>
 else
--include $(TOPDIR)/.kernel.mk
 
-ifneq (,$(findstring 2.4.,$(LINUX_VERSION)))
-KERNEL:=2.4
-LINUX_KMOD_SUFFIX=o
-endif
-ifneq (,$(findstring 2.6.,$(LINUX_VERSION)))
-KERNEL:=2.6
-LINUX_KMOD_SUFFIX=ko
-endif
+  include $(TOPDIR)/.kernel.mk
+  include $(INCLUDE_DIR)/target.mk
 
-LINUX_KARCH:=$(shell echo $(ARCH) | sed -e 's/i[3-9]86/i386/' \
+  # check to see if .kernel.mk matches target.mk
+  ifeq ($(CONFIG_BOARD)-$(CONFIG_KERNEL),$(BOARD)-$(KERNEL))
+     LINUX_VERSION:=$(CONFIG_LINUX_VERSION)
+     RELEASE:=$(CONFIG_RELEASE)
+  else
+  # oops, old .kernel.config; rebuild it (hiding the misleading errors this produces)
+    $(warning rebuilding .kernel.mk)
+    $(TOPDIR)/.kernel.mk: FORCE
+	@$(MAKE) -C $(TOPDIR)/target/linux/$(BOARD)-$(KERNEL) $@ &>/dev/null
+  endif
+
+  ifeq ($(KERNEL),2.6)
+    LINUX_KMOD_SUFFIX=ko
+  else
+    LINUX_KMOD_SUFFIX=o
+  endif
+
+  LINUX_KARCH:=$(shell echo $(ARCH) | sed -e 's/i[3-9]86/i386/' \
 	-e 's/mipsel/mips/' \
 	-e 's/mipseb/mips/' \
 	-e 's/powerpc/ppc/' \
 	-e 's/sh[234]/sh/' \
 	-e 's/armeb/arm/' \
-)
+  )
 
-ifneq (,$(findstring uml,$(BOARD)))
-  LINUX_KARCH:=um
-  KERNEL_CC:=$(HOSTCC)
-  KERNEL_CROSS:=
-else
-  KERNEL_CC:=$(TARGET_CC)
-  KERNEL_CROSS:=$(TARGET_CROSS)
-endif
+  ifneq (,$(findstring uml,$(BOARD)))
+    LINUX_KARCH:=um
+    KERNEL_CC:=$(HOSTCC)
+    KERNEL_CROSS:=
+  else
+    KERNEL_CC:=$(TARGET_CC)
+    KERNEL_CROSS:=$(TARGET_CROSS)
+  endif
 
-KERNEL_BUILD_DIR:=$(BUILD_DIR)/linux-$(KERNEL)-$(BOARD)
-LINUX_DIR := $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION)
+  KERNEL_BUILD_DIR:=$(BUILD_DIR)/linux-$(KERNEL)-$(BOARD)
+  LINUX_DIR := $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION)
 
-MODULES_SUBDIR:=lib/modules/$(LINUX_VERSION)
-MODULES_DIR := $(KERNEL_BUILD_DIR)/modules/$(MODULES_SUBDIR)
-TARGET_MODULES_DIR := $(LINUX_TARGET_DIR)/$(MODULES_SUBDIR)
-KMOD_BUILD_DIR := $(KERNEL_BUILD_DIR)/linux-modules
+  MODULES_SUBDIR:=lib/modules/$(LINUX_VERSION)
+  MODULES_DIR := $(KERNEL_BUILD_DIR)/modules/$(MODULES_SUBDIR)
+  TARGET_MODULES_DIR := $(LINUX_TARGET_DIR)/$(MODULES_SUBDIR)
+  KMOD_BUILD_DIR := $(KERNEL_BUILD_DIR)/linux-modules
 
-LINUX_KERNEL:=$(KERNEL_BUILD_DIR)/vmlinux
+  LINUX_KERNEL:=$(KERNEL_BUILD_DIR)/vmlinux
 endif
 
 # FIXME: remove this crap

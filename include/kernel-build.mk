@@ -94,10 +94,11 @@ $(KERNEL_IPKG):
 	fi
 	$(IPKG_BUILD) $(KERNEL_IDIR) $(KERNEL_BUILD_DIR)
 
-$(TOPDIR)/.kernel.mk:
-	echo "BOARD:=$(BOARD)" > $@
-	echo "LINUX_VERSION:=$(LINUX_VERSION)" >> $@
-	echo "LINUX_RELEASE:=$(LINUX_RELEASE)" >> $@
+$(TOPDIR)/.kernel.mk: $(TOPDIR)/target/linux/$(BOARD)-$(KERNEL)/Makefile
+	echo "CONFIG_BOARD:=$(BOARD)" > $@
+	echo "CONFIG_KERNEL:=$(KERNEL)" >> $@
+	echo "CONFIG_LINUX_VERSION:=$(LINUX_VERSION)" >> $@
+	echo "CONFIG_LINUX_RELEASE:=$(LINUX_RELEASE)" >> $@
 
 pkg-install: FORCE
 	@for pkg in $(INSTALL_TARGETS); do \
