@@ -1,0 +1,14 @@
+diff -Nur  spca5xx-20060501/drivers/usb/spca5xx.c.orig spca5xx-20060501/drivers/usb/spca5xx.c
+--- spca5xx-20060501/drivers/usb/spca5xx.c.orig	2006-08-16 11:56:33.000000000 -0700
++++ spca5xx-20060501/drivers/usb/spca5xx.c	2006-08-16 11:55:41.000000000 -0700
+@@ -1092,8 +1092,8 @@
+ //		   spca50x->avg_lum, spca50x->avg_lum);
+     for (i = 0; i < SPCA50X_NUMFRAMES; i++) {
+ 	out += sprintf(out, "frame           : %d\n", i);
+-	out +=
+-	    sprintf(out, "  sequence      : %d\n", spca50x->frame[i].seq);
++//	out +=
++//	    sprintf(out, "  sequence      : %d\n", spca50x->frame[i].seq);
+ 	out +=
+ 	    sprintf(out, "  grabstate     : %d\n",
+ 		    spca50x->frame[i].grabstate);
