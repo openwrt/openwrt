@@ -45,14 +45,16 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
     endef
   endif
   
-  ifeq ($(CONFIG_TARGET_ROOTFS_EXT2FS),y)
-    define Image/mkfs/ext2
-		$(STAGING_DIR)/bin/genext2fs -q -b 8192 -I 1500 -d $(BUILD_DIR)/root/ $(KDIR)/root.ext2
-		$(call Image/Build,ext2)
-    endef
-  endif
   
 endif
+
+ifeq ($(CONFIG_TARGET_ROOTFS_EXT2FS),y)
+  define Image/mkfs/ext2
+		$(STAGING_DIR)/bin/genext2fs -q -b 8192 -I 1500 -d $(BUILD_DIR)/root/ $(KDIR)/root.ext2
+		$(call Image/Build,ext2)
+  endef
+endif
+
 
 define Image/mkfs/prepare/default
 	find $(BUILD_DIR)/root -type f -not -perm +0100 | xargs chmod 0644

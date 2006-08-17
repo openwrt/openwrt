@@ -38,6 +38,11 @@ else
 	-e 's/armeb/arm/' \
   )
 
+  KERNELNAME=""
+  ifneq (,$(findstring x86,$(BOARD)))
+    KERNELNAME="bzImage"
+  endif
+
   ifneq (,$(findstring uml,$(BOARD)))
     LINUX_KARCH:=um
     KERNEL_CC:=$(HOSTCC)
