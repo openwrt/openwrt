@@ -16,12 +16,12 @@ define Build/DefaultTargets
   ifeq ($(DUMP),)
     ifeq ($(CONFIG_AUTOREBUILD),y)
       ifneq ($$(shell $(SCRIPT_DIR)/timestamp.pl -p $(PKG_BUILD_DIR) .),$(PKG_BUILD_DIR))
-	$$(warning package has changed, need to rebuild $(subst $(TOPDIR)/,,$(PKG_BUILD_DIR)))
+        $$(warning package has changed, need to rebuild $(subst $(TOPDIR)/,,$(PKG_BUILD_DIR)))
         $(PKG_BUILD_DIR)/.prepared: package-clean
       endif
 
       ifneq ($$(shell $(SCRIPT_DIR)/timestamp.pl -p -x ipkg -x ipkg-install $(IPKG_$(1)) $(PKG_BUILD_DIR)),$(IPKG_$(1)))
-	$$(warning $(subst $(TOPDIR)/,,$(PKG_BUILD_DIR)) has changed, need to rebuild $(subst $(TOPDIR)/,,$(IPKG_$(1))))
+        $$(warning $(subst $(TOPDIR)/,,$(PKG_BUILD_DIR)) has changed, need to rebuild $(subst $(TOPDIR)/,,$(IPKG_$(1))))
         $(PKG_BUILD_DIR)/.built: package-rebuild
       endif
     endif
