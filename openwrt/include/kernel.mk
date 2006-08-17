@@ -38,7 +38,7 @@ else
 	-e 's/armeb/arm/' \
   )
 
-  KERNELNAME=""
+  KERNELNAME=
   ifneq (,$(findstring x86,$(BOARD)))
     KERNELNAME="bzImage"
   endif
