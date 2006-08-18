@@ -29,6 +29,7 @@
  * 2005/04/13 added licensing informations
  * 2005/04/18 base reset polarity off initial readings
  * 2006/02/07 motorola wa840g/we800g support added
+ * 2006/08/18 asus power led support added
  */
 
 #include <linux/module.h>
@@ -59,6 +60,13 @@ static void v2_set_diag(u8 state) {
 }
 static void v2_set_dmz(u8 state) {
 	set_gpio(DMZ_GPIO,state);
+}
+
+// asus wl-500g (+deluxe)
+#define ASUS_PWR_GPIO (1<<0)
+
+static void asus_set_pwr(u8 state) {
+	set_gpio(ASUS_PWR_GPIO,state);
 }
 
 // v1.x - - - - -
@@ -92,22 +100,27 @@ static void ignore(u8 ignored) {};
 
 // - - - - -
 #define BIT_DMZ         0x01
+#define BIT_PWR		0x02
 #define BIT_DIAG        0x04
 
 void (*set_diag)(u8 state);
 void (*set_dmz)(u8 state);
+void (*set_pwr)(u8 state);
 
-static unsigned int diag = 0;
+static unsigned int diag = 0x02; // default: diag off, pwr on, dmz off
 
 static void diag_change(void)
 {
 	set_diag(0xFF); // off
 	set_dmz(0xFF); // off
+	set_pwr(0xFF); // off
 
 	if(diag & BIT_DIAG)
 		set_diag(0x00); // on
 	if(diag & BIT_DMZ)
 		set_dmz(0x00); // on
+	if (diag & BIT_PWR)
+		set_pwr(0x00);	//on
 }
 
 static int proc_diag(ctl_table *table, int write, struct file *filp,
@@ -178,6 +191,7 @@ static int __init diag_init(void)
 
 	set_diag=ignore;
 	set_dmz=ignore;
+	set_pwr=ignore;
 	
 	buf=nvram_get("pmon_ver") ?: "";
 	if (((board_type & 0xf00) == 0x400) && (strncmp(buf, "CFE", 3) != 0)) {
@@ -202,6 +216,7 @@ static int __init diag_init(void)
 			}
 			if (!strcmp(buf,"asusX")) {
 				//asus wl-500g
+				set_pwr=asus_set_pwr;
 				reset_gpio=(1<<6);
 			}
 			if (!strcmp(buf,"2")) {
@@ -240,6 +255,7 @@ static int __init diag_init(void)
 		}
 		if (!strcmp(buf,"45")) {
 			//wl-500g deluxe
+			set_pwr=asus_set_pwr;
 			reset_gpio=(1<<6);
 		}
 	}
