@@ -87,11 +87,10 @@ define Package/Template
   define Build/Compile/$(2)
 	$(call Build/CompileTarget,$(2))
   endef
- endif
-
- define Package/$(1)/install
+  define Package/$(1)/install
 	$(call Package/InstallTemplate,$(1),$(2))
- endef
+  endef
+ endif
 endef
 
 define Build/Configure

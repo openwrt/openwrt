@@ -87,7 +87,6 @@ define Build/Compile
 	# Compile wlc
 	$(MAKE) -C $(PKG_BUILD_DIR)/wlc \
 		$(TARGET_CONFIGURE_OPTS) \
-		CC="$(TARGET_CC)" \
 		CFLAGS="-I$(PKG_BUILD_DIR)/wlc/include $(TARGET_CFLAGS)" \
 		all
 endef

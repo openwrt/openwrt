@@ -38,7 +38,7 @@ DESCRIPTION:=ATM RFC2684 bridging utility
 endef
 
 define Build/Configure
-	$(call Build/Configure/Default,)
+	$(call Build/Configure/Default)
 	# prevent autoheader invocation
 	touch $(PKG_BUILD_DIR)/stamp-h.in
 endef

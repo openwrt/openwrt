@@ -50,11 +50,7 @@ define Build/Configure
 endef
 
 define Build/Compile
-	rm -rf $(PKG_INSTALL_DIR)
-	mkdir -p $(PKG_INSTALL_DIR)
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		CFLAGS="$(TARGET_CFLAGS)" \
-		all install
+  $(call Build/Compile/Default,CFLAGS="$(TARGET_CFLAGS)" all install)
 endef
 
 define Package/pcmcia-cs/install
