@@ -62,11 +62,11 @@ done
 COUNTER=0
 while [ $COUNTER -lt 10 ]; do
   sleep 1
-  [ -e /mnt/postinit ] && let COUNTER=10;
+  [ -e /mnt/etc/banner ] && let COUNTER=10;
   let COUNTER=COUNTER+1
 done
-[ -e /mnt/postinit ] || {
-  export FAILSAFE="No postinit"
+[ -e /mnt/etc/banner ] || {
+  export FAILSAFE="No Openwrt FS"
   exec /bin/busybox init
 }
 
@@ -76,5 +76,5 @@ mount -o move /proc /mnt/proc
 mount -o move /dev /mnt/dev
 mount -o move /tmp /mnt/tmp
 mount -o move /sys /mnt/sys
-
-exec switch_root -c /dev/console /mnt /postinit
+mount none /tmp -t tmpfs
+exec switch_root -c /dev/console /mnt /sbin/init
