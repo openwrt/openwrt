@@ -3399,7 +3399,7 @@ diff -ruN busybox-1.2.0-orig/archival/libipkg/ipkg_configure.h busybox-1.2.0+ipk
 diff -ruN busybox-1.2.0-orig/archival/libipkg/ipkg_download.c busybox-1.2.0+ipkg-0.99.162/archival/libipkg/ipkg_download.c
 --- busybox-1.2.0-orig/archival/libipkg/ipkg_download.c	1970-01-01 01:00:00.000000000 +0100
 +++ busybox-1.2.0+ipkg-0.99.162/archival/libipkg/ipkg_download.c	2006-07-22 16:31:25.000000000 +0200
-@@ -0,0 +1,195 @@
+@@ -0,0 +1,190 @@
 +/* ipkg_download.c - the itsy package management system
 +
 +   Carl D. Worth
@@ -3471,12 +3471,7 @@ diff -ruN busybox-1.2.0-orig/archival/libipkg/ipkg_download.c busybox-1.2.0+ipkg
 +    }
 +
 +    /* XXX: BUG rewrite to use execvp or else busybox's internal wget -Jamey 7/23/2002 */ 
-+    sprintf_alloc(&cmd, "wget --passive-ftp %s %s%s %s%s %s -P %s %s",
-+		  (conf->http_proxy || conf->ftp_proxy) ? "--proxy=on" : "",
-+		  conf->proxy_user ? "--proxy-user=" : "",
-+		  conf->proxy_user ? conf->proxy_user : "",
-+		  conf->proxy_passwd ? "--proxy-passwd=" : "",
-+		  conf->proxy_passwd ? conf->proxy_passwd : "",
++    sprintf_alloc(&cmd, "wget %s -P %s %s",
 +		  conf->verbose_wget ? "" : "-q",
 +		  conf->tmp_dir,
 +		  src);
