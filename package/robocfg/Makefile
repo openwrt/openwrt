@@ -27,12 +27,6 @@ define Build/Prepare
 	$(CP) ./src/* $(PKG_BUILD_DIR)/
 endef
 
-define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		CC="$(TARGET_CC)" CFLAGS="$(TARGET_CFLAGS)" \
-		all
-endef
-
 define Package/robocfg/install
 	install -d -m0755 $(1)/sbin
 	install -m0755 $(PKG_BUILD_DIR)/robocfg $(1)/sbin/

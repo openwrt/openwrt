@@ -42,7 +42,6 @@ define Build/Compile
 		CC="$(TARGET_CC)" \
 		CPP="$(TARGET_CC)" \
 		LD="$(TARGET_CROSS)ld" \
-		STAGING_DIR=$(STAGING_DIR) \
 		KERNELVERSION="$(KERNEL)" \
 		KERNEL_SOURCE="$(LINUX_DIR)" \
 		KDIR="$(LINUX_DIR)" \
