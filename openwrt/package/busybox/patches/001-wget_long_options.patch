@@ -1,0 +1,22 @@
+Index: busybox-CURRENT/networking/wget.c
+===================================================================
+--- busybox-CURRENT/networking/wget.c	(revision 15806)
++++ busybox-CURRENT/networking/wget.c	(working copy)
+@@ -133,7 +133,7 @@
+ #define WGET_OPT_PREFIX	32
+ #define WGET_OPT_PROXY	64
+ 
+-#if ENABLE_WGET_LONG_OPTIONS
++#if CONFIG_FEATURE_WGET_LONG_OPTIONS
+ static const struct option wget_long_options[] = {
+ 	{ "continue",        0, NULL, 'c' },
+ 	{ "quiet",           0, NULL, 'q' },
+@@ -177,7 +177,7 @@
+ 	 * Crack command line.
+ 	 */
+ 	bb_opt_complementally = "-1:\203::";
+-#if ENABLE_WGET_LONG_OPTIONS
++#if CONFIG_FEATURE_WGET_LONG_OPTIONS
+ 	bb_applet_long_options = wget_long_options;
+ #endif
+ 	opt = bb_getopt_ulflags(argc, argv, "cq\213O:\203:P:Y:",
