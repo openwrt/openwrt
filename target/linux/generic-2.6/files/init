@@ -4,6 +4,7 @@
 export PATH=/bin:/sbin:/usr/bin:/usr/sbin
 mount none /proc -t proc
 mount none /dev -t devfs
+mount non /dev/pts -t devpts
 
 # the root mount point can come from the kernel command line
 # or it can be overridden in the preinit.arch file
@@ -74,6 +75,7 @@ unset rootfs
 
 mount -o move /proc /mnt/proc
 mount -o move /dev /mnt/dev
+mount -o move /dev/pts /mnt/dev/pts
 mount -o move /tmp /mnt/tmp
 mount -o move /sys /mnt/sys
 mount none /tmp -t tmpfs
