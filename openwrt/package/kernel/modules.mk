@@ -281,6 +281,13 @@ KCONFIG:=$(CONFIG_BRIDGE_NF_EBTABLES)
 endef
 $(eval $(call KernelPackage,ebtables))
 
+define KernelPackage/ipv6
+TITLE:=IPv6 support
+DESCRIPTION:=Kernel modules for IPv6 support
+KCONFIG:=$(CONFIG_IPV6)
+FILES:=$(MODULES_DIR)/kernel/net/ipv6/ipv6.$(LINUX_KMOD_SUFFIX)
+endef
+$(eval $(call KernelPackage,ipv6))
 
 define KernelPackage/ppp
 TITLE:=PPP modules
