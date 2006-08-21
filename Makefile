@@ -96,10 +96,11 @@ toolchain/%: FORCE
 	@touch $@
 
 .prereq-packages: include/prereq.mk .pkginfo .config
-	@$(NO_TRACE_MAKE) -s -C package prereq 2>/dev/null || { \
+	@$(NO_TRACE_MAKE) -s -C package TMPDIR="$(TOPDIR)/tmp" prereq 2>/dev/null || { \
 		echo "Prerequisite check failed. Use FORCE=1 to override."; \
 		false; \
 	}
+	rm -rf "$(TOPDIR)/tmp"
 	@touch $@
 	
 prereq: .prereq-build .prereq-packages FORCE
