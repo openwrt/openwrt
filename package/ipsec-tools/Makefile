@@ -72,6 +72,8 @@ define Build/Configure
 			--with-openssl="$(STAGING_DIR)/usr" \
 			--without-libradius \
 			--without-libpam \
+			--enable-dpd \
+			--enable-natt \
 	);
 endef
 
