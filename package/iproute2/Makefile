@@ -23,7 +23,6 @@ include $(INCLUDE_DIR)/package.mk
 define Package/ip
 SECTION:=base
 CATEGORY:=Network
-DEPENDS:=iproute2
 TITLE:=A routing control utility
 endef
 
