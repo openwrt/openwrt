@@ -334,7 +334,7 @@ diff -urN linux.old/drivers/mtd/devices/sflash.c linux.dev/drivers/mtd/devices/s
 diff -urN linux.old/drivers/mtd/maps/bcm947xx-flash.c linux.dev/drivers/mtd/maps/bcm947xx-flash.c
 --- linux.old/drivers/mtd/maps/bcm947xx-flash.c	1970-01-01 01:00:00.000000000 +0100
 +++ linux.dev/drivers/mtd/maps/bcm947xx-flash.c	2006-06-23 18:08:46.000000000 +0200
-@@ -0,0 +1,547 @@
+@@ -0,0 +1,548 @@
 +/*
 + *  Copyright (C) 2006 Felix Fietkau <nbd@openwrt.org>
 + *  Copyright (C) 2005 Waldemar Brodkorb <wbx@openwrt.org>
@@ -720,7 +720,8 @@ diff -urN linux.old/drivers/mtd/maps/bcm947xx-flash.c linux.dev/drivers/mtd/maps
 +{
 +	int cfe_size;
 +
-+	cfe_size = find_cfe_size(mtd,size);
++	if ((cfe_size = find_cfe_size(mtd,size)) < 0)
++		return NULL;
 +
 +	/* boot loader */
 +	bcm947xx_parts[0].offset = 0;
