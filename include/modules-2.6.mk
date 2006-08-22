@@ -23,10 +23,6 @@ $(eval $(call KMOD_template,SCHED,sched,\
 	$(MODULES_DIR)/kernel/net/sched/*.ko \
 ,CONFIG_NET_SCHED))
 
-$(eval $(call KMOD_template,TUN,tun,\
-	$(MODULES_DIR)/kernel/drivers/net/tun.ko \
-,CONFIG_TUN,,20,tun))
-
 # Block devices
 
 $(eval $(call KMOD_template,LOOP,loop,\

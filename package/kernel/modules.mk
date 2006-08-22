@@ -297,6 +297,14 @@ FILES=$(MODULES_DIR)/kernel/net/ipv4/ip_gre.$(LINUX_KMOD_SUFFIX)
 endef
 $(eval $(call KernelPackage,gre))
 
+define KernelPackage/tun
+TITLE:=Universal TUN/TAP driver
+DESCRIPTION:=Kernel support for the TUN/TAP tunneling device
+KCONFIG:=$(CONFIG_TUN)
+FILES:=$(MODULES_DIR)/kernel/drivers/net/tun.$(LINUX_KMOD_SUFFIX)
+endef
+$(eval $(call KernelPackage,tun))
+
 define KernelPackage/ppp
 TITLE:=PPP modules
 DESCRIPTION:=Kernel modules for PPP support
