@@ -15,10 +15,6 @@ $(eval $(call KMOD_template,ATM,atm,\
 	$(MODULES_DIR)/kernel/drivers/atm/atmtcp.ko \
 ,CONFIG_ATM,,50,atm))
 
-$(eval $(call KMOD_template,GRE,gre,\
-	$(MODULES_DIR)/kernel/net/ipv4/ip_gre.ko \
-,CONFIG_NET_IPGRE))
-
 $(eval $(call KMOD_template,IPIP,ipip,\
 	$(MODULES_DIR)/kernel/net/ipv4/ipip.ko \
 ,CONFIG_NET_IPIP,,60,ipip))

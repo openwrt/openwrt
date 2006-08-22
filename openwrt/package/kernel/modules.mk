@@ -289,6 +289,14 @@ FILES:=$(MODULES_DIR)/kernel/net/ipv6/ipv6.$(LINUX_KMOD_SUFFIX)
 endef
 $(eval $(call KernelPackage,ipv6))
 
+define KernelPackage/gre
+TITLE:=GRE support
+DESCRIPTION:=Generic Routing Encapsulation support
+KCONFIG=$(CONFIG_NET_IPGRE)
+FILES=$(MODULES_DIR)/kernel/net/ipv4/ip_gre.$(LINUX_KMOD_SUFFIX)
+endef
+$(eval $(call KernelPackage,gre))
+
 define KernelPackage/ppp
 TITLE:=PPP modules
 DESCRIPTION:=Kernel modules for PPP support
