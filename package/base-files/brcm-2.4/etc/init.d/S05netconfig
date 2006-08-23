@@ -6,7 +6,7 @@
 mkdir -p /etc/config
 
 (
-	if grep 'mtd0: 00060000' /proc/mtd 2>&- >&-; then
+	if grep -E 'mtd0: 000(6|a)0000' /proc/mtd 2>&- >&-; then
 		# WGT634u
 		echo boardtype=wgt634u
 	else
@@ -19,9 +19,7 @@ function p(cfgname, name) {
 
 BEGIN {
 	FS="="
-	c["lan_ifname"]="br0"
-	c["lan_ifnames"]="eth0.0 wl0"
-	c["wan_proto"]="none"
+	c["lan_ifname"]="eth0.0 wl0"
 	c["wan_ifname"]="eth0.1"
 	c["vlan0ports"]="1 2 3 4 5*"
 	c["vlan1ports"]="0 5"
@@ -36,14 +34,14 @@ END {
 	if (nvram["boardtype"] == "bcm94710dev") {
 		# Asus WL-500g
 		if (nvram["boardnum"] == "asusX") {
-			c["lan_ifnames"]="eth0 eth1 wl0" # FIXME
+			c["lan_ifname"]="eth0 eth1 wl0" # FIXME
 			c["wan_ifname"]=""
 		}
 	}
 	if (nvram["boardtype"] == "wgt634u") {
 		c["vlan0ports"] = "0 1 2 3 5*"
 		c["vlan1ports"] = "4 5"
-		c["lan_ifnames"] = "eth0.0 ath0"
+		c["lan_ifname"] = "eth0.0 ath0"
 	}
 	if ((nvram["boardtype"] == "0x0467") || (nvram["boardtype"] == "0x042f")) {
 		c["vlan0ports"] = "0 1 2 3 5*"
@@ -53,7 +51,7 @@ END {
 	# WAP54G
 	if ((nvram["boardnum"] == "2") || \
 		(nvram["boardnum"] == "1024")) {
-		c["lan_ifnames"]="eth0 wl0"
+		c["lan_ifname"]="eth0 wl0"
 		c["wan_ifname"]=""
 	}
 
@@ -66,7 +64,7 @@ END {
 	print "#### LAN configuration"
 	print "config interface lan"
 	print "	option type 	bridge"
-	p("ifnames", "lan_ifnames")
+	p("ifnames", "lan_ifname")
 	print "	option proto	static"
 	print "	option ipaddr	192.168.1.1"
 	print "	option netmask	255.255.255.0"

@@ -8,11 +8,6 @@ find_config() {
 	for ifn in $interfaces; do
 		config_get iftype "$ifn" type
 		config_get iface "$ifn" ifname
-		case "$iftype" in
-			bridge)
-				config_get iface "$ifn" ifnames
-			;;
-		esac
 		config_get device "$ifn" device
 		for ifc in ${device:-$iface}; do
 			[ "$ifc" = "$1" ] && {
@@ -32,17 +27,9 @@ scan_interfaces() {
 		config_get iftype "$CONFIG_SECTION" TYPE
 		case "$iftype" in
 			interface)
-				config_get iftype "$CONFIG_SECTION" type
-				config_get mode "$CONFIG_SECTION" proto
-				case "$iftype" in
-					bridge)
-						config_get iface "$CONFIG_SECTION" ifname
-						iface="${iface:-br-$CONFIG_SECTION}"
-						config_set "$CONFIG_SECTION" ifname "$iface"
-					;;
-				esac
+				config_get proto "$CONFIG_SECTION" proto
 				append interfaces "$CONFIG_SECTION"
-				( type "scan_$mode" ) >/dev/null 2>/dev/null && eval "scan_$mode '$CONFIG_SECTION'"
+				( type "scan_$proto" ) >/dev/null 2>/dev/null && eval "scan_$proto '$CONFIG_SECTION'"
 			;;
 		esac
 	}
@@ -80,16 +67,15 @@ setup_interface() {
 	# Setup bridging
 	case "$iftype" in
 		bridge)
-			config_get bridge_ifname "$config" ifname
 			ifconfig "$iface" up 2>/dev/null >/dev/null
-			ifconfig "$bridge_ifname" 2>/dev/null >/dev/null && {
-				$DEBUG brctl addif "$bridge_ifname" "$iface"
+			ifconfig "br-$config" 2>/dev/null >/dev/null && {
+				$DEBUG brctl addif "br-$config" "$iface"
 				return 0
 			} || {
-				$DEBUG brctl addbr "$bridge_ifname"
-				$DEBUG brctl setfd "$bridge_ifname" 0
-				$DEBUG brctl addif "$bridge_ifname" "$iface"
-				iface="$bridge_ifname"
+				$DEBUG brctl addbr "br-$config"
+				$DEBUG brctl setfd "br-$config" 0
+				$DEBUG brctl addif "br-$config" "$iface"
+				iface="br-$config"
 			}
 		;;
 	esac
