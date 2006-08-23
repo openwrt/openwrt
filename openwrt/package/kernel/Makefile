@@ -66,7 +66,7 @@ define KernelPackage
     CATEGORY:=Kernel modules
     DEFAULT:=m
     DESCRIPTION:=$(DESCRIPTION)
-    EXTRA_DEPENDS:='kernel (=$(PKG_VERSION))'
+    EXTRA_DEPENDS:='kernel (=$(PKG_VERSION)-$(PKG_RELEASE))'
     $(call KernelPackage/$(1))
     $(call KernelPackage/$(1)/$(KERNEL))
   endef
