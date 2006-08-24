@@ -64,7 +64,7 @@ END {
 	print "#### LAN configuration"
 	print "config interface lan"
 	print "	option type 	bridge"
-	p("ifnames", "lan_ifname")
+	p("ifname", "lan_ifname")
 	print "	option proto	static"
 	print "	option ipaddr	192.168.1.1"
 	print "	option netmask	255.255.255.0"
