@@ -9,7 +9,10 @@ addif() {
 	# find all vlan configurations for this interface and set them up as well
 	for ifc in $interfaces; do
 		config_get iftype "$ifc" type
-		config_get ifs "$ifc" ifname
+		case "$iftype" in
+			bridge) config_get ifs "$ifc" ifnames;;
+			*) config_get ifs "$ifc" ifname;;
+		esac
 		for dev in $ifs; do
 			[ "${dev%%\.*}" = "$INTERFACE" -a "$dev" != "$INTERFACE" ] && {
 				add_vlan "$dev"

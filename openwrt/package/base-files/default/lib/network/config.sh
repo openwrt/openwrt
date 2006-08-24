@@ -21,7 +21,7 @@ find_config() {
 }
 
 scan_interfaces() {
-	local mode iftype iface
+	local mode iftype iface ifname device
 	interfaces=
 	config_cb() {
 		config_get iftype "$CONFIG_SECTION" TYPE
@@ -29,10 +29,15 @@ scan_interfaces() {
 			interface)
 				config_get proto "$CONFIG_SECTION" proto
 				append interfaces "$CONFIG_SECTION"
+				config_get iftype "$CONFIG_SECTION" iftype
+				case "$iftype" in
+					bridge)
+						config_get ifname "$CONFIG_SECTION" ifname
+						config_set "$CONFIG_SECTION" ifnames "$ifname"
+						config_set "$CONFIG_SECTION" ifname br-"$CONFIG_SECTION"
+					;;
+				esac
 				( type "scan_$proto" ) >/dev/null 2>/dev/null && eval "scan_$proto '$CONFIG_SECTION'"
-				config_get ifname "$CONFIG_SECTION" ifname
-				config_get device "$CONFIG_SECTION" device
-				config_set "$CONFIG_SECTION" device "${device:-$ifname}"
 			;;
 		esac
 	}
