@@ -743,6 +743,13 @@ static const struct wlc_call wlc_calls[] = {
 		.desc = "Channel",
 	},
 	{
+		.name = "vlan_mode",
+		.param = INT,
+		.handler = wlc_bssiovar,
+		.data.str = "vlan_mode",
+		.desc = "Parse 802.1Q tags",
+	},
+	{
 		.name = "vif",
 		.param = INT,
 		.handler = wlc_int,
