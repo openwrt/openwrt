@@ -4,14 +4,7 @@
 . /sbin/ifdown "$@"
 
 config_get iftype "$1" type
-case "$iftype" in
-	bridge)
-		config_get ifname "$1" ifnames
-	;;
-	*)
-		config_get ifname "$1" ifname
-	;;
-esac
+config_get ifname "$1" ifname
 
 for dev in $ifname; do
 	setup_interface "$dev" "$1"
