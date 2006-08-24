@@ -30,6 +30,9 @@ scan_interfaces() {
 				config_get proto "$CONFIG_SECTION" proto
 				append interfaces "$CONFIG_SECTION"
 				( type "scan_$proto" ) >/dev/null 2>/dev/null && eval "scan_$proto '$CONFIG_SECTION'"
+				config_get ifname "$CONFIG_SECTION" ifname
+				config_get device "$CONFIG_SECTION" device
+				config_set "$CONFIG_SECTION" device "${device:-$ifname}"
 			;;
 		esac
 	}
