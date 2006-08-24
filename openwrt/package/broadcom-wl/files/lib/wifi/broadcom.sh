@@ -158,6 +158,7 @@ infra $infra
 ${wet:+wet 1}
 
 radio ${radio:-1}
+vlan_mode 0
 macfilter 0
 maclist none
 wds none
