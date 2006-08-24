@@ -100,7 +100,7 @@ toolchain/%: FORCE
 		echo "Prerequisite check failed. Use FORCE=1 to override."; \
 		false; \
 	}
-	rm -rf "$(TOPDIR)/tmp"
+	@rm -rf "$(TOPDIR)/tmp"
 	@touch $@
 	
 prereq: .prereq-build .prereq-packages FORCE
