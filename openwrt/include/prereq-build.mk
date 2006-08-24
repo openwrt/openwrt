@@ -8,6 +8,13 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/prereq.mk
 
+define Require/non-root
+	[ "$$(shell whoami)" != "root" ]
+endef
+$(eval $(call Require,non-root, \
+	Building OpenWrt as root is not supported! \
+))
+
 # Required for the toolchain
 define Require/working-make
 	echo 'all: test' > $(TMP_DIR)/check.mk
