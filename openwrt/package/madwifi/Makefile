@@ -32,6 +32,9 @@ endif
 ifeq ($(ARCH),armeb)
   HAL_TARGET:=xscale-be-elf
 endif
+ifeq ($(ARCH),powerpc)
+  HAL_TARGET:=powerpc-be-elf
+endif
 
 BUS := PCI
 ifneq ($(CONFIG_LINUX_2_4_AR531X),)

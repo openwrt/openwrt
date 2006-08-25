@@ -71,6 +71,14 @@ config LINUX_2_6_XSCALE
 	select BIG_ENDIAN
 	select PCI_SUPPORT
 
+config LINUX_2_6_MAGICBOX
+	bool "Magicbox [2.6]"
+	depends BROKEN
+	select powerpc
+	select LINUX_2_6
+	select BIG_ENDIAN
+	select PCI_SUPPORT
+
 config LINUX_2_6_RB532
 	bool "Mikrotik RB532 [2.6]"
 	select mipsel
@@ -127,13 +135,6 @@ config LINUX_2_6_M68K
 	depends BROKEN
 	select LINUX_2_6
 	select m68k
-
-config LINUX_2_6_PPC
-	bool "UNSUPPORTED powerpc platform"
-	depends BROKEN
-	select LINUX_2_6
-	select BIG_ENDIAN
-	select powerpc
 
 config LINUX_2_6_SH3
 	bool "UNSUPPORTED little-endian sh3 platform"

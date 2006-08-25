@@ -1,0 +1,508 @@
+diff -Nur linux-2.6.17/arch/ppc/platforms/4xx/Kconfig linux-2.6.17-owrt/arch/ppc/platforms/4xx/Kconfig
+--- linux-2.6.17/arch/ppc/platforms/4xx/Kconfig	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17-owrt/arch/ppc/platforms/4xx/Kconfig	2006-08-25 23:33:05.000000000 +0200
+@@ -52,6 +52,12 @@
+ 	help
+ 	  This option enables support for the IBM PPC405GP evaluation board.
+ 
++config MAGICBOX
++	bool "MagicBox"
++	select WANT_EARLY_SERIAL
++	help
++	  This option enables support for the IBM PPC405EP evaluation board.
++
+ config XILINX_ML300
+ 	bool "Xilinx-ML300"
+ 	help
+@@ -173,7 +179,7 @@
+ 
+ config IBM_OCP
+ 	bool
+-	depends on ASH || BAMBOO || BUBINGA || CPCI405 || EBONY || EP405 || LUAN || YUCCA || OCOTEA || REDWOOD_5 || REDWOOD_6 || SYCAMORE || WALNUT
++	depends on ASH || BAMBOO || BUBINGA || CPCI405 || EBONY || EP405 || LUAN || YUCCA || OCOTEA || REDWOOD_5 || REDWOOD_6 || SYCAMORE || WALNUT || MAGICBOX
+ 	default y
+ 
+ config IBM_EMAC4
+@@ -183,7 +189,7 @@
+ 
+ config BIOS_FIXUP
+ 	bool
+-	depends on BUBINGA || EP405 || SYCAMORE || WALNUT
++	depends on BUBINGA || EP405 || SYCAMORE || WALNUT || MAGICBOX
+ 	default y
+ 
+ # OAK doesn't exist but wanted to keep this around for any future 403GCX boards
+@@ -194,7 +200,7 @@
+ 
+ config 405EP
+ 	bool
+-	depends on BUBINGA
++	depends on BUBINGA || MAGICBOX
+ 	default y
+ 
+ config 405GP
+diff -Nur linux-2.6.17/arch/ppc/platforms/4xx/magicbox.c linux-2.6.17-owrt/arch/ppc/platforms/4xx/magicbox.c
+--- linux-2.6.17/arch/ppc/platforms/4xx/magicbox.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-owrt/arch/ppc/platforms/4xx/magicbox.c	2006-08-25 23:33:05.000000000 +0200
+@@ -0,0 +1,249 @@
++/*
++ * Support for IBM PPC 405EP-based MagicBox board 
++ * Copyright (C) 2006  Karol Lewandowski
++ *
++ * Heavily based on bubinga.c
++ *
++ * Author: SAW (IBM), derived from walnut.c.
++ *         Maintained by MontaVista Software <source@mvista.com>
++ *
++ * 2003 (c) MontaVista Softare Inc.  This file is licensed under the
++ * terms of the GNU General Public License version 2. This program is
++ * licensed "as is" without any warranty of any kind, whether express
++ * or implied.
++ */
++
++#include <linux/config.h>
++#include <linux/init.h>
++#include <linux/smp.h>
++#include <linux/threads.h>
++#include <linux/param.h>
++#include <linux/string.h>
++#include <linux/blkdev.h>
++#include <linux/pci.h>
++#include <linux/tty.h>
++#include <linux/serial.h>
++#include <linux/serial_core.h>
++
++#include <asm/system.h>
++#include <asm/pci-bridge.h>
++#include <asm/processor.h>
++#include <asm/machdep.h>
++#include <asm/page.h>
++#include <asm/time.h>
++#include <asm/io.h>
++#include <asm/kgdb.h>
++#include <asm/ocp.h>
++#include <asm/ibm_ocp_pci.h>
++
++#include <platforms/4xx/ibm405ep.h>
++
++#undef DEBUG
++
++#ifdef DEBUG
++#define DBG(x...) printk(x)
++#else
++#define DBG(x...)
++#endif
++
++extern bd_t __res;
++
++/* Some IRQs unique to board
++ * Used by the generic 405 PCI setup functions in ppc4xx_pci.c
++ */
++int __init
++ppc405_map_irq(struct pci_dev *dev, unsigned char idsel, unsigned char pin)
++{
++	static char pci_irq_table[][4] =
++	    /*
++	     *      PCI IDSEL/INTPIN->INTLINE
++	     *      A       B       C       D
++	     */
++	{
++		{28, 28, 28, 28},	/* IDSEL 1 - PCI slot 1 */
++		{29, 29, 29, 29},	/* IDSEL 2 - PCI slot 2 */
++		{30, 30, 30, 30},	/* IDSEL 3 - PCI slot 3 */
++		{31, 31, 31, 31},	/* IDSEL 4 - PCI slot 4 */
++	};
++
++	const long min_idsel = 1, max_idsel = 4, irqs_per_slot = 4;
++	return PCI_IRQ_TABLE_LOOKUP;
++};
++
++
++/* The serial clock for the chip is an internal clock determined by
++ * different clock speeds/dividers.
++ * Calculate the proper input baud rate and setup the serial driver.
++ */
++static void __init
++magicbox_early_serial_map(void)
++{
++	u32 uart_div;
++	int uart_clock;
++	struct uart_port port;
++
++         /* Calculate the serial clock input frequency
++          *
++          * The base baud is the PLL OUTA (provided in the board info
++          * structure) divided by the external UART Divisor, divided
++          * by 16.
++          */
++	uart_div = (mfdcr(DCRN_CPC0_UCR_BASE) & DCRN_CPC0_UCR_U0DIV);
++	uart_clock = __res.bi_procfreq / uart_div;
++
++	/* Setup serial port access */
++	memset(&port, 0, sizeof(port));
++	port.membase = (void*)ACTING_UART0_IO_BASE;
++	port.irq = ACTING_UART0_INT;
++	port.uartclk = uart_clock;
++	port.regshift = 0;
++	port.iotype = SERIAL_IO_MEM;
++	port.flags = ASYNC_BOOT_AUTOCONF | ASYNC_SKIP_TEST;
++	port.line = 0;
++
++	if (early_serial_setup(&port) != 0) {
++		printk("Early serial init of port 0 failed\n");
++	}
++
++	port.membase = (void*)ACTING_UART1_IO_BASE;
++	port.irq = ACTING_UART1_INT;
++	port.line = 1;
++
++	if (early_serial_setup(&port) != 0) {
++		printk("Early serial init of port 1 failed\n");
++	}
++}
++
++void __init
++bios_fixup(struct pci_controller *hose, struct pcil0_regs *pcip)
++{
++	unsigned int bar_response, bar;
++	/*
++	 * Expected PCI mapping:
++	 *
++	 *  PLB addr             PCI memory addr
++	 *  ---------------------       ---------------------
++	 *  0000'0000 - 7fff'ffff <---  0000'0000 - 7fff'ffff
++	 *  8000'0000 - Bfff'ffff --->  8000'0000 - Bfff'ffff
++	 *
++	 *  PLB addr             PCI io addr
++	 *  ---------------------       ---------------------
++	 *  e800'0000 - e800'ffff --->  0000'0000 - 0001'0000
++	 *
++	 * The following code is simplified by assuming that the bootrom
++	 * has been well behaved in following this mapping.
++	 */
++
++#ifdef DEBUG
++	int i;
++
++	printk("ioremap PCLIO_BASE = 0x%x\n", pcip);
++	printk("PCI bridge regs before fixup \n");
++	for (i = 0; i <= 3; i++) {
++		printk(" pmm%dma\t0x%x\n", i, in_le32(&(pcip->pmm[i].ma)));
++		printk(" pmm%dma\t0x%x\n", i, in_le32(&(pcip->pmm[i].la)));
++		printk(" pmm%dma\t0x%x\n", i, in_le32(&(pcip->pmm[i].pcila)));
++		printk(" pmm%dma\t0x%x\n", i, in_le32(&(pcip->pmm[i].pciha)));
++	}
++	printk(" ptm1ms\t0x%x\n", in_le32(&(pcip->ptm1ms)));
++	printk(" ptm1la\t0x%x\n", in_le32(&(pcip->ptm1la)));
++	printk(" ptm2ms\t0x%x\n", in_le32(&(pcip->ptm2ms)));
++	printk(" ptm2la\t0x%x\n", in_le32(&(pcip->ptm2la)));
++
++#endif
++
++	/* added for IBM boot rom version 1.15 bios bar changes  -AK */
++
++	/* Disable region first */
++	out_le32((void *) &(pcip->pmm[0].ma), 0x00000000);
++	/* PLB starting addr, PCI: 0x80000000 */
++	out_le32((void *) &(pcip->pmm[0].la), 0x80000000);
++	/* PCI start addr, 0x80000000 */
++	out_le32((void *) &(pcip->pmm[0].pcila), PPC405_PCI_MEM_BASE);
++	/* 512MB range of PLB to PCI */
++	out_le32((void *) &(pcip->pmm[0].pciha), 0x00000000);
++	/* Enable no pre-fetch, enable region */
++	out_le32((void *) &(pcip->pmm[0].ma), ((0xffffffff -
++						(PPC405_PCI_UPPER_MEM -
++						 PPC405_PCI_MEM_BASE)) | 0x01));
++
++	/* Disable region one */
++	out_le32((void *) &(pcip->pmm[1].ma), 0x00000000);
++	out_le32((void *) &(pcip->pmm[1].la), 0x00000000);
++	out_le32((void *) &(pcip->pmm[1].pcila), 0x00000000);
++	out_le32((void *) &(pcip->pmm[1].pciha), 0x00000000);
++	out_le32((void *) &(pcip->pmm[1].ma), 0x00000000);
++	out_le32((void *) &(pcip->ptm1ms), 0x00000001);
++
++	/* Disable region two */
++	out_le32((void *) &(pcip->pmm[2].ma), 0x00000000);
++	out_le32((void *) &(pcip->pmm[2].la), 0x00000000);
++	out_le32((void *) &(pcip->pmm[2].pcila), 0x00000000);
++	out_le32((void *) &(pcip->pmm[2].pciha), 0x00000000);
++	out_le32((void *) &(pcip->pmm[2].ma), 0x00000000);
++	out_le32((void *) &(pcip->ptm2ms), 0x00000000);
++	out_le32((void *) &(pcip->ptm2la), 0x00000000);
++
++	/* Zero config bars */
++	for (bar = PCI_BASE_ADDRESS_1; bar <= PCI_BASE_ADDRESS_2; bar += 4) {
++		early_write_config_dword(hose, hose->first_busno,
++					 PCI_FUNC(hose->first_busno), bar,
++					 0x00000000);
++		early_read_config_dword(hose, hose->first_busno,
++					PCI_FUNC(hose->first_busno), bar,
++					&bar_response);
++		DBG("BUS %d, device %d, Function %d bar 0x%8.8x is 0x%8.8x\n",
++		    hose->first_busno, PCI_SLOT(hose->first_busno),
++		    PCI_FUNC(hose->first_busno), bar, bar_response);
++	}
++	/* end work arround */
++
++#ifdef DEBUG
++	printk("PCI bridge regs after fixup \n");
++	for (i = 0; i <= 3; i++) {
++		printk(" pmm%dma\t0x%x\n", i, in_le32(&(pcip->pmm[i].ma)));
++		printk(" pmm%dma\t0x%x\n", i, in_le32(&(pcip->pmm[i].la)));
++		printk(" pmm%dma\t0x%x\n", i, in_le32(&(pcip->pmm[i].pcila)));
++		printk(" pmm%dma\t0x%x\n", i, in_le32(&(pcip->pmm[i].pciha)));
++	}
++	printk(" ptm1ms\t0x%x\n", in_le32(&(pcip->ptm1ms)));
++	printk(" ptm1la\t0x%x\n", in_le32(&(pcip->ptm1la)));
++	printk(" ptm2ms\t0x%x\n", in_le32(&(pcip->ptm2ms)));
++	printk(" ptm2la\t0x%x\n", in_le32(&(pcip->ptm2la)));
++
++#endif /* DEBUG */
++}
++
++void __init
++magicbox_setup_arch(void)
++{
++	ppc4xx_setup_arch();
++
++	ibm_ocp_set_emac(0, 1);
++
++	magicbox_early_serial_map();
++
++	/* Identify the system */
++	printk("MagicBox port (C) 2005 Karol Lewandowski <kl@jasmine.eu.org>\n");
++}
++
++void __init
++magicbox_map_io(void)
++{
++	ppc4xx_map_io();
++}
++
++void __init
++platform_init(unsigned long r3, unsigned long r4, unsigned long r5,
++	      unsigned long r6, unsigned long r7)
++{
++	ppc4xx_init(r3, r4, r5, r6, r7);
++
++	ppc_md.setup_arch = magicbox_setup_arch;
++	ppc_md.setup_io_mappings = magicbox_map_io;
++
++#ifdef CONFIG_KGDB
++	ppc_md.early_serial_map = bubinga_early_serial_map;
++#endif
++
++}
+diff -Nur linux-2.6.17/arch/ppc/platforms/4xx/magicbox.h linux-2.6.17-owrt/arch/ppc/platforms/4xx/magicbox.h
+--- linux-2.6.17/arch/ppc/platforms/4xx/magicbox.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-owrt/arch/ppc/platforms/4xx/magicbox.h	2006-08-25 23:33:05.000000000 +0200
+@@ -0,0 +1,47 @@
++/*
++ * Support for IBM PPC 405EP-based MagicBox board
++ *
++ * Heavily based on bubinga.h
++ *
++ *
++ * Author: SAW (IBM), derived from walnut.h.
++ *         Maintained by MontaVista Software <source@mvista.com>
++ *
++ * 2003 (c) MontaVista Softare Inc.  This file is licensed under the
++ * terms of the GNU General Public License version 2. This program is
++ * licensed "as is" without any warranty of any kind, whether express
++ * or implied.
++ */
++
++#ifdef __KERNEL__
++#ifndef __MAGICBOX_H__
++#define __MAGICBOX_H__
++
++#include <linux/config.h>
++#include <platforms/4xx/ibm405ep.h>
++#include <asm/ppcboot.h>
++
++/* Memory map for the "MagicBox" 405EP evaluation board -- generic 4xx. */
++
++/* The UART clock is based off an internal clock -
++ * define BASE_BAUD based on the internal clock and divider(s).
++ * Since BASE_BAUD must be a constant, we will initialize it
++ * using clock/divider values which OpenBIOS initializes
++ * for typical configurations at various CPU speeds.
++ * The base baud is calculated as (FWDA / EXT UART DIV / 16)
++ */
++#define BASE_BAUD       0
++
++/* Flash */
++#define PPC40x_FPGA_BASE	0xF0300000
++#define PPC40x_FPGA_REG_OFFS	1	/* offset to flash map reg */
++#define PPC40x_FLASH_ONBD_N(x)	(x & 0x02)
++#define PPC40x_FLASH_SRAM_SEL(x) (x & 0x01)
++#define PPC40x_FLASH_LOW	0xFFF00000
++#define PPC40x_FLASH_HIGH	0xFFF80000
++#define PPC40x_FLASH_SIZE	0x80000
++
++#define PPC4xx_MACHINE_NAME	"MagicBox"
++
++#endif /* __MAGICBOX_H__ */
++#endif /* __KERNEL__ */
+diff -Nur linux-2.6.17/arch/ppc/platforms/4xx/Makefile linux-2.6.17-owrt/arch/ppc/platforms/4xx/Makefile
+--- linux-2.6.17/arch/ppc/platforms/4xx/Makefile	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17-owrt/arch/ppc/platforms/4xx/Makefile	2006-08-25 23:33:05.000000000 +0200
+@@ -13,6 +13,7 @@
+ obj-$(CONFIG_REDWOOD_6)		+= redwood6.o
+ obj-$(CONFIG_SYCAMORE)		+= sycamore.o
+ obj-$(CONFIG_WALNUT)		+= walnut.o
++obj-$(CONFIG_MAGICBOX)		+= magicbox.o
+ obj-$(CONFIG_XILINX_ML300)	+= xilinx_ml300.o
+ obj-$(CONFIG_XILINX_ML403)	+= xilinx_ml403.o
+ 
+diff -Nur linux-2.6.17/drivers/mtd/maps/Kconfig linux-2.6.17-owrt/drivers/mtd/maps/Kconfig
+--- linux-2.6.17/drivers/mtd/maps/Kconfig	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17-owrt/drivers/mtd/maps/Kconfig	2006-08-25 23:33:05.000000000 +0200
+@@ -323,6 +323,15 @@
+ 	  Walnut board. If you have one of these boards and would like to
+ 	  use the flash chips on it, say 'Y'.
+ 
++config MTD_MAGICMAP
++	tristate "Flash device mapped on IBM 405EP MagicBox"
++	depends on MTD_CFI && MTD_PARTITIONS && 40x && MAGICBOX
++	help
++	  This enables access routines for the flash chips on the IBM 405EP
++	  MagicBox board. If you have one of these boards and would like to
++	  use the flash chips on it, say 'Y'.
++
++
+ config MTD_EBONY
+ 	tristate "Flash devices mapped on IBM 440GP Ebony"
+ 	depends on MTD_JEDECPROBE && EBONY
+diff -Nur linux-2.6.17/drivers/mtd/maps/magicmap.c linux-2.6.17-owrt/drivers/mtd/maps/magicmap.c
+--- linux-2.6.17/drivers/mtd/maps/magicmap.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-owrt/drivers/mtd/maps/magicmap.c	2006-08-25 23:33:05.000000000 +0200
+@@ -0,0 +1,102 @@
++/*
++ * magicmap.c: Copyleft 2005  Karol Lewandowski
++ *
++ * Mapping for MagicBox flash.
++ * Based on walnut.c.
++ *
++ * Heikki Lindholm <holindho@infradead.org>
++ *
++ *
++ * This program is free software; you can redistribute  it and/or modify it
++ * under  the terms of  the GNU General  Public License as published by the
++ * Free Software Foundation;  either version 2 of the  License, or (at your
++ * option) any later version.
++ */
++
++#include <linux/module.h>
++#include <linux/types.h>
++#include <linux/kernel.h>
++#include <linux/init.h>
++#include <linux/mtd/mtd.h>
++#include <linux/mtd/map.h>
++#include <linux/mtd/partitions.h>
++#include <linux/config.h>
++#include <asm/io.h>
++
++static struct mtd_info *flash;
++
++static struct map_info magic_map = {
++	.name =		"Magically mapped flash",
++	.phys =         0xffc00000,
++	.size =		0x400000,
++	.bankwidth =	2,
++};
++
++static struct mtd_partition magic_partitions[] = {
++	{
++		.name =   "kernel",
++		.offset = 0x0,
++		.size =   0x0e0000,
++	},
++	{
++		.name =   "ramdisk",
++		.offset = 0x0e0000,
++		.size =   0x2c0000,
++	},
++	{
++		.name =   "persistent",
++		.offset = 0x3a0000,
++		.size =   0x020000,
++	},
++	{
++		.name =   "bootloader",
++		.offset = 0x3c0000,
++		.size =   0x040000,
++		.mask_flags = MTD_WRITEABLE,
++	},
++};
++
++int __init init_magic(void)
++{
++	magic_map.virt =
++		(void __iomem *)ioremap(magic_map.phys, magic_map.size);
++
++	if (!magic_map.virt) {
++		printk("Failed to ioremap flash.\n");
++		return -EIO;
++	}
++
++	simple_map_init(&magic_map);
++
++	flash = do_map_probe("cfi_probe", &magic_map);
++	if (flash) {
++		flash->owner = THIS_MODULE;
++		add_mtd_partitions(flash, magic_partitions,
++					ARRAY_SIZE(magic_partitions));
++	} else {
++		printk("map probe failed for flash\n");
++		return -ENXIO;
++	}
++
++	return 0;
++}
++
++static void __exit cleanup_magic(void)
++{
++	if (flash) {
++		del_mtd_partitions(flash);
++		map_destroy(flash);
++	}
++
++	if (magic_map.virt) {
++		iounmap((void *)magic_map.virt);
++		magic_map.virt = NULL;
++	}
++}
++
++module_init(init_magic);
++module_exit(cleanup_magic);
++
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("Karol Lewandowski");
++MODULE_DESCRIPTION("MTD map and partitions for IBM 405EP MagicBox boards");
+diff -Nur linux-2.6.17/drivers/mtd/maps/Makefile linux-2.6.17-owrt/drivers/mtd/maps/Makefile
+--- linux-2.6.17/drivers/mtd/maps/Makefile	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17-owrt/drivers/mtd/maps/Makefile	2006-08-25 23:33:05.000000000 +0200
+@@ -58,6 +58,7 @@
+ obj-$(CONFIG_MTD_BEECH)		+= beech-mtd.o
+ obj-$(CONFIG_MTD_ARCTIC)	+= arctic-mtd.o
+ obj-$(CONFIG_MTD_WALNUT)        += walnut.o
++obj-$(CONFIG_MTD_MAGICMAP)      += magicmap.o
+ obj-$(CONFIG_MTD_H720X)		+= h720x-flash.o
+ obj-$(CONFIG_MTD_SBC8240)	+= sbc8240.o
+ obj-$(CONFIG_MTD_NOR_TOTO)	+= omap-toto-flash.o
+diff -Nur linux-2.6.17/include/asm-ppc/ibm4xx.h linux-2.6.17-owrt/include/asm-ppc/ibm4xx.h
+--- linux-2.6.17/include/asm-ppc/ibm4xx.h	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17-owrt/include/asm-ppc/ibm4xx.h	2006-08-25 23:33:05.000000000 +0200
+@@ -19,6 +19,10 @@
+ 
+ #ifdef CONFIG_40x
+ 
++#if defined(CONFIG_MAGICBOX)
++#include <platforms/4xx/magicbox.h>
++#endif
++
+ #if defined(CONFIG_BUBINGA)
+ #include <platforms/4xx/bubinga.h>
+ #endif

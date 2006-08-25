@@ -23,6 +23,7 @@ $(eval $(call kernel_template,2.4,ar531x,2_4_AR531X))
 $(eval $(call kernel_template,2.6,aruba,2_6_ARUBA))
 $(eval $(call kernel_template,2.6,au1000,2_6_AU1000))
 $(eval $(call kernel_template,2.6,xscale,2_6_XSCALE))
+$(eval $(call kernel_template,2.6,magicbox,2_6_MAGICBOX))
 $(eval $(call kernel_template,2.6,sibyte,2_6_SIBYTE))
 
 export BOARD
