@@ -1,3 +1,15 @@
+diff -ruN linux-2.6.15.1/include/asm-ppc/libgcc.h linux-2.6.15.1-openwrt/include/asm-ppc/libgcc.h
+--- linux-2.6.15.1/include/asm-ppc/libgcc.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.15.1-openwrt/include/asm-ppc/libgcc.h	2006-02-01 15:47:53.000000000 +0100
+@@ -0,0 +1,8 @@
++#ifndef __ASM_LIBGCC_H
++#define __ASM_LIBGCC_H
++
++#undef ARCH_NEEDS_ashldi3
++#undef ARCH_NEEDS_ashrdi3
++#undef ARCH_NEEDS_lshrdi3
++
++#endif /* __ASM_LIBGCC_H */
 diff -ruN linux-2.6.15.1/include/asm-i386/libgcc.h linux-2.6.15.1-openwrt/include/asm-i386/libgcc.h
 --- linux-2.6.15.1/include/asm-i386/libgcc.h	1970-01-01 01:00:00.000000000 +0100
 +++ linux-2.6.15.1-openwrt/include/asm-i386/libgcc.h	2006-02-01 15:47:53.000000000 +0100

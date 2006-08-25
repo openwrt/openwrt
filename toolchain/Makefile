@@ -11,7 +11,7 @@ TARGETS-y:=sed kernel-headers sstrip
 ifeq ($(CONFIG_NATIVE_TOOLCHAIN),)
   TARGETS-y+=binutils gcc uClibc
 endif
-TARGETS-y+=ipkg-utils libnotimpl ext2fs squashfs jffs2 lzma
+TARGETS-y+=ipkg-utils libnotimpl ext2fs squashfs jffs2 lzma mkimage
 
 TARGETS-$(CONFIG_GDB) += gdb
 
