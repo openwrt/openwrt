@@ -1,0 +1,33 @@
+#!/bin/sh
+# Copyright (C) 2006 OpenWrt.org
+
+case "$ACTION" in
+add) 
+	[ -f /sys/${DEVPATH}/idVendor -a "$(cat /sys/${DEVPATH}/idVendor)" -ne "0000" ] && {
+		cd /sys/${DEVPATH}
+
+		NUM=${DEVPATH##*/}
+		HOST=$(find ${NUM}:*/host* -type d)
+		HOST=${HOST##*/host}
+
+		echo -ne "waiting for disk"
+
+		while [ ! -d "/dev/scsi/host${HOST}/bus0/target0/lun0" ]; do {
+			echo -ne "."
+			sleep 1;
+			time=$((time+1)); [ $time -gt 10 ] && break
+		}; done
+		echo
+		
+		cd  /sys/bus/scsi/devices/${HOST}\:0\:0\:0
+		for BLOCK in block:* ; do {
+			cd ${BLOCK}
+			BLOCK=${BLOCK##block\:}
+			ln -sf /dev/scsi/host${HOST}/bus0/target0/lun0/disc /dev/${BLOCK} 
+			for DEV in ${BLOCK}*; do {
+				ln -sf /dev/scsi/host${HOST}/bus0/target0/lun0/part${DEV##$BLOCK} /dev/$DEV
+			}; done
+		}; done
+	} 2>&1 | logger 
+	;;
+esac
