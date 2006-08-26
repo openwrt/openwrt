@@ -1,0 +1,26 @@
+#!/bin/sh
+# Copyright (C) 2006 OpenWrt.org
+
+DEV=${DEVPATH##*/}
+{
+echo "ACTION=$ACTION DEVPATH=$DEVPATH $0 $*"
+case "$ACTION" in
+add)
+	echo -ne "waiting for $DEV"
+	while [ ! -b /dev/$DEV ]; do {
+		echo -ne "."
+		sleep 1
+		time=$((time+1)); [ $time -gt 10 ] && break
+	}; done
+	
+	[ ${DEV%%[0-9]} != ${DEV} ] && {
+		mkdir -p /tmp/$DEV
+		mount /dev/$DEV /tmp/$DEV -t auto -o sync
+	}
+	;;
+remove)
+	umount /tmp/$DEV
+	rm -rf /dev/$DEV /tmp/$DEV
+	;;
+esac
+} 2>&1 | logger
