@@ -586,8 +586,8 @@ diff -urN linux.old/arch/mips/bcm963xx/bcm63xx_led.c linux.dev/arch/mips/bcm963x
 +
 diff -urN linux.old/arch/mips/bcm963xx/board.c linux.dev/arch/mips/bcm963xx/board.c
 --- linux.old/arch/mips/bcm963xx/board.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm963xx/board.c	2006-08-25 15:16:26.000000000 +0200
-@@ -0,0 +1,555 @@
++++ linux.dev/arch/mips/bcm963xx/board.c	2006-08-27 21:02:04.000000000 +0200
+@@ -0,0 +1,559 @@
 +/*
 +<:copyright-gpl 
 + Copyright 2002 Broadcom Corp. All Rights Reserved. 
@@ -760,17 +760,21 @@ diff -urN linux.old/arch/mips/bcm963xx/board.c linux.dev/arch/mips/bcm963xx/boar
 +    /* CMO -- Fix le problème avec les adresses mac que l'on n'arrive pas
 +     *  * à relire plusieurs fois */
 +    /* inv_xde */
++#if 0
 +    if (boot_loader_type == BOOT_CFE)
 +      memcpy( pucaMacAddr, g_pNvramInfo->ucaBaseMacAddr,
 +              NVRAM_MAC_ADDRESS_LEN );
 +    else {
++#endif
 +      pucaMacAddr[0] = 0x00;
 +      pucaMacAddr[1] = 0x07;
 +      pucaMacAddr[2] = 0x3A;
 +      pucaMacAddr[3] = 0xFF;
 +      pucaMacAddr[4] = 0xFF;
 +      pucaMacAddr[5] = 0xFF;
++#if 0
 +    }
++#endif
 +
 +    return nRet;
 +} /* kerSysGetMacAddr */
@@ -6918,8 +6922,8 @@ diff -urN linux.old/arch/mips/bcm963xx/Makefile linux.dev/arch/mips/bcm963xx/Mak
 +
 diff -urN linux.old/arch/mips/bcm963xx/prom.c linux.dev/arch/mips/bcm963xx/prom.c
 --- linux.old/arch/mips/bcm963xx/prom.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm963xx/prom.c	2006-08-25 01:49:57.000000000 +0200
-@@ -0,0 +1,128 @@
++++ linux.dev/arch/mips/bcm963xx/prom.c	2006-08-27 21:02:04.000000000 +0200
+@@ -0,0 +1,130 @@
 +/*
 +<:copyright-gpl 
 + Copyright 2004 Broadcom Corp. All Rights Reserved. 
@@ -7037,6 +7041,8 @@ diff -urN linux.old/arch/mips/bcm963xx/prom.c linux.dev/arch/mips/bcm963xx/prom.
 +
 +    mips_machgroup = MACH_GROUP_BRCM;
 +    mips_machtype = MACH_BCM;
++
++	BpSetBoardId("96348GW-10");
 +}
 +
 +/* --------------------------------------------------------------------------
@@ -9626,3 +9632,4 @@ diff -urN linux.old/include/asm-mips/module.h linux.dev/include/asm-mips/module.
  #else
  #error MODULE_PROC_FAMILY undefined for your processor configuration
  #endif
+

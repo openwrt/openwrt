@@ -1,0 +1,267 @@
+diff -urN linux.old/include/asm-mips/cpu-info.h linux.dev/include/asm-mips/cpu-info.h
+--- linux.old/include/asm-mips/cpu-info.h	2006-06-18 03:49:35.000000000 +0200
++++ linux.dev/include/asm-mips/cpu-info.h	2006-08-27 21:02:04.000000000 +0200
+@@ -63,7 +63,6 @@
+ 	 * Capability and feature descriptor structure for MIPS CPU
+ 	 */
+ 	unsigned long		options;
+-	unsigned long		ases;
+ 	unsigned int		processor_id;
+ 	unsigned int		fpu_id;
+ 	unsigned int		cputype;
+@@ -84,6 +83,7 @@
+ 	int			tc_id;   /* Thread Context number */
+ #endif /* CONFIG_MIPS_MT */
+ 	void 			*data;	/* Additional data */
++	unsigned long		ases;
+ } __attribute__((aligned(SMP_CACHE_BYTES)));
+ 
+ extern struct cpuinfo_mips cpu_data[];
+
+diff -urN linux.old/include/linux/netdevice.h linux.dev/include/linux/netdevice.h
+--- linux.old/include/linux/netdevice.h	2006-06-18 03:49:35.000000000 +0200
++++ linux.dev/include/linux/netdevice.h	2006-08-27 21:02:04.000000000 +0200
+@@ -266,8 +266,6 @@
+ 	 * the interface.
+ 	 */
+ 	char			name[IFNAMSIZ];
+-	/* device name hash chain */
+-	struct hlist_node	name_hlist;
+ 
+ 	/*
+ 	 *	I/O specific fields
+@@ -295,22 +293,6 @@
+ 
+ 	/* ------- Fields preinitialized in Space.c finish here ------- */
+ 
+-	/* Net device features */
+-	unsigned long		features;
+-#define NETIF_F_SG		1	/* Scatter/gather IO. */
+-#define NETIF_F_IP_CSUM		2	/* Can checksum only TCP/UDP over IPv4. */
+-#define NETIF_F_NO_CSUM		4	/* Does not require checksum. F.e. loopack. */
+-#define NETIF_F_HW_CSUM		8	/* Can checksum all the packets. */
+-#define NETIF_F_HIGHDMA		32	/* Can DMA to high memory. */
+-#define NETIF_F_FRAGLIST	64	/* Scatter/gather IO. */
+-#define NETIF_F_HW_VLAN_TX	128	/* Transmit VLAN hw acceleration */
+-#define NETIF_F_HW_VLAN_RX	256	/* Receive VLAN hw acceleration */
+-#define NETIF_F_HW_VLAN_FILTER	512	/* Receive filtering on VLAN */
+-#define NETIF_F_VLAN_CHALLENGED	1024	/* Device cannot handle VLAN packets */
+-#define NETIF_F_TSO		2048	/* Can offload TCP/IP segmentation */
+-#define NETIF_F_LLTX		4096	/* LockLess TX */
+-#define NETIF_F_UFO             8192    /* Can offload UDP Large Send*/
+-
+ 	struct net_device	*next_sched;
+ 
+ 	/* Interface index. Unique device identifier	*/
+@@ -324,8 +306,6 @@
+ 	/* List of functions to handle Wireless Extensions (instead of ioctl).
+ 	 * See <net/iw_handler.h> for details. Jean II */
+ 	const struct iw_handler_def *	wireless_handlers;
+-	/* Instance data managed by the core of Wireless Extensions. */
+-	struct iw_public_data *	wireless_data;
+ 
+ 	struct ethtool_ops *ethtool_ops;
+ 
+@@ -335,33 +315,37 @@
+ 	 * will (read: may be cleaned up at will).
+ 	 */
+ 
++	/* These may be needed for future network-power-down code. */
++	unsigned long		trans_start;	/* Time (in jiffies) of last Tx	*/
++	unsigned long		last_rx;	/* Time of last Rx	*/
+ 
+-	unsigned int		flags;	/* interface flags (a la BSD)	*/
++	unsigned short		flags;	/* interface flags (a la BSD)	*/
+ 	unsigned short		gflags;
+         unsigned short          priv_flags; /* Like 'flags' but invisible to userspace. */
+-	unsigned short		padded;	/* How much padding added by alloc_netdev() */
+-
+-	unsigned char		operstate; /* RFC2863 operstate */
+-	unsigned char		link_mode; /* mapping policy to operstate */
++	unsigned short		__useless_padding;
+ 
+ 	unsigned		mtu;	/* interface MTU value		*/
+ 	unsigned short		type;	/* interface hardware type	*/
+ 	unsigned short		hard_header_len;	/* hardware hdr length	*/
++	void			*priv;	/* pointer to private data	*/
+ 
+ 	struct net_device	*master; /* Pointer to master device of a group,
+ 					  * which this device is member of.
+ 					  */
+ 
+ 	/* Interface address info. */
+-	unsigned char		perm_addr[MAX_ADDR_LEN]; /* permanent hw address */
++	unsigned char		broadcast[MAX_ADDR_LEN];	/* hw bcast add	*/
++	unsigned char		dev_addr[MAX_ADDR_LEN];	/* hw address, (before bcast 
++							because most packets are unicast) */
+ 	unsigned char		addr_len;	/* hardware address length	*/
+-	unsigned short          dev_id;		/* for shared network cards */
+ 
+ 	struct dev_mc_list	*mc_list;	/* Multicast mac addresses	*/
+ 	int			mc_count;	/* Number of installed mcasts	*/
+ 	int			promiscuity;
+ 	int			allmulti;
+ 
++	int			watchdog_timeo; /* used by dev_watchdog() */
++	struct timer_list	watchdog_timer;
+ 
+ 	/* Protocol specific pointers */
+ 	
+@@ -378,29 +362,17 @@
+ 	struct list_head	poll_list ____cacheline_aligned_in_smp;
+ 					/* Link to poll list	*/
+ 
+-	int			(*poll) (struct net_device *dev, int *quota);
+ 	int			quota;
+ 	int			weight;
+-	unsigned long		last_rx;	/* Time of last Rx	*/
+ 	/* Interface address info used in eth_type_trans() */
+-	unsigned char		dev_addr[MAX_ADDR_LEN];	/* hw address, (before bcast 
+-							because most packets are unicast) */
+-
+-	unsigned char		broadcast[MAX_ADDR_LEN];	/* hw bcast add	*/
+-
+-/*
+- * Cache line mostly used on queue transmit path (qdisc)
+- */
+-	/* device queue lock */
+-	spinlock_t		queue_lock ____cacheline_aligned_in_smp;
+ 	struct Qdisc		*qdisc;
+ 	struct Qdisc		*qdisc_sleeping;
++	struct Qdisc		*qdisc_ingress;
+ 	struct list_head	qdisc_list;
+ 	unsigned long		tx_queue_len;	/* Max frames per queue allowed */
+ 
+ 	/* ingress path synchronizer */
+ 	spinlock_t		ingress_lock;
+-	struct Qdisc		*qdisc_ingress;
+ 
+ /*
+  * One part is mostly used on xmit path (device)
+@@ -411,16 +383,13 @@
+ 	   if nobody entered there.
+ 	 */
+ 	int			xmit_lock_owner;
+-	void			*priv;	/* pointer to private data	*/
+-	int			(*hard_start_xmit) (struct sk_buff *skb,
+-						    struct net_device *dev);
+-	/* These may be needed for future network-power-down code. */
+-	unsigned long		trans_start;	/* Time (in jiffies) of last Tx	*/
+-
+-	int			watchdog_timeo; /* used by dev_watchdog() */
+-	struct timer_list	watchdog_timer;
+ 
+ /*
++ * Cache line mostly used on queue transmit path (qdisc)
++ */
++	/* device queue lock */
++	spinlock_t		queue_lock ____cacheline_aligned_in_smp;
++/*
+  * refcnt is a very hot point, so align it on SMP
+  */
+ 	/* Number of references to this device */
+@@ -428,6 +397,8 @@
+ 
+ 	/* delayed register/unregister */
+ 	struct list_head	todo_list;
++	/* device name hash chain */
++	struct hlist_node	name_hlist;
+ 	/* device index hash chain */
+ 	struct hlist_node	index_hlist;
+ 
+@@ -439,6 +410,22 @@
+ 	       NETREG_RELEASED,		/* called free_netdev */
+ 	} reg_state;
+ 
++	/* Net device features */
++	unsigned int		features;
++#define NETIF_F_SG		1	/* Scatter/gather IO. */
++#define NETIF_F_IP_CSUM		2	/* Can checksum only TCP/UDP over IPv4. */
++#define NETIF_F_NO_CSUM		4	/* Does not require checksum. F.e. loopack. */
++#define NETIF_F_HW_CSUM		8	/* Can checksum all the packets. */
++#define NETIF_F_HIGHDMA		32	/* Can DMA to high memory. */
++#define NETIF_F_FRAGLIST	64	/* Scatter/gather IO. */
++#define NETIF_F_HW_VLAN_TX	128	/* Transmit VLAN hw acceleration */
++#define NETIF_F_HW_VLAN_RX	256	/* Receive VLAN hw acceleration */
++#define NETIF_F_HW_VLAN_FILTER	512	/* Receive filtering on VLAN */
++#define NETIF_F_VLAN_CHALLENGED	1024	/* Device cannot handle VLAN packets */
++#define NETIF_F_TSO		2048	/* Can offload TCP/IP segmentation */
++#define NETIF_F_LLTX		4096	/* LockLess TX */
++#define NETIF_F_UFO             8192    /* Can offload UDP Large Send*/
++
+ 	/* Called after device is detached from network. */
+ 	void			(*uninit)(struct net_device *dev);
+ 	/* Called after last user reference disappears. */
+@@ -447,7 +434,10 @@
+ 	/* Pointers to interface service routines.	*/
+ 	int			(*open)(struct net_device *dev);
+ 	int			(*stop)(struct net_device *dev);
++	int			(*hard_start_xmit) (struct sk_buff *skb,
++						    struct net_device *dev);
+ #define HAVE_NETDEV_POLL
++	int			(*poll) (struct net_device *dev, int *quota);
+ 	int			(*hard_header) (struct sk_buff *skb,
+ 						struct net_device *dev,
+ 						unsigned short type,
+@@ -490,6 +480,7 @@
+ 	int			(*neigh_setup)(struct net_device *dev, struct neigh_parms *);
+ #ifdef CONFIG_NETPOLL
+ 	struct netpoll_info	*npinfo;
++	int netpoll_rx;
+ #endif
+ #ifdef CONFIG_NET_POLL_CONTROLLER
+ 	void                    (*poll_controller)(struct net_device *dev);
+@@ -507,6 +498,17 @@
+ 	struct class_device	class_dev;
+ 	/* space for optional statistics and wireless sysfs groups */
+ 	struct attribute_group  *sysfs_groups[3];
++
++	unsigned char		operstate; /* RFC2863 operstate */
++	unsigned char		link_mode; /* mapping policy to operstate */
++	unsigned short          dev_id;		/* for shared network cards */
++
++	/* Instance data managed by the core of Wireless Extensions. */
++	struct iw_public_data *	wireless_data;
++
++	unsigned char		perm_addr[MAX_ADDR_LEN]; /* permanent hw address */
++
++	unsigned short		padded;	/* How much padding added by alloc_netdev() */
+ };
+ 
+ #define	NETDEV_ALIGN		32
+@@ -587,9 +589,10 @@
+ 
+ struct softnet_data
+ {
+-	struct net_device	*output_queue;
++	int         useless_padding[3];
+ 	struct sk_buff_head	input_pkt_queue;
+ 	struct list_head	poll_list;
++	struct net_device	*output_queue;
+ 	struct sk_buff		*completion_queue;
+ 
+ 	struct net_device	backlog_dev;	/* Sorry. 8) */
+diff -urN linux.old/include/linux/timer.h linux.dev/include/linux/timer.h
+--- linux.old/include/linux/timer.h	2006-06-18 03:49:35.000000000 +0200
++++ linux.dev/include/linux/timer.h	2006-08-27 21:02:04.000000000 +0200
+@@ -12,6 +12,9 @@
+ 	struct list_head entry;
+ 	unsigned long expires;
+ 
++	spinlock_t lock;
++	unsigned long magic;
++
+ 	void (*function)(unsigned long);
+ 	unsigned long data;
+ 
+diff -urN linux.old/kernel/timer.c linux.dev/kernel/timer.c
+--- linux.old/kernel/timer.c	2006-06-18 03:49:35.000000000 +0200
++++ linux.dev/kernel/timer.c	2006-08-27 21:02:04.000000000 +0200
+@@ -147,6 +147,7 @@
+ {
+ 	timer->entry.next = NULL;
+ 	timer->base = per_cpu(tvec_bases, raw_smp_processor_id());
++	spin_lock_init(&timer->lock);
+ }
+ EXPORT_SYMBOL(init_timer);
+ 
