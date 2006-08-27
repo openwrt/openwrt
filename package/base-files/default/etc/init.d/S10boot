@@ -17,7 +17,8 @@ touch /var/log/wtmp
 touch /var/log/lastlog
 [ "$FAILSAFE" = "true" ] && touch /tmp/.failsafe
 
-for iface in $(/sbin/ifconfig -a | awk '{print $1}' | grep eth); do
+# manually trigger hotplug before loading modules
+for iface in $(awk -F: '/:/ {print $1}' /proc/net/dev); do
 	/usr/bin/env -i ACTION=add INTERFACE="$iface" /sbin/hotplug net
 done
 
