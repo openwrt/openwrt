@@ -123,41 +123,12 @@ CONFIG_NOT_COHERENT_CACHE=y
 #
 # Platform options
 #
-# CONFIG_PPC_PREP is not set
-# CONFIG_APUS is not set
-# CONFIG_KATANA is not set
-# CONFIG_WILLOW is not set
-# CONFIG_CPCI690 is not set
-# CONFIG_POWERPMC250 is not set
-# CONFIG_CHESTNUT is not set
-# CONFIG_SPRUCE is not set
-# CONFIG_HDPU is not set
-# CONFIG_EV64260 is not set
-# CONFIG_LOPEC is not set
-# CONFIG_MVME5100 is not set
-# CONFIG_PPLUS is not set
-# CONFIG_PRPMC750 is not set
-# CONFIG_PRPMC800 is not set
-# CONFIG_SANDPOINT is not set
-# CONFIG_RADSTONE_PPC7D is not set
-# CONFIG_PAL4 is not set
-# CONFIG_GEMINI is not set
-# CONFIG_EST8260 is not set
-# CONFIG_SBC82xx is not set
-# CONFIG_SBS8260 is not set
-# CONFIG_RPX8260 is not set
-# CONFIG_TQM8260 is not set
-# CONFIG_ADS8272 is not set
-# CONFIG_PQ2FADS is not set
-# CONFIG_LITE5200 is not set
-# CONFIG_MPC834x_SYS is not set
-# CONFIG_EV64360 is not set
 # CONFIG_PC_KEYBOARD is not set
 # CONFIG_HIGHMEM is not set
-# CONFIG_HZ_100 is not set
-CONFIG_HZ_250=y
+CONFIG_HZ_100=y
+# CONFIG_HZ_250 is not set
 # CONFIG_HZ_1000 is not set
-CONFIG_HZ=250
+CONFIG_HZ=100
 CONFIG_PREEMPT_NONE=y
 # CONFIG_PREEMPT_VOLUNTARY is not set
 # CONFIG_PREEMPT is not set
@@ -171,7 +142,8 @@ CONFIG_FLAT_NODE_MEM_MAP=y
 CONFIG_SPLIT_PTLOCK_CPUS=4
 CONFIG_BINFMT_ELF=y
 # CONFIG_BINFMT_MISC is not set
-# CONFIG_CMDLINE_BOOL is not set
+CONFIG_CMDLINE_BOOL=y
+CONFIG_CMDLINE="console=ttyS0,115200"
 # CONFIG_PM is not set
 # CONFIG_SOFTWARE_SUSPEND is not set
 # CONFIG_SECCOMP is not set
@@ -463,7 +435,7 @@ CONFIG_BT_RFCOMM_TTY=y
 CONFIG_BT_BNEP=m
 CONFIG_BT_BNEP_MC_FILTER=y
 CONFIG_BT_BNEP_PROTO_FILTER=y
-CONFIG_BT_HIDP=m
+# CONFIG_BT_HIDP is not set
 
 #
 # Bluetooth device drivers
@@ -477,7 +449,13 @@ CONFIG_BT_HCIUART_BCSP=y
 # CONFIG_BT_HCIBPA10X is not set
 # CONFIG_BT_HCIBFUSB is not set
 # CONFIG_BT_HCIVHCI is not set
-# CONFIG_IEEE80211 is not set
+CONFIG_IEEE80211=m
+# CONFIG_IEEE80211_DEBUG is not set
+CONFIG_IEEE80211_CRYPT_WEP=m
+CONFIG_IEEE80211_CRYPT_CCMP=m
+CONFIG_IEEE80211_CRYPT_TKIP=m
+CONFIG_IEEE80211_SOFTMAC=m
+# CONFIG_IEEE80211_SOFTMAC_DEBUG is not set
 CONFIG_WIRELESS_EXT=y
 
 #
@@ -489,7 +467,7 @@ CONFIG_WIRELESS_EXT=y
 #
 CONFIG_STANDALONE=y
 CONFIG_PREVENT_FIRMWARE_BUILD=y
-# CONFIG_FW_LOADER is not set
+CONFIG_FW_LOADER=m
 
 #
 # Connector - unified userspace <-> kernelspace linker
@@ -551,10 +529,7 @@ CONFIG_MTD_CFI_UTIL=y
 # Mapping drivers for chip access
 #
 CONFIG_MTD_COMPLEX_MAPPINGS=y
-CONFIG_MTD_PHYSMAP=y
-CONFIG_MTD_PHYSMAP_START=0x1fc00000
-CONFIG_MTD_PHYSMAP_LEN=0x400000
-CONFIG_MTD_PHYSMAP_BANKWIDTH=1
+# CONFIG_MTD_PHYSMAP is not set
 CONFIG_MTD_MAGICMAP=y
 # CONFIG_MTD_PCI is not set
 # CONFIG_MTD_PLATRAM is not set
@@ -754,32 +729,14 @@ CONFIG_MII=y
 # CONFIG_NET_TULIP is not set
 # CONFIG_HP100 is not set
 CONFIG_IBM_EMAC=y
-CONFIG_IBM_EMAC_RXB=128
-CONFIG_IBM_EMAC_TXB=64
+CONFIG_IBM_EMAC_RXB=64
+CONFIG_IBM_EMAC_TXB=8
 CONFIG_IBM_EMAC_POLL_WEIGHT=32
 CONFIG_IBM_EMAC_RX_COPY_THRESHOLD=256
 CONFIG_IBM_EMAC_RX_SKB_HEADROOM=0
 # CONFIG_IBM_EMAC_PHY_RX_CLK_FIX is not set
 # CONFIG_IBM_EMAC_DEBUG is not set
-CONFIG_NET_PCI=y
-# CONFIG_PCNET32 is not set
-# CONFIG_AMD8111_ETH is not set
-# CONFIG_ADAPTEC_STARFIRE is not set
-# CONFIG_B44 is not set
-# CONFIG_FORCEDETH is not set
-# CONFIG_DGRS is not set
-# CONFIG_EEPRO100 is not set
-# CONFIG_E100 is not set
-# CONFIG_FEALNX is not set
-CONFIG_NATSEMI=y
-# CONFIG_NE2K_PCI is not set
-# CONFIG_8139CP is not set
-# CONFIG_8139TOO is not set
-# CONFIG_SIS900 is not set
-# CONFIG_EPIC100 is not set
-# CONFIG_SUNDANCE is not set
-# CONFIG_TLAN is not set
-# CONFIG_VIA_RHINE is not set
+# CONFIG_NET_PCI is not set
 
 #
 # Ethernet (1000 Mbit)
@@ -795,7 +752,6 @@ CONFIG_NATSEMI=y
 # CONFIG_SKGE is not set
 # CONFIG_SKY2 is not set
 # CONFIG_SK98LIN is not set
-# CONFIG_VIA_VELOCITY is not set
 # CONFIG_TIGON3 is not set
 # CONFIG_BNX2 is not set
 
@@ -825,8 +781,13 @@ CONFIG_NET_WIRELESS_RTNETLINK=y
 #
 # Wireless 802.11b ISA/PCI cards support
 #
-# CONFIG_IPW2100 is not set
-# CONFIG_IPW2200 is not set
+CONFIG_IPW2100=m
+CONFIG_IPW2100_MONITOR=y
+# CONFIG_IPW2100_DEBUG is not set
+CONFIG_IPW2200=m
+CONFIG_IPW2200_MONITOR=y
+# CONFIG_IPW_QOS is not set
+# CONFIG_IPW2200_DEBUG is not set
 # CONFIG_AIRO is not set
 # CONFIG_HERMES is not set
 # CONFIG_ATMEL is not set
@@ -834,8 +795,13 @@ CONFIG_NET_WIRELESS_RTNETLINK=y
 #
 # Prism GT/Duette 802.11(a/b/g) PCI/Cardbus support
 #
-# CONFIG_PRISM54 is not set
-# CONFIG_HOSTAP is not set
+CONFIG_PRISM54=m
+CONFIG_HOSTAP=m
+CONFIG_HOSTAP_FIRMWARE=y
+CONFIG_HOSTAP_FIRMWARE_NVRAM=y
+# CONFIG_HOSTAP_PLX is not set
+CONFIG_HOSTAP_PCI=m
+# CONFIG_BCM43XX is not set
 CONFIG_NET_WIRELESS=y
 
 #
@@ -873,25 +839,7 @@ CONFIG_PPPOE=m
 #
 # Input device support
 #
-CONFIG_INPUT=m
-
-#
-# Userland interfaces
-#
-# CONFIG_INPUT_MOUSEDEV is not set
-# CONFIG_INPUT_JOYDEV is not set
-# CONFIG_INPUT_TSDEV is not set
-# CONFIG_INPUT_EVDEV is not set
-# CONFIG_INPUT_EVBUG is not set
-
-#
-# Input Device Drivers
-#
-# CONFIG_INPUT_KEYBOARD is not set
-# CONFIG_INPUT_MOUSE is not set
-# CONFIG_INPUT_JOYSTICK is not set
-# CONFIG_INPUT_TOUCHSCREEN is not set
-# CONFIG_INPUT_MISC is not set
+# CONFIG_INPUT is not set
 
 #
 # Hardware I/O ports
@@ -1105,6 +1053,7 @@ CONFIG_SND_RAWMIDI=m
 # CONFIG_SND_MIXART is not set
 # CONFIG_SND_NM256 is not set
 # CONFIG_SND_PCXHR is not set
+# CONFIG_SND_RIPTIDE is not set
 # CONFIG_SND_RME32 is not set
 # CONFIG_SND_RME96 is not set
 # CONFIG_SND_RME9652 is not set
@@ -1121,6 +1070,10 @@ CONFIG_SND_RAWMIDI=m
 
 #
 # ALSA PowerMac requires I2C
+#
+
+#
+# ALSA PowerMac requires INPUT
 #
 
 #
@@ -1195,20 +1148,6 @@ CONFIG_USB_STORAGE=m
 #
 # USB HID Boot Protocol drivers
 #
-# CONFIG_USB_KBD is not set
-# CONFIG_USB_MOUSE is not set
-# CONFIG_USB_AIPTEK is not set
-# CONFIG_USB_WACOM is not set
-# CONFIG_USB_ACECAD is not set
-# CONFIG_USB_KBTAB is not set
-# CONFIG_USB_POWERMATE is not set
-# CONFIG_USB_TOUCHSCREEN is not set
-# CONFIG_USB_YEALINK is not set
-# CONFIG_USB_XPAD is not set
-# CONFIG_USB_ATI_REMOTE is not set
-# CONFIG_USB_ATI_REMOTE2 is not set
-# CONFIG_USB_KEYSPAN_REMOTE is not set
-# CONFIG_USB_APPLETOUCH is not set
 
 #
 # USB Imaging devices
