@@ -328,13 +328,11 @@ config PACKAGE_KMOD_NET_PRISM54
 endmenu
 
 menu "PCMCIA/CardBus support"
-	depends LINUX_2_4_X86 || LINUX_2_6_X86 || LINUX_2_4_BRCM || LINUX_2_6_BRCM
+	depends PCMCIA_SUPPORT
 
 config PACKAGE_KMOD_PCMCIA_CORE
 	prompt "kmod-pcmcia-core.................. PCMCIA/CardBus support"
-	depends PCMCIA_SUPPORT
 	tristate
-	depends LINUX_2_4_X86 || LINUX_2_6_X86 || LINUX_2_4_BRCM || LINUX_2_6_BRCM
 	default m
 
 config PACKAGE_KMOD_PCMCIA_SERIAL
@@ -346,11 +344,11 @@ config PACKAGE_KMOD_PCMCIA_SERIAL
 endmenu
 
 menu "USB support"
+	depends USB_SUPPORT
 
 config PACKAGE_KMOD_USB
 	prompt "kmod-usb-core..................... USB support"
 	tristate
-	default n if LINUX_2_4_AR531X
 	default m
 
 config PACKAGE_KMOD_USB_UHCI 
@@ -468,8 +466,8 @@ config PACKAGE_KMOD_AX25
 config PACKAGE_KMOD_BLUETOOTH
 	prompt "kmod-bluetooth.................... Bluetooth drivers and network stack"
 	tristate
+	depends PCI_SUPPORT || USB_SUPPORT
 	default m
-	default n if LINUX_2_4_AR531X
 	help
 	  Bluetooth drivers and network stack
 
