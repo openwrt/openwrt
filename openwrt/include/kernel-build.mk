@@ -82,7 +82,6 @@ $(LINUX_DIR)/.linux-compile:
 	@rm -f $(BUILD_DIR)/linux
 	ln -sf $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION) $(BUILD_DIR)/linux
 	@$(MAKE) modules
-	@$(MAKE) packages
 	touch $@
 
 $(KERNEL_IPKG):
@@ -110,6 +109,7 @@ prepare: $(LINUX_DIR)/.configured
 	@mkdir -p $(LINUX_DIR) $(PACKAGE_DIR)
 
 compile: prepare $(LINUX_DIR)/.linux-compile
+	@$(MAKE) packages
 
 install: compile $(LINUX_KERNEL)
 
