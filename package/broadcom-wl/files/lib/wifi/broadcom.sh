@@ -133,6 +133,7 @@ setup_broadcom() {
 		append vif_post_up "eap_restrict $eap_r" "$N"
 		
 		config_get ssid "$vif" ssid
+		append vif_post_up "vlan_mode 0"
 		append vif_post_up "ssid $ssid" "$N"
 		append vif_post_up "enabled 1" "$N"
 		
@@ -158,7 +159,6 @@ infra $infra
 ${wet:+wet 1}
 
 radio ${radio:-1}
-vlan_mode 0
 macfilter 0
 maclist none
 wds none
