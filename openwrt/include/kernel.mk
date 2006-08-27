@@ -16,7 +16,7 @@ else
   # check to see if .kernel.mk matches target.mk
   ifeq ($(CONFIG_BOARD)-$(CONFIG_KERNEL),$(BOARD)-$(KERNEL))
      LINUX_VERSION:=$(CONFIG_LINUX_VERSION)
-     RELEASE:=$(CONFIG_RELEASE)
+     LINUX_RELEASE:=$(CONFIG_LINUX_RELEASE)
   else
   # oops, old .kernel.config; rebuild it (hiding the misleading errors this produces)
     $(warning rebuilding .kernel.mk)
