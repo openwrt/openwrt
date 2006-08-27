@@ -22,7 +22,3 @@ for iface in $(/sbin/ifconfig -a | awk '{print $1}' | grep eth); do
 done
 
 load_modules /etc/modules /etc/modules.d/*
-
-ifconfig lo 127.0.0.1 up
-ifconfig eth0 promisc
-
