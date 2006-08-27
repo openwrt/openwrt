@@ -4,12 +4,15 @@
 # DEBUG="echo"
 
 find_config() {
-	local iftype iface ifn
+	local iftype device iface ifaces ifn
 	for ifn in $interfaces; do
 		config_get iftype "$ifn" type
 		config_get iface "$ifn" ifname
+		case "$iftype" in
+			bridge) config_get ifaces "$ifn" ifnames;;
+		esac
 		config_get device "$ifn" device
-		for ifc in ${device:-$iface}; do
+		for ifc in $device $iface $ifaces; do
 			[ "$ifc" = "$1" ] && {
 				echo "$ifn"
 				return 0
