@@ -32,7 +32,7 @@ scan_interfaces() {
 			interface)
 				config_get proto "$CONFIG_SECTION" proto
 				append interfaces "$CONFIG_SECTION"
-				config_get iftype "$CONFIG_SECTION" iftype
+				config_get iftype "$CONFIG_SECTION" type
 				case "$iftype" in
 					bridge)
 						config_get ifname "$CONFIG_SECTION" ifname
