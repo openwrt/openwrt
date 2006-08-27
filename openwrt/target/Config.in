@@ -7,6 +7,7 @@ config LINUX_2_6_AU1000
 	select mipsel
 	select LINUX_2_6
 	select PCI_SUPPORT
+	select USB_SUPPORT
 	help
 	  Build firmware for AMD Alchemy 1500 boards
 	  (e.g. 4G-Systems Mesh/Access Cube ...)
@@ -16,6 +17,7 @@ config LINUX_2_6_ARUBA
 	select mips
 	select LINUX_2_6
 	select PCI_SUPPORT
+	select USB_SUPPORT
 	select BIG_ENDIAN
 	help
           Build firmware images for Aruba boards 
@@ -34,6 +36,7 @@ config LINUX_2_4_BRCM
 	bool "Broadcom BCM47xx/53xx [2.4]"
 	select mipsel
 	select PCI_SUPPORT
+	select USB_SUPPORT
 	select PCMCIA_SUPPORT
 	help
 	  Build firmware images for Broadcom based routers
@@ -48,6 +51,7 @@ config LINUX_2_6_BRCM
 	select mipsel
 	select LINUX_2_6
 	select PCI_SUPPORT
+	select USB_SUPPORT
 	#select PCMCIA_SUPPORT
 	help
 	  Build firmware images for Broadcom based routers
@@ -59,6 +63,7 @@ config LINUX_2_6_BRCM63XX
 	select mips
 	select LINUX_2_6
 	select PCI_SUPPORT
+	select USB_SUPPORT
 	select PCMCIA_SUPPORT
 	help
 	  Build firmware images for Broadcom based xDSL/routers
@@ -70,6 +75,7 @@ config LINUX_2_6_XSCALE
 	select LINUX_2_6
 	select BIG_ENDIAN
 	select PCI_SUPPORT
+	select USB_SUPPORT
 
 config LINUX_2_6_MAGICBOX
 	bool "Magicbox [2.6]"
@@ -95,6 +101,8 @@ config LINUX_2_4_X86
 	bool "x86 [2.4]"
 	select i386
 	select LINUX_2_4
+	select PCI_SUPPORT
+	select USB_SUPPORT
 	select PCMCIA_SUPPORT
 	help
 	  Build firmware images for x86 based boards
@@ -104,6 +112,8 @@ config LINUX_2_6_X86
 	bool "x86 [2.6]"
 	select i386
 	select LINUX_2_6
+	select PCI_SUPPORT
+	select USB_SUPPORT
 	select PCMCIA_SUPPORT
 	help
 	  Build firmware images for x86 based boards
@@ -186,6 +196,9 @@ config PCI_SUPPORT
 	bool
 
 config PCMCIA_SUPPORT
+	bool
+
+config USB_SUPPORT
 	bool
 
 config BIG_ENDIAN
