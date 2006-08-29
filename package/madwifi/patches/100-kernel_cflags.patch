@@ -1,43 +1,42 @@
-diff -ru madwifi-ng-r1486-20060329/Makefile madwifi-ng-r1486-20060329-patch/Makefile
---- madwifi-ng-r1486-20060329/Makefile	2006-03-13 19:23:02.000000000 -0500
-+++ madwifi-ng-r1486-20060329-patch/Makefile	2006-03-31 10:52:05.000000000 -0500
-@@ -51,7 +51,7 @@
+diff -ur madwifi.old/hal/public/mips-be-elf.inc madwifi.dev/hal/public/mips-be-elf.inc
+--- madwifi.old/hal/public/mips-be-elf.inc	2006-05-27 04:48:16.000000000 +0200
++++ madwifi.dev/hal/public/mips-be-elf.inc	2006-08-29 18:17:44.000000000 +0200
+@@ -71,5 +71,5 @@
+ 
+ LDOPTS=	-EB
+ COPTS+=	-DAH_BYTE_ORDER=AH_BIG_ENDIAN
+-COPTS+=	-G 0 -EB -mno-abicalls -fno-pic -mips2 -Wa,--trap \
++COPTS+=	-G 0 -mno-abicalls -fno-pic -mips32 -Wa,--trap \
+ 	-fno-strict-aliasing -fno-common -fomit-frame-pointer -mlong-calls
+diff -ur madwifi.old/hal/public/mips-le-elf.inc madwifi.dev/hal/public/mips-le-elf.inc
+--- madwifi.old/hal/public/mips-le-elf.inc	2006-05-27 04:48:16.000000000 +0200
++++ madwifi.dev/hal/public/mips-le-elf.inc	2006-08-29 18:17:57.000000000 +0200
+@@ -68,5 +68,5 @@
+ 
+ LDOPTS=	-EL
+ COPTS+=	-DAH_BYTE_ORDER=AH_LITTLE_ENDIAN
+-COPTS+=	-G 0 -EL -mno-abicalls -fno-pic -mips2 -Wa,--trap \
++COPTS+=	-G 0 -mno-abicalls -fno-pic -mips32 -Wa,--trap \
+ 	-fno-strict-aliasing -fno-common -fomit-frame-pointer -mlong-calls
+diff -ur madwifi.old/hal/public/xscale-be-elf.inc madwifi.dev/hal/public/xscale-be-elf.inc
+--- madwifi.old/hal/public/xscale-be-elf.inc	2006-05-27 04:48:16.000000000 +0200
++++ madwifi.dev/hal/public/xscale-be-elf.inc	2006-08-29 18:01:39.000000000 +0200
+@@ -77,5 +77,5 @@
+ 
+ LDOPTS=	-EB
+ COPTS+=	-DAH_BYTE_ORDER=AH_BIG_ENDIAN
+-COPTS+= -march=armv4 -mbig-endian -fno-strict-aliasing -fno-common -mapcs-32 \
++COPTS+= -march=armv5te -mcpu=xscale -mbig-endian -fno-strict-aliasing -fno-common -mapcs-32 \
+ 	-mtune=xscale  -mshort-load-bytes -msoft-float -mfp=2
+diff -ur madwifi.old/Makefile madwifi.dev/Makefile
+--- madwifi.old/Makefile	2006-07-14 07:15:56.000000000 +0200
++++ madwifi.dev/Makefile	2006-08-29 18:01:39.000000000 +0200
+@@ -54,7 +54,7 @@
  
  all: modules tools
  
 -modules: configcheck svnversion.h
 +modules: svnversion.h
- 	mkdir -p ${SYMBOLSDIR}
- 	for i in ${DIRS_MODULES}; do \
+ ifdef LINUX24
+ 	for i in $(DIRS_MODULES); do \
  		$(MAKE) -C $$i || exit 1; \
-diff -ru madwifi-ng-r1486-20060329/hal/public/mips-be-elf.inc madwifi-ng-r1486-20060329-patch/hal/public/mips-be-elf.inc
---- madwifi-ng-r1486-20060329/hal/public/mips-be-elf.inc	2006-03-28 03:46:27.000000000 -0500
-+++ madwifi-ng-r1486-20060329-patch/hal/public/mips-be-elf.inc	2006-03-31 10:52:05.000000000 -0500
-@@ -66,5 +66,5 @@
- 
- LDOPTS=	-EB
- COPTS+=	-DAH_BYTE_ORDER=AH_BIG_ENDIAN
--COPTS+=	-G 0 -EB -mno-abicalls -fno-pic -Wa,--trap \
-+COPTS+=	-G 0 -EB -mno-abicalls -fno-pic -Wa,--trap -mips32 \
- 	-fno-strict-aliasing -fno-common -fomit-frame-pointer -mlong-calls
-diff -ru madwifi-ng-r1486-20060329/hal/public/mips-le-elf.inc madwifi-ng-r1486-20060329-patch/hal/public/mips-le-elf.inc
---- madwifi-ng-r1486-20060329/hal/public/mips-le-elf.inc	2006-03-28 03:46:27.000000000 -0500
-+++ madwifi-ng-r1486-20060329-patch/hal/public/mips-le-elf.inc	2006-03-31 10:52:05.000000000 -0500
-@@ -63,5 +63,5 @@
- 
- LDOPTS=	-EL
- COPTS+=	-DAH_BYTE_ORDER=AH_LITTLE_ENDIAN
--COPTS+=	-G 0 -EL -mno-abicalls -fno-pic -Wa,--trap \
-+COPTS+=	-G 0 -EL -mno-abicalls -fno-pic -Wa,--trap -mips32 \
- 	-fno-strict-aliasing -fno-common -fomit-frame-pointer -mlong-calls
-diff -ur madwifi-ng-r1486-20060329/hal/public/xscale-be-elf.inc madwifi-ng-r1486-20060329-patch/hal/public/xscale-be-elf.inc
---- madwifi-ng-r1486-20060329/hal/public/xscale-be-elf.inc	2006-02-11 13:04:39.000000000 +0100
-+++ madwifi-ng-r1486-20060329-patch/hal/public/xscale-be-elf.inc	2006-04-16 15:07:59.000000000 +0200
-@@ -72,5 +72,5 @@
- 
- LDOPTS=	-EB
- COPTS+=	-DAH_BYTE_ORDER=AH_BIG_ENDIAN -DAH_REGOPS_FUNC
--COPTS+= -march=armv4 -mbig-endian -fno-strict-aliasing -fno-common -mapcs-32 \
--	-mtune=xscale  -mshort-load-bytes -msoft-float -mfp=2
-+COPTS+= -mcpu=xscale -mbig-endian -fno-strict-aliasing -fno-common \
-+	-msoft-float -mfp=2
