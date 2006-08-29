@@ -10,15 +10,17 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=madwifi
-PKG_VERSION:=0.9.0
+PKG_VERSION:=0.9.2
 PKG_RELEASE:=1
-PKG_MD5SUM:=9b558d1df84cab2b0006c595feee0fba
+PKG_MD5SUM:=a75baacbe07085ddc5cb28e1fb43edbb
 
 PKG_SOURCE_URL:=@SF/$(PKG_NAME)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_CAT:=bzcat
 
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+
+RATE_CONTROL:=sample
 
 ifeq ($(ARCH),mips)
   HAL_TARGET:=mips-be-elf
@@ -53,14 +55,15 @@ ifeq ($(findstring PCI,$(BUS)),PCI)
 endif
 
 MADWIFI_MAKEOPTS= -C $(PKG_BUILD_DIR) \
+		PATH="$(TARGET_PATH)" \
 		ARCH="$(LINUX_KARCH)" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
-		CC="$(TARGET_CC)" \
 		TARGET="$(HAL_TARGET)" \
 		TOOLPREFIX="$(KERNEL_CROSS)" \
 		TOOLPATH="$(KERNEL_CROSS)" \
 		KERNELPATH="$(LINUX_DIR)" \
-		LDOPTS="" \
+		LDOPTS=" " \
+		ATH_RATE="ath_rate/$(RATE_CONTROL)" \
 		DOMULTI=1
 
 include $(INCLUDE_DIR)/package.mk
@@ -109,6 +112,7 @@ define Package/kmod-madwifi/install
 	mkdir -p $(1)/lib/modules/$(LINUX_VERSION)
 	mkdir -p $(1)/usr/sbin
 	install -m0644 ./files/madwifi.modules $(1)/etc/modules.d/20-madwifi
+	echo ath_rate_$(RATE_CONTROL) >> $(1)/etc/modules.d/20-madwifi
 ifeq ($(findstring AHB,$(BUS)),AHB)
 	echo ath_ahb >> $(1)/etc/modules.d/20-madwifi
 endif
@@ -117,9 +121,9 @@ ifeq ($(findstring PCI,$(BUS)),PCI)
 endif
 	install -m0755 ./files/madwifi.init $(1)/etc/init.d/S20madwifi
 	$(CP) \
-		$(PKG_BUILD_DIR)/ath_hal/ath_hal.$(LINUX_KMOD_SUFFIX) \
+		$(PKG_BUILD_DIR)/ath/ath_hal.$(LINUX_KMOD_SUFFIX) \
 		$(BUS_MODULES) \
-		$(PKG_BUILD_DIR)/ath_rate/sample/ath_rate_sample.$(LINUX_KMOD_SUFFIX) \
+		$(PKG_BUILD_DIR)/ath_rate/$(RATE_CONTROL)/ath_rate_$(RATE_CONTROL).$(LINUX_KMOD_SUFFIX) \
 		$(PKG_BUILD_DIR)/net80211/wlan*.$(LINUX_KMOD_SUFFIX) \
 		$(1)/lib/modules/$(LINUX_VERSION)/
 	$(CP) $(PKG_BUILD_DIR)/tools/{madwifi_multi,80211debug,80211stats,athchans,athctrl,athdebug,athkey,athstats,wlanconfig} $(1)/usr/sbin/
