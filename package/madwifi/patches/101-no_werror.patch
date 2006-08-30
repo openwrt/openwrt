@@ -1,0 +1,11 @@
+--- madwifi.old/Makefile.inc	2006-07-14 07:15:56.000000000 +0200
++++ madwifi.dev/Makefile.inc	2006-08-30 05:20:27.000000000 +0200
+@@ -181,7 +181,7 @@
+ # 
+ TOOLS=  $(DEPTH)/tools 
+ 
+-COPTS+=	-Werror
++# COPTS+=	-Werror
+ INCS=	-include $(obj)/$(DEPTH)/include/compat.h -I$(obj)/$(DEPTH)/include
+ 
+ ifeq ($(strip $(BUS)),AHB)
