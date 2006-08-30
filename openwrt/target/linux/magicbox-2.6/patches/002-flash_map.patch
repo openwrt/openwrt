@@ -20,7 +20,7 @@ diff -urN linux.old/drivers/mtd/maps/Kconfig linux.dev/drivers/mtd/maps/Kconfig
 diff -urN linux.old/drivers/mtd/maps/magicmap.c linux.dev/drivers/mtd/maps/magicmap.c
 --- linux.old/drivers/mtd/maps/magicmap.c	1970-01-01 01:00:00.000000000 +0100
 +++ linux.dev/drivers/mtd/maps/magicmap.c	2006-08-30 06:52:34.000000000 +0200
-@@ -0,0 +1,112 @@
+@@ -0,0 +1,113 @@
 +/*
 + * magicmap.c: Copyleft 2005  Karol Lewandowski
 + *
@@ -94,6 +94,7 @@ diff -urN linux.old/drivers/mtd/maps/magicmap.c linux.dev/drivers/mtd/maps/magic
 +		if (MTD_READ(flash, 12, sizeof(u32), &len, (char *) &size) ||
 +			len != 4)
 +			return -ENXIO;
++		size += 0x40; /* header size of the uImage */
 +		if ((size > 0) && (size < 0x400000)) {
 +			/* skip to next erase block */
 +			if (size & (flash->erasesize - 1)) {
