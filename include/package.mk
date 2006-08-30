@@ -27,7 +27,9 @@ define Build/DefaultTargets
       endif
 
       ifneq ($(MAKECMDGOALS),prereq)
-        $$(info Rebuilding $$(_INFO))
+        ifneq ($$(_INFO),)
+          $$(info Rebuilding $$(_INFO))
+        endif
       endif
     endif
   endif
@@ -129,6 +131,10 @@ define BuildPackage
 
     ifneq ($(CONFIG_PACKAGE_$(1)),)
       compile-targets: $$(IPKG_$(1))
+    else
+      compile-targets: $(1)-disabled
+      $(1)-disabled:
+	@echo "WARNING: skipping $(1) -- package not selected"
     endif
   endif
 
