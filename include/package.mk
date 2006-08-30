@@ -237,7 +237,7 @@ define BuildPackage
   clean: $(1)-clean
 
   $(PKG_BUILD_DIR)/.version-$(1)_$(VERSION)_$(PKGARCH): $(PKG_BUILD_DIR)/.prepared
-	-rm $(PKG_BUILD_DIR)/.version-$(1)_*
+	-@rm $(PKG_BUILD_DIR)/.version-$(1)_* 2>/dev/null
 	@touch $$@
 
   $$(eval $$(call Build/DefaultTargets,$(1)))
@@ -263,7 +263,7 @@ endef
 
 define Build/Configure/Default
 	@(cd $(PKG_BUILD_DIR)/$(3); \
-	[ -x configure ] && { \
+	[ \! -x configure ] || \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
 		CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include" \
@@ -287,7 +287,6 @@ define Build/Configure/Default
 		--infodir=/usr/info \
 		$(DISABLE_NLS) \
 		$(1); \
-	} || true; \
 	)
 endef
 
