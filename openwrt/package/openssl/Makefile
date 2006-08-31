@@ -67,7 +67,7 @@ define Build/Compile
 	rm -rf $(PKG_INSTALL_DIR)
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) -j1 \
-		MAKEDEPPROG="$(TARGET_CC)" \
+		MAKEDEPPROG="$(TARGET_CROSS)gcc" \
 		depend
 	$(MAKE) -C $(PKG_BUILD_DIR) -j1 \
 		CC="$(TARGET_CC)" \
