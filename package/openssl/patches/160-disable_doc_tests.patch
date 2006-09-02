@@ -46,3 +46,15 @@ diff -urN openssl-0.9.8a/Makefile openssl-0.9.8a.new/Makefile
  
  install_sw:
  	@$(PERL) $(TOP)/util/mkdir-p.pl $(INSTALL_PREFIX)$(INSTALLTOP)/bin \
+diff -urN openssl-0.9.8b/Makefile.org openssl-0.9.8b.new/Makefile.org
+--- openssl-0.9.8b/Makefile.org	2006-09-01 19:34:51.000000000 +0200
++++ openssl-0.9.8b.new/Makefile.org	2006-09-01 19:36:38.000000000 +0200
+@@ -473,7 +473,7 @@
+ dist_pem_h:
+ 	(cd crypto/pem; $(MAKE) -e $(BUILDENV) pem.h; $(MAKE) clean)
+ 
+-install: all install_docs install_sw
++install: all install_sw
+ 
+ install_sw:
+ 	@$(PERL) $(TOP)/util/mkdir-p.pl $(INSTALL_PREFIX)$(INSTALLTOP)/bin \
