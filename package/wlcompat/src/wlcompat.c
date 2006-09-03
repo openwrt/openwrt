@@ -24,10 +24,12 @@
 
 #include <linux/config.h>
 #include <linux/module.h>
+#include <linux/moduleparam.h>
 #include <linux/init.h>
 #include <linux/if_arp.h>
 #include <asm/uaccess.h>
 #include <linux/wireless.h>
+#include <linux/timer.h>
 
 #include <net/iw_handler.h>
 #include <wlioctl.h>
@@ -35,6 +37,7 @@
 static struct net_device *dev;
 static unsigned short bss_force;
 static struct iw_statistics wstats;
+static int random = 1;
 char buf[WLC_IOCTL_MAXLEN];
 
 /* The frequency of each channel in MHz */
@@ -43,6 +46,8 @@ const long channel_frequency[] = {
 	2447, 2452, 2457, 2462, 2467, 2472, 2484
 };
 #define NUM_CHANNELS ( sizeof(channel_frequency) / sizeof(channel_frequency[0]) )
+
+#define RNG_POLL_FREQ	20
 
 typedef struct internal_wsec_key {
 	uint8 index;		// 0x00
@@ -977,6 +982,25 @@ static int new_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd) {
 	return ret;
 }
 
+static struct timer_list rng_timer;
+
+static void rng_timer_tick(unsigned long n)
+{
+	struct net_device *dev = (struct net_device *) n;
+	u16 data[4];
+	int i, ret;
+	
+	ret = 0;
+	for (i = 0; i < 3; i++) {
+		ret |= wl_get_val(dev, "rand", &data[i], sizeof(u16));
+	}
+	if (!ret)
+		batch_entropy_store(*((u32 *) &data[0]), *((u32 *) &data[2]), (jiffies % 255));
+
+	mod_timer(&rng_timer, jiffies + (HZ/RNG_POLL_FREQ));
+}
+
+
 static int __init wlcompat_init()
 {
 	int found = 0, i;
@@ -999,6 +1023,14 @@ static int __init wlcompat_init()
 	dev->do_ioctl = new_ioctl;
 	dev->wireless_handlers = (struct iw_handler_def *)&wlcompat_handler_def;
 	dev->get_wireless_stats = wlcompat_get_wireless_stats;
+
+	if (random) {
+		init_timer(&rng_timer);
+		rng_timer.function = rng_timer_tick;
+		rng_timer.data = (unsigned long) dev;
+		rng_timer_tick((unsigned long) dev);
+	}
+	
 #ifdef DEBUG
 	printk("broadcom driver private data: 0x%08x\n", dev->priv);
 #endif
@@ -1007,6 +1039,8 @@ static int __init wlcompat_init()
 
 static void __exit wlcompat_exit()
 {
+	if (random)
+		del_timer(&rng_timer);
 	dev->get_wireless_stats = NULL;
 	dev->wireless_handlers = NULL;
 	dev->do_ioctl = old_ioctl;
@@ -1017,5 +1051,6 @@ EXPORT_NO_SYMBOLS;
 MODULE_AUTHOR("openwrt.org");
 MODULE_LICENSE("GPL");
 
+module_param(random, int, 0);
 module_init(wlcompat_init);
 module_exit(wlcompat_exit);
