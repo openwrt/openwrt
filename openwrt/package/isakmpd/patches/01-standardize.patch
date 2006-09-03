@@ -1,0 +1,132 @@
+diff -urN isakmpd/GNUmakefile isakmpd.new/GNUmakefile
+--- isakmpd/GNUmakefile	2004-01-16 13:36:32.000000000 +0100
++++ isakmpd.new/GNUmakefile	2006-09-03 17:33:03.000000000 +0200
+@@ -40,12 +40,12 @@
+ # integrated, freebsd/netbsd means FreeBSD/NetBSD with KAME IPsec.
+ # darwin means MacOS X 10.2 and later with KAME IPsec. linux means Linux-2.5
+ # and later with native IPSec support.
+-OS=		openbsd
++#OS=		openbsd
+ #OS=		netbsd
+ #OS=		freebsd
+ #OS=		freeswan
+ #OS=		darwin
+-#OS=		linux
++OS=		linux
+ 
+ .CURDIR:=	$(shell pwd)
+ VPATH=		${.CURDIR}/sysdep/${OS}
+@@ -53,11 +53,11 @@
+ PROG=		isakmpd
+ 
+ ifndef BINDIR
+-BINDIR=		/sbin
+-endif
+-ifndef LDSTATIC
+-LDSTATIC=	-static
++BINDIR=		/usr/sbin
+ endif
++#ifndef LDSTATIC
++#LDSTATIC=	-static
++#endif
+ 
+ SRCS=		app.c attribute.c cert.c connection.c \
+ 		constants.c conf.c cookie.c crypto.c dh.c doi.c exchange.c \
+@@ -154,7 +154,7 @@
+ 
+ ifdef USE_KEYNOTE
+ USE_LIBCRYPTO=	yes
+-LDADD+=		-lkeynote -lm
++LDADD+=		-L${LIBKEYNOTEDIR} -lkeynote -lm
+ DPADD+=		${LIBKEYNOTE} ${LIBM}
+ POLICY=		policy.c
+ CFLAGS+=	-DUSE_KEYNOTE
+@@ -238,3 +238,16 @@
+ 
+ realcleandepend:
+ 	rm -f .depend tags
++
++# Install rules
++install: install-bin install-man
++
++install-bin: isakmpd
++	-mkdir -p $(DESTDIR)$(BINDIR)
++	$(INSTALL) $(INSTALL_OPTS) -m 755 isakmpd $(DESTDIR)$(BINDIR)
++
++install-man:
++	-mkdir -p $(DESTDIR)$(MANDIR)/man8
++	$(INSTALL) $(INSTALL_OPTS) -m 444 isakmpd.8 $(DESTDIR)$(MANDIR)/man8
++	-mkdir -p $(DESTDIR)$(MANDIR)/man5
++	$(INSTALL) $(INSTALL_OPTS) -m 444 isakmpd.conf.5 isakmpd.policy.5 $(DESTDIR)$(MANDIR)/man5
+diff -urN isakmpd/samples/Makefile isakmpd.new/samples/Makefile
+--- isakmpd/samples/Makefile	2003-06-03 16:39:50.000000000 +0200
++++ isakmpd.new/samples/Makefile	2006-09-03 17:07:24.000000000 +0200
+@@ -26,7 +26,7 @@
+ #
+ 
+ FILES=		VPN-* policy singlehost-*
+-TARGETDIR=	/usr/share/ipsec/isakmpd
++TARGETDIR=	/usr/share/isakmpd/samples
+ 
+ # The mkdir below is for installation on OpenBSD pre 2.7
+ install:
+diff -urN isakmpd/sysdep/linux/GNUmakefile.sysdep isakmpd.new/sysdep/linux/GNUmakefile.sysdep
+--- isakmpd/sysdep/linux/GNUmakefile.sysdep	2004-01-16 13:36:42.000000000 +0100
++++ isakmpd.new/sysdep/linux/GNUmakefile.sysdep	2006-09-03 17:16:48.000000000 +0200
+@@ -25,18 +25,20 @@
+ # THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ #
+ 
+-LIBGMP:=	/usr/lib/libgmp.a
+-LIBCRYPTO:=	/usr/lib/libcrypto.a
++LIBGMP:=	-lgmp
++LIBCRYPTO:=	-lcrypto
+ LIBSYSDEPDIR:=	${.CURDIR}/sysdep/common/libsysdep
+ LIBSYSDEP:=	${LIBSYSDEPDIR}/libsysdep.a
+ 
+-LDADD+=		-lgmp ${LIBSYSDEP} ${LIBCRYPTO}
++LIBKEYNOTEDIR:=	$(STAGING_DIR)/usr/include
++
++LDADD+=		-lgmp ${LIBSYSDEP} ${LIBCRYPTO} -L$(STAGING_DIR)/usr/lib
+ DPADD+=		${LIBGMP} ${LIBSYSDEP}
+ 
+ CFLAGS+=	-DHAVE_GETNAMEINFO -DUSE_OLD_SOCKADDR -DHAVE_PCAP \
+ 		-DNEED_SYSDEP_APP -DMP_FLAVOUR=MP_FLAVOUR_GMP \
+-		-I/usr/src/linux/include -I${.CURDIR}/sysdep/common \
+-		-I/usr/include/openssl
++		-I$(LINUX_DIR)/include -I${.CURDIR}/sysdep/common \
++		-I$(STAGING_DIR)/usr/include/openssl -I${LIBKEYNOTEDIR}
+ 
+ FEATURES=	debug tripledes blowfish cast ec aggressive x509 policy
+ 
+@@ -50,7 +52,7 @@
+ # hack libsysdep.a dependenc
+ ${LIBSYSDEPDIR}/.depend ${LIBSYSDEP}:
+ 	cd ${LIBSYSDEPDIR} && \
+-		${MAKE} --no-print-directory ${MAKEFLAGS} \
++		${MAKE} --no-print-directory \
+ 			CFLAGS="${CFLAGS}" MKDEP="${MKDEP}" ${MAKECMDGOALS}
+ 
+ ifeq ($(findstring clean,$(MAKECMDGOALS)),clean)
+diff -urN isakmpd/x509.c isakmpd.new/x509.c
+--- isakmpd/x509.c	2004-01-06 01:09:19.000000000 +0100
++++ isakmpd.new/x509.c	2006-09-03 17:07:24.000000000 +0200
+@@ -969,14 +969,14 @@
+    * trust.
+    */
+   X509_STORE_CTX_init (&csc, x509_cas, cert, NULL);
+-#if OPENSSL_VERSION_NUMBER >= 0x00907000L
+-  /* XXX See comment in x509_read_crls_from_dir.  */
+-  if (x509_cas->flags & X509_V_FLAG_CRL_CHECK)
++//#if OPENSSL_VERSION_NUMBER >= 0x00907000L
++    /* XXX See comment in x509_read_crls_from_dir.  */
++   /*if (x509_cas->flags & X509_V_FLAG_CRL_CHECK)
+     {
+       X509_STORE_CTX_set_flags (&csc, X509_V_FLAG_CRL_CHECK);
+       X509_STORE_CTX_set_flags (&csc, X509_V_FLAG_CRL_CHECK_ALL);
+     }
+-#endif
++#endif */
+   res = X509_verify_cert (&csc);
+   err = csc.error;
+   X509_STORE_CTX_cleanup (&csc);
