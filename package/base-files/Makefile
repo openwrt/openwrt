@@ -133,6 +133,7 @@ define Package/base-files$(TARGET)/install-ar7
 	$(CP) $(PKG_BUILD_DIR)/adam2patcher $(1)/sbin
 endef
 define Package/base-files$(TARGET)/install-brcm
+	rm -f $(1)/etc/config/network
 	mkdir -p $(1)/sbin
 	$(CP) $(PKG_BUILD_DIR)/jffs2root $(1)/sbin
 endef
