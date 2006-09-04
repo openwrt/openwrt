@@ -14,7 +14,7 @@ PKG_RELEASE:=1
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=@SF/isakmpd
+PKG_SOURCE_URL:=http://downloads.openwrt.org/sources/
 PKG_MD5SUM:=9f59b10d57cfed5e95743255f1c1620d
 PKG_CAT:=bzcat
 
