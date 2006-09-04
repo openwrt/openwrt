@@ -29,7 +29,7 @@ CATEGORY:=Network
 DEPENDS:=@LINUX_2_6
 TITLE:=IPsec management tools
 DESCRIPTION:=IPsec management tools
-URL:=http://keynote.sourceforge.net/
+URL:=http://www1.cs.columbia.edu/~angelos/keynote.html
 endef
 
 define Build/Configure
