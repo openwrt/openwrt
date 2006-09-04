@@ -96,26 +96,32 @@ ifeq ($(KERNEL),2.6)
   define Build/Compile
   endef
   
+ifeq ($(CONFIG_HOSTAP),m)
   define Package/kmod-hostap/install
 	install -m0755 -d $(1)/lib/modules/$(LINUX_VERSION)
 	$(CP) \
 		$(MODULES_DIR)/kernel/drivers/net/wireless/hostap/hostap.$(LINUX_KMOD_SUFFIX) \
 		$(1)/lib/modules/$(LINUX_VERSION)/
   endef
+endif
 
+ifeq ($(CONFIG_HOSTAP_PCI),m)
   define Package/kmod-hostap-pci/install
 	install -m0755 -d $(1)/lib/modules/$(LINUX_VERSION)
 	$(CP) \
 		$(MODULES_DIR)/kernel/drivers/net/wireless/hostap/hostap_pci.$(LINUX_KMOD_SUFFIX) \
 		$(1)/lib/modules/$(LINUX_VERSION)/
   endef
+endif
 
+ifeq ($(CONFIG_HOSTAP_PLX),m)
   define Package/kmod-hostap-plx/install
 	install -m0755 -d $(1)/lib/modules/$(LINUX_VERSION)
 	$(CP) \
 		$(MODULES_DIR)/kernel/drivers/net/wireless/hostap/hostap_plx.$(LINUX_KMOD_SUFFIX) \
 		$(1)/lib/modules/$(LINUX_VERSION)/
   endef
+endif
 endif
 
 $(eval $(call BuildPackage,kmod-hostap))
