@@ -95,7 +95,7 @@ diff -urN linux.old/drivers/mtd/maps/magicmap.c linux.dev/drivers/mtd/maps/magic
 +			len != 4)
 +			return -ENXIO;
 +		size += 0x40; /* header size of the uImage */
-+		if ((size > 0) && (size < 0x400000)) {
++		if (size < 0x400000) {
 +			/* skip to next erase block */
 +			if (size & (flash->erasesize - 1)) {
 +				size |= (flash->erasesize - 1);
