@@ -22,11 +22,17 @@ define Image/Build
 endef
 
 define Image/Build/jffs2-64k
-	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).img bs=65536 conv=sync
+	( \
+		dd if=$(LINUX_DIR)/arch/ppc/boot/images/uImage bs=65536 conv=sync; \
+		dd if=$(KDIR)/root.$(1) bs=65536 conv=sync; \
+	) > $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).img
 endef
 
-define Image/Build/jffs2-128k
-	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).img bs=131072 conv=sync
-endef
+#define Image/Build/jffs2-128k
+#	( \
+#		dd if=$(LINUX_DIR)/arch/ppc/boot/images/uImage bs=131072 conv=sync; \
+#		dd if=$(KDIR)/root.$(1) bs=131072 conv=sync; \
+#	) > $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).img
+#endef
 
 $(eval $(call BuildImage))
