@@ -48,12 +48,12 @@ define Package/keynote/install
 endef
 
 define Build/InstallDev
-	$(CP) $(PKG_BUILD_DIR)/*.h $(STAGING_DIR)/usr/include/
+	$(CP) $(PKG_BUILD_DIR)/{assertion,header,keynote,signature}.h $(STAGING_DIR)/usr/include/
 	$(CP) $(PKG_BUILD_DIR)/libkeynote.a $(STAGING_DIR)/usr/lib/
 endef
 
 define Build/UninstallDev
-	rm -rf $(STAGING_DIR)/usr/include/{assertion,getopt,header,keynote,signature}.h
+	rm -rf $(STAGING_DIR)/usr/include/{assertion,header,keynote,signature}.h
 endef
 
 $(eval $(call BuildPackage,keynote))
