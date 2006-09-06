@@ -87,8 +87,9 @@ diff -urN isakmpd/sysdep/linux/GNUmakefile.sysdep isakmpd.new/sysdep/linux/GNUma
 -LDADD+=		-lgmp ${LIBSYSDEP} ${LIBCRYPTO}
 +LIBKEYNOTEDIR:=	$(STAGING_DIR)/usr/include
 +
-+LDADD+=		-lgmp ${LIBSYSDEP} ${LIBCRYPTO} -L$(STAGING_DIR)/usr/lib
- DPADD+=		${LIBGMP} ${LIBSYSDEP}
++LDADD+=		-L$(STAGING_DIR)/usr/lib ${LIBGMP} ${LIBSYSDEP} ${LIBCRYPTO}
+-DPADD+=		${LIBGMP} ${LIBSYSDEP}
++DPADD+=		${LIBSYSDEP}
  
  CFLAGS+=	-DHAVE_GETNAMEINFO -DUSE_OLD_SOCKADDR -DHAVE_PCAP \
  		-DNEED_SYSDEP_APP -DMP_FLAVOUR=MP_FLAVOUR_GMP \
