@@ -1,0 +1,59 @@
+diff -urN isakmpd/GNUmakefile isakmpd.new/GNUmakefile
+--- isakmpd/GNUmakefile	2004-01-16 13:36:32.000000000 +0100
++++ isakmpd.new/GNUmakefile	2006-09-03 17:33:03.000000000 +0200
+@@ -238,3 +238,16 @@
+ 
+ realcleandepend:
+ 	rm -f .depend tags
++
++# Install rules
++install: install-bin install-man
++
++install-bin: isakmpd
++	-mkdir -p $(DESTDIR)$(BINDIR)
++	$(INSTALL) $(INSTALL_OPTS) -m 755 isakmpd $(DESTDIR)$(BINDIR)
++
++install-man:
++	-mkdir -p $(DESTDIR)$(MANDIR)/man8
++	$(INSTALL) $(INSTALL_OPTS) -m 444 isakmpd.8 $(DESTDIR)$(MANDIR)/man8
++	-mkdir -p $(DESTDIR)$(MANDIR)/man5
++	$(INSTALL) $(INSTALL_OPTS) -m 444 isakmpd.conf.5 isakmpd.policy.5 $(DESTDIR)$(MANDIR)/man5
+diff -urN isakmpd/samples/Makefile isakmpd.new/samples/Makefile
+--- isakmpd/samples/Makefile	2003-06-03 16:39:50.000000000 +0200
++++ isakmpd.new/samples/Makefile	2006-09-03 17:07:24.000000000 +0200
+@@ -26,7 +26,7 @@
+ #
+ 
+ FILES=		VPN-* policy singlehost-*
+-TARGETDIR=	/usr/share/ipsec/isakmpd
++TARGETDIR=	/usr/share/isakmpd/samples
+ 
+ # The mkdir below is for installation on OpenBSD pre 2.7
+ install:
+
+diff -urN isakmp.old/sysdep/linux/GNUmakefile.sysdep isakmp.dev/sysdep/linux/GNUmakefile.sysdep
+--- isakmp.old/sysdep/linux/GNUmakefile.sysdep	2006-09-07 13:49:20.000000000 +0200
++++ isakmp.dev/sysdep/linux/GNUmakefile.sysdep	2006-09-07 13:51:41.000000000 +0200
+@@ -25,18 +25,18 @@
+ # THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ #
+ 
+-LIBGMP:=	/usr/lib/libgmp.a
+-LIBCRYPTO:=	/usr/lib/libcrypto.a
++LIBGMP:=
++LIBCRYPTO:=	-lcrypto
+ LIBSYSDEPDIR:=	${.CURDIR}/sysdep/common/libsysdep
+ LIBSYSDEP:=	${LIBSYSDEPDIR}/libsysdep.a
+ 
+-LDADD+=		-lgmp ${LIBSYSDEP} ${LIBCRYPTO}
++LDADD+=		-L$(STAGING_DIR)/usr/lib -lgmp ${LIBSYSDEP} ${LIBCRYPTO}
+ DPADD+=		${LIBGMP} ${LIBSYSDEP}
+ 
+ CFLAGS+=	-DHAVE_GETNAMEINFO -DUSE_OLD_SOCKADDR -DHAVE_PCAP \
+ 		-DNEED_SYSDEP_APP -DMP_FLAVOUR=MP_FLAVOUR_GMP -DUSE_AES \
+ 		-I${.CURDIR}/sysdep/linux/include -I${.CURDIR}/sysdep/common \
+-		-I/usr/include/openssl
++		-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/usr/include/openssl -I$(LINUX_DIR)/include
+ 
+ FEATURES=	debug tripledes blowfish cast ec aggressive x509 policy
+ FEATURES+=	dpd nat_traversal isakmp_cfg des aes

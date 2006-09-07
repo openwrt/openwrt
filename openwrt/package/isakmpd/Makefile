@@ -9,14 +9,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=isakmpd
-PKG_VERSION:=20040115cvs
+PKG_VERSION:=20041012
 PKG_RELEASE:=1
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=http://downloads.openwrt.org/sources/
-PKG_MD5SUM:=9f59b10d57cfed5e95743255f1c1620d
-PKG_CAT:=bzcat
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION).orig
+PKG_SOURCE:=$(PKG_NAME)_$(PKG_VERSION).orig.tar.gz
+PKG_SOURCE_URL:=http://ftp.debian.org/debian/pool/main/i/isakmpd/
+PKG_MD5SUM:=e6d25a9e232fb186e1a48dc06453bd57
+PKG_CAT:=zcat
 
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
@@ -35,8 +35,10 @@ endef
 define Build/Compile
 	$(call Build/Compile/Default,LINUX_DIR="$(LINUX_DIR)" \
 		STAGING_DIR="$(STAGING_DIR)" \
-		DESTDIR="$(PKG_INSTALL_DIR)")
+		DESTDIR="$(PKG_INSTALL_DIR)" \
+	)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
+		STAGING_DIR="$(STAGING_DIR)" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		INSTALL="install -c" \
 		install-bin
