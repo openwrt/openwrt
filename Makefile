@@ -53,7 +53,7 @@ pkginfo-clean: FORCE
 .config.in: .pkginfo
 	@./scripts/gen_menuconfig.pl < $< > $@ || rm -f $@
 
-.config: ./scripts/config/conf
+.config: ./scripts/config/conf .config.in
 	@[ -f .config ] || $(NO_TRACE_MAKE) menuconfig
 	@$< -D .config Config.in &> /dev/null
 
