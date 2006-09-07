@@ -39,6 +39,10 @@ define Build/DefaultTargets
 	touch $$@
 
   ifdef Build/InstallDev
+    ifneq ($$(shell $(SCRIPT_DIR)/timestamp.pl -p -x ipkg -x ipkg-install $(STAGING_DIR)/stampfiles/.$(PKG_NAME)-installed $(PKG_BUILD_DIR)),$(STAGING_DIR)/stampfiles/.$(PKG_NAME)-installed)
+      $(PKG_BUILD_DIR)/.built: package-rebuild
+    endif
+
     $(STAGING_DIR)/stampfiles/.$(PKG_NAME)-installed: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/stampfiles
 	$(call Build/InstallDev)
