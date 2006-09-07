@@ -1,0 +1,22 @@
+Index: sbin/isakmpd/ipsec.c
+===================================================================
+RCS file: /cvs/src/sbin/isakmpd/ipsec.c,v
+retrieving revision 1.122
+retrieving revision 1.122.2.1
+diff -u -p -r1.122 -r1.122.2.1
+--- isakmpd/ipsec.c	23 Sep 2005 14:44:03 -0000	1.122
++++ isakmpd/ipsec.c	19 Aug 2006 20:23:28 -0000	1.122.2.1
+@@ -2076,9 +2076,10 @@ ipsec_proto_init(struct proto *proto, ch
+ {
+ 	struct ipsec_proto *iproto = proto->data;
+ 
+-	if (proto->sa->phase == 2 && section)
+-		iproto->replay_window = conf_get_num(section, "ReplayWindow",
+-		    DEFAULT_REPLAY_WINDOW);
++	if (proto->sa->phase == 2)
++		iproto->replay_window = section ? conf_get_num(section,
++		    "ReplayWindow", DEFAULT_REPLAY_WINDOW) :
++		    DEFAULT_REPLAY_WINDOW;
+ }
+ 
+ /*
