@@ -17,20 +17,10 @@ define Build/DefaultTargets
     ifeq ($(CONFIG_AUTOREBUILD),y)
       _INFO:=
       ifneq ($$(shell $(SCRIPT_DIR)/timestamp.pl -p $(PKG_BUILD_DIR) .),$(PKG_BUILD_DIR))
-	_INFO+=$(subst $(TOPDIR)/,,$(PKG_BUILD_DIR))
+        _INFO+=$(subst $(TOPDIR)/,,$(PKG_BUILD_DIR))
         $(PKG_BUILD_DIR)/.prepared: package-clean
       endif
 
-      ifneq ($$(shell $(SCRIPT_DIR)/timestamp.pl -p -x ipkg -x ipkg-install $(IPKG_$(1)) $(PKG_BUILD_DIR)),$(IPKG_$(1)))
-        _INFO+=$(subst $(TOPDIR)/,,$(IPKG_$(1)))
-        $(PKG_BUILD_DIR)/.built: package-rebuild
-      endif
-
-      ifneq ($(MAKECMDGOALS),prereq)
-        ifneq ($$(_INFO),)
-          $$(info Rebuilding $$(_INFO))
-        endif
-      endif
     endif
   endif
 
@@ -241,6 +231,19 @@ define BuildPackage
 	@touch $$@
 
   $$(eval $$(call Build/DefaultTargets,$(1)))
+
+  ifneq ($$(CONFIG_PACKAGE_$(1)),)
+    ifneq ($$(shell $(SCRIPT_DIR)/timestamp.pl -p -x ipkg -x ipkg-install $$(IPKG_$(1)) $(PKG_BUILD_DIR)),$$(IPKG_$(1)))
+      _INFO+=$(subst $(TOPDIR)/,,$$(IPKG_$(1)))
+      $(PKG_BUILD_DIR)/.built: package-rebuild
+    endif
+
+    ifneq ($(MAKECMDGOALS),prereq)
+      ifneq ($$(_INFO),)
+        $$(info Rebuilding $$(_INFO))
+      endif
+    endif
+  endif
 endef
 
 ifneq ($(strip $(PKG_CAT)),)
