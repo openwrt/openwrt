@@ -239,7 +239,7 @@ define BuildPackage
   ifneq ($$(CONFIG_PACKAGE_$(1)),)
     ifneq ($(MAKECMDGOALS),prereq)
       ifneq ($(DUMP),1)
-        ifneq ($$(shell $(SCRIPT_DIR)/timestamp.pl -p -x ipkg -x ipkg-install $$(IPKG_$(1)) $(PKG_BUILD_DIR)),$$(IPKG_$(1)))
+        ifneq ($$(shell $(SCRIPT_DIR)/timestamp.pl -p -x ipkg -x ipkg-install '$$(IPKG_$(1))' '$(PKG_BUILD_DIR)'),$$(IPKG_$(1)))
           _INFO+=$(subst $(TOPDIR)/,,$$(IPKG_$(1)))
           $(PKG_BUILD_DIR)/.built: package-rebuild
         endif
