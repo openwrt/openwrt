@@ -12,7 +12,7 @@ define Require/non-root
 	[ "$$(shell whoami)" != "root" ]
 endef
 $(eval $(call Require,non-root, \
-	Building OpenWrt as root is not supported! \
+	Please do not compile as root. \
 ))
 
 # Required for the toolchain
@@ -25,7 +25,7 @@ define Require/working-make
 endef
 
 $(eval $(call Require,working-make, \
-	Your make version is buggy. Please install GNU make v3.81 or later. \
+	Please install GNU make v3.81 or later. (This version has bugs) \
 ))
 
 define Require/working-gcc
@@ -34,7 +34,7 @@ define Require/working-gcc
 endef
 
 $(eval $(call Require,working-gcc, \
-	No working GNU C Compiler (gcc) was found on your system. \
+	Please install the GNU C Compiler (gcc). \
 ))
 
 define Require/working-g++
@@ -43,7 +43,7 @@ define Require/working-g++
 endef
 
 $(eval $(call Require,working-g++, \
-	No working GNU C++ Compiler (g++) was found on your system. \
+	Please install the GNU C++ Compiler (g++). \
 ))
 
 define Require/ncurses
@@ -52,7 +52,7 @@ define Require/ncurses
 endef
 
 $(eval $(call Require,ncurses, \
-	No ncurses development files were not found on your system. \
+	Please install ncurses. (Missing libncurses.so or ncurses.h) \
 ))
 
 
@@ -62,7 +62,7 @@ define Require/zlib
 endef
 
 $(eval $(call Require,zlib, \
-	No zlib development files were not found on your system. \
+	Please install zlib. (Missing libz.so or zlib.h) \
 ))
 
 
