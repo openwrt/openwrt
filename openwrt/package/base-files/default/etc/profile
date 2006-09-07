@@ -4,7 +4,7 @@
 export PATH=/bin:/sbin:/usr/bin:/usr/sbin
 export PS1='\u@\h:\w\$ '
 
-[ -x /usr/bin/less ] || alias less=more
+alias more=less
 [ -x /usr/bin/vim ] || alias vim=vi
 
 arp() { cat /proc/net/arp; }
