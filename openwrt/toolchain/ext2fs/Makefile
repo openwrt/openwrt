@@ -19,6 +19,27 @@ PKG_CAT:=zcat
 
 include $(INCLUDE_DIR)/host-build.mk
 
+define Build/Configure
+	( cd $(PKG_BUILD_DIR); \
+		./configure \
+			--target=$(GNU_HOST_NAME) \
+			--host=$(GNU_HOST_NAME) \
+			--build=$(GNU_HOST_NAME) \
+			--program-prefix="" \
+			--program-suffix="" \
+			--prefix=/usr \
+			--exec-prefix=/usr \
+			--bindir=/usr/bin \
+			--sbindir=/usr/sbin \
+			--libexecdir=/usr/lib \
+			--sysconfdir=/etc \
+			--datadir=/usr/share \
+			--localstatedir=/var \
+			--mandir=/usr/man \
+			--infodir=/usr/info \
+	)
+endef
+
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) all
 endef
