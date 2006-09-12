@@ -13,13 +13,13 @@ start_pppd() {
 	config_get username "$cfg" username
 	config_get password "$cfg" password
 	config_get keepalive "$cfg" keepalive
-	interval="${keepalive%%*,}"
+	interval="${keepalive%%*[, ]}"
 	[ "$interval" != "$keepalive" ] || interval=5
 	
 	config_get demand "$cfg" demand
 	[ -n "$demand" ] && echo "nameserver 1.1.1.1" > /tmp/resolv.conf
 	/usr/sbin/pppd "$@" \
-		${keepalive:+lcp-echo-interval $interval lcp-echo-failure ${keepalive##,*}} \
+		${keepalive:+lcp-echo-interval $interval lcp-echo-failure ${keepalive##[, ]*}} \
 		${demand:+precompiled-active-filter /etc/ppp/filter demand idle }${demand:-persist} \
 		usepeerdns \
 		defaultroute \
