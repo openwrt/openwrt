@@ -1,0 +1,227 @@
+diff -urN openswan-2.4.6/programs/loggerfix openswan-2.4.6.new/programs/loggerfix
+--- openswan-2.4.6/programs/loggerfix	1970-01-01 01:00:00.000000000 +0100
++++ openswan-2.4.6.new/programs/loggerfix	2006-08-22 15:55:14.000000000 +0200
+@@ -0,0 +1,5 @@
++#!/bin/sh
++# use filename instead of /dev/null to log, but dont log to flash or ram
++# pref. log to nfs mount
++echo "$*" >> /dev/null
++exit 0
+diff -urN openswan-2.4.6/programs/look/look.in openswan-2.4.6.new/programs/look/look.in
+--- openswan-2.4.6/programs/look/look.in	2005-08-18 16:10:09.000000000 +0200
++++ openswan-2.4.6.new/programs/look/look.in	2006-08-22 15:43:14.000000000 +0200
+@@ -84,7 +84,7 @@
+ then
+ 	pat="$pat|$defaultroutephys\$|$defaultroutevirt\$"
+ else
+-	for i in `echo "$IPSECinterfaces" | sed 's/=/ /'`
++	for i in `echo "$IPSECinterfaces" | tr '=' ' '`
+ 	do
+ 		pat="$pat|$i\$"
+ 	done
+diff -urN openswan-2.4.6/programs/_plutorun/_plutorun.in openswan-2.4.6.new/programs/_plutorun/_plutorun.in
+--- openswan-2.4.6/programs/_plutorun/_plutorun.in	2006-04-21 17:41:45.000000000 +0200
++++ openswan-2.4.6.new/programs/_plutorun/_plutorun.in	2006-08-22 15:47:32.000000000 +0200
+@@ -147,7 +147,7 @@
+ 			exit 1
+ 		fi
+ 	else
+-		if test ! -w "`dirname $stderrlog`"
++		if test ! -w "`echo $stderrlog | sed -r 's/(^.*\/)(.*$)/\1/'`"
+ 		then
+ 			echo Cannot write to directory to create \"$stderrlog\".
+ 			exit 1
+diff -urN openswan-2.4.6/programs/_realsetup/_realsetup.in openswan-2.4.6.new/programs/_realsetup/_realsetup.in
+--- openswan-2.4.6/programs/_realsetup/_realsetup.in	2006-05-05 20:49:45.000000000 +0200
++++ openswan-2.4.6.new/programs/_realsetup/_realsetup.in	2006-08-22 15:48:13.000000000 +0200
+@@ -232,7 +232,7 @@
+ 
+ 	# misc pre-Pluto setup
+ 
+-	perform test -d `dirname $subsyslock` "&&" touch $subsyslock
++	perform test -d `echo $subsyslock | sed -r 's/(^.*\/)(.*$)/\1/'` "&&" touch $subsyslock "&&" rm -f $subsyslock
+ 
+ 	if test " $IPSECforwardcontrol" = " yes"
+ 	then
+diff -urN openswan-2.4.6/programs/send-pr/send-pr.in openswan-2.4.6.new/programs/send-pr/send-pr.in
+--- openswan-2.4.6/programs/send-pr/send-pr.in	2005-04-18 01:04:46.000000000 +0200
++++ openswan-2.4.6.new/programs/send-pr/send-pr.in	2006-08-22 15:51:09.000000000 +0200
+@@ -402,7 +402,7 @@
+ 		    else
+ 			if [ "$fieldname" != "Category" ]
+ 			then
+-			    values=`${BINDIR}/query-pr --valid-values $fieldname | sed ':a;N;$!ba;s/\n/ /g' | sed 's/ *$//g;s/ / | /g;s/^/[ /;s/$/ ]/;'`
++			    values=`${BINDIR}/query-pr --valid-values $fieldname | tr '\n' ' ' | sed 's/ *$//g;s/ / | /g;s/^/[ /;s/$/ ]/;'`
+ 			    valslen=`echo "$values" | wc -c`
+ 			else
+ 			    values="choose from a category listed above"
+@@ -414,7 +414,7 @@
+ 			else
+ 				desc="<${values} (one line)>";
+ 			fi
+-			dpat=`echo "$desc" | sed 's/[][*+^$|\()&/]/./g'`
++			dpat=`echo "$desc" | tr '\]\[*+^$|\()&/' '............'`
+ 			echo "/^>${fieldname}:/ s/${dpat}//" >> $FIXFIL
+ 		    fi
+ 		    echo "${fmtname}${desc}" >> $file
+@@ -425,7 +425,7 @@
+ 			desc="	$default_val";
+ 		    else
+ 		        desc="	<`${BINDIR}/query-pr --field-description $fieldname` (multiple lines)>";
+-			dpat=`echo "$desc" | sed 's/[][*+^$|\()&/]/./g'`
++			dpat=`echo "$desc" | tr '\]\[*+^$|\()&/' '............'`
+ 			echo "s/^${dpat}//" >> $FIXFIL
+ 		    fi
+ 		    echo "${fmtname}" >> $file;
+@@ -437,7 +437,7 @@
+ 			desc="${default_val}"
+ 		    else
+ 			desc="<`${BINDIR}/query-pr --field-description $fieldname` (one line)>"
+-			dpat=`echo "$desc" | sed 's/[][*+^$|\()&/]/./g'`
++			dpat=`echo "$desc" | tr '\]\[*+^$|\()&/' '............'`
+ 			echo "/^>${fieldname}:/ s/${dpat}//" >> $FIXFIL
+ 		    fi
+ 		    echo "${fmtname}${desc}" >> $file
+diff -urN openswan-2.4.6/programs/setup/setup.in openswan-2.4.6.new/programs/setup/setup.in
+--- openswan-2.4.6/programs/setup/setup.in	2005-07-25 21:17:03.000000000 +0200
++++ openswan-2.4.6.new/programs/setup/setup.in	2006-08-22 15:52:25.000000000 +0200
+@@ -117,12 +117,21 @@
+ # do it
+ case "$1" in
+   start|--start|stop|--stop|_autostop|_autostart)
+-	if test " `id -u`" != " 0"
++	if [ "x${USER}" != "xroot" ]
+ 	then
+ 		echo "permission denied (must be superuser)" |
+ 			logger -s -p $IPSECsyslog -t ipsec_setup 2>&1
+ 		exit 1
+ 	fi
++	# make sure all required directories exist
++	if [ ! -d /var/run/pluto ]
++	then
++		mkdir -p /var/run/pluto
++	fi
++	if [ ! -d /var/lock/subsys ]
++	then
++		mkdir -p /var/lock/subsys
++	fi
+ 	tmp=/var/run/pluto/ipsec_setup.st
+ 	outtmp=/var/run/pluto/ipsec_setup.out
+ 	(
+diff -urN openswan-2.4.6/programs/showhostkey/showhostkey.in openswan-2.4.6.new/programs/showhostkey/showhostkey.in
+--- openswan-2.4.6/programs/showhostkey/showhostkey.in	2004-11-14 14:40:41.000000000 +0100
++++ openswan-2.4.6.new/programs/showhostkey/showhostkey.in	2006-08-22 15:54:21.000000000 +0200
+@@ -63,7 +63,7 @@
+ 	exit 1
+ fi
+ 
+-host="`hostname --fqdn`"
++host="`cat /proc/sys/kernel/hostname`"
+ 
+ awk '	BEGIN {
+ 		inkey = 0
+@@ -81,7 +81,7 @@
+ 		os = "[ \t]*"
+ 		x = "[^ \t]+"
+ 		oc = "(#.*)?"
+-		suffix = ":" os "[rR][sS][aA]" os "{" os oc "$"
++		suffix = ":" os "[rR][sS][aA]" os "\0173" os oc "$"
+ 		if (id == "") {
+ 			pat = "^" suffix
+ 			printid = "default"
+diff -urN openswan-2.4.6/programs/_startklips/_startklips.in openswan-2.4.6.new/programs/_startklips/_startklips.in
+--- openswan-2.4.6/programs/_startklips/_startklips.in	2006-05-09 20:34:34.000000000 +0200
++++ openswan-2.4.6.new/programs/_startklips/_startklips.in	2006-08-22 15:57:53.000000000 +0200
+@@ -265,12 +265,12 @@
+ if test ! -f $ipsecversion && test ! -f $netkey && modprobe -qn ipsec
+ then
+     # statically compiled KLIPS/NETKEY not found; try to load the module
+-    modprobe ipsec
++    insmod ipsec
+ fi
+ 
+ if test ! -f $ipsecversion && test ! -f $netkey
+ then
+-	modprobe -v af_key
++	insmod -v af_key
+ fi
+ 
+ if test -f $netkey
+@@ -278,25 +278,25 @@
+ 	klips=false
+ 	if test -f $modules
+ 	then
+-		modprobe -qv ah4
+-		modprobe -qv esp4
+-		modprobe -qv ipcomp
++		insmod -qv ah4
++		insmod -qv esp4
++		insmod -qv ipcomp
+ 		#  xfrm4_tunnel is needed by ipip and ipcomp
+-		modprobe -qv xfrm4_tunnel
++		insmod -qv xfrm4_tunnel
+ 		# xfrm_user contains netlink support for IPsec 
+ 		modprobe -qv xfrm_user
+ 		if [ -n "`cat /proc/cpuinfo |grep Nehemiah`" ]
+ 		then
+ 			echo "VIA Nehemiah detected, probing for PadLock"
+-			modprobe -qv hw_random
++			insmod -qv hw_random
+ 			# padlock must load before aes module
+-			modprobe -qv padlock
++			insmod -qv padlock
+ 		fi
+ 		# load the most common ciphers/algo's
+-		modprobe -qv sha1
+-		modprobe -qv md5
+-		modprobe -qv des
+-		modprobe -qv aes
++		insmod -qv sha1
++		insmod -qv md5
++		insmod -qv des
++		insmod -qv aes
+ 	fi
+ fi
+ 
+@@ -312,10 +312,16 @@
+ 		fi
+                 unset MODPATH MODULECONF        # no user overrides!
+                 depmod -a >/dev/null 2>&1
+-		modprobe -qv hw_random
++		insmod -qv hw_random
+ 		# padlock must load before aes module
+-		modprobe -qv padlock
+-                modprobe -v ipsec
++		insmod -qv padlock
++                if [ -f modprobe ]
++		then
++			modprobe -v ipsec
++		elif [ -f insmod ]
++		then
++			insmod ipsec
++		fi
+         fi
+         if test ! -f $ipsecversion
+         then
+--- openswan-2.4.6/programs/starter/netkey.c	2004-12-01 08:31:26.000000000 +0100
++++ openswan-2.4.6.new/programs/starter/netkey.c	2006-09-15 15:06:18.000000000 +0200
+@@ -75,7 +75,7 @@
+ 		if (stat(PROC_MODULES,&stb)==0) {
+ 			unsetenv("MODPATH");
+ 			unsetenv("MODULECONF");
+-			system("depmod -a >/dev/null 2>&1 && modprobe xfrm4_tunnel esp4 ah4 af_key");
++			system("depmod -a >/dev/null 2>&1 && insmod xfrm4_tunnel esp4 ah4 af_key");
+ 		}
+ 		if (stat(PROC_NETKEY,&stb)==0) {
+ 			_netkey_module_loaded = 1;
+--- openswan-2.4.6/programs/starter/klips.c	2004-01-21 02:35:29.000000000 +0100
++++ openswan-2.4.6.new/programs/starter/klips.c	2006-09-15 15:05:37.000000000 +0200
+@@ -83,7 +83,7 @@
+ 		if (stat(PROC_MODULES,&stb)==0) {
+ 			unsetenv("MODPATH");
+ 			unsetenv("MODULECONF");
+-			system("depmod -a >/dev/null 2>&1 && modprobe ipsec");
++			system("depmod -a >/dev/null 2>&1 && insmod ipsec");
+ 		}
+ 		if (stat(PROC_IPSECVERSION,&stb)==0) {
+ 			_klips_module_loaded = 1;
