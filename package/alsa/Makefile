@@ -33,7 +33,7 @@ endif
 define Package/kmod-alsa
 SECTION:=drivers
 CATEGORY:=Drivers
-DEPENDS:=@PCI_SUPPORT
+DEPENDS:=@USB_SUPPORT
 TITLE:=Advanced Linux Sound Architecture
 DESCRIPTION:=Advanced Linux Sound Architecture
 URL:=http://alsa-project.org/
