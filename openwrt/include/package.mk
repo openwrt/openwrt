@@ -267,7 +267,7 @@ ifneq ($(strip $(PKG_CAT)),)
 endif
 
 define Build/Prepare
-  $(call Build/Prepare/Default)
+  $(call Build/Prepare/Default,)
 endef
 
 define Build/Configure/Default
