@@ -1,0 +1,20 @@
+Index: package/linux-atm/patches/400-stdint-local-instead-of-host.patch
+===================================================================
+--- package/linux-atm/patches/400-stdint-local-instead-of-host.patch    (revision 0)
++++ package/linux-atm/patches/400-stdint-local-instead-of-host.patch    (revision 0)
+@@ -0,0 +1,15 @@
++--- linux-atm-2.4.1/src/include/stdint.h       2001-09-03 20:41:06.000000000 +0200
+++++ linux-atm-2.4.1/src/include/stdint.h.my    2006-08-26 22:08:41.000000000 +0200
++@@ -4,11 +4,7 @@
++
++ #include <features.h>
++
++-#if __GLIBC__ >= 2 && __GLIBC_MINOR__ >= 1
++-
++-#include "/usr/include/stdint.h"
++-
++-#elif __GLIBC__ >= 2
+++#if __GLIBC__ >= 2
++
++ /* Works for i386 and Alpha */
++
