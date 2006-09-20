@@ -1,0 +1,50 @@
+	Network configuration in buildroot-ng
+
+
+The network configuration in buildroot-ng is stored in /etc/config/network
+and is divided into interface configurations.
+Each interface configuration either refers directly to an ethernet/wifi
+interface (eth0, wl0, ..) or to a bridge containing multiple interfaces.
+It looks like this:
+
+	config interface 	"lan"
+		option ifname	"eth0"
+		option proto 	"static"
+		option ipaddr 	"192.168.1.1"
+		option netmask 	"255.255.255.0"
+		option gateway	"192.168.1.254"
+		option dns		"192.168.1.254"
+
+"ifname" specifies the Linux interface name.
+If you want to use bridging on one or more interfaces, set "ifname" to a list
+of interfaces and add:
+		option type 	"bridge"
+
+It is possible to use VLAN tagging on an interface simply by adding the VLAN IDs
+to it, e.g. "eth0.1". These can be nested as well.
+
+This sets up a simple static configuration for eth0. "proto" specifies the
+'protocol' used for the interface. The default image usually provides 'none'
+'static', 'dhcp' and 'pppoe'. Others can be added by installing additional
+packages.
+
+When using the 'static' method like in the example, the  options "ipaddr" and 
+"netmask" are mandatory, while "gateway" and "dns" are optional.
+DHCP currently only accepts "ipaddr" (IP address to request from the server)
+and "hostname" (client hostname identify as) - both are optional.
+
+PPP based protocols (pppoe, pptp, ...) accept these options:
+	username:
+		The PPP username (usually with PAP authentication)
+	password:
+		The PPP password
+	keepalive:
+		Ping the PPP server (using LCP). The value of this option
+		specifies the maximum number of failed pings before reconnecting.
+		The ping interval defaults to 5, but can be changed by appending 
+		",<interval>" to the keepalive value
+	demand:
+		Use Dial on Demand (value specifies the maximum idle time)
+
+For all protocol types, you can also specify the MTU by using the "mtu" option.
+
