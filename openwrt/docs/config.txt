@@ -1,0 +1,72 @@
+	== Structure of the configuration files ==
+
+The config files are divided into sections and options/values.
+
+Every section has a type, but does not necessarily have a name.
+Every option has a name and a value and is assigned to the section
+it was written under.
+
+Syntax:
+
+config <type> [<name>]			# Section
+	option <name>	<value>		# Option
+
+
+Every parameter needs to be a single string and is formatted exactly
+like a parameter for a shell function. The same rules for Quoting and 
+special characters also apply, as it is parsed by the shell.
+
+
+
+	== Parsing configuration files in custom scripts ==
+
+To be able to load configuration files, you need to include the common 
+functions with:
+
+. /etc/functions.sh
+
+Then you can use config_load <name> to load config files. The function 
+first checks for <name> as absolute filename and falls back to loading 
+it from /etc/config (which is the most common way of using it).
+
+If you want to use special callbacks for sections and/or options, you
+need to define the following shell functions before running config_load
+(after including /etc/functions.sh):
+
+config_cb() {
+	local type="$1"
+	local name="$2"
+	# commands to be run for every section
+}
+
+option_cb() {
+	# commands to be run for every option
+}
+
+You can also alter option_cb from config_cb based on the section type.
+This allows you to process every single config section based on its type
+individually.
+
+config_cb is run every time a new section starts (before options are being
+processed). You can access the last section through the CONFIG_SECTION
+variable. Also an extra call to config_cb (without a new section) is generated
+after config_load is done.
+That allows you to process sections both before and after all options were
+processed.
+
+You can access already processed options with the config_get command
+Syntax:
+
+config_get <section> <option>            # prints the value of the option
+config_get <variable> <section> <option> # stores the value inside the variable
+
+In busybox ash the three-option config_get is faster, because it does not
+result in an extra fork, so it is the preferred way.
+
+Additionally you can also modify or add options to sections by using the 
+config_set command.
+
+Syntax:
+
+config_set <section> <option> <value>
+
