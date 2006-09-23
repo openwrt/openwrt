@@ -21,11 +21,10 @@ PKG_CAT:=zcat
 include $(INCLUDE_DIR)/package.mk
 
 define Package/ebtables
-SECTION:=base
-CATEGORY:=Network
-TITLE:=Ethernet bridge firewall administration utility
-DESCRIPTION:=Ethernet Bridge Firewalling (ebtables)
-URL:=http://ebtables.sourceforge.net/
+  SECTION:=net
+  CATEGORY:=Network
+  TITLE:=Ethernet bridge firewall administration utility
+  URL:=http://ebtables.sourceforge.net/
 endef
 
 define Package/ebtables/install
