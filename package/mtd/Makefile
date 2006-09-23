@@ -16,12 +16,13 @@ PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
 include $(INCLUDE_DIR)/package.mk
 
 define Package/mtd
-SECTION:=base
-CATEGORY:=Utilities
-DEFAULT:=y
-TITLE:=Update utility for trx firmware images
-DESCRIPTION:=Update utility for trx firmware images. To update \\\
-from other firmware or older OpenWrt releases.
+  SECTION:=utils
+  CATEGORY:=Base system
+  DEFAULT:=y
+  TITLE:=Update utility for trx firmware images
+  DESCRIPTION:=\
+	This package contains an utility useful to upgrade from other firmware or \\\
+	older OpenWrt releases.
 endef
 
 define Build/Prepare
