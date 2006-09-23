@@ -12,30 +12,57 @@ include $(INCLUDE_DIR)/kernel.mk
 PKG_NAME:=fuse
 PKG_VERSION:=2.5.3
 PKG_RELEASE:=1
-PKG_MD5SUM:=9c7e8b6606b9f158ae20b8521ba2867c
 
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE_URL:=@SF/$(PKG_NAME)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_SOURCE_URL:=@SF/$(PKG_NAME)
+PKG_MD5SUM:=9c7e8b6606b9f158ae20b8521ba2867c
 PKG_CAT:=zcat
 
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
 include $(INCLUDE_DIR)/package.mk
 
+define Package/fuse/Default
+  TITLE:=FUSE
+  DESCRIPTION:=\
+	FUSE (Filesystem in UserSpacE)
+  URL:=http://fuse.sourceforge.net/
+endef
+
+define Package/fuse-utils
+  $(call Package/fuse/Default)
+  SECTION:=utils
+  CATEGORY:=Utilities
+  TITLE+= (utilities)
+  DESCRIPTION+=\\\
+	\\\
+	This package contains the FUSE utilities.
+endef
+
 define Package/kmod-fuse
-SECTION:=drivers
-CATEGORY:=Drivers
-DEPENDS:=
-TITLE:=FUSE (Filesystem in UserSpacE)
-DESCRIPTION:=FUSE (Filesystem in UserSpacE)
-URL:=http://fuse.sourceforge.net/
-VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
+  $(call Package/fuse/Default)
+  SECTION:=kernel
+  CATEGORY:=Kernel drivers
+  TITLE+= (kernel module)
+  DESCRIPTION+=\\\
+	\\\
+	This package contains the FUSE kernel module.
+  VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
+endef
+
+define Package/libfuse
+  $(call Package/fuse/Default)
+  SECTION:=libs
+  CATEGORY:=Libraries
+  TITLE+= (library)
+  DESCRIPTION+=\\\
+	\\\
+	This package contains the FUSE shared library, needed by other programs.
 endef
 
 define Build/Configure
-	(cd $(PKG_BUILD_DIR); \
-		rm -rf config.{cache,status} ; \
+	(cd $(PKG_BUILD_DIR); rm -f config.cache; \
 		touch configure.in ; \
 		touch aclocal.m4 ; \
 		touch Makefile.in ; \
@@ -71,14 +98,12 @@ define Build/Configure
 			--enable-util \
 			--disable-example \
 			--disable-auto-modprobe \
-			--with-kernel=$(LINUX_DIR) \
+			--with-kernel="$(LINUX_DIR)" \
 			--disable-mtab \
 	);
 endef
 
 define Build/Compile
-	rm -rf $(PKG_INSTALL_DIR)
-	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		ARCH="$(LINUX_KARCH)" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
@@ -88,21 +113,25 @@ endef
 
 define Build/InstallDev
 	mkdir -p $(STAGING_DIR)/usr/include
-	$(CP)	$(PKG_INSTALL_DIR)/usr/include/fuse{,.h} \
-		$(STAGING_DIR)/usr/include/
+	$(CP)	$(PKG_INSTALL_DIR)/usr/include/fuse{,.h} $(STAGING_DIR)/usr/include/
 	mkdir -p $(STAGING_DIR)/usr/lib
-	$(CP)	$(PKG_INSTALL_DIR)/usr/lib/libfuse.{a,so*} \
-		$(STAGING_DIR)/usr/lib/
+	$(CP)	$(PKG_INSTALL_DIR)/usr/lib/libfuse.{a,so*} $(STAGING_DIR)/usr/lib/
 	mkdir -p $(STAGING_DIR)/usr/lib/pkgconfig
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/fuse.pc $(STAGING_DIR)/usr/lib/pkgconfig/
-	$(SED) 's,-I$${includedir}/fuse,,g' $(STAGING_DIR)/usr/lib/pkgconfig/fuse.pc
-	$(SED) 's,-L$${libdir},,g' $(STAGING_DIR)/usr/lib/pkgconfig/fuse.pc
+	$(SED) 's,-I$$$${includedir}/fuse,,g' $(STAGING_DIR)/usr/lib/pkgconfig/fuse.pc
+	$(SED) 's,-L$$$${libdir},,g' $(STAGING_DIR)/usr/lib/pkgconfig/fuse.pc
 endef
 	
 define Build/UninstallDev
-	rm -rf	$(STAGING_DIR)/usr/include/fuse{,.h} \
+	rm -rf \
+		$(STAGING_DIR)/usr/include/fuse{,.h} \
 		$(STAGING_DIR)/usr/lib/libfuse.{a,so*} \
 		$(STAGING_DIR)/usr/lib/pkgconfig/fuse.pc
+endef
+
+define Package/fuse-utils/install
+	install -d -m0755 $(1)/usr/bin
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/fusermount $(1)/usr/bin/
 endef
 
 define Package/kmod-fuse/install
@@ -115,4 +144,11 @@ define Package/kmod-fuse/install
 	$(CP) $(PKG_INSTALL_DIR)/usr/bin/fusermount $(1)/usr/bin/
 endef
 
+define Package/libfuse/install
+	install -d -m0755 $(1)/usr/lib
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libfuse.so.* $(1)/usr/lib/
+endef
+
+$(eval $(call BuildPackage,fuse-utils))
 $(eval $(call BuildPackage,kmod-fuse))
+$(eval $(call BuildPackage,libfuse))
