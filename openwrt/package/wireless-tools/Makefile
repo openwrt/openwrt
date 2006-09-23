@@ -23,12 +23,14 @@ PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 include $(INCLUDE_DIR)/package.mk
 
 define Package/wireless-tools
-SECTION:=base
-CATEGORY:=Network
-DEFAULT:=y
-TITLE:=Tools for manipulating Linux Wireless Extensions
-DESCRIPTION:=Tools for configuring Wireless Adapters implementing the "Wireless Extension"
-URL:=http://hplabs.hp.com/personal/Jean_Tourrilhes/Linux/Tools.html
+  SECTION:=net
+  CATEGORY:=Base system
+  DEFAULT:=y
+  TITLE:=Tools for manipulating Linux Wireless Extensions
+  DESCRIPTION:=\
+	This package contains a collection of tools for configuring wireless \\\
+	adapters implementing the "Linux Wireless Extensions".
+  URL:=http://hplabs.hp.com/personal/Jean_Tourrilhes/Linux/Tools.html
 endef
 
 define Build/Compile
@@ -54,7 +56,8 @@ define Build/InstallDev
 endef
 	
 define Build/UninstallDev
-	rm -f	$(STAGING_DIR)/usr/include/{iwlib,wireless}.h \
+	rm -f \
+		$(STAGING_DIR)/usr/include/{iwlib,wireless}.h \
 		$(STAGING_DIR)/usr/lib/libiw.so*
 endef
 
