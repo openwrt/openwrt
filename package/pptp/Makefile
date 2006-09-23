@@ -21,20 +21,21 @@ PKG_CAT:=zcat
 include $(INCLUDE_DIR)/package.mk
 
 define Package/pptp
-SECTION:=base
-# CATEGORY:=FIXME
-TITLE:=PPTP (Point-to-Point Tunneling Protocol) client
-DESCRIPTION:=A Point-to-Point Tunneling Protocol Client
-URL:=http://pptpclient.sourceforge.net/
+  SECTION:=net
+  CATEGORY:=Network
+  TITLE:=PPTP client
+  DESCRIPTION:=\
+	This package contains a PPTP (Point-to-Point Tunneling Protocol) client.
+  URL:=http://pptpclient.sourceforge.net/
 endef
 
 define Package/pptp/install
+	install -d -m0755 $(1)/usr/sbin
+	install -m0755 $(PKG_BUILD_DIR)/pptp $(1)/usr/sbin/
 	install -d -m0755 $(1)/etc/ppp
 	install -m0644 ./files/options.pptp $(1)/etc/ppp/
 	install -d -m0755 $(1)/lib/network
 	install -m0755 ./files/pptp.sh $(1)/lib/network/
-	install -d -m0755 $(1)/usr/sbin
-	install -m0755 $(PKG_BUILD_DIR)/pptp $(1)/usr/sbin/
 endef
 
 $(eval $(call BuildPackage,pptp))
