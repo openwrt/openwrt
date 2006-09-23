@@ -23,11 +23,11 @@ PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 include $(INCLUDE_DIR)/package.mk
 
 define Package/pcmcia-cs
-SECTION:=base
-DEPENDS:=@PCMCIA_SUPPORT
-TITLE:=PCMCIA/Cardbus management utilities
-DESCRIPTION:=PCMCIA/Cardbus management utilities
-URL:=http://pcmcia-cs.sourceforge.net/
+  SECTION:=utils
+  CATEGORY:=Utilities
+  DEPENDS:=@LINUX_2_4&&PCMCIA_SUPPORT
+  TITLE:=PCMCIA/Cardbus management utilities
+  URL:=http://pcmcia-cs.sourceforge.net/
 endef
 
 define Build/Configure
@@ -45,18 +45,22 @@ define Build/Configure
 			--nopnp \
 			--notrust \
 			--nox11 \
-			--sysv --rcdir="/etc" \
+			--rcdir="/etc" \
+			--sysv \
 	)
 endef
 
 define Build/Compile
-  $(call Build/Compile/Default,CFLAGS="$(TARGET_CFLAGS)" all install)
+	$(call Build/Compile/Default, \
+		CFLAGS="$(TARGET_CFLAGS)" \
+		all install \
+	)
 endef
 
 define Package/pcmcia-cs/install
-	install -m0755 -d $(1)/etc
+	install -d -m0755 $(1)/etc
 	$(CP) $(PKG_INSTALL_DIR)/etc/pcmcia $(1)/etc/
-	install -m0755 -d $(1)/usr/sbin
+	install -d -m0755 $(1)/usr/sbin
 	$(CP) $(PKG_INSTALL_DIR)/sbin/cardctl $(1)/usr/sbin/
 	$(CP) $(PKG_INSTALL_DIR)/sbin/cardmgr $(1)/usr/sbin/
 endef
