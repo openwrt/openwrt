@@ -26,49 +26,21 @@ define Package/libgmp
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=GNU multiprecision arithmetic library
-  DESCRIPTION:=GNU multiprecision arithmetic library.
   URL:=http://www.swox.com/gmp/
 endef
 
 define Build/Configure
-	(cd $(PKG_BUILD_DIR); rm -f config.cache; \
-		$(TARGET_CONFIGURE_OPTS) \
-		CC="$(TARGET_CROSS)gcc" \
-		CFLAGS="$(TARGET_CFLAGS)" \
-		CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include" \
-		LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib" \
-		./configure \
-			--target=$(GNU_TARGET_NAME) \
-			--host=$(GNU_TARGET_NAME) \
-			--build=$(GNU_HOST_NAME) \
-			--program-prefix="" \
-			--program-suffix="" \
-			--prefix=/usr \
-			--exec-prefix=/usr \
-			--bindir=/usr/bin \
-			--datadir=/usr/share \
-			--includedir=/usr/include \
-			--infodir=/usr/share/info \
-			--libdir=/usr/lib \
-			--libexecdir=/usr/lib \
-			--localstatedir=/var \
-			--mandir=/usr/share/man \
-			--sbindir=/usr/sbin \
-			--sysconfdir=/etc \
-			$(DISABLE_NLS) \
-			$(DISABLE_LARGEFILE) \
-			--enable-shared \
-			--enable-static \
-	);
+	$(call Build/Configure/Default, \
+		--enable-shared \
+		--enable-static \
+	)
 endef
 
 define Build/Compile
-  $(call Build/Compile/Default, DESTDIR="$(PKG_INSTALL_DIR)" all install)
-endef
-
-define Package/libgmp/install
-	install -m0755 -d $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libgmp.so.* $(1)/usr/lib/
+	$(call Build/Compile/Default, \
+		DESTDIR="$(PKG_INSTALL_DIR)" \
+		all install \
+	)
 endef
 
 define Build/InstallDev
@@ -82,6 +54,11 @@ define Build/UninstallDev
 	rm -rf \
 		$(STAGING_DIR)/usr/include/gmp* \
 		$(STAGING_DIR)/usr/lib/libgmp.{a,so*}
+endef
+
+define Package/libgmp/install
+	install -m0755 -d $(1)/usr/lib
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libgmp.so.* $(1)/usr/lib/
 endef
 
 $(eval $(call BuildPackage,libgmp))
