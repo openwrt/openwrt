@@ -12,29 +12,32 @@ include $(INCLUDE_DIR)/kernel.mk
 PKG_NAME:=kmod-wlcompat
 PKG_RELEASE:=4
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
+PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)
 
 include $(INCLUDE_DIR)/package.mk
 
+define Package/kmod-wlcompat/Default
+  SECTION:=kernel
+  CATEGORY:=Kernel drivers
+  DEPENDS:=kmod-brcm-wl
+  TITLE:=Broadcom wl wrapper module
+  DESCRIPTION:=\
+	This package contains a wrapper module, that provides Wireless Extension \\\
+	support for the proprietary Broadcom wl module.
+  VERSION:=$(LINUX_VERSION)+$(BOARD)-$(PKG_RELEASE)
+endef
+
 define Package/kmod-wlcompat
-SECTION:=drivers
-CATEGORY:=Drivers
-DEPENDS:=kmod-brcm-wl
-DEFAULT:=y
-TITLE:=Wrapper providing Wireless Extensions for Broadcom wl module
-DESCRIPTION:= \\\
-A wrapper module, that provides Wireless Extension support for the \\\
-proprietary Broadcom wl module.
-VERSION:=$(LINUX_VERSION)+$(BOARD)-$(PKG_RELEASE)
+  $(call Package/kmod-wlcompat/Default)
+  DEFAULT:=y
 endef
 
 define Package/kmod-wlcompat-debug
-$(call Package/kmod-wlcompat)
-DEFAULT:=m
-TITLE:=Wrapper providing Wireless Extensions for Broadcom wl module (debug)
-DESCRIPTION:= \\\
-A wrapper module, that provides Wireless Extension support for the \\\
-proprietary Broadcom wl module.
+  $(call Package/kmod-wlcompat/Default)
+  TITLE+= (debug)
+  DESCRIPTION+=\\\
+	\\\
+	This is a debugging version.
 endef
 
 define Build/Prepare
@@ -59,10 +62,10 @@ define Build/Compile
 endef
 
 define Package/kmod-wlcompat/install
-	install -d -m0755 $(1)/etc/modules.d
-	echo "wlcompat" > $(1)/etc/modules.d/30-wlcompat
 	install -d -m0755 $(1)/lib/modules/$(LINUX_VERSION)
 	$(CP) $(PKG_BUILD_DIR)/wlcompat.o $(1)/lib/modules/$(LINUX_VERSION)/
+	install -d -m0755 $(1)/etc/modules.d
+	echo "wlcompat" > $(1)/etc/modules.d/30-wlcompat
 endef
 
 define Package/kmod-wlcompat-debug/install
