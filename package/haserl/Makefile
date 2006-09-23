@@ -21,11 +21,10 @@ PKG_CAT:=zcat
 include $(INCLUDE_DIR)/package.mk
 
 define Package/haserl
-SECTION:=base
-# CATEGORY:=FIXME
-TITLE:=A CGI wrapper to embed shell scripts in HTML documents
-DESCRIPTION:=A CGI wrapper to embed shell scripts in HTML documents.
-URL:=http://haserl.sourceforge.net/
+  SECTION:=utils
+  CATEGORY:=Utilities
+  TITLE:=A CGI wrapper to embed shell scripts in HTML documents
+  URL:=http://haserl.sourceforge.net/
 endef
 
 define Package/haserl/install
