@@ -12,13 +12,25 @@ include $(INCLUDE_DIR)/kernel.mk
 PKG_NAME:=madwifi
 PKG_VERSION:=0.9.2
 PKG_RELEASE:=1
-PKG_MD5SUM:=a75baacbe07085ddc5cb28e1fb43edbb
-
-PKG_SOURCE_URL:=@SF/$(PKG_NAME)
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_CAT:=bzcat
 
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
+PKG_SOURCE_URL:=@SF/$(PKG_NAME)
+PKG_MD5SUM:=a75baacbe07085ddc5cb28e1fb43edbb
+PKG_CAT:=bzcat
+
+include $(INCLUDE_DIR)/package.mk
+
+define Package/kmod-madwifi
+  SECTION:=kernel
+  CATEGORY:=Kernel drivers
+  DEFAULT:=y if LINUX_2_6_BRCM || LINUX_2_6_ARUBA || LINUX_2_4_AR531X || LINUX_2_6_XSCALE, m if ALL
+  TITLE:=Driver for Atheros wireless chipsets
+  DESCRIPTION:=\
+	This package contains a driver for Atheros 802.11a/b/g chipsets.
+  URL:=http://madwifi.org/
+  VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
+endef
 
 RATE_CONTROL:=sample
 
@@ -38,12 +50,12 @@ ifeq ($(ARCH),powerpc)
   HAL_TARGET:=powerpc-be-elf
 endif
 
-BUS := PCI
+BUS:=PCI
 ifneq ($(CONFIG_LINUX_2_4_AR531X),)
-  BUS := AHB
+  BUS:=AHB
 endif
 ifneq ($(CONFIG_LINUX_2_6_ARUBA),)
-  BUS := PCI AHB	# no suitable HAL for AHB yet.
+  BUS:=PCI AHB	# no suitable HAL for AHB yet.
 endif
 
 BUS_MODULES:=
@@ -66,23 +78,21 @@ MADWIFI_MAKEOPTS= -C $(PKG_BUILD_DIR) \
 		ATH_RATE="ath_rate/$(RATE_CONTROL)" \
 		DOMULTI=1
 
-include $(INCLUDE_DIR)/package.mk
-
 ifeq ($(findstring AHB,$(BUS)),AHB)
-define Build/Compile/ahb
+  define Build/Compile/ahb
 	$(MAKE) $(MADWIFI_MAKEOPTS) BUS="AHB" all
-endef
+  endef
 endif
 
 ifeq ($(findstring PCI,$(BUS)),PCI)
-define Build/Compile/pci
+  define Build/Compile/pci
 	$(MAKE) $(MADWIFI_MAKEOPTS) BUS="PCI" all
-endef
+  endef
 endif
 
 define Build/Compile
-$(call Build/Compile/ahb)
-$(call Build/Compile/pci)
+	$(call Build/Compile/ahb)
+	$(call Build/Compile/pci)
 endef
 
 define Build/InstallDev
@@ -94,16 +104,6 @@ endef
 
 define Build/UninstallDev
 	rm -rf $(STAGING_DIR)/usr/include/madwifi
-endef
-
-define Package/kmod-madwifi
- SECTION:=drivers
- CATEGORY:=Drivers
- DEFAULT:=y if LINUX_2_6_BRCM || LINUX_2_6_ARUBA || LINUX_2_4_AR531X || LINUX_2_6_XSCALE, m if ALL
- TITLE:=Driver for Atheros wireless chipsets
- DESCRIPTION:=Driver for Atheros 802.11a/b/g chipsets
- URL:=http://madwifi.org/
- VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
 endef
 
 define Package/kmod-madwifi/install
