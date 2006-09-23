@@ -21,18 +21,20 @@ PKG_CAT:=zcat
 include $(INCLUDE_DIR)/package.mk
 
 define Package/bridge
-SECTION:=base
-CATEGORY:=Network
-DEFAULT:=y
-TITLE:=Ethernet bridging configuration utility
-DESCRIPTION:=Ethernet bridging configuration utility\\\
-Manage ethernet bridging; a way to connect networks together to\\\
-form a larger network.
-URL:=http://bridge.sourceforge.net/
+  SECTION:=net
+  CATEGORY:=Base system
+  DEFAULT:=y
+  TITLE:=Ethernet bridging configuration utility
+  DESCRIPTION:=\
+	Manage ethernet bridging: a way to connect networks together to \\\
+	form a larger network.
+  URL:=http://bridge.sourceforge.net/
 endef
 
 define Build/Configure
-$(call Build/Configure/Default,--with-linux-headers=$(LINUX_DIR))
+	$(call Build/Configure/Default, \
+		--with-linux-headers="$(LINUX_DIR)" \
+	)
 endef
 
 define Package/bridge/install
