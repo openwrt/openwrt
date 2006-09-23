@@ -45,6 +45,35 @@ PPP based protocols (pppoe, pptp, ...) accept these options:
 		",<interval>" to the keepalive value
 	demand:
 		Use Dial on Demand (value specifies the maximum idle time)
+		
+	(pptp)
+	server: The remote pptp server IP
 
 For all protocol types, you can also specify the MTU by using the "mtu" option.
 
+
+
+
+	Setting up the switch (currently broadcom only)
+
+
+The switch configuration is set by adding a 'switch' config section.
+Example: 
+
+	config switch eth0
+		option vlan0 "1 2 3 4 5*"
+		option vlan1 "0 5"
+
+On Broadcom hardware the section name needs to be eth0, as the switch driver
+does not detect the switch on any other physical device.
+Every vlan option needs to have the name vlan<n> where <n> is the VLAN number
+as used in the switch driver.
+As value it takes a list of ports with these optional suffixes:
+
+	'*': Set the default VLAN (PVID) of the Port to the current VLAN
+	'u': Force the port to be untagged
+	't': Force the port to be tagged
+
+The CPU port defaults to tagged, all other ports to untagged.
+On Broadcom hardware the CPU port is always 5. The other ports may vary with 
+different hardware.
