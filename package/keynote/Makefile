@@ -18,42 +18,51 @@ PKG_SOURCE_URL:=http://downloads.openwrt.org/sources/
 PKG_MD5SUM:=b569066ac2ba1356c2112b118a7d74d0
 PKG_CAT:=bzcat
 
-PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
-
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 define Package/keynote
-SECTION:=base
-CATEGORY:=Network
-DEPENDS:=@LINUX_2_6
-TITLE:=IPsec management tools
-DESCRIPTION:=IPsec management tools
-URL:=http://www1.cs.columbia.edu/~angelos/keynote.html
+  SECTION:=net
+  CATEGORY:=Network
+  DEPENDS:=@LINUX_2_6 +libopenssl
+  TITLE:=Simple and flexible trust-management system
+  DESCRIPTION:=\
+	KeyNote is a simple and flexible trust-management system designed to work \\\
+	well for a variety of large- and small- scale Internet-based applications.\\\
+	It provides a single, unified language for both local policies and \\\
+	credentials. 
+  URL:=http://www1.cs.columbia.edu/~angelos/keynote.html
 endef
 
 define Build/Configure
-$(call Build/Configure/Default,--enable-static --enable-shared,LDFLAGS="-L$(STAGING_DIR)/usr/lib")
+	$(call Build/Configure/Default, \
+		--enable-static \
+		--enable-shared \
+	)
 endef
 
 define Build/Compile
-	$(call Build/Compile/Default,$(TARGET_CONFIGURE_OPTS) \
-		CFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib" \
-		all)
+	$(call Build/Compile/Default, \
+		CFLAGS="\$$$$(EXTRA_CFLAGS) \$$$$(EXTRA_LDFLAGS)" \
+	)
+endef
+
+define Build/InstallDev
+	mkdir -p $(STAGING_DIR)/usr/include
+	$(CP) $(PKG_BUILD_DIR)/{assertion,header,keynote,signature}.h $(STAGING_DIR)/usr/include/
+	mkdir -p $(STAGING_DIR)/usr/lib
+	$(CP) $(PKG_BUILD_DIR)/libkeynote.a $(STAGING_DIR)/usr/lib/
+endef
+
+define Build/UninstallDev
+	rm -rf \
+		$(STAGING_DIR)/usr/include/keynote \
+		$(STAGING_DIR)/usr/lib/libkeynote.a
 endef
 
 define Package/keynote/install
 	install -d -m0755 $(1)/usr/sbin
 	$(CP) $(PKG_BUILD_DIR)/keynote $(1)/usr/sbin/
-endef
-
-define Build/InstallDev
-	$(CP) $(PKG_BUILD_DIR)/{assertion,header,keynote,signature}.h $(STAGING_DIR)/usr/include/
-	$(CP) $(PKG_BUILD_DIR)/libkeynote.a $(STAGING_DIR)/usr/lib/
-endef
-
-define Build/UninstallDev
-	rm -rf $(STAGING_DIR)/usr/include/{assertion,header,keynote,signature}.h
 endef
 
 $(eval $(call BuildPackage,keynote))
