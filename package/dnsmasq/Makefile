@@ -21,13 +21,13 @@ PKG_CAT:=zcat
 include $(INCLUDE_DIR)/package.mk
 
 define Package/dnsmasq
-SECTION:=base
-CATEGORY:=Network
-DEFAULT:=y
-TITLE:=A lightweight DNS and DHCP server
-DESCRIPTION:=A lightweight DNS and DHCP server.  It is intended to provide \\\
-coupled DNS and DHCP service to a LAN.
-URL:=http://www.thekelleys.org.uk/dnsmasq/
+  SECTION:=net
+  CATEGORY:=Base system
+  DEFAULT:=y
+  TITLE:=A lightweight DNS and DHCP server
+  DESCRIPTION:=\
+	It is intended to provide coupled DNS and DHCP service to a LAN.
+  URL:=http://www.thekelleys.org.uk/dnsmasq/
 endef
 
 define Package/dnsmasq/conffiles
@@ -43,12 +43,12 @@ define Build/Compile
 endef
 
 define Package/dnsmasq/install
+	install -m0755 -d $(1)/usr/sbin
+	install -m0755 $(PKG_BUILD_DIR)/src/dnsmasq $(1)/usr/sbin/
 	install -m0755 -d $(1)/etc
 	install -m0644 ./files/dnsmasq.conf $(1)/etc/dnsmasq.conf
 	install -m0755 -d $(1)/etc/init.d
 	install -m0755 ./files/dnsmasq.init $(1)/etc/init.d/S50dnsmasq
-	install -m0755 -d $(1)/usr/sbin
-	install -m0755 $(PKG_BUILD_DIR)/src/dnsmasq $(1)/usr/sbin/
 endef
 
 $(eval $(call BuildPackage,dnsmasq))
