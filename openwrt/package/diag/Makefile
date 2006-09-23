@@ -17,13 +17,12 @@ PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)
 include $(INCLUDE_DIR)/package.mk
 
 define Package/kmod-diag
-SECTION:=drivers
-CATEGORY:=Drivers
-DEFAULT:=y
-DEPENDS:=@LINUX_2_4_BRCM
-TITLE:=Driver for router LEDs and Buttons
-DESCRIPTION:=Driver for router LEDs and Buttons
-VERSION:=$(LINUX_VERSION)-$(BOARD)-$(PKG_RELEASE)
+  SECTION:=kernel
+  CATEGORY:=Kernel drivers
+  DEFAULT:=y
+  DEPENDS:=@LINUX_2_4_BRCM
+  TITLE:=Driver for router LEDs and Buttons
+  VERSION:=$(LINUX_VERSION)-$(BOARD)-$(PKG_RELEASE)
 endef
 
 define Build/Prepare
