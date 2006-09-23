@@ -23,11 +23,13 @@ PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 include $(INCLUDE_DIR)/package.mk
 
 define Package/libpcap
-SECTION:=base
-CATEGORY:=Libraries
-TITLE:=Low-level packet capture library
-DESCRIPTION:=A system-independent library for user-level network packet capture.
-URL:=http://www.tcpdump.org/
+  SECTION:=libs
+  CATEGORY:=Libraries
+  TITLE:=Low-level packet capture library
+  DESCRIPTION:=\
+	This package contains a system-independent library for user-level \\\
+	network packet capture.
+  URL:=http://www.tcpdump.org/
 endef
 
 define Build/Configure
@@ -67,8 +69,6 @@ define Build/Configure
 endef
 
 define Build/Compile
-	rm -rf $(PKG_INSTALL_DIR)
-	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CCOPT="$(TARGET_CFLAGS) -I$(BUILD_DIR)/linux/include" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
