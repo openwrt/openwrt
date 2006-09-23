@@ -1,8 +1,8 @@
-scan_pppoe() {
+scan_pptp() {
 	scan_ppp "$@"
 }
 
-setup_interface_pppoe() {
+setup_interface_pptp() {
 	local iface="$1"
 	local config="$2"
 	
@@ -14,9 +14,10 @@ setup_interface_pppoe() {
 	setup_interface "$iface" "$config" "dhcp"
 
 	config_get mtu "$cfg" mtu
+	config_get server "$cfg" server
 	mtu=${mtu:-1452}
 	start_pppd "$config" \
-		plugin rp-pppoe.so \
-		mtu $mtu mru $mtu \
-		"nic-$device"
+		pty "/usr/sbin/pptp $server --loglevel 0 --nolaunchpppd"
+		file /etc/ppp/options.pptp
+		mtu $mtu mru $mtu
 }
