@@ -20,15 +20,20 @@ PKG_CAT:=zcat
 
 include $(INCLUDE_DIR)/package.mk
 
+define Package/iproute2/Default
+  SECTION:=net
+  CATEGORY:=Network
+  URL:=http://linux-net.osdl.org/index.php/Iproute2
+endef
+
 define Package/ip
-SECTION:=base
-CATEGORY:=Network
-TITLE:=A routing control utility
+  $(call Package/iproute2/Default)
+  TITLE:=Routing control utility
 endef
 
 define Package/tc
-$(call Package/ip)
-TITLE:=A traffic control utility
+  $(call Package/iproute2/Default)
+  TITLE:=Traffic control utility
 endef
 
 define Build/Configure
