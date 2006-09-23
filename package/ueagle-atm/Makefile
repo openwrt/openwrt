@@ -12,11 +12,11 @@ include $(INCLUDE_DIR)/kernel.mk
 PKG_NAME:=ueagle-atm
 PKG_VERSION:=1.0d1
 PKG_RELEASE:=1
-PKG_MD5SUM:=5da1fceb15168f4c7ad407a3e38ddecb
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE_URL:=http://castet.matthieu.free.fr/eagle/release/
+PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_SOURCE_URL:=http://castet.matthieu.free.fr/eagle/release/
+PKG_MD5SUM:=5da1fceb15168f4c7ad407a3e38ddecb
 PKG_CAT:=zcat
 
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
@@ -25,13 +25,12 @@ include $(INCLUDE_DIR)/package.mk
 
 #FIXME: add dependency on kmod-usb-core
 define Package/kmod-ueagle-atm
-SECTION:=drivers
-CATEGORY:=Drivers
-DEPENDS:=@LINUX_2_6_BRCM @PACKAGE_KMOD_USB
-TITLE:=Driver for Eagle 8051 based USB ADSL modems
-DESCRIPTION:=Driver for Eagle 8051 based USB ADSL modems
-URL:=http://www.eagle-usb.org/
-VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
+  SECTION:=kernel
+  CATEGORY:=Kernel drivers
+  DEPENDS:=@LINUX_2_6_BRCM @PACKAGE_KMOD_USB
+  TITLE:=Driver for Eagle 8051 based USB ADSL modems
+  URL:=http://www.eagle-usb.org/
+  VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
 endef
 
 define Build/Compile
@@ -54,4 +53,3 @@ define Package/kmod-ueagle-atm/install
 endef
 
 $(eval $(call BuildPackage,kmod-ueagle-atm))
-
