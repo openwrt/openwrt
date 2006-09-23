@@ -17,9 +17,12 @@ PKG_BUILD_DIR:=$(BUILD_DIR)/robocfg
 include $(INCLUDE_DIR)/package.mk
 
 define Package/robocfg
-SECTION:=base
-TITLE:=BCM5325E/536x switch configuration utility
-DESCRIPTION:=Broadcom BCM5325E/536x switch configuration utility
+  SECTION:=utils
+  CATEGORY:=Utilities
+  TITLE:=BCM5325E/536x switch configuration utility
+  DESCRIPTION:=\
+	This package contains an utility for configuring the Broadcom BCM5325E/536x \\\
+	based switches.
 endef
 
 define Build/Prepare
