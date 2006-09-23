@@ -24,16 +24,15 @@ include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 define Package/ipsec-tools
-SECTION:=base
-CATEGORY:=Network
-DEPENDS:=@LINUX_2_6 +libopenssl
-TITLE:=IPsec management tools
-DESCRIPTION:=IPsec management tools
-URL:=http://ipsec-tools.sourceforge.net/
+  SECTION:=net
+  CATEGORY:=Network
+  DEPENDS:=@LINUX_2_6 +libopenssl
+  TITLE:=IPsec management tools
+  URL:=http://ipsec-tools.sourceforge.net/
 endef
 
 define Build/Configure
-	(cd $(PKG_BUILD_DIR); rm -rf config.{cache,status}; \
+	(cd $(PKG_BUILD_DIR); rm -f config.cache; \
 		touch configure.ac; \
 		touch aclocal.m4; \
 		touch Makefile.in; \
@@ -78,7 +77,10 @@ define Build/Configure
 endef
 
 define Build/Compile
-	$(call Build/Compile/Default,DESTDIR="$(PKG_INSTALL_DIR)" all install)
+	$(call Build/Compile/Default, \
+		DESTDIR="$(PKG_INSTALL_DIR)" \
+		all install \
+	)
 endef
 
 define Package/ipsec-tools/install
