@@ -21,20 +21,23 @@ PKG_CAT:=bzcat
 include $(INCLUDE_DIR)/package.mk
 
 define Package/ipset
-SECTION:=base
-CATEGORY:=Network
-TITLE:=Netfilter ip sets administration utility
-DESCRIPTION:=Netfilter ip sets administration utility
-URL:=http://ipset.netfilter.org/
+  SECTION:=net
+  CATEGORY:=Network
+  TITLE:=Netfilter ip sets administration utility
+  URL:=http://ipset.netfilter.org/
 endef
 
 define Build/Compile
-$(call Build/Compile/Default,KERNEL_DIR=$(LINUX_DIR))
+	$(call Build/Compile/Default, \
+		KERNEL_DIR="$(LINUX_DIR)" \
+	)
 endef
 
 define Package/ipset/install
 	$(MAKE) -C $(PKG_BUILD_DIR) \
-		DESTDIR=$(1) PREFIX=/usr install
+		DESTDIR="$(1)" \
+		PREFIX="/usr" \
+		install
 	rm -rf $(1)/usr/man
 endef
 
