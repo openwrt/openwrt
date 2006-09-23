@@ -24,7 +24,7 @@ include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 define Package/isakmpd
-  SECTION:=base
+  SECTION:=net
   CATEGORY:=Network
   DEPENDS:=@BROKEN @LINUX_2_6 +libopenssl +keynote +libgmp
   TITLE:=IPsec management tools
