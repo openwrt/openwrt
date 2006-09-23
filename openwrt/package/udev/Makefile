@@ -28,18 +28,18 @@ PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 include $(INCLUDE_DIR)/package.mk
 
 define Package/udev
-SECTION:=base
-DEPENDS:=@LINUX_2_6
-TITLE:=Dynamic device management subsystem
-DESCRIPTION:=udev provides a dynamic device directory containing only the files for \\\
-actually present devices. It creates or removes device node files in \\\
-the /dev directory, or it renames network interfaces. \\\
-URL:=http://www.kernel.org/pub/linux/utils/kernel/hotplug/udev.html
+  SECTION:=utils
+  CATEGORY:=Utilities
+  DEPENDS:=@LINUX_2_6
+  TITLE:=Dynamic device management subsystem
+  DESCRIPTION:=\
+	udev provides a dynamic device directory containing only the files for \\\
+	actually present devices. It creates or removes device node files in \\\
+	the /dev directory, or it renames network interfaces.
+  URL:=http://www.kernel.org/pub/linux/utils/kernel/hotplug/udev.html
 endef
 
 define Build/Compile
-	rm -rf $(PKG_INSTALL_DIR)
-	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CROSS="$(TARGET_CROSS)" \
 		STRIP="/bin/true" \
