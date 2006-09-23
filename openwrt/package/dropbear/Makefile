@@ -20,20 +20,25 @@ PKG_CAT:=zcat
 
 include $(INCLUDE_DIR)/package.mk
 
+define Package/dropbear/Default
+  URL:=http://matt.ucc.asn.au/dropbear/
+endef
+
 define Package/dropbear
-SECTION:=base
-CATEGORY:=Base system
-DEFAULT:=y
-TITLE:=Small SSH 2 client/server
-DESCRIPTION:=A small SSH 2 server/client designed for small memory environments.
-URL:=http://matt.ucc.asn.au/dropbear/
+  $(call Package/dropbear/Default)
+  SECTION:=net
+  CATEGORY:=Base system
+  DEFAULT:=y
+  TITLE:=Small SSH2 client/server
+  DESCRIPTION:=\
+	A small SSH2 server/client designed for small memory environments.
 endef
 
 define Package/dropbearconvert
-$(call Package/dropbear)
-TITLE:=Utility for converting SSH keys
-DEFAULT:=m if ALL
-DESCRIPTION:=Utility for converting SSH keys
+  $(call Package/dropbear/Default)
+  SECTION:=utils
+  CATEGORY:=Utilities
+  TITLE:=Utility for converting SSH keys
 endef
 
 define Build/Configure
