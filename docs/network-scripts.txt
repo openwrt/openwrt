@@ -1,0 +1,52 @@
+	Structure of the network scripts in buildroot-ng
+
+
+1) Usage
+
+To be able to access the network functions, you need to include
+the necessary shell scripts by running:
+
+. /etc/functions.sh      # common functions
+include network          # include /lib/network/*.sh
+scan_interfaces          # read and parse the network config
+
+Some protocols, such as PPP might change the configured interface names
+at run time (e.g. eth0 => ppp0 for PPPoE). That's why you have to run
+scan_interfaces instead of reading the values from the config directly.
+After running scan_interfaces, the 'ifname' option will always contain
+the effective interface name (which is used for IP traffic) and if the
+physical device name differs from it, it will be stored in the 'device'
+option.
+That means that running 'config_get lan ifname' after scan_interfaces
+might not return the same result as running it before.
+
+After running scan_interfaces, the following functions are available:
+
+- find_config <interface> looks for a network configuration that includes
+  the specified network interface.
+
+- setup_interface <interface> [<config>] [<protocol>] will set up the
+  specified interface, optionally overriding the network configuration
+  name or the protocol that it uses.
+
+
+
+2) Writing protocol handlers
+
+You can add custom protocol handlers by adding shell scripts to
+/lib/network. They provide the following two shell functions:
+
+scan_<protocolname>() {
+	local config="$1"
+	# change the interface names if necessary
+}
+
+setup_interface_<protocolname>() {
+	local interface="$1"
+	local config="$2"
+	# set up the interface
+}
+
+scan_<protocolname> is optional and only necessary if your protocol
+uses a custom device, e.g. a tunnel or a PPP device.
+
