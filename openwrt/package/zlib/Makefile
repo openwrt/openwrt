@@ -23,11 +23,10 @@ PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 include $(INCLUDE_DIR)/package.mk
 
 define Package/zlib
-SECTION:=base
-CATEGORY:=Libraries
-TITLE:=Library implementing the deflate compression method
-DESCRIPTION:=A library implementing the 'deflate' compression method
-URL:=http://www.zlib.net/
+  SECTION:=libs
+  CATEGORY:=Libraries
+  TITLE:=Library implementing the deflate compression method
+  URL:=http://www.zlib.net/
 endef
 
 define Build/Configure
@@ -36,8 +35,8 @@ define Build/Configure
 		LDSHARED="$(TARGET_CC) -shared -Wl,-soname,libz.so.1" \
 		CFLAGS="$(TARGET_CFLAGS) $(CFLAGS_LARGEFILE)" \
 		./configure \
-		--prefix=/usr \
-		--shared \
+			--prefix=/usr \
+			--shared \
 	);
 endef
 
@@ -62,12 +61,13 @@ define Build/InstallDev
 endef
 	
 define Build/UninstallDev
-	rm -rf	$(STAGING_DIR)/usr/include/z{conf,lib}.h \
+	rm -rf \
+		$(STAGING_DIR)/usr/include/z{conf,lib}.h \
 		$(STAGING_DIR)/usr/lib/libz.{a,so*}
 endef
 
 define Package/zlib/install
-	install -m0755 -d $(1)/usr/lib
+	install -d -m0755 $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libz.so.* $(1)/usr/lib/
 endef
 
