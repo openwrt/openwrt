@@ -12,24 +12,23 @@ include $(INCLUDE_DIR)/kernel.mk
 PKG_NAME:=spca5xx
 PKG_VERSION:=20060501
 PKG_RELEASE:=1
-PKG_MD5SUM:=8fcec25715aea10f9ebec5728c37e752
 
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE_URL:=http://mxhaard.free.fr/spca50x/Download/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_SOURCE_URL:=http://mxhaard.free.fr/spca50x/Download/
+PKG_MD5SUM:=8fcec25715aea10f9ebec5728c37e752
 PKG_CAT:=zcat
 
 include $(INCLUDE_DIR)/package.mk
 
 #FIXME: add proper dependency handling on kmod-usb-core & kmod-videodev packages
 define Package/kmod-spca5xx
-SECTION:=drivers
-CATEGORY:=Drivers
-DEPENDS:=@PACKAGE_KMOD_USB&&PACKAGE_KMOD_VIDEODEV
-TITLE:=Driver for SPCA5xx based USB cameras
-DESCRIPTION:=Driver for SPCA5xx based USB cameras
-URL:=http://mxhaard.free.fr/
-VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
+  SECTION:=kernel
+  CATEGORY:=Kernel drivers
+  DEPENDS:=@PACKAGE_KMOD_USB&&PACKAGE_KMOD_VIDEODEV
+  TITLE:=Driver for SPCA5xx based USB cameras
+  URL:=http://mxhaard.free.fr/
+  VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
 endef
 
 define Build/Compile
