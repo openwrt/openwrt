@@ -64,31 +64,28 @@ menu "Target Images"
 
 	config TARGET_ROOTFS_JFFS2
 		bool "jffs2"
-		default y
+		default y if USES_JFFS2
 		depends !TARGET_ROOTFS_INITRAMFS
 		help
 		  Build a jffs2 root filesystem
 
 	config TARGET_ROOTFS_SQUASHFS
 		bool "squashfs"
-		default y
-		depends !LINUX_2_6_ARUBA
-		depends !LINUX_2_6_XSCALE
+		default y if USES_SQUASHFS
 		depends !TARGET_ROOTFS_INITRAMFS
-		depends !LINUX_2_6_AU1000
 		help
 		  Build a squashfs-lzma root filesystem
 
 	config TARGET_ROOTFS_TGZ
 		bool "tgz"
-		default y if !LINUX_2_4_BRCM && !LINUX_2_6_BRCM && !LINUX_2_6_ARUBA && !LINUX_2_4_AR531X
+		default y if !USES_SQUASHFS && !USES_JFFS2
 		depends !TARGET_ROOTFS_INITRAMFS
 		help
 		  Build a compressed tar archive of the the root filesystem
 		  
 	config TARGET_ROOTFS_EXT2FS
 		bool "ext2"
-		default y if LINUX_2_6_UML
+		default y if !USES_SQUASHFS && !USES_JFFS2
 		depends !TARGET_ROOTFS_INITRAMFS
 		help
 		  Ext2 file system with some free space for uml images

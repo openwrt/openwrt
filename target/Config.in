@@ -8,6 +8,7 @@ config LINUX_2_6_AU1000
 	select LINUX_2_6
 	select PCI_SUPPORT
 	select USB_SUPPORT
+	select USES_JFFS2
 	help
 	  Build firmware for AMD Alchemy 1500 boards
 	  (e.g. 4G-Systems Mesh/Access Cube ...)
@@ -19,6 +20,7 @@ config LINUX_2_6_ARUBA
 	select PCI_SUPPORT
 	select USB_SUPPORT
 	select BIG_ENDIAN
+	select USES_JFFS2
 	help
           Build firmware images for Aruba boards 
 
@@ -28,6 +30,7 @@ config LINUX_2_4_AR531X
 	select mips
 	select LINUX_2_4
 	select BIG_ENDIAN
+	select USES_JFFS2
 	help
 	  Build firmware images for Atheros AR531x based boards
 	  (e.g. Netgear WGT624, Linksys WRT55AG)
@@ -38,6 +41,8 @@ config LINUX_2_4_BRCM
 	select PCI_SUPPORT
 	select USB_SUPPORT
 	select PCMCIA_SUPPORT
+	select USES_SQUASHFS
+	select USES_JFFS2
 	help
 	  Build firmware images for Broadcom based routers
 	  (e.g. Linksys WRT54G(S), Asus WL-500g, Motorola WR850G)
@@ -53,6 +58,8 @@ config LINUX_2_6_BRCM
 	select PCI_SUPPORT
 	select USB_SUPPORT
 	#select PCMCIA_SUPPORT
+	select USES_SQUASHFS
+	select USES_JFFS2
 	help
 	  Build firmware images for Broadcom based routers
 	  (e.g. Netgear WGT634u)
@@ -65,6 +72,8 @@ config LINUX_2_6_BRCM63XX
 	select PCI_SUPPORT
 	select USB_SUPPORT
 	select PCMCIA_SUPPORT
+	select USES_SQUASHFS
+	select USES_JFFS2
 	help
 	  Build firmware images for Broadcom based xDSL/routers
 	  (e.g. Inventel Livebox, Siemens SE515)
@@ -76,6 +85,7 @@ config LINUX_2_6_XSCALE
 	select BIG_ENDIAN
 	select PCI_SUPPORT
 	select USB_SUPPORT
+	select USES_JFFS2
 
 config LINUX_2_6_MAGICBOX
 	bool "Magicbox [2.6]"
@@ -83,16 +93,20 @@ config LINUX_2_6_MAGICBOX
 	select LINUX_2_6
 	select BIG_ENDIAN
 	select PCI_SUPPORT
+	select USES_JFFS2
 
 config LINUX_2_6_RB532
 	bool "Mikrotik RB532 [2.6]"
 	select mipsel
 	select LINUX_2_6
 	select PCI_SUPPORT
+	select USES_JFFS2
 
 config LINUX_2_4_AR7
 	bool "TI AR7 [2.4]"
 	select mipsel
+	select USES_SQUASHFS
+	select USES_JFFS2
 	help
 	  Build firmware images for TI AR7 based routers (w.g. Linksys WAG54G v2)
 
@@ -203,6 +217,12 @@ config USB_SUPPORT
 config BIG_ENDIAN
 	bool
 
+config USES_SQUASHFS
+	bool
+
+config USES_JFFS2
+	bool
+
 # Architecture selection
 
 config i386
@@ -259,5 +279,4 @@ config ARCH
 	default "sh4"     if sh4
 	default "sh4eb"   if sh4eb
 	default "sparc"   if sparc
-
 
