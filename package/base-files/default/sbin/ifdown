@@ -3,7 +3,7 @@
 
 [ $# = 0 ] && { echo "  $0 <group>"; exit; }
 . /etc/functions.sh
-include network
+include /lib/network
 scan_interfaces
 
 cfg=$1
