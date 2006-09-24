@@ -13,12 +13,12 @@ PKG_NAME:=fuse
 PKG_VERSION:=2.5.3
 PKG_RELEASE:=1
 
-PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/$(PKG_NAME)
 PKG_MD5SUM:=9c7e8b6606b9f158ae20b8521ba2867c
 PKG_CAT:=zcat
 
+PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
 include $(INCLUDE_DIR)/package.mk
@@ -123,8 +123,7 @@ define Build/InstallDev
 endef
 	
 define Build/UninstallDev
-	rm -rf \
-		$(STAGING_DIR)/usr/include/fuse{,.h} \
+	rm -rf	$(STAGING_DIR)/usr/include/fuse{,.h} \
 		$(STAGING_DIR)/usr/lib/libfuse.{a,so*} \
 		$(STAGING_DIR)/usr/lib/pkgconfig/fuse.pc
 endef

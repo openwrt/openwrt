@@ -6,14 +6,15 @@
 #
 include $(TOPDIR)/rules.mk
 
-PKG_NAME := sed
-PKG_VERSION := 4.1.2
+PKG_NAME:=sed
+PKG_VERSION:=4.1.2
+
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=ftp://ftp.gnu.org/gnu/$(PKG_NAME)
 PKG_MD5SUM:=928f0e06422f414091917401f1a834d0
 PKG_CAT:=zcat
 
-PKG_BUILD_DIR:=$(TOOL_BUILD_DIR)/sed-$(PKG_VERSION)
+PKG_BUILD_DIR:=$(TOOL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 
 HOST_SED_TARGET=$(strip $(shell ./sedcheck.sh))
 

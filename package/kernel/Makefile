@@ -17,9 +17,9 @@ PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/packages
 
 include $(INCLUDE_DIR)/package.mk
 ifeq ($(DUMP),)
--include $(LINUX_DIR)/.config
-NF_KMOD:=1
-include $(INCLUDE_DIR)/netfilter.mk
+  -include $(LINUX_DIR)/.config
+  NF_KMOD:=1
+  include $(INCLUDE_DIR)/netfilter.mk
 endif
 
 define Build/Prepare
@@ -30,9 +30,9 @@ define Build/Compile
 endef
 
 define KernelPackage/Defaults
-FILES:=
-KCONFIG:=m
-AUTOLOAD:=
+  FILES:=
+  KCONFIG:=m
+  AUTOLOAD:=
 endef
 
 define ModuleAutoLoad
@@ -72,20 +72,19 @@ define KernelPackage
   endef
 
   ifeq ($(findstring m,$(KCONFIG)),m)
-  ifneq ($(strip $(FILES)),)
-    define Package/kmod-$(1)/install
+    ifneq ($(strip $(FILES)),)
+      define Package/kmod-$(1)/install
 		mkdir -p $$(1)/lib/modules/$(LINUX_VERSION)
 		$(CP) $$(FILES) $$(1)/lib/modules/$(LINUX_VERSION)/
 		$(call ModuleAutoLoad,$(1),$$(1),$(AUTOLOAD))
-    endef
-  endif
+      endef
+    endif
   endif
   $$(eval $$(call BuildPackage,kmod-$(1)))
 endef
 
 define AutoLoad
-add_module $(1) "$(2)";
+  add_module $(1) "$(2)";
 endef
 
 include ./modules.mk
-

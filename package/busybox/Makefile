@@ -12,24 +12,26 @@ PKG_NAME:=busybox
 PKG_VERSION:=1.2.1
 PKG_RELEASE:=1
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://www.busybox.net/downloads
 PKG_MD5SUM:=362b3dc0f2023ddfda901dc1f1a74391
 PKG_CAT:=bzcat
 
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/busybox
-SECTION:=base
-CATEGORY:=Base system
-MENU:=1
-DEFAULT:=y
-TITLE:=Core utilities for embedded Linux
-DESCRIPTION:=The Swiss Army Knife of embedded Linux. \\\
-It slices, it dices, it makes Julian Fries.
-URL:=http://busybox.net/
-CONFIG:=\\\
+  SECTION:=base
+  CATEGORY:=Base system
+  DEFAULT:=y
+  TITLE:=Core utilities for embedded Linux
+  DESCRIPTION:=\
+	The Swiss Army Knife of embedded Linux. \\\
+	It slices, it dices, it makes Julian Fries.
+  URL:=http://busybox.net/
+  MENU:=1
+  CONFIG:=\\\
 	menu "Configuration" \\\
 		depends on PACKAGE_busybox \\\
 		source "$(SOURCE)/config/Config.in" \\\
@@ -38,13 +40,19 @@ endef
 
 define Build/Configure
 	$(SCRIPT_DIR)/gen_busybox_config.pl $(TOPDIR)/.config > $(PKG_BUILD_DIR)/.config
-	yes '' | $(MAKE) CC="$(TARGET_CC)" CROSS="$(TARGET_CROSS)" \
-	-C $(PKG_BUILD_DIR) oldconfig
+	yes '' | $(MAKE) -C $(PKG_BUILD_DIR) \
+		CC="$(TARGET_CC)" \
+		CROSS="$(TARGET_CROSS)" \
+		oldconfig
 endef
 
 define Package/busybox/install
-	$(MAKE) CC="$(TARGET_CC)" CROSS="$(TARGET_CROSS)" \
-	PREFIX="$(1)" EXTRA_CFLAGS="$(TARGET_CFLAGS)" -C $(PKG_BUILD_DIR) install
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		CC="$(TARGET_CC)" \
+		CROSS="$(TARGET_CROSS)" \
+		EXTRA_CFLAGS="$(TARGET_CFLAGS)" \
+		PREFIX="$(1)" \
+		install
 	-rm -rf $(1)/lib64
 endef
 

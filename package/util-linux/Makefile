@@ -12,7 +12,6 @@ PKG_NAME:=util-linux
 PKG_VERSION:=2.12r
 PKG_RELEASE:=1
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=ftp://ftp.kernel.org/pub/linux/utils/$(PKG_NAME)/ \
 	http://ftp.kernel.org/pub/linux/utils/$(PKG_NAME)/ \
@@ -21,6 +20,7 @@ PKG_SOURCE_URL:=ftp://ftp.kernel.org/pub/linux/utils/$(PKG_NAME)/ \
 PKG_MD5SUM:=c261230b27fc0fbcc287c76884caf2d3
 PKG_CAT:=zcat
 
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
 include $(INCLUDE_DIR)/package.mk

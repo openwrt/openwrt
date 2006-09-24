@@ -7,11 +7,11 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/host-build.mk
 
-PKG_BUILD_DIR := $(TOOL_BUILD_DIR)/sstrip
+PKG_BUILD_DIR:=$(TOOL_BUILD_DIR)/sstrip
 
 OS:=$(shell uname)
 ifeq ($(OS),Darwin)
-CFLAGS += -I./include
+  CFLAGS += -I./include
 endif
 
 define Build/Compile
@@ -19,7 +19,8 @@ define Build/Compile
 endef
 
 define Build/Install
-	$(CP) $(PKG_BUILD_DIR)/sstrip $(STAGING_DIR)/bin
+	mkdir -p $(STAGING_DIR)/bin
+	$(CP) $(PKG_BUILD_DIR)/sstrip $(STAGING_DIR)/bin/
 endef
 
 define Build/Clean

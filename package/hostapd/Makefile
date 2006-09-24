@@ -11,24 +11,32 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=hostapd
 PKG_VERSION:=0.5.3
 PKG_RELEASE:=1
-PKG_MD5SUM:=4e3134e8b0d86e831230f8c620fd81bb
-PKG_BUILDDEP:=madwifi
 
-PKG_SOURCE_URL:=http://hostap.epitest.fi/releases/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_SOURCE_URL:=http://hostap.epitest.fi/releases/
+PKG_MD5SUM:=4e3134e8b0d86e831230f8c620fd81bb
 PKG_CAT:=zcat
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 
+PKG_BUILDDEP:=madwifi
+
 include $(INCLUDE_DIR)/package.mk
 
+define Package/hostapd/Default
+  SECTION:=net
+  CATEGORY:=Network
+  TITLE:=IEEE 802.1x Authenticator
+  URL:=http://hostap.epitest.fi/
+endef
+
 define Package/hostapd
-SECTION:=net
-CATEGORY:=Network
-DEPENDS:=+libopenssl
-TITLE:=IEEE 802.1x Authenticator
-DESCRIPTION:=IEEE 802.1x/WPA/EAP/RADIUS Authenticator
-URL:=http://hostap.epitest.fi/
+  $(call Package/hostapd/Default)
+  DEPENDS:=+libopenssl
+  TITLE+= (full)
+  DESCRIPTION:=\
+	This package contains a full featured IEEE 802.1x/WPA/EAP/RADIUS \\\
+	Authenticator.
 endef
 
 define Package/hostapd/conffiles
@@ -36,10 +44,11 @@ define Package/hostapd/conffiles
 endef
 
 define Package/hostapd-mini
-$(call Package/hostapd)
-TITLE:=IEEE 802.1x Authenticator (WPA-PSK only)
-DEPENDS:=
-DESCRIPTION:=IEEE 802.1x/WPA/EAP/RADIUS Authenticator (WPA-PSK only)
+  $(call Package/hostapd/Default)
+  TITLE+= (WPA-PSK only)
+  DESCRIPTION:=\
+	This package contains a minimal IEEE 802.1x/WPA/EAP/RADIUS Authenticator \\\
+	(WPA-PSK only).
 endef
 
 define Package/hostapd-mini/conffiles
@@ -47,10 +56,12 @@ define Package/hostapd-mini/conffiles
 endef
 
 define Package/hostapd-utils
-$(call Package/hostapd)
-DEPENDS:=@PACKAGE_hostapd||PACKAGE_hostapd-mini
-TITLE:=IEEE 802.1x Authenticator (utils)
-DESCRIPTION:=IEEE 802.1x/WPA/EAP/RADIUS Authenticator (command line utils)
+  $(call Package/hostapd/Default)
+  DEPENDS:=@PACKAGE_hostapd||PACKAGE_hostapd-mini
+  TITLE+= (utils)
+  DESCRIPTION:=\
+	This package contains a command line utility to control the \\\
+	IEEE 802.1x/WPA/EAP/RADIUS Authenticator.
 endef
 
 define Build/ConfigureTarget

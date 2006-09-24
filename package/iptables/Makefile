@@ -13,7 +13,6 @@ PKG_NAME:=iptables
 PKG_VERSION:=1.3.5
 PKG_RELEASE:=1
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://www.netfilter.org/projects/iptables/files \
 	ftp://ftp.be.netfilter.org/pub/netfilter/iptables/ \
@@ -22,23 +21,26 @@ PKG_SOURCE_URL:=http://www.netfilter.org/projects/iptables/files \
 PKG_MD5SUM:=00fb916fa8040ca992a5ace56d905ea5
 PKG_CAT:=bzcat
 
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
-
-PKG_MENU:=IPv4 / IPv6 firewall administration
 
 include $(INCLUDE_DIR)/package.mk
 ifeq ($(DUMP),)
--include $(LINUX_DIR)/.config
-include $(INCLUDE_DIR)/netfilter.mk
+  -include $(LINUX_DIR)/.config
+  include $(INCLUDE_DIR)/netfilter.mk
 endif
 
+define Package/iptables/Default
+  SECTION:=net
+  CATEGORY:=Base system
+  URL:=http://netfilter.org/
+endef
+
 define Package/iptables
-SECTION:=net
-CATEGORY:=Base system
-MENU:=1
-DEFAULT:=y
-TITLE:=IPv4 firewall administration tool
-URL:=http://netfilter.org/
+  $(call Package/iptables/Default)
+  DEFAULT:=y
+  TITLE:=IPv4 firewall administration tool
+  MENU:=1
 endef
 
 define Package/iptables/conffiles
@@ -47,113 +49,119 @@ define Package/iptables/conffiles
 endef
 
 define Package/iptables-mod-conntrack
-SECTION:=net
-CATEGORY:=Base system
-DEPENDS:=iptables +kmod-ipt-conntrack
-TITLE:=connection tracking modules
-DESCRIPTION:=iptables extensions for connection tracking \\\
-Includes: \\\
-	* libipt_conntrack \\\
-	* libipt_helper \\\
-	* libipt_connmark/CONNMARK
+  $(call Package/iptables/Default)
+  DEPENDS:=iptables +kmod-ipt-conntrack
+  TITLE:=connection tracking modules
+  DESCRIPTION:=\
+	iptables extensions for connection tracking.\\\
+	\\\
+	Includes: \\\
+	- libipt_conntrack \\\
+	- libipt_helper \\\
+	- libipt_connmark/CONNMARK
 endef
 
 define Package/iptables-mod-filter
-SECTION:=net
-CATEGORY:=Base system
-DEPENDS:=iptables +kmod-ipt-filter
-TITLE:=filter modules
-DESCRIPTION:=iptables extensions for packet content inspection\\\
-Includes: \\\
-	* libipt_ipp2p \\\
-	* libipt_layer7 
+  $(call Package/iptables/Default)
+  DEPENDS:=iptables +kmod-ipt-filter
+  TITLE:=filter modules
+  DESCRIPTION:=\
+	iptables extensions for packet content inspection.\\\
+	\\\
+	Includes: \\\
+	- libipt_ipp2p \\\
+	- libipt_layer7 
 endef
 
 define Package/iptables-mod-imq
-SECTION:=net
-CATEGORY:=Base system
-DEPENDS:=iptables
-TITLE:=IMQ support +kmod-imq
-DESCRIPTION:=iptables extension for IMQ support\\\
-Includes: \\\
-	* libipt_IMQ
+  $(call Package/iptables/Default)
+  DEPENDS:=iptables
+  TITLE:=IMQ support
+  DESCRIPTION:=\
+	iptables extension for IMQ support.\\\
+	\\\
+	Includes: \\\
+	- libipt_IMQ
 endef
 
 define Package/iptables-mod-ipopt
-SECTION:=net
-CATEGORY:=Base system
-DEPENDS:=iptables +kmod-ipt-ipopt
-TITLE:=IP/Packet option modules
-DESCRIPTION:=iptables extensions for matching/changing IP packet options\\\
-Includes: \\\
-	* libipt_dscp/DSCP \\\
-	* libipt_ecn/ECN \\\
-	* libipt_length \\\
-	* libipt_mac \\\
-	* libipt_tos/TOS \\\
-	* libipt_tcpmms \\\
-	* libipt_ttl/TTL \\\
-	* libipt_unclean 
+  $(call Package/iptables/Default)
+  DEPENDS:=iptables +kmod-ipt-ipopt
+  TITLE:=IP/Packet option modules
+  DESCRIPTION:=\
+	iptables extensions for matching/changing IP packet options.\\\
+	\\\
+	Includes: \\\
+	- libipt_dscp/DSCP \\\
+	- libipt_ecn/ECN \\\
+	- libipt_length \\\
+	- libipt_mac \\\
+	- libipt_tos/TOS \\\
+	- libipt_tcpmms \\\
+	- libipt_ttl/TTL \\\
+	- libipt_unclean 
 endef
 
 define Package/iptables-mod-ipsec
-SECTION:=net
-CATEGORY:=Base system
-DEPENDS:=iptables +kmod-ipt-ipsec
-TITLE:=IPSec extensions
-DESCRIPTION:=iptables extensions for matching ipsec traffic\\\
-Includes: \\\
-	* libipt_ah \\\
-	* libipt_esp
+  $(call Package/iptables/Default)
+  DEPENDS:=iptables +kmod-ipt-ipsec
+  TITLE:=IPSec extensions
+  DESCRIPTION:=\
+	iptables extensions for matching ipsec traffic.\\\
+	\\\
+	Includes: \\\
+	- libipt_ah \\\
+	- libipt_esp
 endef
 
 define Package/iptables-mod-nat
-SECTION:=net
-CATEGORY:=Base system
-DEPENDS:=iptables +kmod-ipt-nat
-TITLE:=extra NAT targets
-DESCRIPTION:=iptables extensions for different NAT targets\\\
-Includes: \\\
-	* libipt_REDIRECT
+  $(call Package/iptables/Default)
+  DEPENDS:=iptables +kmod-ipt-nat
+  TITLE:=extra NAT targets
+  DESCRIPTION:=\
+	iptables extensions for different NAT targets.\\\
+	\\\
+	Includes: \\\
+	- libipt_REDIRECT
 endef
 
 define Package/iptables-mod-ulog
-SECTION:=net
-CATEGORY:=Base system
-DEPENDS:=iptables +kmod-ipt-ulog
-TITLE:=user-space packet logging
-DESCRIPTION:=iptables extensions for user-space packet logging\\\
-Includes: \\\
-	* libipt_ULOG
+  $(call Package/iptables/Default)
+  DEPENDS:=iptables +kmod-ipt-ulog
+  TITLE:=user-space packet logging
+  DESCRIPTION:=\
+	iptables extensions for user-space packet logging.\\\
+	\\\
+	Includes: \\\
+	- libipt_ULOG
 endef
 
 define Package/iptables-mod-extra
-SECTION:=net
-CATEGORY:=Base system
-DEPENDS:=iptables +kmod-ipt-extra
-TITLE:=other extra iptables extensions
-DESCRIPTION:=other extra iptables extensions\\\
-Includes: \\\
-	* libipt_limit \\\
-	* libipt_owner \\\
-	* libipt_physdev \\\
-	* libipt_pkttype \\\
-	* libipt_recent
+  $(call Package/iptables/Default)
+  DEPENDS:=iptables +kmod-ipt-extra
+  TITLE:=other extra iptables extensions
+  DESCRIPTION:=\
+	other extra iptables extensions.\\\
+	\\\
+	Includes: \\\
+	- libipt_limit \\\
+	- libipt_owner \\\
+	- libipt_physdev \\\
+	- libipt_pkttype \\\
+	- libipt_recent
 endef
 
 define Package/iptables-utils
-SECTION:=net
-CATEGORY:=Base system
-DEPENDS:=iptables
-TITLE:=iptables save and restore utilities
+  $(call Package/iptables/Default)
+  DEPENDS:=iptables
+  TITLE:=iptables save and restore utilities
 endef
 
 define Package/ip6tables
-SECTION:=net
-CATEGORY:=Base system
-TITLE:=IPv6 firewall administration tool
+  $(call Package/iptables/Default)
+  CATEGORY:=Network
+  TITLE:=IPv6 firewall administration tool
 endef
-
 
 define Build/Configure
 endef
@@ -169,7 +177,6 @@ define Build/Compile
 		all install install-devel
 endef
 
-
 define Build/InstallDev
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
@@ -184,7 +191,6 @@ define Build/UninstallDev
 	rm -rf $(STAGING_DIR)/usr/lib/libipq.a
 endef
 
-		
 define Package/iptables/install
 	install -d -m0755 $(1)/etc/config
 	install -m0644 ./files/firewall.config $(1)/etc/config/firewall
@@ -216,15 +222,15 @@ define Package/ip6tables/install
 endef
 
 define BuildPlugin
-define Package/$(1)/install
+  define Package/$(1)/install
 	install -m0755 -d $$(1)/usr/lib/iptables
 	for m in $$(patsubst xt_%,ipt_%,$(2)); do \
 		$(CP) $(PKG_INSTALL_DIR)/usr/lib/iptables/lib$$$$$$$${m}.so $$(1)/usr/lib/iptables/ ; \
 	done
 	$(3)
-endef
+  endef
 
-$$(eval $$(call BuildPackage,$(1)))
+  $$(eval $$(call BuildPackage,$(1)))
 endef
 
 L7_INSTALL:=mkdir -p $$(1)/etc/l7-protocols; \

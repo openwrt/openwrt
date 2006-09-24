@@ -10,12 +10,12 @@ PKG_NAME=kernel-headers
 PKG_VERSION=2.4.32
 
 PKG_SOURCE=linux-$(PKG_VERSION).tar.bz2
-PKG_MD5SUM:=38f4d0830e95a20f4bfed17622d5557c
 PKG_SOURCE_URL= \
 		http://www.de.kernel.org/pub/linux/kernel/v2.4 \
 		http://www.fi.kernel.org/pub/linux/kernel/v2.4 \
 		http://www.fr.kernel.org/pub/linux/kernel/v2.4 \
 		http://www.kernel.org/pub/linux/kernel/v2.4
+PKG_MD5SUM:=38f4d0830e95a20f4bfed17622d5557c
 
 PKG_BUILD_DIR:=$(TOOL_BUILD_DIR)/linux-$(PKG_VERSION)
 

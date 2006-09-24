@@ -12,12 +12,12 @@ PKG_NAME:=wireless-tools
 PKG_VERSION:=28
 PKG_RELEASE:=1
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/wireless_tools.28
 PKG_SOURCE:=wireless_tools.$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.hpl.hp.com/personal/Jean_Tourrilhes/Linux
 PKG_MD5SUM:=599c94497f9c9073c7b052d3dcb7cd16
 PKG_CAT:=zcat
 
+PKG_BUILD_DIR:=$(BUILD_DIR)/wireless_tools.28
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
 include $(INCLUDE_DIR)/package.mk
@@ -56,8 +56,7 @@ define Build/InstallDev
 endef
 	
 define Build/UninstallDev
-	rm -f \
-		$(STAGING_DIR)/usr/include/{iwlib,wireless}.h \
+	rm -f	$(STAGING_DIR)/usr/include/{iwlib,wireless}.h \
 		$(STAGING_DIR)/usr/lib/libiw.so*
 endef
 

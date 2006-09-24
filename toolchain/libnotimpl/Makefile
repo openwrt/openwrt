@@ -6,8 +6,9 @@
 #
 include $(TOPDIR)/rules.mk
 
-PKG_NAME := libnotimpl
-PKG_BUILD_DIR := $(TOOL_BUILD_DIR)/libnotimpl
+PKG_NAME:=libnotimpl
+
+PKG_BUILD_DIR:=$(TOOL_BUILD_DIR)/libnotimpl
 
 include $(INCLUDE_DIR)/host-build.mk
 
@@ -31,9 +32,7 @@ define Build/Install
 endef
 
 define Build/Clean
-	rm -rf \
-		$(STAGING_DIR)/usr/lib/libnotimpl.a \
-		$(PKG_BUILD_DIR)
+	rm -f $(STAGING_DIR)/usr/lib/libnotimpl.a
 endef
 
 $(eval $(call HostBuild))

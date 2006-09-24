@@ -12,12 +12,12 @@ PKG_NAME:=gmp
 PKG_VERSION:=4.1.4
 PKG_RELEASE:=1
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=@GNU/gmp
 PKG_MD5SUM:=0aa7d3b3f5b5ec5951e7dddd6f65e891
 PKG_CAT:=bzcat
 
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
 include $(INCLUDE_DIR)/package.mk
@@ -51,8 +51,7 @@ define Build/InstallDev
 endef
 
 define Build/UninstallDev
-	rm -rf \
-		$(STAGING_DIR)/usr/include/gmp* \
+	rm -rf	$(STAGING_DIR)/usr/include/gmp* \
 		$(STAGING_DIR)/usr/lib/libgmp.{a,so*}
 endef
 
