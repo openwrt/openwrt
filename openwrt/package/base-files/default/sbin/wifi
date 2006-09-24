@@ -30,7 +30,7 @@ config_cb() {
 }
 
 config_load wireless
-include wifi
+include /lib/wifi
 
 for device in $DEVICES; do (
 	config_get iftype "$device" type

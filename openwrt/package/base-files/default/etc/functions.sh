@@ -93,7 +93,7 @@ load_modules() {
 }
 
 include() {
-	for file in $(ls /lib/$1/*.sh 2>/dev/null); do
+	for file in $(ls $1/*.sh 2>/dev/null); do
 		. $file
 	done
 }
