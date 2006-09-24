@@ -90,6 +90,14 @@ define Package/Default
   DESCRIPTION:=
 endef
 
+define BuildDescription
+  ifneq ($(DESCRIPTION),)
+    DESCRIPTION:=$(TITLE)\\ $(DESCRIPTION)
+  else
+    DESCRIPTION:=$(TITLE)
+  endif
+endef
+
 define BuildIPKGVariable
   pkg_$(subst .,_,$(subst -,_,$(1)))_$(2) = $$(Package/$(1)/$(2))
   export pkg_$(subst .,_,$(subst -,_,$(1))_$(2))
@@ -99,20 +107,13 @@ endef
 define BuildPackage
   $(eval $(call Package/Default))
   $(eval $(call Package/$(1)))
+  $(eval $(call BuildDescription))
 
-  $(foreach FIELD, TITLE CATEGORY PRIORITY VERSION,
+  $(foreach FIELD, TITLE CATEGORY PRIORITY SECTION VERSION,
     ifeq ($($(FIELD)),)
       $$(error Package/$(1) is missing the $(FIELD) field)
     endif
   )
-
-  ifeq ($(PKGARCH),)
-    PKGARCH:=$(ARCH)
-  endif
-
-  ifeq ($(DESCRIPTION),)
-    $(eval DESCRIPTION:=$(TITLE))
-  endif
 
   IPKG_$(1):=$(PACKAGE_DIR)/$(1)_$(VERSION)_$(PKGARCH).ipk
   IDIR_$(1):=$(PKG_BUILD_DIR)/ipkg/$(1)
@@ -206,7 +207,7 @@ define BuildPackage
 	echo "Priority: $(PRIORITY)" >> $$(IDIR_$(1))/CONTROL/control
 	echo "Maintainer: $(MAINTAINER)" >> $$(IDIR_$(1))/CONTROL/control
 	echo "Architecture: $(PKGARCH)" >> $$(IDIR_$(1))/CONTROL/control
-	echo "Description: $(DESCRIPTION)" | sed -e 's,\\,\n ,g' >> $$(IDIR_$(1))/CONTROL/control
+	echo "Description: $(DESCRIPTION)" | sed -e 's,\\,\n,g' | sed -e 's,^[[:space:]]*$$$$, .,g' >> $$(IDIR_$(1))/CONTROL/control
 	chmod 644 $$(IDIR_$(1))/CONTROL/control
 	(cd $$(IDIR_$(1))/CONTROL; \
 		$($(1)_COMMANDS) \
