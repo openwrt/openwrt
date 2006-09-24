@@ -11,22 +11,23 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=base-files
 PKG_RELEASE:=8
-PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/base-files
+
+PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)
 
 REV:=$(shell LANG=C svn info | awk '/^Revision:/ { print$$2 }' )
 ifeq ($(REV),)
-REV:=0
+  REV:=0
 endif
 
 include $(INCLUDE_DIR)/package.mk
 
 ifneq ($(DUMP),1)
-TARGET:=-$(BOARD)-$(KERNEL)
-UCLIBC_VERSION:=${shell cat $(STAGING_DIR)/uclibc_version 2>/dev/null}
-LIBGCC_VERSION:=${shell cat $(STAGING_DIR)/gcc_version 2>/dev/null}
+  TARGET:=-$(BOARD)-$(KERNEL)
+  UCLIBC_VERSION:=${shell cat $(STAGING_DIR)/uclibc_version 2>/dev/null}
+  LIBGCC_VERSION:=${shell cat $(STAGING_DIR)/gcc_version 2>/dev/null}
 else
-UCLIBC_VERSION:=<UCLIBC_VERSION>
-LIBGCC_VERSION:=<LIBGCC_VERSION>
+  UCLIBC_VERSION:=<UCLIBC_VERSION>
+  LIBGCC_VERSION:=<LIBGCC_VERSION>
 endif
 
 CONFIG_PACKAGE_base-files$(TARGET):=$(CONFIG_PACKAGE_base-files)
@@ -35,8 +36,10 @@ define Package/base-files$(TARGET)
   SECTION:=base
   CATEGORY:=Base system
   DEFAULT:=y
-  TITLE:=OpenWrt system scripts
-  DESCRIPTION:=Base filesystem for OpenWrt
+  TITLE:=Base filesystem for OpenWrt
+  DESCRIPTION:=\
+	This package contains a base filesystem and system scripts for OpenWrt.
+  URL:=http://openwrt.org/
   VERSION:=$(PKG_RELEASE)-$(REV)
 endef
 
@@ -68,7 +71,6 @@ define -xscale-2.6/conffiles
 /etc/config/network
 endef
 
-
 define Package/base-files$(TARGET)/conffiles
 /etc/banner
 /etc/hosts
@@ -84,36 +86,36 @@ endef
 
 define Package/libgcc
   SECTION:=libs
-  CATEGORY:=Libraries
+  CATEGORY:=Base system
   DEFAULT:=y
   DEPENDS:=@!NATIVE_TOOLCHAIN
   TITLE:=GCC support library
+  URL:=http://gcc.gnu.org/
   VERSION:=$(LIBGCC_VERSION)-$(PKG_RELEASE)
-  DESCRIPTION:=$(TITLE)
 endef
 
 define Package/libpthread
-  $(call Package/base-files$(TARGET))
-  DEFAULT:=n
+  SECTION:=libs
+  CATEGORY:=Libraries
   DEPENDS:=@!NATIVE_TOOLCHAIN
-  VERSION:=$(UCLIBC_VERSION)-$(PKG_RELEASE)
   TITLE:=POSIX thread library
-  DESCRIPTION:=POSIX thread library
+  URL:=http://uclibc.org/
+  VERSION:=$(UCLIBC_VERSION)-$(PKG_RELEASE)
 endef
 
-
 define Package/uclibc
-  $(call Package/base-files$(TARGET))
-  VERSION:=$(UCLIBC_VERSION)-$(PKG_RELEASE)
+  SECTION:=libs
+  CATEGORY:=Base system
+  DEFAULT:=y
   DEPENDS:=@!NATIVE_TOOLCHAIN
-  TITLE:=C library
-  DESCRIPTION:=C library for embedded systems
+  TITLE:=C library embedded systems
+  URL:=http://uclibc.org/
+  VERSION:=$(UCLIBC_VERSION)-$(PKG_RELEASE)
 endef
 
 define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
 endef
-
 
 define Build/Compile/ar7
 	$(TARGET_CC) -o $(PKG_BUILD_DIR)/adam2patcher src/adam2patcher.c
@@ -132,6 +134,7 @@ define Package/base-files$(TARGET)/install-ar7
 	mkdir -p $(1)/sbin
 	$(CP) $(PKG_BUILD_DIR)/adam2patcher $(1)/sbin
 endef
+
 define Package/base-files$(TARGET)/install-brcm
 	rm -f $(1)/etc/config/network
 	mkdir -p $(1)/sbin

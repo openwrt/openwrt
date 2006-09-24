@@ -12,7 +12,6 @@ PKG_NAME:=openssl
 PKG_VERSION:=0.9.8b
 PKG_RELEASE:=1
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.openssl.org/source/ \
 	ftp://ftp.funet.fi/pub/crypt/cryptography/libs/openssl/source/ \
@@ -21,6 +20,7 @@ PKG_SOURCE_URL:=http://www.openssl.org/source/ \
 PKG_MD5SUM:=12cedbeb6813a0d7919dbf1f82134b86
 PKG_CAT:=zcat
 
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
 include $(INCLUDE_DIR)/package.mk
@@ -110,8 +110,7 @@ define Build/InstallDev
 endef
 
 define Build/UninstallDev
-	rm -rf \
-		$(STAGING_DIR)/usr/include/openssl \
+	rm -rf	$(STAGING_DIR)/usr/include/openssl \
 		$(STAGING_DIR)/usr/lib/lib{crypto,ssl}.{a,so*}
 endef
 

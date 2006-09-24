@@ -7,7 +7,7 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/host-build.mk
 
-PKG_BUILD_DIR := $(TOOL_BUILD_DIR)/mkimage
+PKG_BUILD_DIR:=$(TOOL_BUILD_DIR)/mkimage
 
 define Build/Compile
 	$(CC) -O -c src/crc32.c -o $(PKG_BUILD_DIR)/crc32.o
@@ -16,7 +16,8 @@ define Build/Compile
 endef
 
 define Build/Install
-	$(CP) $(PKG_BUILD_DIR)/mkimage $(STAGING_DIR)/bin
+	mkdir -p $(STAGING_DIR)/bin
+	$(CP) $(PKG_BUILD_DIR)/mkimage $(STAGING_DIR)/bin/
 endef
 
 define Build/Clean

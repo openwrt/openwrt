@@ -12,12 +12,12 @@ PKG_NAME:=zlib
 PKG_VERSION:=1.2.3
 PKG_RELEASE:=3
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://www.zlib.net @SF/zlib
 PKG_MD5SUM:=dee233bf288ee795ac96a98cc2e369b6
 PKG_CAT:=bzcat
 
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
 include $(INCLUDE_DIR)/package.mk
@@ -61,8 +61,7 @@ define Build/InstallDev
 endef
 	
 define Build/UninstallDev
-	rm -rf \
-		$(STAGING_DIR)/usr/include/z{conf,lib}.h \
+	rm -rf	$(STAGING_DIR)/usr/include/z{conf,lib}.h \
 		$(STAGING_DIR)/usr/lib/libz.{a,so*}
 endef
 

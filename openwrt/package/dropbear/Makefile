@@ -12,11 +12,12 @@ PKG_NAME:=dropbear
 PKG_VERSION:=0.48.1
 PKG_RELEASE:=1
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://matt.ucc.asn.au/dropbear/releases/
 PKG_MD5SUM:=ca8e53a766faec831882831364568421
 PKG_CAT:=zcat
+
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
 

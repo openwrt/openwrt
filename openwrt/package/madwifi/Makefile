@@ -13,11 +13,12 @@ PKG_NAME:=madwifi
 PKG_VERSION:=0.9.2
 PKG_RELEASE:=1
 
-PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=@SF/$(PKG_NAME)
 PKG_MD5SUM:=a75baacbe07085ddc5cb28e1fb43edbb
 PKG_CAT:=bzcat
+
+PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -103,7 +104,7 @@ define Build/InstallDev
 endef
 
 define Build/UninstallDev
-	rm -rf $(STAGING_DIR)/usr/include/madwifi
+	rm -rf	$(STAGING_DIR)/usr/include/madwifi
 endef
 
 define Package/kmod-madwifi/install

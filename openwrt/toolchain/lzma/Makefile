@@ -6,14 +6,14 @@
 #
 include $(TOPDIR)/rules.mk
 
-PKG_NAME := lzma
-PKG_VERSION := 432
+PKG_NAME:=lzma
+PKG_VERSION:=432
 
-PKG_SOURCE := $(PKG_NAME)$(PKG_VERSION).tar.bz2
-PKG_MD5SUM := 155c1ebce5bc6710ae7ecc926226d9d7
-PKG_SOURCE_URL := @SF/sevenzip
+PKG_SOURCE:=$(PKG_NAME)$(PKG_VERSION).tar.bz2
+PKG_SOURCE_URL:=@SF/sevenzip
+PKG_MD5SUM:=155c1ebce5bc6710ae7ecc926226d9d7
 
-PKG_BUILD_DIR=$(TOOL_BUILD_DIR)/lzma-$(PKG_VERSION)/lzma
+PKG_BUILD_DIR:=$(TOOL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)/lzma
 
 include $(INCLUDE_DIR)/host-build.mk
 
@@ -33,11 +33,12 @@ endef
 define Build/Install
 	mkdir -p $(STAGING_DIR)/host/lib
 	$(CP) $(LIB_DIR)/liblzma.a $(STAGING_DIR)/host/lib/
+	mkdir -p $(STAGING_DIR)/bin
 	$(CP) $(ALONE_DIR)/lzma $(STAGING_DIR)/bin/
 endef
 
 define Build/Clean
-	rm -f $(PKG_BUILD_DIR)/liblzma.a $(PKG_BUILD_DIR)/lzma
+	rm -f $(STAGING_DIR)/host/lib/liblzma.a $(STAGING_DIR)/bin/lzma
 endef
 
 $(eval $(call HostBuild))

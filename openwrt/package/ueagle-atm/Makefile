@@ -13,12 +13,12 @@ PKG_NAME:=ueagle-atm
 PKG_VERSION:=1.0d1
 PKG_RELEASE:=1
 
-PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://castet.matthieu.free.fr/eagle/release/
 PKG_MD5SUM:=5da1fceb15168f4c7ad407a3e38ddecb
 PKG_CAT:=zcat
 
+PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
 include $(INCLUDE_DIR)/package.mk

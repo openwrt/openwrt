@@ -14,68 +14,83 @@ PKG_VERSION:=4.80.17.0
 PKG_RELEASE:=1
 WLC_VERSION:=0.1
 
-PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://downloads.openwrt.org/sources
 PKG_MD5SUM:=3183ddb60e3e882b41df1776c89b614c
 PKG_CAT:=bzcat
 
+PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+
 include $(INCLUDE_DIR)/package.mk
 
-define Package/kmod-brcm-wl
-  SECTION:=drivers
-  CATEGORY:=Drivers
-  DEPENDS:=@LINUX_2_4_BRCM
-  DEFAULT:=y
+define Package/broadcom-wl/Default
+  SECTION:=net
+  CATEGORY:=Kernel drivers
+  DEPENDS:=@PACKAGE_kmod-brcm-wl||PACKAGE_kmod-brcm-wl-mimo
   SUBMENU:=Proprietary BCM43xx WiFi driver
   SUBMENUDEP:=@LINUX_2_4_BRCM
-  TITLE:=Kernel driver (normal version)
-  DESCRIPTION:=Proprietary Wireless driver for the Broadcom BCM43xx chipset
+endef
+
+define Package/kmod-brcm-wl/Default
+  $(call Package/broadcom-wl/Default)
+  SECTION:=kernel
+  DEPENDS:=@LINUX_2_4_BRCM
+  TITLE:=Kernel driver for BCM43xx chipsets
+  DESCRIPTION:=\
+	This package contains the proprietary wireless driver for the Broadcom \\\
+	BCM43xx chipset
   VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(PKG_RELEASE)
 endef
 
+define Package/kmod-brcm-wl
+  $(call Package/kmod-brcm-wl/Default)
+  DEFAULT:=y
+  TITLE+= (normal version)
+  DESCRIPTION+= (normal version).
+endef
+
 define Package/kmod-brcm-wl-mimo
-  $(call Package/kmod-brcm-wl)
-  DEFAULT:=m if ALL
-  TITLE:=Kernel driver (MIMO version)
-  DESCRIPTION:=Proprietary Wireless driver for the Broadcom BCM43xx chipset (MIMO version)
+  $(call Package/kmod-brcm-wl/Default)
+  TITLE+= (MIMO version)
+  DESCRIPTION+= (MIMO version).
 endef
 
 define Package/wlc
-  $(call Package/kmod-brcm-wl-mimo)
+  $(call Package/broadcom-wl/Default)
   DEFAULT:=y
-  DEPENDS:=kmod-brcm-wl
-  TITLE:=Setup utility
-  DESCRIPTION:=Utility for initializing the Broadcom wl driver
-  VERSION:=$(WLC_VERSION)-$(PKG_RELEASE)
+  TITLE:=Proprietary Broadcom wl driver setup utility
+  DESCRIPTION:=\
+	This package contains an utility for initializing the proprietary Broadcom \\\
+	wl driver.
 endef
 
 define Package/wl
-  $(call Package/wlc)
-  TITLE:=Utility for changing the driver's parameters
-  DESCRIPTION:=Utility for changing the Broadcom wl driver's parameters
-  VERSION:=$(PKG_VERSION)-$(PKG_RELEASE)
+  $(call Package/broadcom-wl/Default)
+  TITLE:=Proprietary Broadcom wl driver config utility
+  DESCRIPTION:=\
+	This package contains the proprietary utility (wl) for configuring the \\\
+	proprietary Broadcom wl driver.
 endef
 
 define Package/nas
-  $(call Package/wl)
-  DEPENDS:=@PACKAGE_kmod-brcm-wl||PACKAGE_kmod-brcm-wl-mimo +nvram
-  DEFAULT:=m
-  TITLE:=Proprietary WPA/WPA2 authenticator
-  DESCRIPTION:=Proprietary WPA/WPA2 authenticator for the Broadcom wl driver
+  $(call Package/broadcom-wl/Default)
+  DEPENDS+= +nvram
+  TITLE:=Proprietary Broadcom WPA/WPA2 authenticator
+  DESCRIPTION:=\
+	This package contains the proprietary WPA/WPA2 authenticator (nas) for the \\\
+	proprietary Broadcom wl driver.
 endef
 
-define Build/Prepare
-  $(call Build/Prepare/Default)
-	$(CP) src/* $(PKG_BUILD_DIR)/
-endef
-
-MAKEFLAGS_KMOD = -C "$(LINUX_DIR)" \
+MAKEFLAGS_KMOD:= -C "$(LINUX_DIR)" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
 		ARCH="$(LINUX_KARCH)" \
 		PATH="$(TARGET_PATH)" \
 		SUBDIRS="$(PKG_BUILD_DIR)/kmod"
 
+define Build/Prepare
+	$(call Build/Prepare/Default)
+	$(CP) src/* $(PKG_BUILD_DIR)/
+endef
 
 define Build/Compile
 	# Compile the kernel part

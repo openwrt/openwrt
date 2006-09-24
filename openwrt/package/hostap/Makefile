@@ -12,30 +12,24 @@ include $(INCLUDE_DIR)/kernel.mk
 PKG_NAME:=hostap-driver
 PKG_VERSION:=0.4.9
 PKG_RELEASE:=1
-PKG_MD5SUM:=c7534dc040ab90218257a78488ecd378
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE_URL:=http://hostap.epitest.fi/releases/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_SOURCE_URL:=http://hostap.epitest.fi/releases/
+PKG_MD5SUM:=c7534dc040ab90218257a78488ecd378
 PKG_CAT:=zcat
 
+PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/kmod-hostap
-  SECTION:=drivers
-  CATEGORY:=Drivers
-  DEPENDS:=@PCI_SUPPORT||PCMCIA_SUPPORT
-  TITLE:=Host AP support for Prism2/2.5/3 IEEE 802.11b
-  DESCRIPTION:=Host AP support for Prism2/2.5/3 IEEE 802.11b \\\
-    A driver for 802.11b wireless cards based on Intersil Prism2/2.5/3 \\\
-    chipset. This driver supports so called Host AP mode that allows the card \\\
-    to act as an IEEE 802.11 access point. \\\
-    \\\
-    This option includes the base Host AP driver code that is shared by \\\
-    different hardware models. You will also need to enable support for \\\
-    PLX/PCI/CS version of the driver to actually use the driver. \\\
+define Package/kmod-hostap/Default
+  SECTION:=kernel
+  CATEGORY:=Kernel drivers
+  DESCRIPTION:=\
+	Host AP is a driver for 802.11b wireless cards based on Intersil \\\
+	Prism2/2.5/3 chipset. It supports so called Host AP mode that allows the \\\
+	card to act as an IEEE 802.11 access point.
   URL:=http://hostap.epitest.fi/
   ifeq ($(KERNEL),2.6)
     VERSION:=$(LINUX_VERSION)-$(BOARD)-$(PKG_RELEASE)
@@ -44,18 +38,34 @@ define Package/kmod-hostap
   endif
 endef
 
+define Package/kmod-hostap
+  $(call Package/kmod-hostap/Default)
+  DEPENDS:=@PCI_SUPPORT||PCMCIA_SUPPORT
+  TITLE:=Host AP support for Prism2/2.5/3
+  DESCRIPTION+=\\\
+	\\\
+	This package contains the base Host AP driver code that is shared by \\\
+	different hardware models. You will also need to enable support for \\\
+	PLX/PCI/CS version of the driver to actually use the driver.
+endef
+
 define Package/kmod-hostap-pci
-$(call Package/kmod-hostap)
-DEPENDS:=kmod-hostap
-TITLE:=Host AP driver for Prism2.5 PCI adaptors
-DESCRIPTION:=Host AP driver for Prism2.5 PCI adaptors
+  $(call Package/kmod-hostap/Default)
+  DEPENDS:=kmod-hostap
+  TITLE:=Host AP driver for PCI adaptors
+  DESCRIPTION+=\\\
+	\\\
+	This package contains the Host AP driver for Prism2.5 PCI adaptors.
 endef
 
 define Package/kmod-hostap-plx
-$(call Package/kmod-hostap)
-DEPENDS:=kmod-hostap
-TITLE:=Host AP driver for Prism2/2.5/3 in PLX9052 based PCI adaptors
-DESCRIPTION:=Host AP driver for Prism2/2.5/3 in PLX9052 based PCI adaptors
+  $(call Package/kmod-hostap/Default)
+  DEPENDS:=kmod-hostap
+  TITLE:=Host AP driver for PLX9052 based PCI adaptors
+  DESCRIPTION+=\\\
+	\\\
+	This package contains the Host AP driver for Prism2/2.5/3 in PLX9052 \\\
+	based PCI adaptors.
 endef
 
 ifeq ($(KERNEL),2.4)

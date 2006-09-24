@@ -13,11 +13,12 @@ PKG_NAME:=mini_fo
 PKG_VERSION:=0.6.2pre1
 PKG_RELEASE:=1
 
-PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/mini_fo-0-6-2-pre1
 PKG_SOURCE:=mini_fo-0-6-2-pre1.tar.bz2
 PKG_SOURCE_URL:=http://www.denx.de/twiki/pub/Know/MiniFOHome/
 PKG_MD5SUM:=acd12157be25d7b3c8df90914049403e
 PKG_CAT:=bzcat
+
+PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/mini_fo-0-6-2-pre1
 
 include $(INCLUDE_DIR)/package.mk
 

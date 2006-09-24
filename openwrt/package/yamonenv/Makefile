@@ -12,30 +12,24 @@ PKG_NAME:=yamonenv
 PKG_VERSION:=20051022
 PKG_RELEASE:=1
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
 PKG_SOURCE:=$(PKG_NAME)_gruen.4g__$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://meshcube.org/nylon/stable/sources/
 PKG_MD5SUM:=a3e4f24155aa3ba5aa502bc63fdaa6ad
 PKG_CAT:=zcat
 
-PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
 
 include $(INCLUDE_DIR)/package.mk
 
 define Package/yamonenv
-SECTION:=sys
-CATEGORY:=Base system
-DEPENDS:=@LINUX_2_6_AU1000@
-TITLE:=YAMON configuration utility
-DESCRIPTION:=YAMON bootloader configuration utility
-URL:=http://meshcube.org/nylon/stable/sources/
+  SECTION:=utils
+  CATEGORY:=Utilities
+  DEPENDS:=@LINUX_2_6_AU1000@
+  TITLE:=YAMON configuration utility
+  URL:=http://meshcube.org/nylon/stable/sources/
 endef
 
 define Build/Configure
-endef
-
-define Build/Compile
-	$(call Build/Compile/Default,all)
 endef
 
 define Package/yamonenv/install
