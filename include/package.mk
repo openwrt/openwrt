@@ -271,12 +271,14 @@ define Build/Prepare
 endef
 
 define Build/Configure/Default
-	@(cd $(PKG_BUILD_DIR)/$(3); \
+	(cd $(PKG_BUILD_DIR)/$(3); \
 	if [ -x configure ]; then \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
+		CXXFLAGS="$(TARGET_CFLAGS)" \
 		CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include" \
 		LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib" \
+		PKG_CONFIG_PATH="$(STAGING_DIR)/usr/lib/pkgconfig" \
 		$(2) \
 		./configure \
 		--target=$(GNU_TARGET_NAME) \
@@ -308,7 +310,8 @@ define Build/Compile/Default
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
 		CROSS="$(TARGET_CROSS)" \
-		EXTRA_CFLAGS="$(TARGET_CFLAGS) -I$(STAGING_DIR)/include -I$(STAGING_DIR)/usr/include" \
+		EXTRA_CFLAGS="$(TARGET_CFLAGS) -I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include " \
+		EXTRA_LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib " \
 		ARCH="$(ARCH)" \
 		$(1);
 endef
