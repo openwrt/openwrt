@@ -6,6 +6,7 @@
 #
 
 include $(TOPDIR)/rules.mk
+TMP_DIR:=$(TOPDIR)/tmp
 include $(INCLUDE_DIR)/prereq.mk
 
 define Require/non-root
