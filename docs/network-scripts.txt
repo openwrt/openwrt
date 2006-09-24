@@ -7,7 +7,7 @@ To be able to access the network functions, you need to include
 the necessary shell scripts by running:
 
 . /etc/functions.sh      # common functions
-include network          # include /lib/network/*.sh
+include /lib/network     # include /lib/network/*.sh
 scan_interfaces          # read and parse the network config
 
 Some protocols, such as PPP might change the configured interface names
