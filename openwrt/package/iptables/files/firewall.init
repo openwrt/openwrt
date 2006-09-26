@@ -23,6 +23,10 @@ iptables -N forwarding_rule
 iptables -t nat -N prerouting_rule
 iptables -t nat -N postrouting_rule
 
+iptables -N LAN_ACCEPT
+[ -z "$WAN" ] || iptables -A LAN_ACCEPT -i "$WAN" -j RETURN
+iptables -A LAN_ACCEPT -j ACCEPT
+
 ### INPUT
 ###  (connections with the router as destination)
 
@@ -38,7 +42,7 @@ iptables -t nat -N postrouting_rule
   iptables -A INPUT -j input_rule
 
   # allow
-  iptables -A INPUT ${WAN:+-i \! $WAN}	-j ACCEPT	# allow from lan/wifi interfaces 
+  iptables -A INPUT -j LAN_ACCEPT	# allow from lan/wifi interfaces 
   iptables -A INPUT -p icmp	-j ACCEPT	# allow ICMP
   iptables -A INPUT -p gre	-j ACCEPT	# allow GRE
 
