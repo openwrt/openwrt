@@ -7,13 +7,12 @@
 # Main makefile for the toolchain
 #
 include $(TOPDIR)/rules.mk
-TARGETS-y:=sed kernel-headers sstrip
+
+TARGETS-y:=kernel-headers libnotimpl
+TARGETS-$(CONFIG_GDB) += gdb
 ifeq ($(CONFIG_NATIVE_TOOLCHAIN),)
   TARGETS-y+=binutils gcc uClibc
 endif
-TARGETS-y+=ipkg-utils libnotimpl ext2fs squashfs jffs2 lzma mkimage
-
-TARGETS-$(CONFIG_GDB) += gdb
 
 TARGETS_DOWNLOAD:=$(patsubst %,%-download,$(TARGETS-y))
 TARGETS_INSTALL:=$(patsubst %,%-install,$(TARGETS-y))
@@ -24,15 +23,14 @@ download: $(TARGETS_DOWNLOAD)
 install: $(TARGETS_INSTALL)
 clean: $(TARGETS_CLEAN)
 
-kernel-headers-prepare: sed-install
-uClibc-prepare: kernel-headers-prepare sstrip-install
+uClibc-prepare: kernel-headers-prepare
 ifeq ($(CONFIG_NATIVE_TOOLCHAIN),)
   binutils-prepare: uClibc-prepare
   gcc-prepare: binutils-install
   uClibc-compile: gcc-compile
+  libnotimpl-compile: gcc-install
 endif
 gcc-install: uClibc-install
-squashfs-compile: lzma-install
 
 TOOLCHAIN_STAMP_DIR:=$(STAGING_DIR)/stampfiles
 
@@ -45,13 +43,13 @@ $(STAGING_DIR):
 	@mkdir -p $@/$(REAL_GNU_TARGET_NAME)
 	@ln -sf ../lib $@/$(REAL_GNU_TARGET_NAME)/lib
 
-$(TOOL_BUILD_DIR):
+$(TOOLCHAIN_BUILD_DIR):
 	@mkdir -p $@
 
 %-download: FORCE
 	$(MAKE) -C $(patsubst %-download,%,$@) download
 
-%-prepare: $(TOOLCHAIN_STAMP_DIR) $(STAGING_DIR) $(TOOL_BUILD_DIR) FORCE
+%-prepare: $(TOOLCHAIN_STAMP_DIR) $(STAGING_DIR) $(TOOLCHAIN_BUILD_DIR) FORCE
 	@[ -f $(TOOLCHAIN_STAMP_DIR)/.toolchain_$@ ] || { \
 		$(MAKE) -C $(patsubst %-prepare,%,$@) prepare; \
 	}

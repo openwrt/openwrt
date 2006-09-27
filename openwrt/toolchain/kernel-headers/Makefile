@@ -17,7 +17,7 @@ PKG_SOURCE_URL= \
 		http://www.kernel.org/pub/linux/kernel/v2.4
 PKG_MD5SUM:=38f4d0830e95a20f4bfed17622d5557c
 
-PKG_BUILD_DIR:=$(TOOL_BUILD_DIR)/linux-$(PKG_VERSION)
+PKG_BUILD_DIR:=$(TOOLCHAIN_BUILD_DIR)/linux-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/host-build.mk
 
@@ -30,8 +30,8 @@ LINUX_KARCH:=$(shell echo $(ARCH) | sed -e 's/i[3-9]86/i386/' \
 )
 
 define Build/Prepare
-	mkdir -p $(TOOL_BUILD_DIR)
-	bzcat $(DL_DIR)/$(PKG_SOURCE) | tar --wildcards -C $(TOOL_BUILD_DIR) $(TAR_OPTIONS) - \
+	mkdir -p $(TOOLCHAIN_BUILD_DIR)
+	bzcat $(DL_DIR)/$(PKG_SOURCE) | tar --wildcards -C $(TOOLCHAIN_BUILD_DIR) $(TAR_OPTIONS) - \
 		linux-$(PKG_VERSION)/include \
 		linux-$(PKG_VERSION)/Makefile \
 		linux-$(PKG_VERSION)/Rules.make \
