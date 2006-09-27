@@ -37,12 +37,6 @@ TOOLCHAIN_STAMP_DIR:=$(STAGING_DIR)/stampfiles
 $(TOOLCHAIN_STAMP_DIR):
 	mkdir -p $@
 
-$(STAGING_DIR):
-	@mkdir -p $@/lib
-	@mkdir -p $@/include
-	@mkdir -p $@/$(REAL_GNU_TARGET_NAME)
-	@ln -sf ../lib $@/$(REAL_GNU_TARGET_NAME)/lib
-
 $(TOOLCHAIN_BUILD_DIR):
 	@mkdir -p $@
 
