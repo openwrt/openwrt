@@ -4,21 +4,25 @@
 # What library to link
 ldflags()
 {
-	$cc -print-file-name=libncursesw.so | grep -q /
-	if [ $? -eq 0 ]; then
-		echo '-lncursesw'
-		exit
-	fi
-	$cc -print-file-name=libncurses.so | grep -q /
-	if [ $? -eq 0 ]; then
-		echo '-lncurses'
-		exit
-	fi
-	$cc -print-file-name=libcurses.so | grep -q /
-	if [ $? -eq 0 ]; then
-		echo '-lcurses'
-		exit
-	fi
+	for ext in so dylib; do
+		for dir in "" /usr/local/lib /opt/local/lib; do
+			$cc ${dir:+-L$dir} -print-file-name=libncursesw.$ext | grep -q /
+			if [ $? -eq 0 ]; then
+				echo $dir '-lncursesw'
+				exit
+			fi
+			$cc ${dir:+-L$dir} -print-file-name=libncurses.$ext | grep -q /
+			if [ $? -eq 0 ]; then
+				echo $dir '-lncurses'
+				exit 
+			fi
+			$cc ${dir:+-L$dir} -print-file-name=libcurses.$ext | grep -q /
+			if [ $? -eq 0 ]; then
+				echo $dir '-lcurses'
+				exit
+			fi
+		done
+	done
 	exit 1
 }
 
@@ -29,6 +33,8 @@ ccflags()
 		echo '-I/usr/include/ncurses -DCURSES_LOC="<ncurses.h>"'
 	elif [ -f /usr/include/ncurses/curses.h ]; then
 		echo '-I/usr/include/ncurses -DCURSES_LOC="<ncurses/curses.h>"'
+	elif [ -f /opt/local/include/ncurses/ncurses.h ]; then
+		echo '-I/opt/local/include/ncurses -DCURSES_LOC="<ncurses/ncurses.h>"'
 	elif [ -f /usr/include/ncurses.h ]; then
 		echo '-DCURSES_LOC="<ncurses.h>"'
 	else
