@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libnotimpl
 
-PKG_BUILD_DIR:=$(TOOL_BUILD_DIR)/libnotimpl
+PKG_BUILD_DIR:=$(TOOLCHAIN_BUILD_DIR)/libnotimpl
 
 include $(INCLUDE_DIR)/host-build.mk
 

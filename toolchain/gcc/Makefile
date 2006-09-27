@@ -30,7 +30,7 @@ PKG_SOURCE_URL:=ftp://ftp.fu-berlin.de/unix/languages/gcc/releases/gcc-$(PKG_VER
 	ftp://ftp.gnu.org/gnu/gcc/releases/gcc-$(PKG_VERSION)
 PKG_CAT:=bzcat
 
-PKG_BUILD_DIR:=$(TOOL_BUILD_DIR)/gcc-$(PKG_VERSION)
+PKG_BUILD_DIR:=$(TOOLCHAIN_BUILD_DIR)/gcc-$(PKG_VERSION)
 
 TARGET_LANGUAGES:=c
 ifeq ($(CONFIG_INSTALL_LIBSTDCPP),y)
@@ -42,8 +42,8 @@ endif
 
 include $(INCLUDE_DIR)/host-build.mk
 
-BUILD_DIR1:=$(TOOL_BUILD_DIR)/gcc-$(PKG_VERSION)-initial
-BUILD_DIR2:=$(TOOL_BUILD_DIR)/gcc-$(PKG_VERSION)-final
+BUILD_DIR1:=$(TOOLCHAIN_BUILD_DIR)/gcc-$(PKG_VERSION)-initial
+BUILD_DIR2:=$(TOOLCHAIN_BUILD_DIR)/gcc-$(PKG_VERSION)-final
 
 
 define Stage1/Configure
@@ -56,7 +56,7 @@ define Stage1/Configure
 		--target=$(REAL_GNU_TARGET_NAME) \
 		--enable-languages=c \
 		--disable-shared \
-		--with-sysroot=$(TOOL_BUILD_DIR)/uClibc_dev/ \
+		--with-sysroot=$(TOOLCHAIN_BUILD_DIR)/uClibc_dev/ \
 		--disable-__cxa_atexit \
 		--enable-target-optspace \
 		--with-gnu-ld \

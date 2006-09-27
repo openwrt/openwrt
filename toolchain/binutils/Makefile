@@ -18,7 +18,7 @@ PKG_SOURCE_URL:=http://ftp.gnu.org/gnu/binutils/ \
 
 PKG_SOURCE:=binutils-$(PKG_VERSION).tar.bz2
 PKG_MD5SUM:=unknown
-PKG_BUILD_DIR:=$(TOOL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_BUILD_DIR:=$(TOOLCHAIN_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_CAT:=bzcat
 
 include $(INCLUDE_DIR)/host-build.mk

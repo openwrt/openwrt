@@ -85,6 +85,9 @@ package/%: .pkginfo FORCE
 target/%: .pkginfo FORCE
 	$(MAKE) -C target $(patsubst target/%,%,$@)
 
+tools/%: FORCE
+	$(MAKE) -C tools $(patsubst tools/%,%,$@)
+
 toolchain/%: FORCE
 	$(MAKE) -C toolchain $(patsubst toolchain/%,%,$@)
 
@@ -108,11 +111,13 @@ toolchain/%: FORCE
 prereq: .prereq-build .prereq-packages FORCE
 
 download: .config FORCE
+	$(MAKE) tools/download
 	$(MAKE) toolchain/download
 	$(MAKE) package/download
 	$(MAKE) target/download
 
 world: .config FORCE
+	$(MAKE) tools/install
 	$(MAKE) toolchain/install
 	$(MAKE) target/compile
 	$(MAKE) package/compile
@@ -124,7 +129,7 @@ clean: FORCE
 	rm -rf build_* bin
 
 dirclean: clean
-	rm -rf staging_dir_* toolchain_build_*
+	rm -rf staging_dir_* toolchain_build_* tool_build
 
 distclean: dirclean config-clean
 	rm -rf dl .*config* .pkg* .prereq

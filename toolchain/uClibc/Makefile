@@ -15,7 +15,7 @@ PKG_SOURCE_URL:=http://www.uclibc.org/downloads
 PKG_MD5SUM:=1ada58d919a82561061e4741fb6abd29
 PKG_CAT:=bzcat
 
-PKG_BUILD_DIR:=$(TOOL_BUILD_DIR)/uClibc-$(PKG_VERSION)
+PKG_BUILD_DIR:=$(TOOLCHAIN_BUILD_DIR)/uClibc-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/host-build.mk
 
@@ -52,13 +52,13 @@ endif
 ifeq ($(CONFIG_SOFT_FLOAT),y)
 	$(SED) 's,.*HAS_FPU.*,HAS_FPU=n\nUCLIBC_HAS_FLOATS=y\nUCLIBC_HAS_SOFT_FLOAT=y,g' $(PKG_BUILD_DIR)/.config
 endif
-	mkdir -p $(TOOL_BUILD_DIR)/uClibc_dev/usr/include
-	mkdir -p $(TOOL_BUILD_DIR)/uClibc_dev/usr/lib
-	mkdir -p $(TOOL_BUILD_DIR)/uClibc_dev/lib
+	mkdir -p $(TOOLCHAIN_BUILD_DIR)/uClibc_dev/usr/include
+	mkdir -p $(TOOLCHAIN_BUILD_DIR)/uClibc_dev/usr/lib
+	mkdir -p $(TOOLCHAIN_BUILD_DIR)/uClibc_dev/lib
 	PATH=$(TARGET_PATH) $(MAKE) -C $(PKG_BUILD_DIR) \
-		PREFIX=$(TOOL_BUILD_DIR)/uClibc_dev/ \
+		PREFIX=$(TOOLCHAIN_BUILD_DIR)/uClibc_dev/ \
 		DEVEL_PREFIX=/usr/ \
-		RUNTIME_PREFIX=$(TOOL_BUILD_DIR)/uClibc_dev/ \
+		RUNTIME_PREFIX=$(TOOLCHAIN_BUILD_DIR)/uClibc_dev/ \
 		HOSTCC="$(HOSTCC)" \
 		CPU_CFLAGS="$(TARGET_CFLAGS)" \
 		pregen install_dev;
@@ -92,7 +92,7 @@ define Build/Install
 endef
 
 define Build/Clean
-	rm -rf $(PKG_BUILD_DIR) $(TOOL_BUILD_DIR)/uClibc_dev
+	rm -rf $(PKG_BUILD_DIR) $(TOOLCHAIN_BUILD_DIR)/uClibc_dev
 endef
 
 $(eval $(call HostBuild))
