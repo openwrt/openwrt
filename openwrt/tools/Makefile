@@ -28,8 +28,10 @@ $(TOOL_STAMP_DIR):
 $(STAGING_DIR):
 	@mkdir -p $@/lib
 	@mkdir -p $@/include
-	@mkdir -p $@/$(REAL_GNU_TARGET_NAME)
+	@mkdir -p $@/include-host
+	$(CP) ./include/*.h $@/include-host/
 	@ln -sf ../lib $@/$(REAL_GNU_TARGET_NAME)/lib
+	@mkdir -p $@/$(REAL_GNU_TARGET_NAME)
 
 $(TOOL_BUILD_DIR):
 	@mkdir -p $@

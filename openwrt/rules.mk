@@ -106,7 +106,7 @@ IPKG:= \
 
 # invoke ipkg-build with some default options
 IPKG_BUILD:= \
-  ipkg-build -c -o root -g root
+  ipkg-build -c -o 0 -g 0
 
 ifeq ($(CONFIG_ENABLE_LOCALE),true)
   DISABLE_NLS:=
