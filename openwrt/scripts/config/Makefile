@@ -13,10 +13,7 @@
 # Platform specific fixes
 #
 # FreeBSD
-ifeq ($(shell uname -s),FreeBSD)
-export CFLAGS+=-I/usr/local/include
-export LDFLAGS+=-L/usr/local/lib -lintl
-endif
+export CFLAGS+=-DKBUILD_NO_NLS
 
 conf-objs	:= conf.o zconf.tab.o
 mconf-objs	:= mconf.o zconf.tab.o
