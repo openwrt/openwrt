@@ -23,6 +23,7 @@ PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 PKG_BUILDDEP:=libpcap linux-atm
 
 include $(INCLUDE_DIR)/package.mk
+include $(INCLUDE_DIR)/kernel.mk
 
 define Package/ppp/Default
   SECTION:=net
@@ -89,6 +90,14 @@ define Package/pppstats
   TITLE:=Report PPP statistics
   DESCRIPTION:=\
 	This package contains an utility to report PPP statistics.
+endef
+
+define Build/Configure
+$(call Build/Configure/Default,, \
+	UNAME_S="Linux" \
+	UNAME_R="$(LINUX_VERSION)" \
+	UNAME_M="$(ARCH)" \
+)
 endef
 
 define Build/Compile
