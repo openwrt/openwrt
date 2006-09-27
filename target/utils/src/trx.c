@@ -45,8 +45,8 @@
 #include <errno.h>
 #include <unistd.h>
 #if defined(__APPLE__)
-#include        <machine/endian.h>
-#include        <machine/byte_order.h>
+#include <machine/endian.h>
+#include <machine/byte_order.h>
 #define __BYTE_ORDER BYTE_ORDER
 #define __BIG_ENDIAN BIG_ENDIAN
 #define bswap_16(x) NXSwapShort(x)
@@ -89,7 +89,7 @@ void usage(void) __attribute__ (( __noreturn__ ));
 
 void usage(void)
 {
-	fprintf(stderr, "Usage: trx [-o outfile] [-m maxlen] [-a align] [-b offset] file [file [file]]\n");
+	fprintf(stderr, "Usage: trx [-o outfile] [-m maxlen] [-a align] [-b offset] [-f file] [-f file [-f file]]\n");
 	exit(EXIT_FAILURE);
 }
 
@@ -122,8 +122,9 @@ int main(int argc, char **argv)
 	in = NULL;
 	i = 0;
 
-	while ((c = getopt(argc, argv, "-:o:m:a:b:")) != -1) {
+	while ((c = getopt(argc, argv, "-:o:m:a:b:f:")) != -1) {
 		switch (c) {
+			case 'f':
 			case 1:
 				p->offsets[i++] = STORE32_LE(cur_len);
 
