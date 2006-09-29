@@ -19,6 +19,7 @@ PKG_MD5SUM:=b34d71ca49dedad017879b0e912d40dd
 PKG_CAT:=zcat
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
 PKG_INIT_PRIO:=60
 
@@ -67,20 +68,13 @@ define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
 		$(PKG_MAKE_OPTS) \
-		module
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		$(TARGET_CONFIGURE_OPTS) \
-		$(PKG_MAKE_OPTS) \
 		LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib" \
-		programs
+		DESTDIR="$(PKG_INSTALL_DIR)" \
+		programs module install
 endef
 
 define Package/openswan/install
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		$(TARGET_CONFIGURE_OPTS) \
-		$(PKG_MAKE_OPTS) \
-		DESTDIR="$(1)" \
-		install
+	$(CP) $(PKG_INSTALL_DIR)/* $(1)
 	install -d -m0755 $(1)/etc/init.d
 	$(CP) $(1)/etc/rc.d/init.d/ipsec $(1)/etc/init.d/S$(PKG_INIT_PRIO)ipsec
 	rm -rf $(1)/usr/share
