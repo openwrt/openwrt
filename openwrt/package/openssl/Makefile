@@ -9,7 +9,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openssl
-PKG_VERSION:=0.9.8b
+PKG_VERSION:=0.9.8d
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -17,7 +17,7 @@ PKG_SOURCE_URL:=http://www.openssl.org/source/ \
 	ftp://ftp.funet.fi/pub/crypt/cryptography/libs/openssl/source/ \
 	ftp://ftp.webmonster.de/pub/openssl/source/ \
 	ftp://ftp.sunet.se/pub/security/tools/net/openssl/source/
-PKG_MD5SUM:=12cedbeb6813a0d7919dbf1f82134b86
+PKG_MD5SUM:=8ed1853538e1d05a1f5ada61ebf8bffa
 PKG_CAT:=zcat
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
@@ -66,8 +66,6 @@ OPENSSL_NO_CIPHERS:= no-idea no-md2 no-mdc2 no-rc5 no-sha0 no-rmd160 no-aes192
 OPENSSL_OPTIONS:= shared no-ec no-err no-fips no-hw no-krb5 no-threads zlib-dynamic no-engines
 
 define Build/Configure
-	$(SED) 's,/CFLAG=,/CFLAG= $(TARGET_SOFT_FLOAT) ,g' $(PKG_BUILD_DIR)/Configure
-	$(SED) s/OPENWRT_OPTIMIZATION_FLAGS/$(BR2_TARGET_OPTIMIZATION)/g $(PKG_BUILD_DIR)/Configure
 	(cd $(PKG_BUILD_DIR); \
 		./Configure linux-openwrt \
 			--prefix=/usr \
@@ -85,17 +83,19 @@ define Build/Compile
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) -j1 \
 		MAKEDEPPROG="$(TARGET_CROSS)gcc" \
+		OPENWRT_OPTIMIZATION_FLAGS="$(TARGET_CFLAGS)" \
 		depend
 	$(MAKE) -C $(PKG_BUILD_DIR) -j1 \
 		CC="$(TARGET_CC)" \
 		AR="$(TARGET_CROSS)ar r" \
 		RANLIB="$(TARGET_CROSS)ranlib" \
+		OPENWRT_OPTIMIZATION_FLAGS="$(TARGET_CFLAGS)" \
 		all build-shared
 	# Work around openssl build bug to link libssl.so with libcrypto.so.
 	-rm $(PKG_BUILD_DIR)/libssl.so.*.*.*
 	$(MAKE) -C $(PKG_BUILD_DIR) -j1 \
 		CC="$(TARGET_CC)" \
-		CCOPTS="$(TARGET_CFLAGS) -fomit-frame-pointer" \
+		OPENWRT_OPTIMIZATION_FLAGS="$(TARGET_CFLAGS)" \
 		do_linux-shared
 	$(MAKE) -C $(PKG_BUILD_DIR) -j1 \
 		INSTALL_PREFIX="$(PKG_INSTALL_DIR)" \
