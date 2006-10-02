@@ -16,11 +16,11 @@ diff -urN busybox.old/networking/httpd.c busybox.dev/networking/httpd.c
  				continue;
  			}
  			pp = strchr(p, ':');
-+			if(pp && pp[1] == '!' && pp[2] == ':')
-+				continue;
 +			if(pp && pp[1] == '$' && pp[2] == 'p' &&
 +						 pp[3] == '$' && pp[4] &&
 +						 (pwd = getpwnam(&pp[4])) != NULL) {
++				if(pwd->pw_passwd && pwd->pw_passwd[0] == '!')
++					continue;
 +				ppnew = malloc(5 + strlen(pwd->pw_passwd));
 +				ppnew[0] = ':';
 +				strcpy(ppnew + 1, pwd->pw_passwd);
