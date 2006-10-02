@@ -4,7 +4,7 @@
 diff -urN busybox.old/networking/httpd.c busybox.dev/networking/httpd.c
 --- busybox.old/networking/httpd.c	2004-10-08 10:03:29.000000000 +0200
 +++ busybox.dev/networking/httpd.c	2006-02-04 01:54:19.688016250 +0100
-@@ -1467,12 +1467,22 @@
+@@ -1467,12 +1467,24 @@
  		{
  			char *cipher;
  			char *pp;
@@ -16,6 +16,8 @@ diff -urN busybox.old/networking/httpd.c busybox.dev/networking/httpd.c
  				continue;
  			}
  			pp = strchr(p, ':');
++			if(pp && pp[1] == '!' && pp[2] == ':')
++				continue;
 +			if(pp && pp[1] == '$' && pp[2] == 'p' &&
 +						 pp[3] == '$' && pp[4] &&
 +						 (pwd = getpwnam(&pp[4])) != NULL) {
