@@ -19,7 +19,6 @@ config LINUX_2_6_ARUBA
 	select LINUX_2_6
 	select PCI_SUPPORT
 	select USB_SUPPORT
-	select BIG_ENDIAN
 	select USES_JFFS2
 	help
           Build firmware images for Aruba boards 
@@ -29,7 +28,6 @@ config LINUX_2_4_AR531X
 	depends BROKEN
 	select mips
 	select LINUX_2_4
-	select BIG_ENDIAN
 	select USES_JFFS2
 	help
 	  Build firmware images for Atheros AR531x based boards
@@ -82,7 +80,6 @@ config LINUX_2_6_XSCALE
 	bool "Intel XScale [2.6]"
 	select armeb
 	select LINUX_2_6
-	select BIG_ENDIAN
 	select PCI_SUPPORT
 	select USB_SUPPORT
 	select USES_JFFS2
@@ -91,7 +88,6 @@ config LINUX_2_6_MAGICBOX
 	bool "Magicbox [2.6]"
 	select powerpc
 	select LINUX_2_6
-	select BIG_ENDIAN
 	select PCI_SUPPORT
 	select USES_JFFS2
 
@@ -169,7 +165,6 @@ config LINUX_2_6_SH3EB
 	bool "UNSUPPORTED big-endian sh3 platform"
 	depends BROKEN
 	select LINUX_2_6
-	select BIG_ENDIAN
 	select sh3eb
 
 config LINUX_2_6_SH4
@@ -182,14 +177,12 @@ config LINUX_2_6_SH4EB
 	bool "UNSUPPORTED big-endian sh4 platform"
 	depends BROKEN
 	select LINUX_2_6
-	select BIG_ENDIAN
 	select sh4eb
 
 config LINUX_2_6_SPARC
 	bool "UNSUPPORTED sparc platform"
 	depends BROKEN
 	select LINUX_2_6
-	select BIG_ENDIAN
 	select sparc
 
 endif
@@ -229,6 +222,7 @@ config i386
 	bool
 	
 config mips
+	select BIG_ENDIAN
 	bool
 
 config mipsel
@@ -238,6 +232,7 @@ config arm
 	bool
 
 config armeb
+	select BIG_ENDIAN
 	bool
 
 config cris
@@ -247,21 +242,25 @@ config m68k
 	bool
 
 config powerpc
+	select BIG_ENDIAN
 	bool
 
 config sh3
 	bool
 
 config sh3eb
+	select BIG_ENDIAN
 	bool
 
 config sh4
 	bool
 
 config sh4eb
+	select BIG_ENDIAN
 	bool
 
 config sparc
+	select BIG_ENDIAN
 	bool
 
 config ARCH
