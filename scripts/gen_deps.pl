@@ -62,6 +62,7 @@ foreach $name (sort {uc($a) cmp uc($b)} keys %pkg) {
 		} elsif (defined($pkg{$dep}) && !$options{SDK}) {
 			$idx = $dep;
 		}
+		undef $idx if $idx =~ /^(kernel)|(base-files)$/;
 		if ($idx) {
 			next if $dep{$pkg{$name}->{src}."->".$idx};
 			$depline .= " $idx\-compile";
