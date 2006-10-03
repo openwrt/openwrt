@@ -37,13 +37,15 @@ case "$1" in
 				route add default gw $i dev $interface
 			done
 		fi
-
-		echo -n > $RESOLV_CONF
-		${domain:+echo search $domain} >> $RESOLV_CONF
-		for i in $dns ; do
-			echo "adding dns $i"
-			echo "nameserver $i" >> $RESOLV_CONF
-		done
+		
+		[ -n "$dns" ] && {
+			echo -n > $RESOLV_CONF
+			${domain:+echo search $domain} >> $RESOLV_CONF
+			for i in $dns ; do
+				echo "adding dns $i"
+				echo "nameserver $i" >> $RESOLV_CONF
+			done
+		}
 		
 		hotplug_event ifup
 		
