@@ -48,8 +48,6 @@ Available commands:
 	stop	Stop the service
 	restart	Restart the service
 	reload	Reload configuration files (or restart if that fails)
-	enable	Enable the service (load at boot time)
-	disable	Disable the service
 $EXTRA_HELP
 EOF
 }
@@ -68,8 +66,6 @@ eval "case \"\$action\" in
 	stop) stop;;
 	reload) reload || restart;;
 	restart) restart;;
-	enable) enable;;
-	disable) disable;;
 	boot) boot;;
 	shutdown) shutdown;;
 	$cmds
