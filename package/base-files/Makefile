@@ -142,7 +142,6 @@ define Package/base-files$(TARGET)/install-brcm
 endef
 
 define Package/base-files$(TARGET)/install
-  $(call Package/base-files$(TARGET)/install-$(BOARD),$(1))
 	$(CP) ./default/* $(1)/
 	if [ -d $(BOARD)-$(KERNEL) ]; then \
 		$(CP) $(BOARD)-$(KERNEL)/* $(1)/; \
@@ -164,6 +163,7 @@ define Package/base-files$(TARGET)/install
 	rm -f $(1)/var
 	ln -sf /tmp $(1)/var
 	mkdir -p $(1)/etc
+$(call Package/base-files$(TARGET)/install-$(BOARD),$(1))
 endef
 
 define Package/libgcc/install
