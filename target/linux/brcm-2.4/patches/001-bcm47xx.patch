@@ -1,58 +1,6 @@
-diff -urN linux.old/arch/mips/Makefile linux.dev/arch/mips/Makefile
---- linux.old/arch/mips/Makefile	2006-04-27 18:04:37.000000000 +0200
-+++ linux.dev/arch/mips/Makefile	2006-04-27 19:24:19.000000000 +0200
-@@ -726,6 +726,19 @@
- endif
- 
- #
-+# Broadcom BCM947XX variants
-+#
-+ifdef CONFIG_BCM947XX
-+LIBS		+= arch/mips/bcm947xx/generic/brcm.o arch/mips/bcm947xx/bcm947xx.o 
-+SUBDIRS		+= arch/mips/bcm947xx/generic arch/mips/bcm947xx 
-+LOADADDR	:= 0x80001000
-+
-+zImage: vmlinux
-+	$(MAKE) -C arch/$(ARCH)/bcm947xx/compressed
-+export LOADADDR
-+endif
-+
-+#
- # Choosing incompatible machines durings configuration will result in
- # error messages during linking.  Select a default linkscript if
- # none has been choosen above.
-@@ -778,6 +791,7 @@
- 	$(MAKE) -C arch/$(ARCH)/tools clean
- 	$(MAKE) -C arch/mips/baget clean
- 	$(MAKE) -C arch/mips/lasat clean
-+	$(MAKE) -C arch/mips/bcm947xx/compressed clean
- 
- archmrproper:
- 	@$(MAKEBOOT) mrproper
-diff -urN linux.old/arch/mips/bcm947xx/Makefile linux.dev/arch/mips/bcm947xx/Makefile
---- linux.old/arch/mips/bcm947xx/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/Makefile	2006-05-02 17:46:22.000000000 +0200
-@@ -0,0 +1,17 @@
-+#
-+# Makefile for the BCM947xx specific kernel interface routines
-+# under Linux.
-+#
-+
-+EXTRA_CFLAGS+=-I$(TOPDIR)/arch/mips/bcm947xx/include -DBCMDRIVER
-+
-+O_TARGET        := bcm947xx.o
-+
-+export-objs     := export.o
-+obj-y		:= prom.o setup.o time.o sbmips.o gpio.o
-+obj-y		+= nvram.o nvram_linux.o sflash.o cfe_env.o
-+obj-y		+= sbutils.o bcmutils.o bcmsrom.o hndchipc.o
-+obj-$(CONFIG_PCI) += sbpci.o pcibios.o
-+obj-y 		+= export.o
-+
-+include $(TOPDIR)/Rules.make
 diff -urN linux.old/arch/mips/bcm947xx/bcmsrom.c linux.dev/arch/mips/bcm947xx/bcmsrom.c
 --- linux.old/arch/mips/bcm947xx/bcmsrom.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/bcmsrom.c	2006-04-27 20:32:48.000000000 +0200
++++ linux.dev/arch/mips/bcm947xx/bcmsrom.c	2006-10-02 21:19:59.000000000 +0200
 @@ -0,0 +1,1212 @@
 +/*
 + *  Misc useful routines to access NIC SROM/OTP .
@@ -1268,7 +1216,7 @@ diff -urN linux.old/arch/mips/bcm947xx/bcmsrom.c linux.dev/arch/mips/bcm947xx/bc
 +
 diff -urN linux.old/arch/mips/bcm947xx/bcmutils.c linux.dev/arch/mips/bcm947xx/bcmutils.c
 --- linux.old/arch/mips/bcm947xx/bcmutils.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/bcmutils.c	2006-04-28 00:34:02.000000000 +0200
++++ linux.dev/arch/mips/bcm947xx/bcmutils.c	2006-10-02 21:19:59.000000000 +0200
 @@ -0,0 +1,247 @@
 +/*
 + * Misc useful OS-independent routines.
@@ -1519,7 +1467,7 @@ diff -urN linux.old/arch/mips/bcm947xx/bcmutils.c linux.dev/arch/mips/bcm947xx/b
 +
 diff -urN linux.old/arch/mips/bcm947xx/cfe_env.c linux.dev/arch/mips/bcm947xx/cfe_env.c
 --- linux.old/arch/mips/bcm947xx/cfe_env.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/cfe_env.c	2006-04-27 19:24:19.000000000 +0200
++++ linux.dev/arch/mips/bcm947xx/cfe_env.c	2006-10-02 21:19:59.000000000 +0200
 @@ -0,0 +1,234 @@
 +/*
 + * NVRAM variable manipulation (Linux kernel half)
@@ -1757,7 +1705,7 @@ diff -urN linux.old/arch/mips/bcm947xx/cfe_env.c linux.dev/arch/mips/bcm947xx/cf
 +
 diff -urN linux.old/arch/mips/bcm947xx/compressed/Makefile linux.dev/arch/mips/bcm947xx/compressed/Makefile
 --- linux.old/arch/mips/bcm947xx/compressed/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/compressed/Makefile	2006-04-27 19:24:19.000000000 +0200
++++ linux.dev/arch/mips/bcm947xx/compressed/Makefile	2006-10-02 21:19:59.000000000 +0200
 @@ -0,0 +1,33 @@
 +#
 +# Makefile for Broadcom BCM947XX boards
@@ -1794,7 +1742,7 @@ diff -urN linux.old/arch/mips/bcm947xx/compressed/Makefile linux.dev/arch/mips/b
 +	rm -f vmlinuz piggy
 diff -urN linux.old/arch/mips/bcm947xx/export.c linux.dev/arch/mips/bcm947xx/export.c
 --- linux.old/arch/mips/bcm947xx/export.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/export.c	2006-04-28 02:57:34.000000000 +0200
++++ linux.dev/arch/mips/bcm947xx/export.c	2006-10-02 21:19:59.000000000 +0200
 @@ -0,0 +1,65 @@
 +#include <linux/module.h>
 +
@@ -1861,28 +1809,9 @@ diff -urN linux.old/arch/mips/bcm947xx/export.c linux.dev/arch/mips/bcm947xx/exp
 +_export(srom_read)
 +_export(srom_write)
 +
-diff -urN linux.old/arch/mips/bcm947xx/generic/Makefile linux.dev/arch/mips/bcm947xx/generic/Makefile
---- linux.old/arch/mips/bcm947xx/generic/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/generic/Makefile	2006-04-27 19:24:19.000000000 +0200
-@@ -0,0 +1,15 @@
-+#
-+# Makefile for the BCM947xx specific kernel interface routines
-+# under Linux.
-+#
-+
-+.S.s:
-+	$(CPP) $(AFLAGS) $< -o $*.s
-+.S.o:
-+	$(CC) $(AFLAGS) -c $< -o $*.o
-+
-+O_TARGET        := brcm.o
-+
-+obj-y	:= int-handler.o irq.o
-+
-+include $(TOPDIR)/Rules.make
 diff -urN linux.old/arch/mips/bcm947xx/generic/int-handler.S linux.dev/arch/mips/bcm947xx/generic/int-handler.S
 --- linux.old/arch/mips/bcm947xx/generic/int-handler.S	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/generic/int-handler.S	2006-04-27 19:24:19.000000000 +0200
++++ linux.dev/arch/mips/bcm947xx/generic/int-handler.S	2006-10-02 21:19:59.000000000 +0200
 @@ -0,0 +1,51 @@
 +/*
 + * Generic interrupt handler for Broadcom MIPS boards
@@ -1937,7 +1866,7 @@ diff -urN linux.old/arch/mips/bcm947xx/generic/int-handler.S linux.dev/arch/mips
 +	END(brcmIRQ)
 diff -urN linux.old/arch/mips/bcm947xx/generic/irq.c linux.dev/arch/mips/bcm947xx/generic/irq.c
 --- linux.old/arch/mips/bcm947xx/generic/irq.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/generic/irq.c	2006-04-27 19:24:19.000000000 +0200
++++ linux.dev/arch/mips/bcm947xx/generic/irq.c	2006-10-02 21:19:59.000000000 +0200
 @@ -0,0 +1,130 @@
 +/*
 + * Generic interrupt control functions for Broadcom MIPS boards
@@ -2069,9 +1998,29 @@ diff -urN linux.old/arch/mips/bcm947xx/generic/irq.c linux.dev/arch/mips/bcm947x
 +	breakpoint(); 
 +#endif
 +}
+diff -urN linux.old/arch/mips/bcm947xx/generic/Makefile linux.dev/arch/mips/bcm947xx/generic/Makefile
+--- linux.old/arch/mips/bcm947xx/generic/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/arch/mips/bcm947xx/generic/Makefile	2006-10-02 21:26:29.000000000 +0200
+@@ -0,0 +1,16 @@
++#
++# Makefile for the BCM947xx specific kernel interface routines
++# under Linux.
++#
++EXTRA_CFLAGS += -fno-delayed-branch
++
++.S.s:
++	$(CPP) $(AFLAGS) $< -o $*.s
++.S.o:
++	$(CC) $(AFLAGS) -c $< -o $*.o
++
++O_TARGET        := brcm.o
++
++obj-y	:= int-handler.o irq.o
++
++include $(TOPDIR)/Rules.make
 diff -urN linux.old/arch/mips/bcm947xx/gpio.c linux.dev/arch/mips/bcm947xx/gpio.c
 --- linux.old/arch/mips/bcm947xx/gpio.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/gpio.c	2006-04-27 23:09:33.000000000 +0200
++++ linux.dev/arch/mips/bcm947xx/gpio.c	2006-10-02 21:19:59.000000000 +0200
 @@ -0,0 +1,159 @@
 +/*
 + * GPIO char driver
@@ -2234,7 +2183,7 @@ diff -urN linux.old/arch/mips/bcm947xx/gpio.c linux.dev/arch/mips/bcm947xx/gpio.
 +module_exit(gpio_exit);
 diff -urN linux.old/arch/mips/bcm947xx/hndchipc.c linux.dev/arch/mips/bcm947xx/hndchipc.c
 --- linux.old/arch/mips/bcm947xx/hndchipc.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/hndchipc.c	2006-04-28 00:33:05.000000000 +0200
++++ linux.dev/arch/mips/bcm947xx/hndchipc.c	2006-10-02 21:19:59.000000000 +0200
 @@ -0,0 +1,158 @@
 +/*
 + * BCM47XX support code for some chipcommon (old extif) facilities (uart)
@@ -2396,7 +2345,7 @@ diff -urN linux.old/arch/mips/bcm947xx/hndchipc.c linux.dev/arch/mips/bcm947xx/h
 +
 diff -urN linux.old/arch/mips/bcm947xx/include/bcm4710.h linux.dev/arch/mips/bcm947xx/include/bcm4710.h
 --- linux.old/arch/mips/bcm947xx/include/bcm4710.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/bcm4710.h	2006-04-27 22:30:01.000000000 +0200
++++ linux.dev/arch/mips/bcm947xx/include/bcm4710.h	2006-10-02 21:19:59.000000000 +0200
 @@ -0,0 +1,91 @@
 +/*
 + * BCM4710 address space map and definitions
@@ -2491,7 +2440,7 @@ diff -urN linux.old/arch/mips/bcm947xx/include/bcm4710.h linux.dev/arch/mips/bcm
 +#endif /* _bcm4710_h_ */
 diff -urN linux.old/arch/mips/bcm947xx/include/bcmdefs.h linux.dev/arch/mips/bcm947xx/include/bcmdefs.h
 --- linux.old/arch/mips/bcm947xx/include/bcmdefs.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/bcmdefs.h	2006-04-27 20:12:21.000000000 +0200
++++ linux.dev/arch/mips/bcm947xx/include/bcmdefs.h	2006-10-02 21:19:59.000000000 +0200
 @@ -0,0 +1,106 @@
 +/*
 + * Misc system wide definitions
@@ -2599,382 +2548,9 @@ diff -urN linux.old/arch/mips/bcm947xx/include/bcmdefs.h linux.dev/arch/mips/bcm
 +
 +
 +#endif /* _bcmdefs_h_ */
-diff -urN linux.old/arch/mips/bcm947xx/include/bcmdevs.h linux.dev/arch/mips/bcm947xx/include/bcmdevs.h
---- linux.old/arch/mips/bcm947xx/include/bcmdevs.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/bcmdevs.h	2006-04-27 22:30:25.000000000 +0200
-@@ -0,0 +1,369 @@
-+/*
-+ * Broadcom device-specific manifest constants.
-+ *
-+ * Copyright 2006, Broadcom Corporation
-+ * All Rights Reserved.
-+ * 
-+ * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
-+ * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
-+ * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
-+ * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
-+ * $Id: bcmdevs.h,v 1.1.1.17 2006/04/15 01:29:08 michael Exp $
-+ */
-+
-+#ifndef	_BCMDEVS_H
-+#define	_BCMDEVS_H
-+
-+#include "bcm4710.h"
-+
-+/* Known PCI vendor Id's */
-+#define	VENDOR_EPIGRAM		0xfeda
-+#define	VENDOR_BROADCOM		0x14e4
-+#define	VENDOR_3COM		0x10b7
-+#define	VENDOR_NETGEAR		0x1385
-+#define	VENDOR_DIAMOND		0x1092
-+#define	VENDOR_DELL		0x1028
-+#define	VENDOR_HP		0x0e11
-+#define	VENDOR_APPLE		0x106b
-+
-+/* PCI Device Id's */
-+#define	BCM4210_DEVICE_ID	0x1072		/* never used */
-+#define	BCM4211_DEVICE_ID	0x4211
-+#define	BCM4230_DEVICE_ID	0x1086		/* never used */
-+#define	BCM4231_DEVICE_ID	0x4231
-+
-+#define	BCM4410_DEVICE_ID	0x4410		/* bcm44xx family pci iline */
-+#define	BCM4430_DEVICE_ID	0x4430		/* bcm44xx family cardbus iline */
-+#define	BCM4412_DEVICE_ID	0x4412		/* bcm44xx family pci enet */
-+#define	BCM4432_DEVICE_ID	0x4432		/* bcm44xx family cardbus enet */
-+
-+#define	BCM3352_DEVICE_ID	0x3352		/* bcm3352 device id */
-+#define	BCM3360_DEVICE_ID	0x3360		/* bcm3360 device id */
-+
-+#define	EPI41210_DEVICE_ID	0xa0fa		/* bcm4210 */
-+#define	EPI41230_DEVICE_ID	0xa10e		/* bcm4230 */
-+
-+#define	BCM47XX_ILINE_ID	0x4711		/* 47xx iline20 */
-+#define	BCM47XX_V90_ID		0x4712		/* 47xx v90 codec */
-+#define	BCM47XX_ENET_ID		0x4713		/* 47xx enet */
-+#define	BCM47XX_EXT_ID		0x4714		/* 47xx external i/f */
-+#define	BCM47XX_USB_ID		0x4715		/* 47xx usb */
-+#define	BCM47XX_USBH_ID		0x4716		/* 47xx usb host */
-+#define	BCM47XX_USBD_ID		0x4717		/* 47xx usb device */
-+#define	BCM47XX_IPSEC_ID	0x4718		/* 47xx ipsec */
-+#define	BCM47XX_ROBO_ID		0x4719		/* 47xx/53xx roboswitch core */
-+#define	BCM47XX_USB20H_ID	0x471a		/* 47xx usb 2.0 host */
-+#define	BCM47XX_USB20D_ID	0x471b		/* 47xx usb 2.0 device */
-+#define	BCM47XX_ATA100_ID	0x471d		/* 47xx parallel ATA */
-+#define	BCM47XX_SATAXOR_ID	0x471e		/* 47xx serial ATA & XOR DMA */
-+#define	BCM47XX_GIGETH_ID	0x471f		/* 47xx GbE (5700) */
-+
-+#define BCM47XX_SMBUS_EMU_ID	0x47fe		/* 47xx emulated SMBus device */
-+#define	BCM47XX_XOR_EMU_ID	0x47ff		/* 47xx emulated XOR engine */
-+
-+#define	BCM4710_CHIP_ID		0x4710		/* 4710 chipid returned by sb_chip() */
-+#define	BCM4710_DEVICE_ID	0x4710		/* 4710 primary function 0 */
-+
-+#define	BCM4402_CHIP_ID		0x4402		/* 4402 chipid */
-+#define	BCM4402_ENET_ID		0x4402		/* 4402 enet */
-+#define	BCM4402_V90_ID		0x4403		/* 4402 v90 codec */
-+#define	BCM4401_ENET_ID		0x170c		/* 4401b0 production enet cards */
-+
-+#define	BCM4306_CHIP_ID		0x4306		/* 4306 chipcommon chipid */
-+#define	BCM4306_D11G_ID		0x4320		/* 4306 802.11g */
-+#define	BCM4306_D11G_ID2	0x4325		
-+#define	BCM4306_D11A_ID		0x4321		/* 4306 802.11a */
-+#define	BCM4306_UART_ID		0x4322		/* 4306 uart */
-+#define	BCM4306_V90_ID		0x4323		/* 4306 v90 codec */
-+#define	BCM4306_D11DUAL_ID	0x4324		/* 4306 dual A+B */
-+
-+#define	BCM4309_PKG_ID		1		/* 4309 package id */
-+
-+#define	BCM4311_CHIP_ID		0x4311		/* 4311 PCIe 802.11a/b/g */
-+#define	BCM4311_D11G_ID		0x4311		/* 4311 802.11b/g id */
-+#define	BCM4311_D11DUAL_ID	0x4312		/* 4311 802.11a/b/g id */
-+#define	BCM4311_D11A_ID		0x4313		/* 4311 802.11a id */
-+
-+#define	BCM4303_D11B_ID		0x4303		/* 4303 802.11b */
-+#define	BCM4303_PKG_ID		2		/* 4303 package id */
-+
-+#define	BCMGPRS_UART_ID		0x4333		/* Uart id used by 4306/gprs card */
-+#define	BCMGPRS2_UART_ID	0x4344		/* Uart id used by 4306/gprs card */
-+
-+#define	BCM4704_CHIP_ID		0x4704		/* 4704 chipcommon chipid */
-+#define	BCM4704_ENET_ID		0x4706		/* 4704 enet (Use 47XX_ENET_ID instead!) */
-+
-+#define	BCM4318_CHIP_ID		0x4318		/* 4318 chip common chipid */
-+#define	BCM4318_D11G_ID		0x4318		/* 4318 802.11b/g id */
-+#define	BCM4318_D11DUAL_ID	0x4319		/* 4318 802.11a/b/g id */
-+#define	BCM4318_D11A_ID		0x431a		/* 4318 802.11a id */
-+
-+#define	BCM4321_CHIP_ID		0x4321		/* 4321 chip common chipid */
-+#define	BCM4321_D11N_ID		0x4328		/* 4321 802.11n dualband id */
-+#define	BCM4321_D11N2G_ID	0x4329		/* 4321 802.11n 2.4Hgz band id */
-+#define	BCM4321_D11N5G_ID	0x432a		/* 4321 802.11n 5Ghz band id */
-+
-+#define BCM4331_CHIP_ID		0x4331		/* 4331 chip common chipid */
-+#define BCM4331_D11N2G_ID	0x4330		/* 4331 802.11n 2.4Ghz band id */
-+#define BCM4331_D11N_ID		0x4331		/* 4331 802.11n dualband id */
-+#define BCM4331_D11N5G_ID	0x4332		/* 4331 802.11n 5Ghz band id */
-+
-+#define HDLSIM5350_PKG_ID	1		/* HDL simulator package id for a 5350 */
-+#define HDLSIM_PKG_ID		14		/* HDL simulator package id */
-+#define HWSIM_PKG_ID		15		/* Hardware simulator package id */
-+
-+#define	BCM4712_CHIP_ID		0x4712		/* 4712 chipcommon chipid */
-+#define	BCM4712_MIPS_ID		0x4720		/* 4712 base devid */
-+#define	BCM4712LARGE_PKG_ID	0		/* 340pin 4712 package id */
-+#define	BCM4712SMALL_PKG_ID	1		/* 200pin 4712 package id */
-+#define	BCM4712MID_PKG_ID	2		/* 225pin 4712 package id */
-+
-+#define BCM5365_CHIP_ID		0x5365          /* 5365 chipcommon chipid */
-+#define	BCM5350_CHIP_ID		0x5350		/* bcm5350 chipcommon chipid */
-+#define	BCM5352_CHIP_ID		0x5352		/* bcm5352 chipcommon chipid */
-+
-+#define	BCM4320_CHIP_ID		0x4320		/* bcm4320 chipcommon chipid */
-+
-+#define BCM4328_CHIP_ID		0x4328		/* bcm4328 chipcommon chipid */
-+
-+#define FPGA_JTAGM_ID		0x43f0		/* FPGA jtagm device id */
-+#define BCM43XX_JTAGM_ID	0x43f1		/* 43xx jtagm device id */
-+#define BCM43XXOLD_JTAGM_ID	0x4331		/* 43xx old jtagm device id */
-+
-+#define SDIOH_FPGA_ID		0x43f2		/* sdio host fpga */
-+#define SDIOD_FPGA_ID		0x43f4		/* sdio device fpga */
-+
-+#define MIMO_FPGA_ID		0x43f8		/* FPGA mimo minimacphy device id */
-+
-+#define BCM4785_CHIP_ID		0x4785		/* 4785 chipcommon chipid */
-+
-+/* PCMCIA vendor Id's */
-+
-+#define	VENDOR_BROADCOM_PCMCIA	0x02d0
-+
-+/* SDIO vendor Id's */
-+#define	VENDOR_BROADCOM_SDIO	0x00BF
-+
-+
-+/* boardflags */
-+#define	BFL_BTCOEXIST		0x0001	/* This board implements Bluetooth coexistance */
-+#define	BFL_PACTRL		0x0002	/* This board has gpio 9 controlling the PA */
-+#define	BFL_AIRLINEMODE		0x0004	/* This board implements gpio13 radio disable indication */
-+#define	BFL_ENETROBO		0x0010	/* This board has robo switch or core */
-+#define	BFL_CCKHIPWR		0x0040	/* Can do high-power CCK transmission */
-+#define	BFL_ENETADM		0x0080	/* This board has ADMtek switch */
-+#define	BFL_ENETVLAN		0x0100	/* This board has vlan capability */
-+#define	BFL_AFTERBURNER		0x0200	/* This board supports Afterburner mode */
-+#define BFL_NOPCI		0x0400	/* This board leaves PCI floating */
-+#define BFL_FEM			0x0800  /* This board supports the Front End Module */
-+#define BFL_EXTLNA		0x1000	/* This board has an external LNA */
-+#define BFL_HGPA		0x2000	/* This board has a high gain PA */
-+#define	BFL_BTCMOD		0x4000	/* This board' BTCOEXIST is in the alternate gpios */
-+#define	BFL_ALTIQ		0x8000	/* Alternate I/Q settings */
-+
-+/* boardflags2 */
-+#define BFL2_RXBB_INT_REG_DIS	0x00000001	/* This board has an external rxbb regulator */
-+#define BFL2_SSWITCH_AVAIL	0x00000002	/* This board has a superswitch for > 2 antennas */
-+#define BFL2_TXPWRCTRL_EN	0x00000004	/* This board permits TX Power Control to be enabled */
-+
-+/* board specific GPIO assignment, gpio 0-3 are also customer-configurable led */
-+#define	BOARD_GPIO_BTCMOD_IN	0x010	/* bit 4 is the alternate BT Coexistance Input */
-+#define	BOARD_GPIO_BTCMOD_OUT	0x020	/* bit 5 is the alternate BT Coexistance Out */
-+#define	BOARD_GPIO_BTC_IN	0x080	/* bit 7 is BT Coexistance Input */
-+#define	BOARD_GPIO_BTC_OUT	0x100	/* bit 8 is BT Coexistance Out */
-+#define	BOARD_GPIO_PACTRL	0x200	/* bit 9 controls the PA on new 4306 boards */
-+#define	PCI_CFG_GPIO_SCS	0x10	/* PCI config space bit 4 for 4306c0 slow clock source */
-+#define PCI_CFG_GPIO_HWRAD	0x20	/* PCI config space GPIO 13 for hw radio disable */
-+#define PCI_CFG_GPIO_XTAL	0x40	/* PCI config space GPIO 14 for Xtal powerup */
-+#define PCI_CFG_GPIO_PLL	0x80	/* PCI config space GPIO 15 for PLL powerdown */
-+
-+/* power control defines */
-+#define PLL_DELAY		150		/* us pll on delay */
-+#define FREF_DELAY		200		/* us fref change delay */
-+#define MIN_SLOW_CLK		32		/* us Slow clock period */
-+#define	XTAL_ON_DELAY		1000		/* us crystal power-on delay */
-+
-+/* Reference Board Types */
-+
-+#define	BU4710_BOARD		0x0400
-+#define	VSIM4710_BOARD		0x0401
-+#define	QT4710_BOARD		0x0402
-+
-+#define	BU4309_BOARD		0x040a
-+#define	BCM94309CB_BOARD	0x040b
-+#define	BCM94309MP_BOARD	0x040c
-+#define	BCM4309AP_BOARD		0x040d
-+
-+#define	BCM94302MP_BOARD	0x040e
-+
-+#define	BU4306_BOARD		0x0416
-+#define	BCM94306CB_BOARD	0x0417
-+#define	BCM94306MP_BOARD	0x0418
-+
-+#define	BCM94710D_BOARD		0x041a
-+#define	BCM94710R1_BOARD	0x041b
-+#define	BCM94710R4_BOARD	0x041c
-+#define	BCM94710AP_BOARD	0x041d
-+
-+#define	BU2050_BOARD		0x041f
-+
-+
-+#define	BCM94309G_BOARD		0x0421
-+
-+#define	BU4704_BOARD		0x0423
-+#define	BU4702_BOARD		0x0424
-+
-+#define	BCM94306PC_BOARD	0x0425		/* pcmcia 3.3v 4306 card */
-+
-+
-+#define	BCM94702MN_BOARD	0x0428
-+
-+/* BCM4702 1U CompactPCI Board */
-+#define	BCM94702CPCI_BOARD	0x0429
-+
-+/* BCM4702 with BCM95380 VLAN Router */
-+#define	BCM95380RR_BOARD	0x042a
-+
-+/* cb4306 with SiGe PA */
-+#define	BCM94306CBSG_BOARD	0x042b
-+
-+/* cb4306 with SiGe PA */
-+#define	PCSG94306_BOARD		0x042d
-+
-+/* bu4704 with sdram */
-+#define	BU4704SD_BOARD		0x042e
-+
-+/* Dual 11a/11g Router */
-+#define	BCM94704AGR_BOARD	0x042f
-+
-+/* 11a-only minipci */
-+#define	BCM94308MP_BOARD	0x0430
-+
-+
-+
-+#define BU4712_BOARD		0x0444
-+#define	BU4712SD_BOARD		0x045d
-+#define	BU4712L_BOARD		0x045f
-+
-+/* BCM4712 boards */
-+#define BCM94712AP_BOARD	0x0445
-+#define BCM94712P_BOARD		0x0446
-+
-+/* BCM4318 boards */
-+#define BU4318_BOARD		0x0447
-+#define CB4318_BOARD		0x0448
-+#define MPG4318_BOARD		0x0449
-+#define MP4318_BOARD		0x044a
-+#define SD4318_BOARD		0x044b
-+
-+/* BCM63XX boards */
-+#define BCM96338_BOARD		0x6338
-+#define BCM96348_BOARD		0x6348
-+
-+/* Another mp4306 with SiGe */
-+#define	BCM94306P_BOARD		0x044c
-+
-+/* mp4303 */
-+#define	BCM94303MP_BOARD	0x044e
-+
-+/* mpsgh4306 */
-+#define	BCM94306MPSGH_BOARD	0x044f
-+
-+/* BRCM 4306 w/ Front End Modules */
-+#define BCM94306MPM  		0x0450
-+#define BCM94306MPL  		0x0453
-+
-+/* 4712agr */
-+#define	BCM94712AGR_BOARD	0x0451
-+
-+/* pcmcia 4303 */
-+#define	PC4303_BOARD		0x0454
-+
-+/* 5350K */
-+#define	BCM95350K_BOARD		0x0455
-+
-+/* 5350R */
-+#define	BCM95350R_BOARD		0x0456
-+
-+/* 4306mplna */
-+#define	BCM94306MPLNA_BOARD	0x0457
-+
-+/* 4320 boards */
-+#define	BU4320_BOARD		0x0458
-+#define	BU4320S_BOARD		0x0459
-+#define	BCM94320PH_BOARD	0x045a
-+
-+/* 4306mph */
-+#define	BCM94306MPH_BOARD	0x045b
-+
-+/* 4306pciv */
-+#define	BCM94306PCIV_BOARD	0x045c
-+
-+#define	BU4712SD_BOARD		0x045d
-+
-+#define	BCM94320PFLSH_BOARD	0x045e
-+
-+#define	BU4712L_BOARD		0x045f
-+#define	BCM94712LGR_BOARD	0x0460
-+#define	BCM94320R_BOARD		0x0461
-+
-+#define	BU5352_BOARD		0x0462
-+
-+#define	BCM94318MPGH_BOARD	0x0463
-+
-+#define	BU4311_BOARD		0x0464
-+#define	BCM94311MC_BOARD	0x0465
-+#define	BCM94311MCAG_BOARD	0x0466
-+
-+#define	BCM95352GR_BOARD	0x0467
-+
-+/* bcm95351agr */
-+#define	BCM95351AGR_BOARD	0x0470
-+
-+/* bcm94704mpcb */
-+#define	BCM94704MPCB_BOARD	0x0472
-+
-+/* 4785 boards */
-+#define BU4785_BOARD		0x0478
-+
-+/* 4321 boards */
-+#define BU4321_BOARD		0x046b
-+#define BU4321E_BOARD		0x047c
-+#define MP4321_BOARD		0x046c
-+#define CB2_4321_BOARD		0x046d
-+#define MC4321_BOARD		0x046e
-+
-+/* # of GPIO pins */
-+#define GPIO_NUMPINS		16
-+
-+/* radio ID codes */
-+#define	NORADIO_ID		0xe4f5
-+#define	NORADIO_IDCODE		0x4e4f5246
-+
-+#define	BCM2050_ID		0x2050
-+#define	BCM2050_IDCODE		0x02050000
-+#define	BCM2050A0_IDCODE	0x1205017f
-+#define	BCM2050A1_IDCODE	0x2205017f
-+#define	BCM2050R8_IDCODE	0x8205017f
-+
-+#define BCM2055_ID		0x2055
-+#define BCM2055_IDCODE		0x02055000
-+#define BCM2055A0_IDCODE	0x1205517f
-+
-+#define	BCM2060_ID		0x2060
-+#define	BCM2060_IDCODE		0x02060000
-+#define	BCM2060WW_IDCODE	0x1206017f
-+
-+#define BCM2062_ID		0x2062
-+#define BCM2062_IDCODE		0x02062000
-+#define BCM2062A0_IDCODE	0x0206217f
-+
-+/* parts of an idcode: */
-+#define	IDCODE_MFG_MASK		0x00000fff
-+#define	IDCODE_MFG_SHIFT	0
-+#define	IDCODE_ID_MASK		0x0ffff000
-+#define	IDCODE_ID_SHIFT		12
-+#define	IDCODE_REV_MASK		0xf0000000
-+#define	IDCODE_REV_SHIFT	28
-+
-+#endif /* _BCMDEVS_H */
 diff -urN linux.old/arch/mips/bcm947xx/include/bcmdevs1.h linux.dev/arch/mips/bcm947xx/include/bcmdevs1.h
 --- linux.old/arch/mips/bcm947xx/include/bcmdevs1.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/bcmdevs1.h	2006-05-02 04:32:03.000000000 +0200
++++ linux.dev/arch/mips/bcm947xx/include/bcmdevs1.h	2006-10-02 21:19:59.000000000 +0200
 @@ -0,0 +1,391 @@
 +/*
 + * Broadcom device-specific manifest constants.
@@ -3367,9 +2943,382 @@ diff -urN linux.old/arch/mips/bcm947xx/include/bcmdevs1.h linux.dev/arch/mips/bc
 +#define GPIO_NUMPINS		16
 +
 +#endif /* _BCMDEVS_H */
+diff -urN linux.old/arch/mips/bcm947xx/include/bcmdevs.h linux.dev/arch/mips/bcm947xx/include/bcmdevs.h
+--- linux.old/arch/mips/bcm947xx/include/bcmdevs.h	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/arch/mips/bcm947xx/include/bcmdevs.h	2006-10-02 21:19:59.000000000 +0200
+@@ -0,0 +1,369 @@
++/*
++ * Broadcom device-specific manifest constants.
++ *
++ * Copyright 2006, Broadcom Corporation
++ * All Rights Reserved.
++ * 
++ * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
++ * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
++ * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
++ * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
++ * $Id: bcmdevs.h,v 1.1.1.17 2006/04/15 01:29:08 michael Exp $
++ */
++
++#ifndef	_BCMDEVS_H
++#define	_BCMDEVS_H
++
++#include "bcm4710.h"
++
++/* Known PCI vendor Id's */
++#define	VENDOR_EPIGRAM		0xfeda
++#define	VENDOR_BROADCOM		0x14e4
++#define	VENDOR_3COM		0x10b7
++#define	VENDOR_NETGEAR		0x1385
++#define	VENDOR_DIAMOND		0x1092
++#define	VENDOR_DELL		0x1028
++#define	VENDOR_HP		0x0e11
++#define	VENDOR_APPLE		0x106b
++
++/* PCI Device Id's */
++#define	BCM4210_DEVICE_ID	0x1072		/* never used */
++#define	BCM4211_DEVICE_ID	0x4211
++#define	BCM4230_DEVICE_ID	0x1086		/* never used */
++#define	BCM4231_DEVICE_ID	0x4231
++
++#define	BCM4410_DEVICE_ID	0x4410		/* bcm44xx family pci iline */
++#define	BCM4430_DEVICE_ID	0x4430		/* bcm44xx family cardbus iline */
++#define	BCM4412_DEVICE_ID	0x4412		/* bcm44xx family pci enet */
++#define	BCM4432_DEVICE_ID	0x4432		/* bcm44xx family cardbus enet */
++
++#define	BCM3352_DEVICE_ID	0x3352		/* bcm3352 device id */
++#define	BCM3360_DEVICE_ID	0x3360		/* bcm3360 device id */
++
++#define	EPI41210_DEVICE_ID	0xa0fa		/* bcm4210 */
++#define	EPI41230_DEVICE_ID	0xa10e		/* bcm4230 */
++
++#define	BCM47XX_ILINE_ID	0x4711		/* 47xx iline20 */
++#define	BCM47XX_V90_ID		0x4712		/* 47xx v90 codec */
++#define	BCM47XX_ENET_ID		0x4713		/* 47xx enet */
++#define	BCM47XX_EXT_ID		0x4714		/* 47xx external i/f */
++#define	BCM47XX_USB_ID		0x4715		/* 47xx usb */
++#define	BCM47XX_USBH_ID		0x4716		/* 47xx usb host */
++#define	BCM47XX_USBD_ID		0x4717		/* 47xx usb device */
++#define	BCM47XX_IPSEC_ID	0x4718		/* 47xx ipsec */
++#define	BCM47XX_ROBO_ID		0x4719		/* 47xx/53xx roboswitch core */
++#define	BCM47XX_USB20H_ID	0x471a		/* 47xx usb 2.0 host */
++#define	BCM47XX_USB20D_ID	0x471b		/* 47xx usb 2.0 device */
++#define	BCM47XX_ATA100_ID	0x471d		/* 47xx parallel ATA */
++#define	BCM47XX_SATAXOR_ID	0x471e		/* 47xx serial ATA & XOR DMA */
++#define	BCM47XX_GIGETH_ID	0x471f		/* 47xx GbE (5700) */
++
++#define BCM47XX_SMBUS_EMU_ID	0x47fe		/* 47xx emulated SMBus device */
++#define	BCM47XX_XOR_EMU_ID	0x47ff		/* 47xx emulated XOR engine */
++
++#define	BCM4710_CHIP_ID		0x4710		/* 4710 chipid returned by sb_chip() */
++#define	BCM4710_DEVICE_ID	0x4710		/* 4710 primary function 0 */
++
++#define	BCM4402_CHIP_ID		0x4402		/* 4402 chipid */
++#define	BCM4402_ENET_ID		0x4402		/* 4402 enet */
++#define	BCM4402_V90_ID		0x4403		/* 4402 v90 codec */
++#define	BCM4401_ENET_ID		0x170c		/* 4401b0 production enet cards */
++
++#define	BCM4306_CHIP_ID		0x4306		/* 4306 chipcommon chipid */
++#define	BCM4306_D11G_ID		0x4320		/* 4306 802.11g */
++#define	BCM4306_D11G_ID2	0x4325		
++#define	BCM4306_D11A_ID		0x4321		/* 4306 802.11a */
++#define	BCM4306_UART_ID		0x4322		/* 4306 uart */
++#define	BCM4306_V90_ID		0x4323		/* 4306 v90 codec */
++#define	BCM4306_D11DUAL_ID	0x4324		/* 4306 dual A+B */
++
++#define	BCM4309_PKG_ID		1		/* 4309 package id */
++
++#define	BCM4311_CHIP_ID		0x4311		/* 4311 PCIe 802.11a/b/g */
++#define	BCM4311_D11G_ID		0x4311		/* 4311 802.11b/g id */
++#define	BCM4311_D11DUAL_ID	0x4312		/* 4311 802.11a/b/g id */
++#define	BCM4311_D11A_ID		0x4313		/* 4311 802.11a id */
++
++#define	BCM4303_D11B_ID		0x4303		/* 4303 802.11b */
++#define	BCM4303_PKG_ID		2		/* 4303 package id */
++
++#define	BCMGPRS_UART_ID		0x4333		/* Uart id used by 4306/gprs card */
++#define	BCMGPRS2_UART_ID	0x4344		/* Uart id used by 4306/gprs card */
++
++#define	BCM4704_CHIP_ID		0x4704		/* 4704 chipcommon chipid */
++#define	BCM4704_ENET_ID		0x4706		/* 4704 enet (Use 47XX_ENET_ID instead!) */
++
++#define	BCM4318_CHIP_ID		0x4318		/* 4318 chip common chipid */
++#define	BCM4318_D11G_ID		0x4318		/* 4318 802.11b/g id */
++#define	BCM4318_D11DUAL_ID	0x4319		/* 4318 802.11a/b/g id */
++#define	BCM4318_D11A_ID		0x431a		/* 4318 802.11a id */
++
++#define	BCM4321_CHIP_ID		0x4321		/* 4321 chip common chipid */
++#define	BCM4321_D11N_ID		0x4328		/* 4321 802.11n dualband id */
++#define	BCM4321_D11N2G_ID	0x4329		/* 4321 802.11n 2.4Hgz band id */
++#define	BCM4321_D11N5G_ID	0x432a		/* 4321 802.11n 5Ghz band id */
++
++#define BCM4331_CHIP_ID		0x4331		/* 4331 chip common chipid */
++#define BCM4331_D11N2G_ID	0x4330		/* 4331 802.11n 2.4Ghz band id */
++#define BCM4331_D11N_ID		0x4331		/* 4331 802.11n dualband id */
++#define BCM4331_D11N5G_ID	0x4332		/* 4331 802.11n 5Ghz band id */
++
++#define HDLSIM5350_PKG_ID	1		/* HDL simulator package id for a 5350 */
++#define HDLSIM_PKG_ID		14		/* HDL simulator package id */
++#define HWSIM_PKG_ID		15		/* Hardware simulator package id */
++
++#define	BCM4712_CHIP_ID		0x4712		/* 4712 chipcommon chipid */
++#define	BCM4712_MIPS_ID		0x4720		/* 4712 base devid */
++#define	BCM4712LARGE_PKG_ID	0		/* 340pin 4712 package id */
++#define	BCM4712SMALL_PKG_ID	1		/* 200pin 4712 package id */
++#define	BCM4712MID_PKG_ID	2		/* 225pin 4712 package id */
++
++#define BCM5365_CHIP_ID		0x5365          /* 5365 chipcommon chipid */
++#define	BCM5350_CHIP_ID		0x5350		/* bcm5350 chipcommon chipid */
++#define	BCM5352_CHIP_ID		0x5352		/* bcm5352 chipcommon chipid */
++
++#define	BCM4320_CHIP_ID		0x4320		/* bcm4320 chipcommon chipid */
++
++#define BCM4328_CHIP_ID		0x4328		/* bcm4328 chipcommon chipid */
++
++#define FPGA_JTAGM_ID		0x43f0		/* FPGA jtagm device id */
++#define BCM43XX_JTAGM_ID	0x43f1		/* 43xx jtagm device id */
++#define BCM43XXOLD_JTAGM_ID	0x4331		/* 43xx old jtagm device id */
++
++#define SDIOH_FPGA_ID		0x43f2		/* sdio host fpga */
++#define SDIOD_FPGA_ID		0x43f4		/* sdio device fpga */
++
++#define MIMO_FPGA_ID		0x43f8		/* FPGA mimo minimacphy device id */
++
++#define BCM4785_CHIP_ID		0x4785		/* 4785 chipcommon chipid */
++
++/* PCMCIA vendor Id's */
++
++#define	VENDOR_BROADCOM_PCMCIA	0x02d0
++
++/* SDIO vendor Id's */
++#define	VENDOR_BROADCOM_SDIO	0x00BF
++
++
++/* boardflags */
++#define	BFL_BTCOEXIST		0x0001	/* This board implements Bluetooth coexistance */
++#define	BFL_PACTRL		0x0002	/* This board has gpio 9 controlling the PA */
++#define	BFL_AIRLINEMODE		0x0004	/* This board implements gpio13 radio disable indication */
++#define	BFL_ENETROBO		0x0010	/* This board has robo switch or core */
++#define	BFL_CCKHIPWR		0x0040	/* Can do high-power CCK transmission */
++#define	BFL_ENETADM		0x0080	/* This board has ADMtek switch */
++#define	BFL_ENETVLAN		0x0100	/* This board has vlan capability */
++#define	BFL_AFTERBURNER		0x0200	/* This board supports Afterburner mode */
++#define BFL_NOPCI		0x0400	/* This board leaves PCI floating */
++#define BFL_FEM			0x0800  /* This board supports the Front End Module */
++#define BFL_EXTLNA		0x1000	/* This board has an external LNA */
++#define BFL_HGPA		0x2000	/* This board has a high gain PA */
++#define	BFL_BTCMOD		0x4000	/* This board' BTCOEXIST is in the alternate gpios */
++#define	BFL_ALTIQ		0x8000	/* Alternate I/Q settings */
++
++/* boardflags2 */
++#define BFL2_RXBB_INT_REG_DIS	0x00000001	/* This board has an external rxbb regulator */
++#define BFL2_SSWITCH_AVAIL	0x00000002	/* This board has a superswitch for > 2 antennas */
++#define BFL2_TXPWRCTRL_EN	0x00000004	/* This board permits TX Power Control to be enabled */
++
++/* board specific GPIO assignment, gpio 0-3 are also customer-configurable led */
++#define	BOARD_GPIO_BTCMOD_IN	0x010	/* bit 4 is the alternate BT Coexistance Input */
++#define	BOARD_GPIO_BTCMOD_OUT	0x020	/* bit 5 is the alternate BT Coexistance Out */
++#define	BOARD_GPIO_BTC_IN	0x080	/* bit 7 is BT Coexistance Input */
++#define	BOARD_GPIO_BTC_OUT	0x100	/* bit 8 is BT Coexistance Out */
++#define	BOARD_GPIO_PACTRL	0x200	/* bit 9 controls the PA on new 4306 boards */
++#define	PCI_CFG_GPIO_SCS	0x10	/* PCI config space bit 4 for 4306c0 slow clock source */
++#define PCI_CFG_GPIO_HWRAD	0x20	/* PCI config space GPIO 13 for hw radio disable */
++#define PCI_CFG_GPIO_XTAL	0x40	/* PCI config space GPIO 14 for Xtal powerup */
++#define PCI_CFG_GPIO_PLL	0x80	/* PCI config space GPIO 15 for PLL powerdown */
++
++/* power control defines */
++#define PLL_DELAY		150		/* us pll on delay */
++#define FREF_DELAY		200		/* us fref change delay */
++#define MIN_SLOW_CLK		32		/* us Slow clock period */
++#define	XTAL_ON_DELAY		1000		/* us crystal power-on delay */
++
++/* Reference Board Types */
++
++#define	BU4710_BOARD		0x0400
++#define	VSIM4710_BOARD		0x0401
++#define	QT4710_BOARD		0x0402
++
++#define	BU4309_BOARD		0x040a
++#define	BCM94309CB_BOARD	0x040b
++#define	BCM94309MP_BOARD	0x040c
++#define	BCM4309AP_BOARD		0x040d
++
++#define	BCM94302MP_BOARD	0x040e
++
++#define	BU4306_BOARD		0x0416
++#define	BCM94306CB_BOARD	0x0417
++#define	BCM94306MP_BOARD	0x0418
++
++#define	BCM94710D_BOARD		0x041a
++#define	BCM94710R1_BOARD	0x041b
++#define	BCM94710R4_BOARD	0x041c
++#define	BCM94710AP_BOARD	0x041d
++
++#define	BU2050_BOARD		0x041f
++
++
++#define	BCM94309G_BOARD		0x0421
++
++#define	BU4704_BOARD		0x0423
++#define	BU4702_BOARD		0x0424
++
++#define	BCM94306PC_BOARD	0x0425		/* pcmcia 3.3v 4306 card */
++
++
++#define	BCM94702MN_BOARD	0x0428
++
++/* BCM4702 1U CompactPCI Board */
++#define	BCM94702CPCI_BOARD	0x0429
++
++/* BCM4702 with BCM95380 VLAN Router */
++#define	BCM95380RR_BOARD	0x042a
++
++/* cb4306 with SiGe PA */
++#define	BCM94306CBSG_BOARD	0x042b
++
++/* cb4306 with SiGe PA */
++#define	PCSG94306_BOARD		0x042d
++
++/* bu4704 with sdram */
++#define	BU4704SD_BOARD		0x042e
++
++/* Dual 11a/11g Router */
++#define	BCM94704AGR_BOARD	0x042f
++
++/* 11a-only minipci */
++#define	BCM94308MP_BOARD	0x0430
++
++
++
++#define BU4712_BOARD		0x0444
++#define	BU4712SD_BOARD		0x045d
++#define	BU4712L_BOARD		0x045f
++
++/* BCM4712 boards */
++#define BCM94712AP_BOARD	0x0445
++#define BCM94712P_BOARD		0x0446
++
++/* BCM4318 boards */
++#define BU4318_BOARD		0x0447
++#define CB4318_BOARD		0x0448
++#define MPG4318_BOARD		0x0449
++#define MP4318_BOARD		0x044a
++#define SD4318_BOARD		0x044b
++
++/* BCM63XX boards */
++#define BCM96338_BOARD		0x6338
++#define BCM96348_BOARD		0x6348
++
++/* Another mp4306 with SiGe */
++#define	BCM94306P_BOARD		0x044c
++
++/* mp4303 */
++#define	BCM94303MP_BOARD	0x044e
++
++/* mpsgh4306 */
++#define	BCM94306MPSGH_BOARD	0x044f
++
++/* BRCM 4306 w/ Front End Modules */
++#define BCM94306MPM  		0x0450
++#define BCM94306MPL  		0x0453
++
++/* 4712agr */
++#define	BCM94712AGR_BOARD	0x0451
++
++/* pcmcia 4303 */
++#define	PC4303_BOARD		0x0454
++
++/* 5350K */
++#define	BCM95350K_BOARD		0x0455
++
++/* 5350R */
++#define	BCM95350R_BOARD		0x0456
++
++/* 4306mplna */
++#define	BCM94306MPLNA_BOARD	0x0457
++
++/* 4320 boards */
++#define	BU4320_BOARD		0x0458
++#define	BU4320S_BOARD		0x0459
++#define	BCM94320PH_BOARD	0x045a
++
++/* 4306mph */
++#define	BCM94306MPH_BOARD	0x045b
++
++/* 4306pciv */
++#define	BCM94306PCIV_BOARD	0x045c
++
++#define	BU4712SD_BOARD		0x045d
++
++#define	BCM94320PFLSH_BOARD	0x045e
++
++#define	BU4712L_BOARD		0x045f
++#define	BCM94712LGR_BOARD	0x0460
++#define	BCM94320R_BOARD		0x0461
++
++#define	BU5352_BOARD		0x0462
++
++#define	BCM94318MPGH_BOARD	0x0463
++
++#define	BU4311_BOARD		0x0464
++#define	BCM94311MC_BOARD	0x0465
++#define	BCM94311MCAG_BOARD	0x0466
++
++#define	BCM95352GR_BOARD	0x0467
++
++/* bcm95351agr */
++#define	BCM95351AGR_BOARD	0x0470
++
++/* bcm94704mpcb */
++#define	BCM94704MPCB_BOARD	0x0472
++
++/* 4785 boards */
++#define BU4785_BOARD		0x0478
++
++/* 4321 boards */
++#define BU4321_BOARD		0x046b
++#define BU4321E_BOARD		0x047c
++#define MP4321_BOARD		0x046c
++#define CB2_4321_BOARD		0x046d
++#define MC4321_BOARD		0x046e
++
++/* # of GPIO pins */
++#define GPIO_NUMPINS		16
++
++/* radio ID codes */
++#define	NORADIO_ID		0xe4f5
++#define	NORADIO_IDCODE		0x4e4f5246
++
++#define	BCM2050_ID		0x2050
++#define	BCM2050_IDCODE		0x02050000
++#define	BCM2050A0_IDCODE	0x1205017f
++#define	BCM2050A1_IDCODE	0x2205017f
++#define	BCM2050R8_IDCODE	0x8205017f
++
++#define BCM2055_ID		0x2055
++#define BCM2055_IDCODE		0x02055000
++#define BCM2055A0_IDCODE	0x1205517f
++
++#define	BCM2060_ID		0x2060
++#define	BCM2060_IDCODE		0x02060000
++#define	BCM2060WW_IDCODE	0x1206017f
++
++#define BCM2062_ID		0x2062
++#define BCM2062_IDCODE		0x02062000
++#define BCM2062A0_IDCODE	0x0206217f
++
++/* parts of an idcode: */
++#define	IDCODE_MFG_MASK		0x00000fff
++#define	IDCODE_MFG_SHIFT	0
++#define	IDCODE_ID_MASK		0x0ffff000
++#define	IDCODE_ID_SHIFT		12
++#define	IDCODE_REV_MASK		0xf0000000
++#define	IDCODE_REV_SHIFT	28
++
++#endif /* _BCMDEVS_H */
 diff -urN linux.old/arch/mips/bcm947xx/include/bcmendian.h linux.dev/arch/mips/bcm947xx/include/bcmendian.h
 --- linux.old/arch/mips/bcm947xx/include/bcmendian.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/bcmendian.h	2006-04-27 20:08:35.000000000 +0200
++++ linux.dev/arch/mips/bcm947xx/include/bcmendian.h	2006-10-02 21:19:59.000000000 +0200
 @@ -0,0 +1,198 @@
 +/*
 + * local version of endian.h - byte order defines
@@ -3571,7 +3520,7 @@ diff -urN linux.old/arch/mips/bcm947xx/include/bcmendian.h linux.dev/arch/mips/b
 +#endif /* _BCMENDIAN_H_ */
 diff -urN linux.old/arch/mips/bcm947xx/include/bcmnvram.h linux.dev/arch/mips/bcm947xx/include/bcmnvram.h
 --- linux.old/arch/mips/bcm947xx/include/bcmnvram.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/bcmnvram.h	2006-04-27 23:29:18.000000000 +0200
++++ linux.dev/arch/mips/bcm947xx/include/bcmnvram.h	2006-10-02 21:19:59.000000000 +0200
 @@ -0,0 +1,159 @@
 +/*
 + * NVRAM variable manipulation
@@ -3734,7 +3683,7 @@ diff -urN linux.old/arch/mips/bcm947xx/include/bcmnvram.h linux.dev/arch/mips/bc
 +#endif /* _bcmnvram_h_ */
 diff -urN linux.old/arch/mips/bcm947xx/include/bcmsrom.h linux.dev/arch/mips/bcm947xx/include/bcmsrom.h
 --- linux.old/arch/mips/bcm947xx/include/bcmsrom.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/bcmsrom.h	2006-04-27 20:27:33.000000000 +0200
++++ linux.dev/arch/mips/bcm947xx/include/bcmsrom.h	2006-10-02 21:19:59.000000000 +0200
 @@ -0,0 +1,108 @@
 +/*
 + * Misc useful routines to access NIC local SROM/OTP .
@@ -3846,7 +3795,7 @@ diff -urN linux.old/arch/mips/bcm947xx/include/bcmsrom.h linux.dev/arch/mips/bcm
 +#endif	/* _bcmsrom_h_ */
 diff -urN linux.old/arch/mips/bcm947xx/include/bcmutils.h linux.dev/arch/mips/bcm947xx/include/bcmutils.h
 --- linux.old/arch/mips/bcm947xx/include/bcmutils.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/bcmutils.h	2006-05-02 01:52:12.000000000 +0200
++++ linux.dev/arch/mips/bcm947xx/include/bcmutils.h	2006-10-02 21:19:59.000000000 +0200
 @@ -0,0 +1,433 @@
 +/*
 + * Misc useful os-independent macros and functions.
@@ -4283,7 +4232,7 @@ diff -urN linux.old/arch/mips/bcm947xx/include/bcmutils.h linux.dev/arch/mips/bc
 +#endif	/* _bcmutils_h_ */
 diff -urN linux.old/arch/mips/bcm947xx/include/hndcpu.h linux.dev/arch/mips/bcm947xx/include/hndcpu.h
 --- linux.old/arch/mips/bcm947xx/include/hndcpu.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/hndcpu.h	2006-04-27 22:14:38.000000000 +0200
++++ linux.dev/arch/mips/bcm947xx/include/hndcpu.h	2006-10-02 21:19:59.000000000 +0200
 @@ -0,0 +1,28 @@
 +/*
 + * HND SiliconBackplane MIPS/ARM cores software interface.
@@ -4315,7 +4264,7 @@ diff -urN linux.old/arch/mips/bcm947xx/include/hndcpu.h linux.dev/arch/mips/bcm9
 +#endif /* _hndcpu_h_ */
 diff -urN linux.old/arch/mips/bcm947xx/include/hndmips.h linux.dev/arch/mips/bcm947xx/include/hndmips.h
 --- linux.old/arch/mips/bcm947xx/include/hndmips.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/hndmips.h	2006-04-27 20:43:42.000000000 +0200
++++ linux.dev/arch/mips/bcm947xx/include/hndmips.h	2006-10-02 21:19:59.000000000 +0200
 @@ -0,0 +1,45 @@
 +/*
 + * HND SiliconBackplane MIPS core software interface.
@@ -4364,7 +4313,7 @@ diff -urN linux.old/arch/mips/bcm947xx/include/hndmips.h linux.dev/arch/mips/bcm
 +#endif /* _hndmips_h_ */
 diff -urN linux.old/arch/mips/bcm947xx/include/hndpci.h linux.dev/arch/mips/bcm947xx/include/hndpci.h
 --- linux.old/arch/mips/bcm947xx/include/hndpci.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/hndpci.h	2006-04-27 20:36:48.000000000 +0200
++++ linux.dev/arch/mips/bcm947xx/include/hndpci.h	2006-10-02 21:19:59.000000000 +0200
 @@ -0,0 +1,30 @@
 +/*
 + * HND SiliconBackplane PCI core software interface.
@@ -4398,7 +4347,7 @@ diff -urN linux.old/arch/mips/bcm947xx/include/hndpci.h linux.dev/arch/mips/bcm9
 +#endif /* _hndpci_h_ */
 diff -urN linux.old/arch/mips/bcm947xx/include/linuxver.h linux.dev/arch/mips/bcm947xx/include/linuxver.h
 --- linux.old/arch/mips/bcm947xx/include/linuxver.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/linuxver.h	2006-04-27 20:10:08.000000000 +0200
++++ linux.dev/arch/mips/bcm947xx/include/linuxver.h	2006-10-02 21:19:59.000000000 +0200
 @@ -0,0 +1,417 @@
 +/*
 + * Linux-specific abstractions to gain some independence from linux kernel versions.
@@ -4819,7 +4768,7 @@ diff -urN linux.old/arch/mips/bcm947xx/include/linuxver.h linux.dev/arch/mips/bc
 +#endif /* _linuxver_h_ */
 diff -urN linux.old/arch/mips/bcm947xx/include/mipsinc.h linux.dev/arch/mips/bcm947xx/include/mipsinc.h
 --- linux.old/arch/mips/bcm947xx/include/mipsinc.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/mipsinc.h	2006-04-27 22:12:20.000000000 +0200
++++ linux.dev/arch/mips/bcm947xx/include/mipsinc.h	2006-10-02 21:19:59.000000000 +0200
 @@ -0,0 +1,541 @@
 +/*
 + * HND Run Time Environment for standalone MIPS programs.
@@ -5364,7 +5313,7 @@ diff -urN linux.old/arch/mips/bcm947xx/include/mipsinc.h linux.dev/arch/mips/bcm
 +#endif	/* _MISPINC_H */
 diff -urN linux.old/arch/mips/bcm947xx/include/osl.h linux.dev/arch/mips/bcm947xx/include/osl.h
 --- linux.old/arch/mips/bcm947xx/include/osl.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/osl.h	2006-05-02 17:40:43.000000000 +0200
++++ linux.dev/arch/mips/bcm947xx/include/osl.h	2006-10-02 21:19:59.000000000 +0200
 @@ -0,0 +1,179 @@
 +#ifndef __osl_h
 +#define __osl_h
@@ -5547,7 +5496,7 @@ diff -urN linux.old/arch/mips/bcm947xx/include/osl.h linux.dev/arch/mips/bcm947x
 +#endif
 diff -urN linux.old/arch/mips/bcm947xx/include/pcicfg.h linux.dev/arch/mips/bcm947xx/include/pcicfg.h
 --- linux.old/arch/mips/bcm947xx/include/pcicfg.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/pcicfg.h	2006-04-27 20:31:41.000000000 +0200
++++ linux.dev/arch/mips/bcm947xx/include/pcicfg.h	2006-10-02 21:19:59.000000000 +0200
 @@ -0,0 +1,495 @@
 +/*
 + * pcicfg.h: PCI configuration constants and structures.
@@ -6046,7 +5995,7 @@ diff -urN linux.old/arch/mips/bcm947xx/include/pcicfg.h linux.dev/arch/mips/bcm9
 +#endif	/* _h_pcicfg_ */
 diff -urN linux.old/arch/mips/bcm947xx/include/sbchipc.h linux.dev/arch/mips/bcm947xx/include/sbchipc.h
 --- linux.old/arch/mips/bcm947xx/include/sbchipc.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/sbchipc.h	2006-04-27 22:11:01.000000000 +0200
++++ linux.dev/arch/mips/bcm947xx/include/sbchipc.h	2006-10-02 21:19:59.000000000 +0200
 @@ -0,0 +1,516 @@
 +/*
 + * SiliconBackplane Chipcommon core hardware definitions.
@@ -6566,7 +6515,7 @@ diff -urN linux.old/arch/mips/bcm947xx/include/sbchipc.h linux.dev/arch/mips/bcm
 +#endif	/* _SBCHIPC_H */
 diff -urN linux.old/arch/mips/bcm947xx/include/sbconfig.h linux.dev/arch/mips/bcm947xx/include/sbconfig.h
 --- linux.old/arch/mips/bcm947xx/include/sbconfig.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/sbconfig.h	2006-04-27 22:14:11.000000000 +0200
++++ linux.dev/arch/mips/bcm947xx/include/sbconfig.h	2006-10-02 21:19:59.000000000 +0200
 @@ -0,0 +1,369 @@
 +/*
 + * Broadcom SiliconBackplane hardware register definitions.
@@ -6939,7 +6888,7 @@ diff -urN linux.old/arch/mips/bcm947xx/include/sbconfig.h linux.dev/arch/mips/bc
 +#endif	/* _SBCONFIG_H */
 diff -urN linux.old/arch/mips/bcm947xx/include/sbextif.h linux.dev/arch/mips/bcm947xx/include/sbextif.h
 --- linux.old/arch/mips/bcm947xx/include/sbextif.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/sbextif.h	2006-04-27 22:13:03.000000000 +0200
++++ linux.dev/arch/mips/bcm947xx/include/sbextif.h	2006-10-02 21:19:59.000000000 +0200
 @@ -0,0 +1,243 @@
 +/*
 + * Hardware-specific External Interface I/O core definitions
@@ -7186,7 +7135,7 @@ diff -urN linux.old/arch/mips/bcm947xx/include/sbextif.h linux.dev/arch/mips/bcm
 +#endif	/* _SBEXTIF_H */
 diff -urN linux.old/arch/mips/bcm947xx/include/sbhndmips.h linux.dev/arch/mips/bcm947xx/include/sbhndmips.h
 --- linux.old/arch/mips/bcm947xx/include/sbhndmips.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/sbhndmips.h	2006-04-27 20:43:56.000000000 +0200
++++ linux.dev/arch/mips/bcm947xx/include/sbhndmips.h	2006-10-02 21:19:59.000000000 +0200
 @@ -0,0 +1,47 @@
 +/*
 + * Broadcom SiliconBackplane MIPS definitions
@@ -7237,7 +7186,7 @@ diff -urN linux.old/arch/mips/bcm947xx/include/sbhndmips.h linux.dev/arch/mips/b
 +#endif	/* _sbhndmips_h_ */
 diff -urN linux.old/arch/mips/bcm947xx/include/sbmemc.h linux.dev/arch/mips/bcm947xx/include/sbmemc.h
 --- linux.old/arch/mips/bcm947xx/include/sbmemc.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/sbmemc.h	2006-04-27 22:12:41.000000000 +0200
++++ linux.dev/arch/mips/bcm947xx/include/sbmemc.h	2006-10-02 21:19:59.000000000 +0200
 @@ -0,0 +1,147 @@
 +/*
 + * BCM47XX Sonics SiliconBackplane DDR/SDRAM controller core hardware definitions.
@@ -7386,127 +7335,9 @@ diff -urN linux.old/arch/mips/bcm947xx/include/sbmemc.h linux.dev/arch/mips/bcm9
 +#define MEMC_CONFIG_DDR		0x00000001
 +
 +#endif	/* _SBMEMC_H */
-diff -urN linux.old/arch/mips/bcm947xx/include/sbpci.h linux.dev/arch/mips/bcm947xx/include/sbpci.h
---- linux.old/arch/mips/bcm947xx/include/sbpci.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/sbpci.h	2006-05-02 17:20:14.000000000 +0200
-@@ -0,0 +1,114 @@
-+/*
-+ * HND SiliconBackplane PCI core hardware definitions.
-+ *
-+ * Copyright 2006, Broadcom Corporation
-+ * All Rights Reserved.
-+ * 
-+ * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
-+ * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
-+ * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
-+ * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
-+ *
-+ * $Id: sbpci.h,v 1.1.1.11 2006/02/27 03:43:16 honor Exp $
-+ */
-+
-+#ifndef	_sbpci_h_
-+#define	_sbpci_h_
-+
-+#ifndef _LANGUAGE_ASSEMBLY
-+
-+/* cpp contortions to concatenate w/arg prescan */
-+#ifndef PAD
-+#define	_PADLINE(line)	pad ## line
-+#define	_XSTR(line)	_PADLINE(line)
-+#define	PAD		_XSTR(__LINE__)
-+#endif
-+
-+/* Sonics side: PCI core and host control registers */
-+typedef struct sbpciregs {
-+	uint32 control;		/* PCI control */
-+	uint32 PAD[3];
-+	uint32 arbcontrol;	/* PCI arbiter control */
-+	uint32 PAD[3];
-+	uint32 intstatus;	/* Interrupt status */
-+	uint32 intmask;		/* Interrupt mask */
-+	uint32 sbtopcimailbox;	/* Sonics to PCI mailbox */
-+	uint32 PAD[9];
-+	uint32 bcastaddr;	/* Sonics broadcast address */
-+	uint32 bcastdata;	/* Sonics broadcast data */
-+	uint32 PAD[2];
-+	uint32 gpioin;		/* ro: gpio input (>=rev2) */
-+	uint32 gpioout;		/* rw: gpio output (>=rev2) */
-+	uint32 gpioouten;	/* rw: gpio output enable (>= rev2) */
-+	uint32 gpiocontrol;	/* rw: gpio control (>= rev2) */
-+	uint32 PAD[36];
-+	uint32 sbtopci0;	/* Sonics to PCI translation 0 */
-+	uint32 sbtopci1;	/* Sonics to PCI translation 1 */
-+	uint32 sbtopci2;	/* Sonics to PCI translation 2 */
-+	uint32 PAD[189];
-+	uint32 pcicfg[4][64];	/* 0x400 - 0x7FF, PCI Cfg Space (>=rev8) */
-+	uint16 sprom[36];	/* SPROM shadow Area */
-+	uint32 PAD[46];
-+} sbpciregs_t;
-+
-+#endif	/* _LANGUAGE_ASSEMBLY */
-+
-+/* PCI control */
-+#define PCI_RST_OE	0x01	/* When set, drives PCI_RESET out to pin */
-+#define PCI_RST		0x02	/* Value driven out to pin */
-+#define PCI_CLK_OE	0x04	/* When set, drives clock as gated by PCI_CLK out to pin */
-+#define PCI_CLK		0x08	/* Gate for clock driven out to pin */
-+
-+/* PCI arbiter control */
-+#define PCI_INT_ARB	0x01	/* When set, use an internal arbiter */
-+#define PCI_EXT_ARB	0x02	/* When set, use an external arbiter */
-+/* ParkID - for PCI corerev >= 8 */
-+#define PCI_PARKID_MASK		0x1c	/* Selects which agent is parked on an idle bus */
-+#define PCI_PARKID_SHIFT	2
-+#define PCI_PARKID_EXT0		0	/* External master 0 */
-+#define PCI_PARKID_EXT1		1	/* External master 1 */
-+#define PCI_PARKID_EXT2		2	/* External master 2 */
-+#define PCI_PARKID_INT		3	/* Internal master */
-+#define PCI_PARKID_LAST		4	/* Last active master */
-+
-+/* Interrupt status/mask */
-+#define PCI_INTA	0x01	/* PCI INTA# is asserted */
-+#define PCI_INTB	0x02	/* PCI INTB# is asserted */
-+#define PCI_SERR	0x04	/* PCI SERR# has been asserted (write one to clear) */
-+#define PCI_PERR	0x08	/* PCI PERR# has been asserted (write one to clear) */
-+#define PCI_PME		0x10	/* PCI PME# is asserted */
-+
-+/* (General) PCI/SB mailbox interrupts, two bits per pci function */
-+#define	MAILBOX_F0_0	0x100	/* function 0, int 0 */
-+#define	MAILBOX_F0_1	0x200	/* function 0, int 1 */
-+#define	MAILBOX_F1_0	0x400	/* function 1, int 0 */
-+#define	MAILBOX_F1_1	0x800	/* function 1, int 1 */
-+#define	MAILBOX_F2_0	0x1000	/* function 2, int 0 */
-+#define	MAILBOX_F2_1	0x2000	/* function 2, int 1 */
-+#define	MAILBOX_F3_0	0x4000	/* function 3, int 0 */
-+#define	MAILBOX_F3_1	0x8000	/* function 3, int 1 */
-+
-+/* Sonics broadcast address */
-+#define BCAST_ADDR_MASK	0xff	/* Broadcast register address */
-+
-+/* Sonics to PCI translation types */
-+#define SBTOPCI0_MASK	0xfc000000
-+#define SBTOPCI1_MASK	0xfc000000
-+#define SBTOPCI2_MASK	0xc0000000
-+#define SBTOPCI_MEM	0
-+#define SBTOPCI_IO	1
-+#define SBTOPCI_CFG0	2
-+#define SBTOPCI_CFG1	3
-+#define	SBTOPCI_PREF	0x4		/* prefetch enable */
-+#define	SBTOPCI_BURST	0x8		/* burst enable */
-+#define	SBTOPCI_RC_MASK		0x30	/* read command (>= rev11) */
-+#define	SBTOPCI_RC_READ		0x00	/* memory read */
-+#define	SBTOPCI_RC_READLINE	0x10	/* memory read line */
-+#define	SBTOPCI_RC_READMULTI	0x20	/* memory read multiple */
-+
-+/* PCI core index in SROM shadow area */
-+#define SRSH_PI_OFFSET	0	/* first word */
-+#define SRSH_PI_MASK	0xf000	/* bit 15:12 */
-+#define SRSH_PI_SHIFT	12	/* bit 15:12 */
-+
-+#endif	/* _sbpci_h_ */
 diff -urN linux.old/arch/mips/bcm947xx/include/sbpcie.h linux.dev/arch/mips/bcm947xx/include/sbpcie.h
 --- linux.old/arch/mips/bcm947xx/include/sbpcie.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/sbpcie.h	2006-04-27 20:42:22.000000000 +0200
++++ linux.dev/arch/mips/bcm947xx/include/sbpcie.h	2006-10-02 21:19:59.000000000 +0200
 @@ -0,0 +1,200 @@
 +/*
 + * BCM43XX SiliconBackplane PCIE core hardware definitions.
@@ -7708,9 +7539,127 @@ diff -urN linux.old/arch/mips/bcm947xx/include/sbpcie.h linux.dev/arch/mips/bcm9
 +#define SERDES_RX_CDRBW			7	/* CDR BW */
 +
 +#endif	/* _SBPCIE_H */
+diff -urN linux.old/arch/mips/bcm947xx/include/sbpci.h linux.dev/arch/mips/bcm947xx/include/sbpci.h
+--- linux.old/arch/mips/bcm947xx/include/sbpci.h	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/arch/mips/bcm947xx/include/sbpci.h	2006-10-02 21:19:59.000000000 +0200
+@@ -0,0 +1,114 @@
++/*
++ * HND SiliconBackplane PCI core hardware definitions.
++ *
++ * Copyright 2006, Broadcom Corporation
++ * All Rights Reserved.
++ * 
++ * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
++ * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
++ * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
++ * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
++ *
++ * $Id: sbpci.h,v 1.1.1.11 2006/02/27 03:43:16 honor Exp $
++ */
++
++#ifndef	_sbpci_h_
++#define	_sbpci_h_
++
++#ifndef _LANGUAGE_ASSEMBLY
++
++/* cpp contortions to concatenate w/arg prescan */
++#ifndef PAD
++#define	_PADLINE(line)	pad ## line
++#define	_XSTR(line)	_PADLINE(line)
++#define	PAD		_XSTR(__LINE__)
++#endif
++
++/* Sonics side: PCI core and host control registers */
++typedef struct sbpciregs {
++	uint32 control;		/* PCI control */
++	uint32 PAD[3];
++	uint32 arbcontrol;	/* PCI arbiter control */
++	uint32 PAD[3];
++	uint32 intstatus;	/* Interrupt status */
++	uint32 intmask;		/* Interrupt mask */
++	uint32 sbtopcimailbox;	/* Sonics to PCI mailbox */
++	uint32 PAD[9];
++	uint32 bcastaddr;	/* Sonics broadcast address */
++	uint32 bcastdata;	/* Sonics broadcast data */
++	uint32 PAD[2];
++	uint32 gpioin;		/* ro: gpio input (>=rev2) */
++	uint32 gpioout;		/* rw: gpio output (>=rev2) */
++	uint32 gpioouten;	/* rw: gpio output enable (>= rev2) */
++	uint32 gpiocontrol;	/* rw: gpio control (>= rev2) */
++	uint32 PAD[36];
++	uint32 sbtopci0;	/* Sonics to PCI translation 0 */
++	uint32 sbtopci1;	/* Sonics to PCI translation 1 */
++	uint32 sbtopci2;	/* Sonics to PCI translation 2 */
++	uint32 PAD[189];
++	uint32 pcicfg[4][64];	/* 0x400 - 0x7FF, PCI Cfg Space (>=rev8) */
++	uint16 sprom[36];	/* SPROM shadow Area */
++	uint32 PAD[46];
++} sbpciregs_t;
++
++#endif	/* _LANGUAGE_ASSEMBLY */
++
++/* PCI control */
++#define PCI_RST_OE	0x01	/* When set, drives PCI_RESET out to pin */
++#define PCI_RST		0x02	/* Value driven out to pin */
++#define PCI_CLK_OE	0x04	/* When set, drives clock as gated by PCI_CLK out to pin */
++#define PCI_CLK		0x08	/* Gate for clock driven out to pin */
++
++/* PCI arbiter control */
++#define PCI_INT_ARB	0x01	/* When set, use an internal arbiter */
++#define PCI_EXT_ARB	0x02	/* When set, use an external arbiter */
++/* ParkID - for PCI corerev >= 8 */
++#define PCI_PARKID_MASK		0x1c	/* Selects which agent is parked on an idle bus */
++#define PCI_PARKID_SHIFT	2
++#define PCI_PARKID_EXT0		0	/* External master 0 */
++#define PCI_PARKID_EXT1		1	/* External master 1 */
++#define PCI_PARKID_EXT2		2	/* External master 2 */
++#define PCI_PARKID_INT		3	/* Internal master */
++#define PCI_PARKID_LAST		4	/* Last active master */
++
++/* Interrupt status/mask */
++#define PCI_INTA	0x01	/* PCI INTA# is asserted */
++#define PCI_INTB	0x02	/* PCI INTB# is asserted */
++#define PCI_SERR	0x04	/* PCI SERR# has been asserted (write one to clear) */
++#define PCI_PERR	0x08	/* PCI PERR# has been asserted (write one to clear) */
++#define PCI_PME		0x10	/* PCI PME# is asserted */
++
++/* (General) PCI/SB mailbox interrupts, two bits per pci function */
++#define	MAILBOX_F0_0	0x100	/* function 0, int 0 */
++#define	MAILBOX_F0_1	0x200	/* function 0, int 1 */
++#define	MAILBOX_F1_0	0x400	/* function 1, int 0 */
++#define	MAILBOX_F1_1	0x800	/* function 1, int 1 */
++#define	MAILBOX_F2_0	0x1000	/* function 2, int 0 */
++#define	MAILBOX_F2_1	0x2000	/* function 2, int 1 */
++#define	MAILBOX_F3_0	0x4000	/* function 3, int 0 */
++#define	MAILBOX_F3_1	0x8000	/* function 3, int 1 */
++
++/* Sonics broadcast address */
++#define BCAST_ADDR_MASK	0xff	/* Broadcast register address */
++
++/* Sonics to PCI translation types */
++#define SBTOPCI0_MASK	0xfc000000
++#define SBTOPCI1_MASK	0xfc000000
++#define SBTOPCI2_MASK	0xc0000000
++#define SBTOPCI_MEM	0
++#define SBTOPCI_IO	1
++#define SBTOPCI_CFG0	2
++#define SBTOPCI_CFG1	3
++#define	SBTOPCI_PREF	0x4		/* prefetch enable */
++#define	SBTOPCI_BURST	0x8		/* burst enable */
++#define	SBTOPCI_RC_MASK		0x30	/* read command (>= rev11) */
++#define	SBTOPCI_RC_READ		0x00	/* memory read */
++#define	SBTOPCI_RC_READLINE	0x10	/* memory read line */
++#define	SBTOPCI_RC_READMULTI	0x20	/* memory read multiple */
++
++/* PCI core index in SROM shadow area */
++#define SRSH_PI_OFFSET	0	/* first word */
++#define SRSH_PI_MASK	0xf000	/* bit 15:12 */
++#define SRSH_PI_SHIFT	12	/* bit 15:12 */
++
++#endif	/* _sbpci_h_ */
 diff -urN linux.old/arch/mips/bcm947xx/include/sbpcmcia.h linux.dev/arch/mips/bcm947xx/include/sbpcmcia.h
 --- linux.old/arch/mips/bcm947xx/include/sbpcmcia.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/sbpcmcia.h	2006-04-27 20:29:47.000000000 +0200
++++ linux.dev/arch/mips/bcm947xx/include/sbpcmcia.h	2006-10-02 21:19:59.000000000 +0200
 @@ -0,0 +1,147 @@
 +/*
 + * BCM43XX Sonics SiliconBackplane PCMCIA core hardware definitions.
@@ -7861,7 +7810,7 @@ diff -urN linux.old/arch/mips/bcm947xx/include/sbpcmcia.h linux.dev/arch/mips/bc
 +#endif	/* _SBPCMCIA_H */
 diff -urN linux.old/arch/mips/bcm947xx/include/sbsdram.h linux.dev/arch/mips/bcm947xx/include/sbsdram.h
 --- linux.old/arch/mips/bcm947xx/include/sbsdram.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/sbsdram.h	2006-04-27 20:36:08.000000000 +0200
++++ linux.dev/arch/mips/bcm947xx/include/sbsdram.h	2006-10-02 21:19:59.000000000 +0200
 @@ -0,0 +1,85 @@
 +/*
 + * BCM47XX Sonics SiliconBackplane SDRAM controller core hardware definitions.
@@ -7950,7 +7899,7 @@ diff -urN linux.old/arch/mips/bcm947xx/include/sbsdram.h linux.dev/arch/mips/bcm
 +#endif	/* _SBSDRAM_H */
 diff -urN linux.old/arch/mips/bcm947xx/include/sbsocram.h linux.dev/arch/mips/bcm947xx/include/sbsocram.h
 --- linux.old/arch/mips/bcm947xx/include/sbsocram.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/sbsocram.h	2006-04-27 22:13:19.000000000 +0200
++++ linux.dev/arch/mips/bcm947xx/include/sbsocram.h	2006-10-02 21:19:59.000000000 +0200
 @@ -0,0 +1,64 @@
 +/*
 + * BCM47XX Sonics SiliconBackplane embedded ram core
@@ -8018,7 +7967,7 @@ diff -urN linux.old/arch/mips/bcm947xx/include/sbsocram.h linux.dev/arch/mips/bc
 +#endif	/* _SBSOCRAM_H */
 diff -urN linux.old/arch/mips/bcm947xx/include/sbutils.h linux.dev/arch/mips/bcm947xx/include/sbutils.h
 --- linux.old/arch/mips/bcm947xx/include/sbutils.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/sbutils.h	2006-04-27 23:09:25.000000000 +0200
++++ linux.dev/arch/mips/bcm947xx/include/sbutils.h	2006-10-02 21:19:59.000000000 +0200
 @@ -0,0 +1,150 @@
 +/*
 + * Misc utility routines for accessing chip-specific features
@@ -8172,7 +8121,7 @@ diff -urN linux.old/arch/mips/bcm947xx/include/sbutils.h linux.dev/arch/mips/bcm
 +#endif	/* _sbutils_h_ */
 diff -urN linux.old/arch/mips/bcm947xx/include/sflash.h linux.dev/arch/mips/bcm947xx/include/sflash.h
 --- linux.old/arch/mips/bcm947xx/include/sflash.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/sflash.h	2006-04-27 22:13:51.000000000 +0200
++++ linux.dev/arch/mips/bcm947xx/include/sflash.h	2006-10-02 21:19:59.000000000 +0200
 @@ -0,0 +1,36 @@
 +/*
 + * Broadcom SiliconBackplane chipcommon serial flash interface
@@ -8212,7 +8161,7 @@ diff -urN linux.old/arch/mips/bcm947xx/include/sflash.h linux.dev/arch/mips/bcm9
 +#endif /* _sflash_h_ */
 diff -urN linux.old/arch/mips/bcm947xx/include/trxhdr.h linux.dev/arch/mips/bcm947xx/include/trxhdr.h
 --- linux.old/arch/mips/bcm947xx/include/trxhdr.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/trxhdr.h	2006-04-27 19:24:19.000000000 +0200
++++ linux.dev/arch/mips/bcm947xx/include/trxhdr.h	2006-10-02 21:19:59.000000000 +0200
 @@ -0,0 +1,33 @@
 +/*
 + * TRX image file header format.
@@ -8249,7 +8198,7 @@ diff -urN linux.old/arch/mips/bcm947xx/include/trxhdr.h linux.dev/arch/mips/bcm9
 +typedef struct trx_header TRXHDR, *PTRXHDR;
 diff -urN linux.old/arch/mips/bcm947xx/include/typedefs.h linux.dev/arch/mips/bcm947xx/include/typedefs.h
 --- linux.old/arch/mips/bcm947xx/include/typedefs.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/include/typedefs.h	2006-04-27 23:47:30.000000000 +0200
++++ linux.dev/arch/mips/bcm947xx/include/typedefs.h	2006-10-02 21:19:59.000000000 +0200
 @@ -0,0 +1,361 @@
 +/*
 + * Copyright 2006, Broadcom Corporation
@@ -8612,9 +8561,30 @@ diff -urN linux.old/arch/mips/bcm947xx/include/typedefs.h linux.dev/arch/mips/bc
 +#include "bcmdefs.h"
 +
 +#endif /* _TYPEDEFS_H_ */
+diff -urN linux.old/arch/mips/bcm947xx/Makefile linux.dev/arch/mips/bcm947xx/Makefile
+--- linux.old/arch/mips/bcm947xx/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/arch/mips/bcm947xx/Makefile	2006-10-02 21:26:08.000000000 +0200
+@@ -0,0 +1,17 @@
++#
++# Makefile for the BCM947xx specific kernel interface routines
++# under Linux.
++#
++
++EXTRA_CFLAGS+=-I$(TOPDIR)/arch/mips/bcm947xx/include -DBCMDRIVER -fno-delayed-branch
++
++O_TARGET        := bcm947xx.o
++
++export-objs     := export.o
++obj-y		:= prom.o setup.o time.o sbmips.o gpio.o
++obj-y		+= nvram.o nvram_linux.o sflash.o cfe_env.o
++obj-y		+= sbutils.o bcmutils.o bcmsrom.o hndchipc.o
++obj-$(CONFIG_PCI) += sbpci.o pcibios.o
++obj-y 		+= export.o
++
++include $(TOPDIR)/Rules.make
 diff -urN linux.old/arch/mips/bcm947xx/nvram.c linux.dev/arch/mips/bcm947xx/nvram.c
 --- linux.old/arch/mips/bcm947xx/nvram.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/nvram.c	2006-04-27 23:11:58.000000000 +0200
++++ linux.dev/arch/mips/bcm947xx/nvram.c	2006-10-02 21:19:59.000000000 +0200
 @@ -0,0 +1,315 @@
 +/*
 + * NVRAM variable manipulation (common)
@@ -8933,7 +8903,7 @@ diff -urN linux.old/arch/mips/bcm947xx/nvram.c linux.dev/arch/mips/bcm947xx/nvra
 +}
 diff -urN linux.old/arch/mips/bcm947xx/nvram_linux.c linux.dev/arch/mips/bcm947xx/nvram_linux.c
 --- linux.old/arch/mips/bcm947xx/nvram_linux.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/nvram_linux.c	2006-04-27 23:30:07.000000000 +0200
++++ linux.dev/arch/mips/bcm947xx/nvram_linux.c	2006-10-02 21:19:59.000000000 +0200
 @@ -0,0 +1,723 @@
 +/*
 + * NVRAM variable manipulation (Linux kernel half)
@@ -9660,7 +9630,7 @@ diff -urN linux.old/arch/mips/bcm947xx/nvram_linux.c linux.dev/arch/mips/bcm947x
 +module_exit(dev_nvram_exit);
 diff -urN linux.old/arch/mips/bcm947xx/pcibios.c linux.dev/arch/mips/bcm947xx/pcibios.c
 --- linux.old/arch/mips/bcm947xx/pcibios.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/pcibios.c	2006-04-27 23:42:50.000000000 +0200
++++ linux.dev/arch/mips/bcm947xx/pcibios.c	2006-10-02 21:22:56.000000000 +0200
 @@ -0,0 +1,380 @@
 +/*
 + * Low-Level PCI and SB support for BCM47xx (Linux support code)
@@ -10044,7 +10014,7 @@ diff -urN linux.old/arch/mips/bcm947xx/pcibios.c linux.dev/arch/mips/bcm947xx/pc
 +
 diff -urN linux.old/arch/mips/bcm947xx/prom.c linux.dev/arch/mips/bcm947xx/prom.c
 --- linux.old/arch/mips/bcm947xx/prom.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/prom.c	2006-04-27 19:24:19.000000000 +0200
++++ linux.dev/arch/mips/bcm947xx/prom.c	2006-10-02 21:19:59.000000000 +0200
 @@ -0,0 +1,41 @@
 +/*
 + * Early initialization code for BCM94710 boards
@@ -10089,7 +10059,7 @@ diff -urN linux.old/arch/mips/bcm947xx/prom.c linux.dev/arch/mips/bcm947xx/prom.
 +}
 diff -urN linux.old/arch/mips/bcm947xx/sbmips.c linux.dev/arch/mips/bcm947xx/sbmips.c
 --- linux.old/arch/mips/bcm947xx/sbmips.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/sbmips.c	2006-05-02 04:43:13.000000000 +0200
++++ linux.dev/arch/mips/bcm947xx/sbmips.c	2006-10-02 21:19:59.000000000 +0200
 @@ -0,0 +1,1132 @@
 +/*
 + * BCM47XX Sonics SiliconBackplane MIPS core routines
@@ -11225,7 +11195,7 @@ diff -urN linux.old/arch/mips/bcm947xx/sbmips.c linux.dev/arch/mips/bcm947xx/sbm
 +#endif /* BCMINTERNAL | BCMPERFSTATS */
 diff -urN linux.old/arch/mips/bcm947xx/sbpci.c linux.dev/arch/mips/bcm947xx/sbpci.c
 --- linux.old/arch/mips/bcm947xx/sbpci.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/sbpci.c	2006-05-02 17:37:13.000000000 +0200
++++ linux.dev/arch/mips/bcm947xx/sbpci.c	2006-10-02 21:19:59.000000000 +0200
 @@ -0,0 +1,768 @@
 +/*
 + * Low-Level PCI and SB support for BCM47xx
@@ -11997,7 +11967,7 @@ diff -urN linux.old/arch/mips/bcm947xx/sbpci.c linux.dev/arch/mips/bcm947xx/sbpc
 +
 diff -urN linux.old/arch/mips/bcm947xx/sbutils.c linux.dev/arch/mips/bcm947xx/sbutils.c
 --- linux.old/arch/mips/bcm947xx/sbutils.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/sbutils.c	2006-05-02 04:33:16.000000000 +0200
++++ linux.dev/arch/mips/bcm947xx/sbutils.c	2006-10-02 21:19:59.000000000 +0200
 @@ -0,0 +1,3081 @@
 +/*
 + * Misc utility routines for accessing chip-specific features
@@ -15082,7 +15052,7 @@ diff -urN linux.old/arch/mips/bcm947xx/sbutils.c linux.dev/arch/mips/bcm947xx/sb
 +
 diff -urN linux.old/arch/mips/bcm947xx/setup.c linux.dev/arch/mips/bcm947xx/setup.c
 --- linux.old/arch/mips/bcm947xx/setup.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/setup.c	2006-04-27 23:22:53.000000000 +0200
++++ linux.dev/arch/mips/bcm947xx/setup.c	2006-10-02 21:19:59.000000000 +0200
 @@ -0,0 +1,241 @@
 +/*
 + *  Generic setup routines for Broadcom MIPS boards
@@ -15327,7 +15297,7 @@ diff -urN linux.old/arch/mips/bcm947xx/setup.c linux.dev/arch/mips/bcm947xx/setu
 +
 diff -urN linux.old/arch/mips/bcm947xx/sflash.c linux.dev/arch/mips/bcm947xx/sflash.c
 --- linux.old/arch/mips/bcm947xx/sflash.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/sflash.c	2006-04-27 22:11:27.000000000 +0200
++++ linux.dev/arch/mips/bcm947xx/sflash.c	2006-10-02 21:19:59.000000000 +0200
 @@ -0,0 +1,422 @@
 +/*
 + * Broadcom SiliconBackplane chipcommon serial flash interface
@@ -15753,7 +15723,7 @@ diff -urN linux.old/arch/mips/bcm947xx/sflash.c linux.dev/arch/mips/bcm947xx/sfl
 +}
 diff -urN linux.old/arch/mips/bcm947xx/time.c linux.dev/arch/mips/bcm947xx/time.c
 --- linux.old/arch/mips/bcm947xx/time.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm947xx/time.c	2006-04-28 00:45:40.000000000 +0200
++++ linux.dev/arch/mips/bcm947xx/time.c	2006-10-02 21:19:59.000000000 +0200
 @@ -0,0 +1,104 @@
 +/*
 + * Copyright 2006, Broadcom Corporation
@@ -15860,8 +15830,8 @@ diff -urN linux.old/arch/mips/bcm947xx/time.c linux.dev/arch/mips/bcm947xx/time.
 +	setup_irq(7, &bcm947xx_timer_irqaction);
 +}
 diff -urN linux.old/arch/mips/config-shared.in linux.dev/arch/mips/config-shared.in
---- linux.old/arch/mips/config-shared.in	2006-04-27 18:04:37.000000000 +0200
-+++ linux.dev/arch/mips/config-shared.in	2006-04-27 19:24:19.000000000 +0200
+--- linux.old/arch/mips/config-shared.in	2006-10-02 21:23:10.000000000 +0200
++++ linux.dev/arch/mips/config-shared.in	2006-10-02 21:19:59.000000000 +0200
 @@ -208,6 +208,14 @@
     fi
     define_bool CONFIG_MIPS_RTC y
@@ -15902,7 +15872,7 @@ diff -urN linux.old/arch/mips/config-shared.in linux.dev/arch/mips/config-shared
  if [ "$CONFIG_SNI_RM200_PCI" = "y" ]; then
     define_bool CONFIG_ARC32 y
     define_bool CONFIG_ARC_MEMORY y
-@@ -1042,7 +1062,11 @@
+@@ -1042,7 +1061,11 @@
  
  bool 'Are you using a crosscompiler' CONFIG_CROSSCOMPILE
  bool 'Enable run-time debugging' CONFIG_RUNTIME_DEBUG
@@ -15916,8 +15886,8 @@ diff -urN linux.old/arch/mips/config-shared.in linux.dev/arch/mips/config-shared
  if [ "$CONFIG_KGDB" = "y" ]; then
     define_bool CONFIG_DEBUG_INFO y
 diff -urN linux.old/arch/mips/kernel/cpu-probe.c linux.dev/arch/mips/kernel/cpu-probe.c
---- linux.old/arch/mips/kernel/cpu-probe.c	2006-04-27 18:04:37.000000000 +0200
-+++ linux.dev/arch/mips/kernel/cpu-probe.c	2006-04-27 19:24:19.000000000 +0200
+--- linux.old/arch/mips/kernel/cpu-probe.c	2006-10-02 21:23:10.000000000 +0200
++++ linux.dev/arch/mips/kernel/cpu-probe.c	2006-10-02 21:19:59.000000000 +0200
 @@ -162,7 +162,7 @@
  
  static inline void cpu_probe_legacy(struct cpuinfo_mips *c)
@@ -16038,8 +16008,8 @@ diff -urN linux.old/arch/mips/kernel/cpu-probe.c linux.dev/arch/mips/kernel/cpu-
  		cpu_probe_sibyte(c);
  		break;
 diff -urN linux.old/arch/mips/kernel/head.S linux.dev/arch/mips/kernel/head.S
---- linux.old/arch/mips/kernel/head.S	2006-04-27 18:04:37.000000000 +0200
-+++ linux.dev/arch/mips/kernel/head.S	2006-04-27 19:24:19.000000000 +0200
+--- linux.old/arch/mips/kernel/head.S	2006-10-02 21:23:10.000000000 +0200
++++ linux.dev/arch/mips/kernel/head.S	2006-10-02 21:19:59.000000000 +0200
 @@ -28,12 +28,20 @@
  #include <asm/mipsregs.h>
  #include <asm/stackframe.h>
@@ -16063,8 +16033,8 @@ diff -urN linux.old/arch/mips/kernel/head.S linux.dev/arch/mips/kernel/head.S
  		/* The following two symbols are used for kernel profiling. */
  		EXPORT(stext)
 diff -urN linux.old/arch/mips/kernel/proc.c linux.dev/arch/mips/kernel/proc.c
---- linux.old/arch/mips/kernel/proc.c	2006-04-27 18:04:37.000000000 +0200
-+++ linux.dev/arch/mips/kernel/proc.c	2006-04-27 19:24:19.000000000 +0200
+--- linux.old/arch/mips/kernel/proc.c	2006-10-02 21:23:10.000000000 +0200
++++ linux.dev/arch/mips/kernel/proc.c	2006-10-02 21:19:59.000000000 +0200
 @@ -78,9 +78,10 @@
  	[CPU_AU1550]	"Au1550",
  	[CPU_24K]	"MIPS 24K",
@@ -16078,8 +16048,8 @@ diff -urN linux.old/arch/mips/kernel/proc.c linux.dev/arch/mips/kernel/proc.c
  {
  	unsigned int version = current_cpu_data.processor_id;
 diff -urN linux.old/arch/mips/kernel/setup.c linux.dev/arch/mips/kernel/setup.c
---- linux.old/arch/mips/kernel/setup.c	2006-04-27 18:04:37.000000000 +0200
-+++ linux.dev/arch/mips/kernel/setup.c	2006-04-27 19:24:19.000000000 +0200
+--- linux.old/arch/mips/kernel/setup.c	2006-10-02 21:23:10.000000000 +0200
++++ linux.dev/arch/mips/kernel/setup.c	2006-10-02 21:19:59.000000000 +0200
 @@ -493,6 +493,7 @@
  	void swarm_setup(void);
  	void hp_setup(void);
@@ -16101,8 +16071,8 @@ diff -urN linux.old/arch/mips/kernel/setup.c linux.dev/arch/mips/kernel/setup.c
  		panic("Unsupported architecture");
  	}
 diff -urN linux.old/arch/mips/kernel/traps.c linux.dev/arch/mips/kernel/traps.c
---- linux.old/arch/mips/kernel/traps.c	2006-04-27 18:04:37.000000000 +0200
-+++ linux.dev/arch/mips/kernel/traps.c	2006-04-27 19:24:19.000000000 +0200
+--- linux.old/arch/mips/kernel/traps.c	2006-10-02 21:23:10.000000000 +0200
++++ linux.dev/arch/mips/kernel/traps.c	2006-10-02 21:19:59.000000000 +0200
 @@ -920,6 +920,7 @@
  void __init trap_init(void)
  {
@@ -16132,9 +16102,40 @@ diff -urN linux.old/arch/mips/kernel/traps.c linux.dev/arch/mips/kernel/traps.c
  	if (cpu_has_fpu && !cpu_has_nofpuex)
  		set_except_vector(15, handle_fpe);
  
+diff -urN linux.old/arch/mips/Makefile linux.dev/arch/mips/Makefile
+--- linux.old/arch/mips/Makefile	2006-10-02 21:23:10.000000000 +0200
++++ linux.dev/arch/mips/Makefile	2006-10-02 21:19:59.000000000 +0200
+@@ -726,6 +726,19 @@
+ endif
+ 
+ #
++# Broadcom BCM947XX variants
++#
++ifdef CONFIG_BCM947XX
++LIBS		+= arch/mips/bcm947xx/generic/brcm.o arch/mips/bcm947xx/bcm947xx.o 
++SUBDIRS		+= arch/mips/bcm947xx/generic arch/mips/bcm947xx 
++LOADADDR	:= 0x80001000
++
++zImage: vmlinux
++	$(MAKE) -C arch/$(ARCH)/bcm947xx/compressed
++export LOADADDR
++endif
++
++#
+ # Choosing incompatible machines durings configuration will result in
+ # error messages during linking.  Select a default linkscript if
+ # none has been choosen above.
+@@ -778,6 +791,7 @@
+ 	$(MAKE) -C arch/$(ARCH)/tools clean
+ 	$(MAKE) -C arch/mips/baget clean
+ 	$(MAKE) -C arch/mips/lasat clean
++	$(MAKE) -C arch/mips/bcm947xx/compressed clean
+ 
+ archmrproper:
+ 	@$(MAKEBOOT) mrproper
 diff -urN linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
---- linux.old/arch/mips/mm/c-r4k.c	2006-04-27 18:04:37.000000000 +0200
-+++ linux.dev/arch/mips/mm/c-r4k.c	2006-04-27 19:24:19.000000000 +0200
+--- linux.old/arch/mips/mm/c-r4k.c	2006-10-02 21:23:10.000000000 +0200
++++ linux.dev/arch/mips/mm/c-r4k.c	2006-10-02 21:19:59.000000000 +0200
 @@ -1166,3 +1166,47 @@
  	build_clear_page();
  	build_copy_page();
@@ -16184,8 +16185,8 @@ diff -urN linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
 +
 +
 diff -urN linux.old/arch/mips/pci/Makefile linux.dev/arch/mips/pci/Makefile
---- linux.old/arch/mips/pci/Makefile	2006-04-27 18:04:37.000000000 +0200
-+++ linux.dev/arch/mips/pci/Makefile	2006-04-27 19:24:19.000000000 +0200
+--- linux.old/arch/mips/pci/Makefile	2006-10-02 21:23:10.000000000 +0200
++++ linux.dev/arch/mips/pci/Makefile	2006-10-02 21:19:59.000000000 +0200
 @@ -13,7 +13,9 @@
  obj-$(CONFIG_MIPS_MSC)		+= ops-msc.o
  obj-$(CONFIG_MIPS_NILE4)	+= ops-nile4.o
@@ -16197,8 +16198,8 @@ diff -urN linux.old/arch/mips/pci/Makefile linux.dev/arch/mips/pci/Makefile
  
  include $(TOPDIR)/Rules.make
 diff -urN linux.old/drivers/char/serial.c linux.dev/drivers/char/serial.c
---- linux.old/drivers/char/serial.c	2006-04-27 18:04:37.000000000 +0200
-+++ linux.dev/drivers/char/serial.c	2006-04-27 19:24:19.000000000 +0200
+--- linux.old/drivers/char/serial.c	2006-10-02 21:23:10.000000000 +0200
++++ linux.dev/drivers/char/serial.c	2006-10-02 21:19:59.000000000 +0200
 @@ -444,6 +444,10 @@
  		return inb(info->port+1);
  #endif
@@ -16268,8 +16269,8 @@ diff -urN linux.old/drivers/char/serial.c linux.dev/drivers/char/serial.c
  #if defined(__powerpc__) || defined(__alpha__)
  	cval >>= 8;
 diff -urN linux.old/drivers/net/Makefile linux.dev/drivers/net/Makefile
---- linux.old/drivers/net/Makefile	2006-04-27 18:04:38.000000000 +0200
-+++ linux.dev/drivers/net/Makefile	2006-05-04 01:41:03.000000000 +0200
+--- linux.old/drivers/net/Makefile	2006-10-02 21:23:10.000000000 +0200
++++ linux.dev/drivers/net/Makefile	2006-10-02 21:19:59.000000000 +0200
 @@ -3,6 +3,8 @@
  # Makefile for the Linux network (ethercard) device drivers.
  #
@@ -16280,8 +16281,8 @@ diff -urN linux.old/drivers/net/Makefile linux.dev/drivers/net/Makefile
  obj-m           :=
  obj-n           :=
 diff -urN linux.old/drivers/parport/Config.in linux.dev/drivers/parport/Config.in
---- linux.old/drivers/parport/Config.in	2006-04-27 18:04:38.000000000 +0200
-+++ linux.dev/drivers/parport/Config.in	2006-04-27 19:24:19.000000000 +0200
+--- linux.old/drivers/parport/Config.in	2006-10-02 21:23:10.000000000 +0200
++++ linux.dev/drivers/parport/Config.in	2006-10-02 21:19:59.000000000 +0200
 @@ -11,6 +11,7 @@
  tristate 'Parallel port support' CONFIG_PARPORT
  if [ "$CONFIG_PARPORT" != "n" ]; then
@@ -16291,8 +16292,8 @@ diff -urN linux.old/drivers/parport/Config.in linux.dev/drivers/parport/Config.i
        if [ "$CONFIG_SERIAL" = "m" ]; then
           define_tristate CONFIG_PARPORT_PC_CML1 m
 diff -urN linux.old/drivers/parport/Makefile linux.dev/drivers/parport/Makefile
---- linux.old/drivers/parport/Makefile	2006-04-27 18:04:38.000000000 +0200
-+++ linux.dev/drivers/parport/Makefile	2006-04-27 19:24:19.000000000 +0200
+--- linux.old/drivers/parport/Makefile	2006-10-02 21:23:10.000000000 +0200
++++ linux.dev/drivers/parport/Makefile	2006-10-02 21:19:59.000000000 +0200
 @@ -22,6 +22,7 @@
  
  obj-$(CONFIG_PARPORT)		+= parport.o
@@ -16303,7 +16304,7 @@ diff -urN linux.old/drivers/parport/Makefile linux.dev/drivers/parport/Makefile
  obj-$(CONFIG_PARPORT_MFC3)	+= parport_mfc3.o
 diff -urN linux.old/drivers/parport/parport_splink.c linux.dev/drivers/parport/parport_splink.c
 --- linux.old/drivers/parport/parport_splink.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/parport/parport_splink.c	2006-04-27 19:24:19.000000000 +0200
++++ linux.dev/drivers/parport/parport_splink.c	2006-10-02 21:19:59.000000000 +0200
 @@ -0,0 +1,345 @@
 +/* Low-level parallel port routines for the ASUS WL-500g built-in port
 + *
@@ -16651,8 +16652,8 @@ diff -urN linux.old/drivers/parport/parport_splink.c linux.dev/drivers/parport/p
 +module_exit(parport_splink_cleanup)
 +
 diff -urN linux.old/include/asm-mips/bootinfo.h linux.dev/include/asm-mips/bootinfo.h
---- linux.old/include/asm-mips/bootinfo.h	2006-04-27 18:04:38.000000000 +0200
-+++ linux.dev/include/asm-mips/bootinfo.h	2006-04-27 19:24:19.000000000 +0200
+--- linux.old/include/asm-mips/bootinfo.h	2006-10-02 21:23:10.000000000 +0200
++++ linux.dev/include/asm-mips/bootinfo.h	2006-10-02 21:19:59.000000000 +0200
 @@ -37,6 +37,7 @@
  #define MACH_GROUP_HP_LJ       20 /* Hewlett Packard LaserJet               */
  #define MACH_GROUP_LASAT       21
@@ -16678,8 +16679,8 @@ diff -urN linux.old/include/asm-mips/bootinfo.h linux.dev/include/asm-mips/booti
   */
  #define	MACH_TITAN_YOSEMITE	1 	/* PMC-Sierra Yosemite */
 diff -urN linux.old/include/asm-mips/cpu.h linux.dev/include/asm-mips/cpu.h
---- linux.old/include/asm-mips/cpu.h	2006-04-27 18:04:38.000000000 +0200
-+++ linux.dev/include/asm-mips/cpu.h	2006-04-27 19:24:19.000000000 +0200
+--- linux.old/include/asm-mips/cpu.h	2006-10-02 21:23:10.000000000 +0200
++++ linux.dev/include/asm-mips/cpu.h	2006-10-02 21:19:59.000000000 +0200
 @@ -22,6 +22,11 @@
     spec.
  */
@@ -16729,8 +16730,8 @@ diff -urN linux.old/include/asm-mips/cpu.h linux.dev/include/asm-mips/cpu.h
  /*
   * ISA Level encodings
 diff -urN linux.old/include/asm-mips/r4kcache.h linux.dev/include/asm-mips/r4kcache.h
---- linux.old/include/asm-mips/r4kcache.h	2006-04-27 18:04:38.000000000 +0200
-+++ linux.dev/include/asm-mips/r4kcache.h	2006-04-27 19:24:19.000000000 +0200
+--- linux.old/include/asm-mips/r4kcache.h	2006-10-02 21:23:10.000000000 +0200
++++ linux.dev/include/asm-mips/r4kcache.h	2006-10-02 21:19:59.000000000 +0200
 @@ -658,4 +658,17 @@
  			cache128_unroll32(addr|ws,Index_Writeback_Inv_SD);
  }
@@ -16750,8 +16751,8 @@ diff -urN linux.old/include/asm-mips/r4kcache.h linux.dev/include/asm-mips/r4kca
 +
  #endif /* __ASM_R4KCACHE_H */
 diff -urN linux.old/include/asm-mips/serial.h linux.dev/include/asm-mips/serial.h
---- linux.old/include/asm-mips/serial.h	2006-04-27 18:04:38.000000000 +0200
-+++ linux.dev/include/asm-mips/serial.h	2006-04-27 19:24:19.000000000 +0200
+--- linux.old/include/asm-mips/serial.h	2006-10-02 21:23:10.000000000 +0200
++++ linux.dev/include/asm-mips/serial.h	2006-10-02 21:19:59.000000000 +0200
 @@ -223,6 +223,13 @@
  #define TXX927_SERIAL_PORT_DEFNS
  #endif
@@ -16775,8 +16776,8 @@ diff -urN linux.old/include/asm-mips/serial.h linux.dev/include/asm-mips/serial.
  	DDB5477_SERIAL_PORT_DEFNS		\
  	EV96100_SERIAL_PORT_DEFNS		\
 diff -urN linux.old/init/do_mounts.c linux.dev/init/do_mounts.c
---- linux.old/init/do_mounts.c	2006-04-27 18:04:38.000000000 +0200
-+++ linux.dev/init/do_mounts.c	2006-04-27 19:24:19.000000000 +0200
+--- linux.old/init/do_mounts.c	2006-10-02 21:23:10.000000000 +0200
++++ linux.dev/init/do_mounts.c	2006-10-02 21:19:59.000000000 +0200
 @@ -254,7 +254,13 @@
  	{ "ftlb", 0x2c08 },
  	{ "ftlc", 0x2c10 },

@@ -1,86 +1,87 @@
-#!/bin/sh
+#!/bin/sh /etc/rc.common
 # Copyright (C) 2006 OpenWrt.org
 
-[ -e /etc/config/network ] && exit 0
-
-mkdir -p /etc/config
-
-(
-	if grep -E 'mtd0: 000(6|a)0000' /proc/mtd 2>&- >&-; then
-		# WGT634u
-		echo boardtype=wgt634u
-	else
-		strings /dev/mtdblock/3
-	fi
-) | awk '
-function p(cfgname, name) {
-	if (c[name] != "") print "	option " cfgname "	\"" c[name] "\""
-}
-
-BEGIN {
-	FS="="
-	c["lan_ifname"]="eth0.0 wl0"
-	c["wan_ifname"]="eth0.1"
-	c["vlan0ports"]="1 2 3 4 5*"
-	c["vlan1ports"]="0 5"
-}
-
-($1 == "boardnum") || ($1 == "boardtype") || ($1 == "boardflags") {
-	nvram[$1] = $2
-}
-
-END {
-	# v1 hardware
-	if (nvram["boardtype"] == "bcm94710dev") {
-		# Asus WL-500g
-		if (nvram["boardnum"] == "asusX") {
-			c["lan_ifname"]="eth0 eth1 wl0" # FIXME
+start() {
+	[ -e /etc/config/network ] && exit 0
+	
+	mkdir -p /etc/config
+	
+	(
+		if grep -E 'mtd0: 000(6|a)0000' /proc/mtd 2>&- >&-; then
+			# WGT634u
+			echo boardtype=wgt634u
+		else
+			strings /dev/mtdblock/3
+		fi
+	) | awk '
+	function p(cfgname, name) {
+		if (c[name] != "") print "	option " cfgname "	\"" c[name] "\""
+	}
+	
+	BEGIN {
+		FS="="
+		c["lan_ifname"]="eth0.0 wl0"
+		c["wan_ifname"]="eth0.1"
+		c["vlan0ports"]="1 2 3 4 5*"
+		c["vlan1ports"]="0 5"
+	}
+	
+	($1 == "boardnum") || ($1 == "boardtype") || ($1 == "boardflags") {
+		nvram[$1] = $2
+	}
+	
+	END {
+		# v1 hardware
+		if (nvram["boardtype"] == "bcm94710dev") {
+			# Asus WL-500g
+			if (nvram["boardnum"] == "asusX") {
+				c["lan_ifname"]="eth0 eth1 wl0" # FIXME
+				c["wan_ifname"]=""
+			}
+		}
+		if (nvram["boardtype"] == "wgt634u") {
+			c["vlan0ports"] = "0 1 2 3 5*"
+			c["vlan1ports"] = "4 5"
+			c["lan_ifname"] = "eth0.0 ath0"
+		}
+		if ((nvram["boardtype"] == "0x0467") || (nvram["boardtype"] == "0x042f")) {
+			c["vlan0ports"] = "0 1 2 3 5*"
+			c["vlan1ports"] = "4 5"
+		}
+	
+		# WAP54G
+		if ((nvram["boardnum"] == "2") || \
+			(nvram["boardnum"] == "1024")) {
+			c["lan_ifname"]="eth0 wl0"
 			c["wan_ifname"]=""
 		}
-	}
-	if (nvram["boardtype"] == "wgt634u") {
-		c["vlan0ports"] = "0 1 2 3 5*"
-		c["vlan1ports"] = "4 5"
-		c["lan_ifname"] = "eth0.0 ath0"
-	}
-	if ((nvram["boardtype"] == "0x0467") || (nvram["boardtype"] == "0x042f")) {
-		c["vlan0ports"] = "0 1 2 3 5*"
-		c["vlan1ports"] = "4 5"
-	}
-
-	# WAP54G
-	if ((nvram["boardnum"] == "2") || \
-		(nvram["boardnum"] == "1024")) {
-		c["lan_ifname"]="eth0 wl0"
-		c["wan_ifname"]=""
-	}
-
-	print "#### VLAN configuration "
-	print "config switch eth0"
-	p("vlan0", "vlan0ports")
-	p("vlan1", "vlan1ports")
-	print ""
-	print ""
-	print "#### Loopback configuration"
-	print "config interface loopback"
-	print "	option ifname	\"lo\""
-	print "	option proto	static"
-	print "	option ipaddr	127.0.0.1"
-	print "	option netmask	255.0.0.0"
-	print ""
-	print ""
-	print "#### LAN configuration"
-	print "config interface lan"
-	print "	option type 	bridge"
-	p("ifname", "lan_ifname")
-	print "	option proto	static"
-	print "	option ipaddr	192.168.1.1"
-	print "	option netmask	255.255.255.0"
-	print ""
-	print ""
-	print "#### WAN configuration"
-	print "config interface	wan"
-	p("ifname", "wan_ifname")
-	print "	option proto	dhcp"
+	
+		print "#### VLAN configuration "
+		print "config switch eth0"
+		p("vlan0", "vlan0ports")
+		p("vlan1", "vlan1ports")
+		print ""
+		print ""
+		print "#### Loopback configuration"
+		print "config interface loopback"
+		print "	option ifname	\"lo\""
+		print "	option proto	static"
+		print "	option ipaddr	127.0.0.1"
+		print "	option netmask	255.0.0.0"
+		print ""
+		print ""
+		print "#### LAN configuration"
+		print "config interface lan"
+		print "	option type 	bridge"
+		p("ifname", "lan_ifname")
+		print "	option proto	static"
+		print "	option ipaddr	192.168.1.1"
+		print "	option netmask	255.255.255.0"
+		print ""
+		print ""
+		print "#### WAN configuration"
+		print "config interface	wan"
+		p("ifname", "wan_ifname")
+		print "	option proto	dhcp"
+	}' > /etc/config/network
 }
-' > /etc/config/network
