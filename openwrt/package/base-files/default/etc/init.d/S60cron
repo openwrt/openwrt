@@ -1,6 +1,12 @@
-#!/bin/sh
+#!/bin/sh /etc/rc.common
 # Copyright (C) 2006 OpenWrt.org
 
-mkdir -p /var/spool/cron
-ln -s /etc/crontabs /var/spool/cron/crontabs
-crond -c /etc/crontabs
+start () {
+	mkdir -p /var/spool/cron
+	ln -s /etc/crontabs /var/spool/cron/crontabs
+	crond -c /etc/crontabs
+}
+
+stop() {
+	killall crond
+}
