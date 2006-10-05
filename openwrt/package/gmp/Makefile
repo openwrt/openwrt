@@ -32,13 +32,15 @@ endef
 define Build/Configure
 	$(call Build/Configure/Default, \
 		--enable-shared \
-		--enable-static \
+		--enable-static, \
+		CC="$(TARGET_CROSS)gcc" \
 	)
 endef
 
 define Build/Compile
 	$(call Build/Compile/Default, \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
+		CC="$(TARGET_CC)" \
 		all install \
 	)
 endef
