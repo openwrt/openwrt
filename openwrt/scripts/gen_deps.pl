@@ -13,6 +13,8 @@ my $src;
 my $makefile;
 my %conf;
 my %pkg;
+my %prereq;
+my $prereq;
 my %dep;
 my %options;
 my $opt;
@@ -32,6 +34,10 @@ while ($line = <>) {
 		$name = $1;
 		defined $pkg{$name} or $pkg{$name} = {};
 		$pkg{$name}->{src} = $src;
+	};
+	$line =~ /^Prereq-Check:/ and !defined $prereq{$src} and do {
+		$prereq{$src} = 1;
+		$prereq .= "package-prereq += $src\n";
 	};
 	$line =~ /^(Build-)?Depends: \s*(.+)\s*$/ and do {
 		$pkg{$name}->{depends} ||= [];
@@ -75,5 +81,5 @@ foreach $name (sort {uc($a) cmp uc($b)} keys %pkg) {
 }
 
 if ($line ne "") {
-	print "\n$line";
+	print "\n$line\n$prereq";
 }

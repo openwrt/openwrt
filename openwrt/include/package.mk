@@ -163,13 +163,14 @@ define BuildPackage
     endif
 
     DUMPINFO += \
+	if [ "$$$$PREREQ_CHECK" = 1 ]; then echo "Prereq-Check: 1"; fi; \
 	echo "Version: $(VERSION)"; \
 	echo "Depends: $$(IDEPEND_$(1))"; \
 	echo "Build-Depends: $(PKG_BUILDDEP)"; \
 	echo "Category: $(CATEGORY)"; \
 	echo "Title: $(TITLE)"; \
 	echo "Description: $(DESCRIPTION)" | sed -e 's,\\,\n,g';
-
+	
     ifneq ($(URL),)
       DUMPINFO += \
 	echo; \
