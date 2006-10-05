@@ -132,7 +132,7 @@ dirclean: clean
 	rm -rf staging_dir_* toolchain_build_* tool_build
 
 distclean: dirclean config-clean
-	rm -rf dl .*config* .pkg* .prereq
+	rm -rf dl .*config* .pkg* .prereq ccache_*
 
 .SILENT: clean dirclean distclean config-clean download world
 FORCE: ;
