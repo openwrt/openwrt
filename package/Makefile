@@ -10,7 +10,7 @@ include $(TOPDIR)/rules.mk
 include $(TOPDIR)/.config
 include $(TOPDIR)/.pkgdeps
 
-PREREQ_PACKAGES:=$(patsubst %,%-prereq,$(package-y) $(package-m))
+PREREQ_PACKAGES:=$(patsubst %,%-prereq,$(package-prereq))
 DOWNLOAD_PACKAGES:=$(patsubst %,%-download,$(package-y) $(package-m))
 COMPILE_PACKAGES:=$(patsubst %,%-compile,$(package-y) $(package-m))
 INSTALL_PACKAGES:=$(patsubst %,%-install,$(package-y))

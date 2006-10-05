@@ -22,6 +22,7 @@ prereq:
 .SILENT: $(TMP_DIR) prereq
 
 define Require
+  export PREREQ_CHECK=1
   ifeq ($$(CHECK_$(1)),)
     prereq: prereq-$(1)
 
