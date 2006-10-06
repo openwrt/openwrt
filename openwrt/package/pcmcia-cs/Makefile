@@ -25,7 +25,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/pcmcia-cs
   SECTION:=utils
   CATEGORY:=Utilities
-  DEPENDS:=@LINUX_2_4&&PCMCIA_SUPPORT
+  DEPENDS:=@PCMCIA_SUPPORT
   TITLE:=PCMCIA/Cardbus management utilities
   URL:=http://pcmcia-cs.sourceforge.net/
 endef
