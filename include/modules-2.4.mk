@@ -21,10 +21,6 @@ $(eval $(call KMOD_template,IPIP,ipip,\
 	$(MODULES_DIR)/kernel/net/ipv4/ipip.o \
 ,CONFIG_NET_IPIP,,60,ipip))
 
-$(eval $(call KMOD_template,SCHED,sched,\
-	$(MODULES_DIR)/kernel/net/sched/*.o \
-))
-
 $(eval $(call KMOD_template,TUN,tun,\
 	$(MODULES_DIR)/kernel/drivers/net/tun.o \
 ,CONFIG_TUN,,20,tun))
