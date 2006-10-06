@@ -59,17 +59,14 @@ add_vlan() {
 setup_interface() {
 	local iface="$1"
 	local config="$2"
-	local proto="$3"
+	local proto
 
 	[ -n "$config" ] || {
 		config=$(find_config "$iface")
 		[ "$?" = 0 ] || return 1
 	}
 
-	[ -n "$proto" ] || {
-		config_get proto "$config" proto
-	}
-
+	proto="${3:-$(config_get "$config" proto)}"
 	config_get iftype "$config" type
 	
 	# Setup VLAN interfaces
