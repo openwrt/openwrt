@@ -1,0 +1,16 @@
+#!/bin/sh
+echo '#################'
+echo '# EGRESS STATUS #'
+echo '#################'
+echo
+for iface in $(tc qdisc show | grep hfsc | awk '{print $5}' | grep -v imq); do
+	tc -s class show dev "$iface"
+done
+
+echo '##################'
+echo '# INGRESS STATUS #'
+echo '##################'
+echo
+for iface in $(tc qdisc show | grep hfsc | awk '{print $5}' | grep imq); do
+	tc -s class show dev "$iface"
+done
