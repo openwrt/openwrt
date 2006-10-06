@@ -1,0 +1,6 @@
+#!/bin/sh
+for iface in $(tc qdisc show | grep hfsc | awk '{print $5}'); do
+	tc qdisc del dev "$iface" root
+done
+iptables -t mangle -F
+iptables -t mangle -X
