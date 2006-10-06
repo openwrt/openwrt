@@ -391,6 +391,16 @@ endef
 $(eval $(call KernelPackage,mppe))
 
 
+define KernelPackage/sched
+  TITLE:=Traffic schedulers
+  DESCRIPTION:=\
+	Kernel schedulers for IP traffic
+  FILES:=$(MODULES_DIR)/kernel/net/sched/*.$(LINUX_KMOD_SUFFIX)
+endef
+$(eval $(call KernelPackage,sched))
+
+
+
 NDMENU:=Network Devices
 
 define KernelPackage/natsemi

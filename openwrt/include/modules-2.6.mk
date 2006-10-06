@@ -19,10 +19,6 @@ $(eval $(call KMOD_template,IPIP,ipip,\
 	$(MODULES_DIR)/kernel/net/ipv4/ipip.ko \
 ,CONFIG_NET_IPIP,,60,ipip))
 
-$(eval $(call KMOD_template,SCHED,sched,\
-	$(MODULES_DIR)/kernel/net/sched/*.ko \
-,CONFIG_NET_SCHED))
-
 # Block devices
 
 $(eval $(call KMOD_template,LOOP,loop,\
