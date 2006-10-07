@@ -1,8 +1,0 @@
-diff -ruN iproute2-2.6.9-old/Config iproute2-2.6.9-new/Config
---- iproute2-2.6.9-old/Config	1970-01-01 01:00:00.000000000 +0100
-+++ iproute2-2.6.9-new/Config	2005-03-22 23:56:56.000000000 +0100
-@@ -0,0 +1,4 @@
-+# Fixed config to disable ATM support even if present on host system
-+TC_CONFIG_ATM:=n
-+TC_CONFIG_ACTION_GACT=y
-+TC_CONFIG_ACTION_PROB=y

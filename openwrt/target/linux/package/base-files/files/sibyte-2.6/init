@@ -1,6 +1,0 @@
-#!/bin/ash
-mount none /dev -t devfs
-mount none /proc -t proc
-mount_root failsafe
-mount -o remount,rw /dev/root /
-exec /bin/busybox init
