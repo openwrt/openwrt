@@ -17,3 +17,7 @@ start() {
 	
 	/usr/sbin/dropbear
 }
+
+stop() {
+	killall dropbear
+}
