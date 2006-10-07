@@ -1,9 +1,0 @@
-config BR2_PACKAGE_VPNC
-	prompt "vpnc.............................. VPN client for Cisco 3000"
-	tristate
-	default m if CONFIG_DEVEL
-	select BR2_PACKAGE_KMOD_TUN
-	select BR2_PACKAGE_LIBGPG_ERROR
-	select BR2_PACKAGE_LIBGCRYPT
-	help
-		Client for cisco3000 VPN Concentrator.

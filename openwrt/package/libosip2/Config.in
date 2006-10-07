@@ -1,9 +1,0 @@
-config BR2_PACKAGE_LIBOSIP2
-	prompt "libosip2.......................... The GNU oSIP library"
-	tristate
-	default m if CONFIG_DEVEL
-	select BR2_PACKAGE_LIBPTHREAD
-	help
-	  GNU oSIP library, a Session Initiation Protocol (SIP) implementation
-	  
-	  http://www.gnu.org/software/osip/
