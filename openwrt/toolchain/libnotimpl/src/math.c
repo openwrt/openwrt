@@ -43,7 +43,7 @@
 #ifdef __STDC__
 	float ceilf(float x)
 #else
-	float rintf(x)
+	float ceilf(x)
 	float x;
 #endif
 {
