@@ -40,9 +40,16 @@ define Build/Compile
 endef
 
 define Build/Install
-	install -c $(PKG_BUILD_DIR)/gdb/gdb $(TARGET_CROSS)gdb
-	cd $(STAGING_DIR)/bin && \
-		ln -fs $(TARGET_CROSS)gdb $(GNU_TARGET_NAME)-gdb
+	(cd $(STAGING_DIR)/bin; \
+		install -c $(PKG_BUILD_DIR)/gdb/gdb $(TARGET_CROSS)gdb; \
+		ln -fs $(TARGET_CROSS)gdb $(GNU_TARGET_NAME)-gdb; \
+	);
+endef
+
+define Build/Clean
+	rm -rf $(PKG_BUILD_DIR)
+	rm -f $(STAGING_DIR)/bin/$(TARGET_CROSS)gdb
+	rm -f $(STAGING_DIR)/bin/$(GNU_TARGET_NAME)-gdb
 endef
 
 $(eval $(call HostBuild))
