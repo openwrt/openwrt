@@ -271,11 +271,12 @@ config ARCH
 	default "i386"    if i386
 	default "m68k"    if m68k
 	default "mips"    if mips
-	default "mipsel"  if mipsel || !DEVEL
+	default "mipsel"  if mipsel
 	default "powerpc" if powerpc
 	default "sh3"     if sh3
 	default "sh3eb"   if sh3eb
 	default "sh4"     if sh4
 	default "sh4eb"   if sh4eb
 	default "sparc"   if sparc
+	default "mipsel"  if !DEVEL
 
