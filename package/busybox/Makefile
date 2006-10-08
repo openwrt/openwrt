@@ -46,11 +46,21 @@ define Build/Configure
 		oldconfig
 endef
 
+define Build/Compile
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		CC="$(TARGET_CC)" \
+		CROSS="$(TARGET_CROSS)" \
+		EXTRA_CFLAGS="$(TARGET_CFLAGS)" \
+		IPKG_ARCH="$(ARCH)" \
+		all
+endef
+
 define Package/busybox/install
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CC="$(TARGET_CC)" \
 		CROSS="$(TARGET_CROSS)" \
 		EXTRA_CFLAGS="$(TARGET_CFLAGS)" \
+		IPKG_ARCH="$(ARCH)" \
 		PREFIX="$(1)" \
 		install
 	-rm -rf $(1)/lib64
