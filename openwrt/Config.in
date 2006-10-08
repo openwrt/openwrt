@@ -90,6 +90,9 @@ menu "Target Images"
 		help
 		  Ext2 file system with some free space for uml images
 
+comment "Image Options"
+
+source "target/image/*/Config.in"
 
 endmenu
 
