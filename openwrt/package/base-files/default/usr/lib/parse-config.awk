@@ -27,7 +27,7 @@ $1 == "@else" {
 	else noprint = 1
 }
 
-($1 !~ /^@/) && (noprint != 1) {
+($1 !~ /^@[a-zA-Z]/) && (noprint != 1) {
 	n=split(line "@@", a, /@@/)
 	for (i=1; i<=n; i++) {
 		if ((i % 2) == 1) printf a[i]
