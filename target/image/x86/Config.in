@@ -1,0 +1,20 @@
+config X86_GRUB_IMAGES
+	bool "Build GRUB images (Linux x86 or x86_64 host only)"
+	depends LINUX_2_6_X86
+	depends TARGET_ROOTFS_EXT2FS || TARGET_ROOTFS_JFFS2
+	default y
+
+config X86_GRUB_BAUDRATE
+	int "Serial port baud rate"
+	depends X86_GRUB_IMAGES
+	default 38400
+
+config X86_GRUB_KERNELPART
+	int "Kernel partition size (in MB)"
+	depends X86_GRUB_IMAGES
+	default 4
+
+config X86_GRUB_FSPART
+	int "Filesystem partition size (in MB)"
+	depends X86_GRUB_IMAGES
+	default 16
