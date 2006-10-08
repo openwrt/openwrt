@@ -1,10 +1,3 @@
-# Copyright (C) 2006 OpenWrt.org
-#
-# This is free software, licensed under the GNU General Public License v2.
-# See /LICENSE for more information.
-#
-# add ipkg support to busybox
-#
 diff -ruN busybox-1.2.0-orig/archival/Config.in busybox-1.2.0+ipkg-0.99.162/archival/Config.in
 --- busybox-1.2.0-orig/archival/Config.in	2006-07-01 00:42:04.000000000 +0200
 +++ busybox-1.2.0+ipkg-0.99.162/archival/Config.in	2006-07-22 16:31:25.000000000 +0200
@@ -7281,8 +7274,8 @@ diff -ruN busybox-1.2.0-orig/archival/libipkg/Makefile busybox-1.2.0+ipkg-0.99.1
 +
 diff -ruN busybox-1.2.0-orig/archival/libipkg/Makefile.in busybox-1.2.0+ipkg-0.99.162/archival/libipkg/Makefile.in
 --- busybox-1.2.0-orig/archival/libipkg/Makefile.in	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.2.0+ipkg-0.99.162/archival/libipkg/Makefile.in	2006-07-22 16:31:25.000000000 +0200
-@@ -0,0 +1,85 @@
++++ busybox-1.2.0+ipkg-0.99.162/archival/libipkg/Makefile.in	2006-10-08 12:29:39.000000000 +0200
+@@ -0,0 +1,88 @@
 +# Makefile for busybox
 +#
 +# Copyright (C) 1999-2004 by Erik Andersen <andersen@codepoet.org>
@@ -7358,7 +7351,10 @@ diff -ruN busybox-1.2.0-orig/archival/libipkg/Makefile.in busybox-1.2.0+ipkg-0.9
 +LIBIPKG-$(CONFIG_IPKG) += $(LIBIPKG_UTIL_SOURCES)
 +LIBIPKG_OBJS=$(patsubst %.c,$(LIBIPKG_DIR)%.o, $(LIBIPKG-y))
 +
-+CFLAGS += -DIPKG_LIB -DIPKGLIBDIR="\"/usr/lib\"" -DHOST_CPU_STR="\"$(TARGET_ARCH)\""
++ifeq ($(strip $(IPKG_ARCH)),)
++IPKG_ARCH:=$(TARGET_ARCH)
++endif
++CFLAGS += -DIPKG_LIB -DIPKGLIBDIR="\"/usr/lib\"" -DHOST_CPU_STR="\"$(IPKG_ARCH)\""
 +
 +libraries-$(CONFIG_IPKG) += $(LIBIPKG_DIR)$(LIBIPKG_AR)
 +
@@ -10892,7 +10888,7 @@ diff -ruN busybox-1.2.0-orig/archival/libipkg/pkg_dest_list.h busybox-1.2.0+ipkg
 +
 diff -ruN busybox-1.2.0-orig/archival/libipkg/pkg_extract.c busybox-1.2.0+ipkg-0.99.162/archival/libipkg/pkg_extract.c
 --- busybox-1.2.0-orig/archival/libipkg/pkg_extract.c	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.2.0+ipkg-0.99.162/archival/libipkg/pkg_extract.c	2006-07-22 16:31:25.000000000 +0200
++++ busybox-1.2.0+ipkg-0.99.162/archival/libipkg/pkg_extract.c	2006-07-30 22:47:49.000000000 +0200
 @@ -0,0 +1,224 @@
 +/* pkg_extract.c - the itsy package management system
 +
