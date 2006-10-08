@@ -1782,18 +1782,6 @@ diff -urN linux.old/drivers/mtd/devices/block2mtd.c linux.dev/drivers/mtd/device
  /* Info for the block device */
  struct block2mtd_dev {
  	struct list_head list;
-@@ -62,10 +61,8 @@
- 	read_lock_irq(&mapping->tree_lock);
- 	for (i = 0; i < PAGE_READAHEAD; i++) {
- 		pagei = index + i;
--		if (pagei > end_index) {
--			INFO("Overrun end of disk in cache readahead\n");
-+		if (pagei > end_index)
- 			break;
--		}
- 		page = radix_tree_lookup(&mapping->page_tree, pagei);
- 		if (page && (!i))
- 			break;
 @@ -106,7 +103,7 @@
  
  	while (pages) {
