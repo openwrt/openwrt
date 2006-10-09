@@ -303,6 +303,15 @@ define KernelPackage/ebtables
 endef
 $(eval $(call KernelPackage,ebtables))
 
+define KernelPackage/ipip
+  TITLE:=IP in IP encapsulation support
+  DESCRIPTION:=\
+  	Kernel modules for IP in IP encapsulation
+  FILES:=$(MODULES_DIR)/kernel/net/ipv4/ipip.$(LINUX_KMOD_SUFFIX)
+  KCONFIG:=$(CONFIG_NET_IPIP)
+endef
+$(eval $(call KernelPackage,ipip))
+
 
 define KernelPackage/ipv6
   TITLE:=IPv6 support
