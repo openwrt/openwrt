@@ -6,6 +6,6 @@ timeout 5
 
 title   OpenWrt
 root    (hd0,0)
-kernel  /boot/vmlinuz @CMDLINE@ noinitrd console=ttyS0,@BAUDRATE@n8
+kernel  /boot/vmlinuz @CMDLINE@ noinitrd console=ttyS0,@BAUDRATE@n8 reboot=bios
 boot
 
