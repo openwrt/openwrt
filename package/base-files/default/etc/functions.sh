@@ -54,6 +54,26 @@ option () {
 	option_cb "$varname" "$*"
 }
 
+config_rename() {
+	local OLD="$1"
+	local NEW="$2"
+	local oldsetting
+	local newvar
+	
+	[ -z "$OLD" -o -z "$NEW" ] && return
+	for oldsetting in `set | grep ^CONFIG_${OLD}_ | \
+		sed -e 's/\(.*\)=.*$/\1/'` ; do
+		newvar="CONFIG_${NEW}_${oldsetting##CONFIG_${OLD}_}"
+		eval "${newvar}=\${$oldsetting}"
+		unset "$oldsetting"
+	done
+	[ "$CONFIG_SECTION" = "$OLD" ] && CONFIG_SECTION="$NEW"
+}
+
+config_unset() {
+	config_set "$1" "$2" ""
+}
+
 config_clear() {
 	[ -z "$CONFIG_SECTION" ] && return
 	for oldsetting in `set | grep ^CONFIG_${CONFIG_SECTION}_ | \
@@ -79,7 +99,7 @@ config_load() {
 
 config_get() {
 	case "$3" in
-		"") eval "echo \${CONFIG_${1}_${2}}";;
+		"") eval "echo \"\${CONFIG_${1}_${2}}\"";;
 		*) eval "$1=\"\${CONFIG_${2}_${3}}\"";;
 	esac
 }
