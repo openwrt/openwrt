@@ -110,17 +110,9 @@ $(eval $(call KMOD_template,NLS_UTF8,nls-utf8,\
 
 # Network devices
 
-$(eval $(call KMOD_template,NET_3C59X,net-3c59x,\
-	$(MODULES_DIR)/kernel/drivers/net/3c59x.ko \
-,CONFIG_VORTEX,,10,3c59x))
-
 $(eval $(call KMOD_template,NET_AIRO,net-airo,\
 	$(MODULES_DIR)/kernel/drivers/net/wireless/airo.ko \
 ,CONFIG_AIRO,,10,airo))
-
-$(eval $(call KMOD_template,NET_E100,net-e100,\
-	$(MODULES_DIR)/kernel/drivers/net/e100.ko \
-,CONFIG_E100,,10,e100))
 
 $(eval $(call KMOD_template,NET_HERMES,net-hermes,\
 	$(MODULES_DIR)/kernel/drivers/net/wireless/hermes.ko \
