@@ -20,13 +20,6 @@ config GDB
 	help
 		Enable if you want to build the gdb
 
-config ENABLE_MULTILIB
-	bool
-	prompt "Enable multilib support?" if TOOLCHAINOPTS
-	default n
-	help
-	    If you want multilib enabled, enable this...
-
 config LARGEFILE
 	bool
 	prompt "Enable large file (files > 2 GB) support?" if TOOLCHAINOPTS
