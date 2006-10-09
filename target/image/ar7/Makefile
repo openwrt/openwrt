@@ -66,12 +66,13 @@ define Image/Prepare
 	$(STAGING_DIR)/bin/srec2bin $(KDIR)/ram_zimage.sre $(KDIR)/vmlinux.bin
 endef
 
-ifeq ($(FS),jffs2-8MB)
-ALIGN:=bs=131072 conv=sync
-endif
-ifeq ($(FS),jffs2-4MB)
-ALIGN:=bs=65536 conv=sync
-endif
+define align/jffs2-64k
+bs=65536 conv=sync
+endef
+
+define align/jffs2-128k
+bs=131072 conv=sync
+endef
 
 define Image/Build/CyberTAN
 	(dd if=/dev/zero bs=16 count=1; cat $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).bin) | \
@@ -86,7 +87,7 @@ define Image/Build/sErCoMm
 endef
 
 define Image/Build
-	dd if=$(KDIR)/vmlinux.bin $(ALIGN) > $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).bin
+	dd if=$(KDIR)/vmlinux.bin $(call align/$(1)) > $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).bin
 	cat $(BUILD_DIR)/linux-$(KERNEL)-$(BOARD)/root.$(1) >> $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).bin
 	$(call Image/Build/CyberTAN,$(1),AG1B,AG1B,$(1))
 	$(call Image/Build/CyberTAN,$(1),WA21,WA21,$(1))
