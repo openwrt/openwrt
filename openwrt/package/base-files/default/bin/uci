@@ -1,0 +1,159 @@
+#!/bin/sh
+# Shell script for interacting with config files
+#
+# Copyright (C) 2006 by Fokus Fraunhofer <carsten.tittel@fokus.fraumhofer.de>
+# Copyright (C) 2006 by Felix Fietkau <nbd@openwrt.org>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+
+. /etc/functions.sh
+include /lib/config
+
+do_get() {
+	[ $# -ne 3 ] && {
+		uci_usage get
+		exit 1
+	}
+	local PACKAGE="$1"
+	local CONFIG="$2"
+	local OPTION="$3"
+
+	uci_load "$PACAKGE"
+	config_get "$CONFIG" "$OPTION"
+}
+
+do_set() {
+	[ $# -ne 4 ] && {
+		uci_usage set
+		exit 1
+	}
+	uci_set "$@"
+}
+
+do_add() {
+	[ $# -ne 3 ] && {
+		uci_usage add
+		exit 1
+	}
+	uci_add "$@"
+}
+
+do_rename() {
+	[ $# -ne 3 ] && {
+		uci_usage rename
+		exit 1
+	}
+	uci_rename "$@"
+}
+
+do_remove() {
+	[ $# -ne 3 -a $# -ne 2 ] && {
+		uci_usage rename
+		exit 1
+	}
+	uci_remove "$@"
+}
+
+do_commit() {
+	[ $# -ne 1 ] && {
+		uci_usage commit
+		exit 1
+	}
+	uci_commit "$1"
+}
+
+do_show() {
+	[ $# -gt 2 -o $# -lt 1 ] && {
+		uci_usage show
+		exit 1
+	}
+	
+	PACKAGE="$1"
+	CONFIG="$2"
+	SECTION=""
+	
+	config_cb() {
+		if [ -z "$CONFIG" -o "$CONFIG" = "$2" ]; then
+			append SECTION "$2"
+			option_cb() {
+				append "${CONFIG_SECTION}_VARS" "$1"
+			}
+		else
+			option_cb() {
+				return 0
+			}
+		fi
+	}
+			
+	uci_load "$PACKAGE"
+	
+	for section in $SECTION; do
+		config_get type "$section" TYPE
+		[ -z "$type" ] && continue
+		echo "@$section=$type"
+		eval "VARS=\"\${${section}_VARS}\""
+		for var in $VARS; do
+			config_get val "$section" "$var"
+			[ -n "$val" ] && {
+				echo "${section}.${var}=${val}"
+				config_set "$section" "$var" ""
+			}
+		done
+		config_set "$section" TYPE ""
+	done
+}
+
+uci_usage() {
+	case "$1" in
+		show) echo "$0 show <package> [<config>]";;
+		get) echo "$0 get <package> <config> <option>";;
+		set) echo "$0 set <package> <config> <option> <value>";;
+		add) echo "$0 add <package> <type> <config>";;
+		del) echo "$0 del <package> <config> [<option>]";;
+		rename) echo "$0 rename <package> <config> <name>";;
+		commit) echo "$0 commit <package>";;
+		*) 
+			echo "Syntax: $0 <command> <arguments...>"
+			echo
+			uci_usage show
+			uci_usage get
+			uci_usage set
+			uci_usage add
+			uci_usage del
+			uci_usage rename
+			uci_usage commit
+			echo
+			exit 1
+		;;
+	esac
+}
+
+if [ $# -eq 0 ] ; then
+	uci_usage
+	exit 0
+fi
+CMD="$1"
+shift
+case "$CMD" in
+	set) do_set "$@";;
+	add) do_add "$@";;
+	del) do_remove "$@";;
+	rename) do_rename "$@";;
+	get) do_get "$@";;
+	show) do_show "$@";;
+	commit) do_commit "$@";;
+	*) uci_usage;;
+esac
+exit 0
