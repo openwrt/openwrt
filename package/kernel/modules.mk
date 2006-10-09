@@ -410,8 +410,10 @@ define KernelPackage/natsemi
 	adapters.
   FILES:=$(MODULES_DIR)/kernel/drivers/net/natsemi.$(LINUX_KMOD_SUFFIX)
   KCONFIG:=$(CONFIG_NATSEMI)
-  DEPENDS:=@LINUX_2_6_X86||LINUX_2_4_X86
+  DEPENDS:=@LINUX_2_6_X86
+  DEFAULT:=y
   SUBMENU:=$(NDMENU)
+  AUTOLOAD:=$(call AutoLoad,20,natsemi)
 endef
 $(eval $(call KernelPackage,natsemi))
 
