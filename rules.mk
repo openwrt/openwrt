@@ -60,7 +60,7 @@ CP:=cp -fpR
 
 ifneq ($(CONFIG_CCACHE),)
   # FIXME: move this variable to a better location
-  export CCACHE_DIR=$(TOPDIR)/ccache_$(ARCH)
+  export CCACHE_DIR=$(STAGING_DIR)/ccache
   TARGET_CC:= ccache $(TARGET_CC)
 endif
 
