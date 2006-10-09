@@ -23,6 +23,9 @@ addif() {
 
 case "$ACTION" in
 	add|register)
+		case "$PHYSDEVDRIVER" in
+			natsemi) sleep 1;;
+		esac
 		addif
 	;;
 esac
