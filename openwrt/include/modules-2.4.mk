@@ -13,18 +13,6 @@ $(eval $(call KMOD_template,ATM,atm,\
 	$(MODULES_DIR)/kernel/net/atm/br2684.o \
 ,CONFIG_ATM,,50,atm))
 
-$(eval $(call KMOD_template,GRE,gre,\
-	$(MODULES_DIR)/kernel/net/ipv4/ip_gre.o \
-,CONFIG_NET_IPGRE))
-
-$(eval $(call KMOD_template,IPIP,ipip,\
-	$(MODULES_DIR)/kernel/net/ipv4/ipip.o \
-,CONFIG_NET_IPIP,,60,ipip))
-
-$(eval $(call KMOD_template,TUN,tun,\
-	$(MODULES_DIR)/kernel/drivers/net/tun.o \
-,CONFIG_TUN,,20,tun))
-
 # Block devices
 
 $(eval $(call KMOD_template,LOOP,loop,\
@@ -92,22 +80,9 @@ $(eval $(call KMOD_template,VIDEODEV,videodev,\
 
 # Network devices
 
-$(eval $(call KMOD_template,NET_3C59X,net-3c59x,\
-	$(MODULES_DIR)/kernel/drivers/net/3c59x.o \
-,CONFIG_VORTEX,,10,3c59x))
-
-$(eval $(call KMOD_template,NET_8139TOO,net-8139too,\
-	$(MODULES_DIR)/kernel/drivers/net/8139too.o \
-	$(MODULES_DIR)/kernel/drivers/net/mii.o \
-,CONFIG_8139TOO,,10,mii 8139too))
-
 $(eval $(call KMOD_template,NET_AIRO,net-airo,\
 	$(MODULES_DIR)/kernel/drivers/net/wireless/airo.o \
 ,CONFIG_AIRO,,10,airo))
-
-$(eval $(call KMOD_template,NET_E100,net-e100,\
-	$(MODULES_DIR)/kernel/drivers/net/e100.o \
-,CONFIG_E100,,10,e100))
 
 $(eval $(call KMOD_template,NET_HERMES,net-hermes,\
 	$(MODULES_DIR)/kernel/drivers/net/wireless/hermes.o \
