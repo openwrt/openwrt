@@ -1,7 +1,6 @@
 scan_ppp() {
 	config_get ifname "$1" ifname
 	pppdev="${pppdev:-0}"
-	config_set "$1" device "$ifname"
 	config_set "$1" ifname "ppp$pppdev"
 	config_set "$1" unit "$pppdev"
 }
