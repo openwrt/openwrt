@@ -32,6 +32,8 @@ ipkg_is_upgrade () {
   return 1
 }         
 
+which md5sum 2>&1 >/dev/null || alias md5sum=md5
+
 ipkg_srcs() {
 	local srcre="$1"
 	sed -ne "s/^src[[:space:]]\+$srcre[[:space:]]\+//p" < $IPKG_CONF
