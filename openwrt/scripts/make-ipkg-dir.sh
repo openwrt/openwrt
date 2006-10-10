@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 BASE=http://svn.openwrt.org/openwrt/trunk/openwrt
 TARGET=$1
 CONTROL=$2
