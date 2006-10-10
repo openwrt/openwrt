@@ -8,6 +8,7 @@
 include $(TOPDIR)/rules.mk
 TMP_DIR:=$(TOPDIR)/tmp
 include $(INCLUDE_DIR)/prereq.mk
+include $(INCLUDE_DIR)/host.mk
 
 define Require/non-root
 	[ "$$(shell whoami)" != "root" ]
@@ -93,4 +94,12 @@ $(eval $(call RequireCommand,patch, \
 
 $(eval $(call RequireCommand,perl, \
 	Please install perl. \
+))
+
+define Require/gnutar
+	$(TAR) --version 2>&1 | grep GNU > /dev/null
+endef
+
+$(eval $(call Require,gnutar, \
+	Please install GNU tar. \
 ))

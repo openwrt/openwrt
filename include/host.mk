@@ -7,6 +7,8 @@
 
 include $(TOPDIR)/.host.mk
 
+export TAR
+
 $(TOPDIR)/.host.mk: $(INCLUDE_DIR)/host.mk
 	@( \
 		HOST_OS=`uname`; \
@@ -23,5 +25,7 @@ $(TOPDIR)/.host.mk: $(INCLUDE_DIR)/host.mk
 		if tar --version 2>&1 | grep 'GNU' >/dev/null; then \
 			echo "TAR_WILDCARDS:=--wildcards" >> $@; \
 		fi; \
+		TAR=`which gtar tar | head -n 1`; \
+		echo "TAR:=$$TAR" >> $@; \
 	)
 
