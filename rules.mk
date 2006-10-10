@@ -64,21 +64,6 @@ ifneq ($(CONFIG_CCACHE),)
   TARGET_CC:= ccache $(TARGET_CC)
 endif
 
-HOST_ARCH:=$(shell $(HOSTCC) -dumpmachine | sed -e s'/-.*//' \
-	-e 's/sparc.*/sparc/' \
-	-e 's/arm.*/arm/' \
-	-e 's/m68k.*/m68k/' \
-	-e 's/ppc/powerpc/' \
-	-e 's/v850.*/v850/' \
-	-e 's/sh[234]/sh/' \
-	-e 's/mips-.*/mips/' \
-	-e 's/mipsel-.*/mipsel/' \
-	-e 's/cris.*/cris/' \
-	-e 's/i[3-9]86/i386/' \
-	)
-
-GNU_HOST_NAME:=$(shell $(HOSTCC) -dumpmachine)
-
 TARGET_CONFIGURE_OPTS:= \
   AR=$(TARGET_CROSS)ar \
   AS="$(TARGET_CC) -c $(TARGET_CFLAGS)" \
