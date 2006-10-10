@@ -17,6 +17,7 @@ RELEASE:=Kamikaze
 
 all: world
 
+SHELL:=/usr/bin/env bash
 export TOPDIR=${shell pwd}
 include $(TOPDIR)/include/verbose.mk
 
