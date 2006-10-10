@@ -8,8 +8,8 @@
 include $(TOPDIR)/.host.mk
 
 $(TOPDIR)/.host.mk: $(INCLUDE_DIR)/host.mk
-	echo "HOST_OS:=`uname`" > $@
-	echo "HOST_ARCH:=` \
+	@echo "HOST_OS:=`uname`" > $@
+	@echo "HOST_ARCH:=` \
 		$(HOSTCC) -dumpmachine | sed -e s'/-.*//' \
 			-e 's/sparc.*/sparc/' \
 			-e 's/arm.*/arm/' \
@@ -21,8 +21,8 @@ $(TOPDIR)/.host.mk: $(INCLUDE_DIR)/host.mk
 			-e 's/mipsel-.*/mipsel/' \
 			-e 's/cris.*/cris/' \
 			-e 's/i[3-9]86/i386/'`" >> $@
-	echo "GNU_HOST_NAME:=`$(HOSTCC) -dumpmachine`" >> $@
-	if tar --version 2>&1 | grep 'GNU' >/dev/null; then \
+	@echo "GNU_HOST_NAME:=`$(HOSTCC) -dumpmachine`" >> $@
+	@if tar --version 2>&1 | grep 'GNU' >/dev/null; then \
 		echo "TAR_OPTIONS+=--wildcards" >> $@; \
 	fi
 
