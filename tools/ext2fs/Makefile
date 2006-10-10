@@ -42,7 +42,9 @@ define Build/Configure
 endef
 
 define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) all
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		CFLAGS="-O2 -I $(STAGING_DIR)/include-host -include getline.h" \
+		all
 endef
 
 define Build/Install
