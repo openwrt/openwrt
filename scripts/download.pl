@@ -18,12 +18,16 @@ my $ok;
 
 @ARGV > 0 or die "Syntax: $0 <target dir> <filename> <md5sum> <mirror> [<mirror> ...]\n";
 
+my $md5cmd = `which md5sum`;
+$md5cmd =~ /not found/ and $md5cmd = `which md5`;
+$md5cmd =~ /not found/ and die 'no md5 checksum program found, please install md5 or md5sum';
+
 sub download
 {
 	my $mirror = shift;
-	
+
 	open WGET, "wget -t1 --timeout=20 -O- \"$mirror/$filename\" |" or die "Cannot launch wget.\n";
-	open MD5SUM, "| md5sum > \"$target/$filename.md5sum\"" or die "Cannot launch md5sum.\n";
+	open MD5SUM, "| $md5cmd > \"$target/$filename.md5sum\"" or die "Cannot launch md5sum.\n";
 	open OUTPUT, "> $target/$filename.dl" or die "Cannot create file $target/$filename.dl: $!\n";
 	my $buffer;
 	while (read WGET, $buffer, 1048576) {
