@@ -84,6 +84,7 @@ RSTRIP:= \
 
 # where to build (and put) .ipk packages
 IPKG:= \
+  PATH="$(STAGING_DIR)/bin:$(PATH)" \
   IPKG_TMP=$(BUILD_DIR)/tmp \
   IPKG_INSTROOT=$(TARGET_DIR) \
   IPKG_CONF_DIR=$(STAGING_DIR)/etc \
