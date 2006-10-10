@@ -10,6 +10,7 @@ include $(TOPDIR)/rules.mk
 TARGETS-y:=sed sstrip ipkg-utils ext2fs squashfs mtd-utils lzma mkimage
 
 TARGETS_DOWNLOAD:=$(patsubst %,%-download,$(TARGETS-y))
+TARGETS_PREPARE:=$(patsubst %,%-prepare,$(TARGETS-y))
 TARGETS_INSTALL:=$(patsubst %,%-install,$(TARGETS-y))
 TARGETS_CLEAN:=$(patsubst %,%-clean,$(TARGETS-y))
 
@@ -25,13 +26,9 @@ TOOL_STAMP_DIR:=$(STAGING_DIR)/stampfiles
 $(TOOL_STAMP_DIR):
 	mkdir -p $@
 
-$(STAGING_DIR):
-	@mkdir -p $@/lib
-	@mkdir -p $@/include
-	@mkdir -p $@/include-host
-	$(CP) ./include/*.h $@/include-host/
-	@ln -sf ../lib $@/$(REAL_GNU_TARGET_NAME)/lib
-	@mkdir -p $@/$(REAL_GNU_TARGET_NAME)
+$(STAGING_DIR)/include-host:
+	@mkdir -p $@
+	@$(CP) ./include/*.h $@/
 
 $(TOOL_BUILD_DIR):
 	@mkdir -p $@
@@ -39,7 +36,7 @@ $(TOOL_BUILD_DIR):
 %-download: FORCE
 	$(MAKE) -C $(patsubst %-download,%,$@) download
 
-%-prepare: $(TOOL_STAMP_DIR) $(STAGING_DIR) $(TOOL_BUILD_DIR) FORCE
+%-prepare: $(TOOL_STAMP_DIR) $(STAGING_DIR)/include-host $(TOOL_BUILD_DIR) FORCE
 	@[ -f $(TOOL_STAMP_DIR)/.tool_$@ ] || { \
 		$(MAKE) -C $(patsubst %-prepare,%,$@) prepare; \
 	}

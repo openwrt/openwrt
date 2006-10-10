@@ -22,6 +22,7 @@ all: install
 download: $(TARGETS_DOWNLOAD)
 install: $(TARGETS_INSTALL)
 clean: $(TARGETS_CLEAN)
+$(TARGETS_INSTALL): $(STAGING_DIR)/$(REAL_GNU_TARGET_NAME)
 
 uClibc-prepare: kernel-headers-prepare
 ifeq ($(CONFIG_NATIVE_TOOLCHAIN),)
@@ -34,6 +35,10 @@ gcc-install: uClibc-install
 
 TOOLCHAIN_STAMP_DIR:=$(STAGING_DIR)/stampfiles
 
+$(STAGING_DIR)/$(REAL_GNU_TARGET_NAME):
+	@mkdir -p $@
+	@ln -sf ../lib $@/lib
+
 $(TOOLCHAIN_STAMP_DIR):
 	mkdir -p $@
 
@@ -43,7 +48,7 @@ $(TOOLCHAIN_BUILD_DIR):
 %-download: FORCE
 	$(MAKE) -C $(patsubst %-download,%,$@) download
 
-%-prepare: $(TOOLCHAIN_STAMP_DIR) $(STAGING_DIR) $(TOOLCHAIN_BUILD_DIR) FORCE
+%-prepare: $(TOOLCHAIN_STAMP_DIR) $(STAGING_DIR)/$(REAL_GNU_TARGET_NAME) $(TOOLCHAIN_BUILD_DIR) FORCE
 	@[ -f $(TOOLCHAIN_STAMP_DIR)/.toolchain_$@ ] || { \
 		$(MAKE) -C $(patsubst %-prepare,%,$@) prepare; \
 	}
