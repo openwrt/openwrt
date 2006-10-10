@@ -17,6 +17,7 @@ else
   ifeq ($(CONFIG_BOARD)-$(CONFIG_KERNEL),$(BOARD)-$(KERNEL))
      LINUX_VERSION:=$(CONFIG_LINUX_VERSION)
      LINUX_RELEASE:=$(CONFIG_LINUX_RELEASE)
+     LINUX_KARCH:=$(CONFIG_LINUX_KARCH)
   else
   # oops, old .kernel.config; rebuild it (hiding the misleading errors this produces)
     $(warning rebuilding .kernel.mk)
@@ -29,14 +30,6 @@ else
   else
     LINUX_KMOD_SUFFIX=o
   endif
-
-  LINUX_KARCH:=$(shell echo $(ARCH) | sed -e 's/i[3-9]86/i386/' \
-	-e 's/mipsel/mips/' \
-	-e 's/mipseb/mips/' \
-	-e 's/powerpc/ppc/' \
-	-e 's/sh[234]/sh/' \
-	-e 's/armeb/arm/' \
-  )
 
   KERNELNAME=
   ifneq (,$(findstring x86,$(BOARD)))

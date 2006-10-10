@@ -17,6 +17,15 @@ KERNEL_IPKG:=$(KERNEL_BUILD_DIR)/kernel_$(LINUX_VERSION)-$(BOARD)-$(LINUX_RELEAS
 TARGETS += $(KERNEL_IPKG)
 INSTALL_TARGETS += $(KERNEL_IPKG)
 
+LINUX_KARCH:=$(shell echo $(ARCH) | sed -e 's/i[3-9]86/i386/' \
+	-e 's/mipsel/mips/' \
+	-e 's/mipseb/mips/' \
+	-e 's/powerpc/ppc/' \
+	-e 's/sh[234]/sh/' \
+	-e 's/armeb/arm/' \
+)
+
+
 $(TARGETS): $(PACKAGE_DIR)
 
 $(PACKAGE_DIR):
@@ -98,6 +107,7 @@ $(TOPDIR)/.kernel.mk: $(TOPDIR)/target/linux/$(BOARD)-$(KERNEL)/Makefile
 	echo "CONFIG_KERNEL:=$(KERNEL)" >> $@
 	echo "CONFIG_LINUX_VERSION:=$(LINUX_VERSION)" >> $@
 	echo "CONFIG_LINUX_RELEASE:=$(LINUX_RELEASE)" >> $@
+	echo "CONFIG_LINUX_KARCH:=$(LINUX_KARCH)" >> $@
 
 pkg-install: FORCE
 	@for pkg in $(INSTALL_TARGETS); do \
