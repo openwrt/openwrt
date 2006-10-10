@@ -169,6 +169,8 @@ define BuildPackage
 	echo "Default: $(DEFAULT)";
     endif
 
+	$(call shexport,Package/$(1)/description)
+
     DUMPINFO += \
 	if [ "$$$$PREREQ_CHECK" = 1 ]; then echo "Prereq-Check: 1"; fi; \
 	echo "Version: $(VERSION)"; \
@@ -176,7 +178,12 @@ define BuildPackage
 	echo "Build-Depends: $(PKG_BUILDDEP)"; \
 	echo "Category: $(CATEGORY)"; \
 	echo "Title: $(TITLE)"; \
-	echo "Description: $(DESCRIPTION)" | sed -e 's,\\,\n,g'; \
+	if isset $(call shvar,Package/$(1)/description); then \
+		echo -n "Description: "; \
+		getvar $(call shvar,Package/$(1)/description); \
+	else \
+		echo "Description: $(DESCRIPTION)" | sed -e 's,\\,\n,g'; \
+	fi;
 	
     ifneq ($(URL),)
       DUMPINFO += \
