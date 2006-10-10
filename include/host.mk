@@ -22,3 +22,7 @@ $(TOPDIR)/.host.mk: $(INCLUDE_DIR)/host.mk
 			-e 's/cris.*/cris/' \
 			-e 's/i[3-9]86/i386/'`" >> $@
 	echo "GNU_HOST_NAME:=`$(HOSTCC) -dumpmachine`" >> $@
+	if tar --version 2>&1 | grep 'GNU' >/dev/null; then \
+		echo "TAR_OPTIONS+=--wildcards" >> $@; \
+	fi
+
