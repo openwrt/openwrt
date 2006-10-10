@@ -20,7 +20,7 @@ include $(INCLUDE_DIR)/host-build.mk
 
 CFLAGS := $(HOSTCFLAGS) -O2 -I../include
 ifneq ($(OS),Linux)
-CFLAGS += -Dloff_t=off_t -D__BYTE_ORDER=BYTE_ORDER -I$(STAGING_DIR)/include-host -include getline.h
+CFLAGS += -Dloff_t=off_t -D__BYTE_ORDER=BYTE_ORDER -I$(STAGING_DIR)/include-host -include getline.h -include endian.h
 endif
 
 define Build/Compile
