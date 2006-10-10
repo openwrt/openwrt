@@ -9,6 +9,7 @@
 include $(TOPDIR)/rules.mk
 include $(TOPDIR)/.config
 include $(TOPDIR)/.pkgdeps
+include $(TOPDIR)/host.mk
 
 PREREQ_PACKAGES:=$(patsubst %,%-prereq,$(package-prereq))
 DOWNLOAD_PACKAGES:=$(patsubst %,%-download,$(package-y) $(package-m))
@@ -58,7 +59,7 @@ install:
 index: $(PACKAGE_DIR)/Packages
 
 $(PACKAGE_DIR)/Packages: $(PACKAGE_DIR)/*.ipk
-	(cd $(PACKAGE_DIR); $(STAGING_DIR)/usr/bin/ipkg-make-index . > Packages)
+	(cd $(PACKAGE_DIR); $(SCRIPT_DIR)/ipkg-make-index.sh . > Packages)
 
 
 ifeq ($(MAKECMDGOALS),compile-targets)
