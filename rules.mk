@@ -8,7 +8,9 @@
 -include $(TOPDIR)/.config
 include $(TOPDIR)/include/verbose.mk
 
-export SHELL=/usr/bin/env bash -c '. $(TOPDIR)/include/shell.sh; eval "$$2"'  --
+export SHELL=/usr/bin/env bash -c '. $(TOPDIR)/include/shell.sh; eval "$$2"' --
+export BASH=$(shell which bash)
+
 ARCH:=$(strip $(subst ",, $(CONFIG_ARCH)))
 TARGET_OPTIMIZATION:=$(strip $(subst ",, $(CONFIG_TARGET_OPTIMIZATION)))
 WGET:=$(strip $(subst ",, $(CONFIG_WGET)))
