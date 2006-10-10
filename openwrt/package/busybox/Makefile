@@ -31,10 +31,12 @@ define Package/busybox
 	It slices, it dices, it makes Julian Fries.
   URL:=http://busybox.net/
   MENU:=1
-  CONFIG:=\\\
-	menu "Configuration" \\\
-		depends on PACKAGE_busybox \\\
-		source "$(SOURCE)/config/Config.in" \\\
+endef
+
+define Package/busybox/config
+	menu "Configuration"
+		depends on PACKAGE_busybox
+		source "$(SOURCE)/config/Config.in"
 	endmenu
 endef
 

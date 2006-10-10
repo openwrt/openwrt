@@ -12,6 +12,15 @@ endif
 
 include $(INCLUDE_DIR)/prereq.mk
 
+define shvar
+V_$(subst .,_,$(subst -,_,$(subst /,_,$(1))))
+endef
+
+define shexport
+$(call shvar,$(1))=$$(call $(1))
+export $(call shvar,$(1))
+endef
+
 define Build/DefaultTargets
   ifeq ($(DUMP),)
     ifeq ($(CONFIG_AUTOREBUILD),y)
@@ -98,9 +107,8 @@ define BuildDescription
 endef
 
 define BuildIPKGVariable
-  pkg_$(subst .,_,$(subst -,_,$(1)))_$(2) = $$(Package/$(1)/$(2))
-  export pkg_$(subst .,_,$(subst -,_,$(1))_$(2))
-  $(1)_COMMANDS += if [ -n "$$$$$$$$pkg_$(subst .,_,$(subst -,_,$(1)))_$(2)" ]; then echo "$$$$$$$$pkg_$(subst .,_,$(subst -,_,$(1)))_$(2)" > $(2); fi;
+  $(call shexport,Package/$(1)/$(2))
+  $(1)_COMMANDS += var2file "$(call shvar,Package/$(1)/$(2))" $(2);
 endef
 
 define BuildPackage
@@ -168,22 +176,22 @@ define BuildPackage
 	echo "Build-Depends: $(PKG_BUILDDEP)"; \
 	echo "Category: $(CATEGORY)"; \
 	echo "Title: $(TITLE)"; \
-	echo "Description: $(DESCRIPTION)" | sed -e 's,\\,\n,g';
+	echo "Description: $(DESCRIPTION)" | sed -e 's,\\,\n,g'; \
 	
     ifneq ($(URL),)
       DUMPINFO += \
-	echo; \
-	echo "$(URL)";
+		echo; \
+		echo "$(URL)";
     endif
+	
+	DUMPINFO += \
+		echo "@@";
 
-    DUMPINFO += \
-	echo "@@";
-
-    ifneq ($(CONFIG),)
-      DUMPINFO += \
-	echo "Config: $(CONFIG)" | sed -e 's,\\,\n,g'; \
-	echo "@@";
-    endif
+	$(call shexport,Package/$(1)/config)
+	DUMPINFO += \
+		if isset $(call shvar,Package/$(1)/config); then echo "Config: "; getvar $(call shvar,Package/$(1)/config); fi; \
+		echo "@@";
+  
   endif
 
   $(eval $(call BuildIPKGVariable,$(1),conffiles))
