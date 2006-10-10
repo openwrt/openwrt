@@ -20,6 +20,5 @@ case "$1" in
 		fi;
 	;;
 esac
-rm -f .sedtest
-
+rm -f .sedtest*
 
