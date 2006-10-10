@@ -10,7 +10,7 @@ include $(INCLUDE_DIR)/host-build.mk
 PKG_BUILD_DIR:=$(TOOL_BUILD_DIR)/sstrip
 
 OS:=$(shell uname)
-ifeq ($(OS),Darwin)
+ifeq ($(HOST_OS),Darwin)
   CFLAGS += -I./include
 endif
 
