@@ -1,0 +1,2 @@
+world ${.TARGETS}:
+	@gmake $@
