@@ -19,8 +19,9 @@ my $ok;
 @ARGV > 0 or die "Syntax: $0 <target dir> <filename> <md5sum> <mirror> [<mirror> ...]\n";
 
 my $md5cmd = `which md5sum`;
-$md5cmd =~ /not found/ and $md5cmd = `which md5`;
-$md5cmd =~ /not found/ and die 'no md5 checksum program found, please install md5 or md5sum';
+$md5cmd or $md5cmd = `which md5`;
+$md5cmd or die 'no md5 checksum program found, please install md5 or md5sum';
+chomp $md5cmd;
 
 sub download
 {
@@ -43,7 +44,6 @@ sub download
 		cleanup();
 		return;
 	}
-	$? = 0;
 	
 	my $sum = `cat "$target/$filename.md5sum"`;
 	$sum =~ /^(\w+)\s*/ or die "Could not generate md5sum\n";
