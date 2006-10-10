@@ -26,11 +26,13 @@ define Package/busybox
   CATEGORY:=Base system
   DEFAULT:=y
   TITLE:=Core utilities for embedded Linux
-  DESCRIPTION:=\
-	The Swiss Army Knife of embedded Linux. \\\
-	It slices, it dices, it makes Julian Fries.
   URL:=http://busybox.net/
   MENU:=1
+endef
+
+define Package/busybox/description
+The Swiss Army Knife of embedded Linux.
+	It slices, it dices, it makes Julian Fries.
 endef
 
 define Package/busybox/config
