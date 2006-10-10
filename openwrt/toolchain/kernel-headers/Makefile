@@ -48,7 +48,10 @@ endef
 
 define Build/Configure
 	-$(CP) ./files/config.$(LINUX_KARCH) $(PKG_BUILD_DIR)/.config
-	$(MAKE) -C $(PKG_BUILD_DIR) ARCH=$(LINUX_KARCH) oldconfig include/linux/version.h
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		ARCH=$(LINUX_KARCH) \
+		CONFIG_SHELL=$(shell which bash) \
+		oldconfig include/linux/version.h
 endef
 
 define Build/Compile
