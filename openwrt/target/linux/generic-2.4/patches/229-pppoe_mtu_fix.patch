@@ -1,0 +1,12 @@
+--- linux-2.4.30/drivers/net/pppoe.c.old	2006-10-10 13:49:12.000000000 +0200
++++ linux-2.4.30/drivers/net/pppoe.c	2006-10-10 13:50:02.000000000 +0200
+@@ -639,6 +639,9 @@
+ 		po->chan.hdrlen = (sizeof(struct pppoe_hdr) +
+ 				   dev->hard_header_len);
+ 
++		if (po->chan.mtu > dev->mtu - sizeof(struct pppoe_hdr))
++			po->chan.mtu = dev->mtu - sizeof(struct pppoe_hdr);
++
+ 		po->chan.private = sk;
+ 		po->chan.ops = &pppoe_chan_ops;
+ 
