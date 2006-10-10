@@ -16,29 +16,23 @@ PKG_CAT:=zcat
 
 PKG_BUILD_DIR:=$(TOOL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 
-HOST_SED_TARGET=$(strip $(shell ./sedcheck.sh))
-
-ifneq ($(HOST_SED_TARGET),build-sed-host-binary)
-  PKG_SOURCE:=
-  PKG_CAT:=
-endif
-
 include $(INCLUDE_DIR)/host-build.mk
 
-ifeq ($(HOST_SED_TARGET),build-sed-host-binary)
-  define Build/Configure
+override SHELL:=$(BASH)
+
+define Build/Configure
 	(cd $(PKG_BUILD_DIR); rm -rf config.cache; \
 		./configure \
 		--prefix=$(STAGING_DIR) \
 		--prefix=/usr \
 	);
-  endef
+endef
 
-  define Build/Compile
+define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR)
-  endef
+endef
 
-  define Build/Install
+define Build/Install
 	@if [ -L $(STAGING_DIR)/bin/sed ] ; then \
 		rm -f $(STAGING_DIR)/bin/sed; fi;
 	@if [ ! -f $(STAGING_DIR)/bin/sed -o $(STAGING_DIR)/bin/sed -ot $(PKG_BUILD_DIR)/sed/sed ]; then \
@@ -49,15 +43,6 @@ ifeq ($(HOST_SED_TARGET),build-sed-host-binary)
 	    rm -rf $(STAGING_DIR)/share/locale $(STAGING_DIR)/usr/info \
 		    $(STAGING_DIR)/usr/man $(STAGING_DIR)/usr/share/doc; \
 	fi
-  endef
-else
-  define Build/Compile
-  endef
-  define Build/Install
-    rm -rf $(STAGING_DIR)/bin/sed
-	mkdir -p $(STAGING_DIR)/bin
-	ln -s `which sed` $(STAGING_DIR)/bin/sed
-  endef
-endif
+endef
 
 $(eval $(call HostBuild))
