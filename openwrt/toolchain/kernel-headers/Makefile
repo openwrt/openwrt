@@ -29,9 +29,10 @@ LINUX_KARCH:=$(shell echo $(ARCH) | sed -e 's/i[3-9]86/i386/' \
 	-e 's/armeb/arm/' \
 )
 
+
 define Build/Prepare
 	mkdir -p $(TOOLCHAIN_BUILD_DIR)
-	bzcat $(DL_DIR)/$(PKG_SOURCE) | tar --wildcards -C $(TOOLCHAIN_BUILD_DIR) $(TAR_OPTIONS) - \
+	bzcat $(DL_DIR)/$(PKG_SOURCE) | tar -C $(TOOLCHAIN_BUILD_DIR) $(TAR_OPTIONS) - \
 		linux-$(PKG_VERSION)/include \
 		linux-$(PKG_VERSION)/Makefile \
 		linux-$(PKG_VERSION)/Rules.make \
