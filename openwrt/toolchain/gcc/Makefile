@@ -45,6 +45,7 @@ include $(INCLUDE_DIR)/host-build.mk
 BUILD_DIR1:=$(TOOLCHAIN_BUILD_DIR)/gcc-$(PKG_VERSION)-initial
 BUILD_DIR2:=$(TOOLCHAIN_BUILD_DIR)/gcc-$(PKG_VERSION)-final
 
+override SHELL:=$(BASH)
 
 define Stage1/Configure
 	mkdir -p $(BUILD_DIR1)
