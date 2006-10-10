@@ -21,7 +21,7 @@ obj-y		+= bcmutils.o hnddma.o linux_osl.o
 obj-m		:= $(O_TARGET)
 
 wl_mod$(MOD_NAME).o: wl_apsta$(MOD_NAME).o
-	sed -e 's,eth%d,wl%d\x00,g' < $< > $@
+	perl -ne 's,eth%d,wl%d\x00,g,print' < $< > $@
 
 wl$(MOD_NAME).o.patch: wl$(MOD_NAME).o
 	$(OBJDUMP) -d $< | perl patchtable.pl > $@
