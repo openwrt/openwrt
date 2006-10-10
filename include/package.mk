@@ -11,6 +11,7 @@ else
 endif
 
 include $(INCLUDE_DIR)/prereq.mk
+include $(INCLUDE_DIR)/host.mk
 
 define shvar
 V_$(subst .,_,$(subst -,_,$(subst /,_,$(1))))
