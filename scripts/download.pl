@@ -43,9 +43,10 @@ sub download
 		cleanup();
 		return;
 	}
+	$? = 0;
 	
 	my $sum = `cat "$target/$filename.md5sum"`;
-	$sum =~ /^(\w+)\s+/ or die "Could not generate md5sum\n";
+	$sum =~ /^(\w+)\s*/ or die "Could not generate md5sum\n";
 	$sum = $1;
 	
 	if (($md5sum =~ /\w{32}/) and ($sum ne $md5sum)) {
