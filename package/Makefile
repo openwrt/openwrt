@@ -11,7 +11,7 @@ include $(TOPDIR)/.config
 include $(TOPDIR)/.pkgdeps
 include $(TOPDIR)/host.mk
 
-PREREQ_PACKAGES:=$(patsubst %,%-prereq,$(package-prereq))
+PREREQ_PACKAGES:=$(patsubst %,%-prereq,$(prereq-y) $(prereq-m))
 DOWNLOAD_PACKAGES:=$(patsubst %,%-download,$(package-y) $(package-m))
 COMPILE_PACKAGES:=$(patsubst %,%-compile,$(package-y) $(package-m))
 INSTALL_PACKAGES:=$(patsubst %,%-install,$(package-y))

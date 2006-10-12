@@ -14,7 +14,6 @@ my $makefile;
 my %conf;
 my %pkg;
 my %prereq;
-my $prereq;
 my %dep;
 my %options;
 my $opt;
@@ -36,8 +35,7 @@ while ($line = <>) {
 		$pkg{$name}->{src} = $src;
 	};
 	$line =~ /^Prereq-Check:/ and !defined $prereq{$src} and do {
-		$prereq{$src} = 1;
-		$prereq .= "package-prereq += $src\n";
+		$pkg{$name}->{prereq} = 1;
 	};
 	$line =~ /^(Build-)?Depends: \s*(.+)\s*$/ and do {
 		$pkg{$name}->{depends} ||= [];
@@ -52,11 +50,19 @@ while ($line = <>) {
 $line="";
 
 foreach $name (sort {uc($a) cmp uc($b)} keys %pkg) {
+	my $config;
+	
 	if ($options{SDK}) {
-		$conf{$pkg{$name}->{src}} or print "package-m += $pkg{$name}->{src}\n";
-		$conf{$pkg{$name}->{src}} = 1;
+		$conf{$pkg{$name}->{src}} or do {
+			$config = 'm';
+			$conf{$pkg{$name}->{src}} = 1;
+		};
 	} else {
-		print "package-\$(CONFIG_PACKAGE_$name) += $pkg{$name}->{src}\n";
+		$config = "\$(CONFIG_PACKAGE_$name)"
+	}
+	if ($config) {
+		print "package-$config += $pkg{$name}->{src}\n";
+		$pkg{$name}->{prereq} and print "prereq-$config += $pkg{$name}->{src}\n";
 	}
 
 	my $hasdeps = 0;
@@ -81,5 +87,5 @@ foreach $name (sort {uc($a) cmp uc($b)} keys %pkg) {
 }
 
 if ($line ne "") {
-	print "\n$line\n$prereq";
+	print "\n$line";
 }
