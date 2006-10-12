@@ -1228,7 +1228,7 @@ diff -Nur linux-2.6.17/drivers/net/ar2313/ar2313.c linux-2.6.17-owrt/drivers/net
 +	    ar2313_restart(dev);
 +	}
 +    }
-+    return IRQ_RETVAL(0);
++    return IRQ_HANDLED;
 +}
 +
 +
