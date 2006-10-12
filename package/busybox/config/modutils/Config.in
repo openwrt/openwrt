@@ -112,7 +112,7 @@ comment "Options common to multiple modutils"
 config BUSYBOX_CONFIG_FEATURE_CHECK_TAINTED_MODULE
 	# Simulate indentation
 	bool "Support tainted module checking with new kernels"
-	default n
+	default y
 	depends on BUSYBOX_CONFIG_INSMOD || BUSYBOX_CONFIG_LSMOD
 	help
 	  Support checking for tainted modules.  These are usually binary
