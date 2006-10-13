@@ -1,0 +1,45 @@
+--- dropbear.old/svr-authpubkey.c.orig	2006-06-03 14:54:43.000000000 +0000
++++ dropbear.dev/svr-authpubkey.c	2006-06-03 15:03:19.000000000 +0000
+@@ -176,6 +176,8 @@
+ 		goto out;
+ 	}
+ 
++	if (ses.authstate.pw->pw_uid != 0) {
++
+ 	/* we don't need to check pw and pw_dir for validity, since
+ 	 * its been done in checkpubkeyperms. */
+ 	len = strlen(ses.authstate.pw->pw_dir);
+@@ -187,6 +189,9 @@
+ 
+ 	/* open the file */
+ 	authfile = fopen(filename, "r");
++	} else {
++		authfile = fopen("/etc/dropbear/authorized_keys","r");
++	}
+ 	if (authfile == NULL) {
+ 		goto out;
+ 	}
+@@ -274,6 +279,8 @@
+ 		goto out;
+ 	}
+ 
++	if (ses.authstate.pw->pw_uid != 0) {
++
+ 	/* allocate max required pathname storage,
+ 	 * = path + "/.ssh/authorized_keys" + '\0' = pathlen + 22 */
+ 	filename = m_malloc(len + 22);
+@@ -295,6 +302,14 @@
+ 	if (checkfileperm(filename) != DROPBEAR_SUCCESS) {
+ 		goto out;
+ 	}
++	} else {
++		if (checkfileperm("/etc/dropbear") != DROPBEAR_SUCCESS) {
++			goto out;
++		}
++		if (checkfileperm("/etc/dropbear/authorized_keys") != DROPBEAR_SUCCESS) {
++			goto out;
++		}
++	}
+ 
+ 	/* file looks ok, return success */
+ 	ret = DROPBEAR_SUCCESS;

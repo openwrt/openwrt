@@ -1,0 +1,11 @@
+--- ppp-2.4.3/pppd/plugins/pppoatm/pppoatm.c	2005-08-26 15:18:55.000000000 +0200
++++ ppp-2.4.3/pppd/plugins/pppoatm/pppoatm.c	2005-08-26 15:19:51.000000000 +0200
+@@ -136,8 +136,6 @@
+ 	int fd;
+ 	struct atm_qos qos;
+ 
+-	system ("/sbin/modprobe pppoatm");
+-
+ 	if (!device_got_set)
+ 		no_device_given_pppoatm();
+ 	fd = socket(AF_ATMPVC, SOCK_DGRAM, 0);

@@ -1,0 +1,75 @@
+--- linux.old/net/sched/sch_htb.c	2005-11-15 14:09:41.548066000 +0100
++++ linux.dev/net/sched/sch_htb.c	2005-11-15 14:08:34.000000000 +0100
+@@ -369,7 +369,7 @@
+ 		struct list_head *l;
+ 		list_for_each (l,q->hash+i) {
+ 			struct htb_class *cl = list_entry(l,struct htb_class,hlist);
+-			long diff = PSCHED_TDIFF_SAFE(q->now, cl->t_c, (u32)cl->mbuffer, 0);
++			long long diff = PSCHED_TDIFF_SAFE(q->now, cl->t_c, (u32)cl->mbuffer, 0);
+ 			printk(KERN_DEBUG "htb*c%x m=%d t=%ld c=%ld pq=%lu df=%ld ql=%d "
+ 					"pa=%x f:",
+ 				cl->classid,cl->cmode,cl->tokens,cl->ctokens,
+@@ -617,7 +617,7 @@
+  * mode transitions per time unit. The speed gain is about 1/6.
+  */
+ static __inline__ enum htb_cmode 
+-htb_class_mode(struct htb_class *cl,long *diff)
++htb_class_mode(struct htb_class *cl,long long *diff)
+ {
+     long toks;
+ 
+@@ -650,7 +650,7 @@
+  * to mode other than HTB_CAN_SEND (see htb_add_to_wait_tree).
+  */
+ static void 
+-htb_change_class_mode(struct htb_sched *q, struct htb_class *cl, long *diff)
++htb_change_class_mode(struct htb_sched *q, struct htb_class *cl, long long *diff)
+ { 
+ 	enum htb_cmode new_mode = htb_class_mode(cl,diff);
+ 	
+@@ -815,7 +815,8 @@
+ static void htb_charge_class(struct htb_sched *q,struct htb_class *cl,
+ 		int level,int bytes)
+ {	
+-	long toks,diff;
++	long long diff;
++	long toks;
+ 	enum htb_cmode old_mode;
+ 	HTB_DBG(5,1,"htb_chrg_cl cl=%X lev=%d len=%d\n",cl->classid,level,bytes);
+ 
+@@ -831,7 +832,7 @@
+ #ifdef HTB_DEBUG
+ 		if (diff > cl->mbuffer || diff < 0 || PSCHED_TLESS(q->now, cl->t_c)) {
+ 			if (net_ratelimit())
+-				printk(KERN_ERR "HTB: bad diff in charge, cl=%X diff=%lX now=%Lu then=%Lu j=%lu\n",
++				printk(KERN_ERR "HTB: bad diff in charge, cl=%X diff=%Ld now=%Lu then=%Lu j=%lu\n",
+ 				       cl->classid, diff,
+ 				       (unsigned long long) q->now,
+ 				       (unsigned long long) cl->t_c,
+@@ -848,7 +849,7 @@
+ 		}
+ 		HTB_ACCNT (ctokens,cbuffer,ceil);
+ 		cl->t_c = q->now;
+-		HTB_DBG(5,2,"htb_chrg_clp cl=%X diff=%ld tok=%ld ctok=%ld\n",cl->classid,diff,cl->tokens,cl->ctokens);
++		HTB_DBG(5,2,"htb_chrg_clp cl=%X diff=%Ld tok=%ld ctok=%ld\n",cl->classid,diff,cl->tokens,cl->ctokens);
+ 
+ 		old_mode = cl->cmode; diff = 0;
+ 		htb_change_class_mode(q,cl,&diff);
+@@ -887,7 +888,7 @@
+ 			level,q->wait_pq[level].rb_node,q->row_mask[level]);
+ 	for (i = 0; i < 500; i++) {
+ 		struct htb_class *cl;
+-		long diff;
++		long long diff;
+ 		rb_node_t *p = q->wait_pq[level].rb_node;
+ 		if (!p) return 0;
+ 		while (p->rb_left) p = p->rb_left;
+@@ -902,7 +903,7 @@
+ #ifdef HTB_DEBUG
+ 		if (diff > cl->mbuffer || diff < 0 || PSCHED_TLESS(q->now, cl->t_c)) {
+ 			if (net_ratelimit())
+-				printk(KERN_ERR "HTB: bad diff in events, cl=%X diff=%lX now=%Lu then=%Lu j=%lu\n",
++				printk(KERN_ERR "HTB: bad diff in events, cl=%X diff=%Ld now=%Lu then=%Lu j=%lu\n",
+ 				       cl->classid, diff,
+ 				       (unsigned long long) q->now,
+ 				       (unsigned long long) cl->t_c,

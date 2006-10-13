@@ -1,0 +1,11 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+start() {
+	setup_switch() { return 0; }
+
+	include /lib/network
+	setup_switch
+	/sbin/wifi
+}
+

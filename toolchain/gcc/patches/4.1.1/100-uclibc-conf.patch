@@ -1,0 +1,544 @@
+--- gcc-4.1.0/gcc/config/t-linux-uclibc
++++ gcc-4.1.0/gcc/config/t-linux-uclibc
+@@ -0,0 +1,5 @@
++# Remove glibc specific files added in t-linux
++SHLIB_MAPFILES := $(filter-out $(srcdir)/config/libgcc-glibc.ver, $(SHLIB_MAPFILES))
++
++# Use unwind-dw2-fde instead of unwind-dw2-fde-glibc
++LIB2ADDEH := $(subst unwind-dw2-fde-glibc.c,unwind-dw2-fde.c,$(LIB2ADDEH))
+--- gcc-4.1.0/gcc/config.gcc
++++ gcc-4.1.0/gcc/config.gcc
+@@ -1887,7 +1887,7 @@ s390x-ibm-tpf*)
+ 	;;
+ sh-*-elf* | sh[12346l]*-*-elf* | sh*-*-kaos* | \
+ sh-*-symbianelf* | sh[12346l]*-*-symbianelf* | \
+-  sh-*-linux* | sh[346lbe]*-*-linux* | \
++  sh*-*-linux* | sh[346lbe]*-*-linux* | \
+   sh-*-netbsdelf* | shl*-*-netbsdelf* | sh5-*-netbsd* | sh5l*-*-netbsd* | \
+    sh64-*-netbsd* | sh64l*-*-netbsd*)
+ 	tmake_file="${tmake_file} sh/t-sh sh/t-elf"
+@@ -2341,6 +2341,12 @@ m32c-*-elf*)
+ 	;;
+ esac
+ 
++# Rather than hook into each target, just do it after all the linux
++# targets have been processed
++case ${target} in
++*-linux-uclibc*) tm_defines="${tm_defines} USE_UCLIBC" ; tmake_file="${tmake_file} t-linux-uclibc"
++esac
++
+ case ${target} in
+ i[34567]86-*-linux*aout* | i[34567]86-*-linux*libc1)
+ 	tmake_file="${tmake_file} i386/t-gmm_malloc"
+--- gcc-4.1.0/boehm-gc/configure
++++ gcc-4.1.0/boehm-gc/configure
+@@ -4320,6 +4320,11 @@ linux-gnu*)
+   lt_cv_deplibs_check_method=pass_all
+   ;;
+ 
++linux-uclibc*)
++  lt_cv_deplibs_check_method=pass_all
++  lt_cv_file_magic_test_file=`echo /lib/libuClibc-*.so`
++  ;;
++
+ netbsd* | knetbsd*-gnu)
+   if echo __ELF__ | $CC -E - | grep __ELF__ > /dev/null; then
+     lt_cv_deplibs_check_method='match_pattern /lib[^/\.]+\.so\.[0-9]+\.[0-9]+$'
+--- gcc-4.1.0/configure
++++ gcc-4.1.0/configure
+@@ -1133,7 +1133,7 @@ no)
+     ;;
+ "")
+     case "${target}" in
+-    *-*-linux*-gnu | *-*-gnu* | *-*-k*bsd*-gnu)
++    *-*-linux*-gnu | *-*-gnu* | *-*-k*bsd*-gnu | *-*-linux-uclibc*)
+         # Enable libmudflap by default in GNU and friends.
+ 	;;
+     *-*-freebsd*)
+--- gcc-4.1.0/configure.in
++++ gcc-4.1.0/configure.in
+@@ -341,7 +341,7 @@ no)
+     ;;
+ "")
+     case "${target}" in
+-    *-*-linux*-gnu | *-*-gnu* | *-*-k*bsd*-gnu)
++    *-*-linux*-gnu | *-*-gnu* | *-*-k*bsd*-gnu | *-*-linux-uclibc*)
+         # Enable libmudflap by default in GNU and friends.
+ 	;;
+     *-*-freebsd*)
+--- gcc-4.1.0/contrib/regression/objs-gcc.sh
++++ gcc-4.1.0/contrib/regression/objs-gcc.sh
+@@ -105,6 +105,10 @@ if [ $H_REAL_TARGET = $H_REAL_HOST -a $H
+  then
+   make all-gdb all-dejagnu all-ld || exit 1
+   make install-gdb install-dejagnu install-ld || exit 1
++elif [ $H_REAL_TARGET = $H_REAL_HOST -a $H_REAL_TARGET = i686-pc-linux-uclibc ]
++ then
++  make all-gdb all-dejagnu all-ld || exit 1
++  make install-gdb install-dejagnu install-ld || exit 1
+ elif [ $H_REAL_TARGET = $H_REAL_HOST ] ; then
+   make bootstrap || exit 1
+   make install || exit 1
+--- gcc-4.1.0/gcc/config/alpha/linux-elf.h
++++ gcc-4.1.0/gcc/config/alpha/linux-elf.h
+@@ -27,7 +27,11 @@ Boston, MA 02110-1301, USA.  */
+ #define SUBTARGET_EXTRA_SPECS \
+ { "elf_dynamic_linker", ELF_DYNAMIC_LINKER },
+ 
++#if defined USE_UCLIBC
++#define ELF_DYNAMIC_LINKER	"/lib/ld-uClibc.so.0"
++#else
+ #define ELF_DYNAMIC_LINKER	"/lib/ld-linux.so.2"
++#endif
+ 
+ #define LINK_SPEC "-m elf64alpha %{G*} %{relax:-relax}		\
+   %{O*:-O3} %{!O*:-O1}						\
+--- gcc-4.1.0/gcc/config/arm/linux-elf.h
++++ gcc-4.1.0/gcc/config/arm/linux-elf.h
+@@ -51,7 +51,11 @@
+ 
+ #define LIBGCC_SPEC "%{msoft-float:-lfloat} %{mfloat-abi=soft*:-lfloat} -lgcc"
+ 
++#ifdef USE_UCLIBC
++#define LINUX_TARGET_INTERPRETER "/lib/ld-uClibc.so.0"
++#else
+ #define LINUX_TARGET_INTERPRETER "/lib/ld-linux.so.2"
++#endif
+ 
+ #define LINUX_TARGET_LINK_SPEC  "%{h*} %{version:-v} \
+    %{b} \
+--- gcc-4.1.0/gcc/config/cris/linux.h
++++ gcc-4.1.0/gcc/config/cris/linux.h
+@@ -73,6 +73,25 @@ Boston, MA 02110-1301, USA.  */
+ #undef CRIS_DEFAULT_CPU_VERSION
+ #define CRIS_DEFAULT_CPU_VERSION CRIS_CPU_NG
+ 
++#ifdef USE_UCLIBC
++
++#undef CRIS_SUBTARGET_VERSION
++#define CRIS_SUBTARGET_VERSION " - cris-axis-linux-uclibc"
++
++#undef CRIS_LINK_SUBTARGET_SPEC
++#define CRIS_LINK_SUBTARGET_SPEC \
++ "-mcrislinux\
++  -rpath-link include/asm/../..%s\
++  %{shared} %{static}\
++  %{symbolic:-Bdynamic} %{shlib:-Bdynamic} %{static:-Bstatic}\
++  %{!shared: \
++    %{!static: \
++      %{rdynamic:-export-dynamic} \
++      %{!dynamic-linker:-dynamic-linker /lib/ld-uClibc.so.0}}} \
++  %{!r:%{O2|O3: --gc-sections}}"
++
++#else  /* USE_UCLIBC */
++
+ #undef CRIS_SUBTARGET_VERSION
+ #define CRIS_SUBTARGET_VERSION " - cris-axis-linux-gnu"
+ 
+@@ -87,6 +106,8 @@ Boston, MA 02110-1301, USA.  */
+   %{!shared:%{!static:%{rdynamic:-export-dynamic}}}\
+   %{!r:%{O2|O3: --gc-sections}}"
+ 
++#endif  /* USE_UCLIBC */
++
+ 
+ /* Node: Run-time Target */
+ 
+--- gcc-4.1.0/gcc/config/i386/linux.h
++++ gcc-4.1.0/gcc/config/i386/linux.h
+@@ -107,6 +107,11 @@ Boston, MA 02110-1301, USA.  */
+ #define LINK_EMULATION "elf_i386"
+ #define DYNAMIC_LINKER "/lib/ld-linux.so.2"
+ 
++#if defined USE_UCLIBC
++#undef DYNAMIC_LINKER
++#define DYNAMIC_LINKER "/lib/ld-uClibc.so.0"
++#endif
++
+ #undef  SUBTARGET_EXTRA_SPECS
+ #define SUBTARGET_EXTRA_SPECS \
+   { "link_emulation", LINK_EMULATION },\
+--- gcc-4.1.0/gcc/config/i386/linux64.h
++++ gcc-4.1.0/gcc/config/i386/linux64.h
+@@ -54,14 +54,21 @@ Boston, MA 02110-1301, USA.  */
+    When the -shared link option is used a final link is not being
+    done.  */
+ 
++#ifdef USE_UCLIBC
++#define ELF32_DYNAMIC_LINKER "/lib/ld-uClibc.so.0"
++#define ELF64_DYNAMIC_LINKER "/lib/ld64-uClibc.so.0"
++#else
++#define ELF32_DYNAMIC_LINKER "/lib/ld-linux.so.2"
++#define ELF64_DYNAMIC_LINKER "/lib64/ld-linux-x86-64.so.2"
++#endif
+ #undef	LINK_SPEC
+ #define LINK_SPEC "%{!m32:-m elf_x86_64} %{m32:-m elf_i386} \
+   %{shared:-shared} \
+   %{!shared: \
+     %{!static: \
+       %{rdynamic:-export-dynamic} \
+-      %{m32:%{!dynamic-linker:-dynamic-linker /lib/ld-linux.so.2}} \
+-      %{!m32:%{!dynamic-linker:-dynamic-linker /lib64/ld-linux-x86-64.so.2}}} \
++      %{m32:%{!dynamic-linker:-dynamic-linker " ELF32_DYNAMIC_LINKER "}} \
++      %{!m32:%{!dynamic-linker:-dynamic-linker " ELF64_DYNAMIC_LINKER "}}} \
+     %{static:-static}}"
+ 
+ /* Similar to standard Linux, but adding -ffast-math support.  */
+--- gcc-4.1.0/gcc/config/ia64/linux.h
++++ gcc-4.1.0/gcc/config/ia64/linux.h
+@@ -37,13 +37,18 @@ do {						\
+ /* Define this for shared library support because it isn't in the main
+    linux.h file.  */
+ 
++#ifdef USE_UCLIBC
++#define ELF_DYNAMIC_LINKER	"/lib/ld-uClibc.so.0"
++#else
++#define ELF_DYNAMIC_LINKER "/lib/ld-linux-ia64.so.2"
++#endif
+ #undef LINK_SPEC
+ #define LINK_SPEC "\
+   %{shared:-shared} \
+   %{!shared: \
+     %{!static: \
+       %{rdynamic:-export-dynamic} \
+-      %{!dynamic-linker:-dynamic-linker /lib/ld-linux-ia64.so.2}} \
++      %{!dynamic-linker:-dynamic-linker " ELF_DYNAMIC_LINKER "}} \
+       %{static:-static}}"
+ 
+ 
+--- gcc-4.1.0/gcc/config/m68k/linux.h
++++ gcc-4.1.0/gcc/config/m68k/linux.h
+@@ -123,12 +123,17 @@ Boston, MA 02110-1301, USA.  */
+ 
+ /* If ELF is the default format, we should not use /lib/elf.  */
+ 
++#ifdef USE_UCLIBC
++#define ELF_DYNAMIC_LINKER "/lib/ld-uClibc.so.0"
++#else
++#define ELF_DYNAMIC_LINKER "/lib/ld.so.1"
++#endif
+ #undef	LINK_SPEC
+ #define LINK_SPEC "-m m68kelf %{shared} \
+   %{!shared: \
+     %{!static: \
+       %{rdynamic:-export-dynamic} \
+-      %{!dynamic-linker*:-dynamic-linker /lib/ld.so.1}} \
++      %{!dynamic-linker*:-dynamic-linker " ELF_DYNAMIC_LINKER "}} \
+     %{static}}"
+ 
+ /* For compatibility with linux/a.out */
+--- gcc-4.1.0/gcc/config/mips/linux.h
++++ gcc-4.1.0/gcc/config/mips/linux.h
+@@ -105,6 +105,11 @@ Boston, MA 02110-1301, USA.  */
+ 
+ /* Borrowed from sparc/linux.h */
+ #undef LINK_SPEC
++#ifdef USE_UCLIBC
++#define ELF_DYNAMIC_LINKER "/lib/ld-uClibc.so.0"
++#else
++#define ELF_DYNAMIC_LINKER "/lib/ld.so.1"
++#endif
+ #define LINK_SPEC \
+  "%(endian_spec) \
+   %{shared:-shared} \
+@@ -112,7 +117,7 @@ Boston, MA 02110-1301, USA.  */
+     %{!ibcs: \
+       %{!static: \
+         %{rdynamic:-export-dynamic} \
+-        %{!dynamic-linker:-dynamic-linker /lib/ld.so.1}} \
++        %{!dynamic-linker:-dynamic-linker " ELF_DYNAMIC_LINKER "}} \
+         %{static:-static}}}"
+ 
+ #undef SUBTARGET_ASM_SPEC
+--- gcc-4.1.0/gcc/config/pa/pa-linux.h
++++ gcc-4.1.0/gcc/config/pa/pa-linux.h
+@@ -49,13 +49,18 @@ Boston, MA 02110-1301, USA.  */
+ /* Define this for shared library support because it isn't in the main
+    linux.h file.  */
+ 
++#ifdef USE_UCLIBC
++#define ELF_DYNAMIC_LINKER "/lib/ld-uClibc.so.0"
++#else
++#define ELF_DYNAMIC_LINKER "/lib/ld.so.1"
++#endif
+ #undef LINK_SPEC
+ #define LINK_SPEC "\
+   %{shared:-shared} \
+   %{!shared: \
+     %{!static: \
+       %{rdynamic:-export-dynamic} \
+-      %{!dynamic-linker:-dynamic-linker /lib/ld.so.1}} \
++      %{!dynamic-linker:-dynamic-linker " ELF_DYNAMIC_LINKER "}} \
+       %{static:-static}}"
+ 
+ /* glibc's profiling functions don't need gcc to allocate counters.  */
+--- gcc-4.1.0/gcc/config/rs6000/linux.h
++++ gcc-4.1.0/gcc/config/rs6000/linux.h
+@@ -72,7 +72,11 @@
+ #define LINK_START_DEFAULT_SPEC "%(link_start_linux)"
+ 
+ #undef	LINK_OS_DEFAULT_SPEC
++#ifdef USE_UCLIBC
++#define LINK_OS_DEFAULT_SPEC "%(link_os_linux_uclibc)"
++#else
+ #define LINK_OS_DEFAULT_SPEC "%(link_os_linux)"
++#endif
+ 
+ #define LINK_GCC_C_SEQUENCE_SPEC \
+   "%{static:--start-group} %G %L %{static:--end-group}%{!static:%G}"
+--- gcc-4.1.0/gcc/config/rs6000/sysv4.h
++++ gcc-4.1.0/gcc/config/rs6000/sysv4.h
+@@ -866,6 +866,7 @@ extern int fixuplabelno;
+   mcall-linux  : %(link_os_linux)       ; \
+   mcall-gnu    : %(link_os_gnu)         ; \
+   mcall-netbsd : %(link_os_netbsd)      ; \
++  mcall-linux-uclibc : %(link_os_linux_uclibc); \
+   mcall-openbsd: %(link_os_openbsd)     ; \
+                : %(link_os_default)     }"
+ 
+@@ -1043,6 +1044,10 @@ extern int fixuplabelno;
+   %{rdynamic:-export-dynamic} \
+   %{!dynamic-linker:-dynamic-linker /lib/ld.so.1}}}"
+ 
++#define LINK_OS_LINUX_UCLIBC_SPEC "-m elf32ppclinux %{!shared: %{!static: \
++  %{rdynamic:-export-dynamic} \
++  %{!dynamic-linker:-dynamic-linker /lib/ld-uClibc.so.0}}}"
++
+ #if defined(HAVE_LD_EH_FRAME_HDR)
+ # define LINK_EH_SPEC "%{!static:--eh-frame-hdr} "
+ #endif
+@@ -1209,6 +1214,7 @@ ncrtn.o%s"
+   { "link_os_sim",		LINK_OS_SIM_SPEC },			\
+   { "link_os_freebsd",		LINK_OS_FREEBSD_SPEC },			\
+   { "link_os_linux",		LINK_OS_LINUX_SPEC },			\
++  { "link_os_linux_uclibc",	LINK_OS_LINUX_UCLIBC_SPEC },		\
+   { "link_os_gnu",		LINK_OS_GNU_SPEC },			\
+   { "link_os_netbsd",		LINK_OS_NETBSD_SPEC },			\
+   { "link_os_openbsd",		LINK_OS_OPENBSD_SPEC },			\
+--- gcc-4.1.0/gcc/config/s390/linux.h
++++ gcc-4.1.0/gcc/config/s390/linux.h
+@@ -77,6 +77,13 @@ Software Foundation, 51 Franklin Street,
+ #define MULTILIB_DEFAULTS { "m31" }
+ #endif
+ 
++#ifdef USE_UCLIBC
++#define ELF31_DYNAMIC_LINKER "/lib/ld-uClibc.so.0"
++#define ELF64_DYNAMIC_LINKER "/lib/ld64-uClibc.so.0"
++#else
++#define ELF31_DYNAMIC_LINKER "/lib/ld.so.1"
++#define ELF64_DYNAMIC_LINKER "/lib/ld64.so.1"
++#endif
+ #undef  LINK_SPEC
+ #define LINK_SPEC \
+   "%{m31:-m elf_s390}%{m64:-m elf64_s390} \
+@@ -86,8 +93,8 @@ Software Foundation, 51 Franklin Street,
+       %{!static: \
+ 	%{rdynamic:-export-dynamic} \
+ 	%{!dynamic-linker: \
+-          %{m31:-dynamic-linker /lib/ld.so.1} \
+-          %{m64:-dynamic-linker /lib/ld64.so.1}}}}"
++          %{m31:-dynamic-linker " ELF31_DYNAMIC_LINKER "} \
++          %{m64:-dynamic-linker " ELF64_DYNAMIC_LINKER "}}}}"
+ 
+ 
+ #define TARGET_ASM_FILE_END file_end_indicate_exec_stack
+--- gcc-4.1.0/gcc/config/sh/linux.h
++++ gcc-4.1.0/gcc/config/sh/linux.h
+@@ -56,12 +56,21 @@ Boston, MA 02110-1301, USA.  */
+ #undef SUBTARGET_LINK_EMUL_SUFFIX
+ #define SUBTARGET_LINK_EMUL_SUFFIX "_linux"
+ #undef SUBTARGET_LINK_SPEC
++#ifdef USE_UCLIBC
++#define SUBTARGET_LINK_SPEC \
++  "%{shared:-shared} \
++   %{!static: \
++     %{rdynamic:-export-dynamic} \
++     %{!dynamic-linker:-dynamic-linker /lib/ld-uClibc.so.0}} \
++   %{static:-static}"
++#else
+ #define SUBTARGET_LINK_SPEC \
+   "%{shared:-shared} \
+    %{!static: \
+      %{rdynamic:-export-dynamic} \
+      %{!dynamic-linker:-dynamic-linker /lib/ld-linux.so.2}} \
+    %{static:-static}"
++#endif
+ 
+ /* Output assembler code to STREAM to call the profiler.  */
+ 
+--- gcc-4.1.0/gcc/config/sparc/linux.h
++++ gcc-4.1.0/gcc/config/sparc/linux.h
+@@ -125,6 +125,11 @@ Boston, MA 02110-1301, USA.  */
+ 
+ /* If ELF is the default format, we should not use /lib/elf.  */
+ 
++#ifdef USE_UCLIBC
++#define ELF_DYNAMIC_LINKER "/lib/ld-uClibc.so.0"
++#else
++#define ELF_DYNAMIC_LINKER "/lib/ld-linux.so.2"
++#endif
+ #undef  LINK_SPEC
+ #define LINK_SPEC "-m elf32_sparc -Y P,/usr/lib %{shared:-shared} \
+   %{!mno-relax:%{!r:-relax}} \
+@@ -132,7 +137,7 @@ Boston, MA 02110-1301, USA.  */
+     %{!ibcs: \
+       %{!static: \
+         %{rdynamic:-export-dynamic} \
+-        %{!dynamic-linker:-dynamic-linker /lib/ld-linux.so.2}} \
++        %{!dynamic-linker:-dynamic-linker " ELF_DYNAMIC_LINKER "}} \
+         %{static:-static}}}"
+ 
+ /* The sun bundled assembler doesn't accept -Yd, (and neither does gas).
+--- gcc-4.1.0/gcc/config/sparc/linux64.h
++++ gcc-4.1.0/gcc/config/sparc/linux64.h
+@@ -162,12 +162,17 @@ Boston, MA 02110-1301, USA.  */
+   { "link_arch_default", LINK_ARCH_DEFAULT_SPEC },	  \
+   { "link_arch",	 LINK_ARCH_SPEC },
+     
++#ifdef USE_UCLIBC
++#define ELF_DYNAMIC_LINKER	"/lib/ld-uClibc.so.0"
++#else
++#define ELF_DYNAMIC_LINKER  "/lib/ld-linux.so.2"
++#endif
+ #define LINK_ARCH32_SPEC "-m elf32_sparc -Y P,/usr/lib %{shared:-shared} \
+   %{!shared: \
+     %{!ibcs: \
+       %{!static: \
+         %{rdynamic:-export-dynamic} \
+-        %{!dynamic-linker:-dynamic-linker /lib/ld-linux.so.2}} \
++        %{!dynamic-linker:-dynamic-linker " ELF_DYNAMIC_LINKER "}} \
+         %{static:-static}}} \
+ "
+ 
+--- gcc-4.1.0/libffi/configure
++++ gcc-4.1.0/libffi/configure
+@@ -3457,6 +3457,11 @@ linux-gnu*)
+   lt_cv_deplibs_check_method=pass_all
+   ;;
+ 
++linux-uclibc*)
++  lt_cv_deplibs_check_method=pass_all
++  lt_cv_file_magic_test_file=`echo /lib/libuClibc-*.so`
++  ;;
++
+ netbsd* | knetbsd*-gnu)
+   if echo __ELF__ | $CC -E - | grep __ELF__ > /dev/null; then
+     lt_cv_deplibs_check_method='match_pattern /lib[^/\.]+\.so\.[0-9]+\.[0-9]+$'
+--- gcc-4.1.0/libgfortran/configure
++++ gcc-4.1.0/libgfortran/configure
+@@ -3699,6 +3699,11 @@ linux-gnu*)
+   lt_cv_deplibs_check_method=pass_all
+   ;;
+ 
++linux-uclibc*)
++  lt_cv_deplibs_check_method=pass_all
++  lt_cv_file_magic_test_file=`echo /lib/libuClibc-*.so`
++  ;;
++
+ netbsd* | knetbsd*-gnu)
+   if echo __ELF__ | $CC -E - | grep __ELF__ > /dev/null; then
+     lt_cv_deplibs_check_method='match_pattern /lib[^/\.]+\.so\.[0-9]+\.[0-9]+$'
+--- gcc-4.1.0/libjava/configure
++++ gcc-4.1.0/libjava/configure
+@@ -5137,6 +5137,11 @@ linux-gnu*)
+   lt_cv_deplibs_check_method=pass_all
+   ;;
+ 
++linux-uclibc*)
++  lt_cv_deplibs_check_method=pass_all
++  lt_cv_file_magic_test_file=`echo /lib/libuClibc-*.so`
++  ;;
++
+ netbsd* | knetbsd*-gnu)
+   if echo __ELF__ | $CC -E - | grep __ELF__ > /dev/null; then
+     lt_cv_deplibs_check_method='match_pattern /lib[^/\.]+\.so\.[0-9]+\.[0-9]+$'
+--- gcc-4.1.0/libmudflap/configure
++++ gcc-4.1.0/libmudflap/configure
+@@ -5382,6 +5382,11 @@ linux-gnu*)
+   lt_cv_deplibs_check_method=pass_all
+   ;;
+ 
++linux-uclibc*)
++  lt_cv_deplibs_check_method=pass_all
++  lt_cv_file_magic_test_file=`echo /lib/libuClibc-*.so`
++  ;;
++
+ netbsd* | knetbsd*-gnu)
+   if echo __ELF__ | $CC -E - | grep __ELF__ > /dev/null; then
+     lt_cv_deplibs_check_method='match_pattern /lib[^/\.]+\.so\.[0-9]+\.[0-9]+$'
+--- gcc-4.1.0/libobjc/configure
++++ gcc-4.1.0/libobjc/configure
+@@ -3312,6 +3312,11 @@ linux-gnu*)
+   lt_cv_deplibs_check_method=pass_all
+   ;;
+ 
++linux-uclibc*)
++  lt_cv_deplibs_check_method=pass_all
++  lt_cv_file_magic_test_file=`echo /lib/libuClibc-*.so`
++  ;;
++
+ netbsd* | knetbsd*-gnu)
+   if echo __ELF__ | $CC -E - | grep __ELF__ > /dev/null; then
+     lt_cv_deplibs_check_method='match_pattern /lib[^/\.]+\.so\.[0-9]+\.[0-9]+$'
+--- gcc-4.1.0/libtool.m4
++++ gcc-4.1.0/libtool.m4
+@@ -743,6 +743,11 @@ linux-gnu*)
+   lt_cv_deplibs_check_method=pass_all
+   ;;
+ 
++linux-uclibc*)
++  lt_cv_deplibs_check_method=pass_all
++  lt_cv_file_magic_test_file=`echo /lib/libuClibc-*.so`
++  ;;
++
+ netbsd* | knetbsd*-gnu)
+   if echo __ELF__ | $CC -E - | grep __ELF__ > /dev/null; then
+     [lt_cv_deplibs_check_method='match_pattern /lib[^/\.]+\.so\.[0-9]+\.[0-9]+$']
+--- gcc-4.1.0/ltconfig
++++ gcc-4.1.0/ltconfig
+@@ -603,6 +603,7 @@ host_os=`echo $host | sed 's/^\([^-]*\)-
+ 
+ # Transform linux* to *-*-linux-gnu*, to support old configure scripts.
+ case $host_os in
++linux-uclibc*) ;;
+ linux-gnu*) ;;
+ linux*) host=`echo $host | sed 's/^\(.*-.*-linux\)\(.*\)$/\1-gnu\2/'`
+ esac
+@@ -1274,6 +1275,23 @@ linux-gnu*)
+   dynamic_linker='GNU/Linux ld.so'
+   ;;
+ 
++linux-uclibc*)
++  version_type=linux
++  need_lib_prefix=no
++  need_version=no
++  library_names_spec='${libname}${release}.so$versuffix ${libname}${release}.so$major $libname.so'
++  soname_spec='${libname}${release}.so$major'
++  finish_cmds='PATH="\$PATH:/sbin" ldconfig -n $libdir'
++  shlibpath_var=LD_LIBRARY_PATH
++  shlibpath_overrides_runpath=no
++  # This implies no fast_install, which is unacceptable.
++  # Some rework will be needed to allow for fast_install
++  # before this can be enabled.
++  hardcode_into_libs=yes
++  # Assume using the uClibc dynamic linker.
++  dynamic_linker="uClibc ld.so"
++  ;;
++
+ netbsd*)
+   need_lib_prefix=no
+   need_version=no
+--- gcc-4.1.0/zlib/configure
++++ gcc-4.1.0/zlib/configure
+@@ -3426,6 +3426,11 @@ linux-gnu*)
+   lt_cv_deplibs_check_method=pass_all
+   ;;
+ 
++linux-uclibc*)
++  lt_cv_deplibs_check_method=pass_all
++  lt_cv_file_magic_test_file=`echo /lib/libuClibc-*.so`
++  ;;
++
+ netbsd* | knetbsd*-gnu)
+   if echo __ELF__ | $CC -E - | grep __ELF__ > /dev/null; then
+     lt_cv_deplibs_check_method='match_pattern /lib[^/\.]+\.so\.[0-9]+\.[0-9]+$'

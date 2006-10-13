@@ -1,0 +1,35 @@
+Common subdirectories: hostapd-0.5.2/logwatch and hostapd-0.5.2.new/logwatch
+diff -u hostapd-0.5.2/Makefile hostapd-0.5.2.new/Makefile
+--- hostapd-0.5.2/Makefile	2006-03-20 03:20:09.000000000 +0000
++++ hostapd-0.5.2.new/Makefile	2006-03-21 22:25:23.803473592 +0000
+@@ -3,7 +3,7 @@
+ DIR_HOSTAP=.
+ 
+ ifndef CFLAGS
+-CFLAGS = -MMD -O2 -Wall -g
++CFLAGS = -MMD $(OPTFLAGS) $(CPPFLAGS)
+ endif
+ 
+ # define HOSTAPD_DUMP_STATE to include SIGUSR1 handler for dumping state to
+@@ -266,7 +266,7 @@
+ 	for i in $(ALL); do cp $$i /usr/local/bin/$$i; done
+ 
+ hostapd: $(OBJS)
+-	$(CC) -o hostapd $(OBJS) $(LIBS)
++	$(CC) -o hostapd $(OBJS) $(LDFLAGS) $(LIBS)
+ 
+ driver_conf.c: Makefile .config
+ 	rm -f driver_conf.c
+@@ -330,10 +330,10 @@
+ endif
+ 
+ nt_password_hash: $(NOBJS)
+-	$(CC) -o nt_password_hash $(NOBJS) $(LIBS_n)
++	$(CC) -o nt_password_hash $(NOBJS) $(LDFLAGS) $(LIBS_n)
+ 
+ hlr_auc_gw: $(HOBJS)
+-	$(CC) -o hlr_auc_gw $(HOBJS) $(LIBS_h)
++	$(CC) -o hlr_auc_gw $(HOBJS) $(LDFLAGS) $(LIBS_h)
+ 
+ clean:
+ 	rm -f core *~ *.o hostapd hostapd_cli nt_password_hash hlr_auc_gw

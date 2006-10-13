@@ -1,0 +1,228 @@
+# Copyright (C) 2006 OpenWrt.org
+#
+# This is free software, licensed under the GNU General Public License v2.
+# See /LICENSE for more information.
+#
+# expose (again) an hash_fd function (used in 911-ipkg.patch)
+#
+diff -ruN busybox-1.2.0-orig/coreutils/md5_sha1_sum.c busybox-1.2.0-libbb_hash/coreutils/md5_sha1_sum.c
+--- busybox-1.2.0-orig/coreutils/md5_sha1_sum.c	2006-07-01 00:42:07.000000000 +0200
++++ busybox-1.2.0-libbb_hash/coreutils/md5_sha1_sum.c	2006-07-22 17:08:02.000000000 +0200
+@@ -16,79 +16,10 @@
+ 
+ #include "busybox.h"
+ 
+-typedef enum { HASH_SHA1, HASH_MD5 } hash_algo_t;
+-
+ #define FLAG_SILENT	1
+ #define FLAG_CHECK	2
+ #define FLAG_WARN	4
+ 
+-/* This might be useful elsewhere */
+-static unsigned char *hash_bin_to_hex(unsigned char *hash_value,
+-									  unsigned char hash_length)
+-{
+-	int x, len, max;
+-	unsigned char *hex_value;
+-
+-	max = (hash_length * 2) + 2;
+-	hex_value = xmalloc(max);
+-	for (x = len = 0; x < hash_length; x++) {
+-		len += snprintf((char*)(hex_value + len), max - len, "%02x", hash_value[x]);
+-	}
+-	return (hex_value);
+-}
+-
+-static uint8_t *hash_file(const char *filename, hash_algo_t hash_algo)
+-{
+-	int src_fd, hash_len, count;
+-	union _ctx_ {
+-		sha1_ctx_t sha1;
+-		md5_ctx_t md5;
+-	} context;
+-	uint8_t *hash_value = NULL;
+-	RESERVE_CONFIG_UBUFFER(in_buf, 4096);
+-	void (*update)(const void*, size_t, void*);
+-	void (*final)(void*, void*);
+-
+-	if (strcmp(filename, "-") == 0) {
+-		src_fd = STDIN_FILENO;
+-	} else if(0 > (src_fd = open(filename, O_RDONLY))) {
+-		bb_perror_msg("%s", filename);
+-		return NULL;
+-	}
+-
+-	/* figure specific hash algorithims */
+-	if (ENABLE_MD5SUM && hash_algo==HASH_MD5) {
+-		md5_begin(&context.md5);
+-		update = (void (*)(const void*, size_t, void*))md5_hash;
+-		final = (void (*)(void*, void*))md5_end;
+-		hash_len = 16;
+-	} else if (ENABLE_SHA1SUM && hash_algo==HASH_SHA1) {
+-		sha1_begin(&context.sha1);
+-		update = (void (*)(const void*, size_t, void*))sha1_hash;
+-		final = (void (*)(void*, void*))sha1_end;
+-		hash_len = 20;
+-	} else {
+-		bb_error_msg_and_die("algorithm not supported");
+-	}
+-
+-	while (0 < (count = read(src_fd, in_buf, 4096))) {
+-		update(in_buf, count, &context);
+-	}
+-
+-	if (count == 0) {
+-		final(in_buf, &context);
+-		hash_value = hash_bin_to_hex(in_buf, hash_len);
+-	}
+-
+-	RELEASE_CONFIG_BUFFER(in_buf);
+-
+-	if (src_fd != STDIN_FILENO) {
+-		close(src_fd);
+-	}
+-
+-	return hash_value;
+-}
+-
+ /* This could become a common function for md5 as well, by using md5_stream */
+ static int hash_files(int argc, char **argv, hash_algo_t hash_algo)
+ {
+diff -ruN busybox-1.2.0-orig/include/libbb.h busybox-1.2.0-libbb_hash/include/libbb.h
+--- busybox-1.2.0-orig/include/libbb.h	2006-07-01 00:42:10.000000000 +0200
++++ busybox-1.2.0-libbb_hash/include/libbb.h	2006-07-22 17:01:06.000000000 +0200
+@@ -518,6 +518,8 @@
+ extern int get_terminal_width_height(int fd, int *width, int *height);
+ extern unsigned long get_ug_id(const char *s, long (*__bb_getxxnam)(const char *));
+ 
++typedef enum { HASH_SHA1, HASH_MD5 } hash_algo_t;
++
+ typedef struct _sha1_ctx_t_ {
+ 	uint32_t count[2];
+ 	uint32_t hash[5];
+@@ -542,6 +544,10 @@
+ void md5_hash(const void *data, size_t length, md5_ctx_t *ctx);
+ void *md5_end(void *resbuf, md5_ctx_t *ctx);
+ 
++unsigned char *hash_bin_to_hex(unsigned char *hash_value, unsigned char hash_length);
++int hash_fd(int fd, hash_algo_t hash_algo, uint8_t *hash_value);
++uint8_t *hash_file(const char *filename, hash_algo_t hash_algo);
++
+ extern uint32_t *bb_crc32_filltable (int endian);
+ 
+ #ifndef RB_POWER_OFF
+diff -ruN busybox-1.2.0-orig/libbb/hash.c busybox-1.2.0-libbb_hash/libbb/hash.c
+--- busybox-1.2.0-orig/libbb/hash.c	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.2.0-libbb_hash/libbb/hash.c	2006-07-22 17:07:34.000000000 +0200
+@@ -0,0 +1,100 @@
++/*
++ *  Copyright (C) 2003 Glenn L. McGrath
++ *  Copyright (C) 2003-2004 Erik Andersen
++ *
++ * Licensed under the GPL v2 or later, see the file LICENSE in this tarball.
++ */
++
++#include <fcntl.h>
++#include <limits.h>
++#include <stdio.h>
++#include <stdint.h>
++#include <stdlib.h>
++#include <string.h>
++#include <unistd.h>
++
++#include "busybox.h"
++
++unsigned char *hash_bin_to_hex(unsigned char *hash_value, unsigned char hash_length)
++{
++	int x, len, max;
++	unsigned char *hex_value;
++
++	max = (hash_length * 2) + 2;
++	hex_value = xmalloc(max);
++	for (x = len = 0; x < hash_length; x++) {
++		len += snprintf((char*)(hex_value + len), max - len, "%02x", hash_value[x]);
++	}
++	return (hex_value);
++}
++
++int hash_fd(int fd, hash_algo_t hash_algo, uint8_t *hash_value)
++{
++	int count, result = 0;
++	union _ctx_ {
++		sha1_ctx_t sha1;
++		md5_ctx_t md5;
++	} context;
++	RESERVE_CONFIG_UBUFFER(in_buf, 4096);
++	void (*update)(const void*, size_t, void*) = NULL;
++	void (*final)(void*, void*) = NULL;
++	
++	// figure specific hash algorithims
++	if (hash_algo==HASH_MD5) {
++		md5_begin(&context.md5);
++		update = (void (*)(const void*, size_t, void*))md5_hash;
++		final = (void (*)(void*, void*))md5_end;
++	} else if (hash_algo==HASH_SHA1) {
++		sha1_begin(&context.sha1);
++		update = (void (*)(const void*, size_t, void*))sha1_hash;
++		final = (void (*)(void*, void*))sha1_end;
++	}
++
++
++	while (0 < (count = read(fd, in_buf, sizeof in_buf))) {
++		update(in_buf, count, &context);
++		result += count;
++	}
++
++	if (count == 0) {
++		final(hash_value, &context);
++	}
++	
++	RELEASE_CONFIG_BUFFER(in_buf);
++	
++	return result;
++}
++
++uint8_t *hash_file(const char *filename, hash_algo_t hash_algo)
++{
++	int src_fd, hash_len;
++	RESERVE_CONFIG_UBUFFER(hash_buf, 20);
++	uint8_t *hash_value = NULL;
++	
++	if (ENABLE_MD5SUM && hash_algo==HASH_MD5) {
++		hash_len = 16;
++	} else if (ENABLE_SHA1SUM && hash_algo==HASH_SHA1) {
++		hash_len = 20;
++	} else {
++		bb_error_msg_and_die("algotithm not supported");
++	}
++
++	if (strcmp(filename, "-") == 0) {
++		src_fd = STDIN_FILENO;
++	} else if (0 > (src_fd = open(filename, O_RDONLY))) {
++		bb_perror_msg("%s", filename);
++		return NULL;
++	}
++
++	if (hash_fd(src_fd, hash_algo, hash_buf) > 0) {
++		hash_value = hash_bin_to_hex(hash_buf, hash_len);
++	}
++	
++	if (src_fd != STDIN_FILENO) {
++		close(src_fd);
++	}
++	
++	RELEASE_CONFIG_BUFFER(hash_buf);
++
++	return hash_value;
++}
+diff -ruN busybox-1.2.0-orig/libbb/Makefile.in busybox-1.2.0-libbb_hash/libbb/Makefile.in
+--- busybox-1.2.0-orig/libbb/Makefile.in	2006-07-01 00:42:08.000000000 +0200
++++ busybox-1.2.0-libbb_hash/libbb/Makefile.in	2006-07-22 16:51:47.000000000 +0200
+@@ -11,6 +11,7 @@
+ 
+ LIBBB-n:=
+ LIBBB-y:= \
++	hash.c \
+ 	bb_asprintf.c ask_confirmation.c change_identity.c chomp.c \
+ 	compare_string_array.c concat_path_file.c copy_file.c copyfd.c \
+ 	crc32.c create_icmp_socket.c create_icmp6_socket.c \

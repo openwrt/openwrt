@@ -1,0 +1,18 @@
+diff -urN linux.old/arch/mips/lib/ide-std.c linux.dev/arch/mips/lib/ide-std.c
+--- linux.old/arch/mips/lib/ide-std.c	2003-08-25 13:44:40.000000000 +0200
++++ linux.dev/arch/mips/lib/ide-std.c	2005-08-12 23:55:23.886963936 +0200
+@@ -31,12 +31,14 @@
+ static ide_ioreg_t std_ide_default_io_base(int index)
+ {
+ 	switch (index) {
++#if 0
+ 		case 0:	return 0x1f0;
+ 		case 1:	return 0x170;
+ 		case 2: return 0x1e8;
+ 		case 3: return 0x168;
+ 		case 4: return 0x1e0;
+ 		case 5: return 0x160;
++#endif
+ 		default:
+ 			return 0;
+ 	}

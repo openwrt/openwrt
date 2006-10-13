@@ -1,0 +1,37 @@
+diff -ur gcc.old/libstdc++-v3/configure gcc.dev/libstdc++-v3/configure
+--- gcc.old/libstdc++-v3/configure	2006-06-29 23:26:47.000000000 +0200
++++ gcc.dev/libstdc++-v3/configure	2006-06-05 15:48:03.000000000 +0200
+@@ -5745,7 +5745,7 @@
+   enableval="$enable_clocale"
+ 
+       case "$enableval" in
+-       generic|gnu|ieee_1003.1-2001|uclibc|yes|no|auto) ;;
++       generic|gnu|ieee_1003.1-2001|yes|no|auto) ;;
+        *) { { echo "$as_me:$LINENO: error: Unknown argument to enable/disable clocale" >&5
+ echo "$as_me: error: Unknown argument to enable/disable clocale" >&2;}
+    { (exit 1); exit 1; }; } ;;
+@@ -6524,23 +6525,6 @@
+ echo "${ECHO_T}$enable_long_long" >&6
+ 
+ 
+-
+-   # Check whether --enable-wchar_t or --disable-wchar_t was given.
+-if test "${enable_wchar_t+set}" = set; then
+-  enableval="$enable_wchar_t"
+-
+-      case "$enableval" in
+-       yes|no) ;;
+-       *) { { echo "$as_me:$LINENO: error: Argument to enable/disable wchar_t must be yes or no" >&5
+-echo "$as_me: error: Argument to enable/disable wchar_t must be yes or no" >&2;}
+-   { (exit 1); exit 1; }; } ;;
+-      esac
+-
+-else
+-  enable_wchar_t=yes
+-fi;
+-
+-
+   # Test wchar.h for mbstate_t, which is needed for char_traits and fpos.
+ 
+ for ac_header in wchar.h
+

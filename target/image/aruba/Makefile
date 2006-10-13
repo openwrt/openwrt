@@ -1,0 +1,43 @@
+# 
+# Copyright (C) 2006 OpenWrt.org
+#
+# This is free software, licensed under the GNU General Public License v2.
+# See /LICENSE for more information.
+#
+include $(TOPDIR)/rules.mk
+include $(INCLUDE_DIR)/image.mk
+
+LOADADDR = 0x81000000		# RAM start + 16M 
+KERNEL_ENTRY = 0x80100000
+RAMSIZE = 0x00100000		# 1MB
+
+LOADER_MAKEOPTS= \
+		KDIR=$(KDIR) \
+		LOADADDR=$(LOADADDR) \
+		KERNEL_ENTRY=$(KERNEL_ENTRY) \
+		RAMSIZE=$(RAMSIZE)
+
+define Build/Clean
+	$(MAKE) -C ../generic/lzma-loader $(LOADER_MAKEOPTS) clean
+endef
+
+define Image/Prepare
+	cat $(KDIR)/vmlinux | $(STAGING_DIR)/bin/lzma e -si -so -eos -lc1 -lp2 -pb2 > $(KDIR)/vmlinux.lzma
+	$(MAKE) -C ../generic/lzma-loader $(LOADER_MAKEOPTS) clean compile
+endef
+
+define Image/BuildKernel
+	./addVersion -n ArubaOS $(KDIR)/loader.elf $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL).ari version
+endef
+
+define Image/Build/jffs2-64k
+	@dd if=$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL).ari of=$(KDIR)/image.tmp bs=655360 conv=sync
+	@cat $(KDIR)/root.$(1) >> $(KDIR)/image.tmp
+	mv $(KDIR)/image.tmp $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(patsubst jffs2-%,jffs2,$(1)).bin
+endef
+
+define Image/Build
+	$(call Image/Build/$(1),$(1))
+endef
+
+$(eval $(call BuildImage))

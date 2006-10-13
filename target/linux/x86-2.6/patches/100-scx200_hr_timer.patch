@@ -1,0 +1,320 @@
+SCx200 High Resolution Timer Patch for Linux 2.6
+http://www.gnusto.com/scx200-hr-timer.html
+
+diff -Naurp linux-2.6.12-rc6.orig/arch/i386/Kconfig linux-2.6.12-rc6/arch/i386/Kconfig
+--- linux-2.6.12-rc6.orig/arch/i386/Kconfig	2005-06-07 14:56:02.000000000 +0100
++++ linux-2.6.12-rc6/arch/i386/Kconfig	2005-06-07 16:43:19.000000000 +0100
+@@ -458,6 +458,17 @@ config HPET_EMULATE_RTC
+ 	bool "Provide RTC interrupt"
+ 	depends on HPET_TIMER && RTC=y
+ 
++config SCx200HR_TIMER
++	bool "NatSemi SCx200 27MHz High-Resolution Timer Support"
++	help
++	  Some of the AMD (formerly National Semiconductor) Geode
++	  processors, notably the SC1100, suffer from a buggy time
++	  stamp counter which causes them to lose time when the
++	  processor is sleeping.  Enable this option to use the
++	  on-board 27Mz high-resolution timer to keep time instead.
++	depends on (SCx200)
++	default n
++
+ config SMP
+ 	bool "Symmetric multi-processing support"
+ 	---help---
+diff -Naurp linux-2.6.12-rc6.orig/arch/i386/kernel/scx200.c linux-2.6.12-rc6/arch/i386/kernel/scx200.c
+--- linux-2.6.12-rc6.orig/arch/i386/kernel/scx200.c	2005-06-07 14:56:02.000000000 +0100
++++ linux-2.6.12-rc6/arch/i386/kernel/scx200.c	2005-06-07 16:43:19.000000000 +0100
+@@ -27,6 +27,10 @@ long scx200_gpio_shadow[2];
+ 
+ unsigned scx200_cb_base = 0;
+ 
++#ifdef CONFIG_SCx200HR_TIMER
++extern void __devinit scx200hr_timer_enable(void);
++#endif
++
+ static struct pci_device_id scx200_tbl[] = {
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_NS, PCI_DEVICE_ID_NS_SCx200_BRIDGE) },
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_NS, PCI_DEVICE_ID_NS_SC1100_BRIDGE) },
+@@ -83,6 +87,9 @@ static int __devinit scx200_probe(struct
+ 		printk(KERN_INFO NAME ": Configuration Block base 0x%x\n", scx200_cb_base);
+ 	}
+ 
++#ifdef CONFIG_SCx200HR_TIMER
++	scx200hr_timer_enable();
++#endif
+ 	return 0;
+ }
+ 
+diff -Naurp linux-2.6.12-rc6.orig/arch/i386/kernel/timers/Makefile linux-2.6.12-rc6/arch/i386/kernel/timers/Makefile
+--- linux-2.6.12-rc6.orig/arch/i386/kernel/timers/Makefile	2004-03-11 18:21:13.000000000 +0000
++++ linux-2.6.12-rc6/arch/i386/kernel/timers/Makefile	2005-06-07 16:43:19.000000000 +0100
+@@ -5,5 +5,6 @@
+ obj-y := timer.o timer_none.o timer_tsc.o timer_pit.o common.o
+ 
+ obj-$(CONFIG_X86_CYCLONE_TIMER)	+= timer_cyclone.o
++obj-$(CONFIG_SCx200HR_TIMER)	+= timer_scx200hr.o
+ obj-$(CONFIG_HPET_TIMER)	+= timer_hpet.o
+ obj-$(CONFIG_X86_PM_TIMER)	+= timer_pm.o
+diff -Naurp linux-2.6.12-rc6.orig/arch/i386/kernel/timers/timer.c linux-2.6.12-rc6/arch/i386/kernel/timers/timer.c
+--- linux-2.6.12-rc6.orig/arch/i386/kernel/timers/timer.c	2004-12-26 14:07:37.000000000 +0000
++++ linux-2.6.12-rc6/arch/i386/kernel/timers/timer.c	2005-06-07 16:43:19.000000000 +0100
+@@ -13,6 +13,9 @@
+ #endif
+ /* list of timers, ordered by preference, NULL terminated */
+ static struct init_timer_opts* __initdata timers[] = {
++#ifdef CONFIG_SCx200HR_TIMER
++	&timer_scx200hr_init,
++#endif
+ #ifdef CONFIG_X86_CYCLONE_TIMER
+ 	&timer_cyclone_init,
+ #endif
+diff -Naurp linux-2.6.12-rc6.orig/arch/i386/kernel/timers/timer_scx200hr.c linux-2.6.12-rc6/arch/i386/kernel/timers/timer_scx200hr.c
+--- linux-2.6.12-rc6.orig/arch/i386/kernel/timers/timer_scx200hr.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.12-rc6/arch/i386/kernel/timers/timer_scx200hr.c	2005-06-07 16:43:19.000000000 +0100
+@@ -0,0 +1,220 @@
++/*
++ * Copyright (C) 2005 Ted Phelps
++ *
++ * This is a clock driver for the Geode SCx200's 27MHz high-resolution
++ * timer as the system clock replacing its buggy time stamp counter.
++ *
++ * Based on parts of timer_hpet.c, timer_tsc.c and timer_pit.c.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of the
++ * License, or (at your option) any later version.
++ */
++
++#include <asm/timer.h>
++#include <linux/init.h>
++#include <linux/pci.h>
++#include <linux/seq_file.h>
++#include <linux/scx200.h>
++
++#define NAME "scx200hr"
++
++/* Read the clock */
++#define SCx200HR_CLOCK() inl(scx200_cb_base + SCx200_TIMER_OFFSET)
++
++/* High-resolution timer configuration address */
++#define SCx200_TMCNFG_OFFSET (SCx200_TIMER_OFFSET + 5)
++
++/* Set this bit to disable the 27 MHz input clock */
++#define HR_TM27MPD (1 << 2)
++
++/* Set this bit to update the count-up timer once per cycle of the
++ * 27MHz timer, clear it to update the timer once every 27 cycles
++ * (effectively producing a 1MHz counter) */
++#define HR_TMCLKSEL (1 << 1)
++
++/* Set this bit to enable the high-resolution timer interrupt */
++#define HR_TMEN (1 << 0)
++
++/* The frequency of the timer.	Change this to 27000000 and set
++ * HR_TMCLKSEL in scx200hr_enable to run at the faster clock rate.  At
++ * this point in time there is no point in doing so since times are
++ * recorded in usec except for the monotonic clock, which is only used
++ * by the hangcheck-timer. */
++#define HR_FREQ 1000000
++
++/* The number of cycles of the high-resolution timer we expect to see
++ * in a single tick.  Note that the result is <<8 for greater precision*/
++#define HR_CYCLES_PER_TICK \
++    (SH_DIV(HR_FREQ / 1000000 * TICK_NSEC, 1000, 8))
++
++/* The number of cycles of the high-resolution timer we expect to see
++ * in one microsecond, <<8 */
++#define HR_CYCLES_PER_US ((HR_FREQ / 1000000) << 8)
++
++
++/* The value of the timer at the last interrupt */
++static u32 clock_at_last_interrupt;
++
++/* The number of high-resolution clock cycles beyond what we would
++ have expected that the last tick occurred, <<8 for greater precision */
++static long clock_delay;
++
++/* The total number of timer nanoseconds between the time the timer
++ * went live and the most recent tick. */
++static unsigned long long total_ns;
++
++/* A lock to guard access to the monotonic clock-related variables
++ * (total_ns and clocal_at_last_interrupt).  Note that these are also
++ * protected by the xtime lock. */
++static seqlock_t hr_lock = SEQLOCK_UNLOCKED;
++
++/* Nonzero if the timer has been selected */
++static int enable_scx200hr;
++
++static int __init scx200hr_init(char *override)
++{
++	/* Watch for a command-line clock= override */
++	if (override[0] && strncmp(override, NAME, sizeof(NAME) - 1) != 0) {
++		return -ENODEV;
++	}
++
++        /* Note that we should try to enable this timer once the
++         * configuration block address is known */
++        printk(KERN_WARNING NAME ": timer not yet accessible; will probe later.\n");
++	enable_scx200hr = 1;
++	return -EAGAIN;
++}
++
++/* Called by the timer interrupt.  The xtime_lock will be held. */
++static void mark_offset_scx200hr(void)
++{
++	u32 now, delta;
++
++	/* Avoid races between the interrupt handler and monotonic_clock */
++	write_seqlock(&hr_lock);
++
++	/* Determine how many cycles have elapsed since the last interrupt */
++	now = SCx200HR_CLOCK();
++	delta = (now - clock_at_last_interrupt) << 8;
++	clock_at_last_interrupt = now;
++
++	/* Update the total us count and remainder */
++	total_ns += (delta * 1000) / HR_CYCLES_PER_US;
++
++	/* The monotonic clock is safe now */
++	write_sequnlock(&hr_lock);
++
++	/* Adjust for interrupt handling delay */
++	delta += clock_delay;
++
++	/* The high-resolution timer is driven by a different crystal
++	 * to the main CPU, so there's no guarantee that the 1KHz
++	 * interrupt rate will coincide with the timer.  This keeps
++	 * the jiffies count in line with the high-resolution timer,
++	 * which makes it possible for NTP to do its magic */
++	if (delta < HR_CYCLES_PER_TICK) {
++#if 1
++		/* Didn't go over 1000us: decrement jiffies to balance
++		 * out increment in do_timer.  This will cause some
++		 * jitter if the frequency offset is large, as that
++		 * adjustment will be applied about 1ms late. */
++		jiffies_64--;
++		clock_delay = delta;
++#else /* !1 */
++                clock_delay = 0;
++#endif /* 1 */
++	} else if (delta < (HR_CYCLES_PER_TICK << 1) + (HR_CYCLES_PER_TICK >> 1)) {
++		clock_delay = delta - HR_CYCLES_PER_TICK;
++	} else {
++		jiffies_64 += delta / HR_CYCLES_PER_TICK - 2;
++		clock_delay = HR_CYCLES_PER_TICK + delta % HR_CYCLES_PER_TICK;
++	}
++}
++
++/* Called by gettimeofday().  Returns the number of microseconds since
++ * the last interrupt.	This is called with the xtime_lock held.*/
++static unsigned long get_offset_scx200hr(void)
++{
++	u32 delta;
++
++	/* Get the time now and determine how many cycles have
++	 * transpired since the interrupt, adjusting for timer
++	 * interrupt jitter. */
++	delta = ((SCx200HR_CLOCK() - clock_at_last_interrupt) << 8) + clock_delay;
++
++	/* Convert from cycles<<8 to microseconds */
++	return delta / HR_CYCLES_PER_US;
++}
++
++/* Returns the number of nanoseconds since the init of the timer. */
++static unsigned long long monotonic_clock_scx200hr(void)
++{
++	u32 delta, seq;
++	unsigned long long ns;
++
++	/* This function is *not* called with xtime_lock held, so we
++	 * need to get the hr_lock to ensure we're not competing with
++	 * mark_offset_scx200hr. */
++	do {
++		seq = read_seqbegin(&hr_lock);
++		ns = total_ns;
++		delta = SCx200HR_CLOCK() - clock_at_last_interrupt;
++	} while (read_seqretry(&hr_lock, seq));
++
++	/* Convert cycles to microseconds and add. */
++	return ns + delta * 1000 / HR_CYCLES_PER_US;
++}
++
++/* scx200hr timer_opts struct */
++struct timer_opts timer_scx200hr = {
++	.name = NAME,
++	.mark_offset = mark_offset_scx200hr, 
++	.get_offset = get_offset_scx200hr,
++	.monotonic_clock = monotonic_clock_scx200hr,
++	.delay = NULL
++};
++
++/* And the init_timer struct */
++struct init_timer_opts __devinitdata timer_scx200hr_init = {
++	.init = scx200hr_init,
++	.opts = &timer_scx200hr
++};
++
++
++/* Switch from the original timer to the high-resolution timer */
++void __devinit scx200hr_timer_enable(void)
++{
++        /* Make sure the timer was requested and that the
++         * configuration block is present */
++	if (!enable_scx200hr || !scx200_cb_present()) {
++		return;
++	}
++
++	/* Reserve the timer region for ourselves */
++	if (!request_region(scx200_cb_base + SCx200_TIMER_OFFSET,
++			    SCx200_TIMER_SIZE,
++			    "NatSemi SCx200 High-Resolution Timer")) {
++		printk(KERN_WARNING NAME ": unable to lock timer region\n");
++		return;
++	}
++
++	/* Configure the timer */
++	outb(0, scx200_cb_base + SCx200_TMCNFG_OFFSET);
++
++	/* Record the current value of the timer. */
++	clock_at_last_interrupt = SCx200HR_CLOCK();
++
++        /* Get the current value of the monotonic clock */
++	total_ns = cur_timer->monotonic_clock();
++
++        /* Switch from the original timer functions to ours, but keep
++         * the current delay function since loops_per_jiffy will have
++         * been computed using that */
++        timer_scx200hr.delay = cur_timer->delay;
++	cur_timer = &timer_scx200hr;
++
++	printk(KERN_INFO "switching to scx200 high-resolution timer (%lu cpt)\n",
++                HR_CYCLES_PER_TICK);
++}
+diff -Naurp linux-2.6.12-rc6.orig/include/asm-i386/timer.h linux-2.6.12-rc6/include/asm-i386/timer.h
+--- linux-2.6.12-rc6.orig/include/asm-i386/timer.h	2005-06-07 14:56:11.000000000 +0100
++++ linux-2.6.12-rc6/include/asm-i386/timer.h	2005-06-07 16:43:19.000000000 +0100
+@@ -50,6 +50,9 @@ extern struct init_timer_opts timer_tsc_
+ #ifdef CONFIG_X86_CYCLONE_TIMER
+ extern struct init_timer_opts timer_cyclone_init;
+ #endif
++#ifdef CONFIG_SCx200HR_TIMER
++extern struct init_timer_opts timer_scx200hr_init;
++#endif
+ 
+ extern unsigned long calibrate_tsc(void);
+ extern void init_cpu_khz(void);
+diff -Naurp linux-2.6.12-rc6.orig/include/linux/scx200.h linux-2.6.12-rc6/include/linux/scx200.h
+--- linux-2.6.12-rc6.orig/include/linux/scx200.h	2005-06-07 14:56:11.000000000 +0100
++++ linux-2.6.12-rc6/include/linux/scx200.h	2005-06-07 16:43:19.000000000 +0100
+@@ -32,7 +32,7 @@ extern unsigned scx200_cb_base;
+ 
+ /* High Resolution Timer */
+ #define SCx200_TIMER_OFFSET 0x08
+-#define SCx200_TIMER_SIZE 0x05
++#define SCx200_TIMER_SIZE 0x06
+ 
+ /* Clock Generators */
+ #define SCx200_CLOCKGEN_OFFSET 0x10

@@ -1,0 +1,52 @@
+#!/bin/sh -e
+## 001_ld_makefile_patch.dpatch
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: Description: correct where ld scripts are installed
+## DP: Author: Chris Chimelis <chris@debian.org>
+## DP: Upstream status: N/A
+## DP: Date: ??
+
+if [ $# -ne 1 ]; then
+    echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+    exit 1
+fi
+
+[ -f debian/patches/00patch-opts ] && . debian/patches/00patch-opts
+patch_opts="${patch_opts:--f --no-backup-if-mismatch}"
+
+case "$1" in
+       -patch) patch $patch_opts -p1 < $0;;
+       -unpatch) patch $patch_opts -p1 -R < $0;;
+        *)
+                echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+                exit 1;;
+esac
+
+exit 0
+
+@DPATCH@
+diff -urNad /home/james/debian/packages/binutils/binutils-2.14.90.0.6/ld/Makefile.am binutils-2.14.90.0.6/ld/Makefile.am
+--- /home/james/debian/packages/binutils/binutils-2.14.90.0.6/ld/Makefile.am	2003-08-21 16:28:48.000000000 +0100
++++ binutils-2.14.90.0.6/ld/Makefile.am	2003-09-10 23:12:09.000000000 +0100
+@@ -19,7 +19,7 @@
+ # We put the scripts in the directory $(scriptdir)/ldscripts.
+ # We can't put the scripts in $(datadir) because the SEARCH_DIR
+ # directives need to be different for native and cross linkers.
+-scriptdir = $(tooldir)/lib
++scriptdir = $(libdir)
+ 
+ EMUL = @EMUL@
+ EMULATION_OFILES = @EMULATION_OFILES@
+diff -urNad /home/james/debian/packages/binutils/binutils-2.14.90.0.6/ld/Makefile.in binutils-2.14.90.0.6/ld/Makefile.in
+--- /home/james/debian/packages/binutils/binutils-2.14.90.0.6/ld/Makefile.in	2003-08-21 16:28:48.000000000 +0100
++++ binutils-2.14.90.0.6/ld/Makefile.in	2003-09-10 23:12:09.000000000 +0100
+@@ -128,7 +128,7 @@
+ # We put the scripts in the directory $(scriptdir)/ldscripts.
+ # We can't put the scripts in $(datadir) because the SEARCH_DIR
+ # directives need to be different for native and cross linkers.
+-scriptdir = $(tooldir)/lib
++scriptdir = $(libdir)
+ 
+ EMUL = @EMUL@
+ EMULATION_OFILES = @EMULATION_OFILES@

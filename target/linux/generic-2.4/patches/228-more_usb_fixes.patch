@@ -1,0 +1,861 @@
+diff -ur linux.old/drivers/scsi/hosts.c linux.dev/drivers/scsi/hosts.c
+--- linux.old/drivers/scsi/hosts.c	2003-06-13 16:51:36.000000000 +0200
++++ linux.dev/drivers/scsi/hosts.c	2006-07-30 12:34:30.000000000 +0200
+@@ -107,8 +107,21 @@
+     if (shn) shn->host_registered = 0;
+     /* else {} : This should not happen, we should panic here... */
+     
++    /* If we are removing the last host registered, it is safe to reuse
++     * its host number (this avoids "holes" at boot time) (DB) 
++     * It is also safe to reuse those of numbers directly below which have
++     * been released earlier (to avoid some holes in numbering).
++     */
++    if(sh->host_no == max_scsi_hosts - 1) {
++	while(--max_scsi_hosts >= next_scsi_host) {
++	    shpnt = scsi_hostlist;
++	    while(shpnt && shpnt->host_no != max_scsi_hosts - 1)
++		shpnt = shpnt->next;
++	    if(shpnt)
++		break;
++	}
++    }
+     next_scsi_host--;
+-
+     kfree((char *) sh);
+ }
+ 
+diff -ur linux.old/drivers/usb/hcd.c linux.dev/drivers/usb/hcd.c
+--- linux.old/drivers/usb/hcd.c	2004-04-14 15:05:32.000000000 +0200
++++ linux.dev/drivers/usb/hcd.c	2006-07-30 11:49:06.000000000 +0200
+@@ -1105,7 +1105,8 @@
+ 		break;
+ 	case PIPE_BULK:
+ 		allowed |= USB_DISABLE_SPD | USB_QUEUE_BULK
+-				| USB_ZERO_PACKET | URB_NO_INTERRUPT;
++				| USB_ZERO_PACKET | URB_NO_INTERRUPT
++		        | URB_NO_TRANSFER_DMA_MAP;
+ 		break;
+ 	case PIPE_INTERRUPT:
+ 		allowed |= USB_DISABLE_SPD;
+@@ -1212,7 +1213,8 @@
+ 					urb->setup_packet,
+ 					sizeof (struct usb_ctrlrequest),
+ 					PCI_DMA_TODEVICE);
+-		if (urb->transfer_buffer_length != 0)
++		if (urb->transfer_buffer_length != 0
++			&& !(urb->transfer_flags & URB_NO_TRANSFER_DMA_MAP))
+ 			urb->transfer_dma = pci_map_single (
+ 					hcd->pdev,
+ 					urb->transfer_buffer,
+diff -ur linux.old/drivers/usb/host/ehci-hcd.c linux.dev/drivers/usb/host/ehci-hcd.c
+--- linux.old/drivers/usb/host/ehci-hcd.c	2006-07-30 11:31:57.000000000 +0200
++++ linux.dev/drivers/usb/host/ehci-hcd.c	2006-07-30 11:48:14.000000000 +0200
+@@ -399,6 +399,27 @@
+ 		ehci_mem_cleanup (ehci);
+ 		return retval;
+ 	}
++
++{
++	int misc_reg;
++	u32 vendor_id;
++	
++	pci_read_config_dword (ehci->hcd.pdev, PCI_VENDOR_ID, &vendor_id);
++	if (vendor_id == 0x31041106) {
++		/* VIA 6212 */
++		printk(KERN_INFO "EHCI: Enabling VIA 6212 workarounds\n", misc_reg);
++		pci_read_config_byte(ehci->hcd.pdev, 0x49, &misc_reg);
++		misc_reg &= ~0x20;
++		pci_write_config_byte(ehci->hcd.pdev, 0x49, misc_reg);
++		pci_read_config_byte(ehci->hcd.pdev, 0x49, &misc_reg);
++
++		pci_read_config_byte(ehci->hcd.pdev, 0x4b, &misc_reg);
++		misc_reg |= 0x20;
++		pci_write_config_byte(ehci->hcd.pdev, 0x4b, misc_reg);
++		pci_read_config_byte(ehci->hcd.pdev, 0x4b, &misc_reg);
++	}
++}
++
+ 	writel (INTR_MASK, &ehci->regs->intr_enable);
+ 	writel (ehci->periodic_dma, &ehci->regs->frame_list);
+ 
+diff -ur linux.old/drivers/usb/host/ehci-q.c linux.dev/drivers/usb/host/ehci-q.c
+--- linux.old/drivers/usb/host/ehci-q.c	2006-07-30 11:31:57.000000000 +0200
++++ linux.dev/drivers/usb/host/ehci-q.c	2006-07-30 12:10:15.000000000 +0200
+@@ -791,6 +791,8 @@
+ 			writel (cmd, &ehci->regs->command);
+ 			ehci->hcd.state = USB_STATE_RUNNING;
+ 			/* posted write need not be known to HC yet ... */
++			
++			timer_action (ehci, TIMER_IO_WATCHDOG);
+ 		}
+ 	}
+ 
+diff -ur linux.old/drivers/usb/host/usb-uhci.c linux.dev/drivers/usb/host/usb-uhci.c
+--- linux.old/drivers/usb/host/usb-uhci.c	2004-11-17 12:54:21.000000000 +0100
++++ linux.dev/drivers/usb/host/usb-uhci.c	2006-07-30 12:10:16.000000000 +0200
+@@ -2491,7 +2491,7 @@
+ 			((urb_priv_t*)urb->hcpriv)->flags=0;		       			
+ 		}
+ 		
+-		if ((urb->status != -ECONNABORTED) && (urb->status != ECONNRESET) &&
++		if ((urb->status != -ECONNABORTED) && (urb->status != -ECONNRESET) &&
+ 			    (urb->status != -ENOENT)) {
+ 
+ 			urb->status = -EINPROGRESS;
+@@ -3034,6 +3034,21 @@
+ 	
+ 	pci_set_master(dev);
+ 
++	{
++		u8 misc_reg;
++		u32 vendor_id;
++		
++		pci_read_config_dword (dev, PCI_VENDOR_ID, &vendor_id);
++		if (vendor_id == 0x30381106) {
++			/* VIA 6212 */
++			printk(KERN_INFO "UHCI: Enabling VIA 6212 workarounds\n");
++			pci_read_config_byte(dev, 0x41, &misc_reg);
++			misc_reg &= ~0x10;
++			pci_write_config_byte(dev, 0x41, misc_reg);
++			pci_read_config_byte(dev, 0x41, &misc_reg);
++		}
++	}
++	
+ 	/* Search for the IO base address.. */
+ 	for (i = 0; i < 6; i++) {
+ 
+diff -ur linux.old/drivers/usb/storage/transport.c linux.dev/drivers/usb/storage/transport.c
+--- linux.old/drivers/usb/storage/transport.c	2005-04-04 03:42:19.000000000 +0200
++++ linux.dev/drivers/usb/storage/transport.c	2006-07-30 12:22:56.000000000 +0200
+@@ -54,6 +54,22 @@
+ #include <linux/sched.h>
+ #include <linux/errno.h>
+ #include <linux/slab.h>
++#include <linux/pci.h>
++#include "../hcd.h"
++
++/* These definitions mirror those in pci.h, so they can be used
++ * interchangeably with their PCI_ counterparts */
++enum dma_data_direction {
++	DMA_BIDIRECTIONAL = 0,
++	DMA_TO_DEVICE = 1,
++	DMA_FROM_DEVICE = 2,
++	DMA_NONE = 3,
++};
++
++#define dma_map_sg(d,s,n,dir) pci_map_sg(d,s,n,dir)
++#define dma_unmap_sg(d,s,n,dir) pci_unmap_sg(d,s,n,dir)
++
++
+ 
+ /***********************************************************************
+  * Helper routines
+@@ -554,6 +570,543 @@
+ 	return US_BULK_TRANSFER_SHORT;
+ }
+ 
++/*-------------------------------------------------------------------*/
++/**
++ * usb_buffer_unmap_sg - free DMA mapping(s) for a scatterlist
++ * @dev: device to which the scatterlist will be mapped
++ * @pipe: endpoint defining the mapping direction
++ * @sg: the scatterlist to unmap
++ * @n_hw_ents: the positive return value from usb_buffer_map_sg
++ *
++ * Reverses the effect of usb_buffer_map_sg().
++ */
++static void usb_buffer_unmap_sg (struct usb_device *dev, unsigned pipe,
++		struct scatterlist *sg, int n_hw_ents)
++{
++	struct usb_bus *bus;
++	struct usb_hcd *hcd;
++	struct pci_dev *pdev;
++
++	if (!dev
++			|| !(bus = dev->bus)
++			|| !(hcd = bus->hcpriv)
++			|| !(pdev = hcd->pdev)
++			|| !pdev->dma_mask)
++		return;
++
++	dma_unmap_sg (pdev, sg, n_hw_ents,
++			usb_pipein (pipe) ? DMA_FROM_DEVICE : DMA_TO_DEVICE);
++}
++
++/**
++ * usb_buffer_map_sg - create scatterlist DMA mapping(s) for an endpoint
++ * @dev: device to which the scatterlist will be mapped
++ * @pipe: endpoint defining the mapping direction
++ * @sg: the scatterlist to map
++ * @nents: the number of entries in the scatterlist
++ *
++ * Return value is either < 0 (indicating no buffers could be mapped), or
++ * the number of DMA mapping array entries in the scatterlist.
++ *
++ * The caller is responsible for placing the resulting DMA addresses from
++ * the scatterlist into URB transfer buffer pointers, and for setting the
++ * URB_NO_TRANSFER_DMA_MAP transfer flag in each of those URBs.
++ *
++ * Top I/O rates come from queuing URBs, instead of waiting for each one
++ * to complete before starting the next I/O.   This is particularly easy
++ * to do with scatterlists.  Just allocate and submit one URB for each DMA
++ * mapping entry returned, stopping on the first error or when all succeed.
++ * Better yet, use the usb_sg_*() calls, which do that (and more) for you.
++ *
++ * This call would normally be used when translating scatterlist requests,
++ * rather than usb_buffer_map(), since on some hardware (with IOMMUs) it
++ * may be able to coalesce mappings for improved I/O efficiency.
++ *
++ * Reverse the effect of this call with usb_buffer_unmap_sg().
++ */
++static int usb_buffer_map_sg (struct usb_device *dev, unsigned pipe,
++		struct scatterlist *sg, int nents)
++{
++	struct usb_bus		*bus;
++	struct usb_hcd *hcd;
++	struct pci_dev *pdev;
++
++	if (!dev
++			|| usb_pipecontrol (pipe)
++			|| !(bus = dev->bus)
++			|| !(hcd = bus->hcpriv)
++			|| !(pdev = hcd->pdev)
++			|| !pdev->dma_mask)
++		return -1;
++
++	// FIXME generic api broken like pci, can't report errors
++	return dma_map_sg (pdev, sg, nents,
++			usb_pipein (pipe) ? DMA_FROM_DEVICE : DMA_TO_DEVICE);
++}
++
++static void sg_clean (struct usb_sg_request *io)
++{
++	struct usb_hcd *hcd = io->dev->bus->hcpriv;
++	struct pci_dev *pdev = hcd->pdev;
++
++	if (io->urbs) {
++		while (io->entries--)
++			usb_free_urb (io->urbs [io->entries]);
++		kfree (io->urbs);
++		io->urbs = 0;
++	}
++	if (pdev->dma_mask != 0)
++		usb_buffer_unmap_sg (io->dev, io->pipe, io->sg, io->nents);
++	io->dev = 0;
++}
++
++static void sg_complete (struct urb *urb)
++{
++	struct usb_sg_request	*io = (struct usb_sg_request *) urb->context;
++
++	spin_lock (&io->lock);
++
++	/* In 2.5 we require hcds' endpoint queues not to progress after fault
++	 * reports, until the completion callback (this!) returns.  That lets
++	 * device driver code (like this routine) unlink queued urbs first,
++	 * if it needs to, since the HC won't work on them at all.  So it's
++	 * not possible for page N+1 to overwrite page N, and so on.
++	 *
++	 * That's only for "hard" faults; "soft" faults (unlinks) sometimes
++	 * complete before the HCD can get requests away from hardware,
++	 * though never during cleanup after a hard fault.
++	 */
++	if (io->status
++			&& (io->status != -ECONNRESET
++				|| urb->status != -ECONNRESET)
++			&& urb->actual_length) {
++		US_DEBUGP("Error: %s ep%d%s scatterlist error %d/%d\n",
++			io->dev->devpath,
++			usb_pipeendpoint (urb->pipe),
++			usb_pipein (urb->pipe) ? "in" : "out",
++			urb->status, io->status);
++		// BUG ();
++	}
++
++	if (urb->status && urb->status != -ECONNRESET) {
++		int		i, found, status;
++
++		io->status = urb->status;
++
++		/* the previous urbs, and this one, completed already.
++		 * unlink pending urbs so they won't rx/tx bad data.
++		 */
++		for (i = 0, found = 0; i < io->entries; i++) {
++			if (!io->urbs [i])
++				continue;
++			if (found) {
++				status = usb_unlink_urb (io->urbs [i]);
++				if (status != -EINPROGRESS && status != -EBUSY)
++					US_DEBUGP("Error: %s, unlink --> %d\n", __FUNCTION__, status);
++			} else if (urb == io->urbs [i])
++				found = 1;
++		}
++	}
++	urb->dev = 0;
++
++	/* on the last completion, signal usb_sg_wait() */
++	io->bytes += urb->actual_length;
++	io->count--;
++	if (!io->count)
++		complete (&io->complete);
++
++	spin_unlock (&io->lock);
++}
++
++/**
++ * usb_sg_init - initializes scatterlist-based bulk/interrupt I/O request
++ * @io: request block being initialized.  until usb_sg_wait() returns,
++ *	treat this as a pointer to an opaque block of memory,
++ * @dev: the usb device that will send or receive the data
++ * @pipe: endpoint "pipe" used to transfer the data
++ * @period: polling rate for interrupt endpoints, in frames or
++ * 	(for high speed endpoints) microframes; ignored for bulk
++ * @sg: scatterlist entries
++ * @nents: how many entries in the scatterlist
++ * @length: how many bytes to send from the scatterlist, or zero to
++ * 	send every byte identified in the list.
++ * @mem_flags: SLAB_* flags affecting memory allocations in this call
++ *
++ * Returns zero for success, else a negative errno value.  This initializes a
++ * scatter/gather request, allocating resources such as I/O mappings and urb
++ * memory (except maybe memory used by USB controller drivers).
++ *
++ * The request must be issued using usb_sg_wait(), which waits for the I/O to
++ * complete (or to be canceled) and then cleans up all resources allocated by
++ * usb_sg_init().
++ *
++ * The request may be canceled with usb_sg_cancel(), either before or after
++ * usb_sg_wait() is called.
++ */
++int usb_sg_init (
++	struct usb_sg_request	*io,
++	struct usb_device	*dev,
++	unsigned		pipe, 
++	unsigned		period,
++	struct scatterlist	*sg,
++	int			nents,
++	size_t			length,
++	int			mem_flags
++)
++{
++	int			i;
++	int			urb_flags;
++	int			dma;
++	struct usb_hcd *hcd;
++
++	hcd = dev->bus->hcpriv;
++
++	if (!io || !dev || !sg
++			|| usb_pipecontrol (pipe)
++			|| usb_pipeisoc (pipe)
++			|| nents <= 0)
++		return -EINVAL;
++
++	spin_lock_init (&io->lock);
++	io->dev = dev;
++	io->pipe = pipe;
++	io->sg = sg;
++	io->nents = nents;
++
++	/* not all host controllers use DMA (like the mainstream pci ones);
++	 * they can use PIO (sl811) or be software over another transport.
++	 */
++	dma = (hcd->pdev->dma_mask != 0);
++	if (dma)
++		io->entries = usb_buffer_map_sg (dev, pipe, sg, nents);
++	else
++		io->entries = nents;
++
++	/* initialize all the urbs we'll use */
++	if (io->entries <= 0)
++		return io->entries;
++
++	io->count = 0;
++	io->urbs = kmalloc (io->entries * sizeof *io->urbs, mem_flags);
++	if (!io->urbs)
++		goto nomem;
++
++	urb_flags = USB_ASYNC_UNLINK | URB_NO_INTERRUPT | URB_NO_TRANSFER_DMA_MAP;
++	if (usb_pipein (pipe))
++		urb_flags |= URB_SHORT_NOT_OK;
++
++	for (i = 0; i < io->entries; i++, io->count = i) {
++		unsigned		len;
++
++		io->urbs [i] = usb_alloc_urb (0);
++		if (!io->urbs [i]) {
++			io->entries = i;
++			goto nomem;
++		}
++
++		io->urbs [i]->dev = 0;
++		io->urbs [i]->pipe = pipe;
++		io->urbs [i]->interval = period;
++		io->urbs [i]->transfer_flags = urb_flags;
++
++		io->urbs [i]->complete = sg_complete;
++		io->urbs [i]->context = io;
++		io->urbs [i]->status = -EINPROGRESS;
++		io->urbs [i]->actual_length = 0;
++
++		if (dma) {
++			/* hc may use _only_ transfer_dma */
++			io->urbs [i]->transfer_dma = sg_dma_address (sg + i);
++			len = sg_dma_len (sg + i);
++		} else {
++			/* hc may use _only_ transfer_buffer */
++			io->urbs [i]->transfer_buffer =
++				page_address (sg [i].page) + sg [i].offset;
++			len = sg [i].length;
++		}
++
++		if (length) {
++			len = min_t (unsigned, len, length);
++			length -= len;
++			if (length == 0)
++				io->entries = i + 1;
++		}
++		io->urbs [i]->transfer_buffer_length = len;
++	}
++	io->urbs [--i]->transfer_flags &= ~URB_NO_INTERRUPT;
++
++	/* transaction state */
++	io->status = 0;
++	io->bytes = 0;
++	init_completion (&io->complete);
++	return 0;
++
++nomem:
++	sg_clean (io);
++	return -ENOMEM;
++}
++
++/**
++ * usb_sg_cancel - stop scatter/gather i/o issued by usb_sg_wait()
++ * @io: request block, initialized with usb_sg_init()
++ *
++ * This stops a request after it has been started by usb_sg_wait().
++ * It can also prevents one initialized by usb_sg_init() from starting,
++ * so that call just frees resources allocated to the request.
++ */
++void usb_sg_cancel (struct usb_sg_request *io)
++{
++	unsigned long	flags;
++
++	spin_lock_irqsave (&io->lock, flags);
++
++	/* shut everything down, if it didn't already */
++	if (!io->status) {
++		int	i;
++
++		io->status = -ECONNRESET;
++		for (i = 0; i < io->entries; i++) {
++			int	retval;
++
++			if (!io->urbs [i]->dev)
++				continue;
++			retval = usb_unlink_urb (io->urbs [i]);
++			if (retval != -EINPROGRESS && retval != -EBUSY)
++				US_DEBUGP("WARNING: %s, unlink --> %d\n", __FUNCTION__, retval);
++		}
++	}
++	spin_unlock_irqrestore (&io->lock, flags);
++}
++
++/**
++ * usb_sg_wait - synchronously execute scatter/gather request
++ * @io: request block handle, as initialized with usb_sg_init().
++ * 	some fields become accessible when this call returns.
++ * Context: !in_interrupt ()
++ *
++ * This function blocks until the specified I/O operation completes.  It
++ * leverages the grouping of the related I/O requests to get good transfer
++ * rates, by queueing the requests.  At higher speeds, such queuing can
++ * significantly improve USB throughput.
++ *
++ * There are three kinds of completion for this function.
++ * (1) success, where io->status is zero.  The number of io->bytes
++ *     transferred is as requested.
++ * (2) error, where io->status is a negative errno value.  The number
++ *     of io->bytes transferred before the error is usually less
++ *     than requested, and can be nonzero.
++ * (3) cancelation, a type of error with status -ECONNRESET that
++ *     is initiated by usb_sg_cancel().
++ *
++ * When this function returns, all memory allocated through usb_sg_init() or
++ * this call will have been freed.  The request block parameter may still be
++ * passed to usb_sg_cancel(), or it may be freed.  It could also be
++ * reinitialized and then reused.
++ *
++ * Data Transfer Rates:
++ *
++ * Bulk transfers are valid for full or high speed endpoints.
++ * The best full speed data rate is 19 packets of 64 bytes each
++ * per frame, or 1216 bytes per millisecond.
++ * The best high speed data rate is 13 packets of 512 bytes each
++ * per microframe, or 52 KBytes per millisecond.
++ *
++ * The reason to use interrupt transfers through this API would most likely
++ * be to reserve high speed bandwidth, where up to 24 KBytes per millisecond
++ * could be transferred.  That capability is less useful for low or full
++ * speed interrupt endpoints, which allow at most one packet per millisecond,
++ * of at most 8 or 64 bytes (respectively).
++ */
++void usb_sg_wait (struct usb_sg_request *io)
++{
++	int		i, entries = io->entries;
++
++	/* queue the urbs.  */
++	spin_lock_irq (&io->lock);
++	for (i = 0; i < entries && !io->status; i++) {
++		int	retval;
++
++		io->urbs [i]->dev = io->dev;
++		retval = usb_submit_urb (io->urbs [i]);
++
++		/* after we submit, let completions or cancelations fire;
++		 * we handshake using io->status.
++		 */
++		spin_unlock_irq (&io->lock);
++		switch (retval) {
++			/* maybe we retrying will recover */
++		case -ENXIO:	// hc didn't queue this one
++		case -EAGAIN:
++		case -ENOMEM:
++			io->urbs [i]->dev = 0;
++			retval = 0;
++			i--;
++			yield ();
++			break;
++
++			/* no error? continue immediately.
++			 *
++			 * NOTE: to work better with UHCI (4K I/O buffer may
++			 * need 3K of TDs) it may be good to limit how many
++			 * URBs are queued at once; N milliseconds?
++			 */
++		case 0:
++			cpu_relax ();
++			break;
++
++			/* fail any uncompleted urbs */
++		default:
++			spin_lock_irq (&io->lock);
++			io->count -= entries - i;
++			if (io->status == -EINPROGRESS)
++				io->status = retval;
++			if (io->count == 0)
++				complete (&io->complete);
++			spin_unlock_irq (&io->lock);
++
++			io->urbs [i]->dev = 0;
++			io->urbs [i]->status = retval;
++			
++			US_DEBUGP("%s, submit --> %d\n", __FUNCTION__, retval);
++			usb_sg_cancel (io);
++		}
++		spin_lock_irq (&io->lock);
++		if (retval && io->status == -ECONNRESET)
++			io->status = retval;
++	}
++	spin_unlock_irq (&io->lock);
++
++	/* OK, yes, this could be packaged as non-blocking.
++	 * So could the submit loop above ... but it's easier to
++	 * solve neither problem than to solve both!
++	 */
++	wait_for_completion (&io->complete);
++
++	sg_clean (io);
++}
++
++/*
++ * Interpret the results of a URB transfer
++ *
++ * This function prints appropriate debugging messages, clears halts on
++ * non-control endpoints, and translates the status to the corresponding
++ * USB_STOR_XFER_xxx return code.
++ */
++static int interpret_urb_result(struct us_data *us, unsigned int pipe,
++		unsigned int length, int result, unsigned int partial)
++{
++	US_DEBUGP("Status code %d; transferred %u/%u\n",
++			result, partial, length);
++	switch (result) {
++
++	/* no error code; did we send all the data? */
++	case 0:
++		if (partial != length) {
++			US_DEBUGP("-- short transfer\n");
++			return USB_STOR_XFER_SHORT;
++		}
++
++		US_DEBUGP("-- transfer complete\n");
++		return USB_STOR_XFER_GOOD;
++
++	/* stalled */
++	case -EPIPE:
++		/* for control endpoints, (used by CB[I]) a stall indicates
++		 * a failed command */
++		if (usb_pipecontrol(pipe)) {
++			US_DEBUGP("-- stall on control pipe\n");
++			return USB_STOR_XFER_STALLED;
++		}
++
++		/* for other sorts of endpoint, clear the stall */
++		US_DEBUGP("clearing endpoint halt for pipe 0x%x\n", pipe);
++		if (usb_stor_clear_halt(us, pipe) < 0)
++			return USB_STOR_XFER_ERROR;
++		return USB_STOR_XFER_STALLED;
++
++	/* timeout or excessively long NAK */
++	case -ETIMEDOUT:
++		US_DEBUGP("-- timeout or NAK\n");
++		return USB_STOR_XFER_ERROR;
++
++	/* babble - the device tried to send more than we wanted to read */
++	case -EOVERFLOW:
++		US_DEBUGP("-- babble\n");
++		return USB_STOR_XFER_LONG;
++
++	/* the transfer was cancelled by abort, disconnect, or timeout */
++	case -ECONNRESET:
++		US_DEBUGP("-- transfer cancelled\n");
++		return USB_STOR_XFER_ERROR;
++
++	/* short scatter-gather read transfer */
++	case -EREMOTEIO:
++		US_DEBUGP("-- short read transfer\n");
++		return USB_STOR_XFER_SHORT;
++
++	/* abort or disconnect in progress */
++	case -EIO:
++		US_DEBUGP("-- abort or disconnect in progress\n");
++		return USB_STOR_XFER_ERROR;
++
++	/* the catch-all error case */
++	default:
++		US_DEBUGP("-- unknown error\n");
++		return USB_STOR_XFER_ERROR;
++	}
++}
++
++/*
++ * Transfer a scatter-gather list via bulk transfer
++ *
++ * This function does basically the same thing as usb_stor_bulk_msg()
++ * above, but it uses the usbcore scatter-gather library.
++ */
++int usb_stor_bulk_transfer_sglist(struct us_data *us, unsigned int pipe,
++		struct scatterlist *sg, int num_sg, unsigned int length,
++		unsigned int *act_len)
++{
++	int result;
++
++	/* don't submit s-g requests during abort/disconnect processing */
++	if (us->flags & ABORTING_OR_DISCONNECTING)
++		return USB_STOR_XFER_ERROR;
++
++	/* initialize the scatter-gather request block */
++	US_DEBUGP("%s: xfer %u bytes, %d entries\n", __FUNCTION__,
++			length, num_sg);
++	result = usb_sg_init(&us->current_sg, us->pusb_dev, pipe, 0,
++			sg, num_sg, length, SLAB_NOIO);
++	if (result) {
++		US_DEBUGP("usb_sg_init returned %d\n", result);
++		return USB_STOR_XFER_ERROR;
++	}
++
++	/* since the block has been initialized successfully, it's now
++	 * okay to cancel it */
++	set_bit(US_FLIDX_SG_ACTIVE, &us->flags);
++
++	/* did an abort/disconnect occur during the submission? */
++	if (us->flags & ABORTING_OR_DISCONNECTING) {
++
++		/* cancel the request, if it hasn't been cancelled already */
++		if (test_and_clear_bit(US_FLIDX_SG_ACTIVE, &us->flags)) {
++			US_DEBUGP("-- cancelling sg request\n");
++			usb_sg_cancel(&us->current_sg);
++		}
++	}
++
++	/* wait for the completion of the transfer */
++	usb_sg_wait(&us->current_sg);
++	clear_bit(US_FLIDX_SG_ACTIVE, &us->flags);
++
++	result = us->current_sg.status;
++	if (act_len)
++		*act_len = us->current_sg.bytes;
++	return interpret_urb_result(us, pipe, length, result,
++			us->current_sg.bytes);
++}
++
+ /*
+  * Transfer an entire SCSI command's worth of data payload over the bulk
+  * pipe.
+@@ -569,6 +1122,8 @@
+ 	struct scatterlist *sg;
+ 	unsigned int total_transferred = 0;
+ 	unsigned int transfer_amount;
++	unsigned int partial;
++	unsigned int pipe;
+ 
+ 	/* calculate how much we want to transfer */
+ 	transfer_amount = usb_stor_transfer_length(srb);
+@@ -585,23 +1140,34 @@
+ 		 * make the appropriate requests for each, until done
+ 		 */
+ 		sg = (struct scatterlist *) srb->request_buffer;
+-		for (i = 0; i < srb->use_sg; i++) {
+-
+-			/* transfer the lesser of the next buffer or the
+-			 * remaining data */
+-			if (transfer_amount - total_transferred >= 
+-					sg[i].length) {
+-				result = usb_stor_transfer_partial(us,
+-						sg[i].address, sg[i].length);
+-				total_transferred += sg[i].length;
+-			} else
+-				result = usb_stor_transfer_partial(us,
+-						sg[i].address,
+-						transfer_amount - total_transferred);
+-
+-			/* if we get an error, end the loop here */
+-			if (result)
+-				break;
++		if (us->pusb_dev->speed == USB_SPEED_HIGH) {
++			/* calculate the appropriate pipe information */
++			if (us->srb->sc_data_direction == SCSI_DATA_READ)
++				pipe = usb_rcvbulkpipe(us->pusb_dev, us->ep_in);
++			else
++				pipe = usb_sndbulkpipe(us->pusb_dev, us->ep_out);
++			/* use the usb core scatter-gather primitives */
++			result = usb_stor_bulk_transfer_sglist(us, pipe,
++					sg, srb->use_sg, transfer_amount, &partial);
++		} else {
++			for (i = 0; i < srb->use_sg; i++) {
++
++				/* transfer the lesser of the next buffer or the
++				 * remaining data */
++				if (transfer_amount - total_transferred >= 
++						sg[i].length) {
++					result = usb_stor_transfer_partial(us,
++							sg[i].address, sg[i].length);
++					total_transferred += sg[i].length;
++				} else
++					result = usb_stor_transfer_partial(us,
++							sg[i].address,
++							transfer_amount - total_transferred);
++
++				/* if we get an error, end the loop here */
++				if (result)
++					break;
++			}
+ 		}
+ 	}
+ 	else
+diff -ur linux.old/drivers/usb/storage/transport.h linux.dev/drivers/usb/storage/transport.h
+--- linux.old/drivers/usb/storage/transport.h	2003-08-25 13:44:42.000000000 +0200
++++ linux.dev/drivers/usb/storage/transport.h	2006-07-30 12:10:16.000000000 +0200
+@@ -127,6 +127,16 @@
+ #define US_BULK_TRANSFER_ABORTED	3  /* transfer canceled             */
+ 
+ /*
++ * usb_stor_bulk_transfer_xxx() return codes, in order of severity
++ */
++
++#define USB_STOR_XFER_GOOD		0	/* good transfer                 */
++#define USB_STOR_XFER_SHORT		1	/* transferred less than expected */
++#define USB_STOR_XFER_STALLED	2	/* endpoint stalled              */
++#define USB_STOR_XFER_LONG		3	/* device tried to send too much */
++#define USB_STOR_XFER_ERROR		4	/* transfer died in the middle   */
++
++/*
+  * Transport return codes
+  */
+ 
+diff -ur linux.old/drivers/usb/storage/usb.h linux.dev/drivers/usb/storage/usb.h
+--- linux.old/drivers/usb/storage/usb.h	2005-04-04 03:42:20.000000000 +0200
++++ linux.dev/drivers/usb/storage/usb.h	2006-07-30 12:11:06.000000000 +0200
+@@ -111,6 +111,60 @@
+ typedef void (*proto_cmnd)(Scsi_Cmnd*, struct us_data*);
+ typedef void (*extra_data_destructor)(void *);	 /* extra data destructor   */
+ 
++/* Dynamic flag definitions: used in set_bit() etc. */
++#define US_FLIDX_URB_ACTIVE	18  /* 0x00040000  current_urb is in use  */
++#define US_FLIDX_SG_ACTIVE	19  /* 0x00080000  current_sg is in use   */
++#define US_FLIDX_ABORTING	20  /* 0x00100000  abort is in progress   */
++#define US_FLIDX_DISCONNECTING	21  /* 0x00200000  disconnect in progress */
++#define ABORTING_OR_DISCONNECTING	((1UL << US_FLIDX_ABORTING) | \
++					 (1UL << US_FLIDX_DISCONNECTING))
++#define US_FLIDX_RESETTING	22  /* 0x00400000  device reset in progress */
++
++/* processing state machine states */
++#define US_STATE_IDLE		1
++#define US_STATE_RUNNING	2
++#define US_STATE_RESETTING	3
++#define US_STATE_ABORTING	4
++
++/**
++ * struct usb_sg_request - support for scatter/gather I/O
++ * @status: zero indicates success, else negative errno
++ * @bytes: counts bytes transferred.
++ *
++ * These requests are initialized using usb_sg_init(), and then are used
++ * as request handles passed to usb_sg_wait() or usb_sg_cancel().  Most
++ * members of the request object aren't for driver access.
++ *
++ * The status and bytecount values are valid only after usb_sg_wait()
++ * returns.  If the status is zero, then the bytecount matches the total
++ * from the request.
++ *
++ * After an error completion, drivers may need to clear a halt condition
++ * on the endpoint.
++ */
++struct usb_sg_request {
++	int			status;
++	size_t			bytes;
++
++	/* 
++	 * members below are private to usbcore,
++	 * and are not provided for driver access!
++	 */
++	spinlock_t		lock;
++
++	struct usb_device	*dev;
++	int			pipe;
++	struct scatterlist	*sg;
++	int			nents;
++
++	int			entries;
++	struct urb		**urbs;
++
++	int			count;
++	struct completion	complete;
++};
++
++
+ /* we allocate one of these for every device that we remember */
+ struct us_data {
+ 	struct us_data		*next;		 /* next device */
+@@ -171,6 +225,7 @@
+ 	struct urb		*current_urb;	 /* non-int USB requests */
+ 	struct completion	current_done;	 /* the done flag        */
+ 	unsigned int		tag;		 /* tag for bulk CBW/CSW */
++	struct usb_sg_request	current_sg;  /* scatter-gather req.  */
+ 
+ 	/* the semaphore for sleeping the control thread */
+ 	struct semaphore	sema;		 /* to sleep thread on   */
+diff -ur linux.old/include/linux/usb.h linux.dev/include/linux/usb.h
+--- linux.old/include/linux/usb.h	2004-11-17 12:54:22.000000000 +0100
++++ linux.dev/include/linux/usb.h	2006-07-30 12:19:19.000000000 +0200
+@@ -483,6 +483,8 @@
+ #define URB_NO_INTERRUPT	0x0080	/* HINT: no non-error interrupt needed */
+ 					/* ... less overhead for QUEUE_BULK */
+ #define USB_TIMEOUT_KILLED	0x1000	// only set by HCD!
++#define URB_NO_TRANSFER_DMA_MAP	0x0400	/* urb->transfer_dma valid on submit */
++#define URB_NO_SETUP_DMA_MAP	0x0800	/* urb->setup_dma valid on submit */
+ 
+ struct iso_packet_descriptor
+ {

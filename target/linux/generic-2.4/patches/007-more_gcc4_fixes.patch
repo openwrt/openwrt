@@ -1,0 +1,1339 @@
+diff -rupN linux-2.4.32/drivers/atm/fore200e.c linux-2.4.32.more-gcc4-fixes-v1/drivers/atm/fore200e.c
+--- linux-2.4.32/drivers/atm/fore200e.c	2004-11-17 18:36:41.000000000 +0100
++++ linux-2.4.32.more-gcc4-fixes-v1/drivers/atm/fore200e.c	2005-11-17 13:31:16.000000000 +0100
+@@ -112,8 +112,8 @@
+ #endif
+ 
+ 
+-extern const struct atmdev_ops   fore200e_ops;
+-extern const struct fore200e_bus fore200e_bus[];
++static const struct atmdev_ops   fore200e_ops;
++static const struct fore200e_bus fore200e_bus[];
+ 
+ static struct fore200e* fore200e_boards = NULL;
+ 
+diff -rupN linux-2.4.32/drivers/atm/horizon.c linux-2.4.32.more-gcc4-fixes-v1/drivers/atm/horizon.c
+--- linux-2.4.32/drivers/atm/horizon.c	2004-02-18 15:16:22.000000000 +0100
++++ linux-2.4.32.more-gcc4-fixes-v1/drivers/atm/horizon.c	2005-11-17 13:31:16.000000000 +0100
+@@ -481,6 +481,7 @@ static inline void dump_skb (char * pref
+   return;
+ }
+ 
++#if 0 /* unused and in conflict with <asm-ppc/system.h> */
+ static inline void dump_regs (hrz_dev * dev) {
+ #ifdef DEBUG_HORIZON
+   PRINTD (DBG_REGS, "CONTROL 0: %#x", rd_regl (dev, CONTROL_0_REG));
+@@ -494,6 +495,7 @@ static inline void dump_regs (hrz_dev * 
+ #endif
+   return;
+ }
++#endif
+ 
+ static inline void dump_framer (hrz_dev * dev) {
+ #ifdef DEBUG_HORIZON
+diff -rupN linux-2.4.32/drivers/atm/iphase.c linux-2.4.32.more-gcc4-fixes-v1/drivers/atm/iphase.c
+--- linux-2.4.32/drivers/atm/iphase.c	2004-11-17 18:36:41.000000000 +0100
++++ linux-2.4.32.more-gcc4-fixes-v1/drivers/atm/iphase.c	2005-11-17 13:31:16.000000000 +0100
+@@ -82,6 +82,7 @@ static IADEV *ia_dev[8];
+ static struct atm_dev *_ia_dev[8];
+ static int iadev_count;
+ static void ia_led_timer(unsigned long arg);
++static int ia_pkt_tx (struct atm_vcc *vcc, struct sk_buff *skb);
+ static struct timer_list ia_timer = { function: ia_led_timer };
+ struct atm_vcc *vcc_close_que[100];
+ static int IA_TX_BUF = DFL_TX_BUFFERS, IA_TX_BUF_SZ = DFL_TX_BUF_SZ;
+@@ -627,7 +628,6 @@ static int ia_que_tx (IADEV *iadev) { 
+    int num_desc;
+    struct atm_vcc *vcc;
+    struct ia_vcc *iavcc;
+-   static int ia_pkt_tx (struct atm_vcc *vcc, struct sk_buff *skb);
+    num_desc = ia_avail_descs(iadev);
+    while (num_desc && (skb = skb_dequeue(&iadev->tx_backlog))) {
+       if (!(vcc = ATM_SKB(skb)->vcc)) {
+diff -rupN linux-2.4.32/drivers/atm/iphase.h linux-2.4.32.more-gcc4-fixes-v1/drivers/atm/iphase.h
+--- linux-2.4.32/drivers/atm/iphase.h	2003-06-14 13:30:20.000000000 +0200
++++ linux-2.4.32.more-gcc4-fixes-v1/drivers/atm/iphase.h	2005-11-17 13:31:16.000000000 +0100
+@@ -68,8 +68,6 @@
+ #define IF_IADBG_SUNI_STAT      0x02000000        // suni statistics
+ #define IF_IADBG_RESET          0x04000000        
+ 
+-extern	unsigned int	IADebugFlag;
+-
+ #define IF_IADBG(f) if (IADebugFlag & (f))
+ 
+ #ifdef  CONFIG_ATM_IA_DEBUG   /* Debug build */
+diff -rupN linux-2.4.32/drivers/block/nbd.c linux-2.4.32.more-gcc4-fixes-v1/drivers/block/nbd.c
+--- linux-2.4.32/drivers/block/nbd.c	2005-04-04 19:56:04.000000000 +0200
++++ linux-2.4.32.more-gcc4-fixes-v1/drivers/block/nbd.c	2005-11-17 13:31:16.000000000 +0100
+@@ -74,6 +74,29 @@ static int requests_in;
+ static int requests_out;
+ #endif
+ 
++static void
++nbd_end_request(struct request *req)
++{
++	struct buffer_head *bh;
++	unsigned nsect;
++	unsigned long flags;
++	int uptodate = (req->errors == 0) ? 1 : 0;
++
++#ifdef PARANOIA
++	requests_out++;
++#endif
++	spin_lock_irqsave(&io_request_lock, flags);
++	while((bh = req->bh) != NULL) {
++		nsect = bh->b_size >> 9;
++		blk_finished_io(nsect);
++		req->bh = bh->b_reqnext;
++		bh->b_reqnext = NULL;
++		bh->b_end_io(bh, uptodate);
++	}
++	blkdev_release_request(req);
++	spin_unlock_irqrestore(&io_request_lock, flags);
++}
++
+ static int nbd_open(struct inode *inode, struct file *file)
+ {
+ 	int dev;
+diff -rupN linux-2.4.32/drivers/block/paride/pd.c linux-2.4.32.more-gcc4-fixes-v1/drivers/block/paride/pd.c
+--- linux-2.4.32/drivers/block/paride/pd.c	2002-11-30 17:12:24.000000000 +0100
++++ linux-2.4.32.more-gcc4-fixes-v1/drivers/block/paride/pd.c	2005-11-17 13:31:16.000000000 +0100
+@@ -343,7 +343,14 @@ static char *pd_errs[17] = { "ERR","INDE
+ 
+ /* kernel glue structures */
+ 
+-extern struct block_device_operations pd_fops;
++static struct block_device_operations pd_fops = {
++	owner:			THIS_MODULE,
++        open:			pd_open,
++        release:		pd_release,
++        ioctl:			pd_ioctl,
++        check_media_change:	pd_check_media,
++        revalidate:		pd_revalidate
++};
+ 
+ static struct gendisk pd_gendisk = {
+ 	major:		PD_MAJOR,
+@@ -355,15 +362,6 @@ static struct gendisk pd_gendisk = {
+ 	fops:		&pd_fops,
+ };
+ 
+-static struct block_device_operations pd_fops = {
+-	owner:			THIS_MODULE,
+-        open:			pd_open,
+-        release:		pd_release,
+-        ioctl:			pd_ioctl,
+-        check_media_change:	pd_check_media,
+-        revalidate:		pd_revalidate
+-};
+-
+ void pd_init_units( void )
+ 
+ {	int	unit, j;
+diff -rupN linux-2.4.32/drivers/block/xd.c linux-2.4.32.more-gcc4-fixes-v1/drivers/block/xd.c
+--- linux-2.4.32/drivers/block/xd.c	2002-11-30 17:12:24.000000000 +0100
++++ linux-2.4.32.more-gcc4-fixes-v1/drivers/block/xd.c	2005-11-17 13:31:16.000000000 +0100
+@@ -125,7 +125,12 @@ static int xd_sizes[XD_MAXDRIVES << 6], 
+ static int xd_blocksizes[XD_MAXDRIVES << 6];
+ static int xd_maxsect[XD_MAXDRIVES << 6];
+ 
+-extern struct block_device_operations xd_fops;
++static struct block_device_operations xd_fops = {
++	owner:		THIS_MODULE,
++	open:		xd_open,
++	release:	xd_release,
++	ioctl:		xd_ioctl,
++};
+ 
+ static struct gendisk xd_gendisk = {
+ 	major:		MAJOR_NR,
+@@ -138,13 +143,6 @@ static struct gendisk xd_gendisk = {
+ 	fops:		&xd_fops,
+ };
+ 
+-static struct block_device_operations xd_fops = {
+-	owner:		THIS_MODULE,
+-	open:		xd_open,
+-	release:	xd_release,
+-	ioctl:		xd_ioctl,
+-};
+-
+ static DECLARE_WAIT_QUEUE_HEAD(xd_wait_int);
+ static DECLARE_WAIT_QUEUE_HEAD(xd_wait_open);
+ static u8 xd_valid[XD_MAXDRIVES] = { 0,0 };
+diff -rupN linux-2.4.32/drivers/cdrom/sbpcd.c linux-2.4.32.more-gcc4-fixes-v1/drivers/cdrom/sbpcd.c
+--- linux-2.4.32/drivers/cdrom/sbpcd.c	2001-11-06 12:12:06.000000000 +0100
++++ linux-2.4.32.more-gcc4-fixes-v1/drivers/cdrom/sbpcd.c	2005-11-17 13:31:16.000000000 +0100
+@@ -525,6 +525,8 @@ static int sbp_data(struct request *req)
+ static int cmd_out(void);
+ static int DiskInfo(void);
+ static int sbpcd_chk_disk_change(kdev_t);
++static int cmd_out_T(void);
++static int cc_DriveReset(void);
+ 
+ /*==========================================================================*/
+ 
+@@ -1213,8 +1215,6 @@ static int get_state_T(void)
+ {
+ 	int i;
+ 	
+-	static int cmd_out_T(void);
+-
+ 	clr_cmdbuf();
+ 	D_S[d].n_bytes=1;
+ 	drvcmd[0]=CMDT_STATUS;
+@@ -1362,7 +1362,6 @@ static int cmd_out_T(void)
+ #define CMDT_TRIES 1000
+ #define TEST_FALSE_FF 1
+ 	
+-	static int cc_DriveReset(void);
+ 	int i, j, l=0, m, ntries;
+ 	long flags;
+ 
+diff -rupN linux-2.4.32/drivers/char/ip2/i2lib.c linux-2.4.32.more-gcc4-fixes-v1/drivers/char/ip2/i2lib.c
+--- linux-2.4.32/drivers/char/ip2/i2lib.c	2005-01-19 18:00:53.000000000 +0100
++++ linux-2.4.32.more-gcc4-fixes-v1/drivers/char/ip2/i2lib.c	2005-11-17 13:31:16.000000000 +0100
+@@ -1262,7 +1262,7 @@ i2RetryFlushOutput(i2ChanStrPtr pCh)
+ 
+ 	}
+ 	if ( old_flags & STOPFL_FLAG ) {
+-		if ( 1 == i2QueueCommands(PTYPE_INLINE, pCh, 0, 1, CMD_STOPFL) > 0 ) {
++		if ( 1 == i2QueueCommands(PTYPE_INLINE, pCh, 0, 1, CMD_STOPFL)) {
+ 			old_flags = 0;	// Success - clear flags
+ 		}
+ 
+diff -rupN linux-2.4.32/drivers/char/rio/rio_linux.c linux-2.4.32.more-gcc4-fixes-v1/drivers/char/rio/rio_linux.c
+--- linux-2.4.32/drivers/char/rio/rio_linux.c	2002-02-26 13:26:56.000000000 +0100
++++ linux-2.4.32.more-gcc4-fixes-v1/drivers/char/rio/rio_linux.c	2005-11-17 13:31:16.000000000 +0100
+@@ -1205,8 +1205,8 @@ static int __init rio_init(void) 
+       hp->Ivec = get_irq (pdev);
+       if (((1 << hp->Ivec) & rio_irqmask) == 0)
+               hp->Ivec = 0;
+-      hp->CardP	= (struct DpRam *)
+       hp->Caddr = ioremap(p->RIOHosts[p->RIONumHosts].PaddrP, RIO_WINDOW_LEN);
++      hp->CardP	= (struct DpRam *) hp->Caddr;
+       hp->Type  = RIO_PCI;
+       hp->Copy  = rio_pcicopy; 
+       hp->Mode  = RIO_PCI_BOOT_FROM_RAM;
+@@ -1277,8 +1277,8 @@ static int __init rio_init(void) 
+       if (((1 << hp->Ivec) & rio_irqmask) == 0) 
+       	hp->Ivec = 0;
+       hp->Ivec |= 0x8000; /* Mark as non-sharable */
+-      hp->CardP	= (struct DpRam *)
+       hp->Caddr = ioremap(p->RIOHosts[p->RIONumHosts].PaddrP, RIO_WINDOW_LEN);
++      hp->CardP	= (struct DpRam *) hp->Caddr;
+       hp->Type  = RIO_PCI;
+       hp->Copy  = rio_pcicopy;
+       hp->Mode  = RIO_PCI_BOOT_FROM_RAM;
+@@ -1329,8 +1329,8 @@ static int __init rio_init(void) 
+     hp->PaddrP = rio_probe_addrs[i];
+     /* There was something about the IRQs of these cards. 'Forget what.--REW */
+     hp->Ivec = 0;
+-    hp->CardP = (struct DpRam *)
+     hp->Caddr = ioremap(p->RIOHosts[p->RIONumHosts].PaddrP, RIO_WINDOW_LEN);
++    hp->CardP = (struct DpRam *) hp->Caddr;
+     hp->Type = RIO_AT;
+     hp->Copy = rio_pcicopy; /* AT card PCI???? - PVDL
+                              * -- YES! this is now a normal copy. Only the 
+diff -rupN linux-2.4.32/drivers/char/sonypi.c linux-2.4.32.more-gcc4-fixes-v1/drivers/char/sonypi.c
+--- linux-2.4.32/drivers/char/sonypi.c	2004-04-14 20:22:20.000000000 +0200
++++ linux-2.4.32.more-gcc4-fixes-v1/drivers/char/sonypi.c	2005-11-17 13:31:16.000000000 +0100
+@@ -60,6 +60,35 @@ static int compat; /* = 0 */
+ static int useinput = 1;
+ static unsigned long mask = 0xffffffff;
+ 
++static inline int sonypi_ec_write(u8 addr, u8 value) {
++#ifdef CONFIG_ACPI_EC
++	if (SONYPI_ACPI_ACTIVE)
++		return ec_write(addr, value);
++#endif
++	wait_on_command(1, inb_p(SONYPI_CST_IOPORT) & 3, ITERATIONS_LONG);
++	outb_p(0x81, SONYPI_CST_IOPORT);
++	wait_on_command(0, inb_p(SONYPI_CST_IOPORT) & 2, ITERATIONS_LONG);
++	outb_p(addr, SONYPI_DATA_IOPORT);
++	wait_on_command(0, inb_p(SONYPI_CST_IOPORT) & 2, ITERATIONS_LONG);
++	outb_p(value, SONYPI_DATA_IOPORT);
++	wait_on_command(0, inb_p(SONYPI_CST_IOPORT) & 2, ITERATIONS_LONG);
++	return 0;
++}
++
++static inline int sonypi_ec_read(u8 addr, u8 *value) {
++#ifdef CONFIG_ACPI_EC
++	if (SONYPI_ACPI_ACTIVE)
++		return ec_read(addr, value);
++#endif
++	wait_on_command(1, inb_p(SONYPI_CST_IOPORT) & 3, ITERATIONS_LONG);
++	outb_p(0x80, SONYPI_CST_IOPORT);
++	wait_on_command(0, inb_p(SONYPI_CST_IOPORT) & 2, ITERATIONS_LONG);
++	outb_p(addr, SONYPI_DATA_IOPORT);
++	wait_on_command(0, inb_p(SONYPI_CST_IOPORT) & 2, ITERATIONS_LONG);
++	*value = inb_p(SONYPI_DATA_IOPORT);
++	return 0;
++}
++
+ /* Inits the queue */
+ static inline void sonypi_initq(void) {
+         sonypi_device.queue.head = sonypi_device.queue.tail = 0;
+diff -rupN linux-2.4.32/drivers/char/sonypi.h linux-2.4.32.more-gcc4-fixes-v1/drivers/char/sonypi.h
+--- linux-2.4.32/drivers/char/sonypi.h	2004-04-14 20:22:20.000000000 +0200
++++ linux-2.4.32.more-gcc4-fixes-v1/drivers/char/sonypi.h	2005-11-17 13:31:16.000000000 +0100
+@@ -401,37 +401,6 @@ struct sonypi_device {
+ #define SONYPI_ACPI_ACTIVE 0
+ #endif /* CONFIG_ACPI */
+ 
+-extern int verbose;
+-
+-static inline int sonypi_ec_write(u8 addr, u8 value) {
+-#ifdef CONFIG_ACPI_EC
+-	if (SONYPI_ACPI_ACTIVE)
+-		return ec_write(addr, value);
+-#endif
+-	wait_on_command(1, inb_p(SONYPI_CST_IOPORT) & 3, ITERATIONS_LONG);
+-	outb_p(0x81, SONYPI_CST_IOPORT);
+-	wait_on_command(0, inb_p(SONYPI_CST_IOPORT) & 2, ITERATIONS_LONG);
+-	outb_p(addr, SONYPI_DATA_IOPORT);
+-	wait_on_command(0, inb_p(SONYPI_CST_IOPORT) & 2, ITERATIONS_LONG);
+-	outb_p(value, SONYPI_DATA_IOPORT);
+-	wait_on_command(0, inb_p(SONYPI_CST_IOPORT) & 2, ITERATIONS_LONG);
+-	return 0;
+-}
+-
+-static inline int sonypi_ec_read(u8 addr, u8 *value) {
+-#ifdef CONFIG_ACPI_EC
+-	if (SONYPI_ACPI_ACTIVE)
+-		return ec_read(addr, value);
+-#endif
+-	wait_on_command(1, inb_p(SONYPI_CST_IOPORT) & 3, ITERATIONS_LONG);
+-	outb_p(0x80, SONYPI_CST_IOPORT);
+-	wait_on_command(0, inb_p(SONYPI_CST_IOPORT) & 2, ITERATIONS_LONG);
+-	outb_p(addr, SONYPI_DATA_IOPORT);
+-	wait_on_command(0, inb_p(SONYPI_CST_IOPORT) & 2, ITERATIONS_LONG);
+-	*value = inb_p(SONYPI_DATA_IOPORT);
+-	return 0;
+-}
+-
+ #endif /* __KERNEL__ */
+ 
+ #endif /* _SONYPI_PRIV_H_ */
+diff -rupN linux-2.4.32/drivers/char/sx.c linux-2.4.32.more-gcc4-fixes-v1/drivers/char/sx.c
+--- linux-2.4.32/drivers/char/sx.c	2005-01-19 18:00:53.000000000 +0100
++++ linux-2.4.32.more-gcc4-fixes-v1/drivers/char/sx.c	2005-11-17 13:31:16.000000000 +0100
+@@ -522,13 +522,13 @@ static int sx_busy_wait_eq (struct sx_bo
+ 
+ 	func_enter ();
+ 
+-	for (i=0; i < TIMEOUT_1 > 0;i++) 
++	for (i=0; i < TIMEOUT_1 ;i++) 
+ 		if ((read_sx_byte (board, offset) & mask) == correctval) {
+ 			func_exit ();
+ 			return 1;
+ 		}
+ 
+-	for (i=0; i < TIMEOUT_2 > 0;i++) {
++	for (i=0; i < TIMEOUT_2 ;i++) {
+ 		if ((read_sx_byte (board, offset) & mask) == correctval) {
+ 			func_exit ();
+ 			return 1;
+@@ -548,13 +548,13 @@ static int sx_busy_wait_neq (struct sx_b
+ 
+ 	func_enter ();
+ 
+-	for (i=0; i < TIMEOUT_1 > 0;i++) 
++	for (i=0; i < TIMEOUT_1 ;i++) 
+ 		if ((read_sx_byte (board, offset) & mask) != badval) {
+ 			func_exit ();
+ 			return 1;
+ 		}
+ 
+-	for (i=0; i < TIMEOUT_2 > 0;i++) {
++	for (i=0; i < TIMEOUT_2 ;i++) {
+ 		if ((read_sx_byte (board, offset) & mask) != badval) {
+ 			func_exit ();
+ 			return 1;
+diff -rupN linux-2.4.32/drivers/char/tpqic02.c linux-2.4.32.more-gcc4-fixes-v1/drivers/char/tpqic02.c
+--- linux-2.4.32/drivers/char/tpqic02.c	2004-08-08 10:56:31.000000000 +0200
++++ linux-2.4.32.more-gcc4-fixes-v1/drivers/char/tpqic02.c	2005-11-17 13:31:16.000000000 +0100
+@@ -202,6 +202,7 @@ static int mode_access;		/* access mode:
+ 
+ static int qic02_get_resources(void);
+ static void qic02_release_resources(void);
++static void finish_rw(int cmd);
+ 
+ /* This is a pointer to the actual kernel buffer where the interrupt routines
+  * read from/write to. It is needed because the DMA channels 1 and 3 cannot
+@@ -820,7 +821,6 @@ static int get_ext_status3(void)
+ static int tp_sense(int ignore)
+ {
+ 	unsigned err = 0, exnr = 0, gs = 0;
+-	static void finish_rw(int cmd);
+ 
+ 	if (TPQDBG(SENSE_TEXT))
+ 		printk(TPQIC02_NAME ": tp_sense(ignore=0x%x) enter\n",
+@@ -2173,16 +2173,6 @@ static ssize_t qic02_tape_write(struct f
+  * Don't rewind if the minor bits specify density 0.
+  */
+ 
+-static int qic02_tape_open(struct inode *inode, struct file *filp)
+-{
+-	static int qic02_tape_open_no_use_count(struct inode *,
+-						struct file *);
+-	int open_error;
+-
+-	open_error = qic02_tape_open_no_use_count(inode, filp);
+-	return open_error;
+-}
+-
+ static int qic02_tape_open_no_use_count(struct inode *inode,
+ 					struct file *filp)
+ {
+@@ -2385,6 +2375,14 @@ static int qic02_tape_open_no_use_count(
+ }				/* qic02_tape_open */
+ 
+ 
++static int qic02_tape_open(struct inode *inode, struct file *filp)
++{
++	int open_error;
++
++	open_error = qic02_tape_open_no_use_count(inode, filp);
++	return open_error;
++}
++
+ static int qic02_tape_release(struct inode *inode, struct file *filp)
+ {
+ 	kdev_t dev = inode->i_rdev;
+diff -rupN linux-2.4.32/drivers/i2c/i2c-core.c linux-2.4.32.more-gcc4-fixes-v1/drivers/i2c/i2c-core.c
+--- linux-2.4.32/drivers/i2c/i2c-core.c	2005-06-01 18:02:21.000000000 +0200
++++ linux-2.4.32.more-gcc4-fixes-v1/drivers/i2c/i2c-core.c	2005-11-17 13:31:16.000000000 +0100
+@@ -720,7 +720,7 @@ int i2cproc_cleanup(void)
+  * ----------------------------------------------------
+  */
+ 
+-int i2c_transfer(struct i2c_adapter * adap, struct i2c_msg msgs[],int num)
++int i2c_transfer(struct i2c_adapter * adap, struct i2c_msg *msgs,int num)
+ {
+ 	int ret;
+ 
+@@ -750,7 +750,7 @@ int i2c_master_send(struct i2c_client *c
+ 		msg.addr   = client->addr;
+ 		msg.flags = client->flags & I2C_M_TEN;
+ 		msg.len = count;
+-		(const char *)msg.buf = buf;
++		msg.buf = (char *)buf;
+ 	
+ 		DEB2(printk(KERN_DEBUG "i2c-core.o: master_send: writing %d bytes on %s.\n",
+ 			count,client->adapter->name));
+diff -rupN linux-2.4.32/drivers/i2c/i2c-proc.c linux-2.4.32.more-gcc4-fixes-v1/drivers/i2c/i2c-proc.c
+--- linux-2.4.32/drivers/i2c/i2c-proc.c	2005-01-19 18:00:53.000000000 +0100
++++ linux-2.4.32.more-gcc4-fixes-v1/drivers/i2c/i2c-proc.c	2005-11-17 13:31:16.000000000 +0100
+@@ -205,7 +205,7 @@ void i2c_deregister_entry(int id)
+ 		table = i2c_entries[id]->ctl_table;
+ 		unregister_sysctl_table(i2c_entries[id]);
+ 		/* 2-step kfree needed to keep gcc happy about const points */
+-		(const char *) temp = table[4].procname;
++		temp = (char *) table[4].procname;
+ 		kfree(temp);
+ 		kfree(table);
+ 		i2c_entries[id] = NULL;
+@@ -287,7 +287,7 @@ int i2c_proc_chips(ctl_table * ctl, int 
+ 			if(copy_to_user(buffer, BUF, buflen))
+ 				return -EFAULT;
+ 			curbufsize += buflen;
+-			(char *) buffer += buflen;
++			buffer = (char *) buffer + buflen;
+ 		}
+ 	*lenp = curbufsize;
+ 	filp->f_pos += curbufsize;
+@@ -318,7 +318,7 @@ int i2c_sysctl_chips(ctl_table * table, 
+ 					     sizeof(struct
+ 						    i2c_chips_data)))
+ 					return -EFAULT;
+-				(char *) oldval +=
++				oldval = (char *) oldval +
+ 				    sizeof(struct i2c_chips_data);
+ 				nrels++;
+ 			}
+@@ -473,7 +473,7 @@ int i2c_parse_reals(int *nrels, void *bu
+ 		       !((ret=get_user(nextchar, (char *) buffer))) &&
+ 		       isspace((int) nextchar)) {
+ 			bufsize--;
+-			((char *) buffer)++;
++			buffer = (char *) buffer + 1;
+ 		}
+ 
+ 		if (ret)
+@@ -492,7 +492,7 @@ int i2c_parse_reals(int *nrels, void *bu
+ 		    && (nextchar == '-')) {
+ 			min = 1;
+ 			bufsize--;
+-			((char *) buffer)++;
++			buffer = (char *) buffer + 1;
+ 		}
+ 		if (ret)
+ 			return -EFAULT;
+@@ -503,7 +503,7 @@ int i2c_parse_reals(int *nrels, void *bu
+ 		       isdigit((int) nextchar)) {
+ 			res = res * 10 + nextchar - '0';
+ 			bufsize--;
+-			((char *) buffer)++;
++			buffer = (char *) buffer + 1;
+ 		}
+ 		if (ret)
+ 			return -EFAULT;
+@@ -517,7 +517,7 @@ int i2c_parse_reals(int *nrels, void *bu
+ 		if (bufsize && (nextchar == '.')) {
+ 			/* Skip the dot */
+ 			bufsize--;
+-			((char *) buffer)++;
++			buffer = (char *) buffer + 1;
+ 
+ 			/* Read digits while they are significant */
+ 			while (bufsize && (mag > 0) &&
+@@ -526,7 +526,7 @@ int i2c_parse_reals(int *nrels, void *bu
+ 				res = res * 10 + nextchar - '0';
+ 				mag--;
+ 				bufsize--;
+-				((char *) buffer)++;
++				buffer = (char *) buffer + 1;
+ 			}
+ 			if (ret)
+ 				return -EFAULT;
+@@ -542,7 +542,7 @@ int i2c_parse_reals(int *nrels, void *bu
+ 		       !((ret=get_user(nextchar, (char *) buffer))) &&
+ 		       !isspace((int) nextchar)) {
+ 			bufsize--;
+-			((char *) buffer)++;
++			buffer = (char *) buffer + 1;
+ 		}
+ 		if (ret)
+ 			return -EFAULT;
+@@ -574,7 +574,7 @@ int i2c_write_reals(int nrels, void *buf
+ 			if(put_user(' ', (char *) buffer))
+ 				return -EFAULT;
+ 			curbufsize++;
+-			((char *) buffer)++;
++			buffer = (char *) buffer + 1;
+ 		}
+ 
+ 		/* Fill BUF with the representation of the next string */
+@@ -615,7 +615,7 @@ int i2c_write_reals(int nrels, void *buf
+ 		if(copy_to_user(buffer, BUF, buflen))
+ 			return -EFAULT;
+ 		curbufsize += buflen;
+-		(char *) buffer += buflen;
++		buffer = (char *) buffer + buflen;
+ 
+ 		nr++;
+ 	}
+diff -rupN linux-2.4.32/drivers/ide/legacy/hd.c linux-2.4.32.more-gcc4-fixes-v1/drivers/ide/legacy/hd.c
+--- linux-2.4.32/drivers/ide/legacy/hd.c	2003-06-14 13:30:22.000000000 +0200
++++ linux-2.4.32.more-gcc4-fixes-v1/drivers/ide/legacy/hd.c	2005-11-17 13:31:16.000000000 +0100
+@@ -694,7 +694,11 @@ static int hd_release(struct inode * ino
+ 	return 0;
+ }
+ 
+-extern struct block_device_operations hd_fops;
++static struct block_device_operations hd_fops = {
++	open:		hd_open,
++	release:	hd_release,
++	ioctl:		hd_ioctl,
++};
+ 
+ static struct gendisk hd_gendisk = {
+ 	major:		MAJOR_NR,
+@@ -718,12 +722,6 @@ static void hd_interrupt(int irq, void *
+ 	sti();
+ }
+ 
+-static struct block_device_operations hd_fops = {
+-	open:		hd_open,
+-	release:	hd_release,
+-	ioctl:		hd_ioctl,
+-};
+-
+ /*
+  * This is the hard disk IRQ description. The SA_INTERRUPT in sa_flags
+  * means we run the IRQ-handler with interrupts disabled:  this is bad for
+diff -rupN linux-2.4.32/drivers/ieee1394/highlevel.c linux-2.4.32.more-gcc4-fixes-v1/drivers/ieee1394/highlevel.c
+--- linux-2.4.32/drivers/ieee1394/highlevel.c	2003-11-29 00:28:11.000000000 +0100
++++ linux-2.4.32.more-gcc4-fixes-v1/drivers/ieee1394/highlevel.c	2005-11-17 13:31:16.000000000 +0100
+@@ -500,7 +500,7 @@ int highlevel_read(struct hpsb_host *hos
+                                 rcode = RCODE_TYPE_ERROR;
+                         }
+ 
+-			(u8 *)data += partlength;
++			data += partlength;
+                         length -= partlength;
+                         addr += partlength;
+ 
+@@ -546,7 +546,7 @@ int highlevel_write(struct hpsb_host *ho
+                                 rcode = RCODE_TYPE_ERROR;
+                         }
+ 
+-			(u8 *)data += partlength;
++			data += partlength;
+                         length -= partlength;
+                         addr += partlength;
+ 
+diff -rupN linux-2.4.32/drivers/isdn/eicon/eicon.h linux-2.4.32.more-gcc4-fixes-v1/drivers/isdn/eicon/eicon.h
+--- linux-2.4.32/drivers/isdn/eicon/eicon.h	2002-08-07 00:52:20.000000000 +0200
++++ linux-2.4.32.more-gcc4-fixes-v1/drivers/isdn/eicon/eicon.h	2005-11-17 13:31:16.000000000 +0100
+@@ -344,7 +344,6 @@ typedef struct eicon_card {
+ 
+ #include "eicon_idi.h"
+ 
+-extern eicon_card *cards;
+ extern char *eicon_ctype_name[];
+ 
+ 
+diff -rupN linux-2.4.32/drivers/isdn/hisax/hfc_pci.c linux-2.4.32.more-gcc4-fixes-v1/drivers/isdn/hisax/hfc_pci.c
+--- linux-2.4.32/drivers/isdn/hisax/hfc_pci.c	2004-11-17 18:36:42.000000000 +0100
++++ linux-2.4.32.more-gcc4-fixes-v1/drivers/isdn/hisax/hfc_pci.c	2005-11-17 13:31:16.000000000 +0100
+@@ -1742,7 +1742,7 @@ setup_hfcpci(struct IsdnCard *card)
+ 		/* Allocate memory for FIFOS */
+ 		/* Because the HFC-PCI needs a 32K physical alignment, we */
+ 		/* need to allocate the double mem and align the address */
+-		if (!((void *) cs->hw.hfcpci.share_start = kmalloc(65536, GFP_KERNEL))) {
++		if (!(cs->hw.hfcpci.share_start = kmalloc(65536, GFP_KERNEL))) {
+ 			printk(KERN_WARNING "HFC-PCI: Error allocating memory for FIFO!\n");
+ 			return 0;
+ 		}
+diff -rupN linux-2.4.32/drivers/md/lvm-internal.h linux-2.4.32.more-gcc4-fixes-v1/drivers/md/lvm-internal.h
+--- linux-2.4.32/drivers/md/lvm-internal.h	2003-11-29 00:28:12.000000000 +0100
++++ linux-2.4.32.more-gcc4-fixes-v1/drivers/md/lvm-internal.h	2005-11-17 13:31:16.000000000 +0100
+@@ -45,7 +45,6 @@ extern int loadtime;
+ extern const char *const lvm_name;
+ 
+ 
+-extern uint vg_count;
+ extern vg_t *vg[];
+ extern struct file_operations lvm_chr_fops;
+ 
+diff -rupN linux-2.4.32/drivers/media/video/bttvp.h linux-2.4.32.more-gcc4-fixes-v1/drivers/media/video/bttvp.h
+--- linux-2.4.32/drivers/media/video/bttvp.h	2003-11-29 00:28:12.000000000 +0100
++++ linux-2.4.32.more-gcc4-fixes-v1/drivers/media/video/bttvp.h	2005-11-17 13:31:16.000000000 +0100
+@@ -58,7 +58,6 @@ extern int pvr_boot(struct bttv *btv);
+ 
+ #define BTTV_MAX 16
+ extern unsigned int bttv_num;			/* number of Bt848s in use */
+-extern struct bttv bttvs[BTTV_MAX];
+ 
+ #define UNSET -1U
+ 
+@@ -203,6 +202,8 @@ struct bttv {
+ 	int shutdown;
+         void (*audio_hook)(struct bttv *btv, struct video_audio *v, int set);
+ };
++
++extern struct bttv bttvs[BTTV_MAX];
+ #endif
+ 
+ #define btwrite(dat,adr)    writel((dat), (char *) (btv->bt848_mem+(adr)))
+diff -rupN linux-2.4.32/drivers/media/video/videodev.c linux-2.4.32.more-gcc4-fixes-v1/drivers/media/video/videodev.c
+--- linux-2.4.32/drivers/media/video/videodev.c	2004-08-08 10:56:31.000000000 +0200
++++ linux-2.4.32.more-gcc4-fixes-v1/drivers/media/video/videodev.c	2005-11-17 13:31:16.000000000 +0100
+@@ -489,7 +489,18 @@ static void videodev_proc_destroy_dev (s
+ 
+ #endif /* CONFIG_VIDEO_PROC_FS */
+ 
+-extern struct file_operations video_fops;
++static struct file_operations video_fops=
++{
++	owner:		THIS_MODULE,
++	llseek:		no_llseek,
++	read:		video_read,
++	write:		video_write,
++	ioctl:		video_ioctl,
++	mmap:		video_mmap,
++	open:		video_open,
++	release:	video_release,
++	poll:		video_poll,
++};
+ 
+ /**
+  *	video_register_device - register video4linux devices
+@@ -633,19 +644,6 @@ void video_unregister_device(struct vide
+ }
+ 
+ 
+-static struct file_operations video_fops=
+-{
+-	owner:		THIS_MODULE,
+-	llseek:		no_llseek,
+-	read:		video_read,
+-	write:		video_write,
+-	ioctl:		video_ioctl,
+-	mmap:		video_mmap,
+-	open:		video_open,
+-	release:	video_release,
+-	poll:		video_poll,
+-};
+-
+ /*
+  *	Initialise video for linux
+  */
+diff -rupN linux-2.4.32/drivers/net/3c507.c linux-2.4.32.more-gcc4-fixes-v1/drivers/net/3c507.c
+--- linux-2.4.32/drivers/net/3c507.c	2003-11-29 00:28:12.000000000 +0100
++++ linux-2.4.32.more-gcc4-fixes-v1/drivers/net/3c507.c	2005-11-17 13:31:16.000000000 +0100
+@@ -306,6 +306,7 @@ static void el16_tx_timeout (struct net_
+ static void hardware_send_packet(struct net_device *dev, void *buf, short length, short pad);
+ static void init_82586_mem(struct net_device *dev);
+ static struct ethtool_ops netdev_ethtool_ops;
++static void init_rx_bufs(struct net_device *);
+ 
+ 
+ /* Check for a network adaptor of this type, and return '0' iff one exists.
+@@ -602,7 +603,6 @@ static void el16_interrupt(int irq, void
+ 	}
+ 
+ 	if ((status & 0x0070) != 0x0040 && netif_running(dev)) {
+-		static void init_rx_bufs(struct net_device *);
+ 		/* The Rx unit is not ready, it must be hung.  Restart the receiver by
+ 		   initializing the rx buffers, and issuing an Rx start command. */
+ 		if (net_debug)
+diff -rupN linux-2.4.32/drivers/net/acenic.c linux-2.4.32.more-gcc4-fixes-v1/drivers/net/acenic.c
+--- linux-2.4.32/drivers/net/acenic.c	2003-08-25 20:07:43.000000000 +0200
++++ linux-2.4.32.more-gcc4-fixes-v1/drivers/net/acenic.c	2005-11-17 13:31:16.000000000 +0100
+@@ -594,6 +594,7 @@ static struct net_device *root_dev;
+ 
+ static int probed __initdata = 0;
+ 
++static void ace_watchdog(struct net_device *dev);
+ 
+ int __devinit acenic_probe (ACE_PROBE_ARG)
+ {
+@@ -665,7 +666,6 @@ int __devinit acenic_probe (ACE_PROBE_AR
+ 		dev->vlan_rx_kill_vid = ace_vlan_rx_kill_vid;
+ #endif
+ 		if (1) {
+-			static void ace_watchdog(struct net_device *dev);
+ 			dev->tx_timeout = &ace_watchdog;
+ 			dev->watchdog_timeo = 5*HZ;
+ 		}
+diff -rupN linux-2.4.32/drivers/net/arcnet/arcnet.c linux-2.4.32.more-gcc4-fixes-v1/drivers/net/arcnet/arcnet.c
+--- linux-2.4.32/drivers/net/arcnet/arcnet.c	2003-08-25 20:07:43.000000000 +0200
++++ linux-2.4.32.more-gcc4-fixes-v1/drivers/net/arcnet/arcnet.c	2005-11-17 13:31:16.000000000 +0100
+@@ -277,7 +277,7 @@ static void release_arcbuf(struct net_de
+ 	BUGLVL(D_DURING) {
+ 		BUGMSG(D_DURING, "release_arcbuf: freed #%d; buffer queue is now: ",
+ 		       bufnum);
+-		for (i = lp->next_buf; i != lp->first_free_buf; i = ++i % 5)
++		for (i = lp->next_buf; i != lp->first_free_buf; i = (i+1) % 5)
+ 			BUGMSG2(D_DURING, "#%d ", lp->buf_queue[i]);
+ 		BUGMSG2(D_DURING, "\n");
+ 	}
+@@ -310,7 +310,7 @@ static int get_arcbuf(struct net_device 
+ 
+ 	BUGLVL(D_DURING) {
+ 		BUGMSG(D_DURING, "get_arcbuf: got #%d; buffer queue is now: ", buf);
+-		for (i = lp->next_buf; i != lp->first_free_buf; i = ++i % 5)
++		for (i = lp->next_buf; i != lp->first_free_buf; i = (i+1) % 5)
+ 			BUGMSG2(D_DURING, "#%d ", lp->buf_queue[i]);
+ 		BUGMSG2(D_DURING, "\n");
+ 	}
+diff -rupN linux-2.4.32/drivers/net/arlan.c linux-2.4.32.more-gcc4-fixes-v1/drivers/net/arlan.c
+--- linux-2.4.32/drivers/net/arlan.c	2002-08-07 00:52:20.000000000 +0200
++++ linux-2.4.32.more-gcc4-fixes-v1/drivers/net/arlan.c	2005-11-17 13:31:16.000000000 +0100
+@@ -12,7 +12,7 @@
+ #  error FIXME: this driver requires a 32-bit platform
+ #endif
+ 
+-static const char *arlan_version = "C.Jennigs 97 & Elmer.Joandi@ut.ee  Oct'98, http://www.ylenurme.ee/~elmer/655/";
++const char *arlan_version = "C.Jennigs 97 & Elmer.Joandi@ut.ee  Oct'98, http://www.ylenurme.ee/~elmer/655/";
+ 
+ struct net_device *arlan_device[MAX_ARLANS];
+ int last_arlan;
+diff -rupN linux-2.4.32/drivers/net/arlan.h linux-2.4.32.more-gcc4-fixes-v1/drivers/net/arlan.h
+--- linux-2.4.32/drivers/net/arlan.h	2001-03-30 19:05:06.000000000 +0200
++++ linux-2.4.32.more-gcc4-fixes-v1/drivers/net/arlan.h	2005-11-17 13:31:16.000000000 +0100
+@@ -47,7 +47,6 @@ extern int 	init_arlan_proc(void);
+ 
+ extern struct net_device *arlan_device[MAX_ARLANS];
+ extern int	arlan_debug;
+-extern char *	siteName;
+ extern int	arlan_entry_debug;
+ extern int	arlan_exit_debug;
+ extern int	testMemory;
+diff -rupN linux-2.4.32/drivers/net/bonding/bond_alb.c linux-2.4.32.more-gcc4-fixes-v1/drivers/net/bonding/bond_alb.c
+--- linux-2.4.32/drivers/net/bonding/bond_alb.c	2004-04-14 20:22:20.000000000 +0200
++++ linux-2.4.32.more-gcc4-fixes-v1/drivers/net/bonding/bond_alb.c	2005-11-17 13:31:16.000000000 +0100
+@@ -1275,7 +1275,7 @@ void bond_alb_deinitialize(struct bondin
+ int bond_alb_xmit(struct sk_buff *skb, struct net_device *bond_dev)
+ {
+ 	struct bonding *bond = bond_dev->priv;
+-	struct ethhdr *eth_data = (struct ethhdr *)skb->mac.raw = skb->data;
++	struct ethhdr *eth_data;
+ 	struct alb_bond_info *bond_info = &(BOND_ALB_INFO(bond));
+ 	struct slave *tx_slave = NULL;
+ 	static u32 ip_bcast = 0xffffffff;
+@@ -1285,6 +1285,9 @@ int bond_alb_xmit(struct sk_buff *skb, s
+ 	u8 *hash_start = NULL;
+ 	int res = 1;
+ 
++	skb->mac.raw = (unsigned char *)skb->data;
++	eth_data = (struct ethhdr *)skb->mac.raw;
++
+ 	/* make sure that the curr_active_slave and the slaves list do
+ 	 * not change during tx
+ 	 */
+diff -rupN linux-2.4.32/drivers/net/de4x5.c linux-2.4.32.more-gcc4-fixes-v1/drivers/net/de4x5.c
+--- linux-2.4.32/drivers/net/de4x5.c	2004-02-18 15:16:23.000000000 +0100
++++ linux-2.4.32.more-gcc4-fixes-v1/drivers/net/de4x5.c	2005-11-17 13:31:16.000000000 +0100
+@@ -5109,7 +5109,7 @@ mii_get_phy(struct net_device *dev)
+     lp->useMII = TRUE;
+ 
+     /* Search the MII address space for possible PHY devices */
+-    for (n=0, lp->mii_cnt=0, i=1; !((i==1) && (n==1)); i=(++i)%DE4X5_MAX_MII) {
++    for (n=0, lp->mii_cnt=0, i=1; !((i==1) && (n==1)); i=(i+1)%DE4X5_MAX_MII) {
+ 	lp->phy[lp->active].addr = i;
+ 	if (i==0) n++;                             /* Count cycles */
+ 	while (de4x5_reset_phy(dev)<0) udelay(100);/* Wait for reset */
+diff -rupN linux-2.4.32/drivers/net/depca.c linux-2.4.32.more-gcc4-fixes-v1/drivers/net/depca.c
+--- linux-2.4.32/drivers/net/depca.c	2003-06-14 13:30:23.000000000 +0200
++++ linux-2.4.32.more-gcc4-fixes-v1/drivers/net/depca.c	2005-11-17 13:31:16.000000000 +0100
+@@ -1746,7 +1746,7 @@ static int load_packet(struct net_device
+ 
+ 		/* set up the buffer descriptors */
+ 		len = (skb->len < ETH_ZLEN) ? ETH_ZLEN : skb->len;
+-		for (i = entry; i != end; i = (++i) & lp->txRingMask) {
++		for (i = entry; i != end; i = (i+1) & lp->txRingMask) {
+ 			/* clean out flags */
+ 			writel(readl(&lp->tx_ring[i].base) & ~T_FLAGS, &lp->tx_ring[i].base);
+ 			writew(0x0000, &lp->tx_ring[i].misc);	/* clears other error flags */
+diff -rupN linux-2.4.32/drivers/net/hamradio/baycom_epp.c linux-2.4.32.more-gcc4-fixes-v1/drivers/net/hamradio/baycom_epp.c
+--- linux-2.4.32/drivers/net/hamradio/baycom_epp.c	2002-11-30 17:12:25.000000000 +0100
++++ linux-2.4.32.more-gcc4-fixes-v1/drivers/net/hamradio/baycom_epp.c	2005-11-17 13:31:16.000000000 +0100
+@@ -60,8 +60,10 @@
+ #include <net/ax25.h> 
+ #endif /* CONFIG_AX25 || CONFIG_AX25_MODULE */
+ 
++static int my_errno;
++#define errno my_errno
+ #define __KERNEL_SYSCALLS__
+-#include <linux/unistd.h>
++#include <asm/unistd.h>
+ 
+ /* --------------------------------------------------------------------- */
+ 
+@@ -370,8 +372,6 @@ static char eppconfig_path[256] = "/usr/
+ 
+ static char *envp[] = { "HOME=/", "TERM=linux", "PATH=/usr/bin:/bin", NULL };
+ 
+-static int errno;
+-
+ static int exec_eppfpga(void *b)
+ {
+ 	struct baycom_state *bc = (struct baycom_state *)b;
+diff -rupN linux-2.4.32/drivers/net/hamradio/soundmodem/sm.h linux-2.4.32.more-gcc4-fixes-v1/drivers/net/hamradio/soundmodem/sm.h
+--- linux-2.4.32/drivers/net/hamradio/soundmodem/sm.h	2002-08-07 00:52:20.000000000 +0200
++++ linux-2.4.32.more-gcc4-fixes-v1/drivers/net/hamradio/soundmodem/sm.h	2005-11-17 13:31:16.000000000 +0100
+@@ -151,7 +151,6 @@ struct hardware_info {
+ /* --------------------------------------------------------------------- */
+ 
+ extern const char sm_drvname[];
+-extern const char sm_drvinfo[];
+ 
+ /* --------------------------------------------------------------------- */
+ /*
+@@ -353,7 +352,6 @@ extern const struct hardware_info sm_hw_
+ 
+ extern const struct modem_tx_info *sm_modem_tx_table[];
+ extern const struct modem_rx_info *sm_modem_rx_table[];
+-extern const struct hardware_info *sm_hardware_table[];
+ 
+ /* --------------------------------------------------------------------- */
+ 
+diff -rupN linux-2.4.32/drivers/net/irda/donauboe.c linux-2.4.32.more-gcc4-fixes-v1/drivers/net/irda/donauboe.c
+--- linux-2.4.32/drivers/net/irda/donauboe.c	2003-06-14 13:30:23.000000000 +0200
++++ linux-2.4.32.more-gcc4-fixes-v1/drivers/net/irda/donauboe.c	2005-11-17 13:31:16.000000000 +0100
+@@ -209,7 +209,11 @@ static int do_probe = DO_PROBE;
+ #ifdef CRC_EXPORTED
+ extern __u16 const irda_crc16_table[];
+ #else
+-static __u16 const irda_crc16_table[256] = {
++/* Our local version of irda_crc16_table must have a unique
++   name to prevent extern-redefined-as-static compile errors.
++   This #define redirects the irda_fcs() macro to our version. */
++#define irda_crc16_table donauboe_irda_crc16_table
++static __u16 const donauboe_irda_crc16_table[256] = {
+   0x0000, 0x1189, 0x2312, 0x329b, 0x4624, 0x57ad, 0x6536, 0x74bf,
+   0x8c48, 0x9dc1, 0xaf5a, 0xbed3, 0xca6c, 0xdbe5, 0xe97e, 0xf8f7,
+   0x1081, 0x0108, 0x3393, 0x221a, 0x56a5, 0x472c, 0x75b7, 0x643e,
+diff -rupN linux-2.4.32/drivers/net/rrunner.c linux-2.4.32.more-gcc4-fixes-v1/drivers/net/rrunner.c
+--- linux-2.4.32/drivers/net/rrunner.c	2003-06-14 13:30:23.000000000 +0200
++++ linux-2.4.32.more-gcc4-fixes-v1/drivers/net/rrunner.c	2005-11-17 13:31:16.000000000 +0100
+@@ -234,7 +234,7 @@ int __init rr_hippi_probe (struct net_de
+ 		 * Don't access any registes before this point!
+ 		 */
+ #ifdef __BIG_ENDIAN
+-		writel(readl(&regs->HostCtrl) | NO_SWAP, &regs->HostCtrl);
++		writel(readl(&rrpriv->regs->HostCtrl) | NO_SWAP, &rrpriv->regs->HostCtrl);
+ #endif
+ 		/*
+ 		 * Need to add a case for little-endian 64-bit hosts here.
+diff -rupN linux-2.4.32/drivers/net/sk98lin/skvpd.c linux-2.4.32.more-gcc4-fixes-v1/drivers/net/sk98lin/skvpd.c
+--- linux-2.4.32/drivers/net/sk98lin/skvpd.c	2005-04-04 19:56:04.000000000 +0200
++++ linux-2.4.32.more-gcc4-fixes-v1/drivers/net/sk98lin/skvpd.c	2005-11-17 13:31:16.000000000 +0100
+@@ -472,7 +472,7 @@ SK_IOC	IoC)	/* IO Context */
+ 	    ((unsigned char)pAC->vpd.vpd_buf[0x40] == 0x3c) &&
+ 	    ((unsigned char)pAC->vpd.vpd_buf[0x41] == 0x45) ) {
+ 		printk(KERN_INFO "sk98lin : humm... Asus mainboard with buggy VPD ? correcting data.\n");
+-		(unsigned char)pAC->vpd.vpd_buf[0x40] = 0x38;
++		pAC->vpd.vpd_buf[0x40] = 0x38;
+ 	}
+ 
+ 	/* find the end tag of the RO area */
+diff -rupN linux-2.4.32/drivers/net/wan/comx-hw-comx.c linux-2.4.32.more-gcc4-fixes-v1/drivers/net/wan/comx-hw-comx.c
+--- linux-2.4.32/drivers/net/wan/comx-hw-comx.c	2002-11-30 17:12:26.000000000 +0100
++++ linux-2.4.32.more-gcc4-fixes-v1/drivers/net/wan/comx-hw-comx.c	2005-11-17 13:31:16.000000000 +0100
+@@ -92,9 +92,9 @@ struct comx_privdata {
+ };
+ 
+ static struct net_device *memory_used[(COMX_MEM_MAX - COMX_MEM_MIN) / 0x10000];
+-extern struct comx_hardware hicomx_hw;
+-extern struct comx_hardware comx_hw;
+-extern struct comx_hardware cmx_hw;
++static struct comx_hardware hicomx_hw;
++static struct comx_hardware comx_hw;
++static struct comx_hardware cmx_hw;
+ 
+ static void COMX_interrupt(int irq, void *dev_id, struct pt_regs *regs);
+ 
+diff -rupN linux-2.4.32/drivers/net/wan/comx.h linux-2.4.32.more-gcc4-fixes-v1/drivers/net/wan/comx.h
+--- linux-2.4.32/drivers/net/wan/comx.h	2001-08-16 23:47:01.000000000 +0200
++++ linux-2.4.32.more-gcc4-fixes-v1/drivers/net/wan/comx.h	2005-11-17 13:31:16.000000000 +0100
+@@ -212,8 +212,6 @@ typedef u16	word;
+ #define	SEEK_END	2
+ #endif
+ 
+-extern struct proc_dir_entry * comx_root_dir;
+-
+ extern int	comx_register_hardware(struct comx_hardware *comx_hw);
+ extern int	comx_unregister_hardware(char *name);
+ extern int	comx_register_protocol(struct comx_protocol *comx_line);
+diff -rupN linux-2.4.32/drivers/net/wan/sdla_fr.c linux-2.4.32.more-gcc4-fixes-v1/drivers/net/wan/sdla_fr.c
+--- linux-2.4.32/drivers/net/wan/sdla_fr.c	2003-11-29 00:28:12.000000000 +0100
++++ linux-2.4.32.more-gcc4-fixes-v1/drivers/net/wan/sdla_fr.c	2005-11-17 13:31:16.000000000 +0100
+@@ -3929,7 +3929,7 @@ static int process_udp_mgmt_pkt(sdla_t* 
+                                 break;
+                         }
+ 
+-			(void *)ptr_trc_el = card->u.f.curr_trc_el;
++			ptr_trc_el = (void *)card->u.f.curr_trc_el;
+ 
+                         buffer_length = 0;
+ 			fr_udp_pkt->data[0x00] = 0x00;
+@@ -3980,7 +3980,7 @@ static int process_udp_mgmt_pkt(sdla_t* 
+                                
+ 				ptr_trc_el ++;
+ 				if((void *)ptr_trc_el > card->u.f.trc_el_last)
+-					(void*)ptr_trc_el = card->u.f.trc_el_base;
++					ptr_trc_el = (void*)card->u.f.trc_el_base;
+ 
+ 				buffer_length += sizeof(fpipemon_trc_hdr_t);
+                                	if(fpipemon_trc->fpipemon_trc_hdr.data_passed) {
+diff -rupN linux-2.4.32/drivers/net/wan/sdladrv.c linux-2.4.32.more-gcc4-fixes-v1/drivers/net/wan/sdladrv.c
+--- linux-2.4.32/drivers/net/wan/sdladrv.c	2001-09-23 21:06:34.000000000 +0200
++++ linux-2.4.32.more-gcc4-fixes-v1/drivers/net/wan/sdladrv.c	2005-11-17 13:31:16.000000000 +0100
+@@ -1002,7 +1002,7 @@ int sdla_peek (sdlahw_t* hw, unsigned lo
+                         peek_by_4 ((unsigned long)hw->dpmbase + curpos, buf,
+ 				curlen);
+                         addr       += curlen;
+-                        (char*)buf += curlen;
++                        buf         = (char*)buf + curlen;
+                         len        -= curlen;
+                 }
+ 
+@@ -1086,7 +1086,7 @@ int sdla_poke (sdlahw_t* hw, unsigned lo
+                         poke_by_4 ((unsigned long)hw->dpmbase + curpos, buf,
+ 				curlen);
+ 	                addr       += curlen;
+-                        (char*)buf += curlen;
++                        buf         = (char*)buf + curlen;
+                         len        -= curlen;
+                 }
+ 
+@@ -2127,10 +2127,10 @@ static int detect_s514 (sdlahw_t* hw)
+ 		modname, hw->irq);
+ 
+ 	/* map the physical PCI memory to virtual memory */
+-	(void *)hw->dpmbase = ioremap((unsigned long)S514_mem_base_addr,
++	hw->dpmbase = (void *)ioremap((unsigned long)S514_mem_base_addr,
+ 		(unsigned long)MAX_SIZEOF_S514_MEMORY);
+     	/* map the physical control register memory to virtual memory */
+-	(void *)hw->vector = ioremap(
++	hw->vector = (unsigned long)ioremap(
+ 		(unsigned long)(S514_mem_base_addr + S514_CTRL_REG_BYTE),
+ 		(unsigned long)16);
+      
+diff -rupN linux-2.4.32/drivers/net/wan/sdlamain.c linux-2.4.32.more-gcc4-fixes-v1/drivers/net/wan/sdlamain.c
+--- linux-2.4.32/drivers/net/wan/sdlamain.c	2003-11-29 00:28:12.000000000 +0100
++++ linux-2.4.32.more-gcc4-fixes-v1/drivers/net/wan/sdlamain.c	2005-11-17 13:31:16.000000000 +0100
+@@ -1027,7 +1027,7 @@ static int ioctl_dump (sdla_t* card, sdl
+                       #endif
+                         dump.length     -= len;
+                         dump.offset     += len;
+-                        (char*)dump.ptr += len;
++                        dump.ptr         = (char*)dump.ptr + len;
+                 }
+ 		
+                 sdla_mapmem(&card->hw, oldvec);/* restore DPM window position */
+diff -rupN linux-2.4.32/drivers/scsi/advansys.c linux-2.4.32.more-gcc4-fixes-v1/drivers/scsi/advansys.c
+--- linux-2.4.32/drivers/scsi/advansys.c	2005-01-19 18:00:53.000000000 +0100
++++ linux-2.4.32.more-gcc4-fixes-v1/drivers/scsi/advansys.c	2005-11-17 13:31:16.000000000 +0100
+@@ -3456,9 +3456,9 @@ do { \
+ /*
+  * Default EEPROM Configuration structure defined in a_init.c.
+  */
+-extern ADVEEP_3550_CONFIG Default_3550_EEPROM_Config;
+-extern ADVEEP_38C0800_CONFIG Default_38C0800_EEPROM_Config;
+-extern ADVEEP_38C1600_CONFIG Default_38C1600_EEPROM_Config;
++static ADVEEP_3550_CONFIG Default_3550_EEPROM_Config;
++static ADVEEP_38C0800_CONFIG Default_38C0800_EEPROM_Config;
++static ADVEEP_38C1600_CONFIG Default_38C1600_EEPROM_Config;
+ 
+ /*
+  * DvcGetPhyAddr() flag arguments
+@@ -7171,7 +7171,7 @@ asc_isr_callback(ASC_DVC_VAR *asc_dvc_va
+          * then return the number of underrun bytes.
+          */
+         if (scp->request_bufflen != 0 && qdonep->remain_bytes != 0 &&
+-            qdonep->remain_bytes <= scp->request_bufflen != 0) {
++            qdonep->remain_bytes <= scp->request_bufflen) {
+             ASC_DBG1(1, "asc_isr_callback: underrun condition %u bytes\n",
+             (unsigned) qdonep->remain_bytes);
+             scp->resid = qdonep->remain_bytes;
+diff -rupN linux-2.4.32/drivers/scsi/atp870u.c linux-2.4.32.more-gcc4-fixes-v1/drivers/scsi/atp870u.c
+--- linux-2.4.32/drivers/scsi/atp870u.c	2002-08-07 00:52:21.000000000 +0200
++++ linux-2.4.32.more-gcc4-fixes-v1/drivers/scsi/atp870u.c	2005-11-17 13:31:16.000000000 +0100
+@@ -807,19 +807,19 @@ oktosend:
+ 			bttl = virt_to_bus(sgpnt[j].address);
+ 			l = sgpnt[j].length;
+ 			while (l > 0x10000) {
+-				(unsigned short int) (((unsigned short int *) (prd))[i + 3]) = 0x0000;
+-				(unsigned short int) (((unsigned short int *) (prd))[i + 2]) = 0x0000;
+-				(unsigned long) (((unsigned long *) (prd))[i >> 1]) = bttl;
++				(((unsigned short int *) (prd))[i + 3]) = 0x0000;
++				(((unsigned short int *) (prd))[i + 2]) = 0x0000;
++				(((unsigned long *) (prd))[i >> 1]) = bttl;
+ 				l -= 0x10000;
+ 				bttl += 0x10000;
+ 				i += 0x04;
+ 			}
+-			(unsigned long) (((unsigned long *) (prd))[i >> 1]) = bttl;
+-			(unsigned short int) (((unsigned short int *) (prd))[i + 2]) = l;
+-			(unsigned short int) (((unsigned short int *) (prd))[i + 3]) = 0;
++			(((unsigned long *) (prd))[i >> 1]) = bttl;
++			(((unsigned short int *) (prd))[i + 2]) = l;
++			(((unsigned short int *) (prd))[i + 3]) = 0;
+ 			i += 0x04;
+ 		}
+-		(unsigned short int) (((unsigned short int *) (prd))[i - 1]) = 0x8000;
++		(((unsigned short int *) (prd))[i - 1]) = 0x8000;
+ 	} else {
+ 		/*
+ 		 *	For a linear request write a chain of blocks
+@@ -828,16 +828,16 @@ oktosend:
+ 		l = workrequ->request_bufflen;
+ 		i = 0;
+ 		while (l > 0x10000) {
+-			(unsigned short int) (((unsigned short int *) (prd))[i + 3]) = 0x0000;
+-			(unsigned short int) (((unsigned short int *) (prd))[i + 2]) = 0x0000;
+-			(unsigned long) (((unsigned long *) (prd))[i >> 1]) = bttl;
++			(((unsigned short int *) (prd))[i + 3]) = 0x0000;
++			(((unsigned short int *) (prd))[i + 2]) = 0x0000;
++			(((unsigned long *) (prd))[i >> 1]) = bttl;
+ 			l -= 0x10000;
+ 			bttl += 0x10000;
+ 			i += 0x04;
+ 		}
+-		(unsigned short int) (((unsigned short int *) (prd))[i + 3]) = 0x8000;
+-		(unsigned short int) (((unsigned short int *) (prd))[i + 2]) = l;
+-		(unsigned long) (((unsigned long *) (prd))[i >> 1]) = bttl;
++		(((unsigned short int *) (prd))[i + 3]) = 0x8000;
++		(((unsigned short int *) (prd))[i + 2]) = l;
++		(((unsigned long *) (prd))[i >> 1]) = bttl;
+ 	}
+ 	tmpcip = tmpcip + 4;
+ 	dev->id[target_id].prdaddru = virt_to_bus(dev->id[target_id].prd_tableu);
+diff -rupN linux-2.4.32/drivers/scsi/cpqfcTSstructs.h linux-2.4.32.more-gcc4-fixes-v1/drivers/scsi/cpqfcTSstructs.h
+--- linux-2.4.32/drivers/scsi/cpqfcTSstructs.h	2004-02-18 15:16:23.000000000 +0100
++++ linux-2.4.32.more-gcc4-fixes-v1/drivers/scsi/cpqfcTSstructs.h	2005-11-17 13:31:16.000000000 +0100
+@@ -965,7 +965,6 @@ void fcSestReset(CPQFCHBA *);
+ 
+ void cpqfc_pci_unmap(struct pci_dev *pcidev, Scsi_Cmnd * cmd, PTACHYON fcChip, __u32 x_ID);
+ 
+-extern const __u8 valid_al_pa[];
+ extern const int number_of_al_pa;
+ 
+ #define FCP_RESID_UNDER   0x80000
+diff -rupN linux-2.4.32/drivers/scsi/cpqfcTSworker.c linux-2.4.32.more-gcc4-fixes-v1/drivers/scsi/cpqfcTSworker.c
+--- linux-2.4.32/drivers/scsi/cpqfcTSworker.c	2003-06-14 13:30:24.000000000 +0200
++++ linux-2.4.32.more-gcc4-fixes-v1/drivers/scsi/cpqfcTSworker.c	2005-11-17 13:31:16.000000000 +0100
+@@ -48,6 +48,7 @@
+ #include "cpqfcTSchip.h"
+ #include "cpqfcTSstructs.h"
+ #include "cpqfcTStrigger.h"
++static const __u8 valid_al_pa[];
+ 
+ //#define LOGIN_DBG 1
+ 
+diff -rupN linux-2.4.32/drivers/sound/wavfront.c linux-2.4.32.more-gcc4-fixes-v1/drivers/sound/wavfront.c
+--- linux-2.4.32/drivers/sound/wavfront.c	2001-10-11 13:34:42.000000000 +0200
++++ linux-2.4.32.more-gcc4-fixes-v1/drivers/sound/wavfront.c	2005-11-17 13:31:16.000000000 +0100
+@@ -2484,11 +2484,11 @@ static int __init detect_wavefront (int 
+ #include <linux/fs.h>
+ #include <linux/mm.h>
+ #include <linux/slab.h>
+-#include <linux/unistd.h>
++static int my_errno;
++#define errno my_errno
++#include <asm/unistd.h>
+ #include <asm/uaccess.h>
+ 
+-static int errno; 
+-
+ static int
+ wavefront_download_firmware (char *path)
+ 
+diff -rupN linux-2.4.32/drivers/usb/audio.c linux-2.4.32.more-gcc4-fixes-v1/drivers/usb/audio.c
+--- linux-2.4.32/drivers/usb/audio.c	2004-11-17 18:36:42.000000000 +0100
++++ linux-2.4.32.more-gcc4-fixes-v1/drivers/usb/audio.c	2005-11-17 13:31:16.000000000 +0100
+@@ -462,6 +462,7 @@ struct usb_audio_state {
+ 
+ /* prevent picking up a bogus abs macro */
+ #undef abs
++#define abs my_abs
+ static inline int abs(int x)
+ {
+         if (x < 0)
+diff -rupN linux-2.4.32/fs/intermezzo/presto.c linux-2.4.32.more-gcc4-fixes-v1/fs/intermezzo/presto.c
+--- linux-2.4.32/fs/intermezzo/presto.c	2002-11-30 17:12:28.000000000 +0100
++++ linux-2.4.32.more-gcc4-fixes-v1/fs/intermezzo/presto.c	2005-11-17 13:31:16.000000000 +0100
+@@ -344,8 +344,8 @@ int izo_mark_cache(struct dentry *dentry
+                 return -EBADF;
+         }
+ 
+-        ((int)cache->cache_flags) &= and_flag;
+-        ((int)cache->cache_flags) |= or_flag;
++        cache->cache_flags &= and_flag;
++        cache->cache_flags |= or_flag;
+         if (res)
+                 *res = (int)cache->cache_flags;
+ 
+@@ -383,8 +383,8 @@ int izo_mark_fset(struct dentry *dentry,
+                 make_bad_inode(dentry->d_inode);
+                 return -EBADF;
+         }
+-        ((int)fset->fset_flags) &= and_flag;
+-        ((int)fset->fset_flags) |= or_flag;
++        fset->fset_flags &= and_flag;
++        fset->fset_flags |= or_flag;
+         if (res)
+                 *res = (int)fset->fset_flags;
+ 
+diff -rupN linux-2.4.32/include/asm-ppc/spinlock.h linux-2.4.32.more-gcc4-fixes-v1/include/asm-ppc/spinlock.h
+--- linux-2.4.32/include/asm-ppc/spinlock.h	2003-06-14 13:30:28.000000000 +0200
++++ linux-2.4.32.more-gcc4-fixes-v1/include/asm-ppc/spinlock.h	2005-11-17 13:31:16.000000000 +0100
+@@ -40,7 +40,6 @@ typedef struct {
+ extern void _spin_lock(spinlock_t *lock);
+ extern void _spin_unlock(spinlock_t *lock);
+ extern int spin_trylock(spinlock_t *lock);
+-extern unsigned long __spin_trylock(volatile unsigned long *lock);
+ 
+ #define spin_lock(lp)			_spin_lock(lp)
+ #define spin_unlock(lp)			_spin_unlock(lp)
+diff -rupN linux-2.4.32/include/linux/fsfilter.h linux-2.4.32.more-gcc4-fixes-v1/include/linux/fsfilter.h
+--- linux-2.4.32/include/linux/fsfilter.h	2004-11-17 18:36:42.000000000 +0100
++++ linux-2.4.32.more-gcc4-fixes-v1/include/linux/fsfilter.h	2005-11-17 13:31:16.000000000 +0100
+@@ -70,7 +70,6 @@ struct filter_fs {
+ #define FILTER_FS_XFS 3
+ #define FILTER_FS_OBDFS 4
+ #define FILTER_FS_TMPFS 5
+-extern struct filter_fs filter_oppar[FILTER_FS_TYPES];
+ 
+ struct filter_fs *filter_get_filter_fs(const char *cache_type);
+ void filter_setup_journal_ops(struct filter_fs *ops, char *cache_type);
+diff -rupN linux-2.4.32/include/linux/generic_serial.h linux-2.4.32.more-gcc4-fixes-v1/include/linux/generic_serial.h
+--- linux-2.4.32/include/linux/generic_serial.h	2002-02-26 13:26:58.000000000 +0100
++++ linux-2.4.32.more-gcc4-fixes-v1/include/linux/generic_serial.h	2005-11-17 13:31:16.000000000 +0100
+@@ -98,6 +98,4 @@ int  gs_setserial(struct gs_port *port, 
+ int  gs_getserial(struct gs_port *port, struct serial_struct *sp);
+ void gs_got_break(struct gs_port *port);
+ 
+-extern int gs_debug;
+-
+ #endif
+diff -rupN linux-2.4.32/include/linux/i2c.h linux-2.4.32.more-gcc4-fixes-v1/include/linux/i2c.h
+--- linux-2.4.32/include/linux/i2c.h	2005-06-01 18:02:21.000000000 +0200
++++ linux-2.4.32.more-gcc4-fixes-v1/include/linux/i2c.h	2005-11-17 13:31:16.000000000 +0100
+@@ -70,7 +70,7 @@ extern int i2c_master_recv(struct i2c_cl
+ 
+ /* Transfer num messages.
+  */
+-extern int i2c_transfer(struct i2c_adapter *adap, struct i2c_msg msg[],int num);
++extern int i2c_transfer(struct i2c_adapter *adap, struct i2c_msg *msg,int num);
+ 
+ /*
+  * Some adapter types (i.e. PCF 8584 based ones) may support slave behaviuor. 
+@@ -197,7 +197,7 @@ struct i2c_algorithm {
+ 	   to NULL. If an adapter algorithm can do SMBus access, set 
+ 	   smbus_xfer. If set to NULL, the SMBus protocol is simulated
+ 	   using common I2C messages */
+-	int (*master_xfer)(struct i2c_adapter *adap,struct i2c_msg msgs[], 
++	int (*master_xfer)(struct i2c_adapter *adap,struct i2c_msg *msgs,
+ 	                   int num);
+ 	int (*smbus_xfer) (struct i2c_adapter *adap, u16 addr, 
+ 	                   unsigned short flags, char read_write,
+diff -rupN linux-2.4.32/include/linux/intermezzo_fs.h linux-2.4.32.more-gcc4-fixes-v1/include/linux/intermezzo_fs.h
+--- linux-2.4.32/include/linux/intermezzo_fs.h	2005-01-19 18:00:53.000000000 +0100
++++ linux-2.4.32.more-gcc4-fixes-v1/include/linux/intermezzo_fs.h	2005-11-17 13:31:16.000000000 +0100
+@@ -321,7 +321,6 @@ int presto_fwrite(struct file *file, con
+ int presto_ispresto(struct inode *);
+ 
+ /* super.c */
+-extern struct file_system_type presto_fs_type;
+ extern int init_intermezzo_fs(void);
+ 
+ /* fileset.c */
+diff -rupN linux-2.4.32/include/linux/nbd.h linux-2.4.32.more-gcc4-fixes-v1/include/linux/nbd.h
+--- linux-2.4.32/include/linux/nbd.h	2002-08-07 00:52:26.000000000 +0200
++++ linux-2.4.32.more-gcc4-fixes-v1/include/linux/nbd.h	2005-11-17 13:31:16.000000000 +0100
+@@ -29,34 +29,6 @@
+ 
+ #include <linux/blk.h>
+ 
+-#ifdef PARANOIA
+-extern int requests_in;
+-extern int requests_out;
+-#endif
+-
+-static void
+-nbd_end_request(struct request *req)
+-{
+-	struct buffer_head *bh;
+-	unsigned nsect;
+-	unsigned long flags;
+-	int uptodate = (req->errors == 0) ? 1 : 0;
+-
+-#ifdef PARANOIA
+-	requests_out++;
+-#endif
+-	spin_lock_irqsave(&io_request_lock, flags);
+-	while((bh = req->bh) != NULL) {
+-		nsect = bh->b_size >> 9;
+-		blk_finished_io(nsect);
+-		req->bh = bh->b_reqnext;
+-		bh->b_reqnext = NULL;
+-		bh->b_end_io(bh, uptodate);
+-	}
+-	blkdev_release_request(req);
+-	spin_unlock_irqrestore(&io_request_lock, flags);
+-}
+-
+ #define MAX_NBD 128
+ 
+ struct nbd_device {
+diff -rupN linux-2.4.32/include/net/irda/irlan_event.h linux-2.4.32.more-gcc4-fixes-v1/include/net/irda/irlan_event.h
+--- linux-2.4.32/include/net/irda/irlan_event.h	1999-03-09 11:36:02.000000000 +0100
++++ linux-2.4.32.more-gcc4-fixes-v1/include/net/irda/irlan_event.h	2005-11-17 13:31:16.000000000 +0100
+@@ -67,8 +67,6 @@ typedef enum {
+ 	IRLAN_WATCHDOG_TIMEOUT,
+ } IRLAN_EVENT;
+ 
+-extern char *irlan_state[];
+-
+ void irlan_do_client_event(struct irlan_cb *self, IRLAN_EVENT event, 
+ 			   struct sk_buff *skb);
+ 
+diff -rupN linux-2.4.32/include/net/irda/irttp.h linux-2.4.32.more-gcc4-fixes-v1/include/net/irda/irttp.h
+--- linux-2.4.32/include/net/irda/irttp.h	2003-06-14 13:30:29.000000000 +0200
++++ linux-2.4.32.more-gcc4-fixes-v1/include/net/irda/irttp.h	2005-11-17 13:31:16.000000000 +0100
+@@ -209,6 +209,4 @@ static inline int irttp_is_primary(struc
+ 	return(irlap_is_primary(self->lsap->lap->irlap));
+ }
+ 
+-extern struct irttp_cb *irttp;
+-
+ #endif /* IRTTP_H */
+diff -rupN linux-2.4.32/include/net/irda/qos.h linux-2.4.32.more-gcc4-fixes-v1/include/net/irda/qos.h
+--- linux-2.4.32/include/net/irda/qos.h	2001-07-21 11:47:34.000000000 +0200
++++ linux-2.4.32.more-gcc4-fixes-v1/include/net/irda/qos.h	2005-11-17 13:31:16.000000000 +0100
+@@ -83,7 +83,6 @@ struct qos_info {
+ extern int sysctl_max_baud_rate;
+ extern int sysctl_max_inactive_time;
+ 
+-extern __u32 baud_rates[];
+ extern __u32 data_sizes[];
+ extern __u32 min_turn_times[];
+ extern __u32 add_bofs[];
+diff -rupN linux-2.4.32/include/net/udp.h linux-2.4.32.more-gcc4-fixes-v1/include/net/udp.h
+--- linux-2.4.32/include/net/udp.h	2005-01-19 18:00:53.000000000 +0100
++++ linux-2.4.32.more-gcc4-fixes-v1/include/net/udp.h	2005-11-17 13:31:16.000000000 +0100
+@@ -25,6 +25,7 @@
+ #include <linux/udp.h>
+ #include <linux/poll.h>
+ #include <net/sock.h>
++#include <net/snmp.h>
+ 
+ #define UDP_HTABLE_SIZE		128
+ 
+diff -rupN linux-2.4.32/net/ipv6/ip6_fib.c linux-2.4.32.more-gcc4-fixes-v1/net/ipv6/ip6_fib.c
+--- linux-2.4.32/net/ipv6/ip6_fib.c	2005-11-17 13:27:30.000000000 +0100
++++ linux-2.4.32.more-gcc4-fixes-v1/net/ipv6/ip6_fib.c	2005-11-17 13:31:16.000000000 +0100
+@@ -95,7 +95,7 @@ static __u32	rt_sernum	= 0;
+ 
+ static struct timer_list ip6_fib_timer = { function: fib6_run_gc };
+ 
+-static struct fib6_walker_t fib6_walker_list = {
++struct fib6_walker_t fib6_walker_list = {
+ 	&fib6_walker_list, &fib6_walker_list, 
+ };
+ 
+diff -rupN linux-2.4.32/net/ipv6/sysctl_net_ipv6.c linux-2.4.32.more-gcc4-fixes-v1/net/ipv6/sysctl_net_ipv6.c
+--- linux-2.4.32/net/ipv6/sysctl_net_ipv6.c	2004-04-14 20:22:21.000000000 +0200
++++ linux-2.4.32.more-gcc4-fixes-v1/net/ipv6/sysctl_net_ipv6.c	2005-11-17 13:31:16.000000000 +0100
+@@ -31,17 +31,14 @@ ctl_table ipv6_table[] = {
+ 
+ #ifdef MODULE
+ static struct ctl_table_header *ipv6_sysctl_header;
+-static struct ctl_table ipv6_root_table[];
+-static struct ctl_table ipv6_net_table[];
+ 
+-
+-ctl_table ipv6_root_table[] = {
+-	{CTL_NET, "net", NULL, 0, 0555, ipv6_net_table},
++static ctl_table ipv6_net_table[] = {
++	{NET_IPV6, "ipv6", NULL, 0, 0555, ipv6_table},
+         {0}
+ };
+ 
+-ctl_table ipv6_net_table[] = {
+-	{NET_IPV6, "ipv6", NULL, 0, 0555, ipv6_table},
++static ctl_table ipv6_root_table[] = {
++	{CTL_NET, "net", NULL, 0, 0555, ipv6_net_table},
+         {0}
+ };
+ 
+diff -rupN linux-2.4.32/net/irda/qos.c linux-2.4.32.more-gcc4-fixes-v1/net/irda/qos.c
+--- linux-2.4.32/net/irda/qos.c	2003-11-29 00:28:15.000000000 +0100
++++ linux-2.4.32.more-gcc4-fixes-v1/net/irda/qos.c	2005-11-17 13:31:16.000000000 +0100
+@@ -97,7 +97,7 @@ static int irlap_param_min_turn_time(voi
+ 				     int get);
+ 
+ __u32 min_turn_times[]  = { 10000, 5000, 1000, 500, 100, 50, 10, 0 }; /* us */
+-__u32 baud_rates[]      = { 2400, 9600, 19200, 38400, 57600, 115200, 576000, 
++static __u32 baud_rates[] = { 2400, 9600, 19200, 38400, 57600, 115200, 576000, 
+ 			    1152000, 4000000, 16000000 };           /* bps */
+ __u32 data_sizes[]      = { 64, 128, 256, 512, 1024, 2048 };        /* bytes */
+ __u32 add_bofs[]        = { 48, 24, 12, 5, 3, 2, 1, 0 };            /* bytes */
+diff -rupN linux-2.4.32/net/khttpd/prototypes.h linux-2.4.32.more-gcc4-fixes-v1/net/khttpd/prototypes.h
+--- linux-2.4.32/net/khttpd/prototypes.h	2001-08-16 23:47:03.000000000 +0200
++++ linux-2.4.32.more-gcc4-fixes-v1/net/khttpd/prototypes.h	2005-11-17 13:31:16.000000000 +0100
+@@ -49,7 +49,6 @@ extern int sysctl_khttpd_stop;
+ extern struct khttpd_threadinfo threadinfo[CONFIG_KHTTPD_NUMCPU];
+ extern char CurrentTime[];
+ extern atomic_t ConnectCount;
+-extern struct wait_queue main_wait[CONFIG_KHTTPD_NUMCPU];
+ 
+ /* misc.c */
+ 

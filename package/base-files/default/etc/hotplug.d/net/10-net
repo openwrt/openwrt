@@ -1,0 +1,28 @@
+# Copyright (C) 2006 OpenWrt.org
+
+include /lib/network
+
+addif() {
+	scan_interfaces
+	setup_interface "$INTERFACE"
+
+	# find all vlan configurations for this interface and set them up as well
+	for ifc in $interfaces; do
+		config_get iftype "$ifc" type
+		config_get ifs "$ifc" device
+		for dev in $ifs; do
+			[ "${dev%%\.*}" = "$INTERFACE" -a "$dev" != "$INTERFACE" ] && {
+				add_vlan "$dev"
+			}
+		done
+	done
+}
+
+case "$ACTION" in
+	add|register)
+		case "$PHYSDEVDRIVER" in
+			natsemi) sleep 1;;
+		esac
+		addif
+	;;
+esac

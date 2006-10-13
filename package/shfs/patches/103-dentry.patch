@@ -1,0 +1,21 @@
+diff -urN shfs-0.35.orig/shfs/Linux-2.6/dcache.c shfs-0.35/shfs/Linux-2.6/dcache.c
+--- shfs-0.35.orig/shfs/Linux-2.6/dcache.c	2004-06-01 09:16:19.000000000 -0400
++++ shfs-0.35/shfs/Linux-2.6/dcache.c	2006-03-25 07:08:57.950752296 -0500
+@@ -68,7 +68,7 @@
+ 	spin_lock(&dcache_lock);
+ 	next = parent->d_subdirs.next;
+ 	while (next != &parent->d_subdirs) {
+-		dentry = list_entry(next, struct dentry, d_child);
++		dentry = list_entry(next, struct dentry, d_u.d_child);
+ 		dentry->d_fsdata = NULL;
+ 		shfs_age_dentry(info, dentry);
+ 		next = next->next;
+@@ -101,7 +101,7 @@
+ 	spin_lock(&dcache_lock);
+ 	next = parent->d_subdirs.next;
+ 	while (next != &parent->d_subdirs) {
+-		dent = list_entry(next, struct dentry, d_child);
++		dent = list_entry(next, struct dentry, d_u.d_child);
+ 		if ((unsigned long)dent->d_fsdata == fpos) {
+ 			if (dent->d_inode)
+ 				dget_locked(dent);

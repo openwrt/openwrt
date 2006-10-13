@@ -1,0 +1,51 @@
+diff -ruN busybox-1.2.0-old/networking/telnetd.c busybox-1.2.0-new/networking/telnetd.c
+--- busybox-1.2.0-old/networking/telnetd.c	2006-07-01 00:42:02.000000000 +0200
++++ busybox-1.2.0-new/networking/telnetd.c	2006-07-31 10:52:30.000000000 +0200
+@@ -44,6 +44,7 @@
+ #include <arpa/telnet.h>
+ #include <ctype.h>
+ #include <sys/syslog.h>
++#include <net/if.h>
+ 
+ #include "busybox.h"
+ 
+@@ -391,11 +392,13 @@
+ 	struct in_addr bind_addr = { .s_addr = 0x0 };
+ #endif /* CONFIG_FEATURE_TELNETD_INETD */
+ 	int c;
++	char *interface_name = NULL;
++	struct ifreq interface;
+ 	static const char options[] =
+ #ifdef CONFIG_FEATURE_TELNETD_INETD
+-		"f:l:";
++		"i:f:l:";
+ #else /* CONFIG_EATURE_TELNETD_INETD */
+-		"f:l:p:b:";
++		"i:f:l:p:b:";
+ #endif /* CONFIG_FEATURE_TELNETD_INETD */
+ 	int maxlen, w, r;
+ 
+@@ -410,6 +413,9 @@
+ 			case 'f':
+ 				issuefile = optarg;
+ 				break;
++			case 'i':
++				interface_name = strdup(optarg);
++				break;
+ 			case 'l':
+ 				loginpath = optarg;
+ 				break;
+@@ -459,6 +465,13 @@
+ 	sa.sin_addr = bind_addr;
+ #endif
+ 
++ 	/* Set it to listen on the specified interface */
++ 	if (interface_name) {
++ 		strncpy(interface.ifr_ifrn.ifrn_name, interface_name, IFNAMSIZ);
++ 		(void)setsockopt(master_fd, SOL_SOCKET,
++ 				SO_BINDTODEVICE, &interface, sizeof(interface));
++ 	}
++ 
+ 	bb_xbind(master_fd, (struct sockaddr *) &sa, sizeof(sa));
+ 	bb_xlisten(master_fd, 1);
+ 	bb_xdaemon(0, 0);

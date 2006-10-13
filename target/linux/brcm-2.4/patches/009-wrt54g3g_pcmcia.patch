@@ -1,0 +1,119 @@
+diff -urN linux.old/arch/mips/bcm947xx/pcibios.c linux.dev/arch/mips/bcm947xx/pcibios.c
+--- linux.old/arch/mips/bcm947xx/pcibios.c	2006-04-07 21:20:59.000000000 +0200
++++ linux.dev/arch/mips/bcm947xx/pcibios.c	2006-04-08 03:17:59.000000000 +0200
+@@ -157,6 +157,7 @@
+ 
+ static u32 pci_iobase = 0x100;
+ static u32 pci_membase = SB_PCI_DMA;
++static u32 pcmcia_membase = 0x40004000;
+ 
+ void __init
+ pcibios_fixup_bus(struct pci_bus *b)
+@@ -188,7 +189,7 @@
+ 			/* Fix up resource bases */
+ 			for (pos = 0; pos < 6; pos++) {
+ 				res = &d->resource[pos];
+-				base = (res->flags & IORESOURCE_IO) ? &pci_iobase : &pci_membase;
++				base = (res->flags & IORESOURCE_IO) ? &pci_iobase : ((b->number == 2) ? &pcmcia_membase : &pci_membase);
+ 				if (res->end) {
+ 					size = res->end - res->start + 1;
+  					if (*base & (size - 1))
+@@ -308,7 +309,12 @@
+ 	where = PCI_BASE_ADDRESS_0 + (resource * 4);
+ 	size = res->end - res->start;
+ 	pci_read_config_dword(dev, where, &reg);
+-	reg = (reg & size) | (((u32)(res->start - root->start)) & ~size);
++	
++	if (dev->bus->number == 1)
++		reg = (reg & size) | (((u32)(res->start - root->start)) & ~size);
++	else
++		reg = res->start;
++
+ 	pci_write_config_dword(dev, where, reg);
+ }
+ 
+diff -urN linux.old/drivers/pcmcia/yenta.c linux.dev/drivers/pcmcia/yenta.c
+--- linux.old/drivers/pcmcia/yenta.c	2004-11-17 12:54:21.000000000 +0100
++++ linux.dev/drivers/pcmcia/yenta.c	2006-04-11 17:47:45.000000000 +0200
+@@ -543,6 +543,9 @@
+ 	 * Probe for usable interrupts using the force
+ 	 * register to generate bogus card status events.
+ 	 */
++
++#ifndef CONFIG_BCM947XX
++	/* WRT54G3G does not like this */
+ 	cb_writel(socket, CB_SOCKET_EVENT, -1);
+ 	cb_writel(socket, CB_SOCKET_MASK, CB_CSTSMASK);
+ 	exca_writeb(socket, I365_CSCINT, 0);
+@@ -557,7 +560,8 @@
+ 	}
+ 	cb_writel(socket, CB_SOCKET_MASK, 0);
+ 	exca_writeb(socket, I365_CSCINT, 0);
+-	
++#endif
++
+ 	mask = probe_irq_mask(val) & 0xffff;
+ 
+ 	bridge_ctrl &= ~CB_BRIDGE_INTR;
+@@ -578,6 +582,12 @@
+ 	socket->cap.cb_dev = socket->dev;
+ 	socket->cap.bus = NULL;
+ 
++#ifdef CONFIG_BCM947XX
++	/* irq mask probing is broken for the WRT54G3G */
++	if (socket->cap.irq_mask == 0)
++		socket->cap.irq_mask = 0x6f8;
++#endif
++
+ 	printk(KERN_INFO "Yenta ISA IRQ mask 0x%04x, PCI irq %d\n",
+ 	       socket->cap.irq_mask, socket->cb_irq);
+ }
+@@ -609,6 +619,15 @@
+ 	printk(KERN_INFO "Socket status: %08x\n",
+ 	       cb_readl(socket, CB_SOCKET_STATE));
+ 
++	/* Generate an interrupt on card insert/remove */
++	config_writew(socket, CB_SOCKET_MASK, CB_CSTSMASK | CB_CDMASK);
++
++	/* Set up Multifunction Routing Status Register */
++	config_writew(socket, 0x8C, 0x1000 /* MFUNC3 to GPIO3 */ | 0x2 /* MFUNC0 to INTA */);
++	
++	/* Switch interrupts to parallelized */
++	config_writeb(socket, 0x92, 0x64);
++	
+ 	/* Register it with the pcmcia layer.. */
+ 	cardbus_register(socket);
+ 
+@@ -731,7 +750,7 @@
+ {
+ 	struct pci_bus *bus;
+ 	struct resource *root, *res;
+-	u32 start, end;
++	u32 start = 0, end = 0;
+ 	u32 align, size, min, max;
+ 	unsigned offset;
+ 	unsigned mask;
+@@ -750,6 +769,15 @@
+ 	res->end = 0;
+ 	root = pci_find_parent_resource(socket->dev, res);
+ 
++#ifdef CONFIG_BCM947XX
++	/* default mem resources are completely fscked up on the wrt54g3g */
++	/* bypass the entire resource allocation stuff below and just set it statically */
++	if (type & IORESOURCE_MEM) {
++		res->start = 0x40004000;
++		res->end = res->start + 0x3fff;
++	}
++
++#else
+ 	if (!root)
+ 		return;
+ 
+@@ -794,6 +822,7 @@
+ 		res->start = res->end = 0;
+ 		return;
+ 	}
++#endif
+ 
+ 	config_writel(socket, offset, res->start);
+ 	config_writel(socket, offset+4, res->end);

@@ -1,0 +1,25 @@
+diff -Nur linux-2.4.32/fs/squashfs/Makefile linux-2.4.32-owrt/fs/squashfs/Makefile
+--- linux-2.4.32/fs/squashfs/Makefile	2006-03-21 13:47:50.000000000 +0100
++++ linux-2.4.32-owrt/fs/squashfs/Makefile	2006-03-21 13:48:49.000000000 +0100
+@@ -4,7 +4,7 @@
+ 
+ O_TARGET := squashfs.o
+ 
+-obj-y  := inode.o squashfs2_0.o LzmaDecode.o
++obj-y  := inode.o LzmaDecode.o
+ 
+ obj-m := $(O_TARGET)
+ 
+diff -Nur linux-2.4.32/fs/squashfs/squashfs.h linux-2.4.32-owrt/fs/squashfs/squashfs.h
+--- linux-2.4.32/fs/squashfs/squashfs.h	2006-03-21 13:06:10.000000000 +0100
++++ linux-2.4.32-owrt/fs/squashfs/squashfs.h	2006-03-21 13:48:36.000000000 +0100
+@@ -24,6 +24,9 @@
+ #ifdef CONFIG_SQUASHFS_1_0_COMPATIBILITY
+ #undef CONFIG_SQUASHFS_1_0_COMPATIBILITY
+ #endif
++#ifdef CONFIG_SQUASHFS_2_0_COMPATIBILITY
++#undef CONFIG_SQUASHFS_2_0_COMPATIBILITY
++#endif
+ #ifdef SQUASHFS_TRACE
+ #define TRACE(s, args...)	printk(KERN_NOTICE "SQUASHFS: "s, ## args)
+ #else

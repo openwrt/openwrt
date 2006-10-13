@@ -1,0 +1,85 @@
+diff -urN gcc-3.4.6/gcc/config/mips/mips.c gcc-3.4.6-nonmips/gcc/config/mips/mips.c
+--- gcc-3.4.6/gcc/config/mips/mips.c	2005-07-31 10:35:15.000000000 +0200
++++ gcc-3.4.6-nonmips/gcc/config/mips/mips.c	2006-07-19 20:25:03.000000000 +0200
+@@ -3466,26 +3466,26 @@
+   for (offset = 0, i = 0; offset + delta <= length; offset += delta, i++)
+     {
+       regs[i] = gen_reg_rtx (mode);
+-      if (MEM_ALIGN (src) >= bits)
++      //if (MEM_ALIGN (src) >= bits)
+ 	emit_move_insn (regs[i], adjust_address (src, mode, offset));
+-      else
+-	{
+-	  rtx part = adjust_address (src, BLKmode, offset);
+-	  if (!mips_expand_unaligned_load (regs[i], part, bits, 0))
+-	    abort ();
+-	}
++      //else
++	//{
++	  //rtx part = adjust_address (src, BLKmode, offset);
++	  //if (!mips_expand_unaligned_load (regs[i], part, bits, 0))
++	    //abort ();
++	//}
+     }
+ 
+   /* Copy the chunks to the destination.  */
+   for (offset = 0, i = 0; offset + delta <= length; offset += delta, i++)
+-    if (MEM_ALIGN (dest) >= bits)
++    //if (MEM_ALIGN (dest) >= bits)
+       emit_move_insn (adjust_address (dest, mode, offset), regs[i]);
+-    else
+-      {
+-	rtx part = adjust_address (dest, BLKmode, offset);
+-	if (!mips_expand_unaligned_store (part, regs[i], bits, 0))
+-	  abort ();
+-      }
++    //else
++      //{
++	//rtx part = adjust_address (dest, BLKmode, offset);
++	//if (!mips_expand_unaligned_store (part, regs[i], bits, 0))
++	  //abort ();
++      //}
+ 
+   /* Mop up any left-over bytes.  */
+   if (offset < length)
+@@ -4488,6 +4488,7 @@
+ mips_expand_unaligned_load (rtx dest, rtx src, unsigned int width, int bitpos)
+ {
+   rtx left, right, temp;
++	return false;
+ 
+   /* If TARGET_64BIT, the destination of a 32-bit load will be a
+      paradoxical word_mode subreg.  This is the only case in which
+@@ -4514,8 +4515,9 @@
+     }
+   else
+     {
+-      emit_insn (gen_mov_lwl (temp, src, left));
+-      emit_insn (gen_mov_lwr (dest, copy_rtx (src), right, temp));
++	return false;
++      //emit_insn (gen_mov_lwl (temp, src, left));
++      //emit_insn (gen_mov_lwr (dest, copy_rtx (src), right, temp));
+     }
+   return true;
+ }
+@@ -4528,6 +4530,7 @@
+ mips_expand_unaligned_store (rtx dest, rtx src, unsigned int width, int bitpos)
+ {
+   rtx left, right;
++	return false;
+ 
+   if (!mips_get_unaligned_mem (&dest, width, bitpos, &left, &right))
+     return false;
+@@ -4541,8 +4544,10 @@
+     }
+   else
+     {
+-      emit_insn (gen_mov_swl (dest, src, left));
+-      emit_insn (gen_mov_swr (copy_rtx (dest), copy_rtx (src), right));
++	/* Patented instructions */
++      //emit_insn (gen_mov_swl (dest, src, left));
++      //emit_insn (gen_mov_swr (copy_rtx (dest), copy_rtx (src), right));
++	return false;
+     }
+   return true;
+ }

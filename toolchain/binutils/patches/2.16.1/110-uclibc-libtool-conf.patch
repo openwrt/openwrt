@@ -1,0 +1,218 @@
+diff -urN binutils-2.16.90.0.2-dist/bfd/configure binutils-2.16.90.0.2/bfd/configure
+--- binutils-2.16.90.0.2-dist/bfd/configure	2005-04-29 12:50:24.000000000 -0500
++++ binutils-2.16.90.0.2/bfd/configure	2005-04-30 11:34:59.246377032 -0500
+@@ -3584,6 +3584,11 @@
+   lt_cv_file_magic_test_file=`echo /lib/libc.so* /lib/libc-*.so`
+   ;;
+ 
++linux-uclibc*)
++  lt_cv_deplibs_check_method=pass_all
++  lt_cv_file_magic_test_file=`echo /lib/libuClibc-*.so`
++  ;;
++
+ netbsd* | knetbsd*-gnu)
+   if echo __ELF__ | $CC -E - | grep __ELF__ > /dev/null; then
+     lt_cv_deplibs_check_method='match_pattern /lib[^/\.]+\.so\.[0-9]+\.[0-9]+$'
+diff -urN binutils-2.16.90.0.2-dist/binutils/configure binutils-2.16.90.0.2/binutils/configure
+--- binutils-2.16.90.0.2-dist/binutils/configure	2005-04-29 12:50:26.000000000 -0500
++++ binutils-2.16.90.0.2/binutils/configure	2005-04-30 11:35:28.900868864 -0500
+@@ -1577,6 +1577,11 @@
+   lt_cv_file_magic_test_file=`echo /lib/libc.so* /lib/libc-*.so`
+   ;;
+ 
++linux-uclibc*)
++  lt_cv_deplibs_check_method=pass_all
++  lt_cv_file_magic_test_file=`echo /lib/libuClibc-*.so`
++  ;;
++
+ netbsd* | knetbsd*-gnu)
+   if echo __ELF__ | $CC -E - | grep __ELF__ > /dev/null; then
+     lt_cv_deplibs_check_method='match_pattern /lib[^/\.]+\.so\.[0-9]+\.[0-9]+$'
+diff -urN binutils-2.16.90.0.2-dist/configure binutils-2.16.90.0.2/configure
+--- binutils-2.16.90.0.2-dist/configure	2005-04-29 12:50:23.000000000 -0500
++++ binutils-2.16.90.0.2/configure	2005-04-30 11:31:12.525843792 -0500
+@@ -1111,7 +1111,7 @@
+     ;;
+ "")
+     case "${target}" in
+-    *-*-linux*-gnu | *-*-gnu* | *-*-k*bsd*-gnu)
++    *-*-linux*-gnu | *-*-gnu* | *-*-k*bsd*-gnu | *-*-linux-uclibc*)
+         # Enable libmudflap by default in GNU and friends.
+ 	;;
+     *-*-freebsd*)
+diff -urN binutils-2.16.90.0.2-dist/configure.in binutils-2.16.90.0.2/configure.in
+--- binutils-2.16.90.0.2-dist/configure.in	2005-04-29 12:50:23.000000000 -0500
++++ binutils-2.16.90.0.2/configure.in	2005-04-30 11:29:51.643139832 -0500
+@@ -328,7 +328,7 @@
+     ;;
+ "")
+     case "${target}" in
+-    *-*-linux*-gnu | *-*-gnu* | *-*-k*bsd*-gnu)
++    *-*-linux*-gnu | *-*-gnu* | *-*-k*bsd*-gnu | *-*-linux-uclibc*)
+         # Enable libmudflap by default in GNU and friends.
+ 	;;
+     *-*-freebsd*)
+diff -urN binutils-2.16.90.0.2-dist/gas/configure binutils-2.16.90.0.2/gas/configure
+--- binutils-2.16.90.0.2-dist/gas/configure	2005-04-29 12:50:27.000000000 -0500
++++ binutils-2.16.90.0.2/gas/configure	2005-04-30 11:35:21.097055224 -0500
+@@ -3421,6 +3421,11 @@
+   lt_cv_file_magic_test_file=`echo /lib/libc.so* /lib/libc-*.so`
+   ;;
+ 
++linux-uclibc*)
++  lt_cv_deplibs_check_method=pass_all
++  lt_cv_file_magic_test_file=`echo /lib/libuClibc-*.so`
++  ;;
++
+ netbsd* | knetbsd*-gnu)
+   if echo __ELF__ | $CC -E - | grep __ELF__ > /dev/null; then
+     lt_cv_deplibs_check_method='match_pattern /lib[^/\.]+\.so\.[0-9]+\.[0-9]+$'
+diff -urN binutils-2.16.90.0.2-dist/gas/testsuite/gas/sh/basic.exp binutils-2.16.90.0.2/gas/testsuite/gas/sh/basic.exp
+--- binutils-2.16.90.0.2-dist/gas/testsuite/gas/sh/basic.exp	2005-04-09 14:03:14.000000000 -0500
++++ binutils-2.16.90.0.2/gas/testsuite/gas/sh/basic.exp	2005-04-30 11:41:57.301822944 -0500
+@@ -20,7 +20,7 @@
+ 
+ # Written by Cygnus Support.
+ 
+-if [istarget "sh*-*-linux-gnu"] {
++if {[istarget "sh*-*-linux-gnu"] || [istarget "sh*-*-linux-uclibc"]} {
+     global ASFLAGS
+     set ASFLAGS "$ASFLAGS -big"
+ }
+diff -urN binutils-2.16.90.0.2-dist/gprof/configure binutils-2.16.90.0.2/gprof/configure
+--- binutils-2.16.90.0.2-dist/gprof/configure	2005-04-29 12:50:29.000000000 -0500
++++ binutils-2.16.90.0.2/gprof/configure	2005-04-30 11:35:36.880655752 -0500
+@@ -3419,6 +3419,11 @@
+   lt_cv_file_magic_test_file=`echo /lib/libc.so* /lib/libc-*.so`
+   ;;
+ 
++linux-uclibc*)
++  lt_cv_deplibs_check_method=pass_all
++  lt_cv_file_magic_test_file=`echo /lib/libuClibc-*.so`
++  ;;
++
+ netbsd* | knetbsd*-gnu)
+   if echo __ELF__ | $CC -E - | grep __ELF__ > /dev/null; then
+     lt_cv_deplibs_check_method='match_pattern /lib[^/\.]+\.so\.[0-9]+\.[0-9]+$'
+diff -urN binutils-2.16.90.0.2-dist/ld/configure binutils-2.16.90.0.2/ld/configure
+--- binutils-2.16.90.0.2-dist/ld/configure	2005-04-29 12:50:30.000000000 -0500
++++ binutils-2.16.90.0.2/ld/configure	2005-04-30 11:46:15.974498720 -0500
+@@ -1581,6 +1581,11 @@
+   lt_cv_file_magic_test_file=`echo /lib/libc.so* /lib/libc-*.so`
+   ;;
+ 
++linux-uclibc*)
++  lt_cv_deplibs_check_method=pass_all
++  lt_cv_file_magic_test_file=`echo /lib/libuClibc-*.so`
++  ;;
++
+ netbsd* | knetbsd*-gnu)
+   if echo __ELF__ | $CC -E - | grep __ELF__ > /dev/null; then
+     lt_cv_deplibs_check_method='match_pattern /lib[^/\.]+\.so\.[0-9]+\.[0-9]+$'
+diff -urN binutils-2.16.90.0.2-dist/ld/testsuite/ld-sh/sh.exp binutils-2.16.90.0.2/ld/testsuite/ld-sh/sh.exp
+--- binutils-2.16.90.0.2-dist/ld/testsuite/ld-sh/sh.exp	2005-04-09 14:03:29.000000000 -0500
++++ binutils-2.16.90.0.2/ld/testsuite/ld-sh/sh.exp	2005-04-30 11:45:07.890849008 -0500
+@@ -62,7 +62,7 @@
+ 
+ set testsrec "SH relaxing to S-records"
+ 
+-if [istarget sh*-linux-gnu] {
++if {[istarget sh*-linux-gnu] || [istarget sh*-*-linux-uclibc]} {
+     # This target needs the explicit entry address.
+     catch "exec $objdump -x tmpdir/sh1 | grep start\\ address | sed s/start\\ address//" entry_addr
+     set srec_relax_arg "-Ttext $entry_addr -relax --oformat srec tmpdir/sh1.o"
+@@ -117,7 +117,7 @@
+     return
+ }
+ 
+-if [istarget sh*-linux-gnu] {
++if {[istarget sh*-linux-gnu] || [istarget sh*-*-linux-uclibc]} {
+     exec sed -e s/_main/main/ -e s/_trap/trap/ -e s/_stack/stack/ \
+ 	    < $srcdir/$subdir/start.s >tmpdir/start.s
+ } else {
+diff -urN binutils-2.16.90.0.2-dist/ld/testsuite/ld-srec/srec.exp binutils-2.16.90.0.2/ld/testsuite/ld-srec/srec.exp
+--- binutils-2.16.90.0.2-dist/ld/testsuite/ld-srec/srec.exp	2005-04-29 12:50:30.000000000 -0500
++++ binutils-2.16.90.0.2/ld/testsuite/ld-srec/srec.exp	2005-04-30 11:44:26.358162936 -0500
+@@ -385,7 +385,7 @@
+ setup_xfail "v850*-*-elf"
+ 
+ # The S-record linker doesn't handle Alpha Elf relaxation.
+-setup_xfail "alpha*-*-elf*" "alpha*-*-linux-gnu*" "alpha*-*-gnu*"
++setup_xfail "alpha*-*-elf*" "alpha*-*-linux-gnu*" "alpha*-*-gnu*" "alpha*-*-linux-uclibc*"
+ setup_xfail "alpha*-*-netbsd*"
+ 
+ # The S-record linker hasn't any hope of coping with HPPA relocs.
+@@ -424,7 +424,7 @@
+ setup_xfail "thumb-*-*"
+ setup_xfail "powerpc*-*-eabi*"
+ setup_xfail "v850*-*-elf"
+-setup_xfail "alpha*-*-elf*" "alpha*-*-linux-gnu*" "alpha*-*-gnu*"
++setup_xfail "alpha*-*-elf*" "alpha*-*-linux-gnu*" "alpha*-*-gnu*" "alpha*-*-linux-uclibc*"
+ setup_xfail "alpha*-*-netbsd*"
+ setup_xfail "hppa*-*-*"
+ setup_xfail "ia64-*-*"
+diff -urN binutils-2.16.90.0.2-dist/libtool.m4 binutils-2.16.90.0.2/libtool.m4
+--- binutils-2.16.90.0.2-dist/libtool.m4	2004-07-27 23:36:06.000000000 -0500
++++ binutils-2.16.90.0.2/libtool.m4	2005-04-30 11:35:54.062043784 -0500
+@@ -645,6 +645,11 @@
+   lt_cv_file_magic_test_file=`echo /lib/libc.so* /lib/libc-*.so`
+   ;;
+ 
++linux-uclibc*)
++  lt_cv_deplibs_check_method=pass_all
++  lt_cv_file_magic_test_file=`echo /lib/libuClibc-*.so`
++  ;;
++
+ netbsd* | knetbsd*-gnu)
+   if echo __ELF__ | $CC -E - | grep __ELF__ > /dev/null; then
+     [lt_cv_deplibs_check_method='match_pattern /lib[^/\.]+\.so\.[0-9]+\.[0-9]+$']
+diff -urN binutils-2.16.90.0.2-dist/ltconfig binutils-2.16.90.0.2/ltconfig
+--- binutils-2.16.90.0.2-dist/ltconfig	2004-11-22 14:33:30.000000000 -0600
++++ binutils-2.16.90.0.2/ltconfig	2005-04-30 11:22:10.594229920 -0500
+@@ -602,6 +602,7 @@
+ 
+ # Transform linux* to *-*-linux-gnu*, to support old configure scripts.
+ case $host_os in
++linux-uclibc*) ;;
+ linux-gnu*) ;;
+ linux*) host=`echo $host | sed 's/^\(.*-.*-linux\)\(.*\)$/\1-gnu\2/'`
+ esac
+@@ -1270,6 +1271,23 @@
+   dynamic_linker='GNU/Linux ld.so'
+   ;;
+ 
++linux-uclibc*)
++  version_type=linux
++  need_lib_prefix=no
++  need_version=no
++  library_names_spec='${libname}${release}.so$versuffix ${libname}${release}.so$major $libname.so'
++  soname_spec='${libname}${release}.so$major'
++  finish_cmds='PATH="\$PATH:/sbin" ldconfig -n $libdir'
++  shlibpath_var=LD_LIBRARY_PATH
++  shlibpath_overrides_runpath=no
++  # This implies no fast_install, which is unacceptable.
++  # Some rework will be needed to allow for fast_install
++  # before this can be enabled.
++  hardcode_into_libs=yes
++  # Assume using the uClibc dynamic linker.
++  dynamic_linker="uClibc ld.so"
++  ;;
++
+ netbsd*)
+   need_lib_prefix=no
+   need_version=no
+diff -urN binutils-2.16.90.0.2-dist/opcodes/configure binutils-2.16.90.0.2/opcodes/configure
+--- binutils-2.16.90.0.2-dist/opcodes/configure	2005-04-29 12:50:31.000000000 -0500
++++ binutils-2.16.90.0.2/opcodes/configure	2005-04-30 11:17:07.168357664 -0500
+@@ -3588,6 +3588,11 @@
+   lt_cv_file_magic_test_file=`echo /lib/libc.so* /lib/libc-*.so`
+   ;;
+ 
++linux-uclibc*)
++  lt_cv_deplibs_check_method=pass_all
++  lt_cv_file_magic_test_file=`echo /lib/libuClibc-*.so`
++  ;;
++
+ netbsd* | knetbsd*-gnu)
+   if echo __ELF__ | $CC -E - | grep __ELF__ > /dev/null; then
+     lt_cv_deplibs_check_method='match_pattern /lib[^/\.]+\.so\.[0-9]+\.[0-9]+$'

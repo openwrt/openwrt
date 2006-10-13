@@ -1,0 +1,296 @@
+diff -urN linux-2.4.26-pre5/Documentation/Configure.help linux-2.4.26-pre5-netdev-core/Documentation/Configure.help
+--- linux-2.4.26-pre5/Documentation/Configure.help	Sat Mar 20 10:08:18 2004
++++ linux-2.4.26-pre5-netdev-core/Documentation/Configure.help	Sun Mar 21 10:16:14 2004
+@@ -10419,6 +10419,20 @@
+ 
+   If you don't know what to use this for, you don't need it.
+ 
++Allow Net Devices to contribute to /dev/random
++CONFIG_NET_RANDOM
++  If you say Y here, network device interrupts will contribute to the
++  kernel entropy pool. Normally, block devices and some other devices
++  feed the pool. Some systems, such as those that are headless or diskless,
++  need additional entropy sources.  Some people, however, feel that network
++  devices should not contribute to /dev/random because an external attacker
++  could observe incoming packets in an attempt to learn the entropy pool's
++  state.  If you say N, no network device will contribute entropy.
++
++  If you believe there is a chance of your network packets being observed
++  and you doubt the security of the entropy pool's one-way hash, do not
++  enable this.  If unsure, say N.
++
+ Ethertap network tap (OBSOLETE)
+ CONFIG_ETHERTAP
+   If you say Y here (and have said Y to "Kernel/User network link
+diff -urN linux-2.4.26-pre5/drivers/net/Config.in linux-2.4.26-pre5-netdev-core/drivers/net/Config.in
+--- linux-2.4.26-pre5/drivers/net/Config.in	Sat Mar 20 10:08:18 2004
++++ linux-2.4.26-pre5-netdev-core/drivers/net/Config.in	Sun Mar 21 10:16:14 2004
+@@ -8,6 +8,7 @@
+ tristate 'Bonding driver support' CONFIG_BONDING
+ tristate 'EQL (serial line load balancing) support' CONFIG_EQUALIZER
+ tristate 'Universal TUN/TAP device driver support' CONFIG_TUN
++bool 'Allow Net Devices to contribute to /dev/random' CONFIG_NET_RANDOM
+ if [ "$CONFIG_EXPERIMENTAL" = "y" ]; then
+    tristate 'Ethertap network tap (OBSOLETE)' CONFIG_ETHERTAP
+ fi
+diff -urN linux-2.4.26-pre5/include/asm-alpha/signal.h linux-2.4.26-pre5-netdev-core/include/asm-alpha/signal.h
+--- linux-2.4.26-pre5/include/asm-alpha/signal.h	Sat Dec  1 18:27:14 2001
++++ linux-2.4.26-pre5-netdev-core/include/asm-alpha/signal.h	Sun Mar 21 10:16:14 2004
+@@ -121,7 +121,14 @@
+ #define SA_PROBE		SA_ONESHOT
+ #define SA_SAMPLE_RANDOM	SA_RESTART
+ #define SA_SHIRQ		0x40000000
++
++#ifdef CONFIG_NET_RANDOM
++#define SA_NET_RANDOM	SA_SAMPLE_RANDOM
++#else
++#define SA_NET_RANDOM	0
+ #endif
++
++#endif /* __KERNEL__ */
+ 
+ #define SIG_BLOCK          1	/* for blocking signals */
+ #define SIG_UNBLOCK        2	/* for unblocking signals */
+diff -urN linux-2.4.26-pre5/include/asm-arm/signal.h linux-2.4.26-pre5-netdev-core/include/asm-arm/signal.h
+--- linux-2.4.26-pre5/include/asm-arm/signal.h	Sat Sep 13 07:57:29 2003
++++ linux-2.4.26-pre5-netdev-core/include/asm-arm/signal.h	Sun Mar 21 10:16:14 2004
+@@ -125,7 +125,14 @@
+ #define SA_PROBE		0x80000000
+ #define SA_SAMPLE_RANDOM	0x10000000
+ #define SA_SHIRQ		0x04000000
++
++#ifdef CONFIG_NET_RANDOM
++#define SA_NET_RANDOM	SA_SAMPLE_RANDOM
++#else
++#define SA_NET_RANDOM	0
+ #endif
++
++#endif /* __KERNEL__ */
+ 
+ #define SIG_BLOCK          0	/* for blocking signals */
+ #define SIG_UNBLOCK        1	/* for unblocking signals */
+diff -urN linux-2.4.26-pre5/include/asm-cris/signal.h linux-2.4.26-pre5-netdev-core/include/asm-cris/signal.h
+--- linux-2.4.26-pre5/include/asm-cris/signal.h	Sat Dec  1 18:27:14 2001
++++ linux-2.4.26-pre5-netdev-core/include/asm-cris/signal.h	Sun Mar 21 10:16:14 2004
+@@ -120,7 +120,14 @@
+ #define SA_PROBE		SA_ONESHOT
+ #define SA_SAMPLE_RANDOM	SA_RESTART
+ #define SA_SHIRQ		0x04000000
++
++#ifdef CONFIG_NET_RANDOM
++#define SA_NET_RANDOM	SA_SAMPLE_RANDOM
++#else
++#define SA_NET_RANDOM	0
+ #endif
++
++#endif /* __KERNEL__ */
+ 
+ #define SIG_BLOCK          0	/* for blocking signals */
+ #define SIG_UNBLOCK        1	/* for unblocking signals */
+diff -urN linux-2.4.26-pre5/include/asm-i386/signal.h linux-2.4.26-pre5-netdev-core/include/asm-i386/signal.h
+--- linux-2.4.26-pre5/include/asm-i386/signal.h	Sun Mar 21 00:00:43 2004
++++ linux-2.4.26-pre5-netdev-core/include/asm-i386/signal.h	Sun Mar 21 10:16:14 2004
+@@ -119,7 +119,14 @@
+ #define SA_PROBE		SA_ONESHOT
+ #define SA_SAMPLE_RANDOM	SA_RESTART
+ #define SA_SHIRQ		0x04000000
++
++#ifdef CONFIG_NET_RANDOM
++#define SA_NET_RANDOM	SA_SAMPLE_RANDOM
++#else
++#define SA_NET_RANDOM	0
+ #endif
++
++#endif /* __KERNEL__ */
+ 
+ #define SIG_BLOCK          0	/* for blocking signals */
+ #define SIG_UNBLOCK        1	/* for unblocking signals */
+diff -urN linux-2.4.26-pre5/include/asm-ia64/signal.h linux-2.4.26-pre5-netdev-core/include/asm-ia64/signal.h
+--- linux-2.4.26-pre5/include/asm-ia64/signal.h	Sat Mar 20 10:08:20 2004
++++ linux-2.4.26-pre5-netdev-core/include/asm-ia64/signal.h	Sun Mar 21 10:16:14 2004
+@@ -117,6 +117,12 @@
+ #define SA_SHIRQ		0x04000000
+ #define SA_PERCPU_IRQ		0x02000000
+ 
++#ifdef CONFIG_NET_RANDOM
++#define SA_NET_RANDOM	SA_SAMPLE_RANDOM
++#else
++#define SA_NET_RANDOM	0
++#endif
++
+ #endif /* __KERNEL__ */
+ 
+ #define SIG_BLOCK          0	/* for blocking signals */
+diff -urN linux-2.4.26-pre5/include/asm-m68k/signal.h linux-2.4.26-pre5-netdev-core/include/asm-m68k/signal.h
+--- linux-2.4.26-pre5/include/asm-m68k/signal.h	Fri Feb 20 07:38:33 2004
++++ linux-2.4.26-pre5-netdev-core/include/asm-m68k/signal.h	Sun Mar 21 10:16:14 2004
+@@ -116,7 +116,14 @@
+ #define SA_PROBE		SA_ONESHOT
+ #define SA_SAMPLE_RANDOM	SA_RESTART
+ #define SA_SHIRQ		0x04000000
++
++#ifdef CONFIG_NET_RANDOM
++#define SA_NET_RANDOM	SA_SAMPLE_RANDOM
++#else
++#define SA_NET_RANDOM	0
+ #endif
++
++#endif /* __KERNEL__ */
+ 
+ #define SIG_BLOCK          0	/* for blocking signals */
+ #define SIG_UNBLOCK        1	/* for unblocking signals */
+diff -urN linux-2.4.26-pre5/include/asm-mips/signal.h linux-2.4.26-pre5-netdev-core/include/asm-mips/signal.h
+--- linux-2.4.26-pre5/include/asm-mips/signal.h	Sat Sep 13 07:57:31 2003
++++ linux-2.4.26-pre5-netdev-core/include/asm-mips/signal.h	Sun Mar 21 10:16:14 2004
+@@ -111,6 +111,12 @@
+ #define SA_SAMPLE_RANDOM	SA_RESTART
+ #define SA_SHIRQ		0x02000000
+ 
++#ifdef CONFIG_NET_RANDOM
++#define SA_NET_RANDOM	SA_SAMPLE_RANDOM
++#else
++#define SA_NET_RANDOM	0
++#endif
++
+ #endif /* __KERNEL__ */
+ 
+ #define SIG_BLOCK	1	/* for blocking signals */
+diff -urN linux-2.4.26-pre5/include/asm-mips64/signal.h linux-2.4.26-pre5-netdev-core/include/asm-mips64/signal.h
+--- linux-2.4.26-pre5/include/asm-mips64/signal.h	Sat Sep 13 07:57:32 2003
++++ linux-2.4.26-pre5-netdev-core/include/asm-mips64/signal.h	Sun Mar 21 10:16:14 2004
+@@ -119,6 +119,12 @@
+ #define SA_SAMPLE_RANDOM	SA_RESTART
+ #define SA_SHIRQ		0x02000000
+ 
++#ifdef CONFIG_NET_RANDOM
++#define SA_NET_RANDOM	SA_SAMPLE_RANDOM
++#else
++#define SA_NET_RANDOM	0
++#endif
++
+ #endif /* __KERNEL__ */
+ 
+ #define SIG_BLOCK	1	/* for blocking signals */
+diff -urN linux-2.4.26-pre5/include/asm-parisc/signal.h linux-2.4.26-pre5-netdev-core/include/asm-parisc/signal.h
+--- linux-2.4.26-pre5/include/asm-parisc/signal.h	Sun Jan 11 18:48:21 2004
++++ linux-2.4.26-pre5-netdev-core/include/asm-parisc/signal.h	Sun Mar 21 10:16:14 2004
+@@ -100,6 +100,12 @@
+ #define SA_SAMPLE_RANDOM	SA_RESTART
+ #define SA_SHIRQ		0x04000000
+ 
++#ifdef CONFIG_NET_RANDOM
++#define SA_NET_RANDOM	SA_SAMPLE_RANDOM
++#else
++#define SA_NET_RANDOM	0
++#endif
++
+ #endif /* __KERNEL__ */
+ 
+ #define SIG_BLOCK          0	/* for blocking signals */
+diff -urN linux-2.4.26-pre5/include/asm-ppc/signal.h linux-2.4.26-pre5-netdev-core/include/asm-ppc/signal.h
+--- linux-2.4.26-pre5/include/asm-ppc/signal.h	Sat Sep 13 07:57:32 2003
++++ linux-2.4.26-pre5-netdev-core/include/asm-ppc/signal.h	Sun Mar 21 10:16:14 2004
+@@ -111,6 +111,13 @@
+ #define SA_PROBE		SA_ONESHOT
+ #define SA_SAMPLE_RANDOM	SA_RESTART
+ #define SA_SHIRQ		0x04000000
++ 
++#ifdef CONFIG_NET_RANDOM
++#define SA_NET_RANDOM SA_SAMPLE_RANDOM
++#else
++#define SA_NET_RANDOM 0
++#endif
++  
+ #endif /* __KERNEL__ */
+ 
+ #define SIG_BLOCK          0	/* for blocking signals */
+diff -urN linux-2.4.26-pre5/include/asm-s390/signal.h linux-2.4.26-pre5-netdev-core/include/asm-s390/signal.h
+--- linux-2.4.26-pre5/include/asm-s390/signal.h	Fri Feb 20 07:38:34 2004
++++ linux-2.4.26-pre5-netdev-core/include/asm-s390/signal.h	Sun Mar 21 10:16:14 2004
+@@ -129,7 +129,14 @@
+ #define SA_SHIRQ                0x04000000
+ #define SA_DOPATHGROUP          0x00100000
+ #define SA_FORCE                0x00200000
++
++#ifdef CONFIG_NET_RANDOM
++#define SA_NET_RANDOM		SA_SAMPLE_RANDOM
++#else
++#define SA_NET_RANDOM		0
+ #endif
++
++#endif /* __KERNEL__ */
+ 
+ #define SIG_BLOCK          0    /* for blocking signals */
+ #define SIG_UNBLOCK        1    /* for unblocking signals */
+diff -urN linux-2.4.26-pre5/include/asm-s390x/signal.h linux-2.4.26-pre5-netdev-core/include/asm-s390x/signal.h
+--- linux-2.4.26-pre5/include/asm-s390x/signal.h	Fri Feb 20 07:38:34 2004
++++ linux-2.4.26-pre5-netdev-core/include/asm-s390x/signal.h	Sun Mar 21 10:16:14 2004
+@@ -129,7 +129,14 @@
+ #define SA_SHIRQ                0x04000000
+ #define SA_DOPATHGROUP          0x00100000
+ #define SA_FORCE                0x00200000
++
++#ifdef CONFIG_NET_RANDOM
++#define SA_NET_RANDOM		SA_SAMPLE_RANDOM
++#else
++#define SA_NET_RANDOM		0
+ #endif
++
++#endif /* __KERNEL__ */
+ 
+ #define SIG_BLOCK          0    /* for blocking signals */
+ #define SIG_UNBLOCK        1    /* for unblocking signals */
+diff -urN linux-2.4.26-pre5/include/asm-sh/signal.h linux-2.4.26-pre5-netdev-core/include/asm-sh/signal.h
+--- linux-2.4.26-pre5/include/asm-sh/signal.h	Sat Dec  1 18:27:13 2001
++++ linux-2.4.26-pre5-netdev-core/include/asm-sh/signal.h	Sun Mar 21 10:16:14 2004
+@@ -107,7 +107,14 @@
+ #define SA_PROBE		SA_ONESHOT
+ #define SA_SAMPLE_RANDOM	SA_RESTART
+ #define SA_SHIRQ		0x04000000
++
++#ifdef CONFIG_NET_RANDOM
++#define SA_NET_RANDOM	SA_SAMPLE_RANDOM
++#else
++#define SA_NET_RANDOM	0
+ #endif
++
++#endif /* __KERNEL__ */
+ 
+ #define SIG_BLOCK          0	/* for blocking signals */
+ #define SIG_UNBLOCK        1	/* for unblocking signals */
+diff -urN linux-2.4.26-pre5/include/asm-sparc/signal.h linux-2.4.26-pre5-netdev-core/include/asm-sparc/signal.h
+--- linux-2.4.26-pre5/include/asm-sparc/signal.h	Sat Dec  1 18:27:14 2001
++++ linux-2.4.26-pre5-netdev-core/include/asm-sparc/signal.h	Sun Mar 21 10:16:14 2004
+@@ -176,7 +176,14 @@
+ #define SA_PROBE SA_ONESHOT
+ #define SA_SAMPLE_RANDOM SA_RESTART
+ #define SA_STATIC_ALLOC		0x80
++
++#ifdef CONFIG_NET_RANDOM
++#define SA_NET_RANDOM	SA_SAMPLE_RANDOM
++#else
++#define SA_NET_RANDOM	0
+ #endif
++
++#endif /* __KERNEL__ */
+ 
+ /* Type of a signal handler.  */
+ #ifdef __KERNEL__
+diff -urN linux-2.4.26-pre5/include/asm-sparc64/signal.h linux-2.4.26-pre5-netdev-core/include/asm-sparc64/signal.h
+--- linux-2.4.26-pre5/include/asm-sparc64/signal.h	Sat Dec  1 18:27:14 2001
++++ linux-2.4.26-pre5-netdev-core/include/asm-sparc64/signal.h	Sun Mar 21 10:16:14 2004
+@@ -192,7 +192,14 @@
+ #define SA_PROBE SA_ONESHOT
+ #define SA_SAMPLE_RANDOM SA_RESTART
+ #define SA_STATIC_ALLOC		0x80
++
++#ifdef CONFIG_NET_RANDOM
++#define SA_NET_RANDOM	SA_SAMPLE_RANDOM
++#else
++#define SA_NET_RANDOM	0
+ #endif
++
++#endif /* __KERNEL__ */
+ 
+ /* Type of a signal handler.  */
+ #ifdef __KERNEL__

@@ -1,0 +1,97 @@
+diff -ur linux.old/fs/jffs2/build.c linux.dev/fs/jffs2/build.c
+--- linux.old/fs/jffs2/build.c	2003-06-13 16:51:37.000000000 +0200
++++ linux.dev/fs/jffs2/build.c	2006-06-23 22:15:21.000000000 +0200
+@@ -31,6 +31,10 @@
+  * provisions above, a recipient may use your version of this file
+  * under either the RHEPL or the GPL.
+  *
++ * Modification for automatically cleaning the filesystem after
++ * a specially marked block
++ * Copyright (C) 2006 Felix Fietkau <nbd@openwrt.org>
++ *
+  * $Id: build.c,v 1.16.2.3 2003/04/30 09:43:32 dwmw2 Exp $
+  *
+  */
+@@ -38,6 +42,7 @@
+ #include <linux/kernel.h>
+ #include <linux/jffs2.h>
+ #include <linux/slab.h>
++#include <linux/mtd/mtd.h>
+ #include "nodelist.h"
+ 
+ int jffs2_build_inode_pass1(struct jffs2_sb_info *, struct jffs2_inode_cache *);
+@@ -89,6 +94,18 @@
+ 	if (ret)
+ 		return ret;
+ 
++	if (c->flags & (1 << 7)) {
++		printk("%s(): unlocking the mtd device... ", __func__);
++		if (c->mtd->unlock)
++			c->mtd->unlock(c->mtd, 0, c->mtd->size);
++		printk("done.\n");
++		
++		printk("%s(): erasing all blocks after the end marker... ", __func__);
++		jffs2_erase_pending_blocks(c);
++		jffs2_mark_erased_blocks(c);
++		printk("done.\n");
++	}
++
+ 	D1(printk(KERN_DEBUG "Scanned flash completely\n"));
+ 	/* Now build the data map for each inode, marking obsoleted nodes
+ 	   as such, and also increase nlink of any children. */
+diff -ur linux.old/fs/jffs2/scan.c linux.dev/fs/jffs2/scan.c
+--- linux.old/fs/jffs2/scan.c	2006-06-23 21:57:32.000000000 +0200
++++ linux.dev/fs/jffs2/scan.c	2006-06-23 22:01:35.000000000 +0200
+@@ -31,6 +31,10 @@
+  * provisions above, a recipient may use your version of this file
+  * under either the RHEPL or the GPL.
+  *
++ * Modification for automatically cleaning the filesystem after
++ * a specially marked block
++ * Copyright (C) 2006 Felix Fietkau <nbd@openwrt.org>
++ *
+  * $Id: scan.c,v 1.51.2.4 2003/11/02 13:51:18 dwmw2 Exp $
+  *
+  */
+@@ -88,7 +92,12 @@
+ 	for (i=0; i<c->nr_blocks; i++) {
+ 		struct jffs2_eraseblock *jeb = &c->blocks[i];
+ 
+-		ret = jffs2_scan_eraseblock(c, jeb);
++
++		if (c->flags & (1 << 7))
++			ret = 1;
++		else
++			ret = jffs2_scan_eraseblock(c, jeb);
++
+ 		if (ret < 0)
+ 			return ret;
+ 
+@@ -181,6 +190,7 @@
+ 
+ 	while(ofs < jeb->offset + c->sector_size) {
+ 		ssize_t retlen;
++		unsigned char *buf = (unsigned char *) &node;
+ 		ACCT_PARANOIA_CHECK(jeb);
+ 		
+ 		if (ofs & 3) {
+@@ -202,8 +212,18 @@
+ 			break;
+ 		}
+ 
+-		err = c->mtd->read(c->mtd, ofs, sizeof(node), &retlen, (char *)&node);
++		err = c->mtd->read(c->mtd, ofs, sizeof(node), &retlen, buf);
++		if ((buf[0] == 0xde) &&
++			(buf[1] == 0xad) &&
++			(buf[2] == 0xc0) &&
++			(buf[3] == 0xde)) {
++				
++			/* end of filesystem. erase everything after this point */
++			c->flags |= (1 << 7);
++			printk("jffs2_scan_eraseblock(): End of filesystem marker found at 0x%x\n", jeb->offset);
+ 		
++			return 1;
++		}
+ 		if (err) {
+ 			D1(printk(KERN_WARNING "mtd->read(0x%x bytes from 0x%x) returned %d\n", sizeof(node), ofs, err));
+ 			return err;

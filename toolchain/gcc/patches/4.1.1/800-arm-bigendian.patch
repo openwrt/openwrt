@@ -1,0 +1,67 @@
+By Lennert Buytenhek <buytenh@wantstofly.org>
+Adds support for arm*b-linux* big-endian ARM targets
+
+See http://gcc.gnu.org/PR16350
+
+--- gcc-4.1.0/gcc/config/arm/linux-elf.h
++++ gcc-4.1.0/gcc/config/arm/linux-elf.h
+@@ -28,19 +28,33 @@
+ #undef  TARGET_VERSION
+ #define TARGET_VERSION  fputs (" (ARM GNU/Linux with ELF)", stderr);
+ 
++/*
++ * 'config.gcc' defines TARGET_BIG_ENDIAN_DEFAULT as 1 for arm*b-*
++ * (big endian) configurations.
++ */
++#if TARGET_BIG_ENDIAN_DEFAULT
++#define TARGET_ENDIAN_DEFAULT MASK_BIG_END
++#define TARGET_ENDIAN_OPTION "mbig-endian"
++#define TARGET_LINKER_EMULATION "armelfb_linux"
++#else
++#define TARGET_ENDIAN_DEFAULT 0
++#define TARGET_ENDIAN_OPTION "mlittle-endian"
++#define TARGET_LINKER_EMULATION "armelf_linux"
++#endif
++
+ #undef  TARGET_DEFAULT_FLOAT_ABI
+ #define TARGET_DEFAULT_FLOAT_ABI ARM_FLOAT_ABI_HARD
+ 
+ #undef  TARGET_DEFAULT
+-#define TARGET_DEFAULT (0)
++#define TARGET_DEFAULT (TARGET_ENDIAN_DEFAULT)
+ 
+ #define SUBTARGET_CPU_DEFAULT TARGET_CPU_arm6
+ 
+-#define SUBTARGET_EXTRA_LINK_SPEC " -m armelf_linux -p"
++#define SUBTARGET_EXTRA_LINK_SPEC " -m " TARGET_LINKER_EMULATION " -p"
+ 
+ #undef  MULTILIB_DEFAULTS
+ #define MULTILIB_DEFAULTS \
+-	{ "marm", "mlittle-endian", "mhard-float", "mno-thumb-interwork" }
++	{ "marm", TARGET_ENDIAN_OPTION, "mhard-float", "mno-thumb-interwork" }
+ 
+ /* Now we define the strings used to build the spec file.  */
+ #undef  LIB_SPEC
+@@ -61,7 +75,7 @@
+    %{rdynamic:-export-dynamic} \
+    %{!dynamic-linker:-dynamic-linker " LINUX_TARGET_INTERPRETER "} \
+    -X \
+-   %{mbig-endian:-EB}" \
++   %{mbig-endian:-EB} %{mlittle-endian:-EL}" \
+    SUBTARGET_EXTRA_LINK_SPEC
+ 
+ #undef  LINK_SPEC
+--- gcc-4.1.0/gcc/config.gcc
++++ gcc-4.1.0/gcc/config.gcc
+@@ -672,6 +672,11 @@
+ 	;;
+ arm*-*-linux*)			# ARM GNU/Linux with ELF
+ 	tm_file="dbxelf.h elfos.h linux.h arm/elf.h arm/linux-gas.h arm/linux-elf.h" 
++	case $target in
++	arm*b-*)
++		tm_defines="${tm_defines} TARGET_BIG_ENDIAN_DEFAULT=1"
++		;;
++	esac
+ 	tmake_file="${tmake_file} t-linux arm/t-arm"
+ 	case ${target} in
+ 	arm*-*-linux-gnueabi)

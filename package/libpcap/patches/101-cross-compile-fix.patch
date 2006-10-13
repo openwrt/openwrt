@@ -1,0 +1,12 @@
+diff -urN libpcap-0.9.4.orig/Makefile.in libpcap-0.9.4/Makefile.in
+--- libpcap-0.9.4.orig/Makefile.in	2006-02-05 16:57:16.000000000 +0100
++++ libpcap-0.9.4/Makefile.in	2006-02-05 16:57:03.000000000 +0100
+@@ -117,7 +117,7 @@
+ 
+ libpcap.a: $(OBJ)
+ 	@rm -f $@
+-	ar rc $@ $(OBJ) $(LIBS)
++	$(AR) rc $@ $(OBJ) $(LIBS)
+ 	$(RANLIB) $@
+ 
+ $(SHAREDLIB): $(OBJ_PIC)

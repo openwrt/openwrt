@@ -1,0 +1,57 @@
+#!/bin/sh
+[ -z "$1" ] && echo "Error: should be run by udhcpc" && exit 1
+. /etc/functions.sh
+include /lib/network
+
+RESOLV_CONF="/tmp/resolv.conf"
+
+hotplug_event() {
+	scan_interfaces
+	for ifc in $interfaces; do
+		config_get ifname $ifc ifname
+		[ "$ifname" = "$interface" ] || continue
+
+		config_get proto $ifc proto
+		[ "$proto" = "dhcp" ] || continue
+
+		env -i ACTION="$1" INTERFACE="$ifname" PROTO=dhcp /sbin/hotplug iface
+	done
+}
+
+case "$1" in
+	deconfig)
+		ifconfig $interface 0.0.0.0
+		hotplug_event ifdown
+	;;
+	renew|bound)
+		ifconfig $interface $ip \
+		netmask ${subnet:-255.255.255.0} \
+		broadcast ${broadcast:-+}
+
+		if [ -n "$router" ] ; then
+			echo "deleting routers"
+			while route del default gw 0.0.0.0 dev $interface >&- 2>&- ; do :; done
+					
+			for i in $router ; do
+				echo "adding router $i"
+				route add default gw $i dev $interface
+			done
+		fi
+		
+		[ -n "$dns" ] && {
+			echo -n > $RESOLV_CONF
+			${domain:+echo search $domain} >> $RESOLV_CONF
+			for i in $dns ; do
+				echo "adding dns $i"
+				echo "nameserver $i" >> $RESOLV_CONF
+			done
+		}
+		
+		hotplug_event ifup
+		
+		# user rules
+		[ -f /etc/udhcpc.user ] && . /etc/udhcpc.user
+	;;
+esac
+
+exit 0

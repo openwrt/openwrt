@@ -1,0 +1,464 @@
+This patch needs to be submitted for the FSF.  Also, there may be testcases
+already in the GDB testsuite (currently disabled) that it would probably fix.
+
+Index: gdb-6.3/gdb/infcall.c
+===================================================================
+--- gdb-6.3.orig/gdb/infcall.c	2004-10-08 04:15:56.000000000 -0400
++++ gdb-6.3/gdb/infcall.c	2004-11-10 12:30:07.000000000 -0500
+@@ -36,6 +36,7 @@
+ #include "gdb_string.h"
+ #include "infcall.h"
+ #include "dummy-frame.h"
++#include "cp-abi.h"
+ 
+ /* NOTE: cagney/2003-04-16: What's the future of this code?
+ 
+@@ -297,8 +298,8 @@ call_function_by_hand (struct value *fun
+ {
+   CORE_ADDR sp;
+   CORE_ADDR dummy_addr;
+-  struct type *value_type;
+-  unsigned char struct_return;
++  struct type *value_type, *target_value_type;
++  unsigned char struct_return = 0, cp_struct_return = 0;
+   CORE_ADDR struct_addr = 0;
+   struct regcache *retbuf;
+   struct cleanup *retbuf_cleanup;
+@@ -312,6 +313,7 @@ call_function_by_hand (struct value *fun
+   struct regcache *caller_regcache;
+   struct cleanup *caller_regcache_cleanup;
+   struct frame_id dummy_id;
++  struct cleanup *args_cleanup;
+ 
+   if (!target_has_execution)
+     noprocess ();
+@@ -410,10 +412,31 @@ call_function_by_hand (struct value *fun
+     using_gcc = (b == NULL ? 2 : BLOCK_GCC_COMPILED (b));
+   }
+ 
+-  /* Are we returning a value using a structure return or a normal
+-     value return? */
++  /* Are we returning a value using a structure return (passing a
++     hidden argument pointing to storage) or a normal value return?
++     There are two cases: C++ ABI mandated structure return and
++     target ABI structure return.  The variable STRUCT_RETURN only
++     describes the latter.  The C++ version is handled by passing
++     the return location as the first parameter to the function,
++     even preceding "this".  This is different from the target
++     ABI version, which is target-specific; for instance, on ia64
++     the first argument is passed in out0 but the hidden structure
++     return pointer would normally be passed in r8.  */
+ 
+-  struct_return = using_struct_return (value_type, using_gcc);
++  if (current_language->la_language == language_cplus
++      && cp_pass_by_reference (value_type))
++    {
++      cp_struct_return = 1;
++
++      /* Tell the target specific argument pushing routine not to
++	 expect a value.  */
++      target_value_type = builtin_type_void;
++    }
++  else
++    {
++      struct_return = using_struct_return (value_type, using_gcc);
++      target_value_type = value_type;
++    }
+ 
+   /* Determine the location of the breakpoint (and possibly other
+      stuff) that the called function will return to.  The SPARC, for a
+@@ -432,7 +455,7 @@ call_function_by_hand (struct value *fun
+       if (INNER_THAN (1, 2))
+ 	{
+ 	  sp = push_dummy_code (current_gdbarch, sp, funaddr,
+-				using_gcc, args, nargs, value_type,
++				using_gcc, args, nargs, target_value_type,
+ 				&real_pc, &bp_addr);
+ 	  dummy_addr = sp;
+ 	}
+@@ -440,7 +463,7 @@ call_function_by_hand (struct value *fun
+ 	{
+ 	  dummy_addr = sp;
+ 	  sp = push_dummy_code (current_gdbarch, sp, funaddr,
+-				using_gcc, args, nargs, value_type,
++				using_gcc, args, nargs, target_value_type,
+ 				&real_pc, &bp_addr);
+ 	}
+       break;
+@@ -507,9 +530,15 @@ call_function_by_hand (struct value *fun
+ 	  param_type = TYPE_FIELD_TYPE (ftype, i);
+ 	else
+ 	  param_type = NULL;
+-	
++
+ 	args[i] = value_arg_coerce (args[i], param_type, prototyped);
+ 
++	/* FIXME: Is current_language the right language?  */
++	if (current_language->la_language == language_cplus
++	    && param_type != NULL
++	    && cp_pass_by_reference (param_type))
++	  args[i] = value_addr (args[i]);
++
+ 	/* elz: this code is to handle the case in which the function
+ 	   to be called has a pointer to function as parameter and the
+ 	   corresponding actual argument is the address of a function
+@@ -607,7 +636,7 @@ You must use a pointer to function type 
+      stack, if necessary.  Make certain that the value is correctly
+      aligned. */
+ 
+-  if (struct_return)
++  if (struct_return || cp_struct_return)
+     {
+       int len = TYPE_LENGTH (value_type);
+       if (INNER_THAN (1, 2))
+@@ -632,6 +661,22 @@ You must use a pointer to function type 
+ 	}
+     }
+ 
++  if (cp_struct_return)
++    {
++      struct value **new_args;
++
++      /* Add the new argument to the front of the argument list.  */
++      new_args = xmalloc (sizeof (struct value *) * (nargs + 1));
++      new_args[0] = value_from_pointer (lookup_pointer_type (value_type),
++					struct_addr);
++      memcpy (&new_args[1], &args[0], sizeof (struct value *) * nargs);
++      args = new_args;
++      nargs++;
++      args_cleanup = make_cleanup (xfree, args);
++    }
++  else
++    args_cleanup = make_cleanup (null_cleanup, NULL);
++
+   /* Create the dummy stack frame.  Pass in the call dummy address as,
+      presumably, the ABI code knows where, in the call dummy, the
+      return address should be pointed.  */
+@@ -649,6 +694,8 @@ You must use a pointer to function type 
+   else
+     error ("This target does not support function calls");
+ 
++  do_cleanups (args_cleanup);
++
+   /* Set up a frame ID for the dummy frame so we can pass it to
+      set_momentary_breakpoint.  We need to give the breakpoint a frame
+      ID so that the breakpoint code can correctly re-identify the
+@@ -839,11 +886,7 @@ the function call).", name);
+   /* Figure out the value returned by the function, return that.  */
+   {
+     struct value *retval;
+-    if (TYPE_CODE (value_type) == TYPE_CODE_VOID)
+-      /* If the function returns void, don't bother fetching the
+-	 return value.  */
+-      retval = allocate_value (value_type);
+-    else if (struct_return)
++    if (struct_return || cp_struct_return)
+       /* NOTE: cagney/2003-09-27: This assumes that PUSH_DUMMY_CALL
+ 	 has correctly stored STRUCT_ADDR in the target.  In the past
+ 	 that hasn't been the case, the old MIPS PUSH_ARGUMENTS
+@@ -853,6 +896,10 @@ the function call).", name);
+ 	 "struct return convention", check that PUSH_DUMMY_CALL isn't
+ 	 playing tricks.  */
+       retval = value_at (value_type, struct_addr, NULL);
++    else if (TYPE_CODE (value_type) == TYPE_CODE_VOID)
++      /* If the function returns void, don't bother fetching the
++	 return value.  */
++      retval = allocate_value (value_type);
+     else
+       {
+ 	/* This code only handles "register convention".  */
+Index: gdb-6.3/gdb/cp-abi.h
+===================================================================
+--- gdb-6.3.orig/gdb/cp-abi.h	2003-04-12 13:41:25.000000000 -0400
++++ gdb-6.3/gdb/cp-abi.h	2004-11-10 12:30:07.000000000 -0500
+@@ -1,7 +1,7 @@
+ /* Abstraction of various C++ ABI's we support, and the info we need
+    to get from them.
+    Contributed by Daniel Berlin <dberlin@redhat.com>
+-   Copyright 2001 Free Software Foundation, Inc.
++   Copyright 2001, 2002, 2003, 2004 Free Software Foundation, Inc.
+ 
+    This file is part of GDB.
+ 
+@@ -145,6 +145,10 @@ extern struct type *value_rtti_type (str
+ extern int baseclass_offset (struct type *type, int index, char *valaddr,
+ 			     CORE_ADDR address);
+                   
++/* Return non-zero if an argument of type TYPE should be passed by reference
++   instead of value.  */
++extern int cp_pass_by_reference (struct type *type);
++
+ struct cp_abi_ops
+ {
+   const char *shortname;
+@@ -162,6 +166,7 @@ struct cp_abi_ops
+ 			     int *using_enc);
+   int (*baseclass_offset) (struct type *type, int index, char *valaddr,
+ 			   CORE_ADDR address);
++  int (*pass_by_reference) (struct type *type);
+ };
+ 
+ 
+Index: gdb-6.3/gdb/cp-abi.c
+===================================================================
+--- gdb-6.3.orig/gdb/cp-abi.c	2003-11-26 17:04:00.000000000 -0500
++++ gdb-6.3/gdb/cp-abi.c	2004-11-10 12:30:07.000000000 -0500
+@@ -1,5 +1,5 @@
+ /* Generic code for supporting multiple C++ ABI's
+-   Copyright 2001, 2002, 2003 Free Software Foundation, Inc.
++   Copyright 2001, 2002, 2003, 2004 Free Software Foundation, Inc.
+ 
+    This file is part of GDB.
+ 
+@@ -94,6 +94,14 @@ value_rtti_type (struct value *v, int *f
+   return (*current_cp_abi.rtti_type) (v, full, top, using_enc);
+ }
+ 
++int
++cp_pass_by_reference (struct type *type)
++{
++  if ((current_cp_abi.pass_by_reference) == NULL)
++    return 0;
++  return (*current_cp_abi.pass_by_reference) (type);
++}
++
+ /* Set the current C++ ABI to SHORT_NAME.  */
+ 
+ static int
+Index: gdb-6.3/gdb/gnu-v3-abi.c
+===================================================================
+--- gdb-6.3.orig/gdb/gnu-v3-abi.c	2004-03-15 15:38:08.000000000 -0500
++++ gdb-6.3/gdb/gnu-v3-abi.c	2004-11-10 12:30:07.000000000 -0500
+@@ -1,7 +1,7 @@
+ /* Abstraction of GNU v3 abi.
+    Contributed by Jim Blandy <jimb@redhat.com>
+ 
+-   Copyright 2001, 2002, 2003 Free Software Foundation, Inc.
++   Copyright 2001, 2002, 2003, 2004 Free Software Foundation, Inc.
+ 
+    This file is part of GDB.
+ 
+@@ -419,6 +419,84 @@ gnuv3_baseclass_offset (struct type *typ
+   return base_offset;
+ }
+ 
++/* Return nonzero if a type should be passed by reference.
++
++   The rule in the v3 ABI document comes from section 3.1.1.  If the
++   type has a non-trivial copy constructor or destructor, then the
++   caller must make a copy (by calling the copy constructor if there
++   is one or perform the copy itself otherwise), pass the address of
++   the copy, and then destroy the temporary (if necessary).
++
++   For return values with non-trivial copy constructors or
++   destructors, space will be allocated in the caller, and a pointer
++   will be passed as the first argument (preceding "this").
++
++   We don't have a bulletproof mechanism for determining whether a
++   constructor or destructor is trivial.  For GCC and DWARF2 debug
++   information, we can check the artificial flag.
++
++   We don't do anything with the constructors or destructors yet,
++   but we have to get the argument passing right anyway.  */
++static int
++gnuv3_pass_by_reference (struct type *type)
++{
++  int fieldnum, fieldelem, basenum;
++
++  CHECK_TYPEDEF (type);
++
++  /* We're only interested in things that can have methods.  */
++  if (TYPE_CODE (type) != TYPE_CODE_STRUCT
++      && TYPE_CODE (type) != TYPE_CODE_CLASS
++      && TYPE_CODE (type) != TYPE_CODE_UNION)
++    return 0;
++
++  for (fieldnum = 0; fieldnum < TYPE_NFN_FIELDS (type); fieldnum++)
++    for (fieldelem = 0; fieldelem < TYPE_FN_FIELDLIST_LENGTH (type, fieldnum);
++	 fieldelem++)
++      {
++	struct fn_field *fn = TYPE_FN_FIELDLIST1 (type, fieldnum);
++	char *name = TYPE_FN_FIELDLIST_NAME (type, fieldnum);
++	struct type *fieldtype = TYPE_FN_FIELD_TYPE (fn, fieldelem);
++
++	/* If this function is marked as artificial, it is compiler-generated,
++	   and we assume it is trivial.  */
++	if (TYPE_FN_FIELD_ARTIFICIAL (fn, fieldelem))
++	  continue;
++
++	/* If we've found a destructor, we must pass this by reference.  */
++	if (name[0] == '~')
++	  return 1;
++
++	/* If the mangled name of this method doesn't indicate that it
++	   is a constructor, we're not interested.
++
++	   FIXME drow/2004-05-27: We could do this using the name of
++	   the method and the name of the class instead of dealing
++	   with the mangled name.  We don't have a convenient function
++	   to strip off both leading scope qualifiers and trailing
++	   template arguments yet.  */
++	if (!is_constructor_name (TYPE_FN_FIELD_PHYSNAME (fn, fieldelem)))
++	  continue;
++
++	/* If this method takes two arguments, and the second argument is
++	   a reference to this class, then it is a copy constructor.  */
++	if (TYPE_NFIELDS (fieldtype) == 2
++	    && TYPE_CODE (TYPE_FIELD_TYPE (fieldtype, 1)) == TYPE_CODE_REF
++	    && check_typedef (TYPE_TARGET_TYPE (TYPE_FIELD_TYPE (fieldtype, 1))) == type)
++	  return 1;
++      }
++
++  /* Even if all the constructors and destructors were artificial, one
++     of them may have invoked a non-artificial constructor or
++     destructor in a base class.  If any base class needs to be passed
++     by reference, so does this class.  */
++  for (basenum = 0; basenum < TYPE_N_BASECLASSES (type); basenum++)
++    if (gnuv3_pass_by_reference (TYPE_BASECLASS (type, basenum)))
++      return 1;
++
++  return 0;
++}
++
+ static void
+ init_gnuv3_ops (void)
+ {
+@@ -434,6 +512,7 @@ init_gnuv3_ops (void)
+   gnu_v3_abi_ops.rtti_type = gnuv3_rtti_type;
+   gnu_v3_abi_ops.virtual_fn_field = gnuv3_virtual_fn_field;
+   gnu_v3_abi_ops.baseclass_offset = gnuv3_baseclass_offset;
++  gnu_v3_abi_ops.pass_by_reference = gnuv3_pass_by_reference;
+ }
+ 
+ extern initialize_file_ftype _initialize_gnu_v3_abi; /* -Wmissing-prototypes */
+Index: gdb-6.3/gdb/hpacc-abi.c
+===================================================================
+--- gdb-6.3.orig/gdb/hpacc-abi.c	2003-06-08 14:27:13.000000000 -0400
++++ gdb-6.3/gdb/hpacc-abi.c	2004-11-10 12:30:07.000000000 -0500
+@@ -3,7 +3,7 @@
+    Most of the real code is from HP, i've just fiddled it to fit in
+    the C++ ABI abstraction framework.
+ 
+-   Copyright 2001 Free Software Foundation, Inc.
++   Copyright 2001, 2002, 2003 Free Software Foundation, Inc.
+ 
+    This file is part of GDB.
+ 
+Index: gdb-6.3/gdb/Makefile.in
+===================================================================
+--- gdb-6.3.orig/gdb/Makefile.in	2004-11-10 12:30:06.000000000 -0500
++++ gdb-6.3/gdb/Makefile.in	2004-11-10 12:30:07.000000000 -0500
+@@ -2073,7 +2073,7 @@ ia64-tdep.o: ia64-tdep.c $(defs_h) $(inf
+ infcall.o: infcall.c $(defs_h) $(breakpoint_h) $(target_h) $(regcache_h) \
+ 	$(inferior_h) $(gdb_assert_h) $(block_h) $(gdbcore_h) $(language_h) \
+ 	$(objfiles_h) $(gdbcmd_h) $(command_h) $(gdb_string_h) $(infcall_h) \
+-	$(dummy_frame_h)
++	$(dummy_frame_h) $(cp_abi_h)
+ inf-child.o: inf-child.c $(defs_h) $(regcache_h) $(memattr_h) $(symtab_h) \
+ 	$(target_h) $(inferior_h) $(gdb_string_h)
+ infcmd.o: infcmd.c $(defs_h) $(gdb_string_h) $(symtab_h) $(gdbtypes_h) \
+Index: gdb-6.3/gdb/testsuite/gdb.cp/pass-by-ref.exp
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ gdb-6.3/gdb/testsuite/gdb.cp/pass-by-ref.exp	2004-11-11 09:48:00.498518899 -0500
+@@ -0,0 +1,38 @@
++# This testcase is part of GDB, the GNU debugger.
++
++# Copyright 2004 Free Software Foundation, Inc.
++
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2 of the License, or
++# (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.  
++
++# Check that GDB can call C++ functions whose parameters have
++# object type, but are passed by reference.
++
++set testfile "pass-by-ref"
++set srcfile ${testfile}.cc
++set binfile ${objdir}/${subdir}/${testfile}
++if { [gdb_compile "${srcdir}/${subdir}/${srcfile}" "${binfile}" executable {debug}] != "" } {
++    return -1
++}
++
++gdb_exit
++gdb_start
++gdb_reinitialize_dir $srcdir/$subdir
++gdb_load ${binfile}
++
++if ![runto_main] then {
++    return -1
++}
++
++gdb_test "print foo (global_obj)" " = 3" "call function"
+Index: gdb-6.3/gdb/testsuite/gdb.cp/pass-by-ref.cc
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ gdb-6.3/gdb/testsuite/gdb.cp/pass-by-ref.cc	2004-11-11 09:44:17.815014667 -0500
+@@ -0,0 +1,57 @@
++/* This testcase is part of GDB, the GNU debugger.
++
++   Copyright 2004 Free Software Foundation, Inc.
++
++   This program is free software; you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation; either version 2 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++ 
++   You should have received a copy of the GNU General Public License
++   along with this program; if not, write to the Free Software
++   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307,
++   USA.  */
++
++class Obj {
++public:
++  Obj ();
++  Obj (const Obj &);
++  ~Obj ();
++  int var[2];
++};
++
++int foo (Obj arg)
++{
++  return arg.var[0] + arg.var[1];
++}
++
++Obj::Obj ()
++{
++  var[0] = 1;
++  var[1] = 2;
++}
++
++Obj::Obj (const Obj &obj)
++{
++  var[0] = obj.var[0];
++  var[1] = obj.var[1];
++}
++
++Obj::~Obj ()
++{
++
++}
++
++Obj global_obj;
++
++int
++main ()
++{
++  int bar = foo (global_obj);
++  return bar;
++}

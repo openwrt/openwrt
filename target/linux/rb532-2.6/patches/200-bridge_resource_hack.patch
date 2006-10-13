@@ -1,0 +1,13 @@
+--- linux.old/arch/mips/pci/pci.c	2006-04-19 08:10:14.000000000 +0200
++++ linux.dev/arch/mips/pci/pci.c	2006-06-14 20:23:18.000000000 +0200
+@@ -65,8 +65,10 @@
+ 		/*
+ 		 * Put everything into 0x00-0xff region modulo 0x400
+ 		 */
++#ifndef CONFIG_MIKROTIK_RB500
+ 		if (start & 0x300)
+ 			start = (start + 0x3ff) & ~0x3ff;
++#endif
+ 	} else if (res->flags & IORESOURCE_MEM) {
+ 		/* Make sure we start at our min on all hoses */
+ 		if (start < PCIBIOS_MIN_MEM + hose->mem_resource->start)

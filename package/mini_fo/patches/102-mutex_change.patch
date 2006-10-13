@@ -1,0 +1,602 @@
+From:  <mk@mary.denx.de>
+Date: Tue, 24 Jan 2006 14:09:21 +0000 (+0100)
+Subject:     Support for new mutex infrastructure
+X-Git-Url: http://www.denx.de/cgi-bin/gitweb.cgi?p=mini_fo.git;a=commitdiff;h=1dcc028729060ea83ea662155634b33ae8e2c493
+
+  Support for new mutex infrastructure
+  (7892f2f48d165a34b0b8130c8a195dfd807b8cb6)
+---
+
+--- a/ChangeLog
++++ b/ChangeLog
+@@ -1,3 +1,13 @@
++2006-01-24  Markus Klotzbuecher  <mk@mary.denx.de>
++
++	* Add tons of ugly ifdefs to Ed L. Cashin's mutex patch to
++          retain backwards compatibility.
++	
++2006-01-24  Ed L. Cashin <ecashin@coraid.com>
++
++	* Support for the new mutex infrastructure
++	(7892f2f48d165a34b0b8130c8a195dfd807b8cb6)
++
+ 2005-10-15  Markus Klotzbuecher  <mk@localhost.localdomain>
+ 
+ 	* Bugfix for a serious memory leak in mini_fo_follow_link.
+--- a/aux.c
++++ b/aux.c
+@@ -435,8 +435,11 @@ int build_sto_structure(dentry_t *dir, d
+ 
+ 	/* was:	hidden_sto_dir_dentry = lock_parent(hidden_sto_dentry); */
+ 	hidden_sto_dir_dentry = dget(hidden_sto_dentry->d_parent);
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
++	mutex_lock(&hidden_sto_dir_dentry->d_inode->i_mutex);
++#else
+ 	down(&hidden_sto_dir_dentry->d_inode->i_sem);
+-
++#endif
+ 	/* lets be safe */
+ 	if(dtohd2(dir) != hidden_sto_dir_dentry) {
+ 		printk(KERN_CRIT "mini_fo: build_sto_structure: invalid parameter or meta data corruption [2].\n");
+@@ -457,7 +460,11 @@ int build_sto_structure(dentry_t *dir, d
+ 	if(err) {
+ 		printk(KERN_CRIT "mini_fo: build_sto_structure: failed to create storage dir [1].\n");
+ 		/* was: unlock_dir(dir); */
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
++		mutex_unlock(&dir->d_inode->i_mutex);
++#else
+ 		up(&dir->d_inode->i_sem);
++#endif
+ 		dput(dir);
+ 		return err;
+ 	}
+@@ -466,7 +473,11 @@ int build_sto_structure(dentry_t *dir, d
+ 	if(!dtohd2(dentry)->d_inode) {
+ 		printk(KERN_CRIT "mini_fo: build_sto_structure: failed to create storage dir [2].\n");
+ 		/* was: unlock_dir(dir); */
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
++		mutex_unlock(&dir->d_inode->i_mutex);
++#else
+ 		up(&dir->d_inode->i_sem);
++#endif
+ 		dput(dir);
+ 		return 1;
+ 	}
+@@ -485,7 +496,11 @@ int build_sto_structure(dentry_t *dir, d
+ 				 hidden_sto_dir_dentry->d_inode);
+ 	dir->d_inode->i_nlink++;
+ 	/* was: unlock_dir(hidden_sto_dir_dentry); */
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
++	mutex_unlock(&hidden_sto_dir_dentry->d_inode->i_mutex);
++#else
+ 	up(&hidden_sto_dir_dentry->d_inode->i_sem);
++#endif
+ 	dput(hidden_sto_dir_dentry);
+ 	return 0;
+ }
+--- a/file.c
++++ b/file.c
+@@ -613,18 +613,34 @@ mini_fo_fsync(file_t *file, dentry_t *de
+ 	if ((hidden_file = ftohf(file)) != NULL) {
+ 		hidden_dentry = dtohd(dentry);
+ 		if (hidden_file->f_op && hidden_file->f_op->fsync) {
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
++			mutex_lock(&hidden_dentry->d_inode->i_mutex);
++#else
+ 			down(&hidden_dentry->d_inode->i_sem);
++#endif
+ 			err1 = hidden_file->f_op->fsync(hidden_file, hidden_dentry, datasync);
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
++			mutex_unlock(&hidden_dentry->d_inode->i_mutex);
++#else
+ 			up(&hidden_dentry->d_inode->i_sem);
++#endif
+ 		}
+ 	}
+ 
+ 	if ((hidden_file = ftohf2(file)) != NULL) {
+ 		hidden_dentry = dtohd2(dentry);
+ 		if (hidden_file->f_op && hidden_file->f_op->fsync) {
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
++			mutex_lock(&hidden_dentry->d_inode->i_mutex);
++#else
+ 			down(&hidden_dentry->d_inode->i_sem);
++#endif
+ 			err2 = hidden_file->f_op->fsync(hidden_file, hidden_dentry, datasync);
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
++			mutex_unlock(&hidden_dentry->d_inode->i_mutex);
++#else
+ 			up(&hidden_dentry->d_inode->i_sem);
++#endif
+ 		}
+ 	}
+ 	else
+--- a/inode.c
++++ b/inode.c
+@@ -355,7 +355,11 @@ mini_fo_link(dentry_t *old_dentry, inode
+ 
+ 	/* was: hidden_dir_dentry = lock_parent(hidden_new_dentry); */
+ 	hidden_dir_dentry = dget(hidden_new_dentry->d_parent);
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
++	mutex_lock(&hidden_dir_dentry->d_inode->i_mutex);
++#else
+ 	down(&hidden_dir_dentry->d_inode->i_sem);
++#endif
+ 
+ 	err = vfs_link(hidden_old_dentry,
+ 		       hidden_dir_dentry->d_inode,
+@@ -374,7 +378,11 @@ mini_fo_link(dentry_t *old_dentry, inode
+ 
+  out_lock:
+ 	/* was: unlock_dir(hidden_dir_dentry); */
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
++	mutex_unlock(&hidden_dir_dentry->d_inode->i_mutex);
++#else
+ 	up(&hidden_dir_dentry->d_inode->i_sem);
++#endif
+ 	dput(hidden_dir_dentry);
+ 
+ 	dput(hidden_new_dentry);
+@@ -452,7 +460,11 @@ mini_fo_symlink(inode_t *dir, dentry_t *
+ 	dget(hidden_sto_dentry);
+ 	/* was: hidden_sto_dir_dentry = lock_parent(hidden_sto_dentry); */
+ 	hidden_sto_dir_dentry = dget(hidden_sto_dentry->d_parent);
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
++	mutex_lock(&hidden_sto_dir_dentry->d_inode->i_mutex);
++#else
+ 	down(&hidden_sto_dir_dentry->d_inode->i_sem);
++#endif
+ 
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
+ 	mode = S_IALLUGO;
+@@ -481,7 +493,11 @@ mini_fo_symlink(inode_t *dir, dentry_t *
+ 	
+  out_lock:
+         /* was: unlock_dir(hidden_sto_dir_dentry); */
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
++	mutex_unlock(&hidden_sto_dir_dentry->d_inode->i_mutex);
++#else
+ 	up(&hidden_sto_dir_dentry->d_inode->i_sem);
++#endif
+ 	dput(hidden_sto_dir_dentry);
+ 
+         dput(hidden_sto_dentry);
+@@ -524,7 +540,11 @@ mini_fo_rmdir(inode_t *dir, dentry_t *de
+ 
+ 		/* was:hidden_sto_dir_dentry = lock_parent(hidden_sto_dentry); */
+ 		hidden_sto_dir_dentry = dget(hidden_sto_dentry->d_parent);
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
++		mutex_lock(&hidden_sto_dir_dentry->d_inode->i_mutex);
++#else
+ 		down(&hidden_sto_dir_dentry->d_inode->i_sem);
++#endif
+ 
+ 		/* avoid destroying the hidden inode if the file is in use */
+ 		dget(hidden_sto_dentry);
+@@ -572,7 +592,11 @@ mini_fo_rmdir(inode_t *dir, dentry_t *de
+ 					 dentry->d_name.len);
+ 		}
+ 		/* was: unlock_dir(hidden_sto_dir_dentry); */
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
++		mutex_unlock(&hidden_sto_dir_dentry->d_inode->i_mutex);
++#else
+ 		up(&hidden_sto_dir_dentry->d_inode->i_sem);
++#endif
+ 		dput(hidden_sto_dir_dentry);
+ 		goto out;
+ 	}
+@@ -602,7 +626,12 @@ mini_fo_rmdir(inode_t *dir, dentry_t *de
+ 
+ 		/* was: hidden_sto_dir_dentry = lock_parent(hidden_sto_dentry);*/
+ 		hidden_sto_dir_dentry = dget(hidden_sto_dentry->d_parent);
++
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
++		mutex_lock(&hidden_sto_dir_dentry->d_inode->i_mutex);
++#else
+ 		down(&hidden_sto_dir_dentry->d_inode->i_sem);
++#endif
+ 
+ 		/* avoid destroying the hidden inode if the file is in use */
+ 		dget(hidden_sto_dentry);
+@@ -630,7 +659,11 @@ mini_fo_rmdir(inode_t *dir, dentry_t *de
+ 		dtopd(dentry)->state = NON_EXISTANT;
+ 
+ 		/* was: unlock_dir(hidden_sto_dir_dentry); */
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
++		mutex_unlock(&hidden_sto_dir_dentry->d_inode->i_mutex);
++#else
+ 		up(&hidden_sto_dir_dentry->d_inode->i_sem);
++#endif
+ 		dput(hidden_sto_dir_dentry);
+ 
+ 		goto out;
+@@ -641,7 +674,12 @@ mini_fo_rmdir(inode_t *dir, dentry_t *de
+ 
+ 		/* was: hidden_sto_dir_dentry = lock_parent(hidden_sto_dentry);*/
+ 		hidden_sto_dir_dentry = dget(hidden_sto_dentry->d_parent);
++
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
++		mutex_lock(&hidden_sto_dir_dentry->d_inode->i_mutex);
++#else
+ 		down(&hidden_sto_dir_dentry->d_inode->i_sem);
++#endif
+ 
+ 		/* avoid destroying the hidden inode if the file is in use */
+ 		dget(hidden_sto_dentry);
+@@ -668,7 +706,12 @@ mini_fo_rmdir(inode_t *dir, dentry_t *de
+ 		dentry->d_inode->i_nlink = itohi2(dentry->d_inode)->i_nlink;
+ 		dtopd(dentry)->state = DELETED;
+ 		/* was: unlock_dir(hidden_sto_dir_dentry); */
++
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
++		mutex_unlock(&hidden_sto_dir_dentry->d_inode->i_mutex);
++#else
+ 		up(&hidden_sto_dir_dentry->d_inode->i_sem);
++#endif
+ 		dput(hidden_sto_dir_dentry);
+ 		goto out;
+ 	}
+@@ -1294,11 +1337,19 @@ mini_fo_getxattr(struct dentry *dentry, 
+ 		encoded_name = (char *)name;
+ 		encoded_value = (char *)value;
+ 
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
++		mutex_lock(&hidden_dentry->d_inode->i_mutex);
++#else
+ 		down(&hidden_dentry->d_inode->i_sem);
++#endif
+ 		/* lock_kernel() already done by caller. */
+ 		err = hidden_dentry->d_inode->i_op->getxattr(hidden_dentry, encoded_name, encoded_value, size);
+ 		/* unlock_kernel() will be done by caller. */
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
++		mutex_lock(&hidden_dentry->d_inode->i_mutex);
++#else
+ 		up(&hidden_dentry->d_inode->i_sem);
++#endif
+ 	}
+ 	return err;
+ }
+@@ -1340,11 +1391,19 @@ mini_fo_setxattr(struct dentry *dentry, 
+ 		encoded_name = (char *)name;
+ 		encoded_value = (char *)value;
+ 
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
++		mutex_lock(&hidden_dentry->d_inode->i_mutex);
++#else
+ 		down(&hidden_dentry->d_inode->i_sem);
++#endif
+ 		/* lock_kernel() already done by caller. */
+ 		err = hidden_dentry->d_inode->i_op->setxattr(hidden_dentry, encoded_name, encoded_value, size, flags);
+ 		/* unlock_kernel() will be done by caller. */
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
++		mutex_unlock(&hidden_dentry->d_inode->i_mutex);
++#else
+ 		up(&hidden_dentry->d_inode->i_sem);
++#endif
+ 	}
+ 	return err;
+ }
+@@ -1372,11 +1431,19 @@ mini_fo_removexattr(struct dentry *dentr
+ 	if (hidden_dentry->d_inode->i_op->removexattr) {
+ 		encoded_name = (char *)name;
+ 
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
++		mutex_lock(&hidden_dentry->d_inode->i_mutex);
++#else
+ 		down(&hidden_dentry->d_inode->i_sem);
++#endif
+ 		/* lock_kernel() already done by caller. */
+ 		err = hidden_dentry->d_inode->i_op->removexattr(hidden_dentry, encoded_name);
+ 		/* unlock_kernel() will be done by caller. */
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
++		mutex_unlock(&hidden_dentry->d_inode->i_mutex);
++#else
+ 		up(&hidden_dentry->d_inode->i_sem);
++#endif
+ 	}
+ 	return err;
+ }
+@@ -1403,11 +1470,20 @@ mini_fo_listxattr(struct dentry *dentry,
+ 
+ 	if (hidden_dentry->d_inode->i_op->listxattr) {
+ 		encoded_list = list;
++
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
++		mutex_lock(&hidden_dentry->d_inode->i_mutex);
++#else
+ 		down(&hidden_dentry->d_inode->i_sem);
++#endif
+ 		/* lock_kernel() already done by caller. */
+ 		err = hidden_dentry->d_inode->i_op->listxattr(hidden_dentry, encoded_list, size);
+ 		/* unlock_kernel() will be done by caller. */
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
++		mutex_unlock(&hidden_dentry->d_inode->i_mutex);
++#else
+ 		up(&hidden_dentry->d_inode->i_sem);
++#endif
+ 	}
+ 	return err;
+ }
+--- a/meta.c
++++ b/meta.c
+@@ -650,9 +650,20 @@ int meta_sync_d_list(dentry_t *dentry, i
+ 		struct iattr newattrs;
+                 newattrs.ia_size = 0;
+                 newattrs.ia_valid = ATTR_SIZE | ATTR_CTIME;
++
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
++		mutex_lock(&meta_dentry->d_inode->i_mutex);
++#else
+                 down(&meta_dentry->d_inode->i_sem);
++#endif
+                 err = notify_change(meta_dentry, &newattrs);
++
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
++		mutex_unlock(&meta_dentry->d_inode->i_mutex);
++#else
+                 up(&meta_dentry->d_inode->i_sem);
++#endif
++
+                 if(err || meta_dentry->d_inode->i_size != 0) {
+                         printk(KERN_CRIT "mini_fo: meta_sync_d_list: \
+                                           ERROR truncating meta file.\n");
+@@ -780,9 +791,19 @@ int meta_sync_r_list(dentry_t *dentry, i
+ 		struct iattr newattrs;
+                 newattrs.ia_size = 0;
+                 newattrs.ia_valid = ATTR_SIZE | ATTR_CTIME;
++
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
++		mutex_lock(&meta_dentry->d_inode->i_mutex);
++#else
+                 down(&meta_dentry->d_inode->i_sem);
++#endif
+                 err = notify_change(meta_dentry, &newattrs);
++
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
++		mutex_unlock(&meta_dentry->d_inode->i_mutex);
++#else
+                 up(&meta_dentry->d_inode->i_sem);
++#endif
+                 if(err || meta_dentry->d_inode->i_size != 0) {
+                         printk(KERN_CRIT "mini_fo: meta_sync_r_list: \
+                                           ERROR truncating meta file.\n");
+--- a/mini_fo.h
++++ b/mini_fo.h
+@@ -433,6 +433,33 @@ fist_copy_attr_all(inode_t *dest, const 
+ 
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
+ /* copied from linux/fs.h */
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
++static inline void double_lock(struct dentry *d1, struct dentry *d2)
++{
++	struct mutex *m1 = &d1->d_inode->i_mutex;
++	struct mutex *m2 = &d2->d_inode->i_mutex;
++	if (m1 != m2) {
++		if ((unsigned long) m1 < (unsigned long) m2) {
++			struct mutex *tmp = m2;
++			m2 = m1; m1 = tmp;
++		}
++		mutex_lock(m1);
++	}
++	mutex_lock(m2);
++}
++
++static inline void double_unlock(struct dentry *d1, struct dentry *d2)
++{
++	struct mutex *m1 = &d1->d_inode->i_mutex;
++	struct mutex *m2 = &d2->d_inode->i_mutex;
++	mutex_unlock(m1);
++	if (m1 != m2)
++		mutex_unlock(m2);
++	dput(d1);
++	dput(d2);
++}
++
++#else
+ static inline void double_down(struct semaphore *s1, struct semaphore *s2)
+ {
+         if (s1 != s2) {
+@@ -463,8 +490,8 @@ static inline void double_unlock(struct 
+         dput(d1);
+         dput(d2);
+ }
+-
+-#endif
++#endif   /* if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16) */
++#endif  /* if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) */
+ #endif /* __KERNEL__ */
+ 
+ /*
+--- a/mmap.c
++++ b/mmap.c
+@@ -478,7 +478,11 @@ mini_fo_commit_write(file_t *file, page_
+ 	if (ftopd(file) != NULL)
+ 		hidden_file = ftohf(file);
+ 
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
++	mutex_lock(&hidden_inode->i_mutex);
++#else
+ 	down(&hidden_inode->i_sem);
++#endif
+ 	/* find lower page (returns a locked page) */
+ 	hidden_page = grab_cache_page(hidden_inode->i_mapping, page->index);
+ 	if (!hidden_page)
+@@ -556,7 +560,12 @@ mini_fo_commit_write(file_t *file, page_
+ 		ClearPageUptodate(page);
+ 	else
+ 		SetPageUptodate(page);
++
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
++	mutex_unlock(&hidden_inode->i_mutex);
++#else
+ 	up(&hidden_inode->i_sem);
++#endif
+ 	print_exit_status(err);
+ 	return err;			/* assume all is ok */
+ }
+--- a/state.c
++++ b/state.c
+@@ -44,7 +44,12 @@ int create_sto_reg_file(dentry_t *dentry
+ 
+ 	/* lock parent */
+ 	hidden_sto_dir_dentry = dget(hidden_sto_dentry->d_parent);
++
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
++	mutex_lock(&hidden_sto_dir_dentry->d_inode->i_mutex);
++#else
+         down(&hidden_sto_dir_dentry->d_inode->i_sem);
++#endif
+ 
+ 	err = PTR_ERR(hidden_sto_dir_dentry);
+         if (IS_ERR(hidden_sto_dir_dentry))
+@@ -97,7 +102,11 @@ int create_sto_reg_file(dentry_t *dentry
+ 				 hidden_sto_dir_dentry->d_inode);
+ 
+  out_lock:
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
++	mutex_unlock(&hidden_sto_dir_dentry->d_inode->i_mutex);
++#else
+ 	up(&hidden_sto_dir_dentry->d_inode->i_sem);
++#endif
+         dput(hidden_sto_dir_dentry);
+  out:
+ 	return err;
+@@ -130,7 +139,12 @@ n");
+ 
+ 	/* was: hidden_sto_dir_dentry = lock_parent(hidden_sto_dentry); */
+ 	hidden_sto_dir_dentry = dget(hidden_sto_dentry->d_parent);
++
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
++	mutex_lock(&hidden_sto_dir_dentry->d_inode->i_mutex);
++#else
+ 	down(&hidden_sto_dir_dentry->d_inode->i_sem);
++#endif
+ 
+ 	err = PTR_ERR(hidden_sto_dir_dentry);
+ 	if (IS_ERR(hidden_sto_dir_dentry))
+@@ -184,7 +198,11 @@ n");
+ 
+  out_lock:
+ 	/* was: unlock_dir(hidden_sto_dir_dentry); */
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
++	mutex_unlock(&hidden_sto_dir_dentry->d_inode->i_mutex);
++#else
+ 	up(&hidden_sto_dir_dentry->d_inode->i_sem);
++#endif
+ 	dput(hidden_sto_dir_dentry);
+  out:
+ 	return err;
+@@ -217,7 +235,12 @@ int create_sto_nod(dentry_t *dentry, int
+ 	
+ 	/* lock parent */
+ 	hidden_sto_dir_dentry = dget(hidden_sto_dentry->d_parent);
++
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
++	mutex_lock(&hidden_sto_dir_dentry->d_inode->i_mutex);
++#else
+ 	down(&hidden_sto_dir_dentry->d_inode->i_sem);
++#endif
+ 	
+ 	err = PTR_ERR(hidden_sto_dir_dentry);
+ 	if (IS_ERR(hidden_sto_dir_dentry))
+@@ -260,7 +283,11 @@ int create_sto_nod(dentry_t *dentry, int
+ 	fist_copy_attr_timesizes(dir, hidden_sto_dir_dentry->d_inode);
+ 
+  out_lock:
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
++	mutex_unlock(&hidden_sto_dir_dentry->d_inode->i_mutex);
++#else
+ 	up(&hidden_sto_dir_dentry->d_inode->i_sem);
++#endif
+ 	dput(hidden_sto_dir_dentry);
+  out:
+ 	return err;
+@@ -314,7 +341,12 @@ int nondir_unmod_to_mod(dentry_t *dentry
+ 
+ 	/* lock parent */
+ 	hidden_sto_dir_dentry = dget(hidden_sto_dentry->d_parent);
++
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
++	mutex_lock(&hidden_sto_dir_dentry->d_inode->i_mutex);
++#else
+         down(&hidden_sto_dir_dentry->d_inode->i_sem);
++#endif
+ 
+ 	err = PTR_ERR(hidden_sto_dir_dentry);
+         if (IS_ERR(hidden_sto_dir_dentry))
+@@ -365,7 +397,12 @@ int nondir_unmod_to_mod(dentry_t *dentry
+ 	if((cp_flag == 1) && S_ISREG(dentry->d_inode->i_mode)) {
+ 
+ 		/* unlock first */
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
++		mutex_unlock(&hidden_sto_dir_dentry->d_inode->i_mutex);
++#else
+ 		up(&hidden_sto_dir_dentry->d_inode->i_sem);
++#endif
++
+ 		dput(hidden_sto_dir_dentry);
+ 
+ 		tgt_dentry = dtohd2(dentry);
+@@ -383,7 +420,11 @@ int nondir_unmod_to_mod(dentry_t *dentry
+ 	}
+ 
+  out_lock:
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
++	mutex_unlock(&hidden_sto_dir_dentry->d_inode->i_mutex);
++#else
+ 	up(&hidden_sto_dir_dentry->d_inode->i_sem);
++#endif
+         dput(hidden_sto_dir_dentry);
+  out:
+ 	return err;
+@@ -420,7 +461,12 @@ int nondir_creat_to_del(dentry_t *dentry
+ 	
+ 	/* was: hidden_sto_dir_dentry = lock_parent(hidden_sto_dentry);*/
+ 	hidden_sto_dir_dentry = dget(hidden_sto_dentry->d_parent);
++
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
++	mutex_lock(&hidden_sto_dir_dentry->d_inode->i_mutex);
++#else
+ 	down(&hidden_sto_dir_dentry->d_inode->i_sem);
++#endif
+ 	
+ 	/* avoid destroying the hidden inode if the file is in use */
+ 	dget(hidden_sto_dentry);
+@@ -435,7 +481,11 @@ int nondir_creat_to_del(dentry_t *dentry
+ 	dtost(dentry) = NON_EXISTANT;
+ 	
+ 	/* was: unlock_dir(hidden_sto_dir_dentry); */
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
++	mutex_unlock(&hidden_sto_dir_dentry->d_inode->i_mutex);
++#else
+ 	up(&hidden_sto_dir_dentry->d_inode->i_sem);
++#endif
+ 	dput(hidden_sto_dir_dentry);
+ 	
+  out:
+@@ -464,7 +514,12 @@ int nondir_mod_to_del(dentry_t *dentry)
+ 	
+ 	/* was hidden_sto_dir_dentry = lock_parent(hidden_sto_dentry); */
+ 	hidden_sto_dir_dentry = dget(hidden_sto_dentry->d_parent);
++
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
++	mutex_lock(&hidden_sto_dir_dentry->d_inode->i_mutex);
++#else
+ 	down(&hidden_sto_dir_dentry->d_inode->i_sem);
++#endif
+ 	
+ 	/* avoid destroying the hidden inode if the file is in use */
+ 	dget(hidden_sto_dentry);
+@@ -488,7 +543,11 @@ int nondir_mod_to_del(dentry_t *dentry)
+ 			 dentry->d_name.len);
+ 	
+ 	/* was: unlock_dir(hidden_sto_dir_dentry); */
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
++	mutex_unlock(&hidden_sto_dir_dentry->d_inode->i_mutex);
++#else
+ 	up(&hidden_sto_dir_dentry->d_inode->i_sem);
++#endif
+ 	dput(hidden_sto_dir_dentry);
+ 
+  out:
+

@@ -1,0 +1,480 @@
+#
+# For a description of the syntax of this configuration file,
+# see scripts/kbuild/config-language.txt.
+#
+
+menu "Linux System Utilities"
+
+config BUSYBOX_CONFIG_DMESG
+	bool "dmesg"
+	default y
+	help
+	  dmesg is used to examine or control the kernel ring buffer.  When the
+	  Linux kernel prints messages to the system log, they are stored in
+	  the kernel ring buffer.  You can use dmesg to print the kernel's ring
+	  buffer, clear the kernel ring buffer, change the size of the kernel
+	  ring buffer, and change the priority level at which kernel messages
+	  are also logged to the system console.  Enable this option if you
+	  wish to enable the 'dmesg' utility.
+
+config BUSYBOX_CONFIG_FBSET
+	bool "fbset"
+	default n
+	help
+	  fbset is used to show or change the settings of a Linux frame buffer
+	  device.  The frame buffer device provides a simple and unique
+	  interface to access a graphics display.  Enable this option
+	  if you wish to enable the 'fbset' utility.
+
+config BUSYBOX_CONFIG_FEATURE_FBSET_FANCY
+	bool "Turn on extra fbset options"
+	default n
+	depends on BUSYBOX_CONFIG_FBSET
+	help
+	  This option enables extended fbset options, allowing one to set the
+	  framebuffer size, color depth, etc.  interface to access a graphics
+	  display.  Enable this option if you wish to enable extended fbset
+	  options.
+
+config BUSYBOX_CONFIG_FEATURE_FBSET_READMODE
+	bool "Turn on fbset readmode support"
+	default n
+	depends on BUSYBOX_CONFIG_FBSET
+	help
+	  This option allows fbset to read the video mode database stored by
+	  default n /etc/fb.modes, which can be used to set frame buffer
+	  device to pre-defined video modes.
+
+config BUSYBOX_CONFIG_FDFLUSH
+	bool "fdflush"
+	default n
+	help
+	  fdflush is only needed when changing media on slightly-broken
+	  removable media drives.  It is used to make Linux believe that a
+	  hardware disk-change switch has been actuated, which causes Linux to
+	  forget anything it has cached from the previous media.  If you have
+	  such a slightly-broken drive, you will need to run fdflush every time
+	  you change a disk.  Most people have working hardware and can safely
+	  leave this disabled.
+
+config BUSYBOX_CONFIG_FDFORMAT
+	bool "fdformat"
+	default n
+	help
+	  fdformat is used to low-level format a floppy disk.
+
+config BUSYBOX_CONFIG_FDISK
+	bool "fdisk"
+	default n
+	help
+	  The fdisk utility is used to divide hard disks into one or more
+	  logical disks, which are generally called partitions.  This utility
+	  can be used to list and edit the set of partitions or BSD style
+	  'disk slices' that are defined on a hard drive.
+
+config BUSYBOX_FDISK_SUPPORT_LARGE_DISKS
+	bool
+	default y
+	depends on BUSYBOX_CONFIG_FDISK
+	help
+	  Enable this option to support large disks > 4GB.
+
+config BUSYBOX_CONFIG_FEATURE_FDISK_WRITABLE
+	bool "Write support"
+	default n
+	depends on BUSYBOX_CONFIG_FDISK
+	help
+	  Enabling this option allows you to create or change a partition table
+	  and write those changes out to disk.  If you leave this option
+	  disabled, you will only be able to view the partition table.
+
+config BUSYBOX_CONFIG_FEATURE_AIX_LABEL
+	bool "Support AIX disklabels"
+	default n
+	depends on BUSYBOX_CONFIG_FDISK && BUSYBOX_CONFIG_FEATURE_FDISK_WRITABLE
+	help
+	  Enabling this option allows you to create or change AIX disklabels.
+	  Most people can safely leave this option disabled.
+
+config BUSYBOX_CONFIG_FEATURE_SGI_LABEL
+	bool "Support SGI disklabels"
+	default n
+	depends on BUSYBOX_CONFIG_FDISK && BUSYBOX_CONFIG_FEATURE_FDISK_WRITABLE
+	help
+	  Enabling this option allows you to create or change SGI disklabels.
+	  Most people can safely leave this option disabled.
+
+config BUSYBOX_CONFIG_FEATURE_SUN_LABEL
+	bool "Support SUN disklabels"
+	default n
+ 	depends on BUSYBOX_CONFIG_FDISK && BUSYBOX_CONFIG_FEATURE_FDISK_WRITABLE
+	help
+	  Enabling this option allows you to create or change SUN disklabels.
+	  Most people can safely leave this option disabled.
+
+config BUSYBOX_CONFIG_FEATURE_OSF_LABEL
+	bool "Support BSD disklabels"
+	default n
+	depends on BUSYBOX_CONFIG_FDISK && BUSYBOX_CONFIG_FEATURE_FDISK_WRITABLE
+	help
+	  Enabling this option allows you to create or change BSD disklabels
+	  and define and edit BSD disk slices.
+
+config BUSYBOX_CONFIG_FEATURE_FDISK_ADVANCED
+	bool "Support expert mode"
+	default n
+	depends on BUSYBOX_CONFIG_FDISK && BUSYBOX_CONFIG_FEATURE_FDISK_WRITABLE
+	help
+	  Enabling this option allows you to do terribly unsafe things like
+	  define arbitrary drive geometry, move the beginning of data in a
+	  partition, and similarly evil things.  Unless you have a very good
+	  reason you would be wise to leave this disabled.
+
+config BUSYBOX_CONFIG_FREERAMDISK
+	bool "freeramdisk"
+	default n
+	help
+	  Linux allows you to create ramdisks.  This utility allows you to
+	  delete them and completely free all memory that was used for the
+	  ramdisk.  For example, if you boot Linux into a ramdisk and later
+	  pivot_root, you may want to free the memory that is allocated to the
+	  ramdisk.  If you have no use for freeing memory from a ramdisk, leave
+	  this disabled.
+
+config BUSYBOX_CONFIG_FSCK_MINIX
+	bool "fsck_minix"
+	default n
+	help
+	  The minix filesystem is a nice, small, compact, read-write filesystem
+	  with little overhead.  It is not a journaling filesystem however and
+	  can experience corruption if it is not properly unmounted or if the
+	  power goes off in the middle of a write.  This utility allows you to
+	  check for and attempt to repair any corruption that occurs to a minix
+	  filesystem.
+
+config BUSYBOX_CONFIG_MKFS_MINIX
+	bool "mkfs_minix"
+	default n
+	help
+	  The minix filesystem is a nice, small, compact, read-write filesystem
+	  with little overhead.  If you wish to be able to create minix filesystems
+	  this utility will do the job for you.
+
+comment "Minix filesystem support"
+    depends on BUSYBOX_CONFIG_FSCK_MINIX || BUSYBOX_CONFIG_MKFS_MINIX
+
+config BUSYBOX_CONFIG_FEATURE_MINIX2
+	bool "Support Minix fs v2 (fsck_minix/mkfs_minix)"
+	default n
+	depends on BUSYBOX_CONFIG_FSCK_MINIX || BUSYBOX_CONFIG_MKFS_MINIX
+	help
+	  If you wish to be able to create version 2 minix filesystems, enable this.
+	  If you enabled 'mkfs_minix' then you almost certainly want to be using the
+	  version 2 filesystem support.
+
+config BUSYBOX_CONFIG_GETOPT
+	bool "getopt"
+	default n
+	help
+	  The getopt utility is used to break up (parse) options in command
+	  lines to make it easy to write complex shell scripts that also check
+	  for legal (and illegal) options.  If you want to write horribly
+	  complex shell scripts, or use some horribly complex shell script
+	  written by others, this utility may be for you.  Most people will
+	  wisely leave this disabled.
+
+config BUSYBOX_CONFIG_HEXDUMP
+	bool "hexdump"
+	default y
+	help
+	  The hexdump utility is used to display binary data in a readable
+	  way that is comparable to the output from most hex editors.
+
+config BUSYBOX_CONFIG_HWCLOCK
+	bool "hwclock"
+	default n
+	help
+	  The hwclock utility is used to read and set the hardware clock
+	  on a system.  This is primarily used to set the current time on
+	  shutdown in the hardware clock, so the hardware will keep the
+	  correct time when Linux is _not_ running.
+
+config BUSYBOX_CONFIG_FEATURE_HWCLOCK_LONG_OPTIONS
+	bool "Support long options (--hctosys,...)"
+	default n
+	depends on BUSYBOX_CONFIG_HWCLOCK && BUSYBOX_CONFIG_GETOPT_LONG
+	help
+	  By default, the hwclock utility only uses short options.  If you
+	  are overly fond of its long options, such as --hctosys, --utc, etc)
+	  then enable this option.
+
+config BUSYBOX_CONFIG_FEATURE_HWCLOCK_ADJTIME_FHS
+	bool "Use FHS /var/lib/hwclock/adjtime"
+	default n
+	depends on BUSYBOX_CONFIG_HWCLOCK
+	help
+	  Starting with FHS 2.3, the adjtime state file is supposed to exist
+	  at /var/lib/hwclock/adjtime instead of /etc/adjtime.  If you wish
+	  to use the FHS behavior, answer Y here, otherwise answer N for the
+	  classic /etc/adjtime path.
+
+	  http://www.pathname.com/fhs/pub/fhs-2.3.html#VARLIBHWCLOCKSTATEDIRECTORYFORHWCLO
+
+config BUSYBOX_CONFIG_IPCRM
+	bool "ipcrm"
+	default n
+	select BUSYBOX_CONFIG_FEATURE_SUID
+	help
+	  The ipcrm utility allows the removal of System V interprocess
+	  communication (IPC) objects and the associated data structures
+	  from the system.
+
+config BUSYBOX_CONFIG_IPCS
+	bool "ipcs"
+	default n
+	select BUSYBOX_CONFIG_FEATURE_SUID
+	help
+	  The ipcs utility is used to provide information on the currently
+	  allocated System V interprocess (IPC) objects in the system.
+
+config BUSYBOX_CONFIG_LOSETUP
+	bool "losetup"
+	default n
+	help
+	  losetup is used to associate or detach a loop device with a regular
+	  file or block device, and to query the status of a loop device.  This
+	  version does not currently support enabling data encryption.
+
+config BUSYBOX_CONFIG_MDEV
+	bool "mdev"
+	default n
+	help
+	  mdev is a mini-udev implementation: call it with -s to populate
+	  /dev from /sys, then "echo /sbin/mdev > /proc/sys/kernel/hotplug" to
+	  have it handle hotplug events afterwards.  Device names are taken
+	  from sysfs.
+
+config BUSYBOX_CONFIG_FEATURE_MDEV_CONF
+	bool "Support /etc/mdev.conf"
+	default n
+	depends on BUSYBOX_CONFIG_MDEV
+	help
+	  The mdev config file contains lines that look like:
+
+	    hd[a-z][0-9]* 0:3 660
+
+	  That's device name (with regex match), uid:gid, and permissions.
+
+	  Config file parsing stops on the first matching line.  If no config
+	  entry is matched, devices are created with default 0:0 660.  (Make
+	  the last line match .* to override this.)
+
+config BUSYBOX_CONFIG_FEATURE_MDEV_EXEC
+	bool "Support command execution at device addition/removal"
+	default n
+	depends on BUSYBOX_CONFIG_FEATURE_MDEV_CONF
+	help
+	  This adds support for an optional field to /etc/mdev.conf, consisting
+	  of a special character and a command line to run after creating the
+	  corresponding device(s) and before removing, ala:
+
+	    hdc root:cdrom 660  *ln -s $MDEV cdrom
+
+	  The $MDEV environment variable is set to the name of the device.
+
+	  The special characters and their meanings are:
+	    @ Run after creating the device.
+	    $ Run before removing the device.
+	    * Run both after creating and before removing the device.
+
+	  Commands are executed via system() so you need /bin/sh, meaning you
+	  probably want to select a default shell in the Shells menu.
+
+config BUSYBOX_CONFIG_MKSWAP
+	bool "mkswap"
+	default n
+	help
+	  The mkswap utility is used to configure a file or disk partition as
+	  Linux swap space.  This allows Linux to use the entire file or
+	  partition as if it were additional RAM, which can greatly increase
+	  the capability of low-memory machines.  This additional memory is
+	  much slower than real RAM, but can be very helpful at preventing your
+	  applications being killed by the Linux out of memory (OOM) killer.
+	  Once you have created swap space using 'mkswap' you need to enable
+	  the swap space using the 'swapon' utility.
+
+config BUSYBOX_CONFIG_FEATURE_MKSWAP_V0
+	bool "version 0 support"
+	default n
+	depends on BUSYBOX_CONFIG_MKSWAP
+#	depends on BUSYBOX_CONFIG_MKSWAP && BUSYBOX_CONFIG_DEPRECATED
+	help
+	  Enable support for the old v0 style.
+	  If your kernel is older than 2.1.117, then v0 support is the
+	  only option.
+
+config BUSYBOX_CONFIG_MORE
+	bool "more"
+	default n
+	help
+	  more is a simple utility which allows you to read text one screen
+	  sized page at a time.  If you want to read text that is larger than
+	  the screen, and you are using anything faster than a 300 baud modem,
+	  you will probably find this utility very helpful.  If you don't have
+	  any need to reading text files, you can leave this disabled.
+
+config BUSYBOX_CONFIG_FEATURE_USE_TERMIOS
+	bool "Use termios to manipulate the screen"
+	default y
+	depends on BUSYBOX_CONFIG_MORE
+	help
+	  This option allows utilities such as 'more' and 'top' to determine
+	  the size of the screen.  If you leave this disabled, your utilities
+	  that display things on the screen will be especially primitive and
+	  will be unable to determine the current screen size, and will be
+	  unable to move the cursor.
+
+config BUSYBOX_CONFIG_MOUNT
+	bool "mount"
+	default y
+	help
+	  All files and filesystems in Unix are arranged into one big directory
+	  tree.  The 'mount' utility is used to graft a filesystem onto a
+	  particular part of the tree.  A filesystem can either live on a block
+	  device, or it can be accessible over the network, as is the case with
+	  NFS filesystems.  Most people using BusyBox will also want to enable
+	  the 'mount' utility.
+
+config BUSYBOX_CONFIG_FEATURE_MOUNT_NFS
+	bool "Support mounting NFS file systems"
+	default y
+	depends on BUSYBOX_CONFIG_MOUNT
+	help
+	 Enable mounting of NFS file systems.
+
+config BUSYBOX_CONFIG_PIVOT_ROOT
+	bool "pivot_root"
+	default y
+	help
+	  The pivot_root utility swaps the mount points for the root filesystem
+	  with some other mounted filesystem.  This allows you to do all sorts
+	  of wild and crazy things with your Linux system and is far more
+	  powerful than 'chroot'.
+
+	  Note: This is for initrd in linux 2.4.  Under initramfs (introduced
+	  in linux 2.6) use switch_root instead.
+
+config BUSYBOX_CONFIG_RDATE
+	bool "rdate"
+	default y
+	help
+	  The rdate utility allows you to synchronize the date and time of your
+	  system clock with the date and time of a remote networked system using
+	  the RFC868 protocol, which is built into the inetd daemon on most
+	  systems.
+
+config BUSYBOX_CONFIG_READPROFILE
+	bool "readprofile"
+	default n
+	help
+	  This allows you to parse /proc/profile for basic profiling.
+
+config BUSYBOX_CONFIG_SETARCH
+	bool "setarch"
+	default n
+	help
+	  The linux32 utility is used to create a 32bit environment for the
+	  specified program (usually a shell).  It only makes sense to have
+	  this util on a system that supports both 64bit and 32bit userland
+	  (like amd64/x86, ppc64/ppc, sparc64/sparc, etc...).
+
+config BUSYBOX_CONFIG_SWAPONOFF
+	bool "swaponoff"
+	default n
+	help
+	  This option enables both the 'swapon' and the 'swapoff' utilities.
+	  Once you have created some swap space using 'mkswap', you also need
+	  to enable your swap space with the 'swapon' utility.  The 'swapoff'
+	  utility is used, typically at system shutdown, to disable any swap
+	  space.  If you are not using any swap space, you can leave this
+	  option disabled.
+
+config BUSYBOX_CONFIG_SWITCH_ROOT
+	bool "switch_root"
+	default y
+	help
+	  The switch_root utility is used from initramfs to select a new
+	  root device.  Under initramfs, you have to use this instead of
+	  pivot_root.  (Stop reading here if you don't care why.)
+
+	  Booting with initramfs extracts a gzipped cpio archive into rootfs
+	  (which is a variant of ramfs/tmpfs).  Because rootfs can't be moved
+	  or unmounted*, pivot_root will not work from initramfs.  Instead,
+	  switch_root deletes everything out of rootfs (including itself),
+	  does a mount --move that overmounts rootfs with the new root, and
+	  then execs the specified init program.
+
+	  * Because the Linux kernel uses rootfs internally as the starting
+	  and ending point for searching through the kernel's doubly linked
+	  list of active mount points.  That's why.
+
+config BUSYBOX_CONFIG_UMOUNT
+	bool "umount"
+	default y
+	help
+	  When you want to remove a mounted filesystem from its current mount point,
+	  for example when you are shutting down the system, the 'umount' utility is
+	  the tool to use.  If you enabled the 'mount' utility, you almost certainly
+	  also want to enable 'umount'.
+
+config BUSYBOX_CONFIG_FEATURE_UMOUNT_ALL
+	bool "umount -a option"
+	default y
+	depends on BUSYBOX_CONFIG_UMOUNT
+	help
+	  Support -a option to unmount all currently mounted filesystems.
+
+comment "Common options for mount/umount"
+	depends on BUSYBOX_CONFIG_MOUNT || BUSYBOX_CONFIG_UMOUNT
+
+config BUSYBOX_CONFIG_FEATURE_MOUNT_LOOP
+	bool "Support loopback mounts"
+	default y
+	depends on BUSYBOX_CONFIG_MOUNT || BUSYBOX_CONFIG_UMOUNT
+	help
+	  Enabling this feature allows automatic mounting of files (containing
+	  filesystem images) via the linux kernel's loopback devices.  The mount
+	  command will detect you are trying to mount a file instead of a block
+	  device, and transparently associate the file with a loopback device.
+	  The umount command will also free that loopback device.
+
+	  You can still use the 'losetup' utility (to manually associate files
+          with loop devices) if you need to do something advanced, such as
+	  specify an offset or cryptographic options to the loopback device.
+	  (If you don't want umount to free the loop device, use "umount -D".)
+
+config BUSYBOX_CONFIG_FEATURE_MTAB_SUPPORT
+	bool "Support for the old /etc/mtab file"
+	default n
+	depends on BUSYBOX_CONFIG_MOUNT || BUSYBOX_CONFIG_UMOUNT
+	help
+	  Historically, Unix systems kept track of the currently mounted
+	  partitions in the file "/etc/mtab".  These days, the kernel exports
+	  the list of currently mounted partitions in "/proc/mounts", rendering
+	  the old mtab file obsolete.  (In modern systems, /etc/mtab should be
+	  a symlink to /proc/mounts.)
+
+	  The only reason to have mount maintain an /etc/mtab file itself is if
+	  your stripped-down embedded system does not have a /proc directory.
+	  If you must use this, keep in mind it's inherently brittle (for
+	  example a mount under chroot won't update it), can't handle modern
+	  features like separate per-process filesystem namespaces, requires
+	  that your /etc directory be writeable, tends to get easily confused
+	  by --bind or --move mounts, won't update if you rename a directory
+	  that contains a mount point, and so on.  (In brief: avoid.)
+
+	  About the only reason to use this is if you've removed /proc from
+	  your kernel.
+
+endmenu
+

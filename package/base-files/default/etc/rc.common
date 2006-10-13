@@ -1,0 +1,73 @@
+#!/bin/sh
+. /etc/functions.sh
+
+start() {
+	return 0
+}
+
+stop() {
+	return 0
+}
+
+reload() {
+	return 1
+}
+
+restart() {
+	stop
+	start
+}
+
+boot() {
+	start
+}
+
+shutdown() {
+	return 0
+}
+
+disable() {
+	rm -f /etc/rc.d/${initscript##*/}
+}
+
+enable() {
+	disable
+	ln -s /etc/init.d/${initscript##*/} /etc/rc.d/${initscript##*/}
+}
+
+depends() {
+	return 0
+}
+
+help() {
+	cat <<EOF
+Syntax: $initscript [command]
+
+Available commands:
+	start	Start the service
+	stop	Stop the service
+	restart	Restart the service
+	reload	Reload configuration files (or restart if that fails)
+$EXTRA_HELP
+EOF
+}
+
+initscript="$1"
+action="$2"
+
+. "$initscript"
+
+cmds=
+for cmd in $EXTRA_COMMANDS; do
+	cmds="$cmd) $cmd;;"
+done
+eval "case \"\$action\" in
+	start) start;;
+	stop) stop;;
+	reload) reload || restart;;
+	restart) restart;;
+	boot) boot;;
+	shutdown) shutdown;;
+	$cmds
+	*) help;;
+esac"

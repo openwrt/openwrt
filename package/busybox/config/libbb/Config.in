@@ -1,0 +1,22 @@
+#
+# For a description of the syntax of this configuration file,
+# see scripts/kbuild/config-language.txt.
+#
+
+menu "Busybox Library Tuning"
+
+config BUSYBOX_CONFIG_MD5_SIZE_VS_SPEED
+	int " MD5: Trade Bytes for Speed"
+	default 2
+	range 0 3
+	help
+	  Trade binary size versus speed for the md5sum algorithm.
+	  Approximate values running uClibc and hashing
+	  linux-2.4.4.tar.bz2 were:
+	                    user times (sec)  text size (386)
+	  0 (fastest)         1.1                6144
+	  1                   1.4                5392
+	  2                   3.0                5088
+	  3 (smallest)        5.1                4912
+
+endmenu

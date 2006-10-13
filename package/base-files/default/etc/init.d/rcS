@@ -1,0 +1,26 @@
+#!/bin/sh
+# Copyright (C) 2006 OpenWrt.org
+
+${FAILSAFE:+exit}
+
+# FIXME: add logging configuration
+#[ -f /etc/config/network ] && . /etc/config/network
+#eval $(ipcalc "$log_ipaddr")
+#[ "$log_ipaddr" = "$IP" ] || log_ipaddr=""
+syslogd -C 16 #${log_ipaddr:+-L -R $log_ipaddr}
+klogd
+
+(
+	for i in /etc/init.d/S*; do
+		$i start 2>&1
+	done 
+	
+	sysctl -p >&-
+
+	# automagically run firstboot
+	{ mount|grep "on / type tmpfs" 1>&-; } && {
+		lock /tmp/.switch2jffs
+		firstboot switch2jffs
+		lock -u /tmp/.switch2jffs
+	}
+) | logger -s -p 6 -t '' &

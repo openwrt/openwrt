@@ -1,0 +1,88 @@
+diff -ruNp ppp-2.4.3.orig/pppd/ipcp.c ppp-2.4.3/pppd/ipcp.c
+--- ppp-2.4.3.orig/pppd/ipcp.c	2004-11-13 13:03:26.000000000 +0100
++++ ppp-2.4.3/pppd/ipcp.c	2005-02-20 18:45:22.241810136 +0100
+@@ -1846,7 +1846,7 @@ ipcp_up(f)
+      */
+     if (ipcp_script_state == s_down && ipcp_script_pid == 0) {
+ 	ipcp_script_state = s_up;
+-	ipcp_script(_PATH_IPUP);
++	ipcp_script(path_ipup);
+     }
+ }
+ 
+@@ -1896,7 +1896,7 @@ ipcp_down(f)
+     /* Execute the ip-down script */
+     if (ipcp_script_state == s_up && ipcp_script_pid == 0) {
+ 	ipcp_script_state = s_down;
+-	ipcp_script(_PATH_IPDOWN);
++	ipcp_script(path_ipdown);
+     }
+ }
+ 
+@@ -1950,13 +1950,13 @@ ipcp_script_done(arg)
+     case s_up:
+ 	if (ipcp_fsm[0].state != OPENED) {
+ 	    ipcp_script_state = s_down;
+-	    ipcp_script(_PATH_IPDOWN);
++	    ipcp_script(path_ipdown);
+ 	}
+ 	break;
+     case s_down:
+ 	if (ipcp_fsm[0].state == OPENED) {
+ 	    ipcp_script_state = s_up;
+-	    ipcp_script(_PATH_IPUP);
++	    ipcp_script(path_ipup);
+ 	}
+ 	break;
+     }
+diff -ruNp ppp-2.4.3.orig/pppd/main.c ppp-2.4.3/pppd/main.c
+--- ppp-2.4.3.orig/pppd/main.c	2005-02-20 18:46:14.409879384 +0100
++++ ppp-2.4.3/pppd/main.c	2005-02-20 18:45:22.243809832 +0100
+@@ -314,6 +314,9 @@ main(argc, argv)
+     struct protent *protp;
+     char numbuf[16];
+ 
++    strlcpy(path_ipup, _PATH_IPUP, sizeof(path_ipup));
++    strlcpy(path_ipdown, _PATH_IPDOWN, sizeof(path_ipdown));
++
+     link_stats_valid = 0;
+     new_phase(PHASE_INITIALIZE);
+ 
+diff -ruNp ppp-2.4.3.orig/pppd/options.c ppp-2.4.3/pppd/options.c
+--- ppp-2.4.3.orig/pppd/options.c	2005-02-20 18:46:14.410879232 +0100
++++ ppp-2.4.3/pppd/options.c	2005-02-20 18:46:02.154742448 +0100
+@@ -108,6 +108,8 @@ char	linkname[MAXPATHLEN];	/* logical na
+ bool	tune_kernel;		/* may alter kernel settings */
+ int	connect_delay = 1000;	/* wait this many ms after connect script */
+ int	req_unit = -1;		/* requested interface unit */
++char	path_ipup[MAXPATHLEN];	/* pathname of ip-up script */
++char	path_ipdown[MAXPATHLEN];/* pathname of ip-down script */
+ bool	multilink = 0;		/* Enable multilink operation */
+ char	*bundle_name = NULL;	/* bundle name for multilink */
+ bool	dump_options;		/* print out option values */
+@@ -276,6 +278,13 @@ option_t general_options[] = {
+       "Number of seconds to wait for child processes at exit",
+       OPT_PRIO },
+ 
++    { "ip-up-script", o_string, path_ipup,
++      "Set pathname of ip-up script",
++      OPT_PRIV|OPT_STATIC, NULL, MAXPATHLEN },
++    { "ip-down-script", o_string, path_ipdown,
++      "Set pathname of ip-down script",
++      OPT_PRIV|OPT_STATIC, NULL, MAXPATHLEN },
++
+ #ifdef HAVE_MULTILINK
+     { "multilink", o_bool, &multilink,
+       "Enable multilink operation", OPT_PRIO | 1 },
+diff -ruNp ppp-2.4.3.orig/pppd/pppd.h ppp-2.4.3/pppd/pppd.h
+--- ppp-2.4.3.orig/pppd/pppd.h	2005-02-20 18:46:14.414878624 +0100
++++ ppp-2.4.3/pppd/pppd.h	2005-02-20 18:45:22.247809224 +0100
+@@ -312,6 +312,8 @@ extern bool	tune_kernel;	/* May alter ke
+ extern int	connect_delay;	/* Time to delay after connect script */
+ extern int	max_data_rate;	/* max bytes/sec through charshunt */
+ extern int	req_unit;	/* interface unit number to use */
++extern char	path_ipup[MAXPATHLEN]; /* pathname of ip-up script */
++extern char	path_ipdown[MAXPATHLEN]; /* pathname of ip-down script */
+ extern bool	multilink;	/* enable multilink operation */
+ extern bool	noendpoint;	/* don't send or accept endpt. discrim. */
+ extern char	*bundle_name;	/* bundle name for multilink */

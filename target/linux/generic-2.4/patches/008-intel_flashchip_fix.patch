@@ -1,0 +1,101 @@
+diff -urN linux.old/drivers/mtd/chips/cfi_cmdset_0001.c linux.dev/drivers/mtd/chips/cfi_cmdset_0001.c
+--- linux.old/drivers/mtd/chips/cfi_cmdset_0001.c	2004-11-17 12:54:21.000000000 +0100
++++ linux.dev/drivers/mtd/chips/cfi_cmdset_0001.c	2006-03-16 17:25:04.000000000 +0100
+@@ -28,10 +28,18 @@
+ #include <linux/slab.h>
+ #include <linux/delay.h>
+ #include <linux/interrupt.h>
++#include <linux/notifier.h>
++#include <linux/reboot.h>
+ #include <linux/mtd/map.h>
+ #include <linux/mtd/cfi.h>
+ #include <linux/mtd/compatmac.h>
+ 
++#ifndef container_of
++#define container_of(ptr, type, member) ({                      \
++		        const typeof( ((type *)0)->member ) *__mptr = (ptr);    \
++			        (type *)( (char *)__mptr - offsetof(type,member) );})
++#endif
++
+ // debugging, turns off buffer write mode #define FORCE_WORD_WRITE
+ 
+ static int cfi_intelext_read (struct mtd_info *, loff_t, size_t, size_t *, u_char *);
+@@ -45,6 +53,7 @@
+ static int cfi_intelext_unlock(struct mtd_info *mtd, loff_t ofs, size_t len);
+ static int cfi_intelext_suspend (struct mtd_info *);
+ static void cfi_intelext_resume (struct mtd_info *);
++static int cfi_intelext_reboot(struct notifier_block *nb, unsigned long val, void *v);
+ 
+ static void cfi_intelext_destroy(struct mtd_info *);
+ 
+@@ -288,6 +297,9 @@
+ 	map->fldrv = &cfi_intelext_chipdrv;
+ 	MOD_INC_USE_COUNT;
+ 	mtd->name = map->name;
++	mtd->reboot_notifier.notifier_call = cfi_intelext_reboot;
++	register_reboot_notifier(&mtd->reboot_notifier);
++
+ 	return mtd;
+ 
+  setup_err:
+@@ -1960,10 +1972,40 @@
+ 	}
+ }
+ 
++
++static void cfi_intelext_reset(struct mtd_info *mtd)
++{
++	struct map_info *map = mtd->priv;
++	struct cfi_private *cfi = map->fldrv_priv;
++	int i;
++	struct flchip *chip;
++
++	cfi_intelext_sync(mtd);
++	for (i=0; i<cfi->numchips; i++) {
++		chip = &cfi->chips[i];
++		
++		spin_lock(chip->mutex);
++		cfi_write(map, CMD(0xFF), 0);
++		chip->state = FL_READY;
++		spin_unlock(chip->mutex);
++	}
++}
++
++static int cfi_intelext_reboot(struct notifier_block *nb, unsigned long val, void *v)
++{
++	struct mtd_info *mtd;
++
++	mtd = container_of(nb, struct mtd_info, reboot_notifier);
++	cfi_intelext_reset(mtd);
++	return NOTIFY_DONE;
++}
++
+ static void cfi_intelext_destroy(struct mtd_info *mtd)
+ {
+ 	struct map_info *map = mtd->priv;
+ 	struct cfi_private *cfi = map->fldrv_priv;
++	cfi_intelext_reset(mtd);
++	unregister_reboot_notifier(&mtd->reboot_notifier);
+ 	kfree(cfi->cmdset_priv);
+ 	kfree(cfi->cfiq);
+ 	kfree(cfi);
+diff -urN linux.old/include/linux/mtd/mtd.h linux.dev/include/linux/mtd/mtd.h
+--- linux.old/include/linux/mtd/mtd.h	2003-08-25 13:44:44.000000000 +0200
++++ linux.dev/include/linux/mtd/mtd.h	2006-03-16 17:00:10.000000000 +0100
+@@ -10,6 +10,7 @@
+ #include <linux/version.h>
+ #include <linux/types.h>
+ #include <linux/mtd/compatmac.h>
++#include <linux/notifier.h>
+ #include <linux/module.h>
+ #include <linux/uio.h>
+ 
+@@ -217,6 +218,8 @@
+ 	int (*suspend) (struct mtd_info *mtd);
+ 	void (*resume) (struct mtd_info *mtd);
+ 
++	struct notifier_block reboot_notifier;
++
+ 	void *priv;
+ };
+ 

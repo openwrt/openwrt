@@ -1,0 +1,42 @@
+diff -ur madwifi.old/hal/public/mips-be-elf.inc madwifi.dev/hal/public/mips-be-elf.inc
+--- madwifi.old/hal/public/mips-be-elf.inc	2006-05-27 04:48:16.000000000 +0200
++++ madwifi.dev/hal/public/mips-be-elf.inc	2006-08-29 18:17:44.000000000 +0200
+@@ -71,5 +71,5 @@
+ 
+ LDOPTS=	-EB
+ COPTS+=	-DAH_BYTE_ORDER=AH_BIG_ENDIAN
+-COPTS+=	-G 0 -EB -mno-abicalls -fno-pic -mips2 -Wa,--trap \
++COPTS+=	-G 0 -mno-abicalls -fno-pic -mips32 -Wa,--trap \
+ 	-fno-strict-aliasing -fno-common -fomit-frame-pointer -mlong-calls
+diff -ur madwifi.old/hal/public/mips-le-elf.inc madwifi.dev/hal/public/mips-le-elf.inc
+--- madwifi.old/hal/public/mips-le-elf.inc	2006-05-27 04:48:16.000000000 +0200
++++ madwifi.dev/hal/public/mips-le-elf.inc	2006-08-29 18:17:57.000000000 +0200
+@@ -68,5 +68,5 @@
+ 
+ LDOPTS=	-EL
+ COPTS+=	-DAH_BYTE_ORDER=AH_LITTLE_ENDIAN
+-COPTS+=	-G 0 -EL -mno-abicalls -fno-pic -mips2 -Wa,--trap \
++COPTS+=	-G 0 -mno-abicalls -fno-pic -mips32 -Wa,--trap \
+ 	-fno-strict-aliasing -fno-common -fomit-frame-pointer -mlong-calls
+diff -ur madwifi.old/hal/public/xscale-be-elf.inc madwifi.dev/hal/public/xscale-be-elf.inc
+--- madwifi.old/hal/public/xscale-be-elf.inc	2006-05-27 04:48:16.000000000 +0200
++++ madwifi.dev/hal/public/xscale-be-elf.inc	2006-08-29 18:01:39.000000000 +0200
+@@ -77,5 +77,5 @@
+ 
+ LDOPTS=	-EB
+ COPTS+=	-DAH_BYTE_ORDER=AH_BIG_ENDIAN
+-COPTS+= -march=armv4 -mbig-endian -fno-strict-aliasing -fno-common -mapcs-32 \
++COPTS+= -march=armv5te -mtune=xscale -mbig-endian -fno-strict-aliasing -fno-common \
+ 	-mtune=xscale  -mshort-load-bytes -msoft-float -mfp=2
+diff -ur madwifi.old/Makefile madwifi.dev/Makefile
+--- madwifi.old/Makefile	2006-07-14 07:15:56.000000000 +0200
++++ madwifi.dev/Makefile	2006-08-29 18:01:39.000000000 +0200
+@@ -54,7 +54,7 @@
+ 
+ all: modules tools
+ 
+-modules: configcheck svnversion.h
++modules: svnversion.h
+ ifdef LINUX24
+ 	for i in $(DIRS_MODULES); do \
+ 		$(MAKE) -C $$i || exit 1; \

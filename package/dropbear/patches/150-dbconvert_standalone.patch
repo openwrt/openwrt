@@ -1,0 +1,14 @@
+--- dropbear-0.47.old/options.h	2006-01-31 13:36:25.301562500 +0100
++++ dropbear-0.47.dev/options.h	2006-01-31 13:37:41.846346250 +0100
+@@ -5,6 +5,11 @@
+ #ifndef _OPTIONS_H_
+ #define _OPTIONS_H_
+ 
++#if !defined(DROPBEAR_CLIENT) && !defined(DROPBEAR_SERVER)
++#define DROPBEAR_SERVER
++#define DROPBEAR_CLIENT
++#endif
++
+ /******************************************************************
+  * Define compile-time options below - the "#ifndef DROPBEAR_XXX .... #endif"
+  * parts are to allow for commandline -DDROPBEAR_XXX options etc.

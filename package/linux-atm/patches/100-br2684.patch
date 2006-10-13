@@ -1,0 +1,488 @@
+diff -ruN linux-atm-2.4.1/configure.in linux-atm-2.4.1.new/configure.in
+--- linux-atm-2.4.1/configure.in	2003-04-25 04:17:05.000000000 +0200
++++ linux-atm-2.4.1.new/configure.in	2005-07-27 15:45:49.532396543 +0200
+@@ -153,26 +153,6 @@
+ 		src/Makefile \
+ 		src/include/Makefile \
+ 		src/lib/Makefile \
+-		src/test/Makefile \
+-		src/debug/Makefile \
+-		src/qgen/Makefile \
+-		src/saal/Makefile \
+-		src/sigd/Makefile \
+-		src/maint/Makefile \
+-		src/arpd/Makefile \
+-		src/ilmid/Makefile \
+-		src/ilmid/asn1/Makefile \
+-		src/man/Makefile \
+-		src/led/Makefile \
+-		src/lane/Makefile \
+-		src/mpoad/Makefile \
+-		src/switch/Makefile \
+-		src/switch/debug/Makefile \
+-		src/switch/tcp/Makefile \
+-		src/config/Makefile \
+-		src/config/init-redhat/Makefile \
+-		src/extra/Makefile \
+-		src/extra/linux-atm.spec \
+-		src/extra/ANS/Makefile
++		src/br2684/Makefile \
+ 		)
+ 
+diff -ruN linux-atm-2.4.1/src/br2684/Makefile linux-atm-2.4.1.new/src/br2684/Makefile
+--- linux-atm-2.4.1/src/br2684/Makefile	1970-01-01 02:00:00.000000000 +0200
++++ linux-atm-2.4.1.new/src/br2684/Makefile	2002-07-15 23:44:25.000000000 +0200
+@@ -0,0 +1,13 @@
++PREFIX=${TI_FILESYSTEM}
++
++all: br2684ctl
++
++br2684ctl: br2684ctl.c
++	gcc -latm -o br2684ctl br2684ctl.c 
++	strip br2684ctl
++
++install: br2684ctl
++	cp br2684ctl $(PREFIX)/usr/sbin/
++
++clean:
++	rm -rf br2684ctl *.o
+diff -ruN linux-atm-2.4.1/src/Makefile.am linux-atm-2.4.1.new/src/Makefile.am
+--- linux-atm-2.4.1/src/Makefile.am	2001-10-03 23:14:53.000000000 +0200
++++ linux-atm-2.4.1.new/src/Makefile.am	2005-07-27 15:33:52.389309711 +0200
+@@ -1,3 +1,2 @@
+-SUBDIRS = include lib test debug qgen saal sigd maint arpd ilmid man led lane \
+-		mpoad switch config extra
++SUBDIRS = include lib br2684
+ 
+
+diff -Nur linux-atm-2.4.1.orig/src/include/linux/atmbr2684.h linux-atm-2.4.1/src/include/linux/atmbr2684.h
+--- linux-atm-2.4.1.orig/src/include/linux/atmbr2684.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-atm-2.4.1/src/include/linux/atmbr2684.h	2005-11-13 00:06:42.000000000 +0100
+@@ -0,0 +1,117 @@
++#ifndef _LINUX_ATMBR2684_H
++#define _LINUX_ATMBR2684_H
++
++#include <linux/atm.h>
++#include <linux/if.h>		/* For IFNAMSIZ */
++#include <linux/if_ether.h>	/* ETH_P_* */
++
++/*
++ * Type of media we're bridging (ethernet, token ring, etc)  Currently only
++ * ethernet is supported
++ */
++#define BR2684_MEDIA_ETHERNET	(0)	/* 802.3 */
++#define BR2684_MEDIA_802_4	(1)	/* 802.4 */
++#define BR2684_MEDIA_TR		(2)	/* 802.5 - token ring */
++#define BR2684_MEDIA_FDDI	(3)
++#define BR2684_MEDIA_802_6	(4)	/* 802.6 */
++
++/*
++ * Is there FCS inbound on this VC?  This currently isn't supported.
++ */
++#define BR2684_FCSIN_NO		(0)
++#define BR2684_FCSIN_IGNORE	(1)
++#define BR2684_FCSIN_VERIFY	(2)
++
++/*
++ * Is there FCS outbound on this VC?  This currently isn't supported.
++ */
++#define BR2684_FCSOUT_NO	(0)
++#define BR2684_FCSOUT_SENDZERO	(1)
++#define BR2684_FCSOUT_GENERATE	(2)
++
++/*
++ * Does this VC include LLC encapsulation?
++ */
++#define BR2684_ENCAPS_VC	(0)	/* VC-mux */
++#define BR2684_ENCAPS_LLC	(1)
++#define BR2684_ENCAPS_AUTODETECT (2)	/* Unsuported */
++
++/*
++ * Is this VC bridged or routed?
++ */
++
++#define	BR2684_PAYLOAD_ROUTED	(0)
++#define	BR2684_PAYLOAD_BRIDGED	(1)
++
++
++/*
++ * This is for the ATM_NEWBACKENDIF call - these are like socket families:
++ * the first element of the structure is the backend number and the rest
++ * is per-backend specific
++ */
++struct atm_newif_br2684 {
++	atm_backend_t backend_num;	/* ATM_BACKEND_BR2684 */
++	int media;		/* BR2684_MEDIA_* */
++	char ifname[IFNAMSIZ];
++	int mtu;
++	int payload;		/* bridged or routed */
++};
++
++/*
++ * This structure is used to specify a br2684 interface - either by a
++ * positive integer (returned by ATM_NEWBACKENDIF) or the interfaces name
++ */
++#define BR2684_FIND_BYNOTHING	(0)
++#define BR2684_FIND_BYNUM	(1)
++#define BR2684_FIND_BYIFNAME	(2)
++struct br2684_if_spec {
++	int method;		/* BR2684_FIND_* */
++	union {
++		char ifname[IFNAMSIZ];
++		int devnum;
++	} spec;
++};
++
++/*
++ * This is for the ATM_SETBACKEND call - these are like socket families:
++ * the first element of the structure is the backend number and the rest
++ * is per-backend specific
++ */
++struct atm_backend_br2684 {
++	atm_backend_t backend_num;	/* ATM_BACKEND_BR2684 */
++	struct br2684_if_spec ifspec;
++	int fcs_in;		/* BR2684_FCSIN_* */
++	int fcs_out;		/* BR2684_FCSOUT_* */
++	int fcs_auto;		/* 1: fcs_{in,out} disabled if no FCS rx'ed */
++	int encaps;		/* BR2684_ENCAPS_* */
++	int payload;		/* BR2684_PAYLOAD_* */
++	int has_vpiid;		/* 1: use vpn_id - Unsupported */
++	__u8 vpn_id[7];
++	int send_padding;	/* unsupported */
++	int min_size;		/* we will pad smaller packets than this */
++};
++
++/*
++ * The BR2684_SETFILT ioctl is an experimental mechanism for folks
++ * terminating a large number of IP-only vcc's.  When netfilter allows
++ * efficient per-if in/out filters, this support will be removed
++ */
++struct br2684_filter {
++	__u32 prefix;		/* network byte order */
++	__u32 netmask;		/* 0 = disable filter */
++};
++
++struct br2684_filter_set {
++	struct br2684_if_spec ifspec;
++	struct br2684_filter filter;
++};
++
++enum br2684_payload {
++	p_routed = BR2684_PAYLOAD_ROUTED,
++	p_bridged = BR2684_PAYLOAD_BRIDGED,
++};
++
++#define BR2684_SETFILT	_IOW( 'a', ATMIOC_BACKEND + 0, \
++				struct br2684_filter_set)
++
++#endif				/* _LINUX_ATMBR2684_H */
+--- linux-atm-2.4.1/src/br2684/br2684ctl.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-atm-2.4.1.new/src/br2684/br2684ctl.c	2006-02-07 14:19:42.000000000 +0100
+@@ -0,0 +1,307 @@
++#include <stdio.h>
++#include <stdlib.h>
++#include <unistd.h>
++#include <errno.h>
++#include <sys/ioctl.h>
++#include <string.h>
++#include <syslog.h>
++#include <atm.h>
++#include <linux/atmdev.h>
++#include <linux/atmbr2684.h>
++
++/* Written by Marcell GAL <cell@sch.bme.hu> to make use of the */
++/* ioctls defined in the br2684... kernel patch */
++/* Compile with cc -o br2684ctl br2684ctl.c -latm */
++
++/*
++  Modified feb 2001 by Stephen Aaskov (saa@lasat.com)
++  - Added daemonization code
++  - Added syslog
++  
++  TODO: Delete interfaces after exit?
++*/
++
++
++#define LOG_NAME "RFC1483/2684 bridge"
++#define LOG_OPTION     LOG_PERROR
++#define LOG_FACILITY   LOG_LOCAL0
++
++
++int lastsock, lastitf;
++
++void fatal(char *str, int i)
++{
++	syslog(LOG_ERR, "Fatal: %s", str);
++	exit(-2);
++};
++
++
++void exitFunc(void)
++{
++	syslog(LOG_PID, "Daemon terminated\n");
++}
++
++
++int create_pidfile(char *nstr)
++{
++	FILE *pidfile = NULL;
++	char name[20];
++	int num;
++
++	if (nstr == NULL)
++		return -1;
++	num = atoi(nstr);
++	if (num < 0)
++		return -1;
++
++	snprintf(name, 20, "/var/run/nas%d.pid", num);
++	pidfile = fopen(name, "w");
++	if (pidfile == NULL)
++		return -1;
++	fprintf(pidfile, "%d", getpid());
++	fclose(pidfile);
++
++	return 0;
++}
++
++int create_br(char *nstr, int payload)
++{
++	int num, err;
++
++	if (lastsock < 0) {
++		lastsock = socket(PF_ATMPVC, SOCK_DGRAM, ATM_AAL5);
++	}
++	if (lastsock < 0) {
++		syslog(LOG_ERR, "socket creation failed: %s",
++		       strerror(errno));
++	} else {
++		/* create the device with ioctl: */
++		num = atoi(nstr);
++		if (num >= 0 && num < 1234567890) {
++			struct atm_newif_br2684 ni;
++			ni.backend_num = ATM_BACKEND_BR2684;
++			ni.media = BR2684_MEDIA_ETHERNET;
++			ni.mtu = 1500;
++			ni.payload = payload;	/* bridged or routed */
++			sprintf(ni.ifname, "nas%d", num);
++			err = ioctl(lastsock, ATM_NEWBACKENDIF, &ni);
++
++			if (err == 0)
++				syslog(LOG_INFO,
++				       "Interface \"%s\" (mtu=%d, payload=%s) created sucessfully\n",
++				       ni.ifname, ni.mtu,ni.payload ? "bridged" : "routed");
++			else
++				syslog(LOG_INFO,
++				       "Interface \"%s\" could not be created, reason: %s\n",
++				       ni.ifname, strerror(errno));
++			lastitf = num;	/* even if we didn't create, because existed, assign_vcc wil want to know it! */
++		} else {
++			syslog(LOG_ERR, "err: strange interface number %d",
++			       num);
++		}
++	}
++	return 0;
++}
++
++
++int assign_vcc(char *astr, int encap, int payload, int bufsize)
++{
++	int err, errno;
++	struct atm_qos qos;
++	struct sockaddr_atmpvc addr;
++	int fd;
++	struct atm_backend_br2684 be;
++
++	memset(&addr, 0, sizeof(addr));
++	err =
++	    text2atm(astr, (struct sockaddr *) (&addr), sizeof(addr),
++		     T2A_PVC);
++	if (err != 0)
++		syslog(LOG_ERR,
++		       "Could not parse ATM parameters (error=%d)\n", err);
++
++#if 0
++	addr.sap_family = AF_ATMPVC;
++	addr.sap_addr.itf = itf;
++	addr.sap_addr.vpi = 0;
++	addr.sap_addr.vci = vci;
++#endif
++	syslog(LOG_INFO,
++	       "Communicating over ATM %d.%d.%d, encapsulation: %s\n",
++	       addr.sap_addr.itf, addr.sap_addr.vpi, addr.sap_addr.vci,
++	       encap ? "VC mux" : "LLC");
++
++	if ((fd = socket(PF_ATMPVC, SOCK_DGRAM, ATM_AAL5)) < 0)
++		syslog(LOG_ERR, "failed to create socket %d, reason: %s",
++		       errno, strerror(errno));
++
++
++	memset(&qos, 0, sizeof(qos));
++	qos.aal = ATM_AAL5;
++	qos.txtp.traffic_class = ATM_UBR;
++	qos.txtp.max_sdu = 1524;
++	qos.txtp.pcr = ATM_MAX_PCR;
++	qos.rxtp = qos.txtp;
++
++	if ((err =
++	     setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &bufsize,
++			sizeof(bufsize))))
++		syslog(LOG_ERR, "setsockopt SO_SNDBUF: (%d) %s\n", err,
++		       strerror(err));
++
++	if (setsockopt(fd, SOL_ATM, SO_ATMQOS, &qos, sizeof(qos)) < 0)
++		syslog(LOG_ERR, "setsockopt SO_ATMQOS %d", errno);
++
++	err =
++	    connect(fd, (struct sockaddr *) &addr,
++		    sizeof(struct sockaddr_atmpvc));
++
++	if (err < 0)
++		fatal("failed to connect on socket", err);
++
++	/* attach the vcc to device: */
++
++	be.backend_num = ATM_BACKEND_BR2684;
++	be.ifspec.method = BR2684_FIND_BYIFNAME;
++	sprintf(be.ifspec.spec.ifname, "nas%d", lastitf);
++	be.fcs_in = BR2684_FCSIN_NO;
++	be.fcs_out = BR2684_FCSOUT_NO;
++	be.fcs_auto = 0;
++	be.encaps = encap ? BR2684_ENCAPS_VC : BR2684_ENCAPS_LLC;
++	be.payload = payload;
++	be.has_vpiid = 0;
++	be.send_padding = 0;
++	be.min_size = 0;
++	err = ioctl(fd, ATM_SETBACKEND, &be);
++	if (err == 0)
++		syslog(LOG_INFO, "Interface configured");
++	else {
++		syslog(LOG_ERR, "Could not configure interface:%s",
++		       strerror(errno));
++		exit(2);
++	}
++	return fd;
++}
++
++
++
++void usage(char *s)
++{
++	printf("usage: %s [-b] [[-c number] [-e 0|1] [-p 0|1] [-s num] [-a [itf.]vpi.vci]*]*\n"
++			" -b               = run in background (daemonize)\n"
++			" -c <num>         = use interface nas<num>\n"
++			" -e 0|1           = encapsulation (0=LLC, 1=VC Mux)\n"
++			" -p 0|1           = payload type (0=routed,1=bridged)\n"
++			" -s <num>         = set sndbuf (send buffer) size (default 8192)\n"
++			" -a [itf.]vpi.vci = ATM interface no, VPI, VCI\n",
++	     s);
++	exit(1);
++}
++
++
++
++int main(int argc, char **argv)
++{
++	int c, background = 0, encap = 0, sndbuf = 8192, payload = 1;
++	char *itfnum = NULL;
++
++	lastsock = -1;
++	lastitf = 0;
++
++	openlog(LOG_NAME, LOG_OPTION, LOG_FACILITY);
++	if (argc > 1)
++		while ((c = getopt(argc, argv, "a:bc:e:s:p:t:?h")) != EOF)
++			switch (c) {
++			case 'a':
++				assign_vcc(optarg, encap, payload, sndbuf);
++				break;
++			case 'b':
++				background = 1;
++				break;
++			case 'c':
++				create_br(optarg, payload);
++				itfnum = strdup(optarg);
++				break;
++			case 'e':
++				encap = (atoi(optarg));
++				if (encap < 0) {
++					syslog(LOG_ERR,
++					       "invalid encapsulation: %s:\n",
++					       optarg);
++					encap = 0;
++				}
++				break;
++			case 's':
++				sndbuf = (atoi(optarg));
++				if (sndbuf < 0) {
++					syslog(LOG_ERR,
++					       "Invalid sndbuf: %s, using size of 8192 instead\n",
++					       optarg);
++					sndbuf = 8192;
++				}
++				break;
++			case 'p':	/* payload type: routed (0) or bridged (1) */
++				payload = atoi(optarg);
++				break;
++			case '?':
++			case 'h':
++			default:
++				usage(argv[0]);
++	} else
++		usage(argv[0]);
++
++	if (argc != optind)
++		usage(argv[0]);
++
++	if (lastsock >= 0)
++		close(lastsock);
++
++	if (background) {
++		pid_t pid;
++
++		pid = fork();
++		if (pid < 0) {
++			fprintf(stderr, "Error detaching\n");
++			exit(2);
++		} else if (pid)
++			exit(0);	// This is the parent
++
++		// Become a process group and session group leader
++		if (setsid() < 0) {
++			fprintf(stderr, "Could not set process group\n");
++			exit(2);
++		}
++		// Fork again to let process group leader exit
++		pid = fork();
++		if (pid < 0) {
++			fprintf(stderr,
++				"Error detaching during second fork\n");
++			exit(2);
++		} else if (pid)
++			exit(0);	// This is the parent
++
++		// Now we're ready for buisness
++		chdir("/");	// Don't keep directories in use
++		close(0);
++		close(1);
++		close(2);	// Close stdin, -out and -error
++		/*
++		   Note that this implementation does not keep an open 
++		   stdout/err.
++		   If we need them they can be opened now
++		 */
++
++	}
++
++	if (itfnum != NULL) {
++		create_pidfile(itfnum);
++		free(itfnum);
++	}
++
++	syslog(LOG_INFO, "RFC 1483/2684 bridge daemon started\n");
++	atexit(exitFunc);
++
++	while (1)
++		sleep(30);	/* to keep the sockets... */
++	return 0;
++}

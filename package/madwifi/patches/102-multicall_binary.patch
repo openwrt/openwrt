@@ -1,0 +1,369 @@
+diff -urN madwifi-0.9.2.old/tools/80211debug.c madwifi-0.9.2.dev/tools/80211debug.c
+--- madwifi-0.9.2.old/tools/80211debug.c	2006-03-10 14:23:50.000000000 +0100
++++ madwifi-0.9.2.dev/tools/80211debug.c	2006-08-29 17:49:50.000000000 +0200
+@@ -49,6 +49,10 @@
+ #include <getopt.h>
+ #include <err.h>
+ 
++#ifdef DOMULTI
++#include "do_multi.h"
++#endif
++
+ #define	N(a)	(sizeof(a)/sizeof(a[0]))
+ 
+ const char *progname;
+@@ -180,9 +184,19 @@
+ }
+ #endif /* __linux__ */
+ 
++#ifdef DOMULTI
++
++int
++a80211debug_init(int argc, char *argv[])
++{
++
++#else
++
+ int
+ main(int argc, char *argv[])
+ {
++
++#endif
+ 	const char *ifname = "ath0";
+ 	const char *cp, *tp;
+ 	const char *sep;
+diff -urN madwifi-0.9.2.old/tools/80211stats.c madwifi-0.9.2.dev/tools/80211stats.c
+--- madwifi-0.9.2.old/tools/80211stats.c	2006-05-27 08:21:18.000000000 +0200
++++ madwifi-0.9.2.dev/tools/80211stats.c	2006-08-29 17:49:50.000000000 +0200
+@@ -58,6 +58,10 @@
+ #include "net80211/ieee80211_crypto.h"
+ #include "net80211/ieee80211_ioctl.h"
+ 
++#ifdef DOMULTI
++#include "do_multi.h"
++#endif
++
+ #ifndef SIOCG80211STATS
+ #define	SIOCG80211STATS	(SIOCDEVPRIVATE + 2)
+ #endif
+@@ -241,9 +245,19 @@
+ #undef STAT
+ }
+ 
++#ifdef DOMULTI
++
++int
++a80211stats_init(int argc, char *argv[])
++{
++
++#else
++
+ int
+ main(int argc, char *argv[])
+ {
++
++#endif
+ 	int c, len;
+ 	struct ieee80211req_sta_info *si;
+ 	u_int8_t buf[24*1024], *cp;
+diff -urN madwifi-0.9.2.old/tools/athchans.c madwifi-0.9.2.dev/tools/athchans.c
+--- madwifi-0.9.2.old/tools/athchans.c	2006-02-01 21:07:11.000000000 +0100
++++ madwifi-0.9.2.dev/tools/athchans.c	2006-08-29 17:49:50.000000000 +0200
+@@ -57,6 +57,10 @@
+ #include "net80211/ieee80211_crypto.h"
+ #include "net80211/ieee80211_ioctl.h"
+ 
++#ifdef DOMULTI
++#include "do_multi.h"
++#endif
++
+ static	int s = -1;
+ const char *progname;
+ 
+@@ -134,9 +138,20 @@
+ }
+ 
+ #define	MAXCHAN	((int)(sizeof(struct ieee80211req_chanlist) * NBBY))
++
++#ifdef DOMULTI
++
++int
++athchans_init(int argc, char *argv[])
++{
++
++#else
++
+ int
+ main(int argc, char *argv[])
+ {
++
++#endif
+ 	const char *ifname = "wifi0";
+ 	struct ieee80211req_chanlist chanlist;
+ 	int c;
+diff -urN madwifi-0.9.2.old/tools/athctrl.c madwifi-0.9.2.dev/tools/athctrl.c
+--- madwifi-0.9.2.old/tools/athctrl.c	2006-02-03 13:03:03.000000000 +0100
++++ madwifi-0.9.2.dev/tools/athctrl.c	2006-08-29 17:49:50.000000000 +0200
+@@ -53,6 +53,10 @@
+ 
+ #include <net/if.h>
+ 
++#ifdef DOMULTI
++#include "do_multi.h"
++#endif
++
+ static int
+ setsysctrl(const char *dev, const char *control , u_long value)
+ {
+@@ -87,9 +91,19 @@
+     exit(1);
+ }
+ 
++#ifdef DOMULTI
++
++int
++athctrl_init(int argc, char *argv[])
++{
++
++#else
++
+ int
+ main(int argc, char *argv[])
+ {
++
++#endif
+ 	char device[IFNAMSIZ + 1];
+ 	int distance = -1;
+ 	int c;
+diff -urN madwifi-0.9.2.old/tools/athdebug.c madwifi-0.9.2.dev/tools/athdebug.c
+--- madwifi-0.9.2.old/tools/athdebug.c	2006-05-05 06:17:59.000000000 +0200
++++ madwifi-0.9.2.dev/tools/athdebug.c	2006-08-29 17:49:50.000000000 +0200
+@@ -52,6 +52,10 @@
+ #include <getopt.h>
+ #include <err.h>
+ 
++#ifdef DOMULTI
++#include "do_multi.h"
++#endif
++
+ #define	N(a)	(sizeof(a)/sizeof(a[0]))
+ 
+ const char *progname;
+@@ -179,9 +183,20 @@
+ }
+ #endif /* __linux__ */
+ 
++#ifdef DOMULTI
++
++int
++athdebug_init(int argc, char *argv[])
++{
++
++#else
++
+ int
+ main(int argc, char *argv[])
+ {
++
++#endif
++
+ #ifdef __linux__
+ 	const char *ifname = "wifi0";
+ #else
+diff -urN madwifi-0.9.2.old/tools/athkey.c madwifi-0.9.2.dev/tools/athkey.c
+--- madwifi-0.9.2.old/tools/athkey.c	2006-02-01 21:07:11.000000000 +0100
++++ madwifi-0.9.2.dev/tools/athkey.c	2006-08-29 17:49:50.000000000 +0200
+@@ -57,6 +57,10 @@
+ #include "net80211/ieee80211_crypto.h"
+ #include "net80211/ieee80211_ioctl.h"
+ 
++#ifdef DOMULTI
++#include "do_multi.h"
++#endif
++
+ static int s = -1;
+ const char *progname;
+ 
+@@ -207,9 +211,19 @@
+ 	exit(-1);
+ }
+ 
++#ifdef DOMULTI
++
++int
++athkey_init(int argc, char *argv[])
++{
++
++#else
++
+ int
+ main(int argc, char *argv[])
+ {
++
++#endif
+ 	const char *ifname = "wifi0";
+ 	struct ieee80211req_key setkey;
+ 	struct ieee80211req_del_key delkey;
+diff -urN madwifi-0.9.2.old/tools/athstats.c madwifi-0.9.2.dev/tools/athstats.c
+--- madwifi-0.9.2.old/tools/athstats.c	2006-05-05 06:20:50.000000000 +0200
++++ madwifi-0.9.2.dev/tools/athstats.c	2006-08-29 17:49:50.000000000 +0200
+@@ -64,6 +64,10 @@
+ #include "ah_desc.h"
+ #include "if_athioctl.h"
+ 
++#ifdef DOMULTI
++#include "do_multi.h"
++#endif
++
+ static const struct {
+ 	u_int		phyerr;
+ 	const char*	desc;
+@@ -227,9 +231,20 @@
+ 	signalled = 1;
+ }
+ 
++#ifdef DOMULTI
++
++int
++athstats_init(int argc, char *argv[])
++{
++
++#else
++
+ int
+ main(int argc, char *argv[])
+ {
++
++#endif
++
+ #ifdef __linux__
+ 	const char *ifname = "wifi0";
+ #else
+diff -urN madwifi-0.9.2.old/tools/do_multi.c madwifi-0.9.2.dev/tools/do_multi.c
+--- madwifi-0.9.2.old/tools/do_multi.c	1970-01-01 01:00:00.000000000 +0100
++++ madwifi-0.9.2.dev/tools/do_multi.c	2006-08-29 17:49:50.000000000 +0200
+@@ -0,0 +1,30 @@
++#include <string.h>
++#include "do_multi.h"
++
++int
++main(int argc, char *argv[])
++{
++    char *progname;
++    int ret = 0;
++
++    progname = basename(argv[0]);
++
++    if(strcmp(progname, "80211debug") == 0)
++	ret = a80211debug_init(argc, argv);
++    if(strcmp(progname, "80211stats") == 0)
++	ret = a80211stats_init(argc, argv);
++    if(strcmp(progname, "athchans") == 0)
++	ret = athchans_init(argc, argv);
++    if(strcmp(progname, "athctrl") == 0)
++	ret =  athctrl_init(argc, argv);
++    if(strcmp(progname, "athdebug") == 0)
++	ret =  athdebug_init(argc, argv);
++    if(strcmp(progname, "athkey") == 0)
++	ret =  athkey_init(argc, argv);
++    if(strcmp(progname, "athstats") == 0)
++	ret =  athstats_init(argc, argv);
++    if(strcmp(progname, "wlanconfig") == 0)
++	ret =  wlanconfig_init(argc, argv);
++    
++    return ret;
++}
+diff -urN madwifi-0.9.2.old/tools/do_multi.h madwifi-0.9.2.dev/tools/do_multi.h
+--- madwifi-0.9.2.old/tools/do_multi.h	1970-01-01 01:00:00.000000000 +0100
++++ madwifi-0.9.2.dev/tools/do_multi.h	2006-08-29 17:49:50.000000000 +0200
+@@ -0,0 +1,9 @@
++
++int a80211debug_init(int argc, char *argv[]);
++int a80211stats_init(int argc, char *argv[]);
++int athchans_init(int argc, char *argv[]);
++int athctrl_init(int argc, char *argv[]);
++int athdebug_init(int argc, char *argv[]);
++int athkey_init(int argc, char *argv[]);
++int athstats_init(int argc, char *argv[]);
++int wlanconfig_init(int argc, char *argv[]);
+diff -urN madwifi-0.9.2.old/tools/Makefile madwifi-0.9.2.dev/tools/Makefile
+--- madwifi-0.9.2.old/tools/Makefile	2006-07-14 07:15:56.000000000 +0200
++++ madwifi-0.9.2.dev/tools/Makefile	2006-08-29 17:49:50.000000000 +0200
+@@ -49,6 +49,12 @@
+ 
+ ALL=	athstats 80211stats athkey athchans athctrl \
+ 	athdebug 80211debug wlanconfig
++	
++ifdef DOMULTI
++OBJS=	do_multi.o athstats.o 80211stats.o athkey.o athchans.o athctrl.o \
++	athdebug.o 80211debug.o wlanconfig.o 
++ALL=	${OBJS} madwifi_multi
++endif
+ 
+ all:	$(ALL)
+ 
+@@ -59,6 +65,30 @@
+ 
+ all:	$(ALL)
+ 
++athstats.o: athstats.c
++	${CC} -c -o athstats.o -DDOMULTI=1 ${ALL_CFLAGS} -I../ath athstats.c
++80211stats.o: 80211stats.c
++	${CC} -c -o 80211stats.o -DDOMULTI=1 ${ALL_CFLAGS} 80211stats.c
++athkey.o: athkey.c
++	${CC} -c -o athkey.o -DDOMULTI=1 ${ALL_CFLAGS} athkey.c
++athchans.o: athchans.c
++	${CC} -c -o athchans.o -DDOMULTI=1 ${ALL_CFLAGS} athchans.c
++athctrl.o: athctrl.c
++	${CC} -c -o athctrl.o -DDOMULTI=1 ${ALL_CFLAGS} athctrl.c
++athdebug.o: athdebug.c
++	${CC} -c -o athdebug.o -DDOMULTI=1 ${ALL_CFLAGS} athdebug.c
++wlanconfig.o: wlanconfig.c
++	${CC} -c -o wlanconfig.o -DDOMULTI=1 ${ALL_CFLAGS} wlanconfig.c
++80211debug.o: 80211debug.c
++	${CC} -c -o 80211debug.o -DDOMULTI=1 ${ALL_CFLAGS} 80211debug.c
++do_multi.o: do_multi.c
++	${CC} -c -o do_multi.o -DDOMULTI=1 ${ALL_CFLAGS} do_multi.c
++madwifi_multi:
++	${CC} -o madwifi_multi ${LDFLAGS} ${OBJS}
++	for i in athstats 80211stats athkey athchans athctrl athdebug wlanconfig 80211debug; do \
++	ln -s -f madwifi_multi $$i; \
++	done
++
+ athstats: athstats.c
+ 	$(CC) -o athstats $(ALL_CFLAGS) -I../ath $(LDFLAGS) athstats.c
+ 80211stats: 80211stats.c
+diff -urN madwifi-0.9.2.old/tools/wlanconfig.c madwifi-0.9.2.dev/tools/wlanconfig.c
+--- madwifi-0.9.2.old/tools/wlanconfig.c	2006-05-14 09:17:29.000000000 +0200
++++ madwifi-0.9.2.dev/tools/wlanconfig.c	2006-08-29 17:49:50.000000000 +0200
+@@ -60,6 +60,10 @@
+ #include "net80211/ieee80211_crypto.h"
+ #include "net80211/ieee80211_ioctl.h"
+ 
++#ifdef DOMULTI
++#include "do_multi.h"
++#endif
++
+ /*
+  * These are taken from ieee80211_node.h
+  */
+@@ -96,9 +100,19 @@
+ 
+ int verbose = 0;
+ 
++#ifdef DOMULTI
++
++int
++wlanconfig_init(int argc, char *argv[])
++{
++
++#else
++
+ int
+ main(int argc, char *argv[])
+ {
++
++#endif
+ 	const char *ifname, *cmd;
+ 	unsigned char bnounit = 0;
+ 	char *if_base = NULL;

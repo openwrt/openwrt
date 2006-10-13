@@ -1,0 +1,24 @@
+diff -urN mtd-20050122.orig.old/include/mtd/jffs2-user.h mtd-20050122.orig.dev/include/mtd/jffs2-user.h
+--- mtd-20050122.orig.old/include/mtd/jffs2-user.h	2004-05-05 13:57:54.000000000 +0200
++++ mtd-20050122.orig.dev/include/mtd/jffs2-user.h	2005-07-02 10:03:09.000000000 +0200
+@@ -19,8 +19,6 @@
+ #undef je32_to_cpu
+ #undef jemode_to_cpu
+ 
+-extern int target_endian;
+-
+ #define t16(x) ({ uint16_t __b = (x); (target_endian==__BYTE_ORDER)?__b:bswap_16(__b); })
+ #define t32(x) ({ uint32_t __b = (x); (target_endian==__BYTE_ORDER)?__b:bswap_32(__b); })
+ 
+diff -urN mtd.old/util/jffs3.h mtd.dev/util/jffs3.h
+--- mtd.old/util/jffs3.h	2005-01-22 00:00:13.000000000 +0100
++++ mtd.dev/util/jffs3.h	2005-07-17 17:48:24.000000000 +0200
+@@ -177,8 +177,6 @@
+ #undef je32_to_cpu
+ #undef jemode_to_cpu
+ 
+-extern int target_endian;
+-
+ #define t16(x) ({ uint16_t __b = (x); (target_endian==__BYTE_ORDER)?__b:bswap_16(__b); })
+ #define t32(x) ({ uint32_t __b = (x); (target_endian==__BYTE_ORDER)?__b:bswap_32(__b); })
+ 

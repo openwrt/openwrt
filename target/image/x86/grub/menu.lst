@@ -1,0 +1,11 @@
+serial --unit=0 --speed=@BAUDRATE@ --word=8 --parity=no --stop=1
+terminal --timeout=10 serial
+
+default 0
+timeout 5
+
+title   OpenWrt
+root    (hd0,0)
+kernel  /boot/vmlinuz @CMDLINE@ noinitrd console=ttyS0,@BAUDRATE@n8 reboot=bios
+boot
+

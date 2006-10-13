@@ -1,0 +1,11 @@
+#!/bin/sh
+export PATH=/bin:/sbin:/usr/bin:/usr/sbin
+mount none /proc -t proc
+
+[ -f /etc/preinit.arch ] && . /etc/preinit.arch
+[ -z "$FAILSAFE" ] || {
+	echo /bin/true > /proc/sys/kernel/hotplug
+	telnetd -l /bin/login <> /dev/null 2>&1
+}
+mount_root ${FAILSAFE:+failsafe}
+exec /sbin/init

@@ -1,0 +1,14 @@
+
+	Copyright (C) 2006 Markus Wigge
+
+diff -urN libpcap-0.9.4.orig/Makefile.in libpcap-0.9.4/Makefile.in
+--- libpcap-0.9.4.orig/Makefile.in	2006-07-19 09:27:47.000000000 +0200
++++ libpcap-0.9.4/Makefile.in	2006-07-19 09:34:48.000000000 +0200
+@@ -53,7 +53,7 @@
+ CC = @CC@
+ CCOPT = @V_CCOPT@
+ INCLS = -I. @V_INCLS@
+-DEFS = @DEFS@ @V_DEFS@
++DEFS = -D_BSD_SOURCE @DEFS@ @V_DEFS@
+ LIBS = @V_LIBS@
+ DYEXT = @DYEXT@

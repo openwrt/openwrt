@@ -1,0 +1,44 @@
+#!/bin/sh
+# Copyright (C) 2006 OpenWrt.org
+
+. /etc/functions.sh
+
+config_get_bool() {
+	local _tmp
+	config_get "$1" "$2" "$3"
+	eval "_tmp=\$$1"
+	case "$_tmp" in
+		1|on|enabled) eval "$1=1";;
+		0|off|disabled) eval "$1=0";;
+		*) eval "$1=${4:-0}";;
+	esac
+}
+
+config_cb() {
+	config_get TYPE "$CONFIG_SECTION" TYPE
+	case "$TYPE" in
+		wifi-device)
+			append DEVICES "$CONFIG_SECTION"
+		;;
+		wifi-iface)
+			config_get device "$CONFIG_SECTION" device
+			config_get vifs "$device" vifs 
+			append vifs "$CONFIG_SECTION"
+			config_set "$device" vifs "$vifs"
+		;;
+	esac
+}
+
+config_load wireless
+include /lib/wifi
+
+for device in $DEVICES; do (
+	config_get iftype "$device" type
+	eval "type setup_$iftype" 2>/dev/null >/dev/null && {
+		eval "scan_$iftype '$device'"
+		eval "setup_$iftype '$device'" && {
+			# TODO: set up network settings
+			/bin/true
+		} || echo "$device($iftype): Setup failed" || true
+	} || echo "$device($iftype): Interface type not supported"
+); done
