@@ -1,0 +1,12 @@
+--- linux-2.6.17/arch/mips/Makefile	2006-06-19 15:12:09.000000000 -0700
++++ linux-2.6.17/arch/mips/Makefile	2006-06-19 15:11:59.000000000 -0700
+@@ -602,6 +602,9 @@
+ core-$(CONFIG_TOSHIBA_RBTX4938) += arch/mips/tx4938/common/
+ load-$(CONFIG_TOSHIBA_RBTX4938) += 0xffffffff80100000
+ 
++# temporary until string.h is fixed
++cflags-y += -ffreestanding
++
+ cflags-y			+= -Iinclude/asm-mips/mach-generic
+ drivers-$(CONFIG_PCI)		+= arch/mips/pci/
+ 

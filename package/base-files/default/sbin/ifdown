@@ -1,0 +1,34 @@
+#!/bin/sh
+# Copyright (C) 2006 OpenWrt.org
+
+[ $# = 0 ] && { echo "  $0 <group>"; exit; }
+. /etc/functions.sh
+include /lib/network
+scan_interfaces
+
+cfg=$1
+debug "### ifdown $cfg ###"
+
+config_get proto "$cfg" proto
+[ -z "$proto" ] && { echo "interface not found."; exit; }
+
+# kill active ppp daemon
+pid="$(cat /var/run/ppp-${cfg}.pid 2>/dev/null)"
+[ -n "$pid" -a -d "/proc/$pid" ] && {
+	kill $pid
+	sleep 1
+	[ -d "/proc/$pid" ] && kill -9 $pid
+}
+
+# kill any other process associated with the interface
+config_get ifname "$cfg" ifname
+pid="$(cat /var/run/${ifname}.pid 2>/dev/null)"
+[ -n "$pid" -a -d "/proc/$pid" ] && kill -9 $pid
+
+config_get ifname "$cfg" ifname
+ifconfig "$ifname" >/dev/null 2>/dev/null && {
+	ifconfig "$ifname" 0.0.0.0 down
+
+	config_get iftype "$cfg" type
+	[ "$iftype" = "bridge" ] && brctl delbr "$ifname"
+}

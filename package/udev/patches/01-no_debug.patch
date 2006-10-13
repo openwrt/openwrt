@@ -1,0 +1,21 @@
+diff -ruN udev-077-old/Makefile udev-077-new/Makefile
+--- udev-077-old/Makefile	2005-12-04 03:01:48.000000000 +0100
++++ udev-077-new/Makefile	2005-12-07 16:48:11.000000000 +0100
+@@ -136,7 +136,7 @@
+ # check if compiler option is supported
+ cc-supports = ${shell if $(CC) ${1} -S -o /dev/null -xc /dev/null > /dev/null 2>&1; then echo "$(1)"; else echo "$(2)"; fi;}
+ 
+-CFLAGS		= -g -Wall -pipe -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64
++CFLAGS		= -Wall -pipe -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64
+ WARNINGS	= -Wstrict-prototypes -Wsign-compare -Wshadow \
+ 		  -Wchar-subscripts -Wmissing-declarations -Wnested-externs \
+ 		  -Wpointer-arith -Wcast-align -Wsign-compare -Wmissing-prototypes
+@@ -159,7 +159,7 @@
+ 
+ # if DEBUG is enabled, then we do not strip
+ ifeq ($(strip $(DEBUG)),true)
+-	CFLAGS  += -DDEBUG
++	CFLAGS  += -g -DDEBUG 
+ 	STRIPCMD =
+ endif
+ 

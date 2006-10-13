@@ -1,0 +1,12 @@
+diff -urN dropbear-0.45.old/cli-kex.c dropbear-0.45/cli-kex.c
+--- dropbear-0.45.old/cli-kex.c	2005-03-07 05:27:01.000000000 +0100
++++ dropbear-0.45/cli-kex.c	2005-03-25 11:13:57.000000000 +0100
+@@ -119,7 +119,7 @@
+ 	char response = 'z';
+ 
+ 	fp = sign_key_fingerprint(keyblob, keybloblen);
+-	fprintf(stderr, "\nHost '%s' is not in the trusted hosts file.\n(fingerprint %s)\nDo you want to continue connecting? (y/n)\n", 
++	fprintf(stderr, "\nHost '%s' is not in the trusted hosts file.\n(fingerprint %s)\nDo you want to continue connecting? (y/n) ", 
+ 			cli_opts.remotehost, 
+ 			fp);
+ 

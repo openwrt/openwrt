@@ -1,0 +1,12 @@
+diff -ur linux-atm.old/src/include/stdint.h linux-atm.dev/src/include/stdint.h
+--- linux-atm.old/src/include/stdint.h	2001-09-03 20:41:06.000000000 +0200
++++ linux-atm.dev/src/include/stdint.h	2006-09-27 19:13:56.000000000 +0200
+@@ -6,7 +6,7 @@
+ 
+ #if __GLIBC__ >= 2 && __GLIBC_MINOR__ >= 1
+ 
+-#include "/usr/include/stdint.h"
++#include_next <stdint.h>
+ 
+ #elif __GLIBC__ >= 2
+ 

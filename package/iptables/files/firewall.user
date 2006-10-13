@@ -1,0 +1,28 @@
+#!/bin/sh
+# Copyright (C) 2006 OpenWrt.org
+
+iptables -F input_rule
+iptables -F output_rule
+iptables -F forwarding_rule
+iptables -t nat -F prerouting_rule
+iptables -t nat -F postrouting_rule
+
+### BIG FAT DISCLAIMER
+## The "-i $WAN" is used to match packets that come in via the $WAN interface.
+## it WILL NOT MATCH packets sent from the $WAN ip address -- you won't be able
+## to see the effects from within the LAN.
+
+### Open port to WAN
+## -- This allows port 22 to be answered by (dropbear on) the router
+# iptables -t nat -A prerouting_rule -i $WAN -p tcp --dport 22 -j ACCEPT 
+# iptables        -A input_rule      -i $WAN -p tcp --dport 22 -j ACCEPT
+
+### Port forwarding
+## -- This forwards port 8080 on the WAN to port 80 on 192.168.1.2
+# iptables -t nat -A prerouting_rule -i $WAN -p tcp --dport 8080 -j DNAT --to 192.168.1.2:80
+# iptables        -A forwarding_rule -i $WAN -p tcp --dport 80 -d 192.168.1.2 -j ACCEPT
+
+### DMZ
+## -- Connections to ports not handled above will be forwarded to 192.168.1.2
+# iptables -t nat -A prerouting_rule -i $WAN -j DNAT --to 192.168.1.2
+# iptables        -A forwarding_rule -i $WAN -d 192.168.1.2 -j ACCEPT

@@ -1,0 +1,52 @@
+diff -Nur mini_fo-0-6-2-pre1/Makefile mini_fo-0-6-2-pre1.patched/Makefile
+--- mini_fo-0-6-2-pre1/Makefile	2005-10-15 12:49:43.000000000 +0200
++++ mini_fo-0-6-2-pre1.patched/Makefile	2005-12-25 14:03:36.864205250 +0100
+@@ -26,36 +26,29 @@
+ # allow custom override of TOPINC for fistgen developers
+ -include fistdev.mk
+ 
++obj-m := mini_fo.o
++mini_fo-objs   := meta.o dentry.o file.o inode.o main.o super.o state.o aux.o
++
+ ifeq ($(KERNELVERSION),2.4)
+-CFLAGS = -D__KERNEL__ -DMODULE -DFISTGEN -I. ${TOPINC} -O2 -Wall -Wno-unused -g -fno-common -fno-schedule-insns -fno-schedule-insns2 -fno-strict-aliasing -msoft-float -Werror 
+-ifeq ($(ARCH),um)
+-CFLAGS += $(shell cd $(KERNEL_SRC) ; make script 'SCRIPT=@echo $$(CFLAGS)' ARCH=um)
+-endif
+-UCFLAGS = -DFISTGEN -I. ${TOPINC} -g -O2 -Wall -Wno-unused -Werror
+-endif
+ 
+-CC	= $(CROSS_COMPILE)gcc
+-LD	= $(CROSS_COMPILE)ld
++O_TARGET := $(obj-m)
++obj-y := $(mini_fo-objs)
+ 
+-obj-m := mini_fo.o
+-mini_fo-objs   := meta.o dentry.o file.o inode.o main.o super.o state.o aux.o
++-include $(TOPDIR)/Rules.make
++
++endif
+ 
+ all: mini_fo$(KERNELVERSION)
+ 
+-mini_fo2.4: ${obj-m}
++mini_fo2.4:
++	$(MAKE) -C ${KERNEL_SRC} TOPDIR="${KERNEL_SRC}" SUBDIRS=$(shell pwd) modules
+ 
+ mini_fo2.6:
+-	make -C ${KERNEL_SRC} SUBDIRS=$(PWD) modules
+-
+-${obj-m}: ${mini_fo-objs}
+-	$(LD) -o ${obj-m} -r ${mini_fo-objs}
+-
+-tags:
+-	ctags -R -e
++	$(MAKE) -C ${KERNEL_SRC} SUBDIRS=$(shell pwd) modules
+ 
+ clean:
+ ifeq ($(KERNELVERSION),2.6)
+-	-make -C ${KERNEL_SRC} SUBDIRS=$(PWD) clean
++	-$(MAKE) -C ${KERNEL_SRC} SUBDIRS=$(shell pwd) clean
+ endif
+ 	rm -f ${obj-m} ${mini_fo-objs} ${obj-m:.o=.ko} *.d .*.flags *~
+ 	rm -f TAGS

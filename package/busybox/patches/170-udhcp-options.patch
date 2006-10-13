@@ -1,0 +1,15 @@
+diff -Nur busybox-1.00.orig/networking/udhcp/options.c busybox-1.00/networking/udhcp/options.c
+--- busybox-1.00.orig/networking/udhcp/options.c	2004-03-15 09:29:01.000000000 +0100
++++ busybox-1.00/networking/udhcp/options.c	2005-09-14 13:27:23.792609800 +0200
+@@ -39,8 +39,11 @@
+ 	{"dhcptype",	OPTION_U8,				0x35},
+ 	{"serverid",	OPTION_IP,				0x36},
+ 	{"message",	OPTION_STRING,				0x38},
++	{"vendorclass", OPTION_STRING,                          0x3C},
++	{"clientid",    OPTION_STRING,                          0x3D},
+ 	{"tftp",	OPTION_STRING,				0x42},
+ 	{"bootfile",	OPTION_STRING,				0x43},
++	{"userclass",   OPTION_STRING,                          0x4D},
+ 	{"",		0x00,				0x00}
+ };
+ 

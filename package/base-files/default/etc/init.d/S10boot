@@ -1,0 +1,25 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+start() {
+	[ -f /proc/mounts ] || /sbin/mount_root
+	[ -f /proc/jffs2_bbc ] && echo "S" > /proc/jffs2_bbc
+	vconfig set_name_type DEV_PLUS_VID_NO_PAD
+	
+	HOSTNAME=${wan_hostname%%.*}
+	echo ${HOSTNAME:=OpenWrt}>/proc/sys/kernel/hostname
+	
+	mkdir -p /var/run
+	mkdir -p /var/log
+	mkdir -p /var/lock
+	touch /var/log/wtmp
+	touch /var/log/lastlog
+	[ "$FAILSAFE" = "true" ] && touch /tmp/.failsafe
+	
+	# manually trigger hotplug before loading modules
+	for iface in $(awk -F: '/:/ {print $1}' /proc/net/dev); do
+		/usr/bin/env -i ACTION=add INTERFACE="$iface" /sbin/hotplug net
+	done
+	
+	load_modules /etc/modules /etc/modules.d/*
+}

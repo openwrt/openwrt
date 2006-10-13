@@ -1,0 +1,28 @@
+Sometime around 2.4.22-23, the mips pt_regs.h fields were reordered, breaking
+coredump handling by gdb for current kernels.  Update the hardcoded constants
+to reflect the change.
+--- gdb-6.2.1/gdb/mips-linux-tdep.c-orig	2004-10-29 14:23:55.000000000 -0500
++++ gdb-6.2.1/gdb/mips-linux-tdep.c	2004-10-29 14:26:44.000000000 -0500
+@@ -53,12 +53,22 @@
+ 
+ #define EF_REG0			6
+ #define EF_REG31		37
++
++#if 0
+ #define EF_LO			38
+ #define EF_HI			39
+ #define EF_CP0_EPC		40
+ #define EF_CP0_BADVADDR		41
+ #define EF_CP0_STATUS		42
+ #define EF_CP0_CAUSE		43
++#else
++#define EF_CP0_STATUS		38
++#define EF_LO			39
++#define EF_HI			40
++#define EF_CP0_BADVADDR		41
++#define EF_CP0_CAUSE		42
++#define EF_CP0_EPC		43
++#endif
+ 
+ #define EF_SIZE			180
+ 

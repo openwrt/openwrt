@@ -1,0 +1,8 @@
+# eDonkey2000 - P2P filesharing (download part) - http://edonkey2000.com
+# Pattern quality: good veryfast overmatch usepacket
+
+edonkey-dl
+
+^[\xe3\xe4\xc5\xe5\xd4](....)?[\x01\x0a\x0e\x0f\x10\x18\x19\x1b\x1c\x47\x4a\x4f\x51\x53\x54\x58\x60\x81\x90\x96\x9a\x9c\xa2]
+
+

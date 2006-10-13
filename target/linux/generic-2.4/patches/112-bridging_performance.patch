@@ -1,0 +1,22 @@
+--- linux.old/net/core/dev.c	2005-07-05 16:42:36.000000000 +0200
++++ linux.dev/net/core/dev.c	2005-07-08 19:32:46.000000000 +0200
+@@ -1289,6 +1289,19 @@
+ 	local_irq_save(flags);
+ 
+ 	netdev_rx_stat[this_cpu].total++;
++
++#ifdef CONFIG_BRIDGE
++	/* Optimisation for framebursting (allow interleaving of pkts by
++	 * immediately processing the rx pkt instead of Qing the pkt and deferring
++	 * the processing). Only optimise for bridging and guard against non
++	 * TASKLET based netif_rx calls.
++	 */
++	if (!in_irq() && (skb->dev->br_port != NULL) && br_handle_frame_hook != NULL) {
++		local_irq_restore(flags);
++		return netif_receive_skb(skb);
++	}
++#endif		
++	
+ 	if (queue->input_pkt_queue.qlen <= netdev_max_backlog) {
+ 		if (queue->input_pkt_queue.qlen) {
+ 			if (queue->throttle)

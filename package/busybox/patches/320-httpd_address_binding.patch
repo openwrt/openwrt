@@ -1,0 +1,95 @@
+# Copyright (C) 2006 OpenWrt.org
+#
+# This is free software, licensed under the GNU General Public License v2.
+# See /LICENSE for more information.
+#
+diff -ruN busybox-1.2.0-old/networking/httpd.c busybox-1.2.0-new/networking/httpd.c
+--- busybox-1.2.0-old/networking/httpd.c	2006-07-01 00:42:02.000000000 +0200
++++ busybox-1.2.0-new/networking/httpd.c	2006-08-01 10:06:58.000000000 +0200
+@@ -99,6 +99,7 @@
+ #include <sys/types.h>
+ #include <sys/socket.h>    /* for connect and socket*/
+ #include <netinet/in.h>    /* for sockaddr_in       */
++#include <arpa/inet.h>
+ #include <sys/stat.h>
+ #include <sys/wait.h>
+ #include <fcntl.h>         /* for open modes        */
+@@ -165,6 +166,7 @@
+ #endif
+   unsigned port;           /* server initial port and for
+ 			      set env REMOTE_PORT */
++  char *address;
+   union HTTPD_FOUND {
+ 	const char *found_mime_type;
+ 	const char *found_moved_temporarily;
+@@ -868,7 +870,10 @@
+   /* inet_addr() returns a value that is already in network order */
+   memset(&lsocket, 0, sizeof(lsocket));
+   lsocket.sin_family = AF_INET;
+-  lsocket.sin_addr.s_addr = INADDR_ANY;
++  if (inet_aton(config->address, &(lsocket.sin_addr)) == 1) {
++	  if (config->address != NULL) lsocket.sin_addr.s_addr = ((struct in_addr *) ((gethostbyname(config->address))->h_addr))->s_addr;
++	  else lsocket.sin_addr.s_addr = htons(INADDR_ANY);
++  }
+   lsocket.sin_port = htons(config->port);
+   fd = bb_xsocket(AF_INET, SOCK_STREAM, 0);
+   /* tell the OS it's OK to reuse a previous address even though */
+@@ -1899,6 +1904,7 @@
+ 	USE_FEATURE_HTTPD_AUTH_MD5(m_opt_md5,)
+ 	USE_FEATURE_HTTPD_SETUID(u_opt_setuid,)
+ 	USE_FEATURE_HTTPD_WITHOUT_INETD(p_opt_port,)
++	USE_FEATURE_HTTPD_WITHOUT_INETD(l_opt_addr,)
+ };
+ 
+ static const char httpd_opts[]="c:d:h:"
+@@ -1906,7 +1912,7 @@
+ 	USE_FEATURE_HTTPD_BASIC_AUTH("r:")
+ 	USE_FEATURE_HTTPD_AUTH_MD5("m:")
+ 	USE_FEATURE_HTTPD_SETUID("u:")
+-	USE_FEATURE_HTTPD_WITHOUT_INETD("p:");
++	USE_FEATURE_HTTPD_WITHOUT_INETD("p:l:");
+ 
+ #define OPT_CONFIG_FILE (1<<c_opt_config_file)
+ #define OPT_DECODE_URL  (1<<d_opt_decode_url)
+@@ -1927,6 +1933,8 @@
+ #define OPT_PORT        USE_FEATURE_HTTPD_WITHOUT_INETD((1<<p_opt_port)) \
+ 			SKIP_FEATURE_HTTPD_WITHOUT_INETD(0)
+ 
++#define OPT_ADDRESS     USE_FEATURE_HTTPD_WITHOUT_INETD((1<<l_opt_addr)) \
++			SKIP_FEATURE_HTTPD_WITHOUT_INETD(0)
+ 
+ int httpd_main(int argc, char *argv[])
+ {
+@@ -1935,6 +1943,7 @@
+   char *url_for_decode;
+   USE_FEATURE_HTTPD_ENCODE_URL_STR(const char *url_for_encode;)
+   USE_FEATURE_HTTPD_WITHOUT_INETD(const char *s_port;)
++  USE_FEATURE_HTTPD_WITHOUT_INETD(const char *s_addr;)
+   USE_FEATURE_HTTPD_WITHOUT_INETD(int server;)
+ 
+   USE_FEATURE_HTTPD_SETUID(const char *s_uid;)
+@@ -1949,6 +1958,7 @@
+ 
+ #ifdef CONFIG_FEATURE_HTTPD_WITHOUT_INETD
+   config->port = 80;
++  config->address = "";
+ #endif
+ 
+   config->ContentLength = -1;
+@@ -1960,6 +1970,7 @@
+ 			USE_FEATURE_HTTPD_AUTH_MD5(, &pass)
+ 			USE_FEATURE_HTTPD_SETUID(, &s_uid)
+ 			USE_FEATURE_HTTPD_WITHOUT_INETD(, &s_port)
++			USE_FEATURE_HTTPD_WITHOUT_INETD(, &s_addr)
+ 	);
+ 
+   if(opt & OPT_DECODE_URL) {
+@@ -1981,6 +1992,8 @@
+ #ifdef CONFIG_FEATURE_HTTPD_WITHOUT_INETD
+     if(opt & OPT_PORT)
+ 	config->port = bb_xgetlarg(s_port, 10, 1, 0xffff);
++    if (opt & OPT_ADDRESS)
++	if (s_addr) config->address = (char *) s_addr;
+ #ifdef CONFIG_FEATURE_HTTPD_SETUID
+     if(opt & OPT_SETUID) {
+ 	char *e;

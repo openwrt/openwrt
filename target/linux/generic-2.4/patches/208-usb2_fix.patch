@@ -1,0 +1,15 @@
+diff -ur linux-2.4.30.dev/drivers/usb/host/ehci-q.c linux-tmp/drivers/usb/host/ehci-q.c
+--- linux-2.4.30.dev/drivers/usb/host/ehci-q.c	2005-01-19 15:10:07.000000000 +0100
++++ linux-tmp/drivers/usb/host/ehci-q.c	2005-03-30 05:11:12.000000000 +0200
+@@ -783,6 +765,11 @@
+ 		if (!(cmd & CMD_ASE)) {
+ 			/* in case a clear of CMD_ASE didn't take yet */
+ 			(void) handshake (&ehci->regs->status, STS_ASS, 0, 150);
++
++			/* force async head to be valid */
++			writel ((u32)ehci->async->qh_dma,
++					&ehci->regs->async_next);
++
+ 			cmd |= CMD_ASE | CMD_RUN;
+ 			writel (cmd, &ehci->regs->command);
+ 			ehci->hcd.state = USB_STATE_RUNNING;

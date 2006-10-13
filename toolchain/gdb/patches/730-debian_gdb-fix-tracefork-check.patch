@@ -1,0 +1,225 @@
+Status: submitted for comments
+
+2004-11-12  Daniel Jacobowitz  <dan@debian.org>
+
+	* linux-nat.c (my_waitpid): New function.
+	(linux_test_for_tracefork): Make more robust and verbose.  Take
+	an ORIGINAL_PID argument and test for PTRACE_SETOPTIONS first.
+	(linux_supports_tracefork, linux_supports_tracevforkdone): Take a PID
+	argument.  Update calls to linux_test_for_tracefork.
+	(linux_enable_event_reporting, child_follow_fork)
+	(child_insert_fork_catchpoint, child_insert_vfork_catchpoint)
+	(child_insert_exec_catchpoint): Update calls to
+	linux_supports_tracefork and linux_supports_tracevforkdone.
+
+Index: gdb-6.3/gdb/linux-nat.c
+===================================================================
+--- gdb-6.3.orig/gdb/linux-nat.c	2004-10-08 16:29:47.000000000 -0400
++++ gdb-6.3/gdb/linux-nat.c	2004-11-13 16:41:51.368720845 -0500
+@@ -150,18 +150,47 @@ linux_tracefork_child (void)
+   exit (0);
+ }
+ 
+-/* Determine if PTRACE_O_TRACEFORK can be used to follow fork events.  We
++/* Wrapper function for waitpid which handles EINTR.  */
++
++static int
++my_waitpid (int pid, int *status, int flags)
++{
++  int ret;
++  do
++    {
++      ret = waitpid (pid, status, flags);
++    }
++  while (ret == -1 && errno == EINTR);
++
++  return ret;
++}
++
++/* Determine if PTRACE_O_TRACEFORK can be used to follow fork events.
++
++   First, we try to enable fork tracing on ORIGINAL_PID.  If this fails,
++   we know that the feature is not available.  This may change the tracing
++   options for ORIGINAL_PID, but we'll be setting them shortly anyway.
++
++   However, if it succeeds, we don't know for sure that the feature is
++   available; old versions of PTRACE_SETOPTIONS ignored unknown options.  We
+    create a child process, attach to it, use PTRACE_SETOPTIONS to enable
+-   fork tracing, and let it fork.  If the process exits, we assume that
+-   we can't use TRACEFORK; if we get the fork notification, and we can
+-   extract the new child's PID, then we assume that we can.  */
++   fork tracing, and let it fork.  If the process exits, we assume that we
++   can't use TRACEFORK; if we get the fork notification, and we can extract
++   the new child's PID, then we assume that we can.  */
+ 
+ static void
+-linux_test_for_tracefork (void)
++linux_test_for_tracefork (int original_pid)
+ {
+   int child_pid, ret, status;
+   long second_pid;
+ 
++  linux_supports_tracefork_flag = 0;
++  linux_supports_tracevforkdone_flag = 0;
++
++  ret = ptrace (PTRACE_SETOPTIONS, original_pid, 0, PTRACE_O_TRACEFORK);
++  if (ret != 0)
++    return;
++
+   child_pid = fork ();
+   if (child_pid == -1)
+     perror_with_name ("linux_test_for_tracefork: fork");
+@@ -169,7 +198,7 @@ linux_test_for_tracefork (void)
+   if (child_pid == 0)
+     linux_tracefork_child ();
+ 
+-  ret = waitpid (child_pid, &status, 0);
++  ret = my_waitpid (child_pid, &status, 0);
+   if (ret == -1)
+     perror_with_name ("linux_test_for_tracefork: waitpid");
+   else if (ret != child_pid)
+@@ -177,13 +206,23 @@ linux_test_for_tracefork (void)
+   if (! WIFSTOPPED (status))
+     error ("linux_test_for_tracefork: waitpid: unexpected status %d.", status);
+ 
+-  linux_supports_tracefork_flag = 0;
+-
+   ret = ptrace (PTRACE_SETOPTIONS, child_pid, 0, PTRACE_O_TRACEFORK);
+   if (ret != 0)
+     {
+-      ptrace (PTRACE_KILL, child_pid, 0, 0);
+-      waitpid (child_pid, &status, 0);
++      ret = ptrace (PTRACE_KILL, child_pid, 0, 0);
++      if (ret != 0)
++	{
++	  warning ("linux_test_for_tracefork: failed to kill child");
++	  return;
++	}
++
++      ret = my_waitpid (child_pid, &status, 0);
++      if (ret != child_pid)
++	warning ("linux_test_for_tracefork: failed to wait for killed child");
++      else if (!WIFSIGNALED (status))
++	warning ("linux_test_for_tracefork: unexpected wait status 0x%x from "
++		 "killed child", status);
++
+       return;
+     }
+ 
+@@ -192,8 +231,12 @@ linux_test_for_tracefork (void)
+ 		PTRACE_O_TRACEFORK | PTRACE_O_TRACEVFORKDONE);
+   linux_supports_tracevforkdone_flag = (ret == 0);
+ 
+-  ptrace (PTRACE_CONT, child_pid, 0, 0);
+-  ret = waitpid (child_pid, &status, 0);
++  ret = ptrace (PTRACE_CONT, child_pid, 0, 0);
++  if (ret != 0)
++    warning ("linux_test_for_tracefork: failed to resume child");
++
++  ret = my_waitpid (child_pid, &status, 0);
++
+   if (ret == child_pid && WIFSTOPPED (status)
+       && status >> 16 == PTRACE_EVENT_FORK)
+     {
+@@ -204,34 +247,38 @@ linux_test_for_tracefork (void)
+ 	  int second_status;
+ 
+ 	  linux_supports_tracefork_flag = 1;
+-	  waitpid (second_pid, &second_status, 0);
+-	  ptrace (PTRACE_DETACH, second_pid, 0, 0);
++	  my_waitpid (second_pid, &second_status, 0);
++	  ret = ptrace (PTRACE_KILL, second_pid, 0, 0);
++	  if (ret != 0)
++	    warning ("linux_test_for_tracefork: failed to kill second child");
+ 	}
+     }
++  else
++    warning ("linux_test_for_tracefork: unexpected result from waitpid "
++	     "(%d, status 0x%x)", ret, status);
+ 
+-  if (WIFSTOPPED (status))
+-    {
+-      ptrace (PTRACE_DETACH, child_pid, 0, 0);
+-      waitpid (child_pid, &status, 0);
+-    }
++  ret = ptrace (PTRACE_KILL, child_pid, 0, 0);
++  if (ret != 0)
++    warning ("linux_test_for_tracefork: failed to kill child");
++  my_waitpid (child_pid, &status, 0);
+ }
+ 
+ /* Return non-zero iff we have tracefork functionality available.
+    This function also sets linux_supports_tracefork_flag.  */
+ 
+ static int
+-linux_supports_tracefork (void)
++linux_supports_tracefork (int pid)
+ {
+   if (linux_supports_tracefork_flag == -1)
+-    linux_test_for_tracefork ();
++    linux_test_for_tracefork (pid);
+   return linux_supports_tracefork_flag;
+ }
+ 
+ static int
+-linux_supports_tracevforkdone (void)
++linux_supports_tracevforkdone (int pid)
+ {
+   if (linux_supports_tracefork_flag == -1)
+-    linux_test_for_tracefork ();
++    linux_test_for_tracefork (pid);
+   return linux_supports_tracevforkdone_flag;
+ }
+ 
+@@ -242,12 +289,12 @@ linux_enable_event_reporting (ptid_t pti
+   int pid = ptid_get_pid (ptid);
+   int options;
+ 
+-  if (! linux_supports_tracefork ())
++  if (! linux_supports_tracefork (pid))
+     return;
+ 
+   options = PTRACE_O_TRACEFORK | PTRACE_O_TRACEVFORK | PTRACE_O_TRACEEXEC
+     | PTRACE_O_TRACECLONE;
+-  if (linux_supports_tracevforkdone ())
++  if (linux_supports_tracevforkdone (pid))
+     options |= PTRACE_O_TRACEVFORKDONE;
+ 
+   /* Do not enable PTRACE_O_TRACEEXIT until GDB is more prepared to support
+@@ -308,7 +355,8 @@ child_follow_fork (int follow_child)
+ 
+       if (has_vforked)
+ 	{
+-	  if (linux_supports_tracevforkdone ())
++	  gdb_assert (linux_supports_tracefork_flag >= 0);
++	  if (linux_supports_tracevforkdone (0))
+ 	    {
+ 	      int status;
+ 
+@@ -476,7 +524,7 @@ linux_handle_extended_wait (int pid, int
+ int
+ child_insert_fork_catchpoint (int pid)
+ {
+-  if (! linux_supports_tracefork ())
++  if (! linux_supports_tracefork (pid))
+     error ("Your system does not support fork catchpoints.");
+ 
+   return 0;
+@@ -485,7 +533,7 @@ child_insert_fork_catchpoint (int pid)
+ int
+ child_insert_vfork_catchpoint (int pid)
+ {
+-  if (!linux_supports_tracefork ())
++  if (!linux_supports_tracefork (pid))
+     error ("Your system does not support vfork catchpoints.");
+ 
+   return 0;
+@@ -494,7 +542,7 @@ child_insert_vfork_catchpoint (int pid)
+ int
+ child_insert_exec_catchpoint (int pid)
+ {
+-  if (!linux_supports_tracefork ())
++  if (!linux_supports_tracefork (pid))
+     error ("Your system does not support exec catchpoints.");
+ 
+   return 0;

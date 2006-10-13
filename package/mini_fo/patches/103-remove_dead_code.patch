@@ -1,0 +1,47 @@
+From: Markus Klotzbuecher <mk@creamnet.de>
+Date: Tue, 20 Jun 2006 14:50:26 +0000 (+0200)
+Subject: Removed some dead code (mini_fo_lock) that caused compiling to fail on
+X-Git-Url: http://www.denx.de/cgi-bin/gitweb.cgi?p=mini_fo.git;a=commitdiff;h=240ede43ad8342334494d36d6d762666f75a1c8e
+
+Removed some dead code (mini_fo_lock) that caused compiling to fail on
+recent kernels.
+---
+
+--- a/file.c
++++ b/file.c
+@@ -668,35 +668,6 @@ mini_fo_fasync(int fd, file_t *file, int
+ 	return (err1 || err2);
+ }
+ 
+-
+-STATIC int
+-mini_fo_lock(file_t *file, int cmd, struct file_lock *fl)
+-{
+-	int err = -EINVAL;
+-	file_t *hidden_file = NULL;
+-
+-	if(!check_mini_fo_file(file))
+-		goto out;
+-
+-	/* which file shall we lock? */
+-	if(ftohf2(file))
+-		hidden_file = ftohf2(file);
+-	else
+-		hidden_file = ftohf(file);
+-
+-	if (hidden_file->f_op->lock) {
+-		fl->fl_file = hidden_file;
+-		err = hidden_file->f_op->lock(hidden_file, F_GETLK, fl);
+-		fl->fl_file = file;
+-	} else {
+- 		if(posix_test_lock(hidden_file, fl))
+-			err = 0;
+-	}
+- out:
+-	return err;
+-}
+-
+-
+ struct file_operations mini_fo_dir_fops =
+ 	{
+ 		llseek:	mini_fo_llseek,

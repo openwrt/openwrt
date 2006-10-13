@@ -1,0 +1,82 @@
+#!/bin/sh
+# Copyright (C) 2006 OpenWrt.org
+
+export PATH=/bin:/sbin:/usr/bin:/usr/sbin
+mount none /proc -t proc
+mount none /dev -t devfs
+mount non /dev/pts -t devpts
+
+# the root mount point can come from the kernel command line
+# or it can be overridden in the preinit.arch file
+[ -f /etc/preinit.arch ] && . /etc/preinit.arch
+
+# if we have no root parameter, just go to running from ramfs
+[ -z $rootfs ] && {
+  export NOMOUNT="No Root"
+  exec /sbin/init
+}
+
+#if we have a failsafe boot selected, dont bother
+#trying to find or wait for a root mount point
+[ -z "$FAILSAFE" ] || {
+  exec /bin/busybox init
+}
+
+# Load the modules we have in initramfs, this should
+# make the media accessible, but, it may take some time
+. /etc/functions.sh
+load_modules /etc/modules /etc/modules.d/*
+
+#wait 10 seconds for the disc to show up
+#usb stick typically takes 4 to 6 seconds
+#till it's readable
+#it's quite possible the disc never shows up
+#if we netbooted this kernel
+COUNTER=0
+while [ $COUNTER -lt 10 ]; do
+  sleep 1
+  [ -e $rootfs ] && let COUNTER=10;
+  let COUNTER=COUNTER+1
+done
+[ -e $rootfs ] || {
+  export FAILSAFE="NoDisc"
+  exec /bin/busybox init
+}
+
+# now we'll try mount it, again with a timeout
+# This will fail if the inserted stick is formatted
+# in a manner we dont understand
+COUNTER=0
+while [ $COUNTER -lt 10 ]; do
+  sleep 1
+  mount $rootfs /mnt
+  [ $? -eq "0" ] && let COUNTER=100;
+  let COUNTER=COUNTER+1
+done
+[ $? -ne "0" ] && {
+  export FAILSAFE="MountFail"
+  exec /bin/busybox init
+}
+
+#It mounted, lets look for a postinit file, again, give it time
+#I've seen this take 6 seconds to actually complete
+COUNTER=0
+while [ $COUNTER -lt 10 ]; do
+  sleep 1
+  [ -e /mnt/etc/banner ] && let COUNTER=10;
+  let COUNTER=COUNTER+1
+done
+[ -e /mnt/etc/banner ] || {
+  export FAILSAFE="No Openwrt FS"
+  exec /bin/busybox init
+}
+
+unset rootfs
+
+mount -o move /proc /mnt/proc
+mount -o move /dev /mnt/dev
+mount -o move /dev/pts /mnt/dev/pts
+mount -o move /tmp /mnt/tmp
+mount -o move /sys /mnt/sys
+mount none /tmp -t tmpfs
+exec switch_root -c /dev/console /mnt /sbin/init

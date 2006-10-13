@@ -1,0 +1,24 @@
+diff -ruN ipsec-tools-0.6.3-old/configure.ac ipsec-tools-0.6.3-new/configure.ac
+--- ipsec-tools-0.6.3-old/configure.ac	2005-11-21 12:11:41.000000000 +0100
++++ ipsec-tools-0.6.3-new/configure.ac	2005-12-09 02:09:06.000000000 +0100
+@@ -180,7 +180,7 @@
+ 
+ if test "x$crypto_dir" != "x"; then
+ 	LIBS="$LIBS -L${crypto_dir}/lib"
+-	CPPFLAGS="-I${crypto_dir}/include $CPPLAGS"
++	CPPFLAGS="-I${crypto_dir}/include $CPPFLAGS"
+ fi
+ AC_MSG_CHECKING(openssl version)
+ 
+diff -ruN ipsec-tools-0.6.3-old/configure ipsec-tools-0.6.3-new/configure
+--- ipsec-tools-0.6.3-old/configure	2005-11-21 12:15:12.000000000 +0100
++++ ipsec-tools-0.6.3-new/configure	2005-12-09 02:09:13.000000000 +0100
+@@ -23680,7 +23680,7 @@
+ 
+ if test "x$crypto_dir" != "x"; then
+ 	LIBS="$LIBS -L${crypto_dir}/lib"
+-	CPPFLAGS="-I${crypto_dir}/include $CPPLAGS"
++	CPPFLAGS="-I${crypto_dir}/include $CPPFLAGS"
+ fi
+ echo "$as_me:$LINENO: checking openssl version" >&5
+ echo $ECHO_N "checking openssl version... $ECHO_C" >&6

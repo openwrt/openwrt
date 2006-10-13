@@ -1,0 +1,51 @@
+# Choose gcc version.
+
+choice
+	prompt "GCC compiler Version" if TOOLCHAINOPTS
+	default GCC_VERSION_4_1_1 if LINUX_2_6_ARUBA
+	default GCC_VERSION_3_4_6
+	help
+	  Select the version of gcc you wish to use.
+
+
+	config GCC_VERSION_3_4_4
+		bool "gcc 3.4.4"
+
+	config GCC_VERSION_3_4_5
+		bool "gcc 3.4.5"
+
+	config GCC_VERSION_3_4_6
+		bool "gcc 3.4.6"
+
+	config GCC_VERSION_3_4_6_nonmips
+		bool "gcc 3.4.6-nonmips"
+
+	config GCC_VERSION_4_0_2
+		bool "gcc 4.0.2"
+
+	config GCC_VERSION_4_0_3
+		bool "gcc 4.0.3"
+
+	config GCC_VERSION_4_1_0
+		bool "gcc 4.1.0"
+
+	config GCC_VERSION_4_1_1
+		bool "gcc 4.1.1"
+
+endchoice
+
+config EXTRA_GCC_CONFIG_OPTIONS
+	string
+	prompt "Additional gcc options" if TOOLCHAINOPTS
+	default ""
+	help
+	    Any additional gcc options you may want to include....
+
+config INSTALL_LIBSTDCPP
+	bool
+	prompt "Build/install c++ compiler and libstdc++?" if TOOLCHAINOPTS
+	default y
+	help
+	    Build/install c++ compiler and libstdc++?
+
+

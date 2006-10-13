@@ -1,0 +1,348 @@
+diff -Nur linux-2.4.32/include/linux/netfilter_ipv4/ipt_string.h linux-2.4.32.patch/include/linux/netfilter_ipv4/ipt_string.h
+--- linux-2.4.32/include/linux/netfilter_ipv4/ipt_string.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.32.patch/include/linux/netfilter_ipv4/ipt_string.h	2005-12-16 00:40:19.082509250 +0100
+@@ -0,0 +1,18 @@
++#ifndef _IPT_STRING_H
++#define _IPT_STRING_H
++
++#define IPT_STRING_MAX_PATTERN_SIZE 128
++#define IPT_STRING_MAX_ALGO_NAME_SIZE 16
++
++struct ipt_string_info
++{
++	u_int16_t from_offset;
++	u_int16_t to_offset;
++	char	  algo[IPT_STRING_MAX_ALGO_NAME_SIZE];
++	char 	  pattern[IPT_STRING_MAX_PATTERN_SIZE];
++	u_int8_t  patlen;
++	u_int8_t  invert;
++	struct ts_config __attribute__((aligned(8))) *config;
++};
++
++#endif /*_IPT_STRING_H*/
+diff -Nur linux-2.4.32/include/linux/textsearch.h linux-2.4.32.patch/include/linux/textsearch.h
+--- linux-2.4.32/include/linux/textsearch.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.32.patch/include/linux/textsearch.h	2005-12-16 11:15:34.838073000 +0100
+@@ -0,0 +1,205 @@
++#ifndef __LINUX_TEXTSEARCH_H
++#define __LINUX_TEXTSEARCH_H
++
++#ifdef __KERNEL__
++
++#include <linux/types.h>
++#include <linux/list.h>
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/slab.h>
++
++#ifdef __CHECKER__
++#define __bitwise__ __attribute__((bitwise))
++#else
++#define __bitwise__
++#endif
++#ifdef __CHECK_ENDIAN__
++#define __bitwise __bitwise__
++#else
++#define __bitwise
++#endif
++
++typedef __u16 __bitwise __le16;
++typedef __u16 __bitwise __be16;
++typedef __u32 __bitwise __le32;
++typedef __u32 __bitwise __be32;
++#if defined(__GNUC__) && !defined(__STRICT_ANSI__)
++typedef __u64 __bitwise __le64;
++typedef __u64 __bitwise __be64;
++#endif
++
++#ifdef __KERNEL__
++typedef unsigned __bitwise__ gfp_t;
++#endif
++
++struct ts_config;
++
++/**
++ * TS_AUTOLOAD - Automatically load textsearch modules when needed
++ */
++#define TS_AUTOLOAD	1
++
++/**
++ * struct ts_state - search state
++ * @offset: offset for next match
++ * @cb: control buffer, for persistant variables of get_next_block()
++ */
++struct ts_state
++{
++	unsigned int		offset;
++	char			cb[40];
++};
++
++/**
++ * struct ts_ops - search module operations
++ * @name: name of search algorithm
++ * @init: initialization function to prepare a search
++ * @find: find the next occurrence of the pattern
++ * @destroy: destroy algorithm specific parts of a search configuration
++ * @get_pattern: return head of pattern
++ * @get_pattern_len: return length of pattern
++ * @owner: module reference to algorithm
++ */
++struct ts_ops
++{
++	const char		*name;
++	struct ts_config *	(*init)(const void *, unsigned int, gfp_t);
++	unsigned int		(*find)(struct ts_config *,
++					struct ts_state *);
++	void			(*destroy)(struct ts_config *);
++	void *			(*get_pattern)(struct ts_config *);
++	unsigned int		(*get_pattern_len)(struct ts_config *);
++	struct module		*owner;
++	struct list_head	list;
++};
++
++/**
++ * struct ts_config - search configuration
++ * @ops: operations of chosen algorithm
++ * @get_next_block: callback to fetch the next block to search in
++ * @finish: callback to finalize a search
++ */
++struct ts_config
++{
++	struct ts_ops		*ops;
++
++	/**
++	 * get_next_block - fetch next block of data
++	 * @consumed: number of bytes consumed by the caller
++	 * @dst: destination buffer
++	 * @conf: search configuration
++	 * @state: search state
++	 *
++	 * Called repeatedly until 0 is returned. Must assign the
++	 * head of the next block of data to &*dst and return the length
++	 * of the block or 0 if at the end. consumed == 0 indicates
++	 * a new search. May store/read persistant values in state->cb.
++	 */
++	unsigned int		(*get_next_block)(unsigned int consumed,
++						  const u8 **dst,
++						  struct ts_config *conf,
++						  struct ts_state *state);
++
++	/**
++	 * finish - finalize/clean a series of get_next_block() calls
++	 * @conf: search configuration
++	 * @state: search state
++	 *
++	 * Called after the last use of get_next_block(), may be used
++	 * to cleanup any leftovers.
++	 */
++	void			(*finish)(struct ts_config *conf,
++					  struct ts_state *state);
++};
++
++/**
++ * textsearch_next - continue searching for a pattern
++ * @conf: search configuration
++ * @state: search state
++ *
++ * Continues a search looking for more occurrences of the pattern.
++ * textsearch_find() must be called to find the first occurrence
++ * in order to reset the state.
++ *
++ * Returns the position of the next occurrence of the pattern or
++ * UINT_MAX if not match was found.
++ */ 
++static inline unsigned int textsearch_next(struct ts_config *conf,
++					   struct ts_state *state)
++{
++	unsigned int ret = conf->ops->find(conf, state);
++
++	if (conf->finish)
++		conf->finish(conf, state);
++
++	return ret;
++}
++
++/**
++ * textsearch_find - start searching for a pattern
++ * @conf: search configuration
++ * @state: search state
++ *
++ * Returns the position of first occurrence of the pattern or
++ * UINT_MAX if no match was found.
++ */ 
++static inline unsigned int textsearch_find(struct ts_config *conf,
++					   struct ts_state *state)
++{
++	state->offset = 0;
++	return textsearch_next(conf, state);
++}
++
++/**
++ * textsearch_get_pattern - return head of the pattern
++ * @conf: search configuration
++ */
++static inline void *textsearch_get_pattern(struct ts_config *conf)
++{
++	return conf->ops->get_pattern(conf);
++}
++
++/**
++ * textsearch_get_pattern_len - return length of the pattern
++ * @conf: search configuration
++ */
++static inline unsigned int textsearch_get_pattern_len(struct ts_config *conf)
++{
++	return conf->ops->get_pattern_len(conf);
++}
++
++extern int textsearch_register(struct ts_ops *);
++extern int textsearch_unregister(struct ts_ops *);
++extern struct ts_config *textsearch_prepare(const char *, const void *,
++					    unsigned int, gfp_t, int);
++extern void textsearch_destroy(struct ts_config *conf);
++extern unsigned int textsearch_find_continuous(struct ts_config *,
++					       struct ts_state *,
++					       const void *, unsigned int);
++
++
++#define TS_PRIV_ALIGNTO	8
++#define TS_PRIV_ALIGN(len) (((len) + TS_PRIV_ALIGNTO-1) & ~(TS_PRIV_ALIGNTO-1))
++
++static inline struct ts_config *alloc_ts_config(size_t payload,
++						gfp_t gfp_mask)
++{
++	struct ts_config *conf;
++
++	conf = kmalloc(TS_PRIV_ALIGN(sizeof(*conf)) + payload, gfp_mask);
++	if (conf == NULL)
++		return -ENOMEM;
++
++	memset(conf, 0, TS_PRIV_ALIGN(sizeof(*conf)) + payload);
++	return conf;
++}
++
++static inline void *ts_config_priv(struct ts_config *conf)
++{
++	return ((u8 *) conf + TS_PRIV_ALIGN(sizeof(struct ts_config)));
++}
++
++#endif /* __KERNEL__ */
++
++#endif
+diff -Nur linux-2.4.32/net/ipv4/netfilter/Config.in linux-2.4.32.patch/net/ipv4/netfilter/Config.in
+--- linux-2.4.32/net/ipv4/netfilter/Config.in	2005-01-19 15:10:13.000000000 +0100
++++ linux-2.4.32.patch/net/ipv4/netfilter/Config.in	2005-12-16 00:41:43.023755250 +0100
+@@ -42,6 +42,7 @@
+   fi
+   if [ "$CONFIG_EXPERIMENTAL" = "y" ]; then
+     dep_tristate '  Unclean match support (EXPERIMENTAL)' CONFIG_IP_NF_MATCH_UNCLEAN $CONFIG_IP_NF_IPTABLES
++    dep_tristate '  String match support (EXPERIMENTAL) ' CONFIG_IP_NF_MATCH_STRING $CONFIG_IP_NF_IPTABLES
+     dep_tristate '  Owner match support (EXPERIMENTAL)' CONFIG_IP_NF_MATCH_OWNER $CONFIG_IP_NF_IPTABLES
+   fi
+ # The targets
+diff -Nur linux-2.4.32/net/ipv4/netfilter/ipt_string.c linux-2.4.32.patch/net/ipv4/netfilter/ipt_string.c
+--- linux-2.4.32/net/ipv4/netfilter/ipt_string.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.32.patch/net/ipv4/netfilter/ipt_string.c	2005-12-16 00:40:48.436343750 +0100
+@@ -0,0 +1,91 @@
++/* String matching match for iptables
++ * 
++ * (C) 2005 Pablo Neira Ayuso <pablo@eurodev.net>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++
++#include <linux/init.h>
++#include <linux/module.h>
++#include <linux/kernel.h>
++#include <linux/skbuff.h>
++#include <linux/netfilter_ipv4/ip_tables.h>
++#include <linux/netfilter_ipv4/ipt_string.h>
++#include <linux/textsearch.h>
++
++MODULE_AUTHOR("Pablo Neira Ayuso <pablo@eurodev.net>");
++MODULE_DESCRIPTION("IP tables string match module");
++MODULE_LICENSE("GPL");
++
++static int match(const struct sk_buff *skb,
++		 const struct net_device *in,
++		 const struct net_device *out,
++		 const void *matchinfo,
++		 int offset,
++		 int *hotdrop)
++{
++	struct ts_state state;
++	struct ipt_string_info *conf = (struct ipt_string_info *) matchinfo;
++
++	memset(&state, 0, sizeof(struct ts_state));
++
++	return (skb_find_text((struct sk_buff *)skb, conf->from_offset, 
++			     conf->to_offset, conf->config, &state) 
++			     != UINT_MAX) && !conf->invert;
++}
++
++#define STRING_TEXT_PRIV(m) ((struct ipt_string_info *) m)
++
++static int checkentry(const char *tablename,
++		      const struct ipt_ip *ip,
++		      void *matchinfo,
++		      unsigned int matchsize,
++		      unsigned int hook_mask)
++{
++	struct ipt_string_info *conf = matchinfo;
++	struct ts_config *ts_conf;
++
++	if (matchsize != IPT_ALIGN(sizeof(struct ipt_string_info)))
++		return 0;
++
++	/* Damn, can't handle this case properly with iptables... */
++	if (conf->from_offset > conf->to_offset)
++		return 0;
++
++	ts_conf = textsearch_prepare(conf->algo, conf->pattern, conf->patlen,
++				     GFP_KERNEL, TS_AUTOLOAD);
++	if (IS_ERR(ts_conf))
++		return 0;
++
++	conf->config = ts_conf;
++
++	return 1;
++}
++
++static void destroy(void *matchinfo, unsigned int matchsize)
++{
++	textsearch_destroy(STRING_TEXT_PRIV(matchinfo)->config);
++}
++
++static struct ipt_match string_match = {
++	.name 		= "string",
++	.match 		= match,
++	.checkentry	= checkentry,
++	.destroy 	= destroy,
++	.me 		= THIS_MODULE
++};
++
++static int __init init(void)
++{
++	return ipt_register_match(&string_match);
++}
++
++static void __exit fini(void)
++{
++	ipt_unregister_match(&string_match);
++}
++
++module_init(init);
++module_exit(fini);
+diff -Nur linux-2.4.32/net/ipv4/netfilter/Makefile linux-2.4.32.patch/net/ipv4/netfilter/Makefile
+--- linux-2.4.32/net/ipv4/netfilter/Makefile	2003-08-25 13:44:44.000000000 +0200
++++ linux-2.4.32.patch/net/ipv4/netfilter/Makefile	2005-12-16 00:42:10.929499250 +0100
+@@ -85,6 +85,7 @@
+ obj-$(CONFIG_IP_NF_MATCH_STATE) += ipt_state.o
+ obj-$(CONFIG_IP_NF_MATCH_CONNTRACK) += ipt_conntrack.o
+ obj-$(CONFIG_IP_NF_MATCH_UNCLEAN) += ipt_unclean.o
++obj-$(CONFIG_IP_NF_MATCH_STRING) += ipt_string.o
+ obj-$(CONFIG_IP_NF_MATCH_TCPMSS) += ipt_tcpmss.o
+ 
+ # targets

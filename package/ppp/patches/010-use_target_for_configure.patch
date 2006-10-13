@@ -1,0 +1,20 @@
+
+	Use values exported from $(TOPDIR)/rules.mk for determining
+	the target system instead of the host configuration
+
+--- ppp-2.4.3/configure.orig	Sat Nov  6 11:36:32 2004
++++ ppp-2.4.3/configure	Sun Jun 18 23:40:46 2006
+@@ -8,9 +8,9 @@ SYSCONF=/etc
+ #  if [ -d /NextApps ]; then
+ #    system="NeXTStep"
+ #  else
+-  system=`uname -s`
+-  release=`uname -r`
+-  arch=`uname -m`
++  system=${UNAME_S:-`uname -s`}
++  release=${UNAME_R:-`uname -r`}
++  arch=${UNAME_M:-`uname -m`}
+ #  fi
+ state="unknown"
+ 
+

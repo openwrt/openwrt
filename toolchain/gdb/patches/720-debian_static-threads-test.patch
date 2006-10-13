@@ -1,0 +1,36 @@
+Update staticthreads.exp to handle debugging info in libpthread.a.
+
+Index: gdb-6.3/gdb/testsuite/gdb.threads/staticthreads.exp
+===================================================================
+--- gdb-6.3.orig/gdb/testsuite/gdb.threads/staticthreads.exp	2004-11-10 10:35:15.000000000 -0500
++++ gdb-6.3/gdb/testsuite/gdb.threads/staticthreads.exp	2004-11-10 11:22:48.671121466 -0500
+@@ -53,6 +53,10 @@ gdb_test_multiple "continue" "$test" {
+     -re " sem_post .*$gdb_prompt " {
+ 	pass "$test"
+     }
++    -re " (.*_)sem_post .*$gdb_prompt " {
++	# Glibc uses aliases for internal symbols; match __new_sem_post.
++	pass "$test"
++    }
+     -re "Program received signal .*$gdb_prompt " {
+ 	kfail gdb/1328 "$test"
+     }
+@@ -64,8 +68,16 @@ gdb_test_multiple "continue" "$test" {
+ 
+ rerun_to_main
+ gdb_test "handle SIG32 nostop noprint pass"
+-set test "Handle SIG32 helps"
+-gdb_test "continue" " sem_post .*" "handle SIG32 helps"
++set test "handle SIG32 helps"
++gdb_test_multiple "continue" "$test" {
++    -re " sem_post .*$gdb_prompt $" {
++	pass "$test"
++    }
++    -re " (.*_)sem_post .*$gdb_prompt $" {
++	# Glibc uses aliases for internal symbols; match __new_sem_post.
++	pass "$test"
++    }
++}
+ 
+ 
+ # See if info threads produces anything approaching a thread list.

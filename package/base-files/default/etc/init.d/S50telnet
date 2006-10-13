@@ -1,0 +1,10 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+start() {
+	if awk -F: '/^root:/ && $2 !~ /\!/ {exit 1}' /etc/passwd 2>/dev/null; then telnetd -l /bin/login; fi
+}
+
+stop() {
+	killall telnetd
+}

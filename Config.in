@@ -1,0 +1,101 @@
+#
+
+mainmenu "OpenWrt Configuration"
+
+config HAVE_DOT_CONFIG
+	bool
+	default y
+
+source "target/Config.in"
+
+config ALL
+	bool "Select all packages by default"
+	default n
+
+menuconfig DEVEL
+	bool "Advanced configuration options (for developers)"
+	default n
+	select BUILDOPTS
+	select TOOLCHAINOPTS if !NATIVE_TOOLCHAIN
+
+config BROKEN
+	bool "Show broken platforms / packages" if DEVEL
+	default n
+
+menuconfig BUILDOPTS
+	bool "Build Options" if DEVEL
+
+config AUTOREBUILD
+	bool
+	prompt "Automatic rebuild of packages" if BUILDOPTS
+	default y
+	help
+		Automatically rebuild packages when their files change
+
+config TAR_VERBOSITY
+	bool 
+	prompt "Tar verbose" if BUILDOPTS
+	default n
+
+config JLEVEL
+	int
+	prompt "Number of jobs to run simultaneously" if BUILDOPTS
+	default "1"
+	help
+	    Number of jobs to run simultanesouly
+
+config CCACHE
+	bool
+	prompt "Use ccache" if BUILDOPTS
+	default n
+	help
+		Compiler cache; see http://ccache.samba.org/
+
+source "toolchain/Config.in"
+source "target/sdk/Config.in"
+
+menu "Target Images"
+	config TARGET_ROOTFS_INITRAMFS
+		bool "ramdisk"
+		default n
+		depends LINUX_2_6
+		help
+		  Embed the rootfs into the kernel (initramfs)
+
+	config TARGET_ROOTFS_JFFS2
+		bool "jffs2"
+		default y if USES_JFFS2
+		depends !TARGET_ROOTFS_INITRAMFS
+		help
+		  Build a jffs2 root filesystem
+
+	config TARGET_ROOTFS_SQUASHFS
+		bool "squashfs"
+		default y if USES_SQUASHFS
+		depends !TARGET_ROOTFS_INITRAMFS
+		help
+		  Build a squashfs-lzma root filesystem
+
+	config TARGET_ROOTFS_TGZ
+		bool "tgz"
+		default y if !USES_SQUASHFS && !USES_JFFS2
+		depends !TARGET_ROOTFS_INITRAMFS
+		help
+		  Build a compressed tar archive of the the root filesystem
+		  
+	config TARGET_ROOTFS_EXT2FS
+		bool "ext2"
+		default y if !USES_SQUASHFS && !USES_JFFS2
+		depends !TARGET_ROOTFS_INITRAMFS
+		help
+		  Ext2 file system with some free space for uml images
+
+comment "Image Options"
+
+source "target/image/*/Config.in"
+
+endmenu
+
+source "target/linux/Config.in"
+source ".config.in"
+

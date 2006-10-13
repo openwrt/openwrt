@@ -1,0 +1,11 @@
+--- linux-2.6.15.1.old/include/asm-mips/system.h	2006-01-28 15:02:54.481032280 +0100
++++ linux-2.6.15.1.dev/include/asm-mips/system.h	2006-01-28 14:47:51.634285848 +0100
+@@ -273,7 +273,7 @@
+    if something tries to do an invalid xchg().  */
+ extern void __xchg_called_with_bad_pointer(void);
+ 
+-static inline unsigned long __xchg(unsigned long x, volatile void * ptr, int size)
++static __always_inline unsigned long __xchg(unsigned long x, volatile void * ptr, int size)
+ {
+ 	switch (size) {
+ 		case 4:

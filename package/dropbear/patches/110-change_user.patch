@@ -1,0 +1,19 @@
+diff -urN dropbear.old/svr-chansession.c dropbear.dev/svr-chansession.c
+--- dropbear.old/svr-chansession.c	2005-12-09 06:42:33.000000000 +0100
++++ dropbear.dev/svr-chansession.c	2005-12-12 01:42:38.982034750 +0100
+@@ -860,12 +860,12 @@
+ 	/* We can only change uid/gid as root ... */
+ 	if (getuid() == 0) {
+ 
+-		if ((setgid(ses.authstate.pw->pw_gid) < 0) ||
++		if ((ses.authstate.pw->pw_gid != 0) && ((setgid(ses.authstate.pw->pw_gid) < 0) ||
+ 			(initgroups(ses.authstate.pw->pw_name, 
+-						ses.authstate.pw->pw_gid) < 0)) {
++						ses.authstate.pw->pw_gid) < 0))) {
+ 			dropbear_exit("error changing user group");
+ 		}
+-		if (setuid(ses.authstate.pw->pw_uid) < 0) {
++		if ((ses.authstate.pw->pw_uid != 0) && (setuid(ses.authstate.pw->pw_uid) < 0)) {
+ 			dropbear_exit("error changing user");
+ 		}
+ 	} else {

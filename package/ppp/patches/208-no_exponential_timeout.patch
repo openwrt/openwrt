@@ -1,0 +1,28 @@
+diff -urN ppp.old/pppd/plugins/rp-pppoe/discovery.c ppp.dev/pppd/plugins/rp-pppoe/discovery.c
+--- ppp.old/pppd/plugins/rp-pppoe/discovery.c	2005-09-05 15:25:35.917232000 +0200
++++ ppp.dev/pppd/plugins/rp-pppoe/discovery.c	2005-09-05 15:29:17.233586872 +0200
+@@ -593,12 +593,14 @@
+ 	conn->discoveryState = STATE_SENT_PADI;
+ 	waitForPADO(conn, timeout);
+ 
++#if 0
+ 	/* If we're just probing for access concentrators, don't do
+ 	   exponential backoff.  This reduces the time for an unsuccessful
+ 	   probe to 15 seconds. */
+ 	if (!conn->printACNames) {
+ 	    timeout *= 2;
+ 	}
++#endif
+ 	if (conn->printACNames && conn->numPADOs) {
+ 	    break;
+ 	}
+@@ -621,7 +623,9 @@
+ 	sendPADR(conn);
+ 	conn->discoveryState = STATE_SENT_PADR;
+ 	waitForPADS(conn, timeout);
++#if 0
+ 	timeout *= 2;
++#endif
+     } while (conn->discoveryState == STATE_SENT_PADR);
+ 
+     /* We're done. */

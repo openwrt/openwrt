@@ -1,0 +1,83 @@
+#
+# For a description of the syntax of this configuration file,
+# see scripts/kbuild/config-language.txt.
+#
+
+menu "Init Utilities"
+
+config BUSYBOX_CONFIG_INIT
+	bool "init"
+	default y
+	help
+	  init is the first program run when the system boots.
+
+config BUSYBOX_CONFIG_DEBUG_INIT
+	bool "debugging aid"
+	default n
+	depends on BUSYBOX_CONFIG_INIT
+	help
+	  Turn this on to disable all the dangerous
+	  rebooting stuff when debugging.
+
+config BUSYBOX_CONFIG_FEATURE_USE_INITTAB
+	bool "Support reading an inittab file"
+	default y
+	depends on BUSYBOX_CONFIG_INIT
+	help
+	  Allow init to read an inittab file when the system boot.
+
+config BUSYBOX_CONFIG_FEATURE_INIT_SCTTY
+	bool "Support running commands with a controlling-tty"
+	default n
+	depends on BUSYBOX_CONFIG_INIT
+	help
+	  If this option is enabled a command starting with hyphen (-)
+	  is run in its own session (setsid(2)) and possibly with a
+	  controlling tty (TIOCSCTTY).  This is not the traditional init
+	  behavour, but is often what you want in an embedded system where
+	  the console is only accessed during development or for maintenance.
+
+config BUSYBOX_CONFIG_FEATURE_EXTRA_QUIET
+	bool "Be _extra_ quiet on boot"
+	default n
+	depends on BUSYBOX_CONFIG_INIT
+	help
+	  Prevent init from logging some messages to the console during boot.
+
+config BUSYBOX_CONFIG_FEATURE_INIT_COREDUMPS
+	bool "Support dumping core for child processes (debugging only)"
+	default n
+	depends on BUSYBOX_CONFIG_INIT
+	help
+	  If this option is enabled and the file /.init_enable_core
+	  exists, then init will call setrlimit() to allow unlimited
+	  core file sizes.  If this option is disabled, processes
+	  will not generate any core files.
+
+
+
+config BUSYBOX_CONFIG_FEATURE_INITRD
+	bool "Support running init from within an initrd (not initramfs)"
+	default n
+	depends on BUSYBOX_CONFIG_INIT
+	help
+	  Legacy support for running init under the old-style initrd.  Allows
+	  the name linuxrc to act as init, and it doesn't assume init is PID 1.
+
+	  This does not apply to initramfs, which runs /init as PID 1 and
+	  requires no special support.
+
+config BUSYBOX_CONFIG_HALT
+	bool "poweroff, halt, and reboot"
+	default y
+	help
+	  Stop all processes and either halt, reboot, or power off the system.
+
+config BUSYBOX_CONFIG_MESG
+	bool "mesg"
+	default y
+	help
+	  Mesg controls access to your terminal by others.  It is typically
+	  used to allow or disallow other users to write to your terminal
+
+endmenu

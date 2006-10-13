@@ -1,0 +1,23 @@
+--- ipkg-utils-1.7/ipkg.py.orig	2006-06-29 14:16:00.000000000 +0200
++++ ipkg-utils-1.7/ipkg.py	2006-06-29 14:36:01.000000000 +0200
+@@ -93,9 +93,9 @@
+             self.filename = os.path.basename(fn)
+ 	    ## sys.stderr.write("  extracting control.tar.gz from %s\n"% (fn,)) 
+             if self.isdeb:
+-                control = os.popen("ar p "+fn+" control.tar.gz | tar xfzO - '*control'","r")
++                control = os.popen("ar p "+fn+" control.tar.gz | tar xzO --wildcards -f - '*control'","r")
+             else:
+-                control = os.popen("tar xfzO "+fn+" '*control.tar.gz' | tar xfzO - '*control'","r")
++                control = os.popen("tar xzO --wildcards -f "+fn+" '*control.tar.gz' | tar xzO --wildcards -f - '*control'","r")
+             line = control.readline()
+             while 1:
+                 if not line: break
+@@ -122,7 +122,7 @@
+             if self.isdeb:
+                 data = os.popen("ar p "+fn+" data.tar.gz | tar tfz -","r")
+             else:
+-                data = os.popen("tar xfzO "+fn+" '*data.tar.gz' | tar tfz -","r")
++                data = os.popen("tar xzO --wildcards -f "+fn+" '*data.tar.gz' | tar tfz -","r")
+             while 1:
+                 line = data.readline()
+                 if not line: break

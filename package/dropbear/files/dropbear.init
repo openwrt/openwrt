@@ -1,0 +1,23 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+start() {
+	for type in rsa dss; do {
+	  # check for keys
+	  key=/etc/dropbear/dropbear_${type}_host_key
+	  [ ! -f $key ] && {
+	    # generate missing keys
+	    mkdir -p /etc/dropbear
+	    [ -x /usr/bin/dropbearkey ] && {
+	      /usr/bin/dropbearkey -t $type -f $key 2>&- >&- && exec $0 $*
+	    } &
+	    exit 0
+	  }
+	}; done
+	
+	/usr/sbin/dropbear
+}
+
+stop() {
+	killall dropbear
+}

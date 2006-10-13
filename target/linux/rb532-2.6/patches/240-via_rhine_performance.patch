@@ -1,0 +1,461 @@
+diff -urN linux.old/drivers/net/via-rhine.c linux.dev/drivers/net/via-rhine.c
+--- linux.old/drivers/net/via-rhine.c	2006-06-08 20:21:20.000000000 +0200
++++ linux.dev/drivers/net/via-rhine.c	2006-06-08 20:19:40.000000000 +0200
+@@ -131,6 +131,10 @@
+ 	- Fix Tx engine race for good
+ 	- Craig Brind: Zero padded aligned buffers for short packets.
+ 
++	OpenWrt Version (Felix Fietkau <nbd@openwrt.org>)
++	- Performance improvements
++	- NAPI polling
++
+ */
+ 
+ #define DRV_NAME	"via-rhine"
+@@ -142,7 +146,6 @@
+    These may be modified when a driver module is loaded. */
+ 
+ static int debug = 1;	/* 1 normal messages, 0 quiet .. 7 verbose. */
+-static int max_interrupt_work = 20;
+ 
+ /* Set the copy breakpoint for the copy-only-tiny-frames scheme.
+    Setting to > 1518 effectively disables this feature. */
+@@ -165,9 +168,9 @@
+    Making the Tx ring too large decreases the effectiveness of channel
+    bonding and packet priority.
+    There are no ill effects from too-large receive rings. */
+-#define TX_RING_SIZE	16
+-#define TX_QUEUE_LEN	10	/* Limit ring entries actually used. */
+-#define RX_RING_SIZE	16
++#define TX_RING_SIZE	128
++#define TX_QUEUE_LEN	120	/* Limit ring entries actually used. */
++#define RX_RING_SIZE	128
+ 
+ 
+ /* Operational parameters that usually are not changed. */
+@@ -201,6 +204,7 @@
+ #include <asm/io.h>
+ #include <asm/irq.h>
+ #include <asm/uaccess.h>
++#include <asm/unaligned.h>
+ 
+ /* These identify the driver base version and may not be removed. */
+ static char version[] __devinitdata =
+@@ -217,10 +221,8 @@
+ MODULE_DESCRIPTION("VIA Rhine PCI Fast Ethernet driver");
+ MODULE_LICENSE("GPL");
+ 
+-module_param(max_interrupt_work, int, 0);
+ module_param(debug, int, 0);
+ module_param(rx_copybreak, int, 0);
+-MODULE_PARM_DESC(max_interrupt_work, "VIA Rhine maximum events handled per interrupt");
+ MODULE_PARM_DESC(debug, "VIA Rhine debug level (0-7)");
+ MODULE_PARM_DESC(rx_copybreak, "VIA Rhine copy breakpoint for copy-only-tiny-frames");
+ 
+@@ -461,6 +463,8 @@
+ 	struct tx_desc *tx_ring;
+ 	dma_addr_t rx_ring_dma;
+ 	dma_addr_t tx_ring_dma;
++	u32 istat;
++	u32 imask;
+ 
+ 	/* The addresses of receive-in-place skbuffs. */
+ 	struct sk_buff *rx_skbuff[RX_RING_SIZE];
+@@ -504,9 +508,10 @@
+ static void rhine_check_media_task(struct net_device *dev);
+ static int  rhine_start_tx(struct sk_buff *skb, struct net_device *dev);
+ static irqreturn_t rhine_interrupt(int irq, void *dev_instance, struct pt_regs *regs);
+-static void rhine_tx(struct net_device *dev);
+-static void rhine_rx(struct net_device *dev);
+-static void rhine_error(struct net_device *dev, int intr_status);
++static int rhine_poll(struct net_device *dev, int *budget);
++static int rhine_tx(struct net_device *dev);
++static int rhine_rx(struct net_device *dev);
++static void rhine_error(struct net_device *dev);
+ static void rhine_set_rx_mode(struct net_device *dev);
+ static struct net_device_stats *rhine_get_stats(struct net_device *dev);
+ static int netdev_ioctl(struct net_device *dev, struct ifreq *rq, int cmd);
+@@ -601,6 +606,8 @@
+ 	struct rhine_private *rp = netdev_priv(dev);
+ 	void __iomem *ioaddr = rp->base;
+ 
++	pci_enable_device(rp->pdev);
++
+ 	iowrite8(Cmd1Reset, ioaddr + ChipCmd1);
+ 	IOSYNC;
+ 
+@@ -622,6 +629,28 @@
+ 			"failed" : "succeeded");
+ }
+ 
++static inline void rhine_intr_enable(struct net_device *dev)
++{
++	struct rhine_private *rp = netdev_priv(dev);
++	void __iomem *ioaddr = rp->base;
++
++	iowrite16(rp->imask = (IntrRxDone | IntrRxErr | IntrRxEmpty| IntrRxOverflow |
++	       IntrRxDropped | IntrRxNoBuf | IntrTxAborted |
++	       IntrTxDone | IntrTxError | IntrTxUnderrun |
++	       IntrPCIErr | IntrStatsMax | IntrLinkChange),
++	       ioaddr + IntrEnable);
++}
++
++static inline void rhine_intr_disable(struct net_device *dev)
++{
++	struct rhine_private *rp = netdev_priv(dev);
++	void __iomem *ioaddr = rp->base;
++
++	iowrite16(rp->imask = (IntrRxOverflow | IntrRxNoBuf | IntrTxAborted |
++	       IntrTxError | IntrTxUnderrun | IntrPCIErr | IntrStatsMax | IntrLinkChange),
++	       ioaddr + IntrEnable);
++}
++
+ #ifdef USE_MMIO
+ static void enable_mmio(long pioaddr, u32 quirks)
+ {
+@@ -664,14 +693,26 @@
+ 
+ }
+ 
+-#ifdef CONFIG_NET_POLL_CONTROLLER
+-static void rhine_poll(struct net_device *dev)
++static int rhine_poll(struct net_device *dev, int *budget)
+ {
+-	disable_irq(dev->irq);
+-	rhine_interrupt(dev->irq, (void *)dev, NULL);
+-	enable_irq(dev->irq);
++	unsigned int work_done, work_to_do = min(*budget, dev->quota);
++	struct rhine_private *rp = netdev_priv(dev);
++
++	work_done = rhine_rx(dev);
++
++	if (rp->istat & (IntrTxErrSummary | IntrTxDone))
++		rhine_tx(dev);
++	
++	*budget -= work_done;
++	dev->quota -= work_done;
++
++	if (work_done < work_to_do) {
++		netif_rx_complete(dev);
++		rhine_intr_enable(dev);
++	}
++
++	return (work_done >= work_to_do);
+ }
+-#endif
+ 
+ static void rhine_hw_init(struct net_device *dev, long pioaddr)
+ {
+@@ -850,11 +891,10 @@
+ 	dev->ethtool_ops = &netdev_ethtool_ops;
+ 	dev->tx_timeout = rhine_tx_timeout;
+ 	dev->watchdog_timeo = TX_TIMEOUT;
+-#ifdef CONFIG_NET_POLL_CONTROLLER
+-	dev->poll_controller = rhine_poll;
+-#endif
+-	if (rp->quirks & rqRhineI)
+-		dev->features |= NETIF_F_SG|NETIF_F_HW_CSUM;
++	dev->poll = rhine_poll;
++	dev->weight = 64;
++
++	dev->features |= NETIF_F_SG | NETIF_F_HW_CSUM;
+ 
+ 	INIT_WORK(&rp->tx_timeout_task,
+ 		  (void (*)(void *))rhine_tx_timeout_task, dev);
+@@ -904,6 +944,10 @@
+ 		}
+ 	}
+ 	rp->mii_if.phy_id = phy_id;
++	
++	// shut down until somebody really needs it
++	iowrite8(0x80, ioaddr + 0xa1);
++	pci_set_power_state(rp->pdev, 3);
+ 
+ 	return 0;
+ 
+@@ -995,7 +1039,7 @@
+ 
+ 	/* Fill in the Rx buffers.  Handle allocation failure gracefully. */
+ 	for (i = 0; i < RX_RING_SIZE; i++) {
+-		struct sk_buff *skb = dev_alloc_skb(rp->rx_buf_sz);
++		struct sk_buff *skb = dev_alloc_skb(rp->rx_buf_sz + 4);
+ 		rp->rx_skbuff[i] = skb;
+ 		if (skb == NULL)
+ 			break;
+@@ -1115,11 +1159,7 @@
+ 	rhine_set_rx_mode(dev);
+ 
+ 	/* Enable interrupts by setting the interrupt mask. */
+-	iowrite16(IntrRxDone | IntrRxErr | IntrRxEmpty| IntrRxOverflow |
+-	       IntrRxDropped | IntrRxNoBuf | IntrTxAborted |
+-	       IntrTxDone | IntrTxError | IntrTxUnderrun |
+-	       IntrPCIErr | IntrStatsMax | IntrLinkChange,
+-	       ioaddr + IntrEnable);
++	rhine_intr_enable(dev);
+ 
+ 	iowrite16(CmdStart | CmdTxOn | CmdRxOn | (Cmd1NoTxPoll << 8),
+ 	       ioaddr + ChipCmd);
+@@ -1230,6 +1270,7 @@
+ 		       mdio_read(dev, rp->mii_if.phy_id, MII_BMSR));
+ 
+ 	netif_start_queue(dev);
++	netif_poll_enable(dev);
+ 
+ 	return 0;
+ }
+@@ -1268,8 +1309,8 @@
+ 	/* Reinitialize the hardware. */
+ 	rhine_chip_reset(dev);
+ 	init_registers(dev);
+-
+ 	spin_unlock(&rp->lock);
++
+ 	enable_irq(rp->pdev->irq);
+ 
+ 	dev->trans_start = jiffies;
+@@ -1363,69 +1404,56 @@
+ 	struct net_device *dev = dev_instance;
+ 	struct rhine_private *rp = netdev_priv(dev);
+ 	void __iomem *ioaddr = rp->base;
+-	u32 intr_status;
+-	int boguscnt = max_interrupt_work;
+ 	int handled = 0;
+ 
+-	while ((intr_status = get_intr_status(dev))) {
++	if ((rp->istat = (get_intr_status(dev) & rp->imask))) {
+ 		handled = 1;
+ 
+ 		/* Acknowledge all of the current interrupt sources ASAP. */
+-		if (intr_status & IntrTxDescRace)
++		if (rp->istat & IntrTxDescRace)
+ 			iowrite8(0x08, ioaddr + IntrStatus2);
+-		iowrite16(intr_status & 0xffff, ioaddr + IntrStatus);
++		iowrite16(rp->istat & 0xffff, ioaddr + IntrStatus);
+ 		IOSYNC;
+ 
+-		if (debug > 4)
+-			printk(KERN_DEBUG "%s: Interrupt, status %8.8x.\n",
+-			       dev->name, intr_status);
++		if (likely(rp->istat & ((IntrRxDone | IntrRxErr | IntrRxDropped |
++				IntrRxWakeUp | IntrRxEmpty | IntrRxNoBuf | 
++				IntrTxErrSummary | IntrTxDone)))) {
++				
++			rhine_intr_disable(dev);
+ 
+-		if (intr_status & (IntrRxDone | IntrRxErr | IntrRxDropped |
+-		    IntrRxWakeUp | IntrRxEmpty | IntrRxNoBuf))
+-			rhine_rx(dev);
+-
+-		if (intr_status & (IntrTxErrSummary | IntrTxDone)) {
+-			if (intr_status & IntrTxErrSummary) {
+-				/* Avoid scavenging before Tx engine turned off */
+-				RHINE_WAIT_FOR(!(ioread8(ioaddr+ChipCmd) & CmdTxOn));
+-				if (debug > 2 &&
+-				    ioread8(ioaddr+ChipCmd) & CmdTxOn)
+-					printk(KERN_WARNING "%s: "
+-					       "rhine_interrupt() Tx engine"
+-					       "still on.\n", dev->name);
+-			}
+-			rhine_tx(dev);
++			if (likely(netif_rx_schedule_prep(dev)))
++				__netif_rx_schedule(dev);
+ 		}
+ 
+ 		/* Abnormal error summary/uncommon events handlers. */
+-		if (intr_status & (IntrPCIErr | IntrLinkChange |
++		if (unlikely(rp->istat & (IntrPCIErr | IntrLinkChange |
+ 				   IntrStatsMax | IntrTxError | IntrTxAborted |
+-				   IntrTxUnderrun | IntrTxDescRace))
+-			rhine_error(dev, intr_status);
+-
+-		if (--boguscnt < 0) {
+-			printk(KERN_WARNING "%s: Too much work at interrupt, "
+-			       "status=%#8.8x.\n",
+-			       dev->name, intr_status);
+-			break;
+-		}
++				   IntrTxUnderrun | IntrTxDescRace)))
++			rhine_error(dev);
+ 	}
+ 
+-	if (debug > 3)
+-		printk(KERN_DEBUG "%s: exiting interrupt, status=%8.8x.\n",
+-		       dev->name, ioread16(ioaddr + IntrStatus));
+ 	return IRQ_RETVAL(handled);
+ }
+ 
+ /* This routine is logically part of the interrupt handler, but isolated
+    for clarity. */
+-static void rhine_tx(struct net_device *dev)
++static int rhine_tx(struct net_device *dev)
+ {
+ 	struct rhine_private *rp = netdev_priv(dev);
+ 	int txstatus = 0, entry = rp->dirty_tx % TX_RING_SIZE;
++	void __iomem *ioaddr = rp->base;
++	int done = 0;
+ 
+-	spin_lock(&rp->lock);
++	/* Avoid scavenging before Tx engine turned off */
++	RHINE_WAIT_FOR(!(ioread8(ioaddr+ChipCmd) & CmdTxOn));
++	if (debug > 2 &&
++		ioread8(ioaddr+ChipCmd) & CmdTxOn)
++		printk(KERN_WARNING "%s: "
++			   "rhine_interrupt() Tx engine"
++			   "still on.\n", dev->name);
+ 
++
++	spin_lock_irq(&rp->lock);
+ 	/* find and cleanup dirty tx descriptors */
+ 	while (rp->dirty_tx != rp->cur_tx) {
+ 		txstatus = le32_to_cpu(rp->tx_ring[entry].tx_status);
+@@ -1462,6 +1490,7 @@
+ 				       txstatus & 0xF);
+ 			rp->stats.tx_bytes += rp->tx_skbuff[entry]->len;
+ 			rp->stats.tx_packets++;
++			done++;
+ 		}
+ 		/* Free the original skb. */
+ 		if (rp->tx_skbuff_dma[entry]) {
+@@ -1470,23 +1499,25 @@
+ 					 rp->tx_skbuff[entry]->len,
+ 					 PCI_DMA_TODEVICE);
+ 		}
+-		dev_kfree_skb_irq(rp->tx_skbuff[entry]);
++		dev_kfree_skb_any(rp->tx_skbuff[entry]);
+ 		rp->tx_skbuff[entry] = NULL;
+ 		entry = (++rp->dirty_tx) % TX_RING_SIZE;
+ 	}
++	spin_unlock_irq(&rp->lock);
++
+ 	if ((rp->cur_tx - rp->dirty_tx) < TX_QUEUE_LEN - 4)
+ 		netif_wake_queue(dev);
+ 
+-	spin_unlock(&rp->lock);
++	return done;
+ }
+ 
+ /* This routine is logically part of the interrupt handler, but isolated
+    for clarity and better register allocation. */
+-static void rhine_rx(struct net_device *dev)
++static int rhine_rx(struct net_device *dev)
+ {
+ 	struct rhine_private *rp = netdev_priv(dev);
+ 	int entry = rp->cur_rx % RX_RING_SIZE;
+-	int boguscnt = rp->dirty_rx + RX_RING_SIZE - rp->cur_rx;
++	int done = 0;
+ 
+ 	if (debug > 4) {
+ 		printk(KERN_DEBUG "%s: rhine_rx(), entry %d status %8.8x.\n",
+@@ -1503,8 +1534,6 @@
+ 		if (debug > 4)
+ 			printk(KERN_DEBUG "rhine_rx() status is %8.8x.\n",
+ 			       desc_status);
+-		if (--boguscnt < 0)
+-			break;
+ 		if ((desc_status & (RxWholePkt | RxErr)) != RxWholePkt) {
+ 			if ((desc_status & RxWholePkt) != RxWholePkt) {
+ 				printk(KERN_WARNING "%s: Oversized Ethernet "
+@@ -1528,9 +1557,7 @@
+ 				if (desc_status & 0x0004) rp->stats.rx_frame_errors++;
+ 				if (desc_status & 0x0002) {
+ 					/* this can also be updated outside the interrupt handler */
+-					spin_lock(&rp->lock);
+ 					rp->stats.rx_crc_errors++;
+-					spin_unlock(&rp->lock);
+ 				}
+ 			}
+ 		} else {
+@@ -1558,6 +1585,7 @@
+ 							       rp->rx_buf_sz,
+ 							       PCI_DMA_FROMDEVICE);
+ 			} else {
++				int i;
+ 				skb = rp->rx_skbuff[entry];
+ 				if (skb == NULL) {
+ 					printk(KERN_ERR "%s: Inconsistent Rx "
+@@ -1566,6 +1594,14 @@
+ 					break;
+ 				}
+ 				rp->rx_skbuff[entry] = NULL;
++				
++				/* align the data to the ip header - should be faster than using rx_copybreak */
++				for (i = pkt_len - (pkt_len % 4); i >= 0; i -= 4) {
++					put_unaligned(*((u32 *) (skb->data + i)), (u32 *) (skb->data + i + 2));
++				}
++				skb->data += 2;
++				skb->tail += 2;
++
+ 				skb_put(skb, pkt_len);
+ 				pci_unmap_single(rp->pdev,
+ 						 rp->rx_skbuff_dma[entry],
+@@ -1573,10 +1609,11 @@
+ 						 PCI_DMA_FROMDEVICE);
+ 			}
+ 			skb->protocol = eth_type_trans(skb, dev);
+-			netif_rx(skb);
++			netif_receive_skb(skb);
+ 			dev->last_rx = jiffies;
+ 			rp->stats.rx_bytes += pkt_len;
+ 			rp->stats.rx_packets++;
++			done++;
+ 		}
+ 		entry = (++rp->cur_rx) % RX_RING_SIZE;
+ 		rp->rx_head_desc = &rp->rx_ring[entry];
+@@ -1587,7 +1624,7 @@
+ 		struct sk_buff *skb;
+ 		entry = rp->dirty_rx % RX_RING_SIZE;
+ 		if (rp->rx_skbuff[entry] == NULL) {
+-			skb = dev_alloc_skb(rp->rx_buf_sz);
++			skb = dev_alloc_skb(rp->rx_buf_sz + 4);
+ 			rp->rx_skbuff[entry] = skb;
+ 			if (skb == NULL)
+ 				break;	/* Better luck next round. */
+@@ -1600,6 +1637,8 @@
+ 		}
+ 		rp->rx_ring[entry].rx_status = cpu_to_le32(DescOwn);
+ 	}
++
++	return done;
+ }
+ 
+ /*
+@@ -1649,11 +1688,11 @@
+ 
+ }
+ 
+-static void rhine_error(struct net_device *dev, int intr_status)
++static void rhine_error(struct net_device *dev)
+ {
+ 	struct rhine_private *rp = netdev_priv(dev);
+ 	void __iomem *ioaddr = rp->base;
+-
++	u32 intr_status = rp->istat;
+ 	spin_lock(&rp->lock);
+ 
+ 	if (intr_status & IntrLinkChange)
+@@ -1898,6 +1937,7 @@
+ 
+ 	/* Disable interrupts by clearing the interrupt mask. */
+ 	iowrite16(0x0000, ioaddr + IntrEnable);
++	rp->imask = 0;
+ 
+ 	/* Stop the chip's Tx and Rx processes. */
+ 	iowrite16(CmdStop, ioaddr + ChipCmd);
+@@ -1912,6 +1952,9 @@
+ 	free_tbufs(dev);
+ 	free_ring(dev);
+ 
++	writeb(0x80, ioaddr + 0xa1);
++	pci_set_power_state(rp->pdev, 3);
++
+ 	return 0;
+ }
+ 
+@@ -1941,6 +1984,7 @@
+ 		return; /* Nothing to do for non-WOL adapters */
+ 
+ 	rhine_power_init(dev);
++	netif_poll_disable(dev);
+ 
+ 	/* Make sure we use pattern 0, 1 and not 4, 5 */
+ 	if (rp->quirks & rq6patterns)

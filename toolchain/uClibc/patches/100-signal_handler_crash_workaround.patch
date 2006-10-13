@@ -1,0 +1,13 @@
+diff -ur uClibc-0.9.28/libc/sysdeps/linux/mips/sigaction.c uClibc-0.9.28.openwrt/libc/sysdeps/linux/mips/sigaction.c
+--- uClibc-0.9.28/libc/sysdeps/linux/mips/sigaction.c	2005-08-18 00:49:44.000000000 +0200
++++ uClibc-0.9.28.openwrt/libc/sysdeps/linux/mips/sigaction.c	2005-10-20 13:19:05.000000000 +0200
+@@ -49,7 +49,8 @@
+ 	memcpy (&kact.sa_mask, &act->sa_mask, sizeof (kact.sa_mask));
+ 	kact.sa_flags = act->sa_flags;
+ 
+-	kact.sa_flags = act->sa_flags | SA_RESTORER;
++/* http://bugs.uclibc.org/view.php?id=480
++	kact.sa_flags = act->sa_flags | SA_RESTORER; */
+ #ifdef HAVE_SA_RESTORER
+ 	kact.sa_restorer = act->sa_restorer;
+ #endif

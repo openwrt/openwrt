@@ -1,0 +1,35 @@
+Status: unsubmitted
+
+This patch was for Debian bug #239535.  It needs to be tested, and
+submitted.
+
+Index: gdb-6.3/gdb/valops.c
+===================================================================
+--- gdb-6.3.orig/gdb/valops.c	2004-11-09 22:51:07.000000000 -0500
++++ gdb-6.3/gdb/valops.c	2004-11-10 00:43:54.036837699 -0500
+@@ -2314,8 +2314,10 @@ check_field_in (struct type *type, const
+ 	return 1;
+     }
+ 
++  /* Check each baseclass.  Call check_typedef, which will follow typedefs
++     and do opaque/stub type resolution.  */
+   for (i = TYPE_N_BASECLASSES (type) - 1; i >= 0; i--)
+-    if (check_field_in (TYPE_BASECLASS (type, i), name))
++    if (check_field_in (check_typedef (TYPE_BASECLASS (type, i)), name))
+       return 1;
+ 
+   return 0;
+Index: gdb-6.3/gdb/dwarf2read.c
+===================================================================
+--- gdb-6.3.orig/gdb/dwarf2read.c	2004-10-15 20:41:00.000000000 -0400
++++ gdb-6.3/gdb/dwarf2read.c	2004-11-10 00:46:21.970935829 -0500
+@@ -2099,8 +2099,8 @@ guess_structure_name (struct partial_die
+ 				    strlen (actual_class_name),
+ 				    &cu->comp_unit_obstack);
+ 		  xfree (actual_class_name);
++		  break;
+ 		}
+-	      break;
+ 	    }
+ 
+ 	  child_pdi = child_pdi->die_sibling;

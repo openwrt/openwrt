@@ -1,0 +1,44 @@
+See http://gcc.gnu.org/PR15068
+
+Fixes error
+
+../sysdeps/generic/s_fmax.c: In function `__fmax':
+../sysdeps/generic/s_fmax.c:28: internal compiler error: in elim_reg_cond, at flow.c:3257
+Please submit a full bug report,
+with preprocessed source if appropriate.
+See <URL:http://gcc.gnu.org/bugs.html> for instructions.
+make[2]: *** [/home/dank/wk/crosstool-0.28-rc35/build/arm-unknown-linux-gnu/gcc-3.4.1-glibc-20040822/build-glibc/math/s_fmax.o] Error 1
+make[2]: Leaving directory `/home/dank/wk/crosstool-0.28-rc35/build/arm-unknown-linux-gnu/gcc-3.4.1-glibc-20040822/glibc-20040822/math'
+make[1]: *** [math/others] Error 2
+make[1]: Leaving directory `/home/dank/wk/crosstool-0.28-rc35/build/arm-unknown-linux-gnu/gcc-3.4.1-glibc-20040822/glibc-20040822'
+make: *** [all] Error 2
+
+[ rediffed against gcc-3.4.1, with elbow grease, ending up with same thing as
+http://gcc.gnu.org/cgi-bin/cvsweb.cgi/gcc/gcc/flow.c.diff?cvsroot=gcc&only_with_tag=csl-arm-branch&r1=1.563.4.2&r2=1.563.4.3 ]
+
+--- gcc-3.4.1/gcc/flow.c.old	2004-02-27 19:39:19.000000000 -0800
++++ gcc-3.4.1/gcc/flow.c	2004-08-26 07:29:46.000000000 -0700
+@@ -1878,6 +1878,7 @@
+ 	  rtx set_src = SET_SRC (pc_set (BB_END (bb)));
+ 	  rtx cond_true = XEXP (set_src, 0);
+ 	  rtx reg = XEXP (cond_true, 0);
++ 	  enum rtx_code inv_cond;
+ 
+ 	  if (GET_CODE (reg) == SUBREG)
+ 	    reg = SUBREG_REG (reg);
+@@ -1886,11 +1887,13 @@
+ 	     in the form of a comparison of a register against zero.  
+ 	     If the condition is more complex than that, then it is safe
+ 	     not to record any information.  */
+-	  if (GET_CODE (reg) == REG
++ 	  inv_cond = reversed_comparison_code (cond_true, BB_END (bb));
++ 	  if (inv_cond != UNKNOWN
++	      && GET_CODE (reg) == REG
+ 	      && XEXP (cond_true, 1) == const0_rtx)
+ 	    {
+ 	      rtx cond_false
+-		= gen_rtx_fmt_ee (reverse_condition (GET_CODE (cond_true)),
++		= gen_rtx_fmt_ee (inv_cond,
+ 				  GET_MODE (cond_true), XEXP (cond_true, 0),
+ 				  XEXP (cond_true, 1));
+ 	      if (GET_CODE (XEXP (set_src, 1)) == PC)

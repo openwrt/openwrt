@@ -1,0 +1,15 @@
+--- gcc-3.4.4/gcc/config/rs6000/linux-unwind.h.org	2005-06-23 17:50:34.000000000 -0600
++++ gcc-3.4.4/gcc/config/rs6000/linux-unwind.h	2005-06-23 17:52:02.000000000 -0600
+@@ -32,6 +32,7 @@
+    these structs elsewhere;  Many fields are missing, particularly
+    from the end of the structures.  */
+ 
++#ifndef inhibit_libc
+ struct gcc_vregs
+ {
+   __attribute__ ((vector_size (16))) int vr[32];
+@@ -320,3 +321,4 @@
+ 									\
+     goto SUCCESS;							\
+   } while (0)
++#endif

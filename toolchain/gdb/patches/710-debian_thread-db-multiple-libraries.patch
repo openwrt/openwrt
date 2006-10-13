@@ -1,0 +1,593 @@
+Support loading two libthread_db DSOs.  In this case, the LinuxThreads
+and NPTL ones.
+
+Index: gdb-6.3/gdb/thread-db.c
+===================================================================
+--- gdb-6.3.orig/gdb/thread-db.c	2004-11-10 10:46:24.000000000 -0500
++++ gdb-6.3/gdb/thread-db.c	2004-11-10 11:22:34.858812426 -0500
+@@ -79,53 +79,63 @@ static td_thragent_t *thread_agent;
+ 
+ /* Pointers to the libthread_db functions.  */
+ 
+-static td_err_e (*td_init_p) (void);
++struct thread_db_pointers
++{
++  const char *filename;
++
++  td_err_e (*td_init_p) (void);
+ 
+-static td_err_e (*td_ta_new_p) (struct ps_prochandle * ps,
+-				td_thragent_t **ta);
+-static td_err_e (*td_ta_map_id2thr_p) (const td_thragent_t *ta, thread_t pt,
+-				       td_thrhandle_t *__th);
+-static td_err_e (*td_ta_map_lwp2thr_p) (const td_thragent_t *ta,
+-					lwpid_t lwpid, td_thrhandle_t *th);
+-static td_err_e (*td_ta_thr_iter_p) (const td_thragent_t *ta,
+-				     td_thr_iter_f *callback, void *cbdata_p,
+-				     td_thr_state_e state, int ti_pri,
+-				     sigset_t *ti_sigmask_p,
+-				     unsigned int ti_user_flags);
+-static td_err_e (*td_ta_event_addr_p) (const td_thragent_t *ta,
+-				       td_event_e event, td_notify_t *ptr);
+-static td_err_e (*td_ta_set_event_p) (const td_thragent_t *ta,
+-				      td_thr_events_t *event);
+-static td_err_e (*td_ta_event_getmsg_p) (const td_thragent_t *ta,
+-					 td_event_msg_t *msg);
+-
+-static td_err_e (*td_thr_validate_p) (const td_thrhandle_t *th);
+-static td_err_e (*td_thr_get_info_p) (const td_thrhandle_t *th,
+-				      td_thrinfo_t *infop);
+-static td_err_e (*td_thr_getfpregs_p) (const td_thrhandle_t *th,
+-				       gdb_prfpregset_t *regset);
+-static td_err_e (*td_thr_getgregs_p) (const td_thrhandle_t *th,
+-				      prgregset_t gregs);
+-static td_err_e (*td_thr_setfpregs_p) (const td_thrhandle_t *th,
+-				       const gdb_prfpregset_t *fpregs);
+-static td_err_e (*td_thr_setgregs_p) (const td_thrhandle_t *th,
+-				      prgregset_t gregs);
+-static td_err_e (*td_thr_event_enable_p) (const td_thrhandle_t *th,
+-					  int event);
+-
+-static td_err_e (*td_thr_tls_get_addr_p) (const td_thrhandle_t *th,
+-					  void *map_address,
+-					  size_t offset, void **address);
++  td_err_e (*td_ta_new_p) (struct ps_prochandle * ps,
++			   td_thragent_t **ta);
++  td_err_e (*td_ta_map_id2thr_p) (const td_thragent_t *ta, thread_t pt,
++				  td_thrhandle_t *__th);
++  td_err_e (*td_ta_map_lwp2thr_p) (const td_thragent_t *ta,
++				   lwpid_t lwpid, td_thrhandle_t *th);
++
++  td_err_e (*td_ta_thr_iter_p) (const td_thragent_t *ta,
++				td_thr_iter_f *callback, void *cbdata_p,
++				td_thr_state_e state, int ti_pri,
++				sigset_t *ti_sigmask_p,
++				unsigned int ti_user_flags);
++  td_err_e (*td_ta_event_addr_p) (const td_thragent_t *ta,
++				  td_event_e event, td_notify_t *ptr);
++  td_err_e (*td_ta_set_event_p) (const td_thragent_t *ta,
++				 td_thr_events_t *event);
++  td_err_e (*td_ta_event_getmsg_p) (const td_thragent_t *ta,
++				    td_event_msg_t *msg);
++
++  td_err_e (*td_thr_validate_p) (const td_thrhandle_t *th);
++  td_err_e (*td_thr_get_info_p) (const td_thrhandle_t *th,
++				 td_thrinfo_t *infop);
++  td_err_e (*td_thr_getfpregs_p) (const td_thrhandle_t *th,
++				  gdb_prfpregset_t *regset);
++  td_err_e (*td_thr_getgregs_p) (const td_thrhandle_t *th,
++				 prgregset_t gregs);
++  td_err_e (*td_thr_setfpregs_p) (const td_thrhandle_t *th,
++				  const gdb_prfpregset_t *fpregs);
++  td_err_e (*td_thr_setgregs_p) (const td_thrhandle_t *th,
++				 prgregset_t gregs);
++  td_err_e (*td_thr_event_enable_p) (const td_thrhandle_t *th,
++				     int event);
++
++  td_err_e (*td_thr_tls_get_addr_p) (const td_thrhandle_t *th,
++				     void *map_address,
++				     size_t offset, void **address);
++
++  struct thread_db_pointers *next;
++};
+ 
+ /* Location of the thread creation event breakpoint.  The code at this
+    location in the child process will be called by the pthread library
+    whenever a new thread is created.  By setting a special breakpoint
+    at this location, GDB can detect when a new thread is created.  We
+    obtain this location via the td_ta_event_addr call.  */
+-static CORE_ADDR td_create_bp_addr;
++CORE_ADDR td_create_bp_addr;
+ 
+ /* Location of the thread death event breakpoint.  */
+-static CORE_ADDR td_death_bp_addr;
++CORE_ADDR td_death_bp_addr;
++
++static struct thread_db_pointers *current_pointers, *all_pointers;
+ 
+ /* Prototypes for local functions.  */
+ static void thread_db_find_new_threads (void);
+@@ -262,7 +272,7 @@ thread_get_info_callback (const td_thrha
+   struct thread_info *thread_info;
+   ptid_t thread_ptid;
+ 
+-  err = td_thr_get_info_p (thp, &ti);
++  err = current_pointers->td_thr_get_info_p (thp, &ti);
+   if (err != TD_OK)
+     error ("thread_get_info_callback: cannot get thread info: %s",
+ 	   thread_db_err_str (err));
+@@ -316,8 +326,9 @@ thread_db_map_id2thr (struct thread_info
+   if (thread_info->private->th_valid)
+     return;
+ 
+-  err = td_ta_map_id2thr_p (thread_agent, GET_THREAD (thread_info->ptid),
+-			    &thread_info->private->th);
++  err = current_pointers->td_ta_map_id2thr_p (thread_agent,
++					      GET_THREAD (thread_info->ptid),
++					      &thread_info->private->th);
+   if (err != TD_OK)
+     {
+       if (fatal)
+@@ -340,8 +351,8 @@ thread_db_get_info (struct thread_info *
+   if (!thread_info->private->th_valid)
+     thread_db_map_id2thr (thread_info, 1);
+ 
+-  err =
+-    td_thr_get_info_p (&thread_info->private->th, &thread_info->private->ti);
++  err = current_pointers->td_thr_get_info_p (&thread_info->private->th,
++					     &thread_info->private->ti);
+   if (err != TD_OK)
+     error ("thread_db_get_info: cannot get thread info: %s",
+ 	   thread_db_err_str (err));
+@@ -365,7 +376,8 @@ thread_from_lwp (ptid_t ptid)
+ 
+   gdb_assert (is_lwp (ptid));
+ 
+-  err = td_ta_map_lwp2thr_p (thread_agent, GET_LWP (ptid), &th);
++  err = current_pointers->td_ta_map_lwp2thr_p (thread_agent, GET_LWP (ptid),
++					       &th);
+   if (err != TD_OK)
+     error ("Cannot find user-level thread for LWP %ld: %s",
+ 	   GET_LWP (ptid), thread_db_err_str (err));
+@@ -420,85 +432,102 @@ verbose_dlsym (void *handle, const char 
+   return sym;
+ }
+ 
+-static int
+-thread_db_load (void)
++static struct thread_db_pointers *
++thread_db_load (const char *name)
+ {
++  struct thread_db_pointers *ptrs;
++  Dl_info info;
+   void *handle;
+   td_err_e err;
+ 
+-  handle = dlopen (LIBTHREAD_DB_SO, RTLD_NOW);
++  ptrs = xcalloc (1, sizeof (struct thread_db_pointers));
++
++  handle = dlopen (name, RTLD_NOW);
+   if (handle == NULL)
+     {
+-      fprintf_filtered (gdb_stderr, "\n\ndlopen failed on '%s' - %s\n",
+-			LIBTHREAD_DB_SO, dlerror ());
+-      fprintf_filtered (gdb_stderr,
+-			"GDB will not be able to debug pthreads.\n\n");
++      if (all_pointers == NULL)
++	{
++	  fprintf_filtered (gdb_stderr, "\n\ndlopen failed on '%s' - %s\n",
++			    name, dlerror ());
++	  fprintf_filtered (gdb_stderr,
++			    "GDB will not be able to debug pthreads.\n\n");
++	}
+       return 0;
+     }
+ 
+   /* Initialize pointers to the dynamic library functions we will use.
+      Essential functions first.  */
+ 
+-  td_init_p = verbose_dlsym (handle, "td_init");
+-  if (td_init_p == NULL)
++  ptrs->td_init_p = verbose_dlsym (handle, "td_init");
++  if (ptrs->td_init_p == NULL)
+     return 0;
+ 
+-  td_ta_new_p = verbose_dlsym (handle, "td_ta_new");
+-  if (td_ta_new_p == NULL)
++  ptrs->td_ta_new_p = verbose_dlsym (handle, "td_ta_new");
++  if (ptrs->td_ta_new_p == NULL)
+     return 0;
+ 
+-  td_ta_map_id2thr_p = verbose_dlsym (handle, "td_ta_map_id2thr");
+-  if (td_ta_map_id2thr_p == NULL)
++  ptrs->td_ta_map_id2thr_p = verbose_dlsym (handle, "td_ta_map_id2thr");
++  if (ptrs->td_ta_map_id2thr_p == NULL)
+     return 0;
+ 
+-  td_ta_map_lwp2thr_p = verbose_dlsym (handle, "td_ta_map_lwp2thr");
+-  if (td_ta_map_lwp2thr_p == NULL)
++  ptrs->td_ta_map_lwp2thr_p = verbose_dlsym (handle, "td_ta_map_lwp2thr");
++  if (ptrs->td_ta_map_lwp2thr_p == NULL)
+     return 0;
+ 
+-  td_ta_thr_iter_p = verbose_dlsym (handle, "td_ta_thr_iter");
+-  if (td_ta_thr_iter_p == NULL)
++  ptrs->td_ta_thr_iter_p = verbose_dlsym (handle, "td_ta_thr_iter");
++  if (ptrs->td_ta_thr_iter_p == NULL)
+     return 0;
+ 
+-  td_thr_validate_p = verbose_dlsym (handle, "td_thr_validate");
+-  if (td_thr_validate_p == NULL)
++  ptrs->td_thr_validate_p = verbose_dlsym (handle, "td_thr_validate");
++  if (ptrs->td_thr_validate_p == NULL)
+     return 0;
+ 
+-  td_thr_get_info_p = verbose_dlsym (handle, "td_thr_get_info");
+-  if (td_thr_get_info_p == NULL)
++  ptrs->td_thr_get_info_p = verbose_dlsym (handle, "td_thr_get_info");
++  if (ptrs->td_thr_get_info_p == NULL)
+     return 0;
+ 
+-  td_thr_getfpregs_p = verbose_dlsym (handle, "td_thr_getfpregs");
+-  if (td_thr_getfpregs_p == NULL)
++  ptrs->td_thr_getfpregs_p = verbose_dlsym (handle, "td_thr_getfpregs");
++  if (ptrs->td_thr_getfpregs_p == NULL)
+     return 0;
+ 
+-  td_thr_getgregs_p = verbose_dlsym (handle, "td_thr_getgregs");
+-  if (td_thr_getgregs_p == NULL)
++  ptrs->td_thr_getgregs_p = verbose_dlsym (handle, "td_thr_getgregs");
++  if (ptrs->td_thr_getgregs_p == NULL)
+     return 0;
+ 
+-  td_thr_setfpregs_p = verbose_dlsym (handle, "td_thr_setfpregs");
+-  if (td_thr_setfpregs_p == NULL)
++  ptrs->td_thr_setfpregs_p = verbose_dlsym (handle, "td_thr_setfpregs");
++  if (ptrs->td_thr_setfpregs_p == NULL)
+     return 0;
+ 
+-  td_thr_setgregs_p = verbose_dlsym (handle, "td_thr_setgregs");
+-  if (td_thr_setgregs_p == NULL)
++  ptrs->td_thr_setgregs_p = verbose_dlsym (handle, "td_thr_setgregs");
++  if (ptrs->td_thr_setgregs_p == NULL)
+     return 0;
+ 
+   /* Initialize the library.  */
+-  err = td_init_p ();
++  err = ptrs->td_init_p ();
+   if (err != TD_OK)
+     {
+       warning ("Cannot initialize libthread_db: %s", thread_db_err_str (err));
++      xfree (ptrs);
+       return 0;
+     }
+ 
+   /* These are not essential.  */
+-  td_ta_event_addr_p = dlsym (handle, "td_ta_event_addr");
+-  td_ta_set_event_p = dlsym (handle, "td_ta_set_event");
+-  td_ta_event_getmsg_p = dlsym (handle, "td_ta_event_getmsg");
+-  td_thr_event_enable_p = dlsym (handle, "td_thr_event_enable");
+-  td_thr_tls_get_addr_p = dlsym (handle, "td_thr_tls_get_addr");
++  ptrs->td_ta_event_addr_p = dlsym (handle, "td_ta_event_addr");
++  ptrs->td_ta_set_event_p = dlsym (handle, "td_ta_set_event");
++  ptrs->td_ta_event_getmsg_p = dlsym (handle, "td_ta_event_getmsg");
++  ptrs->td_thr_event_enable_p = dlsym (handle, "td_thr_event_enable");
++  ptrs->td_thr_tls_get_addr_p = dlsym (handle, "td_thr_tls_get_addr");
++
++  if (dladdr (ptrs->td_ta_new_p, &info) != 0)
++    ptrs->filename = info.dli_fname;
++
++  /* Try dlinfo?  */
++
++  if (ptrs->filename == NULL)
++    /* Paranoid - don't let a NULL path slip through.  */
++    ptrs->filename = name;
+ 
+-  return 1;
++  return ptrs;
+ }
+ 
+ static td_err_e
+@@ -508,7 +537,7 @@ enable_thread_event (td_thragent_t *thre
+   td_err_e err;
+ 
+   /* Get the breakpoint address for thread EVENT.  */
+-  err = td_ta_event_addr_p (thread_agent, event, &notify);
++  err = current_pointers->td_ta_event_addr_p (thread_agent, event, &notify);
+   if (err != TD_OK)
+     return err;
+ 
+@@ -534,8 +563,10 @@ enable_thread_event_reporting (void)
+ 
+   /* We cannot use the thread event reporting facility if these
+      functions aren't available.  */
+-  if (td_ta_event_addr_p == NULL || td_ta_set_event_p == NULL
+-      || td_ta_event_getmsg_p == NULL || td_thr_event_enable_p == NULL)
++  if (current_pointers->td_ta_event_addr_p == NULL
++      || current_pointers->td_ta_set_event_p == NULL
++      || current_pointers->td_ta_event_getmsg_p == NULL
++      || current_pointers->td_thr_event_enable_p == NULL)
+     return;
+ 
+   /* Set the process wide mask saying which events we're interested in.  */
+@@ -552,7 +583,7 @@ enable_thread_event_reporting (void)
+ #endif
+     td_event_addset (&events, TD_DEATH);
+ 
+-  err = td_ta_set_event_p (thread_agent, &events);
++  err = current_pointers->td_ta_set_event_p (thread_agent, &events);
+   if (err != TD_OK)
+     {
+       warning ("Unable to set global thread event mask: %s",
+@@ -592,7 +623,7 @@ disable_thread_event_reporting (void)
+   /* Set the process wide mask saying we aren't interested in any
+      events anymore.  */
+   td_event_emptyset (&events);
+-  td_ta_set_event_p (thread_agent, &events);
++  current_pointers->td_ta_set_event_p (thread_agent, &events);
+ 
+   /* Delete thread event breakpoints, if any.  */
+   remove_thread_event_breakpoints ();
+@@ -635,7 +666,6 @@ check_thread_signals (void)
+ static void
+ check_for_thread_db (void)
+ {
+-  td_err_e err;
+   static int already_loaded;
+ 
+   /* First time through, report that libthread_db was successfuly
+@@ -644,19 +674,8 @@ check_for_thread_db (void)
+ 
+   if (!already_loaded)
+     {
+-      Dl_info info;
+-      const char *library = NULL;
+-      if (dladdr ((*td_ta_new_p), &info) != 0)
+-	library = info.dli_fname;
+-
+-      /* Try dlinfo?  */
+-
+-      if (library == NULL)
+-	/* Paranoid - don't let a NULL path slip through.  */
+-	library = LIBTHREAD_DB_SO;
+-
+       printf_unfiltered ("Using host libthread_db library \"%s\".\n",
+-			 library);
++			 all_pointers->filename);
+       already_loaded = 1;
+     }
+ 
+@@ -674,28 +693,34 @@ check_for_thread_db (void)
+   proc_handle.pid = GET_PID (inferior_ptid);
+ 
+   /* Now attempt to open a connection to the thread library.  */
+-  err = td_ta_new_p (&proc_handle, &thread_agent);
+-  switch (err)
++  for (current_pointers = all_pointers;
++       current_pointers != NULL;
++       current_pointers = current_pointers->next)
+     {
+-    case TD_NOLIBTHREAD:
+-      /* No thread library was detected.  */
+-      break;
+-
+-    case TD_OK:
+-      printf_unfiltered ("[Thread debugging using libthread_db enabled]\n");
++      td_err_e err;
++      err = current_pointers->td_ta_new_p (&proc_handle, &thread_agent);
++      switch (err)
++	{
++	case TD_NOLIBTHREAD:
++	  /* No thread library was detected.  */
++	  break;
+ 
+-      /* The thread library was detected.  Activate the thread_db target.  */
+-      push_target (&thread_db_ops);
+-      using_thread_db = 1;
++	case TD_OK:
++	  printf_unfiltered ("[Thread debugging using libthread_db enabled]\n");
+ 
+-      enable_thread_event_reporting ();
+-      thread_db_find_new_threads ();
+-      break;
++	  /* The thread library was detected.  Activate the thread_db target.  */
++	  push_target (&thread_db_ops);
++	  using_thread_db = 1;
++
++	  enable_thread_event_reporting ();
++	  thread_db_find_new_threads ();
++	  return;
+ 
+-    default:
+-      warning ("Cannot initialize thread debugging library: %s",
+-	       thread_db_err_str (err));
+-      break;
++	default:
++	  warning ("Cannot initialize thread debugging library: %s",
++		   thread_db_err_str (err));
++	  break;
++	}
+     }
+ }
+ 
+@@ -766,7 +791,7 @@ attach_thread (ptid_t ptid, const td_thr
+ #endif
+ 
+   /* Enable thread event reporting for this thread.  */
+-  err = td_thr_event_enable_p (th_p, 1);
++  err = current_pointers->td_thr_event_enable_p (th_p, 1);
+   if (err != TD_OK)
+     error ("Cannot enable thread event reporting for %s: %s",
+ 	   target_pid_to_str (ptid), thread_db_err_str (err));
+@@ -892,7 +917,7 @@ check_event (ptid_t ptid)
+ 
+   do
+     {
+-      err = td_ta_event_getmsg_p (thread_agent, &msg);
++      err = current_pointers->td_ta_event_getmsg_p (thread_agent, &msg);
+       if (err != TD_OK)
+ 	{
+ 	  if (err == TD_NOMSG)
+@@ -902,7 +927,7 @@ check_event (ptid_t ptid)
+ 		 thread_db_err_str (err));
+ 	}
+ 
+-      err = td_thr_get_info_p (msg.th_p, &ti);
++      err = current_pointers->td_thr_get_info_p (msg.th_p, &ti);
+       if (err != TD_OK)
+ 	error ("Cannot get thread info: %s", thread_db_err_str (err));
+ 
+@@ -1015,12 +1040,14 @@ thread_db_fetch_registers (int regno)
+   thread_info = find_thread_pid (inferior_ptid);
+   thread_db_map_id2thr (thread_info, 1);
+ 
+-  err = td_thr_getgregs_p (&thread_info->private->th, gregset);
++  err = current_pointers->td_thr_getgregs_p (&thread_info->private->th,
++					     gregset);
+   if (err != TD_OK)
+     error ("Cannot fetch general-purpose registers for thread %ld: %s",
+ 	   (long) GET_THREAD (inferior_ptid), thread_db_err_str (err));
+ 
+-  err = td_thr_getfpregs_p (&thread_info->private->th, &fpregset);
++  err = current_pointers->td_thr_getfpregs_p (&thread_info->private->th,
++					      &fpregset);
+   if (err != TD_OK)
+     error ("Cannot get floating-point registers for thread %ld: %s",
+ 	   (long) GET_THREAD (inferior_ptid), thread_db_err_str (err));
+@@ -1062,11 +1089,13 @@ thread_db_store_registers (int regno)
+   fill_gregset ((gdb_gregset_t *) gregset, -1);
+   fill_fpregset (&fpregset, -1);
+ 
+-  err = td_thr_setgregs_p (&thread_info->private->th, gregset);
++  err = current_pointers->td_thr_setgregs_p (&thread_info->private->th,
++					     gregset);
+   if (err != TD_OK)
+     error ("Cannot store general-purpose registers for thread %ld: %s",
+ 	   (long) GET_THREAD (inferior_ptid), thread_db_err_str (err));
+-  err = td_thr_setfpregs_p (&thread_info->private->th, &fpregset);
++  err = current_pointers->td_thr_setfpregs_p (&thread_info->private->th,
++					      &fpregset);
+   if (err != TD_OK)
+     error ("Cannot store floating-point registers  for thread %ld: %s",
+ 	   (long) GET_THREAD (inferior_ptid), thread_db_err_str (err));
+@@ -1136,15 +1165,14 @@ thread_db_thread_alive (ptid_t ptid)
+       if (!thread_info->private->th_valid)
+ 	return 0;
+ 
+-      err = td_thr_validate_p (&thread_info->private->th);
++      err = current_pointers->td_thr_validate_p (&thread_info->private->th);
+       if (err != TD_OK)
+ 	return 0;
+ 
+       if (!thread_info->private->ti_valid)
+ 	{
+-	  err =
+-	    td_thr_get_info_p (&thread_info->private->th,
+-			       &thread_info->private->ti);
++	  err = current_pointers->td_thr_get_info_p
++	    (&thread_info->private->th, &thread_info->private->ti);
+ 	  if (err != TD_OK)
+ 	    return 0;
+ 	  thread_info->private->ti_valid = 1;
+@@ -1170,7 +1198,7 @@ find_new_threads_callback (const td_thrh
+   td_err_e err;
+   ptid_t ptid;
+ 
+-  err = td_thr_get_info_p (th_p, &ti);
++  err = current_pointers->td_thr_get_info_p (th_p, &ti);
+   if (err != TD_OK)
+     error ("find_new_threads_callback: cannot get thread info: %s",
+ 	   thread_db_err_str (err));
+@@ -1192,9 +1220,10 @@ thread_db_find_new_threads (void)
+   td_err_e err;
+ 
+   /* Iterate over all user-space threads to discover new threads.  */
+-  err = td_ta_thr_iter_p (thread_agent, find_new_threads_callback, NULL,
+-			  TD_THR_ANY_STATE, TD_THR_LOWEST_PRIORITY,
+-			  TD_SIGNO_MASK, TD_THR_ANY_USER_FLAGS);
++  err = current_pointers->td_ta_thr_iter_p
++    (thread_agent, find_new_threads_callback, NULL,
++     TD_THR_ANY_STATE, TD_THR_LOWEST_PRIORITY,
++     TD_SIGNO_MASK, TD_THR_ANY_USER_FLAGS);
+   if (err != TD_OK)
+     error ("Cannot find new threads: %s", thread_db_err_str (err));
+ }
+@@ -1257,7 +1286,7 @@ thread_db_get_thread_local_address (ptid
+       struct thread_info *thread_info;
+ 
+       /* glibc doesn't provide the needed interface.  */
+-      if (!td_thr_tls_get_addr_p)
++      if (!current_pointers->td_thr_tls_get_addr_p)
+ 	error ("Cannot find thread-local variables in this thread library.");
+ 
+       /* Get the address of the link map for this objfile.  */
+@@ -1279,8 +1308,8 @@ thread_db_get_thread_local_address (ptid
+       thread_db_map_id2thr (thread_info, 1);
+ 
+       /* Finally, get the address of the variable.  */
+-      err = td_thr_tls_get_addr_p (&thread_info->private->th, (void *) lm,
+-				   offset, &address);
++      err = current_pointers->td_thr_tls_get_addr_p
++	(&thread_info->private->th, (void *) lm, offset, &address);
+ 
+ #ifdef THREAD_DB_HAS_TD_NOTALLOC
+       /* The memory hasn't been allocated, yet.  */
+@@ -1360,17 +1389,49 @@ init_thread_db_ops (void)
+ void
+ _initialize_thread_db (void)
+ {
++  struct thread_db_pointers *ptrs;
++  const char *p;
++
+   /* Only initialize the module if we can load libthread_db.  */
+-  if (thread_db_load ())
+-    {
+-      init_thread_db_ops ();
+-      add_target (&thread_db_ops);
++  ptrs = thread_db_load (LIBTHREAD_DB_SO);
++  if (ptrs == NULL)
++    return;
++
++  all_pointers = ptrs;
+ 
+-      /* Add ourselves to objfile event chain.  */
+-      target_new_objfile_chain = deprecated_target_new_objfile_hook;
+-      deprecated_target_new_objfile_hook = thread_db_new_objfile;
++  /* Some GNU/Linux systems have more than one binary-compatible copy
++     of libthread_db.  If we can find a second one, load that too.
++     The inferior may force the use of a different threading package
++     than we expect.  Our guess for the location is somewhat hokey:
++     strip out anything between /lib (or /lib64) and LIBTHREAD_DB_SO.
++     If we loaded the NPTL libthread_db by default, this may find us
++     the LinuxThreads copy.  */
++  p = strrchr (ptrs->filename, '/');
++  while (p != NULL && p > ptrs->filename)
++    {
++      const char *component;
+ 
+-      /* Register ourselves for the new inferior observer.  */
+-      observer_attach_inferior_created (check_for_thread_db_observer);
++      component = memrchr (ptrs->filename, '/', p - ptrs->filename);
++      if (component != NULL && strncmp (component, "/lib", 4) == 0)
++	{
++	  char *new_name = xmalloc (p - ptrs->filename + 2
++				    + strlen (LIBTHREAD_DB_SO));
++	  memcpy (new_name, ptrs->filename, p - ptrs->filename + 1);
++	  strcpy (new_name + (p - ptrs->filename) + 1, LIBTHREAD_DB_SO);
++	  ptrs->next = thread_db_load (new_name);
++	  xfree (new_name);
++	  break;
++	}
++      p = component;
+     }
++
++  init_thread_db_ops ();
++  add_target (&thread_db_ops);
++
++  /* Add ourselves to objfile event chain.  */
++  target_new_objfile_chain = deprecated_target_new_objfile_hook;
++  deprecated_target_new_objfile_hook = thread_db_new_objfile;
++
++  /* Register ourselves for the new inferior observer.  */
++  observer_attach_inferior_created (check_for_thread_db_observer);
+ }
