@@ -21,10 +21,9 @@ mconf-objs	:= mconf.o zconf.tab.o
 clean-files	:= lkc_defs.h qconf.moc .tmp_qtcheck \
 		   .tmp_gtkcheck zconf.tab.c lex.zconf.c zconf.hash.c
 
-all: conf mconf lxdialog
+all: conf mconf lxdialog/lxdialog
 
-.PHONY: lxdialog
-lxdialog:
+lxdialog/lxdialog:
 	$(MAKE) -C lxdialog
 
 conf: $(conf-objs)
