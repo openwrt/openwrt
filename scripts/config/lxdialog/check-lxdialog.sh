@@ -34,7 +34,7 @@ ccflags()
 	elif [ -f /usr/include/ncurses/curses.h ]; then
 		echo '-I/usr/include/ncurses -DCURSES_LOC="<ncurses/curses.h>"'
 	elif [ -f /opt/local/include/ncurses/ncurses.h ]; then
-		echo '-I/opt/local/include/ncurses -DCURSES_LOC="<ncurses/ncurses.h>"'
+		echo '-I/opt/local/include -I/opt/local/include/ncurses -DCURSES_LOC="<ncurses/ncurses.h>"'
 	elif [ -f /usr/include/ncurses.h ]; then
 		echo '-DCURSES_LOC="<ncurses.h>"'
 	else
