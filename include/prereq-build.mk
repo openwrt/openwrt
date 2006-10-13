@@ -96,6 +96,10 @@ $(eval $(call RequireCommand,perl, \
 	Please install perl. \
 ))
 
+$(eval $(call RequireCommand,wget, \
+	Please install wget. \
+))
+
 define Require/gnutar
 	$(TAR) --version 2>&1 | grep GNU > /dev/null
 endef
