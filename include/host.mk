@@ -22,10 +22,11 @@ $(TOPDIR)/.host.mk: $(INCLUDE_DIR)/host.mk
 		echo "HOST_OS:=$$HOST_OS" > $@; \
 		echo "HOST_ARCH:=$$HOST_ARCH" >> $@; \
 		echo "GNU_HOST_NAME:=$$GNU_HOST_NAME" >> $@; \
-		if tar --version 2>&1 | grep 'GNU' >/dev/null; then \
+		TAR=`which gtar`; \
+		[ -n "$$TAR" -a -x "$$TAR" ] || TAR=`which tar`; \
+		echo "TAR:=$$TAR" >> $@; \
+		if $$TAR --version 2>&1 | grep 'GNU' >/dev/null; then \
 			echo "TAR_WILDCARDS:=--wildcards" >> $@; \
 		fi; \
-		TAR=`which gtar tar | head -n 1`; \
-		echo "TAR:=$$TAR" >> $@; \
 	)
 
