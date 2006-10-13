@@ -1,0 +1,45 @@
+\documentclass[a4paper]{book}
+\usepackage[latin9]{inputenc}
+%\usepackage[T1]{fontenc}
+\usepackage{fancyvrb}
+
+\begin{document}
+
+\tableofcontents
+
+\chapter{The Router}
+\section{Getting started}
+\subsection{Installation}
+\subsection{Initial configuration}
+\subsection{Failsafe mode}
+\section{Configuring OpenWrt}
+\subsection{Network}
+\include{network}
+
+\subsection{Wireless}
+
+\section{Advanced configuration}
+\include{config}
+
+\subsection{Hotplug}
+\subsection{Init scripts}
+\subsection{Network scripts}
+\include{network-scripts}
+
+\chapter{Development issues}
+\section{The build system}
+\subsection{Building an image}
+\subsection{Integrating packages}
+\subsection{Creating packages}
+
+\section{Extra tools}
+\subsection{Image Builder}
+\subsection{SDK}
+
+\section{Adding platform support}
+\section{Debugging and debricking}
+\subsection{Adding a serial port}
+\subsection{JTAG}
+
+
+\end{document}
