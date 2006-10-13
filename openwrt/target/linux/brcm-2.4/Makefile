@@ -12,17 +12,7 @@ LINUX_KERNEL_MD5SUM:=38f4d0830e95a20f4bfed17622d5557c
 
 include ./config
 include $(INCLUDE_DIR)/kernel.mk
-
-# broadcom specific kmod packages
-$(eval $(call KMOD_template,LP,lp,\
-	$(MODULES_DIR)/kernel/drivers/parport/parport.o \
-	$(MODULES_DIR)/kernel/drivers/parport/parport_splink.o \
-	$(MODULES_DIR)/kernel/drivers/char/lp.o \
-	$(MODULES_DIR)/kernel/drivers/char/ppdev.o \
-,CONFIG_PARPORT,,50,parport parport_splink lp))
-
 include $(INCLUDE_DIR)/kernel-build.mk
-
 
 $(LINUX_DIR)/.patched: $(LINUX_DIR)/.unpacked
 	[ -d ../generic-$(KERNEL)/patches ] && $(PATCH) $(LINUX_DIR) ../generic-$(KERNEL)/patches

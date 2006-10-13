@@ -60,6 +60,24 @@ define KernelPackage/ide-pdc202xx
 endef
 $(eval $(call KernelPackage,ide-pdc202xx))
 
+
+define KernelPackage/lp
+  TITLE:=Parallel port and line printer support
+  KCONFIG:=$(CONFIG_PARPORT)
+  FILES:= \
+	$(MODULES_DIR)/kernel/drivers/parport/parport.o \
+	$(MODULES_DIR)/kernel/drivers/parport/parport_splink.o \
+	$(MODULES_DIR)/kernel/drivers/char/lp.o \
+	$(MODULES_DIR)/kernel/drivers/char/ppdev.o
+  AUTOLOAD:=$(call AutoLoad,50, \
+  	parport \
+  	parport_splink \
+  	lp \
+  )
+endef
+$(eval $(call KernelPackage,lp))
+
+
 define KernelPackage/ieee80211softmac
   TITLE:=802.11 Networking stack
   DESCRIPTION:=\\\
