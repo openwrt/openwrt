@@ -18,8 +18,17 @@ my $ok;
 
 @ARGV > 0 or die "Syntax: $0 <target dir> <filename> <md5sum> <mirror> [<mirror> ...]\n";
 
-my $md5cmd = `which md5sum`;
-$md5cmd or $md5cmd = `which md5`;
+sub which($) {
+	my $prog = shift;
+	my $res = `which $prog`;
+	$res or return undef;
+	$res =~ /^no / and return undef;
+	$res =~ /not found/ and return undef;
+	return $res;
+}
+
+my $md5cmd = which("md5sum");
+$md5cmd or $md5cmd = which("md5");
 $md5cmd or die 'no md5 checksum program found, please install md5 or md5sum';
 chomp $md5cmd;
 
