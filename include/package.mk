@@ -272,7 +272,7 @@ endef
 
 ifneq ($(strip $(PKG_UNPACK)),)
   define Build/Prepare/Default
-  	$(UNPACK)
+  	$(PKG_UNPACK)
 	@if [ -d ./patches ]; then \
 		$(PATCH) $(PKG_BUILD_DIR) ./patches; \
 	fi
