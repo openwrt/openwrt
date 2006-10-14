@@ -9,7 +9,7 @@
 include $(TOPDIR)/rules.mk
 include $(TOPDIR)/.config
 include $(TOPDIR)/.pkgdeps
-include $(TOPDIR)/host.mk
+include $(INCLUDE_DIR)/host.mk
 
 PREREQ_PACKAGES:=$(patsubst %,%-prereq,$(prereq-y) $(prereq-m))
 DOWNLOAD_PACKAGES:=$(patsubst %,%-download,$(package-y) $(package-m))
