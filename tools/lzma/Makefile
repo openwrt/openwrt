@@ -21,7 +21,7 @@ LIB_DIR=$(PKG_BUILD_DIR)/C/7zip/Compress/LZMA_Lib
 ALONE_DIR=$(PKG_BUILD_DIR)/C/7zip/Compress/LZMA_Alone
 
 define Build/Prepare
-	bzcat $(DL_DIR)/$(PKG_SOURCE) | tar -C $(PKG_BUILD_DIR)/ $(TAR_OPTIONS) -
+	bzcat $(DL_DIR)/$(PKG_SOURCE) | $(TAR) -C $(PKG_BUILD_DIR)/ $(TAR_OPTIONS)
 	$(PATCH) $(PKG_BUILD_DIR) ./patches
 endef
 
