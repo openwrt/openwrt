@@ -18,6 +18,8 @@ RELEASE:=Kamikaze
 all: world
 
 SHELL:=/usr/bin/env bash
+export LC_ALL=C
+export LANG=C
 export TOPDIR=${shell pwd}
 include $(TOPDIR)/include/verbose.mk
 
