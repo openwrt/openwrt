@@ -22,7 +22,8 @@ PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/grub-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
 
-define Build/Configure
+ifeq ($(HOST_ARCH),x86_64)
+  define Build/Configure
 	(cd $(PKG_BUILD_DIR); \
 		LDFLAGS="-static" \
 		./configure \
@@ -43,7 +44,27 @@ define Build/Configure
 		--infodir=/usr/info \
 		$(DISABLE_NLS) \
 	)
-endef
+  endef
+else
+  define Build/Configure
+	(cd $(PKG_BUILD_DIR); \
+		LDFLAGS="-static" \
+		./configure \
+		--program-prefix="" \
+		--program-suffix="" \
+		--prefix=/usr \
+		--exec-prefix=/usr \
+		--bindir=/usr/bin \
+		--sbindir=/usr/sbin \
+		--libexecdir=/usr/lib \
+		--sysconfdir=/etc \
+		--datadir=/usr/share \
+		--localstatedir=/var \
+		--mandir=/usr/man \
+		--infodir=/usr/info \
+	)
+  endef
+endif
 
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR)
