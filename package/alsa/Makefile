@@ -67,6 +67,7 @@ define Build/Compile
 		ARCH="$(LINUX_KARCH)" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
 		c_opts="$(KERNEL_C_OPTS)" \
+		CP="$(CP)" \
 		all
 endef
 
