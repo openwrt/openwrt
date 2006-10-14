@@ -25,9 +25,6 @@ $(TOPDIR)/.host.mk: $(INCLUDE_DIR)/host.mk
 		TAR=`which gtar`; \
 		[ -n "$$TAR" -a -x "$$TAR" ] || TAR=`which tar`; \
 		echo "TAR:=$$TAR" >> $@; \
-		if $$TAR --version 2>&1 | grep 'GNU' >/dev/null; then \
-			echo "TAR_WILDCARDS:=--wildcards" >> $@; \
-		fi; \
 		ZCAT=`which gzcat`; \
 		[ -n "$$ZCAT" -a -x "$$ZCAT" ] || ZCAT=`which zcat`; \
 		echo "ZCAT:=$$ZCAT" >> $@; \
