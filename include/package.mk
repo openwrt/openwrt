@@ -12,6 +12,7 @@ endif
 
 include $(INCLUDE_DIR)/prereq.mk
 include $(INCLUDE_DIR)/host.mk
+include $(INCLUDE_DIR)/unpack.mk
 
 define shvar
 V_$(subst .,_,$(subst -,_,$(subst /,_,$(1))))
@@ -269,12 +270,7 @@ define BuildPackage
   endif
 endef
 
-ifneq ($(strip $(PKG_CAT)),)
-  ifeq ($(PKG_CAT),unzip)
-    UNPACK=unzip -d $(PKG_BUILD_DIR) $(DL_DIR)/$(PKG_SOURCE)
-  else
-    UNPACK=$(PKG_CAT) $(DL_DIR)/$(PKG_SOURCE) | tar -C $(PKG_BUILD_DIR)/.. $(TAR_OPTIONS) -
-  endif
+ifneq ($(strip $(PKG_UNPACK)),)
   define Build/Prepare/Default
   	$(UNPACK)
 	@if [ -d ./patches ]; then \
