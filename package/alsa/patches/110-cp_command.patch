@@ -1,0 +1,20 @@
+diff -ur alsa.old/Makefile alsa.dev/Makefile
+--- alsa.old/Makefile	2006-10-14 07:07:48.000000000 -0700
++++ alsa.dev/Makefile	2006-10-14 07:08:45.000000000 -0700
+@@ -100,6 +100,7 @@
+ SUBDIRS  += parisc
+ endif
+ CSUBDIRS += include test utils
++CP = cp -fPR
+ 
+ KCONFIG_FILES = $(shell find $(SND_TOPDIR) -name Kconfig) $(shell find $(SND_TOPDIR)/alsa-kernel/ -name Kconfig)
+ 
+@@ -115,7 +116,7 @@
+ 	if [ ! -d include/sound -a ! -L include/sound ]; then \
+ 	  ln -sf ../alsa-kernel/include include/sound ; \
+ 	fi
+-	cp -auvf include/version.h include/sound/version.h
++	$(CP) include/version.h include/sound/version.h
+ 
+ utils/mod-deps: utils/mod-deps.c
+ 	gcc utils/mod-deps.c -o utils/mod-deps
