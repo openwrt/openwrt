@@ -2,6 +2,7 @@
 #define __endian_compat_h
 
 #if defined(__linux__)
+#include <byteswap.h>
 #include_next <endian.h>
 #elif defined(__APPLE__)
 #include <machine/endian.h>
