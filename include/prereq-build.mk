@@ -30,6 +30,16 @@ $(eval $(call Require,working-make, \
 	Please install GNU make v3.81 or later. (This version has bugs) \
 ))
 
+define Require/case-sensitive-fs
+	rm -f $(TMP_DIR)/test.*
+	touch $(TMP_DIR)/test.fs
+	[ \! -f $(TMP_DIR)/test.FS ]
+endef
+
+$(eval $(call Require,case-sensitive-fs, \
+	OpenWrt can only be built on a case-sensitive filesystem \
+))
+
 define Require/working-gcc
 	echo 'int main(int argc, char **argv) { return 0; }' | \
 		gcc -x c -o $(TMP_DIR)/a.out -
