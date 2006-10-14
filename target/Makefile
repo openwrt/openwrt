@@ -17,7 +17,6 @@ TARGETS-$(CONFIG_SDK) += sdk
 
 linux-compile: utils-install
 linux-install: $(BIN_DIR)
-sdk-compile: linux-install
 image_install: linux-install
 
 download: $(patsubst %,%-download,$(TARGETS-y))

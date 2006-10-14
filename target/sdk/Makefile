@@ -8,6 +8,7 @@
 
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
+include $(INCLUDE_DIR)/host.mk
 
 PKG_OS:=$(shell uname -s)
 PKG_CPU:=$(shell uname -m)
@@ -25,13 +26,16 @@ $(BIN_DIR)/$(SDK_NAME).tar.bz2:
 	)
 	rm -rf $(SDK_BUILD_DIR)
 	mkdir -p $(SDK_BUILD_DIR)/dl $(SDK_BUILD_DIR)/package
-	$(CP) $(STAGING_DIR) $(INCLUDE_DIR) $(SCRIPT_DIR) $(TOPDIR)/docs $(SDK_BUILD_DIR)/
+	$(CP) $(INCLUDE_DIR) $(SCRIPT_DIR) $(TOPDIR)/docs $(SDK_BUILD_DIR)/
+	$(TAR) -cf - -C $(TOPDIR) --exclude=ccache/ staging_dir_$(ARCH) | \
+		$(TAR) -xf - -C $(SDK_BUILD_DIR)
 	$(CP) $(TOPDIR)/rules.mk $(TOPDIR)/.config $(SDK_BUILD_DIR)/
 	$(CP) $(TOPDIR)/package/Makefile $(SDK_BUILD_DIR)/package/
 	$(CP) ./files/Makefile $(SDK_BUILD_DIR)/
 	$(CP) ./files/README.SDK $(SDK_BUILD_DIR)/
 	$(CP) ./files/package/rules.mk $(SDK_BUILD_DIR)/package/
 	echo OPENWRTVERSION:=$(OPENWRTVERSION) > $(SDK_BUILD_DIR)/.version.mk
+	rm -rf $(SDK_BUILD_DIR)/staging_dir*/ccache
 	find $(SDK_BUILD_DIR) -name .svn | xargs rm -rf 
 	find $(SDK_BUILD_DIR) -name CVS | xargs rm -rf 
 	(cd $(BUILD_DIR); \
