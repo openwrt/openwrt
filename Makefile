@@ -45,7 +45,7 @@ endif
 	@echo Collecting package info...
 	@-for dir in package/*/; do \
 		echo Source-Makefile: $${dir}Makefile; \
-		$(NO_TRACE_MAKE) --no-print-dir DUMP=1 -C $$dir || echo "ERROR: please fix $${dir}Makefile" >&2; \
+		$(NO_TRACE_MAKE) --no-print-dir DUMP=1 -C $$dir 3>/dev/null || echo "ERROR: please fix $${dir}Makefile" >&2; \
 	done > $@
 
 pkginfo-clean: FORCE
