@@ -6,13 +6,9 @@
 #
 
 include $(INCLUDE_DIR)/host.mk
+include $(INCLUDE_DIR)/unpack.mk
 
-ifneq ($(strip $(PKG_CAT)),)
-  ifeq ($(PKG_CAT),unzip)
-    UNPACK=unzip -d $(PKG_BUILD_DIR) $(DL_DIR)/$(PKG_SOURCE)
-  else
-    UNPACK=$(PKG_CAT) $(DL_DIR)/$(PKG_SOURCE) | tar -C $(PKG_BUILD_DIR)/.. $(TAR_OPTIONS) -
-  endif
+ifneq ($(strip $(UNPACK)),)
   define Build/Prepare/Default
   	$(UNPACK)
 	@if [ -d ./patches ]; then \

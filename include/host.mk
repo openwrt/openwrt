@@ -28,5 +28,8 @@ $(TOPDIR)/.host.mk: $(INCLUDE_DIR)/host.mk
 		if $$TAR --version 2>&1 | grep 'GNU' >/dev/null; then \
 			echo "TAR_WILDCARDS:=--wildcards" >> $@; \
 		fi; \
+		ZCAT=`which gzcat`; \
+		[ -n "$$ZCAT" -a -x "$$ZCAT" ] || ZCAT=`which zcat`; \
+		echo "ZCAT:=$$ZCAT" >> $@; \
 	)
 
