@@ -106,9 +106,9 @@ ifneq ($(CONFIG_LARGEFILE),y)
 endif
 
 ifeq ($(CONFIG_TAR_VERBOSITY),y)
-  TAR_OPTIONS=-xvf
+  TAR_OPTIONS=-xvf -
 else
-  TAR_OPTIONS=-xf
+  TAR_OPTIONS=-xf -
 endif
 
 all:

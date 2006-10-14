@@ -38,7 +38,7 @@ $(DL_DIR)/$(LINUX_SOURCE):
 
 $(LINUX_DIR)/.unpacked: $(DL_DIR)/$(LINUX_SOURCE)
 	-mkdir -p $(KERNEL_BUILD_DIR)
-	bzcat $(DL_DIR)/$(LINUX_SOURCE) | tar -C $(KERNEL_BUILD_DIR) $(TAR_OPTIONS) -
+	bzcat $(DL_DIR)/$(LINUX_SOURCE) | tar -C $(KERNEL_BUILD_DIR) $(TAR_OPTIONS)
 	touch $@
 
 ifeq ($(KERNEL),2.4)
