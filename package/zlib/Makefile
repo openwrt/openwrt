@@ -34,6 +34,7 @@ define Build/Configure
 		$(TARGET_CONFIGURE_OPTS) \
 		LDSHARED="$(TARGET_CC) -shared -Wl,-soname,libz.so.1" \
 		CFLAGS="$(TARGET_CFLAGS) $(CFLAGS_LARGEFILE)" \
+		UNAME_S="Linux" \
 		./configure \
 			--prefix=/usr \
 			--shared \
