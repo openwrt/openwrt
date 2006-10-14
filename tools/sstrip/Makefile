@@ -13,6 +13,7 @@ OS:=$(shell uname)
 ifeq ($(HOST_OS),Darwin)
   CFLAGS += -I./include
 endif
+CFLAGS += -I $(TOPDIR)/tools/include -include endian.h
 
 define Build/Compile
 	$(CC) $(CFLAGS) -o $(PKG_BUILD_DIR)/sstrip src/sstrip.c
