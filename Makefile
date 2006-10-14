@@ -22,6 +22,9 @@ export LC_ALL=C
 export LANG=C
 export TOPDIR=${shell pwd}
 include $(TOPDIR)/include/verbose.mk
+ifeq ($(KBUILD_VERBOSE),99)
+  MAKE:=3>/dev/null $(MAKE)
+endif
 
 OPENWRTVERSION:=$(RELEASE)
 ifneq ($(VERSION),)
