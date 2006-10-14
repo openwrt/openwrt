@@ -8,9 +8,9 @@
 include $(INCLUDE_DIR)/host.mk
 include $(INCLUDE_DIR)/unpack.mk
 
-ifneq ($(strip $(UNPACK)),)
+ifneq ($(strip $(PKG_UNPACK)),)
   define Build/Prepare/Default
-  	$(UNPACK)
+  	$(PKG_UNPACK)
 	@if [ -d ./patches ]; then \
 		$(PATCH) $(PKG_BUILD_DIR) ./patches; \
 	fi
