@@ -111,6 +111,7 @@ define KernelPackage/bcm43xx
 	\\\
 	Includes: \\\
 	- bcm43xx
+  DEPENDS:=kmod-ieee80211softmac
   KCONFIG:=$(CONFIG_BCM43XX)
   FILES:=$(MODULES_DIR)/kernel/drivers/net/wireless/bcm43xx/bcm43xx.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call Autoload,50,bcm43xx)
@@ -124,6 +125,7 @@ define KernelPackage/ipw2100
 	\\\
 	Includes: \\\
 	- ipw2100
+  DEPENDS:=kmod-ieee80211softmac
   KCONFIG:=$(CONFIG_IPW2100)
   FILES:=$(MODULES_DIR)/kernel/drivers/net/wireless/ipw2100.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call Autoload,50,ipw2100)
@@ -137,6 +139,7 @@ define KernelPackage/ipw2200
 	\\\
 	Includes: \\\
 	- ipw2200
+  DEPENDS:=kmod-ieee80211softmac
   KCONFIG:=$(CONFIG_IPW2200)
   FILES:=$(MODULES_DIR)/kernel/drivers/net/wireless/ipw2200.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call Autoload,50,ipw2200)
