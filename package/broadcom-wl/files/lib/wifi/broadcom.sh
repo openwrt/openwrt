@@ -103,6 +103,7 @@ disable_broadcom() {
 			}
 		done
 	)
+	true
 }
 
 enable_broadcom() {
