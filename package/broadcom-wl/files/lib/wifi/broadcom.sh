@@ -77,7 +77,6 @@ disable_broadcom() {
 	wlc down
 	(
 		include /lib/network
-		scan_interfaces
 
 		# make sure the interfaces are down and removed from all bridges
 		for dev in wl0 wl0.1 wl0.2 wl0.3; do
