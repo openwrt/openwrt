@@ -982,6 +982,7 @@ static int new_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd) {
 	return ret;
 }
 
+#ifndef DEBUG
 static struct timer_list rng_timer;
 
 static void rng_timer_tick(unsigned long n)
@@ -999,7 +1000,7 @@ static void rng_timer_tick(unsigned long n)
 
 	mod_timer(&rng_timer, jiffies + (HZ/RNG_POLL_FREQ));
 }
-
+#endif
 
 static int __init wlcompat_init()
 {
@@ -1024,12 +1025,14 @@ static int __init wlcompat_init()
 	dev->wireless_handlers = (struct iw_handler_def *)&wlcompat_handler_def;
 	dev->get_wireless_stats = wlcompat_get_wireless_stats;
 
+#ifndef DEBUG
 	if (random) {
 		init_timer(&rng_timer);
 		rng_timer.function = rng_timer_tick;
 		rng_timer.data = (unsigned long) dev;
 		rng_timer_tick((unsigned long) dev);
 	}
+#endif
 	
 #ifdef DEBUG
 	printk("broadcom driver private data: 0x%08x\n", dev->priv);
@@ -1039,8 +1042,10 @@ static int __init wlcompat_init()
 
 static void __exit wlcompat_exit()
 {
+#ifndef DEBUG
 	if (random)
 		del_timer(&rng_timer);
+#endif
 	dev->get_wireless_stats = NULL;
 	dev->wireless_handlers = NULL;
 	dev->do_ioctl = old_ioctl;
@@ -1051,6 +1056,8 @@ EXPORT_NO_SYMBOLS;
 MODULE_AUTHOR("openwrt.org");
 MODULE_LICENSE("GPL");
 
+#ifndef DEBUG
 module_param(random, int, 0);
+#endif
 module_init(wlcompat_init);
 module_exit(wlcompat_exit);
