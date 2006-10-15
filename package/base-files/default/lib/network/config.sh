@@ -70,6 +70,11 @@ setup_interface() {
 	proto="${3:-$(config_get "$config" proto)}"
 	config_get iftype "$config" type
 	
+	ifconfig "$iface" 2>/dev/null >/dev/null && {
+		# make sure the interface is removed from any existing bridge
+		unbridge "$iface"
+	}
+
 	# Setup VLAN interfaces
 	add_vlan "$iface"
 
@@ -141,3 +146,15 @@ setup_interface() {
 	esac
 }
 
+unbridge() {
+	local dev="$1"
+	local brdev
+
+	brctl show | grep "$dev" >/dev/null && {
+		# interface is still part of a bridge, correct that
+
+		for brdev in $(brctl show | awk '$2 ~ /^[0-9].*\./ { print $1 }'); do
+			brctl delif "$brdev" "$dev" 2>/dev/null >/dev/null
+		done
+	}
+}
