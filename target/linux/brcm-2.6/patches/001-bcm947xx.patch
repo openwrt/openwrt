@@ -11329,7 +11329,7 @@ diff -urN linux.old/arch/mips/bcm947xx/pci.c linux.dev/arch/mips/bcm947xx/pci.c
 +static struct resource ext_pci_io_resource = {
 +	.name   = "Ext PCI I/O resources",
 +	.start  = 0x100,
-+	.end    = 0x1FF,
++	.end    = 0x7FF,
 +	.flags  = IORESOURCE_IO,
 +};
 +
