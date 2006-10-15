@@ -1,16 +1,34 @@
 append DRIVERS "broadcom"
 
-bridge_interface() {
-	(
-		. /etc/functions.sh
-		include network
+find_vif_config() {(
+	local vif="$1"
+	local cfg
+	local ifname
+
+	config_get cfg "$vif" network
+
+	[ -z "$cfg" ] && {
+		include /lib/network
 		scan_interfaces
-		cfg="$(find_config "$1")"
-		[ -z "$cfg" ] && return 0
-		config_get iftype "$cfg" type
-		[ "$iftype" = bridge ] && config_get "$iftype" bridge
-	)
-}
+
+		config_get ifname "$vif" ifnamea
+
+		cfg="$(find_config "$ifname")"
+	}
+	[ -z "$cfg" ] && return 0
+	echo "$cfg"
+)}
+
+bridge_interface() {(
+	local cfg="$1"
+	[ -z "$cfg" ] && return 0
+
+	include /lib/network
+	scan_interfaces
+
+	config_get iftype "$cfg" type
+	[ "$iftype" = bridge ] && config_get "$iftype" ifname
+)}
 
 scan_broadcom() {
 	local device="$1"
@@ -154,8 +172,12 @@ enable_broadcom() {
 		
 		config_get ifname "$vif" ifname
 		append if_up "ifconfig $ifname up" ";$N"
+		net_cfg="$(find_vif_config "$vif")"
+		[ -z "$net_cfg" ] || {
+			bridge="$(bridge_interface "$net_cfg")"
+			append if_up "start_net '$ifname' '$net_cfg'" ";$N"
+		}
 		[ -z "$nasopts" ] || {
-			bridge="$(bridge_interface "$ifname")"
 			eval "${vif}_ssid=\"\$ssid\""
 			mode="-A"
 			[ "$vif" = "$sta_if" ] && mode="-S"
@@ -185,8 +207,8 @@ $vif_pre_up
 up
 $vif_post_up
 EOF
-	eval "$nas_cmd"
 	eval "$if_up"
+	eval "$nas_cmd"
 }
 
 
