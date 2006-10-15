@@ -98,6 +98,16 @@ config LINUX_2_6_RB532
 	select PCI_SUPPORT
 	select USES_JFFS2
 
+config LINUX_2_6_RDC
+	bool "RDC x86 [2.6]"
+	depends BROKEN
+	select i386
+	select LINUX_2_6
+	select PCI_SUPPORT
+	select USES_JFFS2
+	help
+	  Build firmware images for RDC R3203 based routers (e.g. Airlink101 AR525W)
+
 config LINUX_2_4_AR7
 	bool "TI AR7 [2.4]"
 	select mipsel

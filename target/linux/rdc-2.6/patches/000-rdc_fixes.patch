@@ -1,0 +1,861 @@
+diff -urN linux-2.6.17/arch/i386/Kconfig linux-2.6.17.new/arch/i386/Kconfig
+--- linux-2.6.17/arch/i386/Kconfig	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17.new/arch/i386/Kconfig	2006-10-07 22:33:09.000000000 +0200
+@@ -167,6 +167,14 @@
+ 	  Only choose this option if you have such a system, otherwise you
+ 	  should say N here.
+ 
++config X86_RDC
++	bool "Support for RDC 3211 boards"
++	help
++	  Support for RDC 3211 sustems. Say 'Y' here if ther kernel is 
++	  supposed to run on an IA-32 RDC R3211 system.
++	  Only choose this option if you have such as system, otherwise you
++	  should say N here.
++
+ endchoice
+ 
+ config ACPI_SRAT
+diff -urN linux-2.6.17/arch/i386/kernel/time.c linux-2.6.17.new/arch/i386/kernel/time.c
+--- linux-2.6.17/arch/i386/kernel/time.c	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17.new/arch/i386/kernel/time.c	2006-10-07 22:23:05.000000000 +0200
+@@ -479,7 +479,8 @@
+ 		return;
+ 	}
+ #endif
+-	xtime.tv_sec = get_cmos_time();
++	/* RDC board does not have CMOS */
++	xtime.tv_sec = 0;
+ 	xtime.tv_nsec = (INITIAL_JIFFIES % HZ) * (NSEC_PER_SEC / HZ);
+ 	set_normalized_timespec(&wall_to_monotonic,
+ 		-xtime.tv_sec, -xtime.tv_nsec);
+diff -urN linux-2.6.17/arch/i386/mach-rdc/led.c linux-2.6.17.new/arch/i386/mach-rdc/led.c
+--- linux-2.6.17/arch/i386/mach-rdc/led.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17.new/arch/i386/mach-rdc/led.c	2006-10-07 23:55:59.000000000 +0200
+@@ -0,0 +1,743 @@
++/*
++ * LED interface for WP3200
++ *
++ * Copyright (C) 2002, by Allen Hung
++ *
++ */
++
++#include <linux/types.h>
++#include <linux/errno.h>
++#include <linux/ioport.h>
++#include <linux/fcntl.h>
++#include <linux/sched.h>
++#include <linux/module.h>
++#include <linux/proc_fs.h>
++#include <linux/init.h>
++#include <linux/timer.h>
++#include <asm/io.h>
++#include <asm/uaccess.h>
++#include <asm/system.h>                       
++#include <linux/reboot.h>
++
++#include "led.h"
++
++#define BUF_LEN		30
++
++struct LED_DATA  {
++    char sts_buf[BUF_LEN+1];
++    unsigned long sts;
++};
++
++struct LED_DATA led_data[LED_DEV_NUM];
++// sam 
++unsigned long ul_ledstat = 0xffffffff;
++
++
++static struct timer_list blink_timer[LED_DEV_NUM];
++// sam 01-30-2004 for watchdog
++static struct timer_list watchdog;
++// end sam
++static char cmd_buf[BUF_LEN+1];
++
++//------------------------------------------------------------
++static long atoh(char *p) 
++{
++    long v = 0, c;
++    while ( (c = *p++) )  {
++        if      ( c >= '0' && c <= '9' )  v = (v << 4) + c - '0';
++        else if ( c >= 'a' && c <= 'f' )  v = (v << 4) + c - 'a' + 0xA;
++        else if ( c >= 'A' && c <= 'F' )  v = (v << 4) + c - 'A' + 0xA;
++        else  break;
++    }
++    return v;
++}
++
++static int reset_flash_default(void *data)
++{
++	char *argv[3], *envp[1] = {NULL};
++	int i = 0;
++	
++	int reset_default=(int) data;
++
++	argv[i++] = "/bin/flash";
++    argv[i++] = "default";
++	argv[i] = NULL;
++    if(reset_default)
++		if (call_usermodehelper(argv[0], argv, envp, 1))
++        	printk("failed to Reset to default\n");
++	machine_restart(0);
++	return 0;
++}
++
++// sam for ps 3205U -- using CSx1 (0xb0e00000)
++// bit map as following
++// BIT   1      2      3      4      5   
++//     POWER  WLEN   PORT1  PORT2  PORT3
++//
++// value 0 --> led on
++// value 1 --> led off
++
++#define _ROUTER_
++
++#ifdef _ROUTER_
++	#define LED_VAL         0x8000384C    // the data ofset of gpio 0~30
++#else
++	#define LED_VAL         0x80003888    // the ofset of gpio 31~58
++#endif
++#define GPIO_VAL	0x8000384C    // the offset of gpio 0-30 
++
++
++
++// sam 1-30-2004 LED status 
++// bit map as following
++// BIT 4:0  Link status   -->PHY Link ->1 = up, 0 = down
++#define LINK_STATUS     (*(unsigned long *)0xb2000014)
++#define WATCHDOG_VAL    (*(unsigned long *)0xb20000c0)
++#define WATCHDOG_PERIOD 500 // unit ms
++#define EXPIRE_TIME     300 // unit 10 ms
++#define CLEAR_TIMEER    0xffffa000l  // bit 14:0 -> count up timer, write 0 to clear
++#define ENABLE_WATCHDOG 0x80000000l  // bit 31 -> 1 enable , 0 disable watchdog
++#define WATCHDOG_SET_TMR_SHIFT 16    // bit 16:30 -> watchdog timer set
++// end sam
++
++ 
++//------------------------------------------------------------
++static void turn_led(int id, int on)
++{
++    unsigned long led_bit = 1 << (id);
++    unsigned long led_bit_val;
++
++    // since we define we have 8 led devices and use gpio 53, 55, 57, 58 
++    // which locate at bit21~26, so we  rotate left 20bit  
++	
++#ifdef _ROUTER_ 	
++    led_bit_val = led_bit;
++#else   
++    led_bit_val = led_bit << 20;
++#endif	
++	
++    switch ( on ) {
++      case 0:  
++               	ul_ledstat|=  led_bit_val;
++               	outl(LED_VAL, 0xcf8);
++               	outl(ul_ledstat, 0xcfc);	
++		break; // LED OFF
++      case 1:  
++               	ul_ledstat &= ~led_bit_val;
++               	outl(LED_VAL, 0xcf8);
++               	outl(ul_ledstat, 0xcfc);
++		break; // LED ON
++      case 2:  
++               	ul_ledstat ^=  led_bit_val;
++               	outl(LED_VAL, 0xcf8);
++               	outl(ul_ledstat, 0xcfc);
++		break; // LED inverse
++    }
++}
++
++
++static int led_flash[30]={20,10,100,5,5,150,100,5,5,50,20,50,50,20,60,5,20,10,30,10,5,10,50,2,5,5,5,70,10,50};//Erwin
++static unsigned int    wlan_counter;    //Erwin
++static void blink_wrapper(u_long id)
++{
++    u_long sts = led_data[id].sts;
++
++    if ( (sts & LED_BLINK_CMD) == LED_BLINK_CMD )  {
++	unsigned long period = sts & LED_BLINK_PERIOD;
++	if(period == 0xffff)		// BLINK random
++	{
++		blink_timer[id].expires = jiffies + 3*led_flash[wlan_counter%30]*HZ/1000;
++		wlan_counter++;
++	}
++	else
++		blink_timer[id].expires = jiffies + (period * HZ / 1000);
++	turn_led(id, 2);
++	add_timer(&blink_timer[id]);
++    }
++    else if ( sts == LED_ON || sts == LED_OFF )
++	turn_led(id, sts==LED_ON ? 1 : 0);
++}
++//------------------------------------------------------------
++static void get_token_str(char *str, char token[][21], int token_num)
++{
++    int t, i;
++
++    for ( t = 0 ; t < token_num ; t++ )  {
++    	memset(token[t], 0, 21);
++    	while ( *str == ' ' )  str++;
++    	for ( i = 0 ; str[i] ; i++ )  {
++    	    if ( str[i] == '\t' || str[i] == ' ' || str[i] == '\n' )  break;
++    	    if ( i < 20 )  token[t][i] = str[i];
++    	}
++    	str += i;
++    }
++}
++
++//------------------------------------------------------------
++static void set_led_status_by_str(int id)
++{
++    char token[3][21], *p;
++
++    
++    get_token_str(led_data[id].sts_buf, token, 3);
++	
++    if ( strcmp(token[0], "LED") ) 
++	{
++        goto set_led_off;
++	}
++    if ( !strcmp(token[1], "ON") )  
++	{
++		
++    	turn_led(id, 1);
++    	led_data[id].sts = LED_ON;
++    }
++    else if ( !strcmp(token[1], "OFF") )  
++	{
++		
++	    goto set_led_off;
++    }
++    else if ( !strcmp(token[1], "BLINK") ) 
++	{
++    	unsigned int period = 0;
++    	p = token[2];
++    	if ( !strcmp(p, "FAST") )
++    	    period = LED_BLINK_FAST & LED_BLINK_PERIOD;
++    	else if ( !strcmp(p, "SLOW") )
++    	    period = LED_BLINK_SLOW & LED_BLINK_PERIOD;
++    	else if ( !strcmp(p, "EXTRA_SLOW") )
++    	    period = LED_BLINK_EXTRA_SLOW & LED_BLINK_PERIOD;
++    	else if ( !strcmp(p, "RANDOM") )
++    	    period = LED_BLINK_RANDOM & LED_BLINK_PERIOD;
++    	else if ( !strcmp(p, "OFF") )
++	    goto set_led_off;
++	else if ( *p >= '0' && *p <= '9' )  
++	{
++    		while ( *p >= '0' && *p <= '9' )
++    	        period = period * 10 + (*p++) - '0';
++//    		if ( period > 10000 )  
++//			period = 10000;
++	}
++	else
++    		period = LED_BLINK & LED_BLINK_PERIOD;
++	
++    	if ( period == 0 )
++    	    goto set_led_off;
++		
++	sprintf(led_data[id].sts_buf, "LED BLINK %d\n", period);
++    	led_data[id].sts = LED_BLINK_CMD + period;
++    	turn_led(id, 2);
++     // Set timer for next blink
++	del_timer(&blink_timer[id]);
++        blink_timer[id].function = blink_wrapper;
++        blink_timer[id].data = id;
++        init_timer(&blink_timer[id]);
++        
++	blink_timer[id].expires = jiffies + (1000 * HZ / 1000);
++        
++	add_timer(&blink_timer[id]);
++    }
++    else
++	{
++        goto set_led_off;
++	}
++    return;
++  set_led_off:
++    strcpy(led_data[id].sts_buf, "LED OFF\n");
++    led_data[id].sts = LED_OFF;
++    turn_led(id, 0);
++}
++
++//----------------------------------------------------------------------
++static int led_read_proc(char *buf, char **start, off_t fpos, int length, int *eof, void *data)
++{
++    int len, dev;
++
++    for ( len = dev = 0 ; dev < LED_DEV_NUM ; dev++ )  {
++    	len += sprintf(buf+len, "%d: %s", dev, led_data[dev].sts_buf);
++    }
++    len = strlen(buf) - fpos;
++    if ( len <= 0 ) {
++	*start = buf;
++	*eof = 1;
++	return 0;
++    }
++    *start = buf + fpos;
++    if ( len <= length )   *eof = 1;
++    return len < length ? len : length;
++}
++
++//----------------------------------------------------------------------
++static int led_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg)
++{
++    int id = (int)file->private_data;
++
++    switch ( cmd )  {
++      case LED_ON:
++    	strcpy(led_data[id].sts_buf, "LED ON\n");
++	set_led_status_by_str(id);
++	break;
++      case LED_OFF:
++    	strcpy(led_data[id].sts_buf, "LED OFF\n");
++	set_led_status_by_str(id);
++	break;
++      default:
++        if ( (cmd & LED_BLINK_CMD) != LED_BLINK_CMD )
++		{
++	    break;
++		}
++      case LED_BLINK:
++      case LED_BLINK_FAST:
++      case LED_BLINK_SLOW:
++      case LED_BLINK_EXTRA_SLOW:
++      case LED_BLINK_RANDOM:
++        sprintf(led_data[id].sts_buf, "LED BLINK %d\n", (int)(cmd & LED_BLINK_PERIOD));
++	set_led_status_by_str(id);
++	break;
++    }
++    return 0;
++}
++
++static int led_open(struct inode *inode, struct file *file)
++{
++    int led_id = MINOR(inode->i_rdev);
++//    unsigned long led_bit = 1 << (led_id);
++
++    if ( led_id >= LED_DEV_NUM )
++        return -ENODEV;
++/* sam 12/02/2003
++    GPIO_SEL_I_O &= ~led_bit;   // 0 to GPIO
++    GPIO_O_EN |= (led_bit << 16);   // 0 to Output
++*/	
++	
++    file->private_data = (void*)led_id;
++    return 0;
++}
++
++static long led_read(struct file *file, char *buf, size_t count, loff_t *fpos)
++{
++    int  rem, len;
++    int  id = (int)file->private_data;
++    char *p = led_data[id].sts_buf;
++
++    len = strlen(p);
++    rem = len - *fpos;
++    if ( rem <= 0 )  {
++    	*fpos = len;
++    	return 0;
++    }
++    if ( rem > count )   rem = count;
++    memcpy(buf, p+(*fpos), rem);
++    *fpos += rem;
++    return rem;
++}
++
++static long led_write(struct file *file, char *buf, size_t count, loff_t *fpos)
++{
++    int  len;
++    int  id = (int)file->private_data;
++    char *p = id == REG_MINOR ? cmd_buf : led_data[id].sts_buf;
++    memset(p, 0, BUF_LEN);
++
++    p += *fpos;
++    len = 0;
++
++	
++    while ( count > 0 )  
++	{
++		
++    	if ( *fpos < BUF_LEN )  
++		{
++    	    int c = *buf++;
++            p[len] = c>='a' && c<='z' ? c-'a'+'A' : c;
++        }
++    	(*fpos)++;
++	    len++;
++    	count--;
++    }
++	// sam
++    set_led_status_by_str(id);
++	(*fpos) = 0;
++	//
++	
++    return len;
++}
++
++static int led_flush(struct file *file)
++{
++    int  id = (int)file->private_data;
++
++    if ( file->f_mode & FMODE_WRITE )
++	{
++    	set_led_status_by_str(id);
++	}
++    return 0;
++}
++
++static struct file_operations led_fops = {
++    read:	led_read,
++    write:	led_write,
++    flush:	led_flush,
++    ioctl:	led_ioctl,
++    open:	led_open,
++};
++
++//----------------------------------------------
++static unsigned long *reg_addr;
++static int  dump_len;
++
++static int dump_content(char *buf)
++{
++    return 0;
++}
++
++static long gpio_read(struct file *file, char *buf, size_t count, loff_t *fpos)
++{
++    int  rem, len;
++    int  id = (int)file->private_data;
++    char temp[80*10];
++    unsigned long gpio_regval =0;
++
++	outl(GPIO_VAL, 0xcf8);
++    gpio_regval = inl(0xcfc);
++	gpio_regval |= 0x40;
++	outl(gpio_regval, 0xcfc);   // each in, need out 1 first
++	gpio_regval = inl(0xcfc);
++					
++	
++    // sam debug
++    //printk(KERN_ERR "gpio_id:%d, gpio_regval:%08X\n", id, gpio_regval);
++    //end sam 
++    
++    if ( id < GPIO_DEV_NUM )  {
++        int  gpio_bit = 1 << id;
++
++        len = sprintf(temp, "%d\n", (gpio_regval & gpio_bit) ? 1 : 0);
++    }
++    else   // REG device
++        len = dump_content(temp);
++    rem = len - *fpos;
++    if ( rem <= 0 )  {
++    	*fpos = len;
++    	return 0;
++    }
++    if ( rem > count )   rem = count;
++    memcpy(buf, temp+(*fpos), rem);
++    *fpos += rem;
++    return rem;
++}
++
++static int gpio_flush(struct file *file)
++{
++    return 0;
++}
++
++static int gpio_open(struct inode *inode, struct file *file)
++{
++    int id = MINOR(inode->i_rdev);
++    if ( id >= GPIO_DEV_NUM && id != REG_MINOR )
++        return -ENODEV;
++    file->private_data = (void*)id;
++    return 0;
++}
++
++static struct file_operations gpio_fops = {
++    read:	gpio_read,
++    open:	gpio_open,
++    flush:	gpio_flush,
++    write:	led_write,
++};
++
++// ---------------------------------------------
++//  sam 1-30-2004 LAN_STATUS Device
++
++//static unsigned long *reg_addr;
++//static int  dump_len;
++
++//static int lanSt_content(char *buf)
++//{
++//    int  i, j, len;
++//    unsigned long *p = (unsigned long *)0xb2000014;  // PHY_ST 
++// //    j = dump_len/4 + ((dump_len&3) ? 1 : 0);
++//    len = sprintf(buf, "Reg Addr = %08lX,  Value = \n", (unsigned long)p);
++// //    for ( i = 0 ; i < j ; i++, p++ )
++//    len += sprintf(buf+len,"%08lX\n", *p);
++    
++//    return len;
++//}
++
++#define MAC_IOBASE 0xe800 // Eth0
++#define PHY_ADDR   1      // For Eth0
++#define MII_STATUS_ADDR 1
++// where "id" value means which bit of PHY reg 1 we want to check  
++static long lanSt_read(struct file *file, char *buf, size_t count, loff_t *fpos)
++{
++    int  rem, len;
++//  unsigned long *p = (unsigned long *)0xb2000014;  // PHY_ST 
++    unsigned short status;
++    unsigned int   i = 0;
++    int  id = (int)file->private_data;
++    char temp[80*10];
++    
++    outw(0x2000 + MII_STATUS_ADDR + (PHY_ADDR << 8), MAC_IOBASE + 0x20);
++    do{}while( (i++ < 2048) && (inw(MAC_IOBASE+0x20) & 0x2000) );
++
++    status = inw(MAC_IOBASE + 0x24);
++    
++    // sam debug
++    //printk(KERN_ERR "PHY REG1 Status:%04x\n", status );
++    // end sam
++    
++    if ( id < LAN_DEV_NUM )  {
++        unsigned long lanSt_bit = 1 << id;
++//        len = lanSt_content(temp);
++        len = sprintf(temp, "%d\n",(status & lanSt_bit) ? 1 : 0);
++    }
++    else   // REG device
++    {
++        len = sprintf(temp, "-1\n");
++    }   
++    rem = len - *fpos;
++    if ( rem <= 0 )  {
++    	*fpos = len;
++    	return 0;
++    }
++    if ( rem > count )   rem = count;
++    memcpy(buf, temp+(*fpos), rem);
++    *fpos += rem;
++    return rem;
++}
++
++static int lanSt_flush(struct file *file)
++{
++    return 0;
++}
++
++static int lanSt_open(struct inode *inode, struct file *file)
++{
++    int id = MINOR(inode->i_rdev);
++    if ( id >= LAN_DEV_NUM && id != REG_MINOR )
++        return -ENODEV;
++    file->private_data = (void*)id;
++    return 0;
++}
++
++static struct file_operations lanSt_fops = {
++    read:	lanSt_read,
++    open:	lanSt_open,
++    flush:	lanSt_flush,
++    write:	led_write,
++};
++
++//----------------------------------------------
++static int SwResetPress = 0;
++static int SwResetCounter = 0;
++static int RebootFlag = 0;
++static void watchdog_wrapper(unsigned int period)
++{
++    	// { RexHua add for restore default, by press SwReset 5 second, 2 sec to restart
++#if 0		// 
++	u_long reg;
++
++   	outl(GPIO_VAL, 0xcf8);
++   	reg = inl(0xcfc);
++   	reg |= 0x40;
++   	outl(reg, 0xcfc);	// each in, need out 1 first
++   	reg = inl(0xcfc);
++
++   	if( (reg & 0x40) == 0)
++   	{
++		if(SwResetPress == 0)
++		{	
++			SwResetCounter=0;
++			strcpy(led_data[15].sts_buf, "LED BLINK 500\n" );
++			set_led_status_by_str(15);
++		}
++		SwResetPress=1;
++		printk("SwReset press!\n");
++
++    }
++    else
++	{
++		if(SwResetPress=1)
++		{
++			strcpy(led_data[15].sts_buf, "LED ON\n" );
++               set_led_status_by_str(15);
++		}
++		
++		SwResetPress=0;
++		if(RebootFlag == 1)
++			machine_restart(0);
++	}
++
++	if(SwResetPress == 1)
++  	{
++		if(SwResetCounter > 10)
++		{
++			turn_led(15, 0);
++//			kernel_thread(reset_flash_default, 1, SIGCHLD);
++			reset_flash_default(1);
++			turn_led(15, 1);
++		}
++		else if(SwResetCounter == 3)
++		{
++			RebootFlag=1;
++			strcpy(led_data[15].sts_buf, "LED BLINK 100\n" );
++			set_led_status_by_str(15);
++		}
++	}		
++
++	SwResetCounter++;
++#endif
++	
++	// clear timer count
++	outl(0x80003844, 0xcf8);
++	outl(0x00800080, 0xcfc); // enable watchdog and set the timeout = 1.34s
++    //printk(KERN_ERR "wdt\n" );
++	watchdog.expires = jiffies + (period * HZ / 1000);
++	add_timer(&watchdog);
++}
++
++//----------------------------------------------
++static int init_status;
++
++#define INIT_REGION	        0x01
++#define INIT_LED_REGISTER	0x02
++#define INIT_LED_PROC_READ	0x04
++#define INIT_GPIO_REGISTER	0x08
++// sam 1-30-2004 LAN_STATUS
++#define INIT_LAN_STATUS_REGISTER 0x10
++#define INIT_WATCHDOG_REGISTER 0x20
++
++static void led_exit(void)
++{
++    int id;
++    for ( id = 0 ; id < LED_DEV_NUM ; id++ )  {
++        del_timer(&blink_timer[id]);
++        turn_led(id, 0);
++    }
++    if ( init_status & INIT_LED_PROC_READ )
++    	remove_proc_entry("driver/led", NULL);
++    	
++    if ( init_status & INIT_LED_REGISTER )
++    	unregister_chrdev(LED_MAJOR, "led");
++
++    if ( init_status & INIT_GPIO_REGISTER )
++    	unregister_chrdev(GPIO_MAJOR, "gpio");
++    // sam 1-30-2004 
++    
++    if( init_status & INIT_LAN_STATUS_REGISTER )
++      unregister_chrdev(LAN_STATUS_MAJOR, "lanSt");
++    
++    if( init_status & INIT_WATCHDOG_REGISTER)
++       del_timer(&watchdog);
++    
++    
++    // end sam
++
++}
++
++static int __init led_init(void)
++{
++    int result, id, i, j;
++    unsigned long reg;
++    init_status = 0;
++	
++  //----- register device (LED)-------------------------
++  
++                                                                                        
++    result = register_chrdev(LED_MAJOR, "led", &led_fops);
++    if ( result < 0 )   {
++    	printk(KERN_ERR "led: can't register char device\n" );
++    	led_exit();
++    	return result;
++    }
++    init_status |= INIT_LED_REGISTER;
++  //----- register device (GPIO)-------------------------
++    result = register_chrdev(GPIO_MAJOR, "gpio", &gpio_fops);
++    if ( result < 0 )   {
++    	printk(KERN_ERR "gpio: can't register char device\n" );
++    	led_exit();
++    	return result;
++    }
++    init_status |= INIT_GPIO_REGISTER;
++    
++  // sam 1-30-2004 LAN Status
++  // ----- register device (LAN_STATUS)-------------------
++  
++  //--> sam 5-1802995
++  
++    result = register_chrdev(LAN_STATUS_MAJOR, "lanSt", &lanSt_fops);
++    if ( result < 0 )   {
++    	printk(KERN_ERR "lanSt: can't register char device\n" );
++    	led_exit();
++    	return result;
++    }
++    init_status |= INIT_LAN_STATUS_REGISTER;
++  
++  // <-- end sam
++    
++ // -----------init watchdog timer-------------------------
++	 //del_timer(&blink_timer[id]);
++
++    outl(0x80003840, 0xcf8);
++    reg = inl(0xcfc);
++    reg |= 0x1600;         // ensable SRC bit 
++    outl(reg, 0xcfc);
++#ifdef _ROUTER_
++    outl(0x80003848, 0xcf8);
++    reg = inl(0xcfc);
++    reg |= 0x18040; 		// enable GPIO, PowerLED:15, WLAN_LED0:16, SwReset:6 
++    outl(reg, 0xcfc);
++    
++    outl(0x8000384c, 0xcf8);
++    reg = inl(0xcfc);
++    reg |= 0x40;         	// output SwReset:6 1, Set SwReset as Input 
++    outl(reg, 0xcfc);
++#endif
++    // sam debug
++    //reg = inl(0xcfc);
++    //printk(KERN_ERR "REG40:%08X\n", reg);
++    // end sam
++    outl(0x80003844, 0xcf8);
++    outl(0x00800080, 0xcfc); // enable watchdog and set the timeout = 1.34s
++    
++    watchdog.function = watchdog_wrapper;
++    watchdog.data = WATCHDOG_PERIOD;
++    init_timer(&watchdog);
++    watchdog.expires = jiffies + (WATCHDOG_PERIOD * HZ / 1000);
++    add_timer(&watchdog);
++    init_status |= INIT_WATCHDOG_REGISTER;
++
++ // end sam   
++ //------ read proc -------------------
++    if ( !create_proc_read_entry("driver/led", 0, 0, led_read_proc, NULL) )  {
++	printk(KERN_ERR "led: can't create /proc/driver/led\n");
++    	led_exit();
++    	return -ENOMEM;
++    }
++    init_status |= INIT_LED_PROC_READ;
++  //------------------------------
++//    reg_addr = (unsigned long *)0xB4000000;
++//    dump_len = 4;
++    
++    for ( id = 0 ; id < LED_DEV_NUM ; id++ )  {
++    	strcpy(led_data[id].sts_buf, "LED ON\n" );
++    	set_led_status_by_str(id);
++    }
++
++//    for (i = 0; i < 0xffff; i++)
++//	    for (j = 0; j < 0x6000; j++);
++
++/* sam 5-18-2005 remark
++    for ( id = 0 ; id < LED_DEV_NUM ; id++ )  {
++        strcpy(led_data[id].sts_buf, "LED ON\n" );
++        set_led_status_by_str(id);
++    }
++*/    
++    printk(KERN_INFO "LED & GPIO & LAN Status Driver LED_VERSION \n");
++    return 0;
++}
++
++module_init(led_init);
++module_exit(led_exit);
++EXPORT_NO_SYMBOLS;
+diff -urN linux-2.6.17/arch/i386/mach-rdc/led.h linux-2.6.17.new/arch/i386/mach-rdc/led.h
+--- linux-2.6.17/arch/i386/mach-rdc/led.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17.new/arch/i386/mach-rdc/led.h	2006-10-07 22:28:32.000000000 +0200
+@@ -0,0 +1,32 @@
++#ifndef _LED_H_INCLUDED
++#define _LED_H_INCLUDED
++
++#include <linux/config.h>
++
++#define LED_VERSION 		"v1.0"
++#define LED_MAJOR       	166
++#define LED_DEV_NUM		32 
++#define LED_GPIO_START      	1
++#define GPIO_MAJOR       	167
++#define GPIO_DEV_NUM		32
++#define REG_MINOR           	128
++// sam 1-30-2004 for LAN_STATUS
++#define LAN_STATUS_MAJOR   	168
++#define LAN_DEV_NUM     	5
++// end sam
++
++//#define GPIO_IO_BASE        0xB4002480
++//#define GPIO_IO_BASE        ((unsigned long)0xb20000b8)
++//#define GPIO_IO_EXTENT		0x40
++
++#define LED_ON              0x010000
++#define LED_OFF             0x020000
++#define LED_BLINK_CMD       0x030000
++#define LED_BLINK_PERIOD    0x00FFFF
++#define LED_BLINK           (LED_BLINK_CMD|1000)
++#define LED_BLINK_FAST      (LED_BLINK_CMD|250)
++#define LED_BLINK_SLOW      (LED_BLINK_CMD|500)
++#define LED_BLINK_EXTRA_SLOW    (LED_BLINK_CMD|2000)
++#define LED_BLINK_RANDOM    (LED_BLINK_CMD|0xffff)
++
++#endif
+diff -urN linux-2.6.17/arch/i386/mach-rdc/Makefile linux-2.6.17.new/arch/i386/mach-rdc/Makefile
+--- linux-2.6.17/arch/i386/mach-rdc/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17.new/arch/i386/mach-rdc/Makefile	2006-10-07 22:31:19.000000000 +0200
+@@ -0,0 +1,5 @@
++#
++# Makefile for the linux kernel.
++#
++
++obj-$(CONFIG_X86_RDC)        := led.o
+diff -urN linux-2.6.17/arch/i386/Makefile linux-2.6.17.new/arch/i386/Makefile
+--- linux-2.6.17/arch/i386/Makefile	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17.new/arch/i386/Makefile	2006-10-07 23:56:13.000000000 +0200
+@@ -80,6 +80,10 @@
+ mflags-$(CONFIG_X86_ES7000)	:= -Iinclude/asm-i386/mach-es7000
+ mcore-$(CONFIG_X86_ES7000)	:= mach-default
+ core-$(CONFIG_X86_ES7000)	:= arch/i386/mach-es7000/
++# RDC subarch support
++mflags-$(CONFIG_X86_RDC)	:= -Iinclude/asm-i386/mach-generic
++mcore-$(CONFIG_X86_RDC)		:= mach-default
++core-$(CONFIG_X86_RDC)		:= arch/i386/mach-rdc/
+ 
+ # default subarch .h files
+ mflags-y += -Iinclude/asm-i386/mach-default
+diff -urN linux-2.6.17/arch/i386/mm/fault.c linux-2.6.17.new/arch/i386/mm/fault.c
+--- linux-2.6.17/arch/i386/mm/fault.c	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17.new/arch/i386/mm/fault.c	2006-10-07 22:24:15.000000000 +0200
+@@ -551,6 +551,7 @@
+ 	tsk->thread.cr2 = address;
+ 	tsk->thread.trap_no = 14;
+ 	tsk->thread.error_code = error_code;
++	machine_restart(NULL); /* Added for RDC */
+ 	die("Oops", regs, error_code);
+ 	bust_spinlocks(0);
+ 	do_exit(SIGKILL);
+@@ -566,6 +567,12 @@
+ 		down_read(&mm->mmap_sem);
+ 		goto survive;
+ 	}
++	/* RDC : Forcing processes to be niced */
++	if (tsk->prio < 0) {
++		printk("VM: niced process %s\n", tsk->comm);
++		yield();
++		goto survive;
++	}
+ 	printk("VM: killing process %s\n", tsk->comm);
+ 	if (error_code & 4)
+ 		do_exit(SIGKILL);
