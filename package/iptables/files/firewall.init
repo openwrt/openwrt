@@ -8,6 +8,7 @@ start() {
 	scan_interfaces
 	
 	config_get WAN wan ifname
+	config_get WANDEV wan device
 	config_get LAN lan ifname
 	
 	## CLEAR TABLES
@@ -25,6 +26,7 @@ start() {
 	
 	iptables -N LAN_ACCEPT
 	[ -z "$WAN" ] || iptables -A LAN_ACCEPT -i "$WAN" -j RETURN
+	[ -z "$WANDEV" -o "$WANDEV" = "$WAN" ] || iptables -A LAN_ACCEPT -i "$WANDEV" -j RETURN
 	iptables -A LAN_ACCEPT -j ACCEPT
 	
 	### INPUT
