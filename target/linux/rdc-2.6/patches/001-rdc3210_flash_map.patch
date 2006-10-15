@@ -1,0 +1,271 @@
+diff -urN linux-2.6.17/drivers/mtd/maps/imghdr.h linux-2.6.17.new/drivers/mtd/maps/imghdr.h
+--- linux-2.6.17/drivers/mtd/maps/imghdr.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17.new/drivers/mtd/maps/imghdr.h	2006-09-24 20:29:20.000000000 +0200
+@@ -0,0 +1,25 @@
++#ifndef GT_IMGHDR_H
++#define GT_IMGHDR_H
++
++#define GTIMG_MAGIC		"GMTK"
++
++/* Product ID */
++#define PID_RTL_AIRGO		1
++#define PID_RTL_RALINK		2
++#define PID_RDC_AIRGO		3
++#define PID_RDC_RALINK		5	/* White Lable */
++
++/* Gemtek */
++typedef struct
++{
++	UINT8		magic[4];		/* ASICII: GMTK */
++	UINT32		checksum;		/* CRC32 */
++	UINT32		version;		/* x.x.x.x */
++	UINT32		kernelsz;		/* The size of the kernel image */
++	UINT32		imagesz;		/* The length of this image file ( kernel + romfs + this header) */
++	UINT32		pid;			/* Product ID */
++	UINT32		fastcksum;		/* Partial CRC32 on (First(256), medium(256), last(512)) */
++	UINT32		reserved;
++}gt_imghdr_t;
++
++#endif
+diff -urN linux-2.6.17/drivers/mtd/maps/Kconfig linux-2.6.17.new/drivers/mtd/maps/Kconfig
+--- linux-2.6.17/drivers/mtd/maps/Kconfig	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17.new/drivers/mtd/maps/Kconfig	2006-09-24 20:28:11.000000000 +0200
+@@ -76,6 +76,12 @@
+ 	  PNC-2000 is the name of Network Camera product from PHOTRON
+ 	  Ltd. in Japan. It uses CFI-compliant flash.
+ 
++config MTD_RDC3210
++	tristate "CFI Flash devcie mapped on RDC3210"
++	depends on X86 && MTD_CFI && MTD_PARTITIONS
++	help
++	  RDC-3210 is the flash device we find on Ralink reference board
++
+ config MTD_SC520CDP
+ 	tristate "CFI Flash device mapped on AMD SC520 CDP"
+ 	depends on X86 && MTD_CFI
+diff -urN linux-2.6.17/drivers/mtd/maps/Makefile linux-2.6.17.new/drivers/mtd/maps/Makefile
+--- linux-2.6.17/drivers/mtd/maps/Makefile	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17.new/drivers/mtd/maps/Makefile	2006-09-24 20:26:10.000000000 +0200
+@@ -28,6 +28,7 @@
+ obj-$(CONFIG_MTD_PHYSMAP)	+= physmap.o
+ obj-$(CONFIG_MTD_PNC2000)	+= pnc2000.o
+ obj-$(CONFIG_MTD_PCMCIA)	+= pcmciamtd.o
++obj-$(CONFIG_MTD_RDC3210)	+= rdc3210.o
+ obj-$(CONFIG_MTD_RPXLITE)	+= rpxlite.o
+ obj-$(CONFIG_MTD_TQM8XXL)	+= tqm8xxl.o
+ obj-$(CONFIG_MTD_SA1100)	+= sa1100-flash.o
+diff -urN linux-2.6.17/drivers/mtd/maps/rdc3210.c linux-2.6.17.new/drivers/mtd/maps/rdc3210.c
+--- linux-2.6.17/drivers/mtd/maps/rdc3210.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17.new/drivers/mtd/maps/rdc3210.c	2006-09-24 22:55:20.000000000 +0200
+@@ -0,0 +1,211 @@
++/*******************************************************************
++ * Simple Flash mapping for RDC3210                                *
++ *                                                                 *
++ *                                                     2005.03.23  *
++ *                              Dante Su (dante_su@gemtek.com.tw)  *
++ *                          Copyright (C) 2005 Gemtek Corporation  *
++ *******************************************************************/
++
++#include <linux/module.h>
++#include <linux/slab.h>
++#include <linux/types.h>
++#include <linux/kernel.h>
++#include <asm/io.h>
++#include <linux/mtd/mtd.h>
++#include <linux/mtd/map.h>
++#include <linux/mtd/partitions.h>
++#include <linux/config.h>
++
++#define WINDOW_ADDR             0xFFC00000
++#define WINDOW_SIZE             0x00400000
++
++#define BUSWIDTH 2
++
++static struct mtd_info *rdc3210_mtd_info;
++
++__u8  rdc3210_map_read8(struct map_info *map, unsigned long ofs)
++{
++        return *(__u8 *)(map->map_priv_1 + ofs);
++}
++
++__u16 rdc3210_map_read16(struct map_info *map, unsigned long ofs)
++{
++        return *(__u16 *)(map->map_priv_1 + ofs);
++}
++
++__u32 rdc3210_map_read32(struct map_info *map, unsigned long ofs)
++{
++        return *(__u32 *)(map->map_priv_1 + ofs);
++}
++
++void rdc3210_map_write8(struct map_info *map, __u8 d, unsigned long adr)
++{
++        *(__u8 *)(map->map_priv_1 + adr) = d;
++}
++
++void rdc3210_map_write16(struct map_info *map, __u16 d, unsigned long adr)
++{
++        *(__u16 *)(map->map_priv_1 + adr) = d;
++}
++
++void rdc3210_map_write32(struct map_info *map, __u32 d, unsigned long adr)
++{
++        *(__u32 *)(map->map_priv_1 + adr) = d;
++}
++
++void rdc3210_map_copy_from(struct map_info *map, void *to, unsigned long from, ssize_t len)
++{
++        int     i;
++        u16     *dst = (u16 *)(to);
++        u16     *src = (u16 *)(map->map_priv_1 + from);
++
++        for(i = 0; i < (len / 2); ++i)
++                dst[i] = src[i];
++
++        if(len & 1)
++        {
++                printk("# WARNNING!!! rdc3210_map_copy_from has odd length\n");
++                //dst[len - 1] = B0(src[i]);
++        }
++}
++
++void rdc3210_map_copy_to(struct map_info *map, void *to, unsigned long from, ssize_t len)
++{
++        int     i;
++        u16     *dst = (u16 *)(map->map_priv_1 + to);
++        u16     *src = (u16 *)(from);
++
++        for(i = 0; i < (len / 2); ++i)
++                dst[i] = src[i];
++
++        if(len & 1)
++        {
++                printk("# WARNNING!!! rdc3210_map_copy_from has odd length\n");
++                //dst[len - 1] = B0(src[i]);
++        }
++}
++
++static struct map_info rdc3210_map = 
++{
++        .name = "RDC3210 Flash",
++        .size = WINDOW_SIZE,
++        .bankwidth = BUSWIDTH,
++	.phys = WINDOW_ADDR,
++};
++
++/* Dante: This is the default static mapping, however this is nothing but a hint. (Say dynamic mapping) */
++static struct mtd_partition rdc3210_parts[] =
++{
++        { .name = "linux",   .offset = 0,          .size = 0x003C0000 },     /* 3840 KB = (Kernel + ROMFS) = (768 KB + 3072 KB) */
++        { .name = "romfs",   .offset = 0x000C0000, .size = 0x00300000 },     /* 3072 KB */
++        { .name = "nvram",   .offset = 0x003C0000, .size = 0x00010000 },     /*   64 KB */
++        { .name = "factory", .offset = 0x003D0000, .size = 0x00010000 },     /*   64 KB */
++        { .name = "bootldr", .offset = 0x003E0000, .size = 0x00020000 },     /*  128 KB */
++};
++
++static int __init rdc3210_mtd_init(void)
++{
++        printk(KERN_NOTICE "flash device: 0x%x at 0x%x\n", WINDOW_SIZE, WINDOW_ADDR);
++
++        rdc3210_map.virt = ioremap(WINDOW_ADDR, WINDOW_SIZE);
++
++        if (!rdc3210_map.virt)
++        {
++                printk("Failed to ioremap\n");
++                return -EIO;
++        }
++
++	simple_map_init(&rdc3210_map);
++
++        rdc3210_mtd_info = do_map_probe("cfi_probe", &rdc3210_map);
++  	/* Dante: This is for fixed map */
++        if (rdc3210_mtd_info)
++        {
++                rdc3210_mtd_info->owner = THIS_MODULE;
++                add_mtd_partitions(rdc3210_mtd_info, rdc3210_parts, sizeof(rdc3210_parts)/sizeof(rdc3210_parts[0]));
++                return 0;
++        }
++	/* Dante: This is for dynamic mapping */
++#if 0
++ 	if (rdc3210_mtd_info)
++        {       // Dante
++                unsigned int    tmp;
++                gt_imghdr_t     *hdr;
++
++                hdr = (gt_imghdr_t *)(rdc3210_map.virt);
++
++                if(memcmp(hdr->magic, GTIMG_MAGIC, 4))
++                {
++                        printk("Invalid MAGIC for Firmware Image!!!\n");
++                        return -EIO;
++                }
++
++                /* 1. Adjust Redboot */
++                tmp = flashdrv_get_size() - rdc3210_parts[4].size;
++                rdc3210_parts[4].offset = flashdrv_get_sector_addr(flashdrv_get_sector(tmp));
++                rdc3210_parts[4].size   = flashdrv_get_size() - rdc3210_parts[4].offset;
++
++                /* 2. Adjust NVRAM */
++                tmp -= rdc3210_parts[3].size;
++                rdc3210_parts[3].offset = flashdrv_get_sector_addr(flashdrv_get_sector(tmp));
++                rdc3210_parts[3].size   = rdc3210_parts[4].offset - rdc3210_parts[3].offset;
++
++                /* 3. Adjust Factory Default */
++                tmp -= rdc3210_parts[2].size;
++                rdc3210_parts[2].offset = flashdrv_get_sector_addr(flashdrv_get_sector(tmp));
++                rdc3210_parts[2].size   = rdc3210_parts[3].offset - rdc3210_parts[2].offset;
++
++                /* 4. Adjust Linux (Kernel + ROMFS) */
++                rdc3210_parts[0].size   = rdc3210_parts[2].offset - rdc3210_parts[0].offset;
++
++                /* 5. Adjust ROMFS */
++                tmp = hdr->kernelsz + sizeof(gt_imghdr_t);
++                rdc3210_parts[1].offset = rdc3210_parts[0].offset + (((tmp / 32) + ((tmp % 32) ? 1 : 0)) * 32);
++                rdc3210_parts[1].size   = rdc3210_parts[2].offset - rdc3210_parts[1].offset;
++
++                /* 1. Adjust Redboot */
++                tmp = flashdrv_get_size() - rdc3210_parts[3].size;
++                rdc3210_parts[3].offset = flashdrv_get_sector_addr(flashdrv_get_sector(tmp));
++                rdc3210_parts[3].size   = flashdrv_get_size() - rdc3210_parts[3].offset;
++
++                /* 2. Adjust NVRAM */
++                tmp -= rdc3210_parts[2].size;
++                rdc3210_parts[2].offset = flashdrv_get_sector_addr(flashdrv_get_sector(tmp));
++                rdc3210_parts[2].size   = rdc3210_parts[3].offset - rdc3210_parts[2].offset;
++
++                /* 4. Adjust Linux (Kernel + ROMFS) */
++                rdc3210_parts[0].size   = rdc3210_parts[2].offset - rdc3210_parts[0].offset;
++
++                /* 5. Adjust ROMFS */
++                tmp = hdr->kernelsz + sizeof(gt_imghdr_t);
++                rdc3210_parts[1].offset = rdc3210_parts[0].offset + (((tmp / 32) + ((tmp % 32) ? 1 : 0)) * 32);
++                rdc3210_parts[1].size   = rdc3210_parts[2].offset - rdc3210_parts[1].offset;
++                
++		rdc3210_mtd_info->owner = THIS_MODULE;
++                add_mtd_partitions(rdc3210_mtd_info, rdc3210_parts, sizeof(rdc3210_parts)/sizeof(rdc3210_parts[0]));
++                return 0;
++        }
++#endif
++        iounmap((void *)rdc3210_map.virt);
++        return -ENXIO;
++}
++
++static void  __exit rdc3210_mtd_exit(void)
++{
++        if (rdc3210_mtd_info)
++        {
++                del_mtd_partitions(rdc3210_mtd_info);
++                map_destroy(rdc3210_mtd_info);
++        }
++
++        if (rdc3210_map.virt)
++        {
++                iounmap(rdc3210_map.virt);
++                rdc3210_map.virt = 0;
++        }
++}
++
++module_init(rdc3210_mtd_init);
++module_exit(rdc3210_mtd_exit);
++MODULE_LICENSE("GPL");
++
