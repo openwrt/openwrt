@@ -5,7 +5,7 @@ diff -Nur linux-2.6.17/arch/mips/kernel/genex.S linux-2.6.17-owrt/arch/mips/kern
  	.set	push
  	.set	mips3
  	.set	noat
-+#ifdef CONFIG_BCM4710
++#ifdef CONFIG_BCM947XX
 +	nop
 +	nop
 +#endif
@@ -19,12 +19,12 @@ diff -Nur linux-2.6.17/arch/mips/mm/c-r4k.c linux-2.6.17-owrt/arch/mips/mm/c-r4k
  #include <linux/mm.h>
  #include <linux/bitops.h>
  
-+#ifdef CONFIG_BCM4710
++#ifdef CONFIG_BCM947XX
 +#include "../bcm947xx/include/typedefs.h"
 +#include "../bcm947xx/include/sbconfig.h"
++#include "../bcm947xx/include/mipsinc.h"
 +#include <asm/paccess.h>
 +#endif
-+
  #include <asm/bcache.h>
  #include <asm/bootinfo.h>
  #include <asm/cache.h>
@@ -84,7 +84,7 @@ diff -Nur linux-2.6.17/arch/mips/mm/c-r4k.c linux-2.6.17-owrt/arch/mips/mm/c-r4k
  static inline void coherency_setup(void)
  {
  	change_c0_config(CONF_CM_CMASK, CONF_CM_DEFAULT);
-+#if defined(CONFIG_BCM4310) || defined(CONFIG_BCM4704) || defined(CONFIG_BCM5365)
++#ifdef CONFIG_BCM947XX
 +	if (BCM330X(current_cpu_data.processor_id)) {
 +		__u32 cm = read_c0_diag();
 +		/* Enable icache */
@@ -103,7 +103,7 @@ diff -Nur linux-2.6.17/arch/mips/mm/c-r4k.c linux-2.6.17-owrt/arch/mips/mm/c-r4k
  	set_uncached_handler (0x100, &except_vec2_generic, 0x80);
 +	
 +	/* Check if special workarounds are required */
-+#ifdef CONFIG_BCM4710
++#ifdef CONFIG_BCM947XX
 +	if (current_cpu_data.cputype == CPU_BCM4710 && (current_cpu_data.processor_id & 0xff) == 0) {
 +		printk("Enabling BCM4710A0 cache workarounds.\n");
 +		bcm4710 = 1;
@@ -120,7 +120,7 @@ diff -Nur linux-2.6.17/arch/mips/mm/tlbex.c linux-2.6.17-owrt/arch/mips/mm/tlbex
  
  /* #define DEBUG_TLB */
  
-+#ifdef CONFIG_BCM4710
++#ifdef CONFIG_BCM947XX
 +extern int bcm4710;
 +#endif
 +
@@ -131,7 +131,7 @@ diff -Nur linux-2.6.17/arch/mips/mm/tlbex.c linux-2.6.17-owrt/arch/mips/mm/tlbex
  	memset(relocs, 0, sizeof(relocs));
  	memset(final_handler, 0, sizeof(final_handler));
  
-+#ifdef CONFIG_BCM4710
++#ifdef CONFIG_BCM947XX
 +	if (bcm4710) {
 +		i_nop(&p);
 +	}
@@ -147,7 +147,7 @@ diff -Nur linux-2.6.17/include/asm-mips/r4kcache.h linux-2.6.17-owrt/include/asm
  #include <asm/cpu-features.h>
  #include <asm/mipsmtregs.h>
  
-+#ifdef CONFIG_BCM4710
++#ifdef CONFIG_BCM947XX
 +#define BCM4710_DUMMY_RREG() (((sbconfig_t *)(KSEG1ADDR(SB_ENUM_BASE + SBCONFIGOFF)))->sbimstate)
 +
 +#define BCM4710_FILL_TLB(addr) (*(volatile unsigned long *)(addr))
@@ -345,7 +345,7 @@ diff -Nur linux-2.6.17/include/asm-mips/stackframe.h linux-2.6.17-owrt/include/a
  		.macro	RESTORE_SP_AND_RET
  		LONG_L	sp, PT_R29(sp)
  		.set	mips3
-+#ifdef CONFIG_BCM4710
++#ifdef CONFIG_BCM947XX
 +		nop
 +		nop
 +#endif
