@@ -20,7 +20,7 @@ start() {
 	
 	BEGIN {
 		FS="="
-		c["lan_ifname"]="eth0.0 wl0"
+		c["lan_ifname"]="eth0.0"
 		c["wan_ifname"]="eth0.1"
 		c["vlan0ports"]="1 2 3 4 5*"
 		c["vlan1ports"]="0 5"
@@ -35,14 +35,13 @@ start() {
 		if (nvram["boardtype"] == "bcm94710dev") {
 			# Asus WL-500g
 			if (nvram["boardnum"] == "asusX") {
-				c["lan_ifname"]="eth0 eth1 wl0" # FIXME
+				c["lan_ifname"]="eth0 eth1" # FIXME
 				c["wan_ifname"]=""
 			}
 		}
 		if (nvram["boardtype"] == "wgt634u") {
 			c["vlan0ports"] = "0 1 2 3 5*"
 			c["vlan1ports"] = "4 5"
-			c["lan_ifname"] = "eth0.0 ath0"
 		}
 		if ((nvram["boardtype"] == "0x0467") || (nvram["boardtype"] == "0x042f")) {
 			c["vlan0ports"] = "0 1 2 3 5*"
@@ -52,7 +51,7 @@ start() {
 		# WAP54G
 		if ((nvram["boardnum"] == "2") || \
 			(nvram["boardnum"] == "1024")) {
-			c["lan_ifname"]="eth0 wl0"
+			c["lan_ifname"]="eth0"
 			c["wan_ifname"]=""
 		}
 	
