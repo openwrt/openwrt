@@ -92,7 +92,11 @@ struct wlc_call {
 
 /* can't use the system include because of the stupid broadcom header files */
 extern struct ether_addr *ether_aton(const char *asc);
-extern char *ether_ntoa(const struct ether_addr *addr);
+static inline int my_ether_ntoa(unsigned char *ea, char *buf)
+{
+	return sprintf(buf, "%02x:%02x:%02x:%02x:%02x:%02x",
+		ea[0], ea[1], ea[2], ea[3], ea[4], ea[5]);
+}
 
 /*
  * find the starting point of wl.o in memory
@@ -476,8 +480,10 @@ static int wlc_maclist(wlc_param param, void *data, void *value)
 		ret = wl_ioctl(interface, (ioc >> 16) & 0xffff, wlbuf, sizeof(wlbuf));
 		
 		if (!ret) 
-			while (list->count)
-				str += sprintf(str, "%s%s", ((((char *) value) == str) ? "" : " "), ether_ntoa(&list->ea[list->count-- - 1]));
+			while (list->count) {
+				str += sprintf(str, "%s", ((((char *) value) == str) ? "" : " "));
+				str += my_ether_ntoa((unsigned char *) &list->ea[list->count-- - 1], str);
+			}
 		
 		return ret;
 	} else {
@@ -663,13 +669,12 @@ static int wlc_ifname(wlc_param param, void *data, void *value)
 
 static int wlc_wdsmac(wlc_param param, void *data, void *value)
 {
-	static struct ether_addr mac;
+	unsigned char mac[6];
 	int ret = 0;
 	
 	ret = wl_ioctl(interface, WLC_WDS_GET_REMOTE_HWADDR, &mac, 6);
-	if (ret == 0) {
-		strcpy((char *) value, ether_ntoa(&mac));
-	}
+	if (ret == 0)
+		my_ether_ntoa(mac, value);
 
 	return ret;
 }
