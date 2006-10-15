@@ -57,7 +57,7 @@ endif
 
 
 define Image/mkfs/prepare/default
-	find $(BUILD_DIR)/root -type f -not -perm +0100 | xargs chmod 0644
+	find $(BUILD_DIR)/root -type f -not -perm +0100 -not -name 'ssh_host*' | xargs chmod 0644
 	find $(BUILD_DIR)/root -type f -perm +0100 | xargs chmod 0755
 	find $(BUILD_DIR)/root -type d | xargs chmod 0755
 	mkdir -p $(BUILD_DIR)/root/tmp
