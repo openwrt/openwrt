@@ -644,6 +644,36 @@ static int wlc_wme_ac(wlc_param param, void *data, void *value)
 	return ret;
 }
 
+static int wlc_ifname(wlc_param param, void *data, void *value)
+{
+	char *val = (char *) value;
+	int ret = 0;
+	
+	if (param & SET) {
+		if (strlen(val) < 16)
+			strcpy(interface, val);
+		else ret = -1;
+	}
+	if (param & GET) {
+		strcpy(val, interface);
+	}
+
+	return ret;
+}
+
+static int wlc_wdsmac(wlc_param param, void *data, void *value)
+{
+	static struct ether_addr mac;
+	int ret = 0;
+	
+	ret = wl_ioctl(interface, WLC_WDS_GET_REMOTE_HWADDR, &mac, 6);
+	if (ret == 0) {
+		strcpy((char *) value, ether_ntoa(&mac));
+	}
+
+	return ret;
+}
+
 static const struct wlc_call wlc_calls[] = {
 	{
 		.name = "version",
@@ -665,6 +695,12 @@ static const struct wlc_call wlc_calls[] = {
 		.handler = wlc_flag,
 		.data.ptr = &fromstdin,
 		.desc = "Accept input from stdin"
+	},
+	{
+		.name = "ifname",
+		.param = STRING,
+		.handler = wlc_ifname,
+		.desc = "interface to send commands to"
 	},
 	{
 		.name = "up",
@@ -955,6 +991,12 @@ static const struct wlc_call wlc_calls[] = {
 		.handler = wlc_iovar,
 		.data.str = "wdstimeout",
 		.desc = "WDS link detection timeout"
+	},
+	{
+		.name = "wdsmac",
+		.param = STRING|NOARG,
+		.handler = wlc_wdsmac,
+		.desc = "MAC of the remote WDS endpoint (only with wds0.* interfaces)"
 	},
 	{
 		.name = "afterburner",
