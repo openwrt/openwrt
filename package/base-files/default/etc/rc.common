@@ -1,5 +1,9 @@
 #!/bin/sh
-. /etc/functions.sh
+# Copyright (C) 2006 OpenWrt.org
+
+. $IPKG_INSTROOT/etc/functions.sh
+
+START=50
 
 start() {
 	return 0
@@ -27,12 +31,14 @@ shutdown() {
 }
 
 disable() {
-	rm -f /etc/rc.d/${initscript##*/}
+	name="$(basename "${initscript}")"
+	rm -f "$IPKG_INSTROOT/etc/rc.d/S??$name"
 }
 
 enable() {
+	name="$(basename "${initscript}")"
 	disable
-	ln -s /etc/init.d/${initscript##*/} /etc/rc.d/${initscript##*/}
+	ln -s "/etc/init.d/$name" "$IPKG_INSTROOT/etc/rc.d/S${START}${name##S[0-9][0-9]}"
 }
 
 depends() {
@@ -48,6 +54,8 @@ Available commands:
 	stop	Stop the service
 	restart	Restart the service
 	reload	Reload configuration files (or restart if that fails)
+	enable	Enable service autostart
+	disable	Disable service autostart
 $EXTRA_HELP
 EOF
 }
@@ -68,6 +76,8 @@ eval "case \"\$action\" in
 	restart) restart;;
 	boot) boot;;
 	shutdown) shutdown;;
+	enable) enable;;
+	disable) disable;;
 	$cmds
 	*) help;;
 esac"

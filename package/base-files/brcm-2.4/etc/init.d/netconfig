@@ -1,11 +1,13 @@
 #!/bin/sh /etc/rc.common
 # Copyright (C) 2006 OpenWrt.org
 
+START=05
+
 start() {
 	[ -e /etc/config/network ] && exit 0
-	
+
 	mkdir -p /etc/config
-	
+
 	(
 		if grep -E 'mtd0: 000(6|a)0000' /proc/mtd 2>&- >&-; then
 			# WGT634u

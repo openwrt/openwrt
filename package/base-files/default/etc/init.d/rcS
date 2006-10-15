@@ -11,8 +11,8 @@ syslogd -C 16 #${log_ipaddr:+-L -R $log_ipaddr}
 klogd
 
 (
-	for i in /etc/init.d/S*; do
-		$i start 2>&1
+	for i in /etc/rc.d/S*; do
+		$i boot 2>&1
 	done 
 	
 	sysctl -p >&-

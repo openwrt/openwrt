@@ -195,7 +195,7 @@ define Package/iptables/install
 	install -d -m0755 $(1)/etc/config
 	install -m0644 ./files/firewall.config $(1)/etc/config/firewall
 	install -d -m0755 $(1)/etc/init.d
-	install -m0755 ./files/firewall.init $(1)/etc/init.d/S45firewall
+	install -m0755 ./files/firewall.init $(1)/etc/init.d/firewall
 	install -m0755 ./files/firewall.user $(1)/etc/
 	install -d -m0755 $(1)/usr/lib
 	install -m0644 ./files/firewall.awk $(1)/usr/lib

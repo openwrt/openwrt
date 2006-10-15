@@ -55,6 +55,13 @@ install-targets: base-files-install $(INSTALL_PACKAGES)
 install:
 	rm -rf $(BUILD_DIR)/root
 	$(MAKE) install-targets
+	@( \
+		cd $(BUILD_DIR)/root; \
+		for script in ./etc/init.d/*; do \
+			grep '#!/bin/sh /etc/rc.common' $$script >/dev/null || continue; \
+			IPKG_INSTROOT=$(BUILD_DIR)/root $(which bash) ./etc/rc.common $$script enable; \
+		done; \
+	)
 
 index: $(PACKAGE_DIR)/Packages
 

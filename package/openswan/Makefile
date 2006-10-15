@@ -21,8 +21,6 @@ PKG_CAT:=zcat
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
-PKG_INIT_PRIO:=60
-
 include $(INCLUDE_DIR)/package.mk
 
 define Package/openswan/Default
@@ -76,7 +74,7 @@ endef
 define Package/openswan/install
 	$(CP) $(PKG_INSTALL_DIR)/* $(1)
 	install -d -m0755 $(1)/etc/init.d
-	$(CP) $(1)/etc/rc.d/init.d/ipsec $(1)/etc/init.d/S$(PKG_INIT_PRIO)ipsec
+	$(CP) ./files/ipsec.init $(1)/etc/init.d/ipsec
 	rm -rf $(1)/usr/share
 	rm -rf $(1)/usr/man
 	rm -rf $(1)/var

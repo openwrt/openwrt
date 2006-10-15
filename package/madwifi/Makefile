@@ -120,7 +120,7 @@ endif
 ifeq ($(findstring PCI,$(BUS)),PCI)
 	echo ath_pci >> $(1)/etc/modules.d/20-madwifi
 endif
-	install -m0755 ./files/madwifi.init $(1)/etc/init.d/S20madwifi
+	install -m0755 ./files/madwifi.init $(1)/etc/init.d/madwifi
 	$(CP) \
 		$(PKG_BUILD_DIR)/ath/ath_hal.$(LINUX_KMOD_SUFFIX) \
 		$(BUS_MODULES) \

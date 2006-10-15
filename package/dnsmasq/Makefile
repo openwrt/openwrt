@@ -49,7 +49,7 @@ define Package/dnsmasq/install
 	install -m0755 -d $(1)/etc
 	install -m0644 ./files/dnsmasq.conf $(1)/etc/dnsmasq.conf
 	install -m0755 -d $(1)/etc/init.d
-	install -m0755 ./files/dnsmasq.init $(1)/etc/init.d/S50dnsmasq
+	install -m0755 ./files/dnsmasq.init $(1)/etc/init.d/dnsmasq
 endef
 
 $(eval $(call BuildPackage,dnsmasq))
