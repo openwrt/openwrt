@@ -835,27 +835,3 @@ diff -urN linux-2.6.17/arch/i386/Makefile linux-2.6.17.new/arch/i386/Makefile
  
  # default subarch .h files
  mflags-y += -Iinclude/asm-i386/mach-default
-diff -urN linux-2.6.17/arch/i386/mm/fault.c linux-2.6.17.new/arch/i386/mm/fault.c
---- linux-2.6.17/arch/i386/mm/fault.c	2006-06-18 03:49:35.000000000 +0200
-+++ linux-2.6.17.new/arch/i386/mm/fault.c	2006-10-07 22:24:15.000000000 +0200
-@@ -551,6 +551,7 @@
- 	tsk->thread.cr2 = address;
- 	tsk->thread.trap_no = 14;
- 	tsk->thread.error_code = error_code;
-+	machine_restart(NULL); /* Added for RDC */
- 	die("Oops", regs, error_code);
- 	bust_spinlocks(0);
- 	do_exit(SIGKILL);
-@@ -566,6 +567,12 @@
- 		down_read(&mm->mmap_sem);
- 		goto survive;
- 	}
-+	/* RDC : Forcing processes to be niced */
-+	if (tsk->prio < 0) {
-+		printk("VM: niced process %s\n", tsk->comm);
-+		yield();
-+		goto survive;
-+	}
- 	printk("VM: killing process %s\n", tsk->comm);
- 	if (error_code & 4)
- 		do_exit(SIGKILL);
