@@ -75,7 +75,17 @@ scan_broadcom() {
 
 disable_broadcom() {
 	wlc down
-	ifconfig wl0 down
+	(
+		include /lib/network
+		scan_interfaces
+
+		# make sure the interfaces are down and removed from all bridges
+		for dev in wl0 wl0.1 wl0.2 wl0.3; do
+			ifconfig "$dev" down 2>/dev/null >/dev/null && {
+				unbridge "$dev"
+			}
+		done
+	)
 }
 
 enable_broadcom() {
