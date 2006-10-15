@@ -32,6 +32,7 @@ bridge_interface() {(
 
 scan_broadcom() {
 	local device="$1"
+	local wds=
 
 	config_get vifs "$device" vifs
 	for vif in $vifs; do
@@ -49,9 +50,14 @@ scan_broadcom() {
 				ap=1
 				ap_if="${ap_if:+$ap_if }$vif"
 			;;
+			wds)
+				config_get addr "$vif" bssid
+				[ -z "$addr" ] || append wds "$addr"
+			;;
 			*) echo "$device($vif): Invalid mode";;
 		esac
 	done
+	config_set "$device" wds "$wds"
 
 	local _c=
 	for vif in ${adhoc_if:-$sta_if $ap_if}; do
@@ -111,6 +117,7 @@ enable_broadcom() {
 	config_get channel "$device" channel
 	config_get country "$device" country
 	config_get maxassoc "$device" maxassoc
+	config_get wds "$device" wds
 
 	_c=0
 	nas="$(which nas)"
@@ -199,7 +206,7 @@ ${wet:+wet 1}
 radio ${radio:-1}
 macfilter 0
 maclist none
-wds none
+wds ${wds:-none}
 channel ${channel:-0}
 country ${country:-IL0}
 maxassoc ${maxassoc:-128}
