@@ -1,0 +1,34 @@
+include /lib/wifi
+
+setup_broadcom_wds() {
+	local iface="$1"
+	local remote="$(wlc ifname "$iface" wdsmac)"
+
+	[ -z "$remote" ] && return
+	
+	config_cb() {
+		[ -z "$CONFIG_SECTION" ] && return
+	
+		config_get type "$CONFIG_SECTION" TYPE
+		[ "$type" = "wifi-iface" ] || return
+		
+		config_get network "$CONFIG_SECTION" network
+		[ -z "$network" ] && return
+		
+		config_get addr "$CONFIG_SECTION" bssid
+		[ "$addr" = "$remote" ] && {
+			include /lib/network
+			scan_interfaces
+
+			setup_interface "$iface" "$network"
+		}
+	}
+
+	config_load wireless
+}
+
+case "$ACTION" in
+	add|register)
+		[ "${INTERFACE%%0.*}" = wds ] && setup_broadcom_wds "$INTERFACE"
+	;;
+esac
