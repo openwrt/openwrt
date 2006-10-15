@@ -107,7 +107,7 @@ define Package/dropbear/install
 	ln -sf ../sbin/dropbear $(1)/usr/bin/dbclient
 	ln -sf ../sbin/dropbear $(1)/usr/bin/dropbearkey
 	install -d -m0755 $(1)/etc/init.d
-	install -m0755 ./files/dropbear.init $(1)/etc/init.d/S50dropbear
+	install -m0755 ./files/dropbear.init $(1)/etc/init.d/dropbear
 endef
 
 define Package/dropbearconvert/install

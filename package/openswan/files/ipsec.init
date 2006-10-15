@@ -1,0 +1,158 @@
+#!/bin/sh /etc/rc.common
+# IPsec startup and shutdown script
+# Copyright (C) 1998, 1999, 2001  Henry Spencer.
+# Copyright (C) 2002              Michael Richardson <mcr@freeswan.org>
+# Copyright (C) 2006              OpenWrt.org
+# 
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.  See <http://www.fsf.org/copyleft/gpl.txt>.
+# 
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# for more details.
+#
+# RCSID $Id: setup.in,v 1.122.6.1 2005/07/25 19:17:03 ken Exp $
+#
+# ipsec         init.d script for starting and stopping
+#               the IPsec security subsystem (KLIPS and Pluto).
+#
+# This script becomes /etc/rc.d/init.d/ipsec (or possibly /etc/init.d/ipsec)
+# and is also accessible as "ipsec setup" (the preferred route for human
+# invocation).
+#
+# The startup and shutdown times are a difficult compromise (in particular,
+# it is almost impossible to reconcile them with the insanely early/late
+# times of NFS filesystem startup/shutdown).  Startup is after startup of
+# syslog and pcmcia support; shutdown is just before shutdown of syslog.
+#
+# chkconfig: 2345 47 76
+# description: IPsec provides encrypted and authenticated communications; \
+# KLIPS is the kernel half of it, Pluto is the user-level management daemon.
+
+START=60
+script_init() {
+	me='ipsec setup'		# for messages
+
+	# where the private directory and the config files are
+	IPSEC_EXECDIR="${IPSEC_EXECDIR-/usr/libexec/ipsec}"
+	IPSEC_LIBDIR="${IPSEC_LIBDIR-/usr/lib/ipsec}"
+	IPSEC_SBINDIR="${IPSEC_SBINDIR-/usr/sbin}"
+	IPSEC_CONFS="${IPSEC_CONFS-/etc}"
+
+	if test " $IPSEC_DIR" = " "	# if we were not called by the ipsec command
+	then
+	    # we must establish a suitable PATH ourselves
+	    PATH="${IPSEC_SBINDIR}":/sbin:/usr/sbin:/usr/local/bin:/bin:/usr/bin
+	    export PATH
+
+	    IPSEC_DIR="$IPSEC_LIBDIR"
+	    export IPSEC_DIR IPSEC_CONFS IPSEC_LIBDIR IPSEC_EXECDIR
+	fi
+
+	# Check that the ipsec command is available.
+	found=
+	for dir in `echo $PATH | tr ':' ' '`
+	do
+		if test -f $dir/ipsec -a -x $dir/ipsec
+		then
+			found=yes
+			break			# NOTE BREAK OUT
+		fi
+	done
+	if ! test "$found"
+	then
+		echo "cannot find ipsec command -- \`$1' aborted" |
+			logger -s -p daemon.error -t ipsec_setup
+		exit 1
+	fi
+
+	# Pick up IPsec configuration (until we have done this, successfully, we
+	# do not know where errors should go, hence the explicit "daemon.error"s.)
+	# Note the "--export", which exports the variables created.
+	eval `ipsec _confread $config --optional --varprefix IPSEC --export --type config setup`
+
+	if test " $IPSEC_confreadstatus" != " "
+	then
+	    case $1 in 
+	    stop|--stop|_autostop) 
+		echo "$IPSEC_confreadstatus -- \`$1' may not work" |
+			logger -s -p daemon.error -t ipsec_setup;;
+
+	    *) echo "$IPSEC_confreadstatus -- \`$1' aborted" |
+		    logger -s -p daemon.error -t ipsec_setup;
+		exit 1;;
+	    esac
+	fi
+
+	IPSEC_confreadsection=${IPSEC_confreadsection:-setup}
+	export IPSEC_confreadsection
+
+	IPSECsyslog=${IPSECsyslog-daemon.error}
+	export IPSECsyslog
+
+	# misc setup
+	umask 022
+
+	mkdir -p /var/run/pluto
+}
+
+script_command() {
+	if [ "${USER}" != "root" ]
+	then
+		echo "permission denied (must be superuser)" |
+			logger -s -p $IPSECsyslog -t ipsec_setup 2>&1
+		exit 1
+	fi
+	# make sure all required directories exist
+	if [ ! -d /var/run/pluto ]
+	then
+		mkdir -p /var/run/pluto
+	fi
+	if [ ! -d /var/lock/subsys ]
+	then
+		mkdir -p /var/lock/subsys
+	fi
+	tmp=/var/run/pluto/ipsec_setup.st
+	outtmp=/var/run/pluto/ipsec_setup.out
+	(
+		ipsec _realsetup $1
+		echo "$?" >$tmp
+	) > ${outtmp} 2>&1
+	st=$?
+	if test -f $tmp
+	then
+		st=`cat $tmp`
+		rm -f $tmp
+	fi
+	if [ -f ${outtmp} ]; then
+		cat ${outtmp} | logger -s -p $IPSECsyslog -t ipsec_setup 2>&1
+		rm -f ${outtmp}
+	fi
+}
+
+
+start() {
+	script_init start "$@"
+	script_command start "$@"
+}
+
+stop() {
+	script_init stop "$@"
+	script_command stop "$@"
+}
+
+restart() {
+	script_init stop "$@"
+	script_command stop "$@"
+	script_command start "$@"
+}
+
+status() {
+	script_init status "$@"
+	ipsec _realsetup status
+}
+EXTRA_COMMANDS=status
+EXTRA_HELP="	status	Show the status of the service"

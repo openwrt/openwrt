@@ -1,16 +1,14 @@
 #!/bin/sh /etc/rc.common
 # Copyright (C) 2006 OpenWrt.org
 
+START=50
+
 boot() {
 	/usr/lib/qos.sh firewall | sh
 }
 
 start() {
-#	FIXME: after init script migration
-#	qos-start
-#
-
-	boot
+	qos-start
 }
 
 stop() {
