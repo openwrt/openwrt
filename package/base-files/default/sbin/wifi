@@ -20,7 +20,7 @@ wifi_down() {
 		config_get iftype "$device" type
 		if eval "type disable_$iftype" 2>/dev/null >/dev/null; then
 			eval "scan_$iftype '$device'"
-			eval "disable_$iftype '$device'" || echo "$device($iftype): Setup failed"
+			eval "disable_$iftype '$device'" || echo "$device($iftype): Disable failed"
 		else
 			echo "$device($iftype): Interface type not supported"
 		fi
