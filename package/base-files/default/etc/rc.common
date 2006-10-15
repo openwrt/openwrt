@@ -32,7 +32,7 @@ shutdown() {
 
 disable() {
 	name="$(basename "${initscript}")"
-	rm -f "$IPKG_INSTROOT/etc/rc.d/S??$name"
+	rm -f "$IPKG_INSTROOT"/etc/rc.d/S??$name
 }
 
 enable() {
