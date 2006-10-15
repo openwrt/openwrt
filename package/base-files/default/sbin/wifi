@@ -3,6 +3,49 @@
 
 . /etc/functions.sh
 
+wifi_up() {
+	for device in ${2:-$DEVICES}; do (
+		config_get iftype "$device" type
+		if eval "type enable_$iftype" 2>/dev/null >/dev/null; then
+			eval "scan_$iftype '$device'"
+			eval "enable_$iftype '$device'" || echo "$device($iftype): Setup failed"
+		else
+			echo "$device($iftype): Interface type not supported"
+		fi
+	); done
+}
+
+wifi_down() {
+	for device in ${2:-$DEVICES}; do (
+		config_get iftype "$device" type
+		if eval "type disable_$iftype" 2>/dev/null >/dev/null; then
+			eval "scan_$iftype '$device'"
+			eval "disable_$iftype '$device'" || echo "$device($iftype): Setup failed"
+		else
+			echo "$device($iftype): Interface type not supported"
+		fi
+	); done
+}
+
+wifi_detect() {
+	for driver in ${2:-$DRIVERS}; do (
+		if eval "type detect_$driver" 2>/dev/null >/dev/null; then
+			eval "detect_$driver" || echo "$driver: Detect failed" >&2
+		else
+			echo "$driver: Hardware detection not supported" >&2
+		fi
+	); done
+}
+
+start_net() {(
+	local iface="$1"
+	local config="$2"
+
+	include /lib/network
+	scan_interfaces
+	setup_interface "$1" "$2"
+)}
+
 config_get_bool() {
 	local _tmp
 	config_get "$1" "$2" "$3"
@@ -29,16 +72,13 @@ config_cb() {
 	esac
 }
 
+DEVICES=
+DRIVERS=
 config_load wireless
 include /lib/wifi
 
-for device in $DEVICES; do (
-	config_get iftype "$device" type
-	eval "type setup_$iftype" 2>/dev/null >/dev/null && {
-		eval "scan_$iftype '$device'"
-		eval "setup_$iftype '$device'" && {
-			# TODO: set up network settings
-			/bin/true
-		} || echo "$device($iftype): Setup failed" || true
-	} || echo "$device($iftype): Interface type not supported"
-); done
+case "$1" in
+	down) wifi_down "$2";;
+	detect) wifi_detect "$2";;
+	*) wifi_up "$2";;
+esac

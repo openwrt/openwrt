@@ -1,3 +1,5 @@
+append DRIVERS "broadcom"
+
 bridge_interface() {
 	(
 		. /etc/functions.sh
@@ -71,8 +73,12 @@ scan_broadcom() {
 	esac
 }
 
+disable_broadcom() {
+	wlc down
+	ifconfig wl0 down
+}
 
-setup_broadcom() {
+enable_broadcom() {
 	local _c
 	config_get channel "$device" channel
 	config_get country "$device" country
@@ -175,3 +181,21 @@ EOF
 }
 
 
+detect_broadcom() {
+	[ -f /proc/net/wl0 ] || return
+	config_get type wl0 type
+	[ "$type" = broadcom ] && return
+	cat <<EOF
+config wifi-device  wl0
+	option type     broadcom
+	option channel  5
+
+config wifi-iface
+	option device   wl0
+	option mode     ap
+	option ssid     OpenWrt
+	option hidden   0
+	option encryption none
+
+EOF
+}
