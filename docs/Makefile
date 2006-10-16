@@ -8,7 +8,7 @@ clean: cleanup
 	rm -f openwrt.pdf
 
 cleanup: FORCE
-	rm -f *.log *.aux *.toc
+	rm -f *.log *.aux *.toc *.out
 
 
 FORCE:
