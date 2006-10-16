@@ -492,3 +492,30 @@ diff -urN linux.old/drivers/mtd/maps/bcm47xx-flash.c linux.dev/drivers/mtd/maps/
 +
 +module_init(init_bcm947xx_map);
 +module_exit(cleanup_bcm947xx_map);
+diff -urN linux.old/drivers/mtd/maps/Kconfig linux.dev/drivers/mtd/maps/Kconfig
+--- linux.old/drivers/mtd/maps/Kconfig	2006-06-23 19:13:51.000000000 +0200
++++ linux.dev/drivers/mtd/maps/Kconfig	2006-06-23 18:47:58.000000000 +0200
+@@ -299,6 +299,12 @@
+ 	  Mapping for the Flaga digital module. If you don't have one, ignore
+ 	  this setting.
+ 
++config MTD_BCM47XX
++	tristate "BCM47xx flash device"
++	depends on MIPS && MTD_CFI && BCM947XX
++	help
++	  Support for the flash chips on the BCM947xx board.
++	  
+ config MTD_BEECH
+ 	tristate "CFI Flash device mapped on IBM 405LP Beech"
+ 	depends on MTD_CFI && BEECH
+diff -urN linux.old/drivers/mtd/maps/Makefile linux.dev/drivers/mtd/maps/Makefile
+--- linux.old/drivers/mtd/maps/Makefile	2006-06-23 19:13:51.000000000 +0200
++++ linux.dev/drivers/mtd/maps/Makefile	2006-06-23 18:47:58.000000000 +0200
+@@ -30,6 +30,7 @@
+ obj-$(CONFIG_MTD_PCMCIA)	+= pcmciamtd.o
+ obj-$(CONFIG_MTD_RPXLITE)	+= rpxlite.o
+ obj-$(CONFIG_MTD_TQM8XXL)	+= tqm8xxl.o
++obj-$(CONFIG_MTD_BCM47XX)	+= bcm47xx-flash.o
+ obj-$(CONFIG_MTD_SA1100)	+= sa1100-flash.o
+ obj-$(CONFIG_MTD_IPAQ)		+= ipaq-flash.o
+ obj-$(CONFIG_MTD_SBC_GXX)	+= sbc_gxx.o
