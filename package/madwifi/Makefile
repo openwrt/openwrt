@@ -118,7 +118,7 @@ ifeq ($(findstring AHB,$(BUS)),AHB)
 	echo ath_ahb >> $(1)/etc/modules.d/20-madwifi
 endif
 ifeq ($(findstring PCI,$(BUS)),PCI)
-	echo ath_pci >> $(1)/etc/modules.d/20-madwifi
+	echo "ath_pci autocreate=none" >> $(1)/etc/modules.d/20-madwifi
 endif
 	install -m0755 ./files/madwifi.init $(1)/etc/init.d/madwifi
 	$(CP) \
