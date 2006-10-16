@@ -5,6 +5,9 @@
 \usepackage{ae,aecompl,aeguill}
 \usepackage{fancyvrb}
 
+\setlength{\parindent}{0pt}
+\setlength{\parskip}\medskipamount
+
 \begin{document}
 
 \tableofcontents
@@ -28,9 +31,7 @@
       \input{network-scripts}
 \chapter{Development issues}
   \section{The build system}
-    \subsection{Building an image}
-    \subsection{Integrating packages}
-    \subsection{Creating packages}
+    \input{build}
   \section{Extra tools}
     \subsection{Image Builder}
     \subsection{SDK}
