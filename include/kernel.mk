@@ -70,7 +70,11 @@ define ModuleAutoLoad
 	export modules=; \
 	add_module() { \
 		mkdir -p $(2)/etc/modules.d; \
-		echo "$$$$$$$$2" > $(2)/etc/modules.d/$$$$$$$$1-$(1); \
+		( \
+			for mod in $$$$$$$$2; do \
+				getvar mod; \
+			done \
+		) > $(2)/etc/modules.d/$$$$$$$$1-$(1); \
 		modules="$$$$$$$${modules:+$$$$$$$$modules }$$$$$$$$1-$(1)"; \
 	}; \
 	$(3) \
