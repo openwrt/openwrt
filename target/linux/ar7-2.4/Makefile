@@ -12,11 +12,6 @@ LINUX_KERNEL_MD5SUM:=38f4d0830e95a20f4bfed17622d5557c
 
 include ./config
 include $(INCLUDE_DIR)/kernel.mk
-
-$(eval $(call KMOD_template,CPMAC,cpmac,\
-	$(MODULES_DIR)/kernel/drivers/net/avalanche_cpmac/avalanche_cpmac.o \
-,CONFIG_MIPS_AVALANCHE_CPMAC,,10,avalanche_cpmac))
-
 include $(INCLUDE_DIR)/kernel-build.mk
 
 $(LINUX_DIR)/.patched: $(LINUX_DIR)/.unpacked
