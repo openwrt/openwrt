@@ -34,7 +34,10 @@ sub print_category($) {
 	print "menu \"$cat\"\n\n";
 	my %spkg = %{$category{$cat}};
 	foreach my $spkg (sort {uc($a) cmp uc($b)} keys %spkg) {
-		foreach my $pkg (@{$spkg{$spkg}}) {
+		my @pkgs = sort {
+			$a->{submenu}."->".$a->{name} cmp $b->{submenu}."->".$b->{name}
+		} @{$spkg{$spkg}};
+		foreach my $pkg (@pkgs) {
 			if ($cur_menu ne $pkg->{submenu}) {
 				close_submenu();
 				if ($pkg->{submenu}) {
