@@ -59,6 +59,7 @@ define KernelPackage
   $(eval $(call KernelPackage/Defaults))
   $(eval $(call KernelPackage/$(1)))
   $(eval $(call KernelPackage/$(1)/$(KERNEL)))
+  $(eval $(call KernelPackage/$(1)/$(BOARD)-$(KERNEL)))
 
   define Package/kmod-$(1)
     TITLE:=$(TITLE)
@@ -88,4 +89,5 @@ define AutoLoad
   add_module $(1) "$(2)";
 endef
 
+include $(TOPDIR)/target/linux/*/modules.mk
 include ./modules/*.mk

@@ -69,13 +69,11 @@ define KernelPackage/lp
   KCONFIG:=$(CONFIG_PARPORT)
   FILES:= \
 	$(MODULES_DIR)/kernel/drivers/parport/parport.$(LINUX_KMOD_SUFFIX) \
-	$(MODULES_DIR)/kernel/drivers/parport/parport_*.$(LINUX_KMOD_SUFFIX) \
 	$(MODULES_DIR)/kernel/drivers/char/lp.$(LINUX_KMOD_SUFFIX) \
 	$(MODULES_DIR)/kernel/drivers/char/ppdev.$(LINUX_KMOD_SUFFIX)
   SUBMENU:=$(EMENU)
   AUTOLOAD:=$(call AutoLoad,50, \
   	parport \
-  	parport_splink \
   	lp \
   )
 endef
