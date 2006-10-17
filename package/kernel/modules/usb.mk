@@ -24,7 +24,7 @@ endef
 define KernelPackage/usb-core/2.6
   FILES:=$(MODULES_DIR)/kernel/drivers/usb/core/usbcore.$(LINUX_KMOD_SUFFIX)
 endef
-$(eval $(call KernelPackage,usb-core))
+$(eval $(call KernelPackage,usbcore))
 
 
 define KernelPackage/usb-uhci
