@@ -6,69 +6,7 @@ source "target/linux/*-2.[46]/Config.in"
 
 comment "Kernel modules"
 
-menu "Networking modules"
-
-config PACKAGE_KMOD_ATM
-	prompt "kmod-atm.......................... ATM support"
-	tristate
-	default y if LINUX_2_4_AR7
-	default m
-	help
-	  ATM support
-
-config PACKAGE_KMOD_IPIP
-	prompt "kmod-ipip......................... IP in IP encapsulation support"
-	tristate
-	default m
-	help
-	  Kernel module for IP in IP encapsulation
-
-config PACKAGE_KMOD_RING
-	prompt "kmod-ring......................... PF Ring"
-	tristate
-	default m
-	help
-	  PF Ring
-
-config PACKAGE_KMOD_TUN
-	prompt "kmod-tun.......................... Universal TUN/TAP driver"
-	tristate
-	default m
-	help
-	  Kernel support for the TUN/TAP tunneling device
-
-endmenu
-
 menu "Block devices support"
-
-config PACKAGE_kmod-ide-core
-	prompt "kmod-ide-core..................... IDE support"
-	tristate
-	default m
-	depends LINUX_2_4_X86 || LINUX_2_6_X86 || LINUX_2_4_BRCM || LINUX_2_6_BRCM
-	help
-	  Kernel modules for IDE support
-	  useful for usb mass storage devices (e.g. on WL-HDD)
-	  
-	  Includes:
-	    - ide-core
-	    - ide-detect
-	    - ide-disk
-
-config PACKAGE_kmod-ide-pdc202xx
-	prompt "kmod-ide-pdc202xx................. PDC202xx driver"
-	tristate
-	default m
-	depends PACKAGE_kmod-ide-core
-	depends LINUX_2_4_X86 || LINUX_2_6_X86 || LINUX_2_4_BRCM || LINUX_2_6_BRCM
-	help
-	  Kernel modules for IDE support
-	  useful for usb mass storage devices (e.g. on WL-HDD)
-	  
-	  Includes:
-	    - ide-core
-	    - ide-detect
-	    - ide-disk
 
 config PACKAGE_KMOD_LOOP
 	prompt "kmod-loop......................... Loop mount support"
@@ -477,15 +415,6 @@ config PACKAGE_KMOD_SOFTDOG
 	default m
 	help
 	  Kernel modules for software watchdog driver
-
-config PACKAGE_KMOD_WD1100
-	prompt "kmod-wd1100....................... Soekris net4801 watchdog"
-	tristate
-	default y
-	depends LINUX_2_4_X86
-	help
-	  Driver for the NatSemi SC1x00 series Watchdog 
-	  found on Soekris net4801 boards
 
 endmenu
 

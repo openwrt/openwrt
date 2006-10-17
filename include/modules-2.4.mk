@@ -6,13 +6,6 @@
 #
 include $(INCLUDE_DIR)/netfilter.mk
 
-# Networking
-
-$(eval $(call KMOD_template,ATM,atm,\
-	$(MODULES_DIR)/kernel/net/atm/atm.o \
-	$(MODULES_DIR)/kernel/net/atm/br2684.o \
-,CONFIG_ATM,,50,atm))
-
 # Block devices
 
 $(eval $(call KMOD_template,LOOP,loop,\
