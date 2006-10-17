@@ -69,6 +69,7 @@ define KernelPackage
     EXTRA_DEPENDS:='kernel (=$(PKG_VERSION)-$(PKG_RELEASE))'
     $(call KernelPackage/$(1))
     $(call KernelPackage/$(1)/$(KERNEL))
+    $(call KernelPackage/$(1)/$(BOARD)-$(KERNEL))
   endef
 
   ifeq ($(findstring m,$(KCONFIG)),m)
@@ -87,4 +88,4 @@ define AutoLoad
   add_module $(1) "$(2)";
 endef
 
-include ./modules.mk
+include ./modules/*.mk
