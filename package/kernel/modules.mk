@@ -65,10 +65,10 @@ define KernelPackage/lp
   TITLE:=Parallel port and line printer support
   KCONFIG:=$(CONFIG_PARPORT)
   FILES:= \
-	$(MODULES_DIR)/kernel/drivers/parport/parport.o \
-	$(MODULES_DIR)/kernel/drivers/parport/parport_*.o \
-	$(MODULES_DIR)/kernel/drivers/char/lp.o \
-	$(MODULES_DIR)/kernel/drivers/char/ppdev.o
+	$(MODULES_DIR)/kernel/drivers/parport/parport.$(LINUX_KMOD_SUFFIX) \
+	$(MODULES_DIR)/kernel/drivers/parport/parport_*.$(LINUX_KMOD_SUFFIX) \
+	$(MODULES_DIR)/kernel/drivers/char/lp.$(LINUX_KMOD_SUFFIX) \
+	$(MODULES_DIR)/kernel/drivers/char/ppdev.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50, \
   	parport \
   	parport_splink \
@@ -307,8 +307,8 @@ define KernelPackage/atm
   DESCRIPTION:= \
     Kernel modules for ATM support
   FILES:= \
-    $(MODULES_DIR)/kernel/net/atm/atm.o \
-    $(MODULES_DIR)/kernel/net/atm/br2684.o
+    $(MODULES_DIR)/kernel/net/atm/atm.$(LINUX_KMOD_SUFFIX) \
+    $(MODULES_DIR)/kernel/net/atm/br2684.$(LINUX_KMOD_SUFFIX)
   KCONFIG:=$(CONFIG_ATM)
   SUBMENU:=$(NSMENU)
   AUTOLOAD:=$(call AutoLoad,30,atm)
