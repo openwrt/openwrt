@@ -13,19 +13,7 @@ my $makefile;
 my $pkg;
 my %package;
 my %category;
-my $cur_menu;
-my $cur_menu_dep;
 
-sub close_submenu {
-	if ($cur_menu) {
-		print "endmenu\n";
-		$cur_menu_dep and do {
-			print "endif\n";
-			$cur_menu_dep = undef;
-		};
-		undef $cur_menu;
-	} 
-}
 
 sub find_dep($$) {
 	my $pkg = shift;
@@ -45,6 +33,7 @@ sub depends($$) {
 	my $b = shift;
 	my $ret;
 
+	return 0 if ($a->{submenu} ne $b->{submenu});
 	if (find_dep($a, $b->{name}) == 1) {
 		$ret = 1;
 	} elsif (find_dep($b, $a->{name}) == 1) {
@@ -59,25 +48,42 @@ sub depends($$) {
 
 sub print_category($) {
 	my $cat = shift;
+	my %menus;
+	my %menu_dep;
 	
 	return unless $category{$cat};
 	
 	print "menu \"$cat\"\n\n";
 	my %spkg = %{$category{$cat}};
+	
 	foreach my $spkg (sort {uc($a) cmp uc($b)} keys %spkg) {
+		foreach my $pkg (@{$spkg{$spkg}}) {
+			my $menu = $pkg->{submenu};
+			if ($menu) {
+				$menu_dep{$menu} or $menu_dep{$menu} = $pkg->{submenudep};
+			} else {
+				$menu = 'undef';
+			}
+			$menus{$menu} or $menus{$menu} = [];
+			push @{$menus{$menu}}, $pkg;
+		}
+	}
+	my @menus = sort {
+		($a eq 'undef' ?  1 : 0) or
+		($b eq 'undef' ? -1 : 0) or
+		($a cmp $b)
+	} keys %menus;
+
+	foreach my $menu (@menus) {
 		my @pkgs = sort {
 			depends($a, $b) or
-			$a->{submenu}."->".$a->{name} cmp $b->{submenu}."->".$b->{name}
-		} @{$spkg{$spkg}};
+			($a->{name} cmp $b->{name})
+		} @{$menus{$menu}};
+		if ($menu ne 'undef') {
+			$menu_dep{$menu} and print "if $menu_dep{$menu}\n";
+			print "menu \"$menu\"\n";
+		}
 		foreach my $pkg (@pkgs) {
-			if ($cur_menu ne $pkg->{submenu}) {
-				close_submenu();
-				if ($pkg->{submenu}) {
-					$cur_menu = $pkg->{submenu};
-					$cur_menu_dep = $pkg->{submenudep} and print "if $cur_menu_dep\n";
-					print "menu \"$cur_menu\"\n";
-				}
-			}
 			my $title = $pkg->{name};
 			my $c = (72 - length($pkg->{name}) - length($pkg->{title}));
 			if ($c > 0) {
@@ -110,8 +116,11 @@ sub print_category($) {
 
 			$pkg->{config} and print $pkg->{config}."\n";
 		}
+		if ($menu ne 'undef') {
+			print "endmenu\n";
+			$menu_dep{$menu} and print "endif\n";
+		}
 	}
-	close_submenu();
 	print "endmenu\n\n";
 	
 	undef $category{$cat};
