@@ -11,6 +11,7 @@ use strict;
 my $src;
 my $makefile;
 my $pkg;
+my %package;
 my %category;
 my $cur_menu;
 my $cur_menu_dep;
@@ -26,6 +27,35 @@ sub close_submenu {
 	} 
 }
 
+sub find_dep($$) {
+	my $pkg = shift;
+	my $name = shift;
+	
+	return 0 unless defined $pkg->{depends};
+	foreach my $dep (@{$pkg->{depends}}) {
+		return 1 if $dep eq $name;
+		return 1 if ($package{$dep} and (find_dep($package{$dep},$name) == 1));
+	}
+	return 0;
+}
+
+sub depends($$) {
+	my $a = shift;
+	my $b = shift;
+	my $ret;
+	
+	if (find_dep($a, $b->{name}) == 1) {
+		$ret = 1;
+	} elsif (find_dep($b, $a->{name}) == 1) {
+		$ret = -1;
+	} else {
+		$ret = 0;
+	}
+#	print STDERR "depends($a->{name}, $b->{name}) == $ret\n";
+	return $ret;
+}
+
+
 sub print_category($) {
 	my $cat = shift;
 	
@@ -35,6 +65,7 @@ sub print_category($) {
 	my %spkg = %{$category{$cat}};
 	foreach my $spkg (sort {uc($a) cmp uc($b)} keys %spkg) {
 		my @pkgs = sort {
+			depends($a, $b) or
 			$a->{submenu}."->".$a->{name} cmp $b->{submenu}."->".$b->{name}
 		} @{$spkg{$spkg}};
 		foreach my $pkg (@pkgs) {
@@ -93,6 +124,7 @@ while ($line = <>) {
 		$pkg->{makefile} = $makefile;
 		$pkg->{name} = $1;
 		$pkg->{default} = "m if ALL";
+		$package{$1} = $pkg;
 	};
 	$line =~ /^Version: \s*(.+)\s*$/ and $pkg->{version} = $1;
 	$line =~ /^Title: \s*(.+)\s*$/ and $pkg->{title} = $1;
