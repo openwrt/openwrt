@@ -83,14 +83,6 @@ config PACKAGE_KMOD_PWC
 	depends PACKAGE_kmod-usb-core
 	default m
 
-config PACKAGE_KMOD_SOUNDCORE
-	prompt "kmod-soundcore.................... Soundcard support"
-	tristate
-	default n
-	help
-	  Base support for soundcards
-	  Requires either USB soundcard support (OSS) or ALSA package to be useful
-
 config PACKAGE_KMOD_VIDEODEV
 	prompt "kmod-videodev..................... Video (For Linux) kernel support"
 	tristate

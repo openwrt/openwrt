@@ -62,10 +62,6 @@ $(eval $(call KMOD_template,PWC,pwc,\
 	$(MODULES_DIR)/kernel/drivers/usb/media/pwc/pwc.ko \
 ,CONFIG_USB_PWC,kmod-videodev,63,pwc))
 
-$(eval $(call KMOD_template,SOUNDCORE,soundcore,\
-	$(MODULES_DIR)/kernel/sound/soundcore.ko \
-,CONFIG_SOUND,,30,soundcore))
-
 $(eval $(call KMOD_template,VIDEODEV,videodev,\
 	$(MODULES_DIR)/kernel/drivers/media/video/v4l1-compat.ko \
 	$(MODULES_DIR)/kernel/drivers/media/video/v4l2-common.ko \

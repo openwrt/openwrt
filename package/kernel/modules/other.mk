@@ -81,4 +81,21 @@ endef
 $(eval $(call KernelPackage,lp))
 
 
+define KernelPackage/soundcore
+  TITLE:=Sound support
+  DESCRIPTION:=Kernel modules for sound support
+  KCONFIG:=$(CONFIG_SOUND)
+  SUBMENU:=$(EMENU)
+  AUTOLOAD:=$(call AutoLoad,30,soundcore)
+endef
+
+define KernelPackage/soundcore/2.4
+  FILES:=$(MODULES_DIR)/kernel/drivers/sound/soundcore.$(LINUX_KMOD_SUFFIX)
+endef
+
+define KernelPackage/soundcore/2.6
+  FILES:=$(MODULES_DIR)/kernel/sound/soundcore.$(LINUX_KMOD_SUFFIX)
+endef
+$(eval $(call KernelPackage,soundcore))
+
 
