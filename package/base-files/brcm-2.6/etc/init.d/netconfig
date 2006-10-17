@@ -2,11 +2,12 @@
 # Copyright (C) 2006 OpenWrt.org
 
 START=05
+
 start() {
 	[ -e /etc/config/network ] && exit 0
-	
+
 	mkdir -p /etc/config
-	
+
 	(
 		if grep -E 'mtd0: 000(6|a)0000' /proc/mtd 2>&- >&-; then
 			# WGT634u
@@ -39,6 +40,11 @@ start() {
 				c["lan_ifname"]="eth0 eth1" # FIXME
 				c["wan_ifname"]=""
 			}
+		}
+		if (nvram["boardtype"] == "bcm94710r4") {
+			# Toshiba WRC-1000
+			c["lan_ifname"] = "eth0"
+			c["wan_ifname"] = "eth1"
 		}
 		if (nvram["boardtype"] == "wgt634u") {
 			c["vlan0ports"] = "0 1 2 3 5*"

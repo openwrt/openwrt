@@ -41,6 +41,11 @@ start() {
 				c["wan_ifname"]=""
 			}
 		}
+		if (nvram["boardtype"] == "bcm94710r4") {
+			# Toshiba WRC-1000
+			c["lan_ifname"] = "eth0"
+			c["wan_ifname"] = "eth1"
+		}
 		if (nvram["boardtype"] == "wgt634u") {
 			c["vlan0ports"] = "0 1 2 3 5*"
 			c["vlan1ports"] = "4 5"
