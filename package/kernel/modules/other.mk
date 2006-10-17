@@ -57,6 +57,7 @@ $(eval $(call KernelPackage,ide-core))
 
 define KernelPackage/ide-pdc202xx
   TITLE:=PDC202xx IDE driver
+  SUBMENU:=$(EMENU)
   KCONFIG:=$(CONFIG_BLK_DEV_PDC202XX_OLD)
   FILES:=$(MODULES_DIR)/kernel/drivers/ide/pci/pdc202xx_old.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,pdc202xx_old)
