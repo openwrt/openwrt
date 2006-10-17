@@ -86,6 +86,7 @@ menu "Target Images"
 	config TARGET_ROOTFS_EXT2FS
 		bool "ext2"
 		default y if !USES_SQUASHFS && !USES_JFFS2
+		default y if USES_EXT2
 		depends !TARGET_ROOTFS_INITRAMFS
 		help
 		  Ext2 file system with some free space for uml images
