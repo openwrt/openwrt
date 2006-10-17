@@ -11,7 +11,7 @@ config PACKAGE_KMOD_SANGAM_ATM_A
 	tristate
 	default m
 	depends LINUX_2_4_AR7
-	select PACKAGE_KMOD_ATM
+	select PACKAGE_kmod-atm
 	help
 	  ATM driver for the Sangam ADSL chip on AR7
 	  Annex A version
@@ -21,7 +21,7 @@ config PACKAGE_KMOD_SANGAM_ATM_B
 	tristate
 	default y
 	depends LINUX_2_4_AR7
-	select PACKAGE_KMOD_ATM
+	select PACKAGE_kmod-atm
 	help
 	  ATM driver for the Sangam ADSL chip on AR7
 	  Annex B version

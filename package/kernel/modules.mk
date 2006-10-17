@@ -66,7 +66,7 @@ define KernelPackage/lp
   KCONFIG:=$(CONFIG_PARPORT)
   FILES:= \
 	$(MODULES_DIR)/kernel/drivers/parport/parport.o \
-	$(MODULES_DIR)/kernel/drivers/parport/parport_splink.o \
+	$(MODULES_DIR)/kernel/drivers/parport/parport_*.o \
 	$(MODULES_DIR)/kernel/drivers/char/lp.o \
 	$(MODULES_DIR)/kernel/drivers/char/ppdev.o
   AUTOLOAD:=$(call AutoLoad,50, \
@@ -78,32 +78,7 @@ endef
 $(eval $(call KernelPackage,lp))
 
 
-define KernelPackage/ieee80211softmac
-  TITLE:=802.11 Networking stack
-  DESCRIPTION:=\\\
-	\\\
-	Includes: \\\
-	- ieee80211_crypt \\\
-	- ieee80211 \\\
-	- ieee80211_crypt_wep \\\
-	- ieee80211_crypt_tkip \\\
-	- ieee80211_crytp_ccmp \\\
-	- ieee80211softmac
-  KCONFIG:=$(CONFIG_IEEE80211_SOFTMAC)
-  FILES:=$(MODULES_DIR)/kernel/net/ieee80211/*.$(LINUX_KMOD_SUFFIX) $(MODULES_DIR)/kernel/net/ieee80211/softmac/*.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,10, \
-	ieee80211_crypt \
-	ieee80211 \
-	ieee80211_crypt_wep \
-	ieee80211_crypt_tkip \
-	ieee80211_crypt_ccmp \
-	ieee80211softmac \
-  )
-endef
-$(eval $(call KernelPackage,ieee80211softmac))
-
-
-WIMENU:=Wireless drivers
+WIMENU:=Wireless Drivers
 
 define KernelPackage/bcm43xx
   TITLE:=Broadcom BCM43xx driver
@@ -324,15 +299,53 @@ define KernelPackage/ebtables
 endef
 $(eval $(call KernelPackage,ebtables))
 
+NSMENU:=Network Support
+
+define KernelPackage/atm
+  TITLE:=ATM support
+  DEPENDS:=@ATM_SUPPORT
+  DESCRIPTION:= \
+    Kernel modules for ATM support
+  FILES:= \
+    $(MODULES_DIR)/kernel/net/atm/atm.o \
+    $(MODULES_DIR)/kernel/net/atm/br2684.o
+  KCONFIG:=$(CONFIG_ATM)
+  SUBMENU:=$(NSMENU)
+  AUTOLOAD:=$(call AutoLoad,30,atm)
+endef
+$(eval $(call KernelPackage,atm))
+
+define KernelPackage/atmtcp
+  TITLE:=ATM over TCP
+  DESCRIPTION:= \
+    Kernel module for ATM over TCP support
+  DEPENDS:=@LINUX_2_6 kmod-atm
+  FILES:=$(MODULES_DIR)/kernel/drivers/atm/atmtcp.$(LINUX_KMOD_SUFFIX)
+  KCONFIG:=$(CONFIG_ATM_TCP)
+  AUTOLOAD:=$(call AutoLoad,40,atmtcp)
+endef
+$(eval $(call KernelPackage,atmtcp))
+
 define KernelPackage/ipip
   TITLE:=IP in IP encapsulation support
   DESCRIPTION:=\
   	Kernel modules for IP in IP encapsulation
-  FILES:=$(MODULES_DIR)/kernel/net/ipv4/ipip.$(LINUX_KMOD_SUFFIX)
   KCONFIG:=$(CONFIG_NET_IPIP)
+  SUBMENU:=$(NSMENU)
 endef
 $(eval $(call KernelPackage,ipip))
 
+define KernelPackage/ipip/2.4
+  FILES:=$(MODULES_DIR)/kernel/net/ipv4/ipip.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,30,ipip)
+endef
+
+define KernelPackage/ipip/2.6
+  FILES:= \
+	$(MODULES_DIR)/kernel/net/ipv4/ipip.$(LINUX_KMOD_SUFFIX) \
+	$(MODULES_DIR)/kernel/net/ipv4/tunnel4.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,30,ipip tunnel4)
+endef
 
 define KernelPackage/ipv6
   TITLE:=IPv6 support
@@ -340,6 +353,7 @@ define KernelPackage/ipv6
 	Kernel modules for IPv6 support
   KCONFIG:=$(CONFIG_IPV6)
   FILES:=$(MODULES_DIR)/kernel/net/ipv6/ipv6.$(LINUX_KMOD_SUFFIX)
+  SUBMENU:=$(NSMENU)
 endef
 $(eval $(call KernelPackage,ipv6))
 
@@ -350,6 +364,7 @@ define KernelPackage/gre
 	Generic Routing Encapsulation support
   KCONFIG=$(CONFIG_NET_IPGRE)
   FILES=$(MODULES_DIR)/kernel/net/ipv4/ip_gre.$(LINUX_KMOD_SUFFIX)
+  SUBMENU:=$(NSMENU)
 endef
 $(eval $(call KernelPackage,gre))
 
@@ -360,6 +375,8 @@ define KernelPackage/tun
 	Kernel support for the TUN/TAP tunneling device
   KCONFIG:=$(CONFIG_TUN)
   FILES:=$(MODULES_DIR)/kernel/drivers/net/tun.$(LINUX_KMOD_SUFFIX)
+  SUBMENU:=$(NSMENU)
+  AUTOLOAD:=$(call AutoLoad,30,tun)
 endef
 $(eval $(call KernelPackage,tun))
 
@@ -369,6 +386,7 @@ define KernelPackage/ppp
   DESCRIPTION:=\
 	Kernel modules for PPP support
   KCONFIG:=$(CONFIG_PPP)
+  SUBMENU:=$(NSMENU)
 endef
 
 define KernelPackage/ppp/2.6
@@ -389,6 +407,7 @@ define KernelPackage/pppoe
   DEPENDS:=kmod-ppp
   KCONFIG:=$(CONFIG_PPPOE)
   FILES:=$(MODULES_DIR)/kernel/drivers/net/pppoe.$(LINUX_KMOD_SUFFIX) $(MODULES_DIR)/kernel/drivers/net/pppox.$(LINUX_KMOD_SUFFIX)
+  SUBMENU:=$(NSMENU)
 endef
 $(eval $(call KernelPackage,pppoe))
 
@@ -400,6 +419,7 @@ define KernelPackage/pppoa
   DEPENDS:=kmod-ppp
   KCONFIG:=$(CONFIG_PPPOATM)
   FILES:=$(MODULES_DIR)/kernel/net/atm/pppoatm.$(LINUX_KMOD_SUFFIX)
+  SUBMENU:=$(NSMENU)
 endef
 $(eval $(call KernelPackage,pppoa))
 
@@ -409,6 +429,7 @@ define KernelPackage/mppe
   DESCRIPTION:=Kernel modules for Microsoft PPP compression/encryption
   DEPENDS:=kmod-ppp
   KCONFIG:=$(CONFIG_PPP_MPPE)
+  SUBMENU:=$(NSMENU)
 endef
 
 define KernelPackage/mppe/2.4
@@ -426,8 +447,36 @@ define KernelPackage/sched
   DESCRIPTION:=\
 	Kernel schedulers for IP traffic
   FILES:=$(MODULES_DIR)/kernel/net/sched/*.$(LINUX_KMOD_SUFFIX)
+  SUBMENU:=$(NSMENU)
 endef
 $(eval $(call KernelPackage,sched))
+
+
+define KernelPackage/ieee80211softmac
+  TITLE:=802.11 Networking stack
+  DESCRIPTION:=\\\
+	\\\
+	Includes: \\\
+	- ieee80211_crypt \\\
+	- ieee80211 \\\
+	- ieee80211_crypt_wep \\\
+	- ieee80211_crypt_tkip \\\
+	- ieee80211_crytp_ccmp \\\
+	- ieee80211softmac
+  DEPENDS:=@LINUX_2_6
+  KCONFIG:=$(CONFIG_IEEE80211_SOFTMAC)
+  FILES:=$(MODULES_DIR)/kernel/net/ieee80211/*.$(LINUX_KMOD_SUFFIX) $(MODULES_DIR)/kernel/net/ieee80211/softmac/*.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,10, \
+	ieee80211_crypt \
+	ieee80211 \
+	ieee80211_crypt_wep \
+	ieee80211_crypt_tkip \
+	ieee80211_crypt_ccmp \
+	ieee80211softmac \
+  )
+  SUBMENU:=$(NSMENU)
+endef
+$(eval $(call KernelPackage,ieee80211softmac))
 
 
 
