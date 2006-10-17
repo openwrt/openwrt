@@ -14,7 +14,7 @@ define KernelPackage/usb-core
   DEPENDS:=@USB_SUPPORT
   KCONFIG:=$(CONFIG_USB)
   SUBMENU:=$(USBMENU)
-  AUTOLOAD:=$(call AutoLoad,20,usb-core)
+  AUTOLOAD:=$(call AutoLoad,20,usbcore)
 endef
 
 define KernelPackage/usb-core/2.4
@@ -24,7 +24,7 @@ endef
 define KernelPackage/usb-core/2.6
   FILES:=$(MODULES_DIR)/kernel/drivers/usb/core/usbcore.$(LINUX_KMOD_SUFFIX)
 endef
-$(eval $(call KernelPackage,usbcore))
+$(eval $(call KernelPackage,usb-core))
 
 
 define KernelPackage/usb-uhci
