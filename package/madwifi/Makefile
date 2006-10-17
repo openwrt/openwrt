@@ -76,7 +76,7 @@ ifeq ($(findstring PCI,$(BUS)),PCI)
 endif
 
 define KernelPackage/madwifi
-  SUBMENU:=Network Devices
+  SUBMENU:=Wireless Drivers
   DEFAULT:=y if LINUX_2_6_BRCM || LINUX_2_6_ARUBA || LINUX_2_4_AR531X || LINUX_2_6_XSCALE, m if ALL
   TITLE:=Driver for Atheros wireless chipsets
   DESCRIPTION:=\
