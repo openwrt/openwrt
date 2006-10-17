@@ -22,7 +22,7 @@
 #include <unistd.h>
 #include <locale.h>
 
-#define BUFSIZE 32768
+#define BUFSIZE 524288
 #define LKC_DIRECT_LINK
 #include "lkc.h"
 
