@@ -34,6 +34,12 @@ while ($line = <>) {
 		defined $pkg{$name} or $pkg{$name} = {};
 		$pkg{$name}->{src} = $src;
 	};
+	$line =~ /^Provides: \s*(.+)\s*$/ and do {
+		foreach my $vpkg (split /\s+/, $1) {
+			defined $pkg{$vpkg} or $pkg{$vpkg} = {};
+			$pkg{$vpkg}->{virtual} = 1;
+		}
+	};
 	$line =~ /^Prereq-Check:/ and !defined $prereq{$src} and do {
 		$pkg{$name}->{prereq} = 1;
 	};
@@ -52,6 +58,7 @@ $line="";
 foreach $name (sort {uc($a) cmp uc($b)} keys %pkg) {
 	my $config;
 	
+	next if defined $pkg{$name}->{virtual};
 	if ($options{SDK}) {
 		$conf{$pkg{$name}->{src}} or do {
 			$config = 'm';
@@ -69,6 +76,7 @@ foreach $name (sort {uc($a) cmp uc($b)} keys %pkg) {
 	my $depline = "";
 	foreach my $dep (@{$pkg{$name}->{depends}}) {
 		my $idx;
+		next if defined $pkg{$dep}->{virtual};
 		if (defined $pkg{$dep}->{src}) {
 			($pkg{$name}->{src} ne $pkg{$dep}->{src}) and $idx = $pkg{$dep}->{src};
 		} elsif (defined($pkg{$dep}) && !$options{SDK}) {

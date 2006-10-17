@@ -30,9 +30,10 @@ sub close_submenu {
 sub find_dep($$) {
 	my $pkg = shift;
 	my $name = shift;
-	
-	return 0 unless defined $pkg->{depends};
-	foreach my $dep (@{$pkg->{depends}}) {
+	my $deps = ($pkg->{vdepends} or $pkg->{depends});
+
+	return 0 unless defined $deps;
+	foreach my $dep (@{$deps}) {
 		return 1 if $dep eq $name;
 		return 1 if ($package{$dep} and (find_dep($package{$dep},$name) == 1));
 	}
@@ -43,13 +44,13 @@ sub depends($$) {
 	my $a = shift;
 	my $b = shift;
 	my $ret;
-	
+
 	if (find_dep($a, $b->{name}) == 1) {
 		$ret = 1;
 	} elsif (find_dep($b, $a->{name}) == 1) {
 		$ret = -1;
 	} else {
-		$ret = 0;
+		return 0;
 	}
 #	print STDERR "depends($a->{name}, $b->{name}) == $ret\n";
 	return $ret;
@@ -93,8 +94,14 @@ sub print_category($) {
 				my $m = "depends";
 				$depend =~ s/^([@\+]+)//;
 				my $flags = $1;
-				$flags =~ /@/ or $depend = "PACKAGE_$depend";
-				$flags =~ /\+/ and $m = "select";
+				my $vdep;
+				
+				if ($vdep = $package{$depend}->{vdepends}) {
+					$depend = join("||", map { "PACKAGE_".$_ } @$vdep);
+				} else {
+					$flags =~ /@/ or $depend = "PACKAGE_$depend";
+					$flags =~ /\+/ and $m = "select";
+				}
 				print "\t\t$m $depend\n";
 			}
 			print "\t\thelp\n";
@@ -132,6 +139,13 @@ while ($line = <>) {
 	$line =~ /^Submenu: \s*(.+)\s*$/ and $pkg->{submenu} = $1;
 	$line =~ /^Submenu-Depends: \s*(.+)\s*$/ and $pkg->{submenudep} = $1;
 	$line =~ /^Default: \s*(.+)\s*$/ and $pkg->{default} = $1;
+	$line =~ /^Provides: \s*(.+)\s*$/ and do {
+		my @vpkg = split /\s+/, $1;
+		foreach my $vpkg (@vpkg) {
+			$package{$vpkg} or $package{$vpkg} = { vdepends => [] };
+			push @{$package{$vpkg}->{vdepends}}, $pkg->{name};
+		}
+	};
 	$line =~ /^Depends: \s*(.+)\s*$/ and do {
 		my @dep = split /\s+/, $1;
 		$pkg->{depends} = \@dep;
