@@ -78,6 +78,7 @@ define Package/Default
   SECTION:=opt
   CATEGORY:=Extra packages
   DEPENDS:=
+  PROVIDES:=
   EXTRA_DEPENDS:=
   MAINTAINER:=OpenWrt Developers Team <openwrt-devel@openwrt.org>
   SOURCE:=$(patsubst $(TOPDIR)/%,%,${shell pwd})
@@ -177,6 +178,7 @@ define BuildPackage
 	if [ "$$$$PREREQ_CHECK" = 1 ]; then echo "Prereq-Check: 1"; fi; \
 	echo "Version: $(VERSION)"; \
 	echo "Depends: $$(IDEPEND_$(1))"; \
+	echo "Provides: $(PROVIDES)"; \
 	echo "Build-Depends: $(PKG_BUILDDEP)"; \
 	echo "Category: $(CATEGORY)"; \
 	echo "Title: $(TITLE)"; \
