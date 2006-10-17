@@ -55,6 +55,7 @@ config LINUX_2_6_BRCM
 	select LINUX_2_6
 	select PCI_SUPPORT
 	select USB_SUPPORT
+	select ATM_SUPPORT
 	#select PCMCIA_SUPPORT
 	select USES_SQUASHFS
 	select USES_JFFS2
@@ -69,6 +70,7 @@ config LINUX_2_6_BRCM63XX
 	select LINUX_2_6
 	select PCI_SUPPORT
 	select USB_SUPPORT
+	select ATM_SUPPORT
 	select PCMCIA_SUPPORT
 	select USES_SQUASHFS
 	select USES_JFFS2
@@ -122,6 +124,7 @@ config LINUX_2_6_X86
 	select LINUX_2_6
 	select PCI_SUPPORT
 	select USB_SUPPORT
+	select ATM_SUPPORT
 	select PCMCIA_SUPPORT
 	select USES_JFFS2
 	select USES_EXT2
@@ -206,6 +209,9 @@ config PCMCIA_SUPPORT
 	bool
 
 config USB_SUPPORT
+	bool
+
+config ATM_SUPPORT
 	bool
 
 config BIG_ENDIAN
