@@ -22,17 +22,6 @@ PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/kmod-madwifi
-  SECTION:=kernel
-  CATEGORY:=Kernel drivers
-  DEFAULT:=y if LINUX_2_6_BRCM || LINUX_2_6_ARUBA || LINUX_2_4_AR531X || LINUX_2_6_XSCALE, m if ALL
-  TITLE:=Driver for Atheros wireless chipsets
-  DESCRIPTION:=\
-	This package contains a driver for Atheros 802.11a/b/g chipsets.
-  URL:=http://madwifi.org/
-  VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
-endef
-
 RATE_CONTROL:=sample
 
 ifeq ($(ARCH),mips)
@@ -66,6 +55,41 @@ endif
 ifeq ($(findstring PCI,$(BUS)),PCI)
   BUS_MODULES+=$(PKG_BUILD_DIR)/ath/ath_pci.$(LINUX_KMOD_SUFFIX)
 endif
+
+MADWIFI_AUTOLOAD:= \
+	wlan \
+	wlan_scan_ap \
+	wlan_scan_sta \
+	ath_hal \
+	ath_rate_$(RATE_CONTROL) \
+	wlan_acl \
+	wlan_ccmp \
+	wlan_tkip \
+	wlan_wep \
+	wlan_xauth
+
+ifeq ($(findstring AHB,$(BUS)),AHB)
+	MADWIFI_AUTOLOAD += ath_ahb
+endif
+ifeq ($(findstring PCI,$(BUS)),PCI)
+	MADWIFI_AUTOLOAD += ath_pci
+endif
+
+define KernelPackage/madwifi
+  SUBMENU:=Network Devices
+  DEFAULT:=y if LINUX_2_6_BRCM || LINUX_2_6_ARUBA || LINUX_2_4_AR531X || LINUX_2_6_XSCALE, m if ALL
+  TITLE:=Driver for Atheros wireless chipsets
+  DESCRIPTION:=\
+	This package contains a driver for Atheros 802.11a/b/g chipsets.
+  URL:=http://madwifi.org/
+  VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
+  FILES:= \
+		$(PKG_BUILD_DIR)/ath/ath_hal.$(LINUX_KMOD_SUFFIX) \
+		$(BUS_MODULES) \
+		$(PKG_BUILD_DIR)/ath_rate/$(RATE_CONTROL)/ath_rate_$(RATE_CONTROL).$(LINUX_KMOD_SUFFIX) \
+		$(PKG_BUILD_DIR)/net80211/wlan*.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,50,$(MADWIFI_AUTOLOAD))
+endef
 
 MADWIFI_MAKEOPTS= -C $(PKG_BUILD_DIR) \
 		PATH="$(TARGET_PATH)" \
@@ -107,27 +131,12 @@ define Build/UninstallDev
 	rm -rf	$(STAGING_DIR)/usr/include/madwifi
 endef
 
-define Package/kmod-madwifi/install
-	mkdir -p $(1)/etc/modules.d
+define KernelPackage/madwifi/install
 	mkdir -p $(1)/etc/init.d
 	mkdir -p $(1)/lib/modules/$(LINUX_VERSION)
 	mkdir -p $(1)/usr/sbin
-	install -m0644 ./files/madwifi.modules $(1)/etc/modules.d/20-madwifi
-	echo ath_rate_$(RATE_CONTROL) >> $(1)/etc/modules.d/20-madwifi
-ifeq ($(findstring AHB,$(BUS)),AHB)
-	echo ath_ahb >> $(1)/etc/modules.d/20-madwifi
-endif
-ifeq ($(findstring PCI,$(BUS)),PCI)
-	echo "ath_pci autocreate=none" >> $(1)/etc/modules.d/20-madwifi
-endif
 	install -m0755 ./files/madwifi.init $(1)/etc/init.d/madwifi
-	$(CP) \
-		$(PKG_BUILD_DIR)/ath/ath_hal.$(LINUX_KMOD_SUFFIX) \
-		$(BUS_MODULES) \
-		$(PKG_BUILD_DIR)/ath_rate/$(RATE_CONTROL)/ath_rate_$(RATE_CONTROL).$(LINUX_KMOD_SUFFIX) \
-		$(PKG_BUILD_DIR)/net80211/wlan*.$(LINUX_KMOD_SUFFIX) \
-		$(1)/lib/modules/$(LINUX_VERSION)/
 	$(CP) $(PKG_BUILD_DIR)/tools/{madwifi_multi,80211debug,80211stats,athchans,athctrl,athdebug,athkey,athstats,wlanconfig} $(1)/usr/sbin/
 endef
 
-$(eval $(call BuildPackage,kmod-madwifi))
+$(eval $(call KernelPackage,madwifi))

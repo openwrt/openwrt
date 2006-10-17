@@ -6,7 +6,7 @@ diff -urN madwifi-0.9.2.old/ath/if_ath.c madwifi-0.9.2.dev/ath/if_ath.c
  	HAL_STATUS status;
  	int error = 0, i;
 -	int autocreatemode = IEEE80211_M_STA;
-+	int autocreatemode = IEEE80211_M_HOSTAP;
++	int autocreatemode = -1;
  	u_int8_t csz;
  
  	sc->devid = devid;
