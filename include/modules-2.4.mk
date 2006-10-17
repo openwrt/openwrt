@@ -108,66 +108,6 @@ $(eval $(call KMOD_template,PCMCIA_SERIAL,pcmcia-serial,\
 ,CONFIG_PCMCIA_SERIAL_CS,kmod-pcmcia-core,51,serial_cs))
 
 
-# USB
-
-$(eval $(call KMOD_template,USB,usb-core,\
-	$(MODULES_DIR)/kernel/drivers/usb/usbcore.o \
-,CONFIG_USB,,50,usbcore))
-
-$(eval $(call KMOD_template,USB_OHCI,usb-ohci,\
-	$(MODULES_DIR)/kernel/drivers/usb/host/usb-ohci.o \
-,CONFIG_USB_OHCI,kmod-usb-core,60,usb-ohci))
-
-$(eval $(call KMOD_template,USB_UHCI,usb-uhci,\
-	$(MODULES_DIR)/kernel/drivers/usb/host/uhci.o \
-,CONFIG_USB_UHCI_ALT,kmod-usb-core,60,uhci))
-
-$(eval $(call KMOD_template,USB2,usb2,\
-	$(MODULES_DIR)/kernel/drivers/usb/host/ehci-hcd.o \
-,CONFIG_USB_EHCI_HCD,kmod-usb-core,60,ehci-hcd))
-
-$(eval $(call KMOD_template,USB_ACM,usb-acm,\
-	$(MODULES_DIR)/kernel/drivers/usb/acm.o \
-,CONFIG_USB_ACM))
-
-$(eval $(call KMOD_template,USB_AUDIO,usb-audio,\
-	$(MODULES_DIR)/kernel/drivers/usb/audio.o \
-,CONFIG_USB_AUDIO,kmod-soundcore kmod-usb-core,61,audio))
-
-$(eval $(call KMOD_template,USB_PRINTER,usb-printer,\
-	$(MODULES_DIR)/kernel/drivers/usb/printer.o \
-,CONFIG_USB_PRINTER,kmod-usb-core,60,printer))
-
-$(eval $(call KMOD_template,USB_SERIAL,usb-serial,\
-	$(MODULES_DIR)/kernel/drivers/usb/serial/usbserial.o \
-,CONFIG_USB_SERIAL,kmod-usb-core,60,usbserial))
-
-$(eval $(call KMOD_template,USB_SERIAL_BELKIN,usb-serial-belkin,\
-	$(MODULES_DIR)/kernel/drivers/usb/serial/belkin_sa.o \
-,CONFIG_USB_SERIAL_BELKIN,kmod-usb-serial,61,belkin_sa))
-
-$(eval $(call KMOD_template,USB_SERIAL_FTDI,usb-serial-ftdi,\
-	$(MODULES_DIR)/kernel/drivers/usb/serial/ftdi_sio.o \
-,CONFIG_USB_SERIAL_FTDI_SIO,kmod-usb-serial,61,ftdi_sio))
-
-$(eval $(call KMOD_template,USB_SERIAL_MCT_U232,usb-serial-mct-u232,\
-	$(MODULES_DIR)/kernel/drivers/usb/serial/mct_u232.o \
-,CONFIG_USB_SERIAL_MCT_U232,kmod-usb-serial,61,mct_u232))
-
-$(eval $(call KMOD_template,USB_SERIAL_PL2303,usb-serial-pl2303,\
-	$(MODULES_DIR)/kernel/drivers/usb/serial/pl2303.o \
-,CONFIG_USB_SERIAL_PL2303,kmod-usb-serial,61,pl2303))
-
-$(eval $(call KMOD_template,USB_SERIAL_VISOR,usb-serial-visor,\
-	$(MODULES_DIR)/kernel/drivers/usb/serial/visor.o \
-,CONFIG_USB_SERIAL_VISOR,kmod-usb-serial,61,visor))
-
-$(eval $(call KMOD_template,USB_STORAGE,usb-storage,\
-	$(MODULES_DIR)/kernel/drivers/scsi/*.o \
-	$(MODULES_DIR)/kernel/drivers/usb/storage/*.o \
-,CONFIG_USB_STORAGE,kmod-usb-core,60,scsi_mod sd_mod usb-storage))
-
-
 # Misc. devices
 
 $(eval $(call KMOD_template,AX25,ax25,\
