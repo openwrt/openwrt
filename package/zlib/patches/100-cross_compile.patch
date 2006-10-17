@@ -1,6 +1,6 @@
 diff -ruN zlib-1.2.3-orig/Makefile.in zlib-1.2.3-2/Makefile.in
---- zlib-1.2.3-orig/Makefile.in	2004-09-15 16:27:20.000000000 +0200
-+++ zlib-1.2.3-2/Makefile.in	2004-11-13 13:38:12.000000000 +0100
+--- zlib-1.2.3-orig/Makefile.in	2005-07-18 10:25:21.000000000 +0800
++++ zlib-1.2.3-2/Makefile.in	2006-10-16 21:23:27.000000000 +0800
 @@ -25,20 +25,23 @@
  #           -Wstrict-prototypes -Wmissing-prototypes
  
@@ -88,8 +88,8 @@ diff -ruN zlib-1.2.3-orig/Makefile.in zlib-1.2.3-2/Makefile.in
  # ldconfig is for Linux
  
 diff -ruN zlib-1.2.3-orig/configure zlib-1.2.3-2/configure
---- zlib-1.2.3-orig/configure	2004-09-07 07:50:06.000000000 +0200
-+++ zlib-1.2.3-2/configure	2004-11-13 12:37:43.000000000 +0100
+--- zlib-1.2.3-orig/configure	2005-07-12 04:11:57.000000000 +0800
++++ zlib-1.2.3-2/configure	2006-10-16 21:25:38.000000000 +0800
 @@ -23,7 +23,7 @@
  VER=`sed -n -e '/VERSION "/s/.*"\(.*\)".*/\1/p' < zlib.h`
  VER2=`sed -n -e '/VERSION "/s/.*"\([0-9]*\\.[0-9]*\)\\..*/\1/p' < zlib.h`
@@ -99,16 +99,42 @@ diff -ruN zlib-1.2.3-orig/configure zlib-1.2.3-2/configure
  RANLIB=${RANLIB-"ranlib"}
  prefix=${prefix-/usr/local}
  exec_prefix=${exec_prefix-'${prefix}'}
-@@ -73,7 +73,7 @@
+@@ -73,32 +73,9 @@
  
  if test "$gcc" -eq 1 && ($cc -c $cflags $test.c) 2>/dev/null; then
    CC="$cc"
 -  SFLAGS=${CFLAGS-"-fPIC -O3"}
 +  SFLAGS=${CFLAGS-"-D_REENTRANT -fPIC -O3"}
    CFLAGS="$cflags"
-   case `(uname -s || echo unknown) 2>/dev/null` in
-   Linux | linux | GNU | GNU/*) LDSHARED=${LDSHARED-"$cc -shared -Wl,-soname,libz.so.1"};;
-@@ -408,6 +408,29 @@
+-  case `(uname -s || echo unknown) 2>/dev/null` in
+-  Linux | linux | GNU | GNU/*) LDSHARED=${LDSHARED-"$cc -shared -Wl,-soname,libz.so.1"};;
+-  CYGWIN* | Cygwin* | cygwin* | OS/2* )
+-             EXE='.exe';;
+-  QNX*)  # This is for QNX6. I suppose that the QNX rule below is for QNX2,QNX4
+-         # (alain.bonnefoy@icbt.com)
+-                 LDSHARED=${LDSHARED-"$cc -shared -Wl,-hlibz.so.1"};;
+-  HP-UX*)
+-         LDSHARED=${LDSHARED-"$cc -shared $SFLAGS"}
+-         case `(uname -m || echo unknown) 2>/dev/null` in
+-         ia64)
+-                 shared_ext='.so'
+-                 SHAREDLIB='libz.so';;
+-         *)
+-                 shared_ext='.sl'
+-                 SHAREDLIB='libz.sl';;
+-         esac;;
+-  Darwin*)   shared_ext='.dylib'
+-             SHAREDLIB=libz$shared_ext
+-             SHAREDLIBV=libz.$VER$shared_ext
+-             SHAREDLIBM=libz.$VER1$shared_ext
+-             LDSHARED=${LDSHARED-"$cc -dynamiclib -install_name $libdir/$SHAREDLIBM -compatibility_version $VER1 -current_version $VER"};;
+-  *)             LDSHARED=${LDSHARED-"$cc -shared"};;
+-  esac
++  LDSHARED=${LDSHARED-"$cc -shared -Wl,-soname,libz.so.1"}
+ else
+   # find system name and corresponding cc options
+   CC=${CC-cc}
+@@ -424,6 +401,29 @@
    echo Checking for mmap support... No.
  fi
  
@@ -138,7 +164,7 @@ diff -ruN zlib-1.2.3-orig/configure zlib-1.2.3-2/configure
  CPP=${CPP-"$CC -E"}
  case $CFLAGS in
    *ASMV*)
-@@ -424,20 +447,21 @@
+@@ -440,20 +440,21 @@
  # udpate Makefile
  sed < Makefile.in "
  /^CC *=/s#=.*#=$CC#
@@ -177,8 +203,8 @@ diff -ruN zlib-1.2.3-orig/configure zlib-1.2.3-2/configure
 +/^LDFLAGS *=/s%=.*%= $LDFLAGS%
  " > Makefile
 diff -ruN zlib-1.2.3-orig/contrib/minizip/Makefile zlib-1.2.3-2/contrib/minizip/Makefile
---- zlib-1.2.3-orig/contrib/minizip/Makefile	2003-09-10 20:00:16.000000000 +0200
-+++ zlib-1.2.3-2/contrib/minizip/Makefile	2004-11-13 12:37:43.000000000 +0100
+--- zlib-1.2.3-orig/contrib/minizip/Makefile	2005-07-13 02:08:40.000000000 +0800
++++ zlib-1.2.3-2/contrib/minizip/Makefile	2006-10-16 21:23:27.000000000 +0800
 @@ -1,8 +1,8 @@
  CC=cc
 -CFLAGS=-O -I../..
