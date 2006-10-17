@@ -13,9 +13,16 @@ define KernelPackage/usb-core
   DESCRIPTION:=Kernel support for USB
   DEPENDS:=@USB_SUPPORT
   KCONFIG:=$(CONFIG_USB)
-  FILES:=$(MODULES_DIR)/kernel/drivers/usb/usbcore.$(LINUX_KMOD_SUFFIX)
   SUBMENU:=$(USBMENU)
   AUTOLOAD:=$(call AutoLoad,20,usb-core)
+endef
+
+define KernelPackage/usb-core/2.4
+  FILES:=$(MODULES_DIR)/kernel/drivers/usb/usbcore.$(LINUX_KMOD_SUFFIX)
+endef
+
+define KernelPackage/usb-core/2.6
+  FILES:=$(MODULES_DIR)/kernel/drivers/usb/core/usbcore.$(LINUX_KMOD_SUFFIX)
 endef
 $(eval $(call KernelPackage,usb-core))
 
