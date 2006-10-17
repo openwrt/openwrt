@@ -80,7 +80,7 @@ menu "Multimedia devices support"
 config PACKAGE_KMOD_PWC
 	prompt "kmod-pwc.......................... Kernel driver for USB Philips Cameras"
 	tristate
-	depends PACKAGE_KMOD_USB
+	depends PACKAGE_kmod-usb-core
 	default m
 
 config PACKAGE_KMOD_SOUNDCORE
@@ -270,114 +270,6 @@ config PACKAGE_KMOD_PCMCIA_SERIAL
 
 endmenu
 
-menu "USB support"
-	depends USB_SUPPORT
-
-config PACKAGE_KMOD_USB
-	prompt "kmod-usb-core..................... USB support"
-	tristate
-	default m
-
-config PACKAGE_KMOD_USB_UHCI 
-	prompt   "kmod-usb-uhci................... Support for UHCI controllers"
-	tristate
-	default n if LINUX_2_6_AU1000
-	depends PACKAGE_KMOD_USB
-	select PACKAGE_KMOD_USB_CONTROLLER
-
-config PACKAGE_KMOD_USB_OHCI
-	prompt   "kmod-usb-ohci................... Support for OHCI controllers"
-	tristate
-	default m
-	depends PACKAGE_KMOD_USB
-	select PACKAGE_KMOD_USB_CONTROLLER
-
-config PACKAGE_KMOD_USB2
-	prompt   "kmod-usb2....................... Support for USB 2.0 controllers"
-	tristate
-	default n if LINUX_2_6_AU1000
-	depends PACKAGE_KMOD_USB
-	select PACKAGE_KMOD_USB_CONTROLLER
-
-config PACKAGE_KMOD_USB_CONTROLLER
-	tristate
-	depends on PACKAGE_KMOD_USB_UHCI || PACKAGE_KMOD_USB_OHCI || PACKAGE_KMOD_USB2
-	default n
-
-config PACKAGE_KMOD_USB_ACM
-	prompt "kmod-usb-acm...................... Support for USB modems/isdn controllers"
-	tristate
-	default m
-	depends PACKAGE_KMOD_USB_CONTROLLER
-
-config PACKAGE_KMOD_USB_AUDIO
-	prompt "kmod-usb-audio.................... Support for USB soundcards"
-	tristate
-	default m
-	depends PACKAGE_KMOD_USB_CONTROLLER
-	select PACKAGE_KMOD_SOUNDCORE
-
-config PACKAGE_KMOD_USB_PRINTER
-	prompt "kmod-usb-printer.................. Support for USB printers"
-	tristate
-	default m
-	depends PACKAGE_KMOD_USB_CONTROLLER
-
-config PACKAGE_KMOD_USB_SERIAL
-	prompt "kmod-usb-serial................... Support for USB-to-serial converters"
-	tristate
-	default m
-	depends PACKAGE_KMOD_USB_CONTROLLER
-
-config PACKAGE_KMOD_USB_SERIAL_BELKIN
-	prompt   "kmod-usb-serial-belkin.......... Support for Belkin USB-to-serial converters"
-	tristate
-	default m
-	depends PACKAGE_KMOD_USB_SERIAL
-
-config PACKAGE_KMOD_USB_SERIAL_FTDI
-	prompt   "kmod-usb-serial-ftdi............ Support for FTDI USB-to-serial converterr"
-	tristate
-	default m
-	depends PACKAGE_KMOD_USB_SERIAL
-
-config PACKAGE_KMOD_USB_SERIAL_MCT_U232
-	prompt   "kmod-usb-serial-mct-u232........ Support for Magic Control Technology USB-to-Serial converters"
-	tristate
-	default m
-	depends PACKAGE_KMOD_USB_SERIAL
-
-config PACKAGE_KMOD_USB_SERIAL_PL2303
-	prompt   "kmod-usb-serial-pl2303.......... Support for Prolific PL2303 USB-to-Serial converters"
-	tristate
-	default m
-	depends PACKAGE_KMOD_USB_SERIAL
-
-config PACKAGE_KMOD_USB_SERIAL_VISOR
-	prompt   "kmod-usb-serial-visor........... Support for Handspring Visor / Palm m50x / Sony Clie Driver"
-	tristate
-	default m
-	depends PACKAGE_KMOD_USB_SERIAL
-
-config PACKAGE_KMOD_USB_STORAGE
-	prompt "kmod-usb-storage.................. Support for USB storage devices"
-	tristate
-	default m
-	depends PACKAGE_KMOD_USB_CONTROLLER
-
-config PACKAGE_KMOD_USB_ATM
-        prompt "kmod-usb-atm...................... Support for USB ATM devices"
-	tristate
-	default m
-	depends PACKAGE_KMOD_USB_CONTROLLER
-
-config PACKAGE_KMOD_USB_ATM_SPEEDTOUCH
-        prompt   "kmod-usb-atm-speedtouch......... Support for USB Speedtouch ADSL modem"
-	tristate
-	default m
-	depends PACKAGE_KMOD_USB_ATM
-
-endmenu
 
 menu "Misc. devices support"
 
