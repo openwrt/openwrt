@@ -16,7 +16,9 @@ TARGETS_CLEAN:=$(patsubst %,%-clean,$(TARGETS-y))
 
 all: install
 download: $(TARGETS_DOWNLOAD)
-install: $(TARGETS_INSTALL)
+install: 
+	$(MAKE) install-targets
+install-targets: $(TARGETS_INSTALL)
 clean: $(TARGETS_CLEAN)
 
 squashfs-compile: lzma-install
@@ -58,3 +60,8 @@ $(TOOL_BUILD_DIR):
 	@$(MAKE) -C $(patsubst %-clean,%,$@) clean
 	@rm -f $(TOOL_STAMP_DIR)/.tool_$(patsubst %-clean,%,$@)-*
 
+ifeq ($(MAKECMDGOALS),install-targets)
+MAKEFLAGS:=$(MAKEFLAGS) -j$(CONFIG_JLEVEL)
+else
+.NOTPARALLEL:
+endif
