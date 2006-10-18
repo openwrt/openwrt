@@ -1,0 +1,21 @@
+--- linux-2.4.32/arch/mips/Makefile.old	2006-10-18 21:11:18.110720000 +0200
++++ linux-2.4.32/arch/mips/Makefile	2006-10-18 21:12:32.570720000 +0200
+@@ -752,6 +752,7 @@
+ HEAD := arch/mips/kernel/head.o arch/mips/kernel/init_task.o
+ 
+ SUBDIRS := $(addprefix arch/mips/, tools) $(SUBDIRS) $(addprefix arch/mips/, kernel mm lib)
++$(SUBDIRS): $(TOPDIR)/include/asm-$(ARCH)/offset.h
+ CORE_FILES := arch/mips/kernel/kernel.o arch/mips/mm/mm.o $(CORE_FILES)
+ LIBS := arch/mips/lib/lib.a $(LIBS)
+ 
+@@ -799,7 +800,7 @@
+ 	$(MAKE) -C arch/$(ARCH)/tools mrproper
+ 
+ archdep:
+-	if [ ! -f $(TOPDIR)/include/asm-$(ARCH)/offset.h ]; then \
+-		touch $(TOPDIR)/include/asm-$(ARCH)/offset.h; \
+-	fi;
+ 	@$(MAKEBOOT) dep
++
++$(TOPDIR)/include/asm-$(ARCH)/offset.h:
++	@$(MAKE) -C arch/mips/tools
