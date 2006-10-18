@@ -2001,17 +2001,13 @@ diff -urN linux.old/arch/mips/bcm947xx/generic/irq.c linux.dev/arch/mips/bcm947x
 diff -urN linux.old/arch/mips/bcm947xx/generic/Makefile linux.dev/arch/mips/bcm947xx/generic/Makefile
 --- linux.old/arch/mips/bcm947xx/generic/Makefile	1970-01-01 01:00:00.000000000 +0100
 +++ linux.dev/arch/mips/bcm947xx/generic/Makefile	2006-10-02 21:26:29.000000000 +0200
-@@ -0,0 +1,16 @@
+@@ -0,0 +1,12 @@
 +#
 +# Makefile for the BCM947xx specific kernel interface routines
 +# under Linux.
 +#
 +EXTRA_CFLAGS += -fno-delayed-branch
-+
-+.S.s:
-+	$(CPP) $(AFLAGS) $< -o $*.s
-+.S.o:
-+	$(CC) $(AFLAGS) -c $< -o $*.o
++USE_STANDARD_AS_RULE := true
 +
 +O_TARGET        := brcm.o
 +
