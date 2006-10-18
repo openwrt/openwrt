@@ -18,13 +18,25 @@ KERNEL_IPKG:=$(KERNEL_BUILD_DIR)/kernel_$(LINUX_VERSION)-$(BOARD)-$(LINUX_RELEAS
 TARGETS += $(KERNEL_IPKG)
 INSTALL_TARGETS += $(KERNEL_IPKG)
 
-LINUX_KARCH:=$(shell echo $(ARCH) | sed -e 's/i[3-9]86/i386/' \
+ifneq (,$(findstring uml,$(BOARD)))
+  LINUX_KARCH:=um
+else
+  LINUX_KARCH:=$(shell echo $(ARCH) | sed -e 's/i[3-9]86/i386/' \
 	-e 's/mipsel/mips/' \
 	-e 's/mipseb/mips/' \
 	-e 's/powerpc/ppc/' \
 	-e 's/sh[234]/sh/' \
 	-e 's/armeb/arm/' \
-)
+  )
+endif
+
+KERNELNAME=
+ifneq (,$(findstring x86,$(BOARD)))
+  KERNELNAME="bzImage"
+endif
+ifneq (,$(findstring ppc,$(BOARD)))
+  KERNELNAME="uImage"
+endif
 
 
 $(TARGETS): $(PACKAGE_DIR)

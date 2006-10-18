@@ -31,16 +31,7 @@ else
     LINUX_KMOD_SUFFIX=o
   endif
 
-  KERNELNAME=
-  ifneq (,$(findstring x86,$(BOARD)))
-    KERNELNAME="bzImage"
-  endif
-  ifneq (,$(findstring ppc,$(BOARD)))
-    KERNELNAME="uImage"
-  endif
-
   ifneq (,$(findstring uml,$(BOARD)))
-    LINUX_KARCH:=um
     KERNEL_CC:=$(HOSTCC)
     KERNEL_CROSS:=
   else
