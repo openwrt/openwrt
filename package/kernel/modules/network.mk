@@ -34,6 +34,7 @@ define KernelPackage/atmtcp
 endef
 $(eval $(call KernelPackage,atmtcp))
 
+
 define KernelPackage/ipip
   TITLE:=IP in IP encapsulation support
   DESCRIPTION:=\
@@ -54,6 +55,55 @@ define KernelPackage/ipip/2.6
 	$(MODULES_DIR)/kernel/net/ipv4/tunnel4.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,ipip tunnel4)
 endef
+
+
+define KernelPackage/ipsec
+  TITLE:=IPsec related modules (IPv4 and IPv6)
+  DESCRIPTION:=\
+	Kernel modules for IPsec support in both IPv4 and IPv6.\\\
+	Includes:\\\
+	- af_key\\\
+	- xfrm_user
+  SUBMENU:=$(NSMENU)
+  DEPENDS:=@LINUX_2_6
+  FILES:=\
+	$(MODULES_DIR)/kernel/net/key/af_key.$(LINUX_KMOD_SUFFIX) \
+	$(MODULES_DIR)/kernel/net/xfrm/xfrm_user.$(LINUX_KMOD_SUFFIX)
+endef
+$(eval $(call KernelPackage,ipsec))
+
+define KernelPackage/ipsec4
+  TITLE:=IPsec related modules (IPv4)
+  DESCRIPTION:=\
+	Kernel modules for IPsec support in IPv4.\\\
+	Includes:\\\
+	- ah4\\\
+	- esp4\\\
+	- ipcomp\\\
+	- xfrm4_tunnel
+  SUBMENU:=$(NSMENU)
+  DEPENDS:=kmod-ipsec
+  FILES:=\
+	$(MODULES_DIR)/kernel/net/ipv4/{ah4,esp4,ipcomp,xfrm4_tunnel}.$(LINUX_KMOD_SUFFIX)
+endef
+$(eval $(call KernelPackage,ipsec4))
+
+define KernelPackage/ipsec6
+  TITLE:=IPsec related modules (IPv6)
+  DESCRIPTION:=\
+	Kernel modules for IPsec support in IPv6.\\\
+	Includes:\\\
+	- ah6\\\
+	- esp6\\\
+	- ipcomp6\\\
+	- xfrm6_tunnel
+  SUBMENU:=$(NSMENU)
+  DEPENDS:=kmod-ipsec
+  FILES:=\
+	$(MODULES_DIR)/kernel/net/ipv6/{ah6,esp6,ipcomp6,xfrm6_tunnel}.$(LINUX_KMOD_SUFFIX)
+endef
+$(eval $(call KernelPackage,ipsec6))
+
 
 define KernelPackage/ipv6
   TITLE:=IPv6 support
