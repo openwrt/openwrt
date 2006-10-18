@@ -251,7 +251,7 @@ define BuildPackage
   clean: $(1)-clean
 
   $(PKG_BUILD_DIR)/.version-$(1)_$(VERSION)_$(PKGARCH): $(PKG_BUILD_DIR)/.prepared
-	-@rm $(PKG_BUILD_DIR)/.version-$(1)_* 2>/dev/null
+	-@rm -f $(PKG_BUILD_DIR)/.version-$(1)_* 2>/dev/null
 	@touch $$@
 
   $$(eval $$(call Build/DefaultTargets,$(1)))
