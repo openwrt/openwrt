@@ -14,6 +14,8 @@ include $(INCLUDE_DIR)/prereq.mk
 include $(INCLUDE_DIR)/host.mk
 include $(INCLUDE_DIR)/unpack.mk
 
+export CONFIG_SITE:=$(INCLUDE_DIR)/site/$(REAL_GNU_TARGET_NAME)
+
 define shvar
 V_$(subst .,_,$(subst -,_,$(subst /,_,$(1))))
 endef
