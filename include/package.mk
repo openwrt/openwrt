@@ -346,7 +346,7 @@ else
   $(PACKAGE_DIR):
 	mkdir -p $@
 		
-  ifneq ($(strip $(PKG_SOURCE)),)
+  ifneq ($(strip $(PKG_SOURCE_URL)),)
     download: $(DL_DIR)/$(PKG_SOURCE)
 
     $(DL_DIR)/$(PKG_SOURCE):
