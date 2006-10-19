@@ -6,55 +6,6 @@
 #
 include $(INCLUDE_DIR)/netfilter.mk
 
-# Block devices
-
-$(eval $(call KMOD_template,LOOP,loop,\
-    $(MODULES_DIR)/kernel/drivers/block/loop.o \
-,CONFIG_BLK_DEV_LOOP,,20,loop))
-
-$(eval $(call KMOD_template,NBD,nbd,\
-    $(MODULES_DIR)/kernel/drivers/block/nbd.o \
-,CONFIG_BLK_DEV_NBD,,20,nbd))
-
-
-# Filesystems
-
-$(eval $(call KMOD_template,FS_CIFS,fs-cifs,\
-	$(MODULES_DIR)/kernel/fs/cifs/cifs.o \
-,CONFIG_CIFS,,30,cifs))
-
-$(eval $(call KMOD_template,FS_MINIX,fs-minix,\
-	$(MODULES_DIR)/kernel/fs/minix/*.o \
-,CONFIG_MINIX_FS,,30,minix))
-
-$(eval $(call KMOD_template,FS_EXT2,fs-ext2,\
-	$(MODULES_DIR)/kernel/fs/ext2/*.o \
-,CONFIG_EXT2_FS,,30,ext2))
-
-$(eval $(call KMOD_template,FS_EXT3,fs-ext3,\
-	$(MODULES_DIR)/kernel/fs/ext3/*.o \
-	$(MODULES_DIR)/kernel/fs/jbd/*.o \
-,CONFIG_EXT3_FS,,30,jbd ext3))
-
-$(eval $(call KMOD_template,FS_HFSPLUS,fs-hfsplus,\
-	$(MODULES_DIR)/kernel/fs/hfsplus/*.o \
-,CONFIG_HFSPLUS_FS,,30,hfsplus))
-
-$(eval $(call KMOD_template,FS_NFS,fs-nfs,\
-	$(MODULES_DIR)/kernel/fs/lockd/*.o \
-	$(MODULES_DIR)/kernel/fs/nfs/*.o \
-	$(MODULES_DIR)/kernel/net/sunrpc/*.o \
-,CONFIG_NFS_FS,,30,sunrpc lockd nfs))
-
-$(eval $(call KMOD_template,FS_VFAT,fs-vfat,\
-	$(MODULES_DIR)/kernel/fs/vfat/vfat.o \
-	$(MODULES_DIR)/kernel/fs/fat/fat.o \
-,CONFIG_VFAT_FS,,30,fat vfat))
-
-$(eval $(call KMOD_template,FS_XFS,fs-xfs,\
-	$(MODULES_DIR)/kernel/fs/xfs/*.o \
-,CONFIG_XFS_FS,,30,xfs))
-
 
 # Multimedia
 

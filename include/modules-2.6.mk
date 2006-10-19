@@ -7,55 +7,6 @@
 NF_2_6:=1
 include $(INCLUDE_DIR)/netfilter.mk
 
-# Block devices
-
-$(eval $(call KMOD_template,LOOP,loop,\
-    $(MODULES_DIR)/kernel/drivers/block/loop.ko \
-,CONFIG_BLK_DEV_LOOP,,20,loop))
-
-$(eval $(call KMOD_template,NBD,nbd,\
-    $(MODULES_DIR)/kernel/drivers/block/nbd.ko \
-,CONFIG_BLK_DEV_NBD,,20,nbd))
-
-# Filesystems
-
-$(eval $(call KMOD_template,FS_CIFS,fs-cifs,\
-	$(MODULES_DIR)/kernel/fs/cifs/cifs.ko \
-,CONFIG_CIFS,kmod-nls-base,30,cifs))
-
-$(eval $(call KMOD_template,FS_MINIX,fs-minix,\
-	$(MODULES_DIR)/kernel/fs/minix/minix.ko \
-,CONFIG_MINIX_FS,,30,minix))
-
-$(eval $(call KMOD_template,FS_EXT2,fs-ext2,\
-	$(MODULES_DIR)/kernel/fs/ext2/ext2.ko \
-,CONFIG_EXT2_FS,,30,ext2))
-
-$(eval $(call KMOD_template,FS_EXT3,fs-ext3,\
-	$(MODULES_DIR)/kernel/fs/ext3/ext3.ko \
-	$(MODULES_DIR)/kernel/fs/jbd/jbd.ko \
-,CONFIG_EXT3_FS,,30,jbd ext3))
-
-$(eval $(call KMOD_template,FS_HFSPLUS,fs-hfsplus,\
-	$(MODULES_DIR)/kernel/fs/hfsplus/hfsplus.ko \
-,CONFIG_HFSPLUS_FS,kmod-nls-base,30,hfsplus))
-
-$(eval $(call KMOD_template,FS_NFS,fs-nfs,\
-	$(MODULES_DIR)/kernel/fs/lockd/lockd.ko \
-	$(MODULES_DIR)/kernel/fs/nfs/nfs.ko \
-	$(MODULES_DIR)/kernel/net/sunrpc/sunrpc.ko \
-,CONFIG_NFS_FS,,30,sunrpc lockd nfs))
-
-$(eval $(call KMOD_template,FS_VFAT,fs-vfat,\
-	$(MODULES_DIR)/kernel/fs/fat/fat.ko \
-	$(MODULES_DIR)/kernel/fs/vfat/vfat.ko \
-,CONFIG_VFAT_FS,kmod-nls-base,30,fat vfat))
-
-$(eval $(call KMOD_template,FS_XFS,fs-xfs,\
-	$(MODULES_DIR)/kernel/fs/xfs/xfs.ko \
-,CONFIG_XFS_FS,,30,xfs))
-
-
 # Multimedia
 
 $(eval $(call KMOD_template,PWC,pwc,\
@@ -67,33 +18,6 @@ $(eval $(call KMOD_template,VIDEODEV,videodev,\
 	$(MODULES_DIR)/kernel/drivers/media/video/v4l2-common.ko \
 	$(MODULES_DIR)/kernel/drivers/media/video/videodev.ko \
 ,CONFIG_VIDEO_DEV,,62,videodev))
-
-
-# NLS
-
-$(eval $(call KMOD_template,NLS_BASE,nls-base,\
-	$(MODULES_DIR)/kernel/fs/nls/nls_base.ko \
-,CONFIG_NLS,,20,nls_base))
-
-$(eval $(call KMOD_template,NLS_CP437,nls-cp437,\
-	$(MODULES_DIR)/kernel/fs/nls/nls_cp437.ko \
-,CONFIG_NLS_CODEPAGE_437,,20,nls_cp437))
-
-$(eval $(call KMOD_template,NLS_CP850,nls-cp850,\
-	$(MODULES_DIR)/kernel/fs/nls/nls_cp850.ko \
-,CONFIG_NLS_CODEPAGE_850,,20,nls_cp850))
-
-$(eval $(call KMOD_template,NLS_ISO8859_1,nls-iso8859-1,\
-	$(MODULES_DIR)/kernel/fs/nls/nls_iso8859-1.ko \
-,CONFIG_NLS_ISO8859_1,,20,nls_iso8859-1))
-
-$(eval $(call KMOD_template,NLS_ISO8859_15,nls-iso8859-15,\
-	$(MODULES_DIR)/kernel/fs/nls/nls_iso8859-15.ko \
-,CONFIG_NLS_ISO8859_15,,20,nls_iso8859-15))
-
-$(eval $(call KMOD_template,NLS_UTF8,nls-utf8,\
-	$(MODULES_DIR)/kernel/fs/nls/nls_utf8.ko \
-,CONFIG_NLS_UTF8,,20,nls_utf8))
 
 
 # Network devices

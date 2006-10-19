@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2006 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
@@ -97,5 +97,26 @@ define KernelPackage/soundcore/2.6
   FILES:=$(MODULES_DIR)/kernel/sound/soundcore.$(LINUX_KMOD_SUFFIX)
 endef
 $(eval $(call KernelPackage,soundcore))
+
+
+define KernelPackage/loop
+  TITLE:=Loopback device support
+  DESCRIPTION:=Kernel module for loopback device support
+  KCONFIG:=$(CONFIG_BLK_DEV_LOOP)
+  SUBMENU:=$(EMENU)
+  AUTOLOAD:=$(call AutoLoad,30,loop)
+  FILES:=$(MODULES_DIR)/kernel/drivers/block/loop.$(LINUX_KMOD_SUFFIX)
+endef
+$(eval $(call KernelPackage,loop))
+
+define KernelPackage/nbd
+  TITLE:=Network block device support
+  DESCRIPTION:=Kernel module for network block device support
+  KCONFIG:=$(CONFIG_BLK_DEV_NBD)
+  SUBMENU:=$(EMENU)
+  AUTOLOAD:=$(call AutoLoad,30,nbd)
+  FILES:=$(MODULES_DIR)/kernel/drivers/block/nbd.$(LINUX_KMOD_SUFFIX)
+endef
+$(eval $(call KernelPackage,nbd))
 
 
