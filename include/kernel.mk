@@ -18,11 +18,14 @@ else
      LINUX_VERSION:=$(CONFIG_LINUX_VERSION)
      LINUX_RELEASE:=$(CONFIG_LINUX_RELEASE)
      LINUX_KARCH:=$(CONFIG_LINUX_KARCH)
-  else
+  else 
   # oops, old .kernel.config; rebuild it (hiding the misleading errors this produces)
     $(warning rebuilding .kernel.mk)
     $(TOPDIR)/.kernel.mk: FORCE
-	@$(MAKE) -C $(TOPDIR)/target/linux/$(BOARD)-$(KERNEL) $@ &>/dev/null
+    ifneq ($(KERNEL_BUILD),1)
+      $(TOPDIR)/.kernel.mk:
+		@$(MAKE) -C $(TOPDIR)/target/linux/$(BOARD)-$(KERNEL) $@ &>/dev/null
+    endif
   endif
 
   ifeq ($(KERNEL),2.6)

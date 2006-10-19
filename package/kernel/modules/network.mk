@@ -66,7 +66,8 @@ define KernelPackage/ipsec
 	- xfrm_user
   SUBMENU:=$(NSMENU)
   DEPENDS:=@LINUX_2_6
-  FILES:=\
+  KCONFIG:=$(CONFIG_NET_KEY)
+  FILES:= \
 	$(MODULES_DIR)/kernel/net/key/af_key.$(LINUX_KMOD_SUFFIX) \
 	$(MODULES_DIR)/kernel/net/xfrm/xfrm_user.$(LINUX_KMOD_SUFFIX)
 endef
@@ -82,9 +83,11 @@ define KernelPackage/ipsec4
 	- ipcomp\\\
 	- xfrm4_tunnel
   SUBMENU:=$(NSMENU)
+  KCONFIG:=$(CONFIG_INET_AH)
   DEPENDS:=kmod-ipsec
-  FILES:=\
-	$(MODULES_DIR)/kernel/net/ipv4/{ah4,esp4,ipcomp,xfrm4_tunnel}.$(LINUX_KMOD_SUFFIX)
+  FILES:= $(foreach mod,ah4 esp4 ipcomp xfrm4_tunnel, \
+	$(MODULES_DIR)/kernel/net/ipv4/$(mod).$(LINUX_KMOD_SUFFIX) \
+  )
 endef
 $(eval $(call KernelPackage,ipsec4))
 
@@ -98,9 +101,11 @@ define KernelPackage/ipsec6
 	- ipcomp6\\\
 	- xfrm6_tunnel
   SUBMENU:=$(NSMENU)
+  KCONFIG:=$(CONFIG_INET6_AH)
   DEPENDS:=kmod-ipsec
-  FILES:=\
-	$(MODULES_DIR)/kernel/net/ipv6/{ah6,esp6,ipcomp6,xfrm6_tunnel}.$(LINUX_KMOD_SUFFIX)
+  FILES:= $(foreach mod,ah6 esp6 ipcomp6 xfrm6_tunnel, \
+	$(MODULES_DIR)/kernel/net/ipv6/{ah6,esp6,ipcomp6,xfrm6_tunnel}.$(LINUX_KMOD_SUFFIX) \
+  )
 endef
 $(eval $(call KernelPackage,ipsec6))
 

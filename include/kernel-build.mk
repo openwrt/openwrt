@@ -4,7 +4,10 @@
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
+KERNEL_BUILD:=1
+
 include $(INCLUDE_DIR)/host.mk
+include $(INCLUDE_DIR)/kernel.mk
 
 LINUX_SOURCE:=linux-$(LINUX_VERSION).tar.bz2
 LINUX_SITE=http://www.us.kernel.org/pub/linux/kernel/v$(KERNEL) \
@@ -43,7 +46,7 @@ $(LINUX_DIR)/.unpacked: $(DL_DIR)/$(LINUX_SOURCE)
 	touch $@
 
 ifeq ($(KERNEL),2.4)
-$(LINUX_DIR)/.configured: $(LINUX_DIR)/.patched
+$(LINUX_DIR)/.configured: $(LINUX_DIR)/.patched $(LINUX_DIR)/.config
 	$(SED) "s,\-mcpu=,\-mtune=,g;" $(LINUX_DIR)/arch/mips/Makefile
 	$(MAKE) -C $(LINUX_DIR) CROSS_COMPILE="$(KERNEL_CROSS)" CC="$(KERNEL_CC)" ARCH=$(LINUX_KARCH) oldconfig include/linux/compile.h include/linux/version.h
 	touch $@
@@ -73,25 +76,22 @@ else
 	echo 'CONFIG_INITRAMFS_SOURCE=""' >> $(LINUX_DIR)/.config
 endif
 
-$(LINUX_DIR)/vmlinux: $(LINUX_DIR)/.linux-compile ramdisk-config
+$(LINUX_DIR)/vmlinux: ramdisk-config
 	$(MAKE) -j$(CONFIG_JLEVEL) -C $(LINUX_DIR) CROSS_COMPILE="$(KERNEL_CROSS)" CC="$(KERNEL_CC)" ARCH=$(LINUX_KARCH) $(KERNELNAME)
 
 $(LINUX_KERNEL): $(LINUX_DIR)/vmlinux
 	$(KERNEL_CROSS)objcopy -O binary -R .reginfo -R .note -R .comment -R .mdebug -S $< $@
 	touch -c $(LINUX_KERNEL)
 
-$(LINUX_DIR)/.modules_done:
+$(LINUX_DIR)/.modules_done: $(LINUX_DIR)/.config
 	rm -rf $(KERNEL_BUILD_DIR)/modules
 	$(MAKE) -j$(CONFIG_JLEVEL) -C "$(LINUX_DIR)" CROSS_COMPILE="$(KERNEL_CROSS)" CC="$(KERNEL_CC)" ARCH=$(LINUX_KARCH) modules
 	$(MAKE) -C "$(LINUX_DIR)" CROSS_COMPILE="$(KERNEL_CROSS)" CC="$(KERNEL_CC)" ARCH=$(LINUX_KARCH) DEPMOD=true INSTALL_MOD_PATH=$(KERNEL_BUILD_DIR)/modules modules_install
 	touch $(LINUX_DIR)/.modules_done
 
-modules: $(LINUX_DIR)/.modules_done
-
-$(LINUX_DIR)/.linux-compile:
+$(LINUX_DIR)/.linux-compile: $(LINUX_DIR)/.modules_done
 	@rm -f $(BUILD_DIR)/linux
 	ln -sf $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION) $(BUILD_DIR)/linux
-	@$(MAKE) modules
 	touch $@
 
 $(TOPDIR)/.kernel.mk: $(TOPDIR)/target/linux/$(BOARD)-$(KERNEL)/Makefile
@@ -106,7 +106,6 @@ prepare: $(LINUX_DIR)/.configured
 	@mkdir -p $(LINUX_DIR)
 
 compile: prepare $(LINUX_DIR)/.linux-compile
-
 install: compile $(LINUX_KERNEL)
 
 mostlyclean: FORCE
