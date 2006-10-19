@@ -219,33 +219,19 @@ endef
 $(eval $(call KernelPackage,sched))
 
 
-define KernelPackage/ieee80211softmac
-  TITLE:=802.11 Networking stack
-  DESCRIPTION:=\\\
-	\\\
-	Includes: \\\
-	- ieee80211_crypt \\\
-	- ieee80211 \\\
-	- ieee80211_crypt_wep \\\
-	- ieee80211_crypt_tkip \\\
-	- ieee80211_crytp_ccmp \\\
-	- ieee80211softmac
-  DEPENDS:=@LINUX_2_6
-  KCONFIG:=$(CONFIG_IEEE80211_SOFTMAC)
-  FILES:= \
-  	$(MODULES_DIR)/kernel/net/ieee80211/*.$(LINUX_KMOD_SUFFIX) \
-	$(MODULES_DIR)/kernel/net/ieee80211/softmac/*.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,10, \
-	ieee80211_crypt \
-	ieee80211 \
-	ieee80211_crypt_wep \
-	ieee80211_crypt_tkip \
-	ieee80211_crypt_ccmp \
-	ieee80211softmac \
-  )
+
+define KernelPackage/ax25
+  TITLE:=AX25 support
+  DESCRIPTION:=Kernel modules for AX25 support
   SUBMENU:=$(NSMENU)
+  KCONFIG:=$(CONFIG_AX25)
+  FILES:= \
+	$(MODULES_DIR)/kernel/net/ax25/ax25.$(LINUX_KMOD_SUFFIX) \
+	$(MODULES_DIR)/kernel/drivers/net/hamradio/mkiss.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,80,ax25 mkiss)
 endef
-$(eval $(call KernelPackage,ieee80211softmac))
+$(eval $(call KernelPackage,ax25))
+
 
 
 

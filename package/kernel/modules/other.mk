@@ -120,3 +120,103 @@ endef
 $(eval $(call KernelPackage,nbd))
 
 
+define KernelPackage/pcmcia-core
+  TITLE:=PCMCIA/CardBus support
+  DESCRIPTION:=Kernel support for PCMCIA/CardBus controllers
+  SUBMENU:=$(EMENU)
+  KCONFIG:=$(CONFIG_PCMCIA)
+endef
+
+define KernelPackage/pcmcia-core/2.4
+  FILES:= \
+	$(MODULES_DIR)/kernel/drivers/pcmcia/pcmcia_core.$(LINUX_KMOD_SUFFIX) \
+	$(MODULES_DIR)/kernel/drivers/pcmcia/yenta_socket.$(LINUX_KMOD_SUFFIX) \
+	$(MODULES_DIR)/kernel/drivers/pcmcia/ds.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,40,pcmcia_core yenta_socket ds)
+endef
+
+define KernelPackage/pcmcia-core/2.6
+  FILES:= \
+	$(MODULES_DIR)/kernel/drivers/pcmcia/pcmcia_core.$(LINUX_KMOD_SUFFIX) \
+	$(MODULES_DIR)/kernel/drivers/pcmcia/pcmcia.$(LINUX_KMOD_SUFFIX) \
+	$(MODULES_DIR)/kernel/drivers/pcmcia/yenta_socket.$(LINUX_KMOD_SUFFIX) \
+	$(MODULES_DIR)/kernel/drivers/pcmcia/rsrc_nonstatic.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,40,pcmcia_core pcmcia yenta_socket rsrc_nonstatic)
+endef
+$(eval $(call KernelPackage,pcmcia-core))
+
+
+define KernelPackage/pcmcia-serial
+  TITLE:=Serial devices support
+  DESCRIPTION:=Kernel support for PCMCIA/CardBus serial devices
+  DEPENDS:=kmod-pcmcia-core
+  SUBMENU:=$(EMENU)
+  AUTOLOAD:=$(call AutoLoad,45,serial_cs)
+endef
+
+define KernelPackage/pcmcia-serial/2.4
+  KCONFIG:=$(CONFIG_PCMCIA_SERIAL_CS)
+  FILES:=$(MODULES_DIR)/kernel/drivers/char/pcmcia/serial_cs.$(LINUX_KMOD_SUFFIX)
+endef
+
+define KernelPackage/pcmcia-serial/2.6
+  KCONFIG:=$(CONFIG_SERIAL_8250_CS)
+  FILES:=$(MODULES_DIR)/kernel/drivers/serial/serial_cs.$(LINUX_KMOD_SUFFIX)
+endef
+$(eval $(call KernelPackage,pcmcia-serial))
+
+
+define KernelPackage/bluetooth
+  TITLE:=Bluetooth support
+  DESCRIPTION:=Kernel support for Bluetooth devices
+  SUBMENU:=$(EMENU)
+  FILES:= \
+	$(MODULES_DIR)/kernel/net/bluetooth/bluetooth.ko \
+	$(MODULES_DIR)/kernel/net/bluetooth/l2cap.ko \
+	$(MODULES_DIR)/kernel/net/bluetooth/sco.ko \
+	$(MODULES_DIR)/kernel/net/bluetooth/rfcomm/rfcomm.ko \
+	$(MODULES_DIR)/kernel/drivers/bluetooth/hci_uart.ko \
+	$(MODULES_DIR)/kernel/drivers/bluetooth/hci_usb.ko
+  AUTOLOAD:=$(call AutoLoad,90,bluetooth l2cap sco rfcomm hci_uart hci_usb)
+endef
+
+define KernelPackage/bluetooth/2.4
+  KCONFIG:=$(CONFIG_BLUEZ)
+endef
+
+define KernelPackage/bluetooth/2.6
+  KCONFIG:=$(CONFIG_BT)
+endef
+$(eval $(call KernelPackage,bluetooth))
+
+
+define KernelPackage/softdog
+  TITLE:=Software watchdog driver
+  DESCRIPTION:=Software watchdog driver
+  SUBMENU:=$(EMENU)
+  KCONFIG:=$(CONFIG_SOFT_WATCHDOG)
+  FILES:=$(MODULES_DIR)/kernel/drivers/char/softdog.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,50,softdog)
+endef
+$(eval $(call KernelPackage,softdog))
+
+
+define KernelPackage/videodev
+  TITLE=Video4Linux support
+  DESCRIPTION:=Kernel modules for Video4Linux support
+  SUBMENU:=$(EMENU)
+  KCONFIG:=$(CONFIG_VIDEO_DEV)
+  FILES:=$(MODULES_DIR)/kernel/drivers/media/video/*.$(LINUX_KMOD_SUFFIX)
+endef
+
+define KernelPackage/videodev/2.4
+  AUTOLOAD:=$(call AutoLoad,60,videodev)
+endef
+
+define KernelPackage/videodev/2.6
+  AUTOLOAD:=$(call AutoLoad,60,v4l2-common videodev)
+endef
+$(eval $(call KernelPackage,videodev))
+
+
+
