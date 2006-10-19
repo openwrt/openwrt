@@ -206,6 +206,15 @@ define KernelPackage/softdog
   FILES:=$(MODULES_DIR)/kernel/drivers/char/softdog.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,softdog)
 endef
+
+define KernelPackage/softdog/2.4
+  FILES:=$(MODULES_DIR)/kernel/drivers/char/softdog.o
+endef
+
+define KernelPackage/softdog/2.6
+  FILES:=$(MODULES_DIR)/kernel/drivers/char/watchdog/softdog.ko
+endef
+
 $(eval $(call KernelPackage,softdog))
 
 
