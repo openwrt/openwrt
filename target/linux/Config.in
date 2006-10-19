@@ -2,79 +2,6 @@ menu "Kernel Configuration / Device Support"
 
 comment "Kernel modules"
 
-menu "Block devices support"
-
-config PACKAGE_KMOD_LOOP
-	prompt "kmod-loop......................... Loop mount support"
-	tristate
-	default m
-	help
-	  Kernel module for loop mount support
-
-config PACKAGE_KMOD_NBD
-	prompt "kmod-nbd.......................... Network Block Device"
-	tristate
-	default m
-	help
-	  Kernel module for network block device
-
-endmenu
-
-menu "Filesystems support"
-
-config PACKAGE_KMOD_FS_CIFS
-	prompt "kmod-fs-cifs...................... CIFS support"
-	tristate
-	default m
-	help
-	  Kernel modules for CIFS support
-
-config PACKAGE_KMOD_FS_EXT2
-	prompt "kmod-fs-ext2...................... EXT2 filesystem support"
-	tristate
-	default m
-	help
-	  Kernel modules for EXT2 filesystem support
-
-config PACKAGE_KMOD_FS_EXT3
-	prompt "kmod-fs-ext3...................... EXT3 filesystem support"
-	tristate
-	default m
-	help
-	  Kernel modules for EXT3 filesystem support
-
-config PACKAGE_KMOD_FS_HFSPLUS
-	prompt "kmod-fs-hfsplus................... HFS+ filesystem support"
-	tristate
-	default m
-	help
-	  Kernel modules for HFS+ filesystem support
-
-config PACKAGE_KMOD_FS_NFS
-	prompt "kmod-fs-nfs....................... NFS support"
-	tristate
-	default m
-	help
-	  Kernel modules for NFS support
-	  Includes lockd, nfs and sunrpc
-
-config PACKAGE_KMOD_FS_VFAT
-	prompt "kmod-fs-vfat...................... VFAT filesystem support"
-	tristate
-	default m
-	help
-	  Kernel modules for VFAT filesystem support
-	  useful for usb mass storage devices
-
-config PACKAGE_KMOD_FS_XFS
-	prompt "kmod-fs-xfs....................... XFS filesystem support"
-	tristate
-	default m
-	help
-	  Kernel modules for XFS filesystem support
-
-endmenu
-
 menu "Multimedia devices support"
 
 config PACKAGE_KMOD_PWC
@@ -90,60 +17,9 @@ config PACKAGE_KMOD_VIDEODEV
 
 endmenu
 
-menu "Native Language support"
-
-config PACKAGE_KMOD_NLS_BASE
-	prompt "kmod-nls-base..................... Native Language support"
-	tristate
-	default m
-	help
-	  Kernel native language support
-
-config PACKAGE_KMOD_NLS_CP437
-	prompt   "kmod-nls-cp437.................. Codepage 437 (United States, Canada)"
-	tristate
-	default m
-	depends PACKAGE_KMOD_NLS_BASE
-	help
-	  Kernel native language support
-
-config PACKAGE_KMOD_NLS_CP850
-	prompt   "kmod-nls-cp850.................. Codepage 850 (Europe)"
-	tristate
-	default m
-	depends PACKAGE_KMOD_NLS_BASE
-	help
-	  Kernel native language support
-
-config PACKAGE_KMOD_NLS_ISO8859_1
-	prompt   "kmod-nls-iso8859-1.............. NLS ISO 8859-1 (Latin 1; Western European Languages)"
-	tristate
-	default m
-	depends PACKAGE_KMOD_NLS_BASE
-	help
-	  Kernel native language support
-
-config PACKAGE_KMOD_NLS_ISO8859_15
-	prompt   "kmod-nls-iso8859-15............. NLS ISO 8859-15 (Latin 15; Western European Languages with Euro)"
-	tristate
-	default m
-	depends PACKAGE_KMOD_NLS_BASE
-	help
-	  Kernel native language support
-
-config PACKAGE_KMOD_NLS_UTF8
-	prompt   "kmod-nls-utf8................... NLS UTF8"
-	tristate
-	default m
-	depends PACKAGE_KMOD_NLS_BASE
-	help
-	  Kernel native language support
-
-endmenu
 
 menu "Network devices support"
 	depends LINUX_2_4_X86 || LINUX_2_6_X86
-
 
 config PACKAGE_KMOD_NET_AIRO
 	prompt "kmod-net-airo..................... Cisco/Aironet 34X/35X/4500/4800 ISA and PCI cards kernel support"
