@@ -48,9 +48,12 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
   
 endif
 
+
 ifeq ($(CONFIG_TARGET_ROOTFS_EXT2FS),y)
+  E2SIZE=$(shell echo $$(($(CONFIG_TARGET_ROOTFS_SIZE)*1024)))
+  
   define Image/mkfs/ext2
-		$(STAGING_DIR)/bin/genext2fs -q -b 8192 -I 1500 -d $(BUILD_DIR)/root/ $(KDIR)/root.ext2
+		$(STAGING_DIR)/bin/genext2fs -q -b $(E2SIZE) -I 1500 -d $(BUILD_DIR)/root/ $(KDIR)/root.ext2
 		$(call Image/Build,ext2)
   endef
 endif
