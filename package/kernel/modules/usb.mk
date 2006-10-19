@@ -243,4 +243,25 @@ define KernelPackage/usb-speedtouch
   AUTOLOAD:=$(call AutoLoad,70,usbatm speedtch)
 endef
 $(eval $(call KernelPackage,usb-speedtouch))
-  
+
+
+define KernelPackage/usb-pwc
+  $(call usbdep,+kmod-videodev)
+  TITLE:=Philips WebCam driver
+  DESCRIPTION:=Kernel modules for supporting Philips WebCam USB devices
+  KCONFIG:=$(CONFIG_USB_PWC)
+  AUTOLOAD:=$(call AutoLoad,70,pwc)
+endef
+
+define KernelPackage/usb-pwc/2.4
+  FILES:=$(MODULES_DIR)/kernel/drivers/usb/pwc.$(LINUX_KMOD_SUFFIX)
+endef
+
+define KernelPackage/usb-pwc/2.6
+  FILES:=$(MODULES_DIR)/kernel/drivers/usb/media/pwc.$(LINUX_KMOD_SUFFIX)
+endef
+$(eval $(call KernelPackage,usb-pwc))
+
+
+
+

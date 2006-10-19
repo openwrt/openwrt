@@ -32,5 +32,27 @@ endef
 define Build/Compile
 endef
 
+CONFIG_PACKAGE_kernel=y
+define Package/kernel
+  SECTION:=sys
+  CATEGORY:=Kernel
+  DEFAULT:=y
+  TITLE:=Virtual kernel package
+  DESCRIPTION:=Virtual kernel package
+  VERSION:=$(LINUX_VERSION)-$(BOARD)-$(LINUX_RELEASE)
+endef
+
+define Package/kernel/install
+  # nothing to do
+endef
+
+# this is more robust than ifdef around eval/call
+ifneq ($(DUMP),1)
+  define BuildKernel
+    $(call BuildPackage,kernel)
+  endef
+endif
+$(eval $(call BuildKernel))
+
 include $(TOPDIR)/target/linux/*/modules.mk
 include ./modules/*.mk

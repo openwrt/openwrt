@@ -5,18 +5,12 @@
 # See /LICENSE for more information.
 #
 include $(INCLUDE_DIR)/host.mk
--include $(INCLUDE_DIR)/modules-$(KERNEL).mk
 
 LINUX_SOURCE:=linux-$(LINUX_VERSION).tar.bz2
 LINUX_SITE=http://www.us.kernel.org/pub/linux/kernel/v$(KERNEL) \
            http://www.us.kernel.org/pub/linux/kernel/v$(KERNEL) \
            http://www.kernel.org/pub/linux/kernel/v$(KERNEL) \
            http://www.de.kernel.org/pub/linux/kernel/v$(KERNEL)
-
-KERNEL_IDIR:=$(KERNEL_BUILD_DIR)/kernel-ipkg
-KERNEL_IPKG:=$(KERNEL_BUILD_DIR)/kernel_$(LINUX_VERSION)-$(BOARD)-$(LINUX_RELEASE)_$(ARCH).ipk
-TARGETS += $(KERNEL_IPKG)
-INSTALL_TARGETS += $(KERNEL_IPKG)
 
 ifneq (,$(findstring uml,$(BOARD)))
   LINUX_KARCH:=um
@@ -38,11 +32,6 @@ ifneq (,$(findstring ppc,$(BOARD)))
   KERNELNAME="uImage"
 endif
 
-
-$(TARGETS): $(PACKAGE_DIR)
-
-$(PACKAGE_DIR):
-	mkdir -p $@
 
 $(DL_DIR)/$(LINUX_SOURCE):
 	-mkdir -p $(DL_DIR)
@@ -84,7 +73,7 @@ else
 	echo 'CONFIG_INITRAMFS_SOURCE=""' >> $(LINUX_DIR)/.config
 endif
 
-$(LINUX_DIR)/vmlinux: $(LINUX_DIR)/.linux-compile pkg-install ramdisk-config
+$(LINUX_DIR)/vmlinux: $(LINUX_DIR)/.linux-compile ramdisk-config
 	$(MAKE) -j$(CONFIG_JLEVEL) -C $(LINUX_DIR) CROSS_COMPILE="$(KERNEL_CROSS)" CC="$(KERNEL_CC)" ARCH=$(LINUX_KARCH) $(KERNELNAME)
 
 $(LINUX_KERNEL): $(LINUX_DIR)/vmlinux
@@ -98,22 +87,12 @@ $(LINUX_DIR)/.modules_done:
 	touch $(LINUX_DIR)/.modules_done
 
 modules: $(LINUX_DIR)/.modules_done
-packages: $(TARGETS)
 
 $(LINUX_DIR)/.linux-compile:
 	@rm -f $(BUILD_DIR)/linux
 	ln -sf $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION) $(BUILD_DIR)/linux
 	@$(MAKE) modules
 	touch $@
-
-$(KERNEL_IPKG):
-	rm -rf $(KERNEL_IDIR)
-	mkdir -p $(KERNEL_IDIR)/etc
-	$(SCRIPT_DIR)/make-ipkg-dir.sh $(KERNEL_IDIR) ../control/kernel.control $(LINUX_VERSION)-$(BOARD)-$(LINUX_RELEASE) $(ARCH)
-	if [ -f ./config/$(BOARD).modules ]; then \
-		cp ./config/$(BOARD).modules $(KERNEL_IDIR)/etc/modules; \
-	fi
-	$(IPKG_BUILD) $(KERNEL_IDIR) $(KERNEL_BUILD_DIR)
 
 $(TOPDIR)/.kernel.mk: $(TOPDIR)/target/linux/$(BOARD)-$(KERNEL)/Makefile
 	echo "CONFIG_BOARD:=$(BOARD)" > $@
@@ -122,17 +101,11 @@ $(TOPDIR)/.kernel.mk: $(TOPDIR)/target/linux/$(BOARD)-$(KERNEL)/Makefile
 	echo "CONFIG_LINUX_RELEASE:=$(LINUX_RELEASE)" >> $@
 	echo "CONFIG_LINUX_KARCH:=$(LINUX_KARCH)" >> $@
 
-pkg-install: FORCE
-	@for pkg in $(INSTALL_TARGETS); do \
-		$(IPKG) install $$pkg || echo; \
-	done
-
 download: $(DL_DIR)/$(LINUX_SOURCE)
 prepare: $(LINUX_DIR)/.configured
-	@mkdir -p $(LINUX_DIR) $(PACKAGE_DIR)
+	@mkdir -p $(LINUX_DIR)
 
 compile: prepare $(LINUX_DIR)/.linux-compile
-	@$(MAKE) packages
 
 install: compile $(LINUX_KERNEL)
 
@@ -153,5 +126,4 @@ rebuild: FORCE
 clean: FORCE
 	rm -f $(STAMP_DIR)/.linux-compile
 	rm -rf $(KERNEL_BUILD_DIR)
-	rm -f $(TARGETS)
 
