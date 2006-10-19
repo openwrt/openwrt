@@ -11,7 +11,6 @@ download:
 	$(MAKE) -C $(BOARD)-$(KERNEL) download
 
 prepare:
-	rm -f $(TOPDIR)/.kernel.mk
 	$(MAKE) -C $(BOARD)-$(KERNEL) prepare
 
 compile:
