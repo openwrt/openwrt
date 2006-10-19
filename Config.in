@@ -95,6 +95,11 @@ comment "Image Options"
 
 source "target/image/*/Config.in"
 
+	config TARGET_ROOTFS_FSPART
+		int "Filesystem part size (in MB)"
+		depends X86_GRUB_IMAGES || TARGET_ROOTFS_EXT2FS
+		default 16
+
 endmenu
 
 source "target/linux/Config.in"
