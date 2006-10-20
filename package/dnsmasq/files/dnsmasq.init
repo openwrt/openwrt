@@ -49,7 +49,7 @@ start() {
 		[ -z "$wan_proto" -o "$wan_proto" = "none" ] || echo "@define wan_ifname $wan_ifname"
 	
 		cat /etc/dnsmasq.conf
-	) | awk -f /usr/lib/parse-config.awk | dnsmasq -C /proc/self/fd/0
+	) | awk -f /lib/config/template.awk | dnsmasq -C /proc/self/fd/0
 }
 
 stop() {
