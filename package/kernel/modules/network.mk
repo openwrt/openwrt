@@ -264,6 +264,7 @@ define KernelPackage/sis900
   KCONFIG:=$(CONFIG_SIS900)
   DEPENDS:=@LINUX_2_6_X86||LINUX_2_4_X86
   SUBMENU:=$(NDMENU)
+  AUTOLOAD:=$(call AutoLoad,50,sis900)
 endef
 $(eval $(call KernelPackage,sis900))
 
@@ -275,6 +276,7 @@ define KernelPackage/via-rhine
   KCONFIG:=$(CONFIG_VIA_RHINE)
   DEPENDS:=@LINUX_2_6_X86||LINUX_2_4_X86
   SUBMENU:=$(NDMENU)
+  AUTOLOAD:=$(call AutoLoad,50,via-rhine)
 endef
 $(eval $(call KernelPackage,via-rhine))
 
@@ -286,6 +288,7 @@ define KernelPackage/8139too
   KCONFIG:=$(CONFIG_8139TOO)
   DEPENDS:=@LINUX_2_6_X86||LINUX_2_4_X86
   SUBMENU:=$(NDMENU)
+  AUTOLOAD:=$(call AutoLoad,50,8139too)
 endef
 $(eval $(call KernelPackage,8139too))
 
@@ -297,6 +300,7 @@ define KernelPackage/e100
   KCONFIG:=$(CONFIG_E100)
   DEPENDS:=@LINUX_2_6_X86||LINUX_2_4_X86
   SUBMENU:=$(NDMENU)
+  AUTOLOAD:=$(call AutoLoad,50,e100)
 endef
 $(eval $(call KernelPackage,e100))
 
@@ -314,5 +318,6 @@ define KernelPackage/3c59x
   KCONFIG:=$(CONFIG_3C59X)
   DEPENDS:=@LINUX_2_6_X86||LINUX_2_4_X86
   SUBMENU:=$(NDMENU)
+  AUTOLOAD:=$(call AutoLoad,50,3c59x)
 endef
 $(eval $(call KernelPackage,3c59x))
