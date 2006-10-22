@@ -1,0 +1,39 @@
+diff -u linux-2.4.30/drivers/mtd/chips/cfi_cmdset_0002.c.orig linux-2.4.30/drivers/mtd/chips/cfi_cmdset_0002.c
+--- linux-2.4.30/drivers/mtd/chips/cfi_cmdset_0002.c.orig	2004-11-17 12:54:21.000000000 +0100
++++ linux-2.4.30/drivers/mtd/chips/cfi_cmdset_0002.c	2006-10-21 17:55:25.000000000 +0200
+@@ -510,7 +510,7 @@
+ 	   or tells us why it failed. */        
+ 	dq6 = CMD(1<<6);
+ 	dq5 = CMD(1<<5);
+-	timeo = jiffies + (HZ/1000); /* setting timeout to 1ms for now */
++	timeo = jiffies + (HZ/1000) + 1; /* setting timeout to 1ms for now */
+ 		
+ 	oldstatus = cfi_read(map, adr);
+ 	status = cfi_read(map, adr);
+@@ -547,7 +547,7 @@
+ 				printk(KERN_WARNING "Internal flash device timeout occurred or write operation was performed while flash was programming.\n" );
+ 			}
+ 		} else {
+-			printk(KERN_WARNING "Waiting for write to complete timed out in do_write_oneword.");        
++			printk(KERN_WARNING "Waiting for write to complete timed out in do_write_oneword.\n");        
+ 			
+ 			chip->state = FL_READY;
+ 			wake_up(&chip->wq);
+@@ -825,7 +825,7 @@
+ 		chip->state = FL_READY;
+ 		wake_up(&chip->wq);
+ 		cfi_spin_unlock(chip->mutex);
+-		printk("waiting for erase to complete timed out.");
++		printk("waiting for erase to complete timed out.\n");
+ 		DISABLE_VPP(map);
+ 		return -EIO;
+ 	}
+@@ -963,7 +963,7 @@
+ 		}
+         else
+         {
+-		    printk( "Waiting for erase to complete timed out in do_erase_oneblock.");        
++		    printk( "Waiting for erase to complete timed out in do_erase_oneblock.\n");        
+ 		    
+ 		chip->state = FL_READY;
+ 		wake_up(&chip->wq);
