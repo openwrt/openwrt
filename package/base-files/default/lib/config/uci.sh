@@ -1,7 +1,7 @@
 #!/bin/sh
 # Shell script defining macros for manipulating config files
 #
-# Copyright (C) 2006 by Fokus Fraunhofer <carsten.tittel@fokus.fraumhofer.de>
+# Copyright (C) 2006 by Fokus Fraunhofer <carsten.tittel@fokus.fraunhofer.de>
 # Copyright (C) 2006 by Felix Fietkau <nbd@openwrt.org>
 #
 # This program is free software; you can redistribute it and/or modify
