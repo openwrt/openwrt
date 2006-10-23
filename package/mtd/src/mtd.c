@@ -62,6 +62,7 @@ struct trx_header {
 
 char buf[BUFSIZE];
 int buflen;
+int quiet;
 
 int
 image_check_bcom(int imagefd, const char *mtd)
@@ -70,6 +71,9 @@ image_check_bcom(int imagefd, const char *mtd)
 	struct mtd_info_user mtdInfo;
 	int fd;
 
+	if (strcmp(mtd, "linux") != 0)
+		return 1;
+	
 	buflen = read(imagefd, buf, 32);
 	if (buflen < 32) {
 		fprintf(stdout, "Could not get image header, file too small (%ld bytes)\n", buflen);
@@ -88,10 +92,11 @@ image_check_bcom(int imagefd, const char *mtd)
 	}
 	
 	if (trx->magic != TRX_MAGIC || trx->len < sizeof(struct trx_header)) {
-		fprintf(stderr, "Bad trx header\n");
-		fprintf(stderr, "If this is a firmware in bin format, like some of the\n"
-				"original firmware files are, use following command to convert to trx:\n"
-				"dd if=firmware.bin of=firmware.trx bs=32 skip=1\n");
+		if (quiet < 2) {
+			fprintf(stderr, "Bad trx header\n");
+			fprintf(stderr, "If this is a firmware in bin format, like some of the\n"
+					"original firmware files are, you need to convert it to trx.\n");
+		}
 		return 0;
 	}
 
@@ -255,7 +260,7 @@ mtd_erase(const char *mtd)
 }
 
 int
-mtd_write(int imagefd, const char *mtd, int quiet)
+mtd_write(int imagefd, const char *mtd)
 {
 	int fd, i, result;
 	size_t r, w, e;
@@ -346,7 +351,7 @@ void usage(void)
 
 int main (int argc, char **argv)
 {
-	int ch, i, boot, unlock, imagefd, force, quiet, unlocked;
+	int ch, i, boot, unlock, imagefd, force, unlocked;
 	char *erase[MAX_ARGS], *device, *imagefile;
 	enum {
 		CMD_ERASE,
@@ -413,10 +418,10 @@ int main (int argc, char **argv)
 	
 		/* check trx file before erasing or writing anything */
 		if (!image_check(imagefd, device)) {
-			if ((quiet < 2) || !force)
-				fprintf(stderr, "TRX check failed!\n");
-			if (!force)
+			if (!force) {
+				fprintf(stderr, "Image check failed.\n");
 				exit(1);
+			}
 		} else {
 			if (!mtd_check(device)) {
 				fprintf(stderr, "Can't open device for writing!\n");
@@ -460,7 +465,7 @@ int main (int argc, char **argv)
 		case CMD_WRITE:
 			if (quiet < 2)
 				fprintf(stderr, "Writing from %s to %s ... ", imagefile, device);
-			mtd_write(imagefd, device, quiet);
+			mtd_write(imagefd, device);
 			if (quiet < 2)
 				fprintf(stderr, "\n");
 			break;
