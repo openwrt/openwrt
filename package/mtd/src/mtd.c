@@ -64,8 +64,9 @@ char buf[BUFSIZE];
 int buflen;
 int quiet;
 
+#ifdef target_brcm
 int
-image_check_bcom(int imagefd, const char *mtd)
+image_check_brcm(int imagefd, const char *mtd)
 {
 	struct trx_header *trx = (struct trx_header *) buf;
 	struct mtd_info_user mtdInfo;
@@ -121,6 +122,7 @@ image_check_bcom(int imagefd, const char *mtd)
 	close(fd);
 	return 1;
 }
+#endif /* target_brcm */
 
 int
 image_check(int imagefd, const char *mtd)
@@ -130,23 +132,9 @@ image_check(int imagefd, const char *mtd)
 	char *c;
 	FILE *f;
 
-	systype = SYSTYPE_UNKNOWN;
-	f = fopen("/proc/cpuinfo", "r");
-	while (!feof(f) && (fgets(buf, BUFSIZE - 1, f) != NULL)) {
-		if ((strncmp(buf, "system type", 11) == 0) && (c = strchr(buf, ':'))) {
-			c += 2;
-			if (strncmp(c, "Broadcom BCM947XX", 17) == 0)
-				systype = SYSTYPE_BROADCOM;
-		}
-	}
-	fclose(f);
-	
-	switch(systype) {
-		case SYSTYPE_BROADCOM:
-			return image_check_bcom(imagefd, mtd);
-		default:
-			return 1;
-	}
+#ifdef target_brcm
+	return image_check_brcm(imagefd, mtd);
+#endif
 }
 
 int mtd_check(char *mtd)
