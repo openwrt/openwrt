@@ -7,6 +7,11 @@ scan_ppp() {
 
 start_pppd() {
 	local cfg="$1"; shift
+	
+	# make sure only one pppd process is started
+	local pid="$(cat /var/run/ppp-${cfg}.pid 2>/dev/null)"
+	[ -d "/proc/$pid" ] && grep pppd "/proc/$pid/cmdline" 2>/dev/null >/dev/null && return 0
+
 	config_get device "$cfg" device
 	config_get unit "$cfg" unit
 	config_get username "$cfg" username

@@ -120,8 +120,9 @@ setup_interface() {
 			env -i ACTION="ifup" INTERFACE="config" DEVICE="$iface" PROTO=static /sbin/hotplug "iface" &
 		;;
 		dhcp)
+			# prevent udhcpc from starting more than once
 			pid="$(cat "$pidfile" 2>/dev/null)"
-			[ -n "$pid" -a -d "/proc/$pid" ] && kill -9 "$pid"
+			[ -d "/proc/$pid" ] && grep udhcpc "/proc/${pid}/cmdline" >/dev/null 2>/dev/null && return 0
 
 			config_get ipaddr "$config" ipaddr
 			config_get netmask "$config" netmask
