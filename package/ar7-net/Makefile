@@ -22,15 +22,15 @@ PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/kmod-avalanche-cpmac
-  SECTION:=kernel
-  CATEGORY:=Kernel modules
+define KernelPackage/avalanche-cpmac
   SUBMENU:=Network Devices
   DEPENDS:=@LINUX_2_4_AR7 +kmod-atm
   DEFAULT:=y
-  TITLE:=AR7 ADSL driver (Annex A)
-  DESCRIPTION:=The AR7 ADSL driver for Annex A
+  TITLE:=AR7 Network driver (CPMAC)
+  DESCRIPTION:=AR7 Network driver (CPMAC)
   VERSION:=$(PKG_VERSION)+$(LINUX_VERSION)-$(BOARD)-$(PKG_RELEASE)
+  FILES:=$(PKG_BUILD_DIR)/avalanche_cpmac.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,30,avalanche_cpmac)
 endef
 
 define Build/Compile
@@ -42,10 +42,5 @@ define Build/Compile
 		modules
 endef
 
-define Package/kmod-avalanche-cpmac/install
-	install -m0755 -d $(1)/lib/modules/$(LINUX_VERSION)
-	$(CP) $(PKG_BUILD_DIR)/avalanche_cpmac.$(LINUX_KMOD_SUFFIX) \
-		$(1)/lib/modules/$(LINUX_VERSION)
-endef
 
-$(eval $(call BuildPackage,kmod-avalanche-cpmac))
+$(eval $(call KernelPackage,avalanche-cpmac))
