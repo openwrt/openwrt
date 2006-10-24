@@ -25,7 +25,7 @@ ifeq ($(CONFIG_X86_GRUB_IMAGES),y)
   endef
 
   define Image/cmdline/ext2
-    root=/dev/hda2 rootfstype=ext2
+    root=$(CONFIG_X86_GRUB_ROOTPART) rootfstype=ext2 $(CONFIG_X86_GRUB_BOOTOPTS)
   endef
 
   define Image/Build/grub
