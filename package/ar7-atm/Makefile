@@ -22,18 +22,18 @@ PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/kmod-sangam-atm-annex-a
-  SECTION:=kernel
-  CATEGORY:=Kernel modules
+define KernelPackage/sangam-atm-annex-a
   SUBMENU:=Network Devices
   DEPENDS:=@LINUX_2_4_AR7 +kmod-atm
   DEFAULT:=y
   TITLE:=AR7 ADSL driver (Annex A)
   DESCRIPTION:=The AR7 ADSL driver for Annex A
   VERSION:=$(PKG_VERSION)+$(LINUX_VERSION)-$(BOARD)-$(PKG_RELEASE)
+  FILES:=$(PKG_BUILD_DIR)/tiatm.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,50,tiatm)
 endef
 
-define Package/kmod-sangam-atm-annex-b
+define KernelPackage/sangam-atm-annex-b
   $(call Package/kmod-sangam-atm-annex-a)
   TITLE:=AR7 ADSL driver (Annex B)
   DESCRIPTION:=The AR7 ADSL driver for Annex B
@@ -47,22 +47,13 @@ define Build/Compile
 		modules
 endef
 
-define install
-	install -m0755 -d $(1)/lib/modules/$(LINUX_VERSION)
-	$(CP) $(PKG_BUILD_DIR)/tiatm.$(LINUX_KMOD_SUFFIX) \
-		$(1)/lib/modules/$(LINUX_VERSION)
+define KernelPackage/sangam-atm-annex-a/install
 	install -m0644 $(PKG_BUILD_DIR)/ar0700xx_a.bin $(1)/lib/modules/ar0700xx.bin
-	install -m0755 -d $(1)/etc/modules.d/
-	printf 'tiatm\n' > $(1)/etc/modules.d/20-switch
 endef
 
-define Package/kmod-sangam-atm-annex-a/install
-	$(call install,$(1),a)
+define KernelPackage/sangam-atm-annex-b/install
+	install -m0644 $(PKG_BUILD_DIR)/ar0700xx_b.bin $(1)/lib/modules/ar0700xx.bin
 endef
 
-define Package/kmod-sangam-atm-annex-b/install
-	$(call install,$(1),b)
-endef
-
-$(eval $(call BuildPackage,kmod-sangam-atm-annex-a))
-$(eval $(call BuildPackage,kmod-sangam-atm-annex-b))
+$(eval $(call KernelPackage,sangam-atm-annex-a))
+$(eval $(call KernelPackage,sangam-atm-annex-b))
