@@ -1,0 +1,28 @@
+diff -ur sangam.old/Makefile sangam.dev/Makefile
+--- sangam.old/Makefile	2006-10-17 16:43:09.000000000 +0200
++++ sangam.dev/Makefile	2006-10-24 15:34:14.000000000 +0200
+@@ -1,17 +1,15 @@
+-# File: drivers/net/avalanche_cpmac/Makefile
+ #
+-# Makefile for the Linux network (CPMAC) device drivers.
++# Makefile for the TIATM device drivers.
+ #
+ 
+-
+ O_TARGET := tiatm.o
++obj-m := tiatm.o
++
++tiatm-objs += tn7atm.o tn7dsl.o tn7sar.o dsl_hal_api.o dsl_hal_support.o cpsar.o aal5sar.o
++EXTRA_CFLAGS += -DEL -I. -DPOST_SILICON -DCOMMON_NSP -DCONFIG_LED_MODULE -DDEREGISTER_LED -DNO_ACT
+ 
+-obj-m	+= tiatm.o
+-tiatm-objs := tn7atm.o tn7dsl.o tn7sar.o dsl_hal_api.o dsl_hal_support.o cpsar.o aal5sar.o
++include $(TOPDIR)/Rules.make
+ 
+ tiatm.o: $(tiatm-objs)
+-	$(LD) $(LDOPTS) -o wlan.$(KMODSUF) -r $(tiatm-objs)
+-	
+-EXTRA_CFLAGS += -DEL -I. -DPOST_SILICON -DCOMMON_NSP -DCONFIG_LED_MODULE -DDEREGISTER_LED -DNO_ACT
++	$(LD) -r $(LDOPTS) -o $@ $(tiatm-objs)
+ 
+--include $(TOPDIR)/Rules.make
