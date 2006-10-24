@@ -12,23 +12,26 @@ debug "### ifdown $cfg ###"
 config_get proto "$cfg" proto
 [ -z "$proto" ] && { echo "interface not found."; exit; }
 
-# kill active ppp daemon
-pid="$(cat /var/run/ppp-${cfg}.pid 2>/dev/null)"
-[ -n "$pid" -a -d "/proc/$pid" ] && {
-	kill $pid
-	sleep 1
-	[ -d "/proc/$pid" ] && kill -9 $pid
-}
-
-# kill any other process associated with the interface
+# kill active ppp daemon and other processes
 config_get ifname "$cfg" ifname
-pid="$(cat /var/run/${ifname}.pid 2>/dev/null)"
-[ -n "$pid" -a -d "/proc/$pid" ] && kill -9 $pid
+pids="$(cat /var/run/${ifname}.pid /var/run/ppp-${cfg}.pid 2>/dev/null)"
+for pid in $pids; do 
+	[ -d "/proc/$pid" ] && {
+		kill $pid
+		sleep 1
+		[ -d "/proc/$pid" ] && kill -9 $pid
+	}
+done
+rm -f /var/run/${ifname}.pid /var/run/ppp-${cfg}.pid
 
 config_get ifname "$cfg" ifname
-ifconfig "$ifname" >/dev/null 2>/dev/null && {
-	ifconfig "$ifname" 0.0.0.0 down
+config_get device "$cfg" ifname
 
-	config_get iftype "$cfg" type
-	[ "$iftype" = "bridge" ] && brctl delbr "$ifname"
-}
+[ ."$device" != ."$ifname" ] || device=
+for dev in $ifname $device; do
+	ifconfig "$ifname" 0.0.0.0 down >/dev/null 2>/dev/null
+done
+
+config_get iftype "$cfg" type
+[ "$iftype" = "bridge" ] && brctl delbr "$ifname" >/dev/null 2>/dev/null
+
