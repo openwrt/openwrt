@@ -18,7 +18,7 @@ define KernelPackage/atm
     $(MODULES_DIR)/kernel/net/atm/br2684.$(LINUX_KMOD_SUFFIX)
   KCONFIG:=$(CONFIG_ATM)
   SUBMENU:=$(NSMENU)
-  AUTOLOAD:=$(call AutoLoad,30,atm)
+  AUTOLOAD:=$(call AutoLoad,30,atm br2684)
 endef
 $(eval $(call KernelPackage,atm))
 
@@ -158,7 +158,7 @@ define KernelPackage/ppp/2.6
 	$(MODULES_DIR)/kernel/drivers/net/ppp_generic.ko \
 	$(MODULES_DIR)/kernel/drivers/net/slhc.ko \
 	$(MODULES_DIR)/kernel/lib/crc-ccitt.ko
-  AUTOLOAD:=$(call AutoLoad,30,crc-ccitt)
+  AUTOLOAD:=$(call AutoLoad,30,crc-ccitt slhc ppp_generic ppp_async)
 endef
 
 define KernelPackage/ppp/2.4
@@ -166,6 +166,7 @@ define KernelPackage/ppp/2.4
   	$(MODULES_DIR)/kernel/drivers/net/ppp_async.o \
 	$(MODULES_DIR)/kernel/drivers/net/ppp_generic.o \
 	$(MODULES_DIR)/kernel/drivers/net/slhc.o
+  AUTOLOAD:=$(call AutoLoad,30,slhc ppp_generic ppp_async)
 endef
 $(eval $(call KernelPackage,ppp))
 
@@ -191,6 +192,7 @@ define KernelPackage/pppoa
   DEPENDS:=kmod-ppp
   KCONFIG:=$(CONFIG_PPPOATM)
   FILES:=$(MODULES_DIR)/kernel/net/atm/pppoatm.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,40,pppoatm)
   SUBMENU:=$(NSMENU)
 endef
 $(eval $(call KernelPackage,pppoa))
