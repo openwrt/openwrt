@@ -94,7 +94,7 @@ define KernelPackage
     CATEGORY:=Kernel modules
     DEFAULT:=m
     DESCRIPTION:=$(DESCRIPTION)
-    EXTRA_DEPENDS:='kernel (=$(PKG_VERSION)-$(PKG_RELEASE))'
+    EXTRA_DEPENDS:='kernel (=$(LINUX_VERSION)-$(BOARD)-$(LINUX_RELEASE))'
     $(call KernelPackage/$(1))
     $(call KernelPackage/$(1)/$(KERNEL))
     $(call KernelPackage/$(1)/$(BOARD)-$(KERNEL))
