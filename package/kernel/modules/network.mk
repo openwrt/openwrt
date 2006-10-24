@@ -264,7 +264,7 @@ define KernelPackage/sis900
 	Kernel modules for Sis 900 Ethernet adapters.
   FILES:=$(MODULES_DIR)/kernel/drivers/net/sis900.$(LINUX_KMOD_SUFFIX)
   KCONFIG:=$(CONFIG_SIS900)
-  DEPENDS:=@LINUX_2_6_X86||LINUX_2_4_X86
+  DEPENDS:=@LINUX_2_6_X86
   SUBMENU:=$(NDMENU)
   AUTOLOAD:=$(call AutoLoad,50,sis900)
 endef
@@ -276,7 +276,7 @@ define KernelPackage/via-rhine
 	Kernel modules for Via Rhine Ethernet chipsets.
   FILES:=$(MODULES_DIR)/kernel/drivers/net/via-rhine.$(LINUX_KMOD_SUFFIX)
   KCONFIG:=$(CONFIG_VIA_RHINE)
-  DEPENDS:=@LINUX_2_6_X86||LINUX_2_4_X86
+  DEPENDS:=@LINUX_2_6_X86
   SUBMENU:=$(NDMENU)
   AUTOLOAD:=$(call AutoLoad,50,via-rhine)
 endef
@@ -288,7 +288,7 @@ define KernelPackage/8139too
 	Kernel modules for RealTek RTL-8139 PCI Fast Ethernet adapters.
   FILES:=$(MODULES_DIR)/kernel/drivers/net/8139too.$(LINUX_KMOD_SUFFIX)
   KCONFIG:=$(CONFIG_8139TOO)
-  DEPENDS:=@LINUX_2_6_X86||LINUX_2_4_X86
+  DEPENDS:=@LINUX_2_6_X86
   SUBMENU:=$(NDMENU)
   AUTOLOAD:=$(call AutoLoad,50,8139too)
 endef
@@ -300,11 +300,22 @@ define KernelPackage/e100
 	Kernel modules for Intel(R) PRO/100+ Ethernet adapters.
   FILES:=$(MODULES_DIR)/kernel/drivers/net/e100.$(LINUX_KMOD_SUFFIX)
   KCONFIG:=$(CONFIG_E100)
-  DEPENDS:=@LINUX_2_6_X86||LINUX_2_4_X86
+  DEPENDS:=@LINUX_2_6_X86
   SUBMENU:=$(NDMENU)
   AUTOLOAD:=$(call AutoLoad,50,e100)
 endef
 $(eval $(call KernelPackage,e100))
+
+define KernelPackage/e1000
+  TITLE:=Intel(R) PRO/1000 cards kernel support
+  DESCRIPTION:=\
+	Kernel modules for Intel(R) PRO/1000 Ethernet adapters.
+  FILES:=$(MODULES_DIR)/kernel/drivers/net/e1000/e1000.$(LINUX_KMOD_SUFFIX)
+  KCONFIG:=$(CONFIG_E1000)
+  DEPENDS:=@LINUX_2_6_X86
+  SUBMENU:=$(NDMENU)
+endef
+$(eval $(call KernelPackage,e1000))
 
 define KernelPackage/3c59x
   TITLE:=3Com 3c590/3c900 series (592/595/597) Vortex/Boomerang
@@ -318,7 +329,7 @@ define KernelPackage/3c59x
 	- "Hurricane" (3c555/3cSOHO)                           PCI 
   FILES:=$(MODULES_DIR)/kernel/drivers/net/3c59x.$(LINUX_KMOD_SUFFIX)
   KCONFIG:=$(CONFIG_3C59X)
-  DEPENDS:=@LINUX_2_6_X86||LINUX_2_4_X86
+  DEPENDS:=@LINUX_2_6_X86
   SUBMENU:=$(NDMENU)
   AUTOLOAD:=$(call AutoLoad,50,3c59x)
 endef
