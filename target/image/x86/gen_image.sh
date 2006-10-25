@@ -2,8 +2,8 @@
 # Copyright (C) 2006 OpenWrt.org
 
 [ $# == 5 ] || {
-	echo "SYNTAX: $0 <file> <kernel size> <kernel directory> <rootfs size> <rootfs image>"
-	exit 1
+    echo "SYNTAX: $0 <file> <kernel size> <kernel directory> <rootfs size> <rootfs image>"
+    exit 1
 }
 
 file="$1"
@@ -22,20 +22,20 @@ n
 p
 1
 
-+${part1s}M
++$(($part1s * 1024))K
 n
 p
 2
 
-+${part2s}M
+
 w
 q
 EOF
 
 block() {
-	echo -e 'p\nq' | fdisk -u -C $cyl -H $head -S $sect "$file" | awk -v file="$file$1" -v n="$(($2 + 2))" '
+    echo -e 'p\nq' | fdisk -u -C $cyl -H $head -S $sect "$file" | awk -v file="$file$1" -v n="$(($2 + 2))" '
 $1 == file {
-	print $n * 512
+    print $n * 512
 }'
 }
 
