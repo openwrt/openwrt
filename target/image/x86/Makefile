@@ -29,7 +29,7 @@ ifeq ($(CONFIG_X86_GRUB_IMAGES),y)
   endef
 
   define Image/Build/grub
-  	mkdir -p $(KDIR)/root.grub/boot/grub
+	mkdir -p $(KDIR)/root.grub/boot/grub
 	$(CP) \
 		$(STAGING_DIR)/usr/lib/grub/i386-pc/stage1 \
 		$(STAGING_DIR)/usr/lib/grub/i386-pc/stage2 \
