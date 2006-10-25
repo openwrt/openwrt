@@ -235,11 +235,8 @@ mtd_erase(const char *mtd)
 		 mtdEraseInfo.start += mtdInfo.erasesize) {
 		
 		ioctl(fd, MEMUNLOCK, &mtdEraseInfo);
-		if(ioctl(fd, MEMERASE, &mtdEraseInfo)) {
-			fprintf(stderr, "Could not erase MTD device: %s\n", mtd);
-			close(fd);
-			exit(1);
-		}
+		if(ioctl(fd, MEMERASE, &mtdEraseInfo))
+			fprintf(stderr, "Failed to erase block on %s at 0x%x\n", mtd, mtdEraseInfo.start);
 	}		
 
 	close(fd);
