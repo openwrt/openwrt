@@ -16,6 +16,11 @@ copy_kernel() {
 }
 
 fstype="$(mount | grep ' / ' | awk '{print $5}')"
+case "$fstype" in
+	ext2|jffs2) echo "Copying from $fstype to yaffs2";;
+	*) echo "Invalid filesystem."; exit 1;;
+esac
+
 [ -d /tmp/cf2nand ] && {
 	echo "/tmp/cf2nand already exists"
 	exit 1
