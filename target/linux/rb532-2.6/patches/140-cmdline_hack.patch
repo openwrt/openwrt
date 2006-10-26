@@ -1,0 +1,33 @@
+diff -ur linux.old/arch/mips/kernel/head.S linux.dev/arch/mips/kernel/head.S
+--- linux.old/arch/mips/kernel/head.S	2006-10-26 00:11:13.000000000 +0200
++++ linux.dev/arch/mips/kernel/head.S	2006-10-26 02:40:10.000000000 +0200
+@@ -132,6 +132,8 @@
+ 
+ 	j kernel_entry
+ 	nop
++	nop
++EXPORT(_image_cmdline)
+ 
+ 	/*
+ 	 * Reserved space for exception handlers.
+diff -ur linux.old/arch/mips/rb500/prom.c linux.dev/arch/mips/rb500/prom.c
+--- linux.old/arch/mips/rb500/prom.c	2006-10-26 00:11:14.000000000 +0200
++++ linux.dev/arch/mips/rb500/prom.c	2006-10-26 02:40:46.000000000 +0200
+@@ -128,6 +128,7 @@
+ 	/* FIXME: STUB */
+ }
+ 
++extern char _image_cmdline;
+ void __init prom_setup_cmdline(void){
+ 	char cmd_line[CL_SIZE];
+ 	char *cp;
+@@ -163,6 +164,9 @@
+ 		strcpy(cp,prom_argv[i]);
+ 		cp+=strlen(prom_argv[i]);
+ 	}
++	*(cp++) = ' ';
++	strcpy(cp,&_image_cmdline);
++	cp += strlen(&_image_cmdline);
+ 	
+ 	i=strlen(arcs_cmdline);
+ 	if (i>0){
