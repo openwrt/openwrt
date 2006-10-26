@@ -110,3 +110,10 @@ include() {
 		. $file
 	done
 }
+
+find_mtd_part() {
+	local PART="$(grep "\"$1\"" /proc/mtd | awk -F: '{print $1}')"
+	PART="${PART##mtd}"
+	echo "${PART:+/dev/mtdblock/$PART}"
+}
+
