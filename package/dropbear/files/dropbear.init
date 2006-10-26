@@ -9,7 +9,7 @@ start() {
 	    # generate missing keys
 	    mkdir -p /etc/dropbear
 	    [ -x /usr/bin/dropbearkey ] && {
-	      /usr/bin/dropbearkey -t $type -f $key 2>&- >&- && exec $0 $*
+	      /usr/bin/dropbearkey -t $type -f $key 2>&- >&- && exec /etc/rc.common "$initscript" start
 	    } &
 	    exit 0
 	  }
