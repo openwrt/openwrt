@@ -121,8 +121,12 @@ setup_interface() {
 		;;
 		dhcp)
 			# prevent udhcpc from starting more than once
+			lock "/var/lock/dhcp-$iface"
 			pid="$(cat "$pidfile" 2>/dev/null)"
-			[ -d "/proc/$pid" ] && grep udhcpc "/proc/${pid}/cmdline" >/dev/null 2>/dev/null && return 0
+			[ -d "/proc/$pid" ] && grep udhcpc "/proc/${pid}/cmdline" >/dev/null 2>/dev/null && {
+				lock -u "/var/lock/dhcp-$iface"
+				return 0
+			}
 
 			config_get ipaddr "$config" ipaddr
 			config_get netmask "$config" netmask
@@ -135,6 +139,7 @@ setup_interface() {
 			# don't stay running in background if dhcp is not the main proto on the interface (e.g. when using pptp)
 			[ "$proto1" != "$proto" ] && dhcpopts="-n -q"
 			$DEBUG udhcpc -i "$iface" ${ipaddr:+-r $ipaddr} ${hostname:+-H $hostname} -b -p "$pidfile" ${dhcpopts:- -R &}
+			lock -u "/var/lock/dhcp-$iface"
 		;;
 		*)
 			if ( eval "type setup_interface_$proto" ) >/dev/null 2>/dev/null; then
