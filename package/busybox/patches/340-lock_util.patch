@@ -33,7 +33,7 @@ diff -ruN busybox-1.2.0-old/miscutils/Config.in busybox-1.2.0-new/miscutils/Conf
 diff -ruN busybox-1.2.0-old/miscutils/lock.c busybox-1.2.0-new/miscutils/lock.c
 --- busybox-1.2.0-old/miscutils/lock.c	1970-01-01 01:00:00.000000000 +0100
 +++ busybox-1.2.0-new/miscutils/lock.c	2006-08-01 10:21:15.000000000 +0200
-@@ -0,0 +1,133 @@
+@@ -0,0 +1,135 @@
 +/*
 + * Copyright (C) 2006 Felix Fietkau <nbd@openwrt.org>
 + *
@@ -93,9 +93,11 @@ diff -ruN busybox-1.2.0-old/miscutils/lock.c busybox-1.2.0-new/miscutils/lock.c
 +	int pid;
 +	char pidstr[8];
 +
-+	if ((fd = open(file, O_RDWR | O_CREAT, 0700)) < 0) {
-+		fprintf(stderr, "Can't open %s\n", file);
-+		return 1;
++	if ((fd = open(file, O_RDWR | O_CREAT | O_EXCL, 0700)) < 0) {
++		if ((fd = open(file, O_RDWR)) < 0) {
++			fprintf(stderr, "Can't open %s\n", file);
++			return 1;
++		}
 +	}
 +
 +	if (flock(fd, (shared ? LOCK_SH : LOCK_EX)) < 0) {
