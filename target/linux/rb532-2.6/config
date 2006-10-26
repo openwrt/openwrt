@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 2.6.17
-# Sun Jun 18 17:29:23 2006
+# Wed Oct 25 20:06:48 2006
 #
 CONFIG_MIPS=y
 
@@ -156,7 +156,9 @@ CONFIG_SYSCTL=y
 # CONFIG_AUDIT is not set
 # CONFIG_IKCONFIG is not set
 # CONFIG_RELAY is not set
-CONFIG_INITRAMFS_SOURCE=""
+CONFIG_INITRAMFS_SOURCE="../../root"
+CONFIG_INITRAMFS_ROOT_UID=0
+CONFIG_INITRAMFS_ROOT_GID=0
 CONFIG_CC_OPTIMIZE_FOR_SIZE=y
 CONFIG_EMBEDDED=y
 # CONFIG_KALLSYMS is not set
@@ -294,7 +296,7 @@ CONFIG_INET6_AH=m
 CONFIG_INET6_ESP=m
 CONFIG_INET6_IPCOMP=m
 CONFIG_INET6_XFRM_TUNNEL=m
-# CONFIG_INET6_TUNNEL is not set
+CONFIG_INET6_TUNNEL=m
 # CONFIG_IPV6_TUNNEL is not set
 CONFIG_NETFILTER=y
 # CONFIG_NETFILTER_DEBUG is not set
@@ -637,7 +639,12 @@ CONFIG_MTD_BLOCK2MTD=y
 #
 # NAND Flash Device Drivers
 #
-# CONFIG_MTD_NAND is not set
+CONFIG_MTD_NAND=y
+CONFIG_MTD_NAND_VERIFY_WRITE=y
+CONFIG_MTD_NAND_RB500=y
+CONFIG_MTD_NAND_IDS=y
+# CONFIG_MTD_NAND_DISKONCHIP is not set
+# CONFIG_MTD_NAND_NANDSIM is not set
 
 #
 # OneNAND Flash Device Drivers
@@ -806,13 +813,6 @@ CONFIG_NET_WIRELESS_RTNETLINK=y
 # Obsolete Wireless cards support (pre-802.11)
 #
 # CONFIG_STRIP is not set
-# CONFIG_PCMCIA_WAVELAN is not set
-# CONFIG_PCMCIA_NETWAVE is not set
-
-#
-# Wireless 802.11 Frequency Hopping cards support
-#
-# CONFIG_PCMCIA_RAYCS is not set
 
 #
 # Wireless 802.11b ISA/PCI cards support
@@ -823,12 +823,6 @@ CONFIG_NET_WIRELESS_RTNETLINK=y
 # CONFIG_ATMEL is not set
 
 #
-# Wireless 802.11b Pcmcia/Cardbus cards support
-#
-# CONFIG_AIRO_CS is not set
-# CONFIG_PCMCIA_WL3501 is not set
-
-#
 # Prism GT/Duette 802.11(a/b/g) PCI/Cardbus support
 #
 # CONFIG_PRISM54 is not set
@@ -837,14 +831,8 @@ CONFIG_HOSTAP_FIRMWARE=y
 CONFIG_HOSTAP_FIRMWARE_NVRAM=y
 # CONFIG_HOSTAP_PLX is not set
 # CONFIG_HOSTAP_PCI is not set
-CONFIG_HOSTAP_CS=m
 # CONFIG_BCM43XX is not set
 CONFIG_NET_WIRELESS=y
-
-#
-# PCMCIA network device support
-#
-# CONFIG_NET_PCMCIA is not set
 
 #
 # Wan interfaces
@@ -918,7 +906,6 @@ CONFIG_INPUT=y
 CONFIG_SERIAL_8250=y
 CONFIG_SERIAL_8250_CONSOLE=y
 # CONFIG_SERIAL_8250_PCI is not set
-# CONFIG_SERIAL_8250_CS is not set
 CONFIG_SERIAL_8250_NR_UARTS=2
 CONFIG_SERIAL_8250_RUNTIME_UARTS=2
 # CONFIG_SERIAL_8250_EXTENDED is not set
@@ -951,13 +938,6 @@ CONFIG_UNIX98_PTYS=y
 # Ftape, the floppy tape device driver
 #
 # CONFIG_DRM is not set
-
-#
-# PCMCIA character devices
-#
-# CONFIG_SYNCLINK_CS is not set
-# CONFIG_CARDMAN_4000 is not set
-# CONFIG_CARDMAN_4040 is not set
 # CONFIG_RAW_DRIVER is not set
 
 #
@@ -1068,7 +1048,7 @@ CONFIG_LEDS_TRIGGER_TIMER=y
 #
 # File systems
 #
-CONFIG_EXT2_FS=m
+CONFIG_EXT2_FS=y
 # CONFIG_EXT2_FS_XATTR is not set
 # CONFIG_EXT2_FS_XIP is not set
 CONFIG_EXT3_FS=m
@@ -1140,6 +1120,7 @@ CONFIG_RAMFS=y
 # CONFIG_BEFS_FS is not set
 # CONFIG_BFS_FS is not set
 # CONFIG_EFS_FS is not set
+CONFIG_YAFFS_FS=y
 # CONFIG_JFFS_FS is not set
 CONFIG_JFFS2_FS=y
 CONFIG_JFFS2_FS_DEBUG=0
@@ -1270,7 +1251,7 @@ CONFIG_NLS_UTF8=m
 CONFIG_LOG_BUF_SHIFT=14
 # CONFIG_DEBUG_FS is not set
 CONFIG_CROSSCOMPILE=y
-CONFIG_CMDLINE="root=/dev/mtdblock1 rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200"
+CONFIG_CMDLINE="noinitrd console=ttyS0,115200"
 
 #
 # Security options
