@@ -52,6 +52,9 @@ endif
 ifeq ($(CONFIG_SOFT_FLOAT),y)
 	$(SED) 's,.*HAS_FPU.*,HAS_FPU=n\nUCLIBC_HAS_FLOATS=y\nUCLIBC_HAS_SOFT_FLOAT=y,g' $(PKG_BUILD_DIR)/.config
 endif
+ifeq ($(CONFIG_C99_MATH),y)
+	$(SED) 's,.*DO_C99_MATH.*,DO_C99_MATH=y,g' $(PKG_BUILD_DIR)/.config
+endif
 	mkdir -p $(TOOLCHAIN_BUILD_DIR)/uClibc_dev/usr/include
 	mkdir -p $(TOOLCHAIN_BUILD_DIR)/uClibc_dev/usr/lib
 	mkdir -p $(TOOLCHAIN_BUILD_DIR)/uClibc_dev/lib
