@@ -26,7 +26,14 @@ config LARGEFILE
 	depends on !cris
 	default y
 	help
-	    Enable large file (files > 2 GB) support
+		Enable large file (files > 2 GB) support
+
+config C99_MATH
+	bool
+	prompt "Enable full C99 math support?" if TOOLCHAINOPTS
+	default n
+	help
+		Enable if you need full C99 math in libm
 
 config SOFT_FLOAT
 	bool
