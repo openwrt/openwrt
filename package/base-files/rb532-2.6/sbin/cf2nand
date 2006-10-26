@@ -1,0 +1,61 @@
+#!/bin/sh
+. /etc/functions.sh
+
+copy_kernel() {
+	local input="$1"
+	local output="$2"
+	local cmdline="$3"
+	size="$(echo -n "$cmdline" | wc -c)"
+	dd if="$input" bs=3M count=1 | (
+		dd bs=4112 count=1
+		echo -n "$cmdline"
+		dd if=/dev/zero bs="$((512 - $size))" count=1
+		dd bs=512 count=1 of=/dev/null
+		cat
+	) > "$output"
+}
+
+fstype="$(mount | grep ' / ' | awk '{print $5}')"
+[ -d /tmp/cf2nand ] && {
+	echo "/tmp/cf2nand already exists"
+	exit 1
+}
+
+mkdir /tmp/cf2nand
+mkdir /tmp/cf2nand/rootfs
+mount -t "$fstype" /dev/root /tmp/cf2nand/rootfs || {
+	echo "Mounting rootfs failed."
+	exit 1
+}
+
+boot="$(find_mtd_part 'RouterBoard NAND Boot')"
+main="$(find_mtd_part 'RouterBoard NAND Main')"
+[ -z "$boot" -o -z "$main" ] && {
+	echo "Cannot find NAND Flash partitions"
+	exit 1
+}
+
+echo "Erasing filesystem..."
+mtd erase Boot 2>/dev/null >/dev/null
+mtd erase Main 2>/dev/null >/dev/null
+
+mkdir /tmp/cf2nand/p1
+mkdir /tmp/cf2nand/p2
+mount -t yaffs2 "$boot" /tmp/cf2nand/p1
+mount -t yaffs2 "$main" /tmp/cf2nand/p2
+
+echo "Copying kernel..."
+copy_kernel /dev/cf/card0/part1 /tmp/cf2nand/p1/kernel "root=/dev/mtdblock1 rootfstype=yaffs2 " 2>/dev/null >/dev/null
+umount /tmp/cf2nand/p1
+rmdir /tmp/cf2nand/p1
+
+echo "Copying filesystem..."
+( cd /tmp/cf2nand/rootfs; tar c . ) | ( cd /tmp/cf2nand/p2; tar x )
+sync
+umount /tmp/cf2nand/p2
+rmdir /tmp/cf2nand/p2
+
+umount /tmp/cf2nand/rootfs
+rmdir /tmp/cf2nand/rootfs
+rmdir /tmp/cf2nand
+
