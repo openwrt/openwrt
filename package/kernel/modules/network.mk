@@ -294,6 +294,32 @@ define KernelPackage/8139too
 endef
 $(eval $(call KernelPackage,8139too))
 
+define KernelPackage/r8169
+  TITLE:=RealTek RTL-8169 PCI Gigabit Ethernet Adapter kernel support
+  DESCRIPTION:=\
+	Kernel modules for RealTek RTL-8169 PCI Gigabit Ethernet adapters.
+  FILES:=$(MODULES_DIR)/kernel/drivers/net/r8169.$(LINUX_KMOD_SUFFIX)
+  KCONFIG:=$(CONFIG_R8169)
+  DEPENDS:=@LINUX_2_6_X86 
+  SUBMENU:=$(NDMENU)
+  AUTOLOAD:=$(call AutoLoad,50,r8169)
+endef
+$(eval $(call KernelPackage,r8169))
+
+define KernelPackage/ixp4xx-npe
+  TITLE:=Intel(R) IXP4xx ethernet support
+  DESCRIPTION:=\
+	Kernel modules for Intel(R) IXP4xx onboard ethernet.
+  FILES:=$(MODULES_DIR)/kernel/drivers/net/ixp4xx/ixp4xx_npe.$(LINUX_KMOD_SUFFIX) \
+	$(MODULES_DIR)/kernel/drivers/net/ixp4xx/ixp4xx_qmgr.$(LINUX_KMOD_SUFFIX) \
+	$(MODULES_DIR)/kernel/drivers/net/ixp4xx/ixp4xx_mac.$(LINUX_KMOD_SUFFIX)
+  KCONFIG:=$(CONFIG_IXP4XX_MAC)
+  DEPENDS:=@LINUX_2_6_IXP4XX
+  SUBMENU:=$(NDMENU)
+  AUTOLOAD:=$(call AutoLoad,20,ixp4xx_npe ixp4xx_qmgr ixp4xx_mac)
+endef
+$(eval $(call KernelPackage,ixp4xx-npe))
+
 define KernelPackage/e100
   TITLE:=Intel(R) PRO/100+ cards kernel support
   DESCRIPTION:=\

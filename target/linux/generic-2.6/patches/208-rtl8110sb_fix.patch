@@ -1,0 +1,35 @@
+diff -Nur linux-2.6.17/drivers/net/r8169.c linux-2.6.17-owrt/drivers/net/r8169.c
+--- linux-2.6.17/drivers/net/r8169.c	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17-owrt/drivers/net/r8169.c	2006-10-27 13:18:46.000000000 +0200
+@@ -483,7 +483,7 @@
+ #endif
+ 
+ static const u16 rtl8169_intr_mask =
+-	SYSErr | LinkChg | RxOverflow | RxFIFOOver | TxErr | TxOK | RxErr | RxOK;
++	LinkChg | RxOverflow | RxFIFOOver | TxErr | TxOK | RxErr | RxOK;
+ static const u16 rtl8169_napi_event =
+ 	RxOK | RxOverflow | RxFIFOOver | TxOK | TxErr;
+ static const unsigned int rtl8169_rx_config =
+@@ -1832,8 +1832,8 @@
+ 	 */
+ 	RTL_W16(IntrMitigate, 0x0000);
+ 
+-	RTL_W32(TxDescStartAddrLow, ((u64) tp->TxPhyAddr & DMA_32BIT_MASK));
+ 	RTL_W32(TxDescStartAddrHigh, ((u64) tp->TxPhyAddr >> 32));
++	RTL_W32(TxDescStartAddrLow, ((u64) tp->TxPhyAddr & DMA_32BIT_MASK));
+ 	RTL_W32(RxDescAddrLow, ((u64) tp->RxPhyAddr & DMA_32BIT_MASK));
+ 	RTL_W32(RxDescAddrHigh, ((u64) tp->RxPhyAddr >> 32));
+ 	RTL_W8(Cfg9346, Cfg9346_Lock);
+@@ -2535,10 +2535,12 @@
+ 		if (!(status & rtl8169_intr_mask))
+ 			break;
+ 
++#if 0
+ 		if (unlikely(status & SYSErr)) {
+ 			rtl8169_pcierr_interrupt(dev);
+ 			break;
+ 		}
++#endif
+ 
+ 		if (status & LinkChg)
+ 			rtl8169_check_link_status(dev, tp, ioaddr);
