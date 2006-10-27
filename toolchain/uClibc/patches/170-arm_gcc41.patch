@@ -1,0 +1,13 @@
+diff -ur uClibc-0.9.28/ldso/include/dl-string.h uClibc-0.9.28-owrt/ldso/include/dl-string.h
+--- uClibc-0.9.28/ldso/include/dl-string.h	2005-08-18 00:49:41.000000000 +0200
++++ uClibc-0.9.28-owrt/ldso/include/dl-string.h	2006-09-11 11:42:08.000000000 +0200
+@@ -228,7 +228,8 @@
+ 	    char temp;
+ 	    do_rem(temp, i, 10);
+ 	    *--p = '0' + temp;
+-	    i /= 10;
++	    i /= 2;
++	    i *= -(-1ul / 5ul);
+ 	} while (i > 0);
+ 	return p;
+ }
