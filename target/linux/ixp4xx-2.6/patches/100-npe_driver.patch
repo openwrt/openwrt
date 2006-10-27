@@ -1,0 +1,3046 @@
+diff -Nur linux-2.6.17/Documentation/networking/ixp4xx/IxNpeMicrocode.h linux-2.6.17-owrt/Documentation/networking/ixp4xx/IxNpeMicrocode.h
+--- linux-2.6.17/Documentation/networking/ixp4xx/IxNpeMicrocode.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-owrt/Documentation/networking/ixp4xx/IxNpeMicrocode.h	2006-10-27 12:48:52.000000000 +0200
+@@ -0,0 +1,149 @@
++/*
++ * IxNpeMicrocode.h - Headerfile for compiling the Intel microcode C file
++ *
++ * Copyright (C) 2006 Christian Hohnstaedt <chohnstaedt@innominate.com>
++ *
++ * This file is released under the GPLv2
++ *
++ *
++ * compile with
++ *
++ * gcc -Wall IxNpeMicrocode.c -o IxNpeMicrocode
++ *
++ * Executing the resulting binary on your build-host creates the
++ * "NPE-[ABC].xxxxxxxx" files containing the selected microcode
++ * The options -le and -be controll the output format of the microcode
++ * the default is -be independent of the host endianess
++ *
++ * The download functions in the driver are smart enough to discover
++ * and correct firmware with wrong endianess
++ *
++ * fetch the IxNpeMicrocode.c from the Intel Access Library.
++ * It will include this header.
++ *
++ * select Images for every NPE from the following
++ * (used C++ comments for easy uncommenting ....)
++ */
++
++// #define IX_NPEDL_NPEIMAGE_NPEA_ETH_SPAN_MASK_FIREWALL_VLAN_QOS_HDR_CONV_EXTMIB
++// #define IX_NPEDL_NPEIMAGE_NPEA_ETH_SPAN_VLAN_QOS_HDR_CONV_EXTMIB
++// #define IX_NPEDL_NPEIMAGE_NPEA_ETH_LEARN_FILTER_SPAN_MASK_FIREWALL_VLAN_QOS_EXTMIB
++// #define IX_NPEDL_NPEIMAGE_NPEA_HSS_TSLOT_SWITCH
++// #define IX_NPEDL_NPEIMAGE_NPEA_ETH_SPAN_FIREWALL_VLAN_QOS_HDR_CONV
++// #define IX_NPEDL_NPEIMAGE_NPEA_ETH_LEARN_FILTER_SPAN_FIREWALL_VLAN_QOS
++// #define IX_NPEDL_NPEIMAGE_NPEA_ETH_LEARN_FILTER_SPAN_FIREWALL
++// #define IX_NPEDL_NPEIMAGE_NPEA_HSS_2_PORT
++// #define IX_NPEDL_NPEIMAGE_NPEA_DMA
++// #define IX_NPEDL_NPEIMAGE_NPEA_ATM_MPHY_12_PORT
++// #define IX_NPEDL_NPEIMAGE_NPEA_HSS0_ATM_MPHY_1_PORT
++// #define IX_NPEDL_NPEIMAGE_NPEA_HSS0_ATM_SPHY_1_PORT
++// #define IX_NPEDL_NPEIMAGE_NPEA_HSS0
++// #define IX_NPEDL_NPEIMAGE_NPEA_WEP
++
++
++// #define IX_NPEDL_NPEIMAGE_NPEB_ETH_SPAN_MASK_FIREWALL_VLAN_QOS_HDR_CONV_EXTMIB
++// #define IX_NPEDL_NPEIMAGE_NPEB_ETH_SPAN_VLAN_QOS_HDR_CONV_EXTMIB
++// #define IX_NPEDL_NPEIMAGE_NPEB_ETH_LEARN_FILTER_SPAN_MASK_FIREWALL_VLAN_QOS_EXTMIB
++// #define IX_NPEDL_NPEIMAGE_NPEB_DMA
++// #define IX_NPEDL_NPEIMAGE_NPEB_ETH_SPAN_FIREWALL_VLAN_QOS_HDR_CONV
++// #define IX_NPEDL_NPEIMAGE_NPEB_ETH_LEARN_FILTER_SPAN_FIREWALL_VLAN_QOS
++#define IX_NPEDL_NPEIMAGE_NPEB_ETH_LEARN_FILTER_SPAN_FIREWALL
++
++
++// #define IX_NPEDL_NPEIMAGE_NPEC_ETH_SPAN_MASK_FIREWALL_VLAN_QOS_HDR_CONV_EXTMIB
++// #define IX_NPEDL_NPEIMAGE_NPEC_ETH_SPAN_VLAN_QOS_HDR_CONV_EXTMIB
++// #define IX_NPEDL_NPEIMAGE_NPEC_ETH_LEARN_FILTER_SPAN_MASK_FIREWALL_VLAN_QOS_EXTMIB
++// #define IX_NPEDL_NPEIMAGE_NPEC_DMA
++// #define IX_NPEDL_NPEIMAGE_NPEC_CRYPTO_AES_ETH_LEARN_FILTER_SPAN
++// #define IX_NPEDL_NPEIMAGE_NPEC_CRYPTO_AES_ETH_LEARN_FILTER_FIREWALL
++#define IX_NPEDL_NPEIMAGE_NPEC_CRYPTO_AES_CCM_ETH
++// #define IX_NPEDL_NPEIMAGE_NPEC_CRYPTO_ETH_LEARN_FILTER_SPAN_FIREWALL
++// #define IX_NPEDL_NPEIMAGE_NPEC_ETH_SPAN_FIREWALL_VLAN_QOS_HDR_CONV
++// #define IX_NPEDL_NPEIMAGE_NPEC_ETH_LEARN_FILTER_SPAN_FIREWALL_VLAN_QOS
++// #define IX_NPEDL_NPEIMAGE_NPEC_ETH_LEARN_FILTER_SPAN_FIREWALL
++
++
++#include <stdio.h>
++#include <unistd.h>
++#include <stdlib.h>
++#include <netinet/in.h>
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <fcntl.h>
++#include <errno.h>
++#include <endian.h>
++#include <byteswap.h>
++#include <string.h>
++
++#if __BYTE_ORDER == __LITTLE_ENDIAN
++#define to_le32(x) (x)
++#define to_be32(x) bswap_32(x)
++#else
++#define to_be32(x) (x)
++#define to_le32(x) bswap_32(x)
++#endif
++
++struct dl_image {
++	unsigned magic;
++	unsigned id;
++	unsigned size;
++	unsigned data[0];
++};
++
++const unsigned IxNpeMicrocode_array[];
++
++int main(int argc, char *argv[])
++{
++	struct dl_image *image = (struct dl_image *)IxNpeMicrocode_array;
++	int imgsiz, i, fd, cnt;
++	const unsigned *arrayptr = IxNpeMicrocode_array;
++	const char *names[] = { "IXP425", "IXP465", "unknown" };
++	int bigendian = 1;
++
++	if (argc > 1) {
++		if (!strcmp(argv[1], "-le"))
++			bigendian = 0;
++		else if (!strcmp(argv[1], "-be"))
++			bigendian = 1;
++		else {
++			printf("Usage: %s <-le|-be>\n", argv[0]);
++			return EXIT_FAILURE;
++		}
++	}
++	printf("Output format is %s endian\n", bigendian ? "big" : "little");
++
++	for (image = (struct dl_image *)arrayptr, cnt=0;
++		(image->id != 0xfeedf00d) && (image->magic == 0xfeedf00d);
++		image = (struct dl_image *)(arrayptr), cnt++)
++	{
++		unsigned char field[4];
++		imgsiz = image->size + 3;
++		*(unsigned*)field = to_be32(image->id);
++		char filename[40], slnk[10];
++
++		sprintf(filename, "NPE-%c.%08x", (field[0] & 0xf) + 'A',
++			image->id);
++		sprintf(slnk, "NPE-%c", (field[0] & 0xf) + 'A');
++		printf("Writing image: %s.NPE_%c Func: %2x Rev: %02x.%02x "
++			"Size: %5d to: '%s'\n",
++			names[field[0] >> 4], (field[0] & 0xf) + 'A',
++			field[1], field[2], field[3], imgsiz*4, filename);
++		fd = open(filename, O_CREAT | O_RDWR | O_TRUNC, 0644);
++		if (fd >= 0) {
++			for (i=0; i<imgsiz; i++) {
++				*(unsigned*)field = bigendian ?
++					to_be32(arrayptr[i]) :
++					to_le32(arrayptr[i]);
++				write(fd, field, sizeof(field));
++			}
++			close(fd);
++			unlink(slnk);
++			symlink(filename, slnk);
++		} else {
++			perror(filename);
++		}
++		arrayptr += imgsiz;
++	}
++	close(fd);
++	return 0;
++}
+diff -Nur linux-2.6.17/Documentation/networking/ixp4xx/README linux-2.6.17-owrt/Documentation/networking/ixp4xx/README
+--- linux-2.6.17/Documentation/networking/ixp4xx/README	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-owrt/Documentation/networking/ixp4xx/README	2006-10-27 12:48:52.000000000 +0200
+@@ -0,0 +1,72 @@
++Informations about the Networking Driver using the IXP4XX CPU internal NPEs
++and Queue manager.
++
++If this driver is used, the IAL (Intel Access Library) must not be loaded.
++However, the IAL may be loaded, if this Modules are unloaded:
++	ixp4xx_npe.ko, ixp4xx_qmgr.ko ixp4xx_mac.ko
++
++This also means that HW crypto accelleration does NOT work when using this
++driver, unless I have finished my crypto driver for NPE-C
++
++
++Adoption to your custom board:
++------------------------------
++use "arch/arm/mach-ixp4xx/ixdp425-setup.c" as template:
++
++in "static struct mac_plat_info" adopt the entry "phy_id" to your needs
++(Ask your hardware designer about the PHY id)
++If in doubt, try the values from the ixdp425 board.
++
++The order of "&mac0" and "&mac1" in the "struct platform_device"
++determines which of them becomes eth0 and eth1.
++
++
++The Microcode:
++---------------
++
++The Download functions below are endianess independent.
++If the image comes in wrong endianess, it is swapped automatically.
++
++Solution 1)
++ Configure "CONFIG_HOTPLUG" and "CONFIG_FW_LOADER" and configure
++ IXP4XX_NPE as module.
++ The default hotplug script will load the Firmware from
++ /usr/lib/hotplug/firmware/NPE-[ABC]
++ see Documentation/firmware_class/hotplug-script
++
++ You should take care, that $ACTION is "add" and $SUBSYSTEM is "firmware"
++ to avoid unnessecary calls:
++ test $ACTION = "remove" -o $SUBSYSTEM != "firmware" && exit
++
++Solution 2)
++ create a char-dev: "mknod /dev/ixp4xx_ucode c 10 184".
++ If you are using "udev" or busybox "mdev", they will do this
++ for you automatically during module load.
++ cat the Microcode into it:
++ cat /usr/lib/hotplug/firmware/NPE-* > /dev/ixp4xx_ucode
++ This also works if the driver is linked to the kernel
++
++Having a mix of both (e.g. solution 1 for NPE-B and solution 2 for NPE-C)
++is perfectly ok and works.
++
++The state of the NPEs can be seen and changed at:
++/sys/bus/platform/devices/ixp4xx_npe.X/state
++
++
++Obtaining the Microcode:
++------------------------
++1) IxNpeMicrocode.h in this directory:
++   Download IPL_IXP400NPELIBRARYWITHCRYPTO-2_1.ZIP from Intel
++   It unpacks the Microcode IxNpeMicrocode.c
++   Read the Licence !
++   Read the top of IxNpeMicrocode.h for more details.
++   Compile it with "gcc -Wall IxNpeMicrocode.c -o IxNpeMicrocode" on your host.
++   The resulting images can be moved to "/usr/lib/hotplug/firmware"
++   The endianeess of the written microcode can be controlled by the
++   switches -le -be. Default is big-endian.
++
++2) mc_grab.c in this directory:
++   Compile and execute it either on the host or on the target
++   to grab the microcode from a binary image like the RedBoot bootloader.
++   (big-endian images only)
++
+diff -Nur linux-2.6.17/Documentation/networking/ixp4xx/mc_grab.c linux-2.6.17-owrt/Documentation/networking/ixp4xx/mc_grab.c
+--- linux-2.6.17/Documentation/networking/ixp4xx/mc_grab.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-owrt/Documentation/networking/ixp4xx/mc_grab.c	2006-10-27 12:48:52.000000000 +0200
+@@ -0,0 +1,97 @@
++/*
++ * mc_grab.c  - grabs IXP4XX microcode from a binary datastream
++ * e.g. The redboot bootloader....
++ *
++ * usage: mc_grab 1010200 2010200 < /dev/mtd/0 > /dev/misc/npe
++ *
++ * Copyright (C) 2006 Christian Hohnstaedt <chohnstaedt@innominate.com>
++ *
++ * This file is released under the GPLv2
++ */
++
++
++#include <stdlib.h>
++#include <stdio.h>
++#include <unistd.h>
++#include <netinet/in.h>
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <fcntl.h>
++#include <errno.h>
++#include <string.h>
++
++#define MAX_IMG 6
++
++static void print_mc_info(unsigned id, int siz)
++{
++	unsigned char buf[sizeof(unsigned)];
++	*(unsigned*)buf = id;
++	unsigned idx;
++	const char *names[] = { "IXP425", "IXP465", "unknown" };
++
++	idx = (buf[0] >> 4) < 2 ? (buf[0] >> 4) : 2;
++
++	fprintf(stderr, "Device: %s:NPE_%c Func: %2x Rev: %02x.%02x "
++		"Size: %5d bytes ID:%08x\n", names[idx], (buf[0] & 0xf)+'A',
++		buf[1], buf[2], buf[3], siz*4, ntohl(id));
++}
++
++int main(int argc, char *argv[])
++{
++	int i,j;
++	unsigned char buf[sizeof(unsigned)];
++	unsigned magic = htonl(0xfeedf00d);
++	unsigned id, my_ids[MAX_IMG+1], siz, sizbe;
++	int ret=1, verbose=0;
++
++	for (i=0, j=0; i<argc-1 && j<MAX_IMG; i++) {
++		if (!strcmp(argv[i+1], "-v"))
++			verbose = 1;
++		else
++			my_ids[j++] = htonl(strtoul(argv[i+1], NULL, 16));
++	}
++	my_ids[j] = 0;
++	if (my_ids[0] == 0 && !verbose) {
++		fprintf(stderr, "Usage: %s <-v> [ID1] [ID2] [IDn]\n", argv[0]);
++		return 1;
++	}
++
++	while ((ret=read(0, buf, sizeof(unsigned))) == sizeof(unsigned)) {
++		if (*(unsigned*)buf != magic)
++			continue;
++		if ((ret=read(0, buf, sizeof(unsigned))) != sizeof(unsigned) )
++			break;
++		id = *(unsigned*)buf;
++
++		if (read(0, buf, sizeof(siz)) != sizeof(siz) )
++			break;
++		sizbe = *(unsigned*)buf;
++		siz = ntohl(sizbe);
++
++		if (verbose)
++			print_mc_info(id, siz);
++
++		for(i=0; my_ids[i]; i++)
++			if (id == my_ids[i])
++				break;
++		if (!my_ids[i])
++			continue;
++
++		if (!verbose)
++			print_mc_info(id, siz);
++
++		write(1, &magic, sizeof(magic));
++		write(1, &id, sizeof(id));
++		write(1, &sizbe, sizeof(sizbe));
++		for (i=0; i<siz; i++) {
++			if (read(0, buf, sizeof(unsigned)) != sizeof(unsigned))
++				break;
++			write(1, buf, sizeof(unsigned));
++		}
++		if (i != siz)
++			break;
++	}
++	if (ret)
++		fprintf(stderr, "Error reading  Microcode\n");
++	return ret;
++}
+diff -Nur linux-2.6.17/arch/arm/mach-ixp4xx/common.c linux-2.6.17-owrt/arch/arm/mach-ixp4xx/common.c
+--- linux-2.6.17/arch/arm/mach-ixp4xx/common.c	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17-owrt/arch/arm/mach-ixp4xx/common.c	2006-10-27 12:50:32.000000000 +0200
+@@ -341,6 +341,97 @@
+ 	&ixp46x_i2c_controller
+ };
+ 
++static struct npe_plat_data npea = {
++	.name		= "NPE-A",
++	.data_size	= 0x800,
++	.inst_size	= 0x1000,
++	.id		= 0,
++};
++
++static struct npe_plat_data npeb = {
++	.name		= "NPE-B",
++	.data_size	= 0x800,
++	.inst_size	= 0x800,
++	.id		= 1,
++};
++
++static struct npe_plat_data npec = {
++	.name		= "NPE-C",
++	.data_size	= 0x800,
++	.inst_size	= 0x800,
++	.id		= 2,
++};
++
++static struct resource res_npea = {
++	.start		= IXP4XX_NPEA_BASE_PHYS,
++	.end		= IXP4XX_NPEA_BASE_PHYS + 0xfff,
++	.flags          = IORESOURCE_MEM,
++};
++
++static struct resource res_npeb = {
++	.start		= IXP4XX_NPEB_BASE_PHYS,
++	.end		= IXP4XX_NPEB_BASE_PHYS + 0xfff,
++	.flags          = IORESOURCE_MEM,
++};
++
++static struct resource res_npec = {
++	.start		= IXP4XX_NPEC_BASE_PHYS,
++	.end		= IXP4XX_NPEC_BASE_PHYS + 0xfff,
++	.flags          = IORESOURCE_MEM,
++};
++
++static struct platform_device dev_npea = {
++	.name           = "ixp4xx_npe",
++	.id             = 0,
++	.dev.platform_data = &npea,
++	.num_resources  = 1,
++	.resource       = &res_npea,
++};
++
++static struct platform_device dev_npeb = {
++	.name           = "ixp4xx_npe",
++	.id             = 1,
++	.dev.platform_data = &npeb,
++	.num_resources  = 1,
++	.resource       = &res_npeb,
++};
++
++static struct platform_device dev_npec = {
++	.name           = "ixp4xx_npe",
++	.id             = 2,
++	.dev.platform_data = &npec,
++	.num_resources  = 1,
++	.resource       = &res_npec,
++};
++
++/* QMGR */
++static struct resource res_qmgr[] = {
++{
++	.start		= IXP4XX_QMGR_BASE_PHYS,
++	.end		= IXP4XX_QMGR_BASE_PHYS + IXP4XX_QMGR_REGION_SIZE -1,
++	.flags          = IORESOURCE_MEM,
++}, {
++	.start          = IRQ_IXP4XX_QM1,
++	.flags          = IORESOURCE_IRQ,
++} };
++
++static struct platform_device qmgr = {
++	.name           = "ixp4xx_qmgr",
++	.id             = 0,
++	.dev		= {
++		.coherent_dma_mask	= DMA_31BIT_MASK,
++	},
++	.num_resources  = ARRAY_SIZE(res_qmgr),
++	.resource       = res_qmgr,
++};
++
++static struct platform_device *npes_qmgr[] __initdata = {
++	&qmgr,
++	&dev_npea,
++	&dev_npeb,
++	&dev_npec,
++};
++
+ unsigned long ixp4xx_exp_bus_size;
+ EXPORT_SYMBOL(ixp4xx_exp_bus_size);
+ 
+@@ -360,7 +451,10 @@
+ 				break;
+ 			}
+ 		}
++		npeb.inst_size = 0x1000;
++		npec.inst_size = 0x1000;
+ 	}
++	platform_add_devices(npes_qmgr, ARRAY_SIZE(npes_qmgr));
+ 
+ 	printk("IXP4xx: Using %luMiB expansion bus window size\n",
+ 			ixp4xx_exp_bus_size >> 20);
+diff -Nur linux-2.6.17/arch/arm/mach-ixp4xx/ixdp425-setup.c linux-2.6.17-owrt/arch/arm/mach-ixp4xx/ixdp425-setup.c
+--- linux-2.6.17/arch/arm/mach-ixp4xx/ixdp425-setup.c	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17-owrt/arch/arm/mach-ixp4xx/ixdp425-setup.c	2006-10-27 12:48:54.000000000 +0200
+@@ -101,10 +101,57 @@
+ 	.resource		= ixdp425_uart_resources
+ };
+ 
++/* MACs */
++static struct resource res_mac0 = {
++	.start		= IXP4XX_EthB_BASE_PHYS,
++	.end		= IXP4XX_EthB_BASE_PHYS + 0x1ff,
++	.flags          = IORESOURCE_MEM,
++};
++
++static struct resource res_mac1 = {
++	.start		= IXP4XX_EthC_BASE_PHYS,
++	.end		= IXP4XX_EthC_BASE_PHYS + 0x1ff,
++	.flags          = IORESOURCE_MEM,
++};
++
++static struct mac_plat_info plat_mac0 = {
++	.npe_id		= 1,
++	.phy_id		= 0,
++	.eth_id		= 0,
++	.rxq_id		= 27,
++	.txq_id		= 24,
++};
++
++static struct mac_plat_info plat_mac1 = {
++	.npe_id		= 2,
++	.phy_id		= 1,
++	.eth_id		= 1,
++	.rxq_id		= 28,
++	.txq_id		= 25,
++};
++
++static struct platform_device mac0 = {
++	.name           = "ixp4xx_mac",
++	.id             = 0,
++	.dev.platform_data = &plat_mac0,
++	.num_resources  = 1,
++	.resource       = &res_mac0,
++};
++
++static struct platform_device mac1 = {
++	.name           = "ixp4xx_mac",
++	.id             = 1,
++	.dev.platform_data = &plat_mac1,
++	.num_resources  = 1,
++	.resource       = &res_mac1,
++};
++
+ static struct platform_device *ixdp425_devices[] __initdata = {
+ 	&ixdp425_i2c_controller,
+ 	&ixdp425_flash,
+-	&ixdp425_uart
++	&ixdp425_uart,
++	&mac0,
++	&mac1,
+ };
+ 
+ static void __init ixdp425_init(void)
+diff -Nur linux-2.6.17/drivers/net/Kconfig linux-2.6.17-owrt/drivers/net/Kconfig
+--- linux-2.6.17/drivers/net/Kconfig	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17-owrt/drivers/net/Kconfig	2006-10-27 12:48:54.000000000 +0200
+@@ -187,6 +187,8 @@
+ 
+ source "drivers/net/arm/Kconfig"
+ 
++source "drivers/net/ixp4xx/Kconfig"
++
+ config MACE
+ 	tristate "MACE (Power Mac ethernet) support"
+ 	depends on NET_ETHERNET && PPC_PMAC && PPC32
+diff -Nur linux-2.6.17/drivers/net/Makefile linux-2.6.17-owrt/drivers/net/Makefile
+--- linux-2.6.17/drivers/net/Makefile	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17-owrt/drivers/net/Makefile	2006-10-27 12:48:54.000000000 +0200
+@@ -208,6 +208,7 @@
+ obj-$(CONFIG_IRDA) += irda/
+ obj-$(CONFIG_ETRAX_ETHERNET) += cris/
+ obj-$(CONFIG_ENP2611_MSF_NET) += ixp2000/
++obj-$(CONFIG_IXP4XX_NPE) += ixp4xx/
+ 
+ obj-$(CONFIG_NETCONSOLE) += netconsole.o
+ 
+diff -Nur linux-2.6.17/drivers/net/ixp4xx/Kconfig linux-2.6.17-owrt/drivers/net/ixp4xx/Kconfig
+--- linux-2.6.17/drivers/net/ixp4xx/Kconfig	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-owrt/drivers/net/ixp4xx/Kconfig	2006-10-27 12:48:54.000000000 +0200
+@@ -0,0 +1,40 @@
++config IXP4XX_QMGR
++	tristate "IXP4xx Queue Manager support"
++	depends on ARCH_IXP4XX
++	depends on NET_ETHERNET
++	help
++	  The IXP4XX Queue manager is a configurable hardware ringbuffer.
++	  It is used by the NPEs to exchange data from and to the CPU.
++	  You can either use this OR the Intel Access Library (IAL)
++
++config IXP4XX_NPE
++	tristate "IXP4xx NPE support"
++	depends on ARCH_IXP4XX
++	depends on NET_ETHERNET
++	help
++	  The IXP4XX NPE driver supports the 3 CPU co-processors called
++	  "Network Processing Engines" (NPE). It adds support fo downloading
++	  the Microcode (firmware) via Hotplug or  character-special-device.
++	  More about this at: Documentation/networking/ixp4xx/README.
++	  You can either use this OR the Intel Access Library (IAL)
++
++config IXP4XX_FW_LOAD
++	bool "Use Firmware hotplug for Microcode download"
++	depends on IXP4XX_NPE
++	select HOTPLUG
++	select FW_LOADER
++	help
++	  The default hotplug script will load the Firmware from
++	  /usr/lib/hotplug/firmware/NPE-[ABC]
++	  see Documentation/firmware_class/hotplug-script
++
++config IXP4XX_MAC
++	tristate "IXP4xx MAC support"
++	depends on IXP4XX_NPE
++	depends on IXP4XX_QMGR
++	depends on NET_ETHERNET
++	select MII
++	help
++	  The IXP4XX MAC driver supports the MACs on the IXP4XX CPUs.
++	  There are 2 on ixp425 and up to 5 on ixdp465.
++	  You can either use this OR the Intel Access Library (IAL)
+diff -Nur linux-2.6.17/drivers/net/ixp4xx/Makefile linux-2.6.17-owrt/drivers/net/ixp4xx/Makefile
+--- linux-2.6.17/drivers/net/ixp4xx/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-owrt/drivers/net/ixp4xx/Makefile	2006-10-27 12:48:54.000000000 +0200
+@@ -0,0 +1,6 @@
++obj-$(CONFIG_IXP4XX_QMGR) += ixp4xx_qmgr.o
++obj-$(CONFIG_IXP4XX_NPE) += ixp4xx_npe.o
++obj-$(CONFIG_IXP4XX_MAC) += ixp4xx_mac.o
++
++ixp4xx_npe-objs := ucode_dl.o npe_mh.o
++ixp4xx_mac-objs := mac_driver.o qmgr_eth.o phy.o
+diff -Nur linux-2.6.17/drivers/net/ixp4xx/ixp4xx_qmgr.c linux-2.6.17-owrt/drivers/net/ixp4xx/ixp4xx_qmgr.c
+--- linux-2.6.17/drivers/net/ixp4xx/ixp4xx_qmgr.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-owrt/drivers/net/ixp4xx/ixp4xx_qmgr.c	2006-10-27 12:48:54.000000000 +0200
+@@ -0,0 +1,390 @@
++/*
++ * qmgr.c - reimplementation of the queue configuration interface.
++ *
++ * Copyright (C) 2006 Christian Hohnstaedt <chohnstaedt@innominate.com>
++ *
++ * This file is released under the GPLv2
++ */
++
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/platform_device.h>
++#include <linux/fs.h>
++#include <linux/init.h>
++#include <linux/slab.h>
++#include <linux/dmapool.h>
++#include <linux/interrupt.h>
++#include <linux/err.h>
++#include <asm/uaccess.h>
++#include <asm/io.h>
++
++#include <linux/ixp_qmgr.h>
++#include <linux/ixp_npe.h>
++
++#define IXQMGR_VERSION "IXP4XX Q Manager 0.2.0"
++
++static struct device *qmgr_dev = NULL;
++
++int queue_len(struct qm_queue *queue)
++{
++	struct qm_qmgr *qmgr = dev_get_drvdata(queue->dev);
++	int diff, offs;
++	u32 val;
++
++	offs = queue->id/8 + QUE_LOW_STAT0;
++	val = *(qmgr->addr + IX_QMGR_QCFG_BASE + queue->id);
++
++	diff = (val - (val >> 7)) & 0x7f;
++	if (!diff) {
++		/* diff == 0 means either empty or full, must look at STAT0 */
++		if ((*(qmgr->addr + offs) >>  ((queue->id % 8)*4)) & 0x04)
++			diff = queue->len;
++	}
++	return diff;
++}
++
++static int request_pool(struct device *dev, int count)
++{
++	int i;
++	struct npe_cont *cont;
++	struct qm_qmgr *qmgr = dev_get_drvdata(dev);
++	dma_addr_t handle;
++
++	for (i=0; i<count; i++) {
++		cont = dma_pool_alloc(qmgr->dmapool, GFP_KERNEL, &handle);
++		if (!cont) {
++			return -ENOMEM;
++		}
++		cont->phys = handle;
++		cont->virt = cont;
++		write_lock(&qmgr->lock);
++		cont->next = qmgr->pool;
++		qmgr->pool = cont;
++		write_unlock(&qmgr->lock);
++	}
++	return 0;
++}
++
++static int free_pool(struct device *dev, int count)
++{
++	int i;
++	struct npe_cont *cont;
++	struct qm_qmgr *qmgr = dev_get_drvdata(dev);
++
++	for (i=0; i<count; i++) {
++		write_lock(&qmgr->lock);
++		cont = qmgr->pool;
++		if (!cont) {
++			write_unlock(&qmgr->lock);
++			return -1;
++		}
++		qmgr->pool = cont->next;
++		write_unlock(&qmgr->lock);
++		dma_pool_free(qmgr->dmapool, cont, cont->phys);
++	}
++	return 0;
++}
++
++static int get_free_qspace(struct qm_qmgr *qmgr, int len)
++{
++	int words = (qmgr->res->end - qmgr->res->start + 1) / 4 -
++			IX_QMGR_SRAM_SPACE;
++	int i,q;
++
++	for (i=0; i<words; i+=len) {
++		for (q=0; q<MAX_QUEUES; q++) {
++			struct qm_queue *qu = qmgr->queues[q];
++			if (!qu)
++				continue;
++			if ((qu->addr + qu->len > i) && (qu->addr < i + len))
++				break;
++		}
++		if (q == MAX_QUEUES) {
++			/* we have a free address */
++			return i;
++		}
++	}
++	return -1;
++}
++
++static inline int log2(int x)
++{
++	int r=0;
++	while(x>>=1)
++		r++;
++	return r;
++}
++
++/*
++ * 32bit Config registers at IX_QMGR_QUECONFIG_BASE_OFFSET[Qid]
++ *    0 - 6 WRPTR Word offset to baseaddr (index 0 .. BSIZE-1)
++ *    7 -13 RDPTR        ''
++ *   14 -21 BADDR baseaddr = (offset to IX_QMGR_QUEBUFFER_SPACE_OFFSET) >> 6
++ *   22 -23 ESIZE entrySizeInWords (always 00 because entrySizeInWords==1)
++ *   24 -25 BSIZE qSizeInWords 00=16,01=32,10=64,11=128
++ *   26 -28 NE nearly empty
++ *   29 -31 NF nearly full
++ */
++static int conf_q_regs(struct qm_queue *queue)
++{
++	int bsize = log2(queue->len/16);
++	int baddr = queue->addr + IX_QMGR_QCFG_SIZE;
++
++	/* +2, because baddr is in words and not in bytes */
++	queue_write_cfg_reg(queue,  (bsize << 24) | (baddr<<(14-6+2)) );
++
++	return 0;
++}
++
++void queue_set_watermarks(struct qm_queue *queue, unsigned ne, unsigned nf)
++{
++	u32 val;
++	/* calculate the register values
++	 * 0->0, 1->1, 2->2, 4->3, 8->4 16->5...*/
++	ne = log2(ne<<1) & 0x7;
++	nf = log2(nf<<1) & 0x7;
++
++	/* Mask out old watermarks */
++	val = queue_read_cfg_reg(queue) & ~0xfc000000;
++	queue_write_cfg_reg(queue, val | (ne << 26) | (nf << 29));
++}
++
++int queue_set_irq_src(struct qm_queue *queue, int flag)
++{
++	struct qm_qmgr *qmgr = dev_get_drvdata(queue->dev);
++	u32 reg;
++	int offs, bitoffs;
++
++	/* Q 0-7 are in REG0, 8-15 are in REG1, etc. They occupy 4 bits/Q */
++	offs = queue->id/8 + INT0_SRC_SELREG0;
++	bitoffs = (queue->id % 8)*4;
++
++	reg = *(qmgr->addr + offs) & ~(0xf << bitoffs);
++	*(qmgr->addr + offs) = reg | (flag << bitoffs);
++
++	return 0;
++}
++
++static irqreturn_t irq_qm1(int irq, void *dev_id, struct pt_regs *regs)
++{
++	struct qm_qmgr *qmgr = dev_id;
++	int offs, reg;
++	struct qm_queue *queue;
++
++	reg = *(qmgr->addr + QUE_INT_REG0);
++	while(reg) {
++		/*
++		 * count leading zeros. "offs" gets
++		 * the amount of leading 0 in "reg"
++		 */
++		asm ("clz %0, %1;" : "=r"(offs) : "r"(reg));
++		offs = 31 - offs;
++		reg &= ~(1 << offs);
++		queue = qmgr->queues[offs];
++		if (likely(queue)) {
++			if (likely(queue->irq_cb)) {
++				queue->irq_cb(queue);
++			} else {
++				printk(KERN_ERR "Missing callback for Q %d\n",
++						offs);
++			}
++		} else {
++			printk(KERN_ERR "IRQ for unregistered Q %d\n", offs);
++		}
++	}
++	return IRQ_HANDLED;
++}
++
++struct qm_queue *request_queue(int qid, int len)
++{
++	int ram;
++	struct qm_qmgr *qmgr;
++	struct qm_queue *queue;
++
++	if (!qmgr_dev)
++		return ERR_PTR(-ENODEV);
++
++	if ((qid < 0) || (qid > MAX_QUEUES))
++		return ERR_PTR(-ERANGE);
++
++	switch (len) {
++		case 16:
++		case 32:
++		case 64:
++		case 128: break;
++		default : return ERR_PTR(-EINVAL);
++	}
++
++	qmgr = dev_get_drvdata(qmgr_dev);
++
++	if (qmgr->queues[qid]) {
++		/* not an error, just in use already */
++		return NULL;
++	}
++	if ((ram = get_free_qspace(qmgr, len)) < 0) {
++		printk(KERN_ERR "No free SRAM space for this queue\n");
++		return ERR_PTR(-ENOMEM);
++	}
++	if (!(queue = kzalloc(sizeof(struct qm_queue), GFP_KERNEL)))
++		return ERR_PTR(-ENOMEM);
++
++	if (!try_module_get(THIS_MODULE)) {
++		kfree(queue);
++		return ERR_PTR(-ENODEV);
++	}
++
++	queue->addr = ram;
++	queue->len = len;
++	queue->id = qid;
++	queue->dev = get_device(qmgr_dev);
++	queue->acc_reg = qmgr->addr + (4 * qid);
++	qmgr->queues[qid] = queue;
++	if (request_pool(qmgr_dev, len)) {
++		printk(KERN_ERR "Failed to request DMA pool of Q %d\n", qid);
++	}
++
++	conf_q_regs(queue);
++	return queue;
++}
++
++void release_queue(struct qm_queue *queue)
++{
++	struct qm_qmgr *qmgr = dev_get_drvdata(queue->dev);
++
++	BUG_ON(qmgr->queues[queue->id] != queue);
++	qmgr->queues[queue->id] = NULL;
++
++	if (free_pool(queue->dev, queue->len)) {
++		printk(KERN_ERR "Failed to release DMA pool of Q %d\n",
++				queue->id);
++	}
++	queue_disable_irq(queue);
++	queue_write_cfg_reg(queue, 0);
++
++	module_put(THIS_MODULE);
++	put_device(queue->dev);
++	kfree(queue);
++}
++
++static int qmgr_probe(struct platform_device *pdev)
++{
++	struct resource *res;
++	struct qm_qmgr *qmgr;
++	int size, ret=0, i;
++
++	if (!(res = platform_get_resource(pdev, IORESOURCE_MEM, 0)))
++		return -EIO;
++
++	if ((i = platform_get_irq(pdev, 0)) < 0)
++		return -EIO;
++
++	if (!(qmgr = kzalloc(sizeof(struct qm_qmgr), GFP_KERNEL)))
++		return -ENOMEM;
++
++	qmgr->irq = i;
++	size = res->end - res->start +1;
++	qmgr->res = request_mem_region(res->start, size, "ixp_qmgr");
++	if (!qmgr->res) {
++		ret = -EBUSY;
++		goto out_free;
++	}
++
++	qmgr->addr = ioremap(res->start, size);
++	if (!qmgr->addr) {
++		ret = -ENOMEM;
++		goto out_rel;
++	}
++
++	/* Reset Q registers */
++	for (i=0; i<4; i++)
++		*(qmgr->addr + QUE_LOW_STAT0 +i) = 0x33333333;
++	for (i=0; i<10; i++)
++		*(qmgr->addr + QUE_UO_STAT0 +i) = 0x0;
++	for (i=0; i<4; i++)
++		*(qmgr->addr + INT0_SRC_SELREG0 +i) = 0x0;
++	for (i=0; i<2; i++) {
++		*(qmgr->addr + QUE_IE_REG0 +i) = 0x00;
++		*(qmgr->addr + QUE_INT_REG0 +i) = 0xffffffff;
++	}
++	for (i=0; i<64; i++) {
++		*(qmgr->addr + IX_QMGR_QCFG_BASE + i) = 0x0;
++	}
++
++	ret = request_irq(qmgr->irq, irq_qm1, SA_SHIRQ | SA_INTERRUPT,
++			"qmgr", qmgr);
++	if (ret) {
++		printk(KERN_ERR "Failed to request IRQ(%d)\n", qmgr->irq);
++		ret = -EIO;
++		goto out_rel;
++	}
++
++	rwlock_init(&qmgr->lock);
++	qmgr->dmapool = dma_pool_create("qmgr", &pdev->dev,
++			sizeof(struct npe_cont), 32, 0);
++	platform_set_drvdata(pdev, qmgr);
++
++	qmgr_dev = &pdev->dev;
++
++	printk(KERN_INFO IXQMGR_VERSION " initialized.\n");
++
++	return 0;
++
++out_rel:
++	release_resource(qmgr->res);
++out_free:
++	kfree(qmgr);
++	return ret;
++}
++
++static int qmgr_remove(struct platform_device *pdev)
++{
++	struct qm_qmgr *qmgr = platform_get_drvdata(pdev);
++	int i;
++
++	for (i=0; i<MAX_QUEUES; i++) {
++		if (qmgr->queues[i]) {
++			printk(KERN_ERR "WARNING Unreleased Q: %d\n", i);
++			release_queue(qmgr->queues[i]);
++		}
++	}
++
++	synchronize_irq (qmgr->irq);
++	free_irq(qmgr->irq, qmgr);
++
++	dma_pool_destroy(qmgr->dmapool);
++	iounmap(qmgr->addr);
++	release_resource(qmgr->res);
++	platform_set_drvdata(pdev, NULL);
++	qmgr_dev = NULL;
++	kfree(qmgr);
++	return 0;
++}
++
++static struct platform_driver ixp4xx_qmgr = {
++	.driver.name    = "ixp4xx_qmgr",
++	.probe          = qmgr_probe,
++	.remove         = qmgr_remove,
++};
++
++
++static int __init init_qmgr(void)
++{
++	return platform_driver_register(&ixp4xx_qmgr);
++}
++
++static void __exit finish_qmgr(void)
++{
++	platform_driver_unregister(&ixp4xx_qmgr);
++}
++
++module_init(init_qmgr);
++module_exit(finish_qmgr);
++
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("Christian Hohnstaedt <chohnstaedt@innominate.com>");
++
++EXPORT_SYMBOL(request_queue);
++EXPORT_SYMBOL(release_queue);
++EXPORT_SYMBOL(queue_set_irq_src);
++EXPORT_SYMBOL(queue_set_watermarks);
++EXPORT_SYMBOL(queue_len);
+diff -Nur linux-2.6.17/drivers/net/ixp4xx/mac.h linux-2.6.17-owrt/drivers/net/ixp4xx/mac.h
+--- linux-2.6.17/drivers/net/ixp4xx/mac.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-owrt/drivers/net/ixp4xx/mac.h	2006-10-27 12:48:54.000000000 +0200
+@@ -0,0 +1,221 @@
++/*
++ * Copyright (C) 2002-2006 Christian Hohnstaedt <chohnstaedt@innominate.com>
++ *
++ * This file is released under the GPLv2
++ */
++
++#include <linux/resource.h>
++#include <linux/netdevice.h>
++#include <linux/io.h>
++#include <linux/mii.h>
++#include <linux/workqueue.h>
++#include <asm/hardware.h>
++#include <linux/ixp_qmgr.h>
++
++
++/* 32 bit offsets to be added to u32 *pointers */
++#define MAC_TX_CNTRL1       0x00  // 0x000
++#define MAC_TX_CNTRL2       0x01  // 0x004
++#define MAC_RX_CNTRL1       0x04  // 0x010
++#define MAC_RX_CNTRL2       0x05  // 0x014
++#define MAC_RANDOM_SEED     0x08  // 0x020
++#define MAC_THRESH_P_EMPTY  0x0c  // 0x030
++#define MAC_THRESH_P_FULL   0x0e  // 0x038
++#define MAC_BUF_SIZE_TX     0x10  // 0x040
++#define MAC_TX_DEFER        0x14  // 0x050
++#define MAC_RX_DEFER        0x15  // 0x054
++#define MAC_TX_TWO_DEFER_1  0x18  // 0x060
++#define MAC_TX_TWO_DEFER_2  0x19  // 0x064
++#define MAC_SLOT_TIME       0x1c  // 0x070
++#define MAC_MDIO_CMD        0x20  // 0x080 4 registers 0x20 - 0x23
++#define MAC_MDIO_STS        0x24  // 0x090 4 registers 0x24 - 0x27
++#define MAC_ADDR_MASK       0x28  // 0x0A0 6 registers 0x28 - 0x2d
++#define MAC_ADDR            0x30  // 0x0C0 6 registers 0x30 - 0x35
++#define MAC_INT_CLK_THRESH  0x38  // 0x0E0 1 register
++#define MAC_UNI_ADDR        0x3c  // 0x0F0 6 registers 0x3c - 0x41
++#define MAC_CORE_CNTRL      0x7f  // 0x1fC
++
++/* TX Control Register 1*/
++
++#define TX_CNTRL1_TX_EN         BIT(0)
++#define TX_CNTRL1_DUPLEX        BIT(1)
++#define TX_CNTRL1_RETRY         BIT(2)
++#define TX_CNTRL1_PAD_EN        BIT(3)
++#define TX_CNTRL1_FCS_EN        BIT(4)
++#define TX_CNTRL1_2DEFER        BIT(5)
++#define TX_CNTRL1_RMII          BIT(6)
++
++/* TX Control Register 2 */
++#define TX_CNTRL2_RETRIES_MASK  0xf
++
++/* RX Control Register 1 */
++#define RX_CNTRL1_RX_EN         BIT(0)
++#define RX_CNTRL1_PADSTRIP_EN   BIT(1)
++#define RX_CNTRL1_CRC_EN        BIT(2)
++#define RX_CNTRL1_PAUSE_EN      BIT(3)
++#define RX_CNTRL1_LOOP_EN       BIT(4)
++#define RX_CNTRL1_ADDR_FLTR_EN  BIT(5)
++#define RX_CNTRL1_RX_RUNT_EN    BIT(6)
++#define RX_CNTRL1_BCAST_DIS     BIT(7)
++
++/* RX Control Register 2 */
++#define RX_CNTRL2_DEFER_EN      BIT(0)
++
++/* Core Control Register */
++#define CORE_RESET              BIT(0)
++#define CORE_RX_FIFO_FLUSH      BIT(1)
++#define CORE_TX_FIFO_FLUSH      BIT(2)
++#define CORE_SEND_JAM           BIT(3)
++#define CORE_MDC_EN             BIT(4)
++
++/* Definitions for MII access routines*/
++
++#define MII_REG_SHL    16
++#define MII_ADDR_SHL   21
++
++#define MII_GO                  BIT(31)
++#define MII_WRITE               BIT(26)
++#define MII_READ_FAIL           BIT(31)
++
++#define MII_TIMEOUT_10TH_SECS        5
++#define MII_10TH_SEC_IN_MILLIS     100
++
++/*
++ *
++ * Default values
++ *
++ */
++
++
++#define MAC_TX_CNTRL1_DEFAULT  (\
++		TX_CNTRL1_TX_EN | \
++		TX_CNTRL1_RETRY  | \
++		TX_CNTRL1_FCS_EN | \
++		TX_CNTRL1_2DEFER | \
++		TX_CNTRL1_PAD_EN )
++
++#define MAC_TX_MAX_RETRIES_DEFAULT 0x0f
++
++#define MAC_RX_CNTRL1_DEFAULT ( \
++		RX_CNTRL1_PADSTRIP_EN | \
++		RX_CNTRL1_CRC_EN | \
++		RX_CNTRL1_RX_EN )
++
++#define MAC_RX_CNTRL2_DEFAULT       0x0
++#define MAC_TX_CNTRL2_DEFAULT       TX_CNTRL2_RETRIES_MASK
++
++/* Thresholds determined by NPE firmware FS */
++#define MAC_THRESH_P_EMPTY_DEFAULT  0x12
++#define MAC_THRESH_P_FULL_DEFAULT   0x30
++
++/* Number of bytes that must be in the tx fifo before
++ * transmission commences */
++#define MAC_BUF_SIZE_TX_DEFAULT     0x8
++
++/* One-part deferral values */
++#define MAC_TX_DEFER_DEFAULT        0x15
++#define MAC_RX_DEFER_DEFAULT        0x16
++
++/* Two-part deferral values... */
++#define MAC_TX_TWO_DEFER_1_DEFAULT  0x08
++#define MAC_TX_TWO_DEFER_2_DEFAULT  0x07
++
++/* This value applies to MII */
++#define MAC_SLOT_TIME_DEFAULT       0x80
++
++/* This value applies to RMII */
++#define MAC_SLOT_TIME_RMII_DEFAULT  0xFF
++
++#define MAC_ADDR_MASK_DEFAULT       0xFF
++
++#define MAC_INT_CLK_THRESH_DEFAULT  0x1
++/* The following is a value chosen at random */
++#define RANDOM_SEED_DEFAULT         0x8
++
++/* By default we must configure the MAC to generate the MDC clock*/
++#define CORE_DEFAULT                (CORE_MDC_EN)
++
++/* End of Intel provided register information */
++
++extern int
++mdio_read_register(struct net_device *dev, int phy_addr, int phy_reg);
++extern void
++mdio_write_register(struct net_device *dev, int phy_addr, int phy_reg, int val);
++extern void init_mdio(struct net_device *dev, int phy_id);
++
++struct mac_info {
++	u32 __iomem *addr;
++	struct resource *res;
++	struct device *npe_dev;
++	struct qm_qmgr *qmgr;
++	struct qm_queue *rxq;
++	struct qm_queue *txq;
++	u32 irqflags;
++	struct net_device_stats stat;
++	struct mii_if_info mii;
++	struct work_struct mdio_thread;
++	int rxq_pkt;
++	int unloading;
++	struct mac_plat_info *plat;
++};
++
++static inline void mac_write_reg(struct mac_info *mac, int offset, u32 val)
++{
++	*(mac->addr + offset) = val;
++}
++static inline u32 mac_read_reg(struct mac_info *mac, int offset)
++{
++	return *(mac->addr + offset);
++}
++static inline void mac_set_regbit(struct mac_info *mac, int offset, u32 bit)
++{
++	mac_write_reg(mac, offset, mac_read_reg(mac, offset) | bit);
++}
++static inline void mac_reset_regbit(struct mac_info *mac, int offset, u32 bit)
++{
++	mac_write_reg(mac, offset, mac_read_reg(mac, offset) & ~bit);
++}
++
++static inline void mac_mdio_cmd_write(struct mac_info *mac, u32 cmd)
++{
++	int i;
++	for(i=0; i<4; i++) {
++		mac_write_reg(mac, MAC_MDIO_CMD + i, cmd & 0xff);
++		cmd >>=8;
++	}
++}
++
++#define mac_mdio_cmd_read(mac) mac_mdio_read((mac), MAC_MDIO_CMD)
++#define mac_mdio_status_read(mac) mac_mdio_read((mac), MAC_MDIO_STS)
++static inline u32 mac_mdio_read(struct mac_info *mac, int offset)
++{
++	int i;
++	u32 data = 0;
++	for(i=0; i<4; i++) {
++		data |= (mac_read_reg(mac, offset + i) & 0xff) << (i*8);
++	}
++	return data;
++}
++
++static inline u32 mdio_cmd(int phy_addr, int phy_reg)
++{
++	return phy_addr << MII_ADDR_SHL |
++		phy_reg << MII_REG_SHL |
++	        MII_GO;
++}
++
++#define MAC_REG_LIST { \
++	MAC_TX_CNTRL1, MAC_TX_CNTRL2, \
++	MAC_RX_CNTRL1, MAC_RX_CNTRL2, \
++	MAC_RANDOM_SEED, MAC_THRESH_P_EMPTY, MAC_THRESH_P_FULL, \
++	MAC_BUF_SIZE_TX, MAC_TX_DEFER, MAC_RX_DEFER, \
++	MAC_TX_TWO_DEFER_1, MAC_TX_TWO_DEFER_2, MAC_SLOT_TIME, \
++	MAC_ADDR_MASK +0, MAC_ADDR_MASK +1, MAC_ADDR_MASK +2, \
++	MAC_ADDR_MASK +3, MAC_ADDR_MASK +4, MAC_ADDR_MASK +5, \
++	MAC_ADDR +0, MAC_ADDR +1, MAC_ADDR +2, \
++	MAC_ADDR +3, MAC_ADDR +4, MAC_ADDR +5, \
++	MAC_INT_CLK_THRESH, \
++	MAC_UNI_ADDR +0, MAC_UNI_ADDR +1, MAC_UNI_ADDR +2, \
++	MAC_UNI_ADDR +3, MAC_UNI_ADDR +4, MAC_UNI_ADDR +5, \
++	MAC_CORE_CNTRL \
++}
+diff -Nur linux-2.6.17/drivers/net/ixp4xx/mac_driver.c linux-2.6.17-owrt/drivers/net/ixp4xx/mac_driver.c
+--- linux-2.6.17/drivers/net/ixp4xx/mac_driver.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-owrt/drivers/net/ixp4xx/mac_driver.c	2006-10-27 12:48:54.000000000 +0200
+@@ -0,0 +1,578 @@
++/*
++ * mac_driver.c - provide a network interface for each MAC
++ *
++ * Copyright (C) 2006 Christian Hohnstaedt <chohnstaedt@innominate.com>
++ *
++ * This file is released under the GPLv2
++ */
++
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/platform_device.h>
++#include <linux/netdevice.h>
++#include <linux/etherdevice.h>
++#include <linux/ethtool.h>
++#include <linux/slab.h>
++#include <linux/delay.h>
++#include <linux/err.h>
++#include <asm/io.h>
++#include <asm/irq.h>
++
++
++#include <linux/ixp_qmgr.h>
++#include <linux/ixp_npe.h>
++#include "mac.h"
++
++#define MDIO_INTERVAL (3*HZ)
++#define RX_QUEUE_PREFILL 64
++
++#define IXMAC_NAME "ixp4xx_mac"
++#define IXMAC_VERSION "0.2.1"
++
++#define MAC_DEFAULT_REG(mac, name) \
++	mac_write_reg(mac, MAC_ ## name, MAC_ ## name ## _DEFAULT)
++
++#define RX_DONE_QID 4
++#define TX_DONE_QID 31
++
++extern int queue_send_skb(struct qm_queue *queue, struct sk_buff *skb);
++extern int queue_fill_skb(struct qm_queue *queue, struct net_device *dev);
++extern int queue_drain(struct qm_queue *queue);
++extern struct sk_buff *queue_return_skb(struct qm_queue *queue);
++
++
++/* Since the NPEs use 1 Return Q for sent frames, we need a device
++ * independent return Q. We call it tx_doneq.
++ * It will be initialized during module load and uninitialized
++ * during module unload. Evil hack, but there is no choice :-(
++ */
++
++static struct qm_queue *tx_doneq = NULL;
++static struct qm_queue *rx_doneq = NULL;
++
++static void mac_init(struct mac_info *mac)
++{
++	MAC_DEFAULT_REG(mac, TX_CNTRL2);
++	MAC_DEFAULT_REG(mac, THRESH_P_EMPTY);
++	MAC_DEFAULT_REG(mac, THRESH_P_FULL);
++	MAC_DEFAULT_REG(mac, TX_DEFER);
++	MAC_DEFAULT_REG(mac, TX_TWO_DEFER_1);
++	MAC_DEFAULT_REG(mac, TX_TWO_DEFER_2);
++	MAC_DEFAULT_REG(mac, SLOT_TIME);
++	MAC_DEFAULT_REG(mac, INT_CLK_THRESH);
++	MAC_DEFAULT_REG(mac, BUF_SIZE_TX);
++	MAC_DEFAULT_REG(mac, TX_CNTRL1);
++	MAC_DEFAULT_REG(mac, RX_CNTRL1);
++}
++
++static void mac_set_uniaddr(struct net_device *dev)
++{
++	int i;
++	struct mac_info *mac = netdev_priv(dev);
++	struct npe_info *npe = dev_get_drvdata(mac->npe_dev);
++
++	/* check for multicast */
++	if (dev->dev_addr[0] & 1)
++		return;
++
++	npe_mh_setportaddr(npe, mac->plat, dev->dev_addr);
++	npe_mh_disable_firewall(npe, mac->plat);
++	for (i=0; i<dev->addr_len; i++)
++		mac_write_reg(mac, MAC_UNI_ADDR + i, dev->dev_addr[i]);
++}
++
++static void update_duplex_mode(struct net_device *dev)
++{
++	struct mac_info *mac = netdev_priv(dev);
++	printk("Duplex mode %s =%d\n", dev->name, mac->mii.full_duplex);
++	if (mac->mii.full_duplex) {
++		mac_reset_regbit(mac, MAC_TX_CNTRL1, TX_CNTRL1_DUPLEX);
++	} else {
++		mac_set_regbit(mac, MAC_TX_CNTRL1, TX_CNTRL1_DUPLEX);
++	}
++}
++
++static int media_check(struct net_device *dev, int init)
++{
++	struct mac_info *mac = netdev_priv(dev);
++
++	if (mii_check_media(&mac->mii, 1, init)) {
++		update_duplex_mode(dev);
++		return 1;
++	}
++	return 0;
++}
++
++static void irqcb_recv(struct qm_queue *queue)
++{
++	struct net_device *dev;
++	struct mac_info *mac;
++	struct sk_buff *skb;
++
++	queue_ack_irq(queue);
++	skb = queue_return_skb(queue);
++	while (skb) {
++		int rc;
++		dev = skb->dev;
++		mac = netdev_priv(dev);
++		skb->protocol = eth_type_trans(skb, dev);
++		dev->last_rx = jiffies;
++		rc = netif_rx(skb);
++		if (rc == NET_RX_DROP) {
++			mac->stat.rx_dropped++;
++		} else {
++			mac->stat.rx_packets++;
++			mac->stat.rx_bytes += skb->len;
++		}
++
++		if (!mac->unloading)
++			queue_fill_skb(mac->rxq, dev);
++		else
++			mac->rxq_pkt--;
++
++		skb = queue_return_skb(queue);
++	}
++}
++
++void irqcb_txdone(struct qm_queue *queue)
++{
++	queue_ack_irq(queue);
++	while (queue_drain(queue));
++}
++
++static void ixmac_set_rx_mode (struct net_device *dev)
++{
++	struct mac_info *mac = netdev_priv(dev);
++	struct dev_mc_list *mclist;
++	u8 aset[dev->addr_len], aclear[dev->addr_len];
++	int i,j;
++
++	if (dev->flags & IFF_PROMISC) {
++		mac_reset_regbit(mac, MAC_RX_CNTRL1, RX_CNTRL1_ADDR_FLTR_EN);
++	} else {
++		mac_set_regbit(mac, MAC_RX_CNTRL1, RX_CNTRL1_ADDR_FLTR_EN);
++
++		mclist = dev->mc_list;
++		memset(aset, 0xff, dev->addr_len);
++		memset(aclear, 0x00, dev->addr_len);
++		for (i = 0; mclist && i < dev->mc_count; i++) {
++			for (j=0; j< dev->addr_len; j++) {
++				aset[j] &= mclist->dmi_addr[j];
++				aclear[j] |= mclist->dmi_addr[j];
++			}
++			mclist = mclist->next;
++		}
++		for (j=0; j< dev->addr_len; j++) {
++			aclear[j] = aset[j] | ~aclear[j];
++		}
++		for (i=0; i<dev->addr_len; i++) {
++			mac_write_reg(mac, MAC_ADDR + i, aset[i]);
++			mac_write_reg(mac, MAC_ADDR_MASK + i, aclear[i]);
++		}
++	}
++}
++
++static int ixmac_open (struct net_device *dev)
++{
++	struct mac_info *mac = netdev_priv(dev);
++	struct npe_info *npe = dev_get_drvdata(mac->npe_dev);
++	int i;
++
++	/* first check if Microcode was downloaded into this NPE */
++	if (!( npe_status(npe) & IX_NPEDL_EXCTL_STATUS_RUN)) {
++		printk(KERN_ERR "Missing microcode for %s\n", npe->plat->name);
++		return -EIO;
++	}
++
++	for (i=0; i<RX_QUEUE_PREFILL; i++) {
++		queue_fill_skb(mac->rxq, dev);
++	}
++	mac->rxq_pkt += RX_QUEUE_PREFILL;
++
++	mac_init(mac);
++	npe_mh_set_rxqid(npe, mac->plat, RX_DONE_QID);
++	mac_set_uniaddr(dev);
++
++	media_check(dev, 1);
++
++	ixmac_set_rx_mode(dev);
++
++	netif_start_queue(dev);
++	schedule_delayed_work(&mac->mdio_thread, MDIO_INTERVAL);
++	return 0;
++}
++
++static int ixmac_start_xmit (struct sk_buff *skb, struct net_device *dev)
++{
++	struct mac_info *mac = netdev_priv(dev);
++
++	if (queue_send_skb(mac->txq, skb)) {
++		mac->stat.tx_packets++;
++		mac->stat.tx_bytes += skb->len;
++	} else {
++		mac->stat.tx_errors++;
++		dev_kfree_skb(skb);
++	}
++
++	dev->trans_start = jiffies;
++	return 0;
++}
++
++static int ixmac_close (struct net_device *dev)
++{
++	struct mac_info *mac = netdev_priv(dev);
++
++	netif_stop_queue (dev);
++
++	if (mac->mdio_thread.pending)
++		cancel_rearming_delayed_work(&mac->mdio_thread);
++
++
++	/* After doing all our business, the rxfreeq must
++	 * carry as much packets as we gave it during setup.
++	 * Here we calc the missing packets.
++	 */
++	mac->rxq_pkt -= queue_len(mac->rxq);
++
++	while (queue_drain(mac->txq));
++	while (queue_drain(mac->rxq));
++
++	return 0;
++}
++
++static int ixmac_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
++{
++	struct mac_info *mac = netdev_priv(dev);
++	int rc, duplex_changed;
++
++	if (!netif_running(dev))
++		return -EINVAL;
++
++
++	if (!try_module_get(THIS_MODULE))
++		return -ENODEV;
++	rc = generic_mii_ioctl(&mac->mii, if_mii(rq), cmd, &duplex_changed);
++	module_put(THIS_MODULE);
++	if (duplex_changed)
++		update_duplex_mode(dev);
++	return rc;
++}
++
++static struct net_device_stats *ixmac_stats (struct net_device *dev)
++{
++	struct mac_info *mac = netdev_priv(dev);
++	return &mac->stat;
++}
++
++static void ixmac_get_drvinfo(struct net_device *dev, struct ethtool_drvinfo *info)
++{
++	struct mac_info *mac = netdev_priv(dev);
++	struct npe_info *npe = dev_get_drvdata(mac->npe_dev);
++
++	strcpy(info->driver, IXMAC_NAME);
++	strcpy(info->version, IXMAC_VERSION);
++	if  (npe_status(npe) & IX_NPEDL_EXCTL_STATUS_RUN) {
++		snprintf(info->fw_version, 32, "%d.%d func [%d]",
++			npe->img_info[2], npe->img_info[3], npe->img_info[1]);
++	}
++	strncpy(info->bus_info, npe->plat->name, ETHTOOL_BUSINFO_LEN);
++}
++
++static int ixmac_get_settings(struct net_device *dev, struct ethtool_cmd *cmd)
++{
++	struct mac_info *mac = netdev_priv(dev);
++	mii_ethtool_gset(&mac->mii, cmd);
++	return 0;
++}
++
++static int ixmac_set_settings(struct net_device *dev, struct ethtool_cmd *cmd)
++{
++	struct mac_info *mac = netdev_priv(dev);
++	int rc;
++	rc = mii_ethtool_sset(&mac->mii, cmd);
++	return rc;
++}
++
++static int ixmac_nway_reset(struct net_device *dev)
++{
++	struct mac_info *mac = netdev_priv(dev);
++	return mii_nway_restart(&mac->mii);
++}
++
++static u32 ixmac_get_link(struct net_device *dev)
++{
++	struct mac_info *mac = netdev_priv(dev);
++	return mii_link_ok(&mac->mii);
++}
++
++static const int mac_reg_list[] = MAC_REG_LIST;
++
++static int ixmac_get_regs_len(struct net_device *dev)
++{
++	return ARRAY_SIZE(mac_reg_list);
++}
++
++static void
++ixmac_get_regs(struct net_device *dev, struct ethtool_regs *regs, void *regbuf)
++{
++	int i;
++	struct mac_info *mac = netdev_priv(dev);
++	u8 *buf = regbuf;
++
++	for (i=0; i<regs->len; i++) {
++		buf[i] = mac_read_reg(mac, mac_reg_list[i]);
++	}
++}
++
++static struct ethtool_ops ixmac_ethtool_ops = {
++	.get_drvinfo		= ixmac_get_drvinfo,
++	.get_settings		= ixmac_get_settings,
++	.set_settings		= ixmac_set_settings,
++	.nway_reset		= ixmac_nway_reset,
++	.get_link		= ixmac_get_link,
++	.get_regs_len		= ixmac_get_regs_len,
++	.get_regs		= ixmac_get_regs,
++	.get_perm_addr		= ethtool_op_get_perm_addr,
++};
++static void mac_mdio_thread (void *_data)
++{
++	struct net_device *dev = _data;
++	struct mac_info *mac = netdev_priv(dev);
++
++	media_check(dev, 0);
++	schedule_delayed_work(&mac->mdio_thread, MDIO_INTERVAL);
++}
++
++static int mac_probe(struct platform_device *pdev)
++{
++	struct resource *res;
++	struct mac_info *mac;
++	struct net_device* dev;
++	struct npe_info *npe;
++	struct mac_plat_info *plat = pdev->dev.platform_data;
++	int size, ret;
++
++	if (!(res = platform_get_resource(pdev, IORESOURCE_MEM, 0))) {
++		return -EIO;
++	}
++	if (!(dev = alloc_etherdev (sizeof(struct mac_info)))) {
++		return -ENOMEM;
++	}
++	SET_MODULE_OWNER(dev);
++	SET_NETDEV_DEV(dev, &pdev->dev);
++	mac = netdev_priv(dev);
++
++	size = res->end - res->start +1;
++	mac->res = request_mem_region(res->start, size, IXMAC_NAME);
++	if (!mac->res) {
++		ret = -EBUSY;
++		goto out_free;
++	}
++
++	mac->addr = ioremap(res->start, size);
++	if (!mac->addr) {
++		ret = -ENOMEM;
++		goto out_rel;
++	}
++
++	dev->open = ixmac_open;
++	dev->hard_start_xmit = ixmac_start_xmit;
++	dev->stop = ixmac_close;
++	dev->get_stats = ixmac_stats;
++	dev->do_ioctl = ixmac_ioctl;
++	dev->set_multicast_list = ixmac_set_rx_mode;
++	dev->ethtool_ops = &ixmac_ethtool_ops;
++
++	mac->npe_dev = get_npe_by_id(plat->npe_id);
++	if (!mac->npe_dev) {
++		ret = -EIO;
++		goto out_unmap;
++	}
++	if (!try_module_get(mac->npe_dev->driver->owner)) {
++		put_device(mac->npe_dev);
++		ret = -EIO;
++		goto out_unmap;
++	}
++
++	npe = dev_get_drvdata(mac->npe_dev);
++
++	mac->rxq = request_queue(plat->rxq_id, 128);
++	if (IS_ERR(mac->rxq)) {
++		printk(KERN_ERR "Error requesting Q: %d\n", plat->rxq_id);
++		ret = -EBUSY;
++		goto out_putmod;
++	}
++	mac->txq = request_queue(plat->txq_id, 128);
++	if (IS_ERR(mac->txq)) {
++		printk(KERN_ERR "Error requesting Q: %d\n", plat->txq_id);
++		release_queue(mac->rxq);
++		ret = -EBUSY;
++		goto out_putmod;
++	}
++
++	mac->qmgr = dev_get_drvdata(mac->rxq->dev);
++	if (register_netdev (dev)) {
++		release_queue(mac->rxq);
++		release_queue(mac->txq);
++		ret = -EIO;
++		goto out_putmod;
++	}
++
++	mac->plat = plat;
++	platform_set_drvdata(pdev, dev);
++
++	mac_write_reg(mac, MAC_CORE_CNTRL, CORE_RESET);
++	udelay(500);
++	mac_write_reg(mac, MAC_CORE_CNTRL, CORE_MDC_EN);
++
++	init_mdio(dev, plat->phy_id);
++
++	INIT_WORK(&mac->mdio_thread, mac_mdio_thread, dev);
++
++	/* The place of the MAC address is very system dependent.
++	 * Here we use a random one to be replaced by one of the
++	 * following commands:
++	 * "ip link set address 02:03:04:04:04:01 dev eth0"
++	 * "ifconfig eth0 hw ether 02:03:04:04:04:07"
++	 */
++	random_ether_addr(dev->dev_addr);
++	dev->dev_addr[5] = plat->phy_id;
++
++	printk(KERN_INFO IXMAC_NAME " driver " IXMAC_VERSION
++			": %s on %s with PHY[%d] initialized\n",
++			dev->name, npe->plat->name, plat->phy_id);
++
++	return 0;
++
++out_putmod:
++	module_put(mac->npe_dev->driver->owner);
++out_unmap:
++	iounmap(mac->addr);
++out_rel:
++	release_resource(mac->res);
++out_free:
++	kfree(mac);
++	return ret;
++}
++
++static int mac_remove(struct platform_device *pdev)
++{
++	struct net_device* dev = platform_get_drvdata(pdev);
++	struct mac_info *mac = netdev_priv(dev);
++	struct npe_info *npe = dev_get_drvdata(mac->npe_dev);
++	int loop = 0;
++	struct sk_buff *skb;
++
++	ixmac_close(dev);
++
++	mac->unloading = 1;
++
++	/* Now there are some skb hold by the NPE.
++	 * We switch the MAC in loopback mode and send a pseudo packet
++	 * that will be returned by the NPE in its last SKB.
++	 * We will also try to isolate the PHY to keep the packets internal.
++	 */
++
++	if (npe_status(npe) & IX_NPEDL_EXCTL_STATUS_RUN) {
++		mac_reset_regbit(mac, MAC_CORE_CNTRL, CORE_MDC_EN);
++		mac_set_regbit(mac, MAC_RX_CNTRL1, RX_CNTRL1_LOOP_EN);
++
++		npe_mh_npe_loopback_mode(npe, mac->plat, 1);
++		mdelay(200);
++
++		while (mac->rxq_pkt && loop++ < 2000 ) {
++			skb = dev_alloc_skb(128);
++			skb_put(skb, 64);
++			/* actually the packets should never leave the system,
++			 * but if they do, they shall contain 0s instead of
++			 * intresting random data....
++			 */
++			memset(skb->data, 0, skb->len);
++			queue_send_skb(mac->txq, skb);
++
++			mdelay(1);
++		}
++
++		npe_mh_npe_loopback_mode(npe, mac->plat, 0);
++	}
++	/* Flush MAC TX fifo to drain the bogus packages */
++	mac_set_regbit(mac, MAC_CORE_CNTRL, CORE_TX_FIFO_FLUSH);
++	mac_reset_regbit(mac, MAC_RX_CNTRL1, RX_CNTRL1_RX_EN);
++	mac_reset_regbit(mac, MAC_TX_CNTRL1, TX_CNTRL1_TX_EN);
++	mac_reset_regbit(mac, MAC_RX_CNTRL1, RX_CNTRL1_LOOP_EN);
++	mac_reset_regbit(mac, MAC_CORE_CNTRL, CORE_TX_FIFO_FLUSH);
++	mac_reset_regbit(mac, MAC_CORE_CNTRL, CORE_TX_FIFO_FLUSH);
++
++	unregister_netdev(dev);
++
++	while (queue_drain(mac->txq));
++	release_queue(mac->txq);
++	while (queue_drain(mac->rxq));
++	release_queue(mac->rxq);
++
++	module_put(mac->npe_dev->driver->owner);
++	put_device(mac->npe_dev);
++
++	iounmap(mac->addr);
++	release_resource(mac->res);
++	platform_set_drvdata(pdev, NULL);
++	free_netdev(dev);
++	return 0;
++}
++
++static struct platform_driver ixp4xx_mac = {
++	.driver.name    = IXMAC_NAME,
++	.probe          = mac_probe,
++	.remove         = mac_remove,
++};
++
++static int __init init_mac(void)
++{
++	/* The TX done Queue handles skbs sent out by the NPE */
++	tx_doneq = request_queue(TX_DONE_QID, 128);
++	if (IS_ERR(tx_doneq)) {
++		printk(KERN_ERR "Error requesting Q: %d\n", TX_DONE_QID);
++		return -EBUSY;
++	}
++	tx_doneq->irq_cb = irqcb_txdone;
++	/* drain the TX queue if it is half full */
++	queue_set_watermarks(tx_doneq, 0, 64);
++	queue_set_irq_src(tx_doneq, Q_IRQ_ID_NF);
++	queue_enable_irq(tx_doneq);
++
++	/* RX Queue handles SKBs with a valid frame */
++	rx_doneq = request_queue(RX_DONE_QID, 128);
++	if (IS_ERR(rx_doneq)) {
++		printk(KERN_ERR "Error requesting Q: %d\n", RX_DONE_QID);
++		return -EBUSY;
++	}
++	irqcb_recv(rx_doneq);
++	rx_doneq->irq_cb = irqcb_recv;
++	queue_set_watermarks(rx_doneq, 0, 0);
++	queue_set_irq_src(rx_doneq, Q_IRQ_ID_NOT_E);
++	queue_enable_irq(rx_doneq);
++
++	return platform_driver_register(&ixp4xx_mac);
++}
++
++static void __exit finish_mac(void)
++{
++	platform_driver_unregister(&ixp4xx_mac);
++	if (tx_doneq) {
++		queue_disable_irq(tx_doneq);
++		while (queue_drain(tx_doneq));
++		release_queue(tx_doneq);
++	}
++	if (rx_doneq) {
++		queue_disable_irq(rx_doneq);
++		while (queue_drain(rx_doneq));
++		release_queue(rx_doneq);
++	}
++}
++
++module_init(init_mac);
++module_exit(finish_mac);
++
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("Christian Hohnstaedt <chohnstaedt@innominate.com>");
++
+diff -Nur linux-2.6.17/drivers/net/ixp4xx/npe_mh.c linux-2.6.17-owrt/drivers/net/ixp4xx/npe_mh.c
+--- linux-2.6.17/drivers/net/ixp4xx/npe_mh.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-owrt/drivers/net/ixp4xx/npe_mh.c	2006-10-27 12:48:54.000000000 +0200
+@@ -0,0 +1,137 @@
++/*
++ * npe_mh.c - NPE message handler.
++ *
++ * Copyright (C) 2006 Christian Hohnstaedt <chohnstaedt@innominate.com>
++ *
++ * This file is released under the GPLv2
++ */
++
++#include <linux/ixp_npe.h>
++#include <linux/slab.h>
++
++#define MAX_RETRY 200
++
++struct npe_mh_msg {
++	union {
++		u8 byte[8]; /* Very desciptive name, I know ... */
++		u32 data[2];
++	} u;
++};
++
++/*
++ * The whole code in this function must be reworked.
++ * It is in a state that works but is not rock solid
++ */
++static int send_message(struct npe_info *npe, struct npe_mh_msg *msg)
++{
++	int i,j;
++	u32 send[2], recv[2];
++
++	for (i=0; i<2; i++)
++		send[i] = be32_to_cpu(msg->u.data[i]);
++
++	if ((npe_reg_read(npe, IX_NPEDL_REG_OFFSET_STAT) &
++				IX_NPEMH_NPE_STAT_IFNE))
++		return -1;
++
++	npe_reg_write(npe, IX_NPEDL_REG_OFFSET_FIFO, send[0]);
++	for(i=0; i<MAX_RETRY; i++) {
++		/* if the IFNF status bit is unset then the inFIFO is full */
++		if (npe_reg_read(npe, IX_NPEDL_REG_OFFSET_STAT) &
++				IX_NPEMH_NPE_STAT_IFNF)
++			break;
++	}
++	if (i>=MAX_RETRY)
++		return -1;
++	npe_reg_write(npe, IX_NPEDL_REG_OFFSET_FIFO, send[1]);
++	i=0;
++	while (!(npe_reg_read(npe, IX_NPEDL_REG_OFFSET_STAT) &
++					IX_NPEMH_NPE_STAT_OFNE)) {
++		if (i++>MAX_RETRY) {
++			printk("Waiting for Output FIFO NotEmpty failed\n");
++			return -1;
++		}
++	}
++	//printk("Output FIFO Not Empty. Loops: %d\n", i);
++	j=0;
++	while (npe_reg_read(npe, IX_NPEDL_REG_OFFSET_STAT) &
++					IX_NPEMH_NPE_STAT_OFNE) {
++		recv[j&1] = npe_reg_read(npe,IX_NPEDL_REG_OFFSET_FIFO);
++		j++;
++	}
++	if ((recv[0] != send[0]) || (recv[1] != send[1])) {
++		printk("Unexpected answer: Send %08x:%08x Ret %08x:%08x\n",
++			send[0], send[1], recv[0], recv[1]);
++	}
++	return 0;
++}
++
++#define CMD  0
++#define PORT 1
++#define MAC  2
++
++#define IX_ETHNPE_EDB_SETPORTADDRESS            0x01
++#define IX_ETHNPE_FW_SETFIREWALLMODE            0x0E
++#define IX_ETHNPE_VLAN_SETRXQOSENTRY            0x0B
++#define IX_ETHNPE_SETLOOPBACK_MODE		0x12
++
++#define logical_id(mp) (((mp)->npe_id << 4) | ((mp)->port_id & 0xf))
++
++int npe_mh_setportaddr(struct npe_info *npe, struct mac_plat_info *mp,
++		u8 *macaddr)
++{
++	struct npe_mh_msg msg;
++
++	msg.u.byte[CMD] = IX_ETHNPE_EDB_SETPORTADDRESS;
++	msg.u.byte[PORT] = mp->eth_id;
++	memcpy(msg.u.byte + MAC, macaddr, 6);
++
++	return send_message(npe, &msg);
++}
++
++int npe_mh_disable_firewall(struct npe_info *npe, struct mac_plat_info *mp)
++{
++	struct npe_mh_msg msg;
++
++	memset(&msg, 0, sizeof(msg));
++	msg.u.byte[CMD] = IX_ETHNPE_FW_SETFIREWALLMODE;
++	msg.u.byte[PORT] = logical_id(mp);
++
++	return send_message(npe, &msg);
++}
++
++int npe_mh_npe_loopback_mode(struct npe_info *npe, struct mac_plat_info *mp,
++		int enable)
++{
++	struct npe_mh_msg msg;
++
++	memset(&msg, 0, sizeof(msg));
++	msg.u.byte[CMD] = IX_ETHNPE_SETLOOPBACK_MODE;
++	msg.u.byte[PORT] = logical_id(mp);
++	msg.u.byte[3] = enable ? 1 : 0;
++
++	return send_message(npe, &msg);
++}
++
++int npe_mh_set_rxqid(struct npe_info *npe, struct mac_plat_info *mp, int qid)
++{
++	struct npe_mh_msg msg;
++	int i, ret;
++
++	memset(&msg, 0, sizeof(msg));
++	msg.u.byte[CMD] = IX_ETHNPE_VLAN_SETRXQOSENTRY;
++	msg.u.byte[PORT] = logical_id(mp);
++	msg.u.byte[5] = qid | 0x80;
++	msg.u.byte[7] = qid<<4;
++	for(i=0; i<8; i++) {
++		msg.u.byte[3] = i;
++		if ((ret = send_message(npe, &msg)))
++			return ret;
++	}
++	return 0;
++}
++
++EXPORT_SYMBOL(npe_mh_setportaddr);
++EXPORT_SYMBOL(npe_mh_disable_firewall);
++EXPORT_SYMBOL(npe_mh_set_rxqid);
++EXPORT_SYMBOL(npe_mh_npe_loopback_mode);
+diff -Nur linux-2.6.17/drivers/net/ixp4xx/phy.c linux-2.6.17-owrt/drivers/net/ixp4xx/phy.c
+--- linux-2.6.17/drivers/net/ixp4xx/phy.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-owrt/drivers/net/ixp4xx/phy.c	2006-10-27 12:48:54.000000000 +0200
+@@ -0,0 +1,113 @@
++/*
++ * phy.c - MDIO functions and mii initialisation
++ *
++ * Copyright (C) 2006 Christian Hohnstaedt <chohnstaedt@innominate.com>
++ *
++ * This file is released under the GPLv2
++ */
++
++
++#include <linux/mutex.h>
++#include "mac.h"
++
++#define MAX_PHYS (1<<5)
++
++/*
++ * We must always use the same MAC for acessing the MDIO
++ * We may not use each MAC for its PHY :-(
++ */
++
++static struct net_device *phy_dev = NULL;
++static struct mutex mtx;
++
++/* here we remember if the PHY is alive, to avoid log dumping */
++static int phy_works[MAX_PHYS];
++
++int mdio_read_register(struct net_device *dev, int phy_addr, int phy_reg)
++{
++	struct mac_info *mac;
++	u32 cmd, reg;
++	int cnt = 0;
++
++	if (!phy_dev)
++		return 0;
++
++	mac = netdev_priv(phy_dev);
++	cmd = mdio_cmd(phy_addr, phy_reg);
++	mutex_lock_interruptible(&mtx);
++	mac_mdio_cmd_write(mac, cmd);
++	while((cmd = mac_mdio_cmd_read(mac)) & MII_GO) {
++		if (++cnt >= 100) {
++			printk("%s: PHY[%d] access failed\n",
++				dev->name, phy_addr);
++			break;
++		}
++		schedule();
++	}
++	reg = mac_mdio_status_read(mac);
++	mutex_unlock(&mtx);
++	if (reg & MII_READ_FAIL) {
++		if (phy_works[phy_addr]) {
++			printk("%s: PHY[%d] unresponsive\n",
++					dev->name, phy_addr);
++		}
++		reg = 0;
++		phy_works[phy_addr] = 0;
++	} else {
++		if ( !phy_works[phy_addr]) {
++			printk("%s: PHY[%d] responsive again\n",
++				dev->name, phy_addr);
++		}
++		phy_works[phy_addr] = 1;
++	}
++	return reg & 0xffff;
++}
++
++void
++mdio_write_register(struct net_device *dev, int phy_addr, int phy_reg, int val)
++{
++	struct mac_info *mac;
++	u32 cmd;
++	int cnt=0;
++
++	if (!phy_dev)
++		return;
++
++	mac = netdev_priv(phy_dev);
++	cmd = mdio_cmd(phy_addr, phy_reg) | MII_WRITE | val;
++
++	mutex_lock_interruptible(&mtx);
++	mac_mdio_cmd_write(mac, cmd);
++	while((cmd = mac_mdio_cmd_read(mac)) & MII_GO) {
++		if (++cnt >= 100) {
++			printk("%s: PHY[%d] access failed\n",
++					dev->name, phy_addr);
++			break;
++		}
++		schedule();
++	}
++	mutex_unlock(&mtx);
++}
++
++void init_mdio(struct net_device *dev, int phy_id)
++{
++	struct mac_info *mac = netdev_priv(dev);
++	int i;
++
++	/* All phy operations should use the same MAC
++	 * (my experience)
++	 */
++	if (mac->plat->eth_id == 0) {
++		mutex_init(&mtx);
++		phy_dev = dev;
++		for (i=0; i<MAX_PHYS; i++)
++			phy_works[i] = 1;
++	}
++	mac->mii.dev = dev;
++	mac->mii.phy_id = phy_id;
++	mac->mii.phy_id_mask = MAX_PHYS - 1;
++	mac->mii.reg_num_mask = 0x1f;
++	mac->mii.mdio_read = mdio_read_register;
++	mac->mii.mdio_write = mdio_write_register;
++}
++
+diff -Nur linux-2.6.17/drivers/net/ixp4xx/qmgr_eth.c linux-2.6.17-owrt/drivers/net/ixp4xx/qmgr_eth.c
+--- linux-2.6.17/drivers/net/ixp4xx/qmgr_eth.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-owrt/drivers/net/ixp4xx/qmgr_eth.c	2006-10-27 12:48:54.000000000 +0200
+@@ -0,0 +1,127 @@
++/*
++ * qmgr_eth.c - Glue between qmgr and MAC. Linked to mac to keep qmgr.ko
++ * more virtual
++ *
++ * Copyright (C) 2006 Christian Hohnstaedt <chohnstaedt@innominate.com>
++ *
++ * This file is released under the GPLv2
++ */
++
++#include <linux/skbuff.h>
++#include <linux/dma-mapping.h>
++#include <linux/netdevice.h>
++#include <linux/ixp_qmgr.h>
++
++#define SKB_SIZE 1688
++
++int queue_send_skb(struct qm_queue *queue, struct sk_buff *skb)
++{
++	struct npe_cont *cont;
++	struct qm_qmgr *qmgr = dev_get_drvdata(queue->dev);
++
++	cont = qmgr_get_cont(qmgr);
++	if (!cont)
++		return 0;
++
++	cont->h.skb = skb;
++#ifndef __ARMEB__
++	/* swap the payload of the SKB */
++	{
++		u32 *p = (u32*)((unsigned)skb->data & ~0x3);
++		u32 *e = (u32*)(((unsigned)skb->data + skb->len + 3) & ~0x3);
++		while (p < e)
++			*p = cpu_to_be32(*p), ++p;
++	}
++#endif
++	/* fill the NPE information record */
++	cont->ctl.eth.next = 0;
++	cont->ctl.eth.buf_len = skb->end - skb->head;
++	cont->ctl.eth.pkt_len = skb->len;
++	cont->ctl.eth.phys_addr =
++		dma_map_single(queue->dev, skb->data, skb->len, DMA_TO_DEVICE);
++
++	queue_put_entry(queue, cont->phys);
++
++	if (queue_stat(queue) == 2) { /* overflow */
++		return 0;
++	}
++	return 1;
++}
++
++int queue_fill_skb(struct qm_queue *queue, struct net_device *dev)
++{
++	struct npe_cont *cont;
++	struct sk_buff *skb;
++	struct qm_qmgr *qmgr = dev_get_drvdata(queue->dev);
++	int len;
++
++	cont = qmgr_get_cont(qmgr);
++	if (!cont)
++		return 0;
++	skb = dev_alloc_skb(SKB_SIZE);
++	if (!skb) {
++		qmgr_return_cont(qmgr, cont);
++		return 0;
++	}
++	len = skb->end - skb->data;
++	skb->dev = dev;
++	cont->h.skb = skb;
++	cont->ctl.eth.next = 0;
++	cont->ctl.eth.buf_len = len;
++	cont->ctl.eth.pkt_len = 0;
++	cont->ctl.eth.phys_addr =
++		dma_map_single(queue->dev, skb->data, len, DMA_FROM_DEVICE);
++
++	queue_put_entry(queue, cont->phys);
++
++	/* TODO: check quelen ?
++	 * The current use guarantees that this queues will never overflow.
++	 */
++	return 1;
++}
++
++int queue_drain(struct qm_queue *queue)
++{
++	u32 phys = *queue->acc_reg & ~0xf;
++	struct npe_cont *cont;
++
++	if (!phys)
++		return 0;
++	cont = dma_to_virt(queue->dev, phys);
++	cont = cont->virt;
++	dev_kfree_skb_any(cont->h.skb);
++	qmgr_return_cont(dev_get_drvdata(queue->dev), cont);
++	return 1;
++}
++
++struct sk_buff *queue_return_skb(struct qm_queue *queue)
++{
++	u32 phys = *queue->acc_reg & ~0xf;
++	struct sk_buff *skb;
++	struct npe_cont *cont;
++	int len, buflen;
++
++	if (!phys)
++		return NULL;
++
++	cont = dma_to_virt(queue->dev, phys);
++	cont = cont->virt;
++	skb = cont->h.skb;
++	buflen = cont->ctl.eth.buf_len;
++	len = cont->ctl.eth.pkt_len;
++	dma_unmap_single(queue->dev, cont->ctl.eth.phys_addr,
++			buflen,	DMA_FROM_DEVICE);
++	qmgr_return_cont(dev_get_drvdata(queue->dev), cont);
++	skb_put(skb, len);
++#ifndef __ARMEB__
++	/* swap the payload of the SKB */
++	{
++		u32 *p = (u32*)((unsigned)skb->data & ~0x3);
++		u32 *e = (u32*)(((unsigned)skb->data + skb->len + 3) & ~0x3);
++		while (p < e)
++			*p = cpu_to_be32(*p), ++p;
++	}
++#endif
++	return skb;
++}
++
+diff -Nur linux-2.6.17/drivers/net/ixp4xx/ucode_dl.c linux-2.6.17-owrt/drivers/net/ixp4xx/ucode_dl.c
+--- linux-2.6.17/drivers/net/ixp4xx/ucode_dl.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-owrt/drivers/net/ixp4xx/ucode_dl.c	2006-10-27 12:48:54.000000000 +0200
+@@ -0,0 +1,466 @@
++/*
++ * ucode_dl.c - provide an NPE device and a char-dev for microcode download
++ *
++ * Copyright (C) 2006 Christian Hohnstaedt <chohnstaedt@innominate.com>
++ *
++ * This file is released under the GPLv2
++ */
++
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/miscdevice.h>
++#include <linux/platform_device.h>
++#include <linux/fs.h>
++#include <linux/init.h>
++#include <linux/slab.h>
++#include <linux/firmware.h>
++#include <linux/dma-mapping.h>
++#include <linux/byteorder/swab.h>
++#include <asm/uaccess.h>
++#include <asm/io.h>
++
++#include <linux/ixp_npe.h>
++
++#define IXNPE_VERSION "IXP4XX NPE driver Version 0.2.0"
++
++#define DL_MAGIC 0xfeedf00d
++#define DL_MAGIC_SWAP 0x0df0edfe
++
++#define EOF_BLOCK 0xf
++#define IMG_SIZE(image) (((image)->size * sizeof(u32)) + \
++		sizeof(struct dl_image))
++
++#define BT_INSTR 0
++#define BT_DATA 1
++
++enum blk_type {
++	instruction,
++	data,
++};
++
++struct dl_block {
++	u32 type;
++	u32 offset;
++};
++
++struct dl_image {
++	u32 magic;
++	u32 id;
++	u32 size;
++	union {
++		u32 data[0];
++		struct dl_block block[0];
++	} u;
++};
++
++struct dl_codeblock {
++	u32 npe_addr;
++	u32 size;
++	u32 data[0];
++};
++
++static struct platform_driver ixp4xx_npe_driver;
++
++static void npe_stop(struct npe_info *npe)
++{
++	npe_write_exctl(npe, IX_NPEDL_EXCTL_CMD_NPE_STOP);
++	npe_write_exctl(npe, IX_NPEDL_EXCTL_CMD_NPE_CLR_PIPE);
++}
++static void npe_reset_active(struct npe_info *npe, u32 reg)
++{
++	u32 regval;
++
++	regval = npe_read_ecs_reg(npe, reg);
++	regval &= ~IX_NPEDL_MASK_ECS_REG_0_ACTIVE;
++	npe_write_ecs_reg(npe, reg, regval);
++}
++
++static void npe_start(struct npe_info *npe)
++{
++	npe_reset_active(npe, IX_NPEDL_ECS_PRI_1_CTXT_REG_0);
++	npe_reset_active(npe, IX_NPEDL_ECS_PRI_2_CTXT_REG_0);
++	npe_reset_active(npe, IX_NPEDL_ECS_DBG_CTXT_REG_0);
++
++	npe_write_exctl(npe, IX_NPEDL_EXCTL_CMD_NPE_CLR_PIPE);
++	npe_write_exctl(npe, IX_NPEDL_EXCTL_CMD_NPE_START);
++}
++
++static int
++download_block(struct npe_info *npe, struct dl_codeblock *cb, unsigned type)
++{
++	int i;
++	int cmd;
++
++	switch (type) {
++	case BT_DATA:
++		cmd = IX_NPEDL_EXCTL_CMD_WR_DATA_MEM;
++		if (cb->npe_addr + cb->size > npe->plat->data_size) {
++			printk(KERN_INFO "Data size too large: %d+%d > %d\n",
++				cb->npe_addr, cb->size, npe->plat->data_size);
++			return -EIO;
++		}
++		break;
++	case BT_INSTR:
++		cmd = IX_NPEDL_EXCTL_CMD_WR_INS_MEM;
++		if (cb->npe_addr + cb->size > npe->plat->inst_size) {
++			printk(KERN_INFO "Instr size too large: %d+%d > %d\n",
++				cb->npe_addr, cb->size, npe->plat->inst_size);
++			return -EIO;
++		}
++		break;
++	default:
++		printk(KERN_INFO "Unknown CMD: %d\n", type);
++		return -EIO;
++	}
++
++	for (i=0; i < cb->size; i++) {
++		npe_write_cmd(npe, cb->npe_addr + i, cb->data[i], cmd);
++	}
++
++	return 0;
++}
++
++static int match_by_npeid(struct device *dev, void *id)
++{
++	struct npe_info *npe = dev_get_drvdata(dev);
++	if (!npe->plat)
++		return 0;
++	return (npe->plat->id == *(int*)id);
++}
++
++struct device *get_npe_by_id(int id)
++{
++	return driver_find_device(&ixp4xx_npe_driver.driver, NULL,
++			&id, match_by_npeid);
++}
++
++static int store_npe_image(struct dl_image *image, struct device *dev)
++{
++	struct dl_block *blk;
++	struct dl_codeblock *cb;
++	struct npe_info *npe;
++	int ret=0;
++
++	if (!dev) {
++		dev = get_npe_by_id( (image->id >> 24) & 0xf);
++		put_device(dev);
++	}
++	if (!dev)
++		return -ENODEV;
++
++	npe = dev_get_drvdata(dev);
++
++	if ( npe_status(npe) & IX_NPEDL_EXCTL_STATUS_RUN) {
++		printk(KERN_INFO "Cowardly refusing to reload an Image "
++				"into the running %s\n", npe->plat->name);
++		return 0; /* indicate success anyway... */
++	}
++	npe_stop(npe);
++
++	for (blk = image->u.block; blk->type != EOF_BLOCK; blk++) {
++		if (blk->offset > image->size) {
++			printk(KERN_INFO "Block offset out of range\n");
++			return -EIO;
++		}
++		cb = (struct dl_codeblock*)&image->u.data[blk->offset];
++		if (blk->offset + cb->size + 2 > image->size) {
++			printk(KERN_INFO "Codeblock size out of range\n");
++			return -EIO;
++		}
++		if ((ret = download_block(npe, cb, blk->type)))
++			return ret;
++	}
++	*(u32*)npe->img_info = cpu_to_be32(image->id);
++	npe_start(npe);
++
++	printk(KERN_INFO "Image loaded to %s Func:%x, Rel: %x:%x, Status: %x\n",
++			npe->plat->name, npe->img_info[1], npe->img_info[2],
++			npe->img_info[3], npe_status(npe));
++	return 0;
++}
++
++static int ucode_open(struct inode *inode, struct file *file)
++{
++	file->private_data = kmalloc(sizeof(struct dl_image), GFP_KERNEL);
++	if (!file->private_data)
++		return -ENOMEM;
++	return 0;
++}
++
++static int ucode_close(struct inode *inode, struct file *file)
++{
++	kfree(file->private_data);
++	return 0;
++}
++
++static ssize_t ucode_write(struct file *file, const char __user *buf,
++		size_t count, loff_t *ppos)
++{
++	union {
++		char *data;
++		struct dl_image *image;
++	} u;
++	const char __user *cbuf = buf;
++
++	u.data = file->private_data;
++
++	while (count) {
++		int len;
++		if (*ppos < sizeof(struct dl_image)) {
++			len = sizeof(struct dl_image) - *ppos;
++			len = len > count ? count : len;
++			if (copy_from_user(u.data + *ppos, cbuf, len))
++				return -EFAULT;
++			count -= len;
++			*ppos += len;
++			cbuf += len;
++			continue;
++		} else if (*ppos == sizeof(struct dl_image)) {
++			void *data;
++			if (u.image->magic == DL_MAGIC_SWAP) {
++				printk(KERN_INFO "swapped image found\n");
++				u.image->id = swab32(u.image->id);
++				u.image->size = swab32(u.image->size);
++			} else if (u.image->magic != DL_MAGIC) {
++				printk(KERN_INFO "Bad magic:%x\n",
++						u.image->magic);
++				return -EFAULT;
++			}
++			len = IMG_SIZE(u.image);
++			data = kmalloc(len, GFP_KERNEL);
++			if (!data)
++				return -ENOMEM;
++			memcpy(data, u.data, *ppos);
++			kfree(u.data);
++			u.data = (char*)data;
++			file->private_data = data;
++		}
++		len = IMG_SIZE(u.image) - *ppos;
++		len = len > count ? count : len;
++		if (copy_from_user(u.data + *ppos, cbuf, len))
++			return -EFAULT;
++		count -= len;
++		*ppos += len;
++		cbuf += len;
++		if (*ppos == IMG_SIZE(u.image)) {
++			int ret, i;
++			*ppos = 0;
++			if (u.image->magic == DL_MAGIC_SWAP) {
++				for (i=0; i<u.image->size; i++) {
++					u.image->u.data[i] =
++						swab32(u.image->u.data[i]);
++				}
++				u.image->magic = swab32(u.image->magic);
++			}
++			ret = store_npe_image(u.image, NULL);
++			if (ret) {
++				printk(KERN_INFO "Error in NPE image: %x\n",
++					u.image->id);
++				return ret;
++			}
++		}
++	}
++	return (cbuf-buf);
++}
++
++static void npe_firmware_probe(struct device *dev)
++{
++#if (defined(CONFIG_FW_LOADER) || defined(CONFIG_FW_LOADER_MODULE)) \
++	&& defined(MODULE)
++	const struct firmware *fw_entry;
++	struct npe_info *npe = dev_get_drvdata(dev);
++	struct dl_image *image;
++	int ret = -1, i;
++
++	if (request_firmware(&fw_entry, npe->plat->name, dev) != 0) {
++		return;
++	}
++	image = (struct dl_image*)fw_entry->data;
++	/* Sanity checks */
++	if (fw_entry->size < sizeof(struct dl_image)) {
++		printk(KERN_ERR "Firmware error: too small\n");
++		goto out;
++	}
++	if (image->magic == DL_MAGIC_SWAP) {
++		printk(KERN_INFO "swapped image found\n");
++		image->id = swab32(image->id);
++		image->size = swab32(image->size);
++	} else if (image->magic != DL_MAGIC) {
++		printk(KERN_ERR "Bad magic:%x\n", image->magic);
++		goto out;
++	}
++	if (IMG_SIZE(image) != fw_entry->size) {
++		printk(KERN_ERR "Firmware error: bad size\n");
++		goto out;
++	}
++	if (((image->id >> 24) & 0xf) != npe->plat->id) {
++		printk(KERN_ERR "NPE id missmatch\n");
++		goto out;
++	}
++	if (image->magic == DL_MAGIC_SWAP) {
++		for (i=0; i<image->size; i++) {
++			image->u.data[i] = swab32(image->u.data[i]);
++		}
++		image->magic = swab32(image->magic);
++	}
++
++	ret = store_npe_image(image, dev);
++out:
++	if (ret) {
++		printk(KERN_ERR "Error downloading Firmware for %s\n",
++				npe->plat->name);
++	}
++	release_firmware(fw_entry);
++#endif
++}
++
++static void disable_npe_irq(struct npe_info *npe)
++{
++	u32 reg;
++	reg = npe_reg_read(npe, IX_NPEDL_REG_OFFSET_CTL);
++	reg &= ~(IX_NPEMH_NPE_CTL_OFE | IX_NPEMH_NPE_CTL_IFE);
++	reg |= IX_NPEMH_NPE_CTL_OFEWE | IX_NPEMH_NPE_CTL_IFEWE;
++}
++
++static ssize_t show_npe_state(struct device *dev, struct device_attribute *attr,
++		char *buf)
++{
++	struct npe_info *npe = dev_get_drvdata(dev);
++
++	strcpy(buf, npe_status(npe) & IX_NPEDL_EXCTL_STATUS_RUN ?
++			"start\n" : "stop\n");
++	return strlen(buf);
++}
++
++static ssize_t set_npe_state(struct device *dev, struct device_attribute *attr,
++		const char *buf, size_t count)
++{
++	struct npe_info *npe = dev_get_drvdata(dev);
++
++	if (!strncmp(buf, "start", 5)) {
++		printk("NPE start\n");
++		npe_start(npe);
++	}
++	if (!strncmp(buf, "stop", 4)) {
++		printk("NPE stop\n");
++		npe_stop(npe);
++	}
++	return count;
++}
++
++static DEVICE_ATTR(state, S_IRUGO | S_IWUSR, show_npe_state, set_npe_state);
++
++static int npe_probe(struct platform_device *pdev)
++{
++	struct resource *res;
++	struct npe_info *npe;
++	struct npe_plat_data *plat = pdev->dev.platform_data;
++	int size, ret=0;
++
++	if (!(res = platform_get_resource(pdev, IORESOURCE_MEM, 0)))
++		return -EIO;
++
++	if (!(npe = kzalloc(sizeof(struct npe_info), GFP_KERNEL)))
++		return -ENOMEM;
++
++	size = res->end - res->start +1;
++	npe->res = request_mem_region(res->start, size, plat->name);
++	if (!npe->res) {
++		ret = -EBUSY;
++		printk(KERN_ERR "Failed to get memregion(%x, %x)\n",
++				res->start, size);
++		goto out_free;
++	}
++
++	npe->addr = ioremap(res->start, size);
++	if (!npe->addr) {
++		ret = -ENOMEM;
++		printk(KERN_ERR "Failed to ioremap(%x, %x)\n",
++				res->start, size);
++		goto out_rel;
++	}
++
++	pdev->dev.coherent_dma_mask = DMA_32BIT_MASK;
++
++	platform_set_drvdata(pdev, npe);
++
++	device_create_file(&pdev->dev, &dev_attr_state);
++
++	npe->plat = plat;
++	disable_npe_irq(npe);
++	if (! (npe_status(npe) & IX_NPEDL_EXCTL_STATUS_RUN))
++		npe_firmware_probe(&pdev->dev);
++
++	return 0;
++
++out_rel:
++	release_resource(npe->res);
++out_free:
++	kfree(npe);
++	return ret;
++}
++
++static struct file_operations ucode_dl_fops = {
++	.owner		= THIS_MODULE,
++	.write		= ucode_write,
++	.open		= ucode_open,
++	.release	= ucode_close,
++};
++
++static struct miscdevice ucode_dl_dev = {
++	.minor	= MICROCODE_MINOR,
++	.name	= "ixp4xx_ucode",
++	.fops	= &ucode_dl_fops,
++};
++
++static int npe_remove(struct platform_device *pdev)
++{
++	struct npe_info *npe = platform_get_drvdata(pdev);
++
++	device_remove_file(&pdev->dev, &dev_attr_state);
++
++	iounmap(npe->addr);
++	release_resource(npe->res);
++	kfree(npe);
++	return 0;
++}
++
++static struct platform_driver ixp4xx_npe_driver = {
++	.driver = {
++		.name	= "ixp4xx_npe",
++		.owner	= THIS_MODULE,
++	},
++	.probe	= npe_probe,
++	.remove	= npe_remove,
++};
++
++static int __init init_npedriver(void)
++{
++	int ret;
++	if ((ret = misc_register(&ucode_dl_dev))){
++		printk(KERN_ERR "Failed to register misc device %d\n",
++				MICROCODE_MINOR);
++		return ret;
++	}
++	if ((ret = platform_driver_register(&ixp4xx_npe_driver)))
++		misc_deregister(&ucode_dl_dev);
++	else
++		printk(KERN_INFO IXNPE_VERSION " initialized\n");
++
++	return ret;
++
++}
++
++static void __exit finish_npedriver(void)
++{
++	misc_deregister(&ucode_dl_dev);
++	platform_driver_unregister(&ixp4xx_npe_driver);
++}
++
++module_init(init_npedriver);
++module_exit(finish_npedriver);
++
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("Christian Hohnstaedt <chohnstaedt@innominate.com>");
++
++EXPORT_SYMBOL(get_npe_by_id);
+diff -Nur linux-2.6.17/include/asm-arm/arch-ixp4xx/ixp4xx-regs.h linux-2.6.17-owrt/include/asm-arm/arch-ixp4xx/ixp4xx-regs.h
+--- linux-2.6.17/include/asm-arm/arch-ixp4xx/ixp4xx-regs.h	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17-owrt/include/asm-arm/arch-ixp4xx/ixp4xx-regs.h	2006-10-27 12:48:54.000000000 +0200
+@@ -22,6 +22,8 @@
+ #ifndef _ASM_ARM_IXP4XX_H_
+ #define _ASM_ARM_IXP4XX_H_
+ 
++#include "npe_regs.h"
++
+ /*
+  * IXP4xx Linux Memory Map:
+  *
+diff -Nur linux-2.6.17/include/asm-arm/arch-ixp4xx/npe_regs.h linux-2.6.17-owrt/include/asm-arm/arch-ixp4xx/npe_regs.h
+--- linux-2.6.17/include/asm-arm/arch-ixp4xx/npe_regs.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-owrt/include/asm-arm/arch-ixp4xx/npe_regs.h	2006-10-27 12:48:54.000000000 +0200
+@@ -0,0 +1,82 @@
++#ifndef NPE_REGS_H
++#define NPE_REGS_H
++
++/* Execution Address  */
++#define IX_NPEDL_REG_OFFSET_EXAD             0x00
++/* Execution Data */
++#define IX_NPEDL_REG_OFFSET_EXDATA           0x04
++/* Execution Control */
++#define IX_NPEDL_REG_OFFSET_EXCTL            0x08
++/* Execution Count */
++#define IX_NPEDL_REG_OFFSET_EXCT             0x0C
++/* Action Point 0 */
++#define IX_NPEDL_REG_OFFSET_AP0              0x10
++/* Action Point 1 */
++#define IX_NPEDL_REG_OFFSET_AP1              0x14
++/* Action Point 2 */
++#define IX_NPEDL_REG_OFFSET_AP2              0x18
++/* Action Point 3 */
++#define IX_NPEDL_REG_OFFSET_AP3              0x1C
++/* Watchpoint FIFO */
++#define IX_NPEDL_REG_OFFSET_WFIFO            0x20
++/* Watch Count */
++#define IX_NPEDL_REG_OFFSET_WC               0x24
++/* Profile Count */
++#define IX_NPEDL_REG_OFFSET_PROFCT           0x28
++
++/* Messaging Status */
++#define IX_NPEDL_REG_OFFSET_STAT	     0x2C
++/* Messaging Control */
++#define IX_NPEDL_REG_OFFSET_CTL	             0x30
++/* Mailbox Status */
++#define IX_NPEDL_REG_OFFSET_MBST	     0x34
++/* messaging in/out FIFO */
++#define IX_NPEDL_REG_OFFSET_FIFO	     0x38
++
++
++#define IX_NPEDL_MASK_ECS_DBG_REG_2_IF       0x00100000
++#define IX_NPEDL_MASK_ECS_DBG_REG_2_IE       0x00080000
++#define IX_NPEDL_MASK_ECS_REG_0_ACTIVE       0x80000000
++
++#define IX_NPEDL_EXCTL_CMD_NPE_STEP          0x01
++#define IX_NPEDL_EXCTL_CMD_NPE_START         0x02
++#define IX_NPEDL_EXCTL_CMD_NPE_STOP          0x03
++#define IX_NPEDL_EXCTL_CMD_NPE_CLR_PIPE      0x04
++#define IX_NPEDL_EXCTL_CMD_CLR_PROFILE_CNT   0x0C
++#define IX_NPEDL_EXCTL_CMD_RD_INS_MEM        0x10
++#define IX_NPEDL_EXCTL_CMD_WR_INS_MEM        0x11
++#define IX_NPEDL_EXCTL_CMD_RD_DATA_MEM       0x12
++#define IX_NPEDL_EXCTL_CMD_WR_DATA_MEM       0x13
++#define IX_NPEDL_EXCTL_CMD_RD_ECS_REG        0x14
++#define IX_NPEDL_EXCTL_CMD_WR_ECS_REG        0x15
++
++#define IX_NPEDL_EXCTL_STATUS_RUN            0x80000000
++#define IX_NPEDL_EXCTL_STATUS_STOP           0x40000000
++#define IX_NPEDL_EXCTL_STATUS_CLEAR          0x20000000
++
++#define IX_NPEDL_MASK_WFIFO_VALID            0x80000000
++#define IX_NPEDL_MASK_STAT_OFNE              0x00010000
++#define IX_NPEDL_MASK_STAT_IFNE              0x00080000
++
++#define IX_NPEDL_ECS_DBG_CTXT_REG_0          0x0C
++#define IX_NPEDL_ECS_PRI_1_CTXT_REG_0        0x04
++#define IX_NPEDL_ECS_PRI_2_CTXT_REG_0        0x08
++
++/* NPE control register bit definitions */
++#define IX_NPEMH_NPE_CTL_OFE   (1 << 16) /**< OutFifoEnable */
++#define IX_NPEMH_NPE_CTL_IFE   (1 << 17) /**< InFifoEnable */
++#define IX_NPEMH_NPE_CTL_OFEWE (1 << 24) /**< OutFifoEnableWriteEnable */
++#define IX_NPEMH_NPE_CTL_IFEWE (1 << 25) /**< InFifoEnableWriteEnable */
++
++/* NPE status register bit definitions */
++#define IX_NPEMH_NPE_STAT_OFNE  (1 << 16) /**< OutFifoNotEmpty */
++#define IX_NPEMH_NPE_STAT_IFNF  (1 << 17) /**< InFifoNotFull */
++#define IX_NPEMH_NPE_STAT_OFNF  (1 << 18) /**< OutFifoNotFull */
++#define IX_NPEMH_NPE_STAT_IFNE  (1 << 19) /**< InFifoNotEmpty */
++#define IX_NPEMH_NPE_STAT_MBINT (1 << 20) /**< Mailbox interrupt */
++#define IX_NPEMH_NPE_STAT_IFINT (1 << 21) /**< InFifo interrupt */
++#define IX_NPEMH_NPE_STAT_OFINT (1 << 22) /**< OutFifo interrupt */
++#define IX_NPEMH_NPE_STAT_WFINT (1 << 23) /**< WatchFifo interrupt */
++
++#endif
++
+diff -Nur linux-2.6.17/include/asm-arm/arch-ixp4xx/platform.h linux-2.6.17-owrt/include/asm-arm/arch-ixp4xx/platform.h
+--- linux-2.6.17/include/asm-arm/arch-ixp4xx/platform.h	2006-06-18 03:49:35.000000000 +0200
++++ linux-2.6.17-owrt/include/asm-arm/arch-ixp4xx/platform.h	2006-10-27 12:48:54.000000000 +0200
+@@ -86,6 +86,22 @@
+ 	unsigned long scl_pin;
+ };
+ 
++struct npe_plat_data {
++	const char *name;
++	int data_size;
++	int inst_size;
++	int id;		/* Node ID */
++};
++
++struct mac_plat_info {
++	int npe_id;	/* Node ID of the NPE for this port */
++	int port_id;	/* Port ID for NPE-B @ ixp465 */
++	int eth_id;	/* Physical ID */
++	int phy_id;	/* ID of the connected PHY (PCB/platform dependent) */
++	int rxq_id;	/* Queue ID of the RX-free q*/
++	int txq_id;	/* Where to push the outgoing packets */
++};
++
+ 
+ struct sys_timer;
+ 
+diff -Nur linux-2.6.17/include/linux/ixp_npe.h linux-2.6.17-owrt/include/linux/ixp_npe.h
+--- linux-2.6.17/include/linux/ixp_npe.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-owrt/include/linux/ixp_npe.h	2006-10-27 12:48:54.000000000 +0200
+@@ -0,0 +1,85 @@
++/*
++ * Copyright (C) 2006 Christian Hohnstaedt <chohnstaedt@innominate.com>
++ *
++ * This file is released under the GPLv2
++ */
++
++#ifndef NPE_DEVICE_H
++#define NPE_DEVICE_H
++
++#include <linux/miscdevice.h>
++#include <asm/hardware.h>
++
++struct npe_info {
++	struct resource *res;
++	void __iomem *addr;
++	struct npe_plat_data *plat;
++	u8 img_info[4];
++	u32 exec_count;
++	u32 ctx_reg2;
++};
++
++
++static inline void npe_reg_write(struct npe_info *npe, u32 reg, u32 val)
++{
++	*(volatile u32*)((u8*)(npe->addr) + reg) = val;
++}
++
++static inline u32 npe_reg_read(struct npe_info *npe, u32 reg)
++{
++	return *(volatile u32*)((u8*)(npe->addr) + reg);
++}
++
++static inline u32 npe_status(struct npe_info *npe)
++{
++	return npe_reg_read(npe, IX_NPEDL_REG_OFFSET_EXCTL);
++}
++
++/* ixNpeDlNpeMgrCommandIssue */
++static inline void npe_write_exctl(struct npe_info *npe, u32 cmd)
++{
++	npe_reg_write(npe, IX_NPEDL_REG_OFFSET_EXCTL, cmd);
++}
++/* ixNpeDlNpeMgrWriteCommandIssue */
++static inline void
++npe_write_cmd(struct npe_info *npe, u32 addr, u32 data, int cmd)
++{
++	npe_reg_write(npe, IX_NPEDL_REG_OFFSET_EXDATA, data);
++	npe_reg_write(npe, IX_NPEDL_REG_OFFSET_EXAD, addr);
++	npe_reg_write(npe, IX_NPEDL_REG_OFFSET_EXCTL, cmd);
++}
++/* ixNpeDlNpeMgrReadCommandIssue */
++static inline u32
++npe_read_cmd(struct npe_info *npe, u32 addr, int cmd)
++{
++	npe_reg_write(npe, IX_NPEDL_REG_OFFSET_EXAD, addr);
++	npe_reg_write(npe, IX_NPEDL_REG_OFFSET_EXCTL, cmd);
++	/* Intel reads the data twice - so do we... */
++	npe_reg_read(npe, IX_NPEDL_REG_OFFSET_EXDATA);
++	return npe_reg_read(npe, IX_NPEDL_REG_OFFSET_EXDATA);
++}
++
++/* ixNpeDlNpeMgrExecAccRegWrite */
++static inline void npe_write_ecs_reg(struct npe_info *npe, u32 addr, u32 data)
++{
++	npe_write_cmd(npe, addr, data, IX_NPEDL_EXCTL_CMD_WR_ECS_REG);
++}
++/* ixNpeDlNpeMgrExecAccRegRead */
++static inline u32 npe_read_ecs_reg(struct npe_info *npe, u32 addr)
++{
++	return npe_read_cmd(npe, addr, IX_NPEDL_EXCTL_CMD_RD_ECS_REG);
++}
++
++extern struct device *get_npe_by_id(int id);
++
++/* NPE Messages */
++extern int
++npe_mh_setportaddr(struct npe_info *npe, struct mac_plat_info *mp, u8 *macaddr);
++extern int
++npe_mh_disable_firewall(struct npe_info *npe, struct mac_plat_info *mp);
++extern int
++npe_mh_set_rxqid(struct npe_info *npe, struct mac_plat_info *mp, int qid);
++extern int
++npe_mh_npe_loopback_mode(struct npe_info *npe, struct mac_plat_info *mp, int enable);
++
++#endif
+diff -Nur linux-2.6.17/include/linux/ixp_qmgr.h linux-2.6.17-owrt/include/linux/ixp_qmgr.h
+--- linux-2.6.17/include/linux/ixp_qmgr.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.17-owrt/include/linux/ixp_qmgr.h	2006-10-27 12:48:54.000000000 +0200
+@@ -0,0 +1,188 @@
++/*
++ * Copyright (C) 2006 Christian Hohnstaedt <chohnstaedt@innominate.com>
++ *
++ * This file is released under the GPLv2
++ */
++
++#ifndef IX_QMGR_H
++#define IX_QMGR_H
++
++#include <linux/skbuff.h>
++#include <linux/list.h>
++#include <linux/if_ether.h>
++#include <linux/spinlock.h>
++#include <linux/platform_device.h>
++#include <asm/atomic.h>
++
++/* All offsets are in 32bit words */
++#define QUE_LOW_STAT0    0x100 /* 4x Status of the 32 lower queues 0-31 */
++#define QUE_UO_STAT0     0x104 /* 2x Underflow/Overflow status bits*/
++#define QUE_UPP_STAT0    0x106 /* 2x Status of thew 32 upper queues 32-63 */
++#define INT0_SRC_SELREG0 0x108 /* 4x */
++#define QUE_IE_REG0      0x10c /* 2x */
++#define QUE_INT_REG0     0x10e /* 2x IRQ reg, write 1 to reset IRQ */
++
++#define IX_QMGR_QCFG_BASE	0x800
++#define IX_QMGR_QCFG_SIZE	0x40
++#define IX_QMGR_SRAM_SPACE	(IX_QMGR_QCFG_BASE + IX_QMGR_QCFG_SIZE)
++
++#define MAX_QUEUES 32 /* first, we only support the lower 32 queues */
++#define MAX_NPES    3
++
++enum {
++	Q_IRQ_ID_E = 0,  /* Queue Empty due to last read  */
++	Q_IRQ_ID_NE,     /* Queue Nearly Empty due to last read */
++	Q_IRQ_ID_NF,     /* Queue Nearly Full due to last write */
++	Q_IRQ_ID_F,      /* Queue Full due to last write  */
++	Q_IRQ_ID_NOT_E,  /* Queue Not Empty due to last write */
++	Q_IRQ_ID_NOT_NE, /* Queue Not Nearly Empty due to last write */
++	Q_IRQ_ID_NOT_NF, /* Queue Not Nearly Full due to last read */
++	Q_IRQ_ID_NOT_F   /* Queue Not Full due to last read */
++};
++
++extern struct qm_queue *request_queue(int qid, int len);
++extern void release_queue(struct qm_queue *queue);
++extern int queue_set_irq_src(struct qm_queue *queue, int flag);
++extern void queue_set_watermarks(struct qm_queue *, unsigned ne, unsigned nf);
++extern int queue_len(struct qm_queue *queue);
++
++struct qm_qmgr;
++struct qm_queue;
++
++typedef void(*queue_cb)(struct qm_queue *);
++
++struct qm_queue {
++	int addr;	/* word offset from IX_QMGR_SRAM_SPACE */
++	int len;	/* size in words */
++	int id;		/* Q Id */
++	u32 __iomem *acc_reg;
++	struct device *dev;
++	atomic_t use;
++	queue_cb irq_cb;
++	void *cb_data;
++};
++
++struct eth_ctl {
++	u32 next;
++#ifdef __ARMEB__
++	u16 buf_len;
++	u16 pkt_len;
++#else
++	u16 pkt_len;
++	u16 buf_len;
++#endif
++	u32 phys_addr;
++	u8 dest_id;
++	u8 src_id;
++	u16 flags;
++	u8 qos;
++	u8 padlen;
++	u16 vlan_tci;
++	u8 dest_mac[ETH_ALEN];
++	u8 src_mac[ETH_ALEN];
++};
++
++struct npe_cont {
++	union {
++		struct eth_ctl eth;
++	} ctl;
++	union {
++		struct sk_buff *skb;
++		void *ptr;
++	} h;
++	struct npe_cont *next;
++	struct npe_cont *virt;
++	dma_addr_t phys;
++};
++
++struct qm_qmgr {
++	u32 __iomem *addr;
++	struct resource *res;
++	struct qm_queue *queues[MAX_QUEUES];
++	rwlock_t lock;
++	struct npe_cont *pool;
++	struct dma_pool *dmapool;
++	int irq;
++};
++
++static inline void queue_write_cfg_reg(struct qm_queue *queue, u32 val)
++{
++	struct qm_qmgr *qmgr = dev_get_drvdata(queue->dev);
++	*(qmgr->addr + IX_QMGR_QCFG_BASE + queue->id) = val;
++}
++static inline u32 queue_read_cfg_reg(struct qm_queue *queue)
++{
++	struct qm_qmgr *qmgr = dev_get_drvdata(queue->dev);
++	return *(qmgr->addr + IX_QMGR_QCFG_BASE + queue->id);
++}
++
++static inline void queue_ack_irq(struct qm_queue *queue)
++{
++	struct qm_qmgr *qmgr = dev_get_drvdata(queue->dev);
++	*(qmgr->addr + QUE_INT_REG0) = 1 << queue->id;
++}
++
++static inline void queue_enable_irq(struct qm_queue *queue)
++{
++	struct qm_qmgr *qmgr = dev_get_drvdata(queue->dev);
++	*(qmgr->addr + QUE_IE_REG0) |= 1 << queue->id;
++}
++
++static inline void queue_disable_irq(struct qm_queue *queue)
++{
++	struct qm_qmgr *qmgr = dev_get_drvdata(queue->dev);
++	*(qmgr->addr + QUE_IE_REG0) &= ~(1 << queue->id);
++}
++
++static inline void queue_put_entry(struct qm_queue *queue, u32 entry)
++{
++	*(queue->acc_reg) = entry;
++}
++
++static inline struct npe_cont *qmgr_get_cont(struct qm_qmgr *qmgr)
++{
++	unsigned long flags;
++	struct npe_cont *cont;
++
++	if (!qmgr->pool)
++		return NULL;
++	write_lock_irqsave(&qmgr->lock, flags);
++	cont = qmgr->pool;
++	qmgr->pool = cont->next;
++	write_unlock_irqrestore(&qmgr->lock, flags);
++	return cont;
++}
++
++static inline void qmgr_return_cont(struct qm_qmgr *qmgr,struct npe_cont *cont)
++{
++	unsigned long flags;
++
++	write_lock_irqsave(&qmgr->lock, flags);
++	cont->next = qmgr->pool;
++	qmgr->pool = cont;
++	write_unlock_irqrestore(&qmgr->lock, flags);
++}
++
++static inline int queue_stat(struct qm_queue *queue)
++{
++	struct qm_qmgr *qmgr = dev_get_drvdata(queue->dev);
++	u32 reg = *(qmgr->addr + QUE_UO_STAT0 + (queue->id >> 4));
++	return (reg >> (queue->id & 0xf) << 1) & 3;
++}
++
++/* Prints the queue state, which is very, very helpfull for debugging */
++static inline void queue_state(struct qm_queue *queue)
++{
++	u32 val=0, lstat=0;
++	int offs;
++	struct qm_qmgr *qmgr = dev_get_drvdata(queue->dev);
++
++	offs = queue->id/8 + QUE_LOW_STAT0;
++	val = *(qmgr->addr + IX_QMGR_QCFG_BASE + queue->id);
++	lstat = (*(qmgr->addr + offs) >>  ((queue->id % 8)*4)) & 0x0f;
++
++	printk("Qid[%02d]: Wptr=%4x, Rptr=%4x, diff=%4x, Stat:%x\n", queue->id,
++		val&0x7f, (val>>7) &0x7f, (val - (val >> 7)) & 0x7f, lstat);
++}
++
++#endif
