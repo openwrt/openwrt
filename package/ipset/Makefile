@@ -30,6 +30,7 @@ endef
 
 define Build/Compile
 	$(call Build/Compile/Default, \
+		COPT_FLAGS="$(TARGET_CFLAGS)" \
 		KERNEL_DIR="$(LINUX_DIR)" \
 	)
 endef
