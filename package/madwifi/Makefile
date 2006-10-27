@@ -105,19 +105,22 @@ MADWIFI_MAKEOPTS= -C $(PKG_BUILD_DIR) \
 
 ifeq ($(findstring AHB,$(BUS)),AHB)
   define Build/Compile/ahb
-	$(MAKE) $(MADWIFI_MAKEOPTS) BUS="AHB" all
+	$(MAKE) $(MADWIFI_MAKEOPTS) BUS="AHB" modules
   endef
 endif
 
 ifeq ($(findstring PCI,$(BUS)),PCI)
   define Build/Compile/pci
-	$(MAKE) $(MADWIFI_MAKEOPTS) BUS="PCI" all
+	$(MAKE) $(MADWIFI_MAKEOPTS) BUS="PCI" modules
   endef
 endif
 
 define Build/Compile
 	$(call Build/Compile/ahb)
 	$(call Build/Compile/pci)
+	$(MAKE) $(MADWIFI_MAKEOPTS) \
+		CFLAGS="$(TARGET_CFLAGS)" \
+		tools
 endef
 
 define Build/InstallDev
