@@ -77,6 +77,7 @@ config_clear() {
 }
 
 config_load() {
+	CONFIG_SECTION=
 	local DIR="./"
 	_C=0
 	[ \! -e "$1" -a -e "/etc/config/$1" ] && {
