@@ -1,21 +1,49 @@
 #!/bin/sh /etc/rc.common
 # Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006 Carlos Sobrinho
+
+config_cb() {
+	local cfg="$CONFIG_SECTION"
+	local nopasswd
+	local type
+	config_get cfgtype "$cfg" TYPE
+
+	case "$cfgtype" in
+		dropbear)
+			config_get passauth $cfg PasswordAuth
+			config_get port $cfg Port
+
+			case "$passauth" in
+				no|off|disabled|0) nopasswd=1;;
+			esac
+			DROPBEAR_ARGS="${port:+-p $port} ${nopasswd:+-s}"
+		;;
+	esac
+}
 
 start() {
-	for type in rsa dss; do {
-	  # check for keys
-	  key=/etc/dropbear/dropbear_${type}_host_key
-	  [ ! -f $key ] && {
-	    # generate missing keys
-	    mkdir -p /etc/dropbear
-	    [ -x /usr/bin/dropbearkey ] && {
-	      /usr/bin/dropbearkey -t $type -f $key 2>&- >&- && exec /etc/rc.common "$initscript" start
-	    } &
-	    exit 0
-	  }
-	}; done
+	for keytype in rsa dss; do
+		# check for keys
+		key=/tmp/dropbear/dropbear_${keytype}_host_key
+		[ ! -f $key ] && {
+			# generate missing keys
+			mkdir -p /tmp/dropbear
+			[ -x /usr/bin/dropbearkey ] && {
+				/usr/bin/dropbearkey -t $keytype -f $key 2>&- >&- && exec /etc/rc.common "$initscript" start
+			} &
+		exit 0
+		}
+	done
+
+	lock /tmp/.switch2jffs
+	mkdir -p /etc/dropbear
+	mv /tmp/dropbear/dropbear_* /etc/dropbear/
+	lock -u /tmp/.switch2jffs
 	
-	/usr/sbin/dropbear
+	chown root /etc/dropbear
+	chmod 0700 /etc/dropbear
+	config_load dropbear
+	/usr/sbin/dropbear $DROPBEAR_ARGS
 }
 
 stop() {
