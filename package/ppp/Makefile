@@ -44,6 +44,7 @@ endef
 define Package/ppp-mod-pppoa
   $(call Package/ppp/Default)
   DEPENDS:=ppp +linux-atm +kmod-pppoa
+  DEFAULT:=y if LINUX_2_4_AR7
   TITLE:=PPPoA plugin
   DESCRIPTION:=\
 	This package contains a PPPoA (PPP over ATM) plugin for ppp.
