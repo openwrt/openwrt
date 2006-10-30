@@ -7,6 +7,8 @@ setup_interface_pppoa() {
 	local config="$2"
 	
 	config_get device "$config" device
+	config_get vpi "$config" vpi
+	config_get vci "$config" vci
 
 	for module in slhc ppp_generic pppoatm; do
 		/sbin/insmod $module 2>&- >&-
@@ -15,6 +17,6 @@ setup_interface_pppoa() {
 	config_get mtu "$cfg" mtu
 	mtu=${mtu:-1492}
 	start_pppd "$config" \
-		plugin pppoatm.so ${atm_vpi:-8}.${atm_vci:-35} \
+		plugin pppoatm.so ${vpi:-8}.${vci:-35} \
 		mtu $mtu mru $mtu
 }
