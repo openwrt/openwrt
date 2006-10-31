@@ -7,6 +7,10 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
+ROOTPART=$(strip $(subst ",, $(CONFIG_X86_GRUB_ROOTPART)))
+")) # fix vim's broken syntax highlighting
+
+
 ifeq ($(CONFIG_X86_GRUB_IMAGES),y)
   define Build/Compile
 	$(MAKE) -C grub compile
@@ -17,15 +21,15 @@ ifeq ($(CONFIG_X86_GRUB_IMAGES),y)
   endef
 
   define Image/cmdline/jffs2-64k
-    block2mtd.block2mtd=$(CONFIG_X86_GRUB_ROOTPART),65536 root=/dev/mtdblock0 rootfstype=jffs2
+    block2mtd.block2mtd=$(ROOTPART),65536 root=/dev/mtdblock0 rootfstype=jffs2
   endef
 
   define Image/cmdline/jffs2-128k
-    block2mtd.block2mtd=$(CONFIG_X86_GRUB_ROOTPART),131072 root=/dev/mtdblock0 rootfstype=jffs2
+    block2mtd.block2mtd=$(ROOTPART),131072 root=/dev/mtdblock0 rootfstype=jffs2
   endef
 
   define Image/cmdline/ext2
-    root=$(CONFIG_X86_GRUB_ROOTPART) rootfstype=ext2 $(CONFIG_X86_GRUB_BOOTOPTS)
+    root=$(ROOTPART) rootfstype=ext2 $(CONFIG_X86_GRUB_BOOTOPTS)
   endef
 
   define Image/Build/grub
