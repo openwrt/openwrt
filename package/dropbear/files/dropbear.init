@@ -21,15 +21,15 @@ config_cb() {
 	esac
 }
 
-start() {
+keygen() {
 	for keytype in rsa dss; do
 		# check for keys
-		key=/tmp/dropbear/dropbear_${keytype}_host_key
-		[ ! -f $key ] && {
+		key=dropbear/dropbear_${keytype}_host_key
+		[ -f /tmp/$key -o -f /etc/$key ] || {
 			# generate missing keys
 			mkdir -p /tmp/dropbear
 			[ -x /usr/bin/dropbearkey ] && {
-				/usr/bin/dropbearkey -t $keytype -f $key 2>&- >&- && exec /etc/rc.common "$initscript" start
+				/usr/bin/dropbearkey -t $keytype -f /etc/$key 2>&- >&- && exec /etc/rc.common "$initscript" start
 			} &
 		exit 0
 		}
@@ -39,9 +39,14 @@ start() {
 	mkdir -p /etc/dropbear
 	mv /tmp/dropbear/dropbear_* /etc/dropbear/
 	lock -u /tmp/.switch2jffs
-	
 	chown root /etc/dropbear
 	chmod 0700 /etc/dropbear
+}
+
+start() {
+	[ -f /etc/dropbear/dropbear_rsa_host_key -a \
+	  -f /etc/dropbear/dropbear_dss_host_key ] || keygen
+	
 	config_load dropbear
 	/usr/sbin/dropbear $DROPBEAR_ARGS
 }
