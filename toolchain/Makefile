@@ -8,7 +8,7 @@
 #
 include $(TOPDIR)/rules.mk
 
-TARGETS-y:=kernel-headers libnotimpl
+TARGETS-y:=kernel-headers
 TARGETS-$(CONFIG_GDB) += gdb
 ifeq ($(CONFIG_NATIVE_TOOLCHAIN),)
   TARGETS-y+=binutils gcc uClibc
@@ -29,7 +29,6 @@ ifeq ($(CONFIG_NATIVE_TOOLCHAIN),)
   binutils-prepare: uClibc-prepare
   gcc-prepare: binutils-install
   uClibc-compile: gcc-compile
-  libnotimpl-compile: gcc-install
 endif
 gcc-install: uClibc-install
 
