@@ -1,0 +1,102 @@
+--- linux-2.4.32/drivers/net/tun.c 2006-10-28 18:21:45.000000000 +0100
++++ new.linux-2.4.32/drivers/net/tun.c 2006-10-28 18:50:53.000000000 +0100
+@@ -185,22 +185,31 @@
+ {
+ 	struct tun_pi pi = { 0, __constant_htons(ETH_P_IP) };
+ 	struct sk_buff *skb;
+-	size_t len = count;
++	size_t len = count, align = 0;
+ 
+ 	if (!(tun->flags & TUN_NO_PI)) {
+ 		if ((len -= sizeof(pi)) > count)
+ 			return -EINVAL;
+ 
+-		memcpy_fromiovec((void *)&pi, iv, sizeof(pi));
++ 		if(memcpy_fromiovec((void *)&pi, iv, sizeof(pi)))
++ 			return -EFAULT;
+ 	}
+- 
+-	if (!(skb = alloc_skb(len + 2, GFP_KERNEL))) {
++
++	if ((tun->flags & TUN_TYPE_MASK) == TUN_TAP_DEV)
++		align = NET_IP_ALIGN;
++  
++	if (!(skb = alloc_skb(len + align, GFP_KERNEL))) {
+ 		tun->stats.rx_dropped++;
+ 		return -ENOMEM;
+ 	}
+ 
+-	skb_reserve(skb, 2);
+-	memcpy_fromiovec(skb_put(skb, len), iv, len);
++	if (align)
++		skb_reserve(skb, align);
++ 	if (memcpy_fromiovec(skb_put(skb, len), iv, len)) {
++		tun->stats.rx_dropped++;
++		kfree_skb(skb);
++ 		return -EFAULT;
++	}
+ 
+ 	skb->dev = &tun->dev;
+ 	switch (tun->flags & TUN_TYPE_MASK) {
+@@ -271,7 +271,8 @@
+ 			pi.flags |= TUN_PKT_STRIP;
+ 		}
+  
+-		memcpy_toiovec(iv, (void *) &pi, sizeof(pi));
++		if(memcpy_toiovec(iv, (void *) &pi, sizeof(pi)))
++			return -EFAULT;
+ 		total += sizeof(pi);
+ 	}       
+ 
+--- linux-2.4.32/include/linux/skbuff.h	2006-10-28 19:31:31.000000000 +0100
++++ new.linux-2.4.32/include/linux/skbuff.h	2006-10-28 19:29:27.000000000 +0100
+@@ -918,6 +918,49 @@
+ 	skb->tail+=len;
+ }
+ 
++/*
++ * CPUs often take a performance hit when accessing unaligned memory
++ * locations. The actual performance hit varies, it can be small if the
++ * hardware handles it or large if we have to take an exception and fix it
++ * in software.
++ *
++ * Since an ethernet header is 14 bytes network drivers often end up with
++ * the IP header at an unaligned offset. The IP header can be aligned by
++ * shifting the start of the packet by 2 bytes. Drivers should do this
++ * with:
++ *
++ * skb_reserve(NET_IP_ALIGN);
++ *
++ * The downside to this alignment of the IP header is that the DMA is now
++ * unaligned. On some architectures the cost of an unaligned DMA is high
++ * and this cost outweighs the gains made by aligning the IP header.
++ * 
++ * Since this trade off varies between architectures, we allow NET_IP_ALIGN
++ * to be overridden.
++ */
++#ifndef NET_IP_ALIGN
++#define NET_IP_ALIGN    2
++#endif
++
++/*
++ * The networking layer reserves some headroom in skb data (via
++ * dev_alloc_skb). This is used to avoid having to reallocate skb data when
++ * the header has to grow. In the default case, if the header has to grow
++ * 16 bytes or less we avoid the reallocation.
++ *
++ * Unfortunately this headroom changes the DMA alignment of the resulting
++ * network packet. As for NET_IP_ALIGN, this unaligned DMA is expensive
++ * on some architectures. An architecture can override this value,
++ * perhaps setting it to a cacheline in size (since that will maintain
++ * cacheline alignment of the DMA). It must be a power of 2.
++ *
++ * Various parts of the networking layer expect at least 16 bytes of
++ * headroom, you should not reduce this.
++ */
++#ifndef NET_SKB_PAD
++#define NET_SKB_PAD     16
++#endif
++ 
+ extern int ___pskb_trim(struct sk_buff *skb, unsigned int len, int realloc);
+ 
+ static inline void __skb_trim(struct sk_buff *skb, unsigned int len)
