@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 ROOTPART=$(strip $(subst ",, $(CONFIG_X86_GRUB_ROOTPART)))
-")) # fix vim's broken syntax highlighting
+#")) # fix vim's broken syntax highlighting
 
 
 ifeq ($(CONFIG_X86_GRUB_IMAGES),y)
