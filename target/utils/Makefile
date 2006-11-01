@@ -6,7 +6,7 @@
 #
 include $(TOPDIR)/rules.mk
 
-TARGETS := addpattern trx motorola-bin dgfirmware
+TARGETS := addpattern trx motorola-bin dgfirmware trx2usr
 
 UTILS_BUILD_DIR:=$(BUILD_DIR)/target-utils
 

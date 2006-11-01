@@ -37,6 +37,10 @@ define Image/Build/Motorola
 	$(STAGING_DIR)/bin/motorola-bin -$(3) $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).trx $(BIN_DIR)/openwrt-$(2)-$(4).bin
 endef
 
+define Image/Build/USR
+	$(STAGING_DIR)/bin/trx2usr $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).trx $(BIN_DIR)/openwrt-$(2)-$(3).bin
+endef
+
 define trxalign/jffs2-128k
 -a 0x20000
 endef
@@ -64,6 +68,7 @@ ifeq ($(KERNEL),2.6)
 endif
 endif
 	$(call Image/Build/Motorola,$(1),wr850g,1,$(1))
+	$(call Image/Build/USR,$(1),usr5461,$(1)) 
 endef
 
 $(eval $(call BuildImage))
