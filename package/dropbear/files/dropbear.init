@@ -29,7 +29,7 @@ keygen() {
 			# generate missing keys
 			mkdir -p /tmp/dropbear
 			[ -x /usr/bin/dropbearkey ] && {
-				/usr/bin/dropbearkey -t $keytype -f /etc/$key 2>&- >&- && exec /etc/rc.common "$initscript" start
+				/usr/bin/dropbearkey -t $keytype -f /tmp/$key 2>&- >&- && exec /etc/rc.common "$initscript" start
 			} &
 		exit 0
 		}
