@@ -290,6 +290,12 @@ define Build/Prepare
 endef
 
 define Build/Configure/Default
+	(cd $(PKG_BUILD_DIR) ; \
+		[ -e configure.in ] && touch configure.in ; \
+		[ -e aclocal.m4 ] && touch aclocal.m4 ; \
+		[ -e Makefile.in ] && touch Makefile.in ; \
+		[ -e configure ] && touch configure ; \
+	);
 	(cd $(PKG_BUILD_DIR)/$(strip $(3)); \
 	if [ -x configure ]; then \
 		$(TARGET_CONFIGURE_OPTS) \
