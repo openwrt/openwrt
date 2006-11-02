@@ -295,6 +295,10 @@ define Build/Configure/Default
 		[ -e aclocal.m4 ] && touch aclocal.m4 ; \
 		[ -e Makefile.in ] && touch Makefile.in ; \
 		[ -e configure ] && touch configure ; \
+		[ -e acinclude.m4 ] && touch acinclude.m4 ; \
+		[ -e config.h.in ] && touch config.h.in ; \
+		[ -e configure.ac ] && touch configure.ac ; \
+		[ -e stamp-h.in ] && touch stamp-h.in ; \
 	);
 	(cd $(PKG_BUILD_DIR)/$(strip $(3)); \
 	if [ -x configure ]; then \
