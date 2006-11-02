@@ -298,7 +298,6 @@ define Build/Configure/Default
 		[ -e acinclude.m4 ] && touch acinclude.m4 ; \
 		[ -e config.h.in ] && touch config.h.in ; \
 		[ -e configure.ac ] && touch configure.ac ; \
-		[ -e stamp-h.in ] && touch stamp-h.in ; \
 	);
 	(cd $(PKG_BUILD_DIR)/$(strip $(3)); \
 	if [ -x configure ]; then \
