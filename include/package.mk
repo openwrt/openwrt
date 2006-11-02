@@ -289,7 +289,7 @@ define Build/Prepare
   $(call Build/Prepare/Default,)
 endef
 
-define Build/Configure/Default
+define Build/Configure/Touch
 	(cd $(PKG_BUILD_DIR) ; \
 		touch configure.in ; \
 		touch aclocal.m4 ; \
@@ -299,7 +299,11 @@ define Build/Configure/Default
 		touch config.h.in ; \
 		touch configure.ac ; \
 		touch stamp-h.in ; \
-	);
+        );
+endef
+
+define Build/Configure/Default
+	$(call Build/Configure/Touch)
 	(cd $(PKG_BUILD_DIR)/$(strip $(3)); \
 	if [ -x configure ]; then \
 		$(TARGET_CONFIGURE_OPTS) \
