@@ -291,13 +291,14 @@ endef
 
 define Build/Configure/Default
 	(cd $(PKG_BUILD_DIR) ; \
-		[ -e configure.in ] && touch configure.in ; \
-		[ -e aclocal.m4 ] && touch aclocal.m4 ; \
-		[ -e Makefile.in ] && touch Makefile.in ; \
-		[ -e configure ] && touch configure ; \
-		[ -e acinclude.m4 ] && touch acinclude.m4 ; \
-		[ -e config.h.in ] && touch config.h.in ; \
-		[ -e configure.ac ] && touch configure.ac ; \
+		touch configure.in ; \
+		touch aclocal.m4 ; \
+		touch Makefile.in ; \
+		touch configure ; \
+		touch acinclude.m4 ; \
+		touch config.h.in ; \
+		touch configure.ac ; \
+		touch stamp-h.in ; \
 	);
 	(cd $(PKG_BUILD_DIR)/$(strip $(3)); \
 	if [ -x configure ]; then \
