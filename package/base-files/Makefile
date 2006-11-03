@@ -143,6 +143,9 @@ endef
 
 define Package/base-files$(TARGET)/install
 	$(CP) ./default/* $(1)/
+	if [ -d $(BOARD) ]; then \
+		$(CP) $(BOARD)/* $(1)/; \
+	fi
 	if [ -d $(BOARD)-$(KERNEL) ]; then \
 		$(CP) $(BOARD)-$(KERNEL)/* $(1)/; \
 	fi

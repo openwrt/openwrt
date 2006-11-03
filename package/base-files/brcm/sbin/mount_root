@@ -32,4 +32,4 @@ fi
 mount none /tmp -t tmpfs -o remount,nosuid,nodev,mode=1777
 mkdir -p /dev/pts
 mount none /dev/pts -t devpts
-mount -t sysfs none /sys 2>&-
+grep sysfs /proc/filesystems >/dev/null && mount -t sysfs none /sys 2>&-
