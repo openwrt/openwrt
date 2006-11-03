@@ -9,20 +9,21 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-PKG_NAME:=kmod-diag
+PKG_NAME:=broadcom-diag
 PKG_RELEASE:=1
 
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/kmod-diag
+define KernelPackage/diag
   SECTION:=kernel
   CATEGORY:=Kernel drivers
   DEFAULT:=y
-  DEPENDS:=@LINUX_2_4_BRCM
+  DEPENDS:=@LINUX_2_4_BRCM||LINUX_2_6_BRCM
   TITLE:=Driver for router LEDs and Buttons
-  VERSION:=$(LINUX_VERSION)-$(BOARD)-$(PKG_RELEASE)
+  VERSION:=$(PKG_RELEASE)+$(LINUX_VERSION)-$(BOARD)-$(LINUX_RELEASE)
+  FILES:=$(PKG_BUILD_DIR)/diag.$(LINUX_KMOD_SUFFIX)
 endef
 
 define Build/Prepare
@@ -39,10 +40,4 @@ define Build/Compile
 		modules
 endef
 	
-define Package/kmod-diag/install
-	install -d -m0755 $(1)/lib/modules/$(LINUX_VERSION)
-	$(CP) $(PKG_BUILD_DIR)/diag.$(LINUX_KMOD_SUFFIX) \
-		$(1)/lib/modules/$(LINUX_VERSION)/
-endef
-
-$(eval $(call BuildPackage,kmod-diag))
+$(eval $(call KernelPackage,diag))

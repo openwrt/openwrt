@@ -13,7 +13,6 @@
 obj-m := diag.o
 
 ifeq ($(MAKING_MODULES),1)
-export-objs := diag.o
 
 -include $(TOPDIR)/Rules.make
 endif

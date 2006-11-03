@@ -1743,7 +1743,7 @@ diff -urN linux.old/arch/mips/bcm947xx/compressed/Makefile linux.dev/arch/mips/b
 diff -urN linux.old/arch/mips/bcm947xx/export.c linux.dev/arch/mips/bcm947xx/export.c
 --- linux.old/arch/mips/bcm947xx/export.c	1970-01-01 01:00:00.000000000 +0100
 +++ linux.dev/arch/mips/bcm947xx/export.c	2006-10-02 21:19:59.000000000 +0200
-@@ -0,0 +1,65 @@
+@@ -0,0 +1,70 @@
 +#include <linux/module.h>
 +
 +#define _export(n) \
@@ -1772,17 +1772,21 @@ diff -urN linux.old/arch/mips/bcm947xx/export.c linux.dev/arch/mips/bcm947xx/exp
 +_export(sb_coreflags)
 +_export(sb_coreflagshi)
 +_export(sb_coreidx)
++_export(sb_coreregs)
 +_export(sb_corerev)
 +_export(sb_coreunit)
 +_export(sb_detach)
 +_export(sb_deviceremoved)
 +_export(sb_gpiosetcore)
 +_export(sb_gpiocontrol)
++_export(sb_gpiointmask)
++_export(sb_gpiointpolarity)
 +_export(sb_gpioled)
 +_export(sb_gpioin)
 +_export(sb_gpioout)
 +_export(sb_gpioouten)
 +_export(sb_gpiotimerval)
++_export(sb_irq)
 +_export(sb_iscoreup)
 +_export(sb_pci_setup)
 +_export(sb_pcirev)
@@ -1790,6 +1794,7 @@ diff -urN linux.old/arch/mips/bcm947xx/export.c linux.dev/arch/mips/bcm947xx/exp
 +_export(sb_pcmciarev)
 +_export(sb_register_intr_callback)
 +_export(sb_setcore)
++_export(sb_setcoreidx)
 +_export(sb_war16165)
 +_export(sb_osh)
 +		
