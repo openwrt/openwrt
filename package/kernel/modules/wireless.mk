@@ -46,7 +46,7 @@ define KernelPackage/net-bcm43xx
   DEPENDS:=kmod-ieee80211
   KCONFIG:=$(CONFIG_BCM43XX)
   FILES:=$(MODULES_DIR)/kernel/drivers/net/wireless/bcm43xx/bcm43xx.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call Autoload,50,bcm43xx)
+  AUTOLOAD:=$(call AutoLoad,50,bcm43xx)
   SUBMENU:=$(WIMENU)
 endef
 $(eval $(call KernelPackage,net-bcm43xx))
@@ -60,7 +60,7 @@ define KernelPackage/net-ipw2100
   DEPENDS:=kmod-ieee80211
   KCONFIG:=$(CONFIG_IPW2100)
   FILES:=$(MODULES_DIR)/kernel/drivers/net/wireless/ipw2100.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call Autoload,50,ipw2100)
+  AUTOLOAD:=$(call AutoLoad,50,ipw2100)
   SUBMENU:=$(WIMENU)
 endef
 $(eval $(call KernelPackage,net-ipw2100))
@@ -74,7 +74,7 @@ define KernelPackage/net-ipw2200
   DEPENDS:=kmod-ieee80211
   KCONFIG:=$(CONFIG_IPW2200)
   FILES:=$(MODULES_DIR)/kernel/drivers/net/wireless/ipw2200.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call Autoload,50,ipw2200)
+  AUTOLOAD:=$(call AutoLoad,50,ipw2200)
   SUBMENU:=$(WIMENU)
 endef
 $(eval $(call KernelPackage,net-ipw2200))
