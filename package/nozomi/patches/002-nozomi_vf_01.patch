@@ -1,0 +1,251 @@
+--- nozomi/nozomi.c.orig	2006-04-16 12:15:42.000000000 +0100
++++ nozomi/nozomi.c	2006-04-19 18:27:29.000000000 +0100
+@@ -7,6 +7,9 @@
+  *
+  * Maintained by: Paul Hardwick, p.hardwick@option.com
+  *
++ * Patches:
++ *          Locking code changes for Vodafone, Andrew Bird & Phil Sanderson
++ *
+  * Source has been ported from an implementation made by Filip Aben, f.aben@option.com
+  *
+  * --------------------------------------------------------------------------
+@@ -61,6 +64,7 @@
+ #include <linux/interrupt.h>
+ #include <linux/kmod.h>
+ #include <linux/proc_fs.h>
++#include <linux/init.h>
+ #include <asm/uaccess.h>
+ 
+ 
+@@ -133,23 +137,23 @@
+ /* TODO: rewrite to optimize macros... */
+ #define SET_FCR(value__) \
+   do {  \
+-	writew((value__), (void*) (dc->REG_FCR )); \
++	writew((value__), (dc->REG_FCR )); \
+ } while(0)
+ 
+ #define SET_IER(value__, mask__) \
+   do {  \
+ 	dc->ier_last_written = (dc->ier_last_written & ~mask__) | (value__ & mask__ );\
+-    writew( dc->ier_last_written, (void*) (dc->REG_IER));\
++    writew( dc->ier_last_written, (dc->REG_IER));\
+ } while(0)
+ 
+ #define GET_IER(read_val__) \
+   do {  \
+-	(read_val__) = readw((void*) (dc->REG_IER));\
++	(read_val__) = readw((dc->REG_IER));\
+ } while(0)
+ 
+ #define GET_IIR(read_val__) \
+   do {  \
+-	(read_val__) = readw((void*) (dc->REG_IIR));\
++	(read_val__) = readw( (dc->REG_IIR));\
+ } while(0)
+ 
+ #define GET_MEM(value__, addr__, length__) \
+@@ -265,7 +268,7 @@
+ /* There are two types of nozomi cards, one with 2048 memory and with 8192 memory */
+ typedef enum {
+ 	F32_2 = 2048, /* Has 512 bytes downlink and uplink * 2             -> 2048 */
+-	F32_8 = 9192, /* Has 3072 bytes downlink and 1024 bytes uplink * 2 -> 8192 */
++	F32_8 = 8192, /* Has 3072 bytes downlink and 1024 bytes uplink * 2 -> 8192 */
+ } card_type_t;
+ 
+ /* Two different toggle channels exist */
+@@ -438,12 +441,12 @@
+ 	u32				     base_addr;
+ 	u8				     closing;
+ 
+-	/* Register addresses */
+-	u32				     REG_IIR;
+-	u32				     REG_FCR;
+-	u32				     REG_IER;
++   /* Pointers to registers ( register is tagged volatile, not pointer ) */
++	volatile u16 * REG_IIR;
++	volatile u16 * REG_FCR;
++	volatile u16 * REG_IER;
+ 
+-	volatile u16		 ier_last_written;
++	u16		 ier_last_written;
+ 	card_type_t 	     card_type;
+ 	config_table_t 	     config_table; /* Configuration table */
+ 	struct pci_dev 	    *pdev;
+@@ -490,7 +493,7 @@
+ 
+ /* Used to store interrupt variables */
+ typedef struct {
+-	volatile u16 read_iir; /* Holds current interrupt tokens */
++	u16 read_iir; /* Holds current interrupt tokens */
+ } irq_t;
+ 
+ MODULE_DEVICE_TABLE(pci, nozomi_pci_tbl);
+@@ -1345,9 +1348,9 @@
+ 	u32 offset = dc->base_addr + dc->card_type/2;
+ 	int i;
+ 
+-	dc->REG_FCR = offset + R_FCR;
+-	dc->REG_IIR = offset + R_IIR;
+-	dc->REG_IER = offset + R_IER;
++	dc->REG_FCR = (u16 *) (offset + R_FCR);
++	dc->REG_IIR = (u16 *) (offset + R_IIR);
++	dc->REG_IER = (u16 *) (offset + R_IER);
+ 	dc->ier_last_written = 0;
+ 	dc->closing = 0;
+ 
+@@ -1366,13 +1369,16 @@
+ static void tty_flip_queue_function(void *tmp_dc) {
+ 	dc_t *dc = (dc_t*) tmp_dc;
+ 	int i;
++   u32 flags;
+ 
+ 	/* Enable interrupt for that port */
+ 	for(i=0;i<MAX_PORT;i++) {
+ 		if (dc->port[i].tty_dont_flip) {
+ 			D6("Enable for port: %d", i);
+ 			dc->port[i].tty_dont_flip = 0;
++         spin_lock_irqsave(&dc->spin_mutex, flags);
+ 			enable_transmit_dl(dc->port[i].tty_index, dc);
++         spin_unlock_irqrestore(&dc->spin_mutex, flags);
+ 		}
+ 	}
+ }
+@@ -1555,7 +1561,11 @@
+ 
+ static void tty_do_close(dc_t *dc, port_t *port) {
+ 
+-	down(&port->tty_sem);
++	u32      flags;
++
++	if(down_interruptible(&port->tty_sem)){
++      return;
++   }
+ 
+ 	if ( !port->tty_open_count ) {
+ 		goto exit;
+@@ -1569,7 +1579,9 @@
+ 
+ 	if ( port->tty_open_count == 0) {
+         D1("close: %d", port->token_dl );
++      spin_lock_irqsave(&dc->spin_mutex, flags);
+ 		SET_IER( 0,  port->token_dl );
++      spin_unlock_irqrestore(&dc->spin_mutex, flags);
+ 	}
+ 
+ exit:
+@@ -1679,8 +1691,11 @@
+ 	s32 index = get_index(tty);
+ 	port_t *port = get_port_by_tty(tty);
+ 	dc_t *dc = get_dc_by_tty(tty);
++	u32      flags;
+ 
+-	down(&port->tty_sem);
++   if(down_interruptible(&port->tty_sem)){
++      return -ERESTARTSYS;
++   }
+ 
+ 	tty->low_latency  = 1;
+ 	tty->driver_data  = port;
+@@ -1698,7 +1713,9 @@
+ 	if ( port->tty_open_count == 1) {
+ 		port->rx_data = port->tx_data = 0;
+         D1("open: %d", port->token_dl );
++      spin_lock_irqsave(&dc->spin_mutex, flags);
+ 		SET_IER( port->token_dl,  port->token_dl );
++      spin_unlock_irqrestore(&dc->spin_mutex, flags);
+ 	}
+ 
+ 	up(&port->tty_sem);
+@@ -1722,6 +1739,7 @@
+ 	int                  rval = -EINVAL;
+ 	dc_t                *dc = get_dc_by_tty(tty);
+ 	port_t              *port = (port_t *) tty->driver_data;
++	u32      flags;
+ 
+ 	/* D1( "WRITEx: %d, index = %d", count, index); */
+ 
+@@ -1729,7 +1747,10 @@
+ 		return -ENODEV;
+ 	}
+ 
+-	down(&port->tty_sem);
++   if(down_trylock(&port->tty_sem) ) { // must test lock as tty layer wraps calls to this function with BKL
++      ERR("Would have deadlocked - return ERESTARTSYS");
++      return -ERESTARTSYS;
++   }
+ 
+ 	if (! port->tty_open_count) {
+         D1( " ");
+@@ -1752,6 +1773,7 @@
+ 		goto exit;
+ 	}
+ 
++   spin_lock_irqsave(&dc->spin_mutex, flags);
+ 	// CTS is only valid on the modem channel
+ 	if ( port == &(dc->port[PORT_MDM]) ) {
+ 		if ( port->ctrl_dl.CTS ) {
+@@ -1763,6 +1785,7 @@
+ 	} else {
+ 		enable_transmit_ul(port->tty_index, dc );
+ 	}
++   spin_unlock_irqrestore(&dc->spin_mutex, flags);
+ 
+ exit:
+ 	up(&port->tty_sem);
+@@ -1782,7 +1805,9 @@
+         return 0;
+ 	}
+ 
+-	down(&port->tty_sem);
++   if(down_interruptible(&port->tty_sem)){
++      return 0;
++   }
+ 
+ 	if (! port->tty_open_count) {
+ 		goto exit;
+@@ -1969,6 +1994,8 @@
+ 
+ static int ntty_ioctl(struct tty_struct *tty, struct file *file, unsigned int cmd, unsigned long arg) {
+ 	port_t *port = (port_t *) tty->driver_data;
++	dc_t    *dc = get_dc_by_tty(tty);
++	u32      flags;
+ 	int mask;
+ 	int rval = -ENOIOCTLCMD;
+ 
+@@ -1991,7 +2018,9 @@
+ 		rval =  ntty_ioctl_tiocgicount(tty, file, cmd, arg);
+ 		break;
+ 	case TIOCMGET:
++      spin_lock_irqsave(&dc->spin_mutex, flags);
+ 		rval = ntty_tiocmget(tty, file);
++      spin_unlock_irqrestore(&dc->spin_mutex, flags);
+ 		break;
+ 	case TIOCMSET:
+ 		rval = ntty_tiocmset(tty, file, arg);
+@@ -2000,20 +2029,24 @@
+ 		if (get_user(mask, (unsigned long *) arg))
+ 			return -EFAULT;
+ 
++      spin_lock_irqsave(&dc->spin_mutex, flags);
+ 		if (mask & TIOCM_RTS)
+ 			set_rts(port->tty_index, 0);
+ 		if (mask & TIOCM_DTR)
+ 			set_dtr(port->tty_index, 0);
++      spin_unlock_irqrestore(&dc->spin_mutex, flags);
+ 		rval = 0;
+ 		break;
+    	case TIOCMBIS:
+ 		if (get_user(mask, (unsigned long *) arg))
+ 			return -EFAULT;
+ 
++      spin_lock_irqsave(&dc->spin_mutex, flags);
+ 		if (mask & TIOCM_RTS)
+ 			set_rts(port->tty_index, 1);
+ 		if (mask & TIOCM_DTR)
+ 			set_dtr(port->tty_index, 1);
++      spin_unlock_irqrestore(&dc->spin_mutex, flags);
+ 		rval = 0;
+ 		break;
+ 	case TCFLSH:

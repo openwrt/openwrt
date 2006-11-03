@@ -1,0 +1,19 @@
+--- kmod-nozomi.orig/nozomi.c	2006-02-09 18:07:27.000000000 +0100
++++ kmod-nozomi/nozomi.c	2006-09-06 10:55:48.000000000 +0200
+@@ -2093,11 +2093,15 @@
+ 
+ 	td->magic                 = TTY_DRIVER_MAGIC;
+ 	td->driver_name           = NOZOMI_NAME_TTY;
++#ifndef CONFIG_DEVFS_FS
+ 	td->name                  = "noz";
++#else
++	td->name                  = "noz%d";
++#endif
+ 	td->major                 = NTTY_TTY_MAJOR,
+ 	td->type                  = TTY_DRIVER_TYPE_SERIAL,
+ 	td->subtype               = SERIAL_TYPE_NORMAL,
+-	td->flags                 = TTY_DRIVER_REAL_RAW | TTY_DRIVER_NO_DEVFS,
++	td->flags                 = TTY_DRIVER_REAL_RAW,
+ 	td->init_termios          = tty_std_termios;
+ 	td->init_termios.c_cflag  = B115200 | CS8 | CREAD | HUPCL | CLOCAL;
+ 
