@@ -27,6 +27,11 @@ scan_interfaces() {
 	local mode iftype iface ifname device
 	interfaces=
 	config_cb() {
+		case "$1" in
+			interface)
+				config_set "$2" auto 1
+			;;
+		esac
 		config_get iftype "$CONFIG_SECTION" TYPE
 		case "$iftype" in
 			interface)

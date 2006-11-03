@@ -4,7 +4,14 @@ include /lib/network
 
 addif() {
 	scan_interfaces
-	setup_interface "$INTERFACE"
+	local cfg="$(find_config "$INTERFACE")"
+
+	# check the autoload setting
+	config_get auto "$cfg" auto
+	case "$auto" in
+		1|on|enabled) setup_interface "$INTERFACE";;
+	esac
+
 
 	# find all vlan configurations for this interface and set them up as well
 	for ifc in $interfaces; do
