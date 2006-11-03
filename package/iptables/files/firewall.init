@@ -101,6 +101,7 @@ start() {
 	## USER RULES
 	[ -f /etc/firewall.user ] && . /etc/firewall.user
 	[ -n "$WAN" -a -e /etc/config/firewall ] && {
+		export WAN
 		awk -f /usr/lib/common.awk -f /usr/lib/firewall.awk /etc/config/firewall | ash
 	}
 }
