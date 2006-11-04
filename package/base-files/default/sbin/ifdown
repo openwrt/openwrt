@@ -12,6 +12,9 @@ debug "### ifdown $cfg ###"
 config_get proto "$cfg" proto
 [ -z "$proto" ] && { echo "interface not found."; exit; }
 
+# call interface stop handler
+( type "stop_interface_$proto" ) >/dev/null 2>/dev/null && eval "stop_interface_$proto '$cfg'"
+
 # make sure all locks are removed
 for lock in "/var/lock/dhcp-$iface" "/var/lock/ppp-$iface"; do
 	[ -f "$lock" ] && {
