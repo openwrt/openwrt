@@ -3,7 +3,7 @@
 
 start () {
 	mkdir -p /var/spool/cron
-	ln -s /etc/crontabs /var/spool/cron/crontabs
+	[ -L /var/spool/cron/crontabs ] || ln -s /etc/crontabs /var/spool/cron/crontabs
 	crond -c /etc/crontabs
 }
 
