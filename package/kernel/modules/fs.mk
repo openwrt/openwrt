@@ -149,6 +149,17 @@ define KernelPackage/nls-iso8859-15
 endef
 $(eval $(call KernelPackage,nls-iso8859-15))
 
+define KernelPackage/nls-koi8r
+  TITLE:=KOI8-R (Russian)
+  DESCRIPTION:=Kernel module for KOI8-R (Russian)
+  DEPENDS:=kmod-nls-base
+  KCONFIG:=$(CONFIG_NLS_KOI8_R)
+  SUBMENU:=$(FSMENU)
+  FILES:=$(MODULES_DIR)/kernel/fs/nls/nls_koi8-r.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,25,nls_koi8-r)
+endef
+$(eval $(call KernelPackage,nls-koi8r))
+
 define KernelPackage/nls-utf8
   TITLE:=UTF8
   DESCRIPTION:=Kernel module for NLS UTF8
