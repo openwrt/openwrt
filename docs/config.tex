@@ -9,25 +9,25 @@ it was written under.
 Syntax:
 
 \begin{Verbatim}
-config      <type> [<name>]	     # Section
-    option  <name>  <value>      # Option
+config      <type> ["<name>"]      # Section
+    option  <name> "<value>"       # Option
 \end{Verbatim}
 
 Every parameter needs to be a single string and is formatted exactly
-like a parameter for a shell function. The same rules for Quoting and 
+like a parameter for a shell function. The same rules for Quoting and
 special characters also apply, as it is parsed by the shell.
 
 \subsubsection{Parsing configuration files in custom scripts}
 
-To be able to load configuration files, you need to include the common 
+To be able to load configuration files, you need to include the common
 functions with:
 
 \begin{Verbatim}
 . /etc/functions.sh
 \end{Verbatim}
 
-Then you can use \texttt{config\_load \textit{<name>}} to load config files. The function 
-first checks for \textit{<name>} as absolute filename and falls back to loading 
+Then you can use \texttt{config\_load \textit{<name>}} to load config files. The function
+first checks for \textit{<name>} as absolute filename and falls back to loading
 it from \texttt{/etc/config} (which is the most common way of using it).
 
 If you want to use special callbacks for sections and/or options, you
@@ -36,13 +36,13 @@ need to define the following shell functions before running \texttt{config\_load
 
 \begin{Verbatim}
 config_cb() {
-	local type="$1"
-	local name="$2"
-	# commands to be run for every section
+    local type="$1"
+    local name="$2"
+    # commands to be run for every section
 }
 
 option_cb() {
-	# commands to be run for every option
+    # commands to be run for every option
 }
 \end{Verbatim}
 
@@ -68,7 +68,7 @@ config_get <variable> <section> <option> # stores the value inside the variable
 In busybox ash the three-option \texttt{config\_get} is faster, because it does not
 result in an extra fork, so it is the preferred way.
 
-Additionally you can also modify or add options to sections by using the 
+Additionally you can also modify or add options to sections by using the
 \texttt{config\_set} command.
 
 Syntax:

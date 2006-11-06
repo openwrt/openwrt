@@ -3,16 +3,16 @@ The WiFi settings are configured in the file \texttt{/etc/config/wireless}
 it should detect your card and create a sample configuration that looks like this:
 
 \begin{Verbatim}
-config wifi-device  wl0
-    option type     broadcom
-    option channel  5
+config wifi-device      "wl0"
+    option type         "broadcom"
+    option channel      "5"
 
 config wifi-iface
-    option device   wl0
-    option mode     ap
-    option ssid     OpenWrt
-    option hidden   0
-    option encryption none
+    option device       "wl0"
+    option mode         "ap"
+    option ssid         "OpenWrt"
+    option hidden       "0"
+    option encryption   "none"
 \end{Verbatim}
 
 There are two types of config sections in this file. The '\texttt{wifi-device}' refers to
@@ -22,81 +22,81 @@ of that (if supported by the driver).
 \paragraph{Options for the \texttt{wifi-device}:}
 
 \begin{itemize}
-	\item \texttt{type} \\
-		The driver to use for this interface.
-	
-	\item \texttt{country} \\
-		The country code used to determine the regulatory settings.
-	
-	\item \texttt{channel} \\
-		The wifi channel (1-14, depending on your country setting).
+    \item \texttt{type} \\
+        The driver to use for this interface.
 
-	\item \texttt{maxassoc} \\
-		Maximum number of associated clients
+    \item \texttt{country} \\
+        The country code used to determine the regulatory settings.
+
+    \item \texttt{channel} \\
+        The wifi channel (1-14, depending on your country setting).
+
+    \item \texttt{maxassoc} \\
+        Maximum number of associated clients
 
 \end{itemize}
 
 \paragraph{Options for the \texttt{wifi-iface}:}
 
 \begin{itemize}
-	\item \texttt{mode} \\
-		Operating mode:
-		
-		\begin{itemize}
-			\item \texttt{ap} \\
-				Access point mode
+    \item \texttt{mode} \\
+        Operating mode:
 
-			\item \texttt{sta} \\
-				Client mode
+        \begin{itemize}
+            \item \texttt{ap} \\
+                Access point mode
 
-			\item \texttt{adhoc} \\
-				Ad-Hoc mode
+            \item \texttt{sta} \\
+                Client mode
 
-			\item \texttt{wds} \\
-				WDS point-to-point link
-				
-		\end{itemize}
-	\item \texttt{network} \\
-		Selects the interface section from \texttt{/etc/config/network} to be
-		used with this interface
+            \item \texttt{adhoc} \\
+                Ad-Hoc mode
 
-	\item \texttt{encryption} \\
-		Encryption setting. Accepts the following values:
-		
-		\begin{itemize}
-			\item \texttt{psk}, \texttt{psk2} \\
-				WPA(2) Pre-shared Key
-				
-			\item \texttt{wpa}, \texttt{wpa2} \\
-				WPA(2) RADIUS
-				
-		\end{itemize}
-		
-	\item \texttt{key} (wpa and psk) \\
-		Either the WPA key (PSK mode) or the RADIUS shared secret (WPA RADIUS mode)
+            \item \texttt{wds} \\
+                WDS point-to-point link
 
-	\item \texttt{server} (wpa) \\
-		The RADIUS server address
+        \end{itemize}
+    \item \texttt{network} \\
+        Selects the interface section from \texttt{/etc/config/network} to be
+        used with this interface
 
-	\item \texttt{port} (wpa) \\
-		The RADIUS server port
+    \item \texttt{encryption} \\
+        Encryption setting. Accepts the following values:
+
+        \begin{itemize}
+            \item \texttt{psk}, \texttt{psk2} \\
+                WPA(2) Pre-shared Key
+
+            \item \texttt{wpa}, \texttt{wpa2} \\
+                WPA(2) RADIUS
+
+        \end{itemize}
+
+    \item \texttt{key} (wpa and psk) \\
+        Either the WPA key (PSK mode) or the RADIUS shared secret (WPA RADIUS mode)
+
+    \item \texttt{server} (wpa) \\
+        The RADIUS server address
+
+    \item \texttt{port} (wpa) \\
+        The RADIUS server port
 
 \end{itemize}
 
 \paragraph{Limitations:}
 
 \begin{itemize}
-	\item \textbf{Broadcom}: \\
-		Only the following mode combinations are supported:
-		
-		\begin{itemize}
-			\item 1x \texttt{sta}, 0-3x \texttt{ap}
-			\item 1-4x \texttt{ap}
-			\item 1x \texttt{adhoc}
-		\end{itemize}
+    \item \textbf{Broadcom}: \\
+        Only the following mode combinations are supported:
 
-		WDS links can only be used in pure AP mode and can't use WEP (except when sharing the
-		settings with the master interface, which is done automatically).
+        \begin{itemize}
+            \item 1x \texttt{sta}, 0-3x \texttt{ap}
+            \item 1-4x \texttt{ap}
+            \item 1x \texttt{adhoc}
+        \end{itemize}
+
+        WDS links can only be used in pure AP mode and can't use WEP (except when sharing the
+        settings with the master interface, which is done automatically).
 
 \end{itemize}
 

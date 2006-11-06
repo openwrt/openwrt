@@ -22,13 +22,13 @@ after \texttt{scan\_interfaces} might not return the same result as running it b
 After running \texttt{scan\_interfaces}, the following functions are available:
 
 \begin{itemize}
-	\item{\texttt{find\_config \textit{interface}}} \\
-		looks for a network configuration that includes
-  		the specified network interface.
+    \item{\texttt{find\_config \textit{interface}}} \\
+        looks for a network configuration that includes
+        the specified network interface.
 
-	\item{\texttt{setup\_interface \textit{interface [config] [protocol]}}} \\
-	  will set up the specified interface, optionally overriding the network configuration
-	  name or the protocol that it uses.
+    \item{\texttt{setup\_interface \textit{interface [config] [protocol]}}} \\
+      will set up the specified interface, optionally overriding the network configuration
+      name or the protocol that it uses.
 \end{itemize}
 
 \subsubsection{Writing protocol handlers}
@@ -38,14 +38,14 @@ You can add custom protocol handlers by adding shell scripts to
 
 \begin{Verbatim}
 scan_<protocolname>() {
-	local config="$1"
-	# change the interface names if necessary
+    local config="$1"
+    # change the interface names if necessary
 }
 
 setup_interface_<protocolname>() {
-	local interface="\$1"
-	local config="\$2"
-	# set up the interface
+    local interface="$1"
+    local config="$2"
+    # set up the interface
 }
 \end{Verbatim}
 
