@@ -306,6 +306,18 @@ define KernelPackage/r8169
 endef
 $(eval $(call KernelPackage,r8169))
 
+define KernelPackage/ne2k-pci
+  TITLE:=ne2k-pci Ethernet Adapter kernel support
+  DESCRIPTION:=\
+	ne2k-pci Ethernet Adapter kernel support.
+  FILES:=$(MODULES_DIR)/kernel/drivers/net/ne2k-pci.$(LINUX_KMOD_SUFFIX)
+  KCONFIG:=$(CONFIG_NE2K-PCI)
+  DEPENDS:=@LINUX_2_6_X86
+  SUBMENU:=$(NDMENU)
+  AUTOLOAD:=$(call AutoLoad,50,ne2k-pci)
+endef
+$(eval $(call KernelPackage,ne2k-pci))
+
 define KernelPackage/ixp4xx-npe
   TITLE:=Intel(R) IXP4xx ethernet support
   DESCRIPTION:=\
