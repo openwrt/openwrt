@@ -29,7 +29,7 @@ protocol used for the interface. The default image usually provides \texttt{'non
 \texttt{'static'}, \texttt{'dhcp'} and \texttt{'pppoe'}. Others can be added by installing additional
 packages.
 
-When using the \texttt{'static'} method like in the example, the  options \texttt{ipaddr} and 
+When using the \texttt{'static'} method like in the example, the  options \texttt{ipaddr} and
 \texttt{netmask} are mandatory, while \texttt{gateway} and \texttt{dns} are optional.
 DHCP currently only accepts \texttt{ipaddr} (IP address to request from the server)
 and \texttt{hostname} (client hostname identify as) - both are optional.
@@ -43,27 +43,27 @@ PPP based protocols (\texttt{pppoe}, \texttt{pptp}, ...) accept these options:
     \item{keepalive} \\
         Ping the PPP server (using LCP). The value of this option
         specifies the maximum number of failed pings before reconnecting.
-        The ping interval defaults to 5, but can be changed by appending 
+        The ping interval defaults to 5, but can be changed by appending
         ",<interval>" to the keepalive value
     \item{demand} \\
         Use Dial on Demand (value specifies the maximum idle time.
-        
+
     \item{server: (pptp)} \\
         The remote pptp server IP
 \end{itemize}
-        
+
 For all protocol types, you can also specify the MTU by using the \texttt{mtu} option.
 
 
 \subsubsection{Setting up the switch (currently broadcom only)}
 
 The switch configuration is set by adding a \texttt{'switch'} config section.
-Example: 
+Example:
 
 \begin{Verbatim}
-config switch eth0
-    option vlan0 "1 2 3 4 5*"
-    option vlan1 "0 5"
+config switch       "eth0"
+    option vlan0    "1 2 3 4 5*"
+    option vlan1    "0 5"
 \end{Verbatim}
 
 On Broadcom hardware the section name needs to be eth0, as the switch driver
@@ -82,5 +82,5 @@ As value it takes a list of ports with these optional suffixes:
 \end{itemize}
 
 The CPU port defaults to tagged, all other ports to untagged.
-On Broadcom hardware the CPU port is always 5. The other ports may vary with 
+On Broadcom hardware the CPU port is always 5. The other ports may vary with
 different hardware.
