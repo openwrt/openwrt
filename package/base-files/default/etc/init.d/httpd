@@ -2,7 +2,10 @@
 # Copyright (C) 2006 OpenWrt.org
 
 start() {
-	[ -d /www ] && httpd -p 80 -h /www -r OpenWrt
+	include /lib/network
+	scan_interfaces
+        config_get ifname wan hostname
+	[ -d /www ] && httpd -p 80 -h /www -r ${hostname:-OpenWrt}
 }
 
 stop() {
