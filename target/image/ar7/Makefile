@@ -57,7 +57,7 @@ endef
 define Image/Prepare
 	cat $(KDIR)/vmlinux | $(STAGING_DIR)/bin/lzma e -si -so -eos -lc1 -lp2 -pb2 > $(KDIR)/vmlinux.lzma
 	$(TARGET_CROSS)ld -T $(PKG_BUILD_DIR)/zimage.script -r -b binary $(KDIR)/vmlinux.lzma -o $(KDIR)/zimage.o
-	$(TARGET_CROSS)ld -static -G 0 --defsym kernel_entry=0x$${shell nm $(KDIR)/linux-*/vmlinux | grep kernel_entry | cut -d' ' -f1} -T $(PKG_BUILD_DIR)/ld.script \
+	$(TARGET_CROSS)ld -static -G 0 --defsym kernel_entry=0x$${shell $(TARGET_CROSS)nm $(KDIR)/linux-*/vmlinux | grep kernel_entry | cut -d' ' -f1} -T $(PKG_BUILD_DIR)/ld.script \
 		$(PKG_BUILD_DIR)/loader.o \
 		$(PKG_BUILD_DIR)/LzmaDecode.o \
 		$(KDIR)/zimage.o \
