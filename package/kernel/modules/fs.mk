@@ -53,6 +53,28 @@ define KernelPackage/fs-hfsplus
 endef
 $(eval $(call KernelPackage,fs-hfsplus))
 
+define KernelPackage/fs-isofs
+  TITLE:=ISO9660 filesystem support
+  DESCRIPTION:=Kernel module for ISO9660 filesystem support
+  DEPENDS:=+kmod-nls-base
+  KCONFIG:=$(CONFIG_ISO9660_FS)
+  SUBMENU:=$(FSMENU)
+  AUTOLOAD:=$(call AutoLoad,30,isofs)
+  FILES:=$(MODULES_DIR)/kernel/fs/isofs/isofs.$(LINUX_KMOD_SUFFIX)
+endef
+$(eval $(call KernelPackage,fs-isofs))
+
+define KernelPackage/fs-udf
+  TITLE:=UDF filesystem support
+  DESCRIPTION:=Kernel module for UDF filesystem support
+  DEPENDS:=+kmod-nls-base
+  KCONFIG:=$(CONFIG_UDF_FS)
+  SUBMENU:=$(FSMENU)
+  AUTOLOAD:=$(call AutoLoad,30,udf)
+  FILES:=$(MODULES_DIR)/kernel/fs/udf/udf.$(LINUX_KMOD_SUFFIX)
+endef
+$(eval $(call KernelPackage,fs-udf))
+
 define KernelPackage/fs-nfs
   TITLE:=NFS filesystem support
   DESCRIPTION:=Kernel module for NFS support
