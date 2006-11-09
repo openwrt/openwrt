@@ -12,6 +12,11 @@ debug "### ifdown $cfg ###"
 config_get proto "$cfg" proto
 [ -z "$proto" ] && { echo "interface not found."; exit; }
 
+config_get iface "$cfg" device
+[ "$proto" = "static" ] && {
+	env -i ACTION="ifdown" INTERFACE="$config" DEVICE="$iface" PROTO=static /sbin/hotplug "iface" &
+}
+
 # call interface stop handler
 ( type "stop_interface_$proto" ) >/dev/null 2>/dev/null && eval "stop_interface_$proto '$cfg'"
 
