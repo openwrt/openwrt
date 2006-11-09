@@ -1,0 +1,21 @@
+diff -ur busybox.old/networking/udhcp/dhcpc.c busybox.dev/networking/udhcp/dhcpc.c
+--- busybox.old/networking/udhcp/dhcpc.c	2006-11-10 00:17:26.000000000 +0100
++++ busybox.dev/networking/udhcp/dhcpc.c	2006-11-10 00:17:10.000000000 +0100
+@@ -330,7 +330,7 @@
+ 			/* timeout dropped to zero */
+ 			switch (state) {
+ 			case INIT_SELECTING:
+-				if (packet_num < client_config.retries) {
++				if (!client_config.retries || (packet_num < client_config.retries)) {
+ 					if (packet_num == 0)
+ 						xid = random_xid();
+ 
+@@ -355,7 +355,7 @@
+ 				break;
+ 			case RENEW_REQUESTED:
+ 			case REQUESTING:
+-				if (packet_num < client_config.retries) {
++				if (!client_config.retries || (packet_num < client_config.retries)) {
+ 					/* send request packet */
+ 					if (state == RENEW_REQUESTED)
+ 						send_renew(xid, server_addr, requested_ip); /* unicast */
