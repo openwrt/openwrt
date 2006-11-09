@@ -67,7 +67,7 @@ action="$2"
 
 cmds=
 for cmd in $EXTRA_COMMANDS; do
-	cmds="$cmd) $cmd;;"
+	cmds="${cmds:+$cmds$N}$cmd) $cmd;;"
 done
 eval "case \"\$action\" in
 	start) start;;
