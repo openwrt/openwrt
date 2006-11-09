@@ -122,7 +122,7 @@ setup_interface() {
 				done
 			}
 
-			env -i ACTION="ifup" INTERFACE="config" DEVICE="$iface" PROTO=static /sbin/hotplug "iface" &
+			env -i ACTION="ifup" INTERFACE="$config" DEVICE="$iface" PROTO=static /sbin/hotplug "iface" &
 		;;
 		dhcp)
 			# prevent udhcpc from starting more than once
