@@ -14,7 +14,7 @@ hotplug_event() {
 		config_get proto $ifc proto
 		[ "$proto" = "dhcp" ] || continue
 
-		env -i ACTION="$1" INTERFACE="$ifname" PROTO=dhcp /sbin/hotplug iface
+		env -i ACTION="$1" INTERFACE="$ifc" DEVICE="$ifname" PROTO=dhcp /sbin/hotplug iface
 	done
 }
 
