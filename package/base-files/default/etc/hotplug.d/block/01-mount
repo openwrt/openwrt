@@ -19,8 +19,8 @@ add)
 	}
 	;;
 remove)
-	umount /tmp/$DEV
-	rm -rf /dev/$DEV /tmp/$DEV
+	umount /tmp/$DEV && rmdir /tmp/$DEV
+	rm -f /dev/$DEV /tmp/$DEV
 	;;
 esac
 } 2>&1 | logger
