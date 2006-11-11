@@ -3,6 +3,38 @@
 
 . /etc/functions.sh
 
+find_net_config() {(
+	local vif="$1"
+	local cfg
+	local ifname
+
+	config_get cfg "$vif" network
+
+	[ -z "$cfg" ] && {
+		include /lib/network
+		scan_interfaces
+
+		config_get ifname "$vif" ifnamea
+
+		cfg="$(find_config "$ifname")"
+	}
+	[ -z "$cfg" ] && return 0
+	echo "$cfg"
+)}
+
+
+bridge_interface() {(
+	local cfg="$1"
+	[ -z "$cfg" ] && return 0
+
+	include /lib/network
+	scan_interfaces
+
+	config_get iftype "$cfg" type
+	[ "$iftype" = bridge ] && config_get "$iftype" ifname
+)}
+
+
 wifi_up() {
 	for device in ${2:-$DEVICES}; do (
 		config_get iftype "$device" type
