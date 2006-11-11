@@ -143,7 +143,6 @@ config_cb() {
 		interface)
 			config_set "$1" "classgroup" "Default"
 			config_set "$1" "upload" "128"
-			config_set "$1" "download" "1024"
 		;;
 		classify|default|reclassify)
 			option_cb() {
