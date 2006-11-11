@@ -5,28 +5,23 @@
 # See /LICENSE for more information.
 #
 
-$(TMP_DIR):
-	mkdir -p $@
-
 prereq:
 	if [ -f $(TMP_DIR)/.prereq-error ]; then \
 		echo; \
 		cat $(TMP_DIR)/.prereq-error; \
+		rm -f $(TMP_DIR)/.prereq-error; \
 		echo; \
-		rm -rf $(TMP_DIR); \
 		false; \
 	fi
-	rm -rf $(TMP_DIR)
-	mkdir -p $(TMP_DIR)
 
-.SILENT: $(TMP_DIR) prereq
+.SILENT: prereq
 
 define Require
   export PREREQ_CHECK=1
   ifeq ($$(CHECK_$(1)),)
     prereq: prereq-$(1)
 
-    prereq-$(1): $(TMP_DIR) FORCE
+    prereq-$(1): FORCE
 		echo -n "Checking '$(1)'... "
 		if $(NO_TRACE_MAKE) -f $(firstword $(MAKEFILE_LIST)) check-$(1) >/dev/null 2>/dev/null; then \
 			echo 'ok.'; \

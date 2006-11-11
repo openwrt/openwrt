@@ -5,11 +5,11 @@
 # See /LICENSE for more information.
 #
 
-include $(TOPDIR)/.host.mk
+include $(TMP_DIR)/.host.mk
 
 export TAR
 
-$(TOPDIR)/.host.mk: $(INCLUDE_DIR)/host.mk
+$(TMP_DIR)/.host.mk: $(INCLUDE_DIR)/host.mk
 	@( \
 		HOST_OS=`uname`; \
 		case "$$HOST_OS" in \

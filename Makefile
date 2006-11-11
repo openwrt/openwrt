@@ -37,29 +37,48 @@ else
 endif
 export OPENWRTVERSION
 
-ifneq ($(shell ./scripts/timestamp.pl -p .pkginfo package Makefile),.pkginfo)
-  .pkginfo .config: FORCE
+ifneq ($(shell ./scripts/timestamp.pl -p tmp/.pkginfo package scripts Makefile),tmp/.pkginfo)
+  tmp/.pkginfo: tmpinfo-clean
+endif
+
+ifneq ($(shell ./scripts/timestamp.pl -p tmp/.targetinfo target/linux scripts Makefile),tmp/.targetinfo)
+  tmp/.targetinfo: tmpinfo-clean
 endif
 
 ifeq ($(FORCE),)
-  .config scripts/config/conf scripts/config/mconf: .prereq-build
-  world: .prereq-packages
+  .config scripts/config/conf scripts/config/mconf: tmp/.prereq-build
+  world: tmp/.prereq-packages
 endif
 
-.pkginfo:
+tmp/.pkginfo:
+	@mkdir -p tmp
 	@echo Collecting package info...
 	@-for dir in package/*/; do \
+		[ -f "$${dir}/Makefile" ] || continue; \
 		echo Source-Makefile: $${dir}Makefile; \
 		$(NO_TRACE_MAKE) --no-print-dir DUMP=1 -C $$dir 3>/dev/null || echo "ERROR: please fix $${dir}Makefile" >&2; \
+		echo; \
 	done > $@
 
-pkginfo-clean: FORCE
-	-rm -f .pkginfo .config.in
+tmp/.targetinfo:
+	@mkdir -p tmp
+	@echo Collecting target info...
+	@-for dir in target/linux/*/; do \
+		[ -f "$${dir}/Makefile" ] || continue; \
+		( cd "$$dir"; $(NO_TRACE_MAKE) --no-print-dir DUMP=1 3>/dev/null || echo "ERROR: please fix $${dir}Makefile" >&2 ); \
+		echo; \
+	done > $@
 
-.config.in: .pkginfo
-	@./scripts/gen_menuconfig.pl < $< > $@ || rm -f $@
+tmpinfo-clean: FORCE
+	@-rm -rf tmp/.pkginfo tmp/.targetinfo
 
-.config: ./scripts/config/conf .config.in
+tmp/.config.in: tmp/.pkginfo
+	@./scripts/gen_package_config.pl < $< > $@ || rm -f $@
+
+tmp/.config-target.in: tmp/.targetinfo
+	@./scripts/gen_target_config.pl < $< > $@ || rm -f $@
+
+.config: ./scripts/config/conf tmp/.config.in tmp/.config-target.in
 	@[ -f .config ] || $(NO_TRACE_MAKE) menuconfig
 	@$< -D .config Config.in &> /dev/null
 
@@ -69,52 +88,51 @@ scripts/config/mconf:
 scripts/config/conf:
 	@$(MAKE) -C scripts/config conf
 
-config: scripts/config/conf .config.in FORCE
+config: scripts/config/conf tmp/.config.in tmp/.config-target.in FORCE
 	$< Config.in
 
 config-clean: FORCE
 	$(NO_TRACE_MAKE) -C scripts/config clean
 
-defconfig: scripts/config/conf .config.in FORCE
+defconfig: scripts/config/conf tmp/.config.in tmp/.config-target.in FORCE
 	touch .config
 	$< -D .config Config.in
 
-oldconfig: scripts/config/conf .config.in FORCE
+oldconfig: scripts/config/conf tmp/.config.in tmp/.config-target.in FORCE
 	$< -o Config.in
 
-menuconfig: scripts/config/mconf .config.in FORCE
+menuconfig: scripts/config/mconf tmp/.config.in tmp/.config-target.in FORCE
 	$< Config.in
 
-package/%: .pkginfo FORCE
+package/%: tmp/.pkginfot tmp/.targetinfo FORCE
 	$(MAKE) -C package $(patsubst package/%,%,$@)
 
-target/%: .pkginfo FORCE
+target/%: tmp/.pkginfo tmp/.targetinfo FORCE
 	$(MAKE) -C target $(patsubst target/%,%,$@)
 
 tools/%: FORCE
 	$(MAKE) -C tools $(patsubst tools/%,%,$@)
 
-toolchain/%: FORCE
+toolchain/%: tmp/.targetinfo FORCE
 	$(MAKE) -C toolchain $(patsubst toolchain/%,%,$@)
 
-.prereq-build: include/prereq-build.mk
+tmp/.prereq-build: include/prereq-build.mk
+	@mkdir -p tmp
 	@$(NO_TRACE_MAKE) -s -f $(TOPDIR)/include/prereq-build.mk prereq 2>/dev/null || { \
 		echo "Prerequisite check failed. Use FORCE=1 to override."; \
-		rm -rf $(TOPDIR)/tmp; \
 		false; \
 	}
-	@rm -rf $(TOPDIR)/tmp
 	@touch $@
 
-.prereq-packages: include/prereq.mk .pkginfo .config
+tmp/.prereq-packages: include/prereq.mk tmp/.pkginfo .config
+	@mkdir -p tmp
 	@$(NO_TRACE_MAKE) -s -C package prereq 2>/dev/null || { \
 		echo "Prerequisite check failed. Use FORCE=1 to override."; \
 		false; \
 	}
-	@rm -rf "$(TOPDIR)/tmp"
 	@touch $@
 	
-prereq: .prereq-build .prereq-packages FORCE
+prereq: tmp/.prereq-build tmp/.prereq-packages FORCE
 
 download: .config FORCE
 	$(MAKE) tools/download
@@ -132,13 +150,13 @@ world: .config FORCE
 	$(MAKE) package/index
 
 clean: FORCE
-	rm -rf build_* bin
+	rm -rf build_* bin tmp
 
 dirclean: clean
 	rm -rf staging_dir_* toolchain_build_* tool_build
 
 distclean: dirclean config-clean
-	rm -rf dl .*config* .pkg* .prereq 
+	rm -rf dl
 
 .SILENT: clean dirclean distclean config-clean download world
 FORCE: ;

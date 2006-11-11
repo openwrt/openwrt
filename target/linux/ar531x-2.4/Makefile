@@ -6,6 +6,17 @@
 #
 include $(TOPDIR)/rules.mk
 
+ARCH:=mips
+BOARD:=ar531x
+BOARDNAME:=Atheros AR531x
+FEATURES:=broken jffs2
+
+define Target/Description
+	Build firmware images for Atheros AR531x based boards
+	(e.g. Netgear WGT624, Linksys WRT55AG)
+endef
+
+
 LINUX_VERSION:=2.4.32
 LINUX_RELEASE:=1
 LINUX_KERNEL_MD5SUM:=38f4d0830e95a20f4bfed17622d5557c

@@ -30,7 +30,7 @@ BIN_DIR:=$(TOPDIR)/bin
 PACKAGE_DIR:=$(BIN_DIR)/packages
 IPKG_TARGET_DIR:=$(PACKAGE_DIR)
 BUILD_DIR:=$(TOPDIR)/build_$(ARCH)
-TMP_DIR:=$(BUILD_DIR)/tmp
+TMP_DIR:=$(TOPDIR)/tmp
 STAMP_DIR:=$(BUILD_DIR)/stamp
 TARGET_DIR:=$(BUILD_DIR)/root
 IPKG_STATE_DIR:=$(TARGET_DIR)/usr/lib/ipkg
@@ -110,6 +110,16 @@ ifeq ($(CONFIG_TAR_VERBOSITY),y)
 else
   TAR_OPTIONS:=-xf -
 endif
+
+define shvar
+V_$(subst .,_,$(subst -,_,$(subst /,_,$(1))))
+endef
+
+define shexport
+$(call shvar,$(1))=$$(call $(1))
+export $(call shvar,$(1))
+endef
+
 
 all:
 FORCE: ;

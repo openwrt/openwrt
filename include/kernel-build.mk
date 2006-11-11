@@ -6,14 +6,15 @@
 #
 KERNEL_BUILD:=1
 
+ifeq ($(DUMP),1)
+  all: dumpinfo
+else
+  all: compile
+endif
+KERNEL:=2.$(word 2,$(subst ., ,$(strip $(LINUX_VERSION))))
+
 include $(INCLUDE_DIR)/host.mk
 include $(INCLUDE_DIR)/kernel.mk
-
-LINUX_SOURCE:=linux-$(LINUX_VERSION).tar.bz2
-LINUX_SITE:=http://www.us.kernel.org/pub/linux/kernel/v$(KERNEL) \
-           http://www.us.kernel.org/pub/linux/kernel/v$(KERNEL) \
-           http://www.kernel.org/pub/linux/kernel/v$(KERNEL) \
-           http://www.de.kernel.org/pub/linux/kernel/v$(KERNEL)
 
 LINUX_CONFIG:=./config
 
@@ -149,28 +150,37 @@ define BuildKernel
   endef
 endef
 
+$(eval $(call shexport,Target/Description))
 
-download: $(DL_DIR)/$(LINUX_SOURCE)
-prepare: $(LINUX_DIR)/.configured $(TOPDIR)/.kernel.mk
-compile: $(LINUX_DIR)/.modules
-install: $(LINUX_DIR)/.image
+ifeq ($(DUMP),1)
+  dumpinfo:
+	@echo 'Target: $(BOARD)-$(KERNEL)'
+	@echo 'Target-Name: $(BOARDNAME) [$(KERNEL)]'
+	@echo 'Target-Path: $(subst $(TOPDIR)/,,$(PWD))'
+	@echo 'Target-Arch: $(ARCH)'
+	@echo 'Target-Features: $(FEATURES)'
+	@echo 'Linux-Version: $(LINUX_VERSION)'
+	@echo 'Linux-Release: $(LINUX_RELEASE)'
+	@echo 'Linux-Kernel-Arch: $(LINUX_KARCH)'
+	@echo 'Target-Description:'
+	@echo "$$$(call shvar,Target/Description)"
+	@echo '@@'
+else
+  download: $(DL_DIR)/$(LINUX_SOURCE)
+  prepare: $(LINUX_DIR)/.configured $(TMP_DIR)/.kernel.mk
+  compile: $(LINUX_DIR)/.modules
+  install: $(LINUX_DIR)/.image
 
-clean: FORCE
+  clean: FORCE
 	rm -f $(STAMP_DIR)/.linux-compile
 	rm -rf $(KERNEL_BUILD_DIR)
 
-rebuild: FORCE
+  rebuild: FORCE
 	@$(MAKE) mostlyclean
 	@if [ -f $(LINUX_KERNEL) ]; then \
 		$(MAKE) clean; \
 	fi
 	@$(MAKE) compile
-
-$(TOPDIR)/.kernel.mk: Makefile
-	echo "CONFIG_BOARD:=$(BOARD)" > $@
-	echo "CONFIG_KERNEL:=$(KERNEL)" >> $@
-	echo "CONFIG_LINUX_VERSION:=$(LINUX_VERSION)" >> $@
-	echo "CONFIG_LINUX_RELEASE:=$(LINUX_RELEASE)" >> $@
-	echo "CONFIG_LINUX_KARCH:=$(LINUX_KARCH)" >> $@
+endif
 
 

@@ -4,28 +4,13 @@
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
+
 ifeq ($(DUMP),1)
-  KERNEL:=<KERNEL>
-  BOARD:=<BOARD>
-  LINUX_VERSION:=<LINUX_VERSION>
+  KERNEL?=<KERNEL>
+  BOARD?=<BOARD>
+  LINUX_VERSION?=<LINUX_VERSION>
 else
-
-  include $(TOPDIR)/.kernel.mk
   include $(INCLUDE_DIR)/target.mk
-
-  # check to see if .kernel.mk matches target.mk
-  ifeq ($(CONFIG_BOARD)-$(CONFIG_KERNEL),$(BOARD)-$(KERNEL))
-     LINUX_VERSION:=$(CONFIG_LINUX_VERSION)
-     LINUX_RELEASE:=$(CONFIG_LINUX_RELEASE)
-     LINUX_KARCH:=$(CONFIG_LINUX_KARCH)
-  else
-    ifneq ($(KERNEL_BUILD),1)
-      # oops, old .kernel.config; rebuild it (hiding the misleading errors this produces)
-      $(warning rebuilding .kernel.mk)
-      $(TOPDIR)/.kernel.mk: FORCE
-		@$(MAKE) -C $(TOPDIR)/target/linux/$(BOARD)-$(KERNEL) $@ &>/dev/null
-    endif
-  endif
 
   ifeq ($(KERNEL),2.6)
     LINUX_KMOD_SUFFIX=ko
@@ -49,6 +34,13 @@ else
   TARGET_MODULES_DIR := $(LINUX_TARGET_DIR)/$(MODULES_SUBDIR)
 
   LINUX_KERNEL:=$(KERNEL_BUILD_DIR)/vmlinux
+
+  LINUX_SOURCE:=linux-$(LINUX_VERSION).tar.bz2
+  LINUX_SITE:=http://www.us.kernel.org/pub/linux/kernel/v$(KERNEL) \
+           http://www.us.kernel.org/pub/linux/kernel/v$(KERNEL) \
+           http://www.kernel.org/pub/linux/kernel/v$(KERNEL) \
+           http://www.de.kernel.org/pub/linux/kernel/v$(KERNEL)
+
 endif
 
 
