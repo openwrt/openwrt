@@ -16,15 +16,6 @@ include $(INCLUDE_DIR)/unpack.mk
 
 export CONFIG_SITE:=$(INCLUDE_DIR)/site/$(REAL_GNU_TARGET_NAME)
 
-define shvar
-V_$(subst .,_,$(subst -,_,$(subst /,_,$(1))))
-endef
-
-define shexport
-$(call shvar,$(1))=$$(call $(1))
-export $(call shvar,$(1))
-endef
-
 define Build/DefaultTargets
   ifeq ($(DUMP),)
     ifeq ($(CONFIG_AUTOREBUILD),y)

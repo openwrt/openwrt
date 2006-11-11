@@ -6,6 +6,15 @@
 #
 include $(TOPDIR)/rules.mk
 
+ARCH:=mips
+BOARD:=aruba
+BOARDNAME:=Aruba
+FEATURES:=jffs2 pci usb
+
+define Target/Description
+	Build firmware images for Aruba boards
+endef
+
 LINUX_VERSION:=2.6.17
 LINUX_RELEASE:=1
 LINUX_KERNEL_MD5SUM:=37ddefe96625502161f075b9d907f21e

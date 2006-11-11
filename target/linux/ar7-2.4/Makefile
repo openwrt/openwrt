@@ -6,6 +6,15 @@
 #
 include $(TOPDIR)/rules.mk
 
+ARCH:=mipsel
+BOARD:=ar7
+BOARDNAME:=TI AR7
+FEATURES:=atm squashfs jffs2
+
+define Target/Description
+	Build firmware images for TI AR7 based routers (w.g. Linksys WAG54G v2)
+endef
+
 LINUX_VERSION:=2.4.32
 LINUX_RELEASE:=1
 LINUX_KERNEL_MD5SUM:=38f4d0830e95a20f4bfed17622d5557c
