@@ -39,11 +39,11 @@ else
 endif
 export OPENWRTVERSION
 
-ifneq ($(shell ./scripts/timestamp.pl -p tmp/.pkginfo package scripts Makefile),tmp/.pkginfo)
+ifneq ($(shell ./scripts/timestamp.pl -p tmp/.pkginfo package scripts include),tmp/.pkginfo)
   tmp/.pkginfo: FORCE
 endif
 
-ifneq ($(shell ./scripts/timestamp.pl -p tmp/.targetinfo target/linux scripts Makefile),tmp/.targetinfo)
+ifneq ($(shell ./scripts/timestamp.pl -p tmp/.targetinfo target/linux scripts include),tmp/.targetinfo)
   tmp/.targetinfo: FORCE
 endif
 

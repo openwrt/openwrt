@@ -10,6 +10,7 @@ ARCH:=mips
 BOARD:=aruba
 BOARDNAME:=Aruba
 FEATURES:=jffs2 pci usb
+DEFAULT_PACKAGES += kmod-madwifi
 
 define Target/Description
 	Build firmware images for Aruba boards

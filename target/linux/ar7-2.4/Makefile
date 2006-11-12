@@ -10,6 +10,7 @@ ARCH:=mipsel
 BOARD:=ar7
 BOARDNAME:=TI AR7
 FEATURES:=atm squashfs jffs2
+DEFAULT_PACKAGES += kmod-avalanche-cpmac
 
 define Target/Description
 	Build firmware images for TI AR7 based routers (w.g. Linksys WAG54G v2)
@@ -20,4 +21,23 @@ LINUX_RELEASE:=1
 LINUX_KERNEL_MD5SUM:=38f4d0830e95a20f4bfed17622d5557c
 
 include $(INCLUDE_DIR)/kernel-build.mk
+
+define Profile/AnnexA
+  NAME:=ADSL Annex A (default)
+  PACKAGES:=kmod-sangam-atm-annex-a ppp-mod-pppoa
+endef
+$(eval $(call Profile,AnnexA))
+
+define Profile/AnnexB
+  NAME:=ADSL Annex B
+  PACKAGES:=kmod-sangam-atm-annex-b ppp-mod-pppoa
+endef
+$(eval $(call Profile,AnnexB))
+
+define Profile/None
+  NAME:=No ADSL
+  PACKAGES:=
+endef
+$(eval $(call Profile,None))
+
 $(eval $(call BuildKernel))

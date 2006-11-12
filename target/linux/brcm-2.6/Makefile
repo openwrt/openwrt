@@ -10,6 +10,7 @@ ARCH:=mipsel
 BOARD:=brcm
 BOARDNAME:=Broadcom BCM947xx/953xx
 FEATURES:=pci usb pcmcia squashfs jffs2
+DEFAULT_PACKAGES += kmod-switch
 
 define Target/Description
 	Build firmware images for Broadcom based routers
@@ -25,5 +26,17 @@ LINUX_RELEASE:=1
 LINUX_KERNEL_MD5SUM:=37ddefe96625502161f075b9d907f21e
 
 include $(INCLUDE_DIR)/kernel-build.mk
+
+define Profile/Atheros
+  NAME:=Atheros WiFi (default)
+  PACKAGES:=kmod-madwifi
+endef
+$(eval $(call Profile,Atheros))
+
+define Profile/None
+  NAME:=No WiFi
+  PACKAGES:=
+endef
+$(eval $(call Profile,None))
 
 $(eval $(call BuildKernel))

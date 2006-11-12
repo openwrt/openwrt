@@ -24,7 +24,6 @@ include $(INCLUDE_DIR)/package.mk
 define Package/bridge
   SECTION:=net
   CATEGORY:=Base system
-  DEFAULT:=y
   TITLE:=Ethernet bridging configuration utility
   DESCRIPTION:=\
 	Manage ethernet bridging: a way to connect networks together to \\\

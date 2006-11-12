@@ -26,7 +26,6 @@ include $(INCLUDE_DIR)/package.mk
 define Package/wireless-tools
   SECTION:=net
   CATEGORY:=Base system
-  DEFAULT:=y
   TITLE:=Tools for manipulating Linux Wireless Extensions
   DESCRIPTION:=\
 	This package contains a collection of tools for configuring wireless \\\

@@ -6,6 +6,9 @@
 #
 KERNEL_BUILD:=1
 
+# For target profile selection - the default set
+DEFAULT_PACKAGES:=base-files libgcc uclibc bridge busybox dnsmasq dropbear iptables mtd ppp ppp-mod-pppoe mtd
+
 ifeq ($(DUMP),1)
   all: dumpinfo
 else
@@ -146,41 +149,59 @@ define BuildKernel
   mostlyclean: FORCE
 	$(call Kernel/Clean)
 
+  ifeq ($(DUMP),1)
+    dumpinfo:
+		@echo 'Target: $(BOARD)-$(KERNEL)'
+		@echo 'Target-Name: $(BOARDNAME) [$(KERNEL)]'
+		@echo 'Target-Path: $(subst $(TOPDIR)/,,$(PWD))'
+		@echo 'Target-Arch: $(ARCH)'
+		@echo 'Target-Features: $(FEATURES)'
+		@echo 'Linux-Version: $(LINUX_VERSION)'
+		@echo 'Linux-Release: $(LINUX_RELEASE)'
+		@echo 'Linux-Kernel-Arch: $(LINUX_KARCH)'
+		@echo 'Target-Description:'
+		@getvar $(call shvar,Target/Description)
+		@echo '@@'
+		@echo 'Default-Packages: $(DEFAULT_PACKAGES)'
+    ifneq ($(DUMPINFO),)
+		@$(DUMPINFO)
+    endif
+  endif
+
   define BuildKernel
   endef
 endef
 
+define Profile/Default
+  NAME:=
+  PACKAGES:=
+endef
+
+define Profile
+  $(eval $(call Profile/Default))
+  $(eval $(call Profile/$(1)))
+  DUMPINFO += \
+	echo "Target-Profile: $(1)"; \
+	echo "Target-Profile-Name: $(NAME)"; \
+	echo "Target-Profile-Packages: $(PACKAGES)"; 
+endef
+
 $(eval $(call shexport,Target/Description))
 
-ifeq ($(DUMP),1)
-  dumpinfo:
-	@echo 'Target: $(BOARD)-$(KERNEL)'
-	@echo 'Target-Name: $(BOARDNAME) [$(KERNEL)]'
-	@echo 'Target-Path: $(subst $(TOPDIR)/,,$(PWD))'
-	@echo 'Target-Arch: $(ARCH)'
-	@echo 'Target-Features: $(FEATURES)'
-	@echo 'Linux-Version: $(LINUX_VERSION)'
-	@echo 'Linux-Release: $(LINUX_RELEASE)'
-	@echo 'Linux-Kernel-Arch: $(LINUX_KARCH)'
-	@echo 'Target-Description:'
-	@echo "$$$(call shvar,Target/Description)"
-	@echo '@@'
-else
-  download: $(DL_DIR)/$(LINUX_SOURCE)
-  prepare: $(LINUX_DIR)/.configured $(TMP_DIR)/.kernel.mk
-  compile: $(LINUX_DIR)/.modules
-  install: $(LINUX_DIR)/.image
+download: $(DL_DIR)/$(LINUX_SOURCE)
+prepare: $(LINUX_DIR)/.configured $(TMP_DIR)/.kernel.mk
+compile: $(LINUX_DIR)/.modules
+install: $(LINUX_DIR)/.image
 
-  clean: FORCE
+clean: FORCE
 	rm -f $(STAMP_DIR)/.linux-compile
 	rm -rf $(KERNEL_BUILD_DIR)
 
-  rebuild: FORCE
+rebuild: FORCE
 	@$(MAKE) mostlyclean
 	@if [ -f $(LINUX_KERNEL) ]; then \
 		$(MAKE) clean; \
 	fi
 	@$(MAKE) compile
-endif
 
 

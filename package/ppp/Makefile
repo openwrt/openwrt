@@ -33,7 +33,6 @@ endef
 
 define Package/ppp
   $(call Package/ppp/Default)
-  DEFAULT:=y
   DEPENDS:=+kmod-ppp
   TITLE:=PPP daemon
   DESCRIPTION:=\
@@ -44,7 +43,6 @@ endef
 define Package/ppp-mod-pppoa
   $(call Package/ppp/Default)
   DEPENDS:=ppp +linux-atm +kmod-pppoa
-  DEFAULT:=y if LINUX_2_4_AR7
   TITLE:=PPPoA plugin
   DESCRIPTION:=\
 	This package contains a PPPoA (PPP over ATM) plugin for ppp.
@@ -52,7 +50,6 @@ endef
 
 define Package/ppp-mod-pppoe
   $(call Package/ppp/Default)
-  DEFAULT:=y
   DEPENDS:=ppp +kmod-pppoe
   TITLE:=PPPoE plugin
   DESCRIPTION:=\

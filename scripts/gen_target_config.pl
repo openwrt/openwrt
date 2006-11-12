@@ -10,6 +10,8 @@ use strict;
 
 my @target;
 my $target;
+my $profiles;
+my $profile;
 
 sub features(@) {
 	my $ret;
@@ -30,8 +32,11 @@ sub features(@) {
 while (<>) {
 	chomp;
 	/^Target:\s*((.+)-(\d+\.\d+))\s*$/ and do {
+		my $conf = uc $3.'_'.$2;
+		$conf =~ tr/\.-/__/;
 		$target = {
 			id => $1,
+			conf => $conf,
 			board => $2,
 			kernel => $3
 		};
@@ -56,6 +61,22 @@ while (<>) {
 	/^Linux-Version:\s*(.+)\s*$/ and $target->{version} = $1;
 	/^Linux-Release:\s*(.+)\s*$/ and $target->{release} = $1;
 	/^Linux-Kernel-Arch:\s*(.+)\s*$/ and $target->{karch} = $1;
+	/^Default-Packages:\s*(.+)\s*$/ and do {
+		my @pkgs = split /\s+/, $1;
+		$target->{defaultpkgs} = \@pkgs;
+	};
+	/^Target-Profile:\s*(.+)\s*$/ and do {
+		$profiles = $target->{profiles} or $target->{profiles} = $profiles = [];
+		$profile = {
+			id => $1
+		};
+		push @$profiles, $profile;
+	};
+	/^Target-Profile-Name:\s*(.+)\s*$/ and $profile->{name} = $1;
+	/^Target-Profile-Packages:\s*(.+)\s*$/ and do {
+		my @pkgs = split /\s+/, $1;
+		$profile->{pkgs} = \@pkgs;
+	};
 }
 
 @target = sort {
@@ -63,13 +84,18 @@ while (<>) {
 } @target;
 
 
+print <<EOF;
+choice
+	prompt "Target System"
+	default LINUX_2_4_BRCM
+	
+EOF
+
 foreach $target (@target) {
-	my $conf = uc $target->{kernel}.'_'.$target->{board};
 	my $features = features(@{$target->{features}});
 	my $help = $target->{desc};
 	chomp $features;
 	$features .= "\n";
-	$conf =~ tr/\.-/__/;
 	if ($help =~ /\w+/) {
 		$help =~ s/^\s*/\t  /mg;
 		$help = "\thelp\n$help";
@@ -78,7 +104,7 @@ foreach $target (@target) {
 	}
 
 	print <<EOF
-config LINUX_$conf
+config LINUX_$target->{conf}
 	bool "$target->{name}"
 	select $target->{arch}
 $features$help
@@ -86,3 +112,87 @@ $features$help
 EOF
 }
 
+print <<EOF;
+if DEVEL
+
+config LINUX_2_6_ARM
+	bool "UNSUPPORTED little-endian arm platform"
+	depends BROKEN
+	select LINUX_2_6
+	select arm
+
+config LINUX_2_6_CRIS
+	bool "UNSUPPORTED cris platform"
+	depends BROKEN
+	select LINUX_2_6
+	select cris
+
+config LINUX_2_6_M68K
+	bool "UNSUPPORTED m68k platform"
+	depends BROKEN
+	select LINUX_2_6
+	select m68k
+
+config LINUX_2_6_SH3
+	bool "UNSUPPORTED little-endian sh3 platform"
+	depends BROKEN
+	select LINUX_2_6
+	select sh3
+
+config LINUX_2_6_SH3EB
+	bool "UNSUPPORTED big-endian sh3 platform"
+	depends BROKEN
+	select LINUX_2_6
+	select sh3eb
+
+config LINUX_2_6_SH4
+	bool "UNSUPPORTED little-endian sh4 platform"
+	depends BROKEN
+	select LINUX_2_6
+	select sh4
+
+config LINUX_2_6_SH4EB
+	bool "UNSUPPORTED big-endian sh4 platform"
+	depends BROKEN
+	select LINUX_2_6
+	select sh4eb
+
+config LINUX_2_6_SPARC
+	bool "UNSUPPORTED sparc platform"
+	depends BROKEN
+	select LINUX_2_6
+	select sparc
+
+endif
+
+endchoice
+
+choice
+	prompt "Target Profile"
+
+EOF
+
+foreach $target (@target) {
+	my $profiles;
+	
+	$profiles = $target->{profiles} or $profiles = [
+		{
+			id => 'Default',
+			name => 'Default',
+			pkgs => []
+		}
+	];
+	foreach my $profile (@$profiles) {
+		print <<EOF;
+config LINUX_$target->{conf}_$profile->{id}
+	bool "$profile->{name}"
+	depends LINUX_$target->{conf}
+EOF
+		foreach my $pkg (@{$target->{defaultpkgs}}, @{$profile->{pkgs}}) {
+			print "\tselect DEFAULT_$pkg\n";
+		}
+		print "\n";
+	}
+}
+
+print "endchoice\n";

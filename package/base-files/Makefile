@@ -35,7 +35,6 @@ CONFIG_PACKAGE_base-files$(TARGET):=$(CONFIG_PACKAGE_base-files)
 define Package/base-files$(TARGET)
   SECTION:=base
   CATEGORY:=Base system
-  DEFAULT:=y
   TITLE:=Base filesystem for OpenWrt
   DESCRIPTION:=\
 	This package contains a base filesystem and system scripts for OpenWrt.
@@ -87,7 +86,6 @@ endef
 define Package/libgcc
   SECTION:=libs
   CATEGORY:=Base system
-  DEFAULT:=y
   DEPENDS:=@!NATIVE_TOOLCHAIN
   TITLE:=GCC support library
   URL:=http://gcc.gnu.org/
@@ -106,7 +104,6 @@ endef
 define Package/uclibc
   SECTION:=libs
   CATEGORY:=Base system
-  DEFAULT:=y
   DEPENDS:=@!NATIVE_TOOLCHAIN
   TITLE:=C library embedded systems
   URL:=http://uclibc.org/

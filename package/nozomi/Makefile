@@ -30,7 +30,6 @@ define KernelPackage/nozomi
   DESCRIPTION:=Option Globetrotter HSDPA driver
   URL:=http://www.pharscape.org/
   DEPENDS:=@LINUX_2_4
-  DEFAULT:=m if ALL
   VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
   FILES:=$(PKG_BUILD_DIR)/noz.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,70,noz)

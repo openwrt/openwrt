@@ -19,7 +19,8 @@ include $(INCLUDE_DIR)/package.mk
 define Package/kmod-wlcompat/Default
   SECTION:=kernel
   CATEGORY:=Kernel drivers
-  DEPENDS:=kmod-brcm-wl
+  DEPENDS:=@PACKAGE_kmod-brcm-wl||PACKAGE_kmod-brcm-wl-mimo +wireless-tools
+  DEFAULT:=y
   TITLE:=Broadcom wl wrapper module
   DESCRIPTION:=\
 	This package contains a wrapper module, that provides Wireless Extension \\\
@@ -29,7 +30,6 @@ endef
 
 define Package/kmod-wlcompat
   $(call Package/kmod-wlcompat/Default)
-  DEFAULT:=y
 endef
 
 define Package/kmod-wlcompat-debug

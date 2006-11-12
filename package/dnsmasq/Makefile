@@ -24,7 +24,6 @@ include $(INCLUDE_DIR)/package.mk
 define Package/dnsmasq
   SECTION:=net
   CATEGORY:=Base system
-  DEFAULT:=y
   TITLE:=A lightweight DNS and DHCP server
   DESCRIPTION:=\
 	It is intended to provide coupled DNS and DHCP service to a LAN.

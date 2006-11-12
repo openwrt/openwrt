@@ -44,7 +44,6 @@ endef
 
 define Package/kmod-brcm-wl
   $(call Package/kmod-brcm-wl/Default)
-  DEFAULT:=y
   TITLE+= (normal version)
   DESCRIPTION+= (normal version).
 endef
@@ -57,8 +56,8 @@ endef
 
 define Package/wlc
   $(call Package/broadcom-wl/Default)
+  TITLE:=wl driver setup utility
   DEFAULT:=y
-  TITLE:=Proprietary Broadcom wl driver setup utility
   DESCRIPTION:=\
 	This package contains an utility for initializing the proprietary Broadcom \\\
 	wl driver.
@@ -74,7 +73,8 @@ endef
 
 define Package/nas
   $(call Package/broadcom-wl/Default)
-  DEPENDS+= +nvram
+  DEPENDS+=+nvram
+  DEFAULT:=y
   TITLE:=Proprietary Broadcom WPA/WPA2 authenticator
   DESCRIPTION:=\
 	This package contains the proprietary WPA/WPA2 authenticator (nas) for the \\\

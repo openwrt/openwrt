@@ -38,7 +38,6 @@ endef
 
 define Package/iptables
   $(call Package/iptables/Default)
-  DEFAULT:=y
   TITLE:=IPv4 firewall administration tool
   MENU:=1
 endef

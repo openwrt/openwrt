@@ -25,7 +25,6 @@ include $(INCLUDE_DIR)/package.mk
 define KernelPackage/avalanche-cpmac
   SUBMENU:=Network Devices
   DEPENDS:=@LINUX_2_4_AR7 +kmod-atm
-  DEFAULT:=y
   TITLE:=AR7 Network driver (CPMAC)
   DESCRIPTION:=AR7 Network driver (CPMAC)
   VERSION:=$(PKG_VERSION)+$(LINUX_VERSION)-$(BOARD)-$(PKG_RELEASE)
