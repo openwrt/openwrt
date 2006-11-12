@@ -8,7 +8,7 @@
 
 include $(TOPDIR)/rules.mk
 include $(TOPDIR)/.config
-include $(TOPDIR)/.pkgdeps
+include $(TMP_DIR)/.pkgdeps
 include $(INCLUDE_DIR)/host.mk
 
 PREREQ_PACKAGES:=$(patsubst %,%-prereq,$(prereq-y) $(prereq-m))
@@ -41,7 +41,7 @@ ifeq ($(SDK),1)
 GENDEP_OPTS := -s
 endif
 
-$(TOPDIR)/.pkgdeps: $(TOPDIR)/.pkginfo
+$(TMP_DIR)/.pkgdeps: $(TMP_DIR)/.pkginfo
 	@$(TOPDIR)/scripts/gen_deps.pl $(GENDEP_OPTS) < $< > $@ || rm -f $@
 
 all: compile
