@@ -87,6 +87,6 @@ endef
 $(eval $(call BuildPackage,linux-atm))
 $(eval $(call BuildPackage,br2684ctl))
 
-$(eval $(call RequireCommand,automake-1.4, \
-	$(PKG_NAME) requires automake-1.4. \
+$(eval $(call RequireCommand,automake, \
+	$(PKG_NAME) requires automake. \
 ))
