@@ -122,7 +122,7 @@ define Build/Compile/ar7
 endef
 
 define Build/Compile/brcm
-	$(TARGET_CC) -o $(PKG_BUILD_DIR)/jffs2root src/jffs2root.c
+	$(TARGET_CC) -I src -o $(PKG_BUILD_DIR)/jffs2root src/jffs2root.c
 endef
 
 define Build/Compile

@@ -31,7 +31,7 @@
 #include <string.h>
 
 #include <sys/ioctl.h>
-#include <linux/mtd/mtd.h>
+#include "mtd.h"
 
 #define FILENAME "/dev/mtdblock/1"
 
