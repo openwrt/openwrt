@@ -38,11 +38,11 @@ endif
 export OPENWRTVERSION
 
 ifneq ($(shell ./scripts/timestamp.pl -p tmp/.pkginfo package scripts Makefile),tmp/.pkginfo)
-  tmp/.pkginfo: tmpinfo-clean
+  tmp/.pkginfo: FORCE
 endif
 
 ifneq ($(shell ./scripts/timestamp.pl -p tmp/.targetinfo target/linux scripts Makefile),tmp/.targetinfo)
-  tmp/.targetinfo: tmpinfo-clean
+  tmp/.targetinfo: FORCE
 endif
 
 ifeq ($(FORCE),)
