@@ -21,10 +21,15 @@ SHELL:=/usr/bin/env bash
 export LC_ALL=C
 export LANG=C
 export TOPDIR=${shell pwd}
-include $(TOPDIR)/include/verbose.mk
 ifeq ($(KBUILD_VERBOSE),99)
   MAKE:=3>/dev/null $(MAKE)
 endif
+ifneq ($(shell tty -s <&3 || echo x),x)
+  IS_TTY=1
+  export IS_TTY
+endif
+
+include $(TOPDIR)/include/verbose.mk
 
 OPENWRTVERSION:=$(RELEASE)
 ifneq ($(VERSION),)

@@ -18,7 +18,7 @@ ifeq ("$(origin V)", "command line")
   KBUILD_VERBOSE:=$(V)
 endif
 
-ifneq ($(shell tty -s <&3 || echo x),x)
+ifeq ($(IS_TTY),1)
   _Y:="\\33[33m"# yellow
   _N:="\\33[m"#	normal
 endif
