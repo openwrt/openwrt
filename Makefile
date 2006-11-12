@@ -24,10 +24,7 @@ export TOPDIR=${shell pwd}
 ifeq ($(KBUILD_VERBOSE),99)
   MAKE:=3>/dev/null $(MAKE)
 endif
-ifneq ($(shell tty -s <&3 || echo x),x)
-  IS_TTY=1
-  export IS_TTY
-endif
+export IS_TTY=$(shell tty -s && echo 1 || echo 0)
 
 include $(TOPDIR)/include/verbose.mk
 
