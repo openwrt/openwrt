@@ -4,6 +4,8 @@
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
+
+include $(INCLUDE_DIR)/kernel.mk
 KDIR:=$(BUILD_DIR)/linux-$(KERNEL)-$(BOARD)
 
 ifneq ($(CONFIG_BIG_ENDIAN),y)
