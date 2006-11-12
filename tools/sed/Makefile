@@ -18,10 +18,9 @@ PKG_BUILD_DIR:=$(TOOL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/host-build.mk
 
-override SHELL:=$(BASH)
-
 define Build/Configure
 	(cd $(PKG_BUILD_DIR); rm -rf config.cache; \
+		SHELL="$(BASH)" \
 		./configure \
 		--prefix=$(STAGING_DIR) \
 		--prefix=/usr \
@@ -29,7 +28,7 @@ define Build/Configure
 endef
 
 define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR)
+	$(MAKE) -C $(PKG_BUILD_DIR) SHELL="$(BASH)"
 endef
 
 define Build/Install

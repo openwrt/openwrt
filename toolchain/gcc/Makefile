@@ -45,11 +45,10 @@ include $(INCLUDE_DIR)/host-build.mk
 BUILD_DIR1:=$(TOOLCHAIN_BUILD_DIR)/gcc-$(PKG_VERSION)-initial
 BUILD_DIR2:=$(TOOLCHAIN_BUILD_DIR)/gcc-$(PKG_VERSION)-final
 
-override SHELL:=$(BASH)
-
 define Stage1/Configure
 	mkdir -p $(BUILD_DIR1)
 	(cd $(BUILD_DIR1); rm -f config.cache; \
+		SHELL="$(BASH)" \
 		$(PKG_BUILD_DIR)/configure \
 		--prefix=$(STAGING_DIR) \
 		--build=$(GNU_HOST_NAME) \
@@ -65,10 +64,10 @@ define Stage1/Configure
 	);
 endef
 define Stage1/Compile
-	$(MAKE) -C $(BUILD_DIR1) all-gcc
+	$(MAKE) -C $(BUILD_DIR1) all-gcc SHELL="$(BASH)"
 endef
 define Stage1/Install
-	$(MAKE) -C $(BUILD_DIR1) install-gcc
+	$(MAKE) -C $(BUILD_DIR1) install-gcc SHELL="$(BASH)"
 endef
 
 define Stage2/Configure
@@ -79,6 +78,7 @@ define Stage2/Configure
 	rm -rf $(STAGING_DIR)/$(REAL_GNU_TARGET_NAME)/lib
 	ln -sf ../lib $(STAGING_DIR)/$(REAL_GNU_TARGET_NAME)/lib
 	(cd $(BUILD_DIR2); rm -f config.cache; \
+		SHELL="$(BASH)" \
 		$(PKG_BUILD_DIR)/configure \
 		--prefix=$(STAGING_DIR) \
 		--build=$(GNU_HOST_NAME) \
@@ -93,10 +93,10 @@ define Stage2/Configure
 	);
 endef
 define Stage2/Compile
-	$(MAKE) -C $(BUILD_DIR2) all
+	$(MAKE) -C $(BUILD_DIR2) all SHELL="$(BASH)"
 endef
 define Stage2/Install
-	$(MAKE) -C $(BUILD_DIR2) install
+	$(MAKE) -C $(BUILD_DIR2) install SHELL="$(BASH)"
 	echo $(PKG_VERSION) > $(STAGING_DIR)/gcc_version
 	# Set up the symlinks to enable lying about target name.
 	set -e; \
