@@ -64,10 +64,10 @@ define Stage1/Configure
 	);
 endef
 define Stage1/Compile
-	$(MAKE) -C $(BUILD_DIR1) all-gcc SHELL="$(BASH)"
+	export SHELL="$(BASH)"; $(MAKE) -C $(BUILD_DIR1) all-gcc
 endef
 define Stage1/Install
-	$(MAKE) -C $(BUILD_DIR1) install-gcc SHELL="$(BASH)"
+	export SHELL="$(BASH)"; $(MAKE) -C $(BUILD_DIR1) install-gcc
 endef
 
 define Stage2/Configure
@@ -93,10 +93,10 @@ define Stage2/Configure
 	);
 endef
 define Stage2/Compile
-	$(MAKE) -C $(BUILD_DIR2) all SHELL="$(BASH)"
+	export SHELL="$(BASH)"; $(MAKE) -C $(BUILD_DIR2) all
 endef
 define Stage2/Install
-	$(MAKE) -C $(BUILD_DIR2) install SHELL="$(BASH)"
+	export SHELL="$(BASH)"; $(MAKE) -C $(BUILD_DIR2) install
 	echo $(PKG_VERSION) > $(STAGING_DIR)/gcc_version
 	# Set up the symlinks to enable lying about target name.
 	set -e; \
