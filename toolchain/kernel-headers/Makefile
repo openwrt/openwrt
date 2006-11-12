@@ -29,7 +29,7 @@ define Build/Configure
 	-$(CP) ./files/config.$(LINUX_KARCH) $(PKG_BUILD_DIR)/.config
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		ARCH=$(LINUX_KARCH) \
-		CONFIG_SHELL=$(shell which bash) \
+		CONFIG_SHELL=$(BASH) \
 		defconfig include/linux/version.h
 endef
 
