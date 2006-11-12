@@ -10,7 +10,6 @@ ARCH:=mips
 BOARD:=aruba
 BOARDNAME:=Aruba
 FEATURES:=jffs2 pci usb
-DEFAULT_PACKAGES += kmod-madwifi
 
 define Target/Description
 	Build firmware images for Aruba boards
@@ -21,4 +20,6 @@ LINUX_RELEASE:=1
 LINUX_KERNEL_MD5SUM:=37ddefe96625502161f075b9d907f21e
 
 include $(INCLUDE_DIR)/kernel-build.mk
+DEFAULT_PACKAGES += kmod-madwifi
+
 $(eval $(call BuildKernel))

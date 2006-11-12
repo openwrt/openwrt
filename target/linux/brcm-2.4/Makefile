@@ -10,7 +10,6 @@ ARCH:=mipsel
 BOARD:=brcm
 BOARDNAME:=Broadcom BCM947xx/953xx
 FEATURES:=pci usb pcmcia squashfs jffs2
-DEFAULT_PACKAGES += kmod-switch nvram
 
 define Target/Description
 	Build firmware images for Broadcom based routers
@@ -26,6 +25,7 @@ LINUX_RELEASE:=1
 LINUX_KERNEL_MD5SUM:=38f4d0830e95a20f4bfed17622d5557c
 
 include $(INCLUDE_DIR)/kernel-build.mk
+DEFAULT_PACKAGES += kmod-switch nvram
 
 define Profile/Broadcom
   NAME:=Generic, Broadcom WiFi (default)
