@@ -26,11 +26,10 @@ define Build/Prepare
 endef
 
 define Build/Configure
-	-$(CP) ./files/config.$(LINUX_KARCH) $(PKG_BUILD_DIR)/.config
-	$(MAKE) -C $(PKG_BUILD_DIR) \
+	yes '' | $(MAKE) -C $(PKG_BUILD_DIR) \
 		ARCH=$(LINUX_KARCH) \
 		CONFIG_SHELL=$(BASH) \
-		defconfig include/linux/version.h
+		oldconfig include/linux/version.h
 endef
 
 define Build/Compile
