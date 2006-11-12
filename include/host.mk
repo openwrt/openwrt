@@ -9,9 +9,9 @@ include $(TMP_DIR)/.host.mk
 
 export TAR
 
-$(TMP_DIR)/.host.mk: $(INCLUDE_DIR)/host.mk
+$(TMP_DIR)/.host.mk: $(TOPDIR)/include/host.mk
+	@mkdir -p $(TMP_DIR)
 	@( \
-		echo -n "BASH:=$(shell which bash)"; \
 		HOST_OS=`uname`; \
 		case "$$HOST_OS" in \
 			Linux) HOST_ARCH=`uname -m`;; \
@@ -29,5 +29,6 @@ $(TMP_DIR)/.host.mk: $(INCLUDE_DIR)/host.mk
 		ZCAT=`which gzcat`; \
 		[ -n "$$ZCAT" -a -x "$$ZCAT" ] || ZCAT=`which zcat`; \
 		echo "ZCAT:=$$ZCAT" >> $@; \
+		echo "BASH:=$(shell which bash)" >> $@; \
 	)
 

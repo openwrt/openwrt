@@ -6,7 +6,6 @@
 #
 
 include $(TOPDIR)/rules.mk
-TMP_DIR:=$(TOPDIR)/tmp
 include $(INCLUDE_DIR)/prereq.mk
 include $(INCLUDE_DIR)/host.mk
 
