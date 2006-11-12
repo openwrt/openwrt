@@ -104,7 +104,7 @@ oldconfig: scripts/config/conf tmp/.config.in tmp/.config-target.in FORCE
 menuconfig: scripts/config/mconf tmp/.config.in tmp/.config-target.in FORCE
 	$< Config.in
 
-package/%: tmp/.pkginfot tmp/.targetinfo FORCE
+package/%: tmp/.pkginfo tmp/.targetinfo FORCE
 	$(MAKE) -C package $(patsubst package/%,%,$@)
 
 target/%: tmp/.pkginfo tmp/.targetinfo FORCE
