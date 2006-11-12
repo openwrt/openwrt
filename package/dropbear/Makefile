@@ -29,7 +29,6 @@ define Package/dropbear
   $(call Package/dropbear/Default)
   SECTION:=net
   CATEGORY:=Base system
-  DEFAULT:=y
   TITLE:=Small SSH2 client/server
   DESCRIPTION:=\
 	A small SSH2 server/client designed for small memory environments.

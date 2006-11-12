@@ -24,7 +24,6 @@ include $(INCLUDE_DIR)/package.mk
 define Package/busybox
   SECTION:=base
   CATEGORY:=Base system
-  DEFAULT:=y
   TITLE:=Core utilities for embedded Linux
   URL:=http://busybox.net/
   MENU:=1

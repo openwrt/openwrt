@@ -20,7 +20,6 @@ define Package/kmod-switch
   SECTION:=kernel
   CATEGORY:=Kernel drivers
   DEPENDS:=@LINUX_2_6_BRCM||LINUX_2_4_BRCM
-  DEFAULT:=y
   TITLE:=Switch drivers
   DESCRIPTION:=\
 	This package contains switch drivers for ADM6996L and BCM53XX RoboSwitch.
