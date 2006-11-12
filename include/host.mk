@@ -11,6 +11,7 @@ export TAR
 
 $(TMP_DIR)/.host.mk: $(INCLUDE_DIR)/host.mk
 	@( \
+		echo -n "BASH:=$(shell which bash)"; \
 		HOST_OS=`uname`; \
 		case "$$HOST_OS" in \
 			Linux) HOST_ARCH=`uname -m`;; \
