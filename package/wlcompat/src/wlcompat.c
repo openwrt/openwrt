@@ -48,7 +48,7 @@ const long channel_frequency[] = {
 };
 #define NUM_CHANNELS ( sizeof(channel_frequency) / sizeof(channel_frequency[0]) )
 
-#define RNG_POLL_FREQ	20
+#define RNG_POLL_FREQ	2
 
 typedef struct internal_wsec_key {
 	uint8 index;		// 0x00
