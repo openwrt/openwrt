@@ -18,7 +18,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  *
- * $Id:$
+ * $Id$
  */
 #include <linux/module.h>
 #include <linux/pci.h>
@@ -401,7 +401,7 @@ static struct platform_t __init *platform_detect(void)
 	if (strncmp(getvar("pmon_ver"), "CFE", 3) == 0) {
 		/* CFE based - newer hardware */
 		if (!strcmp(boardnum, "42")) { /* Linksys */
-			if (!strcmp(boardtype, "0x0101"))
+			if (!strcmp(boardtype, "0x0101") && !strcmp(getvar("boot_ver"), "v3.6"))
 				return &platforms[WRT54G3G];
 
 			if (!strcmp(getvar("et1phyaddr"),"5") && !strcmp(getvar("et1mdcport"), "1"))
