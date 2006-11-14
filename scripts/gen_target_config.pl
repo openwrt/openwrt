@@ -40,6 +40,7 @@ while (<>) {
 			board => $2,
 			kernel => $3
 		};
+		$target->{kernel} =~ tr/\./_/;
 		push @target, $target;
 	};
 	/^Target-Name:\s*(.+)\s*$/ and $target->{name} = $1;
@@ -107,6 +108,7 @@ foreach $target (@target) {
 config LINUX_$target->{conf}
 	bool "$target->{name}"
 	select $target->{arch}
+	select LINUX_$target->{kernel}
 $features$help
 
 EOF
