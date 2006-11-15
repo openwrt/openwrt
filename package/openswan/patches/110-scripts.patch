@@ -125,7 +125,7 @@ diff -urN openswan.old/programs/showhostkey/showhostkey.in openswan.dev/programs
  		x = "[^ \t]+"
  		oc = "(#.*)?"
 -		suffix = ":" os "[rR][sS][aA]" os "{" os oc "$"
-+		suffix = ":" os "[rR][sS][aA]" os "\0173" os oc "$"
++		suffix = ":" os "[rR][sS][aA]" os "[{]" os oc "$"
  		if (id == "") {
  			pat = "^" suffix
  			printid = "default"
