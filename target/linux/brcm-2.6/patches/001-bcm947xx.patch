@@ -11639,7 +11639,7 @@ diff -urN linux.old/arch/mips/bcm947xx/setup.c linux.dev/arch/mips/bcm947xx/setu
 +	s.membase = regs;
 +	s.irq = irq + 2;
 +	s.uartclk = baud_base;
-+	s.flags = ASYNC_BOOT_AUTOCONF;
++	s.flags = ASYNC_BOOT_AUTOCONF | UPF_SHARE_IRQ;
 +	s.iotype = SERIAL_IO_MEM;
 +	s.regshift = reg_shift;
 +
