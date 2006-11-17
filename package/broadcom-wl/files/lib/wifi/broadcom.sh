@@ -117,7 +117,23 @@ enable_broadcom() {
 		config_get enc "$vif" encryption
 		case "$enc" in
 			WEP|wep)
-				wsec_r=1
+				wsec_r=0
+				wsec=1
+				defkey=1
+				config_get key "$vif" key
+				case "$key" in
+					[1234])
+						defkey="$key"
+						for knr in 1 2 3 4; do
+							config_get k "$vif" key$knr
+							[ -n "$k" ] || continue
+							[ "$defkey" = "$knr" ] && def="=" || def=""
+							append vif_pre_up "wepkey $def$knr,$k" "$N"
+						done
+					;;
+					"");;
+					*) append vif_pre_up "wepkey 1,$key" "$N";;
+				esac
 			;;
 			*psk*|*PSK*)
 				wsec_r=1
