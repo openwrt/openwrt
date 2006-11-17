@@ -36,6 +36,7 @@ scan_broadcom() {
 		config_set "$vif" ifname "wl0${_c:+.$_c}"
 		_c=$((${_c:-0} + 1))
 	done
+	config_set "$device" vifs "${adhoc_if:-$sta_if $ap_if}"
 
 	ifdown="down"
 	for vif in 0 1 2 3; do
@@ -90,12 +91,14 @@ enable_broadcom() {
 	config_get country "$device" country
 	config_get maxassoc "$device" maxassoc
 	config_get wds "$device" wds
+	config_get vifs "$device" vifs
+	local vif_pre_up vif_post_up vif_do_up
 
 	_c=0
 	nas="$(which nas)"
 	nas_cmd=
 	if_up=
-	for vif in ${adhoc_if:-$sta_if $ap_if}; do
+	for vif in $vifs; do
 		append vif_pre_up "vif $_c" "$N"
 		append vif_post_up "vif $_c" "$N"
 		
@@ -148,6 +151,9 @@ enable_broadcom() {
 		config_get ssid "$vif" ssid
 		append vif_post_up "vlan_mode 0"
 		append vif_post_up "ssid $ssid" "$N"
+		[ "$wet" = 1 -o "$apsta" = 1 -o "$ap" = 0 -o "$infra" = 0 ] && \
+			append vif_do_up "ssid $ssid" "$N"
+		
 		append vif_post_up "enabled 1" "$N"
 		
 		config_get ifname "$vif" ifname
@@ -188,6 +194,9 @@ up
 $vif_post_up
 EOF
 	eval "$if_up"
+	wlc stdin <<EOF
+$vif_do_up
+EOF
 	eval "$nas_cmd"
 }
 
