@@ -2,7 +2,9 @@ append DRIVERS "broadcom"
 
 scan_broadcom() {
 	local device="$1"
-	local wds=
+	local wds
+	local adhoc sta apmode
+	local adhoc_if sta_if ap_if
 
 	config_get vifs "$device" vifs
 	for vif in $vifs; do
@@ -17,7 +19,7 @@ scan_broadcom() {
 				sta_if="$vif"
 			;;
 			ap)
-				ap=1
+				apmode=1
 				ap_if="${ap_if:+$ap_if }$vif"
 			;;
 			wds)
@@ -46,7 +48,7 @@ scan_broadcom() {
 	mssid=1
 	apsta=0
 	radio=1
-	case "$adhoc:$sta:$ap" in
+	case "$adhoc:$sta:$apmode" in
 		1*)
 			ap=0
 			mssid=0
@@ -167,8 +169,8 @@ enable_broadcom() {
 	wlc stdin <<EOF
 $ifdown
 
-mssid $mssid
 ap $ap
+mssid $mssid
 apsta $apsta
 infra $infra
 ${wet:+wet 1}
