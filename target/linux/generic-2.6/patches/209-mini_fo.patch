@@ -1142,7 +1142,7 @@ diff -urN linux.old/fs/mini_fo/dentry.c linux.dev/fs/mini_fo/dentry.c
 diff -urN linux.old/fs/mini_fo/file.c linux.dev/fs/mini_fo/file.c
 --- linux.old/fs/mini_fo/file.c	1970-01-01 01:00:00.000000000 +0100
 +++ linux.dev/fs/mini_fo/file.c	2006-11-17 03:11:48.000000000 +0100
-@@ -0,0 +1,717 @@
+@@ -0,0 +1,690 @@
 +/*
 + * Copyright (c) 1997-2003 Erez Zadok
 + * Copyright (c) 2001-2003 Stony Brook University
@@ -1791,33 +1791,6 @@ diff -urN linux.old/fs/mini_fo/file.c linux.dev/fs/mini_fo/file.c
 +	return (err1 || err2);
 +}
 +
-+
-+STATIC int
-+mini_fo_lock(file_t *file, int cmd, struct file_lock *fl)
-+{
-+	int err = -EINVAL;
-+	file_t *hidden_file = NULL;
-+
-+	if(!check_mini_fo_file(file))
-+		goto out;
-+
-+	/* which file shall we lock? */
-+	if(ftohf2(file))
-+		hidden_file = ftohf2(file);
-+	else
-+		hidden_file = ftohf(file);
-+
-+	if (hidden_file->f_op->lock) {
-+		fl->fl_file = hidden_file;
-+		err = hidden_file->f_op->lock(hidden_file, F_GETLK, fl);
-+		fl->fl_file = file;
-+	} else {
-+ 		if(posix_test_lock(hidden_file, fl))
-+			err = 0;
-+	}
-+ out:
-+	return err;
-+}
 +
 +
 +struct file_operations mini_fo_dir_fops =
@@ -4110,7 +4083,7 @@ diff -urN linux.old/fs/mini_fo/main.c linux.dev/fs/mini_fo/main.c
 diff -urN linux.old/fs/mini_fo/Makefile linux.dev/fs/mini_fo/Makefile
 --- linux.old/fs/mini_fo/Makefile	1970-01-01 01:00:00.000000000 +0100
 +++ linux.dev/fs/mini_fo/Makefile	2006-11-17 03:11:48.000000000 +0100
-@@ -0,0 +1,22 @@
+@@ -0,0 +1,17 @@
 +#
 +# Makefile for mini_fo 2.4 and 2.6 Linux kernels
 +#
@@ -4124,11 +4097,6 @@ diff -urN linux.old/fs/mini_fo/Makefile linux.dev/fs/mini_fo/Makefile
 +
 +obj-$(CONFIG_MINI_FO) := mini_fo.o
 +mini_fo-objs   := meta.o dentry.o file.o inode.o main.o super.o state.o aux.o
-+
-+O_TARGET := $(obj-$(CONFIG_MINI_FO))
-+obj-y := $(mini_fo-objs)
-+
-+-include $(TOPDIR)/Rules.make
 +
 +# dependencies
 +${mini_fo-objs}: mini_fo.h fist.h
