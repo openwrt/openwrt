@@ -855,3 +855,19 @@ bcm_bprintf(struct bcmstrbuf *b, const char *fmt, ...)
 
 	return r;
 }
+
+uint
+bcm_bitcount(uint8 *bitmap, uint length)
+{   
+	uint bitcount = 0, i;
+	uint8 tmp;
+	for (i = 0; i < length; i++) {
+		tmp = bitmap[i];
+		while (tmp) {
+			bitcount++;
+			tmp &= (tmp - 1);
+		}
+	}
+	return bitcount;
+}
+
