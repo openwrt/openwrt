@@ -22,24 +22,29 @@ PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
 include $(INCLUDE_DIR)/package.mk
+ifeq ($(DUMP),)
+  -include $(LINUX_DIR)/.config
+endif
 
-define Package/kmod-hostap/Default
-  SECTION:=kernel
-  CATEGORY:=Kernel drivers
+define KernelPackage/hostap/Default/2.4
+  VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
+endef
+define KernelPackage/hostap/Default/2.6
+  VERSION:=$(LINUX_VERSION)-$(BOARD)-$(PKG_RELEASE)
+endef
+define KernelPackage/hostap/Default
+  SUBMENU:=Wireless Drivers
   DESCRIPTION:=\
 	Host AP is a driver for 802.11b wireless cards based on Intersil \\\
 	Prism2/2.5/3 chipset. It supports so called Host AP mode that allows the \\\
 	card to act as an IEEE 802.11 access point.
   URL:=http://hostap.epitest.fi/
-  ifeq ($(KERNEL),2.6)
-    VERSION:=$(LINUX_VERSION)-$(BOARD)-$(PKG_RELEASE)
-  else
-    VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
-  endif
+  $(call KernelPackage/hostap/Default/$(KERNEL))
 endef
 
-define Package/kmod-hostap
-  $(call Package/kmod-hostap/Default)
+
+define KernelPackage/hostap
+  $(call KernelPackage/hostap/Default)
   DEPENDS:=@PCI_SUPPORT||PCMCIA_SUPPORT
   TITLE:=Host AP support for Prism2/2.5/3
   DESCRIPTION+=\\\
@@ -48,18 +53,41 @@ define Package/kmod-hostap
 	different hardware models. You will also need to enable support for \\\
 	PLX/PCI/CS version of the driver to actually use the driver.
 endef
+define KernelPackage/hostap/2.4
+  FILES:= \
+	$(PKG_BUILD_DIR)/driver/modules/hostap.$(LINUX_KMOD_SUFFIX) \
+	$(PKG_BUILD_DIR)/driver/modules/hostap_crypt_ccmp.$(LINUX_KMOD_SUFFIX) \
+	$(PKG_BUILD_DIR)/driver/modules/hostap_crypt_tkip.$(LINUX_KMOD_SUFFIX) \
+	$(PKG_BUILD_DIR)/driver/modules/hostap_crypt_wep.$(LINUX_KMOD_SUFFIX)
+endef
+define KernelPackage/hostap/2.6
+  KCONFIG:=$(CONFIG_HOSTAP)
+  FILES:= \
+	$(MODULES_DIR)/kernel/drivers/net/wireless/hostap/hostap.$(LINUX_KMOD_SUFFIX)
+endef
 
-define Package/kmod-hostap-pci
-  $(call Package/kmod-hostap/Default)
+
+define KernelPackage/hostap-pci
+  $(call KernelPackage/hostap/Default)
   DEPENDS:=kmod-hostap
   TITLE:=Host AP driver for PCI adaptors
   DESCRIPTION+=\\\
 	\\\
 	This package contains the Host AP driver for Prism2.5 PCI adaptors.
 endef
+define KernelPackage/hostap-pci/2.4
+  FILES:= \
+	$(PKG_BUILD_DIR)/driver/modules/hostap_pci.$(LINUX_KMOD_SUFFIX)
+endef
+define KernelPackage/hostap-pci/2.6
+  KCONFIG:=$(CONFIG_HOSTAP_PCI)
+  FILES:= \
+	$(MODULES_DIR)/kernel/drivers/net/wireless/hostap/hostap_pci.$(LINUX_KMOD_SUFFIX)
+endef
 
-define Package/kmod-hostap-plx
-  $(call Package/kmod-hostap/Default)
+
+define KernelPackage/hostap-plx
+  $(call KernelPackage/hostap/Default)
   DEPENDS:=kmod-hostap
   TITLE:=Host AP driver for PLX9052 based PCI adaptors
   DESCRIPTION+=\\\
@@ -67,6 +95,16 @@ define Package/kmod-hostap-plx
 	This package contains the Host AP driver for Prism2/2.5/3 in PLX9052 \\\
 	based PCI adaptors.
 endef
+define KernelPackage/hostap-plx/2.4
+  FILES:= \
+	$(PKG_BUILD_DIR)/driver/modules/hostap_plx.$(LINUX_KMOD_SUFFIX)
+endef
+define KernelPackage/hostap-plx/2.6
+  KCONFIG:=$(CONFIG_HOSTAP_PLX)
+  FILES:= \
+	$(MODULES_DIR)/kernel/drivers/net/wireless/hostap/hostap_plx.$(LINUX_KMOD_SUFFIX)
+endef
+
 
 ifeq ($(KERNEL),2.4)
   define Build/Compile
@@ -77,20 +115,9 @@ ifeq ($(KERNEL),2.4)
 		modules
   endef
 
-  define Package/kmod-hostap/install
-	install -m0755 -d $(1)/lib/modules/$(LINUX_VERSION)
-	$(CP) \
-		$(PKG_BUILD_DIR)/driver/modules/hostap.$(LINUX_KMOD_SUFFIX) \
-		$(PKG_BUILD_DIR)/driver/modules/hostap_crypt_ccmp.$(LINUX_KMOD_SUFFIX) \
-		$(PKG_BUILD_DIR)/driver/modules/hostap_crypt_tkip.$(LINUX_KMOD_SUFFIX) \
-		$(PKG_BUILD_DIR)/driver/modules/hostap_crypt_wep.$(LINUX_KMOD_SUFFIX) \
-		$(1)/lib/modules/$(LINUX_VERSION)/
-  endef
-
   define Package/kmod-hostap-pci/install
 	install -m0755 -d $(1)/lib/modules/$(LINUX_VERSION)
 	$(CP) \
-		$(PKG_BUILD_DIR)/driver/modules/hostap_pci.$(LINUX_KMOD_SUFFIX) \
 		$(1)/lib/modules/$(LINUX_VERSION)/
   endef
 
@@ -100,40 +127,19 @@ ifeq ($(KERNEL),2.4)
 		$(PKG_BUILD_DIR)/driver/modules/hostap_plx.$(LINUX_KMOD_SUFFIX) \
 		$(1)/lib/modules/$(LINUX_VERSION)/
   endef
-endif
-
-ifeq ($(KERNEL),2.6)
-  define Build/Compile
+else
+  define Build/Prepare
+	mkdir -p $(PKG_BUILD_DIR)
   endef
   
-ifeq ($(CONFIG_HOSTAP),m)
-  define Package/kmod-hostap/install
-	install -m0755 -d $(1)/lib/modules/$(LINUX_VERSION)
-	$(CP) \
-		$(MODULES_DIR)/kernel/drivers/net/wireless/hostap/hostap.$(LINUX_KMOD_SUFFIX) \
-		$(1)/lib/modules/$(LINUX_VERSION)/
+  define Build/Configure
+  endef
+  
+  define Build/Compile
   endef
 endif
 
-ifeq ($(CONFIG_HOSTAP_PCI),m)
-  define Package/kmod-hostap-pci/install
-	install -m0755 -d $(1)/lib/modules/$(LINUX_VERSION)
-	$(CP) \
-		$(MODULES_DIR)/kernel/drivers/net/wireless/hostap/hostap_pci.$(LINUX_KMOD_SUFFIX) \
-		$(1)/lib/modules/$(LINUX_VERSION)/
-  endef
-endif
 
-ifeq ($(CONFIG_HOSTAP_PLX),m)
-  define Package/kmod-hostap-plx/install
-	install -m0755 -d $(1)/lib/modules/$(LINUX_VERSION)
-	$(CP) \
-		$(MODULES_DIR)/kernel/drivers/net/wireless/hostap/hostap_plx.$(LINUX_KMOD_SUFFIX) \
-		$(1)/lib/modules/$(LINUX_VERSION)/
-  endef
-endif
-endif
-
-$(eval $(call BuildPackage,kmod-hostap))
-$(eval $(call BuildPackage,kmod-hostap-pci))
-$(eval $(call BuildPackage,kmod-hostap-plx))
+$(eval $(call KernelPackage,hostap))
+$(eval $(call KernelPackage,hostap-pci))
+$(eval $(call KernelPackage,hostap-plx))
