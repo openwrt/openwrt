@@ -30,7 +30,7 @@ do_get() {
 	local CONFIG="$2"
 	local OPTION="$3"
 
-	uci_load "$PACAKGE"
+	uci_load "$PACKAGE"
 	config_get "$CONFIG" "$OPTION"
 }
 
