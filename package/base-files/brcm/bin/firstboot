@@ -1,5 +1,9 @@
 #!/bin/sh
-# Copyright (C) 2006 OpenWrt.org
+# $Id$
+. /etc/functions.sh
+
+partname="OpenWrt"
+mtdpart="$(find_mtd_part $partname)"
 
 rom=$(awk '/squashfs/ {print $2}' /proc/mounts)
 jffs=$(awk '/jffs2/ {print $2}' /proc/mounts)
@@ -10,7 +14,7 @@ dupe() { # <new_root> <old_root>
 	{
 		cd $2 
 		find . -xdev -type d
-		echo "./dev ./jffs ./mnt ./proc ./tmp ./sys"
+		echo "./dev ./jffs ./mnt ./proc ./tmp"
 		# xdev skips mounted directories
 		cd $1 
 	} | xargs mkdir -p
@@ -21,7 +25,6 @@ dupe() { # <new_root> <old_root>
 		case "$file" in
 		./rom/note) ;; #nothing
 		./etc/config*|\
-		./etc/resolv.conf|\
 		./usr/lib/ipkg/info/*) cp -af $2/$file $file;;
 		*) ln -sf /rom/${file#./*} $file;;
 		esac
@@ -37,24 +40,37 @@ pivot() { # <new_root> <old_root>
 	pivot_root $1 $1$2 && {
 		mount -o move $2/dev /dev
 		mount -o move $2/tmp /tmp
-		mount -o move $2/sys /sys
+		mount -o move $2/jffs /jffs 2>&-
 		return 0
 	}
 }
 
-mountdp() { # <device> <mount_point> <ignored> <fs>
-        dev=$1; mnt=$2; shift 2; opt=$*
-	mount $dev $mnt $opt
-	dupe $mnt $rom
-	pivot $mnt /rom
+fopivot() { # <rw_root> <ro_root> <dupe?>
+	root=$1
+	{
+		mount -t mini_fo -o base=/,sto=$1 $1 /mnt 2>&- && root=/mnt
+	} || {
+		[ "$3" = "1" ] && {
+		mount | grep "on $1 type" 2>&- 1>&- || mount -o bind $1 $1
+		dupe $1 $rom
+		}
+	}
+	pivot $root $2
 }
 
 ramoverlay() {
 	mkdir -p /tmp/root
-	mountdp /tmp/root /mnt -o bind
+	fopivot /tmp/root /rom 1
 }
 
+# invoked as an executable
 [ "${0##*/}" = "firstboot" ] && {
+
+	[ -z "$mtdpart" ] && {
+		echo "MTD partition not found."
+		exit 1
+	}
+
 	[ -z "$rom" ] && {
 		echo "You do not have a squashfs partition; aborting"
 		echo "(firstboot cannot be run on jffs2 based firmwares)"
@@ -62,17 +78,31 @@ ramoverlay() {
 	}
 
 	[ "$1" = "switch2jffs" ] && {
-		mtd erase OpenWrt
-		mount -o remount,ro none / # try to avoid fs changing while copying
-		mount -o bind / /mnt
-		mount /dev/mtdblock/4 /rom/jffs -t jffs2
+		mtd erase "$partname"
+
+		# try to avoid fs changing while copying
+		mount -o remount,ro none / 2>&-
+
+		# copy ramoverlay to jffs2
+		mount "$mtdpart" /rom/jffs -t jffs2
 		echo -n "copying files ... "
-		cp -a /mnt/* /rom/jffs
-		umount /mnt
+		cp -a /tmp/root/* /rom/jffs 2>&-
 		echo "done"
+
+		# switch back to squashfs (temporarily)
+		# and park the ramdisk ontop of /tmp/root
 		pivot /rom /mnt
 		mount -o move /mnt /tmp/root
-		pivot /jffs /rom
+
+		# /jffs is the overlay
+		# /rom is the readonly
+		fopivot /jffs /rom
+
+		# try to get rid of /tmp/root
+		# this will almost always fail
+		umount /tmp/root 2>&-
+
+		# fs is clean
 		jffs2root --clean
 		exit 0
 	}
@@ -81,10 +111,18 @@ ramoverlay() {
 	[ \! -z "$jffs" ] && {
 		echo "firstboot has already been run"
 		echo "jffs2 partition is mounted, only resetting files"
-		dupe $jffs $rom
-		exit 0
+		grep mini_fo /proc/filesystems >&-
+		[ $? != 0 ] && {
+			dupe $jffs $rom
+			exit 0
+		} || { 
+			rm -rf $jffs/* 2>&-
+			mount -o remount $jffs / 2>&-
+			exit 0
+		}
 	}
 
-	mtd erase OpenWrt
-	mountdp /dev/mtdblock/4 /jffs -t jffs2
+	mtd erase "$partname"
+	mount "$mtdpart" /jffs -t jffs2
+	fopivot /jffs /rom 1
 }
