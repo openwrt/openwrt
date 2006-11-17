@@ -159,13 +159,18 @@ osl_pktget(osl_t *osh, uint len, bool send)
 	return ((void*) skb);
 }
 
+typedef void (*pktfree_cb_fn_t)(void *ctx, void *pkt, uint16 status);
 /* Free the driver packet. Free the tag if present */
 void
-osl_pktfree(osl_t *osh, void *p)
+osl_pktfree(osl_t *osh, void *p, bool send)
 {
 	struct sk_buff *skb, *nskb;
+	pktfree_cb_fn_t tx_fn = osh->pub.tx_fn;
 
 	skb = (struct sk_buff*) p;
+	
+	if (send && tx_fn)
+		tx_fn(osh->pub.tx_ctx, p, 0);
 
 	/* perversion: we use skb->next to chain multi-skb packets */
 	while (skb) {

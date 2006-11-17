@@ -92,7 +92,7 @@ osl_dma_free_consistent(osl_t *osh, void *va, uint size, ulong pa)
 
 /* packet primitives */
 #define	PKTGET(osh, len, send)		osl_pktget((osh), (len), (send))
-#define	PKTFREE(osh, skb, send)		osl_pktfree((osh), (skb))
+#define	PKTFREE(osh, skb, send)		osl_pktfree((osh), (skb), (send))
 #define	PKTDATA(osh, skb)		(((struct sk_buff*)(skb))->data)
 #define	PKTLEN(osh, skb)		(((struct sk_buff*)(skb))->len)
 #define PKTHEADROOM(osh, skb)		(PKTDATA(osh, skb)-(((struct sk_buff*)(skb))->head))
@@ -112,7 +112,7 @@ osl_dma_free_consistent(osl_t *osh, void *va, uint size, ulong pa)
  * Also, a packettag is zeroed out
  */
 static INLINE void *
-osl_pkt_frmnative(struct osl_pubinfo *osh, struct sk_buff *skb)
+osl_pkt_frmnative(osl_pubinfo_t*osh, struct sk_buff *skb)
 {
 	struct sk_buff *nskb;
 
@@ -126,7 +126,7 @@ osl_pkt_frmnative(struct osl_pubinfo *osh, struct sk_buff *skb)
 
 	return (void *)skb;
 }
-#define PKTFRMNATIVE(osh, skb)	osl_pkt_frmnative(((struct osl_pubinfo *)osh), \
+#define PKTFRMNATIVE(osh, skb)	osl_pkt_frmnative(((osl_pubinfo_t*)osh), \
 							(struct sk_buff*)(skb))
 
 /* Convert a driver packet to native(OS) packet
@@ -135,7 +135,7 @@ osl_pkt_frmnative(struct osl_pubinfo *osh, struct sk_buff *skb)
  * In our case, that means it should be 0
  */
 static INLINE struct sk_buff *
-osl_pkt_tonative(struct osl_pubinfo *osh, void *pkt)
+osl_pkt_tonative(osl_pubinfo_t*osh, void *pkt)
 {
 	struct sk_buff *nskb;
 
@@ -149,7 +149,7 @@ osl_pkt_tonative(struct osl_pubinfo *osh, void *pkt)
 
 	return (struct sk_buff *)pkt;
 }
-#define PKTTONATIVE(osh, pkt)		osl_pkt_tonative((struct osl_pubinfo *)(osh), (pkt))
+#define PKTTONATIVE(osh, pkt)		osl_pkt_tonative((osl_pubinfo_t*)(osh), (pkt))
 
 #define	PKTLINK(skb)			(((struct sk_buff*)(skb))->prev)
 #define	PKTSETLINK(skb, x)		(((struct sk_buff*)(skb))->prev = (struct sk_buff*)(x))
@@ -158,7 +158,7 @@ osl_pkt_tonative(struct osl_pubinfo *osh, void *pkt)
 #define PKTSHARED(skb)                  (((struct sk_buff*)(skb))->cloned)
 
 extern void *osl_pktget(osl_t *osh, uint len, bool send);
-extern void osl_pktfree(osl_t *osh, void *skb);
+extern void osl_pktfree(osl_t *osh, void *skb, bool send);
 extern void *osl_pktdup(osl_t *osh, void *skb);
 extern uint osl_pktalloced(osl_t *osh);
 
