@@ -167,7 +167,7 @@ enable_broadcom() {
 		config_get ssid "$vif" ssid
 		append vif_post_up "vlan_mode 0"
 		append vif_post_up "ssid $ssid" "$N"
-		[ "$wet" = 1 -o "$apsta" = 1 -o "$ap" = 0 -o "$infra" = 0 ] && \
+		[ "$vif" = "$sta_if" -o "$vif" = "$adhoc_if" ] && \
 			append vif_do_up "ssid $ssid" "$N"
 		
 		append vif_post_up "enabled 1" "$N"
