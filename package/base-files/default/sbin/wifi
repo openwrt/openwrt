@@ -31,7 +31,7 @@ bridge_interface() {(
 	scan_interfaces
 
 	config_get iftype "$cfg" type
-	[ "$iftype" = bridge ] && config_get "$iftype" ifname
+	[ "$iftype" = bridge ] && config_get "$cfg" ifname
 )}
 
 
