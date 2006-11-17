@@ -99,10 +99,11 @@ enable_broadcom() {
 	nas_cmd=
 	if_up=
 	for vif in $vifs; do
+		config_get mode "$vif" mode
 		append vif_pre_up "vif $_c" "$N"
 		append vif_post_up "vif $_c" "$N"
 		
-		[ "$vif" = "$sta_if" ] || {
+		[ "$mode" = "sta" ] || {
 			config_get_bool hidden "$vif" hidden 1
 			append vif_pre_up "closed $hidden" "$N"
 			config_get_bool isolate "$vif" isolate
@@ -167,13 +168,15 @@ enable_broadcom() {
 		config_get ssid "$vif" ssid
 		append vif_post_up "vlan_mode 0"
 		append vif_post_up "ssid $ssid" "$N"
-		[ "$vif" = "$sta_if" -o "$vif" = "$adhoc_if" ] && \
-			append vif_do_up "ssid $ssid" "$N"
+		case "$mode" in
+			sta|adhoc) append vif_do_up "ssid $ssid" "$N";;
+		esac
 		
 		append vif_post_up "enabled 1" "$N"
 		
 		config_get ifname "$vif" ifname
 		append if_up "ifconfig $ifname up" ";$N"
+		local net_cfg bridge
 		net_cfg="$(find_net_config "$vif")"
 		[ -z "$net_cfg" ] || {
 			bridge="$(bridge_interface "$net_cfg")"
