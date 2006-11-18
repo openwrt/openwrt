@@ -6,6 +6,8 @@
 #
 KERNEL_BUILD:=1
 
+include $(INCLUDE_DIR)/prereq.mk
+
 # For target profile selection - the default set
 DEFAULT_PACKAGES:=base-files libgcc uclibc bridge busybox dnsmasq dropbear iptables mtd ppp ppp-mod-pppoe mtd
 

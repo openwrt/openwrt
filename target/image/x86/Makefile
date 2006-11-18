@@ -54,5 +54,8 @@ define Image/Build
 	cp $(LINUX_DIR)/arch/i386/boot/bzImage $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-vmlinuz
 endef
 
-
 $(eval $(call BuildImage))
+
+$(eval $(call RequireCommand,fdisk, \
+	Please install fdisk \
+))
