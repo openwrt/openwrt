@@ -24,6 +24,7 @@ define Package/arptables
   SECTION:=net
   CATEGORY:=Network
   TITLE:=ARP firewalling software
+  DEPENDS:=+kmod-arptables
   URL:=http://ebtables.sourceforge.net
 endef
 
