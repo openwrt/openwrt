@@ -21,7 +21,7 @@ define KernelPackage/ieee80211
   DEPENDS:=@LINUX_2_6 kmod-crypto
   KCONFIG:=$(CONFIG_IEEE80211)
   FILES:= \
-  	$(MODULES_DIR)/kernel/net/ieee80211/*.$(LINUX_KMOD_SUFFIX) \
+  	$(MODULES_DIR)/kernel/net/ieee80211/*.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,10, \
 	ieee80211_crypt \
 	ieee80211 \
