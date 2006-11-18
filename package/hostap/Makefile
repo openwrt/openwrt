@@ -45,7 +45,7 @@ endef
 
 define KernelPackage/hostap
   $(call KernelPackage/hostap/Default)
-  DEPENDS:=@PCI_SUPPORT||PCMCIA_SUPPORT
+  DEPENDS:=@PCI_SUPPORT||PCMCIA_SUPPORT +kmod-ieee80211
   TITLE:=Host AP support for Prism2/2.5/3
   DESCRIPTION+=\\\
 	\\\
