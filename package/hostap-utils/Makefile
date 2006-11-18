@@ -21,8 +21,8 @@ PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 include $(INCLUDE_DIR)/package.mk
 
 define Package/hostap-utils
-  SECTION:=utils
-  CATEGORY:=Kernel drivers
+  SECTION:=net
+  CATEGORY:=Network
   DEPENDS:=kmod-hostap
   TITLE:=Host AP driver utility programs
   URL:=http://hostap.epitest.fi/
