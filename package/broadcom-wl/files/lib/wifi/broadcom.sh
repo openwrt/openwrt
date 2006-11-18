@@ -92,12 +92,24 @@ enable_broadcom() {
 	config_get maxassoc "$device" maxassoc
 	config_get wds "$device" wds
 	config_get vifs "$device" vifs
+	config_get distance "$device" distance
+	config_get slottime "$device" slottime
 	local vif_pre_up vif_post_up vif_do_up
 
 	_c=0
 	nas="$(which nas)"
 	nas_cmd=
 	if_up=
+
+	[ -z "$slottime" ] && {
+		[ -n "$distance" ] && {
+			# slottime = 9 + (distance / 150) + (distance % 150 ? 1 : 0)
+			slottime="$((9 + ($distance / 150) + 1 - (150 - ($distance % 150)) / 150 ))"
+		}
+	} || {
+		slottime="${slottime:--1}"
+	}
+
 	for vif in $vifs; do
 		config_get mode "$vif" mode
 		append vif_pre_up "vif $_c" "$N"
@@ -207,6 +219,7 @@ wds ${wds:-none}
 channel ${channel:-0}
 country ${country:-IL0}
 maxassoc ${maxassoc:-128}
+slottime ${slottime:--1}
 
 $vif_pre_up
 up
