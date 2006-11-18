@@ -10,7 +10,7 @@ start_pppd() {
 
 	# make sure only one pppd process is started
 	lock "/var/lock/ppp-${cfg}"
-	local pid="$(cat /var/run/ppp-${cfg}.pid 2>/dev/null)"
+	local pid="$(head -n1 /var/run/ppp-${cfg}.pid 2>/dev/null)"
 	[ -d "/proc/$pid" ] && grep pppd "/proc/$pid/cmdline" 2>/dev/null >/dev/null && {
 		lock -u "/var/lock/ppp-${cfg}"
 		return 0
