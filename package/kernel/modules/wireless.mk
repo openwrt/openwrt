@@ -20,21 +20,31 @@ define KernelPackage/ieee80211
 	- ieee80211_crytp_ccmp \\\
 	- ieee80211softmac
   DEPENDS:=@LINUX_2_6
-  KCONFIG:=$(CONFIG_IEEE80211_SOFTMAC)
+  KCONFIG:=$(CONFIG_IEEE80211)
   FILES:= \
   	$(MODULES_DIR)/kernel/net/ieee80211/*.$(LINUX_KMOD_SUFFIX) \
-	$(MODULES_DIR)/kernel/net/ieee80211/softmac/*.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,10, \
 	ieee80211_crypt \
 	ieee80211 \
 	ieee80211_crypt_wep \
 	ieee80211_crypt_tkip \
 	ieee80211_crypt_ccmp \
-	ieee80211softmac \
   )
   SUBMENU:=$(WIMENU)
 endef
 $(eval $(call KernelPackage,ieee80211))
+
+
+define KernelPackage/ieee80211-softmac
+  TITLE:=ieee80211 SoftMAC support
+  DEPENDS:=kmod-ieee80211
+  KCONFIG:=$(CONFIG_IEEE80211_SOFTMAC)
+  FILES:= \
+	$(MODULES_DIR)/kernel/net/ieee80211/softmac/*.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,20,ieee80211softmac)
+  SUBMENU:=$(WIMENU)
+endef
+$(eval $(call KernelPackage,ieee80211-softmac))
 
 
 define KernelPackage/net-bcm43xx
@@ -43,7 +53,7 @@ define KernelPackage/net-bcm43xx
 	\\\
 	Includes: \\\
 	- bcm43xx
-  DEPENDS:=kmod-ieee80211
+  DEPENDS:=kmod-ieee80211-softmac
   KCONFIG:=$(CONFIG_BCM43XX)
   FILES:=$(MODULES_DIR)/kernel/drivers/net/wireless/bcm43xx/bcm43xx.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,bcm43xx)
