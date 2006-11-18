@@ -15,6 +15,9 @@ PKG_RELEASE:=$(LINUX_RELEASE)
 
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/packages
 
+# build all in-tree kmod-* packages by default
+KMOD_DEFAULT:=m
+
 include $(INCLUDE_DIR)/package.mk
 ifeq ($(DUMP),)
   -include $(LINUX_DIR)/.config

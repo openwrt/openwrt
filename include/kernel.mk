@@ -84,7 +84,7 @@ define KernelPackage
     TITLE:=$(TITLE)
     SECTION:=kernel
     CATEGORY:=Kernel modules
-    DEFAULT:=m
+    DEFAULT:=$(KMOD_DEFAULT)
     DESCRIPTION:=$(DESCRIPTION)
     EXTRA_DEPENDS:='kernel (=$(LINUX_VERSION)-$(BOARD)-$(LINUX_RELEASE))'
     $(call KernelPackage/$(1))
