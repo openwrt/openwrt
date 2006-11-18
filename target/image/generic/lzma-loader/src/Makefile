@@ -44,6 +44,7 @@ kernel.o: vmlinux.lzma lzma.lds
 	$(LD) -r -b binary --oformat $(O_FORMAT) -o $@ $<
 
 ifeq ($(IMAGE_COPY),1)
+LOADER_ENTRY ?= $(KERNEL_ENTRY)
 lzma.o: decompress.o LzmaDecode.o kernel.o
 	sed -e 's,@LOADADDR@,$(LOADADDR),g' -e 's,@ENTRY@,entry,g' lzma.lds.in >lzma-stage2.lds
 	$(LD) -static --no-warn-mismatch -e entry -Tlzma-stage2.lds -o temp-$@ $^
@@ -52,7 +53,7 @@ lzma.o: decompress.o LzmaDecode.o kernel.o
 	$(LD) -no-warn-mismatch -T lzma-data.lds -r -o $@ -b binary lzma.tmp --oformat $(O_FORMAT)
 	
 lzma.elf: start.o lzma.o
-	sed -e 's,@LOADADDR@,$(KERNEL_ENTRY),g' lzma-copy.lds.in >lzma-copy.lds
+	sed -e 's,@LOADADDR@,$(LOADER_ENTRY),g' lzma-copy.lds.in >lzma-copy.lds
 	$(LD) -s -Tlzma-copy.lds -o $@ $^
 else
 lzma.elf: start.o decompress.o LzmaDecode.o kernel.o
