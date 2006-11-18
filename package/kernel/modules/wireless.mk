@@ -143,7 +143,7 @@ define KernelPackage/net-prism54
   KCONFIG:=$(CONFIG_PRISM54)
   SUBMENU:=$(WIMENU)
   FILES:=$(MODULES_DIR)/kernel/drivers/net/wireless/prism54/prism54.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,prism54)
+  AUTOLOAD:=$(call AutoLoad,60,prism54)
 endef
 $(eval $(call KernelPackage,net-prism54))
 
