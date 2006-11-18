@@ -11,7 +11,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME := loader
 PKG_VERSION := 0.05
 
-PKG_BUILD_DIR := $(KDIR)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_BUILD_DIR := $(KDIR)/$(PKG_NAME)-$(PKG_VERSION)$(LOADER_TYPE)
 
 $(PKG_BUILD_DIR)/.prepared:
 	mkdir $(PKG_BUILD_DIR)
@@ -30,12 +30,12 @@ $(PKG_BUILD_DIR)/lzma.elf: $(PKG_BUILD_DIR)/.prepared $(PKG_BUILD_DIR)/vmlinux.l
 $(PKG_BUILD_DIR)/vmlinux.lzma: $(KDIR)/vmlinux.lzma
 	$(CP) $< $@
 
-$(KDIR)/loader.elf: $(PKG_BUILD_DIR)/lzma.elf
+$(KDIR)/loader$(LOADER_TYPE).elf: $(PKG_BUILD_DIR)/lzma.elf
 	$(CP) $< $@
 
 download: 
 prepare: $(PKG_BUILD_DIR)/.prepared
-compile: $(KDIR)/loader.elf
+compile: $(KDIR)/loader$(LOADER_TYPE).elf
 install:
 
 clean:
