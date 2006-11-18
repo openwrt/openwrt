@@ -25,6 +25,10 @@ compile: linux-compile image_compile
 install: image_clean $(patsubst %,%-install,$(TARGETS-y)) image_install
 clean: $(patsubst %,%-clean,$(TARGETS-y)) image_clean
 
+prereq: FORCE
+	$(MAKE) -C linux/$(BOARD)-$(KERNEL) prereq
+	$(MAKE) -C image/$(BOARD) prereq
+
 image_clean: FORCE
 	$(MAKE) -C image/$(BOARD) clean
 	rm -f $(BIN_DIR)/openwrt-*

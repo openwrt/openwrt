@@ -5,6 +5,7 @@
 # See /LICENSE for more information.
 #
 
+include $(INCLUDE_DIR)/prereq.mk
 include $(INCLUDE_DIR)/kernel.mk
 KDIR:=$(BUILD_DIR)/linux-$(KERNEL)-$(BOARD)
 

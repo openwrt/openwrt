@@ -49,7 +49,7 @@ endif
 
 ifeq ($(FORCE),)
   .config scripts/config/conf scripts/config/mconf: tmp/.prereq-build
-  world: tmp/.prereq-packages
+  world: tmp/.prereq-packages tmp/.prereq-target
 endif
 
 tmp/.pkginfo:
@@ -133,8 +133,16 @@ tmp/.prereq-packages: include/prereq.mk tmp/.pkginfo .config
 		false; \
 	}
 	@touch $@
-	
-prereq: tmp/.prereq-build tmp/.prereq-packages FORCE
+
+tmp/.prereq-target: include/prereq.mk tmp/.targetinfo .config
+	@mkdir -p tmp
+	@$(NO_TRACE_MAKE) -s -C target prereq 2>/dev/null || { \
+		echo "Prerequisite check failed. Use FORCE=1 to override."; \
+		false; \
+	}
+	@touch $@
+
+prereq: tmp/.prereq-build tmp/.prereq-packages tmp/.prereq-target FORCE
 
 download: .config FORCE
 	$(MAKE) tools/download
