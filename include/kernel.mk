@@ -75,6 +75,7 @@ endef
 
 define KernelPackage
   NAME:=$(1)
+  $(eval $(call Package/Default))
   $(eval $(call KernelPackage/Defaults))
   $(eval $(call KernelPackage/$(1)))
   $(eval $(call KernelPackage/$(1)/$(KERNEL)))
