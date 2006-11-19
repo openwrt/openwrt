@@ -421,6 +421,13 @@ static struct platform_t __init *platform_detect(void)
 		if (!strcmp(boardnum, "10496"))
 			return &platforms[USR5461];
 	} else { /* PMON based - old stuff */
+		if ((simple_strtoul(getvar("GemtekPmonVer"), NULL, 0) == 9) &&
+			(simple_strtoul(getvar("et0phyaddr"), NULL, 0) == 30)) {
+			if (!strncmp(getvar("ModelId"),"WE800G", 6))
+				return &platforms[WE800G];
+			else
+				return &platforms[WR850GV1];
+		}
 		if (!strncmp(boardtype, "bcm94710dev", 11)) {
 			if (!strcmp(boardnum, "42"))
 				return &platforms[WRT54GV1];
@@ -442,14 +449,6 @@ static struct platform_t __init *platform_detect(void)
 		/* unknown asus stuff, probably bcm4702 */
 		if (!strncmp(boardnum, "asusX", 5))
 			return &platforms[ASUS_4702];
-
-		if ((simple_strtoul(getvar("GemtekPmonVer"), NULL, 0) == 9) &&
-			(simple_strtoul(getvar("et0phyaddr"), NULL, 0) == 30)) {
-			if (!strncmp(getvar("ModelId"),"WE800G", 6))
-				return &platforms[WE800G];
-			else
-				return &platforms[WR850GV1];
-		}
 	}
 
 	if ((buf = (nvram_get("melco_id") ?: nvram_get("buffalo_id")))) {
