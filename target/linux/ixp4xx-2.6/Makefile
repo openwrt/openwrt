@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=arm
 BOARD:=ixp4xx
 BOARDNAME:=Intel XScale IXP4xx
-FEATURES:=pci usb jffs2
+FEATURES:=jffs2
 
 define Target/Description
 endef
