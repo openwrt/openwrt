@@ -114,7 +114,7 @@ define KernelPackage/ipt-nathelper-extra
   FILES:=$(foreach mod,$(IPT_NAT_EXTRA-m),$(MODULES_DIR)/kernel/net/$(mod).$(LINUX_KMOD_SUFFIX))
   SUBMENU:=$(NFMENU)
 endef
-$(eval $(call KernelPackage,ipt-nathelper))
+$(eval $(call KernelPackage,ipt-nathelper-extra))
 
 define KernelPackage/ipt-imq
   TITLE:=Intermediate Queueing support
