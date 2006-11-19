@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=i386
 BOARD:=rdc
 BOARDNAME:=RDC x86
-FEATURES:=broken pci jffs2
+FEATURES:=broken jffs2
 
 define Target/Description
         Build firmware images for RDC3211 based routers

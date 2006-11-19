@@ -8,6 +8,23 @@ KERNEL_BUILD:=1
 
 include $(INCLUDE_DIR)/prereq.mk
 
+-include ./config
+ifneq ($(CONFIG_ATM),)
+  FEATURES += atm
+endif
+ifneq ($(CONFIG_PCI),)
+  FEATURES += pci
+endif
+ifneq ($(CONFIG_USB),)
+  FEATURES += usb
+endif
+ifneq ($(CONFIG_PCMCIA),)
+  FEATURES += pcmcia
+endif
+
+# remove duplicates
+FEATURES:=$(sort $(FEATURES))
+
 # For target profile selection - the default set
 DEFAULT_PACKAGES:=base-files libgcc uclibc bridge busybox dnsmasq dropbear iptables mtd ppp ppp-mod-pppoe mtd
 
