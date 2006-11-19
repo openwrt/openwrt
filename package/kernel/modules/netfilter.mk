@@ -81,6 +81,23 @@ endef
 $(eval $(call KernelPackage,ipt-nat))
 
 define KernelPackage/ipt-nathelper
+  TITLE:=Default Conntrack and NAT helpers
+  DEFAULT:=y
+  DESCRIPTION:=\
+	Default Netfilter (IPv4) Conntrack and NAT helpers \\\
+	\\\
+	Includes: \\\
+	- ip_conntrack_ftp \\\
+	- ip_nat_ftp \\\
+	- ip_conntrack_irc \\\
+	- ip_nat_irc \\\
+	- ip_conntrack_tftp
+  FILES:=$(foreach mod,$(IPT_NAT_DEFAULT-m),$(MODULES_DIR)/kernel/net/$(mod).$(LINUX_KMOD_SUFFIX))
+  SUBMENU:=$(NFMENU)
+endef
+$(eval $(call KernelPackage,ipt-nathelper))
+
+define KernelPackage/ipt-nathelper-extra
   TITLE:=Extra Conntrack and NAT helpers
   DESCRIPTION:=\
 	Extra Netfilter (IPv4) Conntrack and NAT helpers \\\
@@ -93,8 +110,7 @@ define KernelPackage/ipt-nathelper
 	- ip_nat_pptp \\\
 	- ip_conntrack_sip \\\
 	- ip_nat_sip \\\
-	- ip_nat_snmp_basic \\\
-	- ip_conntrack_tftp
+	- ip_nat_snmp_basic
   FILES:=$(foreach mod,$(IPT_NAT_EXTRA-m),$(MODULES_DIR)/kernel/net/$(mod).$(LINUX_KMOD_SUFFIX))
   SUBMENU:=$(NFMENU)
 endef

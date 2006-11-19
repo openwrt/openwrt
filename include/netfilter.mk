@@ -85,6 +85,13 @@ IPT_NAT-$(CONFIG_IP_NF_TARGET_MIRROR) += $(P_V4)ipt_MIRROR
 IPT_NAT-$(CONFIG_IP_NF_TARGET_REDIRECT) += $(P_V4)ipt_REDIRECT
 IPT_NAT-$(CONFIG_IP_NF_TARGET_NETMAP) += $(P_V4)ipt_NETMAP
 
+IPT_NAT_DEFAULT-m :=
+IPT_NAT_DEFAULT-$(CONFIG_IP_NF_FTP) += $(P_V4)ip_conntrack_ftp
+IPT_NAT_DEFAULT-$(CONFIG_IP_NF_NAT_FTP) += $(P_V4)ip_nat_ftp
+IPT_NAT_DEFAULT-$(CONFIG_IP_NF_IRC) += $(P_V4)ip_conntrack_irc
+IPT_NAT_DEFAULT-$(CONFIG_IP_NF_NAT_IRC) += $(P_V4)ip_nat_irc
+IPT_NAT_DEFAULT-$(CONFIG_IP_NF_TFTP) += $(P_V4)ip_conntrack_tftp
+
 IPT_NAT_EXTRA-m := 
 IPT_NAT_EXTRA-$(CONFIG_IP_NF_AMANDA) += $(P_V4)ip_conntrack_amanda
 IPT_NAT_EXTRA-$(CONFIG_IP_NF_CT_PROTO_GRE) += $(P_V4)ip_conntrack_proto_gre
@@ -102,7 +109,6 @@ IPT_NAT_EXTRA-$(CONFIG_IP_NF_NAT_SIP) += $(P_V4)ip_nat_sip
 IPT_NAT_EXTRA-$(CONFIG_IP_NF_NAT_SNMP_BASIC) += $(P_V4)ip_nat_snmp_basic
 IPT_NAT_EXTRA-$(CONFIG_IP_NF_SIP) += $(P_V4)ip_conntrack_sip
 IPT_NAT_EXTRA-$(CONFIG_IP_NF_NAT_SIP) += $(P_V4)ip_nat_sip
-IPT_NAT_EXTRA-$(CONFIG_IP_NF_TFTP) += $(P_V4)ip_conntrack_tftp
 
 IPT_QUEUE-m :=
 IPT_QUEUE-$(CONFIG_IP_NF_QUEUE) += $(P_V4)ip_queue
