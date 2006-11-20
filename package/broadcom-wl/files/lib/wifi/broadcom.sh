@@ -145,7 +145,7 @@ enable_broadcom() {
 						done
 					;;
 					"");;
-					*) append vif_pre_up "wepkey 1,$key" "$N";;
+					*) append vif_pre_up "wepkey =1,$key" "$N";;
 				esac
 			;;
 			*psk*|*PSK*)
