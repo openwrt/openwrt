@@ -85,10 +85,6 @@ $(eval $(call RequireCommand,flex, \
 	Please install flex. \
 ))
 
-$(eval $(call RequireCommand,python, \
-	Please install python. \
-))
-
 $(eval $(call RequireCommand,unzip, \
 	Please install unzip. \
 ))
