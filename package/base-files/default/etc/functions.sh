@@ -118,3 +118,27 @@ find_mtd_part() {
 	echo "${PART:+/dev/mtdblock/$PART}"
 }
 
+strtok() { # <string> <variable> [<separator>] ...
+	local right
+	local left="$1"
+	local count=0
+
+	shift
+
+	while [ $# -gt 1 ]; do
+		right="${left%%$2*}"
+
+		[ "$right" = "$left" ] && break
+
+		left="${left#$right$2}"
+
+		export $1="$right"; count=$((count+1))
+		shift 2
+	done
+
+	if [ $# -gt 0 -a "$left" ]; then
+		export $1="$left"; count=$((count+1))
+	fi
+
+	return $count
+}
