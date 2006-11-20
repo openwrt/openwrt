@@ -119,7 +119,7 @@ enable_broadcom() {
 			config_get_bool hidden "$vif" hidden 1
 			append vif_pre_up "closed $hidden" "$N"
 			config_get_bool isolate "$vif" isolate
-			append vif_pre_up "ap_isolate $hidden" "$N"
+			append vif_pre_up "ap_isolate $isolate" "$N"
 		}
 
 		wsec_r=0
