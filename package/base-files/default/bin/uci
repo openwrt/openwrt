@@ -21,33 +21,44 @@
 . /etc/functions.sh
 include /lib/config
 
+SEP="[^0-9A-Za-z_]"
+
 do_get() {
-	[ $# -ne 3 ] && {
+	local PACKAGE
+	local CONFIG
+	local OPTION
+	local DUMMY
+
+	strtok "$*" PACKAGE . CONFIG . OPTION $SEP DUMMY
+
+	[ $? -ne 3 ] && {
 		uci_usage get
 		exit 1
 	}
-	local PACKAGE="$1"
-	local CONFIG="$2"
-	local OPTION="$3"
 
 	uci_load "$PACKAGE"
 	config_get "$CONFIG" "$OPTION"
 }
 
 do_set() {
-	[ $# -ne 4 ] && {
+	local PACKAGE
+	local CONFIG
+	local OPTION
+	local VALUE
+
+	strtok "$1" PACKAGE . CONFIG = VALUE
+	[ $? -ne 3 ] && {
 		uci_usage set
 		exit 1
 	}
-	uci_set "$@"
-}
-
-do_add() {
-	[ $# -ne 3 ] && {
-		uci_usage add
-		exit 1
-	}
-	uci_add "$@"
+	
+	strtok "$CONFIG" CONFIG . OPTION
+	
+	if [ $? -eq 1 ]; then
+		uci_add "$PACKAGE" "$VALUE" "$CONFIG"
+	else
+		uci_set "$PACKAGE" "$CONFIG" "$OPTION" "$VALUE"
+	fi
 }
 
 do_rename() {
@@ -59,78 +70,86 @@ do_rename() {
 }
 
 do_remove() {
-	[ $# -ne 3 -a $# -ne 2 ] && {
+	local PACKAGE
+	local CONFIG
+	local OPTION
+	local DUMMY
+
+	strtok "$*" PACKAGE . CONFIG . OPTION $SEP DUMMY
+	[ $? -ne 3 -a $? -ne 2 ] && {
 		uci_usage rename
 		exit 1
 	}
-	uci_remove "$@"
+	uci_remove "$PACKAGE" "$CONFIG" ${OPTION:+"$OPTION"}
 }
 
 do_commit() {
-	[ $# -ne 1 ] && {
-		uci_usage commit
-		exit 1
-	}
-	uci_commit "$1"
+	local PACKAGE="$1"
+	for package in ${PACKAGE:-$(cd /tmp/.uci; ls)}; do 
+		uci_commit "$package"
+	done
 }
 
 do_show() {
-	[ $# -gt 2 -o $# -lt 1 ] && {
+	local PACKAGE
+	local CONFIG
+	local DUMMY
+
+	strtok "$*" PACKAGE . CONFIG $SEP DUMMY
+	[ $? -gt 2 ] && {
 		uci_usage show
 		exit 1
 	}
 	
-	PACKAGE="$1"
-	CONFIG="$2"
-	SECTION=""
+	for package in ${PACKAGE:-$(cd /etc/config; ls)}; do
+		SECTION=""
 	
-	config_cb() {
-		if [ -z "$CONFIG" -o "$CONFIG" = "$2" ]; then
-			append SECTION "$2"
-			option_cb() {
-				append "${CONFIG_SECTION}_VARS" "$1"
-			}
-		else
-			option_cb() {
-				return 0
-			}
-		fi
-	}
+		config_cb() {
+			if [ -z "$CONFIG" -o "$CONFIG" = "$2" ]; then
+				append SECTION "$2"
+				option_cb() {
+					append "${CONFIG_SECTION}_VARS" "$1"
+				}
+			else
+				option_cb() {
+					return 0
+				}
+			fi
+		}
 			
-	uci_load "$PACKAGE"
+		uci_load "$package"
 	
-	for section in $SECTION; do
-		config_get type "$section" TYPE
-		[ -z "$type" ] && continue
-		echo "@$section=$type"
-		eval "VARS=\"\${${section}_VARS}\""
-		for var in $VARS; do
-			config_get val "$section" "$var"
-			[ -n "$val" ] && {
-				echo "${section}.${var}=${val}"
-				config_set "$section" "$var" ""
-			}
+		for section in $SECTION; do
+			config_get type "$section" TYPE
+			[ -z "$type" ] && continue
+			echo "$package.$section=$type"
+			eval "VARS=\"\${${section}_VARS}\""
+			for var in $VARS; do
+				config_get val "$section" "$var"
+				[ -n "$val" ] && {
+					echo "$package.$section.$var=$val"
+					config_set "$section" "$var" ""
+				}
+			done
+			config_set "$section" TYPE ""
 		done
-		config_set "$section" TYPE ""
 	done
 }
 
 uci_usage() {
 	case "$1" in
-		show) echo "$0 show <package> [<config>]";;
-		get) echo "$0 get <package> <config> <option>";;
-		set) echo "$0 set <package> <config> <option> <value>";;
-		add) echo "$0 add <package> <type> <config>";;
-		del) echo "$0 del <package> <config> [<option>]";;
+		show) echo "$0 show [<package>[.<config>]]";;
+		get) echo "$0 get <package>.<config>.<option>";;
+		set) echo "$0 set <package>.<config>[.<option>]=<value>";;
+		del) echo "$0 del <package>.<config>[.<option>]";;
 		rename) echo "$0 rename <package> <config> <name>";;
-		commit) echo "$0 commit <package>";;
+		commit) echo "$0 commit [<package> ... ]";;
 		*) 
 			echo "Syntax: $0 <command> <arguments...>"
 			echo
 			uci_usage show
 			uci_usage get
 			uci_usage set
-			uci_usage add
 			uci_usage del
 			uci_usage rename
 			uci_usage commit
@@ -144,11 +163,11 @@ if [ $# -eq 0 ] ; then
 	uci_usage
 	exit 0
 fi
-CMD="$1"
+
+local CMD="$1"
 shift
 case "$CMD" in
 	set) do_set "$@";;
-	add) do_add "$@";;
 	del) do_remove "$@";;
 	rename) do_rename "$@";;
 	get) do_get "$@";;
