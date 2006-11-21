@@ -3117,13 +3117,13 @@ diff -urN gcc-4.0.0-100/libstdc++-v3/crossconfig.m4 gcc-4.0.0/libstdc++-v3/cross
 +    GLIBCXX_CHECK_WCHAR_T_SUPPORT
 +
 +    # For LFS.
-+    AC_DEFINE(HAVE_INT64_T)
++    GLIBCXX_CHECK_INT64_T
 +    case "$target" in
 +      *-uclinux*)
 +        # Don't enable LFS with uClinux
 +        ;;
 +      *)
-+        AC_DEFINE(_GLIBCXX_USE_LFS)
++        GLIBCXX_USE_LFS
 +    esac
 +
 +    # For showmanyc_helper().
