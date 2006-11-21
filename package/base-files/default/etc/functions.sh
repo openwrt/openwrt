@@ -18,48 +18,48 @@ append() {
 	local var="$1"
 	local value="$2"
 	local sep="${3:- }"
-	eval "export ${var}=\"\${${var}:+\${${var}}${value:+$sep}}\$value\""
+	
+	eval "$var=\"\${$var:+\${$var}${value:+$sep}}$value\""
 }
 
 reset_cb() {
-	config_cb() {
-		return 0
-	}
-	option_cb() {
-		return 0
-	}
+	config_cb() { return 0; }
+	option_cb() { return 0; }
 }
 reset_cb
 
 config () {
-    local cfgtype="$1"
-    local name="$2"
-    _C=$(($_C + 1))
-    name="${name:-cfg${_C}}"
-    config_cb "$cfgtype" "$name"
-    export CONFIG_SECTION="$name"
-    export CONFIG_${CONFIG_SECTION}_TYPE="$cfgtype"
+	local cfgtype="$1"
+	local name="$2"
+    
+	_C=$((_C + 1))
+	name="${name:-cfg${_C}}"
+	config_cb "$cfgtype" "$name"
+	CONFIG_SECTION="$name"
+	eval CONFIG_${CONFIG_SECTION}_TYPE="$cfgtype"
 }
 
 option () {
 	local varname="$1"; shift
-	export CONFIG_${CONFIG_SECTION}_${varname}="$*"
+	
+	eval CONFIG_${CONFIG_SECTION}_${varname}="$*"
 	option_cb "$varname" "$*"
 }
 
 config_rename() {
 	local OLD="$1"
 	local NEW="$2"
-	local oldsetting
+	local oldvar
 	local newvar
 	
-	[ -z "$OLD" -o -z "$NEW" ] && return
-	for oldsetting in `set | grep ^CONFIG_${OLD}_ | \
+	[ "$OLD" -a "$NEW" ] || return
+	for oldvar in `set | grep ^CONFIG_${OLD}_ | \
 		sed -e 's/\(.*\)=.*$/\1/'` ; do
-		newvar="CONFIG_${NEW}_${oldsetting##CONFIG_${OLD}_}"
-		eval "${newvar}=\${$oldsetting}"
-		unset "$oldsetting"
+		newvar="CONFIG_${NEW}_${oldvar##CONFIG_${OLD}_}"
+		eval "$newvar=\${$oldvar}"
+		unset "$oldvar"
 	done
+	
 	[ "$CONFIG_SECTION" = "$OLD" ] && CONFIG_SECTION="$NEW"
 }
 
@@ -68,38 +68,36 @@ config_unset() {
 }
 
 config_clear() {
-	[ -z "$CONFIG_SECTION" ] && return
-	for oldsetting in `set | grep ^CONFIG_${CONFIG_SECTION}_ | \
+	local SECTION="$1"
+	local oldvar
+	
+	for oldvar in `set | grep ^CONFIG_${SECTION}_ | \
 		sed -e 's/\(.*\)=.*$/\1/'` ; do 
-		unset $oldsetting 
+		unset $oldvar 
 	done
-	unset CONFIG_SECTION
 }
 
 config_load() {
-	CONFIG_SECTION=
-	local DIR="./"
+	local file="/etc/config/$1"
 	_C=0
-	[ \! -e "$1" -a -e "/etc/config/$1" ] && {
-		DIR="/etc/config/"
-	}
-	[ -e "$DIR$1" ] && {
-		CONFIG_FILENAME="$DIR$1"
-		. ${CONFIG_FILENAME}
+	CONFIG_SECTION=
+	
+	[ -e "$file" ] && {
+		. $file
 	} || return 1
-	${CD:+cd -} >/dev/null
+	
 	${CONFIG_SECTION:+config_cb}
 }
 
 config_get() {
 	case "$3" in
 		"") eval "echo \"\${CONFIG_${1}_${2}}\"";;
-		*) eval "$1=\"\${CONFIG_${2}_${3}}\"";;
+		*)  eval "$1=\"\${CONFIG_${2}_${3}}\"";;
 	esac
 }
 
 config_set() {
-	export CONFIG_${1}_${2}="${3}"
+	eval CONFIG_${1}_${2}="$3"
 }
 
 load_modules() {
@@ -107,6 +105,8 @@ load_modules() {
 }
 
 include() {
+	local file
+	
 	for file in $(ls $1/*.sh 2>/dev/null); do
 		. $file
 	done
@@ -114,30 +114,31 @@ include() {
 
 find_mtd_part() {
 	local PART="$(grep "\"$1\"" /proc/mtd | awk -F: '{print $1}')"
+	
 	PART="${PART##mtd}"
 	echo "${PART:+/dev/mtdblock/$PART}"
 }
 
-strtok() { # <string> <variable> [<separator>] ...
-	local right
-	local left="$1"
+strtok() { # <string> { <variable> [<separator>] ... }
+	local tmp
+	local val="$1"
 	local count=0
 
 	shift
 
 	while [ $# -gt 1 ]; do
-		right="${left%%$2*}"
+		tmp="${val%%$2*}"
 
-		[ "$right" = "$left" ] && break
+		[ "$tmp" = "$val" ] && break
 
-		left="${left#$right$2}"
+		val="${val#$tmp$2}"
 
-		export $1="$right"; count=$((count+1))
+		eval $1="$tmp"; count=$((count+1))
 		shift 2
 	done
 
-	if [ $# -gt 0 -a "$left" ]; then
-		export $1="$left"; count=$((count+1))
+	if [ $# -gt 0 -a "$val" ]; then
+		eval $1="$val"; count=$((count+1))
 	fi
 
 	return $count
