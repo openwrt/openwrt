@@ -147,7 +147,7 @@ static struct platform_t __initdata platforms[] = {
 		},
 		.leds		= {
 			{ .name = "power",	.gpio = 1 << 1, .polarity = NORMAL },
-			{ .name = "dmz",	.gpio = 1 << 7, .polarity = REVERSE },
+			{ .name = "dmz",	.gpio = 1 << 0, .polarity = REVERSE },
 			{ .name = "ses_white",	.gpio = 1 << 5, .polarity = REVERSE },
 			{ .name = "ses_orange",	.gpio = 1 << 7, .polarity = REVERSE },
 		},
