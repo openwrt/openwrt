@@ -57,7 +57,7 @@ config_rename() {
 	for oldvar in `set | grep ^CONFIG_${OLD}_ | \
 		sed -e 's/\(.*\)=.*$/\1/'` ; do
 		newvar="CONFIG_${NEW}_${oldvar##CONFIG_${OLD}_}"
-		export -n "$newvar=\${$oldvar}"
+		eval "export -n \"$newvar=\${$oldvar}\""
 		unset "$oldvar"
 	done
 	
