@@ -26,6 +26,7 @@ else
     KERNEL_CROSS:=$(TARGET_CROSS)
   endif
 
+  PLATFORM_DIR := $(TOPDIR)/target/linux/$(BOARD)-$(KERNEL)
   KERNEL_BUILD_DIR:=$(BUILD_DIR)/linux-$(KERNEL)-$(BOARD)
   LINUX_DIR := $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION)
 
