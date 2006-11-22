@@ -42,34 +42,6 @@ define Package/base-files$(TARGET)
   VERSION:=$(PKG_RELEASE)-$(REV)
 endef
 
-define -ar7-2.4/conffiles
-/etc/config/network
-endef
-
-define -aruba-2.6/conffiles
-/etc/config/network
-endef
-
-define -au1000-2.6/conffiles
-/etc/config/network
-endef
-
-define -rb532-2.6/conffiles
-/etc/config/network
-endef
-
-define -sibyte-2.6/conffiles
-/etc/config/network
-endef
-
-define -x86-2.6/conffiles
-/etc/config/network
-endef
-
-define -xscale-2.6/conffiles
-/etc/config/network
-endef
-
 define Package/base-files$(TARGET)/conffiles
 /etc/banner
 /etc/hosts
@@ -114,37 +86,17 @@ define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
 endef
 
-define Build/Compile/ar7
-	$(TARGET_CC) -o $(PKG_BUILD_DIR)/adam2patcher src/adam2patcher.c
-endef
-
-define Build/Compile/brcm
-	$(TARGET_CC) -I src -o $(PKG_BUILD_DIR)/jffs2root src/jffs2root.c
+define Build/Compile/Default
 endef
 
 define Build/Compile
-  $(call Build/Compile/$(BOARD))
-endef
-
-
-define Package/base-files$(TARGET)/install-ar7
-	mkdir -p $(1)/sbin
-	$(CP) $(PKG_BUILD_DIR)/adam2patcher $(1)/sbin
-endef
-
-define Package/base-files$(TARGET)/install-brcm
-	rm -f $(1)/etc/config/network
-	mkdir -p $(1)/sbin
-	$(CP) $(PKG_BUILD_DIR)/jffs2root $(1)/sbin
+	$(call Build/Compile/Default)
 endef
 
 define Package/base-files$(TARGET)/install
 	$(CP) ./default/* $(1)/
-	if [ -d $(BOARD) ]; then \
-		$(CP) $(BOARD)/* $(1)/; \
-	fi
-	if [ -d $(BOARD)-$(KERNEL) ]; then \
-		$(CP) $(BOARD)-$(KERNEL)/* $(1)/; \
+	if [ -d $(PLATFORM_DIR)/base-files/. ]; then \
+		$(CP) $(PLATFORM_DIR)/base-files/* $(1)/; \
 	fi
 	$(SED) 's,$$$$R,r$(REV),g' $(1)/etc/banner
 	$(SED) 's,$$$$S,$(BOARD)-$(KERNEL),g' $(1)/etc/ipkg.conf
@@ -163,7 +115,13 @@ define Package/base-files$(TARGET)/install
 	rm -f $(1)/var
 	ln -sf /tmp $(1)/var
 	mkdir -p $(1)/etc
-$(call Package/base-files$(TARGET)/install-$(BOARD),$(1))
+	$(call Package/base-files/install-target,$(1))
+	for conffile in $(1)/etc/config/*; do \
+		if [ -f "$$$$conffile" ]; then \
+			grep "$$$$conffile" $(1)/CONTROL/conffiles || \
+				echo "$$$${conffile##$(1)}" >> $(1)/CONTROL/conffiles; \
+		fi \
+	done
 endef
 
 define Package/libgcc/install
@@ -184,6 +142,10 @@ define Package/uclibc/install
 		$(CP) $(STAGING_DIR)/lib/$$$$file-$(UCLIBC_VERSION).so $(1)/lib/; \
 	done
 endef
+
+ifneq ($(DUMP),1)
+  -include $(PLATFORM_DIR)/base-files.mk
+endif
 
 $(eval $(call BuildPackage,base-files$(TARGET)))
 $(eval $(call BuildPackage,libgcc))
