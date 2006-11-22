@@ -5,7 +5,7 @@
 alias debug=${DEBUG:-:}
 
 # newline
-N="
+readonly N="
 "
 
 _C=0
@@ -19,7 +19,7 @@ append() {
 	local value="$2"
 	local sep="${3:- }"
 	
-	eval "$var=\"\${$var:+\${$var}\${value:+\$sep}}\$value\""
+	eval "export -n -- \"$var=\${$var:+\${$var}\${value:+\$sep}}\$value\""
 }
 
 reset_cb() {
@@ -36,14 +36,14 @@ config () {
 	name="${name:-cfg${_C}}"
 	config_cb "$cfgtype" "$name"
 	CONFIG_SECTION="$name"
-	eval CONFIG_${CONFIG_SECTION}_TYPE="\$cfgtype"
+	export -n "CONFIG_${CONFIG_SECTION}_TYPE=$cfgtype"
 }
 
 option () {
 	local varname="$1"; shift
 	local value="$*"
 	
-	eval CONFIG_${CONFIG_SECTION}_${varname}="\$value"
+	export -n "CONFIG_${CONFIG_SECTION}_${varname}=$value"
 	option_cb "$varname" "$*"
 }
 
@@ -57,7 +57,7 @@ config_rename() {
 	for oldvar in `set | grep ^CONFIG_${OLD}_ | \
 		sed -e 's/\(.*\)=.*$/\1/'` ; do
 		newvar="CONFIG_${NEW}_${oldvar##CONFIG_${OLD}_}"
-		eval "$newvar=\${$oldvar}"
+		export -n "$newvar=\${$oldvar}"
 		unset "$oldvar"
 	done
 	
@@ -93,7 +93,7 @@ config_load() {
 config_get() {
 	case "$3" in
 		"") eval "echo \"\${CONFIG_${1}_${2}}\"";;
-		*)  eval "$1=\"\${CONFIG_${2}_${3}}\"";;
+		*)  eval "export -n -- \"$1=\${CONFIG_${2}_${3}}\"";;
 	esac
 }
 
@@ -101,7 +101,7 @@ config_set() {
 	local section="$1"
 	local option="$2"
 	local value="$3"
-	eval CONFIG_${section}_${option}="\$value"
+	export -n "CONFIG_${section}_${option}=$value"
 }
 
 load_modules() {
@@ -137,12 +137,12 @@ strtok() { # <string> { <variable> [<separator>] ... }
 
 		val="${val#$tmp$2}"
 
-		eval $1="\$tmp"; count=$((count+1))
+		export -n "$1=$tmp"; count=$((count+1))
 		shift 2
 	done
 
 	if [ $# -gt 0 -a "$val" ]; then
-		eval $1="\$val"; count=$((count+1))
+		export -n "$1=$val"; count=$((count+1))
 	fi
 
 	return $count
