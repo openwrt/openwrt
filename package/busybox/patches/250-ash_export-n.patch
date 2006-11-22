@@ -1,0 +1,35 @@
+--- busybox.old/shell/ash.c	2006-11-22 12:02:03.000000000 -0800
++++ busybox.dev/shell/ash.c	2006-11-22 11:05:32.000000000 -0800
+@@ -12257,9 +12257,18 @@
+ 	const char *p;
+ 	char **aptr;
+ 	int flag = argv[0][0] == 'r'? VREADONLY : VEXPORT;
++	int mask = ~0;
+ 	int notp;
+ 
+-	notp = nextopt("p") - 'p';
++	while ((notp = nextopt("np"))) {
++		if (notp == 'n') {
++				mask = ~flag;
++		} else { /* p */
++			break;
++		}
++	}
++
++	notp -= 'p';
+ 	if (notp && ((name = *(aptr = argptr)))) {
+ 		do {
+ 			if ((p = strchr(name, '=')) != NULL) {
+@@ -12267,10 +12276,11 @@
+ 			} else {
+ 				if ((vp = *findvar(hashvar(name), name))) {
+ 					vp->flags |= flag;
++					vp->flags &= mask;
+ 					continue;
+ 				}
+ 			}
+-			setvar(name, p, flag);
++			setvar(name, p, flag & mask);
+ 		} while ((name = *++aptr) != NULL);
+ 	} else {
+ 		showvars(argv[0], flag, 0);
