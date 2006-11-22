@@ -94,7 +94,7 @@ define Build/Compile
 endef
 
 define Package/base-files$(TARGET)/install
-	$(CP) ./default/* $(1)/
+	$(CP) ./files/* $(1)/
 	if [ -d $(PLATFORM_DIR)/base-files/. ]; then \
 		$(CP) $(PLATFORM_DIR)/base-files/* $(1)/; \
 	fi
