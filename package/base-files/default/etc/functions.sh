@@ -19,7 +19,7 @@ append() {
 	local value="$2"
 	local sep="${3:- }"
 	
-	eval "$var=\"\${$var:+\${$var}${value:+$sep}}$value\""
+	eval "$var=\"\${$var:+\${$var}\${value:+\$sep}}\$value\""
 }
 
 reset_cb() {
@@ -36,13 +36,14 @@ config () {
 	name="${name:-cfg${_C}}"
 	config_cb "$cfgtype" "$name"
 	CONFIG_SECTION="$name"
-	eval CONFIG_${CONFIG_SECTION}_TYPE="$cfgtype"
+	eval CONFIG_${CONFIG_SECTION}_TYPE="\$cfgtype"
 }
 
 option () {
 	local varname="$1"; shift
+	local value="$*"
 	
-	eval CONFIG_${CONFIG_SECTION}_${varname}="$*"
+	eval CONFIG_${CONFIG_SECTION}_${varname}="\$value"
 	option_cb "$varname" "$*"
 }
 
@@ -97,7 +98,10 @@ config_get() {
 }
 
 config_set() {
-	eval CONFIG_${1}_${2}="$3"
+	local section="$1"
+	local option="$2"
+	local value="$3"
+	eval CONFIG_${section}_${option}="\$value"
 }
 
 load_modules() {
@@ -133,12 +137,12 @@ strtok() { # <string> { <variable> [<separator>] ... }
 
 		val="${val#$tmp$2}"
 
-		eval $1="$tmp"; count=$((count+1))
+		eval $1="\$tmp"; count=$((count+1))
 		shift 2
 	done
 
 	if [ $# -gt 0 -a "$val" ]; then
-		eval $1="$val"; count=$((count+1))
+		eval $1="\$val"; count=$((count+1))
 	fi
 
 	return $count
