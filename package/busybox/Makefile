@@ -21,6 +21,11 @@ PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
 
+init-y :=
+init-$(CONFIG_BUSYBOX_CONFIG_HTTPD) += httpd
+init-$(CONFIG_BUSYBOX_CONFIG_CROND) += cron
+init-$(CONFIG_BUSYBOX_CONFIG_TELNETD) += telnet
+
 define Package/busybox
   SECTION:=base
   CATEGORY:=Base system
@@ -66,6 +71,10 @@ define Package/busybox/install
 		IPKG_ARCH="$(ARCH)" \
 		PREFIX="$(1)" \
 		install
+	mkdir -p $(1)/etc/init.d
+	for tmp in $(init-y); do \
+		$(INSTALL_BIN) ./files/$$$$tmp $(1)/etc/init.d/$$$$tmp; \
+	done
 	-rm -rf $(1)/lib64
 endef
 
