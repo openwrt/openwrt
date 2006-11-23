@@ -34,6 +34,17 @@ define KernelPackage/atmtcp
 endef
 $(eval $(call KernelPackage,atmtcp))
 
+define KernelPackage/bonding
+  TITLE:=Ethernet bonding driver
+  DESCRIPTION:= \
+    Kernel module for NIC bonding.
+  DEPENDS:=@LINUX_2_6_X86
+  FILES:=$(MODULES_DIR)/kernel/drivers/net/bonding/bonding.$(LINUX_KMOD_SUFFIX)
+  KCONFIG:=$(CONFIG_BONDING)
+  SUBMENU:=$(NSMENU)
+  AUTOLOAD:=$(call AutoLoad,40,bonding)
+endef
+$(eval $(call KernelPackage,bonding))
 
 define KernelPackage/ipip
   TITLE:=IP in IP encapsulation support
