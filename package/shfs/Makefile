@@ -77,15 +77,15 @@ define Build/Compile
 endef
 
 define Package/kmod-shfs/install
-	install -m0755 -d $(1)/lib/modules/$(LINUX_VERSION)
+	$(INSTALL_DIR) $(1)/lib/modules/$(LINUX_VERSION)
 	$(CP) $(PKG_INSTALL_DIR)/lib/modules/$(LINUX_VERSION)/kernel/fs/shfs/shfs.$(LINUX_KMOD_SUFFIX) \
 		$(1)/lib/modules/$(LINUX_VERSION)/
 endef
 
 define Package/shfs-utils/install
-	install -m0755 -d $(1)/usr/bin
+	$(INSTALL_DIR) $(1)/usr/bin
 	$(CP) $(PKG_INSTALL_DIR)/usr/bin/shfs{,u}mount $(1)/usr/bin/
-	install -m0755 -d $(1)/sbin
+	$(INSTALL_DIR) $(1)/sbin
 	$(CP) $(PKG_INSTALL_DIR)/sbin/mount.shfs $(1)/sbin/
 endef
 

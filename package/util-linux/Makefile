@@ -70,7 +70,7 @@ define Package/Template
 		rm -f $(PKG_BUILD_DIR)/.built; \
 		$(MAKE) $(PKG_BUILD_DIR)/.built; \
 	fi
-	install -d -m0755 $(2)
+	$(INSTALL_DIR) $(2)
 	$(CP) $(PKG_INSTALL_DIR)/$(1) $(2)/
 endef
 

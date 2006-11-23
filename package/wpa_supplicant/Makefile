@@ -60,12 +60,12 @@ define Build/Compile
 endef
 
 define Package/wpa-supplicant/install
-	install -m0755 -d $(1)/usr/sbin
+	$(INSTALL_DIR) $(1)/usr/sbin
 	$(CP) $(PKG_BUILD_DIR)/wpa_supplicant $(1)/usr/sbin/
 endef
 
 define Package/wpa-cli/install
-	install -m0755 -d $(1)/usr/sbin
+	$(INSTALL_DIR) $(1)/usr/sbin
 	$(CP) $(PKG_BUILD_DIR)/wpa_cli $(1)/usr/sbin/
 endef
 

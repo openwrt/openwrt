@@ -52,10 +52,10 @@ define Build/Compile
 endef
 
 define Package/kmod-zd1211/install
-	install -d -m0755 $(1)/lib/modules/$(LINUX_VERSION)
+	$(INSTALL_DIR) $(1)/lib/modules/$(LINUX_VERSION)
 	$(CP) $(PKG_BUILD_DIR)/zd1211.$(LINUX_KMOD_SUFFIX) \
 		$(1)/lib/modules/$(LINUX_VERSION)/
-	install -d -m0755 $(1)/usr/sbin
+	$(INSTALL_DIR) $(1)/usr/sbin
 	$(CP) $(PKG_BUILD_DIR)/apdbg $(1)/usr/sbin/
 	$(CP) $(PKG_BUILD_DIR)/sta $(1)/usr/sbin/$(PKG_NAME)-sta
 endef

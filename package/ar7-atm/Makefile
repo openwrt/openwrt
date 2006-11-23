@@ -47,11 +47,11 @@ define Build/Compile
 endef
 
 define KernelPackage/sangam-atm-annex-a/install
-	install -m0644 $(PKG_BUILD_DIR)/ar0700xx_a.bin $(1)/lib/modules/ar0700xx.bin
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/ar0700xx_a.bin $(1)/lib/modules/ar0700xx.bin
 endef
 
 define KernelPackage/sangam-atm-annex-b/install
-	install -m0644 $(PKG_BUILD_DIR)/ar0700xx_b.bin $(1)/lib/modules/ar0700xx.bin
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/ar0700xx_b.bin $(1)/lib/modules/ar0700xx.bin
 endef
 
 $(eval $(call KernelPackage,sangam-atm-annex-a))

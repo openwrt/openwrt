@@ -72,11 +72,11 @@ define Build/Compile
 endef
 
 define Package/kmod-alsa/install
-	install -d -m0755 $(1)/lib/modules/$(LINUX_VERSION)
-	install -m0644 $(PKG_BUILD_DIR)/modules/*.$(LINUX_KMOD_SUFFIX) \
+	$(INSTALL_DIR) $(1)/lib/modules/$(LINUX_VERSION)
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/modules/*.$(LINUX_KMOD_SUFFIX) \
 		$(1)/lib/modules/$(LINUX_VERSION)/
-	install -d -m0755 $(1)/etc/modules.d
-	install -m0644 ./files/alsa.modules $(1)/etc/modules.d/70-alsa
+	$(INSTALL_DIR) $(1)/etc/modules.d
+	$(INSTALL_DATA) ./files/alsa.modules $(1)/etc/modules.d/70-alsa
 endef
 
 $(eval $(call BuildPackage,kmod-alsa))

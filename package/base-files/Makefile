@@ -125,18 +125,18 @@ define Package/base-files$(TARGET)/install
 endef
 
 define Package/libgcc/install
-	install -m0755 -d $(1)/lib
+	$(INSTALL_DIR) $(1)/lib
 	$(CP) $(STAGING_DIR)/lib/libgcc_s.so.* $(1)/lib/
 endef
 
 define Package/libpthread/install
-	install -m0755 -d $(1)/lib
+	$(INSTALL_DIR) $(1)/lib
 	$(CP) $(STAGING_DIR)/lib/libpthread.so.* $(1)/lib/
 	$(CP) $(STAGING_DIR)/lib/libpthread-$(UCLIBC_VERSION).so $(1)/lib/
 endef
 
 define Package/uclibc/install
-	install -m0755 -d $(1)/lib
+	$(INSTALL_DIR) $(1)/lib
 	for file in ld-uClibc libc libcrypt libdl libm libnsl libresolv librt libuClibc libutil; do \
 		$(CP) $(STAGING_DIR)/lib/$$$$file.so.* $(1)/lib/; \
 		$(CP) $(STAGING_DIR)/lib/$$$$file-$(UCLIBC_VERSION).so $(1)/lib/; \

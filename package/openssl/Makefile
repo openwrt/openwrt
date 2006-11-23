@@ -115,18 +115,18 @@ define Build/UninstallDev
 endef
 
 define Package/libopenssl/install
-	install -d -m0755 $(1)/usr/lib
+	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/lib{crypto,ssl}.so.* $(1)/usr/lib/
 	chmod 0644 $(1)/usr/lib/*
 endef
 
 define Package/openssl-util/install
-	install -d -m0755 $(1)/etc/ssl
+	$(INSTALL_DIR) $(1)/etc/ssl
 	$(CP) $(PKG_INSTALL_DIR)/etc/ssl/openssl.cnf $(1)/etc/ssl/
-	install -d -m0755 $(1)/etc/ssl/certs
-	install -d -m0755 $(1)/etc/ssl/private
+	$(INSTALL_DIR) $(1)/etc/ssl/certs
+	$(INSTALL_DIR) $(1)/etc/ssl/private
 	chmod 0700 $(1)/etc/ssl/private
-	install -d -m0755 $(1)/usr/bin
+	$(INSTALL_DIR) $(1)/usr/bin
 	$(CP) $(PKG_INSTALL_DIR)/usr/bin/openssl $(1)/usr/bin/
 endef
 

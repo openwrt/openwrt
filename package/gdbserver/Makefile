@@ -61,7 +61,7 @@ define Build/Compile
 endef
 
 define Package/gdbserver/install	
-	install -m0755 -d $(1)/usr/bin
+	$(INSTALL_DIR) $(1)/usr/bin
 	$(CP) $(PKG_INSTALL_DIR)/usr/bin/gdbserver $(1)/usr/bin/
 endef
 

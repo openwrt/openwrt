@@ -84,10 +84,10 @@ define Package/InstallTemplate
 		rm -f $(PKG_BUILD_DIR)/.built; \
 		$(MAKE) $(PKG_BUILD_DIR)/.built; \
 	fi
-	install -m0755 -d $$(1)/etc
+	$(INSTALL_DIR) $$(1)/etc
 	install -m0600 $(PKG_BUILD_DIR)_$(2)/madwifi.conf $$(1)/etc/hostapd.conf
-	install -m0755 -d $$(1)/usr/sbin
-	install -m0755 $(PKG_BUILD_DIR)_$(2)/hostapd $$(1)/usr/sbin/
+	$(INSTALL_DIR) $$(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)_$(2)/hostapd $$(1)/usr/sbin/
 endef
 
 define Package/Template
@@ -120,8 +120,8 @@ define Build/Clean
 endef
 
 define Package/hostapd-utils/install
-	install -m0755 -d $(1)/usr/sbin
-	install -m0755 $(PKG_BUILD_DIR)/hostapd_cli $(1)/usr/sbin/
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/hostapd_cli $(1)/usr/sbin/
 endef
 
 $(eval $(call Package/Template,hostapd,default))

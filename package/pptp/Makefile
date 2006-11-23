@@ -31,12 +31,12 @@ define Package/pptp
 endef
 
 define Package/pptp/install
-	install -d -m0755 $(1)/usr/sbin
-	install -m0755 $(PKG_BUILD_DIR)/pptp $(1)/usr/sbin/
-	install -d -m0755 $(1)/etc/ppp
-	install -m0644 ./files/options.pptp $(1)/etc/ppp/
-	install -d -m0755 $(1)/lib/network
-	install -m0755 ./files/pptp.sh $(1)/lib/network/
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/pptp $(1)/usr/sbin/
+	$(INSTALL_DIR) $(1)/etc/ppp
+	$(INSTALL_DATA) ./files/options.pptp $(1)/etc/ppp/
+	$(INSTALL_DIR) $(1)/lib/network
+	$(INSTALL_BIN) ./files/pptp.sh $(1)/lib/network/
 endef
 
 $(eval $(call BuildPackage,pptp))

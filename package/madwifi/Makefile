@@ -138,7 +138,7 @@ define KernelPackage/madwifi/install
 	mkdir -p $(1)/etc/init.d
 	mkdir -p $(1)/lib/modules/$(LINUX_VERSION)
 	mkdir -p $(1)/usr/sbin
-	install -m0755 ./files/madwifi.init $(1)/etc/init.d/madwifi
+	$(INSTALL_BIN) ./files/madwifi.init $(1)/etc/init.d/madwifi
 	$(CP) $(PKG_BUILD_DIR)/tools/{madwifi_multi,80211debug,80211stats,athchans,athctrl,athdebug,athkey,athstats,wlanconfig} $(1)/usr/sbin/
 endef
 

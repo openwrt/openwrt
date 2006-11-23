@@ -73,7 +73,7 @@ endef
 
 define Package/openswan/install
 	$(CP) $(PKG_INSTALL_DIR)/* $(1)
-	install -d -m0755 $(1)/etc/init.d
+	$(INSTALL_DIR) $(1)/etc/init.d
 	$(CP) ./files/ipsec.init $(1)/etc/init.d/ipsec
 	rm -rf $(1)/usr/share
 	rm -rf $(1)/usr/man

@@ -61,7 +61,7 @@ define Build/UninstallDev
 endef
 
 define Package/keynote/install
-	install -d -m0755 $(1)/usr/sbin
+	$(INSTALL_DIR) $(1)/usr/sbin
 	$(CP) $(PKG_BUILD_DIR)/keynote $(1)/usr/sbin/
 endef
 

@@ -44,7 +44,7 @@ define Build/Compile
 endef
 
 define Package/kmod-spca5xx/install
-	install -m0755 -d $(1)/lib/modules/$(LINUX_VERSION)
+	$(INSTALL_DIR) $(1)/lib/modules/$(LINUX_VERSION)
 	$(CP) $(PKG_BUILD_DIR)/spca5xx.$(LINUX_KMOD_SUFFIX) \
 		$(1)/lib/modules/$(LINUX_VERSION)/
 endef

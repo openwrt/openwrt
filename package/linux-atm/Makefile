@@ -73,15 +73,15 @@ define Build/UninstallDev
 endef
 
 define Package/linux-atm/install
-	install -d -m0755 $(1)/usr/lib
+	$(INSTALL_DIR) $(1)/usr/lib
 	cp -f $(PKG_INSTALL_DIR)/usr/lib/libatm.so.1 $(1)/usr/lib
 endef
 
 define Package/br2684ctl/install
-	install -d -m0755 $(1)/usr/sbin
+	$(INSTALL_DIR) $(1)/usr/sbin
 	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/br2684ctl $(1)/usr/sbin/
-	install -d -m0755 $(1)/etc/hotplug.d/net
-	install -m0644 ./files/br2684.hotplug $(1)/etc/hotplug.d/net/30-br2684
+	$(INSTALL_DIR) $(1)/etc/hotplug.d/net
+	$(INSTALL_DATA) ./files/br2684.hotplug $(1)/etc/hotplug.d/net/30-br2684
 endef
 
 $(eval $(call BuildPackage,linux-atm))

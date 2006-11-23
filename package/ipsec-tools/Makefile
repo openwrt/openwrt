@@ -84,12 +84,12 @@ define Build/Compile
 endef
 
 define Package/ipsec-tools/install
-	install -d -m0755 $(1)/etc
+	$(INSTALL_DIR) $(1)/etc
 	install -m0600 $(PKG_BUILD_DIR)/src/racoon/samples/racoon.conf $(1)/etc/
-	install -d -m0755 $(1)/usr/lib/
+	$(INSTALL_DIR) $(1)/usr/lib/
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libipsec.so.* $(1)/usr/lib/
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libracoon.so.* $(1)/usr/lib/
-	install -d -m0755 $(1)/usr/sbin
+	$(INSTALL_DIR) $(1)/usr/sbin
 	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/plainrsa-gen $(1)/usr/sbin/
 	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/racoon $(1)/usr/sbin/
 	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/racoonctl $(1)/usr/sbin/

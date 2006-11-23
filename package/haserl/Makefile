@@ -29,8 +29,8 @@ define Package/haserl
 endef
 
 define Package/haserl/install
-	install -m0755 -d $(1)/usr/bin
-	install -m0755 $(PKG_BUILD_DIR)/src/haserl $(1)/usr/bin/
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/src/haserl $(1)/usr/bin/
 endef
 
 $(eval $(call BuildPackage,haserl))
