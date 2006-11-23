@@ -23,11 +23,19 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=gcc
 PKG_VERSION:=$(strip $(subst ",, $(CONFIG_GCC_VERSION)))#"))
 
-PKG_SOURCE:=gcc-$(PKG_VERSION).tar.bz2
-PKG_MD5SUM:=unknown
+ifeq ($(PKG_VERSION),4.2)
+PKG_VERSION:=20060709
+PKG_SOURCE_URL:=http://downloads.openwrt.org/sources
+PATCH_DIR=./patches/4.2
+else
+PATCH_DIR=./patches/$(PKG_VERSION)
 PKG_SOURCE_URL:=ftp://ftp.fu-berlin.de/unix/languages/gcc/releases/gcc-$(PKG_VERSION) \
 	http://mirrors.rcn.net/pub/sourceware/gcc/releases/gcc-$(PKG_VERSION) \
 	ftp://ftp.gnu.org/gnu/gcc/releases/gcc-$(PKG_VERSION)
+endif
+	
+PKG_SOURCE:=gcc-$(PKG_VERSION).tar.bz2
+PKG_MD5SUM:=unknown
 PKG_CAT:=bzcat
 
 PKG_BUILD_DIR:=$(TOOLCHAIN_BUILD_DIR)/gcc-$(PKG_VERSION)
@@ -112,7 +120,7 @@ endef
 
 define Build/Prepare
 	$(call Build/Prepare/Default)
-	$(SCRIPT_DIR)/patch-kernel.sh $(PKG_BUILD_DIR) ./patches/$(PKG_VERSION) \*.patch
+	$(SCRIPT_DIR)/patch-kernel.sh $(PKG_BUILD_DIR) $(PATCH_DIR) \*.patch
 	$(SED) 's,\(version_string.. = "[0-9\.]*\).*\(";\),\1 (OpenWrt-2.0)\2,' $(PKG_BUILD_DIR)/gcc/version.c
 	$(SED) 's,\(bug_report_url.. = "\).*\(";\),\1<URL:https://dev.openwrt.org/>\2,' $(PKG_BUILD_DIR)/gcc/version.c
 	(cd $(PKG_BUILD_DIR)/libstdc++-v3; autoconf;);
