@@ -6,7 +6,7 @@
 #
 include $(TOPDIR)/rules.mk
 
-ARCH:=arm
+ARCH:=armeb
 BOARD:=ixp4xx
 BOARDNAME:=Intel XScale IXP4xx
 FEATURES:=jffs2
