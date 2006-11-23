@@ -1,0 +1,11 @@
+--- linux.old/drivers/mtd/mtdchar.c	2006-11-23 18:48:56.000000000 +0100
++++ linux.dev/drivers/mtd/mtdchar.c	2006-11-23 18:49:11.000000000 +0100
+@@ -564,7 +564,7 @@
+ 	sprintf(name, "%dro", mtd->index);
+ 	devfs_ro_handle[mtd->index] = devfs_register(devfs_dir_handle, name,
+ 			DEVFS_FL_DEFAULT, MTD_CHAR_MAJOR, mtd->index*2+1,
+-			S_IFCHR | S_IRUGO,
++			S_IFCHR | S_IRUSR,
+ 			&mtd_fops, NULL);
+ }
+ 
