@@ -111,64 +111,64 @@ define Build/Compile
 endef
 
 define Package/ppp/install
-	install -d -m0755 $(1)/usr/lib/pppd/$(PKG_VERSION)
-	install -d -m0755 $(1)/usr/sbin
-	install -m0755 $(PKG_INSTALL_DIR)/usr/sbin/pppd $(1)/usr/sbin/
-	install -d -m0755 $(1)/lib/network
-	install -m0755 ./files/ppp.sh $(1)/lib/network/
-	install -d -m0755 $(1)/etc/ppp
+	$(INSTALL_DIR) $(1)/usr/lib/pppd/$(PKG_VERSION)
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/pppd $(1)/usr/sbin/
+	$(INSTALL_DIR) $(1)/lib/network
+	$(INSTALL_BIN) ./files/ppp.sh $(1)/lib/network/
+	$(INSTALL_DIR) $(1)/etc/ppp
 	install -m0600 ./files/etc/ppp/chap-secrets $(1)/etc/ppp/
-	install -m0644 ./files/etc/ppp/filter $(1)/etc/ppp/
-	install -m0755 ./files/etc/ppp/ip-up $(1)/etc/ppp/
-	install -d -m0755 $(1)/etc/ppp/ip-up.d
-	install -m0755 ./files/etc/ppp/ip-down $(1)/etc/ppp/
-	install -d -m0755 $(1)/etc/ppp/ip-down.d
-	install -m0644 ./files/etc/ppp/options $(1)/etc/ppp/
+	$(INSTALL_DATA) ./files/etc/ppp/filter $(1)/etc/ppp/
+	$(INSTALL_BIN) ./files/etc/ppp/ip-up $(1)/etc/ppp/
+	$(INSTALL_DIR) $(1)/etc/ppp/ip-up.d
+	$(INSTALL_BIN) ./files/etc/ppp/ip-down $(1)/etc/ppp/
+	$(INSTALL_DIR) $(1)/etc/ppp/ip-down.d
+	$(INSTALL_DATA) ./files/etc/ppp/options $(1)/etc/ppp/
 	ln -sf /tmp/resolv.conf $(1)/etc/ppp/resolv.conf
 endef
 	
 define Package/ppp-mod-pppoa/install
-	install -d -m0755 $(1)/usr/lib/pppd/$(PKG_VERSION)
-	install -m0755 $(PKG_INSTALL_DIR)/usr/lib/pppd/$(PKG_VERSION)/pppoatm.so \
+	$(INSTALL_DIR) $(1)/usr/lib/pppd/$(PKG_VERSION)
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/lib/pppd/$(PKG_VERSION)/pppoatm.so \
 		$(1)/usr/lib/pppd/$(PKG_VERSION)/
-	install -d -m0755 $(1)/lib/network
-	install -m0755 ./files/pppoa.sh $(1)/lib/network/
+	$(INSTALL_DIR) $(1)/lib/network
+	$(INSTALL_BIN) ./files/pppoa.sh $(1)/lib/network/
 endef
 
 define Package/ppp-mod-pppoe/install
-	install -d -m0755 $(1)/usr/lib/pppd/$(PKG_VERSION)
-	install -m0755 $(PKG_INSTALL_DIR)/usr/lib/pppd/$(PKG_VERSION)/rp-pppoe.so \
+	$(INSTALL_DIR) $(1)/usr/lib/pppd/$(PKG_VERSION)
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/lib/pppd/$(PKG_VERSION)/rp-pppoe.so \
 		$(1)/usr/lib/pppd/$(PKG_VERSION)/
-	install -d -m0755 $(1)/lib/network
-	install -m0755 ./files/pppoe.sh $(1)/lib/network/
+	$(INSTALL_DIR) $(1)/lib/network
+	$(INSTALL_BIN) ./files/pppoe.sh $(1)/lib/network/
 endef
 
 define Package/ppp-mod-radius/install
-	install -d -m0755 $(1)/usr/lib/pppd/$(PKG_VERSION)
-	install -m0755 $(PKG_INSTALL_DIR)/usr/lib/pppd/$(PKG_VERSION)/radius.so \
+	$(INSTALL_DIR) $(1)/usr/lib/pppd/$(PKG_VERSION)
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/lib/pppd/$(PKG_VERSION)/radius.so \
 		$(1)/usr/lib/pppd/$(PKG_VERSION)/
-	install -d -m0755 $(1)/etc/ppp
-	install -m0644 ./files/etc/ppp/radius.conf $(1)/etc/ppp/
-	install -d -m0755 $(1)/etc/ppp/radius
-	install -m0644 ./files/etc/ppp/radius/dictionary* \
+	$(INSTALL_DIR) $(1)/etc/ppp
+	$(INSTALL_DATA) ./files/etc/ppp/radius.conf $(1)/etc/ppp/
+	$(INSTALL_DIR) $(1)/etc/ppp/radius
+	$(INSTALL_DATA) ./files/etc/ppp/radius/dictionary* \
 		$(1)/etc/ppp/radius/
 	install -m0600 ./files/etc/ppp/radius/servers \
 		$(1)/etc/ppp/radius/
 endef
 
 define Package/chat/install
-	install -d -m0755 $(1)/usr/sbin
-	install -m0755 $(PKG_INSTALL_DIR)/usr/sbin/chat $(1)/usr/sbin/
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/chat $(1)/usr/sbin/
 endef
 
 define Package/pppdump/install
-	install -d -m0755 $(1)/usr/sbin
-	install -m0755 $(PKG_INSTALL_DIR)/usr/sbin/pppdump $(1)/usr/sbin/
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/pppdump $(1)/usr/sbin/
 endef
 
 define Package/pppstats/install
-	install -d -m0755 $(1)/usr/sbin
-	install -m0755 $(PKG_INSTALL_DIR)/usr/sbin/pppstats $(1)/usr/sbin/
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/pppstats $(1)/usr/sbin/
 endef
 
 $(eval $(call BuildPackage,ppp))

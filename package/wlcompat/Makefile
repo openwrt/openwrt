@@ -62,14 +62,14 @@ define Build/Compile
 endef
 
 define Package/kmod-wlcompat/install
-	install -d -m0755 $(1)/lib/modules/$(LINUX_VERSION)
+	$(INSTALL_DIR) $(1)/lib/modules/$(LINUX_VERSION)
 	$(CP) $(PKG_BUILD_DIR)/wlcompat.o $(1)/lib/modules/$(LINUX_VERSION)/
-	install -d -m0755 $(1)/etc/modules.d
+	$(INSTALL_DIR) $(1)/etc/modules.d
 	echo "wlcompat" > $(1)/etc/modules.d/30-wlcompat
 endef
 
 define Package/kmod-wlcompat-debug/install
-	install -d -m0755 $(1)/lib/modules/$(LINUX_VERSION)
+	$(INSTALL_DIR) $(1)/lib/modules/$(LINUX_VERSION)
 	$(CP) $(PKG_BUILD_DIR)/wlcompat-debug.o $(1)/lib/modules/$(LINUX_VERSION)/
 endef
 

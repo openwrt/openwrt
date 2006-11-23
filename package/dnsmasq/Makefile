@@ -43,12 +43,12 @@ define Build/Compile
 endef
 
 define Package/dnsmasq/install
-	install -m0755 -d $(1)/usr/sbin
-	install -m0755 $(PKG_BUILD_DIR)/src/dnsmasq $(1)/usr/sbin/
-	install -m0755 -d $(1)/etc
-	install -m0644 ./files/dnsmasq.conf $(1)/etc/dnsmasq.conf
-	install -m0755 -d $(1)/etc/init.d
-	install -m0755 ./files/dnsmasq.init $(1)/etc/init.d/dnsmasq
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/src/dnsmasq $(1)/usr/sbin/
+	$(INSTALL_DIR) $(1)/etc
+	$(INSTALL_DATA) ./files/dnsmasq.conf $(1)/etc/dnsmasq.conf
+	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/dnsmasq.init $(1)/etc/init.d/dnsmasq
 endef
 
 $(eval $(call BuildPackage,dnsmasq))

@@ -43,12 +43,12 @@ define Build/Compile
 endef
 
 define Package/kmod-ueagle-atm/install
-	install -d -m0755 $(1)/lib/modules/$(LINUX_VERSION)
+	$(INSTALL_DIR) $(1)/lib/modules/$(LINUX_VERSION)
 	$(CP)	$(PKG_BUILD_DIR)/driver/ueagle-atm.$(LINUX_KMOD_SUFFIX) \
 		$(PKG_BUILD_DIR)/usbatm_iso/usbatm.$(LINUX_KMOD_SUFFIX) \
 		$(1)/lib/modules/$(LINUX_VERSION)/
-	install -d -m0755 $(1)/etc/modules.d
-	install -m0644 ./files/$(PKG_NAME).modules \
+	$(INSTALL_DIR) $(1)/etc/modules.d
+	$(INSTALL_DATA) ./files/$(PKG_NAME).modules \
 		$(1)/etc/modules.d/10-$(PKG_NAME)
 endef
 

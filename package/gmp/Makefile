@@ -58,7 +58,7 @@ define Build/UninstallDev
 endef
 
 define Package/libgmp/install
-	install -m0755 -d $(1)/usr/lib
+	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libgmp.so.* $(1)/usr/lib/
 endef
 

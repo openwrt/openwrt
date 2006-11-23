@@ -29,15 +29,15 @@ define Package/ebtables
 endef
 
 define Package/ebtables/install
-	install -d -m0755 $(1)/etc
-	install -m0644 $(PKG_BUILD_DIR)/ethertypes $(1)/etc/
-	install -d -m0755 $(1)/usr/lib/ebtables
-	install -m0755 $(PKG_BUILD_DIR)/lib*.so $(1)/usr/lib/
-	install -m0755 $(PKG_BUILD_DIR)/extensions/*.so $(1)/usr/lib/ebtables/
-	install -d -m0755 $(1)/usr/sbin
-	install -m0755 $(PKG_BUILD_DIR)/ebtables $(1)/usr/sbin/
-	install -m0755 $(PKG_BUILD_DIR)/ebtables-save $(1)/usr/sbin/
-	install -m0755 $(PKG_BUILD_DIR)/ebtables-restore $(1)/usr/sbin/
+	$(INSTALL_DIR) $(1)/etc
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/ethertypes $(1)/etc/
+	$(INSTALL_DIR) $(1)/usr/lib/ebtables
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/lib*.so $(1)/usr/lib/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/extensions/*.so $(1)/usr/lib/ebtables/
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/ebtables $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/ebtables-save $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/ebtables-restore $(1)/usr/sbin/
 endef
 
 $(eval $(call BuildPackage,ebtables))

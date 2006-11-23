@@ -31,8 +31,8 @@ define Build/Prepare
 endef
 
 define Package/robocfg/install
-	install -d -m0755 $(1)/sbin
-	install -m0755 $(PKG_BUILD_DIR)/robocfg $(1)/sbin/
+	$(INSTALL_DIR) $(1)/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/robocfg $(1)/sbin/
 endef
 
 $(eval $(call BuildPackage,robocfg))

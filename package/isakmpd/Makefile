@@ -44,7 +44,7 @@ define Build/Compile
 endef
 
 define Package/isakmpd/install
-	install -d -m0755 $(1)/usr/sbin
+	$(INSTALL_DIR) $(1)/usr/sbin
 	$(CP) $(PKG_INSTALL_DIR)/* $(1)/
 endef
 

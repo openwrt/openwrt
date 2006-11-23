@@ -42,23 +42,23 @@ define Build/Compile
 endef
 	
 define Package/comgt/install
-	install -d -m0755 $(1)/usr/bin
-	install -m0755 $(PKG_BUILD_DIR)/gcom $(1)/usr/bin/
-	install -d -m0755 $(1)/etc/ppp
-	install -m0755 ./files/3g.connect $(1)/etc/ppp/3g.connect
-	install -d -m0755 $(1)/etc/chatscripts
-	install -m0644 ./files/3g.chat $(1)/etc/chatscripts/3g.chat
-	install -d -m0755 $(1)/lib/network
-	install -m0644 ./files/3g.sh $(1)/lib/network/3g.sh
-	install -d -m0755 $(1)/etc/hotplug.d/button
-	install -m0644 ./files/3g.button $(1)/etc/hotplug.d/button/05-3g
-	install -d -m0755 $(1)/etc/hotplug.d/iface
-	install -m0644 ./files/3g.iface $(1)/etc/hotplug.d/iface/05-3g
-	install -d -m0755 $(1)/etc/gcom
-	install -m0644 ./files/setpin.gcom $(1)/etc/gcom/setpin.gcom
-	install -m0644 ./files/setmode.gcom $(1)/etc/gcom/setmode.gcom
-	install -m0644 ./files/getcardinfo.gcom $(1)/etc/gcom/getcardinfo.gcom
-	install -m0644 ./files/getstrength.gcom $(1)/etc/gcom/getstrength.gcom
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/gcom $(1)/usr/bin/
+	$(INSTALL_DIR) $(1)/etc/ppp
+	$(INSTALL_BIN) ./files/3g.connect $(1)/etc/ppp/3g.connect
+	$(INSTALL_DIR) $(1)/etc/chatscripts
+	$(INSTALL_DATA) ./files/3g.chat $(1)/etc/chatscripts/3g.chat
+	$(INSTALL_DIR) $(1)/lib/network
+	$(INSTALL_DATA) ./files/3g.sh $(1)/lib/network/3g.sh
+	$(INSTALL_DIR) $(1)/etc/hotplug.d/button
+	$(INSTALL_DATA) ./files/3g.button $(1)/etc/hotplug.d/button/05-3g
+	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface
+	$(INSTALL_DATA) ./files/3g.iface $(1)/etc/hotplug.d/iface/05-3g
+	$(INSTALL_DIR) $(1)/etc/gcom
+	$(INSTALL_DATA) ./files/setpin.gcom $(1)/etc/gcom/setpin.gcom
+	$(INSTALL_DATA) ./files/setmode.gcom $(1)/etc/gcom/setmode.gcom
+	$(INSTALL_DATA) ./files/getcardinfo.gcom $(1)/etc/gcom/getcardinfo.gcom
+	$(INSTALL_DATA) ./files/getstrength.gcom $(1)/etc/gcom/getstrength.gcom
 endef
 
 $(eval $(call BuildPackage,comgt))

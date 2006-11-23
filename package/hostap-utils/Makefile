@@ -36,13 +36,13 @@ define Build/Compile
 endef
 
 define Package/hostap-utils/install	
-	install -m0755 -d $(1)/usr/sbin
-	install -m0755 $(PKG_BUILD_DIR)/hostap_crypt_conf $(1)/usr/sbin/
-	install -m0755 $(PKG_BUILD_DIR)/hostap_diag $(1)/usr/sbin/
-	install -m0755 $(PKG_BUILD_DIR)/hostap_io_debug $(1)/usr/sbin/
-	install -m0755 $(PKG_BUILD_DIR)/hostap_rid $(1)/usr/sbin/
-	install -m0755 $(PKG_BUILD_DIR)/prism2_srec $(1)/usr/sbin/
-	install -m0755 $(PKG_BUILD_DIR)/split_combined_hex $(1)/usr/sbin/
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/hostap_crypt_conf $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/hostap_diag $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/hostap_io_debug $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/hostap_rid $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/prism2_srec $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/split_combined_hex $(1)/usr/sbin/
 endef
 
 $(eval $(call BuildPackage,hostap-utils))

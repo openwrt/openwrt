@@ -44,8 +44,8 @@ endef
 
 define Package/kmod-pwc/install
 	mkdir -p $(1)/etc/modules.d
-	install -m0644 ./files/pwc.modules $(1)/etc/modules.d/70-pwc
-	install -m0755 -d $(1)/lib/modules/$(LINUX_VERSION)
+	$(INSTALL_DATA) ./files/pwc.modules $(1)/etc/modules.d/70-pwc
+	$(INSTALL_DIR) $(1)/lib/modules/$(LINUX_VERSION)
 	$(CP) $(PKG_BUILD_DIR)/pwc.$(LINUX_KMOD_SUFFIX) \
 		$(1)/lib/modules/$(LINUX_VERSION)/
 endef

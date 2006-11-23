@@ -191,30 +191,30 @@ define Build/UninstallDev
 endef
 
 define Package/iptables/install
-	install -d -m0755 $(1)/etc/config
-	install -m0644 ./files/firewall.config $(1)/etc/config/firewall
-	install -d -m0755 $(1)/etc/init.d
-	install -m0755 ./files/firewall.init $(1)/etc/init.d/firewall
-	install -m0755 ./files/firewall.user $(1)/etc/
-	install -d -m0755 $(1)/usr/lib
-	install -m0644 ./files/firewall.awk $(1)/usr/lib
-	install -d -m0755 $(1)/usr/sbin
+	$(INSTALL_DIR) $(1)/etc/config
+	$(INSTALL_DATA) ./files/firewall.config $(1)/etc/config/firewall
+	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/firewall.init $(1)/etc/init.d/firewall
+	$(INSTALL_BIN) ./files/firewall.user $(1)/etc/
+	$(INSTALL_DIR) $(1)/usr/lib
+	$(INSTALL_DATA) ./files/firewall.awk $(1)/usr/lib
+	$(INSTALL_DIR) $(1)/usr/sbin
 	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/iptables $(1)/usr/sbin/
-	install -d -m0755 $(1)/usr/lib/iptables
+	$(INSTALL_DIR) $(1)/usr/lib/iptables
 	(cd $(PKG_INSTALL_DIR)/usr/lib/iptables ; \
 		$(CP) $(patsubst %,lib%.so,$(IPT_BUILTIN:xt_%=ipt_%)) $(1)/usr/lib/iptables/ \
 	)
 endef
 
 define Package/iptables-utils/install
-	install -d -m0755 $(1)/usr/sbin
+	$(INSTALL_DIR) $(1)/usr/sbin
 	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/iptables-{save,restore} $(1)/usr/sbin/
 endef
 
 define Package/ip6tables/install
-	install -d -m0755 $(1)/usr/sbin
+	$(INSTALL_DIR) $(1)/usr/sbin
 	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/ip6tables $(1)/usr/sbin/
-	install -d -m0755 $(1)/usr/lib/iptables
+	$(INSTALL_DIR) $(1)/usr/lib/iptables
 	(cd $(PKG_INSTALL_DIR)/usr/lib/iptables ; \
 		$(CP) libip6t_*.so $(1)/usr/lib/iptables/ \
 	)
@@ -222,7 +222,7 @@ endef
 
 define BuildPlugin
   define Package/$(1)/install
-	install -m0755 -d $$(1)/usr/lib/iptables
+	$(INSTALL_DIR) $$(1)/usr/lib/iptables
 	for m in $$(patsubst xt_%,ipt_%,$(2)); do \
 		$(CP) $(PKG_INSTALL_DIR)/usr/lib/iptables/lib$$$$$$$${m}.so $$(1)/usr/lib/iptables/ ; \
 	done

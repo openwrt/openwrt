@@ -107,10 +107,10 @@ define Build/Compile
 endef
 
 define wl_template
-	install -d -m0755 $(1)/etc/modules.d
+	$(INSTALL_DIR) $(1)/etc/modules.d
 	echo "wl$(2)" > $(1)/etc/modules.d/20-wl$(2)
-	install -d -m0755 $(1)/lib/modules/$(LINUX_VERSION)
-	install -m0644 $(PKG_BUILD_DIR)/kmod/wl$(2).o $(PKG_BUILD_DIR)/kmod/wl$(2).o.patch $(1)/lib/modules/$(LINUX_VERSION)/
+	$(INSTALL_DIR) $(1)/lib/modules/$(LINUX_VERSION)
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/kmod/wl$(2).o $(PKG_BUILD_DIR)/kmod/wl$(2).o.patch $(1)/lib/modules/$(LINUX_VERSION)/
 endef
 
 define Package/kmod-brcm-wl/install
@@ -123,20 +123,20 @@ endef
 
 define Package/wlc/install
 	$(CP) ./files/* $(1)/
-	install -d -m0755 $(1)/sbin
-	install -m0755 $(PKG_BUILD_DIR)/wlc/wlc $(1)/sbin/
+	$(INSTALL_DIR) $(1)/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/wlc/wlc $(1)/sbin/
 endef
 
 define Package/wl/install
-	install -d -m0755 $(1)/usr/sbin
-	install -m0755 $(PKG_BUILD_DIR)/wl $(1)/usr/sbin/
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/wl $(1)/usr/sbin/
 endef
 
 define Package/nas/install
-	install -d -m0755 $(1)/usr/lib
-	install -m0755 $(PKG_BUILD_DIR)/libbcmcrypto.so $(1)/usr/lib/
-	install -d -m0755 $(1)/usr/sbin
-	install -m0755 $(PKG_BUILD_DIR)/nas $(1)/usr/sbin/
+	$(INSTALL_DIR) $(1)/usr/lib
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/libbcmcrypto.so $(1)/usr/lib/
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/nas $(1)/usr/sbin/
 	ln -sf nas $(1)/usr/sbin/nas4not
 	ln -sf nas $(1)/usr/sbin/nas4wds
 endef

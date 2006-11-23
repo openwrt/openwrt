@@ -42,8 +42,8 @@ endef
 
 define Package/kmod-rt2x00/install
 	mkdir -p $(1)/etc/modules.d
-	install -m0644 ./files/rt2x00.modules $(1)/etc/modules.d/10-ralink
-	install -m0755 -d $(1)/lib/modules/$(LINUX_VERSION)
+	$(INSTALL_DATA) ./files/rt2x00.modules $(1)/etc/modules.d/10-ralink
+	$(INSTALL_DIR) $(1)/lib/modules/$(LINUX_VERSION)
 	$(CP) $(PKG_BUILD_DIR)/Module/rt61.$(LINUX_KMOD_SUFFIX) \
 		$(1)/lib/modules/$(LINUX_VERSION)/
 endef

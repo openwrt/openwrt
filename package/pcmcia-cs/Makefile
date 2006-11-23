@@ -58,9 +58,9 @@ define Build/Compile
 endef
 
 define Package/pcmcia-cs/install
-	install -d -m0755 $(1)/etc
+	$(INSTALL_DIR) $(1)/etc
 	$(CP) $(PKG_INSTALL_DIR)/etc/pcmcia $(1)/etc/
-	install -d -m0755 $(1)/usr/sbin
+	$(INSTALL_DIR) $(1)/usr/sbin
 	$(CP) $(PKG_INSTALL_DIR)/sbin/cardctl $(1)/usr/sbin/
 	$(CP) $(PKG_INSTALL_DIR)/sbin/cardmgr $(1)/usr/sbin/
 endef

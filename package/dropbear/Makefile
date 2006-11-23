@@ -97,23 +97,23 @@ define Build/Compile
 endef
 	
 define Package/dropbear/install
-	install -d -m0755 $(1)/usr/sbin
-	install -m0755 $(PKG_BUILD_DIR)/dropbearmulti \
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/dropbearmulti \
 		$(1)/usr/sbin/dropbear
-	install -d -m0755 $(1)/usr/bin
+	$(INSTALL_DIR) $(1)/usr/bin
 	ln -sf ../sbin/dropbear $(1)/usr/bin/scp
 	ln -sf ../sbin/dropbear $(1)/usr/bin/ssh
 	ln -sf ../sbin/dropbear $(1)/usr/bin/dbclient
 	ln -sf ../sbin/dropbear $(1)/usr/bin/dropbearkey
-	install -d -m0755 $(1)/etc/config
-	install -m0755 ./files/dropbear.config $(1)/etc/config/dropbear
-	install -d -m0755 $(1)/etc/init.d
-	install -m0755 ./files/dropbear.init $(1)/etc/init.d/dropbear
+	$(INSTALL_DIR) $(1)/etc/config
+	$(INSTALL_BIN) ./files/dropbear.config $(1)/etc/config/dropbear
+	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/dropbear.init $(1)/etc/init.d/dropbear
 endef
 
 define Package/dropbearconvert/install
-	install -d -m0755 $(1)/usr/bin
-	install -m0755 $(PKG_BUILD_DIR)/dropbearconvert \
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/dropbearconvert \
 		$(1)/usr/bin/dropbearconvert
 endef
 
