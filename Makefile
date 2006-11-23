@@ -120,6 +120,7 @@ toolchain/%: tmp/.targetinfo FORCE
 
 tmp/.prereq-build: include/prereq-build.mk
 	@mkdir -p tmp
+	@rm -f tmp/.host.mk
 	@$(NO_TRACE_MAKE) -s -f $(TOPDIR)/include/prereq-build.mk prereq 2>/dev/null || { \
 		echo "Prerequisite check failed. Use FORCE=1 to override."; \
 		false; \
@@ -128,6 +129,7 @@ tmp/.prereq-build: include/prereq-build.mk
 
 tmp/.prereq-packages: include/prereq.mk tmp/.pkginfo .config
 	@mkdir -p tmp
+	@rm -f tmp/.host.mk
 	@$(NO_TRACE_MAKE) -s -C package prereq 2>/dev/null || { \
 		echo "Prerequisite check failed. Use FORCE=1 to override."; \
 		false; \
@@ -136,6 +138,7 @@ tmp/.prereq-packages: include/prereq.mk tmp/.pkginfo .config
 
 tmp/.prereq-target: include/prereq.mk tmp/.targetinfo .config
 	@mkdir -p tmp
+	@rm -f tmp/.host.mk
 	@$(NO_TRACE_MAKE) -s -C target prereq 2>/dev/null || { \
 		echo "Prerequisite check failed. Use FORCE=1 to override."; \
 		false; \
