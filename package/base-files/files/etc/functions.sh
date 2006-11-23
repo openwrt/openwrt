@@ -5,7 +5,7 @@
 alias debug=${DEBUG:-:}
 
 # newline
-readonly N="
+N="
 "
 
 _C=0
@@ -105,6 +105,7 @@ config_set() {
 }
 
 load_modules() {
+	cd /etc/modules.d
 	sed 's/^[^#]/insmod &/' $* | ash 2>&- || :
 }
 
