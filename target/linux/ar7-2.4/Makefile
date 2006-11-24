@@ -15,9 +15,9 @@ define Target/Description
 	Build firmware images for TI AR7 based routers (w.g. Linksys WAG54G v2)
 endef
 
-LINUX_VERSION:=2.4.32
+LINUX_VERSION:=2.4.33.4
 LINUX_RELEASE:=1
-LINUX_KERNEL_MD5SUM:=38f4d0830e95a20f4bfed17622d5557c
+LINUX_KERNEL_MD5SUM:=aca0257549c385a227088ad8853a72a2
 
 include $(INCLUDE_DIR)/kernel-build.mk
 DEFAULT_PACKAGES += kmod-avalanche-cpmac
