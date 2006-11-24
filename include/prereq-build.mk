@@ -112,3 +112,9 @@ endef
 $(eval $(call Require,gnutar, \
 	Please install GNU tar. \
 ))
+
+$(eval $(call RequireCommand,autoconf, \
+	Please install GNU autoconf. \
+))
+
+
