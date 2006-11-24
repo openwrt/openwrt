@@ -1,0 +1,14 @@
+--- linux.old/net/sched/sch_generic.c	2006-11-24 02:42:23.000000000 +0100
++++ linux.dev/net/sched/sch_generic.c	2006-11-24 02:36:58.000000000 +0100
+@@ -84,6 +84,11 @@
+ 	struct sk_buff *skb;
+ 
+ 	/* Dequeue packet */
++	if (!q) {
++		if (net_ratelimit())
++			printk(KERN_DEBUG "HELP ME! qdisc_restart called, but no Qdisc!\n");
++		return 0;
++	}
+ 	if ((skb = q->dequeue(q)) != NULL) {
+ 		if (spin_trylock(&dev->xmit_lock)) {
+ 			/* Remember that the driver is grabbed by us. */
