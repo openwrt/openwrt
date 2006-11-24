@@ -1,21 +1,21 @@
-diff -ruN udev-077-old/Makefile udev-077-new/Makefile
---- udev-077-old/Makefile	2005-12-04 03:01:48.000000000 +0100
-+++ udev-077-new/Makefile	2005-12-07 16:48:11.000000000 +0100
-@@ -136,7 +136,7 @@
- # check if compiler option is supported
- cc-supports = ${shell if $(CC) ${1} -S -o /dev/null -xc /dev/null > /dev/null 2>&1; then echo "$(1)"; else echo "$(2)"; fi;}
+diff -Nur udev-103-old/Makefile udev-103-new/Makefile
+--- udev-103-old/Makefile	2006-10-20 14:43:35.000000000 +0200
++++ udev-103-new/Makefile	2006-11-24 15:44:35.000000000 +0100
+@@ -113,7 +113,7 @@
+ AR = $(CROSS_COMPILE)ar
+ RANLIB = $(CROSS_COMPILE)ranlib
  
 -CFLAGS		= -g -Wall -pipe -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64
 +CFLAGS		= -Wall -pipe -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64
  WARNINGS	= -Wstrict-prototypes -Wsign-compare -Wshadow \
  		  -Wchar-subscripts -Wmissing-declarations -Wnested-externs \
  		  -Wpointer-arith -Wcast-align -Wsign-compare -Wmissing-prototypes
-@@ -159,7 +159,7 @@
+@@ -130,7 +130,7 @@
  
  # if DEBUG is enabled, then we do not strip
  ifeq ($(strip $(DEBUG)),true)
 -	CFLAGS  += -DDEBUG
-+	CFLAGS  += -g -DDEBUG 
- 	STRIPCMD =
++	CFLAGS  += -g -DDEBUG
  endif
  
+ ifeq ($(strip $(USE_GCOV)),true)
