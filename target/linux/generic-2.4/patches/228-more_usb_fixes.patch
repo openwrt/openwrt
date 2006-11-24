@@ -93,15 +93,6 @@ diff -ur linux.old/drivers/usb/host/ehci-q.c linux.dev/drivers/usb/host/ehci-q.c
 diff -ur linux.old/drivers/usb/host/usb-uhci.c linux.dev/drivers/usb/host/usb-uhci.c
 --- linux.old/drivers/usb/host/usb-uhci.c	2004-11-17 12:54:21.000000000 +0100
 +++ linux.dev/drivers/usb/host/usb-uhci.c	2006-07-30 12:10:16.000000000 +0200
-@@ -2491,7 +2491,7 @@
- 			((urb_priv_t*)urb->hcpriv)->flags=0;		       			
- 		}
- 		
--		if ((urb->status != -ECONNABORTED) && (urb->status != ECONNRESET) &&
-+		if ((urb->status != -ECONNABORTED) && (urb->status != -ECONNRESET) &&
- 			    (urb->status != -ENOENT)) {
- 
- 			urb->status = -EINPROGRESS;
 @@ -3034,6 +3034,21 @@
  	
  	pci_set_master(dev);

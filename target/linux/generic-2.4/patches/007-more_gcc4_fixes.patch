@@ -753,28 +753,6 @@ diff -rupN linux-2.4.32/drivers/net/arlan.h linux-2.4.32.more-gcc4-fixes-v1/driv
  extern int	arlan_entry_debug;
  extern int	arlan_exit_debug;
  extern int	testMemory;
-diff -rupN linux-2.4.32/drivers/net/bonding/bond_alb.c linux-2.4.32.more-gcc4-fixes-v1/drivers/net/bonding/bond_alb.c
---- linux-2.4.32/drivers/net/bonding/bond_alb.c	2004-04-14 20:22:20.000000000 +0200
-+++ linux-2.4.32.more-gcc4-fixes-v1/drivers/net/bonding/bond_alb.c	2005-11-17 13:31:16.000000000 +0100
-@@ -1275,7 +1275,7 @@ void bond_alb_deinitialize(struct bondin
- int bond_alb_xmit(struct sk_buff *skb, struct net_device *bond_dev)
- {
- 	struct bonding *bond = bond_dev->priv;
--	struct ethhdr *eth_data = (struct ethhdr *)skb->mac.raw = skb->data;
-+	struct ethhdr *eth_data;
- 	struct alb_bond_info *bond_info = &(BOND_ALB_INFO(bond));
- 	struct slave *tx_slave = NULL;
- 	static u32 ip_bcast = 0xffffffff;
-@@ -1285,6 +1285,9 @@ int bond_alb_xmit(struct sk_buff *skb, s
- 	u8 *hash_start = NULL;
- 	int res = 1;
- 
-+	skb->mac.raw = (unsigned char *)skb->data;
-+	eth_data = (struct ethhdr *)skb->mac.raw;
-+
- 	/* make sure that the curr_active_slave and the slaves list do
- 	 * not change during tx
- 	 */
 diff -rupN linux-2.4.32/drivers/net/de4x5.c linux-2.4.32.more-gcc4-fixes-v1/drivers/net/de4x5.c
 --- linux-2.4.32/drivers/net/de4x5.c	2004-02-18 15:16:23.000000000 +0100
 +++ linux-2.4.32.more-gcc4-fixes-v1/drivers/net/de4x5.c	2005-11-17 13:31:16.000000000 +0100

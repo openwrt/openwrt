@@ -16,10 +16,9 @@ define Target/Description
 	(e.g. Netgear WGT624, Linksys WRT55AG)
 endef
 
-
-LINUX_VERSION:=2.4.32
+LINUX_VERSION:=2.4.33.4
 LINUX_RELEASE:=1
-LINUX_KERNEL_MD5SUM:=38f4d0830e95a20f4bfed17622d5557c
+LINUX_KERNEL_MD5SUM:=aca0257549c385a227088ad8853a72a2
 
 include $(INCLUDE_DIR)/kernel-build.mk
 $(eval $(call BuildKernel))

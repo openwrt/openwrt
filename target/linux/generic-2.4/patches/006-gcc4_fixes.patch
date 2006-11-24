@@ -184,18 +184,6 @@ diff -rupN linux-2.4.32/drivers/sound/sound_firmware.c linux-2.4.32.gcc4-fixes-v
  static int do_mod_firmware_load(const char *fn, char **fp)
  {
  	int fd;
-diff -rupN linux-2.4.32/drivers/usb/host/ehci-q.c linux-2.4.32.gcc4-fixes-v12/drivers/usb/host/ehci-q.c
---- linux-2.4.32/drivers/usb/host/ehci-q.c	2005-01-19 18:00:53.000000000 +0100
-+++ linux-2.4.32.gcc4-fixes-v12/drivers/usb/host/ehci-q.c	2005-11-17 13:32:13.000000000 +0100
-@@ -199,8 +199,6 @@ ehci_urb_done (struct ehci_hcd *ehci, st
- #ifdef	INTR_AUTOMAGIC
- 	struct urb		*resubmit = 0;
- 	struct usb_device	*dev = 0;
--
--	static int ehci_urb_enqueue (struct usb_hcd *, struct urb *, int);
- #endif
- 
- 	if (likely (urb->hcpriv != 0)) {
 diff -rupN linux-2.4.32/drivers/usb/inode.c linux-2.4.32.gcc4-fixes-v12/drivers/usb/inode.c
 --- linux-2.4.32/drivers/usb/inode.c	2004-02-18 15:16:23.000000000 +0100
 +++ linux-2.4.32.gcc4-fixes-v12/drivers/usb/inode.c	2005-11-17 13:32:13.000000000 +0100
