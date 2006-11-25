@@ -208,11 +208,11 @@ define BuildPackage
 	echo "Package: $(1)" > $$(IDIR_$(1))/CONTROL/control
 	echo "Version: $(VERSION)" >> $$(IDIR_$(1))/CONTROL/control
 	( \
-		DEPENDS=; \
+		DEPENDS='$(EXTRA_DEPENDS)'; \
 		for depend in $$(filter-out @%,$$(IDEPEND_$(1))); do \
 			DEPENDS=$$$${DEPENDS:+$$$$DEPENDS, }$$$${depend##+}; \
 		done; \
-		echo "Depends: $(EXTRA_DEPENDS) $$$$DEPENDS" >> $$(IDIR_$(1))/CONTROL/control; \
+		echo "Depends: $$$$DEPENDS" >> $$(IDIR_$(1))/CONTROL/control; \
 	)
 	echo "Source: $(SOURCE)" >> $$(IDIR_$(1))/CONTROL/control
 	echo "Section: $(SECTION)" >> $$(IDIR_$(1))/CONTROL/control
