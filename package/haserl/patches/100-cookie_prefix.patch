@@ -1,0 +1,20 @@
+diff -ur haserl.old/src/haserl.c haserl.dev/src/haserl.c
+--- haserl.old/src/haserl.c	2004-11-10 18:59:35.000000000 +0100
++++ haserl.dev/src/haserl.c	2006-11-25 03:24:31.000000000 +0100
+@@ -74,6 +74,7 @@
+ token_t 	/*@null@*/ *token_list = NULL;
+ 
+ char	global_variable_prefix[] = HASERL_VAR_PREFIX;
++char	cookie_variable_prefix[] = "COOKIE_";
+ int	global_subshell_pipe[4];
+ int	global_subshell_pid;
+ int	global_subshell_died = 0;
+@@ -221,7 +222,7 @@
+ 	while (token) {
+ 		// skip leading spaces 
+ 		while ( token[0] == ' ' ) { token++; }
+-		myputenv(token, global_variable_prefix);
++		myputenv(token, cookie_variable_prefix);
+ 		token=strtok(NULL, ";");
+ 		}
+ 	free (qs);
