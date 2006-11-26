@@ -28,17 +28,20 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <sys/ioctl.h>
+#include <sys/syscall.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <error.h>
 #include <time.h>
+#include <string.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/param.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
 #include <sys/reboot.h>
-#include <string.h>
+#include <linux/reboot.h>
 
 #include "mtd.h"
 
@@ -458,8 +461,9 @@ int main (int argc, char **argv)
 
 	sync();
 	
-	if (boot)
-		kill(1, 15); // send SIGTERM to init for reboot
-
+	if (boot) {
+		fflush(stdout);
+		syscall(SYS_reboot,LINUX_REBOOT_MAGIC1,LINUX_REBOOT_MAGIC2,LINUX_REBOOT_CMD_RESTART,NULL);
+	}
 	return 0;
 }
