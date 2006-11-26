@@ -183,6 +183,7 @@ define Build/InstallDev
 		KERNEL_DIR="$(LINUX_DIR)" PREFIX=/usr \
 		DESTDIR="$(STAGING_DIR)" \
 		install install-devel
+	$(CP) $(PKG_BUILD_DIR)/include $(STAGING_DIR)/usr
 endef
 
 define Build/UninstallDev
