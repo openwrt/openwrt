@@ -173,7 +173,7 @@ define Build/Compile
 		COPT_FLAGS="$(TARGET_CFLAGS)" \
 		KERNEL_DIR="$(LINUX_DIR)" PREFIX=/usr \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
-		all install install-devel
+		all install
 endef
 
 define Build/InstallDev
@@ -182,13 +182,20 @@ define Build/InstallDev
 		COPT_FLAGS="$(TARGET_CFLAGS)" \
 		KERNEL_DIR="$(LINUX_DIR)" PREFIX=/usr \
 		DESTDIR="$(STAGING_DIR)" \
-		install install-devel
+		install-devel
 	$(CP) $(PKG_BUILD_DIR)/include $(STAGING_DIR)/usr
+	$(CP) $(PKG_BUILD_DIR)/libiptc/libiptc.a $(STAGING_DIR)/usr/lib
 endef
 
 define Build/UninstallDev
-	rm -rf $(STAGING_DIR)/usr/include/libipq.h
+	rm -rf $(STAGING_DIR)/usr/include/libipulog
+	rm -rf $(STAGING_DIR)/usr/include/libipq
+	rm -rf $(STAGING_DIR)/usr/include/libiptc
+	rm -rf $(STAGING_DIR)/usr/include/linux/netfilter*
+	rm -rf $(STAGING_DIR)/usr/include/iptables*
+	rm -rf $(STAGING_DIR)/usr/include/ip6tables*
 	rm -rf $(STAGING_DIR)/usr/lib/libipq.a
+	rm -rf $(STAGING_DIR)/usr/lib/libiptc.a
 endef
 
 define Package/iptables/install
