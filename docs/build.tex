@@ -245,7 +245,7 @@ and abstracted to the point where you only need to specify a few variables.
     \item \texttt{PKG\_SOURCE} \\
         The filename of the original sources
     \item \texttt{PKG\_SOURCE\_URL} \\
-        Where to download the sources from
+        Where to download the sources from (no trailing slash)
     \item \texttt{PKG\_MD5SUM} \\
         A checksum to validate the download
     \item \texttt{PKG\_CAT} \\
@@ -255,7 +255,9 @@ and abstracted to the point where you only need to specify a few variables.
 \end{itemize}
 
 The \texttt{PKG\_*} variables define where to download the package from;
-\texttt{@SF} is a special keyword for downloading packages from sourceforge.
+\texttt{@SF} is a special keyword for downloading packages from sourceforge. There is also
+another keyword of \texttt{@GNU} for grabbing GNU source releases.
+
 The md5sum is used to verify the package was downloaded correctly and
 \texttt{PKG\_BUILD\_DIR} defines where to find the package after the sources are
 uncompressed into \texttt{\$(BUILD\_DIR)}.
@@ -331,7 +333,26 @@ After you've created your \texttt{package/\textit{<name>}/Makefile}, the new pac
 will automatically show in the menu the next time you run "make menuconfig" and if selected
 will be built automatically the next time "\texttt{make}" is run.
 
-\subsubsection{Troubleshooting}
+
+\subsection{Conventions}
+
+There are a couple conventions to follow regarding packages:
+
+\begin{itemize}
+    \item \texttt{files}
+    \begin{enumerate}
+        \item configuration files follow the convention \\
+        \texttt{\textit{<name>}.conf}
+        \item init files follow the convention \\
+        \texttt{\textit{<name>}.init}
+    \end{enumerate}
+    \item \texttt{patches}
+    \begin{enumerate}
+        \item patches are numerically prefixed and named related to what they do
+    \end{enumerate}
+\end{itemize}
+
+\subsection{Troubleshooting}
 
 If you find your package doesn't show up in menuconfig, try the following command to
 see if you get the correct description:
