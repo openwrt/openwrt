@@ -188,6 +188,7 @@ define Build/InstallDev
 endef
 
 define Build/UninstallDev
+	rm -rf $(STAGING_DIR)/usr/include/libipq.h
 	rm -rf $(STAGING_DIR)/usr/include/libipulog
 	rm -rf $(STAGING_DIR)/usr/include/libipq
 	rm -rf $(STAGING_DIR)/usr/include/libiptc
