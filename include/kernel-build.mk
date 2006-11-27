@@ -70,14 +70,18 @@ define Kernel/Prepare
 	$(call Kernel/Prepare/Default)
 endef
 
+KERNEL_MAKEOPTS := -C $(LINUX_DIR) \
+	CROSS_COMPILE="$(KERNEL_CROSS)" \
+	ARCH="$(LINUX_KARCH)" \
+	CONFIG_SHELL="$(BASH)"
 
 define Kernel/Configure/2.4
 	$(SED) "s,\-mcpu=,\-mtune=,g;" $(LINUX_DIR)/arch/mips/Makefile
-	$(MAKE) -C $(LINUX_DIR) CROSS_COMPILE="$(KERNEL_CROSS)" CC="$(KERNEL_CC)" ARCH=$(LINUX_KARCH) oldconfig include/linux/compile.h include/linux/version.h
-	$(MAKE) -C $(LINUX_DIR) CROSS_COMPILE="$(KERNEL_CROSS)" ARCH=$(LINUX_KARCH) dep
+	$(MAKE) $(KERNEL_MAKEOPTS) CC="$(KERNEL_CC)" oldconfig include/linux/compile.h include/linux/version.h
+	$(MAKE) $(KERNEL_MAKEOPTS) dep
 endef
 define Kernel/Configure/2.6
-	$(MAKE) -C $(LINUX_DIR) CROSS_COMPILE="$(KERNEL_CROSS)" CC="$(KERNEL_CC)" ARCH=$(LINUX_KARCH) oldconfig prepare scripts
+	$(MAKE) $(KERNEL_MAKEOPTS) CC="$(KERNEL_CC)" oldconfig prepare scripts
 endef
 define Kernel/Configure/Default
 	@$(CP) $(LINUX_CONFIG) $(LINUX_DIR)/.config
