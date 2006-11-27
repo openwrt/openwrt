@@ -143,31 +143,35 @@ define BuildPackage
   IDEPEND_$(1):=$$(strip $$(DEPENDS))
 
   ifneq ($(DUMP),)
-    DUMPINFO += \
+    dumpinfo: dumpinfo-$(1)
+    dumpinfo-$(1): FORCE
+		@$$(DUMPINFO_$(call shvar,$(1)))
+		
+    DUMPINFO_$(call shvar,$(1)) += \
 	echo "Package: $(1)"; 
 
     ifneq ($(MENU),)
-      DUMPINFO += \
+      DUMPINFO_$(call shvar,$(1)) += \
 	echo "Menu: $(MENU)";
     endif
 
     ifneq ($(SUBMENU),)
-      DUMPINFO += \
+      DUMPINFO_$(call shvar,$(1)) += \
 	echo "Submenu: $(SUBMENU)";
       ifneq ($(SUBMENUDEP),)
-        DUMPINFO += \
+        DUMPINFO_$(call shvar,$(1)) += \
 	  echo "Submenu-Depends: $(SUBMENUDEP)";
       endif
     endif
 
     ifneq ($(DEFAULT),)
-      DUMPINFO += \
+      DUMPINFO_$(call shvar,$(1)) += \
 	echo "Default: $(DEFAULT)";
     endif
 
 	$(call shexport,Package/$(1)/description)
 
-    DUMPINFO += \
+    DUMPINFO_$(call shvar,$(1)) += \
 	if [ "$$$$PREREQ_CHECK" = 1 ]; then echo "Prereq-Check: 1"; fi; \
 	echo "Version: $(VERSION)"; \
 	echo "Depends: $$(IDEPEND_$(1))"; \
@@ -179,22 +183,25 @@ define BuildPackage
 		echo -n "Description: "; \
 		getvar $(call shvar,Package/$(1)/description); \
 	else \
-		echo "Description: $(DESCRIPTION)" | sed -e 's,\\,\n,g'; \
+		echo "Description: $(patsubst \\,\\\\,$(DESCRIPTION))" | perl -ne 's/\\/\n/g, print'; \
 	fi;
 	
     ifneq ($(URL),)
-      DUMPINFO += \
+      DUMPINFO_$(call shvar,$(1)) += \
 		echo; \
 		echo "$(URL)";
     endif
 	
-	DUMPINFO += \
+	DUMPINFO_$(call shvar,$(1)) += \
 		echo "@@";
 
 	$(call shexport,Package/$(1)/config)
-	DUMPINFO += \
-		if isset $(call shvar,Package/$(1)/config); then echo "Config: "; getvar $(call shvar,Package/$(1)/config); fi; \
-		echo "@@";
+	DUMPINFO_$(call shvar,$(1)) += \
+		if isset $(call shvar,Package/$(1)/config); then \
+			echo "Config: "; \
+			getvar $(call shvar,Package/$(1)/config); \
+			echo "@@"; \
+		fi;
   
   endif
 
@@ -331,8 +338,7 @@ define Build/Compile
 endef
 
 ifneq ($(DUMP),)
-  dumpinfo: FORCE
-	@$(DUMPINFO)
+  dumpinfo:
 else
   $(PACKAGE_DIR):
 	mkdir -p $@
