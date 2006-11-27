@@ -29,7 +29,7 @@ DEFAULT_PACKAGES += kmod-switch nvram
 
 define Profile/Broadcom
   NAME:=Generic, Broadcom WiFi (default)
-  PACKAGES:=kmod-brcm-wl
+  PACKAGES:=kmod-brcm-wl 
 endef
 $(eval $(call Profile,Broadcom))
 
@@ -54,31 +54,31 @@ $(eval $(call Profile,None))
 
 define Profile/WRT54G3G
   NAME:=Linksys WRT54G3G
-  PACKAGES:=kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-pcmcia-core kmod-pcmcia-serial kmod-nozomi comgt
+  PACKAGES:=kmod-brcm-wl kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-pcmcia-core kmod-pcmcia-serial kmod-nozomi comgt
 endef
 $(eval $(call Profile,WRT54G3G))
 
 define Profile/WL500G
   NAME:=ASUS WL-500g
-  PACKAGES:=kmod-usb-core kmod-usb-ohci kmod-lp
+  PACKAGES:=kmod-brcm-wl kmod-usb-core kmod-usb-ohci kmod-lp
 endef
 $(eval $(call Profile,WL500G))
 
 define Profile/WL500GD
   NAME:=ASUS WL-500g Deluxe
-  PACKAGES:=kmod-usb-core kmod-usb-uhci kmod-usb2
+  PACKAGES:=kmod-brcm-wl kmod-usb-core kmod-usb-uhci kmod-usb2
 endef
 $(eval $(call Profile,WL500GD))
 
 define Profile/WL500GP
   NAME:=ASUS WL-500g Premium
-  PACKAGES:=kmod-usb-core kmod-usb-ohci kmod-usb2
+  PACKAGES:=kmod-brcm-wl kmod-usb-core kmod-usb-ohci kmod-usb2
 endef
 $(eval $(call Profile,WL500GP))
 
 define Profile/WLHDD
   NAME:=WL-HDD
-  PACKAGES:=kmod-usb-core kmod-usb-ohci kmod-ide-core kmod-ide-pdc202xx
+  PACKAGES:=kmod-brcm-wl kmod-usb-core kmod-usb-ohci kmod-ide-core kmod-ide-pdc202xx
 endef
 $(eval $(call Profile,WLHDD))
 
