@@ -19,7 +19,7 @@ include $(INCLUDE_DIR)/host-build.mk
 
 define Build/Prepare
 	mkdir -p $(TOOLCHAIN_BUILD_DIR)
-	bzcat $(DL_DIR)/$(PKG_SOURCE) | $(TAR) -C $(TOOLCHAIN_BUILD_DIR) $(TAR_OPTIONS)
+	bzcat $(DL_DIR)/$(PKG_SOURCE) | $(HOST_TAR) -C $(TOOLCHAIN_BUILD_DIR) $(TAR_OPTIONS)
 	$(PATCH) $(PKG_BUILD_DIR) $(TOPDIR)/target/linux/generic-$(KERNEL)/patches
 	$(SED) 's/@expr length/@-expr length/' $(PKG_BUILD_DIR)/Makefile
 	ln -sf $(PKG_BUILD_DIR) $(LINUX_HEADERS_DIR)
