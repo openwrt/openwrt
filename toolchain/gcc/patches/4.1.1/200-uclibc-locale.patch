@@ -1747,7 +1747,7 @@
 +# ifdef __UCLIBC_HAS_XLOCALE__
 +	  _M_data->_M_decimal_point = __cloc->decimal_point_wc;
 +	  _M_data->_M_thousands_sep = __cloc->thousands_sep_wc;
-+# else
++# elif defined __UCLIBC_HAS_LOCALE__
 +	  _M_data->_M_decimal_point = __global_locale->decimal_point_wc;
 +	  _M_data->_M_thousands_sep = __global_locale->thousands_sep_wc;
 +# endif
@@ -1902,7 +1902,7 @@
 +# ifdef __UCLIBC_HAS_XLOCALE__
 +	  _M_data->_M_decimal_point = __cloc->decimal_point_wc;
 +	  _M_data->_M_thousands_sep = __cloc->thousands_sep_wc;
-+# else
++# elif defined __UCLIBC_HAS_LOCALE__
 +	  _M_data->_M_decimal_point = __global_locale->decimal_point_wc;
 +	  _M_data->_M_thousands_sep = __global_locale->thousands_sep_wc;
 +# endif
@@ -2174,7 +2174,7 @@
 +# ifdef __UCLIBC_HAS_XLOCALE__
 +	  _M_data->_M_decimal_point = __cloc->decimal_point_wc;
 +	  _M_data->_M_thousands_sep = __cloc->thousands_sep_wc;
-+# else
++# elif defined __UCLIBC_HAS_LOCALE__
 +	  _M_data->_M_decimal_point = __global_locale->decimal_point_wc;
 +	  _M_data->_M_thousands_sep = __global_locale->thousands_sep_wc;
 +# endif
@@ -3120,13 +3120,13 @@
 +    GLIBCXX_CHECK_WCHAR_T_SUPPORT
 +
 +    # For LFS.
-+    GLIBCXX_CHECK_INT64_T
++    AC_DEFINE(HAVE_INT64_T)
 +    case "$target" in
 +      *-uclinux*)
 +        # Don't enable LFS with uClinux
 +        ;;
 +      *)
-+        GLIBCXX_USE_LFS
++        AC_DEFINE(_GLIBCXX_USE_LFS)
 +    esac
 +
 +    # For showmanyc_helper().
