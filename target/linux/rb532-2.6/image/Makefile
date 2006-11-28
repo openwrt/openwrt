@@ -21,7 +21,7 @@ LOADER_MAKEOPTS= \
 		IMAGE_COPY=$(IMAGE_COPY)
 
 define Build/Clean
-	$(MAKE) -C ../generic/lzma-loader $(LOADER_MAKEOPTS) clean
+	$(MAKE) -C ../../generic-2.6/image/lzma-loader $(LOADER_MAKEOPTS) clean
 endef
 
 CMDLINE_SIZE=512
