@@ -20,7 +20,7 @@ all: world
 SHELL:=/usr/bin/env bash
 export LC_ALL=C
 export LANG=C
-export TOPDIR=${shell pwd}
+export TOPDIR=${CURDIR}
 ifeq ($(KBUILD_VERBOSE),99)
   MAKE:=3>/dev/null $(MAKE)
 endif
