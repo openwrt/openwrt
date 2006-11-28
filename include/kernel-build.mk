@@ -93,8 +93,8 @@ endef
 
 
 define Kernel/CompileModules/Default
-	$(MAKE) -j$(CONFIG_JLEVEL) -C "$(LINUX_DIR)" CROSS_COMPILE="$(KERNEL_CROSS)" CC="$(KERNEL_CC)" ARCH=$(LINUX_KARCH) modules
-	$(MAKE) -C "$(LINUX_DIR)" CROSS_COMPILE="$(KERNEL_CROSS)" CC="$(KERNEL_CC)" ARCH=$(LINUX_KARCH) DEPMOD=true INSTALL_MOD_PATH=$(KERNEL_BUILD_DIR)/modules modules_install
+	$(MAKE) -j$(CONFIG_JLEVEL) $(KERNEL_MAKEOPTS) CC="$(KERNEL_CC)" modules
+	$(MAKE) $(KERNEL_MAKEOPTS) CC="$(KERNEL_CC)" DEPMOD=true INSTALL_MOD_PATH=$(KERNEL_BUILD_DIR)/modules modules_install
 endef
 define Kernel/CompileModules
 	$(call Kernel/CompileModules/Default)
@@ -123,7 +123,7 @@ ifeq ($(KERNEL),2.6)
 endif
 define Kernel/CompileImage/Default
 	$(call Kernel/SetInitramfs)
-	$(MAKE) -j$(CONFIG_JLEVEL) -C $(LINUX_DIR) CROSS_COMPILE="$(KERNEL_CROSS)" CC="$(KERNEL_CC)" ARCH=$(LINUX_KARCH) $(KERNELNAME)
+	$(MAKE) -j$(CONFIG_JLEVEL) $(KERNEL_MAKEOPTS) CC="$(KERNEL_CC)" $(KERNELNAME)
 	$(KERNEL_CROSS)objcopy -O binary -R .reginfo -R .note -R .comment -R .mdebug -S $(LINUX_DIR)/vmlinux $(LINUX_KERNEL)
 endef
 define Kernel/CompileImage
