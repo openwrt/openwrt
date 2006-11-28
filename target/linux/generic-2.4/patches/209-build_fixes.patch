@@ -26,7 +26,7 @@ diff -urN linux.old/Makefile linux.dev/Makefile
  #
  fastdep: dummy
 -	$(TOPDIR)/scripts/mkdep $(CFLAGS) $(EXTRA_CFLAGS_nostdinc) -- $(wildcard *.[chS]) > .depend
-+	find -name '*.[chS]' | xargs $(TOPDIR)/scripts/mkdep $(CFLAGS) $(EXTRA_CFLAGS_nostdinc) -- > .depend
++	find . -name '*.[chS]' | xargs $(TOPDIR)/scripts/mkdep $(CFLAGS) $(EXTRA_CFLAGS_nostdinc) -- > .depend
  ifdef ALL_SUB_DIRS
  	$(MAKE) $(patsubst %,_sfdep_%,$(ALL_SUB_DIRS)) _FASTDEP_ALL_SUB_DIRS="$(ALL_SUB_DIRS)"
  endif
