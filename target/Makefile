@@ -19,6 +19,9 @@ linux-compile: utils-install
 linux-install: $(BIN_DIR)
 image_install: linux-install
 
+IMAGE_DIR:=linux/$(BOARD)-$(KERNEL)/image
+
+
 download: $(patsubst %,%-download,$(TARGETS-y))
 prepare: linux-prepare
 compile: linux-compile image_compile
@@ -27,17 +30,17 @@ clean: $(patsubst %,%-clean,$(TARGETS-y)) image_clean
 
 prereq: FORCE
 	$(MAKE) -C linux/$(BOARD)-$(KERNEL) prereq
-	$(MAKE) -C image/$(BOARD) prereq
+	$(MAKE) -C $(IMAGE_DIR) prereq
 
 image_clean: FORCE
-	$(MAKE) -C image/$(BOARD) clean
+	$(MAKE) -C $(IMAGE_DIR) clean
 	rm -f $(BIN_DIR)/openwrt-*
 	
 image_compile: FORCE
-	$(MAKE) -C image/$(BOARD) compile
+	$(MAKE) -C $(IMAGE_DIR) compile
 
 image_install: image_compile
-	$(MAKE) -C image/$(BOARD) install
+	$(MAKE) -C $(IMAGE_DIR) install
 
 %-clean: FORCE
 	$(MAKE) -C $(patsubst %-clean,%,$@) clean
