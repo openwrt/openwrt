@@ -3,7 +3,7 @@
 
 case "$ACTION" in
 add) 
-	[ -f /sys/${DEVPATH}/idVendor -a "$(cat /sys/${DEVPATH}/idVendor)" -ne "0000" ] && {
+	[ -f /sys/${DEVPATH}/idVendor -a "$(cat /sys/${DEVPATH}/idVendor)" != "0000" ] && {
 		cd /sys/${DEVPATH}
 
 		NUM=${DEVPATH##*/}
@@ -15,7 +15,7 @@ add)
 		while [ ! -d "/dev/scsi/host${HOST}/bus0/target0/lun0" ]; do {
 			echo -ne "."
 			sleep 1;
-			time=$((time+1)); [ $time -gt 10 ] && break
+			[ "$((++time))" -gt 10 ] && break
 		}; done
 		echo
 		
