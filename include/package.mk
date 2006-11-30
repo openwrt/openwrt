@@ -127,7 +127,7 @@ define BuildPackage
       install-targets: $$(INFO_$(1))
     endif
 
-    ifneq ($(CONFIG_PACKAGE_$(1)),)
+    ifneq ($(CONFIG_PACKAGE_$(1))$(DEVELOPER)$(SDK),)
       compile-targets: $$(IPKG_$(1))
     else
       compile-targets: $(1)-disabled
@@ -257,7 +257,7 @@ define BuildPackage
   $$(eval $$(call Build/DefaultTargets,$(1)))
 
   ifdef Package/$(1)/install
-    ifneq ($$(CONFIG_PACKAGE_$(1)),)
+    ifneq ($$(CONFIG_PACKAGE_$(1))$(DEVELOPER)$(SDK),)
       ifneq ($(MAKECMDGOALS),prereq)
         ifneq ($(DUMP),1)
           ifneq ($$(shell $(SCRIPT_DIR)/timestamp.pl -p -x ipkg -x ipkg-install '$$(IPKG_$(1))' '$(PKG_BUILD_DIR)'),$$(IPKG_$(1)))
