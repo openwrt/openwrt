@@ -29,7 +29,7 @@ define Build/Configure
 	yes '' | $(MAKE) -C $(PKG_BUILD_DIR) \
 		ARCH=$(LINUX_KARCH) \
 		CONFIG_SHELL=$(BASH) \
-		oldconfig include/linux/version.h
+		oldconfig include/linux/version.h include/asm
 endef
 
 define Build/Compile
