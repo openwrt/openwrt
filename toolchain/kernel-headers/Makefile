@@ -25,11 +25,16 @@ define Build/Prepare
 	ln -sf $(PKG_BUILD_DIR) $(LINUX_HEADERS_DIR)
 endef
 
+define Build/Configure/powerpc
+	$(CP) $(PKG_BUILD_DIR)/include/asm-powerpc/* $(PKG_BUILD_DIR)/include/asm-ppc/
+endef
+
 define Build/Configure
 	yes '' | $(MAKE) -C $(PKG_BUILD_DIR) \
 		ARCH=$(LINUX_KARCH) \
 		CONFIG_SHELL=$(BASH) \
 		oldconfig include/linux/version.h include/asm
+	$(call Build/Configure/$(ARCH))
 endef
 
 define Build/Compile
