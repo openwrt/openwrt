@@ -26,7 +26,9 @@ define Build/Prepare
 endef
 
 define Build/Configure/powerpc
-	$(CP) $(PKG_BUILD_DIR)/include/asm-powerpc/* $(PKG_BUILD_DIR)/include/asm-ppc/
+	$(CP) $(PKG_BUILD_DIR)/include/asm-ppc/* $(PKG_BUILD_DIR)/include/asm-powerpc/
+	rm -rf $(PKG_BUILD_DIR)/include/asm-ppc
+	mv $(PKG_BUILD_DIR)/include/asm-powerpc $(PKG_BUILD_DIR)/include/asm-ppc
 endef
 
 define Build/Configure
