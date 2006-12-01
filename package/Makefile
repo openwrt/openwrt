@@ -55,6 +55,9 @@ install-targets: base-files-install $(INSTALL_PACKAGES)
 install:
 	rm -rf $(BUILD_DIR)/root
 	$(MAKE) install-targets
+	@if [ -d $(TOPDIR)/files ]; then \
+		$(CP) $(TOPDIR)/files/. $(BUILD_DIR)/root; \
+	fi
 	@( \
 		cd $(BUILD_DIR)/root; \
 		for script in ./etc/init.d/*; do \
