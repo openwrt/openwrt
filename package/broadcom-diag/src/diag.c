@@ -556,6 +556,8 @@ static irqreturn_t button_handler(int irq, void *dev_id, struct pt_regs *regs)
 	changed = platform.button_polarity ^ in;
 	platform.button_polarity = in;
 
+	changed &= ~gpio_outen(0, 0);
+
 	for (b = platform.buttons; b->name; b++) { 
 		struct event_t *event;
 
