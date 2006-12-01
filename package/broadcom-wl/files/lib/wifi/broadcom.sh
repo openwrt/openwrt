@@ -153,7 +153,7 @@ enable_broadcom() {
 				config_get key "$vif" key
 				case "$enc" in
 					wpa2*|WPA2*|PSK2*|psk2*) auth=128; wsec=4;;
-					*) auth=4; crypto=2;;
+					*) auth=4; wsec=2;;
 				esac
 				eval "${vif}_key=\"\$key\""
 				nasopts="-k \"\$${vif}_key\""
@@ -166,7 +166,7 @@ enable_broadcom() {
 				config_get port "$vif" port
 				case "$enc" in
 					wpa2*|WPA2*) auth=64; wsec=4;;
-					*) auth=2; crypto=2;;
+					*) auth=2; wsec=2;;
 				esac
 				eval "${vif}_key=\"\$key\""
 				nasopts="-r \"\$${vif}_key\" -h $server -p $port"
@@ -198,7 +198,7 @@ enable_broadcom() {
 			eval "${vif}_ssid=\"\$ssid\""
 			mode="-A"
 			[ "$vif" = "$sta_if" ] && mode="-S"
-			[ -z "$nas" ] || nas_cmd="${nas_cmd:+$nas_cmd$N}$nas -P /var/run/nas.$ifname.pid -H 34954 ${bridge:+ -l $bridge} -i $ifname $mode -m $auth -w $crypto -s \"\$${vif}_ssid\" -g 3600 $nasopts &"
+			[ -z "$nas" ] || nas_cmd="${nas_cmd:+$nas_cmd$N}$nas -P /var/run/nas.$ifname.pid -H 34954 ${bridge:+ -l $bridge} -i $ifname $mode -m $auth -w $wsec -s \"\$${vif}_ssid\" -g 3600 $nasopts &"
 		}
 		_c=$(($_c + 1))
 	done
