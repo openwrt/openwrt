@@ -14,7 +14,7 @@ find_net_config() {(
 		include /lib/network
 		scan_interfaces
 
-		config_get ifname "$vif" ifnamea
+		config_get ifname "$vif" ifname
 
 		cfg="$(find_config "$ifname")"
 	}
