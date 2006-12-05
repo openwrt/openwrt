@@ -1,0 +1,42 @@
+diff -urN pcmcia-cs-3.2.8-old/cardmgr/cardmgr.c pcmcia-cs-3.2.8-new/cardmgr/cardmgr.c
+--- pcmcia-cs-3.2.8-old/cardmgr/cardmgr.c	2004-05-21 08:39:36.000000000 +0200
++++ pcmcia-cs-3.2.8-new/cardmgr/cardmgr.c	2006-03-29 20:27:03.000000000 +0200
+@@ -739,10 +739,7 @@
+     int ret;
+ 
+     strcpy(cmd, "insmod ");
+-    if (strchr(mod, '/') != NULL)
+-	sprintf(cmd+7, "%s/%s.o", modpath, mod);
+-    else
+-	sprintf(cmd+7, "%s/pcmcia/%s.o", modpath, mod);
++    sprintf(cmd+7, "%s/%s.o", modpath, mod);
+     if (access(cmd+7, R_OK) != 0) {
+ 	syslog(LOG_NOTICE, "module %s not available", cmd+7);
+ 	free(cmd);
+@@ -808,11 +805,13 @@
+     }
+ 
+     if (do_modprobe) {
+-	if (try_modprobe(mod, opts) != 0)
++	if (try_modprobe(mod, opts) != 0) {
+ 	    try_insmod(mod, opts);
++	}
+     } else {
+-	if (try_insmod(mod, opts) != 0)
++	if (try_insmod(mod, opts) != 0) {
+ 	    try_modprobe(mod, opts);
++	}
+     }
+ }
+ 
+@@ -1113,8 +1112,9 @@
+ 
+     /* remove kernel modules in inverse order */
+     for (i = 0; i < card->bindings; i++) {
+-	for (j = dev[i]->modules-1; j >= 0; j--)
++	for (j = dev[i]->modules-1; j >= 0; j--) {
+ 	    remove_module(dev[i]->module[j]);
++	}
+ 	free_device(dev[i]);
+     }
+     /* Remove any MTD's bound to this socket */
