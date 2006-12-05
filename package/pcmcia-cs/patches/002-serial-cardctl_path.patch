@@ -1,0 +1,12 @@
+diff -urN pcmcia-cs-3.2.8-old/etc/shared pcmcia-cs-3.2.8-new/etc/shared
+--- pcmcia-cs-3.2.8-old/etc/shared	2004-02-28 17:49:45.000000000 +0100
++++ pcmcia-cs-3.2.8-new/etc/shared	2006-03-29 18:49:07.000000000 +0200
+@@ -167,7 +167,7 @@
+ 	    STAB=/var/run/stab
+ 	fi
+ 	grep_stab $1 < $STAB || usage
+-	eval `/sbin/cardctl info $SOCKET`
++	eval `/usr/sbin/cardctl info $SOCKET`
+     fi
+ }
+ 
