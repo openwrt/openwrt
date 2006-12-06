@@ -12,10 +12,9 @@ all: install
 $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
 
-TARGETS-y := linux utils
+TARGETS-y := linux
 TARGETS-$(CONFIG_SDK) += sdk
 
-linux-compile: utils-install
 linux-install: $(BIN_DIR)
 image_install: linux-install
 

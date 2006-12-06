@@ -7,7 +7,7 @@
 # Main makefile for the host tools
 #
 include $(TOPDIR)/rules.mk
-TARGETS-y:=sed sstrip ipkg-utils ext2fs squashfs mtd-utils lzma mkimage
+TARGETS-y:=sed sstrip ipkg-utils ext2fs squashfs mtd-utils lzma mkimage firmware-utils
 
 TARGETS_DOWNLOAD:=$(patsubst %,%-download,$(TARGETS-y))
 TARGETS_PREPARE:=$(patsubst %,%-prepare,$(TARGETS-y))
