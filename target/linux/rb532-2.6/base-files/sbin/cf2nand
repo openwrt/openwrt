@@ -6,13 +6,8 @@ copy_kernel() {
 	local output="$2"
 	local cmdline="$3"
 	size="$(echo -n "$cmdline" | wc -c)"
-	dd if="$input" bs=3M count=1 | (
-		dd bs=4112 count=1
-		echo -n "$cmdline"
-		dd if=/dev/zero bs="$((512 - $size))" count=1
-		dd bs=512 count=1 of=/dev/null
-		cat
-	) > "$output"
+	dd if="$input" bs=3M count=1 > "$output"
+	/sbin/patch-cmdline "$output" "$cmdline"
 }
 
 fstype="$(mount | grep ' / ' | awk '{print $5}')"

@@ -1,18 +1,33 @@
 diff -ur linux.old/arch/mips/kernel/head.S linux.dev/arch/mips/kernel/head.S
---- linux.old/arch/mips/kernel/head.S	2006-10-26 00:11:13.000000000 +0200
-+++ linux.dev/arch/mips/kernel/head.S	2006-10-26 02:40:10.000000000 +0200
-@@ -132,6 +132,8 @@
+--- linux.old/arch/mips/kernel/head.S	2006-12-06 17:30:27.000000000 +0100
++++ linux.dev/arch/mips/kernel/head.S	2006-12-06 18:34:43.000000000 +0100
+@@ -129,15 +129,20 @@
+ #endif
+ 	.endm
  
+-
  	j kernel_entry
  	nop
+-
 +	nop
-+EXPORT(_image_cmdline)
- 
++	
  	/*
  	 * Reserved space for exception handlers.
+ 	 * Necessary for machines which link their kernels at KSEG0.
++	 * Use as temporary storage for the kernel command line, so that it
++	 * can be updated easily without having to relink the kernel.
+ 	 */
+-	.fill	0x400
++	 
++EXPORT(_image_cmdline)
++	.ascii "CMDLINE:"
++	.fill	0x3ec
+ 
+ EXPORT(stext)					# used for profiling
+ EXPORT(_stext)
 diff -ur linux.old/arch/mips/rb500/prom.c linux.dev/arch/mips/rb500/prom.c
---- linux.old/arch/mips/rb500/prom.c	2006-10-26 00:11:14.000000000 +0200
-+++ linux.dev/arch/mips/rb500/prom.c	2006-10-26 02:40:46.000000000 +0200
+--- linux.old/arch/mips/rb500/prom.c	2006-12-06 17:30:27.000000000 +0100
++++ linux.dev/arch/mips/rb500/prom.c	2006-12-06 17:41:40.000000000 +0100
 @@ -128,6 +128,7 @@
  	/* FIXME: STUB */
  }
@@ -26,7 +41,7 @@ diff -ur linux.old/arch/mips/rb500/prom.c linux.dev/arch/mips/rb500/prom.c
  		cp+=strlen(prom_argv[i]);
  	}
 +	*(cp++) = ' ';
-+	strcpy(cp,&_image_cmdline);
++	strcpy(cp,(&_image_cmdline + 8));
 +	cp += strlen(&_image_cmdline);
  	
  	i=strlen(arcs_cmdline);
