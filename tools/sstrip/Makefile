@@ -7,6 +7,7 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/host-build.mk
 
+PKG_NAME:=sstrip
 PKG_BUILD_DIR:=$(TOOL_BUILD_DIR)/sstrip
 
 OS:=$(shell uname)
