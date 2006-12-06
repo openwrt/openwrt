@@ -37,7 +37,8 @@ sub download
 	my $mirror = shift;
 	my $options = $ENV{WGET_OPTIONS};
 	$options or $options = "";
-
+	
+	$mirror =~ s/\/$//;
 	open WGET, "wget -t1 --timeout=20 $options -O- \"$mirror/$filename\" |" or die "Cannot launch wget.\n";
 	open MD5SUM, "| $md5cmd > \"$target/$filename.md5sum\"" or die "Cannot launch md5sum.\n";
 	open OUTPUT, "> $target/$filename.dl" or die "Cannot create file $target/$filename.dl: $!\n";
