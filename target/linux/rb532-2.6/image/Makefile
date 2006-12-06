@@ -20,17 +20,16 @@ LOADER_MAKEOPTS= \
 		RAMSIZE=$(RAMSIZE) \
 		IMAGE_COPY=$(IMAGE_COPY)
 
+define Build/Compile
+	$(CC) -o $(STAGING_DIR)/bin/patch-cmdline $(PLATFORM_DIR)/src/patch-cmdline.c
+endef
+
 define Build/Clean
 	$(MAKE) -C ../../generic-2.6/image/lzma-loader $(LOADER_MAKEOPTS) clean
 endef
 
-CMDLINE_SIZE=512
-CMDLINE_OFFSET=4112
-
 define Image/Prepare
-	echo 'root=/dev/cfa2 ' | \
-		dd bs=$(CMDLINE_SIZE) count=1 conv=sync | \
-		dd of=$(LINUX_DIR)/vmlinux bs=$(CMDLINE_OFFSET) conv=notrunc seek=1
+	$(STAGING_DIR)/bin/patch-cmdline $(LINUX_DIR)/vmlinux 'root=/dev/cfa2 '
 	$(KERNEL_CROSS)objcopy -O binary -R .reginfo -R .note -R .comment -R .mdebug -S $(LINUX_DIR)/vmlinux $(LINUX_KERNEL)
 endef
 
@@ -56,9 +55,7 @@ root=/dev/cfa2 rootfstype=ext2
 endef
 
 define Image/Build
-	echo '$(strip $(call Image/cmdline/$(1))) ' | \
-		dd bs=$(CMDLINE_SIZE) count=1 conv=sync | \
-		dd of=$(LINUX_DIR)/vmlinux bs=$(CMDLINE_OFFSET) conv=notrunc seek=1
+	$(STAGING_DIR)/bin/patch-cmdline $(LINUX_DIR)/vmlinux '$(strip $(call Image/cmdline/$(1))) '
 	( \
 		echo -ne OWRT | dd bs=$$$$((0x1be)) conv=sync; \
 		( \
