@@ -24,10 +24,12 @@ define Image/Prepare
 	cat $(KDIR)/vmlinux | $(STAGING_DIR)/bin/lzma e -si -so -eos -lc1 -lp2 -pb2 > $(KDIR)/vmlinux.lzma
 endef
 
-define Image/Build/wgt634u
+ifneq ($(KERNEL),2.4)
+  define Image/Build/wgt634u
 	dd if=$(KDIR)/loader.elf of=$(BIN_DIR)/openwrt-wgt634u-$(KERNEL)-$(2).bin bs=131072 conv=sync
 	cat $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).trx >> $(BIN_DIR)/openwrt-wgt634u-$(KERNEL)-$(2).bin
-endef
+  endef
+endif
 
 define Image/Build/CyberTAN
 	$(STAGING_DIR)/bin/addpattern -4 -p $(3) -v v$(4) -i $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).trx -o $(BIN_DIR)/openwrt-$(2)-$(KERNEL)-$(5).bin
