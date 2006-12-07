@@ -56,7 +56,3 @@ define Image/Build
 endef
 
 $(eval $(call BuildImage))
-
-$(eval $(call RequireCommand,fdisk, \
-	Please install fdisk \
-))
