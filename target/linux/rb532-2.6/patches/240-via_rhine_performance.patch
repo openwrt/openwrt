@@ -1,6 +1,6 @@
-diff -urN linux.old/drivers/net/via-rhine.c linux.dev/drivers/net/via-rhine.c
---- linux.old/drivers/net/via-rhine.c	2006-06-08 20:21:20.000000000 +0200
-+++ linux.dev/drivers/net/via-rhine.c	2006-06-08 20:19:40.000000000 +0200
+diff -ur linux.old/drivers/net/via-rhine.c linux.dev/drivers/net/via-rhine.c
+--- linux.old/drivers/net/via-rhine.c	2006-12-07 05:53:39.000000000 +0100
++++ linux.dev/drivers/net/via-rhine.c	2006-12-07 07:06:52.000000000 +0100
 @@ -131,6 +131,10 @@
  	- Fix Tx engine race for good
  	- Craig Brind: Zero padded aligned buffers for short packets.
@@ -27,9 +27,9 @@ diff -urN linux.old/drivers/net/via-rhine.c linux.dev/drivers/net/via-rhine.c
 -#define TX_RING_SIZE	16
 -#define TX_QUEUE_LEN	10	/* Limit ring entries actually used. */
 -#define RX_RING_SIZE	16
-+#define TX_RING_SIZE	128
-+#define TX_QUEUE_LEN	120	/* Limit ring entries actually used. */
-+#define RX_RING_SIZE	128
++#define TX_RING_SIZE	64
++#define TX_QUEUE_LEN	60	/* Limit ring entries actually used. */
++#define RX_RING_SIZE	64
  
  
  /* Operational parameters that usually are not changed. */
@@ -61,8 +61,8 @@ diff -urN linux.old/drivers/net/via-rhine.c linux.dev/drivers/net/via-rhine.c
  
  	/* The addresses of receive-in-place skbuffs. */
  	struct sk_buff *rx_skbuff[RX_RING_SIZE];
-@@ -504,9 +508,10 @@
- static void rhine_check_media_task(struct net_device *dev);
+@@ -500,9 +504,10 @@
+ static void rhine_tx_timeout(struct net_device *dev);
  static int  rhine_start_tx(struct sk_buff *skb, struct net_device *dev);
  static irqreturn_t rhine_interrupt(int irq, void *dev_instance, struct pt_regs *regs);
 -static void rhine_tx(struct net_device *dev);
@@ -70,21 +70,20 @@ diff -urN linux.old/drivers/net/via-rhine.c linux.dev/drivers/net/via-rhine.c
 -static void rhine_error(struct net_device *dev, int intr_status);
 +static int rhine_poll(struct net_device *dev, int *budget);
 +static int rhine_tx(struct net_device *dev);
-+static int rhine_rx(struct net_device *dev);
++static int rhine_rx(struct net_device *dev, int max_work);
 +static void rhine_error(struct net_device *dev);
  static void rhine_set_rx_mode(struct net_device *dev);
  static struct net_device_stats *rhine_get_stats(struct net_device *dev);
  static int netdev_ioctl(struct net_device *dev, struct ifreq *rq, int cmd);
-@@ -601,6 +606,8 @@
+@@ -597,6 +602,7 @@
  	struct rhine_private *rp = netdev_priv(dev);
  	void __iomem *ioaddr = rp->base;
  
 +	pci_enable_device(rp->pdev);
-+
  	iowrite8(Cmd1Reset, ioaddr + ChipCmd1);
  	IOSYNC;
  
-@@ -622,6 +629,28 @@
+@@ -618,6 +624,28 @@
  			"failed" : "succeeded");
  }
  
@@ -113,7 +112,7 @@ diff -urN linux.old/drivers/net/via-rhine.c linux.dev/drivers/net/via-rhine.c
  #ifdef USE_MMIO
  static void enable_mmio(long pioaddr, u32 quirks)
  {
-@@ -664,14 +693,26 @@
+@@ -660,14 +688,26 @@
  
  }
  
@@ -127,7 +126,7 @@ diff -urN linux.old/drivers/net/via-rhine.c linux.dev/drivers/net/via-rhine.c
 +	unsigned int work_done, work_to_do = min(*budget, dev->quota);
 +	struct rhine_private *rp = netdev_priv(dev);
 +
-+	work_done = rhine_rx(dev);
++	work_done = rhine_rx(dev, (*budget < dev->quota ? *budget : dev->quota));
 +
 +	if (rp->istat & (IntrTxErrSummary | IntrTxDone))
 +		rhine_tx(dev);
@@ -146,7 +145,7 @@ diff -urN linux.old/drivers/net/via-rhine.c linux.dev/drivers/net/via-rhine.c
  
  static void rhine_hw_init(struct net_device *dev, long pioaddr)
  {
-@@ -850,11 +891,10 @@
+@@ -846,11 +886,10 @@
  	dev->ethtool_ops = &netdev_ethtool_ops;
  	dev->tx_timeout = rhine_tx_timeout;
  	dev->watchdog_timeo = TX_TIMEOUT;
@@ -160,9 +159,9 @@ diff -urN linux.old/drivers/net/via-rhine.c linux.dev/drivers/net/via-rhine.c
 +
 +	dev->features |= NETIF_F_SG | NETIF_F_HW_CSUM;
  
- 	INIT_WORK(&rp->tx_timeout_task,
- 		  (void (*)(void *))rhine_tx_timeout_task, dev);
-@@ -904,6 +944,10 @@
+ 	/* dev->name not defined before register_netdev()! */
+ 	rc = register_netdev(dev);
+@@ -894,6 +933,10 @@
  		}
  	}
  	rp->mii_if.phy_id = phy_id;
@@ -173,7 +172,7 @@ diff -urN linux.old/drivers/net/via-rhine.c linux.dev/drivers/net/via-rhine.c
  
  	return 0;
  
-@@ -995,7 +1039,7 @@
+@@ -985,7 +1028,7 @@
  
  	/* Fill in the Rx buffers.  Handle allocation failure gracefully. */
  	for (i = 0; i < RX_RING_SIZE; i++) {
@@ -182,7 +181,7 @@ diff -urN linux.old/drivers/net/via-rhine.c linux.dev/drivers/net/via-rhine.c
  		rp->rx_skbuff[i] = skb;
  		if (skb == NULL)
  			break;
-@@ -1115,11 +1159,7 @@
+@@ -1120,11 +1163,7 @@
  	rhine_set_rx_mode(dev);
  
  	/* Enable interrupts by setting the interrupt mask. */
@@ -195,7 +194,7 @@ diff -urN linux.old/drivers/net/via-rhine.c linux.dev/drivers/net/via-rhine.c
  
  	iowrite16(CmdStart | CmdTxOn | CmdRxOn | (Cmd1NoTxPoll << 8),
  	       ioaddr + ChipCmd);
-@@ -1230,6 +1270,7 @@
+@@ -1235,6 +1274,7 @@
  		       mdio_read(dev, rp->mii_if.phy_id, MII_BMSR));
  
  	netif_start_queue(dev);
@@ -203,7 +202,7 @@ diff -urN linux.old/drivers/net/via-rhine.c linux.dev/drivers/net/via-rhine.c
  
  	return 0;
  }
-@@ -1268,8 +1309,8 @@
+@@ -1263,8 +1303,8 @@
  	/* Reinitialize the hardware. */
  	rhine_chip_reset(dev);
  	init_registers(dev);
@@ -213,7 +212,7 @@ diff -urN linux.old/drivers/net/via-rhine.c linux.dev/drivers/net/via-rhine.c
  	enable_irq(rp->pdev->irq);
  
  	dev->trans_start = jiffies;
-@@ -1363,69 +1404,56 @@
+@@ -1358,77 +1398,66 @@
  	struct net_device *dev = dev_instance;
  	struct rhine_private *rp = netdev_priv(dev);
  	void __iomem *ioaddr = rp->base;
@@ -293,8 +292,7 @@ diff -urN linux.old/drivers/net/via-rhine.c linux.dev/drivers/net/via-rhine.c
  	int txstatus = 0, entry = rp->dirty_tx % TX_RING_SIZE;
 +	void __iomem *ioaddr = rp->base;
 +	int done = 0;
- 
--	spin_lock(&rp->lock);
++
 +	/* Avoid scavenging before Tx engine turned off */
 +	RHINE_WAIT_FOR(!(ioread8(ioaddr+ChipCmd) & CmdTxOn));
 +	if (debug > 2 &&
@@ -303,12 +301,32 @@ diff -urN linux.old/drivers/net/via-rhine.c linux.dev/drivers/net/via-rhine.c
 +			   "rhine_interrupt() Tx engine"
 +			   "still on.\n", dev->name);
  
-+
-+	spin_lock_irq(&rp->lock);
+-	spin_lock(&rp->lock);
+ 
  	/* find and cleanup dirty tx descriptors */
  	while (rp->dirty_tx != rp->cur_tx) {
++		spin_lock(&rp->lock);
  		txstatus = le32_to_cpu(rp->tx_ring[entry].tx_status);
-@@ -1462,6 +1490,7 @@
+ 		if (debug > 6)
+ 			printk(KERN_DEBUG "Tx scavenge %d status %8.8x.\n",
+ 			       entry, txstatus);
+-		if (txstatus & DescOwn)
++		if (txstatus & DescOwn) {
++			spin_unlock(&rp->lock);
+ 			break;
++		}
+ 		if (txstatus & 0x8000) {
+ 			if (debug > 1)
+ 				printk(KERN_DEBUG "%s: Transmit error, "
+@@ -1443,6 +1472,7 @@
+ 			    (txstatus & 0x0800) || (txstatus & 0x1000)) {
+ 				rp->stats.tx_fifo_errors++;
+ 				rp->tx_ring[entry].tx_status = cpu_to_le32(DescOwn);
++				spin_unlock(&rp->lock);
+ 				break; /* Keep the skb - we try again */
+ 			}
+ 			/* Transmitter restarted in 'abnormal' handler. */
+@@ -1457,6 +1487,7 @@
  				       txstatus & 0xF);
  			rp->stats.tx_bytes += rp->tx_skbuff[entry]->len;
  			rp->stats.tx_packets++;
@@ -316,7 +334,7 @@ diff -urN linux.old/drivers/net/via-rhine.c linux.dev/drivers/net/via-rhine.c
  		}
  		/* Free the original skb. */
  		if (rp->tx_skbuff_dma[entry]) {
-@@ -1470,23 +1499,25 @@
+@@ -1465,23 +1496,25 @@
  					 rp->tx_skbuff[entry]->len,
  					 PCI_DMA_TODEVICE);
  		}
@@ -324,8 +342,8 @@ diff -urN linux.old/drivers/net/via-rhine.c linux.dev/drivers/net/via-rhine.c
 +		dev_kfree_skb_any(rp->tx_skbuff[entry]);
  		rp->tx_skbuff[entry] = NULL;
  		entry = (++rp->dirty_tx) % TX_RING_SIZE;
++		spin_unlock(&rp->lock);
  	}
-+	spin_unlock_irq(&rp->lock);
 +
  	if ((rp->cur_tx - rp->dirty_tx) < TX_QUEUE_LEN - 4)
  		netif_wake_queue(dev);
@@ -337,7 +355,7 @@ diff -urN linux.old/drivers/net/via-rhine.c linux.dev/drivers/net/via-rhine.c
  /* This routine is logically part of the interrupt handler, but isolated
     for clarity and better register allocation. */
 -static void rhine_rx(struct net_device *dev)
-+static int rhine_rx(struct net_device *dev)
++static int rhine_rx(struct net_device *dev, int max_work)
  {
  	struct rhine_private *rp = netdev_priv(dev);
  	int entry = rp->cur_rx % RX_RING_SIZE;
@@ -346,16 +364,16 @@ diff -urN linux.old/drivers/net/via-rhine.c linux.dev/drivers/net/via-rhine.c
  
  	if (debug > 4) {
  		printk(KERN_DEBUG "%s: rhine_rx(), entry %d status %8.8x.\n",
-@@ -1503,8 +1534,6 @@
+@@ -1498,7 +1531,7 @@
  		if (debug > 4)
  			printk(KERN_DEBUG "rhine_rx() status is %8.8x.\n",
  			       desc_status);
 -		if (--boguscnt < 0)
--			break;
++		if (--max_work < 0)
+ 			break;
  		if ((desc_status & (RxWholePkt | RxErr)) != RxWholePkt) {
  			if ((desc_status & RxWholePkt) != RxWholePkt) {
- 				printk(KERN_WARNING "%s: Oversized Ethernet "
-@@ -1528,9 +1557,7 @@
+@@ -1523,9 +1556,7 @@
  				if (desc_status & 0x0004) rp->stats.rx_frame_errors++;
  				if (desc_status & 0x0002) {
  					/* this can also be updated outside the interrupt handler */
@@ -365,7 +383,7 @@ diff -urN linux.old/drivers/net/via-rhine.c linux.dev/drivers/net/via-rhine.c
  				}
  			}
  		} else {
-@@ -1558,6 +1585,7 @@
+@@ -1553,6 +1584,7 @@
  							       rp->rx_buf_sz,
  							       PCI_DMA_FROMDEVICE);
  			} else {
@@ -373,7 +391,7 @@ diff -urN linux.old/drivers/net/via-rhine.c linux.dev/drivers/net/via-rhine.c
  				skb = rp->rx_skbuff[entry];
  				if (skb == NULL) {
  					printk(KERN_ERR "%s: Inconsistent Rx "
-@@ -1566,6 +1594,14 @@
+@@ -1561,6 +1593,14 @@
  					break;
  				}
  				rp->rx_skbuff[entry] = NULL;
@@ -388,7 +406,7 @@ diff -urN linux.old/drivers/net/via-rhine.c linux.dev/drivers/net/via-rhine.c
  				skb_put(skb, pkt_len);
  				pci_unmap_single(rp->pdev,
  						 rp->rx_skbuff_dma[entry],
-@@ -1573,10 +1609,11 @@
+@@ -1568,10 +1608,11 @@
  						 PCI_DMA_FROMDEVICE);
  			}
  			skb->protocol = eth_type_trans(skb, dev);
@@ -401,7 +419,7 @@ diff -urN linux.old/drivers/net/via-rhine.c linux.dev/drivers/net/via-rhine.c
  		}
  		entry = (++rp->cur_rx) % RX_RING_SIZE;
  		rp->rx_head_desc = &rp->rx_ring[entry];
-@@ -1587,7 +1624,7 @@
+@@ -1582,7 +1623,7 @@
  		struct sk_buff *skb;
  		entry = rp->dirty_rx % RX_RING_SIZE;
  		if (rp->rx_skbuff[entry] == NULL) {
@@ -410,7 +428,7 @@ diff -urN linux.old/drivers/net/via-rhine.c linux.dev/drivers/net/via-rhine.c
  			rp->rx_skbuff[entry] = skb;
  			if (skb == NULL)
  				break;	/* Better luck next round. */
-@@ -1600,6 +1637,8 @@
+@@ -1595,6 +1636,8 @@
  		}
  		rp->rx_ring[entry].rx_status = cpu_to_le32(DescOwn);
  	}
@@ -419,7 +437,7 @@ diff -urN linux.old/drivers/net/via-rhine.c linux.dev/drivers/net/via-rhine.c
  }
  
  /*
-@@ -1649,11 +1688,11 @@
+@@ -1644,11 +1687,11 @@
  
  }
  
@@ -433,7 +451,7 @@ diff -urN linux.old/drivers/net/via-rhine.c linux.dev/drivers/net/via-rhine.c
  	spin_lock(&rp->lock);
  
  	if (intr_status & IntrLinkChange)
-@@ -1898,6 +1937,7 @@
+@@ -1895,6 +1938,7 @@
  
  	/* Disable interrupts by clearing the interrupt mask. */
  	iowrite16(0x0000, ioaddr + IntrEnable);
@@ -441,7 +459,7 @@ diff -urN linux.old/drivers/net/via-rhine.c linux.dev/drivers/net/via-rhine.c
  
  	/* Stop the chip's Tx and Rx processes. */
  	iowrite16(CmdStop, ioaddr + ChipCmd);
-@@ -1912,6 +1952,9 @@
+@@ -1906,6 +1950,9 @@
  	free_tbufs(dev);
  	free_ring(dev);
  
@@ -451,7 +469,7 @@ diff -urN linux.old/drivers/net/via-rhine.c linux.dev/drivers/net/via-rhine.c
  	return 0;
  }
  
-@@ -1941,6 +1984,7 @@
+@@ -1935,6 +1982,7 @@
  		return; /* Nothing to do for non-WOL adapters */
  
  	rhine_power_init(dev);
@@ -459,3 +477,4 @@ diff -urN linux.old/drivers/net/via-rhine.c linux.dev/drivers/net/via-rhine.c
  
  	/* Make sure we use pattern 0, 1 and not 4, 5 */
  	if (rp->quirks & rq6patterns)
+Only in linux.dev/drivers/net: .via-rhine.c.swp
