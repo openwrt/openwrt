@@ -12,8 +12,11 @@ config GCC_VERSION
 	default "3.4.6"
 
 if !TOOLCHAINOPTS
+	config GCC_VERSION_4_2
+		default y if LINUX_2_6_X86
+
 	config GCC_VERSION_4_1_1
-		default y if LINUX_2_6_ARUBA || LINUX_2_6_X86 || LINUX_2_6_IXP4XX || LINUX_2_6_RB532
+		default y if LINUX_2_6_ARUBA || LINUX_2_6_IXP4XX || LINUX_2_6_RB532
 endif
 
 
