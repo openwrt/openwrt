@@ -130,7 +130,7 @@ enable_broadcom() {
 		config_get enc "$vif" encryption
 		case "$enc" in
 			WEP|wep)
-				wsec_r=0
+				wsec_r=1
 				wsec=1
 				defkey=1
 				config_get key "$vif" key
