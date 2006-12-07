@@ -39,9 +39,6 @@ define Image/BuildKernel
 	$(CP) $(KDIR)/loader.elf $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-vmlinux
 endef
 
-PARTITION1=\x80\x01\x01\x00\x27\x01\x20\x7b\x20\x00\x00\x00\xe0\x1e\x00\x00# 4 MB  (kernel part)
-PARTITION2=\x00\x00\x01\x7c\x83\x01\xa0\x64\x00\x1f\x00\x00\x40\x7a\x00\x00# 16 MB (rootfs part)
-
 define Image/cmdline/jffs2-64k
 block2mtd.block2mtd=/dev/cfa2,65536 root=/dev/mtdblock0 rootfstype=jffs2
 endef
@@ -56,18 +53,7 @@ endef
 
 define Image/Build
 	$(STAGING_DIR)/bin/patch-cmdline $(LINUX_DIR)/vmlinux '$(strip $(call Image/cmdline/$(1))) '
-	( \
-		echo -ne OWRT | dd bs=$$$$((0x1be)) conv=sync; \
-		( \
-			echo -ne '$(strip $(PARTITION1))'; \
-			echo -ne '$(strip $(PARTITION2))'; \
-		) | dd bs=$$$$((0x40)) conv=sync; \
-		echo -ne '\x55\xaa'; \
-		dd if=/dev/zero bs=$$$$((0x3e00)) conv=sync count=1; \
-		dd if=$(LINUX_DIR)/vmlinux bs=$$$$((0x3dc000)) conv=sync; \
-		cat $(KDIR)/root.$(1); \
-		echo -ne '\xde\xad\xc0\xde'; \
-	) > $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).bin
+	./gen_image.sh $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).bin 4 $(LINUX_DIR)/vmlinux 16 $(KDIR)/root.$(1)
 endef
 
 $(eval $(call BuildImage))

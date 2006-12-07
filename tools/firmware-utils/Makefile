@@ -23,6 +23,7 @@ define Build/Compile
 	$(call cc,motorola-bin)
 	$(call cc,dgfirmware)
 	$(call cc,trx2usr)
+	$(call cc,ptgen)
 endef
 
 define Build/Install
