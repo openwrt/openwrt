@@ -1,0 +1,27 @@
+The fix for CVE-2006-6332 in r1842 was not entirely correct. In
+encode_ie() the bound check did not consider that each byte from
+the IE causes two bytes to be written into buffer. That could
+lead to a kernel oops, but does not allow code injection. This is
+now fixed.
+
+Due to the type of this problem it does not trigger another
+urgent security bugfix release. v0.9.3 is at the door anyway.
+
+Reported-by: Joachim Gleisner <jg@suse.de> 
+
+Index: trunk/net80211/ieee80211_wireless.c
+===================================================================
+--- trunk/net80211/ieee80211_wireless.c (revision 1846)
++++ trunk/net80211/ieee80211_wireless.c (revision 1847)
+@@ -1566,8 +1566,8 @@
+ 	bufsize -= leader_len;
+ 	p += leader_len;
+-	if (bufsize < ielen)
+-		return 0;
+-	for (i = 0; i < ielen && bufsize > 2; i++)
++	for (i = 0; i < ielen && bufsize > 2; i++) {
+ 		p += sprintf(p, "%02x", ie[i]);
++		bufsize -= 2;
++	}
+ 	return (i == ielen ? p - (u_int8_t *)buf : 0);
+ }
