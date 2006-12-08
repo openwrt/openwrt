@@ -103,7 +103,7 @@ setup_interface() {
 	
 	# Interface settings
 	config_get mtu "$config" mtu
-	config_get macddr "$config" macaddr
+	config_get macaddr "$config" macaddr
 	$DEBUG ifconfig "$iface" ${macaddr:+hw ether "$macaddr"} ${mtu:+mtu $mtu} up
 
 	pidfile="/var/run/$iface.pid"
