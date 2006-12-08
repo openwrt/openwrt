@@ -49,16 +49,3 @@ Update 2005-05-05 gotom, add __extension__ for linux/types.h.
  /*
   * Below are truly Linux-specific types that should never collide with
   * any application/library that wants linux/types.h.
-@@ -167,9 +179,9 @@
- typedef __u16 __bitwise __be16;
- typedef __u32 __bitwise __le32;
- typedef __u32 __bitwise __be32;
--#if defined(__GNUC__) && !defined(__STRICT_ANSI__)
--typedef __u64 __bitwise __le64;
--typedef __u64 __bitwise __be64;
-+#if defined(__GNUC__)
-+__extension__ typedef __u64 __bitwise __le64;
-+__extension__ typedef __u64 __bitwise __be64;
- #endif
- 
- #ifdef __KERNEL__
