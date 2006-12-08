@@ -1,0 +1,64 @@
+Taken from Debian linux-kernel-headers package
+Update 2005-05-05 gotom, add __extension__ for linux/types.h.
+
+--- linux.old/include/linux/time.h	2006-06-05 13:18:23.000000000 -0400
++++ linux.dev/include/linux/time.h	2006-06-10 00:16:51.962628154 -0400
+@@ -1,6 +1,10 @@
+ #ifndef _LINUX_TIME_H
+ #define _LINUX_TIME_H
+ 
++#ifndef __KERNEL__
++#include <time.h>
++#else
++
+ #include <linux/types.h>
+ 
+ #ifdef __KERNEL__
+@@ -196,4 +200,6 @@
+  */
+ #define TIMER_ABSTIME			0x01
+ 
++#endif /* __KERNEL__ DEBIAN */
++
+ #endif
+--- linux.old/include/linux/types.h	2006-06-05 13:18:23.000000000 -0400
++++ linux.dev/include/linux/types.h	2006-06-10 00:16:51.962628154 -0400
+@@ -1,6 +1,16 @@
+ #ifndef _LINUX_TYPES_H
+ #define _LINUX_TYPES_H
+ 
++/* Debian: Use userland types instead.  */
++#ifndef __KERNEL__
++# include <sys/types.h>
++/* For other kernel headers.  */
++# include <linux/posix_types.h>
++# include <asm/types.h>
++/* For util-linux / cryptoloop.  How lame.  */
++typedef __u32 __kernel_dev_t;
++#else
++
+ #ifdef	__KERNEL__
+ #include <linux/config.h>
+ 
+@@ -147,6 +157,8 @@
+ 
+ #endif /* __KERNEL_STRICT_NAMES */
+ 
++#endif /* __KERNEL__ DEBIAN */
++
+ /*
+  * Below are truly Linux-specific types that should never collide with
+  * any application/library that wants linux/types.h.
+@@ -167,9 +179,9 @@
+ typedef __u16 __bitwise __be16;
+ typedef __u32 __bitwise __le32;
+ typedef __u32 __bitwise __be32;
+-#if defined(__GNUC__) && !defined(__STRICT_ANSI__)
+-typedef __u64 __bitwise __le64;
+-typedef __u64 __bitwise __be64;
++#if defined(__GNUC__)
++__extension__ typedef __u64 __bitwise __le64;
++__extension__ typedef __u64 __bitwise __be64;
+ #endif
+ 
+ #ifdef __KERNEL__
