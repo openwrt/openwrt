@@ -75,10 +75,12 @@ define Image/mkfs/prepare
 endef
 
 define BuildImage
-compile:
+download:
+prepare:
+compile: compile-targets
 	$(call Build/Compile)
 
-install:
+install: compile install-targets
 	$(call Image/Prepare)
 	$(call Image/mkfs/prepare)
 	$(call Image/BuildKernel)
@@ -87,16 +89,12 @@ install:
 	$(call Image/mkfs/tgz)
 	$(call Image/mkfs/ext2)
 	
-clean:
+clean: clean-targets
 	$(call Build/Clean)
-endef
 
 compile-targets:
 install-targets:
 clean-targets:
+endef
 
-download:
-prepare:
-compile: compile-targets
-install: compile install-targets
-clean: clean-targets
+
