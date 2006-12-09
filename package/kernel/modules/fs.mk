@@ -88,6 +88,18 @@ define KernelPackage/fs-nfs
 endef
 $(eval $(call KernelPackage,fs-nfs))
 
+define KernelPackage/fs-msdos
+  TITLE:=MSDOS filesystem support
+  DESCRIPTION:=Kernel module for MSDOS filesystem support
+  DEPENDS:=+kmod-nls-base
+  KCONFIG:=$(CONFIG_MSDOS_FS)
+  SUBMENU:=$(FSMENU)
+  AUTOLOAD:=$(call AutoLoad,30,fat vfat)
+  FILES:= \
+	$(MODULES_DIR)/kernel/fs/msdos/msdos.$(LINUX_KMOD_SUFFIX)
+endef
+$(eval $(call KernelPackage,fs-msdos))
+
 define KernelPackage/fs-vfat
   TITLE:=VFAT filesystem support
   DESCRIPTION:=Kernel module for VFAT filesystem support
