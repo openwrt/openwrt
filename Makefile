@@ -171,7 +171,10 @@ dirclean: clean
 distclean: dirclean config-clean
 	rm -rf dl
 
+help:
+	cat README
+
 .SILENT: clean dirclean distclean config-clean download world
 FORCE: ;
-.PHONY: FORCE
+.PHONY: FORCE help
 %: ;
