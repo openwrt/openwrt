@@ -23,7 +23,7 @@ Update 2005-05-05 gotom, add __extension__ for linux/types.h.
  #endif
 --- linux.old/include/linux/types.h	2006-06-05 13:18:23.000000000 -0400
 +++ linux.dev/include/linux/types.h	2006-06-10 00:16:51.962628154 -0400
-@@ -1,6 +1,16 @@
+@@ -1,6 +1,14 @@
  #ifndef _LINUX_TYPES_H
  #define _LINUX_TYPES_H
  
@@ -33,8 +33,6 @@ Update 2005-05-05 gotom, add __extension__ for linux/types.h.
 +/* For other kernel headers.  */
 +# include <linux/posix_types.h>
 +# include <asm/types.h>
-+/* For util-linux / cryptoloop.  How lame.  */
-+typedef __u32 __kernel_dev_t;
 +#else
 +
  #ifdef	__KERNEL__
