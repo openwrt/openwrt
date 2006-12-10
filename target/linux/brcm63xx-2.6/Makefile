@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=mips
 BOARD:=brcm63xx
 BOARDNAME:=Broadcom BCM963xx
-FEATURES:=squashfs jffs2
+FEATURES:=squashfs jffs2 broken
 
 define Target/Description
 	Build firmware images for Broadcom based xDSL/routers
