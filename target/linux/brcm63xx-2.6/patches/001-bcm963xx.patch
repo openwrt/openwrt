@@ -6758,7 +6758,7 @@ diff -urN linux.old/arch/mips/bcm963xx/Kconfig linux.dev/arch/mips/bcm963xx/Kcon
 +# Kernel and Driver configuration for Broadcom Commengine ADSL board
 +choice
 +	prompt "Broadcom Commengine ADSL board"
-+	depends on MIPS_BRCM
++	depends on BCM963XX
 +	default BCM96345
 +	help
 +	  Select different Broadcom ADSL board
@@ -7911,7 +7911,7 @@ diff -urN linux.old/arch/mips/Kconfig linux.dev/arch/mips/Kconfig
  	prompt "System type"
  	default SGI_IP22
  
-+config MIPS_BRCM
++config BCM963XX 
 +	bool "Support for the Broadcom boards"
 +	select SYS_SUPPORTS_32BIT_KERNEL
 +	select SYS_SUPPORTS_BIG_ENDIAN
@@ -7992,10 +7992,10 @@ diff -urN linux.old/arch/mips/Makefile linux.dev/arch/mips/Makefile
  #
 +# Broadcom board
 +#
-+core-$(CONFIG_MIPS_BRCM)	+= arch/mips/bcm963xx/
-+cflags-$(CONFIG_MIPS_BRCM)     	+= -Iinclude/asm-mips/mach-bcm963xx
-+cflags-$(CONFIG_MIPS_BRCM)     	+= -Iarch/mips/bcm963xx/include
-+load-$(CONFIG_MIPS_BRCM)	+= 0xffffffff80010000
++core-$(CONFIG_BCM963XX)	+= arch/mips/bcm963xx/
++cflags-$(CONFIG_BCM963XX)     	+= -Iinclude/asm-mips/mach-bcm963xx
++cflags-$(CONFIG_BCM963XX)     	+= -Iarch/mips/bcm963xx/include
++load-$(CONFIG_BCM963XX)	+= 0xffffffff80010000
 +
 +
 +#
