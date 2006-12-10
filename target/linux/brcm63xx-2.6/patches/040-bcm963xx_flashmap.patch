@@ -287,7 +287,7 @@ diff -urN linux-2.6.17/drivers/mtd/maps/Kconfig linux-2.6.17-brcm63xx/drivers/mt
  
 +config MTD_BCM963XX
 +        tristate "BCM963xx Flash device"
-+        depends on MIPS && MIPS_BRCM
++        depends on MIPS && BCM963XX
 +        help
 +	  Flash memory access on BCM963xx boards. Currently only works with
 +	  RedBoot, CFE support coming soon.
