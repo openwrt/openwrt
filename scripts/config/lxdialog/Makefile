@@ -7,7 +7,14 @@ all: lxdialog
 # we really need to do so. (Do not call gcc as part of make mrproper)
 CFLAGS := $(shell sh check-lxdialog.sh -ccflags)
 LIBS := $(shell sh check-lxdialog.sh -ldflags gcc)
- 
+
+# workaround for OpenBSD, which does not use symlinks to libncurses.so
+OS := $(shell uname -s)
+ifeq ($(strip $(OS)),OpenBSD)
+LIBS := -lncurses
+endif
+
+
 always		:= $(hostprogs-y) dochecklxdialog
 
 %.o: %.c
