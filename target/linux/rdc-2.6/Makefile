@@ -21,4 +21,11 @@ LINUX_RELEASE:=1
 LINUX_KERNEL_MD5SUM:=37ddefe96625502161f075b9d907f21e
 
 include $(INCLUDE_DIR)/kernel-build.mk
+
+define Profile/Ralink
+  NAME:=Ralink WiFi (default)
+  PACKAGES:=kmod-rt2x00
+endef
+$(eval $(call Profile,Ralink))
+
 $(eval $(call BuildKernel))
