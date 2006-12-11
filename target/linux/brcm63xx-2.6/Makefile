@@ -21,4 +21,17 @@ LINUX_RELEASE:=1
 LINUX_KERNEL_MD5SUM:=37ddefe96625502161f075b9d907f21e
 
 include $(INCLUDE_DIR)/kernel-build.mk
+
+define Profile/Broadcom
+  NAME:=Broadcom WiFi (default)
+  PACKAGES:=kmod-net-bcm43xx
+endef
+$(eval $(call Profile,Broadcom))
+
+define Profile/Atheros
+  NAME:=Atheros WiFi
+  PACKAGES:=kmod-madwifi
+endef
+$(eval $(call Profile,Atheros))
+
 $(eval $(call BuildKernel))
