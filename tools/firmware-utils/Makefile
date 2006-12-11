@@ -24,6 +24,7 @@ define Build/Compile
 	$(call cc,dgfirmware)
 	$(call cc,trx2usr)
 	$(call cc,ptgen)
+	$(call cc,airlink)
 endef
 
 define Build/Install
