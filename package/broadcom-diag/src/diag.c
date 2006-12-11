@@ -91,6 +91,9 @@ enum {
 
 	/* Belkin */
 	BELKIN_UNKNOWN,
+
+	/* Trendware */
+	TEW411BRPP,
 };
 
 static struct platform_t __initdata platforms[] = {
@@ -416,6 +419,18 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "connected",	.gpio = 1 << 0, .polarity = NORMAL },
 		},
 	},
+	/* Trendware */
+	[TEW411BRPP] = {
+		.name           = "Trendware TEW411BRP+",
+		.buttons        = {
+			{ /* No usable buttons */ },
+		},
+		.leds           = {
+			{ .name = "power",      .gpio = 1 << 7, .polarity = NORMAL },
+			{ .name = "wlan",       .gpio = 1 << 1, .polarity = NORMAL },
+			{ .name = "bridge",     .gpio = 1 << 6, .polarity = NORMAL },
+		},
+	},
 };
 
 static struct platform_t __init *platform_detect(void)
@@ -507,6 +522,10 @@ static struct platform_t __init *platform_detect(void)
 		!strcmp(getvar("MOTO_BOARD_TYPE"), "WR_FEM1")) {
 
 		return &platforms[WR850GV2V3];
+	}
+
+	if (!strcmp(boardnum, "44")) {  /* Trendware TEW-411BRP+ */
+		return &platforms[TEW411BRPP];
 	}
 
 	/* not found */

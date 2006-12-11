@@ -498,8 +498,17 @@ static int detect_adm(void)
 
 #if defined(BCMGPIO2) || defined(BCMGPIO)
 	int boardflags = atoi(nvram_get("boardflags"));
+        int boardnum = atoi(nvram_get("boardnum"));
 
-	if ((boardflags & 0x80) || force) {
+        if (boardnum == 44) {   /* Trendware TEW-411BRP+ */
+                ret = 1;
+
+                eecs = getgpiopin("adm_eecs", 2);
+                eesk = getgpiopin("adm_eesk", 3);
+                eedi = getgpiopin("adm_eedi", 4);
+                eerc = getgpiopin("adm_rc", 5);
+
+	} else if ((boardflags & 0x80) || force) {
 		ret = 1;
 
 		eecs = getgpiopin("adm_eecs", 2);
