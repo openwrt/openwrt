@@ -10,6 +10,7 @@ include $(TOPDIR)/rules.mk
 
 TARGETS-y:=kernel-headers
 TARGETS-$(CONFIG_GDB) += gdb
+TARGETS-$(CONFIG_CCACHE) += ccache
 ifeq ($(CONFIG_NATIVE_TOOLCHAIN),)
   TARGETS-y+=binutils gcc uClibc
 endif
@@ -24,7 +25,7 @@ install: $(TARGETS_INSTALL)
 clean: $(TARGETS_CLEAN)
 $(TARGETS_INSTALL): $(STAGING_DIR)/$(REAL_GNU_TARGET_NAME)
 
-uClibc-prepare: kernel-headers-prepare
+uClibc-prepare: ccache-prepare kernel-headers-prepare
 ifeq ($(CONFIG_NATIVE_TOOLCHAIN),)
   binutils-prepare: uClibc-prepare
   gcc-prepare: binutils-install
