@@ -9,7 +9,7 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-PKG_NAME:=rt2x00
+PKG_NAME:=rt61
 PKG_VERSION:=1.1.0-b1
 PKG_RELEASE:=1
 
@@ -21,7 +21,7 @@ PKG_CAT:=zcat
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/kmod-rt2x00
+define Package/kmod-rt61
   SECTION:=kernel
   CATEGORY:=Kernel drivers
   DEPENDS:=@LINUX_2_6_RDC
@@ -40,12 +40,12 @@ define Build/Compile
 		modules
 endef
 
-define Package/kmod-rt2x00/install
+define Package/kmod-rt61/install
 	mkdir -p $(1)/etc/modules.d
-	$(INSTALL_DATA) ./files/rt2x00.modules $(1)/etc/modules.d/10-ralink
+	$(INSTALL_DATA) ./files/rt61.modules $(1)/etc/modules.d/10-ralink
 	$(INSTALL_DIR) $(1)/lib/modules/$(LINUX_VERSION)
 	$(CP) $(PKG_BUILD_DIR)/Module/rt61.$(LINUX_KMOD_SUFFIX) \
 		$(1)/lib/modules/$(LINUX_VERSION)/
 endef
 
-$(eval $(call BuildPackage,kmod-rt2x00))
+$(eval $(call BuildPackage,kmod-rt61))
