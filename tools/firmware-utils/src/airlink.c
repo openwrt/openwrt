@@ -276,8 +276,8 @@ int main(int argc, char **argv)
 	l0 = *((u32 *) & buf[0x10]);
 	if (!BHDR)
 		*((u32 *) & buf[0x18]) = 0;
-	ulong sum0 = *((u32 *) & buf[0x18]);
-	ulong sum1 = *((u32 *) & buf[0x4]);
+	unsigned long sum0 = *((u32 *) & buf[0x18]);
+	unsigned long sum1 = *((u32 *) & buf[0x4]);
 	*((u32 *) & buf[0x4]) = 0x0L;
 	for (i = 0; i < 0x100; i++)
 		b[i] = buf[i];
@@ -308,7 +308,7 @@ int main(int argc, char **argv)
 	*((u32 *) & buf[0x4]) = sum;
 	write(fd, &buf[0x4], 0x4);
 	if (EHDR) {
-		ulong sum2 = *((u32 *) & buf[-0x8]);
+		unsigned long sum2 = *((u32 *) & buf[-0x8]);
 		*((u32 *) & buf[-0x8]) = 0L;
 		sum = crc32(buf - 0x4, len - 0x4);
 		sum = htonl(sum);
