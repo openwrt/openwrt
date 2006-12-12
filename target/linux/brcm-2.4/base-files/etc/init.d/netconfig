@@ -19,27 +19,43 @@ start() {
 	function p(cfgname, name) {
 		if (c[name] != "") print "	option " cfgname "	\"" c[name] "\""
 	}
-	
+
+	function macinc(mac, maca, i, result) {
+		split(mac, maca, ":")
+		for (i = 1; i <= 6; i++) maca[i] = "0x" maca[i]
+		if (++maca[6] > 0xff) {
+			maca[5]++
+			maca[6] = 0
+		}
+		for (i = 1; i <= 6; i++) {
+			if (i != 1) result = result ":"
+			result = result sprintf("%02x", maca[i])
+		}
+		return result
+	}
+
 	BEGIN {
 		FS="="
 		c["lan_ifname"]="eth0.0"
 		c["wan_ifname"]="eth0.1"
 		c["vlan0ports"]="1 2 3 4 5*"
 		c["vlan1ports"]="0 5"
+		getline < "/proc/diag/model"
+		model=$0
+		for (i = 0; i < 6; i++) {
+			if (mac_check != "") mac_check = mac_check ":"
+			mac_check = mac_check "[0-9a-fA-F][0-9a-fA-F]"
+		}
 	}
 	
-	($1 == "boardnum") || ($1 == "boardtype") || ($1 == "boardflags") {
+	($1 == "boardnum") || ($1 == "boardtype") || ($1 == "boardflags") || ($1 ~ /macaddr/) {
 		nvram[$1] = $2
 	}
 	
 	END {
-		# v1 hardware
-		if (nvram["boardtype"] == "bcm94710dev") {
-			# Asus WL-500g
-			if (nvram["boardnum"] == "asusX") {
-				c["lan_ifname"]="eth0 eth1" # FIXME
-				c["wan_ifname"]=""
-			}
+		if ((model == "ASUS WL-HDD") || (model == "ASUS WL-300g") || (model == "Linksys WAP54G V1")) {
+			c["wan_ifname"] = ""
+			c["lan_ifname"] = "eth1"
 		}
 		if (nvram["boardtype"] == "bcm94710r4") {
 			# Toshiba WRC-1000
@@ -50,16 +66,30 @@ start() {
 			c["vlan0ports"] = "0 1 2 3 5*"
 			c["vlan1ports"] = "4 5"
 		}
-		if ((nvram["boardtype"] == "0x0467") || (nvram["boardtype"] == "0x042f")) {
+		if (nvram["boardtype"] == "0x0467") {
+			c["vlan0ports"] = "0 1 2 3 5*"
+			c["vlan1ports"] = "4 5"
+		}
+		if ((nvram["boardtype"] == "0x042f") || (nvram["boardtype"] == "0x0472")) {
 			if (nvram["boardnum"] == "45") {
+				# WL-500gP
 				c["vlan0ports"] = "1 2 3 4 5*"
 				c["vlan1ports"] = "0 5"
 			} else {
-				c["vlan0ports"] = "0 1 2 3 5*"
-				c["vlan1ports"] = "4 5"
+				# Generic BCM94704
+				c["vlan0ports"] = "0 1 2 3 4 5u"
+				c["vlan1ports"] = ""
+				c["lan_ifname"] = "eth0"
+				c["wan_ifname"] = "eth1"
+
+				# MAC addresses on 4704 tend to be screwed up. Add a workaround here
+				if (nvram["et0macaddr"] ~ mac_check) {
+					c["lan_macaddr"] = nvram["et0macaddr"]
+					c["wan_macaddr"] = macinc(c["lan_macaddr"])
+				}
 			}
 		}
-	
+
 		# WAP54G
 		if ((nvram["boardnum"] == "2") || \
 			(nvram["boardnum"] == "1024")) {
@@ -85,6 +115,7 @@ start() {
 		print "config interface lan"
 		print "	option type 	bridge"
 		p("ifname", "lan_ifname")
+		p("macaddr", "lan_macaddr")
 		print "	option proto	static"
 		print "	option ipaddr	192.168.1.1"
 		print "	option netmask	255.255.255.0"
@@ -93,6 +124,7 @@ start() {
 		print "#### WAN configuration"
 		print "config interface	wan"
 		p("ifname", "wan_ifname")
+		p("macaddr", "wan_macaddr")
 		print "	option proto	dhcp"
 	}' > /etc/config/network
 }
