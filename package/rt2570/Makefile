@@ -41,7 +41,7 @@ define Build/Compile
 		ARCH="$(LINUX_KARCH)" \
 		PWD="$(PKG_BUILD_DIR)/Module" \
 		KERNDIR="$(LINUX_DIR)" \
-		PATCHLEVEL=" $(patsubst 2.%,%,$(KERNEL))"
+		PATCHLEVEL="$(patsubst 2.%,%,$(KERNEL))"
 endef
 
 $(eval $(call KernelPackage,rt2570))
