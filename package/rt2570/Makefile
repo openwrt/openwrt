@@ -38,6 +38,7 @@ endef
 define Build/Compile
 	$(MAKE) -C "$(PKG_BUILD_DIR)/Module" \
 		CC="$(TARGET_CC)" \
+		LD="$(TARGET_CROSS)ld" \
 		ARCH="$(LINUX_KARCH)" \
 		PWD="$(PKG_BUILD_DIR)/Module" \
 		KERNDIR="$(LINUX_DIR)" \
