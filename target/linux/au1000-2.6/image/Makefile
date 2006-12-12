@@ -25,7 +25,8 @@ define Build/Clean
 endef
 
 DROP_SECTIONS := .reginfo .mdebug .comment .note .pdr .options .MIPS.options
-OBJCOPY_KERNEL := $(TARGET_CROSS)objcopy -S -O srec $(addprefix --remove-section=,$(DROP_SECTIONS))
+OBJCOPY_SREC := $(TARGET_CROSS)objcopy -S -O srec $(addprefix --remove-section=,$(DROP_SECTIONS))
+OBJCOPY_BIN := $(TARGET_CROSS)objcopy -S -O binary $(addprefix --remove-section=,$(DROP_SECTIONS))
 
 define Image/Prepare
 	cat $(KDIR)/vmlinux | $(STAGING_DIR)/bin/lzma e -si -so -eos -lc1 -lp2 -pb2 > $(KDIR)/vmlinux.lzma
@@ -34,7 +35,7 @@ define Image/Prepare
 	$(MAKE) -C ../../generic-2.6/image/lzma-loader \
 		$(LOADER_MAKEOPTS) \
 		clean compile
-	$(OBJCOPY_KERNEL) $(KDIR)/loader.elf $(KDIR)/kernel.ram.srec
+	$(OBJCOPY_SREC) $(KDIR)/loader.elf $(KDIR)/kernel.ram.srec
 	
 	# Build Flash image
 	$(MAKE) -C ../../generic-2.6/image/lzma-loader \
@@ -43,13 +44,16 @@ define Image/Prepare
 		LOADER_ENTRY=$(FLASH_KERNEL) \
 		LOADER_TYPE=_flash \
 		clean compile
-	$(OBJCOPY_KERNEL) $(KDIR)/loader_flash.elf $(KDIR)/kernel.flash.srec
+	$(OBJCOPY_SREC) $(KDIR)/loader_flash.elf $(KDIR)/kernel.flash.srec
+	$(OBJCOPY_BIN) $(KDIR)/loader_flash.elf $(KDIR)/kernel.flash.bin
 endef
 
 define Image/Build
 	$(TARGET_CROSS)objcopy -O srec -I binary --adjust-vma $(FLASH_FS) $(KDIR)/root.$(1) $(KDIR)/root.$(1).srec
 	grep -v S7 $(KDIR)/root.$(1).srec > $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).img
 	grep -v S0 $(KDIR)/kernel.flash.srec >> $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).img
+	$(CP) $(KDIR)/kernel.flash.bin $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-vmlinux.bin
+	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).fs
 endef
 
 $(eval $(call BuildImage))
