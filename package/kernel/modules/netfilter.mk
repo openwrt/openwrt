@@ -184,7 +184,7 @@ define KernelPackage/ip6tables
   KCONFIG:=$(CONFIG_IP6_NF_IPTABLES)
   FILES:=$(MODULES_DIR)/kernel/net/ipv6/netfilter/ip*.$(LINUX_KMOD_SUFFIX)
   SUBMENU:=$(NFMENU)
-  AUTOLOAD:=$(call AutoLoad,40,$(notdir $(patsubst %.ko,%,$(wildcard $(MODULES_DIR)/kernel/net/ipv6/netfilter/ip*.$(LINUX_KMOD_SUFFIX)))))
+  AUTOLOAD:=$(call AutoLoad,40,$(notdir $(patsubst %.ko,%,$(wildcard $(MODULES_DIR)/kernel/net/ipv6/netfilter/ip6_*.$(LINUX_KMOD_SUFFIX)) $(wildcard $(MODULES_DIR)/kernel/net/ipv6/netfilter/ip6table_*.$(LINUX_KMOD_SUFFIX)) $(wildcard $(MODULES_DIR)/kernel/net/ipv6/netfilter/ip6t_*.$(LINUX_KMOD_SUFFIX)))))
 endef
 $(eval $(call KernelPackage,ip6tables))
 
@@ -208,6 +208,6 @@ define KernelPackage/ebtables
   FILES:=$(MODULES_DIR)/kernel/net/bridge/netfilter/*.$(LINUX_KMOD_SUFFIX)
   KCONFIG:=$(CONFIG_BRIDGE_NF_EBTABLES)
   SUBMENU:=$(NFMENU)
-  AUTOLOAD:=$(call AutoLoad,40,$(notdir $(patsubst %.ko,%,$(wildcard $(MODULES_DIR)/kernel/net/bridge/netfilter/*.$(LINUX_KMOD_SUFFIX)))))
+  AUTOLOAD:=$(call AutoLoad,40,$(notdir $(patsubst %.ko,%,ebtables.ko $(wildcard $(MODULES_DIR)/kernel/net/bridge/netfilter/ebtable_*.$(LINUX_KMOD_SUFFIX)) $(wildcard $(MODULES_DIR)/kernel/net/bridge/netfilter/ebt_*.$(LINUX_KMOD_SUFFIX)))))
 endef
 $(eval $(call KernelPackage,ebtables))
