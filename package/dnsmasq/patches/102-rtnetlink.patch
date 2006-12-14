@@ -1,0 +1,13 @@
+--- dnsmasq-2.35/src/netlink.c.orig	2006-12-04 23:32:49.000000000 +0100
++++ dnsmasq-2.35/src/netlink.c	2006-12-04 23:33:18.000000000 +0100
+@@ -17,6 +17,10 @@
+ #include <linux/types.h>
+ #include <linux/netlink.h>
+ #include <linux/rtnetlink.h>
++#ifndef IFA_RTA
++# include "linux/if_addr.h"
++# define IFA_RTA(r)  ((struct rtattr*)(((char*)(r)) + NLMSG_ALIGN(sizeof(struct ifaddrmsg))))
++#endif
+ 
+ static struct iovec iov;
+ 
