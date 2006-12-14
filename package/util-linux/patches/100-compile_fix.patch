@@ -1,0 +1,47 @@
+diff -ur util-linux.old/fdisk/llseek.c util-linux.dev/fdisk/llseek.c
+--- util-linux.old/fdisk/llseek.c	2003-07-13 23:13:33.000000000 +0200
++++ util-linux.dev/fdisk/llseek.c	2006-12-14 23:06:12.000000000 +0100
+@@ -29,13 +29,7 @@
+ static int _llseek (unsigned int, unsigned long,
+ 		   unsigned long, long long *, unsigned int);
+ 
+-#ifdef __NR__llseek
+-
+-static _syscall5(int,_llseek,unsigned int,fd,unsigned long,offset_high,
+-		 unsigned long, offset_low,long long *,result,
+-		 unsigned int, origin)
+-
+-#else
++#ifndef __NR__llseek
+ 
+ /* no __NR__llseek on compilation machine - might give it explicitly */
+ static int _llseek (unsigned int fd, unsigned long oh,
+diff -ur util-linux.old/fdisk/sfdisk.c util-linux.dev/fdisk/sfdisk.c
+--- util-linux.old/fdisk/sfdisk.c	2005-01-04 23:31:57.000000000 +0100
++++ util-linux.dev/fdisk/sfdisk.c	2006-12-14 23:05:41.000000000 +0100
+@@ -176,12 +176,6 @@
+ #define use_lseek
+ #endif
+ 
+-#ifndef use_lseek
+-static __attribute__used
+-_syscall5(int,  _llseek,  unsigned int,  fd, ulong, hi, ulong, lo,
+-       loff_t *, res, unsigned int, wh);
+-#endif
+-
+ static int
+ sseek(char *dev, unsigned int fd, unsigned long s) {
+     loff_t in, out;
+diff -ur util-linux.old/partx/partx.c util-linux.dev/partx/partx.c
+--- util-linux.old/partx/partx.c	2004-08-23 22:13:27.000000000 +0200
++++ util-linux.dev/partx/partx.c	2006-12-14 23:06:42.000000000 +0100
+@@ -339,9 +339,6 @@
+ 
+ #ifdef NEED__llseek
+ #include <linux/unistd.h>       /* _syscall */
+-static
+-_syscall5(int,  _llseek,  uint,  fd, ulong, hi, ulong, lo,
+-	  long long *, res, uint, wh);
+ #endif
+ 
+ static int
