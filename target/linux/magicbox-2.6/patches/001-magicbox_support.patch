@@ -1,6 +1,6 @@
-diff -Nur linux-2.6.17/arch/ppc/platforms/4xx/Kconfig linux-2.6.17-owrt/arch/ppc/platforms/4xx/Kconfig
---- linux-2.6.17/arch/ppc/platforms/4xx/Kconfig	2006-06-18 03:49:35.000000000 +0200
-+++ linux-2.6.17-owrt/arch/ppc/platforms/4xx/Kconfig	2006-08-25 23:33:05.000000000 +0200
+diff -urN linux.old/arch/ppc/platforms/4xx/Kconfig linux.dev/arch/ppc/platforms/4xx/Kconfig
+--- linux.old/arch/ppc/platforms/4xx/Kconfig	2006-11-29 22:57:37.000000000 +0100
++++ linux.dev/arch/ppc/platforms/4xx/Kconfig	2006-12-14 08:49:18.000000000 +0100
 @@ -52,6 +52,12 @@
  	help
  	  This option enables support for the IBM PPC405GP evaluation board.
@@ -27,8 +27,8 @@ diff -Nur linux-2.6.17/arch/ppc/platforms/4xx/Kconfig linux-2.6.17-owrt/arch/ppc
  
  config BIOS_FIXUP
  	bool
--	depends on BUBINGA || EP405 || SYCAMORE || WALNUT
-+	depends on BUBINGA || EP405 || SYCAMORE || WALNUT || MAGICBOX
+-	depends on BUBINGA || EP405 || SYCAMORE || WALNUT || CPCI405
++	depends on BUBINGA || EP405 || SYCAMORE || WALNUT || CPCI405 || MAGICBOX
  	default y
  
  # OAK doesn't exist but wanted to keep this around for any future 403GCX boards
@@ -41,9 +41,9 @@ diff -Nur linux-2.6.17/arch/ppc/platforms/4xx/Kconfig linux-2.6.17-owrt/arch/ppc
  	default y
  
  config 405GP
-diff -Nur linux-2.6.17/arch/ppc/platforms/4xx/magicbox.c linux-2.6.17-owrt/arch/ppc/platforms/4xx/magicbox.c
---- linux-2.6.17/arch/ppc/platforms/4xx/magicbox.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.17-owrt/arch/ppc/platforms/4xx/magicbox.c	2006-08-25 23:33:05.000000000 +0200
+diff -urN linux.old/arch/ppc/platforms/4xx/magicbox.c linux.dev/arch/ppc/platforms/4xx/magicbox.c
+--- linux.old/arch/ppc/platforms/4xx/magicbox.c	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/arch/ppc/platforms/4xx/magicbox.c	2006-12-14 08:48:56.000000000 +0100
 @@ -0,0 +1,249 @@
 +/*
 + * Support for IBM PPC 405EP-based MagicBox board 
@@ -60,7 +60,7 @@ diff -Nur linux-2.6.17/arch/ppc/platforms/4xx/magicbox.c linux-2.6.17-owrt/arch/
 + * or implied.
 + */
 +
-+#include <linux/config.h>
++#include <linux/autoconf.h>
 +#include <linux/init.h>
 +#include <linux/smp.h>
 +#include <linux/threads.h>
@@ -294,9 +294,9 @@ diff -Nur linux-2.6.17/arch/ppc/platforms/4xx/magicbox.c linux-2.6.17-owrt/arch/
 +#endif
 +
 +}
-diff -Nur linux-2.6.17/arch/ppc/platforms/4xx/magicbox.h linux-2.6.17-owrt/arch/ppc/platforms/4xx/magicbox.h
---- linux-2.6.17/arch/ppc/platforms/4xx/magicbox.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.17-owrt/arch/ppc/platforms/4xx/magicbox.h	2006-08-25 23:33:05.000000000 +0200
+diff -urN linux.old/arch/ppc/platforms/4xx/magicbox.h linux.dev/arch/ppc/platforms/4xx/magicbox.h
+--- linux.old/arch/ppc/platforms/4xx/magicbox.h	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/arch/ppc/platforms/4xx/magicbox.h	2006-12-14 08:48:56.000000000 +0100
 @@ -0,0 +1,47 @@
 +/*
 + * Support for IBM PPC 405EP-based MagicBox board
@@ -317,7 +317,7 @@ diff -Nur linux-2.6.17/arch/ppc/platforms/4xx/magicbox.h linux-2.6.17-owrt/arch/
 +#ifndef __MAGICBOX_H__
 +#define __MAGICBOX_H__
 +
-+#include <linux/config.h>
++#include <linux/autoconf.h>
 +#include <platforms/4xx/ibm405ep.h>
 +#include <asm/ppcboot.h>
 +
@@ -345,9 +345,9 @@ diff -Nur linux-2.6.17/arch/ppc/platforms/4xx/magicbox.h linux-2.6.17-owrt/arch/
 +
 +#endif /* __MAGICBOX_H__ */
 +#endif /* __KERNEL__ */
-diff -Nur linux-2.6.17/arch/ppc/platforms/4xx/Makefile linux-2.6.17-owrt/arch/ppc/platforms/4xx/Makefile
---- linux-2.6.17/arch/ppc/platforms/4xx/Makefile	2006-06-18 03:49:35.000000000 +0200
-+++ linux-2.6.17-owrt/arch/ppc/platforms/4xx/Makefile	2006-08-25 23:33:05.000000000 +0200
+diff -urN linux.old/arch/ppc/platforms/4xx/Makefile linux.dev/arch/ppc/platforms/4xx/Makefile
+--- linux.old/arch/ppc/platforms/4xx/Makefile	2006-11-29 22:57:37.000000000 +0100
++++ linux.dev/arch/ppc/platforms/4xx/Makefile	2006-12-14 08:48:56.000000000 +0100
 @@ -13,6 +13,7 @@
  obj-$(CONFIG_REDWOOD_6)		+= redwood6.o
  obj-$(CONFIG_SYCAMORE)		+= sycamore.o
@@ -356,10 +356,10 @@ diff -Nur linux-2.6.17/arch/ppc/platforms/4xx/Makefile linux-2.6.17-owrt/arch/pp
  obj-$(CONFIG_XILINX_ML300)	+= xilinx_ml300.o
  obj-$(CONFIG_XILINX_ML403)	+= xilinx_ml403.o
  
-diff -Nur linux-2.6.17/include/asm-ppc/ibm4xx.h linux-2.6.17-owrt/include/asm-ppc/ibm4xx.h
---- linux-2.6.17/include/asm-ppc/ibm4xx.h	2006-06-18 03:49:35.000000000 +0200
-+++ linux-2.6.17-owrt/include/asm-ppc/ibm4xx.h	2006-08-25 23:33:05.000000000 +0200
-@@ -19,6 +19,10 @@
+diff -urN linux.old/include/asm-ppc/ibm4xx.h linux.dev/include/asm-ppc/ibm4xx.h
+--- linux.old/include/asm-ppc/ibm4xx.h	2006-11-29 22:57:37.000000000 +0100
++++ linux.dev/include/asm-ppc/ibm4xx.h	2006-12-14 08:48:56.000000000 +0100
+@@ -18,6 +18,10 @@
  
  #ifdef CONFIG_40x
  

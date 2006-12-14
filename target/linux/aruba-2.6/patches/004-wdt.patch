@@ -2,7 +2,7 @@ diff -Nur linux-2.6.15.1/drivers/char/watchdog/wdt_merlot.c linux-2.6.15.1-openw
 --- linux-2.6.15.1/drivers/char/watchdog/wdt_merlot.c	2006-01-26 21:14:02.204626250 -0800
 +++ linux-2.6.15.1-openwrt/drivers/char/watchdog/wdt_merlot.c	2006-02-02 20:31:43.000000000 -0800
 @@ -0,0 +1,110 @@
-+#include <linux/config.h>
++#include <linux/autoconf.h>
 +#include <linux/module.h>
 +#include <linux/types.h>
 +#include <linux/miscdevice.h>

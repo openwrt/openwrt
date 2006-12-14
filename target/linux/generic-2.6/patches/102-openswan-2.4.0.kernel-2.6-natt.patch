@@ -1,6 +1,6 @@
-diff -Nur linux-2.6.16/include/net/xfrmudp.h linux-2.6.16-owrt/include/net/xfrmudp.h
---- linux-2.6.16/include/net/xfrmudp.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.16-owrt/include/net/xfrmudp.h	2006-03-22 21:39:54.000000000 +0100
+diff -urN linux-2.6.19.old/include/net/xfrmudp.h linux-2.6.19.dev/include/net/xfrmudp.h
+--- linux-2.6.19.old/include/net/xfrmudp.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.dev/include/net/xfrmudp.h	2006-12-14 03:13:41.000000000 +0100
 @@ -0,0 +1,10 @@
 +/*
 + * pointer to function for type that xfrm4_input wants, to permit
@@ -12,10 +12,10 @@ diff -Nur linux-2.6.16/include/net/xfrmudp.h linux-2.6.16-owrt/include/net/xfrmu
 +extern int udp4_register_esp_rcvencap(xfrm4_rcv_encap_t func
 +				      , xfrm4_rcv_encap_t *oldfunc);
 +extern int udp4_unregister_esp_rcvencap(xfrm4_rcv_encap_t func);
-diff -Nur linux-2.6.16/net/ipv4/Kconfig linux-2.6.16-owrt/net/ipv4/Kconfig
---- linux-2.6.16/net/ipv4/Kconfig	2006-03-20 06:53:29.000000000 +0100
-+++ linux-2.6.16-owrt/net/ipv4/Kconfig	2006-03-22 21:49:04.000000000 +0100
-@@ -271,6 +271,12 @@
+diff -urN linux-2.6.19.old/net/ipv4/Kconfig linux-2.6.19.dev/net/ipv4/Kconfig
+--- linux-2.6.19.old/net/ipv4/Kconfig	2006-11-29 22:57:37.000000000 +0100
++++ linux-2.6.19.dev/net/ipv4/Kconfig	2006-12-14 03:13:41.000000000 +0100
+@@ -273,6 +273,12 @@
  	  Network), but can be distributed all over the Internet. If you want
  	  to do that, say Y here and to "IP multicast routing" below.
  
@@ -28,10 +28,10 @@ diff -Nur linux-2.6.16/net/ipv4/Kconfig linux-2.6.16-owrt/net/ipv4/Kconfig
  config IP_MROUTE
  	bool "IP: multicast routing"
  	depends on IP_MULTICAST
-diff -Nur linux-2.6.16/net/ipv4/udp.c linux-2.6.16-owrt/net/ipv4/udp.c
---- linux-2.6.16/net/ipv4/udp.c	2006-03-20 06:53:29.000000000 +0100
-+++ linux-2.6.16-owrt/net/ipv4/udp.c	2006-03-22 21:39:54.000000000 +0100
-@@ -109,11 +109,14 @@
+diff -urN linux-2.6.19.old/net/ipv4/udp.c linux-2.6.19.dev/net/ipv4/udp.c
+--- linux-2.6.19.old/net/ipv4/udp.c	2006-11-29 22:57:37.000000000 +0100
++++ linux-2.6.19.dev/net/ipv4/udp.c	2006-12-14 03:13:41.000000000 +0100
+@@ -108,11 +108,14 @@
  #include <net/inet_common.h>
  #include <net/checksum.h>
  #include <net/xfrm.h>
@@ -46,7 +46,7 @@ diff -Nur linux-2.6.16/net/ipv4/udp.c linux-2.6.16-owrt/net/ipv4/udp.c
  DEFINE_SNMP_STAT(struct udp_mib, udp_statistics) __read_mostly;
  
  struct hlist_head udp_hash[UDP_HTABLE_SIZE];
-@@ -882,6 +885,42 @@
+@@ -917,6 +920,42 @@
  	sk_common_release(sk);
  }
  
@@ -89,7 +89,7 @@ diff -Nur linux-2.6.16/net/ipv4/udp.c linux-2.6.16-owrt/net/ipv4/udp.c
  /* return:
   * 	1  if the the UDP system should process it
   *	0  if we should drop this packet
-@@ -889,9 +928,9 @@
+@@ -924,9 +963,9 @@
   */
  static int udp_encap_rcv(struct sock * sk, struct sk_buff *skb)
  {
@@ -99,12 +99,12 @@ diff -Nur linux-2.6.16/net/ipv4/udp.c linux-2.6.16-owrt/net/ipv4/udp.c
 -#else
 +#else /* either CONFIG_XFRM or CONFIG_IPSEC_NAT_TRAVERSAL */
  	struct udp_sock *up = udp_sk(sk);
-   	struct udphdr *uh = skb->h.uh;
+   	struct udphdr *uh;
  	struct iphdr *iph;
-@@ -903,11 +942,11 @@
- 
+@@ -939,11 +978,11 @@
  	/* if we're overly short, let UDP handle it */
- 	if (udpdata > skb->tail)
+ 	len = skb->len - sizeof(struct udphdr);
+ 	if (len <= 0)
 -		return 1;
 +		return 2;
  
@@ -113,9 +113,9 @@ diff -Nur linux-2.6.16/net/ipv4/udp.c linux-2.6.16-owrt/net/ipv4/udp.c
 -		return 1;
 +		return 3;
  
- 	len = skb->tail - udpdata;
- 
-@@ -922,7 +961,7 @@
+ 	/* If this is a paged skb, make sure we pull up
+ 	 * whatever data we need to look at. */
+@@ -966,7 +1005,7 @@
  			len = sizeof(struct udphdr);
  		} else
  			/* Must be an IKE packet.. pass it through */
@@ -124,7 +124,7 @@ diff -Nur linux-2.6.16/net/ipv4/udp.c linux-2.6.16-owrt/net/ipv4/udp.c
  		break;
  	case UDP_ENCAP_ESPINUDP_NON_IKE:
  		/* Check if this is a keepalive packet.  If so, eat it. */
-@@ -935,7 +974,7 @@
+@@ -979,7 +1018,7 @@
  			len = sizeof(struct udphdr) + 2 * sizeof(u32);
  		} else
  			/* Must be an IKE packet.. pass it through */
@@ -133,7 +133,7 @@ diff -Nur linux-2.6.16/net/ipv4/udp.c linux-2.6.16-owrt/net/ipv4/udp.c
  		break;
  	}
  
-@@ -946,6 +985,8 @@
+@@ -990,6 +1029,8 @@
  	 */
  	if (skb_cloned(skb) && pskb_expand_head(skb, 0, 0, GFP_ATOMIC))
  		return 0;
@@ -142,7 +142,7 @@ diff -Nur linux-2.6.16/net/ipv4/udp.c linux-2.6.16-owrt/net/ipv4/udp.c
  
  	/* Now we can update and verify the packet length... */
  	iph = skb->nh.iph;
-@@ -1010,9 +1051,13 @@
+@@ -1055,9 +1096,13 @@
  			return 0;
  		}
  		if (ret < 0) {
@@ -159,7 +159,7 @@ diff -Nur linux-2.6.16/net/ipv4/udp.c linux-2.6.16-owrt/net/ipv4/udp.c
  			return -ret;
  		}
  		/* FALLTHROUGH -- it's a UDP Packet */
-@@ -1559,3 +1604,9 @@
+@@ -1639,3 +1684,9 @@
  EXPORT_SYMBOL(udp_proc_register);
  EXPORT_SYMBOL(udp_proc_unregister);
  #endif

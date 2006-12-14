@@ -1,6 +1,28 @@
-diff -urN linux-2.6.15-rc6.orig/net/ipv4/netfilter/ipt_time.c linux-2.6.15-rc6/net/ipv4/netfilter/ipt_time.c
---- linux-2.6.15-rc6.orig/net/ipv4/netfilter/ipt_time.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-rc6/net/ipv4/netfilter/ipt_time.c	2006-01-07 13:02:59.000000000 +0100
+diff -urN linux-2.6.19.old/include/linux/netfilter_ipv4/ipt_time.h linux-2.6.19.dev/include/linux/netfilter_ipv4/ipt_time.h
+--- linux-2.6.19.old/include/linux/netfilter_ipv4/ipt_time.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.dev/include/linux/netfilter_ipv4/ipt_time.h	2006-12-14 03:13:45.000000000 +0100
+@@ -0,0 +1,18 @@
++#ifndef __ipt_time_h_included__
++#define __ipt_time_h_included__
++
++
++struct ipt_time_info {
++	u_int8_t  days_match;   /* 1 bit per day. -SMTWTFS                      */
++	u_int16_t time_start;   /* 0 < time_start < 23*60+59 = 1439             */
++	u_int16_t time_stop;    /* 0:0 < time_stat < 23:59                      */
++
++				/* FIXME: Keep this one for userspace iptables binary compability: */
++	u_int8_t  kerneltime;   /* ignore skb time (and use kerneltime) or not. */
++
++	time_t    date_start;
++	time_t    date_stop;
++};
++
++
++#endif /* __ipt_time_h_included__ */
+diff -urN linux-2.6.19.old/net/ipv4/netfilter/ipt_time.c linux-2.6.19.dev/net/ipv4/netfilter/ipt_time.c
+--- linux-2.6.19.old/net/ipv4/netfilter/ipt_time.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.dev/net/ipv4/netfilter/ipt_time.c	2006-12-14 03:13:45.000000000 +0100
 @@ -0,0 +1,178 @@
 +/*
 +  This is a module which is used for time matching
@@ -50,8 +72,10 @@ diff -urN linux-2.6.15-rc6.orig/net/ipv4/netfilter/ipt_time.c linux-2.6.15-rc6/n
 +match(const struct sk_buff *skb,
 +      const struct net_device *in,
 +      const struct net_device *out,
++      const struct xt_match *match,
 +      const void *matchinfo,
 +      int offset,
++      unsigned int protoff,
 +      int *hotdrop)
 +{
 +	const struct ipt_time_info *info = matchinfo;   /* match info for rule */
@@ -85,9 +109,9 @@ diff -urN linux-2.6.15-rc6.orig/net/ipv4/netfilter/ipt_time.c linux-2.6.15-rc6/n
 +
 +static int
 +checkentry(const char *tablename,
-+           const struct ipt_ip *ip,
++           const void *ip,
++	   const struct xt_match *match,
 +           void *matchinfo,
-+           unsigned int matchsize,
 +           unsigned int hook_mask)
 +{
 +	struct ipt_time_info *info = matchinfo;   /* match info for rule */
@@ -100,9 +124,6 @@ diff -urN linux-2.6.15-rc6.orig/net/ipv4/netfilter/ipt_time.c linux-2.6.15-rc6/n
 +		return 0;
 +	}
 +
-+	/* Check the size */
-+	if (matchsize != IPT_ALIGN(sizeof(struct ipt_time_info)))
-+		return 0;
 +	/* Now check the coherence of the data ... */
 +	if ((info->time_start > 1439) ||        /* 23*60+59 = 1439*/
 +	    (info->time_stop  > 1439))
@@ -117,6 +138,7 @@ diff -urN linux-2.6.15-rc6.orig/net/ipv4/netfilter/ipt_time.c linux-2.6.15-rc6/n
 +static struct ipt_match time_match = {
 +	.name = "time",
 +	.match = &match,
++	.matchsize = sizeof(struct ipt_time_info),
 +	.checkentry = &checkentry,
 +	.me = THIS_MODULE
 +};
@@ -180,14 +202,14 @@ diff -urN linux-2.6.15-rc6.orig/net/ipv4/netfilter/ipt_time.c linux-2.6.15-rc6/n
 +	r->tm_mon=i;
 +	r->tm_mday=work-__spm[i]+1;
 +}
-diff -urN linux-2.6.15-rc6.orig/net/ipv4/netfilter/Kconfig linux-2.6.15-rc6/net/ipv4/netfilter/Kconfig
---- linux-2.6.15-rc6.orig/net/ipv4/netfilter/Kconfig	2006-01-07 13:00:21.000000000 +0100
-+++ linux-2.6.15-rc6/net/ipv4/netfilter/Kconfig	2006-01-07 13:05:07.000000000 +0100
-@@ -278,6 +278,22 @@
+diff -urN linux-2.6.19.old/net/ipv4/netfilter/Kconfig linux-2.6.19.dev/net/ipv4/netfilter/Kconfig
+--- linux-2.6.19.old/net/ipv4/netfilter/Kconfig	2006-12-14 03:13:45.000000000 +0100
++++ linux-2.6.19.dev/net/ipv4/netfilter/Kconfig	2006-12-14 03:13:45.000000000 +0100
+@@ -263,6 +263,22 @@
  
  	  To compile it as a module, choose M here.  If unsure, say N.
  
-+	  
++
 +config IP_NF_MATCH_TIME
 +	tristate  'TIME match support'
 +	depends on IP_NF_IPTABLES
@@ -196,46 +218,24 @@ diff -urN linux-2.6.15-rc6.orig/net/ipv4/netfilter/Kconfig linux-2.6.15-rc6/net/
 +	  to match based on the packet arrival time/date
 +	  (arrival time/date at the machine which netfilter is running on) or
 +	  departure time/date (for locally generated packets).
-+	  
++
 +	  If you say Y here, try iptables -m time --help for more information.
 +	  If you want to compile it as a module, say M here and read
-+	  
++
 +	  Documentation/modules.txt.  If unsure, say `N'.
 +
 +
  config IP_NF_MATCH_RECENT
  	tristate "recent match support"
  	depends on IP_NF_IPTABLES
-diff -urN linux-2.6.15-rc6.orig/net/ipv4/netfilter/Makefile linux-2.6.15-rc6/net/ipv4/netfilter/Makefile
---- linux-2.6.15-rc6.orig/net/ipv4/netfilter/Makefile	2006-01-07 13:00:21.000000000 +0100
-+++ linux-2.6.15-rc6/net/ipv4/netfilter/Makefile	2006-01-07 13:03:50.000000000 +0100
+diff -urN linux-2.6.19.old/net/ipv4/netfilter/Makefile linux-2.6.19.dev/net/ipv4/netfilter/Makefile
+--- linux-2.6.19.old/net/ipv4/netfilter/Makefile	2006-12-14 03:13:45.000000000 +0100
++++ linux-2.6.19.dev/net/ipv4/netfilter/Makefile	2006-12-14 03:13:45.000000000 +0100
 @@ -58,6 +58,7 @@
- obj-$(CONFIG_IP_NF_MATCH_MULTIPORT) += ipt_multiport.o
+ obj-$(CONFIG_IP_NF_MATCH_IPRANGE) += ipt_iprange.o
  obj-$(CONFIG_IP_NF_MATCH_OWNER) += ipt_owner.o
  obj-$(CONFIG_IP_NF_MATCH_TOS) += ipt_tos.o
 +obj-$(CONFIG_IP_NF_MATCH_TIME) += ipt_time.o
  obj-$(CONFIG_IP_NF_MATCH_RECENT) += ipt_recent.o
  obj-$(CONFIG_IP_NF_MATCH_ECN) += ipt_ecn.o
- obj-$(CONFIG_IP_NF_MATCH_DSCP) += ipt_dscp.o
-diff -urN linux-2.6.15-rc6.orig/include/linux/netfilter_ipv4/ipt_time.h linux-2.6.15-rc6/include/linux/netfilter_ipv4/ipt_time.h
---- linux-2.6.15-rc6.orig/include/linux/netfilter_ipv4/ipt_time.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.15-rc6/include/linux/netfilter_ipv4/ipt_time.h	2006-01-07 13:02:14.000000000 +0100
-@@ -0,0 +1,18 @@
-+#ifndef __ipt_time_h_included__
-+#define __ipt_time_h_included__
-+
-+
-+struct ipt_time_info {
-+	u_int8_t  days_match;   /* 1 bit per day. -SMTWTFS                      */
-+	u_int16_t time_start;   /* 0 < time_start < 23*60+59 = 1439             */
-+	u_int16_t time_stop;    /* 0:0 < time_stat < 23:59                      */
-+
-+				/* FIXME: Keep this one for userspace iptables binary compability: */
-+	u_int8_t  kerneltime;   /* ignore skb time (and use kerneltime) or not. */
-+
-+	time_t    date_start;
-+	time_t    date_stop;
-+};
-+
-+
-+#endif /* __ipt_time_h_included__ */
+ obj-$(CONFIG_IP_NF_MATCH_AH) += ipt_ah.o

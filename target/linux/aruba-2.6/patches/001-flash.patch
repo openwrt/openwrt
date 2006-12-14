@@ -118,42 +118,4 @@ diff -Nur linux-2.6.15/drivers/mtd/chips/cfi_probe.c linux-2.6.15-openwrt/driver
  	cfi_send_gen_cmd(0xF0, 0, base, map, cfi, cfi->device_type, NULL);
  	cfi_send_gen_cmd(0xFF, 0, base, map, cfi, cfi->device_type, NULL);
  	cfi_send_gen_cmd(0x98, 0x55, base, map, cfi, cfi->device_type, NULL);
-diff -Nur linux-2.6.15/drivers/mtd/maps/physmap.c linux-2.6.15-openwrt/drivers/mtd/maps/physmap.c
---- linux-2.6.15/drivers/mtd/maps/physmap.c	2006-01-03 04:21:10.000000000 +0100
-+++ linux-2.6.15-openwrt/drivers/mtd/maps/physmap.c	2006-01-10 00:32:32.000000000 +0100
-@@ -34,15 +34,31 @@
- static struct mtd_partition *mtd_parts;
- static int                   mtd_parts_nb;
- 
--static int num_physmap_partitions;
--static struct mtd_partition *physmap_partitions;
-+static int num_physmap_partitions = 3;
-+static struct mtd_partition physmap_partitions[] = {
-+	{
-+                name:           "zImage",
-+                size:           0x3f0000-0x80000,
-+                offset:         0x80000,
-+        },
-+	{
-+                name:           "JFFS2",
-+                size:           0x3f0000-0x120000,
-+                offset:         0x120000,
-+	},
-+	{
-+		name:		"NVRAM",
-+		size:		0x2000,
-+		offset:		0x3f8000,
-+	}
-+};
- 
- static const char *part_probes[] __initdata = {"cmdlinepart", "RedBoot", NULL};
- 
- void physmap_set_partitions(struct mtd_partition *parts, int num_parts)
- {
--	physmap_partitions=parts;
--	num_physmap_partitions=num_parts;
-+//	physmap_partitions=parts;
-+//	num_physmap_partitions=num_parts;
- }
- #endif /* CONFIG_MTD_PARTITIONS */
- 
+

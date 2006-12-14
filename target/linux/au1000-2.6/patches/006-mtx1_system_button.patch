@@ -47,7 +47,7 @@ diff -urN linux-2.6.16.7/arch/mips/au1000/mtx-1/mtx-1_sysbtn.c linux-2.6.16.7.ne
 + *      that can be read. It returns one char '1' if the button
 + *      has been pressed an '0' if it has been released.
 + */
-+#include <linux/config.h>
++#include <linux/autoconf.h>
 +#include <linux/module.h>
 +#include <linux/version.h>
 +#include <linux/types.h>
@@ -108,7 +108,7 @@ diff -urN linux-2.6.16.7/arch/mips/au1000/mtx-1/mtx-1_sysbtn.c linux-2.6.16.7.ne
 +//---------[ Interrupt handling ]-----------------
 +
 +
-+static void mtx1_btn_interrupt (int irq, void *private, struct pt_regs *regs)
++static void mtx1_btn_interrupt (int irq, void *private)
 +{
 +	char value = mtx1_getbtn(0);
 +	if (last_value != value)

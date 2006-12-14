@@ -1,6 +1,6 @@
-diff -urN linux.old/drivers/mtd/maps/bcm47xx-flash.c linux.dev/drivers/mtd/maps/bcm47xx-flash.c
---- linux.old/drivers/mtd/maps/bcm47xx-flash.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/mtd/maps/bcm47xx-flash.c	2006-06-23 19:54:06.000000000 +0200
+diff -urN linux-2.6.19.ref/drivers/mtd/maps/bcm47xx-flash.c linux-2.6.19/drivers/mtd/maps/bcm47xx-flash.c
+--- linux-2.6.19.ref/drivers/mtd/maps/bcm47xx-flash.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19/drivers/mtd/maps/bcm47xx-flash.c	2006-12-04 21:33:58.000000000 +0100
 @@ -0,0 +1,490 @@
 +/*
 + *  Copyright (C) 2006 Felix Fietkau <nbd@openwrt.org>
@@ -45,7 +45,7 @@ diff -urN linux.old/drivers/mtd/maps/bcm47xx-flash.c linux.dev/drivers/mtd/maps/
 +#include <linux/types.h>
 +#include <linux/kernel.h>
 +#include <linux/wait.h>
-+#include <linux/config.h>
++#include <linux/autoconf.h>
 +#include <linux/mtd/mtd.h>
 +#include <linux/mtd/map.h>
 +#ifdef CONFIG_MTD_PARTITIONS
@@ -133,7 +133,7 @@ diff -urN linux.old/drivers/mtd/maps/bcm47xx-flash.c linux.dev/drivers/mtd/maps/
 +		/*
 +		 * Read into buffer 
 +		 */
-+		if (MTD_READ(mtd, off, sizeof(buf), &len, buf) ||
++		if (mtd->read(mtd, off, sizeof(buf), &len, buf) ||
 +		    len != sizeof(buf))
 +			continue;
 +
@@ -195,7 +195,7 @@ diff -urN linux.old/drivers/mtd/maps/bcm47xx-flash.c linux.dev/drivers/mtd/maps/
 +	set_current_state(TASK_INTERRUPTIBLE);
 +	add_wait_queue(&wait_q, &wait);
 +
-+	ret = MTD_ERASE(mtd, &erase);
++	ret = mtd->erase(mtd, &erase);
 +	if (ret) {
 +		set_current_state(TASK_RUNNING);
 +		remove_wait_queue(&wait_q, &wait);
@@ -212,7 +212,7 @@ diff -urN linux.old/drivers/mtd/maps/bcm47xx-flash.c linux.dev/drivers/mtd/maps/
 +	 * Next, writhe data to flash.
 +	 */
 +
-+	ret = MTD_WRITE (mtd, pos, len, &retlen, buf);
++	ret = mtd->write(mtd, pos, len, &retlen, buf);
 +	if (ret)
 +		return ret;
 +	if (retlen != len)
@@ -243,7 +243,7 @@ diff -urN linux.old/drivers/mtd/maps/bcm47xx-flash.c linux.dev/drivers/mtd/maps/
 +		/*
 +		 * Read into buffer 
 +		 */
-+		if (MTD_READ(mtd, off, sizeof(trx), &len, (char *) &trx) ||
++		if (mtd->read(mtd, off, sizeof(trx), &len, (char *) &trx) ||
 +		    len != sizeof(trx))
 +			continue;
 +
@@ -269,7 +269,7 @@ diff -urN linux.old/drivers/mtd/maps/bcm47xx-flash.c linux.dev/drivers/mtd/maps/
 +	if (part->size == 0)
 +		return 0;
 +	
-+	if (MTD_READ(mtd, part->offset, sizeof(buf), &len, buf) || len != sizeof(buf))
++	if (mtd->read(mtd, part->offset, sizeof(buf), &len, buf) || len != sizeof(buf))
 +		return 0;
 +
 +	if (*((__u32 *) buf) == SQUASHFS_MAGIC) {
@@ -297,7 +297,7 @@ diff -urN linux.old/drivers/mtd/maps/bcm47xx-flash.c linux.dev/drivers/mtd/maps/
 +	
 +		/* Update the trx crc32 */
 +		for (i = (u32) &(((struct trx_header *)NULL)->flag_version); i <= trx.len; i += sizeof(buf)) {
-+			if (MTD_READ(mtd, off + i, sizeof(buf), &len, buf) || len != sizeof(buf))
++			if (mtd->read(mtd, off + i, sizeof(buf), &len, buf) || len != sizeof(buf))
 +				return 0;
 +			crc = crc32_le(crc, buf, min(sizeof(buf), trx.len - i));
 +		}
@@ -306,7 +306,7 @@ diff -urN linux.old/drivers/mtd/maps/bcm47xx-flash.c linux.dev/drivers/mtd/maps/
 +		/* read first eraseblock from the trx */
 +		block = kmalloc(mtd->erasesize, GFP_KERNEL);
 +		trx2 = (struct trx_header *) block;
-+		if (MTD_READ(mtd, off, mtd->erasesize, &len, block) || len != mtd->erasesize) {
++		if (mtd->read(mtd, off, mtd->erasesize, &len, block) || len != mtd->erasesize) {
 +			printk("Error accessing the first trx eraseblock\n");
 +			return 0;
 +		}
@@ -492,9 +492,9 @@ diff -urN linux.old/drivers/mtd/maps/bcm47xx-flash.c linux.dev/drivers/mtd/maps/
 +
 +module_init(init_bcm947xx_map);
 +module_exit(cleanup_bcm947xx_map);
-diff -urN linux.old/drivers/mtd/maps/Kconfig linux.dev/drivers/mtd/maps/Kconfig
---- linux.old/drivers/mtd/maps/Kconfig	2006-06-23 19:13:51.000000000 +0200
-+++ linux.dev/drivers/mtd/maps/Kconfig	2006-06-23 18:47:58.000000000 +0200
+diff -urN linux-2.6.19.ref/drivers/mtd/maps/Kconfig linux-2.6.19/drivers/mtd/maps/Kconfig
+--- linux-2.6.19.ref/drivers/mtd/maps/Kconfig	2006-11-29 22:57:37.000000000 +0100
++++ linux-2.6.19/drivers/mtd/maps/Kconfig	2006-12-04 21:33:58.000000000 +0100
 @@ -299,6 +299,12 @@
  	  Mapping for the Flaga digital module. If you don't have one, ignore
  	  this setting.
@@ -508,10 +508,10 @@ diff -urN linux.old/drivers/mtd/maps/Kconfig linux.dev/drivers/mtd/maps/Kconfig
  config MTD_BEECH
  	tristate "CFI Flash device mapped on IBM 405LP Beech"
  	depends on MTD_CFI && BEECH
-diff -urN linux.old/drivers/mtd/maps/Makefile linux.dev/drivers/mtd/maps/Makefile
---- linux.old/drivers/mtd/maps/Makefile	2006-06-23 19:13:51.000000000 +0200
-+++ linux.dev/drivers/mtd/maps/Makefile	2006-06-23 18:47:58.000000000 +0200
-@@ -30,6 +30,7 @@
+diff -urN linux-2.6.19.ref/drivers/mtd/maps/Makefile linux-2.6.19/drivers/mtd/maps/Makefile
+--- linux-2.6.19.ref/drivers/mtd/maps/Makefile	2006-11-29 22:57:37.000000000 +0100
++++ linux-2.6.19/drivers/mtd/maps/Makefile	2006-12-04 21:33:58.000000000 +0100
+@@ -29,6 +29,7 @@
  obj-$(CONFIG_MTD_PCMCIA)	+= pcmciamtd.o
  obj-$(CONFIG_MTD_RPXLITE)	+= rpxlite.o
  obj-$(CONFIG_MTD_TQM8XXL)	+= tqm8xxl.o

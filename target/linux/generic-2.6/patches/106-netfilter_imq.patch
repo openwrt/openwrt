@@ -1,7 +1,7 @@
-diff -Nur linux-2.6.16/drivers/net/imq.c linux-2.6.16-owrt/drivers/net/imq.c
---- linux-2.6.16/drivers/net/imq.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.16-owrt/drivers/net/imq.c	2006-03-20 12:59:23.000000000 +0100
-@@ -0,0 +1,403 @@
+diff -urN linux-2.6.19.old/drivers/net/imq.c linux-2.6.19.dev/drivers/net/imq.c
+--- linux-2.6.19.old/drivers/net/imq.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.dev/drivers/net/imq.c	2006-12-14 03:13:47.000000000 +0100
+@@ -0,0 +1,400 @@
 +/*
 + *             Pseudo-driver for the intermediate queue device.
 + *
@@ -29,31 +29,31 @@ diff -Nur linux-2.6.16/drivers/net/imq.c linux-2.6.16-owrt/drivers/net/imq.c
 + *	       the following changes:
 + *
 + *	       - Correction of ipv6 support "+"s issue (Hasso Tepper)
-+ *	       - Correction of imq_init_devs() issue that resulted in 
++ *	       - Correction of imq_init_devs() issue that resulted in
 + *	       kernel OOPS unloading IMQ as module (Norbert Buchmuller)
 + *	       - Addition of functionality to choose number of IMQ devices
 + *	       during kernel config (Andre Correa)
-+ *	       - Addition of functionality to choose how IMQ hooks on 
++ *	       - Addition of functionality to choose how IMQ hooks on
 + *	       PRE and POSTROUTING (after or before NAT) (Andre Correa)
 + *	       - Cosmetic corrections (Norbert Buchmuller) (Andre Correa)
 + *
 + *
-+ *             2005/12/16 - IMQ versions between 2.6.7 and 2.6.13 were 
-+ *             released with almost no problems. 2.6.14-x was released 
-+ *             with some important changes: nfcache was removed; After 
-+ *             some weeks of trouble we figured out that some IMQ fields 
++ *             2005/12/16 - IMQ versions between 2.6.7 and 2.6.13 were
++ *             released with almost no problems. 2.6.14-x was released
++ *             with some important changes: nfcache was removed; After
++ *             some weeks of trouble we figured out that some IMQ fields
 + *             in skb were missing in skbuff.c - skb_clone and copy_skb_header.
 + *             These functions are correctly patched by this new patch version.
 + *
-+ *             Thanks for all who helped to figure out all the problems with 
++ *             Thanks for all who helped to figure out all the problems with
 + *             2.6.14.x: Patrick McHardy, Rune Kock, VeNoMouS, Max CtRiX,
-+ *             Kevin Shanahan, Richard Lucassen, Valery Dachev (hopefully 
++ *             Kevin Shanahan, Richard Lucassen, Valery Dachev (hopefully
 + *             I didn't forget anybody). I apologize again for my lack of time.
 + *
 + *             More info at: http://www.linuximq.net/ (Andre Correa)
 + */
 +
-+#include <linux/config.h>
++#include <linux/autoconf.h>
 +#include <linux/module.h>
 +#include <linux/kernel.h>
 +#include <linux/moduleparam.h>
@@ -172,7 +172,7 @@ diff -Nur linux-2.6.16/drivers/net/imq.c linux-2.6.16-owrt/drivers/net/imq.c
 +       unsigned int index = skb->imq_flags&IMQ_F_IFMASK;
 +       int ret = -1;
 +
-+       if (index > numdevs) 
++       if (index > numdevs)
 +               return -1;
 +
 +       dev = imq_devs + index;
@@ -205,13 +205,10 @@ diff -Nur linux-2.6.16/drivers/net/imq.c linux-2.6.16-owrt/drivers/net/imq.c
 +                       ret = 0;
 +               }
 +       }
-+       if (spin_is_locked(&dev->xmit_lock))
++       if (spin_is_locked(&dev->_xmit_lock))
 +               netif_schedule(dev);
 +       else
-+
-+        while (!netif_queue_stopped(dev) &&
-+               qdisc_restart(dev)<0)
-+                /* NOTHING */;
++               qdisc_run(dev);
 +
 +       spin_unlock_bh(&dev->queue_lock);
 +
@@ -405,10 +402,10 @@ diff -Nur linux-2.6.16/drivers/net/imq.c linux-2.6.16-owrt/drivers/net/imq.c
 +MODULE_AUTHOR("http://www.linuximq.net");
 +MODULE_DESCRIPTION("Pseudo-driver for the intermediate queue device. See http://www.linuximq.net/ for more information.");
 +MODULE_LICENSE("GPL");
-diff -Nur linux-2.6.16/drivers/net/Kconfig linux-2.6.16-owrt/drivers/net/Kconfig
---- linux-2.6.16/drivers/net/Kconfig	2006-03-20 06:53:29.000000000 +0100
-+++ linux-2.6.16-owrt/drivers/net/Kconfig	2006-03-20 12:59:23.000000000 +0100
-@@ -93,6 +93,129 @@
+diff -urN linux-2.6.19.old/drivers/net/Kconfig linux-2.6.19.dev/drivers/net/Kconfig
+--- linux-2.6.19.old/drivers/net/Kconfig	2006-11-29 22:57:37.000000000 +0100
++++ linux-2.6.19.dev/drivers/net/Kconfig	2006-12-14 03:13:47.000000000 +0100
+@@ -96,6 +96,129 @@
  	  To compile this driver as a module, choose M here: the module
  	  will be called eql.  If unsure, say N.
  
@@ -526,7 +523,7 @@ diff -Nur linux-2.6.16/drivers/net/Kconfig linux-2.6.16-owrt/drivers/net/Kconfig
 +        default "2"
 +        help
 +
-+                This settings defines how many IMQ devices will be 
++                This settings defines how many IMQ devices will be
 +		created.
 +
 +		The default value is 2.
@@ -538,20 +535,20 @@ diff -Nur linux-2.6.16/drivers/net/Kconfig linux-2.6.16-owrt/drivers/net/Kconfig
  config TUN
  	tristate "Universal TUN/TAP device driver support"
  	select CRC32
-diff -Nur linux-2.6.16/drivers/net/Makefile linux-2.6.16-owrt/drivers/net/Makefile
---- linux-2.6.16/drivers/net/Makefile	2006-03-20 06:53:29.000000000 +0100
-+++ linux-2.6.16-owrt/drivers/net/Makefile	2006-03-20 13:00:13.000000000 +0100
-@@ -125,6 +125,7 @@
- endif
+diff -urN linux-2.6.19.old/drivers/net/Makefile linux-2.6.19.dev/drivers/net/Makefile
+--- linux-2.6.19.old/drivers/net/Makefile	2006-11-29 22:57:37.000000000 +0100
++++ linux-2.6.19.dev/drivers/net/Makefile	2006-12-14 03:13:47.000000000 +0100
+@@ -124,6 +124,7 @@
+ obj-$(CONFIG_SLHC) += slhc.o
  
  obj-$(CONFIG_DUMMY) += dummy.o
 +obj-$(CONFIG_IMQ) += imq.o
  obj-$(CONFIG_IFB) += ifb.o
  obj-$(CONFIG_DE600) += de600.o
  obj-$(CONFIG_DE620) += de620.o
-diff -Nur linux-2.6.16/include/linux/imq.h linux-2.6.16-owrt/include/linux/imq.h
---- linux-2.6.16/include/linux/imq.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.16-owrt/include/linux/imq.h	2006-03-20 12:59:23.000000000 +0100
+diff -urN linux-2.6.19.old/include/linux/imq.h linux-2.6.19.dev/include/linux/imq.h
+--- linux-2.6.19.old/include/linux/imq.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.dev/include/linux/imq.h	2006-12-14 03:13:47.000000000 +0100
 @@ -0,0 +1,9 @@
 +#ifndef _IMQ_H
 +#define _IMQ_H
@@ -562,9 +559,9 @@ diff -Nur linux-2.6.16/include/linux/imq.h linux-2.6.16-owrt/include/linux/imq.h
 +#define IMQ_F_ENQUEUE  0x80
 +
 +#endif /* _IMQ_H */
-diff -Nur linux-2.6.16/include/linux/netfilter_ipv4/ipt_IMQ.h linux-2.6.16-owrt/include/linux/netfilter_ipv4/ipt_IMQ.h
---- linux-2.6.16/include/linux/netfilter_ipv4/ipt_IMQ.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.16-owrt/include/linux/netfilter_ipv4/ipt_IMQ.h	2006-03-20 12:59:23.000000000 +0100
+diff -urN linux-2.6.19.old/include/linux/netfilter_ipv4/ipt_IMQ.h linux-2.6.19.dev/include/linux/netfilter_ipv4/ipt_IMQ.h
+--- linux-2.6.19.old/include/linux/netfilter_ipv4/ipt_IMQ.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.dev/include/linux/netfilter_ipv4/ipt_IMQ.h	2006-12-14 03:13:47.000000000 +0100
 @@ -0,0 +1,8 @@
 +#ifndef _IPT_IMQ_H
 +#define _IPT_IMQ_H
@@ -574,9 +571,9 @@ diff -Nur linux-2.6.16/include/linux/netfilter_ipv4/ipt_IMQ.h linux-2.6.16-owrt/
 +};
 +
 +#endif /* _IPT_IMQ_H */
-diff -Nur linux-2.6.16/include/linux/netfilter_ipv6/ip6t_IMQ.h linux-2.6.16-owrt/include/linux/netfilter_ipv6/ip6t_IMQ.h
---- linux-2.6.16/include/linux/netfilter_ipv6/ip6t_IMQ.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.16-owrt/include/linux/netfilter_ipv6/ip6t_IMQ.h	2006-03-20 12:59:23.000000000 +0100
+diff -urN linux-2.6.19.old/include/linux/netfilter_ipv6/ip6t_IMQ.h linux-2.6.19.dev/include/linux/netfilter_ipv6/ip6t_IMQ.h
+--- linux-2.6.19.old/include/linux/netfilter_ipv6/ip6t_IMQ.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.dev/include/linux/netfilter_ipv6/ip6t_IMQ.h	2006-12-14 03:13:47.000000000 +0100
 @@ -0,0 +1,8 @@
 +#ifndef _IP6T_IMQ_H
 +#define _IP6T_IMQ_H
@@ -586,10 +583,10 @@ diff -Nur linux-2.6.16/include/linux/netfilter_ipv6/ip6t_IMQ.h linux-2.6.16-owrt
 +};
 +
 +#endif /* _IP6T_IMQ_H */
-diff -Nur linux-2.6.16/include/linux/skbuff.h linux-2.6.16-owrt/include/linux/skbuff.h
---- linux-2.6.16/include/linux/skbuff.h	2006-03-20 06:53:29.000000000 +0100
-+++ linux-2.6.16-owrt/include/linux/skbuff.h	2006-03-20 12:59:23.000000000 +0100
-@@ -275,6 +275,10 @@
+diff -urN linux-2.6.19.old/include/linux/skbuff.h linux-2.6.19.dev/include/linux/skbuff.h
+--- linux-2.6.19.old/include/linux/skbuff.h	2006-11-29 22:57:37.000000000 +0100
++++ linux-2.6.19.dev/include/linux/skbuff.h	2006-12-14 03:13:47.000000000 +0100
+@@ -292,6 +292,10 @@
  #if defined(CONFIG_NF_CONNTRACK) || defined(CONFIG_NF_CONNTRACK_MODULE)
  	struct sk_buff		*nfct_reasm;
  #endif
@@ -600,10 +597,10 @@ diff -Nur linux-2.6.16/include/linux/skbuff.h linux-2.6.16-owrt/include/linux/sk
  #ifdef CONFIG_BRIDGE_NETFILTER
  	struct nf_bridge_info	*nf_bridge;
  #endif
-diff -Nur linux-2.6.16/net/core/skbuff.c linux-2.6.16-owrt/net/core/skbuff.c
---- linux-2.6.16/net/core/skbuff.c	2006-03-20 06:53:29.000000000 +0100
-+++ linux-2.6.16-owrt/net/core/skbuff.c	2006-03-20 12:59:23.000000000 +0100
-@@ -425,6 +425,10 @@
+diff -urN linux-2.6.19.old/net/core/skbuff.c linux-2.6.19.dev/net/core/skbuff.c
+--- linux-2.6.19.old/net/core/skbuff.c	2006-11-29 22:57:37.000000000 +0100
++++ linux-2.6.19.dev/net/core/skbuff.c	2006-12-14 03:13:47.000000000 +0100
+@@ -482,6 +482,10 @@
  	C(nfct_reasm);
  	nf_conntrack_get_reasm(skb->nfct_reasm);
  #endif
@@ -614,7 +611,7 @@ diff -Nur linux-2.6.16/net/core/skbuff.c linux-2.6.16-owrt/net/core/skbuff.c
  #ifdef CONFIG_BRIDGE_NETFILTER
  	C(nf_bridge);
  	nf_bridge_get(skb->nf_bridge);
-@@ -489,6 +493,10 @@
+@@ -546,6 +550,10 @@
  #if defined(CONFIG_IP_VS) || defined(CONFIG_IP_VS_MODULE)
  	new->ipvs_property = old->ipvs_property;
  #endif
@@ -625,10 +622,10 @@ diff -Nur linux-2.6.16/net/core/skbuff.c linux-2.6.16-owrt/net/core/skbuff.c
  #ifdef CONFIG_BRIDGE_NETFILTER
  	new->nf_bridge	= old->nf_bridge;
  	nf_bridge_get(old->nf_bridge);
-diff -Nur linux-2.6.16/net/ipv4/netfilter/ipt_IMQ.c linux-2.6.16-owrt/net/ipv4/netfilter/ipt_IMQ.c
---- linux-2.6.16/net/ipv4/netfilter/ipt_IMQ.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.16-owrt/net/ipv4/netfilter/ipt_IMQ.c	2006-03-20 12:59:23.000000000 +0100
-@@ -0,0 +1,80 @@
+diff -urN linux-2.6.19.old/net/ipv4/netfilter/ipt_IMQ.c linux-2.6.19.dev/net/ipv4/netfilter/ipt_IMQ.c
+--- linux-2.6.19.old/net/ipv4/netfilter/ipt_IMQ.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.dev/net/ipv4/netfilter/ipt_IMQ.c	2006-12-14 03:13:47.000000000 +0100
+@@ -0,0 +1,77 @@
 +/*
 + * This target marks packets to be enqueued to an imq device
 + */
@@ -642,8 +639,8 @@ diff -Nur linux-2.6.16/net/ipv4/netfilter/ipt_IMQ.c linux-2.6.16-owrt/net/ipv4/n
 +                              const struct net_device *in,
 +                              const struct net_device *out,
 +                              unsigned int hooknum,
-+                              const void *targinfo,
-+                              void *userdata)
++			      const struct xt_target *target,
++                              const void *targinfo)
 +{
 +       struct ipt_imq_info *mr = (struct ipt_imq_info*)targinfo;
 +
@@ -653,17 +650,13 @@ diff -Nur linux-2.6.16/net/ipv4/netfilter/ipt_IMQ.c linux-2.6.16-owrt/net/ipv4/n
 +}
 +
 +static int imq_checkentry(const char *tablename,
-+                         const struct ipt_entry *e,
++                         const void *e,
++			 const struct xt_target *target,
 +                         void *targinfo,
-+                         unsigned int targinfosize,
 +                         unsigned int hook_mask)
 +{
 +       struct ipt_imq_info *mr;
 +
-+       if (targinfosize != IPT_ALIGN(sizeof(struct ipt_imq_info))) {
-+               printk(KERN_WARNING "IMQ: invalid targinfosize\n");
-+               return 0;
-+       }
 +       mr = (struct ipt_imq_info*)targinfo;
 +
 +       if (strcmp(tablename, "mangle") != 0) {
@@ -686,6 +679,7 @@ diff -Nur linux-2.6.16/net/ipv4/netfilter/ipt_IMQ.c linux-2.6.16-owrt/net/ipv4/n
 +static struct ipt_target ipt_imq_reg = {
 +       .name           = "IMQ",
 +       .target         = imq_target,
++       .targetsize     = sizeof(struct ipt_imq_info),
 +       .checkentry     = imq_checkentry,
 +       .me             = THIS_MODULE
 +};
@@ -709,10 +703,10 @@ diff -Nur linux-2.6.16/net/ipv4/netfilter/ipt_IMQ.c linux-2.6.16-owrt/net/ipv4/n
 +MODULE_AUTHOR("http://www.linuximq.net");
 +MODULE_DESCRIPTION("Pseudo-driver for the intermediate queue device. See http://www.linuximq.net/ for more information.");
 +MODULE_LICENSE("GPL");
-diff -Nur linux-2.6.16/net/ipv4/netfilter/Kconfig linux-2.6.16-owrt/net/ipv4/netfilter/Kconfig
---- linux-2.6.16/net/ipv4/netfilter/Kconfig	2006-03-20 12:58:53.000000000 +0100
-+++ linux-2.6.16-owrt/net/ipv4/netfilter/Kconfig	2006-03-20 12:59:23.000000000 +0100
-@@ -351,6 +351,17 @@
+diff -urN linux-2.6.19.old/net/ipv4/netfilter/Kconfig linux-2.6.19.dev/net/ipv4/netfilter/Kconfig
+--- linux-2.6.19.old/net/ipv4/netfilter/Kconfig	2006-12-14 03:13:47.000000000 +0100
++++ linux-2.6.19.dev/net/ipv4/netfilter/Kconfig	2006-12-14 03:13:47.000000000 +0100
+@@ -390,6 +390,17 @@
  
  	  To compile it as a module, choose M here.  If unsure, say N.
  
@@ -730,21 +724,21 @@ diff -Nur linux-2.6.16/net/ipv4/netfilter/Kconfig linux-2.6.16-owrt/net/ipv4/net
  config IP_NF_TARGET_LOG
  	tristate "LOG target support"
  	depends on IP_NF_IPTABLES
-diff -Nur linux-2.6.16/net/ipv4/netfilter/Makefile linux-2.6.16-owrt/net/ipv4/netfilter/Makefile
---- linux-2.6.16/net/ipv4/netfilter/Makefile	2006-03-20 12:58:53.000000000 +0100
-+++ linux-2.6.16-owrt/net/ipv4/netfilter/Makefile	2006-03-20 13:01:12.000000000 +0100
-@@ -67,6 +67,7 @@
+diff -urN linux-2.6.19.old/net/ipv4/netfilter/Makefile linux-2.6.19.dev/net/ipv4/netfilter/Makefile
+--- linux-2.6.19.old/net/ipv4/netfilter/Makefile	2006-12-14 03:13:47.000000000 +0100
++++ linux-2.6.19.dev/net/ipv4/netfilter/Makefile	2006-12-14 03:13:47.000000000 +0100
+@@ -71,6 +71,7 @@
+ obj-$(CONFIG_IP_NF_TARGET_REJECT) += ipt_REJECT.o
  obj-$(CONFIG_IP_NF_TARGET_TOS) += ipt_TOS.o
  obj-$(CONFIG_IP_NF_TARGET_ECN) += ipt_ECN.o
- obj-$(CONFIG_IP_NF_TARGET_DSCP) += ipt_DSCP.o
 +obj-$(CONFIG_IP_NF_TARGET_IMQ) += ipt_IMQ.o
  obj-$(CONFIG_IP_NF_TARGET_MASQUERADE) += ipt_MASQUERADE.o
  obj-$(CONFIG_IP_NF_TARGET_REDIRECT) += ipt_REDIRECT.o
  obj-$(CONFIG_IP_NF_TARGET_NETMAP) += ipt_NETMAP.o
-diff -Nur linux-2.6.16/net/ipv6/netfilter/ip6t_IMQ.c linux-2.6.16-owrt/net/ipv6/netfilter/ip6t_IMQ.c
---- linux-2.6.16/net/ipv6/netfilter/ip6t_IMQ.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.16-owrt/net/ipv6/netfilter/ip6t_IMQ.c	2006-03-20 12:59:23.000000000 +0100
-@@ -0,0 +1,80 @@
+diff -urN linux-2.6.19.old/net/ipv6/netfilter/ip6t_IMQ.c linux-2.6.19.dev/net/ipv6/netfilter/ip6t_IMQ.c
+--- linux-2.6.19.old/net/ipv6/netfilter/ip6t_IMQ.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.dev/net/ipv6/netfilter/ip6t_IMQ.c	2006-12-14 03:13:47.000000000 +0100
+@@ -0,0 +1,77 @@
 +/*
 + * This target marks packets to be enqueued to an imq device
 + */
@@ -755,11 +749,11 @@ diff -Nur linux-2.6.16/net/ipv6/netfilter/ip6t_IMQ.c linux-2.6.16-owrt/net/ipv6/
 +#include <linux/imq.h>
 +
 +static unsigned int imq_target(struct sk_buff **pskb,
-+                              unsigned int hooknum,
 +                              const struct net_device *in,
 +                              const struct net_device *out,
-+                              const void *targinfo,
-+                              void *userdata)
++                              unsigned int hooknum,
++			      const struct xt_target *target,
++                              const void *targinfo)
 +{
 +       struct ip6t_imq_info *mr = (struct ip6t_imq_info*)targinfo;
 +
@@ -769,17 +763,13 @@ diff -Nur linux-2.6.16/net/ipv6/netfilter/ip6t_IMQ.c linux-2.6.16-owrt/net/ipv6/
 +}
 +
 +static int imq_checkentry(const char *tablename,
-+                         const struct ip6t_entry *e,
++                         const void *e,
++			 const struct xt_target *target,
 +                         void *targinfo,
-+                         unsigned int targinfosize,
 +                         unsigned int hook_mask)
 +{
 +       struct ip6t_imq_info *mr;
 +
-+       if (targinfosize != IP6T_ALIGN(sizeof(struct ip6t_imq_info))) {
-+               printk(KERN_WARNING "IMQ: invalid targinfosize\n");
-+               return 0;
-+       }
 +       mr = (struct ip6t_imq_info*)targinfo;
 +
 +       if (strcmp(tablename, "mangle") != 0) {
@@ -802,6 +792,7 @@ diff -Nur linux-2.6.16/net/ipv6/netfilter/ip6t_IMQ.c linux-2.6.16-owrt/net/ipv6/
 +static struct ip6t_target ip6t_imq_reg = {
 +       .name           = "IMQ",
 +       .target         = imq_target,
++       .targetsize     = sizeof(struct ip6t_imq_info),
 +       .checkentry     = imq_checkentry,
 +       .me             = THIS_MODULE
 +};
@@ -825,10 +816,10 @@ diff -Nur linux-2.6.16/net/ipv6/netfilter/ip6t_IMQ.c linux-2.6.16-owrt/net/ipv6/
 +MODULE_AUTHOR("http://www.linuximq.net");
 +MODULE_DESCRIPTION("Pseudo-driver for the intermediate queue device. See http://www.linuximq.net/ for more information.");
 +MODULE_LICENSE("GPL");
-diff -Nur linux-2.6.16/net/ipv6/netfilter/Kconfig linux-2.6.16-owrt/net/ipv6/netfilter/Kconfig
---- linux-2.6.16/net/ipv6/netfilter/Kconfig	2006-03-20 06:53:29.000000000 +0100
-+++ linux-2.6.16-owrt/net/ipv6/netfilter/Kconfig	2006-03-20 12:59:23.000000000 +0100
-@@ -154,6 +154,15 @@
+diff -urN linux-2.6.19.old/net/ipv6/netfilter/Kconfig linux-2.6.19.dev/net/ipv6/netfilter/Kconfig
+--- linux-2.6.19.old/net/ipv6/netfilter/Kconfig	2006-11-29 22:57:37.000000000 +0100
++++ linux-2.6.19.dev/net/ipv6/netfilter/Kconfig	2006-12-14 03:13:47.000000000 +0100
+@@ -134,6 +134,15 @@
  
  	  To compile it as a module, choose M here.  If unsure, say N.
  
@@ -844,21 +835,21 @@ diff -Nur linux-2.6.16/net/ipv6/netfilter/Kconfig linux-2.6.16-owrt/net/ipv6/net
  config IP6_NF_TARGET_LOG
  	tristate "LOG target support"
  	depends on IP6_NF_FILTER
-diff -Nur linux-2.6.16/net/ipv6/netfilter/Makefile linux-2.6.16-owrt/net/ipv6/netfilter/Makefile
---- linux-2.6.16/net/ipv6/netfilter/Makefile	2006-03-20 06:53:29.000000000 +0100
-+++ linux-2.6.16-owrt/net/ipv6/netfilter/Makefile	2006-03-20 13:02:14.000000000 +0100
+diff -urN linux-2.6.19.old/net/ipv6/netfilter/Makefile linux-2.6.19.dev/net/ipv6/netfilter/Makefile
+--- linux-2.6.19.old/net/ipv6/netfilter/Makefile	2006-11-29 22:57:37.000000000 +0100
++++ linux-2.6.19.dev/net/ipv6/netfilter/Makefile	2006-12-14 03:13:47.000000000 +0100
 @@ -4,6 +4,7 @@
  
  # Link order matters here.
  obj-$(CONFIG_IP6_NF_IPTABLES) += ip6_tables.o
 +obj-$(CONFIG_IP6_NF_TARGET_IMQ) += ip6t_IMQ.o
  obj-$(CONFIG_IP6_NF_MATCH_RT) += ip6t_rt.o
- obj-$(CONFIG_IP6_NF_MATCH_OPTS) += ip6t_hbh.o ip6t_dst.o
+ obj-$(CONFIG_IP6_NF_MATCH_OPTS) += ip6t_hbh.o
  obj-$(CONFIG_IP6_NF_MATCH_IPV6HEADER) += ip6t_ipv6header.o
-diff -Nur linux-2.6.16/net/sched/sch_generic.c linux-2.6.16-owrt/net/sched/sch_generic.c
---- linux-2.6.16/net/sched/sch_generic.c	2006-03-20 06:53:29.000000000 +0100
-+++ linux-2.6.16-owrt/net/sched/sch_generic.c	2006-03-20 12:59:23.000000000 +0100
-@@ -29,6 +29,9 @@
+diff -urN linux-2.6.19.old/net/sched/sch_generic.c linux-2.6.19.dev/net/sched/sch_generic.c
+--- linux-2.6.19.old/net/sched/sch_generic.c	2006-11-29 22:57:37.000000000 +0100
++++ linux-2.6.19.dev/net/sched/sch_generic.c	2006-12-14 03:13:47.000000000 +0100
+@@ -28,6 +28,9 @@
  #include <linux/netdevice.h>
  #include <linux/skbuff.h>
  #include <linux/rtnetlink.h>
@@ -868,18 +859,10 @@ diff -Nur linux-2.6.16/net/sched/sch_generic.c linux-2.6.16-owrt/net/sched/sch_g
  #include <linux/init.h>
  #include <linux/rcupdate.h>
  #include <linux/list.h>
-@@ -136,7 +139,13 @@
- 
- 			if (!netif_queue_stopped(dev)) {
- 				int ret;
--				if (netdev_nit)
-+
-+                                if (netdev_nit
-+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
-+                                  && !(skb->imq_flags & IMQ_F_ENQUEUE)
-+#endif
-+                                  )
-+
- 					dev_queue_xmit_nit(skb, dev);
- 
- 				ret = dev->hard_start_xmit(skb, dev);
+@@ -615,5 +618,6 @@
+ EXPORT_SYMBOL(qdisc_alloc);
+ EXPORT_SYMBOL(qdisc_destroy);
+ EXPORT_SYMBOL(qdisc_reset);
++EXPORT_SYMBOL(__qdisc_run);
+ EXPORT_SYMBOL(qdisc_lock_tree);
+ EXPORT_SYMBOL(qdisc_unlock_tree);

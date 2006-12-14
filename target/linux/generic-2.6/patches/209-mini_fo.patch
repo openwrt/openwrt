@@ -1,9 +1,9 @@
-diff -urN linux.old/fs/Kconfig linux.dev/fs/Kconfig
---- linux.old/fs/Kconfig	2006-11-17 03:10:00.000000000 +0100
-+++ linux.dev/fs/Kconfig	2006-11-17 03:12:36.000000000 +0100
-@@ -356,6 +356,9 @@
- 	          - POSIX ACLs
- 	          - readpages / writepages (not user visible)
+diff -urN linux-2.6.19.old/fs/Kconfig linux-2.6.19.dev/fs/Kconfig
+--- linux-2.6.19.old/fs/Kconfig	2006-12-14 03:13:20.000000000 +0100
++++ linux-2.6.19.dev/fs/Kconfig	2006-12-14 03:14:03.000000000 +0100
+@@ -468,6 +468,9 @@
+ 	  This option will enlarge your kernel, but it allows debugging of
+ 	  ocfs2 filesystem issues.
  
 +config MINI_FO
 +	tristate "Mini fanout overlay filesystem"
@@ -11,10 +11,10 @@ diff -urN linux.old/fs/Kconfig linux.dev/fs/Kconfig
  config MINIX_FS
  	tristate "Minix fs support"
  	help
-diff -urN linux.old/fs/Makefile linux.dev/fs/Makefile
---- linux.old/fs/Makefile	2006-11-17 03:10:00.000000000 +0100
-+++ linux.dev/fs/Makefile	2006-11-17 03:13:05.000000000 +0100
-@@ -60,6 +60,7 @@
+diff -urN linux-2.6.19.old/fs/Makefile linux-2.6.19.dev/fs/Makefile
+--- linux-2.6.19.old/fs/Makefile	2006-12-14 03:13:20.000000000 +0100
++++ linux-2.6.19.dev/fs/Makefile	2006-12-14 03:14:03.000000000 +0100
+@@ -71,6 +71,7 @@
  obj-$(CONFIG_RAMFS)		+= ramfs/
  obj-$(CONFIG_HUGETLBFS)		+= hugetlbfs/
  obj-$(CONFIG_CODA_FS)		+= coda/
@@ -22,9 +22,9 @@ diff -urN linux.old/fs/Makefile linux.dev/fs/Makefile
  obj-$(CONFIG_MINIX_FS)		+= minix/
  obj-$(CONFIG_FAT_FS)		+= fat/
  obj-$(CONFIG_MSDOS_FS)		+= msdos/
-diff -urN linux.old/fs/mini_fo/aux.c linux.dev/fs/mini_fo/aux.c
---- linux.old/fs/mini_fo/aux.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/mini_fo/aux.c	2006-11-17 03:11:48.000000000 +0100
+diff -urN linux-2.6.19.old/fs/mini_fo/aux.c linux-2.6.19.dev/fs/mini_fo/aux.c
+--- linux-2.6.19.old/fs/mini_fo/aux.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.dev/fs/mini_fo/aux.c	2006-12-14 03:14:03.000000000 +0100
 @@ -0,0 +1,580 @@
 +/*
 + * Copyright (c) 1997-2003 Erez Zadok
@@ -606,9 +606,9 @@ diff -urN linux.old/fs/mini_fo/aux.c linux.dev/fs/mini_fo/aux.c
 +
 +#endif /* unused */
 +
-diff -urN linux.old/fs/mini_fo/ChangeLog linux.dev/fs/mini_fo/ChangeLog
---- linux.old/fs/mini_fo/ChangeLog	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/mini_fo/ChangeLog	2006-11-17 03:11:48.000000000 +0100
+diff -urN linux-2.6.19.old/fs/mini_fo/ChangeLog linux-2.6.19.dev/fs/mini_fo/ChangeLog
+--- linux-2.6.19.old/fs/mini_fo/ChangeLog	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.dev/fs/mini_fo/ChangeLog	2006-12-14 03:14:03.000000000 +0100
 @@ -0,0 +1,281 @@
 +2006-01-24  Markus Klotzbuecher  <mk@mary.denx.de>
 +
@@ -891,9 +891,9 @@ diff -urN linux.old/fs/mini_fo/ChangeLog linux.dev/fs/mini_fo/ChangeLog
 +	* Implementation of mini_fo_mknod and mini_fo_rename, support
 +          for device files.
 +	
-diff -urN linux.old/fs/mini_fo/dentry.c linux.dev/fs/mini_fo/dentry.c
---- linux.old/fs/mini_fo/dentry.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/mini_fo/dentry.c	2006-11-17 03:11:48.000000000 +0100
+diff -urN linux-2.6.19.old/fs/mini_fo/dentry.c linux-2.6.19.dev/fs/mini_fo/dentry.c
+--- linux-2.6.19.old/fs/mini_fo/dentry.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.dev/fs/mini_fo/dentry.c	2006-12-14 03:14:03.000000000 +0100
 @@ -0,0 +1,244 @@
 +/*
 + * Copyright (c) 1997-2003 Erez Zadok
@@ -1139,10 +1139,10 @@ diff -urN linux.old/fs/mini_fo/dentry.c linux.dev/fs/mini_fo/dentry.c
 +	d_delete:		mini_fo_d_delete,
 +	d_iput:		mini_fo_d_iput,
 +};
-diff -urN linux.old/fs/mini_fo/file.c linux.dev/fs/mini_fo/file.c
---- linux.old/fs/mini_fo/file.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/mini_fo/file.c	2006-11-17 03:11:48.000000000 +0100
-@@ -0,0 +1,690 @@
+diff -urN linux-2.6.19.old/fs/mini_fo/file.c linux-2.6.19.dev/fs/mini_fo/file.c
+--- linux-2.6.19.old/fs/mini_fo/file.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.dev/fs/mini_fo/file.c	2006-12-14 03:14:03.000000000 +0100
+@@ -0,0 +1,713 @@
 +/*
 + * Copyright (c) 1997-2003 Erez Zadok
 + * Copyright (c) 2001-2003 Stony Brook University
@@ -1382,12 +1382,15 @@ diff -urN linux.old/fs/mini_fo/file.c linux.dev/fs/mini_fo/file.c
 +
 +/* mainly copied from fs/readdir.c */
 +STATIC int
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)
++mini_fo_filldir(void * __buf, const char * name, int namlen, loff_t offset,
++		  u64 ino, unsigned int d_type)
++#else
 +mini_fo_filldir(void * __buf, const char * name, int namlen, loff_t offset,
 +		  ino_t ino, unsigned int d_type)
++#endif
 +{
-+	struct linux_dirent *dirent, d;
 +	struct getdents_callback * buf = (struct getdents_callback *) __buf;
-+	int reclen;
 +	file_t* file = mini_fo_filldir_file;
 +
 +	/* In theses states we filter meta files in storage (WOL) */
@@ -1640,7 +1643,11 @@ diff -urN linux.old/fs/mini_fo/file.c linux.dev/fs/mini_fo/file.c
 +		/* If the base file has been opened, we need to close it here */
 +		if(ftohf(file)) {
 +			if (hidden_file->f_op && hidden_file->f_op->flush)
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)
++				hidden_file->f_op->flush(hidden_file, NULL);
++#else
 +				hidden_file->f_op->flush(hidden_file);
++#endif
 +			dput(hidden_dentry);
 +		}
 +		goto out;
@@ -1658,7 +1665,11 @@ diff -urN linux.old/fs/mini_fo/file.c linux.dev/fs/mini_fo/file.c
 +		/* close base file if open */
 +		if(ftohf(file)) {
 +			if (hidden_file->f_op && hidden_file->f_op->flush)
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)
++				hidden_file->f_op->flush(hidden_file, NULL);
++#else
 +				hidden_file->f_op->flush(hidden_file);
++#endif
 +			dput(hidden_dentry);
 +		}
 +		goto out;
@@ -1673,7 +1684,11 @@ diff -urN linux.old/fs/mini_fo/file.c linux.dev/fs/mini_fo/file.c
 +}
 +
 +STATIC int
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)
++mini_fo_flush(file_t *file, fl_owner_t id)
++#else
 +mini_fo_flush(file_t *file)
++#endif
 +{
 +	int err1 = 0;		/* assume ok (see open.c:close_fp) */
 +	int err2 = 0;
@@ -1688,12 +1703,20 @@ diff -urN linux.old/fs/mini_fo/file.c linux.dev/fs/mini_fo/file.c
 +		if(ftohf(file) != NULL) {
 +			hidden_file = ftohf(file);
 +			if (hidden_file->f_op && hidden_file->f_op->flush)
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)
++				err1 = hidden_file->f_op->flush(hidden_file, id);
++#else
 +				err1 = hidden_file->f_op->flush(hidden_file);
++#endif
 +		}
 +		if(ftohf2(file) != NULL) {
 +			hidden_file = ftohf2(file);
 +			if (hidden_file->f_op && hidden_file->f_op->flush)
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)
++				err2 = hidden_file->f_op->flush(hidden_file, id);
++#else
 +				err2 = hidden_file->f_op->flush(hidden_file);
++#endif
 +		}
 +	}
 +	return (err1 | err2);
@@ -1833,10 +1856,10 @@ diff -urN linux.old/fs/mini_fo/file.c linux.dev/fs/mini_fo/file.c
 +		/* not implemented: sendpage */
 +		/* not implemented: get_unmapped_area */
 +	};
-diff -urN linux.old/fs/mini_fo/fist.h linux.dev/fs/mini_fo/fist.h
---- linux.old/fs/mini_fo/fist.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/mini_fo/fist.h	2006-11-17 03:11:48.000000000 +0100
-@@ -0,0 +1,248 @@
+diff -urN linux-2.6.19.old/fs/mini_fo/fist.h linux-2.6.19.dev/fs/mini_fo/fist.h
+--- linux-2.6.19.old/fs/mini_fo/fist.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.dev/fs/mini_fo/fist.h	2006-12-14 03:14:03.000000000 +0100
+@@ -0,0 +1,252 @@
 +/*
 + * Copyright (c) 1997-2003 Erez Zadok
 + * Copyright (c) 2001-2003 Stony Brook University
@@ -1868,8 +1891,12 @@ diff -urN linux.old/fs/mini_fo/fist.h linux.dev/fs/mini_fo/fist.h
 + * KERNEL ONLY CODE:
 + */
 +#ifdef __KERNEL__
-+#include <linux/config.h>
 +#include <linux/version.h>
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19)
++#include <linux/autoconf.h>
++#else
++#include <linux/config.h>
++#endif
 +#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 +#ifdef CONFIG_MODVERSIONS
 +# define MODVERSIONS
@@ -2085,9 +2112,9 @@ diff -urN linux.old/fs/mini_fo/fist.h linux.dev/fs/mini_fo/fist.h
 +# define FIST_IOCTL_SET_DEBUG_VALUE	_IOW(0x15, 2, int)
 +
 +#endif /* not __FIST_H_ */
-diff -urN linux.old/fs/mini_fo/inode.c linux.dev/fs/mini_fo/inode.c
---- linux.old/fs/mini_fo/inode.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/mini_fo/inode.c	2006-11-17 03:11:48.000000000 +0100
+diff -urN linux-2.6.19.old/fs/mini_fo/inode.c linux-2.6.19.dev/fs/mini_fo/inode.c
+--- linux-2.6.19.old/fs/mini_fo/inode.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.dev/fs/mini_fo/inode.c	2006-12-14 03:14:03.000000000 +0100
 @@ -0,0 +1,1573 @@
 +/*
 + * Copyright (c) 1997-2003 Erez Zadok
@@ -3662,10 +3689,10 @@ diff -urN linux.old/fs/mini_fo/inode.c linux.dev/fs/mini_fo/inode.c
 +		removexattr:    mini_fo_removexattr
 +# endif /* XATTR && LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,20) */
 +	};
-diff -urN linux.old/fs/mini_fo/main.c linux.dev/fs/mini_fo/main.c
---- linux.old/fs/mini_fo/main.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/mini_fo/main.c	2006-11-17 03:11:48.000000000 +0100
-@@ -0,0 +1,414 @@
+diff -urN linux-2.6.19.old/fs/mini_fo/main.c linux-2.6.19.dev/fs/mini_fo/main.c
+--- linux-2.6.19.old/fs/mini_fo/main.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.dev/fs/mini_fo/main.c	2006-12-14 03:14:03.000000000 +0100
+@@ -0,0 +1,423 @@
 +/*
 + * Copyright (c) 1997-2003 Erez Zadok
 + * Copyright (c) 2001-2003 Stony Brook University
@@ -4023,12 +4050,21 @@ diff -urN linux.old/fs/mini_fo/main.c linux.dev/fs/mini_fo/main.c
 +}
 +
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)
++static int mini_fo_get_sb(struct file_system_type *fs_type,
++					  int flags, const char *dev_name,
++					  void *raw_data, struct vfsmount *mnt) 
++{
++	return get_sb_nodev(fs_type, flags, raw_data, mini_fo_read_super, mnt);
++}
++#else
 +static struct super_block *mini_fo_get_sb(struct file_system_type *fs_type,
 +					  int flags, const char *dev_name,
 +					  void *raw_data) 
 +{
 +	return get_sb_nodev(fs_type, flags, raw_data, mini_fo_read_super);
 +}
++#endif
 +
 +void mini_fo_kill_block_super(struct super_block *sb)
 +{
@@ -4080,9 +4116,9 @@ diff -urN linux.old/fs/mini_fo/main.c linux.dev/fs/mini_fo/main.c
 +
 +module_init(init_mini_fo_fs)
 +module_exit(exit_mini_fo_fs)
-diff -urN linux.old/fs/mini_fo/Makefile linux.dev/fs/mini_fo/Makefile
---- linux.old/fs/mini_fo/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/mini_fo/Makefile	2006-11-17 03:11:48.000000000 +0100
+diff -urN linux-2.6.19.old/fs/mini_fo/Makefile linux-2.6.19.dev/fs/mini_fo/Makefile
+--- linux-2.6.19.old/fs/mini_fo/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.dev/fs/mini_fo/Makefile	2006-12-14 03:14:03.000000000 +0100
 @@ -0,0 +1,17 @@
 +#
 +# Makefile for mini_fo 2.4 and 2.6 Linux kernels
@@ -4101,9 +4137,9 @@ diff -urN linux.old/fs/mini_fo/Makefile linux.dev/fs/mini_fo/Makefile
 +# dependencies
 +${mini_fo-objs}: mini_fo.h fist.h
 +
-diff -urN linux.old/fs/mini_fo/meta.c linux.dev/fs/mini_fo/meta.c
---- linux.old/fs/mini_fo/meta.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/mini_fo/meta.c	2006-11-17 03:11:48.000000000 +0100
+diff -urN linux-2.6.19.old/fs/mini_fo/meta.c linux-2.6.19.dev/fs/mini_fo/meta.c
+--- linux-2.6.19.old/fs/mini_fo/meta.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.dev/fs/mini_fo/meta.c	2006-12-14 03:14:03.000000000 +0100
 @@ -0,0 +1,1000 @@
 +/*
 + * Copyright (C) 2004, 2005 Markus Klotzbuecher <mk@creamnet.de>
@@ -5105,10 +5141,10 @@ diff -urN linux.old/fs/mini_fo/meta.c linux.dev/fs/mini_fo/meta.c
 +	return 0;
 +}
 +
-diff -urN linux.old/fs/mini_fo/mini_fo.h linux.dev/fs/mini_fo/mini_fo.h
---- linux.old/fs/mini_fo/mini_fo.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/mini_fo/mini_fo.h	2006-11-17 03:11:48.000000000 +0100
-@@ -0,0 +1,503 @@
+diff -urN linux-2.6.19.old/fs/mini_fo/mini_fo.h linux-2.6.19.dev/fs/mini_fo/mini_fo.h
+--- linux-2.6.19.old/fs/mini_fo/mini_fo.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.dev/fs/mini_fo/mini_fo.h	2006-12-14 03:14:03.000000000 +0100
+@@ -0,0 +1,510 @@
 +/*
 + * Copyright (c) 1997-2003 Erez Zadok
 + * Copyright (c) 2001-2003 Stony Brook University
@@ -5308,8 +5344,13 @@ diff -urN linux.old/fs/mini_fo/mini_fo.h linux.dev/fs/mini_fo/mini_fo.h
 +# define ftohf2(file) ((ftopd(file))->wfi_file2) 
 +
 +/* inode TO private_data */
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)
++# define itopd(ino) ((struct mini_fo_inode_info *)(ino)->i_private)
++# define __itopd(ino) ((ino)->i_private)
++#else
 +# define itopd(ino) ((struct mini_fo_inode_info *)(ino)->u.generic_ip)
 +# define __itopd(ino) ((ino)->u.generic_ip)
++#endif
 +/* inode TO hidden_inode */
 +# define itohi(ino) (itopd(ino)->wii_inode)
 +# define itohi2(ino) (itopd(ino)->wii_inode2)
@@ -5530,7 +5571,9 @@ diff -urN linux.old/fs/mini_fo/mini_fo.h linux.dev/fs/mini_fo/mini_fo.h
 +	dest->i_atime = src->i_atime;
 +	dest->i_mtime = src->i_mtime;
 +	dest->i_ctime = src->i_ctime;
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19)
 +	dest->i_blksize = src->i_blksize;
++#endif
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,12)
 +	dest->i_blkbits = src->i_blkbits;
 +# endif /* linux 2.4.12 and newer */
@@ -5612,9 +5655,9 @@ diff -urN linux.old/fs/mini_fo/mini_fo.h linux.dev/fs/mini_fo/mini_fo.h
 +/* ioctls */
 +
 +#endif	/* not __MINI_FO_H_ */
-diff -urN linux.old/fs/mini_fo/mini_fo-merge linux.dev/fs/mini_fo/mini_fo-merge
---- linux.old/fs/mini_fo/mini_fo-merge	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/mini_fo/mini_fo-merge	2006-11-17 03:11:48.000000000 +0100
+diff -urN linux-2.6.19.old/fs/mini_fo/mini_fo-merge linux-2.6.19.dev/fs/mini_fo/mini_fo-merge
+--- linux-2.6.19.old/fs/mini_fo/mini_fo-merge	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.dev/fs/mini_fo/mini_fo-merge	2006-12-14 03:14:03.000000000 +0100
 @@ -0,0 +1,180 @@
 +#!/bin/bash
 +#
@@ -5796,9 +5839,9 @@ diff -urN linux.old/fs/mini_fo/mini_fo-merge linux.dev/fs/mini_fo/mini_fo-merge
 +#rm $TMP/$SKIP_DEL_LIST 
 +
 +echo "Done!"
-diff -urN linux.old/fs/mini_fo/mini_fo-overlay linux.dev/fs/mini_fo/mini_fo-overlay
---- linux.old/fs/mini_fo/mini_fo-overlay	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/mini_fo/mini_fo-overlay	2006-11-17 03:11:48.000000000 +0100
+diff -urN linux-2.6.19.old/fs/mini_fo/mini_fo-overlay linux-2.6.19.dev/fs/mini_fo/mini_fo-overlay
+--- linux-2.6.19.old/fs/mini_fo/mini_fo-overlay	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.dev/fs/mini_fo/mini_fo-overlay	2006-12-14 03:14:03.000000000 +0100
 @@ -0,0 +1,130 @@
 +#!/bin/bash
 +#
@@ -5930,9 +5973,9 @@ diff -urN linux.old/fs/mini_fo/mini_fo-overlay linux.dev/fs/mini_fo/mini_fo-over
 +if [ $? -ne 0 ]; then
 +    echo "Error, mounting failed, maybe no permisson to mount?"
 +fi
-diff -urN linux.old/fs/mini_fo/mmap.c linux.dev/fs/mini_fo/mmap.c
---- linux.old/fs/mini_fo/mmap.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/mini_fo/mmap.c	2006-11-17 03:11:48.000000000 +0100
+diff -urN linux-2.6.19.old/fs/mini_fo/mmap.c linux-2.6.19.dev/fs/mini_fo/mmap.c
+--- linux-2.6.19.old/fs/mini_fo/mmap.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.dev/fs/mini_fo/mmap.c	2006-12-14 03:14:03.000000000 +0100
 @@ -0,0 +1,637 @@
 +/*
 + * Copyright (c) 1997-2003 Erez Zadok
@@ -6571,9 +6614,9 @@ diff -urN linux.old/fs/mini_fo/mmap.c linux.dev/fs/mini_fo/mmap.c
 +	print_exit_status(err);
 +	return err;
 +}
-diff -urN linux.old/fs/mini_fo/README linux.dev/fs/mini_fo/README
---- linux.old/fs/mini_fo/README	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/mini_fo/README	2006-11-17 03:11:48.000000000 +0100
+diff -urN linux-2.6.19.old/fs/mini_fo/README linux-2.6.19.dev/fs/mini_fo/README
+--- linux-2.6.19.old/fs/mini_fo/README	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.dev/fs/mini_fo/README	2006-12-14 03:14:03.000000000 +0100
 @@ -0,0 +1,163 @@
 +README for the mini_fo overlay file system
 +=========================================
@@ -6738,9 +6781,9 @@ diff -urN linux.old/fs/mini_fo/README linux.dev/fs/mini_fo/README
 +2 of the License, or (at your option) any later version.
 +
 +
-diff -urN linux.old/fs/mini_fo/RELEASE_NOTES linux.dev/fs/mini_fo/RELEASE_NOTES
---- linux.old/fs/mini_fo/RELEASE_NOTES	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/mini_fo/RELEASE_NOTES	2006-11-17 03:11:48.000000000 +0100
+diff -urN linux-2.6.19.old/fs/mini_fo/RELEASE_NOTES linux-2.6.19.dev/fs/mini_fo/RELEASE_NOTES
+--- linux-2.6.19.old/fs/mini_fo/RELEASE_NOTES	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.dev/fs/mini_fo/RELEASE_NOTES	2006-12-14 03:14:03.000000000 +0100
 @@ -0,0 +1,111 @@
 +Release:	mini_fo-0.6.1 (v0-6-1)
 +Date:		21.09.2005
@@ -6853,9 +6896,9 @@ diff -urN linux.old/fs/mini_fo/RELEASE_NOTES linux.dev/fs/mini_fo/RELEASE_NOTES
 +original state. I hope to fix this someday. Please note that this does
 +not effect the special hard links '.' and '..', that are handled
 +seperately by the lower fs.
-diff -urN linux.old/fs/mini_fo/state.c linux.dev/fs/mini_fo/state.c
---- linux.old/fs/mini_fo/state.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/mini_fo/state.c	2006-11-17 03:11:48.000000000 +0100
+diff -urN linux-2.6.19.old/fs/mini_fo/state.c linux-2.6.19.dev/fs/mini_fo/state.c
+--- linux-2.6.19.old/fs/mini_fo/state.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.dev/fs/mini_fo/state.c	2006-12-14 03:14:03.000000000 +0100
 @@ -0,0 +1,620 @@
 +/*
 + * Copyright (C) 2005 Markus Klotzbuecher <mk@creamnet.de>
@@ -7477,10 +7520,10 @@ diff -urN linux.old/fs/mini_fo/state.c linux.dev/fs/mini_fo/state.c
 +	return err;
 +}
 +
-diff -urN linux.old/fs/mini_fo/super.c linux.dev/fs/mini_fo/super.c
---- linux.old/fs/mini_fo/super.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/fs/mini_fo/super.c	2006-11-17 03:11:48.000000000 +0100
-@@ -0,0 +1,259 @@
+diff -urN linux-2.6.19.old/fs/mini_fo/super.c linux-2.6.19.dev/fs/mini_fo/super.c
+--- linux-2.6.19.old/fs/mini_fo/super.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.dev/fs/mini_fo/super.c	2006-12-14 03:14:03.000000000 +0100
+@@ -0,0 +1,281 @@
 +/*
 + * Copyright (c) 1997-2003 Erez Zadok
 + * Copyright (c) 2001-2003 Stony Brook University
@@ -7640,17 +7683,26 @@ diff -urN linux.old/fs/mini_fo/super.c linux.dev/fs/mini_fo/super.c
 +
 +
 +STATIC int
-+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)
++mini_fo_statfs(struct dentry *d, struct kstatfs *buf)
++#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
 +mini_fo_statfs(super_block_t *sb, struct kstatfs *buf)
 +#else
 +mini_fo_statfs(super_block_t *sb, struct statfs *buf)
 +#endif
 +{
 +	int err = 0;
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)
++	struct dentry *hidden_d;
++
++	hidden_d = dtohd(d);
++	err = vfs_statfs(hidden_d, buf);
++#else
 +	super_block_t *hidden_sb;
 +
 +	hidden_sb = stohs(sb);
 +	err = vfs_statfs(hidden_sb, buf);
++#endif
 +
 +	return err;
 +}
@@ -7712,6 +7764,18 @@ diff -urN linux.old/fs/mini_fo/super.c linux.dev/fs/mini_fo/super.c
 + * dies.
 + */
 +STATIC void
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)
++mini_fo_umount_begin(struct vfsmount *mnt, int flags)
++{
++	struct vfsmount *hidden_mnt;
++
++	hidden_mnt = stopd(mnt->mnt_sb)->hidden_mnt;
++
++	if (hidden_mnt->mnt_sb->s_op->umount_begin)
++		hidden_mnt->mnt_sb->s_op->umount_begin(hidden_mnt, flags);
++
++}
++#else
 +mini_fo_umount_begin(super_block_t *sb)
 +{
 +	super_block_t *hidden_sb;
@@ -7722,6 +7786,7 @@ diff -urN linux.old/fs/mini_fo/super.c linux.dev/fs/mini_fo/super.c
 +		hidden_sb->s_op->umount_begin(hidden_sb);
 +
 +}
++#endif
 +
 +
 +struct super_operations mini_fo_sops =

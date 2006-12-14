@@ -1,5 +1,6 @@
---- linux-2.6.18/drivers/mtd/redboot.c.orig	2006-10-23 11:41:56.000000000 -0400
-+++ linux-2.6.18/drivers/mtd/redboot.c	2006-10-23 11:42:09.000000000 -0400
+diff -urN linux-2.6.19.old/drivers/mtd/redboot.c linux-2.6.19.dev/drivers/mtd/redboot.c
+--- linux-2.6.19.old/drivers/mtd/redboot.c	2006-11-29 22:57:37.000000000 +0100
++++ linux-2.6.19.dev/drivers/mtd/redboot.c	2006-12-14 03:13:35.000000000 +0100
 @@ -92,22 +92,47 @@
  			 * swab32(erasesize) then we know we are looking at
  			 * a byte swapped FIS directory - swap all the entries!
@@ -32,7 +33,9 @@
 +				for (j = 0; j < numslots; ++j) {
  					/* The unsigned long fields were written with the
  					 * wrong byte sex, name and pad have no byte sex.
--					 */
++					 *
++					 * Only process non-deleted entries. Don't exit early.
+ 					 */
 -					swab32s(&buf[j].flash_base);
 -					swab32s(&buf[j].mem_base);
 -					swab32s(&buf[j].size);
@@ -40,9 +43,6 @@
 -					swab32s(&buf[j].data_length);
 -					swab32s(&buf[j].desc_cksum);
 -					swab32s(&buf[j].file_cksum);
-+					 *
-+					 * Only process non-deleted entries. Don't exit early.
-+					 */
 +					if (buf[j].name[0] != 0xff) {
 +						swab32s(&buf[j].flash_base);
 +						swab32s(&buf[j].mem_base);
