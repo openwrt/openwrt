@@ -31,7 +31,7 @@ define Image/BuildKernel
 endef
 
 define Image/Build/jffs2-64k
-	@dd if=$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL).ari of=$(KDIR)/image.tmp bs=655360 conv=sync
+	@dd if=$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL).ari of=$(KDIR)/image.tmp bs=65536 conv=sync
 	@cat $(KDIR)/root.$(1) >> $(KDIR)/image.tmp
 	mv $(KDIR)/image.tmp $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(patsubst jffs2-%,jffs2,$(1)).bin
 endef
