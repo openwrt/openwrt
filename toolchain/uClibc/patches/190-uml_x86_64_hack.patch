@@ -1,0 +1,13 @@
+diff -ur uclibc.old/libc/sysdeps/linux/i386/bits/kernel_types.h uclibc.dev/libc/sysdeps/linux/i386/bits/kernel_types.h
+--- uclibc.old/libc/sysdeps/linux/i386/bits/kernel_types.h	2005-08-18 00:49:43.000000000 +0200
++++ uclibc.dev/libc/sysdeps/linux/i386/bits/kernel_types.h	2006-12-14 07:58:19.000000000 +0100
+@@ -4,7 +4,8 @@
+  * our private content, and not the kernel header, will win.
+  *  -Erik
+  */
+-#ifndef __ARCH_I386_POSIX_TYPES_H
++#if !defined(__ARCH_I386_POSIX_TYPES_H) && !defined(_ASM_X86_64_POSIX_TYPES_H)
++#define _ASM_X86_64_POSIX_TYPES_H
+ #define __ARCH_I386_POSIX_TYPES_H
+ 
+ typedef unsigned short	__kernel_dev_t;
