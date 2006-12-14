@@ -1,0 +1,368 @@
+--- madwifi-0.9.2/hal/linux/ah_osdep.c.orig	2006-12-04 23:37:56.000000000 +0100
++++ madwifi-0.9.2/hal/linux/ah_osdep.c	2006-12-04 23:38:06.000000000 +0100
+@@ -41,7 +41,7 @@
+ #define	EXPORT_SYMTAB
+ #endif
+ 
+-#include <linux/config.h>
++#include <linux/autoconf.h>
+ #include <linux/version.h>
+ #include <linux/module.h>
+ #include <linux/init.h>
+--- madwifi-0.9.2/ath/if_ath.c.orig	2006-12-04 23:42:57.000000000 +0100
++++ madwifi-0.9.2/ath/if_ath.c	2006-12-04 23:43:09.000000000 +0100
+@@ -44,7 +44,7 @@
+  */
+ #include "opt_ah.h"
+ 
+-#include <linux/config.h>
++#include <linux/autoconf.h>
+ #include <linux/version.h>
+ #include <linux/module.h>
+ #include <linux/init.h>
+--- madwifi-0.9.2/ath/if_ath_pci.c.orig	2006-12-04 23:44:55.000000000 +0100
++++ madwifi-0.9.2/ath/if_ath_pci.c	2006-12-04 23:46:03.000000000 +0100
+@@ -42,7 +42,7 @@
+ #define	EXPORT_SYMTAB
+ #endif
+ 
+-#include <linux/config.h>
++#include <linux/autoconf.h>
+ #include <linux/version.h>
+ #include <linux/module.h>
+ #include <linux/init.h>
+--- madwifi-0.9.2/ath_rate/sample/sample.c.orig	2006-12-04 23:50:56.000000000 +0100
++++ madwifi-0.9.2/ath_rate/sample/sample.c	2006-12-04 23:51:11.000000000 +0100
+@@ -41,7 +41,7 @@
+  * John Bicket's SampleRate control algorithm.
+  */
+ 
+-#include <linux/config.h>
++#include <linux/autoconf.h>
+ #include <linux/version.h>
+ #include <linux/module.h>
+ #include <linux/init.h>
+diff -urN madwifi-0.9.2.orig/ath/if_ath_ahb.c madwifi-0.9.2/ath/if_ath_ahb.c
+--- madwifi-0.9.2.orig/ath/if_ath_ahb.c	2006-05-22 06:39:55.000000000 +0200
++++ madwifi-0.9.2/ath/if_ath_ahb.c	2006-12-04 23:56:43.000000000 +0100
+@@ -10,7 +10,7 @@
+ #define	EXPORT_SYMTAB
+ #endif
+ 
+-#include <linux/config.h>
++#include <linux/autoconf.h>
+ #include <linux/version.h>
+ #include <linux/module.h>
+ #include <linux/init.h>
+diff -urN madwifi-0.9.2.orig/ath_rate/amrr/amrr.c madwifi-0.9.2/ath_rate/amrr/amrr.c
+--- madwifi-0.9.2.orig/ath_rate/amrr/amrr.c	2006-07-04 12:23:35.000000000 +0200
++++ madwifi-0.9.2/ath_rate/amrr/amrr.c	2006-12-04 23:56:43.000000000 +0100
+@@ -43,7 +43,7 @@
+  * "IEEE 802.11 Rate Adaptation: A Practical Approach" by
+  *    Mathieu Lacage, Hossein Manshaei, Thierry Turletti
+  */
+-#include <linux/config.h>
++#include <linux/autoconf.h>
+ #include <linux/version.h>
+ #include <linux/module.h>
+ #include <linux/init.h>
+diff -urN madwifi-0.9.2.orig/ath_rate/onoe/onoe.c madwifi-0.9.2/ath_rate/onoe/onoe.c
+--- madwifi-0.9.2.orig/ath_rate/onoe/onoe.c	2006-07-04 12:23:35.000000000 +0200
++++ madwifi-0.9.2/ath_rate/onoe/onoe.c	2006-12-04 23:56:43.000000000 +0100
+@@ -39,7 +39,7 @@
+ /*
+  * Atsushi Onoe's rate control algorithm.
+  */
+-#include <linux/config.h>
++#include <linux/autoconf.h>
+ #include <linux/version.h>
+ #include <linux/module.h>
+ #include <linux/init.h>
+diff -urN madwifi-0.9.2.orig/net80211/ieee80211_acl.c madwifi-0.9.2/net80211/ieee80211_acl.c
+--- madwifi-0.9.2.orig/net80211/ieee80211_acl.c	2006-05-31 23:05:08.000000000 +0200
++++ madwifi-0.9.2/net80211/ieee80211_acl.c	2006-12-04 23:56:49.000000000 +0100
+@@ -45,7 +45,7 @@
+  * and if found the frame is either accepted (ACL_POLICY_ALLOW)
+  * or rejected (ACL_POLICY_DENT).
+  */
+-#include <linux/config.h>
++#include <linux/autoconf.h>
+ #include <linux/version.h>
+ #include <linux/module.h>
+ #include <linux/skbuff.h>
+diff -urN madwifi-0.9.2.orig/net80211/ieee80211_beacon.c madwifi-0.9.2/net80211/ieee80211_beacon.c
+--- madwifi-0.9.2.orig/net80211/ieee80211_beacon.c	2006-05-19 22:42:19.000000000 +0200
++++ madwifi-0.9.2/net80211/ieee80211_beacon.c	2006-12-04 23:56:49.000000000 +0100
+@@ -38,7 +38,7 @@
+ /*
+  * IEEE 802.11 beacon handling routines
+  */
+-#include <linux/config.h>
++#include <linux/autoconf.h>
+ #include <linux/version.h>
+ #include <linux/module.h>
+ #include <linux/skbuff.h>
+diff -urN madwifi-0.9.2.orig/net80211/ieee80211.c madwifi-0.9.2/net80211/ieee80211.c
+--- madwifi-0.9.2.orig/net80211/ieee80211.c	2006-07-04 12:22:11.000000000 +0200
++++ madwifi-0.9.2/net80211/ieee80211.c	2006-12-04 23:56:49.000000000 +0100
+@@ -38,7 +38,7 @@
+ /*
+  * IEEE 802.11 generic handler
+  */
+-#include <linux/config.h>
++#include <linux/autoconf.h>
+ #include <linux/version.h>
+ #include <linux/module.h>
+ #include <linux/skbuff.h>
+diff -urN madwifi-0.9.2.orig/net80211/ieee80211_crypto.c madwifi-0.9.2/net80211/ieee80211_crypto.c
+--- madwifi-0.9.2.orig/net80211/ieee80211_crypto.c	2006-02-01 21:07:11.000000000 +0100
++++ madwifi-0.9.2/net80211/ieee80211_crypto.c	2006-12-04 23:56:49.000000000 +0100
+@@ -38,7 +38,7 @@
+ /*
+  * IEEE 802.11 generic crypto support.
+  */
+-#include <linux/config.h>
++#include <linux/autoconf.h>
+ #include <linux/version.h>
+ #include <linux/module.h>
+ #include <linux/kmod.h>
+diff -urN madwifi-0.9.2.orig/net80211/ieee80211_crypto_ccmp.c madwifi-0.9.2/net80211/ieee80211_crypto_ccmp.c
+--- madwifi-0.9.2.orig/net80211/ieee80211_crypto_ccmp.c	2006-06-13 16:09:51.000000000 +0200
++++ madwifi-0.9.2/net80211/ieee80211_crypto_ccmp.c	2006-12-04 23:56:49.000000000 +0100
+@@ -38,7 +38,7 @@
+  * AP driver. The code is used with the consent of the author and
+  * it's license is included below.
+  */
+-#include <linux/config.h>
++#include <linux/autoconf.h>
+ #include <linux/version.h>
+ #include <linux/module.h>
+ #include <linux/skbuff.h>
+diff -urN madwifi-0.9.2.orig/net80211/ieee80211_crypto_none.c madwifi-0.9.2/net80211/ieee80211_crypto_none.c
+--- madwifi-0.9.2.orig/net80211/ieee80211_crypto_none.c	2006-02-01 21:07:11.000000000 +0100
++++ madwifi-0.9.2/net80211/ieee80211_crypto_none.c	2006-12-04 23:56:49.000000000 +0100
+@@ -34,7 +34,7 @@
+ /*
+  * IEEE 802.11 NULL crypto support.
+  */
+-#include <linux/config.h>
++#include <linux/autoconf.h>
+ #include <linux/version.h>
+ #include <linux/module.h>
+ #include <linux/skbuff.h>
+diff -urN madwifi-0.9.2.orig/net80211/ieee80211_crypto_tkip.c madwifi-0.9.2/net80211/ieee80211_crypto_tkip.c
+--- madwifi-0.9.2.orig/net80211/ieee80211_crypto_tkip.c	2006-02-01 21:07:11.000000000 +0100
++++ madwifi-0.9.2/net80211/ieee80211_crypto_tkip.c	2006-12-04 23:56:49.000000000 +0100
+@@ -38,7 +38,7 @@
+  * AP driver. The code is used with the consent of the author and
+  * it's license is included below.
+  */
+-#include <linux/config.h>
++#include <linux/autoconf.h>
+ #include <linux/version.h>
+ #include <linux/module.h>
+ #include <linux/skbuff.h>
+diff -urN madwifi-0.9.2.orig/net80211/ieee80211_crypto_wep.c madwifi-0.9.2/net80211/ieee80211_crypto_wep.c
+--- madwifi-0.9.2.orig/net80211/ieee80211_crypto_wep.c	2006-02-06 21:20:57.000000000 +0100
++++ madwifi-0.9.2/net80211/ieee80211_crypto_wep.c	2006-12-04 23:56:49.000000000 +0100
+@@ -34,7 +34,7 @@
+ /*
+  * IEEE 802.11 WEP crypto support.
+  */
+-#include <linux/config.h>
++#include <linux/autoconf.h>
+ #include <linux/version.h>
+ #include <linux/module.h>
+ #include <linux/skbuff.h>
+diff -urN madwifi-0.9.2.orig/net80211/ieee80211_input.c madwifi-0.9.2/net80211/ieee80211_input.c
+--- madwifi-0.9.2.orig/net80211/ieee80211_input.c	2006-07-06 05:23:08.000000000 +0200
++++ madwifi-0.9.2/net80211/ieee80211_input.c	2006-12-04 23:56:50.000000000 +0100
+@@ -38,7 +38,7 @@
+ /*
+  * IEEE 802.11 input handling.
+  */
+-#include <linux/config.h>
++#include <linux/autoconf.h>
+ #include <linux/version.h>
+ #include <linux/module.h>
+ #include <linux/skbuff.h>
+diff -urN madwifi-0.9.2.orig/net80211/ieee80211_linux.c madwifi-0.9.2/net80211/ieee80211_linux.c
+--- madwifi-0.9.2.orig/net80211/ieee80211_linux.c	2006-07-21 10:59:10.000000000 +0200
++++ madwifi-0.9.2/net80211/ieee80211_linux.c	2006-12-04 23:56:49.000000000 +0100
+@@ -33,7 +33,7 @@
+ /*
+  * IEEE 802.11 support (Linux-specific code)
+  */
+-#include <linux/config.h>
++#include <linux/autoconf.h>
+ #include <linux/version.h>
+ #include <linux/module.h>
+ #include <linux/kmod.h>
+diff -urN madwifi-0.9.2.orig/net80211/ieee80211_monitor.c madwifi-0.9.2/net80211/ieee80211_monitor.c
+--- madwifi-0.9.2.orig/net80211/ieee80211_monitor.c	2006-04-21 18:57:59.000000000 +0200
++++ madwifi-0.9.2/net80211/ieee80211_monitor.c	2006-12-04 23:56:49.000000000 +0100
+@@ -34,7 +34,7 @@
+ /*
+  * IEEE 802.11 monitor mode 
+  */
+-#include <linux/config.h>
++#include <linux/autoconf.h>
+ #include <linux/version.h>
+ #include <linux/module.h>
+ #include <linux/kmod.h>
+diff -urN madwifi-0.9.2.orig/net80211/ieee80211_node.c madwifi-0.9.2/net80211/ieee80211_node.c
+--- madwifi-0.9.2.orig/net80211/ieee80211_node.c	2006-06-13 10:50:37.000000000 +0200
++++ madwifi-0.9.2/net80211/ieee80211_node.c	2006-12-04 23:56:49.000000000 +0100
+@@ -38,7 +38,7 @@
+ /*
+  * IEEE 802.11 node handling support.
+  */
+-#include <linux/config.h>
++#include <linux/autoconf.h>
+ #include <linux/version.h>
+ #include <linux/module.h>
+ #include <linux/skbuff.h>
+diff -urN madwifi-0.9.2.orig/net80211/ieee80211_output.c madwifi-0.9.2/net80211/ieee80211_output.c
+--- madwifi-0.9.2.orig/net80211/ieee80211_output.c	2006-06-10 04:17:05.000000000 +0200
++++ madwifi-0.9.2/net80211/ieee80211_output.c	2006-12-04 23:56:49.000000000 +0100
+@@ -38,7 +38,7 @@
+ /*
+  * IEEE 802.11 output handling.
+  */
+-#include <linux/config.h>
++#include <linux/autoconf.h>
+ #include <linux/version.h>
+ #include <linux/module.h>
+ #include <linux/skbuff.h>
+diff -urN madwifi-0.9.2.orig/net80211/ieee80211_power.c madwifi-0.9.2/net80211/ieee80211_power.c
+--- madwifi-0.9.2.orig/net80211/ieee80211_power.c	2006-06-10 04:17:05.000000000 +0200
++++ madwifi-0.9.2/net80211/ieee80211_power.c	2006-12-04 23:56:49.000000000 +0100
+@@ -38,7 +38,7 @@
+ /*
+  * IEEE 802.11 power save support.
+  */
+-#include <linux/config.h>
++#include <linux/autoconf.h>
+ #include <linux/version.h>
+ #include <linux/module.h>
+ #include <linux/skbuff.h>
+diff -urN madwifi-0.9.2.orig/net80211/ieee80211_proto.c madwifi-0.9.2/net80211/ieee80211_proto.c
+--- madwifi-0.9.2.orig/net80211/ieee80211_proto.c	2006-06-09 22:41:19.000000000 +0200
++++ madwifi-0.9.2/net80211/ieee80211_proto.c	2006-12-04 23:56:49.000000000 +0100
+@@ -38,7 +38,7 @@
+ /*
+  * IEEE 802.11 protocol support.
+  */
+-#include <linux/config.h>
++#include <linux/autoconf.h>
+ #include <linux/version.h>
+ #include <linux/kmod.h>
+ #include <linux/module.h>
+diff -urN madwifi-0.9.2.orig/net80211/ieee80211_scan_ap.c madwifi-0.9.2/net80211/ieee80211_scan_ap.c
+--- madwifi-0.9.2.orig/net80211/ieee80211_scan_ap.c	2006-02-01 21:07:11.000000000 +0100
++++ madwifi-0.9.2/net80211/ieee80211_scan_ap.c	2006-12-04 23:56:49.000000000 +0100
+@@ -37,7 +37,7 @@
+ /*
+  * IEEE 802.11 ap scanning support.
+  */
+-#include <linux/config.h>
++#include <linux/autoconf.h>
+ #include <linux/version.h>
+ #include <linux/module.h>
+ #include <linux/skbuff.h>
+diff -urN madwifi-0.9.2.orig/net80211/ieee80211_scan.c madwifi-0.9.2/net80211/ieee80211_scan.c
+--- madwifi-0.9.2.orig/net80211/ieee80211_scan.c	2006-04-21 18:57:59.000000000 +0200
++++ madwifi-0.9.2/net80211/ieee80211_scan.c	2006-12-04 23:56:49.000000000 +0100
+@@ -37,7 +37,7 @@
+ /*
+  * IEEE 802.11 scanning support.
+  */
+-#include <linux/config.h>
++#include <linux/autoconf.h>
+ #include <linux/version.h>
+ #include <linux/module.h>
+ #include <linux/skbuff.h>
+diff -urN madwifi-0.9.2.orig/net80211/ieee80211_scan_sta.c madwifi-0.9.2/net80211/ieee80211_scan_sta.c
+--- madwifi-0.9.2.orig/net80211/ieee80211_scan_sta.c	2006-07-02 09:19:37.000000000 +0200
++++ madwifi-0.9.2/net80211/ieee80211_scan_sta.c	2006-12-04 23:56:49.000000000 +0100
+@@ -37,7 +37,7 @@
+ /*
+  * IEEE 802.11 station scanning support.
+  */
+-#include <linux/config.h>
++#include <linux/autoconf.h>
+ #include <linux/version.h>
+ #include <linux/module.h>
+ #include <linux/skbuff.h>
+diff -urN madwifi-0.9.2.orig/net80211/ieee80211_wireless.c madwifi-0.9.2/net80211/ieee80211_wireless.c
+--- madwifi-0.9.2.orig/net80211/ieee80211_wireless.c	2006-07-06 05:23:08.000000000 +0200
++++ madwifi-0.9.2/net80211/ieee80211_wireless.c	2006-12-04 23:56:49.000000000 +0100
+@@ -39,7 +39,7 @@
+ /*
+  * Wireless extensions support for 802.11 common code.
+  */
+-#include <linux/config.h>
++#include <linux/autoconf.h>
+ 
+ #ifdef CONFIG_NET_WIRELESS
+ #include <linux/version.h>
+diff -urN madwifi-0.9.2.orig/net80211/ieee80211_xauth.c madwifi-0.9.2/net80211/ieee80211_xauth.c
+--- madwifi-0.9.2.orig/net80211/ieee80211_xauth.c	2006-02-01 21:07:11.000000000 +0100
++++ madwifi-0.9.2/net80211/ieee80211_xauth.c	2006-12-04 23:56:49.000000000 +0100
+@@ -46,7 +46,7 @@
+  * of the available callbacks--the user mode authenticator process works
+  * entirely from messages about stations joining and leaving.
+  */
+-#include <linux/config.h>
++#include <linux/autoconf.h>
+ #include <linux/version.h>
+ #include <linux/module.h>
+ #include <linux/init.h>
+diff -urN madwifi-0.9.2.orig/net80211/if_media.c madwifi-0.9.2/net80211/if_media.c
+--- madwifi-0.9.2.orig/net80211/if_media.c	2006-05-31 23:05:08.000000000 +0200
++++ madwifi-0.9.2/net80211/if_media.c	2006-12-04 23:56:49.000000000 +0100
+@@ -49,7 +49,7 @@
+ #define	EXPORT_SYMTAB
+ #endif
+ 
+-#include <linux/config.h>
++#include <linux/autoconf.h>
+ #include <linux/version.h>
+ #include <linux/module.h>
+ #include <linux/kernel.h>
+diff -urN madwifi-0.9.2.orig/regression/ccmp/test_ccmp.c madwifi-0.9.2/regression/ccmp/test_ccmp.c
+--- madwifi-0.9.2.orig/regression/ccmp/test_ccmp.c	2006-02-01 21:07:11.000000000 +0100
++++ madwifi-0.9.2/regression/ccmp/test_ccmp.c	2006-12-04 23:56:50.000000000 +0100
+@@ -44,7 +44,7 @@
+  * you want; e.g. insmod ccmp_test tests=7 will run only test mpdu's
+  * 1, 2, and 3.
+  */
+-#include <linux/config.h>
++#include <linux/autoconf.h>
+ #include <linux/version.h>
+ #include <linux/module.h>
+ #include <linux/init.h>
+diff -urN madwifi-0.9.2.orig/regression/tkip/test_tkip.c madwifi-0.9.2/regression/tkip/test_tkip.c
+--- madwifi-0.9.2.orig/regression/tkip/test_tkip.c	2006-02-01 21:07:11.000000000 +0100
++++ madwifi-0.9.2/regression/tkip/test_tkip.c	2006-12-04 23:56:50.000000000 +0100
+@@ -34,7 +34,7 @@
+ /*
+  * TKIP test module.
+  */
+-#include <linux/config.h>
++#include <linux/autoconf.h>
+ #include <linux/version.h>
+ #include <linux/module.h>
+ #include <linux/init.h>
+diff -urN madwifi-0.9.2.orig/regression/wep/test_wep.c madwifi-0.9.2/regression/wep/test_wep.c
+--- madwifi-0.9.2.orig/regression/wep/test_wep.c	2006-02-01 21:07:11.000000000 +0100
++++ madwifi-0.9.2/regression/wep/test_wep.c	2006-12-04 23:56:50.000000000 +0100
+@@ -44,7 +44,7 @@
+  * you want; e.g. insmod wep_test tests=7 will run only test mpdu's
+  * 1, 2, and 3.
+  */
+-#include <linux/config.h>
++#include <linux/autoconf.h>
+ #include <linux/version.h>
+ #include <linux/module.h>
+ #include <linux/init.h>
