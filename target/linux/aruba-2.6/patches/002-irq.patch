@@ -220,7 +220,7 @@ diff -Nur linux-2.6.17/arch/mips/aruba/irq.c linux-2.6.17-openwrt/arch/mips/arub
 +		irq_desc[i].status = IRQ_DISABLED;
 +		irq_desc[i].action = NULL;
 +		irq_desc[i].depth = 1;
-+		irq_desc[i].handler = &aruba_irq_type;
++		irq_desc[i].chip = &aruba_irq_type;
 +		spin_lock_init(&irq_desc[i].lock);
 +	}
 +}
@@ -263,7 +263,7 @@ diff -Nur linux-2.6.17/arch/mips/aruba/irq.c linux-2.6.17-openwrt/arch/mips/arub
 +				pend = READ_PEND_MUSCAT(addr);
 +				pend &= ~READ_MASK_MUSCAT(addr); // only unmasked interrupts
 +				pend = 39 - rc32434_clz(pend);
-+				do_IRQ(pend + (group << 5), regs);
++				do_IRQ(pend + (group << 5));
 +			}
 +			break;
 +		case MACH_ARUBA_AP65:
@@ -278,11 +278,11 @@ diff -Nur linux-2.6.17/arch/mips/aruba/irq.c linux-2.6.17-openwrt/arch/mips/arub
 +				pend = READ_PEND_MERLOT(addr);
 +				pend &= READ_MASK_MERLOT(addr);	// only unmasked interrupts
 +				pend = 31 - rc32434_clz(pend);
-+				do_IRQ(pend + GROUP0_IRQ_BASE, regs);
++				do_IRQ(pend + GROUP0_IRQ_BASE);
 +			}
 +			if ((ip = (cp0_cause & 0x3c00))) { // irq 2-5
 +				pend = 31 - rc32434_clz(ip);
-+				do_IRQ(pend - GROUP0_IRQ_BASE, regs);
++				do_IRQ(pend - GROUP0_IRQ_BASE);
 +			}
 +			break;
 +	}

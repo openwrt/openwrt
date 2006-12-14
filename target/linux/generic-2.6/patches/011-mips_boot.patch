@@ -1,7 +1,7 @@
-diff -Nur linux-cvs/arch/mips/kernel/head.S linux-aruba/arch/mips/kernel/head.S
---- linux-cvs/arch/mips/kernel/head.S	2004-12-23 00:21:39.000000000 -0800
-+++ linux-aruba/arch/mips/kernel/head.S	2005-10-20 09:16:08.000000000 -0700
-@@ -122,6 +122,10 @@
+diff -urN linux-2.6.19.old/arch/mips/kernel/head.S linux-2.6.19.dev/arch/mips/kernel/head.S
+--- linux-2.6.19.old/arch/mips/kernel/head.S	2006-11-29 22:57:37.000000000 +0100
++++ linux-2.6.19.dev/arch/mips/kernel/head.S	2006-12-14 03:13:33.000000000 +0100
+@@ -129,6 +129,10 @@
  #endif
  	.endm
  
@@ -12,4 +12,3 @@ diff -Nur linux-cvs/arch/mips/kernel/head.S linux-aruba/arch/mips/kernel/head.S
  	/*
  	 * Reserved space for exception handlers.
  	 * Necessary for machines which link their kernels at KSEG0.
-

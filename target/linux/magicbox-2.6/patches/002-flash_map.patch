@@ -43,7 +43,7 @@ diff -urN linux.old/drivers/mtd/maps/magicmap.c linux.dev/drivers/mtd/maps/magic
 +#include <linux/mtd/mtd.h>
 +#include <linux/mtd/map.h>
 +#include <linux/mtd/partitions.h>
-+#include <linux/config.h>
++#include <linux/autoconf.h>
 +#include <asm/io.h>
 +
 +static struct mtd_info *flash;
@@ -91,7 +91,7 @@ diff -urN linux.old/drivers/mtd/maps/magicmap.c linux.dev/drivers/mtd/maps/magic
 +	flash = do_map_probe("cfi_probe", &magic_map);
 +	if (flash) {
 +		flash->owner = THIS_MODULE;
-+		if (MTD_READ(flash, 12, sizeof(u32), &len, (char *) &size) ||
++		if (flash->read(flash, 12, sizeof(u32), &len, (char *) &size) ||
 +			len != 4)
 +			return -ENXIO;
 +		size += 0x40; /* header size of the uImage */

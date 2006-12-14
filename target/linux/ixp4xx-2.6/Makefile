@@ -14,10 +14,9 @@ FEATURES:=jffs2
 define Target/Description
 endef
 
-
-LINUX_VERSION:=2.6.17
+LINUX_VERSION:=2.6.19
 LINUX_RELEASE:=1
-LINUX_KERNEL_MD5SUM:=37ddefe96625502161f075b9d907f21e
+LINUX_KERNEL_MD5SUM:=443c265b57e87eadc0c677c3acc37e20
 
 include $(INCLUDE_DIR)/kernel-build.mk
 $(eval $(call BuildKernel))

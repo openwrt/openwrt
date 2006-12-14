@@ -750,7 +750,7 @@ diff -Nur linux-2.6.17/drivers/net/ixp4xx/ixp4xx_qmgr.c linux-2.6.17-owrt/driver
 +	return 0;
 +}
 +
-+static irqreturn_t irq_qm1(int irq, void *dev_id, struct pt_regs *regs)
++static irqreturn_t irq_qm1(int irq, void *dev_id)
 +{
 +	struct qm_qmgr *qmgr = dev_id;
 +	int offs, reg;

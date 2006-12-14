@@ -1,6 +1,6 @@
-diff -urN linux.old/fs/jffs2/build.c linux.dev/fs/jffs2/build.c
---- linux.old/fs/jffs2/build.c	2006-06-18 03:49:35.000000000 +0200
-+++ linux.dev/fs/jffs2/build.c	2006-06-23 21:46:48.000000000 +0200
+diff -urN linux-2.6.19.old/fs/jffs2/build.c linux-2.6.19.dev/fs/jffs2/build.c
+--- linux-2.6.19.old/fs/jffs2/build.c	2006-11-29 22:57:37.000000000 +0100
++++ linux-2.6.19.dev/fs/jffs2/build.c	2006-12-14 03:13:57.000000000 +0100
 @@ -107,6 +107,17 @@
  	dbg_fsbuild("scanned flash completely\n");
  	jffs2_dbg_dump_block_lists_nolock(c);
@@ -19,10 +19,10 @@ diff -urN linux.old/fs/jffs2/build.c linux.dev/fs/jffs2/build.c
  	dbg_fsbuild("pass 1 starting\n");
  	c->flags |= JFFS2_SB_FLAG_BUILDING;
  	/* Now scan the directory tree, increasing nlink according to every dirent found. */
-diff -urN linux.old/fs/jffs2/scan.c linux.dev/fs/jffs2/scan.c
---- linux.old/fs/jffs2/scan.c	2006-06-23 21:39:38.000000000 +0200
-+++ linux.dev/fs/jffs2/scan.c	2006-06-23 21:42:18.000000000 +0200
-@@ -119,9 +119,12 @@
+diff -urN linux-2.6.19.old/fs/jffs2/scan.c linux-2.6.19.dev/fs/jffs2/scan.c
+--- linux-2.6.19.old/fs/jffs2/scan.c	2006-11-29 22:57:37.000000000 +0100
++++ linux-2.6.19.dev/fs/jffs2/scan.c	2006-12-14 03:13:57.000000000 +0100
+@@ -141,9 +141,12 @@
  
  		/* reset summary info for next eraseblock scan */
  		jffs2_sum_reset_collected(s);
@@ -38,7 +38,7 @@ diff -urN linux.old/fs/jffs2/scan.c linux.dev/fs/jffs2/scan.c
  
  		if (ret < 0)
  			goto out;
-@@ -389,6 +392,17 @@
+@@ -540,6 +543,17 @@
  			return err;
  	}
  

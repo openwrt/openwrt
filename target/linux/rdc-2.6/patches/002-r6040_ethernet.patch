@@ -187,7 +187,7 @@ diff -urN linux-2.6.17/drivers/net/r6040.c linux-2.6.17.new/drivers/net/r6040.c
 +
 +static int rdc_open(struct net_device *dev);
 +static int rdc_start_xmit(struct sk_buff *skb, struct net_device *dev);
-+static irqreturn_t rdc_interrupt(int irq, void *dev_id, struct pt_regs *regs);
++static irqreturn_t rdc_interrupt(int irq, void *dev_id);
 +static struct net_device_stats *rdc_get_stats(struct net_device *dev);
 +static int rdc_close(struct net_device *dev);
 +static void set_multicast_list(struct net_device *dev);
@@ -439,7 +439,7 @@ diff -urN linux-2.6.17/drivers/net/r6040.c linux-2.6.17.new/drivers/net/r6040.c
 +
 +/* The RDC interrupt handler. */
 +static irqreturn_t
-+rdc_interrupt(int irq, void *dev_id, struct pt_regs *regs)
++rdc_interrupt(int irq, void *dev_id)
 +{
 +	struct net_device *dev = dev_id;
 +	struct rdc_private *lp;

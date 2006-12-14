@@ -1,25 +1,24 @@
---- linux.old/drivers/mtd/chips/cfi_cmdset_0002.c	2006-10-23 21:14:11.618024794 +0200
-+++ linux.dev/drivers/mtd/chips/cfi_cmdset_0002.c	2006-10-24 07:47:52.267007586 +0200
-@@ -49,6 +49,7 @@
- #define MANUFACTURER_SST	0x00BF
+diff -urN linux-2.6.19.old/drivers/mtd/chips/cfi_cmdset_0002.c linux-2.6.19.dev/drivers/mtd/chips/cfi_cmdset_0002.c
+--- linux-2.6.19.old/drivers/mtd/chips/cfi_cmdset_0002.c	2006-11-29 22:57:37.000000000 +0100
++++ linux-2.6.19.dev/drivers/mtd/chips/cfi_cmdset_0002.c	2006-12-14 03:13:30.000000000 +0100
+@@ -50,6 +50,7 @@
  #define SST49LF004B	        0x0060
  #define SST49LF008A		0x005a
+ #define AT49BV6416		0x00d6
 +#define MANUFACTURER_SAMSUNG	0x00ec
  
  static int cfi_amdstd_read (struct mtd_info *, loff_t, size_t, size_t *, u_char *);
  static int cfi_amdstd_write_words(struct mtd_info *, loff_t, size_t, size_t *, const u_char *);
-@@ -254,13 +255,20 @@
- 		}
+@@ -293,12 +294,19 @@
  
  		if (extp->MajorVersion != '1' ||
--		    (extp->MinorVersion < '0' || extp->MinorVersion > '4')) {
+ 		    (extp->MinorVersion < '0' || extp->MinorVersion > '4')) {
 -			printk(KERN_ERR "  Unknown Amd/Fujitsu Extended Query "
 -			       "version %c.%c.\n",  extp->MajorVersion,
 -			       extp->MinorVersion);
 -			kfree(extp);
 -			kfree(mtd);
 -			return NULL;
-+		    (extp->MinorVersion < '0' || extp->MinorVersion > '4')) {
 +		        if (cfi->mfr == MANUFACTURER_SAMSUNG &&
 +			    (extp->MajorVersion == '3' && extp->MinorVersion == '3')) {
 +			    printk(KERN_NOTICE "  Newer Samsung flash detected, "

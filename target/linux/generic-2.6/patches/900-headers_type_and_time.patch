@@ -1,8 +1,6 @@
-Taken from Debian linux-kernel-headers package
-Update 2005-05-05 gotom, add __extension__ for linux/types.h.
-
---- linux.old/include/linux/time.h	2006-06-05 13:18:23.000000000 -0400
-+++ linux.dev/include/linux/time.h	2006-06-10 00:16:51.962628154 -0400
+diff -urN linux-2.6.19.old/include/linux/time.h linux-2.6.19.dev/include/linux/time.h
+--- linux-2.6.19.old/include/linux/time.h	2006-11-29 22:57:37.000000000 +0100
++++ linux-2.6.19.dev/include/linux/time.h	2006-12-14 03:14:05.000000000 +0100
 @@ -1,6 +1,10 @@
  #ifndef _LINUX_TIME_H
  #define _LINUX_TIME_H
@@ -14,15 +12,16 @@ Update 2005-05-05 gotom, add __extension__ for linux/types.h.
  #include <linux/types.h>
  
  #ifdef __KERNEL__
-@@ -196,4 +200,6 @@
+@@ -223,4 +227,6 @@
   */
  #define TIMER_ABSTIME			0x01
  
 +#endif /* __KERNEL__ DEBIAN */
 +
  #endif
---- linux.old/include/linux/types.h	2006-06-05 13:18:23.000000000 -0400
-+++ linux.dev/include/linux/types.h	2006-06-10 00:16:51.962628154 -0400
+diff -urN linux-2.6.19.old/include/linux/types.h linux-2.6.19.dev/include/linux/types.h
+--- linux-2.6.19.old/include/linux/types.h	2006-11-29 22:57:37.000000000 +0100
++++ linux-2.6.19.dev/include/linux/types.h	2006-12-14 03:14:05.000000000 +0100
 @@ -1,6 +1,14 @@
  #ifndef _LINUX_TYPES_H
  #define _LINUX_TYPES_H
@@ -36,9 +35,9 @@ Update 2005-05-05 gotom, add __extension__ for linux/types.h.
 +#else
 +
  #ifdef	__KERNEL__
- #include <linux/config.h>
  
-@@ -147,6 +157,8 @@
+ #define BITS_TO_LONGS(bits) \
+@@ -156,6 +164,8 @@
  
  #endif /* __KERNEL_STRICT_NAMES */
  

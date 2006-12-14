@@ -1,6 +1,7 @@
---- linux-2.6.12.5/Makefile.old	2005-10-23 22:56:29.017270000 +0200
-+++ linux-2.6.12.5/Makefile	2005-10-23 22:57:23.226138500 +0200
-@@ -533,6 +533,9 @@
+diff -urN linux-2.6.19.old/Makefile linux-2.6.19.dev/Makefile
+--- linux-2.6.19.old/Makefile	2006-11-29 22:57:37.000000000 +0100
++++ linux-2.6.19.dev/Makefile	2006-12-14 03:13:23.000000000 +0100
+@@ -513,6 +513,9 @@
  NOSTDINC_FLAGS += -nostdinc -isystem $(shell $(CC) -print-file-name=include)
  CHECKFLAGS     += $(NOSTDINC_FLAGS)
  

@@ -61,7 +61,7 @@ diff -urN linux-2.6.16.7/drivers/char/watchdog/mtx-1_watchdog.c linux-2.6.16.7.n
 + *      it is opened for the first time. After the first open
 + *      it MUST be triggered every 2..95 seconds.
 + */
-+#include <linux/config.h>
++#include <linux/autoconf.h>
 +#include <linux/module.h>
 +#include <linux/version.h>
 +#include <linux/types.h>

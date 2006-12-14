@@ -570,7 +570,7 @@ diff -Nur linux-2.6.17/arch/mips/aruba/nvram/nvram434.h linux-2.6.17-owrt/arch/m
 diff -Nur linux-2.6.17/arch/mips/aruba/prom.c linux-2.6.17-owrt/arch/mips/aruba/prom.c
 --- linux-2.6.17/arch/mips/aruba/prom.c	1970-01-01 01:00:00.000000000 +0100
 +++ linux-2.6.17-owrt/arch/mips/aruba/prom.c	2006-06-18 12:44:28.000000000 +0200
-@@ -0,0 +1,111 @@
+@@ -0,0 +1,114 @@
 +/**************************************************************************
 + *
 + *  BRIEF MODULE DESCRIPTION
@@ -609,7 +609,7 @@ diff -Nur linux-2.6.17/arch/mips/aruba/prom.c linux-2.6.17-owrt/arch/mips/aruba/
 + **************************************************************************
 + */
 +
-+#include <linux/config.h>
++#include <linux/autoconf.h>
 +#include <linux/init.h>
 +#include <linux/mm.h>
 +#include <linux/module.h>
@@ -629,7 +629,10 @@ diff -Nur linux-2.6.17/arch/mips/aruba/prom.c linux-2.6.17-owrt/arch/mips/aruba/
 +unsigned int arch_has_pci=0;
 +
 +/* Kernel Boot parameters */
-+static unsigned char bootparm[] = "console=ttyS0,9600 root=/dev/mtdblock1 rootfstype=jffs2";
++static unsigned char bootparm[] = 
++	"mtdparts=physmap-flash.0:3520k@0x080000(zImage),2880k@0x120000(JFFS2),8k@0x3f8000(NVRAM) "
++	"console=ttyS0,9600 root=/dev/mtdblock1 rootfstype=jffs2 ";
++
 +
 +extern unsigned long mips_machgroup;
 +extern unsigned long mips_machtype;
@@ -725,7 +728,7 @@ diff -Nur linux-2.6.17/arch/mips/aruba/serial.c linux-2.6.17-owrt/arch/mips/arub
 + */
 +
 +
-+#include <linux/config.h>
++#include <linux/autoconf.h>
 +#include <linux/init.h>
 +#include <linux/sched.h>
 +#include <linux/pci.h>
@@ -783,7 +786,7 @@ diff -Nur linux-2.6.17/arch/mips/aruba/serial.c linux-2.6.17-owrt/arch/mips/arub
 diff -Nur linux-2.6.17/arch/mips/aruba/setup.c linux-2.6.17-owrt/arch/mips/aruba/setup.c
 --- linux-2.6.17/arch/mips/aruba/setup.c	1970-01-01 01:00:00.000000000 +0100
 +++ linux-2.6.17-owrt/arch/mips/aruba/setup.c	2006-06-18 12:44:28.000000000 +0200
-@@ -0,0 +1,134 @@
+@@ -0,0 +1,128 @@
 +/**************************************************************************
 + *
 + *  BRIEF MODULE DESCRIPTION
@@ -840,9 +843,7 @@ diff -Nur linux-2.6.17/arch/mips/aruba/setup.c linux-2.6.17-owrt/arch/mips/aruba
 +extern char *__init prom_getcmdline(void);
 +
 +extern void (*board_time_init) (void);
-+extern void (*board_timer_setup) (struct irqaction * irq);
 +extern void aruba_time_init(void);
-+extern void aruba_timer_setup(struct irqaction *irq);
 +extern void aruba_reset(void);
 +
 +#define epldMask ((volatile unsigned char *)0xB900000d)
@@ -874,11 +875,9 @@ diff -Nur linux-2.6.17/arch/mips/aruba/setup.c linux-2.6.17-owrt/arch/mips/aruba
 +extern char * getenv(char *e);
 +extern void unlock_ap60_70_flash(void);
 +
-+void __init plat_setup(void)
++void __init plat_mem_setup(void)
 +{
 +	board_time_init = aruba_time_init;
-+
-+	board_timer_setup = aruba_timer_setup;
 +
 +	_machine_restart = aruba_machine_restart;
 +	_machine_halt = aruba_machine_halt;
@@ -894,8 +893,6 @@ diff -Nur linux-2.6.17/arch/mips/aruba/setup.c linux-2.6.17-owrt/arch/mips/aruba
 +	unlock_ap60_70_flash();
 +
 +	printk("BOARD - %s\n",getenv("boardname"));
-+
-+	return 0;
 +}
 +
 +int page_is_ram(unsigned long pagenr)
@@ -960,7 +957,7 @@ diff -Nur linux-2.6.17/arch/mips/aruba/time.c linux-2.6.17-owrt/arch/mips/aruba/
 + **************************************************************************
 + */
 +
-+#include <linux/config.h>
++#include <linux/autoconf.h>
 +#include <linux/init.h>
 +#include <linux/kernel_stat.h>
 +#include <linux/sched.h>
@@ -1011,7 +1008,7 @@ diff -Nur linux-2.6.17/arch/mips/aruba/time.c linux-2.6.17-owrt/arch/mips/aruba/
 +
 +}
 +
-+void __init aruba_timer_setup(struct irqaction *irq)
++void __init plat_timer_setup(struct irqaction *irq)
 +{
 +	/* we are using the cpu counter for timer interrupts */
 +	setup_irq(MIPS_CPU_TIMER_IRQ, irq);
@@ -1029,7 +1026,7 @@ diff -Nur linux-2.6.17/arch/mips/aruba/time.c linux-2.6.17-owrt/arch/mips/aruba/
 +	irq_enter();
 +	kstat_this_cpu.irqs[irq]++;
 +
-+	timer_interrupt(irq, NULL, regs);
++	timer_interrupt(irq, NULL);
 +	irq_exit();
 +}
 diff -Nur linux-2.6.17/arch/mips/Kconfig linux-2.6.17-owrt/arch/mips/Kconfig
@@ -1243,7 +1240,7 @@ diff -Nur linux-2.6.17/drivers/net/rc32434_eth.c linux-2.6.17-owrt/drivers/net/r
 + **************************************************************************
 + */
 +
-+#include <linux/config.h>
++#include <linux/autoconf.h>
 +#include <linux/version.h>
 +#include <linux/module.h>
 +#include <linux/kernel.h>
@@ -1849,7 +1846,7 @@ diff -Nur linux-2.6.17/drivers/net/rc32434_eth.c linux-2.6.17-owrt/drivers/net/r
 +#ifdef	RC32434_REVISION	
 +/* Ethernet Rx Overflow interrupt */
 +static irqreturn_t
-+rc32434_ovr_interrupt(int irq, void *dev_id, struct pt_regs * regs)
++rc32434_ovr_interrupt(int irq, void *dev_id)
 +{
 +	struct net_device *dev = (struct net_device *)dev_id;
 +	struct rc32434_local *lp;
@@ -1882,7 +1879,7 @@ diff -Nur linux-2.6.17/drivers/net/rc32434_eth.c linux-2.6.17-owrt/drivers/net/r
 +
 +/* Ethernet Tx Underflow interrupt */
 +static irqreturn_t
-+rc32434_und_interrupt(int irq, void *dev_id, struct pt_regs * regs)
++rc32434_und_interrupt(int irq, void *dev_id)
 +{
 +	struct net_device *dev = (struct net_device *)dev_id;
 +	struct rc32434_local *lp;
@@ -1915,7 +1912,7 @@ diff -Nur linux-2.6.17/drivers/net/rc32434_eth.c linux-2.6.17-owrt/drivers/net/r
 +
 +/* Ethernet Rx DMA interrupt */
 +static irqreturn_t
-+rc32434_rx_dma_interrupt(int irq, void *dev_id, struct pt_regs * regs)
++rc32434_rx_dma_interrupt(int irq, void *dev_id)
 +{
 +	struct net_device *dev = (struct net_device *)dev_id;
 +	struct rc32434_local* lp;
@@ -2129,7 +2126,7 @@ diff -Nur linux-2.6.17/drivers/net/rc32434_eth.c linux-2.6.17-owrt/drivers/net/r
 +
 +/* Ethernet Tx DMA interrupt */
 +static irqreturn_t
-+rc32434_tx_dma_interrupt(int irq, void *dev_id, struct pt_regs * regs)
++rc32434_tx_dma_interrupt(int irq, void *dev_id)
 +{
 +	struct net_device *dev = (struct net_device *)dev_id;
 +	struct rc32434_local *lp;
@@ -2630,11 +2627,11 @@ diff -Nur linux-2.6.17/drivers/net/rc32434_eth.h linux-2.6.17-owrt/drivers/net/r
 +static int rc32434_open(struct net_device *dev);
 +static int rc32434_send_packet(struct sk_buff *skb, struct net_device *dev);
 +static void rc32434_mii_handler(unsigned long data);
-+static irqreturn_t  rc32434_und_interrupt(int irq, void *dev_id, struct pt_regs * regs);
-+static irqreturn_t rc32434_rx_dma_interrupt(int irq, void *dev_id, struct pt_regs * regs);
-+static irqreturn_t rc32434_tx_dma_interrupt(int irq, void *dev_id, struct pt_regs * regs);
++static irqreturn_t  rc32434_und_interrupt(int irq, void *dev_id);
++static irqreturn_t rc32434_rx_dma_interrupt(int irq, void *dev_id);
++static irqreturn_t rc32434_tx_dma_interrupt(int irq, void *dev_id);
 +#ifdef	RC32434_REVISION	
-+static irqreturn_t rc32434_ovr_interrupt(int irq, void *dev_id, struct pt_regs * regs);
++static irqreturn_t rc32434_ovr_interrupt(int irq, void *dev_id);
 +#endif
 +static int  rc32434_close(struct net_device *dev);
 +static struct net_device_stats *rc32434_get_stats(struct net_device *dev);
@@ -6769,7 +6766,7 @@ diff -Nur linux-2.6.17/include/asm-mips/idt-boards/rc32434/rc32434.h linux-2.6.1
 +#ifndef _RC32434_H_
 +#define _RC32434_H_
 +
-+#include <linux/config.h>
++#include <linux/autoconf.h>
 +#include <linux/delay.h>
 +#include <asm/io.h>
 +#include <asm/idt-boards/rc32434/rc32434_timer.h>
@@ -9582,7 +9579,7 @@ diff -Nur linux-2.6.17/include/asm-mips/idt-boards/rc32438/rc32438.h linux-2.6.1
 +
 +#ifndef __IDT_RC32438_H__
 +#define  __IDT_RC32438_H__
-+#include <linux/config.h>
++#include <linux/autoconf.h>
 +#include <linux/delay.h>
 +#include <asm/io.h>
 +#include <asm/idt-boards/rc32438/rc32438_timer.h>

@@ -1,6 +1,6 @@
-diff -u'rNF^function' linux-2.6.16.7/include/linux/netfilter_ipv4/ipt_ROUTE.h linux-2.6.16.7-ROUTE/include/linux/netfilter_ipv4/ipt_ROUTE.h
---- linux-2.6.16.7/include/linux/netfilter_ipv4/ipt_ROUTE.h     1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.16.7-ROUTE/include/linux/netfilter_ipv4/ipt_ROUTE.h       2006-06-14 16:40:49.000000000 +0200
+diff -urN linux-2.6.19.old/include/linux/netfilter_ipv4/ipt_ROUTE.h linux-2.6.19.dev/include/linux/netfilter_ipv4/ipt_ROUTE.h
+--- linux-2.6.19.old/include/linux/netfilter_ipv4/ipt_ROUTE.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.dev/include/linux/netfilter_ipv4/ipt_ROUTE.h	2006-12-14 03:13:49.000000000 +0100
 @@ -0,0 +1,23 @@
 +/* Header file for iptables ipt_ROUTE target
 + *
@@ -25,9 +25,9 @@ diff -u'rNF^function' linux-2.6.16.7/include/linux/netfilter_ipv4/ipt_ROUTE.h li
 +#define IPT_ROUTE_TEE             0x02
 +
 +#endif /*_IPT_ROUTE_H_target*/
-diff -u'rNF^function' linux-2.6.16.7/include/linux/netfilter_ipv6/ip6t_ROUTE.h linux-2.6.16.7-ROUTE/include/linux/netfilter_ipv6/ip6t_ROUTE.h
---- linux-2.6.16.7/include/linux/netfilter_ipv6/ip6t_ROUTE.h    1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.16.7-ROUTE/include/linux/netfilter_ipv6/ip6t_ROUTE.h      2006-06-14 16:41:08.000000000 +0200
+diff -urN linux-2.6.19.old/include/linux/netfilter_ipv6/ip6t_ROUTE.h linux-2.6.19.dev/include/linux/netfilter_ipv6/ip6t_ROUTE.h
+--- linux-2.6.19.old/include/linux/netfilter_ipv6/ip6t_ROUTE.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.dev/include/linux/netfilter_ipv6/ip6t_ROUTE.h	2006-12-14 03:13:49.000000000 +0100
 @@ -0,0 +1,23 @@
 +/* Header file for iptables ip6t_ROUTE target
 + *
@@ -52,48 +52,10 @@ diff -u'rNF^function' linux-2.6.16.7/include/linux/netfilter_ipv6/ip6t_ROUTE.h l
 +#define IP6T_ROUTE_TEE             0x02
 +
 +#endif /*_IP6T_ROUTE_H_target*/
-diff -u'rNF^function' linux-2.6.16.7/net/ipv4/netfilter/Kconfig linux-2.6.16.7-ROUTE/net/ipv4/netfilter/Kconfig
---- linux-2.6.16.7/net/ipv4/netfilter/Kconfig   2006-06-14 16:05:44.000000000 +0200
-+++ linux-2.6.16.7-ROUTE/net/ipv4/netfilter/Kconfig     2006-06-14 16:46:40.000000000 +0200
-@@ -491,6 +491,23 @@
-
-          To compile it as a module, choose M here.  If unsure, say N.
-
-+config IP_NF_TARGET_ROUTE
-+        tristate  'ROUTE target support'
-+        depends on IP_NF_MANGLE
-+        help
-+          This option adds a `ROUTE' target, which enables you to setup unusual
-+          routes. For example, the ROUTE lets you route a received packet through
-+          an interface or towards a host, even if the regular destination of the
-+          packet is the router itself. The ROUTE target is also able to change the
-+          incoming interface of a packet.
-+
-+          The target can be or not a final target. It has to be used inside the
-+          mangle table.
-+
-+          If you want to compile it as a module, say M here and read
-+          Documentation/modules.txt.  The module will be called ipt_ROUTE.o.
-+          If unsure, say `N'.
-+
- config IP_NF_TARGET_NETMAP
-        tristate "NETMAP target support"
-        depends on IP_NF_NAT
-diff -u'rNF^function' linux-2.6.16.7/net/ipv4/netfilter/Makefile linux-2.6.16.7-ROUTE/net/ipv4/netfilter/Makefile
---- linux-2.6.16.7/net/ipv4/netfilter/Makefile  2006-06-14 16:05:44.000000000 +0200
-+++ linux-2.6.16.7-ROUTE/net/ipv4/netfilter/Makefile    2006-06-14 16:44:02.000000000 +0200
-@@ -74,6 +74,7 @@
- obj-$(CONFIG_IP_NF_TARGET_IMQ) += ipt_IMQ.o
- obj-$(CONFIG_IP_NF_TARGET_MASQUERADE) += ipt_MASQUERADE.o
- obj-$(CONFIG_IP_NF_TARGET_REDIRECT) += ipt_REDIRECT.o
-+obj-$(CONFIG_IP_NF_TARGET_ROUTE) += ipt_ROUTE.o
- obj-$(CONFIG_IP_NF_TARGET_NETMAP) += ipt_NETMAP.o
- obj-$(CONFIG_IP_NF_TARGET_SAME) += ipt_SAME.o
- obj-$(CONFIG_IP_NF_NAT_SNMP_BASIC) += ip_nat_snmp_basic.o
-diff -u'rNF^function' linux-2.6.16.7/net/ipv4/netfilter/ipt_ROUTE.c linux-2.6.16.7-ROUTE/net/ipv4/netfilter/ipt_ROUTE.c
---- linux-2.6.16.7/net/ipv4/netfilter/ipt_ROUTE.c       1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.16.7-ROUTE/net/ipv4/netfilter/ipt_ROUTE.c 2006-06-14 16:42:23.000000000 +0200
-@@ -0,0 +1,461 @@
+diff -urN linux-2.6.19.old/net/ipv4/netfilter/ipt_ROUTE.c linux-2.6.19.dev/net/ipv4/netfilter/ipt_ROUTE.c
+--- linux-2.6.19.old/net/ipv4/netfilter/ipt_ROUTE.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.dev/net/ipv4/netfilter/ipt_ROUTE.c	2006-12-14 03:13:49.000000000 +0100
+@@ -0,0 +1,455 @@
 +/*
 + * This implements the ROUTE target, which enables you to setup unusual
 + * routes not supported by the standard kernel routing table.
@@ -376,8 +338,8 @@ diff -u'rNF^function' linux-2.6.16.7/net/ipv4/netfilter/ipt_ROUTE.c linux-2.6.16
 +                                    const struct net_device *in,
 +                                    const struct net_device *out,
 +                                    unsigned int hooknum,
-+                                    const void *targinfo,
-+                                    void *userinfo)
++				    const struct xt_target *target,
++                                    const void *targinfo)
 +{
 +       const struct ipt_route_target_info *route_info = targinfo;
 +       struct sk_buff *skb = *pskb;
@@ -497,8 +459,8 @@ diff -u'rNF^function' linux-2.6.16.7/net/ipv4/netfilter/ipt_ROUTE.c linux-2.6.16
 +
 +static int ipt_route_checkentry(const char *tablename,
 +                               const void *e,
++			       const struct xt_target *target,
 +                               void *targinfo,
-+                               unsigned int targinfosize,
 +                               unsigned int hook_mask)
 +{
 +       if (strcmp(tablename, "mangle") != 0) {
@@ -516,13 +478,6 @@ diff -u'rNF^function' linux-2.6.16.7/net/ipv4/netfilter/ipt_ROUTE.c linux-2.6.16
 +               return 0;
 +       }
 +
-+       if (targinfosize != IPT_ALIGN(sizeof(struct ipt_route_target_info))) {
-+               printk(KERN_WARNING "ipt_ROUTE: targinfosize %u != %Zu\n",
-+                      targinfosize,
-+                      IPT_ALIGN(sizeof(struct ipt_route_target_info)));
-+               return 0;
-+       }
-+
 +       return 1;
 +}
 +
@@ -530,6 +485,7 @@ diff -u'rNF^function' linux-2.6.16.7/net/ipv4/netfilter/ipt_ROUTE.c linux-2.6.16
 +static struct ipt_target ipt_route_reg = {
 +       .name = "ROUTE",
 +       .target = ipt_route_target,
++       .targetsize = sizeof(struct ipt_route_target_info),
 +       .checkentry = ipt_route_checkentry,
 +       .me = THIS_MODULE,
 +};
@@ -555,10 +511,48 @@ diff -u'rNF^function' linux-2.6.16.7/net/ipv4/netfilter/ipt_ROUTE.c linux-2.6.16
 +
 +module_init(init);
 +module_exit(fini);
-diff -u'rNF^function' linux-2.6.16.7/net/ipv6/ipv6_syms.c linux-2.6.16.7-ROUTE/net/ipv6/ipv6_syms.c
---- linux-2.6.16.7/net/ipv6/ipv6_syms.c 2006-04-17 23:53:25.000000000 +0200
-+++ linux-2.6.16.7-ROUTE/net/ipv6/ipv6_syms.c   2006-06-14 17:02:32.000000000 +0200
-@@ -12,6 +12,7 @@
+diff -urN linux-2.6.19.old/net/ipv4/netfilter/Kconfig linux-2.6.19.dev/net/ipv4/netfilter/Kconfig
+--- linux-2.6.19.old/net/ipv4/netfilter/Kconfig	2006-12-14 03:13:49.000000000 +0100
++++ linux-2.6.19.dev/net/ipv4/netfilter/Kconfig	2006-12-14 03:13:49.000000000 +0100
+@@ -494,6 +494,23 @@
+ 
+ 	  To compile it as a module, choose M here.  If unsure, say N.
+ 
++config IP_NF_TARGET_ROUTE
++        tristate  'ROUTE target support'
++        depends on IP_NF_MANGLE
++        help
++          This option adds a `ROUTE' target, which enables you to setup unusual
++          routes. For example, the ROUTE lets you route a received packet through
++          an interface or towards a host, even if the regular destination of the
++          packet is the router itself. The ROUTE target is also able to change the
++          incoming interface of a packet.
++
++          The target can be or not a final target. It has to be used inside the
++          mangle table.
++
++          If you want to compile it as a module, say M here and read
++          Documentation/modules.txt.  The module will be called ipt_ROUTE.o.
++          If unsure, say `N'.
++
+ config IP_NF_TARGET_NETMAP
+ 	tristate "NETMAP target support"
+ 	depends on IP_NF_NAT
+diff -urN linux-2.6.19.old/net/ipv4/netfilter/Makefile linux-2.6.19.dev/net/ipv4/netfilter/Makefile
+--- linux-2.6.19.old/net/ipv4/netfilter/Makefile	2006-12-14 03:13:49.000000000 +0100
++++ linux-2.6.19.dev/net/ipv4/netfilter/Makefile	2006-12-14 03:13:49.000000000 +0100
+@@ -74,6 +74,7 @@
+ obj-$(CONFIG_IP_NF_TARGET_IMQ) += ipt_IMQ.o
+ obj-$(CONFIG_IP_NF_TARGET_MASQUERADE) += ipt_MASQUERADE.o
+ obj-$(CONFIG_IP_NF_TARGET_REDIRECT) += ipt_REDIRECT.o
++obj-$(CONFIG_IP_NF_TARGET_ROUTE) += ipt_ROUTE.o
+ obj-$(CONFIG_IP_NF_TARGET_NETMAP) += ipt_NETMAP.o
+ obj-$(CONFIG_IP_NF_TARGET_SAME) += ipt_SAME.o
+ obj-$(CONFIG_IP_NF_NAT_SNMP_BASIC) += ip_nat_snmp_basic.o
+diff -urN linux-2.6.19.old/net/ipv6/ipv6_syms.c linux-2.6.19.dev/net/ipv6/ipv6_syms.c
+--- linux-2.6.19.old/net/ipv6/ipv6_syms.c	2006-11-29 22:57:37.000000000 +0100
++++ linux-2.6.19.dev/net/ipv6/ipv6_syms.c	2006-12-14 03:13:49.000000000 +0100
+@@ -11,6 +11,7 @@
  EXPORT_SYMBOL(icmpv6_statistics);
  EXPORT_SYMBOL(icmpv6_err_convert);
  EXPORT_SYMBOL(ndisc_mc_map);
@@ -566,44 +560,10 @@ diff -u'rNF^function' linux-2.6.16.7/net/ipv6/ipv6_syms.c linux-2.6.16.7-ROUTE/n
  EXPORT_SYMBOL(register_inet6addr_notifier);
  EXPORT_SYMBOL(unregister_inet6addr_notifier);
  EXPORT_SYMBOL(ip6_route_output);
-diff -u'rNF^function' linux-2.6.16.7/net/ipv6/netfilter/Kconfig linux-2.6.16.7-ROUTE/net/ipv6/netfilter/Kconfig
---- linux-2.6.16.7/net/ipv6/netfilter/Kconfig   2006-06-14 16:05:44.000000000 +0200
-+++ linux-2.6.16.7-ROUTE/net/ipv6/netfilter/Kconfig     2006-06-14 16:45:45.000000000 +0200
-@@ -182,6 +182,19 @@
-
-          To compile it as a module, choose M here.  If unsure, say N.
-
-+config IP6_NF_TARGET_ROUTE
-+        tristate '    ROUTE target support'
-+        depends on IP6_NF_MANGLE
-+        help
-+          This option adds a `ROUTE' target, which enables you to setup unusual
-+          routes. The ROUTE target is also able to change the incoming interface
-+          of a packet.
-+
-+          The target can be or not a final target. It has to be used inside the
-+          mangle table.
-+
-+          Not working as a module.
-+
- config IP6_NF_MANGLE
-        tristate "Packet mangling"
-        depends on IP6_NF_IPTABLES
-diff -u'rNF^function' linux-2.6.16.7/net/ipv6/netfilter/Makefile linux-2.6.16.7-ROUTE/net/ipv6/netfilter/Makefile
---- linux-2.6.16.7/net/ipv6/netfilter/Makefile  2006-06-14 16:05:44.000000000 +0200
-+++ linux-2.6.16.7-ROUTE/net/ipv6/netfilter/Makefile    2006-06-14 16:45:00.000000000 +0200
-@@ -22,6 +22,7 @@
- obj-$(CONFIG_IP6_NF_RAW) += ip6table_raw.o
- obj-$(CONFIG_IP6_NF_MATCH_HL) += ip6t_hl.o
- obj-$(CONFIG_IP6_NF_TARGET_REJECT) += ip6t_REJECT.o
-+obj-$(CONFIG_IP6_NF_TARGET_ROUTE) += ip6t_ROUTE.o
-
- # objects for l3 independent conntrack
- nf_conntrack_ipv6-objs  :=  nf_conntrack_l3proto_ipv6.o nf_conntrack_proto_icmpv6.o nf_conntrack_reasm.o
-diff -u'rNF^function' linux-2.6.16.7/net/ipv6/netfilter/ip6t_ROUTE.c linux-2.6.16.7-ROUTE/net/ipv6/netfilter/ip6t_ROUTE.c
---- linux-2.6.16.7/net/ipv6/netfilter/ip6t_ROUTE.c      1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.16.7-ROUTE/net/ipv6/netfilter/ip6t_ROUTE.c        2006-06-14 16:42:44.000000000 +0200
-@@ -0,0 +1,308 @@
+diff -urN linux-2.6.19.old/net/ipv6/netfilter/ip6t_ROUTE.c linux-2.6.19.dev/net/ipv6/netfilter/ip6t_ROUTE.c
+--- linux-2.6.19.old/net/ipv6/netfilter/ip6t_ROUTE.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.dev/net/ipv6/netfilter/ip6t_ROUTE.c	2006-12-14 03:13:49.000000000 +0100
+@@ -0,0 +1,302 @@
 +/*
 + * This implements the ROUTE v6 target, which enables you to setup unusual
 + * routes not supported by the standard kernel routing table.
@@ -798,8 +758,8 @@ diff -u'rNF^function' linux-2.6.16.7/net/ipv6/netfilter/ip6t_ROUTE.c linux-2.6.1
 +                 const struct net_device *in,
 +                 const struct net_device *out,
 +                 unsigned int hooknum,
-+                 const void *targinfo,
-+                 void *userinfo)
++		 const struct xt_target *target,
++                 const void *targinfo)
 +{
 +       const struct ip6t_route_target_info *route_info = targinfo;
 +       struct sk_buff *skb = *pskb;
@@ -865,20 +825,13 @@ diff -u'rNF^function' linux-2.6.16.7/net/ipv6/netfilter/ip6t_ROUTE.c linux-2.6.1
 +
 +static int
 +ip6t_route_checkentry(const char *tablename,
-+                     const struct ip6t_entry *e,
++                     const void *e,
++		     const struct xt_target *target,
 +                     void *targinfo,
-+                     unsigned int targinfosize,
 +                     unsigned int hook_mask)
 +{
 +       if (strcmp(tablename, "mangle") != 0) {
 +               printk("ip6t_ROUTE: can only be called from \"mangle\" table.\n");
-+               return 0;
-+       }
-+
-+       if (targinfosize != IP6T_ALIGN(sizeof(struct ip6t_route_target_info))) {
-+               printk(KERN_WARNING "ip6t_ROUTE: targinfosize %u != %Zu\n",
-+                      targinfosize,
-+                      IP6T_ALIGN(sizeof(struct ip6t_route_target_info)));
 +               return 0;
 +       }
 +
@@ -889,6 +842,7 @@ diff -u'rNF^function' linux-2.6.16.7/net/ipv6/netfilter/ip6t_ROUTE.c linux-2.6.1
 +static struct ip6t_target ip6t_route_reg = {
 +       .name       = "ROUTE",
 +       .target     = ip6t_route_target,
++       .targetsize = sizeof(struct ip6t_route_target_info),
 +       .checkentry = ip6t_route_checkentry,
 +       .me         = THIS_MODULE
 +};
@@ -912,3 +866,37 @@ diff -u'rNF^function' linux-2.6.16.7/net/ipv6/netfilter/ip6t_ROUTE.c linux-2.6.1
 +module_init(init);
 +module_exit(fini);
 +MODULE_LICENSE("GPL");
+diff -urN linux-2.6.19.old/net/ipv6/netfilter/Kconfig linux-2.6.19.dev/net/ipv6/netfilter/Kconfig
+--- linux-2.6.19.old/net/ipv6/netfilter/Kconfig	2006-12-14 03:13:49.000000000 +0100
++++ linux-2.6.19.dev/net/ipv6/netfilter/Kconfig	2006-12-14 03:13:49.000000000 +0100
+@@ -162,6 +162,19 @@
+ 
+ 	  To compile it as a module, choose M here.  If unsure, say N.
+ 
++config IP6_NF_TARGET_ROUTE
++        tristate "ROUTE target support"
++        depends on IP6_NF_MANGLE
++        help
++          This option adds a `ROUTE' target, which enables you to setup unusual
++          routes. The ROUTE target is also able to change the incoming interface
++          of a packet.
++
++          The target can be or not a final target. It has to be used inside the
++          mangle table.
++
++          Not working as a module.
++
+ config IP6_NF_MANGLE
+ 	tristate "Packet mangling"
+ 	depends on IP6_NF_IPTABLES
+diff -urN linux-2.6.19.old/net/ipv6/netfilter/Makefile linux-2.6.19.dev/net/ipv6/netfilter/Makefile
+--- linux-2.6.19.old/net/ipv6/netfilter/Makefile	2006-12-14 03:13:49.000000000 +0100
++++ linux-2.6.19.dev/net/ipv6/netfilter/Makefile	2006-12-14 03:13:49.000000000 +0100
+@@ -20,6 +20,7 @@
+ obj-$(CONFIG_IP6_NF_RAW) += ip6table_raw.o
+ obj-$(CONFIG_IP6_NF_MATCH_HL) += ip6t_hl.o
+ obj-$(CONFIG_IP6_NF_TARGET_REJECT) += ip6t_REJECT.o
++obj-$(CONFIG_IP6_NF_TARGET_ROUTE) += ip6t_ROUTE.o
+ 
+ # objects for l3 independent conntrack
+ nf_conntrack_ipv6-objs  :=  nf_conntrack_l3proto_ipv6.o nf_conntrack_proto_icmpv6.o nf_conntrack_reasm.o

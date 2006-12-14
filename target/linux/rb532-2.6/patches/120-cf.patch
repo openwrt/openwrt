@@ -26,7 +26,18 @@ diff -urN linux.old/drivers/block/Makefile linux.dev/drivers/block/Makefile
 diff -urN linux.old/drivers/block/rb500/ata.c linux.dev/drivers/block/rb500/ata.c
 --- linux.old/drivers/block/rb500/ata.c	1970-01-01 01:00:00.000000000 +0100
 +++ linux.dev/drivers/block/rb500/ata.c	2006-10-26 00:11:14.000000000 +0200
-@@ -0,0 +1,474 @@
+@@ -0,0 +1,485 @@
++/* CF-mips driver
++   This is a block driver for the direct (mmaped) interface to the CF-slot,
++   found in Routerboard.com's RB532 board
++   See SDK provided from routerboard.com.
++   
++   Module adapted By P.Christeas <p_christeas@yahoo.com>, 2005-6.
++   Cleaned up and adapted to platform_device by Felix Fietkau <nbd@openwrt.org>
++
++   This work is redistributed under the terms of the GNU General Public License.
++*/
++
 +#include <linux/kernel.h>	/* printk() */
 +#include <linux/module.h>	/* module to be loadable */
 +#include <linux/delay.h>
@@ -162,7 +173,7 @@ diff -urN linux.old/drivers/block/rb500/ata.c linux.dev/drivers/block/rb500/ata.
 +	return CF_TRANS_FAILED;
 +}
 +
-+static irqreturn_t cf_irq_handler(int irq, void *dev_id, struct pt_regs *regs)
++static irqreturn_t cf_irq_handler(int irq, void *dev_id)
 +{
 +	/* While tasklet has not disabled irq, irq will be retried all the time
 +	 * because of ILEVEL matching GPIO pin status => deadlock.
@@ -504,7 +515,18 @@ diff -urN linux.old/drivers/block/rb500/ata.c linux.dev/drivers/block/rb500/ata.
 diff -urN linux.old/drivers/block/rb500/ata.h linux.dev/drivers/block/rb500/ata.h
 --- linux.old/drivers/block/rb500/ata.h	1970-01-01 01:00:00.000000000 +0100
 +++ linux.dev/drivers/block/rb500/ata.h	2006-10-26 00:11:14.000000000 +0200
-@@ -0,0 +1,132 @@
+@@ -0,0 +1,143 @@
++/* CF-mips driver
++   This is a block driver for the direct (mmaped) interface to the CF-slot,
++   found in Routerboard.com's RB532 board
++   See SDK provided from routerboard.com.
++   
++   Module adapted By P.Christeas <p_christeas@yahoo.com>, 2005-6.
++   Cleaned up and adapted to platform_device by Felix Fietkau <nbd@openwrt.org>
++
++   This work is redistributed under the terms of the GNU General Public License.
++*/
++
 +#ifndef __CFMIPS_ATA_H__
 +#define __CFMIPS_ATA_H__
 +

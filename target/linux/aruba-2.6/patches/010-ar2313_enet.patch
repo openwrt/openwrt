@@ -21,7 +21,7 @@ diff -Nur linux-2.6.17/drivers/net/ar2313/ar2313.c linux-2.6.17-owrt/drivers/net
 + * 	modified for the AR2313.
 + */
 +
-+#include <linux/config.h>
++#include <linux/autoconf.h>
 +#include <linux/module.h>
 +#include <linux/version.h>
 +#include <linux/types.h>
@@ -1188,7 +1188,7 @@ diff -Nur linux-2.6.17/drivers/net/ar2313/ar2313.c linux-2.6.17-owrt/drivers/net
 +	tasklet_hi_schedule(&sp->rx_tasklet);
 +}
 +
-+static irqreturn_t ar2313_interrupt(int irq, void *dev_id, struct pt_regs *ptregs)
++static irqreturn_t ar2313_interrupt(int irq, void *dev_id)
 +{
 +    struct net_device *dev = (struct net_device *)dev_id;
 +    struct ar2313_private *sp = dev->priv;
@@ -1658,7 +1658,7 @@ diff -Nur linux-2.6.17/drivers/net/ar2313/ar2313.h linux-2.6.17-owrt/drivers/net
 +#ifndef _AR2313_H_
 +#define _AR2313_H_
 +
-+#include <linux/config.h>
++#include <linux/autoconf.h>
 +#include <asm/bootinfo.h>
 +#include "platform.h"
 +
@@ -1834,7 +1834,7 @@ diff -Nur linux-2.6.17/drivers/net/ar2313/ar2313.h linux-2.6.17-owrt/drivers/net
 +static void  ar2313_dump_regs(struct net_device *dev);
 +#endif
 +static void ar2313_load_rx_ring(struct net_device *dev, int bufs);
-+static irqreturn_t ar2313_interrupt(int irq, void *dev_id, struct pt_regs *regs);
++static irqreturn_t ar2313_interrupt(int irq, void *dev_id);
 +static int  ar2313_open(struct net_device *dev);
 +static int  ar2313_start_xmit(struct sk_buff *skb, struct net_device *dev);
 +static int  ar2313_close(struct net_device *dev);

@@ -6,9 +6,9 @@ diff -Nurb linux-2.6.16.1/drivers/usb/host/ehci.h linux-patched/drivers/usb/host
  
  	struct timer_list	watchdog;
 +	struct timer_list	softirq;
- 	struct notifier_block	reboot_notifier;
  	unsigned long		actions;
  	unsigned		stamp;
+ 	unsigned long		next_statechange;
 diff -Nurb linux-2.6.16.1/drivers/usb/host/ehci-hcd.c linux-patched/drivers/usb/host/ehci-hcd.c
 --- linux-2.6.16.1/drivers/usb/host/ehci-hcd.c	2006-03-27 22:49:02.000000000 -0800
 +++ linux-patched/drivers/usb/host/ehci-hcd.c	2006-04-07 13:20:13.000000000 -0700
@@ -24,13 +24,13 @@ diff -Nurb linux-2.6.16.1/drivers/usb/host/ehci-hcd.c linux-patched/drivers/usb/
  #include "ehci-sched.c"
  
  /*-------------------------------------------------------------------------*/
-+static irqreturn_t ehci_irq (struct usb_hcd *hcd, struct pt_regs *regs);
++static irqreturn_t ehci_irq (struct usb_hcd *hcd);
 +
 +static void ehci_softirq (unsigned long param)
 +{
 +	struct ehci_hcd         *ehci = (struct ehci_hcd *) param;
 +
-+	if (ehci_irq(ehci_to_hcd(ehci),0) != IRQ_NONE)
++	if (ehci_irq(ehci_to_hcd(ehci)) != IRQ_NONE)
 +		set_bit(HCD_FLAG_SAW_IRQ, &(ehci_to_hcd(ehci))->flags);
 +	mod_timer (&ehci->softirq, jiffies + EHCI_SOFTIRQ);
 +}

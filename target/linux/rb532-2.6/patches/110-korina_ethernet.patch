@@ -1,7 +1,7 @@
 diff -urN linux.old/drivers/net/Kconfig linux.dev/drivers/net/Kconfig
---- linux.old/drivers/net/Kconfig	2006-06-08 20:21:20.000000000 +0200
-+++ linux.dev/drivers/net/Kconfig	2006-06-08 20:19:40.000000000 +0200
-@@ -310,6 +310,13 @@
+--- linux.old/drivers/net/Kconfig	2006-12-14 03:13:47.000000000 +0100
++++ linux.dev/drivers/net/Kconfig	2006-12-14 03:18:45.000000000 +0100
+@@ -313,6 +313,13 @@
  
  source "drivers/net/arm/Kconfig"
  
@@ -17,7 +17,7 @@ diff -urN linux.old/drivers/net/Kconfig linux.dev/drivers/net/Kconfig
  	depends on NET_ETHERNET && PPC_PMAC && PPC32
 diff -urN linux.old/drivers/net/korina.c linux.dev/drivers/net/korina.c
 --- linux.old/drivers/net/korina.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/net/korina.c	2006-06-09 00:48:40.000000000 +0200
++++ linux.dev/drivers/net/korina.c	2006-12-14 03:18:45.000000000 +0100
 @@ -0,0 +1,1159 @@
 +/**************************************************************************
 + *
@@ -59,7 +59,7 @@ diff -urN linux.old/drivers/net/korina.c linux.dev/drivers/net/korina.c
 + **************************************************************************
 + */
 +
-+#include <linux/config.h>
++#include <linux/autoconf.h>
 +#include <linux/module.h>
 +#include <linux/kernel.h>
 +#include <linux/moduleparam.h>
@@ -573,7 +573,7 @@ diff -urN linux.old/drivers/net/korina.c linux.dev/drivers/net/korina.c
 +#ifdef	RC32434_REVISION	
 +/* Ethernet Rx Overflow interrupt */
 +static irqreturn_t
-+rc32434_ovr_interrupt(int irq, void *dev_id, struct pt_regs * regs)
++rc32434_ovr_interrupt(int irq, void *dev_id)
 +{
 +	struct net_device *dev = (struct net_device *)dev_id;
 +	struct rc32434_local *lp;
@@ -606,7 +606,7 @@ diff -urN linux.old/drivers/net/korina.c linux.dev/drivers/net/korina.c
 +
 +/* Ethernet Tx Underflow interrupt */
 +static irqreturn_t
-+rc32434_und_interrupt(int irq, void *dev_id, struct pt_regs * regs)
++rc32434_und_interrupt(int irq, void *dev_id)
 +{
 +	struct net_device *dev = (struct net_device *)dev_id;
 +	struct rc32434_local *lp;
@@ -639,7 +639,7 @@ diff -urN linux.old/drivers/net/korina.c linux.dev/drivers/net/korina.c
 +
 +/* Ethernet Rx DMA interrupt */
 +static irqreturn_t
-+rc32434_rx_dma_interrupt(int irq, void *dev_id, struct pt_regs * regs)
++rc32434_rx_dma_interrupt(int irq, void *dev_id)
 +{
 +	struct net_device *dev = (struct net_device *)dev_id;
 +	struct rc32434_local* lp;
@@ -853,7 +853,7 @@ diff -urN linux.old/drivers/net/korina.c linux.dev/drivers/net/korina.c
 +
 +/* Ethernet Tx DMA interrupt */
 +static irqreturn_t
-+rc32434_tx_dma_interrupt(int irq, void *dev_id, struct pt_regs * regs)
++rc32434_tx_dma_interrupt(int irq, void *dev_id)
 +{
 +	struct net_device *dev = (struct net_device *)dev_id;
 +	struct rc32434_local *lp;
@@ -1179,8 +1179,8 @@ diff -urN linux.old/drivers/net/korina.c linux.dev/drivers/net/korina.c
 +module_init(rc32434_init_module);
 +module_exit(rc32434_cleanup_module);
 diff -urN linux.old/drivers/net/Makefile linux.dev/drivers/net/Makefile
---- linux.old/drivers/net/Makefile	2006-06-08 20:21:20.000000000 +0200
-+++ linux.dev/drivers/net/Makefile	2006-06-08 20:19:40.000000000 +0200
+--- linux.old/drivers/net/Makefile	2006-12-14 03:13:47.000000000 +0100
++++ linux.dev/drivers/net/Makefile	2006-12-14 03:18:45.000000000 +0100
 @@ -23,6 +23,8 @@
  #
  obj-$(CONFIG_PLIP) += plip.o
@@ -1192,7 +1192,7 @@ diff -urN linux.old/drivers/net/Makefile linux.dev/drivers/net/Makefile
  obj-$(CONFIG_HAPPYMEAL) += sunhme.o
 diff -urN linux.old/drivers/net/rc32434_eth.h linux.dev/drivers/net/rc32434_eth.h
 --- linux.old/drivers/net/rc32434_eth.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/net/rc32434_eth.h	2006-06-08 21:57:12.000000000 +0200
++++ linux.dev/drivers/net/rc32434_eth.h	2006-12-14 03:18:45.000000000 +0100
 @@ -0,0 +1,178 @@
 +/**************************************************************************
 + *
@@ -1337,11 +1337,11 @@ diff -urN linux.old/drivers/net/rc32434_eth.h linux.dev/drivers/net/rc32434_eth.
 +static int rc32434_open(struct net_device *dev);
 +static int rc32434_send_packet(struct sk_buff *skb, struct net_device *dev);
 +static void rc32434_mii_handler(unsigned long data);
-+static irqreturn_t  rc32434_und_interrupt(int irq, void *dev_id, struct pt_regs * regs);
-+static irqreturn_t rc32434_rx_dma_interrupt(int irq, void *dev_id, struct pt_regs * regs);
-+static irqreturn_t rc32434_tx_dma_interrupt(int irq, void *dev_id, struct pt_regs * regs);
++static irqreturn_t  rc32434_und_interrupt(int irq, void *dev_id);
++static irqreturn_t rc32434_rx_dma_interrupt(int irq, void *dev_id);
++static irqreturn_t rc32434_tx_dma_interrupt(int irq, void *dev_id);
 +#ifdef	RC32434_REVISION	
-+static irqreturn_t rc32434_ovr_interrupt(int irq, void *dev_id, struct pt_regs * regs);
++static irqreturn_t rc32434_ovr_interrupt(int irq, void *dev_id);
 +#endif
 +static int  rc32434_close(struct net_device *dev);
 +static struct net_device_stats *rc32434_get_stats(struct net_device *dev);
@@ -1372,4 +1372,3 @@ diff -urN linux.old/drivers/net/rc32434_eth.h linux.dev/drivers/net/rc32434_eth.
 +	__raw_writel(0, &ch->dmadptr); 
 +	__raw_writel(0, &ch->dmandptr); 
 +}
-

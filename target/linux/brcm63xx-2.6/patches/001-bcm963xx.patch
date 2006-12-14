@@ -710,7 +710,7 @@ diff -urN linux.old/arch/mips/bcm963xx/board.c linux.dev/arch/mips/bcm963xx/boar
 +
 +/* DyingGasp function prototype */
 +static void __init kerSysDyingGaspMapIntr(void);
-+static irqreturn_t kerSysDyingGaspIsr(int irq, void * dev_id, struct pt_regs * regs);
++static irqreturn_t kerSysDyingGaspIsr(int irq, void * dev_id);
 +static void __init kerSysInitDyingGaspHandler( void );
 +static void __exit kerSysDeinitDyingGaspHandler( void );
 +/* -DyingGasp function prototype - */
@@ -982,7 +982,7 @@ diff -urN linux.old/arch/mips/bcm963xx/board.c linux.dev/arch/mips/bcm963xx/boar
 +}
 +
 +#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0))
-+static irqreturn_t kerSysDyingGaspIsr(int irq, void * dev_id, struct pt_regs * regs)
++static irqreturn_t kerSysDyingGaspIsr(int irq, void * dev_id)
 +#else
 +static unsigned int kerSysDyingGaspIsr(void)
 +#endif
@@ -5577,7 +5577,7 @@ diff -urN linux.old/arch/mips/bcm963xx/include/bcm_intr.h linux.dev/arch/mips/bc
 +
 +/* defines */
 +struct pt_regs;
-+typedef int (*FN_HANDLER) (int, void *, struct pt_regs *);
++typedef int (*FN_HANDLER) (int, void *);
 +
 +/* prototypes */
 +extern void enable_brcm_irq(unsigned int irq);
@@ -6454,7 +6454,7 @@ diff -urN linux.old/arch/mips/bcm963xx/int-handler.S linux.dev/arch/mips/bcm963x
 + * Generic interrupt handler for Broadcom MIPS boards
 + */
 +
-+#include <linux/config.h>
++#include <linux/autoconf.h>
 +
 +#include <asm/asm.h>
 +#include <asm/mipsregs.h>
@@ -6555,13 +6555,13 @@ diff -urN linux.old/arch/mips/bcm963xx/irq.c linux.dev/arch/mips/bcm963xx/irq.c
 +	}
 +	if (pendingIrqs & irqBit) {
 +			PERF->IrqMask &= ~irqBit; // mask
-+			do_IRQ(isrNumber + INTERNAL_ISR_TABLE_OFFSET, regs);
++			do_IRQ(isrNumber + INTERNAL_ISR_TABLE_OFFSET);
 +		break;
 +	}
 +	}
 +}
 +
-+static void irq_dispatch_ext(uint32 irq, struct pt_regs *regs)
++static void irq_dispatch_ext(uint32 irq)
 +{
 +	if (!(PERF->ExtIrqCfg & (1 << (irq - INTERRUPT_ID_EXTERNAL_0 + EI_MASK_SHFT)))) {
 +	printk("**** Ext IRQ mask. Should not dispatch ****\n");
@@ -6569,7 +6569,7 @@ diff -urN linux.old/arch/mips/bcm963xx/irq.c linux.dev/arch/mips/bcm963xx/irq.c
 +	/* disable and clear interrupt in the controller */
 +	PERF->ExtIrqCfg |= (1 << (irq - INTERRUPT_ID_EXTERNAL_0 + EI_CLEAR_SHFT));
 +	PERF->ExtIrqCfg &= ~(1 << (irq - INTERRUPT_ID_EXTERNAL_0 + EI_MASK_SHFT));
-+	do_IRQ(irq, regs);
++	do_IRQ(irq);
 +}
 +
 +
@@ -6584,13 +6584,13 @@ diff -urN linux.old/arch/mips/bcm963xx/irq.c linux.dev/arch/mips/bcm963xx/irq.c
 +		else if (cause & CAUSEF_IP2)
 +			irq_dispatch_int(regs);
 +		else if (cause & CAUSEF_IP3)
-+			irq_dispatch_ext(INTERRUPT_ID_EXTERNAL_0, regs);
++			irq_dispatch_ext(INTERRUPT_ID_EXTERNAL_0);
 +		else if (cause & CAUSEF_IP4)
-+			irq_dispatch_ext(INTERRUPT_ID_EXTERNAL_1, regs);
++			irq_dispatch_ext(INTERRUPT_ID_EXTERNAL_1);
 +		else if (cause & CAUSEF_IP5)
-+			irq_dispatch_ext(INTERRUPT_ID_EXTERNAL_2, regs);
++			irq_dispatch_ext(INTERRUPT_ID_EXTERNAL_2);
 +		else if (cause & CAUSEF_IP6)
-+			irq_dispatch_ext(INTERRUPT_ID_EXTERNAL_3, regs);
++			irq_dispatch_ext(INTERRUPT_ID_EXTERNAL_3);
 +		local_irq_disable();
 +	}
 +}
@@ -7095,7 +7095,7 @@ diff -urN linux.old/arch/mips/bcm963xx/ser_init.c linux.dev/arch/mips/bcm963xx/s
 + *   
 + */
 +
-+#include <linux/config.h>
++#include <linux/autoconf.h>
 +#include <linux/init.h>
 +#include <linux/interrupt.h>
 +#include <linux/kernel.h>
@@ -7277,7 +7277,7 @@ diff -urN linux.old/arch/mips/bcm963xx/setup.c linux.dev/arch/mips/bcm963xx/setu
 + * Generic setup routines for Broadcom 963xx MIPS boards
 + */
 +
-+#include <linux/config.h>
++#include <linux/autoconf.h>
 +#include <linux/init.h>
 +#include <linux/interrupt.h>
 +#include <linux/kernel.h>
@@ -7812,7 +7812,7 @@ diff -urN linux.old/arch/mips/bcm963xx/time.c linux.dev/arch/mips/bcm963xx/time.
 + * Setup time for Broadcom 963xx MIPS boards
 + */
 +
-+#include <linux/config.h>
++#include <linux/autoconf.h>
 +#include <linux/init.h>
 +#include <linux/kernel_stat.h>
 +#include <linux/sched.h>
@@ -8732,7 +8732,7 @@ diff -urN linux.old/drivers/serial/bcm63xx_cons.c linux.dev/drivers/serial/bcm63
 + * ------------------------------------------------------------
 + */
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
-+static irqreturn_t bcm_interrupt (int irq, void * dev, struct pt_regs * regs)
++static irqreturn_t bcm_interrupt (int irq, void * dev)
 +#else
 +static void bcm_interrupt (int irq, void * dev, struct pt_regs * regs)
 +#endif

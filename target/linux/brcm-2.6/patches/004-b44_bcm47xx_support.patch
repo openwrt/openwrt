@@ -1,6 +1,6 @@
-diff -Nur linux-2.6.17/drivers/net/b44.c linux-2.6.17-owrt/drivers/net/b44.c
---- linux-2.6.17/drivers/net/b44.c	2006-06-18 03:49:35.000000000 +0200
-+++ linux-2.6.17-owrt/drivers/net/b44.c	2006-06-18 16:24:14.000000000 +0200
+diff -urN linux-2.6.19.ref/drivers/net/b44.c linux-2.6.19/drivers/net/b44.c
+--- linux-2.6.19.ref/drivers/net/b44.c	2006-11-29 22:57:37.000000000 +0100
++++ linux-2.6.19/drivers/net/b44.c	2006-12-04 21:34:14.000000000 +0100
 @@ -1,7 +1,9 @@
 -/* b44.c: Broadcom 4400 device driver.
 +/* b44.c: Broadcom 4400/47xx device driver.
@@ -14,8 +14,8 @@ diff -Nur linux-2.6.17/drivers/net/b44.c linux-2.6.17-owrt/drivers/net/b44.c
   *
   * Distribute under GPL.
 @@ -32,6 +34,28 @@
- #define DRV_MODULE_VERSION	"1.00"
- #define DRV_MODULE_RELDATE	"Apr 7, 2006"
+ #define DRV_MODULE_VERSION	"1.01"
+ #define DRV_MODULE_RELDATE	"Jun 16, 2006"
  
 +#ifdef CONFIG_BCM947XX
 +extern char *nvram_get(char *name);
@@ -42,7 +42,7 @@ diff -Nur linux-2.6.17/drivers/net/b44.c linux-2.6.17-owrt/drivers/net/b44.c
  #define B44_DEF_MSG_ENABLE	  \
  	(NETIF_MSG_DRV		| \
  	 NETIF_MSG_PROBE	| \
-@@ -78,8 +102,8 @@
+@@ -87,8 +111,8 @@
  static char version[] __devinitdata =
  	DRV_MODULE_NAME ".c:v" DRV_MODULE_VERSION " (" DRV_MODULE_RELDATE ")\n";
  
@@ -53,7 +53,7 @@ diff -Nur linux-2.6.17/drivers/net/b44.c linux-2.6.17-owrt/drivers/net/b44.c
  MODULE_LICENSE("GPL");
  MODULE_VERSION(DRV_MODULE_VERSION);
  
-@@ -94,6 +118,10 @@
+@@ -103,6 +127,10 @@
  	  PCI_ANY_ID, PCI_ANY_ID, 0, 0, 0UL },
  	{ PCI_VENDOR_ID_BROADCOM, PCI_DEVICE_ID_BCM4401B1,
  	  PCI_ANY_ID, PCI_ANY_ID, 0, 0, 0UL },
@@ -64,7 +64,7 @@ diff -Nur linux-2.6.17/drivers/net/b44.c linux-2.6.17-owrt/drivers/net/b44.c
  	{ }	/* terminate list with empty entry */
  };
  
-@@ -132,17 +160,6 @@
+@@ -141,17 +169,6 @@
  	                              dma_desc_sync_size, dir);
  }
  
@@ -82,7 +82,7 @@ diff -Nur linux-2.6.17/drivers/net/b44.c linux-2.6.17-owrt/drivers/net/b44.c
  static int b44_wait_bit(struct b44 *bp, unsigned long reg,
  			u32 bit, unsigned long timeout, const int clear)
  {
-@@ -269,6 +286,10 @@
+@@ -278,6 +295,10 @@
  		break;
  	};
  #endif
@@ -93,7 +93,7 @@ diff -Nur linux-2.6.17/drivers/net/b44.c linux-2.6.17-owrt/drivers/net/b44.c
  	return 0;
  }
  
-@@ -278,6 +299,30 @@
+@@ -287,6 +308,30 @@
  		== SBTMSLOW_CLOCK);
  }
  
@@ -124,7 +124,7 @@ diff -Nur linux-2.6.17/drivers/net/b44.c linux-2.6.17-owrt/drivers/net/b44.c
  static void __b44_cam_write(struct b44 *bp, unsigned char *data, int index)
  {
  	u32 val;
-@@ -314,14 +359,14 @@
+@@ -323,14 +368,14 @@
  	bw32(bp, B44_IMASK, bp->imask);
  }
  
@@ -141,7 +141,7 @@ diff -Nur linux-2.6.17/drivers/net/b44.c linux-2.6.17-owrt/drivers/net/b44.c
  			     (reg << MDIO_DATA_RA_SHIFT) |
  			     (MDIO_TA_VALID << MDIO_DATA_TA_SHIFT)));
  	err = b44_wait_bit(bp, B44_EMAC_ISTAT, EMAC_INT_MII, 100, 0);
-@@ -330,18 +375,34 @@
+@@ -339,18 +384,34 @@
  	return err;
  }
  
@@ -178,7 +178,7 @@ diff -Nur linux-2.6.17/drivers/net/b44.c linux-2.6.17-owrt/drivers/net/b44.c
  /* miilib interface */
  /* FIXME FIXME: phy_id is ignored, bp->phy_addr use is unconditional
   * due to code existing before miilib use was added to this driver.
-@@ -370,6 +431,8 @@
+@@ -379,6 +440,8 @@
  	u32 val;
  	int err;
  
@@ -187,7 +187,7 @@ diff -Nur linux-2.6.17/drivers/net/b44.c linux-2.6.17-owrt/drivers/net/b44.c
  	err = b44_writephy(bp, MII_BMCR, BMCR_RESET);
  	if (err)
  		return err;
-@@ -433,6 +496,22 @@
+@@ -442,6 +505,22 @@
  	u32 val;
  	int err;
  
@@ -210,7 +210,7 @@ diff -Nur linux-2.6.17/drivers/net/b44.c linux-2.6.17-owrt/drivers/net/b44.c
  	if ((err = b44_readphy(bp, B44_MII_ALEDCTRL, &val)) != 0)
  		goto out;
  	if ((err = b44_writephy(bp, B44_MII_ALEDCTRL,
-@@ -528,6 +607,19 @@
+@@ -537,6 +616,19 @@
  {
  	u32 bmsr, aux;
  
@@ -230,7 +230,7 @@ diff -Nur linux-2.6.17/drivers/net/b44.c linux-2.6.17-owrt/drivers/net/b44.c
  	if (!b44_readphy(bp, MII_BMSR, &bmsr) &&
  	    !b44_readphy(bp, B44_MII_AUXCTRL, &aux) &&
  	    (bmsr != 0xffff)) {
-@@ -1282,9 +1374,10 @@
+@@ -1292,9 +1384,10 @@
  		bw32(bp, B44_DMARX_CTRL, 0);
  		bp->rx_prod = bp->rx_cons = 0;
  	} else {
@@ -244,7 +244,7 @@ diff -Nur linux-2.6.17/drivers/net/b44.c linux-2.6.17-owrt/drivers/net/b44.c
  	}
  
  	ssb_core_reset(bp);
-@@ -1292,8 +1385,14 @@
+@@ -1302,8 +1395,14 @@
  	b44_clear_stats(bp);
  
  	/* Make PHY accessible. */
@@ -260,7 +260,7 @@ diff -Nur linux-2.6.17/drivers/net/b44.c linux-2.6.17-owrt/drivers/net/b44.c
  	br32(bp, B44_MDIO_CTRL);
  
  	if (!(br32(bp, B44_DEVCTRL) & DEVCTRL_IPP)) {
-@@ -1837,18 +1936,297 @@
+@@ -2034,18 +2133,297 @@
  	.get_perm_addr		= ethtool_op_get_perm_addr,
  };
  
@@ -447,7 +447,7 @@ diff -Nur linux-2.6.17/drivers/net/b44.c linux-2.6.17-owrt/drivers/net/b44.c
 +
 +		b44_halt(bp);
 +		b44_init_rings(bp);
-+		b44_init_hw(bp);
++		b44_init_hw(bp, 1);
 +		netif_wake_queue(bp->dev);
 +		spin_unlock_irq(&bp->lock);
 +
@@ -490,7 +490,7 @@ diff -Nur linux-2.6.17/drivers/net/b44.c linux-2.6.17-owrt/drivers/net/b44.c
 +		if (bp->flags & B44_FLAG_PAUSE_AUTO) {
 +			b44_halt(bp);
 +			b44_init_rings(bp);
-+			b44_init_hw(bp);
++			b44_init_hw(bp, 1);
 +		} else {
 +			__b44_set_flow_ctrl(bp, bp->flags);
 +		}
@@ -562,7 +562,7 @@ diff -Nur linux-2.6.17/drivers/net/b44.c linux-2.6.17-owrt/drivers/net/b44.c
  out:
  	return err;
  }
-@@ -1868,27 +2246,60 @@
+@@ -2065,27 +2443,60 @@
  static int __devinit b44_get_invariants(struct b44 *bp)
  {
  	u8 eeprom[128];
@@ -639,7 +639,7 @@ diff -Nur linux-2.6.17/drivers/net/b44.c linux-2.6.17-owrt/drivers/net/b44.c
  
  	/* With this, plus the rx_header prepended to the data by the
  	 * hardware, we'll land the ethernet header on a 2-byte boundary.
-@@ -1898,7 +2309,6 @@
+@@ -2095,7 +2506,6 @@
  	bp->imask = IMASK_DEF;
  
  	bp->core_unit = ssb_core_unit(bp);
@@ -647,7 +647,7 @@ diff -Nur linux-2.6.17/drivers/net/b44.c linux-2.6.17-owrt/drivers/net/b44.c
  
  	/* XXX - really required?
  	   bp->flags |= B44_FLAG_BUGGY_TXPTR;
-@@ -2048,11 +2458,17 @@
+@@ -2246,11 +2656,17 @@
  	 */
  	b44_chip_reset(bp);
  
@@ -666,10 +666,10 @@ diff -Nur linux-2.6.17/drivers/net/b44.c linux-2.6.17-owrt/drivers/net/b44.c
  	return 0;
  
  err_out_iounmap:
-diff -Nur linux-2.6.17/drivers/net/b44.h linux-2.6.17-owrt/drivers/net/b44.h
---- linux-2.6.17/drivers/net/b44.h	2006-06-18 03:49:35.000000000 +0200
-+++ linux-2.6.17-owrt/drivers/net/b44.h	2006-06-18 16:01:10.000000000 +0200
-@@ -292,6 +292,10 @@
+diff -urN linux-2.6.19.ref/drivers/net/b44.h linux-2.6.19/drivers/net/b44.h
+--- linux-2.6.19.ref/drivers/net/b44.h	2006-11-29 22:57:37.000000000 +0100
++++ linux-2.6.19/drivers/net/b44.h	2006-12-04 21:34:14.000000000 +0100
+@@ -297,6 +297,10 @@
  #define SSB_PCI_MASK1		0xfc000000
  #define SSB_PCI_MASK2		0xc0000000
  
@@ -680,7 +680,7 @@ diff -Nur linux-2.6.17/drivers/net/b44.h linux-2.6.17-owrt/drivers/net/b44.h
  /* 4400 PHY registers */
  #define B44_MII_AUXCTRL		24	/* Auxiliary Control */
  #define  MII_AUXCTRL_DUPLEX	0x0001  /* Full Duplex */
-@@ -345,6 +349,8 @@
+@@ -350,6 +354,8 @@
  };
  
  #define B44_MCAST_TABLE_SIZE	32
@@ -689,11 +689,11 @@ diff -Nur linux-2.6.17/drivers/net/b44.h linux-2.6.17-owrt/drivers/net/b44.h
  
  #define	B44_STAT_REG_DECLARE		\
  	_B44(tx_good_octets)		\
-@@ -420,6 +426,7 @@
- 
- 	u32			dma_offset;
- 	u32			flags;
-+#define B44_FLAG_INIT_COMPLETE	0x00000001
+@@ -428,6 +434,7 @@
+ #define B44_FLAG_B0_ANDLATER	0x00000001
  #define B44_FLAG_BUGGY_TXPTR	0x00000002
  #define B44_FLAG_REORDER_BUG	0x00000004
++#define B44_FLAG_INIT_COMPLETE	0x00000008
  #define B44_FLAG_PAUSE_AUTO	0x00008000
+ #define B44_FLAG_FULL_DUPLEX	0x00010000
+ #define B44_FLAG_100_BASE_T	0x00020000
