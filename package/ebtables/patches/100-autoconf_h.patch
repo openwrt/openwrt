@@ -1,0 +1,12 @@
+diff -ur ebtables.old/include/linux/netfilter_bridge.h ebtables.dev/include/linux/netfilter_bridge.h
+--- ebtables.old/include/linux/netfilter_bridge.h	2006-03-30 19:24:57.000000000 +0200
++++ ebtables.dev/include/linux/netfilter_bridge.h	2006-12-14 20:59:16.000000000 +0100
+@@ -4,7 +4,7 @@
+ /* bridge-specific defines for netfilter. 
+  */
+ 
+-#include <linux/config.h>
++#include <linux/autoconf.h>
+ #include <linux/netfilter.h>
+ #if defined(__KERNEL__) && defined(CONFIG_BRIDGE_NETFILTER)
+ #include <asm/atomic.h>
