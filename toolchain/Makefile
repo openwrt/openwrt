@@ -25,7 +25,10 @@ install: $(TARGETS_INSTALL)
 clean: $(TARGETS_CLEAN)
 $(TARGETS_INSTALL): $(STAGING_DIR)/$(REAL_GNU_TARGET_NAME)
 
-uClibc-prepare: ccache-prepare kernel-headers-prepare
+ifeq ($(CONFIG_CCACHE),y)
+  uClibc-prepare: ccache-install
+endif
+uClibc-prepare: kernel-headers-prepare
 ifeq ($(CONFIG_NATIVE_TOOLCHAIN),)
   binutils-prepare: uClibc-prepare
   gcc-prepare: binutils-install
