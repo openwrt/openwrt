@@ -23,7 +23,7 @@ uci_load() {
 	config_load "$PACKAGE"
 	local PACKAGE_BASE="$(basename "$PACKAGE")"
 	[ -f "/tmp/.uci/${PACKAGE_BASE}" ] && {
-		. "/tmp/.uci/${PACKAGE_BASE}" 2>&/dev/null >&/dev/null
+		. "/tmp/.uci/${PACKAGE_BASE}" 2>/dev/null >/dev/null
 		config_cb
 	}
 }
