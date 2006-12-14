@@ -41,7 +41,7 @@ ifeq ($(ARCH),powerpc)
 endif
 
 BUS:=PCI
-ifneq ($(CONFIG_LINUX_2_4_AR531X),)
+ifneq ($(CONFIG_LINUX_2_6_AR531X),)
   BUS:=AHB
 endif
 ifneq ($(CONFIG_LINUX_2_6_ARUBA),)
