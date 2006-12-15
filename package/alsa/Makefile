@@ -10,12 +10,12 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=alsa-driver
-PKG_VERSION:=1.0.11
+PKG_VERSION:=1.0.14rc1
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=ftp://ftp.alsa-project.org/pub/driver/
-PKG_MD5SUM:=57534e4297cd683371402220e3753885
+PKG_MD5SUM:=4cff99be4b225e96663fbd61cabe3182
 PKG_CAT:=bzcat
 
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
