@@ -24,6 +24,7 @@ PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 include $(INCLUDE_DIR)/package.mk
 
 define Package/shfs/Default
+  DEPENDS:=@BROKEN
   TITLE:=ShFS
   DESCRIPTION:=\
 	ShFS is a simple and easy to use Linux kernel module which allows you to \\\
@@ -37,7 +38,7 @@ define Package/kmod-shfs
   $(call Package/shfs/Default)
   SECTION:=kernel
   CATEGORY:=Kernel drivers
-  DEPENDS:=
+  DEPENDS+=
   TITLE+= (kernel module)
   DESCRIPTION+=\\\
 	\\\
@@ -49,7 +50,7 @@ define Package/shfs-utils
   $(call Package/shfs/Default)
   SECTION:=utils
   CATEGORY:=Utilities
-  DEPENDS:=+kmod-shfs
+  DEPENDS+=+kmod-shfs
   TITLE+= (utilities)
   DESCRIPTION+=\\\
 	\\\

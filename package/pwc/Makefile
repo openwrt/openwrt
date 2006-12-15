@@ -24,7 +24,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/kmod-pwc
   SECTION:=kernel
   CATEGORY:=Kernel drivers
-  DEPENDS:=@LINUX_2_6
+  DEPENDS:=@BROKEN @LINUX_2_6
   TITLE:=USB Philips camera driver
   URL:=http://www.saillard.org/linux/pwc/
   VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
