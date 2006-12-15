@@ -1,0 +1,12 @@
+diff -bruN openswan-2.4.7-old/linux/net/ipsec/pfkey_v2.c openswan-2.4.7-new/linux/net/ipsec/pfkey_v2.c
+--- openswan-2.4.7-old/linux/net/ipsec/pfkey_v2.c	2006-10-10 22:43:28.000000000 +0200
++++ openswan-2.4.7-new/linux/net/ipsec/pfkey_v2.c	2006-12-15 17:29:02.000000000 +0100
+@@ -1503,7 +1503,7 @@
+ 	
+         printk(KERN_INFO "klips_info:pfkey_cleanup: "
+ 	       "shutting down PF_KEY domain sockets.\n");
+-        error |= sock_unregister(PF_KEY);
++        sock_unregister(PF_KEY);
+ 
+ 	error |= supported_remove_all(SADB_SATYPE_AH);
+ 	error |= supported_remove_all(SADB_SATYPE_ESP);

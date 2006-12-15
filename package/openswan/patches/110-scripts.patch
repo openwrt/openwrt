@@ -153,91 +153,77 @@ diff -urN openswan.old/programs/starter/netkey.c openswan.dev/programs/starter/n
  		}
  		if (stat(PROC_NETKEY,&stb)==0) {
  			_netkey_module_loaded = 1;
-diff -urN openswan.old/programs/_startklips/_startklips.in openswan.dev/programs/_startklips/_startklips.in
---- openswan.old/programs/_startklips/_startklips.in	2006-10-08 20:43:21.000000000 +0200
-+++ openswan.dev/programs/_startklips/_startklips.in	2006-10-08 20:41:46.000000000 +0200
-@@ -242,7 +242,7 @@
-         fi
-         if test -f $moduleinstplace/$wantgoo
-         then
--                echo "modprobe failed, but found matching template module $wantgoo."
-+                echo "insmod failed, but found matching template module $wantgoo."
-                 echo "Copying $moduleinstplace/$wantgoo to $module."
-                 rm -f $module
-                 mkdir -p $moduleplace
-@@ -262,15 +262,15 @@
+diff -ruN openswan-2.4.7-old/programs/_startklips/_startklips.in openswan-2.4.7-new/programs/_startklips/_startklips.in
+--- openswan-2.4.7-old/programs/_startklips/_startklips.in	2006-12-15 16:29:48.000000000 +0100
++++ openswan-2.4.7-new/programs/_startklips/_startklips.in	2006-12-15 17:18:52.000000000 +0100
+@@ -269,16 +269,16 @@
      echo "FATAL ERROR: Both KLIPS and NETKEY IPsec code is present in kernel"
      exit
  fi
 -if test ! -f $ipsecversion && test ! -f $netkey && modprobe -qn ipsec
-+if test ! -f $ipsecversion && test ! -f $netkey && insmod -q ipsec
++if test ! -f $ipsecversion && test ! -f $netkey
  then
-     # statically compiled KLIPS/NETKEY not found; try to load the module
--    modprobe ipsec
-+    insmod ipsec
+ 	# statically compiled KLIPS/NETKEY not found; but there seems to be an ipsec module
+-	modprobe ipsec 2> /dev/null
++	insmod -q ipsec 2> /dev/null
  fi
  
- if test ! -f $ipsecversion && test ! -f $netkey
+-if test ! -f $ipsecversion && test ! -f $netkey && modprobe -qn af_key
++if test ! -f $ipsecversion && test ! -f $netkey
  then
--	modprobe -v af_key
-+	insmod -v af_key
+ 	# netkey should work then
+-	modprobe af_key 2> /dev/null
++	insmod -q af_key 2> /dev/null
  fi
+ if test ! -f $ipsecversion && test ! -f $netkey 
+ then
+@@ -291,27 +291,27 @@
+ # modules shared between klips and netkey
+ if test -f $modules
+ then
+-	# we modprobe hw_random so ipsec verify can complain about not using it
+-	modprobe -q hw_random 2> /dev/null
++	# we insmod hw_random so ipsec verify can complain about not using it
++	insmod -q hw_random 2> /dev/null
+ 	# padlock must load before aes module
+-	modprobe -q padlock 2> /dev/null
++	insmod -q padlock 2> /dev/null
+ 	# load the most common ciphers/algo's
+-	modprobe -q sha256 2> /dev/null
+-	modprobe -q sha1 2> /dev/null
+-	modprobe -q md5 2> /dev/null
+-	modprobe -q des 2> /dev/null
+-	modprobe -q aes 2> /dev/null
++	insmod -q sha256 2> /dev/null
++	insmod -q sha1 2> /dev/null
++	insmod -q md5 2> /dev/null
++	insmod -q des 2> /dev/null
++	insmod -q aes 2> /dev/null
  
- if test -f $netkey
-@@ -278,25 +278,25 @@
- 	klips=false
- 	if test -f $modules
+ 	if test -f $netkey
  	then
--		modprobe -qv ah4
--		modprobe -qv esp4
--		modprobe -qv ipcomp
-+		insmod -qv ah4
-+		insmod -qv esp4
-+		insmod -qv ipcomp
+ 		klips=false
+-		modprobe -q ah4 2> /dev/null
+-		modprobe -q esp4 2> /dev/null
+-		modprobe -q ipcomp 2> /dev/null
++		insmod -q ah4 2> /dev/null
++		insmod -q esp4 2> /dev/null
++		insmod -q ipcomp 2> /dev/null
  		#  xfrm4_tunnel is needed by ipip and ipcomp
--		modprobe -qv xfrm4_tunnel
-+		insmod -qv xfrm4_tunnel
+-		modprobe -q xfrm4_tunnel 2> /dev/null
++		insmod -q xfrm4_tunnel 2> /dev/null
  		# xfrm_user contains netlink support for IPsec 
--		modprobe -qv xfrm_user
-+		insmod -qv xfrm_user
- 		if [ -n "`cat /proc/cpuinfo |grep Nehemiah`" ]
- 		then
- 			echo "VIA Nehemiah detected, probing for PadLock"
--			modprobe -qv hw_random
-+			insmod -qv hw_random
- 			# padlock must load before aes module
--			modprobe -qv padlock
-+			insmod -qv padlock
- 		fi
- 		# load the most common ciphers/algo's
--		modprobe -qv sha1
--		modprobe -qv md5
--		modprobe -qv des
--		modprobe -qv aes
-+		insmod -qv sha1
-+		insmod -qv md5
-+		insmod -qv des
-+		insmod -qv aes
+-		modprobe -q xfrm_user 2> /dev/null
++		insmod -q xfrm_user 2> /dev/null
  	fi
- fi
  
-@@ -312,10 +312,16 @@
+ 	if test ! -f $ipsecversion && $klips
+@@ -324,7 +324,7 @@
  		fi
-                 unset MODPATH MODULECONF        # no user overrides!
-                 depmod -a >/dev/null 2>&1
--		modprobe -qv hw_random
-+		insmod -qv hw_random
- 		# padlock must load before aes module
--		modprobe -qv padlock
--                modprobe -v ipsec
-+		insmod -qv padlock
-+                if [ -f insmod ]
-+		then
-+			insmod -v ipsec
-+		elif [ -f insmod ]
-+		then
-+			insmod ipsec
-+		fi
-         fi
-         if test ! -f $ipsecversion
-         then
+                	unset MODPATH MODULECONF        # no user overrides!
+                	depmod -a >/dev/null 2>&1
+-               	modprobe -v ipsec
++               	insmod -v ipsec
+         	if test ! -f $ipsecversion
+         	then
+                 	echo "kernel appears to lack IPsec support (neither CONFIG_KLIPS or CONFIG_NET_KEY are set)"
