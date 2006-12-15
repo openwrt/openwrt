@@ -10,12 +10,12 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=fuse
-PKG_VERSION:=2.5.3
+PKG_VERSION:=2.6.1
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/$(PKG_NAME)
-PKG_MD5SUM:=9c7e8b6606b9f158ae20b8521ba2867c
+PKG_MD5SUM:=13e1873086a1d7a95f470bbc7428c528
 PKG_CAT:=zcat
 
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
@@ -25,6 +25,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define Package/fuse/Default
   TITLE:=FUSE
+  DEPENDS:=@LINUX_2_6
   DESCRIPTION:=\
 	FUSE (Filesystem in UserSpacE)
   URL:=http://fuse.sourceforge.net/
