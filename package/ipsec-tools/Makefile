@@ -9,12 +9,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ipsec-tools
-PKG_VERSION:=0.6.4
+PKG_VERSION:=0.6.6
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=@SF/ipsec-tools
-PKG_MD5SUM:=d0242a943c82c0cbf28005966ff35e21
+PKG_MD5SUM:=e908f3cf367e31c7902df5ab16fbe5c3
 PKG_CAT:=bzcat
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
@@ -32,55 +32,32 @@ define Package/ipsec-tools
 endef
 
 define Build/Configure
-	(cd $(PKG_BUILD_DIR); rm -f config.cache; \
-		touch configure.ac; \
-		touch aclocal.m4; \
-		touch Makefile.in; \
-		touch config.h.in; \
-		touch configure; \
-		$(TARGET_CONFIGURE_OPTS) \
-		CFLAGS="$(TARGET_CFLAGS)" \
-		CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include" \
-		LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib" \
-		./configure \
-			--target=$(GNU_TARGET_NAME) \
-			--host=$(GNU_TARGET_NAME) \
-			--build=$(GNU_HOST_NAME) \
-			--program-prefix="" \
-			--program-suffix="" \
-			--prefix=/usr \
-			--exec-prefix=/usr \
-			--bindir=/usr/bin \
-			--datadir=/usr/share \
-			--includedir=/usr/include \
-			--infodir=/usr/share/info \
-			--libdir=/usr/lib \
-			--libexecdir=/usr/lib \
-			--localstatedir=/var \
-			--mandir=/usr/share/man \
-			--sbindir=/usr/sbin \
-			--sysconfdir=/etc \
-			$(DISABLE_LARGEFILE) \
-			$(DISABLE_NLS) \
-			--enable-shared \
-			--enable-static \
-			--disable-rpath \
-			--with-gnu-ld \
-			--with-kernel-headers="$(LINUX_DIR)/include" \
-			--without-readline \
-			--with-openssl="$(STAGING_DIR)/usr" \
-			--without-libradius \
-			--without-libpam \
-			--enable-dpd \
-			--enable-natt \
+	(cd $(PKG_BUILD_DIR); touch \
+		configure.ac \
+		aclocal.m4 \
+		Makefile.in \
+		config.h.in \
+		configure \
+	);
+	$(call Build/Configure/Default, \
+		--enable-shared \
+		--enable-static \
+		--with-kernel-headers="$(LINUX_DIR)/include" \
+		--without-readline \
+		--with-openssl="$(STAGING_DIR)/usr" \
+		--without-libradius \
+		--without-libpam \
+		--enable-dpd \
+		--enable-natt \
 	);
 endef
 
+# override CFLAGS holding "-Werror" that break builds on compile warnings
 define Build/Compile
-	$(call Build/Compile/Default, \
+	$(MAKE) -C $(PKG_BUILD_DIR) \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
-		all install \
-	)
+		CFLAGS="$(TARGET_CFLAGS)" \
+		all install
 endef
 
 define Package/ipsec-tools/install

@@ -1,0 +1,21 @@
+diff -ruN ipsec-tools-0.6.6-old/src/racoon/grabmyaddr.c ipsec-tools-0.6.6-new/src/racoon/grabmyaddr.c
+--- ipsec-tools-0.6.6-old/src/racoon/grabmyaddr.c	2005-07-16 06:41:01.000000000 +0200
++++ ipsec-tools-0.6.6-new/src/racoon/grabmyaddr.c	2006-12-15 15:50:13.000000000 +0100
+@@ -77,10 +77,17 @@
+ #ifdef __linux__
+ #include <linux/types.h>
+ #include <linux/rtnetlink.h>
++#include <linux/version.h>
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19)
++# include <linux/if_addr.h>
++#endif
+ #ifndef HAVE_GETIFADDRS
+ #define HAVE_GETIFADDRS
+ #define NEED_LINUX_GETIFADDRS
+ #endif
++#ifndef IFA_RTA
++# define IFA_RTA(r)  ((struct rtattr*)(((char*)(r)) + NLMSG_ALIGN(sizeof(struct ifaddrmsg))))
++#endif
+ #endif
+ 
+ #ifndef HAVE_GETIFADDRS
