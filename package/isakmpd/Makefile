@@ -26,15 +26,16 @@ include $(INCLUDE_DIR)/kernel.mk
 define Package/isakmpd
   SECTION:=net
   CATEGORY:=Network
-  DEPENDS:=@BROKEN @LINUX_2_6 +libopenssl +keynote +libgmp
+  DEPENDS:=@LINUX_2_6 +libopenssl +keynote +libgmp
   TITLE:=IPsec management tools
   URL:=http://isakmpd.sourceforge.net/
 endef
 
 define Build/Compile
-	$(call Build/Compile/Default,LINUX_DIR="$(LINUX_DIR)" \
-		STAGING_DIR="$(STAGING_DIR)" \
-		DESTDIR="$(PKG_INSTALL_DIR)" \
+	$(call Build/Compile/Default, \
+		LINUX_DIR="$(LINUX_DIR)" \
+		EXTRA_CPPFLAGS="-I$(STAGING_DIR)/usr/include/openssl -I$(STAGING_DIR)/usr/include/keynote  -I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include" \
+		EXTRA_LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib" \
 	)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		STAGING_DIR="$(STAGING_DIR)" \
