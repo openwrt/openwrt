@@ -216,7 +216,7 @@ radio ${radio:-1}
 macfilter 0
 maclist none
 wds ${wds:-none}
-channel ${channel:-0}
+${channel:-channel $channel}
 country ${country:-IL0}
 maxassoc ${maxassoc:-128}
 slottime ${slottime:--1}
