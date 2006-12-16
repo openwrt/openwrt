@@ -110,7 +110,7 @@ ifeq ($(KERNEL),2.6)
 		echo 'CONFIG_INITRAMFS_ROOT_UID=0' >> $(LINUX_DIR)/.config
 		echo 'CONFIG_INITRAMFS_ROOT_GID=0' >> $(LINUX_DIR)/.config
 		mkdir -p $(BUILD_DIR)/root/etc/init.d
-		$(CP) ../generic-2.6/files/init $(BUILD_DIR)/root/
+		$(CP) $(TOPDIR)/target/linux/generic-2.6/files/init $(BUILD_DIR)/root/
     endef
   else
     define Kernel/SetInitramfs
