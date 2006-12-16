@@ -43,6 +43,7 @@ endif
 BUS:=PCI
 ifneq ($(CONFIG_LINUX_2_6_AR531X),)
   BUS:=AHB
+  HAL_TARGET:=ap51
 endif
 ifneq ($(CONFIG_LINUX_2_6_ARUBA),)
   BUS:=PCI AHB	# no suitable HAL for AHB yet.
@@ -105,15 +106,19 @@ MADWIFI_MAKEOPTS= -C $(PKG_BUILD_DIR) \
 
 ifeq ($(findstring AHB,$(BUS)),AHB)
   define Build/Compile/ahb
-	$(MAKE) $(MADWIFI_MAKEOPTS) BUS="AHB" modules
+	$(MAKE) $(MADWIFI_MAKEOPTS) BUS="AHB" LDOPTS="--no-warn-mismatch" modules
   endef
 endif
 
 ifeq ($(findstring PCI,$(BUS)),PCI)
   define Build/Compile/pci
-	$(MAKE) $(MADWIFI_MAKEOPTS) BUS="PCI" modules
+	$(MAKE) $(MADWIFI_MAKEOPTS) BUS="PCI" LDOPTS="--no-warn-mismatch" modules
   endef
 endif
+
+define Build/Configure
+	$(SED) 's,-E[LB] ,,g' $(PKG_BUILD_DIR)/hal/public/*.inc
+endef
 
 define Build/Compile
 	$(call Build/Compile/ahb)

@@ -1,0 +1,196 @@
+diff -ur madwifi.old/ath/if_ath_ahb.c madwifi.dev/ath/if_ath_ahb.c
+--- madwifi.old/ath/if_ath_ahb.c	2006-12-16 00:56:39.000000000 +0100
++++ madwifi.dev/ath/if_ath_ahb.c	2006-12-16 00:57:08.000000000 +0100
+@@ -27,6 +27,7 @@
+ #include "if_athvar.h"
+ #include "ah_devid.h"
+ #include "if_ath_ahb.h"
++#include "ah_soc.h"
+ 
+ struct ath_ahb_softc {
+ 	struct ath_softc	aps_sc;
+@@ -176,6 +177,9 @@
+ int
+ ahb_enable_wmac(u_int16_t devid, u_int16_t wlanNum)
+ {
++	u_int32_t reset;
++	u_int32_t enable;
++	
+ 	if ((devid & AR5315_REV_MAJ_M) == AR5315_REV_MAJ) {
+ 		u_int32_t reg;
+ 		u_int32_t *en = (u_int32_t *) AR5315_AHB_ARB_CTL;
+@@ -203,17 +207,32 @@
+ 		/* wait for the MAC to wakeup */
+ 		while (REG_READ(AR5315_PCI_MAC_PCICFG) & AR5315_PCI_MAC_PCICFG_SPWR_DN);
+ 	} else {
+-		u_int32_t *en = (u_int32_t *)AR531X_ENABLE;
+ 		switch (wlanNum) {
+ 		case AR531X_WLAN0_NUM:
+-			*en |= AR531X_ENABLE_WLAN0;
++			reset = (AR531X_RESET_WLAN0 |
++				AR531X_RESET_WARM_WLAN0_MAC |
++				AR531X_RESET_WARM_WLAN0_BB);
++			enable = AR531X_ENABLE_WLAN0;
+ 			break;
+ 		case AR531X_WLAN1_NUM:
+-			*en |= AR531X_ENABLE_WLAN1;
++			reset = (AR531X_RESET_WLAN1 |
++				AR531X_RESET_WARM_WLAN1_MAC |
++				AR531X_RESET_WARM_WLAN1_BB);
++			enable = AR531X_ENABLE_WLAN1;
+ 			break;
+ 		default:
+ 			return -ENODEV;
+ 		}
++		/* reset the MAC or suffer lots of AHB PROC errors */
++		REG_WRITE(AR531X_RESETCTL, REG_READ(AR531X_RESETCTL) | reset);
++		mdelay(15);
++
++		/* take it out of reset */
++		REG_WRITE(AR531X_RESETCTL, REG_READ(AR531X_RESETCTL) & ~reset);
++		udelay(25);
++
++		/* enable it */
++		REG_WRITE(AR531X_ENABLE, REG_READ(AR531X_ENABLE) | enable);
+ 	}
+ 	return 0;
+ }
+@@ -221,6 +240,7 @@
+ int
+ ahb_disable_wmac(u_int16_t devid, u_int16_t wlanNum)
+ {
++	u_int32_t enable;
+ 	if ((devid & AR5315_REV_MAJ_M) == AR5315_REV_MAJ) {
+ 		u_int32_t *en = (u_int32_t *) AR5315_AHB_ARB_CTL;
+ 
+@@ -229,17 +249,17 @@
+ 		/* Enable Arbitration for WLAN */
+ 		*en &= ~AR5315_ARB_WLAN;
+ 	} else { 
+-		u_int32_t *en = (u_int32_t *)AR531X_ENABLE;
+ 		switch (wlanNum) {
+ 		case AR531X_WLAN0_NUM:
+-			*en &= ~AR531X_ENABLE_WLAN0;
++			enable = AR531X_ENABLE_WLAN0;
+ 			break;
+ 		case AR531X_WLAN1_NUM:
+-			*en &= ~AR531X_ENABLE_WLAN1;
++			enable = AR531X_ENABLE_WLAN1;
+ 			break;
+ 		default:
+ 			return -ENODEV;
+ 		}
++		REG_WRITE(AR531X_ENABLE, REG_READ(AR531X_ENABLE) & ~enable);
+ 	}
+ 	return 0;
+ }
+@@ -326,13 +346,18 @@
+ 	}
+ 	dev->mem_end = dev->mem_start + AR531X_WLANX_LEN;
+ 	sc->aps_sc.sc_bdev = NULL;
+-        
++
+ 	if (request_irq(dev->irq, ath_intr, SA_SHIRQ, dev->name, dev)) {
+ 		printk(KERN_WARNING "%s: request_irq failed\n", dev->name);
+ 		goto bad3;
+ 	}
+-        
+-	if (ath_attach(devid, dev) != 0)
++	
++	struct ar531x_config config;
++	config.board = ar5312_boardConfig;
++	config.radio = radioConfig;
++	config.unit = wlanNum;
++	config.tag = NULL;
++	if (ath_attach(devid, dev, &config) != 0)
+ 		goto bad4;
+ 	athname = ath_hal_probe(ATHEROS_VENDOR_ID, devid);
+ 	printk(KERN_INFO "%s: %s: mem=0x%lx, irq=%d\n",
+diff -ur madwifi.old/ath/if_ath_ahb.h madwifi.dev/ath/if_ath_ahb.h
+--- madwifi.old/ath/if_ath_ahb.h	2006-12-16 00:56:39.000000000 +0100
++++ madwifi.dev/ath/if_ath_ahb.h	2006-12-16 00:57:08.000000000 +0100
+@@ -10,6 +10,7 @@
+ 
+ #include <asm/io.h>
+ #include <asm/uaccess.h>
++
+ #define AR531X_WLAN0_NUM       0
+ #define AR531X_WLAN1_NUM       1
+ 
+@@ -70,9 +71,18 @@
+ #define AR531X_WLAN1		0xb8500000
+ #define AR531X_WLANX_LEN	0x000ffffc
+ 
++#define	AR531X_RESETCTL		0xbc003020
++#define	AR531X_RESET_WLAN0			0x00000004	/* mac & bb */
++#define	AR531X_RESET_WLAN1			0x00000200	/* mac & bb */
++#define	AR531X_RESET_WARM_WLAN0_MAC		0x00002000
++#define	AR531X_RESET_WARM_WLAN0_BB		0x00004000
++#define	AR531X_RESET_WARM_WLAN1_MAC		0x00020000
++#define	AR531X_RESET_WARM_WLAN1_BB		0x00040000
++
+ #define AR531X_ENABLE		0xbc003080
+-#define AR531X_ENABLE_WLAN1	0x8
+-#define AR531X_ENABLE_WLAN0	0x1
++#define	AR531X_ENABLE_WLAN0			0x0001
++#define	AR531X_ENABLE_WLAN1			0x0018	/* both DMA and PIO */
++
+ #define AR531X_RADIO_MASK_OFF	0xc8
+ #define AR531X_RADIO0_MASK	0x0003
+ #define AR531X_RADIO1_MASK	0x000c
+diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
+--- madwifi.old/ath/if_ath.c	2006-12-16 00:56:39.000000000 +0100
++++ madwifi.dev/ath/if_ath.c	2006-12-16 00:57:08.000000000 +0100
+@@ -380,7 +380,7 @@
+ 	} while(0)
+ 
+ int
+-ath_attach(u_int16_t devid, struct net_device *dev)
++ath_attach(u_int16_t devid, struct net_device *dev, HAL_BUS_TAG tag)
+ {
+ 	struct ath_softc *sc = dev->priv;
+ 	struct ieee80211com *ic = &sc->sc_ic;
+@@ -421,7 +421,7 @@
+ 	 * built with an ah.h that does not correspond to the hal
+ 	 * module loaded in the kernel.
+ 	 */
+-	ah = _ath_hal_attach(devid, sc, NULL, (void *) dev->mem_start, &status);
++	ah = _ath_hal_attach(devid, sc, tag, (void *) dev->mem_start, &status);
+ 	if (ah == NULL) {
+ 		printk(KERN_ERR "%s: unable to attach hardware: '%s' (HAL status %u)\n",
+ 			dev->name, ath_get_hal_status_desc(status), status);
+diff -ur madwifi.old/ath/if_ath_pci.c madwifi.dev/ath/if_ath_pci.c
+--- madwifi.old/ath/if_ath_pci.c	2006-12-16 00:56:39.000000000 +0100
++++ madwifi.dev/ath/if_ath_pci.c	2006-12-16 00:57:08.000000000 +0100
+@@ -218,7 +218,7 @@
+ 			break;
+ 		}
+ 	}
+-	if (ath_attach(vdevice, dev) != 0)
++	if (ath_attach(vdevice, dev, NULL) != 0)
+ 		goto bad4;
+ 
+ 	athname = ath_hal_probe(id->vendor, vdevice);
+diff -ur madwifi.old/ath/if_athvar.h madwifi.dev/ath/if_athvar.h
+--- madwifi.old/ath/if_athvar.h	2006-12-16 00:56:39.000000000 +0100
++++ madwifi.dev/ath/if_athvar.h	2006-12-16 00:57:08.000000000 +0100
+@@ -681,7 +681,7 @@
+ #define	ATH_LOCK(_sc)			down(&(_sc)->sc_lock)
+ #define	ATH_UNLOCK(_sc)			up(&(_sc)->sc_lock)
+ 
+-int ath_attach(u_int16_t, struct net_device *);
++int ath_attach(u_int16_t, struct net_device *, HAL_BUS_TAG);
+ int ath_detach(struct net_device *);
+ void ath_resume(struct net_device *);
+ void ath_suspend(struct net_device *);
+diff -ur madwifi.old/THANKS madwifi.dev/THANKS
+--- madwifi.old/THANKS	2006-12-16 00:56:39.000000000 +0100
++++ madwifi.dev/THANKS	2006-12-16 00:58:33.000000000 +0100
+@@ -102,6 +102,7 @@
+ Joe Parks
+ Pavel Novak
+ Wade Mealing
++Mats Hojlund
+ 
+ Apologies to anyone whose name was unintentionally left off.
+ Please let us know if you think your name should be mentioned here!
