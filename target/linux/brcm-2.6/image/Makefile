@@ -59,6 +59,7 @@ ifneq ($(1),jffs2-128k)
 	$(call Image/Build/CyberTAN,$(1),wrt54g3g,W54F,1.99.5,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/CyberTAN,$(1),wrt54g,W54G,4.40.1,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/CyberTAN,$(1),wrt54gs_v4,W54s,1.09.1,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/CyberTAN,$(1),wrt300n_v1,EWCB,0.93.3,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/Motorola,$(1),wa840g,2,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/Motorola,$(1),we800g,3,$(patsubst jffs2-%,jffs2,$(1)))
 endif
