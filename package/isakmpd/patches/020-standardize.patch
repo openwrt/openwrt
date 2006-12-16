@@ -46,14 +46,103 @@ diff -urN isakmp.old/sysdep/linux/GNUmakefile.sysdep isakmp.dev/sysdep/linux/GNU
  LIBSYSDEP:=	${LIBSYSDEPDIR}/libsysdep.a
  
 -LDADD+=		-lgmp ${LIBSYSDEP} ${LIBCRYPTO}
-+LDADD+=		-L$(STAGING_DIR)/usr/lib -lgmp ${LIBSYSDEP} ${LIBCRYPTO}
++LDADD+=		$(EXTRA_LDFLAGS) -lgmp ${LIBSYSDEP} ${LIBCRYPTO}
  DPADD+=		${LIBGMP} ${LIBSYSDEP}
  
  CFLAGS+=	-DHAVE_GETNAMEINFO -DUSE_OLD_SOCKADDR -DHAVE_PCAP \
  		-DNEED_SYSDEP_APP -DMP_FLAVOUR=MP_FLAVOUR_GMP -DUSE_AES \
  		-I${.CURDIR}/sysdep/linux/include -I${.CURDIR}/sysdep/common \
 -		-I/usr/include/openssl
-+		-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/usr/include/openssl -I$(LINUX_DIR)/include
++		$(EXTRA_CPPFLAGS)
  
  FEATURES=	debug tripledes blowfish cast ec aggressive x509 policy
  FEATURES+=	dpd nat_traversal isakmp_cfg des aes
+diff -ruN isakmpd-20041012.orig/GNUmakefile isakmpd-20041012.new/GNUmakefile
+--- isakmpd-20041012.orig/GNUmakefile	2006-12-16 22:41:26.000000000 +0100
++++ isakmpd-20041012.new/GNUmakefile	2006-12-16 22:48:27.000000000 +0100
+@@ -169,7 +169,6 @@
+ X509=		x509.c
+ CFLAGS+=	-DUSE_LIBCRYPTO
+ LDADD+=		-lcrypto
+-DPADD+=		${LIBCRYPTO}
+ endif
+ 
+ ifdef USE_RAWKEY
+diff -ruN isakmpd-20041012.orig/Makefile isakmpd-20041012.new/Makefile
+--- isakmpd-20041012.orig/Makefile	2004-10-12 23:25:52.000000000 +0200
++++ isakmpd-20041012.new/Makefile	2006-12-16 22:46:48.000000000 +0100
+@@ -147,7 +147,6 @@
+ .ifdef USE_LIBCRYPTO
+ CFLAGS+=	-DUSE_LIBCRYPTO
+ LDADD+=		-lcrypto
+-DPADD+=		${LIBCRYPTO}
+ .endif
+ 
+ .ifdef USE_LIBDES
+diff -ruN isakmpd-20041012.orig/apps/certpatch/Makefile isakmpd-20041012.new/apps/certpatch/Makefile
+--- isakmpd-20041012.orig/apps/certpatch/Makefile	2004-10-12 23:25:52.000000000 +0200
++++ isakmpd-20041012.new/apps/certpatch/Makefile	2006-12-16 22:48:58.000000000 +0100
+@@ -40,7 +40,6 @@
+ .PATH:		${TOPSRC} ${TOPSRC}/sysdep/${OS} ${TOPOBJ}
+ CFLAGS+=	-I${TOPSRC} -I${TOPSRC}/sysdep/${OS} -I${TOPOBJ} -Wall
+ LDADD+=		-lcrypto
+-DPADD+=		${LIBCRYPTO}
+ MAN=		certpatch.8
+ 
+ .if ${FEATURES:Mgmp} == "gmp"
+diff -ruN isakmpd-20041012.orig/regress/crypto/Makefile isakmpd-20041012.new/regress/crypto/Makefile
+--- isakmpd-20041012.orig/regress/crypto/Makefile	2004-10-12 23:25:52.000000000 +0200
++++ isakmpd-20041012.new/regress/crypto/Makefile	2006-12-16 22:50:02.000000000 +0100
+@@ -13,7 +13,7 @@
+ 		-DUSE_TRIPLEDES -DUSE_CAST -DUSE_BLOWFISH -DUSE_DES \
+ 		-DUSE_AES
+ LDADD+=		-lcrypto -ldes
+-DPADD+=		${LIBCRYPTO} ${LIBDES}
++DPADD+=		${LIBDES}
+ NOMAN=
+ DEBUG=		-g
+ 
+diff -ruN isakmpd-20041012.orig/regress/dh/Makefile isakmpd-20041012.new/regress/dh/Makefile
+--- isakmpd-20041012.orig/regress/dh/Makefile	2004-10-12 23:25:52.000000000 +0200
++++ isakmpd-20041012.new/regress/dh/Makefile	2006-12-16 22:49:25.000000000 +0100
+@@ -15,7 +15,6 @@
+ 		-DUSE_EC
+ NOMAN=
+ LDADD+=		-lcrypto
+-DPADD+=		${LIBCRYPTO}
+ DEBUG=		-g
+ 
+ .if ${FEATURES:Mgmp} == "gmp"
+diff -ruN isakmpd-20041012.orig/regress/group/Makefile isakmpd-20041012.new/regress/group/Makefile
+--- isakmpd-20041012.orig/regress/group/Makefile	2004-10-12 23:25:52.000000000 +0200
++++ isakmpd-20041012.new/regress/group/Makefile	2006-12-16 22:49:30.000000000 +0100
+@@ -15,7 +15,6 @@
+ 		-DUSE_EC
+ NOMAN=
+ LDADD+=		-lcrypto
+-DPADD+=		${LIBCRYPTO}
+ DEBUG=		-g
+ 
+ .if ${FEATURES:Mgmp} == "gmp"
+diff -ruN isakmpd-20041012.orig/regress/rsakeygen/Makefile isakmpd-20041012.new/regress/rsakeygen/Makefile
+--- isakmpd-20041012.orig/regress/rsakeygen/Makefile	2004-10-12 23:25:52.000000000 +0200
++++ isakmpd-20041012.new/regress/rsakeygen/Makefile	2006-12-16 22:49:41.000000000 +0100
+@@ -62,7 +62,6 @@
+ .ifdef USE_LIBCRYPTO
+ CFLAGS+=	-DUSE_LIBCRYPTO
+ LDADD+=		-lcrypto
+-DPADD+=		${LIBCRYPTO}
+ .endif
+ 
+ .if !defined (HAVE_DLOPEN) && !defined (USE_LIBCRYPTO)
+diff -ruN isakmpd-20041012.orig/regress/x509/Makefile isakmpd-20041012.new/regress/x509/Makefile
+--- isakmpd-20041012.orig/regress/x509/Makefile	2004-10-12 23:25:52.000000000 +0200
++++ isakmpd-20041012.new/regress/x509/Makefile	2006-12-16 22:49:49.000000000 +0100
+@@ -78,7 +78,6 @@
+ X509=		x509.c
+ CFLAGS+=	-DUSE_LIBCRYPTO
+ LDADD+=		-lcrypto ${LIBLWRES}
+-DPADD+=		${LIBCRYPTO}
+ .endif
+ 
+ .if !defined (HAVE_DLOPEN) && !defined (USE_LIBCRYPTO) || !defined (USE_KEYNOTE)
