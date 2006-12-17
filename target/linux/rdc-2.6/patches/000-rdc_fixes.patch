@@ -1,7 +1,7 @@
-diff -urN linux-2.6.17/arch/i386/Kconfig linux-2.6.17.new/arch/i386/Kconfig
---- linux-2.6.17/arch/i386/Kconfig	2006-06-18 03:49:35.000000000 +0200
-+++ linux-2.6.17.new/arch/i386/Kconfig	2006-10-07 22:33:09.000000000 +0200
-@@ -167,6 +167,14 @@
+diff -urN linux-2.6.19/arch/i386/Kconfig linux-2.6.19.new/arch/i386/Kconfig
+--- linux-2.6.19/arch/i386/Kconfig	2006-11-29 22:57:37.000000000 +0100
++++ linux-2.6.19.new/arch/i386/Kconfig	2006-12-17 17:13:33.000000000 +0100
+@@ -180,6 +180,14 @@
  	  Only choose this option if you have such a system, otherwise you
  	  should say N here.
  
@@ -16,22 +16,45 @@ diff -urN linux-2.6.17/arch/i386/Kconfig linux-2.6.17.new/arch/i386/Kconfig
  endchoice
  
  config ACPI_SRAT
-diff -urN linux-2.6.17/arch/i386/kernel/time.c linux-2.6.17.new/arch/i386/kernel/time.c
---- linux-2.6.17/arch/i386/kernel/time.c	2006-06-18 03:49:35.000000000 +0200
-+++ linux-2.6.17.new/arch/i386/kernel/time.c	2006-10-07 22:23:05.000000000 +0200
-@@ -479,7 +479,8 @@
- 		return;
- 	}
- #endif
--	xtime.tv_sec = get_cmos_time();
+diff -urN linux-2.6.19/arch/i386/Makefile linux-2.6.19.new/arch/i386/Makefile
+--- linux-2.6.19/arch/i386/Makefile	2006-11-29 22:57:37.000000000 +0100
++++ linux-2.6.19.new/arch/i386/Makefile	2006-12-17 17:13:33.000000000 +0100
+@@ -92,6 +92,10 @@
+ mflags-$(CONFIG_X86_ES7000)	:= -Iinclude/asm-i386/mach-es7000
+ mcore-$(CONFIG_X86_ES7000)	:= mach-default
+ core-$(CONFIG_X86_ES7000)	:= arch/i386/mach-es7000/
++# RDC subarch support
++mflags-$(CONFIG_X86_RDC)	:= -Iinclude/asm-i386/mach-generic
++mcore-$(CONFIG_X86_RDC)		:= mach-default
++core-$(CONFIG_X86_RDC)		:= arch/i386/mach-rdc/
+ 
+ # default subarch .h files
+ mflags-y += -Iinclude/asm-i386/mach-default
+diff -urN linux-2.6.19/arch/i386/kernel/time.c linux-2.6.19.new/arch/i386/kernel/time.c
+--- linux-2.6.19/arch/i386/kernel/time.c	2006-11-29 22:57:37.000000000 +0100
++++ linux-2.6.19.new/arch/i386/kernel/time.c	2006-12-17 17:13:10.000000000 +0100
+@@ -361,7 +361,8 @@
+ static void __init hpet_time_init(void)
+ {
+ 	struct timespec ts;
+-	ts.tv_sec = get_cmos_time();
 +	/* RDC board does not have CMOS */
-+	xtime.tv_sec = 0;
- 	xtime.tv_nsec = (INITIAL_JIFFIES % HZ) * (NSEC_PER_SEC / HZ);
- 	set_normalized_timespec(&wall_to_monotonic,
- 		-xtime.tv_sec, -xtime.tv_nsec);
-diff -urN linux-2.6.17/arch/i386/mach-rdc/led.c linux-2.6.17.new/arch/i386/mach-rdc/led.c
---- linux-2.6.17/arch/i386/mach-rdc/led.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.17.new/arch/i386/mach-rdc/led.c	2006-10-07 23:55:59.000000000 +0200
++	ts.tv_sec = 0;
+ 	ts.tv_nsec = (INITIAL_JIFFIES % HZ) * (NSEC_PER_SEC / HZ);
+ 
+ 	do_settimeofday(&ts);
+diff -urN linux-2.6.19/arch/i386/mach-rdc/Makefile linux-2.6.19.new/arch/i386/mach-rdc/Makefile
+--- linux-2.6.19/arch/i386/mach-rdc/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.new/arch/i386/mach-rdc/Makefile	2006-12-17 17:13:33.000000000 +0100
+@@ -0,0 +1,5 @@
++#
++# Makefile for the linux kernel.
++#
++
++obj-$(CONFIG_X86_RDC)        := led.o
+diff -urN linux-2.6.19/arch/i386/mach-rdc/led.c linux-2.6.19.new/arch/i386/mach-rdc/led.c
+--- linux-2.6.19/arch/i386/mach-rdc/led.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.new/arch/i386/mach-rdc/led.c	2006-12-17 17:13:33.000000000 +0100
 @@ -0,0 +1,743 @@
 +/*
 + * LED interface for WP3200
@@ -776,9 +799,9 @@ diff -urN linux-2.6.17/arch/i386/mach-rdc/led.c linux-2.6.17.new/arch/i386/mach-
 +module_init(led_init);
 +module_exit(led_exit);
 +EXPORT_NO_SYMBOLS;
-diff -urN linux-2.6.17/arch/i386/mach-rdc/led.h linux-2.6.17.new/arch/i386/mach-rdc/led.h
---- linux-2.6.17/arch/i386/mach-rdc/led.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.17.new/arch/i386/mach-rdc/led.h	2006-10-07 22:28:32.000000000 +0200
+diff -urN linux-2.6.19/arch/i386/mach-rdc/led.h linux-2.6.19.new/arch/i386/mach-rdc/led.h
+--- linux-2.6.19/arch/i386/mach-rdc/led.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.new/arch/i386/mach-rdc/led.h	2006-12-17 17:13:33.000000000 +0100
 @@ -0,0 +1,32 @@
 +#ifndef _LED_H_INCLUDED
 +#define _LED_H_INCLUDED
@@ -812,26 +835,3 @@ diff -urN linux-2.6.17/arch/i386/mach-rdc/led.h linux-2.6.17.new/arch/i386/mach-
 +#define LED_BLINK_RANDOM    (LED_BLINK_CMD|0xffff)
 +
 +#endif
-diff -urN linux-2.6.17/arch/i386/mach-rdc/Makefile linux-2.6.17.new/arch/i386/mach-rdc/Makefile
---- linux-2.6.17/arch/i386/mach-rdc/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.17.new/arch/i386/mach-rdc/Makefile	2006-10-07 22:31:19.000000000 +0200
-@@ -0,0 +1,5 @@
-+#
-+# Makefile for the linux kernel.
-+#
-+
-+obj-$(CONFIG_X86_RDC)        := led.o
-diff -urN linux-2.6.17/arch/i386/Makefile linux-2.6.17.new/arch/i386/Makefile
---- linux-2.6.17/arch/i386/Makefile	2006-06-18 03:49:35.000000000 +0200
-+++ linux-2.6.17.new/arch/i386/Makefile	2006-10-07 23:56:13.000000000 +0200
-@@ -80,6 +80,10 @@
- mflags-$(CONFIG_X86_ES7000)	:= -Iinclude/asm-i386/mach-es7000
- mcore-$(CONFIG_X86_ES7000)	:= mach-default
- core-$(CONFIG_X86_ES7000)	:= arch/i386/mach-es7000/
-+# RDC subarch support
-+mflags-$(CONFIG_X86_RDC)	:= -Iinclude/asm-i386/mach-generic
-+mcore-$(CONFIG_X86_RDC)		:= mach-default
-+core-$(CONFIG_X86_RDC)		:= arch/i386/mach-rdc/
- 
- # default subarch .h files
- mflags-y += -Iinclude/asm-i386/mach-default
