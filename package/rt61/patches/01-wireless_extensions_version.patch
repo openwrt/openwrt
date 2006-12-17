@@ -1,0 +1,12 @@
+diff -urN rt61-1.1.0-b1/Module/rtmp_main.c rt61-1.1.0-b1.new/Module/rtmp_main.c
+--- rt61-1.1.0-b1/Module/rtmp_main.c	2006-06-18 10:58:40.000000000 +0200
++++ rt61-1.1.0-b1.new/Module/rtmp_main.c	2006-12-17 19:59:10.000000000 +0100
+@@ -252,7 +252,7 @@
+     net_dev->stop = RT61_close;
+     net_dev->get_stats = RT61_get_ether_stats;
+ 
+-#if WIRELESS_EXT >= 12
++#if WIRELESS_EXT >= 12 && WIRELESS_EXT < 21
+     net_dev->get_wireless_stats = RT61_get_wireless_stats;
+     net_dev->wireless_handlers = (struct iw_handler_def *) &rt61_iw_handler_def;
+ #endif
