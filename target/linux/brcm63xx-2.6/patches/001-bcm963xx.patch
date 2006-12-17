@@ -1,6 +1,221 @@
-diff -urN linux.old/arch/mips/bcm963xx/bcm63xx_led.c linux.dev/arch/mips/bcm963xx/bcm63xx_led.c
---- linux.old/arch/mips/bcm963xx/bcm63xx_led.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm963xx/bcm63xx_led.c	2006-08-25 00:39:38.000000000 +0200
+diff -urN linux-2.6.19/arch/mips/Kconfig linux-2.6.19.new/arch/mips/Kconfig
+--- linux-2.6.19/arch/mips/Kconfig	2006-11-29 22:57:37.000000000 +0100
++++ linux-2.6.19.new/arch/mips/Kconfig	2006-12-16 18:46:31.000000000 +0100
+@@ -12,6 +12,15 @@
+ 	prompt "System type"
+ 	default SGI_IP22
+ 
++config BCM963XX 
++	bool "Support for the Broadcom boards"
++	select SYS_SUPPORTS_32BIT_KERNEL
++	select SYS_SUPPORTS_BIG_ENDIAN
++	select SYS_HAS_CPU_MIPS32_R1
++	select IRQ_CPU
++	help
++	 This is a fmaily of boards based on the Broadcom MIPS32
++
+ config MIPS_MTX1
+ 	bool "4G Systems MTX-1 board"
+ 	select DMA_NONCOHERENT
+@@ -766,6 +775,7 @@
+ 
+ endchoice
+ 
++source "arch/mips/bcm963xx/Kconfig"
+ source "arch/mips/ddb5xxx/Kconfig"
+ source "arch/mips/gt64120/ev64120/Kconfig"
+ source "arch/mips/jazz/Kconfig"
+diff -urN linux-2.6.19/arch/mips/Makefile linux-2.6.19.new/arch/mips/Makefile
+--- linux-2.6.19/arch/mips/Makefile	2006-12-16 17:36:29.000000000 +0100
++++ linux-2.6.19.new/arch/mips/Makefile	2006-12-16 18:46:31.000000000 +0100
+@@ -158,6 +158,15 @@
+ #
+ 
+ #
++# Broadcom board
++#
++core-$(CONFIG_BCM963XX)	+= arch/mips/bcm963xx/
++cflags-$(CONFIG_BCM963XX)     	+= -Iinclude/asm-mips/mach-bcm963xx
++cflags-$(CONFIG_BCM963XX)     	+= -Iarch/mips/bcm963xx/include
++load-$(CONFIG_BCM963XX)	+= 0xffffffff80010000
++
++
++#
+ # Acer PICA 61, Mips Magnum 4000 and Olivetti M700.
+ #
+ core-$(CONFIG_MACH_JAZZ)	+= arch/mips/jazz/
+diff -urN linux-2.6.19/arch/mips/bcm963xx/Kconfig linux-2.6.19.new/arch/mips/bcm963xx/Kconfig
+--- linux-2.6.19/arch/mips/bcm963xx/Kconfig	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.new/arch/mips/bcm963xx/Kconfig	2006-12-16 18:46:31.000000000 +0100
+@@ -0,0 +1,138 @@
++# Kernel and Driver configuration for Broadcom Commengine ADSL board
++choice
++	prompt "Broadcom Commengine ADSL board"
++	depends on BCM963XX
++	default BCM96345
++	help
++	  Select different Broadcom ADSL board
++
++config BCM96338
++	bool "96338 ADSL board"
++	select DMA_NONCOHERENT
++	select HW_HAS_PCI
++
++config BCM96345
++	bool "96345 ADSL board"
++	select DMA_NONCOHERENT
++	select HW_HAS_PCI
++
++config BCM96348
++	bool "96348 ADSL board"
++	select DMA_NONCOHERENT
++	select HW_HAS_PCI
++
++endchoice
++
++config BCM_BOARD
++	bool "Support for Broadcom Board"
++	depends on BCM96338 || BCM96345 || BCM96348
++
++config BCM_SERIAL
++	bool "Support for Serial Port"
++	depends on BCM96338 || BCM96345 || BCM96348
++
++config BCM_ENET
++	tristate "Support for Ethernet"
++	depends on BCM96338 || BCM96345 || BCM96348
++
++config BCM_USB
++	tristate "Support for USB"
++	depends on BCM96338 || BCM96345 || BCM96348
++
++config BCM_WLAN
++	tristate "Support for Wireless"
++	depends on BCM96338 || BCM96345 || BCM96348
++
++config BCM_PCI
++	bool "Support for PCI"
++	depends on BCM96338 || BCM96345 || BCM96348
++	select PCI
++
++config BCM_ATMAPI
++	tristate "Support for ATM"
++	depends on BCM96338 || BCM96345 || BCM96348
++
++config BCM_ATMTEST
++	tristate "Support for ATM Diagnostic"
++	depends on BCM96338 || BCM96345 || BCM96348
++
++config BCM_ADSL
++	tristate "Support for ADSL"
++	depends on BCM96338 || BCM96345 || BCM96348
++
++config BCM_ENDPOINT
++	tristate "Support for VOICE"
++	depends on BCM96338 || BCM96345 || BCM96348
++
++config BCM_PROCFS
++	tristate "Support for PROCFS"
++	depends on BCM96338 || BCM96345 || BCM96348
++
++config BCM_VDSL
++	tristate "Support for VDSL"
++	depends on BCM96338 || BCM96345 || BCM96348
++
++config BCM_SECURITY
++	tristate "Support for SECURITY"
++	depends on BCM96338 || BCM96345 || BCM96348
++
++config BCM_HPNA
++	tristate "Support for HPNA"
++	depends on BCM96338 || BCM96345 || BCM96348
++
++config BCM_BOARD_IMPL
++	int "Implementation index for ADSL Board"
++	depends on BCM96338 || BCM96345 || BCM96348
++
++config BCM_SERIAL_IMPL
++	int "Implementation index for Serial"
++	depends on BCM96338 || BCM96345 || BCM96348
++
++config BCM_ENET_IMPL
++	int "Implementation index for Ethernet"
++	depends on BCM96338 || BCM96345 || BCM96348
++
++config BCM_USB_IMPL
++	int "Implementation index for USB"
++	depends on BCM96338 || BCM96345 || BCM96348
++
++config BCM_WLAN_IMPL
++	int "Implementation index for WIRELESS"
++	depends on BCM96338 || BCM96345 || BCM96348
++
++config BCM_ATMAPI_IMPL
++	int "Implementation index for ATM"
++	depends on BCM96338 || BCM96345 || BCM96348
++
++config BCM_ATMTEST_IMPL
++	int "Implementation index for ATM Diagnostic"
++	depends on BCM96338 || BCM96345 || BCM96348
++
++config BCM_BLAA_IMPL
++	int "Implementation index for BLAA"
++	depends on BCM96338 || BCM96345 || BCM96348
++
++config BCM_ADSL_IMPL
++	int "Implementation index for ADSL"
++	depends on BCM96338 || BCM96345 || BCM96348
++
++config BCM_ENDPOINT_IMPL
++	int "Implementation index for VOICE"
++	depends on BCM96338 || BCM96345 || BCM96348
++
++config BCM_PROCFS_IMPL
++	int "Implementation index for PROCFS"
++	depends on BCM96338 || BCM96345 || BCM96348
++
++config BCM_VDSL_IMPL
++	int "Implementation index for VDSL"
++	depends on BCM96338 || BCM96345 || BCM96348
++
++config BCM_SECURITY_IMPL
++	int "Implementation index for SECURITY"
++	depends on BCM96338 || BCM96345 || BCM96348
++
++config BCM_HPNA_IMPL
++	int "Implementation index for HPNA"
++	depends on BCM96338 || BCM96345 || BCM96348
++
+diff -urN linux-2.6.19/arch/mips/bcm963xx/Makefile linux-2.6.19.new/arch/mips/bcm963xx/Makefile
+--- linux-2.6.19/arch/mips/bcm963xx/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.new/arch/mips/bcm963xx/Makefile	2006-12-16 18:46:31.000000000 +0100
+@@ -0,0 +1,23 @@
++#
++# Makefile for generic Broadcom MIPS boards
++#
++# Copyright (C) 2004 Broadcom Corporation
++#
++obj-y           := irq.o prom.o setup.o time.o ser_init.o bcm63xx_led.o  board.o  boardparms.o int-handler.o
++
++SRCBASE         := $(TOPDIR)
++EXTRA_CFLAGS    += -I$(SRCBASE)/include
++#EXTRA_CFLAGS    += -I$(INC_ADSLDRV_PATH) -DDBG
++EXTRA_CFLAGS    += -I$(INC_ADSLDRV_PATH) 
++
++
++ifeq "$(ADSL)" "ANNEX_B"
++EXTRA_CFLAGS += -DADSL_ANNEXB
++endif
++ifeq "$(ADSL)" "SADSL"
++EXTRA_CFLAGS += -DADSL_SADSL
++endif
++ifeq "$(ADSL)" "ANNEX_C"
++EXTRA_CFLAGS += -DADSL_ANNEXC
++endif
++
+diff -urN linux-2.6.19/arch/mips/bcm963xx/bcm63xx_led.c linux-2.6.19.new/arch/mips/bcm963xx/bcm63xx_led.c
+--- linux-2.6.19/arch/mips/bcm963xx/bcm63xx_led.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.new/arch/mips/bcm963xx/bcm63xx_led.c	2006-12-16 18:46:31.000000000 +0100
 @@ -0,0 +1,582 @@
 +/*
 +<:copyright-gpl 
@@ -584,9 +799,9 @@ diff -urN linux.old/arch/mips/bcm963xx/bcm63xx_led.c linux.dev/arch/mips/bcm963x
 +    }
 +}
 +
-diff -urN linux.old/arch/mips/bcm963xx/board.c linux.dev/arch/mips/bcm963xx/board.c
---- linux.old/arch/mips/bcm963xx/board.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm963xx/board.c	2006-08-27 21:02:04.000000000 +0200
+diff -urN linux-2.6.19/arch/mips/bcm963xx/board.c linux-2.6.19.new/arch/mips/bcm963xx/board.c
+--- linux-2.6.19/arch/mips/bcm963xx/board.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.new/arch/mips/bcm963xx/board.c	2006-12-16 18:46:31.000000000 +0100
 @@ -0,0 +1,559 @@
 +/*
 +<:copyright-gpl 
@@ -1147,9 +1362,9 @@ diff -urN linux.old/arch/mips/bcm963xx/board.c linux.dev/arch/mips/bcm963xx/boar
 +EXPORT_SYMBOL(kerSysSetWdTimer);
 +EXPORT_SYMBOL(kerSysWakeupMonitorTask);
 +
-diff -urN linux.old/arch/mips/bcm963xx/boardparms.c linux.dev/arch/mips/bcm963xx/boardparms.c
---- linux.old/arch/mips/bcm963xx/boardparms.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm963xx/boardparms.c	2006-08-25 00:39:38.000000000 +0200
+diff -urN linux-2.6.19/arch/mips/bcm963xx/boardparms.c linux-2.6.19.new/arch/mips/bcm963xx/boardparms.c
+--- linux-2.6.19/arch/mips/bcm963xx/boardparms.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.new/arch/mips/bcm963xx/boardparms.c	2006-12-16 18:46:31.000000000 +0100
 @@ -0,0 +1,2391 @@
 +/*
 +<:copyright-gpl 
@@ -3542,9 +3757,9 @@ diff -urN linux.old/arch/mips/bcm963xx/boardparms.c linux.dev/arch/mips/bcm963xx
 +    return( nRet );
 +} /* BpGetVoipChipSelect */
 +
-diff -urN linux.old/arch/mips/bcm963xx/boardparms.h linux.dev/arch/mips/bcm963xx/boardparms.h
---- linux.old/arch/mips/bcm963xx/boardparms.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm963xx/boardparms.h	2006-08-25 00:39:38.000000000 +0200
+diff -urN linux-2.6.19/arch/mips/bcm963xx/boardparms.h linux-2.6.19.new/arch/mips/bcm963xx/boardparms.h
+--- linux-2.6.19/arch/mips/bcm963xx/boardparms.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.new/arch/mips/bcm963xx/boardparms.h	2006-12-16 18:46:31.000000000 +0100
 @@ -0,0 +1,758 @@
 +/*
 +<:copyright-gpl 
@@ -4304,9 +4519,9 @@ diff -urN linux.old/arch/mips/bcm963xx/boardparms.h linux.dev/arch/mips/bcm963xx
 +
 +#endif /* _BOARDPARMS_H */
 +
-diff -urN linux.old/arch/mips/bcm963xx/include/6338_intr.h linux.dev/arch/mips/bcm963xx/include/6338_intr.h
---- linux.old/arch/mips/bcm963xx/include/6338_intr.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm963xx/include/6338_intr.h	2006-08-25 00:39:38.000000000 +0200
+diff -urN linux-2.6.19/arch/mips/bcm963xx/include/6338_intr.h linux-2.6.19.new/arch/mips/bcm963xx/include/6338_intr.h
+--- linux-2.6.19/arch/mips/bcm963xx/include/6338_intr.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.new/arch/mips/bcm963xx/include/6338_intr.h	2006-12-16 18:46:31.000000000 +0100
 @@ -0,0 +1,64 @@
 +/*
 +<:copyright-gpl 
@@ -4372,9 +4587,9 @@ diff -urN linux.old/arch/mips/bcm963xx/include/6338_intr.h linux.dev/arch/mips/b
 +
 +#endif  /* __BCM6338_H */
 +
-diff -urN linux.old/arch/mips/bcm963xx/include/6338_map_part.h linux.dev/arch/mips/bcm963xx/include/6338_map_part.h
---- linux.old/arch/mips/bcm963xx/include/6338_map_part.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm963xx/include/6338_map_part.h	2006-08-25 00:39:38.000000000 +0200
+diff -urN linux-2.6.19/arch/mips/bcm963xx/include/6338_map_part.h linux-2.6.19.new/arch/mips/bcm963xx/include/6338_map_part.h
+--- linux-2.6.19/arch/mips/bcm963xx/include/6338_map_part.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.new/arch/mips/bcm963xx/include/6338_map_part.h	2006-12-16 18:46:31.000000000 +0100
 @@ -0,0 +1,334 @@
 +/*
 +<:copyright-gpl 
@@ -4710,9 +4925,9 @@ diff -urN linux.old/arch/mips/bcm963xx/include/6338_map_part.h linux.dev/arch/mi
 +
 +#endif
 +
-diff -urN linux.old/arch/mips/bcm963xx/include/6345_intr.h linux.dev/arch/mips/bcm963xx/include/6345_intr.h
---- linux.old/arch/mips/bcm963xx/include/6345_intr.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm963xx/include/6345_intr.h	2006-08-25 00:39:38.000000000 +0200
+diff -urN linux-2.6.19/arch/mips/bcm963xx/include/6345_intr.h linux-2.6.19.new/arch/mips/bcm963xx/include/6345_intr.h
+--- linux-2.6.19/arch/mips/bcm963xx/include/6345_intr.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.new/arch/mips/bcm963xx/include/6345_intr.h	2006-12-16 18:46:31.000000000 +0100
 @@ -0,0 +1,72 @@
 +/*
 +<:copyright-gpl 
@@ -4786,9 +5001,9 @@ diff -urN linux.old/arch/mips/bcm963xx/include/6345_intr.h linux.dev/arch/mips/b
 +
 +#endif  /* __BCM6345_H */
 +
-diff -urN linux.old/arch/mips/bcm963xx/include/6345_map_part.h linux.dev/arch/mips/bcm963xx/include/6345_map_part.h
---- linux.old/arch/mips/bcm963xx/include/6345_map_part.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm963xx/include/6345_map_part.h	2006-08-25 00:39:38.000000000 +0200
+diff -urN linux-2.6.19/arch/mips/bcm963xx/include/6345_map_part.h linux-2.6.19.new/arch/mips/bcm963xx/include/6345_map_part.h
+--- linux-2.6.19/arch/mips/bcm963xx/include/6345_map_part.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.new/arch/mips/bcm963xx/include/6345_map_part.h	2006-12-16 18:46:31.000000000 +0100
 @@ -0,0 +1,163 @@
 +/*
 +<:copyright-gpl 
@@ -4953,9 +5168,9 @@ diff -urN linux.old/arch/mips/bcm963xx/include/6345_map_part.h linux.dev/arch/mi
 +
 +#endif
 +
-diff -urN linux.old/arch/mips/bcm963xx/include/6348_intr.h linux.dev/arch/mips/bcm963xx/include/6348_intr.h
---- linux.old/arch/mips/bcm963xx/include/6348_intr.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm963xx/include/6348_intr.h	2006-08-25 00:39:38.000000000 +0200
+diff -urN linux-2.6.19/arch/mips/bcm963xx/include/6348_intr.h linux-2.6.19.new/arch/mips/bcm963xx/include/6348_intr.h
+--- linux-2.6.19/arch/mips/bcm963xx/include/6348_intr.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.new/arch/mips/bcm963xx/include/6348_intr.h	2006-12-16 18:46:31.000000000 +0100
 @@ -0,0 +1,74 @@
 +/*
 +<:copyright-gpl 
@@ -5031,9 +5246,9 @@ diff -urN linux.old/arch/mips/bcm963xx/include/6348_intr.h linux.dev/arch/mips/b
 +
 +#endif  /* __BCM6348_H */
 +
-diff -urN linux.old/arch/mips/bcm963xx/include/6348_map_part.h linux.dev/arch/mips/bcm963xx/include/6348_map_part.h
---- linux.old/arch/mips/bcm963xx/include/6348_map_part.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm963xx/include/6348_map_part.h	2006-08-25 00:39:38.000000000 +0200
+diff -urN linux-2.6.19/arch/mips/bcm963xx/include/6348_map_part.h linux-2.6.19.new/arch/mips/bcm963xx/include/6348_map_part.h
+--- linux-2.6.19/arch/mips/bcm963xx/include/6348_map_part.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.new/arch/mips/bcm963xx/include/6348_map_part.h	2006-12-16 18:46:31.000000000 +0100
 @@ -0,0 +1,500 @@
 +/*
 +<:copyright-gpl 
@@ -5535,201 +5750,9 @@ diff -urN linux.old/arch/mips/bcm963xx/include/6348_map_part.h linux.dev/arch/mi
 +
 +#endif
 +
-diff -urN linux.old/arch/mips/bcm963xx/include/bcm_intr.h linux.dev/arch/mips/bcm963xx/include/bcm_intr.h
---- linux.old/arch/mips/bcm963xx/include/bcm_intr.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm963xx/include/bcm_intr.h	2006-08-25 00:39:38.000000000 +0200
-@@ -0,0 +1,59 @@
-+/*
-+<:copyright-gpl 
-+ Copyright 2003 Broadcom Corp. All Rights Reserved. 
-+ 
-+ This program is free software; you can distribute it and/or modify it 
-+ under the terms of the GNU General Public License (Version 2) as 
-+ published by the Free Software Foundation. 
-+ 
-+ This program is distributed in the hope it will be useful, but WITHOUT 
-+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-+ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License 
-+ for more details. 
-+ 
-+ You should have received a copy of the GNU General Public License along 
-+ with this program; if not, write to the Free Software Foundation, Inc., 
-+ 59 Temple Place - Suite 330, Boston MA 02111-1307, USA. 
-+:>
-+*/
-+
-+#ifndef __BCM_INTR_H
-+#define __BCM_INTR_H
-+
-+#ifdef __cplusplus
-+    extern "C" {
-+#endif
-+
-+#if defined(CONFIG_BCM96338)
-+#include <6338_intr.h>
-+#endif
-+#if defined(CONFIG_BCM96345)
-+#include <6345_intr.h>
-+#endif
-+#if defined(CONFIG_BCM96348)
-+#include <6348_intr.h>
-+#endif
-+
-+/* defines */
-+struct pt_regs;
-+typedef int (*FN_HANDLER) (int, void *);
-+
-+/* prototypes */
-+extern void enable_brcm_irq(unsigned int irq);
-+extern void disable_brcm_irq(unsigned int irq);
-+extern int request_external_irq(unsigned int irq,
-+    FN_HANDLER handler, unsigned long irqflags, 
-+    const char * devname, void *dev_id);
-+extern unsigned int BcmHalMapInterrupt(FN_HANDLER isr, unsigned int param,
-+    unsigned int interruptId);
-+extern void dump_intr_regs(void);
-+
-+/* compatibility definitions */
-+#define BcmHalInterruptEnable(irq)      enable_brcm_irq( irq )
-+#define BcmHalInterruptDisable(irq)     disable_brcm_irq( irq )
-+
-+#ifdef __cplusplus
-+    }
-+#endif
-+
-+#endif
-diff -urN linux.old/arch/mips/bcm963xx/include/bcm_map_part.h linux.dev/arch/mips/bcm963xx/include/bcm_map_part.h
---- linux.old/arch/mips/bcm963xx/include/bcm_map_part.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm963xx/include/bcm_map_part.h	2006-08-25 00:39:38.000000000 +0200
-@@ -0,0 +1,34 @@
-+/*
-+<:copyright-gpl 
-+ Copyright 2004 Broadcom Corp. All Rights Reserved. 
-+ 
-+ This program is free software; you can distribute it and/or modify it 
-+ under the terms of the GNU General Public License (Version 2) as 
-+ published by the Free Software Foundation. 
-+ 
-+ This program is distributed in the hope it will be useful, but WITHOUT 
-+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-+ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License 
-+ for more details. 
-+ 
-+ You should have received a copy of the GNU General Public License along 
-+ with this program; if not, write to the Free Software Foundation, Inc., 
-+ 59 Temple Place - Suite 330, Boston MA 02111-1307, USA. 
-+:>
-+*/
-+
-+#ifndef __BCM_MAP_PART_H
-+#define __BCM_MAP_PART_H
-+
-+#if defined(CONFIG_BCM96338)
-+#include <6338_map_part.h>
-+#endif
-+#if defined(CONFIG_BCM96345)
-+#include <6345_map_part.h>
-+#endif
-+#if defined(CONFIG_BCM96348)
-+#include <6348_map_part.h>
-+#endif
-+
-+#endif
-+
-diff -urN linux.old/arch/mips/bcm963xx/include/bcmpci.h linux.dev/arch/mips/bcm963xx/include/bcmpci.h
---- linux.old/arch/mips/bcm963xx/include/bcmpci.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm963xx/include/bcmpci.h	2006-08-25 00:39:38.000000000 +0200
-@@ -0,0 +1,87 @@
-+/*
-+<:copyright-gpl 
-+ Copyright 2004 Broadcom Corp. All Rights Reserved. 
-+ 
-+ This program is free software; you can distribute it and/or modify it 
-+ under the terms of the GNU General Public License (Version 2) as 
-+ published by the Free Software Foundation. 
-+ 
-+ This program is distributed in the hope it will be useful, but WITHOUT 
-+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-+ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License 
-+ for more details. 
-+ 
-+ You should have received a copy of the GNU General Public License along 
-+ with this program; if not, write to the Free Software Foundation, Inc., 
-+ 59 Temple Place - Suite 330, Boston MA 02111-1307, USA. 
-+:>
-+*/
-+
-+//
-+// bcmpci.h - bcm96348 PCI, Cardbus, and PCMCIA definition
-+//
-+#ifndef BCMPCI_H
-+#define BCMPCI_H
-+
-+/* Memory window in internal system bus address space */ 
-+#define BCM_PCI_MEM_BASE        0x08000000
-+/* IO window in internal system bus address space */ 
-+#define BCM_PCI_IO_BASE         0x0C000000
-+
-+#define BCM_PCI_ADDR_MASK       0x1fffffff
-+
-+/* Memory window size (range) */
-+#define BCM_PCI_MEM_SIZE_16MB   0x01000000
-+/* IO window size (range) */
-+#define BCM_PCI_IO_SIZE_64KB    0x00010000
-+
-+/* PCI Configuration and I/O space acesss */
-+#define BCM_PCI_CFG(d, f, o)    ( (d << 11) | (f << 8) | (o/4 << 2) )
-+
-+/* fake USB PCI slot */
-+#define USB_HOST_SLOT           9
-+#define USB_BAR0_MEM_SIZE       0x0800
-+
-+#define BCM_HOST_MEM_SPACE1     0x10000000
-+#define BCM_HOST_MEM_SPACE2     0x00000000
-+
-+/* 
-+ * EBI bus clock is 33MHz and share with PCI bus
-+ * each clock cycle is 30ns.
-+ */
-+/* attribute memory access wait cnt for 4306 */
-+#define PCMCIA_ATTR_CE_HOLD     3  // data hold time 70ns
-+#define PCMCIA_ATTR_CE_SETUP    3  // data setup time 50ns
-+#define PCMCIA_ATTR_INACTIVE    6  // time between read/write cycles 180ns. For the total cycle time 600ns (cnt1+cnt2+cnt3+cnt4)
-+#define PCMCIA_ATTR_ACTIVE      10 // OE/WE pulse width 300ns
-+
-+/* common memory access wait cnt for 4306 */
-+#define PCMCIA_MEM_CE_HOLD      1  // data hold time 30ns
-+#define PCMCIA_MEM_CE_SETUP     1  // data setup time 30ns
-+#define PCMCIA_MEM_INACTIVE     2  // time between read/write cycles 40ns. For the total cycle time 250ns (cnt1+cnt2+cnt3+cnt4)
-+#define PCMCIA_MEM_ACTIVE       5  // OE/WE pulse width 150ns
-+
-+#define PCCARD_VCC_MASK     0x00070000  // Mask Reset also
-+#define PCCARD_VCC_33V      0x00010000
-+#define PCCARD_VCC_50V      0x00020000
-+
-+typedef enum {
-+    MPI_CARDTYPE_NONE,      // No Card in slot
-+    MPI_CARDTYPE_PCMCIA,    // 16-bit PCMCIA card in slot    
-+    MPI_CARDTYPE_CARDBUS,   // 32-bit CardBus card in slot
-+}   CardType;
-+
-+#define CARDBUS_SLOT        0    // Slot 0 is default for CardBus
-+
-+#define pcmciaAttrOffset    0x00200000
-+#define pcmciaMemOffset     0x00000000
-+// Needs to be right above PCI I/O space. Give 0x8000 (32K) to PCMCIA. 
-+#define pcmciaIoOffset      (BCM_PCI_IO_BASE + 0x80000)
-+// Base Address is that mapped into the MPI ChipSelect registers. 
-+// UBUS bridge MemoryWindow 0 outputs a 0x00 for the base.
-+#define pcmciaBase          0xbf000000
-+#define pcmciaAttr          (pcmciaAttrOffset | pcmciaBase)
-+#define pcmciaMem           (pcmciaMemOffset  | pcmciaBase)
-+#define pcmciaIo            (pcmciaIoOffset   | pcmciaBase)
-+
-+#endif
-diff -urN linux.old/arch/mips/bcm963xx/include/bcmTag.h linux.dev/arch/mips/bcm963xx/include/bcmTag.h
---- linux.old/arch/mips/bcm963xx/include/bcmTag.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm963xx/include/bcmTag.h	2006-08-25 00:39:38.000000000 +0200
+diff -urN linux-2.6.19/arch/mips/bcm963xx/include/bcmTag.h linux-2.6.19.new/arch/mips/bcm963xx/include/bcmTag.h
+--- linux-2.6.19/arch/mips/bcm963xx/include/bcmTag.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.new/arch/mips/bcm963xx/include/bcmTag.h	2006-12-16 18:46:31.000000000 +0100
 @@ -0,0 +1,153 @@
 +/*
 +<:copyright-gpl 
@@ -5884,9 +5907,201 @@ diff -urN linux.old/arch/mips/bcm963xx/include/bcmTag.h linux.dev/arch/mips/bcm9
 +
 +#endif // _BCMTAG_H_
 +
-diff -urN linux.old/arch/mips/bcm963xx/include/bcmtypes.h linux.dev/arch/mips/bcm963xx/include/bcmtypes.h
---- linux.old/arch/mips/bcm963xx/include/bcmtypes.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm963xx/include/bcmtypes.h	2006-08-25 00:39:38.000000000 +0200
+diff -urN linux-2.6.19/arch/mips/bcm963xx/include/bcm_intr.h linux-2.6.19.new/arch/mips/bcm963xx/include/bcm_intr.h
+--- linux-2.6.19/arch/mips/bcm963xx/include/bcm_intr.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.new/arch/mips/bcm963xx/include/bcm_intr.h	2006-12-16 18:46:31.000000000 +0100
+@@ -0,0 +1,59 @@
++/*
++<:copyright-gpl 
++ Copyright 2003 Broadcom Corp. All Rights Reserved. 
++ 
++ This program is free software; you can distribute it and/or modify it 
++ under the terms of the GNU General Public License (Version 2) as 
++ published by the Free Software Foundation. 
++ 
++ This program is distributed in the hope it will be useful, but WITHOUT 
++ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
++ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License 
++ for more details. 
++ 
++ You should have received a copy of the GNU General Public License along 
++ with this program; if not, write to the Free Software Foundation, Inc., 
++ 59 Temple Place - Suite 330, Boston MA 02111-1307, USA. 
++:>
++*/
++
++#ifndef __BCM_INTR_H
++#define __BCM_INTR_H
++
++#ifdef __cplusplus
++    extern "C" {
++#endif
++
++#if defined(CONFIG_BCM96338)
++#include <6338_intr.h>
++#endif
++#if defined(CONFIG_BCM96345)
++#include <6345_intr.h>
++#endif
++#if defined(CONFIG_BCM96348)
++#include <6348_intr.h>
++#endif
++
++/* defines */
++struct pt_regs;
++typedef int (*FN_HANDLER) (int, void *);
++
++/* prototypes */
++extern void enable_brcm_irq(unsigned int irq);
++extern void disable_brcm_irq(unsigned int irq);
++extern int request_external_irq(unsigned int irq,
++    FN_HANDLER handler, unsigned long irqflags, 
++    const char * devname, void *dev_id);
++extern unsigned int BcmHalMapInterrupt(FN_HANDLER isr, unsigned int param,
++    unsigned int interruptId);
++extern void dump_intr_regs(void);
++
++/* compatibility definitions */
++#define BcmHalInterruptEnable(irq)      enable_brcm_irq( irq )
++#define BcmHalInterruptDisable(irq)     disable_brcm_irq( irq )
++
++#ifdef __cplusplus
++    }
++#endif
++
++#endif
+diff -urN linux-2.6.19/arch/mips/bcm963xx/include/bcm_map_part.h linux-2.6.19.new/arch/mips/bcm963xx/include/bcm_map_part.h
+--- linux-2.6.19/arch/mips/bcm963xx/include/bcm_map_part.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.new/arch/mips/bcm963xx/include/bcm_map_part.h	2006-12-16 18:46:31.000000000 +0100
+@@ -0,0 +1,34 @@
++/*
++<:copyright-gpl 
++ Copyright 2004 Broadcom Corp. All Rights Reserved. 
++ 
++ This program is free software; you can distribute it and/or modify it 
++ under the terms of the GNU General Public License (Version 2) as 
++ published by the Free Software Foundation. 
++ 
++ This program is distributed in the hope it will be useful, but WITHOUT 
++ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
++ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License 
++ for more details. 
++ 
++ You should have received a copy of the GNU General Public License along 
++ with this program; if not, write to the Free Software Foundation, Inc., 
++ 59 Temple Place - Suite 330, Boston MA 02111-1307, USA. 
++:>
++*/
++
++#ifndef __BCM_MAP_PART_H
++#define __BCM_MAP_PART_H
++
++#if defined(CONFIG_BCM96338)
++#include <6338_map_part.h>
++#endif
++#if defined(CONFIG_BCM96345)
++#include <6345_map_part.h>
++#endif
++#if defined(CONFIG_BCM96348)
++#include <6348_map_part.h>
++#endif
++
++#endif
++
+diff -urN linux-2.6.19/arch/mips/bcm963xx/include/bcmpci.h linux-2.6.19.new/arch/mips/bcm963xx/include/bcmpci.h
+--- linux-2.6.19/arch/mips/bcm963xx/include/bcmpci.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.new/arch/mips/bcm963xx/include/bcmpci.h	2006-12-16 18:46:31.000000000 +0100
+@@ -0,0 +1,87 @@
++/*
++<:copyright-gpl 
++ Copyright 2004 Broadcom Corp. All Rights Reserved. 
++ 
++ This program is free software; you can distribute it and/or modify it 
++ under the terms of the GNU General Public License (Version 2) as 
++ published by the Free Software Foundation. 
++ 
++ This program is distributed in the hope it will be useful, but WITHOUT 
++ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
++ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License 
++ for more details. 
++ 
++ You should have received a copy of the GNU General Public License along 
++ with this program; if not, write to the Free Software Foundation, Inc., 
++ 59 Temple Place - Suite 330, Boston MA 02111-1307, USA. 
++:>
++*/
++
++//
++// bcmpci.h - bcm96348 PCI, Cardbus, and PCMCIA definition
++//
++#ifndef BCMPCI_H
++#define BCMPCI_H
++
++/* Memory window in internal system bus address space */ 
++#define BCM_PCI_MEM_BASE        0x08000000
++/* IO window in internal system bus address space */ 
++#define BCM_PCI_IO_BASE         0x0C000000
++
++#define BCM_PCI_ADDR_MASK       0x1fffffff
++
++/* Memory window size (range) */
++#define BCM_PCI_MEM_SIZE_16MB   0x01000000
++/* IO window size (range) */
++#define BCM_PCI_IO_SIZE_64KB    0x00010000
++
++/* PCI Configuration and I/O space acesss */
++#define BCM_PCI_CFG(d, f, o)    ( (d << 11) | (f << 8) | (o/4 << 2) )
++
++/* fake USB PCI slot */
++#define USB_HOST_SLOT           9
++#define USB_BAR0_MEM_SIZE       0x0800
++
++#define BCM_HOST_MEM_SPACE1     0x10000000
++#define BCM_HOST_MEM_SPACE2     0x00000000
++
++/* 
++ * EBI bus clock is 33MHz and share with PCI bus
++ * each clock cycle is 30ns.
++ */
++/* attribute memory access wait cnt for 4306 */
++#define PCMCIA_ATTR_CE_HOLD     3  // data hold time 70ns
++#define PCMCIA_ATTR_CE_SETUP    3  // data setup time 50ns
++#define PCMCIA_ATTR_INACTIVE    6  // time between read/write cycles 180ns. For the total cycle time 600ns (cnt1+cnt2+cnt3+cnt4)
++#define PCMCIA_ATTR_ACTIVE      10 // OE/WE pulse width 300ns
++
++/* common memory access wait cnt for 4306 */
++#define PCMCIA_MEM_CE_HOLD      1  // data hold time 30ns
++#define PCMCIA_MEM_CE_SETUP     1  // data setup time 30ns
++#define PCMCIA_MEM_INACTIVE     2  // time between read/write cycles 40ns. For the total cycle time 250ns (cnt1+cnt2+cnt3+cnt4)
++#define PCMCIA_MEM_ACTIVE       5  // OE/WE pulse width 150ns
++
++#define PCCARD_VCC_MASK     0x00070000  // Mask Reset also
++#define PCCARD_VCC_33V      0x00010000
++#define PCCARD_VCC_50V      0x00020000
++
++typedef enum {
++    MPI_CARDTYPE_NONE,      // No Card in slot
++    MPI_CARDTYPE_PCMCIA,    // 16-bit PCMCIA card in slot    
++    MPI_CARDTYPE_CARDBUS,   // 32-bit CardBus card in slot
++}   CardType;
++
++#define CARDBUS_SLOT        0    // Slot 0 is default for CardBus
++
++#define pcmciaAttrOffset    0x00200000
++#define pcmciaMemOffset     0x00000000
++// Needs to be right above PCI I/O space. Give 0x8000 (32K) to PCMCIA. 
++#define pcmciaIoOffset      (BCM_PCI_IO_BASE + 0x80000)
++// Base Address is that mapped into the MPI ChipSelect registers. 
++// UBUS bridge MemoryWindow 0 outputs a 0x00 for the base.
++#define pcmciaBase          0xbf000000
++#define pcmciaAttr          (pcmciaAttrOffset | pcmciaBase)
++#define pcmciaMem           (pcmciaMemOffset  | pcmciaBase)
++#define pcmciaIo            (pcmciaIoOffset   | pcmciaBase)
++
++#endif
+diff -urN linux-2.6.19/arch/mips/bcm963xx/include/bcmtypes.h linux-2.6.19.new/arch/mips/bcm963xx/include/bcmtypes.h
+--- linux-2.6.19/arch/mips/bcm963xx/include/bcmtypes.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.new/arch/mips/bcm963xx/include/bcmtypes.h	2006-12-16 18:46:31.000000000 +0100
 @@ -0,0 +1,163 @@
 +/*
 +<:copyright-gpl 
@@ -6051,9 +6266,9 @@ diff -urN linux.old/arch/mips/bcm963xx/include/bcmtypes.h linux.dev/arch/mips/bc
 +#define READ8(addr)         (*(volatile UINT8  *)((ULONG)&addr))
 +
 +#endif
-diff -urN linux.old/arch/mips/bcm963xx/include/board.h linux.dev/arch/mips/bcm963xx/include/board.h
---- linux.old/arch/mips/bcm963xx/include/board.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm963xx/include/board.h	2006-08-25 01:52:34.000000000 +0200
+diff -urN linux-2.6.19/arch/mips/bcm963xx/include/board.h linux-2.6.19.new/arch/mips/bcm963xx/include/board.h
+--- linux-2.6.19/arch/mips/bcm963xx/include/board.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.new/arch/mips/bcm963xx/include/board.h	2006-12-16 18:46:31.000000000 +0100
 @@ -0,0 +1,373 @@
 +/*
 +<:copyright-gpl 
@@ -6428,9 +6643,9 @@ diff -urN linux.old/arch/mips/bcm963xx/include/board.h linux.dev/arch/mips/bcm96
 +
 +#endif /* _BOARD_H */
 +
-diff -urN linux.old/arch/mips/bcm963xx/int-handler.S linux.dev/arch/mips/bcm963xx/int-handler.S
---- linux.old/arch/mips/bcm963xx/int-handler.S	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm963xx/int-handler.S	2006-08-25 02:13:33.000000000 +0200
+diff -urN linux-2.6.19/arch/mips/bcm963xx/int-handler.S linux-2.6.19.new/arch/mips/bcm963xx/int-handler.S
+--- linux-2.6.19/arch/mips/bcm963xx/int-handler.S	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.new/arch/mips/bcm963xx/int-handler.S	2006-12-16 18:46:31.000000000 +0100
 @@ -0,0 +1,59 @@
 +/*
 +<:copyright-gpl 
@@ -6491,9 +6706,9 @@ diff -urN linux.old/arch/mips/bcm963xx/int-handler.S linux.dev/arch/mips/bcm963x
 +	nop
 +		
 +	END(brcmIRQ)
-diff -urN linux.old/arch/mips/bcm963xx/irq.c linux.dev/arch/mips/bcm963xx/irq.c
---- linux.old/arch/mips/bcm963xx/irq.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm963xx/irq.c	2006-08-25 03:54:34.000000000 +0200
+diff -urN linux-2.6.19/arch/mips/bcm963xx/irq.c linux-2.6.19.new/arch/mips/bcm963xx/irq.c
+--- linux-2.6.19/arch/mips/bcm963xx/irq.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.new/arch/mips/bcm963xx/irq.c	2006-12-16 18:46:31.000000000 +0100
 @@ -0,0 +1,256 @@
 +/*
 +<:copyright-gpl 
@@ -6751,178 +6966,9 @@ diff -urN linux.old/arch/mips/bcm963xx/irq.c linux.dev/arch/mips/bcm963xx/irq.c
 +EXPORT_SYMBOL(request_external_irq);
 +EXPORT_SYMBOL(BcmHalMapInterrupt);
 +
-diff -urN linux.old/arch/mips/bcm963xx/Kconfig linux.dev/arch/mips/bcm963xx/Kconfig
---- linux.old/arch/mips/bcm963xx/Kconfig	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm963xx/Kconfig	2006-08-25 01:22:39.000000000 +0200
-@@ -0,0 +1,138 @@
-+# Kernel and Driver configuration for Broadcom Commengine ADSL board
-+choice
-+	prompt "Broadcom Commengine ADSL board"
-+	depends on BCM963XX
-+	default BCM96345
-+	help
-+	  Select different Broadcom ADSL board
-+
-+config BCM96338
-+	bool "96338 ADSL board"
-+	select DMA_NONCOHERENT
-+	select HW_HAS_PCI
-+
-+config BCM96345
-+	bool "96345 ADSL board"
-+	select DMA_NONCOHERENT
-+	select HW_HAS_PCI
-+
-+config BCM96348
-+	bool "96348 ADSL board"
-+	select DMA_NONCOHERENT
-+	select HW_HAS_PCI
-+
-+endchoice
-+
-+config BCM_BOARD
-+	bool "Support for Broadcom Board"
-+	depends on BCM96338 || BCM96345 || BCM96348
-+
-+config BCM_SERIAL
-+	bool "Support for Serial Port"
-+	depends on BCM96338 || BCM96345 || BCM96348
-+
-+config BCM_ENET
-+	tristate "Support for Ethernet"
-+	depends on BCM96338 || BCM96345 || BCM96348
-+
-+config BCM_USB
-+	tristate "Support for USB"
-+	depends on BCM96338 || BCM96345 || BCM96348
-+
-+config BCM_WLAN
-+	tristate "Support for Wireless"
-+	depends on BCM96338 || BCM96345 || BCM96348
-+
-+config BCM_PCI
-+	bool "Support for PCI"
-+	depends on BCM96338 || BCM96345 || BCM96348
-+	select PCI
-+
-+config BCM_ATMAPI
-+	tristate "Support for ATM"
-+	depends on BCM96338 || BCM96345 || BCM96348
-+
-+config BCM_ATMTEST
-+	tristate "Support for ATM Diagnostic"
-+	depends on BCM96338 || BCM96345 || BCM96348
-+
-+config BCM_ADSL
-+	tristate "Support for ADSL"
-+	depends on BCM96338 || BCM96345 || BCM96348
-+
-+config BCM_ENDPOINT
-+	tristate "Support for VOICE"
-+	depends on BCM96338 || BCM96345 || BCM96348
-+
-+config BCM_PROCFS
-+	tristate "Support for PROCFS"
-+	depends on BCM96338 || BCM96345 || BCM96348
-+
-+config BCM_VDSL
-+	tristate "Support for VDSL"
-+	depends on BCM96338 || BCM96345 || BCM96348
-+
-+config BCM_SECURITY
-+	tristate "Support for SECURITY"
-+	depends on BCM96338 || BCM96345 || BCM96348
-+
-+config BCM_HPNA
-+	tristate "Support for HPNA"
-+	depends on BCM96338 || BCM96345 || BCM96348
-+
-+config BCM_BOARD_IMPL
-+	int "Implementation index for ADSL Board"
-+	depends on BCM96338 || BCM96345 || BCM96348
-+
-+config BCM_SERIAL_IMPL
-+	int "Implementation index for Serial"
-+	depends on BCM96338 || BCM96345 || BCM96348
-+
-+config BCM_ENET_IMPL
-+	int "Implementation index for Ethernet"
-+	depends on BCM96338 || BCM96345 || BCM96348
-+
-+config BCM_USB_IMPL
-+	int "Implementation index for USB"
-+	depends on BCM96338 || BCM96345 || BCM96348
-+
-+config BCM_WLAN_IMPL
-+	int "Implementation index for WIRELESS"
-+	depends on BCM96338 || BCM96345 || BCM96348
-+
-+config BCM_ATMAPI_IMPL
-+	int "Implementation index for ATM"
-+	depends on BCM96338 || BCM96345 || BCM96348
-+
-+config BCM_ATMTEST_IMPL
-+	int "Implementation index for ATM Diagnostic"
-+	depends on BCM96338 || BCM96345 || BCM96348
-+
-+config BCM_BLAA_IMPL
-+	int "Implementation index for BLAA"
-+	depends on BCM96338 || BCM96345 || BCM96348
-+
-+config BCM_ADSL_IMPL
-+	int "Implementation index for ADSL"
-+	depends on BCM96338 || BCM96345 || BCM96348
-+
-+config BCM_ENDPOINT_IMPL
-+	int "Implementation index for VOICE"
-+	depends on BCM96338 || BCM96345 || BCM96348
-+
-+config BCM_PROCFS_IMPL
-+	int "Implementation index for PROCFS"
-+	depends on BCM96338 || BCM96345 || BCM96348
-+
-+config BCM_VDSL_IMPL
-+	int "Implementation index for VDSL"
-+	depends on BCM96338 || BCM96345 || BCM96348
-+
-+config BCM_SECURITY_IMPL
-+	int "Implementation index for SECURITY"
-+	depends on BCM96338 || BCM96345 || BCM96348
-+
-+config BCM_HPNA_IMPL
-+	int "Implementation index for HPNA"
-+	depends on BCM96338 || BCM96345 || BCM96348
-+
-diff -urN linux.old/arch/mips/bcm963xx/Makefile linux.dev/arch/mips/bcm963xx/Makefile
---- linux.old/arch/mips/bcm963xx/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm963xx/Makefile	2006-08-25 02:04:27.000000000 +0200
-@@ -0,0 +1,23 @@
-+#
-+# Makefile for generic Broadcom MIPS boards
-+#
-+# Copyright (C) 2004 Broadcom Corporation
-+#
-+obj-y           := irq.o prom.o setup.o time.o ser_init.o bcm63xx_led.o  board.o  boardparms.o int-handler.o
-+
-+SRCBASE         := $(TOPDIR)
-+EXTRA_CFLAGS    += -I$(SRCBASE)/include
-+#EXTRA_CFLAGS    += -I$(INC_ADSLDRV_PATH) -DDBG
-+EXTRA_CFLAGS    += -I$(INC_ADSLDRV_PATH) 
-+
-+
-+ifeq "$(ADSL)" "ANNEX_B"
-+EXTRA_CFLAGS += -DADSL_ANNEXB
-+endif
-+ifeq "$(ADSL)" "SADSL"
-+EXTRA_CFLAGS += -DADSL_SADSL
-+endif
-+ifeq "$(ADSL)" "ANNEX_C"
-+EXTRA_CFLAGS += -DADSL_ANNEXC
-+endif
-+
-diff -urN linux-2.6.17/arch/mips/bcm963xx/prom.c linux-2.6.17-brcm63xx/arch/mips/bcm963xx/prom.c
---- linux-2.6.17/arch/mips/bcm963xx/prom.c      1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.17-brcm63xx/arch/mips/bcm963xx/prom.c     2006-08-29 07:10:10.000000000 +0200
+diff -urN linux-2.6.19/arch/mips/bcm963xx/prom.c linux-2.6.19.new/arch/mips/bcm963xx/prom.c
+--- linux-2.6.19/arch/mips/bcm963xx/prom.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.new/arch/mips/bcm963xx/prom.c	2006-12-16 18:46:31.000000000 +0100
 @@ -0,0 +1,143 @@
 +/*
 +<:copyright-gpl
@@ -7067,9 +7113,9 @@ diff -urN linux-2.6.17/arch/mips/bcm963xx/prom.c linux-2.6.17-brcm63xx/arch/mips
 +
 +}
 +
-diff -urN linux.old/arch/mips/bcm963xx/ser_init.c linux.dev/arch/mips/bcm963xx/ser_init.c
---- linux.old/arch/mips/bcm963xx/ser_init.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm963xx/ser_init.c	2006-08-25 00:39:38.000000000 +0200
+diff -urN linux-2.6.19/arch/mips/bcm963xx/ser_init.c linux-2.6.19.new/arch/mips/bcm963xx/ser_init.c
+--- linux-2.6.19/arch/mips/bcm963xx/ser_init.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.new/arch/mips/bcm963xx/ser_init.c	2006-12-16 18:46:31.000000000 +0100
 @@ -0,0 +1,180 @@
 +/*
 +<:copyright-gpl 
@@ -7251,9 +7297,9 @@ diff -urN linux.old/arch/mips/bcm963xx/ser_init.c linux.dev/arch/mips/bcm963xx/s
 +	prom_puts(ptr);
 +}
 +#endif
-diff -urN linux.old/arch/mips/bcm963xx/setup.c linux.dev/arch/mips/bcm963xx/setup.c
---- linux.old/arch/mips/bcm963xx/setup.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm963xx/setup.c	2006-08-25 02:26:58.000000000 +0200
+diff -urN linux-2.6.19/arch/mips/bcm963xx/setup.c linux-2.6.19.new/arch/mips/bcm963xx/setup.c
+--- linux-2.6.19/arch/mips/bcm963xx/setup.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.new/arch/mips/bcm963xx/setup.c	2006-12-16 18:46:31.000000000 +0100
 @@ -0,0 +1,525 @@
 +/*
 +<:copyright-gpl 
@@ -7780,15 +7826,15 @@ diff -urN linux.old/arch/mips/bcm963xx/setup.c linux.dev/arch/mips/bcm963xx/setu
 +EXPORT_SYMBOL(_ZdlPv);
 +EXPORT_SYMBOL(_ZdaPv);
 +
-diff -urN linux.old/arch/mips/bcm963xx/softdsl/AdslCoreDefs.h linux.dev/arch/mips/bcm963xx/softdsl/AdslCoreDefs.h
---- linux.old/arch/mips/bcm963xx/softdsl/AdslCoreDefs.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm963xx/softdsl/AdslCoreDefs.h	2006-08-25 00:39:38.000000000 +0200
+diff -urN linux-2.6.19/arch/mips/bcm963xx/softdsl/AdslCoreDefs.h linux-2.6.19.new/arch/mips/bcm963xx/softdsl/AdslCoreDefs.h
+--- linux-2.6.19/arch/mips/bcm963xx/softdsl/AdslCoreDefs.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.new/arch/mips/bcm963xx/softdsl/AdslCoreDefs.h	2006-12-16 18:46:31.000000000 +0100
 @@ -0,0 +1,2 @@
 +#define ADSL_SDRAM_IMAGE_SIZE (384*1024)
 +
-diff -urN linux.old/arch/mips/bcm963xx/time.c linux.dev/arch/mips/bcm963xx/time.c
---- linux.old/arch/mips/bcm963xx/time.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/bcm963xx/time.c	2006-08-25 03:58:22.000000000 +0200
+diff -urN linux-2.6.19/arch/mips/bcm963xx/time.c linux-2.6.19.new/arch/mips/bcm963xx/time.c
+--- linux-2.6.19/arch/mips/bcm963xx/time.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.new/arch/mips/bcm963xx/time.c	2006-12-16 18:46:31.000000000 +0100
 @@ -0,0 +1,114 @@
 +/*
 +<:copyright-gpl
@@ -7904,37 +7950,10 @@ diff -urN linux.old/arch/mips/bcm963xx/time.c linux.dev/arch/mips/bcm963xx/time.
 +	write_c0_compare(r4k_cur);
 +	set_c0_status(IE_IRQ5);
 +}
-diff -urN linux.old/arch/mips/Kconfig linux.dev/arch/mips/Kconfig
---- linux.old/arch/mips/Kconfig	2006-08-25 00:43:39.000000000 +0200
-+++ linux.dev/arch/mips/Kconfig	2006-08-25 01:57:46.000000000 +0200
-@@ -12,6 +12,15 @@
- 	prompt "System type"
- 	default SGI_IP22
- 
-+config BCM963XX 
-+	bool "Support for the Broadcom boards"
-+	select SYS_SUPPORTS_32BIT_KERNEL
-+	select SYS_SUPPORTS_BIG_ENDIAN
-+	select SYS_HAS_CPU_MIPS32_R1
-+	select IRQ_CPU
-+	help
-+	 This is a fmaily of boards based on the Broadcom MIPS32
-+
- config MIPS_MTX1
- 	bool "4G Systems MTX-1 board"
- 	select DMA_NONCOHERENT
-@@ -780,6 +789,7 @@
- 
- endchoice
- 
-+source "arch/mips/bcm963xx/Kconfig"
- source "arch/mips/ddb5xxx/Kconfig"
- source "arch/mips/gt64120/ev64120/Kconfig"
- source "arch/mips/jazz/Kconfig"
-diff -urN linux.old/arch/mips/kernel/cpu-probe.c linux.dev/arch/mips/kernel/cpu-probe.c
---- linux.old/arch/mips/kernel/cpu-probe.c	2006-08-25 00:43:39.000000000 +0200
-+++ linux.dev/arch/mips/kernel/cpu-probe.c	2006-08-25 00:39:38.000000000 +0200
-@@ -568,6 +568,25 @@
+diff -urN linux-2.6.19/arch/mips/kernel/cpu-probe.c linux-2.6.19.new/arch/mips/kernel/cpu-probe.c
+--- linux-2.6.19/arch/mips/kernel/cpu-probe.c	2006-11-29 22:57:37.000000000 +0100
++++ linux-2.6.19.new/arch/mips/kernel/cpu-probe.c	2006-12-16 18:46:31.000000000 +0100
+@@ -602,6 +602,25 @@
  		return;
  }
  
@@ -7960,7 +7979,7 @@ diff -urN linux.old/arch/mips/kernel/cpu-probe.c linux.dev/arch/mips/kernel/cpu-
  static inline void cpu_probe_mips(struct cpuinfo_mips *c)
  {
  	decode_configs(c);
-@@ -704,6 +723,9 @@
+@@ -736,6 +755,9 @@
  	case PRID_COMP_LEGACY:
  		cpu_probe_legacy(c);
  		break;
@@ -7970,10 +7989,10 @@ diff -urN linux.old/arch/mips/kernel/cpu-probe.c linux.dev/arch/mips/kernel/cpu-
  	case PRID_COMP_MIPS:
  		cpu_probe_mips(c);
  		break;
-diff -urN linux.old/arch/mips/kernel/proc.c linux.dev/arch/mips/kernel/proc.c
---- linux.old/arch/mips/kernel/proc.c	2006-08-25 00:43:39.000000000 +0200
-+++ linux.dev/arch/mips/kernel/proc.c	2006-08-25 00:39:38.000000000 +0200
-@@ -85,6 +85,9 @@
+diff -urN linux-2.6.19/arch/mips/kernel/proc.c linux-2.6.19.new/arch/mips/kernel/proc.c
+--- linux-2.6.19/arch/mips/kernel/proc.c	2006-11-29 22:57:37.000000000 +0100
++++ linux-2.6.19.new/arch/mips/kernel/proc.c	2006-12-16 18:46:31.000000000 +0100
+@@ -84,6 +84,9 @@
  	[CPU_VR4181A]	= "NEC VR4181A",
  	[CPU_SR71000]	= "Sandcraft SR71000",
  	[CPU_PR4450]	= "Philips PR4450",
@@ -7983,29 +8002,10 @@ diff -urN linux.old/arch/mips/kernel/proc.c linux.dev/arch/mips/kernel/proc.c
  };
  
  
-diff -urN linux.old/arch/mips/Makefile linux.dev/arch/mips/Makefile
---- linux.old/arch/mips/Makefile	2006-08-25 00:43:39.000000000 +0200
-+++ linux.dev/arch/mips/Makefile	2006-08-25 15:39:54.000000000 +0200
-@@ -145,6 +145,15 @@
- #
- 
- #
-+# Broadcom board
-+#
-+core-$(CONFIG_BCM963XX)	+= arch/mips/bcm963xx/
-+cflags-$(CONFIG_BCM963XX)     	+= -Iinclude/asm-mips/mach-bcm963xx
-+cflags-$(CONFIG_BCM963XX)     	+= -Iarch/mips/bcm963xx/include
-+load-$(CONFIG_BCM963XX)	+= 0xffffffff80010000
-+
-+
-+#
- # Acer PICA 61, Mips Magnum 4000 and Olivetti M700.
- #
- core-$(CONFIG_MACH_JAZZ)	+= arch/mips/jazz/
-diff -urN linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
---- linux.old/arch/mips/mm/c-r4k.c	2006-08-25 00:43:39.000000000 +0200
-+++ linux.dev/arch/mips/mm/c-r4k.c	2006-08-25 00:39:38.000000000 +0200
-@@ -914,6 +914,13 @@
+diff -urN linux-2.6.19/arch/mips/mm/c-r4k.c linux-2.6.19.new/arch/mips/mm/c-r4k.c
+--- linux-2.6.19/arch/mips/mm/c-r4k.c	2006-11-29 22:57:37.000000000 +0100
++++ linux-2.6.19.new/arch/mips/mm/c-r4k.c	2006-12-16 18:46:31.000000000 +0100
+@@ -852,6 +852,13 @@
  		if (!(config & MIPS_CONF_M))
  			panic("Don't know how to probe P-caches on this cpu.");
  
@@ -8019,10 +8019,10 @@ diff -urN linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
  		/*
  		 * So we seem to be a MIPS32 or MIPS64 CPU
  		 * So let's probe the I-cache ...
-diff -urN linux.old/arch/mips/mm/tlbex.c linux.dev/arch/mips/mm/tlbex.c
---- linux.old/arch/mips/mm/tlbex.c	2006-08-25 00:43:39.000000000 +0200
-+++ linux.dev/arch/mips/mm/tlbex.c	2006-08-25 00:39:38.000000000 +0200
-@@ -882,6 +882,9 @@
+diff -urN linux-2.6.19/arch/mips/mm/tlbex.c linux-2.6.19.new/arch/mips/mm/tlbex.c
+--- linux-2.6.19/arch/mips/mm/tlbex.c	2006-11-29 22:57:37.000000000 +0100
++++ linux-2.6.19.new/arch/mips/mm/tlbex.c	2006-12-16 18:46:31.000000000 +0100
+@@ -880,6 +880,9 @@
  	case CPU_4KSC:
  	case CPU_20KC:
  	case CPU_25KF:
@@ -8032,9 +8032,20 @@ diff -urN linux.old/arch/mips/mm/tlbex.c linux.dev/arch/mips/mm/tlbex.c
  		tlbw(p);
  		break;
  
-diff -urN linux-2.6.17/arch/mips/pci/fixup-bcm96348.c linux-2.6.17-brcm63xx/arch/mips/pci/fixup-bcm96348.c
---- linux-2.6.17/arch/mips/pci/fixup-bcm96348.c 1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.17-brcm63xx/arch/mips/pci/fixup-bcm96348.c        2006-08-29 10:25:22.000000000 +0200
+diff -urN linux-2.6.19/arch/mips/pci/Makefile linux-2.6.19.new/arch/mips/pci/Makefile
+--- linux-2.6.19/arch/mips/pci/Makefile	2006-11-29 22:57:37.000000000 +0100
++++ linux-2.6.19.new/arch/mips/pci/Makefile	2006-12-16 18:48:18.000000000 +0100
+@@ -17,6 +17,7 @@
+ obj-$(CONFIG_PCI_VR41XX)	+= ops-vr41xx.o pci-vr41xx.o
+ obj-$(CONFIG_NEC_CMBVR4133)	+= fixup-vr4133.o
+ obj-$(CONFIG_MARKEINS)		+= ops-emma2rh.o pci-emma2rh.o fixup-emma2rh.o
++obj-$(CONFIG_BCM_PCI)		+= fixup-bcm96348.o pci-bcm96348.o ops-bcm96348.o
+ 
+ #
+ # These are still pretty much in the old state, watch, go blind.
+diff -urN linux-2.6.19/arch/mips/pci/fixup-bcm96348.c linux-2.6.19.new/arch/mips/pci/fixup-bcm96348.c
+--- linux-2.6.19/arch/mips/pci/fixup-bcm96348.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.new/arch/mips/pci/fixup-bcm96348.c	2006-12-16 18:46:31.000000000 +0100
 @@ -0,0 +1,93 @@
 +/*
 +<:copyright-gpl
@@ -8129,20 +8140,9 @@ diff -urN linux-2.6.17/arch/mips/pci/fixup-bcm96348.c linux-2.6.17-brcm63xx/arch
 +    { PCI_FIXUP_FINAL, PCI_ANY_ID, PCI_ANY_ID, bcm96348_fixup },
 +    {0}
 +};*/
-diff -urN linux.old/arch/mips/pci/Makefile linux.dev/arch/mips/pci/Makefile
---- linux.old/arch/mips/pci/Makefile	2006-08-25 00:43:29.000000000 +0200
-+++ linux.dev/arch/mips/pci/Makefile	2006-08-25 00:39:38.000000000 +0200
-@@ -18,6 +18,7 @@
- obj-$(CONFIG_MIPS_TX3927)	+= ops-tx3927.o
- obj-$(CONFIG_PCI_VR41XX)	+= ops-vr41xx.o pci-vr41xx.o
- obj-$(CONFIG_NEC_CMBVR4133)	+= fixup-vr4133.o
-+obj-$(CONFIG_BCM_PCI)		+= fixup-bcm96348.o pci-bcm96348.o ops-bcm96348.o
- 
- #
- # These are still pretty much in the old state, watch, go blind.
-diff -urN linux.old/arch/mips/pci/ops-bcm96348.c linux.dev/arch/mips/pci/ops-bcm96348.c
---- linux.old/arch/mips/pci/ops-bcm96348.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/arch/mips/pci/ops-bcm96348.c	2006-08-25 00:39:38.000000000 +0200
+diff -urN linux-2.6.19/arch/mips/pci/ops-bcm96348.c linux-2.6.19.new/arch/mips/pci/ops-bcm96348.c
+--- linux-2.6.19/arch/mips/pci/ops-bcm96348.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.new/arch/mips/pci/ops-bcm96348.c	2006-12-16 18:46:31.000000000 +0100
 @@ -0,0 +1,276 @@
 +/*
 +<:copyright-gpl 
@@ -8420,9 +8420,9 @@ diff -urN linux.old/arch/mips/pci/ops-bcm96348.c linux.dev/arch/mips/pci/ops-bcm
 +    .read   = bcm96348_pcibios_read,
 +    .write  = bcm96348_pcibios_write
 +};
-diff -urN linux-2.6.17/arch/mips/pci/pci-bcm96348.c linux-2.6.17-brcm63xx/arch/mips/pci/pci-bcm96348.c
---- linux-2.6.17/arch/mips/pci/pci-bcm96348.c   1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.17-brcm63xx/arch/mips/pci/pci-bcm96348.c  2006-08-29 10:25:13.000000000 +0200
+diff -urN linux-2.6.19/arch/mips/pci/pci-bcm96348.c linux-2.6.19.new/arch/mips/pci/pci-bcm96348.c
+--- linux-2.6.19/arch/mips/pci/pci-bcm96348.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.new/arch/mips/pci/pci-bcm96348.c	2006-12-16 18:46:31.000000000 +0100
 @@ -0,0 +1,54 @@
 +/*
 +<:copyright-gpl
@@ -8478,9 +8478,17 @@ diff -urN linux-2.6.17/arch/mips/pci/pci-bcm96348.c linux-2.6.17-brcm63xx/arch/m
 +}
 +
 +arch_initcall(bcm96348_pci_init);
-diff -urN linux.old/drivers/serial/bcm63xx_cons.c linux.dev/drivers/serial/bcm63xx_cons.c
---- linux.old/drivers/serial/bcm63xx_cons.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/drivers/serial/bcm63xx_cons.c	2006-08-25 15:37:34.000000000 +0200
+diff -urN linux-2.6.19/drivers/serial/Makefile linux-2.6.19.new/drivers/serial/Makefile
+--- linux-2.6.19/drivers/serial/Makefile	2006-11-29 22:57:37.000000000 +0100
++++ linux-2.6.19.new/drivers/serial/Makefile	2006-12-16 18:49:17.000000000 +0100
+@@ -56,3 +56,4 @@
+ obj-$(CONFIG_SERIAL_SGI_IOC3) += ioc3_serial.o
+ obj-$(CONFIG_SERIAL_ATMEL) += atmel_serial.o
+ obj-$(CONFIG_SERIAL_NETX) += netx-serial.o
++obj-$(CONFIG_BCM_SERIAL) += bcm63xx_cons.o
+diff -urN linux-2.6.19/drivers/serial/bcm63xx_cons.c linux-2.6.19.new/drivers/serial/bcm63xx_cons.c
+--- linux-2.6.19/drivers/serial/bcm63xx_cons.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.new/drivers/serial/bcm63xx_cons.c	2006-12-16 18:46:31.000000000 +0100
 @@ -0,0 +1,1049 @@
 +/*
 +<:copyright-gpl 
@@ -9531,20 +9539,12 @@ diff -urN linux.old/drivers/serial/bcm63xx_cons.c linux.dev/drivers/serial/bcm63
 +}
 +
 +console_initcall(bcm63xx_console_init);
-diff -urN linux.old/drivers/serial/Makefile linux.dev/drivers/serial/Makefile
---- linux.old/drivers/serial/Makefile	2006-06-18 03:49:35.000000000 +0200
-+++ linux.dev/drivers/serial/Makefile	2006-08-25 15:38:44.000000000 +0200
-@@ -55,3 +55,4 @@
- obj-$(CONFIG_SERIAL_SGI_IOC4) += ioc4_serial.o
- obj-$(CONFIG_SERIAL_SGI_IOC3) += ioc3_serial.o
- obj-$(CONFIG_SERIAL_AT91) += at91_serial.o
-+obj-$(CONFIG_BCM_SERIAL) += bcm63xx_cons.o
-diff -urN linux.old/include/asm-mips/bootinfo.h linux.dev/include/asm-mips/bootinfo.h
---- linux.old/include/asm-mips/bootinfo.h	2006-08-25 00:43:22.000000000 +0200
-+++ linux.dev/include/asm-mips/bootinfo.h	2006-08-25 00:39:38.000000000 +0200
-@@ -218,6 +218,14 @@
- #define MACH_GROUP_TITAN       22	/* PMC-Sierra Titan		*/
- #define  MACH_TITAN_YOSEMITE	1	/* PMC-Sierra Yosemite		*/
+diff -urN linux-2.6.19/include/asm-mips/bootinfo.h linux-2.6.19.new/include/asm-mips/bootinfo.h
+--- linux-2.6.19/include/asm-mips/bootinfo.h	2006-11-29 22:57:37.000000000 +0100
++++ linux-2.6.19.new/include/asm-mips/bootinfo.h	2006-12-16 18:46:31.000000000 +0100
+@@ -212,6 +212,14 @@
+ #define MACH_GROUP_NEC_EMMA2RH 25	/* NEC EMMA2RH (was 23)		*/
+ #define  MACH_NEC_MARKEINS	0	/* NEC EMMA2RH Mark-eins	*/
  
 +/*
 + * Valid machtype for group BRCM
@@ -9557,9 +9557,9 @@ diff -urN linux.old/include/asm-mips/bootinfo.h linux.dev/include/asm-mips/booti
  #define CL_SIZE			COMMAND_LINE_SIZE
  
  const char *get_system_type(void);
-diff -urN linux.old/include/asm-mips/cpu.h linux.dev/include/asm-mips/cpu.h
---- linux.old/include/asm-mips/cpu.h	2006-08-25 00:43:22.000000000 +0200
-+++ linux.dev/include/asm-mips/cpu.h	2006-08-25 00:39:38.000000000 +0200
+diff -urN linux-2.6.19/include/asm-mips/cpu.h linux-2.6.19.new/include/asm-mips/cpu.h
+--- linux-2.6.19/include/asm-mips/cpu.h	2006-11-29 22:57:37.000000000 +0100
++++ linux-2.6.19.new/include/asm-mips/cpu.h	2006-12-16 18:46:31.000000000 +0100
 @@ -103,6 +103,13 @@
  
  #define PRID_IMP_SR71000        0x0400
@@ -9586,61 +9586,50 @@ diff -urN linux.old/include/asm-mips/cpu.h linux.dev/include/asm-mips/cpu.h
  
  /*
   * ISA Level encodings
-diff -urN linux.old/include/asm-mips/mach-bcm963xx/cpu-feature-overrides.h linux.dev/include/asm-mips/mach-bcm963xx/cpu-feature-overrides.h
---- linux.old/include/asm-mips/mach-bcm963xx/cpu-feature-overrides.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux.dev/include/asm-mips/mach-bcm963xx/cpu-feature-overrides.h	2006-08-25 11:27:40.000000000 +0200
+diff -urN linux-2.6.19/include/asm-mips/mach-bcm963xx/cpu-feature-overrides.h linux-2.6.19.new/include/asm-mips/mach-bcm963xx/cpu-feature-overrides.h
+--- linux-2.6.19/include/asm-mips/mach-bcm963xx/cpu-feature-overrides.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.new/include/asm-mips/mach-bcm963xx/cpu-feature-overrides.h	2006-12-16 18:52:30.000000000 +0100
 @@ -0,0 +1,36 @@
 +#ifndef __ASM_MACH_BCM963XX_CPU_FEATURE_OVERRIDES_H
 +#define __ASM_MACH_BCM963XX_CPU_FEATURE_OVERRIDES_H
 +
-+#define cpu_has_tlb			1
-+#define cpu_has_4kex			4
-+#define cpu_has_4ktlb			8
-+#define cpu_has_fpu			0
-+#define cpu_has_32fpr			0
++#define cpu_has_tlb                    	1
++#define cpu_has_4kex                   	4
++#define cpu_has_4ktlb                  	8
++#define cpu_has_fpu                    	0
++#define cpu_has_32fpr                  	0
 +#define cpu_has_counter			0x40
-+#define cpu_has_watch			0
-+#define cpu_has_mips16			0
-+#define cpu_has_divec			0x200
-+#define cpu_has_vce			0
-+#define cpu_has_cache_cdex_p		0
-+#define cpu_has_cache_cdex_s		0
-+#define cpu_has_prefetch		0x40000
-+#define cpu_has_mcheck			0x2000
-+#define cpu_has_ejtag			0x4000
-+#define cpu_has_llsc			0x10000
-+#define cpu_has_vtag_icache		0
-+#define cpu_has_dc_aliases		0
-+#define cpu_has_ic_fills_f_dc		0
++#define cpu_has_watch                  	0
++#define cpu_has_mips16                 	0
++#define cpu_has_divec                  	0x200
++#define cpu_has_vce                    	0
++#define cpu_has_cache_cdex_p           	0
++#define cpu_has_cache_cdex_s           	0
++#define cpu_has_prefetch               	0x40000
++#define cpu_has_mcheck                 	0x2000
++#define cpu_has_ejtag                  	0x4000
++#define cpu_has_llsc                   	0x10000
++#define cpu_has_vtag_icache            	0
++#define cpu_has_dc_aliases             	0
++#define cpu_has_ic_fills_f_dc          	0
 +
-+#define cpu_has_nofpuex			0
-+#define cpu_has_64bits			0
-+#define cpu_has_64bit_zero_reg		0
-+#define cpu_has_64bit_gp_regs		0
-+#define cpu_has_64bit_addresses		0
++#define cpu_has_nofpuex               	0
++#define cpu_has_64bits                 	0
++#define cpu_has_64bit_zero_reg         	0
++#define cpu_has_64bit_gp_regs          	0
++#define cpu_has_64bit_addresses        	0
 +
-+#define cpu_has_subset_pcaches		0
++#define cpu_has_subset_pcaches         	0
 +
-+#define cpu_dcache_line_size()		16
-+#define cpu_icache_line_size()		16
-+#define cpu_scache_line_size()		0
++#define cpu_dcache_line_size()         	16
++#define cpu_icache_line_size()         	16
++#define cpu_scache_line_size()         	0
 +
 +#endif /* __ASM_MACH_BCM963XX_CPU_FEATURE_OVERRIDES_H */
-diff -urN linux.old/include/asm-mips/mach-generic/param.h linux.dev/include/asm-mips/mach-generic/param.h
---- linux.old/include/asm-mips/mach-generic/param.h	2006-08-25 00:43:22.000000000 +0200
-+++ linux.dev/include/asm-mips/mach-generic/param.h	2006-08-25 00:39:38.000000000 +0200
-@@ -8,6 +8,6 @@
- #ifndef __ASM_MACH_GENERIC_PARAM_H
- #define __ASM_MACH_GENERIC_PARAM_H
- 
--#define HZ		1000		/* Internal kernel timer frequency */
-+#define HZ		200		/* Internal kernel timer frequency */
- 
- #endif /* __ASM_MACH_GENERIC_PARAM_H */
-diff -urN linux.old/include/asm-mips/module.h linux.dev/include/asm-mips/module.h
---- linux.old/include/asm-mips/module.h	2006-08-25 00:43:22.000000000 +0200
-+++ linux.dev/include/asm-mips/module.h	2006-08-25 00:39:38.000000000 +0200
-@@ -113,6 +113,12 @@
+diff -urN linux-2.6.19/include/asm-mips/module.h linux-2.6.19.new/include/asm-mips/module.h
+--- linux-2.6.19/include/asm-mips/module.h	2006-11-29 22:57:37.000000000 +0100
++++ linux-2.6.19.new/include/asm-mips/module.h	2006-12-16 19:03:22.000000000 +0100
+@@ -112,6 +112,12 @@
  #define MODULE_PROC_FAMILY "RM9000 "
  #elif defined CONFIG_CPU_SB1
  #define MODULE_PROC_FAMILY "SB1 "
@@ -9653,4 +9642,3 @@ diff -urN linux.old/include/asm-mips/module.h linux.dev/include/asm-mips/module.
  #else
  #error MODULE_PROC_FAMILY undefined for your processor configuration
  #endif
-
