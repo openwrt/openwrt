@@ -34,4 +34,10 @@ define Profile/Atheros
 endef
 $(eval $(call Profile,Atheros))
 
+define Profile/Ralink
+  NAME:=Ralink WiFi
+  PACKAGES:=kmod-rt61
+endef
+$(eval $(call Profile,Ralink))
+
 $(eval $(call BuildKernel))
