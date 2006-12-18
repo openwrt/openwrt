@@ -1,0 +1,35 @@
+---
+ arch/arm/mach-ixp4xx/nslu2-setup.c |   13 ++++++++++++-
+ 1 file changed, 12 insertions(+), 1 deletion(-)
+
+Index: linux-2.6.19/arch/arm/mach-ixp4xx/nslu2-setup.c
+===================================================================
+--- linux-2.6.19.orig/arch/arm/mach-ixp4xx/nslu2-setup.c
++++ linux-2.6.19/arch/arm/mach-ixp4xx/nslu2-setup.c
+@@ -159,6 +159,16 @@ static struct platform_device mac0 = {
+ 	.resource       = &res_mac0,
+ };
+ 
++struct npe_ucode_platform_data nslu2_npe_ucode_data = {
++	.mtd_partition	= "FIS directory",
++};
++
++static struct platform_device nslu2_npe_ucode = {
++	.name			= "ixp4xx_npe_ucode",
++	.id			= 0,
++	.dev.platform_data	= &nslu2_npe_ucode_data,
++};
++
+ static struct platform_device *nslu2_devices[] __initdata = {
+ 	&nslu2_i2c_controller,
+ 	&nslu2_flash,
+@@ -166,7 +176,8 @@ static struct platform_device *nslu2_dev
+ #ifdef CONFIG_LEDS_IXP4XX
+ 	&nslu2_leds,
+ #endif
+-	&mac0
++	&mac0,
++	&nslu2_npe_ucode,
+ };
+ 
+ static void nslu2_power_off(void)

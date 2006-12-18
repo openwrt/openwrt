@@ -1,0 +1,56 @@
+---
+ arch/arm/mach-ixp4xx/nslu2-setup.c |   27 +++++++++++++++++++++++++++
+ 1 file changed, 27 insertions(+)
+
+Index: linux-2.6.19/arch/arm/mach-ixp4xx/nslu2-setup.c
+===================================================================
+--- linux-2.6.19.orig/arch/arm/mach-ixp4xx/nslu2-setup.c
++++ linux-2.6.19/arch/arm/mach-ixp4xx/nslu2-setup.c
+@@ -18,6 +18,7 @@
+ #include <linux/serial.h>
+ #include <linux/serial_8250.h>
+ #include <linux/leds.h>
++#include <linux/mtd/mtd.h>
+ 
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+@@ -180,6 +181,30 @@ static struct platform_device *nslu2_dev
+ 	&nslu2_npe_ucode,
+ };
+ 
++static void nslu2_flash_add(struct mtd_info *mtd)
++{
++	if (strcmp(mtd->name, "RedBoot") == 0) {
++		size_t retlen;
++		u_char mac[6];
++
++		if (mtd->read(mtd, 0x3FFB0, 6, &retlen, mac) == 0 && retlen == 6) {
++			printk(KERN_INFO "nslu2 mac: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x\n",
++				mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
++			memcpy(plat_mac0.hwaddr, mac, 6);
++		} else {
++			printk(KERN_ERR "nslu2 mac: read failed\n");
++		}
++	}
++}
++
++static void nslu2_flash_remove(struct mtd_info *mtd) {
++}
++
++static struct mtd_notifier nslu2_flash_notifier = {
++	.add = nslu2_flash_add,
++	.remove = nslu2_flash_remove,
++};
++
+ static void nslu2_power_off(void)
+ {
+ 	/* This causes the box to drop the power and go dead. */
+@@ -210,6 +235,8 @@ static void __init nslu2_init(void)
+ 	(void)platform_device_register(&nslu2_uart);
+ 
+ 	platform_add_devices(nslu2_devices, ARRAY_SIZE(nslu2_devices));
++
++	register_mtd_user(&nslu2_flash_notifier);
+ }
+ 
+ MACHINE_START(NSLU2, "Linksys NSLU2")

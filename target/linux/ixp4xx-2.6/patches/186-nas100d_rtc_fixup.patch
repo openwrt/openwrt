@@ -1,0 +1,55 @@
+Index: linux-2.6.19/arch/arm/mach-ixp4xx/nas100d-setup.c
+===================================================================
+--- linux-2.6.19.orig/arch/arm/mach-ixp4xx/nas100d-setup.c
++++ linux-2.6.19/arch/arm/mach-ixp4xx/nas100d-setup.c
+@@ -18,6 +18,7 @@
+ #include <linux/leds.h>
+ #include <linux/mtd/mtd.h>
+ 
++#include <asm/setup.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ #include <asm/mach/flash.h>
+@@ -225,11 +226,42 @@ static void __init nas100d_init(void)
+ 	register_mtd_user(&nas100d_flash_notifier);
+ }
+ 
++static char nas100d_rtc_probe[] __initdata = "rtc-pcf8563.probe=0,0x51 ";
++
++static void __init nas100d_fixup(struct machine_desc *desc,
++		struct tag *tags, char **cmdline, struct meminfo *mi)
++{
++	struct tag *t = tags;
++	char *p = *cmdline;
++
++	/* Find the end of the tags table, taking note of any cmdline tag. */
++	for (; t->hdr.size; t = tag_next(t)) {
++		if (t->hdr.tag == ATAG_CMDLINE) {
++			p = t->u.cmdline.cmdline;
++		}
++	}
++
++	/* Overwrite the end of the table with a new cmdline tag. */
++	t->hdr.tag = ATAG_CMDLINE;
++	t->hdr.size =
++		(sizeof (struct tag_header) +
++		 strlen(nas100d_rtc_probe) + strlen(p) + 1 + 4) >> 2;
++	strlcpy(t->u.cmdline.cmdline, nas100d_rtc_probe, COMMAND_LINE_SIZE);
++	strlcpy(t->u.cmdline.cmdline + strlen(nas100d_rtc_probe), p,
++		COMMAND_LINE_SIZE - strlen(nas100d_rtc_probe));
++
++	/* Terminate the table. */
++	t = tag_next(t);
++	t->hdr.tag = ATAG_NONE;
++	t->hdr.size = 0;
++}
++
+ MACHINE_START(NAS100D, "Iomega NAS 100d")
+ 	/* Maintainer: www.nslu2-linux.org */
+ 	.phys_io	= IXP4XX_PERIPHERAL_BASE_PHYS,
+ 	.io_pg_offst	= ((IXP4XX_PERIPHERAL_BASE_VIRT) >> 18) & 0xFFFC,
+ 	.boot_params	= 0x00000100,
++	.fixup          = nas100d_fixup,
+ 	.map_io		= ixp4xx_map_io,
+ 	.init_irq	= ixp4xx_init_irq,
+ 	.timer          = &ixp4xx_timer,

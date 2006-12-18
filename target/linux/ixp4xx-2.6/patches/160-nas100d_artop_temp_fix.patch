@@ -1,0 +1,49 @@
+From: Alan Cox <alan@redhat.com>
+To: Alessandro Zummo <alessandro.zummo@towertech.it>
+Cc: Jeff Garzik <jgarzik@redhat.com>, Alan Cox <alan@redhat.com>
+Subject: Re: drivers/ata/pata_artop.c
+Date: Sun, 15 Oct 2006 14:25:16 -0400
+User-Agent: Mutt/1.4.1i
+
+On Sun, Oct 15, 2006 at 07:18:31PM +0200, Alessandro Zummo wrote:
+>  In the discovery phase there's a lot of time spent in the detection
+>  of the second port.  
+
+The error recovery is a bit determined right now - Tejun's been doing some
+work on SRST behaviour and also for the worst cases polled detect so it
+should come out ok
+
+>  What's the correct way to inform the driver
+>  to avoid checking the second port?  
+
+Set the number of ports to 1 in your own tree for now. The real fix is
+not to go poking at pata ports if the ret is 0xFF
+
+---
+ drivers/ata/pata_artop.c |    6 ++++++
+ 1 file changed, 6 insertions(+)
+
+Index: linux-2.6.19/drivers/ata/pata_artop.c
+===================================================================
+--- linux-2.6.19.orig/drivers/ata/pata_artop.c
++++ linux-2.6.19/drivers/ata/pata_artop.c
+@@ -26,6 +26,7 @@
+ #include <scsi/scsi_host.h>
+ #include <linux/libata.h>
+ #include <linux/ata.h>
++#include <asm/mach-types.h>
+ 
+ #define DRV_NAME	"pata_artop"
+ #define DRV_VERSION	"0.4.2"
+@@ -469,6 +470,11 @@ static int artop_init_one (struct pci_de
+ 		pci_read_config_byte(pdev, 0x4a, &reg);
+ 		pci_write_config_byte(pdev, 0x4a, (reg & ~0x01) | 0x80);
+ 
++		/* NAS100D workaround */
++#ifdef CONFIG_MACH_NAS100D
++		if (machine_is_nas100d())
++			ports = 1;
++#endif
+ 	}
+ 
+ 	BUG_ON(info == NULL);

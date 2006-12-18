@@ -1,0 +1,60 @@
+Index: linux-2.6.19/include/asm-arm/arch-ixp4xx/platform.h
+===================================================================
+--- linux-2.6.19.orig/include/asm-arm/arch-ixp4xx/platform.h
++++ linux-2.6.19/include/asm-arm/arch-ixp4xx/platform.h
+@@ -100,6 +100,7 @@ struct mac_plat_info {
+ 	int phy_id;	/* ID of the connected PHY (PCB/platform dependent) */
+ 	int rxq_id;	/* Queue ID of the RX-free q*/
+ 	int txq_id;	/* Where to push the outgoing packets */
++	unsigned char hwaddr[6]; /* Desired hardware address */
+ };
+ 
+ 
+Index: linux-2.6.19/drivers/net/ixp4xx/mac_driver.c
+===================================================================
+--- linux-2.6.19.orig/drivers/net/ixp4xx/mac_driver.c
++++ linux-2.6.19/drivers/net/ixp4xx/mac_driver.c
+@@ -189,6 +189,24 @@ static int ixmac_open (struct net_device
+ 	}
+ 	mac->rxq_pkt += RX_QUEUE_PREFILL;
+ 
++	/* printk(KERN_INFO "...Platform MAC=0x%02x%02x%02x%02x%02x%02x\n",
++		mac->plat->hwaddr[0],
++		mac->plat->hwaddr[1],
++		mac->plat->hwaddr[2],
++		mac->plat->hwaddr[3],
++		mac->plat->hwaddr[4],
++		mac->plat->hwaddr[5]
++	); */
++	/* Only use platform or random if there's currently no device hw addr */
++	if (is_zero_ether_addr(dev->dev_addr)) {
++		if (is_zero_ether_addr(mac->plat->hwaddr)) {
++			random_ether_addr(dev->dev_addr);
++			dev->dev_addr[5] = mac->plat->phy_id;
++		}
++		else
++			memcpy(dev->dev_addr, mac->plat->hwaddr, 6);
++	}
++
+ 	mac_init(mac);
+ 	npe_mh_set_rxqid(npe, mac->plat, RX_DONE_QID);
+ 	mac_set_uniaddr(dev);
+@@ -434,9 +452,15 @@ static int mac_probe(struct platform_dev
+ 	 * following commands:
+ 	 * "ip link set address 02:03:04:04:04:01 dev eth0"
+ 	 * "ifconfig eth0 hw ether 02:03:04:04:04:07"
+-	 */
+-	random_ether_addr(dev->dev_addr);
+-	dev->dev_addr[5] = plat->phy_id;
++	*/
++/*     Note: moved to ixmac_open to allow notifiers to run for compiled in modules
++	if (is_zero_ether_addr(plat->hwaddr)) {
++		random_ether_addr(dev->dev_addr);
++		dev->dev_addr[5] = plat->phy_id;
++	}
++	else
++		memcpy(dev->dev_addr, plat->hwaddr, 6);
++*/
+ 
+ 	printk(KERN_INFO IXMAC_NAME " driver " IXMAC_VERSION
+ 			": %s on %s with PHY[%d] initialized\n",

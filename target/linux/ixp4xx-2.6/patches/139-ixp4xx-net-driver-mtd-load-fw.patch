@@ -1,0 +1,414 @@
+Index: linux-2.6.19/drivers/net/ixp4xx/Kconfig
+===================================================================
+--- linux-2.6.19.orig/drivers/net/ixp4xx/Kconfig
++++ linux-2.6.19/drivers/net/ixp4xx/Kconfig
+@@ -11,6 +11,7 @@ config IXP4XX_NPE
+ 	tristate "IXP4xx NPE support"
+ 	depends on ARCH_IXP4XX
+ 	depends on NET_ETHERNET
++	select CRC16
+ 	help
+ 	  The IXP4XX NPE driver supports the 3 CPU co-processors called
+ 	  "Network Processing Engines" (NPE). It adds support fo downloading
+@@ -18,7 +19,7 @@ config IXP4XX_NPE
+ 	  More about this at: Documentation/networking/ixp4xx/README.
+ 	  You can either use this OR the Intel Access Library (IAL)
+ 
+-config IXP4XX_FW_LOAD
++config IXP4XX_NPE_FW_LOAD
+ 	bool "Use Firmware hotplug for Microcode download"
+ 	depends on IXP4XX_NPE
+ 	select HOTPLUG
+@@ -28,6 +29,13 @@ config IXP4XX_FW_LOAD
+ 	  /usr/lib/hotplug/firmware/NPE-[ABC]
+ 	  see Documentation/firmware_class/hotplug-script
+ 
++config IXP4XX_NPE_FW_MTD
++	bool "Load firmware from an mtd partition"
++	depends on IXP4XX_NPE && MTD_IXP4XX
++	help
++	  With this option, the driver will search for
++	  the firmware into an MTD partition.
++
+ config IXP4XX_MAC
+ 	tristate "IXP4xx MAC support"
+ 	depends on IXP4XX_NPE
+Index: linux-2.6.19/drivers/net/ixp4xx/Makefile
+===================================================================
+--- linux-2.6.19.orig/drivers/net/ixp4xx/Makefile
++++ linux-2.6.19/drivers/net/ixp4xx/Makefile
+@@ -1,6 +1,7 @@
+ obj-$(CONFIG_IXP4XX_QMGR) += ixp4xx_qmgr.o
+ obj-$(CONFIG_IXP4XX_NPE) += ixp4xx_npe.o
+ obj-$(CONFIG_IXP4XX_MAC) += ixp4xx_mac.o
++obj-$(CONFIG_IXP4XX_NPE_FW_MTD) += npe_ucode.o
+ 
+ ixp4xx_npe-objs := ucode_dl.o npe_mh.o
+ ixp4xx_mac-objs := mac_driver.o qmgr_eth.o phy.o
+Index: linux-2.6.19/drivers/net/ixp4xx/npe_ucode.c
+===================================================================
+--- /dev/null
++++ linux-2.6.19/drivers/net/ixp4xx/npe_ucode.c
+@@ -0,0 +1,185 @@
++/*
++ * Provide an NPE platform device for microcode handling
++ *
++ * Copyright (C) 2006 Christian Hohnstaedt <chohnstaedt@innominate.com>
++ *
++ * This file is released under the GPLv2
++ */
++
++#include <linux/kernel.h>
++#include <linux/platform_device.h>
++#include <linux/init.h>
++#include <linux/slab.h>
++#include <linux/firmware.h>
++#include <linux/mtd/mtd.h>
++
++#include <linux/ixp_npe.h>
++
++#define DL_MAGIC 0xfeedf00d
++#define DL_MAGIC_SWAP 0x0df0edfe
++
++#define IMG_SIZE(image) (((image)->size * sizeof(u32)) + \
++		sizeof(struct dl_image))
++
++#define IMG_REV_MAJOR(id) (((id) >> 8) & 0x0f)
++#define IMG_REV_MINOR(id) ((id) & 0x0f)
++#define IMG_FUNC(id) (((id) >> 16) & 0xff)
++#define IMG_NPE(id) (((id) >> 24) & 0x0f)
++#define IMG_IXP(id) (((id) >> 28) & 0x0f)
++
++static struct platform_driver ixp4xx_npe_ucode_driver;
++static unsigned char *partition_name = NULL;
++
++static void print_image_info(u32 id, u32 offset, u32 size)
++{
++	unsigned char idx;
++	const char *names[] = { "IXP425", "IXP465", "unknown" };
++
++	idx = IMG_IXP(id) < 2 ? IMG_IXP(id) : 2;
++
++	printk(KERN_INFO "npe: found at 0x%x, %s/NPE-%c func: %02x, rev: %x.%x, "
++		"size: %5d, id: %08x\n", offset, names[idx], IMG_NPE(id) + 'A',
++		IMG_FUNC(id), IMG_REV_MAJOR(id), IMG_REV_MINOR(id), size, id);
++}
++
++void npe_swap_image(struct dl_image *image)
++{
++	unsigned int i;
++
++	image->magic = swab32(image->magic);
++	image->id = swab32(image->id);
++	image->size = swab32(image->size);
++
++	for (i = 0; i < image->size; i++)
++		image->u.data[i] = swab32(image->u.data[i]);
++}
++
++static void npe_find_microcode(struct mtd_info *mtd)
++{
++	u32 buf;
++	u32 magic = htonl(DL_MAGIC);
++	u32 id, size;
++	size_t retlen;
++	int err;
++	unsigned int offset = 0;
++
++	printk("npe: searching for firmware...\n");
++
++	while (offset < mtd->size) {
++
++		err = mtd->read(mtd, offset, 4, &retlen, (u_char *) &buf);
++		offset += retlen;
++
++		if (buf != magic)
++			continue;
++
++		err = mtd->read(mtd, offset, 4, &retlen, (u_char *) &id);
++		offset += retlen;
++
++		if (id == magic)
++			break;
++
++		id = ntohl(id);
++
++		err = mtd->read(mtd, offset, 4, &retlen, (u_char *) &size);
++		offset += retlen;
++
++		size = (ntohl(size) * 4) + 12;
++
++		print_image_info(id, offset - 12, size);
++
++		if (size < 24000 && ( IMG_FUNC(id) == 0x01 || IMG_FUNC(id) == 0x00) ) { // XXX fix size/detection
++
++			struct dl_image *image = kmalloc(size, GFP_KERNEL);
++
++			/* we are going to load it, rewind offset */
++			offset -= 12;
++
++			if (image) {
++				err = mtd->read(mtd, offset, size, &retlen, (u_char *) image);
++
++				if (err == 0 && retlen == size) {
++					if (image->magic == DL_MAGIC_SWAP)
++						npe_swap_image(image);
++
++					store_npe_image(image, NULL);
++				} else {
++					printk(KERN_ERR "unable to read firmware\n");
++				}
++
++				kfree(image);
++			}
++
++			offset += size;
++		}
++	}
++}
++
++static void npe_flash_add(struct mtd_info *mtd)
++{
++	if (partition_name == NULL)
++		return;
++
++	if (strcmp(mtd->name, partition_name) == 0) {
++		npe_find_microcode(mtd);
++	}
++}
++
++static void npe_flash_remove(struct mtd_info *mtd) {
++}
++
++static struct mtd_notifier npe_flash_notifier = {
++	.add = npe_flash_add,
++	.remove = npe_flash_remove,
++};
++
++static int npe_ucode_probe(struct platform_device *pdev)
++{
++	struct npe_ucode_platform_data *data = pdev->dev.platform_data;
++
++	if (partition_name)
++		return -EEXIST;
++
++	if (data && data->mtd_partition) {
++		partition_name = data->mtd_partition;
++		return 0;
++	}
++
++	return -EINVAL;
++}
++
++static int npe_ucode_remove(struct platform_device *pdev)
++{
++	return 0;
++}
++
++static struct platform_driver ixp4xx_npe_ucode_driver = {
++	.driver = {
++		.name	= "ixp4xx_npe_ucode",
++		.owner	= THIS_MODULE,
++	},
++	.probe	= npe_ucode_probe,
++	.remove	= npe_ucode_remove,
++};
++
++static int __init npe_ucode_init(void)
++{
++	int ret;
++
++	ret = platform_driver_register(&ixp4xx_npe_ucode_driver);
++	register_mtd_user(&npe_flash_notifier);
++
++	return ret;
++}
++
++static void __exit npe_ucode_exit(void)
++{
++	unregister_mtd_user(&npe_flash_notifier);
++	platform_driver_unregister(&ixp4xx_npe_ucode_driver);
++}
++
++module_init(npe_ucode_init);
++module_exit(npe_ucode_exit);
++
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("Alessandro Zummo <a.zummo@towertech.it>");
+Index: linux-2.6.19/drivers/net/ixp4xx/ucode_dl.c
+===================================================================
+--- linux-2.6.19.orig/drivers/net/ixp4xx/ucode_dl.c
++++ linux-2.6.19/drivers/net/ixp4xx/ucode_dl.c
+@@ -16,6 +16,7 @@
+ #include <linux/firmware.h>
+ #include <linux/dma-mapping.h>
+ #include <linux/byteorder/swab.h>
++#include <linux/crc16.h>
+ #include <asm/uaccess.h>
+ #include <asm/io.h>
+ 
+@@ -30,6 +31,12 @@
+ #define IMG_SIZE(image) (((image)->size * sizeof(u32)) + \
+ 		sizeof(struct dl_image))
+ 
++#define IMG_REV_MAJOR(id) (((id) >> 8) & 0x0f)
++#define IMG_REV_MINOR(id) ((id) & 0x0f)
++#define IMG_FUNC(id) (((id) >> 16) & 0xff)
++#define IMG_NPE(id) (((id) >> 24) & 0x0f)
++#define IMG_IXP(id) (((id) >> 28) & 0x0f)
++
+ #define BT_INSTR 0
+ #define BT_DATA 1
+ 
+@@ -38,21 +45,6 @@ enum blk_type {
+ 	data,
+ };
+ 
+-struct dl_block {
+-	u32 type;
+-	u32 offset;
+-};
+-
+-struct dl_image {
+-	u32 magic;
+-	u32 id;
+-	u32 size;
+-	union {
+-		u32 data[0];
+-		struct dl_block block[0];
+-	} u;
+-};
+-
+ struct dl_codeblock {
+ 	u32 npe_addr;
+ 	u32 size;
+@@ -134,23 +126,41 @@ struct device *get_npe_by_id(int id)
+ 			&id, match_by_npeid);
+ }
+ 
+-static int store_npe_image(struct dl_image *image, struct device *dev)
++int store_npe_image(struct dl_image *image, struct device *dev)
+ {
+ 	struct dl_block *blk;
+ 	struct dl_codeblock *cb;
+ 	struct npe_info *npe;
+-	int ret=0;
++	int ret = 0;
++	u16 crc;
+ 
+ 	if (!dev) {
+-		dev = get_npe_by_id( (image->id >> 24) & 0xf);
+-		put_device(dev);
++		dev = get_npe_by_id(IMG_NPE(image->id));
++		if (dev)
++			put_device(dev);
++			// XXX shouldn't this put_device be outside if(!dev) ?
++		else
++			printk(KERN_ERR "npe: cannot find npe for image %x\n", IMG_NPE(image->id));
+ 	}
++
+ 	if (!dev)
+ 		return -ENODEV;
+ 
++	if (image->size > 24000) { // XXX fix max size
++		printk(KERN_ERR "npe: firmware too large\n");
++		return -EFBIG;
++	}
++
++	if (IMG_REV_MAJOR(image->id) != 2) {
++		printk(KERN_ERR "npe: only revision 2 is supported at this time\n");
++		return -EINVAL;
++	}
++
++	crc = crc16(0, (u8 *) image, IMG_SIZE(image));
++
+ 	npe = dev_get_drvdata(dev);
+ 
+-	if ( npe_status(npe) & IX_NPEDL_EXCTL_STATUS_RUN) {
++	if (npe_status(npe) & IX_NPEDL_EXCTL_STATUS_RUN) {
+ 		printk(KERN_INFO "Cowardly refusing to reload an Image "
+ 				"into the running %s\n", npe->plat->name);
+ 		return 0; /* indicate success anyway... */
+@@ -173,9 +183,9 @@ static int store_npe_image(struct dl_ima
+ 	*(u32*)npe->img_info = cpu_to_be32(image->id);
+ 	npe_start(npe);
+ 
+-	printk(KERN_INFO "Image loaded to %s Func:%x, Rel: %x:%x, Status: %x\n",
++	printk(KERN_INFO "npe: firmware loaded to %s, func: %02x, rev: %x.%x, status: %x, crc: %x\n",
+ 			npe->plat->name, npe->img_info[1], npe->img_info[2],
+-			npe->img_info[3], npe_status(npe));
++			npe->img_info[3], npe_status(npe), crc);
+ 	return 0;
+ }
+ 
+@@ -265,8 +275,7 @@ static ssize_t ucode_write(struct file *
+ 
+ static void npe_firmware_probe(struct device *dev)
+ {
+-#if (defined(CONFIG_FW_LOADER) || defined(CONFIG_FW_LOADER_MODULE)) \
+-	&& defined(MODULE)
++#ifdef CONFIG_IXP4XX_NPE_FW_LOADER
+ 	const struct firmware *fw_entry;
+ 	struct npe_info *npe = dev_get_drvdata(dev);
+ 	struct dl_image *image;
+@@ -388,7 +397,7 @@ static int npe_probe(struct platform_dev
+ 
+ 	npe->plat = plat;
+ 	disable_npe_irq(npe);
+-	if (! (npe_status(npe) & IX_NPEDL_EXCTL_STATUS_RUN))
++	if (!(npe_status(npe) & IX_NPEDL_EXCTL_STATUS_RUN))
+ 		npe_firmware_probe(&pdev->dev);
+ 
+ 	return 0;
+@@ -464,3 +473,4 @@ MODULE_LICENSE("GPL");
+ MODULE_AUTHOR("Christian Hohnstaedt <chohnstaedt@innominate.com>");
+ 
+ EXPORT_SYMBOL(get_npe_by_id);
++EXPORT_SYMBOL(store_npe_image);
+Index: linux-2.6.19/include/asm-arm/arch-ixp4xx/platform.h
+===================================================================
+--- linux-2.6.19.orig/include/asm-arm/arch-ixp4xx/platform.h
++++ linux-2.6.19/include/asm-arm/arch-ixp4xx/platform.h
+@@ -86,6 +86,20 @@ struct ixp4xx_i2c_pins {
+ 	unsigned long scl_pin;
+ };
+ 
++struct dl_block {
++	u32 type;
++        u32 offset;
++};
++
++struct dl_image {
++	u32 magic;
++	u32 id;
++	u32 size;
++	union {
++		u32 data[0];
++		struct dl_block block[0];
++	} u;
++};
+ struct npe_plat_data {
+ 	const char *name;
+ 	int data_size;
+@@ -103,6 +117,9 @@ struct mac_plat_info {
+ 	unsigned char hwaddr[6]; /* Desired hardware address */
+ };
+ 
++struct npe_ucode_platform_data {
++	unsigned char *mtd_partition;
++};
+ 
+ struct sys_timer;
+ 
+Index: linux-2.6.19/include/linux/ixp_npe.h
+===================================================================
+--- linux-2.6.19.orig/include/linux/ixp_npe.h
++++ linux-2.6.19/include/linux/ixp_npe.h
+@@ -71,6 +71,7 @@ static inline u32 npe_read_ecs_reg(struc
+ }
+ 
+ extern struct device *get_npe_by_id(int id);
++extern int store_npe_image(struct dl_image *image, struct device *dev);
+ 
+ /* NPE Messages */
+ extern int

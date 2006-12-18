@@ -1,0 +1,56 @@
+---
+ arch/arm/mach-ixp4xx/nas100d-setup.c |   27 +++++++++++++++++++++++++++
+ 1 file changed, 27 insertions(+)
+
+Index: linux-2.6.19/arch/arm/mach-ixp4xx/nas100d-setup.c
+===================================================================
+--- linux-2.6.19.orig/arch/arm/mach-ixp4xx/nas100d-setup.c
++++ linux-2.6.19/arch/arm/mach-ixp4xx/nas100d-setup.c
+@@ -16,6 +16,7 @@
+ #include <linux/serial.h>
+ #include <linux/serial_8250.h>
+ #include <linux/leds.h>
++#include <linux/mtd/mtd.h>
+ 
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+@@ -165,6 +166,30 @@ static struct platform_device *nas100d_d
+ 	&nas100d_npe_ucode,
+ };
+ 
++static void nas100d_flash_add(struct mtd_info *mtd)
++{
++	if (strcmp(mtd->name, "RedBoot config") == 0) {
++		size_t retlen;
++		u_char mac[6];
++
++		if (mtd->read(mtd, 0x0FD8, 6, &retlen, mac) == 0 && retlen == 6) {
++			printk(KERN_INFO "nas100d mac: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x\n",
++				mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
++			memcpy(plat_mac0.hwaddr, mac, 6);
++		} else {
++			printk(KERN_ERR "nas100d mac: read failed\n");
++		}
++	}
++}
++
++static void nas100d_flash_remove(struct mtd_info *mtd) {
++}
++
++static struct mtd_notifier nas100d_flash_notifier = {
++	.add = nas100d_flash_add,
++	.remove = nas100d_flash_remove,
++};
++
+ static void nas100d_power_off(void)
+ {
+ 	/* This causes the box to drop the power and go dead. */
+@@ -196,6 +221,8 @@ static void __init nas100d_init(void)
+ 	(void)platform_device_register(&nas100d_uart);
+ 
+ 	platform_add_devices(nas100d_devices, ARRAY_SIZE(nas100d_devices));
++
++	register_mtd_user(&nas100d_flash_notifier);
+ }
+ 
+ MACHINE_START(NAS100D, "Iomega NAS 100d")

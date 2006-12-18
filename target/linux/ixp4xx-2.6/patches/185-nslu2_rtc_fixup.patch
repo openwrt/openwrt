@@ -1,0 +1,54 @@
+Index: linux-2.6.19/arch/arm/mach-ixp4xx/nslu2-setup.c
+===================================================================
+--- linux-2.6.19.orig/arch/arm/mach-ixp4xx/nslu2-setup.c
++++ linux-2.6.19/arch/arm/mach-ixp4xx/nslu2-setup.c
+@@ -20,6 +20,7 @@
+ #include <linux/leds.h>
+ #include <linux/mtd/mtd.h>
+ 
++#include <asm/setup.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ #include <asm/mach/flash.h>
+@@ -239,11 +240,41 @@ static void __init nslu2_init(void)
+ 	register_mtd_user(&nslu2_flash_notifier);
+ }
+ 
++static char nslu2_rtc_probe[] __initdata = "rtc-x1205.probe=0,0x6f ";
++
++static void __init nslu2_fixup(struct machine_desc *desc,
++		struct tag *tags, char **cmdline, struct meminfo *mi)
++{
++	struct tag *t = tags;
++	char *p = *cmdline;
++
++	/* Find the end of the tags table, taking note of any cmdline tag. */
++	for (; t->hdr.size; t = tag_next(t)) {
++		if (t->hdr.tag == ATAG_CMDLINE) {
++			p = t->u.cmdline.cmdline;
++		}
++	}
++
++	/* Overwrite the end of the table with a new cmdline tag. */
++	t->hdr.tag = ATAG_CMDLINE;
++	t->hdr.size = (sizeof (struct tag_header) +
++		       strlen(nslu2_rtc_probe) + strlen(p) + 1 + 4) >> 2;
++	strlcpy(t->u.cmdline.cmdline, nslu2_rtc_probe, COMMAND_LINE_SIZE);
++	strlcpy(t->u.cmdline.cmdline + strlen(nslu2_rtc_probe), p,
++		COMMAND_LINE_SIZE - strlen(nslu2_rtc_probe));
++
++	/* Terminate the table. */
++	t = tag_next(t);
++	t->hdr.tag = ATAG_NONE;
++	t->hdr.size = 0;
++}
++
+ MACHINE_START(NSLU2, "Linksys NSLU2")
+ 	/* Maintainer: www.nslu2-linux.org */
+ 	.phys_io	= IXP4XX_PERIPHERAL_BASE_PHYS,
+ 	.io_pg_offst	= ((IXP4XX_PERIPHERAL_BASE_VIRT) >> 18) & 0xFFFC,
+ 	.boot_params	= 0x00000100,
++	.fixup          = nslu2_fixup,
+ 	.map_io		= ixp4xx_map_io,
+ 	.init_irq	= ixp4xx_init_irq,
+ 	.timer          = &ixp4xx_timer,

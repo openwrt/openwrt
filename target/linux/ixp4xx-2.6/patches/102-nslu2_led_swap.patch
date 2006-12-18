@@ -1,0 +1,36 @@
+Submitted as http://www.arm.linux.org.uk/developer/patches/viewpatch.php?id=3984/1
+
+This patch fixes an error in the numbering of the disk LEDs on the
+Linksys NSLU2.  The error crept in because the physical location
+of the LEDs has the Disk 2 LED *above* the Disk 1 LED.
+
+Thanks to Gordon Farquharson for reporting this.
+
+Signed-off-by: Rod Whitby <rod@whitby.id.au>
+
+PATCH FOLLOWS
+KernelVersion: 2.6.19
+
+Index: linux-2.6.19/include/asm-arm/arch-ixp4xx/nslu2.h
+===================================================================
+--- linux-2.6.19.orig/include/asm-arm/arch-ixp4xx/nslu2.h
++++ linux-2.6.19/include/asm-arm/arch-ixp4xx/nslu2.h
+@@ -76,6 +76,7 @@
+ 
+ #define NSLU2_GPIO_BUZZ		4
+ #define NSLU2_BZ_BM		(1L << NSLU2_GPIO_BUZZ)
++
+ /* LEDs */
+ 
+ #define NSLU2_LED_RED		NSLU2_GPIO0
+@@ -84,8 +85,8 @@
+ #define NSLU2_LED_RED_BM	(1L << NSLU2_LED_RED)
+ #define NSLU2_LED_GRN_BM	(1L << NSLU2_LED_GRN)
+ 
+-#define NSLU2_LED_DISK1		NSLU2_GPIO2
+-#define NSLU2_LED_DISK2		NSLU2_GPIO3
++#define NSLU2_LED_DISK1		NSLU2_GPIO3
++#define NSLU2_LED_DISK2		NSLU2_GPIO2
+ 
+ #define NSLU2_LED_DISK1_BM	(1L << NSLU2_GPIO2)
+ #define NSLU2_LED_DISK2_BM	(1L << NSLU2_GPIO3)
