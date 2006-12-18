@@ -7,6 +7,6 @@
 
 include $(TMP_DIR)/.target.mk
 
-$(TMP_DIR)/.target.mk:
+$(TMP_DIR)/.target.mk: $(TMP_DIR)/.targetinfo
 	$(SCRIPT_DIR)/gen_target_mk.pl < $(TMP_DIR)/.targetinfo > $@
 
