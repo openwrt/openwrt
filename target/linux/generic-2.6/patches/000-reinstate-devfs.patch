@@ -9519,7 +9519,7 @@ diff -urN linux-2.6.19.old/fs/devfs/base.c linux-2.6.19.dev/fs/devfs/base.c
 +{
 +	if (inode == NULL)
 +		return NULL;
-+	VERIFY_ENTRY((struct devfs_entry *)inode->u.generic_ip);
++	VERIFY_ENTRY((struct devfs_entry *)inode->i_private);
 +	return inode->i_private;
 +}				/*  End Function get_devfs_entry_from_vfs_inode  */
 +
