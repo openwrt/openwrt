@@ -21,7 +21,7 @@ LOADER_MAKEOPTS= \
 		RAMSIZE=$(RAMSIZE)
 
 define Build/Clean
-	$(MAKE) -C ../../generic-2.6/image/lzma-loader $(LOADER_MAKEOPTS) clean
+	$(MAKE) -C $(GENERIC_PLATFORM_DIR)/image/lzma-loader $(LOADER_MAKEOPTS) clean
 endef
 
 DROP_SECTIONS := .reginfo .mdebug .comment .note .pdr .options .MIPS.options
@@ -32,13 +32,13 @@ define Image/Prepare
 	cat $(KDIR)/vmlinux | $(STAGING_DIR)/bin/lzma e -si -so -eos -lc1 -lp2 -pb2 > $(KDIR)/vmlinux.lzma
 	
 	# Build RAM image
-	$(MAKE) -C ../../generic-2.6/image/lzma-loader \
+	$(MAKE) -C $(GENERIC_PLATFORM_DIR)/image/lzma-loader \
 		$(LOADER_MAKEOPTS) \
 		clean compile
 	$(OBJCOPY_SREC) $(KDIR)/loader.elf $(KDIR)/kernel.ram.srec
 	
 	# Build Flash image
-	$(MAKE) -C ../../generic-2.6/image/lzma-loader \
+	$(MAKE) -C $(GENERIC_PLATFORM_DIR)/image/lzma-loader \
 		$(LOADER_MAKEOPTS) \
 		IMAGE_COPY=1 \
 		LOADER_ENTRY=$(FLASH_KERNEL) \
