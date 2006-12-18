@@ -1,0 +1,34 @@
+---
+ arch/arm/mach-ixp4xx/nas100d-setup.c |   13 ++++++++++++-
+ 1 file changed, 12 insertions(+), 1 deletion(-)
+
+Index: linux-2.6.19/arch/arm/mach-ixp4xx/nas100d-setup.c
+===================================================================
+--- linux-2.6.19.orig/arch/arm/mach-ixp4xx/nas100d-setup.c
++++ linux-2.6.19/arch/arm/mach-ixp4xx/nas100d-setup.c
+@@ -145,13 +145,24 @@ static struct platform_device mac0 = {
+        .resource       = &res_mac0,
+ };
+ 
++struct npe_ucode_platform_data nas100d_npe_ucode_data = {
++	.mtd_partition	= "sysconfig",
++};
++
++static struct platform_device nas100d_npe_ucode = {
++	.name			= "ixp4xx_npe_ucode",
++	.id			= 0,
++	.dev.platform_data	= &nas100d_npe_ucode_data,
++};
++
+ static struct platform_device *nas100d_devices[] __initdata = {
+ 	&nas100d_i2c_controller,
+ 	&nas100d_flash,
+ #ifdef CONFIG_LEDS_IXP4XX
+ 	&nas100d_leds,
+ #endif
+-	&mac0
++	&mac0,
++	&nas100d_npe_ucode,
+ };
+ 
+ static void nas100d_power_off(void)
