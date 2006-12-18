@@ -27,6 +27,7 @@ else
   endif
 
   PLATFORM_DIR := $(TOPDIR)/target/linux/$(BOARD)-$(KERNEL)
+  GENERIC_PLATFORM_DIR := $(TOPDIR)/target/linux/generic-$(KERNEL)
   KERNEL_BUILD_DIR:=$(BUILD_DIR)/linux-$(KERNEL)-$(BOARD)
   LINUX_DIR := $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION)
 

@@ -63,7 +63,7 @@ endif
 
 define Kernel/Prepare/Default
 	bzcat $(DL_DIR)/$(LINUX_SOURCE) | tar -C $(KERNEL_BUILD_DIR) $(TAR_OPTIONS)
-	[ -d ../generic-$(KERNEL)/patches ] && $(PATCH) $(LINUX_DIR) ../generic-$(KERNEL)/patches 
+	[ -d ../generic-$(KERNEL)/patches ] && $(PATCH) $(LINUX_DIR) $(GENERIC_PLATFORM_DIR)/patches 
 	[ -d ./patches ] && $(PATCH) $(LINUX_DIR) ./patches
 endef
 define Kernel/Prepare
@@ -110,7 +110,7 @@ ifeq ($(KERNEL),2.6)
 		echo 'CONFIG_INITRAMFS_ROOT_UID=0' >> $(LINUX_DIR)/.config
 		echo 'CONFIG_INITRAMFS_ROOT_GID=0' >> $(LINUX_DIR)/.config
 		mkdir -p $(BUILD_DIR)/root/etc/init.d
-		$(CP) $(TOPDIR)/target/linux/generic-2.6/files/init $(BUILD_DIR)/root/
+		$(CP) $(GENERIC_PLATFORM_DIR)/files/init $(BUILD_DIR)/root/
     endef
   else
     define Kernel/SetInitramfs
