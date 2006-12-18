@@ -6102,7 +6102,7 @@ diff -urN linux-2.6.19/arch/mips/bcm963xx/include/bcmpci.h linux-2.6.19.new/arch
 diff -urN linux-2.6.19/arch/mips/bcm963xx/include/bcmtypes.h linux-2.6.19.new/arch/mips/bcm963xx/include/bcmtypes.h
 --- linux-2.6.19/arch/mips/bcm963xx/include/bcmtypes.h	1970-01-01 01:00:00.000000000 +0100
 +++ linux-2.6.19.new/arch/mips/bcm963xx/include/bcmtypes.h	2006-12-16 18:46:31.000000000 +0100
-@@ -0,0 +1,163 @@
+@@ -0,0 +1,160 @@
 +/*
 +<:copyright-gpl 
 + Copyright 2002 Broadcom Corp. All Rights Reserved. 
@@ -6138,9 +6138,6 @@ diff -urN linux-2.6.19/arch/mips/bcm963xx/include/bcmtypes.h linux-2.6.19.new/ar
 +typedef signed char     int8;
 +typedef signed short    int16;
 +typedef signed long     int32;
-+#if !defined(__cplusplus)
-+typedef	int	bool;
-+#endif
 +#endif
 +
 +typedef unsigned char   byte;
@@ -6902,7 +6899,7 @@ diff -urN linux-2.6.19/arch/mips/bcm963xx/irq.c linux-2.6.19.new/arch/mips/bcm96
 +		irq_desc[i].status = IRQ_DISABLED;
 +		irq_desc[i].action = 0;
 +		irq_desc[i].depth = 1;
-+		irq_desc[i].handler = &brcm_irq_type;
++		irq_desc[i].handler_data = &brcm_irq_type;
 +	}
 +}
 +
@@ -6944,7 +6941,7 @@ diff -urN linux-2.6.19/arch/mips/bcm963xx/irq.c linux-2.6.19.new/arch/mips/bcm96
 +	 * explicitly call BcmHalInterruptEnable or enable_brcm_irq.  This behavior
 +	 * is consistent with interrupt handling on VxWorks.
 +	 */
-+	irq_desc[interruptId].handler = &brcm_irq_no_end_type;
++	irq_desc[interruptId].handler_data = &brcm_irq_no_end_type;
 +
 +	if( interruptId >= INTERNAL_ISR_TABLE_OFFSET )
 +	{
@@ -7300,7 +7297,7 @@ diff -urN linux-2.6.19/arch/mips/bcm963xx/ser_init.c linux-2.6.19.new/arch/mips/
 diff -urN linux-2.6.19/arch/mips/bcm963xx/setup.c linux-2.6.19.new/arch/mips/bcm963xx/setup.c
 --- linux-2.6.19/arch/mips/bcm963xx/setup.c	1970-01-01 01:00:00.000000000 +0100
 +++ linux-2.6.19.new/arch/mips/bcm963xx/setup.c	2006-12-16 18:46:31.000000000 +0100
-@@ -0,0 +1,525 @@
+@@ -0,0 +1,524 @@
 +/*
 +<:copyright-gpl 
 + Copyright 2002 Broadcom Corp. All Rights Reserved. 
@@ -7769,7 +7766,6 @@ diff -urN linux-2.6.19/arch/mips/bcm963xx/setup.c linux-2.6.19.new/arch/mips/bcm
 +    pm_power_off = brcm_machine_halt;
 +
 +    board_time_init = brcm_time_init;
-+    board_timer_setup = brcm_timer_setup;
 +
 +    panic_timeout = 5;
 +
@@ -7780,7 +7776,7 @@ diff -urN linux-2.6.19/arch/mips/bcm963xx/setup.c linux-2.6.19.new/arch/mips/bcm
 +    return 0;
 +}
 +
-+void plat_setup(void)
++void __init plat_mem_setup(void)
 +{
 +    brcm63xx_setup();
 +}
@@ -7835,7 +7831,7 @@ diff -urN linux-2.6.19/arch/mips/bcm963xx/softdsl/AdslCoreDefs.h linux-2.6.19.ne
 diff -urN linux-2.6.19/arch/mips/bcm963xx/time.c linux-2.6.19.new/arch/mips/bcm963xx/time.c
 --- linux-2.6.19/arch/mips/bcm963xx/time.c	1970-01-01 01:00:00.000000000 +0100
 +++ linux-2.6.19.new/arch/mips/bcm963xx/time.c	2006-12-16 18:46:31.000000000 +0100
-@@ -0,0 +1,114 @@
+@@ -0,0 +1,119 @@
 +/*
 +<:copyright-gpl
 + Copyright 2004 Broadcom Corp. All Rights Reserved.
@@ -7920,7 +7916,7 @@ diff -urN linux-2.6.19/arch/mips/bcm963xx/time.c linux-2.6.19.new/arch/mips/bcm9
 +	irq_enter();
 +	kstat_this_cpu.irqs[irq]++;
 +
-+	timer_interrupt(irq, NULL, regs);
++	timer_interrupt(irq, regs);
 +	irq_exit();
 +	return IRQ_HANDLED;
 +}
@@ -7949,6 +7945,11 @@ diff -urN linux-2.6.19/arch/mips/bcm963xx/time.c linux-2.6.19.new/arch/mips/bcm9
 +	r4k_cur = (read_c0_count() + r4k_offset);
 +	write_c0_compare(r4k_cur);
 +	set_c0_status(IE_IRQ5);
++}
++
++void __init plat_timer_setup(struct irqaction *irq)
++{
++       brcm_timer_setup(irq);
 +}
 diff -urN linux-2.6.19/arch/mips/kernel/cpu-probe.c linux-2.6.19.new/arch/mips/kernel/cpu-probe.c
 --- linux-2.6.19/arch/mips/kernel/cpu-probe.c	2006-11-29 22:57:37.000000000 +0100
