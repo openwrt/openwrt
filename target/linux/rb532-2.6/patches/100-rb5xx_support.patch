@@ -245,7 +245,7 @@ diff -urN linux.old/arch/mips/pci/ops-rc32434.c linux.dev/arch/mips/pci/ops-rc32
 +	int ret;
 +	int delay = 1;
 +
-+	if (bus->number == 0 && (devfn >> 3) > 21)
++	if (bus->number == 0 && PCI_SLOT(devfn) > 21)
 +		return 0;
 +
 +retry:
