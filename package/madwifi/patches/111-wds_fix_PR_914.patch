@@ -1,0 +1,43 @@
+WDS related crash is observed. This causes by possible random memory
+writes/accesss. Note how wds is freed, yet it will be used further in
+loop ...
+
+Other usages in the tree of LIST_FOREACH() when element is found and
+acted up on element, loop is immediately break (either via break, or
+return). But not in this case ...
+
+Signed-off-by: Mindaugas Kriaučiūnas <mindaugas.kriauciunas@gmail.com>
+Signed-off-by: Žilvinas Valinskas <valins@soften.ktu.lt>
+
+Index: madwifi-ng-trunk/net80211/ieee80211_node.c
+===================================================================
+--- madwifi-ng-trunk.orig/net80211/ieee80211_node.c	2006-09-25 13:28:08.000000000 +0300
++++ madwifi-ng-trunk/net80211/ieee80211_node.c	2006-10-18 15:59:40.000000000 +0300
+@@ -961,11 +961,11 @@
+ ieee80211_del_wds_node(struct ieee80211_node_table *nt, struct ieee80211_node *ni)
+ {
+ 	int hash;
+-	struct ieee80211_wds_addr *wds;
++	struct ieee80211_wds_addr *wds, *next;
+ 
+ 	IEEE80211_NODE_LOCK_IRQ(nt);
+ 	for (hash = 0; hash < IEEE80211_NODE_HASHSIZE; hash++) {
+-		LIST_FOREACH(wds, &nt->nt_wds_hash[hash], wds_hash) {
++		LIST_FOREACH_SAFE(wds, &nt->nt_wds_hash[hash], wds_hash, next) {
+ 			if (wds->wds_ni == ni) {
+ 				if (ieee80211_node_dectestref(ni)) {
+ 					_ieee80211_free_node(ni);
+@@ -984,11 +984,11 @@
+ {
+ 	struct ieee80211_node_table *nt = (struct ieee80211_node_table *)data;
+ 	int hash;
+-	struct ieee80211_wds_addr *wds;
++	struct ieee80211_wds_addr *wds, *next;
+ 
+ 	IEEE80211_NODE_LOCK_IRQ(nt);
+ 	for (hash = 0; hash < IEEE80211_NODE_HASHSIZE; hash++) {
+-		LIST_FOREACH(wds, &nt->nt_wds_hash[hash], wds_hash) {
++		LIST_FOREACH_SAFE(wds, &nt->nt_wds_hash[hash], wds_hash, next) {
+ 			if (wds->wds_agingcount != WDS_AGING_STATIC) {
+ 				if (!wds->wds_agingcount) {
+ 					if (ieee80211_node_dectestref(wds->wds_ni)) {
