@@ -275,6 +275,7 @@ BEGIN {
 		print "sfq perturb 10 limit " cqlen 
 	} else {
 		avpkt = 1200
+		if (min < avpkt) min = avpkt
 		min = int(limit * 1024 / 8 * 0.1)
 		dqb = cqlen * 1500
 		max = int(min + (dqb - min) * 0.25)
