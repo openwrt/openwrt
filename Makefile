@@ -60,23 +60,23 @@ endif
 
 define dumpinfo
 	@mkdir -p tmp
-	@echo -n Collecting package info... 
+	@echo -n Collecting $(2) info... 
 	@-for dir in $(1)/*/; do \
 		[ -f "$${dir}/Makefile" ] || continue; \
-		$(call progress,Collecting package info... $${dir%%/}) \
+		$(call progress,Collecting $(2) info: $${dir%%/}) \
 		echo Source-Makefile: $${dir}Makefile; \
 		$(NO_TRACE_MAKE) --no-print-dir DUMP=1 -C $$dir 3>/dev/null || echo "ERROR: please fix $${dir}Makefile" >&2; \
 		echo; \
 	done > $@
-	$(call progress,Collecting package info... done)
-	echo
+	@($(call progress,Collecting $(2) info: done))
+	@echo
 endef
 
 tmp/.pkginfo:
-	$(call dumpinfo,package)
+	$(call dumpinfo,package,package)
 
 tmp/.targetinfo:
-	$(call dumpinfo,target/linux)
+	$(call dumpinfo,target/linux,target)
 
 tmpinfo-clean: FORCE
 	@-rm -rf tmp/.pkginfo tmp/.targetinfo
