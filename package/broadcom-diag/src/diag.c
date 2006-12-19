@@ -393,7 +393,8 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "reset",	.gpio = 1 << 0 },
 		},
 		.leds		= {
-			{ .name = "diag",	.gpio = 1 << 7, .polarity = REVERSE },
+			{ .name = "wlan",	.gpio = 1 << 6, .polarity = REVERSE },
+			{ .name = "power",	.gpio = 1 << 7, .polarity = REVERSE },
 		},
 	},
 	/* Motorola */
@@ -502,6 +503,11 @@ static struct platform_t __init *platform_detect(void)
 		if (!strcmp(boardnum, "10496"))
 			return &platforms[USR5461];
 	} else { /* PMON based - old stuff */
+
+		/* Dell TrueMobile 2300 */
+		if (!strcmp(getvar("ModelId"),"WX-5565"))
+			return &platforms[TM2300];
+	
 		if ((simple_strtoul(getvar("GemtekPmonVer"), NULL, 0) == 9) &&
 			(simple_strtoul(getvar("et0phyaddr"), NULL, 0) == 30)) {
 			if (!strncmp(getvar("ModelId"),"WE800G", 6))
