@@ -15,6 +15,8 @@ endef
 
 define Image/BuildKernel
 	cp $(LINUX_DIR)/arch/arm/boot/zImage $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-zImage
+#	$(shell BIN_DIR=$(BIN_DIR) $(TOPDIR)/scripts/arm-magic.sh)
+	BIN_DIR=$(BIN_DIR) $(TOPDIR)/scripts/arm-magic.sh
 endef
 
 define Image/Build
