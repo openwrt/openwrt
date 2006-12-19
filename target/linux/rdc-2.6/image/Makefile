@@ -13,13 +13,9 @@ endef
 define Image/Prepare
 endef
 
-define Image/Prepare
-        cat $(KDIR)/vmlinux | $(STAGING_DIR)/bin/lzma e -si -so -eos -lc1 -lp2 -pb2 > $(KDIR)/vmlinux.lzma
+define Image/Build
+	touch $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).img
+	$(STAGING_DIR)/bin/airlink -b 1 -j $(LINUX_DIR)/arch/i386/boot/bzImage $(KDIR)/root.$(1) $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).img
 endef
-
-define Image/Build/ar525w
-endef
-
-$(call Image/Build/ar525w,$(1),$(patsubst jffs2-%,jffs2,$(1)))
 
 $(eval $(call BuildImage))
