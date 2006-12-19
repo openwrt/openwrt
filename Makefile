@@ -52,24 +52,31 @@ ifeq ($(FORCE),)
   world: tmp/.prereq-packages tmp/.prereq-target
 endif
 
-tmp/.pkginfo:
+ifeq ($(IS_TTY),1)
+  define progress
+	printf "\033[M\r$(1)" >&2;
+  endef
+endif
+
+define dumpinfo
 	@mkdir -p tmp
-	@echo Collecting package info...
-	@-for dir in package/*/; do \
+	@echo -n Collecting package info... 
+	@-for dir in $(1)/*/; do \
 		[ -f "$${dir}/Makefile" ] || continue; \
+		$(call progress,Collecting package info... $${dir%%/}) \
 		echo Source-Makefile: $${dir}Makefile; \
 		$(NO_TRACE_MAKE) --no-print-dir DUMP=1 -C $$dir 3>/dev/null || echo "ERROR: please fix $${dir}Makefile" >&2; \
 		echo; \
 	done > $@
+	$(call progress,Collecting package info... done)
+	echo
+endef
+
+tmp/.pkginfo:
+	$(call dumpinfo,package)
 
 tmp/.targetinfo:
-	@mkdir -p tmp
-	@echo Collecting target info...
-	@-for dir in target/linux/*/; do \
-		[ -f "$${dir}/Makefile" ] || continue; \
-		( cd "$$dir"; $(NO_TRACE_MAKE) --no-print-dir DUMP=1 3>/dev/null || echo "ERROR: please fix $${dir}Makefile" >&2 ); \
-		echo; \
-	done > $@
+	$(call dumpinfo,target/linux)
 
 tmpinfo-clean: FORCE
 	@-rm -rf tmp/.pkginfo tmp/.targetinfo
