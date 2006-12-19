@@ -1050,7 +1050,7 @@ diff -urN linux.old/arch/mips/rb500/irq.c linux.dev/arch/mips/rb500/irq.c
 +}
 +
 +/* Main Interrupt dispatcher */
-+asmlinkage void plat_irq_dispatch(struct pt_regs *regs)
++asmlinkage void plat_irq_dispatch(void)
 +{
 +	unsigned int ip, pend, group;
 +	volatile unsigned int *addr;
