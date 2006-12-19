@@ -1,0 +1,19 @@
+diff -Nur linux-2.6.19/arch/arm/boot/compressed/head-xscale.S linux-2.6.19-owrt/arch/arm/boot/compressed/head-xscale.S
+--- linux-2.6.19/arch/arm/boot/compressed/head-xscale.S	2006-12-19 12:56:21.000000000 +0100
++++ linux-2.6.19-owrt/arch/arm/boot/compressed/head-xscale.S	2006-12-19 12:58:15.000000000 +0100
+@@ -41,6 +41,7 @@
+ 		mov	r7, #MACH_TYPE_COTULLA_IDP
+ #endif
+ 
++/* let the arm-magic.sh script do the dirty work
+ #ifdef  CONFIG_MACH_GTWX5715
+                mov     r7, #(MACH_TYPE_GTWX5715 & 0xff)
+                orr     r7, r7, #(MACH_TYPE_GTWX5715 & 0xff00)
+@@ -50,6 +51,7 @@
+                mov     r7, #(MACH_TYPE_GATEWAY7001 & 0xff)
+                orr     r7, r7, #(MACH_TYPE_GATEWAY7001 & 0xff00)
+ #endif
++ */
+ 
+ #ifdef CONFIG_ARCH_IXP2000
+ 		mov	r1, #-1
