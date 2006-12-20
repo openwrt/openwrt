@@ -900,6 +900,20 @@ static const struct wlc_call wlc_calls[] = {
 		.desc = "WME ACK disable request",
 	},
 	{
+		.name = "802.11d",
+		.param = INT,
+		.handler = wlc_ioctl,
+		.data.num = ((WLC_GET_REGULATORY << 16) | WLC_SET_REGULATORY),
+		.desc = "Enable/disable 802.11d regulatory management",
+	},
+	{
+		.name = "802.11h",
+		.param = INT,
+		.handler = wlc_ioctl,
+		.data.num = ((WLC_GET_SPECT_MANAGMENT << 16) | WLC_SET_SPECT_MANAGMENT),
+		.desc = "Enable/disable 802.11h spectrum management",
+	},
+	{
 		.name = "fragthresh",
 		.param = INT,
 		.handler = wlc_iovar,

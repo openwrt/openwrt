@@ -211,6 +211,8 @@ mssid $mssid
 apsta $apsta
 infra $infra
 ${wet:+wet 1}
+802.11d 0
+802.11h 0
 
 radio ${radio:-1}
 macfilter 0
