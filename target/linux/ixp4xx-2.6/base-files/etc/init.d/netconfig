@@ -1,0 +1,94 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+START=05
+
+# hardware
+#  the 'Hardware' string from cpuinfo
+hardware(){
+	sed -n 's!^Hardware	*: !!p' /proc/cpuinfo
+}
+#
+# machine
+#  outputs an identifier of the current machine - i.e. the board
+#  slugos is running on.
+machine(){
+	case "$(hardware)" in
+	*Avila*)	echo avila;;
+	*Loft*)		echo loft;;
+	*NAS?100d*)	echo nas100d;;
+	*DSM?G600*)	echo dsmg600;;
+	*NSLU2*)	echo nslu2;;
+	*FSG?3*)	echo fsg3;;
+	*Gateway?7001*)	echo gateway7001;;
+	*)		echo unknown;;
+	esac
+}
+
+# Returns the mtd device with the specified name (without leading /dev)
+# $1 = name of mtd device
+get_mtd() {
+	grep "\"$1\"*$" /proc/mtd | cut -d : -f 1
+}
+
+# Returns the mtd block device with the specified name (without leading /dev)
+# $1 = name of mtd device
+get_mtdblock() {
+	echo $(get_mtd "$1") | sed 's/mtd/mtdblock/'
+}
+
+start() {
+	[ -e /etc/config/network ] && exit 0
+
+	mkdir -p /etc/config
+
+	(
+		case "$(machine)" in
+			nslu2)
+				sysconf=$(find_mtd_part "SysConf")
+				echo model=nslu2
+				strings $sysconf ;;
+			nas100d)
+				sysconf=$(find_mtd_part "sysconfig")
+				echo model=nas100d
+				strings $sysconf ;;
+			*)
+				echo model=$(machine) ;;
+		esac
+	) | awk '
+	function p(cfgname, name) {
+		if (c[name] != "") print "	option " cfgname "	\"" c[name] "\""
+	}
+
+	BEGIN {
+		FS="="
+		getline model
+	}
+	
+	{	c[$1] = $2	}
+	
+	END {
+		print "#### Loopback configuration"
+		print "config interface loopback"
+		print "	option ifname	\"lo\""
+		print "	option proto	static"
+		print "	option ipaddr	127.0.0.1"
+		print "	option netmask	255.0.0.0"
+		print ""
+		print ""
+		print "#### LAN configuration"
+		print "config interface lan"
+		print " option ifname   eth0"
+		if ((model == "nslu2") || (model == "nas100d")) {
+			p("proto", "bootproto")
+			p("ipaddr", "ip_addr")
+			p("netmask", "netmask")
+			p("gateway", "gateway")
+			p("dns", "dns_server1")
+			p("hostname", "disk_server_name")
+		}
+		else {
+			print " option proto    dhcp"
+		}
+	}' > /etc/config/network
+}
