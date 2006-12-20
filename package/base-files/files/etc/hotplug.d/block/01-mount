@@ -13,7 +13,7 @@ add)
 	}; done
 	echo
 	
-	[ ${DEV%%[0-9]} != ${DEV} ] && {
+	[ ${DEV%%[0-9]} != ${DEV} -a ${DEV%%[0-9]} != "loop" ] && {
 		mkdir -p /tmp/$DEV
 		mount /dev/$DEV /tmp/$DEV -t auto -o sync
 	}
