@@ -31,9 +31,10 @@ reset_cb
 config () {
 	local cfgtype="$1"
 	local name="$2"
-    
-	_C=$((_C + 1))
-	name="${name:-cfg${_C}}"
+	
+	CONFIG_NUM_SECTIONS=$(($CONFIG_NUM_SECTIONS + 1))
+	name="${name:-cfg$CONFIG_NUM_SECTIONS}"
+	append CONFIG_SECTIONS "$name"
 	config_cb "$cfgtype" "$name"
 	CONFIG_SECTION="$name"
 	export -n "CONFIG_${CONFIG_SECTION}_TYPE=$cfgtype"
@@ -60,6 +61,7 @@ config_rename() {
 		eval "export -n \"$newvar=\${$oldvar}\""
 		unset "$oldvar"
 	done
+	CONFIG_SECTIONS="$(echo " $CONFIG_SECTIONS " | sed -e "s, $OLD , $NEW ,")"
 	
 	[ "$CONFIG_SECTION" = "$OLD" ] && CONFIG_SECTION="$NEW"
 }
@@ -72,7 +74,10 @@ config_clear() {
 	local SECTION="$1"
 	local oldvar
 	
-	for oldvar in `set | grep ^CONFIG_${SECTION}_ | \
+	CONFIG_SECTIONS="$(echo " $CONFIG_SECTIONS " | sed -e "s, $OLD , ,")"
+	CONFIG_SECTIONS="${SECTION:+$CONFIG_SECTIONS}"
+
+	for oldvar in `set | grep ^CONFIG_${SECTION:+$SECTION_} | \
 		sed -e 's/\(.*\)=.*$/\1/'` ; do 
 		unset $oldvar 
 	done
@@ -81,6 +86,8 @@ config_clear() {
 config_load() {
 	local file="/etc/config/$1"
 	_C=0
+	CONFIG_SECTIONS=
+	CONFIG_NUM_SECTIONS=0
 	CONFIG_SECTION=
 	
 	[ -e "$file" ] && {
@@ -102,6 +109,16 @@ config_set() {
 	local option="$2"
 	local value="$3"
 	export -n "CONFIG_${section}_${option}=$value"
+}
+
+config_foreach() {
+	local function="$1"
+	local section
+	
+	[ -z "$CONFIG_SECTIONS" ] && return 0
+	for section in ${CONFIG_SECTIONS}; do
+		eval "$function \"\$section\""
+	done
 }
 
 load_modules() {
