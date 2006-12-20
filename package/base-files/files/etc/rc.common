@@ -18,6 +18,7 @@ reload() {
 }
 
 restart() {
+	trap '' TERM
 	stop
 	start
 }
