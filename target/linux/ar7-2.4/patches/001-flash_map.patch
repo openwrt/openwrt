@@ -217,7 +217,7 @@ diff -urN linux.old/drivers/mtd/maps/ar7-flash.c linux.dev/drivers/mtd/maps/ar7-
 +
 +	ar7_partinfo[p].name = strdup("config");
 +	ar7_partinfo[p].offset = config_offset;
-+	ar7_partinfo[p].size = WINDOW_SIZE - config_offset;
++	ar7_partinfo[p].size = ar7_mtd_info->size - config_offset;
 +	ar7_partinfo[p++].mask_flags = 0;
 +
 +	if (ar7_read32(&ar7_map, rootfs_start) == SQUASHFS_MAGIC) {
