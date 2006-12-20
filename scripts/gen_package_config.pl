@@ -66,6 +66,8 @@ sub print_category($) {
 			}
 			$menus{$menu} or $menus{$menu} = [];
 			push @{$menus{$menu}}, $pkg;
+			print "\tconfig DEFAULT_".$pkg->{name}."\n";
+			print "\t\tbool\n\n";
 		}
 	}
 	my @menus = sort {
@@ -89,8 +91,6 @@ sub print_category($) {
 			if ($c > 0) {
 				$title .= ("." x $c). " ". $pkg->{title};
 			}
-			print "\tconfig DEFAULT_".$pkg->{name}."\n";
-			print "\t\tbool\n\n";
 			print "\t";
 			$pkg->{menu} and print "menu";
 			print "config PACKAGE_".$pkg->{name}."\n";
