@@ -18,10 +18,13 @@ start() {
 	done
 	
 	iptables -N input_rule
+	iptables -N input_wan
 	iptables -N output_rule
 	iptables -N forwarding_rule
+	iptables -N forwarding_wan
 	
 	iptables -t nat -N prerouting_rule
+	iptables -t nat -N prerouting_wan
 	iptables -t nat -N postrouting_rule
 	
 	iptables -N LAN_ACCEPT
@@ -42,6 +45,7 @@ start() {
 	# insert accept rule or to jump to new accept-check table here
 	#
 	iptables -A INPUT -j input_rule
+	[ -z "$WAN" ] || iptables -A INPUT -i $WAN -j input_wan
 	
 	# allow
 	iptables -A INPUT -j LAN_ACCEPT	# allow from lan/wifi interfaces 
@@ -85,6 +89,7 @@ start() {
 	# insert accept rule or to jump to new accept-check table here
 	#
 	iptables -A FORWARD -j forwarding_rule
+	[ -z "$WAN" ] || iptables -A FORWARD -i $WAN -j forwarding_wan
 	
 	# allow
 	iptables -A FORWARD -i $LAN -o $LAN -j ACCEPT
@@ -95,6 +100,7 @@ start() {
 	
 	### MASQ
 	iptables -t nat -A PREROUTING -j prerouting_rule
+	[ -z "$WAN" ] || iptables -t nat -A PREROUTING -i "$WAN" -j prerouting_wan
 	iptables -t nat -A POSTROUTING -j postrouting_rule
 	[ -z "$WAN" ] || iptables -t nat -A POSTROUTING -o $WAN -j MASQUERADE
 	
@@ -111,8 +117,10 @@ stop() {
 	iptables -P OUTPUT ACCEPT
 	iptables -P FORWARD ACCEPT
 	iptables -F
+	iptables -X
 	iptables -t nat -P PREROUTING ACCEPT
 	iptables -t nat -P POSTROUTING ACCEPT
 	iptables -t nat -P OUTPUT ACCEPT
 	iptables -t nat -F
+	iptables -t nat -X
 }
