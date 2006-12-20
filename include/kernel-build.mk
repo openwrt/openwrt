@@ -63,7 +63,7 @@ endif
 
 define Kernel/Prepare/Default
 	bzcat $(DL_DIR)/$(LINUX_SOURCE) | tar -C $(KERNEL_BUILD_DIR) $(TAR_OPTIONS)
-	[ -d ../generic-$(KERNEL)/patches ] && $(PATCH) $(LINUX_DIR) $(GENERIC_PLATFORM_DIR)/patches 
+	[ -d $(GENERIC_PLATFORM_DIR)/patches ] && $(PATCH) $(LINUX_DIR) $(GENERIC_PLATFORM_DIR)/patches 
 	[ -d ./patches ] && $(PATCH) $(LINUX_DIR) ./patches
 endef
 define Kernel/Prepare
