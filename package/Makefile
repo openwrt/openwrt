@@ -51,7 +51,7 @@ download: $(DOWNLOAD_PACKAGES)
 compile-targets: $(COMPILE_PACKAGES)
 compile:
 	$(MAKE) compile-targets
-install-targets: base-files-install $(INSTALL_PACKAGES)
+install-targets: $(INSTALL_PACKAGES)
 install:
 	rm -rf $(BUILD_DIR)/root
 	$(MAKE) install-targets
