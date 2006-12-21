@@ -1,7 +1,7 @@
 #!/bin/sh /etc/rc.common
 # Copyright (C) 2006 OpenWrt.org
 
-START=05
+START=15
 
 # hardware
 #  the 'Hardware' string from cpuinfo
@@ -23,18 +23,6 @@ machine(){
 	*Gateway?7001*)	echo gateway7001;;
 	*)		echo unknown;;
 	esac
-}
-
-# Returns the mtd device with the specified name (without leading /dev)
-# $1 = name of mtd device
-get_mtd() {
-	grep "\"$1\"*$" /proc/mtd | cut -d : -f 1
-}
-
-# Returns the mtd block device with the specified name (without leading /dev)
-# $1 = name of mtd device
-get_mtdblock() {
-	echo $(get_mtd "$1") | sed 's/mtd/mtdblock/'
 }
 
 start() {
@@ -62,7 +50,6 @@ start() {
 
 	BEGIN {
 		FS="="
-		getline model
 	}
 	
 	{	c[$1] = $2	}
@@ -78,8 +65,8 @@ start() {
 		print ""
 		print "#### LAN configuration"
 		print "config interface lan"
-		print " option ifname   eth0"
-		if ((model == "nslu2") || (model == "nas100d")) {
+		print "	option ifname	\"eth0\""
+		if ((c["model"] == "nslu2") || (c["model"] == "nas100d")) {
 			p("proto", "bootproto")
 			p("ipaddr", "ip_addr")
 			p("netmask", "netmask")
@@ -88,7 +75,10 @@ start() {
 			p("hostname", "disk_server_name")
 		}
 		else {
-			print " option proto    dhcp"
+			print "	option proto	dhcp"
 		}
 	}' > /etc/config/network
+
+	ifup loopback
+	ifup lan
 }
