@@ -203,34 +203,4 @@ diff -ur madwifi.old/ath/if_ath_ahb.h madwifi.dev/ath/if_ath_ahb.h
  #define AR5315_REV_MAJ_M	0x00f0
  #define AR5315_REV_MAJ_S	4
  #define AR5315_REV_MIN_M	0x000f
-diff -urN madwifi-0.9.2.old/ath/if_ath.c madwifi-0.9.2.dev/ath/if_ath.c
---- madwifi-0.9.2.old/ath/if_ath.c	2006-08-29 20:38:48.000000000 +0200
-+++ madwifi-0.9.2.dev/ath/if_ath.c	2006-08-29 20:38:48.000000000 +0200
-@@ -658,7 +658,10 @@
- 	 * 5211 minipci cards.  Users can also manually enable/disable
- 	 * support with a sysctl.
- 	 */
--	sc->sc_softled = (devid == AR5212_DEVID_IBM || devid == AR5211_DEVID);
-+	sc->sc_softled = ((devid == AR5212_DEVID_IBM) || (devid == AR5211_DEVID) ||
-+		(devid == AR5212_AR2315_REV6) || (devid == AR5212_AR2315_REV7) ||
-+		(devid == AR5212_AR2317_REV1) || (devid == AR5212_AR2317_REV2));
-+
- 	if (sc->sc_softled) {
- 		ath_hal_gpioCfgOutput(ah, sc->sc_ledpin);
- 		ath_hal_gpioset(ah, sc->sc_ledpin, !sc->sc_ledon);
-diff -urN madwifi-0.9.2.old/hal/ah_devid.h madwifi-0.9.2.dev/hal/ah_devid.h
---- madwifi-0.9.2.old/hal/ah_devid.h	2006-02-11 13:04:39.000000000 +0100
-+++ madwifi-0.9.2.dev/hal/ah_devid.h	2006-08-29 20:38:48.000000000 +0200
-@@ -68,9 +68,10 @@
- #define AR5212_AR5312_REV2      0x0052          /* AR5312 WMAC (AP31) */
- #define AR5212_AR5312_REV7      0x0057          /* AR5312 WMAC (AP30-040) */
- #define AR5212_AR2313_REV8      0x0058          /* AR2313 WMAC (AP43-030) */
--#define AR5212_AR2315_REV6      0x0086          /* AR2315 WMAC (AP51-Light) */
-+#define AR5212_AR2315_REV6      0x0086          /* AR2315 WMAC (AP51-Lite) */
- #define AR5212_AR2315_REV7      0x0087          /* AR2315 WMAC (AP51-Full) */
--#define AR5212_AR2317_REV1      0x0091          /* AR2317 WMAC (AP61) */
-+#define AR5212_AR2317_REV1      0x0090          /* AR2317 WMAC (AP61-Lite) */
-+#define AR5212_AR2317_REV2      0x0091          /* AR2317 WMAC (AP61-Full) */
- 
- /* AR5212 compatible devid's also attach to 5212 */
- #define	AR5212_DEVID_0014	0x0014
+
