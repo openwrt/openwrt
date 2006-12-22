@@ -154,6 +154,9 @@ enable_atheros() {
 		}
 		config_set "$vif" ifname "$ifname"
 
+		config_get "$device" mode
+		iwpriv "$ifname" mode "${mode:-11g}"
+
 		config_get wds "$vif" wds
 		case "$wds" in
 			1|on|enabled) wds=1;;
