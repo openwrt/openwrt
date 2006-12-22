@@ -1,5 +1,4 @@
 #!/bin/sh
-set -x
 append DRIVERS "atheros"
 
 scan_atheros() {
@@ -20,15 +19,22 @@ scan_atheros() {
 			;;
 			wds)
 				config_get addr "$vif" bssid
-				${addr:+append wds "$addr"}
+				config_get ssid "$vif" ssid
+				[ -z "$addr" -a -n "$ssid" ] && {
+					config_set "$vif" wds 1
+					config_set "$vif" mode sta
+					mode="sta"
+					addr="$ssid"
+				}
+				${addr:+append $mode "$vif"}
 			;;
 			*) echo "$device($vif): Invalid mode, ignored."; continue;;
 		esac
 	done
 
-	case "${adhoc:+1}:${sta:+}:${ap+1}" in
+	case "${adhoc:+1}:${sta:+1}:${ap+1}" in
 		# valid mode combinations
-		1::);;
+		1::) wds="";;
 		:1:1)config_set "$device" nosbeacon 1;; # AP+STA, can't use beacon timers for STA
 		:1:);;
 		::1);;
@@ -36,13 +42,84 @@ scan_atheros() {
 		*) echo "$device: Invalid mode combination in config"; return 1;;
 	esac
 
-	config_set "$device" vifs "${ap:+$ap }${adhoc:+$adhoc }${sta:+$sta }"
+	config_set "$device" vifs "${ap:+$ap }${adhoc:+$adhoc }${sta:+$sta }${wds:+$wds }"
+}
+
+hostapd_setup_vif() {
+	local vif="$1"
+	local driver="$2"
+	local hostapd_cfg=
+
+	# Examples:
+	# psk-mixed/tkip 	=> WPA1+2 PSK, TKIP
+	# wpa-psk2/tkip+aes	=> WPA2 PSK, CCMP+TKIP
+	# wpa2/tkip+aes 	=> WPA2 RADIUS, CCMP+TKIP
+	# ...
+
+	# TODO: move this parsing function somewhere generic, so that
+	# later it can be reused by drivers that don't use hostapd
 	
-	[ -z "$adhoc" ] && config_set "$device" wds "$wdsifs"
+	# crypto defaults: WPA2 vs WPA1
+	case "$enc" in
+		wpa2*|WPA2*|*PSK2*|*psk2*)
+			wpa=2
+			crypto="CCMP"
+		;;
+		*mixed*)
+			wpa=3
+			crypto="CCMP TKIP"
+		;;
+		*) 
+			wpa=1
+			crypto="TKIP"
+		;;
+	esac
+
+	# explicit override for crypto setting
+	case "$enc" in
+		*tkip+aes|*TKIP+AES|*tkip+ccmp|*TKIP+CCMP) crypto="CCMP TKIP";;
+		*tkip|*TKIP) crypto="TKIP";;
+		*aes|*AES|*ccmp|*CCMP) crypto="CCMP";;
+	esac
+	
+	# use crypto/auth settings for building the hostapd config
+	case "$enc" in
+		*psk*|*PSK*)
+			config_get psk "$vif" key
+			append hostapd_cfg "wpa_passphrase=$psk" "$N"
+		;;
+		*wpa*|*WPA*)
+		# FIXME: add wpa+radius here
+		;;
+		*)
+			return 0;
+		;;
+	esac
+	config_get ifname "$vif" ifname
+	config_get bridge "$vif" bridge
+	config_get ssid "$vif" ssid
+	cat > /var/run/hostapd-$ifname.conf <<EOF
+driver=$driver
+interface=$ifname
+${bridge:+bridge=$bridge}
+ssid=$ssid
+debug=0
+wpa=$wpa
+wpa_pairwise=$crypto
+$hostapd_cfg
+EOF
+	hostapd -B /var/run/hostapd-$ifname.conf
 }
 
 disable_atheros() (
 	local device="$1"
+
+	# kill all running hostapd and wpa_supplicant processes that
+	# are running on atheros vifs 
+	for pid in `pidof hostapd wpa_supplicant`; do
+		grep ath /proc/$pid/cmdline >/dev/null && \
+			kill $pid
+	done
 	
 	include /lib/network
 	cd /proc/sys/net
@@ -50,16 +127,17 @@ disable_atheros() (
 		grep "$device" "$dev/%parent" >/dev/null 2>/dev/null && {
 			ifconfig "$dev" down 
 			unbridge "$dev"
-			wlanconfig $dev destroy
+			wlanconfig "$dev" destroy
 		}
 	done
+	return 0
 )
 
 enable_atheros() {
 	config_get channel "$device" channel
-	config_get wds "$device" wds
 	config_get vifs "$device" vifs
-
+	
+	disable_atheros "$device"
 	for vif in $vifs; do
 		nosbeacon=
 		config_get ifname "$vif" ifname
@@ -70,12 +148,19 @@ enable_atheros() {
 		
 		config_get ifname "$vif" ifname
 		ifname=$(wlanconfig "$ifname" create wlandev "$device" wlanmode "$mode" ${nosbeacon:+nosbeacon})
-		config_set "$vif" ifname "$ifname"
-		
 		[ $? -ne 0 ] && {
-			echo "enable_atheros($device): Failed to set up vif $ifname" >&2
+			echo "enable_atheros($device): Failed to set up $mode vif $ifname" >&2
 			continue
 		}
+		config_set "$vif" ifname "$ifname"
+
+		config_get wds "$vif" wds
+		case "$wds" in
+			1|on|enabled) wds=1;;
+			*) wds=0;;
+		esac
+		iwpriv "$ifname" wds "$wds"
+
 		wpa=
 		case "$enc" in
 			WEP|wep)
@@ -84,42 +169,45 @@ enable_atheros() {
 					iwconfig "$ifname" enc "[$idx]" "${key:-off}"
 				done
 				config_get key "$vif" key
-				iwconfig "$ifname" enc "$key"
+				iwconfig "$ifname" enc "[${key:-1}]"
 			;;
 		esac
+
 		case "$mode" in
-			ap)
-				local hostapd_cfg=
-				case "$enc" in
-					*psk*|*PSK*)
-					# FIXME: wpa
-					;;
-					*wpa*|*WPA*)
-					# FIXME: add wpa+radius here
-					;;
-				esac
+			wds)
+				config_get addr "$vif" bssid
+				iwpriv "$ifname" wds_add "$addr"
 			;;
-			sta)
-				# FIXME: implement wpa_supplicant calls here
+			*)
+				config_get ssid "$vif" ssid
 			;;
-		esac	
-		
-		config_get ssid "$vif" ssid
-		append if_up "iwconfig $ifname essid $ssid channel $channel" ";$N"
-		append if_up "sleep 1" ";$N"
-		append if_up "ifconfig $ifname up" ";$N"
+		esac
+		iwconfig "$ifname" channel "$channel"
+		ifconfig "$ifname" up
 		
 		local net_cfg bridge
 		net_cfg="$(find_net_config "$vif")"
 		[ -z "$net_cfg" ] || {
 			bridge="$(bridge_interface "$net_cfg")"
-			append if_up "start_net '$ifname' '$net_cfg'" ";$N"
+			config_set "$vif" bridge "$bridge"
+			start_net "$ifname" "$net_cfg"
 		}
-		# TODO: start hostapd
+		case "$mode" in
+			ap)
+				hostapd_setup_vif "$vif" madwifi || {
+					echo "enable_atheros($device): Failed to set up wpa for interface $ifname" >&2
+					# make sure this wifi interface won't accidentally stay open without encryption
+					ifconfig "$ifname" down
+					wlanconfig "$ifname" destroy
+					continue
+				}
+			;;
+			wds|sta)
+				iwconfig "$ifname" essid "$ssid"
+				# FIXME: implement wpa_supplicant calls here
+			;;
+		esac
 	done
-	
-	#killall -KILL $hostapd >&- 2>&-
-	eval "$if_up"
 }
 
 
@@ -136,6 +224,7 @@ config wifi-device  $dev
 
 config wifi-iface
 	option device   $dev
+#	option network	lan
 	option mode     ap
 	option ssid     OpenWrt
 	option hidden   0
