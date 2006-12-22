@@ -41,7 +41,7 @@ ifeq ($(ARCH),powerpc)
 endif
 
 BUS:=PCI
-ifneq ($(CONFIG_LINUX_2_6_AR531X),)
+ifneq ($(CONFIG_LINUX_2_6_ATHEROS),)
   BUS:=AHB
   HAL_TARGET:=ap51
 endif
@@ -140,8 +140,8 @@ define Build/UninstallDev
 endef
 
 define KernelPackage/madwifi/install
-	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) ./files/madwifi.init $(1)/etc/init.d/madwifi
+	$(INSTALL_DIR) $(1)/lib/wifi
+	$(INSTALL_DATA) ./files/lib/wifi/madwifi.sh $(1)/lib/wifi
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(CP) $(PKG_BUILD_DIR)/tools/{madwifi_multi,80211debug,80211stats,athchans,athctrl,athdebug,athkey,athstats,wlanconfig} $(1)/usr/sbin/
 endef
