@@ -29,6 +29,12 @@ endef
 
 define Image/Build/jffs2-128k
 	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).img bs=131072 conv=sync
+	BIN_DIR=$(BIN_DIR) $(TOPDIR)/scripts/slugimage.pl \
+		-k $(BIN_DIR)/openwrt-nslu2-$(KERNEL)-zImage \
+		-r Ramdisk:1,Flashdisk:$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).img \
+		-p -o $(BIN_DIR)/openwrt-nslu2-$(KERNEL)-$(1).bin
+#		-L $(BIN_DIR)/apex-nslu2-armeb.bin
+#		-m $(BIN_DIR)/NPE-B
 endef
 
 $(eval $(call BuildImage))
