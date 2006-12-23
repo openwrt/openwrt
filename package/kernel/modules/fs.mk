@@ -94,7 +94,7 @@ define KernelPackage/fs-msdos
   DEPENDS:=+kmod-nls-base
   KCONFIG:=$(CONFIG_MSDOS_FS)
   SUBMENU:=$(FSMENU)
-  AUTOLOAD:=$(call AutoLoad,30,fat vfat)
+  AUTOLOAD:=$(call AutoLoad,40,msdos)
   FILES:= \
 	$(MODULES_DIR)/kernel/fs/msdos/msdos.$(LINUX_KMOD_SUFFIX)
 endef
