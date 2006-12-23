@@ -56,6 +56,9 @@ KERNELNAME=
 ifneq (,$(findstring x86,$(BOARD)))
   KERNELNAME="bzImage"
 endif
+ifneq (,$(findstring rdc,$(BOARD)))
+  KERNELNAME="bzImage"
+endif
 ifneq (,$(findstring ppc,$(BOARD)))
   KERNELNAME="uImage"
 endif
