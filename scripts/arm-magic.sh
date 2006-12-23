@@ -31,7 +31,7 @@ do
     printf "\xe3\xa0\x10\x$hexid" > $BIN_DIR/openwrt-$1-2.6-zImage
   else
     # we have a high machtypeid, we need a "mov" (e3a) and an "orr" (e38)
-    printf "\xe3\xa0\x10\xx$(echo $hexid|cut -b "2 3")\xe3\x81\x1c\x$(echo $hexid|cut -b 1)" > $BIN_DIR/openwrt-$1-2.6-zImage
+    printf "\xe3\xa0\x10\x$(echo $hexid|cut -b "2 3")\xe3\x81\x1c\x$(echo $hexid|cut -b 1)" > $BIN_DIR/openwrt-$1-2.6-zImage
   fi
     # generate the image
     cat $BIN_DIR/openwrt-ixp4xx-2.6-zImage >> $BIN_DIR/openwrt-$1-2.6-zImage
