@@ -1,0 +1,13 @@
+diff -urN linux.old/drivers/net/wireless/Kconfig linux.dev/drivers/net/wireless/Kconfig
+--- linux.old/drivers/net/wireless/Kconfig	2006-11-29 22:57:37.000000000 +0100
++++ linux.dev/drivers/net/wireless/Kconfig	2006-12-15 00:03:15.000000000 +0100
+@@ -545,7 +545,7 @@
+ # yes, this works even when no drivers are selected
+ config NET_WIRELESS
+ 	bool
+-	depends on NET_RADIO && (ISA || PCI || PPC_PMAC || PCMCIA)
++	depends on NET_RADIO && (ISA || PCI || PPC_PMAC || PCMCIA || AR531X)
+ 	default y
+ 
+ endmenu
+
