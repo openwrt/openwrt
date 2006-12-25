@@ -74,7 +74,7 @@ endef
 
 define Package/iptables-mod-imq
   $(call Package/iptables/Default)
-  DEPENDS:=iptables
+  DEPENDS:=iptables +kmod-ipt-imq
   TITLE:=IMQ support
   DESCRIPTION:=\
 	iptables extension for IMQ support.\\\
