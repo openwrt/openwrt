@@ -33,8 +33,8 @@ ifeq ($(DUMP),1)
 else
   all: compile
 endif
-KERNEL:=2.$(word 2,$(subst ., ,$(strip $(LINUX_VERSION))))
 
+include $(INCLUDE_DIR)/kernel-version.mk
 include $(INCLUDE_DIR)/host.mk
 include $(INCLUDE_DIR)/kernel.mk
 
