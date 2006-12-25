@@ -15,10 +15,6 @@ define Target/Description
 	Build firmware images for Atheros SoC boards (currently AR2315-AR2317)
 endef
 
-LINUX_VERSION:=2.6.19
-LINUX_RELEASE:=1
-LINUX_KERNEL_MD5SUM:=443c265b57e87eadc0c677c3acc37e20
-
 include $(INCLUDE_DIR)/kernel-build.mk
 DEFAULT_PACKAGES += kmod-madwifi
 

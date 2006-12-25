@@ -20,10 +20,6 @@ define Target/Description
 	with TFTP client too.
 endef
 
-LINUX_VERSION:=2.6.19.1
-LINUX_RELEASE:=1
-LINUX_KERNEL_MD5SUM:=2ab08fdfddc00e09b3d5bc7397d3c8be
-
 include $(INCLUDE_DIR)/kernel-build.mk
 DEFAULT_PACKAGES += kmod-switch
 
