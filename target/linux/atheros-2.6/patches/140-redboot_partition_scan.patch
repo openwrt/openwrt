@@ -1,0 +1,24 @@
+diff -urN linux.old/drivers/mtd/redboot.c linux.dev/drivers/mtd/redboot.c
+--- linux.old/drivers/mtd/redboot.c	2006-12-14 23:53:29.000000000 +0100
++++ linux.dev/drivers/mtd/redboot.c	2006-12-16 04:23:42.000000000 +0100
+@@ -64,6 +64,7 @@
+ 	if (!buf)
+ 		return -ENOMEM;
+ 
++restart:
+ 	if ( directory < 0 )
+ 		offset = master->size + directory*master->erasesize;
+ 	else
+@@ -139,6 +140,11 @@
+ 	}
+ 	if (i == numslots) {
+ 		/* Didn't find it */
++		if (offset + master->erasesize < master->size) {
++			/* not at the end of the flash yet, maybe next block :) */
++			directory++;
++			goto restart;
++		}
+ 		printk(KERN_NOTICE "No RedBoot partition table detected in %s\n",
+ 		       master->name);
+ 		ret = 0;
+
