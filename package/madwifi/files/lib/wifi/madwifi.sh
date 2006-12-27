@@ -130,6 +130,7 @@ enable_atheros() {
 			config_set "$vif" bridge "$bridge"
 			start_net "$ifname" "$net_cfg"
 		}
+		iwconfig "$ifname" essid "$ssid"
 		case "$mode" in
 			ap)
 				hostapd_setup_vif "$vif" madwifi || {
@@ -141,7 +142,6 @@ enable_atheros() {
 				}
 			;;
 			wds|sta)
-				iwconfig "$ifname" essid "$ssid"
 				# FIXME: implement wpa_supplicant calls here
 			;;
 		esac
