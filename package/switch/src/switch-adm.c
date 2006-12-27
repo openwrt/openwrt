@@ -223,7 +223,7 @@ static __u32 adm_rreg(__u8 table, __u8 addr)
 	__u8 bits[6] = {
 		0xFF, 0xFF, 0xFF, 0xFF,
 		(0x06 << 4) | ((table & 0x01) << 3 | (addr&64)>>6),
-		((addr&62)<<2)
+		((addr&63)<<2)
 	};
 
 	__u8 rbits[4];
