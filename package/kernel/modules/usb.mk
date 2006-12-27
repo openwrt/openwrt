@@ -87,7 +87,7 @@ $(eval $(call KernelPackage,usb2))
 
 define usbdep
   SUBMENU:=$(USBMENU)
-  DEPENDS:=kmod-usb-core usb-controller $(1)
+  DEPENDS:=kmod-usb-core $(1)
 endef
 
 
