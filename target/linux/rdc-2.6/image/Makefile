@@ -15,7 +15,7 @@ endef
 
 define Image/Build
 	touch $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).img
-	$(STAGING_DIR)/bin/airlink -b 1 -j $(LINUX_DIR)/arch/i386/boot/bzImage $(KDIR)/root.$(1) $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).img
+	$(STAGING_DIR)/bin/airlink -b 0 -j $(LINUX_DIR)/arch/i386/boot/bzImage $(KDIR)/root.$(1) $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).img
 endef
 
 $(eval $(call BuildImage))
