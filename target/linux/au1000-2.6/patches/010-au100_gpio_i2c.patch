@@ -1,13 +1,14 @@
 diff -urN linux-2.6.19/drivers/i2c/busses/Kconfig linux-2.6.19.new/drivers/i2c/busses/Kconfig
 --- linux-2.6.19/drivers/i2c/busses/Kconfig	2006-11-29 22:57:37.000000000 +0100
 +++ linux-2.6.19.new/drivers/i2c/busses/Kconfig	2006-12-28 17:04:34.000000000 +0100
-@@ -84,6 +84,16 @@
+@@ -84,6 +84,17 @@
  	  This driver can also be built as a module.  If so, the module
  	  will be called i2c-au1550.
  
 +config I2C_AU1X00GPIO
 +	tristate "Au1x00 i2c using GPIO pins"
-+	depends on I2C && MIPS_MTX1
++	depends on I2C
++	select I2C_ALGOBIT
 +	help
 +	  If you say yest to this option, support will be included for the
 +	  Au1x00 GPIO interface.
