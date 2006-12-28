@@ -7,7 +7,7 @@ diff -urN linux-2.6.19/drivers/i2c/busses/Kconfig linux-2.6.19.new/drivers/i2c/b
  
 +config I2C_AU1X00GPIO
 +	tristate "Au1x00 i2c using GPIO pins"
-+	depends on I2C && MTX1
++	depends on I2C && MIPS_MTX1
 +	help
 +	  If you say yest to this option, support will be included for the
 +	  Au1x00 GPIO interface.
