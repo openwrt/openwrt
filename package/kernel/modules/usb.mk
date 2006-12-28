@@ -31,7 +31,6 @@ define KernelPackage/usb-uhci
   TITLE:=Support for UHCI controllers
   DESCRIPTION:=Kernel support for USB UHCI controllers
   DEPENDS:=kmod-usb-core
-  PROVIDES:=usb-controller
   SUBMENU:=$(USBMENU)
 endef
 
@@ -48,12 +47,24 @@ define KernelPackage/usb-uhci/2.6
 endef
 $(eval $(call KernelPackage,usb-uhci))
 
+define KernelPackage/usb-uhci-iv
+  TITLE:=Support for Intel/VIA UHCI controllers 
+  DESCRIPTION:=Kernel support for Intel/VIA USB UHCI controllers
+  DEPENDS:=kmod-usb-core
+  SUBMENU:=$(USBMENU)
+endef 
+
+define KernelPackage/usb-uhci-iv/2.4
+  FILES:=$(MODULES_DIR)/kernel/drivers/usb/host/usb-uhci.$(LINUX_KMOD_SUFFIX)
+  KCONFIG:=$(CONFIG_USB_UHCI)
+  AUTOLOAD:=$(call AutoLoad,50,usb-uhci) 
+endef 
+$(eval $(call KernelPackage,usb-uhci-iv)) 
 
 define KernelPackage/usb-ohci
   TITLE:=Support for OHCI controllers
   DESCRIPTION:=Kernel support for USB OHCI controllers
   DEPENDS:=kmod-usb-core
-  PROVIDES:=usb-controller
   SUBMENU:=$(USBMENU)
 endef
 
@@ -70,12 +81,10 @@ define KernelPackage/usb-ohci/2.6
 endef
 $(eval $(call KernelPackage,usb-ohci))
 
-
 define KernelPackage/usb2
   TITLE:=Support for USB2 controllers
   DESCRIPTION:=Kernel support for USB2 (EHCI) controllers
   DEPENDS:=kmod-usb-core
-  PROVIDES:=usb-controller
   KCONFIG:=$(CONFIG_USB)
   SUBMENU:=$(USBMENU)
   FILES:=$(MODULES_DIR)/kernel/drivers/usb/host/ehci-hcd.$(LINUX_KMOD_SUFFIX)
