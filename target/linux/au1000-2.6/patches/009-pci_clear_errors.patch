@@ -1,0 +1,16 @@
+diff -urN linux-2.6.19/arch/mips/pci/ops-au1000.c linux-2.6.19.new/arch/mips/pci/ops-au1000.c
+--- linux-2.6.19/arch/mips/pci/ops-au1000.c	2006-11-29 22:57:37.000000000 +0100
++++ linux-2.6.19.new/arch/mips/pci/ops-au1000.c	2006-12-28 03:02:42.000000000 +0100
+@@ -172,7 +172,11 @@
+ 		error = -1;
+ 		DBG("Au1x Master Abort\n");
+ 	} else if ((status >> 28) & 0xf) {
+-		DBG("PCI ERR detected: status %x\n", status);
++		DBG("PCI ERR detected: device %d, status %x\n", device, ((status >> 28) & 0xf));
++		
++		/* clear errors */
++		au_writel(status & 0xf000ffff, Au1500_PCI_STATCMD);		
++
+ 		*data = 0xffffffff;
+ 		error = -1;
+ 	}
