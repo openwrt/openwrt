@@ -454,3 +454,16 @@ diff -urN linux-2.6.19/drivers/i2c/busses/i2c-au1x00gpio.c linux-2.6.19.new/driv
 +	i2c_bit_au1x00gpio_exit();
 +}
 +#endif
+diff -urN linux-2.6.19/include/linux/i2c-id.h linux-2.6.19.new/include/linux/i2c-id.h
+--- linux-2.6.19/include/linux/i2c-id.h	2006-11-29 22:57:37.000000000 +0100
++++ linux-2.6.19.new/include/linux/i2c-id.h	2006-12-28 03:12:15.000000000 +0100
+@@ -231,6 +231,9 @@
+ /* --- Au1550 PSC adapters adapters					*/
+ #define I2C_HW_AU1550_PSC	0x1b0000
+ 
++/* --- Au1x00 i2c GPIO adapter						*/
++#define I2C_HW_B_AU1x00GPIO 0x1b
++
+ /* --- SMBus only adapters						*/
+ #define I2C_HW_SMBUS_PIIX4	0x040000
+ #define I2C_HW_SMBUS_ALI15X3	0x040001
