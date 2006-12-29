@@ -410,7 +410,7 @@ sub readInFirmware {
 	    }
 	    else {
 
-		# Slurp up the data, based on whether a header is present or not
+		# Slurp up the data, based on whether a header and/or data is present or not
 		if ($_->{'header'}) {
 
 		    # Read the length, and grab the data based on the length.
@@ -421,6 +421,11 @@ sub readInFirmware {
 			$debug and printf("Found header size of 0x%08X bytes for <%s>\n", $data_len, $_->{'name'});
 			$_->{'data'} = substr($firmware_buf, $_->{'offset'} + $_->{'header'}, $data_len);
 		    }
+		}
+		elsif ($_->{'pseudo'} and not defined $_->{'file'} and
+		       (substr($firmware_buf, $_->{'offset'}, $_->{'size'}) eq
+			(pack("C", 0xff) x $_->{'size'}))) {
+		    $debug and printf("Skipping empty pseudo partition <%s>\n", $_->{'name'});
 		}
 		else {
 
@@ -557,6 +562,11 @@ sub readInFirmwareParts {
 sub layoutPartitions {
     my(@partitions) = @_;
 
+    # Find the kernel partition, and save a pointer to it for later use
+    my $kernel;
+    map { ($_->{'name'} eq "Kernel") && ($kernel = $_); } @partitions;
+    $kernel or die "Couldn't find the kernel partition\n";
+
     # Find the last variable size partition, and save a pointer to it for later use
     my $lastdisk;
     my $directory_offset;
@@ -588,66 +598,33 @@ sub layoutPartitions {
 
 	$debug and printf("Pointer is 0x%08X\n", $pointer);
 
-	# If this is the last variable size partition, then fill the rest of the space.
-	if ($_->{'name'} eq $lastdisk->{'name'}) {
-	    $_->{'size'} = paddedSize($directory_offset + $flash_start - $pointer);
-	    $debug and printf("Padding last variable partition <%s> to 0x%08X bytes\n", $_->{'name'}, $_->{'size'});
-	}
-
-	# Handle requests for partition creation first.
-	if (defined $_->{'size'} and not defined $_->{'data'} and ($_->{'name'} ne "FIS directory")) {
-
-	    # A zero size is a request to fill all available space.
-	    if ($_->{'size'} == 0) {
-		# Grab the start of the FIS directory, and use all the space up to there.
-		$_->{'size'} = paddedSize($directory_offset + $flash_start - $pointer);
-
-		# Create an empty partition of the requested size.
-		$_->{'data'} = padBytes("", $_->{'size'});
-		
-		$debug and printf("Creating empty partition <%s> of 0x%08X bytes\n", $_->{'name'}, $_->{'size'});
-	    }
-
-	    if (not defined $_->{'offset'}) {
-		# Check to make sure that the requested size is not too large.
-		if (($pointer + $_->{'size'}) > ($flash_start + $directory_offset)) {
-		    die "Ran out of flash space in <", $_->{'name'}, ">\n";
-		}
-	    }
-	    else {
-		# Check to make sure that the requested size is not too large.
-		if (($_->{'offset'} + $_->{'size'}) > ($flash_start + $directory_offset)) {
-		    die "Ran out of flash space in <", $_->{'name'}, ">\n";
-		}
+	# Determine the start and offset of the current partition.
+	if (defined $_->{'offset'}) {
+	    $_->{'start'} = $flash_start + $_->{'offset'};
+	    # Check for running past the defined start of the partition.
+	    if (($pointer > $_->{'start'}) and not $_->{'pseudo'}) {
+		die sprintf("Ran out of flash space before <%s> - %s too large.\n", $_->{'name'},
+			    sprintf("0x%05X bytes", ($pointer - $_->{'start'})));
 	    }
 	}
 
-	# Then handle known partitions, and allocate them.
-	if (defined $_->{'size'}) {
+	# If offset is not defined, then calculate it.
+	else {
+	    $_->{'start'} = $pointer;
+	    $_->{'offset'} = $_->{'start'} - $flash_start;
+	}
 
-	    # Determine the start and offset of the current partition.
-	    if (defined $_->{'offset'}) {
-		$_->{'start'} = $flash_start + $_->{'offset'};
-	    }
+	my $size = defined $_->{'data'} ? length($_->{'data'}) : 0;
 
-	    # If offset is not defined, then calculate it.
-	    else {
-		$_->{'start'} = $pointer;
-		$_->{'offset'} = $_->{'start'} - $flash_start;
-	    }
+	# Add skip regions for the partitions with headers.
+	if ($_->{'header'} > 0) {
+	    # Define the skip region for the initial Sercomm header.
+	    push(@{$_->{'skips'}},
+		 { 'offset' => 0, 'size' => $_->{'header'}, 'data' => undef });
+	    # Allow for the Sercomm header to be prepended to the data.
+	    $size += $_->{'header'};
 
-	    my $size = defined $_->{'data'} ? length($_->{'data'}) : 0;
-
-	    # Add skip regions for the partitions with headers.
-	    if ($_->{'header'} > 0) {
-		# Define the skip region for the initial Sercomm header.
-		push(@{$_->{'skips'}},
-		     { 'offset' => 0, 'size' => $_->{'header'}, 'data' => undef });
-		# Allow for the Sercomm header to be prepended to the data.
-		$size += $_->{'header'};
-	    }
-
-	    # Determine if the partition requires a Sercomm skip region.
+	    # Determine if the partition overlaps the ramdisk boundary.
 	    if (($_->{'offset'} < $ramdisk_offset) and
 		(($_->{'offset'} + $size) > $ramdisk_offset)) {
 		# Define the skip region for the inline Sercomm header.
@@ -657,36 +634,64 @@ sub layoutPartitions {
 		# Allow for the Sercomm header to be inserted in the data.
 		$size += 16;
 	    }
-
-	    # Extend to another block if required.
-	    if ($size > $_->{'size'}) {
-		$_->{'size'} = $size;
-		printf("Extending partition <%s> to 0x%08X bytes\n", $_->{'name'}, $_->{'size'});
-	    }
-
-	    # Keep the user appraised ...
-	    $debug and printf("Allocated <%s> from 0x%08X to 0x%08X (%s / %s)\n",
-			      $_->{'name'}, $_->{'start'}, $_->{'start'} + $_->{'size'},
-			      ($size >= $block_size ?
-			       sprintf("%d blocks", numBlocks($size)) :
-			       sprintf("0x%05X bytes", $size)),
-			      ($_->{'size'} >= $block_size ?
-			       sprintf("%d blocks", numBlocks($_->{'size'})) :
-			       sprintf("0x%05X bytes", $_->{'size'})));
-
-	    # Check to make sure we have not run out of room.
-	    if (($_->{'start'} + $_->{'size'}) > ($flash_start + $flash_len)) {
-		die "Ran out of flash space in <", $_->{'name'}, ">\n";
-	    }
-
-	    $debug and printf("Moving pointer from 0x%08X to 0x%08X (0x%08X + 0x%08X)\n",
-			      $pointer, paddedSize($_->{'start'} + $_->{'size'}),
-			      $_->{'start'}, $_->{'size'});
-
-	    # Move the pointer up, in preparation for the next partition.
-	    $pointer = paddedSize($_->{'start'} + $_->{'size'});
-
 	}
+
+	# Partitions without headers cannot have skip regions.
+	elsif (($_->{'offset'} <= $ramdisk_offset) and
+	       (($_->{'offset'} + $size) > $ramdisk_offset)) {
+	    # Pad the kernel until it extends past the ramdisk offset.
+	    push(@{$kernel->{'skips'}},
+		 { 'offset' => ($ramdisk_offset - $kernel->{'offset'}), 'size' => 16,
+		   'data' => pack("N4", $block_size) });
+	    $kernel->{'size'} = $ramdisk_offset - $kernel->{'offset'} + $block_size;
+	    $kernel->{'data'} = padBytes($kernel->{'data'},
+					 $kernel->{'size'} - $kernel->{'header'} - 16);
+	    $_->{'offset'} = $ramdisk_offset + $block_size;
+	    $_->{'start'} = $flash_start + $_->{'offset'};
+	    $pointer = $_->{'start'};
+	    $debug and printf("Extending kernel partition past ramdisk offset.\n");
+	}
+
+	# If this is the last variable size partition, then fill the rest of the space.
+	if ($_->{'name'} eq $lastdisk->{'name'}) {
+	    $_->{'size'} = paddedSize($directory_offset + $flash_start - $pointer);
+	    $debug and printf("Padding last variable partition <%s> to 0x%08X bytes\n", $_->{'name'}, $_->{'size'});
+	}
+
+	die sprintf("Partition size not defined in <%s>.\n", $_->{'name'})
+	    unless defined $_->{'size'};
+
+	# Extend to another block if required.
+	if ($size > $_->{'size'}) {
+	    if ($_->{'name'} eq $lastdisk->{'name'}) {
+		die sprintf("Ran out of flash space in <%s> - %s too large.\n", $_->{'name'},
+			    sprintf("0x%05X bytes", ($size - $_->{'size'})));
+	    }
+	    $_->{'size'} = $size;
+	    printf("Extending partition <%s> to 0x%08X bytes\n", $_->{'name'}, $_->{'size'});
+	}
+
+	# Keep the user appraised ...
+	$debug and printf("Allocated <%s> from 0x%08X to 0x%08X (%s / %s)\n",
+			  $_->{'name'}, $_->{'start'}, $_->{'start'} + $_->{'size'},
+			  ($size >= $block_size ?
+			   sprintf("%d blocks", numBlocks($size)) :
+			   sprintf("0x%05X bytes", $size)),
+			  ($_->{'size'} >= $block_size ?
+			   sprintf("%d blocks", numBlocks($_->{'size'})) :
+			   sprintf("0x%05X bytes", $_->{'size'})));
+
+	# Check to make sure we have not run out of room.
+	if (($_->{'start'} + $_->{'size'}) > ($flash_start + $flash_len)) {
+	    die "Ran out of flash space in <", $_->{'name'}, ">\n";
+	}
+
+	$debug and printf("Moving pointer from 0x%08X to 0x%08X (0x%08X + 0x%08X)\n",
+			  $pointer, paddedSize($_->{'start'} + $_->{'size'}),
+			  $_->{'start'}, $_->{'size'});
+
+	# Move the pointer up, in preparation for the next partition.
+	$pointer = paddedSize($_->{'start'} + $_->{'size'});
 
     } @partitions;
 
@@ -916,7 +921,7 @@ sub defaultPartitions {
 	     'offset'=>0x007f8000,        'size'=>0x00004000,
 	     'variable'=>0, 'header'=>0,  'pseudo'=>1, 'data'=>undef, 'byteswap'=>0},
 	    {'name'=>'Microcode',	  'file'=>'NPE-B',
-	     'offset'=>0x007fc000,        'size'=>0x00003ff0,
+	     'offset'=>0x007fc000,        'size'=>0x00003000,
 	     'variable'=>0, 'header'=>16, 'pseudo'=>1, 'data'=>undef, 'byteswap'=>0},
 	    {'name'=>'Trailer',           'file'=>'Trailer',
 	     'offset'=>0x007ffff0,        'size'=>0x00000010,
@@ -1110,10 +1115,7 @@ if (defined $ramdisk) {
 	    if (defined $size) {
 		$entry{'size'} = $size * $block_size;
 		# Create an empty partition of the requested size.
-		$entry{'data'} = padBytes("", $entry{'size'});
-		if ($entry{'header'}) {
-		    $entry{'data'} = padBytes("", $entry{'size'} - $entry{'header'});
-		}
+		$entry{'data'} = padBytes("", $entry{'size'} - $entry{'header'});
 	    }
 
 	    \%entry;
