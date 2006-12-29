@@ -31,9 +31,14 @@ define Build/Configure/powerpc
 	mv $(PKG_BUILD_DIR)/include/asm-powerpc $(PKG_BUILD_DIR)/include/asm-ppc
 endef
 
-KMAKE := $(MAKE) -C $(PKG_BUILD_DIR) \
+ifneq (,$(findstring uml,$(BOARD)))
+  KMAKE := $(MAKE) -C $(PKG_BUILD_DIR) \
+		CONFIG_SHELL=$(BASH)
+else
+  KMAKE := $(MAKE) -C $(PKG_BUILD_DIR) \
 		ARCH=$(LINUX_KARCH) \
 		CONFIG_SHELL=$(BASH)
+endif
 
 define Build/Configure
 	yes '' | $(KMAKE) oldconfig
