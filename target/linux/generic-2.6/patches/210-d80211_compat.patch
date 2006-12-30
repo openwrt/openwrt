@@ -1,0 +1,11 @@
+--- linux.old/include/linux/netdevice.h	2006-12-30 18:49:37.916951328 +0100
++++ linux.dev/include/linux/netdevice.h	2006-12-30 18:49:49.573179312 +0100
+@@ -526,6 +526,8 @@
+ 	struct class_device	class_dev;
+ 	/* space for optional statistics and wireless sysfs groups */
+ 	struct attribute_group  *sysfs_groups[3];
++	
++	void *ieee80211_ptr;
+ };
+ 
+ #define	NETDEV_ALIGN		32
