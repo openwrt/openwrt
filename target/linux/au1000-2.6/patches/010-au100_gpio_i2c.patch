@@ -33,7 +33,7 @@ diff -urN linux-2.6.19/drivers/i2c/busses/Makefile linux-2.6.19.new/drivers/i2c/
 diff -urN linux-2.6.19/drivers/i2c/busses/i2c-au1x00gpio.c linux-2.6.19.new/drivers/i2c/busses/i2c-au1x00gpio.c
 --- linux-2.6.19/drivers/i2c/busses/i2c-au1x00gpio.c	1970-01-01 01:00:00.000000000 +0100
 +++ linux-2.6.19.new/drivers/i2c/busses/i2c-au1x00gpio.c	2006-12-28 17:02:10.000000000 +0100
-@@ -0,0 +1,421 @@
+@@ -0,0 +1,406 @@
 +/* ------------------------------------------------------------------------- */
 +/* i2c-au1x00gpio.c i2c-hw access for Au1x00 GPIO pins.                      */
 +/* ------------------------------------------------------------------------- */
@@ -77,11 +77,6 @@ diff -urN linux-2.6.19/drivers/i2c/busses/i2c-au1x00gpio.c linux-2.6.19.new/driv
 +
 +#include <linux/i2c.h>
 +#include <linux/i2c-algo-bit.h>
-+
-+#ifndef __exit
-+#define __exit __init
-+#endif
-+
 +
 +struct i2c_au1x00gpio
 +{
@@ -398,11 +393,11 @@ diff -urN linux-2.6.19/drivers/i2c/busses/i2c-au1x00gpio.c linux-2.6.19.new/driv
 +
 +
 +#ifndef CONFIG_I2C_AU1X00GPIO_SCL
-+#define CONFIG_I2C_AU1X00GPIO_SCL (216)
++#define CONFIG_I2C_AU1X00GPIO_SCL (210)
 +#endif
 +
 +#ifndef CONFIG_I2C_AU1X00GPIO_SDA
-+#define CONFIG_I2C_AU1X00GPIO_SDA (217)
++#define CONFIG_I2C_AU1X00GPIO_SDA (9)
 +#endif
 +
 +static int au1x00gpiopin_scl = CONFIG_I2C_AU1X00GPIO_SCL;
@@ -410,7 +405,7 @@ diff -urN linux-2.6.19/drivers/i2c/busses/i2c-au1x00gpio.c linux-2.6.19.new/driv
 +
 +
 +
-+int __init i2c_bit_au1x00gpio_init(void)
++static int __init i2c_bit_au1x00gpio_init(void)
 +{
 +  printk(KERN_INFO "i2c-au1x00gpio.o: i2c Au1x00 GPIO adapter module version\n");
 +
@@ -428,7 +423,7 @@ diff -urN linux-2.6.19/drivers/i2c/busses/i2c-au1x00gpio.c linux-2.6.19.new/driv
 +}
 +
 +
-+void __exit i2c_bit_au1x00gpio_exit(void)
++static void __exit i2c_bit_au1x00gpio_exit(void)
 +{
 +  i2c_au1x00gpio_delete (au1x00gpiopin_scl, au1x00gpiopin_sda);
 +}
@@ -443,18 +438,8 @@ diff -urN linux-2.6.19/drivers/i2c/busses/i2c-au1x00gpio.c linux-2.6.19.new/driv
 +MODULE_DESCRIPTION("I2C-Bus adapter routines for Au1x00 GPIO adapter.");
 +MODULE_LICENSE("GPL");
 +
-+
-+#ifdef MODULE
-+int init_module(void)
-+{
-+	return i2c_bit_au1x00gpio_init();
-+}
-+
-+void cleanup_module(void)
-+{
-+	i2c_bit_au1x00gpio_exit();
-+}
-+#endif
++module_init(i2c_bit_au1x00gpio_init);
++module_exit(i2c_bit_au1x00gpio_exit);
 diff -urN linux-2.6.19/include/linux/i2c-id.h linux-2.6.19.new/include/linux/i2c-id.h
 --- linux-2.6.19/include/linux/i2c-id.h	2006-11-29 22:57:37.000000000 +0100
 +++ linux-2.6.19.new/include/linux/i2c-id.h	2006-12-28 03:12:15.000000000 +0100
