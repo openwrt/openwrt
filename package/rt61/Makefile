@@ -21,13 +21,17 @@ PKG_CAT:=zcat
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/kmod-rt61
-  SECTION:=kernel
-  CATEGORY:=Kernel drivers
-  DEPENDS:=@LINUX_2_6_RDC
-  TITLE:=Driver for Ralink RT61xx based boards
+define KernelPackage/rt61
+  SUBMENU:=Wireless Drivers
+  TITLE:=Driver for ralink MiMo pci chipsets 
+  DEPENDS:=@USB_SUPPORT +wireless-tools
+  DESCRIPTION:=\
+        This package contains a driver for ralink rt61xx pci chipsets.
   URL:=http://rt2x00.serialmonkey.com/
   VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
+  FILES:= \
+                $(PKG_BUILD_DIR)/Module/rt61.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,50,rt61)
 endef
 
 define Build/Compile
@@ -40,12 +44,4 @@ define Build/Compile
 		modules
 endef
 
-define Package/kmod-rt61/install
-	mkdir -p $(1)/etc/modules.d
-	$(INSTALL_DATA) ./files/rt61.modules $(1)/etc/modules.d/10-ralink
-	$(INSTALL_DIR) $(1)/lib/modules/$(LINUX_VERSION)
-	$(CP) $(PKG_BUILD_DIR)/Module/rt61.$(LINUX_KMOD_SUFFIX) \
-		$(1)/lib/modules/$(LINUX_VERSION)/
-endef
-
-$(eval $(call BuildPackage,kmod-rt61))
+$(eval $(call KernelPackage,rt61))
