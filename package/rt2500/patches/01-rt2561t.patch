@@ -1,0 +1,31 @@
+diff -urN rt2500-1.1.0-b4/Module/rt_config.h rt2500-1.1.0-b4.new/Module/rt_config.h
+--- rt2500-1.1.0-b4/Module/rt_config.h	2006-06-17 22:12:58.000000000 +0200
++++ rt2500-1.1.0-b4.new/Module/rt_config.h	2006-12-30 02:56:30.000000000 +0100
+@@ -55,7 +55,7 @@
+ #error  You must compile this driver with "-O".
+ #endif
+ 
+-#include <linux/config.h>  //can delete
++#include <linux/autoconf.h>  //can delete
+ #include <linux/module.h>
+ #include <linux/version.h>
+ #include <linux/kernel.h>
+@@ -154,6 +154,7 @@
+ 
+ enum rt2560_chips {
+     RT2560A = 0,
++    RT2561T = 0,
+ };
+ 
+ #ifdef RTMP_EMBEDDED
+diff -urN rt2500-1.1.0-b4/Module/rtmp_main.c rt2500-1.1.0-b4.new/Module/rtmp_main.c
+--- rt2500-1.1.0-b4/Module/rtmp_main.c	2006-06-17 22:12:58.000000000 +0200
++++ rt2500-1.1.0-b4.new/Module/rtmp_main.c	2006-12-30 02:56:01.000000000 +0100
+@@ -975,6 +975,7 @@
+ static struct pci_device_id rt2500_pci_tbl[] __devinitdata =
+ {
+     {0x1814, 0x0201, PCI_ANY_ID, PCI_ANY_ID, 0, 0, RT2560A},
++    {0x1814, 0x0301, PCI_ANY_ID, PCI_ANY_ID, 0, 0, RT2561T},
+     {0,}                                /* terminate list */
+ };
+ MODULE_DEVICE_TABLE(pci, rt2500_pci_tbl);
