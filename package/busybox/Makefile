@@ -9,12 +9,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=busybox
-PKG_VERSION:=1.2.1
+PKG_VERSION:=1.3.1
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://www.busybox.net/downloads
-PKG_MD5SUM:=362b3dc0f2023ddfda901dc1f1a74391
+PKG_MD5SUM:=571531cfa83726947ccb566de017ad4f
 PKG_CAT:=bzcat
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
@@ -50,15 +50,17 @@ define Build/Configure
 	$(SCRIPT_DIR)/gen_busybox_config.pl $(TOPDIR)/.config > $(PKG_BUILD_DIR)/.config
 	yes '' | $(MAKE) -C $(PKG_BUILD_DIR) \
 		CC="$(TARGET_CC)" \
-		CROSS="$(TARGET_CROSS)" \
+		CROSS_COMPILE="$(TARGET_CROSS)" \
+		ARCH="$(ARCH)" \
 		oldconfig
 endef
 
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CC="$(TARGET_CC)" \
-		CROSS="$(TARGET_CROSS)" \
+		CROSS_COMPILE="$(TARGET_CROSS)" \
 		EXTRA_CFLAGS="$(TARGET_CFLAGS)" \
+		ARCH="$(ARCH)" \
 		IPKG_ARCH="$(ARCH)" \
 		all
 endef
@@ -66,10 +68,11 @@ endef
 define Package/busybox/install
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CC="$(TARGET_CC)" \
-		CROSS="$(TARGET_CROSS)" \
+		CROSS_COMPILE="$(TARGET_CROSS)" \
 		EXTRA_CFLAGS="$(TARGET_CFLAGS)" \
+		ARCH="$(ARCH)" \
 		IPKG_ARCH="$(ARCH)" \
-		PREFIX="$(1)" \
+		CONFIG_PREFIX="$(1)" \
 		install
 	mkdir -p $(1)/etc/init.d
 	for tmp in $(init-y); do \
