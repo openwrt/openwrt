@@ -1,0 +1,69 @@
+config D80211
+	tristate "Generic IEEE 802.11 Networking Stack (dscape)"
+	select CRYPTO
+	select CRYPTO_ARC4
+	select CRYPTO_AES
+	---help---
+	This option enables the hardware independent IEEE 802.11
+	networking stack.
+
+config D80211_LEDS
+	bool "Enable LED triggers"
+	depends on D80211
+	select NEW_LEDS
+	select LEDS_TRIGGERS
+	---help---
+	This option enables a few LED triggers for different
+	packet receive/transmit events.
+
+config D80211_DEBUG
+	bool "Enable debugging output"
+	depends on D80211
+	---help---
+	  This option will enable debug tracing output for the
+	  ieee80211 network stack.
+
+	  If you are not trying to debug or develop the ieee80211
+	  subsystem, you most likely want to say N here.
+
+config D80211_VERBOSE_DEBUG
+	bool "Verbose debugging output"
+	depends on D80211_DEBUG
+
+config D80211_LOWTX_FRAME_DUMP
+	bool "Debug frame dumping"
+	depends on D80211_DEBUG
+	---help---
+	  Selecting this option will cause the stack to
+	  print a message for each frame that is handed
+	  to the lowlevel driver for transmission. This
+	  message includes all MAC addresses and the
+	  frame control field.
+
+	  If unsure, say N and insert the debugging code
+	  you require into the driver you are debugging.
+
+config TKIP_DEBUG
+	bool "TKIP debugging"
+	depends on D80211_DEBUG
+
+config D80211_DEBUG_COUNTERS
+	bool "Extra statistics for TX/RX debugging"
+	depends on D80211_DEBUG
+
+config HOSTAPD_WPA_TESTING
+	bool "Support for TKIP countermeasures testing"
+	depends on D80211_DEBUG
+
+config D80211_IBSS_DEBUG
+	bool "Support for IBSS testing"
+	depends on D80211_DEBUG
+	---help---
+	  Say Y here if you intend to debug the IBSS code.
+
+config D80211_VERBOSE_PS_DEBUG
+	bool "Verbose powersave mode debugging"
+	depends on D80211_DEBUG
+	---help---
+	  Say Y here to print out verbose powersave
+	  mode debug messages.
