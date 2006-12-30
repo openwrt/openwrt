@@ -1,49 +1,44 @@
-# Copyright (C) 2006 OpenWrt.org
-#
-# This is free software, licensed under the GNU General Public License v2.
-# See /LICENSE for more information.
-#
-diff -ruN busybox-1.2.0-old/include/applets.h busybox-1.2.0-new/include/applets.h
---- busybox-1.2.0-old/include/applets.h	2006-07-31 10:47:56.000000000 +0200
-+++ busybox-1.2.0-new/include/applets.h	2006-07-31 11:21:00.000000000 +0200
-@@ -200,6 +200,7 @@
+diff -ruN busybox-1.3.1-old/include/applets.h busybox-1.3.1-new/include/applets.h
+--- busybox-1.3.1-old/include/applets.h	2006-12-27 05:56:18.000000000 +0100
++++ busybox-1.3.1-new/include/applets.h	2006-12-28 07:25:35.000000000 +0100
+@@ -211,6 +211,7 @@
  USE_MV(APPLET(mv, _BB_DIR_BIN, _BB_SUID_NEVER))
  USE_NAMEIF(APPLET(nameif, _BB_DIR_SBIN, _BB_SUID_NEVER))
  USE_NC(APPLET(nc, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
 +USE_NETMSG(APPLET_NOUSAGE(netmsg, netmsg, _BB_DIR_BIN, _BB_SUID_ALWAYS))
  USE_NETSTAT(APPLET(netstat, _BB_DIR_BIN, _BB_SUID_NEVER))
  USE_NICE(APPLET(nice, _BB_DIR_BIN, _BB_SUID_NEVER))
- USE_NOHUP(APPLET(nohup, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
-diff -ruN busybox-1.2.0-old/networking/Config.in busybox-1.2.0-new/networking/Config.in
---- busybox-1.2.0-old/networking/Config.in	2006-07-01 00:42:02.000000000 +0200
-+++ busybox-1.2.0-new/networking/Config.in	2006-07-31 11:18:01.000000000 +0200
-@@ -445,6 +445,12 @@
+ USE_NMETER(APPLET(nmeter, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
+diff -ruN busybox-1.3.1-old/networking/Config.in busybox-1.3.1-new/networking/Config.in
+--- busybox-1.3.1-old/networking/Config.in	2006-12-27 05:52:39.000000000 +0100
++++ busybox-1.3.1-new/networking/Config.in	2006-12-28 07:25:35.000000000 +0100
+@@ -452,6 +452,12 @@
  	help
  	  A simple Unix utility which reads and writes data across network
  	  connections.
 +	  
-+config CONFIG_NETMSG
++config NETMSG
 +	bool "netmsg"
 +	default n
 +	help
 +	  simple program for sending udp broadcast messages
  
- config CONFIG_NC_GAPING_SECURITY_HOLE
- 	bool "gaping security hole"
-diff -ruN busybox-1.2.0-old/networking/Makefile.in busybox-1.2.0-new/networking/Makefile.in
---- busybox-1.2.0-old/networking/Makefile.in	2006-07-01 00:42:02.000000000 +0200
-+++ busybox-1.2.0-new/networking/Makefile.in	2006-07-31 11:18:01.000000000 +0200
-@@ -30,6 +30,7 @@
- NETWORKING-$(CONFIG_IPTUNNEL)     += iptunnel.o
- NETWORKING-$(CONFIG_NAMEIF)       += nameif.o
- NETWORKING-$(CONFIG_NC)           += nc.o
-+NETWORKING-$(CONFIG_NETMSG)       += netmsg.o
- NETWORKING-$(CONFIG_NETSTAT)      += netstat.o
- NETWORKING-$(CONFIG_NSLOOKUP)     += nslookup.o
- NETWORKING-$(CONFIG_PING)         += ping.o
-diff -ruN busybox-1.2.0-old/networking/netmsg.c busybox-1.2.0-new/networking/netmsg.c
---- busybox-1.2.0-old/networking/netmsg.c	1970-01-01 01:00:00.000000000 +0100
-+++ busybox-1.2.0-new/networking/netmsg.c	2006-07-31 11:18:01.000000000 +0200
+ config NC_SERVER
+ 	bool "Netcat server options (-lp)"
+diff -ruN busybox-1.3.1-old/networking/Kbuild busybox-1.3.1-new/networking/Kbuild
+--- busybox-1.3.1-old/networking/Kbuild	2006-12-27 05:52:39.000000000 +0100
++++ busybox-1.3.1-new/networking/Kbuild	2006-12-28 07:28:29.000000000 +0100
+@@ -25,6 +25,7 @@
+ lib-$(CONFIG_IPTUNNEL)     += iptunnel.o
+ lib-$(CONFIG_NAMEIF)       += nameif.o
+ lib-$(CONFIG_NC)           += nc.o
++lib-$(CONFIG_NETMSG)       += netmsg.o
+ lib-$(CONFIG_NETSTAT)      += netstat.o
+ lib-$(CONFIG_NSLOOKUP)     += nslookup.o
+ lib-$(CONFIG_PING)         += ping.o
+diff -ruN busybox-1.3.1-old/networking/netmsg.c busybox-1.3.1-new/networking/netmsg.c
+--- busybox-1.3.1-old/networking/netmsg.c	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.3.1-new/networking/netmsg.c	2006-12-28 07:25:52.000000000 +0100
 @@ -0,0 +1,63 @@
 +/*
 + * Copyright (C) 2006 Felix Fietkau <nbd@openwrt.org>
@@ -66,7 +61,7 @@ diff -ruN busybox-1.2.0-old/networking/netmsg.c busybox-1.2.0-new/networking/net
 +int netmsg_main(int argc, char **argv)
 +#endif
 +{
-+	int s, i;
++	int s;
 +	struct sockaddr_in addr;
 +	int optval = 1;
 +	unsigned char buf[1001];
