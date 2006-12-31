@@ -13,7 +13,8 @@ PKG_VERSION:=1.3.1
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=http://www.busybox.net/downloads
+PKG_SOURCE_URL:=http://www.busybox.net/downloads \
+		http://distfiles.gentoo.org/distfiles/
 PKG_MD5SUM:=571531cfa83726947ccb566de017ad4f
 PKG_CAT:=bzcat
 
