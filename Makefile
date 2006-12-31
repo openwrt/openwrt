@@ -181,6 +181,9 @@ distclean: dirclean config-clean
 help:
 	cat README
 
+symlinks:
+	scripts/feeds.sh https://svn.openwrt.org/openwrt/packages
+
 .SILENT: clean dirclean distclean config-clean download world
 FORCE: ;
 .PHONY: FORCE help
