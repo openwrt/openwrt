@@ -61,6 +61,7 @@ CP:=cp -fpR
 INSTALL_BIN:=install -m0755
 INSTALL_DIR:=install -d -m0755
 INSTALL_DATA:=install -m0644
+INSTALL_CONF:=install -m0600
 
 ifneq ($(CONFIG_CCACHE),)
   # FIXME: move this variable to a better location
