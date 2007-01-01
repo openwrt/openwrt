@@ -78,7 +78,8 @@ TARGET_CONFIGURE_OPTS:= \
   GCC="$(TARGET_CC)" \
   CXX=$(TARGET_CROSS)g++ \
   RANLIB=$(TARGET_CROSS)ranlib \
-  STRIP=$(TARGET_CROSS)strip
+  STRIP=$(TARGET_CROSS)strip \
+  OBJCOPY=$(TARGET_CROSS)objcopy
 
 # strip an entire directory
 RSTRIP:= \
