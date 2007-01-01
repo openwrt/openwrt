@@ -17,6 +17,26 @@ config BUSYBOX_CONFIG_DMESG
 	  are also logged to the system console.  Enable this option if you
 	  wish to enable the 'dmesg' utility.
 
+config BUSYBOX_CONFIG_FEATURE_DMESG_PRETTY
+	bool "pretty dmesg output"
+	default y
+	depends on BUSYBOX_CONFIG_DMESG
+	help
+	  If you wish to scrub the syslog level from the output, say 'Y' here.
+	  The syslog level is a string prefixed to every line with the form "<#>".
+
+	  With this option you will see:
+	    # dmesg
+	    Linux version 2.6.17.4 .....
+	    BIOS-provided physical RAM map:
+	     BIOS-e820: 0000000000000000 - 000000000009f000 (usable)
+
+	  Without this option you will see:
+	    # dmesg
+	    <5>Linux version 2.6.17.4 .....
+	    <6>BIOS-provided physical RAM map:
+	    <6> BIOS-e820: 0000000000000000 - 000000000009f000 (usable)
+
 config BUSYBOX_CONFIG_FBSET
 	bool "fbset"
 	default n
@@ -72,8 +92,8 @@ config BUSYBOX_CONFIG_FDISK
 	  can be used to list and edit the set of partitions or BSD style
 	  'disk slices' that are defined on a hard drive.
 
-config BUSYBOX_FDISK_SUPPORT_LARGE_DISKS
-	bool
+config BUSYBOX_CONFIG_FDISK_SUPPORT_LARGE_DISKS
+	bool "support over 4GB disks"
 	default y
 	depends on BUSYBOX_CONFIG_FDISK
 	help
@@ -307,7 +327,7 @@ config BUSYBOX_CONFIG_FEATURE_MKSWAP_V0
 	bool "version 0 support"
 	default n
 	depends on BUSYBOX_CONFIG_MKSWAP
-#	depends on BUSYBOX_CONFIG_MKSWAP && BUSYBOX_CONFIG_DEPRECATED
+#	depends on MKSWAP && BUSYBOX_CONFIG_DEPRECATED
 	help
 	  Enable support for the old v0 style.
 	  If your kernel is older than 2.1.117, then v0 support is the
@@ -325,7 +345,7 @@ config BUSYBOX_CONFIG_MORE
 
 config BUSYBOX_CONFIG_FEATURE_USE_TERMIOS
 	bool "Use termios to manipulate the screen"
-	default y
+	default n
 	depends on BUSYBOX_CONFIG_MORE
 	help
 	  This option allows utilities such as 'more' and 'top' to determine
@@ -349,8 +369,34 @@ config BUSYBOX_CONFIG_FEATURE_MOUNT_NFS
 	bool "Support mounting NFS file systems"
 	default y
 	depends on BUSYBOX_CONFIG_MOUNT
+	depends on BUSYBOX_CONFIG_FEATURE_HAVE_RPC
+	select BUSYBOX_CONFIG_FEATURE_SYSLOG
 	help
-	 Enable mounting of NFS file systems.
+	  Enable mounting of NFS file systems.
+
+config BUSYBOX_CONFIG_FEATURE_MOUNT_CIFS
+	bool "Support mounting CIFS/SMB file systems"
+	default y
+	depends on BUSYBOX_CONFIG_MOUNT
+	help
+	  Enable support for samba mounts.
+
+config BUSYBOX_CONFIG_FEATURE_MOUNT_FLAGS
+	depends on BUSYBOX_CONFIG_MOUNT
+	bool "Support lots of -o flags in mount"
+	default y
+	help
+	  Without this, mount only supports ro/rw/remount.  With this, it
+	  supports nosuid, suid, dev, nodev, exec, noexec, sync, async, atime,
+	  noatime, diratime, nodiratime, loud, bind, move, shared, slave,
+	  private, unbindable, rshared, rslave, rprivate, and runbindable.
+
+config BUSYBOX_CONFIG_FEATURE_MOUNT_FSTAB
+	depends on BUSYBOX_CONFIG_MOUNT
+	bool "Support /etc/fstab and -a"
+	default y
+	help
+	  Support mount all and looking for files in /etc/fstab.
 
 config BUSYBOX_CONFIG_PIVOT_ROOT
 	bool "pivot_root"

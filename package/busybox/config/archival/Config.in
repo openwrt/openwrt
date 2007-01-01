@@ -128,7 +128,7 @@ config BUSYBOX_CONFIG_IPKG
 	select BUSYBOX_CONFIG_WGET
 	help
 	  ipkg is the itsy package management system.
-	
+
 config BUSYBOX_CONFIG_RPM2CPIO
 	bool "rpm2cpio"
 	default n
@@ -300,9 +300,9 @@ config BUSYBOX_CONFIG_FEATURE_DEB_TAR_LZMA
 	depends on BUSYBOX_CONFIG_DPKG || BUSYBOX_CONFIG_DPKG_DEB
 	help
 	  This allows dpkg and dpkg-deb to extract deb's that are compressed
-          internally with lzma instead of gzip.
+	  internally with lzma instead of gzip.
 
 	  You only want this if you are creating your own custom debian
-          packages that use an internal control.tar.lzma or data.tar.lzma.
+	  packages that use an internal control.tar.lzma or data.tar.lzma.
 
 endmenu

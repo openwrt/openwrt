@@ -14,7 +14,7 @@ config BUSYBOX_CONFIG_FEATURE_SHADOWPASSWDS
 	  publicly readable.
 
 config BUSYBOX_CONFIG_USE_BB_SHADOW
-	bool #"  Use busybox shadow password functions"
+	bool "  Use busybox shadow password functions"
 	default n
 	depends on BUSYBOX_CONFIG_USE_BB_PWD_GRP && BUSYBOX_CONFIG_FEATURE_SHADOWPASSWDS
 	help
@@ -80,6 +80,7 @@ config BUSYBOX_CONFIG_DELUSER
 config BUSYBOX_CONFIG_GETTY
 	bool "getty"
 	default n
+	select BUSYBOX_CONFIG_FEATURE_SYSLOG
 	help
 	  getty lets you log in on a tty, it is normally invoked by init.
 
@@ -103,11 +104,20 @@ config BUSYBOX_CONFIG_LOGIN
 	bool "login"
 	default n
 	select BUSYBOX_CONFIG_FEATURE_SUID
+	select BUSYBOX_CONFIG_FEATURE_SYSLOG
 	help
 	  login is used when signing onto a system.
 
 	  Note that Busybox binary must be setuid root for this applet to
 	  work properly.
+
+config BUSYBOX_CONFIG_LOGIN_SCRIPTS
+	bool "Support for login scripts"
+	depends on BUSYBOX_CONFIG_LOGIN
+	default n
+	help
+	  Enable this if you want login to execute $LOGIN_PRE_SUID_SCRIPT
+	  just prior to switching from root to logged-in user.
 
 config BUSYBOX_CONFIG_FEATURE_SECURETTY
 	bool "Support for /etc/securetty"
@@ -122,6 +132,7 @@ config BUSYBOX_CONFIG_PASSWD
 	bool "passwd"
 	default y
 	select BUSYBOX_CONFIG_FEATURE_SUID
+	select BUSYBOX_CONFIG_FEATURE_SYSLOG
 	help
 	  passwd changes passwords for user and group accounts.  A normal user
 	  may only change the password for his/her own account, the super user
@@ -135,6 +146,7 @@ config BUSYBOX_CONFIG_SU
 	bool "su"
 	default n
 	select BUSYBOX_CONFIG_FEATURE_SUID
+	select BUSYBOX_CONFIG_FEATURE_SYSLOG
 	help
 	  su is used to become another user during a login session.
 	  Invoked without a username, su defaults to becoming the super user.
@@ -142,9 +154,17 @@ config BUSYBOX_CONFIG_SU
 	  Note that Busybox binary must be setuid root for this applet to
 	  work properly.
 
+config BUSYBOX_CONFIG_SU_SYSLOG
+	bool "Support for syslog in su"
+	default n
+	depends on BUSYBOX_CONFIG_SU
+	help
+	  Enables support for syslog in su.
+
 config BUSYBOX_CONFIG_SULOGIN
 	bool "sulogin"
 	default n
+	select BUSYBOX_CONFIG_FEATURE_SYSLOG
 	help
 	  sulogin is invoked when the system goes into single user
 	  mode (this is done through an entry in inittab).

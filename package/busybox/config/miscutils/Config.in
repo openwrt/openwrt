@@ -23,6 +23,7 @@ config BUSYBOX_CONFIG_CROND
 	bool "crond"
 	default y
 	select BUSYBOX_CONFIG_FEATURE_SUID
+	select BUSYBOX_CONFIG_FEATURE_SYSLOG
 	help
 	  Crond is a background daemon that parses individual crontab
 	  files and executes commands on behalf of the users in question.
@@ -66,8 +67,9 @@ config BUSYBOX_CONFIG_DC
 config BUSYBOX_CONFIG_DEVFSD
 	bool "devfsd (obsolete)"
 	default n
+	select BUSYBOX_CONFIG_FEATURE_SYSLOG
 	help
-	  This is deprecated, and will be going away in a future release.
+	  This is deprecated, and will be removed at the end of 2008.
 
 	  Provides compatibility with old device names on a devfs systems.
 	  You should set it to true if you have devfs enabled.
@@ -105,12 +107,11 @@ config BUSYBOX_CONFIG_FEATURE_DEVFS
 	bool "  Use devfs names for all devices (obsolete)"
 	default y
 	help
+	  This is obsolete and will be going away at the end of 2008..
+
 	  This tells busybox to look for names like /dev/loop/0 instead of
 	  /dev/loop0.  If your /dev directory has normal names instead of
 	  devfs names, you don't want this.
-
-	  This is obsolete and will be going away someday.  Consider it
-	  deprecated.
 
 config BUSYBOX_CONFIG_EJECT
 	bool "eject"
@@ -178,7 +179,7 @@ config BUSYBOX_CONFIG_HDPARM
 	help
 	  Get/Set hard drive parameters.  Primarily intended for ATA
 	  drives.  Adds about 13k (or around 30k if you enable the
-	  BUSYBOX_CONFIG_FEATURE_HDPARM_GET_IDENTITY option)....
+	  FEATURE_HDPARM_GET_IDENTITY option)....
 
 config BUSYBOX_CONFIG_FEATURE_HDPARM_GET_IDENTITY
 	bool "Support obtaining detailed information directly from drives"
@@ -283,6 +284,35 @@ config BUSYBOX_CONFIG_MT
 	  to advance or rewind a tape past a specified number of archive
 	  files on the tape.
 
+config BUSYBOX_CONFIG_NMETER
+	bool "nmeter"
+	default n
+	help
+	  nmeter prints various system parameters continuously.
+
+config BUSYBOX_CONFIG_RAIDAUTORUN
+	bool "raidautorun"
+	default n
+	help
+	  raidautorun tells the kernel md driver to
+	  search and start RAID arrays.
+
+config BUSYBOX_CONFIG_READAHEAD
+        bool "readahead"
+	default n
+	help
+ 	  Preload the files listed on the command line into RAM cache so that
+	  subsequent reads on these files will not block on disk I/O.
+
+	  This applet just calls the readahead(2) system call on each file.
+	  It is mainly useful in system startup scripts to preload files
+	  or executables before they are used.  When used at the right time
+	  (in particular when a CPU boundprocess is running) it can
+	  significantly speed up system startup.
+
+	  As readahead(2) blocks until each file has been read, it is best to
+	  run this applet as a background job.
+
 config BUSYBOX_CONFIG_RUNLEVEL
         bool "runlevel"
 	default n
@@ -315,13 +345,17 @@ config BUSYBOX_CONFIG_TASKSET
 	bool "taskset"
 	default n
 	help
-	  Retrieve or set a processes's CPU affinity
+	  Retrieve or set a processes's CPU affinity.
+	  This requires sched_{g,s}etaffinity support in your libc.
 
-config BUSYBOX_CONFIG_TASKSET
-	bool "taskset"
+config BUSYBOX_CONFIG_FEATURE_TASKSET_FANCY
+	bool "fancy output"
 	default n
+	depends on BUSYBOX_CONFIG_TASKSET
 	help
-	  Retrieve or set a processes's CPU affinity (on linux)
+	  Add code for fancy output. This merely silences a compiler-warning
+	  and adds about 135 Bytes. May be needed for machines with alot
+	  of CPUs.
 
 config BUSYBOX_CONFIG_TIME
 	bool "time"

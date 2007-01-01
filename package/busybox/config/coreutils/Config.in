@@ -120,11 +120,11 @@ config BUSYBOX_CONFIG_FEATURE_DD_SIGNAL_HANDLING
 	default y
 	depends on BUSYBOX_CONFIG_DD
 	help
-	  sending a SIGUSR1 signal to a running `dd' process makes it 
-	  print to standard error the number of records read and written 
+	  sending a SIGUSR1 signal to a running `dd' process makes it
+	  print to standard error the number of records read and written
 	  so far, then to resume copying.
 
-	  $ dd if=/dev/zero of=/dev/null& pid=$! $ kill -USR1 $pid; sleep 1; kill $pid 
+	  $ dd if=/dev/zero of=/dev/null& pid=$! $ kill -USR1 $pid; sleep 1; kill $pid
 	  10899206+0 records in 10899206+0 records out
 
 config BUSYBOX_CONFIG_FEATURE_DD_IBS_OBS
@@ -704,6 +704,13 @@ config BUSYBOX_CONFIG_WC
 	  wc is used to print the number of bytes, words, and lines,
 	  in specified files.
 
+config BUSYBOX_CONFIG_FEATURE_WC_LARGE
+	bool "Support very large files in wc"
+	default n
+	depends on BUSYBOX_CONFIG_WC
+	help
+	  Use "unsigned long long" in wc for count variables
+
 config BUSYBOX_CONFIG_WHO
 	bool "who"
 	default n
@@ -744,9 +751,9 @@ config BUSYBOX_CONFIG_FEATURE_AUTOWIDTH
 	depends on BUSYBOX_CONFIG_LS || BUSYBOX_CONFIG_MORE || BUSYBOX_CONFIG_TELNET
 	help
 	  This option allows utilities such as 'ls', 'more' and 'telnet'
-	  to determine the width of the screen, which can allow them to 
+	  to determine the width of the screen, which can allow them to
 	  display additional text or avoid wrapping text onto the next line.
-	  If you leave this disabled, your utilities will be especially 
+	  If you leave this disabled, your utilities will be especially
 	  primitive and will be unable to determine the current screen width.
 
 comment "Common options for df, du, ls"

@@ -4,7 +4,7 @@
 #
 
 
-config BUSYBOX_HAVE_DOT_CONFIG
+config BUSYBOX_CONFIG_HAVE_DOT_CONFIG
 	bool
 	default y
 
@@ -27,6 +27,14 @@ config BUSYBOX_CONFIG_NITPICK
 	  See http://en.wikipedia.org/wiki/Fibber_McGee_and_Molly#The_Closet
 
 	  You have been warned.
+
+config BUSYBOX_CONFIG_DESKTOP
+	bool "Enable options for full-blown desktop systems"
+	default n
+	help
+	  Enable options and features which are not essential.
+	  Select this only if you plan to use busybox on full-blown
+	  desktop machine with common Linux distro, not on an embedded box.
 
 choice
 	prompt "Buffer allocation policy"
@@ -74,8 +82,8 @@ config BUSYBOX_CONFIG_FEATURE_VERBOSE_USAGE
 
 config BUSYBOX_CONFIG_FEATURE_COMPRESS_USAGE
 	bool "Store applet usage messages in compressed form"
-	default n
-	depends on BUSYBOX_CONFIG_SHOW_USAGE && BUSYBOX_CONFIG_NITPICK
+	default y
+	depends on BUSYBOX_CONFIG_SHOW_USAGE
 	help
 	  Store usage messages in compressed form, uncompress them on-the-fly
 	  when <applet> --help is called.
@@ -103,13 +111,11 @@ config BUSYBOX_CONFIG_LOCALE_SUPPORT
 	  busybox to support locale settings.
 
 config BUSYBOX_CONFIG_GETOPT_LONG
-	bool
+	bool "Enable support for --long-options"
 	default y
-#	bool "Enable support for --long-options"
-#	default n
-#	help
-#	  Enable this if you want busybox applets to use the gnu --long-option
-#	  style, in addition to single character -a -b -c style options.
+	help
+	  Enable this if you want busybox applets to use the gnu --long-option
+	  style, in addition to single character -a -b -c style options.
 
 config BUSYBOX_CONFIG_FEATURE_DEVPTS
 	bool "Use the devpts filesystem for Unix98 PTYs"
@@ -148,6 +154,13 @@ config BUSYBOX_CONFIG_FEATURE_SUID
 	  one that needs it.  The applets currently marked to need the suid bit
 	  are login, passwd, su, ping, traceroute, crontab, dnsd, ipcrm, ipcs,
 	  and vlock.
+
+config BUSYBOX_CONFIG_FEATURE_SYSLOG
+	bool "Support for syslog"
+	default y
+	help
+	  This option is auto-selected when you select any applet which may
+	  send its output to syslog. You do not need to select it manually.
 
 config BUSYBOX_CONFIG_FEATURE_SUID_CONFIG
 	bool "Runtime SUID/SGID configuration via /etc/busybox.conf"
@@ -188,6 +201,14 @@ config BUSYBOX_CONFIG_FEATURE_SUID_CONFIG_QUIET
 	help
 	  /etc/busybox.conf should be readable by the user needing the SUID, check
 	  this option to avoid users to be notified about missing permissions.
+
+config BUSYBOX_CONFIG_FEATURE_HAVE_RPC
+	bool "RPC support"
+	default y
+	help
+	  Select this if you have rpc support.
+	  This automatically turns off all configuration options that rely
+	  on RPC.
 
 config BUSYBOX_CONFIG_SELINUX
 	bool "Support NSA Security Enhanced Linux"
@@ -251,7 +272,7 @@ config BUSYBOX_CONFIG_BUILD_LIBBUSYBOX
 
 config BUSYBOX_CONFIG_FEATURE_FULL_LIBBUSYBOX
 	bool "Feature-complete libbusybox"
-	default n if !CONFIG_FEATURE_SHARED_BUSYBOX
+	default n if !BUSYBOX_CONFIG_FEATURE_SHARED_BUSYBOX
 	depends on BUSYBOX_CONFIG_BUILD_LIBBUSYBOX
 	help
 	  Build a libbusybox with the complete feature-set, disregarding
@@ -271,7 +292,7 @@ config BUSYBOX_CONFIG_FEATURE_FULL_LIBBUSYBOX
 config BUSYBOX_CONFIG_FEATURE_SHARED_BUSYBOX
 	bool "Use shared libbusybox for busybox"
 	default n if BUSYBOX_CONFIG_BUILD_LIBBUSYBOX
-	depends on !CONFIG_STATIC && BUSYBOX_CONFIG_BUILD_LIBBUSYBOX
+	depends on !BUSYBOX_CONFIG_STATIC && BUSYBOX_CONFIG_BUILD_LIBBUSYBOX
 	help
 	  Use libbusybox.so also for busybox itself.
 	  You need to have a working dynamic linker to use this variant.
@@ -279,7 +300,7 @@ config BUSYBOX_CONFIG_FEATURE_SHARED_BUSYBOX
 config BUSYBOX_CONFIG_LFS
 	bool
 	default y
-	select BUSYBOX_FDISK_SUPPORT_LARGE_DISKS
+	select BUSYBOX_CONFIG_FDISK_SUPPORT_LARGE_DISKS
 	help
 	  If you want to build BusyBox with large file support, then enable
 	  this option.  This will have no effect if your kernel or your C
@@ -287,24 +308,6 @@ config BUSYBOX_CONFIG_LFS
 	  programs that can benefit from large file support include dd, gzip,
 	  cp, mount, tar, and many others.  If you want to access files larger
 	  than 2 Gigabytes, enable this option.  Otherwise, leave it set to 'N'.
-
-config BUSYBOX_USING_CROSS_COMPILER
-	bool
-	default y
-	help
-	  Do you want to build BusyBox with a Cross Compiler?  If so,
-	  then enable this option.  Otherwise leave it set to 'N'.
-
-config BUSYBOX_CROSS_COMPILER_PREFIX
-	string
-	default "mipsel-uclibc-"
-	depends on BUSYBOX_USING_CROSS_COMPILER
-	help
-	  If you want to build BusyBox with a cross compiler, then you
-	  will need to set this to the cross-compiler prefix.  For example,
-	  if my cross-compiler is /usr/i386-linux-uclibc/bin/i386-uclibc-gcc
-	  then I would enter '/usr/i386-linux-uclibc/bin/i386-uclibc-' here,
-	  which will ensure the correct compiler is used.
 
 config BUSYBOX_CONFIG_BUILD_AT_ONCE
 	bool "Compile all sources at once"
@@ -442,8 +445,8 @@ config BUSYBOX_CONFIG_INSTALL_APPLET_DONT
 
 endchoice
 
-config BUSYBOX_PREFIX
-	string
+config BUSYBOX_CONFIG_PREFIX
+	string "BusyBox installation prefix"
 	default "./_install"
 	help
 	  Define your directory to install BusyBox files/subdirs in.
@@ -472,3 +475,4 @@ source package/busybox/config/networking/Config.in
 source package/busybox/config/procps/Config.in
 source package/busybox/config/shell/Config.in
 source package/busybox/config/sysklogd/Config.in
+source package/busybox/config/runit/Config.in

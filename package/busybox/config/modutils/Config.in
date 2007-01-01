@@ -43,7 +43,7 @@ config BUSYBOX_CONFIG_FEATURE_INSMOD_LOADINKMEM
 config BUSYBOX_CONFIG_FEATURE_INSMOD_LOAD_MAP
 	bool "Enable load map (-m) option"
 	default n
-	depends on BUSYBOX_CONFIG_INSMOD && BUSYBOX_CONFIG_FEATURE_2_4_MODULES
+	depends on BUSYBOX_CONFIG_INSMOD && ( BUSYBOX_CONFIG_FEATURE_2_4_MODULES || BUSYBOX_CONFIG_FEATURE_2_6_MODULES )
 	help
 	  Enabling this, one would be able to get a load map
 	  output on stdout. This makes kernel module debugging
@@ -91,7 +91,8 @@ config BUSYBOX_CONFIG_MODPROBE
 	  module options from the configuration file. See option below.
 
 config BUSYBOX_CONFIG_FEATURE_MODPROBE_MULTIPLE_OPTIONS
-	bool "Multiple options parsing"
+	bool
+	prompt "Multiple options parsing" if BUSYBOX_CONFIG_NITPICK
 	default n
 	depends on BUSYBOX_CONFIG_MODPROBE
 	help
@@ -105,6 +106,16 @@ config BUSYBOX_CONFIG_FEATURE_MODPROBE_MULTIPLE_OPTIONS
 
 	  Saying Y here is not a bad idea if you're not that short
 	  on storage capacity.
+
+config BUSYBOX_CONFIG_FEATURE_MODPROBE_FANCY_ALIAS
+	bool
+	prompt "Fancy alias parsing" if BUSYBOX_CONFIG_NITPICK
+	default n
+	depends on BUSYBOX_CONFIG_MODPROBE && BUSYBOX_CONFIG_FEATURE_2_6_MODULES
+	help
+	  Say 'y' here to enable parsing of aliases with underscore/dash
+	  mismatch between module name and file name, along with bus-specific
+	  aliases (such as pci:... or usb:... aliases).
 
 comment "Options common to multiple modutils"
 	depends on BUSYBOX_CONFIG_INSMOD || BUSYBOX_CONFIG_RMMOD || BUSYBOX_CONFIG_MODPROBE || BUSYBOX_CONFIG_LSMOD
@@ -124,7 +135,7 @@ config BUSYBOX_CONFIG_FEATURE_2_4_MODULES
 	# Simulate indentation
 	bool "Support version 2.2.x to 2.4.x Linux kernels"
 	default y
-	depends on BUSYBOX_CONFIG_INSMOD || BUSYBOX_CONFIG_RMMOD
+	depends on BUSYBOX_CONFIG_INSMOD || BUSYBOX_CONFIG_RMMOD || BUSYBOX_CONFIG_MODPROBE
 	help
 	  Support module loading for 2.2.x and 2.4.x Linux kernels.
 
@@ -140,7 +151,7 @@ config BUSYBOX_CONFIG_FEATURE_2_6_MODULES
 config BUSYBOX_CONFIG_FEATURE_QUERY_MODULE_INTERFACE
 	bool
 	default n
-	depends on BUSYBOX_CONFIG_FEATURE_2_4_MODULES && !CONFIG_FEATURE_2_6_MODULES
+	depends on BUSYBOX_CONFIG_FEATURE_2_4_MODULES && !BUSYBOX_CONFIG_FEATURE_2_6_MODULES
 
 
 endmenu
