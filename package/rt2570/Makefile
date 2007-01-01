@@ -25,7 +25,7 @@ include $(INCLUDE_DIR)/package.mk
 define KernelPackage/rt2570
   SUBMENU:=Wireless Drivers
   TITLE:=Driver for ralink usb wireless chipsets
-  DEPENDS:=@USB_SUPPORT +wireless-tools
+  DEPENDS:=@LINUX_2_4 @USB_SUPPORT +wireless-tools
   DESCRIPTION:=\
 	This package contains a driver for ralink rt2570 usb chipsets.
   URL:=http://rt2x00.serialmonkey.com/
