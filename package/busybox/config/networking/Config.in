@@ -22,7 +22,7 @@ config BUSYBOX_CONFIG_DNSD
 	bool "dnsd"
 	default n
 	help
-	  Small and static DNS server daemon. 
+	  Small and static DNS server daemon.
 
 config BUSYBOX_CONFIG_ETHER_WAKE
 	bool "ether-wake"
@@ -33,6 +33,7 @@ config BUSYBOX_CONFIG_ETHER_WAKE
 config BUSYBOX_CONFIG_FAKEIDENTD
 	bool "fakeidentd"
 	default n
+	select BUSYBOX_CONFIG_FEATURE_SYSLOG
 	help
 	  fakeidentd listens on the ident port and returns a predefined
 	  fake value on any query.
@@ -52,7 +53,7 @@ config BUSYBOX_CONFIG_FTPPUT
 config BUSYBOX_CONFIG_FEATURE_FTPGETPUT_LONG_OPTIONS
 	bool "Enable long options in ftpget/ftpput"
 	default n
-	depends on BUSYBOX_CONFIG_GETOPT_LONG && (CONFIG_FTPGET || BUSYBOX_CONFIG_FTPPUT)
+	depends on BUSYBOX_CONFIG_GETOPT_LONG && (BUSYBOX_CONFIG_FTPGET || BUSYBOX_CONFIG_FTPPUT)
 	help
 	  Support long options for the ftpget/ftpput applet.
 
@@ -67,14 +68,6 @@ config BUSYBOX_CONFIG_HTTPD
 	default y
 	help
 	  Serve web pages via an HTTP server.
-
-config BUSYBOX_CONFIG_FEATURE_HTTPD_WITHOUT_INETD
-	bool "Support using httpd as a daemon (not from inetd)"
-	default y
-	depends on BUSYBOX_CONFIG_HTTPD
-	help
-	  This option enables uid and port options for the httpd applet,
-	  and eliminates the need to be called from the inetd server daemon.
 
 config BUSYBOX_CONFIG_FEATURE_HTTPD_RELOAD_CONFIG_SIGHUP
 	bool "Support reloading the global config file using hup signal"
@@ -131,9 +124,9 @@ config BUSYBOX_CONFIG_FEATURE_HTTPD_CONFIG_WITH_SCRIPT_INTERPR
 	default n
 	depends on BUSYBOX_CONFIG_FEATURE_HTTPD_CGI
 	help
-	  This option enables support for running scripts through an 
-	  interpreter. Turn this on if you want PHP scripts to work 
-	  properly. You need to supply an addition line in your httpd 
+	  This option enables support for running scripts through an
+	  interpreter. Turn this on if you want PHP scripts to work
+	  properly. You need to supply an addition line in your httpd
 	  config file:
 	  *.php:/path/to/your/php
 
@@ -210,8 +203,8 @@ config BUSYBOX_CONFIG_IFUPDOWN
 	  Activate or deactivate the specified interfaces.  This applet makes
 	  use of either "ifconfig" and "route" or the "ip" command to actually
 	  configure network interfaces.  Therefore, you will probably also want
-	  to enable either BUSYBOX_CONFIG_IFCONFIG and BUSYBOX_CONFIG_ROUTE, or enable
-	  BUSYBOX_CONFIG_FEATURE_IFUPDOWN_IP and the various BUSYBOX_CONFIG_IP options.  Of
+	  to enable either IFCONFIG and ROUTE, or enable
+	  FEATURE_IFUPDOWN_IP and the various IP options.  Of
 	  course you could use non-busybox versions of these programs, so
 	  against my better judgement (since this will surely result in plenty
 	  of support questions on the mailing list), I do not force you to
@@ -238,20 +231,20 @@ config BUSYBOX_CONFIG_FEATURE_IFUPDOWN_IP_BUILTIN
 	help
 	  Use the busybox iproute "ip" applet to implement "ifupdown".
 
-	  If leave this disabled, you must install the full-blown iproute2
+	  If left disabled, you must install the full-blown iproute2
 	  utility or the  "ifup" and "ifdown" applets will not work.
 
-config BUSYBOX_CONFIG_FEATURE_IFUPDOWN_IP_BUILTIN
+config BUSYBOX_CONFIG_FEATURE_IFUPDOWN_IFCONFIG_BUILTIN
 	bool "Use busybox ifconfig and route applets"
 	default n
-	depends on BUSYBOX_CONFIG_IFUPDOWN && !CONFIG_FEATURE_IFUPDOWN_IP
+	depends on BUSYBOX_CONFIG_IFUPDOWN && !BUSYBOX_CONFIG_FEATURE_IFUPDOWN_IP
 	select BUSYBOX_CONFIG_IFCONFIG
 	select BUSYBOX_CONFIG_ROUTE
 	help
 	  Use the busybox iproute "ifconfig" and "route" applets to
 	  implement the "ifup" and "ifdown" utilities.
 
-	  If leave this disabled, you must install the full-blown ifconfig
+	  If left disabled, you must install the full-blown ifconfig
 	  and route utilities, or the  "ifup" and "ifdown" applets will not
 	  work.
 
@@ -288,6 +281,7 @@ config BUSYBOX_CONFIG_FEATURE_IFUPDOWN_MAPPING
 config BUSYBOX_CONFIG_INETD
 	bool "inetd"
 	default n
+	select BUSYBOX_CONFIG_FEATURE_SYSLOG
 	help
 	  Internet superserver daemon
 
@@ -330,9 +324,9 @@ config BUSYBOX_CONFIG_FEATURE_INETD_RPC
 	bool "Support RPC services"
 	default n
 	depends on BUSYBOX_CONFIG_INETD
+	depends on BUSYBOX_CONFIG_FEATURE_HAVE_RPC
 	help
-	  Suuport Sun-RPC based services
-
+	  Support Sun-RPC based services
 
 config BUSYBOX_CONFIG_IP
 	bool "ip"
@@ -370,6 +364,13 @@ config BUSYBOX_CONFIG_FEATURE_IP_TUNNEL
 	help
 	  Add support for tunneling commands to "ip".
 
+config BUSYBOX_CONFIG_FEATURE_IP_RULE
+	bool "ip rule"
+	default n
+	depends on BUSYBOX_CONFIG_IP
+	help
+	  Add support for rule commands to "ip".
+
 config BUSYBOX_CONFIG_FEATURE_IP_SHORT_FORMS
 	bool "Support short forms of ip commands."
 	default n
@@ -404,6 +405,11 @@ config BUSYBOX_CONFIG_IPTUNNEL
 	default n
 	depends on BUSYBOX_CONFIG_FEATURE_IP_SHORT_FORMS && BUSYBOX_CONFIG_FEATURE_IP_TUNNEL
 
+config BUSYBOX_CONFIG_IPRULE
+	bool
+	default n
+	depends on BUSYBOX_CONFIG_FEATURE_IP_SHORT_FORMS && BUSYBOX_CONFIG_FEATURE_IP_RULE
+
 config BUSYBOX_CONFIG_IPCALC
 	bool "ipcalc"
 	default n
@@ -428,6 +434,7 @@ config BUSYBOX_CONFIG_FEATURE_IPCALC_LONG_OPTIONS
 config BUSYBOX_CONFIG_NAMEIF
 	bool "nameif"
 	default n
+	select BUSYBOX_CONFIG_FEATURE_SYSLOG
 	help
 	  nameif is used to rename network interface by its MAC address.
 	  Renamed interfaces MUST be in the down state.
@@ -452,13 +459,21 @@ config BUSYBOX_CONFIG_NETMSG
 	help
 	  simple program for sending udp broadcast messages
 
-config BUSYBOX_CONFIG_NC_GAPING_SECURITY_HOLE
-	bool "gaping security hole"
+config BUSYBOX_CONFIG_NC_SERVER
+	bool "Netcat server options (-lp)"
 	default n
 	depends on BUSYBOX_CONFIG_NC
 	help
-	  Add support for executing a program after making or receiving a
-	  successful connection (-e option).
+	  Allow netcat to act as a server.
+
+config BUSYBOX_CONFIG_NC_EXTRA
+	bool "Netcat extensions (-eiw and filename)"
+	default n
+	depends on BUSYBOX_CONFIG_NC
+	help
+	  Add -e (support for executing the rest of the command line after
+	  making or receiving a successful connection), -i (delay interval for
+	  lines sent), -w (timeout for initial connection).
 
 config BUSYBOX_CONFIG_NETSTAT
 	bool "netstat"
@@ -537,6 +552,7 @@ config BUSYBOX_CONFIG_FEATURE_TELNET_AUTOLOGIN
 config BUSYBOX_CONFIG_TELNETD
 	bool "telnetd"
 	default y
+	select BUSYBOX_CONFIG_FEATURE_SYSLOG
 	help
 	  A daemon for the TELNET protocol, allowing you to log onto the host
 	  running the daemon.  Please keep in mind that the TELNET protocol
@@ -548,8 +564,8 @@ config BUSYBOX_CONFIG_TELNETD
 
 	  Note that for busybox telnetd to work you need several things:
 	  First of all, your kernel needs:
-		  BUSYBOX_CONFIG_UNIX98_PTYS=y
-		  BUSYBOX_CONFIG_DEVPTS_FS=y
+		  UNIX98_PTYS=y
+		  DEVPTS_FS=y
 
 	  Next, you need a /dev/pts directory on your root filesystem:
 
@@ -566,8 +582,8 @@ config BUSYBOX_CONFIG_TELNETD
 
 		  mount -t devpts devpts /dev/pts
 
-	  You need to be sure that Busybox has BUSYBOX_CONFIG_LOGIN and
-	  BUSYBOX_CONFIG_FEATURE_SUID enabled.  And finally, you should make
+	  You need to be sure that Busybox has LOGIN and
+	  FEATURE_SUID enabled.  And finally, you should make
 	  certain that Busybox has been installed setuid root:
 
 		chown root.root /bin/busybox
@@ -576,13 +592,12 @@ config BUSYBOX_CONFIG_TELNETD
 	  with all that done, telnetd _should_ work....
 
 
-config BUSYBOX_CONFIG_FEATURE_TELNETD_INETD
-	bool "Support call from inetd only"
+config BUSYBOX_CONFIG_FEATURE_TELNETD_STANDALONE
+	bool "Support standalone telnetd (not inetd only)"
 	default n
 	depends on BUSYBOX_CONFIG_TELNETD
 	help
-	  Selecting this will make telnetd only callable from inetd,
-	  removing the standalone support.
+	  Selecting this will make telnetd able to run standalone.
 
 config BUSYBOX_CONFIG_TFTP
 	bool "tftp"
@@ -699,6 +714,7 @@ config BUSYBOX_CONFIG_FEATURE_WGET_LONG_OPTIONS
 config BUSYBOX_CONFIG_ZCIP
 	bool "zcip"
 	default n
+	select BUSYBOX_CONFIG_FEATURE_SYSLOG
 	help
 	  ZCIP provides ZeroConf IPv4 address selection, according to RFC 3927.
 	  It's a daemon that allocates and defends a dynamically assigned

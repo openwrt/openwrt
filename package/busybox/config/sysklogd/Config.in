@@ -89,6 +89,7 @@ config BUSYBOX_CONFIG_KLOGD
 	bool "klogd"
 	default y
 	depends on BUSYBOX_CONFIG_SYSLOGD
+	select BUSYBOX_CONFIG_FEATURE_SYSLOG
 	help
 	  klogd is a utility which intercepts and logs all
 	  messages from the Linux kernel and sends the messages
@@ -99,6 +100,7 @@ config BUSYBOX_CONFIG_KLOGD
 config BUSYBOX_CONFIG_LOGGER
 	bool "logger"
 	default y
+	select BUSYBOX_CONFIG_FEATURE_SYSLOG
 	help
 	    The logger utility allows you to send arbitrary text
 	    messages to the system log (i.e. the 'syslogd' utility) so

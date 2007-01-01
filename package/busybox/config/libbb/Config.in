@@ -5,6 +5,13 @@
 
 menu "Busybox Library Tuning"
 
+config BUSYBOX_CONFIG_PASSWORD_MINLEN
+	int "Minimum password length"
+	default 6
+	range 5 32
+	help
+	  Minimum allowable password length.
+
 config BUSYBOX_CONFIG_MD5_SIZE_VS_SPEED
 	int " MD5: Trade Bytes for Speed"
 	default 2

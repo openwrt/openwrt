@@ -148,7 +148,7 @@ config BUSYBOX_CONFIG_FEATURE_XARGS_SUPPORT_TERMOPT
 	  is exceeded.
 
 config BUSYBOX_CONFIG_FEATURE_XARGS_SUPPORT_ZERO_TERM
-	bool "Enable options -0"
+	bool "Enable null terminated option -0"
 	default y
 	depends on BUSYBOX_CONFIG_XARGS
 	help

@@ -58,6 +58,23 @@ config BUSYBOX_CONFIG_RESET
 	  This program is used to reset the terminal screen, if it
 	  gets messed up.
 
+config BUSYBOX_CONFIG_RESIZE
+	bool "resize"
+	default n
+	help
+	  This program is used to (re)set the width and height of your current
+	  terminal.
+
+config BUSYBOX_CONFIG_FEATURE_RESIZE_PRINT
+	bool "print environment variables"
+	default n
+	depends on BUSYBOX_CONFIG_RESIZE
+	help
+	  Prints the newly set size (number of columns and rows) of
+	  the terminal.
+	  E.g.:
+	  COLUMNS=80;LINES=44;export COLUMNS LINES;
+
 config BUSYBOX_CONFIG_SETCONSOLE
 	bool "setconsole"
 	default n
