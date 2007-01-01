@@ -1,0 +1,28 @@
+diff -ur iptables.old/ip6tables.c iptables.dev/ip6tables.c
+--- iptables.old/ip6tables.c	2006-01-30 09:43:12.000000000 +0100
++++ iptables.dev/ip6tables.c	2007-01-02 00:29:50.000000000 +0100
+@@ -857,8 +857,9 @@
+ 		for (i = 0; vianame[i]; i++) {
+ 			if (!isalnum(vianame[i]) 
+ 			    && vianame[i] != '_' 
++			    && vianame[i] != '-' 
+ 			    && vianame[i] != '.') {
+-				printf("Warning: wierd character in interface"
++				printf("Warning: weird character in interface"
+ 				       " `%s' (No aliases, :, ! or *).\n",
+ 				       vianame);
+ 				break;
+diff -ur iptables.old/iptables.c iptables.dev/iptables.c
+--- iptables.old/iptables.c	2006-01-30 09:43:09.000000000 +0100
++++ iptables.dev/iptables.c	2007-01-02 00:29:38.000000000 +0100
+@@ -805,8 +805,9 @@
+ 		for (i = 0; vianame[i]; i++) {
+ 			if (!isalnum(vianame[i]) 
+ 			    && vianame[i] != '_' 
++			    && vianame[i] != '-' 
+ 			    && vianame[i] != '.') {
+-				printf("Warning: wierd character in interface"
++				printf("Warning: weird character in interface"
+ 				       " `%s' (No aliases, :, ! or *).\n",
+ 				       vianame);
+ 				break;
