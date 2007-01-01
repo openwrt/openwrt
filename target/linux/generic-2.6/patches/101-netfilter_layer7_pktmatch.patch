@@ -1,0 +1,108 @@
+diff -ur linux.dev/include/linux/netfilter_ipv4/ipt_layer7.h linux.dev2/include/linux/netfilter_ipv4/ipt_layer7.h
+--- linux.dev/include/linux/netfilter_ipv4/ipt_layer7.h	2007-01-01 05:18:48.000000000 +0100
++++ linux.dev2/include/linux/netfilter_ipv4/ipt_layer7.h	2007-01-01 05:30:46.000000000 +0100
+@@ -21,6 +21,7 @@
+     char protocol[MAX_PROTOCOL_LEN];
+     char invert:1;
+     char pattern[MAX_PATTERN_LEN];
++    char pkt;
+ };
+ 
+ #endif /* _IPT_LAYER7_H */
+diff -ur linux.dev/net/ipv4/netfilter/ipt_layer7.c linux.dev2/net/ipv4/netfilter/ipt_layer7.c
+--- linux.dev/net/ipv4/netfilter/ipt_layer7.c	2007-01-01 05:18:48.000000000 +0100
++++ linux.dev2/net/ipv4/netfilter/ipt_layer7.c	2007-01-01 05:30:46.000000000 +0100
+@@ -296,33 +296,34 @@
+ 	}
+ }
+ 
+-/* add the new app data to the conntrack.  Return number of bytes added. */
+-static int add_data(struct ip_conntrack * master_conntrack,
+-			char * app_data, int appdatalen)
++static int add_datastr(char *target, int offset, char *app_data, int len)
+ {
+ 	int length = 0, i;
+-	int oldlength = master_conntrack->layer7.app_data_len;
+-
+-	// This is a fix for a race condition by Deti Fliegl. However, I'm not 
+-	// clear on whether the race condition exists or whether this really 
+-	// fixes it.  I might just be being dense... Anyway, if it's not really 
+-	// a fix, all it does is waste a very small amount of time.
+-	if(!master_conntrack->layer7.app_data) return 0;
++	if(!target) return 0;
+ 
+ 	/* Strip nulls. Make everything lower case (our regex lib doesn't
+ 	do case insensitivity).  Add it to the end of the current data. */
+-	for(i = 0; i < maxdatalen-oldlength-1 &&
+-		   i < appdatalen; i++) {
++	for(i = 0; i < maxdatalen-offset-1 && i < len; i++) {
+ 		if(app_data[i] != '\0') {
+-			master_conntrack->layer7.app_data[length+oldlength] =
++			target[length+offset] =
+ 				/* the kernel version of tolower mungs 'upper ascii' */
+ 				isascii(app_data[i])? tolower(app_data[i]) : app_data[i];
+ 			length++;
+ 		}
+ 	}
++	target[length+offset] = '\0';
+ 
+-	master_conntrack->layer7.app_data[length+oldlength] = '\0';
+-	master_conntrack->layer7.app_data_len = length + oldlength;
++	return length;
++}
++
++/* add the new app data to the conntrack.  Return number of bytes added. */
++static int add_data(struct ip_conntrack * master_conntrack,
++			char * app_data, int appdatalen)
++{
++	int length;
++
++	length = add_datastr(master_conntrack->layer7.app_data, master_conntrack->layer7.app_data_len, app_data, appdatalen);
++	master_conntrack->layer7.app_data_len += length;
+ 
+ 	return length;
+ }
+@@ -339,7 +340,7 @@
+ 	struct ipt_layer7_info * info = (struct ipt_layer7_info *)matchinfo;
+ 	enum ip_conntrack_info master_ctinfo, ctinfo;
+ 	struct ip_conntrack *master_conntrack, *conntrack;
+-	unsigned char * app_data;
++	unsigned char *app_data, *tmp_data;
+ 	unsigned int pattern_result, appdatalen;
+ 	regexp * comppattern;
+ 
+@@ -362,8 +363,8 @@
+ 		master_conntrack = master_ct(master_conntrack);
+ 
+ 	/* if we've classified it or seen too many packets */
+-	if(TOTAL_PACKETS > num_packets ||
+-	   master_conntrack->layer7.app_proto) {
++	if(!info->pkt && (TOTAL_PACKETS > num_packets ||
++		master_conntrack->layer7.app_proto)) {
+ 
+ 		pattern_result = match_no_append(conntrack, master_conntrack, ctinfo, master_ctinfo, info);
+ 
+@@ -394,6 +395,23 @@
+ 	comppattern = compile_and_cache(info->pattern, info->protocol);
+ 	spin_unlock_bh(&list_lock);
+ 
++	if (info->pkt) {
++		tmp_data = kmalloc(maxdatalen, GFP_ATOMIC);
++		if(!tmp_data){
++			if (net_ratelimit())
++				printk(KERN_ERR "layer7: out of memory in match, bailing.\n");
++			return info->invert;
++		}
++
++		tmp_data[0] = '\0';
++		add_datastr(tmp_data, 0, app_data, appdatalen);
++		pattern_result = ((comppattern && regexec(comppattern, tmp_data)) ? 1 : 0);
++		kfree(tmp_data);
++		tmp_data = NULL;
++
++		return (pattern_result ^ info->invert);
++	}
++
+ 	/* On the first packet of a connection, allocate space for app data */
+ 	write_lock(&ct_lock);
+ 	if(TOTAL_PACKETS == 1 && !skb->cb[0] && !master_conntrack->layer7.app_data) {

@@ -1,6 +1,6 @@
-diff -urN linux-2.6.19.old/include/linux/netfilter_ipv4/ip_conntrack.h linux-2.6.19.dev/include/linux/netfilter_ipv4/ip_conntrack.h
---- linux-2.6.19.old/include/linux/netfilter_ipv4/ip_conntrack.h	2006-11-29 22:57:37.000000000 +0100
-+++ linux-2.6.19.dev/include/linux/netfilter_ipv4/ip_conntrack.h	2006-12-14 03:13:37.000000000 +0100
+diff -urN linux.old/include/linux/netfilter_ipv4/ip_conntrack.h linux.dev/include/linux/netfilter_ipv4/ip_conntrack.h
+--- linux.old/include/linux/netfilter_ipv4/ip_conntrack.h	2007-01-01 05:17:07.000000000 +0100
++++ linux.dev/include/linux/netfilter_ipv4/ip_conntrack.h	2007-01-01 05:18:48.000000000 +0100
 @@ -127,6 +127,15 @@
  	/* Traversed often, so hopefully in different cacheline to top */
  	/* These are my tuples; original and reply */
@@ -17,10 +17,10 @@ diff -urN linux-2.6.19.old/include/linux/netfilter_ipv4/ip_conntrack.h linux-2.6
  };
  
  struct ip_conntrack_expect
-diff -urN linux-2.6.19.old/include/linux/netfilter_ipv4/ipt_layer7.h linux-2.6.19.dev/include/linux/netfilter_ipv4/ipt_layer7.h
---- linux-2.6.19.old/include/linux/netfilter_ipv4/ipt_layer7.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.19.dev/include/linux/netfilter_ipv4/ipt_layer7.h	2006-12-14 03:13:37.000000000 +0100
-@@ -0,0 +1,27 @@
+diff -urN linux.old/include/linux/netfilter_ipv4/ipt_layer7.h linux.dev/include/linux/netfilter_ipv4/ipt_layer7.h
+--- linux.old/include/linux/netfilter_ipv4/ipt_layer7.h	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/include/linux/netfilter_ipv4/ipt_layer7.h	2007-01-01 05:18:48.000000000 +0100
+@@ -0,0 +1,26 @@
 +/*
 +  By Matthew Strait <quadong@users.sf.net>, Dec 2003.
 +  http://l7-filter.sf.net
@@ -44,13 +44,12 @@ diff -urN linux-2.6.19.old/include/linux/netfilter_ipv4/ipt_layer7.h linux-2.6.1
 +    char protocol[MAX_PROTOCOL_LEN];
 +    char invert:1;
 +    char pattern[MAX_PATTERN_LEN];
-+    char pkt;
 +};
 +
 +#endif /* _IPT_LAYER7_H */
-diff -urN linux-2.6.19.old/net/ipv4/netfilter/ip_conntrack_core.c linux-2.6.19.dev/net/ipv4/netfilter/ip_conntrack_core.c
---- linux-2.6.19.old/net/ipv4/netfilter/ip_conntrack_core.c	2006-11-29 22:57:37.000000000 +0100
-+++ linux-2.6.19.dev/net/ipv4/netfilter/ip_conntrack_core.c	2006-12-14 03:13:37.000000000 +0100
+diff -urN linux.old/net/ipv4/netfilter/ip_conntrack_core.c linux.dev/net/ipv4/netfilter/ip_conntrack_core.c
+--- linux.old/net/ipv4/netfilter/ip_conntrack_core.c	2007-01-01 05:17:07.000000000 +0100
++++ linux.dev/net/ipv4/netfilter/ip_conntrack_core.c	2007-01-01 05:18:48.000000000 +0100
 @@ -337,6 +337,13 @@
  	 * too. */
  	ip_ct_remove_expectations(ct);
@@ -65,9 +64,9 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/ip_conntrack_core.c linux-2.6.19.d
  	/* We overload first tuple to link into unconfirmed list. */
  	if (!is_confirmed(ct)) {
  		BUG_ON(list_empty(&ct->tuplehash[IP_CT_DIR_ORIGINAL].list));
-diff -urN linux-2.6.19.old/net/ipv4/netfilter/ip_conntrack_standalone.c linux-2.6.19.dev/net/ipv4/netfilter/ip_conntrack_standalone.c
---- linux-2.6.19.old/net/ipv4/netfilter/ip_conntrack_standalone.c	2006-11-29 22:57:37.000000000 +0100
-+++ linux-2.6.19.dev/net/ipv4/netfilter/ip_conntrack_standalone.c	2006-12-14 03:13:37.000000000 +0100
+diff -urN linux.old/net/ipv4/netfilter/ip_conntrack_standalone.c linux.dev/net/ipv4/netfilter/ip_conntrack_standalone.c
+--- linux.old/net/ipv4/netfilter/ip_conntrack_standalone.c	2007-01-01 05:17:07.000000000 +0100
++++ linux.dev/net/ipv4/netfilter/ip_conntrack_standalone.c	2007-01-01 05:18:48.000000000 +0100
 @@ -192,6 +192,12 @@
  		return -ENOSPC;
  #endif
@@ -81,17 +80,16 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/ip_conntrack_standalone.c linux-2.
  	if (seq_printf(s, "use=%u\n", atomic_read(&conntrack->ct_general.use)))
  		return -ENOSPC;
  
-diff -urN linux-2.6.19.old/net/ipv4/netfilter/ipt_layer7.c linux-2.6.19.dev/net/ipv4/netfilter/ipt_layer7.c
---- linux-2.6.19.old/net/ipv4/netfilter/ipt_layer7.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.19.dev/net/ipv4/netfilter/ipt_layer7.c	2006-12-14 03:13:37.000000000 +0100
-@@ -0,0 +1,586 @@
+diff -urN linux.old/net/ipv4/netfilter/ipt_layer7.c linux.dev/net/ipv4/netfilter/ipt_layer7.c
+--- linux.old/net/ipv4/netfilter/ipt_layer7.c	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/net/ipv4/netfilter/ipt_layer7.c	2007-01-01 05:18:48.000000000 +0100
+@@ -0,0 +1,573 @@
 +/*
-+  Kernel module to match application layer (OSI layer 7)
-+  data in connections.
++  Kernel module to match application layer (OSI layer 7) data in connections.
 +
 +  http://l7-filter.sf.net
 +
-+  By Matthew Strait and Ethan Sommer, 2003-2005.
++  By Matthew Strait and Ethan Sommer, 2003-2006.
 +
 +  This program is free software; you can redistribute it and/or
 +  modify it under the terms of the GNU General Public License
@@ -156,9 +154,9 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/ipt_layer7.c linux-2.6.19.dev/net/
 +- It doesn't matter if two packets from different connections are in here at
 +  the same time, because they don't share any data.
 +
-+- It _does_ matter if two packets from the same connection are here at the same
-+  time.  In this case, we have to protect the conntracks and the list of
-+  compiled patterns.
++- It _does_ matter if two packets from the same connection (or one from a
++  master and one from its child) are here at the same time.  In this case,
++  we have to protect the conntracks and the list of compiled patterns.
 +*/
 +DEFINE_RWLOCK(ct_lock);
 +DEFINE_SPINLOCK(list_lock);
@@ -337,9 +335,8 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/ipt_layer7.c linux-2.6.19.dev/net/
 +		if(!master_conntrack->layer7.app_proto) {
 +			char * f = friendly_print(master_conntrack->layer7.app_data);
 +			char * g = hex_print(master_conntrack->layer7.app_data);
-+			DPRINTK("\nl7-filter gave up after %d bytes (%llu packets):\n%s\n",
-+				strlen(f),
-+				TOTAL_PACKETS, f);
++			DPRINTK("\nl7-filter gave up after %d bytes (%d packets):\n%s\n",
++				strlen(f), TOTAL_PACKETS, f);
 +			kfree(f);
 +			DPRINTK("In hex: %s\n", g);
 +			kfree(g);
@@ -385,50 +382,52 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/ipt_layer7.c linux-2.6.19.dev/net/
 +	}
 +}
 +
-+static int add_datastr(char *target, int offset, char *app_data, int len)
++/* add the new app data to the conntrack.  Return number of bytes added. */
++static int add_data(struct ip_conntrack * master_conntrack,
++			char * app_data, int appdatalen)
 +{
 +	int length = 0, i;
++	int oldlength = master_conntrack->layer7.app_data_len;
++
++	// This is a fix for a race condition by Deti Fliegl. However, I'm not 
++	// clear on whether the race condition exists or whether this really 
++	// fixes it.  I might just be being dense... Anyway, if it's not really 
++	// a fix, all it does is waste a very small amount of time.
++	if(!master_conntrack->layer7.app_data) return 0;
 +
 +	/* Strip nulls. Make everything lower case (our regex lib doesn't
 +	do case insensitivity).  Add it to the end of the current data. */
-+	for(i = 0; i < maxdatalen-offset-1 && i < len; i++) {
++	for(i = 0; i < maxdatalen-oldlength-1 &&
++		   i < appdatalen; i++) {
 +		if(app_data[i] != '\0') {
-+			target[length+offset] =
++			master_conntrack->layer7.app_data[length+oldlength] =
 +				/* the kernel version of tolower mungs 'upper ascii' */
 +				isascii(app_data[i])? tolower(app_data[i]) : app_data[i];
 +			length++;
 +		}
 +	}
-+	target[length+offset] = '\0';
 +
-+	return length;
-+}
-+
-+/* add the new app data to the conntrack.  Return number of bytes added. */
-+static int add_data(struct ip_conntrack * master_conntrack,
-+			char * app_data, int appdatalen)
-+{
-+	int length;
-+
-+	length = add_datastr(master_conntrack->layer7.app_data, master_conntrack->layer7.app_data_len, app_data, appdatalen);
-+	master_conntrack->layer7.app_data_len += length;
++	master_conntrack->layer7.app_data[length+oldlength] = '\0';
++	master_conntrack->layer7.app_data_len = length + oldlength;
 +
 +	return length;
 +}
 +
 +/* Returns true on match and false otherwise.  */
-+static int match(const struct sk_buff *skb_t, const struct net_device *in,
-+		 const struct net_device *out, const struct xt_match *match,
-+		 const void *matchinfo, int offset, 
-+		 unsigned int protoff, int *hotdrop)
++static int match(const struct sk_buff *skbin,
++	const struct net_device *in, const struct net_device *out,
++	const struct xt_match *match, const void *matchinfo,
++	int offset, unsigned int protoff, int *hotdrop)
 +{
++	/* sidestep const without getting a compiler warning... */
++	struct sk_buff * skb = (struct sk_buff *)skbin; 
++
 +	struct ipt_layer7_info * info = (struct ipt_layer7_info *)matchinfo;
 +	enum ip_conntrack_info master_ctinfo, ctinfo;
 +	struct ip_conntrack *master_conntrack, *conntrack;
-+	unsigned char *app_data, *tmp_data;
++	unsigned char * app_data;
 +	unsigned int pattern_result, appdatalen;
 +	regexp * comppattern;
-+	struct sk_buff *skb = skb_t; /* to leave warning - FIXME */
 +
 +	if(!can_handle(skb)){
 +		DPRINTK("layer7: This is some protocol I can't handle.\n");
@@ -449,8 +448,8 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/ipt_layer7.c linux-2.6.19.dev/net/
 +		master_conntrack = master_ct(master_conntrack);
 +
 +	/* if we've classified it or seen too many packets */
-+	if(!info->pkt && (TOTAL_PACKETS > num_packets ||
-+		master_conntrack->layer7.app_proto)) {
++	if(TOTAL_PACKETS > num_packets ||
++	   master_conntrack->layer7.app_proto) {
 +
 +		pattern_result = match_no_append(conntrack, master_conntrack, ctinfo, master_ctinfo, info);
 +
@@ -480,23 +479,6 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/ipt_layer7.c linux-2.6.19.dev/net/
 +	/* the return value gets checked later, when we're ready to use it */
 +	comppattern = compile_and_cache(info->pattern, info->protocol);
 +	spin_unlock_bh(&list_lock);
-+
-+	if (info->pkt) {
-+		tmp_data = kmalloc(maxdatalen, GFP_ATOMIC);
-+		if(!tmp_data){
-+			if (net_ratelimit())
-+				printk(KERN_ERR "layer7: out of memory in match, bailing.\n");
-+			return info->invert;
-+		}
-+
-+		tmp_data[0] = '\0';
-+		add_datastr(tmp_data, 0, app_data, appdatalen);
-+		pattern_result = ((comppattern && regexec(comppattern, tmp_data)) ? 1 : 0);
-+		kfree(tmp_data);
-+		tmp_data = NULL;
-+
-+		return (pattern_result ^ info->invert);
-+	}
 +
 +	/* On the first packet of a connection, allocate space for app data */
 +	write_lock(&ct_lock);
@@ -533,6 +515,7 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/ipt_layer7.c linux-2.6.19.dev/net/
 +
 +	/* If looking for "unknown", then never match.  "Unknown" means that
 +	we've given up; we're still trying with these packets. */
++	read_lock(&ct_lock);
 +	if(!strcmp(info->protocol, "unknown")) {
 +		pattern_result = 0;
 +	/* If the regexp failed to compile, don't bother running it */
@@ -540,6 +523,7 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/ipt_layer7.c linux-2.6.19.dev/net/
 +		DPRINTK("layer7: matched %s\n", info->protocol);
 +		pattern_result = 1;
 +	} else pattern_result = 0;
++	read_unlock(&ct_lock);
 +
 +	if(pattern_result) {
 +		write_lock(&ct_lock);
@@ -563,7 +547,7 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/ipt_layer7.c linux-2.6.19.dev/net/
 +static struct ipt_match layer7_match = {
 +	.name = "layer7",
 +	.match = &match,
-+	.matchsize = sizeof(struct ipt_layer7_info),
++	.matchsize  = sizeof(struct ipt_layer7_info),
 +	.me = THIS_MODULE
 +};
 +
@@ -647,8 +631,10 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/ipt_layer7.c linux-2.6.19.dev/net/
 +	remove_proc_entry("layer7_numpackets", proc_net);
 +}
 +
-+static int __init init(void)
++static int __init ipt_layer7_init(void)
 +{
++	need_conntrack();
++
 +	layer7_init_proc();
 +	if(maxdatalen < 1) {
 +		printk(KERN_WARNING "layer7: maxdatalen can't be < 1, using 1\n");
@@ -663,20 +649,20 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/ipt_layer7.c linux-2.6.19.dev/net/
 +	return ipt_register_match(&layer7_match);
 +}
 +
-+static void __exit fini(void)
++static void __exit ipt_layer7_fini(void)
 +{
 +	layer7_cleanup_proc();
 +	ipt_unregister_match(&layer7_match);
 +}
 +
-+module_init(init);
-+module_exit(fini);
-diff -urN linux-2.6.19.old/net/ipv4/netfilter/Kconfig linux-2.6.19.dev/net/ipv4/netfilter/Kconfig
---- linux-2.6.19.old/net/ipv4/netfilter/Kconfig	2006-11-29 22:57:37.000000000 +0100
-+++ linux-2.6.19.dev/net/ipv4/netfilter/Kconfig	2006-12-14 03:13:37.000000000 +0100
-@@ -329,6 +329,24 @@
- 	  destination IP' or `500pps from any given source IP'  with a single
- 	  IPtables rule.
++module_init(ipt_layer7_init);
++module_exit(ipt_layer7_fini);
+diff -urN linux.old/net/ipv4/netfilter/Kconfig linux.dev/net/ipv4/netfilter/Kconfig
+--- linux.old/net/ipv4/netfilter/Kconfig	2007-01-01 05:17:07.000000000 +0100
++++ linux.dev/net/ipv4/netfilter/Kconfig	2007-01-01 05:18:48.000000000 +0100
+@@ -248,6 +248,24 @@
+ 
+ 	  To compile it as a module, choose M here.  If unsure, say N.
  
 +config IP_NF_MATCH_LAYER7
 +	tristate "Layer 7 match support (EXPERIMENTAL)"
@@ -696,12 +682,12 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/Kconfig linux-2.6.19.dev/net/ipv4/
 +	help
 +	  Say Y to get lots of debugging output.
 +
- # `filter', generic and specific targets
- config IP_NF_FILTER
- 	tristate "Packet filtering"
-diff -urN linux-2.6.19.old/net/ipv4/netfilter/Makefile linux-2.6.19.dev/net/ipv4/netfilter/Makefile
---- linux-2.6.19.old/net/ipv4/netfilter/Makefile	2006-11-29 22:57:37.000000000 +0100
-+++ linux-2.6.19.dev/net/ipv4/netfilter/Makefile	2006-12-14 03:13:37.000000000 +0100
+ config IP_NF_MATCH_TOS
+ 	tristate "TOS match support"
+ 	depends on IP_NF_IPTABLES
+diff -urN linux.old/net/ipv4/netfilter/Makefile linux.dev/net/ipv4/netfilter/Makefile
+--- linux.old/net/ipv4/netfilter/Makefile	2007-01-01 05:17:07.000000000 +0100
++++ linux.dev/net/ipv4/netfilter/Makefile	2007-01-01 05:18:48.000000000 +0100
 @@ -63,6 +63,8 @@
  obj-$(CONFIG_IP_NF_MATCH_TTL) += ipt_ttl.o
  obj-$(CONFIG_IP_NF_MATCH_ADDRTYPE) += ipt_addrtype.o
@@ -711,10 +697,10 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/Makefile linux-2.6.19.dev/net/ipv4
  # targets
  obj-$(CONFIG_IP_NF_TARGET_REJECT) += ipt_REJECT.o
  obj-$(CONFIG_IP_NF_TARGET_TOS) += ipt_TOS.o
-diff -urN linux-2.6.19.old/net/ipv4/netfilter/regexp/regexp.c linux-2.6.19.dev/net/ipv4/netfilter/regexp/regexp.c
---- linux-2.6.19.old/net/ipv4/netfilter/regexp/regexp.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.19.dev/net/ipv4/netfilter/regexp/regexp.c	2006-12-14 03:13:37.000000000 +0100
-@@ -0,0 +1,1195 @@
+diff -urN linux.old/net/ipv4/netfilter/regexp/regexp.c linux.dev/net/ipv4/netfilter/regexp/regexp.c
+--- linux.old/net/ipv4/netfilter/regexp/regexp.c	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/net/ipv4/netfilter/regexp/regexp.c	2007-01-01 05:18:48.000000000 +0100
+@@ -0,0 +1,1197 @@
 +/*
 + * regcomp and regexec -- regsub and regerror are elsewhere
 + * @(#)regexp.c	1.3 of 18 April 87
@@ -881,11 +867,17 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/regexp/regexp.c linux-2.6.19.dev/n
 +/*
 + * Global work variables for regcomp().
 + */
-+static char *regparse;		/* Input-scan pointer. */
-+static int regnpar;		/* () count. */
-+static char regdummy;
-+static char *regcode;		/* Code-emit pointer; &regdummy = don't. */
-+static long regsize;		/* Code size. */
++struct match_globals {
++char *reginput;		/* String-input pointer. */
++char *regbol;		/* Beginning of input, for ^ check. */
++char **regstartp;	/* Pointer to startp array. */
++char **regendp;		/* Ditto for endp. */
++char *regparse;		/* Input-scan pointer. */
++int regnpar;		/* () count. */
++char regdummy;
++char *regcode;		/* Code-emit pointer; &regdummy = don't. */
++long regsize;		/* Code size. */
++};
 +
 +/*
 + * Forward declarations for regcomp()'s friends.
@@ -893,16 +885,16 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/regexp/regexp.c linux-2.6.19.dev/n
 +#ifndef STATIC
 +#define	STATIC	static
 +#endif
-+STATIC char *reg(int paren,int *flagp);
-+STATIC char *regbranch(int *flagp);
-+STATIC char *regpiece(int *flagp);
-+STATIC char *regatom(int *flagp);
-+STATIC char *regnode(char op);
-+STATIC char *regnext(char *p);
-+STATIC void regc(char b);
-+STATIC void reginsert(char op, char *opnd);
-+STATIC void regtail(char *p, char *val);
-+STATIC void regoptail(char *p, char *val);
++STATIC char *reg(struct match_globals *g, int paren,int *flagp);
++STATIC char *regbranch(struct match_globals *g, int *flagp);
++STATIC char *regpiece(struct match_globals *g, int *flagp);
++STATIC char *regatom(struct match_globals *g, int *flagp);
++STATIC char *regnode(struct match_globals *g, char op);
++STATIC char *regnext(struct match_globals *g, char *p);
++STATIC void regc(struct match_globals *g, char b);
++STATIC void reginsert(struct match_globals *g, char op, char *opnd);
++STATIC void regtail(struct match_globals *g, char *p, char *val);
++STATIC void regoptail(struct match_globals *g, char *p, char *val);
 +
 +
 +__kernel_size_t my_strcspn(const char *s1,const char *s2)
@@ -944,6 +936,8 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/regexp/regexp.c linux-2.6.19.dev/n
 +	register char *longest;
 +	register int len;
 +	int flags;
++	struct match_globals g;
++	
 +	/* commented out by ethan
 +	   extern char *malloc();
 +	*/
@@ -952,30 +946,30 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/regexp/regexp.c linux-2.6.19.dev/n
 +		FAIL("NULL argument");
 +
 +	/* First pass: determine size, legality. */
-+	regparse = exp;
-+	regnpar = 1;
-+	regsize = 0L;
-+	regcode = &regdummy;
-+	regc(MAGIC);
-+	if (reg(0, &flags) == NULL)
++	g.regparse = exp;
++	g.regnpar = 1;
++	g.regsize = 0L;
++	g.regcode = &g.regdummy;
++	regc(&g, MAGIC);
++	if (reg(&g, 0, &flags) == NULL)
 +		return(NULL);
 +
 +	/* Small enough for pointer-storage convention? */
-+	if (regsize >= 32767L)		/* Probably could be 65535L. */
++	if (g.regsize >= 32767L)		/* Probably could be 65535L. */
 +		FAIL("regexp too big");
 +
 +	/* Allocate space. */
-+	*patternsize=sizeof(regexp) + (unsigned)regsize;
-+	r = (regexp *)malloc(sizeof(regexp) + (unsigned)regsize);
++	*patternsize=sizeof(regexp) + (unsigned)g.regsize;
++	r = (regexp *)malloc(sizeof(regexp) + (unsigned)g.regsize);
 +	if (r == NULL)
 +		FAIL("out of space");
 +
 +	/* Second pass: emit code. */
-+	regparse = exp;
-+	regnpar = 1;
-+	regcode = r->program;
-+	regc(MAGIC);
-+	if (reg(0, &flags) == NULL)
++	g.regparse = exp;
++	g.regnpar = 1;
++	g.regcode = r->program;
++	regc(&g, MAGIC);
++	if (reg(&g, 0, &flags) == NULL)
 +		return(NULL);
 +
 +	/* Dig out information for optimizations. */
@@ -984,7 +978,7 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/regexp/regexp.c linux-2.6.19.dev/n
 +	r->regmust = NULL;
 +	r->regmlen = 0;
 +	scan = r->program+1;			/* First BRANCH. */
-+	if (OP(regnext(scan)) == END) {		/* Only one top-level choice. */
++	if (OP(regnext(&g, scan)) == END) {		/* Only one top-level choice. */
 +		scan = OPERAND(scan);
 +
 +		/* Starting-point info. */
@@ -1004,7 +998,7 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/regexp/regexp.c linux-2.6.19.dev/n
 +		if (flags&SPSTART) {
 +			longest = NULL;
 +			len = 0;
-+			for (; scan != NULL; scan = regnext(scan))
++			for (; scan != NULL; scan = regnext(&g, scan))
 +				if (OP(scan) == EXACTLY && strlen(OPERAND(scan)) >= len) {
 +					longest = OPERAND(scan);
 +					len = strlen(OPERAND(scan));
@@ -1027,7 +1021,7 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/regexp/regexp.c linux-2.6.19.dev/n
 + * follows makes it hard to avoid.
 + */
 +static char *
-+reg(int paren, int *flagp /* Parenthesized? */ )
++reg(struct match_globals *g, int paren, int *flagp /* Parenthesized? */ )
 +{
 +	register char *ret;
 +	register char *br;
@@ -1039,49 +1033,49 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/regexp/regexp.c linux-2.6.19.dev/n
 +
 +	/* Make an OPEN node, if parenthesized. */
 +	if (paren) {
-+		if (regnpar >= NSUBEXP)
++		if (g->regnpar >= NSUBEXP)
 +			FAIL("too many ()");
-+		parno = regnpar;
-+		regnpar++;
-+		ret = regnode(OPEN+parno);
++		parno = g->regnpar;
++		g->regnpar++;
++		ret = regnode(g, OPEN+parno);
 +	} else
 +		ret = NULL;
 +
 +	/* Pick up the branches, linking them together. */
-+	br = regbranch(&flags);
++	br = regbranch(g, &flags);
 +	if (br == NULL)
 +		return(NULL);
 +	if (ret != NULL)
-+		regtail(ret, br);	/* OPEN -> first. */
++		regtail(g, ret, br);	/* OPEN -> first. */
 +	else
 +		ret = br;
 +	if (!(flags&HASWIDTH))
 +		*flagp &= ~HASWIDTH;
 +	*flagp |= flags&SPSTART;
-+	while (*regparse == '|') {
-+		regparse++;
-+		br = regbranch(&flags);
++	while (*g->regparse == '|') {
++		g->regparse++;
++		br = regbranch(g, &flags);
 +		if (br == NULL)
 +			return(NULL);
-+		regtail(ret, br);	/* BRANCH -> BRANCH. */
++		regtail(g, ret, br);	/* BRANCH -> BRANCH. */
 +		if (!(flags&HASWIDTH))
 +			*flagp &= ~HASWIDTH;
 +		*flagp |= flags&SPSTART;
 +	}
 +
 +	/* Make a closing node, and hook it on the end. */
-+	ender = regnode((paren) ? CLOSE+parno : END);
-+	regtail(ret, ender);
++	ender = regnode(g, (paren) ? CLOSE+parno : END);	
++	regtail(g, ret, ender);
 +
 +	/* Hook the tails of the branches to the closing node. */
-+	for (br = ret; br != NULL; br = regnext(br))
-+		regoptail(br, ender);
++	for (br = ret; br != NULL; br = regnext(g, br))
++		regoptail(g, br, ender);
 +
 +	/* Check for proper termination. */
-+	if (paren && *regparse++ != ')') {
++	if (paren && *g->regparse++ != ')') {
 +		FAIL("unmatched ()");
-+	} else if (!paren && *regparse != '\0') {
-+		if (*regparse == ')') {
++	} else if (!paren && *g->regparse != '\0') {
++		if (*g->regparse == ')') {
 +			FAIL("unmatched ()");
 +		} else
 +			FAIL("junk on end");	/* "Can't happen". */
@@ -1097,7 +1091,7 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/regexp/regexp.c linux-2.6.19.dev/n
 + * Implements the concatenation operator.
 + */
 +static char *
-+regbranch(int *flagp)
++regbranch(struct match_globals *g, int *flagp)
 +{
 +	register char *ret;
 +	register char *chain;
@@ -1106,21 +1100,21 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/regexp/regexp.c linux-2.6.19.dev/n
 +
 +	*flagp = WORST;		/* Tentatively. */
 +
-+	ret = regnode(BRANCH);
++	ret = regnode(g, BRANCH);
 +	chain = NULL;
-+	while (*regparse != '\0' && *regparse != '|' && *regparse != ')') {
-+		latest = regpiece(&flags);
++	while (*g->regparse != '\0' && *g->regparse != '|' && *g->regparse != ')') {
++		latest = regpiece(g, &flags);
 +		if (latest == NULL)
 +			return(NULL);
 +		*flagp |= flags&HASWIDTH;
 +		if (chain == NULL)	/* First piece. */
 +			*flagp |= flags&SPSTART;
 +		else
-+			regtail(chain, latest);
++			regtail(g, chain, latest);
 +		chain = latest;
 +	}
 +	if (chain == NULL)	/* Loop ran zero times. */
-+		(void) regnode(NOTHING);
++		(void) regnode(g, NOTHING);
 +
 +	return(ret);
 +}
@@ -1135,18 +1129,18 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/regexp/regexp.c linux-2.6.19.dev/n
 + * endmarker role is not redundant.
 + */
 +static char *
-+regpiece(int *flagp)
++regpiece(struct match_globals *g, int *flagp)
 +{
 +	register char *ret;
 +	register char op;
 +	register char *next;
 +	int flags;
 +
-+	ret = regatom(&flags);
++	ret = regatom(g, &flags);
 +	if (ret == NULL)
 +		return(NULL);
 +
-+	op = *regparse;
++	op = *g->regparse;
 +	if (!ISMULT(op)) {
 +		*flagp = flags;
 +		return(ret);
@@ -1157,33 +1151,33 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/regexp/regexp.c linux-2.6.19.dev/n
 +	*flagp = (op != '+') ? (WORST|SPSTART) : (WORST|HASWIDTH);
 +
 +	if (op == '*' && (flags&SIMPLE))
-+		reginsert(STAR, ret);
++		reginsert(g, STAR, ret);
 +	else if (op == '*') {
 +		/* Emit x* as (x&|), where & means "self". */
-+		reginsert(BRANCH, ret);			/* Either x */
-+		regoptail(ret, regnode(BACK));		/* and loop */
-+		regoptail(ret, ret);			/* back */
-+		regtail(ret, regnode(BRANCH));		/* or */
-+		regtail(ret, regnode(NOTHING));		/* null. */
++		reginsert(g, BRANCH, ret);			/* Either x */
++		regoptail(g, ret, regnode(g, BACK));		/* and loop */
++		regoptail(g, ret, ret);			/* back */
++		regtail(g, ret, regnode(g, BRANCH));		/* or */
++		regtail(g, ret, regnode(g, NOTHING));		/* null. */
 +	} else if (op == '+' && (flags&SIMPLE))
-+		reginsert(PLUS, ret);
++		reginsert(g, PLUS, ret);
 +	else if (op == '+') {
 +		/* Emit x+ as x(&|), where & means "self". */
-+		next = regnode(BRANCH);			/* Either */
-+		regtail(ret, next);
-+		regtail(regnode(BACK), ret);		/* loop back */
-+		regtail(next, regnode(BRANCH));		/* or */
-+		regtail(ret, regnode(NOTHING));		/* null. */
++		next = regnode(g, BRANCH);			/* Either */
++		regtail(g, ret, next);
++		regtail(g, regnode(g, BACK), ret);		/* loop back */
++		regtail(g, next, regnode(g, BRANCH));		/* or */
++		regtail(g, ret, regnode(g, NOTHING));		/* null. */
 +	} else if (op == '?') {
 +		/* Emit x? as (x|) */
-+		reginsert(BRANCH, ret);			/* Either x */
-+		regtail(ret, regnode(BRANCH));		/* or */
-+		next = regnode(NOTHING);		/* null. */
-+		regtail(ret, next);
-+		regoptail(ret, next);
++		reginsert(g, BRANCH, ret);			/* Either x */
++		regtail(g, ret, regnode(g, BRANCH));		/* or */
++		next = regnode(g, NOTHING);		/* null. */
++		regtail(g, ret, next);
++		regoptail(g, ret, next);
 +	}
-+	regparse++;
-+	if (ISMULT(*regparse))
++	g->regparse++;
++	if (ISMULT(*g->regparse))
 +		FAIL("nested *?+");
 +
 +	return(ret);
@@ -1198,61 +1192,61 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/regexp/regexp.c linux-2.6.19.dev/n
 + * separate node; the code is simpler that way and it's not worth fixing.
 + */
 +static char *
-+regatom(int *flagp)
++regatom(struct match_globals *g, int *flagp)
 +{
 +	register char *ret;
 +	int flags;
 +
 +	*flagp = WORST;		/* Tentatively. */
 +
-+	switch (*regparse++) {
++	switch (*g->regparse++) {
 +	case '^':
-+		ret = regnode(BOL);
++		ret = regnode(g, BOL);
 +		break;
 +	case '$':
-+		ret = regnode(EOL);
++		ret = regnode(g, EOL);
 +		break;
 +	case '.':
-+		ret = regnode(ANY);
++		ret = regnode(g, ANY);
 +		*flagp |= HASWIDTH|SIMPLE;
 +		break;
 +	case '[': {
 +			register int class;
 +			register int classend;
 +
-+			if (*regparse == '^') {	/* Complement of range. */
-+				ret = regnode(ANYBUT);
-+				regparse++;
++			if (*g->regparse == '^') {	/* Complement of range. */
++				ret = regnode(g, ANYBUT);
++				g->regparse++;
 +			} else
-+				ret = regnode(ANYOF);
-+			if (*regparse == ']' || *regparse == '-')
-+				regc(*regparse++);
-+			while (*regparse != '\0' && *regparse != ']') {
-+				if (*regparse == '-') {
-+					regparse++;
-+					if (*regparse == ']' || *regparse == '\0')
-+						regc('-');
++				ret = regnode(g, ANYOF);
++			if (*g->regparse == ']' || *g->regparse == '-')
++				regc(g, *g->regparse++);
++			while (*g->regparse != '\0' && *g->regparse != ']') {
++				if (*g->regparse == '-') {
++					g->regparse++;
++					if (*g->regparse == ']' || *g->regparse == '\0')
++						regc(g, '-');
 +					else {
-+						class = UCHARAT(regparse-2)+1;
-+						classend = UCHARAT(regparse);
++						class = UCHARAT(g->regparse-2)+1;
++						classend = UCHARAT(g->regparse);
 +						if (class > classend+1)
 +							FAIL("invalid [] range");
 +						for (; class <= classend; class++)
-+							regc(class);
-+						regparse++;
++							regc(g, class);
++						g->regparse++;
 +					}
 +				} else
-+					regc(*regparse++);
++					regc(g, *g->regparse++);
 +			}
-+			regc('\0');
-+			if (*regparse != ']')
++			regc(g, '\0');
++			if (*g->regparse != ']')
 +				FAIL("unmatched []");
-+			regparse++;
++			g->regparse++;
 +			*flagp |= HASWIDTH|SIMPLE;
 +		}
 +		break;
 +	case '(':
-+		ret = reg(1, &flags);
++		ret = reg(g, 1, &flags);
 +		if (ret == NULL)
 +			return(NULL);
 +		*flagp |= flags&(HASWIDTH|SPSTART);
@@ -1268,33 +1262,33 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/regexp/regexp.c linux-2.6.19.dev/n
 +		FAIL("?+* follows nothing");
 +		break;
 +	case '\\':
-+		if (*regparse == '\0')
++		if (*g->regparse == '\0')
 +			FAIL("trailing \\");
-+		ret = regnode(EXACTLY);
-+		regc(*regparse++);
-+		regc('\0');
++		ret = regnode(g, EXACTLY);
++		regc(g, *g->regparse++);
++		regc(g, '\0');
 +		*flagp |= HASWIDTH|SIMPLE;
 +		break;
 +	default: {
 +			register int len;
 +			register char ender;
 +
-+			regparse--;
-+			len = my_strcspn((const char *)regparse, (const char *)META);
++			g->regparse--;
++			len = my_strcspn((const char *)g->regparse, (const char *)META);
 +			if (len <= 0)
 +				FAIL("internal disaster");
-+			ender = *(regparse+len);
++			ender = *(g->regparse+len);
 +			if (len > 1 && ISMULT(ender))
 +				len--;		/* Back off clear of ?+* operand. */
 +			*flagp |= HASWIDTH;
 +			if (len == 1)
 +				*flagp |= SIMPLE;
-+			ret = regnode(EXACTLY);
++			ret = regnode(g, EXACTLY);
 +			while (len > 0) {
-+				regc(*regparse++);
++				regc(g, *g->regparse++);
 +				len--;
 +			}
-+			regc('\0');
++			regc(g, '\0');
 +		}
 +		break;
 +	}
@@ -1306,14 +1300,14 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/regexp/regexp.c linux-2.6.19.dev/n
 + - regnode - emit a node
 + */
 +static char *			/* Location. */
-+regnode(char op)
++regnode(struct match_globals *g, char op)
 +{
 +	register char *ret;
 +	register char *ptr;
 +
-+	ret = regcode;
-+	if (ret == &regdummy) {
-+		regsize += 3;
++	ret = g->regcode;
++	if (ret == &g->regdummy) {
++		g->regsize += 3;
 +		return(ret);
 +	}
 +
@@ -1321,7 +1315,7 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/regexp/regexp.c linux-2.6.19.dev/n
 +	*ptr++ = op;
 +	*ptr++ = '\0';		/* Null "next" pointer. */
 +	*ptr++ = '\0';
-+	regcode = ptr;
++	g->regcode = ptr;
 +
 +	return(ret);
 +}
@@ -1330,12 +1324,12 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/regexp/regexp.c linux-2.6.19.dev/n
 + - regc - emit (if appropriate) a byte of code
 + */
 +static void
-+regc(char b)
++regc(struct match_globals *g, char b)
 +{
-+	if (regcode != &regdummy)
-+		*regcode++ = b;
++	if (g->regcode != &g->regdummy)
++		*g->regcode++ = b;
 +	else
-+		regsize++;
++		g->regsize++;
 +}
 +
 +/*
@@ -1344,20 +1338,20 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/regexp/regexp.c linux-2.6.19.dev/n
 + * Means relocating the operand.
 + */
 +static void
-+reginsert(char op, char* opnd)
++reginsert(struct match_globals *g, char op, char* opnd)
 +{
 +	register char *src;
 +	register char *dst;
 +	register char *place;
 +
-+	if (regcode == &regdummy) {
-+		regsize += 3;
++	if (g->regcode == &g->regdummy) {
++		g->regsize += 3;
 +		return;
 +	}
 +
-+	src = regcode;
-+	regcode += 3;
-+	dst = regcode;
++	src = g->regcode;
++	g->regcode += 3;
++	dst = g->regcode;
 +	while (src > opnd)
 +		*--dst = *--src;
 +
@@ -1371,19 +1365,19 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/regexp/regexp.c linux-2.6.19.dev/n
 + - regtail - set the next-pointer at the end of a node chain
 + */
 +static void
-+regtail(char *p, char *val)
++regtail(struct match_globals *g, char *p, char *val)
 +{
 +	register char *scan;
 +	register char *temp;
 +	register int offset;
 +
-+	if (p == &regdummy)
++	if (p == &g->regdummy)
 +		return;
 +
 +	/* Find last node. */
 +	scan = p;
 +	for (;;) {
-+		temp = regnext(scan);
++		temp = regnext(g, scan);
 +		if (temp == NULL)
 +			break;
 +		scan = temp;
@@ -1401,32 +1395,25 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/regexp/regexp.c linux-2.6.19.dev/n
 + - regoptail - regtail on operand of first argument; nop if operandless
 + */
 +static void
-+regoptail(char *p, char *val)
++regoptail(struct match_globals *g, char *p, char *val)
 +{
 +	/* "Operandless" and "op != BRANCH" are synonymous in practice. */
-+	if (p == NULL || p == &regdummy || OP(p) != BRANCH)
++	if (p == NULL || p == &g->regdummy || OP(p) != BRANCH)
 +		return;
-+	regtail(OPERAND(p), val);
++	regtail(g, OPERAND(p), val);
 +}
 +
 +/*
 + * regexec and friends
 + */
 +
-+/*
-+ * Global work variables for regexec().
-+ */
-+static char *reginput;		/* String-input pointer. */
-+static char *regbol;		/* Beginning of input, for ^ check. */
-+static char **regstartp;	/* Pointer to startp array. */
-+static char **regendp;		/* Ditto for endp. */
 +
 +/*
 + * Forwards.
 + */
-+STATIC int regtry(regexp *prog, char *string);
-+STATIC int regmatch(char *prog);
-+STATIC int regrepeat(char *p);
++STATIC int regtry(struct match_globals *g, regexp *prog, char *string);
++STATIC int regmatch(struct match_globals *g, char *prog);
++STATIC int regrepeat(struct match_globals *g, char *p);
 +
 +#ifdef DEBUG
 +int regnarrate = 0;
@@ -1441,6 +1428,7 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/regexp/regexp.c linux-2.6.19.dev/n
 +regexec(regexp *prog, char *string)
 +{
 +	register char *s;
++	struct match_globals g;
 +
 +	/* Be paranoid... */
 +	if (prog == NULL || string == NULL) {
@@ -1467,25 +1455,25 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/regexp/regexp.c linux-2.6.19.dev/n
 +	}
 +
 +	/* Mark beginning of line for ^ . */
-+	regbol = string;
++	g.regbol = string;
 +
 +	/* Simplest case:  anchored match need be tried only once. */
 +	if (prog->reganch)
-+		return(regtry(prog, string));
++		return(regtry(&g, prog, string));
 +
 +	/* Messy cases:  unanchored match. */
 +	s = string;
 +	if (prog->regstart != '\0')
 +		/* We know what char it must start with. */
 +		while ((s = strchr(s, prog->regstart)) != NULL) {
-+			if (regtry(prog, s))
++			if (regtry(&g, prog, s))
 +				return(1);
 +			s++;
 +		}
 +	else
 +		/* We don't -- general case. */
 +		do {
-+			if (regtry(prog, s))
++			if (regtry(&g, prog, s))
 +				return(1);
 +		} while (*s++ != '\0');
 +
@@ -1497,15 +1485,15 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/regexp/regexp.c linux-2.6.19.dev/n
 + - regtry - try match at specific point
 + */
 +static int			/* 0 failure, 1 success */
-+regtry(regexp *prog, char *string)
++regtry(struct match_globals *g, regexp *prog, char *string)
 +{
 +	register int i;
 +	register char **sp;
 +	register char **ep;
 +
-+	reginput = string;
-+	regstartp = prog->startp;
-+	regendp = prog->endp;
++	g->reginput = string;
++	g->regstartp = prog->startp;
++	g->regendp = prog->endp;
 +
 +	sp = prog->startp;
 +	ep = prog->endp;
@@ -1513,9 +1501,9 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/regexp/regexp.c linux-2.6.19.dev/n
 +		*sp++ = NULL;
 +		*ep++ = NULL;
 +	}
-+	if (regmatch(prog->program + 1)) {
++	if (regmatch(g, prog->program + 1)) {
 +		prog->startp[0] = string;
-+		prog->endp[0] = reginput;
++		prog->endp[0] = g->reginput;
 +		return(1);
 +	} else
 +		return(0);
@@ -1532,7 +1520,7 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/regexp/regexp.c linux-2.6.19.dev/n
 + * by recursion.
 + */
 +static int			/* 0 failure, 1 success */
-+regmatch(char *prog)
++regmatch(struct match_globals *g, char *prog)
 +{
 +	register char *scan = prog; /* Current node. */
 +	char *next;		    /* Next node. */
@@ -1546,21 +1534,21 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/regexp/regexp.c linux-2.6.19.dev/n
 +		if (regnarrate)
 +			fprintf(stderr, "%s...\n", regprop(scan));
 +#endif
-+		next = regnext(scan);
++		next = regnext(g, scan);
 +
 +		switch (OP(scan)) {
 +		case BOL:
-+			if (reginput != regbol)
++			if (g->reginput != g->regbol)
 +				return(0);
 +			break;
 +		case EOL:
-+			if (*reginput != '\0')
++			if (*g->reginput != '\0')
 +				return(0);
 +			break;
 +		case ANY:
-+			if (*reginput == '\0')
++			if (*g->reginput == '\0')
 +				return(0);
-+			reginput++;
++			g->reginput++;
 +			break;
 +		case EXACTLY: {
 +				register int len;
@@ -1568,23 +1556,23 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/regexp/regexp.c linux-2.6.19.dev/n
 +
 +				opnd = OPERAND(scan);
 +				/* Inline the first character, for speed. */
-+				if (*opnd != *reginput)
++				if (*opnd != *g->reginput)
 +					return(0);
 +				len = strlen(opnd);
-+				if (len > 1 && strncmp(opnd, reginput, len) != 0)
++				if (len > 1 && strncmp(opnd, g->reginput, len) != 0)
 +					return(0);
-+				reginput += len;
++				g->reginput += len;
 +			}
 +			break;
 +		case ANYOF:
-+			if (*reginput == '\0' || strchr(OPERAND(scan), *reginput) == NULL)
++			if (*g->reginput == '\0' || strchr(OPERAND(scan), *g->reginput) == NULL)
 +				return(0);
-+			reginput++;
++			g->reginput++;
 +			break;
 +		case ANYBUT:
-+			if (*reginput == '\0' || strchr(OPERAND(scan), *reginput) != NULL)
++			if (*g->reginput == '\0' || strchr(OPERAND(scan), *g->reginput) != NULL)
 +				return(0);
-+			reginput++;
++			g->reginput++;
 +			break;
 +		case NOTHING:
 +		case BACK:
@@ -1602,16 +1590,16 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/regexp/regexp.c linux-2.6.19.dev/n
 +				register char *save;
 +
 +				no = OP(scan) - OPEN;
-+				save = reginput;
++				save = g->reginput;
 +
-+				if (regmatch(next)) {
++				if (regmatch(g, next)) {
 +					/*
 +					 * Don't set startp if some later
 +					 * invocation of the same parentheses
 +					 * already has.
 +					 */
-+					if (regstartp[no] == NULL)
-+						regstartp[no] = save;
++					if (g->regstartp[no] == NULL)
++						g->regstartp[no] = save;
 +					return(1);
 +				} else
 +					return(0);
@@ -1631,16 +1619,16 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/regexp/regexp.c linux-2.6.19.dev/n
 +				register char *save;
 +
 +				no = OP(scan) - CLOSE;
-+				save = reginput;
++				save = g->reginput;
 +
-+				if (regmatch(next)) {
++				if (regmatch(g, next)) {
 +					/*
 +					 * Don't set endp if some later
 +					 * invocation of the same parentheses
 +					 * already has.
 +					 */
-+					if (regendp[no] == NULL)
-+						regendp[no] = save;
++					if (g->regendp[no] == NULL)
++						g->regendp[no] = save;
 +					return(1);
 +				} else
 +					return(0);
@@ -1653,11 +1641,11 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/regexp/regexp.c linux-2.6.19.dev/n
 +					next = OPERAND(scan);	/* Avoid recursion. */
 +				else {
 +					do {
-+						save = reginput;
-+						if (regmatch(OPERAND(scan)))
++						save = g->reginput;
++						if (regmatch(g, OPERAND(scan)))
 +							return(1);
-+						reginput = save;
-+						scan = regnext(scan);
++						g->reginput = save;
++						scan = regnext(g, scan);
 +					} while (scan != NULL && OP(scan) == BRANCH);
 +					return(0);
 +					/* NOTREACHED */
@@ -1679,16 +1667,16 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/regexp/regexp.c linux-2.6.19.dev/n
 +				if (OP(next) == EXACTLY)
 +					nextch = *OPERAND(next);
 +				min = (OP(scan) == STAR) ? 0 : 1;
-+				save = reginput;
-+				no = regrepeat(OPERAND(scan));
++				save = g->reginput;
++				no = regrepeat(g, OPERAND(scan));
 +				while (no >= min) {
 +					/* If it could work, try it. */
-+					if (nextch == '\0' || *reginput == nextch)
-+						if (regmatch(next))
++					if (nextch == '\0' || *g->reginput == nextch)
++						if (regmatch(g, next))
 +							return(1);
 +					/* Couldn't or didn't -- back up. */
 +					no--;
-+					reginput = save + no;
++					g->reginput = save + no;
 +				}
 +				return(0);
 +			}
@@ -1717,13 +1705,13 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/regexp/regexp.c linux-2.6.19.dev/n
 + - regrepeat - repeatedly match something simple, report how many
 + */
 +static int
-+regrepeat(char *p)
++regrepeat(struct match_globals *g, char *p)
 +{
 +	register int count = 0;
 +	register char *scan;
 +	register char *opnd;
 +
-+	scan = reginput;
++	scan = g->reginput;
 +	opnd = OPERAND(p);
 +	switch (OP(p)) {
 +	case ANY:
@@ -1753,7 +1741,7 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/regexp/regexp.c linux-2.6.19.dev/n
 +		count = 0;	/* Best compromise. */
 +		break;
 +	}
-+	reginput = scan;
++	g->reginput = scan;
 +
 +	return(count);
 +}
@@ -1762,11 +1750,11 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/regexp/regexp.c linux-2.6.19.dev/n
 + - regnext - dig the "next" pointer out of a node
 + */
 +static char*
-+regnext(char *p)
++regnext(struct match_globals *g, char *p)
 +{
 +	register int offset;
 +
-+	if (p == &regdummy)
++	if (p == &g->regdummy)
 +		return(NULL);
 +
 +	offset = NEXT(p);
@@ -1910,9 +1898,9 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/regexp/regexp.c linux-2.6.19.dev/n
 +#endif
 +
 +
-diff -urN linux-2.6.19.old/net/ipv4/netfilter/regexp/regexp.h linux-2.6.19.dev/net/ipv4/netfilter/regexp/regexp.h
---- linux-2.6.19.old/net/ipv4/netfilter/regexp/regexp.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.19.dev/net/ipv4/netfilter/regexp/regexp.h	2006-12-14 03:13:37.000000000 +0100
+diff -urN linux.old/net/ipv4/netfilter/regexp/regexp.h linux.dev/net/ipv4/netfilter/regexp/regexp.h
+--- linux.old/net/ipv4/netfilter/regexp/regexp.h	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/net/ipv4/netfilter/regexp/regexp.h	2007-01-01 05:18:48.000000000 +0100
 @@ -0,0 +1,41 @@
 +/*
 + * Definitions etc. for regexp(3) routines.
@@ -1955,18 +1943,18 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/regexp/regexp.h linux-2.6.19.dev/n
 +void regerror(char *s);
 +
 +#endif
-diff -urN linux-2.6.19.old/net/ipv4/netfilter/regexp/regmagic.h linux-2.6.19.dev/net/ipv4/netfilter/regexp/regmagic.h
---- linux-2.6.19.old/net/ipv4/netfilter/regexp/regmagic.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.19.dev/net/ipv4/netfilter/regexp/regmagic.h	2006-12-14 03:13:37.000000000 +0100
+diff -urN linux.old/net/ipv4/netfilter/regexp/regmagic.h linux.dev/net/ipv4/netfilter/regexp/regmagic.h
+--- linux.old/net/ipv4/netfilter/regexp/regmagic.h	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/net/ipv4/netfilter/regexp/regmagic.h	2007-01-01 05:18:48.000000000 +0100
 @@ -0,0 +1,5 @@
 +/*
 + * The first byte of the regexp internal "program" is actually this magic
 + * number; the start node begins in the second byte.
 + */
 +#define	MAGIC	0234
-diff -urN linux-2.6.19.old/net/ipv4/netfilter/regexp/regsub.c linux-2.6.19.dev/net/ipv4/netfilter/regexp/regsub.c
---- linux-2.6.19.old/net/ipv4/netfilter/regexp/regsub.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.19.dev/net/ipv4/netfilter/regexp/regsub.c	2006-12-14 03:13:37.000000000 +0100
+diff -urN linux.old/net/ipv4/netfilter/regexp/regsub.c linux.dev/net/ipv4/netfilter/regexp/regsub.c
+--- linux.old/net/ipv4/netfilter/regexp/regsub.c	1970-01-01 01:00:00.000000000 +0100
++++ linux.dev/net/ipv4/netfilter/regexp/regsub.c	2007-01-01 05:18:48.000000000 +0100
 @@ -0,0 +1,95 @@
 +/*
 + * regsub
@@ -2024,7 +2012,7 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/regexp/regsub.c linux-2.6.19.dev/n
 +	register char c;
 +	register int no;
 +	register int len;
-+
++	
 +	/* Not necessary and gcc doesn't like it -MLS */
 +	/*extern char *strncpy();*/
 +
