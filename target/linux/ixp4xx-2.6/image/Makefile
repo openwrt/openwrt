@@ -7,7 +7,15 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
+define Build/Compile
+	$(MAKE) -C apex \
+		BUILD_DIR="$(KDIR)" \
+		TARGET="$(KDIR)" \
+		install
+endef
+
 define Build/Clean
+	$(MAKE) -C apex clean
 endef
 
 define Image/Prepare
@@ -30,10 +38,10 @@ endef
 define Image/Build/jffs2-128k
 	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).img bs=131072 conv=sync
 	BIN_DIR=$(BIN_DIR) $(TOPDIR)/scripts/slugimage.pl \
+		-L $(KDIR)/apex-nslu2-armeb.bin \
 		-k $(BIN_DIR)/openwrt-nslu2-$(KERNEL)-zImage \
-		-r Ramdisk:1,Flashdisk:$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).img \
+		-r Flashdisk:$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).img \
 		-p -o $(BIN_DIR)/openwrt-nslu2-$(KERNEL)-$(1).bin
-#		-L $(BIN_DIR)/apex-nslu2-armeb.bin
 #		-m $(BIN_DIR)/NPE-B
 endef
 
