@@ -12,10 +12,15 @@ define Build/Compile
 		BUILD_DIR="$(KDIR)" \
 		TARGET="$(KDIR)" \
 		install
+	$(MAKE) -C npe-ucode \
+		BUILD_DIR="$(KDIR)" \
+		TARGET="$(KDIR)" \
+		install
 endef
 
 define Build/Clean
 	$(MAKE) -C apex clean
+	$(MAKE) -C npe-ucode clean
 endef
 
 define Image/Prepare
@@ -41,8 +46,8 @@ define Image/Build/jffs2-128k
 		-L $(KDIR)/apex-nslu2-armeb.bin \
 		-k $(BIN_DIR)/openwrt-nslu2-$(KERNEL)-zImage \
 		-r Flashdisk:$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).img \
+		-m $(BIN_DIR)/NPE-B \
 		-p -o $(BIN_DIR)/openwrt-nslu2-$(KERNEL)-$(1).bin
-#		-m $(BIN_DIR)/NPE-B
 endef
 
 $(eval $(call BuildImage))
