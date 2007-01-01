@@ -594,7 +594,7 @@ config BUSYBOX_CONFIG_TELNETD
 
 config BUSYBOX_CONFIG_FEATURE_TELNETD_STANDALONE
 	bool "Support standalone telnetd (not inetd only)"
-	default n
+	default y
 	depends on BUSYBOX_CONFIG_TELNETD
 	help
 	  Selecting this will make telnetd able to run standalone.
