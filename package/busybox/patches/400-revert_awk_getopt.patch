@@ -1,0 +1,81 @@
+diff -ur busybox.old/editors/awk.c busybox.dev/editors/awk.c
+--- busybox.old/editors/awk.c	2006-12-27 05:56:50.000000000 +0100
++++ busybox.dev/editors/awk.c	2007-01-01 23:12:04.000000000 +0100
+@@ -2634,8 +2634,6 @@
+ 
+ int awk_main(int argc, char **argv)
+ {
+-	unsigned opt;
+-	char *opt_F, *opt_v, *opt_W;
+ 	char *s, *s1;
+ 	int i, j, c, flen;
+ 	var *v;
+@@ -2691,32 +2689,44 @@
+ 		free(s);
+ 	}
+ 
+-	opt = getopt32(argc, argv, "F:v:f:W:", &opt_F, &opt_v, &programname, &opt_W);
+-	if (opt & 0x1) setvar_s(V[FS], opt_F); // -F
+-	if (opt & 0x2) if (!is_assignment(opt_v)) bb_show_usage(); // -v
+-	if (opt & 0x4) { // -f
+-		from_file = TRUE;
+-		F = afopen(programname, "r");
+-		s = NULL;
+-		/* one byte is reserved for some trick in next_token */
+-		if (fseek(F, 0, SEEK_END) == 0) {
+-			flen = ftell(F);
+-			s = (char *)xmalloc(flen+4);
+-			fseek(F, 0, SEEK_SET);
+-			i = 1 + fread(s+1, 1, flen, F);
+-		} else {
+-			for (i=j=1; j>0; i+=j) {
+-				s = (char *)xrealloc(s, i+4096);
+-				j = fread(s+i, 1, 4094, F);
+-			}
++	while((c = getopt(argc, argv, "F:v:f:W:")) != EOF) {
++		switch (c) {
++			case 'F':
++				setvar_s(V[FS], optarg);
++				break;
++			case 'v':
++				if (! is_assignment(optarg))
++					bb_show_usage();
++				break;
++			case 'f':
++				from_file = TRUE;
++				F = afopen(programname = optarg, "r");
++				s = NULL;
++				/* one byte is reserved for some trick in next_token */
++				if (fseek(F, 0, SEEK_END) == 0) {
++					flen = ftell(F);
++					s = (char *)xmalloc(flen+4);
++					fseek(F, 0, SEEK_SET);
++					i = 1 + fread(s+1, 1, flen, F);
++				} else {
++					for (i=j=1; j>0; i+=j) {
++						s = (char *)xrealloc(s, i+4096);
++						j = fread(s+i, 1, 4094, F);
++					}
++				}
++				s[i] = '\0';
++				fclose(F);
++				parse_program(s+1);
++				free(s);
++				break;
++			case 'W':
++				bb_error_msg("Warning: unrecognized option '-W %s' ignored\n", optarg);
++				break;
++
++			default:
++				bb_show_usage();
+ 		}
+-		s[i] = '\0';
+-		fclose(F);
+-		parse_program(s+1);
+-		free(s);
+ 	}
+-	if (opt & 0x8) // -W
+-		bb_error_msg("warning: unrecognized option '-W %s' ignored", opt_W);
+ 
+ 	if (!from_file) {
+ 		if (argc == optind)
