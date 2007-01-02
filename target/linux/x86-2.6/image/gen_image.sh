@@ -32,10 +32,11 @@ dd if="$ROOTFSIMAGE" of="$OUTPUT" bs=512 seek="$ROOTFSOFFSET" conv=notrunc
 #rm -f "$OUTPUT.kernel"
 
 which chpax >/dev/null && chpax -zp $(which grub)
-grub --device-map=/dev/null <<EOF
+grub --batch --no-curses --no-floppy --device-map=/dev/null <<EOF
 device (hd0) $OUTPUT
 geometry (hd0) $cyl $head $sect
 root (hd0,0)
 setup (hd0)
+quit
 EOF
 
