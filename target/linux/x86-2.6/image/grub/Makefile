@@ -43,6 +43,7 @@ ifeq ($(HOST_ARCH),x86_64)
 		--mandir=/usr/man \
 		--infodir=/usr/info \
 		$(DISABLE_NLS) \
+		--disable-auto-linux-mem-opt \
 	)
   endef
 else
@@ -62,12 +63,20 @@ else
 		--localstatedir=/var \
 		--mandir=/usr/man \
 		--infodir=/usr/info \
+		$(DISABLE_NLS) \
+		--disable-auto-linux-mem-opt \
 	)
   endef
 endif
 
+#
+# ./configure detects whether the host compiler supports 
+# -fno-stack-protector but only sets STAGE2_CFLAGS accordingly
+#
 define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR)
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		GRUB_CFLAGS="\$$$$(STAGE2_CFLAGS)" \
+		STAGE1_CFLAGS="\$$$$(STAGE2_CFLAGS)"
 endef
 
 define Build/InstallDev
