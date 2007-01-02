@@ -14,7 +14,8 @@ PKG_RELEASE:=1
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=ftp://metalab.unc.edu/pub/Linux/system/boot/apex/
+PKG_SOURCE_URL:=ftp://ftp.buici.com/pub/apex/ \
+	ftp://metalab.unc.edu/pub/Linux/system/boot/apex/
 PKG_MD5SUM:=ed2183311aacf5714afbd825f3671417
 PKG_CAT:=zcat
 
