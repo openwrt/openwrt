@@ -1,0 +1,33 @@
+diff -urN openswan-2.4.7.old/linux/net/ipsec/pfkey_v2.c openswan-2.4.7/linux/net/ipsec/pfkey_v2.c
+--- openswan-2.4.7.old/linux/net/ipsec/pfkey_v2.c	2007-01-03 11:11:04.645909731 +0000
++++ openswan-2.4.7/linux/net/ipsec/pfkey_v2.c	2007-01-03 11:14:54.482143945 +0000
+@@ -119,7 +119,9 @@
+ #ifdef NETDEV_23
+ 	.family	= PF_KEY,
+ 	.create = pfkey_create,
++#ifdef NET_26
+ 	.owner  = THIS_MODULE,
++#endif
+ #else
+ 	PF_KEY,
+ 	pfkey_create
+@@ -129,7 +131,9 @@
+ struct proto_ops SOCKOPS_WRAPPED(pfkey_ops) = {
+ #ifdef NETDEV_23
+ 	family:		PF_KEY,
++#ifdef NET_26
+ 	owner:		THIS_MODULE,
++#endif
+ 	release:	pfkey_release,
+ 	bind:		sock_no_bind,
+ 	connect:	sock_no_connect,
+@@ -1559,6 +1563,9 @@
+ 
+ /*
+  * $Log: pfkey_v2.c,v $
++ * Revision 1.97.2.11  2006/11/15 16:05:57  paul
++ * fix for compiling on 2.4. kernels by Matthias Haas.
++ *
+  * Revision 1.97.2.10  2006/10/10 20:43:28  paul
+  * Add family/create/owner for pfkey_family_ops. This fixes bug #671
+  *
