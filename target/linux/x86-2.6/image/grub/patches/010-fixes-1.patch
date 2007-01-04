@@ -1,0 +1,4490 @@
+Submitted By: Jim Gifford (jim at linuxfromscratch dot org)
+Date: 2006-07-04
+Initial Package Version: 0.97
+Origin: Debian
+Upstream Status: Unknown
+Description: Contains various fixes and enhancements
+	Graphics mode support
+	Fixes for Raid Support
+	XFS Filesystem Boot Freeze Fixes
+	Removed 2GB Memory Limitation
+	Freebsd support
+	Fixes for initrd support
+	Grub installation Fixes
+	Linux 2.6 geometry Fixes
+	Intel Mac Support
+	Autoconf and aclocal updates
+
+http://trac.cross-lfs.org/browser/trunk/patches/grub-0.97-fixes-1.patch
+
+diff -Naur grub-0.97.orig/aclocal.m4 grub-0.97/aclocal.m4
+--- grub-0.97.orig/aclocal.m4	2005-05-07 19:41:18.000000000 -0700
++++ grub-0.97/aclocal.m4	2006-07-04 00:08:22.000000000 -0700
+@@ -1,7 +1,7 @@
+-# generated automatically by aclocal 1.9.4 -*- Autoconf -*-
++# generated automatically by aclocal 1.9.6 -*- Autoconf -*-
+ 
+-# Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004
+-# Free Software Foundation, Inc.
++# Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004,
++# 2005  Free Software Foundation, Inc.
+ # This file is free software; the Free Software Foundation
+ # gives unlimited permission to copy and/or distribute it,
+ # with or without modifications, as long as this notice is preserved.
+@@ -11,23 +11,11 @@
+ # even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+ # PARTICULAR PURPOSE.
+ 
+-#                                                        -*- Autoconf -*-
+-# Copyright (C) 2002, 2003  Free Software Foundation, Inc.
+-# Generated from amversion.in; do not edit by hand.
+-
+-# This program is free software; you can redistribute it and/or modify
+-# it under the terms of the GNU General Public License as published by
+-# the Free Software Foundation; either version 2, or (at your option)
+-# any later version.
+-
+-# This program is distributed in the hope that it will be useful,
+-# but WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-# GNU General Public License for more details.
+-
+-# You should have received a copy of the GNU General Public License
+-# along with this program; if not, write to the Free Software
+-# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
++# Copyright (C) 2002, 2003, 2005  Free Software Foundation, Inc.
++#
++# This file is free software; the Free Software Foundation
++# gives unlimited permission to copy and/or distribute it,
++# with or without modifications, as long as this notice is preserved.
+ 
+ # AM_AUTOMAKE_VERSION(VERSION)
+ # ----------------------------
+@@ -40,26 +28,15 @@
+ # Call AM_AUTOMAKE_VERSION so it can be traced.
+ # This function is AC_REQUIREd by AC_INIT_AUTOMAKE.
+ AC_DEFUN([AM_SET_CURRENT_AUTOMAKE_VERSION],
+-	 [AM_AUTOMAKE_VERSION([1.9.4])])
+-
+-# AM_AUX_DIR_EXPAND
+-
+-# Copyright (C) 2001, 2003 Free Software Foundation, Inc.
++	 [AM_AUTOMAKE_VERSION([1.9.6])])
+ 
+-# This program is free software; you can redistribute it and/or modify
+-# it under the terms of the GNU General Public License as published by
+-# the Free Software Foundation; either version 2, or (at your option)
+-# any later version.
++# AM_AUX_DIR_EXPAND                                         -*- Autoconf -*-
+ 
+-# This program is distributed in the hope that it will be useful,
+-# but WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-# GNU General Public License for more details.
+-
+-# You should have received a copy of the GNU General Public License
+-# along with this program; if not, write to the Free Software
+-# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+-# 02111-1307, USA.
++# Copyright (C) 2001, 2003, 2005  Free Software Foundation, Inc.
++#
++# This file is free software; the Free Software Foundation
++# gives unlimited permission to copy and/or distribute it,
++# with or without modifications, as long as this notice is preserved.
+ 
+ # For projects using AC_CONFIG_AUX_DIR([foo]), Autoconf sets
+ # $ac_aux_dir to `$srcdir/foo'.  In other projects, it is set to
+@@ -106,26 +83,16 @@
+ am_aux_dir=`cd $ac_aux_dir && pwd`
+ ])
+ 
+-# AM_CONDITIONAL                                              -*- Autoconf -*-
++# AM_CONDITIONAL                                            -*- Autoconf -*-
+ 
+-# Copyright (C) 1997, 2000, 2001, 2003, 2004 Free Software Foundation, Inc.
+-
+-# This program is free software; you can redistribute it and/or modify
+-# it under the terms of the GNU General Public License as published by
+-# the Free Software Foundation; either version 2, or (at your option)
+-# any later version.
+-
+-# This program is distributed in the hope that it will be useful,
+-# but WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-# GNU General Public License for more details.
+-
+-# You should have received a copy of the GNU General Public License
+-# along with this program; if not, write to the Free Software
+-# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+-# 02111-1307, USA.
++# Copyright (C) 1997, 2000, 2001, 2003, 2004, 2005
++# Free Software Foundation, Inc.
++#
++# This file is free software; the Free Software Foundation
++# gives unlimited permission to copy and/or distribute it,
++# with or without modifications, as long as this notice is preserved.
+ 
+-# serial 6
++# serial 7
+ 
+ # AM_CONDITIONAL(NAME, SHELL-CONDITION)
+ # -------------------------------------
+@@ -149,26 +116,15 @@
+ Usually this means the macro was only invoked conditionally.]])
+ fi])])
+ 
+-# serial 7						-*- Autoconf -*-
+ 
+-# Copyright (C) 1999, 2000, 2001, 2002, 2003, 2004
++# Copyright (C) 1999, 2000, 2001, 2002, 2003, 2004, 2005
+ # Free Software Foundation, Inc.
++#
++# This file is free software; the Free Software Foundation
++# gives unlimited permission to copy and/or distribute it,
++# with or without modifications, as long as this notice is preserved.
+ 
+-# This program is free software; you can redistribute it and/or modify
+-# it under the terms of the GNU General Public License as published by
+-# the Free Software Foundation; either version 2, or (at your option)
+-# any later version.
+-
+-# This program is distributed in the hope that it will be useful,
+-# but WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-# GNU General Public License for more details.
+-
+-# You should have received a copy of the GNU General Public License
+-# along with this program; if not, write to the Free Software
+-# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+-# 02111-1307, USA.
+-
++# serial 8
+ 
+ # There are a few dirty hacks below to avoid letting `AC_PROG_CC' be
+ # written in clear, in which case automake, when reading aclocal.m4,
+@@ -177,7 +133,6 @@
+ # CC etc. in the Makefile, will ask for an AC_PROG_CC use...
+ 
+ 
+-
+ # _AM_DEPENDENCIES(NAME)
+ # ----------------------
+ # See how the compiler implements dependency checking.
+@@ -317,27 +272,16 @@
+ AC_SUBST([AMDEPBACKSLASH])
+ ])
+ 
+-# Generate code to set up dependency tracking.   -*- Autoconf -*-
+-
+-# Copyright (C) 1999, 2000, 2001, 2002, 2003, 2004
+-#   Free Software Foundation, Inc.
+-
+-# This program is free software; you can redistribute it and/or modify
+-# it under the terms of the GNU General Public License as published by
+-# the Free Software Foundation; either version 2, or (at your option)
+-# any later version.
++# Generate code to set up dependency tracking.              -*- Autoconf -*-
+ 
+-# This program is distributed in the hope that it will be useful,
+-# but WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-# GNU General Public License for more details.
+-
+-# You should have received a copy of the GNU General Public License
+-# along with this program; if not, write to the Free Software
+-# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+-# 02111-1307, USA.
++# Copyright (C) 1999, 2000, 2001, 2002, 2003, 2004, 2005
++# Free Software Foundation, Inc.
++#
++# This file is free software; the Free Software Foundation
++# gives unlimited permission to copy and/or distribute it,
++# with or without modifications, as long as this notice is preserved.
+ 
+-#serial 2
++#serial 3
+ 
+ # _AM_OUTPUT_DEPENDENCY_COMMANDS
+ # ------------------------------
+@@ -396,30 +340,19 @@
+      [AMDEP_TRUE="$AMDEP_TRUE" ac_aux_dir="$ac_aux_dir"])
+ ])
+ 
+-# Do all the work for Automake.                            -*- Autoconf -*-
++# Do all the work for Automake.                             -*- Autoconf -*-
+ 
+-# This macro actually does too much some checks are only needed if
+-# your package does certain things.  But this isn't really a big deal.
+-
+-# Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004
++# Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005
+ # Free Software Foundation, Inc.
++#
++# This file is free software; the Free Software Foundation
++# gives unlimited permission to copy and/or distribute it,
++# with or without modifications, as long as this notice is preserved.
+ 
+-# This program is free software; you can redistribute it and/or modify
+-# it under the terms of the GNU General Public License as published by
+-# the Free Software Foundation; either version 2, or (at your option)
+-# any later version.
+-
+-# This program is distributed in the hope that it will be useful,
+-# but WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-# GNU General Public License for more details.
+-
+-# You should have received a copy of the GNU General Public License
+-# along with this program; if not, write to the Free Software
+-# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+-# 02111-1307, USA.
++# serial 12
+ 
+-# serial 11
++# This macro actually does too much.  Some checks are only needed if
++# your package does certain things.  But this isn't really a big deal.
+ 
+ # AM_INIT_AUTOMAKE(PACKAGE, VERSION, [NO-DEFINE])
+ # AM_INIT_AUTOMAKE([OPTIONS])
+@@ -521,51 +454,27 @@
+ done
+ echo "timestamp for $1" >`AS_DIRNAME([$1])`/stamp-h[]$_am_stamp_count])
+ 
++# Copyright (C) 2001, 2003, 2005  Free Software Foundation, Inc.
++#
++# This file is free software; the Free Software Foundation
++# gives unlimited permission to copy and/or distribute it,
++# with or without modifications, as long as this notice is preserved.
++
+ # AM_PROG_INSTALL_SH
+ # ------------------
+ # Define $install_sh.
+-
+-# Copyright (C) 2001, 2003 Free Software Foundation, Inc.
+-
+-# This program is free software; you can redistribute it and/or modify
+-# it under the terms of the GNU General Public License as published by
+-# the Free Software Foundation; either version 2, or (at your option)
+-# any later version.
+-
+-# This program is distributed in the hope that it will be useful,
+-# but WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-# GNU General Public License for more details.
+-
+-# You should have received a copy of the GNU General Public License
+-# along with this program; if not, write to the Free Software
+-# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+-# 02111-1307, USA.
+-
+ AC_DEFUN([AM_PROG_INSTALL_SH],
+ [AC_REQUIRE([AM_AUX_DIR_EXPAND])dnl
+ install_sh=${install_sh-"$am_aux_dir/install-sh"}
+ AC_SUBST(install_sh)])
+ 
+-#                                                          -*- Autoconf -*-
+-# Copyright (C) 2003  Free Software Foundation, Inc.
+-
+-# This program is free software; you can redistribute it and/or modify
+-# it under the terms of the GNU General Public License as published by
+-# the Free Software Foundation; either version 2, or (at your option)
+-# any later version.
+-
+-# This program is distributed in the hope that it will be useful,
+-# but WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-# GNU General Public License for more details.
+-
+-# You should have received a copy of the GNU General Public License
+-# along with this program; if not, write to the Free Software
+-# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+-# 02111-1307, USA.
++# Copyright (C) 2003, 2005  Free Software Foundation, Inc.
++#
++# This file is free software; the Free Software Foundation
++# gives unlimited permission to copy and/or distribute it,
++# with or without modifications, as long as this notice is preserved.
+ 
+-# serial 1
++# serial 2
+ 
+ # Check whether the underlying file-system supports filenames
+ # with a leading dot.  For instance MS-DOS doesn't.
+@@ -580,28 +489,17 @@
+ rmdir .tst 2>/dev/null
+ AC_SUBST([am__leading_dot])])
+ 
+-# Add --enable-maintainer-mode option to configure.
++# Add --enable-maintainer-mode option to configure.         -*- Autoconf -*-
+ # From Jim Meyering
+ 
+-# Copyright (C) 1996, 1998, 2000, 2001, 2002, 2003, 2004
++# Copyright (C) 1996, 1998, 2000, 2001, 2002, 2003, 2004, 2005
+ # Free Software Foundation, Inc.
++#
++# This file is free software; the Free Software Foundation
++# gives unlimited permission to copy and/or distribute it,
++# with or without modifications, as long as this notice is preserved.
+ 
+-# This program is free software; you can redistribute it and/or modify
+-# it under the terms of the GNU General Public License as published by
+-# the Free Software Foundation; either version 2, or (at your option)
+-# any later version.
+-
+-# This program is distributed in the hope that it will be useful,
+-# but WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-# GNU General Public License for more details.
+-
+-# You should have received a copy of the GNU General Public License
+-# along with this program; if not, write to the Free Software
+-# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+-# 02111-1307, USA.
+-
+-# serial 3
++# serial 4
+ 
+ AC_DEFUN([AM_MAINTAINER_MODE],
+ [AC_MSG_CHECKING([whether to enable maintainer-specific portions of Makefiles])
+@@ -620,26 +518,15 @@
+ 
+ AU_DEFUN([jm_MAINTAINER_MODE], [AM_MAINTAINER_MODE])
+ 
+-# Check to see how 'make' treats includes.	-*- Autoconf -*-
+-
+-# Copyright (C) 2001, 2002, 2003 Free Software Foundation, Inc.
++# Check to see how 'make' treats includes.	            -*- Autoconf -*-
+ 
+-# This program is free software; you can redistribute it and/or modify
+-# it under the terms of the GNU General Public License as published by
+-# the Free Software Foundation; either version 2, or (at your option)
+-# any later version.
+-
+-# This program is distributed in the hope that it will be useful,
+-# but WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-# GNU General Public License for more details.
+-
+-# You should have received a copy of the GNU General Public License
+-# along with this program; if not, write to the Free Software
+-# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+-# 02111-1307, USA.
++# Copyright (C) 2001, 2002, 2003, 2005  Free Software Foundation, Inc.
++#
++# This file is free software; the Free Software Foundation
++# gives unlimited permission to copy and/or distribute it,
++# with or without modifications, as long as this notice is preserved.
+ 
+-# serial 2
++# serial 3
+ 
+ # AM_MAKE_INCLUDE()
+ # -----------------
+@@ -683,27 +570,16 @@
+ rm -f confinc confmf
+ ])
+ 
+-#  -*- Autoconf -*-
+-
+-
+-# Copyright (C) 1997, 1999, 2000, 2001, 2003 Free Software Foundation, Inc.
+-
+-# This program is free software; you can redistribute it and/or modify
+-# it under the terms of the GNU General Public License as published by
+-# the Free Software Foundation; either version 2, or (at your option)
+-# any later version.
++# Fake the existence of programs that GNU maintainers use.  -*- Autoconf -*-
+ 
+-# This program is distributed in the hope that it will be useful,
+-# but WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-# GNU General Public License for more details.
+-
+-# You should have received a copy of the GNU General Public License
+-# along with this program; if not, write to the Free Software
+-# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+-# 02111-1307, USA.
++# Copyright (C) 1997, 1999, 2000, 2001, 2003, 2005
++# Free Software Foundation, Inc.
++#
++# This file is free software; the Free Software Foundation
++# gives unlimited permission to copy and/or distribute it,
++# with or without modifications, as long as this notice is preserved.
+ 
+-# serial 3
++# serial 4
+ 
+ # AM_MISSING_PROG(NAME, PROGRAM)
+ # ------------------------------
+@@ -729,27 +605,16 @@
+ fi
+ ])
+ 
++# Copyright (C) 2003, 2004, 2005  Free Software Foundation, Inc.
++#
++# This file is free software; the Free Software Foundation
++# gives unlimited permission to copy and/or distribute it,
++# with or without modifications, as long as this notice is preserved.
++
+ # AM_PROG_MKDIR_P
+ # ---------------
+ # Check whether `mkdir -p' is supported, fallback to mkinstalldirs otherwise.
+-
+-# Copyright (C) 2003, 2004 Free Software Foundation, Inc.
+-
+-# This program is free software; you can redistribute it and/or modify
+-# it under the terms of the GNU General Public License as published by
+-# the Free Software Foundation; either version 2, or (at your option)
+-# any later version.
+-
+-# This program is distributed in the hope that it will be useful,
+-# but WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-# GNU General Public License for more details.
+-
+-# You should have received a copy of the GNU General Public License
+-# along with this program; if not, write to the Free Software
+-# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+-# 02111-1307, USA.
+-
++#
+ # Automake 1.8 used `mkdir -m 0755 -p --' to ensure that directories
+ # created by `make install' are always world readable, even if the
+ # installer happens to have an overly restrictive umask (e.g. 077).
+@@ -803,26 +668,15 @@
+ fi
+ AC_SUBST([mkdir_p])])
+ 
+-# Helper functions for option handling.                    -*- Autoconf -*-
++# Helper functions for option handling.                     -*- Autoconf -*-
+ 
+-# Copyright (C) 2001, 2002, 2003  Free Software Foundation, Inc.
+-
+-# This program is free software; you can redistribute it and/or modify
+-# it under the terms of the GNU General Public License as published by
+-# the Free Software Foundation; either version 2, or (at your option)
+-# any later version.
+-
+-# This program is distributed in the hope that it will be useful,
+-# but WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-# GNU General Public License for more details.
+-
+-# You should have received a copy of the GNU General Public License
+-# along with this program; if not, write to the Free Software
+-# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+-# 02111-1307, USA.
++# Copyright (C) 2001, 2002, 2003, 2005  Free Software Foundation, Inc.
++#
++# This file is free software; the Free Software Foundation
++# gives unlimited permission to copy and/or distribute it,
++# with or without modifications, as long as this notice is preserved.
+ 
+-# serial 2
++# serial 3
+ 
+ # _AM_MANGLE_OPTION(NAME)
+ # -----------------------
+@@ -847,28 +701,16 @@
+ AC_DEFUN([_AM_IF_OPTION],
+ [m4_ifset(_AM_MANGLE_OPTION([$1]), [$2], [$3])])
+ 
+-#
+-# Check to make sure that the build environment is sane.
+-#
+-
+-# Copyright (C) 1996, 1997, 2000, 2001, 2003 Free Software Foundation, Inc.
+-
+-# This program is free software; you can redistribute it and/or modify
+-# it under the terms of the GNU General Public License as published by
+-# the Free Software Foundation; either version 2, or (at your option)
+-# any later version.
++# Check to make sure that the build environment is sane.    -*- Autoconf -*-
+ 
+-# This program is distributed in the hope that it will be useful,
+-# but WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-# GNU General Public License for more details.
+-
+-# You should have received a copy of the GNU General Public License
+-# along with this program; if not, write to the Free Software
+-# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+-# 02111-1307, USA.
++# Copyright (C) 1996, 1997, 2000, 2001, 2003, 2005
++# Free Software Foundation, Inc.
++#
++# This file is free software; the Free Software Foundation
++# gives unlimited permission to copy and/or distribute it,
++# with or without modifications, as long as this notice is preserved.
+ 
+-# serial 3
++# serial 4
+ 
+ # AM_SANITY_CHECK
+ # ---------------
+@@ -911,25 +753,14 @@
+ fi
+ AC_MSG_RESULT(yes)])
+ 
+-# AM_PROG_INSTALL_STRIP
+-
+-# Copyright (C) 2001, 2003 Free Software Foundation, Inc.
+-
+-# This program is free software; you can redistribute it and/or modify
+-# it under the terms of the GNU General Public License as published by
+-# the Free Software Foundation; either version 2, or (at your option)
+-# any later version.
+-
+-# This program is distributed in the hope that it will be useful,
+-# but WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-# GNU General Public License for more details.
+-
+-# You should have received a copy of the GNU General Public License
+-# along with this program; if not, write to the Free Software
+-# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+-# 02111-1307, USA.
++# Copyright (C) 2001, 2003, 2005  Free Software Foundation, Inc.
++#
++# This file is free software; the Free Software Foundation
++# gives unlimited permission to copy and/or distribute it,
++# with or without modifications, as long as this notice is preserved.
+ 
++# AM_PROG_INSTALL_STRIP
++# ---------------------
+ # One issue with vendor `install' (even GNU) is that you can't
+ # specify the program used to strip binaries.  This is especially
+ # annoying in cross-compiling environments, where the build's strip
+@@ -952,25 +783,13 @@
+ 
+ # Check how to create a tarball.                            -*- Autoconf -*-
+ 
+-# Copyright (C) 2004  Free Software Foundation, Inc.
+-
+-# This program is free software; you can redistribute it and/or modify
+-# it under the terms of the GNU General Public License as published by
+-# the Free Software Foundation; either version 2, or (at your option)
+-# any later version.
+-
+-# This program is distributed in the hope that it will be useful,
+-# but WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-# GNU General Public License for more details.
+-
+-# You should have received a copy of the GNU General Public License
+-# along with this program; if not, write to the Free Software
+-# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+-# 02111-1307, USA.
+-
+-# serial 1
++# Copyright (C) 2004, 2005  Free Software Foundation, Inc.
++#
++# This file is free software; the Free Software Foundation
++# gives unlimited permission to copy and/or distribute it,
++# with or without modifications, as long as this notice is preserved.
+ 
++# serial 2
+ 
+ # _AM_PROG_TAR(FORMAT)
+ # --------------------
+diff -Naur grub-0.97.orig/ChangeLog grub-0.97/ChangeLog
+--- grub-0.97.orig/ChangeLog	2005-05-07 19:47:02.000000000 -0700
++++ grub-0.97/ChangeLog	2006-07-04 00:01:50.000000000 -0700
+@@ -1,3 +1,51 @@
++2006-05-02  Pavel Roskin  <proski@gnu.org>
++
++	* stage2/stage2.c (run_menu): Fix "savedefault" to save only top
++	level menu positions.  Remember current position when calling a
++	submenu.  Don't recalculate it when booting from a submenu.
++
++	* grub/main.c (main): Make sure the boot drive number doesn't
++	exceed 255.
++
++2006-05-02  Vesa Jaaskelainen  <chaac@nic.fi>
++
++	* stage2/shared.h (vbe_mode): Back ported aligment fix from GRUB 2
++	to GRUB Legacy.  Problem reported by Gerardo Richarte.
++
++2006-04-23  Robert Millan  <robertmh@gnu.org>
++
++	* grub/asmstub.c (get_diskinfo): Optimize sysctl routine.
++
++2006-04-20  Robert Millan  <robertmh@gnu.org>
++
++	Fixes for kernel of FreeBSD:
++	* grub/asmstub.c (get_diskinfo): Toggle "kern.geom.debugflags" sysctl
++	before opening a device for writing.
++	* util/grub-install.in: Devices don't have this "r" prefix anymore.
++
++2006-04-16  Yoshinori K. Okuji  <okuji@enbug.org>
++
++	* docs/multiboot.texi: Correct the offset of address
++	fields. Reported by Jeroen Dekkers.
++
++2006-03-21  Yoshinori K. Okuji  <okuji@enbug.org>
++
++	* stage2/builtins.c (setup_func): Specify the size of DEVICE to
++	grub_strncat instead of a strange number 256. Reported by Vitaly
++	Fertman <vitaly@namesys.com>.
++
++2005-09-29  Yoshinori K. Okuji  <okuji@enbug.org>
++
++	* docs/multiboot.texi: Fix a bug in the byte order of
++	boot_device. I hope this won't affect any OS image.
++	Increased the version number to 0.6.94.
++
++2005-09-28  Yoshinori K. Okuji  <okuji@enbug.org>
++
++	* stage2/boot.c (load_image): Even if an OS image is an ELF
++	object, use the a.out kludge if MULTIBOOT_AOUT_KLUDGE is
++	specified.
++
+ 2005-05-08  Yoshinori K. Okuji  <okuji@enbug.org>
+ 
+ 	* configure.ac (AC_INIT): Upgraded to 0.97.
+diff -Naur grub-0.97.orig/configure grub-0.97/configure
+--- grub-0.97.orig/configure	2005-05-07 19:48:12.000000000 -0700
++++ grub-0.97/configure	2006-07-04 00:08:05.000000000 -0700
+@@ -311,7 +311,7 @@
+ # include <unistd.h>
+ #endif"
+ 
+-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot AMTAR am__tar am__untar build build_cpu build_vendor build_os host host_cpu host_vendor host_os MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT PERL CC ac_ct_CC CFLAGS LDFLAGS CPPFLAGS EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CCAS RANLIB ac_ct_RANLIB STAGE1_CFLAGS STAGE2_CFLAGS GRUB_CFLAGS OBJCOPY ac_ct_OBJCOPY GRUB_LIBS CPP EGREP NETBOOT_SUPPORT_TRUE NETBOOT_SUPPORT_FALSE DISKLESS_SUPPORT_TRUE DISKLESS_SUPPORT_FALSE HERCULES_SUPPORT_TRUE HERCULES_SUPPORT_FALSE SERIAL_SUPPORT_TRUE SERIAL_SUPPORT_FALSE SERIAL_SPEED_SIMULATION_TRUE SERIAL_SPEED_SIMULATION_FALSE BUILD_EXAMPLE_KERNEL_TRUE BUILD_EXAMPLE_KERNEL_FALSE FSYS_CFLAGS NET_CFLAGS NET_EXTRAFLAGS NETBOOT_DRIVERS CCASFLAGS LIBOBJS LTLIBOBJS'
++ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot AMTAR am__tar am__untar build build_cpu build_vendor build_os host host_cpu host_vendor host_os MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT PERL CC ac_ct_CC CFLAGS LDFLAGS CPPFLAGS EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CCAS RANLIB ac_ct_RANLIB STAGE1_CFLAGS STAGE2_CFLAGS GRUB_CFLAGS OBJCOPY ac_ct_OBJCOPY GRUB_LIBS CPP EGREP NETBOOT_SUPPORT_TRUE NETBOOT_SUPPORT_FALSE DISKLESS_SUPPORT_TRUE DISKLESS_SUPPORT_FALSE GRAPHICS_SUPPORT_TRUE GRAPHICS_SUPPORT_FALSE HERCULES_SUPPORT_TRUE HERCULES_SUPPORT_FALSE SERIAL_SUPPORT_TRUE SERIAL_SUPPORT_FALSE SERIAL_SPEED_SIMULATION_TRUE SERIAL_SPEED_SIMULATION_FALSE BUILD_EXAMPLE_KERNEL_TRUE BUILD_EXAMPLE_KERNEL_FALSE FSYS_CFLAGS NET_CFLAGS NET_EXTRAFLAGS NETBOOT_DRIVERS CCASFLAGS LIBOBJS LTLIBOBJS'
+ ac_subst_files=''
+ 
+ # Initialize some variables set by options.
+@@ -914,6 +914,7 @@
+                           set the default memory location for WD/SMC
+   --enable-cs-scan=LIST   probe for CS89x0 base address using LIST
+   --enable-diskless       enable diskless support
++  --disable-graphics      disable graphics terminal support
+   --disable-hercules      disable hercules terminal support
+   --disable-serial        disable serial terminal support
+   --enable-serial-speed-simulation
+@@ -5966,6 +5967,22 @@
+ fi
+ 
+ 
++# Check whether --enable-graphics or --disable-graphics was given.
++if test "${enable_graphics+set}" = set; then
++  enableval="$enable_graphics"
++
++fi;
++
++
++if test "x$enable_graphics" != xno; then
++  GRAPHICS_SUPPORT_TRUE=
++  GRAPHICS_SUPPORT_FALSE='#'
++else
++  GRAPHICS_SUPPORT_TRUE='#'
++  GRAPHICS_SUPPORT_FALSE=
++fi
++
++
+ # Check whether --enable-hercules or --disable-hercules was given.
+ if test "${enable_hercules+set}" = set; then
+   enableval="$enable_hercules"
+@@ -6270,6 +6287,13 @@
+ Usually this means the macro was only invoked conditionally." >&2;}
+    { (exit 1); exit 1; }; }
+ fi
++if test -z "${GRAPHICS_SUPPORT_TRUE}" && test -z "${GRAPHICS_SUPPORT_FALSE}"; then
++  { { echo "$as_me:$LINENO: error: conditional \"GRAPHICS_SUPPORT\" was never defined.
++Usually this means the macro was only invoked conditionally." >&5
++echo "$as_me: error: conditional \"GRAPHICS_SUPPORT\" was never defined.
++Usually this means the macro was only invoked conditionally." >&2;}
++   { (exit 1); exit 1; }; }
++fi
+ if test -z "${HERCULES_SUPPORT_TRUE}" && test -z "${HERCULES_SUPPORT_FALSE}"; then
+   { { echo "$as_me:$LINENO: error: conditional \"HERCULES_SUPPORT\" was never defined.
+ Usually this means the macro was only invoked conditionally." >&5
+@@ -6907,6 +6931,8 @@
+ s,@NETBOOT_SUPPORT_FALSE@,$NETBOOT_SUPPORT_FALSE,;t t
+ s,@DISKLESS_SUPPORT_TRUE@,$DISKLESS_SUPPORT_TRUE,;t t
+ s,@DISKLESS_SUPPORT_FALSE@,$DISKLESS_SUPPORT_FALSE,;t t
++s,@GRAPHICS_SUPPORT_TRUE@,$GRAPHICS_SUPPORT_TRUE,;t t
++s,@GRAPHICS_SUPPORT_FALSE@,$GRAPHICS_SUPPORT_FALSE,;t t
+ s,@HERCULES_SUPPORT_TRUE@,$HERCULES_SUPPORT_TRUE,;t t
+ s,@HERCULES_SUPPORT_FALSE@,$HERCULES_SUPPORT_FALSE,;t t
+ s,@SERIAL_SUPPORT_TRUE@,$SERIAL_SUPPORT_TRUE,;t t
+diff -Naur grub-0.97.orig/configure.ac grub-0.97/configure.ac
+--- grub-0.97.orig/configure.ac	2005-05-07 19:36:03.000000000 -0700
++++ grub-0.97/configure.ac	2006-07-03 23:58:41.000000000 -0700
+@@ -595,6 +595,11 @@
+   [  --enable-diskless       enable diskless support])
+ AM_CONDITIONAL(DISKLESS_SUPPORT, test "x$enable_diskless" = xyes)
+ 
++dnl Graphical splashscreen support
++AC_ARG_ENABLE(graphics,
++  [  --disable-graphics      disable graphics terminal support])
++AM_CONDITIONAL(GRAPHICS_SUPPORT, test "x$enable_graphics" != xno)
++
+ dnl Hercules terminal
+ AC_ARG_ENABLE(hercules,
+   [  --disable-hercules      disable hercules terminal support])
+diff -Naur grub-0.97.orig/docs/grub.8 grub-0.97/docs/grub.8
+--- grub-0.97.orig/docs/grub.8	2005-05-07 19:48:56.000000000 -0700
++++ grub-0.97/docs/grub.8	2006-07-04 00:01:50.000000000 -0700
+@@ -1,5 +1,5 @@
+ .\" DO NOT MODIFY THIS FILE!  It was generated by help2man 1.23.
+-.TH GRUB "8" "May 2005" "grub (GNU GRUB 0.97)" FSF
++.TH GRUB "8" "September 2005" "grub (GNU GRUB 0.97)" FSF
+ .SH NAME
+ grub \- the grub shell
+ .SH SYNOPSIS
+diff -Naur grub-0.97.orig/docs/grub.texi grub-0.97/docs/grub.texi
+--- grub-0.97.orig/docs/grub.texi	2005-05-07 19:59:59.000000000 -0700
++++ grub-0.97/docs/grub.texi	2006-07-04 00:00:54.000000000 -0700
+@@ -2199,6 +2199,7 @@
+ * rarp::                        Initialize a network device via RARP
+ * serial::                      Set up a serial device
+ * setkey::                      Configure the key map
++* splashimage::                 Use a splash image
+ * terminal::                    Choose a terminal
+ * terminfo::                    Define escape sequences for a terminal
+ * tftpserver::                  Specify a TFTP server
+@@ -2578,6 +2579,16 @@
+ @end deffn
+ 
+ 
++@node splashimage
++@subsection splashimage
++
++@deffn Command splashimage file
++Select an image to use as the background image.  This should be
++specified using normal GRUB device naming syntax.  The format of the
++file is a gzipped xpm which is 640x480 with a 14 color palette.
++@end deffn
++
++
+ @node terminal
+ @subsection terminal
+ 
+@@ -2685,6 +2696,7 @@
+ * module::                      Load a module
+ * modulenounzip::               Load a module without decompression
+ * pause::                       Wait for a key press
++* print::                       Print a message
+ * quit::                        Exit from the grub shell
+ * reboot::                      Reboot your computer
+ * read::                        Read data from memory
+@@ -3091,6 +3103,16 @@
+ @end deffn
+ 
+ 
++@node print
++@subsection print
++
++@deffn Command print message @dots{}
++Print the @var{message}. Note that placing @key{^G} (ASCII code 7) in the
++message will cause the speaker to emit the standard beep sound, which is
++useful for visually impaired people.
++@end deffn
++
++
+ @node quit
+ @subsection quit
+ 
+diff -Naur grub-0.97.orig/docs/multiboot.texi grub-0.97/docs/multiboot.texi
+--- grub-0.97.orig/docs/multiboot.texi	2003-07-09 04:45:36.000000000 -0700
++++ grub-0.97/docs/multiboot.texi	2006-07-04 00:01:50.000000000 -0700
+@@ -25,7 +25,7 @@
+ @ifinfo
+ Copyright @copyright{} 1995, 96 Bryan Ford <baford@@cs.utah.edu>
+ Copyright @copyright{} 1995, 96 Erich Stefan Boleyn <erich@@uruk.org>
+-Copyright @copyright{} 1999, 2000, 2001, 2002 Free Software Foundation, Inc.
++Copyright @copyright{} 1999, 2000, 2001, 2002, 2005, 2006 Free Software Foundation, Inc.
+ 
+ Permission is granted to make and distribute verbatim copies of
+ this manual provided the copyright notice and this permission notice
+@@ -57,7 +57,7 @@
+ @vskip 0pt plus 1filll
+ Copyright @copyright{} 1995, 96 Bryan Ford <baford@@cs.utah.edu>
+ Copyright @copyright{} 1995, 96 Erich Stefan Boleyn <erich@@uruk.org>
+-Copyright @copyright{} 1999, 2000, 2001, 2002 Free Software Foundation, Inc.
++Copyright @copyright{} 1999, 2000, 2001, 2002, 2005, 2006 Free Software Foundation, Inc.
+ 
+ Permission is granted to make and distribute verbatim copies of
+ this manual provided the copyright notice and this permission notice
+@@ -80,7 +80,7 @@
+ @top Multiboot Specification
+ 
+ This file documents Multiboot Specification, the proposal for the boot
+-sequence standard. This edition documents version 0.6.93.
++sequence standard. This edition documents version 0.6.94.
+ @end ifnottex
+ 
+ @menu
+@@ -426,7 +426,7 @@
+ kernel.
+ 
+ If bit 16 in the @samp{flags} word is set, then the fields at offsets
+-8-24 in the Multiboot header are valid, and the boot loader should use
++12-28 in the Multiboot header are valid, and the boot loader should use
+ them instead of the fields in the actual executable header to calculate
+ where to load the OS image. This information does not need to be
+ provided if the kernel image is in @sc{elf} format, but it @emph{must}
+@@ -677,7 +677,7 @@
+ @example
+ @group
+ +-------+-------+-------+-------+
+-| drive | part1 | part2 | part3 |
++| part3 | part2 | part1 | drive |
+ +-------+-------+-------+-------+
+ @end group
+ @end example
+@@ -1199,6 +1199,13 @@
+ @email{bug-grub@@gnu.org}, from Bryan Ford and Erich Stefan Boleyn.
+ @end itemize
+ 
++@item
++The byte order of the @samp{boot_device} in Multiboot information is
++reversed. This was a mistake.
++
++@item
++The offset of the address fields were wrong.
++
+ @item 0.6
+ @itemize @bullet
+ @item
+diff -Naur grub-0.97.orig/grub/asmstub.c grub-0.97/grub/asmstub.c
+--- grub-0.97.orig/grub/asmstub.c	2005-02-16 12:45:14.000000000 -0800
++++ grub-0.97/grub/asmstub.c	2006-07-04 00:01:50.000000000 -0700
+@@ -42,6 +42,12 @@
+ #include <sys/time.h>
+ #include <termios.h>
+ #include <signal.h>
++#include <sys/mman.h>
++
++#include <limits.h>
++#ifndef PAGESIZE
++#define PAGESIZE 4096
++#endif
+ 
+ #ifdef __linux__
+ # include <sys/ioctl.h>		/* ioctl */
+@@ -55,6 +61,10 @@
+ # endif /* ! BLKFLSBUF */
+ #endif /* __linux__ */
+ 
++#if defined(__FreeBSD_kernel__) || defined(__FreeBSD__)
++# include <sys/sysctl.h>
++#endif
++
+ /* We want to prevent any circularararity in our stubs, as well as
+    libc name clashes. */
+ #define WITHOUT_LIBC_STUBS 1
+@@ -144,6 +154,22 @@
+   assert (grub_scratch_mem == 0);
+   scratch = malloc (0x100000 + EXTENDED_MEMSIZE + 15);
+   assert (scratch);
++
++  {
++    char *p;
++    int ret;
++
++    /* Align to a multiple of PAGESIZE, assumed to be a power of two. */
++    p = (char *) (((long) scratch) & ~(PAGESIZE - 1));
++
++    /* The simulated stack needs to be executable, since GCC uses stack
++     * trampolines to implement nested functions.
++     */
++    ret = mprotect (p, 0x100000 + EXTENDED_MEMSIZE + 15,
++		    PROT_READ | PROT_WRITE | PROT_EXEC);
++    assert (ret == 0);
++  }
++
+   grub_scratch_mem = (char *) ((((int) scratch) >> 4) << 4);
+ 
+   /* FIXME: simulate the memory holes using mprot, if available. */
+@@ -777,7 +803,39 @@
+ 
+       /* Open read/write, or read-only if that failed. */
+       if (! read_only)
+-	disks[drive].flags = open (devname, O_RDWR);
++	{
++/* By default, kernel of FreeBSD does not allow overwriting MBR */
++#if defined(__FreeBSD_kernel__) || defined(__FreeBSD__)
++#define GEOM_SYSCTL	"kern.geom.debugflags"
++	  int old_flags, flags;
++	  size_t sizeof_int = sizeof (int);
++
++	  if (sysctlbyname (GEOM_SYSCTL, &old_flags, &sizeof_int, NULL, 0) != 0)
++	    grub_printf ("failed to get " GEOM_SYSCTL "sysctl: %s\n", strerror (errno));
++
++	  if ((old_flags & 0x10) == 0)
++	    {
++	      /* "allow foot shooting", see geom(4) */
++	      flags = old_flags | 0x10;
++
++	      if (sysctlbyname (GEOM_SYSCTL, NULL, NULL, &flags, sizeof (int)) != 0)
++		{
++		  flags = old_flags;
++		  grub_printf ("failed to set " GEOM_SYSCTL "sysctl: %s\n", strerror (errno));
++		}
++	    }
++	  else
++	    flags = old_flags;
++#endif
++	  disks[drive].flags = open (devname, O_RDWR);
++#if defined(__FreeBSD_kernel__) || defined(__FreeBSD__)
++	  if (flags != old_flags)
++	    {
++	      if (sysctlbyname (GEOM_SYSCTL, NULL, NULL, &old_flags, sizeof (int)) != 0)
++	        grub_printf ("failed to set " GEOM_SYSCTL "sysctl: %s\n", strerror (errno));
++	    }
++#endif
++	}
+ 
+       if (disks[drive].flags == -1)
+ 	{
+diff -Naur grub-0.97.orig/grub/main.c grub-0.97/grub/main.c
+--- grub-0.97.orig/grub/main.c	2003-07-09 04:45:36.000000000 -0700
++++ grub-0.97/grub/main.c	2006-07-04 00:01:50.000000000 -0700
+@@ -32,6 +32,7 @@
+ #define WITHOUT_LIBC_STUBS 1
+ #include <shared.h>
+ #include <term.h>
++#include <device.h>
+ 
+ char *program_name = 0;
+ int use_config_file = 1;
+@@ -192,6 +193,12 @@
+ 	      perror ("strtoul");
+ 	      exit (1);
+ 	    }
++	  if (boot_drive >= NUM_DISKS)
++	    {
++	      fprintf (stderr, "boot_drive should be from 0 to %d\n",
++		       NUM_DISKS - 1);
++	      exit (1);
++	    }
+ 	  break;
+ 
+ 	case OPT_NO_CONFIG_FILE:
+diff -Naur grub-0.97.orig/lib/device.c grub-0.97/lib/device.c
+--- grub-0.97.orig/lib/device.c	2005-03-27 15:14:25.000000000 -0800
++++ grub-0.97/lib/device.c	2006-07-04 00:00:44.000000000 -0700
+@@ -131,6 +131,152 @@
+ #include <shared.h>
+ #include <device.h>
+ 
++#if defined(__linux__)
++/* The 2.6 kernel has removed all of the geometry handling for IDE drives
++ * that did fixups for LBA, etc.  This means that the geometry we get
++ * with the ioctl has a good chance of being wrong.  So, we get to 
++ * also know about partition tables and try to read what the geometry
++ * is there. *grumble*   Very closely based on code from cfdisk
++ */
++static void get_kernel_geometry(int fd, long long *cyl, int *heads, int *sectors) {
++    struct hd_geometry hdg;
++    
++    if (ioctl (fd, HDIO_GETGEO, &hdg))
++        return;
++
++    *cyl = hdg.cylinders;
++    *heads = hdg.heads;
++    *sectors = hdg.sectors;
++}
++
++struct partition {
++        unsigned char boot_ind;         /* 0x80 - active */
++        unsigned char head;             /* starting head */
++        unsigned char sector;           /* starting sector */
++        unsigned char cyl;              /* starting cylinder */
++        unsigned char sys_ind;          /* What partition type */
++        unsigned char end_head;         /* end head */
++        unsigned char end_sector;       /* end sector */
++        unsigned char end_cyl;          /* end cylinder */
++        unsigned char start4[4];        /* starting sector counting from 0 */
++        unsigned char size4[4];         /* nr of sectors in partition */
++};
++
++#define ALIGNMENT 2
++typedef union {
++    struct {
++	unsigned char align[ALIGNMENT];
++	unsigned char b[SECTOR_SIZE];
++    } c;
++    struct {
++	unsigned char align[ALIGNMENT];
++	unsigned char buffer[0x1BE];
++	struct partition part[4];
++	unsigned char magicflag[2];
++    } p;
++} partition_table;
++
++#define PART_TABLE_FLAG0 0x55
++#define PART_TABLE_FLAG1 0xAA
++
++static void
++get_partition_table_geometry(partition_table *bufp, long long *cyl, int *heads, 
++                             int *sectors) {
++    struct partition *p;
++    int i,h,s,hh,ss;
++    int first = 1;
++    int bad = 0;
++
++    if (bufp->p.magicflag[0] != PART_TABLE_FLAG0 ||
++	bufp->p.magicflag[1] != PART_TABLE_FLAG1) {
++	    /* Matthew Wilcox: slightly friendlier version of
++	       fatal(_("Bad signature on partition table"), 3);
++	    */
++            fprintf(stderr, "Unknown partition table signature\n");
++	    return;
++    }
++
++    hh = ss = 0;
++    for (i=0; i<4; i++) {
++	p = &(bufp->p.part[i]);
++	if (p->sys_ind != 0) {
++	    h = p->end_head + 1;
++	    s = (p->end_sector & 077);
++	    if (first) {
++		hh = h;
++		ss = s;
++		first = 0;
++	    } else if (hh != h || ss != s)
++		bad = 1;
++	}
++    }
++
++    if (!first && !bad) {
++	*heads = hh;
++	*sectors = ss;
++    }
++}
++
++static long long my_lseek (unsigned int fd, long long offset, 
++                           unsigned int origin)
++{
++#if defined(__linux__) && (!defined(__GLIBC__) || \
++        ((__GLIBC__ < 2) || ((__GLIBC__ == 2) && (__GLIBC_MINOR__ < 1))))
++  /* Maybe libc doesn't have large file support.  */
++  loff_t offset, result;
++  static int _llseek (uint filedes, ulong hi, ulong lo,
++                      loff_t *res, uint wh);
++  _syscall5 (int, _llseek, uint, filedes, ulong, hi, ulong, lo,
++             loff_t *, res, uint, wh);
++  
++  if (_llseek (fd, offset >> 32, offset & 0xffffffff, &result, SEEK_SET) < 0)
++    return (long long) -1;
++  return result;
++#else
++  return lseek(fd, offset, SEEK_SET);
++#endif
++}
++
++static void get_linux_geometry (int fd, struct geometry *geom) {
++    long long kern_cyl = 0; int kern_head = 0, kern_sectors = 0;
++    long long pt_cyl = 0; int pt_head = 0, pt_sectors = 0;
++    partition_table bufp;
++    char *buff, *buf_unaligned;
++
++    buf_unaligned = malloc(sizeof(partition_table) + 4095);
++    buff = (char *) (((unsigned long)buf_unaligned + 4096 - 1) &
++                     (~(4096-1)));
++
++    get_kernel_geometry(fd, &kern_cyl, &kern_head, &kern_sectors);
++
++    if (my_lseek (fd, 0*SECTOR_SIZE, SEEK_SET) < 0) {
++        fprintf(stderr, "Unable to seek");
++    }
++
++    if (read(fd, buff, SECTOR_SIZE) == SECTOR_SIZE) {
++        memcpy(bufp.c.b, buff, SECTOR_SIZE);
++        get_partition_table_geometry(&bufp, &pt_cyl, &pt_head, &pt_sectors);
++    } else {
++        fprintf(stderr, "Unable to read partition table: %s\n", strerror(errno));
++    }
++
++    if (pt_head && pt_sectors) {
++        int cyl_size;
++
++        geom->heads = pt_head;
++        geom->sectors = pt_sectors;
++        cyl_size = pt_head * pt_sectors;
++        geom->cylinders = geom->total_sectors/cyl_size;
++    } else {
++        geom->heads = kern_head;
++        geom->sectors = kern_sectors;
++        geom->cylinders = kern_cyl;
++    }
++
++    return;
++}
++#endif
++
+ /* Get the geometry of a drive DRIVE.  */
+ void
+ get_drive_geometry (struct geometry *geom, char **map, int drive)
+@@ -151,21 +297,16 @@
+ #if defined(__linux__)
+   /* Linux */
+   {
+-    struct hd_geometry hdg;
+     unsigned long nr;
+-    
+-    if (ioctl (fd, HDIO_GETGEO, &hdg))
+-      goto fail;
+ 
+     if (ioctl (fd, BLKGETSIZE, &nr))
+       goto fail;
+     
+     /* Got the geometry, so save it. */
+-    geom->cylinders = hdg.cylinders;
+-    geom->heads = hdg.heads;
+-    geom->sectors = hdg.sectors;
+     geom->total_sectors = nr;
+-    
++    get_linux_geometry(fd, geom);
++    if (!geom->heads && !geom->cylinders && !geom->sectors)
++        goto fail;
+     goto success;
+   }
+ 
+@@ -403,6 +544,18 @@
+ }
+ 
+ static void
++get_cciss_disk_name (char *name, int controller, int drive)
++{
++  sprintf (name, "/dev/cciss/c%dd%d", controller, drive);
++}
++
++static void
++get_ida_disk_name (char *name, int controller, int drive)
++{
++  sprintf (name, "/dev/ida/c%dd%d", controller, drive);
++}
++
++static void
+ get_ataraid_disk_name (char *name, int unit)
+ {
+   sprintf (name, "/dev/ataraid/d%c", unit + '0');
+@@ -801,6 +954,74 @@
+ 	  }
+       }
+   }
++
++  /* This is for CCISS, its like the DAC960  - we have
++     /dev/cciss/<controller>d<logical drive>p<partition> 
++
++     It currently supports up to 3 controllers, 10 logical volumes
++     and 10 partitions
++
++     Code gratuitously copied from DAC960 above.
++     Horms <horms@verge.net.au> 23rd July 2004
++  */
++  {
++    int controller, drive;
++    
++    for (controller = 0; controller < 2; controller++)
++      {
++	for (drive = 0; drive < 9; drive++)
++	  {
++	    char name[24];
++	    
++	    get_cciss_disk_name (name, controller, drive);
++	    if (check_device (name))
++	      {
++		(*map)[num_hd + 0x80] = strdup (name);
++		assert ((*map)[num_hd + 0x80]);
++		
++		/* If the device map file is opened, write the map.  */
++		if (fp)
++		  fprintf (fp, "(hd%d)\t%s\n", num_hd, name);
++		
++		num_hd++;
++	      }
++	  }
++      }
++  }
++
++  /* This is for Compaq Smart Array, its like the DAC960  - we have
++     /dev/ida/<controller>d<logical drive>p<partition> 
++
++     It currently supports up to 3 controllers, 10 logical volumes
++     and 15 partitions
++
++     Code gratuitously copied from DAC960 above.
++     Piotr Roszatycki <dexter@debian.org>
++  */
++  {
++    int controller, drive;
++    
++    for (controller = 0; controller < 2; controller++)
++      {
++	for (drive = 0; drive < 9; drive++)
++	  {
++	    char name[24];
++	    
++	    get_ida_disk_name (name, controller, drive);
++	    if (check_device (name))
++	      {
++		(*map)[num_hd + 0x80] = strdup (name);
++		assert ((*map)[num_hd + 0x80]);
++		
++		/* If the device map file is opened, write the map.  */
++		if (fp)
++		  fprintf (fp, "(hd%d)\t%s\n", num_hd, name);
++		
++		num_hd++;
++	      }
++	  }
++      }
++  }
+ #endif /* __linux__ */
+   
+   /* OK, close the device map file if opened.  */
+@@ -844,6 +1065,7 @@
+ {
+   char dev[PATH_MAX];	/* XXX */
+   int fd;
++  off_t offset = (off_t) sector * (off_t) SECTOR_SIZE;
+   
+   if ((partition & 0x00FF00) != 0x00FF00)
+     {
+@@ -861,8 +1083,14 @@
+       if (strcmp (dev + strlen(dev) - 5, "/disc") == 0)
+ 	strcpy (dev + strlen(dev) - 5, "/part");
+     }
+-  sprintf (dev + strlen(dev), "%d", ((partition >> 16) & 0xFF) + 1);
+-  
++  sprintf (dev + strlen(dev), "%s%d", 
++   /* Compaq smart and others */
++   (strncmp(dev, "/dev/ida/", 9) == 0 ||
++   strncmp(dev, "/dev/ataraid/", 13) == 0 ||
++   strncmp(dev, "/dev/cciss/", 11) == 0 ||
++   strncmp(dev, "/dev/rd/", 8) == 0) ? "p" : "",
++   ((partition >> 16) & 0xFF) + 1);
++
+   /* Open the partition.  */
+   fd = open (dev, O_RDWR);
+   if (fd < 0)
+@@ -870,35 +1098,13 @@
+       errnum = ERR_NO_PART;
+       return 0;
+     }
+-  
+-#if defined(__linux__) && (!defined(__GLIBC__) || \
+-        ((__GLIBC__ < 2) || ((__GLIBC__ == 2) && (__GLIBC_MINOR__ < 1))))
+-  /* Maybe libc doesn't have large file support.  */
+-  {
+-    loff_t offset, result;
+-    static int _llseek (uint filedes, ulong hi, ulong lo,
+-                        loff_t *res, uint wh);
+-    _syscall5 (int, _llseek, uint, filedes, ulong, hi, ulong, lo,
+-               loff_t *, res, uint, wh);
+ 
+-    offset = (loff_t) sector * (loff_t) SECTOR_SIZE;
+-    if (_llseek (fd, offset >> 32, offset & 0xffffffff, &result, SEEK_SET))
+-      {
+-	errnum = ERR_DEV_VALUES;
+-	return 0;
+-      }
+-  }
+-#else
+-  {
+-    off_t offset = (off_t) sector * (off_t) SECTOR_SIZE;
+ 
+-    if (lseek (fd, offset, SEEK_SET) != offset)
+-      {
+-	errnum = ERR_DEV_VALUES;
+-	return 0;
+-      }
+-  }
+-#endif
++  if (my_lseek(fd, offset, SEEK_SET) != offset)
++    {
++      errnum = ERR_DEV_VALUES;
++      return 0;
++    }
+   
+   if (write (fd, buf, size * SECTOR_SIZE) != (size * SECTOR_SIZE))
+     {
+diff -Naur grub-0.97.orig/stage2/asm.S grub-0.97/stage2/asm.S
+--- grub-0.97.orig/stage2/asm.S	2004-06-19 09:55:22.000000000 -0700
++++ grub-0.97/stage2/asm.S	2006-07-04 00:01:19.000000000 -0700
+@@ -1651,7 +1651,29 @@
+ 	jnz	3f
+ 	ret
+ 
+-3:	/* use keyboard controller */
++3:	/*
++	 * try to switch gateA20 using PORT92, the "Fast A20 and Init"
++	 * register
++	*/
++	mov $0x92, %dx
++	inb %dx, %al
++	/* skip the port92 code if it's unimplemented (read returns 0xff) */
++	cmpb $0xff, %al
++	jz 6f
++	
++	/* set or clear bit1, the ALT_A20_GATE bit */
++	movb 4(%esp), %ah
++	testb %ah, %ah
++	jz 4f
++	orb $2, %al
++	jmp 5f
++4:	and $0xfd, %al
++	
++	/* clear the INIT_NOW bit don't accidently reset the machine */
++5:	and $0xfe, %al
++	outb %al, %dx
++	
++6:	/* use keyboard controller */
+ 	pushl	%eax
+ 
+ 	call    gloop1
+@@ -1661,9 +1683,12 @@
+ 
+ gloopint1:
+ 	inb	$K_STATUS
++	cmpb	$0xff, %al
++	jz	gloopint1_done
+ 	andb	$K_IBUF_FUL, %al
+ 	jnz	gloopint1
+ 
++gloopint1_done:	
+ 	movb	$KB_OUTPUT_MASK, %al
+ 	cmpb	$0, 0x8(%esp)
+ 	jz	gdoit
+@@ -1684,6 +1709,8 @@
+ 
+ gloop1:
+ 	inb	$K_STATUS
++	cmpb	$0xff, %al
++	jz	gloop2ret
+ 	andb	$K_IBUF_FUL, %al
+ 	jnz	gloop1
+ 
+@@ -1991,6 +2018,11 @@
+ ENTRY(console_getkey)
+ 	push	%ebp
+ 
++wait_for_key:
++	call	EXT_C(console_checkkey)
++	incl	%eax
++	jz	wait_for_key
++	
+ 	call	EXT_C(prot_to_real)
+ 	.code16
+ 
+@@ -2216,7 +2248,304 @@
+ 	pop	%ebx
+ 	pop	%ebp
+ 	ret
+-		
++
++
++/* graphics mode functions */
++#ifdef SUPPORT_GRAPHICS
++VARIABLE(cursorX)
++.word	0
++VARIABLE(cursorY)
++.word	0
++VARIABLE(cursorCount)
++.word 0
++VARIABLE(cursorBuf)
++.byte	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
++
++
++/*
++ * set_int1c_handler(void)
++ */
++ENTRY(set_int1c_handler)
++	pushl   %edi
++
++	/* save the original int1c handler */
++	movl    $0x70, %edi
++	movw    (%edi), %ax
++	movw    %ax, ABS(int1c_offset)
++	movw    2(%edi), %ax
++	movw    %ax, ABS(int1c_segment)
++
++	/* save the new int1c handler */
++	movw    $ABS(int1c_handler), %ax
++	movw    %ax, (%edi)
++	xorw    %ax, %ax
++	movw    %ax, 2(%edi)
++
++	popl    %edi
++	ret
++
++
++/*
++ * unset_int1c_handler(void)
++ */
++ENTRY(unset_int1c_handler)
++	pushl   %edi
++
++	/* check if int1c_handler is set */
++	movl    $0x70, %edi
++	movw    $ABS(int1c_handler), %ax
++	cmpw    %ax, (%edi)
++	jne     int1c_1
++	xorw    %ax, %ax
++	cmpw    %ax, 2(%edi)
++	jne     int1c_1
++
++	/* restore the original */
++	movw    ABS(int1c_offset), %ax
++	movw    %ax, (%edi)
++	movw    ABS(int1c_segment), %ax
++	movw    %ax, 2(%edi)
++
++int1c_1:
++	popl    %edi
++	ret
++
++
++/*
++ * blinks graphics cursor
++ */
++	.code16
++write_data:
++	movw    $0, %ax
++	movw    %ax, %ds
++
++	mov     $0xA000, %ax            /* video in es:di */
++	mov     %ax, %es
++	mov     $80, %ax
++	movw    $ABS(cursorY), %si
++	mov     %ds:(%si), %bx
++	mul     %bx
++	movw    $ABS(cursorX), %si
++	mov     %ds:(%si), %bx
++	shr     $3, %bx                 /* %bx /= 8 */
++	add     %bx, %ax
++	mov     %ax, %di
++
++	movw    $ABS(cursorBuf), %si    /* fontBuf in ds:si */
++
++	/* prepare for data moving */
++	mov     $16, %dx                /* altura da fonte */
++	mov     $80, %bx                /* bytes por linha */
++
++write_loop:
++	movb    %ds:(%si), %al
++	xorb    $0xff, %al
++	movb    %al, %ds:(%si)          /* invert cursorBuf */
++	movb    %al, %es:(%di)          /* write to video */
++	add     %bx, %di
++	inc     %si
++	dec     %dx
++	jg      write_loop
++	ret
++
++int1c_handler:
++	pusha
++	mov     $0, %ax
++	mov     %ax, %ds
++	mov     $ABS(cursorCount), %si
++	mov     %ds:(%si), %ax
++	inc     %ax
++	mov     %ax, %ds:(%si)
++	cmp     $9, %ax
++	jne     int1c_done
++
++	mov     $0, %ax
++	mov     %ax, %ds:(%si)
++	call    write_data
++
++int1c_done:
++	popa
++	iret
++	/* call previous int1c handler */
++	/* ljmp */
++	.byte   0xea
++int1c_offset:  .word   0
++int1c_segment: .word   0
++	.code32
++
++
++/*
++ * unsigned char set_videomode(unsigned char mode)
++ * BIOS call "INT 10H Function 0h" to set video mode
++ *	Call with	%ah = 0x0
++ *			%al = video mode
++ *  Returns old videomode.
++ */
++ENTRY(set_videomode)
++	pushl	%ebp
++	movl	%esp,%ebp
++	pushl	%ebx
++	pushl	%ecx
++
++	movb	8(%ebp), %cl
++
++	call	EXT_C(prot_to_real)
++	.code16
++
++	xorb	%al, %al
++	movb	$0xf, %ah
++	int	$0x10			/* Get Current Video mode */
++	movb	%al, %ch
++	xorb	%ah, %ah
++	movb	%cl, %al
++	int	$0x10			/* Set Video mode */
++
++	DATA32	call	EXT_C(real_to_prot)
++	.code32
++
++	xorl	%eax, %eax
++	movb	%ch, %al
++
++	popl	%ecx
++	popl	%ebx
++	popl	%ebp
++	ret
++
++
++/*
++ * int get_videomode()
++ * BIOS call "INT 10H Function 0Fh" to get current video mode
++ *	Call with	%al = 0x0
++ *			%ah = 0xF
++ *	Returns current videomode.
++ */
++ENTRY(get_videomode)
++	pushl	%ebp
++	movl	%esp,%ebp
++	pushl	%ebx
++	pushl	%ecx
++
++	call	EXT_C(prot_to_real)
++	.code16
++
++	xorb	%al, %al
++	movb	$0xF, %ah
++	int	$0x10			/* Get Current Video mode */
++	movb	%al, %cl	/* For now we only want display mode */
++
++	DATA32	call	EXT_C(real_to_prot)
++	.code32
++
++	xorl	%eax, %eax
++	movb	%cl, %al
++
++	popl	%ecx
++	popl	%ebx
++	popl	%ebp
++	ret
++
++
++/*
++ * unsigned char * graphics_get_font()
++ * BIOS call "INT 10H Function 11h" to set font
++ *      Call with       %ah = 0x11
++ */
++ENTRY(graphics_get_font)
++	push	%ebp
++	push	%ebx
++	push	%ecx
++	push	%edx
++
++	call	EXT_C(prot_to_real)
++	.code16
++
++	movw	$0x1130, %ax
++	movb	$6, %bh		/* font 8x16 */
++	int	$0x10
++	movw	%bp, %dx
++	movw	%es, %cx
++
++	DATA32	call	EXT_C(real_to_prot)
++	.code32
++
++	xorl	%eax, %eax
++	movw	%cx, %ax
++	shll	$4, %eax
++	movw	%dx, %ax
++
++	pop	%edx
++	pop	%ecx
++	pop	%ebx
++	pop	%ebp
++	ret
++
++
++/*
++ * graphics_set_palette(index, red, green, blue)
++ * BIOS call "INT 10H Function 10h" to set individual dac register
++ *	Call with	%ah = 0x10
++ *			%bx = register number
++ *			%ch = new value for green (0-63)
++ *			%cl = new value for blue (0-63)
++ *			%dh = new value for red (0-63)
++ */
++
++ENTRY(graphics_set_palette)
++	push	%ebp
++	push	%eax
++	push	%ebx
++	push	%ecx
++	push	%edx
++
++	movw	$0x3c8, %bx		/* address write mode register */
++
++	/* wait vertical retrace */
++	movw	$0x3da, %dx
++l1b:
++	inb	%dx, %al	/* wait vertical active display */
++	test	$8, %al
++	jnz	l1b
++
++l2b:
++	inb	%dx, %al	/* wait vertical retrace */
++	test	$8, %al
++	jnz	l2b
++
++	mov	%bx, %dx
++	movb	0x18(%esp), %al		/* index */
++	outb	%al, %dx
++	inc	%dx
++
++	movb	0x1c(%esp), %al		/* red */
++	outb	%al, %dx
++
++	movb	0x20(%esp), %al		/* green */
++	outb	%al, %dx
++
++	movb	0x24(%esp), %al		/* blue */
++	outb	%al, %dx
++
++	movw	0x18(%esp), %bx
++
++	call	EXT_C(prot_to_real)
++	.code16
++
++	movb	%bl, %bh
++	movw	$0x1000, %ax
++	int	$0x10
++
++	DATA32	call	EXT_C(real_to_prot)
++	.code32
++
++	pop	%edx
++	pop	%ecx
++	pop	%ebx
++	pop	%eax
++	pop	%ebp
++	ret
++#endif /* SUPPORT_GRAPHICS */
++
++
+ /*
+  * getrtsecs()
+  *	if a seconds value can be read, read it and return it (BCD),
+diff -Naur grub-0.97.orig/stage2/boot.c grub-0.97/stage2/boot.c
+--- grub-0.97.orig/stage2/boot.c	2004-03-30 03:44:08.000000000 -0800
++++ grub-0.97/stage2/boot.c	2006-07-04 00:01:50.000000000 -0700
+@@ -1,7 +1,7 @@
+ /* boot.c - load and bootstrap a kernel */
+ /*
+  *  GRUB  --  GRand Unified Bootloader
+- *  Copyright (C) 1999,2000,2001,2002,2003,2004  Free Software Foundation, Inc.
++ *  Copyright (C) 1999,2000,2001,2002,2003,2004,2005  Free Software Foundation, Inc.
+  *
+  *  This program is free software; you can redistribute it and/or modify
+  *  it under the terms of the GNU General Public License as published by
+@@ -29,6 +29,8 @@
+ entry_func entry_addr;
+ static struct mod_list mll[99];
+ static int linux_mem_size;
++static int elf_kernel_addr;
++static int elf_kernel_size;
+ 
+ /*
+  *  The next two functions, 'load_image' and 'load_module', are the building
+@@ -96,7 +98,7 @@
+   lh = (struct linux_kernel_header *) buffer;
+   
+   /* ELF loading supported if multiboot, FreeBSD and NetBSD.  */
+-  if ((type == KERNEL_TYPE_MULTIBOOT
++  if (((type == KERNEL_TYPE_MULTIBOOT && ! (flags & MULTIBOOT_AOUT_KLUDGE))
+        || pu.elf->e_ident[EI_OSABI] == ELFOSABI_FREEBSD
+        || grub_strcmp (pu.elf->e_ident + EI_BRAND, "FreeBSD") == 0
+        || suggested_type == KERNEL_TYPE_NETBSD)
+@@ -594,6 +596,7 @@
+ 
+       /* reset this to zero for now */
+       cur_addr = 0;
++      elf_kernel_addr = ~0;
+ 
+       /* scan for program segments */
+       for (i = 0; i < pu.elf->e_phnum; i++)
+@@ -630,6 +633,8 @@
+ 	      /* mark memory as used */
+ 	      if (cur_addr < memaddr + memsiz)
+ 		cur_addr = memaddr + memsiz;
++	      if (elf_kernel_addr > cur_addr)
++		elf_kernel_addr = cur_addr;
+ 	      printf (", <0x%x:0x%x:0x%x>", memaddr, filesiz,
+ 		      memsiz - filesiz);
+ 	      /* increment number of segments */
+@@ -647,6 +652,8 @@
+ 	    }
+ 	}
+ 
++      elf_kernel_size = cur_addr - elf_kernel_addr;
++
+       if (! errnum)
+ 	{
+ 	  if (! loaded)
+@@ -824,8 +831,11 @@
+     moveto = (mbi.mem_upper + 0x400) << 10;
+   
+   moveto = (moveto - len) & 0xfffff000;
+-  max_addr = (lh->header == LINUX_MAGIC_SIGNATURE && lh->version >= 0x0203
+-	      ? lh->initrd_addr_max : LINUX_INITRD_MAX_ADDRESS);
++  max_addr = LINUX_INITRD_MAX_ADDRESS;
++  if (lh->header == LINUX_MAGIC_SIGNATURE &&
++      lh->version >= 0x0203 &&
++      lh->initrd_addr_max < max_addr)
++    max_addr = lh->initrd_addr_max;
+   if (moveto + len >= max_addr)
+     moveto = (max_addr - len) & 0xfffff000;
+   
+@@ -864,6 +874,129 @@
+ }
+ #endif
+ 
++#define mem_align4k(p)	((p) + 0xFFF) & 0xFFFFF000
++
++static void
++kfreebsd_setenv (char *env, const char *var, const char *value)
++{
++  while (1)
++    {
++      if (env[0] == '\0' && env[1] == '\0')
++	{
++	  env++;
++	  break;
++	}
++      else
++        env++;
++    }
++
++  grub_sprintf (env, "%s=%s", var, value);
++  env[grub_strlen (env) + 1] = '\0';
++}
++
++static char *
++kfreebsd_read_hints (char *buf)
++{
++  char *buf_end = buf;
++
++  if (grub_open ("/boot/device.hints"))
++    {
++      char *line_start;
++      int line_len = 0;
++      char *envp;
++      int env_len;
++
++      env_len = grub_read (buf, -1);
++      if (env_len)
++	{
++	  buf_end += env_len;
++	  *(buf_end++) = '\0';
++	}
++      else
++	return buf_end;
++
++      grub_close ();
++
++      envp = line_start = buf;
++      while (*envp)
++	{
++	  char *envp_current = envp;
++	
++	  switch (*envp)
++	    {
++	      case ' ':
++		while (*envp == ' ')
++		  {
++		    envp++;
++		    env_len--;
++		  }
++		grub_memmove (envp_current, envp, env_len + 1);
++		envp = envp_current;
++		break;
++	      case '#':
++		while (*envp != '\n')
++		  {
++		    envp++;
++		    env_len--;
++		  }
++		if (!line_len)
++		  envp++;
++		grub_memmove (envp_current, envp, env_len + 1);
++		envp = envp_current;
++		break;
++	      case '\n':
++		if (!line_len)
++		  {
++		    env_len--;
++		    grub_memmove (line_start, envp, env_len + 1);
++		  }
++		*(envp++) = '\0';
++		line_len = 0;
++		line_start = envp;
++	      default:
++		envp++;
++		line_len++;
++		break;
++	    }
++	}
++
++      buf_end = buf + env_len;
++      *(buf_end++) = '\0';
++    }
++
++  return buf_end;
++}
++
++static u32_t *
++kfreebsd_set_module_string (u32_t type, u32_t *dst, char *src)
++{
++  int size;
++
++  *(dst++) = type;
++  *(dst++) = size = grub_strlen (src) + 1;
++  grub_strcpy ((void *) dst, src);
++
++  return dst + (size + sizeof(u32_t) - 1) / sizeof(u32_t);
++}
++
++static u32_t *
++kfreebsd_set_module_var (u32_t type, u32_t *dst, u32_t src)
++{
++  *(dst++) = type;
++  *(dst++) = sizeof(u32_t);
++  *(dst++) = src;
++
++  return dst;
++}
++
++static u32_t *
++kfreebsd_set_modules (u32_t *modulep)
++{
++  /* XXX: Need to copy the whole module structure.  */
++  /* XXX: How to pass the module name ?  */
++
++  return modulep;
++}
+ 
+ /*
+  *  All "*_boot" commands depend on the images being loaded into memory
+@@ -877,7 +1010,10 @@
+ bsd_boot (kernel_t type, int bootdev, char *arg)
+ {
+   char *str;
+-  int clval = 0, i;
++  char *kernelname;
++  char *bsd_root;
++  int clval = 0;
++  int i;
+   struct bootinfo bi;
+ 
+ #ifdef GRUB_UTIL
+@@ -886,8 +1022,21 @@
+   stop_floppy ();
+ #endif
+ 
++  while (*arg != '/')
++    arg++;
++  kernelname = arg;
++
+   while (*(++arg) && *arg != ' ');
++  *(arg++) = 0;
+   str = arg;
++
++  bsd_root = grub_strstr (str, "root=");
++  if (bsd_root)
++    {
++      bsd_root += 5;
++      /* XXX: should copy the str or terminate it.  */
++    }
++
+   while (*str)
+     {
+       if (*str == '-')
+@@ -910,6 +1059,8 @@
+ 		clval |= RB_GDB;
+ 	      if (*str == 'h')
+ 		clval |= RB_SERIAL;
++	      if (*str == 'p')
++		clval |= RB_PAUSE;
+ 	      if (*str == 'm')
+ 		clval |= RB_MUTE;
+ 	      if (*str == 'r')
+@@ -927,14 +1078,17 @@
+ 
+   if (type == KERNEL_TYPE_FREEBSD)
+     {
++      char *envp;
++      u32_t *modp;
++
+       clval |= RB_BOOTINFO;
+ 
+       bi.bi_version = BOOTINFO_VERSION;
+ 
+-      *arg = 0;
+-      while ((--arg) > (char *) MB_CMDLINE_BUF && *arg != '/');
+-      if (*arg == '/')
+-	bi.bi_kernelname = arg + 1;
++      bi.bi_pad[0] = bi.bi_pad[1] = 0;
++
++      if (*kernelname == '/')
++	bi.bi_kernelname = kernelname;
+       else
+ 	bi.bi_kernelname = 0;
+ 
+@@ -961,6 +1115,30 @@
+       bi.bi_basemem = mbi.mem_lower;
+       bi.bi_extmem = extended_memory;
+ 
++      /* Setup the environment.  */
++      bi.bi_envp = cur_addr = mem_align4k (cur_addr);
++      grub_memset ((void *) cur_addr, 0, 2);
++      cur_addr = (int) kfreebsd_read_hints ((void *) cur_addr);
++
++      envp = (char *) bi.bi_envp;
++      kfreebsd_setenv (envp, "kernelname", kernelname);
++      kfreebsd_setenv (envp, "vfs.root.mountfrom", bsd_root);
++
++      /* Setup the modules list.  */
++      bi.bi_modulep = cur_addr = mem_align4k (cur_addr);
++      modp = (u32_t *) bi.bi_modulep;
++      /* The first module is the kernel.  */
++      modp = kfreebsd_set_module_string (MODINFO_NAME, modp, kernelname);
++      modp = kfreebsd_set_module_string (MODINFO_TYPE, modp, "elf kernel");
++      modp = kfreebsd_set_module_string (MODINFO_ARGS, modp, arg);
++      modp = kfreebsd_set_module_var (MODINFO_ADDR, modp, elf_kernel_addr);
++      modp = kfreebsd_set_module_var (MODINFO_SIZE, modp, elf_kernel_size);
++      /* Now the real modules.  */
++      modp = kfreebsd_set_modules(modp);
++
++      /* Set the kernel end.  */
++      bi.bi_kernend = cur_addr = mem_align4k (((int) modp) + 1);
++
+       if (mbi.flags & MB_INFO_AOUT_SYMS)
+ 	{
+ 	  bi.bi_symtab = mbi.syms.a.addr;
+@@ -970,8 +1148,9 @@
+ #if 0
+       else if (mbi.flags & MB_INFO_ELF_SHDR)
+ 	{
+-	  /* FIXME: Should check if a symbol table exists and, if exists,
+-	     pass the table to BI.  */
++	  bi.bi_symtab = mbi.syms.e.addr;
++	  bi.bi_esymtab = mbi.syms.e.addr
++	    + mbi.syms.e.size * mbi.syms.e.num * mbi.syms.e.shndx;
+ 	}
+ #endif
+       else
+diff -Naur grub-0.97.orig/stage2/builtins.c grub-0.97/stage2/builtins.c
+--- grub-0.97.orig/stage2/builtins.c	2005-02-15 13:58:23.000000000 -0800
++++ grub-0.97/stage2/builtins.c	2006-07-04 00:01:50.000000000 -0700
+@@ -28,6 +28,10 @@
+ #include <filesys.h>
+ #include <term.h>
+ 
++#ifdef SUPPORT_GRAPHICS
++# include <graphics.h>
++#endif
++
+ #ifdef SUPPORT_NETBOOT
+ # define GRUB	1
+ # include <etherboot.h>
+@@ -82,6 +86,10 @@
+    inside other functions.  */
+ static int configfile_func (char *arg, int flags);
+ 
++static int savedefault_helper (char *arg, int flags);
++
++static int savedefault_shell (char *arg, int flags);
++
+ /* Initialize the data for builtins.  */
+ void
+ init_builtins (void)
+@@ -237,12 +245,22 @@
+ static int
+ boot_func (char *arg, int flags)
+ {
++  struct term_entry *prev_term = current_term;
+   /* Clear the int15 handler if we can boot the kernel successfully.
+      This assumes that the boot code never fails only if KERNEL_TYPE is
+      not KERNEL_TYPE_NONE. Is this assumption is bad?  */
+   if (kernel_type != KERNEL_TYPE_NONE)
+     unset_int15_handler ();
+ 
++  /* if our terminal needed initialization, we should shut it down
++   * before booting the kernel, but we want to save what it was so
++   * we can come back if needed */
++  if (current_term->shutdown) 
++    {
++      current_term->shutdown();
++      current_term = term_table; /* assumption: console is first */
++    }
++
+ #ifdef SUPPORT_NETBOOT
+   /* Shut down the networking.  */
+   cleanup_net ();
+@@ -306,6 +324,13 @@
+       return 1;
+     }
+ 
++  /* if we get back here, we should go back to what our term was before */
++  current_term = prev_term;
++  if (current_term->startup)
++      /* if our terminal fails to initialize, fall back to console since
++       * it should always work */
++      if (current_term->startup() == 0)
++          current_term = term_table; /* we know that console is first */
+   return 0;
+ }
+ 
+@@ -852,6 +877,251 @@
+ };
+ #endif /* SUPPORT_NETBOOT */
+ 
++#ifdef SUPPORT_GRAPHICS
++
++static int splashimage_func(char *arg, int flags) {
++  int i;
++    
++  /* filename can only be 256 characters due to our buffer size */
++  if (grub_strlen(arg) > 256) {
++    grub_printf("Splash image filename too large\n");
++    grub_printf("Press any key to continue...");
++    getkey();
++    return 1;
++  }
++
++  /* get rid of TERM_NEED_INIT from the graphics terminal. */
++  for (i = 0; term_table[i].name; i++) {
++    if (grub_strcmp (term_table[i].name, "graphics") == 0) {
++      term_table[i].flags &= ~TERM_NEED_INIT;
++      break;
++    }
++  }
++
++  graphics_set_splash(arg);
++
++  if (flags == BUILTIN_CMDLINE && graphics_inited) {
++    graphics_end();
++    if (graphics_init() == 0) {
++      /* Fallback to default term */
++      current_term = term_table;
++      max_lines = current_term->max_lines;
++      if (current_term->cls)
++        current_term->cls();
++      grub_printf("Failed to set splash image and/or graphics mode\n");
++      return 1;
++    }
++    graphics_cls();
++  }
++
++  if (flags == BUILTIN_MENU)
++    current_term = term_table + i;
++
++  return 0;
++}
++
++static struct builtin builtin_splashimage =
++{
++  "splashimage",
++  splashimage_func,
++  BUILTIN_CMDLINE | BUILTIN_MENU | BUILTIN_HELP_LIST,
++  "splashimage FILE",
++  "Load FILE as the background image when in graphics mode."
++};
++
++
++/* shade */
++static int
++shade_func(char *arg, int flags)
++{
++    int new_shade;
++
++    if (!arg || safe_parse_maxint(&arg, &new_shade) == 0)
++       return (1);
++
++    if (shade != new_shade) {
++       shade = new_shade;
++       if (flags == BUILTIN_CMDLINE && graphics_inited) {
++           graphics_end();
++           graphics_init();
++           graphics_cls();
++       }
++    }
++
++    return 0;
++}
++
++static struct builtin builtin_shade =
++{
++  "shade",
++  shade_func,
++  BUILTIN_CMDLINE | BUILTIN_MENU | BUILTIN_HELP_LIST,
++  "shade INTEGER",
++  "If set to 0, disables the use of shaded text, else enables it."
++};
++
++
++/* foreground */
++static int
++foreground_func(char *arg, int flags)
++{
++    if (grub_strlen(arg) == 6) {
++	int r = ((hex(arg[0]) << 4) | hex(arg[1])) >> 2;
++	int g = ((hex(arg[2]) << 4) | hex(arg[3])) >> 2;
++	int b = ((hex(arg[4]) << 4) | hex(arg[5])) >> 2;
++
++	foreground = (r << 16) | (g << 8) | b;
++	if (graphics_inited)
++	    graphics_set_palette(15, r, g, b);
++
++	return 0;
++    }
++
++    return 1;
++}
++
++static struct builtin builtin_foreground =
++{
++  "foreground",
++  foreground_func,
++  BUILTIN_CMDLINE | BUILTIN_MENU | BUILTIN_HELP_LIST,
++  "foreground RRGGBB",
++  "Sets the foreground color when in graphics mode."
++  "RR is red, GG is green, and BB blue. Numbers must be in hexadecimal."
++};
++
++
++/* background */
++static int
++background_func(char *arg, int flags)
++{
++    if (grub_strlen(arg) == 6) {
++	int r = ((hex(arg[0]) << 4) | hex(arg[1])) >> 2;
++	int g = ((hex(arg[2]) << 4) | hex(arg[3])) >> 2;
++	int b = ((hex(arg[4]) << 4) | hex(arg[5])) >> 2;
++
++	background = (r << 16) | (g << 8) | b;
++	if (graphics_inited)
++	    graphics_set_palette(0, r, g, b);
++	return 0;
++    }
++
++    return 1;
++}
++
++static struct builtin builtin_background =
++{
++  "background",
++  background_func,
++  BUILTIN_CMDLINE | BUILTIN_MENU | BUILTIN_HELP_LIST,
++  "background RRGGBB",
++  "Sets the background color when in graphics mode."
++  "RR is red, GG is green, and BB blue. Numbers must be in hexadecimal."
++};
++
++
++/* border */
++static int
++border_func(char *arg, int flags)
++{
++    if (grub_strlen(arg) == 6) {
++       int r = ((hex(arg[0]) << 4) | hex(arg[1])) >> 2;
++       int g = ((hex(arg[2]) << 4) | hex(arg[3])) >> 2;
++       int b = ((hex(arg[4]) << 4) | hex(arg[5])) >> 2;
++
++       window_border = (r << 16) | (g << 8) | b;
++       if (graphics_inited)
++           graphics_set_palette(0x11, r, g, b);
++
++       return 0;
++    }
++
++    return 1;
++}
++
++static struct builtin builtin_border =
++{
++  "border",
++  border_func,
++  BUILTIN_CMDLINE | BUILTIN_MENU | BUILTIN_HELP_LIST,
++  "border RRGGBB",
++  "Sets the border video color when in graphics mode."
++  "RR is red, GG is green, and BB blue. Numbers must be in hexadecimal."
++};
++
++
++/* viewport */
++static int
++viewport_func (char *arg, int flags)
++{
++    int i;
++    int x0 = 0, y0 = 0, x1 = 80, y1 = 30;
++    int *pos[4] = { &x0, &y0, &x1, &y1 };
++
++    if (!arg)
++       return (1);
++    for (i = 0; i < 4; i++) {
++       if (!*arg)
++           return (1);
++    while (*arg && (*arg == ' ' || *arg == '\t'))
++           ++arg;
++       if (!safe_parse_maxint(&arg, pos[i]))
++           return (1);
++       while (*arg && (*arg != ' ' && *arg != '\t'))
++           ++arg;
++    }
++
++    /* minimum size is 65 colums and 16 rows */
++    if (x0 > x1 - 66 || y0 > y1 - 16 || x0 < 0 || y0 < 0 || x1 > 80 || y1 > 30)
++       return 1;
++
++    view_x0 = x0;
++    view_y0 = y0;
++    view_x1 = x1;
++    view_y1 = y1;
++
++    if (flags == BUILTIN_CMDLINE && graphics_inited) {
++       graphics_end();
++       graphics_init();
++       graphics_cls();
++    }
++
++    return 0;
++}
++
++static struct builtin builtin_viewport =
++{
++  "viewport",
++  viewport_func,
++  BUILTIN_CMDLINE | BUILTIN_MENU | BUILTIN_HELP_LIST,
++  "viewport x0 y0 x1 y1",
++  "Changes grub internals to output text in the window defined by"
++  " four parameters. The x and y parameters are 0 based. This option"
++  " only works with the graphics interface."
++};
++
++#endif /* SUPPORT_GRAPHICS */
++
++
++/* clear */
++static int 
++clear_func() 
++{
++  if (current_term->cls)
++    current_term->cls();
++
++  return 0;
++}
++
++static struct builtin builtin_clear =
++{
++  "clear",
++  clear_func,
++  BUILTIN_CMDLINE | BUILTIN_HELP_LIST,
++  "clear",
++  "Clear the screen"
++};
++
+ 
+ /* displayapm */
+ static int
+@@ -1454,14 +1724,20 @@
+ 
+ 
+ /* help */
+-#define MAX_SHORT_DOC_LEN	39
+-#define MAX_LONG_DOC_LEN	66
+-
+ static int
+ help_func (char *arg, int flags)
+ {
+-  int all = 0;
+-  
++  int all = 0, max_short_doc_len, max_long_doc_len;
++  max_short_doc_len = 39;
++  max_long_doc_len = 66;
++#ifdef SUPPORT_GRAPHICS
++  if (grub_memcmp (current_term->name, "graphics", sizeof ("graphics") - 1) == 0)
++    {
++      max_short_doc_len = (view_x1 - view_x0 + 1) / 2 - 1;
++      max_long_doc_len = (view_x1 - view_x0) - 14;
++    }
++#endif
++
+   if (grub_memcmp (arg, "--all", sizeof ("--all") - 1) == 0)
+     {
+       all = 1;
+@@ -1491,13 +1767,13 @@
+ 
+ 	  len = grub_strlen ((*builtin)->short_doc);
+ 	  /* If the length of SHORT_DOC is too long, truncate it.  */
+-	  if (len > MAX_SHORT_DOC_LEN - 1)
+-	    len = MAX_SHORT_DOC_LEN - 1;
++	  if (len > max_short_doc_len - 1)
++	    len = max_short_doc_len - 1;
+ 
+ 	  for (i = 0; i < len; i++)
+ 	    grub_putchar ((*builtin)->short_doc[i]);
+ 
+-	  for (; i < MAX_SHORT_DOC_LEN; i++)
++	  for (; i < max_short_doc_len; i++)
+ 	    grub_putchar (' ');
+ 
+ 	  if (! left)
+@@ -1546,10 +1822,10 @@
+ 		      int i;
+ 
+ 		      /* If LEN is too long, fold DOC.  */
+-		      if (len > MAX_LONG_DOC_LEN)
++		      if (len > max_long_doc_len)
+ 			{
+ 			  /* Fold this line at the position of a space.  */
+-			  for (len = MAX_LONG_DOC_LEN; len > 0; len--)
++			  for (len = max_long_doc_len; len > 0; len--)
+ 			    if (doc[len - 1] == ' ')
+ 			      break;
+ 			}
+@@ -2323,6 +2599,25 @@
+   "Probe I/O ports used for the drive DRIVE."
+ };
+ 
++/* print */
++static int
++print_func (char *arg, int flags)
++{
++  printf("%s\n", arg);
++
++  return 0;
++}
++
++static struct builtin builtin_print =
++{
++  "print",
++  print_func,
++  BUILTIN_CMDLINE | BUILTIN_MENU | BUILTIN_NO_ECHO,
++  "print [MESSAGE ...]",
++  "Print MESSAGE."
++};
++
++
+ 
+ /* kernel */
+ static int
+@@ -3221,7 +3516,102 @@
+ static int
+ savedefault_func (char *arg, int flags)
+ {
+-#if !defined(SUPPORT_DISKLESS) && !defined(GRUB_UTIL)
++#if !defined(SUPPORT_DISKLESS)
++  #if !defined(GRUB_UTIL)
++	savedefault_helper(arg, flags);
++  #else
++	savedefault_shell(arg, flags);
++  #endif
++#else /* !SUPPORT_DISKLESS */ 
++  errnum = ERR_UNRECOGNIZED;
++  return 1;
++#endif /* !SUPPORT_DISKLESS */
++}
++
++#if !defined(SUPPORT_DISKLESS) && defined(GRUB_UTIL)
++/* savedefault_shell */
++static int
++savedefault_shell(char *arg, int flags)
++ {
++  int once_only = 0;
++  int new_default;
++  int curr_default = -1;
++  int curr_prev_default = -1;
++  int new_prev_default = -1;
++  FILE *fp;
++  size_t bytes = 10;
++  char line[bytes];
++  char *default_file = (char *) DEFAULT_FILE_BUF;
++  char buf[bytes];
++  int i;
++  
++  while (1)
++    {
++      if (grub_memcmp ("--default=", arg, sizeof ("--default=") - 1) == 0)
++        {
++          char *p = arg + sizeof ("--default=") - 1;
++          if (! safe_parse_maxint (&p, &new_default))
++            return 1;
++          arg = skip_to (0, arg);
++        }
++      else if (grub_memcmp ("--once", arg, sizeof ("--once") - 1) == 0)
++        {
++         once_only = 1;
++         arg = skip_to (0, arg);
++	}
++      else
++        break;
++    }
++
++  *default_file = 0;
++  grub_strncat (default_file, config_file, DEFAULT_FILE_BUFLEN);
++  for (i = grub_strlen(default_file); i >= 0; i--)
++    if (default_file[i] == '/')
++    {
++      i++;
++      break;
++    }
++  default_file[i] = 0;
++  grub_strncat (default_file + i, "default", DEFAULT_FILE_BUFLEN - i);
++
++  if(!(fp = fopen(default_file,"w")))
++    {
++      errnum = ERR_READ;
++      goto fail;
++    }
++  
++  read(&line, -1);
++    
++  sscanf(line, "%d:%d", &curr_prev_default, &curr_default);
++     
++  if(curr_default != -1)
++    new_prev_default = curr_default;
++  else
++    {
++      if(curr_prev_default != -1)
++        new_prev_default = curr_prev_default;
++      else
++        new_prev_default = 0;
++    }
++     
++  if(once_only)
++    sprintf(buf, "%d:%d\n", new_prev_default, new_default);
++  else
++    sprintf(buf, "%d\n", new_default);
++     
++  fprintf(fp, buf);   
++     
++fail:
++  fclose(fp);
++  return errnum;
++}
++#endif
++
++/* savedefault_helper */
++static int
++savedefault_helper (char *arg, int flags)
++{
++#if !defined(SUPPORT_DISKLESS)
+   unsigned long tmp_drive = saved_drive;
+   unsigned long tmp_partition = saved_partition;
+   char *default_file = (char *) DEFAULT_FILE_BUF;
+@@ -3300,19 +3690,23 @@
+       disk_read_hook = 0;
+       grub_close ();
+       
+-      if (len != sizeof (buf))
+-	{
+-	  /* This is too small. Do not modify the file manually, please!  */
+-	  errnum = ERR_READ;
+-	  goto fail;
+-	}
+-
+       if (sector_count > 2)
+ 	{
+ 	  /* Is this possible?! Too fragmented!  */
+ 	  errnum = ERR_FSYS_CORRUPT;
+ 	  goto fail;
+ 	}
++
++      char *tmp;
++      if((tmp = grub_strstr(buf, ":")) != NULL)
++      {
++       int f_len = grub_strlen(buf) - grub_strlen(tmp);
++       char *def;
++       int a;
++       for(a = 0; a < f_len; a++)
++         grub_memcpy(&def[a], &buf[a], sizeof(char));
++       safe_parse_maxint (&def, &entryno);
++      }
+       
+       /* Set up a string to be written.  */
+       grub_memset (buf, '\n', sizeof (buf));
+@@ -3830,15 +4224,15 @@
+ 	{
+ 	  char tmp[16];
+ 	  grub_sprintf (tmp, ",%d", (partition >> 16) & 0xFF);
+-	  grub_strncat (device, tmp, 256);
++	  grub_strncat (device, tmp, sizeof (device));
+ 	}
+       if ((partition & 0x00FF00) != 0x00FF00)
+ 	{
+ 	  char tmp[16];
+ 	  grub_sprintf (tmp, ",%c", 'a' + ((partition >> 8) & 0xFF));
+-	  grub_strncat (device, tmp, 256);
++	  grub_strncat (device, tmp, sizeof (device));
+ 	}
+-      grub_strncat (device, ")", 256);
++      grub_strncat (device, ")", sizeof (device));
+     }
+   
+   int embed_stage1_5 (char *stage1_5, int drive, int partition)
+@@ -4085,7 +4479,7 @@
+ };
+ 
+ 
+-#if defined(SUPPORT_SERIAL) || defined(SUPPORT_HERCULES)
++#if defined(SUPPORT_SERIAL) || defined(SUPPORT_HERCULES) || defined(SUPPORT_GRAPHICS)
+ /* terminal */
+ static int
+ terminal_func (char *arg, int flags)
+@@ -4244,17 +4638,29 @@
+  end:
+   current_term = term_table + default_term;
+   current_term->flags = term_flags;
+-  
++
+   if (lines)
+     max_lines = lines;
+   else
+-    /* 24 would be a good default value.  */
+-    max_lines = 24;
+-  
++    max_lines = current_term->max_lines;
++
+   /* If the interface is currently the command-line,
+      restart it to repaint the screen.  */
+-  if (current_term != prev_term && (flags & BUILTIN_CMDLINE))
++  if ((current_term != prev_term) && (flags & BUILTIN_CMDLINE)){
++    if (prev_term->shutdown)
++      prev_term->shutdown();
++    if (current_term->startup) {
++      /* If startup fails, return to previous term */
++      if (current_term->startup() == 0) {
++        current_term = prev_term;
++        max_lines = current_term->max_lines;
++        if (current_term->cls) {
++          current_term->cls();
++        }
++      }
++    }
+     grub_longjmp (restart_cmdline_env, 0);
++  }
+   
+   return 0;
+ }
+@@ -4264,7 +4670,7 @@
+   "terminal",
+   terminal_func,
+   BUILTIN_MENU | BUILTIN_CMDLINE | BUILTIN_HELP_LIST,
+-  "terminal [--dumb] [--no-echo] [--no-edit] [--timeout=SECS] [--lines=LINES] [--silent] [console] [serial] [hercules]",
++  "terminal [--dumb] [--no-echo] [--no-edit] [--timeout=SECS] [--lines=LINES] [--silent] [console] [serial] [hercules] [graphics]",
+   "Select a terminal. When multiple terminals are specified, wait until"
+   " you push any key to continue. If both console and serial are specified,"
+   " the terminal to which you input a key first will be selected. If no"
+@@ -4276,7 +4682,7 @@
+   " seconds. The option --lines specifies the maximum number of lines."
+   " The option --silent is used to suppress messages."
+ };
+-#endif /* SUPPORT_SERIAL || SUPPORT_HERCULES */
++#endif /* SUPPORT_SERIAL || SUPPORT_HERCULES || SUPPORT_GRAPHICS */
+ 
+ 
+ #ifdef SUPPORT_SERIAL
+@@ -4795,13 +5201,20 @@
+ /* The table of builtin commands. Sorted in dictionary order.  */
+ struct builtin *builtin_table[] =
+ {
++#ifdef SUPPORT_GRAPHICS
++  &builtin_background,
++#endif
+   &builtin_blocklist,
+   &builtin_boot,
+ #ifdef SUPPORT_NETBOOT
+   &builtin_bootp,
+ #endif /* SUPPORT_NETBOOT */
++#ifdef SUPPORT_GRAPHICS
++  &builtin_border,
++#endif
+   &builtin_cat,
+   &builtin_chainloader,
++  &builtin_clear,
+   &builtin_cmp,
+   &builtin_color,
+   &builtin_configfile,
+@@ -4821,6 +5234,9 @@
+   &builtin_embed,
+   &builtin_fallback,
+   &builtin_find,
++#ifdef SUPPORT_GRAPHICS
++  &builtin_foreground,
++#endif
+   &builtin_fstest,
+   &builtin_geometry,
+   &builtin_halt,
+@@ -4848,6 +5264,7 @@
+   &builtin_parttype,
+   &builtin_password,
+   &builtin_pause,
++  &builtin_print,
+ #ifdef GRUB_UTIL
+   &builtin_quit,
+ #endif /* GRUB_UTIL */
+@@ -4864,9 +5281,13 @@
+ #endif /* SUPPORT_SERIAL */
+   &builtin_setkey,
+   &builtin_setup,
+-#if defined(SUPPORT_SERIAL) || defined(SUPPORT_HERCULES)
++#ifdef SUPPORT_GRAPHICS
++  &builtin_shade,
++  &builtin_splashimage,
++#endif /* SUPPORT_GRAPHICS */
++#if defined(SUPPORT_SERIAL) || defined(SUPPORT_HERCULES) || defined(SUPPORT_GRAPHICS)
+   &builtin_terminal,
+-#endif /* SUPPORT_SERIAL || SUPPORT_HERCULES */
++#endif /* SUPPORT_SERIAL || SUPPORT_HERCULES || SUPPORT_GRAPHICS */
+ #ifdef SUPPORT_SERIAL
+   &builtin_terminfo,
+ #endif /* SUPPORT_SERIAL */
+@@ -4880,5 +5301,8 @@
+   &builtin_unhide,
+   &builtin_uppermem,
+   &builtin_vbeprobe,
++#ifdef SUPPORT_GRAPHICS
++  &builtin_viewport,
++#endif
+   0
+ };
+diff -Naur grub-0.97.orig/stage2/char_io.c grub-0.97/stage2/char_io.c
+--- grub-0.97.orig/stage2/char_io.c	2005-02-01 12:51:23.000000000 -0800
++++ grub-0.97/stage2/char_io.c	2006-07-03 23:59:27.000000000 -0700
+@@ -29,12 +29,17 @@
+ # include <serial.h>
+ #endif
+ 
++#ifdef SUPPORT_GRAPHICS
++# include <graphics.h>
++#endif
++
+ #ifndef STAGE1_5
+ struct term_entry term_table[] =
+   {
+     {
+       "console",
+       0,
++      24,
+       console_putchar,
+       console_checkkey,
+       console_getkey,
+@@ -43,13 +48,16 @@
+       console_cls,
+       console_setcolorstate,
+       console_setcolor,
+-      console_setcursor
++      console_setcursor,
++      0, 
++      0
+     },
+ #ifdef SUPPORT_SERIAL
+     {
+       "serial",
+       /* A serial device must be initialized.  */
+       TERM_NEED_INIT,
++      24,
+       serial_putchar,
+       serial_checkkey,
+       serial_getkey,
+@@ -58,6 +66,8 @@
+       serial_cls,
+       serial_setcolorstate,
+       0,
++      0,
++      0, 
+       0
+     },
+ #endif /* SUPPORT_SERIAL */
+@@ -65,6 +75,7 @@
+     {
+       "hercules",
+       0,
++      24,
+       hercules_putchar,
+       console_checkkey,
+       console_getkey,
+@@ -73,11 +84,30 @@
+       hercules_cls,
+       hercules_setcolorstate,
+       hercules_setcolor,
+-      hercules_setcursor
++      hercules_setcursor,
++      0,
++      0
+     },      
+ #endif /* SUPPORT_HERCULES */
++#ifdef SUPPORT_GRAPHICS
++    { "graphics",
++      TERM_NEED_INIT, /* flags */
++      30, /* number of lines */
++      graphics_putchar, /* putchar */
++      console_checkkey, /* checkkey */
++      console_getkey, /* getkey */
++      graphics_getxy, /* getxy */
++      graphics_gotoxy, /* gotoxy */
++      graphics_cls, /* cls */
++      graphics_setcolorstate, /* setcolorstate */
++      graphics_setcolor, /* setcolor */
++      graphics_setcursor, /* nocursor */
++      graphics_init, /* initialize */
++      graphics_end /* shutdown */
++    },
++#endif /* SUPPORT_GRAPHICS */
+     /* This must be the last entry.  */
+-    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
++    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
+   };
+ 
+ /* This must be console.  */
+@@ -305,9 +335,10 @@
+ 
+   /* XXX: These should be defined in shared.h, but I leave these here,
+      until this code is freezed.  */
+-#define CMDLINE_WIDTH	78
+ #define CMDLINE_MARGIN	10
+-  
++
++  /* command-line limits */
++  int cmdline_width = 78, col_start = 0;
+   int xpos, lpos, c, section;
+   /* The length of PROMPT.  */
+   int plen;
+@@ -338,7 +369,7 @@
+       
+       /* If the cursor is in the first section, display the first section
+ 	 instead of the second.  */
+-      if (section == 1 && plen + lpos < CMDLINE_WIDTH)
++      if (section == 1 && plen + lpos < cmdline_width)
+ 	cl_refresh (1, 0);
+       else if (xpos - count < 1)
+ 	cl_refresh (1, 0);
+@@ -354,7 +385,7 @@
+ 		grub_putchar ('\b');
+ 	    }
+ 	  else
+-	    gotoxy (xpos, getxy () & 0xFF);
++	    gotoxy (xpos + col_start, getxy () & 0xFF);
+ 	}
+     }
+ 
+@@ -364,7 +395,7 @@
+       lpos += count;
+ 
+       /* If the cursor goes outside, scroll the screen to the right.  */
+-      if (xpos + count >= CMDLINE_WIDTH)
++      if (xpos + count >= cmdline_width)
+ 	cl_refresh (1, 0);
+       else
+ 	{
+@@ -383,7 +414,7 @@
+ 		}
+ 	    }
+ 	  else
+-	    gotoxy (xpos, getxy () & 0xFF);
++	    gotoxy (xpos + col_start, getxy () & 0xFF);
+ 	}
+     }
+ 
+@@ -398,14 +429,14 @@
+       if (full)
+ 	{
+ 	  /* Recompute the section number.  */
+-	  if (lpos + plen < CMDLINE_WIDTH)
++	  if (lpos + plen < cmdline_width)
+ 	    section = 0;
+ 	  else
+-	    section = ((lpos + plen - CMDLINE_WIDTH)
+-		       / (CMDLINE_WIDTH - 1 - CMDLINE_MARGIN) + 1);
++	    section = ((lpos + plen - cmdline_width)
++		       / (cmdline_width - 1 - CMDLINE_MARGIN) + 1);
+ 
+ 	  /* From the start to the end.  */
+-	  len = CMDLINE_WIDTH;
++	  len = cmdline_width;
+ 	  pos = 0;
+ 	  grub_putchar ('\r');
+ 
+@@ -445,8 +476,8 @@
+ 	  if (! full)
+ 	    offset = xpos - 1;
+ 	  
+-	  start = ((section - 1) * (CMDLINE_WIDTH - 1 - CMDLINE_MARGIN)
+-		   + CMDLINE_WIDTH - plen - CMDLINE_MARGIN);
++	  start = ((section - 1) * (cmdline_width - 1 - CMDLINE_MARGIN)
++		   + cmdline_width - plen - CMDLINE_MARGIN);
+ 	  xpos = lpos + 1 - start;
+ 	  start += offset;
+ 	}
+@@ -471,7 +502,7 @@
+       
+       /* If the cursor is at the last position, put `>' or a space,
+ 	 depending on if there are more characters in BUF.  */
+-      if (pos == CMDLINE_WIDTH)
++      if (pos == cmdline_width)
+ 	{
+ 	  if (start + len < llen)
+ 	    grub_putchar ('>');
+@@ -488,7 +519,7 @@
+ 	    grub_putchar ('\b');
+ 	}
+       else
+-	gotoxy (xpos, getxy () & 0xFF);
++	gotoxy (xpos + col_start, getxy () & 0xFF);
+     }
+ 
+   /* Initialize the command-line.  */
+@@ -518,10 +549,10 @@
+ 	  
+ 	  llen += l;
+ 	  lpos += l;
+-	  if (xpos + l >= CMDLINE_WIDTH)
++	  if (xpos + l >= cmdline_width)
+ 	    cl_refresh (1, 0);
+-	  else if (xpos + l + llen - lpos > CMDLINE_WIDTH)
+-	    cl_refresh (0, CMDLINE_WIDTH - xpos);
++	  else if (xpos + l + llen - lpos > cmdline_width)
++	    cl_refresh (0, cmdline_width - xpos);
+ 	  else
+ 	    cl_refresh (0, l + llen - lpos);
+ 	}
+@@ -533,12 +564,22 @@
+       grub_memmove (buf + lpos, buf + lpos + count, llen - count + 1);
+       llen -= count;
+       
+-      if (xpos + llen + count - lpos > CMDLINE_WIDTH)
+-	cl_refresh (0, CMDLINE_WIDTH - xpos);
++      if (xpos + llen + count - lpos > cmdline_width)
++	cl_refresh (0, cmdline_width - xpos);
+       else
+ 	cl_refresh (0, llen + count - lpos);
+     }
+ 
++  max_lines = current_term->max_lines;
++#ifdef SUPPORT_GRAPHICS
++  if (grub_memcmp (current_term->name, "graphics", sizeof ("graphics") - 1) == 0)
++    {
++      cmdline_width = (view_x1 - view_x0) - 2;
++      col_start = view_x0;
++      max_lines = view_y1 - view_y0;
++    }
++#endif
++
+   plen = grub_strlen (prompt);
+   llen = grub_strlen (cmdline);
+ 
+@@ -1006,6 +1047,48 @@
+ }
+ #endif /* ! STAGE1_5 */
+ 
++#ifndef STAGE1_5
++/* Internal pager.  */
++int
++do_more (void)
++{
++  if (count_lines >= 0)
++    {
++      count_lines++;
++      if (count_lines >= max_lines - 2)
++        {
++          int tmp;
++
++          /* It's important to disable the feature temporarily, because
++             the following grub_printf call will print newlines.  */
++          count_lines = -1;
++
++          grub_printf("\n");
++          if (current_term->setcolorstate)
++            current_term->setcolorstate (COLOR_STATE_HIGHLIGHT);
++
++          grub_printf ("[Hit return to continue]");
++
++          if (current_term->setcolorstate)
++            current_term->setcolorstate (COLOR_STATE_NORMAL);
++
++
++          do
++            {
++              tmp = ASCII_CHAR (getkey ());
++            }
++          while (tmp != '\n' && tmp != '\r');
++          grub_printf ("\r                        \r");
++
++          /* Restart to count lines.  */
++          count_lines = 0;
++          return 1;
++        }
++    }
++  return 0;
++}
++#endif
++
+ /* Display an ASCII character.  */
+ void
+ grub_putchar (int c)
+@@ -1034,38 +1117,11 @@
+ 
+   if (c == '\n')
+     {
++      int flag;
+       /* Internal `more'-like feature.  */
+-      if (count_lines >= 0)
+-	{
+-	  count_lines++;
+-	  if (count_lines >= max_lines - 2)
+-	    {
+-	      int tmp;
+-	      
+-	      /* It's important to disable the feature temporarily, because
+-		 the following grub_printf call will print newlines.  */
+-	      count_lines = -1;
+-
+-	      if (current_term->setcolorstate)
+-		current_term->setcolorstate (COLOR_STATE_HIGHLIGHT);
+-	      
+-	      grub_printf ("\n[Hit return to continue]");
+-
+-	      if (current_term->setcolorstate)
+-		current_term->setcolorstate (COLOR_STATE_NORMAL);
+-	      
+-	      do
+-		{
+-		  tmp = ASCII_CHAR (getkey ());
+-		}
+-	      while (tmp != '\n' && tmp != '\r');
+-	      grub_printf ("\r                        \r");
+-	      
+-	      /* Restart to count lines.  */
+-	      count_lines = 0;
+-	      return;
+-	    }
+-	}
++      flag = do_more ();
++      if (flag)
++        return;
+     }
+ 
+   current_term->putchar (c);
+@@ -1090,7 +1146,7 @@
+ cls (void)
+ {
+   /* If the terminal is dumb, there is no way to clean the terminal.  */
+-  if (current_term->flags & TERM_DUMB)
++  if (current_term->flags & TERM_DUMB) 
+     grub_putchar ('\n');
+   else
+     current_term->cls ();
+@@ -1175,13 +1231,13 @@
+ #endif /* ! STAGE1_5 */
+ 
+ int
+-memcheck (int addr, int len)
++memcheck (unsigned long int addr, unsigned long int len)
+ {
+ #ifdef GRUB_UTIL
+-  auto int start_addr (void);
+-  auto int end_addr (void);
++  auto unsigned long int start_addr (void);
++  auto int unsigned long end_addr (void);
+   
+-  auto int start_addr (void)
++  auto unsigned long int start_addr (void)
+     {
+       int ret;
+ # if defined(HAVE_START_SYMBOL)
+@@ -1192,7 +1248,7 @@
+       return ret;
+     }
+ 
+-  auto int end_addr (void)
++  auto unsigned long int end_addr (void)
+     {
+       int ret;
+ # if defined(HAVE_END_SYMBOL)
+@@ -1217,6 +1273,16 @@
+   return ! errnum;
+ }
+ 
++void
++grub_memcpy(void *dest, const void *src, int len)
++{
++  int i;
++  register char *d = (char*)dest, *s = (char*)src;
++
++  for (i = 0; i < len; i++)
++    d[i] = s[i];
++}
++
+ void *
+ grub_memmove (void *to, const void *from, int len)
+ {
+diff -Naur grub-0.97.orig/stage2/cmdline.c grub-0.97/stage2/cmdline.c
+--- grub-0.97.orig/stage2/cmdline.c	2004-08-16 16:23:01.000000000 -0700
++++ grub-0.97/stage2/cmdline.c	2006-07-03 23:58:41.000000000 -0700
+@@ -50,10 +50,11 @@
+ void
+ print_cmdline_message (int forever)
+ {
+-  printf (" [ Minimal BASH-like line editing is supported.  For the first word, TAB\n"
+-	  "   lists possible command completions.  Anywhere else TAB lists the possible\n"
+-	  "   completions of a device/filename.%s ]\n",
+-	  (forever ? "" : "  ESC at any time exits."));
++  grub_printf("       [ Minimal BASH-like line editing is supported.   For\n"
++              "         the   first   word,  TAB  lists  possible  command\n"
++              "         completions.  Anywhere else TAB lists the possible\n"
++              "         completions of a device/filename.%s ]\n",
++              (forever ? "" : "  ESC at any time\n         exits."));
+ }
+ 
+ /* Find the builtin whose command name is COMMAND and return the
+diff -Naur grub-0.97.orig/stage2/freebsd.h grub-0.97/stage2/freebsd.h
+--- grub-0.97.orig/stage2/freebsd.h	2003-07-09 04:45:52.000000000 -0700
++++ grub-0.97/stage2/freebsd.h	2006-07-03 23:59:36.000000000 -0700
+@@ -1,7 +1,7 @@
+ 
+ /*
+  *  GRUB  --  GRand Unified Bootloader
+- *  Copyright (C) 2001  Free Software Foundation, Inc.
++ *  Copyright (C) 2001, 2004  Free Software Foundation, Inc.
+  *
+  *  This program is free software; you can redistribute it and/or modify
+  *  it under the terms of the GNU General Public License as published by
+@@ -35,6 +35,10 @@
+ #define RB_CDROM        0x2000	/* use cdrom as root */
+ #define RB_GDB		0x8000	/* use GDB remote debugger instead of DDB */
+ #define RB_MUTE		0x10000	/* Come up with the console muted */
++#define RB_SELFTEST	0x20000 /* don't complete the boot; do selftest */
++#define RB_RESERVED1	0x40000 /* reserved for internal use of boot blocks */
++#define RB_RESERVED2	0x80000 /* reserved for internal use of boot blocks */
++#define RB_PAUSE	0x100000 /* pause after each output line during probe */
+ #define RB_MULTIPLE	0x20000000	/* Use multiple consoles */
+ 
+ #define RB_BOOTINFO     0x80000000	/* have `struct bootinfo *' arg */
+@@ -70,6 +74,9 @@
+ 
+ #define N_BIOS_GEOM             8
+ 
++typedef unsigned char u8_t;
++typedef unsigned int u32_t;
++
+ /*
+  * A zero bootinfo field often means that there is no info available.
+  * Flags are used to indicate the validity of fields where zero is a
+@@ -77,19 +84,33 @@
+  */
+ struct bootinfo
+   {
+-    unsigned int bi_version;
+-    unsigned char *bi_kernelname;
+-    struct nfs_diskless *bi_nfs_diskless;
++    u32_t bi_version;
++    u8_t *bi_kernelname;
++    u32_t bi_nfs_diskless;
+     /* End of fields that are always present. */
+ #define bi_endcommon            bi_n_bios_used
+-    unsigned int bi_n_bios_used;
+-    unsigned long bi_bios_geom[N_BIOS_GEOM];
+-    unsigned int bi_size;
+-    unsigned char bi_memsizes_valid;
+-    unsigned char bi_bios_dev;
+-    unsigned char bi_pad[2];
+-    unsigned long bi_basemem;
+-    unsigned long bi_extmem;
+-    unsigned long bi_symtab;
+-    unsigned long bi_esymtab;
++    u32_t bi_n_bios_used;
++    u32_t bi_bios_geom[N_BIOS_GEOM];
++    u32_t bi_size;
++    u8_t bi_memsizes_valid;
++    u8_t bi_bios_dev;
++    u8_t bi_pad[2];
++    u32_t bi_basemem;
++    u32_t bi_extmem;
++    u32_t bi_symtab;
++    u32_t bi_esymtab;
++    /* Items below only from advanced bootloader */
++    u32_t bi_kernend;
++    u32_t bi_envp;
++    u32_t bi_modulep;
+   };
++
++#define MODINFO_END		0x0000		/* End of list */
++#define MODINFO_NAME		0x0001		/* Name of module (string) */
++#define MODINFO_TYPE		0x0002		/* Type of module (string) */
++#define MODINFO_ADDR		0x0003		/* Loaded address */
++#define MODINFO_SIZE		0x0004		/* Size of module */
++#define MODINFO_EMPTY		0x0005		/* Has been deleted */
++#define MODINFO_ARGS		0x0006		/* Parameters string */
++#define MODINFO_METADATA	0x8000		/* Module-specfic */
++
+diff -Naur grub-0.97.orig/stage2/graphics.c grub-0.97/stage2/graphics.c
+--- grub-0.97.orig/stage2/graphics.c	1969-12-31 16:00:00.000000000 -0800
++++ grub-0.97/stage2/graphics.c	2006-07-03 23:58:41.000000000 -0700
+@@ -0,0 +1,585 @@
++/*
++ * graphics.c - graphics mode support for GRUB
++ * Implemented as a terminal type by Jeremy Katz <katzj@redhat.com> based
++ * on a patch by Paulo César Pereira de Andrade <pcpa@conectiva.com.br>
++ * Options and enhancements made by Herton Ronaldo Krzesinski
++ * <herton@mandriva.com>
++ *
++ *  GRUB  --  GRand Unified Bootloader
++ *  Copyright (C) 2001,2002  Red Hat, Inc.
++ *  Portions copyright (C) 2000  Conectiva, Inc.
++ *
++ *  This program is free software; you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation; either version 2 of the License, or
++ *  (at your option) any later version.
++ *
++ *  This program is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with this program; if not, write to the Free Software
++ *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
++ */
++
++#ifdef SUPPORT_GRAPHICS
++
++#include <term.h>
++#include <shared.h>
++#include <graphics.h>
++
++int saved_videomode;
++unsigned char *font8x16;
++
++int graphics_inited = 0;
++static char splashimage[256];
++
++int shade = 1, no_cursor = 0;
++
++#define VSHADOW VSHADOW1
++unsigned char VSHADOW1[38400];
++unsigned char VSHADOW2[38400];
++unsigned char VSHADOW4[38400];
++unsigned char VSHADOW8[38400];
++
++/* define the default viewable area */
++int view_x0 = 0;
++int view_y0 = 0;
++int view_x1 = 80;
++int view_y1 = 30;
++
++/* text buffer has to be kept around so that we can write things as we
++ * scroll and the like */
++unsigned short text[80 * 30];
++
++/* graphics options */
++int foreground = (63 << 16) | (63 << 8) | (63), background = 0, window_border = 0;
++
++/* current position */
++static int fontx = 0;
++static int fonty = 0;
++
++/* global state so that we don't try to recursively scroll or cursor */
++static int no_scroll = 0;
++
++/* color state */
++static int graphics_standard_color = A_NORMAL;
++static int graphics_normal_color = A_NORMAL;
++static int graphics_highlight_color = A_REVERSE;
++static int graphics_current_color = A_NORMAL;
++static color_state graphics_color_state = COLOR_STATE_STANDARD;
++
++static inline void outb(unsigned short port, unsigned char val)
++{
++    __asm __volatile ("outb %0,%1"::"a" (val), "d" (port));
++}
++
++static void MapMask(int value) {
++    outb(0x3c4, 2);
++    outb(0x3c5, value);
++}
++
++/* bit mask register */
++static void BitMask(int value) {
++    outb(0x3ce, 8);
++    outb(0x3cf, value);
++}
++
++/* move the graphics cursor location to col, row */
++static void graphics_setxy(int col, int row) {
++    if (col >= view_x0 && col < view_x1) {
++        fontx = col;
++        cursorX = col << 3;
++    }
++    if (row >= view_y0 && row < view_y1) {
++        fonty = row;
++        cursorY = row << 4;
++    }
++}
++
++/* scroll the screen */
++static void graphics_scroll() {
++    int i, j, k;
++
++    /* we don't want to scroll recursively... that would be bad */
++    if (no_scroll)
++        return;
++    no_scroll = 1;
++
++    /* disable pager temporarily */
++    k = count_lines;
++    count_lines = -1;
++    
++    /* move everything up a line */
++    for (j = view_y0 + 1; j < view_y1; j++) {
++        graphics_gotoxy(view_x0, j - 1);
++        for (i = view_x0; i < view_x1; i++) {
++            graphics_putchar(text[j * 80 + i]);
++        }
++    }
++
++    /* last line should be blank */
++    graphics_gotoxy(view_x0, view_y1 - 1);
++    for (i = view_x0; i < view_x1; i++)
++        graphics_putchar(' ');
++    graphics_setxy(view_x0, view_y1 - 1);
++
++    count_lines = k;
++
++    no_scroll = 0;
++}
++
++/* Set the splash image */
++void graphics_set_splash(char *splashfile) {
++    grub_strcpy(splashimage, splashfile);
++}
++
++/* Get the current splash image */
++char *graphics_get_splash(void) {
++    return splashimage;
++}
++
++/* 
++ * Initialize a vga16 graphics display with the palette based off of
++ * the image in splashimage.  If the image doesn't exist, leave graphics
++ * mode. The mode initiated is 12h. From "Ralf Brown's Interrupt List":
++ *      text/ text pixel   pixel   colors disply scrn  system
++ *      grph resol  box  resolution       pages  addr
++ * 12h   G   80x30  8x16  640x480  16/256K  .    A000  VGA,ATI VIP
++ *       G   80x30  8x16  640x480  16/64    .    A000  ATI EGA Wonder
++ *       G     .     .    640x480  16       .      .   UltraVision+256K EGA
++ */
++int graphics_init()
++{
++    if (!graphics_inited) {
++        saved_videomode = set_videomode(0x12);
++        if (get_videomode() != 0x12) {
++            set_videomode(saved_videomode);
++            return 0;
++        }
++        graphics_inited = 1;
++    }
++    else
++        return 1;
++
++    font8x16 = (unsigned char*)graphics_get_font();
++
++    /* make sure that the highlight color is set correctly */
++    graphics_highlight_color = ((graphics_normal_color >> 4) | 
++                                ((graphics_normal_color & 0xf) << 4));
++
++    graphics_cls();
++
++    if (!read_image(splashimage)) {
++        grub_printf("Failed to read splash image (%s)\n", splashimage);
++        grub_printf("Press any key to continue...");
++        getkey();
++        set_videomode(saved_videomode);
++        graphics_inited = 0;
++        return 0;
++    }
++
++    set_int1c_handler();
++
++    return 1;
++}
++
++/* Leave graphics mode */
++void graphics_end(void)
++{
++    if (graphics_inited) {
++        unset_int1c_handler();
++        set_videomode(saved_videomode);
++        graphics_inited = 0;
++        no_cursor = 0;
++    }
++}
++
++/* Print ch on the screen.  Handle any needed scrolling or the like */
++void graphics_putchar(int ch) {
++    ch &= 0xff;
++
++    graphics_cursor(0);
++
++    if (ch == '\n') {
++        if (fonty + 1 < view_y1)
++            graphics_setxy(fontx, fonty + 1);
++        else
++            graphics_scroll();
++        graphics_cursor(1);
++        return;
++    } else if (ch == '\r') {
++        graphics_setxy(view_x0, fonty);
++        graphics_cursor(1);
++        return;
++    }
++
++    graphics_cursor(0);
++
++    text[fonty * 80 + fontx] = ch;
++    text[fonty * 80 + fontx] &= 0x00ff;
++    if (graphics_current_color & 0xf0)
++        text[fonty * 80 + fontx] |= 0x100;
++
++    graphics_cursor(0);
++
++    if ((fontx + 1) >= view_x1) {
++        graphics_setxy(view_x0, fonty);
++        if (fonty + 1 < view_y1)
++            graphics_setxy(view_x0, fonty + 1);
++        else
++            graphics_scroll();
++        graphics_cursor(1);
++        do_more ();
++        graphics_cursor(0);
++    } else {
++        graphics_setxy(fontx + 1, fonty);
++    }
++
++    graphics_cursor(1);
++}
++
++/* get the current location of the cursor */
++int graphics_getxy(void) {
++    return (fontx << 8) | fonty;
++}
++
++void graphics_gotoxy(int x, int y) {
++    graphics_cursor(0);
++
++    graphics_setxy(x, y);
++
++    graphics_cursor(1);
++}
++
++void graphics_cls(void) {
++    int i;
++    unsigned char *mem, *s1, *s2, *s4, *s8;
++
++    graphics_cursor(0);
++    graphics_gotoxy(view_x0, view_y0);
++
++    mem = (unsigned char*)VIDEOMEM;
++    s1 = (unsigned char*)VSHADOW1;
++    s2 = (unsigned char*)VSHADOW2;
++    s4 = (unsigned char*)VSHADOW4;
++    s8 = (unsigned char*)VSHADOW8;
++
++    for (i = 0; i < 80 * 30; i++)
++        text[i] = ' ';
++    graphics_cursor(1);
++
++    BitMask(0xff);
++
++    /* plane 1 */
++    MapMask(1);
++    grub_memcpy(mem, s1, 38400);
++
++    /* plane 2 */
++    MapMask(2);
++    grub_memcpy(mem, s2, 38400);
++
++    /* plane 3 */
++    MapMask(4);
++    grub_memcpy(mem, s4, 38400);
++
++    /* plane 4 */
++    MapMask(8);
++    grub_memcpy(mem, s8, 38400);
++
++    MapMask(15);
++
++    if (no_cursor) {
++        no_cursor = 0;
++        set_int1c_handler();
++    }
++}
++
++void graphics_setcolorstate (color_state state) {
++    switch (state) {
++    case COLOR_STATE_STANDARD:
++        graphics_current_color = graphics_standard_color;
++        break;
++    case COLOR_STATE_NORMAL:
++        graphics_current_color = graphics_normal_color;
++        break;
++    case COLOR_STATE_HIGHLIGHT:
++        graphics_current_color = graphics_highlight_color;
++        break;
++    default:
++        graphics_current_color = graphics_standard_color;
++        break;
++    }
++
++    graphics_color_state = state;
++}
++
++void graphics_setcolor (int normal_color, int highlight_color) {
++    graphics_normal_color = normal_color;
++    graphics_highlight_color = highlight_color;
++
++    graphics_setcolorstate (graphics_color_state);
++}
++
++int graphics_setcursor (int on) {
++    if (!no_cursor && !on) {
++        no_cursor = 1;
++        unset_int1c_handler();
++        graphics_cursor(0);
++    }
++    else if(no_cursor && on) {
++        no_cursor = 0;
++        set_int1c_handler();
++        graphics_cursor(1);
++    }
++    return 0;
++}
++
++/* Read in the splashscreen image and set the palette up appropriately.
++ * Format of splashscreen is an xpm (can be gzipped) with 16 colors and
++ * 640x480. */
++int read_image(char *s)
++{
++    char buf[32], pal[16], c;
++    unsigned char base, mask, *s1, *s2, *s4, *s8;
++    unsigned i, len, idx, colors, x, y, width, height;
++
++    if (!grub_open(s))
++        return 0;
++
++    /* read header */
++    if (!grub_read((char*)&buf, 10) || grub_memcmp(buf, "/* XPM */\n", 10)) {
++        grub_close();
++        return 0;
++    }
++    
++    /* parse info */
++    while (grub_read(&c, 1)) {
++        if (c == '"')
++            break;
++    }
++
++    while (grub_read(&c, 1) && (c == ' ' || c == '\t'))
++        ;
++
++    i = 0;
++    width = c - '0';
++    while (grub_read(&c, 1)) {
++        if (c >= '0' && c <= '9')
++            width = width * 10 + c - '0';
++        else
++            break;
++    }
++    while (grub_read(&c, 1) && (c == ' ' || c == '\t'))
++        ;
++
++    height = c - '0';
++    while (grub_read(&c, 1)) {
++        if (c >= '0' && c <= '9')
++            height = height * 10 + c - '0';
++        else
++            break;
++    }
++    while (grub_read(&c, 1) && (c == ' ' || c == '\t'))
++        ;
++
++    colors = c - '0';
++    while (grub_read(&c, 1)) {
++        if (c >= '0' && c <= '9')
++            colors = colors * 10 + c - '0';
++        else
++            break;
++    }
++
++    base = 0;
++    while (grub_read(&c, 1) && c != '"')
++        ;
++
++    /* palette */
++    for (i = 0, idx = 1; i < colors; i++) {
++        len = 0;
++
++        while (grub_read(&c, 1) && c != '"')
++            ;
++        grub_read(&c, 1);       /* char */
++        base = c;
++        grub_read(buf, 4);      /* \t c # */
++
++        while (grub_read(&c, 1) && c != '"') {
++            if (len < sizeof(buf))
++                buf[len++] = c;
++        }
++
++        if (len == 6 && idx < 15) {
++            int r = ((hex(buf[0]) << 4) | hex(buf[1])) >> 2;
++            int g = ((hex(buf[2]) << 4) | hex(buf[3])) >> 2;
++            int b = ((hex(buf[4]) << 4) | hex(buf[5])) >> 2;
++
++            pal[idx] = base;
++            graphics_set_palette(idx, r, g, b);
++            ++idx;
++        }
++    }
++
++    x = y = len = 0;
++
++    s1 = (unsigned char*)VSHADOW1;
++    s2 = (unsigned char*)VSHADOW2;
++    s4 = (unsigned char*)VSHADOW4;
++    s8 = (unsigned char*)VSHADOW8;
++
++    for (i = 0; i < 38400; i++)
++        s1[i] = s2[i] = s4[i] = s8[i] = 0;
++
++    /* parse xpm data */
++    while (y < height) {
++        while (1) {
++            if (!grub_read(&c, 1)) {
++                grub_close();
++                return 0;
++            }
++            if (c == '"')
++                break;
++        }
++
++        while (grub_read(&c, 1) && c != '"') {
++            for (i = 1; i < 15; i++)
++                if (pal[i] == c) {
++                    c = i;
++                    break;
++                }
++
++            mask = 0x80 >> (x & 7);
++            if (c & 1)
++                s1[len + (x >> 3)] |= mask;
++            if (c & 2)
++                s2[len + (x >> 3)] |= mask;
++            if (c & 4)
++                s4[len + (x >> 3)] |= mask;
++            if (c & 8)
++                s8[len + (x >> 3)] |= mask;
++
++            if (++x >= 640) {
++                x = 0;
++
++                if (y < 480)
++                    len += 80;
++                ++y;
++            }
++        }
++    }
++
++    grub_close();
++
++    graphics_set_palette(0, (background >> 16), (background >> 8) & 63, 
++                background & 63);
++    graphics_set_palette(15, (foreground >> 16), (foreground >> 8) & 63, 
++                foreground & 63);
++    graphics_set_palette(0x11, (window_border >> 16), (window_border >> 8) & 63, 
++                         window_border & 63);
++
++    return 1;
++}
++
++/* Convert a character which is a hex digit to the appropriate integer */
++int hex(int v)
++{
++    if (v >= 'A' && v <= 'F')
++        return (v - 'A' + 10);
++    if (v >= 'a' && v <= 'f')
++        return (v - 'a' + 10);
++    return (v - '0');
++}
++
++void graphics_cursor(int set) {
++    unsigned char *pat, *mem, *ptr, chr[16 << 2];
++    int i, ch, invert, offset;
++
++    if (set && (no_cursor || no_scroll))
++        return;
++
++    offset = cursorY * 80 + fontx;
++    ch = text[fonty * 80 + fontx] & 0xff;
++    invert = (text[fonty * 80 + fontx] & 0xff00) != 0;
++    pat = font8x16 + (ch << 4);
++
++    mem = (unsigned char*)VIDEOMEM + offset;
++
++    if (!set) {
++        for (i = 0; i < 16; i++) {
++            unsigned char mask = pat[i];
++
++            if (!invert) {
++                chr[i     ] = ((unsigned char*)VSHADOW1)[offset];
++                chr[16 + i] = ((unsigned char*)VSHADOW2)[offset];
++                chr[32 + i] = ((unsigned char*)VSHADOW4)[offset];
++                chr[48 + i] = ((unsigned char*)VSHADOW8)[offset];
++
++                if (shade) {
++                    if (ch == DISP_VERT || ch == DISP_LL ||
++                        ch == DISP_UR || ch == DISP_LR) {
++                        unsigned char pmask = ~(pat[i] >> 1);
++
++                        chr[i     ] &= pmask;
++                        chr[16 + i] &= pmask;
++                        chr[32 + i] &= pmask;
++                        chr[48 + i] &= pmask;
++                    }
++                    if (i > 0 && ch != DISP_VERT) {
++                        unsigned char pmask = ~(pat[i - 1] >> 1);
++
++                        chr[i     ] &= pmask;
++                        chr[16 + i] &= pmask;
++                        chr[32 + i] &= pmask;
++                        chr[48 + i] &= pmask;
++                        if (ch == DISP_HORIZ || ch == DISP_UR || ch == DISP_LR) {
++                            pmask = ~pat[i - 1];
++
++                            chr[i     ] &= pmask;
++                            chr[16 + i] &= pmask;
++                            chr[32 + i] &= pmask;
++                            chr[48 + i] &= pmask;
++                        }
++                    }
++                }
++                chr[i     ] |= mask;
++                chr[16 + i] |= mask;
++                chr[32 + i] |= mask;
++                chr[48 + i] |= mask;
++
++                offset += 80;
++            }
++            else {
++                chr[i     ] = mask;
++                chr[16 + i] = mask;
++                chr[32 + i] = mask;
++                chr[48 + i] = mask;
++            }
++        }
++    }
++    else {
++        MapMask(15);
++        ptr = mem;
++        for (i = 0; i < 16; i++, ptr += 80) {
++            cursorBuf[i] = pat[i];
++            *ptr = ~pat[i];
++        }
++        return;
++    }
++
++    offset = 0;
++    for (i = 1; i < 16; i <<= 1, offset += 16) {
++        int j;
++
++        MapMask(i);
++        ptr = mem;
++        for (j = 0; j < 16; j++, ptr += 80)
++            *ptr = chr[j + offset];
++    }
++
++    MapMask(15);
++}
++
++#endif /* SUPPORT_GRAPHICS */
+diff -Naur grub-0.97.orig/stage2/graphics.h grub-0.97/stage2/graphics.h
+--- grub-0.97.orig/stage2/graphics.h	1969-12-31 16:00:00.000000000 -0800
++++ grub-0.97/stage2/graphics.h	2006-07-03 23:58:41.000000000 -0700
+@@ -0,0 +1,44 @@
++/* graphics.h - graphics console interface */
++/*
++ *  GRUB  --  GRand Unified Bootloader
++ *  Copyright (C) 2002  Free Software Foundation, Inc.
++ *
++ *  This program is free software; you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation; either version 2 of the License, or
++ *  (at your option) any later version.
++ *
++ *  This program is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with this program; if not, write to the Free Software
++ *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
++ */
++
++#ifndef GRAPHICS_H
++#define GRAPHICS_H
++
++/* magic constant */
++#define VIDEOMEM 0xA0000
++
++/* function prototypes */
++char *graphics_get_splash(void);
++
++int read_image(char *s);
++void graphics_cursor(int set);
++
++/* function prototypes for asm functions */
++void * graphics_get_font();
++void graphics_set_palette(int idx, int red, int green, int blue);
++void set_int1c_handler();
++void unset_int1c_handler();
++
++extern short cursorX, cursorY;
++extern char cursorBuf[16];
++extern int shade;
++extern int view_x0, view_y0, view_x1, view_y1;
++
++#endif /* GRAPHICS_H */
+diff -Naur grub-0.97.orig/stage2/Makefile.am grub-0.97/stage2/Makefile.am
+--- grub-0.97.orig/stage2/Makefile.am	2005-02-02 12:37:35.000000000 -0800
++++ grub-0.97/stage2/Makefile.am	2006-07-03 23:58:41.000000000 -0700
+@@ -7,7 +7,7 @@
+         fat.h filesys.h freebsd.h fs.h hercules.h i386-elf.h \
+ 	imgact_aout.h iso9660.h jfs.h mb_header.h mb_info.h md5.h \
+ 	nbi.h pc_slice.h serial.h shared.h smp-imps.h term.h \
+-	terminfo.h tparm.h nbi.h ufs2.h vstafs.h xfs.h
++	terminfo.h tparm.h nbi.h ufs2.h vstafs.h xfs.h graphics.h
+ EXTRA_DIST = setjmp.S apm.S $(noinst_SCRIPTS)
+ 
+ # For <stage1.h>.
+@@ -19,7 +19,7 @@
+ 	disk_io.c fsys_ext2fs.c fsys_fat.c fsys_ffs.c fsys_iso9660.c \
+ 	fsys_jfs.c fsys_minix.c fsys_reiserfs.c fsys_ufs2.c \
+ 	fsys_vstafs.c fsys_xfs.c gunzip.c md5.c serial.c stage2.c \
+-	terminfo.c tparm.c
++	terminfo.c tparm.c graphics.c
+ libgrub_a_CFLAGS = $(GRUB_CFLAGS) -I$(top_srcdir)/lib \
+ 	-DGRUB_UTIL=1 -DFSYS_EXT2FS=1 -DFSYS_FAT=1 -DFSYS_FFS=1 \
+ 	-DFSYS_ISO9660=1 -DFSYS_JFS=1 -DFSYS_MINIX=1 -DFSYS_REISERFS=1 \
+@@ -79,8 +79,14 @@
+ HERCULES_FLAGS =
+ endif
+ 
++if GRAPHICS_SUPPORT
++GRAPHICS_FLAGS = -DSUPPORT_GRAPHICS=1
++else
++GRAPHICS_FLAGS =
++endif
++
+ STAGE2_COMPILE = $(STAGE2_CFLAGS) -fno-builtin -nostdinc \
+-	$(NETBOOT_FLAGS) $(SERIAL_FLAGS) $(HERCULES_FLAGS)
++	$(NETBOOT_FLAGS) $(SERIAL_FLAGS) $(HERCULES_FLAGS) $(GRAPHICS_FLAGS)
+ 
+ STAGE1_5_LINK = -nostdlib -Wl,-N -Wl,-Ttext -Wl,2000
+ STAGE1_5_COMPILE = $(STAGE2_COMPILE) -DNO_DECOMPRESSION=1 -DSTAGE1_5=1
+@@ -90,7 +96,8 @@
+ 	cmdline.c common.c console.c disk_io.c fsys_ext2fs.c \
+ 	fsys_fat.c fsys_ffs.c fsys_iso9660.c fsys_jfs.c fsys_minix.c \
+ 	fsys_reiserfs.c fsys_ufs2.c fsys_vstafs.c fsys_xfs.c gunzip.c \
+-	hercules.c md5.c serial.c smp-imps.c stage2.c terminfo.c tparm.c
++	hercules.c md5.c serial.c smp-imps.c stage2.c terminfo.c tparm.c \
++	graphics.c
+ pre_stage2_exec_CFLAGS = $(STAGE2_COMPILE) $(FSYS_CFLAGS)
+ pre_stage2_exec_CCASFLAGS = $(STAGE2_COMPILE) $(FSYS_CFLAGS)
+ pre_stage2_exec_LDFLAGS = $(PRE_STAGE2_LINK)
+diff -Naur grub-0.97.orig/stage2/shared.h grub-0.97/stage2/shared.h
+--- grub-0.97.orig/stage2/shared.h	2004-06-19 09:40:09.000000000 -0700
++++ grub-0.97/stage2/shared.h	2006-07-04 00:01:50.000000000 -0700
+@@ -499,7 +499,11 @@
+   unsigned char linear_reserved_field_position;
+   unsigned long max_pixel_clock;
+ 
+-  unsigned char reserved3[189];
++  /* Reserved field to make structure to be 256 bytes long, VESA BIOS 
++     Extension 3.0 Specification says to reserve 189 bytes here but 
++     that doesn't make structure to be 256 bytes.  So additional one is 
++     added here.  */
++  unsigned char reserved3[189 + 1];
+ } __attribute__ ((packed));
+ 
+ 
+@@ -792,6 +796,11 @@
+ /* Set the cursor position. */
+ void gotoxy (int x, int y);
+ 
++/* Internal pager
++   Returns 1 = if pager was used
++           0 = if pager wasn't used  */
++int do_more (void);
++
+ /* Displays an ASCII character.  IBM displays will translate some
+    characters to special graphical ones (see the DISP_* constants). */
+ void grub_putchar (int c);
+@@ -871,6 +880,7 @@
+ int grub_tolower (int c);
+ int grub_isspace (int c);
+ int grub_strncat (char *s1, const char *s2, int n);
++void grub_memcpy(void *dest, const void *src, int len);
+ void *grub_memmove (void *to, const void *from, int len);
+ void *grub_memset (void *start, int c, int len);
+ int grub_strncat (char *s1, const char *s2, int n);
+@@ -911,7 +921,7 @@
+ int nul_terminate (char *str);
+ int get_based_digit (int c, int base);
+ int safe_parse_maxint (char **str_ptr, int *myint_ptr);
+-int memcheck (int start, int len);
++int memcheck (unsigned long int start, unsigned long int len);
+ void grub_putstr (const char *str);
+ 
+ #ifndef NO_DECOMPRESSION
+diff -Naur grub-0.97.orig/stage2/stage2.c grub-0.97/stage2/stage2.c
+--- grub-0.97.orig/stage2/stage2.c	2005-03-19 09:51:57.000000000 -0800
++++ grub-0.97/stage2/stage2.c	2006-07-04 00:01:50.000000000 -0700
+@@ -20,6 +20,12 @@
+ #include <shared.h>
+ #include <term.h>
+ 
++#ifdef SUPPORT_GRAPHICS
++# include <graphics.h>
++#endif
++
++int col_start, col_end, row_start, box_size;
++
+ grub_jmp_buf restart_env;
+ 
+ #if defined(PRESET_MENU_STRING) || defined(SUPPORT_DISKLESS)
+@@ -105,13 +111,13 @@
+   if (highlight && current_term->setcolorstate)
+     current_term->setcolorstate (COLOR_STATE_HIGHLIGHT);
+ 
+-  gotoxy (2, y);
++  gotoxy (2 + col_start, y);
+   grub_putchar (' ');
+-  for (x = 3; x < 75; x++)
++  for (x = 3 + col_start; x < (col_end - 5); x++)
+     {
+-      if (*entry && x <= 72)
++      if (*entry && x <= (col_end - 8))
+ 	{
+-	  if (x == 72)
++	  if (x == (col_end - 8))
+ 	    grub_putchar (DISP_RIGHT);
+ 	  else
+ 	    grub_putchar (*entry++);
+@@ -119,7 +125,7 @@
+       else
+ 	grub_putchar (' ');
+     }
+-  gotoxy (74, y);
++  gotoxy ((col_end - 6), y);
+ 
+   if (current_term->setcolorstate)
+     current_term->setcolorstate (COLOR_STATE_STANDARD);
+@@ -131,7 +137,7 @@
+ {
+   int i;
+   
+-  gotoxy (77, y + 1);
++  gotoxy ((col_end - 3), y + 1);
+ 
+   if (first)
+     grub_putchar (DISP_UP);
+@@ -151,14 +157,14 @@
+ 	menu_entries++;
+     }
+ 
+-  gotoxy (77, y + size);
++  gotoxy ((col_end - 3), y + size);
+ 
+   if (*menu_entries)
+     grub_putchar (DISP_DOWN);
+   else
+     grub_putchar (' ');
+ 
+-  gotoxy (74, y + entryno + 1);
++  gotoxy ((col_end - 6), y + entryno + 1);
+ }
+ 
+ static void
+@@ -196,30 +202,30 @@
+   if (current_term->setcolorstate)
+     current_term->setcolorstate (COLOR_STATE_NORMAL);
+   
+-  gotoxy (1, y);
++  gotoxy (1 + col_start, y);
+ 
+   grub_putchar (DISP_UL);
+-  for (i = 0; i < 73; i++)
++  for (i = col_start; i < (col_end - 7); i++)
+     grub_putchar (DISP_HORIZ);
+   grub_putchar (DISP_UR);
+ 
+   i = 1;
+   while (1)
+     {
+-      gotoxy (1, y + i);
++      gotoxy (1 + col_start, y + i);
+ 
+       if (i > size)
+ 	break;
+       
+       grub_putchar (DISP_VERT);
+-      gotoxy (75, y + i);
++      gotoxy ((col_end - 5), y + i);
+       grub_putchar (DISP_VERT);
+ 
+       i++;
+     }
+ 
+   grub_putchar (DISP_LL);
+-  for (i = 0; i < 73; i++)
++  for (i = col_start; i < (col_end - 7); i++)
+     grub_putchar (DISP_HORIZ);
+   grub_putchar (DISP_LR);
+ 
+@@ -233,6 +239,7 @@
+ {
+   int c, time1, time2 = -1, first_entry = 0;
+   char *cur_entry = 0;
++  struct term_entry *prev_term = NULL;
+ 
+   /*
+    *  Main loop for menu UI.
+@@ -250,6 +257,22 @@
+ 	}
+     }
+ 
++  col_start = 0;
++  col_end = 80;
++  row_start = 0;
++  box_size = 12;
++  /* if we're using viewport we need to make sure to setup
++     coordinates correctly.  */
++#ifdef SUPPORT_GRAPHICS
++  if (grub_memcmp (current_term->name, "graphics", sizeof ("graphics") - 1) == 0)
++    {
++      col_start = view_x0;
++      col_end = view_x1;
++      row_start = view_y0;
++      box_size = (view_y1 - view_y0) - 13;
++    }
++#endif
++
+   /* If the timeout was expired or wasn't set, force to show the menu
+      interface. */
+   if (grub_timeout < 0)
+@@ -302,36 +325,36 @@
+       if (current_term->flags & TERM_DUMB)
+ 	print_entries_raw (num_entries, first_entry, menu_entries);
+       else
+-	print_border (3, 12);
++	print_border (3 + row_start, box_size);
+ 
+       grub_printf ("\n\
+-      Use the %c and %c keys to select which entry is highlighted.\n",
++    Use the %c and %c keys to select which entry is highlighted.\n",
+ 		   DISP_UP, DISP_DOWN);
+       
+       if (! auth && password)
+ 	{
+ 	  printf ("\
+-      Press enter to boot the selected OS or \'p\' to enter a\n\
+-      password to unlock the next set of features.");
++    Press enter to boot the selected OS or \'p\' to enter a\n\
++    password to unlock the next set of features.");
+ 	}
+       else
+ 	{
+ 	  if (config_entries)
+ 	    printf ("\
+-      Press enter to boot the selected OS, \'e\' to edit the\n\
+-      commands before booting, or \'c\' for a command-line.");
++    Press enter to boot the selected OS, \'e\' to edit the\n\
++    commands before booting, or \'c\' for a command-line.");
+ 	  else
+ 	    printf ("\
+-      Press \'b\' to boot, \'e\' to edit the selected command in the\n\
+-      boot sequence, \'c\' for a command-line, \'o\' to open a new line\n\
+-      after (\'O\' for before) the selected line, \'d\' to remove the\n\
+-      selected line, or escape to go back to the main menu.");
++    Press \'b\' to boot, \'e\' to edit the selected command in the\n\
++    boot sequence, \'c\' for a command-line, \'o\' to open a new line\n\
++    after (\'O\' for before) the selected line, \'d\' to remove the\n\
++    selected line, or escape to go back to the main menu.");
+ 	}
+ 
+       if (current_term->flags & TERM_DUMB)
+ 	grub_printf ("\n\nThe selected entry is %d ", entryno);
+       else
+-	print_entries (3, 12, first_entry, entryno, menu_entries);
++	print_entries (3 + row_start, box_size, first_entry, entryno, menu_entries);
+     }
+ 
+   /* XX using RT clock now, need to initialize value */
+@@ -358,10 +381,10 @@
+ 			   entryno, grub_timeout);
+ 	  else
+ 	    {
+-	      gotoxy (3, 22);
+-	      grub_printf ("The highlighted entry will be booted automatically in %d seconds.    ",
++	      gotoxy (3 + col_start, 10 + box_size + row_start);
++	      grub_printf (" The highlighted entry will be booted automatically in %d seconds.   ",
+ 			   grub_timeout);
+-	      gotoxy (74, 4 + entryno);
++	      gotoxy ((col_end - 6), 4 + entryno + row_start);
+ 	  }
+ 	  
+ 	  grub_timeout--;
+@@ -387,12 +410,12 @@
+ 	      if (current_term->flags & TERM_DUMB)
+ 		grub_putchar ('\r');
+ 	      else
+-		gotoxy (3, 22);
++		gotoxy (3 + col_start, 10 + box_size + row_start);
+ 	      printf ("                                                                    ");
+ 	      grub_timeout = -1;
+ 	      fallback_entryno = -1;
+ 	      if (! (current_term->flags & TERM_DUMB))
+-		gotoxy (74, 4 + entryno);
++		gotoxy ((col_end - 6), 4 + entryno + row_start);
+ 	    }
+ 
+ 	  /* We told them above (at least in SUPPORT_SERIAL) to use
+@@ -408,12 +431,12 @@
+ 		{
+ 		  if (entryno > 0)
+ 		    {
+-		      print_entry (4 + entryno, 0,
++		      print_entry (4 + entryno + row_start, 0,
+ 				   get_entry (menu_entries,
+ 					      first_entry + entryno,
+ 					      0));
+ 		      entryno--;
+-		      print_entry (4 + entryno, 1,
++		      print_entry (4 + entryno + row_start, 1,
+ 				   get_entry (menu_entries,
+ 					      first_entry + entryno,
+ 					      0));
+@@ -421,7 +444,7 @@
+ 		  else if (first_entry > 0)
+ 		    {
+ 		      first_entry--;
+-		      print_entries (3, 12, first_entry, entryno,
++		      print_entries (3 + row_start, box_size, first_entry, entryno,
+ 				     menu_entries);
+ 		    }
+ 		}
+@@ -433,29 +456,29 @@
+ 		entryno++;
+ 	      else
+ 		{
+-		  if (entryno < 11)
++		  if (entryno < (box_size - 1))
+ 		    {
+-		      print_entry (4 + entryno, 0,
++		      print_entry (4 + entryno + row_start, 0,
+ 				   get_entry (menu_entries,
+ 					      first_entry + entryno,
+ 					      0));
+ 		      entryno++;
+-		      print_entry (4 + entryno, 1,
++		      print_entry (4 + entryno + row_start, 1,
+ 				   get_entry (menu_entries,
+ 					      first_entry + entryno,
+ 					      0));
+ 		  }
+-		else if (num_entries > 12 + first_entry)
++		else if (num_entries > box_size + first_entry)
+ 		  {
+ 		    first_entry++;
+-		    print_entries (3, 12, first_entry, entryno, menu_entries);
++		    print_entries (3 + row_start, box_size, first_entry, entryno, menu_entries);
+ 		  }
+ 		}
+ 	    }
+ 	  else if (c == 7)
+ 	    {
+ 	      /* Page Up */
+-	      first_entry -= 12;
++	      first_entry -= box_size;
+ 	      if (first_entry < 0)
+ 		{
+ 		  entryno += first_entry;
+@@ -463,20 +486,20 @@
+ 		  if (entryno < 0)
+ 		    entryno = 0;
+ 		}
+-	      print_entries (3, 12, first_entry, entryno, menu_entries);
++	      print_entries (3 + row_start, box_size, first_entry, entryno, menu_entries);
+ 	    }
+ 	  else if (c == 3)
+ 	    {
+ 	      /* Page Down */
+-	      first_entry += 12;
++	      first_entry += box_size;
+ 	      if (first_entry + entryno + 1 >= num_entries)
+ 		{
+-		  first_entry = num_entries - 12;
++		  first_entry = num_entries - box_size;
+ 		  if (first_entry < 0)
+ 		    first_entry = 0;
+ 		  entryno = num_entries - first_entry - 1;
+ 		}
+-	      print_entries (3, 12, first_entry, entryno, menu_entries);
++	      print_entries (3 + row_start, box_size, first_entry, entryno, menu_entries);
+ 	    }
+ 
+ 	  if (config_entries)
+@@ -489,7 +512,7 @@
+ 	      if ((c == 'd') || (c == 'o') || (c == 'O'))
+ 		{
+ 		  if (! (current_term->flags & TERM_DUMB))
+-		    print_entry (4 + entryno, 0,
++		    print_entry (4 + entryno + row_start, 0,
+ 				 get_entry (menu_entries,
+ 					    first_entry + entryno,
+ 					    0));
+@@ -537,7 +560,7 @@
+ 
+ 		      if (entryno >= num_entries)
+ 			entryno--;
+-		      if (first_entry && num_entries < 12 + first_entry)
++		      if (first_entry && num_entries < box_size + first_entry)
+ 			first_entry--;
+ 		    }
+ 
+@@ -549,7 +572,7 @@
+ 		      grub_printf ("\n");
+ 		    }
+ 		  else
+-		    print_entries (3, 12, first_entry, entryno, menu_entries);
++		    print_entries (3 + row_start, box_size, first_entry, entryno, menu_entries);
+ 		}
+ 
+ 	      cur_entry = menu_entries;
+@@ -570,7 +593,7 @@
+ 		  if (current_term->flags & TERM_DUMB)
+ 		    grub_printf ("\r                                    ");
+ 		  else
+-		    gotoxy (1, 21);
++		    gotoxy (1 + col_start, 9 + box_size + row_start);
+ 
+ 		  /* Wipe out the previously entered password */
+ 		  grub_memset (entered, 0, sizeof (entered));
+@@ -651,7 +674,10 @@
+ 		  *(new_heap++) = 0;
+ 
+ 		  if (config_entries)
+-		    run_menu (heap, NULL, new_num_entries, new_heap, 0);
++		    {
++		      current_entryno = first_entry + entryno;
++		      run_menu (heap, NULL, new_num_entries, new_heap, 0);
++		    }
+ 		  else
+ 		    {
+ 		      cls ();
+@@ -714,6 +740,15 @@
+   
+   cls ();
+   setcursor (1);
++  /* if our terminal needed initialization, we should shut it down
++   * before booting the kernel, but we want to save what it was so
++   * we can come back if needed */
++  prev_term = current_term;
++  if (current_term->shutdown) 
++    {
++      current_term->shutdown();
++      current_term = term_table; /* assumption: console is first */
++    }
+   
+   while (1)
+     {
+@@ -727,7 +762,8 @@
+ 	cur_entry = get_entry (config_entries, first_entry + entryno, 1);
+ 
+       /* Set CURRENT_ENTRYNO for the command "savedefault".  */
+-      current_entryno = first_entry + entryno;
++      if (config_entries)
++	current_entryno = first_entry + entryno;
+       
+       if (run_script (cur_entry, heap))
+ 	{
+@@ -748,6 +784,13 @@
+ 	break;
+     }
+ 
++  /* if we get back here, we should go back to what our term was before */
++  current_term = prev_term;
++  if (current_term->startup)
++      /* if our terminal fails to initialize, fall back to console since
++       * it should always work */
++      if (current_term->startup() == 0)
++          current_term = term_table; /* we know that console is first */
+   show_menu = 1;
+   goto restart;
+ }
+@@ -891,8 +934,18 @@
+ 	      len = grub_read (buf, sizeof (buf));
+ 	      if (len > 0)
+ 		{
++		  char *tmp;
++		  char *def;
+ 		  buf[sizeof (buf) - 1] = 0;
+-		  safe_parse_maxint (&p, &saved_entryno);
++
++		  if((tmp = grub_strstr(p, ":")) != NULL)
++		  {
++		    *tmp++;
++		    grub_memcpy(&def, &tmp, sizeof(p));
++		  }else
++		    grub_memcpy(&def, &p, sizeof(p));
++		  
++		  safe_parse_maxint (&def, &saved_entryno);
+ 		}
+ 
+ 	      grub_close ();
+@@ -1050,6 +1103,16 @@
+ 	  while (is_preset);
+ 	}
+ 
++      /* go ahead and make sure the terminal is setup */
++      if (current_term->startup)
++	{
++	  /* If initialization fails, go back to default terminal */
++	  if (current_term->startup() == 0)
++		  {
++		      current_term = term_table;
++		  }
++	}
++
+       if (! num_entries)
+ 	{
+ 	  /* If no acceptable config file, goto command-line, starting
+diff -Naur grub-0.97.orig/stage2/term.h grub-0.97/stage2/term.h
+--- grub-0.97.orig/stage2/term.h	2003-07-09 04:45:53.000000000 -0700
++++ grub-0.97/stage2/term.h	2006-07-03 23:58:41.000000000 -0700
+@@ -60,6 +60,8 @@
+   const char *name;
+   /* The feature flags defined above.  */
+   unsigned long flags;
++  /* Default for maximum number of lines if not specified */
++  unsigned short max_lines;
+   /* Put a character.  */
+   void (*putchar) (int c);
+   /* Check if any input character is available.  */
+@@ -79,6 +81,10 @@
+   void (*setcolor) (int normal_color, int highlight_color);
+   /* Turn on/off the cursor.  */
+   int (*setcursor) (int on);
++  /* function to start a terminal */
++  int (*startup) (void);
++  /* function to use to shutdown a terminal */
++  void (*shutdown) (void);
+ };
+ 
+ /* This lists up available terminals.  */
+@@ -124,4 +130,24 @@
+ int hercules_setcursor (int on);
+ #endif
+ 
++#ifdef SUPPORT_GRAPHICS
++extern int foreground, background, window_border, graphics_inited, saved_videomode;
++
++void graphics_set_splash(char *splashfile);
++int set_videomode(int mode);
++int get_videomode(void);
++void graphics_putchar (int c);
++int graphics_getxy(void);
++void graphics_gotoxy(int x, int y);
++void graphics_cls(void);
++void graphics_setcolorstate (color_state state);
++void graphics_setcolor (int normal_color, int highlight_color);
++int graphics_setcursor (int on);
++int graphics_init(void);
++void graphics_end(void);
++
++int hex(int v);
++void graphics_set_palette(int idx, int red, int green, int blue);
++#endif /* SUPPORT_GRAPHICS */
++
+ #endif /* ! GRUB_TERM_HEADER */
+diff -Naur grub-0.97.orig/THANKS grub-0.97/THANKS
+--- grub-0.97.orig/THANKS	2005-05-07 19:17:43.000000000 -0700
++++ grub-0.97/THANKS	2006-07-04 00:01:50.000000000 -0700
+@@ -121,3 +121,4 @@
+ Yedidyah Bar-David <didi@post.tau.ac.il>
+ Yury V. Umanets <umka@namesys.com>
+ Yuri Zaporogets <yuriz@ukr.net>
++Vitaly Fertman <vitaly@namesys.com>
+diff -Naur grub-0.97.orig/util/grub-install.in grub-0.97/util/grub-install.in
+--- grub-0.97.orig/util/grub-install.in	2004-07-24 11:57:31.000000000 -0700
++++ grub-0.97/util/grub-install.in	2006-07-04 00:01:50.000000000 -0700
+@@ -81,6 +81,50 @@
+ EOF
+ }
+ 
++# Usage: getraid_mdadm mddevice
++# Routine to find a physical device from an md device
++# If found, the first grub BIOS device (from device.map) is returned 
++# If no BIOS drives match the RAID devices, the first device returned
++# from mdadm -D is returned
++getraid_mdadm() {
++	device=$1
++	mdadm=$(mdadm -D "$device") || {
++		echo "$PROG: mdadm -D $device failed" >&2
++		exit 1
++	}
++	eval "$(
++		echo "$mdadm" | awk '
++			$1 == "Number" && $2 == "Major" { start = 1; next }
++			$1 == "UUID" { print "uuid=" $3; start = 0; next }
++			!start { next }
++			$2 == 0 && $3 == 0 { next }
++			{ devices = devices "\n" $NF }
++			END { print "devices='\''" devices "'\''" }
++		'
++	)"
++
++	# Convert RAID devices list into a list of disks
++	tmp_disks=`echo "$devices" | sed -e 's%\([sh]d[a-z]\)[0-9]*$%\1%' \
++					 -e 's%\(d[0-9]*\)p[0-9]*$%\1%' \
++					 -e 's%\(fd[0-9]*\)$%\1%' \
++					 -e 's%/part[0-9]*$%/disc%' \
++					 -e 's%\(c[0-7]d[0-9]*\).*$%\1%' \
++					 -e '/^$/d' |
++				     sed -n '1h;2,$H;${g;s/\n/|/g;p}'`
++
++	# Find first BIOS disk that's a member of the RAID array
++	# Default to first RAID member if no tmp_disks are BIOS devices
++	set -- `egrep $tmp_disks $device_map | \
++		sort | \
++		sed -n 1p `
++	device=${2:-${tmp_disks%%|*}}
++
++	# Return first partition on BIOS disk that's part of the RAID
++	echo "$devices" | \
++		sed -n "\:${device}:p" | \
++		sed -n 1p
++}
++
+ # Usage: convert os_device
+ # Convert an OS device to the corresponding GRUB drive.
+ # This part is OS-specific.
+@@ -96,6 +140,10 @@
+     # Break the device name into the disk part and the partition part.
+     case "$host_os" in
+     linux*)
++	# Find an actual physical device if we're passed a RAID device
++	case $1 in
++		/dev/md*)  set -- `getraid_mdadm $1`
++	esac
+ 	tmp_disk=`echo "$1" | sed -e 's%\([sh]d[a-z]\)[0-9]*$%\1%' \
+ 				  -e 's%\(d[0-9]*\)p[0-9]*$%\1%' \
+ 				  -e 's%\(fd[0-9]*\)$%\1%' \
+@@ -112,8 +160,8 @@
+ 	tmp_disk=`echo "$1" | sed 's%\([sh]d[0-9]*\).*%\1%'`
+ 	tmp_part=`echo "$1" | sed "s%$tmp_disk%%"` ;;
+     freebsd* | kfreebsd*-gnu)
+-	tmp_disk=`echo "$1" | sed 's%r\{0,1\}\([saw]d[0-9]*\).*$%r\1%' \
+-			    | sed 's%r\{0,1\}\(da[0-9]*\).*$%r\1%'`
++	tmp_disk=`echo "$1" | sed 's%r\{0,1\}\([saw]d[0-9]*\).*$%\1%' \
++			    | sed 's%r\{0,1\}\(da[0-9]*\).*$%\1%'`
+ 	tmp_part=`echo "$1" \
+ 	    | sed "s%.*/r\{0,1\}[saw]d[0-9]\(s[0-9]*[a-h]\)%\1%" \
+        	    | sed "s%.*/r\{0,1\}da[0-9]\(s[0-9]*[a-h]\)%\1%"`
+@@ -131,7 +179,7 @@
+ 
+     # Get the drive name.
+     tmp_drive=`grep -v '^#' $device_map | grep "$tmp_disk *$" \
+-	| sed 's%.*\(([hf]d[0-9][a-g0-9,]*)\).*%\1%'`
++	| sed 's%.*\(([hf]d[0-9][a-z0-9,]*)\).*%\1%'`
+ 
+     # If not found, print an error message and exit.
+     if test "x$tmp_drive" = x; then
+@@ -148,13 +196,13 @@
+ 	gnu*)
+ 	    if echo $tmp_part | grep "^s" >/dev/null; then
+ 		tmp_pc_slice=`echo $tmp_part \
+-		    | sed "s%s\([0-9]*\)[a-g]*$%\1%"`
++		    | sed "s%s\([0-9]*\)[a-z]*$%\1%"`
+ 		tmp_drive=`echo "$tmp_drive" \
+ 		    | sed "s%)%,\`expr "$tmp_pc_slice" - 1\`)%"`
+ 	    fi
+-	    if echo $tmp_part | grep "[a-g]$" >/dev/null; then
++	    if echo $tmp_part | grep "[a-z]$" >/dev/null; then
+ 		tmp_bsd_partition=`echo "$tmp_part" \
+-		    | sed "s%[^a-g]*\([a-g]\)$%\1%"`
++		    | sed "s%[^a-z]*\([a-z]\)$%\1%"`
+ 		tmp_drive=`echo "$tmp_drive" \
+ 		    | sed "s%)%,$tmp_bsd_partition)%"`
+ 	    fi
+@@ -336,6 +384,10 @@
+     # Create a safe temporary file.
+     test -n "$mklog" && log_file=`$mklog`
+ 
++    # Before all invocations of the grub shell, call sync to make sure
++    # the raw device is in sync with any bufferring in filesystems.
++    sync
++ 
+     $grub_shell --batch $no_floppy --device-map=$device_map <<EOF >$log_file
+ quit
+ EOF
+@@ -450,6 +502,24 @@
+ # Create a safe temporary file.
+ test -n "$mklog" && log_file=`$mklog`
+ 
++# Sync to prevent GRUB from not finding stage files (notably, on XFS)
++sync
++
++# XFS needs special magic
++xfs_frozen=false
++if which xfs_freeze > /dev/null ; then
++  cat << EOF
++Due to a bug in xfs_freeze, the following command might produce a segmentation
++fault when ${grubdir} is not in an XFS filesystem. This error is harmless and
++can be ignored.
++EOF
++  if xfs_freeze -f ${grubdir} ; then xfs_frozen=true ; fi
++fi
++
++# Before all invocations of the grub shell, call sync to make sure
++# the raw device is in sync with any bufferring in filesystems.
++sync
++
+ # Now perform the installation.
+ $grub_shell --batch $no_floppy --device-map=$device_map <<EOF >$log_file
+ root $root_drive
+@@ -457,6 +527,10 @@
+ quit
+ EOF
+ 
++if ${xfs_frozen} ; then
++  xfs_freeze -u ${grubdir}
++fi
++
+ if grep "Error [0-9]*: " $log_file >/dev/null || test $debug = yes; then
+     cat $log_file 1>&2
+     exit 1
