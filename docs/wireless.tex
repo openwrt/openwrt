@@ -1,6 +1,8 @@
 The WiFi settings are configured in the file \texttt{/etc/config/wireless}
-(currently supported on Broadcom only). When booting the router for the first time
+(currently supported on Broadcom and Atheros). When booting the router for the first time
 it should detect your card and create a sample configuration that looks like this:
+
+\paragraph{Sample Broadcom wireless config:}
 
 \begin{Verbatim}
 config wifi-device      "wl0"
@@ -9,6 +11,22 @@ config wifi-device      "wl0"
 
 config wifi-iface
     option device       "wl0"
+    option mode         "ap"
+    option ssid         "OpenWrt"
+    option hidden       "0"
+    option encryption   "none"
+\end{Verbatim}
+
+\paragraph{Sample Atheros wireless config:}
+
+\begin{Verbatim}
+config wifi-device      "wifi0"
+    option type         "atheros"
+    option channel      "5"
+	option mode  		"11g"
+
+config wifi-iface
+    option device       "wifi0"
     option mode         "ap"
     option ssid         "OpenWrt"
     option hidden       "0"
@@ -24,12 +42,15 @@ of that (if supported by the driver).
 \begin{itemize}
     \item \texttt{type} \\
         The driver to use for this interface.
+	
+	\item \texttt{mode} \\
+		The frequency band (\texttt{b}, \texttt{g}, \texttt{bg}, \texttt{a})
 
     \item \texttt{country} \\
         The country code used to determine the regulatory settings.
 
     \item \texttt{channel} \\
-        The wifi channel (1-14, depending on your country setting).
+        The wifi channel (e.g. 1-14, depending on your country setting).
 
     \item \texttt{maxassoc} \\
         Maximum number of associated clients
@@ -56,6 +77,7 @@ of that (if supported by the driver).
                 WDS point-to-point link
 
         \end{itemize}
+
     \item \texttt{network} \\
         Selects the interface section from \texttt{/etc/config/network} to be
         used with this interface
@@ -85,10 +107,10 @@ of that (if supported by the driver).
 
 \paragraph{Limitations:}
 
+Only the following mode combinations are supported:
+
 \begin{itemize}
     \item \textbf{Broadcom}: \\
-        Only the following mode combinations are supported:
-
         \begin{itemize}
             \item 1x \texttt{sta}, 0-3x \texttt{ap}
             \item 1-4x \texttt{ap}
@@ -97,6 +119,13 @@ of that (if supported by the driver).
 
         WDS links can only be used in pure AP mode and can't use WEP (except when sharing the
         settings with the master interface, which is done automatically).
+
+    \item \textbf{Atheros}: \\
+        \begin{itemize}
+            \item 1x \texttt{sta}, 0-4x \texttt{ap}
+            \item 1-4x \texttt{ap}
+            \item 1x \texttt{adhoc}
+        \end{itemize}
 
 \end{itemize}
 

@@ -73,6 +73,7 @@ enable_atheros() {
 	config_get vifs "$device" vifs
 	
 	disable_atheros "$device"
+	local first=1
 	for vif in $vifs; do
 		nosbeacon=
 		config_get ifname "$vif" ifname
@@ -89,8 +90,22 @@ enable_atheros() {
 		}
 		config_set "$vif" ifname "$ifname"
 
-		config_get "$device" mode
-		iwpriv "$ifname" mode "${mode:-11g}"
+		[ "$first" = 1 ] && {
+			# only need to change freq band and channel on the first vif
+			config_get "$device" mode
+			pureg=0
+			case "$mode" in
+				*b) mode=11b;;
+				*bg) mode=11g;;
+				*g) mode=11g; pureg=1;;
+				*a) mode=11a;;
+				*) mode=11g;;
+			esac
+			iwconfig "$ifname" channel 0 
+			iwpriv "$ifname" mode "$mode"
+			iwpriv "$ifname" pureg "$pureg"
+			iwconfig "$ifname" channel "$channel"
+		}
 
 		config_get wds "$vif" wds
 		case "$wds" in
@@ -120,7 +135,6 @@ enable_atheros() {
 				config_get ssid "$vif" ssid
 			;;
 		esac
-		iwconfig "$ifname" channel "$channel"
 		ifconfig "$ifname" up
 		
 		local net_cfg bridge
@@ -145,6 +159,7 @@ enable_atheros() {
 				# FIXME: implement wpa_supplicant calls here
 			;;
 		esac
+		first=0
 	done
 }
 
