@@ -1,0 +1,145 @@
+diff -urN linux-2.6.19.1/scripts/mod/file2alias.c linux-2.6.19.1.new/scripts/mod/file2alias.c
+--- linux-2.6.19.1/scripts/mod/file2alias.c	2006-12-11 20:32:53.000000000 +0100
++++ linux-2.6.19.1.new/scripts/mod/file2alias.c	2007-01-02 15:28:47.000000000 +0100
+@@ -37,7 +37,21 @@
+  * even potentially has different endianness and word sizes, since
+  * we handle those differences explicitly below */
+ #include "../../include/linux/mod_devicetable.h"
++#ifndef __APPLE__
+ #include "../../include/linux/input.h"
++#else
++#define EV_MAX                  0x1f
++#define KEY_MUTE                113
++#define KEY_MIN_INTERESTING     KEY_MUTE
++#define KEY_MAX                 0x1ff
++#define REL_MAX                 0x0f
++#define ABS_MAX                 0x3f
++#define MSC_MAX                 0x07
++#define LED_MAX                 0x0f
++#define SND_MAX                 0x07
++#define FF_MAX          	0x7f
++#define SW_MAX                  0x0f
++#endif
+ 
+ #define ADD(str, sep, cond, field)                              \
+ do {                                                            \
+diff -urN linux-2.6.19.1/scripts/mod/mk_elfconfig.c linux-2.6.19.1.new/scripts/mod/mk_elfconfig.c
+--- linux-2.6.19.1/scripts/mod/mk_elfconfig.c	2006-12-11 20:32:53.000000000 +0100
++++ linux-2.6.19.1.new/scripts/mod/mk_elfconfig.c	2007-01-02 15:43:57.000000000 +0100
+@@ -1,7 +1,9 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+-#include <elf.h>
++#ifdef __APPLE__
++#include "../../../../../tools/sstrip/include/elf.h"
++#endif
+ 
+ int
+ main(int argc, char **argv)
+diff -urN linux-2.6.19.1/scripts/mod/modpost.h linux-2.6.19.1.new/scripts/mod/modpost.h
+--- linux-2.6.19.1/scripts/mod/modpost.h	2006-12-11 20:32:53.000000000 +0100
++++ linux-2.6.19.1.new/scripts/mod/modpost.h	2007-01-02 15:40:55.000000000 +0100
+@@ -7,7 +7,9 @@
+ #include <sys/mman.h>
+ #include <fcntl.h>
+ #include <unistd.h>
+-#include <elf.h>
++#ifdef __APPLE__
++#include "../../../../../tools/sstrip/include/elf.h"
++#endif
+ 
+ #include "elfconfig.h"
+ 
+diff -urN linux-2.6.19.1/scripts/mod/sumversion.c linux-2.6.19.1.new/scripts/mod/sumversion.c
+--- linux-2.6.19.1/scripts/mod/sumversion.c	2006-12-11 20:32:53.000000000 +0100
++++ linux-2.6.19.1.new/scripts/mod/sumversion.c	2007-01-02 15:30:23.000000000 +0100
+@@ -8,6 +8,9 @@
+ #include <errno.h>
+ #include <string.h>
+ #include "modpost.h"
++#ifdef __APPLE__
++#include <limits.h>
++#endif
+ 
+ /*
+  * Stolen form Cryptographic API.
+diff -urN linux-2.6.19.1/scripts/kconfig linux-2.6.19.1.new/scripts/kconfig/Makefile
+--- linux-2.6.19.1/scripts/kconfig/Makefile    2007-01-04 17:49:35.000000000 +0100
++++ linux-2.6.19.1.new/scripts/kconfig/Makefile        2007-01-04 17:50:37.000000000 +0100
+@@ -86,7 +86,10 @@
+ # Use reursively expanded variables so we do not call gcc unless
+ # we really need to do so. (Do not call gcc as part of make mrproper)
+ HOST_EXTRACFLAGS = $(shell $(CONFIG_SHELL) $(check-lxdialog) -ccflags)
+-HOST_LOADLIBES   = $(shell $(CONFIG_SHELL) $(check-lxdialog) -ldflags $(HOSTCC))
++HOST_LOADLIBES   = $(shell $(CONFIG_SHELL) $(check-lxdialog) -ldflags $(HOSTCC)) -lncurses
++ifeq ($(shell uname -s),Darwin)
++HOST_LOADLIBES  += -lncurses
++endif
+ 
+ HOST_EXTRACFLAGS += -DLOCALE
+
+diff -urN linux-2.6.19.1/scripts/genksyms/parse.y linux-2.6.19.1.new/scripts/genksyms/parse.y 
+--- linux-2.6.19.1/scripts/genksyms/parse.y	2006-12-11 20:32:53.000000000 +0100
++++ linux-2.6.19.1.new/scripts/genksyms/parse.y	2007-01-04 19:20:55.000000000 +0100
+@@ -24,7 +24,9 @@
+ %{
+ 
+ #include <assert.h>
++#ifndef __APPLE__
+ #include <malloc.h>
++#endif
+ #include "genksyms.h"
+ 
+ static int is_typedef;
+diff -urN linux-2.6.19.1/scripts/genksyms/parse.c_shipped linux-2.6.19.1.new/scripts/genksyms/parse.c_shipped
+--- linux-2.6.19.1/scripts/genksyms/parse.c_shipped	2007-01-04 19:34:09.000000000 +0100
++++ linux-2.6.19.1.new/scripts/genksyms/parse.c_shipped	2007-01-04 19:34:02.000000000 +0100
+@@ -144,7 +144,9 @@
+ 
+ 
+ #include <assert.h>
++#ifndef __APPLE__
+ #include <malloc.h>
++#endif
+ #include "genksyms.h"
+ 
+ static int is_typedef;
+--- linux-2.6.19.1/scripts/kallsyms.c	2006-12-11 20:32:53.000000000 +0100
++++ linux-2.6.19.1.new/scripts/kallsyms.c	2007-01-04 19:46:38.000000000 +0100
+@@ -30,6 +30,35 @@
+ #include <stdlib.h>
+ #include <string.h>
+ #include <ctype.h>
++#ifdef __APPLE__
++/* Darwin has no memmem implementation, this one is ripped of the uClibc-0.9.28 source */
++void *memmem (const void *haystack, size_t haystack_len,
++                          const void *needle,  size_t needle_len)
++{
++  const char *begin;
++  const char *const last_possible
++    = (const char *) haystack + haystack_len - needle_len;
++
++  if (needle_len == 0)
++    /* The first occurrence of the empty string is deemed to occur at
++       the beginning of the string.  */
++    return (void *) haystack;
++
++  /* Sanity check, otherwise the loop might search through the whole
++     memory.  */
++  if (__builtin_expect (haystack_len < needle_len, 0))
++    return NULL;
++
++  for (begin = (const char *) haystack; begin <= last_possible; ++begin)
++    if (begin[0] == ((const char *) needle)[0] &&
++        !memcmp ((const void *) &begin[1],
++                 (const void *) ((const char *) needle + 1),
++                 needle_len - 1))
++      return (void *) begin;
++
++  return NULL;
++}
++#endif
+ 
+ #define KSYM_NAME_LEN		127
+ 
