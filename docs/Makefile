@@ -1,4 +1,4 @@
-openwrt.pdf: Makefile openwrt.tex config.tex network.tex network-scripts.tex network-scripts.tex wireless.tex build.tex
+openwrt.pdf: Makefile openwrt.tex config.tex network.tex network-scripts.tex network-scripts.tex wireless.tex build.tex adding.tex bugs.tex
 	$(MAKE) cleanup
 	pdflatex openwrt.tex
 	pdflatex openwrt.tex
