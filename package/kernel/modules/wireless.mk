@@ -148,3 +148,12 @@ endef
 $(eval $(call KernelPackage,net-prism54))
 
 
+define KernelPackage/net-zd1211rw
+  TITLE:=Zydas ZD1211 support
+  DESCRIPTION:=Kernel modules Zydas ZD1211 support, kernel version
+  KCONFIG:=$(CONFIG_ZD1211RW)
+  DEPENDS:=kmod-ieee80211
+  SUBMENU:=$(WIMENU)
+  FILES:=$(MODULES_DIR)/kernel/drivers/net/wireless/zd1211rw/zdd1211rw.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,60,zd1211rw)
+endef
