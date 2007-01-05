@@ -51,6 +51,13 @@ config CCACHE
 	help
 		Compiler cache; see http://ccache.samba.org/
 
+config SOURCE_FEEDS
+	string
+	prompt "Enter here external source feeds you want to include" if BUILDOPTS
+	default "https://svn.openwrt.org/openwrt/packages/"
+	help
+		Separate sources with spaces : " "
+
 source "toolchain/Config.in"
 source "target/sdk/Config.in"
 
