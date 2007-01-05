@@ -1,19 +1,19 @@
 One of the biggest challenges to getting started with embedded devices is that you
-can't just install a copy of Linux and expect to be able to compile a firmware.
+cannot just install a copy of Linux and expect to be able to compile a firmware.
 Even if you did remember to install a compiler and every development tool offered,
-you still wouldn't have the basic set of tools needed to produce a firmware image.
+you still would not have the basic set of tools needed to produce a firmware image.
 The embedded device represents an entirely new hardware platform, which is
-incompatible with the hardware on your development machine, so in a process called
+most of the time incompatible with the hardware on your development machine, so in a process called
 cross compiling you need to produce a new compiler capable of generating code for
 your embedded platform, and then use it to compile a basic Linux distribution to
 run on your device.
 
-The process of creating a cross compiler can be tricky, it's not something that's
-regularly attempted and so there's a certain amount of mystery and black magic
-associated with it. In many cases when you're dealing with embedded devices you'll
+The process of creating a cross compiler can be tricky, it is not something that is
+regularly attempted and so there is a certain amount of mystery and black magic
+associated with it. In many cases when you are dealing with embedded devices you will
 be provided with a binary copy of a compiler and basic libraries rather than
-instructions for creating your own -- it's a time saving step but at the same time
-often means you'll be using a rather dated set of tools. Likewise, it's also common
+instructions for creating your own -- it is a time saving step but at the same time
+often means you will be using a rather dated set of tools. Likewise, it is also common
 to be provided with a patched copy of the Linux kernel from the board or chip vendor,
 but this is also dated and it can be difficult to spot exactly what has been
 modified to make the kernel run on the embedded platform.
@@ -22,17 +22,17 @@ modified to make the kernel run on the embedded platform.
 
 OpenWrt takes a different approach to building a firmware; downloading, patching
 and compiling everything from scratch, including the cross compiler. To put it
-in simpler terms, OpenWrt doesn't contain any executables or even sources, it's an
+in simpler terms, OpenWrt does not contain any executables or even sources, it is an
 automated system for downloading the sources, patching them to work with the given
 platform and compiling them correctly for that platform. What this means is that
 just by changing the template, you can change any step in the process.
 
 As an example, if a new kernel is released, a simple change to one of the Makefiles
 will download the latest kernel, patch it to run on the embedded platform and produce
-a new firmware image -- there's no work to be done trying to track down an unmodified
+a new firmware image -- there is no work to be done trying to track down an unmodified
 copy of the existing kernel to see what changes had been made, the patches are
-already provided and the process ends up almost completely transparent. This doesn't
-just apply to the kernel, but to anything included with OpenWrt -- It's this one
+already provided and the process ends up almost completely transparent. This does not
+just apply to the kernel, but to anything included with OpenWrt -- It is this one
 simple understated concept which is what allows OpenWrt to stay on the bleeding edge
 with the latest compilers, latest kernels and latest applications.
 
@@ -48,7 +48,7 @@ subversion using the following command:
 $ svn co https://svn.openwrt.org/openwrt/trunk kamikaze
 \end{Verbatim}
 
-Additionally, there's a trac interface on \href{https://dev.openwrt.org/}{https://dev.openwrt.org/}
+Additionally, ther is a trac interface on \href{https://dev.openwrt.org/}{https://dev.openwrt.org/}
 which can be used to monitor svn commits and browse the sources.
 
 
@@ -64,12 +64,12 @@ There are four key directories in the base:
 \end{itemize}
 
 \texttt{tools} and \texttt{toolchain} refer to common tools which will be
-used to build the firmware image, the compiler, and the c library.
+used to build the firmware image, the compiler, and the C library.
 The result of this is three new directories, \texttt{tool\_build}, which is a temporary
 directory for building the target independent tools, \texttt{toolchain\_build\_\textit{<arch>}}
 which is used for building the toolchain for a specific architecture, and
 \texttt{staging\_dir\_\textit{<arch>}} where the resulting toolchain is installed.
-You won't need to do anything with the toolchain directory unless you intend to
+You will not need to do anything with the toolchain directory unless you intend to
 add a new version of one of the components above.
 
 \begin{itemize}
@@ -95,6 +95,13 @@ $ ls
 kamikaze  packages
 $ ln -s packages/net/nmap kamikaze/package/nmap
 \end{Verbatim}
+
+To include all packages, issue the following command :
+
+\begin{Verbatim}
+$ ln -s packages/*/* kamikaze/package/
+\end{Verbatim}
+
 
 \texttt{target} refers to the embedded platform, this contains items which are specific to
 a specific embedded platform. Of particular interest here is the "\texttt{target/linux}"
@@ -171,11 +178,14 @@ in OpenWrt you'll find two things:
 \begin{itemize}
     \item \texttt{package/\textit{<name>}/Makefile}
     \item \texttt{package/\textit{<name>}/patches}
+	\item \texttt{package/\textit{<name>}/files}
 \end{itemize}
 
 The patches directory is optional and typically contains bug fixes or optimizations to
 reduce the size of the executable. The package makefile is the important item, provides
 the steps actually needed to download and compile the package.
+
+The files directory is also optional and typicall contains package specific startup scripts or default configuration files that can be used out of the box with OpenWrt.
 
 Looking at one of the package makefiles, you'd hardly recognize it as a makefile.
 Through what can only be described as blatant disregard and abuse of the traditional
@@ -239,13 +249,13 @@ and abstracted to the point where you only need to specify a few variables.
     \item \texttt{PKG\_NAME} \\
         The name of the package, as seen via menuconfig and ipkg
     \item \texttt{PKG\_VERSION} \\
-        The upstream version number that we're downloading
+        The upstream version number that we are downloading
     \item \texttt{PKG\_RELEASE} \\
         The version of this package Makefile
     \item \texttt{PKG\_SOURCE} \\
         The filename of the original sources
     \item \texttt{PKG\_SOURCE\_URL} \\
-        Where to download the sources from (no trailing slash)
+        Where to download the sources from (no trailing slash), you can add multiple download sources by separating them with a \\ and a carriage return.
     \item \texttt{PKG\_MD5SUM} \\
         A checksum to validate the download
     \item \texttt{PKG\_CAT} \\
@@ -256,9 +266,9 @@ and abstracted to the point where you only need to specify a few variables.
 
 The \texttt{PKG\_*} variables define where to download the package from;
 \texttt{@SF} is a special keyword for downloading packages from sourceforge. There is also
-another keyword of \texttt{@GNU} for grabbing GNU source releases.
+another keyword of \texttt{@GNU} for grabbing GNU source releases. If any of the above mentionned download source fails, the OpenWrt mirrors will be used as source.
 
-The md5sum is used to verify the package was downloaded correctly and
+The md5sum (if present) is used to verify the package was downloaded correctly and
 \texttt{PKG\_BUILD\_DIR} defines where to find the package after the sources are
 uncompressed into \texttt{\$(BUILD\_DIR)}.
 
@@ -281,7 +291,7 @@ directly as the Nth argument to \texttt{BuildPackage}.
         \item \texttt{SECTION} \\
             The type of package (currently unused)
         \item \texttt{CATEGORY} \\
-            Which menu it appears in menuconfig
+            Which menu it appears in menuconfig : Network, Sound, Utilities, Multimedia ...
         \item \texttt{TITLE} \\
             A short description of the package
         \item \texttt{URL} \\
@@ -289,7 +299,7 @@ directly as the Nth argument to \texttt{BuildPackage}.
         \item \texttt{MAINTAINER} (optional) \\
             Who to contact concerning the package
         \item \texttt{DEPENDS} (optional) \\
-            Which packages must be built/installed before this package
+            Which packages must be built/installed before this package. To reference a dependency defined in the same Makefile, use \textit{<dependency name>}. If defined as an external package, use \textit{+<dependency name>}. For a kernel version dependency use: \textit{@LINUX\_2\_<minor version>}
     \end{itemize}
 
 \textbf{\texttt{Package/\textit{<name>}/conffiles} (optional):} \\
@@ -302,8 +312,8 @@ directly as the Nth argument to \texttt{BuildPackage}.
 \textbf{\texttt{Build/Configure} (optional):} \\
    You can leave this undefined if the source doesn't use configure or has a
    normal config script, otherwise you can put your own commands here or use
-   "\texttt{\$(call Build/Configure/Default,\textit{<args>})}" as above to
-   pass in additional arguments for a standard configure script.
+   "\texttt{\$(call Build/Configure/Default,\textit{<first list of arguments, second list>})}" as above to
+   pass in additional arguments for a standard configure script. The first list of arguments will be passed to the configure script like that : $--arg 1$ $--arg 2$. The second list contains arguments that should be defined before running the configure script such as autoconf or compiler specific variables.
 
 \textbf{\texttt{Build/Compile} (optional):} \\
    How to compile the source; in most cases you should leave this undefined.
@@ -311,7 +321,7 @@ directly as the Nth argument to \texttt{BuildPackage}.
 \textbf{\texttt{Package/\textit{<name>}/install}:} \\
    A set of commands to copy files out of the compiled source and into the ipkg
    which is represented by the \texttt{\$(1)} directory. Note that there are currently
-   3 defined install macros:
+   4 defined install macros:
    \begin{itemize}
        \item \texttt{INSTALL\_DIR} \\
            install -d -m0755
@@ -319,6 +329,8 @@ directly as the Nth argument to \texttt{BuildPackage}.
            install -m0755
        \item \texttt{INSTALL\_DATA} \\
            install -m0644
+       \item \texttt{INSTALL\_CONF} \\
+           install -m0600
    \end{itemize}
 
 The reason that some of the defines are prefixed by "\texttt{Package/\textit{<name>}}"
@@ -329,7 +341,7 @@ desired. Since you only need to compile the sources once, there's one global set
 "\texttt{Build}" defines, but you can add as many "Package/<name>" defines as you want
 by adding extra calls to \texttt{BuildPackage} -- see the dropbear package for an example.
 
-After you've created your \texttt{package/\textit{<name>}/Makefile}, the new package
+After you have created your \texttt{package/\textit{<name>}/Makefile}, the new package
 will automatically show in the menu the next time you run "make menuconfig" and if selected
 will be built automatically the next time "\texttt{make}" is run.
 
