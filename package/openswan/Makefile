@@ -42,15 +42,15 @@ define Package/openswan
   URL:=http://www.openswan.org/
 endef
 
-define Package/kmod-openswan
+define KernelPackage/openswan
+  SUBMENU:=Network Support
   $(call Package/openswan/Default)
-  SECTION:=kernel
-  CATEGORY:=Kernel drivers
   TITLE+= (kernel module)
   DESCRIPTION+=\\\
 	\\\
 	This package contains the Openswan kernel module.
   VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
+  FILES:=$(PKG_BUILD_DIR)/modobj*/ipsec.$(LINUX_KMOD_SUFFIX)
 endef
 
 PKG_MAKE_OPTS:= \
@@ -82,11 +82,5 @@ define Package/openswan/install
 	find $(1) -name \*.old | xargs rm -rf
 endef
 
-define Package/kmod-openswan/install
-	mkdir -p $(1)/lib/modules/$(LINUX_VERSION)
-	$(CP) $(PKG_BUILD_DIR)/modobj*/ipsec.$(LINUX_KMOD_SUFFIX) \
-		$(1)/lib/modules/$(LINUX_VERSION)/
-endef
-
 $(eval $(call BuildPackage,openswan))
-$(eval $(call BuildPackage,kmod-openswan))
+$(eval $(call KernelPackage,openswan))

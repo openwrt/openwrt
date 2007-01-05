@@ -41,15 +41,15 @@ define Package/fuse-utils
 	This package contains the FUSE utilities.
 endef
 
-define Package/kmod-fuse
+define KernelPackage/fuse
+  SUBMENU:=Filesystems
   $(call Package/fuse/Default)
-  SECTION:=kernel
-  CATEGORY:=Kernel drivers
   TITLE+= (kernel module)
   DESCRIPTION+=\\\
 	\\\
 	This package contains the FUSE kernel module.
   VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
+  FILES:=$(PKG_INSTALL_DIR)/lib/modules/$(LINUX_VERSION)/kernel/fs/fuse/fuse.$(LINUX_KMOD_SUFFIX)
 endef
 
 define Package/libfuse
@@ -134,21 +134,11 @@ define Package/fuse-utils/install
 	$(CP) $(PKG_INSTALL_DIR)/usr/bin/fusermount $(1)/usr/bin/
 endef
 
-define Package/kmod-fuse/install
-	$(INSTALL_DIR) $(1)/lib/modules/$(LINUX_VERSION)
-	$(CP) $(PKG_INSTALL_DIR)/lib/modules/$(LINUX_VERSION)/kernel/fs/fuse/fuse.$(LINUX_KMOD_SUFFIX) \
-		$(1)/lib/modules/$(LINUX_VERSION)/
-	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libfuse.so.* $(1)/usr/lib/
-	$(INSTALL_DIR) $(1)/usr/bin
-	$(CP) $(PKG_INSTALL_DIR)/usr/bin/fusermount $(1)/usr/bin/
-endef
-
 define Package/libfuse/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libfuse.so.* $(1)/usr/lib/
 endef
 
 $(eval $(call BuildPackage,fuse-utils))
-$(eval $(call BuildPackage,kmod-fuse))
 $(eval $(call BuildPackage,libfuse))
+$(eval $(call KernelPackage,fuse))

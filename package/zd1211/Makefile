@@ -23,9 +23,8 @@ PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-driver-$(PKG_VERSION)
 include $(INCLUDE_DIR)/package.mk
 
 #FIXME: add proper dependency handling on kmod-usb-core packages
-define Package/kmod-zd1211
-  SECTION:=kernel
-  CATEGORY:=Kernel drivers
+define KernelPackage/zd1211
+  SUBMENU:=Wireless Drivers
   DEPENDS:=@LINUX_2_6&&!LINUX_2_6_UML
   TITLE:=Driver for Zydas 1211 based USB devices
   DESCRIPTION:=\
@@ -33,8 +32,16 @@ define Package/kmod-zd1211
 	USB-WLAN-Chip.\\\
 	Initially contributed by ZyDAS, this driver is actively maintained by the \\\
 	open source community.
-  URL:=http://zd1211.ath.cx/
   VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
+  FILES:=$(PKG_BUILD_DIR)/zd1211.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,60,zd1211) 
+endef
+
+define Package/zd1211-utils
+  SECTION:=utils
+  CATEGORY:=Utilities
+  TITLE:=zd1211 user-space utilities
+  DESCRIPTION:=zd1211 user-space utilities : apdbg, zd1211-sta
 endef
 
 define Build/Compile
@@ -51,13 +58,11 @@ define Build/Compile
 	$(TARGET_CC) $(PKG_BUILD_DIR)/apdbg.c -o $(PKG_BUILD_DIR)/apdbg
 endef
 
-define Package/kmod-zd1211/install
-	$(INSTALL_DIR) $(1)/lib/modules/$(LINUX_VERSION)
-	$(CP) $(PKG_BUILD_DIR)/zd1211.$(LINUX_KMOD_SUFFIX) \
-		$(1)/lib/modules/$(LINUX_VERSION)/
+define Package/zd1211-utils/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(CP) $(PKG_BUILD_DIR)/apdbg $(1)/usr/sbin/
 	$(CP) $(PKG_BUILD_DIR)/sta $(1)/usr/sbin/$(PKG_NAME)-sta
 endef
 
-$(eval $(call BuildPackage,kmod-zd1211))
+$(eval $(call Package,zd1211-utils))
+$(eval $(call KernelPackage,zd1211))
