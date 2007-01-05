@@ -26,12 +26,13 @@ diff -urN linux-2.6.19.1/scripts/mod/file2alias.c linux-2.6.19.1.new/scripts/mod
 diff -urN linux-2.6.19.1/scripts/mod/mk_elfconfig.c linux-2.6.19.1.new/scripts/mod/mk_elfconfig.c
 --- linux-2.6.19.1/scripts/mod/mk_elfconfig.c	2006-12-11 20:32:53.000000000 +0100
 +++ linux-2.6.19.1.new/scripts/mod/mk_elfconfig.c	2007-01-02 15:43:57.000000000 +0100
-@@ -1,7 +1,9 @@
+@@ -1,7 +1,11 @@
  #include <stdio.h>
  #include <stdlib.h>
  #include <string.h>
--#include <elf.h>
-+#ifdef __APPLE__
++#ifndef __APPLE__
+ #include <elf.h>
++#else
 +#include "../../../../../tools/sstrip/include/elf.h"
 +#endif
  
@@ -40,12 +41,13 @@ diff -urN linux-2.6.19.1/scripts/mod/mk_elfconfig.c linux-2.6.19.1.new/scripts/m
 diff -urN linux-2.6.19.1/scripts/mod/modpost.h linux-2.6.19.1.new/scripts/mod/modpost.h
 --- linux-2.6.19.1/scripts/mod/modpost.h	2006-12-11 20:32:53.000000000 +0100
 +++ linux-2.6.19.1.new/scripts/mod/modpost.h	2007-01-02 15:40:55.000000000 +0100
-@@ -7,7 +7,9 @@
+@@ -7,7 +7,11 @@
  #include <sys/mman.h>
  #include <fcntl.h>
  #include <unistd.h>
--#include <elf.h>
-+#ifdef __APPLE__
++#ifndef __APPLE__
+ #include <elf.h>
++#else
 +#include "../../../../../tools/sstrip/include/elf.h"
 +#endif
  
@@ -67,12 +69,10 @@ diff -urN linux-2.6.19.1/scripts/mod/sumversion.c linux-2.6.19.1.new/scripts/mod
 diff -urN linux-2.6.19.1/scripts/kconfig linux-2.6.19.1.new/scripts/kconfig/Makefile
 --- linux-2.6.19.1/scripts/kconfig/Makefile    2007-01-04 17:49:35.000000000 +0100
 +++ linux-2.6.19.1.new/scripts/kconfig/Makefile        2007-01-04 17:50:37.000000000 +0100
-@@ -86,7 +86,10 @@
- # Use reursively expanded variables so we do not call gcc unless
+@@ -87,6 +87,9 @@
  # we really need to do so. (Do not call gcc as part of make mrproper)
  HOST_EXTRACFLAGS = $(shell $(CONFIG_SHELL) $(check-lxdialog) -ccflags)
--HOST_LOADLIBES   = $(shell $(CONFIG_SHELL) $(check-lxdialog) -ldflags $(HOSTCC))
-+HOST_LOADLIBES   = $(shell $(CONFIG_SHELL) $(check-lxdialog) -ldflags $(HOSTCC)) -lncurses
+ HOST_LOADLIBES   = $(shell $(CONFIG_SHELL) $(check-lxdialog) -ldflags $(HOSTCC))
 +ifeq ($(shell uname -s),Darwin)
 +HOST_LOADLIBES  += -lncurses
 +endif
