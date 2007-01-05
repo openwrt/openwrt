@@ -181,8 +181,14 @@ distclean: dirclean config-clean
 help:
 	cat README
 
+doc:
+	$(MAKE) -C docs/ openwrt.pdf
+
+docclean:
+	$(MAKE) -C docs/ clean
+
 symlinks:
-	scripts/feeds.sh https://svn.openwrt.org/openwrt/packages
+	scripts/feeds.sh $(CONFIG_SOURCE_FEEDS) 
 
 .SILENT: clean dirclean distclean config-clean download world
 FORCE: ;
