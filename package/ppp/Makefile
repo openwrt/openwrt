@@ -117,7 +117,7 @@ define Package/ppp/install
 	$(INSTALL_DIR) $(1)/lib/network
 	$(INSTALL_BIN) ./files/ppp.sh $(1)/lib/network/
 	$(INSTALL_DIR) $(1)/etc/ppp
-	install -m0600 ./files/etc/ppp/chap-secrets $(1)/etc/ppp/
+	$(INSTALL_CONF) ./files/etc/ppp/chap-secrets $(1)/etc/ppp/
 	$(INSTALL_DATA) ./files/etc/ppp/filter $(1)/etc/ppp/
 	$(INSTALL_BIN) ./files/etc/ppp/ip-up $(1)/etc/ppp/
 	$(INSTALL_DIR) $(1)/etc/ppp/ip-up.d
@@ -152,7 +152,7 @@ define Package/ppp-mod-radius/install
 	$(INSTALL_DIR) $(1)/etc/ppp/radius
 	$(INSTALL_DATA) ./files/etc/ppp/radius/dictionary* \
 		$(1)/etc/ppp/radius/
-	install -m0600 ./files/etc/ppp/radius/servers \
+	$(INSTALL_CONF) ./files/etc/ppp/radius/servers \
 		$(1)/etc/ppp/radius/
 endef
 
