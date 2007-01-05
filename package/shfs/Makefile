@@ -34,16 +34,16 @@ define Package/shfs/Default
   URL:=http://shfs.sourceforge.net/
 endef
 
-define Package/kmod-shfs
+define KernelPackage/shfs
   $(call Package/shfs/Default)
-  SECTION:=kernel
-  CATEGORY:=Kernel drivers
-  DEPENDS+=
   TITLE+= (kernel module)
   DESCRIPTION+=\\\
 	\\\
 	This package contains the ShFS kernel module.
+  FILES:=$(PKG_INSTALL_DIR)/lib/modules/$(LINUX_VERSION)/kernel/fs/shfs/shfs.$(LINUX_KMOD_SUFFIX)
+  SUBMENU:=Network Support
   VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
+  AUTOLOAD:=$(call AutoLoad,40,shfs)
 endef
 
 define Package/shfs-utils
@@ -77,12 +77,6 @@ define Build/Compile
 		utils utils-install
 endef
 
-define Package/kmod-shfs/install
-	$(INSTALL_DIR) $(1)/lib/modules/$(LINUX_VERSION)
-	$(CP) $(PKG_INSTALL_DIR)/lib/modules/$(LINUX_VERSION)/kernel/fs/shfs/shfs.$(LINUX_KMOD_SUFFIX) \
-		$(1)/lib/modules/$(LINUX_VERSION)/
-endef
-
 define Package/shfs-utils/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(CP) $(PKG_INSTALL_DIR)/usr/bin/shfs{,u}mount $(1)/usr/bin/
@@ -90,5 +84,5 @@ define Package/shfs-utils/install
 	$(CP) $(PKG_INSTALL_DIR)/sbin/mount.shfs $(1)/sbin/
 endef
 
-$(eval $(call BuildPackage,kmod-shfs))
+$(eval $(call KernelPackage,shfs))
 $(eval $(call BuildPackage,shfs-utils))
