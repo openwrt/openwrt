@@ -85,7 +85,7 @@ define Package/InstallTemplate
 		$(MAKE) $(PKG_BUILD_DIR)/.built; \
 	fi
 	$(INSTALL_DIR) $$(1)/etc
-	install -m0600 $(PKG_BUILD_DIR)_$(2)/madwifi.conf $$(1)/etc/hostapd.conf
+	$(INSTALL_CONF $(PKG_BUILD_DIR)_$(2)/madwifi.conf $$(1)/etc/hostapd.conf
 	$(INSTALL_DIR) $$(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)_$(2)/hostapd $$(1)/usr/sbin/
 endef

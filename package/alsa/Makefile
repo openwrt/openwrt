@@ -22,13 +22,13 @@ PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/kmod-alsa
-  SECTION:=kernel
-  CATEGORY:=Kernel drivers
+define KernelPackage/alsa
+  SUBMENU:=Other modules
   DEPENDS:=@USB_SUPPORT
   TITLE:=Advanced Linux Sound Architecture
-  URL:=http://alsa-project.org/
-  VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
+  DESCRIPTION:=
+  FILES:=$(PKG_BUILD_DIR)/modules/*.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD=$(call AutoLoad,70,$(shell cat ./files/alsa.modules))
 endef
 
 ifeq ($(KERNEL),2.4)
@@ -71,12 +71,4 @@ define Build/Compile
 		all
 endef
 
-define Package/kmod-alsa/install
-	$(INSTALL_DIR) $(1)/lib/modules/$(LINUX_VERSION)
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/modules/*.$(LINUX_KMOD_SUFFIX) \
-		$(1)/lib/modules/$(LINUX_VERSION)/
-	$(INSTALL_DIR) $(1)/etc/modules.d
-	$(INSTALL_DATA) ./files/alsa.modules $(1)/etc/modules.d/70-alsa
-endef
-
-$(eval $(call BuildPackage,kmod-alsa))
+$(eval $(call KernelPackage,alsa))

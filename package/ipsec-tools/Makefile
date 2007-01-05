@@ -62,7 +62,7 @@ endef
 
 define Package/ipsec-tools/install
 	$(INSTALL_DIR) $(1)/etc
-	install -m0600 $(PKG_BUILD_DIR)/src/racoon/samples/racoon.conf $(1)/etc/
+	$(INSTALL_CONF) $(PKG_BUILD_DIR)/src/racoon/samples/racoon.conf $(1)/etc/
 	$(INSTALL_DIR) $(1)/usr/lib/
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libipsec.so.* $(1)/usr/lib/
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libracoon.so.* $(1)/usr/lib/

@@ -21,13 +21,14 @@ PKG_CAT:=bzcat
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/kmod-pwc
-  SECTION:=kernel
-  CATEGORY:=Kernel drivers
-  DEPENDS:=@BROKEN @LINUX_2_6
+define KernelPackage/pwc
   TITLE:=USB Philips camera driver
-  URL:=http://www.saillard.org/linux/pwc/
+  DESCRIPTION:=Kernel support for USB Philips camera
+  SUBMENU:=USB Support
+  DEPENDS:=@BROKEN @LINUX_2_6
   VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
+  FILES:=$(PKG_BUILD_DIR)/pwc.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,70,$(shell cat ./files/pwc.modules))
 endef
 
 define Build/Compile
@@ -42,12 +43,4 @@ define Build/Compile
 		modules
 endef
 
-define Package/kmod-pwc/install
-	mkdir -p $(1)/etc/modules.d
-	$(INSTALL_DATA) ./files/pwc.modules $(1)/etc/modules.d/70-pwc
-	$(INSTALL_DIR) $(1)/lib/modules/$(LINUX_VERSION)
-	$(CP) $(PKG_BUILD_DIR)/pwc.$(LINUX_KMOD_SUFFIX) \
-		$(1)/lib/modules/$(LINUX_VERSION)/
-endef
-
-$(eval $(call BuildPackage,kmod-pwc))
+$(eval $(call KernelPackage,pwc))
