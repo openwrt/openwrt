@@ -1,0 +1,45 @@
+--- busybox-1.3.1/include/platform.h	2006-12-27 05:56:18.000000000 +0100
++++ busybox-1.3.1.new/include/platform.h	2007-01-02 18:28:25.000000000 +0100
+@@ -128,9 +128,11 @@
+ # include <netinet/in.h>
+ #endif
+ 
++#ifndef __APPLE__
+ #ifndef __socklen_t_defined
+ typedef int socklen_t;
+ #endif
++#endif
+ 
+ /* ---- Compiler dependent settings ------------------------- */
+ #ifndef __GNUC__
+@@ -168,7 +170,7 @@
+ #define HAVE_STDINT_H
+ #else
+ /* Largest integral types.  */
+-#if __BIG_ENDIAN__
++#if __BIG_ENDIAN__ && !__APPLE__
+ typedef long int                intmax_t;
+ typedef unsigned long int       uintmax_t;
+ #else
+--- busybox-1.3.1/include/libbb.h	2006-12-27 05:56:18.000000000 +0100
++++ busybox-1.3.1.new/include/libbb.h	2007-01-02 18:29:13.000000000 +0100
+@@ -17,7 +17,9 @@
+ #include <errno.h>
+ #include <fcntl.h>
+ #include <inttypes.h>
++#ifndef __APPLE__
+ #include <malloc.h>
++#endif
+ #include <netdb.h>
+ #include <setjmp.h>
+ #include <signal.h>
+@@ -30,7 +32,9 @@
+ #include <sys/mman.h>
+ #include <sys/socket.h>
+ #include <sys/stat.h>
++#ifndef __APPLE__
+ #include <sys/statfs.h>
++#endif
+ #include <sys/time.h>
+ #include <sys/types.h>
+ #include <sys/wait.h>
