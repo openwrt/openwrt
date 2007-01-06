@@ -1,0 +1,12 @@
+diff -ur busybox.old/Makefile.flags busybox.dev/Makefile.flags
+--- busybox.old/Makefile.flags	2006-12-27 05:57:07.000000000 +0100
++++ busybox.dev/Makefile.flags	2007-01-06 19:53:01.000000000 +0100
+@@ -16,7 +16,7 @@
+ 	-D"BB_VER=KBUILD_STR($(BB_VER))" -DBB_BT=AUTOCONF_TIMESTAMP
+ 
+ CFLAGS += \
+-	-Wall -Wstrict-prototypes -Wshadow -Werror -Wundef \
++	-Wall -Wstrict-prototypes -Wshadow -Wundef \
+ 	-funsigned-char -fno-builtin-strlen -finline-limit=0 -static-libgcc \
+ 	-Os -falign-functions=1 -falign-jumps=1 -falign-loops=1 \
+ 	-fomit-frame-pointer -ffunction-sections -fdata-sections
