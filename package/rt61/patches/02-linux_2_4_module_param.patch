@@ -1,0 +1,22 @@
+--- rt61-old/Module/rtmp_main.c	2006/06/16 11:12:40	1.14
++++ rt61-new/Module/rtmp_main.c	2006/08/12 13:03:25	1.15
+@@ -48,11 +48,19 @@
+ // Global variable, debug level flag
+ // Don't hide this behing debug define. There should be as little difference between debug and no-debug as possible.
+ int debug = 0;
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
+ module_param(debug, int, 0444);
++#else
++MODULE_PARM(debug, "i");
++#endif
+ MODULE_PARM_DESC(debug, "Enable level: accepted values: 1 to switch debug on, 0 to switch debug off.");
+ 
+ static char *ifname = NULL ;
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
+ module_param(ifname, charp, 0444);
++#else
++MODULE_PARM(ifname, "s");
++#endif
+ MODULE_PARM_DESC(ifname, "Network device name (default ra%d)");
+ 
+ static dma_addr_t		dma_adapter;
