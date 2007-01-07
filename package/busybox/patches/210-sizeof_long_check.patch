@@ -1,0 +1,12 @@
+diff -ur busybox.old/e2fsprogs/ext2fs/unix_io.c busybox.dev/e2fsprogs/ext2fs/unix_io.c
+--- busybox.old/e2fsprogs/ext2fs/unix_io.c	2006-12-27 05:55:58.000000000 +0100
++++ busybox.dev/e2fsprogs/ext2fs/unix_io.c	2007-01-07 16:16:52.000000000 +0100
+@@ -419,7 +419,7 @@
+ 
+ #ifdef __linux__
+ #undef RLIM_INFINITY
+-#if (defined(__alpha__) || ((defined(__sparc__) || defined(__mips__)) && (SIZEOF_LONG == 4)))
++#if (defined(__alpha__) || defined(__sparc__) || defined(__mips__))
+ #define RLIM_INFINITY	((unsigned long)(~0UL>>1))
+ #else
+ #define RLIM_INFINITY  (~0UL)
