@@ -21,7 +21,6 @@ failsafe() {
 	telnetd -l /bin/login <> /dev/null 2>&1
 
 	ash --login
-	lock -u /tmp/.failsafe
 }
 
 export PATH=/bin:/sbin:/usr/bin:/usr/sbin
