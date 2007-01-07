@@ -96,7 +96,7 @@ kamikaze  packages
 $ ln -s packages/net/nmap kamikaze/package/nmap
 \end{Verbatim}
 
-To include all packages, issue the following command :
+To include all packages, issue the following command:
 
 \begin{Verbatim}
 $ ln -s packages/*/* kamikaze/package/
@@ -291,7 +291,7 @@ directly as the Nth argument to \texttt{BuildPackage}.
         \item \texttt{SECTION} \\
             The type of package (currently unused)
         \item \texttt{CATEGORY} \\
-            Which menu it appears in menuconfig : Network, Sound, Utilities, Multimedia ...
+            Which menu it appears in menuconfig: Network, Sound, Utilities, Multimedia ...
         \item \texttt{TITLE} \\
             A short description of the package
         \item \texttt{URL} \\
@@ -313,7 +313,7 @@ directly as the Nth argument to \texttt{BuildPackage}.
    You can leave this undefined if the source doesn't use configure or has a
    normal config script, otherwise you can put your own commands here or use
    "\texttt{\$(call Build/Configure/Default,\textit{<first list of arguments, second list>})}" as above to
-   pass in additional arguments for a standard configure script. The first list of arguments will be passed to the configure script like that : $--arg 1$ $--arg 2$. The second list contains arguments that should be defined before running the configure script such as autoconf or compiler specific variables.
+   pass in additional arguments for a standard configure script. The first list of arguments will be passed to the configure script like that: $--arg 1$ $--arg 2$. The second list contains arguments that should be defined before running the configure script such as autoconf or compiler specific variables.
 
 \textbf{\texttt{Build/Compile} (optional):} \\
    How to compile the source; in most cases you should leave this undefined.
