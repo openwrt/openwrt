@@ -57,6 +57,10 @@ start() {
 			c["wan_ifname"] = ""
 			c["lan_ifname"] = "eth1"
 		}
+		if (model == "ASUS WL-500g") {
+			c["wan_ifname"] = "eth1"
+			c["lan_ifname"] = "eth0"
+		}
 		if (nvram["boardtype"] == "bcm94710r4") {
 			# Toshiba WRC-1000
 			c["lan_ifname"] = "eth0"
