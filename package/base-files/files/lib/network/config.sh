@@ -120,9 +120,9 @@ setup_interface() {
 			$DEBUG ifconfig "$iface" "$ipaddr" netmask "$netmask"
 			$DEBUG ifconfig "$iface" inet6 add "$ip6addr" 
 			[ -z "$gateway" ] || route add default gw "$gateway"
-			[ -z "$dns" -o -f /tmp/resolv.conf ] || {
+			[ -z "$dns" -o -f /tmp/resolv.conf.auto ] || {
 				for ns in $dns; do
-					echo "nameserver $ns" >> /tmp/resolv.conf
+					echo "nameserver $ns" >> /tmp/resolv.conf.auto
 				done
 			}
 

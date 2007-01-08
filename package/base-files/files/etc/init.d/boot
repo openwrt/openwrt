@@ -15,6 +15,7 @@ start() {
 	mkdir -p /var/lock
 	touch /var/log/wtmp
 	touch /var/log/lastlog
+	ln -s /tmp/resolv.conf.auto /tmp/resolv.conf
 	[ "$FAILSAFE" = "true" ] && touch /tmp/.failsafe
 	
 	# manually trigger hotplug before loading modules
