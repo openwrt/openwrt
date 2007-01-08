@@ -38,7 +38,7 @@ scan_atheros() {
 		:1:1)config_set "$device" nosbeacon 1;; # AP+STA, can't use beacon timers for STA
 		:1:);;
 		::1);;
-		:::);;
+		::);;
 		*) echo "$device: Invalid mode combination in config"; return 1;;
 	esac
 
