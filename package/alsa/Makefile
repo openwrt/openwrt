@@ -24,7 +24,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/alsa
   SUBMENU:=Other modules
-  DEPENDS:=@USB_SUPPORT
+  DEPENDS:=@USB_SUPPORT @LINUX_2_4
   TITLE:=Advanced Linux Sound Architecture
   DESCRIPTION:=
   FILES:=$(PKG_BUILD_DIR)/modules/*.$(LINUX_KMOD_SUFFIX)
