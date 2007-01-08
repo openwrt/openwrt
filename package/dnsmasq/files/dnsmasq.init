@@ -50,7 +50,13 @@ start() {
 		[ -z "$wan_proto" -o "$wan_proto" = "none" ] || echo "@define wan_ifname $wan_ifname"
 	
 		cat /etc/dnsmasq.conf
-	) | awk -f /lib/config/template.awk | dnsmasq -C /proc/self/fd/0
+	) | awk -f /lib/config/template.awk | dnsmasq -C /proc/self/fd/0 && {
+		rm -f /tmp/resolv.conf
+		cat > /tmp/resolv.conf <<EOF
+nameserver 127.0.0.1
+search lan
+EOF
+	}
 }
 
 stop() {

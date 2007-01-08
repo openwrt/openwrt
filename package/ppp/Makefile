@@ -124,7 +124,7 @@ define Package/ppp/install
 	$(INSTALL_BIN) ./files/etc/ppp/ip-down $(1)/etc/ppp/
 	$(INSTALL_DIR) $(1)/etc/ppp/ip-down.d
 	$(INSTALL_DATA) ./files/etc/ppp/options $(1)/etc/ppp/
-	ln -sf /tmp/resolv.conf $(1)/etc/ppp/resolv.conf
+	ln -sf /tmp/resolv.conf.auto $(1)/etc/ppp/resolv.conf
 endef
 	
 define Package/ppp-mod-pppoa/install

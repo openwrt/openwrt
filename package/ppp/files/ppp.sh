@@ -25,7 +25,7 @@ start_pppd() {
 	[ "$interval" != "$keepalive" ] || interval=5
 	
 	config_get demand "$cfg" demand
-	[ -n "$demand" ] && echo "nameserver 1.1.1.1" > /tmp/resolv.conf
+	[ -n "$demand" ] && echo "nameserver 1.1.1.1" > /tmp/resolv.conf.auto
 	/usr/sbin/pppd "$@" \
 		${keepalive:+lcp-echo-interval $interval lcp-echo-failure ${keepalive%%[, ]*}} \
 		${demand:+precompiled-active-filter /etc/ppp/filter demand idle }${demand:-persist} \
