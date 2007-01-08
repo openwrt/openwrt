@@ -30,14 +30,19 @@ fingerprinting, we will show here an example using \textbf{nmap}:
 
 \begin{Verbatim}
 nmap -P0 -O <IP address>
-Not shown: 1694 closed ports
-PORT     STATE SERVICE
-631/tcp  open  ipp
-1033/tcp open  netinfo
-6000/tcp open  X11
-Device type: general purpose
-Running: Apple Mac OS X 10.4.X
-OS details: Apple Mac OS X 10.4.8 (Tiger)
+Starting Nmap 4.20 ( http://insecure.org ) at 2007-01-08 11:05 CET
+Interesting ports on 192.168.2.1:
+Not shown: 1693 closed ports
+PORT   STATE SERVICE
+22/tcp open  ssh
+23/tcp open  telnet
+53/tcp open  domain
+80/tcp open  http
+MAC Address: 00:13:xx:xx:xx:xx (Cisco-Linksys)
+Device type: broadband router
+Running: Linksys embedded
+OS details: Linksys WRT54GS v4 running OpenWrt w/Linux kernel 2.4.30
+Network Distance: 1 hop
 \end{Verbatim}
 
 nmap is able to report whether your device uses a Linux TCP/IP stack, and if so,
@@ -50,7 +55,16 @@ on the device, and which version of the service is being used:
 
 \begin{verbatim}
 nmap -P0 -sV <IP address>
-
+Starting Nmap 4.20 ( http://insecure.org ) at 2007-01-08 11:06 CET
+Interesting ports on 192.168.2.1:
+Not shown: 1693 closed ports
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     Dropbear sshd 0.48 (protocol 2.0)
+23/tcp open  telnet  Busybox telnetd
+53/tcp open  domain  ISC Bind dnsmasq-2.35
+80/tcp open  http    OpenWrt BusyBox httpd
+MAC Address: 00:13:xx:xx:xx:xx (Cisco-Linksys)
+Service Info: Device: WAP
 \end{verbatim}
 
 The web server version, if identified, can be determining in knowing the Operating
@@ -147,9 +161,11 @@ CD-ROM the open source software used to build or modify the firmware.
 
 In conformance to the GPL license, you have to release the following sources:
 
-- complete toolchain that made the kernel and applications be compiled (gcc, binutils, libc)
-- tools to build a custom firmware (mksquashfs, mkcramfs ...)
-- kernel sources with patches to make it run on this specific hardware, this does not include binary drivers
+\begin{itemize}
+\item complete toolchain that made the kernel and applications be compiled (gcc, binutils, libc)
+\item tools to build a custom firmware (mksquashfs, mkcramfs ...)
+\item kernel sources with patches to make it run on this specific hardware, this does not include binary drivers
+\end{itemize}
 
 Thank you very much in advance for your answer.
 
@@ -201,7 +217,7 @@ VERSION = 2
 PATCHLEVEL = x
 SUBLEVEL = y
 EXTRAVERSION = z
-NAME=Avast! A bilge rat!
+NAME=A fancy name
 \end{verbatim}
 
 So now, you know that you have to download a standard kernel tarball at 
@@ -234,6 +250,42 @@ NIC, USB NIC ... Most of the time this patch contains nothing else than "glue"
 code that has been added to make the binary driver work with the Linux kernel. 
 This code might not be useful if you plan on writing from scratch drivers for 
 this hardware.
+
+\subsubsection{Using the device bootloader}
+
+The bootloader is the first program that is started right after your device has 
+been powered on. This program, can be more or less sophisticated, some do let you 
+do network booting, USB mass storage booting ... The bootloader is device and 
+architeture specific, some bootloaders were designed to be universal such as 
+RedBoot or U-Boot so that you can meet those loaders on totally different 
+platforms and expect to work the same way.
+
+If your device runs a proprietary operating system, you are very likely to deal 
+with a proprietary boot loader as well. This may not always be a limitation, 
+some proprietary bootloaders can even have source code available (i.e : Broadcom CFE).
+
+According to the bootloader features, hacking on th device will be more or less 
+easier. It is very probable that the bootloader, even exotic and rare, has a 
+documentation somewhere over the Internet. In order to know what will be possible 
+with your bootloader and the way you are going to hack the device, look over the 
+following features :
+
+\begin{itemize}
+\item does the bootloader allow net booting via bootp/DHCP/NFS or tftp
+\item does the bootloader accept loading ELF binaries ?
+\item does the bootloader have a kernel/firmware size limitation ?
+\item does the bootloader expect a firmware format to be loaded with ?
+\item are the loaded files executed from RAM or flash ?
+\end{itemize}
+
+Net booting is something very convenient, because you will only have to set up network
+booting servers on your development station, and keep the original firmware on the device
+till you are sure you can replace it. This also prevents your device from being flashed,
+and potentially bricked every time you want to test a modification on the kernel/filesystem.
+
+If your device needs to be flashed every time you load a firmware, the bootlader might
+only accept a specific firmware format to be loaded, so that you will have to 
+understand the firmware format as well.
 
 \subsubsection{Making binary drivers work}
 
