@@ -75,7 +75,7 @@ define Package/busybox/install
 		IPKG_ARCH="$(ARCH)" \
 		CONFIG_PREFIX="$(1)" \
 		install
-	mkdir -p $(1)/etc/init.d
+	$(INSTALL_DIR) $(1)/etc/init.d
 	for tmp in $(init-y); do \
 		$(INSTALL_BIN) ./files/$$$$tmp $(1)/etc/init.d/$$$$tmp; \
 	done

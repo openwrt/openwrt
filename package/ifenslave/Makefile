@@ -35,8 +35,8 @@ define Build/Compile
 endef
 
 define Package/ifenslave/install
-	mkdir -p $(1)/sbin
-	$(CP) $(PKG_BUILD_DIR)/$(PKG_NAME) $(1)/sbin
+	$(INSTALL_DIR) $(1)/sbin
+	$(CP) $(PKG_BUILD_DIR)/$(PKG_NAME) $(1)/sbin/
 endef
 
 $(eval $(call BuildPackage,ifenslave))

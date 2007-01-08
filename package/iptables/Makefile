@@ -241,7 +241,8 @@ define BuildPlugin
   $$(eval $$(call BuildPackage,$(1)))
 endef
 
-L7_INSTALL:=mkdir -p $$(1)/etc/l7-protocols; \
+L7_INSTALL:=\
+	$(INSTALL_DIR) $$(1)/etc/l7-protocols; \
 	$(CP) files/l7/*.pat $$(1)/etc/l7-protocols/
 
 $(eval $(call BuildPackage,iptables))
