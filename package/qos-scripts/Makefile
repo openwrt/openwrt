@@ -37,7 +37,7 @@ define Build/Compile
 endef
 
 define Package/qos-scripts/install
-	mkdir -p $(1)
+	$(INSTALL_DIR) $(1)
 	$(CP) ./files/* $(1)/
 endef
 
