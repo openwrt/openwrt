@@ -1,0 +1,12 @@
+diff -ruN isakmpd-20041012.orig/sysdep/common/libsysdep/GNUmakefile isakmpd-20041012.new/sysdep/common/libsysdep/GNUmakefile
+--- isakmpd-20041012.orig/sysdep/common/libsysdep/GNUmakefile	2007-01-08 03:16:16.000000000 +0100
++++ isakmpd-20041012.new/sysdep/common/libsysdep/GNUmakefile	2007-01-08 03:23:24.000000000 +0100
+@@ -44,7 +44,7 @@
+ endif
+ 
+ lib${LIB}.a: ${SRCS:%.c=%.o}
+-	ar cq $@ ${SRCS:%.c=%.o}
++	$(AR) cq $@ ${SRCS:%.c=%.o}
+ 
+ clean:
+ 	rm -f lib${LIB}.a ${SRCS:%.c=%.o}
