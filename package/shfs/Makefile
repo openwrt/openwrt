@@ -41,7 +41,7 @@ define KernelPackage/shfs
 	\\\
 	This package contains the ShFS kernel module.
   FILES:=$(PKG_INSTALL_DIR)/lib/modules/$(LINUX_VERSION)/kernel/fs/shfs/shfs.$(LINUX_KMOD_SUFFIX)
-  SUBMENU:=Network Support
+  SUBMENU:=Filesystems
   VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
   AUTOLOAD:=$(call AutoLoad,40,shfs)
 endef
