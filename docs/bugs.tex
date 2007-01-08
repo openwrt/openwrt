@@ -29,14 +29,24 @@ Regarding the kind of ticket that is open, a patch is welcome in those cases:
 \item new features that can be added by modifying existing OpenWrt files
 \end{itemize}
 
-In order to include a patch, you need to produce it, this can be done by using the 
-\textbf{svn diff} command which generates the differences between your local copy 
-(modified) and the version on the OpenWrt repository (unmodified yet). Then attach 
-the patch with a description, using the "Attach" button.
-
 Once the ticket is open, a developer will take care of it, if so, the ticket is marked
 as "accepted" with the developer name. You can add comments at any time to the ticket,
 even when it is closed.
+
+\subsubsection{Submitting patches}
+
+In order to include a patch to a ticket, you need to output it, this can be done by using the \textbf{svn diff} command which generates the differences between your local copy (modified) and the version on the OpenWrt repository (unmodified yet). Then attach the patch with a description, using the "Attach" button.
+
+Your patch must respect the following conventions :
+
+\begin{itemize}
+\item it has to work, with no side effect on other platforms, distributions, packages ...
+\item it must have a reason to be included in OpenWrt : bug fix, enhancement, feature adding/removing
+\item the patch name should be named like that : <index number>-this\_fixes\_bug\_foo\_and\_bar.patch
+\item if several, they have to be indexed with an integer number : 100-patch1, 200-patch2 ...
+\end{itemize}
+
+Your patch will be read and most likely be used as-is by the developpers if it is clean and working. If not, the patch will be accepted anyway and modified to be OpenWrt-rules compliant
 
 \subsubsection{Closing a ticket}
 
