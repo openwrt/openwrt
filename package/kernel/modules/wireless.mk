@@ -18,7 +18,7 @@ define KernelPackage/ieee80211
 	- ieee80211_crypt_wep \\\
 	- ieee80211_crypt_tkip \\\
 	- ieee80211_crytp_ccmp \\\
-  DEPENDS:=@LINUX_2_6 kmod-crypto
+  DEPENDS:=@LINUX_2_6 +kmod-crypto
   KCONFIG:=$(CONFIG_IEEE80211)
   FILES:= \
   	$(MODULES_DIR)/kernel/net/ieee80211/*.$(LINUX_KMOD_SUFFIX)
