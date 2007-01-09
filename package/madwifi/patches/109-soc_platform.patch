@@ -184,7 +184,7 @@ diff -ur madwifi.old/ath/if_ath_ahb.c madwifi.dev/ath/if_ath_ahb.c
  #endif
 +
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19)
-+	platform_driver_register(&ahb_wmac_driver);
++	platform_driver_unregister(&ahb_wmac_driver);
 +#else
  	exit_ath_wmac(AR531X_WLAN0_NUM);
  	exit_ath_wmac(AR531X_WLAN1_NUM);
