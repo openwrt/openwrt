@@ -9,12 +9,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=hostapd
-PKG_VERSION:=0.5.5
+PKG_VERSION:=0.5.7
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://hostap.epitest.fi/releases/
-PKG_MD5SUM:=92288aeb2b90c0c81ae3f50beff9b890
+PKG_MD5SUM:=d5113247dc6ee17106e6bc7cb89aa507
 PKG_CAT:=zcat
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
