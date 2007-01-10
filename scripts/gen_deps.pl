@@ -28,6 +28,8 @@ while ($line = <>) {
 	$line =~ /^Source-Makefile: \s*(.+\/([^\/]+)\/Makefile)\s*$/ and do {
 		$makefile = $1;
 		$src = $2;
+		defined $pkg{$src} or $pkg{$src} = {};
+		$pkg{$src}->{src} = $src;
 	};
 	$line =~ /^Package: \s*(.+)\s*$/ and do {
 		$name = $1;
