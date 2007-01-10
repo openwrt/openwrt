@@ -49,10 +49,14 @@ ifeq ($(CONFIG_X86_GRUB_IMAGES),y)
   endef
 endif
 
+define Image/Prepare
+	cp $(LINUX_DIR)/arch/i386/boot/bzImage $(KDIR)/bzImage
+endef
+
 define Image/Build
 	$(call Image/Build/grub,$(1))
 	cp $(KDIR)/root.$(1) $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).fs
-	cp $(LINUX_DIR)/arch/i386/boot/bzImage $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-vmlinuz
+	cp $(KDIR)/bzImage $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-vmlinuz
 endef
 
 $(eval $(call BuildImage))

@@ -7,6 +7,11 @@
 
 include $(TMP_DIR)/.target.mk
 
+ifeq ($(IB),1)
+$(TMP_DIR)/.target.mk: $(TOPDIR)/.target.mk
+	$(CP) $< $@
+else
 $(TMP_DIR)/.target.mk: $(TMP_DIR)/.targetinfo
 	$(SCRIPT_DIR)/gen_target_mk.pl < $(TMP_DIR)/.targetinfo > $@
+endif
 

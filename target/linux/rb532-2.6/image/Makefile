@@ -29,13 +29,13 @@ define Build/Clean
 endef
 
 define Image/Prepare
-	$(STAGING_DIR)/bin/patch-cmdline $(LINUX_DIR)/vmlinux 'root=/dev/cfa2 '
 	$(KERNEL_CROSS)objcopy -O binary -R .reginfo -R .note -R .comment -R .mdebug -S $(LINUX_DIR)/vmlinux $(LINUX_KERNEL)
+	cat $(KDIR)/vmlinux | $(STAGING_DIR)/bin/lzma e -si -so -eos -lc1 -lp2 -pb2 > $(KDIR)/vmlinux.lzma
+	$(MAKE) -C $(GENERIC_PLATFORM_DIR)/image/lzma-loader $(LOADER_MAKEOPTS) clean compile
+	cp $(LINUX_DIR)/vmlinux $(KDIR)/vmlinux.elf
 endef
 
 define Image/BuildKernel
-	cat $(KDIR)/vmlinux | $(STAGING_DIR)/bin/lzma e -si -so -eos -lc1 -lp2 -pb2 > $(KDIR)/vmlinux.lzma
-	$(MAKE) -C $(GENERIC_PLATFORM_DIR)/image/lzma-loader $(LOADER_MAKEOPTS) clean compile
 	$(CP) $(KDIR)/loader.elf $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-vmlinux
 endef
 
@@ -52,7 +52,7 @@ root=/dev/cfa2 rootfstype=ext2
 endef
 
 define Image/Build
-	$(STAGING_DIR)/bin/patch-cmdline $(LINUX_DIR)/vmlinux '$(strip $(call Image/cmdline/$(1))) '
+	$(STAGING_DIR)/bin/patch-cmdline $(KDIR)/vmlinux.elf '$(strip $(call Image/cmdline/$(1))) '
 	./gen_image.sh $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).bin 4 $(LINUX_DIR)/vmlinux 16 $(KDIR)/root.$(1)
 endef
 

@@ -11,10 +11,11 @@ define Build/Clean
 endef
 
 define Image/Prepare
+	cp $(LINUX_DIR)/arch/ppc/boot/images/uImage $(KDIR)/uImage
 endef
 
 define Image/BuildKernel
-	cp $(LINUX_DIR)/arch/ppc/boot/images/uImage $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-uImage
+	cp $(KDIR)/uImage $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-uImage
 endef
 
 define Image/Build
@@ -23,7 +24,7 @@ endef
 
 define Image/Build/jffs2-64k
 	( \
-		dd if=$(LINUX_DIR)/arch/ppc/boot/images/uImage bs=65536 conv=sync; \
+		dd if=$(KDIR)/uImage bs=65536 conv=sync; \
 		dd if=$(KDIR)/root.$(1) bs=65536 conv=sync; \
 	) > $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).img
 endef

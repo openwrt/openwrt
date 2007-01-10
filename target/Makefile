@@ -12,24 +12,23 @@ all: install
 $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
 
-TARGETS-y := linux
-TARGETS-$(CONFIG_SDK) += sdk
-
 linux-install: $(BIN_DIR)
 image_install: linux-install
 
 IMAGE_DIR:=linux/$(BOARD)-$(KERNEL)/image
 
-
 download: $(patsubst %,%-download,$(TARGETS-y))
 prepare: linux-prepare
 compile: linux-compile image_compile
-install: image_clean $(patsubst %,%-install,$(TARGETS-y)) image_install
-clean: $(patsubst %,%-clean,$(TARGETS-y)) image_clean
+install: image_clean linux-install sdk_install image_install imagebuilder_install
+clean: linux-clean sdk-clean imagebuilder-clean image_clean
 
 prereq: FORCE
 	$(MAKE) -C linux/$(BOARD)-$(KERNEL) prereq
 	$(MAKE) -C $(IMAGE_DIR) prereq
+
+sdk_install: FORCE
+	$(MAKE) -C sdk install
 
 image_clean: FORCE
 	$(MAKE) -C $(IMAGE_DIR) clean
@@ -40,6 +39,9 @@ image_compile: FORCE
 
 image_install: image_compile
 	$(MAKE) -C $(IMAGE_DIR) install
+
+imagebuilder_install: image_install
+	$(MAKE) -C imagebuilder install
 
 %-clean: FORCE
 	$(MAKE) -C $(patsubst %-clean,%,$@) clean

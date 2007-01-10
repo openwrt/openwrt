@@ -77,10 +77,15 @@ endef
 define BuildImage
 download:
 prepare:
-compile: compile-targets
+ifneq ($(IB),1)
+  compile: compile-targets
 	$(call Build/Compile)
+else
+  compile:
+endif
 
-install: compile install-targets
+ifneq ($(IB),1)
+  install: compile install-targets
 	$(call Image/Prepare)
 	$(call Image/mkfs/prepare)
 	$(call Image/BuildKernel)
@@ -88,9 +93,21 @@ install: compile install-targets
 	$(call Image/mkfs/squashfs)
 	$(call Image/mkfs/tgz)
 	$(call Image/mkfs/ext2)
+else
+  install: compile install-targets
+	$(call Image/BuildKernel)
+	$(call Image/mkfs/jffs2)
+	$(call Image/mkfs/squashfs)
+	$(call Image/mkfs/tgz)
+	$(call Image/mkfs/ext2)
+endif
 	
-clean: clean-targets
+ifneq ($(IB),1)
+  clean: clean-targets
 	$(call Build/Clean)
+else
+  clean:
+endif
 
 compile-targets:
 install-targets:

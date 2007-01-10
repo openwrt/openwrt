@@ -7,9 +7,13 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
+define Image/Prepare
+	cp $(LINUX_DIR)/linux $(KDIR)/vmlinux.elf
+endef
+
 define Image/Build
 	cp $(KDIR)/root.$(1) $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).img
-	cp $(LINUX_DIR)/linux $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-vmlinux
+	cp $(KDIR)/vmlinux.elf $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-vmlinux
 endef
 
 $(eval $(call BuildImage))
