@@ -19,16 +19,16 @@ SDK_BUILD_DIR:=$(BUILD_DIR)/$(SDK_NAME)
 all: compile
 
 $(BIN_DIR)/$(SDK_NAME).tar.bz2:
-	(cd $(STAGING_DIR); \
-		rm -rf info man share stampfiles; \
-		cd usr; \
-		rm -rf doc info man share; \
-	)
 	rm -rf $(SDK_BUILD_DIR)
 	mkdir -p $(SDK_BUILD_DIR)/dl $(SDK_BUILD_DIR)/package
 	$(CP) $(INCLUDE_DIR) $(SCRIPT_DIR) $(TOPDIR)/docs $(SDK_BUILD_DIR)/
 	$(TAR) -cf - -C $(TOPDIR) --exclude=ccache/ staging_dir_$(ARCH) | \
 		$(TAR) -xf - -C $(SDK_BUILD_DIR)
+	(cd $(SDK_BUILD_DIR)/staging_dir_$(ARCH); \
+		rm -rf info man share stampfiles; \
+		cd usr; \
+		rm -rf doc info man share; \
+	)
 	$(CP) $(TOPDIR)/rules.mk $(TOPDIR)/.config $(SDK_BUILD_DIR)/
 	$(CP) $(TOPDIR)/package/Makefile $(SDK_BUILD_DIR)/package/
 	$(CP) ./files/Makefile $(SDK_BUILD_DIR)/
