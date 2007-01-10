@@ -70,7 +70,7 @@ foreach $target (@target) {
   $profiles_eval .= "
 \$(eval \$(call Profile,$conf\_$profile->{id}))"
 	}
-	print <<EOF
+	print "
 ifeq (\$(CONFIG_LINUX_$conf),y)
   define Target
     KERNEL:=$target->{kernel}
@@ -78,9 +78,10 @@ ifeq (\$(CONFIG_LINUX_$conf),y)
     LINUX_VERSION:=$target->{version}
     LINUX_RELEASE:=$target->{release}
     LINUX_KARCH:=$target->{karch}
+    DEFAULT_PACKAGES:=".join(" ", @{$target->{packages}})."
   endef$profiles_def
 endif$profiles_eval
 
-EOF
+"
 }
 print "\$(eval \$(call Target))\n";
