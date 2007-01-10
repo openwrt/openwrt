@@ -92,17 +92,17 @@ enable_atheros() {
 
 		[ "$first" = 1 ] && {
 			# only need to change freq band and channel on the first vif
-			config_get "$device" mode
+			config_get agmode "$device" mode
 			pureg=0
-			case "$mode" in
-				*b) mode=11b;;
-				*bg) mode=11g;;
-				*g) mode=11g; pureg=1;;
-				*a) mode=11a;;
-				*) mode=11g;;
+			case "$agmode" in
+				*b) agmode=11b;;
+				*bg) agmode=11g;;
+				*g) agmode=11g; pureg=1;;
+				*a) agmode=11a;;
+				*) agmode=11g;;
 			esac
 			iwconfig "$ifname" channel 0 
-			iwpriv "$ifname" mode "$mode"
+			iwpriv "$ifname" agmode "$agmode"
 			iwpriv "$ifname" pureg "$pureg"
 			iwconfig "$ifname" channel "$channel"
 		}
