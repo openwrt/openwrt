@@ -74,7 +74,7 @@ config BUSYBOX_CONFIG_LSMOD
 
 config BUSYBOX_CONFIG_FEATURE_LSMOD_PRETTY_2_6_OUTPUT
 	bool "lsmod pretty output for 2.6.x Linux kernels "
-	default n
+	default y
 	depends on BUSYBOX_CONFIG_LSMOD
 	help
 	  This option makes output format of lsmod adjusted to
