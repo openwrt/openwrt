@@ -7,8 +7,12 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
+define Image/Prepare
+	cp $(KDIR)/linux-*/vmlinux $(KDIR)/vmlinux.elf
+endef
+
 define Image/BuildKernel
-	cp $(KDIR)/linux-*/vmlinux $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-vmlinux.elf
+	cp $(KDIR)/vmlinux.elf $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-vmlinux.elf
 	gzip -9 -c $(KDIR)/vmlinux > $(KDIR)/vmlinux.bin.gz
 	$(STAGING_DIR)/bin/lzma e $(KDIR)/vmlinux $(KDIR)/vmlinux.bin.l7
 	dd if=$(KDIR)/vmlinux.bin.l7 of=$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-vmlinux.lzma bs=65536 conv=sync

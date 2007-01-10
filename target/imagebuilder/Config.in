@@ -1,0 +1,10 @@
+config IB
+	bool "Build the OpenWrt Image Builder"
+	depends !TARGET_ROOTFS_INITRAMFS
+	default y if ALL
+	help
+	  This is essentially a stripped-down version of the buildroot
+	  with precompiled packages, kernel image and image building tools.
+	  You can use it to generate custom images without compiling anything
+
+
