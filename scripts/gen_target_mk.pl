@@ -75,6 +75,7 @@ ifeq (\$(CONFIG_LINUX_$conf),y)
   define Target
     KERNEL:=$target->{kernel}
     BOARD:=$target->{board}
+    BOARDNAME:=$target->{name}
     LINUX_VERSION:=$target->{version}
     LINUX_RELEASE:=$target->{release}
     LINUX_KARCH:=$target->{karch}
