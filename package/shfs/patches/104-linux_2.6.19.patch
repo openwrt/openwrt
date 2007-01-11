@@ -1,0 +1,202 @@
+diff -urN shfs-0.35/shfs/Linux-2.6/dir.c shfs-0.35.new/shfs/Linux-2.6/dir.c
+--- shfs-0.35/shfs/Linux-2.6/dir.c	2007-01-11 14:59:49.000000000 +0100
++++ shfs-0.35.new/shfs/Linux-2.6/dir.c	2007-01-11 14:55:21.000000000 +0100
+@@ -302,8 +302,8 @@
+ 	
+ 	shfs_invalid_dir_cache(dir);
+ 	result = shfs_instantiate(dentry);
+-	if (forced_write && dentry->d_inode && dentry->d_inode->u.generic_ip)
+-		((struct shfs_inode_info *)dentry->d_inode->u.generic_ip)->unset_write_on_close = 1;
++	if (forced_write && dentry->d_inode && dentry->d_inode->i_private)
++		((struct shfs_inode_info *)dentry->d_inode->i_private)->unset_write_on_close = 1;
+ 	return result;
+ }
+ 
+diff -urN shfs-0.35/shfs/Linux-2.6/fcache.c shfs-0.35.new/shfs/Linux-2.6/fcache.c
+--- shfs-0.35/shfs/Linux-2.6/fcache.c	2004-06-01 15:16:19.000000000 +0200
++++ shfs-0.35.new/shfs/Linux-2.6/fcache.c	2007-01-11 14:55:21.000000000 +0100
+@@ -100,7 +100,7 @@
+ 		VERBOSE("dir in file cache?\n");
+ 		return -EINVAL;
+ 	}
+-	p = (struct shfs_inode_info *)inode->u.generic_ip;
++	p = (struct shfs_inode_info *)inode->i_private;
+ 	if (!p) {
+ 		VERBOSE("inode without info\n");
+ 		return -EINVAL;
+@@ -127,7 +127,7 @@
+ 		VERBOSE("dir in file cache?\n");
+ 		return -EINVAL;
+ 	}
+-	p = (struct shfs_inode_info *)inode->u.generic_ip;
++	p = (struct shfs_inode_info *)inode->i_private;
+ 	if (!p) {
+ 		VERBOSE("inode without info\n");
+ 		return -EINVAL;
+@@ -160,7 +160,7 @@
+ 	if (result == 0) {
+ 		struct shfs_inode_info *p;
+ 
+-		p = (struct shfs_inode_info *)f->f_dentry->d_inode->u.generic_ip;
++		p = (struct shfs_inode_info *)f->f_dentry->d_inode->i_private;
+ 		if (!p) {
+ 			VERBOSE("inode without info\n");
+ 			return -EINVAL;
+@@ -184,7 +184,7 @@
+ 		return -EINVAL;
+ 	}
+ 	DEBUG("ino: %lu\n", inode->i_ino);
+-	p = (struct shfs_inode_info *)inode->u.generic_ip;
++	p = (struct shfs_inode_info *)inode->i_private;
+ 	if (!p) {
+ 		VERBOSE("inode without info\n");
+ 		return -EINVAL;
+@@ -226,7 +226,7 @@
+ 		VERBOSE("dir in file cache?\n");
+ 		return -EINVAL;
+ 	}
+-	p = (struct shfs_inode_info *)inode->u.generic_ip;
++	p = (struct shfs_inode_info *)inode->i_private;
+ 	if (!p) {
+ 		VERBOSE("inode without info\n");
+ 		return -EINVAL;
+@@ -327,7 +327,7 @@
+ 		VERBOSE("dir in file cache?\n");
+ 		return -EINVAL;
+ 	}
+-	p = (struct shfs_inode_info *)inode->u.generic_ip;
++	p = (struct shfs_inode_info *)inode->i_private;
+ 	if (!p) {
+ 		VERBOSE("inode without info\n");
+ 		return -EINVAL;
+diff -urN shfs-0.35/shfs/Linux-2.6/file.c shfs-0.35.new/shfs/Linux-2.6/file.c
+--- shfs-0.35/shfs/Linux-2.6/file.c	2004-06-01 15:16:19.000000000 +0200
++++ shfs-0.35.new/shfs/Linux-2.6/file.c	2007-01-11 14:55:21.000000000 +0100
+@@ -9,6 +9,7 @@
+ #include <asm/fcntl.h>
+ #include <linux/smp_lock.h>
+ #include <linux/stat.h>
++#include <linux/fs.h>
+ 
+ #include "shfs_fs.h"
+ #include "shfs_fs_sb.h"
+@@ -90,7 +91,7 @@
+ 	struct dentry *dentry = f->f_dentry;
+ 	struct shfs_sb_info *info = info_from_dentry(dentry);
+ 	struct inode *inode = p->mapping->host;
+-	struct shfs_inode_info *i = (struct shfs_inode_info *)inode->u.generic_ip;
++	struct shfs_inode_info *i = (struct shfs_inode_info *)inode->i_private;
+ 	char *buffer = kmap(p) + offset;
+ 	int written = 0, result;
+ 	unsigned count = to - offset;
+@@ -242,8 +243,8 @@
+ 		}
+ 	}
+ 	/* if file was forced to be writeable, change attrs back on close */
+-	if (dentry->d_inode && dentry->d_inode->u.generic_ip) {
+-		if  (((struct shfs_inode_info *)dentry->d_inode->u.generic_ip)->unset_write_on_close) {
++	if (dentry->d_inode && dentry->d_inode->i_private) {
++		if  (((struct shfs_inode_info *)dentry->d_inode->i_private)->unset_write_on_close) {
+ 			char name[SHFS_PATH_MAX];
+ 
+ 			if (get_name(dentry, name) < 0)
+@@ -320,8 +321,8 @@
+ 
+ struct file_operations shfs_file_operations = {
+ 	.llseek		= generic_file_llseek,
+-	.read		= generic_file_read,
+-	.write		= generic_file_write,
++	.read		= generic_file_aio_read,
++	.write		= generic_file_aio_write,
+ 	.ioctl		= shfs_ioctl,
+ 	.mmap		= generic_file_mmap,
+ 	.open		= shfs_file_open,
+diff -urN shfs-0.35/shfs/Linux-2.6/inode.c shfs-0.35.new/shfs/Linux-2.6/inode.c
+--- shfs-0.35/shfs/Linux-2.6/inode.c	2004-06-01 15:16:19.000000000 +0200
++++ shfs-0.35.new/shfs/Linux-2.6/inode.c	2007-01-11 14:55:21.000000000 +0100
+@@ -35,7 +35,7 @@
+ shfs_set_inode_attr(struct inode *inode, struct shfs_fattr *fattr)
+ {
+ 	struct shfs_sb_info *info = info_from_inode(inode);
+-	struct shfs_inode_info *i = inode->u.generic_ip;
++	struct shfs_inode_info *i = inode->i_private;
+ 	struct timespec last_time = inode->i_mtime;
+ 	loff_t last_size = inode->i_size;
+ 
+@@ -52,7 +52,6 @@
+ 	inode->i_ctime	= fattr->f_ctime;
+ 	inode->i_atime	= fattr->f_atime;
+ 	inode->i_mtime	= fattr->f_mtime;
+-	inode->i_blksize= fattr->f_blksize;
+ 	inode->i_blocks	= fattr->f_blocks;
+ 	inode->i_size	= fattr->f_size;
+ 
+@@ -75,7 +74,7 @@
+ 	if (!inode)
+ 		return NULL;
+ 	inode->i_ino = fattr->f_ino;
+-	i = inode->u.generic_ip = (struct shfs_inode_info *)KMEM_ALLOC("inode", inode_cache, GFP_KERNEL);
++	i = inode->i_private = (struct shfs_inode_info *)KMEM_ALLOC("inode", inode_cache, GFP_KERNEL);
+ 	if (!i)
+ 		return NULL;
+ 	i->cache = NULL;
+@@ -107,7 +106,7 @@
+ 	struct shfs_inode_info *i;
+ 
+ 	DEBUG("ino: %lu\n", inode->i_ino);
+-	i = (struct shfs_inode_info *)inode->u.generic_ip;
++	i = (struct shfs_inode_info *)inode->i_private;
+ 	if (!i) {
+ 		VERBOSE("invalid inode\n");
+ 		goto out;
+@@ -172,7 +171,7 @@
+ {
+ 	struct shfs_sb_info *info = info_from_dentry(dentry);
+ 	struct inode *inode = dentry->d_inode;
+-	struct shfs_inode_info *i = (struct shfs_inode_info *)inode->u.generic_ip;
++	struct shfs_inode_info *i = (struct shfs_inode_info *)inode->i_private;
+ 	int result;
+ 
+         DEBUG("%s\n", dentry->d_name.name);
+@@ -339,9 +338,9 @@
+ 
+ static struct super_block *
+ shfs_get_sb(struct file_system_type *fs_type,
+-	    int flags, const char *dev_name, void *data)
++	    int flags, const char *dev_name, void *data, struct vfsmount *mnt)
+ {
+-	return get_sb_nodev(fs_type, flags, data, shfs_read_super);
++	return get_sb_nodev(fs_type, flags, data, shfs_read_super, mnt);
+ }
+ 
+ static struct file_system_type sh_fs_type = {
+diff -urN shfs-0.35/shfs/Linux-2.6/proc.c shfs-0.35.new/shfs/Linux-2.6/proc.c
+--- shfs-0.35/shfs/Linux-2.6/proc.c	2004-06-01 15:16:19.000000000 +0200
++++ shfs-0.35.new/shfs/Linux-2.6/proc.c	2007-01-11 14:55:21.000000000 +0100
+@@ -178,7 +178,7 @@
+ 
+ 		vec[0].iov_base = (void *)buffer;
+ 		vec[0].iov_len = c;
+-		result = f->f_op->writev(f, (const struct iovec *) &vec, 1, &f->f_pos);
++		result = f->f_op->aio_write(f, (const struct iovec *) &vec, 1, &f->f_pos);
+ 		if (result < 0) {
+ 			DEBUG("error: %d\n", result);
+ 			if (result == -EAGAIN)
+@@ -261,7 +261,7 @@
+ 
+ 		vec[0].iov_base = buffer;
+ 		vec[0].iov_len = c;
+-		result = f->f_op->readv(f, (const struct iovec *)&vec, 1, &f->f_pos);
++		result = f->f_op->aio_read(f, (const struct iovec *)&vec, 1, &f->f_pos);
+ 		if (!result) {
+ 			/*  peer has closed socket */
+ 			result = -EIO;
+@@ -350,7 +350,7 @@
+ 
+ 		vec[0].iov_base = BUFFER+LEN;
+ 		vec[0].iov_len = c;
+-		result = f->f_op->readv(f, (const struct iovec *)&vec, 1, &f->f_pos);
++		result = f->f_op->aio_read(f, (const struct iovec *)&vec, 1, &f->f_pos);
+ 		SIGLOCK(flags);
+ 		if (result == -EPIPE && !sigpipe) {
+ 			sigdelset(&current->pending.signal, SIGPIPE);
