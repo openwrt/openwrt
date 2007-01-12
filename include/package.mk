@@ -21,7 +21,7 @@ define Build/DefaultTargets
   ifeq ($(DUMP),)
     ifeq ($(CONFIG_AUTOREBUILD),y)
       _INFO:=
-      ifneq ($$(shell $(SCRIPT_DIR)/timestamp.pl -p $(PKG_BUILD_DIR) .),$(PKG_BUILD_DIR))
+      ifneq ($$(shell $(SCRIPT_DIR)/timestamp.pl -p $(PKG_BUILD_DIR) . $(PKG_FILE_DEPEND)),$(PKG_BUILD_DIR))
         _INFO+=$(subst $(TOPDIR)/,,$(PKG_BUILD_DIR))
         $(PKG_BUILD_DIR)/.prepared: package-clean
       endif

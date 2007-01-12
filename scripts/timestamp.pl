@@ -17,9 +17,8 @@ sub get_ts($$) {
 	while (<FIND>) {
 		chomp;
 		my $file = $_;
-		open FILE, "<$file";
-		my @stat = stat FILE;
-		close FILE;
+		next if -l $file;
+		my @stat = stat $file;
 		if ($stat[9] > $ts) {
 			$ts = $stat[9];
 			$fn = $file;

@@ -13,6 +13,7 @@ PKG_NAME:=base-files
 PKG_RELEASE:=8
 
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)
+PKG_FILE_DEPEND:=$(PLATFORM_DIR)
 
 REV:=$(shell LANG=C svn info | awk '/^Revision:/ { print$$2 }' )
 ifeq ($(REV),)
