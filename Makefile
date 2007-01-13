@@ -82,10 +82,10 @@ tmpinfo-clean: FORCE
 	@-rm -rf tmp/.pkginfo tmp/.targetinfo
 
 tmp/.config.in: tmp/.pkginfo
-	@./scripts/gen_package_config.pl < $< > $@ || rm -f $@
+	@./scripts/metadata.pl package_config < $< > $@ || rm -f $@
 
 tmp/.config-target.in: tmp/.targetinfo
-	@./scripts/gen_target_config.pl < $< > $@ || rm -f $@
+	@./scripts/metadata.pl target_config < $< > $@ || rm -f $@
 
 .config: ./scripts/config/conf tmp/.config.in tmp/.config-target.in
 	@[ -f .config ] || $(NO_TRACE_MAKE) menuconfig
