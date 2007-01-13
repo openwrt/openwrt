@@ -12,6 +12,6 @@ $(TMP_DIR)/.target.mk: $(TOPDIR)/.target.mk
 	$(CP) $< $@
 else
 $(TMP_DIR)/.target.mk: $(TMP_DIR)/.targetinfo
-	$(SCRIPT_DIR)/gen_target_mk.pl < $(TMP_DIR)/.targetinfo > $@
+	$(SCRIPT_DIR)/metadata.pl target_mk < $(TMP_DIR)/.targetinfo > $@
 endif
 
