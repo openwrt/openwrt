@@ -180,6 +180,7 @@ define BuildPackage
 	echo "Build-Depends: $(PKG_BUILDDEP)"; \
 	echo "Category: $(CATEGORY)"; \
 	echo "Title: $(TITLE)"; \
+	echo "Maintainer: $(MAINTAINER)"; \
 	if isset $(call shvar,Package/$(1)/description); then \
 		echo -n "Description: "; \
 		getvar $(call shvar,Package/$(1)/description); \
