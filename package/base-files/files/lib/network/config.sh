@@ -117,8 +117,8 @@ setup_interface() {
 			config_get gateway "$config" gateway
 			config_get dns "$config" dns
 			
-			$DEBUG ifconfig "$iface" "$ipaddr" netmask "$netmask"
-			$DEBUG ifconfig "$iface" inet6 add "$ip6addr" 
+			[ -z "$ipaddr" ] || $DEBUG ifconfig "$iface" "$ipaddr" netmask "$netmask"
+			[ -z "$ip6addr" ] || $DEBUG ifconfig "$iface" inet6 add "$ip6addr" 
 			[ -z "$gateway" ] || route add default gw "$gateway"
 			[ -z "$dns" -o -f /tmp/resolv.conf.auto ] || {
 				for ns in $dns; do
