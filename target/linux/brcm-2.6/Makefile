@@ -21,7 +21,7 @@ define Target/Description
 endef
 
 include $(INCLUDE_DIR)/kernel-build.mk
-DEFAULT_PACKAGES += kmod-switch
+DEFAULT_PACKAGES += kmod-switch kmod-diag
 
 define Profile/Atheros
   NAME:=Atheros WiFi (default)
