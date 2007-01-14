@@ -46,6 +46,15 @@ sub parse_target_metadata() {
 		/^Target-Profile-Name:\s*(.+)\s*$/ and $profile->{name} = $1;
 		/^Target-Profile-Packages:\s*(.*)\s*$/ and $profile->{packages} = [ split(/\s+/, $1) ];
 	}
+	foreach my $target (@target) {
+		@{$target->{profiles}} > 0 or $target->{profiles} = [
+			{
+				id => 'Default',
+				name => 'Default',
+				packages => []
+			}
+		];
+	}
 	return @target;
 }
 
@@ -274,13 +283,6 @@ EOF
 	foreach my $target (@target) {
 		my $profiles = $target->{profiles};
 		
-		@$profiles > 0 or $profiles = [
-			{
-				id => 'Default',
-				name => 'Default',
-				packages => []
-			}
-		];
 		foreach my $profile (@$profiles) {
 			print <<EOF;
 config LINUX_$target->{conf}_$profile->{id}
