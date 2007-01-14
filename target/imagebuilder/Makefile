@@ -25,6 +25,7 @@ $(BIN_DIR)/$(IB_NAME).tar.bz2: FORCE
 		$(INCLUDE_DIR) $(SCRIPT_DIR) $(PACKAGE_DIR) \
 		$(TOPDIR)/rules.mk $(TOPDIR)/.config \
 		$(TMP_DIR)/.target.mk \
+		$(TMP_DIR)/.targetinfo \
 		./files/Makefile \
 		$(IB_BUILD_DIR)/
 	$(CP) $(STAGING_DIR)/bin/* $(IB_BUILD_DIR)/staging_dir_$(ARCH)/bin
