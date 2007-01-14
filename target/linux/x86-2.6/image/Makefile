@@ -36,11 +36,9 @@ ifeq ($(CONFIG_X86_GRUB_IMAGES),y)
   define Image/Build/grub
 	mkdir -p $(KDIR)/root.grub/boot/grub
 	$(CP) \
-		$(STAGING_DIR)/usr/lib/grub/i386-pc/stage1 \
-		$(STAGING_DIR)/usr/lib/grub/i386-pc/stage2 \
-		$(STAGING_DIR)/usr/lib/grub/i386-pc/e2fs_stage1_5 \
+		$(KDIR)/*stage* \
 		$(KDIR)/root.grub/boot/grub/
-	$(CP) $(LINUX_DIR)/arch/i386/boot/bzImage $(KDIR)/root.grub/boot/vmlinuz
+	$(CP) $(KDIR)/bzImage $(KDIR)/root.grub/boot/vmlinuz
 	sed \
 		-e 's#@CMDLINE@#$(strip $(call Image/cmdline/$(1))) $(CONFIG_X86_GRUB_BOOTOPTS)#g' \
 		-e 's#@BAUDRATE@#$(CONFIG_X86_GRUB_BAUDRATE)#g' \
@@ -51,6 +49,13 @@ endif
 
 define Image/Prepare
 	cp $(LINUX_DIR)/arch/i386/boot/bzImage $(KDIR)/bzImage
+	# for the image builder
+	$(CP) \
+		$(STAGING_DIR)/usr/lib/grub/i386-pc/stage1 \
+		$(STAGING_DIR)/usr/lib/grub/i386-pc/stage2 \
+		$(STAGING_DIR)/usr/lib/grub/i386-pc/e2fs_stage1_5 \
+		$(KDIR)/
+	$(CP) $(STAGING_DIR)/usr/sbin/grub $(STAGING_DIR)/bin
 endef
 
 define Image/Build
