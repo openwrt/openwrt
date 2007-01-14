@@ -140,7 +140,7 @@ build_image: FORCE
 	$(NO_TRACE_MAKE) -C target/linux/$(BOARD)-$(KERNEL)/image install IB=1
 	
 clean:
-	rm -rf tmp $(TARGET_DIR)
+	rm -rf tmp $(TARGET_DIR) $(BIN_DIR)
 
 .PHONY: FORCE
 .SILENT: help info image
