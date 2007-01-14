@@ -50,7 +50,9 @@ prereq: $(PREREQ_PACKAGES)
 download: $(DOWNLOAD_PACKAGES)
 compile-targets: $(COMPILE_PACKAGES)
 compile:
+	@-rm -f $(PACKAGE_DIR)/*.ipk
 	$(MAKE) compile-targets
+
 install-targets: $(INSTALL_PACKAGES)
 install:
 	rm -rf $(BUILD_DIR)/root

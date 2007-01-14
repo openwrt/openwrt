@@ -18,8 +18,7 @@ SDK_BUILD_DIR:=$(BUILD_DIR)/$(SDK_NAME)
 
 all: compile
 
-$(BIN_DIR)/$(SDK_NAME).tar.bz2:
-	rm -rf $(SDK_BUILD_DIR)
+$(BIN_DIR)/$(SDK_NAME).tar.bz2: clean
 	mkdir -p $(SDK_BUILD_DIR)/dl $(SDK_BUILD_DIR)/package
 	$(CP) $(INCLUDE_DIR) $(SCRIPT_DIR) $(TOPDIR)/docs $(SDK_BUILD_DIR)/
 	$(TAR) -cf - -C $(TOPDIR) --exclude=ccache/ staging_dir_$(ARCH) | \
@@ -45,7 +44,7 @@ $(BIN_DIR)/$(SDK_NAME).tar.bz2:
 download:
 prepare:
 compile: $(BIN_DIR)/$(SDK_NAME).tar.bz2
-install:
+install: compile
 
 clean:
 	rm -rf $(SDK_BUILD_DIR) $(BIN_DIR)/$(SDK_NAME).tar.bz2
