@@ -57,7 +57,6 @@ endef
 define Package/wlc
   $(call Package/broadcom-wl/Default)
   TITLE:=wl driver setup utility
-  DEFAULT:=y
   DESCRIPTION:=\
 	This package contains an utility for initializing the proprietary Broadcom \\\
 	wl driver.
@@ -74,7 +73,6 @@ endef
 define Package/nas
   $(call Package/broadcom-wl/Default)
   DEPENDS+=+nvram
-  DEFAULT:=y
   TITLE:=Proprietary Broadcom WPA/WPA2 authenticator
   DESCRIPTION:=\
 	This package contains the proprietary WPA/WPA2 authenticator (nas) for the \\\

@@ -29,7 +29,6 @@ endef
 
 define Package/kmod-wlcompat
   $(call Package/kmod-wlcompat/Default)
-  DEFAULT:=y
 endef
 
 define Package/kmod-wlcompat-debug
