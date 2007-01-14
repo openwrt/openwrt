@@ -47,7 +47,7 @@ define Profile
 	$(ID)_NAME:=$(NAME)
 	$(ID)_PACKAGES:=$(PACKAGES)
     PROFILE_LIST += \
-  		echo '$(ID):'; echo '	$(NAME)';
+  		echo '$(ID):'; [ -z '$(NAME)' ] || echo '	$(NAME)'; echo '	Packages: $(PACKAGES)';
   endif
 endef
 
