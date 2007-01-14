@@ -17,6 +17,7 @@ define Target/Description
 endef
 
 include $(INCLUDE_DIR)/kernel-build.mk
+DEFAULT_PACKAGES += yamonenv
 
 define Kernel/BuildImage
 	$(call Kernel/BuildImage/Default)
