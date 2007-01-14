@@ -178,6 +178,7 @@ define BuildPackage
 	echo "Depends: $$(IDEPEND_$(1))"; \
 	echo "Provides: $(PROVIDES)"; \
 	echo "Build-Depends: $(PKG_BUILDDEP)"; \
+	echo "Section: $(SECTION)"; \
 	echo "Category: $(CATEGORY)"; \
 	echo "Title: $(TITLE)"; \
 	echo "Maintainer: $(MAINTAINER)"; \
