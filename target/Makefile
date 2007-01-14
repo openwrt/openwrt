@@ -20,7 +20,15 @@ IMAGE_DIR:=linux/$(BOARD)-$(KERNEL)/image
 download: $(patsubst %,%-download,$(TARGETS-y))
 prepare: linux-prepare
 compile: linux-compile image_compile
-install: image_clean linux-install sdk_install image_install imagebuilder_install
+install: image_clean linux-install image_install 
+
+ifeq ($(CONFIG_SDK),y)
+install: sdk_install
+endif
+ifeq ($(CONFIG_IB),y)
+install: imagebuilder_install
+endif
+
 clean: linux-clean sdk-clean imagebuilder-clean image_clean
 
 prereq: FORCE

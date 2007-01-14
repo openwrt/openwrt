@@ -18,7 +18,7 @@ IB_BUILD_DIR:=$(BUILD_DIR)/$(IB_NAME)
 
 all: compile
 
-$(BIN_DIR)/$(IB_NAME).tar.bz2: FORCE
+$(BIN_DIR)/$(IB_NAME).tar.bz2: clean
 	rm -rf $(IB_BUILD_DIR)
 	mkdir -p $(IB_BUILD_DIR)/build_$(ARCH)/linux-$(KERNEL)-$(BOARD) $(IB_BUILD_DIR)/staging_dir_$(ARCH)/bin $(IB_BUILD_DIR)/target/linux
 	$(CP) \
@@ -43,5 +43,5 @@ prepare:
 compile: $(BIN_DIR)/$(IB_NAME).tar.bz2
 install: compile
 
-clean:
+clean: FORCE
 	rm -rf $(IB_BUILD_DIR) $(BIN_DIR)/$(IB_NAME).tar.bz2
