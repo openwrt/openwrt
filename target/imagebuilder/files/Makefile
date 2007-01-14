@@ -88,7 +88,7 @@ $(TOPDIR)/tmp/ipkg.conf: FORCE
 BUILD_PACKAGES:=$(sort $(DEFAULT_PACKAGES) $(PACKAGES) $($(PROFILE)_PACKAGES) kernel)
 BUILD_PACKAGES:=$(patsubst base-files,base-files-$(BOARD)-$(KERNEL),$(BUILD_PACKAGES))
 
-image: $(TOPDIR)/tmp/ipkg.conf
+image:
 	if [ -z "$($(PROFILE)_NAME)" ]; then \
 		echo Profile $(PROFILE) not found.; \
 		echo 'Use "make info" to get a list of available target profiles'; \
@@ -107,7 +107,7 @@ endif
 	$(MAKE) package_postinst
 	$(MAKE) build_image
 	
-package_index: FORCE
+package_index: $(TOPDIR)/tmp/ipkg.conf FORCE
 	@echo
 	@echo Building package index...
 	(cd $(PACKAGE_DIR); $(SCRIPT_DIR)/ipkg-make-index.sh . > Packages) >/dev/null 2>/dev/null
