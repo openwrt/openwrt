@@ -102,7 +102,7 @@ enable_atheros() {
 				*) agmode=11g;;
 			esac
 			iwconfig "$ifname" channel 0 
-			iwpriv "$ifname" agmode "$agmode"
+			iwpriv "$ifname" mode "$agmode"
 			iwpriv "$ifname" pureg "$pureg"
 			iwconfig "$ifname" channel "$channel"
 		}
