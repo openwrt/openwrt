@@ -15,7 +15,7 @@ PKG_RELEASE:=1
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE:=IPL_ixp400NpeLibrary-2_3.zip
 PKG_SOURCE_URL:=http://www.intel.com/design/network/products/npfamily/ixp400_current.htm
-PKG_CAT:=unzip
+PKG_UNPACK:=unzip -d $(PKG_BUILD_DIR)/ $(DL_DIR)/$(PKG_SOURCE)
 
 include $(INCLUDE_DIR)/unpack.mk
 
