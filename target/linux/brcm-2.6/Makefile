@@ -14,10 +14,6 @@ FEATURES:=squashfs
 define Target/Description
 	Build firmware images for Broadcom based routers
 	(e.g. Linksys WRT54G(S), Asus WL-500g, Motorola WR850G)
-
-	This one builds the generic .trx images, activate one of the
-	options below for creating device specific files for use
-	with TFTP client too.
 endef
 
 include $(INCLUDE_DIR)/kernel-build.mk
