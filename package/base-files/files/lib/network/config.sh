@@ -97,6 +97,12 @@ setup_interface() {
 				$DEBUG brctl setfd "br-$config" 0
 				$DEBUG brctl addif "br-$config" "$iface"
 				iface="br-$config"
+				
+				# need to bring up the bridge and wait a second for 
+				# it to switch to the 'forwarding' state, otherwise
+				# it will lose its routes...
+				ifconfig "$iface" up
+				sleep 1
 			}
 		;;
 	esac
