@@ -5,10 +5,10 @@
 config_cb() {
 	local cfg="$CONFIG_SECTION"
 	local nopasswd
-	local type
-	config_get cfgtype "$cfg" TYPE
+	local cfgt
+	config_get cfgt "$cfg" TYPE
 
-	case "$cfgtype" in
+	case "$cfgt" in
 		dropbear)
 			config_get passauth $cfg PasswordAuth
 			config_get port $cfg Port
