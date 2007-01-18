@@ -51,6 +51,8 @@ define Build/Configure
 endef
 
 define Build/Compile
+	rm -rf $(PKG_INSTALL_DIR)
+	mkdir -p $(PKG_INSTALL_DIR)
 	$(call Build/Compile/Default, \
 		CFLAGS="$(TARGET_CFLAGS)" \
 		all install \
