@@ -122,7 +122,7 @@ enable_atheros() {
 					iwconfig "$ifname" enc "[$idx]" "${key:-off}"
 				done
 				config_get key "$vif" key
-				iwconfig "$ifname" enc "[${key:-1}]"
+				iwconfig "$ifname" enc "${key:-1}"
 			;;
 		esac
 
