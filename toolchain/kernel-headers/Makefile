@@ -33,6 +33,7 @@ endef
 
 ifneq (,$(findstring uml,$(BOARD)))
   KMAKE := $(MAKE) -C $(PKG_BUILD_DIR) \
+		ARCH=i386 \
 		CONFIG_SHELL=$(BASH)
 else
   KMAKE := $(MAKE) -C $(PKG_BUILD_DIR) \
