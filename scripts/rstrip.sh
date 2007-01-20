@@ -32,4 +32,5 @@ find $TARGETS -type f -a -exec file {} \; | \
 		eval "$STRIP_KMOD $F" || \
 		eval "$STRIP $F"
   done
+  true
 )
