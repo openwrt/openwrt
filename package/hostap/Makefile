@@ -119,19 +119,6 @@ ifeq ($(KERNEL),2.4)
 		SUBDIRS="$(PKG_BUILD_DIR)/driver/modules" \
 		modules
   endef
-
-  define KernelPackage/hostap-pci/install
-	$(INSTALL_DIR) $(1)/lib/modules/$(LINUX_VERSION)
-	$(CP) \
-		$(1)/lib/modules/$(LINUX_VERSION)/
-  endef
-
-  define KernelPackage/hostap-plx/install
-	$(INSTALL_DIR) $(1)/lib/modules/$(LINUX_VERSION)
-	$(CP) \
-		$(PKG_BUILD_DIR)/driver/modules/hostap_plx.$(LINUX_KMOD_SUFFIX) \
-		$(1)/lib/modules/$(LINUX_VERSION)/
-  endef
 else
   define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
