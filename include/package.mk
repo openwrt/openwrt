@@ -20,9 +20,8 @@ export CONFIG_SITE:=$(INCLUDE_DIR)/site/$(REAL_GNU_TARGET_NAME)
 define Build/DefaultTargets
   ifeq ($(DUMP),)
     ifeq ($(CONFIG_AUTOREBUILD),y)
-      _INFO:=
       ifneq ($$(shell $(SCRIPT_DIR)/timestamp.pl -p $(PKG_BUILD_DIR) . $(PKG_FILE_DEPEND)),$(PKG_BUILD_DIR))
-        _INFO+=$(subst $(TOPDIR)/,,$(PKG_BUILD_DIR))
+        $$(info Forcing package rebuild)
         $(PKG_BUILD_DIR)/.prepared: package-clean
       endif
     endif
@@ -264,12 +263,8 @@ define BuildPackage
       ifneq ($(MAKECMDGOALS),prereq)
         ifneq ($(DUMP),1)
           ifneq ($$(shell $(SCRIPT_DIR)/timestamp.pl -p -x ipkg -x ipkg-install '$$(IPKG_$(1))' '$(PKG_BUILD_DIR)'),$$(IPKG_$(1)))
-            _INFO+=$(subst $(TOPDIR)/,,$$(IPKG_$(1)))
             $(PKG_BUILD_DIR)/.built: package-rebuild
-          endif
-
-          ifneq ($$(_INFO),)
-            $$(info Rebuilding $$(_INFO))
+            $$(info Rebuilding $(subst $(TOPDIR)/,,$$(IPKG_$(1))))
           endif
         endif
       endif
