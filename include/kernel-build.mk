@@ -206,10 +206,15 @@ endef
 define Profile
   $(eval $(call Profile/Default))
   $(eval $(call Profile/$(1)))
+  $(eval $(call shexport,Profile/$(1)/Description))
   DUMPINFO += \
 	echo "Target-Profile: $(1)"; \
 	echo "Target-Profile-Name: $(NAME)"; \
-	echo "Target-Profile-Packages: $(PACKAGES)"; 
+	echo "Target-Profile-Packages: $(PACKAGES)"; \
+	echo "Target-Profile-Description:"; \
+	getvar "$(call shvar,Profile/$(1)/Description)"; \
+	echo "@@"; \
+	echo;
 endef
 
 $(eval $(call shexport,Target/Description))
