@@ -45,3 +45,35 @@ diff -ur util-linux.old/partx/partx.c util-linux.dev/partx/partx.c
  #endif
  
  static int
+diff -ur util-linux.old/fdisk/llseek.c util-linux.dev/fdisk/llseek.c
+--- util-linux.old/fdisk/llseek.c	2007-01-20 15:53:17.870636000 +0100
++++ util-linux.dev/fdisk/llseek.c	2007-01-20 15:55:33.458024160 +0100
+@@ -32,7 +32,7 @@
+ #ifndef __NR__llseek
+ 
+ /* no __NR__llseek on compilation machine - might give it explicitly */
+-static int _llseek (unsigned int fd, unsigned long oh,
++static int __llseek (unsigned int fd, unsigned long oh,
+ 		    unsigned long ol, long long *result,
+ 		    unsigned int origin) {
+ 	errno = ENOSYS;
+@@ -41,17 +41,8 @@
+ 
+ #endif
+ 
+-static long long my_llseek (unsigned int fd, long long offset,
+-		unsigned int origin)
+-{
+-	long long result;
+-	int retval;
+-
+-	retval = _llseek (fd, ((unsigned long long) offset) >> 32,
+-			((unsigned long long) offset) & 0xffffffff,
+-			&result, origin);
+-	return (retval == -1 ? (long long) retval : result);
+-}
++extern long long llseek(unsigned int fd, long long offset, unsigned int origin);
++#define my_llseek llseek
+ 
+ #endif /* __alpha__ */
+ 
