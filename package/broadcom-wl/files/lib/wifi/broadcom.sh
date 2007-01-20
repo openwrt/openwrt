@@ -178,7 +178,7 @@ enable_broadcom() {
 		append vif_post_up "eap_restrict $eap_r" "$N"
 		
 		config_get ssid "$vif" ssid
-		append vif_post_up "vlan_mode 0"
+		append vif_post_up "vlan_mode 0" "$N"
 		append vif_post_up "ssid $ssid" "$N"
 		case "$mode" in
 			sta|adhoc) append vif_do_up "ssid $ssid" "$N";;
@@ -218,7 +218,7 @@ radio ${radio:-1}
 macfilter 0
 maclist none
 wds ${wds:-none}
-${channel:-channel $channel}
+${channel:+channel $channel}
 country ${country:-IL0}
 maxassoc ${maxassoc:-128}
 slottime ${slottime:--1}
