@@ -16,7 +16,7 @@ config_cb() {
 			case "$passauth" in
 				no|off|disabled|0) nopasswd=1;;
 			esac
-			DROPBEAR_ARGS="${port:+-p $port} ${nopasswd:+-s}"
+			DROPBEAR_ARGS="${nopasswd:+-s }${port:+-p $port}"
 		;;
 	esac
 }
