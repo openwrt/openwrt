@@ -81,10 +81,12 @@ define Package/e2fsprogs/install
 endef
 
 define Package/tune2fs/install
+	$(INSTALL_DIR) $(1)/usr/sbin
 	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/tune2fs $(1)/usr/sbin/
 endef
 
 define Package/resize2fs/install
+	$(INSTALL_DIR) $(1)/usr/sbin
 	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/resize2fs $(1)/usr/sbin/
 endef
 
