@@ -66,6 +66,7 @@ struct platform_t {
 	struct button_t buttons[MAX_GPIO];
 	u32 button_mask;
 	u32 button_polarity;
+	void (*platform_init)(void);
 
 	struct led_t leds[MAX_GPIO];
 };

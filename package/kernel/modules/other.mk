@@ -64,6 +64,14 @@ define KernelPackage/ide-pdc202xx
 endef
 $(eval $(call KernelPackage,ide-pdc202xx))
 
+define KernelPackage/ide-aec62xx
+  TITLE:=AEC62xx IDE driver
+  SUBMENU:=$(EMENU)
+  KCONFIG:=$(CONFIG_BLK_DEV_AEC62XX)
+  FILES:=$(MODULES_DIR)/kernel/drivers/ide/pci/aec62xx.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,30,aec62xx)
+endef
+$(eval $(call KernelPackage,ide-aec62xx))
 
 define KernelPackage/lp
   TITLE:=Parallel port and line printer support

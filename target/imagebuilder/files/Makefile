@@ -87,6 +87,8 @@ $(TOPDIR)/tmp/ipkg.conf: FORCE
 
 BUILD_PACKAGES:=$(sort $(DEFAULT_PACKAGES) $(PACKAGES) $($(PROFILE)_PACKAGES) kernel)
 BUILD_PACKAGES:=$(patsubst base-files,base-files-$(BOARD)-$(KERNEL),$(BUILD_PACKAGES))
+# "-pkgname" in the package list means remove "pkgname" from the package list
+BUILD_PACKAGES:=$(filter-out $(filter -%,$(BUILD_PACKAGES)) $(patsubst -%,%,$(filter -%,$(BUILD_PACKAGES))),$(BUILD_PACKAGES)
 
 image:
 	if [ -z "$($(PROFILE)_NAME)" ]; then \

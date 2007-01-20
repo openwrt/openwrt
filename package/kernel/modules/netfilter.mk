@@ -87,7 +87,6 @@ $(eval $(call KernelPackage,ipt-nat))
 
 define KernelPackage/ipt-nathelper
   TITLE:=Default Conntrack and NAT helpers
-  DEFAULT:=y
   DESCRIPTION:=\
 	Default Netfilter (IPv4) Conntrack and NAT helpers \\\
 	\\\
