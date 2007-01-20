@@ -23,14 +23,16 @@ PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
 include $(INCLUDE_DIR)/package.mk
 
-#FIXME: add dependency on kmod-usb-core
-define Package/kmod-ueagle-atm
-  SECTION:=kernel
-  CATEGORY:=Kernel drivers
-  DEPENDS:=@LINUX_2_6_BRCM @PACKAGE_KMOD_USB
+define KernelPackage/ueagle-atm
+  SUBMENU:=Network Devices
+  DEPENDS:=@ATM_SUPPORT kmod-usb-core 
   TITLE:=Driver for Eagle 8051 based USB ADSL modems
   URL:=http://www.eagle-usb.org/
   VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
+  FILES:= \
+	$(PKG_BUILD_DIR)/usbatm_iso/usbatm.$(LINUX_KMOD_SUFFIX) \
+	$(PKG_BUILD_DIR)/driver/ueagle-atm.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,50,usbatm ueagle-atm)
 endef
 
 define Build/Compile
@@ -42,14 +44,4 @@ define Build/Compile
 		all
 endef
 
-define Package/kmod-ueagle-atm/install
-	$(INSTALL_DIR) $(1)/lib/modules/$(LINUX_VERSION)
-	$(CP)	$(PKG_BUILD_DIR)/driver/ueagle-atm.$(LINUX_KMOD_SUFFIX) \
-		$(PKG_BUILD_DIR)/usbatm_iso/usbatm.$(LINUX_KMOD_SUFFIX) \
-		$(1)/lib/modules/$(LINUX_VERSION)/
-	$(INSTALL_DIR) $(1)/etc/modules.d
-	$(INSTALL_DATA) ./files/$(PKG_NAME).modules \
-		$(1)/etc/modules.d/10-$(PKG_NAME)
-endef
-
-$(eval $(call BuildPackage,kmod-ueagle-atm))
+$(eval $(call KernelPackage,ueagle-atm))

@@ -16,14 +16,18 @@ PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/kmod-switch
-  SECTION:=kernel
-  CATEGORY:=Kernel drivers
+define KernelPackage/switch
+  SUBMENU:=Other modules
   DEPENDS:=@LINUX_2_6_BRCM||LINUX_2_4_BRCM
   TITLE:=Switch drivers
   DESCRIPTION:=\
 	This package contains switch drivers for ADM6996L and BCM53XX RoboSwitch.
   VERSION:=$(LINUX_VERSION)-$(BOARD)-$(PKG_RELEASE)
+  FILES:= \
+	$(PKG_BUILD_DIR)/switch-core.$(LINUX_KMOD_SUFFIX) \
+	$(PKG_BUILD_DIR)/switch-adm.$(LINUX_KMOD_SUFFIX) \
+	$(PKG_BUILD_DIR)/switch-robo.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,20,switch-core switch-robo switch-adm)
 endef
 
 define Build/Prepare
@@ -40,14 +44,9 @@ define Build/Compile
 		modules
 endef
 	
-define Package/kmod-switch/install
-	$(INSTALL_DIR) $(1)/lib/modules/$(LINUX_VERSION)
-	$(CP) $(PKG_BUILD_DIR)/*.$(LINUX_KMOD_SUFFIX) \
-		$(1)/lib/modules/$(LINUX_VERSION)
+define KernelPackage/switch/install
 	$(INSTALL_DIR) $(1)/lib/network/
 	$(INSTALL_BIN) ./files/switch.sh $(1)/lib/network/
-	$(INSTALL_DIR) $(1)/etc/modules.d/
-	printf 'switch-core\nswitch-robo\nswitch-adm\n' > $(1)/etc/modules.d/20-switch
 endef
 
-$(eval $(call BuildPackage,kmod-switch))
+$(eval $(call KernelPackage,switch))
