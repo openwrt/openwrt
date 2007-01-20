@@ -51,3 +51,17 @@ define Image/Build/jffs2-128k
 endef
 
 $(eval $(call BuildImage))
+
+UCODEFILE:=IPL_ixp400NpeLibrary-2_3.zip
+
+define Require/npe-ucode
+	[ -f $(DL_DIR)/$(UCODEFILE) ]
+endef
+
+$(eval $(call Require,npe-ucode, \
+	You must manually download $(UCODEFILE) from \\\
+	http://www.intel.com/design/network/products/npfamily/ixp400_current.htm \\\
+	and put it in $(DL_DIR). \\\
+	You will need to agree to the Intel Public License to do so - please do read it! \
+))
+	
