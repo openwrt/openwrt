@@ -297,8 +297,12 @@ config LINUX_$target->{conf}_$profile->{id}
 	bool "$profile->{name}"
 	depends LINUX_$target->{conf}
 EOF
+			my %pkgs;
 			foreach my $pkg (@{$target->{packages}}, @{$profile->{packages}}) {
-				print "\tselect DEFAULT_$pkg\n";
+				$pkgs{$pkg} = 1;
+			}
+			foreach my $pkg (keys %pkgs) {
+				print "\tselect DEFAULT_$pkg\n" unless ($pkg =~ /^-/ or $pkgs{"-$pkg"});
 			}
 			print "\n";
 		}

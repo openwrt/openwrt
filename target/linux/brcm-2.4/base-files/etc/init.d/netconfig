@@ -101,6 +101,17 @@ start() {
 			c["wan_ifname"]=""
 		}
 	
+		# ASUS WL-700gE
+		# These are actually same as defaults above. For some reason this script applies
+		# Generic BCM94704 settings instead so we revert to proper settings here.	
+		# Hopefully someone will fix this properly soon.
+		if (model == "ASUS WL-700gE") {
+			c["lan_ifname"]="eth0.0"
+			c["wan_ifname"]="eth0.1"
+			c["vlan0ports"]="1 2 3 4 5*"
+			c["vlan1ports"]="0 5"
+		}
+		
 		print "#### VLAN configuration "
 		print "config switch eth0"
 		p("vlan0", "vlan0ports")

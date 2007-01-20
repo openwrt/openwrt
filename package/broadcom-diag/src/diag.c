@@ -63,6 +63,7 @@ enum {
 	WL500GD,
 	WL500GP,
 	ASUS_4702,
+	WL700GE,
 	
 	/* Buffalo */
 	WBR2_G54,
@@ -100,6 +101,20 @@ enum {
 	/* Trendware */
 	TEW411BRPP,
 };
+
+static void __init wl700ge_init(void) {
+		int pin = 1 << 3;
+
+		/* Enables GPIO 3 that controls HDD and led power on ASUS WL-700gE */
+		printk(MODULE_NAME ": Spinning up HDD and enabling leds\n");
+		gpio_outen(pin, pin);
+		gpio_control(pin, 0);
+		gpio_out(pin, pin);
+
+		/* Wait 5s, so the HDD can spin up */
+		set_current_state(TASK_INTERRUPTIBLE);
+		schedule_timeout(HZ * 5);
+}
 
 static struct platform_t __initdata platforms[] = {
 	/* Linksys */
@@ -243,6 +258,25 @@ static struct platform_t __initdata platforms[] = {
 		.leds		= {
 			{ .name = "power",	.gpio = 1 << 0, .polarity = REVERSE },
 		},
+	},
+	[WL700GE] = {
+		.name		= "ASUS WL-700gE",
+		.buttons	= {
+			{ .name = "reset",	.gpio = 1 << 7 }, // on back, hardwired, always resets device regardless OS state
+			{ .name = "ses",	.gpio = 1 << 4 }, // on back, actual name ezsetup
+			{ .name = "power",	.gpio = 1 << 0 }, // on front
+			{ .name = "copy",	.gpio = 1 << 6 }, // on front
+		},
+		.leds		= {
+#if 0
+			// GPIO that controls power led also enables/disables some essential functions
+			// - power to HDD
+			// - switch leds
+			{ .name = "power",	.gpio = 1 << 3, .polarity = NORMAL },  // actual name power
+#endif
+			{ .name = "diag",	.gpio = 1 << 1, .polarity = REVERSE }, // actual name ready
+		},
+		.platform_init = wl700ge_init,
 	},
 	/* Buffalo */
 	[WHR_G54S] = {
@@ -478,10 +512,14 @@ static struct platform_t __init *platform_detect(void)
 
 	boardnum = getvar("boardnum");
 	boardtype = getvar("boardtype");
+
+	if (strncmp(getvar("model_no"), "WL700",5) == 0) {
+		return &platforms[WL700GE]; }
+
 	if (strncmp(getvar("pmon_ver"), "CFE", 3) == 0) {
 		/* CFE based - newer hardware */
 		if (!strcmp(boardnum, "42")) { /* Linksys */
-			if (!strcmp(boardtype, "0x478") && !strcmp(getvar("cardbus"), 1))
+			if (!strcmp(boardtype, "0x478") && !strcmp(getvar("cardbus"), "1"))
 				return &platforms[WRT350N];
 
 			if (!strcmp(boardtype, "0x0101") && !strcmp(getvar("boot_ver"), "v3.6"))
@@ -873,6 +911,9 @@ static int __init diag_init(void)
 	memcpy(&platform, detected, sizeof(struct platform_t));
 
 	printk(MODULE_NAME ": Detected '%s'\n", platform.name);
+	if (platform.platform_init != NULL) {
+		platform.platform_init();
+	}
 
 	if (!(diag = proc_mkdir("diag", NULL))) {
 		printk(MODULE_NAME ": proc_mkdir on /proc/diag failed\n");

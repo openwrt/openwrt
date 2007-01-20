@@ -112,4 +112,15 @@ define Profile/WLHDD/Description
 endef
 $(eval $(call Profile,WLHDD))
 
+define Profile/WL700GE
+  NAME:=WL-700gE
+  PACKAGES:=-ppp -ppp-mod-pppoe -kmod-ipt-nathelper -iptables -dnsmasq -bridge kmod-ide-core kmod-ide-aec62xx kmod-fs-ext3 fdisk e2fsprogs
+endef
+
+define Profile/WL700GE/Description
+	Minimal package set optimized for booting the WL-700gE from flash with a writable filesystem
+	and the utilities to create a new filesystem on the HDD
+endef
+$(eval $(call Profile,WL700GE))
+
 $(eval $(call BuildKernel))
