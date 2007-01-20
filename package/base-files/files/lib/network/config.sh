@@ -88,21 +88,23 @@ setup_interface() {
 	# Setup bridging
 	case "$iftype" in
 		bridge)
-			ifconfig "$iface" up 2>/dev/null >/dev/null
-			ifconfig "br-$config" 2>/dev/null >/dev/null && {
-				$DEBUG brctl addif "br-$config" "$iface"
-				return 0
-			} || {
-				$DEBUG brctl addbr "br-$config"
-				$DEBUG brctl setfd "br-$config" 0
-				$DEBUG brctl addif "br-$config" "$iface"
-				iface="br-$config"
+			[ -x /usr/sbin/brctl ] && {
+				ifconfig "$iface" up 2>/dev/null >/dev/null
+				ifconfig "br-$config" 2>/dev/null >/dev/null && {
+					$DEBUG brctl addif "br-$config" "$iface"
+					return 0
+				} || {
+					$DEBUG brctl addbr "br-$config"
+					$DEBUG brctl setfd "br-$config" 0
+					$DEBUG brctl addif "br-$config" "$iface"
+					iface="br-$config"
 				
-				# need to bring up the bridge and wait a second for 
-				# it to switch to the 'forwarding' state, otherwise
-				# it will lose its routes...
-				ifconfig "$iface" up
-				sleep 1
+					# need to bring up the bridge and wait a second for 
+					# it to switch to the 'forwarding' state, otherwise
+					# it will lose its routes...
+					ifconfig "$iface" up
+					sleep 1
+				}
 			}
 		;;
 	esac
