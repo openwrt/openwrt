@@ -24,14 +24,14 @@ PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 include $(INCLUDE_DIR)/package.mk
 
 define Package/broadcom-wl/Default
-  SECTION:=net
-  CATEGORY:=Kernel drivers
+  SECTION:=kernel
+  CATEGORY:=Kernel modules
   DEPENDS:=@PACKAGE_kmod-brcm-wl||PACKAGE_kmod-brcm-wl-mimo
   SUBMENU:=Proprietary BCM43xx WiFi driver
   SUBMENUDEP:=@LINUX_2_4_BRCM
 endef
 
-define Package/kmod-brcm-wl/Default
+define KernelPackage/brcm-wl/Default
   $(call Package/broadcom-wl/Default)
   SECTION:=kernel
   DEPENDS:=@LINUX_2_4_BRCM
@@ -40,16 +40,18 @@ define Package/kmod-brcm-wl/Default
 	This package contains the proprietary wireless driver for the Broadcom \\\
 	BCM43xx chipset
   VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(PKG_RELEASE)
+  FILES:=$(PKG_BUILD_DIR)/kmod/wl$(1).o
+  AUTOLOAD:=$(call AutoLoad,30,wl$(1))
 endef
 
-define Package/kmod-brcm-wl
-  $(call Package/kmod-brcm-wl/Default)
+define KernelPackage/brcm-wl
+  $(call KernelPackage/brcm-wl/Default,)
   TITLE+= (normal version)
   DESCRIPTION+= (normal version).
 endef
 
-define Package/kmod-brcm-wl-mimo
-  $(call Package/kmod-brcm-wl/Default)
+define KernelPackage/brcm-wl-mimo
+  $(call KernelPackage/brcm-wl/Default,_mimo)
   TITLE+= (MIMO version)
   DESCRIPTION+= (MIMO version).
 endef
@@ -104,21 +106,6 @@ define Build/Compile
 		all
 endef
 
-define wl_template
-	$(INSTALL_DIR) $(1)/etc/modules.d
-	echo "wl$(2)" > $(1)/etc/modules.d/20-wl$(2)
-	$(INSTALL_DIR) $(1)/lib/modules/$(LINUX_VERSION)
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/kmod/wl$(2).o $(PKG_BUILD_DIR)/kmod/wl$(2).o.patch $(1)/lib/modules/$(LINUX_VERSION)/
-endef
-
-define Package/kmod-brcm-wl/install
-	$(call wl_template,$(1))
-endef
-
-define Package/kmod-brcm-wl-mimo/install
-	$(call wl_template,$(1),_mimo)
-endef
-
 define Package/wlc/install
 	$(CP) ./files/* $(1)/
 	$(INSTALL_DIR) $(1)/sbin
@@ -139,8 +126,8 @@ define Package/nas/install
 	ln -sf nas $(1)/usr/sbin/nas4wds
 endef
 
-$(eval $(call BuildPackage,kmod-brcm-wl))
-$(eval $(call BuildPackage,kmod-brcm-wl-mimo))
+$(eval $(call KernelPackage,brcm-wl))
+$(eval $(call KernelPackage,brcm-wl-mimo))
 $(eval $(call BuildPackage,wlc))
 $(eval $(call BuildPackage,wl))
 $(eval $(call BuildPackage,nas))

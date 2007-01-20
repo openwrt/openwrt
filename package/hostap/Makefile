@@ -120,13 +120,13 @@ ifeq ($(KERNEL),2.4)
 		modules
   endef
 
-  define Package/kmod-hostap-pci/install
+  define KernelPackage/hostap-pci/install
 	$(INSTALL_DIR) $(1)/lib/modules/$(LINUX_VERSION)
 	$(CP) \
 		$(1)/lib/modules/$(LINUX_VERSION)/
   endef
 
-  define Package/kmod-hostap-plx/install
+  define KernelPackage/hostap-plx/install
 	$(INSTALL_DIR) $(1)/lib/modules/$(LINUX_VERSION)
 	$(CP) \
 		$(PKG_BUILD_DIR)/driver/modules/hostap_plx.$(LINUX_KMOD_SUFFIX) \

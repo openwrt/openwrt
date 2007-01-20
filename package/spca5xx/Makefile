@@ -22,14 +22,14 @@ PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
 
-#FIXME: add proper dependency handling on kmod-usb-core & kmod-videodev packages
-define Package/kmod-spca5xx
-  SECTION:=kernel
-  CATEGORY:=Kernel drivers
-  DEPENDS:=@PACKAGE_KMOD_USB&&PACKAGE_KMOD_VIDEODEV
+define KernelPackage/spca5xx
+  SUBMENU:=Other modules
+  DEPENDS:=kmod-usb-core kmod-videodev
   TITLE:=Driver for SPCA5xx based USB cameras
   URL:=http://mxhaard.free.fr/
   VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
+  FILES:=$(PKG_BUILD_DIR)/spca5xx.$(LINUX_KMOD_SUFFIX)
+  AUTLOAD:=$(call AutoLoad,90,spca5xx)
 endef
 
 define Build/Compile
@@ -43,10 +43,4 @@ define Build/Compile
 		modules
 endef
 
-define Package/kmod-spca5xx/install
-	$(INSTALL_DIR) $(1)/lib/modules/$(LINUX_VERSION)
-	$(CP) $(PKG_BUILD_DIR)/spca5xx.$(LINUX_KMOD_SUFFIX) \
-		$(1)/lib/modules/$(LINUX_VERSION)/
-endef
-
-$(eval $(call BuildPackage,kmod-spca5xx))
+$(eval $(call KernelPackage,spca5xx))

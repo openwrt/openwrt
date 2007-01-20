@@ -33,7 +33,7 @@ define KernelPackage/sangam-atm-annex-a
 endef
 
 define KernelPackage/sangam-atm-annex-b
-  $(call Package/kmod-sangam-atm-annex-a)
+  $(call KernelPackage/sangam-atm-annex-a)
   TITLE:=AR7 ADSL driver (Annex B)
   DESCRIPTION:=The AR7 ADSL driver for Annex B
 endef

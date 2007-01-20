@@ -17,8 +17,7 @@ PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)
 include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/diag
-  SECTION:=kernel
-  CATEGORY:=Kernel drivers
+  SUBMENU:=Other modules
   DEPENDS:=@LINUX_2_4_BRCM||LINUX_2_6_BRCM
   TITLE:=Driver for router LEDs and Buttons
   VERSION:=$(PKG_RELEASE)+$(LINUX_VERSION)-$(BOARD)-$(LINUX_RELEASE)
