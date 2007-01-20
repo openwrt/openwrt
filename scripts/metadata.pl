@@ -45,6 +45,14 @@ sub parse_target_metadata() {
 		};
 		/^Target-Profile-Name:\s*(.+)\s*$/ and $profile->{name} = $1;
 		/^Target-Profile-Packages:\s*(.*)\s*$/ and $profile->{packages} = [ split(/\s+/, $1) ];
+		/^Target-Profile-Description:/ and do {
+			my $desc;
+			while (<>) {
+				last if /^@@/;
+				$desc .= $_;
+			}
+			$profile->{desc} = $desc;
+		};
 	}
 	foreach my $target (@target) {
 		@{$target->{profiles}} > 0 or $target->{profiles} = [

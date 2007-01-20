@@ -23,11 +23,19 @@ define Profile/Atheros
   NAME:=Atheros WiFi (default)
   PACKAGES:=kmod-madwifi
 endef
+
+define Profile/Atheros/Description
+	Package set compatible with hardware using Atheros WiFi cards
+endef
 $(eval $(call Profile,Atheros))
 
 define Profile/None
   NAME:=No WiFi
   PACKAGES:=
+endef
+
+define Profile/None/Description
+	Package set without WiFi support
 endef
 $(eval $(call Profile,None))
 
