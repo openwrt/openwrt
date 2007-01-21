@@ -32,11 +32,13 @@ define Package/isakmpd
 endef
 
 define Build/Compile
-	$(call Build/Compile/Default, \
+	CFLAGS="$(TARGET_CFLAGS)" \
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		$(TARGET_CONFIGURE_OPTS) \
 		LINUX_DIR="$(LINUX_DIR)" \
-		EXTRA_CPPFLAGS="-I$(STAGING_DIR)/usr/include/openssl -I$(STAGING_DIR)/usr/include/keynote  -I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include" \
-		EXTRA_LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib" \
-	)
+		EXTRA_CPPFLAGS="-I$(STAGING_DIR)/usr/include/openssl -I$(STAGING_DIR)/usr/include/keynote -I$(STAGING_DIR)/usr/include " \
+		EXTRA_LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib"
+
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		STAGING_DIR="$(STAGING_DIR)" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \

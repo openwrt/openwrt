@@ -69,6 +69,9 @@ ifneq ($(CONFIG_CCACHE),)
   TARGET_CC:= ccache $(TARGET_CC)
 endif
 
+EXTRA_CPPFLAGS := -I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include
+EXTRA_LDFLAGS := -L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib
+
 TARGET_CONFIGURE_OPTS:= \
   AR=$(TARGET_CROSS)ar \
   AS="$(TARGET_CC) -c $(TARGET_CFLAGS)" \

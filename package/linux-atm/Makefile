@@ -51,11 +51,12 @@ define Build/Configure
 	touch $(PKG_BUILD_DIR)/stamp-h.in
 endef
 
+TARGET_CFLAGS := -I$(PKG_BUILD_DIR)/src/include $(TARGET_CFLAGS)
 define Build/Compile
-	$(call Build/Compile/Default, \
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		$(TARGET_CONFIGURE_OPTS) \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
-		all install \
-	)
+		all install
 endef
 
 define Build/InstallDev

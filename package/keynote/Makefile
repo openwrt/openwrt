@@ -42,11 +42,7 @@ define Build/Configure
 	)
 endef
 
-define Build/Compile
-	$(call Build/Compile/Default, \
-		CFLAGS="\$$$$(EXTRA_CFLAGS) \$$$$(EXTRA_LDFLAGS)" \
-	)
-endef
+EXTRA_CFLAGS += $(EXTRA_LDFLAGS)
 
 define Build/InstallDev
 	mkdir -p $(STAGING_DIR)/usr/include

@@ -293,6 +293,7 @@ define Build/Configure/Default
 		CXXFLAGS="$(TARGET_CFLAGS)" \
 		CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include" \
 		LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib" \
+		PKG_CONFIG_PATH="$(STAGING_DIR)/usr/lib/pkgconfig" \
 		PKG_CONFIG_LIBDIR="$(STAGING_DIR)/usr/lib/pkgconfig" \
 		$(2) \
 		$(PKG_CONFIG_PATH)/configure \
@@ -322,11 +323,12 @@ define Build/Configure
 endef
 
 define Build/Compile/Default
+	CFLAGS="$(TARGET_CFLAGS) $(EXTRA_CPPFLAGS) " \
+	LDFLAGS="$(EXTRA_LDFLAGS) " \
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
 		CROSS="$(TARGET_CROSS)" \
-		EXTRA_CFLAGS="$(TARGET_CFLAGS) -I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include " \
-		EXTRA_LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib " \
+		CXXFLAGS="$(TARGET_CFLAGS) $(EXTRA_CPPFLAGS) " \
 		ARCH="$(ARCH)" \
 		$(1);
 endef

@@ -56,6 +56,7 @@ define Package/swap-utils
 	- swapoff
 endef
 
+TARGET_CFLAGS += -I$(PKG_BUILD_DIR)/lib
 define Build/Compile
 	$(call Build/Compile/Default, \
 		OPT="$(TARGET_CFLAGS)" \
