@@ -229,6 +229,7 @@ $(eval $(call KernelPackage,softdog))
 define KernelPackage/videodev
   TITLE=Video4Linux support
   DESCRIPTION:=Kernel modules for Video4Linux support
+  DEPENDS:=@VIDEO_SUPPORT
   SUBMENU:=$(EMENU)
   KCONFIG:=$(CONFIG_VIDEO_DEV)
   FILES:=$(MODULES_DIR)/kernel/drivers/media/video/*.$(LINUX_KMOD_SUFFIX)
