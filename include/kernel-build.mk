@@ -21,6 +21,9 @@ endif
 ifneq ($(CONFIG_PCMCIA),)
   FEATURES += pcmcia
 endif
+ifneq ($(CONFIG_VIDEO_DEV),)
+  FEATURES += video
+endif
 
 # remove duplicates
 FEATURES:=$(sort $(FEATURES))
