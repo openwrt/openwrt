@@ -42,7 +42,11 @@ define Build/Configure
 	)
 endef
 
-EXTRA_CFLAGS += $(EXTRA_LDFLAGS)
+define Build/Compile
+	$(call Build/Compile/Default, \
+		LIBS="$(EXTRA_LDFLAGS) -L. -lkeynote -lm -lcrypto" \
+	)
+endef
 
 define Build/InstallDev
 	mkdir -p $(STAGING_DIR)/usr/include
