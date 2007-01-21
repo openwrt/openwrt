@@ -1,0 +1,9 @@
+#!/bin/sh
+# Copyright (C) 2006 OpenWrt.org 
+#
+START=39
+start() {
+	[ -d /proc/bus/usb ] && {
+		/bin/mount -t usbfs none /proc/bus/usb
+	}		
+}
