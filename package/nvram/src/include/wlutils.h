@@ -16,7 +16,30 @@
 #define _wlutils_h_
 
 #include <typedefs.h>
-#include <wlioctl.h>
+
+/* check this magic number */
+#define WLC_IOCTL_MAGIC		0x14e46c77
+
+/* maximum length buffer required */
+#define WLC_IOCTL_SMLEN         256
+
+#define WLC_IOCTL_VERSION	1
+
+#define WLC_GET_MAGIC				0
+#define WLC_GET_VERSION				1
+#define WLC_GET_VAR				262	/* get value of named variable */
+#define WLC_SET_VAR				263	/* set named variable to value */
+
+/* Linux network driver ioctl encoding */
+typedef struct wl_ioctl {
+	uint cmd;	/* common ioctl definition */
+	void *buf;	/* pointer to user buffer */
+	uint len;	/* length of user buffer */
+	bool set;	/* get or set request (optional) */
+	uint used;	/* bytes read or written (optional) */
+	uint needed;	/* bytes needed (optional) */
+} wl_ioctl_t;
+
 
 /*
  * Pass a wlioctl request to the specified interface.

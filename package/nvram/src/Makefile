@@ -1,7 +1,7 @@
 # $Id$
 
-LIBSHARED_OBJS := shutils.o wl.o wl_linux.o defaults.o linux_timer.o
-LIBNVRAM_OBJS := nvram_linux.o nvram_convert.o
+LIBSHARED_OBJS := shutils.o wl.o linux_timer.o
+LIBNVRAM_OBJS := nvram.o
 
 all: libshared.so libnvram.so nvram
 
