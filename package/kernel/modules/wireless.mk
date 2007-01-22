@@ -154,6 +154,7 @@ define KernelPackage/net-zd1211rw
   KCONFIG:=$(CONFIG_ZD1211RW)
   DEPENDS:=kmod-ieee80211
   SUBMENU:=$(WIMENU)
-  FILES:=$(MODULES_DIR)/kernel/drivers/net/wireless/zd1211rw/zdd1211rw.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(MODULES_DIR)/kernel/drivers/net/wireless/zd1211rw/zd1211rw.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,60,zd1211rw)
 endef
+$(eval $(call KernelPackage,net-zd1211rw))
