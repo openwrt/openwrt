@@ -1,0 +1,52 @@
+diff -urN uClibc.old/libc/Makefile uClibc.dev/libc/Makefile
+--- uClibc.old/libc/Makefile	2005-08-18 00:49:48.000000000 +0200
++++ uClibc.dev/libc/Makefile	2007-01-22 01:21:40.000000000 +0100
+@@ -70,7 +70,6 @@
+ 		$(AR) $(ARFLAGS) $(LIBNAME) $$objs || exit 1 ; \
+ 	done
+ 	cp $(LIBNAME) shared_$(LIBNAME)
+-	$(AR) $(ARFLAGS) $(LIBNAME) misc/internals/static.o
+ 	$(RANLIB) $(LIBNAME)
+ 
+ $(LIBNAME_TARGET): $(LIBNAME)
+diff -urN uClibc.old/libc/misc/internals/Makefile uClibc.dev/libc/misc/internals/Makefile
+--- uClibc.old/libc/misc/internals/Makefile	2005-08-18 00:49:48.000000000 +0200
++++ uClibc.dev/libc/misc/internals/Makefile	2007-01-22 01:11:46.000000000 +0100
+@@ -31,7 +31,7 @@
+ 
+ OBJ_LIST=../../obj.misc.internals
+ 
+-all: $(OBJ_LIST) interp.o static.o
++all: $(OBJ_LIST) interp.o
+ 
+ $(OBJ_LIST): $(OBJS)
+ 	echo $(patsubst %, misc/internals/%, $(OBJS)) > $(OBJ_LIST)
+@@ -44,7 +44,7 @@
+ 		"(\".interp\"))) =\""$(SHARED_LIB_LOADER_PREFIX)/$(UCLIBC_LDSO)"\";" >> interp.c
+ 	echo "#endif" >> interp.c
+ 
+-$(COBJS) interp.o static.o: %.o : %.c
++$(COBJS) interp.o: %.o : %.c
+ 	$(CC) $(CFLAGS) -c $< -o $@
+ 	$(STRIPTOOL) -x -R .note -R .comment $*.o
+ 
+diff -urN uClibc.old/libc/misc/internals/static.c uClibc.dev/libc/misc/internals/static.c
+--- uClibc.old/libc/misc/internals/static.c	2005-08-18 00:49:48.000000000 +0200
++++ uClibc.dev/libc/misc/internals/static.c	1970-01-01 01:00:00.000000000 +0100
+@@ -1,4 +0,0 @@
+-#include <stddef.h>
+-
+-/* Force static libraries to know about ... */
+-void *__libc_stack_end=NULL;
+diff -urN uClibc.old/libc/misc/internals/__uClibc_main.c uClibc.dev/libc/misc/internals/__uClibc_main.c
+--- uClibc.old/libc/misc/internals/__uClibc_main.c	2005-08-18 00:49:48.000000000 +0200
++++ uClibc.dev/libc/misc/internals/__uClibc_main.c	2007-01-22 01:20:23.000000000 +0100
+@@ -32,7 +32,7 @@
+ /*
+  * Prototypes.
+  */
+-extern void *__libc_stack_end;
++void *__libc_stack_end;
+ extern void weak_function _stdio_init(void);
+ extern int *weak_const_function __errno_location(void);
+ extern int *weak_const_function __h_errno_location(void);
