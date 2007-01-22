@@ -288,6 +288,8 @@ typedef float64 float_t;
 #undef TYPEDEF_FLOAT64
 #undef TYPEDEF_FLOAT_T
 
+#define ETHER_ADDR_LEN 6
+
 #endif /* USE_TYPEDEF_DEFAULTS */
 
 #endif /* _TYPEDEFS_H_ */

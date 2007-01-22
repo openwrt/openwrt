@@ -132,9 +132,6 @@ extern int nvram_commit(void);
  */
 extern int nvram_getall(char *buf, int count);
 
-extern int file2nvram(char *filename, char *varname);
-extern int nvram2file(char *varname, char *filename);
-
 #endif /* _LANGUAGE_ASSEMBLY */
 
 #define NVRAM_MAGIC		0x48534C46	/* 'FLSH' */
