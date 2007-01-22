@@ -19,7 +19,7 @@ PKG_CAT:=zcat
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 
-PKG_BUILDDEP:=madwifi
+PKG_BUILD_DEPENDS:=madwifi
 
 include $(INCLUDE_DIR)/package.mk
 
