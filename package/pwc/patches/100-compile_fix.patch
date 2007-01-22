@@ -1,0 +1,24 @@
+diff -ur pwc.old/pwc.h pwc.dev/pwc.h
+--- pwc.old/pwc.h	2006-04-13 23:38:43.000000000 +0200
++++ pwc.dev/pwc.h	2007-01-22 02:04:03.872800960 +0100
+@@ -25,7 +25,7 @@
+ #ifndef PWC_H
+ #define PWC_H
+ 
+-#include <linux/config.h>
++#include <linux/autoconf.h>
+ #include <linux/module.h>
+ #include <linux/usb.h>
+ #include <linux/spinlock.h>
+diff -ur pwc.old/pwc-uncompress.h pwc.dev/pwc-uncompress.h
+--- pwc.old/pwc-uncompress.h	2006-01-07 12:57:47.000000000 +0100
++++ pwc.dev/pwc-uncompress.h	2007-01-22 02:04:18.129633592 +0100
+@@ -30,7 +30,7 @@
+ #ifndef PWC_UNCOMPRESS_H
+ #define PWC_UNCOMPRESS_H
+ 
+-#include <linux/config.h>
++#include <linux/autoconf.h>
+ 
+ #include "pwc-ioctl.h"
+ 

@@ -25,7 +25,7 @@ define KernelPackage/pwc
   TITLE:=USB Philips camera driver
   DESCRIPTION:=Kernel support for USB Philips camera
   SUBMENU:=USB Support
-  DEPENDS:=@BROKEN @LINUX_2_6
+  DEPENDS:=@LINUX_2_6 @VIDEO_SUPPORT
   VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
   FILES:=$(PKG_BUILD_DIR)/pwc.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,70,$(shell cat ./files/pwc.modules))
