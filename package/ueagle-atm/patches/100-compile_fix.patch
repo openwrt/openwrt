@@ -9,3 +9,19 @@ diff -Nur ueagle-atm-1.0d1/driver/ueagle.c ueagle-atm-1.0d1.patched/driver/ueagl
  	.name = "ueagle-atm",
  	.id_table = uea_ids,
  	.probe = uea_probe,
+diff -ur ueagle.old/usbatm_iso/usbatm.h ueagle.dev/usbatm_iso/usbatm.h
+--- ueagle.old/usbatm_iso/usbatm.h	2005-11-19 18:43:26.000000000 +0100
++++ ueagle.dev/usbatm_iso/usbatm.h	2007-01-22 01:57:14.742998144 +0100
+@@ -24,11 +24,11 @@
+ #ifndef	_USBATM_H_
+ #define	_USBATM_H_
+ 
++#include <linux/autoconf.h>
+ #include <asm/semaphore.h>
+ #include <linux/atm.h>
+ #include <linux/atmdev.h>
+ #include <linux/completion.h>
+-#include <linux/config.h>
+ #include <linux/device.h>
+ #include <linux/kernel.h>
+ #include <linux/kref.h>
