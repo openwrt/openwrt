@@ -328,18 +328,6 @@ diff -ruN iptables-1.3.5.orig/extensions/libipt_portscan.c iptables-1.3.5/extens
 +	register_match(&libipt_portscan_info);
 +	return;
 +}
-diff -ruN iptables-1.3.5.orig/extensions/Makefile iptables-1.3.5/extensions/Makefile
---- iptables-1.3.5.orig/extensions/Makefile	2007-01-09 16:03:37.000000000 +0100
-+++ iptables-1.3.5/extensions/Makefile	2007-01-09 16:06:34.501506743 +0100
-@@ -5,7 +5,7 @@
- # header files are present in the include/linux directory of this iptables
- # package (HW)
- #
--PF_EXT_SLIB:=ah addrtype comment connlimit connmark conntrack dscp ecn esp hashlimit helper icmp iprange length limit mac mark multiport owner physdev pkttype policy realm rpc sctp standard state tcp tcpmss tos ttl udp unclean CLASSIFY CONNMARK DNAT DSCP ECN LOG MARK MASQUERADE MIRROR NETMAP NFQUEUE NOTRACK REDIRECT REJECT SAME SNAT TARPIT TCPMSS TOS TRACE TTL ULOG
-+PF_EXT_SLIB:=ah addrtype comment connlimit connmark conntrack dscp ecn esp hashlimit helper icmp iprange length limit mac mark multiport owner physdev pkttype policy portscan realm rpc sctp standard state tcp tcpmss tos ttl udp unclean CHAOS CLASSIFY CONNMARK DELUDE DNAT DSCP ECN LOG MARK MASQUERADE MIRROR NETMAP NFQUEUE NOTRACK REDIRECT REJECT SAME SNAT TARPIT TCPMSS TOS TRACE TTL ULOG
- PF6_EXT_SLIB:=connmark eui64 hl icmpv6 length limit mac mark multiport owner physdev policy standard state tcp udp CONNMARK HL LOG NFQUEUE MARK TRACE
- 
- 
 diff -ruN iptables-1.3.5.orig/extensions/.portscan-test iptables-1.3.5/extensions/.portscan-test
 --- iptables-1.3.5.orig/extensions/.portscan-test	1970-01-01 01:00:00.000000000 +0100
 +++ iptables-1.3.5/extensions/.portscan-test	2007-01-09 16:05:14.228187134 +0100
