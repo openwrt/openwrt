@@ -630,7 +630,7 @@ diff -Nur linux-2.6.17/arch/mips/aruba/prom.c linux-2.6.17-owrt/arch/mips/aruba/
 +
 +/* Kernel Boot parameters */
 +static unsigned char bootparm[] = 
-+	"mtdparts=physmap-flash.0:3520k@0x080000(zImage),2880k@0x120000(JFFS2),8k@0x3f8000(NVRAM) "
++	"mtdparts=physmap-flash.0:3648k@0x080000(zImage),2752k@0x140000(JFFS2),8k@0x3f8000(NVRAM) "
 +	"console=ttyS0,9600 root=/dev/mtdblock1 rootfstype=jffs2 ";
 +
 +
