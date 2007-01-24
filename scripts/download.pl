@@ -8,15 +8,29 @@
 
 use strict;
 use warnings;
+use File::Basename;
 
 my $target = shift @ARGV;
 my $filename = shift @ARGV;
 my $md5sum = shift @ARGV;
+my $scriptdir = dirname($0);
 my @mirrors;
 
 my $ok;
 
 @ARGV > 0 or die "Syntax: $0 <target dir> <filename> <md5sum> <mirror> [<mirror> ...]\n";
+
+sub localmirrors {
+
+    my @mlist;
+    open LM, "$scriptdir/localmirrors" or return "";
+    while (<LM>) {
+        chomp $_;
+        push @mlist, $_;
+    }
+
+    return @mlist;
+}
 
 sub which($) {
 	my $prog = shift;
@@ -77,6 +91,8 @@ sub cleanup
 	unlink "$target/$filename.dl";
 	unlink "$target/$filename.md5sum";
 }
+
+@mirrors = localmirrors();
 
 foreach my $mirror (@ARGV) {
 	if ($mirror =~ /^\@SF\/(.+)$/) {
