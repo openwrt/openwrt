@@ -12,6 +12,12 @@ config BUSYBOX_CONFIG_FEATURE_IPV6
 	  Enable IPv6 support in busybox.
 	  This adds IPv6 support in the networking applets.
 
+config BUSYBOX_CONFIG_ARP
+	bool "arp"
+	default n
+	help
+	  Manipulate the system ARP cache
+
 config BUSYBOX_CONFIG_ARPING
 	bool "arping"
 	default y
@@ -72,15 +78,15 @@ config BUSYBOX_CONFIG_HTTPD
 config BUSYBOX_CONFIG_FEATURE_HTTPD_RELOAD_CONFIG_SIGHUP
 	bool "Support reloading the global config file using hup signal"
 	default n
-	depends on BUSYBOX_CONFIG_HTTPD && BUSYBOX_CONFIG_FEATURE_HTTPD_WITHOUT_INETD
+	depends on BUSYBOX_CONFIG_HTTPD
 	help
 	  This option enables processing of SIGHUP to reload cached
 	  configuration settings.
 
 config BUSYBOX_CONFIG_FEATURE_HTTPD_SETUID
-	bool "Enable support -u <user> option"
+	bool "Enable -u <user> option"
 	default n
-	depends on BUSYBOX_CONFIG_HTTPD && BUSYBOX_CONFIG_FEATURE_HTTPD_WITHOUT_INETD
+	depends on BUSYBOX_CONFIG_HTTPD
 	help
 	  This option allows the server to run as a specific user
 	  rather than defaulting to the user that starts the server.

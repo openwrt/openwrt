@@ -1,0 +1,11 @@
+--- busybox-1.4.0/libbb/xreadlink.c	Fri Jan 19 22:23:06 2007
++++ busybox-1.4.0-syslogd-n/libbb/xreadlink.c	Tue Jan 23 22:35:45 2007
+@@ -36,7 +36,7 @@
+ 
+ char *xmalloc_realpath(const char *path)
+ {
+-#ifdef __GLIBC__
++#if defined(__GLIBC__) && !defined(__UCLIBC__)
+ 	/* glibc provides a non-standard extension */
+ 	return realpath(path, NULL);
+ #else

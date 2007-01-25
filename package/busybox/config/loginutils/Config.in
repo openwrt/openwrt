@@ -142,6 +142,13 @@ config BUSYBOX_CONFIG_PASSWD
 	  Note that Busybox binary must be setuid root for this applet to
 	  work properly.
 
+config BUSYBOX_CONFIG_FEATURE_PASSWD_WEAK_CHECK
+	bool "Check new passwords for weakness"
+	default y
+	depends on BUSYBOX_CONFIG_PASSWD
+	help
+	  With this option passwd will refuse new passwords which are "weak".
+
 config BUSYBOX_CONFIG_SU
 	bool "su"
 	default n
@@ -154,12 +161,15 @@ config BUSYBOX_CONFIG_SU
 	  Note that Busybox binary must be setuid root for this applet to
 	  work properly.
 
-config BUSYBOX_CONFIG_SU_SYSLOG
-	bool "Support for syslog in su"
+config BUSYBOX_CONFIG_FEATURE_SU_SYSLOG
+	bool "Enable su to write to syslog"
 	default n
 	depends on BUSYBOX_CONFIG_SU
-	help
-	  Enables support for syslog in su.
+
+config BUSYBOX_CONFIG_FEATURE_SU_CHECKS_SHELLS
+	bool "Enable su to check user's shell to be listed in /etc/shells"
+	depends on BUSYBOX_CONFIG_SU
+	default n
 
 config BUSYBOX_CONFIG_SULOGIN
 	bool "sulogin"
