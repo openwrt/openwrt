@@ -7,7 +7,7 @@ ${FAILSAFE:+exit}
 #[ -f /etc/config/network ] && . /etc/config/network
 #eval $(ipcalc "$log_ipaddr")
 #[ "$log_ipaddr" = "$IP" ] || log_ipaddr=""
-syslogd -C 16 #${log_ipaddr:+-L -R $log_ipaddr}
+syslogd -C16 #${log_ipaddr:+-L -R $log_ipaddr}
 klogd
 
 (
