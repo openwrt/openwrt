@@ -396,14 +396,14 @@ config BUSYBOX_CONFIG_EFENCE
 
 endchoice
 
-config BUSYBOX_CONFIG_DEBUG_YANK_SUSv2
-	bool "Disable obsolete features removed before SUSv3?"
+config BUSYBOX_CONFIG_INCLUDE_SUSv2
+	bool "Enable obsolete features removed before SUSv3?"
 	default y
 	help
-	  This option will disable backwards compatibility with SuSv2,
+	  This option will enable backwards compatibility with SuSv2,
 	  specifically, old-style numeric options ('command -1 <file>')
-	  will not be supported in head, tail, and fold.  (Note: should
-	  yank from renice too.)
+	  will be supported in head, tail, and fold.  (Note: should
+	  affect renice too.)
 
 endmenu
 
@@ -440,7 +440,7 @@ config BUSYBOX_CONFIG_INSTALL_APPLET_DONT
        prompt "not installed"
        depends on BUSYBOX_CONFIG_FEATURE_INSTALLER || BUSYBOX_CONFIG_FEATURE_SH_STANDALONE_SHELL
        help
-         Do not install applets links. Usefull when using the -install feature
+         Do not install applet links. Useful when using the -install feature
          or a standalone shell for rescue pruposes.
 
 endchoice

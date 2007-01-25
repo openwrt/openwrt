@@ -133,6 +133,11 @@ config BUSYBOX_CONFIG_LESS
 	  'less' is a pager, meaning that it displays text files. It possesses
 	  a wide array of features, and is an improvement over 'more'.
 
+config BUSYBOX_CONFIG_FEATURE_LESS_MAXLINES
+	int "Max number of input lines less will try to eat"
+	default 9999999
+	depends on BUSYBOX_CONFIG_LESS
+
 config BUSYBOX_CONFIG_FEATURE_LESS_BRACKETS
 	bool "Enable bracket searching"
 	default n

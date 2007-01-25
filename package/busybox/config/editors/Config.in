@@ -127,5 +127,12 @@ config BUSYBOX_CONFIG_FEATURE_VI_OPTIMIZE_CURSOR
 	  This will make the cursor movement faster, but requires more memory
 	  and it makes the applet a tiny bit larger.
 
-endmenu
+config BUSYBOX_CONFIG_FEATURE_ALLOW_EXEC
+	bool "Allow vi and awk to execute shell commands"
+	default y
+	depends on BUSYBOX_CONFIG_VI || BUSYBOX_CONFIG_AWK
+	help
+	  Enables vi and awk features which allows user to execute
+	  shell commands (using system() C call).
 
+endmenu
