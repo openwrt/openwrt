@@ -23,7 +23,7 @@ my $ok;
 sub localmirrors {
 
     my @mlist;
-    open LM, "$scriptdir/localmirrors" or return "";
+    open LM, "$scriptdir/localmirrors" or return ();
     while (<LM>) {
         chomp $_;
         push @mlist, $_;
