@@ -30,6 +30,8 @@ define Package/pcmcia-cs
   URL:=http://pcmcia-cs.sourceforge.net/
 endef
 
+$(PKG_BUILD_DIR)/.configured: $(LINUX_DIR)/.config
+
 define Build/Configure
 	( cd $(PKG_BUILD_DIR); \
 		./Configure \
