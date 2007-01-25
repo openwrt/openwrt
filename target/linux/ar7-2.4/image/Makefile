@@ -80,7 +80,7 @@ define Image/Build/CyberTAN
 endef
 
 define Image/Build/sErCoMm
-	cat sercomm/adam2.bin "$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).bin" > "$(BIN_DIR)/openwrt-$(2)-$(KERNEL)-$(3).img"
+	cat sercomm/adam2.bin "$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).bin" > "$(KDIR)/dgfw.tmp"
 	dd if=sercomm/$(2) of="$(KDIR)/dgfw.tmp" bs=$$$$((0x3e0000 - 80)) seek=1 conv=notrunc
 	$(STAGING_DIR)/bin/dgfirmware -f -w "$(BIN_DIR)/openwrt-$(2)-$(KERNEL)-$(3).img" "$(KDIR)/dgfw.tmp"
 	rm -f "$(KDIR)/dgfw.tmp"
