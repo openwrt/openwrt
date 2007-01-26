@@ -2,8 +2,8 @@
 
 choice
 	prompt "GCC compiler Version" if TOOLCHAINOPTS
-	default GCC_VERSION_4_1_1
 	default GCC_VERSION_3_4_6 if LINUX_2_4
+	default GCC_VERSION_4_1_1
 	help
 	  Select the version of gcc you wish to use.
 

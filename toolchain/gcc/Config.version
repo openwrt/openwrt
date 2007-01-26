@@ -12,11 +12,9 @@ config GCC_VERSION
 	default "4.1.1"
 
 if !TOOLCHAINOPTS
-	config GCC_VERSION_4_2
-		default n
-
 	config GCC_VERSION_3_4_6
 		default y if LINUX_2_4
+		default y if LINUX_2_6_BRCM
 endif
 
 
