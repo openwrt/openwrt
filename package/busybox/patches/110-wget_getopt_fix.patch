@@ -1,0 +1,11 @@
+--- busybox.old/networking/wget.c	2007-01-26 21:00:22.421900104 +0100
++++ busybox.dev/networking/wget.c	2007-01-26 21:00:30.688643368 +0100
+@@ -142,7 +142,7 @@
+ 	};
+ 	applet_long_options = wget_long_options;
+ #endif
+-	opt_complementary = "-1" USE_FEATURE_WGET_LONG_OPTIONS(":\xfe::");
++	opt_complementary = "-1" USE_FEATURE_WGET_LONG_OPTIONS(":\xfe::\xff");
+ 	opt = getopt32(argc, argv, "cqO:P:Y:U:",
+ 				&fname_out, &dir_prefix,
+ 				&proxy_flag, &user_agent
