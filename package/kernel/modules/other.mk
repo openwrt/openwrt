@@ -176,6 +176,7 @@ $(eval $(call KernelPackage,pcmcia-serial))
 
 define KernelPackage/bluetooth
   TITLE:=Bluetooth support
+  DEPENDS:=@USB_SUPPORT
   DESCRIPTION:=Kernel support for Bluetooth devices
   SUBMENU:=$(EMENU)
  endef
