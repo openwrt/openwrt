@@ -18,11 +18,11 @@ sub load_config($) {
 	open FILE, "$file" or die "can't open file";
 	while (<FILE>) {
 		chomp;
-		/^CONFIG_(.+)=(.+)/ and do {
+		/^CONFIG_(.+?)=(.+)/ and do {
 			$config{$1} = $2;
 			next;
 		};
-		/^# CONFIG_(.+) is not set/ and do {
+		/^# CONFIG_(.+?) is not set/ and do {
 			$config{$1} = -1;
 			next;
 		};
