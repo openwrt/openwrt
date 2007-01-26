@@ -1,6 +1,6 @@
 diff -ur busybox.old/editors/awk.c busybox.dev/editors/awk.c
 --- busybox.old/editors/awk.c	2007-01-19 22:23:12.000000000 +0100
-+++ busybox.dev/editors/awk.c	2007-01-25 20:01:26.000000000 +0100
++++ busybox.dev/editors/awk.c	2007-01-26 20:09:45.000000000 +0100
 @@ -2639,14 +2639,13 @@
  
  int awk_main(int argc, char **argv)
@@ -17,7 +17,7 @@ diff -ur busybox.old/editors/awk.c busybox.dev/editors/awk.c
  
  	/* Undo busybox.c, or else strtod may eat ','! This breaks parsing:
  	 * $1,$2 == '$1,' '$2', NOT '$1' ',' '$2' */
-@@ -2694,39 +2693,46 @@
+@@ -2694,40 +2693,54 @@
  		free(s);
  	}
  
@@ -39,6 +39,7 @@ diff -ur busybox.old/editors/awk.c busybox.dev/editors/awk.c
 -			for (i = j = 1; j > 0; i += j) {
 -				s = xrealloc(s, i + 4096);
 -				j = fread(s + i, 1, 4094, from_file);
++	programname = NULL;
 +	while((c = getopt(argc, argv, "F:v:f:W:")) != EOF) {
 +		switch (c) {
 +			case 'F':
@@ -83,14 +84,19 @@ diff -ur busybox.old/editors/awk.c busybox.dev/editors/awk.c
 -	} else { // no -f: take program from 1st parameter
 -		if (!argc)
 -			bb_show_usage();
--		programname = "cmd. line";
--		parse_program(*argv++);
--		argc--;
++	}
++	argc -= optind;
++	argv += optind;
++
++	if (!programname) {
+ 		programname = "cmd. line";
+ 		parse_program(*argv++);
+ 		argc--;
  	}
 -	if (opt & 0x8) // -W
 -		bb_error_msg("warning: unrecognized option '-W %s' ignored", opt_W);
-+	argc -= optind;
-+	argv += optind;
- 
+-
++	
  	/* fill in ARGV array */
  	setvar_i(V[ARGC], argc + 1);
+ 	setari_u(V[ARGV], 0, "awk");
