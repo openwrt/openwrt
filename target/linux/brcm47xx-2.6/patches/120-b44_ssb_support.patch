@@ -17,7 +17,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  #include <linux/delay.h>
  #include <linux/init.h>
  #include <linux/dma-mapping.h>
-+#include <linux/ssb.h>
++#include <linux/ssb/ssb.h>
  
  #include <asm/uaccess.h>
  #include <asm/io.h>
@@ -663,7 +663,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
 -	if (ssb_is_core_up(bp)) {
 +	struct ssb_device *sdev = bp->sdev;
 +
-+	if (ssb_core_is_enabled(bp->sdev)) {
++	if (ssb_device_is_enabled(bp->sdev)) {
  		bw32(bp, B44_RCV_LAZY, 0);
  		bw32(bp, B44_ENET_CTRL, ENET_CTRL_DISABLE);
  		b44_wait_bit(bp, B44_ENET_CTRL, ENET_CTRL_DISABLE, 100, 1);
@@ -679,7 +679,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
  
 -	ssb_core_reset(bp);
 -
-+	ssb_core_enable(bp->sdev, 0);
++	ssb_device_enable(bp->sdev, 0);
  	b44_clear_stats(bp);
  
 -	/* Make PHY accessible. */
@@ -1096,7 +1096,7 @@ diff -urN linux.old/drivers/net/b44.c linux.dev/drivers/net/b44.c
 -	err = b44_read_eeprom(bp, &eeprom[0]);
 -	if (err)
 -		goto out;
-+	bp->dma_offset = ssb_dma_offset(sdev);
++	bp->dma_offset = ssb_dma_translation(sdev);
  
 -	bp->dev->dev_addr[0] = eeprom[79];
 -	bp->dev->dev_addr[1] = eeprom[78];
