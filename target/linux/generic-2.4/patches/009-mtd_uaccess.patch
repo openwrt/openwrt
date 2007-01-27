@@ -9,3 +9,25 @@
  			&mtd_fops, NULL);
  }
  
+--- linux-2.4.30/drivers/mtd/mtdblock.c.orig	2006-03-26 06:38:36 -05:00
++++ linux-2.4.30/drivers/mtd/mtdblock.c	2006-03-26 06:38:54 -05:00
+@@ -601,7 +601,7 @@
+         sprintf(name, "%d", mtd->index);
+         devfs_rw_handle[mtd->index] = devfs_register(devfs_dir_handle, name,
+                         DEVFS_FL_DEFAULT, MTD_BLOCK_MAJOR, mtd->index,
+-                        S_IFBLK | S_IRUGO | S_IWUGO,
++                        S_IFBLK | S_IRUSR | S_IWUSR,
+                         &mtd_fops, NULL);
+ }
+ 
+--- linux-2.4.30/drivers/mtd/mtdchar.c.orig	2006-03-26 06:42:23 -05:00
++++ linux-2.4.30/drivers/mtd/mtdchar.c	2006-03-26 06:42:41 -05:00
+@@ -558,7 +558,7 @@
+ 	sprintf(name, "%d", mtd->index);
+ 	devfs_rw_handle[mtd->index] = devfs_register(devfs_dir_handle, name,
+ 			DEVFS_FL_DEFAULT, MTD_CHAR_MAJOR, mtd->index*2,
+-			S_IFCHR | S_IRUGO | S_IWUGO,
++			S_IFCHR | S_IRUSR | S_IWUSR,
+ 			&mtd_fops, NULL);
+ 
+ 	sprintf(name, "%dro", mtd->index);
