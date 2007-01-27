@@ -1,0 +1,14 @@
+diff -ur busybox.old/libbb/xfuncs.c busybox.dev/libbb/xfuncs.c
+--- busybox.old/libbb/xfuncs.c	2007-01-19 22:23:06.000000000 +0100
++++ busybox.dev/libbb/xfuncs.c	2007-01-27 18:30:56.229172096 +0100
+@@ -339,8 +339,8 @@
+ 	while (count) {
+ 		unsigned char c = *cp++;
+ 		/* put lowercase hex digits */
+-		*p++ = 0x10 | bb_hexdigits_upcase[c >> 4];
+-		*p++ = 0x10 | bb_hexdigits_upcase[c & 0xf];
++		*p++ = 0x20 | bb_hexdigits_upcase[c >> 4];
++		*p++ = 0x20 | bb_hexdigits_upcase[c & 0xf];
+ 		count--;
+ 	}
+ 	return p;
