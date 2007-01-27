@@ -124,10 +124,12 @@ setup_interface() {
 			config_get ip6addr "$config" ip6addr
 			config_get gateway "$config" gateway
 			config_get dns "$config" dns
+			config_get bcast "$config" broadcast
 			
 			[ -z "$ipaddr" ] || $DEBUG ifconfig "$iface" "$ipaddr" netmask "$netmask"
 			[ -z "$ip6addr" ] || $DEBUG ifconfig "$iface" inet6 add "$ip6addr" 
-			[ -z "$gateway" ] || route add default gw "$gateway"
+			[ -z "$gateway" ] || $DEBUG route add default gw "$gateway"
+			[ -z "$bcast" ] || $DEBUG ifconfig "$iface" broadcast "$bcast"
 			[ -z "$dns" -o -f /tmp/resolv.conf.auto ] || {
 				for ns in $dns; do
 					echo "nameserver $ns" >> /tmp/resolv.conf.auto
