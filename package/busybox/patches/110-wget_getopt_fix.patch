@@ -1,11 +1,13 @@
---- busybox.old/networking/wget.c	2007-01-26 21:00:22.421900104 +0100
-+++ busybox.dev/networking/wget.c	2007-01-26 21:00:30.688643368 +0100
-@@ -142,7 +142,7 @@
+diff -ur busybox.old/networking/wget.c busybox.dev/networking/wget.c
+--- busybox.old/networking/wget.c	2007-01-27 15:44:02.235530528 +0100
++++ busybox.dev/networking/wget.c	2007-01-27 15:53:26.549741728 +0100
+@@ -136,7 +136,7 @@
+ 		{ "directory-prefix", required_argument, NULL, 'P' },
+ 		{ "proxy",            required_argument, NULL, 'Y' },
+ 		{ "user-agent",       required_argument, NULL, 'U' },
+-		{ "passive-ftp",      no_argument, NULL, 0xff },
++		{ "passive-ftp",      no_argument, NULL, 0xfd },
+ 		{ "header",           required_argument, NULL, 0xfe },
+ 		{ 0, 0, 0, 0 }
  	};
- 	applet_long_options = wget_long_options;
- #endif
--	opt_complementary = "-1" USE_FEATURE_WGET_LONG_OPTIONS(":\xfe::");
-+	opt_complementary = "-1" USE_FEATURE_WGET_LONG_OPTIONS(":\xfe::\xff");
- 	opt = getopt32(argc, argv, "cqO:P:Y:U:",
- 				&fname_out, &dir_prefix,
- 				&proxy_flag, &user_agent
+Only in busybox.dev/networking: .wget.c.swp
