@@ -81,6 +81,20 @@ define Package/nas
 	proprietary Broadcom wl driver.
 endef
 
+
+define install_template
+	$(INSTALL_DIR) $(1)/lib/modules/$(LINUX_VERSION)
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/kmod/wl$(2).o.patch $(1)/lib/modules/$(LINUX_VERSION)/
+endef
+
+define KernelPackage/brcm-wl/install
+	$(call install_template,$(1),)
+endef
+
+define KernelPackage/brcm-wl_mimo/install
+	$(call install_template,$(1),_mimo)
+endef
+
 MAKEFLAGS_KMOD:= -C "$(LINUX_DIR)" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
 		ARCH="$(LINUX_KARCH)" \
