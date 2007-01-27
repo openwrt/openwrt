@@ -1,0 +1,15 @@
+--- linux-2.6.19.2/drivers/mtd/mtdchar.c.old	2007-01-27 20:17:35.000000000 +0100
++++ linux-2.6.19.2/drivers/mtd/mtdchar.c	2007-01-27 20:18:12.000000000 +0100
+@@ -33,10 +33,10 @@
+ 
+ #ifdef CONFIG_DEVFS_FS
+ 	devfs_mk_cdev(MKDEV(MTD_CHAR_MAJOR, mtd->index*2),
+-			S_IFCHR | S_IRUGO | S_IWUGO, "mtd/%d", mtd->index);
++			S_IFCHR | S_IRUSR | S_IWUSR, "mtd/%d", mtd->index);
+ 
+ 	devfs_mk_cdev(MKDEV(MTD_CHAR_MAJOR, mtd->index*2+1),
+-			S_IFCHR | S_IRUGO, "mtd/%dro", mtd->index);
++			S_IFCHR | S_IRUSR, "mtd/%dro", mtd->index);
+ #else
+ 	class_device_create(mtd_class, NULL, MKDEV(MTD_CHAR_MAJOR, mtd->index*2),
+ 			    NULL, "mtd%d", mtd->index);
