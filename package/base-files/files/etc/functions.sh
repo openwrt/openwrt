@@ -77,7 +77,7 @@ config_clear() {
 	CONFIG_SECTIONS="$(echo " $CONFIG_SECTIONS " | sed -e "s, $OLD , ,")"
 	CONFIG_SECTIONS="${SECTION:+$CONFIG_SECTIONS}"
 
-	for oldvar in `set | grep ^CONFIG_${SECTION:+$SECTION_} | \
+	for oldvar in `set | grep ^CONFIG_${SECTION:+${SECTION}_} | \
 		sed -e 's/\(.*\)=.*$/\1/'` ; do 
 		unset $oldvar 
 	done
