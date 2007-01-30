@@ -19,8 +19,8 @@ ifeq ("$(origin V)", "command line")
 endif
 
 ifeq ($(IS_TTY),1)
-  _Y:="\\33[33m"# yellow
-  _N:="\\33[m"#	normal
+  _Y:="\\033[33m" # yellow
+  _N:="\\033[m" #normal
 endif
 
 ifneq ($(KBUILD_VERBOSE),99)
