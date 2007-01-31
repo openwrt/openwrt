@@ -77,7 +77,7 @@ config BUSYBOX_CONFIG_HTTPD
 
 config BUSYBOX_CONFIG_FEATURE_HTTPD_RELOAD_CONFIG_SIGHUP
 	bool "Support reloading the global config file using hup signal"
-	default n
+	default y
 	depends on BUSYBOX_CONFIG_HTTPD
 	help
 	  This option enables processing of SIGHUP to reload cached
