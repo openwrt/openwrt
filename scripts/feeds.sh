@@ -28,16 +28,16 @@ delete_symlinks() {
 setup_symlinks() {
 	# We assume that feeds do reproduce the hierarchy : section/package
 	# so that we can make this structure be flat in $PACKAGE_DIR
-	for dir in $(ls $2/)
+	for dir in $(ls $1/)
 	do
-		ln -s $2/$dir/*/* $1/
+		ln -s $1/$dir/*/* $2/
 	done
 }
 
 checkout_feed() {
 	# We ensure the feed has not already been checked out, if so, we just update the source feed
 	if [ -d $FEEDS_DIR/$2 ]; then
-		svn update $FEEDS_DIR/$2
+		svn up $FEEDS_DIR/$2
 		echo "Updated to revision $(LANG=C svn info $FEEDS_DIR/$2 | awk '/^Revision:/ { print $2 }' )";
 	# Otherwise, we have to checkout in the $FEEDS_DIR 
 	else
@@ -48,7 +48,7 @@ checkout_feed() {
 
 extract_feed_name() {
 	# We extract the last name of the URL, maybe we should rename this as domain.tld.repository.name
-	echo "$(echo $1 | awk -F/ '{ print $NF}')"
+	echo "$(echo $1 | sed -e "s/[^A-Za-z\.]\+/_/g")"
 }
 
 # We can delete symlinks every time we start this script, since modifications have been made in the $FEEDS_DIR anyway

@@ -187,9 +187,6 @@ doc:
 docclean:
 	$(MAKE) -C docs/ clean
 
-symlinks:
-	scripts/feeds.sh $(CONFIG_SOURCE_FEEDS) 
-
 .SILENT: clean dirclean distclean config-clean download world
 FORCE: ;
 .PHONY: FORCE help
