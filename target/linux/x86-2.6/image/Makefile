@@ -34,7 +34,8 @@ ifeq ($(CONFIG_X86_GRUB_IMAGES),y)
   endef
 
   define Image/Build/grub
-	mkdir -p $(KDIR)/root.grub/boot/grub
+	# left here because the image builder doesnt need these
+	$(INSTALL_DIR) $(KDIR)/root.grub/boot/grub
 	$(CP) \
 		$(KDIR)/*stage* \
 		$(KDIR)/root.grub/boot/grub/
@@ -47,8 +48,8 @@ ifeq ($(CONFIG_X86_GRUB_IMAGES),y)
   endef
 endif
 
-define Image/Prepare
-	cp $(LINUX_DIR)/arch/i386/boot/bzImage $(KDIR)/bzImage
+ifeq ($(CONFIG_X86_GRUB_IMAGES),y)
+  define Image/Prepare/grub
 	# for the image builder
 	$(CP) \
 		$(STAGING_DIR)/usr/lib/grub/i386-pc/stage1 \
@@ -56,12 +57,18 @@ define Image/Prepare
 		$(STAGING_DIR)/usr/lib/grub/i386-pc/e2fs_stage1_5 \
 		$(KDIR)/
 	$(CP) $(STAGING_DIR)/usr/sbin/grub $(STAGING_DIR)/bin
+  endef
+endif
+
+define Image/Prepare
+	$(CP) $(LINUX_DIR)/arch/i386/boot/bzImage $(KDIR)/bzImage
+	$(call Image/Prepare/grub)
 endef
 
 define Image/Build
 	$(call Image/Build/grub,$(1))
-	cp $(KDIR)/root.$(1) $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).fs
-	cp $(KDIR)/bzImage $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-vmlinuz
+	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).fs
+	$(CP) $(KDIR)/bzImage $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-vmlinuz
 endef
 
 $(eval $(call BuildImage))
