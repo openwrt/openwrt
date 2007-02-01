@@ -1,0 +1,11 @@
+--- linux.old/drivers/mtd/devices/block2mtd.c	2007-02-01 20:13:47.147274772 +0100
++++ linux/drivers/mtd/devices/block2mtd.c	2007-02-01 20:19:59.753034993 +0100
+@@ -40,7 +40,7 @@
+ static LIST_HEAD(blkmtd_device_list);
+ 
+ 
+-#define PAGE_READAHEAD 64
++#define PAGE_READAHEAD 0
+ static void cache_readahead(struct address_space *mapping, int index)
+ {
+ 	filler_t *filler = (filler_t*)mapping->a_ops->readpage;
