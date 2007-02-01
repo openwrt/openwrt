@@ -322,7 +322,7 @@ define KernelPackage/ne2k-pci
 	ne2k-pci Ethernet Adapter kernel support.
   FILES:=$(MODULES_DIR)/kernel/drivers/net/ne2k-pci.$(LINUX_KMOD_SUFFIX) \
 	$(MODULES_DIR)/kernel/drivers/net/8390.$(LINUX_KMOD_SUFFIX)
-  KCONFIG:=$(CONFIG_NE2K-PCI)
+  KCONFIG:=$(CONFIG_NE2K_PCI)
   DEPENDS:=@LINUX_2_6_X86
   SUBMENU:=$(NDMENU)
   AUTOLOAD:=$(call AutoLoad,50,8390 ne2k-pci)
