@@ -129,24 +129,9 @@ static inline unsigned classify_1d(struct sk_buff *skb, struct Qdisc *qd)
 	ip = (struct iphdr *) (skb->data + offset);
 
 	dscp = ip->tos & 0xfc;
-	switch (dscp) {
-	case 0x20:
-		return 2;
-	case 0x40:
-		return 1;
-	case 0x60:
-		return 3;
-	case 0x80:
-		return 4;
-	case 0xa0:
-		return 5;
-	case 0xc0:
-		return 6;
-	case 0xe0:
-		return 7;
-	default:
+	if (dscp & 0x1c)
 		return 0;
-	}
+	return dscp >> 5;
 }
 
 
@@ -432,7 +417,8 @@ static int wme_qdiscop_init(struct Qdisc *qd, struct rtattr *opt)
 	/* create child queues */
 	for (i = 0; i < queues; i++) {
 		skb_queue_head_init(&q->requeued[i]);
-		q->queues[i] = qdisc_create_dflt(qd->dev, &CHILD_QDISC_OPS);
+		q->queues[i] = qdisc_create_dflt(qd->dev, &CHILD_QDISC_OPS,
+						 qd->handle);
 		if (q->queues[i] == 0) {
 			q->queues[i] = &noop_qdisc;
 			printk(KERN_ERR "%s child qdisc %i creation failed", dev->name, i);
@@ -658,7 +644,7 @@ void ieee80211_install_qdisc(struct net_device *dev)
 {
 	struct Qdisc *qdisc;
 
-	qdisc = qdisc_create_dflt(dev, &wme_qdisc_ops);
+	qdisc = qdisc_create_dflt(dev, &wme_qdisc_ops, TC_H_ROOT);
 	if (!qdisc) {
 		printk(KERN_ERR "%s: qdisc installation failed\n", dev->name);
 		return;

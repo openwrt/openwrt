@@ -22,8 +22,7 @@
 #include <linux/compiler.h>
 #include <linux/bitmap.h>
 
-#include <net/d80211_common.h>
-#include <net/d80211_mgmt.h>
+#include "ieee80211_common.h"
 #include "ieee80211_i.h"
 #include "ieee80211_rate.h"
 #include "wep.h"
@@ -1362,10 +1361,8 @@ static int ieee80211_master_start_xmit(struct sk_buff *skb,
 	struct ieee80211_tx_control control;
 	struct ieee80211_tx_packet_data *pkt_data;
 	struct net_device *odev = NULL;
-	struct ieee80211_sub_if_data *sdata, *osdata;
+	struct ieee80211_sub_if_data *osdata;
 	int ret;
-
-	sdata = IEEE80211_DEV_TO_SUB_IF(dev);
 
 	/*
 	 * copy control out of the skb so other people can use skb->cb
@@ -1395,8 +1392,6 @@ static int ieee80211_master_start_xmit(struct sk_buff *skb,
 		control.flags |= IEEE80211_TXCTL_REQ_TX_STATUS;
 	if (pkt_data->do_not_encrypt)
 		control.flags |= IEEE80211_TXCTL_DO_NOT_ENCRYPT;
-	control.pkt_type =
-		pkt_data->pkt_probe_resp ? PKT_PROBE_RESP : PKT_NORMAL;
 	if (pkt_data->requeue)
 		control.flags |= IEEE80211_TXCTL_REQUEUE;
 	control.queue = pkt_data->queue;
@@ -1627,10 +1622,6 @@ ieee80211_mgmt_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	memset(pkt_data, 0, sizeof(struct ieee80211_tx_packet_data));
         pkt_data->ifindex = sdata->dev->ifindex;
 	pkt_data->mgmt_iface = (sdata->type == IEEE80211_IF_TYPE_MGMT);
-
-	if ((fc & IEEE80211_FCTL_FTYPE) == IEEE80211_FTYPE_MGMT &&
-	    (fc & IEEE80211_FCTL_STYPE) == IEEE80211_STYPE_PROBE_RESP)
-		pkt_data->pkt_probe_resp = 1;
 
 	skb->priority = 20; /* use hardcoded priority for mgmt TX queue */
 	skb->dev = sdata->local->mdev;
@@ -1915,7 +1906,8 @@ int ieee80211_if_config_beacon(struct net_device *dev)
 
 int ieee80211_hw_config(struct ieee80211_local *local)
 {
-	int i, ret = 0;
+	struct ieee80211_hw_mode *mode;
+	int ret = 0;
 
 #ifdef CONFIG_D80211_VERBOSE_DEBUG
 	printk(KERN_DEBUG "HW CONFIG: channel=%d freq=%d "
@@ -1926,12 +1918,10 @@ int ieee80211_hw_config(struct ieee80211_local *local)
 	if (local->ops->config)
 		ret = local->ops->config(local_to_hw(local), &local->hw.conf);
 
-	for (i = 0; i < local->hw.num_modes; i++) {
-		struct ieee80211_hw_modes *mode = &local->hw.modes[i];
+	list_for_each_entry(mode, &local->modes_list, list) {
 		if (mode->mode == local->hw.conf.phymode) {
-			if (local->curr_rates != mode->rates) {
+			if (local->curr_rates != mode->rates)
 				rate_control_clear(local);
-			}
 			local->curr_rates = mode->rates;
 			local->num_curr_rates = mode->num_rates;
 			ieee80211_prepare_rates(local);
@@ -1947,7 +1937,7 @@ static int ieee80211_change_mtu(struct net_device *dev, int new_mtu)
 {
 	/* FIX: what would be proper limits for MTU?
 	 * This interface uses 802.3 frames. */
-	if (new_mtu < 256 || new_mtu > IEEE80211_DATA_LEN - 24 - 6) {
+	if (new_mtu < 256 || new_mtu > IEEE80211_MAX_DATA_LEN - 24 - 6) {
 		printk(KERN_WARNING "%s: invalid MTU %d\n",
 		       dev->name, new_mtu);
 		return -EINVAL;
@@ -1965,7 +1955,7 @@ static int ieee80211_change_mtu_apdev(struct net_device *dev, int new_mtu)
 {
 	/* FIX: what would be proper limits for MTU?
 	 * This interface uses 802.11 frames. */
-	if (new_mtu < 256 || new_mtu > IEEE80211_DATA_LEN) {
+	if (new_mtu < 256 || new_mtu > IEEE80211_MAX_DATA_LEN) {
 		printk(KERN_WARNING "%s: invalid MTU %d\n",
 		       dev->name, new_mtu);
 		return -EINVAL;
@@ -2092,13 +2082,14 @@ void ieee80211_if_shutdown(struct net_device *dev)
 	case IEEE80211_IF_TYPE_IBSS:
 		sdata->u.sta.state = IEEE80211_DISABLED;
 		cancel_delayed_work(&sdata->u.sta.work);
-		if (local->scan_work.data == sdata->dev) {
+		if (!local->ops->hw_scan &&
+		    local->scan_dev == sdata->dev) {
 			local->sta_scanning = 0;
 			cancel_delayed_work(&local->scan_work);
 			flush_scheduled_work();
 			/* see comment in ieee80211_unregister_hw to
 			 * understand why this works */
-			local->scan_work.data = NULL;
+			local->scan_dev = NULL;
 		} else
 			flush_scheduled_work();
 		break;
@@ -2511,10 +2502,10 @@ ieee80211_rx_h_data(struct ieee80211_txrx_data *rx)
 static struct ieee80211_rate *
 ieee80211_get_rate(struct ieee80211_local *local, int phymode, int hw_rate)
 {
-	int m, r;
+	struct ieee80211_hw_mode *mode;
+	int r;
 
-	for (m = 0; m < local->hw.num_modes; m++) {
-		struct ieee80211_hw_modes *mode = &local->hw.modes[m];
+	list_for_each_entry(mode, &local->modes_list, list) {
 		if (mode->mode != phymode)
 			continue;
 		for (r = 0; r < mode->num_rates; r++) {
@@ -4050,7 +4041,6 @@ static void ieee80211_remove_tx_extra(struct ieee80211_local *local,
 	pkt_data->mgmt_iface = (control->type == IEEE80211_IF_TYPE_MGMT);
 	pkt_data->req_tx_status = !!(control->flags & IEEE80211_TXCTL_REQ_TX_STATUS);
 	pkt_data->do_not_encrypt = !!(control->flags & IEEE80211_TXCTL_DO_NOT_ENCRYPT);
-	pkt_data->pkt_probe_resp = (control->pkt_type == PKT_PROBE_RESP);
 	pkt_data->requeue = !!(control->flags & IEEE80211_TXCTL_REQUEUE);
 	pkt_data->queue = control->queue;
 
@@ -4334,6 +4324,7 @@ void ieee80211_if_setup(struct net_device *dev)
 	dev->open = ieee80211_open;
 	dev->stop = ieee80211_stop;
 	dev->tx_queue_len = 0;
+	dev->uninit = ieee80211_if_reinit;
 	dev->destructor = ieee80211_if_free;
 }
 
@@ -4348,25 +4339,8 @@ void ieee80211_if_mgmt_setup(struct net_device *dev)
 	dev->type = ARPHRD_IEEE80211_PRISM;
 	dev->hard_header_parse = header_parse_80211;
 	dev->tx_queue_len = 0;
+	dev->uninit = ieee80211_if_reinit;
 	dev->destructor = ieee80211_if_free;
-}
-
-static void ieee80211_precalc_modes(struct ieee80211_local *local)
-{
-	struct ieee80211_hw_modes *mode;
-	struct ieee80211_rate *rate;
-	struct ieee80211_hw *hw = &local->hw;
-	int m, r;
-
-	local->hw_modes = 0;
-	for (m = 0; m < hw->num_modes; m++) {
-		mode = &hw->modes[m];
-		local->hw_modes |= 1 << mode->mode;
-		for (r = 0; r < mode->num_rates; r++) {
-			rate = &mode->rates[r];
-			rate->rate_inv = CHAN_UTIL_RATE_LCM / rate->rate;
-		}
-	}
 }
 
 int ieee80211_init_rate_ctrl_alg(struct ieee80211_local *local,
@@ -4421,7 +4395,7 @@ static void rate_control_deinitialize(struct ieee80211_local *local)
 }
 
 struct ieee80211_hw *ieee80211_alloc_hw(size_t priv_data_len,
-					      struct ieee80211_ops *ops)
+					const struct ieee80211_ops *ops)
 {
 	struct net_device *mdev;
         struct ieee80211_local *local;
@@ -4461,6 +4435,7 @@ struct ieee80211_hw *ieee80211_alloc_hw(size_t priv_data_len,
 	local->hw.priv = (char *)mdev->priv +
 			 ((sizeof(struct ieee80211_sub_if_data) +
 			   NETDEV_ALIGN_CONST) & ~NETDEV_ALIGN_CONST);
+	local->hw.queues = 1; /* default */
 
 	local->mdev = mdev;
 	local->rx_pre_handlers = ieee80211_rx_pre_handlers;
@@ -4482,10 +4457,13 @@ struct ieee80211_hw *ieee80211_alloc_hw(size_t priv_data_len,
 
         init_timer(&local->scan.timer); /* clear it out */
 
+	INIT_LIST_HEAD(&local->modes_list);
+
 	spin_lock_init(&local->sub_if_lock);
 	INIT_LIST_HEAD(&local->sub_if_list);
 
         spin_lock_init(&local->generic_lock);
+	INIT_DELAYED_WORK(&local->scan_work, ieee80211_sta_scan_work);
 	init_timer(&local->stat_timer);
 	local->stat_timer.function = ieee80211_stat_refresh;
 	local->stat_timer.data = (unsigned long) local;
@@ -4545,9 +4523,6 @@ int ieee80211_register_hw(struct ieee80211_hw *hw)
 		goto fail_sysfs;
 
 	local->hw.conf.beacon_int = 1000;
-
-	/* Don't care about the result */
-	ieee80211_update_hw(local_to_hw(local));
 
 	result = sta_info_start(local);
 	if (result < 0)
@@ -4633,35 +4608,38 @@ fail_sysfs:
 }
 EXPORT_SYMBOL(ieee80211_register_hw);
 
-int ieee80211_update_hw(struct ieee80211_hw *hw)
+int ieee80211_register_hwmode(struct ieee80211_hw *hw,
+			      struct ieee80211_hw_mode *mode)
 {
 	struct ieee80211_local *local = hw_to_local(hw);
+	struct ieee80211_rate *rate;
+	int i;
 
-	/* Backwards compatibility for low-level drivers that do not set number
-	 * of TX queues. */
-	if (hw->queues == 0)
-		hw->queues = 1;
+	INIT_LIST_HEAD(&mode->list);
+	list_add_tail(&mode->list, &local->modes_list);
 
-	if (!hw->modes || !hw->modes->channels || !hw->modes->rates ||
-	    !hw->modes->num_channels || !hw->modes->num_rates)
-		return -1;
+	local->hw_modes |= (1 << mode->mode);
+	for (i = 0; i < mode->num_rates; i++) {
+		rate = &(mode->rates[i]);
+		rate->rate_inv = CHAN_UTIL_RATE_LCM / rate->rate;
+	}
 
-	ieee80211_precalc_modes(local);
-	local->hw.conf.phymode = hw->modes[0].mode;
-	local->curr_rates = hw->modes[0].rates;
-	local->num_curr_rates = hw->modes[0].num_rates;
-	ieee80211_prepare_rates(local);
-
-	local->hw.conf.freq = local->hw.modes[0].channels[0].freq;
-	local->hw.conf.channel = local->hw.modes[0].channels[0].chan;
-	local->hw.conf.channel_val = local->hw.modes[0].channels[0].val;
+	if (!local->curr_rates) {
+		/* Default to this mode */
+		local->hw.conf.phymode = mode->mode;
+		local->curr_rates = mode->rates;
+		local->num_curr_rates = mode->num_rates;
+		ieee80211_prepare_rates(local);
+		local->hw.conf.freq = mode->channels[0].freq;
+		local->hw.conf.channel = mode->channels[0].chan;
+		local->hw.conf.channel_val = mode->channels[0].val;
+	}
 
 	ieee80211_init_client(local->mdev);
-	/* FIXME: Invoke config to allow driver to set the channel. */
 
 	return 0;
 }
-EXPORT_SYMBOL(ieee80211_update_hw);
+EXPORT_SYMBOL(ieee80211_register_hwmode);
 
 void ieee80211_unregister_hw(struct ieee80211_hw *hw)
 {
@@ -4686,7 +4664,7 @@ void ieee80211_unregister_hw(struct ieee80211_hw *hw)
 
 	if (local->stat_time)
 		del_timer_sync(&local->stat_timer);
-	if (local->scan_work.data) {
+	if (!local->ops->hw_scan && local->scan_dev) {
 		local->sta_scanning = 0;
 		cancel_delayed_work(&local->scan_work);
 		flush_scheduled_work();
@@ -4709,12 +4687,13 @@ void ieee80211_unregister_hw(struct ieee80211_hw *hw)
 
 	if (skb_queue_len(&local->skb_queue)
 			|| skb_queue_len(&local->skb_queue_unreliable))
-		printk(KERN_WARNING "%s: skb_queue not empty",
+		printk(KERN_WARNING "%s: skb_queue not empty\n",
 		       local->mdev->name);
 	skb_queue_purge(&local->skb_queue);
 	skb_queue_purge(&local->skb_queue_unreliable);
 
 	ieee80211_dev_free_index(local);
+	ieee80211_wep_free(local);
 	ieee80211_led_exit(local);
 }
 EXPORT_SYMBOL(ieee80211_unregister_hw);
@@ -4724,7 +4703,6 @@ void ieee80211_free_hw(struct ieee80211_hw *hw)
 	struct ieee80211_local *local = hw_to_local(hw);
 
 	ieee80211_if_free(local->mdev);
-	ieee80211_wep_free(local);
 	ieee80211_dev_free(local);
 }
 EXPORT_SYMBOL(ieee80211_free_hw);

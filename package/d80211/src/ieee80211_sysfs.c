@@ -189,15 +189,13 @@ __IEEE80211_LOCAL_SHOW(tx_power_reduction);
 static ssize_t ieee80211_local_fmt_modes(struct ieee80211_local *local,
 					 char *buf)
 {
-	int i;
-	struct ieee80211_hw_modes *mode;
+	struct ieee80211_hw_mode *mode;
 	char *p = buf;
 
-	/* FIXME: locking against ieee80211_update_hw? */
-	for (i = 0; i < local->hw.num_modes; i++) {
-		mode = &local->hw.modes[i];
+	/* FIXME: Locking? Could register a mode in the meantime. */
+	list_for_each_entry(mode, &local->modes_list, list)
 		p += sprintf(p, "%s\n", ieee80211_mode_str_short(mode->mode));
-	}
+
 	return (p - buf);
 }
 __IEEE80211_LOCAL_SHOW(modes);

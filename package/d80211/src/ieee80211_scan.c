@@ -24,49 +24,49 @@
 #define SCAN_TXRX_THRESHOLD 75
 
 static void get_channel_params(struct ieee80211_local *local, int channel,
-				struct ieee80211_hw_modes **mode,
+				struct ieee80211_hw_mode **mode,
 				struct ieee80211_channel **chan)
 {
-	int m;
+	struct ieee80211_hw_mode *m;
 
-	for (m = 0; m < local->hw.num_modes; m++) {
-		*mode = &local->hw.modes[m];
-		if ((*mode)->mode == local->hw.conf.phymode)
+	list_for_each_entry(m, &local->modes_list, list) {
+		*mode = m;
+		if (m->mode == local->hw.conf.phymode)
 			break;
 	}
-	local->scan.mode_idx = m;
+	local->scan.mode = m;
 	local->scan.chan_idx = 0;
 	do {
-		*chan = &(*mode)->channels[local->scan.chan_idx];
-		if ((*chan)->chan == channel) {
+		*chan = &m->channels[local->scan.chan_idx];
+		if ((*chan)->chan == channel)
 			return;
-		}
 		local->scan.chan_idx++;
-	} while (local->scan.chan_idx < (*mode)->num_channels);
+	} while (local->scan.chan_idx < m->num_channels);
 	*chan = NULL;
 }
 
 
 static void next_chan_same_mode(struct ieee80211_local *local,
-				struct ieee80211_hw_modes **mode,
+				struct ieee80211_hw_mode **mode,
 				struct ieee80211_channel **chan)
 {
-	int m, prev;
+	struct ieee80211_hw_mode *m;
+	int prev;
 
-	for (m = 0; m < local->hw.num_modes; m++) {
-		*mode = &local->hw.modes[m];
-		if ((*mode)->mode == local->hw.conf.phymode)
+	list_for_each_entry(m, &local->modes_list, list) {
+		*mode = m;
+		if (m->mode == local->hw.conf.phymode)
 			break;
 	}
-	local->scan.mode_idx = m;
+	local->scan.mode = m;
 
 	/* Select next channel - scan only channels marked with W_SCAN flag */
 	prev = local->scan.chan_idx;
 	do {
 		local->scan.chan_idx++;
-		if (local->scan.chan_idx >= (*mode)->num_channels)
+		if (local->scan.chan_idx >= m->num_channels)
 			local->scan.chan_idx = 0;
-		*chan = &(*mode)->channels[local->scan.chan_idx];
+		*chan = &m->channels[local->scan.chan_idx];
 		if ((*chan)->flag & IEEE80211_CHAN_W_SCAN)
 			break;
 	} while (local->scan.chan_idx != prev);
@@ -74,43 +74,44 @@ static void next_chan_same_mode(struct ieee80211_local *local,
 
 
 static void next_chan_all_modes(struct ieee80211_local *local,
-				struct ieee80211_hw_modes **mode,
+				struct ieee80211_hw_mode **mode,
 				struct ieee80211_channel **chan)
 {
-	int prev, prev_m;
-
-	if (local->scan.mode_idx >= local->hw.num_modes) {
-		local->scan.mode_idx = 0;
-		local->scan.chan_idx = 0;
-	}
+	struct ieee80211_hw_mode *prev_m;
+	int prev;
 
 	/* Select next channel - scan only channels marked with W_SCAN flag */
 	prev = local->scan.chan_idx;
-	prev_m = local->scan.mode_idx;
+	prev_m = local->scan.mode;
 	do {
-		*mode = &local->hw.modes[local->scan.mode_idx];
+		*mode = local->scan.mode;
 		local->scan.chan_idx++;
 		if (local->scan.chan_idx >= (*mode)->num_channels) {
+			struct list_head *next;
+
 			local->scan.chan_idx = 0;
-			local->scan.mode_idx++;
-			if (local->scan.mode_idx >= local->hw.num_modes)
-				local->scan.mode_idx = 0;
-			*mode = &local->hw.modes[local->scan.mode_idx];
+			next = (*mode)->list.next;
+			if (next == &local->modes_list)
+				next = next->next;
+			*mode = list_entry(next,
+					   struct ieee80211_hw_mode,
+					   list);
+			local->scan.mode = *mode;
 		}
 		*chan = &(*mode)->channels[local->scan.chan_idx];
 		if ((*chan)->flag & IEEE80211_CHAN_W_SCAN)
 			break;
 	} while (local->scan.chan_idx != prev ||
-		 local->scan.mode_idx != prev_m);
+		 local->scan.mode != prev_m);
 }
 
 
 static void ieee80211_scan_start(struct ieee80211_local *local,
 				 struct ieee80211_scan_conf *conf)
 {
-	int old_mode_idx = local->scan.mode_idx;
+	struct ieee80211_hw_mode *old_mode = local->scan.mode;
 	int old_chan_idx = local->scan.chan_idx;
-	struct ieee80211_hw_modes *mode = NULL;
+	struct ieee80211_hw_mode *mode = NULL;
 	struct ieee80211_channel *chan = NULL;
 	int ret;
 
@@ -189,7 +190,7 @@ static void ieee80211_scan_start(struct ieee80211_local *local,
 		if (ret == -EAGAIN) {
 			local->scan.timer.expires = jiffies +
 				(local->scan.interval * HZ / 100);
-			local->scan.mode_idx = old_mode_idx;
+			local->scan.mode = old_mode;
 			local->scan.chan_idx = old_chan_idx;
 		} else {
 			printk(KERN_DEBUG "%s: Got unknown error from "
@@ -207,23 +208,17 @@ static void ieee80211_scan_start(struct ieee80211_local *local,
 static void ieee80211_scan_stop(struct ieee80211_local *local,
 				struct ieee80211_scan_conf *conf)
 {
-	struct ieee80211_hw_modes *mode;
+	struct ieee80211_hw_mode *mode;
 	struct ieee80211_channel *chan;
 	int wait;
 
 	if (!local->ops->passive_scan)
 		return;
 
-	if (local->scan.mode_idx >= local->hw.num_modes) {
-		local->scan.mode_idx = 0;
-		local->scan.chan_idx = 0;
-	}
+	mode = local->scan.mode;
 
-	mode = &local->hw.modes[local->scan.mode_idx];
-
-	if (local->scan.chan_idx >= mode->num_channels) {
+	if (local->scan.chan_idx >= mode->num_channels)
 		local->scan.chan_idx = 0;
-	}
 
 	chan = &mode->channels[local->scan.chan_idx];
 

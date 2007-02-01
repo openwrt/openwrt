@@ -10,7 +10,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=kmod-d80211
-PKG_VERSION:=20061230
+PKG_VERSION:=20070201
 
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)
 
@@ -29,6 +29,7 @@ endef
 define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
 	$(CP) ./src/* $(PKG_BUILD_DIR)/
+	$(SED) 's,INIT_WORK(,INIT_WORK_NEW(,g' $(PKG_BUILD_DIR)/*.[ch]
 endef
 
 define Build/Compile
@@ -36,17 +37,19 @@ define Build/Compile
 		CROSS_COMPILE="$(TARGET_CROSS)" \
 		ARCH="$(LINUX_KARCH)" \
 		SUBDIRS="$(PKG_BUILD_DIR)" \
-		EXTRA_CFLAGS="-I$(PKG_BUILD_DIR)/include" \
+		EXTRA_CFLAGS="-I$(PKG_BUILD_DIR)/include -include compat_hacks.h" \
 		modules
 endef
 
 define Build/InstallDev
-	mkdir -p $(STAGING_DIR)/usr/include/net
-	$(CP) ./src/include/net/* $(STAGING_DIR)/usr/include/net/
+	mkdir -p $(STAGING_DIR)/usr/include
+	$(CP) ./src/include/* $(STAGING_DIR)/usr/include/
 endef
 
 define Build/UninstallDev
 	rm -f $(STAGING_DIR)/usr/include/net/d80211*
+	rm -f $(STAGING_DIR)/usr/include/compat_hacks.h
+	rm -f $(STAGING_DIR)/usr/include/linux/ieee80211*
 endef
 
 $(eval $(call KernelPackage,d80211))

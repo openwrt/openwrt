@@ -155,10 +155,9 @@ struct ieee80211_tx_packet_data {
 	unsigned long jiffies;
 	unsigned int req_tx_status:1;
 	unsigned int do_not_encrypt:1;
-	unsigned int pkt_probe_resp:1;
 	unsigned int requeue:1;
-	unsigned int queue:4;
 	unsigned int mgmt_iface:1;
+	unsigned int queue:4;
 };
 
 struct ieee80211_tx_stored_packet {
@@ -181,7 +180,7 @@ struct ieee80211_passive_scan {
 	int channel; /* channel to be scanned */
         int tries;
 
-        int mode_idx;
+	struct ieee80211_hw_mode *mode;
         int chan_idx;
 
 	int freq;
@@ -240,7 +239,7 @@ struct ieee80211_if_sta {
 		IEEE80211_ASSOCIATE, IEEE80211_ASSOCIATED,
 		IEEE80211_IBSS_SEARCH, IEEE80211_IBSS_JOINED
 	} state;
-	struct work_struct work;
+	struct delayed_work work;
 	u8 bssid[ETH_ALEN], prev_bssid[ETH_ALEN];
 	u8 ssid[IEEE80211_MAX_SSID_LEN];
 	size_t ssid_len;
@@ -334,7 +333,10 @@ struct ieee80211_local {
 	 * it first anyway so they become a no-op */
 	struct ieee80211_hw hw;
 
-	struct ieee80211_ops *ops;
+	const struct ieee80211_ops *ops;
+
+	/* List of registered struct ieee80211_hw_mode */
+	struct list_head modes_list;
 
 	struct net_device *mdev; /* wmaster# - "master" 802.11 device */
 	struct net_device *apdev; /* wlan#ap - management frames (hostapd) */
@@ -425,11 +427,12 @@ struct ieee80211_local {
         spinlock_t sub_if_lock; /* mutex for STA data structures */
         struct list_head sub_if_list;
 	int sta_scanning;
-	int scan_hw_mode_idx;
+	struct ieee80211_hw_mode *scan_hw_mode;
 	int scan_channel_idx;
 	enum { SCAN_SET_CHANNEL, SCAN_SEND_PROBE } scan_state;
 	unsigned long last_scan_completed;
-	struct work_struct scan_work;
+	struct delayed_work scan_work;
+	struct net_device *scan_dev;
 	int scan_oper_channel;
 	int scan_oper_channel_val;
 	int scan_oper_power_level;
@@ -558,20 +561,38 @@ struct sta_attribute {
 	ssize_t (*store)(struct sta_info *, const char *buf, size_t count);
 };
 
+static inline void __bss_tim_set(struct ieee80211_if_ap *bss, int aid)
+{
+	/*
+	 * This format has ben mandated by the IEEE specifications,
+	 * so this line may not be changed to use the __set_bit() format.
+	 */
+	bss->tim[(aid)/8] |= 1<<((aid) % 8);
+}
+
 static inline void bss_tim_set(struct ieee80211_local *local,
 			       struct ieee80211_if_ap *bss, int aid)
 {
-	spin_lock(&local->sta_lock);
-	bss->tim[(aid)/8] |= 1<<((aid) % 8);
-	spin_unlock(&local->sta_lock);
+	spin_lock_bh(&local->sta_lock);
+	__bss_tim_set(bss, aid);
+	spin_unlock_bh(&local->sta_lock);
+}
+
+static inline void __bss_tim_clear(struct ieee80211_if_ap *bss, int aid)
+{
+	/*
+	 * This format has ben mandated by the IEEE specifications,
+	 * so this line may not be changed to use the __clear_bit() format.
+	 */
+	bss->tim[(aid)/8] &= !(1<<((aid) % 8));
 }
 
 static inline void bss_tim_clear(struct ieee80211_local *local,
 				 struct ieee80211_if_ap *bss, int aid)
 {
-	spin_lock(&local->sta_lock);
-	bss->tim[(aid)/8] &= !(1<<((aid) % 8));
-	spin_unlock(&local->sta_lock);
+	spin_lock_bh(&local->sta_lock);
+	__bss_tim_clear(bss, aid);
+	spin_unlock_bh(&local->sta_lock);
 }
 
 /* ieee80211.c */
@@ -607,6 +628,7 @@ extern const struct iw_handler_def ieee80211_iw_master_handler_def;
 int ieee80211_set_hw_encryption(struct net_device *dev,
 				struct sta_info *sta, u8 addr[ETH_ALEN],
 				struct ieee80211_key *key);
+void ieee80211_update_default_wep_only(struct ieee80211_local *local);
 
 /* ieee80211_scan.c */
 void ieee80211_init_scan(struct ieee80211_local *local);
@@ -638,7 +660,8 @@ int ieee80211_set_compression(struct ieee80211_local *local,
 			      struct net_device *dev, struct sta_info *sta);
 int ieee80211_init_client(struct net_device *dev);
 /* ieee80211_sta.c */
-void ieee80211_sta_work(void *ptr);
+void ieee80211_sta_work(struct work_struct *work);
+void ieee80211_sta_scan_work(struct work_struct *work);
 void ieee80211_sta_rx_mgmt(struct net_device *dev, struct sk_buff *skb,
 			   struct ieee80211_rx_status *rx_status);
 int ieee80211_sta_set_ssid(struct net_device *dev, char *ssid, size_t len);
