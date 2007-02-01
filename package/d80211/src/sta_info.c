@@ -342,9 +342,10 @@ static void sta_info_cleanup(unsigned long data)
 }
 
 
-static void sta_info_proc_add_task(void *data)
+static void sta_info_proc_add_task(struct work_struct *work)
 {
-	struct ieee80211_local *local = data;
+	struct ieee80211_local *local =
+		container_of(work, struct ieee80211_local, sta_proc_add);
 	struct sta_info *sta, *tmp;
 
 	while (1) {
@@ -395,7 +396,7 @@ void sta_info_init(struct ieee80211_local *local)
 	local->sta_cleanup.data = (unsigned long) local;
 	local->sta_cleanup.function = sta_info_cleanup;
 
-	INIT_WORK(&local->sta_proc_add, sta_info_proc_add_task, local);
+	INIT_WORK(&local->sta_proc_add, sta_info_proc_add_task);
 }
 
 int sta_info_start(struct ieee80211_local *local)
@@ -439,7 +440,7 @@ void sta_info_remove_aid_ptr(struct sta_info *sta)
 		sdata->local->ops->set_tim(local_to_hw(sdata->local),
 					  sta->aid, 0);
 	if (sdata->bss)
-		bss_tim_clear(sdata->local, sdata->bss, sta->aid);
+		__bss_tim_clear(sdata->bss, sta->aid);
 }
 
 

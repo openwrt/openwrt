@@ -14,7 +14,7 @@
 #include <net/iw_handler.h>
 
 #include <net/d80211.h>
-#include <net/d80211_common.h>
+#include "ieee80211_common.h"
 #include "ieee80211_i.h"
 #include "michael.h"
 #include "tkip.h"

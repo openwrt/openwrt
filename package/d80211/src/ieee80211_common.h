@@ -7,8 +7,8 @@
  * published by the Free Software Foundation.
  */
 
-#ifndef D80211_COMMON_H
-#define D80211_COMMON_H
+#ifndef IEEE80211_COMMON_H
+#define IEEE80211_COMMON_H
 
 #include <linux/types.h>
 
@@ -95,4 +95,4 @@ struct ieee80211_radar_info {
 		int radar_type;
 };
 
-#endif /* D80211_COMMON_H */
+#endif /* IEEE80211_COMMON_H */

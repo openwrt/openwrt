@@ -20,7 +20,6 @@
 #include <asm/uaccess.h>
 
 #include <net/d80211.h>
-#include <net/d80211_mgmt.h>
 #include "ieee80211_i.h"
 #include "hostapd_ioctl.h"
 #include "ieee80211_rate.h"
@@ -120,43 +119,45 @@ static int ieee80211_ioctl_get_hw_features(struct net_device *dev,
 	struct ieee80211_local *local = dev->ieee80211_ptr;
 	u8 *pos = param->u.hw_features.data;
 	int left = param_len - (pos - (u8 *) param);
-	int mode, i;
+	int i;
 	struct hostapd_ioctl_hw_modes_hdr *hdr;
 	struct ieee80211_rate_data *rate;
 	struct ieee80211_channel_data *chan;
+	struct ieee80211_hw_mode *mode;
 
 	param->u.hw_features.flags = 0;
 	if (local->hw.flags & IEEE80211_HW_DATA_NULLFUNC_ACK)
 		param->u.hw_features.flags |= HOSTAP_HW_FLAG_NULLFUNC_OK;
 
-	param->u.hw_features.num_modes = local->hw.num_modes;
-	for (mode = 0; mode < local->hw.num_modes; mode++) {
+	param->u.hw_features.num_modes = 0;
+	list_for_each_entry(mode, &local->modes_list, list) {
 		int clen, rlen;
-		struct ieee80211_hw_modes *m = &local->hw.modes[mode];
-		clen = m->num_channels * sizeof(struct ieee80211_channel_data);
-		rlen = m->num_rates * sizeof(struct ieee80211_rate_data);
+
+		param->u.hw_features.num_modes++;
+		clen = mode->num_channels * sizeof(struct ieee80211_channel_data);
+		rlen = mode->num_rates * sizeof(struct ieee80211_rate_data);
 		if (left < sizeof(*hdr) + clen + rlen)
 			return -E2BIG;
 		left -= sizeof(*hdr) + clen + rlen;
 
 		hdr = (struct hostapd_ioctl_hw_modes_hdr *) pos;
-		hdr->mode = m->mode;
-		hdr->num_channels = m->num_channels;
-		hdr->num_rates = m->num_rates;
+		hdr->mode = mode->mode;
+		hdr->num_channels = mode->num_channels;
+		hdr->num_rates = mode->num_rates;
 
 		pos = (u8 *) (hdr + 1);
 		chan = (struct ieee80211_channel_data *) pos;
-		for (i = 0; i < m->num_channels; i++) {
-			chan[i].chan = m->channels[i].chan;
-			chan[i].freq = m->channels[i].freq;
-			chan[i].flag = m->channels[i].flag;
+		for (i = 0; i < mode->num_channels; i++) {
+			chan[i].chan = mode->channels[i].chan;
+			chan[i].freq = mode->channels[i].freq;
+			chan[i].flag = mode->channels[i].flag;
 		}
 		pos += clen;
 
 		rate = (struct ieee80211_rate_data *) pos;
-		for (i = 0; i < m->num_rates; i++) {
-			rate[i].rate = m->rates[i].rate;
-			rate[i].flags = m->rates[i].flags;
+		for (i = 0; i < mode->num_rates; i++) {
+			rate[i].rate = mode->rates[i].rate;
+			rate[i].flags = mode->rates[i].flags;
 		}
 		pos += rlen;
 	}
@@ -198,8 +199,8 @@ static int ieee80211_ioctl_scan(struct net_device *dev,
 		param->u.scan.last_rx = local->scan.rx_packets;
 		local->scan.rx_packets = -1;
 	}
-	param->u.scan.channel = local->hw.modes[local->scan.mode_idx].
-		channels[local->scan.chan_idx].chan;
+	param->u.scan.channel =
+		local->scan.mode->channels[local->scan.chan_idx].chan;
 
 	return 0;
 }
@@ -285,7 +286,9 @@ static int ieee80211_ioctl_add_sta(struct net_device *dev,
 	if (sta->dev != dev) {
 		/* Binding STA to a new interface, so remove all references to
 		 * the old BSS. */
+		spin_lock_bh(&local->sta_lock);
 		sta_info_remove_aid_ptr(sta);
+		spin_unlock_bh(&local->sta_lock);
 	}
 
         /* TODO
@@ -359,7 +362,7 @@ static int ieee80211_ioctl_remove_sta(struct net_device *dev,
 	sta = sta_info_get(local, param->sta_addr);
 	if (sta) {
 		sta_info_put(sta);
-		sta_info_free(sta, 1);
+		sta_info_free(sta, 0);
 	}
 
 	return sta ? 0 : -ENOENT;
@@ -407,10 +410,8 @@ static int ieee80211_ioctl_get_info_sta(struct net_device *dev,
 	if (param->sta_addr[0] == 0xff && param->sta_addr[1] == 0xff &&
 	    param->sta_addr[2] == 0xff && param->sta_addr[3] == 0xff &&
 	    param->sta_addr[4] == 0xff && param->sta_addr[5] == 0xff) {
-		struct ieee80211_sub_if_data *sdata;
 		struct net_device_stats *stats;
 
-		sdata = IEEE80211_DEV_TO_SUB_IF(dev);
 		stats = ieee80211_dev_stats(local->mdev);
 		param->u.get_info_sta.rx_bytes = stats->rx_bytes;
 		param->u.get_info_sta.tx_bytes = stats->tx_bytes;
@@ -537,9 +538,7 @@ static int ieee80211_set_encryption(struct net_device *dev, u8 *sta_addr,
 		}
 		key = sdata->keys[idx];
 
-		/* Disable hwaccel for default keys when the interface is not
-		 * the default one.
-		 * TODO: consider adding hwaccel support for these; at least
+		/* TODO: consider adding hwaccel support for these; at least
 		 * Atheros key cache should be able to handle this since AP is
 		 * only transmitting frames with default keys. */
 		/* FIX: hw key cache can be used when only one virtual
@@ -548,11 +547,6 @@ static int ieee80211_set_encryption(struct net_device *dev, u8 *sta_addr,
 		 * must be used. This should be done automatically
 		 * based on configured station devices. For the time
 		 * being, this can be only set at compile time. */
-		/* FIXME: There is no more anything like "default
-		 * interface". We should try hwaccel if there is just one
-		 * interface - for now, hwaccel is unconditionaly
-		 * disabled. */
-		try_hwaccel = 0;
 	} else {
 		set_tx_key = 0;
 		if (idx != 0) {
@@ -621,7 +615,9 @@ static int ieee80211_set_encryption(struct net_device *dev, u8 *sta_addr,
 
 	if (alg == ALG_NONE) {
 		keyconf = NULL;
-		if (try_hwaccel && key && local->ops->set_key &&
+		if (try_hwaccel && key &&
+		    key->hw_key_idx != HW_KEY_IDX_INVALID &&
+		    local->ops->set_key &&
 		    (keyconf = ieee80211_key_data2conf(local, key)) != NULL &&
 		    local->ops->set_key(local_to_hw(local), DISABLE_KEY,
 				       sta_addr, keyconf, sta ? sta->aid : 0)) {
@@ -810,7 +806,7 @@ static int ieee80211_ioctl_get_encryption(struct net_device *dev,
 	    param->sta_addr[2] == 0xff && param->sta_addr[3] == 0xff &&
 	    param->sta_addr[4] == 0xff && param->sta_addr[5] == 0xff) {
 		sta = NULL;
-		if (param->u.crypt.idx > NUM_DEFAULT_KEYS) {
+		if (param->u.crypt.idx >= NUM_DEFAULT_KEYS) {
 			param->u.crypt.idx = sdata->default_key ?
 				sdata->default_key->keyidx : 0;
 			return 0;
@@ -1357,19 +1353,16 @@ static int ieee80211_ioctl_set_channel_flag(struct net_device *dev,
 					    struct prism2_hostapd_param *param)
 {
 	struct ieee80211_local *local = dev->ieee80211_ptr;
-	struct ieee80211_hw_modes *mode = NULL;
+	struct ieee80211_hw_mode *mode;
 	struct ieee80211_channel *chan = NULL;
 	int i;
 
-	for (i = 0; i < local->hw.num_modes; i++) {
-		mode = &local->hw.modes[i];
+	list_for_each_entry(mode, &local->modes_list, list) {
 		if (mode->mode == param->u.set_channel_flag.mode)
-			break;
-		mode = NULL;
+			goto found;
 	}
-
-	if (!mode)
-		return -ENOENT;
+	return -ENOENT;
+found:
 
 	for (i = 0; i < mode->num_channels; i++) {
 		chan = &mode->channels[i];
@@ -1706,10 +1699,10 @@ static void ieee80211_unmask_channel(struct net_device *dev, int mode,
 static int ieee80211_unmask_channels(struct net_device *dev)
 {
 	struct ieee80211_local *local = dev->ieee80211_ptr;
-	int m, c;
+	struct ieee80211_hw_mode *mode;
+	int c;
 
-	for (m = 0; m < local->hw.num_modes; m++) {
-		struct ieee80211_hw_modes *mode = &local->hw.modes[m];
+	list_for_each_entry(mode, &local->modes_list, list) {
 		for (c = 0; c < mode->num_channels; c++) {
 			ieee80211_unmask_channel(dev, mode->mode,
 						 &mode->channels[c]);
@@ -1807,7 +1800,8 @@ int ieee80211_ioctl_siwfreq(struct net_device *dev,
 			    struct iw_freq *freq, char *extra)
 {
 	struct ieee80211_local *local = dev->ieee80211_ptr;
-	int m, c, nfreq, set = 0;
+	struct ieee80211_hw_mode *mode;
+	int c, nfreq, set = 0;
 
 	/* freq->e == 0: freq->m = channel; otherwise freq = m * 10^e */
 	if (freq->e == 0)
@@ -1822,8 +1816,7 @@ int ieee80211_ioctl_siwfreq(struct net_device *dev,
 			return -EINVAL;
 	}
 
-	for (m = 0; m < local->hw.num_modes; m++) {
-		struct ieee80211_hw_modes *mode = &local->hw.modes[m];
+	list_for_each_entry(mode, &local->modes_list, list) {
 		for (c = 0; c < mode->num_channels; c++) {
 			struct ieee80211_channel *chan = &mode->channels[c];
 			if (chan->flag & IEEE80211_CHAN_W_SCAN &&
@@ -2005,7 +1998,7 @@ static int ieee80211_ioctl_siwscan(struct net_device *dev,
 		    sdata->type == IEEE80211_IF_TYPE_IBSS) {
 			ssid = sdata->u.sta.ssid;
 			ssid_len = sdata->u.sta.ssid_len;
-		} else if (sdata == IEEE80211_IF_TYPE_AP) {
+		} else if (sdata->type == IEEE80211_IF_TYPE_AP) {
 			ssid = sdata->u.ap.ssid;
 			ssid_len = sdata->u.ap.ssid_len;
 		} else
@@ -2166,10 +2159,10 @@ static int ieee80211_ioctl_giwretry(struct net_device *dev,
 
 static void ieee80211_ioctl_unmask_channels(struct ieee80211_local *local)
 {
-	int m, c;
+	struct ieee80211_hw_mode *mode;
+	int c;
 
-	for (m = 0; m < local->hw.num_modes; m++) {
-		struct ieee80211_hw_modes *mode = &local->hw.modes[m];
+	list_for_each_entry(mode, &local->modes_list, list) {
 		for (c = 0; c < mode->num_channels; c++) {
 			struct ieee80211_channel *chan = &mode->channels[c];
 			chan->flag |= IEEE80211_CHAN_W_SCAN;
@@ -2361,6 +2354,36 @@ static int ieee80211_ioctl_default_wep_only(struct ieee80211_local *local,
 							      sdata->keys[i]);
 
 	return 0;
+}
+
+
+void ieee80211_update_default_wep_only(struct ieee80211_local *local)
+{
+	int i = 0;
+	struct ieee80211_sub_if_data *sdata;
+
+	spin_lock_bh(&local->sub_if_lock);
+	list_for_each_entry(sdata, &local->sub_if_list, list) {
+
+		if (sdata->dev == local->mdev)
+			continue;
+
+		/* If there is an AP interface then depend on userspace to
+		   set default_wep_only correctly. */
+		if (sdata->type == IEEE80211_IF_TYPE_AP) {
+			spin_unlock_bh(&local->sub_if_lock);
+			return;
+		}
+
+		i++;
+	}
+
+	if (i <= 1)
+		ieee80211_ioctl_default_wep_only(local, 1);
+	else
+		ieee80211_ioctl_default_wep_only(local, 0);
+
+	spin_unlock_bh(&local->sub_if_lock);
 }
 
 
@@ -3025,6 +3048,7 @@ static struct iw_statistics *ieee80211_get_wireless_stats(struct net_device *net
 		wstats->qual.qual = 100*tmp_qual/local->hw.maxssi;
 		wstats->qual.noise = sta->last_noise;
 		wstats->qual.updated = IW_QUAL_ALL_UPDATED | IW_QUAL_DBM;
+		sta_info_put(sta);
 	}
 	return wstats;
 }

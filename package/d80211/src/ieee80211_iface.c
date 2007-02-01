@@ -12,7 +12,6 @@
 #include <linux/netdevice.h>
 #include <linux/rtnetlink.h>
 #include <net/d80211.h>
-#include <net/d80211_mgmt.h>
 #include "ieee80211_i.h"
 #include "sta_info.h"
 
@@ -42,7 +41,7 @@ int ieee80211_if_add(struct net_device *dev, const char *name,
 {
 	struct net_device *ndev, *tmp_dev;
 	struct ieee80211_local *local = dev->ieee80211_ptr;
-	struct ieee80211_sub_if_data *sdata = NULL, *sdata_parent;
+	struct ieee80211_sub_if_data *sdata = NULL;
 	int ret;
 	int i;
 
@@ -56,7 +55,8 @@ int ieee80211_if_add(struct net_device *dev, const char *name,
 	if (strlen(name) == 0) {
 		i = 0;
 		do {
-			sprintf(ndev->name, "%s.%d", dev->name, i++);
+			snprintf(ndev->name, sizeof(ndev->name), "%s.%d",
+				 dev->name, i++);
 			tmp_dev = dev_get_by_name(ndev->name);
 			if (!tmp_dev)
 				break;
@@ -82,7 +82,6 @@ int ieee80211_if_add(struct net_device *dev, const char *name,
 	sdata->type = IEEE80211_IF_TYPE_AP;
 	sdata->dev = ndev;
 	sdata->local = local;
-	sdata_parent = IEEE80211_DEV_TO_SUB_IF(dev);
 	ieee80211_if_sdata_init(sdata);
 
 	ret = register_netdevice(ndev);
@@ -97,6 +96,7 @@ int ieee80211_if_add(struct net_device *dev, const char *name,
 	}
 
 	list_add(&sdata->list, &local->sub_if_list);
+	ieee80211_update_default_wep_only(local);
 
 	return 0;
 
@@ -164,6 +164,7 @@ void ieee80211_if_del_mgmt(struct ieee80211_local *local)
 void ieee80211_if_set_type(struct net_device *dev, int type)
 {
 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
+	struct ieee80211_local *local = dev->ieee80211_ptr;
 
 	sdata->type = type;
 	switch (type) {
@@ -185,7 +186,7 @@ void ieee80211_if_set_type(struct net_device *dev, int type)
 		struct ieee80211_if_sta *ifsta;
 
 		ifsta = &sdata->u.sta;
-		INIT_WORK(&ifsta->work, ieee80211_sta_work, dev);
+		INIT_DELAYED_WORK(&ifsta->work, ieee80211_sta_work);
 
 		ifsta->capab = WLAN_CAPABILITY_ESS;
 		ifsta->auth_algs = IEEE80211_AUTH_ALG_OPEN |
@@ -205,6 +206,7 @@ void ieee80211_if_set_type(struct net_device *dev, int type)
 		       dev->name, __FUNCTION__, type);
 	}
 	ieee80211_sysfs_change_if_type(dev);
+	ieee80211_update_default_wep_only(local);
 }
 
 /* Must be called with rtnl lock held. */
@@ -225,14 +227,12 @@ void ieee80211_if_reinit(struct net_device *dev)
 		 * really much point in disabling the keys at this point. */
 		memset(addr, 0xff, ETH_ALEN);
 		if (local->ops->set_key)
-			local->ops->set_key(dev, DISABLE_KEY, addr,
-					   local->keys[i], 0);
+			local->ops->set_key(local_to_hw(local), DISABLE_KEY, addr,
+					    local->keys[i], 0);
 #endif
 		ieee80211_key_free(sdata->keys[i]);
+		sdata->keys[i] = NULL;
 	}
-
-	/* Shouldn't be necessary but won't hurt */
-	ieee80211_if_shutdown(dev);
 
 	switch (sdata->type) {
 	case IEEE80211_IF_TYPE_AP: {
@@ -308,7 +308,6 @@ void __ieee80211_if_del(struct ieee80211_local *local,
 {
 	struct net_device *dev = sdata->dev;
 
-	ieee80211_if_reinit(dev);
 	list_del(&sdata->list);
 	ieee80211_sysfs_remove_netdevice(dev);
 	unregister_netdevice(dev);
@@ -329,6 +328,7 @@ int ieee80211_if_remove(struct net_device *dev, const char *name, int id)
 		    strcmp(name, sdata->dev->name) == 0 &&
 		    sdata->dev != local->mdev) {
 			__ieee80211_if_del(local, sdata);
+			ieee80211_update_default_wep_only(local);
 			return 0;
 		}
 	}

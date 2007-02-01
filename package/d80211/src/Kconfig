@@ -1,8 +1,10 @@
 config D80211
 	tristate "Generic IEEE 802.11 Networking Stack (dscape)"
 	select CRYPTO
+	select CRYPTO_ECB
 	select CRYPTO_ARC4
 	select CRYPTO_AES
+	select WIRELESS_EXT
 	---help---
 	This option enables the hardware independent IEEE 802.11
 	networking stack.

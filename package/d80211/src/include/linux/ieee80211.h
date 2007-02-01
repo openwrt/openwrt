@@ -1,25 +1,116 @@
 /*
- * IEEE 802.11 -- shared defines for 80211.o and hostapd
- * Copyright 2002, Jouni Malinen <jkmaline@cc.hut.fi>
- * Copyright 2002-2004, Instant802 Networks, Inc.
- * Copyright 2005, Devicescape Software, Inc.
+ * IEEE 802.11 defines
+ *
+ * Copyright (c) 2001-2002, SSH Communications Security Corp and Jouni Malinen
+ * <jkmaline@cc.hut.fi>
+ * Copyright (c) 2002-2003, Jouni Malinen <jkmaline@cc.hut.fi>
+ * Copyright (c) 2005, Devicescape Software, Inc.
+ * Copyright (c) 2006, Michael Wu <flamingice@sourmilk.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
  */
 
-#ifndef D802_11_MGMT_H
-#define D802_11_MGMT_H
+#ifndef IEEE80211_H
+#define IEEE80211_H
 
 #include <linux/types.h>
+
+#define FCS_LEN 4
+
+#define IEEE80211_FCTL_VERS		0x0003
+#define IEEE80211_FCTL_FTYPE		0x000c
+#define IEEE80211_FCTL_STYPE		0x00f0
+#define IEEE80211_FCTL_TODS		0x0100
+#define IEEE80211_FCTL_FROMDS		0x0200
+#define IEEE80211_FCTL_MOREFRAGS	0x0400
+#define IEEE80211_FCTL_RETRY		0x0800
+#define IEEE80211_FCTL_PM		0x1000
+#define IEEE80211_FCTL_MOREDATA		0x2000
+#define IEEE80211_FCTL_PROTECTED	0x4000
+#define IEEE80211_FCTL_ORDER		0x8000
+
+#define IEEE80211_SCTL_FRAG		0x000F
+#define IEEE80211_SCTL_SEQ		0xFFF0
+
+#define IEEE80211_FTYPE_MGMT		0x0000
+#define IEEE80211_FTYPE_CTL		0x0004
+#define IEEE80211_FTYPE_DATA		0x0008
+
+/* management */
+#define IEEE80211_STYPE_ASSOC_REQ	0x0000
+#define IEEE80211_STYPE_ASSOC_RESP	0x0010
+#define IEEE80211_STYPE_REASSOC_REQ	0x0020
+#define IEEE80211_STYPE_REASSOC_RESP	0x0030
+#define IEEE80211_STYPE_PROBE_REQ	0x0040
+#define IEEE80211_STYPE_PROBE_RESP	0x0050
+#define IEEE80211_STYPE_BEACON		0x0080
+#define IEEE80211_STYPE_ATIM		0x0090
+#define IEEE80211_STYPE_DISASSOC	0x00A0
+#define IEEE80211_STYPE_AUTH		0x00B0
+#define IEEE80211_STYPE_DEAUTH		0x00C0
+#define IEEE80211_STYPE_ACTION		0x00D0
+
+/* control */
+#define IEEE80211_STYPE_PSPOLL		0x00A0
+#define IEEE80211_STYPE_RTS		0x00B0
+#define IEEE80211_STYPE_CTS		0x00C0
+#define IEEE80211_STYPE_ACK		0x00D0
+#define IEEE80211_STYPE_CFEND		0x00E0
+#define IEEE80211_STYPE_CFENDACK	0x00F0
+
+/* data */
+#define IEEE80211_STYPE_DATA			0x0000
+#define IEEE80211_STYPE_DATA_CFACK		0x0010
+#define IEEE80211_STYPE_DATA_CFPOLL		0x0020
+#define IEEE80211_STYPE_DATA_CFACKPOLL		0x0030
+#define IEEE80211_STYPE_NULLFUNC		0x0040
+#define IEEE80211_STYPE_CFACK			0x0050
+#define IEEE80211_STYPE_CFPOLL			0x0060
+#define IEEE80211_STYPE_CFACKPOLL		0x0070
+#define IEEE80211_STYPE_QOS_DATA		0x0080
+#define IEEE80211_STYPE_QOS_DATA_CFACK		0x0090
+#define IEEE80211_STYPE_QOS_DATA_CFPOLL		0x00A0
+#define IEEE80211_STYPE_QOS_DATA_CFACKPOLL	0x00B0
+#define IEEE80211_STYPE_QOS_NULLFUNC		0x00C0
+#define IEEE80211_STYPE_QOS_CFACK		0x00D0
+#define IEEE80211_STYPE_QOS_CFPOLL		0x00E0
+#define IEEE80211_STYPE_QOS_CFACKPOLL		0x00F0
+
+
+/* miscellaneous IEEE 802.11 constants */
+#define IEEE80211_MAX_FRAG_THRESHOLD	2346
+#define IEEE80211_MAX_RTS_THRESHOLD	2347
+#define IEEE80211_MAX_AID		2007
+#define IEEE80211_MAX_TIM_LEN		251
+#define IEEE80211_MAX_DATA_LEN		2304
+/* Maximum size for the MA-UNITDATA primitive, 802.11 standard section
+   6.2.1.1.2.
+
+   The figure in section 7.1.2 suggests a body size of up to 2312
+   bytes is allowed, which is a bit confusing, I suspect this
+   represents the 2304 bytes of real data, plus a possible 8 bytes of
+   WEP IV and ICV. (this interpretation suggested by Ramiro Barreiro) */
+
+
+struct ieee80211_hdr {
+	__le16 frame_control;
+	__le16 duration_id;
+	__u8 addr1[6];
+	__u8 addr2[6];
+	__u8 addr3[6];
+	__le16 seq_ctrl;
+	__u8 addr4[6];
+} __attribute__ ((packed));
+
 
 struct ieee80211_mgmt {
 	__le16 frame_control;
 	__le16 duration;
-	u8 da[6];
-	u8 sa[6];
-	u8 bssid[6];
+	__u8 da[6];
+	__u8 sa[6];
+	__u8 bssid[6];
 	__le16 seq_ctrl;
 	union {
 		struct {
@@ -27,7 +118,7 @@ struct ieee80211_mgmt {
 			__le16 auth_transaction;
 			__le16 status_code;
 			/* possibly followed by Challenge text */
-			u8 variable[0];
+			__u8 variable[0];
 		} __attribute__ ((packed)) auth;
 		struct {
 			__le16 reason_code;
@@ -43,14 +134,14 @@ struct ieee80211_mgmt {
 			__le16 status_code;
 			__le16 aid;
 			/* followed by Supported rates */
-			u8 variable[0];
+			__u8 variable[0];
 		} __attribute__ ((packed)) assoc_resp, reassoc_resp;
 		struct {
 			__le16 capab_info;
 			__le16 listen_interval;
-			u8 current_ap[6];
+			__u8 current_ap[6];
 			/* followed by SSID and Supported rates */
-			u8 variable[0];
+			__u8 variable[0];
 		} __attribute__ ((packed)) reassoc_req;
 		struct {
 			__le16 reason_code;
@@ -61,11 +152,11 @@ struct ieee80211_mgmt {
 			__le16 capab_info;
 			/* followed by some of SSID, Supported rates,
 			 * FH Params, DS Params, CF Params, IBSS Params, TIM */
-			u8 variable[0];
+			__u8 variable[0];
 		} __attribute__ ((packed)) beacon;
 		struct {
 			/* only variable items: SSID, Supported rates */
-			u8 variable[0];
+			__u8 variable[0];
 		} __attribute__ ((packed)) probe_req;
 		struct {
 			__le64 timestamp;
@@ -73,24 +164,24 @@ struct ieee80211_mgmt {
 			__le16 capab_info;
 			/* followed by some of SSID, Supported rates,
 			 * FH Params, DS Params, CF Params, IBSS Params */
-			u8 variable[0];
+			__u8 variable[0];
 		} __attribute__ ((packed)) probe_resp;
 		struct {
-			u8 category;
+			__u8 category;
 			union {
 				struct {
-					u8 action_code;
-					u8 dialog_token;
-					u8 status_code;
-					u8 variable[0];
+					__u8 action_code;
+					__u8 dialog_token;
+					__u8 status_code;
+					__u8 variable[0];
 				} __attribute__ ((packed)) wme_action;
 				struct{
-					u8 action_code;
-					u8 element_id;
-					u8 length;
-					u8 switch_mode;
-					u8 new_chan;
-					u8 switch_count;
+					__u8 action_code;
+					__u8 element_id;
+					__u8 length;
+					__u8 switch_mode;
+					__u8 new_chan;
+					__u8 switch_count;
 				} __attribute__((packed)) chan_switch;
 			} u;
 		} __attribute__ ((packed)) action;
@@ -105,18 +196,19 @@ struct ieee80211_mgmt {
 
 #define WLAN_AUTH_CHALLENGE_LEN 128
 
-#define WLAN_CAPABILITY_ESS BIT(0)
-#define WLAN_CAPABILITY_IBSS BIT(1)
-#define WLAN_CAPABILITY_CF_POLLABLE BIT(2)
-#define WLAN_CAPABILITY_CF_POLL_REQUEST BIT(3)
-#define WLAN_CAPABILITY_PRIVACY BIT(4)
-#define WLAN_CAPABILITY_SHORT_PREAMBLE BIT(5)
-#define WLAN_CAPABILITY_PBCC BIT(6)
-#define WLAN_CAPABILITY_CHANNEL_AGILITY BIT(7)
+#define WLAN_CAPABILITY_ESS		(1<<0)
+#define WLAN_CAPABILITY_IBSS		(1<<1)
+#define WLAN_CAPABILITY_CF_POLLABLE	(1<<2)
+#define WLAN_CAPABILITY_CF_POLL_REQUEST	(1<<3)
+#define WLAN_CAPABILITY_PRIVACY		(1<<4)
+#define WLAN_CAPABILITY_SHORT_PREAMBLE	(1<<5)
+#define WLAN_CAPABILITY_PBCC		(1<<6)
+#define WLAN_CAPABILITY_CHANNEL_AGILITY	(1<<7)
 /* 802.11h */
-#define WLAN_CAPABILITY_SPECTRUM_MGMT BIT(8)
-#define WLAN_CAPABILITY_SHORT_SLOT_TIME BIT(10)
-#define WLAN_CAPABILITY_DSSS_OFDM BIT(13)
+#define WLAN_CAPABILITY_SPECTRUM_MGMT	(1<<8)
+#define WLAN_CAPABILITY_QOS		(1<<9)
+#define WLAN_CAPABILITY_SHORT_SLOT_TIME	(1<<10)
+#define WLAN_CAPABILITY_DSSS_OFDM	(1<<13)
 
 /* Status codes */
 enum ieee80211_statuscode {
@@ -220,4 +312,4 @@ enum ieee80211_eid {
 	WLAN_EID_QOS_PARAMETER = 222
 };
 
-#endif /* D802_11_MGMT_H */
+#endif /* IEEE80211_H */

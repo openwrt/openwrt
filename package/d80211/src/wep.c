@@ -15,6 +15,7 @@
 #include <linux/crc32.h>
 #include <linux/crypto.h>
 #include <linux/err.h>
+#include <linux/mm.h>
 #include <asm/scatterlist.h>
 
 #include <net/d80211.h>

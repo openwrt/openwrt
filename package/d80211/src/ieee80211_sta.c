@@ -26,7 +26,6 @@
 #include <asm/delay.h>
 
 #include <net/d80211.h>
-#include <net/d80211_mgmt.h>
 #include "ieee80211_i.h"
 #include "ieee80211_rate.h"
 #include "hostapd_ioctl.h"
@@ -392,7 +391,7 @@ static void ieee80211_set_disassoc(struct net_device *dev,
 }
 
 static void ieee80211_sta_tx(struct net_device *dev, struct sk_buff *skb,
-			     int encrypt, int probe_resp)
+			     int encrypt)
 {
 	struct ieee80211_sub_if_data *sdata;
 	struct ieee80211_tx_packet_data *pkt_data;
@@ -406,8 +405,6 @@ static void ieee80211_sta_tx(struct net_device *dev, struct sk_buff *skb,
 	pkt_data->ifindex = sdata->dev->ifindex;
 	pkt_data->mgmt_iface = (sdata->type == IEEE80211_IF_TYPE_MGMT);
 	pkt_data->do_not_encrypt = !encrypt;
-	if (probe_resp)
-		pkt_data->pkt_probe_resp = 1;
 
 	dev_queue_xmit(skb);
 }
@@ -444,7 +441,7 @@ static void ieee80211_send_auth(struct net_device *dev,
 	if (extra)
 		memcpy(skb_put(skb, extra_len), extra, extra_len);
 
-	ieee80211_sta_tx(dev, skb, encrypt, 0);
+	ieee80211_sta_tx(dev, skb, encrypt);
 }
 
 
@@ -581,7 +578,7 @@ static void ieee80211_send_assoc(struct net_device *dev,
 	if (ifsta->assocreq_ies)
 		memcpy(ifsta->assocreq_ies, ies, ifsta->assocreq_ies_len);
 
-	ieee80211_sta_tx(dev, skb, 0, 0);
+	ieee80211_sta_tx(dev, skb, 0);
 }
 
 
@@ -608,7 +605,7 @@ static void ieee80211_send_deauth(struct net_device *dev,
 	skb_put(skb, 2);
 	mgmt->u.deauth.reason_code = cpu_to_le16(reason);
 
-	ieee80211_sta_tx(dev, skb, 0, 0);
+	ieee80211_sta_tx(dev, skb, 0);
 }
 
 
@@ -635,7 +632,7 @@ static void ieee80211_send_disassoc(struct net_device *dev,
 	skb_put(skb, 2);
 	mgmt->u.disassoc.reason_code = cpu_to_le16(reason);
 
-	ieee80211_sta_tx(dev, skb, 0, 0);
+	ieee80211_sta_tx(dev, skb, 0);
 }
 
 
@@ -810,7 +807,7 @@ static void ieee80211_send_probe_req(struct net_device *dev, u8 *dst,
 			*pos = rate->rate / 5;
 	}
 
-	ieee80211_sta_tx(dev, skb, 0, 0);
+	ieee80211_sta_tx(dev, skb, 0);
 }
 
 
@@ -1365,15 +1362,18 @@ static void ieee80211_rx_bss_info(struct net_device *dev,
 		static unsigned long last_tsf_debug = 0;
 		u64 tsf;
 		if (local->ops->get_tsf)
-			tsf = local->ops->get_tsf(local->mdev);
+			tsf = local->ops->get_tsf(local_to_hw(local));
 		else
 			tsf = -1LLU;
 		if (time_after(jiffies, last_tsf_debug + 5 * HZ)) {
 			printk(KERN_DEBUG "RX beacon SA=" MAC_FMT " BSSID="
 			       MAC_FMT " TSF=0x%llx BCN=0x%llx diff=%lld "
-			       "@%ld\n",
+			       "@%lu\n",
 			       MAC_ARG(mgmt->sa), MAC_ARG(mgmt->bssid),
-			       tsf, timestamp, tsf - timestamp, jiffies);
+			       (unsigned long long)tsf,
+			       (unsigned long long)timestamp,
+			       (unsigned long long)(tsf - timestamp),
+			       jiffies);
 			last_tsf_debug = jiffies;
 		}
 #endif /* CONFIG_D80211_IBSS_DEBUG */
@@ -1386,6 +1386,7 @@ static void ieee80211_rx_bss_info(struct net_device *dev,
 	if (sdata->type == IEEE80211_IF_TYPE_IBSS && elems.supp_rates &&
 	    memcmp(mgmt->bssid, sdata->u.sta.bssid, ETH_ALEN) == 0 &&
 	    (sta = sta_info_get(local, mgmt->sa))) {
+	    	struct ieee80211_hw_mode *mode;
 		struct ieee80211_rate *rates;
 		size_t num_rates;
 		u32 supp_rates, prev_rates;
@@ -1395,8 +1396,7 @@ static void ieee80211_rx_bss_info(struct net_device *dev,
 		num_rates = local->num_curr_rates;
 		oper_mode = local->sta_scanning ? local->scan_oper_phymode :
 			local->hw.conf.phymode;
-		for (i = 0; i < local->hw.num_modes; i++) {
-			struct ieee80211_hw_modes *mode = &local->hw.modes[i];
+		list_for_each_entry(mode, &local->modes_list, list) {
 			if (oper_mode == mode->mode) {
 				rates = mode->rates;
 				num_rates = mode->num_rates;
@@ -1699,7 +1699,7 @@ static void ieee80211_rx_mgmt_probe_req(struct net_device *dev,
 	printk(KERN_DEBUG "%s: Sending ProbeResp to " MAC_FMT "\n",
 	       dev->name, MAC_ARG(resp->da));
 #endif /* CONFIG_D80211_IBSS_DEBUG */
-	ieee80211_sta_tx(dev, skb, 0, 1);
+	ieee80211_sta_tx(dev, skb, 0);
 }
 
 
@@ -1843,10 +1843,11 @@ static void ieee80211_sta_merge_ibss(struct net_device *dev,
 }
 
 
-void ieee80211_sta_work(void *ptr)
+void ieee80211_sta_work(struct work_struct *work)
 {
-	struct net_device *dev = ptr;
-	struct ieee80211_sub_if_data *sdata;
+	struct ieee80211_sub_if_data *sdata =
+		container_of(work, struct ieee80211_sub_if_data, u.sta.work.work);
+	struct net_device *dev = sdata->dev;
 	struct ieee80211_if_sta *ifsta;
 
 	if (!netif_running(dev))
@@ -1923,17 +1924,17 @@ static void ieee80211_sta_new_auth(struct net_device *dev,
 	printk(KERN_DEBUG "%s: Initial auth_alg=%d\n", dev->name,
 	       ifsta->auth_alg);
 	ifsta->auth_transaction = -1;
-	ifsta->auth_tries = ifsta->assoc_tries = 0;
+	ifsta->associated = ifsta->auth_tries = ifsta->assoc_tries = 0;
 	ieee80211_authenticate(dev, ifsta);
 }
 
 
 static int ieee80211_ibss_allowed(struct ieee80211_local *local)
 {
-	int m, c;
+	struct ieee80211_hw_mode *mode;
+	int c;
 
-	for (m = 0; m < local->hw.num_modes; m++) {
-		struct ieee80211_hw_modes *mode = &local->hw.modes[m];
+	list_for_each_entry(mode, &local->modes_list, list) {
 		if (mode->mode != local->hw.conf.phymode)
 			continue;
 		for (c = 0; c < mode->num_channels; c++) {
@@ -2052,7 +2053,6 @@ static int ieee80211_sta_join_ibss(struct net_device *dev,
 		}
 
 		memset(&control, 0, sizeof(control));
-		control.pkt_type = PKT_PROBE_RESP;
 		memset(&extra, 0, sizeof(extra));
 		extra.endidx = local->num_curr_rates;
 		rate = rate_control_get_rate(local, dev, skb, &extra);
@@ -2355,7 +2355,7 @@ int ieee80211_sta_set_bssid(struct net_device *dev, u8 *bssid)
 		ifsta->bssid_set = 0;
 	else
 		ifsta->bssid_set = 1;
-	if (ifsta->ssid_set)
+	if (ifsta->ssid_set && ifsta->state != IEEE80211_AUTHENTICATE)
 		ieee80211_sta_new_auth(dev, ifsta);
 
 	return 0;
@@ -2389,10 +2389,10 @@ static int ieee80211_sta_restore_oper_chan(struct net_device *dev)
 
 static int ieee80211_active_scan(struct ieee80211_local *local)
 {
-	int m, c;
+	struct ieee80211_hw_mode *mode;
+	int c;
 
-	for (m = 0; m < local->hw.num_modes; m++) {
-		struct ieee80211_hw_modes *mode = &local->hw.modes[m];
+	list_for_each_entry(mode, &local->modes_list, list) {
 		if (mode->mode != local->hw.conf.phymode)
 			continue;
 		for (c = 0; c < mode->num_channels; c++) {
@@ -2413,7 +2413,7 @@ static int ieee80211_active_scan(struct ieee80211_local *local)
 void ieee80211_scan_completed(struct ieee80211_hw *hw)
 {
 	struct ieee80211_local *local = hw_to_local(hw);
-	struct net_device *dev = local->scan_work.data;
+	struct net_device *dev = local->scan_dev;
 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
 	union iwreq_data wrqu;
 
@@ -2434,12 +2434,13 @@ void ieee80211_scan_completed(struct ieee80211_hw *hw)
 }
 EXPORT_SYMBOL(ieee80211_scan_completed);
 
-static void ieee80211_sta_scan_work(void *ptr)
+void ieee80211_sta_scan_work(struct work_struct *work)
 {
-	struct net_device *dev = ptr;
-	struct ieee80211_local *local = dev->ieee80211_ptr;
+	struct ieee80211_local *local =
+		container_of(work, struct ieee80211_local, scan_work.work);
+	struct net_device *dev = local->scan_dev;
         struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
-	struct ieee80211_hw_modes *mode;
+	struct ieee80211_hw_mode *mode;
 	struct ieee80211_channel *chan;
 	int skip;
 	unsigned long next_delay = 0;
@@ -2449,10 +2450,9 @@ static void ieee80211_sta_scan_work(void *ptr)
 
 	switch (local->scan_state) {
 	case SCAN_SET_CHANNEL:
-		mode = &local->hw.modes[local->scan_hw_mode_idx];
-		if (local->scan_hw_mode_idx >= local->hw.num_modes ||
-		    (local->scan_hw_mode_idx + 1 == local->hw.num_modes &&
-		     local->scan_channel_idx >= mode->num_channels)) {
+		mode = local->scan_hw_mode;
+		if (local->scan_hw_mode->list.next == &local->modes_list &&
+		    local->scan_channel_idx >= mode->num_channels) {
 			if (ieee80211_sta_restore_oper_chan(dev)) {
 				printk(KERN_DEBUG "%s: failed to restore "
 				       "operational channel after scan\n",
@@ -2492,10 +2492,13 @@ static void ieee80211_sta_scan_work(void *ptr)
 		}
 
 		local->scan_channel_idx++;
-		if (local->scan_channel_idx >=
-		    local->hw.modes[local->scan_hw_mode_idx].num_channels) {
-			local->scan_hw_mode_idx++;
-			local->scan_channel_idx = 0;
+		if (local->scan_channel_idx >= local->scan_hw_mode->num_channels) {
+			if (local->scan_hw_mode->list.next != &local->modes_list) {
+				local->scan_hw_mode = list_entry(local->scan_hw_mode->list.next,
+								 struct ieee80211_hw_mode,
+								 list);
+				local->scan_channel_idx = 0;
+			}
 		}
 
 		if (skip)
@@ -2520,7 +2523,7 @@ static void ieee80211_sta_scan_work(void *ptr)
 		if (next_delay)
 			schedule_delayed_work(&local->scan_work, next_delay);
 		else
-			schedule_work(&local->scan_work);
+			schedule_work(&local->scan_work.work);
 	}
 }
 
@@ -2553,7 +2556,7 @@ int ieee80211_sta_req_scan(struct net_device *dev, u8 *ssid, size_t ssid_len)
 	 * scan */
 
 	if (local->sta_scanning) {
-		if (local->scan_work.data == dev)
+		if (local->scan_dev == dev)
 			return 0;
 		return -EBUSY;
 	}
@@ -2565,7 +2568,7 @@ int ieee80211_sta_req_scan(struct net_device *dev, u8 *ssid, size_t ssid_len)
 					    ssid, ssid_len);
 		if (!rc) {
 			local->sta_scanning = 1;
-			local->scan_work.data = dev;
+			local->scan_dev = dev;
 		}
 		return rc;
 	}
@@ -2581,10 +2584,12 @@ int ieee80211_sta_req_scan(struct net_device *dev, u8 *ssid, size_t ssid_len)
 	} else
 		local->scan_ssid_len = 0;
 	local->scan_state = SCAN_SET_CHANNEL;
-	local->scan_hw_mode_idx = 0;
+	local->scan_hw_mode = list_entry(local->modes_list.next,
+					 struct ieee80211_hw_mode,
+					 list);
 	local->scan_channel_idx = 0;
-	INIT_WORK(&local->scan_work, ieee80211_sta_scan_work, dev);
-	schedule_work(&local->scan_work);
+	local->scan_dev = dev;
+	schedule_work(&local->scan_work.work);
 
 	return 0;
 }
@@ -2697,7 +2702,7 @@ ieee80211_sta_scan_result(struct net_device *dev,
 		if (buf) {
 			memset(&iwe, 0, sizeof(iwe));
 			iwe.cmd = IWEVCUSTOM;
-			sprintf(buf, "tsf=%016llx", bss->timestamp);
+			sprintf(buf, "tsf=%016llx", (unsigned long long)(bss->timestamp));
 			iwe.u.data.length = strlen(buf);
 			current_ev = iwe_stream_add_point(current_ev, end_buf,
 							  &iwe, buf);

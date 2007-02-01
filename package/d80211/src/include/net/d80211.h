@@ -15,7 +15,7 @@
 #include <linux/skbuff.h>
 #include <linux/wireless.h>
 #include <linux/device.h>
-#include "d80211_shared.h"
+#include <linux/ieee80211.h>
 
 /* Note! Only ieee80211_tx_status_irqsafe() and ieee80211_rx_irqsafe() can be
  * called in hardware interrupt context. The low-level driver must not call any
@@ -46,6 +46,10 @@
 #define IEEE80211_VERSION 2
 
 
+#define IEEE80211_CHAN_W_SCAN 0x00000001
+#define IEEE80211_CHAN_W_ACTIVE_SCAN 0x00000002
+#define IEEE80211_CHAN_W_IBSS 0x00000004
+
 /* Channel information structure. Low-level driver is expected to fill in chan,
  * freq, and val fields. Other fields will be filled in by 80211.o based on
  * hostapd information and low-level driver does not need to use them. The
@@ -60,6 +64,22 @@ struct ieee80211_channel {
         unsigned char antenna_max;
 };
 
+#define IEEE80211_RATE_ERP 0x00000001
+#define IEEE80211_RATE_BASIC 0x00000002
+#define IEEE80211_RATE_PREAMBLE2 0x00000004
+#define IEEE80211_RATE_SUPPORTED 0x00000010
+#define IEEE80211_RATE_OFDM 0x00000020
+#define IEEE80211_RATE_CCK 0x00000040
+#define IEEE80211_RATE_TURBO 0x00000080
+#define IEEE80211_RATE_MANDATORY 0x00000100
+
+#define IEEE80211_RATE_CCK_2 (IEEE80211_RATE_CCK | IEEE80211_RATE_PREAMBLE2)
+#define IEEE80211_RATE_MODULATION(f) \
+(f & (IEEE80211_RATE_CCK | IEEE80211_RATE_OFDM))
+
+/* Low-level driver should set PREAMBLE2, OFDM, CCK, and TURBO flags.
+ * BASIC, SUPPORTED, ERP, and MANDATORY flags are set in 80211.o based on the
+ * configuration. */
 struct ieee80211_rate {
 	int rate; /* rate in 100 kbps */
 	int val; /* hw specific value for the rate */
@@ -76,12 +96,25 @@ struct ieee80211_rate {
 		       * optimizing channel utilization estimates */
 };
 
-struct ieee80211_hw_modes {
-	int mode;
-	int num_channels;
-	struct ieee80211_channel *channels;
-	int num_rates;
-        struct ieee80211_rate *rates;
+/* 802.11g is backwards-compatible with 802.11b, so a wlan card can
+ * actually be both in 11b and 11g modes at the same time. */
+enum {
+	MODE_IEEE80211A = 0 /* IEEE 802.11a */,
+	MODE_IEEE80211B = 1 /* IEEE 802.11b only */,
+	MODE_ATHEROS_TURBO = 2 /* Atheros Turbo mode (2x.11a at 5 GHz) */,
+	MODE_IEEE80211G = 3 /* IEEE 802.11g (and 802.11b compatibility) */,
+	MODE_ATHEROS_TURBOG = 4 /* Atheros Turbo mode (2x.11g at 2.4 GHz) */,
+	NUM_IEEE80211_MODES = 5
+};
+
+struct ieee80211_hw_mode {
+	int mode; /* MODE_IEEE80211... */
+	int num_channels; /* Number of channels (below) */
+	struct ieee80211_channel *channels; /* Array of supported channels */
+	int num_rates; /* Number of rates (below) */
+        struct ieee80211_rate *rates; /* Array of supported rates */
+
+	struct list_head list; /* Internal, don't touch */
 };
 
 struct ieee80211_tx_queue_params {
@@ -135,7 +168,6 @@ struct ieee80211_low_level_stats {
 #define HW_KEY_IDX_INVALID -1
 
 struct ieee80211_tx_control {
-	enum { PKT_NORMAL = 0, PKT_PROBE_RESP } pkt_type;
 	int tx_rate; /* Transmit rate, given as the hw specific value for the
 		      * rate (from struct ieee80211_rate) */
 	int rts_cts_rate; /* Transmit rate for RTS/CTS frame, given as the hw
@@ -420,9 +452,7 @@ typedef enum {
 	SET_KEY, DISABLE_KEY, REMOVE_ALL_KEYS,
 } set_key_cmd;
 
-/* This is driver-visible part of the per-hw state the stack keeps.
- * If you change something in here, call ieee80211_update_hw() to
- * notify the stack about the change. */
+/* This is driver-visible part of the per-hw state the stack keeps. */
 struct ieee80211_hw {
 	/* these are assigned by d80211, don't write */
 	int index;
@@ -511,9 +541,6 @@ struct ieee80211_hw {
         int channel_change_time;
 	/* This is maximum value for rssi reported by this device */
 	int maxssi;
-
-	int num_modes;
-	struct ieee80211_hw_modes *modes;
 
 	/* Number of available hardware TX queues for data packets.
 	 * WMM requires at least four queues. */
@@ -713,11 +740,11 @@ struct ieee80211_ops {
  * priv_data_len.
  */
 struct ieee80211_hw *ieee80211_alloc_hw(size_t priv_data_len,
-					struct ieee80211_ops *ops);
+					const struct ieee80211_ops *ops);
 
 /* Register hardware device to the IEEE 802.11 code and kernel. Low-level
  * drivers must call this function before using any other IEEE 802.11
- * function. */
+ * function except ieee80211_register_hwmode. */
 int ieee80211_register_hw(struct ieee80211_hw *hw);
 
 /* driver can use this and ieee80211_get_rx_led_name to get the
@@ -750,9 +777,9 @@ static inline char *ieee80211_get_rx_led_name(struct ieee80211_hw *hw)
 #endif
 }
 
-/* Call this function if you changed the hardware description after
- * ieee80211_register_hw */
-int ieee80211_update_hw(struct ieee80211_hw *hw);
+/* Register a new hardware PHYMODE capability to the stack. */
+int ieee80211_register_hwmode(struct ieee80211_hw *hw,
+			      struct ieee80211_hw_mode *mode);
 
 /* Unregister a hardware device. This function instructs 802.11 code to free
  * allocated resources and unregister netdevices from the kernel. */
@@ -935,95 +962,6 @@ enum {
 	IEEE80211_TEST_PARAM_TX_RATE = 4,
 	IEEE80211_TEST_PARAM_TX_ANT_SEL_RAW = 5,
 };
-
-/* IEEE 802.11 defines */
-
-#define FCS_LEN 4
-
-#define IEEE80211_DATA_LEN              2304
-/* Maximum size for the MA-UNITDATA primitive, 802.11 standard section
-   6.2.1.1.2.
-
-   The figure in section 7.1.2 suggests a body size of up to 2312
-   bytes is allowed, which is a bit confusing, I suspect this
-   represents the 2304 bytes of real data, plus a possible 8 bytes of
-   WEP IV and ICV. (this interpretation suggested by Ramiro Barreiro) */
-
-#define IEEE80211_FCTL_VERS		0x0003
-#define IEEE80211_FCTL_FTYPE		0x000c
-#define IEEE80211_FCTL_STYPE		0x00f0
-#define IEEE80211_FCTL_TODS		0x0100
-#define IEEE80211_FCTL_FROMDS		0x0200
-#define IEEE80211_FCTL_MOREFRAGS	0x0400
-#define IEEE80211_FCTL_RETRY		0x0800
-#define IEEE80211_FCTL_PM		0x1000
-#define IEEE80211_FCTL_MOREDATA		0x2000
-#define IEEE80211_FCTL_PROTECTED	0x4000
-#define IEEE80211_FCTL_ORDER		0x8000
-
-#define IEEE80211_SCTL_FRAG		0x000F
-#define IEEE80211_SCTL_SEQ		0xFFF0
-
-#define IEEE80211_FTYPE_MGMT		0x0000
-#define IEEE80211_FTYPE_CTL		0x0004
-#define IEEE80211_FTYPE_DATA		0x0008
-
-/* management */
-#define IEEE80211_STYPE_ASSOC_REQ	0x0000
-#define IEEE80211_STYPE_ASSOC_RESP	0x0010
-#define IEEE80211_STYPE_REASSOC_REQ	0x0020
-#define IEEE80211_STYPE_REASSOC_RESP	0x0030
-#define IEEE80211_STYPE_PROBE_REQ	0x0040
-#define IEEE80211_STYPE_PROBE_RESP	0x0050
-#define IEEE80211_STYPE_BEACON		0x0080
-#define IEEE80211_STYPE_ATIM		0x0090
-#define IEEE80211_STYPE_DISASSOC	0x00A0
-#define IEEE80211_STYPE_AUTH		0x00B0
-#define IEEE80211_STYPE_DEAUTH		0x00C0
-#define IEEE80211_STYPE_ACTION		0x00D0
-
-/* control */
-#define IEEE80211_STYPE_PSPOLL		0x00A0
-#define IEEE80211_STYPE_RTS		0x00B0
-#define IEEE80211_STYPE_CTS		0x00C0
-#define IEEE80211_STYPE_ACK		0x00D0
-#define IEEE80211_STYPE_CFEND		0x00E0
-#define IEEE80211_STYPE_CFENDACK	0x00F0
-
-/* data */
-#define IEEE80211_STYPE_DATA			0x0000
-#define IEEE80211_STYPE_DATA_CFACK		0x0010
-#define IEEE80211_STYPE_DATA_CFPOLL		0x0020
-#define IEEE80211_STYPE_DATA_CFACKPOLL		0x0030
-#define IEEE80211_STYPE_NULLFUNC		0x0040
-#define IEEE80211_STYPE_CFACK			0x0050
-#define IEEE80211_STYPE_CFPOLL			0x0060
-#define IEEE80211_STYPE_CFACKPOLL		0x0070
-#define IEEE80211_STYPE_QOS_DATA		0x0080
-#define IEEE80211_STYPE_QOS_DATA_CFACK		0x0090
-#define IEEE80211_STYPE_QOS_DATA_CFPOLL		0x00A0
-#define IEEE80211_STYPE_QOS_DATA_CFACKPOLL	0x00B0
-#define IEEE80211_STYPE_QOS_NULLFUNC		0x00C0
-#define IEEE80211_STYPE_QOS_CFACK		0x00D0
-#define IEEE80211_STYPE_QOS_CFPOLL		0x00E0
-#define IEEE80211_STYPE_QOS_CFACKPOLL		0x00F0
-
-
-/* miscellaneous IEEE 802.11 constants */
-#define IEEE80211_MAX_FRAG_THRESHOLD 2346
-#define IEEE80211_MAX_RTS_THRESHOLD 2347
-#define IEEE80211_MAX_AID 2007
-#define IEEE80211_MAX_TIM_LEN 251
-
-struct ieee80211_hdr {
-	__le16 frame_control;
-	__le16 duration_id;
-	u8 addr1[6];
-	u8 addr2[6];
-	u8 addr3[6];
-	__le16 seq_ctrl;
-	u8 addr4[6];
-} __attribute__ ((packed));
 
 /* return a pointer to the source address (SA) */
 static inline u8 *ieee80211_get_SA(struct ieee80211_hdr *hdr)
