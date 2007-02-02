@@ -10,9 +10,9 @@ struct delayed_work {
 };
 
 #define INIT_DELAYED_WORK(_work, _func) \
-		INIT_WORK(&(_work)->work, _func, NULL)
+		INIT_WORK(&(_work)->work, _func, &(_work)->work)
 
-#define INIT_WORK_NEW(_work, _func) INIT_WORK(_work, _func, NULL)
+#define INIT_WORK_NEW(_work, _func) INIT_WORK(_work, _func, _work)
 
 #define schedule_delayed_work(_work, interval) schedule_delayed_work(&(_work)->work, interval)
 #define cancel_delayed_work(_work) cancel_delayed_work(&(_work)->work)
