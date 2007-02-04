@@ -1,0 +1,529 @@
+/*
+ * This file is subject to the terms and conditions of the GNU General Public
+ * License.  See the file "COPYING" in the main directory of this archive
+ * for more details.
+ *
+ * Copyright (C) 2003 Atheros Communications, Inc.,  All Rights Reserved.
+ * Copyright (C) 2006 FON Technology, SL.
+ * Copyright (C) 2006 Imre Kaloz <kaloz@openwrt.org>
+ * Copyright (C) 2006 Felix Fietkau <nbd@openwrt.org>
+ */
+
+/*
+ * Platform devices for Atheros SoCs
+ */
+
+#include <linux/autoconf.h>
+#include <linux/init.h>
+#include <linux/module.h>
+#include <linux/types.h>
+#include <linux/string.h>
+#include <linux/platform_device.h>
+#include <linux/kernel.h>
+#include <linux/reboot.h>
+#include <asm/bootinfo.h>
+#include <asm/reboot.h>
+#include <asm/time.h>
+#include <asm/irq.h>
+#include <asm/io.h>
+#include "ar531x.h"
+
+#define AR531X_IRQ_MISC_INTRS   MIPS_CPU_IRQ_BASE+2 /* C0_CAUSE: 0x0400 */
+#define AR531X_IRQ_WLAN0_INTRS  MIPS_CPU_IRQ_BASE+3 /* C0_CAUSE: 0x0800 */
+#define AR531X_IRQ_ENET0_INTRS  MIPS_CPU_IRQ_BASE+4 /* C0_CAUSE: 0x1000 */
+#define AR531X_IRQ_LCBUS_PCI    MIPS_CPU_IRQ_BASE+5 /* C0_CAUSE: 0x2000 */
+#define AR531X_IRQ_WLAN0_POLL   MIPS_CPU_IRQ_BASE+6 /* C0_CAUSE: 0x4000 */
+
+static struct resource ar5315_eth_res[] = {
+	{
+		.name = "eth_membase",
+		.flags = IORESOURCE_MEM,
+		.start = AR5315_ENET0,
+		.end = AR5315_ENET0 + 0x2000,
+	},
+	{
+		.name = "eth_irq",
+		.flags = IORESOURCE_IRQ,
+		.start = AR531X_IRQ_ENET0_INTRS,
+		.end = AR531X_IRQ_ENET0_INTRS,
+	},
+};
+
+static struct ar531x_eth ar5315_eth_data = {
+	.phy = 1,
+	.mac = 0,
+	.reset_base = AR5315_RESET,
+	.reset_mac = AR5315_RESET_ENET0,
+	.reset_phy = AR5315_RESET_EPHY0,
+};
+
+static struct platform_device ar5315_eth = {
+	.id = 0,
+	.name = "ar531x-eth",
+	.dev.platform_data = &ar5315_eth_data,
+	.resource = ar5315_eth_res,
+	.num_resources = ARRAY_SIZE(ar5315_eth_res)
+};
+
+static struct platform_device ar5315_wmac = {
+	.id = 0,
+	.name = "ar531x-wmac",
+	/* FIXME: add resources */
+};
+
+static struct resource ar5315_spiflash_res[] = {
+	{
+		.name = "flash_base",
+		.flags = IORESOURCE_MEM,
+		.start = KSEG1ADDR(AR5315_SPI_READ),
+		.end = KSEG1ADDR(AR5315_SPI_READ) + 0x800000,
+	},
+	{
+		.name = "flash_regs",
+		.flags = IORESOURCE_MEM,
+		.start = 0x11300000,
+		.end = 0x11300012,
+	},
+};
+
+static struct platform_device ar5315_spiflash = {
+	.id = 0,
+	.name = "spiflash",
+	.resource = ar5315_spiflash_res,
+	.num_resources = ARRAY_SIZE(ar5315_spiflash_res)
+};
+
+static __initdata struct platform_device *ar5315_devs[4];
+
+
+
+static void *flash_regs;
+
+static inline __u32 spiflash_regread32(int reg)
+{
+	volatile __u32 *data = (__u32 *)(flash_regs + reg);
+
+	return (*data);
+}
+
+static inline void spiflash_regwrite32(int reg, __u32 data)
+{
+	volatile __u32 *addr = (__u32 *)(flash_regs + reg);
+
+	*addr = data;
+}
+
+#define SPI_FLASH_CTL      0x00
+#define SPI_FLASH_OPCODE   0x04
+#define SPI_FLASH_DATA     0x08
+
+static __u8 spiflash_probe(void)
+{
+	 __u32 reg;
+
+	do {
+		reg = spiflash_regread32(SPI_FLASH_CTL);
+	} while (reg & SPI_CTL_BUSY);
+
+	spiflash_regwrite32(SPI_FLASH_OPCODE, 0xab);
+
+	reg = (reg & ~SPI_CTL_TX_RX_CNT_MASK) | 4 |
+        	(1 << 4) | SPI_CTL_START;
+
+	spiflash_regwrite32(SPI_FLASH_CTL, reg);
+ 
+	do {
+  		reg = spiflash_regread32(SPI_FLASH_CTL);
+	} while (reg & SPI_CTL_BUSY);
+
+	reg = (__u32) spiflash_regread32(SPI_FLASH_DATA);
+	reg &= 0xff;
+
+	return (u8) reg;
+}
+
+
+#define STM_8MBIT_SIGNATURE     0x13
+#define STM_16MBIT_SIGNATURE    0x14
+#define STM_32MBIT_SIGNATURE    0x15
+#define STM_64MBIT_SIGNATURE    0x16
+
+
+static char __init *ar5315_flash_limit(void)
+{
+	u8 sig;
+	u32 flash_size = 0;
+
+	/* probe the flash chip size */
+	flash_regs = ioremap_nocache(ar5315_spiflash_res[1].start, ar5315_spiflash_res[1].end - ar5315_spiflash_res[1].start);
+	sig = spiflash_probe();
+	iounmap(flash_regs);
+
+	switch(sig) {
+		case STM_8MBIT_SIGNATURE:
+			flash_size = 0x00100000;
+			break;
+		case STM_16MBIT_SIGNATURE:
+			flash_size = 0x00200000;
+			break;
+		case STM_32MBIT_SIGNATURE:
+			flash_size = 0x00400000;
+			break;
+		case STM_64MBIT_SIGNATURE:
+			flash_size = 0x00800000;
+			break;
+	}
+
+	ar5315_spiflash_res[0].end = ar5315_spiflash_res[0].start + flash_size;
+	return (char *) ar5315_spiflash_res[0].end;
+}
+
+int __init ar5315_init_devices(void)
+{
+	struct ar531x_config *config;
+	int dev = 0;
+
+	if (mips_machtype != MACH_ATHEROS_AR5315) 
+		return 0;
+
+	ar531x_find_config(ar5315_flash_limit());
+
+	config = (struct ar531x_config *) kzalloc(sizeof(struct ar531x_config), GFP_KERNEL);
+	config->board = board_config;
+	config->radio = radio_config;
+	config->unit = 0;
+	config->tag = (u_int16_t) (sysRegRead(AR5315_SREV) & REV_CHIP);
+	
+	ar5315_eth_data.board_config = board_config;
+	ar5315_wmac.dev.platform_data = config;
+	
+	ar5315_devs[dev++] = &ar5315_eth;
+	ar5315_devs[dev++] = &ar5315_wmac;
+	ar5315_devs[dev++] = &ar5315_spiflash;
+
+	return platform_add_devices(ar5315_devs, dev);
+}
+
+
+/*
+ * Called when an interrupt is received, this function
+ * determines exactly which interrupt it was, and it
+ * invokes the appropriate handler.
+ *
+ * Implicitly, we also define interrupt priority by
+ * choosing which to dispatch first.
+ */
+asmlinkage void ar5315_irq_dispatch(void)
+{
+	int pending = read_c0_status() & read_c0_cause();
+
+	if (pending & CAUSEF_IP3)
+		do_IRQ(AR531X_IRQ_WLAN0_INTRS);
+	else if (pending & CAUSEF_IP4)
+		do_IRQ(AR531X_IRQ_ENET0_INTRS);
+	else if (pending & CAUSEF_IP2) {
+		unsigned int ar531x_misc_intrs = sysRegRead(AR5315_ISR) & sysRegRead(AR5315_IMR);
+
+	    if (ar531x_misc_intrs & AR5315_ISR_TIMER)
+			do_IRQ(AR531X_MISC_IRQ_TIMER);
+		else if (ar531x_misc_intrs & AR5315_ISR_AHB)
+			do_IRQ(AR531X_MISC_IRQ_AHB_PROC);
+		else if (ar531x_misc_intrs & AR5315_ISR_GPIO) {
+			sysRegWrite(AR5315_ISR, sysRegRead(AR5315_IMR) | ~AR5315_ISR_GPIO);
+		} else if (ar531x_misc_intrs & AR5315_ISR_UART0)
+			do_IRQ(AR531X_MISC_IRQ_UART0);
+		else if (ar531x_misc_intrs & AR5315_ISR_WD)
+			do_IRQ(AR531X_MISC_IRQ_WATCHDOG);
+		else
+			do_IRQ(AR531X_MISC_IRQ_NONE);
+	} else if (pending & CAUSEF_IP7)
+		do_IRQ(AR531X_IRQ_CPU_CLOCK);
+	else
+		do_IRQ(AR531X_IRQ_NONE);
+}
+
+static void ar5315_halt(void)
+{
+	 while (1);
+}
+
+static void ar5315_power_off(void)
+{
+	 ar5315_halt();
+}
+
+
+static void ar5315_restart(char *command)
+{
+	unsigned int reg;
+	for(;;) {
+		
+		/* reset the system */
+		sysRegWrite(AR5315_COLD_RESET,AR5317_RESET_SYSTEM);
+
+		/* 
+		 * Cold reset does not work on the AR2315/6, use the GPIO reset bits a workaround.
+		 */
+
+		reg = sysRegRead(AR5315_GPIO_DO);
+		reg &= ~(1 << AR5315_RESET_GPIO);
+		sysRegWrite(AR5315_GPIO_DO, reg);
+		(void)sysRegRead(AR5315_GPIO_DO); /* flush write to hardware */
+	}
+}
+
+
+/*
+ * This table is indexed by bits 5..4 of the CLOCKCTL1 register
+ * to determine the predevisor value.
+ */
+static int __initdata CLOCKCTL1_PREDIVIDE_TABLE[4] = {
+    1,
+    2,
+    4,
+    5
+};
+
+static int __initdata PLLC_DIVIDE_TABLE[5] = {
+    2,
+    3,
+    4,
+    6,
+    3
+};
+
+static unsigned int __init
+ar5315_sys_clk(unsigned int clockCtl)
+{
+    unsigned int pllcCtrl,cpuDiv;
+    unsigned int pllcOut,refdiv,fdiv,divby2;
+	unsigned int clkDiv;
+
+    pllcCtrl = sysRegRead(AR5315_PLLC_CTL);
+    refdiv = (pllcCtrl & PLLC_REF_DIV_M) >> PLLC_REF_DIV_S;
+    refdiv = CLOCKCTL1_PREDIVIDE_TABLE[refdiv];
+    fdiv = (pllcCtrl & PLLC_FDBACK_DIV_M) >> PLLC_FDBACK_DIV_S;
+    divby2 = (pllcCtrl & PLLC_ADD_FDBACK_DIV_M) >> PLLC_ADD_FDBACK_DIV_S;
+    divby2 += 1;
+    pllcOut = (40000000/refdiv)*(2*divby2)*fdiv;
+
+
+    /* clkm input selected */
+	switch(clockCtl & CPUCLK_CLK_SEL_M) {
+		case 0:
+		case 1:
+			clkDiv = PLLC_DIVIDE_TABLE[(pllcCtrl & PLLC_CLKM_DIV_M) >> PLLC_CLKM_DIV_S];
+			break;
+		case 2:
+			clkDiv = PLLC_DIVIDE_TABLE[(pllcCtrl & PLLC_CLKC_DIV_M) >> PLLC_CLKC_DIV_S];
+			break;
+		default:
+			pllcOut = 40000000;
+			clkDiv = 1;
+			break;
+	}
+	cpuDiv = (clockCtl & CPUCLK_CLK_DIV_M) >> CPUCLK_CLK_DIV_S;  
+	cpuDiv = cpuDiv * 2 ?: 1;
+	return (pllcOut/(clkDiv * cpuDiv));
+}
+		
+static inline unsigned int ar5315_cpu_frequency(void)
+{
+    return ar5315_sys_clk(sysRegRead(AR5315_CPUCLK));
+}
+
+static inline unsigned int ar5315_apb_frequency(void)
+{
+    return ar5315_sys_clk(sysRegRead(AR5315_AMBACLK));
+}
+
+static void __init ar5315_time_init(void)
+{
+	mips_hpt_frequency = ar5315_cpu_frequency() / 2;
+}
+
+
+
+/* Enable the specified AR531X_MISC_IRQ interrupt */
+static void
+ar5315_misc_intr_enable(unsigned int irq)
+{
+	unsigned int imr;
+
+	imr = sysRegRead(AR5315_IMR);
+	switch(irq)
+	{
+	   case AR531X_MISC_IRQ_TIMER:
+	     imr |= AR5315_ISR_TIMER;
+	     break;
+
+	   case AR531X_MISC_IRQ_AHB_PROC:
+	     imr |= AR5315_ISR_AHB;
+	     break;
+
+	   case AR531X_MISC_IRQ_AHB_DMA:
+	     imr |= 0/* ?? */;
+	     break;
+
+	   case	AR531X_MISC_IRQ_GPIO:
+	     imr |= AR5315_ISR_GPIO;
+	     break;
+
+	   case AR531X_MISC_IRQ_UART0:
+	     imr |= AR5315_ISR_UART0;
+	     break;
+
+
+	   case	AR531X_MISC_IRQ_WATCHDOG:
+	     imr |= AR5315_ISR_WD;
+	     break;
+
+	   case AR531X_MISC_IRQ_LOCAL:
+	     imr |= 0/* ?? */;
+	     break;
+
+	}
+	sysRegWrite(AR5315_IMR, imr);
+	imr=sysRegRead(AR5315_IMR); /* flush write buffer */
+	//printk("enable Interrupt irq 0x%x imr 0x%x \n",irq,imr);
+
+}
+
+/* Disable the specified AR531X_MISC_IRQ interrupt */
+static void
+ar5315_misc_intr_disable(unsigned int irq)
+{
+	unsigned int imr;
+
+	imr = sysRegRead(AR5315_IMR);
+	switch(irq)
+	{
+	   case AR531X_MISC_IRQ_TIMER:
+	     imr &= (~AR5315_ISR_TIMER);
+	     break;
+
+	   case AR531X_MISC_IRQ_AHB_PROC:
+	     imr &= (~AR5315_ISR_AHB);
+	     break;
+
+	   case AR531X_MISC_IRQ_AHB_DMA:
+	     imr &= 0/* ?? */;
+	     break;
+
+	   case	AR531X_MISC_IRQ_GPIO:
+	     imr &= ~AR5315_ISR_GPIO;
+	     break;
+
+	   case AR531X_MISC_IRQ_UART0:
+	     imr &= (~AR5315_ISR_UART0);
+	     break;
+
+	   case	AR531X_MISC_IRQ_WATCHDOG:
+	     imr &= (~AR5315_ISR_WD);
+	     break;
+
+	   case AR531X_MISC_IRQ_LOCAL:
+	     imr &= ~0/* ?? */;
+	     break;
+
+	}
+	sysRegWrite(AR5315_IMR, imr);
+	sysRegRead(AR5315_IMR); /* flush write buffer */
+}
+
+/* Turn on the specified AR531X_MISC_IRQ interrupt */
+static unsigned int
+ar5315_misc_intr_startup(unsigned int irq)
+{
+	ar5315_misc_intr_enable(irq);
+	return 0;
+}
+
+/* Turn off the specified AR531X_MISC_IRQ interrupt */
+static void
+ar5315_misc_intr_shutdown(unsigned int irq)
+{
+	ar5315_misc_intr_disable(irq);
+}
+
+static void
+ar5315_misc_intr_ack(unsigned int irq)
+{
+	ar5315_misc_intr_disable(irq);
+}
+
+static void
+ar5315_misc_intr_end(unsigned int irq)
+{
+	if (!(irq_desc[irq].status & (IRQ_DISABLED | IRQ_INPROGRESS)))
+		ar5315_misc_intr_enable(irq);
+}
+
+static struct irq_chip ar5315_misc_intr_controller = {
+	.typename	= "AR5315 misc",
+	.startup	= ar5315_misc_intr_startup,
+	.shutdown	= ar5315_misc_intr_shutdown,
+	.enable		= ar5315_misc_intr_enable,
+	.disable	= ar5315_misc_intr_disable,
+	.ack		= ar5315_misc_intr_ack,
+	.end		= ar5315_misc_intr_end,
+};
+
+static irqreturn_t ar5315_ahb_proc_handler(int cpl, void *dev_id)
+{
+    sysRegWrite(AR5315_AHB_ERR0,AHB_ERROR_DET);
+    sysRegRead(AR5315_AHB_ERR1);
+
+    printk("AHB fatal error\n");
+    machine_restart("AHB error"); /* Catastrophic failure */
+
+    return IRQ_HANDLED;
+}
+
+static struct irqaction ar5315_ahb_proc_interrupt  = {
+	.handler	= ar5315_ahb_proc_handler,
+	.flags		= SA_INTERRUPT,
+	.name		= "ar5315_ahb_proc_interrupt",
+};
+
+
+static struct irqaction cascade  = {
+	.handler	= no_action,
+	.flags		= SA_INTERRUPT,
+	.name		= "cascade",
+};
+
+void ar5315_misc_intr_init(int irq_base)
+{
+	int i;
+
+	for (i = irq_base; i < irq_base + AR531X_MISC_IRQ_COUNT; i++) {
+		irq_desc[i].status = IRQ_DISABLED;
+		irq_desc[i].action = NULL;
+		irq_desc[i].depth = 1;
+		irq_desc[i].chip = &ar5315_misc_intr_controller;
+	}
+	setup_irq(AR531X_MISC_IRQ_AHB_PROC, &ar5315_ahb_proc_interrupt);
+	setup_irq(AR531X_IRQ_MISC_INTRS, &cascade);
+}
+
+void __init ar5315_plat_setup(void)
+{
+	unsigned int config = read_c0_config();
+
+	/* Clear any lingering AHB errors */
+	write_c0_config(config & ~0x3);
+	sysRegWrite(AR5315_AHB_ERR0,AHB_ERROR_DET);
+	sysRegRead(AR5315_AHB_ERR1);
+	sysRegWrite(AR5315_WDC, WDC_IGNORE_EXPIRATION);
+
+	board_time_init = ar5315_time_init;
+
+	_machine_restart = ar5315_restart;
+	_machine_halt = ar5315_halt;
+	pm_power_off = ar5315_power_off;
+
+	serial_setup(KSEG1ADDR(AR5315_UART0), ar5315_apb_frequency());
+}
+
+arch_initcall(ar5315_init_devices);
