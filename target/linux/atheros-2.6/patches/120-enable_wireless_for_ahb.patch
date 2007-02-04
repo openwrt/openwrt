@@ -6,7 +6,7 @@ diff -urN linux.old/drivers/net/wireless/Kconfig linux.dev/drivers/net/wireless/
  config NET_WIRELESS
  	bool
 -	depends on NET_RADIO && (ISA || PCI || PPC_PMAC || PCMCIA)
-+	depends on NET_RADIO && (ISA || PCI || PPC_PMAC || PCMCIA || AR531X)
++	depends on NET_RADIO && (ISA || PCI || PPC_PMAC || PCMCIA || ATHEROS)
  	default y
  
  endmenu
