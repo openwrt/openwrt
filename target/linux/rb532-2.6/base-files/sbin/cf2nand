@@ -10,7 +10,7 @@ copy_kernel() {
 	/sbin/patch-cmdline "$output" "$cmdline"
 }
 
-fstype="$(mount | grep ' / ' | awk '{print $5}')"
+fstype="$(mount | grep ' / ' | awk '$1 != "rootfs" {print $5}')"
 case "$fstype" in
 	ext2|jffs2) echo "Copying from $fstype to yaffs2";;
 	*) echo "Invalid filesystem."; exit 1;;
