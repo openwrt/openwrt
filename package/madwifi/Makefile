@@ -100,19 +100,19 @@ MADWIFI_MAKEOPTS= -C $(PKG_BUILD_DIR) \
 		TOOLPREFIX="$(KERNEL_CROSS)" \
 		TOOLPATH="$(KERNEL_CROSS)" \
 		KERNELPATH="$(LINUX_DIR)" \
-		LDOPTS=" " \
+		LDOPTS="--no-warn-mismatch " \
 		ATH_RATE="ath_rate/$(RATE_CONTROL)" \
 		DOMULTI=1
 
 ifeq ($(findstring AHB,$(BUS)),AHB)
   define Build/Compile/ahb
-	$(MAKE) $(MADWIFI_MAKEOPTS) BUS="AHB" LDOPTS="--no-warn-mismatch" modules
+	$(MAKE) $(MADWIFI_MAKEOPTS) BUS="AHB" modules
   endef
 endif
 
 ifeq ($(findstring PCI,$(BUS)),PCI)
   define Build/Compile/pci
-	$(MAKE) $(MADWIFI_MAKEOPTS) BUS="PCI" LDOPTS="--no-warn-mismatch" modules
+	$(MAKE) $(MADWIFI_MAKEOPTS) BUS="PCI" modules
   endef
 endif
 
