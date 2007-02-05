@@ -29,6 +29,16 @@ define Profile/Atheros/Description
 endef
 $(eval $(call Profile,Atheros))
 
+define Profile/WGT634U
+  NAME:=Netgear WGT634U
+  PACKAGES:=kmod-madwifi kmod-usb-core kmod-usb-ohci kmod-usb2
+endef
+
+define Profile/WGT634U/Description
+	Package set compatible with the Netgear WGT634U. Contains USB support
+endef
+$(eval $(call Profile,WGT634U))
+
 define Profile/None
   NAME:=No WiFi
   PACKAGES:=
