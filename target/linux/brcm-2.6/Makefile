@@ -13,7 +13,7 @@ FEATURES:=squashfs
 
 define Target/Description
 	Build firmware images for Broadcom based routers
-	(e.g. Linksys WRT54G(S), Asus WL-500g, Motorola WR850G)
+	(e.g. Netgear WGT634U)
 endef
 
 include $(INCLUDE_DIR)/kernel-build.mk
