@@ -43,11 +43,11 @@ done
 rm -f /var/run/${ifname}.pid /var/run/ppp-${cfg}.pid
 
 config_get ifname "$cfg" ifname
-config_get device "$cfg" ifname
+config_get device "$cfg" device
 
 [ ."$device" != ."$ifname" ] || device=
 for dev in $ifname $device; do
-	ifconfig "$ifname" 0.0.0.0 down >/dev/null 2>/dev/null
+	ifconfig "$dev" 0.0.0.0 down >/dev/null 2>/dev/null
 done
 
 config_get iftype "$cfg" type
