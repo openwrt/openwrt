@@ -88,7 +88,7 @@ TARGET_CONFIGURE_OPTS:= \
 # strip an entire directory
 RSTRIP:= \
   STRIP="$(STRIP)" \
-  STRIP_KMOD="$(TARGET_CROSS)strip --strip-unneeded --remove-section=.comment" \
+  STRIP_KMOD="$(TARGET_CROSS)strip --strip-unneeded --remove-section=.comment -w -K '__mod*'" \
   $(SCRIPT_DIR)/rstrip.sh
 
 # where to build (and put) .ipk packages
