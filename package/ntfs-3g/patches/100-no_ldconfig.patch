@@ -1,0 +1,12 @@
+diff -Nur ntfs-3g-0.20070207-RC1/src/Makefile.in ntfs-3g-0.20070207-RC1-owrt/src/Makefile.in
+--- ntfs-3g-0.20070207-RC1/src/Makefile.in	2007-02-06 22:43:10.000000000 +0100
++++ ntfs-3g-0.20070207-RC1-owrt/src/Makefile.in	2007-02-08 12:54:27.000000000 +0100
+@@ -582,7 +582,7 @@
+ install-exec-hook:
+ 	$(INSTALL) -d $(DESTDIR)/sbin
+ 	$(LN_S) -f $(bindir)/ntfs-3g $(DESTDIR)/sbin/mount.ntfs-3g
+-	$(LDCONFIG)
++#	$(LDCONFIG)
+ 
+ install-data-hook:
+ 	$(INSTALL) -d $(DESTDIR)$(man8dir)
