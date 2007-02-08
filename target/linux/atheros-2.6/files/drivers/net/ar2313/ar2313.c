@@ -296,7 +296,10 @@ int __init ar2313_probe(struct platform_device *pdev)
 			memcpy(dev->dev_addr, def_mac, 6);
 		} else {
 			memcpy(dev->dev_addr, ((u8 *)configstart)+102, 6);
-	    }
+			/* use the other MAC slot if the first one is empty */
+			if (!memcmp(dev->dev_addr, "\xff\xff\xff\xff\xff\xff", 6))
+				memcpy(dev->dev_addr, ((u8 *)configstart)+102 + 6, 6);
+		}
 	}
 
 	sp->board_idx = BOARD_IDX_STATIC;
