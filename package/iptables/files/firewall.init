@@ -22,7 +22,8 @@ start() {
 	iptables -N output_rule
 	iptables -N forwarding_rule
 	iptables -N forwarding_wan
-	
+
+	iptables -t nat -N NEW
 	iptables -t nat -N prerouting_rule
 	iptables -t nat -N prerouting_wan
 	iptables -t nat -N postrouting_rule
@@ -99,11 +100,15 @@ start() {
 	# uses the default -P DROP
 	
 	### MASQ
+	iptables -t nat -A PREROUTING -m state --state NEW -j NEW 
 	iptables -t nat -A PREROUTING -j prerouting_rule
 	[ -z "$WAN" ] || iptables -t nat -A PREROUTING -i "$WAN" -j prerouting_wan
 	iptables -t nat -A POSTROUTING -j postrouting_rule
 	[ -z "$WAN" ] || iptables -t nat -A POSTROUTING -o $WAN -j MASQUERADE
-	
+
+	iptables -t nat -A NEW -m limit --limit 50 --limit-burst 100 -j RETURN && \
+		iptables -t nat -A NEW -j DROP
+
 	## USER RULES
 	[ -f /etc/firewall.user ] && . /etc/firewall.user
 	[ -n "$WAN" -a -e /etc/config/firewall ] && {
