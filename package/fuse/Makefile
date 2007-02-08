@@ -10,12 +10,12 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=fuse
-PKG_VERSION:=2.6.1
+PKG_VERSION:=2.6.3
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/$(PKG_NAME)
-PKG_MD5SUM:=13e1873086a1d7a95f470bbc7428c528
+PKG_MD5SUM:=3f4f5d07d12dedc0a3fd23472171fe94
 PKG_CAT:=zcat
 
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
@@ -35,6 +35,7 @@ define Package/fuse-utils
   $(call Package/fuse/Default)
   SECTION:=utils
   CATEGORY:=Utilities
+  DEPENDS:=+libfuse +kmod-fuse
   TITLE+= (utilities)
   DESCRIPTION+=\\\
 	\\\
