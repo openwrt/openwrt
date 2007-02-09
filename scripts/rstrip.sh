@@ -6,6 +6,23 @@
 # See /LICENSE for more information.
 #
 
+find_modparams() {
+	FILE="$1"
+	$NM "$FILE" | awk '
+BEGIN {
+	FS=" "
+}
+($3 ~ /^__module_parm_/) && ($3 !~ /^__module_parm_desc/) {
+	gsub(/__module_parm_/, "", $3)
+	printf "-K " $3 " "
+}
+($2 ~ /r/) && ($3 ~ /__param_/) {
+	gsub(/__param_/, "", $3)
+	printf "-K " $3 " "
+}
+'
+}
+
 
 SELF=${0##*/}
 
@@ -28,9 +45,11 @@ find $TARGETS -type f -a -exec file {} \; | \
   IFS=":"
   while read F S; do
     echo "$SELF: $F:$S"
-	[ "${F##*\.}" = "o" -o "${F##*\.}" = "ko" ] && \
-		eval "$STRIP_KMOD $F" || \
+	[ "${F##*\.}" = "o" -o "${F##*\.}" = "ko" ] && {
+		eval "$STRIP_KMOD -w -K '__param*' -K '__mod*' $(find_modparams "$F")$F"
+	} || {
 		eval "$STRIP $F"
+	}
   done
   true
 )
