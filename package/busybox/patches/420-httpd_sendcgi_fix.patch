@@ -1,0 +1,17 @@
+diff -urN busybox-1.4.0/networking/httpd.c busybox-1.4.0.orig/networking/httpd.c
+--- busybox-1.4.0/networking/httpd.c    2007-02-11 15:07:41.000000000 -0500
++++ busybox-1.4.0.orig/networking/httpd.c       2007-02-11 15:07:32.000000000 -0500
+@@ -1213,10 +1213,9 @@
+ #if PIPESIZE >= MAX_MEMORY_BUFF
+ # error "PIPESIZE >= MAX_MEMORY_BUFF"
+ #endif
+-                       /* reverted back to safe_read, otherwise httpd may block if the */
+-                       /* cgi-script outputs page date before it has fully received all */
+-                       /* (eg POST) data */
+-                       count = safe_read(inFd, rbuf, PIPESIZE);
++                       /* NB: was safe_read. If it *has to be* safe_read, */
++                       /* please explain why in this comment... */
++                       count = full_read(inFd, rbuf, PIPESIZE);
+                        if (count == 0)
+                                break;  /* closed */
+                        if (count < 0)
