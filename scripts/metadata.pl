@@ -341,6 +341,39 @@ sub package_depends($$) {
 	return $ret;
 }
 
+sub mconf_depends($$) {
+	my $depends = shift;
+	my $only_dep = shift;
+	my $res;
+
+	$depends or return;
+	my @depends = @$depends;
+	foreach my $depend (@depends) {
+		my $m = "depends";
+		$depend =~ s/^([@\+]+)//;
+		my $flags = $1;
+		my $vdep;
+	
+		if ($vdep = $package{$depend}->{vdepends}) {
+			$depend = join("||", map { "PACKAGE_".$_ } @$vdep);
+		} else {
+			$flags =~ /\+/ and do {
+				next if $only_dep;
+				$m = "select";
+
+				# Menuconfig will not treat 'select FOO' as a real dependency
+				# thus if FOO depends on other config options, these dependencies
+				# will not be checked. To fix this, we simply emit all of FOO's
+				# depends here as well.
+				$package{$depend} and $res .= mconf_depends($package{$depend}->{depends}, 1);
+			};
+			$flags =~ /@/ or $depend = "PACKAGE_$depend";
+		}
+		$res .= "\t\t$m $depend\n";
+	}
+	return $res;
+}
+
 sub print_package_config_category($) {
 	my $cat = shift;
 	my %menus;
@@ -394,20 +427,7 @@ sub print_package_config_category($) {
 			foreach my $default (split /\s*,\s*/, $pkg->{default}) {
 				print "\t\tdefault $default\n";
 			}
-			foreach my $depend (@{$pkg->{depends}}) {
-				my $m = "depends";
-				$depend =~ s/^([@\+]+)//;
-				my $flags = $1;
-				my $vdep;
-				
-				if ($vdep = $package{$depend}->{vdepends}) {
-					$depend = join("||", map { "PACKAGE_".$_ } @$vdep);
-				} else {
-					$flags =~ /@/ or $depend = "PACKAGE_$depend";
-					$flags =~ /\+/ and $m = "select";
-				}
-				print "\t\t$m $depend\n";
-			}
+			print mconf_depends($pkg->{depends}, 0);
 			print "\t\thelp\n";
 			print $pkg->{description};
 			print "\n";
