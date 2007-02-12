@@ -35,7 +35,7 @@ define Package/fuse-utils
   $(call Package/fuse/Default)
   SECTION:=utils
   CATEGORY:=Utilities
-  DEPENDS:=+libfuse +kmod-fuse
+  DEPENDS:=+libfuse +kmod-fuse @LINUX_2_6
   TITLE+= (utilities)
   DESCRIPTION+=\\\
 	\\\
@@ -46,6 +46,7 @@ define KernelPackage/fuse
   SUBMENU:=Filesystems
   $(call Package/fuse/Default)
   TITLE+= (kernel module)
+  DEPENDS:=@LINUX_2_6
   DESCRIPTION+=\\\
 	\\\
 	This package contains the FUSE kernel module.
@@ -57,6 +58,7 @@ define Package/libfuse
   $(call Package/fuse/Default)
   SECTION:=libs
   CATEGORY:=Libraries
+  DEPENDS:=@LINUX_2_6
   TITLE+= (library)
   DESCRIPTION+=\\\
 	\\\
