@@ -1,0 +1,15 @@
+--- dnsmasq-2.35/src/cache.c.orig	2007-02-12 14:35:58.000000000 -0800
++++ dnsmasq-2.35/src/cache.c	2007-02-12 14:36:51.000000000 -0800
+@@ -720,10 +720,11 @@
+      while ((token = strtok(NULL, " \t\n\r")) && (*token != '#'))
+        {
+ 	 struct crec *cache;
++	 int fqdn = !!strchr(token, '.');
+ 	 if (canonicalise(token))
+ 	   {
+ 	     /* If set, add a version of the name with a default domain appended */
+-	     if ((opts & OPT_EXPAND) && domain_suffix && !strchr(token, '.') && 
++	     if ((opts & OPT_EXPAND) && domain_suffix && !fqdn && 
+ 		 (cache = malloc(sizeof(struct crec) + 
+ 				 strlen(token)+2+strlen(domain_suffix)-SMALLDNAME)))
+ 	       {
