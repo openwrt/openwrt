@@ -1,0 +1,11 @@
+--- linux.old/arch/mips/kernel/branch.c	2006-12-23 21:34:20.000000000 +0100
++++ linux.dev/arch/mips/kernel/branch.c	2007-01-24 18:05:34.000000000 +0100
+@@ -170,7 +170,7 @@
+ 		bit = (insn.i_format.rt >> 2);
+ 		bit += (bit != 0);
+ 		bit += 23;
+-		switch (insn.i_format.rt) {
++		switch (insn.i_format.rt & 3) {
+ 		case 0:	/* bc1f */
+ 		case 2:	/* bc1fl */
+ 			if (~fcr31 & (1 << bit))
