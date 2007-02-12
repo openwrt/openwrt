@@ -27,7 +27,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define Package/ntfs-3g
   TITLE:=NTFS-3G
-  DEPENDS:=+libfuse +fuse-utils
+  DEPENDS:=+libfuse +fuse-utils @LINUX_2_6
   SECTION:=utils
   CATEGORY:=Utilities
   DESCRIPTION:=\
