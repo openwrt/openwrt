@@ -1,0 +1,77 @@
+--- busybox.old/archival/tar.c	2007/02/03 17:28:39	17740
++++ busybox.dev/archival/tar.c	2007/02/04 21:30:35	17772
+@@ -761,7 +761,9 @@
+ 	const char *tar_filename = "-";
+ 	unsigned opt;
+ 	int verboseFlag = 0;
++#if ENABLE_FEATURE_TAR_LONG_OPTIONS && ENABLE_FEATURE_TAR_FROM
+ 	llist_t *excludes = NULL;
++#endif
+ 
+ 	/* Initialise default values */
+ 	tar_handle = init_handle();
+@@ -774,7 +776,9 @@
+ 		"tt:vv:" // count -t,-v
+ 		"?:" // bail out with usage instead of error return
+ 		"X::T::" // cumulative lists
++#if ENABLE_FEATURE_TAR_LONG_OPTIONS && ENABLE_FEATURE_TAR_FROM
+ 		"\xff::" // cumulative lists for --exclude
++#endif
+ 		USE_FEATURE_TAR_CREATE("c:") "t:x:" // at least one of these is reqd
+ 		USE_FEATURE_TAR_CREATE("c--tx:t--cx:x--ct") // mutually exclusive
+ 		SKIP_FEATURE_TAR_CREATE("t--x:x--t"); // mutually exclusive
+@@ -789,14 +793,15 @@
+ 		USE_FEATURE_TAR_FROM(    "T:X:")
+ 		USE_FEATURE_TAR_GZIP(    "z"   )
+ 		USE_FEATURE_TAR_COMPRESS("Z"   )
+-		,
+-		&base_dir, // -C dir
+-		&tar_filename, // -f filename
+-		USE_FEATURE_TAR_FROM(&(tar_handle->accept),) // T
+-		USE_FEATURE_TAR_FROM(&(tar_handle->reject),) // X
+-		USE_FEATURE_TAR_FROM(&excludes            ,) // --exclude
+-		&verboseFlag, // combined count for -t and -v
+-		&verboseFlag // combined count for -t and -v
++		, &base_dir // -C dir
++		, &tar_filename // -f filename
++		USE_FEATURE_TAR_FROM(, &(tar_handle->accept)) // T
++		USE_FEATURE_TAR_FROM(, &(tar_handle->reject)) // X
++#if ENABLE_FEATURE_TAR_LONG_OPTIONS && ENABLE_FEATURE_TAR_FROM
++		, &excludes // --exclude
++#endif
++		, &verboseFlag // combined count for -t and -v
++		, &verboseFlag // combined count for -t and -v
+ 		);
+ 
+ 	if (verboseFlag) tar_handle->action_header = header_verbose_list;
+@@ -829,17 +834,19 @@
+ 	if (opt & OPT_COMPRESS)
+ 		get_header_ptr = get_header_tar_Z;
+ 
+-	if (ENABLE_FEATURE_TAR_FROM) {
+-		tar_handle->reject = append_file_list_to_list(tar_handle->reject);
+-		/* Append excludes to reject */
+-		while (excludes) {
+-			llist_t *temp = excludes->link;
+-			excludes->link = tar_handle->reject;
+-			tar_handle->reject = excludes;
+-			excludes = temp;
+-		}
+-		tar_handle->accept = append_file_list_to_list(tar_handle->accept);
++#if ENABLE_FEATURE_TAR_FROM
++	tar_handle->reject = append_file_list_to_list(tar_handle->reject);
++#if ENABLE_FEATURE_TAR_LONG_OPTIONS
++	/* Append excludes to reject */
++	while (excludes) {
++		llist_t *next = excludes->link;
++		excludes->link = tar_handle->reject;
++		tar_handle->reject = excludes;
++		excludes = next;
+ 	}
++#endif
++	tar_handle->accept = append_file_list_to_list(tar_handle->accept);
++#endif
+ 
+ 	/* Check if we are reading from stdin */
+ 	if (argv[optind] && *argv[optind] == '-') {
+
