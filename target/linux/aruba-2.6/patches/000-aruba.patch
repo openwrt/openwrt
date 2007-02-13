@@ -1068,25 +1068,6 @@ diff -Nur linux-2.6.17/arch/mips/Makefile linux-2.6.17-owrt/arch/mips/Makefile
  # Acer PICA 61, Mips Magnum 4000 and Olivetti M700.
  #
  core-$(CONFIG_MACH_JAZZ)	+= arch/mips/jazz/
-diff -Nur linux-2.6.17/arch/mips/mm/tlbex.c linux-2.6.17-owrt/arch/mips/mm/tlbex.c
---- linux-2.6.17/arch/mips/mm/tlbex.c	2006-06-18 03:49:35.000000000 +0200
-+++ linux-2.6.17-owrt/arch/mips/mm/tlbex.c	2006-06-18 12:48:27.000000000 +0200
-@@ -876,7 +876,6 @@
- 	case CPU_R10000:
- 	case CPU_R12000:
- 	case CPU_R14000:
--	case CPU_4KC:
- 	case CPU_SB1:
- 	case CPU_SB1A:
- 	case CPU_4KSC:
-@@ -904,6 +903,7 @@
- 		tlbw(p);
- 		break;
- 
-+	case CPU_4KC:
- 	case CPU_4KEC:
- 	case CPU_24K:
- 	case CPU_34K:
 diff -Nur linux-2.6.17/drivers/net/Kconfig linux-2.6.17-owrt/drivers/net/Kconfig
 --- linux-2.6.17/drivers/net/Kconfig	2006-06-18 03:49:35.000000000 +0200
 +++ linux-2.6.17-owrt/drivers/net/Kconfig	2006-06-18 12:44:28.000000000 +0200
