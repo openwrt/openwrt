@@ -149,7 +149,7 @@ define KernelPackage/pcmcia-core/2.6
 	$(MODULES_DIR)/kernel/drivers/pcmcia/pcmcia.$(LINUX_KMOD_SUFFIX) \
 	$(MODULES_DIR)/kernel/drivers/pcmcia/yenta_socket.$(LINUX_KMOD_SUFFIX) \
 	$(MODULES_DIR)/kernel/drivers/pcmcia/rsrc_nonstatic.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,40,pcmcia_core pcmcia yenta_socket rsrc_nonstatic)
+  AUTOLOAD:=$(call AutoLoad,40,pcmcia_core pcmcia rsrc_nonstatic yenta_socket)
 endef
 $(eval $(call KernelPackage,pcmcia-core))
 
