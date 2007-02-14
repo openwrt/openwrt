@@ -1,0 +1,17 @@
+--- linux-2.6.19.2/include/linux/stddef.h.old	2007-02-14 03:34:54.861805424 +0100
++++ linux-2.6.19.2/include/linux/stddef.h	2007-02-14 03:35:06.331061832 +0100
+@@ -16,6 +16,7 @@
+ 	false	= 0,
+ 	true	= 1
+ };
++#endif /* __KERNEL__ */
+ 
+ #undef offsetof
+ #ifdef __compiler_offsetof
+@@ -23,6 +24,5 @@
+ #else
+ #define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
+ #endif
+-#endif /* __KERNEL__ */
+ 
+ #endif
