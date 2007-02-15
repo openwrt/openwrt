@@ -28,12 +28,6 @@
 #include <asm/io.h>
 #include "ar531x.h"
 
-#define AR531X_IRQ_MISC_INTRS   MIPS_CPU_IRQ_BASE+2 /* C0_CAUSE: 0x0400 */
-#define AR531X_IRQ_WLAN0_INTRS  MIPS_CPU_IRQ_BASE+3 /* C0_CAUSE: 0x0800 */
-#define AR531X_IRQ_ENET0_INTRS  MIPS_CPU_IRQ_BASE+4 /* C0_CAUSE: 0x1000 */
-#define AR531X_IRQ_LCBUS_PCI    MIPS_CPU_IRQ_BASE+5 /* C0_CAUSE: 0x2000 */
-#define AR531X_IRQ_WLAN0_POLL   MIPS_CPU_IRQ_BASE+6 /* C0_CAUSE: 0x4000 */
-
 static struct resource ar5315_eth_res[] = {
 	{
 		.name = "eth_membase",
@@ -44,8 +38,8 @@ static struct resource ar5315_eth_res[] = {
 	{
 		.name = "eth_irq",
 		.flags = IORESOURCE_IRQ,
-		.start = AR531X_IRQ_ENET0_INTRS,
-		.end = AR531X_IRQ_ENET0_INTRS,
+		.start = AR5315_IRQ_ENET0_INTRS,
+		.end = AR5315_IRQ_ENET0_INTRS,
 	},
 };
 
@@ -218,9 +212,9 @@ asmlinkage void ar5315_irq_dispatch(void)
 	int pending = read_c0_status() & read_c0_cause();
 
 	if (pending & CAUSEF_IP3)
-		do_IRQ(AR531X_IRQ_WLAN0_INTRS);
+		do_IRQ(AR5315_IRQ_WLAN0_INTRS);
 	else if (pending & CAUSEF_IP4)
-		do_IRQ(AR531X_IRQ_ENET0_INTRS);
+		do_IRQ(AR5315_IRQ_ENET0_INTRS);
 	else if (pending & CAUSEF_IP2) {
 		unsigned int ar531x_misc_intrs = sysRegRead(AR5315_ISR) & sysRegRead(AR5315_IMR);
 
@@ -504,7 +498,7 @@ void ar5315_misc_intr_init(int irq_base)
 		irq_desc[i].chip = &ar5315_misc_intr_controller;
 	}
 	setup_irq(AR531X_MISC_IRQ_AHB_PROC, &ar5315_ahb_proc_interrupt);
-	setup_irq(AR531X_IRQ_MISC_INTRS, &cascade);
+	setup_irq(AR5315_IRQ_MISC_INTRS, &cascade);
 }
 
 void __init ar5315_plat_setup(void)

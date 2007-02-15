@@ -12,6 +12,16 @@
 #ifndef AR5315_H
 #define AR5315_H
 
+/* 
+ * IRQs
+ */
+#define AR5315_IRQ_MISC_INTRS   MIPS_CPU_IRQ_BASE+2 /* C0_CAUSE: 0x0400 */
+#define AR5315_IRQ_WLAN0_INTRS  MIPS_CPU_IRQ_BASE+3 /* C0_CAUSE: 0x0800 */
+#define AR5315_IRQ_ENET0_INTRS  MIPS_CPU_IRQ_BASE+4 /* C0_CAUSE: 0x1000 */
+#define AR5315_IRQ_LCBUS_PCI    MIPS_CPU_IRQ_BASE+5 /* C0_CAUSE: 0x2000 */
+#define AR5315_IRQ_WLAN0_POLL   MIPS_CPU_IRQ_BASE+6 /* C0_CAUSE: 0x4000 */
+
+
 /*
  * Address map
  */
@@ -80,23 +90,23 @@
  */
 #define AR5315_ENDIAN_CTL       (AR5315_DSLBASE + 0x000c)
 
-#define CONFIG_AHB                  0x00000001      /* EC - AHB bridge endianess */
-#define CONFIG_WLAN                 0x00000002      /* WLAN byteswap */
-#define CONFIG_MPEGTS_RSVD          0x00000004      /* MPEG-TS byteswap */
-#define CONFIG_PCI                  0x00000008      /* PCI byteswap */
-#define CONFIG_MEMCTL               0x00000010      /* Memory controller endianess */
-#define CONFIG_LOCAL                0x00000020      /* Local bus byteswap */
-#define CONFIG_ETHERNET             0x00000040      /* Ethernet byteswap */
+#define AR5315_CONFIG_AHB                  0x00000001      /* EC - AHB bridge endianess */
+#define AR5315_CONFIG_WLAN                 0x00000002      /* WLAN byteswap */
+#define AR5315_CONFIG_MPEGTS_RSVD          0x00000004      /* MPEG-TS byteswap */
+#define AR5315_CONFIG_PCI                  0x00000008      /* PCI byteswap */
+#define AR5315_CONFIG_MEMCTL               0x00000010      /* Memory controller endianess */
+#define AR5315_CONFIG_LOCAL                0x00000020      /* Local bus byteswap */
+#define AR5315_CONFIG_ETHERNET             0x00000040      /* Ethernet byteswap */
 
-#define CONFIG_MERGE                0x00000200      /* CPU write buffer merge */
-#define CONFIG_CPU                  0x00000400      /* CPU big endian */
-#define CONFIG_PCIAHB               0x00000800
-#define CONFIG_PCIAHB_BRIDGE        0x00001000
-#define CONFIG_SPI                  0x00008000      /* SPI byteswap */
-#define CONFIG_CPU_DRAM             0x00010000
-#define CONFIG_CPU_PCI              0x00020000
-#define CONFIG_CPU_MMR              0x00040000
-#define CONFIG_BIG                  0x00000400      
+#define AR5315_CONFIG_MERGE                0x00000200      /* CPU write buffer merge */
+#define AR5315_CONFIG_CPU                  0x00000400      /* CPU big endian */
+#define AR5315_CONFIG_PCIAHB               0x00000800
+#define AR5315_CONFIG_PCIAHB_BRIDGE        0x00001000
+#define AR5315_CONFIG_SPI                  0x00008000      /* SPI byteswap */
+#define AR5315_CONFIG_CPU_DRAM             0x00010000
+#define AR5315_CONFIG_CPU_PCI              0x00020000
+#define AR5315_CONFIG_CPU_MMR              0x00040000
+#define AR5315_CONFIG_BIG                  0x00000400      
 
 
 /*

@@ -13,6 +13,17 @@
 
 #include <asm/addrspace.h>
 
+/*
+ * IRQs
+ */
+
+#define AR5312_IRQ_WLAN0_INTRS  MIPS_CPU_IRQ_BASE+2 /* C0_CAUSE: 0x0400 */
+#define AR5312_IRQ_ENET0_INTRS  MIPS_CPU_IRQ_BASE+3 /* C0_CAUSE: 0x0800 */
+#define AR5312_IRQ_ENET1_INTRS  MIPS_CPU_IRQ_BASE+4 /* C0_CAUSE: 0x1000 */
+#define AR5312_IRQ_WLAN1_INTRS  MIPS_CPU_IRQ_BASE+5 /* C0_CAUSE: 0x2000 */
+#define AR5312_IRQ_MISC_INTRS   MIPS_CPU_IRQ_BASE+6 /* C0_CAUSE: 0x4000 */
+
+
 /* Address Map */
 #define AR531X_WLAN0            0x18000000
 #define AR531X_WLAN1            0x18500000

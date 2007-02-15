@@ -30,12 +30,6 @@
 #include "ar531x.h"
 
 
-#define AR531X_IRQ_WLAN0_INTRS  MIPS_CPU_IRQ_BASE+2 /* C0_CAUSE: 0x0400 */
-#define AR531X_IRQ_ENET0_INTRS  MIPS_CPU_IRQ_BASE+3 /* C0_CAUSE: 0x0800 */
-#define AR531X_IRQ_ENET1_INTRS  MIPS_CPU_IRQ_BASE+4 /* C0_CAUSE: 0x1000 */
-#define AR531X_IRQ_WLAN1_INTRS  MIPS_CPU_IRQ_BASE+5 /* C0_CAUSE: 0x2000 */
-#define AR531X_IRQ_MISC_INTRS   MIPS_CPU_IRQ_BASE+6 /* C0_CAUSE: 0x4000 */
-
 
 static struct platform_device *ar5312_devs[5];
 
@@ -49,8 +43,8 @@ static struct resource ar5312_eth0_res[] = {
 	{
 		.name = "eth_irq",
 		.flags = IORESOURCE_IRQ,
-		.start = AR531X_IRQ_ENET0_INTRS,
-		.end = AR531X_IRQ_ENET0_INTRS,
+		.start = AR5312_IRQ_ENET0_INTRS,
+		.end = AR5312_IRQ_ENET0_INTRS,
 	},
 };
 
@@ -65,8 +59,8 @@ static struct resource ar5312_eth1_res[] = {
 	{
 		.name = "eth_irq",
 		.flags = IORESOURCE_IRQ,
-		.start = AR531X_IRQ_ENET1_INTRS,
-		.end = AR531X_IRQ_ENET1_INTRS,
+		.start = AR5312_IRQ_ENET1_INTRS,
+		.end = AR5312_IRQ_ENET1_INTRS,
 	},
 };
 
@@ -221,13 +215,13 @@ asmlinkage void ar5312_irq_dispatch(void)
 	int pending = read_c0_status() & read_c0_cause();
 
 	if (pending & CAUSEF_IP2)
-		do_IRQ(AR531X_IRQ_WLAN0_INTRS);
+		do_IRQ(AR5312_IRQ_WLAN0_INTRS);
 	else if (pending & CAUSEF_IP3)
-		do_IRQ(AR531X_IRQ_ENET0_INTRS);
+		do_IRQ(AR5312_IRQ_ENET0_INTRS);
 	else if (pending & CAUSEF_IP4)
-		do_IRQ(AR531X_IRQ_ENET1_INTRS);
+		do_IRQ(AR5312_IRQ_ENET1_INTRS);
 	else if (pending & CAUSEF_IP5)
-		do_IRQ(AR531X_IRQ_WLAN1_INTRS);
+		do_IRQ(AR5312_IRQ_WLAN1_INTRS);
 	else if (pending & CAUSEF_IP6) {
 		unsigned int ar531x_misc_intrs = sysRegRead(AR531X_ISR) & sysRegRead(AR531X_IMR);
 
@@ -448,7 +442,7 @@ void __init ar5312_misc_intr_init(int irq_base)
 		irq_desc[i].chip = &ar5312_misc_intr_controller;
 	}
 	setup_irq(AR531X_MISC_IRQ_AHB_PROC, &ar5312_ahb_proc_interrupt);
-	setup_irq(AR531X_IRQ_MISC_INTRS, &cascade);
+	setup_irq(AR5312_IRQ_MISC_INTRS, &cascade);
 }
 
 
