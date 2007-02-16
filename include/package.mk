@@ -213,6 +213,7 @@ define BuildPackage
   $(eval $(call BuildIPKGVariable,$(1),prerm))
   $(eval $(call BuildIPKGVariable,$(1),postrm))
   $$(IDIR_$(1))/CONTROL/control: $(PKG_BUILD_DIR)/.version-$(1)_$(VERSION)_$(PKGARCH)
+	@rm -f $(PACKAGE_DIR)/$(1)_*
 	mkdir -p $$(IDIR_$(1))/CONTROL
 	echo "Package: $(1)" > $$(IDIR_$(1))/CONTROL/control
 	echo "Version: $(VERSION)" >> $$(IDIR_$(1))/CONTROL/control
