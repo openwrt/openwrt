@@ -164,7 +164,7 @@
 #define AR531X_REV_MAJ_S       4
 #define AR531X_REV_MIN         0x000f
 #define AR531X_REV_MIN_S       0
-#define AR531X_REV_CHIP        (REV_MAJ|REV_MIN)
+#define AR531X_REV_CHIP        (AR531X_REV_MAJ|AR531X_REV_MIN)
 
 /* Major revision numbers, bits 7..4 of Revision ID register */
 #define AR531X_REV_MAJ_AR5312          0x4

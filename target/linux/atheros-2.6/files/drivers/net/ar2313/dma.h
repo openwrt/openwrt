@@ -127,9 +127,14 @@
 #define DMA_CONTROL_ST       AR_BIT(13) /* start transmit */
 #define DMA_CONTROL_SF       AR_BIT(21) /* store and forward */
 
+
+typedef struct {
+    volatile unsigned int	status;		// OWN, Device control and status.
+    volatile unsigned int	devcs;		// pkt Control bits + Length
+    volatile unsigned int	addr;		// Current Address.
+    volatile unsigned int	descr;		// Next descriptor in chain.
+} ar2313_descr_t;
+
+
 #endif	// __ARUBA_DMA_H__
-
-
-
-
 

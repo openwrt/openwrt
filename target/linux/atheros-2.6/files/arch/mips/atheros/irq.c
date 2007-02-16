@@ -67,14 +67,8 @@ static struct irqaction spurious_misc  = {
 
 asmlinkage void plat_irq_dispatch(void)
 {
-#ifdef CONFIG_ATHEROS_AR5312
-	if (mips_machtype == MACH_ATHEROS_AR5312)
-		ar5312_irq_dispatch();
-#endif
-#ifdef CONFIG_ATHEROS_AR5315
-	if (mips_machtype == MACH_ATHEROS_AR5315)
-		ar5315_irq_dispatch();
-#endif
+	DO_AR5312(ar5312_irq_dispatch();)
+	DO_AR5315(ar5315_irq_dispatch();)
 }
 
 void __init arch_init_irq(void)
@@ -83,14 +77,8 @@ void __init arch_init_irq(void)
 	mips_cpu_irq_init(0);
 
 	/* Initialize interrupt controllers */
-#ifdef CONFIG_ATHEROS_AR5312
-	if (mips_machtype == MACH_ATHEROS_AR5312)
-		ar5312_misc_intr_init(AR531X_MISC_IRQ_BASE);
-#endif
-#ifdef CONFIG_ATHEROS_AR5315
-	if (mips_machtype == MACH_ATHEROS_AR5315)
-		ar5315_misc_intr_init(AR531X_MISC_IRQ_BASE);
-#endif
+	DO_AR5312(ar5312_misc_intr_init(AR531X_MISC_IRQ_BASE);)
+	DO_AR5315(ar5315_misc_intr_init(AR531X_MISC_IRQ_BASE);)
 
 	/* Default "spurious interrupt" handlers */
 	setup_irq(AR531X_IRQ_NONE, &spurious_irq);

@@ -28,15 +28,16 @@
 #include <asm/io.h>
 #include "ar531x.h"
 
+static int is_5315 = 0;
 static struct resource ar5315_eth_res[] = {
 	{
-		.name = "eth_membase",
+		.name = "eth0_membase",
 		.flags = IORESOURCE_MEM,
 		.start = AR5315_ENET0,
 		.end = AR5315_ENET0 + 0x2000,
 	},
 	{
-		.name = "eth_irq",
+		.name = "eth0_irq",
 		.flags = IORESOURCE_IRQ,
 		.start = AR5315_IRQ_ENET0_INTRS,
 		.end = AR5315_IRQ_ENET0_INTRS,
@@ -49,6 +50,7 @@ static struct ar531x_eth ar5315_eth_data = {
 	.reset_base = AR5315_RESET,
 	.reset_mac = AR5315_RESET_ENET0,
 	.reset_phy = AR5315_RESET_EPHY0,
+	.phy_base = AR5315_ENET0
 };
 
 static struct platform_device ar5315_eth = {
@@ -175,20 +177,40 @@ static char __init *ar5315_flash_limit(void)
 int __init ar5315_init_devices(void)
 {
 	struct ar531x_config *config;
+	struct ar531x_boarddata *bcfg;
+	u32 devid;
 	int dev = 0;
 
-	if (mips_machtype != MACH_ATHEROS_AR5315) 
+	if (!is_5315)
 		return 0;
 
+	/* Find board configuration */
 	ar531x_find_config(ar5315_flash_limit());
+	bcfg = (struct ar531x_boarddata *) board_config;
+
+#if 0
+	/* Detect the hardware based on the device ID */
+	devid = sysRegRead(AR5315_SREV) & AR5315_REV_MAJ >> AR5315_REV_MAJ_S;
+	switch(devid) {
+		case 0x9:
+			mips_machtype = MACH_ATHEROS_AR2317;
+			break;
+		/* FIXME: how can we detect AR2316? */
+		case 0x8:
+		default:
+			mips_machtype = MACH_ATHEROS_AR2315;
+			break;
+	}
+#endif
 
 	config = (struct ar531x_config *) kzalloc(sizeof(struct ar531x_config), GFP_KERNEL);
 	config->board = board_config;
 	config->radio = radio_config;
 	config->unit = 0;
-	config->tag = (u_int16_t) (sysRegRead(AR5315_SREV) & REV_CHIP);
+	config->tag = (u_int16_t) (sysRegRead(AR5315_SREV) & AR5315_REV_CHIP);
 	
 	ar5315_eth_data.board_config = board_config;
+	ar5315_eth_data.macaddr = bcfg->enet0Mac;
 	ar5315_wmac.dev.platform_data = config;
 	
 	ar5315_devs[dev++] = &ar5315_eth;
@@ -379,8 +401,6 @@ ar5315_misc_intr_enable(unsigned int irq)
 	}
 	sysRegWrite(AR5315_IMR, imr);
 	imr=sysRegRead(AR5315_IMR); /* flush write buffer */
-	//printk("enable Interrupt irq 0x%x imr 0x%x \n",irq,imr);
-
 }
 
 /* Disable the specified AR531X_MISC_IRQ interrupt */
@@ -499,6 +519,23 @@ void ar5315_misc_intr_init(int irq_base)
 	}
 	setup_irq(AR531X_MISC_IRQ_AHB_PROC, &ar5315_ahb_proc_interrupt);
 	setup_irq(AR5315_IRQ_MISC_INTRS, &cascade);
+}
+
+void __init ar5315_prom_init(void)
+{
+	u32 memsize, memcfg;
+
+	is_5315 = 1;
+	memcfg = sysRegRead(AR5315_MEM_CFG);
+	memsize   = 1 + ((memcfg & SDRAM_DATA_WIDTH_M) >> SDRAM_DATA_WIDTH_S);
+	memsize <<= 1 + ((memcfg & SDRAM_COL_WIDTH_M) >> SDRAM_COL_WIDTH_S);
+	memsize <<= 1 + ((memcfg & SDRAM_ROW_WIDTH_M) >> SDRAM_ROW_WIDTH_S);
+	memsize <<= 3;
+	add_memory_region(0, memsize, BOOT_MEM_RAM);
+
+	/* Initialize it to AR2315 for now. Real detection will be done
+	 * in ar5315_init_devices() */
+	mips_machtype = MACH_ATHEROS_AR2315;
 }
 
 void __init ar5315_plat_setup(void)

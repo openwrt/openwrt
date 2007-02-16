@@ -29,56 +29,55 @@
 #include <asm/io.h>
 #include "ar531x.h"
 
+#define NO_PHY 0x1f
 
-
+static int is_5312 = 0;
 static struct platform_device *ar5312_devs[5];
 
 static struct resource ar5312_eth0_res[] = {
 	{
-		.name = "eth_membase",
+		.name = "eth0_membase",
 		.flags = IORESOURCE_MEM,
 		.start = KSEG1ADDR(AR531X_ENET0),
 		.end = KSEG1ADDR(AR531X_ENET0 + 0x2000),
 	},
 	{
-		.name = "eth_irq",
+		.name = "eth0_irq",
 		.flags = IORESOURCE_IRQ,
 		.start = AR5312_IRQ_ENET0_INTRS,
 		.end = AR5312_IRQ_ENET0_INTRS,
 	},
 };
-
+static struct ar531x_eth ar5312_eth0_data = {
+	.phy = NO_PHY,
+	.mac = 0,
+	.reset_base = AR531X_RESET,
+	.reset_mac = AR531X_RESET_ENET0,
+	.reset_phy = AR531X_RESET_EPHY0,
+	.phy_base = KSEG1ADDR(AR531X_ENET0),
+};
 
 static struct resource ar5312_eth1_res[] = {
 	{
-		.name = "eth_membase",
+		.name = "eth1_membase",
 		.flags = IORESOURCE_MEM,
 		.start = KSEG1ADDR(AR531X_ENET1),
 		.end = KSEG1ADDR(AR531X_ENET1 + 0x2000),
 	},
 	{
-		.name = "eth_irq",
+		.name = "eth1_irq",
 		.flags = IORESOURCE_IRQ,
 		.start = AR5312_IRQ_ENET1_INTRS,
 		.end = AR5312_IRQ_ENET1_INTRS,
 	},
 };
-
-
-static struct ar531x_eth ar5312_eth0_data = {
-	.phy = 0x1f,
-	.mac = 0,
-	.reset_base = AR531X_RESET,
-	.reset_mac = AR531X_RESET_ENET0,
-	.reset_phy = AR531X_RESET_EPHY0,
-};
-
 static struct ar531x_eth ar5312_eth1_data = {
-	.phy = 0,
+	.phy = NO_PHY,
 	.mac = 1,
 	.reset_base = AR531X_RESET,
 	.reset_mac = AR531X_RESET_ENET1,
 	.reset_phy = AR531X_RESET_EPHY1,
+	.phy_base = KSEG1ADDR(AR531X_ENET1),
 };
 
 static struct platform_device ar5312_eth[] = {
@@ -98,6 +97,42 @@ static struct platform_device ar5312_eth[] = {
 	},
 };
 
+
+/*
+ * AR2312/3 ethernet uses the PHY of ENET0, but the MAC
+ * of ENET1. Atheros calls it 'twisted' for a reason :)
+ */
+static struct resource ar231x_eth0_res[] = {
+	{
+		.name = "eth0_membase",
+		.flags = IORESOURCE_MEM,
+		.start = KSEG1ADDR(AR531X_ENET1),
+		.end = KSEG1ADDR(AR531X_ENET1 + 0x2000),
+	},
+	{
+		.name = "eth0_irq",
+		.flags = IORESOURCE_IRQ,
+		.start = AR5312_IRQ_ENET1_INTRS,
+		.end = AR5312_IRQ_ENET1_INTRS,
+	},
+};
+static struct ar531x_eth ar231x_eth0_data = {
+	.phy = 1,
+	.mac = 1,
+	.reset_base = AR531X_RESET,
+	.reset_mac = AR531X_RESET_ENET1,
+	.reset_phy = AR531X_RESET_EPHY1,
+	.phy_base = KSEG1ADDR(AR531X_ENET0),
+};
+static struct platform_device ar231x_eth0 = {
+	.id = 0,
+	.name = "ar531x-eth",
+	.dev.platform_data = &ar231x_eth0_data,
+	.resource = ar231x_eth0_res,
+	.num_resources = ARRAY_SIZE(ar231x_eth0_res)
+};
+
+
 static struct platform_device ar5312_wmac[] = {
 	{
 		.id = 0,
@@ -108,7 +143,6 @@ static struct platform_device ar5312_wmac[] = {
 		.name = "ar531x-wmac",
 	},
 };
-
 
 static struct physmap_flash_data ar5312_flash_data = {
 	.width	  = 2,
@@ -139,7 +173,10 @@ static struct platform_device ar5312_physmap_flash = {
 static char __init *ar5312_flash_limit(void)
 {
 	u32 ctl;
-	/* Configure flash bank 0 */
+	/* 
+	 * Configure flash bank 0.
+	 * Assume 8M window size. Flash will be aliased if it's smaller
+	 */
 	ctl = FLASHCTL_E |
 		FLASHCTL_AC_8M |
 		FLASHCTL_RBLE |
@@ -157,7 +194,7 @@ static char __init *ar5312_flash_limit(void)
 	sysRegWrite(AR531X_FLASHCTL2,
 		sysRegRead(AR531X_FLASHCTL2) & ~(FLASHCTL_E | FLASHCTL_AC));
 
-	return (char *) KSEG1ADDR(AR531X_FLASH + 0x400000);
+	return (char *) KSEG1ADDR(AR531X_FLASH + 0x800000);
 }
 
 static struct ar531x_config __init *init_wmac(int unit)
@@ -175,27 +212,80 @@ static struct ar531x_config __init *init_wmac(int unit)
 		
 int __init ar5312_init_devices(void)
 {
-	char *radio;
+	struct ar531x_boarddata *bcfg;
+	char *radio, *c;
 	int dev = 0;
 
-	if (mips_machtype != MACH_ATHEROS_AR5312) 
+	if (!is_5312)
 		return 0;
 
+	/* Locate board/radio config data */
 	ar531x_find_config(ar5312_flash_limit());
+	bcfg = (struct ar531x_boarddata *) board_config;
+
+	
+	/*
+	 * Chip IDs and hardware detection for some Atheros
+	 * models are really broken!
+	 * 
+	 * Atheros uses a disabled WMAC0 and Silicon ID of AR5312
+	 * as indication for AR2312, which is otherwise 
+	 * indistinguishable from the real AR5312.
+	 */
+	if (radio_config) {
+		radio = radio_config + AR531X_RADIO_MASK_OFF;
+		if ((*((u32 *) radio) & AR531X_RADIO0_MASK) == 0)
+			bcfg->config |= BD_ISCASPER;
+	} else
+		radio = NULL;
+
+	/* AR2313 has CPU minor rev. 10 */
+	if ((current_cpu_data.processor_id & 0xff) == 0x0a)
+		mips_machtype = MACH_ATHEROS_AR2313;
+	
+	/* AR2312 shares the same Silicon ID as AR5312 */
+	else if (bcfg->config & BD_ISCASPER)
+		mips_machtype = MACH_ATHEROS_AR2312;
+	
+	/* Everything else is probably AR5312 or compatible */
+	else
+		mips_machtype = MACH_ATHEROS_AR5312;
+
 	ar5312_eth0_data.board_config = board_config;
 	ar5312_eth1_data.board_config = board_config;
 	ar5312_devs[dev++] = &ar5312_physmap_flash;
-	ar5312_devs[dev++] = &ar5312_eth[0];
-	ar5312_devs[dev++] = &ar5312_eth[1];
 
-	radio = radio_config + AR531X_RADIO_MASK_OFF;
-	if (*((u32 *) radio) & AR531X_RADIO0_MASK) {
-		ar5312_wmac[0].dev.platform_data = init_wmac(0);
-		ar5312_devs[dev++] = &ar5312_wmac[0];
+	ar5312_eth0_data.macaddr = bcfg->enet0Mac;
+	ar5312_eth1_data.macaddr = bcfg->enet1Mac;
+	if (memcmp(bcfg->enet0Mac, bcfg->enet1Mac, 6) == 0) {
+		/* ENET0 and ENET1 have the same mac.
+		 * Increment the one from ENET1 */
+		c = bcfg->enet1Mac + 5;
+		while ((c >= (char *) bcfg->enet1Mac) && !(++(*c)))
+			c--;
 	}
-	if (*((u32 *) radio) & AR531X_RADIO1_MASK) {
-		ar5312_wmac[1].dev.platform_data = init_wmac(1);
-		ar5312_devs[dev++] = &ar5312_wmac[1];
+
+	switch(mips_machtype) {
+		case MACH_ATHEROS_AR5312:
+			ar5312_devs[dev++] = &ar5312_eth[0];
+			ar5312_devs[dev++] = &ar5312_eth[1];
+			break;
+		case MACH_ATHEROS_AR2312:
+		case MACH_ATHEROS_AR2313:
+			ar5312_devs[dev++] = &ar231x_eth0;
+			ar5312_flash_data.width = 1;
+			break;
+	}
+
+	if (radio) {
+		if (*((u32 *) radio) & AR531X_RADIO0_MASK) {
+			ar5312_wmac[0].dev.platform_data = init_wmac(0);
+			ar5312_devs[dev++] = &ar5312_wmac[0];
+		}
+		if (*((u32 *) radio) & AR531X_RADIO1_MASK) {
+			ar5312_wmac[1].dev.platform_data = init_wmac(1);
+			ar5312_devs[dev++] = &ar5312_wmac[1];
+		}
 	}
 
 	return platform_add_devices(ar5312_devs, dev);
@@ -445,6 +535,25 @@ void __init ar5312_misc_intr_init(int irq_base)
 	setup_irq(AR5312_IRQ_MISC_INTRS, &cascade);
 }
 
+void __init ar5312_prom_init(void)
+{
+	u32 memsize, memcfg, bank0AC, bank1AC;
+
+	is_5312 = 1;
+
+	/* Detect memory size */
+	memcfg = sysRegRead(AR531X_MEM_CFG1);
+	bank0AC = (memcfg & MEM_CFG1_AC0) >> MEM_CFG1_AC0_S;
+	bank1AC = (memcfg & MEM_CFG1_AC1) >> MEM_CFG1_AC1_S;
+	memsize = (bank0AC ? (1 << (bank0AC+1)) : 0)
+	        + (bank1AC ? (1 << (bank1AC+1)) : 0);
+	memsize <<= 20;
+	add_memory_region(0, memsize, BOOT_MEM_RAM);
+	
+	/* Initialize it to AR5312 for now. Real detection will be done
+	 * in ar5312_init_devices() */
+	mips_machtype = MACH_ATHEROS_AR5312;
+}
 
 void __init ar5312_plat_setup(void)
 {

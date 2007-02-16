@@ -121,11 +121,11 @@
  */
 #define AR5315_SREV             (AR5315_DSLBASE + 0x0014)
 
-#define REV_MAJ                     0x00f0
-#define REV_MAJ_S                   4
-#define REV_MIN                     0x000f
-#define REV_MIN_S                   0
-#define REV_CHIP                    (REV_MAJ|REV_MIN)
+#define AR5315_REV_MAJ                     0x00f0
+#define AR5315_REV_MAJ_S                   4
+#define AR5315_REV_MIN                     0x000f
+#define AR5315_REV_MIN_S                   0
+#define AR5315_REV_CHIP                    (AR5315_REV_MAJ|AR5315_REV_MIN)
 
 /*
  * Interface Enable
@@ -359,21 +359,21 @@
  
 #define AR5315_PCICLK           (AR5315_DSLBASE + 0x00a4)
 
-#define PCICLK_INPUT_M              0x3
-#define PCICLK_INPUT_S              0
+#define AR5315_PCICLK_INPUT_M              0x3
+#define AR5315_PCICLK_INPUT_S              0
                          
-#define PCICLK_PLLC_CLKM            0
-#define PCICLK_PLLC_CLKM1           1
-#define PCICLK_PLLC_CLKC            2
-#define PCICLK_REF_CLK              3 
+#define AR5315_PCICLK_PLLC_CLKM            0
+#define AR5315_PCICLK_PLLC_CLKM1           1
+#define AR5315_PCICLK_PLLC_CLKC            2
+#define AR5315_PCICLK_REF_CLK              3 
 
-#define PCICLK_DIV_M                0xc
-#define PCICLK_DIV_S                2
+#define AR5315_PCICLK_DIV_M                0xc
+#define AR5315_PCICLK_DIV_S                2
                          
-#define PCICLK_IN_FREQ              0
-#define PCICLK_IN_FREQ_DIV_6        1
-#define PCICLK_IN_FREQ_DIV_8        2
-#define PCICLK_IN_FREQ_DIV_10       3 
+#define AR5315_PCICLK_IN_FREQ              0
+#define AR5315_PCICLK_IN_FREQ_DIV_6        1
+#define AR5315_PCICLK_IN_FREQ_DIV_8        2
+#define AR5315_PCICLK_IN_FREQ_DIV_10       3 
 
 /*
  * Observation Control Register

@@ -20,7 +20,9 @@ struct ar531x_eth {
 	u32 reset_base;
 	u32 reset_mac;
 	u32 reset_phy;
+	u32 phy_base;
 	char *board_config;
+	char *macaddr;
 };
 
 #endif /* __AR531X_PLATFORM_H */
