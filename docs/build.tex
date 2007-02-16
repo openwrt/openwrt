@@ -143,7 +143,15 @@ Similar to the linux kernel config, almost every option has three choices,
 \end{itemize}
 
 After you've finished with the menu configuration, exit and when prompted, save your
-configuration changes. To begin compiling the firmware, type "\texttt{make}". By default
+configuration changes.
+
+If you want, you can also modify the kernel config for the selected target system.
+simply run "\texttt{make kernel\_menuconfig}" and the build system will unpack the kernel sources
+(if necessary), run menuconfig inside of the kernel tree, and then copy the kernel config
+to \texttt{target/linux/\textit{<platform>}/config} so that it is preserved over
+"\texttt{make clean}" calls.
+
+To begin compiling the firmware, type "\texttt{make}". By default
 OpenWrt will only display a high level overview of the compile process and not each individual
 command.
 
