@@ -155,23 +155,23 @@ const char *get_system_type(void)
 	switch (mips_machtype) {
 #ifdef CONFIG_ATHEROS_AR5312
 	case MACH_ATHEROS_AR5312:
-		return "Atheros AR5312\n";
+		return "Atheros AR5312";
 
 	case MACH_ATHEROS_AR2312:
-		return "Atheros AR2312\n";
+		return "Atheros AR2312";
 		
 	case MACH_ATHEROS_AR2313:
-		return "Atheros AR2313\n";
+		return "Atheros AR2313";
 #endif
 #ifdef CONFIG_ATHEROS_AR5315
 	case MACH_ATHEROS_AR2315:
-		return "Atheros AR2315\n";
+		return "Atheros AR2315";
 	case MACH_ATHEROS_AR2316:
-		return "Atheros AR2316\n";
+		return "Atheros AR2316";
 	case MACH_ATHEROS_AR2317:
-		return "Atheros AR2317\n";
+		return "Atheros AR2317";
 	case MACH_ATHEROS_AR2318:
-		return "Atheros AR2318\n";
+		return "Atheros AR2318";
 #endif
 	}
 	return "Atheros (unknown)";
