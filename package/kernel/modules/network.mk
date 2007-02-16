@@ -363,6 +363,7 @@ define KernelPackage/e1000
   KCONFIG:=$(CONFIG_E1000)
   DEPENDS:=@LINUX_2_6_X86
   SUBMENU:=$(NDMENU)
+  AUTOLOAD:=$(call AutoLoad,50,e1000)
 endef
 $(eval $(call KernelPackage,e1000))
 
