@@ -1,9 +1,33 @@
 #ifndef __AR531X_H
 #define __AR531X_H
 
+#include <asm/cpu-info.h>
 #include <ar531x_platform.h>
 #include "ar5312.h"
 #include "ar5315.h"
+
+/*                                                                             
+ * Atheros CPUs before the AR2315 are using MIPS 4Kc core, later designs are
+ * using MIPS 4KEc R2 core. This makes it easy to determine the board at runtime.
+ */
+#ifdef CONFIG_ATHEROS_AR5312
+#define DO_AR5312(...) \
+	if (current_cpu_data.cputype != CPU_4KEC) { \
+		__VA_ARGS__ \
+	}
+#else
+#define DO_AR5312(...)
+#endif
+#ifdef CONFIG_ATHEROS_AR5315
+#define DO_AR5315(...) \
+	if (current_cpu_data.cputype == CPU_4KEC) { \
+		__VA_ARGS__ \
+	}
+#else
+#define DO_AR5315(...)
+#endif
+
+
 
 #define MIPS_CPU_IRQ_BASE		0x00
 #define AR531X_HIGH_PRIO                0x10
@@ -89,18 +113,20 @@ struct ar531x_boarddata {
     u8  wlan1Mac[6];                 /* (ar5212) */
 };
 
+#define BOARD_CONFIG_BUFSZ		0x1000
 
-extern char *board_config;
-extern char *radio_config;
+extern char *board_config, *radio_config;
 extern void serial_setup(unsigned long mapbase, unsigned int uartclk);
 extern int ar531x_find_config(char *flash_limit);
 
+extern void ar5312_prom_init(void);
 extern void ar5312_misc_intr_init(int irq_base);
-extern void ar5312_irq_dispatch(void);
 extern void ar5312_plat_setup(void);
+extern asmlinkage void ar5312_irq_dispatch(void);
 
+extern void ar5315_prom_init(void);
 extern void ar5315_misc_intr_init(int irq_base);
-extern asmlinkage void ar5315_irq_dispatch(void);
 extern void ar5315_plat_setup(void);
+extern asmlinkage void ar5315_irq_dispatch(void);
 
 #endif

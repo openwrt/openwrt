@@ -106,7 +106,7 @@ int __init ar531x_find_config(char *flash_limit)
 	if (!bcfg)
 		return -ENODEV;
 
-	board_config = kmalloc(0x1000, GFP_KERNEL);
+	board_config = kzalloc(BOARD_CONFIG_BUFSZ, GFP_KERNEL);
 	memcpy(board_config, bcfg, 0x100);
 
 	/* Radio config starts 0x100 bytes after board config, regardless
@@ -116,9 +116,9 @@ int __init ar531x_find_config(char *flash_limit)
 	if (!rcfg)
 		return -ENODEV;
 
-	printk("Radio config found at offset 0x%x\n", rcfg - bcfg);
 	radio_config = board_config + 0x100 + ((rcfg - bcfg) & 0xfff);
-	rcfg_size = 0x1000 - ((rcfg - bcfg) & 0xfff);
+	printk("Radio config found at offset 0x%x(0x%x)\n", rcfg - bcfg, radio_config - board_config);
+	rcfg_size = BOARD_CONFIG_BUFSZ - ((rcfg - bcfg) & (BOARD_CONFIG_BUFSZ - 1));
 	memcpy(radio_config, rcfg, rcfg_size);
 	
 	return 0;
@@ -143,18 +143,8 @@ void __init serial_setup(unsigned long mapbase, unsigned int uartclk)
 
 void __init plat_mem_setup(void)
 {
-	switch(mips_machtype) {
-#ifdef CONFIG_ATHEROS_AR5312
-	case MACH_ATHEROS_AR5312:
-		ar5312_plat_setup();
-		break;
-#endif
-#ifdef CONFIG_ATHEROS_AR5315
-	case MACH_ATHEROS_AR5315:
-		ar5315_plat_setup();
-		break;
-#endif
-	}
+	DO_AR5312(ar5312_plat_setup();)
+	DO_AR5315(ar5315_plat_setup();)
 
 	/* Disable data watchpoints */
 	write_c0_watchlo0(0);
@@ -166,10 +156,22 @@ const char *get_system_type(void)
 #ifdef CONFIG_ATHEROS_AR5312
 	case MACH_ATHEROS_AR5312:
 		return "Atheros AR5312\n";
+
+	case MACH_ATHEROS_AR2312:
+		return "Atheros AR2312\n";
+		
+	case MACH_ATHEROS_AR2313:
+		return "Atheros AR2313\n";
 #endif
 #ifdef CONFIG_ATHEROS_AR5315
-	case MACH_ATHEROS_AR5315:
-		return "Atheros AR5315\n";
+	case MACH_ATHEROS_AR2315:
+		return "Atheros AR2315\n";
+	case MACH_ATHEROS_AR2316:
+		return "Atheros AR2316\n";
+	case MACH_ATHEROS_AR2317:
+		return "Atheros AR2317\n";
+	case MACH_ATHEROS_AR2318:
+		return "Atheros AR2318\n";
 #endif
 	}
 	return "Atheros (unknown)";

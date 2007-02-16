@@ -3,55 +3,17 @@
 
 #include <linux/autoconf.h>
 #include <asm/bootinfo.h>
+#include <ar531x_platform.h>
 #include "platform.h"
-
-extern unsigned long mips_machtype;
-
-#undef ETHERNET_BASE
-#define ETHERNET_BASE ar_eth_base
-#define ETHERNET_SIZE 0x00100000
-#define ETHERNET_MACS 2
-
-#undef DMA_BASE
-#define DMA_BASE      ar_dma_base
-#define DMA_SIZE      0x00100000
-
 
 /*
  * probe link timer - 5 secs
  */
 #define LINK_TIMER    (5*HZ) 
 
-/*
- * Interrupt register base address
- */
-#define INTERRUPT_BASE    PHYS_TO_K1(ar_int_base)
-
-/*
- * Reset Register
- */
-#define AR531X_RESET    (AR531X_RESETTMR + 0x0020)
-#define RESET_SYSTEM         0x00000001      /* cold reset full system */
-#define RESET_PROC           0x00000002      /* cold reset MIPS core */
-#define RESET_WLAN0          0x00000004      /* cold reset WLAN MAC and BB */
-#define RESET_EPHY0          0x00000008      /* cold reset ENET0 phy */
-#define RESET_EPHY1          0x00000010      /* cold reset ENET1 phy */
-#define RESET_ENET0          0x00000020      /* cold reset ENET0 mac */
-#define RESET_ENET1          0x00000040      /* cold reset ENET1 mac */
-
 #define IS_DMA_TX_INT(X)   (((X) & (DMA_STATUS_TI)) != 0)
 #define IS_DMA_RX_INT(X)   (((X) & (DMA_STATUS_RI)) != 0)
 #define IS_DRIVER_OWNED(X) (((X) & (DMA_TX_OWN))    == 0)
-
-#ifndef K1_TO_PHYS
-// hack
-#define K1_TO_PHYS(x)   (((unsigned int)(x)) & 0x1FFFFFFF)        /* kseg1 to physical */
-#endif
-
-#ifndef PHYS_TO_K1
-// hack
-#define  PHYS_TO_K1(x)   (((unsigned int)(x)) | 0xA0000000)   /* physical to kseg1 */
-#endif
 
 #define AR2313_TX_TIMEOUT (HZ/4)
 
@@ -111,9 +73,11 @@ struct ar2313_private
 	int			version;
 	u32                     mb[2];
 	
+	volatile ETHERNET_STRUCT	*phy_regs;
 	volatile ETHERNET_STRUCT	*eth_regs;
 	volatile DMA			*dma_regs;
 	volatile u32		        *int_regs;
+	struct ar531x_eth *cfg;
 
 	spinlock_t lock; 	/* Serialise access to device */
 

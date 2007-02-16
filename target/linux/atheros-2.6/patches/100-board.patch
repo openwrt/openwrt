@@ -46,7 +46,7 @@ diff -urN linux.old/arch/mips/Makefile linux.dev/arch/mips/Makefile
 diff -urN linux.old/include/asm-mips/bootinfo.h linux.dev/include/asm-mips/bootinfo.h
 --- linux.old/include/asm-mips/bootinfo.h	2007-02-02 23:55:52.913446632 +0100
 +++ linux.dev/include/asm-mips/bootinfo.h	2007-02-03 17:51:02.531494032 +0100
-@@ -212,6 +212,13 @@
+@@ -212,6 +212,18 @@
  #define MACH_GROUP_NEC_EMMA2RH 25	/* NEC EMMA2RH (was 23)		*/
  #define  MACH_NEC_MARKEINS	0	/* NEC EMMA2RH Mark-eins	*/
  
@@ -54,8 +54,13 @@ diff -urN linux.old/include/asm-mips/bootinfo.h linux.dev/include/asm-mips/booti
 + * Valid machtype for group ATHEROS
 + */
 +#define MACH_GROUP_ATHEROS	26
-+#define MACH_ATHEROS_AR5312	0	/* Atheros AR5312, AR2312/3/4	*/
-+#define MACH_ATHEROS_AR5315	1	/* Atheros AR2315/6/7/8		*/
++#define MACH_ATHEROS_AR5312	0
++#define MACH_ATHEROS_AR2312	1
++#define MACH_ATHEROS_AR2313	2
++#define MACH_ATHEROS_AR2315	3
++#define MACH_ATHEROS_AR2316	4
++#define MACH_ATHEROS_AR2317	5
++#define MACH_ATHEROS_AR2318	6
 +
  #define CL_SIZE			COMMAND_LINE_SIZE
  
