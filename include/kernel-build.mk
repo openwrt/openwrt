@@ -92,7 +92,6 @@ define Kernel/Configure/2.6
 endef
 define Kernel/Configure/Default
 	@$(CP) $(LINUX_CONFIG) $(LINUX_DIR)/.config
-	$(call Kernel/Configure/$(KERNEL))
 endef
 define Kernel/Configure
 	$(call Kernel/Configure/Default)
@@ -163,6 +162,7 @@ define BuildKernel
 
   $(LINUX_DIR)/.configured: $(LINUX_DIR)/.prepared $(LINUX_CONFIG)
 	$(call Kernel/Configure)
+	$(call Kernel/Configure/$(KERNEL))
 	touch $$@
 
   $(LINUX_DIR)/.modules: $(LINUX_DIR)/.configured
@@ -226,7 +226,8 @@ $(eval $(call shexport,Target/Description))
 download: $(DL_DIR)/$(LINUX_SOURCE)
 prepare: $(LINUX_DIR)/.configured $(TMP_DIR)/.kernel.mk
 compile: $(LINUX_DIR)/.modules
-menuconfig: $(LINUX_DIR)/.configured FORCE
+menuconfig: $(LINUX_DIR)/.prepared FORCE
+	$(call Kernel/Configure)
 	$(MAKE) -C $(LINUX_DIR) $(KERNEL_MAKEOPTS) menuconfig
 	$(SCRIPT_DIR)/config.pl $(LINUX_DIR)/.config > $(PLATFORM_DIR)/config
 ifeq ($(KERNEL),2.6)
