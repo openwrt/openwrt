@@ -76,7 +76,6 @@
 #define BOARD_IDX_STATIC	0
 #define BOARD_IDX_OVERFLOW	-1
 
-#include "platform.h"
 #include "dma.h"
 #include "ar2313.h"
 
