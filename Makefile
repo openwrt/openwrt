@@ -114,7 +114,7 @@ menuconfig: scripts/config/mconf tmp/.config.in tmp/.config-target.in FORCE
 	$< Config.in
 
 kernel_menuconfig: .config FORCE
-	$(MAKE) target/linux-prepare
+	-$(MAKE) target/linux-prepare
 	$(NO_TRACE_MAKE) -C target/linux menuconfig
 
 package/%: tmp/.pkginfo tmp/.targetinfo FORCE

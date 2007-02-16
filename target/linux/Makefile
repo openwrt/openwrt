@@ -19,7 +19,7 @@ compile:
 install:
 	$(MAKE) -C $(BOARD)-$(KERNEL) install
 	
-menuconfig: prepare
+menuconfig:
 	$(MAKE) -C $(BOARD)-$(KERNEL) menuconfig
 
 clean:
