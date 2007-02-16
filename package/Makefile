@@ -48,9 +48,7 @@ all: compile
 clean: $(patsubst %,%-clean,$(package-) $(package-y) $(package-m))
 prereq: $(PREREQ_PACKAGES)
 download: $(DOWNLOAD_PACKAGES)
-compile-targets: $(COMPILE_PACKAGES)
-compile:
-	$(MAKE) compile-targets
+compile: $(COMPILE_PACKAGES)
 
 install-targets: $(INSTALL_PACKAGES)
 install:
