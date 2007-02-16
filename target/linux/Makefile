@@ -19,5 +19,8 @@ compile:
 install:
 	$(MAKE) -C $(BOARD)-$(KERNEL) install
 	
+menuconfig: prepare
+	$(MAKE) -C $(BOARD)-$(KERNEL) menuconfig
+
 clean:
 	$(MAKE) -C $(BOARD)-$(KERNEL) clean

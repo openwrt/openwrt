@@ -226,6 +226,13 @@ $(eval $(call shexport,Target/Description))
 download: $(DL_DIR)/$(LINUX_SOURCE)
 prepare: $(LINUX_DIR)/.configured $(TMP_DIR)/.kernel.mk
 compile: $(LINUX_DIR)/.modules
+menuconfig: $(LINUX_DIR)/.configured FORCE
+	$(MAKE) -C $(LINUX_DIR) $(KERNEL_MAKEOPTS) menuconfig
+	$(SCRIPT_DIR)/config.pl $(LINUX_DIR)/.config > $(PLATFORM_DIR)/config
+ifeq ($(KERNEL),2.6)
+	$(SCRIPT_DIR)/config.pl '>' $(GENERIC_PLATFORM_DIR)/config-template $(LINUX_DIR)/.config > $(PLATFORM_DIR)/config-diff 
+endif
+
 install: $(LINUX_DIR)/.image
 
 clean: FORCE
