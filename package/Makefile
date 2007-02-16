@@ -73,7 +73,7 @@ $(PACKAGE_DIR)/Packages: $(PACKAGE_DIR)/*.ipk
 symlinks:
 	../scripts/feeds.sh $(CONFIG_SOURCE_FEEDS) 
 
-ifeq ($(MAKECMDGOALS),compile-targets)
+ifeq ($(MAKECMDGOALS),compile)
 MAKEFLAGS:=$(MAKEFLAGS) -j$(CONFIG_JLEVEL)
 else
 .NOTPARALLEL:
