@@ -1,0 +1,12 @@
+diff -ur bb.old/coreutils/uniq.c bb.dev/coreutils/uniq.c
+--- bb.old/coreutils/uniq.c	2007-01-24 22:34:43.000000000 +0100
++++ bb.dev/coreutils/uniq.c	2007-02-16 20:04:19.245454368 +0100
+@@ -83,6 +83,8 @@
+ 
+ 			if (!s0 || strcmp(e0, e1)) {
+ 				break;
++			} else {
++				free(s1);
+ 			}
+ 
+ 			++dups;		 /* Note: Testing for overflow seems excessive. */
