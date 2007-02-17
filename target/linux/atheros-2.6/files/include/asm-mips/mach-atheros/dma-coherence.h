@@ -10,7 +10,11 @@
 #ifndef __ASM_MACH_GENERIC_DMA_COHERENCE_H
 #define __ASM_MACH_GENERIC_DMA_COHERENCE_H
 
+#if 0
 #define PCI_DMA_OFFSET	0x20000000
+#else
+#define PCI_DMA_OFFSET	0x00000000
+#endif
 
 struct device;
 
