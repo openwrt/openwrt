@@ -255,8 +255,9 @@ int __init ar5312_init_devices(void)
 	ar5312_eth1_data.board_config = board_config;
 	ar5312_devs[dev++] = &ar5312_physmap_flash;
 
-	ar5312_eth0_data.macaddr = bcfg->enet0Mac;
-	ar5312_eth1_data.macaddr = bcfg->enet1Mac;
+	if (!memcmp(bcfg->enet0Mac, "\xff\xff\xff\xff\xff\xff", 6))
+		memcpy(bcfg->enet0Mac, bcfg->enet1Mac, 6);
+
 	if (memcmp(bcfg->enet0Mac, bcfg->enet1Mac, 6) == 0) {
 		/* ENET0 and ENET1 have the same mac.
 		 * Increment the one from ENET1 */
@@ -267,11 +268,14 @@ int __init ar5312_init_devices(void)
 
 	switch(mips_machtype) {
 		case MACH_ATHEROS_AR5312:
+			ar5312_eth0_data.macaddr = bcfg->enet0Mac;
+			ar5312_eth1_data.macaddr = bcfg->enet1Mac;
 			ar5312_devs[dev++] = &ar5312_eth[0];
 			ar5312_devs[dev++] = &ar5312_eth[1];
 			break;
 		case MACH_ATHEROS_AR2312:
 		case MACH_ATHEROS_AR2313:
+			ar231x_eth0_data.macaddr = bcfg->enet0Mac;
 			ar5312_devs[dev++] = &ar231x_eth0;
 			ar5312_flash_data.width = 1;
 			break;
