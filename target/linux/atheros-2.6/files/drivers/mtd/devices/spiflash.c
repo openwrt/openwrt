@@ -396,7 +396,7 @@ static const char *part_probe_types[] = { "cmdlinepart", "RedBoot", NULL };
 
 static int spiflash_probe(struct platform_device *pdev)
 {
-   	int result = -1;
+   	int i, result = -1;
    	int index, num_parts;
 	struct mtd_info *mtd;
 
@@ -472,6 +472,12 @@ static int spiflash_probe(struct platform_device *pdev)
 #endif
    	/* parse redboot partitions */
 	num_parts = parse_mtd_partitions(mtd, part_probe_types, &spidata->parsed_parts, 0);
+	for (i = 0; i < num_parts; i++) {
+		if (!strcmp(spidata->parsed_parts[i].name, ROOTFS_NAME)) {
+			/* create the root device */
+			ROOT_DEV = MKDEV(MTD_BLOCK_MAJOR, i);
+		}
+	}
 
 #ifdef SPIFLASH_DEBUG
    	printk (KERN_DEBUG "Found %d partitions\n", num_parts);
