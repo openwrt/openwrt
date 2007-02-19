@@ -29,7 +29,7 @@ define KernelPackage/gspca
   URL:=http://mxhaard.free.fr/
   VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
   FILES:=$(PKG_BUILD_DIR)/gspca.$(LINUX_KMOD_SUFFIX)
-  AUTLOAD:=$(call AutoLoad,90,spca5xx)
+  AUTLOAD:=$(call AutoLoad,90,gspca)
 endef
 
 define Build/Compile
