@@ -215,6 +215,7 @@ int __init ar5312_init_devices(void)
 	struct ar531x_boarddata *bcfg;
 	char *radio, *c;
 	int dev = 0;
+	uint32_t fctl = 0;
 
 	if (!is_5312)
 		return 0;
@@ -253,6 +254,19 @@ int __init ar5312_init_devices(void)
 
 	ar5312_eth0_data.board_config = board_config;
 	ar5312_eth1_data.board_config = board_config;
+
+	/* fixup flash width; TODO: constants -> defines */
+	fctl = sysRegRead(AR531X_FLASHCTL) & 0x30000000;
+	switch (fctl) {
+		case 0x20000000:
+			ar5312_flash_data.width = 2;
+			break;
+		case 0x00000000:
+		default:
+			ar5312_flash_data.width = 1;
+			break;
+	}
+
 	ar5312_devs[dev++] = &ar5312_physmap_flash;
 
 	if (!memcmp(bcfg->enet0Mac, "\xff\xff\xff\xff\xff\xff", 6))
