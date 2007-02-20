@@ -143,6 +143,7 @@ static __u8 spiflash_probe(void)
 #define STM_16MBIT_SIGNATURE    0x14
 #define STM_32MBIT_SIGNATURE    0x15
 #define STM_64MBIT_SIGNATURE    0x16
+#define STM_128MBIT_SIGNATURE   0x17
 
 
 static char __init *ar5315_flash_limit(void)
@@ -167,6 +168,9 @@ static char __init *ar5315_flash_limit(void)
 			break;
 		case STM_64MBIT_SIGNATURE:
 			flash_size = 0x00800000;
+			break;
+		case STM_128MBIT_SIGNATURE:
+			flash_size = 0x01000000;
 			break;
 	}
 
