@@ -143,7 +143,7 @@ define KernelPackage/madwifi/install
 	$(INSTALL_DIR) $(1)/lib/wifi
 	$(INSTALL_DATA) ./files/lib/wifi/madwifi.sh $(1)/lib/wifi
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(CP) $(PKG_BUILD_DIR)/tools/{madwifi_multi,80211debug,80211stats,athchans,athctrl,athdebug,athkey,athstats,wlanconfig} $(1)/usr/sbin/
+	$(CP) $(PKG_BUILD_DIR)/tools/{madwifi_multi,80211stats,athchans,athctrl,athkey,athstats,wlanconfig} $(1)/usr/sbin/
 endef
 
 $(eval $(call KernelPackage,madwifi))
