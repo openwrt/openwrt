@@ -1,0 +1,47 @@
+diff -ruN aodv-uu-0.9.3-old/lnx/kaodv-mod.c aodv-uu-0.9.3-new/lnx/kaodv-mod.c
+--- aodv-uu-0.9.3-old/lnx/kaodv-mod.c	2006-09-20 19:58:38.000000000 +0200
++++ aodv-uu-0.9.3-new/lnx/kaodv-mod.c	2006-12-16 22:08:01.000000000 +0100
+@@ -19,7 +19,7 @@
+  * Author: Erik Nordström, <erik.nordstrom@it.uu.se>
+  * 
+  *****************************************************************************/
+-#include <linux/config.h>
++#include <linux/autoconf.h>
+ #include <linux/version.h>
+ 
+ #ifdef KERNEL26
+@@ -258,7 +258,11 @@
+ 			if (!(*skb))
+ 				return NF_STOLEN;
+ 			
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19)
++			ip_route_me_harder(skb, RTN_UNSPEC);
++#else
+ 			ip_route_me_harder(skb);
++#endif
+ 		}
+ 		break;
+ 	case NF_IP_POST_ROUTING:
+diff -ruN aodv-uu-0.9.3-old/lnx/kaodv-queue.c aodv-uu-0.9.3-new/lnx/kaodv-queue.c
+--- aodv-uu-0.9.3-old/lnx/kaodv-queue.c	2006-09-20 19:58:38.000000000 +0200
++++ aodv-uu-0.9.3-new/lnx/kaodv-queue.c	2006-12-16 22:17:16.000000000 +0100
+@@ -29,6 +29,7 @@
+ #include <linux/spinlock.h>
+ #include <linux/sysctl.h>
+ #include <linux/proc_fs.h>
++#include <linux/version.h>
+ #include <net/sock.h>
+ #include <net/route.h>
+ #include <net/icmp.h>
+@@ -246,7 +247,11 @@
+ 				if (!entry->skb)
+ 					goto next;
+ 			}
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19)
++			ip_route_me_harder(&entry->skb, RTN_UNSPEC);
++#else
+ 			ip_route_me_harder(&entry->skb);
++#endif
+ 
+ 			pkts++;
+ 

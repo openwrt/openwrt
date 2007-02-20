@@ -1,0 +1,15 @@
+diff -ruN aodv-uu-0.9.3-old/lnx/kaodv-netlink.c aodv-uu-0.9.3-new/lnx/kaodv-netlink.c
+--- aodv-uu-0.9.3-old/lnx/kaodv-netlink.c	2006-09-20 19:58:38.000000000 +0200
++++ aodv-uu-0.9.3-new/lnx/kaodv-netlink.c	2006-12-16 22:14:14.000000000 +0100
+@@ -284,7 +284,11 @@
+ /* 		RCV_SKB_FAIL(-EINVAL); */
+ 
+ #ifdef KERNEL26
++# if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19)	
++	if (security_netlink_recv(skb, CAP_NET_ADMIN))
++# else	
+ 	if (security_netlink_recv(skb))
++# endif
+ 		RCV_SKB_FAIL(-EPERM);
+ #endif
+ 	//write_lock_bh(&queue_lock);
