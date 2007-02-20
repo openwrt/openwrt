@@ -84,7 +84,8 @@ struct flashconfig {
         { STM_1MB_BYTE_COUNT, STM_1MB_SECTOR_COUNT, STM_1MB_SECTOR_SIZE, 0x0},
         { STM_2MB_BYTE_COUNT, STM_2MB_SECTOR_COUNT, STM_2MB_SECTOR_SIZE, 0x0},
         { STM_4MB_BYTE_COUNT, STM_4MB_SECTOR_COUNT, STM_4MB_SECTOR_SIZE, 0x0},
-        { STM_8MB_BYTE_COUNT, STM_8MB_SECTOR_COUNT, STM_8MB_SECTOR_SIZE, 0x0}
+        { STM_8MB_BYTE_COUNT, STM_8MB_SECTOR_COUNT, STM_8MB_SECTOR_SIZE, 0x0},
+        { STM_16MB_BYTE_COUNT, STM_16MB_SECTOR_COUNT, STM_16MB_SECTOR_SIZE, 0x0}
     };
 
 /* Mapping of generic opcodes to STM serial flash opcodes */
@@ -214,6 +215,9 @@ spiflash_probe_chip (void)
             	break;
         case STM_64MBIT_SIGNATURE:
             	flash_size = FLASH_8MB;
+            	break;
+        case STM_128MBIT_SIGNATURE:
+            	flash_size = FLASH_16MB;
             	break;
         default:
 	    	printk (KERN_WARNING "%s: Read of flash device signature failed!\n", module_name);
