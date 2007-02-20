@@ -1,6 +1,6 @@
-diff -Nur madwifi-0.9.2.1/ath/if_ath.c madwifi-0.9.2.1-nodebug/ath/if_ath.c
---- madwifi-0.9.2.1/ath/if_ath.c	2006-07-08 08:47:19.000000000 +0200
-+++ madwifi-0.9.2.1-nodebug/ath/if_ath.c	2007-02-20 11:48:05.000000000 +0100
+diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
+--- madwifi.old/ath/if_ath.c	2007-02-20 22:50:52.277096688 +0100
++++ madwifi.dev/ath/if_ath.c	2007-02-20 22:53:50.476006336 +0100
 @@ -72,7 +72,7 @@
  #include <net80211/if_llc.h>
  #endif
@@ -10,9 +10,18 @@ diff -Nur madwifi-0.9.2.1/ath/if_ath.c madwifi-0.9.2.1-nodebug/ath/if_ath.c
  
  #include "if_athrate.h"
  #include "net80211/if_athproto.h"
-diff -Nur madwifi-0.9.2.1/ath_rate/amrr/amrr.c madwifi-0.9.2.1-nodebug/ath_rate/amrr/amrr.c
---- madwifi-0.9.2.1/ath_rate/amrr/amrr.c	2006-07-04 12:23:35.000000000 +0200
-+++ madwifi-0.9.2.1-nodebug/ath_rate/amrr/amrr.c	2007-02-20 11:49:10.000000000 +0100
+@@ -347,7 +347,7 @@
+ 		ath_keyprint(__func__, ix, hk, mac);		\
+ } while (0)
+ #else /* defined(AR_DEBUG) */
+-#define	IFF_DUMPPKTS(sc, _m)	netif_msg_dumppkts(&sc->sc_ic)
++#define	IFF_DUMPPKTS(sc, _m)
+ #define	DPRINTF(sc, _m, _fmt, ...)
+ #define	KEYPRINTF(sc, k, ix, mac)
+ #endif /* defined(AR_DEBUG) */
+diff -ur madwifi.old/ath_rate/amrr/amrr.c madwifi.dev/ath_rate/amrr/amrr.c
+--- madwifi.old/ath_rate/amrr/amrr.c	2007-02-20 22:50:52.278096536 +0100
++++ madwifi.dev/ath_rate/amrr/amrr.c	2007-02-20 22:50:31.652232144 +0100
 @@ -67,7 +67,7 @@
  
  #include "amrr.h"
@@ -22,9 +31,9 @@ diff -Nur madwifi-0.9.2.1/ath_rate/amrr/amrr.c madwifi-0.9.2.1-nodebug/ath_rate/
  #ifdef AMRR_DEBUG
  #define	DPRINTF(sc, _fmt, ...) do {					\
  	if (sc->sc_debug & 0x10)					\
-diff -Nur madwifi-0.9.2.1/ath_rate/onoe/onoe.c madwifi-0.9.2.1-nodebug/ath_rate/onoe/onoe.c
---- madwifi-0.9.2.1/ath_rate/onoe/onoe.c	2006-07-04 12:23:35.000000000 +0200
-+++ madwifi-0.9.2.1-nodebug/ath_rate/onoe/onoe.c	2007-02-20 11:48:51.000000000 +0100
+diff -ur madwifi.old/ath_rate/onoe/onoe.c madwifi.dev/ath_rate/onoe/onoe.c
+--- madwifi.old/ath_rate/onoe/onoe.c	2007-02-20 22:50:52.278096536 +0100
++++ madwifi.dev/ath_rate/onoe/onoe.c	2007-02-20 22:50:31.653231992 +0100
 @@ -63,7 +63,7 @@
  
  #include "onoe.h"
@@ -34,9 +43,9 @@ diff -Nur madwifi-0.9.2.1/ath_rate/onoe/onoe.c madwifi-0.9.2.1-nodebug/ath_rate/
  #ifdef ONOE_DEBUG
  enum {
  	ATH_DEBUG_RATE	= 0x00000010,	/* rate control */
-diff -Nur madwifi-0.9.2.1/ath_rate/sample/sample.c madwifi-0.9.2.1-nodebug/ath_rate/sample/sample.c
---- madwifi-0.9.2.1/ath_rate/sample/sample.c	2006-07-04 12:23:35.000000000 +0200
-+++ madwifi-0.9.2.1-nodebug/ath_rate/sample/sample.c	2007-02-20 11:48:31.000000000 +0100
+diff -ur madwifi.old/ath_rate/sample/sample.c madwifi.dev/ath_rate/sample/sample.c
+--- madwifi.old/ath_rate/sample/sample.c	2007-02-20 22:50:52.278096536 +0100
++++ madwifi.dev/ath_rate/sample/sample.c	2007-02-20 22:50:31.653231992 +0100
 @@ -65,7 +65,7 @@
  
  #include "sample.h"
@@ -46,9 +55,9 @@ diff -Nur madwifi-0.9.2.1/ath_rate/sample/sample.c madwifi-0.9.2.1-nodebug/ath_r
  #ifdef SAMPLE_DEBUG
  enum {
  	ATH_DEBUG_RATE		= 0x00000010	/* rate control */
-diff -Nur madwifi-0.9.2.1/net80211/ieee80211_var.h madwifi-0.9.2.1-nodebug/net80211/ieee80211_var.h
---- madwifi-0.9.2.1/net80211/ieee80211_var.h	2006-07-06 05:23:08.000000000 +0200
-+++ madwifi-0.9.2.1-nodebug/net80211/ieee80211_var.h	2007-02-20 11:43:09.000000000 +0100
+diff -ur madwifi.old/net80211/ieee80211_var.h madwifi.dev/net80211/ieee80211_var.h
+--- madwifi.old/net80211/ieee80211_var.h	2007-02-20 22:50:52.279096384 +0100
++++ madwifi.dev/net80211/ieee80211_var.h	2007-02-20 22:50:31.654231840 +0100
 @@ -37,7 +37,7 @@
  /*
   * Definitions for IEEE 802.11 drivers.
@@ -58,9 +67,9 @@ diff -Nur madwifi-0.9.2.1/net80211/ieee80211_var.h madwifi-0.9.2.1-nodebug/net80
  #undef	IEEE80211_DEBUG_REFCNT			/* node refcnt stuff */
  
  #include <net80211/ieee80211_linux.h>
-diff -Nur madwifi-0.9.2.1/tools/do_multi.c madwifi-0.9.2.1-nodebug/tools/do_multi.c
---- madwifi-0.9.2.1/tools/do_multi.c	2007-02-20 11:53:44.000000000 +0100
-+++ madwifi-0.9.2.1-nodebug/tools/do_multi.c	2007-02-20 11:58:22.000000000 +0100
+diff -ur madwifi.old/tools/do_multi.c madwifi.dev/tools/do_multi.c
+--- madwifi.old/tools/do_multi.c	2007-02-20 22:50:52.279096384 +0100
++++ madwifi.dev/tools/do_multi.c	2007-02-20 22:50:31.654231840 +0100
 @@ -9,16 +9,20 @@
  
      progname = basename(argv[0]);
@@ -82,9 +91,9 @@ diff -Nur madwifi-0.9.2.1/tools/do_multi.c madwifi-0.9.2.1-nodebug/tools/do_mult
      if(strcmp(progname, "athkey") == 0)
  	ret =  athkey_init(argc, argv);
      if(strcmp(progname, "athstats") == 0)
-diff -Nur madwifi-0.9.2.1/tools/Makefile madwifi-0.9.2.1-nodebug/tools/Makefile
---- madwifi-0.9.2.1/tools/Makefile	2007-02-20 11:53:44.000000000 +0100
-+++ madwifi-0.9.2.1-nodebug/tools/Makefile	2007-02-20 11:57:23.000000000 +0100
+diff -ur madwifi.old/tools/Makefile madwifi.dev/tools/Makefile
+--- madwifi.old/tools/Makefile	2007-02-20 22:50:52.279096384 +0100
++++ madwifi.dev/tools/Makefile	2007-02-20 22:50:31.654231840 +0100
 @@ -52,7 +52,7 @@
  	
  ifdef DOMULTI
