@@ -34,6 +34,7 @@ IPKG:= \
 define Profile/Default
   ID:=
   NAME:=
+  KCONFIG:=
   PACKAGES:=
 endef
 
@@ -46,8 +47,10 @@ define AddProfile
     endif
 	$(ID)_NAME:=$(NAME)
 	$(ID)_PACKAGES:=$(PACKAGES)
-    PROFILE_LIST += \
+    ifneq ($(KCONFIG),)
+      PROFILE_LIST += \
   		echo '$(ID):'; [ -z '$(NAME)' ] || echo '	$(NAME)'; echo '	Packages: $(PACKAGES)';
+    endif
   endif
 endef
 
