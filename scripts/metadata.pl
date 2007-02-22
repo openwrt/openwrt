@@ -149,9 +149,10 @@ sub gen_target_mk() {
   define Profile/$conf\_$profile->{id}
     ID:=$profile->{id}
     NAME:=$profile->{name}
-    PACKAGES:=".join(" ", @{$profile->{packages}})."
-  endef";
-  $profiles_eval .= "
+    PACKAGES:=".join(" ", @{$profile->{packages}})."\n";
+			$profile->{kconfig} and $profiles_def .= "    KCONFIG:=1\n";
+			$profiles_def .= "  endef";
+			$profiles_eval .= "
 \$(eval \$(call AddProfile,$conf\_$profile->{id}))"
 		}
 		print "
