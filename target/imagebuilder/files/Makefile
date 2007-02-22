@@ -37,7 +37,7 @@ define Profile/Default
   PACKAGES:=
 endef
 
-define Profile
+define AddProfile
   $(eval $(call Profile/Default))
   $(eval $(call Profile/$(1)))
   ifneq ($(ID),)
