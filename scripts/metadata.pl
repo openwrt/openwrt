@@ -151,7 +151,7 @@ sub gen_target_mk() {
     PACKAGES:=".join(" ", @{$profile->{packages}})."
   endef";
   $profiles_eval .= "
-\$(eval \$(call Profile,$conf\_$profile->{id}))"
+\$(eval \$(call AddProfile,$conf\_$profile->{id}))"
 		}
 		print "
 ifeq (\$(CONFIG_LINUX_$conf),y)
