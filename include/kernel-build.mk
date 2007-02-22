@@ -222,7 +222,7 @@ define Profile
 	echo "Target-Profile-Name: $(NAME)"; \
 	echo "Target-Profile-Packages: $(PACKAGES)"; \
 	echo "Target-Profile-Description:"; \
-	if [ -f ./config/$(1) ]; then \
+	if [ -f ./config/profile-$(1) ]; then \
 		echo "Target-Profile-Kconfig: yes"; \
 	fi; \
 	getvar "$(call shvar,Profile/$(1)/Description)"; \
