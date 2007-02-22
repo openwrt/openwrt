@@ -6,9 +6,16 @@
 #
 KERNEL_BUILD:=1
 
+include $(INCLUDE_DIR)/kernel-version.mk
+include $(INCLUDE_DIR)/host.mk
+include $(INCLUDE_DIR)/kernel.mk
 include $(INCLUDE_DIR)/prereq.mk
 
--include ./config
+LINUX_CONFIG ?= ./config/default
+
+-include $(GENERIC_PLATFORM_DIR)/config-template
+-include $(LINUX_CONFIG)
+
 ifneq ($(CONFIG_ATM),)
   FEATURES += atm
 endif
@@ -36,12 +43,6 @@ ifeq ($(DUMP),1)
 else
   all: compile
 endif
-
-include $(INCLUDE_DIR)/kernel-version.mk
-include $(INCLUDE_DIR)/host.mk
-include $(INCLUDE_DIR)/kernel.mk
-
-LINUX_CONFIG:=./config
 
 ifneq (,$(findstring uml,$(BOARD)))
   LINUX_KARCH:=um
@@ -91,7 +92,11 @@ define Kernel/Configure/2.6
 	$(MAKE) $(KERNEL_MAKEOPTS) CC="$(KERNEL_CC)" oldconfig prepare scripts
 endef
 define Kernel/Configure/Default
-	@$(CP) $(LINUX_CONFIG) $(LINUX_DIR)/.config
+	@if [ -f "./config/profile-$(PROFILE)" ]; then \
+		$(SCRIPT_DIR)/config.pl '+' $(GENERIC_PLATFORM_DIR)/config-template '+' $(LINUX_CONFIG) ./config/profile-$(PROFILE) > $(LINUX_DIR)/.config; \
+	else \
+		$(SCRIPT_DIR)/config.pl '+' $(GENERIC_PLATFORM_DIR)/config-template $(LINUX_CONFIG) > $(LINUX_DIR)/.config; \
+	fi
 endef
 define Kernel/Configure
 	$(call Kernel/Configure/Default)
@@ -207,6 +212,7 @@ define Profile/Default
   PACKAGES:=
 endef
 
+confname=$(subst .,_,$(subst -,_,$(1)))
 define Profile
   $(eval $(call Profile/Default))
   $(eval $(call Profile/$(1)))
@@ -216,9 +222,15 @@ define Profile
 	echo "Target-Profile-Name: $(NAME)"; \
 	echo "Target-Profile-Packages: $(PACKAGES)"; \
 	echo "Target-Profile-Description:"; \
+	if [ -f ./config/$(1) ]; then \
+		echo "Target-Profile-Kconfig: yes"; \
+	fi; \
 	getvar "$(call shvar,Profile/$(1)/Description)"; \
 	echo "@@"; \
 	echo;
+  ifeq ($(CONFIG_LINUX_$(call confname,$(KERNEL)_$(1))),y)
+    PROFILE=$(1)
+  endif
 endef
 
 $(eval $(call shexport,Target/Description))
@@ -228,11 +240,9 @@ prepare: $(LINUX_DIR)/.configured $(TMP_DIR)/.kernel.mk
 compile: $(LINUX_DIR)/.modules
 menuconfig: $(LINUX_DIR)/.prepared FORCE
 	$(call Kernel/Configure)
+	$(SCRIPT_DIR)/config.pl '+' $(GENERIC_PLATFORM_DIR)/config-template $(LINUX_CONFIG) > $(LINUX_DIR)/.config
 	$(MAKE) -C $(LINUX_DIR) $(KERNEL_MAKEOPTS) menuconfig
-	$(SCRIPT_DIR)/config.pl $(LINUX_DIR)/.config > $(PLATFORM_DIR)/config
-ifeq ($(KERNEL),2.6)
-	$(SCRIPT_DIR)/config.pl '>' $(GENERIC_PLATFORM_DIR)/config-template $(LINUX_DIR)/.config > $(PLATFORM_DIR)/config-diff 
-endif
+	$(SCRIPT_DIR)/config.pl '>' $(GENERIC_PLATFORM_DIR)/config-template $(LINUX_DIR)/.config > $(LINUX_CONFIG)
 
 install: $(LINUX_DIR)/.image
 
