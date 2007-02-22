@@ -53,6 +53,7 @@ sub parse_target_metadata() {
 			}
 			$profile->{desc} = $desc;
 		};
+		/^Target-Profile-Kconfig:/ and $profile->{kconfig} = 1;
 	}
 	foreach my $target (@target) {
 		@{$target->{profiles}} > 0 or $target->{profiles} = [
@@ -298,6 +299,7 @@ config LINUX_$target->{conf}_$profile->{id}
 	bool "$profile->{name}"
 	depends LINUX_$target->{conf}
 EOF
+			$profile->{kconfig} and print "\tselect PROFILE_KCONFIG\n";
 			my %pkgs;
 			foreach my $pkg (@{$target->{packages}}, @{$profile->{packages}}) {
 				$pkgs{$pkg} = 1;
