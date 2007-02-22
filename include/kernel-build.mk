@@ -221,10 +221,10 @@ define Profile
 	echo "Target-Profile: $(1)"; \
 	echo "Target-Profile-Name: $(NAME)"; \
 	echo "Target-Profile-Packages: $(PACKAGES)"; \
-	echo "Target-Profile-Description:"; \
 	if [ -f ./config/profile-$(1) ]; then \
 		echo "Target-Profile-Kconfig: yes"; \
 	fi; \
+	echo "Target-Profile-Description:"; \
 	getvar "$(call shvar,Profile/$(1)/Description)"; \
 	echo "@@"; \
 	echo;
