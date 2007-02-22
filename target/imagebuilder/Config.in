@@ -1,6 +1,7 @@
 config IB
 	bool "Build the OpenWrt Image Builder"
 	depends !TARGET_ROOTFS_INITRAMFS
+	depends !PROFILE_KCONFIG
 	default y if ALL
 	help
 	  This is essentially a stripped-down version of the buildroot
