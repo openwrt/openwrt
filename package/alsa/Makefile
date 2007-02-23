@@ -36,7 +36,7 @@ ifeq ($(KERNEL),2.4)
     KERNEL_C_OPTS:= -Os -mpreferred-stack-boundary=2 -march=i486 -fno-unit-at-a-time
   endif
   ifeq ($(LINUX_KARCH),mips)
-    KERNEL_C_OPTS:= -Os -G 0 -mno-abicalls -fno-pic -finline-limit=100000 -mabi=32 -march=mips32 -Wa,-32 -Wa,-march=mips32 -Wa,-mips32 -Wa,--trap
+    KERNEL_C_OPTS:= -Os -G 0 -mlong-calls -mno-abicalls -fno-pic -finline-limit=100000 -mabi=32 -march=mips32 -Wa,-32 -Wa,-march=mips32 -Wa,-mips32 -Wa,--trap
   endif
 endif
 ifeq ($(LINUX_KARCH),i386)
