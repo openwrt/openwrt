@@ -13,7 +13,7 @@ include $(INCLUDE_DIR)/prereq.mk
 
 LINUX_CONFIG ?= ./config/default
 
--include $(GENERIC_PLATFORM_DIR)/config-template
+-include $(TOPDIR)/target/linux/generic-$(KERNEL)/config-template
 -include $(LINUX_CONFIG)
 
 ifneq ($(CONFIG_ATM),)
