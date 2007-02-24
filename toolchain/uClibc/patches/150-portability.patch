@@ -8,7 +8,7 @@ Fix portability of build infrastructure
  	$(INSTALL) -d $(PREFIX)$(DEVEL_PREFIX)lib
  	$(INSTALL) -d $(PREFIX)$(DEVEL_PREFIX)include
  	-$(INSTALL) -m 644 lib/*.[ao] $(PREFIX)$(DEVEL_PREFIX)lib/
--	if [ "$(KERNEL_SOURCE)" == "$(DEVEL_PREFIX)" ] ; then \
+-	if [ "$(KERNEL_SOURCE)" = "$(DEVEL_PREFIX)" ] ; then \
 -		extra_exclude="--exclude include/linux --exclude include/asm'*'" ; \
 -	else \
 -		extra_exclude="" ; \
@@ -27,12 +27,3 @@ Fix portability of build infrastructure
  	@if [ -x lib/ld-uClibc-$(MAJOR_VERSION).$(MINOR_VERSION).$(SUBLEVEL).so ] ; then \
  	    set -e; \
  		$(SHELL_SET_X); \
-@@ -370,7 +365,7 @@ distclean: clean
- release: distclean
- 	cd ..;					\
- 	$(RM) -r uClibc-$(VERSION);		\
--	cp -dRf uClibc uClibc-$(VERSION);	\
-+	cp -PRf uClibc uClibc-$(VERSION);	\
- 	find uClibc-$(VERSION)/ -type f		\
- 	    -name .\#* -exec $(RM) -r {} \; ;	\
- 	find uClibc-$(VERSION)/ -type d		\
