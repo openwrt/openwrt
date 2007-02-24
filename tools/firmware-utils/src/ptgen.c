@@ -114,7 +114,7 @@ static void to_chs(long sect, unsigned char chs[3]) {
 static inline unsigned long round_to_cyl(long sect) {
 	int cyl_size = heads * sectors;
 
-	return sect + cyl_size - ((sect % cyl_size) ?: cyl_size); 
+	return sect + cyl_size - (sect % cyl_size); 
 }
 
 /* check the partition sizes and write the partition table */
