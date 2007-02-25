@@ -141,6 +141,7 @@ static int gen_ptable(int nr)
 			fprintf(stderr, "Partition %d: start=%ld, end=%ld, size=%ld\n", i, (long) start * 512, ((long) start + (long) len) * 512, (long) len * 512);
 		printf("%ld\n", ((long) start * 512));
 	}
+	printf("%ld\n", ((long) (start + len) * 512));
 
 	if ((fd = open(filename, O_WRONLY|O_CREAT, 0644)) < 0) {
 		fprintf(stderr, "Can't open output file '%s'\n",filename);
