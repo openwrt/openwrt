@@ -9,6 +9,8 @@ include $(TMP_DIR)/.host.mk
 
 export TAR
 
+ifneq ($(__host_inc),1)
+__host_inc:=1
 $(TMP_DIR)/.host.mk: $(TOPDIR)/include/host.mk
 	@mkdir -p $(TMP_DIR)
 	@( \
@@ -32,3 +34,4 @@ $(TMP_DIR)/.host.mk: $(TOPDIR)/include/host.mk
 		echo "BASH:=$(shell which bash)" >> $@; \
 	)
 
+endif
