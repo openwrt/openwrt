@@ -16,14 +16,20 @@ ifeq ($(CONFIG_NATIVE_TOOLCHAIN),)
 endif
 
 TARGETS_DOWNLOAD:=$(patsubst %,%-download,$(TARGETS-y))
+TARGETS_COMPILE:=$(patsubst %,%-compile,$(TARGETS-y))
 TARGETS_INSTALL:=$(patsubst %,%-install,$(TARGETS-y))
 TARGETS_CLEAN:=$(patsubst %,%-clean,$(TARGETS-y))
+STAMP:=$(STAGING_DIR)/stampfiles/.toolchain_installed
 
 all: install
 download: $(TARGETS_DOWNLOAD)
-install: $(TARGETS_INSTALL)
+compile: $(TARGETS_COMPILE)
+install: $(STAMP) 
 clean: $(TARGETS_CLEAN)
-$(TARGETS_INSTALL): $(STAGING_DIR)/$(REAL_GNU_TARGET_NAME)
+
+ifneq ($(shell $(SCRIPT_DIR)/timestamp.pl -p . $(STAMP)),$(STAMP))
+  $(STAMP): $(TARGETS_INSTALL)
+endif
 
 ifeq ($(CONFIG_CCACHE),y)
   uClibc-prepare: ccache-install
@@ -36,40 +42,16 @@ ifeq ($(CONFIG_NATIVE_TOOLCHAIN),)
 endif
 gcc-install: uClibc-install
 
-TOOLCHAIN_STAMP_DIR:=$(STAGING_DIR)/stampfiles
+$(STAMP):
+	mkdir -p $(shell dirname $@)
+	touch $@
 
 $(STAGING_DIR)/$(REAL_GNU_TARGET_NAME):
 	@mkdir -p $@
 	@ln -sf ../lib $@/lib
 
-$(TOOLCHAIN_STAMP_DIR):
-	mkdir -p $@
-
 $(TOOLCHAIN_BUILD_DIR):
 	@mkdir -p $@
 
-%-download: FORCE
-	$(MAKE) -C $(patsubst %-download,%,$@) download
-
-%-prepare: $(TOOLCHAIN_STAMP_DIR) $(STAGING_DIR)/$(REAL_GNU_TARGET_NAME) $(TOOLCHAIN_BUILD_DIR) FORCE
-	@[ -f $(TOOLCHAIN_STAMP_DIR)/.toolchain_$@ ] || { \
-		$(MAKE) -C $(patsubst %-prepare,%,$@) prepare; \
-	}
-	@touch $(TOOLCHAIN_STAMP_DIR)/.toolchain_$@
-
-%-compile: %-prepare 
-	@[ -f $(TOOLCHAIN_STAMP_DIR)/.toolchain_$@ ] || { \
-		$(MAKE) -C $(patsubst %-compile,%,$@) compile; \
-	}
-	@touch $(TOOLCHAIN_STAMP_DIR)/.toolchain_$@
-
-%-install: %-compile
-	@[ -f $(TOOLCHAIN_STAMP_DIR)/.toolchain_$@ ] || { \
-		$(MAKE) -C $(patsubst %-install,%,$@) install; \
-	}
-	@touch $(TOOLCHAIN_STAMP_DIR)/.toolchain_$@
-
-%-clean: FORCE
-	@$(MAKE) -C $(patsubst %-clean,%,$@) clean
-	@rm -f $(TOOLCHAIN_STAMP_DIR)/.toolchain_$(patsubst %-clean,%,$@)-*
+$(eval $(call default_subtargets,$(STAGING_DIR)/$(REAL_GNU_TARGET_NAME) $(TOOLCHAIN_BUILD_DIR)))
 
