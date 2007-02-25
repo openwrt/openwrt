@@ -4,6 +4,10 @@ config X86_GRUB_IMAGES
     depends TARGET_ROOTFS_EXT2FS || TARGET_ROOTFS_JFFS2
     default y
 
+config X86_GRUB_IMAGES_PAD
+	bool "Pad GRUB images to filesystem size (for JFFS2)"
+	depends X86_GRUB_IMAGES
+
 config X86_GRUB_BAUDRATE
     int "Serial port baud rate"
     depends X86_GRUB_IMAGES
