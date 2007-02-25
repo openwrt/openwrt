@@ -6,7 +6,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/prereq.mk
 
 MAIN = openwrt.tex
-DEPS = $(MAIN) Makefile config.tex network.tex network-scripts.tex network-scripts.tex wireless.tex build.tex adding.tex bugs.tex .prereq
+DEPS = $(MAIN) Makefile config.tex network.tex network-scripts.tex network-scripts.tex wireless.tex build.tex adding.tex bugs.tex $(TMP_DIR)/.prereq-docs
 
 all:
 	$(MAKE) cleanup
@@ -14,7 +14,7 @@ all:
 	$(MAKE) openwrt.pdf openwrt.html
 	$(MAKE) cleanup
 
-.prereq:
+$(TMP_DIR)/.prereq-docs:
 	$(MAKE) prereq
 	touch $@
 
