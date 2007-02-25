@@ -9,13 +9,13 @@ MAIN = openwrt.tex
 DEPS = $(MAIN) Makefile config.tex network.tex network-scripts.tex network-scripts.tex wireless.tex build.tex adding.tex bugs.tex $(TMP_DIR)/.prereq-docs
 
 all:
-	$(MAKE) cleanup
+	$(NO_TRACE_MAKE) cleanup
 	latex $(MAIN)
-	$(MAKE) openwrt.pdf openwrt.html
-	$(MAKE) cleanup
+	$(NO_TRACE_MAKE) openwrt.pdf openwrt.html
+	$(NO_TRACE_MAKE) cleanup
 
 $(TMP_DIR)/.prereq-docs:
-	$(MAKE) prereq
+	$(NO_TRACE_MAKE) prereq
 	touch $@
 
 openwrt.html: $(DEPS)
