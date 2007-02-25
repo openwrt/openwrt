@@ -29,13 +29,10 @@ define Package/libgmp
   URL:=http://www.swox.com/gmp/
 endef
 
-define Build/Configure
-	$(call Build/Configure/Default, \
-		--enable-shared \
-		--enable-static, \
-		CC="$(TARGET_CROSS)gcc" \
-	)
-endef
+CONFIGURE_VARS += CC="$(TARGET_CROSS)gcc"
+CONFIGURE_ARGS += \
+	--enable-shared \
+	--enable-static \
 
 define Build/Compile
 	$(call Build/Compile/Default, \

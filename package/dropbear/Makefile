@@ -41,47 +41,26 @@ define Package/dropbearconvert
   TITLE:=Utility for converting SSH keys
 endef
 
+CONFIGURE_ARGS += \
+	--with-shared \
+	--disable-pam \
+	--enable-openpty \
+	--enable-syslog \
+	--disable-shadow \
+	--disable-lastlog \
+	--disable-utmp \
+	--disable-utmpx \
+	--disable-wtmp \
+	--disable-wtmpx \
+	--disable-loginfunc \
+	--disable-pututline \
+	--disable-pututxline \
+	--disable-zlib
+
 define Build/Configure
 	$(SED) 's,^/\* #define PKG_MULTI.*,#define PKG_MULTI,g' $(PKG_BUILD_DIR)/options.h
 	$(SED) 's,^#define DO_HOST_LOOKUP,/* & */,g' $(PKG_BUILD_DIR)/options.h
-	(cd $(PKG_BUILD_DIR); rm -rf config.cache; \
-		$(TARGET_CONFIGURE_OPTS) \
-		CFLAGS="$(TARGET_CFLAGS)" \
-		./configure \
-			--target=$(GNU_TARGET_NAME) \
-			--host=$(GNU_TARGET_NAME) \
-			--build=$(GNU_HOST_NAME) \
-			--program-prefix="" \
-			--program-suffix="" \
-			--prefix=/usr \
-			--exec-prefix=/usr \
-			--bindir=/usr/bin \
-			--datadir=/usr/share \
-			--includedir=/usr/include \
-			--infodir=/usr/share/info \
-			--libdir=/usr/lib \
-			--libexecdir=/usr/lib \
-			--localstatedir=/var \
-			--mandir=/usr/share/man \
-			--sbindir=/usr/sbin \
-			--sysconfdir=/etc \
-			$(DISABLE_LARGEFILE) \
-			$(DISABLE_NLS) \
-			--with-shared \
-			--disable-pam \
-			--enable-openpty \
-			--enable-syslog \
-			--disable-shadow \
-			--disable-lastlog \
-			--disable-utmp \
-			--disable-utmpx \
-			--disable-wtmp \
-			--disable-wtmpx \
-			--disable-loginfunc \
-			--disable-pututline \
-			--disable-pututxline \
-			--disable-zlib \
-	);
+	$(call Build/Configure/Default)
 endef
 
 define Build/Compile

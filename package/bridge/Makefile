@@ -31,11 +31,7 @@ define Package/bridge
   URL:=http://bridge.sourceforge.net/
 endef
 
-define Build/Configure
-	$(call Build/Configure/Default, \
-		--with-linux-headers="$(LINUX_DIR)" \
-	)
-endef
+CONFIGURE_ARGS += --with-linux-headers="$(LINUX_DIR)"
 
 define Package/bridge/install
 	$(INSTALL_DIR) $(1)/usr/sbin

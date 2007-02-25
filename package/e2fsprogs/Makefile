@@ -47,15 +47,12 @@ define Package/resize2fs
   DEPENDS:=e2fsprogs
 endef
 
-define Build/Configure
-	$(call Build/Configure/Default, \
-		--enable-shared \
-		--enable-static \
-		--disable-rpath \
-		--enable-elf-shlibs \
-		--enable-dynamic-e2fsck \
-	)
-endef
+CONFIGURE_ARGS += \
+	--enable-shared \
+	--enable-static \
+	--disable-rpath \
+	--enable-elf-shlibs \
+	--enable-dynamic-e2fsck
 
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR)/util \

@@ -35,12 +35,9 @@ define Package/keynote
   URL:=http://www1.cs.columbia.edu/~angelos/keynote.html
 endef
 
-define Build/Configure
-	$(call Build/Configure/Default, \
-		--enable-static \
-		--enable-shared \
-	)
-endef
+CONFIGURE_ARGS += \
+	--enable-static \
+	--enable-shared
 
 define Build/Compile
 	$(call Build/Compile/Default, \

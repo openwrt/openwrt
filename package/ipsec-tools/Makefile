@@ -31,15 +31,7 @@ define Package/ipsec-tools
   URL:=http://ipsec-tools.sourceforge.net/
 endef
 
-define Build/Configure
-	(cd $(PKG_BUILD_DIR); touch \
-		configure.ac \
-		aclocal.m4 \
-		Makefile.in \
-		config.h.in \
-		configure \
-	);
-	$(call Build/Configure/Default, \
+CONFIGURE_ARGS += \
 		--enable-shared \
 		--enable-static \
 		--with-kernel-headers="$(LINUX_DIR)/include" \
@@ -48,8 +40,17 @@ define Build/Configure
 		--without-libradius \
 		--without-libpam \
 		--enable-dpd \
-		--enable-natt \
+		--enable-natt
+
+define Build/Configure
+	(cd $(PKG_BUILD_DIR); touch \
+		configure.ac \
+		aclocal.m4 \
+		Makefile.in \
+		config.h.in \
+		configure \
 	);
+	$(call Build/Configure/Default)
 endef
 
 # override CFLAGS holding "-Werror" that break builds on compile warnings
