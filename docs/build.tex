@@ -307,7 +307,9 @@ directly as the Nth argument to \texttt{BuildPackage}.
         \item \texttt{MAINTAINER} (optional) \\
             Who to contact concerning the package
         \item \texttt{DEPENDS} (optional) \\
-            Which packages must be built/installed before this package. To reference a dependency defined in the same Makefile, use \textit{<dependency name>}. If defined as an external package, use \textit{+<dependency name>}. For a kernel version dependency use: \textit{@LINUX\_2\_<minor version>}
+            Which packages must be built/installed before this package. To reference a dependency defined in the
+			same Makefile, use \textit{<dependency name>}. If defined as an external package, use 
+			\textit{+<dependency name>}. For a kernel version dependency use: \textit{@LINUX\_2\_<minor version>}
     \end{itemize}
 
 \textbf{\texttt{Package/\textit{<name>}/conffiles} (optional):} \\
@@ -321,7 +323,17 @@ directly as the Nth argument to \texttt{BuildPackage}.
    You can leave this undefined if the source doesn't use configure or has a
    normal config script, otherwise you can put your own commands here or use
    "\texttt{\$(call Build/Configure/Default,\textit{<first list of arguments, second list>})}" as above to
-   pass in additional arguments for a standard configure script. The first list of arguments will be passed to the configure script like that: $--arg 1$ $--arg 2$. The second list contains arguments that should be defined before running the configure script such as autoconf or compiler specific variables.
+   pass in additional arguments for a standard configure script. The first list of arguments will be passed
+   to the configure script like that: \texttt{--arg 1} \texttt{--arg 2}. The second list contains arguments that should be
+   defined before running the configure script such as autoconf or compiler specific variables.
+   
+   To make it easier to modify the configure command line, you can either extend or completely override the following variables:
+   \begin{itemize}
+     \item \texttt{CONFIGURE\_ARGS} \\
+	     Contains all command line arguments (format: \texttt{--arg 1} \texttt{--arg 2})
+     \item \texttt{CONFIGURE\_VARS} \\
+	     Contains all environment variables that are passed to ./configure (format: \texttt{NAME="value"})
+   \end{itemize}
 
 \textbf{\texttt{Build/Compile} (optional):} \\
    How to compile the source; in most cases you should leave this undefined.
