@@ -3,10 +3,6 @@ scan_ppp() {
 	pppdev="${pppdev:-0}"
 	config_set "$1" ifname "ppp$pppdev"
 	config_set "$1" unit "$pppdev"
-	
-	# set 'auto' to 0, so that hotplug does not attempt to
-	# reconfigure an interface that is managed by pppd
-	config_set "$1" auto 0
 }
 
 start_pppd() {

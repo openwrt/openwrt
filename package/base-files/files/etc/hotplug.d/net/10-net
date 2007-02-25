@@ -3,6 +3,11 @@
 include /lib/network
 
 addif() {
+	# PPP devices are configured by pppd, no need to run setup_interface here
+	case "$INTERFACE" in
+		ppp*) return 0;;
+	esac
+
 	scan_interfaces
 	local cfg="$(find_config "$INTERFACE")"
 
