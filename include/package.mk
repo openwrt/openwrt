@@ -286,18 +286,7 @@ define Build/Prepare
   $(call Build/Prepare/Default,)
 endef
 
-define Build/Configure/Default
-	(cd $(PKG_BUILD_DIR)/$(strip $(3)); \
-	if [ -x configure ]; then \
-		$(TARGET_CONFIGURE_OPTS) \
-		CFLAGS="$(TARGET_CFLAGS)" \
-		CXXFLAGS="$(TARGET_CFLAGS)" \
-		CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include" \
-		LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib" \
-		PKG_CONFIG_PATH="$(STAGING_DIR)/usr/lib/pkgconfig" \
-		PKG_CONFIG_LIBDIR="$(STAGING_DIR)/usr/lib/pkgconfig" \
-		$(2) \
-		$(PKG_CONFIGURE_PATH)/configure \
+CONFIGURE_ARGS := \
 		--target=$(GNU_TARGET_NAME) \
 		--host=$(GNU_TARGET_NAME) \
 		--build=$(GNU_HOST_NAME) \
@@ -313,7 +302,24 @@ define Build/Configure/Default
 		--localstatedir=/var \
 		--mandir=/usr/man \
 		--infodir=/usr/info \
-		$(DISABLE_NLS) \
+		$(DISABLE_NLS)
+
+CONFIGURE_VARS:= \
+		$(TARGET_CONFIGURE_OPTS) \
+		CFLAGS="$(TARGET_CFLAGS)" \
+		CXXFLAGS="$(TARGET_CFLAGS)" \
+		CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include" \
+		LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib" \
+		PKG_CONFIG_PATH="$(STAGING_DIR)/usr/lib/pkgconfig" \
+		PKG_CONFIG_LIBDIR="$(STAGING_DIR)/usr/lib/pkgconfig"
+
+define Build/Configure/Default
+	(cd $(PKG_BUILD_DIR)/$(strip $(3)); \
+	if [ -x configure ]; then \
+		$(CONFIGURE_VARS) \
+		$(2) \
+		$(PKG_CONFIGURE_PATH)/configure \
+		$(CONFIGURE_ARGS) \
 		$(1); \
 	fi; \
 	)
