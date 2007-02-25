@@ -14,7 +14,6 @@ include $(INCLUDE_DIR)/prereq.mk
 include $(INCLUDE_DIR)/host.mk
 include $(INCLUDE_DIR)/unpack.mk
 
-PKG_CONFIGURE_PATH:=.
 export CONFIG_SITE:=$(INCLUDE_DIR)/site/$(REAL_GNU_TARGET_NAME)
 
 define Build/DefaultTargets
@@ -313,12 +312,14 @@ CONFIGURE_VARS:= \
 		PKG_CONFIG_PATH="$(STAGING_DIR)/usr/lib/pkgconfig" \
 		PKG_CONFIG_LIBDIR="$(STAGING_DIR)/usr/lib/pkgconfig"
 
+CONFIGURE_PATH:=.
+
 define Build/Configure/Default
 	(cd $(PKG_BUILD_DIR)/$(strip $(3)); \
 	if [ -x configure ]; then \
 		$(CONFIGURE_VARS) \
 		$(2) \
-		$(PKG_CONFIGURE_PATH)/configure \
+		$(CONFIGURE_PATH)/configure \
 		$(CONFIGURE_ARGS) \
 		$(1); \
 	fi; \
