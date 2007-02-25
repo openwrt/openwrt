@@ -98,6 +98,7 @@ define HostBuild
 
   $(STAGING_DIR)/stampfiles/.host_$(PKG_NAME)-installed: $(PKG_BUILD_DIR)/.built
 	$(call Build/Install)
+	mkdir -p $$(shell dirname $$@)
 	touch $$@
 	
   ifdef Build/Install
