@@ -73,6 +73,15 @@ ifneq ($(strip $(PKG_SOURCE)),)
 endif
 
 define HostBuild
+  ifeq ($(DUMP),)
+    ifeq ($(CONFIG_AUTOREBUILD),y)
+      ifneq ($$(shell $(SCRIPT_DIR)/timestamp.pl -p $(PKG_BUILD_DIR) . $(PKG_FILE_DEPEND)),$(PKG_BUILD_DIR))
+        $$(info Forcing package rebuild)
+        $(PKG_BUILD_DIR)/.prepared: package-clean
+      endif
+    endif
+  endif
+  
   $(PKG_BUILD_DIR)/.prepared:
 	@-rm -rf $(PKG_BUILD_DIR)
 	@mkdir -p $(PKG_BUILD_DIR)
@@ -92,7 +101,7 @@ define HostBuild
 	touch $$@
 	
   ifdef Build/Install
-    install-targets: $(STAGING_DIR)/stampfiles/.host_$(PKG_NAME)-installed
+    install: $(STAGING_DIR)/stampfiles/.host_$(PKG_NAME)-installed
   endif
 
   package-clean: FORCE
@@ -103,16 +112,9 @@ define HostBuild
   download:
   prepare: $(PKG_BUILD_DIR)/.prepared
   configure: $(PKG_BUILD_DIR)/.configured
-
-  compile-targets: $(PKG_BUILD_DIR)/.built
-  compile: compile-targets
-
-  install-targets:
-  install: install-targets
-
-  clean-targets:
+  compile: $(PKG_BUILD_DIR)/.built 
+  install:
   clean: FORCE
-	@$(MAKE) clean-targets
 	$(call Build/Clean)
 	rm -rf $(PKG_BUILD_DIR)
 
