@@ -62,19 +62,18 @@ add_vlan() {
 	}
 }
 
-setup_interface() {
+# Create the interface, if necessary.
+# Return status 0 indicates that the setup_interface() call should continue
+# Return status 1 means that everything is set up already.
+
+prepare_interface() {
 	local iface="$1"
 	local config="$2"
-	local proto
-	local macaddr
 
-	[ -n "$config" ] || {
-		config=$(find_config "$iface")
-		[ "$?" = 0 ] || return 1
-	}
-
-	proto="${3:-$(config_get "$config" proto)}"
-	config_get iftype "$config" type
+	# if we're called for the bridge interface itself, don't bother trying
+	# to create any interfaces here. The scripts have already done that, otherwise
+	# the bridge interface wouldn't exist.
+	[ "$iface" = "br-$config" ] && return 0;
 	
 	ifconfig "$iface" 2>/dev/null >/dev/null && {
 		# make sure the interface is removed from any existing bridge and brought down
@@ -86,28 +85,50 @@ setup_interface() {
 	add_vlan "$iface"
 
 	# Setup bridging
+	config_get iftype "$config" type
 	case "$iftype" in
 		bridge)
 			[ -x /usr/sbin/brctl ] && {
 				ifconfig "$iface" up 2>/dev/null >/dev/null
 				ifconfig "br-$config" 2>/dev/null >/dev/null && {
 					$DEBUG brctl addif "br-$config" "$iface"
-					return 0
+					# Bridge existed already. No further processing necesary
 				} || {
 					$DEBUG brctl addbr "br-$config"
 					$DEBUG brctl setfd "br-$config" 0
 					$DEBUG brctl addif "br-$config" "$iface"
-					iface="br-$config"
-				
-					# need to bring up the bridge and wait a second for 
-					# it to switch to the 'forwarding' state, otherwise
-					# it will lose its routes...
-					ifconfig "$iface" up
-					sleep 1
+					# Creating the bridge here will have triggered a hotplug event, which will
+					# result in another setup_interface() call, so we simply stop processing
+					# the current event at this point.
 				}
+				return 1
 			}
 		;;
 	esac
+	return 0
+}
+
+setup_interface() {
+	local iface="$1"
+	local config="$2"
+	local proto
+	local macaddr
+
+	[ -n "$config" ] || {
+		config=$(find_config "$iface")
+		[ "$?" = 0 ] || return 1
+	}
+	proto="${3:-$(config_get "$config" proto)}"
+	
+	prepare_interface "$iface" "$config" || return 0
+	
+	[ "$iface" = "br-$config" ] && {
+		# need to bring up the bridge and wait a second for 
+		# it to switch to the 'forwarding' state, otherwise
+		# it will lose its routes...
+		ifconfig "$iface" up
+		sleep 1
+	}
 	
 	# Interface settings
 	config_get mtu "$config" mtu
