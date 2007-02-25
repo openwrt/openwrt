@@ -65,6 +65,18 @@ define Package/libfuse
 	This package contains the FUSE shared library, needed by other programs.
 endef
 
+CONFIGURE_ARGS += \
+	--enable-shared \
+	--enable-static \
+	--disable-rpath \
+	--enable-kernel-module \
+	--enable-lib \
+	--enable-util \
+	--disable-example \
+	--disable-auto-modprobe \
+	--with-kernel="$(LINUX_DIR)" \
+	--disable-mtab
+
 define Build/Configure
 	(cd $(PKG_BUILD_DIR); rm -f config.cache; \
 		touch configure.in ; \
@@ -72,39 +84,8 @@ define Build/Configure
 		touch Makefile.in ; \
 		touch include/config.h.in ; \
 		touch configure ; \
-		$(TARGET_CONFIGURE_OPTS) \
-		CFLAGS="$(TARGET_CFLAGS)" \
-		./configure \
-			--target=$(GNU_TARGET_NAME) \
-			--host=$(GNU_TARGET_NAME) \
-			--build=$(GNU_HOST_NAME) \
-			--program-prefix="" \
-			--program-suffix="" \
-			--prefix=/usr \
-			--exec-prefix=/usr \
-			--bindir=/usr/bin \
-			--datadir=/usr/share \
-			--includedir=/usr/include \
-			--infodir=/usr/share/info \
-			--libdir=/usr/lib \
-			--libexecdir=/usr/lib \
-			--localstatedir=/var \
-			--mandir=/usr/share/man \
-			--sbindir=/usr/sbin \
-			--sysconfdir=/etc \
-			$(DISABLE_LARGEFILE) \
-			$(DISABLE_NLS) \
-			--enable-shared \
-			--enable-static \
-			--disable-rpath \
-			--enable-kernel-module \
-			--enable-lib \
-			--enable-util \
-			--disable-example \
-			--disable-auto-modprobe \
-			--with-kernel="$(LINUX_DIR)" \
-			--disable-mtab \
-	);
+	)
+	$(call Build/Configure/Default)
 endef
 
 define Build/Compile
