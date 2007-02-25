@@ -133,7 +133,7 @@ endef
 
 define KernelPackage/usb-audio/2.6
   KCONFIG:=$(CONFIG_SND_USB_AUDIO)
-  FILES:=$(MODULES_DIR)/kernel/drivers/usb/class/audio.ko
+  FILES:=$(MODULES_DIR)/kernel/sound/usb/snd-usb-audio.ko
 endef
 $(eval $(call KernelPackage,usb-audio))
 
