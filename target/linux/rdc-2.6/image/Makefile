@@ -7,9 +7,6 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-define Build/Clean
-endef
-
 define Image/Prepare
 	$(CP) $(LINUX_DIR)/arch/i386/boot/bzImage $(KDIR)/bzImage
 endef

@@ -23,34 +23,19 @@ PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/grub-$(PKG_VERSION)
 include $(INCLUDE_DIR)/package.mk
 
 ifeq ($(HOST_ARCH),x86_64)
-  define Build/Configure
-	(cd $(PKG_BUILD_DIR); \
-		LDFLAGS="-static" \
-		./configure \
-		--target=$(GNU_TARGET_NAME) \
-		--host=$(GNU_TARGET_NAME) \
-		--build=$(GNU_HOST_NAME) \
-		--program-prefix="" \
-		--program-suffix="" \
-		--prefix=/usr \
-		--exec-prefix=/usr \
-		--bindir=/usr/bin \
-		--sbindir=/usr/sbin \
-		--libexecdir=/usr/lib \
-		--sysconfdir=/etc \
-		--datadir=/usr/share \
-		--localstatedir=/var \
-		--mandir=/usr/man \
-		--infodir=/usr/info \
-		$(DISABLE_NLS) \
-		--disable-auto-linux-mem-opt \
-	)
-  endef
+CONFIGURE_FLAGS:= \
+	--target=$(GNU_TARGET_NAME) \
+	--host=$(GNU_TARGET_NAME) \
+	--build=$(GNU_HOST_NAME)
 else
-  define Build/Configure
+CONFIGURE_FLAGS:=
+endif
+
+define Build/Configure
 	(cd $(PKG_BUILD_DIR); \
 		LDFLAGS="-static" \
 		./configure \
+		$(CONFIGURE_FLAGS) \
 		--program-prefix="" \
 		--program-suffix="" \
 		--prefix=/usr \
@@ -66,8 +51,7 @@ else
 		$(DISABLE_NLS) \
 		--disable-auto-linux-mem-opt \
 	)
-  endef
-endif
+endef
 
 #
 # ./configure detects whether the host compiler supports 

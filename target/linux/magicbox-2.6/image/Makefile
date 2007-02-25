@@ -7,9 +7,6 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-define Build/Clean
-endef
-
 define Image/Prepare
 	cp $(LINUX_DIR)/arch/ppc/boot/images/uImage $(KDIR)/uImage
 endef

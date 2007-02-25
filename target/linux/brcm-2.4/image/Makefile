@@ -7,21 +7,18 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-define Build/Compile
-	rm -f $(KDIR)/loader.gz
-	$(MAKE) -C lzma-loader \
-		BUILD_DIR="$(KDIR)" \
-		TARGET="$(KDIR)" \
-		install
-	echo -ne "\\x00" >> $(KDIR)/loader.gz
-endef
-
 define Build/Clean
 	$(MAKE) -C lzma-loader clean
 endef
 
 define Image/Prepare
 	cat $(KDIR)/vmlinux | $(STAGING_DIR)/bin/lzma e -si -so -eos -lc1 -lp2 -pb2 > $(KDIR)/vmlinux.lzma
+	rm -f $(KDIR)/loader.gz
+	$(MAKE) -C lzma-loader \
+		BUILD_DIR="$(KDIR)" \
+		TARGET="$(KDIR)" \
+		clean install
+	echo -ne "\\x00" >> $(KDIR)/loader.gz
 endef
 
 ifneq ($(KERNEL),2.4)
