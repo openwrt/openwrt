@@ -337,6 +337,15 @@ directly as the Nth argument to \texttt{BuildPackage}.
 
 \textbf{\texttt{Build/Compile} (optional):} \\
    How to compile the source; in most cases you should leave this undefined.
+   
+   As with \texttt{Build/Configure} there are two variables that allow you to override
+   the make command line environment variables and flags:
+   \begin{itemize}
+     \item \texttt{MAKE\_FLAGS} \\
+	   Contains all command line arguments (typically variable overrides like \texttt{NAME="value"}
+	 \item \texttt{MAKE\_VARS} \\
+	   Contains all environment variables that are passed to the make command
+   \end{itemize}
 
 \textbf{\texttt{Package/\textit{<name>}/install}:} \\
    A set of commands to copy files out of the compiled source and into the ipkg
