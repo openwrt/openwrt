@@ -330,14 +330,20 @@ define Build/Configure
   $(call Build/Configure/Default,)
 endef
 
-define Build/Compile/Default
+MAKE_VARS := \
 	CFLAGS="$(TARGET_CFLAGS) $(EXTRA_CPPFLAGS) " \
-	LDFLAGS="$(EXTRA_LDFLAGS) " \
+	LDFLAGS="$(EXTRA_LDFLAGS) "
+
+MAKE_FLAGS := \
+	$(TARGET_CONFIGURE_OPTS) \
+	CROSS="$(TARGET_CROSS)" \
+	CXXFLAGS="$(TARGET_CFLAGS) $(EXTRA_CPPFLAGS) " \
+	ARCH="$(ARCH)"
+
+define Build/Compile/Default
+	$(MAKE_VARS) \
 	$(MAKE) -C $(PKG_BUILD_DIR) \
-		$(TARGET_CONFIGURE_OPTS) \
-		CROSS="$(TARGET_CROSS)" \
-		CXXFLAGS="$(TARGET_CFLAGS) $(EXTRA_CPPFLAGS) " \
-		ARCH="$(ARCH)" \
+		$(MAKE_FLAGS) \
 		$(1);
 endef
 
