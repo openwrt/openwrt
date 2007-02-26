@@ -25,7 +25,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/kexec-tools
   SECTION:=utils
   CATEGORY:=Utilities
-  DEPENDS:=@LINUX_2_6_X86
+  DEPENDS:=@LINUX_2_6_X86 zlib
   TITLE:=Kernel boots kernel
   DESCRIPTION:=\
 	kexec is a set of systems call that allows you to load \\\
