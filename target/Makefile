@@ -51,14 +51,4 @@ image_install: image_compile
 imagebuilder_install: image_install
 	$(MAKE) -C imagebuilder install
 
-%-clean: FORCE
-	$(MAKE) -C $(patsubst %-clean,%,$@) clean
-%-download: FORCE
-	$(MAKE) -C $(patsubst %-download,%,$@) download
-%-prepare: FORCE
-	$(MAKE) -C $(patsubst %-prepare,%,$@) prepare
-%-compile: %-prepare
-	$(MAKE) -C $(patsubst %-compile,%,$@) compile
-%-install: %-compile
-	$(MAKE) -C $(patsubst %-install,%,$@) install
-
+$(eval $(call default_subtargets,))
