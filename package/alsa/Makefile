@@ -46,21 +46,18 @@ ifeq ($(LINUX_KARCH),mips)
   KERNEL_C_INCS:= -I$(LINUX_DIR)/include/asm-mips/mach-generic
 endif
 
-define Build/Configure
-	(cd $(PKG_BUILD_DIR); \
-		CFLAGS="$(KERNEL_C_INCS)" \
-		./configure \
-			--with-build="$(LINUX_DIR)" \
-			--with-kernel="$(LINUX_DIR)" \
-			--with-cross="$(KERNEL_CROSS)" \
-			--with-redhat=no \
-			--with-suse=no \
-			--with-oss=yes \
-			--with-isapnp=no \
-			--with-sequencer=no \
-			--with-cards=usb-audio \
-	);
-endef
+CONFIGURE_VARS:= \
+	CFLAGS="$(KERNEL_C_INCS)"
+
+CONFIGURE_ARGS:= \
+	--with-build="$(LINUX_DIR)" \
+	--with-kernel="$(LINUX_DIR)" \
+	--with-redhat=no \
+	--with-suse=no \
+	--with-oss=yes \
+	--with-isapnp=no \
+	--with-sequencer=no \
+	--with-cards=usb-audio
 
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
