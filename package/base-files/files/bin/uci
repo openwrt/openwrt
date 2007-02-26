@@ -1,8 +1,8 @@
 #!/bin/sh
 # Shell script for interacting with config files
 #
-# Copyright (C) 2006 by Fokus Fraunhofer <carsten.tittel@fokus.fraunhofer.de>
-# Copyright (C) 2006 by Felix Fietkau <nbd@openwrt.org>
+# Copyright (C) 2006        Fokus Fraunhofer <carsten.tittel@fokus.fraunhofer.de>
+# Copyright (C) 2006,2007	Felix Fietkau <nbd@openwrt.org>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,8 +18,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-. /etc/functions.sh
-include /lib/config
+. $UCI_ROOT/etc/functions.sh
+include $UCI_ROOT/lib/config
 
 SEP="[^0-9A-Za-z_]"
 
@@ -101,7 +101,7 @@ do_show() {
 		exit 1
 	}
 	
-	for package in ${PACKAGE:-$(cd /etc/config; ls)}; do
+	for package in ${PACKAGE:-$(cd $UCI_ROOT/etc/config; ls)}; do
 		SECTION=""
 	
 		config_cb() {
@@ -136,6 +136,14 @@ do_show() {
 	done
 }
 
+do_validate() {
+	[ "$#" -ne 1 ] && {
+		uci_usage validate
+		exit 1
+	}
+	uci_validate "$1" || exit "$?"
+}
+
 uci_usage() {
 	case "$1" in
 		show) echo "$0 show [<package>[.<config>]]";;
@@ -144,6 +152,7 @@ uci_usage() {
 		del) echo "$0 del <package>.<config>[.<option>]";;
 		rename) echo "$0 rename <package> <config> <name>";;
 		commit) echo "$0 commit [<package> ... ]";;
+		validate) echo "$0 validate <package>";;
 		*) 
 			echo "Syntax: $0 <command> <arguments...>"
 			echo
@@ -153,6 +162,7 @@ uci_usage() {
 			uci_usage del
 			uci_usage rename
 			uci_usage commit
+			uci_usage validate 
 			echo
 			exit 1
 		;;
@@ -164,7 +174,7 @@ if [ $# -eq 0 ] ; then
 	exit 0
 fi
 
-local CMD="$1"
+CMD="$1"
 shift
 case "$CMD" in
 	set) do_set "$@";;
@@ -173,6 +183,7 @@ case "$CMD" in
 	get) do_get "$@";;
 	show) do_show "$@";;
 	commit) do_commit "$@";;
+	validate) do_validate "$@";;
 	*) uci_usage;;
 esac
 exit 0

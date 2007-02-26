@@ -1,8 +1,8 @@
 #!/bin/sh
 # Shell script defining macros for manipulating config files
 #
-# Copyright (C) 2006 by Fokus Fraunhofer <carsten.tittel@fokus.fraunhofer.de>
-# Copyright (C) 2006 by Felix Fietkau <nbd@openwrt.org>
+# Copyright (C) 2006        Fokus Fraunhofer <carsten.tittel@fokus.fraunhofer.de>
+# Copyright (C) 2006,2007   Felix Fietkau <nbd@openwrt.org>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@ uci_load() {
 uci_do_update() {
 	local FILENAME="$1"
 	local UPDATE="$2"
-	awk -f /lib/config/uci-update.awk -f - <<EOF
+	awk -f $UCI_ROOT/lib/config/uci-update.awk -f - <<EOF
 BEGIN {
 	config = read_file("$FILENAME")
 	$UPDATE
@@ -94,9 +94,10 @@ uci_remove() {
 uci_commit() {
 	local PACKAGE="$1"
 	local PACKAGE_BASE="$(basename "$PACKAGE")"
-	
+
 	mkdir -p /tmp/.uci
-	lock "/tmp/.uci/$PACKAGE_BASE.lock"
+	LOCK=`which lock` || LOCK=:
+	$LOCK "/tmp/.uci/$PACKAGE_BASE.lock"
 	[ -f "/tmp/.uci/$PACKAGE_BASE" ] && (
 		updatestr=""
 		
@@ -128,13 +129,13 @@ uci_commit() {
 		}
 		
 		config_load "$PACKAGE"
-		CONFIG_FILENAME="${CONFIG_FILENAME:-$ROOT/etc/config/$PACKAGE_BASE}"
+		CONFIG_FILENAME="${CONFIG_FILENAME:-$UCI_ROOT/etc/config/$PACKAGE_BASE}"
 		uci_do_update "$CONFIG_FILENAME" "$updatestr" > "/tmp/.uci/$PACKAGE_BASE.new" && {
 			mv -f "/tmp/.uci/$PACKAGE_BASE.new" "$CONFIG_FILENAME" && \
 			rm -f "/tmp/.uci/$PACKAGE_BASE"
 		} 
 	)
-	lock -u "/tmp/.uci/$PACKAGE_BASE.lock"
+	$LOCK -u "/tmp/.uci/$PACKAGE_BASE.lock"
 }
 
 

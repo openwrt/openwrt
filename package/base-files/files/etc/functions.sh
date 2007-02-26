@@ -9,6 +9,7 @@ N="
 "
 
 _C=0
+NO_EXPORT=1
 
 hotplug_dev() {
 	env -i ACTION=$1 INTERFACE=$2 /sbin/hotplug net
@@ -19,7 +20,7 @@ append() {
 	local value="$2"
 	local sep="${3:- }"
 	
-	eval "export -n -- \"$var=\${$var:+\${$var}\${value:+\$sep}}\$value\""
+	eval "export ${NO_EXPORT:+-n} -- \"$var=\${$var:+\${$var}\${value:+\$sep}}\$value\""
 }
 
 reset_cb() {
@@ -32,19 +33,19 @@ config () {
 	local cfgtype="$1"
 	local name="$2"
 	
-	CONFIG_NUM_SECTIONS=$(($CONFIG_NUM_SECTIONS + 1))
+	export ${NO_EXPORT:+-n} CONFIG_NUM_SECTIONS=$(($CONFIG_NUM_SECTIONS + 1))
 	name="${name:-cfg$CONFIG_NUM_SECTIONS}"
 	append CONFIG_SECTIONS "$name"
 	config_cb "$cfgtype" "$name"
-	CONFIG_SECTION="$name"
-	export -n "CONFIG_${CONFIG_SECTION}_TYPE=$cfgtype"
+	export ${NO_EXPORT:+-n} CONFIG_SECTION="$name"
+	export ${NO_EXPORT:+-n} "CONFIG_${CONFIG_SECTION}_TYPE=$cfgtype"
 }
 
 option () {
 	local varname="$1"; shift
 	local value="$*"
 	
-	export -n "CONFIG_${CONFIG_SECTION}_${varname}=$value"
+	export ${NO_EXPORT:+-n} "CONFIG_${CONFIG_SECTION}_${varname}=$value"
 	option_cb "$varname" "$*"
 }
 
@@ -58,12 +59,12 @@ config_rename() {
 	for oldvar in `set | grep ^CONFIG_${OLD}_ | \
 		sed -e 's/\(.*\)=.*$/\1/'` ; do
 		newvar="CONFIG_${NEW}_${oldvar##CONFIG_${OLD}_}"
-		eval "export -n \"$newvar=\${$oldvar}\""
+		eval "export ${NO_EXPORT:+-n} \"$newvar=\${$oldvar}\""
 		unset "$oldvar"
 	done
-	CONFIG_SECTIONS="$(echo " $CONFIG_SECTIONS " | sed -e "s, $OLD , $NEW ,")"
+	export ${NO_EXPORT:+-n} CONFIG_SECTIONS="$(echo " $CONFIG_SECTIONS " | sed -e "s, $OLD , $NEW ,")"
 	
-	[ "$CONFIG_SECTION" = "$OLD" ] && CONFIG_SECTION="$NEW"
+	[ "$CONFIG_SECTION" = "$OLD" ] && export ${NO_EXPORT:+-n} CONFIG_SECTION="$NEW"
 }
 
 config_unset() {
@@ -74,8 +75,8 @@ config_clear() {
 	local SECTION="$1"
 	local oldvar
 	
-	CONFIG_SECTIONS="$(echo " $CONFIG_SECTIONS " | sed -e "s, $OLD , ,")"
-	CONFIG_SECTIONS="${SECTION:+$CONFIG_SECTIONS}"
+	export ${NO_EXPORT:+-n} CONFIG_SECTIONS="$(echo " $CONFIG_SECTIONS " | sed -e "s, $OLD , ,")"
+	export ${NO_EXPORT:+-n} CONFIG_SECTIONS="${SECTION:+$CONFIG_SECTIONS}"
 
 	for oldvar in `set | grep ^CONFIG_${SECTION:+${SECTION}_} | \
 		sed -e 's/\(.*\)=.*$/\1/'` ; do 
@@ -84,11 +85,11 @@ config_clear() {
 }
 
 config_load() {
-	local file="/etc/config/$1"
+	local file="$UCI_ROOT/etc/config/$1"
 	_C=0
-	CONFIG_SECTIONS=
-	CONFIG_NUM_SECTIONS=0
-	CONFIG_SECTION=
+	export ${NO_EXPORT:+-n} CONFIG_SECTIONS=
+	export ${NO_EXPORT:+-n} CONFIG_NUM_SECTIONS=0
+	export ${NO_EXPORT:+-n} CONFIG_SECTION=
 	
 	[ -e "$file" ] && {
 		. $file
@@ -100,7 +101,7 @@ config_load() {
 config_get() {
 	case "$3" in
 		"") eval "echo \"\${CONFIG_${1}_${2}}\"";;
-		*)  eval "export -n -- \"$1=\${CONFIG_${2}_${3}}\"";;
+		*)  eval "export ${NO_EXPORT:+-n} -- \"$1=\${CONFIG_${2}_${3}}\"";;
 	esac
 }
 
@@ -108,7 +109,7 @@ config_set() {
 	local section="$1"
 	local option="$2"
 	local value="$3"
-	export -n "CONFIG_${section}_${option}=$value"
+	export ${NO_EXPORT:+-n} "CONFIG_${section}_${option}=$value"
 }
 
 config_foreach() {
@@ -155,12 +156,12 @@ strtok() { # <string> { <variable> [<separator>] ... }
 
 		val="${val#$tmp$2}"
 
-		export -n "$1=$tmp"; count=$((count+1))
+		export ${NO_EXPORT:+-n} "$1=$tmp"; count=$((count+1))
 		shift 2
 	done
 
 	if [ $# -gt 0 -a "$val" ]; then
-		export -n "$1=$val"; count=$((count+1))
+		export ${NO_EXPORT:+-n} "$1=$val"; count=$((count+1))
 	fi
 
 	return $count
