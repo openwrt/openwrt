@@ -1,0 +1,11 @@
+diff -urN busybox-1.4.1/applets/usage_compressed busybox-1.4.1.new/applets/usage_compressed
+--- busybox-1.4.1/applets/usage_compressed	2007-01-24 22:34:50.000000000 +0100
++++ busybox-1.4.1.new/applets/usage_compressed	2007-02-26 22:28:56.000000000 +0100
+@@ -14,6 +14,6 @@
+ 
+ echo 'static const char packed_usage[] = '
+ "$loc/usage" | bzip2 -1 | od -v -t x1 \
+-| $SED -e 's/^[^ ]*//' -e 's/ \(..\)/\\x\1/g' -e 's/^\(.*\)$/"\1"/'
++| $SED -e 's/^[^ ]*//' -e 's/ \([a-f0-9][a-f0-9]\)/\\x\1/g' -e 's/^\(.*\)$/"\1"/'
+ echo ';'
+ echo '#define SIZEOF_usage_messages' `expr 0 + $sz`
