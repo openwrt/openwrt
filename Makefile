@@ -39,44 +39,37 @@ else
 endif
 export OPENWRTVERSION
 
-ifneq ($(shell ./scripts/timestamp.pl -p tmp/.pkginfo package scripts include),tmp/.pkginfo)
-  tmp/.pkginfo: FORCE
-endif
-
-ifneq ($(shell ./scripts/timestamp.pl -p tmp/.targetinfo target/linux scripts include),tmp/.targetinfo)
-  tmp/.targetinfo: FORCE
-endif
-
 ifeq ($(FORCE),)
   .config scripts/config/conf scripts/config/mconf: tmp/.prereq-build
   world: tmp/.prereq-packages tmp/.prereq-target
 endif
 
-ifeq ($(IS_TTY),1)
-  define progress
-	printf "\033[M\r$(1)" >&2;
-  endef
-endif
-
-define dumpinfo
-	@mkdir -p tmp
-	@echo -n Collecting $(2) info... 
-	@-for dir in $(1)/*/; do \
-		[ -f "$${dir}/Makefile" ] || continue; \
-		$(call progress,Collecting $(2) info: $${dir%%/}) \
-		echo Source-Makefile: $${dir}Makefile; \
-		$(NO_TRACE_MAKE) --no-print-dir DUMP=1 -C $$dir 3>/dev/null || echo "ERROR: please fix $${dir}Makefile" >&2; \
-		echo; \
-	done > $@
-	@($(call progress,Collecting $(2) info: done))
-	@echo
+define stamp
+tmp/info/.stamp-$(1)-$(shell ls $(2)/*/Makefile | (md5sum || md5) 2>/dev/null | cut -d' ' -f1)
 endef
 
-tmp/.pkginfo:
-	$(call dumpinfo,package,package)
+STAMP_pkginfo=$(call stamp,pkginfo,package)
+STAMP_targetinfo=$(call stamp,targetinfo,target/linux)
+define scan_info
 
-tmp/.targetinfo:
-	$(call dumpinfo,target/linux,target)
+$(STAMP_$(1)):
+	@mkdir -p tmp/info
+	@rm -f tmp/info/.stamp-$(1)*
+	@touch $$@
+
+$(foreach FILE,$(shell ls $(2)/*/Makefile),
+tmp/.$(1): $(FILE)
+$(FILE):
+)
+
+tmp/.$(1): $(STAMP_$(1))
+	@echo -n Collecting $(3) info... 
+	@$(NO_TRACE_MAKE) -s -f include/scan.mk SCAN_TARGET="$(1)" SCAN_DIR="$(2)" SCAN_NAME="$(3)" SCAN_DEPS="$(4)"
+
+endef
+
+$(eval $(call scan_info,pkginfo,package,package,include/package.mk))
+$(eval $(call scan_info,targetinfo,target/linux,target,include/kernel-build.mk include/kernel-version.mk))
 
 tmpinfo-clean: FORCE
 	@-rm -rf tmp/.pkginfo tmp/.targetinfo
@@ -117,10 +110,12 @@ kernel_menuconfig: .config FORCE
 	-$(MAKE) target/linux-prepare
 	$(NO_TRACE_MAKE) -C target/linux menuconfig
 
-package/%: tmp/.pkginfo tmp/.targetinfo FORCE
+package/%: 
+	@$(NO_TRACE_MAKE) -s tmp/.pkginfo tmp/.targetinfo
 	$(MAKE) -C package $(patsubst package/%,%,$@)
 
-target/%: tmp/.pkginfo tmp/.targetinfo FORCE
+target/%:
+	@$(NO_TRACE_MAKE) -s tmp/.pkginfo tmp/.targetinfo
 	$(MAKE) -C target $(patsubst target/%,%,$@)
 
 tools/%: FORCE
