@@ -106,6 +106,9 @@ enable_atheros() {
 			iwpriv "$ifname" pureg "$pureg"
 			iwconfig "$ifname" channel "$channel"
 		}
+		
+		config_get hidden "$vif" hidden
+		[ -z "$hidden" ] || iwpriv "$ifname" hide_ssid "$hidden"
 
 		config_get wds "$vif" wds
 		case "$wds" in
