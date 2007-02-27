@@ -10,7 +10,6 @@ include $(TOPDIR)/rules.mk
 
 TARGETS-y:=kernel-headers
 TARGETS-$(CONFIG_GDB) += gdb
-TARGETS-$(CONFIG_CCACHE) += ccache
 ifeq ($(CONFIG_NATIVE_TOOLCHAIN),)
   TARGETS-y+=binutils gcc uClibc
 endif

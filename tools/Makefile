@@ -8,6 +8,7 @@
 #
 include $(TOPDIR)/rules.mk
 TARGETS-y:=sed sstrip ipkg-utils ext2fs squashfs mtd-utils lzma mkimage firmware-utils
+TARGETS-$(CONFIG_CCACHE) += ccache
 
 TARGETS_DOWNLOAD:=$(patsubst %,%-download,$(TARGETS-y))
 TARGETS_PREPARE:=$(patsubst %,%-prepare,$(TARGETS-y))
@@ -28,7 +29,7 @@ ifneq ($(shell $(SCRIPT_DIR)/timestamp.pl -p . $(STAMP)),$(STAMP))
   $(STAMP): $(TARGETS_INSTALL)
 endif
 
-$(STAMP):
+$(STAMP): $(TOPDIR)/.config
 	mkdir -p $(shell dirname $@)
 	touch $@
 	
