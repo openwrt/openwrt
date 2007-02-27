@@ -78,17 +78,6 @@ start_net() {(
 	setup_interface "$1" "$2"
 )}
 
-config_get_bool() {
-	local _tmp
-	config_get "$1" "$2" "$3"
-	eval "_tmp=\$$1"
-	case "$_tmp" in
-		1|on|enabled) eval "$1=1";;
-		0|off|disabled) eval "$1=0";;
-		*) eval "$1=${4:-0}";;
-	esac
-}
-
 config_cb() {
 	config_get TYPE "$CONFIG_SECTION" TYPE
 	case "$TYPE" in
