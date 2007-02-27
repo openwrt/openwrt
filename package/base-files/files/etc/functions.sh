@@ -105,6 +105,17 @@ config_get() {
 	esac
 }
 
+# config_get_bool <variable> <section> <option> [<default>]
+config_get_bool() {
+	local _tmp
+	config_get "_tmp" "$2" "$3"
+	case "$_tmp" in
+		1|on|enabled) export ${NO_EXPORT:+-n} "$1=1";;
+		0|off|disabled) export ${NO_EXPORT:+-n} "$1=0";;
+		*) eval "$1=${4:-0}";;
+	esac
+}
+
 config_set() {
 	local section="$1"
 	local option="$2"
