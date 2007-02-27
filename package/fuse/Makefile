@@ -93,6 +93,8 @@ define Build/Compile
 		ARCH="$(LINUX_KARCH)" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
+		AM_CFLAGS="$(TARGET_CFLAGS) -DDISABLE_COMPAT=1" \
+		EXTRA_DIST="" \
 		all install
 endef
 
