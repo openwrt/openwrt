@@ -52,6 +52,7 @@ CONFIGURE_VARS:= \
 CONFIGURE_ARGS:= \
 	--with-build="$(LINUX_DIR)" \
 	--with-kernel="$(LINUX_DIR)" \
+	--with-cross="$(KERNEL_CROSS)" \
 	--with-redhat=no \
 	--with-suse=no \
 	--with-oss=yes \
