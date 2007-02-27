@@ -195,7 +195,8 @@ setup_interface() {
 unbridge() {
 	local dev="$1"
 	local brdev
-
+	
+	[ -x /usr/sbin/brctl ] || return 0
 	brctl show | grep "$dev" >/dev/null && {
 		# interface is still part of a bridge, correct that
 
