@@ -19,24 +19,31 @@ PKG_BUILD_DIR:=$(TOOLCHAIN_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/host-build.mk
 
-ifneq ($(shell which ccache),)
-  define Build/Configure
-    	$(call Build/Configure/Default)
-  endef
-
+ifneq ($(strip $(shell which ccache >/dev/null && echo found)),found)
   define Build/Compile
-    	$(MAKE) CC="$(HOSTCC)" -C $(PKG_BUILD_DIR)
+	$(MAKE) CC="$(HOSTCC)" -C $(PKG_BUILD_DIR)
   endef
 
   define Build/Install
-    	$(MAKE) -C $(PKG_BUILD_DIR) \
-   		DESTDIR="$(STAGING_DIR)" \
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		DESTDIR="$(STAGING_DIR)" \
 		install
   endef
 
   define Build/Clean
-	$(MAKE) -C $(PKG_BUILD_DIR) uninstall
+	-$(MAKE) -C $(PKG_BUILD_DIR) uninstall
 	-$(MAKE) -C $(PKG_BUILD_DIR) clean
+	$(call Build/Clean/Default)
+  endef
+else
+  define Build/Prepare
+  endef
+  define Build/Configure
+  endef
+  define Build/Compile
+  endef
+  define Build/Clean
   endef
 endif
+
 $(eval $(call HostBuild))
