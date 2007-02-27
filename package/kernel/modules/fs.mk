@@ -3,6 +3,7 @@ FSMENU:=Filesystems
 define KernelPackage/fs-cifs
   TITLE:=CIFS support
   DESCRIPTION:=Kernel module for CIFS support
+  DEPENDS:=+kmod-nls-base
   KCONFIG:=$(CONFIG_CIFS)
   SUBMENU:=$(FSMENU)
   AUTOLOAD:=$(call AutoLoad,30,cifs)
