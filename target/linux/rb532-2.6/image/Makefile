@@ -52,7 +52,7 @@ endef
 
 define Image/Build
 	$(STAGING_DIR)/bin/patch-cmdline $(KDIR)/vmlinux.elf '$(strip $(call Image/cmdline/$(1))) '
-	./gen_image.sh $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).bin 4 $(KDIR)/vmlinux.elf 16 $(KDIR)/root.$(1)
+	./gen_image.sh $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).bin 4 $(KDIR)/vmlinux.elf $(CONFIG_TARGET_ROOTFS_FSPART) $(KDIR)/root.$(1)
 endef
 
 $(eval $(call BuildImage))
