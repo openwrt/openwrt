@@ -1,0 +1,76 @@
+diff -ruN strongswan-2.8.1-orig/lib/libcrypto/libaes/Makefile strongswan-2.8.1/lib/libcrypto/libaes/Makefile
+--- strongswan-2.8.1-orig/lib/libcrypto/libaes/Makefile	2004-03-22 16:53:16.000000000 -0500
++++ strongswan-2.8.1/lib/libcrypto/libaes/Makefile	2007-01-17 00:48:52.260789653 -0500
+@@ -25,10 +25,8 @@
+ 
+ $(BLIB): $(LIBOBJ)
+ 	/bin/rm -f $(BLIB)
+-	ar cr $(BLIB) $(LIBOBJ)
+-	-if test -s /bin/ranlib; then /bin/ranlib $(BLIB); \
+-	else if test -s /usr/bin/ranlib; then /usr/bin/ranlib $(BLIB); \
+-	else exit 0; fi; fi
++	$(AR) cr $(BLIB) $(LIBOBJ)
++	$(RANLIB) $(BLIB)
+ 
+ testx: test_main_mac.o $(BLIB)
+ 	$(CC) -o $@ $^ 
+diff -ruN strongswan-2.8.1-orig/lib/libcrypto/libblowfish/Makefile strongswan-2.8.1/lib/libcrypto/libblowfish/Makefile
+--- strongswan-2.8.1-orig/lib/libcrypto/libblowfish/Makefile	2004-03-22 16:53:16.000000000 -0500
++++ strongswan-2.8.1/lib/libcrypto/libblowfish/Makefile	2007-01-17 01:40:41.716879761 -0500
+@@ -58,7 +58,7 @@
+ lib:	$(LIB)
+ 
+ $(LIB):	$(LIBOBJ)
+-	$(AR) $(LIB) $(LIBOBJ)
++	$(AR) -r $(LIB) $(LIBOBJ)
+ 	$(RANLIB) $(LIB)
+ 
+ # elf
+diff -ruN strongswan-2.8.1-orig/lib/libcrypto/libserpent/Makefile strongswan-2.8.1/lib/libcrypto/libserpent/Makefile
+--- strongswan-2.8.1-orig/lib/libcrypto/libserpent/Makefile	2004-03-22 16:53:16.000000000 -0500
++++ strongswan-2.8.1/lib/libcrypto/libserpent/Makefile	2007-01-17 00:50:37.692571031 -0500
+@@ -8,10 +8,8 @@
+ 
+ $(BLIB): $(LIBOBJ)
+ 	/bin/rm -f $(BLIB)
+-	ar cr $(BLIB) $(LIBOBJ)
+-	-if test -s /bin/ranlib; then /bin/ranlib $(BLIB); \
+-	else if test -s /usr/bin/ranlib; then /usr/bin/ranlib $(BLIB); \
+-	else exit 0; fi; fi
++	$(AR) cr $(BLIB) $(LIBOBJ)
++	$(RANLIB) $(BLIB)
+ 
+ test: test_main.o $(BLIB)
+ 	$(CC) -o $@ $^ 
+diff -ruN strongswan-2.8.1-orig/lib/libcrypto/libsha2/Makefile strongswan-2.8.1/lib/libcrypto/libsha2/Makefile
+--- strongswan-2.8.1-orig/lib/libcrypto/libsha2/Makefile	2004-03-22 16:53:16.000000000 -0500
++++ strongswan-2.8.1/lib/libcrypto/libsha2/Makefile	2007-01-17 00:50:46.050791555 -0500
+@@ -9,10 +9,8 @@
+ 
+ $(BLIB): $(LIBOBJ)
+ 	/bin/rm -f $(BLIB)
+-	ar cr $(BLIB) $(LIBOBJ)
+-	-if test -s /bin/ranlib; then /bin/ranlib $(BLIB); \
+-	else if test -s /usr/bin/ranlib; then /usr/bin/ranlib $(BLIB); \
+-	else exit 0; fi; fi
++	$(AR) cr $(BLIB) $(LIBOBJ)
++	$(RANLIB) $(BLIB)
+ 
+ test: test_main.o $(BLIB)
+ 	$(CC) -o $@ $^ 
+diff -ruN strongswan-2.8.1-orig/lib/libcrypto/libtwofish/Makefile strongswan-2.8.1/lib/libcrypto/libtwofish/Makefile
+--- strongswan-2.8.1-orig/lib/libcrypto/libtwofish/Makefile	2004-03-22 16:53:17.000000000 -0500
++++ strongswan-2.8.1/lib/libcrypto/libtwofish/Makefile	2007-01-17 00:50:53.533988997 -0500
+@@ -9,10 +9,8 @@
+ 
+ $(BLIB): $(LIBOBJ)
+ 	/bin/rm -f $(BLIB)
+-	ar cr $(BLIB) $(LIBOBJ)
+-	-if test -s /bin/ranlib; then /bin/ranlib $(BLIB); \
+-	else if test -s /usr/bin/ranlib; then /usr/bin/ranlib $(BLIB); \
+-	else exit 0; fi; fi
++	$(AR) cr $(BLIB) $(LIBOBJ)
++	$(RANLIB) $(BLIB)
+ 
+ test: test_main.o $(BLIB)
+ 	$(CC) -o $@ $^ 

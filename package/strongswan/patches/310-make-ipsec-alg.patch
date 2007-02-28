@@ -1,0 +1,18 @@
+diff -ruN strongswan-2.8.1-orig/linux/net/ipsec/alg/Makefile.alg_cryptoapi strongswan-2.8.1/linux/net/ipsec/alg/Makefile.alg_cryptoapi
+--- strongswan-2.8.1-orig/linux/net/ipsec/alg/Makefile.alg_cryptoapi	2004-03-22 16:53:19.000000000 -0500
++++ strongswan-2.8.1/linux/net/ipsec/alg/Makefile.alg_cryptoapi	2007-01-17 02:28:26.835241726 -0500
+@@ -1,10 +1,10 @@
+ MOD_CRYPTOAPI := ipsec_cryptoapi.o
+ 
+ ifneq ($(wildcard $(TOPDIR)/include/linux/crypto.h),)
+-ALG_MODULES += $(MOD_CRYPTOAPI)
+-obj-$(CONFIG_IPSEC_ALG_CRYPTOAPI) += $(MOD_CRYPTOAPI)
+-static_init-func-$(CONFIG_IPSEC_ALG_CRYPTOAPI)+= ipsec_cryptoapi_init
+-alg_obj-$(CONFIG_IPSEC_ALG_CRYPTOAPI) += ipsec_alg_cryptoapi.o
++#ALG_MODULES += $(MOD_CRYPTOAPI)
++#obj-$(CONFIG_IPSEC_ALG_CRYPTOAPI) += $(MOD_CRYPTOAPI)
++#static_init-func-$(CONFIG_IPSEC_ALG_CRYPTOAPI)+= ipsec_cryptoapi_init
++#alg_obj-$(CONFIG_IPSEC_ALG_CRYPTOAPI) += ipsec_alg_cryptoapi.o
+ else
+ $(warning "Linux CryptoAPI (2.4.22+ or 2.6.x) not found, not building ipsec_cryptoapi.o")
+ endif

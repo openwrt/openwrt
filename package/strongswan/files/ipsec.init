@@ -1,0 +1,101 @@
+#!/bin/sh /etc/rc.common
+
+START=65
+
+config_cb() {
+	local cfg="$CONFIG_SECTION"
+	local cfgt
+	config_get cfgt "$cfg" TYPE
+
+	case "$cfgt" in
+		device)
+			config_get IPSEC_RESET_BUTTON		$cfg reset_button
+			config_get IPSEC_STATUS_LED_START	$cfg status_start
+			config_get IPSEC_STATUS_LED_VALID	$cfg status_valid
+			;;
+		filter)
+			config_get IPSEC_UPDOWN_RULE_IN		$cfg rule_in
+			config_get IPSEC_UPDOWN_DEST_IN		$cfg dest_in
+			config_get IPSEC_UPDOWN_RULE_OUT	$cfg rule_out
+			config_get IPSEC_UPDOWN_DEST_OUT	$cfg dest_out
+			;;
+		forward)
+			config_get IPSEC_UPDOWN_FWD_RULE_IN	$cfg rule_in
+			config_get IPSEC_UPDOWN_FWD_DEST_IN	$cfg dest_in
+			config_get IPSEC_UPDOWN_FWD_RULE_OUT	$cfg rule_out
+			config_get IPSEC_UPDOWN_FWD_DEST_OUT	$cfg dest_out
+			;;
+		*)
+			;;
+	esac
+}
+
+config_load ipsec
+
+export IPSEC_RESET_BUTTON
+export IPSEC_STATUS_LED_START
+export IPSEC_STATUS_LED_VALID
+
+export IPSEC_UPDOWN_RULE_IN
+export IPSEC_UPDOWN_DEST_IN
+export IPSEC_UPDOWN_RULE_OUT
+export IPSEC_UPDOWN_DEST_OUT
+
+export IPSEC_UPDOWN_FWD_RULE_IN
+export IPSEC_UPDOWN_FWD_DEST_IN
+export IPSEC_UPDOWN_FWD_RULE_OUT
+export IPSEC_UPDOWN_FWD_DEST_OUT
+
+
+start() {
+
+	[ -f /etc/ipsec.conf      ] || exit
+	[ -e /var/run/starter.pid ] && exit
+
+	/usr/sbin/ipsec _showstatus start
+	
+	# stuff the dnsmasq cache in case dns is on our own subnet
+	for peer in `grep left= /etc/ipsec.conf | \
+				cut -f 1 -d% | cut -f 2 -d=` ; do
+		ping -c 1 $peer > /dev/null 2>&1
+	done
+	
+	/usr/sbin/ipsec start || exit
+	
+	# work around broken routing behavior:
+	# a route to the local wan segment will appear
+	# the need was removed in the patched _updown script
+
+	while ! route -n | grep -q ipsec ; do sleep 1 ; done
+
+	defint=`route -n | awk '/^0.0.0.0/{print $8}'`
+	defnet=`route -n | grep $defint | awk  '!/^0.0.0.0/{print $1}'`
+	dnmask=`route -n | grep $defint | awk  '!/^0.0.0.0/{print $3}'`
+	tundev=`route -n | grep $defnet | awk '/ipsec/{print $8}'`
+	
+	route del -net $defnet netmask $dnmask dev $tundev
+}
+
+
+stop() {
+
+	/usr/sbin/ipsec stop 2> /dev/null
+
+	# wait until the shutdown actually happens
+	while [ -e /var/run/starter.pid ] ; do
+		if [ -d /proc/`cat /var/run/starter.pid` ] ; then
+			sleep 1
+		else
+			rm /var/run/starter.pid
+		fi
+	done
+
+	# kill any lingering processes
+	while ps auxww | grep -q ipsec | grep -v init.d; do
+		kill `ps auxww | grep -v init.d | awk '/\/ipsec\//{print $1}'` 2> /dev/null
+		sleep 1
+	done
+
+ 	ipsec _showstatus stop
+}
+
