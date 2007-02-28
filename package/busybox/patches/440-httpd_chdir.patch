@@ -1,0 +1,28 @@
+diff -ur busybox.old/networking/httpd.c busybox.dev/networking/httpd.c
+--- busybox.old/networking/httpd.c	2007-02-27 23:15:20.611300000 +0100
++++ busybox.dev/networking/httpd.c	2007-02-27 23:18:10.022546112 +0100
+@@ -102,6 +102,7 @@
+ static const char default_path_httpd_conf[] = "/etc";
+ static const char httpd_conf[] = "httpd.conf";
+ static const char home[] = "./";
++static const char *home_httpd = home;
+ 
+ #define TIMEOUT 60
+ 
+@@ -1500,6 +1501,8 @@
+ #if ENABLE_FEATURE_HTTPD_BASIC_AUTH
+ 	int credentials = -1;  /* if not required this is Ok */
+ #endif
++	
++	xchdir(home_httpd);
+ 
+ 	sa.sa_handler = handle_sigalrm;
+ 	sigemptyset(&sa.sa_mask);
+@@ -1931,7 +1934,6 @@
+ int httpd_main(int argc, char *argv[])
+ {
+ 	unsigned opt;
+-	const char *home_httpd = home;
+ 	char *url_for_decode;
+ 	USE_FEATURE_HTTPD_ENCODE_URL_STR(const char *url_for_encode;)
+ 	const char *s_port;
