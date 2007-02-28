@@ -23,7 +23,7 @@ sub load_config($) {
 			next;
 		};
 		/^# CONFIG_(.+?) is not set/ and do {
-			$config{$1} = -1;
+			$config{$1} = "#undef";
 			next;
 		};
 		/^#/ and next;
@@ -91,7 +91,7 @@ sub config_sub($$) {
 sub print_cfgline($$) {
 	my $name = shift;
 	my $val = shift;
-	if ($val eq '-1') {
+	if ($val eq '#undef') {
 		print "# CONFIG_$name is not set\n";
 	} else {
 		print "CONFIG_$name=$val\n";
