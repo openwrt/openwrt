@@ -1,7 +1,7 @@
-diff -urN linux-2.6.19.old/drivers/net/imq.c linux-2.6.19.dev/drivers/net/imq.c
---- linux-2.6.19.old/drivers/net/imq.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.19.dev/drivers/net/imq.c	2006-12-14 03:13:47.000000000 +0100
-@@ -0,0 +1,400 @@
+diff -urN linux-2.6.19/drivers/net/imq.c linux-2.6.19+imq/drivers/net/imq.c
+--- linux-2.6.19/drivers/net/imq.c	1970-01-01 09:30:00.000000000 +0930
++++ linux-2.6.19+imq/drivers/net/imq.c	2006-12-05 23:01:02.000000000 +1030
+@@ -0,0 +1,402 @@
 +/*
 + *             Pseudo-driver for the intermediate queue device.
 + *
@@ -53,7 +53,6 @@ diff -urN linux-2.6.19.old/drivers/net/imq.c linux-2.6.19.dev/drivers/net/imq.c
 + *             More info at: http://www.linuximq.net/ (Andre Correa)
 + */
 +
-+#include <linux/autoconf.h>
 +#include <linux/module.h>
 +#include <linux/kernel.h>
 +#include <linux/moduleparam.h>
@@ -69,54 +68,56 @@ diff -urN linux-2.6.19.old/drivers/net/imq.c linux-2.6.19.dev/drivers/net/imq.c
 +#include <linux/imq.h>
 +#include <net/pkt_sched.h>
 +
++extern int qdisc_restart1(struct net_device *dev);
++
 +static nf_hookfn imq_nf_hook;
 +
 +static struct nf_hook_ops imq_ingress_ipv4 = {
-+       .hook           = imq_nf_hook,
-+       .owner          = THIS_MODULE,
-+       .pf             = PF_INET,
-+       .hooknum        = NF_IP_PRE_ROUTING,
++	.hook		= imq_nf_hook,
++	.owner		= THIS_MODULE,
++	.pf		= PF_INET,
++	.hooknum	= NF_IP_PRE_ROUTING,
 +#if defined(CONFIG_IMQ_BEHAVIOR_BA) || defined(CONFIG_IMQ_BEHAVIOR_BB)
-+       .priority       = NF_IP_PRI_MANGLE + 1
++	.priority	= NF_IP_PRI_MANGLE + 1
 +#else
-+       .priority       = NF_IP_PRI_NAT_DST + 1
++	.priority	= NF_IP_PRI_NAT_DST + 1
 +#endif
 +};
 +
 +static struct nf_hook_ops imq_egress_ipv4 = {
-+       .hook           = imq_nf_hook,
-+       .owner          = THIS_MODULE,
-+       .pf             = PF_INET,
-+       .hooknum        = NF_IP_POST_ROUTING,
++	.hook		= imq_nf_hook,
++	.owner		= THIS_MODULE,
++	.pf		= PF_INET,
++	.hooknum	= NF_IP_POST_ROUTING,
 +#if defined(CONFIG_IMQ_BEHAVIOR_AA) || defined(CONFIG_IMQ_BEHAVIOR_BA)
-+       .priority       = NF_IP_PRI_LAST
++	.priority	= NF_IP_PRI_LAST
 +#else
-+       .priority       = NF_IP_PRI_NAT_SRC - 1
++	.priority	= NF_IP_PRI_NAT_SRC - 1
 +#endif
 +};
 +
 +#if defined(CONFIG_IPV6) || defined (CONFIG_IPV6_MODULE)
 +static struct nf_hook_ops imq_ingress_ipv6 = {
-+       .hook           = imq_nf_hook,
-+       .owner          = THIS_MODULE,
-+       .pf             = PF_INET6,
-+       .hooknum        = NF_IP6_PRE_ROUTING,
++	.hook		= imq_nf_hook,
++	.owner		= THIS_MODULE,
++	.pf		= PF_INET6,
++	.hooknum	= NF_IP6_PRE_ROUTING,
 +#if defined(CONFIG_IMQ_BEHAVIOR_BA) || defined(CONFIG_IMQ_BEHAVIOR_BB)
-+       .priority       = NF_IP6_PRI_MANGLE + 1
++	.priority	= NF_IP6_PRI_MANGLE + 1
 +#else
-+       .priority       = NF_IP6_PRI_NAT_DST + 1
++	.priority	= NF_IP6_PRI_NAT_DST + 1
 +#endif
 +};
 +
 +static struct nf_hook_ops imq_egress_ipv6 = {
-+       .hook           = imq_nf_hook,
-+       .owner          = THIS_MODULE,
-+       .pf             = PF_INET6,
-+       .hooknum        = NF_IP6_POST_ROUTING,
++	.hook		= imq_nf_hook,
++	.owner		= THIS_MODULE,
++	.pf		= PF_INET6,
++	.hooknum	= NF_IP6_POST_ROUTING,
 +#if defined(CONFIG_IMQ_BEHAVIOR_AA) || defined(CONFIG_IMQ_BEHAVIOR_BA)
-+       .priority       = NF_IP6_PRI_LAST
++	.priority	= NF_IP6_PRI_LAST
 +#else
-+       .priority       = NF_IP6_PRI_NAT_SRC - 1
++	.priority	= NF_IP6_PRI_NAT_SRC - 1
 +#endif
 +};
 +#endif
@@ -131,266 +132,267 @@ diff -urN linux-2.6.19.old/drivers/net/imq.c linux-2.6.19.dev/drivers/net/imq.c
 +
 +static struct net_device_stats *imq_get_stats(struct net_device *dev)
 +{
-+       return (struct net_device_stats *)dev->priv;
++	return (struct net_device_stats *)dev->priv;
 +}
 +
 +/* called for packets kfree'd in qdiscs at places other than enqueue */
 +static void imq_skb_destructor(struct sk_buff *skb)
 +{
-+       struct nf_info *info = skb->nf_info;
++	struct nf_info *info = skb->nf_info;
 +
-+       if (info) {
-+               if (info->indev)
-+                       dev_put(info->indev);
-+               if (info->outdev)
-+                       dev_put(info->outdev);
-+               kfree(info);
-+       }
++	if (info) {
++		if (info->indev)
++			dev_put(info->indev);
++		if (info->outdev)
++			dev_put(info->outdev);
++		kfree(info);
++	}
 +}
 +
 +static int imq_dev_xmit(struct sk_buff *skb, struct net_device *dev)
 +{
-+       struct net_device_stats *stats = (struct net_device_stats*) dev->priv;
++	struct net_device_stats *stats = (struct net_device_stats*) dev->priv;
 +
-+       stats->tx_bytes += skb->len;
-+       stats->tx_packets++;
++	stats->tx_bytes += skb->len;
++	stats->tx_packets++;
 +
-+       skb->imq_flags = 0;
-+       skb->destructor = NULL;
++	skb->imq_flags = 0;
++	skb->destructor = NULL;
 +
-+       dev->trans_start = jiffies;
-+       nf_reinject(skb, skb->nf_info, NF_ACCEPT);
-+       return 0;
++	dev->trans_start = jiffies;
++	nf_reinject(skb, skb->nf_info, NF_ACCEPT);
++	return 0;
 +}
 +
 +static int imq_nf_queue(struct sk_buff *skb, struct nf_info *info, unsigned queue_num, void *data)
 +{
-+       struct net_device *dev;
-+       struct net_device_stats *stats;
-+       struct sk_buff *skb2 = NULL;
-+       struct Qdisc *q;
-+       unsigned int index = skb->imq_flags&IMQ_F_IFMASK;
-+       int ret = -1;
++	struct net_device *dev;
++	struct net_device_stats *stats;
++	struct sk_buff *skb2 = NULL;
++	struct Qdisc *q;
++	unsigned int index = skb->imq_flags&IMQ_F_IFMASK;
++	int ret = -1;
 +
-+       if (index > numdevs)
-+               return -1;
++	if (index > numdevs)
++		return -1;
 +
-+       dev = imq_devs + index;
-+       if (!(dev->flags & IFF_UP)) {
-+               skb->imq_flags = 0;
-+               nf_reinject(skb, info, NF_ACCEPT);
-+               return 0;
-+       }
-+       dev->last_rx = jiffies;
++	dev = imq_devs + index;
++	if (!(dev->flags & IFF_UP)) {
++		skb->imq_flags = 0;
++		nf_reinject(skb, info, NF_ACCEPT);
++		return 0;
++	}
++	dev->last_rx = jiffies;
 +
-+       if (skb->destructor) {
-+               skb2 = skb;
-+               skb = skb_clone(skb, GFP_ATOMIC);
-+               if (!skb)
-+                       return -1;
-+       }
-+       skb->nf_info = info;
++	if (skb->destructor) {
++		skb2 = skb;
++		skb = skb_clone(skb, GFP_ATOMIC);
++		if (!skb)
++			return -1;
++	}
++	skb->nf_info = info;
 +
-+       stats = (struct net_device_stats *)dev->priv;
-+       stats->rx_bytes+= skb->len;
-+       stats->rx_packets++;
++	stats = (struct net_device_stats *)dev->priv;
++	stats->rx_bytes+= skb->len;
++	stats->rx_packets++;
 +
-+       spin_lock_bh(&dev->queue_lock);
-+       q = dev->qdisc;
-+       if (q->enqueue) {
-+               q->enqueue(skb_get(skb), q);
-+               if (skb_shared(skb)) {
-+                       skb->destructor = imq_skb_destructor;
-+                       kfree_skb(skb);
-+                       ret = 0;
-+               }
-+       }
-+       if (spin_is_locked(&dev->_xmit_lock))
-+               netif_schedule(dev);
-+       else
-+               qdisc_run(dev);
++	spin_lock_bh(&dev->queue_lock);
++	q = dev->qdisc;
++	if (q->enqueue) {
++		q->enqueue(skb_get(skb), q);
++		if (skb_shared(skb)) {
++			skb->destructor = imq_skb_destructor;
++			kfree_skb(skb);
++			ret = 0;
++		}
++	}
++	if (spin_is_locked(&dev->_xmit_lock))
++		netif_schedule(dev);
++	else
++		while (!netif_queue_stopped(dev) && qdisc_restart1(dev) < 0)
++			/* NOTHING */;
 +
-+       spin_unlock_bh(&dev->queue_lock);
++	spin_unlock_bh(&dev->queue_lock);
 +
-+       if (skb2)
-+               kfree_skb(ret ? skb : skb2);
++	if (skb2)
++		kfree_skb(ret ? skb : skb2);
 +
-+       return ret;
++	return ret;
 +}
 +
 +static struct nf_queue_handler nfqh = {
-+       .name  = "imq",
-+       .outfn = imq_nf_queue,
++	.name  = "imq",
++	.outfn = imq_nf_queue,
 +};
 +
 +static unsigned int imq_nf_hook(unsigned int hook, struct sk_buff **pskb,
-+                  const struct net_device *indev,
-+                  const struct net_device *outdev,
-+                  int (*okfn)(struct sk_buff *))
++				const struct net_device *indev,
++				const struct net_device *outdev,
++				int (*okfn)(struct sk_buff *))
 +{
-+       if ((*pskb)->imq_flags & IMQ_F_ENQUEUE)
-+               return NF_QUEUE;
++	if ((*pskb)->imq_flags & IMQ_F_ENQUEUE)
++		return NF_QUEUE;
 +
-+       return NF_ACCEPT;
++	return NF_ACCEPT;
 +}
 +
 +
 +static int __init imq_init_hooks(void)
 +{
-+       int err;
++	int err;
 +
-+       err = nf_register_queue_handler(PF_INET, &nfqh);
-+       if (err > 0)
-+               goto err1;
-+       if ((err = nf_register_hook(&imq_ingress_ipv4)))
-+               goto err2;
-+       if ((err = nf_register_hook(&imq_egress_ipv4)))
-+               goto err3;
++	err = nf_register_queue_handler(PF_INET, &nfqh);
++	if (err > 0)
++		goto err1;
++	if ((err = nf_register_hook(&imq_ingress_ipv4)))
++		goto err2;
++	if ((err = nf_register_hook(&imq_egress_ipv4)))
++		goto err3;
 +#if defined(CONFIG_IPV6) || defined (CONFIG_IPV6_MODULE)
-+       if ((err = nf_register_queue_handler(PF_INET6, &nfqh)))
-+               goto err4;
-+       if ((err = nf_register_hook(&imq_ingress_ipv6)))
-+               goto err5;
-+       if ((err = nf_register_hook(&imq_egress_ipv6)))
-+               goto err6;
++	if ((err = nf_register_queue_handler(PF_INET6, &nfqh)))
++		goto err4;
++	if ((err = nf_register_hook(&imq_ingress_ipv6)))
++		goto err5;
++	if ((err = nf_register_hook(&imq_egress_ipv6)))
++		goto err6;
 +#endif
 +
-+       return 0;
++	return 0;
 +
 +#if defined(CONFIG_IPV6) || defined (CONFIG_IPV6_MODULE)
 +err6:
-+       nf_unregister_hook(&imq_ingress_ipv6);
++	nf_unregister_hook(&imq_ingress_ipv6);
 +err5:
-+       nf_unregister_queue_handler(PF_INET6);
++	nf_unregister_queue_handler(PF_INET6);
 +err4:
-+       nf_unregister_hook(&imq_egress_ipv6);
++	nf_unregister_hook(&imq_egress_ipv6);
 +#endif
 +err3:
-+       nf_unregister_hook(&imq_ingress_ipv4);
++	nf_unregister_hook(&imq_ingress_ipv4);
 +err2:
-+       nf_unregister_queue_handler(PF_INET);
++	nf_unregister_queue_handler(PF_INET);
 +err1:
-+       return err;
++	return err;
 +}
 +
 +static void __exit imq_unhook(void)
 +{
-+       nf_unregister_hook(&imq_ingress_ipv4);
-+       nf_unregister_hook(&imq_egress_ipv4);
-+       nf_unregister_queue_handler(PF_INET);
++	nf_unregister_hook(&imq_ingress_ipv4);
++	nf_unregister_hook(&imq_egress_ipv4);
++	nf_unregister_queue_handler(PF_INET);
 +#if defined(CONFIG_IPV6) || defined (CONFIG_IPV6_MODULE)
-+       nf_unregister_hook(&imq_ingress_ipv6);
-+       nf_unregister_hook(&imq_egress_ipv6);
-+       nf_unregister_queue_handler(PF_INET6);
++	nf_unregister_hook(&imq_ingress_ipv6);
++	nf_unregister_hook(&imq_egress_ipv6);
++	nf_unregister_queue_handler(PF_INET6);
 +#endif
 +}
 +
 +static int __init imq_dev_init(struct net_device *dev)
 +{
-+       dev->hard_start_xmit    = imq_dev_xmit;
-+       dev->type               = ARPHRD_VOID;
-+       dev->mtu                = 1500;
-+       dev->tx_queue_len       = 30;
-+       dev->flags              = IFF_NOARP;
-+       dev->priv = kmalloc(sizeof(struct net_device_stats), GFP_KERNEL);
-+       if (dev->priv == NULL)
-+               return -ENOMEM;
-+       memset(dev->priv, 0, sizeof(struct net_device_stats));
-+       dev->get_stats          = imq_get_stats;
++	dev->hard_start_xmit    = imq_dev_xmit;
++	dev->type               = ARPHRD_VOID;
++	dev->mtu                = 1500;
++	dev->tx_queue_len       = 30;
++	dev->flags              = IFF_NOARP;
++	dev->priv = kmalloc(sizeof(struct net_device_stats), GFP_KERNEL);
++	if (dev->priv == NULL)
++		return -ENOMEM;
++	memset(dev->priv, 0, sizeof(struct net_device_stats));
++	dev->get_stats          = imq_get_stats;
 +
-+       return 0;
++	return 0;
 +}
 +
 +static void imq_dev_uninit(struct net_device *dev)
 +{
-+       kfree(dev->priv);
++	kfree(dev->priv);
 +}
 +
 +static int __init imq_init_devs(void)
 +{
-+       struct net_device *dev;
-+       int i,j;
-+       j = numdevs;
++	struct net_device *dev;
++	int i,j;
++	j = numdevs;
 +
-+       if (!numdevs || numdevs > IMQ_MAX_DEVS) {
-+               printk(KERN_ERR "IMQ: numdevs has to be betweed 1 and %u\n",
-+                      IMQ_MAX_DEVS);
-+               return -EINVAL;
-+       }
++	if (!numdevs || numdevs > IMQ_MAX_DEVS) {
++		printk(KERN_ERR "IMQ: numdevs has to be betweed 1 and %u\n",
++		       IMQ_MAX_DEVS);
++		return -EINVAL;
++	}
 +
-+       imq_devs = kmalloc(sizeof(struct net_device) * numdevs, GFP_KERNEL);
-+       if (!imq_devs)
-+               return -ENOMEM;
-+       memset(imq_devs, 0, sizeof(struct net_device) * numdevs);
++	imq_devs = kmalloc(sizeof(struct net_device) * numdevs, GFP_KERNEL);
++	if (!imq_devs)
++		return -ENOMEM;
++	memset(imq_devs, 0, sizeof(struct net_device) * numdevs);
 +
-+       /* we start counting at zero */
-+       numdevs--;
++	/* we start counting at zero */
++	numdevs--;
 +
-+       for (i = 0, dev = imq_devs; i <= numdevs; i++, dev++) {
-+               SET_MODULE_OWNER(dev);
-+               strcpy(dev->name, "imq%d");
-+               dev->init   = imq_dev_init;
-+               dev->uninit = imq_dev_uninit;
++	for (i = 0, dev = imq_devs; i <= numdevs; i++, dev++) {
++		SET_MODULE_OWNER(dev);
++		strcpy(dev->name, "imq%d");
++		dev->init   = imq_dev_init;
++		dev->uninit = imq_dev_uninit;
 +
-+               if (register_netdev(dev) < 0)
-+                       goto err_register;
-+       }
-+       printk(KERN_INFO "IMQ starting with %u devices...\n", j);
-+       return 0;
++		if (register_netdev(dev) < 0)
++			goto err_register;
++	}
++	printk(KERN_INFO "IMQ starting with %u devices...\n", j);
++	return 0;
 +
 +err_register:
-+       for (; i; i--)
-+               unregister_netdev(--dev);
-+       kfree(imq_devs);
-+       return -EIO;
++	for (; i; i--)
++		unregister_netdev(--dev);
++	kfree(imq_devs);
++	return -EIO;
 +}
 +
 +static void imq_cleanup_devs(void)
 +{
-+       int i;
-+       struct net_device *dev = imq_devs;
++	int i;
++	struct net_device *dev = imq_devs;
 +
-+       for (i = 0; i <= numdevs; i++)
-+               unregister_netdev(dev++);
++	for (i = 0; i <= numdevs; i++)
++		unregister_netdev(dev++);
 +
-+       kfree(imq_devs);
++	kfree(imq_devs);
 +}
 +
 +static int __init imq_init_module(void)
 +{
-+       int err;
++	int err;
 +
-+       if ((err = imq_init_devs())) {
-+               printk(KERN_ERR "IMQ: Error trying imq_init_devs()\n");
-+               return err;
-+       }
-+       if ((err = imq_init_hooks())) {
-+               printk(KERN_ERR "IMQ: Error trying imq_init_hooks()\n");
-+               imq_cleanup_devs();
-+               return err;
-+       }
++	if ((err = imq_init_devs())) {
++		printk(KERN_ERR "IMQ: Error trying imq_init_devs()\n");
++		return err;
++	}
++	if ((err = imq_init_hooks())) {
++		printk(KERN_ERR "IMQ: Error trying imq_init_hooks()\n");
++		imq_cleanup_devs();
++		return err;
++	}
 +
-+       printk(KERN_INFO "IMQ driver loaded successfully.\n");
++	printk(KERN_INFO "IMQ driver loaded successfully.\n");
 +
 +#if defined(CONFIG_IMQ_BEHAVIOR_BA) || defined(CONFIG_IMQ_BEHAVIOR_BB)
-+       printk(KERN_INFO "\tHooking IMQ before NAT on PREROUTING.\n");
++	printk(KERN_INFO "\tHooking IMQ before NAT on PREROUTING.\n");
 +#else
-+       printk(KERN_INFO "\tHooking IMQ after NAT on PREROUTING.\n");
++	printk(KERN_INFO "\tHooking IMQ after NAT on PREROUTING.\n");
 +#endif
 +#if defined(CONFIG_IMQ_BEHAVIOR_AB) || defined(CONFIG_IMQ_BEHAVIOR_BB)
-+       printk(KERN_INFO "\tHooking IMQ before NAT on POSTROUTING.\n");
++	printk(KERN_INFO "\tHooking IMQ before NAT on POSTROUTING.\n");
 +#else
-+       printk(KERN_INFO "\tHooking IMQ after NAT on POSTROUTING.\n");
++	printk(KERN_INFO "\tHooking IMQ after NAT on POSTROUTING.\n");
 +#endif
 +
-+       return 0;
++	return 0;
 +}
 +
 +static void __exit imq_cleanup_module(void)
 +{
-+       imq_unhook();
-+       imq_cleanup_devs();
-+       printk(KERN_INFO "IMQ driver unloaded successfully.\n");
++	imq_unhook();
++	imq_cleanup_devs();
++	printk(KERN_INFO "IMQ driver unloaded successfully.\n");
 +}
 +
 +
@@ -402,142 +404,142 @@ diff -urN linux-2.6.19.old/drivers/net/imq.c linux-2.6.19.dev/drivers/net/imq.c
 +MODULE_AUTHOR("http://www.linuximq.net");
 +MODULE_DESCRIPTION("Pseudo-driver for the intermediate queue device. See http://www.linuximq.net/ for more information.");
 +MODULE_LICENSE("GPL");
-diff -urN linux-2.6.19.old/drivers/net/Kconfig linux-2.6.19.dev/drivers/net/Kconfig
---- linux-2.6.19.old/drivers/net/Kconfig	2006-11-29 22:57:37.000000000 +0100
-+++ linux-2.6.19.dev/drivers/net/Kconfig	2006-12-14 03:13:47.000000000 +0100
+diff -urN linux-2.6.19/drivers/net/Kconfig linux-2.6.19+imq/drivers/net/Kconfig
+--- linux-2.6.19/drivers/net/Kconfig	2006-12-01 14:05:30.000000000 +1030
++++ linux-2.6.19+imq/drivers/net/Kconfig	2006-12-05 23:03:52.000000000 +1030
 @@ -96,6 +96,129 @@
  	  To compile this driver as a module, choose M here: the module
  	  will be called eql.  If unsure, say N.
  
 +config IMQ
-+       tristate "IMQ (intermediate queueing device) support"
-+       depends on NETDEVICES && NETFILTER
-+       ---help---
-+         The IMQ device(s) is used as placeholder for QoS queueing disciplines.
-+         Every packet entering/leaving the IP stack can be directed through
-+         the IMQ device where it's enqueued/dequeued to the attached qdisc.
-+         This allows you to treat network devices as classes and distribute
-+         bandwidth among them. Iptables is used to specify through which IMQ
-+         device, if any, packets travel.
++	tristate "IMQ (intermediate queueing device) support"
++	depends on NETDEVICES && NETFILTER
++	---help---
++	  The IMQ device(s) is used as placeholder for QoS queueing
++	  disciplines. Every packet entering/leaving the IP stack can be
++	  directed through the IMQ device where it's enqueued/dequeued to the
++	  attached qdisc. This allows you to treat network devices as classes
++	  and distribute bandwidth among them. Iptables is used to specify
++	  through which IMQ device, if any, packets travel.
 +
-+         More information at: http://www.linuximq.net/
++	  More information at: http://www.linuximq.net/
 +
-+         To compile this driver as a module, choose M here: the module
-+         will be called imq.  If unsure, say N.
++	  To compile this driver as a module, choose M here: the module
++	  will be called imq.  If unsure, say N.
 +
 +choice
-+        prompt "IMQ behavior (PRE/POSTROUTING)"
++	prompt "IMQ behavior (PRE/POSTROUTING)"
 +	depends on IMQ
-+        default IMQ_BEHAVIOR_BA
-+        help
++	default IMQ_BEHAVIOR_BA
++	help
 +
-+                This settings defines how IMQ behaves in respect to its
-+                hooking in PREROUTING and POSTROUTING.
++		This settings defines how IMQ behaves in respect to its
++		hooking in PREROUTING and POSTROUTING.
 +
-+                IMQ can work in any of the following ways:
++		IMQ can work in any of the following ways:
 +
-+                    PREROUTING   |      POSTROUTING
-+                -----------------|-------------------
-+                #1  After NAT    |      After NAT
-+                #2  After NAT    |      Before NAT
-+                #3  Before NAT   |      After NAT
-+                #4  Before NAT   |      Before NAT
++		    PREROUTING   |      POSTROUTING
++		-----------------|-------------------
++		#1  After NAT    |      After NAT
++		#2  After NAT    |      Before NAT
++		#3  Before NAT   |      After NAT
++		#4  Before NAT   |      Before NAT
 +
-+                The default behavior is to hook before NAT on PREROUTING
-+                and after NAT on POSTROUTING (#3).
++		The default behavior is to hook before NAT on PREROUTING
++		and after NAT on POSTROUTING (#3).
 +
-+                This settings are specially usefull when trying to use IMQ
-+                to shape NATed clients.
++		This settings are specially usefull when trying to use IMQ
++		to shape NATed clients.
 +
-+                More information can be found at: www.linuximq.net
++		More information can be found at: www.linuximq.net
 +
-+                If not sure leave the default settings alone.
++		If not sure leave the default settings alone.
 +
 +config IMQ_BEHAVIOR_AA
-+        bool "IMQ AA"
-+        help
-+                This settings defines how IMQ behaves in respect to its
-+                hooking in PREROUTING and POSTROUTING.
++	bool "IMQ AA"
++	help
++		This settings defines how IMQ behaves in respect to its
++		hooking in PREROUTING and POSTROUTING.
 +
-+                Choosing this option will make IMQ hook like this:
++		Choosing this option will make IMQ hook like this:
 +
-+                PREROUTING:   After NAT
-+                POSTROUTING:  After NAT
++		PREROUTING:   After NAT
++		POSTROUTING:  After NAT
 +
-+                More information can be found at: www.linuximq.net
++		More information can be found at: www.linuximq.net
 +
-+                If not sure leave the default settings alone.
++		If not sure leave the default settings alone.
 +
 +config IMQ_BEHAVIOR_AB
-+        bool "IMQ AB"
-+        help
-+                This settings defines how IMQ behaves in respect to its
-+                hooking in PREROUTING and POSTROUTING.
++	bool "IMQ AB"
++	help
++		This settings defines how IMQ behaves in respect to its
++		hooking in PREROUTING and POSTROUTING.
 +
-+                Choosing this option will make IMQ hook like this:
++		Choosing this option will make IMQ hook like this:
 +
-+                PREROUTING:   After NAT
-+                POSTROUTING:  Before NAT
++		PREROUTING:   After NAT
++		POSTROUTING:  Before NAT
 +
-+                More information can be found at: www.linuximq.net
++		More information can be found at: www.linuximq.net
 +
-+                If not sure leave the default settings alone.
++		If not sure leave the default settings alone.
 +
 +config IMQ_BEHAVIOR_BA
-+        bool "IMQ BA"
-+        help
-+                This settings defines how IMQ behaves in respect to its
-+                hooking in PREROUTING and POSTROUTING.
++	bool "IMQ BA"
++	help
++		This settings defines how IMQ behaves in respect to its
++		hooking in PREROUTING and POSTROUTING.
 +
-+                Choosing this option will make IMQ hook like this:
++		Choosing this option will make IMQ hook like this:
 +
-+                PREROUTING:   Before NAT
-+                POSTROUTING:  After NAT
++		PREROUTING:   Before NAT
++		POSTROUTING:  After NAT
 +
-+                More information can be found at: www.linuximq.net
++		More information can be found at: www.linuximq.net
 +
-+                If not sure leave the default settings alone.
++		If not sure leave the default settings alone.
 +
 +config IMQ_BEHAVIOR_BB
-+        bool "IMQ BB"
-+        help
-+                This settings defines how IMQ behaves in respect to its
-+                hooking in PREROUTING and POSTROUTING.
++	bool "IMQ BB"
++	help
++		This settings defines how IMQ behaves in respect to its
++		hooking in PREROUTING and POSTROUTING.
 +
-+                Choosing this option will make IMQ hook like this:
++		Choosing this option will make IMQ hook like this:
 +
-+                PREROUTING:   Before NAT
-+                POSTROUTING:  Before NAT
++		PREROUTING:   Before NAT
++		POSTROUTING:  Before NAT
 +
-+                More information can be found at: www.linuximq.net
++		More information can be found at: www.linuximq.net
 +
-+                If not sure leave the default settings alone.
++		If not sure leave the default settings alone.
 +
 +endchoice
 +
 +config IMQ_NUM_DEVS
 +
-+        int "Number of IMQ devices"
++	int "Number of IMQ devices"
 +	range 2 8
 +	depends on IMQ
-+        default "2"
-+        help
++	default "2"
++	help
 +
-+                This settings defines how many IMQ devices will be
++		This settings defines how many IMQ devices will be 
 +		created.
 +
 +		The default value is 2.
 +
-+                More information can be found at: www.linuximq.net
++		More information can be found at: www.linuximq.net
 +
-+                If not sure leave the default settings alone.
++		If not sure leave the default settings alone.
 +
  config TUN
  	tristate "Universal TUN/TAP device driver support"
  	select CRC32
-diff -urN linux-2.6.19.old/drivers/net/Makefile linux-2.6.19.dev/drivers/net/Makefile
---- linux-2.6.19.old/drivers/net/Makefile	2006-11-29 22:57:37.000000000 +0100
-+++ linux-2.6.19.dev/drivers/net/Makefile	2006-12-14 03:13:47.000000000 +0100
+diff -urN linux-2.6.19/drivers/net/Makefile linux-2.6.19+imq/drivers/net/Makefile
+--- linux-2.6.19/drivers/net/Makefile	2006-12-01 14:05:30.000000000 +1030
++++ linux-2.6.19+imq/drivers/net/Makefile	2006-12-04 12:41:01.000000000 +1030
 @@ -124,6 +124,7 @@
  obj-$(CONFIG_SLHC) += slhc.o
  
@@ -546,9 +548,9 @@ diff -urN linux-2.6.19.old/drivers/net/Makefile linux-2.6.19.dev/drivers/net/Mak
  obj-$(CONFIG_IFB) += ifb.o
  obj-$(CONFIG_DE600) += de600.o
  obj-$(CONFIG_DE620) += de620.o
-diff -urN linux-2.6.19.old/include/linux/imq.h linux-2.6.19.dev/include/linux/imq.h
---- linux-2.6.19.old/include/linux/imq.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.19.dev/include/linux/imq.h	2006-12-14 03:13:47.000000000 +0100
+diff -urN linux-2.6.19/include/linux/imq.h linux-2.6.19+imq/include/linux/imq.h
+--- linux-2.6.19/include/linux/imq.h	1970-01-01 09:30:00.000000000 +0930
++++ linux-2.6.19+imq/include/linux/imq.h	2006-12-04 12:41:01.000000000 +1030
 @@ -0,0 +1,9 @@
 +#ifndef _IMQ_H
 +#define _IMQ_H
@@ -559,47 +561,73 @@ diff -urN linux-2.6.19.old/include/linux/imq.h linux-2.6.19.dev/include/linux/im
 +#define IMQ_F_ENQUEUE  0x80
 +
 +#endif /* _IMQ_H */
-diff -urN linux-2.6.19.old/include/linux/netfilter_ipv4/ipt_IMQ.h linux-2.6.19.dev/include/linux/netfilter_ipv4/ipt_IMQ.h
---- linux-2.6.19.old/include/linux/netfilter_ipv4/ipt_IMQ.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.19.dev/include/linux/netfilter_ipv4/ipt_IMQ.h	2006-12-14 03:13:47.000000000 +0100
+diff -urN linux-2.6.19/include/linux/netfilter_ipv4/ipt_IMQ.h linux-2.6.19+imq/include/linux/netfilter_ipv4/ipt_IMQ.h
+--- linux-2.6.19/include/linux/netfilter_ipv4/ipt_IMQ.h	1970-01-01 09:30:00.000000000 +0930
++++ linux-2.6.19+imq/include/linux/netfilter_ipv4/ipt_IMQ.h	2006-12-05 23:04:22.000000000 +1030
 @@ -0,0 +1,8 @@
 +#ifndef _IPT_IMQ_H
 +#define _IPT_IMQ_H
 +
 +struct ipt_imq_info {
-+       unsigned int todev;     /* target imq device */
++	unsigned int todev;     /* target imq device */
 +};
 +
 +#endif /* _IPT_IMQ_H */
-diff -urN linux-2.6.19.old/include/linux/netfilter_ipv6/ip6t_IMQ.h linux-2.6.19.dev/include/linux/netfilter_ipv6/ip6t_IMQ.h
---- linux-2.6.19.old/include/linux/netfilter_ipv6/ip6t_IMQ.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.19.dev/include/linux/netfilter_ipv6/ip6t_IMQ.h	2006-12-14 03:13:47.000000000 +0100
+diff -urN linux-2.6.19/include/linux/netfilter_ipv6/ip6t_IMQ.h linux-2.6.19+imq/include/linux/netfilter_ipv6/ip6t_IMQ.h
+--- linux-2.6.19/include/linux/netfilter_ipv6/ip6t_IMQ.h	1970-01-01 09:30:00.000000000 +0930
++++ linux-2.6.19+imq/include/linux/netfilter_ipv6/ip6t_IMQ.h	2006-12-05 23:04:32.000000000 +1030
 @@ -0,0 +1,8 @@
 +#ifndef _IP6T_IMQ_H
 +#define _IP6T_IMQ_H
 +
 +struct ip6t_imq_info {
-+       unsigned int todev;     /* target imq device */
++	unsigned int todev;     /* target imq device */
 +};
 +
 +#endif /* _IP6T_IMQ_H */
-diff -urN linux-2.6.19.old/include/linux/skbuff.h linux-2.6.19.dev/include/linux/skbuff.h
---- linux-2.6.19.old/include/linux/skbuff.h	2006-11-29 22:57:37.000000000 +0100
-+++ linux-2.6.19.dev/include/linux/skbuff.h	2006-12-14 03:13:47.000000000 +0100
+diff -urN linux-2.6.19/include/linux/skbuff.h linux-2.6.19+imq/include/linux/skbuff.h
+--- linux-2.6.19/include/linux/skbuff.h	2006-12-01 14:05:44.000000000 +1030
++++ linux-2.6.19+imq/include/linux/skbuff.h	2006-12-05 23:05:06.000000000 +1030
 @@ -292,6 +292,10 @@
  #if defined(CONFIG_NF_CONNTRACK) || defined(CONFIG_NF_CONNTRACK_MODULE)
  	struct sk_buff		*nfct_reasm;
  #endif
 +#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
-+	unsigned char           imq_flags;
-+	struct nf_info          *nf_info;
++	unsigned char		imq_flags;
++	struct nf_info		*nf_info;
 +#endif
  #ifdef CONFIG_BRIDGE_NETFILTER
  	struct nf_bridge_info	*nf_bridge;
  #endif
-diff -urN linux-2.6.19.old/net/core/skbuff.c linux-2.6.19.dev/net/core/skbuff.c
---- linux-2.6.19.old/net/core/skbuff.c	2006-11-29 22:57:37.000000000 +0100
-+++ linux-2.6.19.dev/net/core/skbuff.c	2006-12-14 03:13:47.000000000 +0100
+diff -urN linux-2.6.19/net/core/dev.c linux-2.6.19+imq/net/core/dev.c
+--- linux-2.6.19/net/core/dev.c	2006-12-01 14:05:45.000000000 +1030
++++ linux-2.6.19+imq/net/core/dev.c	2006-12-05 23:05:40.000000000 +1030
+@@ -94,6 +94,9 @@
+ #include <linux/skbuff.h>
+ #include <net/sock.h>
+ #include <linux/rtnetlink.h>
++#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
++#include <linux/imq.h>
++#endif
+ #include <linux/proc_fs.h>
+ #include <linux/seq_file.h>
+ #include <linux/stat.h>
+@@ -1344,7 +1347,11 @@
+ int dev_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
+ {
+ 	if (likely(!skb->next)) {
+-		if (netdev_nit)
++		if (netdev_nit
++#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
++		    && !(skb->imq_flags & IMQ_F_ENQUEUE)
++#endif
++		    )
+ 			dev_queue_xmit_nit(skb, dev);
+ 
+ 		if (netif_needs_gso(dev, skb)) {
+diff -urN linux-2.6.19/net/core/skbuff.c linux-2.6.19+imq/net/core/skbuff.c
+--- linux-2.6.19/net/core/skbuff.c	2006-12-01 14:05:45.000000000 +1030
++++ linux-2.6.19+imq/net/core/skbuff.c	2006-12-04 12:41:01.000000000 +1030
 @@ -482,6 +482,10 @@
  	C(nfct_reasm);
  	nf_conntrack_get_reasm(skb->nfct_reasm);
@@ -622,10 +650,10 @@ diff -urN linux-2.6.19.old/net/core/skbuff.c linux-2.6.19.dev/net/core/skbuff.c
  #ifdef CONFIG_BRIDGE_NETFILTER
  	new->nf_bridge	= old->nf_bridge;
  	nf_bridge_get(old->nf_bridge);
-diff -urN linux-2.6.19.old/net/ipv4/netfilter/ipt_IMQ.c linux-2.6.19.dev/net/ipv4/netfilter/ipt_IMQ.c
---- linux-2.6.19.old/net/ipv4/netfilter/ipt_IMQ.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.19.dev/net/ipv4/netfilter/ipt_IMQ.c	2006-12-14 03:13:47.000000000 +0100
-@@ -0,0 +1,77 @@
+diff -urN linux-2.6.19/net/ipv4/netfilter/ipt_IMQ.c linux-2.6.19+imq/net/ipv4/netfilter/ipt_IMQ.c
+--- linux-2.6.19/net/ipv4/netfilter/ipt_IMQ.c	1970-01-01 09:30:00.000000000 +0930
++++ linux-2.6.19.2/net/ipv4/netfilter/ipt_IMQ.c	2007-01-25 09:59:34.000000000 +0100
+@@ -0,0 +1,71 @@
 +/*
 + * This target marks packets to be enqueued to an imq device
 + */
@@ -636,65 +664,59 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/ipt_IMQ.c linux-2.6.19.dev/net/ipv
 +#include <linux/imq.h>
 +
 +static unsigned int imq_target(struct sk_buff **pskb,
-+                              const struct net_device *in,
-+                              const struct net_device *out,
-+                              unsigned int hooknum,
-+			      const struct xt_target *target,
-+                              const void *targinfo)
++			       const struct net_device *in,
++			       const struct net_device *out,
++			       unsigned int hooknum,
++			       const struct xt_target *target,
++			       const void *targinfo)
 +{
-+       struct ipt_imq_info *mr = (struct ipt_imq_info*)targinfo;
++	struct ipt_imq_info *mr = (struct ipt_imq_info*)targinfo;
 +
-+       (*pskb)->imq_flags = mr->todev | IMQ_F_ENQUEUE;
++	(*pskb)->imq_flags = mr->todev | IMQ_F_ENQUEUE;
 +
-+       return IPT_CONTINUE;
++	return IPT_CONTINUE;
 +}
 +
 +static int imq_checkentry(const char *tablename,
-+                         const void *e,
-+			 const struct xt_target *target,
-+                         void *targinfo,
-+                         unsigned int hook_mask)
++			  const void *e,
++			  const struct xt_target *target,
++			  void *targinfo,
++			  unsigned int hook_mask)
 +{
-+       struct ipt_imq_info *mr;
++	struct ipt_imq_info *mr;
 +
-+       mr = (struct ipt_imq_info*)targinfo;
++	mr = (struct ipt_imq_info*)targinfo;
 +
-+       if (strcmp(tablename, "mangle") != 0) {
-+               printk(KERN_WARNING
-+                      "IMQ: IMQ can only be called from \"mangle\" table, not \"%s\"\n",
-+                      tablename);
-+               return 0;
-+       }
++	if (mr->todev > IMQ_MAX_DEVS) {
++		printk(KERN_WARNING
++		       "IMQ: invalid device specified, highest is %u\n",
++		       IMQ_MAX_DEVS);
++		return 0;
++	}
 +
-+       if (mr->todev > IMQ_MAX_DEVS) {
-+               printk(KERN_WARNING
-+                      "IMQ: invalid device specified, highest is %u\n",
-+                      IMQ_MAX_DEVS);
-+               return 0;
-+       }
-+
-+       return 1;
++	return 1;
 +}
 +
 +static struct ipt_target ipt_imq_reg = {
-+       .name           = "IMQ",
-+       .target         = imq_target,
-+       .targetsize     = sizeof(struct ipt_imq_info),
-+       .checkentry     = imq_checkentry,
-+       .me             = THIS_MODULE
++	.name		= "IMQ",
++	.target		= imq_target,
++	.targetsize	= sizeof(struct ipt_imq_info),
++	.checkentry	= imq_checkentry,
++	.me		= THIS_MODULE,
++	.table		= "mangle"
 +};
 +
 +static int __init init(void)
 +{
-+       if (ipt_register_target(&ipt_imq_reg))
-+               return -EINVAL;
++	if (ipt_register_target(&ipt_imq_reg))
++		return -EINVAL;
 +
-+       return 0;
++	return 0;
 +}
 +
 +static void __exit fini(void)
 +{
-+       ipt_unregister_target(&ipt_imq_reg);
++	ipt_unregister_target(&ipt_imq_reg);
 +}
 +
 +module_init(init);
@@ -703,10 +725,10 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/ipt_IMQ.c linux-2.6.19.dev/net/ipv
 +MODULE_AUTHOR("http://www.linuximq.net");
 +MODULE_DESCRIPTION("Pseudo-driver for the intermediate queue device. See http://www.linuximq.net/ for more information.");
 +MODULE_LICENSE("GPL");
-diff -urN linux-2.6.19.old/net/ipv4/netfilter/Kconfig linux-2.6.19.dev/net/ipv4/netfilter/Kconfig
---- linux-2.6.19.old/net/ipv4/netfilter/Kconfig	2006-12-14 03:13:47.000000000 +0100
-+++ linux-2.6.19.dev/net/ipv4/netfilter/Kconfig	2006-12-14 03:13:47.000000000 +0100
-@@ -390,6 +390,17 @@
+diff -urN linux-2.6.19/net/ipv4/netfilter/Kconfig linux-2.6.19+imq/net/ipv4/netfilter/Kconfig
+--- linux-2.6.19/net/ipv4/netfilter/Kconfig	2006-12-01 14:05:45.000000000 +1030
++++ linux-2.6.19+imq/net/ipv4/netfilter/Kconfig	2006-12-04 12:41:01.000000000 +1030
+@@ -533,6 +533,17 @@
  
  	  To compile it as a module, choose M here.  If unsure, say N.
  
@@ -721,13 +743,13 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/Kconfig linux-2.6.19.dev/net/ipv4/
 +
 +         To compile it as a module, choose M here.  If unsure, say N.
 +
- config IP_NF_TARGET_LOG
- 	tristate "LOG target support"
- 	depends on IP_NF_IPTABLES
-diff -urN linux-2.6.19.old/net/ipv4/netfilter/Makefile linux-2.6.19.dev/net/ipv4/netfilter/Makefile
---- linux-2.6.19.old/net/ipv4/netfilter/Makefile	2006-12-14 03:13:47.000000000 +0100
-+++ linux-2.6.19.dev/net/ipv4/netfilter/Makefile	2006-12-14 03:13:47.000000000 +0100
-@@ -71,6 +71,7 @@
+ config IP_NF_TARGET_TOS
+ 	tristate "TOS target support"
+ 	depends on IP_NF_MANGLE
+diff -urN linux-2.6.19/net/ipv4/netfilter/Makefile linux-2.6.19+imq/net/ipv4/netfilter/Makefile
+--- linux-2.6.19/net/ipv4/netfilter/Makefile	2006-12-01 14:05:45.000000000 +1030
++++ linux-2.6.19+imq/net/ipv4/netfilter/Makefile	2006-12-04 12:41:01.000000000 +1030
+@@ -67,6 +67,7 @@
  obj-$(CONFIG_IP_NF_TARGET_REJECT) += ipt_REJECT.o
  obj-$(CONFIG_IP_NF_TARGET_TOS) += ipt_TOS.o
  obj-$(CONFIG_IP_NF_TARGET_ECN) += ipt_ECN.o
@@ -735,10 +757,10 @@ diff -urN linux-2.6.19.old/net/ipv4/netfilter/Makefile linux-2.6.19.dev/net/ipv4
  obj-$(CONFIG_IP_NF_TARGET_MASQUERADE) += ipt_MASQUERADE.o
  obj-$(CONFIG_IP_NF_TARGET_REDIRECT) += ipt_REDIRECT.o
  obj-$(CONFIG_IP_NF_TARGET_NETMAP) += ipt_NETMAP.o
-diff -urN linux-2.6.19.old/net/ipv6/netfilter/ip6t_IMQ.c linux-2.6.19.dev/net/ipv6/netfilter/ip6t_IMQ.c
---- linux-2.6.19.old/net/ipv6/netfilter/ip6t_IMQ.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.19.dev/net/ipv6/netfilter/ip6t_IMQ.c	2006-12-14 03:13:47.000000000 +0100
-@@ -0,0 +1,77 @@
+diff -urN linux-2.6.19/net/ipv6/netfilter/ip6t_IMQ.c linux-2.6.19+imq/net/ipv6/netfilter/ip6t_IMQ.c
+--- linux-2.6.19/net/ipv6/netfilter/ip6t_IMQ.c	1970-01-01 09:30:00.000000000 +0930
++++ linux-2.6.19.2/net/ipv6/netfilter/ip6t_IMQ.c	2007-01-25 10:06:41.000000000 +0100
+@@ -0,0 +1,71 @@
 +/*
 + * This target marks packets to be enqueued to an imq device
 + */
@@ -749,65 +771,59 @@ diff -urN linux-2.6.19.old/net/ipv6/netfilter/ip6t_IMQ.c linux-2.6.19.dev/net/ip
 +#include <linux/imq.h>
 +
 +static unsigned int imq_target(struct sk_buff **pskb,
-+                              const struct net_device *in,
-+                              const struct net_device *out,
-+                              unsigned int hooknum,
-+			      const struct xt_target *target,
-+                              const void *targinfo)
++			       const struct net_device *in,
++			       const struct net_device *out,
++			       unsigned int hooknum,
++			       const struct xt_target *target,
++			       const void *targinfo)
 +{
-+       struct ip6t_imq_info *mr = (struct ip6t_imq_info*)targinfo;
++	struct ip6t_imq_info *mr = (struct ip6t_imq_info*)targinfo;
 +
-+       (*pskb)->imq_flags = mr->todev | IMQ_F_ENQUEUE;
++	(*pskb)->imq_flags = mr->todev | IMQ_F_ENQUEUE;
 +
-+       return IP6T_CONTINUE;
++	return IP6T_CONTINUE;
 +}
 +
 +static int imq_checkentry(const char *tablename,
-+                         const void *e,
-+			 const struct xt_target *target,
-+                         void *targinfo,
-+                         unsigned int hook_mask)
++			  const void *entry,
++			  const struct xt_target *target,
++			  void *targinfo,
++			  unsigned int hook_mask)
 +{
-+       struct ip6t_imq_info *mr;
++	struct ip6t_imq_info *mr;
 +
-+       mr = (struct ip6t_imq_info*)targinfo;
++	mr = (struct ip6t_imq_info*)targinfo;
 +
-+       if (strcmp(tablename, "mangle") != 0) {
-+               printk(KERN_WARNING
-+                      "IMQ: IMQ can only be called from \"mangle\" table, not \"%s\"\n",
-+                      tablename);
-+               return 0;
-+       }
++	if (mr->todev > IMQ_MAX_DEVS) {
++		printk(KERN_WARNING
++		       "IMQ: invalid device specified, highest is %u\n",
++		       IMQ_MAX_DEVS);
++		return 0;
++	}
 +
-+       if (mr->todev > IMQ_MAX_DEVS) {
-+               printk(KERN_WARNING
-+                      "IMQ: invalid device specified, highest is %u\n",
-+                      IMQ_MAX_DEVS);
-+               return 0;
-+       }
-+
-+       return 1;
++	return 1;
 +}
 +
 +static struct ip6t_target ip6t_imq_reg = {
-+       .name           = "IMQ",
-+       .target         = imq_target,
-+       .targetsize     = sizeof(struct ip6t_imq_info),
-+       .checkentry     = imq_checkentry,
-+       .me             = THIS_MODULE
++	.name           = "IMQ",
++	.target         = imq_target,
++	.targetsize	= sizeof(struct ip6t_imq_info),
++	.table		= "mangle",
++	.checkentry     = imq_checkentry,
++	.me             = THIS_MODULE
 +};
 +
 +static int __init init(void)
 +{
-+       if (ip6t_register_target(&ip6t_imq_reg))
-+               return -EINVAL;
++	if (ip6t_register_target(&ip6t_imq_reg))
++		return -EINVAL;
 +
-+       return 0;
++	return 0;
 +}
 +
 +static void __exit fini(void)
 +{
-+       ip6t_unregister_target(&ip6t_imq_reg);
++	ip6t_unregister_target(&ip6t_imq_reg);
 +}
 +
 +module_init(init);
@@ -816,10 +832,10 @@ diff -urN linux-2.6.19.old/net/ipv6/netfilter/ip6t_IMQ.c linux-2.6.19.dev/net/ip
 +MODULE_AUTHOR("http://www.linuximq.net");
 +MODULE_DESCRIPTION("Pseudo-driver for the intermediate queue device. See http://www.linuximq.net/ for more information.");
 +MODULE_LICENSE("GPL");
-diff -urN linux-2.6.19.old/net/ipv6/netfilter/Kconfig linux-2.6.19.dev/net/ipv6/netfilter/Kconfig
---- linux-2.6.19.old/net/ipv6/netfilter/Kconfig	2006-11-29 22:57:37.000000000 +0100
-+++ linux-2.6.19.dev/net/ipv6/netfilter/Kconfig	2006-12-14 03:13:47.000000000 +0100
-@@ -134,6 +134,15 @@
+diff -urN linux-2.6.19/net/ipv6/netfilter/Kconfig linux-2.6.19+imq/net/ipv6/netfilter/Kconfig
+--- linux-2.6.19/net/ipv6/netfilter/Kconfig	2006-12-01 14:05:46.000000000 +1030
++++ linux-2.6.19+imq/net/ipv6/netfilter/Kconfig	2006-12-04 12:41:01.000000000 +1030
+@@ -163,6 +163,15 @@
  
  	  To compile it as a module, choose M here.  If unsure, say N.
  
@@ -832,37 +848,45 @@ diff -urN linux-2.6.19.old/net/ipv6/netfilter/Kconfig linux-2.6.19.dev/net/ipv6/
 +
 +          To compile it as a module, choose M here.  If unsure, say N.
 +
- config IP6_NF_TARGET_LOG
- 	tristate "LOG target support"
- 	depends on IP6_NF_FILTER
-diff -urN linux-2.6.19.old/net/ipv6/netfilter/Makefile linux-2.6.19.dev/net/ipv6/netfilter/Makefile
---- linux-2.6.19.old/net/ipv6/netfilter/Makefile	2006-11-29 22:57:37.000000000 +0100
-+++ linux-2.6.19.dev/net/ipv6/netfilter/Makefile	2006-12-14 03:13:47.000000000 +0100
-@@ -4,6 +4,7 @@
- 
- # Link order matters here.
- obj-$(CONFIG_IP6_NF_IPTABLES) += ip6_tables.o
+ config IP6_NF_TARGET_HL
+ 	tristate  'HL (hoplimit) target support'
+ 	depends on IP6_NF_MANGLE
+diff -urN linux-2.6.19/net/ipv6/netfilter/Makefile linux-2.6.19+imq/net/ipv6/netfilter/Makefile
+--- linux-2.6.19/net/ipv6/netfilter/Makefile	2006-12-01 14:05:46.000000000 +1030
++++ linux-2.6.19+imq/net/ipv6/netfilter/Makefile	2006-12-04 12:41:01.000000000 +1030
+@@ -13,6 +13,7 @@
+ obj-$(CONFIG_IP6_NF_MATCH_OWNER) += ip6t_owner.o
+ obj-$(CONFIG_IP6_NF_FILTER) += ip6table_filter.o
+ obj-$(CONFIG_IP6_NF_MANGLE) += ip6table_mangle.o
 +obj-$(CONFIG_IP6_NF_TARGET_IMQ) += ip6t_IMQ.o
- obj-$(CONFIG_IP6_NF_MATCH_RT) += ip6t_rt.o
- obj-$(CONFIG_IP6_NF_MATCH_OPTS) += ip6t_hbh.o
- obj-$(CONFIG_IP6_NF_MATCH_IPV6HEADER) += ip6t_ipv6header.o
-diff -urN linux-2.6.19.old/net/sched/sch_generic.c linux-2.6.19.dev/net/sched/sch_generic.c
---- linux-2.6.19.old/net/sched/sch_generic.c	2006-11-29 22:57:37.000000000 +0100
-+++ linux-2.6.19.dev/net/sched/sch_generic.c	2006-12-14 03:13:47.000000000 +0100
-@@ -28,6 +28,9 @@
- #include <linux/netdevice.h>
- #include <linux/skbuff.h>
- #include <linux/rtnetlink.h>
-+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
-+#include <linux/imq.h>
-+#endif
- #include <linux/init.h>
- #include <linux/rcupdate.h>
- #include <linux/list.h>
-@@ -615,5 +618,6 @@
- EXPORT_SYMBOL(qdisc_alloc);
- EXPORT_SYMBOL(qdisc_destroy);
+ obj-$(CONFIG_IP6_NF_TARGET_HL) += ip6t_HL.o
+ obj-$(CONFIG_IP6_NF_QUEUE) += ip6_queue.o
+ obj-$(CONFIG_IP6_NF_TARGET_LOG) += ip6t_LOG.o
+diff -urN linux-2.6.19/net/sched/sch_generic.c linux-2.6.19+imq/net/sched/sch_generic.c
+--- linux-2.6.19/net/sched/sch_generic.c	2006-12-01 14:05:46.000000000 +1030
++++ linux-2.6.19+imq/net/sched/sch_generic.c	2006-12-05 23:08:54.000000000 +1030
+@@ -87,7 +87,6 @@
+ 
+    NOTE: Called under dev->queue_lock with locally disabled BH.
+ */
+-
+ static inline int qdisc_restart(struct net_device *dev)
+ {
+ 	struct Qdisc *q = dev->qdisc;
+@@ -181,6 +180,11 @@
+ 	return q->q.qlen;
+ }
+ 
++int qdisc_restart1(struct net_device *dev)
++{
++	return qdisc_restart(dev);
++}
++
+ void __qdisc_run(struct net_device *dev)
+ {
+ 	if (unlikely(dev->qdisc == &noop_qdisc))
+@@ -617,3 +621,4 @@
  EXPORT_SYMBOL(qdisc_reset);
-+EXPORT_SYMBOL(__qdisc_run);
  EXPORT_SYMBOL(qdisc_lock_tree);
  EXPORT_SYMBOL(qdisc_unlock_tree);
++EXPORT_SYMBOL(qdisc_restart1);
