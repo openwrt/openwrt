@@ -1,0 +1,24 @@
+diff -ruN strongswan-2.8.1-orig/Makefile.inc strongswan-2.8.1/Makefile.inc
+--- strongswan-2.8.1-orig/Makefile.inc	2007-01-11 16:42:11.000000000 -0500
++++ strongswan-2.8.1/Makefile.inc	2007-01-17 02:42:25.961297797 -0500
+@@ -123,7 +123,7 @@
+ # With a non-null DESTDIR, INC_RCDEFAULT will be used unless one of the
+ # INC_RCDIRS directories has been pre-created under DESTDIR.
+ INC_RCDIRS=/etc/rc.d/init.d /etc/rc.d /etc/init.d /sbin/init.d
+-INC_RCDEFAULT=/etc/rc.d/init.d
++INC_RCDEFAULT=/etc/init.d
+ 
+ # RCDIR is where boot/shutdown scripts go; FINALRCDIR is where they think
+ # will finally be (so utils/Makefile can create a symlink in BINDIR to the
+diff -ruN strongswan-2.8.1-orig/programs/showhostkey/showhostkey.in strongswan-2.8.1/programs/showhostkey/showhostkey.in
+--- strongswan-2.8.1-orig/programs/showhostkey/showhostkey.in	2004-03-15 15:35:31.000000000 -0500
++++ strongswan-2.8.1/programs/showhostkey/showhostkey.in	2007-01-17 00:02:35.433150839 -0500
+@@ -62,7 +62,7 @@
+ 	exit 1
+ fi
+ 
+-host="`hostname --fqdn`"
++host="`cat /proc/sys/kernel/hostname`"
+ 
+ awk '	BEGIN {
+ 		inkey = 0

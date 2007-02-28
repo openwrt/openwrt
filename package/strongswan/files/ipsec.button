@@ -1,0 +1,34 @@
+#!/bin/sh
+
+# snarf the code that loads the config values
+# since we also load the functions, might as well save the shell calls
+. /etc/init.d/ipsec
+
+[ -n "$IPSEC_RESET_BUTTON" -a "$BUTTON" = "$IPSEC_RESET_BUTTON" ] || exit
+
+if [ ! -e /var/run/pluto.pid ] ; then
+
+	[ "$ACTION" = "pressed" ] && start
+	
+else
+
+	if   [ "$ACTION" = "pressed"  ] ; then
+	
+		stop 
+		
+	elif [ "$ACTION" = "released" ] ; then
+
+		while [ -e /var/run/pluto.pid ] ; do
+			sleep 1
+		done
+
+		while ps auxww | grep ipsec | grep -v grep ; do
+			sleep 1
+		done
+
+		start
+		
+	fi
+	
+fi
+

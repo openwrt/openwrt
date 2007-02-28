@@ -1,0 +1,10 @@
+diff -ruN strongswan-2.8.1-orig/programs/ipsec/Makefile strongswan-2.8.1/programs/ipsec/Makefile
+--- strongswan-2.8.1-orig/programs/ipsec/Makefile	2006-02-10 06:27:31.000000000 -0500
++++ strongswan-2.8.1/programs/ipsec/Makefile	2007-01-17 02:46:06.027124968 -0500
+@@ -24,5 +24,5 @@
+ include ../Makefile.program
+ 
+ install:: ipsec
+-	@$(INSTALL) $(INSTBINFLAGS) ipsec $(RCDIR)/ipsec
++	@$(INSTALL) $(INSTBINFLAGS) -D ipsec $(RCDIR)/ipsec
+ 

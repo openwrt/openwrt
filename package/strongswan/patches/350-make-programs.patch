@@ -1,0 +1,20 @@
+diff -ruN strongswan-2.8.2-orig/programs/Makefile strongswan-2.8.2/programs/Makefile
+--- strongswan-2.8.2-orig/programs/Makefile	2006-08-28 07:12:36.000000000 -0400
++++ strongswan-2.8.2/programs/Makefile	2007-02-04 01:24:18.751598552 -0500
+@@ -17,12 +17,10 @@
+ FREESWANSRCDIR=..
+ include ${FREESWANSRCDIR}/Makefile.inc
+ 
+-SUBDIRS=spi eroute spigrp tncfg klipsdebug pf_key proc pluto 
+-SUBDIRS+=_confread _copyright _include _keycensor _plutoload _plutorun
+-SUBDIRS+=_realsetup _secretcensor _startklips _updown _updown_espmark
+-SUBDIRS+=auto barf ipsec look manual ranbits secrets starter
+-SUBDIRS+=rsasigkey send-pr setup showdefaults showhostkey calcgoo mailkey
+-SUBDIRS+=ikeping examples openac scepclient _showstatus wakeup
++SUBDIRS=_copyright _updown _showstatus wakeup examples
++SUBDIRS+=barf calcgoo eroute ikeping klipsdebug look mailkey manual
++SUBDIRS+=openac pf_key pluto proc ranbits rsasigkey scepclient secrets
++SUBDIRS+=showdefaults showhostkey spi spigrp starter tncfg ipsec
+ 
+ ifeq ($(USE_LWRES),true)
+ SUBDIRS+=lwdnsq
