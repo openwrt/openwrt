@@ -43,6 +43,7 @@ define KernelPackage/ipt-ipopt
 	Netfilter (IPv4) modules for matching/changing IP packet options \\\
 	\\\
 	Includes: \\\
+	- ipt_CLASSIFY \\\
 	- ipt_dscp/DSCP \\\
 	- ipt_ecn/ECN \\\
 	- ipt_length \\\

@@ -91,6 +91,7 @@ define Package/iptables-mod-ipopt
 	iptables extensions for matching/changing IP packet options.\\\
 	\\\
 	Includes: \\\
+	- libipt_CLASSIFY \\\
 	- libipt_dscp/DSCP \\\
 	- libipt_ecn/ECN \\\
 	- libipt_length \\\
