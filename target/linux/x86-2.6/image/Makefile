@@ -8,8 +8,9 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 export PATH=$(TARGET_PATH):/sbin
+BOOTOPTS=$(strip $(subst ",, $(CONFIG_X86_GRUB_BOOTOPTS)))
 ROOTPART=$(strip $(subst ",, $(CONFIG_X86_GRUB_ROOTPART)))
-#")) # fix vim's broken syntax highlighting
+#"))")) # fix vim's broken syntax highlighting
 
 
 ifeq ($(CONFIG_X86_GRUB_IMAGES),y)
@@ -41,7 +42,7 @@ ifeq ($(CONFIG_X86_GRUB_IMAGES),y)
 		$(KDIR)/root.grub/boot/grub/
 	$(CP) $(KDIR)/bzImage $(KDIR)/root.grub/boot/vmlinuz
 	sed \
-		-e 's#@CMDLINE@#$(strip $(call Image/cmdline/$(1))) $(CONFIG_X86_GRUB_BOOTOPTS)#g' \
+		-e 's#@CMDLINE@#$(strip $(call Image/cmdline/$(1))) $(BOOTOPTS)#g' \
 		-e 's#@BAUDRATE@#$(CONFIG_X86_GRUB_BAUDRATE)#g' \
 		./grub/menu.lst > $(KDIR)/root.grub/boot/grub/menu.lst
 	PADDING="$(CONFIG_X86_GRUB_IMAGES_PAD)" PATH="$(STAGING_DIR)/usr/sbin:$(STAGING_DIR)/bin:$(PATH)" ./gen_image.sh $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).image $(CONFIG_X86_GRUB_KERNELPART) $(KDIR)/root.grub $(CONFIG_TARGET_ROOTFS_FSPART) $(KDIR)/root.$(1)
