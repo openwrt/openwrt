@@ -25,6 +25,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define Package/fuse/Default
   TITLE:=FUSE
+  DEPENDS:=@LINUX_2_6
   DESCRIPTION:=\
 	FUSE (Filesystem in UserSpacE)
   URL:=http://fuse.sourceforge.net/
@@ -34,7 +35,7 @@ define Package/fuse-utils
   $(call Package/fuse/Default)
   SECTION:=utils
   CATEGORY:=Utilities
-  DEPENDS:=+libfuse +kmod-fuse
+  DEPENDS:=+libfuse +kmod-fuse @LINUX_2_6
   TITLE+= (utilities)
   DESCRIPTION+=\\\
 	\\\
@@ -44,20 +45,14 @@ endef
 define KernelPackage/fuse
   SUBMENU:=Filesystems
   $(call Package/fuse/Default)
+  DEPENDS:=@LINUX_2_6
   TITLE+= (kernel module)
   DESCRIPTION+=\\\
 	\\\
 	This package contains the FUSE kernel module.
+  FILES:=$(PKG_INSTALL_DIR)/lib/modules/$(LINUX_VERSION)/kernel/fs/fuse/fuse.$(LINUX_KMOD_SUFFIX)
   VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
   AUTOLOAD:=$(call AutoLoad,80,fuse)
-endef
-
-define KernelPackage/fuse/2.4 
-  FILES:=$(PKG_BUILD_DIR)/lib/fuse.$(LINUX_KMOD_SUFFIX) 
-endef 
-
-define KernelPackage/fuse/2.6
-  FILES:=$(PKG_INSTALL_DIR)/lib/modules/$(LINUX_VERSION)/kernel/fs/fuse/fuse.$(LINUX_KMOD_SUFFIX)
 endef
 
 define Package/libfuse
