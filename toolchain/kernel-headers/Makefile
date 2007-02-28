@@ -33,14 +33,12 @@ define Build/Configure/powerpc
 endef
 
 ifneq (,$(findstring uml,$(BOARD)))
-  KMAKE := $(MAKE) -C $(PKG_BUILD_DIR) \
-		ARCH=i386 \
-		CONFIG_SHELL=$(BASH)
-else
-  KMAKE := $(MAKE) -C $(PKG_BUILD_DIR) \
-		ARCH=$(LINUX_KARCH) \
-		CONFIG_SHELL=$(BASH)
+  LINUX_KARCH:=$(ARCH)
 endif
+
+KMAKE := $(MAKE) -C $(PKG_BUILD_DIR) \
+	ARCH=$(LINUX_KARCH) \
+	CONFIG_SHELL=$(BASH)
 
 define Build/Configure
 	yes '' | $(KMAKE) oldconfig

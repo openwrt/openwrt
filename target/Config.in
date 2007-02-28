@@ -85,6 +85,9 @@ config sparc
 	select BIG_ENDIAN
 	bool
 
+config x86_64
+	bool
+
 config ARCH
 	string
 	default "arm"     if arm
@@ -100,4 +103,5 @@ config ARCH
 	default "sh4"     if sh4
 	default "sh4eb"   if sh4eb
 	default "sparc"   if sparc
+	default "x86_64"  if x86_64
 

@@ -5,10 +5,25 @@
 # See /LICENSE for more information.
 #
 include $(TOPDIR)/rules.mk
+include $(INCLUDE_DIR)/host.mk
 
-ARCH:=i386
+# UML only makes sense on linux
+ifeq ($(HOST_OS),Linux)
+
+ARCH:=$(shell uname -m | sed \
+	-e 's/i[3-9]86/i386/' \
+	-e 's/mipsel/mips/' \
+	-e 's/mipseb/mips/' \
+	-e 's/powerpc/ppc/' \
+	-e 's/sh[234]/sh/' \
+	-e 's/armeb/arm/' \
+)
 BOARD:=uml
 BOARDNAME:=User Mode Linux
+FEATURES:=broken
+LINUX_CONFIG:=$(CURDIR)/config/$(ARCH)
 
 include $(INCLUDE_DIR)/kernel-build.mk
+endif
+
 $(eval $(call BuildKernel))
