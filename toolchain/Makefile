@@ -30,9 +30,6 @@ ifneq ($(shell $(SCRIPT_DIR)/timestamp.pl -p . $(STAMP)),$(STAMP))
   $(STAMP): $(TARGETS_INSTALL)
 endif
 
-ifeq ($(CONFIG_CCACHE),y)
-  uClibc-prepare: ccache-install
-endif
 uClibc-prepare: kernel-headers-prepare
 ifeq ($(CONFIG_NATIVE_TOOLCHAIN),)
   binutils-prepare: uClibc-prepare
