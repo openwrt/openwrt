@@ -62,6 +62,7 @@ enum {
 	WL500G,
 	WL500GD,
 	WL500GP,
+	WL500W,
 	ASUS_4702,
 	WL700GE,
 	
@@ -248,6 +249,16 @@ static struct platform_t __initdata platforms[] = {
 		},
 		.leds		= {
 			{ .name = "power",	.gpio = 1 << 1, .polarity = REVERSE },
+		},
+	},
+	[WL500W] = {
+		.name		= "ASUS WL-500W",
+		.buttons	= {
+			{ .name = "reset",	.gpio = 1 << 6 },
+			{ .name = "ses",	.gpio = 1 << 7 },
+		},
+		.leds		= {
+			{ .name = "power",	.gpio = 1 << 5, .polarity = REVERSE },
 		},
 	},
 	[ASUS_4702] = {
@@ -535,6 +546,8 @@ static struct platform_t __init *platform_detect(void)
 		if (!strcmp(boardnum, "45")) { /* ASUS */
 			if (!strcmp(boardtype,"0x042f"))
 				return &platforms[WL500GP];
+			else if (!strcmp(boardtype,"0x0472"))
+				return &platforms[WL500W];
 			else
 				return &platforms[WL500GD];
 		}
