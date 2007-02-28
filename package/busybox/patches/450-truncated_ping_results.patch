@@ -1,0 +1,42 @@
+--- busybox-1.4.1/networking/ping.c	2007-01-24 22:34:34.000000000 +0100
++++ busybox-1.4.1.new/networking/ping.c	2007-02-28 20:35:59.000000000 +0100
+@@ -70,7 +70,7 @@
+ 	struct sockaddr_in pingaddr;
+ 	struct icmp *pkt;
+ 	int pingsock, c;
+-	char packet[DEFDATALEN + MAXIPLEN + MAXICMPLEN];
++	char packet[datalen + MAXIPLEN + MAXICMPLEN];
+ 
+ 	pingsock = create_icmp_socket();
+ 
+@@ -86,7 +86,7 @@
+ 	pkt->icmp_type = ICMP_ECHO;
+ 	pkt->icmp_cksum = in_cksum((unsigned short *) pkt, sizeof(packet));
+ 
+-	c = sendto(pingsock, packet, DEFDATALEN + ICMP_MINLEN, 0,
++	c = sendto(pingsock, packet, datalen + ICMP_MINLEN, 0,
+ 			   (struct sockaddr *) &pingaddr, sizeof(struct sockaddr_in));
+ 
+ 	if (c < 0) {
+@@ -257,8 +257,8 @@
+ 
+ 	gettimeofday(&tv, NULL);
+ 
+-	/* discard if too short */
+-	if (sz < (datalen + ICMP_MINLEN))
++	/* discard if too short / long */
++	if (sz < (datalen + ICMP_MINLEN) || sz > (MAXICMPLEN))
+ 		return;
+ 
+ 	/* check IP header */
+@@ -274,6 +274,10 @@
+ 		++nreceived;
+ 		tp = (struct timeval *) icmppkt->icmp_data;
+ 
++		/* If packet is too short, results will be truncated */
++		if (sz < (ICMP_MINLEN + sizeof(tv.tv_sec) + sizeof(tv.tv_usec)))
++			return;
++
+ 		if ((tv.tv_usec -= tp->tv_usec) < 0) {
+ 			--tv.tv_sec;
+ 			tv.tv_usec += 1000000;
