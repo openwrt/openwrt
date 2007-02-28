@@ -33,12 +33,17 @@ define Package/kexec-tools
   URL:=http://www.xmission.com/~ebiederm/files/kexec/README
 endef
 
+MAKE_FLAGS += \
+	DESTDIR="$(PKG_INSTALL_DIR)" \
+	EXTRA_CFLAGS="$(TARGET_CPPFLAGS) $(TARGET_CFLAGS)" \
+	BUILD_CFLAGS="-O2" \
+	LIBS="$(TARGET_LDFLAGS) -lz" \
+	install
+
 define Build/Compile
 	rm -rf $(PKG_INSTALL_DIR)
 	mkdir -p $(PKG_INSTALL_DIR)
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		DESTDIR="$(PKG_INSTALL_DIR)" \
-		install
+	$(call Build/Compile/Default,)
 endef
 
 define Package/kexec-tools/install

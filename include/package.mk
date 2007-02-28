@@ -303,12 +303,14 @@ CONFIGURE_ARGS := \
 		--infodir=/usr/info \
 		$(DISABLE_NLS)
 
+TARGET_CPPFLAGS=-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include
+TARGET_LDFLAGS=-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib
 CONFIGURE_VARS:= \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
 		CXXFLAGS="$(TARGET_CFLAGS)" \
-		CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include" \
-		LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib" \
+		CPPFLAGS="$(TARGET_CPPFLAGS)" \
+		LDFLAGS="$(TARGET_LDFLAGS)" \
 		PKG_CONFIG_PATH="$(STAGING_DIR)/usr/lib/pkgconfig" \
 		PKG_CONFIG_LIBDIR="$(STAGING_DIR)/usr/lib/pkgconfig"
 
