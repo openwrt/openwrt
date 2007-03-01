@@ -163,7 +163,11 @@ define Package/ip6tables
   TITLE:=IPv6 firewall administration tool
 endef
 
+$(PKG_BUILD_DIR)/.configured: $(LINUX_DIR)/.config
+
 define Build/Configure
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		clean
 endef
 
 define Build/Compile
