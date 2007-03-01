@@ -165,12 +165,16 @@ static void ssb_mips_flash_detect(struct ssb_mipscore *mcore)
 {
 	struct ssb_bus *bus = mcore->dev->bus;
 
+	mcore->flash_buswidth = 2;
 	if (bus->chipco.dev) {
 		mcore->flash_window = 0x1c000000;
-		mcore->flash_window_size = 0x800000;
+		mcore->flash_window_size = 0x02000000;
+		if ((ssb_read32(bus->chipco.dev, SSB_CHIPCO_FLASH_CFG)
+				& SSB_CHIPCO_CFG_DS16) == 0)
+			mcore->flash_buswidth = 1;
 	} else {
 		mcore->flash_window = 0x1fc00000;
-		mcore->flash_window_size = 0x400000;
+		mcore->flash_window_size = 0x00400000;
 	}
 }
 

@@ -22,6 +22,7 @@ struct ssb_mipscore {
 	int nr_serial_ports;
 	struct ssb_serial_port serial_ports[4];
 
+	int flash_buswidth;
 	u32 flash_window;
 	u32 flash_window_size;
 };
