@@ -77,26 +77,6 @@ struct trx_header {
 extern struct ssb_bus ssb;
 static struct mtd_info *bcm947xx_mtd;
 
-static void bcm947xx_map_copy_from(struct map_info *map, void *to, unsigned long from, ssize_t len)
-{
-#define MIPS_MEMCPY_ALIGN 4
-	map_word ret;
-	ssize_t transfer;
-	ssize_t done = 0;
-	if ((len >= MIPS_MEMCPY_ALIGN) && (!(from & (MIPS_MEMCPY_ALIGN - 1))) && (!(((unsigned int)to & (MIPS_MEMCPY_ALIGN - 1))))) {
-		done = len & ~(MIPS_MEMCPY_ALIGN - 1);
-		memcpy_fromio(to, map->virt + from, done);
-	}
-	while (done < len) {
-		ret = map->read(map, from + done);
-		transfer = len - done;
-		if (transfer > map->bankwidth)
-			transfer = map->bankwidth;
-		memcpy((void *)((unsigned long)to + done), &ret.x[0], transfer);
-		done += transfer;
-	}
-}
-
 static struct map_info bcm947xx_map = {
 	name: "Physically mapped flash",
 	size: WINDOW_SIZE,
@@ -425,8 +405,6 @@ int __init init_bcm947xx_map(void)
 		return -EIO;
 	}
 	simple_map_init(&bcm947xx_map);
-	
-	bcm947xx_map.copy_from = bcm947xx_map_copy_from;
 	
 	if (!(bcm947xx_mtd = do_map_probe("cfi_probe", &bcm947xx_map))) {
 		printk("Failed to do_map_probe\n");
