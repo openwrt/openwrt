@@ -25,6 +25,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define Package/strongswan/Default
   TITLE:=strongSwan
+  DEPENDS:=@LINUX_2_4
   DESCRIPTION:=\
 	strongSwan is an IPsec implementation for Linux.
   URL:=http://www.strongswan.org/
@@ -46,6 +47,7 @@ define KernelPackage/strongswan
   SUBMENU:=Network Support
   $(call Package/strongswan/Default)
   TITLE+= (kernel module)
+  DEPENDS:=@LINUX_2_4
   DESCRIPTION+=\\\
 	\\\
 	This package contains the strongSwan kernel module.
