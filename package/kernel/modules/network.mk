@@ -126,7 +126,7 @@ define KernelPackage/ipv6
   DESCRIPTION:=\
 	Kernel modules for IPv6 support
   KCONFIG:=$(CONFIG_IPV6)
-  FILES:=$(MODULES_DIR)/kernel/net/ipv6/ipv6.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(MODULES_DIR)/kernel/net/ipv6/{ipv6,sit}.$(LINUX_KMOD_SUFFIX)
   SUBMENU:=$(NSMENU)
 endef
 $(eval $(call KernelPackage,ipv6))
