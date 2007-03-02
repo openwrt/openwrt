@@ -18,22 +18,7 @@ endef
 
 include $(INCLUDE_DIR)/kernel-build.mk
 
-define Profile/Broadcom
-  NAME:=Broadcom WiFi (default)
-  PACKAGES:=kmod-net-bcm43xx
-endef
-$(eval $(call Profile,Broadcom))
-
-define Profile/Atheros
-  NAME:=Atheros WiFi
-  PACKAGES:=kmod-madwifi
-endef
-$(eval $(call Profile,Atheros))
-
-define Profile/Ralink
-  NAME:=Ralink WiFi
-  PACKAGES:=kmod-rt61
-endef
-$(eval $(call Profile,Ralink))
+# include the profiles
+-include profiles/*.mk
 
 $(eval $(call BuildKernel))

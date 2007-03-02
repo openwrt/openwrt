@@ -20,22 +20,7 @@ KERNEL:=2.4
 include $(INCLUDE_DIR)/kernel-build.mk
 DEFAULT_PACKAGES += kmod-avalanche-cpmac
 
-define Profile/AnnexA
-  NAME:=ADSL Annex A (default)
-  PACKAGES:=kmod-sangam-atm-annex-a ppp-mod-pppoa
-endef
-$(eval $(call Profile,AnnexA))
-
-define Profile/AnnexB
-  NAME:=ADSL Annex B
-  PACKAGES:=kmod-sangam-atm-annex-b ppp-mod-pppoa
-endef
-$(eval $(call Profile,AnnexB))
-
-define Profile/None
-  NAME:=No ADSL
-  PACKAGES:=
-endef
-$(eval $(call Profile,None))
+# include the profiles
+-include profiles/*.mk
 
 $(eval $(call BuildKernel))
