@@ -61,8 +61,10 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 		tar -zcf $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-rootfs.tgz --owner=root --group=root -C $(BUILD_DIR)/root/ .
     endef
   endif
-  
-  
+else
+  define Image/BuildKernel
+	cp $(KDIR)/vmlinux.elf $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-vmlinux.elf
+  endef
 endif
 
 

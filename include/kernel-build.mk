@@ -136,6 +136,7 @@ define Kernel/CompileImage/Default
 	$(call Kernel/SetInitramfs)
 	$(MAKE) -j$(CONFIG_JLEVEL) $(KERNEL_MAKEOPTS) CC="$(KERNEL_CC)" $(KERNELNAME)
 	$(KERNEL_CROSS)objcopy -O binary -R .reginfo -R .note -R .comment -R .mdebug -S $(LINUX_DIR)/vmlinux $(LINUX_KERNEL)
+	$(KERNEL_CROSS)objcopy -R .reginfo -R .note -R .comment -R .mdebug -S $(LINUX_DIR)/vmlinux $(KDIR)/vmlinux.elf
 endef
 define Kernel/CompileImage
 	$(call Kernel/CompileImage/Default)
