@@ -18,10 +18,7 @@ endef
 
 include $(INCLUDE_DIR)/kernel-build.mk
 
-define Profile/Ralink
-  NAME:=Ralink WiFi (default)
-  PACKAGES:=kmod-rt61
-endef
-$(eval $(call Profile,Ralink))
+# include the profiles
+-include profiles/*.mk
 
 $(eval $(call BuildKernel))

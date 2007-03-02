@@ -25,23 +25,8 @@ define Kernel/BuildImage
 	$(CP) $(LINUX_DIR)/arch/mips/boot/compressed/images/zImage.srec $(LINUX_DIR)/zImage.srec
 endef
 
-define Profile/Atheros
-  NAME:=Atheros WiFi (default)
-  PACKAGES:=kmod-madwifi
-endef
-$(eval $(call Profile,Atheros))
-
-define Profile/Intel
-  NAME:=Intel IPW2200 WiFi
-  PACKAGES:=kmod-net-ipw2200
-endef
-$(eval $(call Profile,Intel))
-
-define Profile/Broadcom
-  NAME:=Broadcom BCM43xx WiFi
-  PACKAGES:=kmod-net-bcm43xx
-endef
-$(eval $(call Profile,Broadcom))
+# include the profiles
+-include profiles/*.mk
 
 $(eval $(call BuildKernel))
 
