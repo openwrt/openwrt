@@ -9,10 +9,10 @@ include $(TOPDIR)/rules.mk
 ARCH:=mips
 BOARD:=atheros
 BOARDNAME:=Atheros
-FEATURES:=jffs2
+FEATURES:=squashfs jffs2
 
 define Target/Description
-	Build firmware images for Atheros SoC boards (currently AR2315-AR2317)
+	Build firmware images for Atheros SoC boards
 endef
 
 include $(INCLUDE_DIR)/kernel-build.mk
