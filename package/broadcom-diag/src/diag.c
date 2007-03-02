@@ -101,9 +101,12 @@ enum {
 
 	/* Trendware */
 	TEW411BRPP,
+	
+	/* SimpleTech */
+	STI_NAS,
 };
 
-static void __init wl700ge_init(void) {
+static void __init bcm4780_init(void) {
 		int pin = 1 << 3;
 
 		/* Enables GPIO 3 that controls HDD and led power on ASUS WL-700gE */
@@ -287,7 +290,7 @@ static struct platform_t __initdata platforms[] = {
 #endif
 			{ .name = "diag",	.gpio = 1 << 1, .polarity = REVERSE }, // actual name ready
 		},
-		.platform_init = wl700ge_init,
+		.platform_init = bcm4780_init,
 	},
 	/* Buffalo */
 	[WHR_G54S] = {
@@ -515,6 +518,18 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "bridge",     .gpio = 1 << 6, .polarity = NORMAL },
 		},
 	},
+	/* SimpleTech */
+	[STI_NAS] = {
+		.name	   = "SimpleTech SimpleShare NAS",
+		.buttons	= {
+			{ .name = "reset",      .gpio = 1 << 7 }, // on back, hardwired, always resets device regardless OS state
+			{ .name = "power",      .gpio = 1 << 0 }, // on back
+		},
+		.leds	   = {
+			{ .name = "diag",       .gpio = 1 << 1, .polarity = REVERSE }, // actual name ready
+		},
+		.platform_init = bcm4780_init,
+	},
 };
 
 static struct platform_t __init *platform_detect(void)
@@ -626,6 +641,9 @@ static struct platform_t __init *platform_detect(void)
 	if (!strcmp(boardnum, "44")) {  /* Trendware TEW-411BRP+ */
 		return &platforms[TEW411BRPP];
 	}
+
+	if (!strncmp(boardnum, "04FN52", 6)) /* SimpleTech SimpleShare */
+		return &platforms[STI_NAS];
 
 	/* not found */
 	return NULL;
