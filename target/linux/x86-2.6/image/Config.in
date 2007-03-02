@@ -1,7 +1,7 @@
 config X86_GRUB_IMAGES
     bool "Build GRUB images (Linux x86 or x86_64 host only)"
     depends LINUX_2_6_X86
-    depends TARGET_ROOTFS_EXT2FS || TARGET_ROOTFS_JFFS2
+    depends TARGET_ROOTFS_EXT2FS || TARGET_ROOTFS_JFFS2 || TARGET_ROOTFS_SQUASHFS
     default y
 
 config X86_GRUB_IMAGES_PAD
