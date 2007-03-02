@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH=i386
 BOARD:=x86
 BOARDNAME:=x86
-FEATURES:=jffs2 ext2
+FEATURES:=squashfs jffs2 ext2
 
 include $(INCLUDE_DIR)/kernel-build.mk
 DEFAULT_PACKAGES += kmod-natsemi

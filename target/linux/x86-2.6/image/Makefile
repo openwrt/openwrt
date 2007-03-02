@@ -22,18 +22,22 @@ ifeq ($(CONFIG_X86_GRUB_IMAGES),y)
 	$(MAKE) -C grub clean
   endef
 
+  define Image/cmdline/squashfs
+    block2mtd.block2mtd=$(ROOTPART),65536,rootfs root=/dev/mtdblock0 rootfstype=squashfs init=/etc/preinit
+  endef
+
   define Image/cmdline/jffs2-64k
-    block2mtd.block2mtd=$(ROOTPART),65536 root=/dev/mtdblock0 rootfstype=jffs2
+    block2mtd.block2mtd=$(ROOTPART),65536,rootfs root=/dev/mtdblock0 rootfstype=jffs2
   endef
 
   define Image/cmdline/jffs2-128k
-    block2mtd.block2mtd=$(ROOTPART),131072 root=/dev/mtdblock0 rootfstype=jffs2
+    block2mtd.block2mtd=$(ROOTPART),131072,rootfs root=/dev/mtdblock0 rootfstype=jffs2
   endef
 
   define Image/cmdline/ext2
     root=$(ROOTPART) rootfstype=ext2
   endef
-
+  
   define Image/Build/grub
 	# left here because the image builder doesnt need these
 	$(INSTALL_DIR) $(KDIR)/root.grub/boot/grub
@@ -46,6 +50,7 @@ ifeq ($(CONFIG_X86_GRUB_IMAGES),y)
 		-e 's#@BAUDRATE@#$(CONFIG_X86_GRUB_BAUDRATE)#g' \
 		./grub/menu.lst > $(KDIR)/root.grub/boot/grub/menu.lst
 	PADDING="$(CONFIG_X86_GRUB_IMAGES_PAD)" PATH="$(STAGING_DIR)/usr/sbin:$(STAGING_DIR)/bin:$(PATH)" ./gen_image.sh $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).image $(CONFIG_X86_GRUB_KERNELPART) $(KDIR)/root.grub $(CONFIG_TARGET_ROOTFS_FSPART) $(KDIR)/root.$(1)
+	$(call Image/Build/grub/$(1))
   endef
 endif
 
@@ -65,8 +70,13 @@ define Image/Prepare
 	$(CP) $(LINUX_DIR)/arch/i386/boot/bzImage $(KDIR)/bzImage
 	$(call Image/Prepare/grub)
 endef
+  
+define Image/Build/squashfs
+    $(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
+endef
 
 define Image/Build
+	$(call Image/Build/$(1))
 	$(call Image/Build/grub,$(1))
 	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).fs
 	$(CP) $(KDIR)/bzImage $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-vmlinuz
