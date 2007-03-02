@@ -17,6 +17,19 @@ JFFS2OPTS     :=  --pad --big-endian --squash
 SQUASHFS_OPTS :=  -be
 endif
 
+define add_jffs2_mark
+	echo -ne '\xde\xad\xc0\xde' >> $(1)
+endef
+
+# pad to 64k and add jffs2 end-of-filesystem mark
+# do this twice to make sure that this works with 128k blocksize as well
+define prepare_generic_squashfs
+	dd if=$(1) of=$(KDIR)/tmpfile.1 bs=64k conv=sync
+	$(call add_jffs2_mark,$(KDIR)/tmpfile.1)
+	dd of=$(1) if=$(KDIR)/tmpfile.1 bs=64k conv=sync
+	$(call add_jffs2_mark,$(1))
+endef
+
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
   ifeq ($(CONFIG_TARGET_ROOTFS_JFFS2),y)
     define Image/mkfs/jffs2
@@ -25,9 +38,10 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 		$(STAGING_DIR)/bin/mkfs.jffs2 $(JFFS2OPTS) -e 0x10000 -o $(KDIR)/root.jffs2-64k -d $(BUILD_DIR)/root
 		$(STAGING_DIR)/bin/mkfs.jffs2 $(JFFS2OPTS) -e 0x20000 -o $(KDIR)/root.jffs2-128k -d $(BUILD_DIR)/root
 
+		
 		# add End-of-Filesystem markers
-		echo -ne '\xde\xad\xc0\xde' >> $(KDIR)/root.jffs2-64k
-		echo -ne '\xde\xad\xc0\xde' >> $(KDIR)/root.jffs2-128k
+		$(call add_jffs2_mark,$(KDIR)/root.jffs2-64k)
+		$(call add_jffs2_mark,$(KDIR)/root.jffs2-128k)
 	
 		$(call Image/Build,jffs2-64k)
 		$(call Image/Build,jffs2-128k)

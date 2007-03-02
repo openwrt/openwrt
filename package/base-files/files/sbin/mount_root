@@ -1,10 +1,21 @@
 #!/bin/sh
 # Copyright (C) 2006 OpenWrt.org
+. /etc/functions.sh
 
 mount none /proc -t proc
 size=$(awk '/Mem:/ {l=5242880;print((s=$2/2)<l)?$2-l:s}' /proc/meminfo)
 mount none /tmp -t tmpfs -o size=$size,nosuid,nodev,mode=1777
+
+grep rootfs /proc/mtd >/dev/null 2>/dev/null && {
+	mtd unlock rootfs
+	grep rootfs_data /proc/mtd >/dev/null 2>/dev/null && {
+		. /bin/firstboot
+		echo "switching to jffs2"
+		mount "$(find_mtd_part rootfs_data)" /jffs -t jffs2
+		fopivot /jffs /rom
+	}
+} || mount -o remount,rw /dev/root /
+
 mkdir -p /dev/pts
 mount none /dev/pts -t devpts
-mount -t sysfs none /sys 2>&-
-mount -o remount,rw /dev/root /
+grep sysfs /proc/filesystems >/dev/null && mount -t sysfs none /sys 2>&-

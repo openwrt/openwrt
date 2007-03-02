@@ -41,6 +41,11 @@ define Package/base-files$(TARGET)
 	This package contains a base filesystem and system scripts for OpenWrt.
   URL:=http://openwrt.org/
   VERSION:=$(PKG_RELEASE)-$(REV)
+  $(call Config,network.lan.proto,string,static,LAN Protocol)
+  $(call Config,network.lan.ipaddr,ip,192.168.1.1,LAN IP Address)
+  $(call Config,network.lan.netmask,netmask,255.255.0.0,LAN Network Mask)
+  $(call Config,network.lan.gateway,ip,,LAN Gateway)
+  $(call Config,network.lan.dns,ip,,LAN DNS server)
 endef
 
 define Package/base-files$(TARGET)/conffiles
@@ -153,3 +158,5 @@ $(eval $(call BuildPackage,base-files$(TARGET)))
 $(eval $(call BuildPackage,libgcc))
 $(eval $(call BuildPackage,libpthread))
 $(eval $(call BuildPackage,uclibc))
+
+
