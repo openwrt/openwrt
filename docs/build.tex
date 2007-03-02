@@ -45,11 +45,11 @@ This article refers to the "Kamikaze" branch of OpenWrt, which can be downloaded
 subversion using the following command:
 
 \begin{Verbatim}
-$ svn co https://svn.openwrt.org/openwrt/trunk kamikaze
+$ svn checkout https://svn.openwrt.org/openwrt/trunk kamikaze
 \end{Verbatim}
 
-Additionally, ther is a trac interface on \href{https://dev.openwrt.org/}{https://dev.openwrt.org/}
-which can be used to monitor svn commits and browse the sources.
+Additionally, there is a trac interface on \href{https://dev.openwrt.org/}{https://dev.openwrt.org/}
+which can be used to monitor svn commits and browse the source repository.
 
 
 \subsubsection{The directory structure}
@@ -83,7 +83,7 @@ features or removed to save space. Note that packages are also maintained outsid
 trunk and can be obtained from subversion at the following location:
 
 \begin{Verbatim}
-$ svn co https://svn.openwrt.org/openwrt/packages ../packages
+$ svn checkout https://svn.openwrt.org/openwrt/packages packages
 \end{Verbatim}
 
 Those packages can be used to extend the functionality of the build system and need to be
@@ -102,11 +102,10 @@ To include all packages, issue the following command:
 $ ln -s packages/*/* kamikaze/package/
 \end{Verbatim}
 
-
 \texttt{target} refers to the embedded platform, this contains items which are specific to
 a specific embedded platform. Of particular interest here is the "\texttt{target/linux}"
-directory which is broken down by platform and contains the kernel config and patches
-to the kernel for a particular platform. There's also the "\texttt{target/image}" directory
+directory which is broken down by platform \textit{<arch>} and contains the patches to the
+kernel, profile config, for a particular platform. There's also the "\texttt{target/image}" directory
 which describes how to package a firmware for a specific platform.
 
 Both the target and package steps will use the directory "\texttt{build\_\textit{<arch>}}"
@@ -186,7 +185,7 @@ in OpenWrt you'll find two things:
 \begin{itemize}
     \item \texttt{package/\textit{<name>}/Makefile}
     \item \texttt{package/\textit{<name>}/patches}
-	\item \texttt{package/\textit{<name>}/files}
+    \item \texttt{package/\textit{<name>}/files}
 \end{itemize}
 
 The patches directory is optional and typically contains bug fixes or optimizations to
