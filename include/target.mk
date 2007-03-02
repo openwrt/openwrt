@@ -5,6 +5,21 @@
 # See /LICENSE for more information.
 #
 
+define AddProfile
+  $(eval $(call Profile/Default))
+  $(eval $(call Profile/$(1)))
+  ifneq ($(ID),)
+    PROFILE:=$(ID)
+	$(ID)_NAME:=$(NAME)
+	$(ID)_PACKAGES:=$(PACKAGES)
+    ifneq ($(KCONFIG),)
+      PROFILE_LIST += \
+  		echo '$(ID):'; [ -z '$(NAME)' ] || echo '	$(NAME)'; echo '	Packages: $(PACKAGES)';
+    endif
+  endif
+endef
+
+
 include $(TMP_DIR)/.target.mk
 
 ifeq ($(IB),1)
