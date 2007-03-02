@@ -125,10 +125,13 @@ config_set() {
 
 config_foreach() {
 	local function="$1"
-	local section
+	local type="$2"
+	local section cfgtype
 	
 	[ -z "$CONFIG_SECTIONS" ] && return 0
 	for section in ${CONFIG_SECTIONS}; do
+		config_get cfgtype "$section" TYPE
+		[ -n "$type" -a "$cfgtype" != "$type" ] && continue
 		eval "$function \"\$section\""
 	done
 }
