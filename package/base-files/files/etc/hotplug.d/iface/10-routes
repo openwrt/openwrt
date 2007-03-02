@@ -1,0 +1,40 @@
+add_route() {
+	local config="$1"
+
+	# is this route intended for the
+	# $INTERFACE of this hotplug event
+	config_get interface "$config" interface
+	[ "$interface" != "$INTERFACE" ] && return 0
+	
+	# get the real interface name from network config
+	config_get dev "$interface" ifname
+
+	config_get target "$config" target
+	config_get netmask "$config" netmask
+	config_get gateway "$config" gateway
+	config_get metric "$config" metric
+
+	# make sure there is a gateway and a target
+	[ -n "$target" ] || {
+		echo "Missing target in route section $config"
+		return 1
+	}
+	[ -n "$gateway" ] || {
+		echo "Missing gateway in route section $config"
+		return 1
+	}
+
+	netmask="${netmask:-255.255.255.255}"
+	dest="${netmask:+-net "$target" netmask "$netmask"}"
+	dest="${dest:--host "$target"}"
+	
+	/sbin/route add $dest gw "$gateway" ${dev:+dev "$dev"} ${metric:+ metric "$metric"}
+}
+
+case "$ACTION" in
+	ifup)
+		include /lib/network
+		scan_interfaces
+		config_foreach "add_route" route
+	;;
+esac

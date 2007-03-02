@@ -54,6 +54,24 @@ PPP based protocols (\texttt{pppoe}, \texttt{pptp}, ...) accept these options:
 
 For all protocol types, you can also specify the MTU by using the \texttt{mtu} option.
 
+\subsubsection{Setting up static routes}
+
+You can set up static routes for a specific interface that will be brought up 
+after the interface is configured.
+
+Simply add a config section like this:
+
+\begin{Verbatim}
+config route foo
+	option interface lan
+	option target 1.1.1.0
+	option netmask 255.255.255.0
+	option gateway 192.168.1.1
+\end{Verbatim}
+
+The name for the route section is optional, the \texttt{interface}, \texttt{target} and 
+\texttt{gateway} options are mandatory.
+Leaving out the \texttt{netmask} option will turn the route into a host route.
 
 \subsubsection{Setting up the switch (currently broadcom only)}
 
