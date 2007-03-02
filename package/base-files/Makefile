@@ -101,8 +101,13 @@ endef
 
 define Package/base-files$(TARGET)/install
 	$(CP) ./files/* $(1)/
-	if [ -d $(PLATFORM_DIR)/base-files/. ]; then \
-		$(CP) $(PLATFORM_DIR)/base-files/* $(1)/; \
+	if [ -d $(PLATFORM_DIR)/base-files/default/. ]; then \
+		$(CP) $(PLATFORM_DIR)/base-files/default/* $(1)/; \
+	fi
+	if [ "$(PROFILE)" != "Default" ]; then \
+		if [ -d $(PLATFORM_DIR)/base-files/profile-$(PROFILE)/. ]; then \
+			$(CP) $(PLATFORM_DIR)/base-files/profile-$(PROFILE)/* $(1)/; \
+		fi; \
 	fi
 	$(SED) 's,$$$$R,r$(REV),g' $(1)/etc/banner
 	$(SED) 's,$$$$S,$(BOARD)-$(KERNEL),g' $(1)/etc/ipkg.conf
