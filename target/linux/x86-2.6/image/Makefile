@@ -75,6 +75,10 @@ define Image/Build/squashfs
     $(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
 endef
 
+define Image/BuildKernel
+	$(CP) $(KDIR)/bzImage $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-vmlinuz
+endef
+
 define Image/Build
 	$(call Image/Build/$(1))
 	$(call Image/Build/grub,$(1))
