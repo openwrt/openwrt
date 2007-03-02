@@ -7,6 +7,12 @@
 
 include $(TMP_DIR)/.target.mk
 
+define AddProfile
+  ifeq ($(CONFIG_LINUX_$(call confname,$(KERNEL)_$(1))),y)
+    PROFILE=$(1)
+  endif
+endef
+
 ifeq ($(IB),1)
 $(TMP_DIR)/.target.mk: $(TOPDIR)/.target.mk
 	$(CP) $< $@
