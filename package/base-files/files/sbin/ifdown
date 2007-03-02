@@ -1,8 +1,15 @@
 #!/bin/sh
 # Copyright (C) 2006 OpenWrt.org
 
-[ $# = 0 ] && { echo "  $0 <group>"; exit; }
 . /etc/functions.sh
+[ $# = 0 ] && { echo "  $0 <group>"; exit; }
+[ "x$1" = "x-a" ] && {
+	config_cb() {
+		[ -z "$2" ] || eval "$0 $2"
+	}
+	config_load network
+	exit
+}
 include /lib/network
 scan_interfaces
 

@@ -2,7 +2,7 @@
 # Copyright (C) 2006 OpenWrt.org
 
 START=40
-start() {
+boot() {
 	setup_switch() { return 0; }
 
 	include /lib/network
@@ -12,3 +12,16 @@ start() {
 	/sbin/wifi up
 }
 
+start() {
+	ifup -a
+	/sbin/wifi up
+}
+
+restart() {
+	ifup -a
+	/sbin/wifi up
+}
+
+stop() {
+	ifdown -a
+}
