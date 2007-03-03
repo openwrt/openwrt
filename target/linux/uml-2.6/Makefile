@@ -24,6 +24,10 @@ FEATURES:=broken
 LINUX_CONFIG:=$(CURDIR)/config/$(ARCH)
 
 include $(INCLUDE_DIR)/kernel-build.mk
+
+# include the profiles
+-include profiles/*.mk
+
 endif
 
 $(eval $(call BuildKernel))
