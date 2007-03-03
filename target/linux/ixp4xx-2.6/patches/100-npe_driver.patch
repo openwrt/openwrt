@@ -1,7 +1,185 @@
-diff -Nur linux-2.6.17/Documentation/networking/ixp4xx/IxNpeMicrocode.h linux-2.6.17-owrt/Documentation/networking/ixp4xx/IxNpeMicrocode.h
---- linux-2.6.17/Documentation/networking/ixp4xx/IxNpeMicrocode.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.17-owrt/Documentation/networking/ixp4xx/IxNpeMicrocode.h	2006-10-27 12:48:52.000000000 +0200
-@@ -0,0 +1,149 @@
+diff -Naur linux-2.6.19.orig/arch/arm/mach-ixp4xx/common.c linux-2.6.19/arch/arm/mach-ixp4xx/common.c
+--- linux-2.6.19.orig/arch/arm/mach-ixp4xx/common.c	2006-11-29 14:57:37.000000000 -0700
++++ linux-2.6.19/arch/arm/mach-ixp4xx/common.c	2007-01-12 21:54:40.000000000 -0700
+@@ -314,6 +314,90 @@
+ 	&ixp46x_i2c_controller
+ };
+ 
++static struct npe_plat_data npea = {
++	.name		= "NPE-A",
++	.data_size	= 0x800,
++	.inst_size	= 0x1000,
++	.id		= 0,
++};
++
++static struct npe_plat_data npeb = {
++	.name		= "NPE-B",
++	.data_size	= 0x800,
++	.inst_size	= 0x800,
++	.id		= 1,
++};
++
++static struct npe_plat_data npec = {
++	.name		= "NPE-C",
++	.data_size	= 0x800,
++	.inst_size	= 0x800,
++	.id		= 2,
++};
++
++static struct resource res_npea = {
++	.start		= IXP4XX_NPEA_BASE_PHYS,
++	.end		= IXP4XX_NPEA_BASE_PHYS + 0xfff,
++	.flags          = IORESOURCE_MEM,
++};
++
++static struct resource res_npeb = {
++	.start		= IXP4XX_NPEB_BASE_PHYS,
++	.end		= IXP4XX_NPEB_BASE_PHYS + 0xfff,
++	.flags          = IORESOURCE_MEM,
++};
++
++static struct resource res_npec = {
++	.start		= IXP4XX_NPEC_BASE_PHYS,
++	.end		= IXP4XX_NPEC_BASE_PHYS + 0xfff,
++	.flags          = IORESOURCE_MEM,
++};
++
++static struct platform_device dev_npea = {
++	.name           = "ixp4xx_npe",
++	.id             = 0,
++	.dev.platform_data = &npea,
++	.num_resources  = 1,
++	.resource       = &res_npea,
++};
++
++static struct platform_device dev_npeb = {
++	.name           = "ixp4xx_npe",
++	.id             = 1,
++	.dev.platform_data = &npeb,
++	.num_resources  = 1,
++	.resource       = &res_npeb,
++};
++
++static struct platform_device dev_npec = {
++	.name           = "ixp4xx_npe",
++	.id             = 2,
++	.dev.platform_data = &npec,
++	.num_resources  = 1,
++	.resource       = &res_npec,
++};
++
++/* QMGR */
++static struct resource res_qmgr[] = {
++{
++	.start		= IXP4XX_QMGR_BASE_PHYS,
++	.end		= IXP4XX_QMGR_BASE_PHYS + IXP4XX_QMGR_REGION_SIZE -1,
++	.flags          = IORESOURCE_MEM,
++}, {
++	.start          = IRQ_IXP4XX_QM1,
++	.flags          = IORESOURCE_IRQ,
++} };
++
++static struct platform_device qmgr = {
++	.name           = "ixp4xx_qmgr",
++	.id             = 0,
++	.dev		= {
++		.coherent_dma_mask	= DMA_32BIT_MASK,
++	},
++	.num_resources  = ARRAY_SIZE(res_qmgr),
++	.resource       = res_qmgr,
++};
++
+ unsigned long ixp4xx_exp_bus_size;
+ EXPORT_SYMBOL(ixp4xx_exp_bus_size);
+ 
+@@ -333,8 +417,19 @@
+ 				break;
+ 			}
+ 		}
++		npeb.inst_size = 0x1000;
++		npec.inst_size = 0x1000;
+ 	}
+ 
++	platform_device_register(&qmgr);
++
++	if (ix_fuse() & IX_FUSE_NPEA)
++		platform_device_register(&dev_npea);
++	if (ix_fuse() & IX_FUSE_NPEB)
++		platform_device_register(&dev_npeb);
++	if (ix_fuse() & IX_FUSE_NPEC)
++		platform_device_register(&dev_npec);
++
+ 	printk("IXP4xx: Using %luMiB expansion bus window size\n",
+ 			ixp4xx_exp_bus_size >> 20);
+ }
+diff -Naur linux-2.6.19.orig/arch/arm/mach-ixp4xx/ixdp425-setup.c linux-2.6.19/arch/arm/mach-ixp4xx/ixdp425-setup.c
+--- linux-2.6.19.orig/arch/arm/mach-ixp4xx/ixdp425-setup.c	2006-11-29 14:57:37.000000000 -0700
++++ linux-2.6.19/arch/arm/mach-ixp4xx/ixdp425-setup.c	2007-01-12 21:54:40.000000000 -0700
+@@ -101,10 +101,59 @@
+ 	.resource		= ixdp425_uart_resources
+ };
+ 
++/* MACs */
++static struct resource res_mac0 = {
++	.start		= IXP4XX_EthB_BASE_PHYS,
++	.end		= IXP4XX_EthB_BASE_PHYS + 0x1ff,
++	.flags          = IORESOURCE_MEM,
++};
++
++static struct resource res_mac1 = {
++	.start		= IXP4XX_EthC_BASE_PHYS,
++	.end		= IXP4XX_EthC_BASE_PHYS + 0x1ff,
++	.flags          = IORESOURCE_MEM,
++};
++
++static struct mac_plat_info plat_mac0 = {
++	.npe_id		= 1,
++	.phy_id		= 0,
++	.eth_id		= 0,
++	.rxq_id		= 27,
++	.txq_id		= 24,
++	.rxdoneq_id	= 4,
++};
++
++static struct mac_plat_info plat_mac1 = {
++	.npe_id		= 2,
++	.phy_id		= 1,
++	.eth_id		= 1,
++	.rxq_id		= 28,
++	.txq_id		= 25,
++	.rxdoneq_id	= 5,
++};
++
++static struct platform_device mac0 = {
++	.name           = "ixp4xx_mac",
++	.id             = 0,
++	.dev.platform_data = &plat_mac0,
++	.num_resources  = 1,
++	.resource       = &res_mac0,
++};
++
++static struct platform_device mac1 = {
++	.name           = "ixp4xx_mac",
++	.id             = 1,
++	.dev.platform_data = &plat_mac1,
++	.num_resources  = 1,
++	.resource       = &res_mac1,
++};
++
+ static struct platform_device *ixdp425_devices[] __initdata = {
+ 	&ixdp425_i2c_controller,
+ 	&ixdp425_flash,
+-	&ixdp425_uart
++	&ixdp425_uart,
++	&mac0,
++	&mac1,
+ };
+ 
+ static void __init ixdp425_init(void)
+diff -Naur linux-2.6.19.orig/Documentation/networking/ixp4xx/IxNpeMicrocode.h linux-2.6.19/Documentation/networking/ixp4xx/IxNpeMicrocode.h
+--- linux-2.6.19.orig/Documentation/networking/ixp4xx/IxNpeMicrocode.h	1969-12-31 17:00:00.000000000 -0700
++++ linux-2.6.19/Documentation/networking/ixp4xx/IxNpeMicrocode.h	2007-01-12 21:54:40.000000000 -0700
+@@ -0,0 +1,143 @@
 +/*
 + * IxNpeMicrocode.h - Headerfile for compiling the Intel microcode C file
 + *
@@ -16,11 +194,6 @@ diff -Nur linux-2.6.17/Documentation/networking/ixp4xx/IxNpeMicrocode.h linux-2.
 + *
 + * Executing the resulting binary on your build-host creates the
 + * "NPE-[ABC].xxxxxxxx" files containing the selected microcode
-+ * The options -le and -be controll the output format of the microcode
-+ * the default is -be independent of the host endianess
-+ *
-+ * The download functions in the driver are smart enough to discover
-+ * and correct firmware with wrong endianess
 + *
 + * fetch the IxNpeMicrocode.c from the Intel Access Library.
 + * It will include this header.
@@ -46,12 +219,12 @@ diff -Nur linux-2.6.17/Documentation/networking/ixp4xx/IxNpeMicrocode.h linux-2.
 +
 +
 +// #define IX_NPEDL_NPEIMAGE_NPEB_ETH_SPAN_MASK_FIREWALL_VLAN_QOS_HDR_CONV_EXTMIB
-+// #define IX_NPEDL_NPEIMAGE_NPEB_ETH_SPAN_VLAN_QOS_HDR_CONV_EXTMIB
++//#define IX_NPEDL_NPEIMAGE_NPEB_ETH_SPAN_VLAN_QOS_HDR_CONV_EXTMIB
 +// #define IX_NPEDL_NPEIMAGE_NPEB_ETH_LEARN_FILTER_SPAN_MASK_FIREWALL_VLAN_QOS_EXTMIB
 +// #define IX_NPEDL_NPEIMAGE_NPEB_DMA
 +// #define IX_NPEDL_NPEIMAGE_NPEB_ETH_SPAN_FIREWALL_VLAN_QOS_HDR_CONV
 +// #define IX_NPEDL_NPEIMAGE_NPEB_ETH_LEARN_FILTER_SPAN_FIREWALL_VLAN_QOS
-+#define IX_NPEDL_NPEIMAGE_NPEB_ETH_LEARN_FILTER_SPAN_FIREWALL
++ #define IX_NPEDL_NPEIMAGE_NPEB_ETH_LEARN_FILTER_SPAN_FIREWALL
 +
 +
 +// #define IX_NPEDL_NPEIMAGE_NPEC_ETH_SPAN_MASK_FIREWALL_VLAN_QOS_HDR_CONV_EXTMIB
@@ -60,7 +233,7 @@ diff -Nur linux-2.6.17/Documentation/networking/ixp4xx/IxNpeMicrocode.h linux-2.
 +// #define IX_NPEDL_NPEIMAGE_NPEC_DMA
 +// #define IX_NPEDL_NPEIMAGE_NPEC_CRYPTO_AES_ETH_LEARN_FILTER_SPAN
 +// #define IX_NPEDL_NPEIMAGE_NPEC_CRYPTO_AES_ETH_LEARN_FILTER_FIREWALL
-+#define IX_NPEDL_NPEIMAGE_NPEC_CRYPTO_AES_CCM_ETH
++ #define IX_NPEDL_NPEIMAGE_NPEC_CRYPTO_AES_CCM_ETH
 +// #define IX_NPEDL_NPEIMAGE_NPEC_CRYPTO_ETH_LEARN_FILTER_SPAN_FIREWALL
 +// #define IX_NPEDL_NPEIMAGE_NPEC_ETH_SPAN_FIREWALL_VLAN_QOS_HDR_CONV
 +// #define IX_NPEDL_NPEIMAGE_NPEC_ETH_LEARN_FILTER_SPAN_FIREWALL_VLAN_QOS
@@ -114,7 +287,6 @@ diff -Nur linux-2.6.17/Documentation/networking/ixp4xx/IxNpeMicrocode.h linux-2.
 +			return EXIT_FAILURE;
 +		}
 +	}
-+	printf("Output format is %s endian\n", bigendian ? "big" : "little");
 +
 +	for (image = (struct dl_image *)arrayptr, cnt=0;
 +		(image->id != 0xfeedf00d) && (image->magic == 0xfeedf00d);
@@ -151,85 +323,9 @@ diff -Nur linux-2.6.17/Documentation/networking/ixp4xx/IxNpeMicrocode.h linux-2.
 +	close(fd);
 +	return 0;
 +}
-diff -Nur linux-2.6.17/Documentation/networking/ixp4xx/README linux-2.6.17-owrt/Documentation/networking/ixp4xx/README
---- linux-2.6.17/Documentation/networking/ixp4xx/README	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.17-owrt/Documentation/networking/ixp4xx/README	2006-10-27 12:48:52.000000000 +0200
-@@ -0,0 +1,72 @@
-+Informations about the Networking Driver using the IXP4XX CPU internal NPEs
-+and Queue manager.
-+
-+If this driver is used, the IAL (Intel Access Library) must not be loaded.
-+However, the IAL may be loaded, if this Modules are unloaded:
-+	ixp4xx_npe.ko, ixp4xx_qmgr.ko ixp4xx_mac.ko
-+
-+This also means that HW crypto accelleration does NOT work when using this
-+driver, unless I have finished my crypto driver for NPE-C
-+
-+
-+Adoption to your custom board:
-+------------------------------
-+use "arch/arm/mach-ixp4xx/ixdp425-setup.c" as template:
-+
-+in "static struct mac_plat_info" adopt the entry "phy_id" to your needs
-+(Ask your hardware designer about the PHY id)
-+If in doubt, try the values from the ixdp425 board.
-+
-+The order of "&mac0" and "&mac1" in the "struct platform_device"
-+determines which of them becomes eth0 and eth1.
-+
-+
-+The Microcode:
-+---------------
-+
-+The Download functions below are endianess independent.
-+If the image comes in wrong endianess, it is swapped automatically.
-+
-+Solution 1)
-+ Configure "CONFIG_HOTPLUG" and "CONFIG_FW_LOADER" and configure
-+ IXP4XX_NPE as module.
-+ The default hotplug script will load the Firmware from
-+ /usr/lib/hotplug/firmware/NPE-[ABC]
-+ see Documentation/firmware_class/hotplug-script
-+
-+ You should take care, that $ACTION is "add" and $SUBSYSTEM is "firmware"
-+ to avoid unnessecary calls:
-+ test $ACTION = "remove" -o $SUBSYSTEM != "firmware" && exit
-+
-+Solution 2)
-+ create a char-dev: "mknod /dev/ixp4xx_ucode c 10 184".
-+ If you are using "udev" or busybox "mdev", they will do this
-+ for you automatically during module load.
-+ cat the Microcode into it:
-+ cat /usr/lib/hotplug/firmware/NPE-* > /dev/ixp4xx_ucode
-+ This also works if the driver is linked to the kernel
-+
-+Having a mix of both (e.g. solution 1 for NPE-B and solution 2 for NPE-C)
-+is perfectly ok and works.
-+
-+The state of the NPEs can be seen and changed at:
-+/sys/bus/platform/devices/ixp4xx_npe.X/state
-+
-+
-+Obtaining the Microcode:
-+------------------------
-+1) IxNpeMicrocode.h in this directory:
-+   Download IPL_IXP400NPELIBRARYWITHCRYPTO-2_1.ZIP from Intel
-+   It unpacks the Microcode IxNpeMicrocode.c
-+   Read the Licence !
-+   Read the top of IxNpeMicrocode.h for more details.
-+   Compile it with "gcc -Wall IxNpeMicrocode.c -o IxNpeMicrocode" on your host.
-+   The resulting images can be moved to "/usr/lib/hotplug/firmware"
-+   The endianeess of the written microcode can be controlled by the
-+   switches -le -be. Default is big-endian.
-+
-+2) mc_grab.c in this directory:
-+   Compile and execute it either on the host or on the target
-+   to grab the microcode from a binary image like the RedBoot bootloader.
-+   (big-endian images only)
-+
-diff -Nur linux-2.6.17/Documentation/networking/ixp4xx/mc_grab.c linux-2.6.17-owrt/Documentation/networking/ixp4xx/mc_grab.c
---- linux-2.6.17/Documentation/networking/ixp4xx/mc_grab.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.17-owrt/Documentation/networking/ixp4xx/mc_grab.c	2006-10-27 12:48:52.000000000 +0200
+diff -Naur linux-2.6.19.orig/Documentation/networking/ixp4xx/mc_grab.c linux-2.6.19/Documentation/networking/ixp4xx/mc_grab.c
+--- linux-2.6.19.orig/Documentation/networking/ixp4xx/mc_grab.c	1969-12-31 17:00:00.000000000 -0700
++++ linux-2.6.19/Documentation/networking/ixp4xx/mc_grab.c	2007-01-12 21:54:40.000000000 -0700
 @@ -0,0 +1,97 @@
 +/*
 + * mc_grab.c  - grabs IXP4XX microcode from a binary datastream
@@ -328,261 +424,931 @@ diff -Nur linux-2.6.17/Documentation/networking/ixp4xx/mc_grab.c linux-2.6.17-ow
 +		fprintf(stderr, "Error reading  Microcode\n");
 +	return ret;
 +}
-diff -Nur linux-2.6.17/arch/arm/mach-ixp4xx/common.c linux-2.6.17-owrt/arch/arm/mach-ixp4xx/common.c
---- linux-2.6.17/arch/arm/mach-ixp4xx/common.c	2006-06-18 03:49:35.000000000 +0200
-+++ linux-2.6.17-owrt/arch/arm/mach-ixp4xx/common.c	2006-10-27 12:50:32.000000000 +0200
-@@ -341,6 +341,97 @@
- 	&ixp46x_i2c_controller
- };
- 
-+static struct npe_plat_data npea = {
-+	.name		= "NPE-A",
-+	.data_size	= 0x800,
-+	.inst_size	= 0x1000,
-+	.id		= 0,
-+};
+diff -Naur linux-2.6.19.orig/Documentation/networking/ixp4xx/README linux-2.6.19/Documentation/networking/ixp4xx/README
+--- linux-2.6.19.orig/Documentation/networking/ixp4xx/README	1969-12-31 17:00:00.000000000 -0700
++++ linux-2.6.19/Documentation/networking/ixp4xx/README	2007-01-12 21:54:40.000000000 -0700
+@@ -0,0 +1,62 @@
++Informations about the Networking Driver using the IXP4XX CPU internal NPEs
++and Queue manager.
 +
-+static struct npe_plat_data npeb = {
-+	.name		= "NPE-B",
-+	.data_size	= 0x800,
-+	.inst_size	= 0x800,
-+	.id		= 1,
-+};
++If this driver is used, the IAL (Intel Access Library) must not be loaded.
++However, the IAL may be loaded, if this Modules are unloaded:
++	ixp4xx_npe.ko, ixp4xx_qmgr.ko ixp4xx_mac.ko
 +
-+static struct npe_plat_data npec = {
-+	.name		= "NPE-C",
-+	.data_size	= 0x800,
-+	.inst_size	= 0x800,
-+	.id		= 2,
-+};
++This also means that HW crypto accelleration does NOT work when using this
++driver, unless I have finished my crypto driver for NPE-C
 +
-+static struct resource res_npea = {
-+	.start		= IXP4XX_NPEA_BASE_PHYS,
-+	.end		= IXP4XX_NPEA_BASE_PHYS + 0xfff,
-+	.flags          = IORESOURCE_MEM,
-+};
 +
-+static struct resource res_npeb = {
-+	.start		= IXP4XX_NPEB_BASE_PHYS,
-+	.end		= IXP4XX_NPEB_BASE_PHYS + 0xfff,
-+	.flags          = IORESOURCE_MEM,
-+};
++Adoption to your custom board:
++------------------------------
++use "arch/arm/mach-ixp4xx/ixdp425-setup.c" as template:
 +
-+static struct resource res_npec = {
-+	.start		= IXP4XX_NPEC_BASE_PHYS,
-+	.end		= IXP4XX_NPEC_BASE_PHYS + 0xfff,
-+	.flags          = IORESOURCE_MEM,
-+};
++in "static struct mac_plat_info" adopt the entry "phy_id" to your needs
++(Ask your hardware designer about the PHY id)
 +
-+static struct platform_device dev_npea = {
-+	.name           = "ixp4xx_npe",
-+	.id             = 0,
-+	.dev.platform_data = &npea,
-+	.num_resources  = 1,
-+	.resource       = &res_npea,
-+};
++The order of "&mac0" and "&mac1" in the "struct platform_device"
++determines which of them becomes eth0 and eth1
 +
-+static struct platform_device dev_npeb = {
-+	.name           = "ixp4xx_npe",
-+	.id             = 1,
-+	.dev.platform_data = &npeb,
-+	.num_resources  = 1,
-+	.resource       = &res_npeb,
-+};
 +
-+static struct platform_device dev_npec = {
-+	.name           = "ixp4xx_npe",
-+	.id             = 2,
-+	.dev.platform_data = &npec,
-+	.num_resources  = 1,
-+	.resource       = &res_npec,
-+};
++The Microcode:
++---------------
++Solution 1)
++ Configure "CONFIG_HOTPLUG" and "CONFIG_FW_LOADER" and configure
++ IXP4XX_NPE as module.
++ The default hotplug script will load the Firmware from
++ /usr/lib/hotplug/firmware/NPE-[ABC]
++ see Documentation/firmware_class/hotplug-script
 +
-+/* QMGR */
-+static struct resource res_qmgr[] = {
++ You should take care, that $ACTION is "add" and $SUBSYSTEM is "firmware"
++ to avoid unnessecary calls:
++ test $ACTION = "remove" -o $SUBSYSTEM != "firmware" && exit
++
++Solution 2)
++ create a char-dev: "mknod /dev/misc/npe c 10 184"
++ cat the Microcode into it:
++ cat /usr/lib/hotplug/firmware/NPE-* > /dev/misc/npe
++ This also works if the driver is linked to the kernel
++
++ Having a mix of both (e.g. solution 1 for NPE-B and solution 2 for NPE-C)
++ is perfectly ok and works.
++
++ The state of the NPEs can be seen and changed at:
++ /sys/bus/platform/devices/ixp4xx_npe.X/state
++
++
++Obtaining the Microcode:
++------------------------
++1) IxNpeMicrocode.h in this directory:
++   Download IPL_IXP400NPELIBRARYWITHCRYPTO-2_1.ZIP from Intel
++   It unpacks the Microcode IxNpeMicrocode.c
++   Read the Licence !
++   Compile it with "gcc -Wall IxNpeMicrocode.c -o IxNpeMicrocode" on your host.
++   The resulting images can be moved to "/usr/lib/hotplug/firmware"
++
++2) mc_grab.c in this directory:
++   Compile and execute it either on the host or on the target
++   to grab the microcode from a binary image like the RedBoot bootloader.
++
++
+diff -Naur linux-2.6.19.orig/drivers/net/ixp4xx/ixp4xx_crypto.c linux-2.6.19/drivers/net/ixp4xx/ixp4xx_crypto.c
+--- linux-2.6.19.orig/drivers/net/ixp4xx/ixp4xx_crypto.c	1969-12-31 17:00:00.000000000 -0700
++++ linux-2.6.19/drivers/net/ixp4xx/ixp4xx_crypto.c	2007-01-12 21:54:40.000000000 -0700
+@@ -0,0 +1,851 @@
++/*
++ * ixp4xx_crypto.c - interface to the HW crypto
++ *
++ * Copyright (C) 2006 Christian Hohnstaedt <chohnstaedt@innominate.com>
++ *
++ * This file is released under the GPLv2
++ */
++
++#include <linux/ixp_qmgr.h>
++#include <linux/ixp_npe.h>
++#include <linux/dma-mapping.h>
++#include <linux/dmapool.h>
++#include <linux/device.h>
++#include <linux/delay.h>
++#include <linux/slab.h>
++#include <linux/kernel.h>
++#include <linux/ixp_crypto.h>
++
++#define SEND_QID 29
++#define RECV_QID 30
++
++#define NPE_ID   2 /* NPE C */
++
++#define QUEUE_SIZE 64
++#define MY_VERSION "0.0.1"
++
++/* local head for all sa_ctx */
++static struct ix_sa_master sa_master;
++
++static const struct ix_hash_algo _hash_algos[] = {
 +{
-+	.start		= IXP4XX_QMGR_BASE_PHYS,
-+	.end		= IXP4XX_QMGR_BASE_PHYS + IXP4XX_QMGR_REGION_SIZE -1,
-+	.flags          = IORESOURCE_MEM,
-+}, {
-+	.start          = IRQ_IXP4XX_QM1,
-+	.flags          = IORESOURCE_IRQ,
++	.name		= "MD5",
++	.cfgword	= 0xAA010004,
++	.digest_len	= 16,
++	.icv		= "\x01\x23\x45\x67\x89\xAB\xCD\xEF"
++			"\xFE\xDC\xBA\x98\x76\x54\x32\x10",
++	.type		= HASH_TYPE_MD5,
++},{
++	.name		= "SHA1",
++	.cfgword	= 0x00000005,
++	.digest_len	= 20,
++	.icv		= "\x67\x45\x23\x01\xEF\xCD\xAB\x89\x98\xBA"
++			"\xDC\xFE\x10\x32\x54\x76\xC3\xD2\xE1\xF0",
++	.type		= HASH_TYPE_SHA1,
++#if 0
++},{
++	.name		= "CBC MAC",
++	.digest_len	= 64,
++	.aad_len	= 48,
++	.type		= HASH_TYPE_CBCMAC,
++#endif
 +} };
 +
-+static struct platform_device qmgr = {
-+	.name           = "ixp4xx_qmgr",
-+	.id             = 0,
-+	.dev		= {
-+		.coherent_dma_mask	= DMA_31BIT_MASK,
-+	},
-+	.num_resources  = ARRAY_SIZE(res_qmgr),
-+	.resource       = res_qmgr,
-+};
++static const struct ix_cipher_algo _cipher_algos[] = {
++{
++	.name		= "DES ECB",
++	.cfgword_enc	= CIPH_ENCR | MOD_DES | MOD_ECB | KEYLEN_192,
++	.cfgword_dec	= CIPH_DECR | MOD_DES | MOD_ECB | KEYLEN_192,
++	.block_len	= 8,
++	.type		= CIPHER_TYPE_DES,
++	.mode		= CIPHER_MODE_ECB,
++},{
++	.name		= "DES CBC",
++	.cfgword_enc	= CIPH_ENCR | MOD_DES | MOD_CBC_ENC | KEYLEN_192,
++	.cfgword_dec	= CIPH_DECR | MOD_DES | MOD_CBC_DEC | KEYLEN_192,
++	.iv_len		= 8,
++	.block_len	= 8,
++	.type		= CIPHER_TYPE_DES,
++	.mode		= CIPHER_MODE_CBC,
++},{
++	.name		= "3DES ECB",
++	.cfgword_enc	= CIPH_ENCR | MOD_TDEA3 | MOD_ECB | KEYLEN_192,
++	.cfgword_dec	= CIPH_DECR | MOD_TDEA3 | MOD_ECB | KEYLEN_192,
++	.block_len	= 8,
++	.type		= CIPHER_TYPE_3DES,
++	.mode		= CIPHER_MODE_ECB,
++},{
++	.name		= "3DES CBC",
++	.cfgword_enc	= CIPH_ENCR | MOD_TDEA3 | MOD_CBC_ENC | KEYLEN_192,
++	.cfgword_dec	= CIPH_DECR | MOD_TDEA3 | MOD_CBC_DEC | KEYLEN_192,
++	.iv_len		= 8,
++	.block_len	= 8,
++	.type		= CIPHER_TYPE_3DES,
++	.mode		= CIPHER_MODE_CBC,
++},{
++	.name		= "AES ECB",
++	.cfgword_enc	= CIPH_ENCR | ALGO_AES | MOD_ECB,
++	.cfgword_dec	= CIPH_DECR | ALGO_AES | MOD_ECB,
++	.block_len	= 16,
++	.type		= CIPHER_TYPE_AES,
++	.mode		= CIPHER_MODE_ECB,
++},{
++	.name		= "AES CBC",
++	.cfgword_enc	= CIPH_ENCR | ALGO_AES | MOD_CBC_ENC,
++	.cfgword_dec	= CIPH_DECR | ALGO_AES | MOD_CBC_DEC,
++	.block_len	= 16,
++	.iv_len		= 16,
++	.type		= CIPHER_TYPE_AES,
++	.mode		= CIPHER_MODE_CBC,
++},{
++	.name		= "AES CTR",
++	.cfgword_enc	= CIPH_ENCR | ALGO_AES | MOD_CTR,
++	.cfgword_dec	= CIPH_ENCR | ALGO_AES | MOD_CTR,
++	.block_len	= 16,
++	.iv_len		= 16,
++	.type		= CIPHER_TYPE_AES,
++	.mode		= CIPHER_MODE_CTR,
++#if 0
++},{
++	.name		= "AES CCM",
++	.cfgword_enc	= CIPH_ENCR | ALGO_AES | MOD_CCM_ENC,
++	.cfgword_dec	= CIPH_ENCR | ALGO_AES | MOD_CCM_DEC,
++	.block_len	= 16,
++	.iv_len		= 16,
++	.type		= CIPHER_TYPE_AES,
++	.mode		= CIPHER_MODE_CCM,
++#endif
++} };
 +
-+static struct platform_device *npes_qmgr[] __initdata = {
-+	&qmgr,
-+	&dev_npea,
-+	&dev_npeb,
-+	&dev_npec,
-+};
++const struct ix_hash_algo *ix_hash_by_id(int type)
++{
++	int i;
 +
- unsigned long ixp4xx_exp_bus_size;
- EXPORT_SYMBOL(ixp4xx_exp_bus_size);
- 
-@@ -360,7 +451,10 @@
- 				break;
- 			}
- 		}
-+		npeb.inst_size = 0x1000;
-+		npec.inst_size = 0x1000;
- 	}
-+	platform_add_devices(npes_qmgr, ARRAY_SIZE(npes_qmgr));
- 
- 	printk("IXP4xx: Using %luMiB expansion bus window size\n",
- 			ixp4xx_exp_bus_size >> 20);
-diff -Nur linux-2.6.17/arch/arm/mach-ixp4xx/ixdp425-setup.c linux-2.6.17-owrt/arch/arm/mach-ixp4xx/ixdp425-setup.c
---- linux-2.6.17/arch/arm/mach-ixp4xx/ixdp425-setup.c	2006-06-18 03:49:35.000000000 +0200
-+++ linux-2.6.17-owrt/arch/arm/mach-ixp4xx/ixdp425-setup.c	2006-10-27 12:48:54.000000000 +0200
-@@ -101,10 +101,57 @@
- 	.resource		= ixdp425_uart_resources
- };
- 
-+/* MACs */
-+static struct resource res_mac0 = {
-+	.start		= IXP4XX_EthB_BASE_PHYS,
-+	.end		= IXP4XX_EthB_BASE_PHYS + 0x1ff,
-+	.flags          = IORESOURCE_MEM,
-+};
++	for(i=0; i<ARRAY_SIZE(_hash_algos); i++) {
++		if (_hash_algos[i].type == type)
++			return _hash_algos + i;
++	}
++	return NULL;
++}
 +
-+static struct resource res_mac1 = {
-+	.start		= IXP4XX_EthC_BASE_PHYS,
-+	.end		= IXP4XX_EthC_BASE_PHYS + 0x1ff,
-+	.flags          = IORESOURCE_MEM,
-+};
++const struct ix_cipher_algo *ix_cipher_by_id(int type, int mode)
++{
++	int i;
 +
-+static struct mac_plat_info plat_mac0 = {
-+	.npe_id		= 1,
-+	.phy_id		= 0,
-+	.eth_id		= 0,
-+	.rxq_id		= 27,
-+	.txq_id		= 24,
-+};
++	for(i=0; i<ARRAY_SIZE(_cipher_algos); i++) {
++		if (_cipher_algos[i].type==type && _cipher_algos[i].mode==mode)
++			return _cipher_algos + i;
++	}
++	return NULL;
++}
 +
-+static struct mac_plat_info plat_mac1 = {
-+	.npe_id		= 2,
-+	.phy_id		= 1,
-+	.eth_id		= 1,
-+	.rxq_id		= 28,
-+	.txq_id		= 25,
-+};
++static void irqcb_recv(struct qm_queue *queue);
 +
-+static struct platform_device mac0 = {
-+	.name           = "ixp4xx_mac",
-+	.id             = 0,
-+	.dev.platform_data = &plat_mac0,
-+	.num_resources  = 1,
-+	.resource       = &res_mac0,
-+};
++static int init_sa_master(struct ix_sa_master *master)
++{
++	struct npe_info *npe;
++	int ret = -ENODEV;
 +
-+static struct platform_device mac1 = {
-+	.name           = "ixp4xx_mac",
-+	.id             = 1,
-+	.dev.platform_data = &plat_mac1,
-+	.num_resources  = 1,
-+	.resource       = &res_mac1,
-+};
++	if (! (ix_fuse() & (IX_FUSE_HASH | IX_FUSE_AES | IX_FUSE_DES))) {
++		printk(KERN_ERR "ixp_crypto: No HW crypto available\n");
++		return ret;
++	}
++	memset(master, 0, sizeof(struct ix_sa_master));
++	master->npe_dev = get_npe_by_id(NPE_ID);
++	if (! master->npe_dev)
++		goto err;
 +
- static struct platform_device *ixdp425_devices[] __initdata = {
- 	&ixdp425_i2c_controller,
- 	&ixdp425_flash,
--	&ixdp425_uart
-+	&ixdp425_uart,
-+	&mac0,
-+	&mac1,
- };
- 
- static void __init ixdp425_init(void)
-diff -Nur linux-2.6.17/drivers/net/Kconfig linux-2.6.17-owrt/drivers/net/Kconfig
---- linux-2.6.17/drivers/net/Kconfig	2006-06-18 03:49:35.000000000 +0200
-+++ linux-2.6.17-owrt/drivers/net/Kconfig	2006-10-27 12:48:54.000000000 +0200
-@@ -187,6 +187,8 @@
- 
- source "drivers/net/arm/Kconfig"
- 
-+source "drivers/net/ixp4xx/Kconfig"
++	npe = dev_get_drvdata(master->npe_dev);
 +
- config MACE
- 	tristate "MACE (Power Mac ethernet) support"
- 	depends on NET_ETHERNET && PPC_PMAC && PPC32
-diff -Nur linux-2.6.17/drivers/net/Makefile linux-2.6.17-owrt/drivers/net/Makefile
---- linux-2.6.17/drivers/net/Makefile	2006-06-18 03:49:35.000000000 +0200
-+++ linux-2.6.17-owrt/drivers/net/Makefile	2006-10-27 12:48:54.000000000 +0200
-@@ -208,6 +208,7 @@
- obj-$(CONFIG_IRDA) += irda/
- obj-$(CONFIG_ETRAX_ETHERNET) += cris/
- obj-$(CONFIG_ENP2611_MSF_NET) += ixp2000/
-+obj-$(CONFIG_IXP4XX_NPE) += ixp4xx/
- 
- obj-$(CONFIG_NETCONSOLE) += netconsole.o
- 
-diff -Nur linux-2.6.17/drivers/net/ixp4xx/Kconfig linux-2.6.17-owrt/drivers/net/ixp4xx/Kconfig
---- linux-2.6.17/drivers/net/ixp4xx/Kconfig	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.17-owrt/drivers/net/ixp4xx/Kconfig	2006-10-27 12:48:54.000000000 +0200
-@@ -0,0 +1,40 @@
-+config IXP4XX_QMGR
-+	tristate "IXP4xx Queue Manager support"
-+	depends on ARCH_IXP4XX
-+	depends on NET_ETHERNET
-+	help
-+	  The IXP4XX Queue manager is a configurable hardware ringbuffer.
-+	  It is used by the NPEs to exchange data from and to the CPU.
-+	  You can either use this OR the Intel Access Library (IAL)
++	if (npe_status(npe) & IX_NPEDL_EXCTL_STATUS_RUN) {
++		switch (npe->img_info[1]) {
++		case 4:
++			printk(KERN_INFO "Crypto AES avaialable\n");
++			break;
++		case 5:
++			printk(KERN_INFO "Crypto AES and CCM avaialable\n");
++			break;
++		default:
++			printk(KERN_WARNING "Current microcode for %s has no"
++				" crypto capabilities\n", npe->plat->name);
++			break;
++		}
++	}
++	rwlock_init(&master->lock);
++	master->dmapool = dma_pool_create("ixp4xx_crypto", master->npe_dev,
++			sizeof(struct npe_crypt_cont), 32, 0);
++	if (!master->dmapool) {
++		ret = -ENOMEM;
++		goto err;
++	}
++	master->sendq = request_queue(SEND_QID, QUEUE_SIZE);
++	if (IS_ERR(master->sendq)) {
++		printk(KERN_ERR "ixp4xx_crypto: Error requesting Q: %d\n",
++				SEND_QID);
++		ret = PTR_ERR(master->sendq);
++		goto err;
++	}
++	master->recvq = request_queue(RECV_QID, QUEUE_SIZE);
++	if (IS_ERR(master->recvq)) {
++		printk(KERN_ERR "ixp4xx_crypto: Error requesting Q: %d\n",
++				RECV_QID);
++		ret = PTR_ERR(master->recvq);
++		release_queue(master->sendq);
++		goto err;
++	}
 +
-+config IXP4XX_NPE
-+	tristate "IXP4xx NPE support"
-+	depends on ARCH_IXP4XX
-+	depends on NET_ETHERNET
-+	help
-+	  The IXP4XX NPE driver supports the 3 CPU co-processors called
-+	  "Network Processing Engines" (NPE). It adds support fo downloading
-+	  the Microcode (firmware) via Hotplug or  character-special-device.
-+	  More about this at: Documentation/networking/ixp4xx/README.
-+	  You can either use this OR the Intel Access Library (IAL)
++	master->recvq->irq_cb = irqcb_recv;
++	queue_set_watermarks(master->recvq, 0, 0);
++	queue_set_irq_src(master->recvq, Q_IRQ_ID_NOT_E);
++	queue_enable_irq(master->recvq);
++	printk(KERN_INFO "ixp4xx_crypto " MY_VERSION " registered successfully\n");
 +
-+config IXP4XX_FW_LOAD
-+	bool "Use Firmware hotplug for Microcode download"
-+	depends on IXP4XX_NPE
-+	select HOTPLUG
-+	select FW_LOADER
-+	help
-+	  The default hotplug script will load the Firmware from
-+	  /usr/lib/hotplug/firmware/NPE-[ABC]
-+	  see Documentation/firmware_class/hotplug-script
++	return 0;
++err:
++	if (master->dmapool)
++		dma_pool_destroy(master->dmapool);
++	if (! master->npe_dev)
++		put_device(master->npe_dev);
++	return ret;
 +
-+config IXP4XX_MAC
-+	tristate "IXP4xx MAC support"
-+	depends on IXP4XX_NPE
-+	depends on IXP4XX_QMGR
-+	depends on NET_ETHERNET
-+	select MII
-+	help
-+	  The IXP4XX MAC driver supports the MACs on the IXP4XX CPUs.
-+	  There are 2 on ixp425 and up to 5 on ixdp465.
-+	  You can either use this OR the Intel Access Library (IAL)
-diff -Nur linux-2.6.17/drivers/net/ixp4xx/Makefile linux-2.6.17-owrt/drivers/net/ixp4xx/Makefile
---- linux-2.6.17/drivers/net/ixp4xx/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.17-owrt/drivers/net/ixp4xx/Makefile	2006-10-27 12:48:54.000000000 +0200
-@@ -0,0 +1,6 @@
-+obj-$(CONFIG_IXP4XX_QMGR) += ixp4xx_qmgr.o
-+obj-$(CONFIG_IXP4XX_NPE) += ixp4xx_npe.o
-+obj-$(CONFIG_IXP4XX_MAC) += ixp4xx_mac.o
++}
 +
-+ixp4xx_npe-objs := ucode_dl.o npe_mh.o
-+ixp4xx_mac-objs := mac_driver.o qmgr_eth.o phy.o
-diff -Nur linux-2.6.17/drivers/net/ixp4xx/ixp4xx_qmgr.c linux-2.6.17-owrt/drivers/net/ixp4xx/ixp4xx_qmgr.c
---- linux-2.6.17/drivers/net/ixp4xx/ixp4xx_qmgr.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.17-owrt/drivers/net/ixp4xx/ixp4xx_qmgr.c	2006-10-27 12:48:54.000000000 +0200
-@@ -0,0 +1,390 @@
++static void release_sa_master(struct ix_sa_master *master)
++{
++	struct npe_crypt_cont *cont;
++	unsigned long flags;
++
++	write_lock_irqsave(&master->lock, flags);
++	while (master->pool) {
++		cont = master->pool;
++		master->pool = cont->next;
++		dma_pool_free(master->dmapool, cont, cont->phys);
++		master->pool_size--;
++	}
++	write_unlock_irqrestore(&master->lock, flags);
++	if (master->pool_size) {
++		printk(KERN_ERR "ixp4xx_crypto: %d items lost from DMA pool\n",
++				master->pool_size);
++	}
++
++	dma_pool_destroy(master->dmapool);
++	release_queue(master->sendq);
++	release_queue(master->recvq);
++	return_npe_dev(master->npe_dev);
++}
++
++static struct npe_crypt_cont *ix_sa_get_cont(struct ix_sa_master *master)
++{
++	unsigned long flags;
++	struct npe_crypt_cont *cont;
++	dma_addr_t handle;
++
++	write_lock_irqsave(&master->lock, flags);
++	if (!master->pool) {
++		cont = dma_pool_alloc(master->dmapool, GFP_ATOMIC, &handle);
++		if (cont) {
++			master->pool_size++;
++			cont->phys = handle;
++			cont->virt = cont;
++		}
++	} else {
++		cont = master->pool;
++		master->pool = cont->next;
++	}
++	write_unlock_irqrestore(&master->lock, flags);
++	return cont;
++}
++
++static void
++ix_sa_return_cont(struct ix_sa_master *master,struct npe_crypt_cont *cont)
++{
++	unsigned long flags;
++
++	write_lock_irqsave(&master->lock, flags);
++	cont->next = master->pool;
++	master->pool = cont;
++	write_unlock_irqrestore(&master->lock, flags);
++}
++
++static void free_sa_dir(struct ix_sa_ctx *sa_ctx, struct ix_sa_dir *dir)
++{
++	memset(dir->npe_ctx, 0, NPE_CTX_LEN);
++	dma_pool_free(sa_ctx->master->dmapool, dir->npe_ctx,
++			dir->npe_ctx_phys);
++}
++
++static void ix_sa_ctx_destroy(struct ix_sa_ctx *sa_ctx)
++{
++	BUG_ON(sa_ctx->state != STATE_UNLOADING);
++	free_sa_dir(sa_ctx, &sa_ctx->encrypt);
++	free_sa_dir(sa_ctx, &sa_ctx->decrypt);
++	kfree(sa_ctx);
++	module_put(THIS_MODULE);
++}
++
++static void recv_pack(struct qm_queue *queue, u32 phys)
++{
++	struct ix_sa_ctx *sa_ctx;
++	struct npe_crypt_cont *cr_cont;
++	struct npe_cont *cont;
++	int failed;
++
++	failed = phys & 0x1;
++	phys &= ~0x3;
++
++	cr_cont = dma_to_virt(queue->dev, phys);
++	cr_cont = cr_cont->virt;
++	sa_ctx = cr_cont->ctl.crypt.sa_ctx;
++
++	phys = npe_to_cpu32(cr_cont->ctl.crypt.src_buf);
++	if (phys) {
++		cont = dma_to_virt(queue->dev, phys);
++		cont = cont->virt;
++	} else {
++		cont = NULL;
++	}
++	if (cr_cont->ctl.crypt.oper_type == OP_PERFORM) {
++		dma_unmap_single(sa_ctx->master->npe_dev,
++				cont->eth.phys_addr,
++				cont->eth.buf_len,
++				DMA_BIDIRECTIONAL);
++		if (sa_ctx->perf_cb)
++			sa_ctx->perf_cb(sa_ctx, cont->data, failed);
++		qmgr_return_cont(dev_get_drvdata(queue->dev), cont);
++		ix_sa_return_cont(sa_ctx->master, cr_cont);
++		if (atomic_dec_and_test(&sa_ctx->use_cnt))
++			ix_sa_ctx_destroy(sa_ctx);
++		return;
++	}
++
++	/* We are registering */
++	switch (cr_cont->ctl.crypt.mode) {
++	case NPE_OP_HASH_GEN_ICV:
++		/* 1 out of 2 HMAC preparation operations completed */
++		dma_unmap_single(sa_ctx->master->npe_dev,
++				cont->eth.phys_addr,
++				cont->eth.buf_len,
++				DMA_TO_DEVICE);
++		kfree(cont->data);
++		qmgr_return_cont(dev_get_drvdata(queue->dev), cont);
++		break;
++	case NPE_OP_ENC_GEN_KEY:
++		memcpy(sa_ctx->decrypt.npe_ctx + sizeof(u32),
++			sa_ctx->rev_aes->ctl.rev_aes_key + sizeof(u32),
++			sa_ctx->c_key.len);
++		/* REV AES data not needed anymore, free it */
++		ix_sa_return_cont(sa_ctx->master, sa_ctx->rev_aes);
++		sa_ctx->rev_aes = NULL;
++		break;
++	default:
++		printk(KERN_ERR "Unknown crypt-register mode: %x\n",
++				cr_cont->ctl.crypt.mode);
++
++	}
++	if (cr_cont->ctl.crypt.oper_type == OP_REG_DONE) {
++		if (sa_ctx->state == STATE_UNREGISTERED)
++			sa_ctx->state = STATE_REGISTERED;
++		if (sa_ctx->reg_cb)
++			sa_ctx->reg_cb(sa_ctx, failed);
++	}
++	ix_sa_return_cont(sa_ctx->master, cr_cont);
++	if (atomic_dec_and_test(&sa_ctx->use_cnt))
++		ix_sa_ctx_destroy(sa_ctx);
++}
++
++static void irqcb_recv(struct qm_queue *queue)
++{
++	u32 phys;
++
++	queue_ack_irq(queue);
++	while ((phys = queue_get_entry(queue)))
++		recv_pack(queue, phys);
++}
++
++static int init_sa_dir(struct ix_sa_ctx *sa_ctx, struct ix_sa_dir *dir)
++{
++	dir->npe_ctx = dma_pool_alloc(sa_ctx->master->dmapool,
++			sa_ctx->gfp_flags, &dir->npe_ctx_phys);
++	if (!dir->npe_ctx) {
++		return 1;
++	}
++	memset(dir->npe_ctx, 0, NPE_CTX_LEN);
++	return 0;
++}
++
++struct ix_sa_ctx *ix_sa_ctx_new(int priv_len, gfp_t flags)
++{
++	struct ix_sa_ctx *sa_ctx;
++	struct ix_sa_master *master = &sa_master;
++	struct npe_info *npe = dev_get_drvdata(master->npe_dev);
++
++	/* first check if Microcode was downloaded into this NPE */
++	if (!( npe_status(npe) & IX_NPEDL_EXCTL_STATUS_RUN)) {
++		printk(KERN_ERR "%s not running\n", npe->plat->name);
++		return NULL;
++	}
++	switch (npe->img_info[1]) {
++		case 4:
++		case 5:
++			break;
++		default:
++			/* No crypto Microcode */
++			return NULL;
++	}
++	if (!try_module_get(THIS_MODULE)) {
++		return NULL;
++	}
++
++	sa_ctx = kzalloc(sizeof(struct ix_sa_ctx) + priv_len, flags);
++	if (!sa_ctx) {
++		goto err_put;
++	}
++
++	sa_ctx->master = master;
++	sa_ctx->gfp_flags = flags;
++
++	if (init_sa_dir(sa_ctx, &sa_ctx->encrypt))
++		goto err_free;
++	if (init_sa_dir(sa_ctx, &sa_ctx->decrypt)) {
++		free_sa_dir(sa_ctx, &sa_ctx->encrypt);
++		goto err_free;
++	}
++	if (priv_len)
++		sa_ctx->priv = sa_ctx + 1;
++
++	atomic_set(&sa_ctx->use_cnt, 1);
++	return sa_ctx;
++
++err_free:
++	 kfree(sa_ctx);
++err_put:
++	 module_put(THIS_MODULE);
++	 return NULL;
++}
++
++void ix_sa_ctx_free(struct ix_sa_ctx *sa_ctx)
++{
++	sa_ctx->state = STATE_UNLOADING;
++	if (atomic_dec_and_test(&sa_ctx->use_cnt))
++		ix_sa_ctx_destroy(sa_ctx);
++	else
++		printk("ix_sa_ctx_free -> delayed: %p %d\n",
++				sa_ctx, atomic_read(&sa_ctx->use_cnt));
++}
++
++/* http://www.ietf.org/rfc/rfc2104.txt */
++#define HMAC_IPAD_VALUE 0x36
++#define HMAC_OPAD_VALUE 0x5C
++#define PAD_BLOCKLEN 64
++
++static int register_chain_var(struct ix_sa_ctx *sa_ctx,
++	unsigned char *pad, u32 target, int init_len, u32 ctx_addr, int oper)
++{
++	struct npe_crypt_cont *cr_cont;
++	struct npe_cont *cont;
++
++	cr_cont = ix_sa_get_cont(sa_ctx->master);
++	if (!cr_cont)
++		return -ENOMEM;
++
++	cr_cont->ctl.crypt.sa_ctx = sa_ctx;
++	cr_cont->ctl.crypt.auth_offs = 0;
++	cr_cont->ctl.crypt.auth_len =cpu_to_npe16(PAD_BLOCKLEN);
++	cr_cont->ctl.crypt.crypto_ctx = cpu_to_npe32(ctx_addr);
++
++	cont = qmgr_get_cont(dev_get_drvdata(sa_ctx->master->sendq->dev));
++	if (!cont) {
++		ix_sa_return_cont(sa_ctx->master, cr_cont);
++		return -ENOMEM;
++	}
++
++	cont->data = pad;
++	cont->eth.next = 0;
++	cont->eth.buf_len = cpu_to_npe16(PAD_BLOCKLEN);
++	cont->eth.pkt_len = 0;
++
++	cont->eth.phys_addr = cpu_to_npe32(dma_map_single(
++		sa_ctx->master->npe_dev, pad, PAD_BLOCKLEN, DMA_TO_DEVICE));
++
++	cr_cont->ctl.crypt.src_buf = cpu_to_npe32(cont->phys);
++	cr_cont->ctl.crypt.oper_type = oper;
++
++	cr_cont->ctl.crypt.addr.icv = cpu_to_npe32(target);
++	cr_cont->ctl.crypt.mode = NPE_OP_HASH_GEN_ICV;
++	cr_cont->ctl.crypt.init_len = init_len;
++
++	atomic_inc(&sa_ctx->use_cnt);
++	queue_put_entry(sa_ctx->master->sendq, cr_cont->phys);
++	if (queue_stat(sa_ctx->master->sendq) == 2) { /* overflow */
++		atomic_dec(&sa_ctx->use_cnt);
++		qmgr_return_cont(dev_get_drvdata(sa_ctx->master->sendq->dev),
++				cont);
++		ix_sa_return_cont(sa_ctx->master, cr_cont);
++		return -ENOMEM;
++	}
++	return 0;
++}
++
++/* Return value
++ * 0 if nothing registered,
++ * 1 if something registered and
++ * < 0 on error
++ */
++static int ix_sa_ctx_setup_auth(struct ix_sa_ctx *sa_ctx,
++		const struct ix_hash_algo *algo, int len, int oper, int encrypt)
++{
++	unsigned char *ipad, *opad;
++	u32 itarget, otarget, ctx_addr;
++	unsigned char *cinfo;
++	int init_len, i, ret = 0;
++	struct qm_qmgr *qmgr;
++	struct ix_sa_dir *dir;
++	u32 cfgword;
++
++	dir = encrypt ? &sa_ctx->encrypt : &sa_ctx->decrypt;
++	cinfo = dir->npe_ctx + dir->npe_ctx_idx;
++
++	qmgr = dev_get_drvdata(sa_ctx->master->sendq->dev);
++
++	cinfo = dir->npe_ctx + dir->npe_ctx_idx;
++	sa_ctx->h_algo = algo;
++
++	if (!algo) {
++		dir->npe_mode |= NPE_OP_HMAC_DISABLE;
++		return 0;
++	}
++	if (algo->type == HASH_TYPE_CBCMAC) {
++		dir->npe_mode |= NPE_OP_CCM_ENABLE | NPE_OP_HMAC_DISABLE;
++		return 0;
++	}
++	if (sa_ctx->h_key.len > 64 || sa_ctx->h_key.len < algo->digest_len)
++		return -EINVAL;
++	if (len > algo->digest_len || (len % 4))
++		return -EINVAL;
++	if (!len)
++		len = algo->digest_len;
++
++	sa_ctx->digest_len = len;
++
++	/* write cfg word to cryptinfo */
++	cfgword = algo->cfgword | ((len/4) << 8);
++	*(u32*)cinfo = cpu_to_be32(cfgword);
++	cinfo += sizeof(cfgword);
++
++	/* write ICV to cryptinfo */
++	memcpy(cinfo, algo->icv, algo->digest_len);
++	cinfo += algo->digest_len;
++
++	itarget = dir->npe_ctx_phys + dir->npe_ctx_idx
++				+ sizeof(algo->cfgword);
++	otarget = itarget + algo->digest_len;
++
++	opad = kzalloc(PAD_BLOCKLEN, sa_ctx->gfp_flags | GFP_DMA);
++	if (!opad) {
++		return -ENOMEM;
++	}
++	ipad = kzalloc(PAD_BLOCKLEN, sa_ctx->gfp_flags | GFP_DMA);
++	if (!ipad) {
++		kfree(opad);
++		return -ENOMEM;
++	}
++	memcpy(ipad, sa_ctx->h_key.key, sa_ctx->h_key.len);
++	memcpy(opad, sa_ctx->h_key.key, sa_ctx->h_key.len);
++	for (i = 0; i < PAD_BLOCKLEN; i++) {
++		ipad[i] ^= HMAC_IPAD_VALUE;
++		opad[i] ^= HMAC_OPAD_VALUE;
++	}
++	init_len = cinfo - (dir->npe_ctx + dir->npe_ctx_idx);
++	ctx_addr = dir->npe_ctx_phys + dir->npe_ctx_idx;
++
++	dir->npe_ctx_idx += init_len;
++	dir->npe_mode |= NPE_OP_HASH_ENABLE;
++
++	if (!encrypt)
++		dir->npe_mode |= NPE_OP_HASH_VERIFY;
++
++	/* register first chainvar */
++	ret = register_chain_var(sa_ctx, opad, otarget,
++			init_len, ctx_addr, OP_REGISTER);
++	if (ret) {
++		kfree(ipad);
++		kfree(opad);
++		return ret;
++	}
++
++	/* register second chainvar */
++	ret = register_chain_var(sa_ctx, ipad, itarget,
++			init_len, ctx_addr, oper);
++	if (ret) {
++		kfree(ipad);
++		return ret;
++	}
++
++	return 1;
++}
++
++static int gen_rev_aes_key(struct ix_sa_ctx *sa_ctx,
++		u32 keylen_cfg, int cipher_op)
++{
++	unsigned char *cinfo;
++	struct npe_crypt_cont *cr_cont;
++
++	keylen_cfg |= CIPH_ENCR | ALGO_AES | MOD_ECB;
++	sa_ctx->rev_aes = ix_sa_get_cont(sa_ctx->master);
++	if (!sa_ctx->rev_aes)
++		return -ENOMEM;
++
++	cinfo = sa_ctx->rev_aes->ctl.rev_aes_key;
++	*(u32*)cinfo = cpu_to_be32(keylen_cfg);
++	cinfo += sizeof(keylen_cfg);
++
++	memcpy(cinfo, sa_ctx->c_key.key, sa_ctx->c_key.len);
++
++	cr_cont = ix_sa_get_cont(sa_ctx->master);
++	if (!cr_cont) {
++		ix_sa_return_cont(sa_ctx->master, sa_ctx->rev_aes);
++		sa_ctx->rev_aes = NULL;
++		return -ENOMEM;
++	}
++	cr_cont->ctl.crypt.sa_ctx = sa_ctx;
++	cr_cont->ctl.crypt.oper_type = cipher_op;
++
++	cr_cont->ctl.crypt.crypt_offs = 0;
++	cr_cont->ctl.crypt.crypt_len = cpu_to_npe16(AES_BLOCK128);
++	cr_cont->ctl.crypt.addr.rev_aes = cpu_to_npe32(
++			sa_ctx->rev_aes->phys + sizeof(keylen_cfg));
++
++	cr_cont->ctl.crypt.src_buf = 0;
++	cr_cont->ctl.crypt.crypto_ctx = cpu_to_npe32(sa_ctx->rev_aes->phys);
++	cr_cont->ctl.crypt.mode = NPE_OP_ENC_GEN_KEY;
++	cr_cont->ctl.crypt.init_len = sa_ctx->decrypt.npe_ctx_idx;
++
++	atomic_inc(&sa_ctx->use_cnt);
++	queue_put_entry(sa_ctx->master->sendq, cr_cont->phys);
++	if (queue_stat(sa_ctx->master->sendq) == 2) { /* overflow */
++		atomic_dec(&sa_ctx->use_cnt);
++		ix_sa_return_cont(sa_ctx->master, cr_cont);
++		ix_sa_return_cont(sa_ctx->master, sa_ctx->rev_aes);
++		sa_ctx->rev_aes = NULL;
++		return -ENOMEM;
++	}
++
++	return 1;
++}
++
++/* Return value
++ * 0 if nothing registered,
++ * 1 if something registered and
++ * < 0 on error
++ */
++static int ix_sa_ctx_setup_cipher(struct ix_sa_ctx *sa_ctx,
++		const struct ix_cipher_algo *algo, int cipher_op, int encrypt)
++{
++	unsigned char *cinfo;
++	int keylen, init_len;
++	u32 cipher_cfg;
++	u32 keylen_cfg = 0;
++	struct ix_sa_dir *dir;
++
++	dir = encrypt ? &sa_ctx->encrypt : &sa_ctx->decrypt;
++	cinfo = dir->npe_ctx + dir->npe_ctx_idx;
++
++	sa_ctx->c_algo = algo;
++
++	if (!algo)
++		return 0;
++
++	if (algo->type == CIPHER_TYPE_DES && sa_ctx->c_key.len != 8)
++		return -EINVAL;
++
++	if (algo->type == CIPHER_TYPE_3DES && sa_ctx->c_key.len != 24)
++		return -EINVAL;
++
++	keylen = 24;
++
++	if (encrypt) {
++		cipher_cfg = algo->cfgword_enc;
++		dir->npe_mode |= NPE_OP_CRYPT_ENCRYPT;
++	} else {
++		cipher_cfg = algo->cfgword_dec;
++	}
++	if (algo->type == CIPHER_TYPE_AES) {
++		switch (sa_ctx->c_key.len) {
++			case 16: keylen_cfg = MOD_AES128 | KEYLEN_128; break;
++			case 24: keylen_cfg = MOD_AES192 | KEYLEN_192; break;
++			case 32: keylen_cfg = MOD_AES256 | KEYLEN_256; break;
++			default: return -EINVAL;
++		}
++		keylen = sa_ctx->c_key.len;
++		cipher_cfg |= keylen_cfg;
++	}
++
++	/* write cfg word to cryptinfo */
++	*(u32*)cinfo = cpu_to_be32(cipher_cfg);
++	cinfo += sizeof(cipher_cfg);
++
++	/* write cipher key to cryptinfo */
++	memcpy(cinfo, sa_ctx->c_key.key, sa_ctx->c_key.len);
++	cinfo += keylen;
++
++	init_len = cinfo - (dir->npe_ctx + dir->npe_ctx_idx);
++	dir->npe_ctx_idx += init_len;
++
++	dir->npe_mode |= NPE_OP_CRYPT_ENABLE;
++
++	if (algo->type == CIPHER_TYPE_AES && !encrypt) {
++		return gen_rev_aes_key(sa_ctx, keylen_cfg, cipher_op);
++	}
++
++	return 0;
++}
++
++/* returns 0 on OK, <0 on error and 1 on overflow */
++int ix_sa_crypto_perform(struct ix_sa_ctx *sa_ctx, u8 *data, void *ptr,
++	int datalen, int c_offs, int c_len, int a_offs, int a_len,
++	int hmac, char *iv, int encrypt)
++{
++	struct npe_crypt_cont *cr_cont;
++	struct npe_cont *cont;
++	u32 data_phys;
++	int ret = -ENOMEM;
++	struct ix_sa_dir *dir;
++
++	dir = encrypt ? &sa_ctx->encrypt : &sa_ctx->decrypt;
++
++	if (sa_ctx->state != STATE_REGISTERED)
++		return -ENOENT;
++
++	cr_cont = ix_sa_get_cont(sa_ctx->master);
++	if (!cr_cont)
++		return ret;
++
++	cr_cont->ctl.crypt.sa_ctx = sa_ctx;
++	cr_cont->ctl.crypt.crypto_ctx = cpu_to_npe32(dir->npe_ctx_phys);
++	cr_cont->ctl.crypt.oper_type = OP_PERFORM;
++	cr_cont->ctl.crypt.mode = dir->npe_mode;
++	cr_cont->ctl.crypt.init_len = dir->npe_ctx_idx;
++
++	if (sa_ctx->c_algo) {
++		cr_cont->ctl.crypt.crypt_offs = cpu_to_npe16(c_offs);
++		cr_cont->ctl.crypt.crypt_len = cpu_to_npe16(c_len);
++		if (sa_ctx->c_algo->iv_len) {
++			if (!iv) {
++				ret = -EINVAL;
++				goto err_cr;
++			}
++			memcpy(cr_cont->ctl.crypt.iv, iv,
++					sa_ctx->c_algo->iv_len);
++		}
++	}
++
++	if (sa_ctx->h_algo) {
++		/* prepare hashing */
++		cr_cont->ctl.crypt.auth_offs = cpu_to_npe16(a_offs);
++		cr_cont->ctl.crypt.auth_len = cpu_to_npe16(a_len);
++	}
++
++	data_phys = dma_map_single(sa_ctx->master->npe_dev,
++			data, datalen, DMA_BIDIRECTIONAL);
++	if (hmac)
++		cr_cont->ctl.crypt.addr.icv = cpu_to_npe32(data_phys + hmac);
++
++	/* Prepare the data ptr */
++	cont = qmgr_get_cont(dev_get_drvdata(sa_ctx->master->sendq->dev));
++	if (!cont) {
++		goto err_unmap;
++	}
++
++	cont->data = ptr;
++	cont->eth.next = 0;
++	cont->eth.buf_len = cpu_to_npe16(datalen);
++	cont->eth.pkt_len = 0;
++
++	cont->eth.phys_addr = cpu_to_npe32(data_phys);
++	cr_cont->ctl.crypt.src_buf = cpu_to_npe32(cont->phys);
++
++	atomic_inc(&sa_ctx->use_cnt);
++	queue_put_entry(sa_ctx->master->sendq, cr_cont->phys);
++	if (queue_stat(sa_ctx->master->sendq) != 2) {
++		return 0;
++	}
++
++	/* overflow */
++	printk("%s: Overflow\n", __FUNCTION__);
++	ret = -EAGAIN;
++	atomic_dec(&sa_ctx->use_cnt);
++	qmgr_return_cont(dev_get_drvdata(sa_ctx->master->sendq->dev), cont);
++
++err_unmap:
++	dma_unmap_single(sa_ctx->master->npe_dev, data_phys, datalen,
++			DMA_BIDIRECTIONAL);
++err_cr:
++	ix_sa_return_cont(sa_ctx->master, cr_cont);
++
++	return ret;
++}
++
++int ix_sa_ctx_setup_cipher_auth(struct ix_sa_ctx *sa_ctx,
++		const struct ix_cipher_algo *cipher,
++		const struct ix_hash_algo *auth, int len)
++{
++	int ret = 0, sum = 0;
++	int cipher_op;
++
++	if (sa_ctx->state != STATE_UNREGISTERED)
++		return -ENOENT;
++
++	atomic_inc(&sa_ctx->use_cnt);
++
++	cipher_op = auth ? OP_REGISTER : OP_REG_DONE;
++	if ((ret = ix_sa_ctx_setup_cipher(sa_ctx, cipher, OP_REGISTER, 1)) < 0)
++		goto out;
++	sum += ret;
++	if ((ret = ix_sa_ctx_setup_cipher(sa_ctx, cipher, cipher_op, 0)) < 0)
++		goto out;
++	sum += ret;
++	if ((ret = ix_sa_ctx_setup_auth(sa_ctx, auth, len, OP_REGISTER, 1)) < 0)
++		goto out;
++	sum += ret;
++	if ((ret = ix_sa_ctx_setup_auth(sa_ctx, auth, len, OP_REG_DONE, 0)) < 0)
++		goto out;
++	sum += ret;
++
++	/* Nothing registered ?
++	 * Ok, then we are done and call the callback here.
++	 */
++	if (!sum) {
++		if (sa_ctx->state == STATE_UNREGISTERED)
++			sa_ctx->state = STATE_REGISTERED;
++		if (sa_ctx->reg_cb)
++			sa_ctx->reg_cb(sa_ctx, 0);
++	}
++out:
++	atomic_dec(&sa_ctx->use_cnt);
++	return ret;
++}
++
++static int __init init_crypto(void)
++{
++	return init_sa_master(&sa_master);
++}
++
++static void __exit finish_crypto(void)
++{
++	release_sa_master(&sa_master);
++}
++
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("Christian Hohnstaedt <chohnstaedt@innominate.com>");
++
++EXPORT_SYMBOL(ix_hash_by_id);
++EXPORT_SYMBOL(ix_cipher_by_id);
++
++EXPORT_SYMBOL(ix_sa_ctx_new);
++EXPORT_SYMBOL(ix_sa_ctx_free);
++EXPORT_SYMBOL(ix_sa_ctx_setup_cipher_auth);
++EXPORT_SYMBOL(ix_sa_crypto_perform);
++
++module_init(init_crypto);
++module_exit(finish_crypto);
++
+diff -Naur linux-2.6.19.orig/drivers/net/ixp4xx/ixp4xx_qmgr.c linux-2.6.19/drivers/net/ixp4xx/ixp4xx_qmgr.c
+--- linux-2.6.19.orig/drivers/net/ixp4xx/ixp4xx_qmgr.c	1969-12-31 17:00:00.000000000 -0700
++++ linux-2.6.19/drivers/net/ixp4xx/ixp4xx_qmgr.c	2007-01-12 21:54:40.000000000 -0700
+@@ -0,0 +1,474 @@
 +/*
 + * qmgr.c - reimplementation of the queue configuration interface.
 + *
@@ -600,15 +1366,23 @@ diff -Nur linux-2.6.17/drivers/net/ixp4xx/ixp4xx_qmgr.c linux-2.6.17-owrt/driver
 +#include <linux/dmapool.h>
 +#include <linux/interrupt.h>
 +#include <linux/err.h>
++#include <linux/delay.h>
 +#include <asm/uaccess.h>
 +#include <asm/io.h>
 +
 +#include <linux/ixp_qmgr.h>
 +#include <linux/ixp_npe.h>
 +
-+#define IXQMGR_VERSION "IXP4XX Q Manager 0.2.0"
++#define IXQMGR_VERSION "IXP4XX Q Manager 0.2.1"
 +
 +static struct device *qmgr_dev = NULL;
++
++static int poll_freq = 4000;
++static int poll_enable = 0;
++static u32 timer_countup_ticks;
++
++module_param(poll_freq, int, 0644);
++module_param(poll_enable, int, 0644);
 +
 +int queue_len(struct qm_queue *queue)
 +{
@@ -692,7 +1466,7 @@ diff -Nur linux-2.6.17/drivers/net/ixp4xx/ixp4xx_qmgr.c linux-2.6.17-owrt/driver
 +	return -1;
 +}
 +
-+static inline int log2(int x)
++static inline int _log2(int x)
 +{
 +	int r=0;
 +	while(x>>=1)
@@ -712,7 +1486,7 @@ diff -Nur linux-2.6.17/drivers/net/ixp4xx/ixp4xx_qmgr.c linux-2.6.17-owrt/driver
 + */
 +static int conf_q_regs(struct qm_queue *queue)
 +{
-+	int bsize = log2(queue->len/16);
++	int bsize = _log2(queue->len/16);
 +	int baddr = queue->addr + IX_QMGR_QCFG_SIZE;
 +
 +	/* +2, because baddr is in words and not in bytes */
@@ -721,13 +1495,74 @@ diff -Nur linux-2.6.17/drivers/net/ixp4xx/ixp4xx_qmgr.c linux-2.6.17-owrt/driver
 +	return 0;
 +}
 +
++static void pmu_timer_restart(void)
++{
++    unsigned long flags;
++
++    local_irq_save(flags);
++
++     __asm__(" mcr p14,0,%0,c1,c1,0\n"  /* write current counter */
++            : : "r" (timer_countup_ticks));
++
++    __asm__(" mrc p14,0,r1,c4,c1,0; "  /* get int enable register */
++            " orr r1,r1,#1; "
++            " mcr p14,0,r1,c5,c1,0; "  /* clear overflow */
++            " mcr p14,0,r1,c4,c1,0\n"  /* enable interrupts */
++            : : : "r1");
++
++    local_irq_restore(flags);
++}
++
++static void pmu_timer_init(void)
++{
++	u32 controlRegisterMask =
++		BIT(0) | /* enable counters */
++		BIT(2);  /* reset clock counter; */
++
++	/*
++	 *   Compute the number of xscale cycles needed between each
++	 *   PMU IRQ. This is done from the result of an OS calibration loop.
++	 *
++	 *   For 533MHz CPU, 533000000 tick/s / 4000 times/sec = 138250
++	 *   4000 times/sec = 37 mbufs/interrupt at line rate
++	 *   The pmu timer is reset to -138250 = 0xfffde3f6, to trigger an IRQ
++	 *   when this up counter overflows.
++	 *
++	 *   The multiplication gives a number of instructions per second.
++	 *   which is close to the processor frequency, and then close to the
++	 *   PMU clock rate.
++	 *
++	 *   2 is the number of instructions per loop
++	 *
++	 */
++
++	timer_countup_ticks = - ((loops_per_jiffy * HZ * 2) / poll_freq);
++
++	/* enable the CCNT (clock count) timer from the PMU */
++	__asm__(" mcr p14,0,%0,c0,c1,0\n"
++	        : : "r" (controlRegisterMask));
++}
++
++static void pmu_timer_disable(void)
++{
++	unsigned long flags;
++
++	local_irq_save(flags);
++
++	__asm__(" mrc p14,0,r1,c4,c1,0; "  /* get int enable register */
++	        " and r1,r1,#0x1e; "
++	        " mcr p14,0,r1,c4,c1,0\n"  /* disable interrupts */
++	        : : : "r1");
++	local_irq_restore(flags);
++}
++
 +void queue_set_watermarks(struct qm_queue *queue, unsigned ne, unsigned nf)
 +{
 +	u32 val;
 +	/* calculate the register values
 +	 * 0->0, 1->1, 2->2, 4->3, 8->4 16->5...*/
-+	ne = log2(ne<<1) & 0x7;
-+	nf = log2(nf<<1) & 0x7;
++	ne = _log2(ne<<1) & 0x7;
++	nf = _log2(nf<<1) & 0x7;
 +
 +	/* Mask out old watermarks */
 +	val = queue_read_cfg_reg(queue) & ~0xfc000000;
@@ -755,6 +1590,9 @@ diff -Nur linux-2.6.17/drivers/net/ixp4xx/ixp4xx_qmgr.c linux-2.6.17-owrt/driver
 +	struct qm_qmgr *qmgr = dev_id;
 +	int offs, reg;
 +	struct qm_queue *queue;
++
++	if (poll_enable)
++		pmu_timer_restart();
 +
 +	reg = *(qmgr->addr + QUE_INT_REG0);
 +	while(reg) {
@@ -851,6 +1689,9 @@ diff -Nur linux-2.6.17/drivers/net/ixp4xx/ixp4xx_qmgr.c linux-2.6.17-owrt/driver
 +	kfree(queue);
 +}
 +
++
++
++
 +static int qmgr_probe(struct platform_device *pdev)
 +{
 +	struct resource *res;
@@ -895,6 +1736,10 @@ diff -Nur linux-2.6.17/drivers/net/ixp4xx/ixp4xx_qmgr.c linux-2.6.17-owrt/driver
 +		*(qmgr->addr + IX_QMGR_QCFG_BASE + i) = 0x0;
 +	}
 +
++	if (poll_enable) {
++		pmu_timer_init();
++		qmgr->irq = IRQ_IXP4XX_XSCALE_PMU;
++	}
 +	ret = request_irq(qmgr->irq, irq_qm1, SA_SHIRQ | SA_INTERRUPT,
 +			"qmgr", qmgr);
 +	if (ret) {
@@ -902,6 +1747,8 @@ diff -Nur linux-2.6.17/drivers/net/ixp4xx/ixp4xx_qmgr.c linux-2.6.17-owrt/driver
 +		ret = -EIO;
 +		goto out_rel;
 +	}
++	if (poll_enable)
++		pmu_timer_restart();
 +
 +	rwlock_init(&qmgr->lock);
 +	qmgr->dmapool = dma_pool_create("qmgr", &pdev->dev,
@@ -932,6 +1779,9 @@ diff -Nur linux-2.6.17/drivers/net/ixp4xx/ixp4xx_qmgr.c linux-2.6.17-owrt/driver
 +			release_queue(qmgr->queues[i]);
 +		}
 +	}
++
++	if (poll_enable)
++		pmu_timer_disable();
 +
 +	synchronize_irq (qmgr->irq);
 +	free_irq(qmgr->irq, qmgr);
@@ -973,235 +1823,62 @@ diff -Nur linux-2.6.17/drivers/net/ixp4xx/ixp4xx_qmgr.c linux-2.6.17-owrt/driver
 +EXPORT_SYMBOL(queue_set_irq_src);
 +EXPORT_SYMBOL(queue_set_watermarks);
 +EXPORT_SYMBOL(queue_len);
-diff -Nur linux-2.6.17/drivers/net/ixp4xx/mac.h linux-2.6.17-owrt/drivers/net/ixp4xx/mac.h
---- linux-2.6.17/drivers/net/ixp4xx/mac.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.17-owrt/drivers/net/ixp4xx/mac.h	2006-10-27 12:48:54.000000000 +0200
-@@ -0,0 +1,221 @@
-+/*
-+ * Copyright (C) 2002-2006 Christian Hohnstaedt <chohnstaedt@innominate.com>
-+ *
-+ * This file is released under the GPLv2
-+ */
+diff -Naur linux-2.6.19.orig/drivers/net/ixp4xx/Kconfig linux-2.6.19/drivers/net/ixp4xx/Kconfig
+--- linux-2.6.19.orig/drivers/net/ixp4xx/Kconfig	1969-12-31 17:00:00.000000000 -0700
++++ linux-2.6.19/drivers/net/ixp4xx/Kconfig	2007-01-12 21:54:40.000000000 -0700
+@@ -0,0 +1,48 @@
++config IXP4XX_QMGR
++	tristate "IXP4xx Queue Manager support"
++	depends on ARCH_IXP4XX
++	depends on NET_ETHERNET
++	help
++	  The IXP4XX Queue manager is a configurable hardware ringbuffer.
++	  It is used by the NPEs to exchange data from and to the CPU.
++	  You can either use this OR the Intel Access Library (IAL)
 +
-+#include <linux/resource.h>
-+#include <linux/netdevice.h>
-+#include <linux/io.h>
-+#include <linux/mii.h>
-+#include <linux/workqueue.h>
-+#include <asm/hardware.h>
-+#include <linux/ixp_qmgr.h>
++config IXP4XX_NPE
++	tristate "IXP4xx NPE support"
++	depends on ARCH_IXP4XX
++	depends on NET_ETHERNET
++	help
++	  The IXP4XX NPE driver supports the 3 CPU co-processors called
++	  "Network Processing Engines" (NPE). It adds support fo downloading
++	  the Microcode (firmware) via Hotplug or  character-special-device.
++	  More about this at: Documentation/networking/ixp4xx/README.
++	  You can either use this OR the Intel Access Library (IAL)
 +
++config IXP4XX_FW_LOAD
++	bool "Use Firmware hotplug for Microcode download"
++	depends on IXP4XX_NPE
++	select HOTPLUG
++	select FW_LOADER
++	help
++	  The default hotplug script will load the Firmware from
++	  /usr/lib/hotplug/firmware/NPE-[ABC]
++	  see Documentation/firmware_class/hotplug-script
 +
-+/* 32 bit offsets to be added to u32 *pointers */
-+#define MAC_TX_CNTRL1       0x00  // 0x000
-+#define MAC_TX_CNTRL2       0x01  // 0x004
-+#define MAC_RX_CNTRL1       0x04  // 0x010
-+#define MAC_RX_CNTRL2       0x05  // 0x014
-+#define MAC_RANDOM_SEED     0x08  // 0x020
-+#define MAC_THRESH_P_EMPTY  0x0c  // 0x030
-+#define MAC_THRESH_P_FULL   0x0e  // 0x038
-+#define MAC_BUF_SIZE_TX     0x10  // 0x040
-+#define MAC_TX_DEFER        0x14  // 0x050
-+#define MAC_RX_DEFER        0x15  // 0x054
-+#define MAC_TX_TWO_DEFER_1  0x18  // 0x060
-+#define MAC_TX_TWO_DEFER_2  0x19  // 0x064
-+#define MAC_SLOT_TIME       0x1c  // 0x070
-+#define MAC_MDIO_CMD        0x20  // 0x080 4 registers 0x20 - 0x23
-+#define MAC_MDIO_STS        0x24  // 0x090 4 registers 0x24 - 0x27
-+#define MAC_ADDR_MASK       0x28  // 0x0A0 6 registers 0x28 - 0x2d
-+#define MAC_ADDR            0x30  // 0x0C0 6 registers 0x30 - 0x35
-+#define MAC_INT_CLK_THRESH  0x38  // 0x0E0 1 register
-+#define MAC_UNI_ADDR        0x3c  // 0x0F0 6 registers 0x3c - 0x41
-+#define MAC_CORE_CNTRL      0x7f  // 0x1fC
++config IXP4XX_MAC
++	tristate "IXP4xx MAC support"
++	depends on IXP4XX_NPE
++	depends on IXP4XX_QMGR
++	depends on NET_ETHERNET
++	select MII
++	help
++	  The IXP4XX MAC driver supports the MACs on the IXP4XX CPUs.
++	  There are 2 on ixp425 and up to 5 on ixdp465.
++	  You can either use this OR the Intel Access Library (IAL)
 +
-+/* TX Control Register 1*/
-+
-+#define TX_CNTRL1_TX_EN         BIT(0)
-+#define TX_CNTRL1_DUPLEX        BIT(1)
-+#define TX_CNTRL1_RETRY         BIT(2)
-+#define TX_CNTRL1_PAD_EN        BIT(3)
-+#define TX_CNTRL1_FCS_EN        BIT(4)
-+#define TX_CNTRL1_2DEFER        BIT(5)
-+#define TX_CNTRL1_RMII          BIT(6)
-+
-+/* TX Control Register 2 */
-+#define TX_CNTRL2_RETRIES_MASK  0xf
-+
-+/* RX Control Register 1 */
-+#define RX_CNTRL1_RX_EN         BIT(0)
-+#define RX_CNTRL1_PADSTRIP_EN   BIT(1)
-+#define RX_CNTRL1_CRC_EN        BIT(2)
-+#define RX_CNTRL1_PAUSE_EN      BIT(3)
-+#define RX_CNTRL1_LOOP_EN       BIT(4)
-+#define RX_CNTRL1_ADDR_FLTR_EN  BIT(5)
-+#define RX_CNTRL1_RX_RUNT_EN    BIT(6)
-+#define RX_CNTRL1_BCAST_DIS     BIT(7)
-+
-+/* RX Control Register 2 */
-+#define RX_CNTRL2_DEFER_EN      BIT(0)
-+
-+/* Core Control Register */
-+#define CORE_RESET              BIT(0)
-+#define CORE_RX_FIFO_FLUSH      BIT(1)
-+#define CORE_TX_FIFO_FLUSH      BIT(2)
-+#define CORE_SEND_JAM           BIT(3)
-+#define CORE_MDC_EN             BIT(4)
-+
-+/* Definitions for MII access routines*/
-+
-+#define MII_REG_SHL    16
-+#define MII_ADDR_SHL   21
-+
-+#define MII_GO                  BIT(31)
-+#define MII_WRITE               BIT(26)
-+#define MII_READ_FAIL           BIT(31)
-+
-+#define MII_TIMEOUT_10TH_SECS        5
-+#define MII_10TH_SEC_IN_MILLIS     100
-+
-+/*
-+ *
-+ * Default values
-+ *
-+ */
-+
-+
-+#define MAC_TX_CNTRL1_DEFAULT  (\
-+		TX_CNTRL1_TX_EN | \
-+		TX_CNTRL1_RETRY  | \
-+		TX_CNTRL1_FCS_EN | \
-+		TX_CNTRL1_2DEFER | \
-+		TX_CNTRL1_PAD_EN )
-+
-+#define MAC_TX_MAX_RETRIES_DEFAULT 0x0f
-+
-+#define MAC_RX_CNTRL1_DEFAULT ( \
-+		RX_CNTRL1_PADSTRIP_EN | \
-+		RX_CNTRL1_CRC_EN | \
-+		RX_CNTRL1_RX_EN )
-+
-+#define MAC_RX_CNTRL2_DEFAULT       0x0
-+#define MAC_TX_CNTRL2_DEFAULT       TX_CNTRL2_RETRIES_MASK
-+
-+/* Thresholds determined by NPE firmware FS */
-+#define MAC_THRESH_P_EMPTY_DEFAULT  0x12
-+#define MAC_THRESH_P_FULL_DEFAULT   0x30
-+
-+/* Number of bytes that must be in the tx fifo before
-+ * transmission commences */
-+#define MAC_BUF_SIZE_TX_DEFAULT     0x8
-+
-+/* One-part deferral values */
-+#define MAC_TX_DEFER_DEFAULT        0x15
-+#define MAC_RX_DEFER_DEFAULT        0x16
-+
-+/* Two-part deferral values... */
-+#define MAC_TX_TWO_DEFER_1_DEFAULT  0x08
-+#define MAC_TX_TWO_DEFER_2_DEFAULT  0x07
-+
-+/* This value applies to MII */
-+#define MAC_SLOT_TIME_DEFAULT       0x80
-+
-+/* This value applies to RMII */
-+#define MAC_SLOT_TIME_RMII_DEFAULT  0xFF
-+
-+#define MAC_ADDR_MASK_DEFAULT       0xFF
-+
-+#define MAC_INT_CLK_THRESH_DEFAULT  0x1
-+/* The following is a value chosen at random */
-+#define RANDOM_SEED_DEFAULT         0x8
-+
-+/* By default we must configure the MAC to generate the MDC clock*/
-+#define CORE_DEFAULT                (CORE_MDC_EN)
-+
-+/* End of Intel provided register information */
-+
-+extern int
-+mdio_read_register(struct net_device *dev, int phy_addr, int phy_reg);
-+extern void
-+mdio_write_register(struct net_device *dev, int phy_addr, int phy_reg, int val);
-+extern void init_mdio(struct net_device *dev, int phy_id);
-+
-+struct mac_info {
-+	u32 __iomem *addr;
-+	struct resource *res;
-+	struct device *npe_dev;
-+	struct qm_qmgr *qmgr;
-+	struct qm_queue *rxq;
-+	struct qm_queue *txq;
-+	u32 irqflags;
-+	struct net_device_stats stat;
-+	struct mii_if_info mii;
-+	struct work_struct mdio_thread;
-+	int rxq_pkt;
-+	int unloading;
-+	struct mac_plat_info *plat;
-+};
-+
-+static inline void mac_write_reg(struct mac_info *mac, int offset, u32 val)
-+{
-+	*(mac->addr + offset) = val;
-+}
-+static inline u32 mac_read_reg(struct mac_info *mac, int offset)
-+{
-+	return *(mac->addr + offset);
-+}
-+static inline void mac_set_regbit(struct mac_info *mac, int offset, u32 bit)
-+{
-+	mac_write_reg(mac, offset, mac_read_reg(mac, offset) | bit);
-+}
-+static inline void mac_reset_regbit(struct mac_info *mac, int offset, u32 bit)
-+{
-+	mac_write_reg(mac, offset, mac_read_reg(mac, offset) & ~bit);
-+}
-+
-+static inline void mac_mdio_cmd_write(struct mac_info *mac, u32 cmd)
-+{
-+	int i;
-+	for(i=0; i<4; i++) {
-+		mac_write_reg(mac, MAC_MDIO_CMD + i, cmd & 0xff);
-+		cmd >>=8;
-+	}
-+}
-+
-+#define mac_mdio_cmd_read(mac) mac_mdio_read((mac), MAC_MDIO_CMD)
-+#define mac_mdio_status_read(mac) mac_mdio_read((mac), MAC_MDIO_STS)
-+static inline u32 mac_mdio_read(struct mac_info *mac, int offset)
-+{
-+	int i;
-+	u32 data = 0;
-+	for(i=0; i<4; i++) {
-+		data |= (mac_read_reg(mac, offset + i) & 0xff) << (i*8);
-+	}
-+	return data;
-+}
-+
-+static inline u32 mdio_cmd(int phy_addr, int phy_reg)
-+{
-+	return phy_addr << MII_ADDR_SHL |
-+		phy_reg << MII_REG_SHL |
-+	        MII_GO;
-+}
-+
-+#define MAC_REG_LIST { \
-+	MAC_TX_CNTRL1, MAC_TX_CNTRL2, \
-+	MAC_RX_CNTRL1, MAC_RX_CNTRL2, \
-+	MAC_RANDOM_SEED, MAC_THRESH_P_EMPTY, MAC_THRESH_P_FULL, \
-+	MAC_BUF_SIZE_TX, MAC_TX_DEFER, MAC_RX_DEFER, \
-+	MAC_TX_TWO_DEFER_1, MAC_TX_TWO_DEFER_2, MAC_SLOT_TIME, \
-+	MAC_ADDR_MASK +0, MAC_ADDR_MASK +1, MAC_ADDR_MASK +2, \
-+	MAC_ADDR_MASK +3, MAC_ADDR_MASK +4, MAC_ADDR_MASK +5, \
-+	MAC_ADDR +0, MAC_ADDR +1, MAC_ADDR +2, \
-+	MAC_ADDR +3, MAC_ADDR +4, MAC_ADDR +5, \
-+	MAC_INT_CLK_THRESH, \
-+	MAC_UNI_ADDR +0, MAC_UNI_ADDR +1, MAC_UNI_ADDR +2, \
-+	MAC_UNI_ADDR +3, MAC_UNI_ADDR +4, MAC_UNI_ADDR +5, \
-+	MAC_CORE_CNTRL \
-+}
-diff -Nur linux-2.6.17/drivers/net/ixp4xx/mac_driver.c linux-2.6.17-owrt/drivers/net/ixp4xx/mac_driver.c
---- linux-2.6.17/drivers/net/ixp4xx/mac_driver.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.17-owrt/drivers/net/ixp4xx/mac_driver.c	2006-10-27 12:48:54.000000000 +0200
-@@ -0,0 +1,578 @@
++config IXP4XX_CRYPTO
++	tristate "IXP4xx crypto support"
++	depends on IXP4XX_NPE
++	depends on IXP4XX_QMGR
++	help
++	  This driver is a generic NPE-crypto access layer.
++	  You need additional code in OCF for example.
+diff -Naur linux-2.6.19.orig/drivers/net/ixp4xx/mac_driver.c linux-2.6.19/drivers/net/ixp4xx/mac_driver.c
+--- linux-2.6.19.orig/drivers/net/ixp4xx/mac_driver.c	1969-12-31 17:00:00.000000000 -0700
++++ linux-2.6.19/drivers/net/ixp4xx/mac_driver.c	2007-01-12 21:54:40.000000000 -0700
+@@ -0,0 +1,849 @@
 +/*
 + * mac_driver.c - provide a network interface for each MAC
 + *
@@ -1219,6 +1896,8 @@ diff -Nur linux-2.6.17/drivers/net/ixp4xx/mac_driver.c linux-2.6.17-owrt/drivers
 +#include <linux/slab.h>
 +#include <linux/delay.h>
 +#include <linux/err.h>
++#include <linux/dma-mapping.h>
++#include <linux/workqueue.h>
 +#include <asm/io.h>
 +#include <asm/irq.h>
 +
@@ -1229,21 +1908,19 @@ diff -Nur linux-2.6.17/drivers/net/ixp4xx/mac_driver.c linux-2.6.17-owrt/drivers
 +
 +#define MDIO_INTERVAL (3*HZ)
 +#define RX_QUEUE_PREFILL 64
++#define TX_QUEUE_PREFILL 16
 +
 +#define IXMAC_NAME "ixp4xx_mac"
-+#define IXMAC_VERSION "0.2.1"
++#define IXMAC_VERSION "0.3.1"
 +
 +#define MAC_DEFAULT_REG(mac, name) \
 +	mac_write_reg(mac, MAC_ ## name, MAC_ ## name ## _DEFAULT)
 +
-+#define RX_DONE_QID 4
 +#define TX_DONE_QID 31
 +
-+extern int queue_send_skb(struct qm_queue *queue, struct sk_buff *skb);
-+extern int queue_fill_skb(struct qm_queue *queue, struct net_device *dev);
-+extern int queue_drain(struct qm_queue *queue);
-+extern struct sk_buff *queue_return_skb(struct qm_queue *queue);
-+
++#define DMA_ALLOC_SIZE 2048
++#define DMA_HDR_SIZE   (sizeof(struct npe_cont))
++#define DMA_BUF_SIZE (DMA_ALLOC_SIZE - DMA_HDR_SIZE)
 +
 +/* Since the NPEs use 1 Return Q for sent frames, we need a device
 + * independent return Q. We call it tx_doneq.
@@ -1252,11 +1929,73 @@ diff -Nur linux-2.6.17/drivers/net/ixp4xx/mac_driver.c linux-2.6.17-owrt/drivers
 + */
 +
 +static struct qm_queue *tx_doneq = NULL;
-+static struct qm_queue *rx_doneq = NULL;
++static int debug = -1;
++module_param(debug, int, 0);
++
++static int init_buffer(struct qm_queue *queue, int count)
++{
++	int i;
++	struct npe_cont *cont;
++
++	for (i=0; i<count; i++) {
++		cont = kmalloc(DMA_ALLOC_SIZE, GFP_KERNEL | GFP_DMA);
++		if (!cont)
++			goto err;
++
++		cont->phys = dma_map_single(queue->dev, cont, DMA_ALLOC_SIZE,
++				DMA_BIDIRECTIONAL);
++		if (dma_mapping_error(cont->phys))
++			goto err;
++
++		cont->data = cont+1;
++		/* now the buffer is on a 32 bit boundary.
++		 * we add 2 bytes for good alignment to SKB */
++		cont->data+=2;
++		cont->eth.next = 0;
++		cont->eth.buf_len = cpu_to_npe16(DMA_BUF_SIZE);
++		cont->eth.pkt_len = 0;
++		/* also add 2 alignment bytes from cont->data*/
++		cont->eth.phys_addr = cpu_to_npe32(cont->phys+ DMA_HDR_SIZE+ 2);
++
++		dma_sync_single(queue->dev, cont->phys, DMA_HDR_SIZE,
++				DMA_TO_DEVICE);
++
++		queue_put_entry(queue, cont->phys);
++		if (queue_stat(queue) == 2) { /* overflow */
++			dma_unmap_single(queue->dev, cont->phys, DMA_ALLOC_SIZE,
++				DMA_BIDIRECTIONAL);
++			goto err;
++		}
++	}
++	return i;
++err:
++	if (cont)
++		kfree(cont);
++	return i;
++}
++
++static int destroy_buffer(struct qm_queue *queue, int count)
++{
++	u32 phys;
++	int i;
++	struct npe_cont *cont;
++
++	for (i=0; i<count; i++) {
++		phys = queue_get_entry(queue) & ~0xf;
++		if (!phys)
++			break;
++		dma_unmap_single(queue->dev, phys, DMA_ALLOC_SIZE,
++				DMA_BIDIRECTIONAL);
++		cont = dma_to_virt(queue->dev, phys);
++		kfree(cont);
++	}
++	return i;
++}
 +
 +static void mac_init(struct mac_info *mac)
 +{
 +	MAC_DEFAULT_REG(mac, TX_CNTRL2);
++	MAC_DEFAULT_REG(mac, RANDOM_SEED);
 +	MAC_DEFAULT_REG(mac, THRESH_P_EMPTY);
 +	MAC_DEFAULT_REG(mac, THRESH_P_FULL);
 +	MAC_DEFAULT_REG(mac, TX_DEFER);
@@ -1288,7 +2027,10 @@ diff -Nur linux-2.6.17/drivers/net/ixp4xx/mac_driver.c linux-2.6.17-owrt/drivers
 +static void update_duplex_mode(struct net_device *dev)
 +{
 +	struct mac_info *mac = netdev_priv(dev);
-+	printk("Duplex mode %s =%d\n", dev->name, mac->mii.full_duplex);
++	if (netif_msg_link(mac)) {
++		printk(KERN_DEBUG "Link of %s is %s-duplex\n", dev->name,
++				mac->mii.full_duplex ? "full" : "half");
++	}
 +	if (mac->mii.full_duplex) {
 +		mac_reset_regbit(mac, MAC_TX_CNTRL1, TX_CNTRL1_DUPLEX);
 +	} else {
@@ -1300,48 +2042,112 @@ diff -Nur linux-2.6.17/drivers/net/ixp4xx/mac_driver.c linux-2.6.17-owrt/drivers
 +{
 +	struct mac_info *mac = netdev_priv(dev);
 +
-+	if (mii_check_media(&mac->mii, 1, init)) {
++	if (mii_check_media(&mac->mii, netif_msg_link(mac), init)) {
 +		update_duplex_mode(dev);
 +		return 1;
 +	}
 +	return 0;
 +}
 +
-+static void irqcb_recv(struct qm_queue *queue)
++static void get_npe_stats(struct mac_info *mac, u32 *buf, int len, int reset)
 +{
-+	struct net_device *dev;
-+	struct mac_info *mac;
-+	struct sk_buff *skb;
++	struct npe_info *npe = dev_get_drvdata(mac->npe_dev);
++	u32 phys;
 +
-+	queue_ack_irq(queue);
-+	skb = queue_return_skb(queue);
-+	while (skb) {
-+		int rc;
-+		dev = skb->dev;
-+		mac = netdev_priv(dev);
-+		skb->protocol = eth_type_trans(skb, dev);
-+		dev->last_rx = jiffies;
-+		rc = netif_rx(skb);
-+		if (rc == NET_RX_DROP) {
-+			mac->stat.rx_dropped++;
-+		} else {
-+			mac->stat.rx_packets++;
-+			mac->stat.rx_bytes += skb->len;
-+		}
-+
-+		if (!mac->unloading)
-+			queue_fill_skb(mac->rxq, dev);
-+		else
-+			mac->rxq_pkt--;
-+
-+		skb = queue_return_skb(queue);
-+	}
++	memset(buf, len, 0);
++	phys = dma_map_single(mac->npe_dev, buf, len, DMA_BIDIRECTIONAL);
++	npe_mh_get_stats(npe, mac->plat, phys, reset);
++	dma_unmap_single(mac->npe_dev, phys, len, DMA_BIDIRECTIONAL);
 +}
 +
-+void irqcb_txdone(struct qm_queue *queue)
++static void irqcb_recv(struct qm_queue *queue)
 +{
++	struct net_device *dev = queue->cb_data;
++
 +	queue_ack_irq(queue);
-+	while (queue_drain(queue));
++	queue_disable_irq(queue);
++	if (netif_running(dev))
++		netif_rx_schedule(dev);
++}
++
++int ix_recv(struct net_device *dev, int *budget, struct qm_queue *queue)
++{
++	struct mac_info *mac = netdev_priv(dev);
++	struct sk_buff *skb;
++	u32 phys;
++	struct npe_cont *cont;
++
++	while (*budget > 0 && netif_running(dev) ) {
++		int len;
++		phys = queue_get_entry(queue) & ~0xf;
++		if (!phys)
++			break;
++		dma_sync_single(queue->dev, phys, DMA_HDR_SIZE,
++				DMA_FROM_DEVICE);
++		cont = dma_to_virt(queue->dev, phys);
++		len = npe_to_cpu16(cont->eth.pkt_len) -4; /* strip FCS */
++
++		if (unlikely(netif_msg_rx_status(mac))) {
++			printk(KERN_DEBUG "%s: RX packet size: %u\n",
++				dev->name, len);
++			queue_state(mac->rxq);
++			queue_state(mac->rxdoneq);
++		}
++		skb = dev_alloc_skb(len + 2);
++		if (likely(skb)) {
++			skb->dev = dev;
++			skb_reserve(skb, 2);
++			dma_sync_single(queue->dev, cont->eth.phys_addr, len,
++					DMA_FROM_DEVICE);
++#ifdef CONFIG_NPE_ADDRESS_COHERENT
++		        /* swap the payload of the SKB */
++	        	{
++				u32 *t = (u32*)(skb->data-2);
++				u32 *s = (u32*)(cont->data-2);
++				int i, j = (len+5)/4;
++				for (i=0; i<j; i++)
++					t[i] = cpu_to_be32(s[i]);
++			}
++#else			
++			eth_copy_and_sum(skb, cont->data, len, 0);
++#endif
++			skb_put(skb, len);
++			skb->protocol = eth_type_trans(skb, dev);
++			dev->last_rx = jiffies;
++			netif_receive_skb(skb);
++			mac->stat.rx_packets++;
++			mac->stat.rx_bytes += skb->len;
++		} else {
++			mac->stat.rx_dropped++;
++		}
++		cont->eth.buf_len = cpu_to_npe16(DMA_BUF_SIZE);
++		cont->eth.pkt_len = 0;
++		dma_sync_single(queue->dev, phys, DMA_HDR_SIZE, DMA_TO_DEVICE);
++		queue_put_entry(mac->rxq, phys);
++		dev->quota--;
++		(*budget)--;
++	}
++
++	return !budget;
++}
++
++static int ix_poll(struct net_device *dev, int *budget)
++{
++	struct mac_info *mac = netdev_priv(dev);
++	struct qm_queue *queue = mac->rxdoneq;
++
++	for (;;) {
++		if (ix_recv(dev, budget, queue))
++			return 1;
++		netif_rx_complete(dev);
++		queue_enable_irq(queue);
++		if (!queue_len(queue))
++			break;
++		queue_disable_irq(queue);
++		if (netif_rx_reschedule(dev, 0))
++			break;
++	}
++	return 0;
 +}
 +
 +static void ixmac_set_rx_mode (struct net_device *dev)
@@ -1380,46 +2186,118 @@ diff -Nur linux-2.6.17/drivers/net/ixp4xx/mac_driver.c linux-2.6.17-owrt/drivers
 +{
 +	struct mac_info *mac = netdev_priv(dev);
 +	struct npe_info *npe = dev_get_drvdata(mac->npe_dev);
++	u32 buf[NPE_STAT_NUM];
 +	int i;
++	u32 phys;
 +
-+	/* first check if Microcode was downloaded into this NPE */
++	/* first check if the NPE is up and running */
 +	if (!( npe_status(npe) & IX_NPEDL_EXCTL_STATUS_RUN)) {
-+		printk(KERN_ERR "Missing microcode for %s\n", npe->plat->name);
++		printk(KERN_ERR "%s: %s not running\n", dev->name,
++				npe->plat->name);
 +		return -EIO;
 +	}
-+
-+	for (i=0; i<RX_QUEUE_PREFILL; i++) {
-+		queue_fill_skb(mac->rxq, dev);
++	if (npe_mh_status(npe)) {
++		printk(KERN_ERR "%s: %s not responding\n", dev->name,
++				npe->plat->name);
++		return -EIO;
 +	}
-+	mac->rxq_pkt += RX_QUEUE_PREFILL;
++	mac->txq_pkt += init_buffer(mac->txq, TX_QUEUE_PREFILL - mac->txq_pkt);
++	mac->rxq_pkt += init_buffer(mac->rxq, RX_QUEUE_PREFILL - mac->rxq_pkt);
 +
++	queue_enable_irq(mac->rxdoneq);
++
++	/* drain all buffers from then RX-done-q to make the IRQ happen */
++	while ((phys = queue_get_entry(mac->rxdoneq) & ~0xf)) {
++		struct npe_cont *cont;
++		cont = dma_to_virt(mac->rxdoneq->dev, phys);
++		cont->eth.buf_len = cpu_to_npe16(DMA_BUF_SIZE);
++		cont->eth.pkt_len = 0;
++		dma_sync_single(mac->rxdoneq->dev, phys, DMA_HDR_SIZE,
++				DMA_TO_DEVICE);
++		queue_put_entry(mac->rxq, phys);
++	}
 +	mac_init(mac);
-+	npe_mh_set_rxqid(npe, mac->plat, RX_DONE_QID);
++	npe_mh_set_rxqid(npe, mac->plat, mac->plat->rxdoneq_id);
++	get_npe_stats(mac, buf, sizeof(buf), 1); /* reset stats */
++	get_npe_stats(mac, buf, sizeof(buf), 0);
++	/*
++	 * if the extended stats contain random values
++	 * the NPE image lacks extendet statistic counters
++	 */
++	for (i=NPE_STAT_NUM_BASE; i<NPE_STAT_NUM; i++) {
++		if (buf[i] >10000)
++			break;
++	}
++	mac->npe_stat_num = i<NPE_STAT_NUM ? NPE_STAT_NUM_BASE : NPE_STAT_NUM;
++	mac->npe_stat_num += NPE_Q_STAT_NUM;
++
 +	mac_set_uniaddr(dev);
-+
 +	media_check(dev, 1);
-+
 +	ixmac_set_rx_mode(dev);
-+
 +	netif_start_queue(dev);
 +	schedule_delayed_work(&mac->mdio_thread, MDIO_INTERVAL);
++	if (netif_msg_ifup(mac)) {
++		 printk(KERN_DEBUG "%s: open " IXMAC_NAME
++		 	" RX queue %d bufs, TX queue %d bufs\n",
++			 dev->name, mac->rxq_pkt, mac->txq_pkt);
++	}
 +	return 0;
 +}
 +
 +static int ixmac_start_xmit (struct sk_buff *skb, struct net_device *dev)
 +{
 +	struct mac_info *mac = netdev_priv(dev);
++	struct npe_cont *cont;
++	u32 phys;
++	struct qm_queue *queue = mac->txq;
 +
-+	if (queue_send_skb(mac->txq, skb)) {
-+		mac->stat.tx_packets++;
-+		mac->stat.tx_bytes += skb->len;
-+	} else {
-+		mac->stat.tx_errors++;
++	if (unlikely(skb->len > DMA_BUF_SIZE)) {
 +		dev_kfree_skb(skb);
++		mac->stat.tx_errors++;
++		return NETDEV_TX_OK;
 +	}
++	phys = queue_get_entry(tx_doneq) & ~0xf;
++	if (!phys)
++		goto busy;
++	cont = dma_to_virt(queue->dev, phys);
++#ifdef CONFIG_NPE_ADDRESS_COHERENT
++	/* swap the payload of the SKB */
++	{
++		u32 *s = (u32*)(skb->data-2);
++		u32 *t = (u32*)(cont->data-2);
++		int i,j = (skb->len+5) / 4;
++		for (i=0; i<j; i++)
++			t[i] = cpu_to_be32(s[i]);
++	}
++#else			
++	//skb_copy_and_csum_dev(skb, cont->data);
++	memcpy(cont->data, skb->data, skb->len);
++#endif
++	cont->eth.buf_len = cpu_to_npe16(DMA_BUF_SIZE);
++	cont->eth.pkt_len = cpu_to_npe16(skb->len);
++	/* disable VLAN functions in NPE image for now */
++	cont->eth.flags = 0;
++	dma_sync_single(queue->dev, phys, skb->len + DMA_HDR_SIZE,
++			DMA_TO_DEVICE);
++	queue_put_entry(queue, phys);
++	if (queue_stat(queue) == 2) { /* overflow */
++		queue_put_entry(tx_doneq, phys);
++		goto busy;
++	}
++        dev_kfree_skb(skb);
 +
++	mac->stat.tx_packets++;
++	mac->stat.tx_bytes += skb->len;
 +	dev->trans_start = jiffies;
-+	return 0;
++	if (netif_msg_tx_queued(mac)) {
++		printk(KERN_DEBUG "%s: TX packet size %u\n",
++				dev->name, skb->len);
++		queue_state(mac->txq);
++		queue_state(tx_doneq);
++	}
++	return NETDEV_TX_OK;
++busy:
++	return NETDEV_TX_BUSY;
 +}
 +
 +static int ixmac_close (struct net_device *dev)
@@ -1427,20 +2305,18 @@ diff -Nur linux-2.6.17/drivers/net/ixp4xx/mac_driver.c linux-2.6.17-owrt/drivers
 +	struct mac_info *mac = netdev_priv(dev);
 +
 +	netif_stop_queue (dev);
++	queue_disable_irq(mac->rxdoneq);
 +
-+	if (mac->mdio_thread.pending)
-+		cancel_rearming_delayed_work(&mac->mdio_thread);
++	mac->txq_pkt -= destroy_buffer(tx_doneq, mac->txq_pkt);
++	mac->rxq_pkt -= destroy_buffer(mac->rxq, mac->rxq_pkt);
 +
++	cancel_rearming_delayed_work(&(mac->mdio_thread));
 +
-+	/* After doing all our business, the rxfreeq must
-+	 * carry as much packets as we gave it during setup.
-+	 * Here we calc the missing packets.
-+	 */
-+	mac->rxq_pkt -= queue_len(mac->rxq);
-+
-+	while (queue_drain(mac->txq));
-+	while (queue_drain(mac->rxq));
-+
++	if (netif_msg_ifdown(mac)) {
++		printk(KERN_DEBUG "%s: close " IXMAC_NAME
++			" RX queue %d bufs, TX queue %d bufs\n",
++			dev->name, mac->rxq_pkt, mac->txq_pkt);
++	}
 +	return 0;
 +}
 +
@@ -1451,8 +2327,6 @@ diff -Nur linux-2.6.17/drivers/net/ixp4xx/mac_driver.c linux-2.6.17-owrt/drivers
 +
 +	if (!netif_running(dev))
 +		return -EINVAL;
-+
-+
 +	if (!try_module_get(THIS_MODULE))
 +		return -ENODEV;
 +	rc = generic_mii_ioctl(&mac->mii, if_mii(rq), cmd, &duplex_changed);
@@ -1528,17 +2402,73 @@ diff -Nur linux-2.6.17/drivers/net/ixp4xx/mac_driver.c linux-2.6.17-owrt/drivers
 +	}
 +}
 +
++static struct {
++	const char str[ETH_GSTRING_LEN];
++} ethtool_stats_keys[NPE_STAT_NUM + NPE_Q_STAT_NUM] = {
++	NPE_Q_STAT_STRINGS
++	NPE_STAT_STRINGS
++};
++
++static void ixmac_get_strings(struct net_device *dev, u32 stringset, u8 *data)
++{
++	struct mac_info *mac = netdev_priv(dev);
++	memcpy(data, ethtool_stats_keys, mac->npe_stat_num * ETH_GSTRING_LEN);
++}
++
++static int ixmac_get_stats_count(struct net_device *dev)
++{
++	struct mac_info *mac = netdev_priv(dev);
++	return mac->npe_stat_num;
++}
++
++static u32 ixmac_get_msglevel(struct net_device *dev)
++{
++	struct mac_info *mac = netdev_priv(dev);
++	return mac->msg_enable;
++}
++
++static void ixmac_set_msglevel(struct net_device *dev, u32 datum)
++{
++	struct mac_info *mac = netdev_priv(dev);
++	mac->msg_enable = datum;
++}
++
++static void ixmac_get_ethtool_stats(struct net_device *dev,
++		struct ethtool_stats *stats, u64 *data)
++{
++	int i;
++	struct mac_info *mac = netdev_priv(dev);
++	u32 buf[NPE_STAT_NUM];
++
++	data[0] = queue_len(mac->rxq);
++	data[1] = queue_len(mac->rxdoneq);
++	data[2] = queue_len(mac->txq);
++	data[3] = queue_len(tx_doneq);
++
++	get_npe_stats(mac, buf, sizeof(buf), 0);
++
++	for (i=0; i<stats->n_stats-4; i++) {
++		data[i+4] = npe_to_cpu32(buf[i]);
++	}
++}
++
 +static struct ethtool_ops ixmac_ethtool_ops = {
 +	.get_drvinfo		= ixmac_get_drvinfo,
 +	.get_settings		= ixmac_get_settings,
 +	.set_settings		= ixmac_set_settings,
 +	.nway_reset		= ixmac_nway_reset,
 +	.get_link		= ixmac_get_link,
++	.get_msglevel           = ixmac_get_msglevel,
++	.set_msglevel           = ixmac_set_msglevel,
 +	.get_regs_len		= ixmac_get_regs_len,
 +	.get_regs		= ixmac_get_regs,
 +	.get_perm_addr		= ethtool_op_get_perm_addr,
++	.get_strings		= ixmac_get_strings,
++	.get_stats_count	= ixmac_get_stats_count,
++	.get_ethtool_stats	= ixmac_get_ethtool_stats,
 +};
-+static void mac_mdio_thread (void *_data)
++
++static void mac_mdio_thread(void *_data)
 +{
 +	struct net_device *dev = _data;
 +	struct mac_info *mac = netdev_priv(dev);
@@ -1551,7 +2481,7 @@ diff -Nur linux-2.6.17/drivers/net/ixp4xx/mac_driver.c linux-2.6.17-owrt/drivers
 +{
 +	struct resource *res;
 +	struct mac_info *mac;
-+	struct net_device* dev;
++	struct net_device *dev;
 +	struct npe_info *npe;
 +	struct mac_plat_info *plat = pdev->dev.platform_data;
 +	int size, ret;
@@ -1565,6 +2495,7 @@ diff -Nur linux-2.6.17/drivers/net/ixp4xx/mac_driver.c linux-2.6.17-owrt/drivers
 +	SET_MODULE_OWNER(dev);
 +	SET_NETDEV_DEV(dev, &pdev->dev);
 +	mac = netdev_priv(dev);
++	mac->netdev = dev;
 +
 +	size = res->end - res->start +1;
 +	mac->res = request_mem_region(res->start, size, IXMAC_NAME);
@@ -1581,23 +2512,21 @@ diff -Nur linux-2.6.17/drivers/net/ixp4xx/mac_driver.c linux-2.6.17-owrt/drivers
 +
 +	dev->open = ixmac_open;
 +	dev->hard_start_xmit = ixmac_start_xmit;
++	dev->poll = ix_poll;
 +	dev->stop = ixmac_close;
 +	dev->get_stats = ixmac_stats;
 +	dev->do_ioctl = ixmac_ioctl;
 +	dev->set_multicast_list = ixmac_set_rx_mode;
 +	dev->ethtool_ops = &ixmac_ethtool_ops;
 +
++	dev->weight = 16;
++	dev->tx_queue_len = 100;
++
 +	mac->npe_dev = get_npe_by_id(plat->npe_id);
 +	if (!mac->npe_dev) {
 +		ret = -EIO;
 +		goto out_unmap;
 +	}
-+	if (!try_module_get(mac->npe_dev->driver->owner)) {
-+		put_device(mac->npe_dev);
-+		ret = -EIO;
-+		goto out_unmap;
-+	}
-+
 +	npe = dev_get_drvdata(mac->npe_dev);
 +
 +	mac->rxq = request_queue(plat->rxq_id, 128);
@@ -1609,20 +2538,30 @@ diff -Nur linux-2.6.17/drivers/net/ixp4xx/mac_driver.c linux-2.6.17-owrt/drivers
 +	mac->txq = request_queue(plat->txq_id, 128);
 +	if (IS_ERR(mac->txq)) {
 +		printk(KERN_ERR "Error requesting Q: %d\n", plat->txq_id);
-+		release_queue(mac->rxq);
 +		ret = -EBUSY;
 +		goto out_putmod;
 +	}
++	mac->rxdoneq = request_queue(plat->rxdoneq_id, 128);
++	if (IS_ERR(mac->rxdoneq)) {
++		printk(KERN_ERR "Error requesting Q: %d\n", plat->rxdoneq_id);
++		ret = -EBUSY;
++		goto out_putmod;
++	}
++	mac->rxdoneq->irq_cb = irqcb_recv;
++	mac->rxdoneq->cb_data = dev;
++	queue_set_watermarks(mac->rxdoneq, 0, 0);
++	queue_set_irq_src(mac->rxdoneq, Q_IRQ_ID_NOT_E);
 +
 +	mac->qmgr = dev_get_drvdata(mac->rxq->dev);
 +	if (register_netdev (dev)) {
-+		release_queue(mac->rxq);
-+		release_queue(mac->txq);
 +		ret = -EIO;
 +		goto out_putmod;
 +	}
 +
 +	mac->plat = plat;
++	mac->npe_stat_num = NPE_STAT_NUM_BASE;
++	mac->msg_enable = netif_msg_init(debug, MAC_DEF_MSG_ENABLE);
++
 +	platform_set_drvdata(pdev, dev);
 +
 +	mac_write_reg(mac, MAC_CORE_CNTRL, CORE_RESET);
@@ -1638,9 +2577,14 @@ diff -Nur linux-2.6.17/drivers/net/ixp4xx/mac_driver.c linux-2.6.17-owrt/drivers
 +	 * following commands:
 +	 * "ip link set address 02:03:04:04:04:01 dev eth0"
 +	 * "ifconfig eth0 hw ether 02:03:04:04:04:07"
-+	 */
-+	random_ether_addr(dev->dev_addr);
-+	dev->dev_addr[5] = plat->phy_id;
++	*/
++
++	if (is_zero_ether_addr(plat->hwaddr)) {
++		random_ether_addr(dev->dev_addr);
++		dev->dev_addr[5] = plat->phy_id;
++	}
++	else
++		memcpy(dev->dev_addr, plat->hwaddr, 6);
 +
 +	printk(KERN_INFO IXMAC_NAME " driver " IXMAC_VERSION
 +			": %s on %s with PHY[%d] initialized\n",
@@ -1649,6 +2593,12 @@ diff -Nur linux-2.6.17/drivers/net/ixp4xx/mac_driver.c linux-2.6.17-owrt/drivers
 +	return 0;
 +
 +out_putmod:
++	if (mac->rxq)
++		release_queue(mac->rxq);
++	if (mac->txq)
++		release_queue(mac->txq);
++	if (mac->rxdoneq)
++		release_queue(mac->rxdoneq);
 +	module_put(mac->npe_dev->driver->owner);
 +out_unmap:
 +	iounmap(mac->addr);
@@ -1659,23 +2609,21 @@ diff -Nur linux-2.6.17/drivers/net/ixp4xx/mac_driver.c linux-2.6.17-owrt/drivers
 +	return ret;
 +}
 +
-+static int mac_remove(struct platform_device *pdev)
++static void drain_npe(struct mac_info *mac)
 +{
-+	struct net_device* dev = platform_get_drvdata(pdev);
-+	struct mac_info *mac = netdev_priv(dev);
 +	struct npe_info *npe = dev_get_drvdata(mac->npe_dev);
++	struct npe_cont *cont;
++	u32 phys;
 +	int loop = 0;
-+	struct sk_buff *skb;
-+
-+	ixmac_close(dev);
-+
-+	mac->unloading = 1;
 +
 +	/* Now there are some skb hold by the NPE.
 +	 * We switch the MAC in loopback mode and send a pseudo packet
 +	 * that will be returned by the NPE in its last SKB.
 +	 * We will also try to isolate the PHY to keep the packets internal.
 +	 */
++
++	if (mac->txq_pkt <2)
++		mac->txq_pkt += init_buffer(tx_doneq, 5);
 +
 +	if (npe_status(npe) & IX_NPEDL_EXCTL_STATUS_RUN) {
 +		mac_reset_regbit(mac, MAC_CORE_CNTRL, CORE_MDC_EN);
@@ -1685,18 +2633,27 @@ diff -Nur linux-2.6.17/drivers/net/ixp4xx/mac_driver.c linux-2.6.17-owrt/drivers
 +		mdelay(200);
 +
 +		while (mac->rxq_pkt && loop++ < 2000 ) {
-+			skb = dev_alloc_skb(128);
-+			skb_put(skb, 64);
++			phys = queue_get_entry(tx_doneq) & ~0xf;
++			if (!phys)
++				break;
++			cont = dma_to_virt(queue->dev, phys);
 +			/* actually the packets should never leave the system,
 +			 * but if they do, they shall contain 0s instead of
 +			 * intresting random data....
 +			 */
-+			memset(skb->data, 0, skb->len);
-+			queue_send_skb(mac->txq, skb);
-+
++			memset(cont->data, 0, 64);
++			cont->eth.pkt_len = 64;
++			dma_sync_single(mac->txq->dev, phys, 64 + DMA_HDR_SIZE,
++					DMA_TO_DEVICE);
++			queue_put_entry(mac->txq, phys);
++			if (queue_stat(mac->txq) == 2) { /* overflow */
++				queue_put_entry(tx_doneq, phys);
++				break;
++			}
 +			mdelay(1);
++			mac->rxq_pkt -= destroy_buffer(mac->rxdoneq,
++					mac->rxq_pkt);
 +		}
-+
 +		npe_mh_npe_loopback_mode(npe, mac->plat, 0);
 +	}
 +	/* Flush MAC TX fifo to drain the bogus packages */
@@ -1706,16 +2663,32 @@ diff -Nur linux-2.6.17/drivers/net/ixp4xx/mac_driver.c linux-2.6.17-owrt/drivers
 +	mac_reset_regbit(mac, MAC_RX_CNTRL1, RX_CNTRL1_LOOP_EN);
 +	mac_reset_regbit(mac, MAC_CORE_CNTRL, CORE_TX_FIFO_FLUSH);
 +	mac_reset_regbit(mac, MAC_CORE_CNTRL, CORE_TX_FIFO_FLUSH);
++}
++
++static int mac_remove(struct platform_device *pdev)
++{
++	struct net_device* dev = platform_get_drvdata(pdev);
++	struct mac_info *mac = netdev_priv(dev);
 +
 +	unregister_netdev(dev);
 +
-+	while (queue_drain(mac->txq));
-+	release_queue(mac->txq);
-+	while (queue_drain(mac->rxq));
-+	release_queue(mac->rxq);
++	mac->rxq_pkt -= destroy_buffer(mac->rxq, mac->rxq_pkt);
++	if (mac->rxq_pkt)
++		drain_npe(mac);
 +
-+	module_put(mac->npe_dev->driver->owner);
-+	put_device(mac->npe_dev);
++	mac->txq_pkt -= destroy_buffer(mac->txq, mac->txq_pkt);
++	mac->txq_pkt -= destroy_buffer(tx_doneq, mac->txq_pkt);
++
++	if (mac->rxq_pkt || mac->txq_pkt)
++		printk("Buffers lost in NPE: RX:%d, TX:%d\n",
++				mac->rxq_pkt,  mac->txq_pkt);
++
++	release_queue(mac->txq);
++	release_queue(mac->rxq);
++	release_queue(mac->rxdoneq);
++
++	flush_scheduled_work();
++	return_npe_dev(mac->npe_dev);
 +
 +	iounmap(mac->addr);
 +	release_resource(mac->res);
@@ -1738,24 +2711,6 @@ diff -Nur linux-2.6.17/drivers/net/ixp4xx/mac_driver.c linux-2.6.17-owrt/drivers
 +		printk(KERN_ERR "Error requesting Q: %d\n", TX_DONE_QID);
 +		return -EBUSY;
 +	}
-+	tx_doneq->irq_cb = irqcb_txdone;
-+	/* drain the TX queue if it is half full */
-+	queue_set_watermarks(tx_doneq, 0, 64);
-+	queue_set_irq_src(tx_doneq, Q_IRQ_ID_NF);
-+	queue_enable_irq(tx_doneq);
-+
-+	/* RX Queue handles SKBs with a valid frame */
-+	rx_doneq = request_queue(RX_DONE_QID, 128);
-+	if (IS_ERR(rx_doneq)) {
-+		printk(KERN_ERR "Error requesting Q: %d\n", RX_DONE_QID);
-+		return -EBUSY;
-+	}
-+	irqcb_recv(rx_doneq);
-+	rx_doneq->irq_cb = irqcb_recv;
-+	queue_set_watermarks(rx_doneq, 0, 0);
-+	queue_set_irq_src(rx_doneq, Q_IRQ_ID_NOT_E);
-+	queue_enable_irq(rx_doneq);
-+
 +	return platform_driver_register(&ixp4xx_mac);
 +}
 +
@@ -1763,14 +2718,7 @@ diff -Nur linux-2.6.17/drivers/net/ixp4xx/mac_driver.c linux-2.6.17-owrt/drivers
 +{
 +	platform_driver_unregister(&ixp4xx_mac);
 +	if (tx_doneq) {
-+		queue_disable_irq(tx_doneq);
-+		while (queue_drain(tx_doneq));
 +		release_queue(tx_doneq);
-+	}
-+	if (rx_doneq) {
-+		queue_disable_irq(rx_doneq);
-+		while (queue_drain(rx_doneq));
-+		release_queue(rx_doneq);
 +	}
 +}
 +
@@ -1780,10 +2728,595 @@ diff -Nur linux-2.6.17/drivers/net/ixp4xx/mac_driver.c linux-2.6.17-owrt/drivers
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Christian Hohnstaedt <chohnstaedt@innominate.com>");
 +
-diff -Nur linux-2.6.17/drivers/net/ixp4xx/npe_mh.c linux-2.6.17-owrt/drivers/net/ixp4xx/npe_mh.c
---- linux-2.6.17/drivers/net/ixp4xx/npe_mh.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.17-owrt/drivers/net/ixp4xx/npe_mh.c	2006-10-27 12:48:54.000000000 +0200
-@@ -0,0 +1,137 @@
+diff -Naur linux-2.6.19.orig/drivers/net/ixp4xx/mac.h linux-2.6.19/drivers/net/ixp4xx/mac.h
+--- linux-2.6.19.orig/drivers/net/ixp4xx/mac.h	1969-12-31 17:00:00.000000000 -0700
++++ linux-2.6.19/drivers/net/ixp4xx/mac.h	2007-01-12 21:54:40.000000000 -0700
+@@ -0,0 +1,275 @@
++/*
++ * Copyright (C) 2002-2006 Christian Hohnstaedt <chohnstaedt@innominate.com>
++ *
++ * This file is released under the GPLv2
++ */
++
++#include <linux/resource.h>
++#include <linux/netdevice.h>
++#include <linux/io.h>
++#include <linux/mii.h>
++#include <linux/workqueue.h>
++#include <asm/hardware.h>
++#include <linux/ixp_qmgr.h>
++
++/* 32 bit offsets to be added to u32 *pointers */
++#define MAC_TX_CNTRL1       0x00  // 0x000
++#define MAC_TX_CNTRL2       0x01  // 0x004
++#define MAC_RX_CNTRL1       0x04  // 0x010
++#define MAC_RX_CNTRL2       0x05  // 0x014
++#define MAC_RANDOM_SEED     0x08  // 0x020
++#define MAC_THRESH_P_EMPTY  0x0c  // 0x030
++#define MAC_THRESH_P_FULL   0x0e  // 0x038
++#define MAC_BUF_SIZE_TX     0x10  // 0x040
++#define MAC_TX_DEFER        0x14  // 0x050
++#define MAC_RX_DEFER        0x15  // 0x054
++#define MAC_TX_TWO_DEFER_1  0x18  // 0x060
++#define MAC_TX_TWO_DEFER_2  0x19  // 0x064
++#define MAC_SLOT_TIME       0x1c  // 0x070
++#define MAC_MDIO_CMD        0x20  // 0x080 4 registers 0x20 - 0x23
++#define MAC_MDIO_STS        0x24  // 0x090 4 registers 0x24 - 0x27
++#define MAC_ADDR_MASK       0x28  // 0x0A0 6 registers 0x28 - 0x2d
++#define MAC_ADDR            0x30  // 0x0C0 6 registers 0x30 - 0x35
++#define MAC_INT_CLK_THRESH  0x38  // 0x0E0 1 register
++#define MAC_UNI_ADDR        0x3c  // 0x0F0 6 registers 0x3c - 0x41
++#define MAC_CORE_CNTRL      0x7f  // 0x1fC
++
++/* TX Control Register 1*/
++
++#define TX_CNTRL1_TX_EN         BIT(0)
++#define TX_CNTRL1_DUPLEX        BIT(1)
++#define TX_CNTRL1_RETRY         BIT(2)
++#define TX_CNTRL1_PAD_EN        BIT(3)
++#define TX_CNTRL1_FCS_EN        BIT(4)
++#define TX_CNTRL1_2DEFER        BIT(5)
++#define TX_CNTRL1_RMII          BIT(6)
++
++/* TX Control Register 2 */
++#define TX_CNTRL2_RETRIES_MASK  0xf
++
++/* RX Control Register 1 */
++#define RX_CNTRL1_RX_EN         BIT(0)
++#define RX_CNTRL1_PADSTRIP_EN   BIT(1)
++#define RX_CNTRL1_CRC_EN        BIT(2)
++#define RX_CNTRL1_PAUSE_EN      BIT(3)
++#define RX_CNTRL1_LOOP_EN       BIT(4)
++#define RX_CNTRL1_ADDR_FLTR_EN  BIT(5)
++#define RX_CNTRL1_RX_RUNT_EN    BIT(6)
++#define RX_CNTRL1_BCAST_DIS     BIT(7)
++
++/* RX Control Register 2 */
++#define RX_CNTRL2_DEFER_EN      BIT(0)
++
++/* Core Control Register */
++#define CORE_RESET              BIT(0)
++#define CORE_RX_FIFO_FLUSH      BIT(1)
++#define CORE_TX_FIFO_FLUSH      BIT(2)
++#define CORE_SEND_JAM           BIT(3)
++#define CORE_MDC_EN             BIT(4)
++
++/* Definitions for MII access routines*/
++
++#define MII_REG_SHL    16
++#define MII_ADDR_SHL   21
++
++#define MII_GO                  BIT(31)
++#define MII_WRITE               BIT(26)
++#define MII_READ_FAIL           BIT(31)
++
++#define MII_TIMEOUT_10TH_SECS        5
++#define MII_10TH_SEC_IN_MILLIS     100
++
++/*
++ *
++ * Default values
++ *
++ */
++
++#define MAC_DEF_MSG_ENABLE (NETIF_MSG_DRV | NETIF_MSG_PROBE | NETIF_MSG_LINK)
++
++#define MAC_TX_CNTRL1_DEFAULT  (\
++		TX_CNTRL1_TX_EN | \
++		TX_CNTRL1_RETRY  | \
++		TX_CNTRL1_FCS_EN | \
++		TX_CNTRL1_2DEFER | \
++		TX_CNTRL1_PAD_EN )
++
++#define MAC_TX_MAX_RETRIES_DEFAULT 0x0f
++
++#define MAC_RX_CNTRL1_DEFAULT ( \
++		RX_CNTRL1_PADSTRIP_EN | \
++		RX_CNTRL1_CRC_EN | \
++		RX_CNTRL1_RX_EN )
++
++#define MAC_RX_CNTRL2_DEFAULT       0x0
++#define MAC_TX_CNTRL2_DEFAULT       TX_CNTRL2_RETRIES_MASK
++
++/* Thresholds determined by NPE firmware FS */
++#define MAC_THRESH_P_EMPTY_DEFAULT  0x12
++#define MAC_THRESH_P_FULL_DEFAULT   0x30
++
++/* Number of bytes that must be in the tx fifo before
++ * transmission commences */
++#define MAC_BUF_SIZE_TX_DEFAULT     0x8
++
++/* One-part deferral values */
++#define MAC_TX_DEFER_DEFAULT        0x15
++#define MAC_RX_DEFER_DEFAULT        0x16
++
++/* Two-part deferral values... */
++#define MAC_TX_TWO_DEFER_1_DEFAULT  0x08
++#define MAC_TX_TWO_DEFER_2_DEFAULT  0x07
++
++/* This value applies to MII */
++#define MAC_SLOT_TIME_DEFAULT       0x80
++
++/* This value applies to RMII */
++#define MAC_SLOT_TIME_RMII_DEFAULT  0xFF
++
++#define MAC_ADDR_MASK_DEFAULT       0xFF
++
++#define MAC_INT_CLK_THRESH_DEFAULT  0x1
++/* The following is a value chosen at random */
++#define MAC_RANDOM_SEED_DEFAULT     0x8
++
++/* By default we must configure the MAC to generate the MDC clock*/
++#define CORE_DEFAULT                (CORE_MDC_EN)
++
++/* End of Intel provided register information */
++
++extern int
++mdio_read_register(struct net_device *dev, int phy_addr, int phy_reg);
++extern void
++mdio_write_register(struct net_device *dev, int phy_addr, int phy_reg, int val);
++extern void init_mdio(struct net_device *dev, int phy_id);
++
++struct mac_info {
++	u32 __iomem *addr;
++	struct resource *res;
++	struct device *npe_dev;
++	struct net_device *netdev;
++	struct qm_qmgr *qmgr;
++	struct qm_queue *rxq;
++	struct qm_queue *txq;
++	struct qm_queue *rxdoneq;
++	u32 irqflags;
++	struct net_device_stats stat;
++	struct mii_if_info mii;
++	struct work_struct mdio_thread;
++	int rxq_pkt;
++	int txq_pkt;
++	int unloading;
++	struct mac_plat_info *plat;
++	int npe_stat_num;
++	spinlock_t rx_lock;
++	u32 msg_enable;
++};
++
++static inline void mac_write_reg(struct mac_info *mac, int offset, u32 val)
++{
++	*(mac->addr + offset) = val;
++}
++static inline u32 mac_read_reg(struct mac_info *mac, int offset)
++{
++	return *(mac->addr + offset);
++}
++static inline void mac_set_regbit(struct mac_info *mac, int offset, u32 bit)
++{
++	mac_write_reg(mac, offset, mac_read_reg(mac, offset) | bit);
++}
++static inline void mac_reset_regbit(struct mac_info *mac, int offset, u32 bit)
++{
++	mac_write_reg(mac, offset, mac_read_reg(mac, offset) & ~bit);
++}
++
++static inline void mac_mdio_cmd_write(struct mac_info *mac, u32 cmd)
++{
++	int i;
++	for(i=0; i<4; i++) {
++		mac_write_reg(mac, MAC_MDIO_CMD + i, cmd & 0xff);
++		cmd >>=8;
++	}
++}
++
++#define mac_mdio_cmd_read(mac) mac_mdio_read((mac), MAC_MDIO_CMD)
++#define mac_mdio_status_read(mac) mac_mdio_read((mac), MAC_MDIO_STS)
++static inline u32 mac_mdio_read(struct mac_info *mac, int offset)
++{
++	int i;
++	u32 data = 0;
++	for(i=0; i<4; i++) {
++		data |= (mac_read_reg(mac, offset + i) & 0xff) << (i*8);
++	}
++	return data;
++}
++
++static inline u32 mdio_cmd(int phy_addr, int phy_reg)
++{
++	return phy_addr << MII_ADDR_SHL |
++		phy_reg << MII_REG_SHL |
++	        MII_GO;
++}
++
++#define MAC_REG_LIST { \
++	MAC_TX_CNTRL1, MAC_TX_CNTRL2, \
++	MAC_RX_CNTRL1, MAC_RX_CNTRL2, \
++	MAC_RANDOM_SEED, MAC_THRESH_P_EMPTY, MAC_THRESH_P_FULL, \
++	MAC_BUF_SIZE_TX, MAC_TX_DEFER, MAC_RX_DEFER, \
++	MAC_TX_TWO_DEFER_1, MAC_TX_TWO_DEFER_2, MAC_SLOT_TIME, \
++	MAC_ADDR_MASK +0, MAC_ADDR_MASK +1, MAC_ADDR_MASK +2, \
++	MAC_ADDR_MASK +3, MAC_ADDR_MASK +4, MAC_ADDR_MASK +5, \
++	MAC_ADDR +0, MAC_ADDR +1, MAC_ADDR +2, \
++	MAC_ADDR +3, MAC_ADDR +4, MAC_ADDR +5, \
++	MAC_INT_CLK_THRESH, \
++	MAC_UNI_ADDR +0, MAC_UNI_ADDR +1, MAC_UNI_ADDR +2, \
++	MAC_UNI_ADDR +3, MAC_UNI_ADDR +4, MAC_UNI_ADDR +5, \
++	MAC_CORE_CNTRL \
++}
++
++#define NPE_STAT_NUM            34
++#define NPE_STAT_NUM_BASE       22
++#define NPE_Q_STAT_NUM           4
++
++#define NPE_Q_STAT_STRINGS \
++	{"RX ready to use queue len     "}, \
++	{"RX received queue len         "}, \
++	{"TX to be send queue len       "}, \
++	{"TX done queue len             "},
++
++#define NPE_STAT_STRINGS \
++	{"StatsAlignmentErrors          "}, \
++	{"StatsFCSErrors                "}, \
++	{"StatsInternalMacReceiveErrors "}, \
++	{"RxOverrunDiscards             "}, \
++	{"RxLearnedEntryDiscards        "}, \
++	{"RxLargeFramesDiscards         "}, \
++	{"RxSTPBlockedDiscards          "}, \
++	{"RxVLANTypeFilterDiscards      "}, \
++	{"RxVLANIdFilterDiscards        "}, \
++	{"RxInvalidSourceDiscards       "}, \
++	{"RxBlackListDiscards           "}, \
++	{"RxWhiteListDiscards           "}, \
++	{"RxUnderflowEntryDiscards      "}, \
++	{"StatsSingleCollisionFrames    "}, \
++	{"StatsMultipleCollisionFrames  "}, \
++	{"StatsDeferredTransmissions    "}, \
++	{"StatsLateCollisions           "}, \
++	{"StatsExcessiveCollsions       "}, \
++	{"StatsInternalMacTransmitErrors"}, \
++	{"StatsCarrierSenseErrors       "}, \
++	{"TxLargeFrameDiscards          "}, \
++	{"TxVLANIdFilterDiscards        "}, \
++\
++	{"RxValidFramesTotalOctets      "}, \
++	{"RxUcastPkts                   "}, \
++	{"RxBcastPkts                   "}, \
++	{"RxMcastPkts                   "}, \
++	{"RxPkts64Octets                "}, \
++	{"RxPkts65to127Octets           "}, \
++	{"RxPkts128to255Octets          "}, \
++	{"RxPkts256to511Octets          "}, \
++	{"RxPkts512to1023Octets         "}, \
++	{"RxPkts1024to1518Octets        "}, \
++	{"RxInternalNPEReceiveErrors    "}, \
++	{"TxInternalNPETransmitErrors   "}
++
+diff -Naur linux-2.6.19.orig/drivers/net/ixp4xx/Makefile linux-2.6.19/drivers/net/ixp4xx/Makefile
+--- linux-2.6.19.orig/drivers/net/ixp4xx/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ linux-2.6.19/drivers/net/ixp4xx/Makefile	2007-01-12 21:54:40.000000000 -0700
+@@ -0,0 +1,7 @@
++obj-$(CONFIG_IXP4XX_QMGR) += ixp4xx_qmgr.o
++obj-$(CONFIG_IXP4XX_NPE) += ixp4xx_npe.o
++obj-$(CONFIG_IXP4XX_MAC) += ixp4xx_mac.o
++obj-$(CONFIG_IXP4XX_CRYPTO) += ixp4xx_crypto.o
++
++ixp4xx_npe-objs := ucode_dl.o npe_mh.o npe.o
++ixp4xx_mac-objs := mac_driver.o phy.o
+diff -Naur linux-2.6.19.orig/drivers/net/ixp4xx/npe.c linux-2.6.19/drivers/net/ixp4xx/npe.c
+--- linux-2.6.19.orig/drivers/net/ixp4xx/npe.c	1969-12-31 17:00:00.000000000 -0700
++++ linux-2.6.19/drivers/net/ixp4xx/npe.c	2007-01-12 21:54:40.000000000 -0700
+@@ -0,0 +1,291 @@
++
++#include <linux/ixp_npe.h>
++#include <asm/hardware.h>
++
++#define RESET_NPE_PARITY                0x0800
++#define PARITY_BIT_MASK             0x3F00FFFF
++#define CONFIG_CTRL_REG_MASK        0x3F3FFFFF
++#define MAX_RETRIES                    1000000
++#define NPE_PHYS_REG                        32
++#define RESET_MBST_VAL              0x0000F0F0
++#define NPE_REGMAP	            0x0000001E
++#define INSTR_WR_REG_SHORT          0x0000C000
++#define INSTR_WR_REG_BYTE           0x00004000
++#define MASK_ECS_REG_0_NEXTPC       0x1FFF0000
++
++#define INSTR_RD_FIFO               0x0F888220
++#define INSTR_RESET_MBOX            0x0FAC8210
++
++#define ECS_REG_0_LDUR                 8
++#define ECS_REG_1_CCTXT               16
++#define ECS_REG_1_SELCTXT              0
++
++#define ECS_BG_CTXT_REG_0           0x00
++#define ECS_BG_CTXT_REG_1           0x01
++#define ECS_BG_CTXT_REG_2           0x02
++#define ECS_PRI_1_CTXT_REG_0        0x04
++#define ECS_PRI_1_CTXT_REG_1        0x05
++#define ECS_PRI_1_CTXT_REG_2        0x06
++#define ECS_PRI_2_CTXT_REG_0        0x08
++#define ECS_PRI_2_CTXT_REG_1        0x09
++#define ECS_PRI_2_CTXT_REG_2        0x0A
++#define ECS_DBG_CTXT_REG_0          0x0C
++#define ECS_DBG_CTXT_REG_1          0x0D
++#define ECS_DBG_CTXT_REG_2          0x0E
++#define ECS_INSTRUCT_REG            0x11
++
++#define ECS_BG_CTXT_REG_0_RESET     0xA0000000
++#define ECS_BG_CTXT_REG_1_RESET     0x01000000
++#define ECS_BG_CTXT_REG_2_RESET     0x00008000
++#define ECS_PRI_1_CTXT_REG_0_RESET  0x20000080
++#define ECS_PRI_1_CTXT_REG_1_RESET  0x01000000
++#define ECS_PRI_1_CTXT_REG_2_RESET  0x00008000
++#define ECS_PRI_2_CTXT_REG_0_RESET  0x20000080
++#define ECS_PRI_2_CTXT_REG_1_RESET  0x01000000
++#define ECS_PRI_2_CTXT_REG_2_RESET  0x00008000
++#define ECS_DBG_CTXT_REG_0_RESET    0x20000000
++#define ECS_DBG_CTXT_REG_1_RESET    0x00000000
++#define ECS_DBG_CTXT_REG_2_RESET    0x001E0000
++#define ECS_INSTRUCT_REG_RESET      0x1003C00F
++
++static struct { u32 reg; u32 val; } ecs_reset[] =
++{
++    { ECS_BG_CTXT_REG_0,    ECS_BG_CTXT_REG_0_RESET },
++    { ECS_BG_CTXT_REG_1,    ECS_BG_CTXT_REG_1_RESET },
++    { ECS_BG_CTXT_REG_2,    ECS_BG_CTXT_REG_2_RESET },
++    { ECS_PRI_1_CTXT_REG_0, ECS_PRI_1_CTXT_REG_0_RESET },
++    { ECS_PRI_1_CTXT_REG_1, ECS_PRI_1_CTXT_REG_1_RESET },
++    { ECS_PRI_1_CTXT_REG_2, ECS_PRI_1_CTXT_REG_2_RESET },
++    { ECS_PRI_2_CTXT_REG_0, ECS_PRI_2_CTXT_REG_0_RESET },
++    { ECS_PRI_2_CTXT_REG_1, ECS_PRI_2_CTXT_REG_1_RESET },
++    { ECS_PRI_2_CTXT_REG_2, ECS_PRI_2_CTXT_REG_2_RESET },
++    { ECS_DBG_CTXT_REG_0,   ECS_DBG_CTXT_REG_0_RESET },
++    { ECS_DBG_CTXT_REG_1,   ECS_DBG_CTXT_REG_1_RESET },
++    { ECS_DBG_CTXT_REG_2,   ECS_DBG_CTXT_REG_2_RESET },
++    { ECS_INSTRUCT_REG,     ECS_INSTRUCT_REG_RESET }
++};
++
++/* actually I have no idea what I'm doing here !!
++ * I only rewrite the "reset" sequence the way Intel does it.
++ */
++
++static void npe_debg_preexec(struct npe_info *npe)
++{
++	u32 r = IX_NPEDL_MASK_ECS_DBG_REG_2_IF | IX_NPEDL_MASK_ECS_DBG_REG_2_IE;
++
++	npe->exec_count = npe_reg_read(npe, IX_NPEDL_REG_OFFSET_EXCT);
++	npe_reg_write(npe, IX_NPEDL_REG_OFFSET_EXCT, 0);
++	npe->ctx_reg2 = npe_read_ecs_reg(npe, ECS_DBG_CTXT_REG_2);
++	npe_write_ecs_reg(npe, ECS_DBG_CTXT_REG_2, npe->ctx_reg2 | r);
++}
++
++static void npe_debg_postexec(struct npe_info *npe)
++{
++	npe_write_ecs_reg(npe, ECS_DBG_CTXT_REG_0, 0);
++	npe_write_exctl(npe, IX_NPEDL_EXCTL_CMD_NPE_CLR_PIPE);
++	npe_reg_write(npe, IX_NPEDL_REG_OFFSET_EXCT, npe->exec_count);
++	npe_write_ecs_reg(npe, ECS_DBG_CTXT_REG_2, npe->ctx_reg2);
++}
++
++static int
++npe_debg_inst_exec(struct npe_info *npe, u32 instr, u32 ctx, u32 ldur)
++{
++	u32 regval, wc;
++	int c = 0;
++
++	regval = IX_NPEDL_MASK_ECS_REG_0_ACTIVE |
++		(ldur << ECS_REG_0_LDUR);
++	npe_write_ecs_reg(npe, ECS_DBG_CTXT_REG_0 , regval);
++	/* set CCTXT at ECS DEBUG L3 to specify in which context
++	 * to execute the instruction
++	 */
++	regval = (ctx << ECS_REG_1_CCTXT) |
++		 (ctx << ECS_REG_1_SELCTXT);
++	npe_write_ecs_reg(npe, ECS_DBG_CTXT_REG_1, regval);
++
++	/* clear the pipeline */
++	npe_write_exctl(npe, IX_NPEDL_EXCTL_CMD_NPE_CLR_PIPE);
++
++	/* load NPE instruction into the instruction register */
++	npe_write_ecs_reg(npe, ECS_INSTRUCT_REG, instr);
++	/* we need this value later to wait for
++	 * completion of NPE execution step
++	 */
++	wc = npe_reg_read(npe, IX_NPEDL_REG_OFFSET_WC);
++	npe_write_exctl(npe, IX_NPEDL_EXCTL_CMD_NPE_STEP);
++
++	/* Watch Count register increments when NPE completes an instruction */
++	while (wc == npe_reg_read(npe, IX_NPEDL_REG_OFFSET_WC) &&
++			++c < MAX_RETRIES);
++
++	if (c >= MAX_RETRIES) {
++		printk(KERN_ERR "%s reset:npe_debg_inst_exec(): Timeout\n",
++				npe->plat->name);
++		return 1;
++	}
++	return 0;
++}
++
++static int npe_logical_reg_write8(struct npe_info *npe, u32 addr, u32 val)
++{
++	u32 instr;
++	val &= 0xff;
++	/* here we build the NPE assembler instruction:
++	 * mov8 d0, #0 */
++	instr = INSTR_WR_REG_BYTE |	/* OpCode */
++		addr << 9 |		/* base Operand */
++		(val & 0x1f) << 4 |	/* lower 5 bits to immediate data */
++		(val & ~0x1f) << (18-5);/* higher 3 bits to CoProc instr. */
++	/* and execute it */
++	return npe_debg_inst_exec(npe, instr, 0, 1);
++}
++
++static int npe_logical_reg_write16(struct npe_info *npe, u32 addr, u32 val)
++{
++	u32 instr;
++	/* here we build the NPE assembler instruction:
++	 * mov16 d0, #0 */
++	val &= 0xffff;
++	instr = INSTR_WR_REG_SHORT |	/* OpCode */
++		addr << 9 |		/* base Operand */
++		(val & 0x1f) << 4 |	/* lower 5 bits to immediate data */
++		(val & ~0x1f) << (18-5);/* higher 11 bits to CoProc instr. */
++	/* and execute it */
++	return npe_debg_inst_exec(npe, instr, 0, 1);
++}
++
++static int npe_logical_reg_write32(struct npe_info *npe, u32 addr, u32 val)
++{
++	/* write in 16 bit steps first the high and then the low value */
++	npe_logical_reg_write16(npe, addr, val >> 16);
++	return npe_logical_reg_write16(npe, addr+2, val & 0xffff);
++}
++
++void npe_reset(struct npe_info *npe)
++{
++	u32 reg, cfg_ctrl;
++	int i;
++	struct { u32 reset; int addr; int size; } ctx_reg[] = {
++		{ 0x80,  0x1b, 8  },
++		{ 0,     0x1c, 16 },
++		{ 0x820, 0x1e, 16 },
++		{ 0,     0x1f, 8  }
++	}, *cr;
++
++	cfg_ctrl = npe_reg_read(npe, IX_NPEDL_REG_OFFSET_CTL);
++	cfg_ctrl |= 0x3F000000;
++	/* disable the parity interrupt */
++	npe_reg_write(npe, IX_NPEDL_REG_OFFSET_CTL, cfg_ctrl & PARITY_BIT_MASK);
++
++	npe_debg_preexec(npe);
++
++	/* clear the FIFOs */
++	while (npe_reg_read(npe, IX_NPEDL_REG_OFFSET_WFIFO) ==
++					IX_NPEDL_MASK_WFIFO_VALID);
++	while (npe_reg_read(npe, IX_NPEDL_REG_OFFSET_STAT) ==
++					IX_NPEDL_MASK_STAT_OFNE)
++	{
++		u32 reg;
++		reg = npe_reg_read(npe, IX_NPEDL_REG_OFFSET_FIFO);
++		printk("%s reset: Read FIFO:=%x\n", npe->plat->name, reg);
++	}
++	while (npe_reg_read(npe, IX_NPEDL_REG_OFFSET_STAT) ==
++					IX_NPEDL_MASK_STAT_IFNE) {
++		npe_debg_inst_exec(npe, INSTR_RD_FIFO, 0, 0);
++	}
++
++	/*  Reset the mailbox reg */
++	npe_reg_write(npe, IX_NPEDL_REG_OFFSET_MBST, RESET_MBST_VAL);
++	npe_debg_inst_exec(npe, INSTR_RESET_MBOX, 0, 0);
++
++	/* Reset the physical registers in the NPE register file */
++	for (i=0; i<NPE_PHYS_REG; i++) {
++		npe_logical_reg_write16(npe, NPE_REGMAP, i >> 1);
++		npe_logical_reg_write32(npe, (i&1) *4, 0);
++	}
++
++	/* Reset the context store. Iterate over the 16 ctx s */
++	for(i=0; i<16; i++) {
++		for (reg=0; reg<4; reg++) {
++			/* There is no (STEVT) register for Context 0.
++			 * ignore if register=0 and ctx=0 */
++			if (!(reg || i))
++				continue;
++			 /* Context 0 has no STARTPC. Instead, this value is
++			  * used to set NextPC for Background ECS,
++			  * to set where NPE starts executing code
++			  */
++			if (!i && reg==1) {
++				u32 r;
++				r = npe_read_ecs_reg(npe, ECS_BG_CTXT_REG_0);
++				r &= ~MASK_ECS_REG_0_NEXTPC;
++				r |= (cr->reset << 16) & MASK_ECS_REG_0_NEXTPC;
++				continue;
++			}
++			cr = ctx_reg + reg;
++			switch (cr->size) {
++				case 8:
++					npe_logical_reg_write8(npe, cr->addr,
++						cr->reset);
++					break;
++				case 16:
++					npe_logical_reg_write16(npe, cr->addr,
++						cr->reset);
++			}
++		}
++	}
++	npe_debg_postexec(npe);
++
++	for (i=0; i< ARRAY_SIZE(ecs_reset); i++) {
++		npe_write_ecs_reg(npe, ecs_reset[i].reg, ecs_reset[i].val);
++	}
++	npe_write_exctl(npe, IX_NPEDL_EXCTL_CMD_CLR_PROFILE_CNT);
++
++	for (i=IX_NPEDL_REG_OFFSET_EXCT; i<=IX_NPEDL_REG_OFFSET_AP3; i+=4) {
++		npe_reg_write(npe, i, 0);
++	}
++
++	npe_reg_write(npe, IX_NPEDL_REG_OFFSET_WC, 0);
++
++	reg = *IXP4XX_EXP_CFG2;
++	reg |= 0x800 << npe->plat->id;  /* IX_FUSE_NPE[ABC] */
++	*IXP4XX_EXP_CFG2 = reg;
++	reg &= ~(0x800 << npe->plat->id);  /* IX_FUSE_NPE[ABC] */
++	*IXP4XX_EXP_CFG2 = reg;
++
++	npe_stop(npe);
++
++	npe_reg_write(npe, IX_NPEDL_REG_OFFSET_CTL,
++			cfg_ctrl & CONFIG_CTRL_REG_MASK);
++	npe->loaded = 0;
++}
++
++
++void npe_stop(struct npe_info *npe)
++{
++	npe_write_exctl(npe, IX_NPEDL_EXCTL_CMD_NPE_STOP);
++	npe_write_exctl(npe, IX_NPEDL_EXCTL_CMD_NPE_CLR_PIPE);
++}
++
++static void npe_reset_active(struct npe_info *npe, u32 reg)
++{
++	u32 regval;
++
++	regval = npe_read_ecs_reg(npe, reg);
++	regval &= ~IX_NPEDL_MASK_ECS_REG_0_ACTIVE;
++	npe_write_ecs_reg(npe, reg, regval);
++}
++
++void npe_start(struct npe_info *npe)
++{
++	npe_reset_active(npe, IX_NPEDL_ECS_PRI_1_CTXT_REG_0);
++	npe_reset_active(npe, IX_NPEDL_ECS_PRI_2_CTXT_REG_0);
++	npe_reset_active(npe, IX_NPEDL_ECS_DBG_CTXT_REG_0);
++
++	npe_write_exctl(npe, IX_NPEDL_EXCTL_CMD_NPE_CLR_PIPE);
++	npe_write_exctl(npe, IX_NPEDL_EXCTL_CMD_NPE_START);
++}
++
++EXPORT_SYMBOL(npe_stop);
++EXPORT_SYMBOL(npe_start);
++EXPORT_SYMBOL(npe_reset);
+diff -Naur linux-2.6.19.orig/drivers/net/ixp4xx/npe_mh.c linux-2.6.19/drivers/net/ixp4xx/npe_mh.c
+--- linux-2.6.19.orig/drivers/net/ixp4xx/npe_mh.c	1969-12-31 17:00:00.000000000 -0700
++++ linux-2.6.19/drivers/net/ixp4xx/npe_mh.c	2007-01-12 21:54:40.000000000 -0700
+@@ -0,0 +1,170 @@
 +/*
 + * npe_mh.c - NPE message handler.
 + *
@@ -1846,8 +3379,14 @@ diff -Nur linux-2.6.17/drivers/net/ixp4xx/npe_mh.c linux-2.6.17-owrt/drivers/net
 +		j++;
 +	}
 +	if ((recv[0] != send[0]) || (recv[1] != send[1])) {
-+		printk("Unexpected answer: Send %08x:%08x Ret %08x:%08x\n",
-+			send[0], send[1], recv[0], recv[1]);
++		if (send[0] || send[1]) {
++			/* all CMDs return the complete message as answer,
++			 * only GETSTATUS returns the ImageID of the NPE
++			 */
++			printk("Unexpected answer: "
++				"Send %08x:%08x Ret %08x:%08x\n",
++				send[0], send[1], recv[0], recv[1]);
++		}
 +	}
 +	return 0;
 +}
@@ -1856,12 +3395,24 @@ diff -Nur linux-2.6.17/drivers/net/ixp4xx/npe_mh.c linux-2.6.17-owrt/drivers/net
 +#define PORT 1
 +#define MAC  2
 +
++#define IX_ETHNPE_NPE_GETSTATUS			0x00
 +#define IX_ETHNPE_EDB_SETPORTADDRESS            0x01
++#define IX_ETHNPE_GETSTATS			0x04
++#define IX_ETHNPE_RESETSTATS			0x05
 +#define IX_ETHNPE_FW_SETFIREWALLMODE            0x0E
 +#define IX_ETHNPE_VLAN_SETRXQOSENTRY            0x0B
 +#define IX_ETHNPE_SETLOOPBACK_MODE		0x12
 +
 +#define logical_id(mp) (((mp)->npe_id << 4) | ((mp)->port_id & 0xf))
++
++int npe_mh_status(struct npe_info *npe)
++{
++	struct npe_mh_msg msg;
++
++	memset(&msg, 0, sizeof(msg));
++	msg.u.byte[CMD] = IX_ETHNPE_NPE_GETSTATUS;
++	return send_message(npe, &msg);
++}
 +
 +int npe_mh_setportaddr(struct npe_info *npe, struct mac_plat_info *mp,
 +		u8 *macaddr)
@@ -1917,13 +3468,28 @@ diff -Nur linux-2.6.17/drivers/net/ixp4xx/npe_mh.c linux-2.6.17-owrt/drivers/net
 +	return 0;
 +}
 +
++int npe_mh_get_stats(struct npe_info *npe, struct mac_plat_info *mp, u32 phys,
++		int reset)
++{
++	struct npe_mh_msg msg;
++	memset(&msg, 0, sizeof(msg));
++	msg.u.byte[CMD] = reset ? IX_ETHNPE_RESETSTATS : IX_ETHNPE_GETSTATS;
++	msg.u.byte[PORT] = logical_id(mp);
++	msg.u.data[1] = cpu_to_npe32(cpu_to_be32(phys));
++
++	return send_message(npe, &msg);
++}
++
++
++EXPORT_SYMBOL(npe_mh_status);
 +EXPORT_SYMBOL(npe_mh_setportaddr);
 +EXPORT_SYMBOL(npe_mh_disable_firewall);
 +EXPORT_SYMBOL(npe_mh_set_rxqid);
 +EXPORT_SYMBOL(npe_mh_npe_loopback_mode);
-diff -Nur linux-2.6.17/drivers/net/ixp4xx/phy.c linux-2.6.17-owrt/drivers/net/ixp4xx/phy.c
---- linux-2.6.17/drivers/net/ixp4xx/phy.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.17-owrt/drivers/net/ixp4xx/phy.c	2006-10-27 12:48:54.000000000 +0200
++EXPORT_SYMBOL(npe_mh_get_stats);
+diff -Naur linux-2.6.19.orig/drivers/net/ixp4xx/phy.c linux-2.6.19/drivers/net/ixp4xx/phy.c
+--- linux-2.6.19.orig/drivers/net/ixp4xx/phy.c	1969-12-31 17:00:00.000000000 -0700
++++ linux-2.6.19/drivers/net/ixp4xx/phy.c	2007-01-12 21:54:40.000000000 -0700
 @@ -0,0 +1,113 @@
 +/*
 + * phy.c - MDIO functions and mii initialisation
@@ -2038,141 +3604,10 @@ diff -Nur linux-2.6.17/drivers/net/ixp4xx/phy.c linux-2.6.17-owrt/drivers/net/ix
 +	mac->mii.mdio_write = mdio_write_register;
 +}
 +
-diff -Nur linux-2.6.17/drivers/net/ixp4xx/qmgr_eth.c linux-2.6.17-owrt/drivers/net/ixp4xx/qmgr_eth.c
---- linux-2.6.17/drivers/net/ixp4xx/qmgr_eth.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.17-owrt/drivers/net/ixp4xx/qmgr_eth.c	2006-10-27 12:48:54.000000000 +0200
-@@ -0,0 +1,127 @@
-+/*
-+ * qmgr_eth.c - Glue between qmgr and MAC. Linked to mac to keep qmgr.ko
-+ * more virtual
-+ *
-+ * Copyright (C) 2006 Christian Hohnstaedt <chohnstaedt@innominate.com>
-+ *
-+ * This file is released under the GPLv2
-+ */
-+
-+#include <linux/skbuff.h>
-+#include <linux/dma-mapping.h>
-+#include <linux/netdevice.h>
-+#include <linux/ixp_qmgr.h>
-+
-+#define SKB_SIZE 1688
-+
-+int queue_send_skb(struct qm_queue *queue, struct sk_buff *skb)
-+{
-+	struct npe_cont *cont;
-+	struct qm_qmgr *qmgr = dev_get_drvdata(queue->dev);
-+
-+	cont = qmgr_get_cont(qmgr);
-+	if (!cont)
-+		return 0;
-+
-+	cont->h.skb = skb;
-+#ifndef __ARMEB__
-+	/* swap the payload of the SKB */
-+	{
-+		u32 *p = (u32*)((unsigned)skb->data & ~0x3);
-+		u32 *e = (u32*)(((unsigned)skb->data + skb->len + 3) & ~0x3);
-+		while (p < e)
-+			*p = cpu_to_be32(*p), ++p;
-+	}
-+#endif
-+	/* fill the NPE information record */
-+	cont->ctl.eth.next = 0;
-+	cont->ctl.eth.buf_len = skb->end - skb->head;
-+	cont->ctl.eth.pkt_len = skb->len;
-+	cont->ctl.eth.phys_addr =
-+		dma_map_single(queue->dev, skb->data, skb->len, DMA_TO_DEVICE);
-+
-+	queue_put_entry(queue, cont->phys);
-+
-+	if (queue_stat(queue) == 2) { /* overflow */
-+		return 0;
-+	}
-+	return 1;
-+}
-+
-+int queue_fill_skb(struct qm_queue *queue, struct net_device *dev)
-+{
-+	struct npe_cont *cont;
-+	struct sk_buff *skb;
-+	struct qm_qmgr *qmgr = dev_get_drvdata(queue->dev);
-+	int len;
-+
-+	cont = qmgr_get_cont(qmgr);
-+	if (!cont)
-+		return 0;
-+	skb = dev_alloc_skb(SKB_SIZE);
-+	if (!skb) {
-+		qmgr_return_cont(qmgr, cont);
-+		return 0;
-+	}
-+	len = skb->end - skb->data;
-+	skb->dev = dev;
-+	cont->h.skb = skb;
-+	cont->ctl.eth.next = 0;
-+	cont->ctl.eth.buf_len = len;
-+	cont->ctl.eth.pkt_len = 0;
-+	cont->ctl.eth.phys_addr =
-+		dma_map_single(queue->dev, skb->data, len, DMA_FROM_DEVICE);
-+
-+	queue_put_entry(queue, cont->phys);
-+
-+	/* TODO: check quelen ?
-+	 * The current use guarantees that this queues will never overflow.
-+	 */
-+	return 1;
-+}
-+
-+int queue_drain(struct qm_queue *queue)
-+{
-+	u32 phys = *queue->acc_reg & ~0xf;
-+	struct npe_cont *cont;
-+
-+	if (!phys)
-+		return 0;
-+	cont = dma_to_virt(queue->dev, phys);
-+	cont = cont->virt;
-+	dev_kfree_skb_any(cont->h.skb);
-+	qmgr_return_cont(dev_get_drvdata(queue->dev), cont);
-+	return 1;
-+}
-+
-+struct sk_buff *queue_return_skb(struct qm_queue *queue)
-+{
-+	u32 phys = *queue->acc_reg & ~0xf;
-+	struct sk_buff *skb;
-+	struct npe_cont *cont;
-+	int len, buflen;
-+
-+	if (!phys)
-+		return NULL;
-+
-+	cont = dma_to_virt(queue->dev, phys);
-+	cont = cont->virt;
-+	skb = cont->h.skb;
-+	buflen = cont->ctl.eth.buf_len;
-+	len = cont->ctl.eth.pkt_len;
-+	dma_unmap_single(queue->dev, cont->ctl.eth.phys_addr,
-+			buflen,	DMA_FROM_DEVICE);
-+	qmgr_return_cont(dev_get_drvdata(queue->dev), cont);
-+	skb_put(skb, len);
-+#ifndef __ARMEB__
-+	/* swap the payload of the SKB */
-+	{
-+		u32 *p = (u32*)((unsigned)skb->data & ~0x3);
-+		u32 *e = (u32*)(((unsigned)skb->data + skb->len + 3) & ~0x3);
-+		while (p < e)
-+			*p = cpu_to_be32(*p), ++p;
-+	}
-+#endif
-+	return skb;
-+}
-+
-diff -Nur linux-2.6.17/drivers/net/ixp4xx/ucode_dl.c linux-2.6.17-owrt/drivers/net/ixp4xx/ucode_dl.c
---- linux-2.6.17/drivers/net/ixp4xx/ucode_dl.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.17-owrt/drivers/net/ixp4xx/ucode_dl.c	2006-10-27 12:48:54.000000000 +0200
-@@ -0,0 +1,466 @@
+diff -Naur linux-2.6.19.orig/drivers/net/ixp4xx/ucode_dl.c linux-2.6.19/drivers/net/ixp4xx/ucode_dl.c
+--- linux-2.6.19.orig/drivers/net/ixp4xx/ucode_dl.c	1969-12-31 17:00:00.000000000 -0700
++++ linux-2.6.19/drivers/net/ixp4xx/ucode_dl.c	2007-01-12 21:54:40.000000000 -0700
+@@ -0,0 +1,479 @@
 +/*
 + * ucode_dl.c - provide an NPE device and a char-dev for microcode download
 + *
@@ -2196,7 +3631,7 @@ diff -Nur linux-2.6.17/drivers/net/ixp4xx/ucode_dl.c linux-2.6.17-owrt/drivers/n
 +
 +#include <linux/ixp_npe.h>
 +
-+#define IXNPE_VERSION "IXP4XX NPE driver Version 0.2.0"
++#define IXNPE_VERSION "IXP4XX NPE driver Version 0.3.0"
 +
 +#define DL_MAGIC 0xfeedf00d
 +#define DL_MAGIC_SWAP 0x0df0edfe
@@ -2236,28 +3671,35 @@ diff -Nur linux-2.6.17/drivers/net/ixp4xx/ucode_dl.c linux-2.6.17-owrt/drivers/n
 +
 +static struct platform_driver ixp4xx_npe_driver;
 +
-+static void npe_stop(struct npe_info *npe)
++static int match_by_npeid(struct device *dev, void *id)
 +{
-+	npe_write_exctl(npe, IX_NPEDL_EXCTL_CMD_NPE_STOP);
-+	npe_write_exctl(npe, IX_NPEDL_EXCTL_CMD_NPE_CLR_PIPE);
-+}
-+static void npe_reset_active(struct npe_info *npe, u32 reg)
-+{
-+	u32 regval;
-+
-+	regval = npe_read_ecs_reg(npe, reg);
-+	regval &= ~IX_NPEDL_MASK_ECS_REG_0_ACTIVE;
-+	npe_write_ecs_reg(npe, reg, regval);
++	struct npe_info *npe = dev_get_drvdata(dev);
++	if (!npe->plat)
++		return 0;
++	return (npe->plat->id == *(int*)id);
 +}
 +
-+static void npe_start(struct npe_info *npe)
++struct device *get_npe_by_id(int id)
 +{
-+	npe_reset_active(npe, IX_NPEDL_ECS_PRI_1_CTXT_REG_0);
-+	npe_reset_active(npe, IX_NPEDL_ECS_PRI_2_CTXT_REG_0);
-+	npe_reset_active(npe, IX_NPEDL_ECS_DBG_CTXT_REG_0);
++	struct device *dev = driver_find_device(&ixp4xx_npe_driver.driver,
++			NULL, &id, match_by_npeid);
++	if (dev) {
++		struct npe_info *npe = dev_get_drvdata(dev);
++		if (!try_module_get(THIS_MODULE)) {
++			 put_device(dev);
++			 return NULL;
++		}
++		npe->usage++;
++	}
++	return dev;
++}
 +
-+	npe_write_exctl(npe, IX_NPEDL_EXCTL_CMD_NPE_CLR_PIPE);
-+	npe_write_exctl(npe, IX_NPEDL_EXCTL_CMD_NPE_START);
++void return_npe_dev(struct device *dev)
++{
++	struct npe_info *npe = dev_get_drvdata(dev);
++	put_device(dev);
++	module_put(THIS_MODULE);
++	npe->usage--;
 +}
 +
 +static int
@@ -2295,20 +3737,6 @@ diff -Nur linux-2.6.17/drivers/net/ixp4xx/ucode_dl.c linux-2.6.17-owrt/drivers/n
 +	return 0;
 +}
 +
-+static int match_by_npeid(struct device *dev, void *id)
-+{
-+	struct npe_info *npe = dev_get_drvdata(dev);
-+	if (!npe->plat)
-+		return 0;
-+	return (npe->plat->id == *(int*)id);
-+}
-+
-+struct device *get_npe_by_id(int id)
-+{
-+	return driver_find_device(&ixp4xx_npe_driver.driver, NULL,
-+			&id, match_by_npeid);
-+}
-+
 +static int store_npe_image(struct dl_image *image, struct device *dev)
 +{
 +	struct dl_block *blk;
@@ -2318,19 +3746,24 @@ diff -Nur linux-2.6.17/drivers/net/ixp4xx/ucode_dl.c linux-2.6.17-owrt/drivers/n
 +
 +	if (!dev) {
 +		dev = get_npe_by_id( (image->id >> 24) & 0xf);
-+		put_device(dev);
++		return_npe_dev(dev);
 +	}
 +	if (!dev)
 +		return -ENODEV;
 +
 +	npe = dev_get_drvdata(dev);
-+
-+	if ( npe_status(npe) & IX_NPEDL_EXCTL_STATUS_RUN) {
++	if (npe->loaded && (npe->usage > 0)) {
 +		printk(KERN_INFO "Cowardly refusing to reload an Image "
-+				"into the running %s\n", npe->plat->name);
++			"into the used and running %s\n", npe->plat->name);
 +		return 0; /* indicate success anyway... */
 +	}
++	if (!cpu_is_ixp46x() && ((image->id >> 28) & 0xf)) {
++		printk(KERN_INFO "IXP46x NPE image ignored on IXP42x\n");
++		return -EIO;
++	}
++
 +	npe_stop(npe);
++	npe_reset(npe);
 +
 +	for (blk = image->u.block; blk->type != EOF_BLOCK; blk++) {
 +		if (blk->offset > image->size) {
@@ -2351,6 +3784,10 @@ diff -Nur linux-2.6.17/drivers/net/ixp4xx/ucode_dl.c linux-2.6.17-owrt/drivers/n
 +	printk(KERN_INFO "Image loaded to %s Func:%x, Rel: %x:%x, Status: %x\n",
 +			npe->plat->name, npe->img_info[1], npe->img_info[2],
 +			npe->img_info[3], npe_status(npe));
++	if (npe_mh_status(npe)) {
++		printk(KERN_ERR "%s not responding\n", npe->plat->name);
++	}
++	npe->loaded = 1;
 +	return 0;
 +}
 +
@@ -2495,6 +3932,7 @@ diff -Nur linux-2.6.17/drivers/net/ixp4xx/ucode_dl.c linux-2.6.17-owrt/drivers/n
 +	reg = npe_reg_read(npe, IX_NPEDL_REG_OFFSET_CTL);
 +	reg &= ~(IX_NPEMH_NPE_CTL_OFE | IX_NPEMH_NPE_CTL_IFE);
 +	reg |= IX_NPEMH_NPE_CTL_OFEWE | IX_NPEMH_NPE_CTL_IFEWE;
++	npe_reg_write(npe, IX_NPEDL_REG_OFFSET_CTL, reg);
 +}
 +
 +static ssize_t show_npe_state(struct device *dev, struct device_attribute *attr,
@@ -2512,13 +3950,19 @@ diff -Nur linux-2.6.17/drivers/net/ixp4xx/ucode_dl.c linux-2.6.17-owrt/drivers/n
 +{
 +	struct npe_info *npe = dev_get_drvdata(dev);
 +
++	if (npe->usage) {
++		printk("%s in use: read-only\n", npe->plat->name);
++		return count;
++	}
 +	if (!strncmp(buf, "start", 5)) {
-+		printk("NPE start\n");
 +		npe_start(npe);
 +	}
 +	if (!strncmp(buf, "stop", 4)) {
-+		printk("NPE stop\n");
 +		npe_stop(npe);
++	}
++	if (!strncmp(buf, "reset", 5)) {
++		npe_stop(npe);
++		npe_reset(npe);
 +	}
 +	return count;
 +}
@@ -2530,7 +3974,7 @@ diff -Nur linux-2.6.17/drivers/net/ixp4xx/ucode_dl.c linux-2.6.17-owrt/drivers/n
 +	struct resource *res;
 +	struct npe_info *npe;
 +	struct npe_plat_data *plat = pdev->dev.platform_data;
-+	int size, ret=0;
++	int err, size, ret=0;
 +
 +	if (!(res = platform_get_resource(pdev, IORESOURCE_MEM, 0)))
 +		return -EIO;
@@ -2559,12 +4003,15 @@ diff -Nur linux-2.6.17/drivers/net/ixp4xx/ucode_dl.c linux-2.6.17-owrt/drivers/n
 +
 +	platform_set_drvdata(pdev, npe);
 +
-+	device_create_file(&pdev->dev, &dev_attr_state);
++	err = device_create_file(&pdev->dev, &dev_attr_state);
++	if (err)
++		goto out_rel;
 +
 +	npe->plat = plat;
 +	disable_npe_irq(npe);
-+	if (! (npe_status(npe) & IX_NPEDL_EXCTL_STATUS_RUN))
-+		npe_firmware_probe(&pdev->dev);
++	npe->usage = 0;
++	npe_reset(npe);
++	npe_firmware_probe(&pdev->dev);
 +
 +	return 0;
 +
@@ -2639,9 +4086,33 @@ diff -Nur linux-2.6.17/drivers/net/ixp4xx/ucode_dl.c linux-2.6.17-owrt/drivers/n
 +MODULE_AUTHOR("Christian Hohnstaedt <chohnstaedt@innominate.com>");
 +
 +EXPORT_SYMBOL(get_npe_by_id);
-diff -Nur linux-2.6.17/include/asm-arm/arch-ixp4xx/ixp4xx-regs.h linux-2.6.17-owrt/include/asm-arm/arch-ixp4xx/ixp4xx-regs.h
---- linux-2.6.17/include/asm-arm/arch-ixp4xx/ixp4xx-regs.h	2006-06-18 03:49:35.000000000 +0200
-+++ linux-2.6.17-owrt/include/asm-arm/arch-ixp4xx/ixp4xx-regs.h	2006-10-27 12:48:54.000000000 +0200
++EXPORT_SYMBOL(return_npe_dev);
+diff -Naur linux-2.6.19.orig/drivers/net/Kconfig linux-2.6.19/drivers/net/Kconfig
+--- linux-2.6.19.orig/drivers/net/Kconfig	2006-11-29 14:57:37.000000000 -0700
++++ linux-2.6.19/drivers/net/Kconfig	2007-01-12 21:54:40.000000000 -0700
+@@ -190,6 +190,8 @@
+ 
+ source "drivers/net/arm/Kconfig"
+ 
++source "drivers/net/ixp4xx/Kconfig"
++
+ config MACE
+ 	tristate "MACE (Power Mac ethernet) support"
+ 	depends on NET_ETHERNET && PPC_PMAC && PPC32
+diff -Naur linux-2.6.19.orig/drivers/net/Makefile linux-2.6.19/drivers/net/Makefile
+--- linux-2.6.19.orig/drivers/net/Makefile	2006-11-29 14:57:37.000000000 -0700
++++ linux-2.6.19/drivers/net/Makefile	2007-01-12 21:54:40.000000000 -0700
+@@ -209,6 +209,7 @@
+ obj-$(CONFIG_IRDA) += irda/
+ obj-$(CONFIG_ETRAX_ETHERNET) += cris/
+ obj-$(CONFIG_ENP2611_MSF_NET) += ixp2000/
++obj-$(CONFIG_IXP4XX_NPE) += ixp4xx/
+ 
+ obj-$(CONFIG_NETCONSOLE) += netconsole.o
+ 
+diff -Naur linux-2.6.19.orig/include/asm-arm/arch-ixp4xx/ixp4xx-regs.h linux-2.6.19/include/asm-arm/arch-ixp4xx/ixp4xx-regs.h
+--- linux-2.6.19.orig/include/asm-arm/arch-ixp4xx/ixp4xx-regs.h	2006-11-29 14:57:37.000000000 -0700
++++ linux-2.6.19/include/asm-arm/arch-ixp4xx/ixp4xx-regs.h	2007-01-12 21:54:40.000000000 -0700
 @@ -22,6 +22,8 @@
  #ifndef _ASM_ARM_IXP4XX_H_
  #define _ASM_ARM_IXP4XX_H_
@@ -2651,9 +4122,101 @@ diff -Nur linux-2.6.17/include/asm-arm/arch-ixp4xx/ixp4xx-regs.h linux-2.6.17-ow
  /*
   * IXP4xx Linux Memory Map:
   *
-diff -Nur linux-2.6.17/include/asm-arm/arch-ixp4xx/npe_regs.h linux-2.6.17-owrt/include/asm-arm/arch-ixp4xx/npe_regs.h
---- linux-2.6.17/include/asm-arm/arch-ixp4xx/npe_regs.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.17-owrt/include/asm-arm/arch-ixp4xx/npe_regs.h	2006-10-27 12:48:54.000000000 +0200
+@@ -44,6 +46,12 @@
+  */
+ 
+ /*
++ * PCI Memory Space
++ */
++#define IXP4XX_PCIMEM_BASE_PHYS		(0x48000000)
++#define IXP4XX_PCIMEM_REGION_SIZE	(0x04000000)
++#define IXP4XX_PCIMEM_BAR_SIZE		(0x01000000)
++/*
+  * Queue Manager
+  */
+ #define IXP4XX_QMGR_BASE_PHYS		(0x60000000)
+@@ -322,7 +330,13 @@
+ #define PCI_ATPDMA0_LENADDR_OFFSET  0x48
+ #define PCI_ATPDMA1_AHBADDR_OFFSET  0x4C
+ #define PCI_ATPDMA1_PCIADDR_OFFSET  0x50
+-#define PCI_ATPDMA1_LENADDR_OFFSET	0x54
++#define PCI_ATPDMA1_LENADDR_OFFSET  0x54
++#define PCI_PTADMA0_AHBADDR_OFFSET  0x58
++#define PCI_PTADMA0_PCIADDR_OFFSET  0x5c
++#define PCI_PTADMA0_LENADDR_OFFSET  0x60
++#define PCI_PTADMA1_AHBADDR_OFFSET  0x64
++#define PCI_PTADMA1_PCIADDR_OFFSET  0x68
++#define PCI_PTADMA1_LENADDR_OFFSET  0x6c
+ 
+ /*
+  * PCI Control/Status Registers
+@@ -351,6 +365,12 @@
+ #define PCI_ATPDMA1_AHBADDR     IXP4XX_PCI_CSR(PCI_ATPDMA1_AHBADDR_OFFSET)
+ #define PCI_ATPDMA1_PCIADDR     IXP4XX_PCI_CSR(PCI_ATPDMA1_PCIADDR_OFFSET)
+ #define PCI_ATPDMA1_LENADDR     IXP4XX_PCI_CSR(PCI_ATPDMA1_LENADDR_OFFSET)
++#define PCI_PTADMA0_AHBADDR     IXP4XX_PCI_CSR(PCI_PTADMA0_AHBADDR_OFFSET)
++#define PCI_PTADMA0_PCIADDR     IXP4XX_PCI_CSR(PCI_PTADMA0_PCIADDR_OFFSET)
++#define PCI_PTADMA0_LENADDR     IXP4XX_PCI_CSR(PCI_PTADMA0_LENADDR_OFFSET)
++#define PCI_PTADMA1_AHBADDR     IXP4XX_PCI_CSR(PCI_PTADMA1_AHBADDR_OFFSET)
++#define PCI_PTADMA1_PCIADDR     IXP4XX_PCI_CSR(PCI_PTADMA1_PCIADDR_OFFSET)
++#define PCI_PTADMA1_LENADDR     IXP4XX_PCI_CSR(PCI_PTADMA1_LENADDR_OFFSET)
+ 
+ /*
+  * PCI register values and bit definitions 
+@@ -607,6 +627,34 @@
+ 
+ #define DCMD_LENGTH	0x01fff		/* length mask (max = 8K - 1) */
+ 
++
++/* Fuse Bits of IXP_EXP_CFG2 */
++#define IX_FUSE_RCOMP   (1 << 0)
++#define IX_FUSE_USB     (1 << 1)
++#define IX_FUSE_HASH    (1 << 2)
++#define IX_FUSE_AES     (1 << 3)
++#define IX_FUSE_DES     (1 << 4)
++#define IX_FUSE_HDLC    (1 << 5)
++#define IX_FUSE_AAL     (1 << 6)
++#define IX_FUSE_HSS     (1 << 7)
++#define IX_FUSE_UTOPIA  (1 << 8)
++#define IX_FUSE_ETH0    (1 << 9)
++#define IX_FUSE_ETH1    (1 << 10)
++#define IX_FUSE_NPEA    (1 << 11)
++#define IX_FUSE_NPEB    (1 << 12)
++#define IX_FUSE_NPEC    (1 << 13)
++#define IX_FUSE_PCI     (1 << 14)
++#define IX_FUSE_ECC     (1 << 15)
++#define IX_FUSE_UTOPIA_PHY_LIMIT  (3 << 16)
++#define IX_FUSE_USB_HOST          (1 << 18)
++#define IX_FUSE_NPEA_ETH          (1 << 19)
++#define IX_FUSE_NPEB_ETH          (1 << 20)
++#define IX_FUSE_RSA               (1 << 21)
++#define IX_FUSE_XSCALE_MAX_FREQ   (3 << 22)
++
++#define IX_FUSE_IXP46X_ONLY IX_FUSE_XSCALE_MAX_FREQ | IX_FUSE_RSA | \
++	IX_FUSE_NPEB_ETH | IX_FUSE_NPEA_ETH | IX_FUSE_USB_HOST | IX_FUSE_ECC
++
+ #ifndef __ASSEMBLY__
+ static inline int cpu_is_ixp46x(void)
+ {
+@@ -620,6 +668,15 @@
+ #endif
+ 	return 0;
+ }
++
++static inline u32 ix_fuse(void)
++{
++	unsigned int fuses = ~(*IXP4XX_EXP_CFG2);
++	if (!cpu_is_ixp46x())
++		fuses &= ~IX_FUSE_IXP46X_ONLY;
++
++	return fuses;
++}
+ #endif
+ 
+ #endif
+diff -Naur linux-2.6.19.orig/include/asm-arm/arch-ixp4xx/npe_regs.h linux-2.6.19/include/asm-arm/arch-ixp4xx/npe_regs.h
+--- linux-2.6.19.orig/include/asm-arm/arch-ixp4xx/npe_regs.h	1969-12-31 17:00:00.000000000 -0700
++++ linux-2.6.19/include/asm-arm/arch-ixp4xx/npe_regs.h	2007-01-12 21:54:40.000000000 -0700
 @@ -0,0 +1,82 @@
 +#ifndef NPE_REGS_H
 +#define NPE_REGS_H
@@ -2737,12 +4300,12 @@ diff -Nur linux-2.6.17/include/asm-arm/arch-ixp4xx/npe_regs.h linux-2.6.17-owrt/
 +
 +#endif
 +
-diff -Nur linux-2.6.17/include/asm-arm/arch-ixp4xx/platform.h linux-2.6.17-owrt/include/asm-arm/arch-ixp4xx/platform.h
---- linux-2.6.17/include/asm-arm/arch-ixp4xx/platform.h	2006-06-18 03:49:35.000000000 +0200
-+++ linux-2.6.17-owrt/include/asm-arm/arch-ixp4xx/platform.h	2006-10-27 12:48:54.000000000 +0200
-@@ -86,6 +86,22 @@
- 	unsigned long scl_pin;
- };
+diff -Naur linux-2.6.19.orig/include/asm-arm/arch-ixp4xx/platform.h linux-2.6.19/include/asm-arm/arch-ixp4xx/platform.h
+--- linux-2.6.19.orig/include/asm-arm/arch-ixp4xx/platform.h	2006-11-29 14:57:37.000000000 -0700
++++ linux-2.6.19/include/asm-arm/arch-ixp4xx/platform.h	2007-01-12 21:54:40.000000000 -0700
+@@ -89,6 +89,25 @@
+ 
+ struct sys_timer;
  
 +struct npe_plat_data {
 +	const char *name;
@@ -2756,17 +4319,216 @@ diff -Nur linux-2.6.17/include/asm-arm/arch-ixp4xx/platform.h linux-2.6.17-owrt/
 +	int port_id;	/* Port ID for NPE-B @ ixp465 */
 +	int eth_id;	/* Physical ID */
 +	int phy_id;	/* ID of the connected PHY (PCB/platform dependent) */
-+	int rxq_id;	/* Queue ID of the RX-free q*/
++	int rxq_id;	/* Queue ID of the RX-free q */
++	int rxdoneq_id; /* where incoming packets are returned */
 +	int txq_id;	/* Where to push the outgoing packets */
++	unsigned char hwaddr[6]; /* Desired hardware address */
++
 +};
 +
- 
- struct sys_timer;
- 
-diff -Nur linux-2.6.17/include/linux/ixp_npe.h linux-2.6.17-owrt/include/linux/ixp_npe.h
---- linux-2.6.17/include/linux/ixp_npe.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.17-owrt/include/linux/ixp_npe.h	2006-10-27 12:48:54.000000000 +0200
-@@ -0,0 +1,85 @@
+ /*
+  * Frequency of clock used for primary clocksource
+  */
+diff -Naur linux-2.6.19.orig/include/linux/ixp_crypto.h linux-2.6.19/include/linux/ixp_crypto.h
+--- linux-2.6.19.orig/include/linux/ixp_crypto.h	1969-12-31 17:00:00.000000000 -0700
++++ linux-2.6.19/include/linux/ixp_crypto.h	2007-01-12 21:54:40.000000000 -0700
+@@ -0,0 +1,192 @@
++
++#ifndef IX_CRYPTO_H
++#define IX_CRYPTO_H
++
++#define MAX_KEYLEN 64
++#define NPE_CTX_LEN 80
++#define AES_BLOCK128 16
++
++#define NPE_OP_HASH_GEN_ICV   0x50
++#define NPE_OP_ENC_GEN_KEY    0xc9
++
++
++#define NPE_OP_HASH_VERIFY   0x01
++#define NPE_OP_CCM_ENABLE    0x04
++#define NPE_OP_CRYPT_ENABLE  0x08
++#define NPE_OP_HASH_ENABLE   0x10
++#define NPE_OP_NOT_IN_PLACE  0x20
++#define NPE_OP_HMAC_DISABLE  0x40
++#define NPE_OP_CRYPT_ENCRYPT 0x80
++
++#define MOD_ECB     0x0000
++#define MOD_CTR     0x1000
++#define MOD_CBC_ENC 0x2000
++#define MOD_CBC_DEC 0x3000
++#define MOD_CCM_ENC 0x4000
++#define MOD_CCM_DEC 0x5000
++
++#define ALGO_AES    0x0800
++#define CIPH_DECR   0x0000
++#define CIPH_ENCR   0x0400
++
++#define MOD_DES     0x0000
++#define MOD_TDEA2   0x0100
++#define MOD_TDEA3   0x0200
++#define MOD_AES128  0x0000
++#define MOD_AES192  0x0100
++#define MOD_AES256  0x0200
++
++#define KEYLEN_128  4
++#define KEYLEN_192  6
++#define KEYLEN_256  8
++
++#define CIPHER_TYPE_NULL   0
++#define CIPHER_TYPE_DES    1
++#define CIPHER_TYPE_3DES   2
++#define CIPHER_TYPE_AES    3
++
++#define CIPHER_MODE_ECB    1
++#define CIPHER_MODE_CTR    2
++#define CIPHER_MODE_CBC    3
++#define CIPHER_MODE_CCM    4
++
++#define HASH_TYPE_NULL     0
++#define HASH_TYPE_MD5      1
++#define HASH_TYPE_SHA1     2
++#define HASH_TYPE_CBCMAC   3
++
++#define OP_REG_DONE  1
++#define OP_REGISTER  2
++#define OP_PERFORM   3
++
++#define STATE_UNREGISTERED 0
++#define STATE_REGISTERED   1
++#define STATE_UNLOADING    2
++
++struct crypt_ctl {
++#ifndef CONFIG_NPE_ADDRESS_COHERENT
++	u8 mode;    /* NPE operation */
++	u8 init_len;
++	u16 reserved;
++#else
++	u16 reserved;
++	u8 init_len;
++	u8 mode;    /* NPE operation */
++#endif
++	u8 iv[16];  /* IV for CBC mode or CTR IV for CTR mode */
++	union {
++		u32 icv;
++		u32 rev_aes;
++	} addr;
++	u32 src_buf;
++	u32 dest_buf;
++#ifndef CONFIG_NPE_ADDRESS_COHERENT
++	u16 auth_offs;  /* Authentication start offset */
++	u16 auth_len;   /* Authentication data length */
++	u16 crypt_offs; /* Cryption start offset */
++	u16 crypt_len;  /* Cryption data length */
++#else
++	u16 auth_len;   /* Authentication data length */
++	u16 auth_offs;  /* Authentication start offset */
++	u16 crypt_len;  /* Cryption data length */
++	u16 crypt_offs; /* Cryption start offset */
++#endif
++	u32 aadAddr;    /* Additional Auth Data Addr for CCM mode */
++	u32 crypto_ctx; /* NPE Crypto Param structure address */
++
++	/* Used by Host */
++	struct ix_sa_ctx *sa_ctx;
++	int oper_type;
++};
++
++struct npe_crypt_cont {
++	union {
++		struct crypt_ctl crypt;
++		u8 rev_aes_key[NPE_CTX_LEN];
++	} ctl;
++	struct npe_crypt_cont *next;
++	struct npe_crypt_cont *virt;
++	dma_addr_t phys;
++};
++
++struct ix_hash_algo {
++	char *name;
++	u32 cfgword;
++	int digest_len;
++	int aad_len;
++	unsigned char *icv;
++	int type;
++};
++
++struct ix_cipher_algo {
++	char *name;
++	u32 cfgword_enc;
++	u32 cfgword_dec;
++	int block_len;
++	int iv_len;
++	int type;
++	int mode;
++};
++
++struct ix_key {
++	u8 key[MAX_KEYLEN];
++	int len;
++};
++
++struct ix_sa_master {
++	struct device *npe_dev;
++	struct qm_queue *sendq;
++	struct qm_queue *recvq;
++	struct dma_pool *dmapool;
++	struct npe_crypt_cont *pool;
++	int pool_size;
++	rwlock_t lock;
++};
++
++struct ix_sa_dir {
++	unsigned char *npe_ctx;
++	dma_addr_t npe_ctx_phys;
++	int npe_ctx_idx;
++	u8 npe_mode;
++};
++
++struct ix_sa_ctx {
++	struct list_head list;
++	struct ix_sa_master *master;
++
++	const struct ix_hash_algo *h_algo;
++	const struct ix_cipher_algo *c_algo;
++	struct ix_key c_key;
++	struct ix_key h_key;
++
++	int digest_len;
++
++	struct ix_sa_dir encrypt;
++	struct ix_sa_dir decrypt;
++
++	struct npe_crypt_cont *rev_aes;
++	gfp_t gfp_flags;
++
++	int state;
++	void *priv;
++
++	void(*reg_cb)(struct ix_sa_ctx*, int);
++	void(*perf_cb)(struct ix_sa_ctx*, void*, int);
++	atomic_t use_cnt;
++};
++
++const struct ix_hash_algo *ix_hash_by_id(int type);
++const struct ix_cipher_algo *ix_cipher_by_id(int type, int mode);
++
++struct ix_sa_ctx *ix_sa_ctx_new(int priv_len, gfp_t flags);
++void ix_sa_ctx_free(struct ix_sa_ctx *sa_ctx);
++
++int ix_sa_crypto_perform(struct ix_sa_ctx *sa_ctx, u8 *data, void *ptr,
++		int datalen, int c_offs, int c_len, int a_offs, int a_len,
++		int hmac, char *iv, int encrypt);
++
++int ix_sa_ctx_setup_cipher_auth(struct ix_sa_ctx *sa_ctx,
++		const struct ix_cipher_algo *cipher,
++		const struct ix_hash_algo *auth, int len);
++
++#endif
+diff -Naur linux-2.6.19.orig/include/linux/ixp_npe.h linux-2.6.19/include/linux/ixp_npe.h
+--- linux-2.6.19.orig/include/linux/ixp_npe.h	1969-12-31 17:00:00.000000000 -0700
++++ linux-2.6.19/include/linux/ixp_npe.h	2007-01-12 21:54:40.000000000 -0700
+@@ -0,0 +1,117 @@
 +/*
 + * Copyright (C) 2006 Christian Hohnstaedt <chohnstaedt@innominate.com>
 + *
@@ -2779,11 +4541,34 @@ diff -Nur linux-2.6.17/include/linux/ixp_npe.h linux-2.6.17-owrt/include/linux/i
 +#include <linux/miscdevice.h>
 +#include <asm/hardware.h>
 +
++#ifdef __ARMEB__
++#undef CONFIG_NPE_ADDRESS_COHERENT
++#else
++#define CONFIG_NPE_ADDRESS_COHERENT
++#endif
++
++#if defined(__ARMEB__) || defined (CONFIG_NPE_ADDRESS_COHERENT)
++#define npe_to_cpu32(x) (x)
++#define npe_to_cpu16(x) (x)
++#define cpu_to_npe32(x) (x)
++#define cpu_to_npe16(x) (x)
++#else
++#error NPE_DATA_COHERENT
++#define NPE_DATA_COHERENT
++#define npe_to_cpu32(x) be32_to_cpu(x)
++#define npe_to_cpu16(x) be16_to_cpu(x)
++#define cpu_to_npe32(x) cpu_to_be32(x)
++#define cpu_to_npe16(x) cpu_to_be16(x)
++#endif
++
++
 +struct npe_info {
 +	struct resource *res;
 +	void __iomem *addr;
 +	struct npe_plat_data *plat;
 +	u8 img_info[4];
++	int usage;
++	int loaded;
 +	u32 exec_count;
 +	u32 ctx_reg2;
 +};
@@ -2839,9 +4624,16 @@ diff -Nur linux-2.6.17/include/linux/ixp_npe.h linux-2.6.17-owrt/include/linux/i
 +	return npe_read_cmd(npe, addr, IX_NPEDL_EXCTL_CMD_RD_ECS_REG);
 +}
 +
++extern void npe_stop(struct npe_info *npe);
++extern void npe_start(struct npe_info *npe);
++extern void npe_reset(struct npe_info *npe);
++
 +extern struct device *get_npe_by_id(int id);
++extern void return_npe_dev(struct device *dev);
 +
 +/* NPE Messages */
++extern int
++npe_mh_status(struct npe_info *npe);
 +extern int
 +npe_mh_setportaddr(struct npe_info *npe, struct mac_plat_info *mp, u8 *macaddr);
 +extern int
@@ -2850,12 +4642,14 @@ diff -Nur linux-2.6.17/include/linux/ixp_npe.h linux-2.6.17-owrt/include/linux/i
 +npe_mh_set_rxqid(struct npe_info *npe, struct mac_plat_info *mp, int qid);
 +extern int
 +npe_mh_npe_loopback_mode(struct npe_info *npe, struct mac_plat_info *mp, int enable);
++extern int
++npe_mh_get_stats(struct npe_info *npe, struct mac_plat_info *mp, u32 phys, int reset);
 +
 +#endif
-diff -Nur linux-2.6.17/include/linux/ixp_qmgr.h linux-2.6.17-owrt/include/linux/ixp_qmgr.h
---- linux-2.6.17/include/linux/ixp_qmgr.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.17-owrt/include/linux/ixp_qmgr.h	2006-10-27 12:48:54.000000000 +0200
-@@ -0,0 +1,188 @@
+diff -Naur linux-2.6.19.orig/include/linux/ixp_qmgr.h linux-2.6.19/include/linux/ixp_qmgr.h
+--- linux-2.6.19.orig/include/linux/ixp_qmgr.h	1969-12-31 17:00:00.000000000 -0700
++++ linux-2.6.19/include/linux/ixp_qmgr.h	2007-01-12 21:54:40.000000000 -0700
+@@ -0,0 +1,202 @@
 +/*
 + * Copyright (C) 2006 Christian Hohnstaedt <chohnstaedt@innominate.com>
 + *
@@ -2870,6 +4664,7 @@ diff -Nur linux-2.6.17/include/linux/ixp_qmgr.h linux-2.6.17-owrt/include/linux/
 +#include <linux/if_ether.h>
 +#include <linux/spinlock.h>
 +#include <linux/platform_device.h>
++#include <linux/ixp_npe.h>
 +#include <asm/atomic.h>
 +
 +/* All offsets are in 32bit words */
@@ -2920,15 +4715,11 @@ diff -Nur linux-2.6.17/include/linux/ixp_qmgr.h linux-2.6.17-owrt/include/linux/
 +	void *cb_data;
 +};
 +
++#ifndef CONFIG_NPE_ADDRESS_COHERENT
 +struct eth_ctl {
 +	u32 next;
-+#ifdef __ARMEB__
 +	u16 buf_len;
 +	u16 pkt_len;
-+#else
-+	u16 pkt_len;
-+	u16 buf_len;
-+#endif
 +	u32 phys_addr;
 +	u8 dest_id;
 +	u8 src_id;
@@ -2940,14 +4731,26 @@ diff -Nur linux-2.6.17/include/linux/ixp_qmgr.h linux-2.6.17-owrt/include/linux/
 +	u8 src_mac[ETH_ALEN];
 +};
 +
++#else
++struct eth_ctl {
++	u32 next;
++	u16 pkt_len;
++	u16 buf_len;
++	u32 phys_addr;
++	u16 flags;
++	u8 src_id;
++	u8 dest_id;
++	u16 vlan_tci;
++	u8 padlen;
++	u8 qos;
++	u8 dest_mac[ETH_ALEN];
++	u8 src_mac[ETH_ALEN];
++};
++#endif
++
 +struct npe_cont {
-+	union {
-+		struct eth_ctl eth;
-+	} ctl;
-+	union {
-+		struct sk_buff *skb;
-+		void *ptr;
-+	} h;
++	struct eth_ctl eth;
++	void *data;
 +	struct npe_cont *next;
 +	struct npe_cont *virt;
 +	dma_addr_t phys;
@@ -2994,7 +4797,12 @@ diff -Nur linux-2.6.17/include/linux/ixp_qmgr.h linux-2.6.17-owrt/include/linux/
 +
 +static inline void queue_put_entry(struct qm_queue *queue, u32 entry)
 +{
-+	*(queue->acc_reg) = entry;
++	*(queue->acc_reg) = npe_to_cpu32(entry);
++}
++
++static inline u32 queue_get_entry(struct qm_queue *queue)
++{
++	return cpu_to_npe32(*queue->acc_reg);
 +}
 +
 +static inline struct npe_cont *qmgr_get_cont(struct qm_qmgr *qmgr)

@@ -2,7 +2,7 @@ Index: linux-2.6.19/arch/arm/mach-ixp4xx/nslu2-setup.c
 ===================================================================
 --- linux-2.6.19.orig/arch/arm/mach-ixp4xx/nslu2-setup.c
 +++ linux-2.6.19/arch/arm/mach-ixp4xx/nslu2-setup.c
-@@ -137,6 +137,28 @@ static struct platform_device nslu2_uart
+@@ -137,6 +137,29 @@ static struct platform_device nslu2_uart
  	.resource		= nslu2_uart_resources,
  };
  
@@ -18,6 +18,7 @@ Index: linux-2.6.19/arch/arm/mach-ixp4xx/nslu2-setup.c
 +	.eth_id		= 0,
 +	.rxq_id		= 27,
 +	.txq_id		= 24,
++	.rxdoneq_id	= 4,
 +};
 +
 +static struct platform_device mac0 = {
