@@ -9,3 +9,7 @@ root    (hd0,0)
 kernel  /boot/vmlinuz @CMDLINE@ noinitrd console=ttyS0,@BAUDRATE@n8 reboot=bios
 boot
 
+title	OpenWrt (failsafe)
+root	(hd0,0)
+kernel  /boot/vmlinuz failsafe=true @CMDLINE@ noinitrd console=ttyS0,@BAUDRATE@n8 reboot=bios
+boot

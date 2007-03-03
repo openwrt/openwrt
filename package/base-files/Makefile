@@ -19,7 +19,6 @@ REV:=$(shell LANG=C svn info | awk '/^Revision:/ { print$$2 }' )
 ifeq ($(REV),)
   REV:=0
 endif
-
 include $(INCLUDE_DIR)/package.mk
 
 ifneq ($(DUMP),1)
