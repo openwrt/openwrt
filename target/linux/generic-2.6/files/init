@@ -3,8 +3,19 @@
 
 export PATH=/bin:/sbin:/usr/bin:/usr/sbin
 mount none /proc -t proc
-mount none /dev -t devfs
-mount non /dev/pts -t devpts
+
+if grep devfs /proc/filesystems > /dev/null; then
+	mount none /dev -t devfs
+else
+	mount -t sysfs none /sys
+	mount -t tmpfs tmpfs /dev -o size=512K
+	mknod /dev/console c 5 1
+	mkdir /dev/pts
+	mkdir /dev/shm
+	/sbin/mdev -s
+fi
+
+mount none /dev/pts -t devpts
 
 # the root mount point can come from the kernel command line
 # or it can be overridden in the preinit.arch file

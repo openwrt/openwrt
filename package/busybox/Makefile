@@ -41,6 +41,7 @@ The Swiss Army Knife of embedded Linux.
 endef
 
 define Package/busybox/config
+	source "$(SOURCE)/target-config.in"
 	menu "Configuration"
 		depends on PACKAGE_busybox
 		source "$(SOURCE)/config/Config.in"
