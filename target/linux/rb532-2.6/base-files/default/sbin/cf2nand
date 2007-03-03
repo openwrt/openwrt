@@ -45,7 +45,7 @@ mount -t yaffs2 "$boot" /tmp/cf2nand/p1
 mount -t yaffs2 "$main" /tmp/cf2nand/p2
 
 echo "Copying kernel..."
-copy_kernel /dev/cf/card0/part1 /tmp/cf2nand/p1/kernel "root=/dev/mtdblock1 rootfstype=yaffs2 " 2>/dev/null >/dev/null
+copy_kernel /dev/cf/card0/part1 /tmp/cf2nand/p1/kernel "root=/dev/mtdblock1 rootfstype=yaffs2 init=/etc/preinit " 2>/dev/null >/dev/null
 umount /tmp/cf2nand/p1
 rmdir /tmp/cf2nand/p1
 
