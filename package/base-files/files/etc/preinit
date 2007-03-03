@@ -1,5 +1,6 @@
 #!/bin/sh
 # Copyright (C) 2006 OpenWrt.org
 export PATH=/bin:/sbin:/usr/bin:/usr/sbin
-mount_root
+[ -e /etc/preinit.arch ] && . /etc/preinit.arch
+mount_root ${FAILSAFE:+failsafe}
 exec /sbin/init
