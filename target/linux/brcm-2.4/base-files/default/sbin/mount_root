@@ -1,10 +1,12 @@
 #!/bin/sh
 # Copyright (C) 2006 OpenWrt.org
+. /etc/functions.sh
 
 is_dirty() {
+	mtdpart="$(find_mtd_part linux)"
 	grep Broadcom /proc/cpuinfo >&- || return 1
-	OFFSET="$(($(hexdump -v /dev/mtdblock/1 -s 20 -n 2 -e '"%d"')-1))"
-	return $(hexdump -v /dev/mtdblock/1 -s $OFFSET -n 1 -e '"%d"')
+	OFFSET="$(($(hexdump -v $mtdpart -s 20 -n 2 -e '"%d"')-1))"
+	return $(hexdump -v $mtdpart -s $OFFSET -n 1 -e '"%d"')
 }
 
 if [ "$1" != "failsafe" ]; then 
@@ -17,7 +19,7 @@ if [ "$1" != "failsafe" ]; then
 		is_dirty 
 		[ $? != 0 ] && {
 			echo "switching to jffs2"
-			mount /dev/mtdblock/4 /jffs -t jffs2
+			mount $(find_mtd_part OpenWrt) /jffs -t jffs2
 			fopivot /jffs /rom
 		} || {
 			echo "jffs2 not ready yet; using ramdisk"
