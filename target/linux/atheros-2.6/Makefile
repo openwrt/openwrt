@@ -18,4 +18,7 @@ endef
 include $(INCLUDE_DIR)/kernel-build.mk
 DEFAULT_PACKAGES += kmod-madwifi
 
+# include the profiles
+-include profiles/*.mk
+
 $(eval $(call BuildKernel))

@@ -12,4 +12,8 @@ BOARDNAME:=SiByte MIPS
 FEATURES:=broken
 
 include $(INCLUDE_DIR)/kernel-build.mk
+
+# include the profiles
+-include profiles/*.mk
+
 $(eval $(call BuildKernel))

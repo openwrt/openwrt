@@ -14,5 +14,8 @@ FEATURES:=squashfs jffs2 ext2
 include $(INCLUDE_DIR)/kernel-build.mk
 DEFAULT_PACKAGES += kmod-natsemi
 
+# include the profiles
+-include profiles/*.mk
+
 $(eval $(call BuildKernel))
 

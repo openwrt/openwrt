@@ -12,4 +12,8 @@ BOARDNAME:=Mikrotik RouterBoard 532
 FEATURES:=jffs2
 
 include $(INCLUDE_DIR)/kernel-build.mk
+
+# include the profiles
+-include profiles/*.mk
+
 $(eval $(call BuildKernel))
