@@ -1,7 +1,6 @@
-Index: linux-2.6.19/drivers/net/ixp4xx/Kconfig
-===================================================================
---- linux-2.6.19.orig/drivers/net/ixp4xx/Kconfig
-+++ linux-2.6.19/drivers/net/ixp4xx/Kconfig
+diff -Naupr a/drivers/net/ixp4xx/Kconfig b/drivers/net/ixp4xx/Kconfig
+--- a/drivers/net/ixp4xx/Kconfig	2007-01-12 21:54:40.000000000 -0700
++++ b/drivers/net/ixp4xx/Kconfig	2007-01-12 23:28:50.000000000 -0700
 @@ -11,6 +11,7 @@ config IXP4XX_NPE
  	tristate "IXP4xx NPE support"
  	depends on ARCH_IXP4XX
@@ -33,22 +32,19 @@ Index: linux-2.6.19/drivers/net/ixp4xx/Kconfig
  config IXP4XX_MAC
  	tristate "IXP4xx MAC support"
  	depends on IXP4XX_NPE
-Index: linux-2.6.19/drivers/net/ixp4xx/Makefile
-===================================================================
---- linux-2.6.19.orig/drivers/net/ixp4xx/Makefile
-+++ linux-2.6.19/drivers/net/ixp4xx/Makefile
-@@ -1,6 +1,7 @@
+diff -Naupr a/drivers/net/ixp4xx/Makefile b/drivers/net/ixp4xx/Makefile
+--- a/drivers/net/ixp4xx/Makefile	2007-01-12 21:54:40.000000000 -0700
++++ b/drivers/net/ixp4xx/Makefile	2007-01-12 23:28:50.000000000 -0700
+@@ -1,5 +1,6 @@
  obj-$(CONFIG_IXP4XX_QMGR) += ixp4xx_qmgr.o
  obj-$(CONFIG_IXP4XX_NPE) += ixp4xx_npe.o
- obj-$(CONFIG_IXP4XX_MAC) += ixp4xx_mac.o
 +obj-$(CONFIG_IXP4XX_NPE_FW_MTD) += npe_ucode.o
+ obj-$(CONFIG_IXP4XX_MAC) += ixp4xx_mac.o
+ obj-$(CONFIG_IXP4XX_CRYPTO) += ixp4xx_crypto.o
  
- ixp4xx_npe-objs := ucode_dl.o npe_mh.o
- ixp4xx_mac-objs := mac_driver.o qmgr_eth.o phy.o
-Index: linux-2.6.19/drivers/net/ixp4xx/npe_ucode.c
-===================================================================
---- /dev/null
-+++ linux-2.6.19/drivers/net/ixp4xx/npe_ucode.c
+diff -Naupr a/drivers/net/ixp4xx/npe_ucode.c b/drivers/net/ixp4xx/npe_ucode.c
+--- a/drivers/net/ixp4xx/npe_ucode.c	1969-12-31 17:00:00.000000000 -0700
++++ b/drivers/net/ixp4xx/npe_ucode.c	2007-01-12 23:28:50.000000000 -0700
 @@ -0,0 +1,185 @@
 +/*
 + * Provide an NPE platform device for microcode handling
@@ -235,10 +231,9 @@ Index: linux-2.6.19/drivers/net/ixp4xx/npe_ucode.c
 +
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Alessandro Zummo <a.zummo@towertech.it>");
-Index: linux-2.6.19/drivers/net/ixp4xx/ucode_dl.c
-===================================================================
---- linux-2.6.19.orig/drivers/net/ixp4xx/ucode_dl.c
-+++ linux-2.6.19/drivers/net/ixp4xx/ucode_dl.c
+diff -Naupr a/drivers/net/ixp4xx/ucode_dl.c b/drivers/net/ixp4xx/ucode_dl.c
+--- a/drivers/net/ixp4xx/ucode_dl.c	2007-01-12 21:54:40.000000000 -0700
++++ b/drivers/net/ixp4xx/ucode_dl.c	2007-01-12 23:28:50.000000000 -0700
 @@ -16,6 +16,7 @@
  #include <linux/firmware.h>
  #include <linux/dma-mapping.h>
@@ -247,9 +242,9 @@ Index: linux-2.6.19/drivers/net/ixp4xx/ucode_dl.c
  #include <asm/uaccess.h>
  #include <asm/io.h>
  
-@@ -30,6 +31,12 @@
- #define IMG_SIZE(image) (((image)->size * sizeof(u32)) + \
- 		sizeof(struct dl_image))
+@@ -26,6 +27,12 @@
+ #define DL_MAGIC 0xfeedf00d
+ #define DL_MAGIC_SWAP 0x0df0edfe
  
 +#define IMG_REV_MAJOR(id) (((id) >> 8) & 0x0f)
 +#define IMG_REV_MINOR(id) ((id) & 0x0f)
@@ -257,9 +252,9 @@ Index: linux-2.6.19/drivers/net/ixp4xx/ucode_dl.c
 +#define IMG_NPE(id) (((id) >> 24) & 0x0f)
 +#define IMG_IXP(id) (((id) >> 28) & 0x0f)
 +
- #define BT_INSTR 0
- #define BT_DATA 1
- 
+ #define EOF_BLOCK 0xf
+ #define IMG_SIZE(image) (((image)->size * sizeof(u32)) + \
+ 		sizeof(struct dl_image))
 @@ -38,21 +45,6 @@ enum blk_type {
  	data,
  };
@@ -282,8 +277,8 @@ Index: linux-2.6.19/drivers/net/ixp4xx/ucode_dl.c
  struct dl_codeblock {
  	u32 npe_addr;
  	u32 size;
-@@ -134,23 +126,41 @@ struct device *get_npe_by_id(int id)
- 			&id, match_by_npeid);
+@@ -127,20 +119,33 @@ download_block(struct npe_info *npe, str
+ 	return 0;
  }
  
 -static int store_npe_image(struct dl_image *image, struct device *dev)
@@ -292,21 +287,14 @@ Index: linux-2.6.19/drivers/net/ixp4xx/ucode_dl.c
  	struct dl_block *blk;
  	struct dl_codeblock *cb;
  	struct npe_info *npe;
--	int ret=0;
-+	int ret = 0;
+ 	int ret=0;
 +	u16 crc;
  
  	if (!dev) {
 -		dev = get_npe_by_id( (image->id >> 24) & 0xf);
--		put_device(dev);
 +		dev = get_npe_by_id(IMG_NPE(image->id));
-+		if (dev)
-+			put_device(dev);
-+			// XXX shouldn't this put_device be outside if(!dev) ?
-+		else
-+			printk(KERN_ERR "npe: cannot find npe for image %x\n", IMG_NPE(image->id));
+ 		return_npe_dev(dev);
  	}
-+
  	if (!dev)
  		return -ENODEV;
  
@@ -323,25 +311,9 @@ Index: linux-2.6.19/drivers/net/ixp4xx/ucode_dl.c
 +	crc = crc16(0, (u8 *) image, IMG_SIZE(image));
 +
  	npe = dev_get_drvdata(dev);
- 
--	if ( npe_status(npe) & IX_NPEDL_EXCTL_STATUS_RUN) {
-+	if (npe_status(npe) & IX_NPEDL_EXCTL_STATUS_RUN) {
+ 	if (npe->loaded && (npe->usage > 0)) {
  		printk(KERN_INFO "Cowardly refusing to reload an Image "
- 				"into the running %s\n", npe->plat->name);
- 		return 0; /* indicate success anyway... */
-@@ -173,9 +183,9 @@ static int store_npe_image(struct dl_ima
- 	*(u32*)npe->img_info = cpu_to_be32(image->id);
- 	npe_start(npe);
- 
--	printk(KERN_INFO "Image loaded to %s Func:%x, Rel: %x:%x, Status: %x\n",
-+	printk(KERN_INFO "npe: firmware loaded to %s, func: %02x, rev: %x.%x, status: %x, crc: %x\n",
- 			npe->plat->name, npe->img_info[1], npe->img_info[2],
--			npe->img_info[3], npe_status(npe));
-+			npe->img_info[3], npe_status(npe), crc);
- 	return 0;
- }
- 
-@@ -265,8 +275,7 @@ static ssize_t ucode_write(struct file *
+@@ -267,8 +272,7 @@ static ssize_t ucode_write(struct file *
  
  static void npe_firmware_probe(struct device *dev)
  {
@@ -351,27 +323,17 @@ Index: linux-2.6.19/drivers/net/ixp4xx/ucode_dl.c
  	const struct firmware *fw_entry;
  	struct npe_info *npe = dev_get_drvdata(dev);
  	struct dl_image *image;
-@@ -388,7 +397,7 @@ static int npe_probe(struct platform_dev
- 
- 	npe->plat = plat;
- 	disable_npe_irq(npe);
--	if (! (npe_status(npe) & IX_NPEDL_EXCTL_STATUS_RUN))
-+	if (!(npe_status(npe) & IX_NPEDL_EXCTL_STATUS_RUN))
- 		npe_firmware_probe(&pdev->dev);
- 
- 	return 0;
-@@ -464,3 +473,4 @@ MODULE_LICENSE("GPL");
- MODULE_AUTHOR("Christian Hohnstaedt <chohnstaedt@innominate.com>");
+@@ -477,3 +481,4 @@ MODULE_AUTHOR("Christian Hohnstaedt <cho
  
  EXPORT_SYMBOL(get_npe_by_id);
+ EXPORT_SYMBOL(return_npe_dev);
 +EXPORT_SYMBOL(store_npe_image);
-Index: linux-2.6.19/include/asm-arm/arch-ixp4xx/platform.h
-===================================================================
---- linux-2.6.19.orig/include/asm-arm/arch-ixp4xx/platform.h
-+++ linux-2.6.19/include/asm-arm/arch-ixp4xx/platform.h
-@@ -86,6 +86,20 @@ struct ixp4xx_i2c_pins {
- 	unsigned long scl_pin;
- };
+diff -Naupr a/include/asm-arm/arch-ixp4xx/platform.h b/include/asm-arm/arch-ixp4xx/platform.h
+--- a/include/asm-arm/arch-ixp4xx/platform.h	2007-01-12 21:54:40.000000000 -0700
++++ b/include/asm-arm/arch-ixp4xx/platform.h	2007-01-12 23:28:50.000000000 -0700
+@@ -89,6 +89,21 @@ struct ixp4xx_i2c_pins {
+ 
+ struct sys_timer;
  
 +struct dl_block {
 +	u32 type;
@@ -387,27 +349,28 @@ Index: linux-2.6.19/include/asm-arm/arch-ixp4xx/platform.h
 +		struct dl_block block[0];
 +	} u;
 +};
++
  struct npe_plat_data {
  	const char *name;
  	int data_size;
-@@ -103,6 +117,9 @@ struct mac_plat_info {
- 	unsigned char hwaddr[6]; /* Desired hardware address */
+@@ -108,6 +123,10 @@ struct mac_plat_info {
+ 
  };
  
 +struct npe_ucode_platform_data {
 +	unsigned char *mtd_partition;
 +};
- 
- struct sys_timer;
- 
-Index: linux-2.6.19/include/linux/ixp_npe.h
-===================================================================
---- linux-2.6.19.orig/include/linux/ixp_npe.h
-+++ linux-2.6.19/include/linux/ixp_npe.h
-@@ -71,6 +71,7 @@ static inline u32 npe_read_ecs_reg(struc
- }
++ 
+ /*
+  * Frequency of clock used for primary clocksource
+  */
+diff -Naupr a/include/linux/ixp_npe.h b/include/linux/ixp_npe.h
+--- a/include/linux/ixp_npe.h	2007-01-12 21:54:40.000000000 -0700
++++ b/include/linux/ixp_npe.h	2007-01-12 23:28:50.000000000 -0700
+@@ -99,6 +99,7 @@ extern void npe_reset(struct npe_info *n
  
  extern struct device *get_npe_by_id(int id);
+ extern void return_npe_dev(struct device *dev);
 +extern int store_npe_image(struct dl_image *image, struct device *dev);
  
  /* NPE Messages */
