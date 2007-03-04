@@ -662,7 +662,7 @@ diff -urN linux.old/drivers/block/rb500/ata.h linux.dev/drivers/block/rb500/ata.
 diff -urN linux.old/drivers/block/rb500/bdev.c linux.dev/drivers/block/rb500/bdev.c
 --- linux.old/drivers/block/rb500/bdev.c	1970-01-01 01:00:00.000000000 +0100
 +++ linux.dev/drivers/block/rb500/bdev.c	2006-10-26 00:11:14.000000000 +0200
-@@ -0,0 +1,340 @@
+@@ -0,0 +1,339 @@
 +/* CF-mips driver
 +   This is a block driver for the direct (mmaped) interface to the CF-slot,
 +   found in Routerboard.com's RB532 board
@@ -798,7 +798,6 @@ diff -urN linux.old/drivers/block/rb500/bdev.c linux.dev/drivers/block/rb500/bde
 +	cf_gendisk->queue=dev->queue;
 +	BUG_ON(cf_gendisk->minors != CF_MAX_PART);
 +	strcpy(cf_gendisk->disk_name,"cfa");
-+	strcpy(cf_gendisk->devfs_name,"cf/card0");
 +	cf_gendisk->fops = &cf_bdops;
 +	cf_gendisk->flags = 0 ; /* is not yet GENHD_FL_REMOVABLE */
 +	cf_gendisk->private_data=dev;
