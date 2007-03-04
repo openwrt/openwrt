@@ -72,6 +72,7 @@ static struct menu *current_menu, *current_entry;
 %token <id>T_SELECT
 %token <id>T_RANGE
 %token <id>T_ON
+%token <id>T_RESET
 %token <string> T_WORD
 %token <string> T_WORD_QUOTE
 %token T_UNEQUAL
@@ -118,7 +119,7 @@ stmt_list:
 ;
 
 option_name:
-	T_DEPENDS | T_PROMPT | T_TYPE | T_SELECT | T_OPTIONAL | T_RANGE | T_DEFAULT
+	T_DEPENDS | T_PROMPT | T_TYPE | T_SELECT | T_OPTIONAL | T_RANGE | T_DEFAULT | T_RESET
 ;
 
 common_stmt:
@@ -272,6 +273,11 @@ choice_option: T_OPTIONAL T_EOL
 {
 	current_entry->sym->flags |= SYMBOL_OPTIONAL;
 	printd(DEBUG_PARSE, "%s:%d:optional\n", zconf_curname(), zconf_lineno());
+};
+
+choice_option: T_RESET T_EOL
+{
+	current_entry->sym->flags |= SYMBOL_RESET;
 };
 
 choice_option: T_DEFAULT T_WORD if_expr T_EOL
