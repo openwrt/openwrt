@@ -17,4 +17,7 @@ ifeq ($(strip $(PKG_UNPACK)),)
   else
     # try to autodetect file type
   endif
+  ifneq ($(strip $(CRLF_WORKAROUND)),)
+    PKG_UNPACK += && find $(PKG_BUILD_DIR) -type f -print0 | xargs -0 perl -pi -e 's!\r$$$$!!g'
+  endif
 endif
