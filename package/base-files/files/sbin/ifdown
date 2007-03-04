@@ -21,7 +21,7 @@ config_get proto "$cfg" proto
 
 config_get iface "$cfg" device
 [ "$proto" = "static" ] && {
-	env -i ACTION="ifdown" INTERFACE="$config" DEVICE="$iface" PROTO=static /sbin/hotplug "iface" &
+	env -i ACTION="ifdown" INTERFACE="$config" DEVICE="$iface" PROTO=static /sbin/hotplug-call "iface" &
 }
 
 # call interface stop handler

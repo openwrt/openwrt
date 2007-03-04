@@ -20,8 +20,11 @@ start() {
 	
 	# manually trigger hotplug before loading modules
 	for iface in $(awk -F: '/:/ {print $1}' /proc/net/dev); do
-		/usr/bin/env -i ACTION=add INTERFACE="$iface" /sbin/hotplug net
+		/usr/bin/env -i ACTION=add INTERFACE="$iface" /sbin/hotplug-call net
 	done
-	
+
+	/sbin/hotplug2 --persistent &
+	echo /sbin/hotplug-call > /proc/sys/kernel/hotplug
+
 	load_modules /etc/modules.d/*
 }

@@ -65,7 +65,7 @@ eval ${FAILSAFE:+failsafe}
 
 lock -w /tmp/.failsafe
 set_state preinit
-echo /sbin/hotplug > /proc/sys/kernel/hotplug
+echo /sbin/hotplug-call > /proc/sys/kernel/hotplug
 
 ifconfig $ifname 0.0.0.0 down
 

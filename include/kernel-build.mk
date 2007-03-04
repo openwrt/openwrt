@@ -37,6 +37,9 @@ FEATURES:=$(sort $(FEATURES))
 
 # For target profile selection - the default set
 DEFAULT_PACKAGES:=base-files libgcc uclibc bridge busybox dnsmasq dropbear iptables mtd ppp ppp-mod-pppoe mtd kmod-ipt-nathelper
+ifneq ($(KERNEL),2.4)
+  DEFAULT_PACKAGES+=udevtrigger hotplug2
+endif
 
 ifeq ($(DUMP),1)
   all: dumpinfo

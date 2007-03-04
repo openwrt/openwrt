@@ -12,7 +12,7 @@ else
 	mknod /dev/console c 5 1
 	mkdir /dev/pts
 	mkdir /dev/shm
-	/sbin/mdev -s
+	/sbin/hotplug2 --no-persistent --coldplug
 fi
 
 mount none /dev/pts -t devpts

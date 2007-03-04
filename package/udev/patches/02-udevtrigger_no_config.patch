@@ -1,0 +1,10 @@
+--- udev.old/udevtrigger.c	2007-03-03 18:42:09.000000000 +0100
++++ udev.dev/udevtrigger.c	2007-03-04 21:15:18.459211632 +0100
+@@ -446,7 +446,6 @@
+ 	};
+ 
+ 	logging_init("udevtrigger");
+-	udev_config_init();
+ 	dbg("version %s", UDEV_VERSION);
+ 	sysfs_init();
+ 

@@ -1,8 +1,6 @@
 #!/bin/sh
 # Copyright (C) 2006 OpenWrt.org
 
-[ -x /sbin/mdev -a -n "$ACTION" -a -n "$DEVPATH" ] && /sbin/mdev "$@"
-
 # bypass the normal hotplug path for firmware loading
 # would otherwise cause problems with drivers like bcm43xx
 [ "$1" = "firmware" -a "$ACTION" = "add" ] && {

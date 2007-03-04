@@ -12,7 +12,7 @@ _C=0
 NO_EXPORT=1
 
 hotplug_dev() {
-	env -i ACTION=$1 INTERFACE=$2 /sbin/hotplug net
+	env -i ACTION=$1 INTERFACE=$2 /sbin/hotplug-call net
 }
 
 append() {
