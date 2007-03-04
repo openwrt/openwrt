@@ -203,7 +203,7 @@ sub gen_target_config() {
 choice
 	prompt "Target System"
 	default LINUX_2_4_BRCM
-	reset
+	reset if !DEVEL
 	
 EOF
 

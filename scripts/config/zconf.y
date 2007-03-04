@@ -275,9 +275,9 @@ choice_option: T_OPTIONAL T_EOL
 	printd(DEBUG_PARSE, "%s:%d:optional\n", zconf_curname(), zconf_lineno());
 };
 
-choice_option: T_RESET T_EOL
+choice_option: T_RESET if_expr T_EOL
 {
-	current_entry->sym->flags |= SYMBOL_RESET;
+	menu_add_prop(P_RESET, NULL, NULL, $2);
 };
 
 choice_option: T_DEFAULT T_WORD if_expr T_EOL
