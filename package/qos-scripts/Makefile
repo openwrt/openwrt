@@ -4,7 +4,7 @@
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
-# $Id: Makefile 4823 2006-09-23 13:45:49Z nico $
+# $Id$
 
 include $(TOPDIR)/rules.mk
 
