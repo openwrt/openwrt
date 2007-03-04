@@ -5,7 +5,7 @@
  	struct icmp *pkt;
  	int pingsock, c;
 -	char packet[DEFDATALEN + MAXIPLEN + MAXICMPLEN];
-+	char packet[datalen + MAXIPLEN + MAXICMPLEN];
++	char packet[datalen + ICMP_MINLEN + MAXIPLEN + MAXICMPLEN];
  
  	pingsock = create_icmp_socket();
  
@@ -18,17 +18,6 @@
  			   (struct sockaddr *) &pingaddr, sizeof(struct sockaddr_in));
  
  	if (c < 0) {
-@@ -257,8 +257,8 @@
- 
- 	gettimeofday(&tv, NULL);
- 
--	/* discard if too short */
--	if (sz < (datalen + ICMP_MINLEN))
-+	/* discard if too short / long */
-+	if (sz < (datalen + ICMP_MINLEN) || sz > (MAXICMPLEN))
- 		return;
- 
- 	/* check IP header */
 @@ -274,6 +274,10 @@
  		++nreceived;
  		tp = (struct timeval *) icmppkt->icmp_data;
