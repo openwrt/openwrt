@@ -12,7 +12,7 @@ BOARDNAME:=x86
 FEATURES:=squashfs jffs2 ext2
 
 include $(INCLUDE_DIR)/kernel-build.mk
-DEFAULT_PACKAGES += kmod-natsemi
+DEFAULT_PACKAGES += kmod-natsemi kmod-ne2k-pci
 
 # include the profiles
 -include profiles/*.mk
