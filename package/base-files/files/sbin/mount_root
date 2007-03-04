@@ -28,5 +28,3 @@ mount none /dev/pts -t devpts
 		}
 	} || mount -o remount,rw /dev/root /
 }
-
-grep sysfs /proc/filesystems >/dev/null && mount -t sysfs none /sys 2>&-
