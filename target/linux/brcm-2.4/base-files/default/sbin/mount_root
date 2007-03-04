@@ -9,18 +9,6 @@ is_dirty() {
 	return $(hexdump -v $mtdpart -s $OFFSET -n 1 -e '"%d"')
 }
 
-if grep devfs /proc/filesystems > /dev/null; then
-	mount none /dev -t devfs
-else
-	mount -t sysfs none /sys
-	mount -t tmpfs tmpfs /dev -o size=512K
-	mknod /dev/console c 5 1
-	mkdir /dev/shm
-	/sbin/mdev -s
-fi
-mkdir -p /dev/pts
-mount none /dev/pts -t devpts
-
 if [ "$1" != "failsafe" ]; then 
 	mtd unlock linux
 	mount | grep jffs2 >&-
@@ -39,5 +27,3 @@ if [ "$1" != "failsafe" ]; then
 		}
 	fi
 fi
-
-grep sysfs /proc/filesystems >/dev/null && mount -t sysfs none /sys 2>&-
