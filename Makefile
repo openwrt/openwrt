@@ -62,7 +62,7 @@ tmp/.$(1): $(FILE)
 $(FILE):
 )
 
-tmp/.$(1): $(STAMP_$(1))
+tmp/.$(1): $(STAMP_$(1)) $(4)
 	@echo -n Collecting $(3) info... 
 	@$(NO_TRACE_MAKE) -s -f include/scan.mk SCAN_TARGET="$(1)" SCAN_DIR="$(2)" SCAN_NAME="$(3)" SCAN_DEPS="$(4)"
 
