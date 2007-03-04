@@ -27,6 +27,27 @@ export PATH=/bin:/sbin:/usr/bin:/usr/sbin
 mount none /proc -t proc
 size=$(awk '/Mem:/ {l=5242880;print((s=$2/2)<l)?$2-l:s}' /proc/meminfo)
 mount none /tmp -t tmpfs -o size=$size
+if grep devfs /proc/filesystems > /dev/null; then
+	mount none /dev -t devfs
+	M0=/dev/pty/m0
+	M1=/dev/pty/m1
+else
+	mount -t sysfs none /sys
+	mount -t tmpfs tmpfs /dev -o size=512K
+	mknod /dev/console c 5 1
+	mkdir /dev/shm
+	/sbin/hotplug2 --no-persistent --coldplug
+	M0=/dev/ptmx
+	M1=/dev/ptmx
+fi
+mkdir -p /dev/pts
+mount none /dev/pts -t devpts
+
+# the shell really doesn't like having stdin/out closed
+# that's why we use /dev/pty/m0 and m1 as replacement
+# for /dev/console if there's no serial console available
+dd if=/dev/console of=/dev/null bs=1 count=0 >/dev/null 2>/dev/null || \
+	exec <$M0 >$M1 2>&0
 
 insmod diag
 set_state preinit
