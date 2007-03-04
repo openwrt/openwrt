@@ -96,10 +96,10 @@ diff -Nur linux-2.6.19.2/arch/arm/mach-ixp4xx/gateway7001-pci.c linux-2.6.19.2-o
 +
 +static int __init gateway7001_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
 +{
-+	if (slot == 0)
-+		return IRQ_IXP4XX_GPIO10;
-+	else if (slot == 1)
++	if (slot == 1)
 +		return IRQ_IXP4XX_GPIO11;
++	else if (slot == 2)
++		return IRQ_IXP4XX_GPIO10;
 +	else return -1;
 +}
 +
