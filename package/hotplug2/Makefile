@@ -24,7 +24,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/hotplug2
   SECTION:=utils
   CATEGORY:=Utilities
-  DEPENDS:=@LINUX_2_6
+  DEPENDS:=@LINUX_2_6 +udevtrigger
   TITLE:=Dynamic device management subsystem for embedded systems
   URL:=http://isteve.bofh.cz/~isteve/hotplug2/
 endef
