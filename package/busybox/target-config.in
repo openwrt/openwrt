@@ -2,10 +2,3 @@ config BUSYBOX_CONFIG_FEATURE_DEVFS
 	default y if LINUX_2_4
 	default n if LINUX_2_6
 
-config BUSYBOX_CONFIG_MDEV
-	default n if LINUX_2_4
-	default y if LINUX_2_6
-
-config BUSYBOX_CONFIG_FEATURE_MDEV_CONF
-	default n if LINUX_2_4
-	default y if LINUX_2_6

@@ -267,7 +267,7 @@ config BUSYBOX_CONFIG_LOSETUP
 
 config BUSYBOX_CONFIG_MDEV
 	bool "mdev"
-	default y
+	default n
 	help
 	  mdev is a mini-udev implementation: call it with -s to populate
 	  /dev from /sys, then "echo /sbin/mdev > /proc/sys/kernel/hotplug" to
@@ -276,7 +276,7 @@ config BUSYBOX_CONFIG_MDEV
 
 config BUSYBOX_CONFIG_FEATURE_MDEV_CONF
 	bool "Support /etc/mdev.conf"
-	default y
+	default n
 	depends on BUSYBOX_CONFIG_MDEV
 	help
 	  The mdev config file contains lines that look like:

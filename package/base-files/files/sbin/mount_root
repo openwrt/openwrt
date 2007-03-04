@@ -12,7 +12,7 @@ else
 	mount -t tmpfs tmpfs /dev -o size=512K
 	mknod /dev/console c 5 1
 	mkdir /dev/shm
-	/sbin/mdev -s
+	/sbin/hotplug2 --no-persistent --coldplug
 fi
 mkdir -p /dev/pts
 mount none /dev/pts -t devpts

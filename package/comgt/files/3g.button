@@ -13,6 +13,7 @@ button_action() {(
 )}
 
 [ "$ACTION" = "released" -a "$BUTTON" = "3g" ] && {
+	HOTPLUG="$(cat /proc/sys/kernel/hotplug)"
 	(echo /bin/true > /proc/sys/kernel/hotplug)
 
 	include /lib/network
@@ -31,5 +32,5 @@ button_action() {(
 	}
 	config_load network
 
-	(echo /sbin/hotplug > /proc/sys/kernel/hotplug)
+	(echo $HOTPLUG > /proc/sys/kernel/hotplug)
 } &
