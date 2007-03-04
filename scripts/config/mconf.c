@@ -920,6 +920,9 @@ static void conf_choice(struct menu *menu)
 		case 0:
 			if (sscanf(input_buf, "%p", &child) != 1)
 				break;
+			if ((menu->sym->flags & SYMBOL_RESET) &&
+				sym_get_tristate_value(child->sym) != yes)
+				conf_reset();
 			sym_set_tristate_value(child->sym, yes);
 			return;
 		case 1:

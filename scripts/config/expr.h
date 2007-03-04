@@ -94,6 +94,7 @@ struct symbol {
 #define SYMBOL_AUTO		0x1000
 #define SYMBOL_CHECKED		0x2000
 #define SYMBOL_WARNED		0x8000
+#define SYMBOL_RESET		0x10000
 
 #define SYMBOL_MAXLENGTH	256
 #define SYMBOL_HASHSIZE		257
