@@ -9,7 +9,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=udev
-PKG_VERSION:=103
+PKG_VERSION:=106
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
@@ -19,7 +19,7 @@ PKG_SOURCE_URL:=ftp://ftp.kernel.org/pub/linux/utils/kernel/hotplug/ \
 	http://ftp.de.kernel.org/pub/linux/utils/kernel/hotplug/ \
 	ftp://ftp.fr.kernel.org/pub/linux/utils/kernel/hotplug/ \
 	http://ftp.fr.kernel.org/pub/linux/utils/kernel/hotplug/
-PKG_MD5SUM:=7360ce47b5ec3f9fa71f18071ecb8b97
+PKG_MD5SUM:=320ccd2d0f4540d10e021bafa14f8985
 PKG_CAT:=bzcat
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
@@ -37,6 +37,11 @@ define Package/udev
 	actually present devices. It creates or removes device node files in \\\
 	the /dev directory, or it renames network interfaces.
   URL:=http://www.kernel.org/pub/linux/utils/kernel/hotplug/udev.html
+endef
+
+define Package/udevtrigger
+  $(call Package/udev)
+  TITLE:=Small utility to request kernel devices events for coldplug
 endef
 
 define Build/Compile
@@ -63,4 +68,10 @@ define Package/udev/install
 	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/udevmonitor $(1)/usr/sbin/
 endef
 
+define Package/udevtrigger/install
+	$(INSTALL_DIR) $(1)/sbin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/sbin/udevtrigger $(1)/sbin/
+endef
+
 $(eval $(call BuildPackage,udev))
+$(eval $(call BuildPackage,udevtrigger))
