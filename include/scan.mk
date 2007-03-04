@@ -24,10 +24,18 @@ tmp/.$(SCAN_TARGET):
 	@($(call progress,Collecting $(SCAN_NAME) info: done))
 	@echo
 
+ifneq ($(SCAN_EXTRA),)
+SCAN_STAMP=tmp/info/.scan-$(SCAN_TARGET)-$(shell ls $(SCAN_EXTRA) 2>/dev/null | (md5sum || md5) 2>/dev/null | cut -d' ' -f1)
+$(SCAN_STAMP):
+	rm -f tmp/info/.scan-$(SCAN_TARGET)-*
+	mkdir -p $(shell dirname $@)
+	touch $@
+endif
+
 define scanfiles
 $(foreach FILE,$(SCAN),
   tmp/.$(SCAN_TARGET): tmp/info/.$(SCAN_TARGET)-$(FILE) FORCE
-  tmp/info/.$(SCAN_TARGET)-$(FILE): $(SCAN_DEPS) $(SCAN_DIR)/$(FILE)/Makefile
+  tmp/info/.$(SCAN_TARGET)-$(FILE): $(SCAN_DEPS) $(SCAN_DIR)/$(FILE)/Makefile $(SCAN_STAMP)
 	{ \
 		$$(call progress,Collecting $(SCAN_NAME) info: $(SCAN_DIR)/$(FILE)) \
 		echo Source-Makefile: $(SCAN_DIR)/$(FILE)/Makefile; \
