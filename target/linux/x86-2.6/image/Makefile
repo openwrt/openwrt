@@ -27,11 +27,11 @@ ifeq ($(CONFIG_X86_GRUB_IMAGES),y)
   endef
 
   define Image/cmdline/jffs2-64k
-    block2mtd.block2mtd=$(ROOTPART),65536,rootfs root=/dev/mtdblock0 rootfstype=jffs2
+    block2mtd.block2mtd=$(ROOTPART),65536,rootfs root=/dev/mtdblock0 rootfstype=jffs2 init=/etc/preinit
   endef
 
   define Image/cmdline/jffs2-128k
-    block2mtd.block2mtd=$(ROOTPART),131072,rootfs root=/dev/mtdblock0 rootfstype=jffs2
+    block2mtd.block2mtd=$(ROOTPART),131072,rootfs root=/dev/mtdblock0 rootfstype=jffs2 init=/etc/preinit
   endef
 
   define Image/cmdline/ext2
