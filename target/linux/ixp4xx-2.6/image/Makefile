@@ -37,17 +37,27 @@ define Image/Build
 	$(call Image/Build/$(1),$(1))
 endef
 
+define Image/Build/slug
+	BIN_DIR=$(BIN_DIR) $(TOPDIR)/scripts/slugimage.pl \
+		-L $(KDIR)/apex-nslu2-armeb.bin -m $(KDIR)/NPE-B \
+		-k $(BIN_DIR)/openwrt-nslu2-$(KERNEL)-zImage \
+		-r Flashdisk:$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).img \
+		-p -o $(BIN_DIR)/openwrt-nslu2-$(KERNEL)-$(1).bin
+endef
+
 define Image/Build/jffs2-64k
 	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).img bs=65536 conv=sync
 endef
 
 define Image/Build/jffs2-128k
 	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).img bs=131072 conv=sync
-	BIN_DIR=$(BIN_DIR) $(TOPDIR)/scripts/slugimage.pl \
-		-L $(KDIR)/apex-nslu2-armeb.bin -m $(KDIR)/NPE-B \
-		-k $(BIN_DIR)/openwrt-nslu2-$(KERNEL)-zImage \
-		-r Flashdisk:$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).img \
-		-p -o $(BIN_DIR)/openwrt-nslu2-$(KERNEL)-$(1).bin
+	$(call Image/Build/slug,$(1))
+endef
+
+define Image/Build/squashfs
+    $(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
+	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).img bs=131072 conv=sync
+	$(call Image/Build/slug,$(1))
 endef
 
 $(eval $(call BuildImage))
