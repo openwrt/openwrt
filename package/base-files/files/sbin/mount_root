@@ -11,6 +11,7 @@ else
 	mount -t sysfs none /sys
 	mount -t tmpfs tmpfs /dev -o size=512K
 	mknod /dev/console c 5 1
+	exec >/dev/console </dev/console 2>&1
 	mkdir /dev/shm
 	/sbin/hotplug2 --no-persistent --coldplug
 fi
