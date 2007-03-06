@@ -2,13 +2,22 @@
 # Copyright (C) 2006 OpenWrt.org
 
 START=10
+
+system_config() {
+	local cfg="$1"
+	local hostname
+	
+	config_get hostname "$cfg" hostname
+	echo "${hostname:-OpenWrt}" > /proc/sys/kernel/hostname
+}
+
 start() {
 	[ -f /proc/mounts ] || /sbin/mount_root
 	[ -f /proc/jffs2_bbc ] && echo "S" > /proc/jffs2_bbc
 	vconfig set_name_type DEV_PLUS_VID_NO_PAD
 	
-	HOSTNAME=${wan_hostname%%.*}
-	echo ${HOSTNAME:=OpenWrt}>/proc/sys/kernel/hostname
+	config_load system
+	config_foreach system_config system
 	
 	mkdir -p /var/run
 	mkdir -p /var/log
