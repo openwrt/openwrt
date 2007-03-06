@@ -1,0 +1,166 @@
+diff -urN linux-2.6.19.2.old/arch/arm/mach-at91rm9200/Makefile linux-2.6.19.2/arch/arm/mach-at91rm9200/Makefile
+--- linux-2.6.19.2.old/arch/arm/mach-at91rm9200/Makefile	2007-03-06 11:29:37.000000000 +0100
++++ linux-2.6.19.2/arch/arm/mach-at91rm9200/Makefile	2007-03-06 20:52:28.000000000 +0100
+@@ -40,6 +40,7 @@
+ led-$(CONFIG_MACH_CSB637)	+= leds.o
+ led-$(CONFIG_MACH_KB9200)	+= leds.o
+ led-$(CONFIG_MACH_KAFA)		+= leds.o
++led-$(CONFIG_MACH_VLINK)  += vlink_leds.o
+ obj-$(CONFIG_LEDS) += $(led-y)
+ 
+ # VGA support
+diff -urN linux-2.6.19.2.old/arch/arm/mach-at91rm9200/vlink_leds.c linux-2.6.19.2/arch/arm/mach-at91rm9200/vlink_leds.c
+--- linux-2.6.19.2.old/arch/arm/mach-at91rm9200/vlink_leds.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.2/arch/arm/mach-at91rm9200/vlink_leds.c	2007-03-06 21:11:16.000000000 +0100
+@@ -0,0 +1,151 @@
++/*
++ * LED driver for Atmel AT91-based boards.
++ *
++ *  Copyright (C) SAN People (Pty) Ltd
++ *
++ * Modified for FDL Versalink board (c) Guthrie Consulting
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version
++ * 2 of the License, or (at your option) any later version.
++*/
++
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/init.h>
++
++#include <asm/mach-types.h>
++#include <asm/leds.h>
++#include <asm/arch/board.h>
++#include <asm/arch/gpio.h>
++
++#define LED_CPU 0
++#define LED_TIMER 1
++#define LED_COM1 2
++#define LED_COM2 3
++
++static inline void at91_led_on(unsigned int led)
++{
++	at91_set_gpio_value(led, 0);
++}
++
++static inline void at91_led_off(unsigned int led)
++{
++	at91_set_gpio_value(led, 1);
++}
++
++static inline void at91_led_toggle(unsigned int led)
++{
++	unsigned long is_off = at91_get_gpio_value(AT91_PIN_PC7);
++	if (is_off) {
++		at91_set_gpio_value(AT91_PIN_PC7, 0);
++		at91_set_gpio_value(AT91_PIN_PC8, 1);
++	} else {
++		at91_set_gpio_value(AT91_PIN_PC7, 1);
++		at91_set_gpio_value(AT91_PIN_PC8, 0);
++	}
++}
++
++
++/*
++ * Handle LED events.
++ */
++static void at91_leds_event(led_event_t evt)
++{
++	unsigned long flags;
++
++	local_irq_save(flags);
++
++	switch(evt) {
++	case led_start:		/* System startup */
++//		at91_led_on(at91_leds_cpu);
++		at91_led_toggle(at91_leds_timer);
++/*
++		at91_set_gpio_value(AT91_PIN_PC7, 0);
++		at91_set_gpio_value(AT91_PIN_PC8, 1);
++*/
++		break;
++
++	case led_stop:		/* System stop / suspend */
++		at91_led_toggle(at91_leds_timer);
++/*
++		at91_set_gpio_value(AT91_PIN_PC7, 1);
++		at91_set_gpio_value(AT91_PIN_PC8, 0);
++*/
++		break;
++
++#ifdef CONFIG_LEDS_TIMER
++	case led_timer:		/* Every 50 timer ticks */
++		at91_led_toggle(at91_leds_timer);
++		break;
++#endif
++
++#ifdef CONFIG_LEDS_CPU
++	case led_idle_start:	/* Entering idle state */
++		at91_led_toggle(at91_leds_timer);
++/*
++		at91_set_gpio_value(AT91_PIN_PC7, 1);
++		at91_set_gpio_value(AT91_PIN_PC8, 0);
++*/
++		break;
++
++	case led_idle_end:	/* Exit idle state */
++		at91_led_toggle(at91_leds_timer);
++/*
++		at91_set_gpio_value(AT91_PIN_PC7, 0);
++		at91_set_gpio_value(AT91_PIN_PC8, 1);
++*/
++		break;
++#endif
++
++	default:
++		break;
++	}
++
++	local_irq_restore(flags);
++}
++
++
++static int __init leds_init(void)
++{
++/*	if (!at91_leds_timer || !at91_leds_cpu)
++		return -ENODEV;
++*/
++//	printk("leds_init()\n");
++
++	/* Enable PIO to access the LEDs */
++	at91_set_gpio_output(AT91_PIN_PC7, 1);
++	at91_set_gpio_output(AT91_PIN_PC8, 1);
++	at91_set_gpio_output(AT91_PIN_PC14, 1);
++	at91_set_gpio_output(AT91_PIN_PC15, 1);
++	at91_set_gpio_output(AT91_PIN_PB14, 1);
++	at91_set_gpio_output(AT91_PIN_PB15, 1);
++	at91_set_gpio_output(AT91_PIN_PB16, 1);
++	at91_set_gpio_output(AT91_PIN_PB17, 1);
++
++	at91_set_gpio_output(AT91_PIN_PB9, 1);
++	at91_set_gpio_output(AT91_PIN_PB10, 1);
++	at91_set_gpio_output(AT91_PIN_PB11, 1);
++	at91_set_gpio_output(AT91_PIN_PB12, 1);
++
++	at91_set_gpio_input(AT91_PIN_PB8, 1);
++	at91_set_gpio_input(AT91_PIN_PB22, 1);
++	at91_set_gpio_input(AT91_PIN_PA19, 1);
++	at91_set_gpio_input(AT91_PIN_PA24, 1);
++	at91_set_gpio_output(AT91_PIN_PA29, 1);
++	at91_set_gpio_output(AT91_PIN_PB2, 1);
++	at91_set_gpio_output(AT91_PIN_PB3, 1);
++	at91_set_gpio_output(AT91_PIN_PB4, 1);
++
++	at91_set_gpio_input(AT91_PIN_PB27, 1);
++	at91_set_gpio_input(AT91_PIN_PB28, 1);
++	at91_set_gpio_input(AT91_PIN_PB29, 1);
++
++	leds_event = at91_leds_event;
++
++	leds_event(led_start);
++	return 0;
++}
++
++__initcall(leds_init);
