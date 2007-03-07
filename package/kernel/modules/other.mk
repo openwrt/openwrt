@@ -73,6 +73,16 @@ define KernelPackage/ide-aec62xx
 endef
 $(eval $(call KernelPackage,ide-aec62xx))
 
+define KernelPackage/scsi-core
+  TITLE:=Kernel support for SCSI
+  SUBMENU:=$(EMENU)
+  KCONFIG:=$(CONFIG_BLK_DEV_SD)
+  FILES:= \
+    $(MODULES_DIR)/kernel/drivers/scsi/scsi_mod.$(LINUX_KMOD_SUFFIX) \
+    $(MODULES_DIR)/kernel/drivers/scsi/sd_mod.$(LINUX_KMOD_SUFFIX)
+endef
+$(eval $(call KernelPackage,scsi-core))
+
 define KernelPackage/lp
   TITLE:=Parallel port and line printer support
   KCONFIG:=$(CONFIG_PARPORT)

@@ -233,10 +233,9 @@ define KernelPackage/usb-storage
   DESCRIPTION:=Kernel support for USB Mass Storage devices
   KCONFIG:=$(CONFIG_USB_STORAGE)
   FILES:= \
-	$(MODULES_DIR)/kernel/drivers/scsi/scsi_mod.$(LINUX_KMOD_SUFFIX) \
-	$(MODULES_DIR)/kernel/drivers/scsi/sd_mod.$(LINUX_KMOD_SUFFIX) \
 	$(MODULES_DIR)/kernel/drivers/usb/storage/usb-storage.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,60,scsi_mod sd_mod usb-storage)
+  DEPENDS:=+kmod-scsi-core
 endef
 $(eval $(call KernelPackage,usb-storage))
 
