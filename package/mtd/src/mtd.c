@@ -197,13 +197,18 @@ mtd_open(const char *mtd, int flags)
 	FILE *fp;
 	char dev[PATH_MAX];
 	int i;
+	int ret;
 
 	if ((fp = fopen("/proc/mtd", "r"))) {
 		while (fgets(dev, sizeof(dev), fp)) {
 			if (sscanf(dev, "mtd%d:", &i) && strstr(dev, mtd)) {
 				snprintf(dev, sizeof(dev), "/dev/mtd/%d", i);
+				if ((ret=open(dev, flags))<0) {
+					snprintf(dev, sizeof(dev), "/dev/mtd%d", i);
+					ret=open(dev, flags);
+				}
 				fclose(fp);
-				return open(dev, flags);
+				return ret;
 			}
 		}
 		fclose(fp);
