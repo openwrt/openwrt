@@ -13,7 +13,7 @@ start() {
 			# WGT634u
 			echo boardtype=wgt634u
 		else
-			strings /dev/mtdblock/3
+			strings "$(find_mtd_part nvram)"
 		fi
 	) | awk '
 	function p(cfgname, name) {
