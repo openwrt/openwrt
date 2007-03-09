@@ -33,8 +33,6 @@
 #include <sys/ioctl.h>
 #include "mtd.h"
 
-#define FILENAME "/dev/mtdblock/1"
-
 struct trx_header {
 	unsigned magic;		/* "HDR0" */
 	unsigned len;		/* Length of file including header */
@@ -78,18 +76,25 @@ int main(int argc, char **argv)
 	struct trx_header *ptr;
 	char *buf;
 	
-	if (((fd = open(FILENAME, O_RDWR))	< 0)
-			|| ((len = lseek(fd, 0, SEEK_END)) < 0)
+	if ((fd = open("/dev/mtdblock/1", O_RDWR)) < 0) {
+		fd = open("/dev/mtdblock1", O_RDWR);
+	}
+
+	if (((len = lseek(fd, 0, SEEK_END)) < 0)
 			|| ((ptr = (struct trx_header *) mmap(0, len, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0)) == (void *) (-1))
 			|| (ptr->magic != 0x30524448)) {
 		printf("Error reading trx info\n");
 		exit(-1);
 	}
-	close (fd);
 
-	if (((fd = open("/dev/mtd/1", O_RDWR))	< 0)
-			|| (ioctl(fd, MEMGETINFO, &mtdInfo))) {
-		fprintf(stderr, "Could not get MTD device info from %s\n", FILENAME);
+	close(fd);
+
+	if ((fd = open("/dev/mtd/1", O_RDWR)) < 0) {
+		fd = open("/dev/mtd1", O_RDWR);
+	}
+
+	if (ioctl(fd, MEMGETINFO, &mtdInfo)) {
+		fprintf(stderr, "Could not get MTD device info from mtd\n");
 		close(fd);
 		exit(1);
 	}
