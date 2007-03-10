@@ -216,6 +216,21 @@ define KernelPackage/bluetooth/2.6
 endef
 $(eval $(call KernelPackage,bluetooth))
 
+define KernelPackage/mmc
+  TITLE:=MMC/SD Card Support
+  DESCRIPTION:=Kernel support for MMC/SD cards
+  SUBMENU:=$(EMENU)
+ endef
+
+define KernelPackage/mmc/2.6
+	KCONFIG:=$(CONFIG_MMC)
+	FILES:= \
+	$(MODULES_DIR)/kernel/drivers/mmc/mmc_core.$(LINUX_KMOD_SUFFIX) \
+	$(MODULES_DIR)/kernel/drivers/mmc/mmc_block.$(LINUX_KMOD_SUFFIX) \
+	$(MODULES_DIR)/kernel/drivers/mmc/at91_mci.$(LINUX_KMOD_SUFFIX) \
+	AUTOLOAD:=$(call AutoLoad,90,mmc_core mmc_block at91_mci)
+endef
+$(eval $(call KernelPackage,mmc))
 
 define KernelPackage/softdog
   TITLE:=Software watchdog driver
