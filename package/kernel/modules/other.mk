@@ -218,6 +218,7 @@ $(eval $(call KernelPackage,bluetooth))
 
 define KernelPackage/mmc
   TITLE:=MMC/SD Card Support
+	DEPENDS:=@LINUX_2_6_AT91
   DESCRIPTION:=Kernel support for MMC/SD cards
   SUBMENU:=$(EMENU)
  endef
