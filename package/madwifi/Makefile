@@ -36,6 +36,9 @@ endif
 ifeq ($(ARCH),armeb)
   HAL_TARGET:=xscale-be-elf
 endif
+ifeq ($(ARCH),arm)
+  HAL_TARGET:=xscale-le-elf
+endif
 ifeq ($(ARCH),powerpc)
   HAL_TARGET:=powerpc-be-elf
 endif
