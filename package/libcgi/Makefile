@@ -22,6 +22,7 @@ PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 include $(INCLUDE_DIR)/package.mk
 
 define Build/InstallDev
+	mkdir -p $(STAGING_DIR)/usr/include $(STAGING_DIR)/usr/lib
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		prefix="$(STAGING_DIR)/usr" \
 		install
