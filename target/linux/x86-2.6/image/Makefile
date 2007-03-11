@@ -35,7 +35,7 @@ ifeq ($(CONFIG_X86_GRUB_IMAGES),y)
   endef
 
   define Image/cmdline/ext2
-    root=$(ROOTPART) rootfstype=ext2
+    root=$(ROOTPART) rootfstype=ext2 init=/etc/preinit
   endef
   
   define Image/Build/grub
