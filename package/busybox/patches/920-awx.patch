@@ -1,0 +1,662 @@
+diff -purN bb.old/editors/awk.c bb.dev/editors/awk.c
+--- bb.old/editors/awk.c	2007-03-06 19:38:07.278092000 +0100
++++ bb.dev/editors/awk.c	2007-03-11 05:14:11.776304544 +0100
+@@ -30,6 +30,11 @@
+ /* these flags are static, don't change them when value is changed */
+ #define	VF_DONTTOUCH (VF_ARRAY | VF_SPECIAL | VF_WALK | VF_CHILD | VF_DIRTY)
+ 
++#ifdef CONFIG_AWX
++#define fputs(s, stream) fputs_hook(s, stream)
++static inline int fputs_hook (__const char *__restrict __s, FILE *__restrict __stream);
++#endif
++
+ /* Variable */
+ typedef struct var_s {
+ 	unsigned short type;		/* flags */
+@@ -50,10 +55,15 @@ typedef struct chain_s {
+ 	char *programname;
+ } chain;
+ 
++typedef var *(*awk_cfunc)(var *res, var *args, int nargs);
+ /* Function */
+ typedef struct func_s {
+ 	unsigned short nargs;
+-	struct chain_s body;
++	enum { AWKFUNC, CFUNC } type;
++	union {
++		awk_cfunc cfunc;
++		struct chain_s body;
++	} x;
+ } func;
+ 
+ /* I/O stream */
+@@ -1312,7 +1322,8 @@ static void parse_program(char *p)
+ 			next_token(TC_FUNCTION);
+ 			pos++;
+ 			f = newfunc(t.string);
+-			f->body.first = NULL;
++			f->type = AWKFUNC;
++			f->x.body.first = NULL;
+ 			f->nargs = 0;
+ 			while (next_token(TC_VARIABLE | TC_SEQTERM) & TC_VARIABLE) {
+ 				v = findvar(ahash, t.string);
+@@ -1321,7 +1332,7 @@ static void parse_program(char *p)
+ 				if (next_token(TC_COMMA | TC_SEQTERM) & TC_SEQTERM)
+ 					break;
+ 			}
+-			seq = &(f->body);
++			seq = &(f->x.body);
+ 			chain_group();
+ 			clear_array(ahash);
+ 
+@@ -2260,7 +2271,8 @@ static var *evaluate(node *op, var *res)
+ 			break;
+ 
+ 		case XC( OC_FUNC ):
+-			if (! op->r.f->body.first)
++			if ((op->r.f->type == AWKFUNC) &&
++				!op->r.f->x.body.first)
+ 				runtime_error(EMSG_UNDEF_FUNC);
+ 
+ 			X.v = R.v = nvalloc(op->r.f->nargs+1);
+@@ -2277,7 +2289,11 @@ static var *evaluate(node *op, var *res)
+ 			fnargs = X.v;
+ 
+ 			L.s = programname;
+-			res = evaluate(op->r.f->body.first, res);
++			if (op->r.f->type == AWKFUNC)
++				res = evaluate(op->r.f->x.body.first, res);
++			else if (op->r.f->type == CFUNC)
++				res = op->r.f->x.cfunc(res, fnargs, op->r.f->nargs);
++
+ 			programname = L.s;
+ 
+ 			nvfree(fnargs);
+@@ -2637,6 +2653,11 @@ static rstream *next_input_file(void)
+ 	return &rsm;
+ }
+ 
++#ifdef CONFIG_AWX
++static int is_awx = 0;
++#include "awx.c"
++#endif
++
+ int awk_main(int argc, char **argv)
+ {
+ 	int i, j, flen;
+@@ -2693,6 +2714,10 @@ int awk_main(int argc, char **argv)
+ 		free(s);
+ 	}
+ 
++#ifdef CONFIG_AWX
++	do_awx(argc, argv);
++#endif
++
+ 	programname = NULL;
+ 	while((c = getopt(argc, argv, "F:v:f:W:")) != EOF) {
+ 		switch (c) {
+diff -purN bb.old/editors/awx.c bb.dev/editors/awx.c
+--- bb.old/editors/awx.c	1970-01-01 01:00:00.000000000 +0100
++++ bb.dev/editors/awx.c	2007-03-11 06:25:48.552095336 +0100
+@@ -0,0 +1,521 @@
++/*
++ * awk web extension
++ *
++ * Copyright (C) 2007 by Felix Fietkau <nbd@openwrt.org>
++ *
++ * Licensed under the GPL v2 or later, see the file LICENSE in this tarball.
++ */
++
++#include <cgi.h>
++#include <glob.h>
++
++#define LINE_BUF 2048
++#define HASH_MAX	1536
++#define TR_START	"@TR<<"
++#define TR_END		">>"
++#define MAX_TR	32
++#define SSI_START "<%"
++#define SSI_END "%>"
++
++#undef fputs
++
++static xhash *lstr = NULL;
++static int lang_inuse = 0;
++
++/* look up a translation symbol from the hash */
++static inline char *translate_lookup(char *str)
++{
++	char *name, *def, *p;
++	hash_item *hi;
++	var *v;
++
++	def = name = str;
++	if (((p = strchr(str, '|')) != NULL)
++		|| ((p = strchr(str, '#')) != NULL)) {
++		def = p + 1;
++		*p = 0;
++	}
++	
++	hi = hash_search(lstr, name);
++	if (!hi)
++		return def;
++	
++	v = &hi->data.v;
++
++	return getvar_s(v);
++}
++
++/* look for translation markers in the line and return the translated string */
++static char *translate_line(char *line)
++{
++	char *tok[MAX_TR * 3];
++	char *l, *p, *p2, *res;
++	int len = 0, _pos = 0, i;
++
++	l = line;
++	while (l != NULL) {
++		if ((p = strstr(l, TR_START)) == NULL) {
++			len += strlen((tok[_pos++] = l));
++			break;
++		}
++
++		p2 = strstr(p, TR_END);
++		if (p2 == NULL)
++			break;
++
++		*p = 0;
++		*p2 = 0;
++		len += strlen((tok[_pos++] = l));
++		len += strlen((tok[_pos++] = translate_lookup(p + strlen(TR_START))));
++
++		l = p2;
++		l += strlen(TR_END);
++	}
++	len++;
++
++	p = xmalloc(len + 1);
++	*p = 0;
++	res = p;
++	for (i = 0; i < _pos; i++) {
++		strcat(p, tok[i]);
++		p += strlen(tok[i]);
++	}
++
++	return res;
++}
++
++/* hook for intercepting awk's use of puts. used for running all printed strings
++ * through the translation system */
++static inline int fputs_hook (__const char *__restrict __s, FILE *__restrict __stream)
++{
++	if (lang_inuse && (__stream == stdout)) {
++		int ret;
++		char *str;
++	
++		str = translate_line((char *) __s);
++		ret = fputs(str, __stream);
++		free(str);
++
++		return ret;
++	}
++
++	return fputs(__s, __stream);
++}
++
++static var *init_lang(var *res, var *args, int nargs)
++{
++	if (!lstr)
++		lstr = hash_init();
++
++	lang_inuse = 1;
++	return res;
++}
++
++
++/* load and parse language file */
++static void load_lang_file(char *file)
++{
++	FILE *f;
++	char *b, *name, *value;
++	char buf1[LINE_BUF];
++
++	if ((f = fopen(file, "r")) == NULL)
++		return;
++
++	while (!feof(f) && (fgets(buf1, LINE_BUF - 1, f) != NULL)) {
++		b = buf1;
++		if (*b == '#')
++			continue; /* skip comments */
++
++		while (isspace(*b))
++			b++; /* skip leading spaces */
++		if (!*b)
++			continue;
++		
++		name = b;
++		if ((b = strstr(name, "=>")) == NULL)
++			continue; /* separator not found */
++
++		value = b + 2;
++		if (!*value)
++			continue;
++		
++		*b = 0;
++		for (b--; isspace(*b); b--)
++			*b = 0; /* remove trailing spaces */
++		
++		while (isspace(*value))
++			value++; /* skip leading spaces */
++
++		for (b = value + strlen(value) - 1; isspace(*b); b--)
++			*b = 0; /* remove trailing spaces */
++		
++		if (!*value)
++			continue;
++
++		setvar_s(findvar(lstr,name), value);
++	}
++
++	fclose(f);
++}
++
++static var *load_lang(var *res, var *args, int nargs)
++{
++	const char *langfmt = "/usr/lib/webif/lang/%s.txt";
++	char lbuf[LINE_BUF];
++	char *lang;
++
++	if (!lang_inuse)
++		init_lang(res, args, nargs);
++	
++	lang = getvar_s(args);
++	if (!lang || !strcmp(lang, ""))
++		return res;
++
++	sprintf(lbuf, langfmt, lang);
++	load_lang_file(lbuf);
++
++	return res;	
++}
++		
++/* read the contents of an entire file */
++static char *get_file(char *fname)
++{
++	FILE *F;
++	char *s = NULL;
++	int i, j, flen;
++
++	F = fopen(fname, "r");
++	if (!F) {
++		return NULL;
++	}
++
++	if (fseek(F, 0, SEEK_END) == 0) {
++		flen = ftell(F);
++		s = (char *)xmalloc(flen+4);
++		fseek(F, 0, SEEK_SET);
++		i = 1 + fread(s+1, 1, flen, F);
++	} else {
++		for (i=j=1; j>0; i+=j) {
++			s = (char *)xrealloc(s, i+4096);
++			j = fread(s+i, 1, 4094, F);
++		}
++	}
++
++	s[i] = '\0';
++	fclose(F);
++	return s;
++}
++
++
++/* parse_include():
++ * 
++ * taken from parse_program from awk.c
++ * END{} is not parsed here, and BEGIN{} is executed immediately
++ */
++static void parse_include(char *p)
++{
++	uint32_t tclass;
++	chain initseq;
++	func *f;
++	var *v, tv;
++	int has_init = 0;
++
++	pos = p;
++	t.lineno = 1;
++	memset(&initseq, 0, sizeof(initseq));
++	while ((tclass = next_token(TC_EOF | TC_OPSEQ |
++				TC_OPTERM | TC_BEGIN | TC_FUNCDECL)) != TC_EOF) {
++		if (tclass & TC_OPTERM)
++			continue;
++
++		seq = &initseq;
++		if (tclass & TC_BEGIN) {
++			has_init = 1;
++			chain_group();
++		} else if (tclass & TC_FUNCDECL) {
++			next_token(TC_FUNCTION);
++			pos++;
++			f = newfunc(t.string);
++			f->type = AWKFUNC;
++			f->x.body.first = NULL;
++			f->nargs = 0;
++			while (next_token(TC_VARIABLE | TC_SEQTERM) & TC_VARIABLE) {
++				v = findvar(ahash, t.string);
++				v->x.aidx = (f->nargs)++;
++
++				if (next_token(TC_COMMA | TC_SEQTERM) & TC_SEQTERM)
++					break;
++			}
++			seq = &(f->x.body);
++			chain_group();
++			clear_array(ahash);
++		}
++	}
++	if (has_init)
++		evaluate(initseq.first, &tv);
++}
++
++/* include an awk file and run its BEGIN{} section */
++static var *include(var *res, var *args, int nargs)
++{
++	static xhash *includes = NULL;
++	char *s;
++	var *v;
++
++	s = getvar_s(args);
++	if (!s)
++		return res;
++
++	if (!includes)
++		includes = hash_init();
++	
++	/* find out if the file has been included already */
++	v = findvar(includes, s);
++	if (istrue(v))
++		return res;
++	setvar_s(v, "1");
++
++	/* read include file */
++	s = get_file(s);
++	if (!s) {
++		fprintf(stderr, "Could not open file.\n");
++		return res;
++	}
++	parse_include(s+1);
++	free(s);
++
++	return res;
++}
++
++
++/* parse and evaluate an awk expression and return the result as string */
++static char *render_lookup(char *fname, int lnr, char *str)
++{
++	chain body;
++	var tv;
++
++	memset(&body, 0, sizeof(body));
++	zero_out_var(&tv);
++	pos = str;
++	seq = &body;
++	
++	/* end of expression, assume that there's going to be a free byte
++	 * at the end of the string that can be used for the ')' */
++	strcat(str + strlen(str), ")");
++	return getvar_s(evaluate(parse_expr(TC_SEQTERM), &tv));
++}
++
++static inline void print_translate(char *s)
++{
++	char *str = s;
++	if (lang_inuse)
++		str = translate_line(s);
++	fputs(str, stdout);
++	fflush(stdout);
++	if (lang_inuse)
++		free(str);
++}
++
++/* process awk calls in a template line and print the output to stdout */
++static void render_line(char *fname, int lnr, char *line)
++{
++	char *tok[MAX_TR * 3];
++	char *l, *p, *p2, *res;
++	int len = 0, _pos = 0, i;
++
++	l = line;
++	while (l != NULL) {
++		if ((p = strstr(l, SSI_START)) == NULL) {
++			len += strlen((tok[_pos++] = l));
++			break;
++		}
++
++		p2 = strstr(p, SSI_END);
++		if (p2 == NULL) {
++			fprintf(stderr, "Parse error in '%s', line '%d', unmatched %s\n", fname, lnr, SSI_END);
++			break;
++		}
++
++		*p = 0;
++		*p2 = 0;
++		
++		len += strlen((tok[_pos++] = l));
++		len += strlen((tok[_pos++] = render_lookup(fname, lnr, p + strlen(SSI_START))));
++
++		l = p2;
++		l += strlen(SSI_END);
++	}
++	len++;
++
++	p = xmalloc(len + 1);
++	*p = 0;
++	res = p;
++	for (i = 0; i < _pos; i++) {
++		strcat(p, tok[i]);
++		p += strlen(tok[i]);
++	}
++	print_translate(res);
++	free(res);
++}
++
++/* awk method render(), which opens a template file and processes all awk ssi calls */
++static var *render(var *res, var *args, int nargs)
++{
++	char *s;
++	int lnr = 0;
++	FILE *f;
++	char *buf1;
++			
++	buf1 = xmalloc(LINE_BUF);
++	s = getvar_s(args);
++	if (!s)
++		goto done;
++
++	f = fopen(s, "r");
++	if (!f)
++		goto done;
++
++	while (!feof(f) && (fgets(buf1, LINE_BUF - 1, f) != NULL)) {
++		render_line(s, ++lnr, buf1);
++	}
++	
++done:
++	free(buf1);
++	return res;
++}
++
++/* Call render, but only if this function hasn't been called already */
++static int layout_rendered = 0;
++static var *render_layout(var *res, var *args, int nargs)
++{
++	if (layout_rendered)
++		return res;
++	layout_rendered = 1;
++	return render(res, args, nargs);
++}
++
++/* registers a global c function for the awk interpreter */
++static void register_cfunc(char *name, awk_cfunc cfunc, int nargs)
++{
++	func *f;
++
++	f = newfunc(name);
++	f->type = CFUNC;
++	f->x.cfunc = cfunc;
++	f->nargs = nargs;
++}
++
++/* function call for accessing cgi form variables */
++static var *getvar(var *res, var *args, int nargs)
++{
++	char *s;
++
++	s = getvar_s(args);
++	if (s)
++		setvar_s(res, cgi_param(s) ?: "");
++
++	return res;
++}
++
++/* call an awk function without arguments by string reference */
++static var *call(var *res, var *args, int nargs)
++{
++	char *s = getvar_s(args);
++	func *f;
++
++	if (!s)
++		goto done;
++	
++	f = newfunc(s);
++	if (f && f->type == AWKFUNC && f->x.body.first)
++		return evaluate(f->x.body.first, res);
++
++done:
++	return res;
++}
++
++
++/* main awx processing function. called from awk_main() */
++static int do_awx(int argc, char **argv)
++{
++	int ret = -1;
++	var tv;
++	char *s = NULL;
++	var *layout;
++	var *action;
++	char *tmp;
++	int i;
++	
++	zero_out_var(&tv);
++
++	/* register awk C callbacks */
++	register_cfunc("getvar", getvar, 1);
++	register_cfunc("render", render, 1);
++	register_cfunc("render_layout", render_layout, 1);
++	register_cfunc("call", call, 1);
++	register_cfunc("include", include, 1);
++	register_cfunc("init_lang", init_lang, 1);
++	register_cfunc("load_lang", load_lang, 1);
++
++	if (!is_awx)
++		return 0;
++
++	/* fill in ARGV array */
++	programname = argv[1];
++	setvar_i(V[ARGC], argc + 1);
++	setari_u(V[ARGV], 0, "awx");
++	i = 0;
++	while (*argv)
++		setari_u(V[ARGV], ++i, *argv++);
++
++	cgi_init(); 
++	if (argc < 2) {
++		fprintf(stderr, "Invalid argument.\n");
++		goto done;
++	}
++	
++	/* read the main controller source */
++	s = get_file(programname);
++	if (!s) {
++		fprintf(stderr, "Could not open file\n");
++		goto done;
++	}
++	parse_program(s+1);
++	free(s);
++
++	/* set some defaults for ACTION and LAYOUT, which will have special meaning */
++	cgi_process_form();
++
++	action = newvar("ACTION");
++	setvar_s(action, cgi_param("action") ?: "default");
++	layout = newvar("LAYOUT");
++	setvar_s(layout, "views/layout.ahtml");
++
++	/* run the BEGIN {} block */
++	evaluate(beginseq.first, &tv);
++
++	/* call the action (precedence: begin block override > cgi parameter > "default") */
++	tmp = xmalloc(strlen(getvar_s(action)) + 7);
++	sprintf(tmp, "handle_%s", getvar_s(action));
++	setvar_s(action, tmp);
++	call(&tv, action, 1);
++	free(tmp);
++
++	/* render the selected layout, will do nothing if render_layout has been called from awk */
++	render_layout(&tv, layout, 1);
++
++	ret = 0;
++done:
++	cgi_end();
++	
++	exit(0);
++}
++
++/* entry point for awx applet */
++int awx_main(int argc, char **argv)
++{
++	is_awx = 1;
++	return awk_main(argc, argv);
++}
++
+diff -purN bb.old/editors/Config.in bb.dev/editors/Config.in
+--- bb.old/editors/Config.in	2007-01-24 22:34:50.000000000 +0100
++++ bb.dev/editors/Config.in	2007-03-11 06:19:51.469380160 +0100
+@@ -12,6 +12,13 @@ config AWK
+ 	  Awk is used as a pattern scanning and processing language.  This is
+ 	  the BusyBox implementation of that programming language.
+ 
++config AWX
++	bool "Enable awx (awk web extension)"
++	default n
++	depends on AWK
++	help
++	  awx - awk web extension
++
+ config FEATURE_AWK_MATH
+ 	bool "Enable math functions (requires libm)"
+ 	default y
+diff -purN bb.old/include/applets.h bb.dev/include/applets.h
+--- bb.old/include/applets.h	2007-03-06 19:38:07.355081000 +0100
++++ bb.dev/include/applets.h	2007-03-07 02:12:24.280681880 +0100
+@@ -60,6 +60,7 @@ USE_ARP(APPLET(arp, _BB_DIR_SBIN, _BB_SU
+ USE_ARPING(APPLET(arping, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
+ USE_ASH(APPLET_NOUSAGE(ash, ash, _BB_DIR_BIN, _BB_SUID_NEVER))
+ USE_AWK(APPLET(awk, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
++USE_AWX(APPLET_NOUSAGE(awx, awx, _BB_DIR_USR_BIN, _BB_SUID_NEVER)) 
+ USE_BASENAME(APPLET(basename, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
+ USE_BBCONFIG(APPLET(bbconfig, _BB_DIR_BIN, _BB_SUID_NEVER))
+ //USE_BBSH(APPLET(bbsh, _BB_DIR_BIN, _BB_SUID_NEVER))
+diff -purN bb.old/Makefile bb.dev/Makefile
+--- bb.old/Makefile	2007-03-06 19:38:07.358080000 +0100
++++ bb.dev/Makefile	2007-03-07 02:28:22.844957960 +0100
+@@ -565,7 +565,7 @@ quiet_cmd_busybox__ ?= LINK    $@
+       cmd_busybox__ ?= $(srctree)/scripts/trylink $(CC) $(LDFLAGS) \
+       -o $@ \
+       -Wl,--warn-common -Wl,--sort-common -Wl,--gc-sections \
+-      -Wl,--start-group $(busybox-all) -Wl,--end-group
++      -Wl,--start-group $(busybox-all) $(EXTRA_LIBS) -Wl,--end-group
+ 
+ # Generate System.map
+ quiet_cmd_sysmap = SYSMAP

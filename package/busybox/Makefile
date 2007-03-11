@@ -19,6 +19,7 @@ PKG_MD5SUM:=5728403bce309cdabcffa414e2e64052
 PKG_CAT:=bzcat
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_BUILDDEP:=libcgi
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -61,9 +62,10 @@ define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CC="$(TARGET_CC)" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
-		EXTRA_CFLAGS="$(TARGET_CFLAGS)" \
+		EXTRA_CFLAGS="$(TARGET_CFLAGS) -I$(STAGING_DIR)/usr/include" \
 		ARCH="$(ARCH)" \
 		IPKG_ARCH="$(ARCH)" \
+		EXTRA_LIBS="$(STAGING_DIR)/usr/lib/libcgi.a" \
 		all
 endef
 
@@ -71,10 +73,11 @@ define Package/busybox/install
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CC="$(TARGET_CC)" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
-		EXTRA_CFLAGS="$(TARGET_CFLAGS)" \
+		EXTRA_CFLAGS="$(TARGET_CFLAGS) -I$(STAGING_DIR)/usr/include" \
 		ARCH="$(ARCH)" \
 		IPKG_ARCH="$(ARCH)" \
 		CONFIG_PREFIX="$(1)" \
+		EXTRA_LIBS="$(STAGING_DIR)/usr/lib/libcgi.a" \
 		install
 	$(INSTALL_DIR) $(1)/etc/init.d
 	for tmp in $(init-y); do \
