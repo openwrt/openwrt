@@ -127,7 +127,7 @@ config BUSYBOX_CONFIG_FEATURE_HTTPD_CGI
 
 config BUSYBOX_CONFIG_FEATURE_HTTPD_CONFIG_WITH_SCRIPT_INTERPR
 	bool "Enable support for running scripts through an interpreter"
-	default n
+	default y
 	depends on BUSYBOX_CONFIG_FEATURE_HTTPD_CGI
 	help
 	  This option enables support for running scripts through an
