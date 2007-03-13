@@ -228,7 +228,7 @@ define KernelPackage/mmc/2.6
 	FILES:= \
 	$(MODULES_DIR)/kernel/drivers/mmc/mmc_core.$(LINUX_KMOD_SUFFIX) \
 	$(MODULES_DIR)/kernel/drivers/mmc/mmc_block.$(LINUX_KMOD_SUFFIX) \
-	$(MODULES_DIR)/kernel/drivers/mmc/at91_mci.$(LINUX_KMOD_SUFFIX) \
+	$(MODULES_DIR)/kernel/drivers/mmc/at91_mci.$(LINUX_KMOD_SUFFIX)
 	AUTOLOAD:=$(call AutoLoad,90,mmc_core mmc_block at91_mci)
 endef
 $(eval $(call KernelPackage,mmc))
