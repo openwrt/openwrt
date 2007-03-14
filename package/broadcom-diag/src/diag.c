@@ -539,8 +539,11 @@ static struct platform_t __init *platform_detect(void)
 	boardnum = getvar("boardnum");
 	boardtype = getvar("boardtype");
 
-	if (strncmp(getvar("model_no"), "WL700",5) == 0) {
-		return &platforms[WL700GE]; }
+	if (strcmp(getvar("nvram_type"), "cfe") == 0)
+		return &platforms[WGT634U];
+	
+	if (strncmp(getvar("model_no"), "WL700",5) == 0)
+		return &platforms[WL700GE];
 
 	if (strncmp(getvar("pmon_ver"), "CFE", 3) == 0) {
 		/* CFE based - newer hardware */

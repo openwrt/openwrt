@@ -1,5 +1,5 @@
-#ifndef __DIAG_GPIO_H
-#define __DIAG_GPIO_H
+#ifndef __SWITCH_GPIO_H
+#define __SWITCH_GPIO_H
 #include <linux/interrupt.h>
 
 #ifndef BCMDRIVER
@@ -53,24 +53,6 @@ static inline u32 gpio_intpolarity(u32 mask, u32 value)
 	gpio_op(polarity, mask, value);
 }
 
-static void gpio_set_irqenable(int enabled, irqreturn_t (*handler)(int, void *, struct pt_regs *))
-{
-	int irq;
-
-	if (ssb.chipco.dev)
-		irq = ssb_mips_irq(ssb.chipco.dev) + 2;
-	else if (ssb.extif.dev)
-		irq = ssb_mips_irq(ssb.extif.dev) + 2;
-	else return;
-	
-	if (enabled)
-		request_irq(irq, handler, SA_SHIRQ | SA_SAMPLE_RANDOM, "gpio", handler);
-	else
-		free_irq(irq, handler);
-
-	gpio_intmask(1, (enabled ? 1 : 0));
-}
-
 #else
 
 #include <typedefs.h>
@@ -100,52 +82,5 @@ extern spinlock_t sbh_lock;
 #define gpio_intmask(mask, value) 	sb_gpiointmask(sbh, mask, value, GPIO_DRV_PRIORITY)
 #define gpio_intpolarity(mask, value) 	sb_gpiointpolarity(sbh, mask, value, GPIO_DRV_PRIORITY)
 
-static void gpio_set_irqenable(int enabled, irqreturn_t (*handler)(int, void *, struct pt_regs *))
-{
-	unsigned int coreidx;
-	unsigned long flags;
-	chipcregs_t *cc;
-	int irq;
-
-	spin_lock_irqsave(sbh_lock, flags);
-	coreidx = sb_coreidx(sbh);
-
-	irq = sb_irq(sbh) + 2;
-	if (enabled)
-		request_irq(irq, handler, SA_SHIRQ | SA_SAMPLE_RANDOM, "gpio", handler);
-	else
-		free_irq(irq, handler);
-
-	if ((cc = sb_setcore(sbh, SB_CC, 0))) {
-		int intmask;
-
-		intmask = readl(&cc->intmask);
-		if (enabled)
-			intmask |= CI_GPIO;
-		else
-			intmask &= ~CI_GPIO;
-		writel(intmask, &cc->intmask);
-	}
-	sb_setcoreidx(sbh, coreidx);
-	spin_unlock_irqrestore(sbh_lock, flags);
-}
-
 #endif /* BCMDRIVER */
-
-#define EXTIF_ADDR 0x1f000000
-#define EXTIF_UART (EXTIF_ADDR + 0x00800000)
-
-#define GPIO_TYPE_NORMAL	(0x0 << 24)
-#define GPIO_TYPE_EXTIF 	(0x1 << 24)
-#define GPIO_TYPE_MASK  	(0xf << 24)
-
-static inline void gpio_set_extif(int gpio, int value)
-{
-	volatile u8 *addr = (volatile u8 *) KSEG1ADDR(EXTIF_UART) + (gpio & ~GPIO_TYPE_MASK);
-	if (value)
-		*addr = 0xFF;
-	else
-		*addr;
-}
-
-#endif /* __DIAG_GPIO_H */
+#endif /* __SWITCH_GPIO_H */

@@ -4,7 +4,7 @@
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
-# $Id:$
+# $Id$
 
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
@@ -18,7 +18,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/switch
   SUBMENU:=Other modules
-  DEPENDS:=@LINUX_2_6_BRCM||LINUX_2_4_BRCM
+  DEPENDS:=@LINUX_2_6_BRCM||LINUX_2_4_BRCM||LINUX_2_6_BRCM47XX
   TITLE:=Switch drivers
   DESCRIPTION:=\
 	This package contains switch drivers for ADM6996L and BCM53XX RoboSwitch.
@@ -35,12 +35,21 @@ define Build/Prepare
 	$(CP) ./src/* $(PKG_BUILD_DIR)/
 endef
 
+ifeq ($(BOARD),brcm)
+BUILDFLAGS := -DBROADCOM -DBCMDRIVER
+else
+ifeq ($(BOARD),brcm47xx)
+BUILDFLAGS := -DBROADCOM
+endif
+endif
+
+
 define Build/Compile
 	$(MAKE) -C "$(LINUX_DIR)" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
 		ARCH="$(LINUX_KARCH)" \
 		SUBDIRS="$(PKG_BUILD_DIR)" \
-		EXTRA_CFLAGS="-DBCMGPIO2" \
+		EXTRA_CFLAGS="$(BUILDFLAGS)" \
 		modules
 endef
 	
