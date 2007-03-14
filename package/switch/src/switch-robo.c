@@ -221,10 +221,6 @@ static int robo_vlan5350(void)
 
 static int robo_probe(char *devname)
 {
-	struct ethtool_drvinfo info;
-/*
-	int i;
-*/
 	__u32 phyid;
 
 	printk("Probing device %s: ", devname);
@@ -235,12 +231,6 @@ static int robo_probe(char *devname)
 		return 1;
 	}
 
-	info.cmd = ETHTOOL_GDRVINFO;
-	if (do_ioctl(SIOCETHTOOL, (void *) &info) < 0) {
-		printk("SIOCETHTOOL: not supported\n");
-		return 1;
-	}
-	
 	/* try access using MII ioctls - get phy address */
 	if (do_ioctl(SIOCGMIIPHY, NULL) < 0) {
 		use_et = 1;
