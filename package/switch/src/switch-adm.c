@@ -75,7 +75,7 @@ MODULE_PARM(force, "i");
 
 #define atoi(str) simple_strtoul(((str != NULL) ? str : ""), NULL, 0)
 
-#if defined(BCMGPIO2) || defined(BCMGPIO)
+#ifdef BROADCOM
 extern char *nvram_get(char *name);
 
 /* Return gpio pin number assigned to the named pin */
@@ -86,7 +86,7 @@ extern char *nvram_get(char *name);
 *
 * 'def_pin' is returned if there is no such variable found.
 */
-static unsigned int getgpiopin(char *pin_name, unsigned int def_pin)
+static unsigned int get_gpiopin(char *pin_name, unsigned int def_pin)
 {
 	char name[] = "gpioXXXX";
 	char *val;
@@ -496,25 +496,25 @@ static int detect_adm(void)
 {
 	int ret = 0;
 
-#if defined(BCMGPIO2) || defined(BCMGPIO)
+#ifdef BROADCOM
 	int boardflags = atoi(nvram_get("boardflags"));
         int boardnum = atoi(nvram_get("boardnum"));
 
         if (boardnum == 44) {   /* Trendware TEW-411BRP+ */
                 ret = 1;
 
-                eecs = getgpiopin("adm_eecs", 2);
-                eesk = getgpiopin("adm_eesk", 3);
-                eedi = getgpiopin("adm_eedi", 4);
-                eerc = getgpiopin("adm_rc", 5);
+                eecs = get_gpiopin("adm_eecs", 2);
+                eesk = get_gpiopin("adm_eesk", 3);
+                eedi = get_gpiopin("adm_eedi", 4);
+                eerc = get_gpiopin("adm_rc", 5);
 
 	} else if ((boardflags & 0x80) || force) {
 		ret = 1;
 
-		eecs = getgpiopin("adm_eecs", 2);
-		eesk = getgpiopin("adm_eesk", 3);
-		eedi = getgpiopin("adm_eedi", 4);
-		eerc = getgpiopin("adm_rc", 0);
+		eecs = get_gpiopin("adm_eecs", 2);
+		eesk = get_gpiopin("adm_eesk", 3);
+		eedi = get_gpiopin("adm_eedi", 4);
+		eerc = get_gpiopin("adm_rc", 0);
 
 	} else if ((strcmp(nvram_get("boardtype") ?: "", "bcm94710dev") == 0) &&
 			(strncmp(nvram_get("boardnum") ?: "", "42", 2) == 0)) {
