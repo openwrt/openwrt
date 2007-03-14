@@ -109,7 +109,7 @@ static void adm_write(int cs, char *buf, unsigned int bits)
 	int i, len = (bits + 7) / 8;
 	__u8 mask;
 
-	gpioout(eecs, (cs ? eecs : 0));
+	gpio_out(eecs, (cs ? eecs : 0));
 	udelay(EECK_EDGE_TIME);
 
 	/* Byte assemble from MSB to LSB */
@@ -117,25 +117,25 @@ static void adm_write(int cs, char *buf, unsigned int bits)
 		/* Bit bang from MSB to LSB */
 		for (mask = 0x80; mask && bits > 0; mask >>= 1, bits --) {
 			/* Clock low */
-			gpioout(eesk, 0);
+			gpio_out(eesk, 0);
 			udelay(EECK_EDGE_TIME);
 
 			/* Output on rising edge */
-			gpioout(eedi, ((mask & buf[i]) ? eedi : 0));
+			gpio_out(eedi, ((mask & buf[i]) ? eedi : 0));
 			udelay(EEDI_SETUP_TIME);
 
 			/* Clock high */
-			gpioout(eesk, eesk);
+			gpio_out(eesk, eesk);
 			udelay(EECK_EDGE_TIME);
 		}
 	}
 
 	/* Clock low */
-	gpioout(eesk, 0);
+	gpio_out(eesk, 0);
 	udelay(EECK_EDGE_TIME);
 
 	if (cs)
-		gpioout(eecs, 0);
+		gpio_out(eecs, 0);
 }
 
 
@@ -144,7 +144,7 @@ static void adm_read(int cs, char *buf, unsigned int bits)
 	int i, len = (bits + 7) / 8;
 	__u8 mask;
 
-	gpioout(eecs, (cs ? eecs : 0));
+	gpio_out(eecs, (cs ? eecs : 0));
 	udelay(EECK_EDGE_TIME);
 
 	/* Byte assemble from MSB to LSB */
@@ -156,16 +156,16 @@ static void adm_read(int cs, char *buf, unsigned int bits)
 			__u8 gp;
 
 			/* Clock low */
-			gpioout(eesk, 0);
+			gpio_out(eesk, 0);
 			udelay(EECK_EDGE_TIME);
 
 			/* Input on rising edge */
-			gp = gpioin();
+			gp = gpio_in();
 			if (gp & eedi)
 				byte |= mask;
 
 			/* Clock high */
-			gpioout(eesk, eesk);
+			gpio_out(eesk, eesk);
 			udelay(EECK_EDGE_TIME);
 		}
 
@@ -173,11 +173,11 @@ static void adm_read(int cs, char *buf, unsigned int bits)
 	}
 
 	/* Clock low */
-	gpioout(eesk, 0);
+	gpio_out(eesk, 0);
 	udelay(EECK_EDGE_TIME);
 
 	if (cs)
-		gpioout(eecs, 0);
+		gpio_out(eecs, 0);
 }
 
 
@@ -185,10 +185,10 @@ static void adm_read(int cs, char *buf, unsigned int bits)
 static void adm_enout(__u8 pins, __u8 val)
 {   
 	/* Prepare GPIO output value */
-	gpioout(pins, val);
+	gpio_out(pins, val);
 	
 	/* Enable GPIO outputs */
-	gpioouten(pins, pins);
+	gpio_outen(pins, pins);
 	udelay(EECK_EDGE_TIME);
 }
 
@@ -197,7 +197,7 @@ static void adm_enout(__u8 pins, __u8 val)
 static void adm_disout(__u8 pins)
 {   
 	/* Disable GPIO outputs */
-	gpioouten(pins, 0);
+	gpio_outen(pins, 0);
 	udelay(EECK_EDGE_TIME);
 }
 
@@ -208,11 +208,11 @@ static void adm_adclk(int clocks)
 	int i;
 	for (i = 0; i < clocks; i++) {
 		/* Clock high */
-		gpioout(eesk, eesk);
+		gpio_out(eesk, eesk);
 		udelay(EECK_EDGE_TIME);
 
 		/* Clock low */
-		gpioout(eesk, 0);
+		gpio_out(eesk, 0);
 		udelay(EECK_EDGE_TIME);
 	}
 }

@@ -21,6 +21,7 @@
  * $Id:$
  */
 
+#include <linux/irq.h>
 #define MODULE_NAME "diag"
 
 #define MAX_GPIO 8
