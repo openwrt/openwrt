@@ -97,8 +97,8 @@ diff -purN bb.old/editors/awk.c bb.dev/editors/awk.c
  		switch (c) {
 diff -purN bb.old/editors/awx.c bb.dev/editors/awx.c
 --- bb.old/editors/awx.c	1970-01-01 01:00:00.000000000 +0100
-+++ bb.dev/editors/awx.c	2007-03-11 19:03:27.417297384 +0100
-@@ -0,0 +1,553 @@
++++ bb.dev/editors/awx.c	2007-03-14 02:03:50.566202928 +0100
+@@ -0,0 +1,588 @@
 +/*
 + * awk web extension
 + *
@@ -318,22 +318,22 @@ diff -purN bb.old/editors/awx.c bb.dev/editors/awx.c
 +static void parse_include(char *p)
 +{
 +	uint32_t tclass;
-+	chain initseq;
++	chain *initseq = NULL;
++	chain tmp;
 +	func *f;
 +	var *v, tv;
-+	int has_init = 0;
 +
 +	pos = p;
 +	t.lineno = 1;
-+	memset(&initseq, 0, sizeof(initseq));
 +	while ((tclass = next_token(TC_EOF | TC_OPSEQ |
 +				TC_OPTERM | TC_BEGIN | TC_FUNCDECL)) != TC_EOF) {
 +		if (tclass & TC_OPTERM)
 +			continue;
 +
-+		seq = &initseq;
++		seq = &tmp;
 +		if (tclass & TC_BEGIN) {
-+			has_init = 1;
++			initseq = xzalloc(sizeof(chain));
++			seq = initseq;
 +			chain_group();
 +		} else if (tclass & TC_FUNCDECL) {
 +			next_token(TC_FUNCTION);
@@ -354,38 +354,44 @@ diff -purN bb.old/editors/awx.c bb.dev/editors/awx.c
 +			clear_array(ahash);
 +		}
 +	}
-+	if (has_init)
-+		evaluate(initseq.first, &tv);
++	if (initseq)
++		evaluate(initseq->first, &tv);
 +}
 +
++
 +/* include an awk file and run its BEGIN{} section */
-+static var *include(var *res, var *args, int nargs)
++static xhash *includes = NULL;
++static void include_file(char *filename)
 +{
-+	static xhash *includes = NULL;
 +	char *s;
 +	var *v;
-+
-+	s = getvar_s(args);
-+	if (!s)
-+		return res;
 +
 +	if (!includes)
 +		includes = hash_init();
 +	
 +	/* find out if the file has been included already */
-+	v = findvar(includes, s);
++	v = findvar(includes, filename);
 +	if (istrue(v))
-+		return res;
++		return;
 +	setvar_s(v, "1");
 +
 +	/* read include file */
-+	s = get_file(s);
++	s = get_file(filename);
 +	if (!s) {
 +		fprintf(stderr, "Could not open file.\n");
-+		return res;
++		return;
 +	}
 +	parse_include(s+1);
 +	free(s);
++}
++
++static var *include(var *res, var *args, int nargs)
++{
++	char *s;
++
++	s = getvar_s(args);
++	if (s && (strlen(s) > 0))
++		include_file(s);
 +
 +	return res;
 +}
@@ -462,31 +468,35 @@ diff -purN bb.old/editors/awx.c bb.dev/editors/awx.c
 +}
 +
 +/* awk method render(), which opens a template file and processes all awk ssi calls */
-+static var *render(var *res, var *args, int nargs)
++static void render_file(char *filename)
 +{
-+	char *s;
 +	int lnr = 0;
 +	FILE *f;
 +	char *buf1;
 +			
-+	buf1 = xmalloc(LINE_BUF);
-+	s = getvar_s(args);
-+	if (!s)
-+		goto done;
-+
-+	f = fopen(s, "r");
++	f = fopen(filename, "r");
 +	if (!f)
-+		goto done;
-+
-+	while (!feof(f) && (fgets(buf1, LINE_BUF - 1, f) != NULL)) {
-+		render_line(s, ++lnr, buf1);
-+	}
++		return;
 +	
-+done:
-+	free(buf1);
-+	return res;
++	buf1 = xmalloc(LINE_BUF);
++	while (!feof(f) && (fgets(buf1, LINE_BUF - 1, f) != NULL)) {
++		render_line(filename, ++lnr, buf1);
++	}
 +}
 +
++static var *render(var *res, var *args, int nargs)
++{
++	char *s;
++
++	s = getvar_s(args);
++	if (!s)
++		return res;
++
++	render_file(s);
++	
++	return res;
++}
++		
 +/* Call render, but only if this function hasn't been called already */
 +static int layout_rendered = 0;
 +static var *render_layout(var *res, var *args, int nargs)
@@ -566,49 +576,19 @@ diff -purN bb.old/editors/awx.c bb.dev/editors/awx.c
 +}
 +
 +
-+/* main awx processing function. called from awk_main() */
-+static int do_awx(int argc, char **argv)
++static int run_awxscript(char *name)
 +{
-+	int ret = -1;
-+	var tv;
-+	char *s = NULL;
-+	var *layout;
-+	var *action;
-+	char *tmp;
-+	int i;
-+	
++	var tv, *layout, *action;
++	char *tmp, *s = NULL;
++
 +	zero_out_var(&tv);
++	programname = name;
 +
-+	/* register awk C callbacks */
-+	register_cfunc("getvar", getvar, 1);
-+	register_cfunc("render", render, 1);
-+	register_cfunc("render_layout", render_layout, 1);
-+	register_cfunc("call", call, 1);
-+	register_cfunc("include", include, 1);
-+	register_cfunc("init_lang", init_lang, 1);
-+	register_cfunc("load_lang", load_lang, 1);
-+
-+	if (!is_awx)
-+		return 0;
-+
-+	/* fill in ARGV array */
-+	programname = argv[1];
-+	setvar_i(V[ARGC], argc + 1);
-+	setari_u(V[ARGV], 0, "awx");
-+	i = 0;
-+	while (*argv)
-+		setari_u(V[ARGV], ++i, *argv++);
-+
-+	if (argc < 2) {
-+		fprintf(stderr, "Invalid argument.\n");
-+		goto done;
-+	}
-+	
 +	/* read the main controller source */
 +	s = get_file(programname);
 +	if (!s) {
 +		fprintf(stderr, "Could not open file\n");
-+		goto done;
++		return 1;
 +	}
 +	parse_program(s+1);
 +	free(s);
@@ -640,9 +620,64 @@ diff -purN bb.old/editors/awx.c bb.dev/editors/awx.c
 +	/* render the selected layout, will do nothing if render_layout has been called from awk */
 +	render_layout(&tv, layout, 1);
 +
-+	ret = 0;
++	return 0;
++}
++
++
++/* main awx processing function. called from awk_main() */
++static int do_awx(int argc, char **argv)
++{
++	int ret = -1;
++	var tv;
++	int i, c;
++	char **args = argv;
++	
++	zero_out_var(&tv);
++
++	/* register awk C callbacks */
++	register_cfunc("getvar", getvar, 1);
++	register_cfunc("render", render, 1);
++	register_cfunc("render_layout", render_layout, 1);
++	register_cfunc("call", call, 1);
++	register_cfunc("include", include, 1);
++	register_cfunc("init_lang", init_lang, 1);
++	register_cfunc("load_lang", load_lang, 1);
++
++	if (!is_awx)
++		return 0;
++
++	/* fill in ARGV array */
++	setvar_i(V[ARGC], argc + 1);
++	setari_u(V[ARGV], 0, "awx");
++	i = 0;
++	while (*args)
++		setari_u(V[ARGV], ++i, *args++);
++	
++	while((c = getopt(argc, argv, "i:f:")) != EOF) {
++		switch(c) {
++			case 'i':
++				programname = optarg;
++				include_file(optarg);
++				break;
++			case 'f':
++				ret = 0;
++				programname = optarg;
++				render_file(optarg);
++				goto done;
++		}
++	}
++	argc -= optind;
++	argv += optind;
++
++	if (argc < 1) {
++		fprintf(stderr, "Invalid argument.\n");
++		goto done;
++	}
++
++	ret = run_awxscript(*argv);
++
 +done:
-+	exit(0);
++	exit(ret);
 +}
 +
 +/* entry point for awx applet */
