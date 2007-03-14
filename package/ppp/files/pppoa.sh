@@ -15,7 +15,7 @@ setup_interface_pppoa() {
 	done
 
 	config_get mtu "$cfg" mtu
-	mtu=${mtu:-1492}
+	mtu=${mtu:-1500}
 	start_pppd "$config" \
 		plugin pppoatm.so ${vpi:-8}.${vci:-35} \
 		mtu $mtu mru $mtu
