@@ -8,16 +8,16 @@ include $(TOPDIR)/rules.mk
 
 ARCH:=mipsel
 BOARD:=brcm47xx
-BOARDNAME:=Broadcom BCM947xx/953xx (new code)
-FEATURES:=squashfs broken
+BOARDNAME:=Broadcom BCM947xx/953xx
+FEATURES:=squashfs
 
 define Target/Description
 	Build firmware images for Broadcom based routers
-	(e.g. Linksys WRT54G(S), Asus WL-500g, Motorola WR850G)
+	(e.g. Netgear WGT634U)
 endef
 
 include $(INCLUDE_DIR)/kernel-build.mk
-# DEFAULT_PACKAGES += kmod-switch
+DEFAULT_PACKAGES += kmod-switch kmod-diag
 
 # include the profiles
 -include profiles/*.mk
