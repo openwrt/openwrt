@@ -417,6 +417,7 @@ static inline u32 ssb_chipco_gpio_polarity(struct ssb_chipcommon *cc,
 }
 /* TODO: GPIO reservation */
 
+extern int ssb_chipco_watchdog(struct ssb_chipcommon *cc, uint ticks);
 
 #ifdef CONFIG_SSB_SERIAL
 extern int ssb_chipco_serial_init(struct ssb_chipcommon *cc,
