@@ -401,3 +401,13 @@ int ssb_chipco_serial_init(struct ssb_chipcommon *cc,
 	return nr_ports;
 }
 #endif /* CONFIG_SSB_SERIAL */
+
+/* Set chip watchdog reset timer to fire in 'ticks' backplane cycles */
+int
+ssb_chipco_watchdog(struct ssb_chipcommon *cc, uint ticks)
+{
+	/* instant NMI */
+	chipco_write32(cc, SSB_CHIPCO_WATCHDOG, ticks);
+	return 0;
+}
+EXPORT_SYMBOL(ssb_chipco_watchdog);
