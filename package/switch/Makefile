@@ -36,7 +36,7 @@ define Build/Prepare
 endef
 
 ifeq ($(BOARD),brcm)
-BUILDFLAGS := -DBROADCOM -DBCMDRIVER
+BUILDFLAGS := -DBROADCOM -DBCMDRIVER -I$(LINUX_DIR)/arch/mips/bcm947xx/include
 else
 ifeq ($(BOARD),brcm47xx)
 BUILDFLAGS := -DBROADCOM
