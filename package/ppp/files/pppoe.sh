@@ -13,7 +13,7 @@ setup_interface_pppoe() {
 	done
 
 	config_get mtu "$cfg" mtu
-	mtu=${mtu:-1480}
+	mtu=${mtu:-1492}
 	start_pppd "$config" \
 		plugin rp-pppoe.so \
 		mtu $mtu mru $mtu \
