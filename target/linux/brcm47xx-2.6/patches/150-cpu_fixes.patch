@@ -1,0 +1,28 @@
+diff -urN linux-2.6.19.ref/arch/mips/kernel/genex.S linux-2.6.19/arch/mips/kernel/genex.S
+--- linux-2.6.19.ref/arch/mips/kernel/genex.S	2006-11-29 22:57:37.000000000 +0100
++++ linux-2.6.19/arch/mips/kernel/genex.S	2006-12-04 21:34:09.000000000 +0100
+@@ -73,6 +73,10 @@
+ 	.set	push
+ 	.set	mips3
+ 	.set	noat
++#ifdef CONFIG_BCM947XX
++	nop
++	nop
++#endif
+ 	mfc0	k1, CP0_CAUSE
+ 	li	k0, 31<<2
+ 	andi	k1, k1, 0x7c
+diff -urN linux-2.6.19.ref/include/asm-mips/stackframe.h linux-2.6.19/include/asm-mips/stackframe.h
+--- linux-2.6.19.ref/include/asm-mips/stackframe.h	2006-11-29 22:57:37.000000000 +0100
++++ linux-2.6.19/include/asm-mips/stackframe.h	2006-12-04 21:34:09.000000000 +0100
+@@ -334,6 +334,10 @@
+ 		.macro	RESTORE_SP_AND_RET
+ 		LONG_L	sp, PT_R29(sp)
+ 		.set	mips3
++#ifdef CONFIG_BCM947XX
++		nop
++		nop
++#endif
+ 		eret
+ 		.set	mips0
+ 		.endm
