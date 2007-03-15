@@ -127,6 +127,9 @@ enable_atheros() {
 				config_get key "$vif" key
 				iwconfig "$ifname" enc "${key:-1}"
 			;;
+			PSK|psk|PSK2|psk2)
+				config_get key "$vif" key
+			;;
 		esac
 
 		case "$mode" in
@@ -138,8 +141,37 @@ enable_atheros() {
 				config_get ssid "$vif" ssid
 			;;
 		esac
+
+		[ "$mode" = "sta" ] && {
+			config_get_bool bgscan "$vif" bgscan 1
+			iwpriv "$ifname" bgscan "$bgscan"
+		}
+
+		config_get_bool antdiv "$device" diversity 1
+		sysctl -w dev."$device".diversity="$antdiv" >&-
+
+		config_get antrx "$device" rxantenna
+		if [ -n "$antrx" ]; then
+			sysctl -w dev."$device".rxantenna="$antrx" >&-
+		fi
+
+		config_get anttx "$device" txantenna
+		if [ -n "$anttx" ]; then
+			sysctl -w dev."$device".txantenna="$anttx" >&-
+		fi
+
+		config_get distance "$device" distance
+		if [ -n "$distance" ]; then
+			athctrl -i "$device" -d "$distance" >&-
+		fi
+
+		config_get txpwr "$vif" txpower
+		if [ -n "$txpwr" ]; then
+			iwconfig "$ifname" txpower "${txpwr%%.*}"
+		fi
+
 		ifconfig "$ifname" up
-		
+
 		local net_cfg bridge
 		net_cfg="$(find_net_config "$vif")"
 		[ -z "$net_cfg" ] || {
@@ -159,7 +191,34 @@ enable_atheros() {
 				}
 			;;
 			wds|sta)
-				# FIXME: implement wpa_supplicant calls here
+				case "$enc" in 
+					PSK|psk|PSK2|psk2)
+						case "$enc" in
+							PSK|psk)
+								proto='proto=WPA';;
+							PSK2|psk2)
+								proto='proto=RSN';;
+						esac
+						cat > /var/run/wpa_supplicant-$ifname.conf <<EOF
+ctrl_interface=/var/run/wpa_supplicant
+network={
+	scan_ssid=1
+	ssid="$ssid"
+	key_mgmt=WPA-PSK
+	$proto
+	psk="$key"
+}
+EOF
+					;;
+					WPA|wpa|WPA2|wpa2)
+						#add wpa_supplicant calls here
+					;;
+				esac
+				net_cfg="$(find_net_config "$vif")"
+				[ -z "$net_cfg" ] || {
+					bridge="$(bridge_interface "$net_cfg")"
+				}
+				wpa_supplicant ${bridge:+ -b $bridge} -Bw -D wext -i "$ifname" -c /var/run/wpa_supplicant-$ifname.conf
 			;;
 		esac
 		first=0
@@ -177,16 +236,21 @@ detect_atheros() {
 config wifi-device  $dev
 	option type     atheros
 	option channel  5
+#       option diversity 1
+#       option txantenna 0
+#       option rxantenna 0
+#       option distance  2000
 
 config wifi-iface
-	option device   $dev
+	option device	$dev
 #	option network	lan
-	option mode     ap
-	option ssid     OpenWrt
-	option hidden   0
+	option mode	ap
+	option ssid	OpenWrt
+	option hidden	0
+#	option txpower	15
+#	option bgscan	enable
 	option encryption none
 
 EOF
 	done
 }
-
