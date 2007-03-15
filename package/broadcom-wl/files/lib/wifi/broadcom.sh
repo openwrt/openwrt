@@ -243,9 +243,12 @@ detect_broadcom() {
 config wifi-device  wl0
 	option type     broadcom
 	option channel  5
+# disable radio to prevent an open ap after reflashing:
+	option radio	0
 
 config wifi-iface
 	option device   wl0
+	option network	lan
 	option mode     ap
 	option ssid     OpenWrt
 	option hidden   0
