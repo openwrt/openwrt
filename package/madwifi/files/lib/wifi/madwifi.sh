@@ -240,10 +240,13 @@ config wifi-device  $dev
 #       option txantenna 0
 #       option rxantenna 0
 #       option distance  2000
+# disable radio to prevent an open ap after reflashing:
+	option radio	0
+
 
 config wifi-iface
 	option device	$dev
-#	option network	lan
+	option network	lan
 	option mode	ap
 	option ssid	OpenWrt
 	option hidden	0
