@@ -18,8 +18,6 @@ PKG_SOURCE_URL:=ftp://ftp.alsa-project.org/pub/driver/
 PKG_MD5SUM:=4cff99be4b225e96663fbd61cabe3182
 PKG_CAT:=bzcat
 
-PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-
 include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/alsa

@@ -17,8 +17,6 @@ PKG_SOURCE_URL:=http://hostap.epitest.fi/releases/
 PKG_MD5SUM:=d5113247dc6ee17106e6bc7cb89aa507
 PKG_CAT:=zcat
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-
 PKG_BUILD_DEPENDS:=madwifi
 
 include $(INCLUDE_DIR)/package.mk

@@ -21,9 +21,6 @@ PKG_SOURCE_URL:=http://www.netfilter.org/projects/iptables/files \
 PKG_MD5SUM:=00fb916fa8040ca992a5ace56d905ea5
 PKG_CAT:=bzcat
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
-
 include $(INCLUDE_DIR)/package.mk
 ifeq ($(DUMP),)
   -include $(LINUX_DIR)/.config

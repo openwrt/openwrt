@@ -20,9 +20,6 @@ PKG_SOURCE_URL:=http://www.openssl.org/source/ \
 PKG_MD5SUM:=8ed1853538e1d05a1f5ada61ebf8bffa
 PKG_CAT:=zcat
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
-
 include $(INCLUDE_DIR)/package.mk
 
 define Package/openssl/Default

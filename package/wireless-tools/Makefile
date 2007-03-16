@@ -19,7 +19,6 @@ PKG_CAT:=zcat
 TAR_OPTIONS += || true
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/wireless_tools.28
-PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
 
 include $(INCLUDE_DIR)/package.mk
 

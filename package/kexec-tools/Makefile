@@ -17,9 +17,6 @@ PKG_SOURCE_URL:=http://www.xmission.com/~ebiederm/files/kexec/
 PKG_MD5SUM:=b4f7ffcc294d41a6a4c40d6e44b7734d
 PKG_CAT:=zcat
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
-
 include $(INCLUDE_DIR)/package.mk
 
 define Package/kexec-tools

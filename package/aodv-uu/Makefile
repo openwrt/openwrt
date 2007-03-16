@@ -18,8 +18,6 @@ PKG_SOURCE_URL:=http://core.it.uu.se/core/files/
 PKG_MD5SUM:=05460543054449cb4b170252a7168c65
 PKG_CAT:=zcat
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-
 include $(INCLUDE_DIR)/package.mk
 
 define Package/aodv-uu/Default

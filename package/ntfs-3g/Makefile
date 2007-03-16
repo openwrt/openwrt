@@ -18,9 +18,6 @@ PKG_SOURCE_URL:=http://www.ntfs-3g.org/
 PKG_MD5SUM:=873a8de662849d129fc7c475ad3f5447
 PKG_CAT:=zcat
 
-PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
-
 PKG_BUILD_DEPENDS:=libfuse
 
 include $(INCLUDE_DIR)/package.mk

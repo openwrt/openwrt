@@ -17,8 +17,6 @@ PKG_SOURCE_URL:=http://developer.osdl.org/dev/iproute2/download/
 PKG_MD5SUM:=04f57a6d366d36426d276178b600f5c5
 PKG_CAT:=zcat
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/iproute2-$(PKG_VERSION)
-
 include $(INCLUDE_DIR)/package.mk
 
 define Package/iproute2/Default

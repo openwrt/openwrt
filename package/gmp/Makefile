@@ -17,9 +17,6 @@ PKG_SOURCE_URL:=@GNU/gmp
 PKG_MD5SUM:=0aa7d3b3f5b5ec5951e7dddd6f65e891
 PKG_CAT:=bzcat
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
-
 include $(INCLUDE_DIR)/package.mk
 
 define Package/libgmp

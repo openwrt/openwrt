@@ -7,6 +7,9 @@
 
 all: $(if $(DUMP),dumpinfo,compile)
 
+PKG_BUILD_DIR ?= $(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_INSTALL_DIR ?= $(PKG_BUILD_DIR)/ipkg-install
+
 include $(INCLUDE_DIR)/prereq.mk
 include $(INCLUDE_DIR)/host.mk
 include $(INCLUDE_DIR)/unpack.mk

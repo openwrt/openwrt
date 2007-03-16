@@ -17,9 +17,6 @@ PKG_SOURCE_URL:=@SF/e2fsprogs
 PKG_MD5SUM:=06f7806782e357797fad1d34b7ced0c6
 PKG_CAT:=zcat
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
-
 include $(INCLUDE_DIR)/package.mk
 
 define Package/e2fsprogs

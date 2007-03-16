@@ -18,9 +18,6 @@ PKG_SOURCE_URL:=http://hostap.epitest.fi/releases/
 PKG_MD5SUM:=c7534dc040ab90218257a78488ecd378
 PKG_CAT:=zcat
 
-PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
-
 include $(INCLUDE_DIR)/package.mk
 ifeq ($(DUMP),)
   -include $(LINUX_DIR)/.config

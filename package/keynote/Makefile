@@ -7,6 +7,7 @@
 # $Id$
 
 include $(TOPDIR)/rules.mk
+include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=keynote
 PKG_VERSION:=2.3
@@ -17,10 +18,7 @@ PKG_SOURCE_URL:=http://downloads.openwrt.org/sources/
 PKG_MD5SUM:=b569066ac2ba1356c2112b118a7d74d0
 PKG_CAT:=bzcat
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-
 include $(INCLUDE_DIR)/package.mk
-include $(INCLUDE_DIR)/kernel.mk
 
 define Package/keynote
   SECTION:=net

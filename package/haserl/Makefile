@@ -17,8 +17,6 @@ PKG_SOURCE_URL:=@SF/haserl
 PKG_MD5SUM:=bd9195d086566f56634c0bcbbbcbebea
 PKG_CAT:=zcat
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-
 include $(INCLUDE_DIR)/package.mk
 
 define Package/haserl

@@ -18,9 +18,6 @@ PKG_SOURCE_URL:=@SF/shfs
 PKG_MD5SUM:=016f49d71bc32eee2b5d11fc1600cfbe
 PKG_CAT:=zcat
 
-PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
-
 include $(INCLUDE_DIR)/package.mk
 
 define Package/shfs/Default

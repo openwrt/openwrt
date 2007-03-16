@@ -17,8 +17,6 @@ PKG_SOURCE_URL:=http://isteve.bofh.cz/~isteve/hotplug2
 PKG_MD5SUM:=ea2c01d027b4002e4e6b0ff266f51a51
 PKG_CAT:=zcat
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-
 include $(INCLUDE_DIR)/package.mk
 
 define Package/hotplug2
