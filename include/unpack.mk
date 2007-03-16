@@ -27,7 +27,6 @@ ifeq ($(strip $(PKG_UNPACK)),)
       UNPACK:=bzcat $(DL_DIR)/$(PKG_SOURCE) |
     endif
     ifeq ($(filter tgz tbz tbz2,$(EXT1)),$(EXT1))
-      $(error FOO: $(filter tgz tbz tbz2,$(EXT1)),$(EXT1))
       EXT:=tar
     endif
     UNPACK ?= cat $(DL_DIR)/$(PKG_SOURCE) |
