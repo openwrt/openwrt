@@ -28,6 +28,17 @@ uci_load() {
 	}
 }
 
+uci_apply_defaults() {(
+	cd /etc/uci-defaults || return 0
+	files="$(ls)"
+	[ -z "$files" ] && return 0
+	mkdir -p /tmp/.uci
+	for file in $files; do
+		( . "./$(basename $file)" ) && rm -f "$file"
+	done
+	uci commit
+)}
+
 uci_do_update() {
 	local FILENAME="$1"
 	local UPDATE="$2"

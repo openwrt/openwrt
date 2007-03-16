@@ -47,7 +47,7 @@ do_set() {
 	local VALUE
 
 	strtok "$1" PACKAGE . CONFIG = VALUE
-	[ $? -ne 3 ] && {
+	[ $? -ne 3 -a $? -ne 2 ] && {
 		uci_usage set
 		exit 1
 	}
@@ -86,6 +86,7 @@ do_remove() {
 do_commit() {
 	local PACKAGE="$1"
 	for package in ${PACKAGE:-$(cd /tmp/.uci; ls)}; do 
+		[ "${package##.*}" != "$package" ] && continue # ignore .lock files
 		uci_commit "$package"
 	done
 }

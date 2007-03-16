@@ -8,8 +8,11 @@
 
 include $(TOPDIR)/rules.mk
 include $(TOPDIR)/.config
-include $(TMP_DIR)/.pkgdeps
 include $(INCLUDE_DIR)/host.mk
+
+all: compile
+
+include $(TMP_DIR)/.pkgdeps
 
 PREREQ_PACKAGES:=$(patsubst %,%-prereq,$(prereq-y) $(prereq-m))
 DOWNLOAD_PACKAGES:=$(patsubst %,%-download,$(package-y) $(package-m))
@@ -29,9 +32,9 @@ GENDEP_OPTS := -s
 endif
 
 $(TMP_DIR)/.pkgdeps: $(TMP_DIR)/.pkginfo
-	@$(TOPDIR)/scripts/gen_deps.pl $(GENDEP_OPTS) < $< > $@ || rm -f $@
+	@$(TOPDIR)/scripts/metadata.pl package_mk $(GENDEP_OPTS) < $< > $@ || rm -f $@
 
-all: compile
+preconfig:
 clean: $(patsubst %,%-clean,$(package-) $(package-y) $(package-m))
 prereq: $(PREREQ_PACKAGES)
 download: $(DOWNLOAD_PACKAGES)
@@ -41,6 +44,7 @@ install-targets: $(INSTALL_PACKAGES)
 install:
 	rm -rf $(BUILD_DIR)/root
 	$(MAKE) install-targets
+	$(MAKE) preconfig
 	@if [ -d $(TOPDIR)/files ]; then \
 		$(CP) $(TOPDIR)/files/. $(BUILD_DIR)/root; \
 	fi
@@ -49,7 +53,7 @@ install:
 		for script in ./etc/init.d/*; do \
 			grep '#!/bin/sh /etc/rc.common' $$script >/dev/null || continue; \
 			IPKG_INSTROOT=$(BUILD_DIR)/root $(which bash) ./etc/rc.common $$script enable; \
-		done; \
+		done || true \
 	)
 
 index: $(PACKAGE_DIR)/Packages
