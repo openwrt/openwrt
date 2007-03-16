@@ -17,7 +17,7 @@ ifeq ($(DUMP),)
     INFO_$(1):=$(IPKG_STATE_DIR)/info/$(1).list
 
     ifdef Package/$(1)/install
-      ifneq ($(CONFIG_PACKAGE_$(1)),)
+      ifneq ($(CONFIG_PACKAGE_$(1))$(SDK)$(DEVELOPER),)
         compile: $$(IPKG_$(1))
 
         ifeq ($(CONFIG_PACKAGE_$(1)),y)
