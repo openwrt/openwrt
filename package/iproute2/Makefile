@@ -15,7 +15,6 @@ PKG_RELEASE:=1
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://developer.osdl.org/dev/iproute2/download/
 PKG_MD5SUM:=04f57a6d366d36426d276178b600f5c5
-PKG_CAT:=zcat
 
 include $(INCLUDE_DIR)/package.mk
 

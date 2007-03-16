@@ -15,7 +15,6 @@ PKG_RELEASE:=3
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://www.zlib.net @SF/zlib
 PKG_MD5SUM:=dee233bf288ee795ac96a98cc2e369b6
-PKG_CAT:=bzcat
 
 include $(INCLUDE_DIR)/package.mk
 

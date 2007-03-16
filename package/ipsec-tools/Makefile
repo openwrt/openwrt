@@ -7,6 +7,7 @@
 # $Id$
 
 include $(TOPDIR)/rules.mk
+include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ipsec-tools
 PKG_VERSION:=0.6.6
@@ -15,10 +16,8 @@ PKG_RELEASE:=1
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=@SF/ipsec-tools
 PKG_MD5SUM:=e908f3cf367e31c7902df5ab16fbe5c3
-PKG_CAT:=bzcat
 
 include $(INCLUDE_DIR)/package.mk
-include $(INCLUDE_DIR)/kernel.mk
 
 define Package/ipsec-tools
   SECTION:=net

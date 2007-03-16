@@ -19,7 +19,6 @@ PKG_SOURCE_URL:=http://www.netfilter.org/projects/iptables/files \
 	ftp://ftp.de.netfilter.org/pub/netfilter/iptables/ \
 	ftp://ftp.no.netfilter.org/pub/netfilter/iptables/
 PKG_MD5SUM:=00fb916fa8040ca992a5ace56d905ea5
-PKG_CAT:=bzcat
 
 include $(INCLUDE_DIR)/package.mk
 ifeq ($(DUMP),)

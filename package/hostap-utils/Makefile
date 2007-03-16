@@ -14,7 +14,6 @@ PKG_RELEASE:=1
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://hostap.epitest.fi/releases/
 PKG_MD5SUM:=afe041581b8f01666e353bec20917c85
-PKG_CAT:=zcat
 
 include $(INCLUDE_DIR)/package.mk
 

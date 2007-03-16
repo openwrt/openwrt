@@ -15,7 +15,6 @@ PKG_RELEASE:=7
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=ftp://ftp.samba.org/pub/ppp/
 PKG_MD5SUM:=848f6c3cafeb6074ffeb293c3af79b7c
-PKG_CAT:=zcat
 
 PKG_BUILD_DEPENDS:=libpcap linux-atm
 

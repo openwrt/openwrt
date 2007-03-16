@@ -16,7 +16,6 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://www.busybox.net/downloads \
 		http://distfiles.gentoo.org/distfiles/
 PKG_MD5SUM:=5728403bce309cdabcffa414e2e64052
-PKG_CAT:=bzcat
 
 include $(INCLUDE_DIR)/package.mk
 

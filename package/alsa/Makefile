@@ -16,7 +16,6 @@ PKG_RELEASE:=1
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=ftp://ftp.alsa-project.org/pub/driver/
 PKG_MD5SUM:=4cff99be4b225e96663fbd61cabe3182
-PKG_CAT:=bzcat
 
 include $(INCLUDE_DIR)/package.mk
 

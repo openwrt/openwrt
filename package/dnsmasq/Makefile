@@ -15,7 +15,6 @@ PKG_RELEASE:=1
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://thekelleys.org.uk/dnsmasq
 PKG_MD5SUM:=57b8643dc394cf2fbd1bced64536c6df
-PKG_CAT:=zcat
 
 include $(INCLUDE_DIR)/package.mk
 

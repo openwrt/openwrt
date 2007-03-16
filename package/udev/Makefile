@@ -20,7 +20,6 @@ PKG_SOURCE_URL:=ftp://ftp.kernel.org/pub/linux/utils/kernel/hotplug/ \
 	ftp://ftp.fr.kernel.org/pub/linux/utils/kernel/hotplug/ \
 	http://ftp.fr.kernel.org/pub/linux/utils/kernel/hotplug/
 PKG_MD5SUM:=320ccd2d0f4540d10e021bafa14f8985
-PKG_CAT:=bzcat
 
 include $(INCLUDE_DIR)/package.mk
 

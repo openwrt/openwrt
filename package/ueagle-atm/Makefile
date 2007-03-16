@@ -16,7 +16,6 @@ PKG_RELEASE:=1
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://castet.matthieu.free.fr/eagle/release/
 PKG_MD5SUM:=5da1fceb15168f4c7ad407a3e38ddecb
-PKG_CAT:=zcat
 
 include $(INCLUDE_DIR)/package.mk
 

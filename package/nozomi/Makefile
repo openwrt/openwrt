@@ -16,7 +16,6 @@ PKG_RELEASE:=1
 PKG_SOURCE:=nozomi_$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.pharscape.org/3G
 PKG_MD5SUM:=90e4d8f389a18b5579f7234a23e32e99
-PKG_CAT:=zcat
 
 include $(INCLUDE_DIR)/package.mk
 

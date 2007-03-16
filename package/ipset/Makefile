@@ -15,7 +15,6 @@ PKG_RELEASE:=1
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-20050914.tar.bz2
 PKG_SOURCE_URL:=http://ipset.netfilter.org
 PKG_MD5SUM:=1709424cc2cdb925d4fb6fd5fcaefc26
-PKG_CAT:=bzcat
 
 include $(INCLUDE_DIR)/package.mk
 

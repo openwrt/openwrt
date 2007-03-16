@@ -15,7 +15,6 @@ PKG_RELEASE:=1
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/haserl
 PKG_MD5SUM:=bd9195d086566f56634c0bcbbbcbebea
-PKG_CAT:=zcat
 
 include $(INCLUDE_DIR)/package.mk
 

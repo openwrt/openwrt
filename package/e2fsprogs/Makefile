@@ -15,7 +15,6 @@ PKG_RELEASE:=1
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/e2fsprogs
 PKG_MD5SUM:=06f7806782e357797fad1d34b7ced0c6
-PKG_CAT:=zcat
 
 include $(INCLUDE_DIR)/package.mk
 

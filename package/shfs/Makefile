@@ -16,7 +16,6 @@ PKG_RELEASE:=2
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/shfs
 PKG_MD5SUM:=016f49d71bc32eee2b5d11fc1600cfbe
-PKG_CAT:=zcat
 
 include $(INCLUDE_DIR)/package.mk
 

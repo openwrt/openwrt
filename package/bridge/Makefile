@@ -15,7 +15,6 @@ PKG_RELEASE:=1
 PKG_SOURCE:=bridge-utils-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/bridge
 PKG_MD5SUM:=9b7dc52656f5cbec846a7ba3299f73bd
-PKG_CAT:=zcat
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/bridge-utils-$(PKG_VERSION)
 

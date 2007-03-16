@@ -16,7 +16,6 @@ PKG_RELEASE:=1
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.openswan.org/download
 PKG_MD5SUM:=70f22e8adc39e07a165f75eccb7cd079
-PKG_CAT:=zcat
 
 include $(INCLUDE_DIR)/package.mk
 

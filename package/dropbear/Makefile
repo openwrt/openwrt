@@ -15,7 +15,6 @@ PKG_RELEASE:=1
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://matt.ucc.asn.au/dropbear/releases/
 PKG_MD5SUM:=ca8e53a766faec831882831364568421
-PKG_CAT:=zcat
 
 include $(INCLUDE_DIR)/package.mk
 

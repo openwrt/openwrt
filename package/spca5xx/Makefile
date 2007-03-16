@@ -16,7 +16,6 @@ PKG_RELEASE:=1
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://mxhaard.free.fr/spca50x/Download
 PKG_MD5SUM:=1e3fa004490a07b7b76de03d70b3e8ea
-PKG_CAT:=zcat
 
 include $(INCLUDE_DIR)/package.mk
 
