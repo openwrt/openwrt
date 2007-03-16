@@ -13,8 +13,6 @@ PKG_NAME:=ifenslave
 PKG_VERSION:=$(LINUX_VERSION)
 PKG_RELEASE:=1
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
-
 include $(INCLUDE_DIR)/package.mk
 
 define Package/ifenslave

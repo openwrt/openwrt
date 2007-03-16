@@ -19,8 +19,6 @@ PKG_SOURCE_URL:=http://downloads.openwrt.org/sources
 PKG_MD5SUM:=a7d8dde3ce474c361143b83e1d9890b1
 PKG_CAT:=bzcat
 
-PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-
 include $(INCLUDE_DIR)/package.mk
 
 define Package/broadcom-wl/Default

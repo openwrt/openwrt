@@ -43,6 +43,8 @@ else
            http://www.kernel.org/pub/linux/kernel/v$(KERNEL) \
            http://www.de.kernel.org/pub/linux/kernel/v$(KERNEL)
 
+  PKG_BUILD_DIR ?= $(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+
 endif
 
 

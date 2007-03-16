@@ -17,9 +17,6 @@ PKG_SOURCE_URL:=@SF/$(PKG_NAME)
 PKG_MD5SUM:=0d6d65be8896eff081aee996049afaa5
 PKG_CAT:=zcat
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
-
 include $(INCLUDE_DIR)/package.mk
 
 define Package/pcmcia-cs

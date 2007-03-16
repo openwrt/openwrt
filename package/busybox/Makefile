@@ -18,8 +18,6 @@ PKG_SOURCE_URL:=http://www.busybox.net/downloads \
 PKG_MD5SUM:=5728403bce309cdabcffa414e2e64052
 PKG_CAT:=bzcat
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-
 include $(INCLUDE_DIR)/package.mk
 
 init-y :=

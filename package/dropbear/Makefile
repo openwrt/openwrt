@@ -17,8 +17,6 @@ PKG_SOURCE_URL:=http://matt.ucc.asn.au/dropbear/releases/
 PKG_MD5SUM:=ca8e53a766faec831882831364568421
 PKG_CAT:=zcat
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-
 include $(INCLUDE_DIR)/package.mk
 
 define Package/dropbear/Default

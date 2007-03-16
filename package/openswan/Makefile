@@ -18,9 +18,6 @@ PKG_SOURCE_URL:=http://www.openswan.org/download
 PKG_MD5SUM:=70f22e8adc39e07a165f75eccb7cd079
 PKG_CAT:=zcat
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
-
 include $(INCLUDE_DIR)/package.mk
 
 define Package/openswan/Default

@@ -18,8 +18,6 @@ PKG_SOURCE_URL:=@SF/rt2400
 PKG_MD5SUM:=f4131d670920a878b4d4a0f5d4d8b93a
 PKG_CAT:=zcat
 
-PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-
 include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/rt2570

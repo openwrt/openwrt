@@ -18,8 +18,6 @@ PKG_SOURCE_URL:=http://mxhaard.free.fr/spca50x/Download
 PKG_MD5SUM:=1e3fa004490a07b7b76de03d70b3e8ea
 PKG_CAT:=zcat
 
-PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-
 include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/gspca

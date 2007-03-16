@@ -17,9 +17,6 @@ PKG_SOURCE_URL:=http://www.zlib.net @SF/zlib
 PKG_MD5SUM:=dee233bf288ee795ac96a98cc2e369b6
 PKG_CAT:=bzcat
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
-
 include $(INCLUDE_DIR)/package.mk
 
 define Package/zlib

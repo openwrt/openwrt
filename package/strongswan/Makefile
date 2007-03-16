@@ -18,9 +18,6 @@ PKG_SOURCE_URL:=http://download.strongswan.org/
 PKG_MD5SUM:=57427f5b48123851a73b10d78dd4f8d6
 PKG_CAT:=bzcat
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
-
 include $(INCLUDE_DIR)/package.mk
 
 define Package/strongswan/Default

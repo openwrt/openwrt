@@ -17,9 +17,6 @@ PKG_SOURCE_URL:=http://ftp.debian.org/debian/pool/main/l/linux-atm/
 PKG_MD5SUM:=84fef49cc39ff2605204246666f65864
 PKG_CAT:=zcat
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-PKG_INSTALL_DIR:=$(PKG_BUILD_DIR)/ipkg-install
-
 include $(INCLUDE_DIR)/package.mk
 
 define Package/linux-atm/Default
