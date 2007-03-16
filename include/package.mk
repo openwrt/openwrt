@@ -21,8 +21,8 @@ define Build/DefaultTargets
     download: $(DL_DIR)/$(PKG_SOURCE)
 
     $(DL_DIR)/$(PKG_SOURCE):
-		mkdir -p $(DL_DIR)
-		$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(PKG_SOURCE)" "$(PKG_MD5SUM)" $(PKG_SOURCE_URL)
+	mkdir -p $(DL_DIR)
+	$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(PKG_SOURCE)" "$(PKG_MD5SUM)" $(PKG_SOURCE_URL)
 
     $(PKG_BUILD_DIR)/.prepared: $(DL_DIR)/$(PKG_SOURCE)
   endif
@@ -55,12 +55,11 @@ define Build/DefaultTargets
       $(PKG_BUILD_DIR)/.built: package-rebuild
     endif
 
+    compile: $(STAGING_DIR)/stampfiles/.$(PKG_NAME)-installed
     $(STAGING_DIR)/stampfiles/.$(PKG_NAME)-installed: $(PKG_BUILD_DIR)/.built
 	mkdir -p $(STAGING_DIR)/stampfiles
 	$(Build/InstallDev)
 	touch $$@
-	
-    compile: $(STAGING_DIR)/stampfiles/.$(PKG_NAME)-installed
   endif
 
   package-rebuild: FORCE
@@ -74,7 +73,7 @@ define BuildPackage
   $(eval $(Package/Default))
   $(eval $(Package/$(1)))
 
-# <HACK> Support obsolete DESCRIPTION field>
+# <HACK> Support obsolete DESCRIPTION field
 ifndef Package/$(1)/description
 define Package/$(1)/description
 $(TITLE)$(subst \,
