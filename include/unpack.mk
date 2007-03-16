@@ -42,7 +42,7 @@ ifeq ($(strip $(PKG_UNPACK)),)
   endif
  
   # compatibility code for packages that set PKG_CAT
-  ifeq ($(strip $(PKG_CAT)$(PKG_UNPACK)),)
+  ifeq ($(strip $(PKG_UNPACK)),)
     # use existing PKG_CAT
     PKG_UNPACK:=$(PKG_CAT) $(DL_DIR)/$(PKG_SOURCE) | $(TAR_CMD)
     ifeq ($(PKG_CAT),unzip)
