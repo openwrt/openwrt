@@ -9427,7 +9427,7 @@ diff -urN linux-2.6.19/drivers/serial/bcm63xx_cons.c linux-2.6.19.new/drivers/se
 +	return -ENOMEM;
 +
 +	serial_driver->owner 	    = THIS_MODULE;
-+	serial_driver->devfs_name 	    = "tts/";
++//	serial_driver->devfs_name 	    = "tts/";
 +//    serial_driver.magic             = TTY_DRIVER_MAGIC;
 +    serial_driver->name              = "ttyS";
 +    serial_driver->major             = TTY_MAJOR;
