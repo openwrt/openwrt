@@ -69,6 +69,16 @@ define Package/libgcc
   VERSION:=$(LIBGCC_VERSION)-$(PKG_RELEASE)
 endef
 
+define Package/libssp
+  SECTION:=libs
+  CATEGORY:=Base system
+  DEPENDS:=@!NATIVE_TOOLCHAIN
+  DEFAULT:=m
+  TITLE:=GCC support library
+  URL:=http://gcc.gnu.org/
+  VERSION:=$(LIBGCC_VERSION)-$(PKG_RELEASE)
+endef
+
 define Package/libpthread
   SECTION:=libs
   CATEGORY:=Libraries
@@ -140,6 +150,13 @@ define Package/libgcc/install
 	$(CP) $(STAGING_DIR)/lib/libgcc_s.so.* $(1)/lib/
 endef
 
+ifeq ($(word 1,$(subst ., ,$(LIBGCC_VERSION))),4)
+  define Package/libssp/install
+	$(INSTALL_DIR) $(1)/lib
+	$(CP) $(STAGING_DIR)/lib/libssp.so.* $(1)/lib/
+  endef
+endif
+
 define Package/libpthread/install
 	$(INSTALL_DIR) $(1)/lib
 	$(CP) $(STAGING_DIR)/lib/libpthread.so.* $(1)/lib/
@@ -160,7 +177,7 @@ endif
 
 $(eval $(call BuildPackage,base-files$(TARGET)))
 $(eval $(call BuildPackage,libgcc))
+$(eval $(call BuildPackage,libssp))
 $(eval $(call BuildPackage,libpthread))
 $(eval $(call BuildPackage,uclibc))
-
 
