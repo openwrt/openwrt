@@ -18,8 +18,8 @@
 #include <asm/uaccess.h>
 
 #define NVRAM_SIZE       (0x1ff0)
-static char _nvdata[NVRAM_SIZE] __initdata;
-static char _valuestr[256] __initdata;
+static char _nvdata[NVRAM_SIZE];
+static char _valuestr[256];
 
 /*
  * TLV types.  These codes are used in the "type-length-value"
