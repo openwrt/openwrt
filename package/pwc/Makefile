@@ -16,7 +16,6 @@ PKG_RELEASE:=1
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://www.saillard.org/linux/pwc/files/
 PKG_MD5SUM:=8763f3d6fd0f9738ef9854de205a126d
-PKG_CAT:=bzcat
 
 include $(INCLUDE_DIR)/package.mk
 

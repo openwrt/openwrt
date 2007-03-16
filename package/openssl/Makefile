@@ -18,7 +18,6 @@ PKG_SOURCE_URL:=http://www.openssl.org/source/ \
 	ftp://ftp.webmonster.de/pub/openssl/source/ \
 	ftp://ftp.sunet.se/pub/security/tools/net/openssl/source/
 PKG_MD5SUM:=8ed1853538e1d05a1f5ada61ebf8bffa
-PKG_CAT:=zcat
 
 include $(INCLUDE_DIR)/package.mk
 

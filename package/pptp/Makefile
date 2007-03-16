@@ -15,7 +15,6 @@ PKG_RELEASE:=3
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/pptpclient
 PKG_MD5SUM:=9a706327fb9827541d7c86d48ceb9631
-PKG_CAT:=zcat
 
 include $(INCLUDE_DIR)/package.mk
 

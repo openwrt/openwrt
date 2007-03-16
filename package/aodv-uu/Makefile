@@ -16,7 +16,6 @@ PKG_RELEASE:=1
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://core.it.uu.se/core/files/
 PKG_MD5SUM:=05460543054449cb4b170252a7168c65
-PKG_CAT:=zcat
 
 include $(INCLUDE_DIR)/package.mk
 

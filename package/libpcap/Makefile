@@ -15,7 +15,6 @@ PKG_RELEASE:=1
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.tcpdump.org/release/
 PKG_MD5SUM:=79025766e8027df154cb1f32de8a7974
-PKG_CAT:=zcat
 
 include $(INCLUDE_DIR)/package.mk
 

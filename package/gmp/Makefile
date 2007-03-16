@@ -15,7 +15,6 @@ PKG_RELEASE:=1
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=@GNU/gmp
 PKG_MD5SUM:=0aa7d3b3f5b5ec5951e7dddd6f65e891
-PKG_CAT:=bzcat
 
 include $(INCLUDE_DIR)/package.mk
 

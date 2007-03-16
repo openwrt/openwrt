@@ -15,7 +15,6 @@ PKG_RELEASE:=1
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.xmission.com/~ebiederm/files/kexec/
 PKG_MD5SUM:=b4f7ffcc294d41a6a4c40d6e44b7734d
-PKG_CAT:=zcat
 
 include $(INCLUDE_DIR)/package.mk
 

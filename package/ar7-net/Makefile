@@ -16,7 +16,6 @@ PKG_RELEASE:=1
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://downloads.openwrt.org/sources
 PKG_MD5SUM:=ce46849a8f1055cef09c59c6bdb7f86a
-PKG_CAT:=bzcat
 
 include $(INCLUDE_DIR)/package.mk
 
