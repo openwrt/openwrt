@@ -35,24 +35,17 @@ bridge_interface() {(
 )}
 
 
-wifi_up() {
+wifi_updown() {
 	for device in ${2:-$DEVICES}; do (
+	        config_get disabled "$device" disabled
+	        [ "$disabled" == "1" ] && {
+	        	echo "'$device' is disabled"
+	        	set disable
+	        }
 		config_get iftype "$device" type
-		if eval "type enable_$iftype" 2>/dev/null >/dev/null; then
+		if eval "type ${1}_$iftype" 2>/dev/null >/dev/null; then
 			eval "scan_$iftype '$device'"
-			eval "enable_$iftype '$device'" || echo "$device($iftype): Setup failed"
-		else
-			echo "$device($iftype): Interface type not supported"
-		fi
-	); done
-}
-
-wifi_down() {
-	for device in ${2:-$DEVICES}; do (
-		config_get iftype "$device" type
-		if eval "type disable_$iftype" 2>/dev/null >/dev/null; then
-			eval "scan_$iftype '$device'"
-			eval "disable_$iftype '$device'" || echo "$device($iftype): Disable failed"
+			eval "${1}_$iftype '$device'" || echo "$device($iftype): ${1} failed"
 		else
 			echo "$device($iftype): Interface type not supported"
 		fi
@@ -99,7 +92,7 @@ config_load wireless
 include /lib/wifi
 
 case "$1" in
-	down) wifi_down "$2";;
+	down) wifi_updown "disable" "$2";;
 	detect) wifi_detect "$2";;
-	*) wifi_up "$2";;
+	*) wifi_updown "enable" "$2";;
 esac

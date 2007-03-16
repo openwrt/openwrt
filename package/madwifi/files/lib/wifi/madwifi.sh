@@ -241,7 +241,7 @@ config wifi-device  $dev
 #       option rxantenna 0
 #       option distance  2000
 # disable radio to prevent an open ap after reflashing:
-	option radio	0
+	option disabled 1
 
 
 config wifi-iface
