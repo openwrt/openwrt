@@ -54,12 +54,14 @@ define BuildIPKG
 		done; \
 		echo "Depends: $$$$DEPENDS" >> $$(IDIR_$(1))/CONTROL/control; \
 	)
-	echo "Source: $(SOURCE)" >> $$(IDIR_$(1))/CONTROL/control
-	echo "Section: $(SECTION)" >> $$(IDIR_$(1))/CONTROL/control
-	echo "Priority: $(PRIORITY)" >> $$(IDIR_$(1))/CONTROL/control
-	echo "Maintainer: $(MAINTAINER)" >> $$(IDIR_$(1))/CONTROL/control
-	echo "Architecture: $(PKGARCH)" >> $$(IDIR_$(1))/CONTROL/control
-	echo "Description: $(DESCRIPTION)" | sed -e 's,\\,\n,g' | sed -e 's,^[[:space:]]*$$$$, .,g' >> $$(IDIR_$(1))/CONTROL/control
+	( \
+		echo "Source: $(SOURCE)"; \
+		echo "Section: $(SECTION)"; \
+		echo "Priority: $(PRIORITY)"; \
+		echo "Maintainer: $(MAINTAINER)"; \
+		echo "Architecture: $(PKGARCH)"; \
+		echo -n "Description: "; getvar $(call shvar,Package/$(1)/description) | sed -e 's,^[[:space:]]*, ,g'; \
+ 	) >> $$(IDIR_$(1))/CONTROL/control
 	chmod 644 $$(IDIR_$(1))/CONTROL/control
 	(cd $$(IDIR_$(1))/CONTROL; \
 		$($(1)_COMMANDS) \

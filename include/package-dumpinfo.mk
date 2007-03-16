@@ -6,7 +6,11 @@
 #
 
 ifneq ($(DUMP),)
-define Dumpinfo 
+define Config
+  preconfig_$$(1) += echo "Preconfig: $(1)"; echo "Preconfig-Type: $(2)"; echo "Preconfig-Default: $(3)"; echo "Preconfig-Label: $(4)";
+endef
+
+define Dumpinfo
   dumpinfo: dumpinfo-$(1)
   dumpinfo-$(1): FORCE
 	@echo "Package: $(1)" ; \
@@ -28,5 +32,6 @@ define Dumpinfo
 	 $(if $(URL),echo;echo "$(URL)";) \
 	 echo "@@" ; \
 	 $$(if $$(Package/$(1)/config),echo "Config: "; getvar $(call shvar,Package/$(1)/config); echo "@@")
+	 $(if $$(preconfig_$(1)),@$$(preconfig_$(1)) echo "")
 endef
 endif

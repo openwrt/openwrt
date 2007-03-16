@@ -30,6 +30,9 @@ export TOPDIR
 DEVELOPER=1
 export DEVELOPER
 
+SDK=1
+export SDK
+
 all: world
 
 .pkginfo: FORCE

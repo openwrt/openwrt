@@ -1,6 +1,8 @@
 #!/usr/bin/perl
 use strict;
+my %preconfig;
 my %package;
+my %srcpackage;
 my %category;
 
 sub parse_target_metadata() {
@@ -70,21 +72,26 @@ sub parse_target_metadata() {
 sub parse_package_metadata() {
 	my $pkg;
 	my $makefile;
+	my $preconfig;
 	my $src;
 	while (<>) {
 		chomp;
 		/^Source-Makefile: \s*(.+\/([^\/]+)\/Makefile)\s*$/ and do {
 			$makefile = $1;
 			$src = $2;
+			$srcpackage{$src} = [];
 			undef $pkg;
 		};
-		/^Package: \s*(.+)\s*$/ and do {
+		/^Package:\s*(.+?)\s*$/ and do {
 			$pkg = {};
 			$pkg->{src} = $src;
 			$pkg->{makefile} = $makefile;
 			$pkg->{name} = $1;
 			$pkg->{default} = "m if ALL";
+			$pkg->{depends} = [];
+			$pkg->{builddepends} = [];
 			$package{$1} = $pkg;
+			push @{$srcpackage{$src}}, $pkg;
 		};
 		/^Version: \s*(.+)\s*$/ and $pkg->{version} = $1;
 		/^Title: \s*(.+)\s*$/ and $pkg->{title} = $1;
@@ -102,6 +109,10 @@ sub parse_package_metadata() {
 		/^Depends: \s*(.+)\s*$/ and do {
 			my @dep = split /\s+/, $1;
 			$pkg->{depends} = \@dep;
+		};
+		/^Build-Depends: \s*(.+)\s*$/ and do {
+			my @dep = split /\s+/, $1;
+			$pkg->{builddepends} = \@dep;
 		};
 		/^Category: \s*(.+)\s*$/ and do {
 			$pkg->{category} = $1;
@@ -126,7 +137,19 @@ sub parse_package_metadata() {
 				$conf .= "$line";
 			}
 			$pkg->{config} = $conf;
-		}
+		};
+		/^Prereq-Check:/ and $pkg->{prereq} = 1;
+		/^Preconfig:\s*(.+)\s*$/ and do {
+			my $pkgname = $pkg->{name};
+			$preconfig{$pkgname} or $preconfig{$pkgname} = [];
+			$preconfig = {
+				id => $1
+			};
+			push @{$preconfig{$pkgname}}, $preconfig;
+		};
+		/^Preconfig-Type:\s*(.*?)\s*$/ and $preconfig->{type} = $1;
+		/^Preconfig-Label:\s*(.*?)\s*$/ and $preconfig->{label} = $1;
+		/^Preconfig-Default:\s*(.*?)\s*$/ and $preconfig->{default} = $1;
 	}
 	return %category;
 }
@@ -450,23 +473,117 @@ sub print_package_config_category($) {
 
 sub gen_package_config() {
 	parse_package_metadata();
+	print "menu \"Image configuration\"\n";
+	foreach my $preconfig (keys %preconfig) {
+		print "\tcomment \"$preconfig\"\n";
+		foreach my $cfg (@{$preconfig{$preconfig}}) {
+			my $conf = $cfg->{id};
+			$conf =~ tr/\.-/__/;
+			print <<EOF
+	config UCI_PRECONFIG_$conf
+		string "$cfg->{label}"
+		depends PACKAGE_$preconfig
+		default "$cfg->{default}"
+
+EOF
+		}
+	}
+	print "endmenu\n\n";
 	print_package_config_category 'Base system';
 	foreach my $cat (keys %category) {
 		print_package_config_category $cat;
 	}
 }
 
+sub gen_package_mk() {
+	my %conf;
+	my %dep;
+	my $line;
+
+	parse_package_metadata();
+	foreach my $name (sort {uc($a) cmp uc($b)} keys %package) {
+		my $config;
+		my $pkg = $package{$name};
+		
+		next if defined $pkg->{vdepends};
+		if ($ENV{SDK}) {
+			$conf{$pkg->{src}} or do {
+				$config = 'm';
+				$conf{$pkg->{src}} = 1;
+			};
+		} else {
+			$config = "\$(CONFIG_PACKAGE_$name)"
+		}
+		if ($config) {
+			print "package-$config += $pkg->{src}\n";
+			$pkg->{prereq} and print "prereq-$config += $pkg->{src}\n";
+		}
+	
+		my $hasdeps = 0;
+		my $depline = "";
+		foreach my $dep (@{$pkg->{depends}}, @{$pkg->{builddepends}}) {
+			next if $dep =~ /@/;
+			$dep =~ s/\+//;
+			my $idx;
+			my $pkg_dep = $package{$dep};
+			$pkg_dep or $pkg_dep = $srcpackage{$dep}->[0];
+			next unless defined $pkg_dep;
+			next if defined $pkg_dep->{vdepends};
+
+			if (defined $pkg_dep->{src}) {
+				($pkg->{src} ne $pkg_dep->{src}) and $idx = $pkg_dep->{src};
+			} elsif (defined($pkg_dep) && !defined($ENV{SDK})) {
+				$idx = $dep;
+			}
+			undef $idx if $idx =~ /^(kernel)|(base-files)$/;
+			if ($idx) {
+				next if $dep{$pkg->{src}."->".$idx};
+				$depline .= " $idx\-compile";
+				$dep{$pkg->{src}."->".$idx} = 1;
+			}
+		}
+		if ($depline) {
+			$line .= "$pkg->{src}-compile: $depline\n";
+		}
+	}
+	
+	if ($line ne "") {
+		print "\n$line";
+	}
+	foreach my $preconfig (keys %preconfig) {
+		my $cmds;
+		foreach my $cfg (@{$preconfig{$preconfig}}) {
+			my $conf = $cfg->{id};
+			$conf =~ tr/\.-/__/;
+			$cmds .= "\techo \"uci set '$cfg->{id}=\$(subst \",,\$(CONFIG_UCI_PRECONFIG_$conf))'\"; \\\n";
+		}
+		next unless $cmds;
+		print <<EOF
+
+\$(TARGET_DIR)/etc/uci-defaults/$preconfig: FORCE
+	( \\
+$cmds \\
+	) > \$@
+
+preconfig: \$(TARGET_DIR)/etc/uci-defaults/$preconfig
+EOF
+	}
+}
+
+
 sub parse_command() {
 	my $cmd = shift @ARGV;
 	for ($cmd) {
 		/^target_mk$/ and return gen_target_mk();
 		/^target_config$/ and return gen_target_config();
+		/^package_mk$/ and return gen_package_mk();
 		/^package_config$/ and return gen_package_config();
 	}
 	print <<EOF
 Available Commands:
 	$0 target_mk [file] 		Target metadata in makefile format
 	$0 target_config [file] 	Target metadata in Kconfig format
+	$0 package_mk [file] 		Package metadata in makefile format
 	$0 package_config [file] 	Package metadata in Kconfig format
 EOF
 }
