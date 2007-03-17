@@ -25,7 +25,20 @@ $(STAMP_DIR) $(TARGET_DIR):
 %-prereq: $(STAMP_DIR) $(TARGET_DIR)
 	$(MAKE) -C $(patsubst %-prereq,%,$@) prereq
 
-$(eval $(call default_subtargets,$(TARGET_DIR)))
+%-download: FORCE
+	$(MAKE) -C $(patsubst %-download,%,$@) download
+
+%-prepare: $(TARGET_DIR) FORCE
+	$(MAKE) -C $(patsubst %-prepare,%,$@) prepare
+
+%-compile: %-prepare
+	$(MAKE) -C $(patsubst %-compile,%,$@) compile
+
+%-install:
+	$(MAKE) -C $(patsubst %-install,%,$@) install
+
+%-clean: FORCE
+	$(MAKE) -C $(patsubst %-clean,%,$@) clean
 
 ifeq ($(SDK),1)
 GENDEP_OPTS := -s
