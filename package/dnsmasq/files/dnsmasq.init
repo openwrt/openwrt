@@ -2,55 +2,67 @@
 # Copyright (C) 2006 OpenWrt.org
 
 START=60
+
+dhcp_calc() {
+	local ip="$1"
+	local res=0
+	
+	while [ -n "$ip" ]; do
+		part="${ip%%.*}"
+		res="$(($res * 256))"
+		res="$(($res + $part))"
+		[ "${ip%.*}" != "$ip" ] && ip="${ip#*.}" || ip=
+	done
+	echo "$res"
+}
+
+dhcp_add() {
+	local cfg="$1"
+
+	config_get net "$cfg" interface
+	[ -n "$net" ] || return 0
+	
+	config_get ifname "$net" ifname
+	[ -n "$ifname" ] || return 0
+	
+	config_get_bool ignore "$cfg" ignore
+	[ "$ignore" -gt 0 ] && {
+		append args "-I $ifname"
+		return 0
+	}
+	
+	config_get proto "$net" proto
+	[ static = "$proto" ] || return 0
+	
+	config_get ipaddr "$net" ipaddr
+	config_get netmask "$net" netmask
+
+	# check for an already active dhcp server on the interface, unless 'force' is set
+	config_get_bool force "$cfg" force 0
+	[ "$force" -gt 0 ] || {
+		udhcpc -n -q -R -s /bin/true -i $ifname >&- && return 0
+	}
+	
+	config_get start "$cfg" start
+	config_get end "$cfg" end
+	config_get leasetime "$cfg" leasetime
+
+	leasetime="${leasetime:-12h}"
+	start="$(dhcp_calc "${start:-100}")"
+	end="$((${end:-150} + 1))"
+	eval "$(ipcalc.sh $ipaddr $netmask $start $end)"
+	append args "-F $START,$END,$NETMASK,$leasetime"	
+}
+
 start() {
 	include /lib/network
 	scan_interfaces
-	
-	# The following is to automatically configure the DHCP settings
-	# based on config settings. Feel free to replace all this crap
-	# with a simple "dnsmasq" and manage everything via the
-	# /etc/dnsmasq.conf config file
-	
-	[ -f /etc/dnsmasq.conf ] || exit
-	
+	config_load dhcp
+
 	args=""
-	iface=lan
-	config_get ifname "$iface" ifname
-	config_get proto "$iface" proto
+	config_foreach dhcp_add dhcp
 	
-	[ "$proto" = static ] && dhcp_enable="${dhcp_enable:-1}"
-	dhcp_start="${dhcp_start:-100}"
-	dhcp_num="${dhcp_num:-50}"
-	dhcp_lease="${dhcp_lease:-12h}"
-	
-	# if dhcp_enable is unset and there is a dhcp server on the network already, default to dhcp_enable=0
-	[ -z "$dhcp_enable" ] && udhcpc -n -q -R -s /bin/true -i $ifname >&- && dhcp_enable="${dhcp_enable:-0}"
-	
-	# dhcp_enable=0 disables the dhcp server
-	(
-		[ -z "$dhcp_enable" -o "$dhcp_enable" -eq 1 ] && {
-			# no existing DHCP server?
-	
-			# calculate settings
-			config_get ipaddr "$iface" ipaddr
-			config_get netmask "$iface" netmask
-			eval $(ipcalc $ipaddr $netmask ${dhcp_start:-100} ${dhcp_num:-150})
-			
-			# and pass the args via config parser defines
-			echo "${dhcp_enable:+@define dhcp_enable 1}"
-			echo "@define netmask $NETMASK"
-			echo "@define start $START"
-			echo "@define end $END"
-			echo "@define lease ${dhcp_lease:-12h}"
-		}
-	
-		# ignore requests from wan interface
-		config_get wan_proto wan proto
-		config_get wan_ifname wan ifname
-		[ -z "$wan_proto" -o "$wan_proto" = "none" ] || echo "@define wan_ifname $wan_ifname"
-	
-		cat /etc/dnsmasq.conf
-	) | awk -f /lib/config/template.awk | dnsmasq -C /proc/self/fd/0 && {
+	dnsmasq $args && {
 		rm -f /tmp/resolv.conf
 		cat > /tmp/resolv.conf <<EOF
 nameserver 127.0.0.1
