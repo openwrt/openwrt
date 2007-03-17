@@ -214,10 +214,6 @@ EOF
 						#add wpa_supplicant calls here
 					;;
 				esac
-				net_cfg="$(find_net_config "$vif")"
-				[ -z "$net_cfg" ] || {
-					bridge="$(bridge_interface "$net_cfg")"
-				}
 				wpa_supplicant ${bridge:+ -b $bridge} -Bw -D wext -i "$ifname" -c /var/run/wpa_supplicant-$ifname.conf
 			;;
 		esac
