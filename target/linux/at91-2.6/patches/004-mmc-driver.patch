@@ -1,0 +1,30 @@
+--- linux-2.6.19.2/arch/arm/mach-at91rm9200/board-vlink.c	2007-03-16 16:46:50.000000000 +0100
++++ linux-2.6.19.2.new/arch/arm/mach-at91rm9200/board-vlink.c	2007-03-17 11:27:00.000000000 +0100
+@@ -83,13 +83,13 @@
+ 	.pullup_pin	= AT91_PIN_PD5,
+ };
+ 
+-/*static struct at91_mmc_data __initdata ek_mmc_data = {
+-	.det_pin	= AT91_PIN_PB27,
+-	.is_b		= 0,
++static struct at91_mmc_data __initdata vlink_mmc_data = {
++//	.det_pin	= AT91_PIN_PB27,
++	.slot_b		= 0,
+ 	.wire4		= 1,
+-	.wp_pin		= AT91_PIN_PA17,
++//	.wp_pin		= AT91_PIN_PA17,
+ };
+-*/
++
+ 
+ static struct spi_board_info vlink_spi_devices[] = {
+ 	{	/* DataFlash chip */
+@@ -127,7 +127,7 @@
+ #else
+ 	/* MMC */
+ //	at91_set_gpio_output(AT91_PIN_PB22, 1);	/* this MMC card slot can optionally use SPI signaling (CS3). */
+-//	at91_add_device_mmc(&vlink_mmc_data);
++	at91_add_device_mmc(&vlink_mmc_data);
+ #endif
+ 	/* VGA */
+ }
