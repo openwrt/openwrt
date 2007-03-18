@@ -1,0 +1,30 @@
+diff -ruN linux-2.6.19.2-orig/drivers/char/Kconfig linux-2.6.19.2-ar7/drivers/char/Kconfig
+--- linux-2.6.19.2-orig/drivers/char/Kconfig	2007-01-10 20:10:37.000000000 +0100
++++ linux-2.6.19.2-ar7/drivers/char/Kconfig	2007-02-19 01:22:23.000000000 +0100
+@@ -920,6 +920,15 @@
+ 	  To compile this driver as a module, choose M here: the
+ 	  module will be called mwave.
+ 
++config AR7_GPIO
++	tristate "TI AR7 GPIO Support"
++	depends on AR7
++	help
++	  Give userspace access to the GPIO pins on the Texas Instruments AR7 
++	  processors.
++
++	  If compiled as a module, it will be called ar7_gpio.
++
+ config SCx200_GPIO
+ 	tristate "NatSemi SCx200 GPIO Support"
+ 	depends on SCx200
+diff -ruN linux-2.6.19.2-orig/drivers/char/Makefile linux-2.6.19.2-ar7/drivers/char/Makefile
+--- linux-2.6.19.2-orig/drivers/char/Makefile	2007-01-10 20:10:37.000000000 +0100
++++ linux-2.6.19.2-ar7/drivers/char/Makefile	2007-02-19 01:22:23.000000000 +0100
+@@ -83,6 +83,7 @@
+ obj-$(CONFIG_PPDEV)		+= ppdev.o
+ obj-$(CONFIG_NWBUTTON)		+= nwbutton.o
+ obj-$(CONFIG_NWFLASH)		+= nwflash.o
++obj-$(CONFIG_AR7_GPIO)		+= ar7_gpio.o
+ obj-$(CONFIG_SCx200_GPIO)	+= scx200_gpio.o
+ obj-$(CONFIG_PC8736x_GPIO)	+= pc8736x_gpio.o
+ obj-$(CONFIG_NSC_GPIO)		+= nsc_gpio.o

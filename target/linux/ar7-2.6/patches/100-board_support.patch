@@ -1,0 +1,103 @@
+diff -Nru linux-2.6.19.2/arch/mips/Kconfig linux-ar7/arch/mips/Kconfig
+--- linux-2.6.19.2/arch/mips/Kconfig	2006-12-12 02:32:53.000000000 +0700
++++ linux-ar7/arch/mips/Kconfig	2007-01-29 21:52:21.000000000 +0700
+@@ -12,6 +12,18 @@
+ 	prompt "System type"
+ 	default SGI_IP22
+ 
++config AR7
++	bool "Texas Instruments AR7"
++	select BOOT_ELF32
++	select DMA_NONCOHERENT
++	select HW_HAS_PCI
++	select IRQ_CPU
++	select SWAP_IO_SPACE
++	select SYS_HAS_CPU_MIPS32_R1
++	select SYS_SUPPORTS_32BIT_KERNEL
++	select SYS_SUPPORTS_LITTLE_ENDIAN
++	select NEED_MULTIPLE_NODES
++
+ config MIPS_MTX1
+ 	bool "4G Systems MTX-1 board"
+ 	select DMA_NONCOHERENT
+diff -Nru linux-2.6.19.2/arch/mips/Makefile linux-ar7/arch/mips/Makefile
+--- linux-2.6.19.2/arch/mips/Makefile	2006-12-12 02:32:53.000000000 +0700
++++ linux-ar7/arch/mips/Makefile	2007-01-29 21:52:21.000000000 +0700
+@@ -158,6 +158,13 @@
+ #
+ 
+ #
++# Texas Instruments AR7
++#
++core-$(CONFIG_AR7)		+= arch/mips/ar7/
++cflags-$(CONFIG_AR7)		+= -Iinclude/asm-mips/ar7
++load-$(CONFIG_AR7)		+= 0xffffffff94100000
++
++#
+ # Acer PICA 61, Mips Magnum 4000 and Olivetti M700.
+ #
+ core-$(CONFIG_MACH_JAZZ)	+= arch/mips/jazz/
+diff -Nru linux-2.6.19.2/arch/mips/kernel/setup.c linux-ar7/arch/mips/kernel/setup.c
+--- linux-2.6.19.2orig/arch/mips/kernel/setup.c	2006-12-12 02:32:53.000000000 +0700
++++ linux-ar7/arch/mips/kernel/setup.c	2007-03-04 22:32:13.000000000 +0700
+@@ -236,7 +236,7 @@
+  * Initialize the bootmem allocator. It also setup initrd related data
+  * if needed.
+  */
+-#ifdef CONFIG_SGI_IP27
++#ifdef CONFIG_NEED_MULTIPLE_NODES
+ 
+ static void __init bootmem_init(void)
+ {
+@@ -244,7 +244,7 @@
+ 	finalize_initrd();
+ }
+ 
+-#else  /* !CONFIG_SGI_IP27 */
++#else  /* !CONFIG_NEED_MULTIPLE_NODES */
+ 
+ static void __init bootmem_init(void)
+ {
+@@ -349,7 +349,7 @@
+ 	finalize_initrd();
+ }
+ 
+-#endif	/* CONFIG_SGI_IP27 */
++#endif	/* CONFIG_NEED_MULTIPLE_NODES */
+ 
+ /*
+  * arch_mem_init - initialize memory managment subsystem
+diff -Nru linux-2.6.19.2/arch/mips/kernel/traps.c linux-ar7/arch/mips/kernel/traps.c
+--- linux-2.6.19.2/arch/mips/kernel/traps.c	2007-01-11 02:10:37.000000000 +0700
++++ linux-ar7/arch/mips/kernel/traps.c	2007-03-15 13:19:19.000000000 +0700
+@@ -1072,11 +1072,6 @@
+ unsigned long exception_handlers[32];
+ unsigned long vi_handlers[64];
+ 
+-/*
+- * As a side effect of the way this is implemented we're limited
+- * to interrupt handlers in the address range from
+- * KSEG0 <= x < KSEG0 + 256mb on the Nevada.  Oh well ...
+- */
+ void *set_except_vector(int n, void *addr)
+ {
+ 	unsigned long handler = (unsigned long) addr;
+@@ -1084,9 +1079,15 @@
+ 
+ 	exception_handlers[n] = handler;
+ 	if (n == 0 && cpu_has_divec) {
+-		*(volatile u32 *)(ebase + 0x200) = 0x08000000 |
+-		                                 (0x03ffffff & (handler >> 2));
+-		flush_icache_range(ebase + 0x200, ebase + 0x204);
++		/* lui k0, 0x0000 */
++		*(volatile u32 *)(CAC_BASE+0x200) = 0x3c1a0000 | (handler >> 16);
++		/* ori k0, 0x0000 */
++		*(volatile u32 *)(CAC_BASE+0x204) = 0x375a0000 | (handler & 0xffff);
++		/* jr k0 */
++		*(volatile u32 *)(CAC_BASE+0x208) = 0x03400008;
++		/* nop */
++		*(volatile u32 *)(CAC_BASE+0x20C) = 0x00000000;
++		flush_icache_range(CAC_BASE+0x200, CAC_BASE+0x210);
+ 	}
+ 	return (void *)old_handler;
+ }

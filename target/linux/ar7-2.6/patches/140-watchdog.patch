@@ -1,0 +1,27 @@
+diff -ruN linux-2.6.19.2-orig/drivers/char/watchdog/Kconfig linux-2.6.19.2-ar7/drivers/char/watchdog/Kconfig
+--- linux-2.6.19.2-orig/drivers/char/watchdog/Kconfig	2007-01-10 20:10:37.000000000 +0100
++++ linux-2.6.19.2-ar7/drivers/char/watchdog/Kconfig	2007-02-26 12:49:29.000000000 +0100
+@@ -544,6 +544,12 @@
+ 
+ # MIPS Architecture
+ 
++config AR7_WDT
++	tristate "TI AR7 Watchdog Timer"
++	depends on WATCHDOG && AR7
++	help
++	  Hardware driver for the TI AR7 Watchdog Timer.
++
+ config INDYDOG
+ 	tristate "Indy/I2 Hardware Watchdog"
+ 	depends on WATCHDOG && SGI_IP22
+diff -ruN linux-2.6.19.2-orig/drivers/char/watchdog/Makefile linux-2.6.19.2-ar7/drivers/char/watchdog/Makefile
+--- linux-2.6.19.2-orig/drivers/char/watchdog/Makefile	2007-01-10 20:10:37.000000000 +0100
++++ linux-2.6.19.2-ar7/drivers/char/watchdog/Makefile	2007-02-26 12:46:36.000000000 +0100
+@@ -71,6 +71,7 @@
+ obj-$(CONFIG_WATCHDOG_RTAS) += wdrtas.o
+ 
+ # MIPS Architecture
++obj-$(CONFIG_AR7_WDT) += ar7_wdt.o
+ obj-$(CONFIG_INDYDOG) += indydog.o
+ 
+ # S390 Architecture
