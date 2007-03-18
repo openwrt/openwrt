@@ -117,7 +117,7 @@ static void vlynq_irq_unmask(unsigned int irq)
 	BUG_ON(!dev);
 	virq = irq - dev->irq_start;
 	val = dev->remote->int_device[virq >> 2];
-	val |= VINT_ENABLE << VINT_OFFSET(virq);
+	val |= (VINT_ENABLE | virq) << VINT_OFFSET(virq);
 	dev->remote->int_device[virq >> 2] = val;
 }
 
