@@ -140,6 +140,12 @@ enable_atheros() {
 			*)
 				config_get ssid "$vif" ssid
 			;;
+			adhoc)
+				config_get addr "$vif" bssid
+				[ -z "$addr" ] || { 
+					iwconfig "$ifname" ap "$addr"
+				}
+			;;
 		esac
 
 		[ "$mode" = "sta" ] && {
