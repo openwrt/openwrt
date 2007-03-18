@@ -1,0 +1,18 @@
+--- acx-20060521.orig/pci.c	2007-01-25 15:43:48.000000000 +0700
++++ acx-20060521/pci.c	2007-01-25 15:43:48.000000000 +0700
+@@ -906,10 +906,13 @@
+ 
+ 	acx_lock(adev, flags);
+ 
+-	acxpci_l_reset_mac(adev);
+-
+ 	ecpu_ctrl = read_reg16(adev, IO_ACX_ECPU_CTRL) & 1;
+ 	if (!ecpu_ctrl) {
++		acxpci_l_reset_mac(adev);
++		ecpu_ctrl = read_reg16(adev, IO_ACX_ECPU_CTRL) & 1;
++	}
++
++	if (!ecpu_ctrl) {
+ 		msg = "eCPU is already running. ";
+ 		goto end_unlock;
+ 	}
