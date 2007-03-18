@@ -1,0 +1,5 @@
+#!/bin/sh
+[ -z "$FAILSAFE" ] || {
+	echo /bin/true > /proc/sys/kernel/hotplug
+	telnetd -l /bin/login <> /dev/null 2>&1
+}
