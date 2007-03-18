@@ -25,6 +25,7 @@ define Build/Compile
 	$(call cc,trx2usr)
 	$(call cc,ptgen)
 	$(call cc,airlink)
+	$(call cc,srec2bin)
 endef
 
 define Build/Install
