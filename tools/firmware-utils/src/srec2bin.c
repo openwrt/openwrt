@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <ctype.h>
+#include <string.h>
 
 //Rev 0.1 Original
 // 8 Jan 2001  MJH  Added code to write data to Binary file
