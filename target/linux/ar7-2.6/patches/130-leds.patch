@@ -1,0 +1,27 @@
+diff -ruN linux-2.6.19.2-orig/drivers/leds/Kconfig linux-2.6.19.2-ar7/drivers/leds/Kconfig
+--- linux-2.6.19.2-orig/drivers/leds/Kconfig	2007-01-10 20:10:37.000000000 +0100
++++ linux-2.6.19.2-ar7/drivers/leds/Kconfig	2007-02-24 02:30:48.000000000 +0100
+@@ -19,6 +19,12 @@
+ 
+ comment "LED drivers"
+ 
++config LEDS_AR7
++	tristate "LED Support for the TI AR7"
++	depends LEDS_CLASS && AR7
++	help
++	  This option enables support for the LEDs on TI AR7.
++
+ config LEDS_CORGI
+ 	tristate "LED Support for the Sharp SL-C7x0 series"
+ 	depends LEDS_CLASS && PXA_SHARP_C7xx
+diff -ruN linux-2.6.19.2-orig/drivers/leds/Makefile linux-2.6.19.2-ar7/drivers/leds/Makefile
+--- linux-2.6.19.2-orig/drivers/leds/Makefile	2007-01-10 20:10:37.000000000 +0100
++++ linux-2.6.19.2-ar7/drivers/leds/Makefile	2007-02-24 02:29:44.000000000 +0100
+@@ -5,6 +5,7 @@
+ obj-$(CONFIG_LEDS_TRIGGERS)		+= led-triggers.o
+ 
+ # LED Platform Drivers
++obj-$(CONFIG_LEDS_AR7)			+= leds-ar7.o
+ obj-$(CONFIG_LEDS_CORGI)		+= leds-corgi.o
+ obj-$(CONFIG_LEDS_LOCOMO)		+= leds-locomo.o
+ obj-$(CONFIG_LEDS_SPITZ)		+= leds-spitz.o

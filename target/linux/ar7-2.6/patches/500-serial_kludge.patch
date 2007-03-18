@@ -1,0 +1,22 @@
+diff -Nru linux-2.6.19.2/drivers/serial/8250.c linux-ar7/drivers/serial/8250.c
+--- linux-2.6.19.2/drivers/serial/8250.c	2006-12-12 02:32:53.000000000 +0700
++++ linux-ar7/drivers/serial/8250.c	2007-02-02 14:25:51.000000000 +0700
+@@ -2171,6 +2171,9 @@
+ 		 */
+ 		up->mcr_mask = ~ALPHA_KLUDGE_MCR;
+ 		up->mcr_force = ALPHA_KLUDGE_MCR;
++#ifdef CONFIG_AR7
++		up->mcr_force |= UART_MCR_RTS;
++#endif
+ 
+ 		up->port.ops = &serial8250_pops;
+ 	}
+@@ -2243,7 +2246,7 @@
+ {
+ 	struct uart_8250_port *up = (struct uart_8250_port *)port;
+ 
+-	wait_for_xmitr(up, UART_LSR_THRE);
++	wait_for_xmitr(up, UART_LSR_TEMT);
+ 	serial_out(up, UART_TX, ch);
+ }
+ 
