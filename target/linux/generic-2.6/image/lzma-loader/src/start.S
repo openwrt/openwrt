@@ -41,7 +41,7 @@ LEAF(_start)
 	move t7, a3
 	
 	/* set up stack */
-	li	sp, 0xa0000000 + RAMSIZE - 16
+	li	sp, RAMSTART + RAMSIZE - 16
 
 #ifdef IMAGE_COPY
 	/* Copy decompressor code to the right place */

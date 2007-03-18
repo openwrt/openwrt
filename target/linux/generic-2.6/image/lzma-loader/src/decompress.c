@@ -96,7 +96,10 @@ static __inline__ unsigned char get_byte(void)
 	return read_byte(0, &buffer, &fake), *buffer;
 }
 
-static char *buffer = (char *)0x80C00000;
+/* This puts lzma workspace 128k below RAM end. 
+ * That should be enough for both lzma and stack
+ */
+static char *buffer = (char *)(RAMSTART + RAMSIZE - 0x00020000);
 extern char lzma_start[];
 extern char lzma_end[];
 
