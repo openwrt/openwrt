@@ -22,6 +22,7 @@
 #include <linux/pci.h>
 #include <linux/kernel.h>
 #include <linux/init.h>
+#include <linux/irq.h>
 #include <asm/ar7/vlynq.h>
 
 #define VLYNQ_PCI_SLOTS 2
@@ -61,6 +62,7 @@ static struct vlynq_pci_config known_devices[] = {
 			{ .size = 0x0, .offset = 0x0 },
 		},
 		.irq = 0, .chip = 0x9066104c,
+		.irq_type = IRQ_TYPE_EDGE_RISING,
 		.class = PCI_CLASS_NETWORK_OTHER,
 		.num_regs = 5,
 		.regs = { 
@@ -312,6 +314,8 @@ static int vlynq_pci_probe(struct vlynq_device *dev)
 	mapping[0].size = 0x02000000;
 	vlynq_set_local_mapping(dev, dev->mem_start, mapping);
 	vlynq_set_remote_mapping(dev, 0, config->rx_mapping);
+
+	set_irq_type(vlynq_virq_to_irq(dev, config->irq), config->irq_type);
 
 	addr = (u32)ioremap_nocache(dev->mem_start, 0x10000);
 	if (!addr) {
