@@ -1,0 +1,36 @@
+This patch fixes a bug in net80211/ieee80211_wireless.c preventing 
+the user from setting a certain BSSID by 
+"iwconfig athX ap XX:XX:XX:XX:XX:XX". 
+It furthermore prevents merging to another IBSS in ad-hoc mode 
+if a BSSID was set previously by the above command.
+It was tested with the snapshot madwifi-ng-r1696-20060730.
+
+Signed-off-by: Joerg Albert <jal2@gmx.de>
+
+diff -ru madwifi-ng-r1696-20060730/ath/if_ath.c madwifi-ng-r1696-20060730.work/ath/if_ath.c
+--- madwifi-ng-r1696-20060730/ath/if_ath.c	2006-07-08 08:47:19.000000000 +0200
++++ madwifi-ng-r1696-20060730.work/ath/if_ath.c	2006-08-03 20:38:12.000000000 +0200
+@@ -5316,7 +5316,10 @@
+ 			 * ath_newstate as the state machine will go from
+ 			 * RUN -> RUN when this happens.
+ 			 */
+-			if (le64_to_cpu(ni->ni_tstamp.tsf) >= tsf) {
++			/* jal: added: don't merge if we have a desired
++			   BSSID */
++			if (!(vap->iv_flags & IEEE80211_F_DESBSSID) &&
++				le64_to_cpu(ni->ni_tstamp.tsf) >= tsf) {
+ 				DPRINTF(sc, ATH_DEBUG_STATE,
+ 					"ibss merge, rstamp %u tsf %llu "
+ 					"tstamp %llu\n", rstamp, (long long) tsf,
+diff -ru madwifi-ng-r1696-20060730/net80211/ieee80211_wireless.c madwifi-ng-r1696-20060730.work/net80211/ieee80211_wireless.c
+--- madwifi-ng-r1696-20060730/net80211/ieee80211_wireless.c	2006-07-29 03:31:11.000000000 +0200
++++ madwifi-ng-r1696-20060730.work/net80211/ieee80211_wireless.c	2006-08-03 21:23:30.000000000 +0200
+@@ -539,7 +539,7 @@
+ 	 *
+ 	 * anything else specifies a particular AP.
+ 	 */
+-	if (IEEE80211_ADDR_EQ(vap->iv_des_bssid, zero_bssid)) 
++	if (IEEE80211_ADDR_EQ(&ap_addr->sa_data, zero_bssid)) 
+ 		vap->iv_flags &= ~IEEE80211_F_DESBSSID;
+ 	else {
+ 		IEEE80211_ADDR_COPY(vap->iv_des_bssid, &ap_addr->sa_data);
