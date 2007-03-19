@@ -35,7 +35,7 @@
 	(*(volatile u32 *)KSEG1ADDR((base)+(reg)))
 
 #define ADM5120_UARTCLK_FREQ            62500000
-#define ADM5120_UART_BAUDDIV(rate)	((unsigned long)(ADM5120_UARTCLK_FREQ/(16*(_rate)) - 1))
+#define ADM5120_UART_BAUDDIV(rate)	((unsigned long)(ADM5120_UARTCLK_FREQ/(16*(rate)) - 1))
 
 #define ADM5120_UART_BAUD115200		ADM5120_UART_BAUDDIV(115200)
 
