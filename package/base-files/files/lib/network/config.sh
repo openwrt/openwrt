@@ -24,6 +24,7 @@ find_config() {
 }
 
 scan_interfaces() {
+	local cfgfile="$1"
 	local mode iftype iface ifname device
 	interfaces=
 	config_cb() {
@@ -50,7 +51,7 @@ scan_interfaces() {
 			;;
 		esac
 	}
-	config_load network
+	config_load "${cfgfile:-network}"
 }
 
 add_vlan() {
