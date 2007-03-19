@@ -25,7 +25,6 @@
  */
 #include <linux/bootmem.h>
 #include <linux/init.h>
-#include <linux/initrd.h>
 #include <linux/mm.h>
 #include <linux/module.h>
 #include <linux/pfn.h>
@@ -67,8 +66,6 @@ static int __init memsize(void)
 
 	return result;
 }
-
-extern unsigned long __initramfs_start, __initramfs_end;
 
 #ifdef CONFIG_NEED_MULTIPLE_NODES
 static bootmem_data_t node_bootmem_data;
@@ -174,11 +171,6 @@ void __init prom_meminit(void)
 	unsigned long kernel_start, kernel_end;
 	unsigned long pages, free_pages;
 	unsigned long bootmap_size;
-#endif
-
-#ifdef CONFIG_BLK_DEV_INITRD
-	initrd_start = (unsigned long)&__initramfs_start;
-	initrd_end = (unsigned long)&__initramfs_end;
 #endif
 
 	pages = memsize() >> PAGE_SHIFT;
