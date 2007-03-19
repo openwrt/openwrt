@@ -1,22 +1,29 @@
+diff -urN linux-2.6.19.2/drivers/serial/Kconfig linux-2.6.19.2-adm5120/drivers/serial/Kconfig
+--- linux-2.6.19.2/drivers/serial/Kconfig       2007-01-10 20:10:37.000000000 +0100
++++ linux-2.6.19.2-adm5120/drivers/serial/Kconfig       2007-01-23 01:13:39.000000000 +0100
+@@ -246,6 +246,22 @@
+
+ comment "Non-8250 serial port support"
+
 +config SERIAL_ADM5120
-+	bool "ADM5120 serial port support"
-+	depends on MIPS_ADM5120
-+	select SERIAL_CORE
-+	select SERIAL_CORE_CONSOLE
-+	help
-+	  Driver for the on chip UARTs on the ADM5120 SoC
++       bool "ADM5120 serial port support"
++       depends on MIPS_ADM5120
++       select SERIAL_CORE
++       select SERIAL_CORE_CONSOLE
++       help
++         Driver for the on chip UARTs on the ADM5120 SoC
 +
 +config ADM5120_NR_UARTS
-+	int "Maximum number of ADM5120 serial ports"
-+	depends on SERIAL_ADM5120
-+	default "2"
-+	---help---
-+	  Set this to the number of serial ports you want the driver to
-+	  support.
++       int "Maximum number of ADM5120 serial ports"
++       depends on SERIAL_ADM5120
++       default "2"
++       ---help---
++         Set this to the number of serial ports you want the driver to
++         support.
 +
  config SERIAL_AMBA_PL010
- 	tristate "ARM AMBA PL010 serial port support"
- 	depends on ARM_AMBA && (BROKEN || !ARCH_VERSATILE)
+        tristate "ARM AMBA PL010 serial port support"
+        depends on ARM_AMBA && (BROKEN || !ARCH_VERSATILE)
 diff -urN linux-2.6.19.2/drivers/serial/Makefile linux-2.6.19.2-adm5120/drivers/serial/Makefile
 --- linux-2.6.19.2/drivers/serial/Makefile	2007-01-10 20:10:37.000000000 +0100
 +++ linux-2.6.19.2-adm5120/drivers/serial/Makefile	2007-01-23 01:21:45.000000000 +0100
