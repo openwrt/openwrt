@@ -1,234 +1,462 @@
 /*
- *	Flash device on the ADM5120 board
+ *  Copyright (C) 2006 Felix Fietkau <nbd@openwrt.org>
+ *  Copyright (C) 2005 Waldemar Brodkorb <wbx@openwrt.org>
+ *  Copyright (C) 2004 Florian Schirmer (jolt@tuxbox.org)
  *
- *	Copyright Florian Fainelli <florian@openwrt.org>
- *   
+ *  original functions for finding root filesystem from Mike Baker 
  *
- *	This program is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU General Public License version
- *	2 as published by the Free Software Foundation.
+ *  This program is free software; you can redistribute  it and/or modify it
+ *  under  the terms of  the GNU General  Public License as published by the
+ *  Free Software Foundation;  either version 2 of the  License, or (at your
+ *  option) any later version.
+ *
+ *  THIS  SOFTWARE  IS PROVIDED   ``AS  IS'' AND   ANY  EXPRESS OR IMPLIED
+ *  WARRANTIES,   INCLUDING, BUT NOT  LIMITED  TO, THE IMPLIED WARRANTIES OF
+ *  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN
+ *  NO  EVENT  SHALL   THE AUTHOR  BE    LIABLE FOR ANY   DIRECT, INDIRECT,
+ *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ *  NOT LIMITED   TO, PROCUREMENT OF  SUBSTITUTE GOODS  OR SERVICES; LOSS OF
+ *  USE, DATA,  OR PROFITS; OR  BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ *  ANY THEORY OF LIABILITY, WHETHER IN  CONTRACT, STRICT LIABILITY, OR TORT
+ *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ *  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ *  You should have received a copy of the  GNU General Public License along
+ *  with this program; if not, write  to the Free Software Foundation, Inc.,
+ *  675 Mass Ave, Cambridge, MA 02139, USA.
+ * 
+ *  Copyright 2001-2003, Broadcom Corporation
+ *  All Rights Reserved.
+ * 
+ *  THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
+ *  KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
+ *  SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
+ *  FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+ *
+ *  Flash mapping for ADM5120 boards
  */
 
-#include <linux/autoconf.h>
+#include <linux/init.h>
 #include <linux/module.h>
+#include <linux/types.h>
 #include <linux/kernel.h>
+#include <linux/wait.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/map.h>
+#ifdef CONFIG_MTD_PARTITIONS
 #include <linux/mtd/partitions.h>
-#include <linux/vmalloc.h>
-
-
-#define FLASH_PHYS_ADDR		0x1FC00000
-#define FLASH_SIZE 		0x400000
-
-#define IMAGE_LEN 		10                   	/* Length of Length Field */
-#define ADDRESS_LEN 		12                 	/* Length of Address field */
-#define EXTENDED_SIZE 		0xBFC00000       	/* Extended flash address */
-#define ROUNDUP(x, y) ((((x)+((y)-1))/(y))*(y))
- 
-
-static struct mtd_info *adm5120_mtd;
-static struct mtd_partition *parsed_parts;
-
-static struct map_info adm5120_mtd_map = {
-	.name = "adm5120",
-	.size = FLASH_SIZE,
-	.bankwidth = 2,
-	.phys = FLASH_PHYS_ADDR,
-};
-
-static int parse_cfe_partitions( struct mtd_info *master, struct mtd_partition **pparts)
-{
-	int nrparts = 2, curpart = 0; // CFE and NVRAM always present.
-	struct adm5120_cfe_map {
-		unsigned char tagVersion[4];                            // Version of the image tag
-		unsigned char sig_1[20];                                // Company Line 1
-		unsigned char sig_2[14];                                // Company Line 2
-		unsigned char chipid[6];                                        // Chip this image is for
-		unsigned char boardid[16];                              // Board name
-		unsigned char bigEndian[2];                             // Map endianness -- 1 BE 0 LE
-		unsigned char totalLength[IMAGE_LEN];           //Total length of image
-		unsigned char cfeAddress[ADDRESS_LEN];  // Address in memory of CFE
-		unsigned char cfeLength[IMAGE_LEN];             // Size of CFE
-		unsigned char rootAddress[ADDRESS_LEN];         // Address in memory of rootfs
-		unsigned char rootLength[IMAGE_LEN];            // Size of rootfs
-		unsigned char kernelAddress[ADDRESS_LEN];       // Address in memory of kernel
-		unsigned char kernelLength[IMAGE_LEN];  // Size of kernel
-		unsigned char dualImage[2];                             // Unused at present
-		unsigned char inactiveFlag[2];                  // Unused at present
-		unsigned char reserved1[74];                            // Reserved area not in use
-		unsigned char imageCRC[4];                              // CRC32 of images
-		unsigned char reserved2[16];                            // Unused at present
-		unsigned char headerCRC[4];                             // CRC32 of header excluding tagVersion
-		unsigned char reserved3[16];                            // Unused at present
-	} *buf;
-	struct mtd_partition *parts;
-	int ret;
-	size_t retlen;
-	unsigned int rootfsaddr, kerneladdr, spareaddr;
-	unsigned int rootfslen, kernellen, sparelen, totallen;
-	int namelen = 0;
-	int i;
-	// Allocate memory for buffer
-	buf = vmalloc(sizeof(struct adm5120_cfe_map));
-
-	if (!buf)
-		return -ENOMEM;
-
-	// Get the tag
-	ret = master->read(master,master->erasesize,sizeof(struct adm5120_cfe_map), &retlen, (void *)buf);
-
-	if (retlen != sizeof(struct adm5120_cfe_map)){
-		vfree(buf);
-		return -EIO;
-	};
-
-	printk("adm5120: CFE boot tag found with version %s and board type %s.\n",buf->tagVersion,buf->boardid);
-	// Get the values and calculate
-	sscanf(buf->rootAddress,"%u", &rootfsaddr);
-	rootfsaddr = rootfsaddr - EXTENDED_SIZE;
-	sscanf(buf->rootLength, "%u", &rootfslen);
-	sscanf(buf->kernelAddress, "%u", &kerneladdr);
-	kerneladdr = kerneladdr - EXTENDED_SIZE;
-	sscanf(buf->kernelLength, "%u", &kernellen);
-	sscanf(buf->totalLength, "%u", &totallen);
-	spareaddr = ROUNDUP(totallen,master->erasesize) + master->erasesize;
-	sparelen = master->size - spareaddr - master->erasesize;
-	// Determine number of partitions
-	namelen = 8;
-	if (rootfslen > 0){
-		nrparts++;
-		namelen =+ 6;
-	};
-
-	if (kernellen > 0){
-		nrparts++;
-		namelen =+ 6;
-	};
-	if (sparelen > 0){
-		nrparts++;
-		namelen =+ 6;
-	};
-	// Ask kernel for more memory.
-	parts = kmalloc(sizeof(*parts)*nrparts+10*nrparts, GFP_KERNEL);
-	if (!parts){
-		vfree(buf);
-		return -ENOMEM;
-	};
-	memset(parts,0,sizeof(*parts)*nrparts+10*nrparts);
-	// Start building partition list
-	parts[curpart].name = "CFE";
-	parts[curpart].offset = 0;
-	parts[curpart].size = master->erasesize;
-	curpart++;
-	if (kernellen > 0) {
-		parts[curpart].name = "Kernel";
-		parts[curpart].offset = kerneladdr;
-		parts[curpart].size = kernellen;
-		curpart++;
-	};
-	if (rootfslen > 0) {
-		parts[curpart].name = "Rootfs";
-		parts[curpart].offset = rootfsaddr;
-		parts[curpart].size = rootfslen;
-		curpart++;
-	};
-	if (sparelen > 0){
-		parts[curpart].name = "OpenWrt";
-		parts[curpart].offset = spareaddr;
-		parts[curpart].size = sparelen;
-		curpart++;
-	};
-	parts[curpart].name = "NVRAM";
-	parts[curpart].offset = master->size - master->erasesize;
-	parts[curpart].size = master->erasesize;
-	for (i = 0; i < nrparts; i++) {
-		printk("adm5120: Partition %d is %s offset %x and length %x\n", i, parts[i].name, parts[i].offset, parts[i].size);
-	}
-	*pparts = parts;
-	vfree(buf);
-	return nrparts;
-};
-
-static int adm5120_detect_cfe(struct mtd_info *master)
-{
-	int idoffset = 0x4e0;
-#ifdef CONFIG_CPU_BIG_ENDIAN
-	static char idstring[8] = "CFE1CFE1";
-#else
-	static char idstring[8] = "1EFC1EFC";
 #endif
-	char buf[8];
-	int ret;
-	size_t retlen;
+#include <linux/squashfs_fs.h>
+#include <linux/jffs2.h>
+#include <linux/crc32.h>
+#ifdef CONFIG_SSB
+#include <linux/ssb/ssb.h>
+#endif
+#include <asm/io.h>
 
-	ret = master->read(master, idoffset, 8, &retlen, (void *)buf);
-	printk("adm5120: Read Signature value of %s\n", buf);
-	return strcmp(idstring,buf);
+
+#define TRX_MAGIC	0x30524448	/* "HDR0" */
+#define TRX_VERSION	1
+#define TRX_MAX_LEN	0x3A0000
+#define TRX_NO_HEADER	1		/* Do not write TRX header */	
+#define TRX_GZ_FILES	0x2     /* Contains up to TRX_MAX_OFFSET individual gzip files */
+#define TRX_MAX_OFFSET	3
+
+struct trx_header {
+	u32 magic;		/* "HDR0" */
+	u32 len;		/* Length of file including header */
+	u32 crc32;		/* 32-bit CRC from flag_version to end of file */
+	u32 flag_version;	/* 0:15 flags, 16:31 version */
+	u32 offsets[TRX_MAX_OFFSET];	/* Offsets of partitions from start of header */
+};
+
+#define ROUNDUP(x, y) ((((x)+((y)-1))/(y))*(y))
+#define NVRAM_SPACE 0x8000
+#define WINDOW_ADDR 0x1fc00000
+#define WINDOW_SIZE 0x400000
+#define BUSWIDTH 2
+
+#ifdef CONFIG_SSB
+extern struct ssb_bus ssb;
+#endif
+static struct mtd_info *adm5120_mtd;
+
+static struct map_info adm5120_map = {
+	name: "adm5120 physically mapped flash",
+	size: WINDOW_SIZE,
+	bankwidth: BUSWIDTH,
+	phys: WINDOW_ADDR,
+};
+
+#ifdef CONFIG_MTD_PARTITIONS
+
+static struct mtd_partition adm5120_parts[] = {
+	{ name: "cfe",	offset: 0, size: 0, mask_flags: MTD_WRITEABLE, },
+	{ name: "linux", offset: 0, size: 0, },
+	{ name: "rootfs", offset: 0, size: 0, },
+	{ name: "nvram", offset: 0, size: 0, },
+	{ name: "OpenWrt", offset: 0, size: 0, },
+	{ name: NULL, },
+};
+
+static int __init
+find_cfe_size(struct mtd_info *mtd, size_t size)
+{
+	struct trx_header *trx;
+	unsigned char buf[512];
+	int off;
+	size_t len;
+	int blocksize;
+
+	trx = (struct trx_header *) buf;
+
+	blocksize = mtd->erasesize;
+	if (blocksize < 0x10000)
+		blocksize = 0x10000;
+
+	for (off = (128*1024); off < size; off += blocksize) {
+		memset(buf, 0xe5, sizeof(buf));
+
+		/*
+		 * Read into buffer 
+		 */
+		if (mtd->read(mtd, off, sizeof(buf), &len, buf) ||
+		    len != sizeof(buf))
+			continue;
+
+		/* found a TRX header */
+		if (le32_to_cpu(trx->magic) == TRX_MAGIC) {
+			goto found;
+		}
+	}
+
+	printk(KERN_NOTICE
+	       "%s: Couldn't find bootloader size\n",
+	       mtd->name);
+	return -1;
+
+ found:
+	printk(KERN_NOTICE "bootloader size: %d\n", off);
+	return off;
+
 }
 
-static int __init adm5120_mtd_init(void)
+/*
+ * Copied from mtdblock.c
+ *
+ * Cache stuff...
+ * 
+ * Since typical flash erasable sectors are much larger than what Linux's
+ * buffer cache can handle, we must implement read-modify-write on flash
+ * sectors for each block write requests.  To avoid over-erasing flash sectors
+ * and to speed things up, we locally cache a whole flash sector while it is
+ * being written to until a different sector is required.
+ */
+
+static void erase_callback(struct erase_info *done)
 {
-	printk(KERN_INFO "ADM5120 board flash (0x%08x at 0x%08x)\n", FLASH_SIZE,
-	    FLASH_PHYS_ADDR);
+	wait_queue_head_t *wait_q = (wait_queue_head_t *)done->priv;
+	wake_up(wait_q);
+}
 
-	adm5120_mtd_map.virt = ioremap(FLASH_PHYS_ADDR, FLASH_SIZE);
+static int erase_write (struct mtd_info *mtd, unsigned long pos, 
+			int len, const char *buf)
+{
+	struct erase_info erase;
+	DECLARE_WAITQUEUE(wait, current);
+	wait_queue_head_t wait_q;
+	size_t retlen;
+	int ret;
 
-	if (!adm5120_mtd_map.virt) {
-		printk("ADM5120: failed to ioremap\n");
-		return -EIO;
+	/*
+	 * First, let's erase the flash block.
+	 */
+
+	init_waitqueue_head(&wait_q);
+	erase.mtd = mtd;
+	erase.callback = erase_callback;
+	erase.addr = pos;
+	erase.len = len;
+	erase.priv = (u_long)&wait_q;
+
+	set_current_state(TASK_INTERRUPTIBLE);
+	add_wait_queue(&wait_q, &wait);
+
+	ret = mtd->erase(mtd, &erase);
+	if (ret) {
+		set_current_state(TASK_RUNNING);
+		remove_wait_queue(&wait_q, &wait);
+		printk (KERN_WARNING "erase of region [0x%lx, 0x%x] "
+				     "on \"%s\" failed\n",
+			pos, len, mtd->name);
+		return ret;
 	}
-		
-	simple_map_init(&adm5120_mtd_map);
 
-	adm5120_mtd = do_map_probe("cfi_probe", &adm5120_mtd_map);
+	schedule();  /* Wait for erase to finish. */
+	remove_wait_queue(&wait_q, &wait);
 
-	if (adm5120_mtd) {
-		adm5120_mtd->owner = THIS_MODULE;
-		
-		if (adm5120_detect_cfe(adm5120_mtd) == 0)
-		{
-			int parsed_nr_parts = 0;
-			char * part_type;
+	/*
+	 * Next, writhe data to flash.
+	 */
 
-			printk("adm5120: CFE bootloader detected\n");
-			
-			if (parsed_nr_parts == 0) {
-				int ret = parse_cfe_partitions(adm5120_mtd, &parsed_parts);
-				
-				if (ret > 0) {
-					part_type = "CFE";
-					parsed_nr_parts = ret;
-				}
-			}
-			add_mtd_partitions(adm5120_mtd, parsed_parts, parsed_nr_parts);
-			return 0;
-		} else {
-			add_mtd_device(adm5120_mtd);
+	ret = mtd->write (mtd, pos, len, &retlen, buf);
+	if (ret)
+		return ret;
+	if (retlen != len)
+		return -EIO;
+	return 0;
+}
+
+
+
+
+static int __init
+find_root(struct mtd_info *mtd, size_t size, struct mtd_partition *part)
+{
+	struct trx_header trx, *trx2;
+	unsigned char buf[512], *block;
+	int off, blocksize;
+	u32 i, crc = ~0;
+	size_t len;
+	struct squashfs_super_block *sb = (struct squashfs_super_block *) buf;
+
+	blocksize = mtd->erasesize;
+	if (blocksize < 0x10000)
+		blocksize = 0x10000;
+
+	for (off = (128*1024); off < size; off += blocksize) {
+		memset(&trx, 0xe5, sizeof(trx));
+
+		/*
+		 * Read into buffer 
+		 */
+		if (mtd->read(mtd, off, sizeof(trx), &len, (char *) &trx) ||
+		    len != sizeof(trx))
+			continue;
+
+		/* found a TRX header */
+		if (le32_to_cpu(trx.magic) == TRX_MAGIC) {
+			part->offset = le32_to_cpu(trx.offsets[2]) ? : 
+				le32_to_cpu(trx.offsets[1]);
+			part->size = le32_to_cpu(trx.len); 
+
+			part->size -= part->offset;
+			part->offset += off;
+
+			goto found;
 		}
+	}
+
+	printk(KERN_NOTICE
+	       "%s: Couldn't find root filesystem\n",
+	       mtd->name);
+	return -1;
+
+ found:
+	if (part->size == 0)
+		return 0;
+	
+	if (mtd->read(mtd, part->offset, sizeof(buf), &len, buf) || len != sizeof(buf))
+		return 0;
+
+	if (*((__u32 *) buf) == SQUASHFS_MAGIC) {
+		printk(KERN_INFO "%s: Filesystem type: squashfs, size=0x%x\n", mtd->name, (u32) sb->bytes_used);
+
+		/* Update the squashfs partition size based on the superblock info */
+		part->size = sb->bytes_used;
+		len = part->offset + part->size;
+		len +=  (mtd->erasesize - 1);
+		len &= ~(mtd->erasesize - 1);
+		part->size = len - part->offset;
+	} else if (*((__u16 *) buf) == JFFS2_MAGIC_BITMASK) {
+		printk(KERN_INFO "%s: Filesystem type: jffs2\n", mtd->name);
+
+		/* Move the squashfs outside of the trx */
+		part->size = 0;
+	} else {
+		printk(KERN_INFO "%s: Filesystem type: unknown\n", mtd->name);
 		return 0;
 	}
-	iounmap(adm5120_mtd);
-	return -ENXIO;
-}
 
-static void __exit adm5120_mtd_exit(void)
-{
-	if (adm5120_mtd) {
-		del_mtd_device(adm5120_mtd);
-		map_destroy(adm5120_mtd);
-	}
+	if (trx.len != part->offset + part->size - off) {
+		/* Update the trx offsets and length */
+		trx.len = part->offset + part->size - off;
+	
+		/* Update the trx crc32 */
+		for (i = (u32) &(((struct trx_header *)NULL)->flag_version); i <= trx.len; i += sizeof(buf)) {
+			if (mtd->read(mtd, off + i, sizeof(buf), &len, buf) || len != sizeof(buf))
+				return 0;
+			crc = crc32_le(crc, buf, min(sizeof(buf), trx.len - i));
+		}
+		trx.crc32 = crc;
 
-	if (adm5120_mtd_map.virt) {
-		iounmap(adm5120_mtd_map.virt);
-		adm5120_mtd_map.virt = 0;
+		/* read first eraseblock from the trx */
+		block = kmalloc(mtd->erasesize, GFP_KERNEL);
+		trx2 = (struct trx_header *) block;
+		if (mtd->read(mtd, off, mtd->erasesize, &len, block) || len != mtd->erasesize) {
+			printk("Error accessing the first trx eraseblock\n");
+			return 0;
+		}
+		
+		printk("Updating TRX offsets and length:\n");
+		printk("old trx = [0x%08x, 0x%08x, 0x%08x], len=0x%08x crc32=0x%08x\n", trx2->offsets[0], trx2->offsets[1], trx2->offsets[2], trx2->len, trx2->crc32);
+		printk("new trx = [0x%08x, 0x%08x, 0x%08x], len=0x%08x crc32=0x%08x\n",   trx.offsets[0],   trx.offsets[1],   trx.offsets[2],   trx.len, trx.crc32);
+
+		/* Write updated trx header to the flash */
+		memcpy(block, &trx, sizeof(trx));
+		if (mtd->unlock)
+			mtd->unlock(mtd, off, mtd->erasesize);
+		erase_write(mtd, off, mtd->erasesize, block);
+		if (mtd->sync)
+			mtd->sync(mtd);
+		kfree(block);
+		printk("Done\n");
 	}
 	
+	return part->size;
 }
 
-module_init(adm5120_mtd_init);
-module_exit(adm5120_mtd_exit);
+struct mtd_partition * __init
+init_mtd_partitions(struct mtd_info *mtd, size_t size)
+{
+	int cfe_size;
 
-MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Florian Fainelli <florian@openwrt.org>");
-MODULE_DESCRIPTION("MTD map driver for ADM5120 boards");
+	if ((cfe_size = find_cfe_size(mtd,size)) < 0)
+		return NULL;
+
+	/* boot loader */
+	adm5120_parts[0].offset = 0;
+	adm5120_parts[0].size   = cfe_size;
+
+	/* nvram */
+	if (cfe_size != 384 * 1024) {
+		adm5120_parts[3].offset = size - ROUNDUP(NVRAM_SPACE, mtd->erasesize);
+		adm5120_parts[3].size   = ROUNDUP(NVRAM_SPACE, mtd->erasesize);
+	} else {
+		/* nvram (old 128kb config partition on netgear wgt634u) */
+		adm5120_parts[3].offset = adm5120_parts[0].size;
+		adm5120_parts[3].size   = ROUNDUP(NVRAM_SPACE, mtd->erasesize);
+	}
+
+	/* linux (kernel and rootfs) */
+	if (cfe_size != 384 * 1024) {
+		adm5120_parts[1].offset = adm5120_parts[0].size;
+		adm5120_parts[1].size   = adm5120_parts[3].offset - 
+			adm5120_parts[1].offset;
+	} else {
+		/* do not count the elf loader, which is on one block */
+		adm5120_parts[1].offset = adm5120_parts[0].size + 
+			adm5120_parts[3].size + mtd->erasesize;
+		adm5120_parts[1].size   = size - 
+			adm5120_parts[0].size - 
+			(2*adm5120_parts[3].size) - 
+			mtd->erasesize;
+	}
+
+	/* find and size rootfs */
+	if (find_root(mtd,size,&adm5120_parts[2])==0) {
+		/* entirely jffs2 */
+		adm5120_parts[4].name = NULL;
+		adm5120_parts[2].size = size - adm5120_parts[2].offset - 
+				adm5120_parts[3].size;
+	} else {
+		/* legacy setup */
+		/* calculate leftover flash, and assign it to the jffs2 partition */
+		if (cfe_size != 384 * 1024) {
+			adm5120_parts[4].offset = adm5120_parts[2].offset + 
+				adm5120_parts[2].size;
+			if ((adm5120_parts[4].offset % mtd->erasesize) > 0) {
+				adm5120_parts[4].offset += mtd->erasesize - 
+					(adm5120_parts[4].offset % mtd->erasesize);
+			}
+			adm5120_parts[4].size = adm5120_parts[3].offset - 
+				adm5120_parts[4].offset;
+		} else {
+			adm5120_parts[4].offset = adm5120_parts[2].offset + 
+				adm5120_parts[2].size;
+			if ((adm5120_parts[4].offset % mtd->erasesize) > 0) {
+				adm5120_parts[4].offset += mtd->erasesize - 
+					(adm5120_parts[4].offset % mtd->erasesize);
+			}
+			adm5120_parts[4].size = size - adm5120_parts[3].size - 
+				adm5120_parts[4].offset;
+		}
+	}
+
+	return adm5120_parts;
+}
+#endif
+
+int __init init_adm5120_map(void)
+{
+#ifdef CONFIG_SSB
+	struct ssb_mipscore *mcore = &ssb.mipscore;
+#endif
+	size_t size;
+	int ret = 0;
+#ifdef CONFIG_MTD_PARTITIONS
+	struct mtd_partition *parts;
+	int i;
+#endif
+#ifdef CONFIG_SSB
+	u32 window = mcore->flash_window;
+	u32 window_size = mcore->flash_window_size;
+
+	printk("adm5120 : flash init: 0x%08x 0x%08x\n", window, window_size);
+	adm5120_map.phys = window;
+	adm5120_map.size = window_size;
+	adm5120_map.virt = ioremap_nocache(window, window_size);
+#else
+	printk("adm5120 : flash init : 0x%08x 0x%08x\n", WINDOW_ADDR, WINDOW_SIZE);
+	adm5120_map.virt = ioremap_nocache(WINDOW_ADDR, WINDOW_SIZE);
+#endif
+
+	if (!adm5120_map.virt) {
+		printk("Failed to ioremap\n");
+		return -EIO;
+	}
+	simple_map_init(&adm5120_map);
+	
+	if (!(adm5120_mtd = do_map_probe("cfi_probe", &adm5120_map))) {
+		printk("Failed to do_map_probe\n");
+		iounmap((void *)adm5120_map.virt);
+		return -ENXIO;
+	}
+
+	adm5120_mtd->owner = THIS_MODULE;
+
+	size = adm5120_mtd->size;
+
+	printk(KERN_NOTICE "Flash device: 0x%x at 0x%x\n", size, WINDOW_ADDR);
+
+#ifdef CONFIG_MTD_PARTITIONS
+	parts = init_mtd_partitions(adm5120_mtd, size);
+	for (i = 0; parts[i].name; i++);
+	ret = add_mtd_partitions(adm5120_mtd, parts, i);
+	if (ret) {
+		printk(KERN_ERR "Flash: add_mtd_partitions failed\n");
+		goto fail;
+	}
+#endif
+	return 0;
+
+ fail:
+	if (adm5120_mtd)
+		map_destroy(adm5120_mtd);
+	if (adm5120_map.virt)
+		iounmap((void *)adm5120_map.virt);
+	adm5120_map.virt = 0;
+	return ret;
+}
+
+void __exit cleanup_adm5120_map(void)
+{
+#ifdef CONFIG_MTD_PARTITIONS
+	del_mtd_partitions(adm5120_mtd);
+#endif
+	map_destroy(adm5120_mtd);
+	iounmap((void *)adm5120_map.virt);
+}
+
+module_init(init_adm5120_map);
+module_exit(cleanup_adm5120_map);
