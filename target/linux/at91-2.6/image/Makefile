@@ -5,16 +5,25 @@
 # See /LICENSE for more information.
 #
 
-TARGET_DEVICE_TABLE:=$(TOPDIR)/target/linux/vlink-2.6/image/device_table.txt
-
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 define Build/Clean
+	$(MAKE) -C romboot clean
+	$(MAKE) -C u-boot clean
+endef
+
+define Build/Compile
+	$(MAKE) -C romboot compile
+#	$(MAKE) -C u-boot configure
+	$(MAKE) -C u-boot compile
 endef
 
 define Image/Prepare
   cp $(LINUX_DIR)/arch/arm/boot/uImage $(KDIR)/uImage
+	cp $(KDIR)/romboot/romboot.bin $(KDIR)/romboot.bin
+	cp $(KDIR)/u-boot-1.1.4/u-boot.bin $(KDIR)/u-boot.bin
+	cat $(KDIR)/romboot/romboot.block $(KDIR)/u-boot-1.1.4/u-boot.block > $(KDIR)/loaders.block
 endef
 
 define Image/BuildKernel
@@ -23,14 +32,6 @@ endef
 
 define Image/Build
 	$(call Image/Build/$(1),$(1))
-endef
-
-define Image/Build/jffs2-64k
-	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).img bs=65536 conv=sync
-endef
-
-define Image/Build/jffs2-128k
-	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).img bs=131072 conv=sync
 endef
 
 $(eval $(call BuildImage))

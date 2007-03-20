@@ -1,0 +1,57 @@
+diff -uNr romboot/main.cpp romboot.new/main.cpp
+--- romboot/main.cpp	2004-07-16 17:10:04.000000000 +0200
++++ romboot.new/main.cpp	2006-03-03 02:27:37.000000000 +0100
+@@ -23,12 +23,12 @@
+ #define AT91C_UBOOT_DATAFLASH_ADDR 0xC0008000
+ 
+ // crystal= 18.432MHz
+-//#define AT91C_PLLA_VALUE 0x2026BE04 // -> 179.712MHz
+-//#define AT91C_PLLA_MCK 0x0000202
++#define AT91C_PLLA_VALUE 0x2026BE04 // -> 179.712MHz
++#define AT91C_PLLA_MCK 0x0000202
+ 
+ // crystal= 20.000MHz
+-#define AT91C_PLLA_VALUE 0x2023BE04 // -> 180MHz
+-#define AT91C_PLLA_MCK 0x0000202
++//#define AT91C_PLLA_VALUE 0x2023BE04 // -> 180MHz
++//#define AT91C_PLLA_MCK 0x0000202
+ 
+ #define DELAY_MAIN_FREQ	1000
+ #define DISP_LINE_LEN 16
+@@ -151,7 +151,7 @@
+ //*-----------------------------------------------------------------------------
+ void AT91F_DisplayMenu(void)
+ {
+-  printf("\n\rATMEL LOADER %s %s %s\n\r", AT91C_VERSION, __DATE__, __TIME__);
++  printf("\n\rFDL LOADER %s %s %s\n\r", AT91C_VERSION, __DATE__, __TIME__);
+   printf(menu_separ);	
+   AT91F_DataflashPrintInfo();
+   printf(menu_separ);	
+@@ -306,6 +306,19 @@
+   AT91F_SetPLL();
+ }
+ 
++void LedCode(void)
++{
++	int *pRegister;
++	pRegister = (int *)0xFFFFF800; // Enable port C peripheral reg
++        *pRegister = 0x3c00;
++        pRegister = (int *)0xFFFFF810; // Output Enable reg
++        *pRegister = 0x3c00;
++        pRegister = (int *)0xFFFFF830; // Set data
++        *pRegister = 0x1400;
++        pRegister = (int *)0xFFFFF834; // Clear bits
++        *pRegister = 0x2800;
++}
++
+ void AT91F_StartUboot(unsigned int dummy, void *pvoid)
+ {
+   printf("Load U-BOOT from dataflash[%x] to SDRAM[%x]\n\r", AT91C_UBOOT_DATAFLASH_ADDR, AT91C_UBOOT_ADDR);
+@@ -313,6 +326,7 @@
+   printf("Set PLLA to 180Mhz and Master clock to 60Mhz and start U-BOOT\n\r");
+   //* Reset registers
+   AT91F_ResetRegisters();
++  LedCode();
+   Jump(AT91C_UBOOT_ADDR);
+   while(1);
+ }

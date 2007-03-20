@@ -1,0 +1,50 @@
+--- romboot/Makefile.old	2007-03-18 09:29:20.000000000 +0100
++++ romboot/Makefile	2007-03-18 09:29:13.000000000 +0100
+@@ -0,0 +1,47 @@
++LINKFLAGS= -T elf32-littlearm.lds -Ttext 0
++COMPILEFLAGS= -Os
++TARGET=romboot
++OBJFILES=cstartup_ram.o asm_isr.o jump.o at45.o com.o dataflash.o \
++	init.o main.o stdio.o _udivsi3.o _umodsi3.o div0.o
++LIBRARIES=
++INCLUDES= -Iinclude
++
++all:$(TARGET)
++
++$(TARGET): $(OBJFILES)
++	$(LD) $(OBJFILES) -o $(TARGET).out $(LINKFLAGS) -n
++	$(OBJCOPY) $(TARGET).out -O binary $(TARGET).bin
++
++asm_isr.o: asm_isr.S
++	$(CC) -c -Iinclude -o $@ $<
++
++cstartup_ram.o: cstartup_ram.S
++	$(CC) -c -Iinclude -o $@ $<
++
++jump.o: jump.S
++	$(CC) -c -Iinclude -o $@ $<
++
++_udivsi3.o: _udivsi3.S
++	$(CC) -c $<
++
++_umodsi3.o: _umodsi3.S
++	$(CC) -c $<
++
++#%.o: %.S
++#	$(CC) -c $(INCLUDES) -o $@ $<
++
++%.o: %.cpp
++	$(CC) -c $(COMPILEFLAGS) $(INCLUDES) -o $@ $<
++
++div0.o: div0.c
++	$(CC) -c $(COMPILEFLAGS) $<
++
++clean:
++	rm $(OBJFILES) -f
++	rm *~ -f
++	rm $(TARGET) -f
++
++
++#LD="$CROSS"ld
++
++

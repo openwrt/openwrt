@@ -1,0 +1,18 @@
+config AT91_ROMBOOT
+	bool "Build romboot loader"
+	depends LINUX_2_6_AT91
+	default y
+
+config AT91_UBOOT
+	bool "Build u-boot loader"
+	depends LINUX_2_6_AT91
+	default y
+
+config UBOOT_TARGET
+	string "U-Boot Board Configuration"
+	default "vlink"
+	help
+	  For all supported boards there are reqdy-to-use default
+		configurations available; just type "<board_name>".
+
+
