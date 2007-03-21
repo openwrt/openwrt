@@ -49,7 +49,9 @@
 #include <linux/squashfs_fs.h>
 #include <linux/jffs2.h>
 #include <linux/crc32.h>
+#ifdef CONFIG_SSB
 #include <linux/ssb/ssb.h>
+#endif
 #include <asm/io.h>
 
 
@@ -74,7 +76,9 @@ struct trx_header {
 #define WINDOW_SIZE 0x400000
 #define BUSWIDTH 2
 
+#ifdef CONFIG_SSB
 extern struct ssb_bus ssb;
+#endif
 static struct mtd_info *bcm947xx_mtd;
 
 static struct map_info bcm947xx_map = {
@@ -385,13 +389,17 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 
 int __init init_bcm947xx_map(void)
 {
+#ifdef CONFIG_SSB
 	struct ssb_mipscore *mcore = &ssb.mipscore;
+#endif
 	size_t size;
 	int ret = 0;
 #ifdef CONFIG_MTD_PARTITIONS
 	struct mtd_partition *parts;
 	int i;
 #endif
+
+#ifdef CONFIG_SSB
 	u32 window = mcore->flash_window;
 	u32 window_size = mcore->flash_window_size;
 
@@ -399,6 +407,10 @@ int __init init_bcm947xx_map(void)
 	bcm947xx_map.phys = window;
 	bcm947xx_map.size = window_size;
 	bcm947xx_map.virt = ioremap_nocache(window, window_size);
+#else
+	printk("flash init: 0x%08x 0x%08x\n", WINDOW_ADDR, WINDOW_SIZE);
+	bcm947xx_map.virt = ioremap_nocache(WINDOW_ADDR, WINDOW_SIZE);
+#endif
 
 	if (!bcm947xx_map.virt) {
 		printk("Failed to ioremap\n");
