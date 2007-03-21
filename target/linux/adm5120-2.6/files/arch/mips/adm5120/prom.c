@@ -106,7 +106,7 @@ void __init prom_init(void)
 	mips_machtype = MACH_ADM_GW_5120;
 
 	/* init command line, register a default kernel command line */
-	strcpy(&(arcs_cmdline[0]), "console=ttyS0,115200 rootfstype=jffs2 init=/etc/preinit");
+	strcpy(&(arcs_cmdline[0]), "console=ttyS0,115200 rootfstype=squashfs,jffs2 init=/etc/preinit");
 
 	/* init memory map */
 	prom_meminit();
