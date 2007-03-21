@@ -24,17 +24,17 @@ extern struct pci_ops adm5120_pci_ops;
 
 
 struct resource pci_io_resource = {
-	"PCI IO space", 
-	0x11500000,  
-	0x115ffff0-1,
-	IORESOURCE_IO
+	.name = "PCI IO space", 
+	.start = 0x11500000,  
+	.end = 0x115ffff0-1,
+	.flags = IORESOURCE_IO
 };
 
 struct resource pci_mem_resource = {
-	"PCI memory space", 
-	0x11400000,
-	0x11500000,
-	IORESOURCE_MEM
+	.name = "PCI memory space", 
+	.start = 0x11400000,
+	.end = 0x11500000,
+	.flags = IORESOURCE_MEM
 };
 
 static struct pci_controller adm5120_controller = {
@@ -73,10 +73,10 @@ static int __init adm5120_pci_setup(void)
 {
 
 	if ((*(volatile u32 *)(KSEG1ADDR(ADM5120_CODE))) & ADM5120_CODE_PQFP) {
-		printk("System has no PCI BIOS\n");
+		printk("System has no PCI BIOS (ADM5120 PQFP)\n");
 		return 1;
 	}
-	printk("System has PCI BIOS\n");
+	printk("System has PCI BIOS (ADM5120 BGA)\n");
 
 	/* Avoid ISA compat ranges.  */
 	PCIBIOS_MIN_IO = 0x00000000;
