@@ -74,7 +74,7 @@ diff -urN linux-2.6.19.1/include/linux/atmdev.h linux-2.6.19.1.new/include/linux
  	void		*dev_data;	/* per-device data */
  	void		*proto_data;	/* per-protocol data */
  	struct k_atm_aal_stats *stats;	/* pointer to AAL stats group */
-+#if defined(CONFIG_MIP_BCM963XX)
++#if defined(CONFIG_MIPS_BCM963XX)
 +	struct sock	*sk;		/* socket backpointer */
 +#endif
  	/* SVC part --- may move later ------------------------------------- */
