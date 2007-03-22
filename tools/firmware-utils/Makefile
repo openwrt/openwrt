@@ -27,6 +27,7 @@ define Build/Compile
 	$(call cc,airlink)
 	$(call cc,srec2bin)
 	$(call cc,mksyshdr)
+	$(call cc,mkmylofw)
 endef
 
 define Build/Install
