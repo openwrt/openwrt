@@ -321,7 +321,7 @@ static int __init ar7_register_devices(void)
 
 	memset(uart_port, 0, sizeof(struct uart_port) * 2);
 
-	uart_port[0].type = PORT_16750;
+	uart_port[0].type = PORT_AR7;
 	uart_port[0].line = 0;
 	uart_port[0].irq = AR7_IRQ_UART0;
 	uart_port[0].uartclk = ar7_bus_freq() / 2;
@@ -333,7 +333,7 @@ static int __init ar7_register_devices(void)
 	if (res)
 		return res;
 
-	uart_port[1].type = PORT_16750;
+	uart_port[1].type = PORT_AR7;
 	uart_port[1].line = 1;
 	uart_port[1].irq = AR7_IRQ_UART1;
 	uart_port[1].uartclk = ar7_bus_freq() / 2;
