@@ -38,33 +38,26 @@
 
 #include <asm/mips-boards/prom.h>
 
-#warning FIXME: use sdram control regs and/or autodetection
 static int __init memsize(void)
 {
-	char *memsize_str;
-	unsigned int result;
-	char cmdline[CL_SIZE], *ptr;
+	u32 size = (64 << 20);
+	volatile u32 *addr = (u32 *)KSEG1ADDR(0x14000000 + size - 4);
+	u32 *kernel_end = (u32 *)KSEG1ADDR(CPHYSADDR((u32)&_end));
 
-	/* Check the command line first for a memsize directive */
-	strcpy(cmdline, arcs_cmdline);
-	ptr = strstr(cmdline, "memsize=");
-	if (ptr && (ptr != cmdline) && (*(ptr - 1) != ' '))
-		ptr = strstr(ptr, " memsize=");
-
-	if (ptr) {
-		result = memparse(ptr + 8, &ptr);
-	} else {
-		/* otherwise look in the environment */
-		memsize_str = prom_getenv("memsize");
-		if (!memsize_str) {
-			prom_printf("memsize not set in boot prom, set to default (8Mb)\n");
-			result = 0x00800000;
-		} else {
-			result = simple_strtol(memsize_str, NULL, 0);
-		}
+	while (addr > kernel_end) {
+		*addr = (u32)addr;
+		size >>= 1;
+		addr -= size >> 2;
 	}
 
-	return result;
+	do {
+		addr += size >> 2;
+		if (*addr != (u32)addr)
+			break;
+		size <<= 1;
+	} while (size < (64 << 20));
+
+	return size;
 }
 
 #ifdef CONFIG_NEED_MULTIPLE_NODES
@@ -167,9 +160,10 @@ void __init mem_init(void)
 
 void __init prom_meminit(void)
 {
+	unsigned long pages;
 #ifdef CONFIG_NEED_MULTIPLE_NODES
 	unsigned long kernel_start, kernel_end;
-	unsigned long pages, free_pages;
+	unsigned long free_pages;
 	unsigned long bootmap_size;
 #endif
 
@@ -196,7 +190,5 @@ void __init prom_meminit(void)
 
 unsigned long __init prom_free_prom_memory(void)
 {
-/*	return freed;
-*/
 	return 0;
 }

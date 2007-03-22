@@ -1,22 +1,52 @@
-diff -Nru linux-2.6.19.2/drivers/serial/8250.c linux-ar7/drivers/serial/8250.c
---- linux-2.6.19.2/drivers/serial/8250.c	2006-12-12 02:32:53.000000000 +0700
-+++ linux-ar7/drivers/serial/8250.c	2007-02-02 14:25:51.000000000 +0700
-@@ -2171,6 +2171,9 @@
- 		 */
- 		up->mcr_mask = ~ALPHA_KLUDGE_MCR;
- 		up->mcr_force = ALPHA_KLUDGE_MCR;
-+#ifdef CONFIG_AR7
-+		up->mcr_force |= UART_MCR_RTS;
-+#endif
+diff -Nru linux-2.6.19.2/include/linux/serialP.h linux-ar7/include/linux/serialP.h
+--- linux-2.6.19.2/include/linux/serialP.h	2007-01-17 01:24:01.000000000 +0700
++++ linux-ar7/include/linux/serialP.h	2007-03-22 22:36:48.000000000 +0700
+@@ -135,6 +135,9 @@
+  * the interrupt line _up_ instead of down, so if we register the IRQ
+  * while the UART is in that state, we die in an IRQ storm. */
+ #define ALPHA_KLUDGE_MCR (UART_MCR_OUT2)
++#elif defined(CONFIG_AR7)
++/* This is how it is set up by bootloader... */
++#define ALPHA_KLUDGE_MCR  (UART_MCR_OUT2 | UART_MCR_OUT1 | UART_MCR_RTS | UART_MCR_DTR)
+ #else
+ #define ALPHA_KLUDGE_MCR 0
+ #endif
+diff -Nru linux-2.6.19.2/include/linux/serial_core.h linux-ar7/include/linux/serial_core.h
+--- linux-2.6.19.2/include/linux/serial_core.h	2007-01-11 02:10:37.000000000 +0700
++++ linux-ar7/include/linux/serial_core.h	2007-03-22 22:50:13.000000000 +0700
+@@ -39,7 +39,8 @@
+ #define PORT_RSA	13
+ #define PORT_NS16550A	14
+ #define PORT_XSCALE	15
+-#define PORT_MAX_8250	15	/* max port ID */
++#define PORT_AR7	16
++#define PORT_MAX_8250	16	/* max port ID */
  
- 		up->port.ops = &serial8250_pops;
- 	}
-@@ -2243,7 +2246,7 @@
+ /*
+  * ARM specific type numbers.  These are not currently guaranteed
+diff -Nru linux-2.6.19.2/drivers/serial/8250.c linux-ar7/drivers/serial/8250.c
+--- linux-2.6.19.2/drivers/serial/8250.c	2007-01-11 02:10:37.000000000 +0700
++++ linux-ar7/drivers/serial/8250.c	2007-03-22 22:45:17.000000000 +0700
+@@ -251,6 +251,13 @@
+ 		.fcr		= UART_FCR_ENABLE_FIFO | UART_FCR_R_TRIG_10,
+ 		.flags		= UART_CAP_FIFO | UART_CAP_UUE,
+ 	},
++	[PORT_AR7] = {
++		.name		= "TI-AR7",
++		.fifo_size	= 16,
++		.tx_loadsz	= 16,
++		.fcr		= UART_FCR_ENABLE_FIFO | UART_FCR_R_TRIG_00,
++		.flags		= UART_CAP_FIFO | UART_CAP_AFE,
++	},
+ };
+ 
+ #ifdef CONFIG_SERIAL_8250_AU1X00
+@@ -2243,7 +2250,7 @@
  {
  	struct uart_8250_port *up = (struct uart_8250_port *)port;
  
 -	wait_for_xmitr(up, UART_LSR_THRE);
-+	wait_for_xmitr(up, UART_LSR_TEMT);
++	wait_for_xmitr(up, BOTH_EMPTY);
  	serial_out(up, UART_TX, ch);
  }
  
