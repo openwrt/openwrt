@@ -215,15 +215,14 @@ u32 ssb_cpu_clock(struct ssb_mipscore *mcore)
 	if (bus->extif.dev) {
 		ssb_extif_get_clockcontrol(&bus->extif, &pll_type, &n, &m);
 	} else if (bus->chipco.dev) {
-		if (bus->chip_id == 0x5365)
-			/* FIXME: is this override really necessary? */
-			return 200000000;
-
-		ssb_chipco_get_clockcontrol(&bus->chipco, &pll_type, &n, &m);
+		ssb_chipco_get_clockcpu(&bus->chipco, bus->chip_id, &rate,
+			&pll_type, &n, &m);
 	} else
 		return 0;
 
-	rate = ssb_calc_clock_rate(pll_type, n, m);
+	if (rate == 0)
+		rate = ssb_calc_clock_rate(pll_type, n, m);
+
 	if (pll_type == SSB_PLLTYPE_6)
 		rate *= 2;
 

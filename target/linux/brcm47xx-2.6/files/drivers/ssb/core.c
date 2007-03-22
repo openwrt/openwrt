@@ -235,6 +235,7 @@ static int ssb_attach_queued_buses(void)
 	int i, err;
 
 	list_for_each_entry_safe(bus, n, &attach_queue, list) {
+		ssb_pcicore_init(&bus->pcicore);
 		for (i = 0; i < bus->nr_devices; i++) {
 			dev = &(bus->devices[i]);
 
@@ -350,7 +351,6 @@ static int ssb_bus_register(struct ssb_bus *bus,
 	/* Initialize basic system devices (if available) */
 	ssb_chipcommon_init(&bus->chipco);
 	ssb_mipscore_init(&bus->mipscore);
-	ssb_pcicore_init(&bus->pcicore);
 
 	/* Queue it for attach */
 	list_add_tail(&bus->list, &attach_queue);

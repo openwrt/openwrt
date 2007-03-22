@@ -364,6 +364,8 @@ extern void ssb_chipcommon_init(struct ssb_chipcommon *cc);
 extern void ssb_chipco_suspend(struct ssb_chipcommon *cc, pm_message_t state);
 extern void ssb_chipco_resume(struct ssb_chipcommon *cc);
 
+extern void ssb_chipco_get_clockcpu(struct ssb_chipcommon *cc, u32 chip_id,
+	u32 *rate, u32 *plltype, u32 *n, u32 *m);
 extern void ssb_chipco_get_clockcontrol(struct ssb_chipcommon *cc,
 					u32 *plltype, u32 *n, u32 *m);
 extern void ssb_chipco_timing_init(struct ssb_chipcommon *cc,
