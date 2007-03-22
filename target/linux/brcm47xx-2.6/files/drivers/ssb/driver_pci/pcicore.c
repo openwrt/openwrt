@@ -303,6 +303,8 @@ static void ssb_pcicore_init_hostmode(struct ssb_pcicore *pc)
 	udelay(150);
 	val |= SSB_PCICORE_CTL_RST; /* Deassert RST# */
 	pcicore_write32(pc, SSB_PCICORE_CTL, val);
+	val = SSB_PCICORE_ARBCTL_INTERN;
+	pcicore_write32(pc, SSB_PCICORE_ARBCTL, val); 
 	udelay(1);
 
 	//TODO cardbus mode
@@ -329,6 +331,7 @@ static void ssb_pcicore_init_hostmode(struct ssb_pcicore *pc)
 	 * The following needs change, if we want to port hostmode
 	 * to non-MIPS platform. */
 	set_io_port_base((unsigned long)ioremap_nocache(SSB_PCI_MEM, 0x04000000));
+	mdelay(300);
 	register_pci_controller(&ssb_pcicore_controller);
 }
 

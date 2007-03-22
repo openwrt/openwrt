@@ -266,6 +266,35 @@ void ssb_chipco_resume(struct ssb_chipcommon *cc)
 	chipco_powercontrol_init(cc);
 }
 
+void ssb_chipco_get_clockcpu(struct ssb_chipcommon *cc, u32 chip_id, u32 *rate,
+			     u32 *plltype, u32 *n, u32 *m)
+{
+	*rate = 0;
+	*n = chipco_read32(cc, SSB_CHIPCO_CLOCK_N);
+	*plltype = (cc->capabilities & SSB_CHIPCO_CAP_PLLT);
+	switch (*plltype) {
+		case SSB_PLLTYPE_2:
+		case SSB_PLLTYPE_4:
+		case SSB_PLLTYPE_6:
+		case SSB_PLLTYPE_7:
+			*m = chipco_read32(cc, SSB_CHIPCO_CLOCK_MIPS);
+			break;
+		case SSB_PLLTYPE_5:
+			*rate = 200000000;
+			break;
+		case SSB_PLLTYPE_3:
+			/* 5350 uses m2 to control mips */
+			*m = chipco_read32(cc, SSB_CHIPCO_CLOCK_M2);
+			break;
+		default:
+			*m = chipco_read32(cc, SSB_CHIPCO_CLOCK_SB);
+			break;
+	}
+
+	if (*rate == 0 && chip_id == 0x5365)
+		*rate = 200000000;
+}
+
 void ssb_chipco_get_clockcontrol(struct ssb_chipcommon *cc,
 				 u32 *plltype, u32 *n, u32 *m)
 {
