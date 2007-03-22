@@ -29,9 +29,18 @@
 #include <asm/bootinfo.h>
 #include <asm/addrspace.h>
 
+/* boot loaders specific definitions */
+#define CFE_EPTSEAL 0x43464531
+#define CFE 1
+#define MYLOADER 2
+#define UNKNOWN 0
+
 void setup_prom_printf(int);
 void prom_printf(char *, ...);
 void prom_meminit(void);
+
+/* we assume we don't know the boot loader by default */
+int boot_loader_type = UNKNOWN;
 
 #define ADM5120_ENVC           1
 
@@ -107,6 +116,31 @@ void __init prom_init(void)
 
 	/* init command line, register a default kernel command line */
 	strcpy(&(arcs_cmdline[0]), "console=ttyS0,115200 rootfstype=squashfs,jffs2 init=/etc/preinit");
+
+	/* check for CFE by finding the CFE magic number */
+	int *prom_vec = (int *) fw_arg3;
+	int argc = fw_arg0;
+	unsigned int cfe_eptseal;
+
+	if (argc < 0)
+		cfe_eptseal = (uint32_t)(unsigned long)prom_vec;
+	else {
+		if ((int32_t)(long)prom_vec < 0)
+			 /*
+			  * Old loaders all it gives us is the handle,
+			  * so assume the seal.
+			  */
+			cfe_eptseal = CFE_EPTSEAL;
+		else
+			/*
+			 * Newer loaders bundle the handle/ept/eptseal
+			 */
+			cfe_eptseal = (unsigned int)((uint32_t *)prom_vec)[3];
+	}
+	if (cfe_eptseal == CFE_EPTSEAL) {
+		boot_loader_type = CFE;
+		printk("adm5120 : CFE boot loader\n");
+	}
 
 	/* init memory map */
 	prom_meminit();
