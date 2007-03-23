@@ -17,13 +17,16 @@ define Build/Compile
 	$(MAKE) -C romboot compile
 #	$(MAKE) -C u-boot configure
 	$(MAKE) -C u-boot compile
+	$(KDIR)/u-boot-1.1.4/tools/ubparams
+	cp params $(KDIR)
 endef
 
 define Image/Prepare
   cp $(LINUX_DIR)/arch/arm/boot/uImage $(KDIR)/uImage
 	cp $(KDIR)/romboot/romboot.bin $(KDIR)/romboot.bin
 	cp $(KDIR)/u-boot-1.1.4/u-boot.bin $(KDIR)/u-boot.bin
-	cat $(KDIR)/romboot/romboot.block $(KDIR)/u-boot-1.1.4/u-boot.block > $(KDIR)/loaders.block
+	dd if=$(KDIR)/u-boot.bin of=$(KDIR)/u-boot.block bs=100k count=1 conv=sync
+	cat $(KDIR)/u-boot.block $(KDIR)/params > $(KDIR)/u-boot.full
 endef
 
 define Image/BuildKernel
@@ -31,6 +34,10 @@ define Image/BuildKernel
 endef
 
 define Image/Build
+	dd if=$(KDIR)/uImage of=$(KDIR)/uImage.block bs=1056k count=1 conv=sync
+	dd if=$(KDIR)/root.squashfs of=$(KDIR)/root.block bs=1056k count=1 conv=sync
+	cat $(KDIR)/uImage.block $(KDIR)/root.block > $(KDIR)/knlroot.bin
+	$(STAGING_DIR)/bin/trx -o $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL).trx -f $(KDIR)/romboot.bin -f$(KDIR)/u-boot.full -f$(KDIR)/knlroot.bin
 	$(call Image/Build/$(1),$(1))
 endef
 
