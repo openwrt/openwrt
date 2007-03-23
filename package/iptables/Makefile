@@ -24,6 +24,7 @@ include $(INCLUDE_DIR)/package.mk
 ifeq ($(DUMP),)
   -include $(LINUX_DIR)/.config
   include $(INCLUDE_DIR)/netfilter.mk
+  STAMP_CONFIGURED:=$(strip $(STAMP_CONFIGURED))_$(shell grep 'NETFILTER' $(LINUX_DIR)/.config | md5s)
 endif
 
 define Package/iptables/Default
@@ -159,9 +160,8 @@ define Package/ip6tables
   TITLE:=IPv6 firewall administration tool
 endef
 
-$(PKG_BUILD_DIR)/.configured: $(LINUX_DIR)/.config
-
 define Build/Configure
+	rm -f $(PKG_BUILD_DIR)/.configured*
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		clean
 endef
