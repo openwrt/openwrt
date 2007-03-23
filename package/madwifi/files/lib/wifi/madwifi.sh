@@ -231,7 +231,7 @@ EOF
 detect_atheros() {
 	cd /proc/sys/dev
 	[ -d ath ] || return
-	for dev in wifi*; do
+	for dev in $(ls wifi* 2>&-); do
 		config_get type "$dev" type
 		[ "$type" = atheros ] && return
 		cat <<EOF
