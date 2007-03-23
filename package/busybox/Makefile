@@ -19,6 +19,10 @@ PKG_MD5SUM:=5728403bce309cdabcffa414e2e64052
 
 include $(INCLUDE_DIR)/package.mk
 
+ifeq ($(DUMP),)
+  STAMP_CONFIGURED:=$(strip $(STAMP_CONFIGURED))_$(shell grep '^CONFIG_BUSYBOX_' $(TOPDIR)/.config | md5s)
+endif
+
 init-y :=
 init-$(CONFIG_BUSYBOX_CONFIG_HTTPD) += httpd
 init-$(CONFIG_BUSYBOX_CONFIG_CROND) += cron
@@ -46,6 +50,7 @@ define Package/busybox/config
 endef
 
 define Build/Configure
+	rm -f $(PKG_BUILD_DIR)/.configured*
 	$(SCRIPT_DIR)/gen_busybox_config.pl $(TOPDIR)/.config > $(PKG_BUILD_DIR)/.config
 	yes '' | $(MAKE) -C $(PKG_BUILD_DIR) \
 		CC="$(TARGET_CC)" \
