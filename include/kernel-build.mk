@@ -220,6 +220,7 @@ confname=$(subst .,_,$(subst -,_,$(1)))
 define Profile
   $(eval $(call Profile/Default))
   $(eval $(call Profile/$(1)))
+  $(eval $(call shexport,Profile/$(1)/Config))
   $(eval $(call shexport,Profile/$(1)/Description))
   DUMPINFO += \
 	echo "Target-Profile: $(1)"; \
@@ -228,6 +229,9 @@ define Profile
 	if [ -f ./config/profile-$(1) ]; then \
 		echo "Target-Profile-Kconfig: yes"; \
 	fi; \
+	echo "Target-Profile-Config: "; \
+	getvar "$(call shvar,Profile/$(1)/Config)"; \
+	echo "@@"; \
 	echo "Target-Profile-Description:"; \
 	getvar "$(call shvar,Profile/$(1)/Description)"; \
 	echo "@@"; \

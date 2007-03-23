@@ -5,6 +5,18 @@ my %package;
 my %srcpackage;
 my %category;
 
+sub get_multiline {
+	my $prefix = shift;
+	my $str;
+	while (<>) {
+		last if /^@@/;
+		s/^\s*//g;
+		$str .= (($_ and $prefix) ? $prefix . $_ : $_);
+	}
+
+	return $str;
+}
+
 sub parse_target_metadata() {
 	my ($target, @target, $profile);	
 	while (<>) {
@@ -25,14 +37,7 @@ sub parse_target_metadata() {
 		/^Target-Path:\s*(.+)\s*$/ and $target->{path} = $1;
 		/^Target-Arch:\s*(.+)\s*$/ and $target->{arch} = $1;
 		/^Target-Features:\s*(.+)\s*$/ and $target->{features} = [ split(/\s+/, $1) ];
-		/^Target-Description:/ and do {
-			my $desc;
-			while (<>) {
-				last if /^@@/;
-				$desc .= $_;
-			}
-			$target->{desc} = $desc;
-		};
+		/^Target-Description:/ and $target->{desc} = get_multiline();
 		/^Linux-Version:\s*(.+)\s*$/ and $target->{version} = $1;
 		/^Linux-Release:\s*(.+)\s*$/ and $target->{release} = $1;
 		/^Linux-Kernel-Arch:\s*(.+)\s*$/ and $target->{karch} = $1;
@@ -47,14 +52,8 @@ sub parse_target_metadata() {
 		};
 		/^Target-Profile-Name:\s*(.+)\s*$/ and $profile->{name} = $1;
 		/^Target-Profile-Packages:\s*(.*)\s*$/ and $profile->{packages} = [ split(/\s+/, $1) ];
-		/^Target-Profile-Description:/ and do {
-			my $desc;
-			while (<>) {
-				last if /^@@/;
-				$desc .= $_;
-			}
-			$profile->{desc} = $desc;
-		};
+		/^Target-Profile-Description:\s*(.*)\s*/ and $profile->{desc} = get_multiline();
+		/^Target-Profile-Config:/ and $profile->{config} = get_multiline("\t");
 		/^Target-Profile-Kconfig:/ and $profile->{kconfig} = 1;
 	}
 	foreach my $target (@target) {
@@ -106,38 +105,16 @@ sub parse_package_metadata() {
 				push @{$package{$vpkg}->{vdepends}}, $pkg->{name};
 			}
 		};
-		/^Depends: \s*(.+)\s*$/ and do {
-			my @dep = split /\s+/, $1;
-			$pkg->{depends} = \@dep;
-		};
-		/^Build-Depends: \s*(.+)\s*$/ and do {
-			my @dep = split /\s+/, $1;
-			$pkg->{builddepends} = \@dep;
-		};
+		/^Depends: \s*(.+)\s*$/ and $pkg->{depends} = [ split /\s+/, $1 ];
+		/^Build-Depends: \s*(.+)\s*$/ and $pkg->{builddepends} = [ split /\s+/, $1 ];
 		/^Category: \s*(.+)\s*$/ and do {
 			$pkg->{category} = $1;
 			defined $category{$1} or $category{$1} = {};
 			defined $category{$1}->{$src} or $category{$1}->{$src} = [];
 			push @{$category{$1}->{$src}}, $pkg;
 		};
-		/^Description: \s*(.*)\s*$/ and do {
-			my $desc = "\t\t$1\n\n";
-			my $line;
-			while ($line = <>) {
-				last if $line =~ /^@@/;
-				$desc .= "\t\t$line";
-			}
-			$pkg->{description} = $desc;
-		};
-		/^Config: \s*(.*)\s*$/ and do {
-			my $conf = "$1\n";
-			my $line;
-			while ($line = <>) {
-				last if $line =~ /^@@/;
-				$conf .= "$line";
-			}
-			$pkg->{config} = $conf;
-		};
+		/^Description: \s*(.*)\s*$/ and $pkg->{description} = "\t\t $1\n". get_multiline("\t\t ");
+		/^Config: \s*(.*)\s*$/ and $pkg->{config} = "$1\n".get_multiline();
 		/^Prereq-Check:/ and $pkg->{prereq} = 1;
 		/^Preconfig:\s*(.+)\s*$/ and do {
 			my $pkgname = $pkg->{name};
@@ -323,6 +300,7 @@ EOF
 config LINUX_$target->{conf}_$profile->{id}
 	bool "$profile->{name}"
 	depends LINUX_$target->{conf}
+$profile->{config}
 EOF
 			$profile->{kconfig} and print "\tselect PROFILE_KCONFIG\n";
 			my %pkgs;
