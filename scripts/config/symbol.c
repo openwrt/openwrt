@@ -204,13 +204,12 @@ static void sym_calc_visibility(struct symbol *sym)
 		prop->visible.tri = expr_calc_value(prop->visible.expr);
 		tri = E_OR(tri, prop->visible.tri);
 	}
-/* tristate always enabled */
-#if 0
-	if (tri == mod && (sym->type != S_TRISTATE || modules_val == no))
-#else
 	if (tri == mod && (sym->type != S_TRISTATE))
-#endif
 		tri = yes;
+	if (sym->rev_dep_inv.expr) {
+		if (expr_calc_value(sym->rev_dep_inv.expr) == yes)
+			tri = no;
+	}
 	if (sym->visible != tri) {
 		sym->visible = tri;
 		sym_set_changed(sym);
@@ -814,7 +813,7 @@ struct symbol *sym_check_deps(struct symbol *sym)
 		goto out;
 
 	for (prop = sym->prop; prop; prop = prop->next) {
-		if (prop->type == P_CHOICE || prop->type == P_SELECT)
+		if (prop->type == P_CHOICE || prop->type == P_SELECT || prop->type == P_DESELECT)
 			continue;
 		sym2 = sym_check_expr_deps(prop->visible.expr);
 		if (sym2)
@@ -882,6 +881,8 @@ const char *prop_get_type_name(enum prop_type type)
 		return "choice";
 	case P_SELECT:
 		return "select";
+	case P_DESELECT:
+		return "deselect";
 	case P_RANGE:
 		return "range";
 	case P_UNKNOWN:
