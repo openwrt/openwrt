@@ -53,7 +53,7 @@ define Build/InstallDev
 endef
 
 define Build/UninstallDev
-	rm -rf	$(STAGING_DIR)/usr/include/pcap{,-bpf,-named}.h \
+	rm -rf	$(STAGING_DIR)/usr/include/pcap{,-bpf,-namedb}.h \
 		$(STAGING_DIR)/usr/lib/libpcap.{a,so*}
 endef
 
