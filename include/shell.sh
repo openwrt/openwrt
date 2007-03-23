@@ -28,3 +28,7 @@ trapret() {(
 		}
 	}
 )}
+
+md5s() {
+	which md5sum 2>&- >&- && md5sum "$@" | awk '{print $1}' || md5 "$@"
+}
