@@ -405,6 +405,7 @@ static void get_symbol_str(struct gstr *r, struct symbol *sym)
 	                               sym_get_string_value(sym));
 	for_all_prompts(sym, prop)
 		get_prompt_str(r, prop);
+
 	hit = false;
 	for_all_properties(sym, prop, P_SELECT) {
 		if (!hit) {
@@ -416,9 +417,27 @@ static void get_symbol_str(struct gstr *r, struct symbol *sym)
 	}
 	if (hit)
 		str_append(r, "\n");
+
+	hit = false;
+	for_all_properties(sym, prop, P_DESELECT) {
+		if (!hit) {
+			str_append(r, "  Deselects: ");
+			hit = true;
+		} else
+			str_printf(r, " && ");
+		expr_gstr_print(prop->expr, r);
+	}
+	if (hit)
+		str_append(r, "\n");
+
 	if (sym->rev_dep.expr) {
 		str_append(r, "  Selected by: ");
 		expr_gstr_print(sym->rev_dep.expr, r);
+		str_append(r, "\n");
+	}
+	if (sym->rev_dep_inv.expr) {
+		str_append(r, "  Deselected by: ");
+		expr_gstr_print(sym->rev_dep_inv.expr, r);
 		str_append(r, "\n");
 	}
 	str_append(r, "\n\n");

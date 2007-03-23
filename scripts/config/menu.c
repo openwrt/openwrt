@@ -74,37 +74,9 @@ void menu_end_menu(void)
 	current_menu = current_menu->parent;
 }
 
-struct expr *menu_check_dep(struct expr *e)
-{
-	if (!e)
-		return e;
-
-	switch (e->type) {
-	case E_NOT:
-		e->left.expr = menu_check_dep(e->left.expr);
-		break;
-	case E_OR:
-	case E_AND:
-		e->left.expr = menu_check_dep(e->left.expr);
-		e->right.expr = menu_check_dep(e->right.expr);
-		break;
-/* tristate always enabled */
-#if 0
-	case E_SYMBOL:
-		/* change 'm' into 'm' && MODULES */
-		if (e->left.sym == &symbol_mod)
-			return expr_alloc_and(e, expr_alloc_symbol(modules_sym));
-		break;
-#endif
-	default:
-		break;
-	}
-	return e;
-}
-
 void menu_add_dep(struct expr *dep)
 {
-	current_entry->dep = expr_alloc_and(current_entry->dep, menu_check_dep(dep));
+	current_entry->dep = expr_alloc_and(current_entry->dep, dep);
 }
 
 void menu_set_type(int type)
@@ -129,7 +101,7 @@ struct property *menu_add_prop(enum prop_type type, char *prompt, struct expr *e
 	prop->menu = current_entry;
 	prop->text = prompt;
 	prop->expr = expr;
-	prop->visible.expr = menu_check_dep(dep);
+	prop->visible.expr = dep;
 
 	if (prompt) {
 		if (current_entry->prompt)
@@ -191,6 +163,23 @@ void sym_check_prop(struct symbol *sym)
 				    "accept arguments of boolean and "
 				    "tristate type", sym2->name);
 			break;
+		case P_DESELECT:
+			sym2 = prop_get_symbol(prop);
+			if (sym->type != S_BOOLEAN && sym->type != S_TRISTATE)
+				prop_warn(prop,
+				    "config symbol '%s' uses deselect, but is "
+				    "not boolean or tristate", sym->name);
+			else if (sym2->type == S_UNKNOWN)
+				prop_warn(prop,
+				    "'deselect' used by config symbol '%s' "
+				    "refer to undefined symbol '%s'",
+				    sym->name, sym2->name);
+			else if (sym2->type != S_BOOLEAN && sym2->type != S_TRISTATE)
+				prop_warn(prop,
+				    "'%s' has wrong type. 'deselect' only "
+				    "accept arguments of boolean and "
+				    "tristate type", sym2->name);
+			break;
 		case P_RANGE:
 			if (sym->type != S_INT && sym->type != S_HEX)
 				prop_warn(prop, "range is only allowed "
@@ -240,11 +229,12 @@ void menu_finalize(struct menu *parent)
 				prop = menu->sym->prop;
 			else
 				prop = menu->prompt;
+
 			for (; prop; prop = prop->next) {
 				if (prop->menu != menu)
 					continue;
 				dep = expr_transform(prop->visible.expr);
-				dep = expr_alloc_and(expr_copy(basedep), dep);
+				dep = expr_alloc_and(expr_copy(menu->dep), dep);
 				dep = expr_eliminate_dups(dep);
 				if (menu->sym && menu->sym->type != S_TRISTATE)
 					dep = expr_trans_bool(dep);
@@ -252,6 +242,11 @@ void menu_finalize(struct menu *parent)
 				if (prop->type == P_SELECT) {
 					struct symbol *es = prop_get_symbol(prop);
 					es->rev_dep.expr = expr_alloc_or(es->rev_dep.expr,
+							expr_alloc_and(expr_alloc_symbol(menu->sym), expr_copy(dep)));
+				}
+				if (prop->type == P_DESELECT) {
+					struct symbol *es = prop_get_symbol(prop);
+					es->rev_dep_inv.expr = expr_alloc_or(es->rev_dep_inv.expr,
 							expr_alloc_and(expr_alloc_symbol(menu->sym), expr_copy(dep)));
 				}
 			}
