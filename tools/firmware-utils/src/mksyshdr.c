@@ -1,11 +1,13 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
+
 int main(int argc, char* argv[])
 {
 	FILE* fp;
-	long  nImgSize;
+	uint32_t  nImgSize;
 	char* pHeader1 = "CSYS";
-	long  nHeader2 = 0x80500000;
+	uint32_t  nHeader2 = 0x80500000;
 
 	if (argc != 3)
 	{
@@ -23,8 +25,8 @@ int main(int argc, char* argv[])
 		if (fp != NULL)
 		{
 			fwrite(pHeader1,  sizeof(char), 4, fp);
-			fwrite(&nHeader2, sizeof(long), 1, fp);
-			fwrite(&nImgSize, sizeof(long), 1, fp);
+			fwrite(&nHeader2, sizeof(nHeader2), 1, fp);
+			fwrite(&nImgSize, sizeof(nImgSize), 1, fp);
 			fclose(fp);
 		}
 		else
