@@ -1,4 +1,4 @@
-# Configuration update functions
+# Configuration update functions - AWK API
 #
 # Copyright (C) 2006 by Fokus Fraunhofer <carsten.tittel@fokus.fraunhofer.de>
 # Copyright (C) 2006 by Felix Fietkau <nbd@openwrt.org>
@@ -17,6 +17,32 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
+# parameters: 1
+function config_load(package, var) {
+	while (("/bin/ash -c '. /etc/functions.sh; unset NO_EXPORT; config_load \""package"\"; env | grep \"^CONFIG_\"'" | getline) == 1) {
+		sub("^CONFIG_", "")
+		if (match($0, "=") == 0) {
+			if (var != "") CONFIG[var] = CONFIG[var] "\n" $0
+			next
+		}
+		var=substr($0, 1, RSTART-1)
+		CONFIG[var] = substr($0, RSTART+1, length($0) - RSTART)
+	}
+}
+
+# parameters: 2
+function config_get(package, option) {
+	return CONFIG[package "_" option]
+}
+
+# parameters: 3
+function config_get_bool(package, option, default, var) {
+	var = config_get(package, option);
+	if ((var == "enabled") || (var == "1") || (var == "on")) return 1
+	if ((var == "disabled") || (var == "0") || (var == "off")) return 1
+	return (var && var != "0" ? 1 : 0)
+}
+
 
 function read_file(filename,  result) {
 	while ((getline <filename) == 1) {
@@ -26,7 +52,7 @@ function read_file(filename,  result) {
 	return result
 }
 
-function cmd2option(str,  tmp) {
+function uci_cmd2option(str,  tmp) {
 	if (match(str,"=")!=0) {
 		res = "\toption " substr(str,1,RSTART-1) "\t'" substr(str,RSTART+1) "'"
 	} else {
@@ -35,11 +61,11 @@ function cmd2option(str,  tmp) {
 	return res
 }
 
-function cmd2config(atype,  aname) {
+function uci_cmd2config(atype,  aname) {
 	return "config \"" atype "\" \"" aname "\""
 }
 
-function update_config(cfg, update,  \
+function uci_update_config(cfg, update,  \
   lines, line, l, n, i, i2, section, scnt, remove, tmp, aidx, rest) {
 	scnt = 1
 	linecnt=split(cfg "\n", lines, "\n")
@@ -87,7 +113,7 @@ function update_config(cfg, update,  \
 			if (line ~ /^[ \t]*$/) {
 				if (update ~ "^" section "\\.") {
 					gsub("^" section ".", "", update)
-					cfg = cfg cmd2option(update) "\n"
+					cfg = cfg uci_cmd2option(update) "\n"
 					gsub(/=.*$/, "", update)
 					update = "-" section "." update
 				}
@@ -101,7 +127,7 @@ function update_config(cfg, update,  \
 				if (update ~ "^" section "\\.") {
 					flag=1
 					gsub("^" section ".", "", update)
-					cfg = cfg cmd2option(update) "\n"
+					cfg = cfg uci_cmd2option(update) "\n"
 					
 					update = "-" section "." update
 				} 
@@ -121,7 +147,7 @@ function update_config(cfg, update,  \
 				update = ""
 			} else if (update ~ "^&" section "=") {
 				gsub("^&" section "=", "", update)
-				line = cmd2config(l[2],update) 
+				line = uci_cmd2config(l[2],update) 
 				update = ""
 			}
 		}
@@ -131,7 +157,7 @@ function update_config(cfg, update,  \
 			# if a supplied config value already exists, replace the whole line
 			if (match(update, "^" section "." l[2] "=")) {
 				gsub("^" section ".", "", update)
-				line = cmd2option(update)
+				line = uci_cmd2option(update)
 				update = ""
 			}
 		}
@@ -142,7 +168,7 @@ function update_config(cfg, update,  \
 	if (section != "") {
 		if (update ~ "^" section "\\.") {
 			gsub("^" section ".", "", update)
-			cfg = cfg cmd2option(update) "\n"
+			cfg = cfg uci_cmd2option(update) "\n"
 
 			update = "-" section "." update
 		} 

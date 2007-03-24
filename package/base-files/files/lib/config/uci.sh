@@ -39,16 +39,23 @@ uci_apply_defaults() {(
 	uci commit
 )}
 
+uci_call_awk() {
+	local CMD="$*"
+	awk -f $UCI_ROOT/lib/config/uci.awk -f - <<EOF
+BEGIN {
+	$CMD
+}
+EOF
+}
+
 uci_do_update() {
 	local FILENAME="$1"
 	local UPDATE="$2"
-	awk -f $UCI_ROOT/lib/config/uci-update.awk -f - <<EOF
-BEGIN {
-	config = read_file("$FILENAME")
+	uci_call_awk "
+	config = read_file(\"$FILENAME\")
 	$UPDATE
 	print config
-}
-EOF
+"
 }
 
 uci_add_update() {
@@ -71,7 +78,7 @@ uci_set() {
 		uci_load "$PACKAGE"
 		config_get type "$CONFIG" TYPE
 		[ -z "$type" ]
-	) || uci_add_update "$PACKAGE" "CONFIG_SECTION='$CONFIG'${N}option '$OPTION' '$VALUE'"
+	) || uci_add_update "$PACKAGE" "config_set '$CONFIG' '$OPTION' '$VALUE'"
 }
 
 uci_add() {
@@ -114,19 +121,19 @@ uci_commit() {
 		
 		# replace handlers
 		config() {
-			append updatestr "config = update_config(config, \"@$2=$1\")" "$N"
+			append updatestr "config = uci_update_config(config, \"@$2=$1\")" "$N"
 		}
 		option() {
-			append updatestr "config = update_config(config, \"$CONFIG_SECTION.$1=$2\")" "$N"
+			append updatestr "config = uci_update_config(config, \"$CONFIG_SECTION.$1=$2\")" "$N"
 		}
 		config_rename() {
-			append updatestr "config = update_config(config, \"&$1=$2\")" "$N"
+			append updatestr "config = uci_update_config(config, \"&$1=$2\")" "$N"
 		}
 		config_unset() {
-			append updatestr "config = update_config(config, \"-$1.$2\")" "$N"
+			append updatestr "config = uci_update_config(config, \"-$1.$2\")" "$N"
 		}
 		config_clear() {
-			append updatestr "config = update_config(config, \"-$1\")" "$N"
+			append updatestr "config = uci_update_config(config, \"-$1\")" "$N"
 		}
 		
 		. "/tmp/.uci/$PACKAGE_BASE"
