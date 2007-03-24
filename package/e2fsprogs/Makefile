@@ -22,10 +22,19 @@ define Package/e2fsprogs
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=Ext2/3 filesystem utilities
+  DEPENDS:=+libuuid
   DESCRIPTION:=\
 	This package contains essential ext2 filesystem utilities which consists of \\\
 	e2fsck, mke2fs, debugfs, dumpe2fs, tune2fs, and most of the other core ext2 \\\
 	filesystem utilities.
+endef
+
+define Package/libuuid
+  SECTION:=libs
+  CATEGORY:=Libraries
+  TITLE:=DCE compatible Universally Unique Identifier library
+  DESCRIPTION:=\
+		Library for generating DCE compatible Universally Unique Identifiers
   URL:=http://e2fsprogs.sourceforge.net/
 endef
 
@@ -63,6 +72,13 @@ define Build/Compile
 		all install
 endef
 
+define Build/InstallDev
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		BUILDCC="$(HOSTCC)" \
+		DESTDIR="$(STAGING_DIR)" \
+		install-libs
+endef
+
 define Package/e2fsprogs/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/e2fsck $(1)/usr/sbin/
@@ -70,7 +86,11 @@ define Package/e2fsprogs/install
 	ln -sf mke2fs $(1)/usr/sbin/mkfs.ext2
 	ln -sf mke2fs $(1)/usr/sbin/mkfs.ext3
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/lib{blkid,com_err,e2p,ext2fs,uuid}.so.* $(1)/usr/lib/
+	$(CP) $(foreach lib,blkid com_err e2p ext2fs,$(PKG_INSTALL_DIR)/usr/lib/lib$(lib).so.*) $(1)/usr/lib/
+endef
+
+define Package/libuuid/install
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libuuid.so.* $(1)/usr/lib/
 endef
 
 define Package/tune2fs/install
@@ -84,5 +104,6 @@ define Package/resize2fs/install
 endef
 
 $(eval $(call BuildPackage,e2fsprogs))
+$(eval $(call BuildPackage,libuuid))
 $(eval $(call BuildPackage,tune2fs))
 $(eval $(call BuildPackage,resize2fs))
