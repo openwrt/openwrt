@@ -24,6 +24,7 @@ endef
 define Image/Prepare
   cp $(LINUX_DIR)/arch/arm/boot/uImage $(KDIR)/uImage
 	cp $(KDIR)/romboot/romboot.bin $(KDIR)/romboot.bin
+	cp $(KDIR)/romboot/rbptest.bin $(KDIR)/rbptest.bin
 	cp $(KDIR)/u-boot-1.1.4/u-boot.bin $(KDIR)/u-boot.bin
 	dd if=$(KDIR)/u-boot.bin of=$(KDIR)/u-boot.block bs=100k count=1 conv=sync
 	cat $(KDIR)/u-boot.block $(KDIR)/params > $(KDIR)/u-boot.full
@@ -38,6 +39,7 @@ define Image/Build
 	dd if=$(KDIR)/root.squashfs of=$(KDIR)/root.block bs=1056k count=1 conv=sync
 	cat $(KDIR)/uImage.block $(KDIR)/root.block > $(KDIR)/knlroot.bin
 	$(STAGING_DIR)/bin/trx -o $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL).trx -f $(KDIR)/romboot.bin -f$(KDIR)/u-boot.full -f$(KDIR)/knlroot.bin
+	cp $(KDIR)/rbptest.bin $(BIN_DIR)
 	$(call Image/Build/$(1),$(1))
 endef
 
