@@ -224,7 +224,7 @@ EOF
 						#add wpa_supplicant calls here
 					;;
 				esac
-				wpa_supplicant ${bridge:+ -b $bridge} -Bw -D wext -i "$ifname" -c /var/run/wpa_supplicant-$ifname.conf
+				[ -z "$proto" ] || wpa_supplicant ${bridge:+ -b $bridge} -Bw -D wext -i "$ifname" -c /var/run/wpa_supplicant-$ifname.conf
 			;;
 		esac
 		first=0
