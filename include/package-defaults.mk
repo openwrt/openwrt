@@ -73,13 +73,14 @@ CONFIGURE_VARS = \
 		PKG_CONFIG_LIBDIR="$(STAGING_DIR)/usr/lib/pkgconfig"
 
 CONFIGURE_PATH = .
+CONFIGURE_CMD = ./configure
 
 define Build/Configure/Default
-	(cd $(PKG_BUILD_DIR)/$(strip $(3)); \
-	if [ -x $(CONFIGURE_PATH)/configure ]; then \
+	(cd $(PKG_BUILD_DIR)/$(CONFIGURE_PATH)/$(strip $(3)); \
+	if [ -x $(CONFIGURE_CMD) ]; then \
 		$(CONFIGURE_VARS) \
 		$(2) \
-		$(CONFIGURE_PATH)/configure \
+		$(CONFIGURE_CMD) \
 		$(CONFIGURE_ARGS) \
 		$(1); \
 	fi; \
