@@ -76,7 +76,7 @@ CONFIGURE_PATH = .
 
 define Build/Configure/Default
 	(cd $(PKG_BUILD_DIR)/$(strip $(3)); \
-	if [ -x configure ]; then \
+	if [ -x $(CONFIGURE_PATH)/configure ]; then \
 		$(CONFIGURE_VARS) \
 		$(2) \
 		$(CONFIGURE_PATH)/configure \
@@ -96,9 +96,11 @@ MAKE_FLAGS = \
 	CROSS="$(TARGET_CROSS)" \
 	ARCH="$(ARCH)"
 
+MAKE_PATH = .
+
 define Build/Compile/Default
 	$(MAKE_VARS) \
-	$(MAKE) -C $(PKG_BUILD_DIR) \
+	$(MAKE) -C $(PKG_BUILD_DIR)/$(MAKE_PATH) \
 		$(MAKE_FLAGS) \
 		$(1);
 endef
