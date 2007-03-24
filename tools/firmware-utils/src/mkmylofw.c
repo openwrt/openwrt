@@ -70,6 +70,8 @@ struct cpx_board {
 #define CPX_BOARD(_did, _flash, _mod, _name, _desc) \
 	BOARD(VENID_COMPEX, _did, VENID_COMPEX, _did, _flash, _mod, _name, _desc)
 
+#define ALIGN(x,y)	((x)+((y)-1)) & ~((y)-1)
+
 char	*progname;
 char	*ofname = NULL;
 
@@ -449,11 +451,34 @@ write_out_data(FILE *outfile, uint8_t *data, size_t len, uint32_t *crc)
 }
 
 
-inline int
+int
 write_out_desc(FILE *outfile, struct mylo_fw_blockdesc *desc, uint32_t *crc)
 {
 	return write_out_data(outfile, (uint8_t *)desc,
 		sizeof(*desc), crc);
+}
+
+
+int
+write_out_padding(FILE *outfile, size_t len, uint8_t padc, uint32_t *crc)
+{
+	uint8_t buff[512];
+	size_t  buflen;
+	
+	memset(buff, padc, buflen);
+	
+	buflen = sizeof(buff);
+	while (len > 0) {
+		if (len < buflen)
+			buflen = len;
+
+		if (write_out_data(outfile, buff, buflen, crc))
+			return -1;
+			
+		len -= buflen;
+	}
+
+	return 0;
 }
 
 
@@ -495,7 +520,7 @@ write_out_file(FILE *outfile, struct fw_block *block, uint32_t *crc)
 		if (len < buflen)
 			buflen = len;
 
-		// read data from source file
+		/* read data from source file */
 		errno = 0;
 		fread(buff, buflen, 1, f);
 		if (errno != 0) {
@@ -510,6 +535,11 @@ write_out_file(FILE *outfile, struct fw_block *block, uint32_t *crc)
 	}
 
 	fclose(f);
+
+	/* align next block on a 4 byte boundary */
+	len = ALIGN(len,4) - block->size;
+	if (write_out_padding(outfile, len, 0xFF, crc))
+		return -1;
 	
 	dbgmsg(1,"file %s written out", block->name);
 	return 0;
@@ -575,6 +605,7 @@ write_out_blocks(FILE *outfile, uint32_t *crc)
 {
 	struct mylo_fw_blockdesc desc;
 	struct fw_block *b;
+	uint32_t dlen;
 	int i;
 
 	/*
@@ -597,15 +628,22 @@ write_out_blocks(FILE *outfile, uint32_t *crc)
 	 */
 	for (i = 0; i < fw_num_blocks; i++) {
 		b = &fw_blocks[i];
+		
+		/* detect block size */
+		dlen = b->size;
+		if ((b->flags & BLOCK_FLAG_HAVEHDR) != 0) {
+			dlen += sizeof(struct mylo_partition_header);
+		}
+
+		/* round up to 4 bytes */
+		dlen = ALIGN(dlen, 4);
+
+		/* setup the descriptor */
 		desc.type = HOST_TO_LE32(FW_DESC_TYPE_USED);
 		desc.addr = HOST_TO_LE32(b->addr);
+		desc.dlen = HOST_TO_LE32(dlen);
 		desc.blen = HOST_TO_LE32(b->blocklen);
-		if ((b->flags & BLOCK_FLAG_HAVEHDR) != 0) {
-			desc.dlen = HOST_TO_LE32(b->size +
-				sizeof(struct mylo_partition_header));
-		} else {
-			desc.dlen = HOST_TO_LE32(b->size);
-		}
+
 		if (write_out_desc(outfile, &desc, crc) != 0)
 			return -1;
 	}
