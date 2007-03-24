@@ -14,6 +14,7 @@ PKG_VERSION:=$(LINUX_VERSION)-$(BOARD)
 PKG_RELEASE:=$(LINUX_RELEASE)
 
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/packages
+PKG_FILE_DEPEND:=$(MODULES_DIR)
 
 # build all in-tree kmod-* packages by default
 KMOD_DEFAULT:=m

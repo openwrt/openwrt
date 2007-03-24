@@ -49,6 +49,9 @@ define Kernel/Configure/Default
 		$(SCRIPT_DIR)/config.pl '+' $(GENERIC_PLATFORM_DIR)/config-template $(LINUX_CONFIG) > $(LINUX_DIR)/.config; \
 	fi
 	$(call Kernel/Configure/$(KERNEL))
+	rm -rf $(KERNEL_BUILD_DIR)/modules
+	@rm -f $(BUILD_DIR)/linux
+	ln -sf $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION) $(BUILD_DIR)/linux
 endef
 
 define Kernel/CompileModules/Default
