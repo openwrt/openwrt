@@ -125,7 +125,11 @@ enable_atheros() {
 					iwconfig "$ifname" enc "[$idx]" "${key:-off}"
 				done
 				config_get key "$vif" key
-				iwconfig "$ifname" enc "${key:-1}"
+				key="${key:-1}"
+				case "$key" in
+					[1234]) iwconfig "$ifname" enc "[$key]";;
+					*) iwconfig "$ifname" enc "$key";;
+				esac
 			;;
 			PSK|psk|PSK2|psk2)
 				config_get key "$vif" key
