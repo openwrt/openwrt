@@ -39,7 +39,7 @@ with the latest compilers, latest kernels and latest applications.
 So let's take a look at OpenWrt and see how this all works.
 
 
-\subsubsection{Download openwrt}
+\subsubsection{Download OpenWrt}
 
 This article refers to the "Kamikaze" branch of OpenWrt, which can be downloaded via
 subversion using the following command:
@@ -373,6 +373,59 @@ After you have created your \texttt{package/\textit{<name>}/Makefile}, the new p
 will automatically show in the menu the next time you run "make menuconfig" and if selected
 will be built automatically the next time "\texttt{make}" is run.
 
+\subsection{Creating kernel modules packages}
+
+The OpenWrt distribution makes the distinction between two kind of kernel modules, those coming along with the mainline kernel, and the others available as a separate project. We will see later that a common template is used for both of them.
+
+For kernel modules that are part of the mainline kernel source, the makefiles are located in \textit{package/kernel/modules/*.mk} and they appear under the section "Kernel modules"
+
+For external kernel modules, you can add them to the build system just like if they were software packages by defining a KernelPackage section in the package makefile.
+
+Here for instance the Makefile for the I2C subsytem kernel modules :
+
+\begin{Verbatim}[frame=single,numbers=left]
+#
+# Copyright (C) 2006 OpenWrt.org
+#
+# This is free software, licensed under the GNU General Public License v2.
+# See /LICENSE for more information.
+#
+# $Id $
+
+I2CMENU:=I2C Bus
+
+define KernelPackage/i2c-core
+  TITLE:=I2C support
+  DESCRIPTION:=Kernel modules for i2c support
+  SUBMENU:=$(I2CMENU)
+  KCONFIG:=$(CONFIG_I2C_CORE) \
+        $(CONFIG_I2C_DEV)
+  FILES:=$(MODULES_DIR)/kernel/drivers/i2c/*.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,50,i2c-core i2c-dev)
+endef
+$(eval $(call KernelPackage,i2c-core))
+\end{Verbatim}
+
+To group kernel modules under a common description in menuconfig, you might want to define a \textit{<description>MENU} variable on top of the kernel modules makefile.
+
+\begin{itemize}
+    \item \texttt{TITLE} \\
+        The name of the module as seen via menuconfig
+    \item \texttt{DESCRIPTION} \\
+        The description as seen via help in menuconfig
+    \item \texttt{SUBMENU} \\
+        The sub menu under which this package will be seen
+    \item \texttt{KCONFIG} \\
+        Kernel configuration option dependency. For external modules, remove it.
+    \item \texttt{FILES} \\
+        Files you want to inlude to this kernel module package, separate with spaces.
+    \item \texttt{AUTOLOAD} \\
+        Modules that will be loaded automatically on boot, the order you write them is the order they would be loaded.
+\end{itemize}
+
+After you have created your \texttt{package/kernel/modules/\textit{<name>}.mk}, the new kernel modules package
+will automatically show in the menu under "Kernel modules" next time you run "make menuconfig" and if selected
+will be built automatically the next time "\texttt{make}" is run.
 
 \subsection{Conventions}
 
