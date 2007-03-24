@@ -392,7 +392,7 @@ static int __init adm5120_sw_init(void)
 		adm5120_nrdevs = 5;
 	/* CFE based devices only have two enet ports */
 	else if (boot_loader_type == CFE)
-		adm5120_nrdevs = 2
+		adm5120_nrdevs = 2;
 	else
 		adm5120_nrdevs = 6;
 
