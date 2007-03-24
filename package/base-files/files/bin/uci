@@ -86,7 +86,7 @@ do_remove() {
 do_commit() {
 	local PACKAGE="$1"
 	for package in ${PACKAGE:-$(cd /tmp/.uci; ls)}; do 
-		[ "${package##.*}" != "$package" ] && continue # ignore .lock files
+		[ lock = "${package##*.}" ] && continue # ignore .lock files
 		uci_commit "$package"
 	done
 }
