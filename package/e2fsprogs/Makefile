@@ -90,6 +90,7 @@ define Package/e2fsprogs/install
 endef
 
 define Package/libuuid/install
+	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libuuid.so.* $(1)/usr/lib/
 endef
 
