@@ -133,7 +133,7 @@ OpenWrt target.
 
 \subsubsection{Pluging a serial port}
 
-By using a serial port, you may reach the console that is being shown by the device
+By using a serial port and a level shifter, you may reach the console that is being shown by the device
 for debugging or flashing purposes. By analysing the output of this device, you can
 easily notice if the device uses a Linux kenrel or something different.
 
@@ -188,11 +188,11 @@ You should anyway be able to use the following components:
 \item binary tools to create a valid firmware image
 \end{itemize}
 
-Your work is now divided into the following tasks:
+Your work can be divided into the following tasks:
 
 \begin{itemize}
 \item create a clean patch of the hardware specific part of the linux kernel
-\item spot potential kernel GPL violations especially on firewall and USB stack stuff
+\item spot potential kernel GPL violations especially on netfilter and USB stack stuff
 \item make the binary drivers work, until there are open source drivers
 \item use standard a GNU toolchain to make working executables
 \item understand and write open source tools to generate a valid firmware image
@@ -243,12 +243,12 @@ initialized at startup, as well as processor detection and other boot time
 specific fixes.
 
 The second patch will contain all useful definitions for that board: adresses, 
-kernel granularity, redifinitions, processor family and features ...
+kernel granularity, redefinitions, processor family and features ...
 
 The third patch may contain drivers for: serial console, ethernet NIC, wireless 
 NIC, USB NIC ... Most of the time this patch contains nothing else than "glue"
 code that has been added to make the binary driver work with the Linux kernel. 
-This code might not be useful if you plan on writing from scratch drivers for 
+This code might not be useful if you plan on writing drivers from scratch for 
 this hardware.
 
 \subsubsection{Using the device bootloader}
@@ -258,13 +258,13 @@ been powered on. This program, can be more or less sophisticated, some do let yo
 do network booting, USB mass storage booting ... The bootloader is device and 
 architeture specific, some bootloaders were designed to be universal such as 
 RedBoot or U-Boot so that you can meet those loaders on totally different 
-platforms and expect to work the same way.
+platforms and expect them to behave the same way.
 
 If your device runs a proprietary operating system, you are very likely to deal 
 with a proprietary boot loader as well. This may not always be a limitation, 
 some proprietary bootloaders can even have source code available (i.e : Broadcom CFE).
 
-According to the bootloader features, hacking on th device will be more or less 
+According to the bootloader features, hacking on the device will be more or less 
 easier. It is very probable that the bootloader, even exotic and rare, has a 
 documentation somewhere over the Internet. In order to know what will be possible 
 with your bootloader and the way you are going to hack the device, look over the 
@@ -311,7 +311,6 @@ order to make binary drivers work with your custom kernel:
 \item CONFIG\_DEBUG\_KERNEL
 \item CONFIG\_DETECT\_SOFTLOCKUP
 \item CONFIG\_DEBUG\_KOBJECT
-\item CONFIG\_EMBEDDED
 \item CONFIG\_KALLSYMS
 \item CONFIG\_KALLSYMS\_ALL
 \end{itemize}
@@ -337,8 +336,8 @@ A firmare format is most of the time composed of the following fields:
 \begin{itemize}
 \item header, containing a firmare version and additional fields: Vendor, Hardware version ...
 \item CRC32 checksum on either the whole file or just part of it
-\item Binary or compressed kernel image
-\item Binary or compressed root filesystem image
+\item Binary and/or compressed kernel image
+\item Binary and/or compressed root filesystem image
 \item potential garbage
 \end{itemize}
 
