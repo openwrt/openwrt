@@ -92,10 +92,7 @@ define BuildKernel
 	$(call Kernel/Configure)
 	touch $$@
 
-  $(LINUX_DIR)/.modules: $(LINUX_DIR)/.configured
-	rm -rf $(KERNEL_BUILD_DIR)/modules
-	@rm -f $(BUILD_DIR)/linux
-	ln -sf $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION) $(BUILD_DIR)/linux
+  $(LINUX_DIR)/.modules: $(LINUX_DIR)/.configured $(LINUX_DIR)/.config
 	$(call Kernel/CompileModules)
 	touch $$@
 
