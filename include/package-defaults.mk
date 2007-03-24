@@ -42,10 +42,10 @@ ifneq ($(strip $(PKG_UNPACK)),)
   endef
 endif
 
-TARGET_CPPFLAGS=-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include
-TARGET_LDFLAGS=-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib
+TARGET_CPPFLAGS:=-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include
+TARGET_LDFLAGS:=-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib
 
-CONFIGURE_ARGS := \
+CONFIGURE_ARGS = \
 		--target=$(GNU_TARGET_NAME) \
 		--host=$(GNU_TARGET_NAME) \
 		--build=$(GNU_HOST_NAME) \
@@ -63,7 +63,7 @@ CONFIGURE_ARGS := \
 		--infodir=/usr/info \
 		$(DISABLE_NLS)
 
-CONFIGURE_VARS:= \
+CONFIGURE_VARS = \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS)" \
 		CXXFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS)" \
@@ -72,7 +72,7 @@ CONFIGURE_VARS:= \
 		PKG_CONFIG_PATH="$(STAGING_DIR)/usr/lib/pkgconfig" \
 		PKG_CONFIG_LIBDIR="$(STAGING_DIR)/usr/lib/pkgconfig"
 
-CONFIGURE_PATH:=.
+CONFIGURE_PATH = .
 
 define Build/Configure/Default
 	(cd $(PKG_BUILD_DIR)/$(strip $(3)); \
@@ -86,12 +86,12 @@ define Build/Configure/Default
 	)
 endef
 
-MAKE_VARS := \
+MAKE_VARS = \
 	CFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS)" \
 	CXXFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS)" \
 	LDFLAGS="$(EXTRA_LDFLAGS) "
 
-MAKE_FLAGS := \
+MAKE_FLAGS = \
 	$(TARGET_CONFIGURE_OPTS) \
 	CROSS="$(TARGET_CROSS)" \
 	ARCH="$(ARCH)"
