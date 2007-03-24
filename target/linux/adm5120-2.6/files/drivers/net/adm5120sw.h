@@ -102,5 +102,12 @@ struct adm5120_info {
 	u16	ports;
 	u16	vlan;
 };
+#define UNKNOWN 0
+
+#define UBOOT 2
+#define MYLOADER 3
+
+/* Type of boot loader, detected by the prom */
+extern boot_loader_type;
 
 #endif /* _INCLUDE_ADM5120SW_H_ */
