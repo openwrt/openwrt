@@ -390,6 +390,9 @@ static int __init adm5120_sw_init(void)
 	/* MII port? */
 	if (adm5120_get_reg(ADM5120_CODE) & ADM5120_CODE_PQFP)
 		adm5120_nrdevs = 5;
+	/* CFE based devices only have two enet ports */
+	else if (boot_loader_type == CFE)
+		adm5120_nrdevs = 2
 	else
 		adm5120_nrdevs = 6;
 

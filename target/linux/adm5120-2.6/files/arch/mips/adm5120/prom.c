@@ -30,9 +30,10 @@
 #include <asm/addrspace.h>
 
 /* boot loaders specific definitions */
-#define CFE_EPTSEAL 0x43464531
+#define CFE_EPTSEAL 0x43464531 /* CFE1 is the magic number to recognize CFE from other bootloaders */
 #define CFE 1
-#define MYLOADER 2
+#define UBOOT 2
+#define MYLOADER 3
 #define UNKNOWN 0
 
 void setup_prom_printf(int);
