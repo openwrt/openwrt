@@ -104,6 +104,7 @@ struct adm5120_info {
 };
 #define UNKNOWN 0
 
+#define CFE 1
 #define UBOOT 2
 #define MYLOADER 3
 
