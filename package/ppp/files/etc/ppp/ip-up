@@ -1,5 +1,5 @@
 #!/bin/sh
-[ -z "$6" ] || env -i ACTION="ifup" INTERFACE="$6" PROTO=ppp /sbin/hotplug-call "iface"
+[ -z "$6" ] || env -i ACTION="ifup" INTERFACE="$6" DEVICE="$1" PROTO=ppp /sbin/hotplug-call "iface"
 
 [ -d /etc/ppp/ip-up.d ] && {
 	for SCRIPT in /etc/ppp/ip-up.d/*
