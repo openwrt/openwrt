@@ -29,6 +29,7 @@
 #include <linux/mtd/partitions.h>
 #include <linux/bootmem.h>
 #include <linux/squashfs_fs.h>
+#include <linux/root_dev.h>
 
 struct ar7_bin_rec {
 	unsigned int checksum;
@@ -108,6 +109,7 @@ static int create_mtd_partitions(struct mtd_info *master,
 		ar7_parts[p - 1].size -= ar7_parts[p].size;
 		ar7_parts[p - 1].mask_flags |= MTD_WRITEABLE;
 		ar7_parts[p++].mask_flags = 0;
+		ROOT_DEV = MKDEV(MTD_BLOCK_MAJOR, p - 1);
 	} else {
 		printk("Squashfs not found. Moving rootfs partition to next erase block\n");
 		if ((root_offset % master->erasesize) > 0) 
@@ -116,6 +118,7 @@ static int create_mtd_partitions(struct mtd_info *master,
 
 		ar7_parts[p].offset = root_offset;
 		ar7_parts[p].size = master->size - root_offset - post_size;
+		ROOT_DEV = MKDEV(MTD_BLOCK_MAJOR, p);
 	}
 	*pparts = ar7_parts;
 	return p;
