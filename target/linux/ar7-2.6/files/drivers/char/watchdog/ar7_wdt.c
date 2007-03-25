@@ -70,9 +70,6 @@ typedef struct {
 static struct semaphore open_semaphore;
 static unsigned expect_close;
 
-/* XXX correct? assumed to be sysfreq/2. get this dynamically ... */
-#define vbus_freq (ar7_bus_freq() / 2)
-
 /* XXX currently fixed, allows max margin ~68.72 secs */
 #define prescale_value 0xFFFF
 
@@ -143,14 +140,14 @@ static void ar7_wdt_update_margin(int new_margin)
 {
 	u32 change;
 
-	change = new_margin * (vbus_freq / prescale_value);
+	change = new_margin * (ar7_vbus_freq() / prescale_value);
 	if (change < 1) change = 1;
 	if (change > 0xFFFF) change = 0xFFFF;
 	ar7_wdt_change(change);
-	margin = change * prescale_value / vbus_freq;
+	margin = change * prescale_value / ar7_vbus_freq();
 	printk(KERN_INFO DRVNAME
 	       ": timer margin %d seconds (prescale %d, change %d, freq %d)\n",
-	       margin, prescale_value, change, vbus_freq);
+	       margin, prescale_value, change, ar7_vbus_freq());
 }
 
 static void ar7_wdt_enable_wdt(void)

@@ -47,7 +47,7 @@ struct psp_chip_map {
 /* I hate this. No. *I* *HATE* *THIS* */
 static __initdata struct psp_chip_map psp_chip_map[] = {
 	{
-		.chip = 0x5,
+		.chip = AR7_CHIP_7100,
 		.names = {
 			"dummy", "cpufrequency", "memsize",
 			"flashsize", "modetty0", "modetty1", "prompt",
@@ -65,7 +65,7 @@ static __initdata struct psp_chip_map psp_chip_map[] = {
 		},
 	},
 	{
-		.chip = 0x18,
+		.chip = AR7_CHIP_7200,
 		.names = {
 			"dummy", "cpufrequency", "memsize",
 			"flashsize", "modetty0", "modetty1", "prompt",
@@ -83,7 +83,7 @@ static __initdata struct psp_chip_map psp_chip_map[] = {
 		},
 	},
 	{
-		.chip = 0x2b,
+		.chip = AR7_CHIP_7300,
 		.names = {
 			"dummy", "cpufrequency", "memsize",
 			"flashsize", "modetty0", "modetty1", "prompt",
@@ -186,7 +186,7 @@ static int __init parse_psp_env(void *start)
 	char *src, *dest, *name, *value;
 	struct psp_env_var *vars = start;
 
-	chip = get_chip_id();
+	chip = ar7_chip_id();
 	for (map = psp_chip_map; map->chip; map++)
 		if (map->chip == chip)
 			break;

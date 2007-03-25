@@ -72,13 +72,13 @@ static void ar7_machine_power_off(void)
 
 const char *get_system_type(void)
 {
-	u16 chip_id = get_chip_id();
+	u16 chip_id = ar7_chip_id();
 	switch (chip_id) {
-	case 0x5:
+	case AR7_CHIP_7300:
 		return "TI AR7 (TNETD7300)";
-	case 0x18:
+	case AR7_CHIP_7100:
 		return "TI AR7 (TNETD7100)";
-	case 0x2b:
+	case AR7_CHIP_7200:
 		return "TI AR7 (TNETD7200)";
 	default:
 		return "TI AR7 (Unknown)";
@@ -95,6 +95,8 @@ static int __init ar7_init_console(void)
  * given by the bios and saves the command line.
  */
 
+extern void ar7_init_clocks(void);
+
 void __init plat_mem_setup(void)
 {
 	unsigned long io_base;
@@ -110,6 +112,7 @@ void __init plat_mem_setup(void)
 	set_io_port_base(io_base);
 
 	prom_meminit();
+	ar7_init_clocks();
 
 	ioport_resource.start = 0;
 	ioport_resource.end   = ~0;

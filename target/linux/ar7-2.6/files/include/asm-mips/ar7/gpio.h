@@ -35,7 +35,7 @@ static inline int gpio_direction_input(unsigned gpio)
 	if (gpio >= AR7_GPIO_MAX)
 		return -EINVAL;
 
-	__raw_writel(__raw_readl(gpio_dir) | (1 << gpio), gpio_dir);
+	writel(readl(gpio_dir) | (1 << gpio), gpio_dir);
 
 	return 0;
 }
@@ -47,7 +47,7 @@ static inline int gpio_direction_output(unsigned gpio)
 	if (gpio >= AR7_GPIO_MAX)
 		return -EINVAL;
 
-	__raw_writel(__raw_readl(gpio_dir) & ~(1 << gpio), gpio_dir);
+	writel(readl(gpio_dir) & ~(1 << gpio), gpio_dir);
 
 	return 0;
 }
@@ -59,7 +59,7 @@ static inline int gpio_get_value(unsigned gpio)
 	if (gpio >= AR7_GPIO_MAX)
 		return -EINVAL;
 
-	return ((__raw_readl(gpio_in) & (1 << gpio)) != 0);
+	return ((readl(gpio_in) & (1 << gpio)) != 0);
 }
 
 static inline void gpio_set_value(unsigned gpio, int value)
@@ -70,10 +70,10 @@ static inline void gpio_set_value(unsigned gpio, int value)
 	if (gpio >= AR7_GPIO_MAX)
 		return;
 
-	tmp = __raw_readl(gpio_out) & ~(1 << gpio);
+	tmp = readl(gpio_out) & ~(1 << gpio);
 	if (value) 
 		tmp |= 1 << gpio;
-	__raw_writel(tmp, gpio_out);
+	writel(tmp, gpio_out);
 }
 
 static inline int gpio_to_irq(unsigned gpio)
@@ -94,7 +94,7 @@ static inline int ar7_gpio_enable(unsigned gpio)
 	if (gpio >= AR7_GPIO_MAX)
 		return -EINVAL;
 
-	__raw_writel(__raw_readl(gpio_en) | (1 << gpio), gpio_en);
+	writel(readl(gpio_en) | (1 << gpio), gpio_en);
 
 	return 0;
 }
@@ -106,7 +106,7 @@ static inline int ar7_gpio_disable(unsigned gpio)
 	if (gpio >= AR7_GPIO_MAX)
 		return -EINVAL;
 
-	__raw_writel(__raw_readl(gpio_en) & ~(1 << gpio), gpio_en);
+	writel(readl(gpio_en) & ~(1 << gpio), gpio_en);
 
 	return 0;
 }
