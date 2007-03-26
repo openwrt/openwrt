@@ -178,7 +178,7 @@ clean: FORCE
 dirclean: clean
 	rm -rf staging_dir_* toolchain_build_* tool_build
 
-distclean: dirclean config-clean
+distclean: dirclean config-clean symlinkclean docclean
 	rm -rf dl
 
 help:
@@ -193,7 +193,7 @@ docclean:
 symlinkclean:
 	find package -type l | xargs rm -f
 
-.SILENT: clean dirclean distclean config-clean download world
+.SILENT: clean dirclean distclean symlinkclean config-clean download world
 FORCE: ;
 .PHONY: FORCE help
 %: ;
