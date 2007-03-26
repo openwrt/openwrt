@@ -33,21 +33,38 @@ export DEVELOPER
 SDK=1
 export SDK
 
+export IS_TTY=$(shell tty -s && echo 1 || echo 0)
+include $(TOPDIR)/include/verbose.mk
+
 all: world
 
-.pkginfo: FORCE
-ifneq ($(shell ./scripts/timestamp.pl -p .pkginfo package Makefile),.pkginfo)
-	@echo Collecting package info...
-	@-for dir in package/*/; do \
-		echo Source-Makefile: $${dir}Makefile; \
-		$(MAKE) --no-print-dir DUMP=1 -C $$dir 2>&- || true; \
-	done > $@
-endif
+define stamp
+tmp/info/.stamp-$(1)-$(shell ls $(2)/*/Makefile $(5) | (md5sum || md5) 2>/dev/null | cut -d' ' -f1)
+endef
 
-pkginfo-clean: FORCE
-	-rm -f .pkginfo .config.in
+STAMP=$(call stamp,pkginfo,package)
 
-package/%: .pkginfo FORCE
+$(STAMP):
+	@mkdir -p tmp/info
+	@rm -f tmp/info/.stamp-pkginfo*
+	@touch $@
+
+define filedep
+$(foreach FILE,$(shell ls package/*/Makefile),
+tmp/.pkginfo: $(FILE)
+$(FILE):
+	@true
+)
+endef
+
+$(eval $(filedep))
+
+tmp/.pkginfo: $(STAMP)
+	@echo -n Collecting package info... 
+	@$(NO_TRACE_MAKE) -s -f include/scan.mk SCAN_TARGET="pkginfo" SCAN_DIR="package" SCAN_NAME="package" SCAN_DEPS=""
+
+package/%: FORCE
+	@$(NO_TRACE_MAKE) -s tmp/.pkginfo
 	$(MAKE) -C package $(patsubst package/%,%,$@) SDK=1
 
 download: FORCE

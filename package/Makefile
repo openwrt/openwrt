@@ -40,12 +40,8 @@ $(STAMP_DIR) $(TARGET_DIR):
 %-clean: FORCE
 	$(MAKE) -C $(patsubst %-clean,%,$@) clean
 
-ifeq ($(SDK),1)
-GENDEP_OPTS := -s
-endif
-
 $(TMP_DIR)/.pkgdeps: $(TMP_DIR)/.pkginfo
-	@$(TOPDIR)/scripts/metadata.pl package_mk $(GENDEP_OPTS) < $< > $@ || rm -f $@
+	@$(TOPDIR)/scripts/metadata.pl package_mk < $< > $@ || rm -f $@
 
 preconfig:
 clean: $(patsubst %,%-clean,$(package-) $(package-y) $(package-m))
