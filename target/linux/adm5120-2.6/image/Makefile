@@ -39,8 +39,9 @@ define Image/Build/Compex
 endef
 
 define Image/Build/Edimax
-	$(STAGING_DIR)/bin/mksyshdr csys $(KDIR)/vmlinux
-	cat csys $(KDIR)/vmlinux $(KDIR)/root.$(1) > $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(3)-$(2).img
+	# FIXME : not tested (hardware ?)
+	$(STAGING_DIR)/bin/mksyshdr $(KDIR)/csys $(KDIR)/vmlinux
+	cat $(KDIR)/csys $(KDIR)/vmlinux $(KDIR)/root.$(1) > $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(3)-$(2).img
 endef
 
 define Image/Build/MyLoader
