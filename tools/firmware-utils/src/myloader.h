@@ -26,12 +26,22 @@
  *
  */
 
+/* Myloader specific magic numbers */
 #define MYLO_MAGIC_FIRMWARE	0x4C594D00
 #define MYLO_MAGIC_20021103	0x20021103
 #define MYLO_MAGIC_20021107	0x20021107
 
-#define MYLO_MAGIC_SYSSETUP	MYLO_MAGIC_20021107
+#define MYLO_MAGIC_SYS_PARAMS	MYLO_MAGIC_20021107
 #define MYLO_MAGIC_PARTITIONS	MYLO_MAGIC_20021103
+#define MYLO_MAGIC_BOARD_PARAMS	MYLO_MAGIC_20021103
+
+/*
+ * Addresses of the data structures provided by MyLoader
+ */
+#define MYLO_MIPS_SYS_PARAMS	0x80000800	/* System Parameters */
+#define MYLO_MIPS_BOARD_PARAMS	0x80000A00	/* Board Parameters */
+#define MYLO_MIPS_PARTITIONS	0x80000C00	/* Partition Table */
+#define MYLO_MIPS_BOOT_PARAMS	0x80000E00	/* Boot Parameters */
 
 /* Vendor ID's (seems to be same as the PCI vendor ID's) */
 #define VENID_COMPEX		0x11F6
@@ -55,7 +65,7 @@
 #define DEVID_COMPEX_NP26G16M	0x03E9
 
 struct mylo_fw_header {
-	uint32_t	magic;	/* must be MYLO_MAGIC_MYLO */
+	uint32_t	magic;	/* must be MYLO_MAGIC_FIRMWARE */
 	uint32_t	crc;	/* CRC of the whole firmware */
 	uint32_t	res0;	/* unknown/unused */
 	uint32_t	res1;	/* unknown/unused */
@@ -107,7 +117,7 @@ struct mylo_partition {
 					   partition table */
 
 struct mylo_partition_table {
-	uint32_t	magic;	/* must be 0x20021103 */
+	uint32_t	magic;	/* must be MYLO_MAGIC_PARTITIONS */
 	uint32_t	res0;	/* unknown/unused */
 	uint32_t	res1;	/* unknown/unused */
 	uint32_t 	res2;	/* unknown/unused */
@@ -120,7 +130,7 @@ struct mylo_partition_header {
 };
 
 struct mylo_system_params {
-	uint32_t	magic;
+	uint32_t	magic;	/* must be MYLO_MAGIC_SYS_PARAMS */
 	uint32_t	res0;
 	uint32_t	res1;
 	uint32_t	mylo_ver;
@@ -133,8 +143,8 @@ struct mylo_system_params {
 	uint32_t	fwlo;
 	uint32_t	tftp_addr;
 	uint32_t	prog_start;
-	uint32_t	flash_size;
-	uint32_t	dram_size;
+	uint32_t	flash_size;	/* Size of boot FLASH in bytes */
+	uint32_t	dram_size;	/* Size of onboard RAM in bytes */
 };
 
 
@@ -147,7 +157,7 @@ struct mylo_eth_addr {
 					   in the board parameters */
 
 struct mylo_board_params {
-	uint32_t	magic;
+	uint32_t	magic;	/* must be MYLO_MAGIC_BOARD_PARAMS */
 	uint32_t	res0;
 	uint32_t	res1;
 	uint32_t	res2;
