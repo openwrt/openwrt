@@ -1,3 +1,6 @@
+/* Copyright 2007 Gabor Juhos				*/
+/* keep original values of the a0,a1,a2,a3 registers	*/
+/* cache manipulation adapted from Broadcom code 	*/
 /* Copyright 2005 Oleg I. Vdovikin (oleg@cs.msu.su)	*/
 /* cache manipulation adapted from Broadcom code 	*/
 /* idea taken from original bunzip2 decompressor code	*/
@@ -40,18 +43,17 @@
 	.set noreorder
 	
 	/* Copy decompressor code to the right place */
-	li	t2, BZ_TEXT_START
-	add	a0, t2, 0
-	la      a1, code_start
-	la	a2, code_stop
+	li	t0, BZ_TEXT_START
+
+	la      t1, code_start
+	la	t2, code_stop
 $L1:
-	lw	t0, 0(a1)
-	sw	t0, 0(a0)
-	add	a1, 4
-	add	a0, 4
-	blt	a1, a2, $L1
-	nop
-	
+	lw	t3, 0(t1)
+	sw	t3, 0(t0)
+	add	t1, 4
+	blt	t1, t2, $L1
+	add	t0, 4
+
 	/* At this point we need to invalidate dcache and */
 	/* icache before jumping to new code */
 
@@ -145,11 +147,20 @@ nodc:
 	addu	t0,s3
 
 noic:
-	move	a0,s3			/* icache line size */
-	move	a1,s4			/* icache size */
-	move	a2,s1			/* dcache line size */
-	jal	t2
-	move	a3,s2			/* dcache size */
+	li	t0, BZ_TEXT_START
+	
+	addiu	sp, -32			/* reserve stack for parameters */
+#if 0	
+	sw	a0, 0(sp)
+	sw	a1, 4(sp)
+	sw	a2, 8(sp)
+	sw	a3, 12(sp)
+#endif	
+	sw	s3, 16(sp)		/* icache line size */
+	sw	s4, 20(sp)		/* icache size */
+	sw	s1, 24(sp)		/* dcache line size */
+	jr	t0
+	sw	s2, 28(sp)		/* dcache size */
 	
 	.set reorder
 	END(startup)

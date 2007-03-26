@@ -30,6 +30,9 @@
  * 24-Apr-2005 Oleg I. Vdovikin
  *   reordered functions using lds script, removed forward decl
  *
+ * 24-Mar-2007 Gabor Juhos
+ *   pass original values of the a0,a1,a2,a3 registers to the kernel
+ *
  */
 
 #include "LzmaDecode.h"
@@ -93,6 +96,9 @@ extern unsigned char workspace[];
 unsigned int offset;
 unsigned char *data;
 
+typedef void (*kernel_entry)(unsigned long reg_a0, unsigned long reg_a1,
+	unsigned long reg_a2, unsigned long reg_a3);
+
 /* flash access should be aligned, so wrapper is used */
 /* read byte from the flash, all accesses are 32-bit aligned */
 static int read_byte(void *object, unsigned char **buffer, UInt32 *bufferSize)
@@ -119,7 +125,9 @@ static __inline__ unsigned char get_byte(void)
 }
 
 /* should be the first function */
-void entry(unsigned long icache_size, unsigned long icache_lsize, 
+void entry(unsigned long reg_a0, unsigned long reg_a1,
+	unsigned long reg_a2, unsigned long reg_a3,
+	unsigned long icache_size, unsigned long icache_lsize, 
 	unsigned long dcache_size, unsigned long dcache_lsize)
 {
 	unsigned int i;  /* temp value */
@@ -173,7 +181,7 @@ void entry(unsigned long icache_size, unsigned long icache_lsize,
 
 		/* Jump to load address */
         uart_write_str("ok\r\n");
-		((void (*)(void)) LOADADDR)();
+		((kernel_entry) LOADADDR)(reg_a0, reg_a1, reg_a2, reg_a3);
 	}
     uart_write_str("failed\r\n");
     while (1 );
