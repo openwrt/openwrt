@@ -23,7 +23,7 @@ diff -urN linux-2.6.19.2/arch/mips/Kconfig linux-2.6.19.2.new/arch/mips/Kconfig
 diff -urN linux-2.6.19.2/arch/mips/Makefile linux-2.6.19.2.new/arch/mips/Makefile
 --- linux-2.6.19.2/arch/mips/Makefile	2007-01-23 14:02:57.000000000 +0100
 +++ linux-2.6.19.2.new/arch/mips/Makefile	2007-01-23 14:49:39.000000000 +0100
-@@ -165,6 +165,13 @@
+@@ -165,6 +165,14 @@
  load-$(CONFIG_MACH_JAZZ)	+= 0xffffffff80080000
  
  #
@@ -31,6 +31,7 @@ diff -urN linux-2.6.19.2/arch/mips/Makefile linux-2.6.19.2.new/arch/mips/Makefil
 +#
 +
 +core-$(CONFIG_MIPS_ADM5120)	+= arch/mips/adm5120/
++cflags-$(CONFIG_MIPS_ADM5120)	+= -Iinclude/asm-mips/mach-adm5120
 +load-$(CONFIG_MIPS_ADM5120)	+= 0xffffffff80001000
 +
 +#
