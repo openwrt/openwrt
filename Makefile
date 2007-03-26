@@ -190,6 +190,9 @@ doc:
 docclean:
 	$(MAKE) -C docs/ clean
 
+symlinkclean:
+	find package -type l | xargs rm -f
+
 .SILENT: clean dirclean distclean config-clean download world
 FORCE: ;
 .PHONY: FORCE help
