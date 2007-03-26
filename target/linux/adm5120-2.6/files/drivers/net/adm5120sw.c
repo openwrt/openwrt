@@ -20,6 +20,8 @@
 #include <asm/io.h>
 #include "adm5120sw.h"
 
+#include "adm5120_info.h"
+
 MODULE_AUTHOR("Jeroen Vreeken (pe1rxq@amsat.org)");
 MODULE_DESCRIPTION("ADM5120 ethernet switch driver");
 MODULE_LICENSE("GPL");
@@ -316,7 +318,7 @@ static int adm5120_sw_set_mac_address(struct net_device *dev, void *p)
 static int adm5120_do_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
 {
 	int err;
-	struct adm5120_info info;
+	struct adm5120_sw_info info;
 	struct adm5120_sw *priv = netdev_priv(dev);
 
 	switch(cmd) {
@@ -391,7 +393,7 @@ static int __init adm5120_sw_init(void)
 	if (adm5120_get_reg(ADM5120_CODE) & ADM5120_CODE_PQFP)
 		adm5120_nrdevs = 5;
 	/* CFE based devices only have two enet ports */
-	else if (boot_loader_type == CFE)
+	else if (adm5120_info.boot_loader == BOOT_LOADER_CFE)
 		adm5120_nrdevs = 2;
 	else
 		adm5120_nrdevs = 6;
