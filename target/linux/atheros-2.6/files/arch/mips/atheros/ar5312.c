@@ -255,13 +255,13 @@ int __init ar5312_init_devices(void)
 	ar5312_eth0_data.board_config = board_config;
 	ar5312_eth1_data.board_config = board_config;
 
-	/* fixup flash width; TODO: constants -> defines */
-	fctl = sysRegRead(AR531X_FLASHCTL) & 0x30000000;
+	/* fixup flash width */
+	fctl = sysRegRead(AR531X_FLASHCTL) & FLASHCTL_MW;
 	switch (fctl) {
-		case 0x20000000:
+		case FLASHCTL_MWx16:
 			ar5312_flash_data.width = 2;
 			break;
-		case 0x00000000:
+		case FLASHCTL_MWx8:
 		default:
 			ar5312_flash_data.width = 1;
 			break;
