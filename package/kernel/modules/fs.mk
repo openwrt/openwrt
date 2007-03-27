@@ -89,6 +89,17 @@ define KernelPackage/fs-nfs
 endef
 $(eval $(call KernelPackage,fs-nfs))
 
+define KernelPackage/fs-nfsd
+  TITLE:=NFS kernel server support
+  DESCRIPTION:=Kernel module for NFS kernel server support
+  KCONFIG:=$(CONFIG_NFSD)
+  SUBMENU:=$(FSMENU)
+  AUTOLOAD:=$(call AutoLoad,30,nfsd)
+  FILES:= \
+  	$(MODULES_DIR)/kernel/fs/nfsd/nfsd.$(LINUX_KMOD_SUFFIX)
+endef
+$(eval $(call KernelPackage,fs-nfsd))
+
 define KernelPackage/fs-msdos
   TITLE:=MSDOS filesystem support
   DESCRIPTION:=Kernel module for MSDOS filesystem support
