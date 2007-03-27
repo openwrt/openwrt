@@ -100,7 +100,7 @@ start() {
 	# uses the default -P DROP
 	
 	### MASQ
-	iptables -t nat -A PREROUTING -m state --state NEW -j NEW 
+	iptables -t nat -A PREROUTING -m state --state NEW -p tcp -j NEW 
 	iptables -t nat -A PREROUTING -j prerouting_rule
 	[ -z "$WAN" ] || iptables -t nat -A PREROUTING -i "$WAN" -j prerouting_wan
 	iptables -t nat -A POSTROUTING -j postrouting_rule
