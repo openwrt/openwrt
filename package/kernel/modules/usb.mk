@@ -50,7 +50,7 @@ $(eval $(call KernelPackage,usb-uhci))
 define KernelPackage/usb-uhci-iv
   TITLE:=Support for Intel/VIA UHCI controllers 
   DESCRIPTION:=Kernel support for Intel/VIA USB UHCI controllers
-  DEPENDS:=kmod-usb-core
+  DEPENDS:=kmod-usb-core @LINUX_2_4
   SUBMENU:=$(USBMENU)
 endef 
 
