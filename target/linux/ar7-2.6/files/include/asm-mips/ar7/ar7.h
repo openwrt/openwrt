@@ -21,8 +21,9 @@
 #ifndef __AR7_H__
 #define __AR7_H__
 
-#include <asm/addrspace.h>
 #include <linux/delay.h>
+#include <asm/addrspace.h>
+#include <asm/io.h>
 
 #define AR7_REGS_BASE 0x08610000
 
