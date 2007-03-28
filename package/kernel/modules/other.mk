@@ -192,7 +192,8 @@ define KernelPackage/bluetooth
  endef
 
  define KernelPackage/bluetooth/2.4
-  KCONFIG:=$(CONFIG_BLUEZ)
+  KCONFIG:=$(CONFIG_BLUEZ) \
+	   $(CONFIG_USB)
   FILES:= \
 	$(MODULES_DIR)/kernel/net/bluetooth/bluez.$(LINUX_KMOD_SUFFIX) \
 	$(MODULES_DIR)/kernel/net/bluetooth/l2cap.$(LINUX_KMOD_SUFFIX) \
