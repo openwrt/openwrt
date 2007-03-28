@@ -47,8 +47,8 @@ define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CC="$(TARGET_CC)" \
 		KERNEL=$(LINUX_DIR) \
-		CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include" \
-		LDFLAGS=" -L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib" \
+		CPPFLAGS="$(TARGET_CPPFLAGS)" \
+		LDFLAGS="$(TARGET_LDFLAGS)" \
 		all
 	$(STRIP) $(PKG_BUILD_DIR)/wpa_supplicant
 	$(STRIP) $(PKG_BUILD_DIR)/wpa_cli
