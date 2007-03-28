@@ -49,11 +49,13 @@
 #include <linux/squashfs_fs.h>
 #include <linux/jffs2.h>
 #include <linux/crc32.h>
-#ifdef CONFIG_SSB
-#include <linux/ssb/ssb.h>
-#endif
 #include <asm/io.h>
+#include <asm/mach-adm5120/myloader.h>
+#include <asm/mach-adm5120/adm5120_info.h>
 
+extern int parse_myloader_partitions(struct mtd_info *master,
+                        struct mtd_partition **pparts,
+                        unsigned long origin);
 
 #define TRX_MAGIC	0x30524448	/* "HDR0" */
 #define TRX_VERSION	1
@@ -76,9 +78,6 @@ struct trx_header {
 #define WINDOW_SIZE 0x400000
 #define BUSWIDTH 2
 
-#ifdef CONFIG_SSB
-extern struct ssb_bus ssb;
-#endif
 static struct mtd_info *adm5120_mtd;
 
 static struct map_info adm5120_map = {
@@ -90,7 +89,7 @@ static struct map_info adm5120_map = {
 
 #ifdef CONFIG_MTD_PARTITIONS
 
-static struct mtd_partition adm5120_parts[] = {
+static struct mtd_partition adm5120_cfe_parts[] = {
 	{ name: "cfe",	offset: 0, size: 0, mask_flags: MTD_WRITEABLE, },
 	{ name: "linux", offset: 0, size: 0, },
 	{ name: "rootfs", offset: 0, size: 0, },
@@ -325,91 +324,78 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 		return NULL;
 
 	/* boot loader */
-	adm5120_parts[0].offset = 0;
-	adm5120_parts[0].size   = cfe_size;
+	adm5120_cfe_parts[0].offset = 0;
+	adm5120_cfe_parts[0].size   = cfe_size;
 
 	/* nvram */
 	if (cfe_size != 384 * 1024) {
-		adm5120_parts[3].offset = size - ROUNDUP(NVRAM_SPACE, mtd->erasesize);
-		adm5120_parts[3].size   = ROUNDUP(NVRAM_SPACE, mtd->erasesize);
+		adm5120_cfe_parts[3].offset = size - ROUNDUP(NVRAM_SPACE, mtd->erasesize);
+		adm5120_cfe_parts[3].size   = ROUNDUP(NVRAM_SPACE, mtd->erasesize);
 	} else {
 		/* nvram (old 128kb config partition on netgear wgt634u) */
-		adm5120_parts[3].offset = adm5120_parts[0].size;
-		adm5120_parts[3].size   = ROUNDUP(NVRAM_SPACE, mtd->erasesize);
+		adm5120_cfe_parts[3].offset = adm5120_cfe_parts[0].size;
+		adm5120_cfe_parts[3].size   = ROUNDUP(NVRAM_SPACE, mtd->erasesize);
 	}
 
 	/* linux (kernel and rootfs) */
 	if (cfe_size != 384 * 1024) {
-		adm5120_parts[1].offset = adm5120_parts[0].size;
-		adm5120_parts[1].size   = adm5120_parts[3].offset - 
-			adm5120_parts[1].offset;
+		adm5120_cfe_parts[1].offset = adm5120_cfe_parts[0].size;
+		adm5120_cfe_parts[1].size   = adm5120_cfe_parts[3].offset - 
+			adm5120_cfe_parts[1].offset;
 	} else {
 		/* do not count the elf loader, which is on one block */
-		adm5120_parts[1].offset = adm5120_parts[0].size + 
-			adm5120_parts[3].size + mtd->erasesize;
-		adm5120_parts[1].size   = size - 
-			adm5120_parts[0].size - 
-			(2*adm5120_parts[3].size) - 
+		adm5120_cfe_parts[1].offset = adm5120_cfe_parts[0].size + 
+			adm5120_cfe_parts[3].size + mtd->erasesize;
+		adm5120_cfe_parts[1].size   = size - 
+			adm5120_cfe_parts[0].size - 
+			(2*adm5120_cfe_parts[3].size) - 
 			mtd->erasesize;
 	}
 
 	/* find and size rootfs */
-	if (find_root(mtd,size,&adm5120_parts[2])==0) {
+	if (find_root(mtd,size,&adm5120_cfe_parts[2])==0) {
 		/* entirely jffs2 */
-		adm5120_parts[4].name = NULL;
-		adm5120_parts[2].size = size - adm5120_parts[2].offset - 
-				adm5120_parts[3].size;
+		adm5120_cfe_parts[4].name = NULL;
+		adm5120_cfe_parts[2].size = size - adm5120_cfe_parts[2].offset - 
+				adm5120_cfe_parts[3].size;
 	} else {
 		/* legacy setup */
 		/* calculate leftover flash, and assign it to the jffs2 partition */
 		if (cfe_size != 384 * 1024) {
-			adm5120_parts[4].offset = adm5120_parts[2].offset + 
-				adm5120_parts[2].size;
-			if ((adm5120_parts[4].offset % mtd->erasesize) > 0) {
-				adm5120_parts[4].offset += mtd->erasesize - 
-					(adm5120_parts[4].offset % mtd->erasesize);
+			adm5120_cfe_parts[4].offset = adm5120_cfe_parts[2].offset + 
+				adm5120_cfe_parts[2].size;
+			if ((adm5120_cfe_parts[4].offset % mtd->erasesize) > 0) {
+				adm5120_cfe_parts[4].offset += mtd->erasesize - 
+					(adm5120_cfe_parts[4].offset % mtd->erasesize);
 			}
-			adm5120_parts[4].size = adm5120_parts[3].offset - 
-				adm5120_parts[4].offset;
+			adm5120_cfe_parts[4].size = adm5120_cfe_parts[3].offset - 
+				adm5120_cfe_parts[4].offset;
 		} else {
-			adm5120_parts[4].offset = adm5120_parts[2].offset + 
-				adm5120_parts[2].size;
-			if ((adm5120_parts[4].offset % mtd->erasesize) > 0) {
-				adm5120_parts[4].offset += mtd->erasesize - 
-					(adm5120_parts[4].offset % mtd->erasesize);
+			adm5120_cfe_parts[4].offset = adm5120_cfe_parts[2].offset + 
+				adm5120_cfe_parts[2].size;
+			if ((adm5120_cfe_parts[4].offset % mtd->erasesize) > 0) {
+				adm5120_cfe_parts[4].offset += mtd->erasesize - 
+					(adm5120_cfe_parts[4].offset % mtd->erasesize);
 			}
-			adm5120_parts[4].size = size - adm5120_parts[3].size - 
-				adm5120_parts[4].offset;
+			adm5120_cfe_parts[4].size = size - adm5120_cfe_parts[3].size - 
+				adm5120_cfe_parts[4].offset;
 		}
 	}
 
-	return adm5120_parts;
+	return adm5120_cfe_parts;
 }
 #endif
 
 int __init init_adm5120_map(void)
 {
-#ifdef CONFIG_SSB
-	struct ssb_mipscore *mcore = &ssb.mipscore;
-#endif
 	size_t size;
 	int ret = 0;
-#ifdef CONFIG_MTD_PARTITIONS
+#if defined (CONFIG_MTD_PARTITIONS) || (CONFIG_MTD_MYLOADER_PARTS)
 	struct mtd_partition *parts;
-	int i;
+	int i, parsed_nr_parts = 0;
 #endif
-#ifdef CONFIG_SSB
-	u32 window = mcore->flash_window;
-	u32 window_size = mcore->flash_window_size;
-
-	printk("adm5120 : flash init: 0x%08x 0x%08x\n", window, window_size);
-	adm5120_map.phys = window;
-	adm5120_map.size = window_size;
-	adm5120_map.virt = ioremap_nocache(window, window_size);
-#else
 	printk("adm5120 : flash init : 0x%08x 0x%08x\n", WINDOW_ADDR, WINDOW_SIZE);
 	adm5120_map.virt = ioremap_nocache(WINDOW_ADDR, WINDOW_SIZE);
-#endif
 
 	if (!adm5120_map.virt) {
 		printk("Failed to ioremap\n");
@@ -430,12 +416,41 @@ int __init init_adm5120_map(void)
 	printk(KERN_NOTICE "Flash device: 0x%x at 0x%x\n", size, WINDOW_ADDR);
 
 #ifdef CONFIG_MTD_PARTITIONS
-	parts = init_mtd_partitions(adm5120_mtd, size);
-	for (i = 0; parts[i].name; i++);
-	ret = add_mtd_partitions(adm5120_mtd, parts, i);
-	if (ret) {
-		printk(KERN_ERR "Flash: add_mtd_partitions failed\n");
-		goto fail;
+
+	if (adm5120_info.boot_loader == BOOT_LOADER_CFE)
+	{
+		printk(KERN_NOTICE "adm5120 : using CFE flash mapping\n");
+		parts = init_mtd_partitions(adm5120_mtd, size);
+	
+		for (i = 0; parts[i].name; i++);
+			ret = add_mtd_partitions(adm5120_mtd, parts, i);
+	
+		if (ret) {
+			printk(KERN_ERR "Flash: add_mtd_partitions failed\n");
+			goto fail;
+		}
+	}
+#endif
+#ifdef CONFIG_MTD_MYLOADER_PARTS
+	if (adm5120_info.boot_loader == BOOT_LOADER_MYLOADER)
+	{
+		printk(KERN_NOTICE "adm5120 : using MyLoader flash mapping\n");
+		char *part_type;
+		
+		if (parsed_nr_parts == 0) {
+			ret = parse_myloader_partitions(adm5120_mtd, &parts, 0);
+
+			if (ret  > 0) {
+				part_type ="MyLoader";
+				parsed_nr_parts = ret;
+			}
+		}
+		ret = add_mtd_partitions(adm5120_mtd, parts, parsed_nr_parts);
+
+		if (ret) {
+			printk(KERN_ERR "Flash: add_mtd_partitions failed\n");
+			goto fail;
+		}
 	}
 #endif
 	return 0;
