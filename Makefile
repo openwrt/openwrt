@@ -44,36 +44,11 @@ ifeq ($(FORCE),)
   world: tmp/.prereq-packages tmp/.prereq-target
 endif
 
-define stamp
-tmp/info/.stamp-$(1)-$(shell ls $(2)/*/Makefile $(5) | (md5sum || md5) 2>/dev/null | cut -d' ' -f1)
-endef
+tmp/.pkginfo: FORCE
+	@$(NO_TRACE_MAKE) -s -f include/scan.mk SCAN_TARGET="pkginfo" SCAN_DIR="package" SCAN_NAME="package" SCAN_DEPS="$(shell ls include/package*.mk) include/kernel.mk" SCAN_EXTRA=""
 
-STAMP_pkginfo=$(call stamp,pkginfo,package)
-STAMP_targetinfo=$(call stamp,targetinfo,target/linux)
-define scan_info
-
-$(STAMP_$(1)):
-	@mkdir -p tmp/info
-	@rm -f tmp/info/.stamp-$(1)*
-	@touch $$@
-
-$(foreach FILE,$(shell ls $(2)/*/Makefile $(5)),
-tmp/.$(1): $(FILE)
-$(FILE):
-)
-
-ifneq ($(5),)
-tmp/.$(1): $(shell ls $(5))
-endif
-
-tmp/.$(1): $(STAMP_$(1)) $(4)
-	@echo -n Collecting $(3) info... 
-	@$(NO_TRACE_MAKE) -s -f include/scan.mk SCAN_TARGET="$(1)" SCAN_DIR="$(2)" SCAN_NAME="$(3)" SCAN_DEPS="$(4)" SCAN_EXTRA="$(5)"
-
-endef
-
-$(eval $(call scan_info,pkginfo,package,package,include/package.mk))
-$(eval $(call scan_info,targetinfo,target/linux,target,include/kernel-build.mk include/kernel-version.mk,target/linux/*/profiles/*.mk))
+tmp/.targetinfo: FORCE
+	@$(NO_TRACE_MAKE) -s -f include/scan.mk SCAN_TARGET="targetinfo" SCAN_DIR="target/linux" SCAN_NAME="target" SCAN_DEPS="$(shell ls include/kernel*.mk)" SCAN_EXTRA=""
 
 tmpinfo-clean: FORCE
 	@-rm -rf tmp/.pkginfo tmp/.targetinfo
