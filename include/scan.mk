@@ -32,6 +32,11 @@ $(SCAN_STAMP):
 	touch $@
 endif
 
+# FIXME: generate this dynamically?
+ifeq ($(SCAN_TARGET),pkginfo)
+tmp/info/.pkginfo-kernel: $(shell ls package/kernel/modules/*.mk)
+endif
+
 define scanfiles
 $(foreach FILE,$(SCAN),
   tmp/.$(SCAN_TARGET): tmp/info/.$(SCAN_TARGET)-$(FILE) FORCE
