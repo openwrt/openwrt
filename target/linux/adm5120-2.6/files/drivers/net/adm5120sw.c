@@ -385,7 +385,7 @@ static int __init adm5120_sw_init(void)
 	int i, err;
 	struct net_device *dev;
 
-	err = request_irq(SW_IRQ, adm5120_sw_irq, SA_SHIRQ, "ethernet switch", NULL);
+	err = request_irq(SW_IRQ, adm5120_sw_irq, 0, "ethernet switch", NULL);
 	if (err)
 		goto out;
 
