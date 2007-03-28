@@ -9,6 +9,8 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/prereq.mk
 include $(INCLUDE_DIR)/host.mk
 
+PKG_NAME:=Build dependency
+
 define Require/non-root
 	[ "$$(shell whoami)" != "root" ]
 endef
