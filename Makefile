@@ -45,9 +45,11 @@ ifeq ($(FORCE),)
 endif
 
 tmp/.pkginfo: FORCE
+	@mkdir -p tmp/info
 	@$(NO_TRACE_MAKE) -s -f include/scan.mk SCAN_TARGET="pkginfo" SCAN_DIR="package" SCAN_NAME="package" SCAN_DEPS="$(shell ls include/package*.mk) include/kernel.mk" SCAN_EXTRA=""
 
 tmp/.targetinfo: FORCE
+	@mkdir -p tmp/info
 	@$(NO_TRACE_MAKE) -s -f include/scan.mk SCAN_TARGET="targetinfo" SCAN_DIR="target/linux" SCAN_NAME="target" SCAN_DEPS="$(shell ls include/kernel*.mk)" SCAN_EXTRA=""
 
 tmpinfo-clean: FORCE

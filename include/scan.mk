@@ -28,7 +28,6 @@ ifneq ($(SCAN_EXTRA),)
 SCAN_STAMP=tmp/info/.scan-$(SCAN_TARGET)-$(shell ls $(SCAN_EXTRA) 2>/dev/null | (md5sum || md5) 2>/dev/null | cut -d' ' -f1)
 $(SCAN_STAMP):
 	rm -f tmp/info/.scan-$(SCAN_TARGET)-*
-	mkdir -p $(shell dirname $@)
 	touch $@
 endif
 
