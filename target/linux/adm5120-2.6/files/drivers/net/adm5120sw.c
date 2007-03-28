@@ -159,7 +159,7 @@ static inline void adm5120_tx(struct adm5120_dma *dma, struct sk_buff **skbl,
 	}
 }
 
-irqreturn_t adm5120_sw_irq(int irq, void *dev_id, struct pt_regs *regs)
+static irqreturn_t adm5120_sw_irq(int irq, void *dev_id)
 {
 	unsigned long intreg;
 
@@ -385,7 +385,7 @@ static int __init adm5120_sw_init(void)
 	int i, err;
 	struct net_device *dev;
 
-	err = request_irq(SW_IRQ, adm5120_sw_irq, 0, "ethernet switch", NULL);
+	err = request_irq(SW_IRQ, adm5120_sw_irq, SA_SHIRQ, "ethernet switch", NULL);
 	if (err)
 		goto out;
 
