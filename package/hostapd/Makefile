@@ -70,8 +70,8 @@ define Build/CompileTarget
 	$(MAKE) -C $(PKG_BUILD_DIR)_$(1) \
 		$(TARGET_CONFIGURE_OPTS) \
 		OPTFLAGS="$(TARGET_CFLAGS)" \
-		CPPFLAGS="-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include -I$(STAGING_DIR)/usr/include/madwifi" \
-		LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib" \
+		CPPFLAGS="$(TARGET_CPPFLAGS) -I$(STAGING_DIR)/usr/include/madwifi" \
+		LDFLAGS="$(TARGET_LDFLAGS)" \
 		hostapd hostapd_cli
 	$(CP) $(PKG_BUILD_DIR)_$(1)/hostapd_cli $(PKG_BUILD_DIR)/
 endef

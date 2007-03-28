@@ -54,7 +54,7 @@ PKG_MAKE_OPTS:= \
 		KERNELSRC="$(LINUX_DIR)" \
 		ARCH="$(LINUX_KARCH)" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
-		USERCOMPILE="$(TARGET_CFLAGS) -I./linux/include -I$(STAGING_DIR)/usr/include -L$(STAGING_DIR)/usr/lib" \
+		USERCOMPILE="$(TARGET_CFLAGS) -I./linux/include $(TARGET_CPPFLAGS) $(TARGET_LDFLAGS)" \
 		IPSECDIR="/usr/lib/ipsec" \
 		INC_USRLOCAL="/usr" \
 
@@ -62,7 +62,7 @@ define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
 		$(PKG_MAKE_OPTS) \
-		LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib" \
+		LDFLAGS="$(TARGET_LDFLAGS)" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		programs module install
 endef
