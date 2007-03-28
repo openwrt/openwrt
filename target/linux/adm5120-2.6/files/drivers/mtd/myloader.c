@@ -40,7 +40,7 @@
 #define NAME_PARTITION_TABLE	"Partition Table"
 #define BLOCK_LEN_MIN		0x10000
 
-static int parse_myloader_partitions(struct mtd_info *master,
+int parse_myloader_partitions(struct mtd_info *master,
 			struct mtd_partition **pparts,
 			unsigned long origin)
 {
@@ -170,8 +170,6 @@ static void __exit mylo_mtd_parser_exit(void)
 
 module_init(mylo_mtd_parser_init);
 module_exit(mylo_mtd_parser_exit);
-
-EXPORT_SYMBOL_GPL(parse_myloader_partitions);
 
 MODULE_AUTHOR("Gabor Juhos <juhosg@freemail.hu>");
 MODULE_DESCRIPTION("Parsing code for MyLoader partition tables");
