@@ -7,7 +7,6 @@
 # $Id$
 
 include $(TOPDIR)/rules.mk
-include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=keynote
 PKG_VERSION:=2.3
@@ -36,15 +35,9 @@ CONFIGURE_ARGS += \
 	--enable-static \
 	--enable-shared
 
-define Build/Compile
-	$(call Build/Compile/Default, \
-		LIBS="$(EXTRA_LDFLAGS) -L. -lkeynote -lm -lcrypto" \
-	)
-endef
-
 define Build/InstallDev
-	mkdir -p $(STAGING_DIR)/usr/include
-	$(CP) $(PKG_BUILD_DIR)/{assertion,header,keynote,signature}.h $(STAGING_DIR)/usr/include/
+	mkdir -p $(STAGING_DIR)/usr/include/keynote
+	$(CP) $(PKG_BUILD_DIR)/{assertion,header,keynote,signature}.h $(STAGING_DIR)/usr/include/keynote/
 	mkdir -p $(STAGING_DIR)/usr/lib
 	$(CP) $(PKG_BUILD_DIR)/libkeynote.a $(STAGING_DIR)/usr/lib/
 endef
@@ -56,7 +49,7 @@ endef
 
 define Package/keynote/install
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(CP) $(PKG_BUILD_DIR)/keynote $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/keynote $(1)/usr/sbin/
 endef
 
 $(eval $(call BuildPackage,keynote))

@@ -277,15 +277,25 @@ diff -ru keynote-2.3/keynote.y keynote-2.3.new/keynote.y
 diff -ru keynote-2.3/Makefile.in keynote-2.3.new/Makefile.in
 --- keynote-2.3/Makefile.in	2000-09-27 01:16:27.000000000 +0200
 +++ keynote-2.3.new/Makefile.in	2004-01-16 11:35:38.841528129 +0100
-@@ -41,7 +41,7 @@
+@@ -41,7 +41,8 @@
  YACCFLAGS = -d -p kn -b k
  LEXFLAGS2 = -Pkv -s -i
  LEXFLAGS = -Cr -Pkn -s -i
 -CFLAGS = -O2 -Wall # -g
 +CFLAGS = -O2 -Wall -fno-strict-aliasing # -g
++LDFLAGS = @LDFLAGS@
  RMFLAGS2 = -rf
  RMFLAGS = -f
  NROFFFLAGS = -mandoc
+@@ -83,7 +84,7 @@
+ 	$(RANLIB) $(TARGET)
+ 
+ $(TARGET2): $(TARGET) $(OBJS2)
+-	$(CC) $(CFLAGS) -o $(TARGET2) $(OBJS2) $(LIBS)
++	$(CC) $(CFLAGS) -o $(TARGET2) $(OBJS2) $(LDFLAGS) $(LIBS)
+ 
+ k.tab.c: keynote.y header.h keynote.h assertion.h config.h
+ 	$(YACC) $(YACCFLAGS) keynote.y
 diff -ru keynote-2.3/signature.c keynote-2.3.new/signature.c
 --- keynote-2.3/signature.c	1999-10-12 00:34:31.000000000 +0200
 +++ keynote-2.3.new/signature.c	2004-01-16 11:30:48.062084986 +0100

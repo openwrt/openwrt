@@ -34,11 +34,10 @@ define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
 		LINUX_DIR="$(LINUX_DIR)" \
-		EXTRA_CPPFLAGS="-I$(STAGING_DIR)/usr/include/openssl -I$(STAGING_DIR)/usr/include/keynote -I$(STAGING_DIR)/usr/include " \
-		EXTRA_LDFLAGS="-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib"
+		EXTRA_CPPFLAGS="$(TARGET_CPPFLAGS) -I$(STAGING_DIR)/usr/include/openssl -I$(STAGING_DIR)/usr/include/keynote" \
+		EXTRA_LDFLAGS="$(TARGET_LDFLAGS)"
 
 	$(MAKE) -C $(PKG_BUILD_DIR) \
-		STAGING_DIR="$(STAGING_DIR)" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		INSTALL="install -c" \
 		install-bin
