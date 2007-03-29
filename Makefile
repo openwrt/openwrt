@@ -91,11 +91,14 @@ kernel_menuconfig: .config FORCE
 	-$(MAKE) target/linux-prepare
 	$(NO_TRACE_MAKE) -C target/linux menuconfig
 
-package/%: 
+scan_packages:
 	@$(NO_TRACE_MAKE) -s tmp/.pkginfo tmp/.targetinfo
+	
+
+package/%: scan_packages
 	$(MAKE) -C package $(patsubst package/%,%,$@)
 
-target/%:
+target/%: scan_packages
 	@$(NO_TRACE_MAKE) -s tmp/.pkginfo tmp/.targetinfo
 	$(MAKE) -C target $(patsubst target/%,%,$@)
 
