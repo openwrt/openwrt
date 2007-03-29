@@ -14,16 +14,11 @@
 #include <asm/io.h>
 #include <asm/time.h>
 
+#include <adm5120_info.h>
+
 #define ADM5120_SOFTRESET	0x12000004
 #define STATUS_IE		0x00000001
 #define ALLINTS (IE_IRQ0 | IE_IRQ5 | STATUS_IE)
-
-#define ADM5120_CODEREG		0x12000000
-#define ADM5120_CPU_CLK_MASK	0x00300000
-#define ADM5120_CPU_CLK_175	0x00000000
-#define ADM5120_CPU_CLK_200	0x00100000
-#define ADM5120_CPU_CLK_225	0x00200000
-#define ADM5120_CPU_CLK_250	0x00300000
 
 void  mips_time_init(void);
 
@@ -47,30 +42,9 @@ void adm5120_power_off(void)
         adm5120_halt();
 }
 
-void __init mips_time_init(void)
+void __init adm5120_time_init(void)
 {
-	u32 clock;
-
-	clock = *(u32*)KSEG1ADDR(ADM5120_CODEREG);
-
-	switch (clock & ADM5120_CPU_CLK_MASK) {
-		case ADM5120_CPU_CLK_175:
-			mips_counter_frequency = 87500000;
-			printk("CPU clock: 175MHz\n");
-			break;
-		case ADM5120_CPU_CLK_200:
-			mips_counter_frequency = 100000000;
-			printk("CPU clock: 200MHz\n");
-			break;
-		case ADM5120_CPU_CLK_225:
-			mips_counter_frequency = 112500000;
-			printk("CPU clock: 225MHz\n");
-			break;
-		case ADM5120_CPU_CLK_250:
-			mips_counter_frequency = 125000000;
-			printk("CPU clock: 250MHz\n");
-			break;
-	}
+	mips_counter_frequency = adm5120_info.cpu_speed >> 1;
 }
 
 void __init plat_timer_setup(struct irqaction *irq)
@@ -85,7 +59,7 @@ void __init plat_mem_setup(void)
 {
 	printk(KERN_INFO "ADM5120 board setup\n");
 
-	board_time_init = mips_time_init;
+	board_time_init = adm5120_time_init;
 	//board_timer_setup = mips_timer_setup;
 
 	_machine_restart = adm5120_restart;
