@@ -1,6 +1,8 @@
 /*
  *	Copyright (C) ADMtek Incorporated.
  *	Copyright (C) 2005 Jeroen Vreeken (pe1rxq@amsat.org)
+ *	Copyright (C) 2007 Gabor Juhos <juhosg@freemail.hu>
+ *	Copyright (C) 2007 OpenWrt.org
  */
 
 #include <linux/autoconf.h>
@@ -9,11 +11,13 @@
 #include <linux/kernel.h>
 #include <linux/init.h>
 
-volatile u32* pci_config_address_reg = (volatile u32*)KSEG1ADDR(0x115ffff0);
-volatile u32* pci_config_data_reg = (volatile u32*)KSEG1ADDR(0x115ffff8);
+#include <adm5120_defs.h>
+
+volatile u32* pci_config_address_reg = (volatile u32*)KSEG1ADDR(ADM5120_PCICFG_ADDR);
+volatile u32* pci_config_data_reg = (volatile u32*)KSEG1ADDR(ADM5120_PCICFG_DATA);
 
 #define PCI_ENABLE 0x80000000
-                          
+
 static int pci_config_read(struct pci_bus *bus, unsigned int devfn, int where,
                            int size, uint32_t *val)
 {

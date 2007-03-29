@@ -1,6 +1,8 @@
 /*
  *	Copyright (C) ADMtek Incorporated.
  *	Copyright (C) 2005 Jeroen Vreeken (pe1rxq@amsat.org)
+ *	Copyright (C) 2007 Gabor Juhos <juhosg@freemail.hu>
+ *	Copyright (C) 2007 OpenWrt.org
  */
 
 #include <linux/autoconf.h>
@@ -9,10 +11,10 @@
 #include <linux/kernel.h>
 #include <linux/init.h>
 
-extern struct pci_ops adm5120_pci_ops;
+#include <adm5120_info.h>
+#include <adm5120_defs.h>
 
-#define ADM5120_CODE		0x12000000
-#define ADM5120_CODE_PQFP	0x20000000
+extern struct pci_ops adm5120_pci_ops;
 
 #define PCI_CMM_IOACC_EN	0x1
 #define PCI_CMM_MEMACC_EN	0x2
@@ -24,16 +26,16 @@ extern struct pci_ops adm5120_pci_ops;
 
 
 struct resource pci_io_resource = {
-	.name = "PCI IO space", 
-	.start = 0x11500000,  
-	.end = 0x115ffff0-1,
+	.name = "ADM5120 PCI I/O",
+	.start = ADM5120_PCIIO_BASE,
+	.end = ADM5120_PCICFG_ADDR-1,
 	.flags = IORESOURCE_IO
 };
 
 struct resource pci_mem_resource = {
-	.name = "PCI memory space", 
-	.start = 0x11400000,
-	.end = 0x11500000,
+	.name = "ADM5120 PCI MEM",
+	.start = ADM5120_PCIMEM_BASE,
+	.end = ADM5120_PCIIO_BASE-1,
 	.flags = IORESOURCE_MEM
 };
 
@@ -71,12 +73,13 @@ int pcibios_plat_dev_init(struct pci_dev *dev)
 
 static int __init adm5120_pci_setup(void)
 {
+	int pci_bios;
 
-	if ((*(volatile u32 *)(KSEG1ADDR(ADM5120_CODE))) & ADM5120_CODE_PQFP) {
-		printk("System has no PCI BIOS (ADM5120 PQFP)\n");
+	pci_bios = adm5120_has_pci();
+
+	printk("adm5120: system has %sPCI BIOS\n", pci_bios ? "" : "no ");
+	if (pci_bios == 0)
 		return 1;
-	}
-	printk("System has PCI BIOS (ADM5120 BGA)\n");
 
 	/* Avoid ISA compat ranges.  */
 	PCIBIOS_MIN_IO = 0x00000000;
@@ -84,7 +87,7 @@ static int __init adm5120_pci_setup(void)
 
 	/* Set I/O resource limits.  */
 	ioport_resource.end = 0x1fffffff;
-	iomem_resource.end = 0xffffffff;	
+	iomem_resource.end = 0xffffffff;
 
 	register_pci_controller(&adm5120_controller);
 	return 0;
