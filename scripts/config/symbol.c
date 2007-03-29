@@ -197,6 +197,7 @@ static void sym_calc_visibility(struct symbol *sym)
 {
 	struct property *prop;
 	tristate tri;
+	int deselected = 0;
 
 	/* any prompt visible? */
 	tri = no;
@@ -206,15 +207,15 @@ static void sym_calc_visibility(struct symbol *sym)
 	}
 	if (tri == mod && (sym->type != S_TRISTATE))
 		tri = yes;
-	if (sym->rev_dep_inv.expr) {
-		if (expr_calc_value(sym->rev_dep_inv.expr) == yes)
-			tri = no;
+	if (sym->rev_dep_inv.expr && (expr_calc_value(sym->rev_dep_inv.expr) == yes)) {
+		tri = no;
+		deselected = 1;
 	}
 	if (sym->visible != tri) {
 		sym->visible = tri;
 		sym_set_changed(sym);
 	}
-	if (sym_is_choice_value(sym))
+	if (sym_is_choice_value(sym) || deselected)
 		return;
 	tri = no;
 	if (sym->rev_dep.expr)
@@ -310,6 +311,8 @@ void sym_calc_value(struct symbol *sym)
 		if (sym_is_choice_value(sym) && sym->visible == yes) {
 			prop = sym_get_choice_prop(sym);
 			newval.tri = (prop_get_symbol(prop)->curr.val == sym) ? yes : no;
+		} else if (sym->rev_dep_inv.expr && (expr_calc_value(sym->rev_dep_inv.expr) == yes)) {
+			newval.tri = no;
 		} else if (E_OR(sym->visible, sym->rev_dep.tri) != no) {
 			sym->flags |= SYMBOL_WRITE;
 			if (sym_has_value(sym))
