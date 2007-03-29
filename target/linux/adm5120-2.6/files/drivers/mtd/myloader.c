@@ -115,14 +115,14 @@ int parse_myloader_partitions(struct mtd_info *master,
 	mtd_part = mtd_parts;
 	names = (char *)&mtd_parts[num_parts];
 
-	strcpy(NAME_MYLOADER, names);
+	strncpy(names, NAME_MYLOADER, NAME_LEN_MAX-1);
 	mtd_part->name = names;
 	mtd_part->offset = 0;
 	mtd_part->size = blocklen;
 	mtd_part++;
 	names += NAME_LEN_MAX;
 
-	strcpy(NAME_PARTITION_TABLE, names);
+	strncpy(names, NAME_PARTITION_TABLE, NAME_LEN_MAX-1);
 	mtd_part->name = names;
 	mtd_part->offset = blocklen;
 	mtd_part->size = blocklen;
