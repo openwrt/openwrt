@@ -1,7 +1,9 @@
 /*
+ * $Id$
+ *
  * Copyright (C) 2007 OpenWrt.org
- * Copyright (C) Gabor Juhos
- * 
+ * Copyright (C) 2007 Gabor Juhos <juhosg@freemail.hu>
+ *
  * This program is free software; you can redistribute  it and/or modify it
  * under  the terms of  the GNU General  Public License as published by the
  * Free Software Foundation;  either version 2 of the  License, or (at your
@@ -17,11 +19,12 @@
 #include <asm/addrspace.h>
 
 #include <adm5120_info.h>
+#include <adm5120_defs.h>
+#include <adm5120_switch.h>
 #include <myloader.h>
 
 /* boot loaders specific definitions */
 #define CFE_EPTSEAL	0x43464531 /* CFE1 is the magic number to recognize CFE from other bootloaders */
-
 
 struct adm5120_info adm5120_info = {
 	.cpu_speed		= CPU_SPEED_175,
@@ -36,6 +39,42 @@ static char *boot_loader_names[BOOT_LOADER_LAST+1] = {
 	[BOOT_LOADER_UBOOT]	= "U-Boot",
 	[BOOT_LOADER_MYLOADER]	= "MyLoader"
 };
+
+/*
+ * CPU settings detection
+ */
+#define CODE_GET_PC(c)		((c) & CODE_PC_MASK)
+#define CODE_GET_REV(c)		(((c) >> CODE_REV_SHIFT) & CODE_REV_MASK)
+#define CODE_GET_PK(c)		(((c) >> CODE_PK_SHIFT) & CODE_PK_MASK)
+#define CODE_GET_CLKS(c)	(((c) >> CODE_CLKS_SHIFT) & CODE_CLKS_MASK)
+#define CODE_GET_NAB(c)		(((c) & CODE_NAB) != 0)
+
+static void __init detect_cpu_info(void)
+{
+	uint32_t *reg;
+	uint32_t code;
+	uint32_t clks;
+
+	reg = (uint32_t *)KSEG1ADDR(ADM5120_SWITCH_BASE+SWITCH_REG_CODE);
+	code = *reg;
+
+	clks = CODE_GET_CLKS(code);
+
+	adm5120_info.product_code = CODE_GET_PC(code);
+	adm5120_info.revision = CODE_GET_REV(code);
+
+	adm5120_info.cpu_speed = CPU_SPEED_175;
+	if (clks & 1)
+		adm5120_info.cpu_speed += 25000000;
+	if (clks & 2)
+		adm5120_info.cpu_speed += 50000000;
+
+	adm5120_info.cpu_package = (CODE_GET_PK(code) == CODE_PK_BGA) ?
+		CPU_PACKAGE_BGA : CPU_PACKAGE_PQFP;
+
+	adm5120_info.nand_boot = CODE_GET_NAB(code);
+
+}
 
 /*
  * Boot loader detection routines
@@ -55,12 +94,12 @@ static int __init detect_cfe(void)
 		/* We are not booted from CFE */
 		return 0;
 	}
-	
+
 	/* cfe_a1_val must be 0, because only one CPU present in the ADM5120 SoC */
 	if (cfe_a1_val != 0) {
 		return 0;
 	}
-	
+
 	/* The cfe_handle, and the cfe_entry must be kernel mode addresses */
 	if ((cfe_handle < KSEG0) || (cfe_entry < KSEG0)) {
 		return 0;
@@ -86,7 +125,7 @@ static int __init detect_myloader(void)
 	parts = (struct mylo_partition_table *)(MYLO_MIPS_PARTITIONS);
 
 	/* Check for some magic numbers */
-	if ((sysp->magic != MYLO_MAGIC_SYS_PARAMS) || 
+	if ((sysp->magic != MYLO_MAGIC_SYS_PARAMS) ||
 	   (boardp->magic != MYLO_MAGIC_BOARD_PARAMS) ||
 	   (parts->magic != MYLO_MAGIC_PARTITIONS))
 		return 0;
@@ -98,24 +137,41 @@ static int __init detect_bootloader(void)
 {
 	if (detect_cfe())
 		return BOOT_LOADER_CFE;
-	
-	if (detect_uboot()) 
+
+	if (detect_uboot())
 		return BOOT_LOADER_UBOOT;
-	
+
 	if (detect_myloader())
 		return BOOT_LOADER_MYLOADER;
-	
+
 	return BOOT_LOADER_UNKNOWN;
+}
+
+/*
+ * Board detection
+ */
+static void __init detect_board_type(void)
+{
+	/* FIXME: not yet implemented */
 }
 
 void __init adm5120_info_show(void)
 {
-	printk("adm5120: boot loader is %s\n", boot_loader_names[adm5120_info.boot_loader]);
+	printk("ADM%04X%s revision %d, running at %ldMHz\n",
+		adm5120_info.product_code,
+		(adm5120_info.cpu_package == CPU_PACKAGE_BGA) ? "" : "P",
+		adm5120_info.revision,
+		(adm5120_info.cpu_speed / 1000000)
+		);
+	printk("Boot loader is: %s\n", boot_loader_names[adm5120_info.boot_loader]);
+	printk("Booted from   : %s flash\n", adm5120_info.nand_boot ? "NAND" : "NOR");
 }
 
 void __init adm5120_info_init(void)
 {
+	detect_cpu_info();
 	adm5120_info.boot_loader = detect_bootloader();
-	
+	detect_board_type();
+
 	adm5120_info_show();
 }

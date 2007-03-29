@@ -1,7 +1,9 @@
 /*
+ * $Id$
+ *
  * Copyright (C) 2007 OpenWrt.org
- * Copyright (C) Gabor Juhos
- * 
+ * Copyright (C) Gabor Juhos <juhosg@freemail.hu>
+ *
  * This program is free software; you can redistribute  it and/or modify it
  * under  the terms of  the GNU General  Public License as published by the
  * Free Software Foundation;  either version 2 of the  License, or (at your
@@ -14,8 +16,11 @@
 #include <linux/types.h>
 
 struct adm5120_info {
-	unsigned long cpu_speed;
+	unsigned int product_code;
+	unsigned int revision;
 	unsigned int cpu_package;
+	unsigned int nand_boot;
+	unsigned long cpu_speed;
 	unsigned int boot_loader;
 	unsigned int board_type;
 };
@@ -48,5 +53,10 @@ struct adm5120_info {
 
 extern struct adm5120_info adm5120_info;
 extern void adm5120_info_init(void);
+
+static inline int adm5120_has_pci(void)
+{
+	return (adm5120_info.cpu_package == CPU_PACKAGE_BGA);
+}
 
 #endif /* _ADM5120_INFO_H */
