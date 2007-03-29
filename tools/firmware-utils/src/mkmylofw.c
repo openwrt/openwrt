@@ -1,10 +1,22 @@
 /*
- *  Copyright (C) 2006,2007 Gabor Juhos
+ *  $Id$
  *
- *  This program is free software; you can redistribute  it and/or modify it
- *  under  the terms of  the GNU General  Public License as published by the
- *  Free Software Foundation;  either version 2 of the  License, or (at your
- *  option) any later version.
+ *  Copyright (C) 2006,2007 Gabor Juhos <juhosg@freemail.hu>
+ *
+ *  This program is free software; you can redistribute it and/or
+ *  modify it under the terms of the GNU General Public License
+ *  as published by the Free Software Foundation; either version 2
+ *  of the License, or (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the
+ *  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+ *  Boston, MA  02110-1301, USA.
  *
  */
 
@@ -265,7 +277,7 @@ uint32_t
 get_crc(uint8_t *p, uint32_t len)
 {
 	uint32_t crc;
-	
+
 	crc = 0;
 	update_crc(p ,len , &crc);
 	return crc;
@@ -277,7 +289,7 @@ str2u32(char *arg, uint32_t *val)
 {
 	char *err = NULL;
 	uint32_t t;
-	
+
 	errno=0;
 	t = strtoul(arg, &err, 0);
 	if (errno || (err==arg) || ((err != NULL) && *err)) {
@@ -300,7 +312,7 @@ str2u16(char *arg, uint16_t *val)
 	if (errno || (err==arg) || ((err != NULL) && *err) || (t >= 0x10000)) {
 		return -1;
 	}
-	
+
 	*val = t & 0xFFFF;
 	return 0;
 }
@@ -331,19 +343,19 @@ get_file_crc(struct fw_block *ff)
 	uint32_t readlen = sizeof(buf);
 	int res = -1;
 	size_t len;
-	
+
 	if ((ff->flags & BLOCK_FLAG_HAVEHDR) == 0) {
 		res = 0;
 		goto out;
 	}
-	
+
 	errno = 0;
 	f = fopen(ff->name,"r");
 	if (errno) {
 		errmsg(1,"unable to open file %s", ff->name);
 		goto out;
 	}
-	
+
 	ff->crc = 0;
 	len = ff->size;
 	while (len > 0) {
@@ -362,7 +374,7 @@ get_file_crc(struct fw_block *ff)
 	}
 
 	res = 0;
-	
+
 out_close:
 	fclose(f);
 out:
@@ -463,18 +475,17 @@ int
 write_out_padding(FILE *outfile, size_t len, uint8_t padc, uint32_t *crc)
 {
 	uint8_t buff[512];
-	size_t  buflen;
-	
+	size_t  buflen = sizeof(buff);
+
 	memset(buff, padc, buflen);
-	
-	buflen = sizeof(buff);
+
 	while (len > 0) {
 		if (len < buflen)
 			buflen = len;
 
 		if (write_out_data(outfile, buff, buflen, crc))
 			return -1;
-			
+
 		len -= buflen;
 	}
 
@@ -491,24 +502,24 @@ write_out_file(FILE *outfile, struct fw_block *block, uint32_t *crc)
 	size_t len;
 
 	errno = 0;
-	
+
 	if (block->name == NULL) {
 		return 0;
 	}
-	
+
 	if ((block->flags & BLOCK_FLAG_HAVEHDR) != 0) {
 		struct mylo_partition_header ph;
-		
+
 		if (get_file_crc(block) != 0)
 		        return -1;
-		
+
 		ph.crc = HOST_TO_LE32(block->crc);
 		ph.len = HOST_TO_LE32(block->size);
-		
+
 		if (write_out_data(outfile, (uint8_t *)&ph, sizeof(ph), crc) != 0)
 			return -1;
 	}
-	
+
 	f = fopen(block->name,"r");
 	if (errno) {
 		errmsg(1,"unable to open file: %s", block->name);
@@ -530,7 +541,7 @@ write_out_file(FILE *outfile, struct fw_block *block, uint32_t *crc)
 
 		if (write_out_data(outfile, buff, buflen, crc) != 0)
 			return -1;
-			
+
 		len -= buflen;
 	}
 
@@ -540,7 +551,7 @@ write_out_file(FILE *outfile, struct fw_block *block, uint32_t *crc)
 	len = ALIGN(len,4) - block->size;
 	if (write_out_padding(outfile, len, 0xFF, crc))
 		return -1;
-	
+
 	dbgmsg(1,"file %s written out", block->name);
 	return 0;
 }
@@ -628,7 +639,7 @@ write_out_blocks(FILE *outfile, uint32_t *crc)
 	 */
 	for (i = 0; i < fw_num_blocks; i++) {
 		b = &fw_blocks[i];
-		
+
 		/* detect block size */
 		dlen = b->size;
 		if ((b->flags & BLOCK_FLAG_HAVEHDR) != 0) {
@@ -728,7 +739,7 @@ required_arg(char c, char *arg)
 		errmsg(0,"option %c requires an argument\n", c);
 		return -1;
 	}
-	
+
 	return 0;
 }
 
@@ -755,7 +766,7 @@ parse_opt_flags(char ch, char *arg)
 		errmsg(0,"invalid firmware flags: %s", arg);
 		goto err_out;
 	}
-	
+
 	dbgmsg(1, "firmware flags set to %X bytes", fw_header.flags);
 
 	return 0;
@@ -776,7 +787,7 @@ parse_opt_size(char ch, char *arg)
 		errmsg(0,"invalid flash size: %s", arg);
 		goto err_out;
 	}
-	
+
 	dbgmsg(1, "flash size set to %d bytes", flash_size);
 
 	return 0;
@@ -906,12 +917,12 @@ parse_opt_block(char ch, char *arg)
 		errmsg(0,"invalid block length: %s", p);
 		goto err_out;
 	}
-	
+
 	if (argc < 3) {
 		dbgmsg(1,"empty block %s", arg);
 		goto success;
 	}
-	
+
 	/* processing flags */
 	p = argv[2];
 	if (is_empty_arg(p) == 0) {
@@ -933,17 +944,17 @@ parse_opt_block(char ch, char *arg)
 		errmsg(0,"file name missing in %s", arg);
 		goto err_out;
 	}
-	
+
 	b->name = strdup(p);
 	if (b->name == NULL) {
 		errmsg(0,"not enough memory");
 		goto err_out;
 	}
-	
+
 success:
 
 	return 0;
-	
+
 err_out:
 	return -1;
 }
@@ -967,7 +978,7 @@ parse_opt_partition(char ch, char *arg)
 		errmsg(0, "too many partitions specified");
 		goto err_out;
 	}
-	
+
 	part = &fw_partitions[fw_num_partitions++];
 
 	argc = parse_arg(arg, buf, argv);
@@ -1032,7 +1043,7 @@ parse_opt_partition(char ch, char *arg)
 	p = argv[4];
 	if (is_empty_arg(p) == 0) {
 		struct fw_block *b;
-		
+
 		if (fw_num_blocks == MAX_FW_BLOCKS) {
 			errmsg(0,"too many blocks specified", p);
 			goto err_out;
@@ -1058,26 +1069,26 @@ int
 parse_opt_board(char ch, char *arg)
 {
 	struct cpx_board *board;
-	
+
 	if (required_arg(ch, arg)) {
 		goto err_out;
 	}
-	
+
 	board = find_board(arg);
 	if (board == NULL){
 		errmsg(0,"invalid/unknown board specified: %s", arg);
 		goto err_out;
 	}
-	
+
 	fw_header.vid = board->vid;
 	fw_header.did = board->did;
 	fw_header.svid = board->svid;
 	fw_header.sdid = board->sdid;
-	
+
 	flash_size = board->flash_size;
 
 	return 0;
-	
+
 err_out:
 	return -1;
 }
@@ -1111,11 +1122,11 @@ main(int argc, char *argv[])
 
 	FILE  *outfile;
 	uint32_t crc;
-	
+
 	progname=basename(argv[0]);
-	
+
 	memset(&fw_header, 0, sizeof(fw_header));
-	
+
 	/* init header defaults */
 	fw_header.vid = VENID_COMPEX;
 	fw_header.did = DEVID_COMPEX_WP54G;
@@ -1165,24 +1176,24 @@ main(int argc, char *argv[])
 			goto out;
 		}
 	}
-	
+
 	if (optind == argc) {
 		errmsg(0, "no output file specified");
 		goto out;
 	}
 
 	ofname = argv[optind++];
-	
+
 	if (optind < argc) {
 		errmsg(0, "invalid option: %s", argv[optind]);
 		goto out;
 	}
-	
+
 	if (flash_size == 0) {
 		errmsg(0, "no flash size specified");
 		goto out;
 	}
-	
+
 	if (process_files() != 0) {
 		goto out;
 	}
@@ -1202,7 +1213,7 @@ main(int argc, char *argv[])
 
 	if (write_out_header(outfile, &crc) != 0)
 		goto out_flush;
-		
+
 	if (write_out_blocks(outfile, &crc) != 0)
 		goto out_flush;
 
