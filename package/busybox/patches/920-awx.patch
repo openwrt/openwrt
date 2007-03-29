@@ -355,7 +355,7 @@ diff -purN bb.old/editors/awx.c bb.dev/editors/awx.c
 +			clear_array(ahash);
 +		}
 +	}
-+	if (initseq)
++	if (initseq && initseq->first)
 +		evaluate(initseq->first, &tv);
 +}
 +
