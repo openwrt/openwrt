@@ -83,7 +83,7 @@ struct prom_pmemblock * __init prom_getmdesc(void)
 	ptr = strstr(cmdline, "memsize=");
 	if (ptr && (ptr != cmdline) && (*(ptr - 1) != ' '))
 	ptr = strstr(ptr, " memsize=");
-	
+
 	if (ptr)
 		memsize = memparse(ptr + 8, &ptr);
 	else
@@ -131,5 +131,5 @@ void __init prom_meminit(void)
 unsigned long __init prom_free_prom_memory(void)
 {
 	/* We do not have to prom memory to free */
-        return;
+        return 0;
 }
