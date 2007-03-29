@@ -41,7 +41,7 @@ endef
 define Image/Build/Edimax
 	# FIXME : not tested (hardware ?)
 	$(STAGING_DIR)/bin/mksyshdr $(KDIR)/csys $(KDIR)/vmlinux
-	cat $(KDIR)/csys $(KDIR)/vmlinux $(KDIR)/root.$(1) > $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(3)-$(2).img
+	cat $(KDIR)/csys $(KDIR)/loader.gz $(KDIR)/vmlinux.lzma $(KDIR)/root.$(1) > $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(3)-$(2).img
 endef
 
 define Image/Build/MyLoader
