@@ -1,0 +1,61 @@
+--- linux-2.6.19.2.old/arch/arm/mach-at91rm9200/vlink_leds.c	2007-03-25 19:36:45.000000000 +0200
++++ linux-2.6.19.2/arch/arm/mach-at91rm9200/vlink_leds.c	2007-03-29 09:17:39.000000000 +0200
+@@ -37,13 +37,13 @@
+ 
+ static inline void at91_led_toggle(unsigned int led)
+ {
+-	unsigned long is_off = at91_get_gpio_value(AT91_PIN_PC7);
++	unsigned long is_off = at91_get_gpio_value(AT91_PIN_PC14);
+ 	if (is_off) {
+-		at91_set_gpio_value(AT91_PIN_PC7, 0);
+-		at91_set_gpio_value(AT91_PIN_PC8, 1);
++		at91_set_gpio_value(AT91_PIN_PC14, 0);
++		at91_set_gpio_value(AT91_PIN_PC15, 1);
+ 	} else {
+-		at91_set_gpio_value(AT91_PIN_PC7, 1);
+-		at91_set_gpio_value(AT91_PIN_PC8, 0);
++		at91_set_gpio_value(AT91_PIN_PC14, 1);
++		at91_set_gpio_value(AT91_PIN_PC15, 0);
+ 	}
+ }
+ 
+@@ -59,20 +59,11 @@
+ 
+ 	switch(evt) {
+ 	case led_start:		/* System startup */
+-//		at91_led_on(at91_leds_cpu);
+ 		at91_led_toggle(at91_leds_timer);
+-/*
+-		at91_set_gpio_value(AT91_PIN_PC7, 0);
+-		at91_set_gpio_value(AT91_PIN_PC8, 1);
+-*/
+ 		break;
+ 
+ 	case led_stop:		/* System stop / suspend */
+ 		at91_led_toggle(at91_leds_timer);
+-/*
+-		at91_set_gpio_value(AT91_PIN_PC7, 1);
+-		at91_set_gpio_value(AT91_PIN_PC8, 0);
+-*/
+ 		break;
+ 
+ #ifdef CONFIG_LEDS_TIMER
+@@ -84,18 +75,10 @@
+ #ifdef CONFIG_LEDS_CPU
+ 	case led_idle_start:	/* Entering idle state */
+ 		at91_led_toggle(at91_leds_timer);
+-/*
+-		at91_set_gpio_value(AT91_PIN_PC7, 1);
+-		at91_set_gpio_value(AT91_PIN_PC8, 0);
+-*/
+ 		break;
+ 
+ 	case led_idle_end:	/* Exit idle state */
+ 		at91_led_toggle(at91_leds_timer);
+-/*
+-		at91_set_gpio_value(AT91_PIN_PC7, 0);
+-		at91_set_gpio_value(AT91_PIN_PC8, 1);
+-*/
+ 		break;
+ #endif
+ 
