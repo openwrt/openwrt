@@ -100,7 +100,7 @@ u32 header[] = {
 	0x00000000, 0x00000005, 0x00000000, 0x00000000
 };
 
-static int JFFS2 = 0;
+static int JFFS2 = 0x20;
 
 int generate_image(char *kname, char *fsname, char *fname, int EHDR)
 {
@@ -108,7 +108,6 @@ int generate_image(char *kname, char *fsname, char *fname, int EHDR)
 	u32 lenk, lens;
 	uchar *bk, *bs;
 	int fkd, ffd, fsd;
-	int pad = 0x1f;
 	fkd = open(kname, O_RDONLY);
 	ffd = creat(fname, 0x644);
 	if ((fkd < 0) || (ffd < 0))
@@ -135,12 +134,10 @@ int generate_image(char *kname, char *fsname, char *fname, int EHDR)
 	else
 		write(ffd, header + 2, 0x20);
 	write(ffd, bk, lenk);
-	if (fsname && JFFS2)
-		pad = 0xffff;
 	printf("Padding header+kernel - 0x%x +  0x%x = 0x%x\n",
-	       lenk + 0x20, ((lenk + 0x20) | pad) + 1 - lenk - 0x20,
-	       ((lenk + 0x20) | pad) + 1);
-	for (i = 0; i < ((lenk + 0x20) | pad) + 1 - lenk - 0x20; i++)
+	       lenk, ((lenk - 1 + JFFS2) / JFFS2) * JFFS2 - lenk,
+	       ((lenk - 1 + JFFS2) / JFFS2) * JFFS2);
+	for (i = 0; i < ((lenk - 1 + JFFS2) / JFFS2) * JFFS2 - lenk; i++)
 		write(ffd, header, 1);
 	if (fsname) {
 		write(ffd, bs, lens);
@@ -169,13 +166,13 @@ void usage(char *prog)
 	printf("Usage: %s [-b 0/1] image_filename \n", prog);
 	printf("       update checksums for firmware file\n");
 	printf
-	    ("Usage: %s [-b 0/1] [-j] [-e] kernel filesystem image_filename \n",
+	    ("Usage: %s [-b 0/1] [-j erasesize_in_kibytes] [-e] kernel filesystem image_filename \n",
 	     prog);
 	printf("       generate firmware file and update checksums\n");
 	printf("--------------------------------------------------\n");
 	printf("       -e - generate header for web upload\n");
-	printf("       -j - generate header for jffs2 filesystem\n");
 	printf("       -b 0/1 - clear/update bootloader checksum\n");
+	printf("       -j erasesize_in_kibytes - generate header for jffs2 filesystem\n");
 }
 
 int main(int argc, char **argv)
@@ -187,7 +184,7 @@ int main(int argc, char **argv)
 	extern char *optarg;
 	extern int optind, optopt;
 
-	while ((c = getopt(argc, argv, "b:e:j")) != -1) {
+	while ((c = getopt(argc, argv, "b:ej:")) != -1) {
 		switch (c) {
 		case 'b':
 			if (optarg[0] == '1')
@@ -197,7 +194,8 @@ int main(int argc, char **argv)
 			EHDR = 1;
 			break;
 		case 'j':
-			JFFS2 = 1;
+			sscanf(optarg, "%i", &JFFS2);
+			JFFS2 *= 1024;
 			break;
 		case '?':
 			fprintf(stderr, "\nError: unknown arg %c\n\n\n",
