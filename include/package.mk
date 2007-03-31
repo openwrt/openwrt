@@ -124,5 +124,6 @@ compile:
 install:
 clean: FORCE
 	$(Build/UninstallDev)
+	$(Build/Clean)
 	@rm -f $(STAGING_DIR)/stampfiles/.$(PKG_NAME)-installed
 	@rm -rf $(PKG_BUILD_DIR)
