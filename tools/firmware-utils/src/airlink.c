@@ -288,7 +288,7 @@ int main(int argc, char **argv)
 	*((u32 *) & buf[0x4]) = 0x0L;
 	memcpy(b, buf, 0x100);
 	memcpy(b + 0x100, buf + ((l0 >> 1) - ((l0 & 0x6) >> 1)), 0x100);
-	memcpy(b + 0x200, buf + (I0 - 0x200), 0x200);
+	memcpy(b + 0x200, buf + (l0 - 0x200), 0x200);
 	*((u32 *) & b[0x18]) = 0x0L;
 
 	sum = crc32(b, 0x400);
