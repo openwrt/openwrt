@@ -18,8 +18,8 @@
 #ifndef RDC3210_STATIC_MAP
 #define RDC3210_STATIC_MAP	0
 #endif
-#ifndef RDC3210_NO_FACTORY_DFLT
-#define RDC3210_NO_FACTORY_DFLT	1
+#ifndef RDC3210_FACTORY_DFLT
+#define RDC3210_FACTORY_DFLT	0
 #endif
 #ifndef RDC3210_USING_JFFS2
 #define RDC3210_USING_JFFS2	1
@@ -121,7 +121,7 @@ static struct mtd_partition rdc3210_parts[] =
 	{ name: "linux",   offset:  0,          size: 0x003C0000 },	/* 3840 KB = (Kernel + ROMFS) = (768 KB + 3072 KB) */
 	{ name: "romfs",   offset:  0x000C0000, size: 0x00300000 },	/* 3072 KB */
 	{ name: "nvram",   offset:  0x003C0000, size: 0x00010000 },	/*   64 KB */
-#if RDC3210_STATIC_MAP || !RDC3210_NO_FACTORY_DFLT
+#if RDC3210_STATIC_MAP || RDC3210_FACTORY_DFLT
 	{ name: "factory", offset:  0x003D0000, size: 0x00010000 },	/*   64 KB */
 #endif
 	{ name: "bootldr", offset:  0x003E0000, size: 0x00020000 },	/*  128 KB */
@@ -173,6 +173,7 @@ mod_init_t init_rdc3210_map(void)
 			return -EIO;
 		}
 
+#if RDC3210_FACTORY_DFLT
 		/* 1. Adjust Redboot */
 		tmp = flashdrv_get_size() - rdc3210_parts[4].size;
 		rdc3210_parts[4].offset = flashdrv_get_sector_addr(flashdrv_get_sector(tmp));
@@ -195,7 +196,7 @@ mod_init_t init_rdc3210_map(void)
 		tmp = hdr->kernelsz + sizeof(gt_imghdr_t);
 		rdc3210_parts[1].offset = rdc3210_parts[0].offset + (((tmp / tmp2) + ((tmp % tmp2) ? 1 : 0)) * tmp2);
 		rdc3210_parts[1].size   = rdc3210_parts[2].offset - rdc3210_parts[1].offset;
-#if RDC3210_NO_FACTORY_DFLT
+#else
 		/* 1. Adjust Redboot */
 		tmp = flashdrv_get_size() - rdc3210_parts[3].size;
 		rdc3210_parts[3].offset = flashdrv_get_sector_addr(flashdrv_get_sector(tmp));
