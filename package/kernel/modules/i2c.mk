@@ -12,8 +12,7 @@ define KernelPackage/i2c-core
   TITLE:=I2C support
   DESCRIPTION:=Kernel modules for i2c support
   SUBMENU:=$(I2CMENU)
-  KCONFIG:=$(CONFIG_I2C_CORE) \
-	$(CONFIG_I2C_DEV)
+  KCONFIG:=$(CONFIG_I2C)
   FILES:=$(MODULES_DIR)/kernel/drivers/i2c/*.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,i2c-core i2c-dev)
 endef
