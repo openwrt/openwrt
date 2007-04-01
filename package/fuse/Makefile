@@ -62,6 +62,9 @@ define Package/libfuse
 	This package contains the FUSE shared library, needed by other programs.
 endef
 
+CONFIGURE_VARS += \
+	 kernsrcver="$(LINUX_VERSION)"
+
 CONFIGURE_ARGS += \
 	--enable-shared \
 	--enable-static \
