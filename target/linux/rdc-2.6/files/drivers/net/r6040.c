@@ -183,7 +183,7 @@ MODULE_PARM_DESC(adr_table, "MAC Address (assigned)");
 
 static int r6040_open(struct net_device *dev);
 static int r6040_start_xmit(struct sk_buff *skb, struct net_device *dev);
-static irqreturn_t r6040_interrupt(int irq, void *dev_id, struct pt_regs *regs);
+static irqreturn_t r6040_interrupt(int irq, void *dev_id);
 static struct net_device_stats *r6040_get_stats(struct net_device *dev);
 static int r6040_close(struct net_device *dev);
 static void set_multicast_list(struct net_device *dev);
@@ -418,7 +418,7 @@ r6040_start_xmit(struct sk_buff *skb, struct net_device *dev)
 
 /* The RDC interrupt handler. */
 static irqreturn_t
-r6040_interrupt(int irq, void *dev_id, struct pt_regs *regs)
+r6040_interrupt(int irq, void *dev_id)
 {
 	struct net_device *dev = dev_id;
 	struct r6040_private *lp;
