@@ -25,3 +25,15 @@ diff -urN linux-2.6.17/drivers/mtd/maps/Makefile linux-2.6.17.new/drivers/mtd/ma
  obj-$(CONFIG_MTD_RPXLITE)	+= rpxlite.o
  obj-$(CONFIG_MTD_TQM8XXL)	+= tqm8xxl.o
  obj-$(CONFIG_MTD_SA1100)	+= sa1100-flash.o
+diff -urN linux-2.6.19/drivers/mtd/redboot.c linux-2.6.19.new/drivers/mtd/redboot.c
+--- linux-2.6.19/drivers/mtd/redboot.c  2006-12-18 17:09:14.000000000 +0100
++++ linux-2.6.19.new/drivers/mtd/redboot.c      2006-12-18 17:14:26.000000000 +0100
+@@ -39,7 +39,7 @@
+        return 1;
+ }
+
+-static int parse_redboot_partitions(struct mtd_info *master,
++int parse_redboot_partitions(struct mtd_info *master,
+                              struct mtd_partition **pparts,
+                              unsigned long fis_origin)
+ {
