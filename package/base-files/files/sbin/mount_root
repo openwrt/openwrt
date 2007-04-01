@@ -13,7 +13,7 @@ else
 	mknod /dev/console c 5 1
 	exec >/dev/console </dev/console 2>&1
 	mkdir /dev/shm
-	/sbin/hotplug2 --no-persistent --coldplug --max-children 3
+	/sbin/hotplug2 --no-persistent --coldplug --max-children 1
 fi
 mkdir -p /dev/pts
 mount none /dev/pts -t devpts

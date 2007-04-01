@@ -36,7 +36,7 @@ else
 	mount -t tmpfs tmpfs /dev -o size=512K
 	mknod /dev/console c 5 1
 	mkdir /dev/shm
-	/sbin/hotplug2 --no-persistent --coldplug
+	/sbin/hotplug2 --no-persistent --coldplug --max_children 1
 	M0=/dev/ptmx
 	M1=/dev/ptmx
 fi
