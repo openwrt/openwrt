@@ -23,7 +23,7 @@ Fix portability of build infrastructure
  	$(INSTALL) -m 644 lib/lib*-$(MAJOR_VERSION).$(MINOR_VERSION).$(SUBLEVEL).so \
  		$(PREFIX)$(RUNTIME_PREFIX)lib
 -	cp -dRf lib/*.so.* $(PREFIX)$(RUNTIME_PREFIX)lib
-+	cp -PRf lib/*.so.* $(PREFIX)$(RUNTIME_PREFIX)lib
++	cp -pRf lib/*.so.* $(PREFIX)$(RUNTIME_PREFIX)lib
  	@if [ -x lib/ld-uClibc-$(MAJOR_VERSION).$(MINOR_VERSION).$(SUBLEVEL).so ] ; then \
  	    set -e; \
  		$(SHELL_SET_X); \
