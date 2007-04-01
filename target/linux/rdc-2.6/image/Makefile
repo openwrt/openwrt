@@ -11,9 +11,23 @@ define Image/Prepare
 	$(CP) $(LINUX_DIR)/arch/i386/boot/bzImage $(KDIR)/bzImage
 endef
 
+define trxalign/jffs2-128k
+-a 0x20000
+endef
+define trxalign/jffs2-64k
+-a 0x10000
+endef
+define trxalign/squashfs
+-a 1024
+endef
+
 define Image/Build/Airlink
 	touch $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(3)-$(2).img
+ifneq ($(1),squashfs)
 	$(STAGING_DIR)/bin/airlink -b 1 -j 64 $(KDIR)/bzImage $(KDIR)/root.$(1) $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(3)-$(2).img
+else
+	$(STAGING_DIR)/bin/airlink -b 1 $(KDIR)/bzImage $(KDIR)/root.$(1) $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(3)-$(2).img
+endif
 endef
 
 define Image/Build
