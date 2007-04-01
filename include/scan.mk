@@ -40,12 +40,12 @@ define scanfiles
 $(foreach FILE,$(SCAN),
   tmp/.$(SCAN_TARGET): tmp/info/.$(SCAN_TARGET)-$(FILE) FORCE
   tmp/info/.$(SCAN_TARGET)-$(FILE): $(SCAN_DEPS) $(SCAN_DIR)/$(FILE)/Makefile $(SCAN_STAMP)
-	{ \
+	grep -E 'include (\$$$$\(INCLUDE_DIR\)|\$$$$\(TOPDIR\)/include)/' $(SCAN_DIR)/$(FILE)/Makefile >/dev/null && { \
 		$$(call progress,Collecting $(SCAN_NAME) info: $(SCAN_DIR)/$(FILE)) \
 		echo Source-Makefile: $(SCAN_DIR)/$(FILE)/Makefile; \
 		$(NO_TRACE_MAKE) --no-print-dir DUMP=1 -C $(SCAN_DIR)/$(FILE) 3>/dev/null || echo "ERROR: please fix $(SCAN_DIR)/$(FILE)/Makefile" >&2; \
 		echo; \
-	} > $$@
+	} > $$@ || true
 )
 
 endef
