@@ -1,3 +1,8 @@
+DEVICENAME ~~ (tun|tap[0-9]) {
+	makedev /dev/net/%DEVICENAME% 0644
+	next
+}
+
 DEVPATH is set {
 			makedev /dev/%DEVICENAME% 0644
 }
