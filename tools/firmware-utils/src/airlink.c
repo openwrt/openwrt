@@ -102,7 +102,7 @@ u32 header[] = {
 	0x00000000, 0x00000005, 0x00000000, 0x00000000
 };
 
-static int JFFS2 = 0x20;
+static int JFFS2 = 0;
 
 int generate_image(char *kname, char *fsname, char *fname, int EHDR)
 {
@@ -136,6 +136,7 @@ int generate_image(char *kname, char *fsname, char *fname, int EHDR)
 	else
 		write(ffd, header + 2, 0x20);
 	write(ffd, bk, lenk);
+	if (!JFFS2) JFFS2 = 0x20;
 	printf("Padding header+kernel - 0x%x +  0x%x = 0x%x\n",
 	       lenk, ((lenk - 1 + JFFS2) / JFFS2) * JFFS2 - lenk,
 	       ((lenk - 1 + JFFS2) / JFFS2) * JFFS2);
