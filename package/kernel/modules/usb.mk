@@ -268,6 +268,26 @@ endef
 
 $(eval $(call KernelPackage,usb-pwc))
 
+define KernelPackage/usb-net
+  $(call usbdep,)
+  TITLE:=Kernel modules for USB-to-Ethernet convertors
+  DESCRIPTION:=Kernel modules for USB-to-Ethernet convertors
+  KCONFIG:=$(CONFIG_USB_USBNET)
+  DEPENDS:=@USB_SUPPORT
+  FILES:= \
+        $(MODULES_DIR)/kernel/drivers/usb/net/usbnet.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call Autoload,60, usbnet)
+endef
+$(eval $(call KernelPackage,usb-net))
 
-
-
+define KernelPackage/usb-net-asix
+  $(call usbdep,+kmod-usbnet)
+  TITLE:=Kernel module for USB-to-Ethernet Asix convertors
+  DESCRIPTION:=Kernel module for USB-to-Ethernet Asix convertors
+  DEPENDS:=kmod-usb-net
+  KCONFIG:=$(CONFIG_USB_NET_AX8817X)
+  FILES:= \
+        $(MODULES_DIR)/kernel/drivers/usb/net/asix.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call Autoload,61, asix)
+endef
+$(eval $(call KernelPackage,usb-net-asix))
