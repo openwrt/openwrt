@@ -172,6 +172,7 @@ define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
 		COPT_FLAGS="$(TARGET_CFLAGS)" \
+		LDFLAGS="-rdynamic -static-libgcc" \
 		KERNEL_DIR="$(LINUX_DIR)" PREFIX=/usr \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		all install
