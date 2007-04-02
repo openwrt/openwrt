@@ -33,8 +33,8 @@ $(BIN_DIR)/$(IB_NAME).tar.bz2: clean
 	$(CP) $(TOPDIR)/target/linux/* $(IB_BUILD_DIR)/target/linux
 	rm -rf $(IB_BUILD_DIR)/target/linux/*/patches
 	-cp $(BUILD_DIR)/linux-$(KERNEL)-$(BOARD)/* $(IB_BUILD_DIR)/build_$(ARCH)/linux-$(KERNEL)-$(BOARD) # don't copy subdirectories here
-	find $(IB_BUILD_DIR) -name .svn | xargs rm -rf 
-	find $(IB_BUILD_DIR) -name CVS | xargs rm -rf 
+	find $(IB_BUILD_DIR) -name .svn -exec rm -rf {} \;
+	find $(IB_BUILD_DIR) -name CVS -exec rm -rf  {} \;
 	(cd $(BUILD_DIR); \
 		tar cfj $@ $(IB_NAME); \
 	)
