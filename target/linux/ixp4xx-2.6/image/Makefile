@@ -11,11 +11,11 @@ define Build/Compile
 	$(MAKE) -C apex \
 		BUILD_DIR="$(KDIR)" \
 		TARGET="$(KDIR)" \
-		install
+		compile	
 	$(MAKE) -C npe-ucode \
 		BUILD_DIR="$(KDIR)" \
 		TARGET="$(KDIR)" \
-		install
+		compile
 endef
 
 define Build/Clean
