@@ -1,0 +1,37 @@
+diff -Nur linux-2.6.19.2/arch/arm/mach-ixp4xx/wg302v2-setup.c linux-2.6.19.2-owrt/arch/arm/mach-ixp4xx/wg302v2-setup.c
+--- linux-2.6.19.2/arch/arm/mach-ixp4xx/wg302v2-setup.c	2007-04-02 16:06:02.000000000 +0200
++++ linux-2.6.19.2-owrt/arch/arm/mach-ixp4xx/wg302v2-setup.c	2007-03-05 11:57:24.000000000 +0100
+@@ -75,9 +75,33 @@
+ 	.resource	= &wg302v2_uart_resource,
+ };
+ 
++static struct resource res_mac0 = {
++	.start		= IXP4XX_EthB_BASE_PHYS,
++	.end		= IXP4XX_EthB_BASE_PHYS + 0x1ff,
++	.flags		= IORESOURCE_MEM,
++};
++
++static struct mac_plat_info plat_mac0 = {
++	.npe_id		= 1,
++	.phy_id		= 8,
++	.eth_id		= 0,
++	.rxq_id		= 27,
++	.txq_id		= 24,
++	.rxdoneq_id	= 4,
++};
++
++static struct platform_device mac0 = {
++	.name		= "ixp4xx_mac",
++	.id		= 0,
++	.dev.platform_data = &plat_mac0,
++	.num_resources	= 1,
++	.resource	= &res_mac0,
++};
++
+ static struct platform_device *wg302v2_devices[] __initdata = {
+ 	&wg302v2_flash,
+ 	&wg302v2_uart,
++	&mac0,
+ };
+ 
+ static void __init wg302v2_init(void)
