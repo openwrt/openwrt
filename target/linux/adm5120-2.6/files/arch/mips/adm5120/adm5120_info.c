@@ -37,7 +37,8 @@ static char *boot_loader_names[BOOT_LOADER_LAST+1] = {
 	[BOOT_LOADER_UNKNOWN]	= "Unknown",
 	[BOOT_LOADER_CFE]	= "CFE",
 	[BOOT_LOADER_UBOOT]	= "U-Boot",
-	[BOOT_LOADER_MYLOADER]	= "MyLoader"
+	[BOOT_LOADER_MYLOADER]	= "MyLoader",
+	[BOOT_LOADER_ROUTERBOOT]= "RouterBOOT"
 };
 
 /*
@@ -133,6 +134,12 @@ static int __init detect_myloader(void)
 	return 1;
 }
 
+static int __init detect_routerboot(void)
+{
+	/* FIXME: not yet implemented */
+	return 0;
+}
+
 static int __init detect_bootloader(void)
 {
 	if (detect_cfe())
@@ -143,6 +150,9 @@ static int __init detect_bootloader(void)
 
 	if (detect_myloader())
 		return BOOT_LOADER_MYLOADER;
+
+	if (detect_routerboot())
+		return BOOT_LOADER_ROUTERBOOT;
 
 	return BOOT_LOADER_UNKNOWN;
 }
