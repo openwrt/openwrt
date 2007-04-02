@@ -127,7 +127,7 @@ Index: apex-1.4.7/src/mach-ixp42x/slugos-nslu2-armeb_config
 +CONFIG_ENV_REGION_KERNEL="fis://kernel"
 +# CONFIG_ENV_REGION_KERNEL_SWAP is not set
 +CONFIG_ENV_DEFAULT_CMDLINE_OVERRIDE=y
-+CONFIG_ENV_DEFAULT_CMDLINE="root=/dev/mtdblock4 rootfstype=jffs2 console=ttyS0,115200"
++CONFIG_ENV_DEFAULT_CMDLINE="root=/dev/mtdblock4 rootfstype=squashfs,jffs2 console=ttyS0,115200"
 +# CONFIG_ENV_DEFAULT_STARTUP_OVERRIDE is not set
 +CONFIG_USES_NOR_BOOTFLASH=y
 +CONFIG_BIGENDIAN=y
