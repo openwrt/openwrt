@@ -69,7 +69,7 @@ struct adm5120_dma {
 	u32 status;
 } __attribute__ ((packed));
 
-#define	ADM5120_DMA_MASK	0x00ffffff
+#define	ADM5120_DMA_MASK	0x01ffffff
 #define ADM5120_DMA_OWN		0x80000000	/* buffer owner */
 #define ADM5120_DMA_RINGEND	0x10000000	/* Last in DMA ring */
 

@@ -57,6 +57,15 @@ extern int parse_myloader_partitions(struct mtd_info *master,
                         struct mtd_partition **pparts,
                         unsigned long origin);
 
+/* Macros for switching flash bank 
+   ADM5120 only support 2MB flash address space
+   so GPIO5 is used as A20
+ */
+#define GPIO_IO        ((volatile unsigned long *)0xb20000b8)
+#define FLASH_A20_GPIO  5
+#define FLASH_BOUNDARY  0x200000
+
+
 #define TRX_MAGIC	0x30524448	/* "HDR0" */
 #define TRX_VERSION	1
 #define TRX_MAX_LEN	0x3A0000
@@ -97,6 +106,52 @@ static struct mtd_partition adm5120_cfe_parts[] = {
 	{ name: "OpenWrt", offset: 0, size: 0, },
 	{ name: NULL, },
 };
+
+
+static void flash_switch_bank(unsigned long addr)
+{
+	unsigned long val;
+
+	/* Set GPIO as output */
+	val = *GPIO_IO | (1 << (FLASH_A20_GPIO+16));
+	if ( addr & FLASH_BOUNDARY ) {
+		val |= 1 << (FLASH_A20_GPIO + 24);
+	} else {
+		val &= ~(1 << (FLASH_A20_GPIO + 24));
+	}
+	*GPIO_IO = val;
+}
+
+static map_word adm5120_map_read(struct map_info *map, unsigned long ofs)
+{
+    flash_switch_bank(ofs);
+	return inline_map_read(map, ofs);
+}
+
+static void adm5120_map_write(struct map_info *map, const map_word datum, unsigned long ofs)
+{
+    flash_switch_bank(ofs);
+	inline_map_write(map, datum, ofs);
+}
+
+static void adm5120_map_copy_from(struct map_info *map, void *to, unsigned long from, ssize_t len)
+{
+	ssize_t tmp;
+
+	if (from < FLASH_BOUNDARY) {
+		tmp = (len < (FLASH_BOUNDARY - from)) ? len : (FLASH_BOUNDARY - from);
+		flash_switch_bank(0);
+		inline_map_copy_from(map, to, from, tmp);
+		to = (void *)((char *)to + tmp);
+		from += tmp;
+		len -= tmp;
+	}
+	if (len > 0) {
+		flash_switch_bank(FLASH_BOUNDARY);
+		inline_map_copy_from(map, to, from, len);
+	}
+    
+}
 
 static int __init
 find_cfe_size(struct mtd_info *mtd, size_t size)
@@ -402,6 +457,9 @@ int __init init_adm5120_map(void)
 		return -EIO;
 	}
 	simple_map_init(&adm5120_map);
+	adm5120_map.read = adm5120_map_read;
+	adm5120_map.write = adm5120_map_write;
+	adm5120_map.copy_from = adm5120_map_copy_from;
 	
 	if (!(adm5120_mtd = do_map_probe("cfi_probe", &adm5120_map))) {
 		printk("Failed to do_map_probe\n");
