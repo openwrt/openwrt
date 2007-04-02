@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=mipsel
 BOARD:=adm5120
 BOARDNAME:=ADMtek 5120
-FEATURES:=jffs2 broken
+FEATURES:=squashfs jffs2 broken
 
 define Target/Description
 	Build firmware images for ADMTek ADM5120 based boards
