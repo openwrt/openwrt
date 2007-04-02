@@ -23,6 +23,8 @@ struct adm5120_info {
 	unsigned long cpu_speed;
 	unsigned int boot_loader;
 	unsigned int board_type;
+	unsigned int iface_num;
+	unsigned int has_usb;
 };
 
 #define CPU_SPEED_175		175000000
@@ -37,7 +39,8 @@ struct adm5120_info {
 #define BOOT_LOADER_CFE		1
 #define BOOT_LOADER_UBOOT	2
 #define BOOT_LOADER_MYLOADER	3
-#define BOOT_LOADER_LAST	3
+#define BOOT_LOADER_ROUTERBOOT	4
+#define BOOT_LOADER_LAST	4	
 
 #define BOARD_TYPE_UNKNOWN	0
 #define BOARD_TYPE_WP54G_WRT	1
@@ -49,7 +52,13 @@ struct adm5120_info {
 #define BOARD_TYPE_NP28GHS	7
 #define BOARD_TYPE_NP27G	8
 #define BOARD_TYPE_WP54Gv1C	9
-#define BOARD_TYPE_RB_1xx	10
+#define BOARD_TYPE_RB_111	10
+#define BOARD_TYPE_RB_112	11
+#define BOARD_TYPE_RB_133	12
+#define BOARD_TYPE_RB_133C	13
+#define BOARD_TYPE_RB_150	14
+#define BOARD_TYPE_RB_153	15
+#define BOART_TYPE_LAST		15
 
 extern struct adm5120_info adm5120_info;
 extern void adm5120_info_init(void);
