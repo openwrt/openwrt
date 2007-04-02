@@ -84,6 +84,7 @@ prepare_interface() {
 
 	# Setup VLAN interfaces
 	add_vlan "$iface"
+	ifconfig "$iface" 2>/dev/null >/dev/null || return 0
 
 	# Setup bridging
 	config_get iftype "$config" type
