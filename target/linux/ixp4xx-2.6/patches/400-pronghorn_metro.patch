@@ -1,18 +1,10 @@
 diff -Nur linux-2.6.19.2/arch/arm/mach-ixp4xx/Kconfig linux-2.6.19.2-owrt/arch/arm/mach-ixp4xx/Kconfig
 --- linux-2.6.19.2/arch/arm/mach-ixp4xx/Kconfig	2007-04-02 16:10:51.000000000 +0200
 +++ linux-2.6.19.2-owrt/arch/arm/mach-ixp4xx/Kconfig	2007-04-02 16:11:12.000000000 +0200
-@@ -49,6 +49,22 @@
+@@ -49,6 +49,14 @@
  	  WG302 v2 or WAG302 v2 Access Points. For more information
  	  on this platform, see http://openwrt.org
  
-+config MACH_PRONGHORN
-+	bool "Pronghorn"
-+	select PCI
-+	help
-+	  Say 'Y' here if you want your kernel to support the ADI 
-+	  Engineering Pronghorn Platform. For more
-+	  information on this platform, see <file:Documentation/arm/IXP4xx>.
-+
 +config MACH_PRONGHORNMETRO
 +	bool "Pronghorn Metro"
 +	select PCI
