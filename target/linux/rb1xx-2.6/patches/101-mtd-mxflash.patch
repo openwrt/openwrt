@@ -1,0 +1,31 @@
+--- linux-2.6.19.2/drivers/mtd/chips/Kconfig.old	2007-01-11 03:10:36.000000000 +0800
++++ linux-2.6.19.2/drivers/mtd/chips/Kconfig	2007-03-29 14:43:32.000000000 +0800
+@@ -199,6 +199,14 @@
+ 	  provides support for one of those command sets, used on chips
+ 	  including the AMD Am29LV320.
+ 
++config MTD_CFI_AMDSTD_FORCE_BOTTOM_BOOT
++	bool "Force bottom boot for Macronix flash chips"
++	depends on MTD_CFI_AMDSTD
++	help
++	  Some Macronix flash chips have wrong CFI info, and the driver may
++	  detect the type incorrectly. Select this if the chip part number
++	  ends with BTC.
++
+ config MTD_CFI_STAA
+ 	tristate "Support for ST (Advanced Architecture) flash chips"
+ 	depends on MTD_GEN_PROBE
+--- linux-2.6.19.2/drivers/mtd/chips/cfi_cmdset_0002.c.old	2007-03-22 16:14:56.000000000 +0800
++++ linux-2.6.19.2/drivers/mtd/chips/cfi_cmdset_0002.c	2007-03-29 14:07:28.000000000 +0800
+@@ -320,6 +320,11 @@
+ 		cfi_tell_features(extp);
+ #endif
+ 
++#ifdef CONFIG_MTD_CFI_AMDSTD_FORCE_BOTTOM_BOOT
++		extp->TopBottom = 2;
++		bootloc = extp->TopBottom;
++#endif
++
+ 		bootloc = extp->TopBottom;
+ 		if ((bootloc != 2) && (bootloc != 3)) {
+ 			printk(KERN_WARNING "%s: CFI does not contain boot "
