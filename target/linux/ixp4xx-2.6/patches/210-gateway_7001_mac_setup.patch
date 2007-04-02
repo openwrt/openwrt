@@ -1,8 +1,8 @@
-diff -Nur linux-2.6.19.2/arch/arm/mach-ixp4xx/coyote-setup.c linux-2.6.19.2-owrt/arch/arm/mach-ixp4xx/coyote-setup.c
---- linux-2.6.19.2/arch/arm/mach-ixp4xx/coyote-setup.c	2007-03-03 23:34:46.000000000 +0100
-+++ linux-2.6.19.2-owrt/arch/arm/mach-ixp4xx/coyote-setup.c	2007-03-03 23:42:47.000000000 +0100
-@@ -74,9 +74,57 @@
- 	.resource	= &coyote_uart_resource,
+diff -Nur linux-2.6.19.2/arch/arm/mach-ixp4xx/gateway7001-setup.c linux-2.6.19.2-owrt/arch/arm/mach-ixp4xx/gateway7001-setup.c
+--- linux-2.6.19.2/arch/arm/mach-ixp4xx/gateway7001-setup.c	2007-04-02 15:56:39.000000000 +0200
++++ linux-2.6.19.2-owrt/arch/arm/mach-ixp4xx/gateway7001-setup.c	2007-04-02 15:57:38.000000000 +0200
+@@ -76,9 +76,57 @@
+ 	.resource	= &gateway7001_uart_resource,
  };
  
 +static struct resource res_mac0 = {
@@ -51,12 +51,12 @@ diff -Nur linux-2.6.19.2/arch/arm/mach-ixp4xx/coyote-setup.c linux-2.6.19.2-owrt
 +	.resource	= &res_mac1,
 +};
 +
- static struct platform_device *coyote_devices[] __initdata = {
- 	&coyote_flash,
--	&coyote_uart
-+	&coyote_uart,
+ static struct platform_device *gateway7001_devices[] __initdata = {
+ 	&gateway7001_flash,
+-	&gateway7001_uart
++	&gateway7001_uart,
 +	&mac0,
 +	&mac1,
  };
  
- static void __init coyote_init(void)
+ static void __init gateway7001_init(void)
