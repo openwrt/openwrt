@@ -1,0 +1,27 @@
+diff -urN linux.old/drivers/mtd/nand/Kconfig linux.dev/drivers/mtd/nand/Kconfig
+--- linux.old/drivers/mtd/nand/Kconfig	2006-11-29 22:57:37.000000000 +0100
++++ linux.dev/drivers/mtd/nand/Kconfig	2006-12-14 04:38:51.000000000 +0100
+@@ -75,6 +75,12 @@
+ 	help
+ 	  Support for NAND flash on Technologic Systems TS-7250 platform.
+ 
++config MTD_NAND_RB500
++	tristate "NAND Flash device on RB500 board"
++	depends on MTD_NAND
++	help
++	  Support for NAND flash on RB500 platform.
++
+ config MTD_NAND_IDS
+ 	tristate
+ 
+diff -urN linux.old/drivers/mtd/nand/Makefile linux.dev/drivers/mtd/nand/Makefile
+--- linux.old/drivers/mtd/nand/Makefile	2006-11-29 22:57:37.000000000 +0100
++++ linux.dev/drivers/mtd/nand/Makefile	2006-12-14 04:38:51.000000000 +0100
+@@ -9,6 +9,7 @@
+ obj-$(CONFIG_MTD_NAND_SPIA)		+= spia.o
+ obj-$(CONFIG_MTD_NAND_AMS_DELTA)	+= ams-delta.o
+ obj-$(CONFIG_MTD_NAND_TOTO)		+= toto.o
++obj-$(CONFIG_MTD_NAND_RB500)		+= rbmipsnand.o
+ obj-$(CONFIG_MTD_NAND_AUTCPU12)		+= autcpu12.o
+ obj-$(CONFIG_MTD_NAND_EDB7312)		+= edb7312.o
+ obj-$(CONFIG_MTD_NAND_AU1550)		+= au1550nd.o

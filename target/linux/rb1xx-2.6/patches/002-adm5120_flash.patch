@@ -1,0 +1,25 @@
+diff -urN linux-2.6.19.2/drivers/mtd/maps/Kconfig linux-2.6.19.2-adm5120/drivers/mtd/maps/Kconfig
+--- linux-2.6.19.2/drivers/mtd/maps/Kconfig	2007-01-10 20:10:37.000000000 +0100
++++ linux-2.6.19.2-adm5120/drivers/mtd/maps/Kconfig	2007-01-23 01:13:39.000000000 +0100
+@@ -622,5 +622,10 @@
+ 
+ 	  This selection automatically selects the map_ram driver.
+ 
++config MTD_ADM5120
++	tristate "Map driver for ADMtek ADM5120 boards"
++	depends on MIPS_ADM5120
++	select MTD_CFI_AMDSTD
++
+ endmenu
+ 
+diff -urN linux-2.6.19.2/drivers/mtd/maps/Makefile linux-2.6.19.2-adm5120/drivers/mtd/maps/Makefile
+--- linux-2.6.19.2/drivers/mtd/maps/Makefile	2007-01-10 20:10:37.000000000 +0100
++++ linux-2.6.19.2-adm5120/drivers/mtd/maps/Makefile	2007-01-23 01:20:52.000000000 +0100
+@@ -43,6 +43,7 @@
+ obj-$(CONFIG_MTD_SOLUTIONENGINE)+= solutionengine.o
+ obj-$(CONFIG_MTD_PCI)		+= pci.o
+ obj-$(CONFIG_MTD_ALCHEMY)       += alchemy-flash.o
++obj-$(CONFIG_MTD_ADM5120)      	+= adm5120_mtd.o
+ obj-$(CONFIG_MTD_LASAT)		+= lasat.o
+ obj-$(CONFIG_MTD_AUTCPU12)	+= autcpu12-nvram.o
+ obj-$(CONFIG_MTD_EDB7312)	+= edb7312.o
