@@ -245,7 +245,7 @@ int main(int argc, char **argv)
 	u32 sum, l0;
 	u32 MagicS = 0x474d544b;
 	u32 MagicE = 0x4152524e;
-	if (htonl(*((u32 *) buf)) == MagicS) {
+	if (ntohl(*((u32 *) buf)) == MagicS) {
 		fprintf(stderr,
 			"Image without extra 8 bytes - Standard header\n");
 		buf[0x10] = len & 0xff;
@@ -255,8 +255,8 @@ int main(int argc, char **argv)
 		lseek(fd, 0x10, SEEK_SET);
 		write(fd, buf + 0x10, 0x4);
 		EHDR = 0;
-	} else if ((htonl(*((u32 *) (buf + 0x8))) == MagicS)
-		   && ((htonl(*((u32 *) (buf + 0x4))) == MagicE))) {
+	} else if ((ntohl(*((u32 *) (buf + 0x8))) == MagicS)
+		   && ((ntohl(*((u32 *) (buf + 0x4))) == MagicE))) {
 		fprintf(stderr,
 			"Image with extra 8 bytes - Extended header\n");
 		*((u32 *) (buf + 0x18)) = len - 8;
