@@ -78,7 +78,7 @@ $(eval $(call Require,zlib, \
 	Please install zlib. (Missing libz.so or zlib.h) \
 ))
 
-$(eval $(call RequireCommand,gwak, \
+$(eval $(call RequireCommand,gawk, \
 	Please install GNU awk. \
 ))
 
