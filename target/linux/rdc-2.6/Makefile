@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=i386
 BOARD:=rdc
 BOARDNAME:=RDC x86
-FEATURES:=broken jffs2
+FEATURES:=broken squashfs jffs2
 
 define Target/Description
         Build firmware images for RDC3211 based routers
@@ -17,6 +17,7 @@ define Target/Description
 endef
 
 include $(INCLUDE_DIR)/kernel-build.mk
+KERNEL_MAKEOPTS += CFLAGS_KERNEL="-DRDC3210_NVRAM_IS_JFFS2=1"
 
 # include the profiles
 -include profiles/*.mk
