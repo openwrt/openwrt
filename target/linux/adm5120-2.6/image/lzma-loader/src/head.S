@@ -1,6 +1,6 @@
-/* Copyright 2007 Gabor Juhos				*/
+/* Copyright 2007 Gabor Juhos <juhosg@freemail.hu>	*/
 /* keep original values of the a0,a1,a2,a3 registers	*/
-/* cache manipulation adapted from Broadcom code 	*/
+/* modifed to support user defined entry point address	*/
 /* Copyright 2005 Oleg I. Vdovikin (oleg@cs.msu.su)	*/
 /* cache manipulation adapted from Broadcom code 	*/
 /* idea taken from original bunzip2 decompressor code	*/
@@ -39,20 +39,43 @@
 #define Index_Writeback_Inv_D   0x01
 
 	.text
-	LEAF(startup)
-	.set noreorder
-	
-	/* Copy decompressor code to the right place */
-	li	t0, BZ_TEXT_START
 
-	la      t1, code_start
-	la	t2, code_stop
-$L1:
-	lw	t3, 0(t1)
-	sw	t3, 0(t0)
+#if (BZ_STARTUP_ORG)
+	.set	noreorder
+
+	b	startup
+	nop
+
+	.org	BZ_STARTUP_ORG
+#endif
+
+LEAF(startup)
+	.set noreorder
+
+	move	t1, ra			# save return address
+	la	t0, __reloc_label	# get linked address of label
+	bal	__reloc_label		# branch and link to label to
+	nop				# get actual address
+__reloc_label:
+	subu	t0, ra, t0		# get reloc_delta
+	move	ra, t1			# restore return address
+
+	beqz	t0, __reloc_end         # if delta is 0 we are in the right place
+	nop
+
+	/* Copy our code to the right place */
+	la	t1, _code_start		# get linked address of _code_start
+	la	t2, _code_end		# get linked address of _code_end
+	addu	t0, t0, t1		# calculate actual address of _code_start
+
+__reloc_copy:
+	lw	t3, 0(t0)
+	sw	t3, 0(t1)
 	add	t1, 4
-	blt	t1, t2, $L1
+	blt	t1, t2, __reloc_copy
 	add	t0, 4
+
+__reloc_end:
 
 	/* At this point we need to invalidate dcache and */
 	/* icache before jumping to new code */
@@ -100,10 +123,10 @@ $L1:
 	.set	mips0
 	bne	t0,t1,1b
 	addu	t0,s1
-	
+
 nodc:
 	/* Now we get to do it all again for the I$ */
-	
+
 	move	s3,zero			/* just in case there is no icache */
 	move	s4,zero
 
@@ -147,20 +170,25 @@ nodc:
 	addu	t0,s3
 
 noic:
-	li	t0, BZ_TEXT_START
-	
+	/* Setup new "C" stack */
+	la	sp, _stack
+
 	addiu	sp, -32			/* reserve stack for parameters */
-#if 0	
+#if 0
 	sw	a0, 0(sp)
 	sw	a1, 4(sp)
 	sw	a2, 8(sp)
 	sw	a3, 12(sp)
-#endif	
+#endif
 	sw	s3, 16(sp)		/* icache line size */
 	sw	s4, 20(sp)		/* icache size */
 	sw	s1, 24(sp)		/* dcache line size */
-	jr	t0
 	sw	s2, 28(sp)		/* dcache size */
-	
+
+	/* jump to the decompressor routine */
+	la	t0, decompress_entry
+	jr	t0
+	nop
+
 	.set reorder
-	END(startup)
+END(startup)

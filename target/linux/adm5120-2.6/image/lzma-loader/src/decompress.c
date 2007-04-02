@@ -109,10 +109,10 @@ static int read_byte(void *object, unsigned char **buffer, UInt32 *bufferSize)
 		val = *(unsigned int *)data;
 		data += 4;
 	}
-	
+
 	*bufferSize = 1;
 	*buffer = ((unsigned char *)&val) + (offset++ & 3);
-	
+
 	return LZMA_RESULT_OK;
 }
 
@@ -120,14 +120,16 @@ static __inline__ unsigned char get_byte(void)
 {
 	unsigned char *buffer;
 	UInt32 fake;
-	
+
 	return read_byte(0, &buffer, &fake), *buffer;
 }
 
+int uart_write_str(char * str);
+
 /* should be the first function */
-void entry(unsigned long reg_a0, unsigned long reg_a1,
+void decompress_entry(unsigned long reg_a0, unsigned long reg_a1,
 	unsigned long reg_a2, unsigned long reg_a3,
-	unsigned long icache_size, unsigned long icache_lsize, 
+	unsigned long icache_size, unsigned long icache_lsize,
 	unsigned long dcache_size, unsigned long dcache_lsize)
 {
 	unsigned int i;  /* temp value */
@@ -140,13 +142,13 @@ void entry(unsigned long reg_a0, unsigned long reg_a1,
 	callback.Read = read_byte;
 
     uart_write_str("decompress kernel ... ");
-    
+
 	/* look for trx header, 32-bit data access */
 	for (data = ((unsigned char *) KSEG1ADDR(BCM4710_FLASH));
 		((struct trx_header *)data)->magic != TRX_MAGIC; data += 65536);
 
 	/* compressed kernel is in the partition 0 or 1 */
-	if (((struct trx_header *)data)->offsets[1] > 65536) 
+	if (((struct trx_header *)data)->offsets[1] > 65536)
 		data += ((struct trx_header *)data)->offsets[0];
 	else
 		data += ((struct trx_header *)data)->offsets[1];
@@ -169,7 +171,7 @@ void entry(unsigned long reg_a0, unsigned long reg_a1,
 		((unsigned int)get_byte() << 24);
 
 	/* skip rest of the header (upper half of uncompressed size) */
-	for (i = 0; i < 4; i++) 
+	for (i = 0; i < 4; i++)
 		get_byte();
 
 	/* decompress kernel */
@@ -188,11 +190,11 @@ void entry(unsigned long reg_a0, unsigned long reg_a1,
 }
 
 /*  *********************************************************************
-    *  
+    *
     *  ADM5120 UART driver			File: dev_adm_uart.c
-    *  
+    *
     *  This is a console device driver for an ADM5120 UART
-    *  
+    *
     *********************************************************************
     *
     *  Copyright 2006
@@ -226,7 +228,7 @@ int uart_write_hex(int val)
 {
     int i;
     int tmp;
-    
+
     uart_write_str("0x");
     for ( i=0 ; i<8 ; i++ ) {
         tmp = (val >> ((7-i) * 4 )) & 0xf;

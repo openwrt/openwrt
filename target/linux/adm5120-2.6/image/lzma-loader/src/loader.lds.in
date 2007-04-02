@@ -1,17 +1,27 @@
 OUTPUT_ARCH(mips)
-ENTRY(startup)
 SECTIONS {
-	. = TEXT_START;
 	.text : {
+		_code_start = .;
 		*(.text)
+		*(.text.*)
 		*(.rodata)
+		*(.rodata.*)
+		_code_end = .;
 	}
 
 	.data : {
 		*(.data)
+		*(.data.*)
 	}
 
 	.bss : {
 		*(.bss)
+		*(.bss.*)
 	}
+
+	. = ALIGN(16);
+	. = . + 8192;
+	_stack = .;
+
+	workspace = .;
 }
