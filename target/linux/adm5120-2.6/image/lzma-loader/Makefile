@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2006 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
@@ -8,6 +8,9 @@
 
 include $(TOPDIR)/rules.mk
 
+LOADER := loader
+BZ_STARTUP_ORG := 0
+
 PKG_NAME := lzma-loader
 PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
 
@@ -16,18 +19,19 @@ $(PKG_BUILD_DIR)/.prepared:
 	$(CP) ./src/* $(PKG_BUILD_DIR)/
 	touch $@
 
-$(PKG_BUILD_DIR)/loader.gz: $(PKG_BUILD_DIR)/.prepared
+$(PKG_BUILD_DIR)/$(LOADER).gz: $(PKG_BUILD_DIR)/.prepared
 	$(MAKE) -C $(PKG_BUILD_DIR) CC="$(TARGET_CC)" \
-		LD="$(TARGET_CROSS)ld" CROSS_COMPILE="$(TARGET_CROSS)"
+		LD="$(TARGET_CROSS)ld" CROSS_COMPILE="$(TARGET_CROSS)" \
+		LOADER=$(LOADER) BZ_STARTUP_ORG=$(BZ_STARTUP_ORG)
 
-download: 
+download:
 prepare: $(PKG_BUILD_DIR)/.prepared
-compile: $(PKG_BUILD_DIR)/loader.gz
+compile: $(PKG_BUILD_DIR)/$(LOADER).gz
 install:
 
 ifneq ($(TARGET),)
 install: compile
-	$(CP) $(PKG_BUILD_DIR)/loader.gz $(PKG_BUILD_DIR)/loader.elf $(TARGET)/
+	$(CP) $(PKG_BUILD_DIR)/$(LOADER).gz $(PKG_BUILD_DIR)/$(LOADER).elf $(TARGET)/
 endif
 
 clean:

@@ -3,7 +3,7 @@
 #
 # Copyright 2001-2003, Broadcom Corporation
 # All Rights Reserved.
-# 
+#
 # THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
 # KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
 # SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
@@ -16,9 +16,15 @@
 # Copyright 2005  Oleg I. Vdovikin <oleg@cs.msu.su>
 #   Cleaned up, modified for lzma support, removed from kernel
 #
+# Copyright 2007 Gabor Juhos <juhosg@freemail.hu>
+#   Modified to support user defined entry point address.
+#   Added support for make targets with different names
+#
 
-TEXT_START	:= 0x80001000
+LOADADDR	:= 0x80001000
 BZ_TEXT_START	:= 0x80300000
+BZ_STARTUP_ORG	:= 0
+LOADER		:= loader
 
 OBJCOPY		:= $(CROSS_COMPILE)objcopy -O binary -R .reginfo -R .note -R .comment -R .mdebug -S
 
@@ -26,52 +32,41 @@ CFLAGS		= -D__KERNEL__ -Wall -Wstrict-prototypes -Wno-trigraphs -Os \
 		  -fno-strict-aliasing -fno-common -fomit-frame-pointer -G 0 -mno-abicalls -fno-pic \
 		  -ffunction-sections -pipe -mlong-calls -fno-common \
 		  -mabi=32 -march=mips32 -Wa,-32 -Wa,-march=mips32 -Wa,-mips32 -Wa,--trap
-CFLAGS		+= -DLOADADDR=$(TEXT_START) -D_LZMA_IN_CB
+CFLAGS		+= -DLOADADDR=$(LOADADDR) -D_LZMA_IN_CB
 
-ASFLAGS		= $(CFLAGS) -D__ASSEMBLY__ -DBZ_TEXT_START=$(BZ_TEXT_START)
+ASFLAGS		= $(CFLAGS) -D__ASSEMBLY__ -DBZ_STARTUP_ORG=$(BZ_STARTUP_ORG)
 
-SEDFLAGS	:= s/BZ_TEXT_START/$(BZ_TEXT_START)/;s/TEXT_START/$(TEXT_START)/
+LDFLAGS		= -static --gc-sections -no-warn-mismatch
+LDFLAGS		+= -e startup -Ttext $(BZ_TEXT_START) -T loader.lds.in
 
-OBJECTS		:= head.o data.o
+OBJECTS		:= $(LOADER)-head.o decompress.o LzmaDecode.o
 
-all: loader.gz loader.elf
+all: $(LOADER).gz $(LOADER).elf
 
 # Don't build dependencies, this may die if $(CC) isn't gcc
 dep:
 
 install:
 
-loader.gz: loader
+decompress.o:
+	$(CC) $(CFLAGS) -c decompress.c -o $@
+
+$(LOADER)-head.o:
+	$(CC) $(ASFLAGS) -c head.S -o $@
+
+$(LOADER).gz: $(LOADER).bin
 	gzip -nc9 $< > $@
 
-loader.elf: loader.o
+$(LOADER).elf: $(LOADER).o
 	cp $< $@
 
-loader: loader.o
-	$(OBJCOPY) $< $@
+$(LOADER).bin: $(LOADER).o
+	$(OBJCOPY) -O binary $< $@
 
-loader.o: loader.lds $(OBJECTS)
-	$(LD) -static --gc-sections -no-warn-mismatch -T loader.lds -o $@ $(OBJECTS)
-
-loader.lds: loader.lds.in Makefile
-	@sed "$(SEDFLAGS)" < $< > $@
-
-data.o: data.lds decompress.image
-	$(LD) -no-warn-mismatch -T data.lds -r -o $@ -b binary decompress.image -b elf32-tradlittlemips
-
-data.lds:
-	@echo "SECTIONS { .data : { code_start = .; *(.data) code_stop = .; }}" > $@
-
-decompress.image: decompress
-	$(OBJCOPY) $< $@
-
-decompress: decompress.lds decompress.o LzmaDecode.o
-	$(LD) -static --gc-sections -no-warn-mismatch -T decompress.lds -o $@ decompress.o LzmaDecode.o
-
-decompress.lds: decompress.lds.in Makefile
-	@sed "$(SEDFLAGS)" < $< > $@
+$(LOADER).o: $(OBJECTS)
+	$(LD) $(LDFLAGS) -o $@ $(OBJECTS)
 
 mrproper: clean
 
 clean:
-	rm -f loader.gz loader decompress *.lds *.o *.image
+	rm -f *.gz *.elf *.bin *.o
