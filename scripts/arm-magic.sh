@@ -22,7 +22,7 @@
 # NOTE: for now it's for only IXP4xx in big endian mode
 
 # list of supported boards, in "boardname machtypeid" format
-for board in "avila 526" "gateway7001 731" "nslu2 597" "nas100d 865"
+for board in "avila 526" "gateway7001 731" "nslu2 597" "nas100d 865" "wg302v2 890" "pronghornmetro 1040"
 do
   set -- $board
   hexid=$(printf %x\\n $2)
