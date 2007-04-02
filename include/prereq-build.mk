@@ -78,6 +78,9 @@ $(eval $(call Require,zlib, \
 	Please install zlib. (Missing libz.so or zlib.h) \
 ))
 
+$(eval $(call RequireCommand,gwak, \
+	Please install GNU awk. \
+))
 
 $(eval $(call RequireCommand,bison, \
 	Please install GNU bison. \
@@ -118,5 +121,3 @@ $(eval $(call Require,gnutar, \
 $(eval $(call RequireCommand,autoconf, \
 	Please install GNU autoconf. \
 ))
-
-
