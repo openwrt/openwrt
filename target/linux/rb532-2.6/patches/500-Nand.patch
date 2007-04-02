@@ -155,7 +155,7 @@ diff -urN linux.old/drivers/mtd/nand/rbmipsnand.c linux.dev/drivers/mtd/nand/rbm
 +
 +	if (nand_scan(&rmtd, 1) && nand_scan(&rmtd, 1)
 +	    && nand_scan(&rmtd, 1) && nand_scan(&rmtd, 1)) {
-+		printk("RBxxx nand device not found");
++		printk("RBxxx nand device not found\n");
 +		iounmap((void *) p_nand);
 +		return -ENXIO;
 +	}
