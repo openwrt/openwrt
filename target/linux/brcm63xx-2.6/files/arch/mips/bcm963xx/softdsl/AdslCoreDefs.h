@@ -1,0 +1,2 @@
+#define ADSL_SDRAM_IMAGE_SIZE (384*1024)
+
