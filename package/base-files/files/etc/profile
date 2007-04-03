@@ -10,5 +10,5 @@ alias more=less
 [ -z "$KSH_VERSION" -o \! -s /etc/mkshrc ] || . /etc/mkshrc
 
 arp() { cat /proc/net/arp; }
-ldd() { LD_TRACE_LOADED_OBJECTS=1 $*; }
+[ -z /bin/ldd ] || ldd() { LD_TRACE_LOADED_OBJECTS=1 $*; }
 reboot() { ifdown wan 2>&1 >/dev/null ; /sbin/reboot; }
