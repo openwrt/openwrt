@@ -42,16 +42,16 @@ define stamp
 tmp/info/.stamp-$(1)-$(shell ls $(2)/*/Makefile $(5) | (md5sum || md5) 2>/dev/null | cut -d' ' -f1)
 endef
 
-STAMP=$(call stamp,pkginfo,package)
+STAMP=$(call stamp,packageinfo,package)
 
 $(STAMP):
 	@mkdir -p tmp/info
-	@rm -f tmp/info/.stamp-pkginfo*
+	@rm -f tmp/info/.stamp-packageinfo*
 	@touch $@
 
 define filedep
 $(foreach FILE,$(shell ls package/*/Makefile),
-tmp/.pkginfo: $(FILE)
+tmp/.packageinfo: $(FILE)
 $(FILE):
 	@true
 )
@@ -59,12 +59,12 @@ endef
 
 $(eval $(filedep))
 
-tmp/.pkginfo: $(STAMP)
+tmp/.packageinfo: $(STAMP)
 	@echo -n Collecting package info... 
-	@$(NO_TRACE_MAKE) -s -f include/scan.mk SCAN_TARGET="pkginfo" SCAN_DIR="package" SCAN_NAME="package" SCAN_DEPS=""
+	@$(NO_TRACE_MAKE) -s -f include/scan.mk SCAN_TARGET="packageinfo" SCAN_DIR="package" SCAN_NAME="package" SCAN_DEPS=""
 
 package/%: FORCE
-	@$(NO_TRACE_MAKE) -s tmp/.pkginfo
+	@$(NO_TRACE_MAKE) -s tmp/.packageinfo
 	$(MAKE) -C package $(patsubst package/%,%,$@) SDK=1
 
 download: FORCE
