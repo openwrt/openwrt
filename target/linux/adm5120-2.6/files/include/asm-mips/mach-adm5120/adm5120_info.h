@@ -23,8 +23,10 @@ struct adm5120_info {
 	unsigned long cpu_speed;
 	unsigned int boot_loader;
 	unsigned int board_type;
-	unsigned int iface_num;
-	unsigned int has_usb;
+	unsigned int iface_num;		/* Number of Ethernet interfaces */
+	unsigned int has_usb;		/* USB controller presence flag */
+	u32 window_addr;		/* Flash address */
+	u32 window_size;		/* Flash size */
 };
 
 #define CPU_SPEED_175		175000000
