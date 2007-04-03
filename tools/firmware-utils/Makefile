@@ -26,7 +26,6 @@ define Build/Compile
 	$(call cc,ptgen)
 	$(call cc,airlink)
 	$(call cc,srec2bin)
-	$(call cc,mksyshdr)
 	$(call cc,mkmylofw)
 	$(call cc,mkcsysimg)
 endef
