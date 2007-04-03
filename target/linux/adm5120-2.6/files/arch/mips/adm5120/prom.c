@@ -111,7 +111,7 @@ void __init prom_init(void)
 	adm5120_info_init();
 
 	/* init command line, register a default kernel command line */
-	strcpy(&(arcs_cmdline[0]), "console=ttyS0,115200 rootfstype=squashfs,jffs2 init=/etc/preinit");
+	strcpy(&(arcs_cmdline[0]), CONFIG_CMDLINE);
 
 	/* init memory map */
 	prom_meminit();
