@@ -171,7 +171,7 @@ docclean:
 	$(MAKE) -C docs/ clean
 
 symlinkclean:
-	find package -type l -exec rm -f {} \;
+	find package -type l -exec rm -f {} +
 
 .SILENT: clean dirclean distclean symlinkclean config-clean download world
 FORCE: ;

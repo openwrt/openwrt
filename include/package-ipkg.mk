@@ -71,9 +71,9 @@ ifeq ($(DUMP),)
     $$(IPKG_$(1)): $(PKG_BUILD_DIR)/.built $$(IDIR_$(1))/CONTROL/control
 	$(call Package/$(1)/install,$$(IDIR_$(1)))
 	mkdir -p $(PACKAGE_DIR)
-	-find $$(IDIR_$(1)) -name CVS   -exec rm -rf {} \;
-	-find $$(IDIR_$(1)) -name .svn  -exec rm -rf {} \;
-	-find $$(IDIR_$(1)) -name '.#*' -exec rm -f  {} \;
+	-find $$(IDIR_$(1)) -name CVS   -exec rm -rf {} +
+	-find $$(IDIR_$(1)) -name .svn  -exec rm -rf {} +
+	-find $$(IDIR_$(1)) -name '.#*' -exec rm -f  {} +
 	$(RSTRIP) $$(IDIR_$(1))
 	$(IPKG_BUILD) $$(IDIR_$(1)) $(PACKAGE_DIR)
 	@[ -f $$(IPKG_$(1)) ] || false 
