@@ -22,7 +22,7 @@ cd $TOPDIR
 
 # Some functions we might call several times a run
 delete_symlinks() {
-	find $1 -type l -exec rm -f {} \;
+	find $1 -type l -exec rm -f {} +
 }
 
 setup_symlinks() {
