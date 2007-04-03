@@ -46,7 +46,6 @@ define Image/Build/Compex
 endef
 
 define Image/Build/Edimax
-	# FIXME : not tested (hardware ?)
 	$(STAGING_DIR)/bin/mkcsysimg -B $(4) -d -w \
 		-r $(KDIR)/loader-edimax.gz \
 		-x $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1)-noloader.trx \
