@@ -1,6 +1,6 @@
 include $(TOPDIR)/include/verbose.mk
 
-SCAN_TARGET ?= pkginfo
+SCAN_TARGET ?= packageinfo
 SCAN_NAME ?= package
 SCAN_DIR ?= package
 SCAN_DEPS ?= include/package.mk
@@ -15,7 +15,7 @@ else
   endef
 endif
 
-SCAN = $(patsubst $(SCAN_DIR)/%/Makefile,%,$(shell ls $(SCAN_DIR)/*/Makefile))
+SCAN = $(patsubst $(SCAN_DIR)/%/Makefile,%,$(wildcard $(SCAN_DIR)/*/Makefile))
 tmp/.$(SCAN_TARGET):
 	@($(call progress,Collecting $(SCAN_NAME) info: merging...))
 	for file in $(SCAN); do \
@@ -32,8 +32,8 @@ $(SCAN_STAMP):
 endif
 
 # FIXME: generate this dynamically?
-ifeq ($(SCAN_TARGET),pkginfo)
-tmp/info/.pkginfo-kernel: $(shell ls package/kernel/modules/*.mk)
+ifeq ($(SCAN_TARGET),packageinfo)
+tmp/info/.packageinfo-kernel: $(wildcard package/kernel/modules/*.mk)
 endif
 
 define scanfiles

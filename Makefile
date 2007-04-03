@@ -41,27 +41,27 @@ export OPENWRTVERSION
 
 ifeq ($(FORCE),)
   .config scripts/config/conf scripts/config/mconf: tmp/.prereq-build
-  world: tmp/.prereq-packages tmp/.prereq-target
+  world: tmp/.prereq-package tmp/.prereq-target
 endif
 
-tmp/.pkginfo: FORCE
-	@mkdir -p tmp/info
-	@$(NO_TRACE_MAKE) -s -f include/scan.mk SCAN_TARGET="pkginfo" SCAN_DIR="package" SCAN_NAME="package" SCAN_DEPS="$(shell ls include/package*.mk) include/kernel.mk" SCAN_EXTRA=""
+package/%/Makefile: ;
+target/%/Makefile: ;
 
-tmp/.targetinfo: FORCE
+tmp/.packageinfo: $(wildcard package/*/Makefile include/package*.mk include/kernel.mk) 
+tmp/.targetinfo: $(wildcard target/*/Makefile include/kernel*.mk)
+tmp/.%info:
 	@mkdir -p tmp/info
-	@$(NO_TRACE_MAKE) -s -f include/scan.mk SCAN_TARGET="targetinfo" SCAN_DIR="target/linux" SCAN_NAME="target" SCAN_DEPS="$(shell ls include/kernel*.mk)" SCAN_EXTRA=""
+	@$(NO_TRACE_MAKE) -s -f include/scan.mk SCAN_TARGET="$*info" SCAN_DIR="$(patsubst target,target/linux,$*)" SCAN_NAME="$*" SCAN_DEPS="$^" SCAN_EXTRA=""
 
 tmpinfo-clean: FORCE
-	@-rm -rf tmp/.pkginfo tmp/.targetinfo
+	@-rm -rf tmp/.*info
 
-tmp/.config.in: tmp/.pkginfo
-	@./scripts/metadata.pl package_config < $< > $@ || rm -f $@
+tmp/.config-%.in: tmp/.%info
+	@./scripts/metadata.pl $*_config < $< > $@ || rm -f $@
 
-tmp/.config-target.in: tmp/.targetinfo
-	@./scripts/metadata.pl target_config < $< > $@ || rm -f $@
 
-.config: ./scripts/config/conf tmp/.config.in tmp/.config-target.in
+
+.config: ./scripts/config/conf tmp/.config-target.in tmp/.config-package.in
 	@[ -f .config ] || $(NO_TRACE_MAKE) menuconfig
 	@$< -D .config Config.in &> /dev/null
 
@@ -71,42 +71,34 @@ scripts/config/mconf:
 scripts/config/conf:
 	@$(MAKE) -C scripts/config conf
 
-config: scripts/config/conf tmp/.config.in tmp/.config-target.in FORCE
+
+
+config: scripts/config/conf tmp/.config-target.in tmp/.config-package.in FORCE
 	$< Config.in
 
 config-clean: FORCE
 	$(NO_TRACE_MAKE) -C scripts/config clean
 
-defconfig: scripts/config/conf tmp/.config.in tmp/.config-target.in FORCE
+defconfig: scripts/config/conf tmp/.config-target.in tmp/.config-package.in FORCE
 	touch .config
 	$< -D .config Config.in
 
-oldconfig: scripts/config/conf tmp/.config.in tmp/.config-target.in FORCE
+oldconfig: scripts/config/conf tmp/.config-target.in tmp/.config-package.in FORCE
 	$< -o Config.in
 
-menuconfig: scripts/config/mconf tmp/.config.in tmp/.config-target.in FORCE
+menuconfig: scripts/config/mconf tmp/.config-target.in tmp/.config-package.in FORCE
 	$< Config.in
 
 kernel_menuconfig: .config FORCE
 	-$(MAKE) target/linux-prepare
 	$(NO_TRACE_MAKE) -C target/linux menuconfig
 
-scan_packages:
-	@$(NO_TRACE_MAKE) -s tmp/.pkginfo tmp/.targetinfo
-	
 
-package/%: scan_packages
-	$(MAKE) -C package $(patsubst package/%,%,$@)
+package/% target/%: tmp/.packageinfo
+toolchain/% package/% target/%: tmp/.targetinfo
+package/% target/% tools/% toolchain/%: FORCE
+	$(MAKE) -C $(patsubst %/$*,%,$@) $*
 
-target/%: scan_packages
-	@$(NO_TRACE_MAKE) -s tmp/.pkginfo tmp/.targetinfo
-	$(MAKE) -C target $(patsubst target/%,%,$@)
-
-tools/%: FORCE
-	$(MAKE) -C tools $(patsubst tools/%,%,$@)
-
-toolchain/%: tmp/.targetinfo FORCE
-	$(MAKE) -C toolchain $(patsubst toolchain/%,%,$@)
 
 tmp/.prereq-build: include/prereq-build.mk
 	@mkdir -p tmp
@@ -117,25 +109,16 @@ tmp/.prereq-build: include/prereq-build.mk
 	}
 	@touch $@
 
-tmp/.prereq-packages: include/prereq.mk tmp/.pkginfo .config
+tmp/.prereq-%: include/prereq.mk tmp/.%info .config
 	@mkdir -p tmp
 	@rm -f tmp/.host.mk
-	@$(NO_TRACE_MAKE) -s -C package prereq 2>/dev/null || { \
+	@$(NO_TRACE_MAKE) -s -C $* prereq 2>/dev/null || { \
 		echo "Prerequisite check failed. Use FORCE=1 to override."; \
 		false; \
 	}
 	@touch $@
 
-tmp/.prereq-target: include/prereq.mk tmp/.targetinfo .config
-	@mkdir -p tmp
-	@rm -f tmp/.host.mk
-	@$(NO_TRACE_MAKE) -s -C target prereq 2>/dev/null || { \
-		echo "Prerequisite check failed. Use FORCE=1 to override."; \
-		false; \
-	}
-	@touch $@
-
-prereq: tmp/.prereq-build tmp/.prereq-packages tmp/.prereq-target FORCE
+prereq: tmp/.prereq-build tmp/.prereq-package tmp/.prereq-target FORCE
 
 download: .config FORCE
 	$(MAKE) tools/download
@@ -173,7 +156,6 @@ docclean:
 symlinkclean:
 	find package -type l -exec rm -f {} +
 
-.SILENT: clean dirclean distclean symlinkclean config-clean download world
+.SILENT: clean dirclean distclean symlinkclean config-clean download world help
 FORCE: ;
 .PHONY: FORCE help
-%: ;

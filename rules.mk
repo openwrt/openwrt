@@ -135,20 +135,12 @@ endef
 # Parameters:
 # 	1: dependencies for the prepare step
 define default_subtargets
-  %-download: FORCE
-	$$(MAKE) -C $$(patsubst %-download,%,$$@) download
-
-  %-prepare: $(1) FORCE
-	$$(MAKE) -C $$(patsubst %-prepare,%,$$@) prepare
+  %-download %-prepare %-compile %-install %-clean: FORCE
+	$$(MAKE) -C $$* $$(patsubst $$*-%,%,$$@)
 
   %-compile: %-prepare 
-	$$(MAKE) -C $$(patsubst %-compile,%,$$@) compile
-
   %-install: %-compile
-	$$(MAKE) -C $$(patsubst %-install,%,$$@) install
-
-  %-clean: FORCE
-	@$$(MAKE) -C $$(patsubst %-clean,%,$$@) clean
+  .SILENT: %-clean
 endef
 
 
