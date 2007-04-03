@@ -231,7 +231,7 @@ usage(int status)
 	);
 	for (board = boards; board->model != NULL; board++){
 		fprintf(stream,
-"               %-12s: %s\n",
+"                  %-12s: %s\n",
 		 board->model, board->name);
 	};
 	fprintf(stream,
@@ -242,9 +242,9 @@ usage(int status)
 "  -c <file>[:<len>[:<padc>]]\n"
 "                  add configuration settings to the image\n"
 "  -r <file>:[<addr>][:<len>[:<padc>]]\n"
-"                  add runtime code to the image"
+"                  add runtime code to the image\n"
 "  -w [<file>:[<addr>][:<len>[:<padc>]]]\n"
-"                  add webpages to the image"
+"                  add webpages to the image\n"
 "  -x <file>[:<len>[:<padc>]]\n"
 "                  add extra data at the end of the image\n"
 "  -h              show this screen\n"
