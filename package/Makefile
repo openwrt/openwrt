@@ -12,7 +12,7 @@ include $(INCLUDE_DIR)/host.mk
 
 all: compile
 
-include $(TMP_DIR)/.pkgdeps
+include $(TMP_DIR)/.packagedeps
 
 PREREQ_PACKAGES:=$(patsubst %,%-prereq,$(prereq-y) $(prereq-m))
 DOWNLOAD_PACKAGES:=$(patsubst %,%-download,$(package-y) $(package-m))
@@ -22,25 +22,14 @@ INSTALL_PACKAGES:=$(patsubst %,%-install,$(package-y))
 $(STAMP_DIR) $(TARGET_DIR):
 	mkdir -p $@
 
+%-prereq %-download %-clean %-compile %-install: FORCE
+	$(MAKE) -C $* $(patsubst $*-%,%,$@)
+
 %-prereq: $(STAMP_DIR) $(TARGET_DIR)
-	$(MAKE) -C $(patsubst %-prereq,%,$@) prereq
-
-%-download: FORCE
-	$(MAKE) -C $(patsubst %-download,%,$@) download
-
-%-prepare: $(TARGET_DIR) FORCE
-	$(MAKE) -C $(patsubst %-prepare,%,$@) prepare
-
+%-prepare: $(TARGET_DIR)
 %-compile: %-prepare
-	$(MAKE) -C $(patsubst %-compile,%,$@) compile
 
-%-install:
-	$(MAKE) -C $(patsubst %-install,%,$@) install
-
-%-clean: FORCE
-	$(MAKE) -C $(patsubst %-clean,%,$@) clean
-
-$(TMP_DIR)/.pkgdeps: $(TMP_DIR)/.pkginfo
+$(TMP_DIR)/.packagedeps: $(TMP_DIR)/.packageinfo
 	@$(TOPDIR)/scripts/metadata.pl package_mk < $< > $@ || rm -f $@
 
 preconfig:
