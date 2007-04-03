@@ -24,6 +24,7 @@ include $(INCLUDE_DIR)/package.mk
 ifneq ($(DUMP),1)
   TARGET:=-$(BOARD)-$(KERNEL)
   UCLIBC_VERSION:=${shell cat $(STAGING_DIR)/uclibc_version 2>/dev/null}
+  UCLIBC_EXTRA_VERSION:=${shell cat $(STAGING_DIR)/uclibc_extra_version 2>/dev/null}
   LIBGCC_VERSION:=${shell cat $(STAGING_DIR)/gcc_version 2>/dev/null}
 else
   UCLIBC_VERSION:=<UCLIBC_VERSION>
@@ -60,41 +61,50 @@ define Package/base-files$(TARGET)/conffiles
 $(call $(TARGET)/conffiles)
 endef
 
-define Package/libgcc
+define Package/gcc/Default
   SECTION:=libs
   CATEGORY:=Base system
   DEPENDS:=@!NATIVE_TOOLCHAIN
-  TITLE:=GCC support library
   URL:=http://gcc.gnu.org/
   VERSION:=$(LIBGCC_VERSION)-$(PKG_RELEASE)
+endef
+
+define Package/libgcc
+  $(call Package/gcc/Default)
+  TITLE:=GCC support library
 endef
 
 define Package/libssp
+  $(call Package/gcc/Default)
+  TITLE:=GCC support library
+endef
+
+define Package/uclibc/Default
   SECTION:=libs
   CATEGORY:=Base system
   DEPENDS:=@!NATIVE_TOOLCHAIN
-  DEFAULT:=m
-  TITLE:=GCC support library
-  URL:=http://gcc.gnu.org/
-  VERSION:=$(LIBGCC_VERSION)-$(PKG_RELEASE)
+  URL:=http://uclibc.org/
+  VERSION:=$(UCLIBC_VERSION)-$(PKG_RELEASE)
 endef
 
 define Package/libpthread
-  SECTION:=libs
-  CATEGORY:=Libraries
-  DEPENDS:=@!NATIVE_TOOLCHAIN
+  $(call Package/uclibc/Default)
   TITLE:=POSIX thread library
-  URL:=http://uclibc.org/
-  VERSION:=$(UCLIBC_VERSION)-$(PKG_RELEASE)
 endef
 
 define Package/uclibc
-  SECTION:=libs
-  CATEGORY:=Base system
-  DEPENDS:=@!NATIVE_TOOLCHAIN
+  $(call Package/uclibc/Default)
   TITLE:=C library embedded systems
-  URL:=http://uclibc.org/
-  VERSION:=$(UCLIBC_VERSION)-$(PKG_RELEASE)
+endef
+
+define Package/ldd
+  $(call Package/uclibc/Default)
+  TITLE:=LDD trace utility
+endef
+
+define Package/ldconfig
+  $(call Package/uclibc/Default)
+  TITLE:=Shared library path configuration
 endef
 
 define Build/Prepare
@@ -171,6 +181,16 @@ define Package/uclibc/install
 	done
 endef
 
+define Package/ldd/install
+	$(INSTALL_DIR) $(1)/bin/
+	$(CP) $(TOOLCHAIN_BUILD_DIR)/uClibc-$(UCLIBC_EXTRA_VERSION)/utils/ldd $(1)/bin/
+endef
+
+define Package/ldconfig/install
+	$(INSTALL_DIR) $(1)/bin/
+	$(CP) $(TOOLCHAIN_BUILD_DIR)/uClibc-$(UCLIBC_EXTRA_VERSION)/utils/ldconfig $(1)/bin/
+endef
+
 ifneq ($(DUMP),1)
   -include $(PLATFORM_DIR)/base-files.mk
 endif
@@ -180,4 +200,6 @@ $(eval $(call BuildPackage,libgcc))
 $(eval $(call BuildPackage,libssp))
 $(eval $(call BuildPackage,libpthread))
 $(eval $(call BuildPackage,uclibc))
+$(eval $(call BuildPackage,ldd))
+$(eval $(call BuildPackage,ldconfig))
 
