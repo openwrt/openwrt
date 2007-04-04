@@ -1,0 +1,423 @@
+diff -urN romboot.old/com.cpp romboot/com.cpp
+--- romboot.old/com.cpp	2004-07-04 21:37:05.000000000 +0200
++++ romboot/com.cpp	2007-04-04 04:30:12.000000000 +0200
+@@ -27,7 +27,7 @@
+ //*-----------------------------------------------------------------------------
+ void AT91F_ClrScr(void)
+ {
+-  puts(CLRSCREEN);
++  putstr(CLRSCREEN);
+ }
+ 
+ 
+@@ -47,12 +47,12 @@
+   
+   if (*(--p) == '\t') {			/* will retype the whole line	*/
+     while (*colp > plen) {
+-      puts(erase_seq);
++      putstr(erase_seq);
+       (*colp)--;
+     }
+     for (s=buffer; s<p; ++s) {
+       if (*s == '\t') {
+-	puts(tab_seq+((*colp) & 07));
++	putstr(tab_seq+((*colp) & 07));
+ 	*colp += 8 - ((*colp) & 07);
+       } else {
+ 	++(*colp);
+@@ -60,7 +60,7 @@
+       }
+     }
+   } else {
+-    puts(erase_seq);
++    putstr(erase_seq);
+     (*colp)--;
+   }
+   (*np)--;
+@@ -85,7 +85,7 @@
+   
+   /* print prompt */
+   if(prompt)
+-    puts(prompt);
++    putstr(prompt);
+   col = plen;
+   
+   for (;;)
+@@ -97,7 +97,7 @@
+ 	case '\r':				/* Enter		*/
+ 	case '\n':
+ 	  *p = '\0';
+-	  puts ("\r\n");
++	  putstr ("\r\n");
+ 	  return (p - console_buffer);
+ 	  
+ 	case 0x03:				/* ^C - break	*/
+@@ -107,7 +107,7 @@
+ 	case 0x15:				/* ^U - erase line	*/
+ 	  while (col > plen)
+ 	    {
+-	      puts(erase_seq);
++	      putstr(erase_seq);
+ 	      --col;
+ 	    }
+ 	  p = console_buffer;
+@@ -152,7 +152,7 @@
+ void AT91F_WaitKeyPressed(void)
+ {
+   int c;
+-  puts("Hit a Key!");	    	    	
++  putstr("Hit a Key!");	    	    	
+   c = getc();
+ }
+ 
+diff -urN romboot.old/main.cpp romboot/main.cpp
+--- romboot.old/main.cpp	2007-04-03 12:12:33.000000000 +0200
++++ romboot/main.cpp	2007-04-04 05:56:39.000000000 +0200
+@@ -382,8 +382,10 @@
+ 
+ 	AT91F_MCI_ReadBlockSwab(&MCI_Device, block*Max_Read_DataBlock_Length, (unsigned int *)bufpos, Max_Read_DataBlock_Length);
+ 
+-	if (p->magic != TRX_MAGIC)
++	if (p->magic != TRX_MAGIC) {
++		printf("Invalid Image 0x%08x\n\r");
+ 		return FALSE;
++		}
+ 
+ 	printf("Read SD-Card\n\r");
+ 	AT91C_BASE_PIOC->PIO_CODR = AT91C_PIO_PC7 | AT91C_PIO_PC15 | AT91C_PIO_PC8 | AT91C_PIO_PC14;
+@@ -438,9 +440,6 @@
+   int NbPage;
+ 	int mci_present;
+ 
+-  stdin = fopen(0, at91_dbgu_getc);
+-  stdout = fopen(at91_dbgu_putc, 0);
+-  
+   pAT91 = AT91C_ROM_BOOT_ADDRESS;
+   
+   // Tempo Initialisation
+@@ -472,16 +471,18 @@
+ 
+ #ifdef PRODTEST
+ 	if (mci_present) {
+-		Program_From_MCI();
+- 		AT91F_StartUboot(0, (void *)0);
++		if (Program_From_MCI())
++ 			AT91F_StartUboot(0, (void *)0);
+ 		}
+ #endif
+ 
+   // start tempo to start Uboot in a delay of 1 sec if no key pressed
+   svcUbootTempo.Start(&svcUbootTempo, 1000, 0, AT91F_StartUboot, (void *)0);
+ 
++#ifndef PRODTEST
+   printf("press key\n\r");
+   getc();
++#endif
+ 
+   // stop tempo
+   svcUbootTempo.Stop(&svcUbootTempo);
+@@ -601,3 +602,10 @@
+ 		AT91F_WaitKeyPressed();
+ 		}
+ 	}
++
++
++int puts(const char *str)
++{
++	putstr(str);
++	return 0;
++}
+diff -urN romboot.old/stdio.cpp romboot/stdio.cpp
+--- romboot.old/stdio.cpp	2004-07-04 22:36:10.000000000 +0200
++++ romboot/stdio.cpp	2007-04-04 04:29:25.000000000 +0200
+@@ -1,117 +1,32 @@
+ #include "stdio.h"
+ 
+ extern int at91_dbgu_putc(int ch);
++extern int at91_dbgu_getc();
+ 
+-FILE *stdout = (FILE *)0;
+-FILE *stdin = (FILE *)0;
+-
+-FILE __filedesc[FILEDESCS];
+-
+-FILE *fopen(int (*put)(int), int (*get)())
+-{
+-  static int init = 1;
+-
+-  if(init != 0)
+-    {
+-      for(int i = 0; i < FILEDESCS; i++)
+-	{
+-	  __filedesc[i].active = false;
+-	  __filedesc[i].put = 0;
+-	  __filedesc[i].get = 0;
+-	}
+-
+-      init = 0;
+-    }
+-
+-  for(int i = 0; i < FILEDESCS; i++)
+-    {
+-      if(!__filedesc[i].active)
+-	{
+-	  __filedesc[i].put = put;
+-	  __filedesc[i].get = get;
+-	  
+-	  __filedesc[i].active = true;
+-	
+-	  return &__filedesc[i];
+-	}      
+-    }
+-
+-  return (FILE *)0;
+-}
+-      
+-int fclose(FILE *fp)
++int putstr(const char *str)
+ {
+-  for(int i = 0; i < FILEDESCS; i++)
+-    if(&__filedesc[i] == fp || fp->active)
+-      {
+-	fp->active = false;
+-
+-	fp->put = 0;
+-	fp->get = 0;
+-
+-	return 0;
+-      }
+-
+-  return -1;
+-}
+-
+-int fputs(const char *str, FILE *fp)
+-{
+-  if(fp == (FILE *)0)
+-    return -1;
+-
+-  if(fp->put == (void *)0)
+-    return -1;
+-
+-  while(*str != 0)
+-    {
+-      fp->put(*str);
+-      str++;
+-    }
++	while (*str != 0)
++		{
++			putc(*str);
++			str++;
++		}
+   return 0;
+ }
+ 
+-int fputc(int c, FILE *fp)
+-{
+-  if(fp == (FILE *)0)
+-    return -1;
+-
+-  if(fp->put == (void *)0)
+-    return -1;
+-
+-  return fp->put(c);
+-}
+-
+-int fgetc(FILE *fp)
+-{
+-  if(fp == (FILE *)0)
+-    return -1;
+-
+-  if(fp->get == (void *)0)
+-    return -1;
+-
+-  return fp->get();
+-}
+-
+-
+-int puts(const char *str)
++int putchar(int c)
+ {
+-  return fputs(str, stdout);
++  return putc(c);
+ }
+ 
+ int putc(int c)
+ {
+-  return fputc(c, stdout);
+-}
+-
+-int putchar(int c)
+-{
+-  return fputc(c, stdout);
++	at91_dbgu_putc(c);
++  return 0;
+ }
+ 
+ int getc()
+ {
+-  return fgetc(stdin);
++  return at91_dbgu_getc();
+ }
+ 
+ int strlen(const char *str)
+@@ -139,7 +54,7 @@
+         __res; \
+ })
+ 
+-int number(FILE *fp, int num, int base, int size, int precision, int type)
++int number(int num, int base, int size, int precision, int type)
+ {
+   char c, sign, tmp[66];
+   const char *digits="0123456789abcdef";
+@@ -173,28 +88,28 @@
+   
+   if(!(type&(ZEROPAD+LEFT)))
+     while(size-->0)
+-      fputc(' ', fp);
++      putc(' ');
+   
+   if(sign)
+-    fputc(sign, fp);
++    putc(sign);
+ 
+   if (!(type & LEFT))
+     while (size-- > 0)
+-      fputc(c, fp);
++      putc(c);
+ 
+   while (i < precision--)
+-    fputc('0', fp);
++    putc('0');
+   
+   while (i-- > 0)
+-    fputc(tmp[i], fp);
++    putc(tmp[i]);
+ 
+   while (size-- > 0)
+-    fputc(' ', fp);;
++    putc(' ');;
+ 
+   return 1;
+ }
+ 
+-int vfprintf(FILE *fp, const char *fmt, va_list va)
++int vprintf(const char *fmt, va_list va)
+ {
+   char *s;
+ 
+@@ -231,33 +146,33 @@
+                 case 's' :
+                   s = va_arg(va, char *);
+                   if(!s)
+-                    fputs("<NULL>", fp);
++                    putstr("<NULL>");
+                   else
+-                    fputs(s, fp);
++                    putstr(s);
+                   done = true;
+                   break;
+                 case 'c' :
+-                  fputc(va_arg(va, int), fp);
++                  putc(va_arg(va, int));
+                   done = true;
+                   break;
+                 case 'd' :
+-                  number(fp, va_arg(va, int), 10, 0, precision, type);
++                  number(va_arg(va, int), 10, 0, precision, type);
+                   done = true;
+                   break;
+                 case 'x' :
+-                  number(fp, va_arg(va, int), 16, 0, precision, type);
++                  number(va_arg(va, int), 16, 0, precision, type);
+                   done = true;
+                   break;
+                 case 'X' :
+-                  number(fp, va_arg(va, int), 16, 0, precision, type | LARGE);
++                  number(va_arg(va, int), 16, 0, precision, type | LARGE);
+                   done = true;
+                   break;
+                 case '%' :
+-                  fputc(*fmt, fp);
++                  putc(*fmt);
+                   done = true;
+                 default: 
+-                  fputc('%', fp);
+-                  fputc(*fmt, fp);
++                  putc('%');
++                  putc(*fmt);
+                   done = true;
+                   break;
+                 }      
+@@ -265,7 +180,7 @@
+           while(!done);
+         }
+       else
+-        fputc(*fmt, fp);
++        putc(*fmt);
+       
+       fmt++;
+     }
+@@ -274,25 +189,13 @@
+   return 0;
+ }
+ 
+-int fprintf(FILE *fp, const char *fmt, ...)
+-{
+-  va_list ap;
+-  int i;
+-
+-  va_start(ap, fmt);
+-  i = fprintf(fp, fmt, ap);
+-  va_end(ap);  
+-
+-  return i;
+-}
+-
+ int printf(const char *fmt, ...)
+ {
+   va_list ap;
+   int i;
+ 
+   va_start(ap, fmt);
+-  i = vfprintf(stdout, fmt, ap);
++  i = vprintf(fmt, ap);
+   va_end(ap);
+ 
+   return i;
+diff -urN romboot.old/stdio.h romboot/stdio.h
+--- romboot.old/stdio.h	2004-07-04 22:04:27.000000000 +0200
++++ romboot/stdio.h	2007-04-04 04:29:48.000000000 +0200
+@@ -1,31 +1,12 @@
+ #include <stdarg.h>
+ 
+-struct FILE
+-{ 
+-  bool active;
+-  int (*put)(int);    /* function to write one char to device */
+-  int (*get)();       /* function to read one char from device */
+-};
+-
+-#define FILEDESCS 8
+-
+-FILE *fopen(int (*put)(int), int (*get)());
+-int fclose(FILE *fp);
+-
+-int puts(const char *str);
++int putstr(const char *str);
+ int putc(int c);
+ int putchar(int c);
+ int getc();
+ 
+-int fputs(const char *str, FILE *fp);
+-int fputc(int c, FILE *fp);
+-int fgetc(FILE *fp);
+ int strlen(const char *str);
+ 
+-int fprintf(FILE *fp, const char *fmt, ...);
+-int vfprintf(FILE *fp, const char *fmt, va_list ap);
++int vprintf(const char *fmt, va_list ap);
+ 
+ int printf(const char *fmt, ...);
+-
+-extern FILE *stdout;
+-extern FILE *stdin;
