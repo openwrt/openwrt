@@ -19,6 +19,8 @@ PKG_SOURCE_URL:=http://www.teest.com/at91
 PKG_MD5SUM:=
 PKG_CAT:=zcat
 
+CRLF_WORKAROUND=1
+
 include $(INCLUDE_DIR)/package.mk
 
 define Build/InstallDev

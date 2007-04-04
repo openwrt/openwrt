@@ -93,12 +93,14 @@ define Build/Install
 		RUNTIME_PREFIX=/ \
 		install_dev
 	echo $(PKG_VERSION) > $(STAGING_DIR)/uclibc_version
+ifneq ($(CONFIG_LINUX_2_6_AT91),y)
 	echo $(PKG_VERSION)$(PKG_EXTRAVERSION) > $(STAGING_DIR)/uclibc_extra_version
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		PREFIX=$(STAGING_DIR)/ \
 		DEVEL_PREFIX=/ \
 		RUNTIME_PREFIX=/ \
 		utils
+endif
 endef
 
 define Build/Clean
