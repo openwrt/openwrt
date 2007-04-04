@@ -1,0 +1,63 @@
+diff -Nur linux-2.6.19.2/arch/arm/mach-ixp4xx/pronghornmetro-setup.c linux-2.6.19.2-owrt/arch/arm/mach-ixp4xx/pronghornmetro-setup.c
+--- linux-2.6.19.2/arch/arm/mach-ixp4xx/pronghornmetro-setup.c	2007-04-02 21:30:12.000000000 +0200
++++ linux-2.6.19.2-owrt/arch/arm/mach-ixp4xx/pronghornmetro-setup.c	2007-04-02 21:57:11.000000000 +0200
+@@ -87,10 +87,58 @@
+ 	.resource	= &pronghornmetro_uart_resource,
+ };
+ 
++static struct resource res_mac0 = {
++	.start		= IXP4XX_EthB_BASE_PHYS,
++	.end		= IXP4XX_EthB_BASE_PHYS + 0x1ff,
++	.flags		= IORESOURCE_MEM,
++};
++
++static struct resource res_mac1 = {
++	.start		= IXP4XX_EthC_BASE_PHYS,
++	.end		= IXP4XX_EthC_BASE_PHYS + 0x1ff,
++	.flags		= IORESOURCE_MEM,
++};
++
++static struct mac_plat_info plat_mac0 = {
++	.npe_id		= 1,
++	.phy_id		= 0,
++	.eth_id		= 0,
++	.rxq_id		= 27,
++	.txq_id		= 24,
++	.rxdoneq_id	= 4,
++};
++
++static struct mac_plat_info plat_mac1 = {
++	.npe_id		= 2,
++	.phy_id		= 1,
++	.eth_id		= 1,
++	.rxq_id		= 28,
++	.txq_id		= 25,
++	.rxdoneq_id	= 5,
++};
++
++static struct platform_device mac0 = {
++	.name		= "ixp4xx_mac",
++	.id		= 0,
++	.dev.platform_data = &plat_mac0,
++	.num_resources	= 1,
++	.resource	= &res_mac0,
++};
++
++static struct platform_device mac1 = {
++	.name		= "ixp4xx_mac",
++	.id		= 1,
++	.dev.platform_data = &plat_mac1,
++	.num_resources	= 1,
++	.resource	= &res_mac1,
++};
++
+ static struct platform_device *pronghornmetro_devices[] __initdata = {
+ 	&pronghornmetro_i2c_controller,
+ 	&pronghornmetro_flash,
+-	&pronghornmetro_uart
++	&pronghornmetro_uart,
++	&mac0,
++	&mac1,
+ };
+ 
+ static void __init pronghornmetro_init(void)
