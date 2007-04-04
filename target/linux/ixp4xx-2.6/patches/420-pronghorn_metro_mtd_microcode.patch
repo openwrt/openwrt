@@ -1,0 +1,56 @@
+diff -Nur linux-2.6.19.2/arch/arm/mach-ixp4xx/pronghornmetro-setup.c linux-2.6.19.2-owrt/arch/arm/mach-ixp4xx/pronghornmetro-setup.c
+--- linux-2.6.19.2/arch/arm/mach-ixp4xx/pronghornmetro-setup.c	2007-04-04 11:48:14.000000000 +0200
++++ linux-2.6.19.2-owrt/arch/arm/mach-ixp4xx/pronghornmetro-setup.c	2007-04-04 11:52:09.000000000 +0200
+@@ -14,6 +14,7 @@
+ #include <linux/serial.h>
+ #include <linux/tty.h>
+ #include <linux/serial_8250.h>
++#include <linux/mtd/mtd.h>
+ #include <linux/slab.h>
+ 
+ #include <asm/types.h>
+@@ -133,12 +134,35 @@
+ 	.resource	= &res_mac1,
+ };
+ 
++struct npe_ucode_platform_data pronghornmetro_npe_ucode_data = {
++	.mtd_partition	= "RedBoot",
++};
++
++static struct platform_device pronghornmetro_npe_ucode = {
++	.name			= "ixp4xx_npe_ucode",
++	.id			= 0,
++	.dev.platform_data	= &pronghornmetro_npe_ucode_data,
++};
++
+ static struct platform_device *pronghornmetro_devices[] __initdata = {
+ 	&pronghornmetro_i2c_controller,
+ 	&pronghornmetro_flash,
+ 	&pronghornmetro_uart,
+ 	&mac0,
+ 	&mac1,
++	&pronghornmetro_npe_ucode,
++};
++
++static void pronghornmetro_flash_add(struct mtd_info *mtd)
++{
++}
++
++static void pronghornmetro_flash_remove(struct mtd_info *mtd) {
++}
++
++static struct mtd_notifier pronghornmetro_flash_notifier = {
++	.add = pronghornmetro_flash_add,
++	.remove = pronghornmetro_flash_remove,
+ };
+ 
+ static void __init pronghornmetro_init(void)
+@@ -152,6 +176,8 @@
+ 	*IXP4XX_EXP_CS1 = *IXP4XX_EXP_CS0;
+ 
+ 	platform_add_devices(pronghornmetro_devices, ARRAY_SIZE(pronghornmetro_devices));
++
++	register_mtd_user(&pronghornmetro_flash_notifier);
+ }
+ 
+ #ifdef CONFIG_MACH_PRONGHORNMETRO
