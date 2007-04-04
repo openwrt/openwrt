@@ -97,16 +97,6 @@ define Package/uclibc
   TITLE:=C library embedded systems
 endef
 
-define Package/ldd
-  $(call Package/uclibc/Default)
-  TITLE:=LDD trace utility
-endef
-
-define Package/ldconfig
-  $(call Package/uclibc/Default)
-  TITLE:=Shared library path configuration
-endef
-
 define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
 endef
@@ -200,6 +190,3 @@ $(eval $(call BuildPackage,libgcc))
 $(eval $(call BuildPackage,libssp))
 $(eval $(call BuildPackage,libpthread))
 $(eval $(call BuildPackage,uclibc))
-$(eval $(call BuildPackage,ldd))
-$(eval $(call BuildPackage,ldconfig))
-
