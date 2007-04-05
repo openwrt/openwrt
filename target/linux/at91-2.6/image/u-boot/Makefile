@@ -27,11 +27,18 @@ define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) $(UBOOT_CONFIG)_config
 	export CROSS_COMPILE=$(TARGET_CROSS); \
 	$(MAKE) -C $(PKG_BUILD_DIR)
+	mkdir -p $(PKG_BUILD_DIR)/ubclient
+	$(CP) ./ubclient/* $(PKG_BUILD_DIR)/ubclient
+	$(MAKE) -C $(PKG_BUILD_DIR)/ubclient \
+		$(TARGET_CONFIGURE_OPTS) \
+		CFLAGS="$(TARGET_CFLAGS) -Dtarget_$(BOARD)=1"
 endef
 
 define Build/InstallDev
 	dd if=$(PKG_BUILD_DIR)/u-boot.bin of=$(PKG_BUILD_DIR)/u-boot.block bs=232k count=1 conv=sync
-#	mv $(PKG_BUILD_DIR) $(KERNEL_BUILD_DIR)/$(PKG_NAME)
+#	$(INSTALL_DIR) $(STAGING_DIR)/ubclient/sbin
+#	$(INSTALL_BIN) $(PKG_BUILD_DIR)/ubclient/ubpar $(STAGING_DIR)/ubclient/sbin/
+	$(CP) $(PKG_BUILD_DIR)/ubclient/ubpar ../../base-files/default/sbin
 endef
 
 $(eval $(call Build/DefaultTargets))
