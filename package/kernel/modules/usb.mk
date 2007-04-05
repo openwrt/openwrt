@@ -123,17 +123,20 @@ define KernelPackage/usb-audio
   $(call usbdep,+kmod-soundcore)
   TITLE:=Support for audio devices
   DESCRIPTION:=Kernel support for USB audio devices
-  AUTOLOAD:=$(call AutoLoad,60,audio)
 endef
 
 define KernelPackage/usb-audio/2.4
   KCONFIG:=$(CONFIG_USB_AUDIO)
   FILES:=$(MODULES_DIR)/kernel/drivers/usb/audio.o
+  AUTOLOAD:=$(call AutoLoad,60,audio)
 endef
 
 define KernelPackage/usb-audio/2.6
   KCONFIG:=$(CONFIG_SND_USB_AUDIO)
-  FILES:=$(MODULES_DIR)/kernel/sound/usb/snd-usb-audio.ko
+  FILES:= \
+	$(MODULES_DIR)/kernel/sound/usb/snd-usb-lib.ko \
+	$(MODULES_DIR)/kernel/sound/usb/snd-usb-audio.ko
+  AUTOLOAD:=$(call AutoLoad,60,snd-usb-lib snd-usb-audio)
 endef
 $(eval $(call KernelPackage,usb-audio))
 
