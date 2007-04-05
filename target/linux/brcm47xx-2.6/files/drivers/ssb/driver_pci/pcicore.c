@@ -383,8 +383,7 @@ void ssb_pcicore_init(struct ssb_pcicore *pc)
 	if (!dev)
 		return;
 	bus = dev->bus;
-	if (!ssb_device_is_enabled(dev))
-		ssb_device_enable(dev, 0);
+	ssb_device_enable(dev, 0);
 
 #ifdef CONFIG_SSB_PCICORE_HOSTMODE
 	pc->hostmode = pcicore_is_in_hostmode(pc);
