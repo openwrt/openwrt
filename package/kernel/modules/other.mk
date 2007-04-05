@@ -104,18 +104,21 @@ define KernelPackage/soundcore
   DESCRIPTION:=Kernel modules for sound support
   KCONFIG:=$(CONFIG_SOUND)
   SUBMENU:=$(EMENU)
-  AUTOLOAD:=$(call AutoLoad,30,soundcore)
 endef
 
 define KernelPackage/soundcore/2.4
   FILES:=$(MODULES_DIR)/kernel/drivers/sound/soundcore.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,30,soundcore)
 endef
 
 define KernelPackage/soundcore/2.6
-  FILES:=$(MODULES_DIR)/kernel/sound/soundcore.$(LINUX_KMOD_SUFFIX)
+  FILES:= \
+	$(MODULES_DIR)/kernel/sound/soundcore.$(LINUX_KMOD_SUFFIX) \
+	$(MODULES_DIR)/kernel/sound/core/*.$(LINUX_KMOD_SUFFIX) \
+	$(MODULES_DIR)/kernel/sound/core/oss/*.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,30,snd snd-page-alloc snd-hwdep snd-rawmidi snd-timer snd-pcm snd-mixer-oss snd-pcm-oss)
 endef
 $(eval $(call KernelPackage,soundcore))
-
 
 define KernelPackage/loop
   TITLE:=Loopback device support
