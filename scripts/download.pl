@@ -21,13 +21,24 @@ my $ok;
 @ARGV > 0 or die "Syntax: $0 <target dir> <filename> <md5sum> <mirror> [<mirror> ...]\n";
 
 sub localmirrors {
-
     my @mlist;
-    open LM, "$scriptdir/localmirrors" or return ();
-    while (<LM>) {
-        chomp $_;
-        push @mlist, $_;
-    }
+    open LM, "$scriptdir/localmirrors" and do {
+	    while (<LM>) {
+			chomp $_;
+			push @mlist, $_;
+		}
+		close LM;
+	};
+	open CONFIG, "<".$ENV{'TOPDIR'}."/.config" and do {
+		while (<CONFIG>) {
+			/^CONFIG_LOCALMIRROR="(.+)"/ and do {
+				chomp;
+				push @mlist, $1;
+			};
+		}
+		close CONFIG;
+	};
+	
 
     return @mlist;
 }
