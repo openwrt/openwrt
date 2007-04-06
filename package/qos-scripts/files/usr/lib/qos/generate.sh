@@ -1,8 +1,6 @@
 #!/bin/sh
-. /etc/functions.sh
-
-insmod="insmod"
-[ -f /sbin/modprobe ] && insmod="modprobe"
+[ -e /etc/functions.sh ] && . /etc/functions.sh || . ./functions.sh
+[ -x /sbin/modprobe ] && insmod="modprobe" || insmod="insmod"
 
 add_insmod() {
 	eval "export isset=\${insmod_$1}"
@@ -12,11 +10,20 @@ add_insmod() {
 	esac
 }
 
-find_ifname() {(
-	include /lib/network
-	scan_interfaces
-	config_get "$1" ifname
-)}
+[ -e /etc/config/network ] && {
+	# only try to parse network config on openwrt
+
+	find_ifname() {(
+		include /lib/network
+		scan_interfaces
+		config_get "$1" ifname
+	)}
+} || {
+	find_ifname() {
+		echo "Interface not found."
+		exit 1
+	}
+}
 
 parse_matching_rule() {
 	local var="$1"
@@ -182,110 +189,6 @@ config_cb() {
 	esac
 }
 
-class_main_qdisc() {
-	local device="$1"
-	awk -f - <<EOF
-BEGIN {
-	limit = int("$maxrate")
-	m2 = int("$m2")
-	dmax = int("$dmax")
-	umax = int("$umax")
-	share = int("$share")
-	
-	if (!(m2 > 0)) {
-		dmax = 500
-		umax = 1500
-		m2 = 10
-		rt = 0
-	} else {
-		rt = 1
-	}
-
-	cdata = ""
-	pdmax = int (dmax + (umax * 8 / limit))
-	if (rt == 1) {
-		if (share > 0) cdata = " rt"
-		else cdata = " ls"
-		if ((umax > 0) && (dmax > 0)) {
-			cdata = cdata " umax " umax "b dmax " pdmax "ms"
-		}
-		cdata = cdata " rate " m2 "kbit"
-	}
-	if (share > 0) {
-		if ((m2 > 0) && (umax > 0) && (dmax > 0)) {
-			cdata = cdata " ls umax " umax "b dmax " pdmax "ms rate " share "kbit"
-		} else {
-			cdata = cdata " ls m1 " share "kbit d 500ms m2 " share "kbit"
-		}
-	}
-
-	print "tc class add dev $device parent 1:1 classid 1:${classnr}0 hfsc" cdata " ul rate " limit "kbit"
-}
-EOF
-}
-
-class_leaf_qdisc() {
-	local device="$1"
-	awk -f - <<EOF
-
-function qlen(rate, m2, umax, dmax,    qb, qr, qt, ql) {
-	qlen_min = 5 # minimum queue length
-	qlen_base = 1.7	# base value - queueing time in seconds
-	qlen_avgr = 0.7 # avgrate modifier
-	qlen_dmax = 0.0 # dmax modifier
-
-	# bits in a packet
-	qb = 1500
-	if ((m2 > 0) && (umax > 0)) qb -= int((1500 - umax) * qlen_pkt)
-	qb *= 8	
-	
-	# rate in bits/s
-	qr = rate
-	qr -= int((rate - m2) * qlen_avgr)
-	qr *= 1024
-	
-	# queue time
-	qt = qlen_base + qlen_dmax * (dmax / 1000)
-
-	# queue length
-	ql = int(qr * qt / qb)
-	if (ql < qlen_min) ql = qlen_min
-
-	return ql
-}
-
-BEGIN {
-	sfq_dthresh	= 25 # use sfq for download if pktdelay set to this or lower
-
-	limit = int("$maxrate")
-	m2 = int("$m2")
-	dmax = int("$dmax")
-	umax = int("$umax")
-	
-	if (!(m2 > 0)) {
-		dmax = 500
-		umax = 1500
-		m2 = 10
-	}
-	
-	cqlen = ${dl_mode:+2 * }qlen(limit, m2, umax, dmax)
-
-	printf "tc qdisc add dev $device parent 1:${classnr}0 handle ${classnr}00: "
-	if (("$dir" != "down") || ((dmax > 0) && (dmax <= sfq_dthresh))) {
-		print "sfq perturb 10 limit " cqlen 
-	} else {
-		avpkt = 1200
-		if (min < avpkt) min = avpkt
-		min = int(limit * 1024 / 8 * 0.1)
-		dqb = cqlen * 1500
-		max = int(min + (dqb - min) * 0.25)
-		burst = int((2 * min + max) / (3 * avpkt))
-		
-		print "red min " min " max " max " burst " burst " avpkt " avpkt " limit " dqb " probability 0.04 ecn"
-	}
-}
-EOF
-}
 
 enum_classes() {
 	local c="0"
@@ -315,6 +218,15 @@ cls_var() {
 	export ${varname}="${tmp:-$default}"
 }
 
+tcrules() {
+	dir=/usr/lib/qos
+	[ -e $dir/tcrules.awk ] || dir=.
+	echo "$cstr" | awk \
+		-v device="$dev" \
+		-v linespeed="$rate" \
+		-f $dir/tcrules.awk
+}
+
 start_interface() {
 	local iface="$1"
 	local num_imq="$2"
@@ -331,7 +243,7 @@ start_interface() {
 	for dir in up${halfduplex} ${download:+down}; do
 		case "$dir" in
 			up)
-				upload=$(($upload * 98 / 100 - 10))
+				upload=$(($upload * 98 / 100 - (32 * 128 / $upload)))
 				dev="$device"
 				rate="$upload"
 				dl_mode=""
@@ -340,7 +252,7 @@ start_interface() {
 			down)
 				add_insmod imq numdevs="$num_imq"
 				config_get imqdev "$iface" imqdev
-				download=$(($download * 96 / 100 - 64))
+				download=$(($download * 98 / 100 - (100 * 1024 / $download)))
 				dev="imq$imqdev"
 				rate="$download"
 				dl_mode=1
@@ -348,22 +260,17 @@ start_interface() {
 			;;
 			*) continue;;
 		esac
+		cstr=
 		for class in $classes; do
-			cls_var umax "$class" packetsize $dir 1500
-			cls_var dmax "$class" packetdelay $dir 500
-			
+			cls_var pktsize "$class" packetsize $dir 1500
+			cls_var pktdelay "$class" packetdelay $dir 0
 			cls_var maxrate "$class" limitrate $dir 100
-			cls_var share "$class" linksharing $dir 0
-			cls_var m2 "$class" avgrate $dir 0
-			maxrate=$(($maxrate * $rate / 100))
-			share=$(($share * $rate / 100))
-			m2=$(($m2 * $rate / 100))
-		
+			cls_var prio "$class" priority $dir 1
+			cls_var avgrate "$class" avgrate $dir 0
 			config_get classnr "$class" classnr
-			append ${prefix}q "$(class_main_qdisc "$dev" "$iface")" "$N"
-			append ${prefix}l "$(class_leaf_qdisc "$dev" "$iface")" "$N"
-			append ${prefix}f "tc filter add dev $dev parent 1: prio $classnr protocol ip handle $classnr fw flowid 1:${classnr}0" "$N"
+			append cstr "$classnr:$prio:$avgrate:$pktsize:$pktdelay:$maxrate" "$N"
 		done
+		append ${prefix}q "$(tcrules)" "$N"
 		export dev_${dir}="ifconfig $dev up txqueuelen 5 >&- 2>&-
 tc qdisc del dev $dev root >&- 2>&-
 tc qdisc add dev $dev root handle 1: hfsc default ${class_default}0
@@ -373,11 +280,10 @@ tc class add dev $dev parent 1: classid 1:1 hfsc sc rate ${rate}kbit ul rate ${r
 	add_insmod sch_hfsc
 	add_insmod sch_sfq
 	add_insmod sch_red
+
 	cat <<EOF
 ${INSMOD:+$INSMOD$N}${dev_up:+$dev_up
 $clsq
-$clsl
-$clsf
 }${imqdev:+$dev_down
 $d_clsq
 $d_clsl
@@ -471,7 +377,10 @@ EOF
 
 C="0"
 INTERFACES=""
-config_load qos
+[ -e ./qos.conf ] && {
+	. ./qos.conf
+	config_cb
+} || config_load qos
 
 C="0"
 for iface in $INTERFACES; do

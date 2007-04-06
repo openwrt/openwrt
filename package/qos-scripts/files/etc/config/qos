@@ -60,35 +60,29 @@ config classgroup "Default"
 
 
 config class "Priority"
-	option packetsize  300
-	option packetdelay 10
+	option packetsize  400
 	option maxsize     400
-	option avgrate     40
-	option linksharing 75
+	option avgrate     10
+	option priority    20
 config class "Priority_down"
-	option packetsize  1500
-	option avgrate     20
+	option packetsize  1000
+	option avgrate     10
 
 
 config class "Express"
-	option packetsize  1300
-	option packetdelay 15
+	option packetsize  1000
 	option maxsize     800
-	option avgrate     30
-	option linksharing 80
-
+	option avgrate     50
+	option priority    10
 
 config class "Normal"
 	option packetsize  1500
-	option packetdelay 150
-	option avgrate     20
-	option linksharing 30
+	option packetdelay 100
+	option avgrate     10
+	option priority    5
 config class "Normal_down"
-	option avgrate     30
-
+	option avgrate     20
 
 config class "Bulk"
-	option linksharing 10
-config class "Bulk_down"
-	option avgrate     15
-	option limitrate   85
+	option avgrate     1
+	option packetdelay 200
