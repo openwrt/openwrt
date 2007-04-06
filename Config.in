@@ -26,6 +26,9 @@ config BROKEN
 	bool "Show broken platforms / packages" if DEVEL
 	default n
 
+config LOCALMIRROR
+	string "Local mirror for source packages" if DEVEL
+
 menuconfig BUILDOPTS
 	bool "Build Options" if DEVEL
 
