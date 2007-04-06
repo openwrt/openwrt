@@ -201,9 +201,10 @@ define KernelPackage/bluetooth
 	$(MODULES_DIR)/kernel/net/bluetooth/l2cap.$(LINUX_KMOD_SUFFIX) \
 	$(MODULES_DIR)/kernel/net/bluetooth/sco.$(LINUX_KMOD_SUFFIX) \
 	$(MODULES_DIR)/kernel/net/bluetooth/rfcomm/rfcomm.$(LINUX_KMOD_SUFFIX) \
+	$(MODULES_DIR)/kernel/net/bluetooth/bnep/bnep.$(LINUX_KMOD_SUFFIX) \
 	$(MODULES_DIR)/kernel/drivers/bluetooth/hci_uart.$(LINUX_KMOD_SUFFIX) \
 	$(MODULES_DIR)/kernel/drivers/bluetooth/hci_usb.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,90,bluez l2cap sco rfcomm hci_uart hci_usb)
+  AUTOLOAD:=$(call AutoLoad,90,bluez l2cap sco rfcomm bnep hci_uart hci_usb)
 endef
 
 define KernelPackage/bluetooth/2.6
@@ -213,9 +214,10 @@ define KernelPackage/bluetooth/2.6
 	$(MODULES_DIR)/kernel/net/bluetooth/l2cap.$(LINUX_KMOD_SUFFIX) \
 	$(MODULES_DIR)/kernel/net/bluetooth/sco.$(LINUX_KMOD_SUFFIX) \
 	$(MODULES_DIR)/kernel/net/bluetooth/rfcomm/rfcomm.$(LINUX_KMOD_SUFFIX) \
+	$(MODULES_DIR)/kernel/net/bluetooth/bnep/bnep.$(LINUX_KMOD_SUFFIX) \
 	$(MODULES_DIR)/kernel/drivers/bluetooth/hci_uart.$(LINUX_KMOD_SUFFIX) \
 	$(MODULES_DIR)/kernel/drivers/bluetooth/hci_usb.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,90,bluetooth l2cap sco rfcomm hci_uart hci_usb)
+  AUTOLOAD:=$(call AutoLoad,90,bluetooth l2cap sco rfcomm bnep hci_uart hci_usb)
 endef
 $(eval $(call KernelPackage,bluetooth))
 
