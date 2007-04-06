@@ -62,7 +62,10 @@ tmp/.config-%.in: tmp/.%info
 
 
 .config: ./scripts/config/conf tmp/.config-target.in tmp/.config-package.in
-	@[ -f .config ] || $(NO_TRACE_MAKE) menuconfig
+	@[ -f .config ] || { \
+		[ -e $(HOME)/.openwrt/defconfig ] && cp $(HOME)/.openwrt/defconfig .config; \
+		$(NO_TRACE_MAKE) menuconfig; \
+	}
 	@$< -D .config Config.in &> /dev/null
 
 scripts/config/mconf:
@@ -87,6 +90,8 @@ oldconfig: scripts/config/conf tmp/.config-target.in tmp/.config-package.in FORC
 	$< -o Config.in
 
 menuconfig: scripts/config/mconf tmp/.config-target.in tmp/.config-package.in FORCE
+	@[ -f .config ] || \
+		[ -e $(HOME)/.openwrt/defconfig ] && cp $(HOME)/.openwrt/defconfig .config
 	$< Config.in
 
 kernel_menuconfig: .config FORCE
