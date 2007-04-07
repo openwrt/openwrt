@@ -50,29 +50,29 @@ target/%/Makefile: ;
 tmp/.packageinfo: $(wildcard package/*/Makefile include/package*.mk include/kernel.mk) 
 tmp/.targetinfo: $(wildcard target/*/Makefile include/kernel*.mk)
 tmp/.%info:
-	@mkdir -p tmp/info
-	@$(NO_TRACE_MAKE) -s -f include/scan.mk SCAN_TARGET="$*info" SCAN_DIR="$(patsubst target,target/linux,$*)" SCAN_NAME="$*" SCAN_DEPS="$^" SCAN_EXTRA=""
+	mkdir -p tmp/info
+	$(NO_TRACE_MAKE) -s -f include/scan.mk SCAN_TARGET="$*info" SCAN_DIR="$(patsubst target,target/linux,$*)" SCAN_NAME="$*" SCAN_DEPS="$^" SCAN_EXTRA=""
 
 tmpinfo-clean: FORCE
-	@-rm -rf tmp/.*info
+	-rm -rf tmp/.*info
 
 tmp/.config-%.in: tmp/.%info
-	@./scripts/metadata.pl $*_config < $< > $@ || rm -f $@
+	./scripts/metadata.pl $*_config < $< > $@ || rm -f $@
 
 
 
 .config: ./scripts/config/conf tmp/.config-target.in tmp/.config-package.in
-	@if [ \! -f .config -a -e $(HOME)/.openwrt/defconfig ]; then \ 
+	if [ \! -f .config -a -e $(HOME)/.openwrt/defconfig ]; then \ 
 		cp $(HOME)/.openwrt/defconfig .config; \
 		$(NO_TRACE_MAKE) menuconfig; \
 	fi
-	@$< -D .config Config.in &> /dev/null
+	$< -D .config Config.in &> /dev/null
 
 scripts/config/mconf:
-	@$(MAKE) -C scripts/config all
+	$(MAKE) -C scripts/config all
 
 scripts/config/conf:
-	@$(MAKE) -C scripts/config conf
+	$(MAKE) -C scripts/config conf
 
 
 
@@ -90,7 +90,7 @@ oldconfig: scripts/config/conf tmp/.config-target.in tmp/.config-package.in FORC
 	$< -o Config.in
 
 menuconfig: scripts/config/mconf tmp/.config-target.in tmp/.config-package.in FORCE
-	@if [ \! -f .config -a -e $(HOME)/.openwrt/defconfig ]; then \
+	if [ \! -f .config -a -e $(HOME)/.openwrt/defconfig ]; then \
 		cp $(HOME)/.openwrt/defconfig .config; \
 	fi
 	$< Config.in
@@ -107,22 +107,22 @@ package/% target/% tools/% toolchain/%: FORCE
 
 
 tmp/.prereq-build: include/prereq-build.mk
-	@mkdir -p tmp
-	@rm -f tmp/.host.mk
-	@$(NO_TRACE_MAKE) -s -f $(TOPDIR)/include/prereq-build.mk prereq 2>/dev/null || { \
+	mkdir -p tmp
+	rm -f tmp/.host.mk
+	$(NO_TRACE_MAKE) -s -f $(TOPDIR)/include/prereq-build.mk prereq 2>/dev/null || { \
 		echo "Prerequisite check failed. Use FORCE=1 to override."; \
 		false; \
 	}
-	@touch $@
+	touch $@
 
 tmp/.prereq-%: include/prereq.mk tmp/.%info .config
-	@mkdir -p tmp
-	@rm -f tmp/.host.mk
-	@$(NO_TRACE_MAKE) -s -C $* prereq 2>/dev/null || { \
+	mkdir -p tmp
+	rm -f tmp/.host.mk
+	$(NO_TRACE_MAKE) -s -C $* prereq 2>/dev/null || { \
 		echo "Prerequisite check failed. Use FORCE=1 to override."; \
 		false; \
 	}
-	@touch $@
+	touch $@
 
 prereq: tmp/.prereq-build tmp/.prereq-package tmp/.prereq-target FORCE
 
@@ -162,6 +162,6 @@ docclean:
 symlinkclean:
 	find package -type l -exec rm -f {} +
 
-.SILENT: clean dirclean distclean symlinkclean config-clean download world help
+.SILENT: clean dirclean distclean symlinkclean config-clean download world help tmp/.%info tmpinfo-clean tmp/.config-%.in .config scripts/config/mconf scripts/config/conf menuconfig tmp/.prereq-build tmp/.prereq-%
 FORCE: ;
 .PHONY: FORCE help
