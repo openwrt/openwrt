@@ -90,9 +90,9 @@ oldconfig: scripts/config/conf tmp/.config-target.in tmp/.config-package.in FORC
 	$< -o Config.in
 
 menuconfig: scripts/config/mconf tmp/.config-target.in tmp/.config-package.in FORCE
-	@[ -f .config ] || { \
-		[ -e $(HOME)/.openwrt/defconfig ] && cp $(HOME)/.openwrt/defconfig .config; \
-	}
+	@if [ \! -f .config -a -e $(HOME)/.openwrt/defconfig ]; then \
+		cp $(HOME)/.openwrt/defconfig .config; \
+	fi
 	$< Config.in
 
 kernel_menuconfig: .config FORCE
