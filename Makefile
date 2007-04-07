@@ -47,8 +47,8 @@ endif
 package/%/Makefile: ;
 target/%/Makefile: ;
 
-tmp/.packageinfo: $(wildcard package/*/Makefile include/package*.mk include/kernel.mk) 
-tmp/.targetinfo: $(wildcard target/*/Makefile include/kernel*.mk)
+tmp/.packageinfo: FORCE
+tmp/.targetinfo: FORCE
 tmp/.%info:
 	mkdir -p tmp/info
 	$(NO_TRACE_MAKE) -s -f include/scan.mk SCAN_TARGET="$*info" SCAN_DIR="$(patsubst target,target/linux,$*)" SCAN_NAME="$*" SCAN_DEPS="$^" SCAN_EXTRA=""
