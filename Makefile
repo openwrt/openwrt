@@ -50,20 +50,18 @@ target/%/Makefile: ;
 tmp/.packageinfo: FORCE
 tmp/.targetinfo: FORCE
 tmp/.%info:
-	mkdir -p tmp/info
-	$(NO_TRACE_MAKE) -s -f include/scan.mk SCAN_TARGET="$*info" SCAN_DIR="$(patsubst target,target/linux,$*)" SCAN_NAME="$*" SCAN_DEPS="$^" SCAN_EXTRA=""
+	@mkdir -p tmp/info
+	@$(NO_TRACE_MAKE) -s -f include/scan.mk SCAN_TARGET="$*info" SCAN_DIR="$(patsubst target,target/linux,$*)" SCAN_NAME="$*" SCAN_DEPS="$^" SCAN_EXTRA=""
 
 tmpinfo-clean: FORCE
 	-rm -rf tmp/.*info
 
 tmp/.config-%.in: tmp/.%info
-	./scripts/metadata.pl $*_config < $< > $@ || rm -f $@
-
-
+	@./scripts/metadata.pl $*_config < $< > $@ || rm -f $@
 
 .config: ./scripts/config/conf tmp/.config-target.in tmp/.config-package.in
-	if [ \! -f .config -a -e $(HOME)/.openwrt/defconfig ]; then \
-		cp $(HOME)/.openwrt/defconfig .config; \
+	if [ \! -f .config ]; then \
+		[ -e $(HOME)/.openwrt/defconfig ] && cp $(HOME)/.openwrt/defconfig .config; \
 		$(NO_TRACE_MAKE) menuconfig; \
 	fi
 	$< -D .config Config.in &> /dev/null
