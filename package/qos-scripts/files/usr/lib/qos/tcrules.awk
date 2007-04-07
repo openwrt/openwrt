@@ -88,7 +88,8 @@ END {
 			if (min < avpkt) min = avpkt
 			dqb = 8 * min;
 			max = int(2.1*min)
-			rburst = int((1.5*min + max) / (3 * avpkt))
+			rburst = int((2*min + max) / (3 * avpkt))
+			if (rburst < 2) rburst = 2
 			print "red min " min " max " max " burst " rburst " avpkt " avpkt " limit " dqb " probability 0.04 ecn"
 		}
 	}
