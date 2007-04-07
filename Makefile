@@ -47,17 +47,17 @@ endif
 package/%/Makefile: ;
 target/%/Makefile: ;
 
-tmp/.packageinfo: FORCE
-tmp/.targetinfo: FORCE
+tmp/.packageinfo: $(wildcard package/*/Makefile include/package*.mk include/kernel.mk) FORCE
+tmp/.targetinfo: $(wildcard target/*/Makefile include/kernel*.mk)  FORCE
 tmp/.%info:
-	@mkdir -p tmp/info
-	@$(NO_TRACE_MAKE) -s -f include/scan.mk SCAN_TARGET="$*info" SCAN_DIR="$(patsubst target,target/linux,$*)" SCAN_NAME="$*" SCAN_DEPS="$^" SCAN_EXTRA=""
+	mkdir -p tmp/info
+	$(NO_TRACE_MAKE) -s -f include/scan.mk SCAN_TARGET="$*info" SCAN_DIR="$(patsubst target,target/linux,$*)" SCAN_NAME="$*" SCAN_DEPS="$(filter FORCE, $^)" SCAN_EXTRA=""
 
 tmpinfo-clean: FORCE
 	-rm -rf tmp/.*info
 
 tmp/.config-%.in: tmp/.%info
-	@./scripts/metadata.pl $*_config < $< > $@ || rm -f $@
+	./scripts/metadata.pl $*_config < $< > $@ || rm -f $@
 
 .config: ./scripts/config/conf tmp/.config-target.in tmp/.config-package.in
 	if [ \! -f .config ]; then \
@@ -160,6 +160,6 @@ docclean:
 symlinkclean:
 	find package -type l -exec rm -f {} +
 
-.SILENT: clean dirclean distclean symlinkclean config-clean download world help tmp/.%info tmpinfo-clean tmp/.config-%.in .config scripts/config/mconf scripts/config/conf menuconfig tmp/.prereq-build tmp/.prereq-%
+.SILENT: clean dirclean distclean symlinkclean config-clean download world help tmp/.packageinfo tmp/.targetinfo tmpinfo-clean tmp/.config-package.in tmp/.config-target.in .config scripts/config/mconf scripts/config/conf menuconfig tmp/.prereq-build tmp/.prereq-package tmp/.prereq-target
 FORCE: ;
 .PHONY: FORCE help
