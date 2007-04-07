@@ -62,7 +62,7 @@ tmp/.config-%.in: tmp/.%info
 
 
 .config: ./scripts/config/conf tmp/.config-target.in tmp/.config-package.in
-	if [ \! -f .config -a -e $(HOME)/.openwrt/defconfig ]; then \ 
+	if [ \! -f .config -a -e $(HOME)/.openwrt/defconfig ]; then \
 		cp $(HOME)/.openwrt/defconfig .config; \
 		$(NO_TRACE_MAKE) menuconfig; \
 	fi
