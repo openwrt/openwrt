@@ -242,7 +242,7 @@ diff -ur linux.old/drivers/mtd/mtdpart.c linux.dev/drivers/mtd/mtdpart.c
 +				part->offset += len;
 +				part->size -= len;
 +			
-+				if (len + master->erasesize < part->size)
++				if (master->erasesize <= part->size)
 +					ret = add_mtd_partition(master, part, i + 1);
 +				else
 +					kfree(part->name);
