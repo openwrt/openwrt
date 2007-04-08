@@ -9,15 +9,15 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openssl
-PKG_VERSION:=0.9.8d
-PKG_RELEASE:=2
+PKG_VERSION:=0.9.8e
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.openssl.org/source/ \
 	ftp://ftp.funet.fi/pub/crypt/cryptography/libs/openssl/source/ \
 	ftp://ftp.webmonster.de/pub/openssl/source/ \
 	ftp://ftp.sunet.se/pub/security/tools/net/openssl/source/
-PKG_MD5SUM:=8ed1853538e1d05a1f5ada61ebf8bffa
+PKG_MD5SUM:=3a7ff24f6ea5cd711984722ad654b927
 
 include $(INCLUDE_DIR)/package.mk
 
