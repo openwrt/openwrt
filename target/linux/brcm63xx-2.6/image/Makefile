@@ -17,17 +17,32 @@ LOADER_MAKEOPTS= \
 		KERNEL_ENTRY=$(KERNEL_ENTRY) \
 		RAMSIZE=$(RAMSIZE)
 
+define trxalign/jffs2-128k
+-a 0x20000
+endef
+define trxalign/jffs2-64k
+-a 0x10000
+endef
+define trxalign/squashfs
+-a 1024
+endef
+
 define Build/Clean
-	$(MAKE) -C $(GENERIC_PLATFORM_DIR)/image/lzma-loader $(LOADER_MAKEOPTS) clean
+	$(MAKE) -C lzma-loader clean
 endef
 
 define Image/Prepare
 	cat $(KDIR)/vmlinux | $(STAGING_DIR)/bin/lzma e -si -so -eos -lc1 -lp2 -pb2 > $(KDIR)/vmlinux.lzma
-	$(MAKE) -C $(GENERIC_PLATFORM_DIR)/image/lzma-loader $(LOADER_MAKEOPTS) clean compile
+	rm -f $(KDIR)/loader.gz
+	$(MAKE) -C lzma-loader \
+		BUILD_DIR="$(KDIR)" \
+		TARGET="$(KDIR)" \
+		clean install
+	echo -ne "\\x00" >> $(KDIR)/loader.gz
 endef
 
 define Image/Build
-	cp $(KDIR)/vmlinux $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).img
+	$(STAGING_DIR)/bin/trx -o $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).trx -f $(KDIR)/loader.gz -f $(KDIR)/vmlinux.lzma $(call trxalign/$(1)) -f $(KDIR)/root.$(1)
 endef
 
 $(eval $(call BuildImage))

@@ -1,44 +1,54 @@
 diff -urN linux-2.6.19/arch/mips/Kconfig linux-2.6.19.new/arch/mips/Kconfig
 --- linux-2.6.19/arch/mips/Kconfig	2006-11-29 22:57:37.000000000 +0100
 +++ linux-2.6.19.new/arch/mips/Kconfig	2006-12-16 18:46:31.000000000 +0100
-@@ -12,6 +12,15 @@
+@@ -4,6 +4,10 @@
+        # Horrible source of confusion.  Die, die, die ...
+        select EMBEDDED
+
++config CFE
++       bool
++       # Common Firmware Environment
++
+ mainmenu "Linux/MIPS Kernel Configuration"
+
+ menu "Machine selection"
+@@ -12,6 +12,18 @@
  	prompt "System type"
  	default SGI_IP22
  
 +config BCM963XX 
-+	bool "Support for the Broadcom boards"
++	bool "Support for Broadcom BCM963xx SoC"
 +	select SYS_SUPPORTS_32BIT_KERNEL
 +	select SYS_SUPPORTS_BIG_ENDIAN
 +	select SYS_HAS_CPU_MIPS32_R1
++	select HW_HAS_PCI
++	select DMA_NONCOHERENT
 +	select IRQ_CPU
++	select CFE
 +	help
 +	 This is a fmaily of boards based on the Broadcom MIPS32
 +
  config MIPS_MTX1
  	bool "4G Systems MTX-1 board"
  	select DMA_NONCOHERENT
-@@ -766,6 +775,7 @@
- 
- endchoice
- 
-+source "arch/mips/bcm963xx/Kconfig"
- source "arch/mips/ddb5xxx/Kconfig"
- source "arch/mips/gt64120/ev64120/Kconfig"
- source "arch/mips/jazz/Kconfig"
 diff -urN linux-2.6.19/arch/mips/Makefile linux-2.6.19.new/arch/mips/Makefile
 --- linux-2.6.19/arch/mips/Makefile	2006-12-16 17:36:29.000000000 +0100
 +++ linux-2.6.19.new/arch/mips/Makefile	2006-12-16 18:46:31.000000000 +0100
-@@ -158,6 +158,15 @@
+@@ -158,6 +158,19 @@
  #
  
  #
-+# Broadcom board
++# Broadcom BCM963xx SoC
 +#
 +core-$(CONFIG_BCM963XX)	+= arch/mips/bcm963xx/
 +cflags-$(CONFIG_BCM963XX)     	+= -Iinclude/asm-mips/mach-bcm963xx
-+cflags-$(CONFIG_BCM963XX)     	+= -Iarch/mips/bcm963xx/include
 +load-$(CONFIG_BCM963XX)	+= 0xffffffff80010000
 +
++
++#
++# Common Firmware Environment
++#
++core-$(CONFIG_CFE)             += arch/mips/cfe/
 +
 +#
  # Acer PICA 61, Mips Magnum 4000 and Olivetti M700.
@@ -105,7 +115,7 @@ diff -urN linux-2.6.19/arch/mips/mm/c-r4k.c linux-2.6.19.new/arch/mips/mm/c-r4k.
  
 +		if (c->cputype == CPU_BCM6338 || c->cputype == CPU_BCM6345 || c->cputype == CPU_BCM6348)
 +		{
-+			printk("brcm mips: enabling icache and dcache...\n");
++			printk("bcm963xx: enabling icache and dcache...\n");
 +			/* Enable caches */
 +			write_c0_diag(read_c0_diag() | 0xC0000000);
 +		}
@@ -133,7 +143,7 @@ diff -urN linux-2.6.19/arch/mips/pci/Makefile linux-2.6.19.new/arch/mips/pci/Mak
  obj-$(CONFIG_PCI_VR41XX)	+= ops-vr41xx.o pci-vr41xx.o
  obj-$(CONFIG_NEC_CMBVR4133)	+= fixup-vr4133.o
  obj-$(CONFIG_MARKEINS)		+= ops-emma2rh.o pci-emma2rh.o fixup-emma2rh.o
-+obj-$(CONFIG_BCM_PCI)		+= fixup-bcm96348.o pci-bcm96348.o ops-bcm96348.o
++obj-$(CONFIG_BCM963XX)		+= fixup-bcm96348.o pci-bcm96348.o ops-bcm96348.o
  
  #
  # These are still pretty much in the old state, watch, go blind.
@@ -144,7 +154,7 @@ diff -urN linux-2.6.19/drivers/serial/Makefile linux-2.6.19.new/drivers/serial/M
  obj-$(CONFIG_SERIAL_SGI_IOC3) += ioc3_serial.o
  obj-$(CONFIG_SERIAL_ATMEL) += atmel_serial.o
  obj-$(CONFIG_SERIAL_NETX) += netx-serial.o
-+obj-$(CONFIG_BCM_SERIAL) += bcm63xx_cons.o
++obj-$(CONFIG_BCM963XX) += bcm63xx_cons.o
 diff -urN linux-2.6.19/include/asm-mips/bootinfo.h linux-2.6.19.new/include/asm-mips/bootinfo.h
 --- linux-2.6.19/include/asm-mips/bootinfo.h	2006-11-29 22:57:37.000000000 +0100
 +++ linux-2.6.19.new/include/asm-mips/bootinfo.h	2006-12-16 18:46:31.000000000 +0100

@@ -25,119 +25,49 @@
 #include <linux/sched.h>
 #include <linux/bootmem.h>
 #include <linux/blkdev.h>
+
 #include <asm/addrspace.h>
 #include <asm/bootinfo.h>
 #include <asm/cpu.h>
 #include <asm/time.h>
+#include <asm/mach-bcm963xx/bootloaders.h>
+#include <asm/mach-bcm963xx/6348_map_part.h>
 
-#include <bcm_map_part.h>
-#include <board.h>
-#include "boardparms.h"
-#include "softdsl/AdslCoreDefs.h"
+#include "../cfe/cfe_private.h"
 
-
-//char arcs_cmdline[CL_SIZE] __initdata = {0};
-/* inv_xde */
-int boot_loader_type;
-int prom_argc;
-char **prom_argv, **prom_envp;
-
-extern int  do_syslog(int, char *, int);
+extern void __init detect_bootloader(void); 
 extern void serial_init(void);
-extern void __init InitNvramInfo( void );
-extern void kerSysFlashInit( void );
-extern unsigned long get_nvram_start_addr(void);
-void __init create_root_nfs_cmdline( char *cmdline );
+extern int boot_loader_type;
 
 #define MACH_BCM                    MACH_BCM96348
 
 const char *get_system_type(void)
 {
-    /*PNVRAM_DATA pNvramData = (PNVRAM_DATA) get_nvram_start_addr();
-
-    return( pNvramData->szBoardId );*/
-    return "brcm63xx";
+	return "Broadcom BCM963xx";
 }
 
-unsigned long getMemorySize(void)
-{
-    unsigned long ulSdramType = BOARD_SDRAM_TYPE;
-
-    unsigned long ulSdramSize;
-
-    switch( ulSdramType )
-    {
-    case BP_MEMORY_16MB_1_CHIP:
-    case BP_MEMORY_16MB_2_CHIP:
-        ulSdramSize = 16 * 1024 * 1024;
-        break;
-    case BP_MEMORY_32MB_1_CHIP:
-    case BP_MEMORY_32MB_2_CHIP:
-        ulSdramSize = 32 * 1024 * 1024;
-        break;
-    case BP_MEMORY_64MB_2_CHIP:
-        ulSdramSize = 64 * 1024 * 1024;
-        break;
-    default:
-        ulSdramSize = 8 * 1024 * 1024;
-        break;
-    }
-    if (boot_loader_type == BOOT_CFE)
-      return ulSdramSize;
-    else
-      // assume that there is one contiguous memory map
-      return boot_mem_map.map[0].size;
-}
-
-/* --------------------------------------------------------------------------
-    Name: prom_init
- -------------------------------------------------------------------------- */
 void __init prom_init(void)
 {
-    extern ulong r4k_interval;
+    	serial_init();
 
-    serial_init();
+    	printk( "%s prom init\n", get_system_type() );
 
-    prom_argc = fw_arg0;
-    prom_argv = (char **) fw_arg1;
-    prom_envp = (char **) fw_arg2;
+    	PERF->IrqMask = 0;
 
-    if ((prom_argv > 0x80000000) && (prom_argv < 0x82000000)) {
-      strncpy(arcs_cmdline, prom_argv[1], CL_SIZE);
-    }
+	detect_bootloader();
 
-    if (strncmp(arcs_cmdline, "boot_loader=RedBoot", 19) != 0) {
-      boot_loader_type =  BOOT_CFE;
-    }
-    else {
-      boot_loader_type = BOOT_REDBOOT;
-    }
-
-    do_syslog(8, NULL, 8);
-
-    printk( "%s prom init\n", get_system_type() );
-
-    PERF->IrqMask = 0;
-
-    arcs_cmdline[0] = '\0';
-
-       if (boot_loader_type == BOOT_CFE)
-      add_memory_region(0, (getMemorySize() - ADSL_SDRAM_IMAGE_SIZE), BOOT_MEM_RAM);
-    else
-       add_memory_region(0, (0x01000000 - ADSL_SDRAM_IMAGE_SIZE), BOOT_MEM_RAM);
-
-    mips_machgroup = MACH_GROUP_BRCM;
-    mips_machtype = MACH_BCM;
-
-       BpSetBoardId("96348GW-10");
+	if (boot_loader_type == BOOT_LOADER_CFE) {
+		cfe_setup(fw_arg0, fw_arg1, fw_arg2, fw_arg3);
+		add_memory_region(0, (boot_mem_map.map[0].size - ADSL_SDRAM_IMAGE_SIZE), BOOT_MEM_RAM);
+	}
+	else
+		add_memory_region(0, (0x01000000 - ADSL_SDRAM_IMAGE_SIZE), BOOT_MEM_RAM);
+	
+	mips_machgroup = MACH_GROUP_BRCM;
+	mips_machtype = MACH_BCM;
 }
 
-/* --------------------------------------------------------------------------
-    Name: prom_free_prom_memory
-Abstract:
- -------------------------------------------------------------------------- */
 void __init prom_free_prom_memory(void)
 {
-
+	/* We do not have any memory to free */
 }
-

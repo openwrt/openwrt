@@ -32,6 +32,7 @@
 #include <linux/slab.h>
 #include <linux/module.h>
 #include <linux/pm.h>
+#include <linux/bootmem.h>
 
 #include <asm/addrspace.h>
 #include <asm/bcache.h>
@@ -39,9 +40,12 @@
 #include <asm/time.h>
 #include <asm/reboot.h>
 #include <asm/gdb-stub.h>
+#include <asm/bootinfo.h>
+#include <asm/cpu.h>
+#include <asm/mach-bcm963xx/bootloaders.h>
 
 extern void brcm_time_init(void);
-extern unsigned long getMemorySize(void);
+extern int boot_loader_type;
 
 #if defined(CONFIG_BCM96348) && defined(CONFIG_PCI)
 #include <linux/pci.h>
@@ -58,15 +62,15 @@ static volatile MpiRegisters * mpi = (MpiRegisters *)(MPI_BASE);
  */
 static void brcm_machine_restart(char *command)
 {
-    const unsigned long ulSoftReset = 0x00000001;
-    unsigned long *pulPllCtrl = (unsigned long *) 0xfffe0008;
-    *pulPllCtrl |= ulSoftReset;
+	const unsigned long ulSoftReset = 0x00000001;
+	unsigned long *pulPllCtrl = (unsigned long *) 0xfffe0008;
+	*pulPllCtrl |= ulSoftReset;
 }
 
 static void brcm_machine_halt(void)
 {
-    printk("System halted\n");
-    while (1);
+	printk("System halted\n");
+	while (1);
 }
 
 #if defined(CONFIG_BCM96348) && defined(CONFIG_PCI)
@@ -372,20 +376,23 @@ static int mpi_DetectPcCard(void)
 
 static int mpi_init(void)
 {
-    unsigned long data;
-    unsigned int chipid;
-    unsigned int chiprev;
-    unsigned int sdramsize;
+	unsigned long data;
+    	unsigned int chipid, chiprev, sdramsize;
 
-    chipid  = (PERF->RevID & 0xFFFF0000) >> 16;
-    chiprev = (PERF->RevID & 0xFF);
-    sdramsize = getMemorySize();
-    /*
-     * Init the pci interface 
-     */
-    data = GPIO->GPIOMode; // GPIO mode register
-    data |= GROUP2_PCI | GROUP1_MII_PCCARD; // PCI internal arbiter + Cardbus
-    GPIO->GPIOMode = data; // PCI internal arbiter
+	printk("Broadcom BCM963xx MPI\n");
+    	chipid  = (PERF->RevID & 0xFFFF0000) >> 16;
+    	chiprev = (PERF->RevID & 0xFF);
+
+	if (boot_loader_type == BOOT_LOADER_CFE)
+    		sdramsize = boot_mem_map.map[0].size;
+	else
+		sdramsize = 0x01000000; 
+    	/*
+     	 * Init the pci interface 
+     	 */
+    	data = GPIO->GPIOMode; // GPIO mode register
+    	data |= GROUP2_PCI | GROUP1_MII_PCCARD; // PCI internal arbiter + Cardbus
+    	GPIO->GPIOMode = data; // PCI internal arbiter
 
     /*
      * In the BCM6348 CardBus support is defaulted to Slot 0
@@ -456,68 +463,16 @@ static int mpi_init(void)
 }
 #endif
 
-static int __init brcm63xx_setup(void)
-{
-    extern int panic_timeout;
-
-    _machine_restart = brcm_machine_restart;
-    _machine_halt = brcm_machine_halt;
-    pm_power_off = brcm_machine_halt;
-
-    board_time_init = brcm_time_init;
-
-    panic_timeout = 5;
-
-#if defined(CONFIG_BCM96348) && defined(CONFIG_PCI)
-    /* mpi initialization */
-    mpi_init();
-#endif
-    return 0;
-}
-
 void __init plat_mem_setup(void)
 {
-    brcm63xx_setup();
+	_machine_restart = brcm_machine_restart;
+	_machine_halt = brcm_machine_halt;
+	pm_power_off = brcm_machine_halt;
+
+	board_time_init = brcm_time_init;
+
+#if defined(CONFIG_BCM96348) && defined(CONFIG_PCI)
+    	/* mpi initialization */
+    	mpi_init();
+#endif
 }
-
-/***************************************************************************
- * C++ New and delete operator functions
- ***************************************************************************/
-
-/* void *operator new(unsigned int sz) */
-void *_Znwj(unsigned int sz)
-{
-    return( kmalloc(sz, GFP_KERNEL) );
-}
-
-/* void *operator new[](unsigned int sz)*/
-void *_Znaj(unsigned int sz)
-{
-    return( kmalloc(sz, GFP_KERNEL) );
-}
-
-/* placement new operator */
-/* void *operator new (unsigned int size, void *ptr) */
-void *ZnwjPv(unsigned int size, void *ptr)
-{
-    return ptr;
-}
-
-/* void operator delete(void *m) */
-void _ZdlPv(void *m)
-{
-    kfree(m);
-}
-
-/* void operator delete[](void *m) */
-void _ZdaPv(void *m)
-{
-    kfree(m);
-}
-
-EXPORT_SYMBOL(_Znwj);
-EXPORT_SYMBOL(_Znaj);
-EXPORT_SYMBOL(ZnwjPv);
-EXPORT_SYMBOL(_ZdlPv);
-EXPORT_SYMBOL(_ZdaPv);
-

@@ -37,6 +37,7 @@
 #include <asm/mc146818rtc.h> 
 
 #include <bcm_map_part.h>
+#include <6348_map_part.h>
 #include <board.h>
 
 #define  SER63XX_DEFAULT_BAUD      115200
@@ -54,7 +55,7 @@
 -------------------------------------------------------------------------- */
 void __init serial_init(void)
 {
-    UINT32 tmpVal = SER63XX_DEFAULT_BAUD;
+    u32 tmpVal = SER63XX_DEFAULT_BAUD;
     ULONG clockFreqHz;    
 
 #if defined(CONFIG_BCM96345)
