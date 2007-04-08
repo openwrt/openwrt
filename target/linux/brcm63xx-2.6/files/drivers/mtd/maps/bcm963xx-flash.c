@@ -1,277 +1,474 @@
 /*
- * $Id$
- * Copyright (C) 2006  Florian Fainelli <florian@openwrt.org>
- * 			Mike Albon <malbon@openwrt.org>
- * Copyright (C) $Date$  $Author$
+ *  Copyright (C) 2006 Felix Fietkau <nbd@openwrt.org>
+ *  Copyright (C) 2005 Waldemar Brodkorb <wbx@openwrt.org>
+ *  Copyright (C) 2004 Florian Schirmer (jolt@tuxbox.org)
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ *  original functions for finding root filesystem from Mike Baker 
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *  This program is free software; you can redistribute  it and/or modify it
+ *  under  the terms of  the GNU General  Public License as published by the
+ *  Free Software Foundation;  either version 2 of the  License, or (at your
+ *  option) any later version.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ *  THIS  SOFTWARE  IS PROVIDED   ``AS  IS'' AND   ANY  EXPRESS OR IMPLIED
+ *  WARRANTIES,   INCLUDING, BUT NOT  LIMITED  TO, THE IMPLIED WARRANTIES OF
+ *  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN
+ *  NO  EVENT  SHALL   THE AUTHOR  BE    LIABLE FOR ANY   DIRECT, INDIRECT,
+ *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ *  NOT LIMITED   TO, PROCUREMENT OF  SUBSTITUTE GOODS  OR SERVICES; LOSS OF
+ *  USE, DATA,  OR PROFITS; OR  BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ *  ANY THEORY OF LIABILITY, WHETHER IN  CONTRACT, STRICT LIABILITY, OR TORT
+ *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ *  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ *  You should have received a copy of the  GNU General Public License along
+ *  with this program; if not, write  to the Free Software Foundation, Inc.,
+ *  675 Mass Ave, Cambridge, MA 02139, USA.
+ * 
+ *  Copyright 2001-2003, Broadcom Corporation
+ *  All Rights Reserved.
+ * 
+ *  THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
+ *  KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
+ *  SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
+ *  FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+ *
+ *  Flash mapping for BCM963XX boards
  */
 
-/* This is the BCM963xx flash map driver, in its actual state it only supports BCM96348 devices
- * this driver is able to manage both bootloader we found on these boards : CFE and RedBoot
- *
- * RedBoot :
- *  - this bootloader allows us to parse partitions and therefore deduce the MTD partition table
- *
- * CFE :
- *   - CFE partitionning can be detected as for BCM947xx devices 
- *
- */
-
-#include <asm/io.h>
 #include <linux/init.h>
+#include <linux/module.h>
+#include <linux/types.h>
 #include <linux/kernel.h>
-#include <linux/mtd/map.h>
+#include <linux/wait.h>
 #include <linux/mtd/mtd.h>
+#include <linux/mtd/map.h>
+#ifdef CONFIG_MTD_PARTITIONS
 #include <linux/mtd/partitions.h>
-#include <linux/vmalloc.h>
-#include <board.h>
+#endif
+#include <linux/squashfs_fs.h>
+#include <linux/jffs2.h>
+#include <linux/crc32.h>
+#include <asm/io.h>
 
-#define WINDOW_ADDR 0x1FC00000         /* Real address of the flash */
-#define WINDOW_SIZE 0x400000           /* Size of flash */
-#define BUSWIDTH 2                     /* Buswidth */
-#define EXTENDED_SIZE 0xBFC00000       /* Extended flash address */
-#define IMAGE_LEN 10                   /* Length of Length Field */
-#define ADDRESS_LEN 12                 /* Length of Address field */
-#define ROUNDUP(x, y) ((((x)+((y)-1))/(y))*(y))
+#include <asm/mach-bcm963xx/bootloaders.h>
 
-extern int boot_loader_type;           /* For RedBoot / CFE detection */
+extern int boot_loader_type;
 extern int parse_redboot_partitions(struct mtd_info *master, struct mtd_partition **pparts, unsigned long fis_origin);
 static struct mtd_partition *parsed_parts;
 
-static void __exit bcm963xx_mtd_cleanup(void);
 
-static struct mtd_info *bcm963xx_mtd_info;
+#define TRX_MAGIC	0x30524448	/* "HDR0" */
+#define TRX_VERSION	1
+#define TRX_MAX_LEN	0x3A0000
+#define TRX_NO_HEADER	1		/* Do not write TRX header */	
+#define TRX_GZ_FILES	0x2     /* Contains up to TRX_MAX_OFFSET individual gzip files */
+#define TRX_MAX_OFFSET	3
+
+struct trx_header {
+	u32 magic;		/* "HDR0" */
+	u32 len;		/* Length of file including header */
+	u32 crc32;		/* 32-bit CRC from flag_version to end of file */
+	u32 flag_version;	/* 0:15 flags, 16:31 version */
+	u32 offsets[TRX_MAX_OFFSET];	/* Offsets of partitions from start of header */
+};
+
+#define ROUNDUP(x, y) ((((x)+((y)-1))/(y))*(y))
+#define NVRAM_SPACE 0x8000
+#define WINDOW_ADDR 0x1FC00000
+#define WINDOW_SIZE 0x400000
+#define BUSWIDTH 2
+
+#define EXTENDED_SIZE 0xBFC00000       /* Extended flash address */
+
+static struct mtd_info *bcm963xx_mtd;
 
 static struct map_info bcm963xx_map = {
-       .name = "bcm963xx",
-       .size = WINDOW_SIZE,
-       .bankwidth = BUSWIDTH,
-       .phys = WINDOW_ADDR,
+	.name 		= "Physically mapped flash",
+	.size	 	= WINDOW_SIZE,
+	.bankwidth 	= BUSWIDTH,
+	.phys		= WINDOW_ADDR,
 };
 
-
-int parse_cfe_partitions( struct mtd_info *master, struct mtd_partition **pparts)
-{
-       int nrparts = 2, curpart = 0; // CFE and NVRAM always present.
-       struct bcm963xx_cfe_map {
-       unsigned char tagVersion[4];                            // Version of the image tag
-       unsigned char sig_1[20];                                // Company Line 1
-       unsigned char sig_2[14];                                // Company Line 2
-       unsigned char chipid[6];                                        // Chip this image is for
-       unsigned char boardid[16];                              // Board name
-       unsigned char bigEndian[2];                             // Map endianness -- 1 BE 0 LE
-       unsigned char totalLength[IMAGE_LEN];           //Total length of image
-       unsigned char cfeAddress[ADDRESS_LEN];  // Address in memory of CFE
-       unsigned char cfeLength[IMAGE_LEN];             // Size of CFE
-       unsigned char rootAddress[ADDRESS_LEN];         // Address in memory of rootfs
-       unsigned char rootLength[IMAGE_LEN];            // Size of rootfs
-       unsigned char kernelAddress[ADDRESS_LEN];       // Address in memory of kernel
-       unsigned char kernelLength[IMAGE_LEN];  // Size of kernel
-       unsigned char dualImage[2];                             // Unused at present
-       unsigned char inactiveFlag[2];                  // Unused at present
-       unsigned char reserved1[74];                            // Reserved area not in use
-       unsigned char imageCRC[4];                              // CRC32 of images
-       unsigned char reserved2[16];                            // Unused at present
-       unsigned char headerCRC[4];                             // CRC32 of header excluding tagVersion
-       unsigned char reserved3[16];                            // Unused at present
-       } *buf;
-       struct mtd_partition *parts;
-       int ret;
-       size_t retlen;
-       unsigned int rootfsaddr, kerneladdr, spareaddr;
-       unsigned int rootfslen, kernellen, sparelen, totallen;
-       int namelen = 0;
-       int i;
-       // Allocate memory for buffer
-       buf = vmalloc(sizeof(struct bcm963xx_cfe_map));
-
-       if (!buf)
-               return -ENOMEM;
-
-       // Get the tag
-       ret = master->read(master,master->erasesize,sizeof(struct bcm963xx_cfe_map), &retlen, (void *)buf);
-       if (retlen != sizeof(struct bcm963xx_cfe_map)){
-               vfree(buf);
-               return -EIO;
-       };
-       printk("bcm963xx: CFE boot tag found with version %s and board type %s.\n",buf->tagVersion,buf->boardid);
-       // Get the values and calculate
-       sscanf(buf->rootAddress,"%u", &rootfsaddr);
-       rootfsaddr = rootfsaddr - EXTENDED_SIZE;
-       sscanf(buf->rootLength, "%u", &rootfslen);
-       sscanf(buf->kernelAddress, "%u", &kerneladdr);
-       kerneladdr = kerneladdr - EXTENDED_SIZE;
-       sscanf(buf->kernelLength, "%u", &kernellen);
-       sscanf(buf->totalLength, "%u", &totallen);
-       spareaddr = ROUNDUP(totallen,master->erasesize) + master->erasesize;
-       sparelen = master->size - spareaddr - master->erasesize;
-       // Determine number of partitions
-       namelen = 8;
-       if (rootfslen > 0){
-               nrparts++;
-               namelen =+ 6;
-       };
-       if (kernellen > 0){
-               nrparts++;
-               namelen =+ 6;
-       };
-       if (sparelen > 0){
-               nrparts++;
-               namelen =+ 6;
-       };
-       // Ask kernel for more memory.
-       parts = kmalloc(sizeof(*parts)*nrparts+10*nrparts, GFP_KERNEL);
-       if (!parts){
-               vfree(buf);
-               return -ENOMEM;
-       };
-       memset(parts,0,sizeof(*parts)*nrparts+10*nrparts);
-       // Start building partition list
-       parts[curpart].name = "CFE";
-       parts[curpart].offset = 0;
-       parts[curpart].size = master->erasesize;
-       curpart++;
-       if (kernellen > 0){
-               parts[curpart].name = "Kernel";
-               parts[curpart].offset = kerneladdr;
-               parts[curpart].size = kernellen;
-               curpart++;
-       };
-       if (rootfslen > 0){
-               parts[curpart].name = "Rootfs";
-               parts[curpart].offset = rootfsaddr;
-               parts[curpart].size = rootfslen;
-               curpart++;
-       };
-       if (sparelen > 0){
-               parts[curpart].name = "OpenWrt";
-               parts[curpart].offset = spareaddr;
-               parts[curpart].size = sparelen;
-               curpart++;
-       };
-       parts[curpart].name = "NVRAM";
-       parts[curpart].offset = master->size - master->erasesize;
-       parts[curpart].size = master->erasesize;
-       for (i = 0; i < nrparts; i++) {
-          printk("bcm963xx: Partition %d is %s offset %x and length %x\n", i, parts[i].name, parts[i].offset, parts[i].size);
-       }
-       *pparts = parts;
-       vfree(buf);
-       return nrparts;
-};
+#ifdef CONFIG_MTD_PARTITIONS
 
 static struct mtd_partition bcm963xx_parts[] = {
-        { name: "bootloader",  size: 0,        offset: 0,      mask_flags: MTD_WRITEABLE },
-        { name: "rootfs",              size: 0,        offset: 0},
-        { name: "jffs2",        size: 5 * 0x10000,      offset: 57*0x10000}
+	{ name: "cfe",	offset: 0, size: 0, mask_flags: MTD_WRITEABLE, },
+	{ name: "linux", offset: 0, size: 0, },
+	{ name: "rootfs", offset: 0, size: 0, },
+	{ name: "nvram", offset: 0, size: 0, },
+	{ name: "OpenWrt", offset: 0, size: 0, },
+	{ name: NULL, },
 };
 
-static int bcm963xx_parts_size = sizeof(bcm963xx_parts) / sizeof(bcm963xx_parts[0]);
-
-static int bcm963xx_detect_cfe(struct mtd_info *master)
+static int __init
+find_cfe_size(struct mtd_info *mtd, size_t size)
 {
-       int idoffset = 0x4e0;
-       static char idstring[8] = "CFE1CFE1";
-       char buf[8];
-       int ret;
-       size_t retlen;
+	struct trx_header *trx;
+	unsigned char buf[512];
+	int off;
+	size_t len;
+	int blocksize;
 
-       ret = master->read(master, idoffset, 8, &retlen, (void *)buf);
-       printk("bcm963xx: Read Signature value of %s\n", buf);
-       return strcmp(idstring,buf);
+	trx = (struct trx_header *) buf;
+
+	blocksize = mtd->erasesize;
+	if (blocksize < 0x10000)
+		blocksize = 0x10000;
+
+	for (off = (128*1024); off < size; off += blocksize) {
+		memset(buf, 0xe5, sizeof(buf));
+
+		/*
+		 * Read into buffer 
+		 */
+		if (mtd->read(mtd, off, sizeof(buf), &len, buf) ||
+		    len != sizeof(buf))
+			continue;
+
+		/* found a TRX header */
+		if (le32_to_cpu(trx->magic) == TRX_MAGIC) {
+			goto found;
+		}
+	}
+
+	printk(KERN_NOTICE
+	       "%s: Couldn't find bootloader size\n",
+	       mtd->name);
+	return -1;
+
+ found:
+	printk(KERN_NOTICE "bootloader size: %d\n", off);
+	return off;
+
 }
 
-static int __init bcm963xx_mtd_init(void)
+/*
+ * Copied from mtdblock.c
+ *
+ * Cache stuff...
+ * 
+ * Since typical flash erasable sectors are much larger than what Linux's
+ * buffer cache can handle, we must implement read-modify-write on flash
+ * sectors for each block write requests.  To avoid over-erasing flash sectors
+ * and to speed things up, we locally cache a whole flash sector while it is
+ * being written to until a different sector is required.
+ */
+
+static void erase_callback(struct erase_info *done)
 {
-       printk("bcm963xx: 0x%08x at 0x%08x\n", WINDOW_SIZE, WINDOW_ADDR);
-       bcm963xx_map.virt = ioremap(WINDOW_ADDR, WINDOW_SIZE);
+	wait_queue_head_t *wait_q = (wait_queue_head_t *)done->priv;
+	wake_up(wait_q);
+}
 
-       if (!bcm963xx_map.virt) {
-               printk("bcm963xx: Failed to ioremap\n");
-               return -EIO;
-       }
+static int erase_write (struct mtd_info *mtd, unsigned long pos, 
+			int len, const char *buf)
+{
+	struct erase_info erase;
+	DECLARE_WAITQUEUE(wait, current);
+	wait_queue_head_t wait_q;
+	size_t retlen;
+	int ret;
 
-       simple_map_init(&bcm963xx_map);
+	/*
+	 * First, let's erase the flash block.
+	 */
 
-       bcm963xx_mtd_info = do_map_probe("cfi_probe", &bcm963xx_map);
+	init_waitqueue_head(&wait_q);
+	erase.mtd = mtd;
+	erase.callback = erase_callback;
+	erase.addr = pos;
+	erase.len = len;
+	erase.priv = (u_long)&wait_q;
 
-       if (bcm963xx_mtd_info) {
-               bcm963xx_mtd_info->owner = THIS_MODULE;
+	set_current_state(TASK_INTERRUPTIBLE);
+	add_wait_queue(&wait_q, &wait);
 
-               //if (boot_loader_type == BOOT_CFE)
-               if (bcm963xx_detect_cfe(bcm963xx_mtd_info) == 0)
-               {
-                       int parsed_nr_parts = 0;
-                       char * part_type;
-                       printk("bcm963xx: CFE bootloader detected\n");
-                       //add_mtd_device(bcm963xx_mtd_info);
-                       //add_mtd_partitions(bcm963xx_mtd_info, bcm963xx_parts, bcm963xx_parts_size);
-                       if (parsed_nr_parts == 0) {
-                               int ret = parse_cfe_partitions(bcm963xx_mtd_info, &parsed_parts);
-                               if (ret > 0) {
-                                       part_type = "CFE";
-                                       parsed_nr_parts = ret;
-                               }
-                       }
-                       add_mtd_partitions(bcm963xx_mtd_info, parsed_parts, parsed_nr_parts);
-                       return 0;
-               }
-               else
-               {
-                       int parsed_nr_parts = 0;
-                       char * part_type;
+	ret = mtd->erase(mtd, &erase);
+	if (ret) {
+		set_current_state(TASK_RUNNING);
+		remove_wait_queue(&wait_q, &wait);
+		printk (KERN_WARNING "erase of region [0x%lx, 0x%x] "
+				     "on \"%s\" failed\n",
+			pos, len, mtd->name);
+		return ret;
+	}
 
-                       if (bcm963xx_mtd_info->size > 0x00400000) {
-                               printk("Support for extended flash memory size : 0x%08X ; ONLY 64MBIT SUPPORT\n", bcm963xx_mtd_info->size);
-                               bcm963xx_map.virt = (unsigned long)(EXTENDED_SIZE);
-                       }
+	schedule();  /* Wait for erase to finish. */
+	remove_wait_queue(&wait_q, &wait);
+
+	/*
+	 * Next, writhe data to flash.
+	 */
+
+	ret = mtd->write (mtd, pos, len, &retlen, buf);
+	if (ret)
+		return ret;
+	if (retlen != len)
+		return -EIO;
+	return 0;
+}
+
+
+
+
+static int __init
+find_root(struct mtd_info *mtd, size_t size, struct mtd_partition *part)
+{
+	struct trx_header trx, *trx2;
+	unsigned char buf[512], *block;
+	int off, blocksize;
+	u32 i, crc = ~0;
+	size_t len;
+	struct squashfs_super_block *sb = (struct squashfs_super_block *) buf;
+
+	blocksize = mtd->erasesize;
+	if (blocksize < 0x10000)
+		blocksize = 0x10000;
+
+	for (off = (128*1024); off < size; off += blocksize) {
+		memset(&trx, 0xe5, sizeof(trx));
+
+		/*
+		 * Read into buffer 
+		 */
+		if (mtd->read(mtd, off, sizeof(trx), &len, (char *) &trx) ||
+		    len != sizeof(trx))
+			continue;
+
+		/* found a TRX header */
+		if (le32_to_cpu(trx.magic) == TRX_MAGIC) {
+			part->offset = le32_to_cpu(trx.offsets[2]) ? : 
+				le32_to_cpu(trx.offsets[1]);
+			part->size = le32_to_cpu(trx.len); 
+
+			part->size -= part->offset;
+			part->offset += off;
+
+			goto found;
+		}
+	}
+
+	printk(KERN_NOTICE
+	       "%s: Couldn't find root filesystem\n",
+	       mtd->name);
+	return -1;
+
+ found:
+	if (part->size == 0)
+		return 0;
+	
+	if (mtd->read(mtd, part->offset, sizeof(buf), &len, buf) || len != sizeof(buf))
+		return 0;
+
+	if (*((__u32 *) buf) == SQUASHFS_MAGIC) {
+		printk(KERN_INFO "%s: Filesystem type: squashfs, size=0x%x\n", mtd->name, (u32) sb->bytes_used);
+
+		/* Update the squashfs partition size based on the superblock info */
+		part->size = sb->bytes_used;
+		len = part->offset + part->size;
+		len +=  (mtd->erasesize - 1);
+		len &= ~(mtd->erasesize - 1);
+		part->size = len - part->offset;
+	} else if (*((__u16 *) buf) == JFFS2_MAGIC_BITMASK) {
+		printk(KERN_INFO "%s: Filesystem type: jffs2\n", mtd->name);
+
+		/* Move the squashfs outside of the trx */
+		part->size = 0;
+	} else {
+		printk(KERN_INFO "%s: Filesystem type: unknown\n", mtd->name);
+		return 0;
+	}
+
+	if (trx.len != part->offset + part->size - off) {
+		/* Update the trx offsets and length */
+		trx.len = part->offset + part->size - off;
+	
+		/* Update the trx crc32 */
+		for (i = (u32) &(((struct trx_header *)NULL)->flag_version); i <= trx.len; i += sizeof(buf)) {
+			if (mtd->read(mtd, off + i, sizeof(buf), &len, buf) || len != sizeof(buf))
+				return 0;
+			crc = crc32_le(crc, buf, min(sizeof(buf), trx.len - i));
+		}
+		trx.crc32 = crc;
+
+		/* read first eraseblock from the trx */
+		block = kmalloc(mtd->erasesize, GFP_KERNEL);
+		trx2 = (struct trx_header *) block;
+		if (mtd->read(mtd, off, mtd->erasesize, &len, block) || len != mtd->erasesize) {
+			printk("Error accessing the first trx eraseblock\n");
+			return 0;
+		}
+		
+		printk("Updating TRX offsets and length:\n");
+		printk("old trx = [0x%08x, 0x%08x, 0x%08x], len=0x%08x crc32=0x%08x\n", trx2->offsets[0], trx2->offsets[1], trx2->offsets[2], trx2->len, trx2->crc32);
+		printk("new trx = [0x%08x, 0x%08x, 0x%08x], len=0x%08x crc32=0x%08x\n",   trx.offsets[0],   trx.offsets[1],   trx.offsets[2],   trx.len, trx.crc32);
+
+		/* Write updated trx header to the flash */
+		memcpy(block, &trx, sizeof(trx));
+		if (mtd->unlock)
+			mtd->unlock(mtd, off, mtd->erasesize);
+		erase_write(mtd, off, mtd->erasesize, block);
+		if (mtd->sync)
+			mtd->sync(mtd);
+		kfree(block);
+		printk("Done\n");
+	}
+	
+	return part->size;
+}
+
+struct mtd_partition * __init
+init_mtd_partitions(struct mtd_info *mtd, size_t size)
+{
+	int cfe_size;
+
+	if ((cfe_size = find_cfe_size(mtd,size)) < 0)
+		return NULL;
+
+	/* boot loader */
+	bcm963xx_parts[0].offset = 0;
+	bcm963xx_parts[0].size   = cfe_size;
+
+	/* nvram */
+	if (cfe_size != 384 * 1024) {
+		bcm963xx_parts[3].offset = size - ROUNDUP(NVRAM_SPACE, mtd->erasesize);
+		bcm963xx_parts[3].size   = ROUNDUP(NVRAM_SPACE, mtd->erasesize);
+	} else {
+		/* nvram (old 128kb config partition on netgear wgt634u) */
+		bcm963xx_parts[3].offset = bcm963xx_parts[0].size;
+		bcm963xx_parts[3].size   = ROUNDUP(NVRAM_SPACE, mtd->erasesize);
+	}
+
+	/* linux (kernel and rootfs) */
+	if (cfe_size != 384 * 1024) {
+		bcm963xx_parts[1].offset = bcm963xx_parts[0].size;
+		bcm963xx_parts[1].size   = bcm963xx_parts[3].offset - 
+			bcm963xx_parts[1].offset;
+	} else {
+		/* do not count the elf loader, which is on one block */
+		bcm963xx_parts[1].offset = bcm963xx_parts[0].size + 
+			bcm963xx_parts[3].size + mtd->erasesize;
+		bcm963xx_parts[1].size   = size - 
+			bcm963xx_parts[0].size - 
+			(2*bcm963xx_parts[3].size) - 
+			mtd->erasesize;
+	}
+
+	/* find and size rootfs */
+	if (find_root(mtd,size,&bcm963xx_parts[2])==0) {
+		/* entirely jffs2 */
+		bcm963xx_parts[4].name = NULL;
+		bcm963xx_parts[2].size = size - bcm963xx_parts[2].offset - 
+				bcm963xx_parts[3].size;
+	} else {
+		/* legacy setup */
+		/* calculate leftover flash, and assign it to the jffs2 partition */
+		if (cfe_size != 384 * 1024) {
+			bcm963xx_parts[4].offset = bcm963xx_parts[2].offset + 
+				bcm963xx_parts[2].size;
+			if ((bcm963xx_parts[4].offset % mtd->erasesize) > 0) {
+				bcm963xx_parts[4].offset += mtd->erasesize - 
+					(bcm963xx_parts[4].offset % mtd->erasesize);
+			}
+			bcm963xx_parts[4].size = bcm963xx_parts[3].offset - 
+				bcm963xx_parts[4].offset;
+		} else {
+			bcm963xx_parts[4].offset = bcm963xx_parts[2].offset + 
+				bcm963xx_parts[2].size;
+			if ((bcm963xx_parts[4].offset % mtd->erasesize) > 0) {
+				bcm963xx_parts[4].offset += mtd->erasesize - 
+					(bcm963xx_parts[4].offset % mtd->erasesize);
+			}
+			bcm963xx_parts[4].size = size - bcm963xx_parts[3].size - 
+				bcm963xx_parts[4].offset;
+		}
+	}
+
+	return bcm963xx_parts;
+}
+#endif
+
+int __init init_bcm963xx_map(void)
+{
+	size_t size;
+	int ret = 0;
+#ifdef CONFIG_MTD_PARTITIONS
+	struct mtd_partition *parts;
+	int i;
+#endif
+
+	printk("BCM963xx flash init: 0x%08x 0x%08x\n", WINDOW_ADDR, WINDOW_SIZE);
+	bcm963xx_map.virt = ioremap_nocache(WINDOW_ADDR, WINDOW_SIZE);
+
+	if (!bcm963xx_map.virt) {
+		printk("Failed to ioremap\n");
+		return -EIO;
+	}
+	simple_map_init(&bcm963xx_map);
+	
+	if (!(bcm963xx_mtd = do_map_probe("cfi_probe", &bcm963xx_map))) {
+		printk("Failed to do_map_probe\n");
+		iounmap((void *)bcm963xx_map.virt);
+		return -ENXIO;
+	}
+
+	bcm963xx_mtd->owner = THIS_MODULE;
+
+	size = bcm963xx_mtd->size;
+
+	printk(KERN_NOTICE "Flash device: 0x%x at 0x%x\n", size, WINDOW_ADDR);
+
+#ifdef CONFIG_MTD_PARTITIONS
+	if (boot_loader_type == BOOT_LOADER_CFE) {
+		parts = init_mtd_partitions(bcm963xx_mtd, size);
+		for (i = 0; parts[i].name; i++);
+			ret = add_mtd_partitions(bcm963xx_mtd, parts, i);
+		if (ret) {
+			printk(KERN_ERR "Flash: add_mtd_partitions failed\n");
+			goto fail;
+		}
+	}
+	else {
+		int parsed_nr_parts = 0;
+		char * part_type;
+
+		if (bcm963xx_mtd->size > 0x00400000) {
+			printk("Support for extended flash memory size : 0x%08X ; ONLY 64MBIT SUPPORT\n", bcm963xx_mtd->size);
+			bcm963xx_map.virt = (unsigned long)EXTENDED_SIZE;
+		}
 
 #ifdef CONFIG_MTD_REDBOOT_PARTS
-                       if (parsed_nr_parts == 0) {
-                               int ret = parse_redboot_partitions(bcm963xx_mtd_info, &parsed_parts, 0);
-                               if (ret > 0) {
-                                       part_type = "RedBoot";
-                                       parsed_nr_parts = ret;
-                               }
-                       }
+		if (parsed_nr_parts == 0) {
+			int ret = parse_redboot_partitions(bcm963xx_mtd, &parsed_parts, 0);
+			if (ret > 0) {
+				part_type = "RedBoot";
+				parsed_nr_parts = ret;
+			}
+		}
 #endif
-                       add_mtd_partitions(bcm963xx_mtd_info, parsed_parts, parsed_nr_parts);
+		add_mtd_partitions(bcm963xx_mtd, parsed_parts, parsed_nr_parts);	
+#endif
+	}
+	return 0;
 
-                       return 0;
-               }
-       }
-       iounmap(bcm963xx_map.virt);
-       return -ENXIO;
+ fail:
+	if (bcm963xx_mtd)
+		map_destroy(bcm963xx_mtd);
+	if (bcm963xx_map.virt)
+		iounmap((void *)bcm963xx_map.virt);
+	bcm963xx_map.virt = 0;
+	return ret;
 }
 
-static void __exit bcm963xx_mtd_cleanup(void)
+void __exit cleanup_bcm963xx_map(void)
 {
-       if (bcm963xx_mtd_info) {
-               del_mtd_partitions(bcm963xx_mtd_info);
-               map_destroy(bcm963xx_mtd_info);
-       }
-
-       if (bcm963xx_map.virt) {
-               iounmap(bcm963xx_map.virt);
-               bcm963xx_map.virt = 0;
-       }
+#ifdef CONFIG_MTD_PARTITIONS
+	del_mtd_partitions(bcm963xx_mtd);
+#endif
+	map_destroy(bcm963xx_mtd);
+	iounmap((void *)bcm963xx_map.virt);
 }
 
-module_init(bcm963xx_mtd_init);
-module_exit(bcm963xx_mtd_cleanup);
-
-MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Florian Fainelli <florian@openwrt.org> Mike Albon <malbon@openwrt.org>");
+module_init(init_bcm963xx_map);
+module_exit(cleanup_bcm963xx_map);

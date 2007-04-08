@@ -24,6 +24,8 @@
 
 #include <bcm_intr.h>
 #include <bcm_map_part.h>
+#include <6348_intr.h>
+#include <6348_map_part.h>
 #include <bcmpci.h>
 
 #include <linux/delay.h>

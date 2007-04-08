@@ -35,6 +35,8 @@
 #include <asm/div64.h>
 #include <asm/time.h>
 
+#include <6348_map_part.h>
+#include <6348_intr.h>
 #include <bcm_map_part.h>
 #include <bcm_intr.h>
 
@@ -54,7 +56,7 @@ static unsigned long r4k_cur;		/* What counter should be at next timer irq */
 
 static inline unsigned long __init calculateCpuSpeed(void)
 {
-    UINT32 pllStrap = PERF->PllStrap;
+    u32 pllStrap = PERF->PllStrap;
     int n1 = (pllStrap & PLL_N1_MASK) >> PLL_N1_SHFT;
     int n2 = (pllStrap & PLL_N2_MASK) >> PLL_N2_SHFT;
     int m1cpu = (pllStrap & PLL_M1_CPU_MASK) >> PLL_M1_CPU_SHFT;

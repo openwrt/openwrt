@@ -35,6 +35,8 @@
 #include <asm/mipsregs.h>
 #include <asm/addrspace.h>
 #include <asm/signal.h>
+#include <6348_map_part.h>
+#include <6348_intr.h>
 #include <bcm_map_part.h>
 #include <bcm_intr.h>
 

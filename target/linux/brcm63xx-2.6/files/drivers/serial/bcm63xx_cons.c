@@ -44,6 +44,8 @@
 #include <board.h>
 #include <bcm_map_part.h>
 #include <bcm_intr.h>
+#include <6348_map_part.h>
+#include <6348_intr.h>
 
 static DEFINE_SPINLOCK(bcm963xx_serial_lock);
 
