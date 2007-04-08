@@ -63,3 +63,7 @@ endef
 
 $(eval $(call BuildPackage,ip))
 $(eval $(call BuildPackage,tc))
+
+$(eval $(call RequireCommand,bison, \
+	$(PKG_NAME) requires GNU bison. \
+))

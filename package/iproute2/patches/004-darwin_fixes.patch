@@ -1,0 +1,63 @@
+diff -urN iproute2-2.6.15-060110/netem/maketable.c iproute2-2.6.15-060110.new/netem/maketable.c
+--- iproute2-2.6.15-060110/netem/maketable.c	2005-02-09 23:05:41.000000000 +0100
++++ iproute2-2.6.15-060110.new/netem/maketable.c	2007-04-08 22:40:21.000000000 +0200
+@@ -10,7 +10,9 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <math.h>
++#ifndef __APPLE__
+ #include <malloc.h>
++#endif
+ #include <string.h>
+ #include <sys/types.h>
+ #include <sys/stat.h>
+diff -urN iproute2-2.6.15-060110/netem/normal.c iproute2-2.6.15-060110.new/netem/normal.c
+--- iproute2-2.6.15-060110/netem/normal.c	2005-03-30 20:11:49.000000000 +0200
++++ iproute2-2.6.15-060110.new/netem/normal.c	2007-04-08 22:47:26.000000000 +0200
+@@ -8,8 +8,12 @@
+ #include <string.h>
+ #include <limits.h>
+ 
++#ifndef __APPLE__
+ #include <linux/types.h>
+ #include <linux/pkt_sched.h>
++#else
++#define NETEM_DIST_SCALE        8192
++#endif
+ 
+ #define TABLESIZE 16384
+ #define TABLEFACTOR NETEM_DIST_SCALE
+diff -urN iproute2-2.6.15-060110/netem/pareto.c iproute2-2.6.15-060110.new/netem/pareto.c
+--- iproute2-2.6.15-060110/netem/pareto.c	2005-02-09 23:05:41.000000000 +0100
++++ iproute2-2.6.15-060110.new/netem/pareto.c	2007-04-08 22:48:36.000000000 +0200
+@@ -7,8 +7,12 @@
+ #include <math.h>
+ #include <limits.h>
+ 
++#ifndef __APPLE__
+ #include <linux/types.h>
+ #include <linux/pkt_sched.h>
++#else
++#define NETEM_DIST_SCALE        8192
++#endif
+ 
+ static const double a=3.0;
+ #define TABLESIZE	16384
+diff -urN iproute2-2.6.15-060110/netem/paretonormal.c iproute2-2.6.15-060110.new/netem/paretonormal.c
+--- iproute2-2.6.15-060110/netem/paretonormal.c	2005-08-08 22:24:41.000000000 +0200
++++ iproute2-2.6.15-060110.new/netem/paretonormal.c	2007-04-08 22:49:56.000000000 +0200
+@@ -15,10 +15,13 @@
+ #include <string.h>
+ #include <math.h>
+ #include <limits.h>
++#ifndef __APPLE__
+ #include <malloc.h>
+-
+ #include <linux/types.h>
+ #include <linux/pkt_sched.h>
++#else
++#define NETEM_DIST_SCALE        8192
++#endif
+ 
+ #define TABLESIZE	16384
+ #define TABLEFACTOR	NETEM_DIST_SCALE
