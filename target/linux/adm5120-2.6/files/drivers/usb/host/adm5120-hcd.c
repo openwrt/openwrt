@@ -8,13 +8,21 @@
  *	Which again was based on the ohci and uhci drivers.
  */
 
-#include <linux/autoconf.h>
-#include <linux/moduleparam.h>
-#include <linux/kernel.h>
+#include <linux/module.h>
+#include <linux/delay.h>
+#include <linux/debugfs.h>
+#include <linux/seq_file.h>
 #include <linux/errno.h>
-#include <linux/interrupt.h>
+#include <linux/init.h>
+#include <linux/list.h>
 #include <linux/usb.h>
 #include <linux/platform_device.h>
+
+#include <asm/io.h>
+#include <asm/irq.h>
+#include <asm/system.h>
+#include <asm/byteorder.h>
+#include <asm/mach-adm5120/adm5120_info.h>
 
 #include "../core/hcd.h"
 
@@ -137,13 +145,33 @@ static int admhcd_td_err[16] = {
 #define ED(ed)	((struct admhcd_ed *)(((u32)(ed)) & ~0xf))
 
 struct admhcd {
+	spinlock_t	lock;
+	
+	void __iomem *addr_reg;
+	void __iomem *data_reg;
+	/* Root hub registers */
+	u32 rhdesca;
+	u32 rhdescb;
+	u32 rhstatus;
+	u32 rhport[2];
+
+	/* async schedule: control, bulk */
+	struct list_head async;
 	u32		base;
 	u32		dma_en;
-	spinlock_t	lock;
 	unsigned long	flags;
+	
 };
 
-#define hcd_to_admhcd(hcd) ((struct admhcd *)(hcd)->hcd_priv)
+static inline struct admhcd *hcd_to_admhcd(struct usb_hcd *hcd)
+{
+	return (struct admhcd *)(hcd->hcd_priv);
+}
+
+static inline struct usb_hcd *admhcd_to_hcd(struct admhcd *admhcd)
+{
+	return container_of((void *)admhcd, struct usb_hcd, hcd_priv);
+}
 
 static char hcd_name[] = "adm5120-hcd";
 
@@ -670,46 +698,69 @@ static struct hc_driver adm5120_hc_driver = {
 	.hub_control =		admhcd_hub_control,
 };
 
+#define resource_len(r) (((r)->end - (r)->start) + 1)
+
 static int __init adm5120hcd_probe(struct platform_device *pdev)
 {
 	struct usb_hcd *hcd;
 	struct admhcd *ahcd;
 	struct usb_device *udev;
-	int err = 0;
+	struct resource *addr, *data;
+	void __iomem *addr_reg;
+	void __iomem *data_reg;	
+	int irq, err = 0;
 
-	if (!request_mem_region(pdev->resource[0].start,
-	    pdev->resource[0].end - pdev->resource[0].start, hcd_name)) {
-		pr_debug("couldn't request mem\n");
-		err = -EBUSY;
+	if (pdev->num_resources < 3) {
+		err = -ENODEV;
 		goto out;
 	}
 
-	//hcd = usb_create_hcd(&adm5120_hc_driver, pdev, pdev->bus_id);
+	data = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+	addr = platform_get_resource(pdev, IORESOURCE_MEM, 1);
+	irq = platform_get_irq(pdev, 0);
+
+	if (!addr || !data || irq < 0) {
+		err = -ENODEV;
+		goto out;
+	}
+
+	if (pdev->dev.dma_mask) {
+		printk(KERN_DEBUG "DMA not supported\n");
+		err = -EINVAL;
+		goto out;
+	}
+
+	if (!request_mem_region(addr->start, 2, hcd_name)) {
+		err = -EBUSY;
+		goto out;
+	}
+	addr_reg = ioremap(addr->start, resource_len(addr));
+	if (addr_reg == NULL) {
+		err = -ENOMEM;
+		goto out_mem;
+	}
+	if (!request_mem_region(data->start, 2, hcd_name)) {
+		err = -EBUSY;
+		goto out_unmap;
+	}
+	data_reg = ioremap(data->start, resource_len(data));
+	if (data_reg == NULL) {
+		err = -ENOMEM;
+		goto out_mem;
+	}
+								
+
+	hcd = usb_create_hcd(&adm5120_hc_driver, &pdev->dev, pdev->dev.bus_id);
 	if (!hcd)
 		goto out_mem;
 
 	ahcd = hcd_to_admhcd(hcd);
-	dev_set_drvdata(pdev, ahcd);
-	hcd->self.controller = pdev;
-	//hcd->self.bus_name = pdev->bus_id;
-	hcd->irq = pdev->resource[1].start;
-	hcd->regs = (void *)pdev->resource[0].start;
-	hcd->product_desc = hcd_name;
-	ahcd->base = pdev->resource[0].start;
-
-	if (request_irq(pdev->resource[1].start, adm5120hcd_irq, 0, hcd_name,
-	    hcd)) {
-		pr_debug("couldn't request irq\n");
-		err = -EBUSY;
-		goto out_hcd;
-	}
-
-	//err = usb_register_bus(&hcd->self);
-	//if (err < 0)
-	//	goto out_irq;
-
+	ahcd->data_reg = data_reg;
+	ahcd->addr_reg = addr_reg;
 	spin_lock_init(&ahcd->lock);
+	INIT_LIST_HEAD(&ahcd->async);
 
+	/* Initialise the HCD registers */
 	admhcd_reg_set(ahcd, ADMHCD_REG_INTENABLE, 0);
 	mdelay(10);
 	admhcd_reg_set(ahcd, ADMHCD_REG_CONTROL, ADMHCD_SW_RESET);
@@ -727,41 +778,39 @@ static int __init adm5120hcd_probe(struct platform_device *pdev)
 	admhcd_reg_set(ahcd, ADMHCD_REG_RHDESCR, ADMHCD_NPS | ADMHCD_LPSC);
 	admhcd_reg_set(ahcd, ADMHCD_REG_HOSTCONTROL, ADMHCD_STATE_OP);
 
-	udev = usb_alloc_dev(NULL, &hcd->self, 0);
-	if (!udev) {
-		err = -ENOMEM;
-		goto out_bus;
-	}
-
-	udev->speed = USB_SPEED_FULL;
-	hcd->state = HC_STATE_RUNNING;
-
-	//err = hcd_register_root(udev, hcd);
-	//if (err != 0) {
-	//	usb_put_dev(udev);
-	//	goto out_dev;
-	//}
+	err = usb_add_hcd(hcd, irq, IRQF_DISABLED);
+	if (err)
+		goto out_dev;
 
 	return 0;
 
 out_dev:
-	usb_put_dev(udev);
-out_bus:
-	//usb_deregister_bus(&hcd->self);
+	usb_put_hcd(hcd);
 out_irq:
 	free_irq(pdev->resource[1].start, hcd);
+out_unmap:
+	iounmap(addr_reg);
 out_hcd:
 	usb_put_hcd(hcd);
 out_mem:
-	release_mem_region(pdev->resource[0].start,
-	    pdev->resource[0].end - pdev->resource[0].start);
+	release_mem_region(addr->start, 2);
 out:
 	return err;
 }
 
 static int __init_or_module adm5120hcd_remove(struct platform_device *pdev)
 {
-	device_init_wakeup(&pdev->dev, 0);
+	struct usb_hcd *hcd = platform_get_drvdata(pdev);
+	struct admhcd *ahcd;
+	struct resource *res;
+
+	if (!hcd)
+		return 0;
+	ahcd = hcd_to_admhcd(hcd);
+	usb_remove_hcd(hcd);
+
+	usb_put_hcd(hcd);
+	return 0;
 }
 
 static struct platform_driver adm5120hcd_driver = {
@@ -776,6 +825,8 @@ static struct platform_driver adm5120hcd_driver = {
 static int __init adm5120hcd_init(void)
 {
 	if (usb_disabled())
+		return -ENODEV;
+	if (!adm5120_info.has_usb)
 		return -ENODEV;
 
 	return platform_driver_register(&adm5120hcd_driver);

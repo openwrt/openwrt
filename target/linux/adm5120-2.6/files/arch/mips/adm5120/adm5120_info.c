@@ -162,7 +162,16 @@ static int __init detect_bootloader(void)
  */
 static void __init detect_board_type(void)
 {
-	/* FIXME: not yet implemented */
+	switch(adm5120_info.boot_loader) {
+		case BOOT_LOADER_CFE:
+			adm5120_info.board_type = BOARD_TYPE_WP54G_WRT;
+			adm5120_info.iface_num = 2;
+			adm5120_info.has_usb = 0;
+			printk("Board is a Compex WP54G-WRT\n");
+		default:
+			adm5120_info.board_type = BOARD_TYPE_UNKNOWN;
+			printk("Board type is unknown\n");
+	}
 }
 
 void __init adm5120_info_show(void)
