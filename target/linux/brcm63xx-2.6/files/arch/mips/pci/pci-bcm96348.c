@@ -21,34 +21,42 @@
 #include <linux/kernel.h>
 #include <linux/init.h>
 
-//#include <asm/pci_channel.h>
 #include <bcmpci.h>
 
 static struct resource bcm_pci_io_resource = {
-    .name   = "bcm96348 pci IO space",
-    .start  = BCM_PCI_IO_BASE,
-    .end    = BCM_PCI_IO_BASE + BCM_PCI_IO_SIZE_64KB - 1,
-    .flags  = IORESOURCE_IO
+	.name   = "bcm96348 pci IO space",
+	.start  = BCM_PCI_IO_BASE,
+	.end    = BCM_PCI_IO_BASE + BCM_PCI_IO_SIZE_64KB - 1,
+	.flags  = IORESOURCE_IO
 };
 
 static struct resource bcm_pci_mem_resource = {
-    .name   = "bcm96348 pci memory space",
-    .start  = BCM_PCI_MEM_BASE,
-    .end    = BCM_PCI_MEM_BASE + BCM_PCI_MEM_SIZE_16MB - 1,
-    .flags  = IORESOURCE_MEM
+	.name   = "bcm96348 pci memory space",
+	.start  = BCM_PCI_MEM_BASE,
+	.end    = BCM_PCI_MEM_BASE + BCM_PCI_MEM_SIZE_16MB - 1,
+	.flags  = IORESOURCE_MEM
 };
 
 extern struct pci_ops bcm96348_pci_ops;
 
 struct pci_controller bcm96348_controller = {
-    .pci_ops   = &bcm96348_pci_ops,
-    .io_resource       = &bcm_pci_io_resource,
-    .mem_resource      = &bcm_pci_mem_resource,
+	.pci_ops   	= &bcm96348_pci_ops,
+	.io_resource	= &bcm_pci_io_resource,
+	.mem_resource	= &bcm_pci_mem_resource,
 };
 
-static void bcm96348_pci_init(void)
+static __init int bcm96348_pci_init(void)
 {
-    register_pci_controller(&bcm96348_controller);
+	/* Avoid ISA compat ranges.  */
+	PCIBIOS_MIN_IO = 0x00000000;
+	PCIBIOS_MIN_MEM = 0x00000000;
+
+	/* Set I/O resource limits.  */
+	ioport_resource.end = 0x1fffffff;
+	iomem_resource.end = 0xffffffff;
+
+	register_pci_controller(&bcm96348_controller);
+        return 0;
 }
 
-arch_initcall(bcm96348_pci_init);
+subsys_initcall(bcm96348_pci_init);
