@@ -9,12 +9,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dropbear
-PKG_VERSION:=0.48.1
+PKG_VERSION:=0.49
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=http://matt.ucc.asn.au/dropbear/releases/
-PKG_MD5SUM:=ca8e53a766faec831882831364568421
+PKG_SOURCE_URL:=http://matt.ucc.asn.au/dropbear/releases/ \
+				http://www.mirrors.wiretapped.net/security/cryptography/apps/ssh/dropbear/
+PKG_MD5SUM:=7b20c85f1ee34f018a1b948eae003df9
 
 include $(INCLUDE_DIR)/package.mk
 
