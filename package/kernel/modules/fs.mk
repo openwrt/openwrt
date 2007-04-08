@@ -172,6 +172,16 @@ define KernelPackage/nls-cp850
 endef
 $(eval $(call KernelPackage,nls-cp850))
 
+define KernelPackage/nls-cp1250
+  TITLE:=Codepage 1250 (Eastern Europe)
+  DESCRIPTION:=Kernel module for NLS Codepage 1250 (Eastern Europe)
+  DEPENDS:=kmod-nls-base
+  KCONFIG:=$(CONFIG_NLS_CODEPAGE_1250)
+  SUBMENU:=$(FSMENU)
+  FILES:=$(MODULES_DIR)/kernel/fs/nls/nls_cp1250.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,25,nls_cp1250)
+endef
+$(eval $(call KernelPackage,nls-cp1250))
 
 define KernelPackage/nls-iso8859-1
   TITLE:=ISO 8859-1 (Latin 1; Western European Languages)
