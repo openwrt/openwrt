@@ -140,6 +140,15 @@ define KernelPackage/nbd
 endef
 $(eval $(call KernelPackage,nbd))
 
+define KernelPackage/capi
+  TITLE:=CAPI Support
+  DESCRIPTION:=Kernel module for basic CAPI support
+  KCONFIG:=$(CONFIG_ISDN) $(CONFIG_ISDN_CAPI) $(CONFIG_ISDN_CAPI_CAPI20)
+  SUBMENU:=$(EMENU)
+  AUTOLOAD:=$(call AutoLoad,30,kernelcapi capi)
+  FILES:=$(MODULES_DIR)/kernel/drivers/isdn/capi/*capi.$(LINUX_KMOD_SUFFIX)
+endef
+$(eval $(call KernelPackage,capi))
 
 define KernelPackage/pcmcia-core
   TITLE:=PCMCIA/CardBus support
