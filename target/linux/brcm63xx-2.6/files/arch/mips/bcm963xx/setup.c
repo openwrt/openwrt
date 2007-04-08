@@ -47,14 +47,13 @@
 extern void brcm_time_init(void);
 extern int boot_loader_type;
 
-#if defined(CONFIG_BCM96348) && defined(CONFIG_PCI)
 #include <linux/pci.h>
 #include <linux/delay.h>
 #include <bcm_map_part.h>
+#include <6348_map_part.h>
 #include <bcmpci.h>
 
 static volatile MpiRegisters * mpi = (MpiRegisters *)(MPI_BASE);
-#endif
 
 /* This function should be in a board specific directory.  For now,
  * assume that all boards that include this file use a Broadcom chip
@@ -72,8 +71,6 @@ static void brcm_machine_halt(void)
 	printk("System halted\n");
 	while (1);
 }
-
-#if defined(CONFIG_BCM96348) && defined(CONFIG_PCI)
 
 static void mpi_SetLocalPciConfigReg(uint32 reg, uint32 value)
 {
@@ -461,7 +458,6 @@ static int mpi_init(void)
 
     return 0;
 }
-#endif
 
 void __init plat_mem_setup(void)
 {
@@ -471,8 +467,6 @@ void __init plat_mem_setup(void)
 
 	board_time_init = brcm_time_init;
 
-#if defined(CONFIG_BCM96348) && defined(CONFIG_PCI)
     	/* mpi initialization */
     	mpi_init();
-#endif
 }
