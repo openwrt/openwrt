@@ -1,7 +1,7 @@
 diff -urN linux-2.6.17/drivers/mtd/maps/Kconfig linux-2.6.17.new/drivers/mtd/maps/Kconfig
 --- linux-2.6.17/drivers/mtd/maps/Kconfig	2006-06-18 03:49:35.000000000 +0200
 +++ linux-2.6.17.new/drivers/mtd/maps/Kconfig	2006-09-24 20:28:11.000000000 +0200
-@@ -76,6 +76,12 @@
+@@ -76,6 +76,50 @@
  	  PNC-2000 is the name of Network Camera product from PHOTRON
  	  Ltd. in Japan. It uses CFI-compliant flash.
  
@@ -9,11 +9,49 @@ diff -urN linux-2.6.17/drivers/mtd/maps/Kconfig linux-2.6.17.new/drivers/mtd/map
 +	tristate "CFI Flash device mapped on RDC3210"
 +	depends on X86 && MTD_CFI && MTD_PARTITIONS
 +	help
-+	  RDC-3210 is the flash device we find on Ralink reference board
++	  RDC-3210 is the flash device we find on Ralink reference board.
++
++config MTD_RDC3210_STATIC_MAP
++	bool "Partitions on RDC3210 mapped statically" if MTD_RDC3210
++	select MTD_RDC3210_FACTORY_PRESENT
++	help
++	  The mapping driver will use the static partition map for the
++	  RDC-3210 flash device.
++
++config MTD_RDC3210_FACTORY_PRESENT
++	bool "Reserve a partition on RDC3210 for factory presets"
++	depends on MTD_RDC3210
++	default y
++	help
++	  The mapping driver will reserve a partition on the RDC-3210 flash
++	  device for resetting flash contents to factory defaults.
++
++config MTD_RDC3210_ALLOW_JFFS2
++	bool "JFFS2 filesystem usable in a partition on RDC3210"
++	depends on MTD_RDC3210 && !MTD_RDC3210_STATIC_MAP
++	help
++	  The mapping driver will align a partition on the RDC-3210 flash
++	  device to an erase-block boundary so that a JFFS2 filesystem may
++	  reside on it.
++
++config MTD_RDC3210_SIZE
++	hex "Amount of flash memory on RDC3210"
++	depends on MTD_RDC3210
++	default "0x400000"
++	help
++	  Total size in bytes of the RDC-3210 flash device
++
++config MTD_RDC3210_BUSWIDTH
++	int "Width of CFI Flash device mapped on RDC3210"
++	depends on MTD_RDC3210
++	default "2"
++	help
++	  Number of bytes addressed on the RDC-3210 flash device before
++	  addressing the same chip again
 +
  config MTD_SC520CDP
  	tristate "CFI Flash device mapped on AMD SC520 CDP"
- 	depends on X86 && MTD_CFI
+ 	depends on X86 && MTD_CFI && MTD_CONCAT
 diff -urN linux-2.6.17/drivers/mtd/maps/Makefile linux-2.6.17.new/drivers/mtd/maps/Makefile
 --- linux-2.6.17/drivers/mtd/maps/Makefile	2006-06-18 03:49:35.000000000 +0200
 +++ linux-2.6.17.new/drivers/mtd/maps/Makefile	2006-09-24 20:26:10.000000000 +0200
@@ -25,15 +63,3 @@ diff -urN linux-2.6.17/drivers/mtd/maps/Makefile linux-2.6.17.new/drivers/mtd/ma
  obj-$(CONFIG_MTD_RPXLITE)	+= rpxlite.o
  obj-$(CONFIG_MTD_TQM8XXL)	+= tqm8xxl.o
  obj-$(CONFIG_MTD_SA1100)	+= sa1100-flash.o
-diff -urN linux-2.6.19/drivers/mtd/redboot.c linux-2.6.19.new/drivers/mtd/redboot.c
---- linux-2.6.19/drivers/mtd/redboot.c  2006-12-18 17:09:14.000000000 +0100
-+++ linux-2.6.19.new/drivers/mtd/redboot.c      2006-12-18 17:14:26.000000000 +0100
-@@ -39,7 +39,7 @@
-        return 1;
- }
-
--static int parse_redboot_partitions(struct mtd_info *master,
-+int parse_redboot_partitions(struct mtd_info *master,
-                              struct mtd_partition **pparts,
-                              unsigned long fis_origin)
- {

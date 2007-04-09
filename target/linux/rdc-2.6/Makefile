@@ -17,7 +17,6 @@ define Target/Description
 endef
 
 include $(INCLUDE_DIR)/kernel-build.mk
-KERNEL_MAKEOPTS += CFLAGS_KERNEL="-DRDC3210_NVRAM_IS_JFFS2=1"
 
 # include the profiles
 -include profiles/*.mk

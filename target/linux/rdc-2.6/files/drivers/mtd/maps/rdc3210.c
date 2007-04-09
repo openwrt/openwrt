@@ -15,90 +15,14 @@
 #include <linux/mtd/partitions.h>
 #include <linux/autoconf.h>
 #include <linux/squashfs_fs.h>
-#include <linux/jffs2.h>
-//#include <linux/crc32.h>
-
-#define WINDOW_ADDR		0xFFC00000
-#define WINDOW_SIZE		0x00400000
-
-#define BUSWIDTH 2
-
-/* Dante: linked from linux-2.4.x/drivers/mtd/chips/flashdrv.c */
-extern int flashdrv_get_size(void);
-extern int flashdrv_get_sector(int addr);
-extern int flashdrv_get_sector_addr(int sector);
-extern int flashdrv_get_sector_size(int sector);
 
 static struct mtd_info		*rdc3210_mtd;
-
-__u8  rdc3210_map_read8(struct map_info *map, unsigned long ofs)
-{
-	return *(__u8 *)(map->map_priv_1 + ofs);
-}
-
-__u16 rdc3210_map_read16(struct map_info *map, unsigned long ofs)
-{
-	return *(__u16 *)(map->map_priv_1 + ofs);
-}
-
-__u32 rdc3210_map_read32(struct map_info *map, unsigned long ofs)
-{
-	return *(__u32 *)(map->map_priv_1 + ofs);
-}
-
-void rdc3210_map_write8(struct map_info *map, __u8 d, unsigned long adr)
-{
-	*(__u8 *)(map->map_priv_1 + adr) = d;
-}
-
-void rdc3210_map_write16(struct map_info *map, __u16 d, unsigned long adr)
-{
-	*(__u16 *)(map->map_priv_1 + adr) = d;
-}
-
-void rdc3210_map_write32(struct map_info *map, __u32 d, unsigned long adr)
-{
-	*(__u32 *)(map->map_priv_1 + adr) = d;
-}
-
-void rdc3210_map_copy_from(struct map_info *map, void *to, unsigned long from, ssize_t len)
-{
-	int	i;
-	u16	*dst = (u16 *)(to);
-	u16	*src = (u16 *)(map->map_priv_1 + from);
-
-	for(i = 0; i < (len / 2); ++i)
-		dst[i] = src[i];
-
-	if(len & 1)
-	{
-		printk("# WARNNING!!! rdc3210_map_copy_from has odd length\n");
-		//dst[len - 1] = B0(src[i]);
-	}
-}
-
-void rdc3210_map_copy_to(struct map_info *map, unsigned long to, const void *from, ssize_t len)
-{
-	int	i;
-	u16	*dst = (u16 *)(map->map_priv_1 + to);
-	u16	*src = (u16 *)(from);
-	
-	for(i = 0; i < (len / 2); ++i)
-		dst[i] = src[i];
-
-	if(len & 1)
-	{
-		printk("# WARNNING!!! rdc3210_map_copy_from has odd length\n");
-		//dst[len - 1] = B0(src[i]);
-	}
-}
 
 struct map_info rdc3210_map = 
 {
 	.name =		"RDC3210 Flash",
-	.size =		WINDOW_SIZE,
-	.phys = 	WINDOW_ADDR,
-	.bankwidth =	BUSWIDTH,
+	.size =		CONFIG_MTD_RDC3210_SIZE,
+	.bankwidth =	CONFIG_MTD_RDC3210_BUSWIDTH,
 };
 
 /* Dante: This is the default static mapping, however this is nothing but a hint. (Say dynamic mapping) */
@@ -107,7 +31,7 @@ static struct mtd_partition rdc3210_parts[] =
 	{ name: "linux",   offset:  0,          size: 0x003C0000 },	/* 3840 KB = (Kernel + ROMFS) = (768 KB + 3072 KB) */
 	{ name: "romfs",   offset:  0x000C0000, size: 0x00300000 },	/* 3072 KB */
 	{ name: "nvram",   offset:  0x003C0000, size: 0x00010000 },	/*   64 KB */
-#if RDC3210_STATIC_MAP || RDC3210_FACTORY_PRESENT
+#ifdef CONFIG_MTD_RDC3210_FACTORY_PRESENT
 	{ name: "factory", offset:  0x003D0000, size: 0x00010000 },	/*   64 KB */
 #endif
 	{ name: "bootldr", offset:  0x003E0000, size: 0x00020000 },	/*  128 KB */
@@ -250,9 +174,10 @@ static int erase_write (struct mtd_info *mtd, unsigned long pos,
 
 static int __init init_rdc3210_map(void)
 {
-       	printk(KERN_NOTICE "flash device: %x at %x\n", WINDOW_SIZE, WINDOW_ADDR);
+	rdc3210_map.phys = -rdc3210_map.size;
+       	printk(KERN_NOTICE "flash device: %x at %x\n", rdc3210_map.size, rdc3210_map.phys);
        	
-	rdc3210_map.map_priv_1 = (unsigned long)ioremap(WINDOW_ADDR, WINDOW_SIZE);
+	rdc3210_map.map_priv_1 = (unsigned long)(rdc3210_map.virt = ioremap_nocache(rdc3210_map.phys, rdc3210_map.size));
 
 	if (!rdc3210_map.map_priv_1) 
 	{
@@ -260,7 +185,7 @@ static int __init init_rdc3210_map(void)
 		return -EIO;
 	}
 	rdc3210_mtd = do_map_probe("cfi_probe", &rdc3210_map);
-#if RDC3210_STATIC_MAP	/* Dante: This is for fixed map */
+#ifdef CONFIG_MTD_RDC3210_STATIC_MAP	/* Dante: This is for fixed map */
 	if (rdc3210_mtd) 
 	{
 		rdc3210_mtd->module = THIS_MODULE;
@@ -273,7 +198,11 @@ static int __init init_rdc3210_map(void)
 
 	if (rdc3210_mtd) 
 	{	// Dante
-		gt_imghdr_t	*hdr = (gt_imghdr_t *)(rdc3210_map.map_priv_1), *ptmp;
+		gt_imghdr_t	*hdr = (gt_imghdr_t *)(rdc3210_map.map_priv_1)
+#ifdef CONFIG_MTD_RDC3210_ALLOW_JFFS2
+			, *ptmp
+#endif
+			;
 		unsigned int	tmp = hdr->kernelsz + sizeof(gt_imghdr_t), tmp2 = rdc3210_mtd->erasesize;
 		unsigned int	tmp3 = ((tmp / 32) + ((tmp % 32) ? 1 : 0)) * 32;
 		unsigned int	tmp4 = ((tmp / tmp2) + ((tmp % tmp2) ? 1 : 0)) * tmp2;
@@ -281,67 +210,81 @@ static int __init init_rdc3210_map(void)
 		
 		if(memcmp(hdr->magic, GTIMG_MAGIC, 4))
 		{
+			iounmap((void *)rdc3210_map.map_priv_1);
+			rdc3210_map.map_priv_1 = 0L;
+			rdc3210_map.virt = NULL;
 			printk("Invalid MAGIC for Firmware Image!!!\n");
 			return -EIO;
 		}
-
-#if 0
-		/* 1. Adjust Redboot */
-		tmp2 = flashdrv_get_size() - rdc3210_parts[4].size;
-		rdc3210_parts[4].offset = flashdrv_get_sector_addr(flashdrv_get_sector(tmp2));
-		rdc3210_parts[4].size   = flashdrv_get_size() - rdc3210_parts[4].offset;
-		
-		/* 2. Adjust Factory Default */
-		tmp2 -= rdc3210_parts[3].size;
-		rdc3210_parts[3].offset = flashdrv_get_sector_addr(flashdrv_get_sector(tmp2));
-		rdc3210_parts[3].size   = rdc3210_parts[4].offset - rdc3210_parts[3].offset;
-		/* 1. Adjust Redboot */
-		tmp2 = flashdrv_get_size() - rdc3210_parts[3].size;
-		rdc3210_parts[3].offset = flashdrv_get_sector_addr(flashdrv_get_sector(tmp2));
-		rdc3210_parts[3].size   = flashdrv_get_size() - rdc3210_parts[3].offset;
-#endif
-#if RDC3210_NVRAM_IS_JFFS2
-		/* 3. Adjust NVRAM */
-		tmp = hdr->reserved;
-		if (!tmp) tmp = hdr->imagesz;
-		tmp2 = rdc3210_mtd->erasesize;
-		rdc3210_parts[2].offset = rdc3210_parts[0].offset + (((tmp / tmp2) + ((tmp % tmp2) ? 1 : 0)) * tmp2);
-		rdc3210_parts[2].size   = rdc3210_parts[3].offset - rdc3210_parts[2].offset;
-		
-		/* 4. Adjust Linux (Kernel + ROMFS) */
-		rdc3210_parts[0].size   = rdc3210_parts[3].offset - rdc3210_parts[0].offset;
-
-		/* 5. Adjust ROMFS */
-		tmp = hdr->kernelsz + sizeof(gt_imghdr_t);
-#else
-		/* 3. Adjust NVRAM */
-		tmp2 -= rdc3210_parts[2].size;
-		rdc3210_parts[2].offset = flashdrv_get_sector_addr(flashdrv_get_sector(tmp2));
-		rdc3210_parts[2].size   = rdc3210_parts[3].offset - rdc3210_parts[2].offset;
-				
-		/* 4. Adjust Linux (Kernel + ROMFS) */
-		rdc3210_parts[0].size   = rdc3210_parts[2].offset - rdc3210_parts[0].offset;
-
-		/* 5. Adjust ROMFS */
-		tmp2 = rdc3210_mtd->erasesize;
-#endif
-		if ((ptmp = (gt_imghdr_t *)kmalloc(tmp4, GFP_KERNEL)) == NULL)
+#ifdef CONFIG_MTD_RDC3210_ALLOW_JFFS2
+		tmp = (tmp3 == tmp4) ? tmp4 + tmp2 : tmp4;
+		if ((ptmp = (gt_imghdr_t *)vmalloc(tmp)) == NULL)
 		{
 			iounmap((void *)rdc3210_map.map_priv_1);
+			rdc3210_map.map_priv_1 = 0L;
+			rdc3210_map.virt = NULL;
+			printk("Can't allocate 0x%08x for flash-reading buffer!\n", tmp);
 			return -ENOMEM;
 		}
-		if (rdc3210_mtd->read(rdc3210_mtd, 0, tmp4, &len, (__u8 *)ptmp) || len != tmp4)
+		if (rdc3210_mtd->read(rdc3210_mtd, 0, tmp, &len, (__u8 *)ptmp) || len != tmp)
 		{
-			kfree(ptmp);
-			goto oh_snap;
+			vfree(ptmp);
+			iounmap((void *)rdc3210_map.map_priv_1);
+			rdc3210_map.map_priv_1 = 0L;
+			rdc3210_map.virt = NULL;
+			printk("Can't read that much flash! Read 0x%08x of it.\n", len);
+			return -EIO;
 		}
+#endif
+#ifdef CONFIG_MTD_RDC3210_FACTORY_PRESENT
+		/* 1. Adjust Redboot */
+		tmp = rdc3210_mtd->size - rdc3210_parts[4].size;
+		rdc3210_parts[4].offset = tmp - (tmp % tmp2);
+		rdc3210_parts[4].size   = rdc3210_mtd->size - rdc3210_parts[4].offset;
+		
+		/* 2. Adjust Factory Default */
+		tmp -= rdc3210_parts[3].size;
+		rdc3210_parts[3].offset = tmp - (tmp % tmp2);
+		rdc3210_parts[3].size   = rdc3210_parts[4].offset - rdc3210_parts[3].offset;
+#else
+		/* 1. Adjust Redboot */
+		tmp = rdc3210_mtd->size - rdc3210_parts[3].size;
+		rdc3210_parts[3].offset = tmp - (tmp % tmp2);
+		rdc3210_parts[3].size   = rdc3210_mtd->size - rdc3210_parts[3].offset;
+#endif
+		/* 3. Adjust NVRAM */
+#ifdef CONFIG_MTD_RDC3210_ALLOW_JFFS2
 		if (*(__u32 *)(((unsigned char *)ptmp)+tmp3) == SQUASHFS_MAGIC)
+		{
+			len = 1;
 			tmp4 = tmp3;
-		else if (!hdr->reserved)
+			tmp = hdr->imagesz;
+		rdc3210_parts[2].name   = "rootfs";
+		rdc3210_parts[2].offset = rdc3210_parts[0].offset + (((tmp / tmp2) + ((tmp % tmp2) ? 1 : 0)) * tmp2);
+		}
+		else
+#else
+			tmp4 = tmp3;
+#endif
+		{
+			len = 0;
+		tmp -= rdc3210_parts[2].size;
+		rdc3210_parts[2].offset = tmp - (tmp % tmp2);
+		}
+		rdc3210_parts[2].size   = rdc3210_parts[3].offset - rdc3210_parts[2].offset;
+		
+		/* 4. Adjust Linux (Kernel + ROMFS) */
+		rdc3210_parts[0].size   = rdc3210_parts[len + 2].offset - rdc3210_parts[0].offset;
+
+		/* 5. Adjust ROMFS */
+		rdc3210_parts[1].offset = rdc3210_parts[0].offset + tmp4;
+		rdc3210_parts[1].size   = rdc3210_parts[2].offset - rdc3210_parts[1].offset;
+#ifdef CONFIG_MTD_RDC3210_ALLOW_JFFS2
+		if (!(hdr->reserved || len))
 		{
 			__u8	buf[1024];
 			ptmp->reserved = hdr->imagesz;
-			ptmp->imagesz = tmp4;
+			ptmp->imagesz  = tmp4;
 			ptmp->checksum = ptmp->fastcksum = 0;
 			memcpy(buf, ptmp, 0x100);
 			memcpy(buf + 0x100, ((__u8 *)ptmp) + ((tmp4 >> 1) - ((tmp4 & 0x6) >> 1)), 0x100);
@@ -349,25 +292,27 @@ static int __init init_rdc3210_map(void)
 			ptmp->fastcksum = crc32(buf, sizeof(buf));
 			ptmp->checksum = crc32((__u8 *)ptmp, tmp4);
 			if (rdc3210_mtd->unlock) rdc3210_mtd->unlock(rdc3210_mtd, 0, tmp2);
-			if (len == erase_write(rdc3210_mtd, 0, tmp2, (char *)ptmp))
+			if ((len = erase_write(rdc3210_mtd, 0, tmp2, (char *)ptmp)))
 			{
-				kfree(ptmp);
+				vfree(ptmp);
 				iounmap((void *)rdc3210_map.map_priv_1);
+				rdc3210_map.map_priv_1 = 0L;
+				rdc3210_map.virt = NULL;
+				printk("Couldn't erase! Got %d.\n", len);
 				return len;
 			}
 			if (rdc3210_mtd->sync) rdc3210_mtd->sync(rdc3210_mtd);
 		}
-		kfree(ptmp);
-		rdc3210_parts[1].offset = rdc3210_parts[0].offset + tmp4;
-		rdc3210_parts[1].size   = rdc3210_parts[2].offset - rdc3210_parts[1].offset;
-		
+		vfree(ptmp);
+#endif
 		rdc3210_mtd->owner = THIS_MODULE;
 		add_mtd_partitions(rdc3210_mtd, rdc3210_parts, sizeof(rdc3210_parts)/sizeof(rdc3210_parts[0]));
 		return 0;
 	}
 #endif
-oh_snap:
 	iounmap((void *)rdc3210_map.map_priv_1);
+	rdc3210_map.map_priv_1 = 0L;
+	rdc3210_map.virt = NULL;
 	return -ENXIO;
 }
 
@@ -383,6 +328,7 @@ static void __exit cleanup_rdc3210_map(void)
 	{
 		iounmap((void *)rdc3210_map.map_priv_1);
 		rdc3210_map.map_priv_1 = 0L;
+		rdc3210_map.virt = NULL;
 	}
 }
 
