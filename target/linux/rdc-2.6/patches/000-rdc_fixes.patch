@@ -26,7 +26,7 @@ diff -urN linux-2.6.19/arch/i386/Makefile linux-2.6.19.new/arch/i386/Makefile
 +# RDC subarch support
 +mflags-$(CONFIG_X86_RDC)	:= -Iinclude/asm-i386/mach-generic
 +mcore-$(CONFIG_X86_RDC)		:= mach-default
-+core-$(CONFIG_X86_RDC)		:= arch/i386/mach-rdc/
++core-$(CONFIG_X86_RDC)		+= arch/i386/mach-rdc/
  
  # default subarch .h files
  mflags-y += -Iinclude/asm-i386/mach-default
