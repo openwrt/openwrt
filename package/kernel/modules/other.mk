@@ -51,7 +51,7 @@ define KernelPackage/ide-core
   KCONFIG:=$(CONFIG_IDE)
   FILES:=$(MODULES_DIR)/kernel/drivers/ide/*.$(LINUX_KMOD_SUFFIX)
   SUBMENU:=$(EMENU)
-  AUTOLOAD:=$(call AutoLoad,20,ide-core) $(call AutoLoad,90,ide-detect ide-disk)
+  AUTOLOAD:=$(call AutoLoad,20,ide-core) $(call AutoLoad,90,ide-generic ide-detect ide-disk)
 endef
 $(eval $(call KernelPackage,ide-core))
 
