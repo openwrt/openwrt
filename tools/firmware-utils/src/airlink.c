@@ -319,14 +319,10 @@ int main(int argc, char **argv)
 		unsigned long sum2 = buf[-0x8] | ((u32)buf[-0x7] << 8) | ((u32)buf[-0x6] << 16) | ((u32)buf[-0x5] << 24);
 		*((u32 *) & buf[-0x8]) = 0L;
 		sum = crc32(buf - 0x4, len - 0x4);
-		sum = htonl(sum);
 		printf("CRC32 sum2 - (%x, %x, %x)\n", sum, sum2,
 		       len - 0x4);
 		lseek(fd, 0, SEEK_SET);
-		buf[-0x8] = sum & 0xff;
-		buf[-0x7] = (sum >> 8) & 0xff;
-		buf[-0x6] = (sum >> 16) & 0xff;
-		buf[-0x5] = (sum >> 24) & 0xff;
+		*((u32 *) & buf[-0x8]) = htonl(sum);
 		write(fd, &buf[-0x8], 0x4);
 		buf -= 8;
 	}
