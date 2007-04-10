@@ -1,0 +1,186 @@
+diff -urN linux-2.6.19.1/include/linux/atm.h linux-2.6.19.1.new/include/linux/atm.h
+--- linux-2.6.19.1/include/linux/atm.h	2006-12-11 20:32:53.000000000 +0100
++++ linux-2.6.19.1.new/include/linux/atm.h	2007-01-07 18:38:50.000000000 +0100
+@@ -48,6 +48,9 @@
+ #define ATM_AAL2	2		/* AAL2 (VBR) */
+ #define ATM_AAL34	3		/* AAL3/4 (data) */
+ #define ATM_AAL5	5		/* AAL5 (data) */
++#if defined(CONFIG_MIPS_BCM963XX)
++#define ATM_BCM_AAL0    14              /* "raw" ATM cells */
++#endif
+ 
+ /*
+  * socket option name coding functions
+diff -urN linux-2.6.19.1/include/linux/atmbr2684.h linux-2.6.19.1.new/include/linux/atmbr2684.h
+--- linux-2.6.19.1/include/linux/atmbr2684.h	2006-12-11 20:32:53.000000000 +0100
++++ linux-2.6.19.1.new/include/linux/atmbr2684.h	2007-01-07 18:24:01.000000000 +0100
+@@ -78,6 +78,10 @@
+ 	__u8	vpn_id[7];
+ 	int	send_padding;	/* unsupported */
+ 	int	min_size;	/* we will pad smaller packets than this */
++#if defined(CONFIG_MIPS_BCM963XX)
++#define FILTER_PPPOE	1
++	int	proto_filter;	/* protocol filter flag, current only PPPoE */
++#endif
+ };
+ 
+ /*
+diff -urN linux-2.6.19.1/include/linux/atmdev.h linux-2.6.19.1.new/include/linux/atmdev.h
+--- linux-2.6.19.1/include/linux/atmdev.h	2006-12-11 20:32:53.000000000 +0100
++++ linux-2.6.19.1.new/include/linux/atmdev.h	2007-01-07 18:37:34.000000000 +0100
+@@ -29,6 +29,10 @@
+ #define ATM_DS3_PCR	(8000*12)
+ 			/* DS3: 12 cells in a 125 usec time slot */
+ 
++#if defined(CONFIG_MIPS_BCM963XX)
++#define atm_sk(__sk) ((struct atm_vcc *)(__sk)->sk_protinfo)
++#define ATM_SD(s)      (atm_sk((s)->sk))
++#endif
+ 
+ #define __AAL_STAT_ITEMS \
+     __HANDLE_ITEM(tx);			/* TX okay */ \
+@@ -111,6 +115,9 @@
+ #define ATM_BACKEND_RAW		0	
+ #define ATM_BACKEND_PPP		1	/* PPPoATM - RFC2364 */
+ #define ATM_BACKEND_BR2684	2	/* Bridged RFC1483/2684 */
++#if defined(CONFIG_MIPS_BCM963XX)
++#define ATM_BACKEND_RT2684      3       /* Routed RFC1483/2684 */
++#endif
+ 
+ /* for ATM_GETTYPE */
+ #define ATM_ITFTYP_LEN	8	/* maximum length of interface type name */
+@@ -274,6 +281,9 @@
+ 
+ 
+ enum {
++#if defined(CONFIG_MIPS_BCM963XX)
++	ATM_DF_CLOSE,           /* close device when last VCC is closed */
++#endif
+ 	ATM_DF_REMOVED,		/* device was removed from atm_devs list */
+ };
+ 
+@@ -285,8 +295,10 @@
+ #define ATM_ATMOPT_CLP	1	/* set CLP bit */
+ 
+ struct atm_vcc {
++#if !defined(CONFIG_MIPS_BCM963XX)
+ 	/* struct sock has to be the first member of atm_vcc */
+ 	struct sock	sk;
++#endif
+ 	unsigned long	flags;		/* VCC flags (ATM_VF_*) */
+ 	short		vpi;		/* VPI and VCI (types must be equal */
+ 					/* with sockaddr) */
+@@ -303,6 +315,9 @@
+ 	void		*dev_data;	/* per-device data */
+ 	void		*proto_data;	/* per-protocol data */
+ 	struct k_atm_aal_stats *stats;	/* pointer to AAL stats group */
++#if defined(CONFIG_MIPS_BCM963XX)
++	struct sock	*sk;		/* socket backpointer */
++#endif
+ 	/* SVC part --- may move later ------------------------------------- */
+ 	short		itf;		/* interface number */
+ 	struct sockaddr_atmsvc local;
+@@ -332,7 +347,11 @@
+ 
+ struct atm_dev_addr {
+ 	struct sockaddr_atmsvc addr;	/* ATM address */
++#if defined(CONFIG_MIPS_BCM963XX)
++	struct atm_dev_addr *next;      /* next address */
++#else
+ 	struct list_head entry;		/* next address */
++#endif
+ };
+ 
+ enum atm_addr_type_t { ATM_ADDR_LOCAL, ATM_ADDR_LECS };
+@@ -346,8 +365,12 @@
+ 	void		*dev_data;	/* per-device data */
+ 	void		*phy_data;	/* private PHY date */
+ 	unsigned long	flags;		/* device flags (ATM_DF_*) */
++#if defined(CONFIG_MIPS_BCM963XX)
++	struct atm_dev_addr *local;     /* local ATM addresses */
++#else
+ 	struct list_head local;		/* local ATM addresses */
+ 	struct list_head lecs;		/* LECS ATM addresses learned via ILMI */
++#endif
+ 	unsigned char	esi[ESI_LEN];	/* ESI ("MAC" addr) */
+ 	struct atm_cirange ci_range;	/* VPI/VCI range */
+ 	struct k_atm_dev_stats stats;	/* statistics */
+@@ -359,7 +382,9 @@
+ 	struct proc_dir_entry *proc_entry; /* proc entry */
+ 	char *proc_name;		/* proc entry name */
+ #endif
++#if !defined(CONFIG_MIPS_BCM963XX)
+ 	struct class_device class_dev;	/* sysfs class device */
++#endif
+ 	struct list_head dev_list;	/* linkage */
+ };
+ 
+@@ -416,7 +441,13 @@
+     int number,unsigned long *flags); /* number == -1: pick first available */
+ struct atm_dev *atm_dev_lookup(int number);
+ void atm_dev_deregister(struct atm_dev *dev);
++#if defined(CONFIG_MIPS_BCM963XX)
++void shutdown_atm_dev(struct atm_dev *dev);
++#endif
+ void vcc_insert_socket(struct sock *sk);
++#if defined(CONFIG_MIPS_BCM963XX)
++void vcc_remove_socket(struct sock *sk);
++#endif
+ 
+ 
+ /*
+@@ -432,20 +463,33 @@
+ 
+ static inline void atm_force_charge(struct atm_vcc *vcc,int truesize)
+ {
++#if defined(CONFIG_MIPS_BCM963XX)
++	atomic_add(truesize, &vcc->sk->sk_rmem_alloc);
++#else
+ 	atomic_add(truesize, &sk_atm(vcc)->sk_rmem_alloc);
++#endif
+ }
+ 
+ 
+ static inline void atm_return(struct atm_vcc *vcc,int truesize)
+ {
++#if defined(CONFIG_MIPS_BCM963XX)
++	atomic_sub(truesize, &vcc->sk->sk_rmem_alloc);
++#else
+ 	atomic_sub(truesize, &sk_atm(vcc)->sk_rmem_alloc);
++#endif
+ }
+ 
+ 
+ static inline int atm_may_send(struct atm_vcc *vcc,unsigned int size)
+ {
++#if defined(CONFIG_MIPS_BCM963XX)
++	return (size + atomic_read(&vcc->sk->sk_wmem_alloc)) <
++		vcc->sk->sk_sndbuf;
++#else
+ 	return (size + atomic_read(&sk_atm(vcc)->sk_wmem_alloc)) <
+ 	       sk_atm(vcc)->sk_sndbuf;
++#endif
+ }
+ 
+ 
+@@ -457,12 +501,20 @@
+ 
+ static inline void atm_dev_put(struct atm_dev *dev)
+ {
++#if defined(CONFIG_MIPS_BCM963XX)
++	atomic_dec(&dev->refcnt);
++	
++	if ((atomic_read(&dev->refcnt) == 1) &&
++	     test_bit(ATM_DF_CLOSE,&dev->flags))
++		shutdown_atm_dev(dev);
++#else
+ 	if (atomic_dec_and_test(&dev->refcnt)) {
+ 		BUG_ON(!test_bit(ATM_DF_REMOVED, &dev->flags));
+ 		if (dev->ops->dev_close)
+ 			dev->ops->dev_close(dev);
+ 		class_device_put(&dev->class_dev);
+ 	}
++#endif
+ }
+ 
+ 
