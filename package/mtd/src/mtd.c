@@ -84,22 +84,11 @@ image_check_brcm(int imagefd, const char *mtd)
 		return 0;
 	}
 
-	switch(trx->magic) {
-		case 0x47343557: /* W54G */
-		case 0x53343557: /* W54S */
-		case 0x73343557: /* W54s */
-		case 0x46343557: /* W54F */
-		case 0x55343557: /* W54U */
-			/* ignore the first 32 bytes */
-			buflen = read(imagefd, buf, sizeof(struct trx_header));
-			break;
-	}
-	
 	if (trx->magic != TRX_MAGIC || trx->len < sizeof(struct trx_header)) {
 		if (quiet < 2) {
 			fprintf(stderr, "Bad trx header\n");
-			fprintf(stderr, "If this is a firmware in bin format, like some of the\n"
-					"original firmware files are, you need to convert it to trx.\n");
+			fprintf(stderr, "This is not the correct file format; refusing to flash.\n"
+					"Please specify the correct file or use -f to force.\n");
 		}
 		return 0;
 	}
