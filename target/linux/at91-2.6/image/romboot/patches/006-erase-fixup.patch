@@ -1,0 +1,11 @@
+--- romboot.old/main.cpp	2007-04-10 12:35:02.000000000 +0200
++++ romboot/main.cpp	2007-04-10 12:35:15.000000000 +0200
+@@ -561,7 +561,7 @@
+ 					int *i;
+ 	
+ 					for(i = (int *)0x20000000; i < (int *)0x20840000; i++)
+-	  				*i = 0;
++	  				*i = 0xffffffff;
+       		}
+       		write_dataflash(0xc0000000, 0x20000000, 0x840000);
+       		command = 0;
