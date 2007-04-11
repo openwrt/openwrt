@@ -51,7 +51,7 @@ tmp/.packageinfo: $(wildcard package/*/Makefile include/package*.mk include/kern
 tmp/.targetinfo: $(wildcard target/*/Makefile include/kernel*.mk)  FORCE
 tmp/.%info:
 	mkdir -p tmp/info
-	$(NO_TRACE_MAKE) -s -f include/scan.mk SCAN_TARGET="$*info" SCAN_DIR="$(patsubst target,target/linux,$*)" SCAN_NAME="$*" SCAN_DEPS="$(filter FORCE, $^)" SCAN_EXTRA=""
+	$(NO_TRACE_MAKE) -s -f include/scan.mk SCAN_TARGET="$*info" SCAN_DIR="$(patsubst target,target/linux,$*)" SCAN_NAME="$*" SCAN_DEPS="$(filter-out FORCE, $^)" SCAN_EXTRA=""
 
 tmpinfo-clean: FORCE
 	-rm -rf tmp/.*info
