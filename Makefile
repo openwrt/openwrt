@@ -21,9 +21,6 @@ SHELL:=/usr/bin/env bash
 export LC_ALL=C
 export LANG=C
 export TOPDIR=${CURDIR}
-ifeq ($(KBUILD_VERBOSE),99)
-  MAKE:=3>/dev/null $(MAKE)
-endif
 export IS_TTY=$(shell tty -s && echo 1 || echo 0)
 
 include $(TOPDIR)/include/verbose.mk

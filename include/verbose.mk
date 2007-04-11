@@ -23,13 +23,17 @@ ifeq ($(IS_TTY),1)
   _N:="\\033[m" #normal
 endif
 
+define MESSAGE
+	echo -e "$(_Y)$(1)$(_N)" >&3
+endef
+
 ifneq ($(KBUILD_VERBOSE),99)
   ifeq ($(QUIET),1)
     $(MAKECMDGOALS): trace
     trace: FORCE
 	@[ -f "$(MAKECMDGOALS)" ] || { \
 		[ -z "$${PWD##$$TOPDIR}" ] || DIR=" -C $${PWD##$$TOPDIR/}"; \
-		echo -e "$(_Y)make[$$(($(MAKELEVEL)+1))]$$DIR $(MAKECMDGOALS)$(_N)" >&3; \
+		$(call MESSAGE, "make[$$(($(MAKELEVEL)+1))]$$DIR $(MAKECMDGOALS)"); \
 	}
   else
     export QUIET:=1

@@ -16,18 +16,23 @@ include $(TMP_DIR)/.packagedeps
 
 PREREQ_PACKAGES:=$(patsubst %,%-prereq,$(prereq-y) $(prereq-m))
 DOWNLOAD_PACKAGES:=$(patsubst %,%-download,$(package-y) $(package-m))
-COMPILE_PACKAGES:=$(patsubst %,%-compile,$(package-y) $(package-m))
+COMPILE_PACKAGES:=$(patsubst %,%-compile,$(package-m))
 INSTALL_PACKAGES:=$(patsubst %,%-install,$(package-y))
 
 $(STAMP_DIR) $(TARGET_DIR):
 	mkdir -p $@
 
+ifeq ($(QUIET),1)
+%-compile %-install: FORCE
+	$(MAKE) -C $* $(patsubst $*-%,%,$@) || { $(call MESSAGE, "*** $* $(patsubst $*-%,%,$@) failed"); false; }
+
+%-prereq %-download %-clean: FORCE
+else
 %-prereq %-download %-clean %-compile %-install: FORCE
+endif
 	$(MAKE) -C $* $(patsubst $*-%,%,$@)
 
-%-prereq: $(STAMP_DIR) $(TARGET_DIR)
-%-prepare: $(TARGET_DIR)
-%-compile: %-prepare
+# .IGNORE: $(COMPILE_PACKAGES) 
 
 $(TMP_DIR)/.packagedeps: $(TMP_DIR)/.packageinfo
 	@$(TOPDIR)/scripts/metadata.pl package_mk < $< > $@ || rm -f $@
