@@ -181,6 +181,7 @@ enable_atheros() {
 		fi
 
 		ifconfig "$ifname" up
+		iwconfig "$ifname" channel "$channel"
 
 		local net_cfg bridge
 		net_cfg="$(find_net_config "$vif")"
