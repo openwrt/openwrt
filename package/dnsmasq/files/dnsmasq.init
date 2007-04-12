@@ -40,7 +40,7 @@ dhcp_add() {
 	# check for an already active dhcp server on the interface, unless 'force' is set
 	config_get_bool force "$cfg" force 0
 	[ "$force" -gt 0 ] || {
-		udhcpc -n -q -R -s /bin/true -i $ifname >&- && return 0
+		udhcpc -n -q -R -s /bin/true -t 1 -i $ifname >&- && return 0
 	}
 	
 	config_get start "$cfg" start
