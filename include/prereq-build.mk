@@ -121,11 +121,3 @@ $(eval $(call Require,gnutar, \
 $(eval $(call RequireCommand,autoconf, \
 	Please install GNU autoconf. \
 ))
-
-define Require/find
-	find . -maxdepth 1 -exec ls {} + > /dev/null 2>&1
-endef
-
-$(eval $(call Require,find, \
-	Please install GNU find 4.2.12 or better. \
-))
