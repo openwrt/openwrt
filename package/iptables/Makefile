@@ -145,7 +145,8 @@ define Package/iptables-mod-extra
 	- libipt_owner \\\
 	- libipt_physdev \\\
 	- libipt_pkttype \\\
-	- libipt_recent
+	- libipt_recent \\\
+	- libipt_NOTRACK
 endef
 
 define Package/iptables-utils

@@ -170,7 +170,9 @@ define KernelPackage/ipt-extra
 	- ipt_owner \\\
 	- ipt_physdev \\\
 	- ipt_pkttype \\\
-	- ipt_recent
+	- ipt_recent \\\
+	- iptable_raw \\\
+	- xt_NOTRACK 
   FILES:=$(foreach mod,$(IPT_EXTRA-m),$(MODULES_DIR)/kernel/net/$(mod).$(LINUX_KMOD_SUFFIX))
   SUBMENU:=$(NFMENU)
   AUTOLOAD:=$(call AutoLoad,40,$(notdir $(IPT_EXTRA-m)))
