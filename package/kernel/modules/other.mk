@@ -116,7 +116,7 @@ define KernelPackage/soundcore/2.6
 	$(MODULES_DIR)/kernel/sound/soundcore.$(LINUX_KMOD_SUFFIX) \
 	$(MODULES_DIR)/kernel/sound/core/*.$(LINUX_KMOD_SUFFIX) \
 	$(MODULES_DIR)/kernel/sound/core/oss/*.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,30,snd snd-page-alloc snd-hwdep snd-rawmidi snd-timer snd-pcm snd-mixer-oss snd-pcm-oss)
+  AUTOLOAD:=$(call AutoLoad,30,soundcore snd snd-page-alloc snd-hwdep snd-rawmidi snd-timer snd-pcm snd-mixer-oss snd-pcm-oss)
 endef
 $(eval $(call KernelPackage,soundcore))
 
