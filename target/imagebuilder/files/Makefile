@@ -20,6 +20,7 @@ ifeq ($(KBUILD_VERBOSE),99)
   MAKE:=3>/dev/null $(MAKE)
 endif
 export IS_TTY=$(shell tty -s && echo 1 || echo 0)
+export IMAGEBUILDER=1
 
 # override variables from rules.mk
 PACKAGE_DIR:=$(TOPDIR)/packages
