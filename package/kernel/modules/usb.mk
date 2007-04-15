@@ -277,10 +277,17 @@ define KernelPackage/usb-net
   DESCRIPTION:=Kernel modules for USB-to-Ethernet convertors
   KCONFIG:=$(CONFIG_USB_USBNET)
   DEPENDS:=@USB_SUPPORT
-  FILES:= \
-        $(MODULES_DIR)/kernel/drivers/usb/net/usbnet.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call Autoload,60, usbnet)
 endef
+
+define KernelPackage/usb-net/2.4
+  FILES:=$(MODULES_DIR)/kernel/drivers/usb/usbnet.$(LINUX_KMOD_SUFFIX)
+endef
+
+define KernelPackage/usb-net/2.6
+  FILES:=$(MODULES_DIR)/kernel/drivers/usb/net/usbnet.$(LINUX_KMOD_SUFFIX)
+endef
+
 $(eval $(call KernelPackage,usb-net))
 
 define KernelPackage/usb-net-asix
@@ -289,8 +296,16 @@ define KernelPackage/usb-net-asix
   DESCRIPTION:=Kernel module for USB-to-Ethernet Asix convertors
   DEPENDS:=kmod-usb-net
   KCONFIG:=$(CONFIG_USB_NET_AX8817X)
-  FILES:= \
-        $(MODULES_DIR)/kernel/drivers/usb/net/asix.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call Autoload,61, asix)
 endef
+
+define KernelPackage/usb-net-asix/2.4
+  FILES:=$(MODULES_DIR)/kernel/drivers/usb/ax8817x.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call Autoload,61,ax8817x)
+endef
+
+define KernelPackage/usb-net-asix/2.6
+  FILES:=$(MODULES_DIR)/kernel/drivers/usb/net/asix.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call Autoload,61,asix)
+endef
+
 $(eval $(call KernelPackage,usb-net-asix))
