@@ -29,7 +29,6 @@
 #include <linux/mtd/partitions.h>
 #include <linux/bootmem.h>
 #include <linux/squashfs_fs.h>
-#include <linux/root_dev.h>
 
 struct ar7_bin_rec {
 	unsigned int checksum;
@@ -43,85 +42,84 @@ static int create_mtd_partitions(struct mtd_info *master,
 				 struct mtd_partition **pparts, 
 				 unsigned long origin)
 {
-	char sig[8];
 	struct ar7_bin_rec header;
-	unsigned int offset, new_offset, len;
-	struct squashfs_super_block sb;
-	unsigned int block_size = 0x10000, pre_size = 0x10000,
-		post_size = 0, root_offset = 0xe0000; 
-	unsigned int p = 3;
+	unsigned int offset, len;
+	unsigned int pre_size = master->erasesize, post_size = 0,
+		root_offset = 0xe0000;
+	int retries = 10;
 
 	printk("Parsing AR7 partition map...\n");
 
 	ar7_parts[0].name = "loader";
 	ar7_parts[0].offset = 0;
-	ar7_parts[0].size = block_size;
+	ar7_parts[0].size = master->erasesize;
 	ar7_parts[0].mask_flags = MTD_WRITEABLE;
 
 	ar7_parts[1].name = "config";
-	ar7_parts[1].size = block_size;
+	ar7_parts[1].offset = 0;
+	ar7_parts[1].size = master->erasesize;
 	ar7_parts[1].mask_flags = 0;
 
-	master->read(master, block_size, 8, &len, sig);
-	if (strncmp(sig, "TIENV0.8", 8)) {
-		ar7_parts[1].offset = master->size - block_size;
-		post_size = block_size;
-	} else {
-		ar7_parts[1].offset = block_size;
-		pre_size = block_size * 2;
+	do {
+		offset = pre_size;
+		master->read(master, offset, sizeof(header), &len, (u_char *)&header);
+		if (!strncmp((char *)&header, "TIENV0.8", 8))
+			ar7_parts[1].offset = pre_size;
+		if (header.checksum == 0xfeedfa42)
+			break;
+		if (header.checksum == 0xfeed1281)
+			break;
+		pre_size += master->erasesize;
+	} while (retries--);
+
+	pre_size = offset;
+
+	if (!ar7_parts[1].offset) {
+		ar7_parts[1].offset = master->size - master->erasesize;
+		post_size = master->erasesize;
 	}
 
-	ar7_parts[2].name = "linux";
-	ar7_parts[2].offset = pre_size;
-	ar7_parts[2].size = master->size - block_size * 2;
-	ar7_parts[2].mask_flags = 0;
-
-	offset = pre_size;
-	master->read(master, offset, sizeof(header), &len, (u_char *)&header);
-	if (header.checksum != 0xfeedfa42) {
-		printk("Unknown magic: %08x\n", header.checksum);
-	} else {
+	switch (header.checksum) {
+	case 0xfeedfa42:
 		while (header.length) {
 			offset += sizeof(header) + header.length;
 			master->read(master, offset, sizeof(header),
 				     &len, (u_char *)&header); 
 		}
 		root_offset = offset + sizeof(header) + 4;
+		break;
+	case 0xfeed1281:
+		while (header.length) {
+			offset += sizeof(header) + header.length;
+			master->read(master, offset, sizeof(header),
+				     &len, (u_char *)&header); 
+		}
+		root_offset = offset + sizeof(header) + 4 + 0xff;
+		root_offset &= ~(u32)0xff;
+		break;
+	default:
+		printk("Unknown magic: %08x\n", header.checksum);
+		break;
 	}
-	
-	ar7_parts[p].name = "rootfs";
-	ar7_parts[p].offset = root_offset;
-	ar7_parts[p].size = master->size - root_offset - post_size;
-	ar7_parts[p++].mask_flags = 0;
 
-	master->read(master, root_offset, sizeof(sb), &len, (u_char *)&sb);
-	if (sb.s_magic == SQUASHFS_MAGIC) {
-		printk("Squashfs detected (size %Ld)\n", sb.bytes_used);
-		new_offset = root_offset + sb.bytes_used;
-
-		if ((new_offset % master->erasesize) > 0)
-			new_offset += master->erasesize - 
-				(new_offset % master->erasesize); 
-
-		ar7_parts[p].name = "rootfs_data";
-		ar7_parts[p].offset = new_offset;
-		ar7_parts[p].size = master->size - new_offset - post_size;
-		ar7_parts[p - 1].size -= ar7_parts[p].size;
-		ar7_parts[p - 1].mask_flags |= MTD_WRITEABLE;
-		ar7_parts[p++].mask_flags = 0;
-		ROOT_DEV = MKDEV(MTD_BLOCK_MAJOR, p - 1);
-	} else {
-		printk("Squashfs not found. Moving rootfs partition to next erase block\n");
-		if ((root_offset % master->erasesize) > 0) 
-			root_offset += master->erasesize - 
-				(root_offset % master->erasesize); 
-
-		ar7_parts[p].offset = root_offset;
-		ar7_parts[p].size = master->size - root_offset - post_size;
-		ROOT_DEV = MKDEV(MTD_BLOCK_MAJOR, p);
+	master->read(master, root_offset, sizeof(header), &len, (u_char *)&header);
+	if (header.checksum != SQUASHFS_MAGIC) {
+		root_offset += master->erasesize - 1;
+		root_offset &= ~(master->erasesize - 1);
 	}
+
+	ar7_parts[2].name = "linux";
+	ar7_parts[2].offset = pre_size;
+	ar7_parts[2].size = master->size - pre_size - post_size;
+	ar7_parts[2].mask_flags = 0;
+
+	ar7_parts[3].name = "rootfs";
+	ar7_parts[3].offset = root_offset;
+	ar7_parts[3].size = master->size - root_offset - post_size;
+	ar7_parts[3].mask_flags = 0;
+
 	*pparts = ar7_parts;
-	return p;
+	return 4;
 }
 
 static struct mtd_part_parser ar7_parser = {
