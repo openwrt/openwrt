@@ -13,6 +13,7 @@ PKG_INSTALL_DIR ?= $(PKG_BUILD_DIR)/ipkg-install
 include $(INCLUDE_DIR)/prereq.mk
 include $(INCLUDE_DIR)/host.mk
 include $(INCLUDE_DIR)/unpack.mk
+include $(INCLUDE_DIR)/depends.mk
 include $(INCLUDE_DIR)/package-defaults.mk
 include $(INCLUDE_DIR)/package-dumpinfo.mk
 include $(INCLUDE_DIR)/package-ipkg.mk
@@ -21,6 +22,14 @@ STAMP_PREPARED:=$(PKG_BUILD_DIR)/.prepared
 STAMP_CONFIGURED:=$(PKG_BUILD_DIR)/.configured
 STAMP_BUILT:=$(PKG_BUILD_DIR)/.built
 export CONFIG_SITE:=$(INCLUDE_DIR)/site/$(REAL_GNU_TARGET_NAME)
+
+ifneq ($(CONFIG_AUTOREBUILD),)
+  define Build/Autoclean
+    $(PKG_BUILD_DIR)/.dep_files: $(STAMP_PREPARED)
+    $(call rdep,${CURDIR},$(STAMP_PREPARED),$(TMP_DIR)/.packagedir_$(shell echo "${CURDIR}" | md5s))
+    $(call rdep,$(PKG_BUILD_DIR),$(STAMP_BUILT),$(PKG_BUILD_DIR)/.dep_files, -and -not -path "/.*" -and -not -path "*/ipkg*")
+  endef
+endif
 
 define Build/DefaultTargets
   ifneq ($(strip $(PKG_SOURCE_URL)),)
@@ -33,14 +42,7 @@ define Build/DefaultTargets
     $(STAMP_PREPARED): $(DL_DIR)/$(PKG_SOURCE)
   endif
 
-  ifeq ($(DUMP),)
-    ifeq ($(CONFIG_AUTOREBUILD),y)
-      ifneq ($$(shell $(SCRIPT_DIR)/timestamp.pl -p $(PKG_BUILD_DIR) . $(PKG_FILE_DEPEND)),$(PKG_BUILD_DIR))
-        $$(info Forcing package rebuild)
-        $(STAMP_PREPARED): clean
-      endif
-    endif
-  endif
+  $(call Build/Autoclean)
 
   $(STAMP_PREPARED):
 	@-rm -rf $(PKG_BUILD_DIR)
@@ -54,22 +56,16 @@ define Build/DefaultTargets
 
   $(STAMP_BUILT): $(STAMP_CONFIGURED)
 	$(Build/Compile)
+	@$(MAKE) $(PKG_BUILD_DIR)/.dep_files
 	touch $$@
 
   ifdef Build/InstallDev
-    ifneq ($$(shell $(SCRIPT_DIR)/timestamp.pl -p -x ipkg -x ipkg-install $(STAGING_DIR)/stampfiles/.$(PKG_NAME)-installed $(PKG_BUILD_DIR)),$(STAGING_DIR)/stampfiles/.$(PKG_NAME)-installed)
-      $(STAMP_BUILT): package-rebuild
-    endif
-
     compile: $(STAGING_DIR)/stampfiles/.$(PKG_NAME)-installed
     $(STAGING_DIR)/stampfiles/.$(PKG_NAME)-installed: $(STAMP_BUILT)
 	mkdir -p $(STAGING_DIR)/stampfiles
 	$(Build/InstallDev)
 	touch $$@
   endif
-
-  package-rebuild: FORCE
-	@-rm -f $(STAMP_BUILT)
 
   define Build/DefaultTargets
   endef

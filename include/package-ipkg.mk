@@ -23,14 +23,6 @@ ifeq ($(DUMP),)
         ifeq ($(CONFIG_PACKAGE_$(1)),y)
           install: $$(INFO_$(1))
         endif
-
-        ifneq ($(MAKECMDGOALS),prereq)
-          ifneq ($$(shell $(SCRIPT_DIR)/timestamp.pl -p -x ipkg -x ipkg-install '$$(IPKG_$(1))' '$(PKG_BUILD_DIR)'),$$(IPKG_$(1)))
-            $(PKG_BUILD_DIR)/.built: package-rebuild
-            $$(info Rebuilding $(subst $(TOPDIR)/,,$$(IPKG_$(1))))
-          endif
-        endif
-
       else
         compile: $(1)-disabled
         $(1)-disabled:
