@@ -7,6 +7,11 @@
 
 include $(INCLUDE_DIR)/host.mk
 include $(INCLUDE_DIR)/unpack.mk
+include $(INCLUDE_DIR)/depends.mk
+
+STAMP_PREPARED=$(PKG_BUILD_DIR)/.prepared
+STAMP_CONFIGURED=$(PKG_BUILD_DIR)/.configured
+STAMP_BUILT=$(PKG_BUILD_DIR)/.built
 
 ifneq ($(strip $(PKG_UNPACK)),)
   define Build/Prepare/Default
@@ -69,34 +74,38 @@ ifneq ($(strip $(PKG_SOURCE)),)
 	mkdir -p $(DL_DIR)
 	$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(PKG_SOURCE)" "$(PKG_MD5SUM)" $(PKG_SOURCE_URL)
 
-  $(PKG_BUILD_DIR)/.prepared: $(DL_DIR)/$(PKG_SOURCE)
+  $(STAMP_PREPARED): $(DL_DIR)/$(PKG_SOURCE)
+endif
+
+ifneq ($(CONFIG_AUTOREBUILD),)
+  define HostBuild/Autoclean
+    $(PKG_BUILD_DIR)/.dep_files: $(STAMP_PREPARED)
+    $(call rdep,${CURDIR},$(STAMP_PREPARED),$(TMP_DIR)/.packagedir_$(shell echo "${CURDIR}" | md5s))
+    $(call rdep,$(PKG_BUILD_DIR),$(STAMP_BUILT),$(PKG_BUILD_DIR)/.dep_files, -and -not -path "/.*" -and -not -path "*/ipkg*")
+  endef
 endif
 
 define HostBuild
   ifeq ($(DUMP),)
-    ifeq ($(CONFIG_AUTOREBUILD),y)
-      ifneq ($$(shell $(SCRIPT_DIR)/timestamp.pl -p $(PKG_BUILD_DIR) . $(PKG_FILE_DEPEND)),$(PKG_BUILD_DIR))
-        $$(info Forcing package rebuild)
-        $(PKG_BUILD_DIR)/.prepared: package-clean
-      endif
-    endif
+    $(call HostBuild/Autoclean)
   endif
   
-  $(PKG_BUILD_DIR)/.prepared:
+  $(STAMP_PREPARED):
 	@-rm -rf $(PKG_BUILD_DIR)
 	@mkdir -p $(PKG_BUILD_DIR)
 	$(call Build/Prepare)
 	touch $$@
 
-  $(PKG_BUILD_DIR)/.configured: $(PKG_BUILD_DIR)/.prepared
+  $(STAMP_CONFIGURED): $(STAMP_PREPARED)
 	$(call Build/Configure)
 	touch $$@
 
-  $(PKG_BUILD_DIR)/.built: $(PKG_BUILD_DIR)/.configured
+  $(STAMP_BUILT): $(STAMP_CONFIGURED)
 	$(call Build/Compile)
+	@$(MAKE) $(PKG_BUILD_DIR)/.dep_files
 	touch $$@
 
-  $(STAGING_DIR)/stampfiles/.host_$(PKG_NAME)-installed: $(PKG_BUILD_DIR)/.built
+  $(STAGING_DIR)/stampfiles/.host_$(PKG_NAME)-installed: $(STAMP_BUILT)
 	$(call Build/Install)
 	mkdir -p $$(shell dirname $$@)
 	touch $$@
@@ -111,9 +120,9 @@ define HostBuild
 	rm -f $(STAGING_DIR)/stampfiles/.host_$(PKG_NAME)-installed
 
   download:
-  prepare: $(PKG_BUILD_DIR)/.prepared
-  configure: $(PKG_BUILD_DIR)/.configured
-  compile: $(PKG_BUILD_DIR)/.built 
+  prepare: $(STAMP_PREPARED)
+  configure: $(STAMP_CONFIGURED)
+  compile: $(STAMP_BUILT)
   install:
   clean: FORCE
 	$(call Build/Clean)
