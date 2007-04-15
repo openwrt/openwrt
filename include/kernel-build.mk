@@ -159,7 +159,7 @@ endef
 $(eval $(call shexport,Target/Description))
 
 download: $(DL_DIR)/$(LINUX_SOURCE)
-prepare: $(LINUX_DIR)/.configured $(TMP_DIR)/.kernel.mk
+prepare: $(LINUX_DIR)/.configured
 compile: $(LINUX_DIR)/.modules
 menuconfig: $(LINUX_DIR)/.prepared FORCE
 	$(call Kernel/Configure)
