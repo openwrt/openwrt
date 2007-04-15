@@ -503,7 +503,7 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "reset",	.gpio = 1 << 2 },
 		},
 		.leds		= {
-			{ .name = "power",	.gpio = 1 << 3, .polarity = REVERSE },
+			{ .name = "power",	.gpio = 1 << 3, .polarity = NORMAL },
 		},
 	},
 	/* Trendware */
