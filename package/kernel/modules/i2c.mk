@@ -37,7 +37,19 @@ define KernelPackage/i2c-au1x00gpio
   SUBMENU:=$(I2CMENU)
   KCONFIG:=$(CONFIG_I2C_AU1X00GPIO)
   FILES:=$(MODULES_DIR)/kernel/drivers/i2c/busses/i2c-au1x00gpio.$(LINUX_KMOD_SUFFIX)
- AUTOLOAD:=$(call Autoload,70,i2c-au1x00gpio)
+  AUTOLOAD:=$(call Autoload,70,i2c-au1x00gpio)
 endef
 $(eval $(call KernelPackage,i2c-au1x00gpio))
 
+define KernelPackage/i2c-scx200
+  TITLE:=SCX200 i2c support
+  DESCRIPTION:=Kernel module for SCX200 i2c bus
+  DEFAULT:=y if LINUX_2_6_X86_Soekris
+  DEPENDS:=kmod-i2c-core kmod-i2c-algos @LINUX_2_6_X86_Soekris
+  SUBMENU:=$(I2CMENU)
+  KCONFIG:=$(CONFIG_I2C_SCX200)
+  FILES:=$(MODULES_DIR)/kernel/drivers/i2c/busses/scx200_i2c.$(LINUX_KMOD_SUFFIX) \
+	$(MODULES_DIR)/kernel/drivers/i2c/busses/i2c-isa.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,70,scx200_i2c)
+endef
+$(eval $(call KernelPackage,i2c-scx200))
