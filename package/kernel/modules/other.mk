@@ -285,5 +285,75 @@ define KernelPackage/videodev/2.6
 endef
 $(eval $(call KernelPackage,videodev))
 
+define KernelPackage/leds-net48xx
+  TITLE:=Soekris Net48xx LED support
+  DESCRIPTION:=Kernel module for Soekris Net48xx LEDs
+  DEFAULT:=y if LINUX_2_6_X86_Soekris
+  DEPENDS:=@LINUX_2_6_X86_Soekris
+  SUBMENU:=$(EMENU)
+  KCONFIG:=$(CONFIG_LEDS_NET48XX)
+  FILES:=$(MODULES_DIR)/kernel/drivers/leds/leds-net48xx.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,50,leds-net48xx)
+endef
+$(eval $(call KernelPackage,leds-net48xx))
 
+define KernelPackage/nsc-gpio
+  TITLE:=Natsemi GPIO support
+  DESCRIPTION:=Kernel module for Natsemi GPIO
+  DEFAULT:=y if LINUX_2_6_X86_Soekris
+  DEPENDS:=@LINUX_2_6_X86_Soekris
+  SUBMENU:=$(EMENU)
+  KCONFIG:=$(CONFIG_NSC_GPIO)
+  FILES:=$(MODULES_DIR)/kernel/drivers/char/nsc_gpio.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,40,nsc_gpio)
+endef
+$(eval $(call KernelPackage,nsc-gpio))
 
+define KernelPackage/scx200-gpio
+  TITLE:=Natsemi SCX200 GPIO support
+  DESCRIPTION:=Kernel module for SCX200 GPIO
+  DEFAULT:=y if LINUX_2_6_X86_Soekris
+  DEPENDS:=kmod-nsc-gpio @LINUX_2_6_X86_Soekris
+  SUBMENU:=$(EMENU)
+  KCONFIG:=$(CONFIG_SCx200_GPIO)
+  FILES:=$(MODULES_DIR)/kernel/drivers/char/scx200_gpio.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,50,scx200_gpio)
+endef
+$(eval $(call KernelPackage,scx200-gpio))
+
+define KernelPackage/scx200-wdt
+  TITLE:=Natsemi SCX200 Watchdog support
+  DESCRIPTION:=Kernel module for SCX200 Watchdog
+  DEFAULT:=y if LINUX_2_6_X86_Soekris
+  DEPENDS:=@LINUX_2_6_X86_Soekris
+  SUBMENU:=$(EMENU)
+  KCONFIG:=$(CONFIG_SC1200_WDT)
+  FILES:=$(MODULES_DIR)/kernel/drivers/char/watchdog/scx200_wdt.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,50,scx200_wt)
+endef
+$(eval $(call KernelPackage,scx200-wdt))
+
+define KernelPackage/hwmon
+  TITLE:=Hardware monitoring support
+  DESCRIPTION:=Kernel modules for hardware monitoring
+  DEFAULT:=y if LINUX_2_6_X86_Soekris
+  SUBMENU:=$(EMENU)
+  KCONFIG:=$(CONFIG_HWMON_VID)
+  FILES:= \
+	$(MODULES_DIR)/kernel/drivers/hwmon/hwmon.$(LINUX_KMOD_SUFFIX) \
+	$(MODULES_DIR)/kernel/drivers/hwmon/hwmon-vid.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,40,hwmon hwmon-vid)
+endef
+$(eval $(call KernelPackage,hwmon))
+
+define KernelPackage/hwmon-pc87360
+  TITLE:=PC87360 monitoring support
+  DESCRIPTION:=Kernel modules for PC87360 chips
+  DEFAULT:=y if LINUX_2_6_X86_Soekris
+  DEPENDS:=kmod-hwmon
+  SUBMENU:=$(EMENU)
+  KCONFIG:=$(CONFIG_SENSORS_PC87360)
+  FILES:=$(MODULES_DIR)/kernel/drivers/hwmon/pc87360.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,50,pc87360)
+endef
+$(eval $(call KernelPackage,hwmon-pc87360))
