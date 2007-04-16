@@ -186,3 +186,13 @@ strtok() { # <string> { <variable> [<separator>] ... }
 
 	return $count
 }
+
+
+jffs2_mark_erase() {
+	local part="$(find_mtd_part "$1")"
+	[ -z "$part" ] && {
+		echo Partition not found.
+		return 1
+	}
+	echo -e "\xde\xad\xc0\xde" | mtd -qq write - "$1"
+}
