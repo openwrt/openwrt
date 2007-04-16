@@ -56,7 +56,7 @@ define Build/DefaultTargets
 
   $(STAMP_BUILT): $(STAMP_CONFIGURED)
 	$(Build/Compile)
-	@$(MAKE) $(PKG_BUILD_DIR)/.dep_files
+	@$(NO_TRACE_MAKE) $(PKG_BUILD_DIR)/.dep_files
 	touch $$@
 
   ifdef Build/InstallDev
