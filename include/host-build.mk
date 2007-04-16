@@ -102,7 +102,7 @@ define HostBuild
 
   $(STAMP_BUILT): $(STAMP_CONFIGURED)
 	$(call Build/Compile)
-	@$(MAKE) $(PKG_BUILD_DIR)/.dep_files
+	@$(NO_TRACE_MAKE) $(PKG_BUILD_DIR)/.dep_files
 	touch $$@
 
   $(STAGING_DIR)/stampfiles/.host_$(PKG_NAME)-installed: $(STAMP_BUILT)
