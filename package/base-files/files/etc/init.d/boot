@@ -32,7 +32,7 @@ start() {
 		/usr/bin/env -i ACTION=add INTERFACE="$iface" /sbin/hotplug-call net
 	done
 	
-	/sbin/hotplug2 --persistent --max-children 1 &
+	/sbin/hotplug2 --persistent --max-children 5 &
 	echo /sbin/hotplug-call > /proc/sys/kernel/hotplug
 
 	load_modules /etc/modules.d/*
