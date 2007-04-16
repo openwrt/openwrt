@@ -259,7 +259,7 @@ static int __init init_rdc3210_map(void)
 			len = 1;
 			tmp4 = tmp3;
 			tmp = hdr->imagesz;
-		rdc3210_parts[2].name   = "rootfs";
+		rdc3210_parts[2].name   = "rootfs_data";
 		rdc3210_parts[2].offset = rdc3210_parts[0].offset + (((tmp / tmp2) + ((tmp % tmp2) ? 1 : 0)) * tmp2);
 		}
 		else

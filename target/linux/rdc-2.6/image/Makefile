@@ -12,29 +12,26 @@ define Image/Prepare
 endef
 
 define trxalign/jffs2-128k
--a 0x20000
+bs=128k
 endef
 define trxalign/jffs2-64k
--a 0x10000
+bs=64k
 endef
 define trxalign/squashfs
--a 1024
+bs=1024
 endef
 
 define Image/Build/Airlink
-	touch $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(3)-$(2).img
-ifneq ($(1),squashfs)
-	$(STAGING_DIR)/bin/airlink -b 1 -j 64 $(KDIR)/bzImage $(KDIR)/root.$(1) $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(3)-$(2).img
-else
-	$(STAGING_DIR)/bin/airlink -b 1 $(KDIR)/bzImage $(KDIR)/root.$(1) $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(3)-$(2).img
-endif
+	touch $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1)-$(2).img
+	mv $(KDIR)/root.$(1) $(KDIR)/root.tmp
+	dd of=$(KDIR)/root.$(1) if=$(KDIR)/root.tmp $(call trxalign/$(1)) conv=sync
+	rm -f $(KDIR)/root.tmp
+	$(STAGING_DIR)/bin/airlink -b 1 -j $(shell bash -c 'echo $$[$(3)]') $(KDIR)/bzImage $(KDIR)/root.$(1) $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1)-$(2).img
 endef
 
 define Image/Build
 	$(CP) $(KDIR)/bzImage $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL).bzImage
-ifneq ($(1),jffs2-128K)
-	$(call Image/Build/Airlink,$(1),ar525w,$(patsubst jffs2-%,jffs2,$(1)))
-endif
+	$(call Image/Build/Airlink,$(1),ar525w,$(patsubst jffs2-%k,%,$(1)))
 endef
 
 $(eval $(call BuildImage))
