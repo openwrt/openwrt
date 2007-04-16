@@ -1,16 +1,17 @@
 diff -urN linux-2.6.19.2/arch/mips/Kconfig linux-2.6.19.2.new/arch/mips/Kconfig
 --- linux-2.6.19.2/arch/mips/Kconfig	2007-01-10 20:10:37.000000000 +0100
 +++ linux-2.6.19.2.new/arch/mips/Kconfig	2007-01-23 14:49:38.000000000 +0100
-@@ -12,6 +12,18 @@
+@@ -12,6 +12,19 @@
  	prompt "System type"
  	default SGI_IP22
- 
+
 +config MIPS_ADM5120
 +	bool "Support for ADM5120 SoC"
 +	select SYS_HAS_CPU_MIPS32_R1
 +	select DMA_NONCOHERENT
 +	select HW_HAS_PCI
 +	select SYS_SUPPORTS_LITTLE_ENDIAN
++	select SYS_SUPPORTS_BIG_ENDIAN
 +	select SYS_SUPPORTS_32BIT_KERNEL
 +
 +config PCI_ADM5120
@@ -25,7 +26,7 @@ diff -urN linux-2.6.19.2/arch/mips/Makefile linux-2.6.19.2.new/arch/mips/Makefil
 +++ linux-2.6.19.2.new/arch/mips/Makefile	2007-01-23 14:49:39.000000000 +0100
 @@ -165,6 +165,14 @@
  load-$(CONFIG_MACH_JAZZ)	+= 0xffffffff80080000
- 
+
  #
 +# ADMtek 5120
 +#
@@ -49,16 +50,41 @@ diff -urN linux-2.6.19.2/arch/mips/pci/Makefile linux-2.6.19.2.new/arch/mips/pci
 diff -urN linux-2.6.19.2/include/asm-mips/bootinfo.h linux-2.6.19.2.new/include/asm-mips/bootinfo.h
 --- linux-2.6.19.2/include/asm-mips/bootinfo.h	2007-01-10 20:10:37.000000000 +0100
 +++ linux-2.6.19.2.new/include/asm-mips/bootinfo.h	2007-01-23 14:49:40.000000000 +0100
-@@ -212,6 +212,12 @@
+@@ -212,6 +212,37 @@
  #define MACH_GROUP_NEC_EMMA2RH 25	/* NEC EMMA2RH (was 23)		*/
  #define  MACH_NEC_MARKEINS	0	/* NEC EMMA2RH Mark-eins	*/
- 
+
 +/*
-+ * Valid machtype for group ADMtek
++ * Valid machtype for group ADMtek ADM5120
 + */
-+#define MACH_GROUP_ADM_GW      23
-+#define MACH_ADM_GW_5120	0
++#define MACH_GROUP_ADM5120	23
++#define MACH_ADM5120_UNKNOWN	0	/* Unknown board */
++#define MACH_ADM5120_WP54G_WRT	1	/* Compex WP54G-WRT */
++#define MACH_ADM5120_WP54G	2	/* Compex WP54G */
++#define MACH_ADM5120_WP54AG	3	/* Compex WP54AG */
++#define MACH_ADM5120_WPP54G	4	/* Compex WPP54G */
++#define MACH_ADM5120_WPP54AG	5	/* Compex WPP54AG */
++#define MACH_ADM5120_NP28G	6	/* Compex NP28G */
++#define MACH_ADM5120_NP28GHS	7	/* Compex NP28G HotSpot */
++#define MACH_ADM5120_NP27G	8	/* Compex NP27G */
++#define MACH_ADM5120_WP54Gv1C	9	/* Compex WP54G version 1C */
++#define MACH_ADM5120_RB_111	10	/* Mikrotik RouterBOARD 111 */
++#define MACH_ADM5120_RB_112	11	/* Mikrotik RouterBOARD 112 */
++#define MACH_ADM5120_RB_133	12	/* Mikrotik RouterBOARD 133 */
++#define MACH_ADM5120_RB_133C	13	/* Mikrotik RouterBOARD 133c */
++#define MACH_ADM5120_RB_150	14	/* Mikrotik RouterBOARD 150 */
++#define MACH_ADM5120_RB_153	15	/* Mikrotik RouterBOARD 153 */
++#define MACH_ADM5120_HS100	16	/* ZyXEL HomeSafe 100/100W */
++#define MACH_ADM5120_P334	17	/* ZyXEL Prestige 334 */
++#define MACH_ADM5120_P334U	18	/* ZyXEL Prestige 334U */
++#define MACH_ADM5120_P334W	18	/* ZyXEL Prestige 334W */
++#define MACH_ADM5120_P334WH	19	/* ZyXEL Prestige 334WH */
++#define MACH_ADM5120_P334WHD	20	/* ZyXEL Prestige 334WHD */
++#define MACH_ADM5120_P334WT	21	/* ZyXEL Prestige 334WT */
++#define MACH_ADM5120_P335	22	/* ZyXEL Prestige 335/335WT */
++#define MACH_ADM5120_P335PLUS	23	/* ZyXEL Prestige 335Plus */
++#define MACH_ADM5120_P335U	24	/* ZyXEL Prestige 335U */
 +
  #define CL_SIZE			COMMAND_LINE_SIZE
- 
+
  const char *get_system_type(void);

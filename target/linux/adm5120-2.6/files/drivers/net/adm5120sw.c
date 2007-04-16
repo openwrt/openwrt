@@ -3,7 +3,7 @@
  *
  *	Copyright Jeroen Vreeken (pe1rxq@amsat.org), 2005
  *
- *	Inspiration for this driver came from the original ADMtek 2.4 
+ *	Inspiration for this driver came from the original ADMtek 2.4
  *	driver, Copyright ADMtek Inc.
  */
 #include <linux/autoconf.h>
@@ -20,7 +20,7 @@
 #include <asm/io.h>
 #include "adm5120sw.h"
 
-#include "adm5120_info.h"
+#include <asm/mach-adm5120/adm5120_info.h>
 
 MODULE_AUTHOR("Jeroen Vreeken (pe1rxq@amsat.org)");
 MODULE_DESCRIPTION("ADM5120 ethernet switch driver");
@@ -29,7 +29,7 @@ MODULE_LICENSE("GPL");
 /*
  *	The ADM5120 uses an internal matrix to determine which ports
  *	belong to which VLAN.
- *	The default generates a VLAN (and device) for each port 
+ *	The default generates a VLAN (and device) for each port
  *	(including MII port) and the CPU port is part of all of them.
  *
  *	Another example, one big switch and everything mapped to eth0:
@@ -42,7 +42,7 @@ static unsigned char vlan_matrix[SW_DEVS] = {
 static int adm5120_nrdevs;
 
 static struct net_device *adm5120_devs[SW_DEVS];
-static struct adm5120_dma 
+static struct adm5120_dma
     adm5120_dma_txh_v[ADM5120_DMA_TXH] __attribute__((aligned(16))),
     adm5120_dma_txl_v[ADM5120_DMA_TXL] __attribute__((aligned(16))),
     adm5120_dma_rxh_v[ADM5120_DMA_RXH] __attribute__((aligned(16))),
@@ -389,14 +389,9 @@ static int __init adm5120_sw_init(void)
 	if (err)
 		goto out;
 
-	/* MII port? */
-	if (adm5120_get_reg(ADM5120_CODE) & ADM5120_CODE_PQFP)
+	adm5120_nrdevs = adm5120_board.iface_num;
+	if (adm5120_nrdevs > 5 && !adm5120_has_gmii())
 		adm5120_nrdevs = 5;
-	/* CFE based devices only have two enet ports */
-	else if (adm5120_info.boot_loader == BOOT_LOADER_CFE)
-		adm5120_nrdevs = 2;
-	else
-		adm5120_nrdevs = 6;
 
 	adm5120_set_reg(ADM5120_CPUP_CONF,
 	    ADM5120_DISCCPUPORT | ADM5120_CRC_PADDING |
@@ -426,14 +421,14 @@ static int __init adm5120_sw_init(void)
 	adm5120_set_reg(ADM5120_RECEIVE_LBADDR, KSEG1ADDR(adm5120_dma_rxl));
 
 	adm5120_set_vlan(vlan_matrix);
-	
+
 	for (i=0; i<adm5120_nrdevs; i++) {
 		adm5120_devs[i] = alloc_etherdev(sizeof(struct adm5120_sw));
 		if (!adm5120_devs[i]) {
 			err = -ENOMEM;
 			goto out_int;
 		}
-		
+
 		dev = adm5120_devs[i];
 		SET_MODULE_OWNER(dev);
 		memset(netdev_priv(dev), 0, sizeof(struct adm5120_sw));
@@ -456,7 +451,7 @@ static int __init adm5120_sw_init(void)
 		memcpy(dev->dev_addr, "\x00\x50\xfc\x11\x22\x01", 6);
 		dev->dev_addr[5] += i;
 		adm5120_write_mac(dev);
-		
+
 		if ((err = register_netdev(dev))) {
 			free_netdev(dev);
 			goto out_int;
