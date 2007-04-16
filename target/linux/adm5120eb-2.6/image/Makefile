@@ -1,0 +1,48 @@
+#
+# Copyright (C) 2006 OpenWrt.org
+#
+# This is free software, licensed under the GNU General Public License v2.
+# See /LICENSE for more information.
+#
+include $(TOPDIR)/rules.mk
+include $(INCLUDE_DIR)/image.mk
+
+define Build/Compile
+	rm -f $(KDIR)/loader-zynos.gz $(KDIR)/loader-zynos.bin
+	$(MAKE) -C lzma-loader \
+		BUILD_DIR="$(KDIR)" \
+		TARGET="$(KDIR)" \
+		LOADER=loader-zynos \
+		install
+endef
+
+define Build/Clean
+	$(MAKE) -C lzma-loader clean
+endef
+
+define Image/Prepare
+	cat $(KDIR)/vmlinux | $(STAGING_DIR)/bin/lzma e -si -so -eos -lc1 -lp2 -pb2 > $(KDIR)/vmlinux.lzma
+endef
+
+define trxalign/jffs2-128k
+-a 0x20000
+endef
+define trxalign/jffs2-64k
+-a 0x10000
+endef
+define trxalign/squashfs
+-a 1024
+endef
+
+define Image/Build/ZyXEL
+	$(CP) $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1)-noloader.trx $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(3)-$(2).trx
+endef
+
+define Image/Build
+	$(STAGING_DIR)/bin/trx -o $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1)-noloader.trx -f $(KDIR)/vmlinux.lzma $(call trxalign/$(1)) -f $(KDIR)/root.$(1)
+ifneq ($(1),jffs2-128K)
+	#FIXME: no supported boards yet
+endif
+endef
+
+$(eval $(call BuildImage))

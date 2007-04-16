@@ -1,0 +1,24 @@
+#
+# Copyright (C) 2006 OpenWrt.org
+#
+# This is free software, licensed under the GNU General Public License v2.
+# See /LICENSE for more information.
+#
+include $(TOPDIR)/rules.mk
+
+ARCH:=mips
+BOARD:=adm5120eb
+BOARDNAME:=ADMtek 5120 (Big Endian)
+FEATURES:=squashfs broken
+
+define Target/Description
+	Build firmware images for ADMTek ADM5120 based boards running in big-endian mode
+	(e.g : ZyXEL Prestige 335WT ...)
+endef
+
+include $(INCLUDE_DIR)/kernel-build.mk
+
+# include the profiles
+-include profiles/*.mk
+
+$(eval $(call BuildKernel))
