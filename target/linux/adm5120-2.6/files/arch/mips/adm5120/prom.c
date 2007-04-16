@@ -3,6 +3,7 @@
  * Copyright (C) 1999,2000 MIPS Technologies, Inc.  All rights reserved.
  * Copyright (C) 2003 ADMtek Incorporated.
  *	daniell@admtek.com.tw
+ * Copyright (C) 2007 OpenWrt.org
  *
  *  This program is free software; you can distribute it and/or modify it
  *  under the terms of the GNU General Public License (Version 2) as
@@ -29,7 +30,7 @@
 #include <asm/bootinfo.h>
 #include <asm/addrspace.h>
 
-#include <adm5120_info.h>
+#include <asm/mach-adm5120/adm5120_info.h>
 
 void setup_prom_printf(int);
 void prom_printf(char *, ...);
@@ -98,17 +99,17 @@ char *prom_getenv(char *envname)
 	return(NULL);
 }
 
-	
+
 /*
  * initialize the prom module.
  */
 void __init prom_init(void)
 {
-	/* you should these macros defined in include/asm/bootinfo.h */
-	mips_machgroup = MACH_GROUP_ADM_GW;
-	mips_machtype = MACH_ADM_GW_5120;
-	
 	adm5120_info_init();
+
+	/* you should these macros defined in include/asm/bootinfo.h */
+	mips_machgroup = MACH_GROUP_ADM5120;
+	mips_machtype = adm5120_board.mach_type;
 
 	/* init command line, register a default kernel command line */
 	strcpy(&(arcs_cmdline[0]), CONFIG_CMDLINE);

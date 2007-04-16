@@ -31,7 +31,7 @@ install:
 
 ifneq ($(TARGET),)
 install: compile
-	$(CP) $(PKG_BUILD_DIR)/$(LOADER).gz $(PKG_BUILD_DIR)/$(LOADER).elf $(TARGET)/
+	$(CP) $(PKG_BUILD_DIR)/$(LOADER).gz $(PKG_BUILD_DIR)/$(LOADER).elf $(PKG_BUILD_DIR)/$(LOADER).bin $(TARGET)/
 endif
 
 clean:

@@ -3,7 +3,7 @@
  *
  *	Copyright (C) 2005 Jeroen Vreeken (pe1rxq@amsat.org)
  *
- *	Based on the ADMtek 2.4 driver 
+ *	Based on the ADMtek 2.4 driver
  *	(C) Copyright 2003 Junius Chen <juniusc@admtek.com.tw>
  *	Which again was based on the ohci and uhci drivers.
  */
@@ -146,7 +146,7 @@ static int admhcd_td_err[16] = {
 
 struct admhcd {
 	spinlock_t	lock;
-	
+
 	void __iomem *addr_reg;
 	void __iomem *data_reg;
 	/* Root hub registers */
@@ -160,7 +160,7 @@ struct admhcd {
 	u32		base;
 	u32		dma_en;
 	unsigned long	flags;
-	
+
 };
 
 static inline struct admhcd *hcd_to_admhcd(struct usb_hcd *hcd)
@@ -213,7 +213,7 @@ static struct admhcd_td *admhcd_td_alloc(struct admhcd_ed *ed, struct urb *urb)
 	if (ed->cur == NULL) {
 		ed->cur = tdn;
 		ed->head = tdn;
-		ed->tail = tdn;	
+		ed->tail = tdn;
 		td = tdn;
 	} else {
 		/* Supply back the old tail and link in new td as tail */
@@ -345,7 +345,7 @@ static irqreturn_t adm5120hcd_irq(int irq, void *ptr, struct pt_regs *regs)
 	}
 	if (intstatus & ADMHCD_INT_TD) {
 		struct admhcd_ed *ed, *head;
-		
+
 		admhcd_reg_set(ahcd, ADMHCD_REG_INTSTATUS, ADMHCD_INT_TD);
 
 		head = (struct admhcd_ed *)admhcd_reg_get(ahcd, ADMHCD_REG_HOSTHEAD);
@@ -355,7 +355,7 @@ static irqreturn_t adm5120hcd_irq(int irq, void *ptr, struct pt_regs *regs)
 			if (ed->urb && !(ed->cur->control & ADMHCD_TD_OWN)) {
 				struct admhcd_td *td;
 				int error;
-				
+
 				td = ed->cur;
 				error = (td->control & ADMHCD_TD_ERRMASK) >>
 				    ADMHCD_TD_ERRSHIFT;
@@ -442,7 +442,7 @@ static int admhcd_urb_enqueue(struct usb_hcd *hcd, struct usb_host_endpoint *ep,
 			td = admhcd_td_fill(ADMHCD_TD_SETUP | ADMHCD_TD_DATA0,
 			    td, (dma_addr_t)urb->setup_packet, 8);
 			while (data_len > 0) {
-				td = admhcd_td_fill(ADMHCD_TD_DATA1 
+				td = admhcd_td_fill(ADMHCD_TD_DATA1
 				    | ADMHCD_TD_R |
 				    (usb_pipeout(pipe) ?
 				    ADMHCD_TD_OUT : ADMHCD_TD_IN), td,
@@ -459,7 +459,7 @@ static int admhcd_urb_enqueue(struct usb_hcd *hcd, struct usb_host_endpoint *ep,
 			i = 0;
 			while(data_len > 4096) {
 				td = admhcd_td_fill((usb_pipeout(pipe) ?
-				    ADMHCD_TD_OUT : 
+				    ADMHCD_TD_OUT :
 				    ADMHCD_TD_IN | ADMHCD_TD_R) |
 				    (i ? ADMHCD_TD_TOGGLE : toggle), td,
 				    data, 4096);
@@ -467,7 +467,7 @@ static int admhcd_urb_enqueue(struct usb_hcd *hcd, struct usb_host_endpoint *ep,
 				data_len -= 4096;
 				i++;
 			}
-			td = admhcd_td_fill((usb_pipeout(pipe) ? 
+			td = admhcd_td_fill((usb_pipeout(pipe) ?
 			    ADMHCD_TD_OUT : ADMHCD_TD_IN) |
 			    (i ? ADMHCD_TD_TOGGLE : toggle), td, data, data_len);
 			i++;
@@ -616,7 +616,7 @@ static int admhcd_hub_control(struct usb_hcd *hcd, u16 typeReq, u16 wValue,
 		case USB_PORT_FEAT_RESET:
 			if (admhcd_reg_get(ahcd, ADMHCD_REG_PORTSTATUS0 + port*4)
 			    & ADMHCD_CCS) {
-				admhcd_reg_set(ahcd, 
+				admhcd_reg_set(ahcd,
 				    ADMHCD_REG_PORTSTATUS0 + port*4,
 				    ADMHCD_PRS | ADMHCD_CSC);
 				mdelay(50);
@@ -707,7 +707,7 @@ static int __init adm5120hcd_probe(struct platform_device *pdev)
 	struct usb_device *udev;
 	struct resource *addr, *data;
 	void __iomem *addr_reg;
-	void __iomem *data_reg;	
+	void __iomem *data_reg;
 	int irq, err = 0;
 
 	if (pdev->num_resources < 3) {
@@ -748,7 +748,7 @@ static int __init adm5120hcd_probe(struct platform_device *pdev)
 		err = -ENOMEM;
 		goto out_mem;
 	}
-								
+
 
 	hcd = usb_create_hcd(&adm5120_hc_driver, &pdev->dev, pdev->dev.bus_id);
 	if (!hcd)
@@ -826,7 +826,7 @@ static int __init adm5120hcd_init(void)
 {
 	if (usb_disabled())
 		return -ENODEV;
-	if (!adm5120_info.has_usb)
+	if (!adm5120_board.has_usb)
 		return -ENODEV;
 
 	return platform_driver_register(&adm5120hcd_driver);

@@ -3,6 +3,7 @@
  *		Creator : daniell@admtek.com.tw
  *	Copyright 1999, 2000 MIPS Technologies, Inc.
  *	Copyright Jeroen Vreeken (pe1rxq@amsat.org), 2005
+ *	Copyright (C) 2007 OpenWrt.org
  */
 
 #include <linux/autoconf.h>
@@ -44,7 +45,7 @@ void adm5120_power_off(void)
 
 void __init adm5120_time_init(void)
 {
-	mips_counter_frequency = adm5120_info.cpu_speed >> 1;
+	mips_counter_frequency = adm5120_speed >> 1;
 }
 
 void __init plat_timer_setup(struct irqaction *irq)
@@ -71,7 +72,7 @@ void __init plat_mem_setup(void)
 
 const char *get_system_type(void)
 {
-	return "ADM5120 Board";
+	return adm5120_board_name();
 }
 
 static struct resource adm5120_hcd_resources[] = {
