@@ -99,12 +99,13 @@ enable_atheros() {
 				*bg) agmode=11g;;
 				*g) agmode=11g; pureg=1;;
 				*a) agmode=11a;;
-				*) agmode=11g;;
+				*) agmode=auto;;
 			esac
-			iwconfig "$ifname" channel 0 
+			iwconfig "$ifname" channel 0 >/dev/null 2>/dev/null 
+			ifconfig "$ifname" up
 			iwpriv "$ifname" mode "$agmode"
 			iwpriv "$ifname" pureg "$pureg"
-			iwconfig "$ifname" channel "$channel"
+			iwconfig "$ifname" channel "$channel" >/dev/null 2>/dev/null 
 		}
 	
 		config_get_bool hidden "$vif" hidden
@@ -181,7 +182,7 @@ enable_atheros() {
 		fi
 
 		ifconfig "$ifname" up
-		iwconfig "$ifname" channel "$channel"
+		iwconfig "$ifname" channel "$channel" >/dev/null 2>/dev/null 
 
 		local net_cfg bridge
 		net_cfg="$(find_net_config "$vif")"
