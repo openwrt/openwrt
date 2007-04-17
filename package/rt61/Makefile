@@ -10,19 +10,19 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=rt61
-PKG_VERSION:=1.1.0-b1
+PKG_VERSION:=cvs-2007041709
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=@SF/rt2400
-PKG_MD5SUM:=3f2600400a3d6d878a5d27d0a2e47eed
+PKG_SOURCE_URL:=@openwrt/
+PKG_MD5SUM:=3e2675fc0bdb1cfe85fefc5bce9f0ae0
 
 include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/rt61
   SUBMENU:=Wireless Drivers
   TITLE:=Driver for ralink MiMo pci chipsets 
-  DEPENDS:=@LINUX_2_4 @PCI_SUPPORT +wireless-tools
+  DEPENDS:=@PCI_SUPPORT +wireless-tools
   DESCRIPTION:=\
         This package contains a driver for ralink rt61xx pci chipsets.
   URL:=http://rt2x00.serialmonkey.com/
