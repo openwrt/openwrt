@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=armeb
 BOARD:=ixp4xx
 BOARDNAME:=Intel XScale IXP4xx
-FEATURES:=squashfs jffs2
+FEATURES:=squashfs
 
 define Target/Description
 endef
