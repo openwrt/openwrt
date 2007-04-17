@@ -188,7 +188,6 @@ static struct net_device_stats *r6040_get_stats(struct net_device *dev);
 static int r6040_close(struct net_device *dev);
 static void set_multicast_list(struct net_device *dev);
 static struct ethtool_ops netdev_ethtool_ops;
-static int netdev_ioctl (struct net_device *dev, struct ifreq *rq, int cmd);
 static void r6040_down(struct net_device *dev);
 static void r6040_up(struct net_device *dev);
 static void r6040_tx_timeout (struct net_device *dev);
@@ -271,7 +270,6 @@ static int __devinit r6040_init_one (struct pci_dev *pdev,
 	dev->stop = &r6040_close;
 	dev->get_stats = &r6040_get_stats;
 	dev->set_multicast_list = &set_multicast_list;
-	dev->do_ioctl = &netdev_ioctl;
 	dev->ethtool_ops = &netdev_ethtool_ops;
 	dev->tx_timeout = &r6040_tx_timeout;
 	dev->watchdog_timeo = TX_TIMEOUT;
@@ -605,14 +603,6 @@ r6040_close(struct net_device *dev)
 
 	spin_unlock_irq(&lp->lock);
 
-	return 0;
-}
-
-/**
- */
-static int netdev_ioctl (struct net_device *dev, struct ifreq *rq, int cmd)
-{
-	RDC_DBUG("netdev_ioctl()", 0);
 	return 0;
 }
 
