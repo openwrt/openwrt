@@ -237,14 +237,14 @@ unsigned int BcmHalMapInterrupt(FN_HANDLER pfunc, unsigned int param,
 	irq_desc[interruptId].chip = &brcm_irq_no_end_type;
 
 	if( interruptId >= INTERNAL_ISR_TABLE_OFFSET )
-	{
-		nRet = request_irq( interruptId, pfunc, SA_SAMPLE_RANDOM | SA_INTERRUPT,
-			devname, (void *) param );
+	{	
+		printk("BcmHalMapInterrupt : internal IRQ\n");
+		nRet = request_irq( interruptId, pfunc, SA_SAMPLE_RANDOM | SA_INTERRUPT, devname, (void *) param );
 	}
 	else if (interruptId >= INTERRUPT_ID_EXTERNAL_0 && interruptId <= INTERRUPT_ID_EXTERNAL_3)
 	{
-		nRet = request_external_irq( interruptId, pfunc, SA_SAMPLE_RANDOM | SA_INTERRUPT,
-			devname, (void *) param );
+		printk("BcmHalMapInterrupt : external IRQ\n");
+		nRet = request_external_irq( interruptId, pfunc, SA_SAMPLE_RANDOM | SA_INTERRUPT, devname, (void *) param );
 	}
 
 	return( nRet );

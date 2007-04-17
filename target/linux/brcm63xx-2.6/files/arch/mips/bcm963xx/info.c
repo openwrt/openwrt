@@ -25,7 +25,8 @@
 static char *boot_loader_names[BOOT_LOADER_LAST+1] = {
         [BOOT_LOADER_UNKNOWN]   = "Unknown",
         [BOOT_LOADER_CFE]       = "CFE",
-        [BOOT_LOADER_REDBOOT]	= "RedBoot"
+        [BOOT_LOADER_REDBOOT]	= "RedBoot",
+	[BOOT_LOADER_CFE2]	= "CFEv2"
 };
 
 /* boot loaders specific definitions */
@@ -73,14 +74,29 @@ void __init detect_bootloader(void)
 {
 	if (detect_cfe()) {
 		boot_loader_type = BOOT_LOADER_CFE;
-		printk("Boot loader is : %s\n", boot_loader_names[boot_loader_type]);
 	}
 
 	if (detect_redboot()) {
 		boot_loader_type = BOOT_LOADER_REDBOOT;
 	}
-	else
-		boot_loader_type = BOOT_LOADER_UNKNOWN;
+	else {
+		/* Some devices are using CFE, but it is not detected as is */
+		boot_loader_type = BOOT_LOADER_CFE2;
+	}
+	printk("Boot loader is : %s\n", boot_loader_names[boot_loader_type]);
+}
+
+void __init detect_board(void)
+{
+	switch (boot_loader_type)
+	{
+		case BOOT_LOADER_CFE:
+			break;
+		case BOOT_LOADER_REDBOOT:
+			break;
+		default:
+			break;
+	}
 }
 
 EXPORT_SYMBOL(boot_loader_type);

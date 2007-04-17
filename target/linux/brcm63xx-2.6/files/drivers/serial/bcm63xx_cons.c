@@ -27,7 +27,7 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/version.h>
-#include <linux/init.h> 
+#include <linux/init.h>
 #include <linux/slab.h>
 #include <linux/interrupt.h>
 #include <linux/spinlock.h>
@@ -53,37 +53,37 @@ extern void _putc(char);
 extern void _puts(const char *);
 
 typedef struct bcm_serial {
-    volatile Uart *         port;
-    int                     type;
-    int                     flags; 
-    int                     irq;
-    int                     baud_base;
-    int                     blocked_open;
-    unsigned short          close_delay;
-    unsigned short          closing_wait;
-    unsigned short          line;                /* port/line number */
-    unsigned short          cflags;              /* line configuration flag */
-    unsigned short          x_char;              /* xon/xoff character */
-    unsigned short          read_status_mask;    /* mask for read condition */
-    unsigned short          ignore_status_mask;  /* mask for ignore condition */
-    unsigned long           event;               /* mask used in BH */
-    int                     xmit_head;           /* Position of the head */
-    int                     xmit_tail;           /* Position of the tail */
-    int                     xmit_cnt;            /* Count of the chars in the buffer */
-    int                     count;               /* indicates how many times it has been opened */
-    int                     magic;
+	volatile Uart *port;
+	int type;
+	int flags;
+	int irq;
+	int baud_base;
+	int blocked_open;
+	unsigned short close_delay;
+	unsigned short closing_wait;
+	unsigned short line;	/* port/line number */
+	unsigned short cflags;	/* line configuration flag */
+	unsigned short x_char;	/* xon/xoff character */
+	unsigned short read_status_mask;	/* mask for read condition */
+	unsigned short ignore_status_mask;	/* mask for ignore condition */
+	unsigned long event;	/* mask used in BH */
+	int xmit_head;		/* Position of the head */
+	int xmit_tail;		/* Position of the tail */
+	int xmit_cnt;		/* Count of the chars in the buffer */
+	int count;		/* indicates how many times it has been opened */
+	int magic;
 
-    struct async_icount     icount;              /* keep track of things ... */
-    struct tty_struct       *tty;                /* tty associated */    
-    struct termios          normal_termios;
+	struct async_icount icount;	/* keep track of things ... */
+	struct tty_struct *tty;	/* tty associated */
+	struct termios normal_termios;
 
-    wait_queue_head_t       open_wait;
-    wait_queue_head_t       close_wait;
+	wait_queue_head_t open_wait;
+	wait_queue_head_t close_wait;
 
-    long                    session;             /* Session of opening process */
-    long                    pgrp;                /* pgrp of opening process */
+	long session;		/* Session of opening process */
+	long pgrp;		/* pgrp of opening process */
 
-    unsigned char           is_initialized;
+	unsigned char is_initialized;
 } Context;
 
 
@@ -94,7 +94,7 @@ typedef struct bcm_serial {
 #define RXINT   (RXFIFONE|RXOVFERR)
 
 /* Enable transmit interrupt             */
-#define TXINT    (TXFIFOEMT|TXUNDERR|TXOVFERR) 
+#define TXINT    (TXFIFOEMT|TXUNDERR|TXOVFERR)
 
 /* Enable receiver line status interrupt */
 #define LSINT    (RXBRK|RXPARERR|RXFRAMERR)
@@ -111,32 +111,36 @@ static struct termios *serial_termios[BCM_NUM_UARTS];
 static struct termios *serial_termios_locked[BCM_NUM_UARTS];
 
 
-static void bcm_stop (struct tty_struct *tty);
-static void bcm_start (struct tty_struct *tty);
-static inline void receive_chars (struct bcm_serial * info);
-static int startup (struct bcm_serial *info);
-static void shutdown (struct bcm_serial * info);
-static void change_speed( volatile Uart *pUart, tcflag_t cFlag );
-static void bcm63xx_cons_flush_chars (struct tty_struct *tty);
-static int bcm63xx_cons_write (struct tty_struct *tty, 
-    const unsigned char *buf, int count);
-static int bcm63xx_cons_write_room (struct tty_struct *tty);
-static int bcm_chars_in_buffer (struct tty_struct *tty);
-static void bcm_flush_buffer (struct tty_struct *tty);
-static void bcm_throttle (struct tty_struct *tty);
-static void bcm_unthrottle (struct tty_struct *tty);
-static void bcm_send_xchar (struct tty_struct *tty, char ch);
-static int get_serial_info(struct bcm_serial *info, struct serial_struct *retinfo);
-static int set_serial_info (struct bcm_serial *info, struct serial_struct *new_info);
-static int get_lsr_info (struct bcm_serial *info, unsigned int *value);
-static void send_break (struct bcm_serial *info, int duration);
-static int bcm_ioctl (struct tty_struct * tty, struct file * file,
-    unsigned int cmd, unsigned long arg);
-static void bcm_set_termios (struct tty_struct *tty, struct termios *old_termios);
-static void bcm63xx_cons_close (struct tty_struct *tty, struct file *filp);
-static void bcm_hangup (struct tty_struct *tty);
-static int block_til_ready (struct tty_struct *tty, struct file *filp, struct bcm_serial *info);
-static int bcm63xx_cons_open (struct tty_struct * tty, struct file * filp);
+static void bcm_stop(struct tty_struct *tty);
+static void bcm_start(struct tty_struct *tty);
+static inline void receive_chars(struct bcm_serial *info);
+static int startup(struct bcm_serial *info);
+static void shutdown(struct bcm_serial *info);
+static void change_speed(volatile Uart * pUart, tcflag_t cFlag);
+static void bcm63xx_cons_flush_chars(struct tty_struct *tty);
+static int bcm63xx_cons_write(struct tty_struct *tty,
+			      const unsigned char *buf, int count);
+static int bcm63xx_cons_write_room(struct tty_struct *tty);
+static int bcm_chars_in_buffer(struct tty_struct *tty);
+static void bcm_flush_buffer(struct tty_struct *tty);
+static void bcm_throttle(struct tty_struct *tty);
+static void bcm_unthrottle(struct tty_struct *tty);
+static void bcm_send_xchar(struct tty_struct *tty, char ch);
+static int get_serial_info(struct bcm_serial *info,
+			   struct serial_struct *retinfo);
+static int set_serial_info(struct bcm_serial *info,
+			   struct serial_struct *new_info);
+static int get_lsr_info(struct bcm_serial *info, unsigned int *value);
+static void send_break(struct bcm_serial *info, int duration);
+static int bcm_ioctl(struct tty_struct *tty, struct file *file,
+		     unsigned int cmd, unsigned long arg);
+static void bcm_set_termios(struct tty_struct *tty,
+			    struct termios *old_termios);
+static void bcm63xx_cons_close(struct tty_struct *tty, struct file *filp);
+static void bcm_hangup(struct tty_struct *tty);
+static int block_til_ready(struct tty_struct *tty, struct file *filp,
+			   struct bcm_serial *info);
+static int bcm63xx_cons_open(struct tty_struct *tty, struct file *filp);
 static int __init bcm63xx_serialinit(void);
 
 
@@ -149,14 +153,14 @@ static int __init bcm63xx_serialinit(void);
  * as necessary.
  * ------------------------------------------------------------
  */
-static void bcm_stop (struct tty_struct *tty)
+static void bcm_stop(struct tty_struct *tty)
 {
-}  
+}
 
-static void bcm_start (struct tty_struct *tty)
+static void bcm_start(struct tty_struct *tty)
 {
-    _puts(CARDNAME " Start\n");
-}  
+	_puts(CARDNAME " Start\n");
+}
 
 /*
  * ------------------------------------------------------------
@@ -165,76 +169,65 @@ static void bcm_start (struct tty_struct *tty)
  * This routine deals with inputs from any lines.
  * ------------------------------------------------------------
  */
-static inline void receive_chars (struct bcm_serial * info)
+static inline void receive_chars(struct bcm_serial *info)
 {
-    struct tty_struct *tty = 0;
-    struct async_icount * icount;
-    int ignore = 0;
-    unsigned short status, tmp;
-    UCHAR ch = 0;
-    while ((status = info->port->intStatus) & RXINT)
-    {
+	struct tty_struct *tty = 0;
+	struct async_icount *icount;
+	int ignore = 0;
+	unsigned short status, tmp;
+	UCHAR ch = 0;
+	while ((status = info->port->intStatus) & RXINT) {
 		char flag_char = TTY_NORMAL;
 
-        if (status & RXFIFONE)
-            ch = info->port->Data;  // Read the character
-        tty = info->tty;                  /* now tty points to the proper dev */
-        icount = &info->icount;
-        if (! tty)
-            break;
-        if (!tty_buffer_request_room(tty, 1))
-            break;
-        icount->rx++;
-        if (status & RXBRK)
-        {
-            flag_char = TTY_BREAK;
-            icount->brk++;
-        }
-        // keep track of the statistics
-        if (status & (RXFRAMERR | RXPARERR | RXOVFERR))
-        {
-            if (status & RXPARERR)                /* parity error */
-                icount->parity++;
-            else
-                if (status & RXFRAMERR)           /* frame error */
-                    icount->frame++;
-            if (status & RXOVFERR)
-            {
-                // Overflow. Reset the RX FIFO
-                info->port->fifoctl |= RSTRXFIFOS;
-                icount->overrun++;
-            }
-            // check to see if we should ignore the character
-            // and mask off conditions that should be ignored
-            if (status & info->ignore_status_mask)
-            {
-                if (++ignore > 100 )
-                    break;
-                goto ignore_char;
-            }
-            // Mask off the error conditions we want to ignore
-            tmp = status & info->read_status_mask;
-            if (tmp & RXPARERR)
-            {
-                flag_char = TTY_PARITY;
-            }
-            else
-                if (tmp & RXFRAMERR)
-                {
-                    flag_char = TTY_FRAME;
-                }
-            if (tmp & RXOVFERR)
-            {
-	        tty_insert_flip_char(tty, ch, flag_char);
-		ch = 0;
-		flag_char = TTY_OVERRUN;
+		if (status & RXFIFONE)
+			ch = info->port->Data;	// Read the character
+		tty = info->tty;	/* now tty points to the proper dev */
+		icount = &info->icount;
+		if (!tty)
+			break;
 		if (!tty_buffer_request_room(tty, 1))
-		  break;
-            }
-        }
-	tty_insert_flip_char(tty, ch, flag_char);
-    }
-ignore_char:;
+			break;
+		icount->rx++;
+		if (status & RXBRK) {
+			flag_char = TTY_BREAK;
+			icount->brk++;
+		}
+		// keep track of the statistics
+		if (status & (RXFRAMERR | RXPARERR | RXOVFERR)) {
+			if (status & RXPARERR)	/* parity error */
+				icount->parity++;
+			else if (status & RXFRAMERR)	/* frame error */
+				icount->frame++;
+			if (status & RXOVFERR) {
+				// Overflow. Reset the RX FIFO
+				info->port->fifoctl |= RSTRXFIFOS;
+				icount->overrun++;
+			}
+			// check to see if we should ignore the character
+			// and mask off conditions that should be ignored
+			if (status & info->ignore_status_mask) {
+				if (++ignore > 100)
+					break;
+				goto ignore_char;
+			}
+			// Mask off the error conditions we want to ignore
+			tmp = status & info->read_status_mask;
+			if (tmp & RXPARERR) {
+				flag_char = TTY_PARITY;
+			} else if (tmp & RXFRAMERR) {
+				flag_char = TTY_FRAME;
+			}
+			if (tmp & RXOVFERR) {
+				tty_insert_flip_char(tty, ch, flag_char);
+				ch = 0;
+				flag_char = TTY_OVERRUN;
+				if (!tty_buffer_request_room(tty, 1))
+					break;
+			}
+		}
+		tty_insert_flip_char(tty, ch, flag_char);
+	}
+      ignore_char:;
 	tty_flip_buffer_push(tty);
 	tty_schedule_flip(tty);
 
@@ -250,36 +243,34 @@ ignore_char:;
  * ------------------------------------------------------------
  */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
-static irqreturn_t bcm_interrupt (int irq, void * dev)
+static irqreturn_t bcm_interrupt(int irq, void *dev)
 #else
-static void bcm_interrupt (int irq, void * dev, struct pt_regs * regs)
+static void bcm_interrupt(int irq, void *dev, struct pt_regs *regs)
 #endif
 {
-    struct bcm_serial * info = lines[0];
-    UINT16  intStat;
+	struct bcm_serial *info = lines[0];
+	UINT16 intStat;
 
-    /* get pending interrupt flags from UART  */
+	/* get pending interrupt flags from UART  */
 
-    /* Mask with only the serial interrupts that are enabled */
-    intStat = info->port->intStatus & info->port->intMask;
-    while (intStat)
-    {
-        if (intStat & RXINT)
-            receive_chars (info);          
-        else
-            if (intStat & TXINT)
-                info->port->intStatus = TXINT;
-            else /* don't know what it was, so let's mask it */
-                info->port->intMask &= ~intStat;
+	/* Mask with only the serial interrupts that are enabled */
+	intStat = info->port->intStatus & info->port->intMask;
+	while (intStat) {
+		if (intStat & RXINT)
+			receive_chars(info);
+		else if (intStat & TXINT)
+			info->port->intStatus = TXINT;
+		else		/* don't know what it was, so let's mask it */
+			info->port->intMask &= ~intStat;
 
-        intStat = info->port->intStatus & info->port->intMask;
-    }
+		intStat = info->port->intStatus & info->port->intMask;
+	}
 
-    // Clear the interrupt
-    BcmHalInterruptEnable (INTERRUPT_ID_UART);
+	// Clear the interrupt
+	enable_brcm_irq(INTERRUPT_ID_UART);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
-    return IRQ_HANDLED;
-#endif    
+	return IRQ_HANDLED;
+#endif
 }
 
 /*
@@ -289,10 +280,10 @@ static void bcm_interrupt (int irq, void * dev, struct pt_regs * regs)
  * various initialization tasks
  * ------------------------------------------------------------------- 
  */
-static int startup (struct bcm_serial *info)
+static int startup(struct bcm_serial *info)
 {
-    // Port is already started...
-    return 0;
+	// Port is already started...
+	return 0;
 }
 
 /* 
@@ -303,21 +294,22 @@ static int startup (struct bcm_serial *info)
  * DTR is dropped if the hangup on close termio flag is on.
  * ------------------------------------------------------------------- 
  */
-static void shutdown (struct bcm_serial * info)
+static void shutdown(struct bcm_serial *info)
 {
-    unsigned long flags;
-    if (!info->is_initialized)
-        return;
+	unsigned long flags;
+	if (!info->is_initialized)
+		return;
 
-    spin_lock_irqsave(&bcm963xx_serial_lock, flags);
+	spin_lock_irqsave(&bcm963xx_serial_lock, flags);
 
-    info->port->control &= ~(BRGEN|TXEN|RXEN);
-    if (info->tty)
-        set_bit (TTY_IO_ERROR, &info->tty->flags);
-    info->is_initialized = 0;
+	info->port->control &= ~(BRGEN | TXEN | RXEN);
+	if (info->tty)
+		set_bit(TTY_IO_ERROR, &info->tty->flags);
+	info->is_initialized = 0;
 
-    spin_unlock_irqrestore(&bcm963xx_serial_lock, flags);
+	spin_unlock_irqrestore(&bcm963xx_serial_lock, flags);
 }
+
 /* 
  * -------------------------------------------------------------------
  * change_speed ()
@@ -325,118 +317,117 @@ static void shutdown (struct bcm_serial * info)
  * Set the baud rate, character size, parity and stop bits.
  * ------------------------------------------------------------------- 
  */
-static void change_speed( volatile Uart *pUart, tcflag_t cFlag )
+static void change_speed(volatile Uart * pUart, tcflag_t cFlag)
 {
-    unsigned long ulFlags, ulBaud, ulClockFreqHz, ulTmp;
-	
-    spin_lock_irqsave(&bcm963xx_serial_lock, ulFlags);
-    switch( cFlag & (CBAUD | CBAUDEX) )
-    {
-    case B115200:
-        ulBaud = 115200;
-        break;
-    case B57600:
-        ulBaud = 57600;
-        break;
-    case B38400:
-        ulBaud = 38400;
-        break;
-    case B19200:
-        ulBaud = 19200;
-        break;
-    case B9600:
-        ulBaud = 9600;
-        break;
-    case B4800:
-        ulBaud = 4800;
-        break;
-    case B2400:
-        ulBaud = 2400;
-        break;
-    case B1800:
-        ulBaud = 1800;
-        break;
-    case B1200:
-        ulBaud = 1200;
-        break;
-    case B600:
-        ulBaud = 600;
-        break;
-    case B300:
-        ulBaud = 300;
-        break;
-    case B200:
-        ulBaud = 200;
-        break;
-    case B150:
-        ulBaud = 150;
-        break;
-    case B134:
-        ulBaud = 134;
-        break;
-    case B110:
-        ulBaud = 110;
-        break;
-    case B75:
-        ulBaud = 75;
-        break;
-    case B50:
-        ulBaud = 50;
-        break;
-    default:
-        ulBaud = 115200;
-        break;
-    }
+	unsigned long ulFlags, ulBaud, ulClockFreqHz, ulTmp;
 
-    /* Calculate buad rate.  */
-    ulClockFreqHz = BD_BCM63XX_TIMER_CLOCK_INPUT;
-    ulTmp = (ulClockFreqHz / ulBaud) / 16;
-    if( ulTmp & 0x01 )
-        ulTmp /= 2; /* Rounding up, so sub is already accounted for */
-    else
-        ulTmp = (ulTmp / 2) - 1; /* Rounding down so we must sub 1 */
-    pUart->baudword = ulTmp;
+	spin_lock_irqsave(&bcm963xx_serial_lock, ulFlags);
+	switch (cFlag & (CBAUD | CBAUDEX)) {
+	case B115200:
+		ulBaud = 115200;
+		break;
+	case B57600:
+		ulBaud = 57600;
+		break;
+	case B38400:
+		ulBaud = 38400;
+		break;
+	case B19200:
+		ulBaud = 19200;
+		break;
+	case B9600:
+		ulBaud = 9600;
+		break;
+	case B4800:
+		ulBaud = 4800;
+		break;
+	case B2400:
+		ulBaud = 2400;
+		break;
+	case B1800:
+		ulBaud = 1800;
+		break;
+	case B1200:
+		ulBaud = 1200;
+		break;
+	case B600:
+		ulBaud = 600;
+		break;
+	case B300:
+		ulBaud = 300;
+		break;
+	case B200:
+		ulBaud = 200;
+		break;
+	case B150:
+		ulBaud = 150;
+		break;
+	case B134:
+		ulBaud = 134;
+		break;
+	case B110:
+		ulBaud = 110;
+		break;
+	case B75:
+		ulBaud = 75;
+		break;
+	case B50:
+		ulBaud = 50;
+		break;
+	default:
+		ulBaud = 115200;
+		break;
+	}
 
-    /* Set character size, stop bits and parity.  */
-    switch( cFlag & CSIZE )
-    {
-    case CS5:
-        ulTmp = BITS5SYM; /* select transmit 5 bit data size */
-        break;
-    case CS6:
-        ulTmp = BITS6SYM; /* select transmit 6 bit data size */
-        break;
-    case CS7:
-        ulTmp = BITS7SYM; /* select transmit 7 bit data size */
-        break;
-    default:
-        ulTmp = BITS8SYM; /* select transmit 8 bit data size */
-        break;
-    }
-    if( cFlag & CSTOPB )
-        ulTmp |= TWOSTOP;         /* select 2 stop bits */
-    else
-        ulTmp |= ONESTOP;         /* select one stop bit */
+	/* Calculate buad rate.  */
+	ulClockFreqHz = BD_BCM63XX_TIMER_CLOCK_INPUT;
+	ulTmp = (ulClockFreqHz / ulBaud) / 16;
+	if (ulTmp & 0x01)
+		ulTmp /= 2;	/* Rounding up, so sub is already accounted for */
+	else
+		ulTmp = (ulTmp / 2) - 1;	/* Rounding down so we must sub 1 */
+	pUart->baudword = ulTmp;
 
-    /* Write these values into the config reg.  */
-    pUart->config = ulTmp;
-    pUart->control &= ~(RXPARITYEN | TXPARITYEN | RXPARITYEVEN | TXPARITYEVEN);
-    switch( cFlag & (PARENB | PARODD) )
-    {
-    case PARENB|PARODD:
-        pUart->control |= RXPARITYEN | TXPARITYEN;
-        break;
-    case PARENB:
-        pUart->control |= RXPARITYEN | TXPARITYEN | RXPARITYEVEN | TXPARITYEVEN;
-        break;
-    default:
-        pUart->control |= 0;
-        break;
-    }
+	/* Set character size, stop bits and parity.  */
+	switch (cFlag & CSIZE) {
+	case CS5:
+		ulTmp = BITS5SYM;	/* select transmit 5 bit data size */
+		break;
+	case CS6:
+		ulTmp = BITS6SYM;	/* select transmit 6 bit data size */
+		break;
+	case CS7:
+		ulTmp = BITS7SYM;	/* select transmit 7 bit data size */
+		break;
+	default:
+		ulTmp = BITS8SYM;	/* select transmit 8 bit data size */
+		break;
+	}
+	if (cFlag & CSTOPB)
+		ulTmp |= TWOSTOP;	/* select 2 stop bits */
+	else
+		ulTmp |= ONESTOP;	/* select one stop bit */
 
-    /* Reset and flush uart */
-    pUart->fifoctl = RSTTXFIFOS | RSTRXFIFOS;
-    spin_unlock_irqrestore(&bcm963xx_serial_lock, ulFlags);
+	/* Write these values into the config reg.  */
+	pUart->config = ulTmp;
+	pUart->control &=
+	    ~(RXPARITYEN | TXPARITYEN | RXPARITYEVEN | TXPARITYEVEN);
+	switch (cFlag & (PARENB | PARODD)) {
+	case PARENB | PARODD:
+		pUart->control |= RXPARITYEN | TXPARITYEN;
+		break;
+	case PARENB:
+		pUart->control |=
+		    RXPARITYEN | TXPARITYEN | RXPARITYEVEN | TXPARITYEVEN;
+		break;
+	default:
+		pUart->control |= 0;
+		break;
+	}
+
+	/* Reset and flush uart */
+	pUart->fifoctl = RSTTXFIFOS | RSTRXFIFOS;
+	spin_unlock_irqrestore(&bcm963xx_serial_lock, ulFlags);
 }
 
 
@@ -447,7 +438,7 @@ static void change_speed( volatile Uart *pUart, tcflag_t cFlag )
  * Nothing to flush.  Polled I/O is used.
  * ------------------------------------------------------------------- 
  */
-static void bcm63xx_cons_flush_chars (struct tty_struct *tty)
+static void bcm63xx_cons_flush_chars(struct tty_struct *tty)
 {
 }
 
@@ -459,14 +450,14 @@ static void bcm63xx_cons_flush_chars (struct tty_struct *tty)
  * Main output routine using polled I/O.
  * ------------------------------------------------------------------- 
  */
-static int bcm63xx_cons_write (struct tty_struct *tty, 
-    const unsigned char *buf, int count)
+static int bcm63xx_cons_write(struct tty_struct *tty,
+			      const unsigned char *buf, int count)
 {
-    int c;
+	int c;
 
-    for (c = 0; c < count; c++)
-        _putc(buf[c]);
-    return count;
+	for (c = 0; c < count; c++)
+		_putc(buf[c]);
+	return count;
 }
 
 /* 
@@ -476,10 +467,10 @@ static int bcm63xx_cons_write (struct tty_struct *tty,
  * Compute the amount of space available for writing.
  * ------------------------------------------------------------------- 
  */
-static int bcm63xx_cons_write_room (struct tty_struct *tty)
+static int bcm63xx_cons_write_room(struct tty_struct *tty)
 {
-    /* Pick a number.  Any number.  Polled I/O is used. */
-    return 1024;
+	/* Pick a number.  Any number.  Polled I/O is used. */
+	return 1024;
 }
 
 /* 
@@ -489,9 +480,9 @@ static int bcm63xx_cons_write_room (struct tty_struct *tty)
  * compute the amount of char left to be transmitted
  * ------------------------------------------------------------------- 
  */
-static int bcm_chars_in_buffer (struct tty_struct *tty)
+static int bcm_chars_in_buffer(struct tty_struct *tty)
 {
-    return 0;
+	return 0;
 }
 
 /* 
@@ -501,7 +492,7 @@ static int bcm_chars_in_buffer (struct tty_struct *tty)
  * Empty the output buffer
  * ------------------------------------------------------------------- 
  */
-static void bcm_flush_buffer (struct tty_struct *tty)
+static void bcm_flush_buffer(struct tty_struct *tty)
 {
 	tty_wakeup(tty);
 }
@@ -514,31 +505,30 @@ static void bcm_flush_buffer (struct tty_struct *tty)
  * incoming characters should be throttled (or not).
  * ------------------------------------------------------------
  */
-static void bcm_throttle (struct tty_struct *tty)
+static void bcm_throttle(struct tty_struct *tty)
 {
-    struct bcm_serial *info = (struct bcm_serial *)tty->driver_data;  
-    if (I_IXOFF(tty))
-        info->x_char = STOP_CHAR(tty);
+	struct bcm_serial *info = (struct bcm_serial *) tty->driver_data;
+	if (I_IXOFF(tty))
+		info->x_char = STOP_CHAR(tty);
 }
 
-static void bcm_unthrottle (struct tty_struct *tty)
+static void bcm_unthrottle(struct tty_struct *tty)
 {
-    struct bcm_serial *info = (struct bcm_serial *)tty->driver_data;  
-    if (I_IXOFF(tty))
-    {
-        if (info->x_char)
-            info->x_char = 0;
-        else
-            info->x_char = START_CHAR(tty);
-    }
+	struct bcm_serial *info = (struct bcm_serial *) tty->driver_data;
+	if (I_IXOFF(tty)) {
+		if (info->x_char)
+			info->x_char = 0;
+		else
+			info->x_char = START_CHAR(tty);
+	}
 }
 
-static void bcm_send_xchar (struct tty_struct *tty, char ch)
+static void bcm_send_xchar(struct tty_struct *tty, char ch)
 {
-    struct bcm_serial *info = (struct bcm_serial *)tty->driver_data;
-    info->x_char = ch;
-    if (ch)
-        bcm_start (info->tty);
+	struct bcm_serial *info = (struct bcm_serial *) tty->driver_data;
+	info->x_char = ch;
+	if (ch)
+		bcm_start(info->tty);
 }
 
 /*
@@ -546,54 +536,56 @@ static void bcm_send_xchar (struct tty_struct *tty, char ch)
  * rs_ioctl () and friends
  * ------------------------------------------------------------
  */
-static int get_serial_info(struct bcm_serial *info, struct serial_struct *retinfo)
+static int get_serial_info(struct bcm_serial *info,
+			   struct serial_struct *retinfo)
 {
-    struct serial_struct tmp;
+	struct serial_struct tmp;
 
-    if (!retinfo)
-        return -EFAULT;
+	if (!retinfo)
+		return -EFAULT;
 
-    memset (&tmp, 0, sizeof(tmp));
-    tmp.type            = info->type;
-    tmp.line            = info->line;
-    tmp.port            = (int) info->port;
-    tmp.irq             = info->irq;
-    tmp.flags           = 0;
-    tmp.baud_base       = info->baud_base;
-    tmp.close_delay     = info->close_delay;
-    tmp.closing_wait    = info->closing_wait;
+	memset(&tmp, 0, sizeof(tmp));
+	tmp.type = info->type;
+	tmp.line = info->line;
+	tmp.port = (int) info->port;
+	tmp.irq = info->irq;
+	tmp.flags = 0;
+	tmp.baud_base = info->baud_base;
+	tmp.close_delay = info->close_delay;
+	tmp.closing_wait = info->closing_wait;
 
-    return copy_to_user (retinfo, &tmp, sizeof(*retinfo));
+	return copy_to_user(retinfo, &tmp, sizeof(*retinfo));
 }
 
-static int set_serial_info (struct bcm_serial *info, struct serial_struct *new_info)
+static int set_serial_info(struct bcm_serial *info,
+			   struct serial_struct *new_info)
 {
-    struct serial_struct new_serial;
-    struct bcm_serial old_info;
-    int retval = 0;
+	struct serial_struct new_serial;
+	struct bcm_serial old_info;
+	int retval = 0;
 
-    if (!new_info)
-        return -EFAULT;
+	if (!new_info)
+		return -EFAULT;
 
-    copy_from_user (&new_serial, new_info, sizeof(new_serial));
-    old_info = *info;
+	copy_from_user(&new_serial, new_info, sizeof(new_serial));
+	old_info = *info;
 
-    if (!capable(CAP_SYS_ADMIN))
-        return -EPERM;
+	if (!capable(CAP_SYS_ADMIN))
+		return -EPERM;
 
 
-    if (info->count > 1)
-        return -EBUSY;
+	if (info->count > 1)
+		return -EBUSY;
 
-    /* OK, past this point, all the error checking has been done.
-     * At this point, we start making changes.....
-     */
-    info->baud_base = new_serial.baud_base;
-    info->type = new_serial.type;
-    info->close_delay = new_serial.close_delay;
-    info->closing_wait = new_serial.closing_wait;
-    retval = startup (info);
-    return retval;
+	/* OK, past this point, all the error checking has been done.
+	 * At this point, we start making changes.....
+	 */
+	info->baud_base = new_serial.baud_base;
+	info->type = new_serial.type;
+	info->close_delay = new_serial.close_delay;
+	info->closing_wait = new_serial.closing_wait;
+	retval = startup(info);
+	return retval;
 }
 
 /*
@@ -606,125 +598,135 @@ static int set_serial_info (struct bcm_serial *info, struct serial_struct *new_i
  *          transmit holding register is empty.  This functionality
  *          allows an RS485 driver to be written in user space. 
  */
-static int get_lsr_info (struct bcm_serial *info, unsigned int *value)
+static int get_lsr_info(struct bcm_serial *info, unsigned int *value)
 {
-    return( 0 );
+	return (0);
 }
 
 /*
  * This routine sends a break character out the serial port.
  */
-static void send_break (struct bcm_serial *info, int duration)
+static void send_break(struct bcm_serial *info, int duration)
 {
-    unsigned long flags;
+	unsigned long flags;
 
-    if (!info->port)
-        return;
+	if (!info->port)
+		return;
 
-    current->state = TASK_INTERRUPTIBLE;
+	current->state = TASK_INTERRUPTIBLE;
 
-    /*save_flags (flags);
-    cli();*/
-    spin_lock_irqsave(&bcm963xx_serial_lock, flags);
+	/*save_flags (flags);
+	   cli(); */
+	spin_lock_irqsave(&bcm963xx_serial_lock, flags);
 
-    info->port->control |= XMITBREAK;
-    schedule_timeout(duration);
-    info->port->control &= ~XMITBREAK;
+	info->port->control |= XMITBREAK;
+	schedule_timeout(duration);
+	info->port->control &= ~XMITBREAK;
 
-    spin_unlock_irqrestore(&bcm963xx_serial_lock, flags);
-    //restore_flags (flags);
+	spin_unlock_irqrestore(&bcm963xx_serial_lock, flags);
+	//restore_flags (flags);
 }
 
-static int bcm_ioctl (struct tty_struct * tty, struct file * file,
-    unsigned int cmd, unsigned long arg)
+static int bcm_ioctl(struct tty_struct *tty, struct file *file,
+		     unsigned int cmd, unsigned long arg)
 {
-    int error;
-    struct bcm_serial * info = (struct bcm_serial *)tty->driver_data;
-    int retval;
+	int error;
+	struct bcm_serial *info = (struct bcm_serial *) tty->driver_data;
+	int retval;
 
-    if ((cmd != TIOCGSERIAL) && (cmd != TIOCSSERIAL) &&
-        (cmd != TIOCSERCONFIG) && (cmd != TIOCSERGWILD)  &&
-        (cmd != TIOCSERSWILD) && (cmd != TIOCSERGSTRUCT))
-    {
-        if (tty->flags & (1 << TTY_IO_ERROR))
-            return -EIO;
-    }
-    switch (cmd) 
-    {
-
-    case TCSBRK:    /* SVID version: non-zero arg --> no break */
-        retval = tty_check_change (tty);
-        if (retval)
-            return retval;
-        tty_wait_until_sent (tty, 0);
-        if (!arg)
-            send_break (info, HZ/4); /* 1/4 second */
-        return 0;
-
-    case TCSBRKP:   /* support for POSIX tcsendbreak() */
-        retval = tty_check_change (tty);
-        if (retval)
-            return retval;
-        tty_wait_until_sent (tty, 0);
-        send_break (info, arg ? arg*(HZ/10) : HZ/4);
-        return 0;
-
-    case TIOCGSOFTCAR:
-        error = access_ok (VERIFY_WRITE, (void *)arg, sizeof(long));
-        if (!error)
-            return -EFAULT;
-	else
-	{
-	    put_user (C_CLOCAL(tty) ? 1 : 0, (unsigned long *)arg);
-	    return 0;
+	if ((cmd != TIOCGSERIAL) && (cmd != TIOCSSERIAL) &&
+	    (cmd != TIOCSERCONFIG) && (cmd != TIOCSERGWILD) &&
+	    (cmd != TIOCSERSWILD) && (cmd != TIOCSERGSTRUCT)) {
+		if (tty->flags & (1 << TTY_IO_ERROR))
+			return -EIO;
 	}
+	switch (cmd) {
 
-    case TIOCSSOFTCAR:
-        error = get_user (arg, (unsigned long *)arg);
-        if (error)
-            return error;
-        tty->termios->c_cflag = ((tty->termios->c_cflag & ~CLOCAL) | (arg ? CLOCAL : 0));
-        return 0;
+	case TCSBRK:		/* SVID version: non-zero arg --> no break */
+		retval = tty_check_change(tty);
+		if (retval)
+			return retval;
+		tty_wait_until_sent(tty, 0);
+		if (!arg)
+			send_break(info, HZ / 4);	/* 1/4 second */
+		return 0;
 
-    case TIOCGSERIAL:
-        error = access_ok (VERIFY_WRITE, (void *)arg, sizeof(struct serial_struct));
-        if (!error)
-            return -EFAULT;
-	else
-	    return get_serial_info (info, (struct serial_struct *)arg);
+	case TCSBRKP:		/* support for POSIX tcsendbreak() */
+		retval = tty_check_change(tty);
+		if (retval)
+			return retval;
+		tty_wait_until_sent(tty, 0);
+		send_break(info, arg ? arg * (HZ / 10) : HZ / 4);
+		return 0;
 
-    case TIOCSSERIAL:
-        return set_serial_info (info, (struct serial_struct *) arg);
+	case TIOCGSOFTCAR:
+		error =
+		    access_ok(VERIFY_WRITE, (void *) arg, sizeof(long));
+		if (!error)
+			return -EFAULT;
+		else {
+			put_user(C_CLOCAL(tty) ? 1 : 0,
+				 (unsigned long *) arg);
+			return 0;
+		}
 
-    case TIOCSERGETLSR: /* Get line status register */
-        error = access_ok (VERIFY_WRITE, (void *)arg, sizeof(unsigned int));
-        if (!error)
-            return -EFAULT;
-        else
-            return get_lsr_info (info, (unsigned int *)arg);
+	case TIOCSSOFTCAR:
+		error = get_user(arg, (unsigned long *) arg);
+		if (error)
+			return error;
+		tty->termios->c_cflag =
+		    ((tty->termios->
+		      c_cflag & ~CLOCAL) | (arg ? CLOCAL : 0));
+		return 0;
 
-    case TIOCSERGSTRUCT:
-        error = access_ok (VERIFY_WRITE, (void *)arg, sizeof(struct bcm_serial));
-        if (!error)
-            return -EFAULT;
-	else
-	{
-	    copy_to_user((struct bcm_serial *)arg, info, sizeof(struct bcm_serial));
-	    return 0;
+	case TIOCGSERIAL:
+		error =
+		    access_ok(VERIFY_WRITE, (void *) arg,
+			      sizeof(struct serial_struct));
+		if (!error)
+			return -EFAULT;
+		else
+			return get_serial_info(info,
+					       (struct serial_struct *)
+					       arg);
+
+	case TIOCSSERIAL:
+		return set_serial_info(info, (struct serial_struct *) arg);
+
+	case TIOCSERGETLSR:	/* Get line status register */
+		error =
+		    access_ok(VERIFY_WRITE, (void *) arg,
+			      sizeof(unsigned int));
+		if (!error)
+			return -EFAULT;
+		else
+			return get_lsr_info(info, (unsigned int *) arg);
+
+	case TIOCSERGSTRUCT:
+		error =
+		    access_ok(VERIFY_WRITE, (void *) arg,
+			      sizeof(struct bcm_serial));
+		if (!error)
+			return -EFAULT;
+		else {
+			copy_to_user((struct bcm_serial *) arg, info,
+				     sizeof(struct bcm_serial));
+			return 0;
+		}
+
+	default:
+		return -ENOIOCTLCMD;
 	}
-
-    default:
-        return -ENOIOCTLCMD;
-    }
-    return 0;
+	return 0;
 }
 
-static void bcm_set_termios (struct tty_struct *tty, struct termios *old_termios)
+static void bcm_set_termios(struct tty_struct *tty,
+			    struct termios *old_termios)
 {
-    struct bcm_serial *info = (struct bcm_serial *)tty->driver_data;
+	struct bcm_serial *info = (struct bcm_serial *) tty->driver_data;
 
-    if( tty->termios->c_cflag != old_termios->c_cflag )
-        change_speed (info->port, tty->termios->c_cflag);
+	if (tty->termios->c_cflag != old_termios->c_cflag)
+		change_speed(info->port, tty->termios->c_cflag);
 }
 
 /*
@@ -736,112 +738,106 @@ static void bcm_set_termios (struct tty_struct *tty, struct termios *old_termios
  * the transmit enable and receive enable flags.
  * ------------------------------------------------------------
  */
-static void bcm63xx_cons_close (struct tty_struct *tty, struct file *filp)
+static void bcm63xx_cons_close(struct tty_struct *tty, struct file *filp)
 {
-    struct bcm_serial * info = (struct bcm_serial *)tty->driver_data;
-    unsigned long flags;
+	struct bcm_serial *info = (struct bcm_serial *) tty->driver_data;
+	unsigned long flags;
 
-    if (!info)
-        return;
+	if (!info)
+		return;
 
-    /*save_flags (flags); 
-    cli();*/
-    spin_lock_irqsave(&bcm963xx_serial_lock, flags);
+	/*save_flags (flags); 
+	   cli(); */
+	spin_lock_irqsave(&bcm963xx_serial_lock, flags);
 
-    if (tty_hung_up_p (filp))
-    {
-        spin_unlock_irqrestore(&bcm963xx_serial_lock, flags);
-        //restore_flags (flags);
-        return;
-    }
+	if (tty_hung_up_p(filp)) {
+		spin_unlock_irqrestore(&bcm963xx_serial_lock, flags);
+		//restore_flags (flags);
+		return;
+	}
 
-    if ((tty->count == 1) && (info->count != 1))
-    {
+	if ((tty->count == 1) && (info->count != 1)) {
 
-        /* Uh, oh.  tty->count is 1, which means that the tty
-         * structure will be freed.  Info->count should always
-         * be one in these conditions.  If it's greater than
-         * one, we've got real problems, since it means the
-         * serial port won't be shutdown.
-         */
-        printk("bcm63xx_cons_close: bad serial port count; tty->count is 1, "
-            "info->count is %d\n", info->count);
-        info->count = 1;
-    }
+		/* Uh, oh.  tty->count is 1, which means that the tty
+		 * structure will be freed.  Info->count should always
+		 * be one in these conditions.  If it's greater than
+		 * one, we've got real problems, since it means the
+		 * serial port won't be shutdown.
+		 */
+		printk
+		    ("bcm63xx_cons_close: bad serial port count; tty->count is 1, "
+		     "info->count is %d\n", info->count);
+		info->count = 1;
+	}
 
-    if (--info->count < 0)
-    {
-        printk("ds_close: bad serial port count for ttys%d: %d\n",
-        info->line, info->count);
-        info->count = 0;
-    }
+	if (--info->count < 0) {
+		printk("ds_close: bad serial port count for ttys%d: %d\n",
+		       info->line, info->count);
+		info->count = 0;
+	}
 
-    if (info->count)
-    {
-        //restore_flags (flags);
-	spin_unlock_irqrestore(&bcm963xx_serial_lock, flags);
-        return;
-    }
+	if (info->count) {
+		//restore_flags (flags);
+		spin_unlock_irqrestore(&bcm963xx_serial_lock, flags);
+		return;
+	}
 
-    /* Now we wait for the transmit buffer to clear; and we notify 
-     * the line discipline to only process XON/XOFF characters.
-     */
-    tty->closing = 1;
+	/* Now we wait for the transmit buffer to clear; and we notify 
+	 * the line discipline to only process XON/XOFF characters.
+	 */
+	tty->closing = 1;
 
-    /* At this point we stop accepting input.  To do this, we
-     * disable the receive line status interrupts.
-     */
-    shutdown (info);
+	/* At this point we stop accepting input.  To do this, we
+	 * disable the receive line status interrupts.
+	 */
+	shutdown(info);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
-    if (tty->driver->flush_buffer)
-        tty->driver->flush_buffer (tty);
-#else    
-    if (tty->driver.flush_buffer)
-        tty->driver.flush_buffer (tty);
+	if (tty->driver->flush_buffer)
+		tty->driver->flush_buffer(tty);
+#else
+	if (tty->driver.flush_buffer)
+		tty->driver.flush_buffer(tty);
 #endif
-    if (tty->ldisc.flush_buffer)
-        tty->ldisc.flush_buffer (tty);
+	if (tty->ldisc.flush_buffer)
+		tty->ldisc.flush_buffer(tty);
 
-    tty->closing = 0;
-    info->event = 0;
-    info->tty = 0;
-    if (tty->ldisc.num != tty_ldisc_get(N_TTY)->num)
-    {
-        if (tty->ldisc.close)
-            (tty->ldisc.close)(tty);
-        tty->ldisc = *tty_ldisc_get(N_TTY);
-        tty->termios->c_line = N_TTY;
-        if (tty->ldisc.open)
-            (tty->ldisc.open)(tty);
-    }
-    if (info->blocked_open)
-    {
-        if (info->close_delay)
-        {
-            current->state = TASK_INTERRUPTIBLE;
-            schedule_timeout(info->close_delay);
-        }
-        wake_up_interruptible (&info->open_wait);
-    }
-    wake_up_interruptible (&info->close_wait);
+	tty->closing = 0;
+	info->event = 0;
+	info->tty = 0;
+	if (tty->ldisc.num != tty_ldisc_get(N_TTY)->num) {
+		if (tty->ldisc.close)
+			(tty->ldisc.close) (tty);
+		tty->ldisc = *tty_ldisc_get(N_TTY);
+		tty->termios->c_line = N_TTY;
+		if (tty->ldisc.open)
+			(tty->ldisc.open) (tty);
+	}
+	if (info->blocked_open) {
+		if (info->close_delay) {
+			current->state = TASK_INTERRUPTIBLE;
+			schedule_timeout(info->close_delay);
+		}
+		wake_up_interruptible(&info->open_wait);
+	}
+	wake_up_interruptible(&info->close_wait);
 
-    //restore_flags (flags);
-    spin_unlock_irqrestore(&bcm963xx_serial_lock, flags);
+	//restore_flags (flags);
+	spin_unlock_irqrestore(&bcm963xx_serial_lock, flags);
 }
 
 /*
  * bcm_hangup () --- called by tty_hangup() when a hangup is signaled.
  */
-static void bcm_hangup (struct tty_struct *tty)
+static void bcm_hangup(struct tty_struct *tty)
 {
 
-    struct bcm_serial *info = (struct bcm_serial *)tty->driver_data;
+	struct bcm_serial *info = (struct bcm_serial *) tty->driver_data;
 
-    shutdown (info);
-    info->event = 0;
-    info->count = 0;
-    info->tty = 0;
-    wake_up_interruptible (&info->open_wait);
+	shutdown(info);
+	info->event = 0;
+	info->count = 0;
+	info->tty = 0;
+	wake_up_interruptible(&info->open_wait);
 }
 
 /*
@@ -849,62 +845,62 @@ static void bcm_hangup (struct tty_struct *tty)
  * rs_open() and friends
  * ------------------------------------------------------------
  */
-static int block_til_ready (struct tty_struct *tty, struct file *filp,
-    struct bcm_serial *info)
+static int block_til_ready(struct tty_struct *tty, struct file *filp,
+			   struct bcm_serial *info)
 {
-    return 0;
-}       
+	return 0;
+}
 
 /*
  * This routine is called whenever a serial port is opened.  It
  * enables interrupts for a serial port. It also performs the 
  * serial-specific initialization for the tty structure.
  */
-static int bcm63xx_cons_open (struct tty_struct * tty, struct file * filp)
+static int bcm63xx_cons_open(struct tty_struct *tty, struct file *filp)
 {
-    struct bcm_serial *info;
-    int retval, line;
+	struct bcm_serial *info;
+	int retval, line;
 
-    // Make sure we're only opening on of the ports we support
+	// Make sure we're only opening on of the ports we support
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
-    line = MINOR(tty->driver->cdev.dev) - tty->driver->minor_start;
+	line = MINOR(tty->driver->cdev.dev) - tty->driver->minor_start;
 #else
-    line = MINOR(tty->device) - tty->driver.minor_start;
-#endif    
+	line = MINOR(tty->device) - tty->driver.minor_start;
+#endif
 
-    if ((line < 0) || (line >= BCM_NUM_UARTS))
-        return -ENODEV;
+	if ((line < 0) || (line >= BCM_NUM_UARTS))
+		return -ENODEV;
 
-    info = lines[line];
+	info = lines[line];
 
-    tty->low_latency=1;
-    info->port->intMask  = 0;     /* Clear any pending interrupts */
-    info->port->intMask  = RXINT; /* Enable RX */
+	tty->low_latency = 1;
+	info->port->intMask = 0;	/* Clear any pending interrupts */
+	info->port->intMask = RXINT;	/* Enable RX */
 
-    info->count++;
-    tty->driver_data = info;
-    info->tty = tty;
-    BcmHalInterruptEnable (INTERRUPT_ID_UART);
+	info->count++;
+	tty->driver_data = info;
+	info->tty = tty;
+	enable_brcm_irq(INTERRUPT_ID_UART);
 
-    // Start up serial port
-    retval = startup (info);
-    if (retval)
-        return retval;
+	// Start up serial port
+	retval = startup(info);
+	if (retval)
+		return retval;
 
-    retval = block_til_ready (tty, filp, info);
-    if (retval)
-        return retval;
+	retval = block_til_ready(tty, filp, info);
+	if (retval)
+		return retval;
 
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
-    info->pgrp = process_group(current);
-    info->session = current->signal->session;
+	info->pgrp = process_group(current);
+	info->session = current->signal->session;
 #else
-    info->session = current->session;    
-    info->pgrp = current->pgrp;
-#endif    
+	info->session = current->session;
+	info->pgrp = current->pgrp;
+#endif
 
-    return 0;
+	return 0;
 }
 
 
@@ -932,72 +928,69 @@ static struct tty_operations rs_ops = {
 -------------------------------------------------------------------------- */
 static int __init bcm63xx_serialinit(void)
 {
-    int i, flags;
-    struct bcm_serial * info;
+	int i, flags;
+	struct bcm_serial *info;
 
-    // Print the driver version information
-    printk(VER_STR);
-    serial_driver = alloc_tty_driver(BCM_NUM_UARTS);
-    if (!serial_driver)
-	return -ENOMEM;
+	// Print the driver version information
+	printk(VER_STR);
+	serial_driver = alloc_tty_driver(BCM_NUM_UARTS);
+	if (!serial_driver)
+		return -ENOMEM;
 
-	serial_driver->owner 	    = THIS_MODULE;
-//	serial_driver->devfs_name 	    = "tts/";
-//    serial_driver.magic             = TTY_DRIVER_MAGIC;
-    serial_driver->name              = "ttyS";
-    serial_driver->major             = TTY_MAJOR;
-    serial_driver->minor_start       = 64;
-//    serial_driver.num               = BCM_NUM_UARTS;
-    serial_driver->type              = TTY_DRIVER_TYPE_SERIAL;
-    serial_driver->subtype           = SERIAL_TYPE_NORMAL;
-    serial_driver->init_termios      = tty_std_termios;
-    serial_driver->init_termios.c_cflag = B115200 | CS8 | CREAD | HUPCL | CLOCAL;
-    serial_driver->flags             = TTY_DRIVER_REAL_RAW;
+	serial_driver->owner = THIS_MODULE;
+	serial_driver->name = "ttyS";
+	serial_driver->major = TTY_MAJOR;
+	serial_driver->minor_start = 64;
+	serial_driver->num = 1;
+	serial_driver->type = TTY_DRIVER_TYPE_SERIAL;
+	serial_driver->subtype = SERIAL_TYPE_NORMAL;
+	serial_driver->init_termios = tty_std_termios;
+	serial_driver->init_termios.c_cflag = B115200 | CS8 | CREAD | HUPCL | CLOCAL;
+	serial_driver->flags = TTY_DRIVER_REAL_RAW;
 
-    serial_driver->termios           = serial_termios;
-    serial_driver->termios_locked    = serial_termios_locked;
-    
-    tty_set_operations(serial_driver, &rs_ops);
+	serial_driver->termios = serial_termios;
+	serial_driver->termios_locked = serial_termios_locked;
 
-    if (tty_register_driver (serial_driver))
-        panic("Couldn't register serial driver\n");
+	tty_set_operations(serial_driver, &rs_ops);
 
-    //save_flags(flags); cli();
-    spin_lock_irqsave(&bcm963xx_serial_lock, flags);
-    
-    for (i = 0; i < BCM_NUM_UARTS; i++)
-    {
-        info = &multi[i]; 
-        lines[i] = info;
-        info->magic = SERIAL_MAGIC;
-        info->port                  = (Uart *) ((char *)UART_BASE + (i * 0x20));
-        info->tty                   = 0;
-        info->irq                   = (2 - i) + 8;
-        info->line                  = i;
-        info->close_delay           = 50;
-        info->closing_wait          = 3000;
-        info->x_char                = 0;
-        info->event                 = 0;
-        info->count                 = 0;
-        info->blocked_open          = 0;	
-        info->normal_termios        = serial_driver->init_termios;
-        init_waitqueue_head(&info->open_wait); 
-        init_waitqueue_head(&info->close_wait); 
+	if (tty_register_driver(serial_driver))
+		panic("Couldn't register serial driver\n");
 
-        /* If we are pointing to address zero then punt - not correctly
-         * set up in setup.c to handle this. 
-         */
-        if (! info->port)
-            return 0;
-        BcmHalMapInterrupt(bcm_interrupt, 0, INTERRUPT_ID_UART);
-    }
+	//save_flags(flags); cli();
+	spin_lock_irqsave(&bcm963xx_serial_lock, flags);
 
-    /* order matters here... the trick is that flags
-     * is updated... in request_irq - to immediatedly obliterate
-     * it is unwise. 
-     */
-    spin_unlock_irqrestore(&bcm963xx_serial_lock, flags);
-    return 0;
+	for (i = 0; i < 1; i++) {
+		info = &multi[i];
+		lines[i] = info;
+		info->magic = SERIAL_MAGIC;
+		info->port = (Uart *) ((char *) UART_BASE + (i * 0x20));
+		info->tty = 0;
+		info->irq = (2 - i) + 8;
+		info->line = i;
+		info->close_delay = 50;
+		info->closing_wait = 3000;
+		info->x_char = 0;
+		info->event = 0;
+		info->count = 0;
+		info->blocked_open = 0;
+		info->normal_termios = serial_driver->init_termios;
+		init_waitqueue_head(&info->open_wait);
+		init_waitqueue_head(&info->close_wait);
+
+		/* If we are pointing to address zero then punt - not correctly
+		 * set up in setup.c to handle this. 
+		 */
+		if (!info->port)
+			return 0;
+		BcmHalMapInterrupt(bcm_interrupt, 0, INTERRUPT_ID_UART);
+	}
+
+	/* order matters here... the trick is that flags
+	 * is updated... in request_irq - to immediatedly obliterate
+	 * it is unwise. 
+	 */
+	spin_unlock_irqrestore(&bcm963xx_serial_lock, flags);
+	return 0;
 }
 
 module_init(bcm63xx_serialinit);
@@ -1007,45 +1000,43 @@ module_init(bcm63xx_serialinit);
  Purpose: bcm_console_print is registered for printk.
           The console_lock must be held when we get here.
 -------------------------------------------------------------------------- */
-static void bcm_console_print (struct console * cons, const char * str,
-    unsigned int count)
+static void bcm_console_print(struct console *cons, const char *str,
+			      unsigned int count)
 {
-    unsigned int i;
-    //_puts(str);
-    for(i=0; i<count; i++, str++)
-    {
-        _putc(*str);
-        if (*str == 10)
-        {
-            _putc(13);
-        }
-    }
+	unsigned int i;
+	//_puts(str);
+	for (i = 0; i < count; i++, str++) {
+		_putc(*str);
+		if (*str == 10) {
+			_putc(13);
+		}
+	}
 }
 
-static struct tty_driver * bcm_console_device(struct console * c, int *index)
+static struct tty_driver *bcm_console_device(struct console *c, int *index)
 {
-    *index = c->index;
-    return serial_driver;
+	*index = c->index;
+	return serial_driver;
 }
 
-static int __init bcm_console_setup(struct console * co, char * options)
+static int __init bcm_console_setup(struct console *co, char *options)
 {
-    return 0;
+	return 0;
 }
 
 static struct console bcm_sercons = {
-    .name	= "ttyS",
-    .write	= bcm_console_print,
-    .device	= bcm_console_device,
-    .setup	= bcm_console_setup,
-    .flags	= CON_PRINTBUFFER,
-    .index	= -1,
+	.name = "ttyS",
+	.write = bcm_console_print,
+	.device = bcm_console_device,
+	.setup = bcm_console_setup,
+	.flags = CON_PRINTBUFFER,
+	.index = -1,
 };
 
 static int __init bcm63xx_console_init(void)
 {
-    register_console(&bcm_sercons);
-    return 0;
+	register_console(&bcm_sercons);
+	return 0;
 }
 
 console_initcall(bcm63xx_console_init);
