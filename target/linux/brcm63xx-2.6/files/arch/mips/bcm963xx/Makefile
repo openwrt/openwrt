@@ -3,7 +3,7 @@
 #
 # Copyright (C) 2004 Broadcom Corporation
 #
-obj-y           := irq.o prom.o setup.o time.o ser_init.o int-handler.o info.o
+obj-y           := irq.o prom.o setup.o time.o ser_init.o int-handler.o info.o wdt.o
 
 SRCBASE         := $(TOPDIR)
 EXTRA_CFLAGS    += -I$(SRCBASE)/include
