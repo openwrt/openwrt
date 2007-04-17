@@ -93,4 +93,4 @@ static int __init adm5120_pci_setup(void)
 	return 0;
 }
 
-subsys_initcall(adm5120_pci_setup);
+arch_initcall(adm5120_pci_setup);
