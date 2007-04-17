@@ -59,4 +59,4 @@ static __init int bcm96348_pci_init(void)
         return 0;
 }
 
-subsys_initcall(bcm96348_pci_init);
+arch_initcall(bcm96348_pci_init);
