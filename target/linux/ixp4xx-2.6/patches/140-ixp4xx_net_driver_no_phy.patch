@@ -1,0 +1,73 @@
+diff -Nur linux-2.6.19.2/drivers/net/ixp4xx/mac_driver.c linux-2.6.19.2-owrt/drivers/net/ixp4xx/mac_driver.c
+--- linux-2.6.19.2/drivers/net/ixp4xx/mac_driver.c	2007-04-15 14:26:54.000000000 +0200
++++ linux-2.6.19.2-owrt/drivers/net/ixp4xx/mac_driver.c	2007-04-15 14:33:44.000000000 +0200
+@@ -161,6 +161,16 @@
+ {
+ 	struct mac_info *mac = netdev_priv(dev);
+ 
++	if ( mac->mii.phy_id < 0 ) {
++		if ( init ) {
++			netif_carrier_on(mac->mii.dev);
++			mac->mii.full_duplex = 1;
++			update_duplex_mode(dev);
++			return 1;
++		}
++		return 0;
++	}
++
+ 	if (mii_check_media(&mac->mii, netif_msg_link(mac), init)) {
+ 		update_duplex_mode(dev);
+ 		return 1;
+@@ -458,7 +468,12 @@
+ 		return -EINVAL;
+ 	if (!try_module_get(THIS_MODULE))
+ 		return -ENODEV;
+-	rc = generic_mii_ioctl(&mac->mii, if_mii(rq), cmd, &duplex_changed);
++	if ( mac->mii.phy_id < 0 ) {
++		duplex_changed = 0;
++		rc = -EOPNOTSUPP;
++	} else {
++		rc = generic_mii_ioctl(&mac->mii, if_mii(rq), cmd, &duplex_changed);
++	}
+ 	module_put(THIS_MODULE);
+ 	if (duplex_changed)
+ 		update_duplex_mode(dev);
+@@ -488,6 +503,9 @@
+ static int ixmac_get_settings(struct net_device *dev, struct ethtool_cmd *cmd)
+ {
+ 	struct mac_info *mac = netdev_priv(dev);
++	if ( mac->mii.phy_id < 0 ) {
++		return 0;
++	}
+ 	mii_ethtool_gset(&mac->mii, cmd);
+ 	return 0;
+ }
+@@ -496,6 +514,9 @@
+ {
+ 	struct mac_info *mac = netdev_priv(dev);
+ 	int rc;
++	if ( mac->mii.phy_id < 0 ) {
++		return -EOPNOTSUPP;
++	}
+ 	rc = mii_ethtool_sset(&mac->mii, cmd);
+ 	return rc;
+ }
+@@ -503,12 +524,18 @@
+ static int ixmac_nway_reset(struct net_device *dev)
+ {
+ 	struct mac_info *mac = netdev_priv(dev);
++	if ( mac->mii.phy_id < 0 ) {
++		return -EOPNOTSUPP;
++	}
+ 	return mii_nway_restart(&mac->mii);
+ }
+ 
+ static u32 ixmac_get_link(struct net_device *dev)
+ {
+ 	struct mac_info *mac = netdev_priv(dev);
++	if ( mac->mii.phy_id < 0 ) {
++		return 1;
++	}
+ 	return mii_link_ok(&mac->mii);
+ }
+ 

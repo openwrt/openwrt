@@ -1,0 +1,55 @@
+diff -Nur linux-2.6.19.2/arch/arm/mach-ixp4xx/compex-setup.c linux-2.6.19.2-owrt/arch/arm/mach-ixp4xx/compex-setup.c
+--- linux-2.6.19.2/arch/arm/mach-ixp4xx/compex-setup.c	2007-04-09 20:51:57.000000000 +0200
++++ linux-2.6.19.2-owrt/arch/arm/mach-ixp4xx/compex-setup.c	2007-04-09 21:48:22.000000000 +0200
+@@ -17,6 +17,7 @@
+ #include <linux/serial.h>
+ #include <linux/tty.h>
+ #include <linux/serial_8250.h>
++#include <linux/mtd/mtd.h>
+ #include <linux/slab.h>
+ 
+ #include <asm/types.h>
+@@ -136,11 +137,34 @@
+ 	.resource       = &res_mac1,
+ };
+ 
++struct npe_ucode_platform_data compex_npe_ucode_data = {
++	.mtd_partition	= "RedBoot",
++};
++
++static struct platform_device compex_npe_ucode = {
++	.name			= "ixp4xx_npe_ucode",
++	.id			= 0,
++	.dev.platform_data	= &compex_npe_ucode_data,
++};
++
+ static struct platform_device *compex_devices[] __initdata = {
+ 	&compex_flash,
+ 	&compex_uart,
+ 	&mac0,
+ 	&mac1,
++	&compex_npe_ucode,
++};
++
++static void compex_flash_add(struct mtd_info *mtd)
++{
++}
++
++static void compex_flash_remove(struct mtd_info *mtd) {
++}
++
++static struct mtd_notifier compex_flash_notifier = {
++	.add = compex_flash_add,
++	.remove = compex_flash_remove,
+ };
+ 
+ static void __init compex_init(void)
+@@ -152,6 +176,8 @@
+ 		IXP4XX_EXP_BUS_BASE(0) + ixp4xx_exp_bus_size - 1;
+ 
+ 	platform_add_devices(compex_devices, ARRAY_SIZE(compex_devices));
++
++	register_mtd_user(&compex_flash_notifier);
+ }
+ 
+ #ifdef CONFIG_ARCH_COMPEX
