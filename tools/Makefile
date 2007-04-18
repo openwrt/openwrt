@@ -40,7 +40,9 @@ $(STAGING_DIR)/include-host:
 $(TOOL_BUILD_DIR):
 	@mkdir -p $@
 
-$(eval $(call default_subtargets,$(STAGING_DIR)/include-host $(TOOL_BUILD_DIR)))
+$(TARGETS_COMPILE) $(TARGETS_INSTALL): $(STAGING_DIR)/include-host $(TOOL_BUILD_DIR)
+
+$(eval $(call default_subtargets,))
 
 ifeq ($(MAKECMDGOALS),install-targets)
 MAKEFLAGS:=$(MAKEFLAGS) -j$(CONFIG_JLEVEL)
