@@ -81,6 +81,8 @@ define Package/InstallTemplate
 		rm -f $(PKG_BUILD_DIR)/.built; \
 		$(MAKE) $(PKG_BUILD_DIR)/.built; \
 	fi
+	$(INSTALL_DIR) $$(1)/lib/wifi
+	$(INSTALL_DATA) ./files/hostapd.sh $$(1)/lib/wifi/hostapd.sh
 	$(INSTALL_DIR) $$(1)/etc
 	$(INSTALL_CONF) $(PKG_BUILD_DIR)_$(2)/madwifi.conf $$(1)/etc/hostapd.conf
 	$(INSTALL_DIR) $$(1)/usr/sbin
