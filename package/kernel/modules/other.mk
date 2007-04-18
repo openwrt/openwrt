@@ -34,7 +34,7 @@ define KernelPackage/crypto
 	$(CONFIG_CRYPTO_DEFLATE) \
 	$(CONFIG_CRYPTO_MICHAEL_MIC) \
 	$(CONFIG_CRYPTO_CRC32C)
-  FILES:=$(MODULES_DIR)/kernel/crypto/*.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/crypto/*.$(LINUX_KMOD_SUFFIX)
   SUBMENU:=$(EMENU)
 endef
 $(eval $(call KernelPackage,crypto))
@@ -49,7 +49,7 @@ define KernelPackage/ide-core
 	- ide-detect \\\
 	- ide-disk
   KCONFIG:=$(CONFIG_IDE)
-  FILES:=$(MODULES_DIR)/kernel/drivers/ide/*.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/ide/*.$(LINUX_KMOD_SUFFIX)
   SUBMENU:=$(EMENU)
   AUTOLOAD:=$(call AutoLoad,20,ide-core) $(call AutoLoad,90,ide-generic ide-detect ide-disk)
 endef
@@ -59,7 +59,7 @@ define KernelPackage/ide-pdc202xx
   TITLE:=PDC202xx IDE driver
   SUBMENU:=$(EMENU)
   KCONFIG:=$(CONFIG_BLK_DEV_PDC202XX_OLD)
-  FILES:=$(MODULES_DIR)/kernel/drivers/ide/pci/pdc202xx_old.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/ide/pci/pdc202xx_old.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,pdc202xx_old)
 endef
 $(eval $(call KernelPackage,ide-pdc202xx))
@@ -68,7 +68,7 @@ define KernelPackage/ide-aec62xx
   TITLE:=AEC62xx IDE driver
   SUBMENU:=$(EMENU)
   KCONFIG:=$(CONFIG_BLK_DEV_AEC62XX)
-  FILES:=$(MODULES_DIR)/kernel/drivers/ide/pci/aec62xx.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/ide/pci/aec62xx.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,aec62xx)
 endef
 $(eval $(call KernelPackage,ide-aec62xx))
@@ -78,8 +78,8 @@ define KernelPackage/scsi-core
   SUBMENU:=$(EMENU)
   KCONFIG:=$(CONFIG_BLK_DEV_SD)
   FILES:= \
-    $(MODULES_DIR)/kernel/drivers/scsi/scsi_mod.$(LINUX_KMOD_SUFFIX) \
-    $(MODULES_DIR)/kernel/drivers/scsi/sd_mod.$(LINUX_KMOD_SUFFIX)
+    $(LINUX_DIR)/drivers/scsi/scsi_mod.$(LINUX_KMOD_SUFFIX) \
+    $(LINUX_DIR)/drivers/scsi/sd_mod.$(LINUX_KMOD_SUFFIX)
 endef
 $(eval $(call KernelPackage,scsi-core))
 
@@ -87,9 +87,9 @@ define KernelPackage/lp
   TITLE:=Parallel port and line printer support
   KCONFIG:=$(CONFIG_PARPORT)
   FILES:= \
-	$(MODULES_DIR)/kernel/drivers/parport/parport.$(LINUX_KMOD_SUFFIX) \
-	$(MODULES_DIR)/kernel/drivers/char/lp.$(LINUX_KMOD_SUFFIX) \
-	$(MODULES_DIR)/kernel/drivers/char/ppdev.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/drivers/parport/parport.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/char/lp.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/char/ppdev.$(LINUX_KMOD_SUFFIX)
   SUBMENU:=$(EMENU)
   AUTOLOAD:=$(call AutoLoad,50, \
   	parport \
@@ -107,15 +107,15 @@ define KernelPackage/soundcore
 endef
 
 define KernelPackage/soundcore/2.4
-  FILES:=$(MODULES_DIR)/kernel/drivers/sound/soundcore.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/sound/soundcore.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,soundcore)
 endef
 
 define KernelPackage/soundcore/2.6
   FILES:= \
-	$(MODULES_DIR)/kernel/sound/soundcore.$(LINUX_KMOD_SUFFIX) \
-	$(MODULES_DIR)/kernel/sound/core/*.$(LINUX_KMOD_SUFFIX) \
-	$(MODULES_DIR)/kernel/sound/core/oss/*.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/sound/soundcore.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/sound/core/*.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/sound/core/oss/*.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,soundcore snd snd-page-alloc snd-hwdep snd-rawmidi snd-timer snd-pcm snd-mixer-oss snd-pcm-oss)
 endef
 $(eval $(call KernelPackage,soundcore))
@@ -126,7 +126,7 @@ define KernelPackage/loop
   KCONFIG:=$(CONFIG_BLK_DEV_LOOP)
   SUBMENU:=$(EMENU)
   AUTOLOAD:=$(call AutoLoad,30,loop)
-  FILES:=$(MODULES_DIR)/kernel/drivers/block/loop.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/block/loop.$(LINUX_KMOD_SUFFIX)
 endef
 $(eval $(call KernelPackage,loop))
 
@@ -136,7 +136,7 @@ define KernelPackage/nbd
   KCONFIG:=$(CONFIG_BLK_DEV_NBD)
   SUBMENU:=$(EMENU)
   AUTOLOAD:=$(call AutoLoad,30,nbd)
-  FILES:=$(MODULES_DIR)/kernel/drivers/block/nbd.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/block/nbd.$(LINUX_KMOD_SUFFIX)
 endef
 $(eval $(call KernelPackage,nbd))
 
@@ -146,7 +146,7 @@ define KernelPackage/capi
   KCONFIG:=$(CONFIG_ISDN) $(CONFIG_ISDN_CAPI) $(CONFIG_ISDN_CAPI_CAPI20)
   SUBMENU:=$(EMENU)
   AUTOLOAD:=$(call AutoLoad,30,kernelcapi capi)
-  FILES:=$(MODULES_DIR)/kernel/drivers/isdn/capi/*capi.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/isdn/capi/*capi.$(LINUX_KMOD_SUFFIX)
 endef
 $(eval $(call KernelPackage,capi))
 
@@ -159,18 +159,18 @@ endef
 
 define KernelPackage/pcmcia-core/2.4
   FILES:= \
-	$(MODULES_DIR)/kernel/drivers/pcmcia/pcmcia_core.$(LINUX_KMOD_SUFFIX) \
-	$(MODULES_DIR)/kernel/drivers/pcmcia/yenta_socket.$(LINUX_KMOD_SUFFIX) \
-	$(MODULES_DIR)/kernel/drivers/pcmcia/ds.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/drivers/pcmcia/pcmcia_core.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/pcmcia/yenta_socket.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/pcmcia/ds.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,40,pcmcia_core yenta_socket ds)
 endef
 
 define KernelPackage/pcmcia-core/2.6
   FILES:= \
-	$(MODULES_DIR)/kernel/drivers/pcmcia/pcmcia_core.$(LINUX_KMOD_SUFFIX) \
-	$(MODULES_DIR)/kernel/drivers/pcmcia/pcmcia.$(LINUX_KMOD_SUFFIX) \
-	$(MODULES_DIR)/kernel/drivers/pcmcia/yenta_socket.$(LINUX_KMOD_SUFFIX) \
-	$(MODULES_DIR)/kernel/drivers/pcmcia/rsrc_nonstatic.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/drivers/pcmcia/pcmcia_core.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/pcmcia/pcmcia.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/pcmcia/yenta_socket.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/pcmcia/rsrc_nonstatic.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,40,pcmcia_core pcmcia rsrc_nonstatic yenta_socket)
 endef
 $(eval $(call KernelPackage,pcmcia-core))
@@ -186,12 +186,12 @@ endef
 
 define KernelPackage/pcmcia-serial/2.4
   KCONFIG:=$(CONFIG_PCMCIA_SERIAL_CS)
-  FILES:=$(MODULES_DIR)/kernel/drivers/char/pcmcia/serial_cs.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/char/pcmcia/serial_cs.$(LINUX_KMOD_SUFFIX)
 endef
 
 define KernelPackage/pcmcia-serial/2.6
   KCONFIG:=$(CONFIG_SERIAL_8250_CS)
-  FILES:=$(MODULES_DIR)/kernel/drivers/serial/serial_cs.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/serial/serial_cs.$(LINUX_KMOD_SUFFIX)
 endef
 $(eval $(call KernelPackage,pcmcia-serial))
 
@@ -206,26 +206,26 @@ define KernelPackage/bluetooth
  define KernelPackage/bluetooth/2.4
   KCONFIG:=$(CONFIG_BLUEZ)
   FILES:= \
-	$(MODULES_DIR)/kernel/net/bluetooth/bluez.$(LINUX_KMOD_SUFFIX) \
-	$(MODULES_DIR)/kernel/net/bluetooth/l2cap.$(LINUX_KMOD_SUFFIX) \
-	$(MODULES_DIR)/kernel/net/bluetooth/sco.$(LINUX_KMOD_SUFFIX) \
-	$(MODULES_DIR)/kernel/net/bluetooth/rfcomm/rfcomm.$(LINUX_KMOD_SUFFIX) \
-	$(MODULES_DIR)/kernel/net/bluetooth/bnep/bnep.$(LINUX_KMOD_SUFFIX) \
-	$(MODULES_DIR)/kernel/drivers/bluetooth/hci_uart.$(LINUX_KMOD_SUFFIX) \
-	$(MODULES_DIR)/kernel/drivers/bluetooth/hci_usb.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/net/bluetooth/bluez.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/net/bluetooth/l2cap.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/net/bluetooth/sco.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/net/bluetooth/rfcomm/rfcomm.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/net/bluetooth/bnep/bnep.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/bluetooth/hci_uart.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/bluetooth/hci_usb.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,90,bluez l2cap sco rfcomm bnep hci_uart hci_usb)
 endef
 
 define KernelPackage/bluetooth/2.6
   KCONFIG:=$(CONFIG_BT)
   FILES:= \
-	$(MODULES_DIR)/kernel/net/bluetooth/bluetooth.$(LINUX_KMOD_SUFFIX) \
-	$(MODULES_DIR)/kernel/net/bluetooth/l2cap.$(LINUX_KMOD_SUFFIX) \
-	$(MODULES_DIR)/kernel/net/bluetooth/sco.$(LINUX_KMOD_SUFFIX) \
-	$(MODULES_DIR)/kernel/net/bluetooth/rfcomm/rfcomm.$(LINUX_KMOD_SUFFIX) \
-	$(MODULES_DIR)/kernel/net/bluetooth/bnep/bnep.$(LINUX_KMOD_SUFFIX) \
-	$(MODULES_DIR)/kernel/drivers/bluetooth/hci_uart.$(LINUX_KMOD_SUFFIX) \
-	$(MODULES_DIR)/kernel/drivers/bluetooth/hci_usb.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/net/bluetooth/bluetooth.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/net/bluetooth/l2cap.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/net/bluetooth/sco.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/net/bluetooth/rfcomm/rfcomm.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/net/bluetooth/bnep/bnep.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/bluetooth/hci_uart.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/bluetooth/hci_usb.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,90,bluetooth l2cap sco rfcomm bnep hci_uart hci_usb)
 endef
 $(eval $(call KernelPackage,bluetooth))
@@ -240,9 +240,9 @@ define KernelPackage/mmc
 define KernelPackage/mmc/2.6
 	KCONFIG:=$(CONFIG_MMC)
 	FILES:= \
-	$(MODULES_DIR)/kernel/drivers/mmc/mmc_core.$(LINUX_KMOD_SUFFIX) \
-	$(MODULES_DIR)/kernel/drivers/mmc/mmc_block.$(LINUX_KMOD_SUFFIX) \
-	$(MODULES_DIR)/kernel/drivers/mmc/at91_mci.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/drivers/mmc/mmc_core.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/mmc/mmc_block.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/mmc/at91_mci.$(LINUX_KMOD_SUFFIX)
 	AUTOLOAD:=$(call AutoLoad,90,mmc_core mmc_block at91_mci)
 endef
 $(eval $(call KernelPackage,mmc))
@@ -252,16 +252,16 @@ define KernelPackage/softdog
   DESCRIPTION:=Software watchdog driver
   SUBMENU:=$(EMENU)
   KCONFIG:=$(CONFIG_SOFT_WATCHDOG)
-  FILES:=$(MODULES_DIR)/kernel/drivers/char/softdog.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/char/softdog.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,softdog)
 endef
 
 define KernelPackage/softdog/2.4
-  FILES:=$(MODULES_DIR)/kernel/drivers/char/softdog.o
+  FILES:=$(LINUX_DIR)/drivers/char/softdog.o
 endef
 
 define KernelPackage/softdog/2.6
-  FILES:=$(MODULES_DIR)/kernel/drivers/char/watchdog/softdog.ko
+  FILES:=$(LINUX_DIR)/drivers/char/watchdog/softdog.ko
 endef
 
 $(eval $(call KernelPackage,softdog))
@@ -273,7 +273,7 @@ define KernelPackage/videodev
   DEPENDS:=@VIDEO_SUPPORT
   SUBMENU:=$(EMENU)
   KCONFIG:=$(CONFIG_VIDEO_DEV)
-  FILES:=$(MODULES_DIR)/kernel/drivers/media/video/*.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/media/video/*.$(LINUX_KMOD_SUFFIX)
 endef
 
 define KernelPackage/videodev/2.4
@@ -292,7 +292,7 @@ define KernelPackage/leds-net48xx
   DEPENDS:=@LINUX_2_6_X86_Soekris
   SUBMENU:=$(EMENU)
   KCONFIG:=$(CONFIG_LEDS_NET48XX)
-  FILES:=$(MODULES_DIR)/kernel/drivers/leds/leds-net48xx.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/leds/leds-net48xx.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,leds-net48xx)
 endef
 $(eval $(call KernelPackage,leds-net48xx))
@@ -304,7 +304,7 @@ define KernelPackage/nsc-gpio
   DEPENDS:=@LINUX_2_6_X86_Soekris
   SUBMENU:=$(EMENU)
   KCONFIG:=$(CONFIG_NSC_GPIO)
-  FILES:=$(MODULES_DIR)/kernel/drivers/char/nsc_gpio.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/char/nsc_gpio.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,40,nsc_gpio)
 endef
 $(eval $(call KernelPackage,nsc-gpio))
@@ -316,7 +316,7 @@ define KernelPackage/scx200-gpio
   DEPENDS:=kmod-nsc-gpio @LINUX_2_6_X86_Soekris
   SUBMENU:=$(EMENU)
   KCONFIG:=$(CONFIG_SCx200_GPIO)
-  FILES:=$(MODULES_DIR)/kernel/drivers/char/scx200_gpio.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/char/scx200_gpio.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,scx200_gpio)
 endef
 $(eval $(call KernelPackage,scx200-gpio))
@@ -328,7 +328,7 @@ define KernelPackage/scx200-wdt
   DEPENDS:=@LINUX_2_6_X86_Soekris
   SUBMENU:=$(EMENU)
   KCONFIG:=$(CONFIG_SC1200_WDT)
-  FILES:=$(MODULES_DIR)/kernel/drivers/char/watchdog/scx200_wdt.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/char/watchdog/scx200_wdt.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,scx200_wt)
 endef
 $(eval $(call KernelPackage,scx200-wdt))
@@ -340,8 +340,8 @@ define KernelPackage/hwmon
   SUBMENU:=$(EMENU)
   KCONFIG:=$(CONFIG_HWMON_VID)
   FILES:= \
-	$(MODULES_DIR)/kernel/drivers/hwmon/hwmon.$(LINUX_KMOD_SUFFIX) \
-	$(MODULES_DIR)/kernel/drivers/hwmon/hwmon-vid.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/drivers/hwmon/hwmon.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/hwmon/hwmon-vid.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,40,hwmon hwmon-vid)
 endef
 $(eval $(call KernelPackage,hwmon))
@@ -353,7 +353,7 @@ define KernelPackage/hwmon-pc87360
   DEPENDS:=kmod-hwmon
   SUBMENU:=$(EMENU)
   KCONFIG:=$(CONFIG_SENSORS_PC87360)
-  FILES:=$(MODULES_DIR)/kernel/drivers/hwmon/pc87360.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/hwmon/pc87360.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,pc87360)
 endef
 $(eval $(call KernelPackage,hwmon-pc87360))

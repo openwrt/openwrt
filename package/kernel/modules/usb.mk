@@ -18,11 +18,11 @@ define KernelPackage/usb-core
 endef
 
 define KernelPackage/usb-core/2.4
-  FILES:=$(MODULES_DIR)/kernel/drivers/usb/usbcore.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/usb/usbcore.$(LINUX_KMOD_SUFFIX)
 endef
 
 define KernelPackage/usb-core/2.6
-  FILES:=$(MODULES_DIR)/kernel/drivers/usb/core/usbcore.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/usb/core/usbcore.$(LINUX_KMOD_SUFFIX)
 endef
 $(eval $(call KernelPackage,usb-core))
 
@@ -35,13 +35,13 @@ define KernelPackage/usb-uhci
 endef
 
 define KernelPackage/usb-uhci/2.4
-  FILES:=$(MODULES_DIR)/kernel/drivers/usb/host/uhci.o
+  FILES:=$(LINUX_DIR)/drivers/usb/host/uhci.o
   KCONFIG:=$(CONFIG_USB_UHCI_ALT)
   AUTOLOAD:=$(call AutoLoad,50,uhci)
 endef
 
 define KernelPackage/usb-uhci/2.6
-  FILES:=$(MODULES_DIR)/kernel/drivers/usb/host/uhci-hcd.ko
+  FILES:=$(LINUX_DIR)/drivers/usb/host/uhci-hcd.ko
   KCONFIG:=$(CONFIG_USB_UHCI_HCD)
   AUTOLOAD:=$(call AutoLoad,50,uhci-hcd)
 endef
@@ -55,7 +55,7 @@ define KernelPackage/usb-uhci-iv
 endef 
 
 define KernelPackage/usb-uhci-iv/2.4
-  FILES:=$(MODULES_DIR)/kernel/drivers/usb/host/usb-uhci.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/usb/host/usb-uhci.$(LINUX_KMOD_SUFFIX)
   KCONFIG:=$(CONFIG_USB_UHCI)
   AUTOLOAD:=$(call AutoLoad,50,usb-uhci) 
 endef 
@@ -69,13 +69,13 @@ define KernelPackage/usb-ohci
 endef
 
 define KernelPackage/usb-ohci/2.4
-  FILES:=$(MODULES_DIR)/kernel/drivers/usb/host/usb-ohci.o
+  FILES:=$(LINUX_DIR)/drivers/usb/host/usb-ohci.o
   KCONFIG:=$(CONFIG_USB_OHCI)
   AUTOLOAD:=$(call AutoLoad,50,usb-ohci)
 endef
 
 define KernelPackage/usb-ohci/2.6
-  FILES:=$(MODULES_DIR)/kernel/drivers/usb/host/ohci-hcd.ko
+  FILES:=$(LINUX_DIR)/drivers/usb/host/ohci-hcd.ko
   KCONFIG:=$(CONFIG_USB_OHCI_HCD)
   AUTOLOAD:=$(call AutoLoad,50,ohci-hcd)
 endef
@@ -87,7 +87,7 @@ define KernelPackage/usb2
   DEPENDS:=kmod-usb-core
   KCONFIG:=$(CONFIG_USB)
   SUBMENU:=$(USBMENU)
-  FILES:=$(MODULES_DIR)/kernel/drivers/usb/host/ehci-hcd.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/usb/host/ehci-hcd.$(LINUX_KMOD_SUFFIX)
   KCONFIG:=$(CONFIG_USB_EHCI_HCD)
   AUTOLOAD:=$(call AutoLoad,50,ehci-hcd)
 endef
@@ -108,12 +108,12 @@ define KernelPackage/usb-acm
 endef
 
 define KernelPackage/usb-acm/2.4
-  FILES:=$(MODULES_DIR)/kernel/drivers/usb/acm.o
+  FILES:=$(LINUX_DIR)/drivers/usb/acm.o
   AUTOLOAD:=$(call AutoLoad,60,acm)
 endef
 
 define KernelPackage/usb-acm/2.6
-  FILES:=$(MODULES_DIR)/kernel/drivers/usb/class/cdc-acm.ko
+  FILES:=$(LINUX_DIR)/drivers/usb/class/cdc-acm.ko
   AUTOLOAD:=$(call AutoLoad,60,cdc-acm)
 endef
 $(eval $(call KernelPackage,usb-acm))
@@ -127,15 +127,15 @@ endef
 
 define KernelPackage/usb-audio/2.4
   KCONFIG:=$(CONFIG_USB_AUDIO)
-  FILES:=$(MODULES_DIR)/kernel/drivers/usb/audio.o
+  FILES:=$(LINUX_DIR)/drivers/usb/audio.o
   AUTOLOAD:=$(call AutoLoad,60,audio)
 endef
 
 define KernelPackage/usb-audio/2.6
   KCONFIG:=$(CONFIG_SND_USB_AUDIO)
   FILES:= \
-	$(MODULES_DIR)/kernel/sound/usb/snd-usb-lib.ko \
-	$(MODULES_DIR)/kernel/sound/usb/snd-usb-audio.ko
+	$(LINUX_DIR)/sound/usb/snd-usb-lib.ko \
+	$(LINUX_DIR)/sound/usb/snd-usb-audio.ko
   AUTOLOAD:=$(call AutoLoad,60,snd-usb-lib snd-usb-audio)
 endef
 $(eval $(call KernelPackage,usb-audio))
@@ -149,12 +149,12 @@ define KernelPackage/usb-printer
 endef
 
 define KernelPackage/usb-printer/2.4
-  FILES:=$(MODULES_DIR)/kernel/drivers/usb/printer.o
+  FILES:=$(LINUX_DIR)/drivers/usb/printer.o
   AUTOLOAD:=$(call AutoLoad,60,printer)
 endef
 
 define KernelPackage/usb-printer/2.6
-  FILES:=$(MODULES_DIR)/kernel/drivers/usb/class/usblp.ko
+  FILES:=$(LINUX_DIR)/drivers/usb/class/usblp.ko
   AUTOLOAD:=$(call AutoLoad,60,usblp)
 endef
 $(eval $(call KernelPackage,usb-printer))
@@ -165,7 +165,7 @@ define KernelPackage/usb-serial
   TITLE:=Support for USB-to-Serial converters
   DESCRIPTION:=Kernel support for USB-to-Serial converters
   KCONFIG:=$(CONFIG_USB_SERIAL)
-  FILES:=$(MODULES_DIR)/kernel/drivers/usb/serial/usbserial.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/usb/serial/usbserial.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,60,usbserial)
 endef
 $(eval $(call KernelPackage,usb-serial))
@@ -177,7 +177,7 @@ define KernelPackage/usb-serial-belkin
   DEPENDS:=kmod-usb-serial
   SUBMENU:=$(USBMENU)
   KCONFIG:=$(CONFIG_USB_SERIAL_BELKIN)
-  FILES:=$(MODULES_DIR)/kernel/drivers/usb/serial/belkin_sa.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/usb/serial/belkin_sa.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,65,belkin_sa)
 endef
 $(eval $(call KernelPackage,usb-serial-belkin))
@@ -189,7 +189,7 @@ define KernelPackage/usb-serial-ftdi
   DEPENDS:=kmod-usb-serial
   SUBMENU:=$(USBMENU)
   KCONFIG:=$(CONFIG_USB_SERIAL_FTDI_SIO)
-  FILES:=$(MODULES_DIR)/kernel/drivers/usb/serial/ftdi_sio.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/usb/serial/ftdi_sio.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,65,ftdi_sio)
 endef
 $(eval $(call KernelPackage,usb-serial-ftdi))
@@ -201,7 +201,7 @@ define KernelPackage/usb-serial-mct
   DEPENDS:=kmod-usb-serial
   SUBMENU:=$(USBMENU)
   KCONFIG:=$(CONFIG_USB_SERIAL_MCT_U232)
-  FILES:=$(MODULES_DIR)/kernel/drivers/usb/serial/mct_u232.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/usb/serial/mct_u232.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,65,mct_u232)
 endef
 $(eval $(call KernelPackage,usb-serial-mct))
@@ -212,7 +212,7 @@ define KernelPackage/usb-serial-pl2303
   DEPENDS:=kmod-usb-serial
   SUBMENU:=$(USBMENU)
   KCONFIG:=$(CONFIG_USB_SERIAL_PL2303)
-  FILES:=$(MODULES_DIR)/kernel/drivers/usb/serial/pl2303.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/usb/serial/pl2303.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,65,pl2303)
 endef
 $(eval $(call KernelPackage,usb-serial-pl2303))
@@ -224,7 +224,7 @@ define KernelPackage/usb-serial-visor
   DEPENDS:=kmod-usb-serial
   SUBMENU:=$(USBMENU)
   KCONFIG:=$(CONFIG_USB_SERIAL_VISOR)
-  FILES:=$(MODULES_DIR)/kernel/drivers/usb/serial/visor.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/usb/serial/visor.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,65,visor)
 endef
 $(eval $(call KernelPackage,usb-serial-visor))
@@ -236,7 +236,7 @@ define KernelPackage/usb-storage
   DESCRIPTION:=Kernel support for USB Mass Storage devices
   KCONFIG:=$(CONFIG_USB_STORAGE)
   FILES:= \
-	$(MODULES_DIR)/kernel/drivers/usb/storage/usb-storage.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/drivers/usb/storage/usb-storage.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,60,scsi_mod sd_mod usb-storage)
   DEPENDS:=+kmod-scsi-core
 endef
@@ -250,8 +250,8 @@ define KernelPackage/usb-speedtouch
   DESCRIPTION:=Kernel support for SpeedTouch USB ADSL modems
   KCONFIG:=$(CONFIG_USB_SPEEDTOUCH)
   FILES:= \
-	$(MODULES_DIR)/kernel/drivers/usb/atm/usbatm.$(LINUX_KMOD_SUFFIX) \
-	$(MODULES_DIR)/kernel/drivers/usb/atm/speedtch.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/drivers/usb/atm/usbatm.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/usb/atm/speedtch.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,70,usbatm speedtch)
 endef
 $(eval $(call KernelPackage,usb-speedtouch))
@@ -266,7 +266,7 @@ define KernelPackage/usb-pwc
 endef
 
 define KernelPackage/usb-pwc/2.4
-  FILES:=$(MODULES_DIR)/kernel/drivers/usb/pwc.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/usb/pwc.$(LINUX_KMOD_SUFFIX)
 endef
 
 $(eval $(call KernelPackage,usb-pwc))
@@ -281,11 +281,11 @@ define KernelPackage/usb-net
 endef
 
 define KernelPackage/usb-net/2.4
-  FILES:=$(MODULES_DIR)/kernel/drivers/usb/usbnet.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/usb/usbnet.$(LINUX_KMOD_SUFFIX)
 endef
 
 define KernelPackage/usb-net/2.6
-  FILES:=$(MODULES_DIR)/kernel/drivers/usb/net/usbnet.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/usb/net/usbnet.$(LINUX_KMOD_SUFFIX)
 endef
 
 $(eval $(call KernelPackage,usb-net))
@@ -299,12 +299,12 @@ define KernelPackage/usb-net-asix
 endef
 
 define KernelPackage/usb-net-asix/2.4
-  FILES:=$(MODULES_DIR)/kernel/drivers/usb/ax8817x.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/usb/ax8817x.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call Autoload,61,ax8817x)
 endef
 
 define KernelPackage/usb-net-asix/2.6
-  FILES:=$(MODULES_DIR)/kernel/drivers/usb/net/asix.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/usb/net/asix.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call Autoload,61,asix)
 endef
 
