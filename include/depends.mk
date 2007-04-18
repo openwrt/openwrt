@@ -23,6 +23,6 @@ define rdep
   endif
   
   $(3): FORCE
-	@find $(1) $(FINDPARAMS) $(4) 2>/dev/null | md5s > $$@
+	@-find $(1) $(FINDPARAMS) $(4) 2>/dev/null | md5s > $$@
 
 endef
