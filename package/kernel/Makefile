@@ -49,13 +49,7 @@ define Package/kernel/install
   # nothing to do
 endef
 
-# this is more robust than ifdef around eval/call
-ifneq ($(DUMP),1)
-  define BuildKernel
-    $(call BuildPackage,kernel)
-  endef
-endif
-$(eval $(call BuildKernel))
+$(eval $(if $(DUMP),,$(call BuildPackage,kernel)))
 
 include $(TOPDIR)/target/linux/*/modules.mk
 include ./modules/*.mk
