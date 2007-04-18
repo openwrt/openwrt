@@ -32,7 +32,6 @@ else
   LINUX_DIR := $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION)
 
   MODULES_SUBDIR:=lib/modules/$(LINUX_VERSION)
-  MODULES_DIR := $(KERNEL_BUILD_DIR)/modules/$(MODULES_SUBDIR)
   TARGET_MODULES_DIR := $(LINUX_TARGET_DIR)/$(MODULES_SUBDIR)
 
   LINUX_KERNEL:=$(KERNEL_BUILD_DIR)/vmlinux
@@ -108,6 +107,8 @@ define KernelPackage
     endif
   endif
   $$(eval $$(call BuildPackage,kmod-$(1)))
+
+  $$(IPKG_kmod-$(1)): $$(FILES)
 endef
 
 define AutoLoad

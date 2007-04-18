@@ -61,7 +61,7 @@ endef
 define KernelPackage/hostap/2.6
   KCONFIG:=$(CONFIG_HOSTAP)
   FILES:= \
-	$(MODULES_DIR)/kernel/drivers/net/wireless/hostap/hostap.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/drivers/net/wireless/hostap/hostap.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,60,hostap)
 endef
 
@@ -82,7 +82,7 @@ endef
 define KernelPackage/hostap-pci/2.6
   KCONFIG:=$(CONFIG_HOSTAP_PCI)
   FILES:= \
-	$(MODULES_DIR)/kernel/drivers/net/wireless/hostap/hostap_pci.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/drivers/net/wireless/hostap/hostap_pci.$(LINUX_KMOD_SUFFIX)
 endef
 
 
@@ -103,7 +103,7 @@ endef
 define KernelPackage/hostap-plx/2.6
   KCONFIG:=$(CONFIG_HOSTAP_PLX)
   FILES:= \
-	$(MODULES_DIR)/kernel/drivers/net/wireless/hostap/hostap_plx.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/drivers/net/wireless/hostap/hostap_plx.$(LINUX_KMOD_SUFFIX)
 endef
 
 

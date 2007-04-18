@@ -56,7 +56,6 @@ endef
 
 define Kernel/CompileModules/Default
 	$(MAKE) -j$(CONFIG_JLEVEL) $(KERNEL_MAKEOPTS) CC="$(KERNEL_CC)" modules
-	$(MAKE) $(KERNEL_MAKEOPTS) CC="$(KERNEL_CC)" DEPMOD=true INSTALL_MOD_PATH=$(KERNEL_BUILD_DIR)/modules modules_install
 endef
 
 ifeq ($(KERNEL),2.6)

@@ -144,7 +144,7 @@ define default_subtargets
   %-compile: %-prepare 
 	$$(MAKE) -C $$(patsubst %-compile,%,$$@) compile
 
-  %-install: %-compile
+  %-install: 
 	$$(MAKE) -C $$(patsubst %-install,%,$$@) install
 
   %-clean: FORCE

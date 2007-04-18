@@ -7,7 +7,7 @@ define KernelPackage/fs-cifs
   KCONFIG:=$(CONFIG_CIFS)
   SUBMENU:=$(FSMENU)
   AUTOLOAD:=$(call AutoLoad,30,cifs)
-  FILES:=$(MODULES_DIR)/kernel/fs/cifs/cifs.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/fs/cifs/cifs.$(LINUX_KMOD_SUFFIX)
 endef
 $(eval $(call KernelPackage,fs-cifs))
 
@@ -17,7 +17,7 @@ define KernelPackage/fs-minix
   KCONFIG:=$(CONFIG_MINIX_FS)
   SUBMENU:=$(FSMENU)
   AUTOLOAD:=$(call AutoLoad,30,minix)
-  FILES:=$(MODULES_DIR)/kernel/fs/minix/minix.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/fs/minix/minix.$(LINUX_KMOD_SUFFIX)
 endef
 $(eval $(call KernelPackage,fs-minix))
 
@@ -27,7 +27,7 @@ define KernelPackage/fs-ext2
   KCONFIG:=$(CONFIG_EXT2_FS)
   SUBMENU:=$(FSMENU)
   AUTOLOAD:=$(call AutoLoad,30,ext2)
-  FILES:=$(MODULES_DIR)/kernel/fs/ext2/ext2.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/fs/ext2/ext2.$(LINUX_KMOD_SUFFIX)
 endef
 $(eval $(call KernelPackage,fs-ext2))
 
@@ -38,8 +38,8 @@ define KernelPackage/fs-ext3
   SUBMENU:=$(FSMENU)
   AUTOLOAD:=$(call AutoLoad,30,jbd ext3)
   FILES:= \
-	$(MODULES_DIR)/kernel/fs/jbd/jbd.$(LINUX_KMOD_SUFFIX) \
-	$(MODULES_DIR)/kernel/fs/ext3/ext3.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/fs/jbd/jbd.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/fs/ext3/ext3.$(LINUX_KMOD_SUFFIX)
 endef
 $(eval $(call KernelPackage,fs-ext3))
 
@@ -50,7 +50,7 @@ define KernelPackage/fs-hfsplus
   KCONFIG:=$(CONFIG_HFSPLUS_FS)
   SUBMENU:=$(FSMENU)
   AUTOLOAD:=$(call AutoLoad,30,hfsplus)
-  FILES:=$(MODULES_DIR)/kernel/fs/hfsplus/hfsplus.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/fs/hfsplus/hfsplus.$(LINUX_KMOD_SUFFIX)
 endef
 $(eval $(call KernelPackage,fs-hfsplus))
 
@@ -61,7 +61,7 @@ define KernelPackage/fs-isofs
   KCONFIG:=$(CONFIG_ISO9660_FS)
   SUBMENU:=$(FSMENU)
   AUTOLOAD:=$(call AutoLoad,30,isofs)
-  FILES:=$(MODULES_DIR)/kernel/fs/isofs/isofs.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/fs/isofs/isofs.$(LINUX_KMOD_SUFFIX)
 endef
 $(eval $(call KernelPackage,fs-isofs))
 
@@ -72,7 +72,7 @@ define KernelPackage/fs-udf
   KCONFIG:=$(CONFIG_UDF_FS)
   SUBMENU:=$(FSMENU)
   AUTOLOAD:=$(call AutoLoad,30,udf)
-  FILES:=$(MODULES_DIR)/kernel/fs/udf/udf.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/fs/udf/udf.$(LINUX_KMOD_SUFFIX)
 endef
 $(eval $(call KernelPackage,fs-udf))
 
@@ -83,9 +83,9 @@ define KernelPackage/fs-nfs
   SUBMENU:=$(FSMENU)
   AUTOLOAD:=$(call AutoLoad,30,sunrpc lockd nfs)
   FILES:= \
-  	$(MODULES_DIR)/kernel/net/sunrpc/sunrpc.$(LINUX_KMOD_SUFFIX) \
-  	$(MODULES_DIR)/kernel/fs/lockd/lockd.$(LINUX_KMOD_SUFFIX) \
-  	$(MODULES_DIR)/kernel/fs/nfs/nfs.$(LINUX_KMOD_SUFFIX)
+  	$(LINUX_DIR)/net/sunrpc/sunrpc.$(LINUX_KMOD_SUFFIX) \
+  	$(LINUX_DIR)/fs/lockd/lockd.$(LINUX_KMOD_SUFFIX) \
+  	$(LINUX_DIR)/fs/nfs/nfs.$(LINUX_KMOD_SUFFIX)
 endef
 $(eval $(call KernelPackage,fs-nfs))
 
@@ -96,7 +96,7 @@ define KernelPackage/fs-nfsd
   SUBMENU:=$(FSMENU)
   AUTOLOAD:=$(call AutoLoad,30,nfsd)
   FILES:= \
-  	$(MODULES_DIR)/kernel/fs/nfsd/nfsd.$(LINUX_KMOD_SUFFIX)
+  	$(LINUX_DIR)/fs/nfsd/nfsd.$(LINUX_KMOD_SUFFIX)
 endef
 $(eval $(call KernelPackage,fs-nfsd))
 
@@ -108,7 +108,7 @@ define KernelPackage/fs-msdos
   SUBMENU:=$(FSMENU)
   AUTOLOAD:=$(call AutoLoad,40,msdos)
   FILES:= \
-	$(MODULES_DIR)/kernel/fs/msdos/msdos.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/fs/msdos/msdos.$(LINUX_KMOD_SUFFIX)
 endef
 $(eval $(call KernelPackage,fs-msdos))
 
@@ -120,8 +120,8 @@ define KernelPackage/fs-vfat
   SUBMENU:=$(FSMENU)
   AUTOLOAD:=$(call AutoLoad,30,fat vfat)
   FILES:= \
-	$(MODULES_DIR)/kernel/fs/fat/fat.$(LINUX_KMOD_SUFFIX) \
-	$(MODULES_DIR)/kernel/fs/vfat/vfat.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/fs/fat/fat.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/fs/vfat/vfat.$(LINUX_KMOD_SUFFIX)
 endef
 $(eval $(call KernelPackage,fs-vfat))
 
@@ -132,7 +132,7 @@ define KernelPackage/fs-xfs
   SUBMENU:=$(FSMENU)
   AUTOLOAD:=$(call AutoLoad,30,sunrpc lockd xfs)
   FILES:= \
-  	$(MODULES_DIR)/kernel/fs/xfs/xfs.$(LINUX_KMOD_SUFFIX)
+  	$(LINUX_DIR)/fs/xfs/xfs.$(LINUX_KMOD_SUFFIX)
 endef
 $(eval $(call KernelPackage,fs-xfs))
 
@@ -143,7 +143,7 @@ define KernelPackage/nls-base
   KCONFIG:=$(CONFIG_NLS)
   SUBMENU:=$(FSMENU)
   MENU:=1
-  FILES:=$(MODULES_DIR)/kernel/fs/nls/nls_base.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/fs/nls/nls_base.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,20,nls_base)
 endef
 $(eval $(call KernelPackage,nls-base))
@@ -155,7 +155,7 @@ define KernelPackage/nls-cp437
   DEPENDS:=kmod-nls-base
   KCONFIG:=$(CONFIG_NLS_CODEPAGE_437)
   SUBMENU:=$(FSMENU)
-  FILES:=$(MODULES_DIR)/kernel/fs/nls/nls_cp437.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/fs/nls/nls_cp437.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,25,nls_cp437)
 endef
 $(eval $(call KernelPackage,nls-cp437))
@@ -167,7 +167,7 @@ define KernelPackage/nls-cp850
   DEPENDS:=kmod-nls-base
   KCONFIG:=$(CONFIG_NLS_CODEPAGE_850)
   SUBMENU:=$(FSMENU)
-  FILES:=$(MODULES_DIR)/kernel/fs/nls/nls_cp850.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/fs/nls/nls_cp850.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,25,nls_cp850)
 endef
 $(eval $(call KernelPackage,nls-cp850))
@@ -178,7 +178,7 @@ define KernelPackage/nls-cp1250
   DEPENDS:=kmod-nls-base
   KCONFIG:=$(CONFIG_NLS_CODEPAGE_1250)
   SUBMENU:=$(FSMENU)
-  FILES:=$(MODULES_DIR)/kernel/fs/nls/nls_cp1250.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/fs/nls/nls_cp1250.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,25,nls_cp1250)
 endef
 $(eval $(call KernelPackage,nls-cp1250))
@@ -189,7 +189,7 @@ define KernelPackage/nls-iso8859-1
   DEPENDS:=kmod-nls-base
   KCONFIG:=$(CONFIG_NLS_ISO8859_1)
   SUBMENU:=$(FSMENU)
-  FILES:=$(MODULES_DIR)/kernel/fs/nls/nls_iso8859-1.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/fs/nls/nls_iso8859-1.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,25,nls_iso8859-1)
 endef
 $(eval $(call KernelPackage,nls-iso8859-1))
@@ -200,7 +200,7 @@ define KernelPackage/nls-iso8859-15
   DEPENDS:=kmod-nls-base
   KCONFIG:=$(CONFIG_NLS_ISO8859_15)
   SUBMENU:=$(FSMENU)
-  FILES:=$(MODULES_DIR)/kernel/fs/nls/nls_iso8859-15.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/fs/nls/nls_iso8859-15.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,25,nls_iso8859-15)
 endef
 $(eval $(call KernelPackage,nls-iso8859-15))
@@ -211,7 +211,7 @@ define KernelPackage/nls-koi8r
   DEPENDS:=kmod-nls-base
   KCONFIG:=$(CONFIG_NLS_KOI8_R)
   SUBMENU:=$(FSMENU)
-  FILES:=$(MODULES_DIR)/kernel/fs/nls/nls_koi8-r.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/fs/nls/nls_koi8-r.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,25,nls_koi8-r)
 endef
 $(eval $(call KernelPackage,nls-koi8r))
@@ -222,7 +222,7 @@ define KernelPackage/nls-utf8
   DEPENDS:=kmod-nls-base
   KCONFIG:=$(CONFIG_NLS_UTF8)
   SUBMENU:=$(FSMENU)
-  FILES:=$(MODULES_DIR)/kernel/fs/nls/nls_utf8.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/fs/nls/nls_utf8.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,25,nls_utf8)
 endef
 $(eval $(call KernelPackage,nls-utf8))
