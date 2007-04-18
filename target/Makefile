@@ -51,4 +51,5 @@ image_install: image_compile
 imagebuilder_install: image_install
 	$(MAKE) -C imagebuilder install
 
-$(eval $(call default_subtargets,))
+%-prereq %-prepare %-download %-clean %-compile %-install: FORCE
+	$(MAKE) -C $* $(patsubst $*-%,%,$@)
