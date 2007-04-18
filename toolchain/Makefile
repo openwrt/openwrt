@@ -15,6 +15,7 @@ ifeq ($(CONFIG_NATIVE_TOOLCHAIN),)
 endif
 
 TARGETS_DOWNLOAD:=$(patsubst %,%-download,$(TARGETS-y))
+TARGETS_PREPARE:=$(patsubst %,%-prepare,$(TARGETS-y))
 TARGETS_COMPILE:=$(patsubst %,%-compile,$(TARGETS-y))
 TARGETS_INSTALL:=$(patsubst %,%-install,$(TARGETS-y))
 TARGETS_CLEAN:=$(patsubst %,%-clean,$(TARGETS-y))
@@ -49,5 +50,14 @@ $(STAGING_DIR)/$(REAL_GNU_TARGET_NAME):
 $(TOOLCHAIN_BUILD_DIR):
 	@mkdir -p $@
 
-$(eval $(call default_subtargets,$(STAGING_DIR)/$(REAL_GNU_TARGET_NAME) $(TOOLCHAIN_BUILD_DIR)))
+%-prereq %-download %-clean: FORCE
+	$(MAKE) -C $* $(patsubst $*-%,%,$@)
 
+%-prepare: $(STAGING_DIR)/$(REAL_GNU_TARGET_NAME) $(TOOLCHAIN_BUILD_DIR)	
+	$(MAKE) -C $* $(patsubst $*-%,%,$@)
+
+%-compile: %-prepare FORCE
+	$(MAKE) -C $* $(patsubst $*-%,%,$@)
+	
+%-install: %-compile FORCE
+	$(MAKE) -C $* $(patsubst $*-%,%,$@)

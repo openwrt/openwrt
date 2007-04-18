@@ -40,9 +40,17 @@ $(STAGING_DIR)/include-host:
 $(TOOL_BUILD_DIR):
 	@mkdir -p $@
 
-$(TARGETS_COMPILE) $(TARGETS_INSTALL): $(STAGING_DIR)/include-host $(TOOL_BUILD_DIR)
+%-prereq %-download %-clean: FORCE
+	$(MAKE) -C $* $(patsubst $*-%,%,$@)
 
-$(eval $(call default_subtargets,))
+%-prepare: $(STAGING_DIR)/include-host $(TOOL_BUILD_DIR) FORCE
+	$(MAKE) -C $* $(patsubst $*-%,%,$@)
+
+%-compile: %-prepare FORCE
+	$(MAKE) -C $* $(patsubst $*-%,%,$@)
+	
+%-install: %-compile FORCE
+	$(MAKE) -C $* $(patsubst $*-%,%,$@)
 
 ifeq ($(MAKECMDGOALS),install-targets)
 MAKEFLAGS:=$(MAKEFLAGS) -j$(CONFIG_JLEVEL)
