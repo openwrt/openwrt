@@ -194,13 +194,15 @@ enable_atheros() {
 		iwconfig "$ifname" essid "$ssid"
 		case "$mode" in
 			ap)
-				hostapd_setup_vif "$vif" madwifi || {
-					echo "enable_atheros($device): Failed to set up wpa for interface $ifname" >&2
-					# make sure this wifi interface won't accidentally stay open without encryption
-					ifconfig "$ifname" down
-					wlanconfig "$ifname" destroy
-					continue
-				}
+				if eval "type hostapd_setup_vif" 2>/dev/null >/dev/null; then
+					hostapd_setup_vif "$vif" madwifi || {
+						echo "enable_atheros($device): Failed to set up wpa for interface $ifname" >&2
+						# make sure this wifi interface won't accidentally stay open without encryption
+						ifconfig "$ifname" down
+						wlanconfig "$ifname" destroy
+						continue
+					}
+				fi
 			;;
 			wds|sta)
 				case "$enc" in 
