@@ -24,7 +24,7 @@ define Package/admswconfig
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=ADM5120 Switch configuration tool
-  DEPENDS:=@LINUX_2_6_ADM5120 || @LINUX_2_6_ADM5120EB
+  DEPENDS:=@LINUX_2_6_ADM5120||@LINUX_2_6_ADM5120EB
   DESCRIPTION:=\
 	A program to configure the internal ethernet switch of an ADM5120 processor. \\\
 	You need the corresponding driver for the switch in the kernel. \\\
