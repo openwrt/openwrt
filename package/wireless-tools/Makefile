@@ -59,8 +59,6 @@ define Build/UninstallDev
 endef
 
 define Package/wireless-tools/install
-	$(INSTALL_DIR) $(1)/usr/lib
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/libiw.so.28 $(1)/usr/lib/
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/iw{config,getid,list,priv,spy} $(1)/usr/sbin/
 endef
