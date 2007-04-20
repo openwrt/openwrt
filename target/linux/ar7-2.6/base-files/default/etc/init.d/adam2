@@ -1,0 +1,13 @@
+#!/bin/sh /etc/rc.common
+# ADAM2 patcher for Netgear DG834 and compatible
+# Copyright (C) 2006 OpenWrt.org
+
+START=00
+start() {
+	MD5="$(md5sum /dev/mtdblock/0  | awk '{print $1}')"
+	[ "$MD5" = "0530bfdf00ec155f4182afd70da028c1" ] && {
+		mtd unlock adam2
+		/sbin/adam2patcher /dev/mtdblock/0
+	}
+	rm -f /etc/init.d/S00adam2 /sbin/adam2patcher >&- 2>&-
+}
