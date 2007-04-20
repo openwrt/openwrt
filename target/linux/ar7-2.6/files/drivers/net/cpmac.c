@@ -197,7 +197,7 @@ struct cpmac_priv {
 	spinlock_t lock;
 	struct sk_buff *skb_pool;
 	int free_skbs;
-	struct cpmac_desc *rx_head;
+	struct cpmac_desc *rx_head, *rx_tail;
 	int tx_head, tx_tail;
 	struct cpmac_desc *desc_ring;
 	struct cpmac_regs *regs;
@@ -209,9 +209,12 @@ struct cpmac_priv {
 	u32 msg_enable;
 	struct net_device *dev;
 	struct work_struct alloc_work;
+	struct work_struct reset_work;
 };
 
 static irqreturn_t cpmac_irq(int, void *);
+static int cpmac_stop(struct net_device *dev);
+static int cpmac_open(struct net_device *dev);
 
 #define CPMAC_LOW_THRESH 8
 #define CPMAC_ALLOC_SIZE 32
@@ -373,15 +376,18 @@ static void cpmac_rx(struct net_device *dev, int channel)
 	char *data;
 	struct sk_buff *skb;
 	struct cpmac_desc *desc;
+	struct cpmac_desc *start;
 	struct cpmac_priv *priv = netdev_priv(dev);
 
 	spin_lock(&priv->lock);
 	if (unlikely(!priv->rx_head))
 		return;
 
-	desc = priv->rx_head;
-	dma_cache_inv((u32)desc, 16);
 
+	desc = priv->rx_tail->next;
+	dma_cache_inv((u32)desc, 16);
+	
+	start = priv->rx_tail;
 	while((desc->dataflags & CPMAC_OWN) == 0) {
 		priv->regs->rx_ack[0] = virt_to_phys(desc);
 		if (unlikely(!desc->datalen)) {
@@ -407,19 +413,31 @@ static void cpmac_rx(struct net_device *dev, int channel)
 			if (printk_ratelimit())
 				printk(KERN_NOTICE "%s: rx: no free skbs, dropping packet\n",
 				       dev->name);
+			priv->regs->rx_ptr[0] = virt_to_phys(desc);
 			priv->stats.rx_dropped++;
 		}
 		desc->hw_data = virt_to_phys(desc->skb->data);
 		desc->buflen = CPMAC_SKB_SIZE;
 		desc->dataflags = CPMAC_OWN;
+		desc->hw_next = 0;
 		dma_cache_wback((u32)desc, 16);
+
+		priv->rx_tail->hw_next = virt_to_phys(desc);
+		priv->rx_tail->dataflags = CPMAC_OWN;
+		dma_cache_wback((u32)priv->rx_tail, 16);
+
+		priv->rx_tail = desc;
 		desc = desc->next;
 		dma_cache_inv((u32)desc, 16);
+		if (start == desc) {
+			printk("Somebody set up us the bomb!!\n");
+			break;
+		}
 	}
 out:
 	priv->rx_head = desc;
+	priv->regs->rx_ptr[0] = virt_to_phys(desc);
 	spin_unlock(&priv->lock);
-	priv->regs->rx_ptr[0] = virt_to_phys(priv->rx_head);
 }
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 20)
@@ -493,6 +511,15 @@ static int cpmac_start_xmit(struct sk_buff *skb, struct net_device *dev)
 		netif_stop_queue(dev);
 
 	desc = &priv->desc_ring[chan];
+	dma_cache_inv((u32)desc, 16);
+	if (desc->dataflags & CPMAC_OWN) {
+		printk(KERN_NOTICE "%s: tx dma ring full, dropping\n", dev->name);
+		spin_lock_irqsave(&priv->lock, flags);
+		priv->stats.tx_dropped++;
+		spin_unlock_irqrestore(&priv->lock, flags);
+		return -ENOMEM;
+	}
+
 	dev->trans_start = jiffies;
 	desc->jiffies = dev->trans_start;
 	spin_unlock_irqrestore(&priv->lock, flags);
@@ -529,9 +556,9 @@ static void cpmac_end_xmit(struct net_device *dev, int channel)
 					break;
 				desc = &priv->desc_ring[priv->tx_head];
 			}
-			if (netif_queue_stopped(dev))
-				netif_wake_queue(dev);
 		}
+		if (netif_queue_stopped(dev))
+			netif_wake_queue(dev);
 	} else {
 		if (printk_ratelimit())
 			printk(KERN_NOTICE "%s: end_xmit: spurious interrupt\n",
@@ -539,6 +566,40 @@ static void cpmac_end_xmit(struct net_device *dev, int channel)
 	}
 	spin_unlock(&priv->lock);
 }
+
+static void cpmac_reset(struct net_device *dev)
+{
+	int i;
+	struct cpmac_priv *priv = netdev_priv(dev);
+
+	ar7_device_reset(priv->config->reset_bit);
+	priv->regs->rx_ctrl.control &= ~1;
+	priv->regs->tx_ctrl.control &= ~1;
+	for (i = 0; i < 8; i++) {
+		priv->regs->tx_ptr[i] = 0;
+		priv->regs->rx_ptr[i] = 0;
+	}
+	priv->regs->mac_control &= ~MAC_MII; /* disable mii */
+}
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 20)
+static void
+cpmac_full_reset(struct work_struct *work)
+{
+        struct cpmac_priv *priv = container_of(work, struct cpmac_priv,
+					       alloc_work);
+        struct net_device *dev = priv->dev;
+#else
+static void
+cpmac_full_reset(void *data)
+{
+        struct net_device *dev = (struct net_device*)data;
+#endif
+
+	cpmac_stop(dev);
+	cpmac_open(dev);
+}
+
 
 static irqreturn_t cpmac_irq(int irq, void *dev_id)
 {
@@ -560,9 +621,11 @@ static irqreturn_t cpmac_irq(int irq, void *dev_id)
 	}
 
 	if (unlikely(status & INTST_HOST)) { /* host interrupt ??? */
-		printk("%s: host int, something bad happened...\n", dev->name);
-		printk("%s: mac status: 0x%08x\n", dev->name,
-		       priv->regs->mac_status);
+		printk("%s: host int, something bad happened - mac status: 0x%08x\n", dev->name, priv->regs->mac_status);
+
+		/* try to recover */
+		cpmac_reset(dev);
+		schedule_work(&priv->reset_work);
 	}
 
 	if (unlikely(status & INTST_STATUS)) { /* status interrupt ??? */
@@ -665,21 +728,6 @@ static int cpmac_change_mtu(struct net_device *dev, int mtu)
 	return 0;
 }
 
-static void cpmac_reset(struct net_device *dev)
-{
-	int i;
-	struct cpmac_priv *priv = netdev_priv(dev);
-
-	ar7_device_reset(priv->config->reset_bit);
-	priv->regs->rx_ctrl.control &= ~1;
-	priv->regs->tx_ctrl.control &= ~1;
-	for (i = 0; i < 8; i++) {
-		priv->regs->tx_ptr[i] = 0;
-		priv->regs->rx_ptr[i] = 0;
-	}
-	priv->regs->mac_control &= ~MAC_MII; /* disable mii */
-}
-
 static void cpmac_adjust_link(struct net_device *dev)
 {
 	struct cpmac_priv *priv = netdev_priv(dev);
@@ -767,8 +815,10 @@ static int cpmac_open(struct net_device *dev)
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 20)
         INIT_WORK(&priv->alloc_work, cpmac_alloc_skbs);
+        INIT_WORK(&priv->reset_work, cpmac_full_reset);
 #else
         INIT_WORK(&priv->alloc_work, cpmac_alloc_skbs, dev);
+        INIT_WORK(&priv->reset_work, cpmac_full_reset, dev);
 #endif
 	schedule_work(&priv->alloc_work);
 	flush_scheduled_work();
@@ -788,9 +838,9 @@ static int cpmac_open(struct net_device *dev)
 		desc->hw_next = virt_to_phys(desc->next);
 		dma_cache_wback((u32)desc, 16);
 	}
-	priv->rx_head[CPMAC_RX_RING_SIZE - 1].next = priv->rx_head;
-	priv->rx_head[CPMAC_RX_RING_SIZE - 1].hw_next =
-		virt_to_phys(priv->rx_head);
+	priv->rx_tail = &priv->rx_head[CPMAC_RX_RING_SIZE - 1];
+	priv->rx_tail->next = priv->rx_head;
+	priv->rx_tail->hw_next = 0;
 
 	cpmac_reset(dev);
 	for (i = 0; i < 8; i++)
@@ -828,7 +878,6 @@ static int cpmac_open(struct net_device *dev)
 	phy_start(priv->phy);
 
 	netif_start_queue(dev);
-
 	return 0;
 
 fail_irq:
