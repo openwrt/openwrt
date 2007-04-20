@@ -9,19 +9,19 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-PKG_NAME:=sangam-atm
-PKG_VERSION:=0.1
+PKG_NAME:=sangam_atm
+PKG_VERSION:=07.01.00.10
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://downloads.openwrt.org/sources
-PKG_MD5SUM:=90c10702c9c3129e2ad1c01ce3975bf5
+PKG_MD5SUM:=d35e8889ada0f79b3f562bb12dcef0d4
 
 include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/sangam-atm-annex-a
   SUBMENU:=Network Devices
-  DEPENDS:=@LINUX_2_4_AR7 +kmod-atm
+  DEPENDS:=+kmod-atm
   TITLE:=AR7 ADSL driver (Annex A)
   DESCRIPTION:=The AR7 ADSL driver for Annex A
   VERSION:=$(PKG_VERSION)+$(LINUX_VERSION)-$(BOARD)-$(PKG_RELEASE)
@@ -44,11 +44,13 @@ define Build/Compile
 endef
 
 define KernelPackage/sangam-atm-annex-a/install
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/ar0700xx_a.bin $(1)/lib/modules/ar0700xx.bin
+	mkdir -p $(1)/lib/firmware
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/ar0700mp.bin $(1)/lib/firmware/ar0700xx.bin
 endef
 
 define KernelPackage/sangam-atm-annex-b/install
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/ar0700xx_b.bin $(1)/lib/modules/ar0700xx.bin
+	mkdir -p $(1)/lib/firmware
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/ar0700db.bin $(1)/lib/firmware/ar0700xx.bin
 endef
 
 $(eval $(call KernelPackage,sangam-atm-annex-a))

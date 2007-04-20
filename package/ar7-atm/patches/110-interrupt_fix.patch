@@ -1,0 +1,38 @@
+diff -ur atm.old/tn7atm.c atm.dev/tn7atm.c
+--- atm.old/tn7atm.c	2007-04-20 21:04:28.479287240 +0200
++++ atm.dev/tn7atm.c	2007-04-20 21:09:05.288205888 +0200
+@@ -553,7 +553,7 @@
+  *  Description: tnetd73xx SAR interrupt.
+  *
+  *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+-static void tn7atm_sar_irq (int irq, void *voiddev, struct pt_regs *regs)
++static irqreturn_t tn7atm_sar_irq (int irq, void *voiddev)
+ {
+   struct atm_dev *atmdev;
+   Tn7AtmPrivate *priv;
+@@ -580,6 +580,7 @@
+ #ifdef TIATM_INST_SUPP
+   psp_trace_par (ATM_DRV_SAR_ISR_EXIT, retval);
+ #endif
++  return IRQ_HANDLED;
+ }
+ 
+ /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+@@ -589,7 +590,7 @@
+  *  Description: tnetd73xx DSL interrupt.
+  *
+  *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+-static void tn7atm_dsl_irq (int irq, void *voiddev, struct pt_regs *regs)
++static irqreturn_t tn7atm_dsl_irq (int irq, void *voiddev)
+ {
+   struct atm_dev *atmdev;
+   Tn7AtmPrivate *priv;
+@@ -611,6 +612,8 @@
+ #ifdef TIATM_INST_SUPP
+   psp_trace_par (ATM_DRV_DSL_ISR_EXIT, retval);
+ #endif
++
++  return IRQ_HANDLED;
+ }
+ 
+ /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

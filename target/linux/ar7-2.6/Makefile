@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=mipsel
 BOARD:=ar7
 BOARDNAME:=TI AR7
-FEATURES:=squashfs jffs2 broken
+FEATURES:=squashfs jffs2
 
 define Target/Description
 	Build firmware images for TI AR7 based routers
