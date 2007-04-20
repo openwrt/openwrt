@@ -11160,7 +11160,7 @@ diff -urN linux-atm.old/configure linux-atm.dev/configure
  
  
 -                                                                                                                                                                                                                                                                              ac_config_files="$ac_config_files Makefile doc/Makefile m4/Makefile src/Makefile src/include/Makefile src/lib/Makefile src/test/Makefile src/debug/Makefile src/qgen/Makefile src/saal/Makefile src/sigd/Makefile src/maint/Makefile src/arpd/Makefile src/ilmid/Makefile src/ilmid/asn1/Makefile src/man/Makefile src/led/Makefile src/lane/Makefile src/mpoad/Makefile src/switch/Makefile src/switch/debug/Makefile src/switch/tcp/Makefile src/config/Makefile src/config/init-redhat/Makefile src/extra/Makefile src/extra/linux-atm.spec src/extra/ANS/Makefile"
-+                                                                      ac_config_files="$ac_config_files Makefile doc/Makefile m4/Makefile src/Makefile src/include/Makefile src/lib/Makefile src/br2684/Makefile"
++                                                                      ac_config_files="$ac_config_files Makefile doc/Makefile m4/Makefile src/Makefile src/include/Makefile src/lib/Makefile"
  cat >confcache <<\_ACEOF
  # This file is a shell script that caches the results of configure
  # tests run on this system so they can be shared between configure
@@ -11283,7 +11283,7 @@ diff -urN linux-atm.old/configure linux-atm.dev/configure
  This config.status script is free software; the Free Software Foundation
  gives unlimited permission to copy, distribute and modify it."
  srcdir=$srcdir
-@@ -9080,27 +9367,7 @@
+@@ -9080,27 +9367,6 @@
    "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
    "src/include/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/include/Makefile" ;;
    "src/lib/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/lib/Makefile" ;;
@@ -11308,7 +11308,6 @@ diff -urN linux-atm.old/configure linux-atm.dev/configure
 -  "src/extra/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/extra/Makefile" ;;
 -  "src/extra/linux-atm.spec" ) CONFIG_FILES="$CONFIG_FILES src/extra/linux-atm.spec" ;;
 -  "src/extra/ANS/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/extra/ANS/Makefile" ;;
-+  "src/br2684/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/br2684/Makefile" ;;
    "default-1" ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-1" ;;
    "config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS config.h" ;;
    *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
@@ -11855,39 +11854,6 @@ diff -urN linux-atm.old/Makefile.in linux-atm.dev/Makefile.in
  STRIP = @STRIP@
  VERSION = @VERSION@
  YACC = @YACC@
-diff -urN linux-atm.old/src/br2684/Makefile.in linux-atm.dev/src/br2684/Makefile.in
---- linux-atm.old/src/br2684/Makefile.in	2005-08-23 01:12:10.884781000 +0200
-+++ linux-atm.dev/src/br2684/Makefile.in	2005-08-23 01:12:46.632347232 +0200
-@@ -57,11 +57,15 @@
- NORMAL_UNINSTALL = :
- PRE_UNINSTALL = :
- POST_UNINSTALL = :
-+build_alias = @build_alias@
-+build_triplet = @build@
- host_alias = @host_alias@
- host_triplet = @host@
-+target_alias = @target_alias@
-+target_triplet = @target@
- AR = @AR@
- AS = @AS@
--CC = /usr/src/openwrt/staging_dir_mipsel/bin/mipsel-linux-gcc
-+CC = @CC@
- CXX = @CXX@
- CXXCPP = @CXXCPP@
- DLLTOOL = @DLLTOOL@
-@@ -117,9 +121,9 @@
- br2684ctl_DEPENDENCIES =  $(top_builddir)/src/lib/libatm.la
- br2684ctl_LDFLAGS = 
- CFLAGS = @CFLAGS@
--COMPILE = $(TARGET_CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
--LTCOMPILE = $(LIBTOOL) --mode=compile $(TARGET_CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
--CCLD = $(TARGET_CC)
-+COMPILE = $(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-+LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-+CCLD = $(CC)
- LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(LDFLAGS) -o $@
- man8dir = $(mandir)/man8
- MANS = $(man_MANS)
 diff -urN linux-atm.old/src/include/Makefile.in linux-atm.dev/src/include/Makefile.in
 --- linux-atm.old/src/include/Makefile.in	2005-08-23 01:12:10.851786000 +0200
 +++ linux-atm.dev/src/include/Makefile.in	2005-08-23 01:12:46.585354376 +0200
@@ -12008,7 +11974,7 @@ diff -urN linux-atm.old/src/Makefile.in linux-atm.dev/src/Makefile.in
  
 -SUBDIRS = include lib 
 -
-+SUBDIRS = include lib br2684
++SUBDIRS = include lib
  mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
  CONFIG_HEADER = ../config.h
  CONFIG_CLEAN_FILES = 
