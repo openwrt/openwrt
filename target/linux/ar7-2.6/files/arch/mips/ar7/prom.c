@@ -107,7 +107,7 @@ static __initdata struct psp_chip_map psp_chip_map[] = {
 
 static struct env_var adam2_env[MAX_ENTRY] = { { 0, }, };
 
-char * __init prom_getenv(char *name)
+char * prom_getenv(char *name)
 {
 	int i;
 	for (i = 0; (i < MAX_ENTRY) && adam2_env[i].name; i++)
