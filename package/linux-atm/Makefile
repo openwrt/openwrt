@@ -31,16 +31,6 @@ define Package/linux-atm
 	This package contains a library for accessing the Linux ATM subsystem.
 endef
 
-define Package/br2684ctl
-  $(call Package/linux-atm/Default)
-  SECTION:=net
-  CATEGORY:=Network
-  DEPENDS:=+linux-atm
-  TITLE:=RFC2684 bridging utility
-  DESCRIPTION:=\
-	This package contains an ATM RFC2684 bridging utility.
-endef
-
 define Build/Configure
 	$(call Build/Configure/Default)
 	# prevent autoheader invocation
@@ -74,15 +64,7 @@ define Package/linux-atm/install
 	cp -f $(PKG_INSTALL_DIR)/usr/lib/libatm.so.1 $(1)/usr/lib
 endef
 
-define Package/br2684ctl/install
-	$(INSTALL_DIR) $(1)/usr/sbin
-	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/br2684ctl $(1)/usr/sbin/
-	$(INSTALL_DIR) $(1)/etc/hotplug.d/net
-	$(INSTALL_DATA) ./files/br2684.hotplug $(1)/etc/hotplug.d/net/30-br2684
-endef
-
 $(eval $(call BuildPackage,linux-atm))
-$(eval $(call BuildPackage,br2684ctl))
 
 $(eval $(call RequireCommand,automake, \
 	$(PKG_NAME) requires automake. \
