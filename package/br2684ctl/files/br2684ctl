@@ -1,0 +1,26 @@
+#!/bin/sh /etc/rc.common
+stop() {
+	killall br2684ctl 2>/dev/null >/dev/null
+	sleep 1
+	rmmod br2684
+}
+
+start_daemon() {
+	local cfg="$1"
+	config_get atmdev "$cfg" atmdev
+	config_get unit "$cfg" unit
+	config_get vpi "$cfg" vpi
+	config_get vci "$cfg" vci
+	config_get encaps "$cfg" encaps
+	case "$encaps" in
+		1|vc) encaps=1;;
+		*) encaps=0;;
+	esac
+	br2684ctl -b -c "$unit" -e "$encaps" -a "${atmdev:+$atmdev.}${vpi:-8}.${vci:-35}"
+}
+
+start() {
+	insmod br2684 >/dev/null 2>/dev/null
+	config_load network
+	config_foreach start_daemon atm-bridge
+}
