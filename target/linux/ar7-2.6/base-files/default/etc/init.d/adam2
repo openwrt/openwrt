@@ -9,6 +9,5 @@ start() {
 		mtd unlock adam2
 		/sbin/adam2patcher /dev/mtdblock0
 	}
-	disable
-	rm -f /etc/init.d/adam2 /sbin/adam2patcher >&- 2>&-
+	rm -f /etc/rc.d/S${START}adam2 /etc/init.d/adam2 /sbin/adam2patcher >&- 2>&-
 }
