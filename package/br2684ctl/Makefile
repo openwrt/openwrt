@@ -31,6 +31,8 @@ endef
 MAKE_FLAGS += CFLAGS="$(TARGET_CPPFLAGS) $(TARGET_LDFLAGS)"
 
 define Package/$(PKG_NAME)/install
+	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/br2684ctl $(1)/etc/init.d/
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/$(PKG_NAME) $(1)/usr/sbin/
 endef

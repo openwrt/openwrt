@@ -13,10 +13,16 @@ setup_interface_pppoa() {
 	for module in slhc ppp_generic pppoatm; do
 		/sbin/insmod $module 2>&- >&-
 	done
+	
+	config_get encaps "$config" encaps
+	case "$encaps" in
+		1|vc) ENCAPS="vc-encaps" ;;
+		*) ENCAPS="llc-encaps" ;;
+	esac
 
 	config_get mtu "$cfg" mtu
 	mtu=${mtu:-1500}
 	start_pppd "$config" \
-		plugin pppoatm.so ${vpi:-8}.${vci:-35} \
+		plugin pppoatm.so ${vpi:-8}.${vci:-35} ${ENCAPS} \
 		mtu $mtu mru $mtu
 }
