@@ -17,7 +17,7 @@ setup_interface_pptp() {
 	config_get server "$cfg" server
 	mtu=${mtu:-1452}
 	start_pppd "$config" \
-		pty "/usr/sbin/pptp $server --loglevel 0 --nolaunchpppd"
-		file /etc/ppp/options.pptp
+		pty "/usr/sbin/pptp $server --loglevel 0 --nolaunchpppd" \
+		file /etc/ppp/options.pptp \
 		mtu $mtu mru $mtu
 }
