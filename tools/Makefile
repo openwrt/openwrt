@@ -32,10 +32,11 @@ endif
 $(STAMP): $(TOPDIR)/.config
 	mkdir -p $(shell dirname $@)
 	touch $@
-	
-$(STAGING_DIR)/include-host:
-	@mkdir -p $@
-	@$(CP) ./include/*.h $@/
+
+TOOL_HOST_INCLUDES:=$(patsubst ./include/%.h,$(STAGING_DIR)/include-host/%.h,$(wildcard ./include/*.h))
+$(TOOL_HOST_INCLUDES): $(STAGING_DIR)/include-host/%.h: ./include/%.h
+	@mkdir -p $(STAGING_DIR)/include-host
+	$(CP) $< $@
 
 $(TOOL_BUILD_DIR):
 	@mkdir -p $@
@@ -43,7 +44,7 @@ $(TOOL_BUILD_DIR):
 %-prereq %-download %-clean: FORCE
 	$(MAKE) -C $* $(patsubst $*-%,%,$@)
 
-%-prepare: $(STAGING_DIR)/include-host $(TOOL_BUILD_DIR) FORCE
+%-prepare: $(TOOL_HOST_INCLUDES) $(TOOL_BUILD_DIR) FORCE
 	$(MAKE) -C $* $(patsubst $*-%,%,$@)
 
 %-compile: %-prepare FORCE
