@@ -430,7 +430,6 @@ static void cpmac_rx(struct net_device *dev, int channel)
 		desc = desc->next;
 		dma_cache_inv((u32)desc, 16);
 		if (start == desc) {
-			printk("Somebody set up us the bomb!!\n");
 			break;
 		}
 	}
