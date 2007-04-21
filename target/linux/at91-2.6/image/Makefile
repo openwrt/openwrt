@@ -36,7 +36,7 @@ endef
 
 define Image/Build
 	dd if=$(KDIR)/uImage of=$(KDIR)/uImage.block bs=1056k count=1 conv=sync
-	dd if=$(KDIR)/root.squashfs of=$(KDIR)/root.block bs=1056k count=1 conv=sync
+	dd if=$(KDIR)/root.squashfs of=$(KDIR)/root.block bs=2112k count=1 conv=sync
 	cat $(KDIR)/uImage.block $(KDIR)/root.block > $(KDIR)/knlroot.bin
 	$(STAGING_DIR)/bin/trx -o $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL).trx -f $(KDIR)/romboot.bin -f$(KDIR)/u-boot.full -f$(KDIR)/knlroot.bin
 	cp $(KDIR)/rbptest.bin $(BIN_DIR)
