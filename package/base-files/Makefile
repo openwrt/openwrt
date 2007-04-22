@@ -123,7 +123,7 @@ define Package/base-files$(TARGET)/install
 	mkdir -p $(1)/dev
 	mkdir -p $(1)/etc/crontabs
 	mkdir -p $(1)/jffs
-	mkdir -p $(1)/lib
+	mkdir -p $(1)/lib/firmware
 	mkdir -p $(1)/mnt
 	mkdir -p $(1)/proc
 	mkdir -p $(1)/tmp
