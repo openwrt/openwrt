@@ -307,6 +307,8 @@ int vlynq_device_enable(struct vlynq_device *dev)
 		if (vlynq_linked(dev)) 
 			return vlynq_setup_irq(dev);
 	}
+
+	return -ENODEV;
 }
 
 void vlynq_device_disable(struct vlynq_device *dev)
