@@ -13,7 +13,7 @@ PKG_NAME:=base-files
 PKG_RELEASE:=8
 
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)
-PKG_FILE_DEPEND:=$(PLATFORM_DIR)
+PKG_FILE_DEPEND:=$(PLATFORM_DIR) $(GENERIC_PLATFORM_DIR)/base-files
 
 REV:=$(shell LANG=C svn info | awk '/^Revision:/ { print$$2 }' )
 ifeq ($(REV),)
@@ -110,6 +110,9 @@ endef
 
 define Package/base-files$(TARGET)/install
 	$(CP) ./files/* $(1)/
+	if [ -d $(GENERIC_PLATFORM_DIR)/base-files/. ]; then \
+		$(CP) $(GENERIC_PLATFORM_DIR)/base-files/* $(1)/; \
+	fi
 	if [ -d $(PLATFORM_DIR)/base-files/default/. ]; then \
 		$(CP) $(PLATFORM_DIR)/base-files/default/* $(1)/; \
 	fi
