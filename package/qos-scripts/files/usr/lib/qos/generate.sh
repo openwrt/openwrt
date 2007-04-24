@@ -148,8 +148,8 @@ config_cb() {
 	# Section start
 	case "$1" in
 		interface)
-			config_set "$1" "classgroup" "Default"
-			config_set "$1" "upload" "128"
+			config_set "$2" "classgroup" "Default"
+			config_set "$2" "upload" "128"
 		;;
 		classify|default|reclassify)
 			option_cb() {
