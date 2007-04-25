@@ -55,6 +55,7 @@ define Kernel/Configure/Default
 endef
 
 define Kernel/CompileModules/Default
+	rm -f $(LINUX_DIR)/vmlinux $(LINUX_DIR)/System.map
 	$(MAKE) -j$(CONFIG_JLEVEL) $(KERNEL_MAKEOPTS) CC="$(KERNEL_CC)" modules
 endef
 
