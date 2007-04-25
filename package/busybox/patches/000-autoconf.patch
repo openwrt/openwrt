@@ -1,0 +1,12 @@
+diff -ur busybox.old/applets/Kbuild busybox.dev/applets/Kbuild
+--- busybox.old/applets/Kbuild	2007-04-25 15:25:30.000000000 -0700
++++ busybox.dev/applets/Kbuild	2007-04-25 15:25:11.000000000 -0700
+@@ -10,7 +10,7 @@
+ 
+ # Generated file needs additional love
+ 
+-applets/applets.o: include/usage_compressed.h
++applets/applets.o: include/usage_compressed.h include/autoconf.h
+ 
+ hostprogs-y += usage
+ always := $(hostprogs-y)
