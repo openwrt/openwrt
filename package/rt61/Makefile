@@ -22,7 +22,7 @@ include $(INCLUDE_DIR)/package.mk
 define KernelPackage/rt61
   SUBMENU:=Wireless Drivers
   TITLE:=Driver for ralink MiMo pci chipsets 
-  DEPENDS:=@PCI_SUPPORT +wireless-tools
+  DEPENDS:=@LINUX_2_6_RDC +wireless-tools
   DESCRIPTION:=\
         This package contains a driver for ralink rt61xx pci chipsets.
   URL:=http://rt2x00.serialmonkey.com/
