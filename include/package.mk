@@ -26,8 +26,8 @@ export CONFIG_SITE:=$(INCLUDE_DIR)/site/$(REAL_GNU_TARGET_NAME)
 ifneq ($(CONFIG_AUTOREBUILD),)
   define Build/Autoclean
     $(PKG_BUILD_DIR)/.dep_files: $(STAMP_PREPARED)
-    $(call rdep,${CURDIR},$(STAMP_PREPARED),$(TMP_DIR)/.packagedir_$(shell echo "${CURDIR}" | md5s))
-    $(call rdep,$(PKG_BUILD_DIR) $(PKG_FILE_DEPEND),$(STAMP_BUILT),$(PKG_BUILD_DIR)/.dep_files, -and -not -path "/.*" -and -not -path "*/ipkg*")
+    $(call rdep,${CURDIR} $(PKG_FILE_DEPEND),$(STAMP_PREPARED),$(TMP_DIR)/.packagedir_$(shell echo "${CURDIR}" | md5s))
+    $(call rdep,$(PKG_BUILD_DIR),$(STAMP_BUILT),$(PKG_BUILD_DIR)/.dep_files, -and -not -path "/.*" -and -not -path "*/ipkg*")
   endef
 endif
 
