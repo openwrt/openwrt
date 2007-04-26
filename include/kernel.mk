@@ -108,7 +108,7 @@ define KernelPackage
   endif
   $$(eval $$(call BuildPackage,kmod-$(1)))
 
-  $$(IPKG_kmod-$(1)): $$(FILES)
+  $$(IPKG_kmod-$(1)): $$(wildcard $$(FILES))
 endef
 
 define AutoLoad
