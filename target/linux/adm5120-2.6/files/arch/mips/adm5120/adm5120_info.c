@@ -235,6 +235,8 @@ static struct adm5120_board __initdata adm5120_boards[] = {
 	}
 };
 
+#define DUMMY_BOARD()	{.mach_type = MACH_ADM5120_UNKNOWN}
+
 struct mylo_board {
 	u16	vid;
 	u16	did;
@@ -243,7 +245,6 @@ struct mylo_board {
 	unsigned long	mach_type;
 };
 
-#define DUMMY_BOARD()	{.mach_type = MACH_ADM5120_UNKNOWN}
 
 #define MYLO_BOARD(v,d,sv,sd,mt) { .vid = (v), .did = (d), .svid = (sv), \
 	.sdid = (sd), .mach_type = (mt) }
@@ -286,11 +287,6 @@ struct zynos_board {
 	u16		board_id;
 };
 
-#define ZYNOS_VENDOR_ID_INVALID	0
-#define ZYNOS_VENDOR_ID_ZYXEL	1
-#define ZYNOS_VENDOR_ID_DLINK	2
-#define ZYNOS_VENDOR_ID_LUCENT	3
-
 #define ZYNOS_BOARD(vi, bi, mt) { .vendor_id = (vi), .board_id = (bi), \
 		.mach_type = (mt) }
 
@@ -330,6 +326,23 @@ static inline u32 read_le32(void *buf)
 	p = buf;
 	return ((u32)p[0] + ((u32)p[1] << 8) + ((u32)p[2] << 16) +
 		((u32)p[3] << 24));
+}
+
+static inline u16 read_be16(void *buf)
+{
+	u8 *p;
+
+	p = buf;
+	return (((u16)p[0] << 8) + (u16)p[1]);
+}
+
+static inline u32 read_be32(void *buf)
+{
+	u8 *p;
+
+	p = buf;
+	return (((u32)p[0] << 24) + ((u32)p[1] << 16) + ((u32)p[2] << 8) +
+		((u32)p[3]));
 }
 
 /*
@@ -496,56 +509,92 @@ out:
 /*
  * ZyNOS based boards
  */
-#define CHECK_VENDOR(n) (strnicmp(vendor, ZYNOS_VENDOR_ZYXEL, \
-		strlen(ZYNOS_VENDOR_ZYXEL)) == 0)
-
-static unsigned int __init zynos_get_vendor_id(unsigned char *vendor)
+static inline u32 zynos_dbgarea_present(u8 *data)
 {
-	int ret;
+	u32 t;
 
-	ret = ZYNOS_VENDOR_ID_INVALID;
+	t = read_be32(data+5);
+	if (t != ZYNOS_MAGIC_DBGAREA1)
+		return 0;
 
-	if CHECK_VENDOR(ZYNOS_VENDOR_ZYXEL)
-		ret = ZYNOS_VENDOR_ID_ZYXEL;
-#if 0
-	/* TODO: there are no known ADM5120 based boards from other vendors */
-	else if CHECK_VENDOR(ZYNOS_VENDOR_DLINK)
-		ret = ZYNOS_VENDOR_ID_DLINK;
-	else if CHECK_VENDOR(ZYNOS_VENDOR_LUCENT)
-		ret = ZYNOS_VENDOR_ID_LUCENT;
-#endif
+	t = read_be32(data+9);
+	if (t != ZYNOS_MAGIC_DBGAREA2)
+		return 0;
 
-	return ret;
+	return 1;
 }
 
-#define ZYNOS_INFO_ADDR	KSEG1ADDR(ADM5120_SRAM0_BASE+0x3F90)
-#define BOOTEXT_ADDR_2M	0xBFC08000
-#define BOOTEXT_ADDR_4M	0xBFC10000
+#define CHECK_VENDOR(n) (strnicmp(vendor,(n),strlen(n)) == 0)
+
+static inline unsigned int zynos_get_vendor_id(struct zynos_board_info *info)
+{
+	unsigned char vendor[ZYNOS_NAME_LEN];
+	int i;
+
+	for (i=0; i<ZYNOS_NAME_LEN; i++)
+		vendor[i]=info->vendor[i];
+
+	if CHECK_VENDOR(ZYNOS_VENDOR_ZYXEL)
+		return ZYNOS_VENDOR_ID_ZYXEL;
+#if 0
+	/* TODO: there are no known ADM5120 based boards from other vendors */
+	if CHECK_VENDOR(ZYNOS_VENDOR_DLINK)
+		return ZYNOS_VENDOR_ID_DLINK;
+
+	if CHECK_VENDOR(ZYNOS_VENDOR_LUCENT)
+		return ZYNOS_VENDOR_ID_LUCENT;
+
+	if CHECK_VENDOR(ZYNOS_VENDOR_NETGEAR)
+		return ZYNOS_VENDOR_ID_NETGEAR;
+#endif
+
+	return ZYNOS_VENDOR_ID_OTHER;
+}
+
+static inline u16 zynos_get_board_id(struct zynos_board_info *info)
+{
+	return read_be16(&info->board_id);
+}
+
+static inline u32 zynos_get_bootext_addr(struct zynos_board_info *info)
+{
+	return read_be32(&info->bootext_addr);
+}
+
+
+#define ZYNOS_INFO_ADDR		KSEG1ADDR(ADM5120_SRAM0_BASE+0x3F90)
+#define ZYNOS_HDBG_ADDR		KSEG1ADDR(ADM5120_SRAM0_BASE+0x4000)
+#define BOOTEXT_ADDR_MIN	KSEG1ADDR(ADM5120_SRAM0_BASE)
+#define BOOTEXT_ADDR_MAX	(BOOTEXT_ADDR_MIN + (2*1024*1024))
 
 static unsigned long __init zynos_detect_board(void)
 {
 	struct zynos_board_info *info;
 	struct zynos_board *board;
 	unsigned int vendor_id;
-	u32	bootext_addr;
+	u16	board_id;
+	u32	t;
 	unsigned long ret;
 
 	ret = MACH_ADM5120_UNKNOWN;
+	/* check presence of the dbgarea */
+	if (zynos_dbgarea_present((u8 *)ZYNOS_HDBG_ADDR) == 0)
+		goto out;
 
 	info = (struct zynos_board_info *)(ZYNOS_INFO_ADDR);
-	vendor_id = zynos_get_vendor_id(&info->vendor);
-	if (vendor_id == ZYNOS_VENDOR_ID_INVALID)
+
+	/* check for a valid BootExt address */
+	t = zynos_get_bootext_addr(info);
+	if ((t < BOOTEXT_ADDR_MIN) || (t > BOOTEXT_ADDR_MAX))
 		goto out;
 
-	bootext_addr = be32_to_cpu(info->bootext_addr);
-	if ((bootext_addr != BOOTEXT_ADDR_2M) ||
-		(bootext_addr != BOOTEXT_ADDR_4M))
-		goto out;
+	vendor_id = zynos_get_vendor_id(info);
+	board_id = zynos_get_board_id(info);
 
 	for (board = zynos_boards; board->mach_type != MACH_ADM5120_UNKNOWN;
 		board++) {
 		if ((board->vendor_id == vendor_id) &&
-			(board->board_id == be16_to_cpu(info->board_id))) {
+			(board->board_id == board_id)) {
 			ret = board->mach_type;
 			break;
 		}
