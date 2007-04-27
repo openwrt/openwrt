@@ -62,7 +62,7 @@ endef
 
 $(eval $(call BuildImage))
 
-UCODEFILE:=IPL_ixp400NpeLibrary-2_3.zip
+UCODEFILE:=IPL_ixp400NpeLibrary-2_3_2.zip
 
 define Require/npe-ucode
 	[ -f $(DL_DIR)/$(UCODEFILE) ]
@@ -74,4 +74,3 @@ $(eval $(call Require,npe-ucode, \
 	and put it in $(DL_DIR). \\\
 	You will need to agree to the Intel Public License to do so - please do read it! \
 ))
-	

@@ -9,11 +9,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=npe-ucode
-PKG_VERSION:=2.3
+PKG_VERSION:=2.3.2
 PKG_RELEASE:=1
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE:=IPL_ixp400NpeLibrary-2_3.zip
+PKG_SOURCE:=IPL_ixp400NpeLibrary-2_3_2.zip
 
 include $(INCLUDE_DIR)/package.mk
 
