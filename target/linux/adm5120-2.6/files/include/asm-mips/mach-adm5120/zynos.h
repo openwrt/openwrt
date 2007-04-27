@@ -34,15 +34,30 @@ struct zynos_board_info {
 } __attribute__ ((packed));
 
 /*
+ * Vendor IDs
+ */
+#define ZYNOS_VENDOR_ID_ZYXEL	0
+#define ZYNOS_VENDOR_ID_NETGEAR	1
+#define ZYNOS_VENDOR_ID_DLINK	2
+#define ZYNOS_VENDOR_ID_OTHER	3
+#define ZYNOS_VENDOR_ID_LUCENT	4
+
+/*
  * Vendor names
  */
-#define ZYNOS_VENDOR_ZYXEL	"ZyXEL"
+#define ZYNOS_VENDOR_DLINK	"D-Link"
 #define ZYNOS_VENDOR_LUCENT	"LUCENT"
-#define ZYNOS_VENDOR_NETGEAR	"D-Link"
+#define ZYNOS_VENDOR_NETGEAR	"NetGear"
+#define ZYNOS_VENDOR_ZYXEL	"ZyXEL"
 
 /*
  * Board IDs (big-endian)
  */
+#define ZYNOS_BOARD_ES2108	0x00F2	/* Ethernet Switch 2108 */
+#define ZYNOS_BOARD_ES2108F	0x01AF	/* Ethernet Switch 2108-F */
+#define ZYNOS_BOARD_ES2108G	0x00F3	/* Ethernet Switch 2108-G */
+#define ZYNOS_BOARD_ES2108LC	0x00FC	/* Ethernet Switch 2108-LC */
+#define ZYNOS_BOARD_ES2108PWR	0x00F4	/* Ethernet Switch 2108PWR */
 #define ZYNOS_BOARD_HS100	0x9FF1	/* HomeSafe 100/100W */
 #define ZYNOS_BOARD_P334	0x9FF5	/* Prestige 334 */
 #define ZYNOS_BOARD_P334U	0x9FDD	/* Prestige 334U */
@@ -53,5 +68,11 @@ struct zynos_board_info {
 #define ZYNOS_BOARD_P335	0x9FED	/* Prestige 335/335WT */
 #define ZYNOS_BOARD_P335PLUS	0x0025	/* Prestige 335Plus */
 #define ZYNOS_BOARD_P335U	0x9FDC	/* Prestige 335U */
+
+/*
+ * Some magic numbers (big-endian)
+ */
+#define ZYNOS_MAGIC_DBGAREA1	0x48646267	/* "Hdbg" */
+#define ZYNOS_MAGIC_DBGAREA2	0x61726561	/* "area" */
 
 #endif /* _ZYNOS_H */
