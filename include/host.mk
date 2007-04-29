@@ -35,3 +35,9 @@ $(TMP_DIR)/.host.mk: $(TOPDIR)/include/host.mk
 	)
 
 endif
+
+ifeq ($(HOST_OS),Linux)
+  XARGS:=xargs -r
+else
+  XARGS:=xargs
+endif

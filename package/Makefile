@@ -58,9 +58,9 @@ install:
 			IPKG_INSTROOT=$(BUILD_DIR)/root $(which bash) ./etc/rc.common $$script enable; \
 		done || true \
 	)
-	@-find $(BUILD_DIR)/root -name CVS   | xargs -r rm -rf
-	@-find $(BUILD_DIR)/root -name .svn  | xargs -r rm -rf
-	@-find $(BUILD_DIR)/root -name '.#*' | xargs -r rm -f
+	@-find $(BUILD_DIR)/root -name CVS   | $(XARGS) rm -rf
+	@-find $(BUILD_DIR)/root -name .svn  | $(XARGS) rm -rf
+	@-find $(BUILD_DIR)/root -name '.#*' | $(XARGS) rm -f
 
 index: $(PACKAGE_DIR)/Packages
 

@@ -155,7 +155,7 @@ docclean:
 	$(MAKE) -C docs/ clean
 
 symlinkclean:
-	find package -type l | xargs -r rm -f
+	-find package -type l | xargs rm -f
 
 .SILENT: clean dirclean distclean symlinkclean config-clean download world help tmp/.packageinfo tmp/.targetinfo tmpinfo-clean tmp/.config-package.in tmp/.config-target.in .config scripts/config/mconf scripts/config/conf menuconfig tmp/.prereq-build tmp/.prereq-package tmp/.prereq-target
 FORCE: ;

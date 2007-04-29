@@ -7,6 +7,7 @@
 
 include $(INCLUDE_DIR)/prereq.mk
 include $(INCLUDE_DIR)/kernel.mk
+include $(INCLUDE_DIR)/host.mk
 KDIR:=$(BUILD_DIR)/linux-$(KERNEL)-$(BOARD)
 
 ifneq ($(CONFIG_BIG_ENDIAN),y)
@@ -79,9 +80,9 @@ endif
 
 
 define Image/mkfs/prepare/default
-	find $(BUILD_DIR)/root -type f -not -perm +0100 -not -name 'ssh_host*' | xargs -r chmod 0644
-	find $(BUILD_DIR)/root -type f -perm +0100 | xargs -r chmod 0755
-	find $(BUILD_DIR)/root -type d | xargs -r chmod 0755
+	find $(BUILD_DIR)/root -type f -not -perm +0100 -not -name 'ssh_host*' | $(XARGS) chmod 0644
+	find $(BUILD_DIR)/root -type f -perm +0100 | $(XARGS) chmod 0755
+	find $(BUILD_DIR)/root -type d | $(XARGS) chmod 0755
 	mkdir -p $(BUILD_DIR)/root/tmp
 	chmod 0777 $(BUILD_DIR)/root/tmp
 endef
