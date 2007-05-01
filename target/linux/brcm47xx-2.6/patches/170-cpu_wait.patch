@@ -1,0 +1,13 @@
+diff -urN linux-2.6.19.2.old/arch/mips/kernel/cpu-probe.c linux-2.6.19.2/arch/mips/kernel/cpu-probe.c
+--- linux-2.6.19.2.old/arch/mips/kernel/cpu-probe.c     2007-05-01 17:40:29.442141369 +0100
++++ linux-2.6.19.2/arch/mips/kernel/cpu-probe.c 2007-05-01 17:47:11.112141369 +0100
+@@ -145,6 +145,8 @@
+        case CPU_34K:
+        case CPU_74K:
+        case CPU_PR4450:
++       case CPU_BCM3302:
++       case CPU_BCM4710:
+                cpu_wait = r4k_wait;
+                printk(" available.\n");
+                break;
+
