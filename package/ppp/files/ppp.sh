@@ -21,6 +21,10 @@ start_pppd() {
 	config_get username "$cfg" username
 	config_get password "$cfg" password
 	config_get keepalive "$cfg" keepalive
+
+	config_get connect "$cfg" connect
+	config_get disconnect "$cfg" disconnect
+
 	interval="${keepalive##*[, ]}"
 	[ "$interval" != "$keepalive" ] || interval=5
 	
@@ -34,7 +38,23 @@ start_pppd() {
 		replacedefaultroute \
 		${username:+user "$username" password "$password"} \
 		linkname "$cfg" \
-		ipparam "$cfg"
+		ipparam "$cfg" \
+		${connect:+connect "$connect"} \
+		${disconnect:+disconnect "$disconnect"}
 
 	lock -u "/var/lock/ppp-${cfg}"
 }
+
+setup_interface_ppp() {
+	local iface="$1"
+	local config="$2"
+
+	config_get device "$config" device
+
+	config_get mtu "$cfg" mtu
+	mtu=${mtu:-1492}
+	start_pppd "$config" \
+		mtu $mtu mru $mtu \
+		"$device"
+}
+
