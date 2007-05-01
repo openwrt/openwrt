@@ -30,7 +30,7 @@ define Package/openswan
   $(call Package/openswan/Default)
   SECTION:=net
   CATEGORY:=Network
-  DEPENDS:=+kmod-openswan +libgmp
+  DEPENDS:=+kmod-openswan +libgmp +ip
   TITLE+= (daemon)
   DESCRIPTION+=\\\
 	\\\
