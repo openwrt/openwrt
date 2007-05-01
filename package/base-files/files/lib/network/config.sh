@@ -75,6 +75,8 @@ prepare_interface() {
 	# to create any interfaces here. The scripts have already done that, otherwise
 	# the bridge interface wouldn't exist.
 	[ "$iface" = "br-$config" ] && return 0;
+
+	[ -f "$iface" ] && return 0;
 	
 	ifconfig "$iface" 2>/dev/null >/dev/null && {
 		# make sure the interface is removed from any existing bridge and brought down
