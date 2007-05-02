@@ -62,7 +62,7 @@ endef
 
 $(eval $(call BuildImage))
 
-UCODEFILE:=IPL_ixp400NpeLibrary-2_3_2.zip
+UCODEFILE:=IPL_ixp400NpeLibrary-2_4.zip
 
 define Require/npe-ucode
 	[ -f $(DL_DIR)/$(UCODEFILE) ]
