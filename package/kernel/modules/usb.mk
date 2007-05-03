@@ -228,6 +228,18 @@ endef
 $(eval $(call KernelPackage,usb-serial-pl2303))
 
 
+define KernelPackage/usb-serial-sierrawireless
+  TITLE:=Support for Sierra Wireless devices
+  DESCRIPTION:=Kernel support for Sierra Wireless devices
+  DEPENDS:=kmod-usb-serial
+  SUBMENU:=$(USBMENU)
+  KCONFIG:=$(CONFIG_USB_SERIAL_SIERRAWIRELESS)
+  FILES:=$(LINUX_DIR)/drivers/usb/serial/sierra.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,65,sierra)
+endef
+$(eval $(call KernelPackage,usb-serial-sierrawireless))
+
+
 define KernelPackage/usb-serial-visor
   TITLE:=Support for Handspring Visor devices
   DESCRIPTION:=Kernel support for Handspring Visor PDAs
