@@ -1,0 +1,12 @@
+diff -urN linux-2.6.19.2/drivers/net/b44.c linux-2.6.19.2.new/drivers/net/b44.c
+--- linux-2.6.19.2/drivers/net/b44.c	2007-05-03 12:22:54.000000000 +0200
++++ linux-2.6.19.2.new/drivers/net/b44.c	2007-05-03 12:23:19.000000000 +0200
+@@ -1640,7 +1640,7 @@
+ 		bw32(bp, B44_RXCONFIG, val);
+ 	} else {
+ 		unsigned char zero[6] = {0, 0, 0, 0, 0, 0};
+-		int i = 0;
++		int i = 1;
+ 
+ 		__b44_set_mac_addr(bp);
+ 
