@@ -22,19 +22,6 @@
 
 #define STM_PAGE_SIZE           256
 
-#define SPI_WRITE_ENABLE    0
-#define SPI_WRITE_DISABLE   1
-#define SPI_RD_STATUS       2
-#define SPI_WR_STATUS       3
-#define SPI_RD_DATA         4
-#define SPI_FAST_RD_DATA    5
-#define SPI_PAGE_PROGRAM    6
-#define SPI_SECTOR_ERASE    7
-#define SPI_BULK_ERASE      8
-#define SPI_DEEP_PWRDOWN    9
-#define SPI_RD_SIG          10
-#define SPI_MAX_OPCODES     11
-
 #define SFI_WRITE_BUFFER_SIZE   4
 #define SFI_FLASH_ADDR_MASK     0x00ffffff
 
