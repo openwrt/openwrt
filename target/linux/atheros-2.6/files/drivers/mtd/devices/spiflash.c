@@ -3,9 +3,9 @@
  * MTD driver for the SPI Flash Memory support.
  *
  * Copyright (c) 2005-2006 Atheros Communications Inc.
- * Copyright (C) 2006 FON Technology, SL.
- * Copyright (C) 2006 Imre Kaloz <kaloz@openwrt.org>
- * Copyright (C) 2006 Felix Fietkau <nbd@openwrt.org>
+ * Copyright (C) 2006-2007 FON Technology, SL.
+ * Copyright (C) 2006-2007 Imre Kaloz <kaloz@openwrt.org>
+ * Copyright (C) 2006-2007 Felix Fietkau <nbd@openwrt.org>
  *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -40,12 +40,10 @@
 #include <linux/platform_device.h>
 #include <linux/squashfs_fs.h>
 #include <linux/root_dev.h>
+#include <linux/delay.h>
 #include <asm/delay.h>
 #include <asm/io.h>
 #include "spiflash.h"
-
-/* debugging */
-/* #define SPIFLASH_DEBUG */
 
 #ifndef __BIG_ENDIAN
 #error This driver currently only works with big endian CPU.
@@ -53,17 +51,28 @@
 
 #define MAX_PARTS 32
 
-static char module_name[] = "spiflash";
+#define SPIFLASH "spiflash: "
 
 #define MIN(a,b)        ((a) < (b) ? (a) : (b))
-#define FALSE 	0
-#define TRUE 	1
 
-#define ROOTFS_NAME	"rootfs"
+#define busy_wait(condition, wait) \
+	do { \
+		while (condition) { \
+			spin_unlock_bh(&spidata->mutex); \
+			if (wait > 1) \
+				msleep(wait); \
+			else if ((wait == 1) && need_resched()) \
+				schedule(); \
+			else \
+				udelay(1); \
+			spin_lock_bh(&spidata->mutex); \
+		} \
+	} while (0)
+		
 
 static __u32 spiflash_regread32(int reg);
 static void spiflash_regwrite32(int reg, __u32 data);
-static __u32 spiflash_sendcmd (int op);
+static __u32 spiflash_sendcmd (int op, u32 addr);
 
 int __init spiflash_init (void);
 void __exit spiflash_exit (void);
@@ -89,6 +98,19 @@ struct flashconfig {
     };
 
 /* Mapping of generic opcodes to STM serial flash opcodes */
+#define SPI_WRITE_ENABLE    0
+#define SPI_WRITE_DISABLE   1
+#define SPI_RD_STATUS       2
+#define SPI_WR_STATUS       3
+#define SPI_RD_DATA         4
+#define SPI_FAST_RD_DATA    5
+#define SPI_PAGE_PROGRAM    6
+#define SPI_SECTOR_ERASE    7
+#define SPI_BULK_ERASE      8
+#define SPI_DEEP_PWRDOWN    9
+#define SPI_RD_SIG          10
+#define SPI_MAX_OPCODES     11
+
 struct opcodes {
     __u16 code;
     __s8 tx_cnt;
@@ -99,21 +121,29 @@ struct opcodes {
         {STM_OP_RD_STATUS, 1, 1},
         {STM_OP_WR_STATUS, 1, 0},
         {STM_OP_RD_DATA, 4, 4},
-        {STM_OP_FAST_RD_DATA, 1, 0},
+        {STM_OP_FAST_RD_DATA, 5, 0},
         {STM_OP_PAGE_PGRM, 8, 0},
         {STM_OP_SECTOR_ERASE, 4, 0},
         {STM_OP_BULK_ERASE, 1, 0},
         {STM_OP_DEEP_PWRDOWN, 1, 0},
-        {STM_OP_RD_SIG, 4, 1}
+        {STM_OP_RD_SIG, 4, 1},
 };
 
 /* Driver private data structure */
 struct spiflash_data {
 	struct 	mtd_info       *mtd;	
 	struct 	mtd_partition  *parsed_parts;     /* parsed partitions */
-	void 	*spiflash_readaddr; /* memory mapped data for read  */
-	void 	*spiflash_mmraddr;  /* memory mapped register space */
+	void 	*readaddr; /* memory mapped data for read  */
+	void 	*mmraddr;  /* memory mapped register space */
+	wait_queue_head_t wq;
 	spinlock_t mutex;
+	int state;
+};
+enum {
+	FL_READY,
+	FL_READING,
+	FL_ERASING,
+	FL_WRITING
 };
 
 static struct spiflash_data *spidata;
@@ -125,7 +155,7 @@ extern int parse_redboot_partitions(struct mtd_info *master, struct mtd_partitio
 static __u32
 spiflash_regread32(int reg)
 {
-	volatile __u32 *data = (__u32 *)(spidata->spiflash_mmraddr + reg);
+	volatile __u32 *data = (__u32 *)(spidata->mmraddr + reg);
 
 	return (*data);
 }
@@ -133,62 +163,55 @@ spiflash_regread32(int reg)
 static void 
 spiflash_regwrite32(int reg, __u32 data)
 {
-	volatile __u32 *addr = (__u32 *)(spidata->spiflash_mmraddr + reg);
+	volatile __u32 *addr = (__u32 *)(spidata->mmraddr + reg);
 
 	*addr = data;
 	return;
 }
 
+
 static __u32 
-spiflash_sendcmd (int op)
+spiflash_sendcmd (int op, u32 addr)
 {
-	 __u32 reg;
-	 __u32 mask;
+	 u32 reg;
+	 u32 mask;
 	struct opcodes *ptr_opcode;
 
 	ptr_opcode = &stm_opcodes[op];
-
-	do {
-		reg = spiflash_regread32(SPI_FLASH_CTL);
-	} while (reg & SPI_CTL_BUSY);
-
-	spiflash_regwrite32(SPI_FLASH_OPCODE, ptr_opcode->code);
+	busy_wait((reg = spiflash_regread32(SPI_FLASH_CTL)) & SPI_CTL_BUSY, 0);
+	spiflash_regwrite32(SPI_FLASH_OPCODE, ((u32) ptr_opcode->code) | (addr << 8));
 
 	reg = (reg & ~SPI_CTL_TX_RX_CNT_MASK) | ptr_opcode->tx_cnt |
         	(ptr_opcode->rx_cnt << 4) | SPI_CTL_START;
 
 	spiflash_regwrite32(SPI_FLASH_CTL, reg);
+	busy_wait(spiflash_regread32(SPI_FLASH_CTL) & SPI_CTL_BUSY, 0);
  
-	if (ptr_opcode->rx_cnt > 0) {
-        	do {
-          		reg = spiflash_regread32(SPI_FLASH_CTL);
-        	} while (reg & SPI_CTL_BUSY);
+	if (!ptr_opcode->rx_cnt)
+		return 0;
 
-        	reg = (__u32) spiflash_regread32(SPI_FLASH_DATA);
+	reg = (__u32) spiflash_regread32(SPI_FLASH_DATA);
 
-        	switch (ptr_opcode->rx_cnt) {
-        	case 1:
-            		mask = 0x000000ff;
-            		break;
-        	case 2:
-            		mask = 0x0000ffff;
-            		break;
-        	case 3:
-            		mask = 0x00ffffff;
-            		break;
-        	default:
-            		mask = 0xffffffff;
-            		break;
-        	}
-
-        	reg &= mask;
-   	}
-	else {
-       		reg = 0;
-    	}
+	switch (ptr_opcode->rx_cnt) {
+	case 1:
+			mask = 0x000000ff;
+			break;
+	case 2:
+			mask = 0x0000ffff;
+			break;
+	case 3:
+			mask = 0x00ffffff;
+			break;
+	default:
+			mask = 0xffffffff;
+			break;
+	}
+	reg &= mask;
 
 	return reg;
 }
+
+
 
 /* Probe SPI flash device
  * Function returns 0 for failure.
@@ -201,7 +224,9 @@ spiflash_probe_chip (void)
    	int flash_size;
 	
    	/* Read the signature on the flash device */
-   	sig = spiflash_sendcmd(SPI_RD_SIG);
+	spin_lock_bh(&spidata->mutex);
+   	sig = spiflash_sendcmd(SPI_RD_SIG, 0);
+	spin_unlock_bh(&spidata->mutex);
 
    	switch (sig) {
    	case STM_8MBIT_SIGNATURE:
@@ -220,7 +245,7 @@ spiflash_probe_chip (void)
             	flash_size = FLASH_16MB;
             	break;
         default:
-	    	printk (KERN_WARNING "%s: Read of flash device signature failed!\n", module_name);
+	    	printk (KERN_WARNING SPIFLASH "Read of flash device signature failed!\n");
             	return (0);
    	}
 
@@ -228,90 +253,102 @@ spiflash_probe_chip (void)
 }
 
 
+/* wait until the flash chip is ready and grab a lock */
+static int spiflash_wait_ready(int state)
+{
+	DECLARE_WAITQUEUE(wait, current);
+
+retry:
+	spin_lock_bh(&spidata->mutex);
+	if (spidata->state != FL_READY) {
+		set_current_state(TASK_UNINTERRUPTIBLE);
+		add_wait_queue(&spidata->wq, &wait);
+		spin_unlock_bh(&spidata->mutex);
+		schedule();
+		remove_wait_queue(&spidata->wq, &wait);
+		
+		if(signal_pending(current))
+			return 0;
+
+		goto retry;
+	}
+	spidata->state = state;
+
+	return 1;
+}
+
+static inline void spiflash_done(void)
+{
+	spidata->state = FL_READY;
+	spin_unlock_bh(&spidata->mutex);
+	wake_up(&spidata->wq);
+}
+
 static int 
 spiflash_erase (struct mtd_info *mtd,struct erase_info *instr)
 {
 	struct opcodes *ptr_opcode;
-	__u32 temp, reg;
-	int finished = FALSE;
-
-#ifdef SPIFLASH_DEBUG
-   	printk (KERN_DEBUG "%s(addr = 0x%.8x, len = %d)\n",__FUNCTION__,instr->addr,instr->len);
-#endif
+	u32 temp, reg;
 
    	/* sanity checks */
    	if (instr->addr + instr->len > mtd->size) return (-EINVAL);
 
+	if (!spiflash_wait_ready(FL_ERASING))
+		return -EINTR;
+
+	spiflash_sendcmd(SPI_WRITE_ENABLE, 0);
+	busy_wait((reg = spiflash_regread32(SPI_FLASH_CTL)) & SPI_CTL_BUSY, 0);
+	reg = spiflash_regread32(SPI_FLASH_CTL);
+
 	ptr_opcode = &stm_opcodes[SPI_SECTOR_ERASE];
-
 	temp = ((__u32)instr->addr << 8) | (__u32)(ptr_opcode->code);
-	spin_lock(&spidata->mutex);
-	spiflash_sendcmd(SPI_WRITE_ENABLE);
-	do {
-		schedule();
-		reg = spiflash_regread32(SPI_FLASH_CTL);
-	} while (reg & SPI_CTL_BUSY);
-
 	spiflash_regwrite32(SPI_FLASH_OPCODE, temp);
 
 	reg = (reg & ~SPI_CTL_TX_RX_CNT_MASK) | ptr_opcode->tx_cnt | SPI_CTL_START;
 	spiflash_regwrite32(SPI_FLASH_CTL, reg);
 
-	do {
-		schedule();
-		reg = spiflash_sendcmd(SPI_RD_STATUS);
-		if (!(reg & SPI_STATUS_WIP)) {
-			finished = TRUE;
-		}
-	} while (!finished);
-	spin_unlock(&spidata->mutex);
+	/* this will take some time */
+	spin_unlock_bh(&spidata->mutex);
+	msleep(800);
+	spin_lock_bh(&spidata->mutex);
+	
+	busy_wait(spiflash_sendcmd(SPI_RD_STATUS, 0) & SPI_STATUS_WIP, 20);
+	spiflash_done();
 
    	instr->state = MTD_ERASE_DONE;
    	if (instr->callback) instr->callback (instr);
 
-#ifdef SPIFLASH_DEBUG
-   	printk (KERN_DEBUG "%s return\n",__FUNCTION__);
-#endif
-   	return (0);
+   	return 0;
 }
 
 static int 
 spiflash_read (struct mtd_info *mtd, loff_t from,size_t len,size_t *retlen,u_char *buf)
 {
-	u_char	*read_addr;
-
-#ifdef SPIFLASH_DEBUG
-   	printk (KERN_DEBUG "%s(from = 0x%.8x, len = %d)\n",__FUNCTION__,(__u32) from,(int)len);  
-#endif
-
+	u8 *read_addr;
+	
    	/* sanity checks */
    	if (!len) return (0);
    	if (from + len > mtd->size) return (-EINVAL);
 	
-
    	/* we always read len bytes */
    	*retlen = len;
 
-	read_addr = (u_char *)(spidata->spiflash_readaddr + from);
-	spin_lock(&spidata->mutex);
+	if (!spiflash_wait_ready(FL_READING))
+		return -EINTR;
+	read_addr = (u8 *)(spidata->readaddr + from);
 	memcpy(buf, read_addr, len);
-	spin_unlock(&spidata->mutex);
+	spiflash_done();
 
-   	return (0);
+   	return 0;
 }
 
 static int 
 spiflash_write (struct mtd_info *mtd,loff_t to,size_t len,size_t *retlen,const u_char *buf)
 {
-	int done = FALSE, page_offset, bytes_left, finished;
-	__u32 xact_len, spi_data = 0, opcode, reg;
-
-#ifdef SPIFLASH_DEBUG
-   	printk (KERN_DEBUG "%s(to = 0x%.8x, len = %d)\n",__FUNCTION__,(__u32) to,len); 
-#endif
+	u32 opcode, bytes_left;
 
    	*retlen = 0;
-	
+
    	/* sanity checks */
    	if (!len) return (0);
    	if (to + len > mtd->size) return (-EINVAL);
@@ -319,7 +356,9 @@ spiflash_write (struct mtd_info *mtd,loff_t to,size_t len,size_t *retlen,const u
 	opcode = stm_opcodes[SPI_PAGE_PROGRAM].code;
 	bytes_left = len;
 	
-	while (done == FALSE) {
+	do {
+		u32 xact_len, reg, page_offset, spi_data = 0;
+
 		xact_len = MIN(bytes_left, sizeof(__u32));
 
 		/* 32-bit writes cannot span across a page boundary
@@ -334,14 +373,10 @@ spiflash_write (struct mtd_info *mtd,loff_t to,size_t len,size_t *retlen,const u
 			xact_len -= (page_offset - STM_PAGE_SIZE);
 		}
 
-		spin_lock(&spidata->mutex);
-		spiflash_sendcmd(SPI_WRITE_ENABLE);
+		if (!spiflash_wait_ready(FL_WRITING))
+			return -EINTR;
 
-		do {
-			schedule();
-			reg = spiflash_regread32(SPI_FLASH_CTL);
-		} while (reg & SPI_CTL_BUSY);
-	
+		spiflash_sendcmd(SPI_WRITE_ENABLE, 0);
 		switch (xact_len) {
 			case 1:
 			 	spi_data = (u32) ((u8) *buf);
@@ -357,7 +392,7 @@ spiflash_write (struct mtd_info *mtd,loff_t to,size_t len,size_t *retlen,const u
 							(buf[1] << 8) | buf[0];
 				break;
 			default:
-				printk("spiflash_write: default case\n");
+				spi_data = 0;
 				break;
 		}
 
@@ -365,31 +400,26 @@ spiflash_write (struct mtd_info *mtd,loff_t to,size_t len,size_t *retlen,const u
 		opcode = (opcode & SPI_OPCODE_MASK) | ((__u32)to << 8);
 		spiflash_regwrite32(SPI_FLASH_OPCODE, opcode);
 
+		reg = spiflash_regread32(SPI_FLASH_CTL);
 		reg = (reg & ~SPI_CTL_TX_RX_CNT_MASK) | (xact_len + 4) | SPI_CTL_START;
 		spiflash_regwrite32(SPI_FLASH_CTL, reg);
-		finished = FALSE;
-		
-		do {
-			schedule();
-			reg = spiflash_sendcmd(SPI_RD_STATUS);
-			if (!(reg & SPI_STATUS_WIP)) {
-				finished = TRUE;
-			}
-		} while (!finished);
-		spin_unlock(&spidata->mutex);
+
+		/* give the chip some time before we start busy waiting */
+		spin_unlock_bh(&spidata->mutex);
+		schedule();
+		spin_lock_bh(&spidata->mutex);
+
+		busy_wait(spiflash_sendcmd(SPI_RD_STATUS, 0) & SPI_STATUS_WIP, 0);
+		spiflash_done();
 
 		bytes_left -= xact_len;
 		to += xact_len;
 		buf += xact_len;
 
    		*retlen += xact_len;
+	} while (bytes_left != 0);
 
-		if (bytes_left == 0) {
-			done = TRUE;
-		}
-	}
-
-   	return (0);
+   	return 0;
 }
 
 
@@ -400,14 +430,17 @@ static const char *part_probe_types[] = { "cmdlinepart", "RedBoot", NULL };
 
 static int spiflash_probe(struct platform_device *pdev)
 {
-   	int i, result = -1;
+   	int result = -1;
    	int index, num_parts;
 	struct mtd_info *mtd;
 
-	spidata->spiflash_mmraddr = ioremap_nocache(SPI_FLASH_MMR, SPI_FLASH_MMR_SIZE);
+	spidata->mmraddr = ioremap_nocache(SPI_FLASH_MMR, SPI_FLASH_MMR_SIZE);
+	spin_lock_init(&spidata->mutex);
+	init_waitqueue_head(&spidata->wq);
+	spidata->state = FL_READY;
 	
-	if (!spidata->spiflash_mmraddr) {
-  		printk (KERN_WARNING "%s: Failed to map flash device\n", module_name);
+	if (!spidata->mmraddr) {
+  		printk (KERN_WARNING SPIFLASH "Failed to map flash device\n");
 		kfree(spidata);
 		spidata = NULL;
 	}
@@ -415,29 +448,21 @@ static int spiflash_probe(struct platform_device *pdev)
    	mtd = kzalloc(sizeof(struct mtd_info), GFP_KERNEL);
    	if (!mtd) {
 		kfree(spidata);
-		return (-ENXIO);
+		return -ENXIO;
 	}
 	
-   	printk ("MTD driver for SPI flash.\n");
-   	printk ("%s: Probing for Serial flash ...\n", module_name);
    	if (!(index = spiflash_probe_chip())) {
-    	printk (KERN_WARNING "%s: Found no serial flash device\n", module_name);
-		kfree(mtd);
-		kfree(spidata);
-    	return (-ENXIO);
+    	printk (KERN_WARNING SPIFLASH "Found no serial flash device\n");
+		goto error;
    	}
 
-   	printk ("%s: Found SPI serial Flash.\n", module_name);
-
-	spidata->spiflash_readaddr = ioremap_nocache(SPI_FLASH_READ, flashconfig_tbl[index].byte_cnt);
-	if (!spidata->spiflash_readaddr) {
-       		printk (KERN_WARNING "%s: Failed to map flash device\n", module_name);
-		kfree(mtd);
-		kfree(spidata);
-       		return (-ENXIO);
+	spidata->readaddr = ioremap_nocache(SPI_FLASH_READ, flashconfig_tbl[index].byte_cnt);
+	if (!spidata->readaddr) {
+		printk (KERN_WARNING SPIFLASH "Failed to map flash device\n");
+		goto error;
 	}
 
-   	mtd->name = module_name;
+   	mtd->name = "spiflash";
    	mtd->type = MTD_NORFLASH;
    	mtd->flags = (MTD_CAP_NORFLASH|MTD_WRITEABLE);
    	mtd->size = flashconfig_tbl[index].byte_cnt;
@@ -450,57 +475,26 @@ static int spiflash_probe(struct platform_device *pdev)
    	mtd->write = spiflash_write;
 	mtd->owner = THIS_MODULE;
 
-#ifdef SPIFLASH_DEBUG
-	printk (KERN_DEBUG
-		   "mtd->name = %s\n"
-		   "mtd->size = 0x%.8x (%uM)\n"
-		   "mtd->erasesize = 0x%.8x (%uK)\n"
-		   "mtd->numeraseregions = %d\n",
-		   mtd->name,
-		   mtd->size, mtd->size / (1024*1024),
-		   mtd->erasesize, mtd->erasesize / 1024,
-		   mtd->numeraseregions);
-
-   	if (mtd->numeraseregions) {
-	 	for (result = 0; result < mtd->numeraseregions; result++) {
-	   		printk (KERN_DEBUG
-			   "\n\n"
-			   "mtd->eraseregions[%d].offset = 0x%.8x\n"
-			   "mtd->eraseregions[%d].erasesize = 0x%.8x (%uK)\n"
-			   "mtd->eraseregions[%d].numblocks = %d\n",
-			   result,mtd->eraseregions[result].offset,
-			   result,mtd->eraseregions[result].erasesize,mtd->eraseregions[result].erasesize / 1024,
-			   result,mtd->eraseregions[result].numblocks);
-         	}
-    	}
-#endif
    	/* parse redboot partitions */
 	num_parts = parse_mtd_partitions(mtd, part_probe_types, &spidata->parsed_parts, 0);
+	if (!num_parts)
+		goto error;
 
-#ifdef SPIFLASH_DEBUG
-   	printk (KERN_DEBUG "Found %d partitions\n", num_parts);
-#endif
-	if (num_parts) {
-   		result = add_mtd_partitions(mtd, spidata->parsed_parts, num_parts);
-	} else {
-#ifdef SPIFLASH_DEBUG
-		printk (KERN_DEBUG "Did not find any partitions\n");
-#endif
-		kfree(mtd);
-		kfree(spidata);
-       		return (-ENXIO);
-	}
-
+	result = add_mtd_partitions(mtd, spidata->parsed_parts, num_parts);
 	spidata->mtd = mtd;
-
+	
    	return (result);
+	
+error:
+	kfree(mtd);
+	kfree(spidata);
+	return -ENXIO;
 }
 
 static int spiflash_remove (struct platform_device *pdev)
 {
 	del_mtd_partitions (spidata->mtd);
 	kfree(spidata->mtd);
-
 	return 0;
 }
 
@@ -533,6 +527,6 @@ module_init (spiflash_init);
 module_exit (spiflash_exit);
 
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Atheros Communications Inc");
+MODULE_AUTHOR("OpenWrt.org, Atheros Communications Inc");
 MODULE_DESCRIPTION("MTD driver for SPI Flash on Atheros SOC");
 
