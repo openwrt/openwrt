@@ -68,7 +68,8 @@ static void gpio_set_irqenable(int enabled, irqreturn_t (*handler)(int, void *, 
 	else
 		free_irq(irq, handler);
 
-	gpio_intmask(1, (enabled ? 1 : 0));
+	if (ssb.chipco.dev)
+		ssb_write32_masked(ssb.chipco.dev, SSB_CHIPCO_IRQMASK, SSB_CHIPCO_IRQ_GPIO, (enabled ? SSB_CHIPCO_IRQ_GPIO : 0));
 }
 
 #else
