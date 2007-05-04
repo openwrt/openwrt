@@ -111,6 +111,11 @@ parse_matching_rule() {
 				esac
 				ports=1
 			;;
+			*:connbytes)
+				value="$(echo "$value" | sed -e 's,-,:,g')"
+				add_insmod ipt_connbytes
+				append "$var" "-m connbytes --connbytes $value --connbytes-dir both --connbytes-mode bytes"
+			;;
 			1:pktsize)
 				value="$(echo "$value" | sed -e 's,-,:,g')"
 				add_insmod ipt_length
