@@ -28,9 +28,6 @@ $(TMP_DIR)/.host.mk: $(TOPDIR)/include/host.mk
 		TAR=`which gtar 2>/dev/null`; \
 		[ -n "$$TAR" -a -x "$$TAR" ] || TAR=`which tar 2>/dev/null`; \
 		echo "TAR:=$$TAR" >> $@; \
-		ZCAT=`which gzcat 2>/dev/null`; \
-		[ -n "$$ZCAT" -a -x "$$ZCAT" ] || ZCAT=`which zcat 2>/dev/null`; \
-		echo "ZCAT:=$$ZCAT" >> $@; \
 		echo "BASH:=$(shell which bash)" >> $@; \
 	)
 
