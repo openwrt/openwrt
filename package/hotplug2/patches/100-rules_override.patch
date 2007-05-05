@@ -1,0 +1,34 @@
+diff -ur hotplug2.old/hotplug2.c hotplug2.dev/hotplug2.c
+--- hotplug2.old/hotplug2.c	2006-10-08 15:18:23.000000000 +0200
++++ hotplug2.dev/hotplug2.c	2007-05-05 11:38:51.456551560 +0200
+@@ -391,6 +391,7 @@
+ 	int rv = 0;
+ 	int i;
+ 	char *coldplug_command = NULL;
++	char *rules_file = HOTPLUG2_RULE_PATH;
+ 	sigset_t block_mask;
+ 	
+ 	struct rules_t *rules = NULL;
+@@ -435,6 +436,13 @@
+ 						break;
+ 					
+ 					modprobe_command = *argv;
++				} else if (!strcmp(*argv, "--set-rules-file")) {
++					argv++;
++					argc--;
++					if (argc <= 0)
++						break;
++					
++					rules_file = *argv;
+ 				}
+ 			}
+ 		}
+@@ -443,7 +451,7 @@
+ #ifdef HAVE_RULES
+ 	if (!dumb) {
+ 		filemap = MAP_FAILED;
+-		rule_fd = open(HOTPLUG2_RULE_PATH, O_RDONLY | O_NOATIME);
++		rule_fd = open(rules_file, O_RDONLY | O_NOATIME);
+ 		if (rule_fd == -1) {
+ 			dumb = 1;
+ 			ERROR("rules parse","Unable to open rules file: %s.", strerror(errno));

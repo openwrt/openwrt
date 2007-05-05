@@ -21,7 +21,6 @@ include $(INCLUDE_DIR)/package.mk
 define Package/hotplug2
   SECTION:=utils
   CATEGORY:=Utilities
-  DEPENDS:=@LINUX_2_6 +udevtrigger
   TITLE:=Dynamic device management subsystem for embedded systems
   URL:=http://isteve.bofh.cz/~isteve/hotplug2/
 endef
@@ -32,6 +31,9 @@ in a tiny pack, intended for Linux early userspace: Init RAM FS and InitRD.
 endef
 
 define Package/hotplug2/install
+	$(INSTALL_DIR) $(1)/etc
+	$(INSTALL_DATA) ./files/hotplug2.rules $(1)/etc/
+	$(INSTALL_DATA) ./files/hotplug2-init.rules $(1)/etc/
 	$(INSTALL_DIR) $(1)/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/hotplug2 $(1)/sbin/
 endef
