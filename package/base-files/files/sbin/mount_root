@@ -4,17 +4,26 @@
 
 mount none /proc -t proc
 size=$(awk '/Mem:/ {l=5242880;print((s=$2/2)<l)?$2-l:s}' /proc/meminfo)
+
 mount none /tmp -t tmpfs -o size=$size,nosuid,nodev,mode=1777
-if grep devfs /proc/filesystems > /dev/null; then
+if grep devfs /proc/filesystems >/dev/null; then
 	mount none /dev -t devfs
 else
-	mount -t sysfs none /sys
 	mount -t tmpfs tmpfs /dev -o size=512K
 	mknod /dev/console c 5 1
 	exec >/dev/console </dev/console 2>&1
-	mkdir /dev/shm
-	/sbin/hotplug2 --no-persistent --coldplug --max-children 1
 fi
+mkdir /dev/shm
+if grep sysfs /proc/filesystems >/dev/null; then
+	mount -t sysfs none /sys
+	HOTPLUG=""
+	# use a minimal ruleset only for creating device nodes
+	/sbin/hotplug2 --no-persistent --coldplug --set-rules-file /etc/hotplug2-init.rules
+else
+	HOTPLUG="/sbin/hotplug2-dnode"
+fi
+echo "$HOTPLUG" > /proc/sys/kernel/hotplug
+
 mkdir -p /dev/pts
 mount none /dev/pts -t devpts
 

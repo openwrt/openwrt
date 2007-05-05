@@ -31,14 +31,16 @@ if grep devfs /proc/filesystems > /dev/null; then
 	mount none /dev -t devfs
 	M0=/dev/pty/m0
 	M1=/dev/pty/m1
+	HOTPLUG=/sbin/hotplug-call
 else
 	mount -t sysfs none /sys
 	mount -t tmpfs tmpfs /dev -o size=512K
 	mknod /dev/console c 5 1
 	mkdir /dev/shm
-	/sbin/hotplug2 --no-persistent --coldplug --max_children 1
+	/sbin/hotplug2 --no-persistent --coldplug --set-rules-file /etc/hotplug2-init.rules
 	M0=/dev/ptmx
 	M1=/dev/ptmx
+	HOTPLUG=
 fi
 mkdir -p /dev/pts
 mount none /dev/pts -t devpts
@@ -86,7 +88,7 @@ eval ${FAILSAFE:+failsafe}
 
 lock -w /tmp/.failsafe
 set_state preinit
-echo /sbin/hotplug-call > /proc/sys/kernel/hotplug
+echo "$HOTPLUG" > /proc/sys/kernel/hotplug
 
 ifconfig $ifname 0.0.0.0 down
 

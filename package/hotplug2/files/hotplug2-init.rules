@@ -4,9 +4,6 @@ DEVICENAME ~~ (tun|tap[0-9]) {
 }
 
 DEVPATH is set {
-			makedev /dev/%DEVICENAME% 0644
+	makedev /dev/%DEVICENAME% 0644
 }
 
-MODALIAS is set {
-			exec /sbin/modprobe -q %MODALIAS% ;
-}

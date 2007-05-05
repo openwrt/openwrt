@@ -27,13 +27,11 @@ start() {
 	ln -s /tmp/resolv.conf.auto /tmp/resolv.conf
 	[ "$FAILSAFE" = "true" ] && touch /tmp/.failsafe
 	
-	# manually trigger hotplug before loading modules
+	# the coldplugging of network interfaces needs to happen later, so we do it manually here
 	for iface in $(awk -F: '/:/ {print $1}' /proc/net/dev); do
 		/usr/bin/env -i ACTION=add INTERFACE="$iface" /sbin/hotplug-call net
 	done
-	
-	/sbin/hotplug2 --persistent --max-children 5 &
-	echo /sbin/hotplug-call > /proc/sys/kernel/hotplug
+	/sbin/hotplug2 --persistent --max-children 1 &
 
 	# create /dev/root if it doesn't exist
 	[ -e /dev/root ] || {
