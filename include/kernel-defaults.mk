@@ -40,7 +40,7 @@ define Kernel/Configure/2.4
 	$(MAKE) $(KERNEL_MAKEOPTS) dep
 endef
 define Kernel/Configure/2.6
-	$(MAKE) $(KERNEL_MAKEOPTS) CC="$(KERNEL_CC)" oldconfig prepare scripts
+	-$(MAKE) $(KERNEL_MAKEOPTS) CC="$(KERNEL_CC)" oldconfig prepare scripts
 endef
 define Kernel/Configure/Default
 	@if [ -f "./config/profile-$(PROFILE)" ]; then \
