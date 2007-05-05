@@ -53,7 +53,7 @@ tmp/.%info:
 tmpinfo-clean: FORCE
 	-rm -rf tmp/.*info
 
-tmp/.config-%.in: tmp/.%info
+tmp/.config-%.in: tmp/.%info scripts/metadata.pl
 	./scripts/metadata.pl $*_config < $< > $@ || rm -f $@
 
 .config: ./scripts/config/conf tmp/.config-target.in tmp/.config-package.in
