@@ -20,7 +20,7 @@ ifeq ($(strip $(PKG_UNPACK)),)
 
     ifeq ($(filter gz tgz,$(EXT)),$(EXT))
       EXT:=$(call ext,$(PKG_SOURCE:.$(EXT)=))
-      UNPACK:=$(ZCAT) $(DL_DIR)/$(PKG_SOURCE) |
+      UNPACK:=gzip -dc $(DL_DIR)/$(PKG_SOURCE) |
     endif	
     ifeq ($(filter bzip2 bz2 bz tbz2 tbz,$(EXT)),$(EXT))
       EXT:=$(call ext,$(PKG_SOURCE:.$(EXT)=))
@@ -48,9 +48,9 @@ ifeq ($(strip $(PKG_UNPACK)),)
     ifeq ($(PKG_CAT),unzip)
       PKG_UNPACK:=$(UNZIP_CMD)
     endif
-    # replace zcat with $(ZCAT), because some system have it as gzcat
+    # replace zcat with $(ZCAT), because some system don't support it properly
     ifeq ($(PKG_CAT),zcat)
-      PKG_UNPACK:=$(ZCAT) $(DL_DIR)/$(PKG_SOURCE) | $(TAR_CMD)
+      PKG_UNPACK:=gzip -dc $(DL_DIR)/$(PKG_SOURCE) | $(TAR_CMD)
     endif
   endif
   ifneq ($(strip $(CRLF_WORKAROUND)),)
