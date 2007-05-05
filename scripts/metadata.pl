@@ -451,22 +451,20 @@ sub print_package_config_category($) {
 
 sub gen_package_config() {
 	parse_package_metadata();
-	print "menu \"Image configuration\"\n";
+	print "menuconfig UCI_PRECONFIG\n\tbool \"Image configuration\"\n";
 	foreach my $preconfig (keys %preconfig) {
-		print "\tcomment \"$preconfig\"\n";
 		foreach my $cfg (@{$preconfig{$preconfig}}) {
 			my $conf = $cfg->{id};
 			$conf =~ tr/\.-/__/;
 			print <<EOF
 	config UCI_PRECONFIG_$conf
-		string "$cfg->{label}"
+		string "$cfg->{label}" if UCI_PRECONFIG
 		depends PACKAGE_$preconfig
 		default "$cfg->{default}"
 
 EOF
 		}
 	}
-	print "endmenu\n\n";
 	print_package_config_category 'Base system';
 	foreach my $cat (keys %category) {
 		print_package_config_category $cat;
@@ -542,8 +540,10 @@ sub gen_package_mk() {
 	( \\
 $cmds \\
 	) > \$@
-
-preconfig: \$(TARGET_DIR)/etc/uci-defaults/$preconfig
+	
+ifneq (\$(UCI_PRECONFIG)\$(CONFIG_UCI_PRECONFIG),)
+  preconfig: \$(TARGET_DIR)/etc/uci-defaults/$preconfig
+endif
 EOF
 	}
 }
