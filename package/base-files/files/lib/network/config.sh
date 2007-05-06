@@ -152,7 +152,7 @@ setup_interface() {
 			config_get bcast "$config" broadcast
 			
 			[ -z "$ipaddr" ] || $DEBUG ifconfig "$iface" "$ipaddr" netmask "$netmask"
-			[ -z "$ip6addr" ] || $DEBUG ifconfig "$iface" inet6 add "$ip6addr" 
+			[ -z "$ip6addr" ] || $DEBUG ifconfig "$iface" add "$ip6addr"
 			[ -z "$gateway" ] || $DEBUG route add default gw "$gateway"
 			[ -z "$bcast" ] || $DEBUG ifconfig "$iface" broadcast "$bcast"
 			[ -z "$dns" -o -f /tmp/resolv.conf.auto ] || {
