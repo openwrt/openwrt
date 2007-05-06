@@ -29,6 +29,7 @@
 #include <asm/io.h>
 #include <asm/bootinfo.h>
 #include <asm/mips-boards/prom.h>
+#include <asm/gdb-stub.h>
 
 #include <asm/ar7/ar7.h>
 
@@ -243,6 +244,13 @@ static void __init console_config(void)
 	if (strstr(prom_getcmdline(), "console="))
 		return;
 
+#ifdef CONFIG_KGDB
+	strcat(prom_getcmdline(), " console=kgdb");
+	prom_printf("Please connect GDB to this port\n");
+	kgdb_enabled = 1;
+	return;
+#endif
+
 	if ((s = prom_getenv("modetty0"))) {
 		baud = simple_strtoul(s, &p, 10);
 		s = p;
@@ -300,5 +308,17 @@ int prom_putchar(char c)
 	serial_out(UART_TX, c);
 	return 1;
 }
+
+#ifdef CONFIG_KGDB
+int putDebugChar(char c)
+{
+	return prom_putchar(c);
+}
+
+char getDebugChar(void)
+{
+       return prom_getchar();
+}
+#endif
 
 EXPORT_SYMBOL(prom_getenv);
