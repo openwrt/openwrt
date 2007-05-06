@@ -4,7 +4,7 @@
 
 START=00
 start() {
-	MD5="$(md5sum /dev/mtdblock/0  | awk '{print $1}')"
+	MD5="$(md5sum /dev/mtdblock0  | awk '{print $1}')"
 	[ "$MD5" = "0530bfdf00ec155f4182afd70da028c1" ] && {
 		mtd unlock adam2
 		/sbin/adam2patcher /dev/mtdblock0
