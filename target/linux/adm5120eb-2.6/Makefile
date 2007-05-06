@@ -8,11 +8,11 @@ include $(TOPDIR)/rules.mk
 
 ARCH:=mips
 BOARD:=adm5120eb
-BOARDNAME:=ADMtek 5120 (Big Endian)
-FEATURES:=squashfs broken
+BOARDNAME:=ADM5120 (Big Endian)
+FEATURES:=squashfs broken pci usb
 
 define Target/Description
-	Build firmware images for ADMTek ADM5120 based boards running in big-endian mode
+	Build firmware images for Infineon/ADMTek ADM5120 based boards running in big-endian mode
 	(e.g : ZyXEL Prestige 335WT ...)
 endef
 

@@ -8,12 +8,12 @@ include $(TOPDIR)/rules.mk
 
 ARCH:=mipsel
 BOARD:=adm5120
-BOARDNAME:=ADMtek 5120
-FEATURES:=squashfs jffs2 broken
+BOARDNAME:=ADM5120 (Little Endian)
+FEATURES:=squashfs jffs2 broken pci usb
 
 define Target/Description
-	Build firmware images for ADMTek ADM5120 based boards
-	(e.g : RouterBoard RB112, Compex WP54G ...)
+	Build firmware images for Infineon/ADMtek ADM5120 based boards
+	(e.g : RouterBoard RB1xx, Compex WP54G-WRT ...)
 endef
 
 include $(INCLUDE_DIR)/kernel-build.mk
