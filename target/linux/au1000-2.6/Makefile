@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=mipsel
 BOARD:=au1000
 BOARDNAME:=AMD Alchemy AU1x00
-FEATURES:=jffs2
+FEATURES:=jffs2 usb pci
 
 define Target/Description
 	Build firmware for AMD Alchemy 1500 boards
