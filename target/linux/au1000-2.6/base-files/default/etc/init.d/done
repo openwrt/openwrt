@@ -1,0 +1,9 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2007 OpenWrt.org
+
+START=95
+boot() {
+	# set leds to normal state
+	. /etc/diag.sh
+	set_state done
+}
