@@ -7,6 +7,11 @@ DEVPATH is set {
 	makedev /dev/%DEVICENAME% 0644
 }
 
+FIRMWARE is set {
+	exec /sbin/hotplug-call firmware;
+	next
+}
+
 SUBSYSTEM ~~ (net|button) {
 	exec /sbin/hotplug-call %SUBSYSTEM%;
 }
