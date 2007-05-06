@@ -1,0 +1,19 @@
+diff -ur db.old/common-channel.c db.dev/common-channel.c
+--- db.old/common-channel.c	2007-02-22 17:17:15.000000000 +0100
++++ db.dev/common-channel.c	2007-05-06 19:50:19.154943528 +0200
+@@ -309,15 +309,6 @@
+ 			&& (ERRFD_IS_WRITE(channel) || channel->errfd == FD_CLOSED)) {
+ 		send_msg_channel_eof(channel);
+ 	}
+-
+-	/* And if we can't receive any more data from them either, close up */
+-	if (!channel->sent_close
+-			&& channel->readfd == FD_CLOSED
+-			&& (ERRFD_IS_WRITE(channel) || channel->errfd == FD_CLOSED)
+-			&& !write_pending(channel)) {
+-		TRACE(("sending close, readfd is closed"))
+-		send_msg_channel_close(channel);
+-	}
+ }
+ 
+ /* Check whether a deferred (EINPROGRESS) connect() was successful, and
