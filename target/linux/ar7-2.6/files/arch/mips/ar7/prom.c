@@ -232,11 +232,49 @@ static void __init ar7_init_env(struct env_var *env)
 	}
 }
 
+static void __init console_config(void)
+{
+#ifdef CONFIG_SERIAL_8250_CONSOLE
+	char console_string[40];
+	int baud = 0;
+	char parity = '\0', bits = '\0', flow = '\0';
+	char *s, *p;
+
+	if (strstr(prom_getcmdline(), "console="))
+		return;
+
+	if ((s = prom_getenv("modetty0"))) {
+		baud = simple_strtoul(s, &p, 10);
+		s = p;
+		if (*s == ',') s++;
+		if (*s) parity = *s++;
+		if (*s == ',') s++;
+		if (*s) bits = *s++;
+		if (*s == ',') s++;
+		if (*s == 'h') flow = 'r';
+	}
+
+	if (baud == 0)
+		baud = 38400;
+	if (parity != 'n' && parity != 'o' && parity != 'e')
+		parity = 'n';
+	if (bits != '7' && bits != '8')
+		bits = '8';
+	if (flow == '\0')
+		flow = 'r';
+
+	sprintf(console_string, " console=ttyS0,%d%c%c%c", baud,
+		parity, bits, flow);
+	strcat(prom_getcmdline(), console_string);
+#endif
+}
+
 void __init prom_init(void)
 {
 	prom_printf("\nLINUX running...\n");
 	ar7_init_cmdline(fw_arg0, (char **)fw_arg1);
 	ar7_init_env((struct env_var *)fw_arg2);
+	console_config();
 }
 
 #define PORT(offset) (KSEG1ADDR(AR7_REGS_UART0 + (offset * 4)))
