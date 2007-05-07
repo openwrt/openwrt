@@ -41,12 +41,12 @@
 #define BOOT_PLL_2TO1_MODE 0x00008000
 
 struct tnetd7300_clock {
-	u32 ctrl;
+	volatile u32 ctrl;
 #define PREDIV_MASK 0x001f0000
 #define PREDIV_SHIFT 16
 #define POSTDIV_MASK 0x0000001f
 	u32 unused1[3];
-	u32 pll;
+	volatile u32 pll;
 #define MUL_MASK 0x0000f000
 #define MUL_SHIFT 12
 #define PLL_MODE_MASK 0x00000001
@@ -64,16 +64,16 @@ struct tnetd7300_clocks {
 } __attribute__ ((packed));
 
 struct tnetd7200_clock {
-	u32 ctrl;
+	volatile u32 ctrl;
 	u32 unused1[3];
 #define DIVISOR_ENABLE_MASK 0x00008000
-	u32 mul;
-	u32 prediv;
-	u32 postdiv;
+	volatile u32 mul;
+	volatile u32 prediv;
+	volatile u32 postdiv;
 	u32 unused2[7];
-	u32 cmd;
-	u32 status;
-	u32 cmden;
+	volatile u32 cmd;
+	volatile u32 status;
+	volatile u32 cmden;
 	u32 padding[15];
 };
 
@@ -216,7 +216,7 @@ static int tnetd7300_get_clock(u32 shift, struct tnetd7300_clock *clock,
 static void tnetd7300_set_clock(u32 shift, struct tnetd7300_clock *clock,
 				u32 *bootcr, u32 frequency)
 {
-	volatile u32 status;
+	u32 status;
 	int prediv, postdiv, mul;
 	int base_clock = ar7_bus_clock;
 
@@ -290,7 +290,7 @@ static int tnetd7200_get_clock(int base, struct tnetd7200_clock *clock,
 static void tnetd7200_set_clock(int base, struct tnetd7200_clock *clock,
 				u32 *bootcr, u32 frequency) 
 {
-	volatile u32 status;
+	u32 status;
 	int prediv, postdiv, mul;
 
 	calculate(base, frequency, &prediv, &postdiv, &mul);
