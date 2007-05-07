@@ -66,10 +66,10 @@ case "$(cat /proc/diag/model)" in
 	"ASUS (unknown, BCM4702)") ifname=eth1;;
 esac
 
+ifconfig $ifname 192.168.1.1 netmask 255.255.255.0 broadcast 192.168.1.255 up
+
 insmod switch-core
 insmod switch-robo || insmod switch-adm || rmmod switch-core
-
-ifconfig $ifname 192.168.1.1 netmask 255.255.255.0 broadcast 192.168.1.255 up
 
 [ -d /proc/switch/eth0 ] && {
 	echo 1 > /proc/switch/eth0/reset
