@@ -1,0 +1,113 @@
+Fixes "invalid lvalue in assignment" errors when building with gcc 4
+http://sourceware.org/ml/crossgcc/2005-11/msg00172.html
+
+--- gdb-6.3/sim/arm/iwmmxt.c	2003-03-27 18:13:33.000000000 +0100
++++ gdb-6.3.50.20051117/sim/arm/iwmmxt.c	2005-05-12 09:36:59.000000000 +0200
+@@ -14,7 +14,7 @@
+  
+     You should have received a copy of the GNU General Public License
+     along with this program; if not, write to the Free Software
+-    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. */
++    Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA 02110-1301, USA. */
+ 
+ #include "armdefs.h"
+ #include "armos.h"
+@@ -2114,7 +2114,7 @@ WMAC (ARMword instr)
+ 
+ 	  s = (signed long) a * (signed long) b;
+ 
+-	  (signed long long) t += s;
++	  t = t + (ARMdword) s;
+         }
+       else
+         {
+@@ -2130,7 +2130,7 @@ WMAC (ARMword instr)
+     wR [BITS (12, 15)] = 0;
+ 
+   if (BIT (21))	/* Signed.  */
+-    (signed long long) wR[BITS (12, 15)] += (signed long long) t;
++    wR[BITS (12, 15)] += t;
+   else
+     wR [BITS (12, 15)] += t;
+ 
+@@ -2166,7 +2166,7 @@ WMADD (ARMword instr)
+ 	  b = wRHALF (BITS (0, 3), i * 2);
+ 	  b = EXTEND16 (b);
+ 
+-	  (signed long) s1 = a * b;
++	  s1 = (ARMdword) (a * b);
+ 
+ 	  a = wRHALF (BITS (16, 19), i * 2 + 1);
+ 	  a = EXTEND16 (a);
+@@ -2174,7 +2174,7 @@ WMADD (ARMword instr)
+ 	  b = wRHALF (BITS (0, 3), i * 2 + 1);
+ 	  b = EXTEND16 (b);
+ 
+-	  (signed long) s2 = a * b;
++	  s2 = (ARMdword) (a * b);
+         }
+       else			/* Unsigned.  */
+         {
+@@ -2183,12 +2183,12 @@ WMADD (ARMword instr)
+ 	  a = wRHALF (BITS (16, 19), i * 2);
+ 	  b = wRHALF (BITS ( 0,  3), i * 2);
+ 
+-	  (unsigned long) s1 = a * b;
++	  s1 = (ARMdword) (a * b);
+ 
+ 	  a = wRHALF (BITS (16, 19), i * 2 + 1);
+ 	  b = wRHALF (BITS ( 0,  3), i * 2 + 1);
+ 
+-	  (signed long) s2 = a * b;
++	  s2 = (ARMdword) a * b;
+         }
+ 
+       r |= (ARMdword) ((s1 + s2) & 0xffffffff) << (i ? 32 : 0);
+@@ -2837,7 +2837,7 @@ WSLL (ARMul_State * state, ARMword instr
+       if (shift > 63)
+ 	r = 0;
+       else
+-	r = ((wR[BITS (16, 19)] & 0xffffffffffffffff) << shift);
++	r = ((wR[BITS (16, 19)] & 0xffffffffffffffffULL) << shift);
+ 
+       SIMD64_SET (psr, NBIT64 (r), SIMD_NBIT);
+       SIMD64_SET (psr, ZBIT64 (r), SIMD_ZBIT);
+@@ -2914,9 +2914,9 @@ WSRA (ARMul_State * state, ARMword instr
+       
+     case Dqual:
+       if (shift > 63)
+-	r = (wR [BITS (16, 19)] & 0x8000000000000000) ? 0xffffffffffffffff : 0;
++	r = (wR [BITS (16, 19)] & 0x8000000000000000ULL) ? 0xffffffffffffffffULL : 0;
+       else
+-	r = ((signed long long) (wR[BITS (16, 19)] & 0xffffffffffffffff) >> shift);
++	r = ((signed long long) (wR[BITS (16, 19)] & 0xffffffffffffffffULL) >> shift);
+       SIMD64_SET (psr, NBIT64 (r), SIMD_NBIT);
+       SIMD64_SET (psr, ZBIT64 (r), SIMD_ZBIT);
+       break;
+@@ -2985,7 +2985,7 @@ WSRL (ARMul_State * state, ARMword instr
+       if (shift > 63)
+ 	r = 0;
+       else
+-	r = (wR [BITS (16, 19)] & 0xffffffffffffffff) >> shift;
++	r = (wR [BITS (16, 19)] & 0xffffffffffffffffULL) >> shift;
+ 
+       SIMD64_SET (psr, NBIT64 (r), SIMD_NBIT);
+       SIMD64_SET (psr, ZBIT64 (r), SIMD_ZBIT);
+@@ -3287,7 +3287,7 @@ WUNPCKEH (ARMul_State * state, ARMword i
+       r = wRWORD (BITS (16, 19), 1);
+ 
+       if (BIT (21) && NBIT32 (r))
+-	r |= 0xffffffff00000000;
++	r |= 0xffffffff00000000ULL;
+ 
+       SIMD64_SET (psr, NBIT64 (r), SIMD_NBIT);
+       SIMD64_SET (psr, ZBIT64 (r), SIMD_ZBIT);
+@@ -3354,7 +3354,7 @@ WUNPCKEL (ARMul_State * state, ARMword i
+       r = wRWORD (BITS (16, 19), 0);
+ 
+       if (BIT (21) && NBIT32 (r))
+-	r |= 0xffffffff00000000;
++	r |= 0xffffffff00000000ULL;
+ 
+       SIMD64_SET (psr, NBIT64 (r), SIMD_NBIT);
+       SIMD64_SET (psr, ZBIT64 (r), SIMD_ZBIT);
