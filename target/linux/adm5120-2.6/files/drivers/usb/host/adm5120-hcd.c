@@ -376,7 +376,7 @@ static irqreturn_t adm5120hcd_irq(int irq, void *ptr, struct pt_regs *regs)
 }
 
 static int admhcd_urb_enqueue(struct usb_hcd *hcd, struct usb_host_endpoint *ep,
-    struct urb *urb, int mem_flags)
+    struct urb *urb, gfp_t mem_flags)
 {
 	struct admhcd *ahcd = hcd_to_admhcd(hcd);
 	struct admhcd_ed *ed;
@@ -704,7 +704,6 @@ static int __init adm5120hcd_probe(struct platform_device *pdev)
 {
 	struct usb_hcd *hcd;
 	struct admhcd *ahcd;
-	struct usb_device *udev;
 	struct resource *addr, *data;
 	void __iomem *addr_reg;
 	void __iomem *data_reg;
@@ -786,12 +785,8 @@ static int __init adm5120hcd_probe(struct platform_device *pdev)
 
 out_dev:
 	usb_put_hcd(hcd);
-out_irq:
-	free_irq(pdev->resource[1].start, hcd);
 out_unmap:
 	iounmap(addr_reg);
-out_hcd:
-	usb_put_hcd(hcd);
 out_mem:
 	release_mem_region(addr->start, 2);
 out:
@@ -802,7 +797,6 @@ static int __init_or_module adm5120hcd_remove(struct platform_device *pdev)
 {
 	struct usb_hcd *hcd = platform_get_drvdata(pdev);
 	struct admhcd *ahcd;
-	struct resource *res;
 
 	if (!hcd)
 		return 0;
