@@ -258,6 +258,25 @@ endef
 $(eval $(call KernelPackage,ax25))
 
 
+define KernelPackage/mp-alg
+  TITLE:=ECMP caching algorithms
+  DESCRIPTION:= \
+	Kernel modules that provide several different algorithms for multipath \\\
+	route selection from the route cache. The iproute "mpath" argument allows \\\
+	specifying which algorithm to use for routes. \\\
+	quagga (at least <=0.99.6) requires a multipath patch to support this \\\
+	cached mp route feature.
+  SUBMENU:=$(NSMENU)
+  KCONFIG:= \
+	$(CONFIG_IP_ROUTE_MULTIPATH_RR) \
+	$(CONFIG_IP_ROUTE_MULTIPATH_RANDOM) \
+	$(CONFIG_IP_ROUTE_MULTIPATH_WRANDOM) \
+	$(CONFIG_IP_ROUTE_MULTIPATH_DRR)
+  FILES:=$(MODULES_DIR)/kernel/net/ipv4/multipath_*.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,35,multipath_rr multipath_random multipath_wrandom multipath_drr)
+endef
+$(eval $(call KernelPackage,mp-alg))
+
 
 
 NDMENU:=Network Devices
