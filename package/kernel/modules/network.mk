@@ -272,7 +272,7 @@ define KernelPackage/mp-alg
 	$(CONFIG_IP_ROUTE_MULTIPATH_RANDOM) \
 	$(CONFIG_IP_ROUTE_MULTIPATH_WRANDOM) \
 	$(CONFIG_IP_ROUTE_MULTIPATH_DRR)
-  FILES:=$(MODULES_DIR)/kernel/net/ipv4/multipath_*.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/kernel/net/ipv4/multipath_*.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,35,multipath_rr multipath_random multipath_wrandom multipath_drr)
 endef
 $(eval $(call KernelPackage,mp-alg))
