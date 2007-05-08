@@ -20,7 +20,6 @@ PKG_MD5SUM:=016f49d71bc32eee2b5d11fc1600cfbe
 include $(INCLUDE_DIR)/package.mk
 
 define Package/shfs/Default
-  DEPENDS:=@BROKEN
   TITLE:=ShFS
   DESCRIPTION:=\
 	ShFS is a simple and easy to use Linux kernel module which allows you to \\\
