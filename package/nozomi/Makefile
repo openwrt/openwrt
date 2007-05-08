@@ -19,7 +19,7 @@ PKG_MD5SUM:=90e4d8f389a18b5579f7234a23e32e99
 
 include $(INCLUDE_DIR)/package.mk
 
-PKG_UNPACK:=mkdir -p $(PKG_BUILD_DIR); $(ZCAT) $(DL_DIR)/$(PKG_SOURCE) | $(TAR) -C $(PKG_BUILD_DIR) $(TAR_OPTIONS)
+PKG_UNPACK:=mkdir -p $(PKG_BUILD_DIR); gzip -dc $(DL_DIR)/$(PKG_SOURCE) | $(TAR) -C $(PKG_BUILD_DIR) $(TAR_OPTIONS)
 
 define KernelPackage/nozomi
   SUBMENU:=Other modules
