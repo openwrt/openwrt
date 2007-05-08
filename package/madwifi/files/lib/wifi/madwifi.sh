@@ -194,6 +194,9 @@ enable_atheros() {
 		iwconfig "$ifname" essid "$ssid"
 		case "$mode" in
 			ap)
+				config_get_bool isolate "$vif" isolate 0
+				iwpriv "$ifname" ap_bridge "$isolate"
+
 				if eval "type hostapd_setup_vif" 2>/dev/null >/dev/null; then
 					hostapd_setup_vif "$vif" madwifi || {
 						echo "enable_atheros($device): Failed to set up wpa for interface $ifname" >&2
