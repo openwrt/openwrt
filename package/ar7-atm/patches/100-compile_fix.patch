@@ -89,7 +89,7 @@ diff -urN sangam_atm-07.01.00.10/Makefile sangam-atm-0.3/Makefile
 +#EXTRA_CFLAGS += -DEL -I. -DPOST_SILICON -DCOMMON_NSP -DCONFIG_LED_MODULE -DDEREGISTER_LED -DNO_ACT
 +EXTRA_CFLAGS += -DEL -I$(PWD) -DPOST_SILICON -DCOMMON_NSP -DNO_ACT -D__NO__VOICE_PATCH__ -DEL
 +obj-$(CONFIG_SANGAM_ATM) := tiatm.o
-+tiatm-objs += tn7atm.o tn7dsl.o tn7sar.o dsl_hal_api.o dsl_hal_support.o cpsar.o aal5sar.o
++tiatm-objs += cpsar.o aal5sar.o tn7sar.o tn7atm.o tn7dsl.o dsl_hal_api.o dsl_hal_support.o
 diff -urN sangam_atm-07.01.00.10/tn7atm.c sangam-atm-0.3/tn7atm.c
 --- sangam_atm-07.01.00.10/tn7atm.c	2006-10-26 16:48:52.000000000 +0200
 +++ sangam-atm-0.3/tn7atm.c	2007-04-18 15:34:05.000000000 +0200
