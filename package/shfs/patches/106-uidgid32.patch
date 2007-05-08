@@ -1,0 +1,34 @@
+--- shfs-0.35.orig/shfs/Linux-2.4/shfs_fs_sb.h	24 Mar 2004 13:40:02 -0000	1.2
++++ shfs-0.35/shfs/Linux-2.4/shfs_fs_sb.h	3 Jun 2004 17:12:28 -0000
+@@ -38,10 +38,10 @@
+ 	struct shfs_fileops fops;
+ 	int version;
+ 	int ttl;
+-	__kernel_uid_t uid;
+-	__kernel_gid_t gid;
+-	__kernel_mode_t root_mode;
+-	__kernel_mode_t fmask;
++	uid_t uid;
++	gid_t gid;
++	mode_t root_mode;
++	mode_t fmask;
+ 	char mount_point[SHFS_PATH_MAX];
+ 	struct semaphore sock_sem;	/* next 4 vars are guarded */
+ 	struct file *sock;
+--- shfs-0.35.orig/shfs/Linux-2.6/shfs_fs_sb.h	24 Mar 2004 13:40:02 -0000	1.2
++++ shfs-0.35/shfs/Linux-2.6/shfs_fs_sb.h	3 Jun 2004 17:12:28 -0000
+@@ -38,10 +38,10 @@
+ 	struct shfs_fileops fops;
+ 	int version;
+ 	int ttl;
+-	__kernel_uid_t uid;
+-	__kernel_gid_t gid;
+-	__kernel_mode_t root_mode;
+-	__kernel_mode_t fmask;
++	uid_t uid;
++	gid_t gid;
++	mode_t root_mode;
++	mode_t fmask;
+ 	char mount_point[SHFS_PATH_MAX];
+ 	struct semaphore sock_sem;	/* next 4 vars are guarded */
+ 	struct file *sock;
