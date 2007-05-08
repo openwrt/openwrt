@@ -10,12 +10,12 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=gspcav1
-PKG_VERSION:=20070110
+PKG_VERSION:=20070508
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://mxhaard.free.fr/spca50x/Download
-PKG_MD5SUM:=1e3fa004490a07b7b76de03d70b3e8ea
+PKG_MD5SUM:=e18a21b80e1728c6b51b799d1e671f8c
 
 include $(INCLUDE_DIR)/package.mk
 
