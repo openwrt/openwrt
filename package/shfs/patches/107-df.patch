@@ -1,0 +1,34 @@
+--- shfs-0.35.orig/shfs/Linux-2.4/shell.c	3 Jun 2004 13:20:44 -0000	1.8
++++ shfs-0.35/shfs/Linux-2.4/shell.c	18 Jun 2004 12:19:52 -0000
+@@ -961,11 +961,11 @@
+ 
+ 	s = info->sockbuf;
+ 	if ((p = strsep(&s, " ")))
+-		attr->f_blocks = simple_strtoull(p, NULL, 10);
++		attr->f_blocks = simple_strtoull(p, NULL, 10) >> 2;
+ 	if ((p = strsep(&s, " ")))
+-		attr->f_bfree = attr->f_blocks - simple_strtoull(p, NULL, 10);
++		attr->f_bfree = attr->f_blocks - (simple_strtoull(p, NULL, 10) >> 2);
+ 	if ((p = strsep(&s, " ")))
+-		attr->f_bavail = simple_strtoull(p, NULL, 10);
++		attr->f_bavail = simple_strtoull(p, NULL, 10) >> 2;
+ 
+ 	result = sock_readln(info, info->sockbuf, SOCKBUF_SIZE);
+ 	if (result < 0)
+--- shfs-0.35.orig/shfs/Linux-2.6/shell.c	3 Jun 2004 13:20:47 -0000	1.9
++++ shfs-0.35/shfs/Linux-2.6/shell.c	18 Jun 2004 12:19:53 -0000
+@@ -974,11 +974,11 @@
+ 
+ 	s = info->sockbuf;
+ 	if ((p = strsep(&s, " ")))
+-		attr->f_blocks = simple_strtoull(p, NULL, 10);
++		attr->f_blocks = simple_strtoull(p, NULL, 10) >> 2;
+ 	if ((p = strsep(&s, " ")))
+-		attr->f_bfree = attr->f_blocks - simple_strtoull(p, NULL, 10);
++		attr->f_bfree = attr->f_blocks - (simple_strtoull(p, NULL, 10) >> 2);
+ 	if ((p = strsep(&s, " ")))
+-		attr->f_bavail = simple_strtoull(p, NULL, 10);
++		attr->f_bavail = simple_strtoull(p, NULL, 10) >> 2;
+ 
+ 	result = sock_readln(info, info->sockbuf, SOCKBUF_SIZE);
+ 	if (result < 0)

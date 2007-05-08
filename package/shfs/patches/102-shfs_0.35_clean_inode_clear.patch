@@ -1,0 +1,20 @@
+--- shfs-0.35.orig/shfs/Linux-2.6/inode.c.orig	2006-01-04 16:23:11.000000000 -0600
++++ shfs-0.35/shfs/Linux-2.6/inode.c	2006-01-04 16:24:45.000000000 -0600
+@@ -8,6 +8,7 @@
+ #include <linux/modversions.h>
+ #endif
+ 
++#include <linux/version.h>
+ #include <linux/kernel.h>
+ #include <linux/module.h>
+ #include <linux/init.h>
+@@ -118,6 +119,9 @@
+ 	}
+ 	KMEM_FREE("inode", inode_cache, i);
+ out:
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,13))
++   truncate_inode_pages(&inode->i_data, 0);
++#endif
+ 	clear_inode(inode);
+ }
+ 
