@@ -10,9 +10,9 @@
 +			 * USART 0 - Drive DTR and RI pins manually
 +			 */
 +			if (mctrl & TIOCM_DTR)
-+				at91_set_gpio_value(AT91_PIN_PA19, 0);
++				at91_set_gpio_value(AT91_PIN_PB6, 0);
 +			else
-+				at91_set_gpio_value(AT91_PIN_PA19, 1);
++				at91_set_gpio_value(AT91_PIN_PB6, 1);
 +			if (mctrl & TIOCM_RI)
 +				at91_set_gpio_value(AT91_PIN_PB7, 0);
 +			else
@@ -25,9 +25,9 @@
 +		 */
 +		if (port->mapbase == AT91RM9200_BASE_US3) {
 +			if (mctrl & TIOCM_DTR)
-+				at91_set_gpio_value(AT91_PIN_PA24, 0);
++				at91_set_gpio_value(AT91_PIN_PB29, 0);
 +			else
-+				at91_set_gpio_value(AT91_PIN_PA24, 1);
++				at91_set_gpio_value(AT91_PIN_PB29, 1);
 +			if (mctrl & TIOCM_RI)
 +				at91_set_gpio_value(AT91_PIN_PB2, 0);
 +			else
@@ -60,10 +60,10 @@
 +	 * Read the GPIO's for the FDL VersaLink special case
 +	 */
 +	if (port->mapbase == AT91RM9200_BASE_US0)
-+		if (!(at91_get_gpio_value(AT91_PIN_PB6)))
++		if (!(at91_get_gpio_value(AT91_PIN_PA19)))
 +			ret |= TIOCM_CD;
 +	if (port->mapbase == AT91RM9200_BASE_US3)
-+		if (!(at91_get_gpio_value(AT91_PIN_PB29)))
++		if (!(at91_get_gpio_value(AT91_PIN_PA24)))
 +			ret |= TIOCM_CD;
 +
  	return ret;
