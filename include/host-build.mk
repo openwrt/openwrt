@@ -9,9 +9,9 @@ include $(INCLUDE_DIR)/host.mk
 include $(INCLUDE_DIR)/unpack.mk
 include $(INCLUDE_DIR)/depends.mk
 
-STAMP_PREPARED=$(PKG_BUILD_DIR)/.prepared
-STAMP_CONFIGURED=$(PKG_BUILD_DIR)/.configured
-STAMP_BUILT=$(PKG_BUILD_DIR)/.built
+STAMP_PREPARED:=$(PKG_BUILD_DIR)/.prepared_$(shell find ${CURDIR} $(PKG_FILE_DEPEND) $(DEP_FINDPARAMS) | md5s)
+STAMP_CONFIGURED:=$(PKG_BUILD_DIR)/.configured
+STAMP_BUILT:=$(PKG_BUILD_DIR)/.built
 
 ifneq ($(strip $(PKG_UNPACK)),)
   define Build/Prepare/Default
@@ -80,7 +80,7 @@ endif
 ifneq ($(CONFIG_AUTOREBUILD),)
   define HostBuild/Autoclean
     $(PKG_BUILD_DIR)/.dep_files: $(STAMP_PREPARED)
-    $(call rdep,${CURDIR} $(PKG_FILE_DEPEND),$(STAMP_PREPARED),$(TMP_DIR)/.packagedir_$(shell echo "${CURDIR}" | md5s))
+    $(call rdep,${CURDIR} $(PKG_FILE_DEPEND),$(STAMP_PREPARED))
     $(call rdep,$(PKG_BUILD_DIR),$(STAMP_BUILT),$(PKG_BUILD_DIR)/.dep_files, -and -not -path "/.*" -and -not -path "*/ipkg*")
   endef
 endif

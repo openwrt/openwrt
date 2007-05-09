@@ -18,7 +18,7 @@ include $(INCLUDE_DIR)/package-defaults.mk
 include $(INCLUDE_DIR)/package-dumpinfo.mk
 include $(INCLUDE_DIR)/package-ipkg.mk
 
-STAMP_PREPARED:=$(PKG_BUILD_DIR)/.prepared
+STAMP_PREPARED:=$(PKG_BUILD_DIR)/.prepared_$(shell find ${CURDIR} $(PKG_FILE_DEPEND) $(DEP_FINDPARAMS) | md5s)
 STAMP_CONFIGURED:=$(PKG_BUILD_DIR)/.configured
 STAMP_BUILT:=$(PKG_BUILD_DIR)/.built
 export CONFIG_SITE:=$(INCLUDE_DIR)/site/$(REAL_GNU_TARGET_NAME)
@@ -26,7 +26,7 @@ export CONFIG_SITE:=$(INCLUDE_DIR)/site/$(REAL_GNU_TARGET_NAME)
 ifneq ($(CONFIG_AUTOREBUILD),)
   define Build/Autoclean
     $(PKG_BUILD_DIR)/.dep_files: $(STAMP_PREPARED)
-    $(call rdep,${CURDIR} $(PKG_FILE_DEPEND),$(STAMP_PREPARED),$(TMP_DIR)/.packagedir_$(shell echo "${CURDIR}" | md5s))
+    $(call rdep,${CURDIR} $(PKG_FILE_DEPEND),$(STAMP_PREPARED))
     $(call rdep,$(PKG_BUILD_DIR),$(STAMP_BUILT),$(PKG_BUILD_DIR)/.dep_files, -and -not -path "/.*" -and -not -path "*/ipkg*")
   endef
 endif
