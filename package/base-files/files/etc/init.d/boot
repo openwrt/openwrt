@@ -11,11 +11,17 @@ system_config() {
 	echo "${hostname:-OpenWrt}" > /proc/sys/kernel/hostname
 }
 
+apply_uci_config() {(
+	include /lib/config
+	uci_apply_defaults
+)}
+
 start() {
 	[ -f /proc/mounts ] || /sbin/mount_root
 	[ -f /proc/jffs2_bbc ] && echo "S" > /proc/jffs2_bbc
 	vconfig set_name_type DEV_PLUS_VID_NO_PAD
-	
+
+	apply_uci_config
 	config_load system
 	config_foreach system_config system
 	
@@ -27,11 +33,12 @@ start() {
 	ln -s /tmp/resolv.conf.auto /tmp/resolv.conf
 	[ "$FAILSAFE" = "true" ] && touch /tmp/.failsafe
 	
+	/sbin/hotplug2 --persistent --max-children 1 &
+
 	# the coldplugging of network interfaces needs to happen later, so we do it manually here
 	for iface in $(awk -F: '/:/ {print $1}' /proc/net/dev); do
 		/usr/bin/env -i ACTION=add INTERFACE="$iface" /sbin/hotplug-call net
 	done
-	/sbin/hotplug2 --persistent --max-children 1 &
 
 	# create /dev/root if it doesn't exist
 	[ -e /dev/root ] || {
