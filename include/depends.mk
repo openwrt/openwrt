@@ -11,18 +11,19 @@
 #	3: tempfile for file listings
 #	4: find options
 
-FINDPARAMS := -type f -not -name ".*" -and -not -path "*.svn*" 
+DEP_FINDPARAMS := -type f -not -name ".*" -and -not -path "*.svn*" 
 define rdep
-  $(foreach file,$(shell find $(1) $(FINDPARAMS) -and -not -path "*:*" $(4)),
+  $(foreach file,$(shell find $(1) $(DEP_FINDPARAMS) -and -not -path "*:*" $(4)),
     $(2): $(file)
     $(file): ;
   )
 
-  ifneq ($(shell find $(1) $(FINDPARAMS) $(4) 2>/dev/null | md5s),$(shell cat $(3) 2>/dev/null))
-    $(2): $(3)
-  endif
+  ifneq ($(3),)
+    ifneq ($$(shell find $(1) $(DEP_FINDPARAMS) $(4) 2>/dev/null | md5s),$(if $(3),$(shell cat $(3) 2>/dev/null)))
+      $(2): $(3)
+    endif
   
-  $(3): FORCE
-	@-find $(1) $(FINDPARAMS) $(4) 2>/dev/null | md5s > $$@
-
+    $(3): FORCE
+	  @-find $(1) $(DEP_FINDPARAMS) $(4) 2>/dev/null | md5s > $$@
+  endif
 endef
