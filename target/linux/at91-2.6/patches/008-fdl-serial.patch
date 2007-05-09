@@ -1,0 +1,71 @@
+--- linux-2.6.19.2.old/drivers/serial/atmel_serial.c	2007-05-01 13:08:03.000000000 +0200
++++ linux-2.6.19.2/drivers/serial/atmel_serial.c	2007-05-09 10:21:45.000000000 +0200
+@@ -173,6 +173,34 @@
+ 				at91_set_gpio_value(AT91_PIN_PA21, 0);
+ 			else
+ 				at91_set_gpio_value(AT91_PIN_PA21, 1);
++
++			/* 
++			 * FDL VersaLink adds GPIOS to provide full modem control on
++			 * USART 0 - Drive DTR and RI pins manually
++			 */
++			if (mctrl & TIOCM_DTR)
++				at91_set_gpio_value(AT91_PIN_PA19, 0);
++			else
++				at91_set_gpio_value(AT91_PIN_PA19, 1);
++			if (mctrl & TIOCM_RI)
++				at91_set_gpio_value(AT91_PIN_PB7, 0);
++			else
++				at91_set_gpio_value(AT91_PIN_PB7, 1);
++		}
++
++		/* 
++		 * FDL VersaLink adds GPIOS to provide full modem control on
++		 * USART 3 - Drive DTR and RI pins manually
++		 */
++		if (port->mapbase == AT91RM9200_BASE_US3) {
++			if (mctrl & TIOCM_DTR)
++				at91_set_gpio_value(AT91_PIN_PA24, 0);
++			else
++				at91_set_gpio_value(AT91_PIN_PA24, 1);
++			if (mctrl & TIOCM_RI)
++				at91_set_gpio_value(AT91_PIN_PB2, 0);
++			else
++				at91_set_gpio_value(AT91_PIN_PB2, 1);
+ 		}
+ 	}
+ #endif
+@@ -210,8 +238,14 @@
+ 	/*
+ 	 * The control signals are active low.
+ 	 */
+-	if (!(status & ATMEL_US_DCD))
+-		ret |= TIOCM_CD;
++
++	/* 
++	 * Ignore DCD reister for USARTS 0 and 3 as FDL Versalink uses
++	 * GPIO's for these signals
++	 */
++	if (!(port->mapbase == AT91RM9200_BASE_US0 || port->mapbase == AT91RM9200_BASE_US3))
++		if (!(status & ATMEL_US_DCD))
++			ret |= TIOCM_CD;
+ 	if (!(status & ATMEL_US_CTS))
+ 		ret |= TIOCM_CTS;
+ 	if (!(status & ATMEL_US_DSR))
+@@ -219,6 +253,16 @@
+ 	if (!(status & ATMEL_US_RI))
+ 		ret |= TIOCM_RI;
+ 
++	/*
++	 * Read the GPIO's for the FDL VersaLink special case
++	 */
++	if (port->mapbase == AT91RM9200_BASE_US0)
++		if (!(at91_get_gpio_value(AT91_PIN_PB6)))
++			ret |= TIOCM_CD;
++	if (port->mapbase == AT91RM9200_BASE_US3)
++		if (!(at91_get_gpio_value(AT91_PIN_PB29)))
++			ret |= TIOCM_CD;
++
+ 	return ret;
+ }
+ 
