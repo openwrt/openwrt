@@ -1,5 +1,5 @@
 --- linux-2.6.19.2.old/drivers/serial/atmel_serial.c	2007-05-01 13:08:03.000000000 +0200
-+++ linux-2.6.19.2/drivers/serial/atmel_serial.c	2007-05-09 10:21:45.000000000 +0200
++++ linux-2.6.19.2/drivers/serial/atmel_serial.c	2007-05-09 17:13:34.000000000 +0200
 @@ -173,6 +173,34 @@
  				at91_set_gpio_value(AT91_PIN_PA21, 0);
  			else
@@ -69,3 +69,96 @@
  	return ret;
  }
  
+@@ -510,6 +554,34 @@
+ }
+ 
+ /*
++ * USART0 DCD Interrupt handler
++ */
++
++static irqreturn_t atmel_u0_DCD_interrupt(int irq, void *dev_id)
++{
++	struct uart_port *port = dev_id;
++	int status = at91_get_gpio_value(irq);
++	
++	uart_handle_dcd_change(port, !(status));
++
++	return IRQ_HANDLED;
++}
++
++/*
++ * USART3 DCD Interrupt handler
++ */
++
++static irqreturn_t atmel_u3_DCD_interrupt(int irq, void *dev_id)
++{
++	struct uart_port *port = dev_id;
++	int status = at91_get_gpio_value(irq);
++	
++	uart_handle_dcd_change(port, !(status));
++
++	return IRQ_HANDLED;
++}
++
++/*
+  * Interrupt handler
+  */
+ static irqreturn_t atmel_interrupt(int irq, void *dev_id)
+@@ -586,6 +658,24 @@
+ 		return retval;
+ 	}
+ 
++	if (port->mapbase == AT91RM9200_BASE_US0) {
++		retval = request_irq(AT91_PIN_PA19, atmel_u0_DCD_interrupt, 0, "atmel_serial", port);
++		if (retval) {
++			printk("atmel_serial: atmel_startup - Can't get u0DCD irq\n");
++			free_irq(port->irq, port);
++			return retval;
++		}
++	}
++	if (port->mapbase == AT91RM9200_BASE_US3) {
++		retval = request_irq(AT91_PIN_PA24, atmel_u3_DCD_interrupt, 0, "atmel_serial", port);
++		if (retval) {
++			printk("atmel_serial: atmel_startup - Can't get u3DCD irq\n");
++			free_irq(port->irq, port);
++			return retval;
++		}
++	}
++
++
+  	/*
+ 	 * Initialize DMA (if necessary)
+ 	 */
+@@ -602,6 +692,10 @@
+ 					kfree(atmel_port->pdc_rx[0].buf);
+ 				}
+ 				free_irq(port->irq, port);
++				if (port->mapbase == AT91RM9200_BASE_US0)
++					free_irq(AT91_PIN_PA19, port);
++				if (port->mapbase == AT91RM9200_BASE_US3)
++					free_irq(AT91_PIN_PA24, port);
+ 				return -ENOMEM;
+ 			}
+ 			pdc->dma_addr = dma_map_single(port->dev, pdc->buf, PDC_BUFFER_SIZE, DMA_FROM_DEVICE);
+@@ -635,6 +729,10 @@
+ 		retval = atmel_open_hook(port);
+ 		if (retval) {
+ 			free_irq(port->irq, port);
++			if (port->mapbase == AT91RM9200_BASE_US0)
++				free_irq(AT91_PIN_PA19, port);
++			if (port->mapbase == AT91RM9200_BASE_US3)
++				free_irq(AT91_PIN_PA24, port);
+ 			return retval;
+ 		}
+ 	}
+@@ -694,6 +792,10 @@
+ 	 * Free the interrupt
+ 	 */
+ 	free_irq(port->irq, port);
++	if (port->mapbase == AT91RM9200_BASE_US0)
++		free_irq(AT91_PIN_PA19, port);
++	if (port->mapbase == AT91RM9200_BASE_US3)
++		free_irq(AT91_PIN_PA24, port);
+ 
+ 	/*
+ 	 * If there is a specific "close" function (to unregister

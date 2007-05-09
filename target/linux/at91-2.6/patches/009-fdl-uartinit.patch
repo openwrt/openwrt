@@ -1,0 +1,43 @@
+diff -urN linux-2.6.19.2.old/arch/arm/mach-at91rm9200/at91rm9200_devices.c linux-2.6.19.2/arch/arm/mach-at91rm9200/at91rm9200_devices.c
+--- linux-2.6.19.2.old/arch/arm/mach-at91rm9200/at91rm9200_devices.c	2007-05-01 13:08:02.000000000 +0200
++++ linux-2.6.19.2/arch/arm/mach-at91rm9200/at91rm9200_devices.c	2007-05-09 12:59:58.000000000 +0200
+@@ -709,6 +709,10 @@
+ 	 *  We need to drive the pin manually.  Default is off (RTS is active low).
+ 	 */
+ 	at91_set_gpio_output(AT91_PIN_PA21, 1);
++	at91_set_gpio_output(AT91_PIN_PB6, 1);	/* DTR0 */
++	at91_set_gpio_output(AT91_PIN_PB7, 1);	/* RI0 */
++	at91_set_gpio_input(AT91_PIN_PA19, 1);	/* DCD0 */
++	at91_set_deglitch(AT91_PIN_PA19, 1);
+ }
+ 
+ static struct resource uart1_resources[] = {
+@@ -820,6 +824,12 @@
+ {
+ 	at91_set_B_periph(AT91_PIN_PA5, 1);		/* TXD3 */
+ 	at91_set_B_periph(AT91_PIN_PA6, 0);		/* RXD3 */
++	at91_set_B_periph(AT91_PIN_PB0, 0);		/* RTS3 */
++	at91_set_B_periph(AT91_PIN_PB1, 0);		/* CTS3 */
++	at91_set_gpio_output(AT91_PIN_PB29, 1);	/* DTR0 */
++	at91_set_gpio_output(AT91_PIN_PB2, 1);	/* RI0 */
++	at91_set_gpio_input(AT91_PIN_PA24, 1);	/* DCD0 */
++	at91_set_deglitch(AT91_PIN_PA24, 1);
+ }
+ 
+ struct platform_device *at91_uarts[ATMEL_MAX_UART];	/* the UARTs to use */
+diff -urN linux-2.6.19.2.old/arch/arm/mach-at91rm9200/vlink_leds.c linux-2.6.19.2/arch/arm/mach-at91rm9200/vlink_leds.c
+--- linux-2.6.19.2.old/arch/arm/mach-at91rm9200/vlink_leds.c	2007-05-01 13:08:03.000000000 +0200
++++ linux-2.6.19.2/arch/arm/mach-at91rm9200/vlink_leds.c	2007-05-09 12:58:42.000000000 +0200
+@@ -114,12 +114,6 @@
+ 
+ 	at91_set_gpio_input(AT91_PIN_PB8, 1);  	// JIGPRESENT
+ 	at91_set_gpio_input(AT91_PIN_PB22, 1); 	// PWR_IND
+-	at91_set_gpio_input(AT91_PIN_PA19, 1); 	// P1DTR
+-	at91_set_gpio_input(AT91_PIN_PA24, 1); 	// P2DTR
+-	at91_set_gpio_output(AT91_PIN_PB29, 1); // P2DCD
+-	at91_set_gpio_output(AT91_PIN_PB2, 1); 	// P2RI
+-	at91_set_gpio_output(AT91_PIN_PB6, 1);	// P1DCD
+-	at91_set_gpio_output(AT91_PIN_PB7, 1);	// P1RI
+ 
+ 	at91_set_gpio_input(AT91_PIN_PB27, 1);	// UDB_CNX
+ 	at91_set_gpio_output(AT91_PIN_PB28, 1);	// UDB_PUP
