@@ -195,7 +195,7 @@ enable_atheros() {
 		case "$mode" in
 			ap)
 				config_get_bool isolate "$vif" isolate 0
-				iwpriv "$ifname" ap_bridge "$isolate"
+				iwpriv "$ifname" ap_bridge "$((isolate^1))"
 
 				if eval "type hostapd_setup_vif" 2>/dev/null >/dev/null; then
 					hostapd_setup_vif "$vif" madwifi || {
