@@ -1,10 +1,8 @@
 #!/bin/sh
 # Copyright (C) 2006 OpenWrt.org
 
-(
-	for i in /etc/rc.d/S*; do
-		$i boot 2>&1
+{
+	for i in /etc/rc.d/$1*; do
+		$i $2 2>&1
 	done 
-	
-	sysctl -p >&-
-) | logger -s -p 6 -t '' &
+} | logger -s -p 6 -t '' &
