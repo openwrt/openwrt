@@ -9,6 +9,10 @@ system_config() {
 	
 	config_get hostname "$cfg" hostname
 	echo "${hostname:-OpenWrt}" > /proc/sys/kernel/hostname
+
+	config_get log_ip "$cfg" log_ip 
+	syslogd -C16 ${log_ip:+-L -R $log_ip}
+	klogd
 }
 
 apply_uci_config() {(
