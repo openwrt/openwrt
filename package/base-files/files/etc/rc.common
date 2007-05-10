@@ -39,7 +39,7 @@ enable() {
 	name="$(basename "${initscript}")"
 	disable
 	[ "$START" ] && ln -s "/etc/init.d/$name" "$IPKG_INSTROOT/etc/rc.d/S${START}${name##S[0-9][0-9]}"
-	[ "$STOP"  ] && ln -s "/etc/init.d/$name" "$IPKG_INSTROOT/etc/rc.d/K${START}${name##K[0-9][0-9]}"
+	[ "$STOP"  ] && ln -s "/etc/init.d/$name" "$IPKG_INSTROOT/etc/rc.d/K${STOP}${name##K[0-9][0-9]}"
 }
 
 enabled() {
