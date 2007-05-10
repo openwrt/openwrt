@@ -2,8 +2,6 @@
 # Copyright (C) 2006 OpenWrt.org
 . /etc/functions.sh
 
-mkdir -p /dev/pts /dev/shm
-mount none /dev/pts -t devpts
 mount none /proc -t proc
 
 size=$(awk '/MemTotal:/ {l=5242880;mt=($2*1024);print((s=mt/2)<l)?mt-l:s}' /proc/meminfo)
@@ -24,6 +22,9 @@ else
 	M1=/dev/ptmx
 	HOTPLUG=
 fi
+
+mkdir -p /dev/pts /dev/shm
+mount none /dev/pts -t devpts
 
 # the shell really doesn't like having stdin/out closed
 # that's why we use /dev/pty/m0 and m1 as replacement
