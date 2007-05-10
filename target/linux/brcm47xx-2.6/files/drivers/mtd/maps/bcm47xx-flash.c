@@ -95,7 +95,7 @@ static struct mtd_partition bcm947xx_parts[] = {
 	{ name: "linux", offset: 0, size: 0, },
 	{ name: "rootfs", offset: 0, size: 0, },
 	{ name: "nvram", offset: 0, size: 0, },
-	{ name: "OpenWrt", offset: 0, size: 0, },
+	{ name: "rootfs_data", offset: 0, size: 0, },
 	{ name: NULL, },
 };
 

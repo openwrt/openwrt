@@ -2,7 +2,7 @@
 # $Id$
 . /etc/functions.sh
 
-partname="OpenWrt"
+partname="rootfs_data"
 mtdpart="$(find_mtd_part $partname)"
 
 rom=$(awk '/squashfs/ {print $2}' /proc/mounts)
