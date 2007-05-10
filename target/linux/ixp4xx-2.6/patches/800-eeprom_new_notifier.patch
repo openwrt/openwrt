@@ -1,0 +1,201 @@
+Add EEPROM notifiers
+
+These help board level code by allowing a callback when EEPROMs are
+loaded, this permits system level configuration to be loaded from the
+EEPROM.  This is particularly useful when the ethernet MAC ids are
+stored in EEPROM and when the ethernet hardware is generic (so it
+has no board level knowledge), then the MACs can be loaded into
+the 'maclist' code and read out by the ethernet config.
+
+Signed-off-by: John Bowler <jbowler@acm.org>
+
+Index: linux-2.6.19/drivers/i2c/chips/eeprom.c
+===================================================================
+--- linux-2.6.19.orig/drivers/i2c/chips/eeprom.c
++++ linux-2.6.19/drivers/i2c/chips/eeprom.c
+@@ -34,6 +34,8 @@
+ #include <linux/jiffies.h>
+ #include <linux/i2c.h>
+ #include <linux/mutex.h>
++#include <linux/notifier.h>
++#include <linux/eeprom.h>
+ 
+ /* Addresses to scan */
+ static unsigned short normal_i2c[] = { 0x50, 0x51, 0x52, 0x53, 0x54,
+@@ -42,26 +44,7 @@ static unsigned short normal_i2c[] = { 0
+ /* Insmod parameters */
+ I2C_CLIENT_INSMOD_1(eeprom);
+ 
+-
+-/* Size of EEPROM in bytes */
+-#define EEPROM_SIZE		256
+-
+-/* possible types of eeprom devices */
+-enum eeprom_nature {
+-	UNKNOWN,
+-	VAIO,
+-};
+-
+-/* Each client has this additional data */
+-struct eeprom_data {
+-	struct i2c_client client;
+-	struct mutex update_lock;
+-	u8 valid;			/* bitfield, bit!=0 if slice is valid */
+-	unsigned long last_updated[8];	/* In jiffies, 8 slices */
+-	u8 data[EEPROM_SIZE];		/* Register values */
+-	enum eeprom_nature nature;
+-};
+-
++ATOMIC_NOTIFIER_HEAD(eeprom_chain);
+ 
+ static int eeprom_attach_adapter(struct i2c_adapter *adapter);
+ static int eeprom_detect(struct i2c_adapter *adapter, int address, int kind);
+@@ -190,6 +173,7 @@ static int eeprom_detect(struct i2c_adap
+ 	data->valid = 0;
+ 	mutex_init(&data->update_lock);
+ 	data->nature = UNKNOWN;
++	data->attr = &eeprom_attr;
+ 
+ 	/* Tell the I2C layer a new client has arrived */
+ 	if ((err = i2c_attach_client(new_client)))
+@@ -213,6 +197,9 @@ static int eeprom_detect(struct i2c_adap
+ 	if (err)
+ 		goto exit_detach;
+ 
++	/* call the notifier chain */
++	atomic_notifier_call_chain(&eeprom_chain, EEPROM_REGISTER, data);
++
+ 	return 0;
+ 
+ exit_detach:
+@@ -238,6 +225,41 @@ static int eeprom_detach_client(struct i
+ 	return 0;
+ }
+ 
++/**
++ * register_eeprom_notifier - register a 'user' of EEPROM devices.
++ * @nb: pointer to notifier info structure
++ *
++ * Registers a callback function to be called upon detection
++ * of an EEPROM device.  Detection invokes the 'add' callback
++ * with the kobj of the mutex and a bin_attribute which allows
++ * read from the EEPROM.  The intention is that the notifier
++ * will be able to read system configuration from the notifier.
++ *
++ * Only EEPROMs detected *after* the addition of the notifier
++ * are notified.  I.e. EEPROMs already known to the system
++ * will not be notified - add the notifier from board level
++ * code!
++ */
++int register_eeprom_notifier(struct notifier_block *nb)
++{
++	return atomic_notifier_chain_register(&eeprom_chain, nb);
++}
++
++/**
++ *	unregister_eeprom_notifier - unregister a 'user' of EEPROM devices.
++ *	@old: pointer to notifier info structure
++ *
++ *	Removes a callback function from the list of 'users' to be
++ *	notified upon detection of EEPROM devices.
++ */
++int unregister_eeprom_notifier(struct notifier_block *nb)
++{
++	return atomic_notifier_chain_unregister(&eeprom_chain, nb);
++}
++
++EXPORT_SYMBOL_GPL(register_eeprom_notifier);
++EXPORT_SYMBOL_GPL(unregister_eeprom_notifier);
++
+ static int __init eeprom_init(void)
+ {
+ 	return i2c_add_driver(&eeprom_driver);
+Index: linux-2.6.19/include/linux/eeprom.h
+===================================================================
+--- /dev/null
++++ linux-2.6.19/include/linux/eeprom.h
+@@ -0,0 +1,71 @@
++#ifndef _LINUX_EEPROM_H
++#define _LINUX_EEPROM_H
++/*
++ * $Id: 45-eeprom-new-notifier.patch,v 1.2 2006/03/27 11:10:19 azummo Exp $
++ *
++ *  Copyright (C) 2006 John Bowler
++ */
++
++/*
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
++ */
++
++#ifndef __KERNEL__
++#error This is a kernel header
++#endif
++
++#include <linux/list.h>
++#include <linux/kobject.h>
++#include <linux/sysfs.h>
++
++/* Size of EEPROM in bytes */
++#define EEPROM_SIZE             256
++
++/* possible types of eeprom devices */
++enum eeprom_nature {
++	UNKNOWN,
++	VAIO,
++};
++
++/* Each client has this additional data */
++struct eeprom_data {
++	struct i2c_client client;
++	struct mutex update_lock;
++	u8 valid;			/* bitfield, bit!=0 if slice is valid */
++	unsigned long last_updated[8];	/* In jiffies, 8 slices */
++	u8 data[EEPROM_SIZE];		/* Register values */
++	enum eeprom_nature nature;
++	struct bin_attribute *attr;
++};
++
++/*
++ * This is very basic.
++ *
++ * If an EEPROM is detected on the I2C bus (this only works for
++ * I2C EEPROMs) the notifier chain  is called with
++ * both the I2C information and the kobject for the sysfs
++ * device which has been registers.  It is then possible to
++ * read from the device via the bin_attribute::read method
++ * to extract configuration information.
++ *
++ * Register the notifier in the board level code, there is no
++ * need to unregister it but you can if you want (it will save
++ * a little bit or kernel memory to do so).
++ */
++
++extern int register_eeprom_notifier(struct notifier_block *nb);
++extern int unregister_eeprom_notifier(struct notifier_block *nb);
++
++#endif /* _LINUX_EEPROM_H */
+Index: linux-2.6.19/include/linux/notifier.h
+===================================================================
+--- linux-2.6.19.orig/include/linux/notifier.h
++++ linux-2.6.19/include/linux/notifier.h
+@@ -187,5 +187,8 @@ extern int srcu_notifier_call_chain(stru
+ #define CPU_DOWN_FAILED		0x0006 /* CPU (unsigned)v NOT going down */
+ #define CPU_DEAD		0x0007 /* CPU (unsigned)v dead */
+ 
++/* eeprom notifier chain */
++#define EEPROM_REGISTER		0x0001
++
+ #endif /* __KERNEL__ */
+ #endif /* _LINUX_NOTIFIER_H */
