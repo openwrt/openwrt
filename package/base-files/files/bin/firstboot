@@ -79,11 +79,12 @@ ramoverlay() {
 	}
 
 	[ "$1" = "switch2jffs" ] && {
+		mount "$mtdpart" /rom/jffs -t jffs2 || exit
+
 		# try to avoid fs changing while copying
 		mount -o remount,ro none / 2>&-
 
 		# copy ramoverlay to jffs2
-		mount "$mtdpart" /rom/jffs -t jffs2
 		echo -n "copying files ... "
 		cp -a /tmp/root/* /rom/jffs 2>&-
 		echo "done"

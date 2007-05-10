@@ -47,7 +47,7 @@ jffs2_ready () {
 			. /bin/firstboot
 			jffs2_ready && {
 				echo "switching to jffs2"
-				mount "$(find_mtd_part rootfs_data)" /jffs -t jffs2
+				mount "$(find_mtd_part rootfs_data)" /jffs -t jffs2 && \
 				fopivot /jffs /rom
 			} || {
 				echo "jffs2 not ready yet; using ramdisk"
