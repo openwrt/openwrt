@@ -5,10 +5,11 @@
 # See /LICENSE for more information.
 #
 include $(TOPDIR)/rules.mk
-include $(INCLUDE_DIR)/host-build.mk
 
 PKG_NAME:=mkimage
 PKG_BUILD_DIR:=$(TOOL_BUILD_DIR)/mkimage
+
+include $(INCLUDE_DIR)/host-build.mk
 
 define Build/Compile
 	$(CC) -O -c src/crc32.c -o $(PKG_BUILD_DIR)/crc32.o

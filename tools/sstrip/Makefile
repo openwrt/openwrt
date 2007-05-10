@@ -5,10 +5,11 @@
 # See /LICENSE for more information.
 #
 include $(TOPDIR)/rules.mk
-include $(INCLUDE_DIR)/host-build.mk
 
 PKG_NAME:=sstrip
 PKG_BUILD_DIR:=$(TOOL_BUILD_DIR)/sstrip
+
+include $(INCLUDE_DIR)/host-build.mk
 
 OS:=$(shell uname)
 ifeq ($(HOST_OS),Darwin)

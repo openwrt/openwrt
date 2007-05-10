@@ -5,10 +5,11 @@
 # See /LICENSE for more information.
 #
 include $(TOPDIR)/rules.mk
-include $(INCLUDE_DIR)/host-build.mk
 
 PKG_NAME := firmware-utils
 PKG_BUILD_DIR:=$(TOOL_BUILD_DIR)/firmware-utils
+
+include $(INCLUDE_DIR)/host-build.mk
 
 CFLAGS := -O2 -I $(STAGING_DIR)/include-host -include endian.h
 
