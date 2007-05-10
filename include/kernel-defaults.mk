@@ -29,6 +29,7 @@ KERNEL_MAKEOPTS := -C $(LINUX_DIR) \
 
 define Kernel/Prepare/Default
 	bzcat $(DL_DIR)/$(LINUX_SOURCE) | tar -C $(KERNEL_BUILD_DIR) $(TAR_OPTIONS)
+	if [ -d $(GENERIC_PLATFORM_DIR)/files ]; then $(CP) $(GENERIC_PLATFORM_DIR)/files/* $(LINUX_DIR)/; fi
 	if [ -d $(GENERIC_PLATFORM_DIR)/patches ]; then $(PATCH) $(LINUX_DIR) $(GENERIC_PLATFORM_DIR)/patches; fi
 	if [ -d ./files ]; then $(CP) ./files/* $(LINUX_DIR)/; fi
 	if [ -d ./patches ]; then $(PATCH) $(LINUX_DIR) ./patches; fi
@@ -67,14 +68,12 @@ ifeq ($(KERNEL),2.6)
 		echo 'CONFIG_INITRAMFS_SOURCE="../../root"' >> $(LINUX_DIR)/.config
 		echo 'CONFIG_INITRAMFS_ROOT_UID=0' >> $(LINUX_DIR)/.config
 		echo 'CONFIG_INITRAMFS_ROOT_GID=0' >> $(LINUX_DIR)/.config
-		mkdir -p $(BUILD_DIR)/root/etc/init.d
-		$(CP) $(GENERIC_PLATFORM_DIR)/files/init $(BUILD_DIR)/root/
     endef
   else
     define Kernel/SetInitramfs
 		mv $(LINUX_DIR)/.config $(LINUX_DIR)/.config.old
 		grep -v INITRAMFS $(LINUX_DIR)/.config.old > $(LINUX_DIR)/.config
-		rm -f $(BUILD_DIR)/root/init $(BUILD_DIR)/root/etc/init.d/S00initramfs
+		rm -f $(BUILD_DIR)/root/init
 		echo 'CONFIG_INITRAMFS_SOURCE=""' >> $(LINUX_DIR)/.config
     endef
   endif
