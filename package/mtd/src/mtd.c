@@ -456,7 +456,8 @@ int main (int argc, char **argv)
 	sync();
 	
 	if (boot) {
-		fflush(stdout);
+		fprintf(stderr, "Rebooting ...\n");
+		fflush(stderr);
 		syscall(SYS_reboot,LINUX_REBOOT_MAGIC1,LINUX_REBOOT_MAGIC2,LINUX_REBOOT_CMD_RESTART,NULL);
 	}
 	return 0;
