@@ -2,33 +2,36 @@
 # Copyright (C) 2006 OpenWrt.org
 . /etc/functions.sh
 
+mkdir -p /dev/pts /dev/shm
+mount none /dev/pts -t devpts
 mount none /proc -t proc
 
 size=$(awk '/MemTotal:/ {l=5242880;mt=($2*1024);print((s=mt/2)<l)?mt-l:s}' /proc/meminfo)
 mount none /tmp -t tmpfs -o size=$size,nosuid,nodev,mode=1777
 
-if grep devfs /proc/filesystems >/dev/null; then
+if grep devfs /proc/filesystems > /dev/null; then
 	mount none /dev -t devfs
+	M0=/dev/pty/m0
+	M1=/dev/pty/m1
+	HOTPLUG=/sbin/hotplug-call
 else
+	mount -t sysfs none /sys
 	mount -t tmpfs tmpfs /dev -o size=512K
 	mknod /dev/console c 5 1
-	exec >/dev/console </dev/console 2>&1
-fi
-
-mkdir /dev/shm
-
-if grep sysfs /proc/filesystems >/dev/null; then
-	mount -t sysfs none /sys
-	HOTPLUG=""
-	# use a minimal ruleset only for creating device nodes
+	mkdir /dev/shm
 	/sbin/hotplug2 --no-persistent --coldplug --set-rules-file /etc/hotplug2-init.rules
-else
-	HOTPLUG="/sbin/hotplug2-dnode"
+	M0=/dev/ptmx
+	M1=/dev/ptmx
+	HOTPLUG=
 fi
-echo "$HOTPLUG" > /proc/sys/kernel/hotplug
 
-mkdir -p /dev/pts
-mount none /dev/pts -t devpts
+# the shell really doesn't like having stdin/out closed
+# that's why we use /dev/pty/m0 and m1 as replacement
+# for /dev/console if there's no serial console available
+dd if=/dev/console of=/dev/null bs=1 count=0 >/dev/null 2>/dev/null || \
+	exec <$M0 >$M1 2>&0
+
+echo "$HOTPLUG" > /proc/sys/kernel/hotplug
 
 jffs2_ready () {
 	mtdpart="$(find_mtd_part rootfs_data)"
