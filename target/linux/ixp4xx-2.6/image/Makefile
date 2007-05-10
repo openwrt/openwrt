@@ -70,7 +70,7 @@ endef
 
 $(eval $(call Require,npe-ucode, \
 	You must manually download $(UCODEFILE) from \\\
-	http://www.intel.com/design/network/products/npfamily/ixp400_current.htm \\\
+	http://www.intel.com/design/network/products/npfamily/ixp400_archives.htm \\\
 	and put it in $(DL_DIR). \\\
 	You will need to agree to the Intel Public License to do so - please do read it! \
 ))
