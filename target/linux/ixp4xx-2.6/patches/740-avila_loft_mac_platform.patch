@@ -1,0 +1,50 @@
+Index: linux-2.6.19/arch/arm/mach-ixp4xx/avila-setup.c
+===================================================================
+--- linux-2.6.19.orig/arch/arm/mach-ixp4xx/avila-setup.c	2007-01-23 03:12:36.000000000 -0800
++++ linux-2.6.19/arch/arm/mach-ixp4xx/avila-setup.c	2007-01-23 03:12:47.000000000 -0800
+@@ -18,6 +18,10 @@
+ #include <linux/tty.h>
+ #include <linux/serial_8250.h>
+ #include <linux/slab.h>
++#ifdef CONFIG_SENSORS_EEPROM
++#include <linux/i2c.h>
++#include <linux/eeprom.h>
++#endif
+ 
+ #include <asm/types.h>
+ #include <asm/setup.h>
+@@ -198,9 +202,34 @@
+ 	&avila_npe_ucode,
+ };
+ 
++#ifdef CONFIG_SENSORS_EEPROM
++static int loft_eeprom_do(struct notifier_block *self, unsigned long event, void *t)
++{
++       struct eeprom_data *data = t;
++
++       char macs[12];
++
++       /* The MACs are the first 12 bytes in the eeprom at address 0x51 */
++       if (event == EEPROM_REGISTER && data->client.addr == 0x51) {
++               data->attr->read(&data->client.dev.kobj, macs, 0, 12);
++               memcpy(&plat_mac0.hwaddr, macs, 6);
++               memcpy(&plat_mac1.hwaddr, macs + 6, 6);
++       }
++
++       return NOTIFY_DONE;
++}
++
++static struct notifier_block loft_eeprom_notifier = {
++       .notifier_call = loft_eeprom_do
++};
++#endif
++
+ static void __init avila_init(void)
+ {
+ 	ixp4xx_sys_init();
++#ifdef CONFIG_SENSORS_EEPROM
++       register_eeprom_notifier(&loft_eeprom_notifier);
++#endif
+ 
+ 	avila_flash_resource.start = IXP4XX_EXP_BUS_BASE(0);
+ 	avila_flash_resource.end =

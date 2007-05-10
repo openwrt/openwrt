@@ -1,0 +1,39 @@
+diff -Nur linux-2.6.19.2/arch/arm/mach-ixp4xx/ixdp425-pci.c linux-2.6.19.2-owrt/arch/arm/mach-ixp4xx/ixdp425-pci.c
+--- linux-2.6.19.2/arch/arm/mach-ixp4xx/ixdp425-pci.c	2007-04-15 14:26:04.000000000 +0200
++++ linux-2.6.19.2-owrt/arch/arm/mach-ixp4xx/ixdp425-pci.c	2007-05-10 11:10:40.000000000 +0200
+@@ -66,7 +66,7 @@
+ int __init ixdp425_pci_init(void)
+ {
+ 	if (machine_is_ixdp425() || machine_is_ixcdp1100() ||
+-			machine_is_avila() || machine_is_ixdp465() || machine_is_compex())
++			machine_is_ixdp465() || machine_is_compex())
+ 		pci_common_init(&ixdp425_pci);
+ 	return 0;
+ }
+diff -Nur linux-2.6.19.2/arch/arm/mach-ixp4xx/ixdp425-setup.c linux-2.6.19.2-owrt/arch/arm/mach-ixp4xx/ixdp425-setup.c
+--- linux-2.6.19.2/arch/arm/mach-ixp4xx/ixdp425-setup.c	2007-04-15 14:26:49.000000000 +0200
++++ linux-2.6.19.2-owrt/arch/arm/mach-ixp4xx/ixdp425-setup.c	2007-05-10 11:10:01.000000000 +0200
+@@ -205,23 +205,3 @@
+ 	.init_machine	= ixdp425_init,
+ MACHINE_END
+ #endif
+-
+-/*
+- * Avila is functionally equivalent to IXDP425 except that it adds
+- * a CF IDE slot hanging off the expansion bus. When we have a 
+- * driver for IXP4xx CF IDE with driver model support we'll move
+- * Avila to it's own setup file.
+- */
+-#ifdef CONFIG_ARCH_AVILA
+-MACHINE_START(AVILA, "Gateworks Avila Network Platform")
+-	/* Maintainer: Deepak Saxena <dsaxena@plexity.net> */
+-	.phys_io	= IXP4XX_PERIPHERAL_BASE_PHYS,
+-	.io_pg_offst	= ((IXP4XX_PERIPHERAL_BASE_VIRT) >> 18) & 0xfffc,
+-	.map_io		= ixp4xx_map_io,
+-	.init_irq	= ixp4xx_init_irq,
+-	.timer		= &ixp4xx_timer,
+-	.boot_params	= 0x0100,
+-	.init_machine	= ixdp425_init,
+-MACHINE_END
+-#endif
+-

@@ -1,0 +1,28 @@
+diff -Nur linux-2.6.19.2/arch/arm/mach-ixp4xx/avila-setup.c linux-2.6.19.2-owrt/arch/arm/mach-ixp4xx/avila-setup.c
+--- linux-2.6.19.2/arch/arm/mach-ixp4xx/avila-setup.c	2007-05-10 12:30:54.000000000 +0200
++++ linux-2.6.19.2-owrt/arch/arm/mach-ixp4xx/avila-setup.c	2007-05-10 12:33:08.000000000 +0200
+@@ -155,13 +155,23 @@
+ 	.resource       = &res_mac1,
+ };
+ 
++struct npe_ucode_platform_data avila_npe_ucode_data = {
++	 .mtd_partition  = "RedBoot",
++};
++
++static struct platform_device avila_npe_ucode = {
++       .name                   = "ixp4xx_npe_ucode",
++       .id                     = 0,
++       .dev.platform_data      = &avila_npe_ucode_data,
++};
++
+ static struct platform_device *avila_devices[] __initdata = {
+ 	&avila_i2c_controller,
+ 	&avila_flash,
+ 	&avila_uart,
+ 	&mac0,
+ 	&mac1,
+-
++	&avila_npe_ucode,
+ };
+ 
+ #ifdef CONFIG_SENSORS_EEPROM
