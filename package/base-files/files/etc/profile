@@ -12,4 +12,3 @@ alias more=less
 
 arp() { cat /proc/net/arp; }
 [ -z /bin/ldd ] || ldd() { LD_TRACE_LOADED_OBJECTS=1 $*; }
-reboot() { ifdown wan 2>&1 >/dev/null ; /sbin/reboot; }

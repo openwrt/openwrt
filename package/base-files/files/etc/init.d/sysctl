@@ -1,0 +1,7 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org 
+
+START=99
+start() {
+	[ -f /etc/sysctl.conf ] && sysctl -p >&-
+}
