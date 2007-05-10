@@ -1,11 +1,12 @@
-#!/bin/sh
-# Copyright (C) 2006 OpenWrt.org
-
 . /etc/functions.sh
-. /etc/diag.sh
+
+failsafe_ip() {
+	ifconfig $ifname 192.168.1.1 netmask 255.255.255.0 broadcast 192.168.1.255 up
+}
 
 failsafe() {
 	lock /tmp/.failsafe
+	failsafe_ip
 
 	echo "0 1 2 3 4 5u*" > /proc/switch/eth0/vlan/0/ports
 	
@@ -23,10 +24,8 @@ failsafe() {
 	ash --login
 }
 
-export PATH=/bin:/sbin:/usr/bin:/usr/sbin
 mount none /proc -t proc
-size=$(awk '/Mem:/ {l=5242880;print((s=$2/2)<l)?$2-l:s}' /proc/meminfo)
-mount none /tmp -t tmpfs -o size=$size
+
 if grep devfs /proc/filesystems > /dev/null; then
 	mount none /dev -t devfs
 	M0=/dev/pty/m0
@@ -66,7 +65,7 @@ case "$(cat /proc/diag/model)" in
 	"ASUS (unknown, BCM4702)") ifname=eth1;;
 esac
 
-ifconfig $ifname 192.168.1.1 netmask 255.255.255.0 broadcast 192.168.1.255 up
+failsafe_ip
 
 insmod switch-core
 insmod switch-robo || insmod switch-adm || rmmod switch-core
@@ -83,14 +82,6 @@ insmod switch-robo || insmod switch-adm || rmmod switch-core
 } || netmsg 192.168.1.255 "Press reset now, to enter Failsafe!"
 
 sleep 2
-
-eval ${FAILSAFE:+failsafe}
-
-lock -w /tmp/.failsafe
-set_state preinit
 echo "$HOTPLUG" > /proc/sys/kernel/hotplug
 
 ifconfig $ifname 0.0.0.0 down
-
-mount_root
-exec /sbin/init

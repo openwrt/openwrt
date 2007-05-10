@@ -1,6 +1,20 @@
 #!/bin/sh
 # Copyright (C) 2006 OpenWrt.org
 export PATH=/bin:/sbin:/usr/bin:/usr/sbin
+. /etc/diag.sh
+
+failsafe() {
+	lock /tmp/.failsafe
+	ash --login
+}
+
 [ -e /etc/preinit.arch ] && . /etc/preinit.arch
+
+set_state preinit
+
 mount_root ${FAILSAFE:+failsafe}
+
+eval ${FAILSAFE:+failsafe}
+lock -w /tmp/.failsafe
+
 exec /sbin/init

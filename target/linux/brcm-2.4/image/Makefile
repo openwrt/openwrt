@@ -50,7 +50,12 @@ define trxalign/squashfs
 -a 1024
 endef
 
+define Image/Build/squashfs
+    $(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
+endef
+
 define Image/Build
+	$(call Image/Build/$(1))
 	$(STAGING_DIR)/bin/trx -o $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).trx -f $(KDIR)/loader.gz -f $(KDIR)/vmlinux.lzma $(call trxalign/$(1)) -f $(KDIR)/root.$(1)
 ifneq ($(1),jffs2-128k)
 	$(call Image/Build/CyberTAN,$(1),wrt54g3g,W54F,2.01.1,$(patsubst jffs2-%,jffs2,$(1)))
