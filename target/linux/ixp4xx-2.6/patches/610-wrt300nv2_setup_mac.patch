@@ -1,0 +1,62 @@
+diff -Nur linux-2.6.19.2/arch/arm/mach-ixp4xx/wrt300nv2-setup.c linux-2.6.19.2-owrt/arch/arm/mach-ixp4xx/wrt300nv2-setup.c
+--- linux-2.6.19.2/arch/arm/mach-ixp4xx/wrt300nv2-setup.c	2007-04-24 14:25:02.000000000 +0200
++++ linux-2.6.19.2-owrt/arch/arm/mach-ixp4xx/wrt300nv2-setup.c	2007-04-24 14:31:09.000000000 +0200
+@@ -76,9 +76,57 @@
+ 	.resource	= &wrt300nv2_uart_resource,
+ };
+ 
++static struct resource res_mac0 = {
++	.start		= IXP4XX_EthB_BASE_PHYS,
++	.end		= IXP4XX_EthB_BASE_PHYS + 0x1ff,
++	.flags		= IORESOURCE_MEM,
++};
++
++static struct resource res_mac1 = {
++	.start		= IXP4XX_EthC_BASE_PHYS,
++	.end		= IXP4XX_EthC_BASE_PHYS + 0x1ff,
++	.flags		= IORESOURCE_MEM,
++};
++
++static struct mac_plat_info plat_mac0 = {
++	.npe_id		= 1,
++	.phy_id		= -1,
++	.eth_id		= 0,
++	.rxq_id		= 27,
++	.txq_id		= 24,
++	.rxdoneq_id	= 4,
++};
++
++static struct mac_plat_info plat_mac1 = {
++	.npe_id		= 2,
++	.phy_id		= 1,
++	.eth_id		= 1,
++	.rxq_id		= 28,
++	.txq_id		= 25,
++	.rxdoneq_id	= 5,
++};
++
++static struct platform_device mac0 = {
++	.name		= "ixp4xx_mac",
++	.id		= 0,
++	.dev.platform_data = &plat_mac0,
++	.num_resources	= 1,
++	.resource	= &res_mac0,
++};
++
++static struct platform_device mac1 = {
++	.name		= "ixp4xx_mac",
++	.id		= 1,
++	.dev.platform_data = &plat_mac1,
++	.num_resources	= 1,
++	.resource	= &res_mac1,
++};
++
+ static struct platform_device *wrt300nv2_devices[] __initdata = {
+ 	&wrt300nv2_flash,
+-	&wrt300nv2_uart
++	&wrt300nv2_uart,
++	&mac0,
++	&mac1,
+ };
+ 
+ static void __init wrt300nv2_init(void)
