@@ -1,17 +1,17 @@
 diff -ur linux.old/arch/mips/kernel/genex.S linux.dev/arch/mips/kernel/genex.S
 --- linux.old/arch/mips/kernel/genex.S	2007-03-23 16:10:35.572499592 +0100
 +++ linux.dev/arch/mips/kernel/genex.S	2007-03-16 11:54:34.901251992 +0100
-@@ -73,6 +73,10 @@
+@@ -50,6 +50,10 @@
+ NESTED(except_vec3_generic, 0, sp)
  	.set	push
- 	.set	mips3
  	.set	noat
 +#ifdef CONFIG_BCM947XX
 +	nop
 +	nop
 +#endif
- 	mfc0	k1, CP0_CAUSE
- 	li	k0, 31<<2
- 	andi	k1, k1, 0x7c
+ #if R5432_CP0_INTERRUPT_WAR
+ 	mfc0	k0, CP0_INDEX
+ #endif
 diff -ur linux.old/arch/mips/mm/c-r4k.c linux.dev/arch/mips/mm/c-r4k.c
 --- linux.old/arch/mips/mm/c-r4k.c	2007-03-16 12:11:00.344441000 +0100
 +++ linux.dev/arch/mips/mm/c-r4k.c	2007-03-23 16:03:23.596169976 +0100
