@@ -62,6 +62,10 @@ define Image/Build/MyLoader
 		$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(3)-$(2).bin
 endef
 
+define Image/Build/RouterBoard
+	$(CP) $(KDIR)/vmlinux.elf $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-vmlinux
+endef
+
 define Image/Build
 	$(STAGING_DIR)/bin/trx -o $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).trx -f $(KDIR)/loader.gz -f $(KDIR)/vmlinux.lzma $(call trxalign/$(1)) -f $(KDIR)/root.$(1)
 	$(STAGING_DIR)/bin/trx -o $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1)-noloader.trx -f $(KDIR)/vmlinux.lzma $(call trxalign/$(1)) -f $(KDIR)/root.$(1)
@@ -87,6 +91,9 @@ ifneq ($(1),jffs2-128K)
 	$(call Image/Build/MyLoader,$(1),wp54ag,$(patsubst jffs2-%,jffs2,$(1)),WP54AG)
 	$(call Image/Build/MyLoader,$(1),wpp54g,$(patsubst jffs2-%,jffs2,$(1)),WPP54G)
 	$(call Image/Build/MyLoader,$(1),wpp54ag,$(patsubst jffs2-%,jffs2,$(1)),WPP54AG)
+endif
+ifeq ($(1),tgz)
+	$(call Image/Build/RouterBoard)
 endif
 endef
 
