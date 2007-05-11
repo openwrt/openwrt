@@ -1,0 +1,27 @@
+diff -urN linux-2.6.19.2/drivers/leds/Kconfig linux-2.6.19.2.new/drivers/leds/Kconfig
+--- linux-2.6.19.2/drivers/leds/Kconfig	2007-01-10 20:10:37.000000000 +0100
++++ linux-2.6.19.2.new/drivers/leds/Kconfig	2007-04-16 22:09:40.000000000 +0200
+@@ -76,6 +76,12 @@
+ 	  This option enables support for the Soekris net4801 and net4826 error
+ 	  LED.
+ 
++config LEDS_RDC3211
++	tristate "LED Support for RDC3211 boards"
++	depends on LEDS_CLASS && X86_RDC
++	help
++	  This option enables support for the RDC3211 various LEDs.
++
+ comment "LED Triggers"
+ 
+ config LEDS_TRIGGERS
+diff -urN linux-2.6.19.2/drivers/leds/Makefile linux-2.6.19.2.new/drivers/leds/Makefile
+--- linux-2.6.19.2/drivers/leds/Makefile	2007-01-10 20:10:37.000000000 +0100
++++ linux-2.6.19.2.new/drivers/leds/Makefile	2007-04-16 22:09:55.000000000 +0200
+@@ -13,6 +13,7 @@
+ obj-$(CONFIG_LEDS_S3C24XX)		+= leds-s3c24xx.o
+ obj-$(CONFIG_LEDS_AMS_DELTA)		+= leds-ams-delta.o
+ obj-$(CONFIG_LEDS_NET48XX)		+= leds-net48xx.o
++obj-$(CONFIG_LEDS_RDC3211)		+= leds-rdc3211.o
+ 
+ # LED Triggers
+ obj-$(CONFIG_LEDS_TRIGGER_TIMER)	+= ledtrig-timer.o
