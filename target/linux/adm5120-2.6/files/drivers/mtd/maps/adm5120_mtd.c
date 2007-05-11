@@ -312,24 +312,8 @@ find_root(struct mtd_info *mtd, size_t size, struct mtd_partition *part)
 	if (mtd->read(mtd, part->offset, sizeof(buf), &len, buf) || len != sizeof(buf))
 		return 0;
 
-	if (*((__u32 *) buf) == SQUASHFS_MAGIC) {
-		printk(KERN_INFO "%s: Filesystem type: squashfs, size=0x%x\n", mtd->name, (u32) sb->bytes_used);
-
-		/* Update the squashfs partition size based on the superblock info */
-		part->size = sb->bytes_used;
-		len = part->offset + part->size;
-		len +=  (mtd->erasesize - 1);
-		len &= ~(mtd->erasesize - 1);
-		part->size = len - part->offset;
-	} else if (*((__u16 *) buf) == JFFS2_MAGIC_BITMASK) {
-		printk(KERN_INFO "%s: Filesystem type: jffs2\n", mtd->name);
-
-		/* Move the squashfs outside of the trx */
-		part->size = 0;
-	} else {
-		printk(KERN_INFO "%s: Filesystem type: unknown\n", mtd->name);
-		return 0;
-	}
+	/* Move the fs outside of the trx */
+	part->size = 0;
 
 	if (trx.len != part->offset + part->size - off) {
 		/* Update the trx offsets and length */
@@ -408,32 +392,8 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 
 	/* find and size rootfs */
 	if (find_root(mtd,size,&adm5120_cfe_parts[2])==0) {
-		/* entirely jffs2 */
-		adm5120_cfe_parts[4].name = NULL;
 		adm5120_cfe_parts[2].size = size - adm5120_cfe_parts[2].offset -
 				adm5120_cfe_parts[3].size;
-	} else {
-		/* legacy setup */
-		/* calculate leftover flash, and assign it to the jffs2 partition */
-		if (cfe_size != 384 * 1024) {
-			adm5120_cfe_parts[4].offset = adm5120_cfe_parts[2].offset +
-				adm5120_cfe_parts[2].size;
-			if ((adm5120_cfe_parts[4].offset % mtd->erasesize) > 0) {
-				adm5120_cfe_parts[4].offset += mtd->erasesize -
-					(adm5120_cfe_parts[4].offset % mtd->erasesize);
-			}
-			adm5120_cfe_parts[4].size = adm5120_cfe_parts[3].offset -
-				adm5120_cfe_parts[4].offset;
-		} else {
-			adm5120_cfe_parts[4].offset = adm5120_cfe_parts[2].offset +
-				adm5120_cfe_parts[2].size;
-			if ((adm5120_cfe_parts[4].offset % mtd->erasesize) > 0) {
-				adm5120_cfe_parts[4].offset += mtd->erasesize -
-					(adm5120_cfe_parts[4].offset % mtd->erasesize);
-			}
-			adm5120_cfe_parts[4].size = size - adm5120_cfe_parts[3].size -
-				adm5120_cfe_parts[4].offset;
-		}
 	}
 
 	return adm5120_cfe_parts;
