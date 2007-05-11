@@ -137,7 +137,7 @@ package_postinst: FORCE
 		for script in ./etc/init.d/*; do \
 			grep '#!/bin/sh /etc/rc.common' $$script >/dev/null || continue; \
 			IPKG_INSTROOT=$(BUILD_DIR)/root $(which bash) ./etc/rc.common $$script enable; \
-		done; \
+		done || true; \
 	)
 
 build_image: FORCE
