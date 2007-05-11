@@ -17,6 +17,7 @@ define Target/Description
 endef
 
 include $(INCLUDE_DIR)/kernel-build.mk
+DEFAULT_PACKAGES += admswconfig
 
 # include the profiles
 -include profiles/*.mk
