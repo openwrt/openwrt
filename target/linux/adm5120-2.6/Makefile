@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=mipsel
 BOARD:=adm5120
 BOARDNAME:=ADM5120 (Little Endian)
-FEATURES:=squashfs jffs2 broken pci usb
+FEATURES:=squashfs jffs2 pci usb
 
 define Target/Description
 	Build firmware images for Infineon/ADMtek ADM5120 based boards
