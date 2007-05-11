@@ -103,7 +103,6 @@ static struct mtd_partition adm5120_cfe_parts[] = {
 	{ name: "linux", offset: 0, size: 0, },
 	{ name: "rootfs", offset: 0, size: 0, },
 	{ name: "nvram", offset: 0, size: 0, },
-	{ name: "OpenWrt", offset: 0, size: 0, },
 	{ name: NULL, },
 };
 
