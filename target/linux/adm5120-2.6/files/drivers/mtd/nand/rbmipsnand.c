@@ -78,7 +78,7 @@ EXPORT_SYMBOL(get_rbnand_block_size);
 int __init rbmips_init(void) {
 	memset(&rmtd, 0, sizeof(rmtd));
 	memset(&rnand, 0, sizeof(rnand));
-	printk("RB1xx nand\n");
+	printk(KERN_INFO "RB1xx nand\n");
 	MEM32(0xB2000064) = 0x100;
 	MEM32(0xB2000008) = 0x1;
 	SMEM1(NAND_SET_SPn) = 0x01;
@@ -89,7 +89,7 @@ int __init rbmips_init(void) {
 	rnand.dev_ready = rb100_dev_ready;
 	p_nand = (void __iomem *)ioremap(( unsigned long)SMEM1_BASE, 0x1000);
 	if (!p_nand) {
-		printk("RB1xx nand Unable ioremap buffer");
+		printk(KERN_WARNING "RB1xx nand Unable ioremap buffer\n");
 		return -ENXIO;
 	}
 	rnand.ecc.mode = NAND_ECC_SOFT;
@@ -98,7 +98,7 @@ int __init rbmips_init(void) {
 	rmtd.priv = &rnand;
 	if (nand_scan(&rmtd, 1) && nand_scan(&rmtd, 1)
 	    && nand_scan(&rmtd, 1)  && nand_scan(&rmtd, 1)) {
-		printk("RB1xxx nand device not found");
+		printk(KERN_INFO "RB1xxx nand device not found\n");
 		iounmap ((void *)p_nand);
 		return -ENXIO;
 	}
