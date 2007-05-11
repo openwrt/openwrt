@@ -25,10 +25,9 @@ AIRLINK AR525W firmware image structure
 #include <fcntl.h>
 #include <netinet/in.h>
 
-typedef unsigned long u32;
 typedef unsigned char uchar;
 
-u32 crctab[257] = {
+uint32_t crctab[257] = {
 	0x00000000, 0x77073096, 0xee0e612c, 0x990951ba,
 	0x076dc419, 0x706af48f, 0xe963a535, 0x9e6495a3,
 	0x0edb8832, 0x79dcb8a4, 0xe0d5e91e, 0x97d2d988,
@@ -96,7 +95,7 @@ u32 crctab[257] = {
 	0
 };
 
-u32 header[] = {
+uint32_t header[] = {
 	0x00000000, 0x4e525241,
 	0x4b544d47, 0x00000000, 0x00000000, 0x000afd4a,
 	0x00000000, 0x00000005, 0x00000000, 0x00000000
@@ -107,7 +106,7 @@ static int JFFS2 = 0;
 int generate_image(char *kname, char *fsname, char *fname, int EHDR)
 {
 	int i;
-	u32 lenk, lens;
+	uint32_t lenk, lens;
 	uchar *bk, *bs;
 	int fkd, ffd, fsd;
 	fkd = open(kname, O_RDONLY);
@@ -151,11 +150,11 @@ int generate_image(char *kname, char *fsname, char *fname, int EHDR)
 	return 0;
 }
 
-u32 crc32(uchar * buf, u32 len)
+uint32_t crc32(uchar * buf, uint32_t len)
 {
 	register int i;
-	u32 sum;
-	register u32 s0;
+	uint32_t sum;
+	register uint32_t s0;
 	s0 = ~0;
 	for (i = 0; i < len; i++) {
 		s0 = (s0 >> 8) ^ crctab[(uchar) (s0 & 0xFF) ^ buf[i]];
@@ -242,10 +241,10 @@ int main(int argc, char **argv)
 	lseek(fd, 0, SEEK_SET);
 	uchar *buf = malloc(len);
 	read(fd, buf, len);
-	u32 sum, l0;
-	u32 MagicS = 0x474d544b;
-	u32 MagicE = 0x4152524e;
-	if (ntohl(*((u32 *) buf)) == MagicS) {
+	uint32_t sum, l0;
+	uint32_t MagicS = 0x474d544b;
+	uint32_t MagicE = 0x4152524e;
+	if (ntohl(*((uint32_t *) buf)) == MagicS) {
 		fprintf(stderr,
 			"Image without extra 8 bytes - Standard header\n");
 		buf[0x10] = len & 0xff;
@@ -255,11 +254,11 @@ int main(int argc, char **argv)
 		lseek(fd, 0x10, SEEK_SET);
 		write(fd, buf + 0x10, 0x4);
 		EHDR = 0;
-	} else if ((ntohl(*((u32 *) (buf + 0x8))) == MagicS)
-		   && ((ntohl(*((u32 *) (buf + 0x4))) == MagicE))) {
+	} else if ((ntohl(*((uint32_t *) (buf + 0x8))) == MagicS)
+		   && ((ntohl(*((uint32_t *) (buf + 0x4))) == MagicE))) {
 		fprintf(stderr,
 			"Image with extra 8 bytes - Extended header\n");
-		*((u32 *) (buf + 0x18)) = len - 8;
+		*((uint32_t *) (buf + 0x18)) = len - 8;
 		buf[0x18] = (len - 8) & 0xff;
 		buf[0x19] = ((len - 8) >> 8) & 0xff;
 		buf[0x1a] = ((len - 8) >> 16) & 0xff;
@@ -268,11 +267,11 @@ int main(int argc, char **argv)
 		write(fd, buf + 0x18, 0x4);
 		buf += 8;
 		EHDR = 1;
-	} else if (len == buf[0x10] | ((u32)buf[0x11] << 8) | ((u32)buf[0x12] << 16) | ((u32)buf[0x13] << 24)) {
+	} else if (len == buf[0x10] | ((uint32_t)buf[0x11] << 8) | ((uint32_t)buf[0x12] << 16) | ((uint32_t)buf[0x13] << 24)) {
 		fprintf(stderr,
 			"Image without extra 8 bytes - Standard header\n");
 		EHDR = 0;
-	} else if (len == (buf[0x18] | ((u32)buf[0x19] << 8) | ((u32)buf[0x1a] << 16) | ((u32)buf[0x1b] << 24)) + 8) {
+	} else if (len == (buf[0x18] | ((uint32_t)buf[0x19] << 8) | ((uint32_t)buf[0x1a] << 16) | ((uint32_t)buf[0x1b] << 24)) + 8) {
 		fprintf(stderr,
 			"Image with extra 8 bytes - Extended header\n");
 		buf += 8;
@@ -281,16 +280,16 @@ int main(int argc, char **argv)
 		fprintf(stderr, "ERROR: Wrong image size\n");
 		exit(-1);
 	}
-	l0 = buf[0x10] | ((u32)buf[0x11] << 8) | ((u32)buf[0x12] << 16) | ((u32)buf[0x13] << 24);
+	l0 = buf[0x10] | ((uint32_t)buf[0x11] << 8) | ((uint32_t)buf[0x12] << 16) | ((uint32_t)buf[0x13] << 24);
 	if (!BHDR)
-		*((u32 *) & buf[0x18]) = 0;
-	unsigned long sum0 = buf[0x18] | ((u32)buf[0x19] << 8) | ((u32)buf[0x1a] << 16) | ((u32)buf[0x1b] << 24);
-	unsigned long sum1 = buf[0x4] | ((u32)buf[0x5] << 8) | ((u32)buf[0x6] << 16) | ((u32)buf[0x7] << 24);
-	*((u32 *) & buf[0x4]) = 0x0L;
+		*((uint32_t *) & buf[0x18]) = 0;
+	unsigned long sum0 = buf[0x18] | ((uint32_t)buf[0x19] << 8) | ((uint32_t)buf[0x1a] << 16) | ((uint32_t)buf[0x1b] << 24);
+	unsigned long sum1 = buf[0x4] | ((uint32_t)buf[0x5] << 8) | ((uint32_t)buf[0x6] << 16) | ((uint32_t)buf[0x7] << 24);
+	*((uint32_t *) & buf[0x4]) = 0x0L;
 	memcpy(b, buf, 0x100);
 	memcpy(b + 0x100, buf + ((l0 >> 1) - ((l0 & 0x6) >> 1)), 0x100);
 	memcpy(b + 0x200, buf + (l0 - 0x200), 0x200);
-	*((u32 *) & b[0x18]) = 0x0L;
+	*((uint32_t *) & b[0x18]) = 0x0L;
 
 	sum = crc32(b, 0x400);
 	printf("CRC32 sum0 - (%x, %x, %x)\n", sum, sum0, 0x400);
@@ -316,13 +315,13 @@ int main(int argc, char **argv)
 	buf[0x7] = (sum >> 24) & 0xff;
 	write(fd, &buf[0x4], 0x4);
 	if (EHDR) {
-		unsigned long sum2 = buf[-0x8] | ((u32)buf[-0x7] << 8) | ((u32)buf[-0x6] << 16) | ((u32)buf[-0x5] << 24);
-		*((u32 *) & buf[-0x8]) = 0L;
+		unsigned long sum2 = buf[-0x8] | ((uint32_t)buf[-0x7] << 8) | ((uint32_t)buf[-0x6] << 16) | ((uint32_t)buf[-0x5] << 24);
+		*((uint32_t *) & buf[-0x8]) = 0L;
 		sum = crc32(buf - 0x4, len - 0x4);
 		printf("CRC32 sum2 - (%x, %x, %x)\n", sum, sum2,
 		       len - 0x4);
 		lseek(fd, 0, SEEK_SET);
-		*((u32 *) & buf[-0x8]) = htonl(sum);
+		*((uint32_t *) & buf[-0x8]) = htonl(sum);
 		write(fd, &buf[-0x8], 0x4);
 		buf -= 8;
 	}
