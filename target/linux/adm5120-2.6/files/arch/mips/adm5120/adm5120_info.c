@@ -115,46 +115,81 @@ static struct adm5120_board __initdata adm5120_boards[] = {
 		.flash0_size	= 4*1024*1024,
 	},
 	{
-		.name		= "RouterBOARD RB-111",
+		.name		= "RouterBOARD 111",
 		.mach_type	= MACH_ADM5120_RB_111,
 		.has_usb	= 0,
 		.iface_num	= 1,
 		.flash0_size	= 128*1024,
 	},
 	{
-		.name		= "RouterBOARD RB-112",
+		.name		= "RouterBOARD 112",
 		.mach_type	= MACH_ADM5120_RB_112,
 		.has_usb	= 0,
 		.iface_num	= 1,
 		.flash0_size	= 128*1024,
 	},
 	{
-		.name		= "RouterBOARD RB-133",
+		.name		= "RouterBOARD 133",
 		.mach_type	= MACH_ADM5120_RB_133,
 		.has_usb	= 0,
 		.iface_num	= 3,
 		.flash0_size	= 128*1024,
 	},
 	{
-		.name		= "RouterBOARD RB-133C",
+		.name		= "RouterBOARD 133C",
 		.mach_type	= MACH_ADM5120_RB_133C,
 		.has_usb	= 0,
 		.iface_num	= 1,
 		.flash0_size	= 128*1024,
 	},
 	{
-		.name		= "RouterBOARD RB-150",
+		.name		= "RouterBOARD 150",
 		.mach_type	= MACH_ADM5120_RB_150,
 		.has_usb	= 0,
 		.iface_num	= 5,
 		.flash0_size	= 128*1024,
 	},
 	{
-		.name		= "RouterBOARD RB-153",
+		.name		= "RouterBOARD 153",
 		.mach_type	= MACH_ADM5120_RB_153,
 		.has_usb	= 0,
 		.iface_num	= 5,
 		.flash0_size	= 128*1024,
+	},
+	{
+		.name		= "ZyXEL ES-2108",
+		.mach_type	= MACH_ADM5120_ES2108,
+		.has_usb	= 0,
+		.iface_num	= 0,
+		.flash0_size	= 4*1024*1024,
+	},
+	{
+		.name		= "ZyXEL ES-2108-F",
+		.mach_type	= MACH_ADM5120_ES2108F,
+		.has_usb	= 0,
+		.iface_num	= 0,
+		.flash0_size	= 4*1024*1024,
+	},
+	{
+		.name		= "ZyXEL ES-2108-G",
+		.mach_type	= MACH_ADM5120_ES2108G,
+		.has_usb	= 0,
+		.iface_num	= 0,
+		.flash0_size	= 4*1024*1024,
+	},
+	{
+		.name		= "ZyXEL ES-2108-LC",
+		.mach_type	= MACH_ADM5120_ES2108LC,
+		.has_usb	= 0,
+		.iface_num	= 0,
+		.flash0_size	= 4*1024*1024,
+	},
+	{
+		.name		= "ZyXEL ES-2108PWR",
+		.mach_type	= MACH_ADM5120_ES2108PWR,
+		.has_usb	= 0,
+		.iface_num	= 0,
+		.flash0_size	= 4*1024*1024,
 	},
 	{
 		.name		= "ZyXEL HomeSafe 100/100W",
@@ -367,8 +402,7 @@ static int __init cfe_present(void)
 		return 0;
 	}
 
-	/* cfe_a1_val must be 0, because only one CPU present in the ADM5120 SoC
-*/
+	/* cfe_a1_val must be 0, because only one CPU present in the ADM5120 */
 	if (cfe_a1_val != 0) {
 		return 0;
 	}
@@ -434,75 +468,111 @@ out:
 /*
  * RouterBOOT based boards
  */
-static int __init routerboot_find_tag(u8 *buf, u16 tagid, void **tagval,
-	u16 *taglen)
+static int __init routerboot_load_hs(u8 *buf, u16 buflen,
+	struct rb_hard_settings *hs)
 {
 	u16 id,len;
-	int ret;
+	u8 *mac;
+	int i,j;
 
-	ret = -1;
-	/* skip header */
-	buf += 8;
-	for (;;) {
+	if (buflen < 4)
+		return -1;
+
+	if (read_le32(buf) != RB_MAGIC_HARD)
+		return -1;
+
+	/* skip magic value */
+	buf += 4;
+	buflen -= 4;
+
+	while (buflen > 2) {
 		id = read_le16(buf);
 		buf += 2;
-		if (id == RB_ID_TERMINATOR)
+		buflen -= 2;
+		if (id == RB_ID_TERMINATOR || buflen < 2)
 			break;
 
 		len = read_le16(buf);
 		buf += 2;
-		if (id == tagid) {
-			*tagval = buf;
-			*taglen = len;
-			ret = 0;
+		buflen -= 2;
+
+		if (buflen < len)
+			break;
+
+		switch (id) {
+		case RB_ID_BIOS_VERSION:
+			hs->bios_ver = (char *)buf;
+			break;
+		case RB_ID_BOARD_NAME:
+			hs->name = (char *)buf;
+			break;
+		case RB_ID_MEMORY_SIZE:
+			hs->mem_size = read_le32(buf);
+			break;
+		case RB_ID_MAC_ADDRESS_COUNT:
+			hs->mac_count = read_le32(buf);
+			break;
+		case RB_ID_MAC_ADDRESS_PACK:
+			hs->mac_count = len/RB_MAC_SIZE;
+			if (hs->mac_count > RB_MAX_MAC_COUNT)
+				hs->mac_count = RB_MAX_MAC_COUNT;
+			mac = buf;
+			for (i=0; i < hs->mac_count; i++) {
+				for (j=0; j < RB_MAC_SIZE; j++)
+					hs->macs[i][j] = mac[j];
+				mac += RB_MAC_SIZE;
+			}
 			break;
 		}
 
 		buf += len;
+		buflen -= len;
+
 	}
 
-	return ret;
+	return 0;
 }
 
-#define RB_HS_ADDR	KSEG1ADDR(ADM5120_SRAM0_BASE+0x1000)
-#define RB_SS_ADDR	KSEG1ADDR(ADM5120_SRAM0_BASE+0x2000)
-#define RB_FW_ADDR	KSEG1ADDR(ADM5120_SRAM0_BASE+0x10000)
+#define RB_BS_OFFS	0x14
+#define RB_OFFS_MAX	(128*1024)
 
 static unsigned long __init routerboot_detect_board(void)
 {
 	struct routerboard *board;
-	u32 magic;
-	char *name;
-	u16 namelen;
+	struct rb_hard_settings	hs;
+	struct rb_bios_settings	*bs;
+	u8 *base;
+	u32 off,len;
 	unsigned long ret;
 
 	ret = MACH_ADM5120_UNKNOWN;
 
-	magic = le32_to_cpu(*(u32 *)RB_HS_ADDR);
-	if (magic != RB_MAGIC_HARD)
-		goto out;
+	base = (u8 *)KSEG1ADDR(ADM5120_SRAM0_BASE);
+	bs = (struct rb_bios_settings *)(base + RB_BS_OFFS);
 
-	magic = le32_to_cpu(*(u32 *)RB_SS_ADDR);
-	if ((magic != RB_MAGIC_SOFT) && (magic != RB_MAGIC_DAWN))
-		goto out;
+	off = read_le32(&bs->hs_offs);
+	len = read_le32(&bs->hs_size);
+	if (off > RB_OFFS_MAX)
+		return ret;
 
-	if (routerboot_find_tag((u8 *)RB_HS_ADDR, RB_ID_BOARD_NAME,
-		(void *)&name, &namelen))
-		goto out;
-
-	for (board = routerboards; board->mach_type != MACH_ADM5120_UNKNOWN;
-		board++) {
-		if (strncmp(board->name, name, strlen(board->name)) == 0) {
-			ret = board->mach_type;
-			break;
-		}
-
-	}
+	memset(&hs, 0, sizeof(hs));
+	if (routerboot_load_hs(base+off, len, &hs) != 0)
+		return ret;
 
 	/* assume RouterBOOT as the boot-loader */
 	adm5120_boot_loader = BOOT_LOADER_ROUTERBOOT;
 
-out:
+	if (hs.name == NULL)
+		return ret;
+
+	for (board = routerboards; board->mach_type != MACH_ADM5120_UNKNOWN;
+		board++) {
+		if (strncmp(board->name, hs.name, strlen(board->name)) == 0) {
+			ret = board->mach_type;
+			break;
+		}
+	}
+
 	return ret;
 }
 
