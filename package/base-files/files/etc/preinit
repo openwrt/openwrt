@@ -10,6 +10,9 @@ failsafe() {
 
 [ -e /etc/preinit.arch ] && . /etc/preinit.arch
 
+mount -t proc none /proc
+mount -t sysfs none /sys
+
 set_state preinit
 
 mount_root ${FAILSAFE:+failsafe}

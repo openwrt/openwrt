@@ -2,8 +2,6 @@
 # Copyright (C) 2006 OpenWrt.org
 . /etc/functions.sh
 
-mount none /proc -t proc
-
 size=$(awk '/MemTotal:/ {l=5242880;mt=($2*1024);print((s=mt/2)<l)?mt-l:s}' /proc/meminfo)
 mount none /tmp -t tmpfs -o size=$size,nosuid,nodev,mode=1777
 
@@ -13,7 +11,6 @@ if grep devfs /proc/filesystems > /dev/null; then
 	M1=/dev/pty/m1
 	HOTPLUG=/sbin/hotplug-call
 else
-	mount -t sysfs none /sys
 	mount -t tmpfs tmpfs /dev -o size=512K
 	mknod /dev/console c 5 1
 	mkdir /dev/shm
