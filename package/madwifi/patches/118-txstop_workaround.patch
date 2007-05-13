@@ -1,0 +1,45 @@
+diff -urN madwifi-ng-refcount-r2313-20070505.old/ath/if_ath.c madwifi-ng-refcount-r2313-20070505.dev/ath/if_ath.c
+--- madwifi-ng-refcount-r2313-20070505.old/ath/if_ath.c	2007-05-13 18:17:56.196025944 +0200
++++ madwifi-ng-refcount-r2313-20070505.dev/ath/if_ath.c	2007-05-13 18:17:56.284012568 +0200
+@@ -1711,6 +1711,7 @@
+ 			} 
+ #endif
+ 			ATH_SCHEDULE_TQUEUE(&sc->sc_txtq, &needmark);
++			sc->sc_tx_start = 0;
+ 		}
+ 		if (status & HAL_INT_BMISS) {
+ 			sc->sc_stats.ast_bmiss++;
+@@ -2264,6 +2265,15 @@
+ 		txq->axq_link = &lastds->ds_link;
+ 		ath_hal_txstart(ah, txq->axq_qnum);
+ 		sc->sc_dev->trans_start = jiffies;
++		if (sc->sc_tx_start) {
++			if (jiffies > sc->sc_tx_start + 2 * HZ) {
++				printk("%s: Tx queue stuck. Resetting hardware...\n", sc->sc_dev->name);
++				ath_reset(sc->sc_dev);
++				sc->sc_tx_start = 0;
++			}
++		} else {
++			sc->sc_tx_start = jiffies;
++		}
+ 	}
+ 	ATH_TXQ_UNLOCK(txq);
+ 
+diff -urN madwifi-ng-refcount-r2313-20070505.old/ath/if_athvar.h madwifi-ng-refcount-r2313-20070505.dev/ath/if_athvar.h
+--- madwifi-ng-refcount-r2313-20070505.old/ath/if_athvar.h	2007-05-04 23:09:29.000000000 +0200
++++ madwifi-ng-refcount-r2313-20070505.dev/ath/if_athvar.h	2007-05-13 18:17:56.285012416 +0200
+@@ -689,6 +689,14 @@
+ #endif
+ 	u_int sc_slottimeconf;			/* manual override for slottime */
+ 	int16_t sc_channoise; 			/* Measured noise of current channel (dBm) */
++
++	/* 
++	 * Several MiniPCI cards and most SoC revs frequently cease all transmission
++	 * when operating in IBSS mode. The reason for this is unknown and could potentially
++	 * be a hardware bug. This variable contains the timestamp of the last successful
++	 * transmission and is checked when enqueueing new frames
++	 */
++	unsigned long sc_tx_start;
+ };
+ 
+ typedef void (*ath_callback) (struct ath_softc *);

@@ -1,0 +1,21 @@
+diff -urN madwifi-ng-refcount-r2313-20070505.old/net80211/ieee80211_output.c madwifi-ng-refcount-r2313-20070505.dev/net80211/ieee80211_output.c
+--- madwifi-ng-refcount-r2313-20070505.old/net80211/ieee80211_output.c	2007-04-25 22:29:55.000000000 +0200
++++ madwifi-ng-refcount-r2313-20070505.dev/net80211/ieee80211_output.c	2007-05-13 18:17:55.947063792 +0200
+@@ -942,7 +942,7 @@
+ 		llc->llc_snap.org_code[0] = 0;
+ 		llc->llc_snap.org_code[1] = 0;
+ 		llc->llc_snap.org_code[2] = 0;
+-		llc->llc_snap.ether_type = eh.ether_type;
++		llc->llc_snap.ether_type = eh2.ether_type;
+ 
+ 		eh_inter = (struct ether_header *) skb_push(skb2, sizeof(struct ether_header));
+ 		if (eh_inter == NULL) {
+@@ -952,7 +952,7 @@
+ 			return NULL;
+ 		}
+ 
+-		memcpy(eh_inter, &eh2, sizeof(struct ether_header) - sizeof eh.ether_type);
++		memcpy(eh_inter, &eh2, sizeof(struct ether_header) - sizeof eh2.ether_type);
+ 		eh_inter->ether_type = htons(payload);
+ 
+ 		/* variable length pad */
