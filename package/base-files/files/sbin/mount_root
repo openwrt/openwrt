@@ -41,18 +41,19 @@ jffs2_ready () {
 }
 
 [ failsafe != "$1" ] && {
-	grep rootfs /proc/mtd >/dev/null 2>/dev/null && {
-		mtd unlock rootfs
-		grep rootfs_data /proc/mtd >/dev/null 2>/dev/null && {
-			. /bin/firstboot
-			jffs2_ready && {
-				echo "switching to jffs2"
-				mount "$(find_mtd_part rootfs_data)" /jffs -t jffs2 && \
+	grep rootfs_data /proc/mtd >/dev/null 2>/dev/null && {
+		. /bin/firstboot
+		mtd unlock rootfs_data
+		jffs2_ready && {
+			echo "switching to jffs2"
+			mount "$(find_mtd_part rootfs_data)" /jffs -t jffs2 && \
 				fopivot /jffs /rom
-			} || {
-				echo "jffs2 not ready yet; using ramdisk"
-				ramoverlay
-			}
+		} || {
+			echo "jffs2 not ready yet; using ramdisk"
+			ramoverlay
 		}
-	} || mount -o remount,rw /dev/root /
+	} || {
+		mtd unlock rootfs
+		mount -o remount,rw /dev/root /
+	}
 }
