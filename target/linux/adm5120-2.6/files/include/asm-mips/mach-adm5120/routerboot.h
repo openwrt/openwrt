@@ -14,6 +14,25 @@
 #ifndef _ROUTERBOOT_H
 #define _ROUTERBOOT_H
 
+#define RB_MAC_SIZE		6
+#define RB_MAX_MAC_COUNT	6
+
+struct rb_bios_settings {
+	u32	hs_offs; /* hard settings offset */
+	u32	hs_size; /* hard settings size */
+	u32	fw_offs; /* firmware offset */
+	u32	ss_offs; /* soft settings offset */
+	u32	ss_size; /* soft settings size */
+};
+
+struct rb_hard_settings {
+	char	*name;		/* board name */
+	char	*bios_ver;	/* BIOS version */
+	u32	mem_size;	/* memory size in bytes */
+	u32	mac_count;	/* number of mac addresses */
+	u8	macs[RB_MAC_SIZE][RB_MAX_MAC_COUNT]; /* mac addresses */
+};
+
 /*
  * Magic numbers
  */
