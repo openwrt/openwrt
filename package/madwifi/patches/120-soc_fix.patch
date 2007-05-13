@@ -71,48 +71,6 @@ diff -urN madwifi-ng-refcount-r2313-20070505.old/ath/if_ath_ahb.c madwifi-ng-ref
 diff -urN madwifi-ng-refcount-r2313-20070505.old/ath/if_ath.c madwifi-ng-refcount-r2313-20070505.dev/ath/if_ath.c
 --- madwifi-ng-refcount-r2313-20070505.old/ath/if_ath.c	2007-05-13 18:17:56.362000712 +0200
 +++ madwifi-ng-refcount-r2313-20070505.dev/ath/if_ath.c	2007-05-13 18:17:56.371999192 +0200
-@@ -2490,6 +2490,7 @@
- 		DPRINTF(sc,ATH_DEBUG_XMIT,				\
- 			"%s: discard, no xmit buf\n", __func__);	\
- 		sc->sc_stats.ast_tx_nobuf++;				\
-+		goto hardstart_fail;					\
- 	}
- 
- /*
-@@ -2676,14 +2677,13 @@
- 		else if (an->an_tx_ffbuf[skb->priority]) {
- 			DPRINTF(sc, ATH_DEBUG_XMIT | ATH_DEBUG_FF,
- 				"%s: Out-Of-Order fast-frame\n", __func__);
--			ATH_TXQ_UNLOCK(txq);
-+			ATH_TXQ_UNLOCK_BH(txq);
- 		} else
--			ATH_TXQ_UNLOCK(txq);
-+			ATH_TXQ_UNLOCK_BH(txq);
- 
- 	ff_flushdone:
- 		ATH_HARDSTART_GET_TX_BUF_WITH_LOCK;
--		if (bf == NULL)
--			goto hardstart_fail;
-+		ATH_HARDSTART_REL_TX_BUF_WITH_TXQLOCK_OFF;
- 	}
- 
- ff_bypass:
-@@ -5668,6 +5668,7 @@
- 				sc->sc_stats.ast_rx_phyerr++;
- 				phyerr = ds->ds_rxstat.rs_phyerr & 0x1f;
- 				sc->sc_stats.ast_rx_phy[phyerr]++;
-+				goto rx_next;
- 			}
- 			if (ds->ds_rxstat.rs_status & HAL_RXERR_DECRYPT) {
- 				/*
-@@ -7662,6 +7663,7 @@
- ath_draintxq(struct ath_softc *sc)
- {
- 	struct ath_hal *ah = sc->sc_ah;
-+	int npend = 0;
- 	unsigned int i;
- 
- 	/* XXX return value */
 @@ -7670,9 +7672,24 @@
  		DPRINTF(sc, ATH_DEBUG_RESET, "%s: beacon queue 0x%x\n",
  			__func__, ath_hal_gettxbuf(ah, sc->sc_bhalq));
