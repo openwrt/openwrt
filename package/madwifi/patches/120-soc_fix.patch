@@ -1,0 +1,141 @@
+diff -urN madwifi-ng-refcount-r2313-20070505.old/ath/if_ath_ahb.c madwifi-ng-refcount-r2313-20070505.dev/ath/if_ath_ahb.c
+--- madwifi-ng-refcount-r2313-20070505.old/ath/if_ath_ahb.c	2007-03-08 20:59:06.000000000 +0100
++++ madwifi-ng-refcount-r2313-20070505.dev/ath/if_ath_ahb.c	2007-05-13 18:17:56.367999800 +0200
+@@ -274,12 +274,12 @@
+ }
+ 
+ 
++
+ static int
+-exit_ath_wmac(u_int16_t wlanNum)
++exit_ath_wmac(u_int16_t wlanNum, struct ar531x_config *config)
+ {
+ 	struct ath_ahb_softc *sc = sclist[wlanNum];
+ 	struct net_device *dev;
+-	const char *sysType;
+ 	u_int16_t devid;        
+ 
+ 	if (sc == NULL)
+@@ -289,13 +289,17 @@
+ 	ath_detach(dev);
+ 	if (dev->irq)
+ 		free_irq(dev->irq, dev);
+-	sysType = get_system_type();
+-	if (!strcmp(sysType, "Atheros AR5315"))
++
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19)
++	devid = (u32) config->tag;
++#else
++	if (!strcmp(get_system_type(), "Atheros AR5315"))
+ 		devid = (u_int16_t) (sysRegRead(AR5315_SREV) &
+ 			(AR5315_REV_MAJ_M | AR5315_REV_MIN_M));
+ 	else
+ 		devid = (u_int16_t) ((sysRegRead(AR531X_REV) >> 8) & 
+ 			(AR531X_REV_MAJ | AR531X_REV_MIN));
++#endif
+   
+ 	ahb_disable_wmac(devid, wlanNum);
+ 	free_netdev(dev);
+@@ -401,7 +405,7 @@
+ 
+ static int ahb_wmac_remove(struct platform_device *pdev)
+ {
+-	exit_ath_wmac(pdev->id);
++	exit_ath_wmac(pdev->id, (struct ar531x_config *) pdev->dev.platform_data);
+ 
+ 	return 0;
+ }
+@@ -439,7 +443,7 @@
+ 			(AR5315_REV_MAJ_M | AR5315_REV_MIN_M));
+ 		if (((devid & AR5315_REV_MAJ_M) == AR5315_REV_MAJ) ||
+ 			((devid & AR5315_REV_MAJ_M) == AR5317_REV_MAJ))
+-			return init_ath_wmac(devid, 0, &config);
++			return init_ath_wmac(devid, 0);
+ 	}
+ 
+ 	devid = (u_int16_t) ((sysRegRead(AR531X_REV) >>8) &
+@@ -452,11 +456,11 @@
+ 		ar5312BspEepromRead(2 * AR531X_RADIO_MASK_OFF, 2,
+ 			(char *) &radioMask);
+ 		if ((radioMask & AR531X_RADIO0_MASK) != 0)
+-			if ((ret = init_ath_wmac(devid, 0, &config)) !=0 )
++			if ((ret = init_ath_wmac(devid, 0)) !=0 )
+ 				return ret;
+ 		/* XXX: Fall through?! */
+ 	case AR5212_AR2313_REV8:
+-		if ((ret = init_ath_wmac(devid, 1, &config)) != 0)
++		if ((ret = init_ath_wmac(devid, 1)) != 0)
+ 			return ret;
+ 		break;
+ 	default:
+diff -urN madwifi-ng-refcount-r2313-20070505.old/ath/if_ath.c madwifi-ng-refcount-r2313-20070505.dev/ath/if_ath.c
+--- madwifi-ng-refcount-r2313-20070505.old/ath/if_ath.c	2007-05-13 18:17:56.362000712 +0200
++++ madwifi-ng-refcount-r2313-20070505.dev/ath/if_ath.c	2007-05-13 18:17:56.371999192 +0200
+@@ -2490,6 +2490,7 @@
+ 		DPRINTF(sc,ATH_DEBUG_XMIT,				\
+ 			"%s: discard, no xmit buf\n", __func__);	\
+ 		sc->sc_stats.ast_tx_nobuf++;				\
++		goto hardstart_fail;					\
+ 	}
+ 
+ /*
+@@ -2676,14 +2677,13 @@
+ 		else if (an->an_tx_ffbuf[skb->priority]) {
+ 			DPRINTF(sc, ATH_DEBUG_XMIT | ATH_DEBUG_FF,
+ 				"%s: Out-Of-Order fast-frame\n", __func__);
+-			ATH_TXQ_UNLOCK(txq);
++			ATH_TXQ_UNLOCK_BH(txq);
+ 		} else
+-			ATH_TXQ_UNLOCK(txq);
++			ATH_TXQ_UNLOCK_BH(txq);
+ 
+ 	ff_flushdone:
+ 		ATH_HARDSTART_GET_TX_BUF_WITH_LOCK;
+-		if (bf == NULL)
+-			goto hardstart_fail;
++		ATH_HARDSTART_REL_TX_BUF_WITH_TXQLOCK_OFF;
+ 	}
+ 
+ ff_bypass:
+@@ -5668,6 +5668,7 @@
+ 				sc->sc_stats.ast_rx_phyerr++;
+ 				phyerr = ds->ds_rxstat.rs_phyerr & 0x1f;
+ 				sc->sc_stats.ast_rx_phy[phyerr]++;
++				goto rx_next;
+ 			}
+ 			if (ds->ds_rxstat.rs_status & HAL_RXERR_DECRYPT) {
+ 				/*
+@@ -7662,6 +7663,7 @@
+ ath_draintxq(struct ath_softc *sc)
+ {
+ 	struct ath_hal *ah = sc->sc_ah;
++	int npend = 0;
+ 	unsigned int i;
+ 
+ 	/* XXX return value */
+@@ -7670,9 +7672,24 @@
+ 		DPRINTF(sc, ATH_DEBUG_RESET, "%s: beacon queue 0x%x\n",
+ 			__func__, ath_hal_gettxbuf(ah, sc->sc_bhalq));
+ 		for (i = 0; i < HAL_NUM_TX_QUEUES; i++)
+-			if (ATH_TXQ_SETUP(sc, i))
++			if (ATH_TXQ_SETUP(sc, i)) {
+ 				ath_tx_stopdma(sc, &sc->sc_txq[i]);
++
++				/* The TxDMA may not really be stopped.
++				 * Double check the hal tx pending count */
++				npend += ath_hal_numtxpending(ah, sc->sc_txq[i].axq_qnum);
++			}
++	}
++	
++	if (npend) {
++		HAL_STATUS status;
++
++		/* TxDMA not stopped, reset the hal */
++		DPRINTF(sc, ATH_DEBUG_RESET, "%s: Unable to stop TxDMA. Reset HAL!\n", __func__);
++		if (!ath_hal_reset(ah, sc->sc_ic.ic_opmode, &sc->sc_curchan, AH_TRUE, &status))
++			printk("%s: unable to reset hardware; hal status %u\n", __func__, status);
+ 	}
++
+ 	sc->sc_dev->trans_start = jiffies;
+ 	netif_start_queue(sc->sc_dev);		/* XXX move to callers */
+ 	for (i = 0; i < HAL_NUM_TX_QUEUES; i++)

@@ -10,16 +10,17 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=madwifi
-PKG_VERSION:=0.9.2.1
+PKG_VERSION:=r2313-20070505
 PKG_RELEASE:=1
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=@SF/$(PKG_NAME)
-PKG_MD5SUM:=bf5509fccd3852e22551826063b1b61e
+PKG_SOURCE:=madwifi-ng-refcount-$(PKG_VERSION).tar.gz
+PKG_SOURCE_URL:=http://snapshots.madwifi.org/madwifi-ng-refcount
+PKG_MD5SUM:=01ee9dfb1f174be6e009f9697f7267b8
+PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/madwifi-ng-refcount-r2313-20070505
 
 include $(INCLUDE_DIR)/package.mk
 
-RATE_CONTROL:=sample
+RATE_CONTROL:=minstrel
 
 ifeq ($(ARCH),mips)
   HAL_TARGET:=mips-be-elf
@@ -85,7 +86,7 @@ define KernelPackage/madwifi
   URL:=http://madwifi.org/
   VERSION:=$(LINUX_VERSION)+$(PKG_VERSION)-$(BOARD)-$(PKG_RELEASE)
   FILES:= \
-		$(PKG_BUILD_DIR)/ath/ath_hal.$(LINUX_KMOD_SUFFIX) \
+		$(PKG_BUILD_DIR)/ath_hal/ath_hal.$(LINUX_KMOD_SUFFIX) \
 		$(BUS_MODULES) \
 		$(PKG_BUILD_DIR)/ath_rate/$(RATE_CONTROL)/ath_rate_$(RATE_CONTROL).$(LINUX_KMOD_SUFFIX) \
 		$(PKG_BUILD_DIR)/net80211/wlan*.$(LINUX_KMOD_SUFFIX)
@@ -102,17 +103,19 @@ MADWIFI_MAKEOPTS= -C $(PKG_BUILD_DIR) \
 		KERNELPATH="$(LINUX_DIR)" \
 		LDOPTS="--no-warn-mismatch " \
 		ATH_RATE="ath_rate/$(RATE_CONTROL)" \
-		DOMULTI=1
+		WARNINGS="" \
+		DOMULTI=1 \
+		V=1
 
 ifeq ($(findstring AHB,$(BUS)),AHB)
   define Build/Compile/ahb
-	$(MAKE) $(MADWIFI_MAKEOPTS) BUS="AHB" modules
+	COPTS="-DCONFIG_ATHEROS_RATE_DEFAULT='\"$(RATE_CONTROL)\"'" $(MAKE) $(MADWIFI_MAKEOPTS) BUS="AHB" modules
   endef
 endif
 
 ifeq ($(findstring PCI,$(BUS)),PCI)
   define Build/Compile/pci
-	$(MAKE) $(MADWIFI_MAKEOPTS) BUS="PCI" modules
+	COPTS="-DCONFIG_ATHEROS_RATE_DEFAULT='\"$(RATE_CONTROL)\"'" $(MAKE) $(MADWIFI_MAKEOPTS) BUS="PCI" modules
   endef
 endif
 

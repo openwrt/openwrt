@@ -1,0 +1,58 @@
+diff -urN madwifi-ng-refcount-r2313-20070505.old/ath/if_ath.c madwifi-ng-refcount-r2313-20070505.dev/ath/if_ath.c
+--- madwifi-ng-refcount-r2313-20070505.old/ath/if_ath.c	2007-05-13 18:17:55.691102704 +0200
++++ madwifi-ng-refcount-r2313-20070505.dev/ath/if_ath.c	2007-05-13 18:17:55.783088720 +0200
+@@ -5704,7 +5704,8 @@
+ 		 * frame; it'll be dropped where it's not wanted.
+ 		 */
+ 		if (ds->ds_rxstat.rs_keyix != HAL_RXKEYIX_INVALID &&
+-		    (ni = sc->sc_keyixmap[ds->ds_rxstat.rs_keyix]) != NULL) {
++		    (ni = sc->sc_keyixmap[ds->ds_rxstat.rs_keyix]) != NULL &&
++		    ieee80211_check_rxnode(ni, (const struct ieee80211_frame_min *) skb->data)) {
+ 			struct ath_node *an;
+ 			/*
+ 			 * Fast path: node is present in the key map;
+diff -urN madwifi-ng-refcount-r2313-20070505.old/net80211/ieee80211_node.c madwifi-ng-refcount-r2313-20070505.dev/net80211/ieee80211_node.c
+--- madwifi-ng-refcount-r2313-20070505.old/net80211/ieee80211_node.c	2007-05-13 18:17:55.773090240 +0200
++++ madwifi-ng-refcount-r2313-20070505.dev/net80211/ieee80211_node.c	2007-05-13 18:17:55.784088568 +0200
+@@ -1268,8 +1268,6 @@
+ 	IEEE80211_NODE_TABLE_UNLOCK_IRQ(nt);
+ 
+ 	return ni;
+-#undef IS_PSPOLL
+-#undef IS_CTL
+ }
+ #ifdef IEEE80211_DEBUG_REFCNT
+ EXPORT_SYMBOL(ieee80211_find_rxnode_debug);
+@@ -1277,6 +1275,20 @@
+ EXPORT_SYMBOL(ieee80211_find_rxnode);
+ #endif
+ 
++int
++ieee80211_check_rxnode(struct ieee80211_node *ni,
++	const struct ieee80211_frame_min *wh)
++{
++	if (IS_CTL(wh) && !IS_PSPOLL(wh) /*&& !IS_RTS(ah)*/)
++		return IEEE80211_ADDR_EQ(ni->ni_macaddr, wh->i_addr1);
++	else
++		return IEEE80211_ADDR_EQ(ni->ni_macaddr, wh->i_addr2);
++}
++
++EXPORT_SYMBOL(ieee80211_check_rxnode);
++#undef IS_PSPOLL
++#undef IS_CTL
++
+ /*
+  * Return a reference to the appropriate node for sending
+  * a data frame.  This handles node discovery in adhoc networks.
+diff -urN madwifi-ng-refcount-r2313-20070505.old/net80211/ieee80211_node.h madwifi-ng-refcount-r2313-20070505.dev/net80211/ieee80211_node.h
+--- madwifi-ng-refcount-r2313-20070505.old/net80211/ieee80211_node.h	2007-04-04 04:39:58.000000000 +0200
++++ madwifi-ng-refcount-r2313-20070505.dev/net80211/ieee80211_node.h	2007-05-13 18:17:55.784088568 +0200
+@@ -318,6 +318,8 @@
+ 	*pni = NULL;			/* guard against use */
+ }
+ 
++int ieee80211_check_rxnode(struct ieee80211_node *ni,
++	const struct ieee80211_frame_min *wh);
+ int ieee80211_add_wds_addr(struct ieee80211_node_table *, struct ieee80211_node *,
+ 	const u_int8_t *, u_int8_t);
+ void ieee80211_remove_wds_addr(struct ieee80211_node_table *, const u_int8_t *);

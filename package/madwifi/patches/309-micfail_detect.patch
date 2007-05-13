@@ -1,0 +1,273 @@
+diff -urN madwifi-ng-refcount-r2313-20070505.old/ath/if_ath.c madwifi-ng-refcount-r2313-20070505.dev/ath/if_ath.c
+--- madwifi-ng-refcount-r2313-20070505.old/ath/if_ath.c	2007-05-13 18:17:56.785936264 +0200
++++ madwifi-ng-refcount-r2313-20070505.dev/ath/if_ath.c	2007-05-13 18:17:56.878922128 +0200
+@@ -5640,6 +5640,7 @@
+ 	u_int phyerr;
+ 	int processed = 0, early_stop = 0;
+ 	int rx_limit = dev->quota;
++	int mic_fail = 0;
+ 
+ 	/* Let the 802.11 layer know about the new noise floor */
+ 	ic->ic_channoise = sc->sc_channoise;
+@@ -5734,32 +5735,16 @@
+ 			}
+ 			if (ds->ds_rxstat.rs_status & HAL_RXERR_MIC) {
+ 				sc->sc_stats.ast_rx_badmic++;
+-				/*
+-				 * Do minimal work required to hand off
+-				 * the 802.11 header for notification.
+-				 */
+-				/* XXX frag's and QoS frames */
+-				len = ds->ds_rxstat.rs_datalen;
+-				if (len >= sizeof (struct ieee80211_frame)) {
+-					bus_dma_sync_single(sc->sc_bdev,
+-					    bf->bf_skbaddr, len,
+-					    BUS_DMA_FROMDEVICE);
+-#if 0
+-/* XXX revalidate MIC, lookup ni to find VAP */
+-					ieee80211_notify_michael_failure(ic,
+-					    (struct ieee80211_frame *) skb->data,
+-					    sc->sc_splitmic ?
+-					        ds->ds_rxstat.rs_keyix - 32 :
+-					        ds->ds_rxstat.rs_keyix
+-					);
+-#endif
+-				}
++				mic_fail = 1;
+ 			}
+ 			/*
+ 			 * Reject error frames if we have no vaps that 
+ 			 * are operating in monitor mode.
+ 			 */
+-			if(sc->sc_nmonvaps == 0) goto rx_next;
++			if ((ds->ds_rxstat.rs_status & ~HAL_RXERR_MIC) &&
++				((ds->ds_rxstat.rs_status &~ HAL_RXERR_DECRYPT) ||
++			     (sc->sc_ic.ic_opmode != IEEE80211_M_MONITOR)))
++					goto rx_next;
+ 		}
+ rx_accept:
+ 		/*
+@@ -5843,6 +5828,20 @@
+ 				   ds->ds_rxstat.rs_rssi);
+ 		}
+ 
++		/* MIC failure. Drop the packet in any case */
++		if (mic_fail) {
++			ni = ieee80211_find_rxnode(ic, 
++				(const struct ieee80211_frame_min *) skb->data);
++			if (ni != NULL) {
++				ieee80211_check_mic(ni, skb);
++				ieee80211_unref_node(&ni);
++			}
++			dev_kfree_skb_any(skb);
++			skb = NULL;
++			mic_fail = 0;
++			goto rx_next;
++ 		}
++
+ 		/*
+ 		 * Locate the node for sender, track state, and then
+ 		 * pass the (referenced) node up to the 802.11 layer
+diff -urN madwifi-ng-refcount-r2313-20070505.old/net80211/ieee80211_crypto_ccmp.c madwifi-ng-refcount-r2313-20070505.dev/net80211/ieee80211_crypto_ccmp.c
+--- madwifi-ng-refcount-r2313-20070505.old/net80211/ieee80211_crypto_ccmp.c	2007-04-13 07:53:25.000000000 +0200
++++ madwifi-ng-refcount-r2313-20070505.dev/net80211/ieee80211_crypto_ccmp.c	2007-05-13 18:17:56.879921976 +0200
+@@ -78,7 +78,7 @@
+ static int ccmp_encap(struct ieee80211_key *, struct sk_buff *, u_int8_t);
+ static int ccmp_decap(struct ieee80211_key *, struct sk_buff *, int);
+ static int ccmp_enmic(struct ieee80211_key *, struct sk_buff *, int);
+-static int ccmp_demic(struct ieee80211_key *, struct sk_buff *, int);
++static int ccmp_demic(struct ieee80211_key *, struct sk_buff *, int, int);
+ 
+ static const struct ieee80211_cipher ccmp = {
+ 	.ic_name	= "AES-CCM",
+@@ -298,7 +298,7 @@
+  * Verify and strip MIC from the frame.
+  */
+ static int
+-ccmp_demic(struct ieee80211_key *k, struct sk_buff *skb, int hdrlen)
++ccmp_demic(struct ieee80211_key *k, struct sk_buff *skb, int hdrlen, int force)
+ {
+ 	return 1;
+ }
+diff -urN madwifi-ng-refcount-r2313-20070505.old/net80211/ieee80211_crypto.h madwifi-ng-refcount-r2313-20070505.dev/net80211/ieee80211_crypto.h
+--- madwifi-ng-refcount-r2313-20070505.old/net80211/ieee80211_crypto.h	2007-04-25 22:29:55.000000000 +0200
++++ madwifi-ng-refcount-r2313-20070505.dev/net80211/ieee80211_crypto.h	2007-05-13 18:17:56.880921824 +0200
+@@ -145,7 +145,7 @@
+ 	int (*ic_encap)(struct ieee80211_key *, struct sk_buff *, u_int8_t);
+ 	int (*ic_decap)(struct ieee80211_key *, struct sk_buff *, int);
+ 	int (*ic_enmic)(struct ieee80211_key *, struct sk_buff *, int);
+-	int (*ic_demic)(struct ieee80211_key *, struct sk_buff *, int);
++	int (*ic_demic)(struct ieee80211_key *, struct sk_buff *, int, int);
+ };
+ extern const struct ieee80211_cipher ieee80211_cipher_none;
+ 
+@@ -163,10 +163,10 @@
+  */
+ static __inline int
+ ieee80211_crypto_demic(struct ieee80211vap *vap, struct ieee80211_key *k,
+-	struct sk_buff *skb, int hdrlen)
++	struct sk_buff *skb, int hdrlen, int force)
+ {
+ 	const struct ieee80211_cipher *cip = k->wk_cipher;
+-	return (cip->ic_miclen > 0 ? cip->ic_demic(k, skb, hdrlen) : 1);
++	return (cip->ic_miclen > 0 ? cip->ic_demic(k, skb, hdrlen, force) : 1);
+ }
+ 
+ /*
+diff -urN madwifi-ng-refcount-r2313-20070505.old/net80211/ieee80211_crypto_none.c madwifi-ng-refcount-r2313-20070505.dev/net80211/ieee80211_crypto_none.c
+--- madwifi-ng-refcount-r2313-20070505.old/net80211/ieee80211_crypto_none.c	2006-09-20 10:45:13.000000000 +0200
++++ madwifi-ng-refcount-r2313-20070505.dev/net80211/ieee80211_crypto_none.c	2007-05-13 18:17:56.880921824 +0200
+@@ -52,7 +52,7 @@
+ static int none_encap(struct ieee80211_key *, struct sk_buff *, u_int8_t);
+ static int none_decap(struct ieee80211_key *, struct sk_buff *, int);
+ static int none_enmic(struct ieee80211_key *, struct sk_buff *, int);
+-static int none_demic(struct ieee80211_key *, struct sk_buff *, int);
++static int none_demic(struct ieee80211_key *, struct sk_buff *, int, int);
+ 
+ const struct ieee80211_cipher ieee80211_cipher_none = {
+ 	.ic_name	= "NONE",
+@@ -137,7 +137,7 @@
+ }
+ 
+ static int
+-none_demic(struct ieee80211_key *k, struct sk_buff *skb, int hdrlen)
++none_demic(struct ieee80211_key *k, struct sk_buff *skb, int hdrlen, int force)
+ {
+ 	struct ieee80211vap *vap = k->wk_private;
+ 
+diff -urN madwifi-ng-refcount-r2313-20070505.old/net80211/ieee80211_crypto_tkip.c madwifi-ng-refcount-r2313-20070505.dev/net80211/ieee80211_crypto_tkip.c
+--- madwifi-ng-refcount-r2313-20070505.old/net80211/ieee80211_crypto_tkip.c	2007-01-30 04:51:52.000000000 +0100
++++ madwifi-ng-refcount-r2313-20070505.dev/net80211/ieee80211_crypto_tkip.c	2007-05-13 18:17:56.880921824 +0200
+@@ -57,7 +57,7 @@
+ static int tkip_encap(struct ieee80211_key *, struct sk_buff *, u_int8_t);
+ static int tkip_enmic(struct ieee80211_key *, struct sk_buff *, int);
+ static int tkip_decap(struct ieee80211_key *, struct sk_buff *, int);
+-static int tkip_demic(struct ieee80211_key *, struct sk_buff *, int);
++static int tkip_demic(struct ieee80211_key *, struct sk_buff *, int, int);
+ 
+ static const struct ieee80211_cipher tkip  = {
+ 	.ic_name	= "TKIP",
+@@ -339,7 +339,7 @@
+  * Verify and strip MIC from the frame.
+  */
+ static int
+-tkip_demic(struct ieee80211_key *k, struct sk_buff *skb0, int hdrlen)
++tkip_demic(struct ieee80211_key *k, struct sk_buff *skb0, int hdrlen, int force)
+ {
+ 	struct tkip_ctx *ctx = k->wk_private;
+ 	struct sk_buff *skb;
+@@ -355,7 +355,7 @@
+ 	}
+ 	wh = (struct ieee80211_frame *) skb0->data;
+ 	/* NB: skb left pointing at last in chain */
+-	if (k->wk_flags & IEEE80211_KEY_SWMIC) {
++	if ((k->wk_flags & IEEE80211_KEY_SWMIC) || force) {
+ 		struct ieee80211vap *vap = ctx->tc_vap;
+ 		u8 mic[IEEE80211_WEP_MICLEN];
+ 		u8 mic0[IEEE80211_WEP_MICLEN];
+diff -urN madwifi-ng-refcount-r2313-20070505.old/net80211/ieee80211_crypto_wep.c madwifi-ng-refcount-r2313-20070505.dev/net80211/ieee80211_crypto_wep.c
+--- madwifi-ng-refcount-r2313-20070505.old/net80211/ieee80211_crypto_wep.c	2006-09-20 10:45:13.000000000 +0200
++++ madwifi-ng-refcount-r2313-20070505.dev/net80211/ieee80211_crypto_wep.c	2007-05-13 18:17:56.881921672 +0200
+@@ -54,7 +54,7 @@
+ static int wep_encap(struct ieee80211_key *, struct sk_buff *, u_int8_t);
+ static int wep_decap(struct ieee80211_key *, struct sk_buff *, int);
+ static int wep_enmic(struct ieee80211_key *, struct sk_buff *, int);
+-static int wep_demic(struct ieee80211_key *, struct sk_buff *, int);
++static int wep_demic(struct ieee80211_key *, struct sk_buff *, int, int);
+ 
+ static const struct ieee80211_cipher wep = {
+ 	.ic_name	= "WEP",
+@@ -244,7 +244,7 @@
+  * Verify and strip MIC from the frame.
+  */
+ static int
+-wep_demic(struct ieee80211_key *k, struct sk_buff *skb, int hdrlen)
++wep_demic(struct ieee80211_key *k, struct sk_buff *skb, int hdrlen, int force)
+ {
+ 	return 1;
+ }
+diff -urN madwifi-ng-refcount-r2313-20070505.old/net80211/ieee80211_input.c madwifi-ng-refcount-r2313-20070505.dev/net80211/ieee80211_input.c
+--- madwifi-ng-refcount-r2313-20070505.old/net80211/ieee80211_input.c	2007-05-13 18:17:56.786936112 +0200
++++ madwifi-ng-refcount-r2313-20070505.dev/net80211/ieee80211_input.c	2007-05-13 18:17:56.883921368 +0200
+@@ -654,7 +654,7 @@
+ 		 * Next strip any MSDU crypto bits.
+ 		 */
+ 		if (key != NULL &&
+-		    !ieee80211_crypto_demic(vap, key, skb, hdrspace)) {
++		    !ieee80211_crypto_demic(vap, key, skb, hdrspace, 0)) {
+ 			IEEE80211_DISCARD_MAC(vap, IEEE80211_MSG_INPUT,
+ 				ni->ni_macaddr, "data", "%s", "demic error");
+ 			IEEE80211_NODE_STAT(ni, rx_demicfail);
+@@ -3734,6 +3734,47 @@
+ }
+ #endif
+ 
++/*
++ * Process a frame w/ hw detected MIC failure. 
++ * The frame will be dropped in any case.
++ */
++void
++ieee80211_check_mic(struct ieee80211_node *ni, struct sk_buff *skb)
++{
++	struct ieee80211vap *vap = ni->ni_vap;
++
++	struct ieee80211_frame *wh;
++	struct ieee80211_key *key;
++	int hdrspace;
++	struct ieee80211com *ic = vap->iv_ic;
++	
++	if (skb->len < sizeof(struct ieee80211_frame_min)) {
++		IEEE80211_DISCARD_MAC(vap, IEEE80211_MSG_ANY,
++		    ni->ni_macaddr, NULL,
++		    "too short (1): len %u", skb->len);
++		vap->iv_stats.is_rx_tooshort++;
++		return;
++	}
++
++	wh = (struct ieee80211_frame *)skb->data;
++		
++	hdrspace = ieee80211_hdrspace(ic, wh);
++	key = ieee80211_crypto_decap(ni, skb, hdrspace);
++	if (key == NULL) {
++		/* NB: stats+msgs handled in crypto_decap */
++		IEEE80211_NODE_STAT(ni, rx_wepfail);
++		return;
++	}
++
++	if (!ieee80211_crypto_demic(vap, key, skb, hdrspace, 1)) {
++		IEEE80211_DISCARD_MAC(vap, IEEE80211_MSG_INPUT,
++			ni->ni_macaddr, "data", "%s", "demic error");
++			IEEE80211_NODE_STAT(ni, rx_demicfail);
++	}
++	return;
++}
++EXPORT_SYMBOL(ieee80211_check_mic);
++
+ #ifdef IEEE80211_DEBUG
+ /*
+  * Debugging support.
+diff -urN madwifi-ng-refcount-r2313-20070505.old/net80211/ieee80211_linux.c madwifi-ng-refcount-r2313-20070505.dev/net80211/ieee80211_linux.c
+--- madwifi-ng-refcount-r2313-20070505.old/net80211/ieee80211_linux.c	2007-04-25 22:29:55.000000000 +0200
++++ madwifi-ng-refcount-r2313-20070505.dev/net80211/ieee80211_linux.c	2007-05-13 18:17:56.883921368 +0200
+@@ -309,8 +309,8 @@
+ 
+ 	/* TODO: needed parameters: count, keyid, key type, src address, TSC */
+ 	snprintf(buf, sizeof(buf), "%s(keyid=%d %scast addr=%s)", tag,
+-		keyix, IEEE80211_IS_MULTICAST(wh->i_addr1) ?  "broad" : "uni",
+-		ether_sprintf(wh->i_addr1));
++		keyix, IEEE80211_IS_MULTICAST(wh->i_addr2) ?  "broad" : "uni",
++		ether_sprintf(wh->i_addr2));
+ 	memset(&wrqu, 0, sizeof(wrqu));
+ 	wrqu.data.length = strlen(buf);
+ 	wireless_send_event(dev, IWEVCUSTOM, &wrqu, buf);
+diff -urN madwifi-ng-refcount-r2313-20070505.old/net80211/ieee80211_proto.h madwifi-ng-refcount-r2313-20070505.dev/net80211/ieee80211_proto.h
+--- madwifi-ng-refcount-r2313-20070505.old/net80211/ieee80211_proto.h	2007-05-13 18:17:56.579967576 +0200
++++ madwifi-ng-refcount-r2313-20070505.dev/net80211/ieee80211_proto.h	2007-05-13 18:17:56.884921216 +0200
+@@ -91,6 +91,7 @@
+ void ieee80211_set11gbasicrates(struct ieee80211_rateset *, enum ieee80211_phymode);
+ enum ieee80211_phymode ieee80211_get11gbasicrates(struct ieee80211_rateset *);
+ void ieee80211_send_pspoll(struct ieee80211_node *);
++void ieee80211_check_mic(struct ieee80211_node *, struct sk_buff *);
+ 
+ /*
+  * Return the size of the 802.11 header for a management or data frame.

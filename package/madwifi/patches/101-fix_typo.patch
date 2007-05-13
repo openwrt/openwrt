@@ -1,0 +1,12 @@
+diff -urN madwifi-ng-refcount-r2313-20070505.old/ath_hal/ah_os.h madwifi-ng-refcount-r2313-20070505.dev/ath_hal/ah_os.h
+--- madwifi-ng-refcount-r2313-20070505.old/ath_hal/ah_os.h	2007-05-04 02:10:06.000000000 +0200
++++ madwifi-ng-refcount-r2313-20070505.dev/ath_hal/ah_os.h	2007-05-13 18:17:55.040201656 +0200
+@@ -149,7 +149,7 @@
+ 	(0x4000 <= (_reg) && (_reg) < 0x5000) ?			\
+ 	 writel((_val), (_ah)->ah_sh + (_reg)) :		\
+ 	 ({__raw_writel((_val), (_ah)->ah_sh + (_reg)); 	\
+-	   mb(); });
++	   mb(); }); \
+ } while (0)
+ #define _OS_REG_READ(_ah, _reg)					\
+ 	((0x4000 <= (_reg) && (_reg) < 0x5000) ?		\
