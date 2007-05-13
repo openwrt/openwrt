@@ -104,8 +104,7 @@ MADWIFI_MAKEOPTS= -C $(PKG_BUILD_DIR) \
 		LDOPTS="--no-warn-mismatch " \
 		ATH_RATE="ath_rate/$(RATE_CONTROL)" \
 		WARNINGS="" \
-		DOMULTI=1 \
-		V=1
+		DOMULTI=1
 
 ifeq ($(findstring AHB,$(BUS)),AHB)
   define Build/Compile/ahb
