@@ -8,10 +8,10 @@ failsafe() {
 	ash --login
 }
 
-[ -e /etc/preinit.arch ] && . /etc/preinit.arch
+mount none /proc -t proc
+mount none /sys  -t sysfs
 
-mount -t proc none /proc
-mount -t sysfs none /sys
+[ -e /etc/preinit.arch ] && . /etc/preinit.arch
 
 set_state preinit
 
