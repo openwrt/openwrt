@@ -9,18 +9,20 @@ diff -urN madwifi-ng-refcount-r2313-20070505.old/ath/if_ath.c madwifi-ng-refcoun
  		}
  		if (status & HAL_INT_BMISS) {
  			sc->sc_stats.ast_bmiss++;
-@@ -2264,6 +2265,15 @@
+@@ -2264,6 +2265,17 @@
  		txq->axq_link = &lastds->ds_link;
  		ath_hal_txstart(ah, txq->axq_qnum);
  		sc->sc_dev->trans_start = jiffies;
-+		if (sc->sc_tx_start) {
-+			if (jiffies > sc->sc_tx_start + 2 * HZ) {
-+				printk("%s: Tx queue stuck. Resetting hardware...\n", sc->sc_dev->name);
-+				ath_reset(sc->sc_dev);
-+				sc->sc_tx_start = 0;
++		if ((sc->sc_opmode == HAL_M_IBSS) || (sc->sc_opmode == HAL_M_HOSTAP)) {
++			if (sc->sc_tx_start) {
++				if (jiffies > sc->sc_tx_start + 2 * HZ) {
++					printk("%s: Tx queue stuck. Resetting hardware...\n", sc->sc_dev->name);
++					ath_reset(sc->sc_dev);
++					sc->sc_tx_start = 0;
++				}
++			} else {
++				sc->sc_tx_start = jiffies;
 +			}
-+		} else {
-+			sc->sc_tx_start = jiffies;
 +		}
  	}
  	ATH_TXQ_UNLOCK(txq);
