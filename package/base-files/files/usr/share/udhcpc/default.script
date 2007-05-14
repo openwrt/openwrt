@@ -28,15 +28,17 @@ case "$1" in
 		netmask ${subnet:-255.255.255.0} \
 		broadcast ${broadcast:-+}
 
-		if [ "$router" != "$(route -n | grep '^0.0.0.0' | grep $interface | awk '{ print $2 }')" ] ; then
-			echo "deleting routers"
-			while route del default gw 0.0.0.0 dev $interface >&- 2>&- ; do :; done
-					
+		[ "$router"] && {
 			for i in $router ; do
 				echo "adding router $i"
 				route add default gw $i dev $interface
+				valid="$valid|$i"
+
 			done
-		fi
+
+			echo "deleting old routes"
+			$(route -n | awk '/^0.0.0.0\W{9}('$valid')\W/ {next} /^0.0.0.0/ {print "route del -net "$1" gw "$2";"}')
+		}
 		
 		[ -n "$dns" ] && {
 			echo -n > $RESOLV_CONF
