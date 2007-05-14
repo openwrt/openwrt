@@ -5,10 +5,10 @@ export PATH=/bin:/sbin:/usr/bin:/usr/sbin
 export HOME=/tmp
 export PS1='\u@\h:\w\$ '
 
-alias more=less
-[ -x /usr/bin/vim ] || alias vim=vi
+[ -x /bin/more ] || alias more=less
+[ -x /usr/bin/vim ] && alias vi=vim || alias vim=vi
 
 [ -z "$KSH_VERSION" -o \! -s /etc/mkshrc ] || . /etc/mkshrc
 
-arp() { cat /proc/net/arp; }
+[ -x /sbin/arp ] || arp() { cat /proc/net/arp; }
 [ -z /bin/ldd ] || ldd() { LD_TRACE_LOADED_OBJECTS=1 $*; }
