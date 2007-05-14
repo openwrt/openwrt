@@ -335,10 +335,8 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 	}
 
 	/* find and size rootfs */
-	if (find_root(mtd,size,&bcm947xx_parts[2])==0) {
-		bcm947xx_parts[2].size = size - bcm947xx_parts[2].offset - 
-				bcm947xx_parts[3].size;
-	}
+	find_root(mtd,size,&bcm947xx_parts[2]);
+	bcm947xx_parts[2].size = size - bcm947xx_parts[2].offset - bcm947xx_parts[3].size;
 
 	return bcm947xx_parts;
 }
