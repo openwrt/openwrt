@@ -1,0 +1,21 @@
+diff -ur busybox.old/networking/udhcp/clientpacket.c busybox.dev/networking/udhcp/clientpacket.c
+--- busybox.old/networking/udhcp/clientpacket.c	2007-03-18 17:59:24.000000000 +0100
++++ busybox.dev/networking/udhcp/clientpacket.c	2007-05-14 16:03:26.698979472 +0200
+@@ -78,6 +78,7 @@
+ int send_discover(unsigned long xid, unsigned long requested)
+ {
+ 	struct dhcpMessage packet;
++	static int msgs = 0;
+ 
+ 	init_packet(&packet, DHCPDISCOVER);
+ 	packet.xid = xid;
+@@ -85,7 +86,8 @@
+ 		add_simple_option(packet.options, DHCP_REQUESTED_IP, requested);
+ 
+ 	add_requests(&packet);
+-	bb_info_msg("Sending discover...");
++	if (msgs++ < 3)
++		bb_info_msg("Sending discover...");
+ 	return udhcp_raw_packet(&packet, INADDR_ANY, CLIENT_PORT, INADDR_BROADCAST,
+ 			SERVER_PORT, MAC_BCAST_ADDR, client_config.ifindex);
+ }
