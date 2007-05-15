@@ -28,7 +28,7 @@ case "$1" in
 		netmask ${subnet:-255.255.255.0} \
 		broadcast ${broadcast:-+}
 
-		[ "$router"] && {
+		[ -n "$router" ] && {
 			for i in $router ; do
 				echo "adding router $i"
 				route add default gw $i dev $interface
