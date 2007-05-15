@@ -19,6 +19,9 @@ define Image/Prepare
 		TARGET="$(KDIR)" \
 		clean install
 	echo -ne "\\x00" >> $(KDIR)/loader.gz
+	rm -f $(KDIR)/fs_mark
+	touch $(KDIR)/fs_mark
+	$(call prepare_generic_squashfs,$(KDIR)/fs_mark)
 endef
 
 ifneq ($(KERNEL),2.4)
@@ -41,22 +44,17 @@ define Image/Build/USR
 endef
 
 define trxalign/jffs2-128k
--a 0x20000
+-a 0x20000 -f $(KDIR)/root.$(1)
 endef
 define trxalign/jffs2-64k
--a 0x10000
+-a 0x10000 -f $(KDIR)/root.$(1)
 endef
 define trxalign/squashfs
--a 1024
-endef
-
-define Image/Build/squashfs
-    $(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
+-a 1024 -f $(KDIR)/root.$(1) -a 0x10000 -A $(KDIR)/fs_mark
 endef
 
 define Image/Build
-	$(call Image/Build/$(1))
-	$(STAGING_DIR)/bin/trx -o $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).trx -f $(KDIR)/loader.gz -f $(KDIR)/vmlinux.lzma $(call trxalign/$(1)) -f $(KDIR)/root.$(1)
+	$(STAGING_DIR)/bin/trx -o $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).trx -f $(KDIR)/loader.gz -f $(KDIR)/vmlinux.lzma $(call trxalign/$(1),$(1)) 
 ifneq ($(1),jffs2-128k)
 	$(call Image/Build/CyberTAN,$(1),wrt54g3g,W54F,2.01.1,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/CyberTAN,$(1),wrt54g,W54G,4.60.1,$(patsubst jffs2-%,jffs2,$(1)))

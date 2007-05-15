@@ -88,7 +88,7 @@ int main(int argc, char **argv)
 	char *ofn = NULL;
 	char *buf;
 	char *e;
-	int c, i;
+	int c, i, append;
 	size_t n;
 	uint32_t cur_len;
 	unsigned long maxlen = TRX_MAX_LEN;
@@ -110,11 +110,15 @@ int main(int argc, char **argv)
 	in = NULL;
 	i = 0;
 
-	while ((c = getopt(argc, argv, "-:o:m:a:b:f:")) != -1) {
+	while ((c = getopt(argc, argv, "-:o:m:a:b:f:A:")) != -1) {
 		switch (c) {
+			case 'A':
+				append = 1;
+				/* fall through */
 			case 'f':
 			case 1:
-				p->offsets[i++] = STORE32_LE(cur_len);
+				if (!append)
+					p->offsets[i++] = STORE32_LE(cur_len);
 
 				if (!(in = fopen(optarg, "r"))) {
 					fprintf(stderr, "can not open \"%s\" for reading\n", optarg);
@@ -134,6 +138,7 @@ int main(int argc, char **argv)
 					n += ROUND - (n & (ROUND-1));
 				}
 				cur_len += n;
+				append = 0;
 
 				break;
 			case 'o':
