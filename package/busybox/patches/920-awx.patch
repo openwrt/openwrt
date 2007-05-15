@@ -98,7 +98,7 @@ diff -purN bb.old/editors/awk.c bb.dev/editors/awk.c
 diff -purN bb.old/editors/awx.c bb.dev/editors/awx.c
 --- bb.old/editors/awx.c	1970-01-01 01:00:00.000000000 +0100
 +++ bb.dev/editors/awx.c	2007-03-14 02:03:50.566202928 +0100
-@@ -0,0 +1,589 @@
+@@ -0,0 +1,590 @@
 +/*
 + * awk web extension
 + *
@@ -323,6 +323,7 @@ diff -purN bb.old/editors/awx.c bb.dev/editors/awx.c
 +	func *f;
 +	var *v, tv;
 +
++	zero_out_var(&tv);
 +	memset(&tmp, 0, sizeof(tmp));
 +	pos = p;
 +	t.lineno = 1;
