@@ -3,6 +3,11 @@ DEVICENAME ~~ (tun|tap[0-9]) {
 	next
 }
 
+DEVICENAME ~~ (controlC[0-9]|pcmC0D0*) {
+        makedev /dev/snd/%DEVICENAME% 0644
+        next
+}
+
 DEVPATH is set {
 	makedev /dev/%DEVICENAME% 0644
 }
