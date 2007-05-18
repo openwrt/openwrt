@@ -391,10 +391,8 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 	}
 
 	/* find and size rootfs */
-	if (find_root(mtd,size,&adm5120_cfe_parts[2])==0) {
-		adm5120_cfe_parts[2].size = size - adm5120_cfe_parts[2].offset -
-				adm5120_cfe_parts[3].size;
-	}
+	find_root(mtd,size,&adm5120_cfe_parts[2]);
+	adm5120_cfe_parts[2].size = size - adm5120_cfe_parts[2].offset - adm5120_cfe_parts[3].size;
 
 	return adm5120_cfe_parts;
 }
