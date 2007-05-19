@@ -473,8 +473,10 @@ static int rc32434_send_packet(struct sk_buff *skb, struct net_device *dev)
 	lp->tx_skb[lp->tx_chain_tail] = skb;
 	
 	length = skb->len;
+	dma_cache_wback((u32)skb->data, skb->len);
 	
 	/* Setup the transmit descriptor. */
+	dma_cache_inv((u32) td, sizeof(*td));
 	td->ca = CPHYSADDR(skb->data);
 	
 	if(__raw_readl(&(lp->tx_dma_regs->dmandptr)) == 0) {
@@ -507,6 +509,7 @@ static int rc32434_send_packet(struct sk_buff *skb, struct net_device *dev)
 			lp->tx_chain_tail = (lp->tx_chain_tail + 1) & RC32434_TDS_MASK;                          /* Move tail */
 		}
 	}
+	dma_cache_wback((u32) td, sizeof(*td));
 	
 	dev->trans_start = jiffies;				
 	
@@ -675,7 +678,8 @@ static void rc32434_rx_tasklet(unsigned long rx_data_dev)
 	unsigned long 	flags;
 	spin_lock_irqsave(&lp->lock, flags);
 #endif
-	
+
+	dma_cache_inv((u32)rd, sizeof(*rd));
 	while ( (count = RC32434_RBSIZE - (u32)DMA_COUNT(rd->control)) != 0) {
 #ifdef CONFIG_IDT_USE_NAPI
 		if(--rx_work_limit <0)
@@ -789,6 +793,7 @@ static void rc32434_rx_tasklet(unsigned long rx_data_dev)
 		lp->rd_ring[(lp->rx_next_done-1)& RC32434_RDS_MASK].control &=  ~(DMAD_cod_m); 	
 		
 		lp->rx_next_done = (lp->rx_next_done + 1) & RC32434_RDS_MASK;
+		dma_cache_wback((u32)rd, sizeof(*rd));
 		rd = &lp->rd_ring[lp->rx_next_done];
 		__raw_writel( ~DMAS_d_m, &lp->rx_dma_regs->dmas);
 	}	
@@ -809,6 +814,7 @@ static void rc32434_rx_tasklet(unsigned long rx_data_dev)
 		rd->devcs = 0;
 		skb = lp->rx_skb[lp->rx_next_done];
 		rd->ca = CPHYSADDR(skb->data);
+		dma_cache_wback((u32)rd, sizeof(*rd));
 		rc32434_chain_rx(lp,rd);
 	}
 	
