@@ -1,0 +1,100 @@
+--- linux-2.6.19.2.orig/arch/mips/Kconfig	2007-05-11 22:08:15.000000000 +0200
++++ linux-2.6.19.2/arch/mips/Kconfig	2007-05-12 18:51:13.000000000 +0200
+@@ -818,6 +818,10 @@
+ 	bool
+ 	default y
+ 
++config GENERIC_GPIO
++	bool
++	default n
++
+ config SCHED_NO_NO_OMIT_FRAME_POINTER
+ 	bool
+ 	default y
+--- linux-2.6.19.2.orig/include/asm-generic/gpio.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.2/include/asm-generic/gpio.h	2007-03-18 17:17:10.000000000 +0100
+@@ -0,0 +1,25 @@
++#ifndef _ASM_GENERIC_GPIO_H
++#define _ASM_GENERIC_GPIO_H
++
++/* platforms that don't directly support access to GPIOs through I2C, SPI,
++ * or other blocking infrastructure can use these wrappers.
++ */
++
++static inline int gpio_cansleep(unsigned gpio)
++{
++	return 0;
++}
++
++static inline int gpio_get_value_cansleep(unsigned gpio)
++{
++	might_sleep();
++	return gpio_get_value(gpio);
++}
++
++static inline void gpio_set_value_cansleep(unsigned gpio, int value)
++{
++	might_sleep();
++	gpio_set_value(gpio, value);
++}
++
++#endif /* _ASM_GENERIC_GPIO_H */
+--- linux-2.6.19.2.orig/include/asm-mips/gpio.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.2/include/asm-mips/gpio.h	2007-03-18 17:17:10.000000000 +0100
+@@ -0,0 +1,6 @@
++#ifndef _ASM_MIPS_GPIO_H
++#define _ASM_MIPS_GPIO_H
++
++#include <gpio.h>
++
++#endif /* _ASM_MIPS_GPIO_H */
+--- linux-2.6.19.2.orig/arch/mips/Kconfig	2007-05-11 22:08:15.000000000 +0200
++++ linux-2.6.19.2/arch/mips/Kconfig	2007-05-12 18:51:13.000000000 +0200
+@@ -818,6 +818,10 @@
+ 	bool
+ 	default y
+ 
++config GENERIC_GPIO
++	bool
++	default n
++
+ config SCHED_NO_NO_OMIT_FRAME_POINTER
+ 	bool
+ 	default y
+--- linux-2.6.19.2.orig/include/asm-generic/gpio.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.2/include/asm-generic/gpio.h	2007-03-18 17:17:10.000000000 +0100
+@@ -0,0 +1,25 @@
++#ifndef _ASM_GENERIC_GPIO_H
++#define _ASM_GENERIC_GPIO_H
++
++/* platforms that don't directly support access to GPIOs through I2C, SPI,
++ * or other blocking infrastructure can use these wrappers.
++ */
++
++static inline int gpio_cansleep(unsigned gpio)
++{
++	return 0;
++}
++
++static inline int gpio_get_value_cansleep(unsigned gpio)
++{
++	might_sleep();
++	return gpio_get_value(gpio);
++}
++
++static inline void gpio_set_value_cansleep(unsigned gpio, int value)
++{
++	might_sleep();
++	gpio_set_value(gpio, value);
++}
++
++#endif /* _ASM_GENERIC_GPIO_H */
+--- linux-2.6.19.2.orig/include/asm-mips/gpio.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.19.2/include/asm-mips/gpio.h	2007-03-18 17:17:10.000000000 +0100
+@@ -0,0 +1,6 @@
++#ifndef _ASM_MIPS_GPIO_H
++#define _ASM_MIPS_GPIO_H
++
++#include <gpio.h>
++
++#endif /* _ASM_MIPS_GPIO_H */
