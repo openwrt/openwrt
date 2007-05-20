@@ -716,7 +716,12 @@ static int __init adm5120hcd_probe(struct platform_device *pdev)
 
 	data = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	addr = platform_get_resource(pdev, IORESOURCE_MEM, 1);
-	irq = platform_get_irq(pdev, 0);
+
+	if (request_irq(data.start, adm5120hcd_irq, 0, hcd_name, hcd)) {
+		printk(KERN_WARNING "Could not request IRQ\n");
+		err = -EBUSY;
+		goto out;
+	}
 
 	if (!addr || !data || irq < 0) {
 		err = -ENODEV;
