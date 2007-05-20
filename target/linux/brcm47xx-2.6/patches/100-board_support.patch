@@ -12,7 +12,7 @@ diff -urN linux.old/arch/mips/Kconfig linux.dev/arch/mips/Kconfig
  mainmenu "Linux/MIPS Kernel Configuration"
  
  menu "Machine selection"
-@@ -222,6 +226,22 @@
+@@ -222,6 +226,23 @@
  	 Members include the Acer PICA, MIPS Magnum 4000, MIPS Millenium and
  	 Olivetti M700-10 workstations.
  
@@ -29,6 +29,7 @@ diff -urN linux.old/arch/mips/Kconfig linux.dev/arch/mips/Kconfig
 +	select SSB_DRIVER_PCICORE
 +	select SSB_PCICORE_HOSTMODE
 +	select CFE
++	select GENERIC_GPIO
 +	help
 +	 Support for BCM947xx based boards
 +
