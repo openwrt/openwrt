@@ -52,6 +52,16 @@ extern unsigned int adm5120_package;
 
 extern void adm5120_info_init(void);
 
+static inline int adm5120_package_pqfp(void)
+{
+	return (adm5120_package == ADM5120_PACKAGE_PQFP);
+}
+
+static inline int adm5120_package_bga(void)
+{
+	return (adm5120_package == ADM5120_PACKAGE_BGA);
+}
+
 static inline int adm5120_has_pci(void)
 {
 	return (adm5120_package == ADM5120_PACKAGE_BGA);

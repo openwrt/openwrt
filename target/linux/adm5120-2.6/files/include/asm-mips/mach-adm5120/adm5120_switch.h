@@ -85,5 +85,37 @@
 #define CODE_PK_BGA		0		/* BGA package */
 #define CODE_PK_PQFP		1		/* PQFP package */
 
+/* GPIO_CONF0 register bits */
+#define GPIO_CONF0_MASK		BITMASK(8)
+#define GPIO_CONF0_IM_SHIFT	0
+#define GPIO_CONF0_IV_SHIFT	8
+#define GPIO_CONF0_OE_SHIFT	16
+#define GPIO_CONF0_OV_SHIFT	24
+#define GPIO_CONF0_IM_MASK	(0xFF << GPIO_CONF0_IM_SHIFT)
+#define GPIO_CONF0_IV_MASK	(0xFF << GPIO_CONF0_IV_SHIFT)
+#define GPIO_CONF0_OE_MASK	(0xFF << GPIO_CONF0_OE_SHIFT)
+#define GPIO_CONF0_OV_MASK	(0xFF << GPIO_CONF0_OV_SHIFT)
+
+/* PORTx_LED register bits */
+#define LED_MODE_MASK		BITMASK(4)
+#define LED_MODE_INPUT		0
+#define LED_MODE_FLASH		1
+#define LED_MODE_OUT_HIGH	2
+#define LED_MODE_OUT_LOW	3
+#define LED_MODE_LINK		4
+#define LED_MODE_SPEED		5
+#define LED_MODE_DUPLEX		6
+#define LED_MODE_ACT		7
+#define LED_MODE_COLL		8
+#define LED_MODE_LINK_ACT	9
+#define LED_MODE_DUPLEX_COLL	10
+#define LED_MODE_10M_ACT	11
+#define LED_MODE_100M_ACT	12
+#define LED0_MODE_SHIFT		0	/* LED0 mode shift */
+#define LED1_MODE_SHIFT		4	/* LED1 mode shift */
+#define LED2_MODE_SHIFT		8	/* LED2 mode shift */
+#define LED0_IV_SHIFT		12	/* LED0 input value shift */
+#define LED1_IV_SHIFT		13	/* LED1 input value shift */
+#define LED2_IV_SHIFT		14	/* LED2 input value shift */
 
 #endif /* _ADM5120_SWITCH_H */
