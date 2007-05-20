@@ -50,6 +50,9 @@
 #include <asm/addrspace.h>	/* for KSEG1ADDR() */
 #include <asm/idt-boards/rc32434/rc32434.h>
 #include <linux/pm.h>
+#include <linux/platform_device.h>
+#include <linux/mtd/partitions.h>
+#include <linux/mtd/physmap.h>
 
 extern char *__init prom_getcmdline(void);
 
@@ -84,7 +87,57 @@ static void aruba_machine_halt(void)
 }
 
 extern char * getenv(char *e);
+
 extern void unlock_ap60_70_flash(void);
+
+static struct resource aruba_flash_resource = {
+	.start = 0x1fc00000,
+	.end   = 0x1fffffffULL,
+	.flags = IORESOURCE_MEM,
+};
+
+static struct mtd_partition aruba_flash_parts[] = {
+	{
+		.name = "kernel",
+		.offset = 0x80000,
+		.size = 0x370000,
+	},
+	{
+		.name = "rootfs",
+		.offset = 0x140000,
+		.size = 0x2B0000,
+	},
+	{
+		.name = "NVRAM",
+		.offset = 0x3f8000,
+		.size = 0x2000,
+	}
+};
+
+static struct physmap_flash_data aruba_flash_data = {
+	.width		= 1,
+	.parts		= aruba_flash_parts,
+	.nr_parts	= ARRAY_SIZE(aruba_flash_parts),
+};
+
+static struct platform_device aruba_flash_device = {
+	.name		= "physmap-flash",
+	.id		= 0,
+	.dev = {
+			.platform_data = &aruba_flash_data,
+		},
+	.num_resources	= 1,
+	.resource	= &aruba_flash_resource,
+};
+
+static int aruba_setup_flash(void)
+{
+	platform_device_register(&aruba_flash_device);
+
+	return 0;
+};
+
+arch_initcall (aruba_setup_flash);
 
 void __init plat_mem_setup(void)
 {

@@ -57,9 +57,7 @@ unsigned int arch_has_pci=0;
 
 /* Kernel Boot parameters */
 static unsigned char bootparm[] = 
-	"init=/etc/preinit noinitrd "
-	"mtdparts=physmap-flash.0:3520k@0x080000(kernel),2752k@0x140000(rootfs),8k@0x3f8000(NVRAM) "
-	"console=ttyS0,9600 root=/dev/mtdblock1 rootfstype=squashfs,jffs2 ";
+	"root=/dev/mtdblock1 rootfstype=squashfs,jffs2 noinitrd console=ttyS0,9600 init=/etc/preinit";
 
 extern unsigned long mips_machgroup;
 extern unsigned long mips_machtype;
