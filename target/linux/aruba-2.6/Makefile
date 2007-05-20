@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=mips
 BOARD:=aruba
 BOARDNAME:=Aruba
-FEATURES:=jffs2
+FEATURES:=squashfs jffs2
 
 define Target/Description
 	Build firmware images for Aruba boards

@@ -31,9 +31,16 @@ define Image/BuildKernel
 endef
 
 define Image/Build/jffs2-64k
-	@dd if=$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL).ari of=$(KDIR)/image.tmp bs=655360 conv=sync
+	@dd if=$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL).ari of=$(KDIR)/image.tmp bs=786432 conv=sync
 	@cat $(KDIR)/root.$(1) >> $(KDIR)/image.tmp
 	mv $(KDIR)/image.tmp $(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(patsubst jffs2-%,jffs2,$(1)).bin
+endef
+
+define Image/Build/squashfs
+	@dd if=$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL).ari of=$(KDIR)/image.tmp bs=786432 conv=sync
+	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
+	@cat $(KDIR)/root.$(1) >> $(KDIR)/image.tmp
+	@dd if=$(KDIR)/image.tmp of=$(BIN_DIR)/openwrt-$(BOARD)-$(KERNEL)-$(1).bin bs=64k conv=sync
 endef
 
 define Image/Build
