@@ -375,9 +375,7 @@ diff -purN bb.old/editors/awx.c bb.dev/editors/awx.c
 +	}
 +	if (initseq && initseq->first)
 +		tv = evaluate(initseq->first, tv);
-+	fprintf(stderr, "DEBUG: %s(%d)\\n", __func__, __LINE__);
 +	nvfree(tv);
-+	fprintf(stderr, "DEBUG: %s(%d)\\n", __func__, __LINE__);
 +}
 +
 +
@@ -774,7 +772,7 @@ diff -purN bb.old/editors/awx_parser.h bb.dev/editors/awx_parser.h
 diff -purN bb.old/editors/awx_parser.l bb.dev/editors/awx_parser.l
 --- bb.old/editors/awx_parser.l	1970-01-01 01:00:00.000000000 +0100
 +++ bb.dev/editors/awx_parser.l	2007-05-20 22:30:31.380512280 +0200
-@@ -0,0 +1,302 @@
+@@ -0,0 +1,300 @@
 +%{
 +#include <stdio.h>
 +#include <string.h>
