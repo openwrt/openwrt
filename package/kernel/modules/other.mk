@@ -330,7 +330,7 @@ define KernelPackage/scx200-wdt
   SUBMENU:=$(EMENU)
   KCONFIG:=$(CONFIG_SC1200_WDT)
   FILES:=$(LINUX_DIR)/drivers/char/watchdog/scx200_wdt.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,50,scx200_wt)
+  AUTOLOAD:=$(call AutoLoad,50,scx200_wdt)
 endef
 $(eval $(call KernelPackage,scx200-wdt))
 
