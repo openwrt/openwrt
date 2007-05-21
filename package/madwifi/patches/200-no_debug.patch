@@ -34,12 +34,12 @@ diff -urN madwifi-ng-refcount-r2313-20070505.old/ath_rate/amrr/amrr.c madwifi-ng
 diff -urN madwifi-ng-refcount-r2313-20070505.old/ath_rate/minstrel/minstrel.c madwifi-ng-refcount-r2313-20070505.dev/ath_rate/minstrel/minstrel.c
 --- madwifi-ng-refcount-r2313-20070505.old/ath_rate/minstrel/minstrel.c	2007-05-13 18:17:55.605115776 +0200
 +++ madwifi-ng-refcount-r2313-20070505.dev/ath_rate/minstrel/minstrel.c	2007-05-13 18:17:56.458985968 +0200
-@@ -117,7 +117,7 @@
+@@ -116,7 +116,7 @@
+ 
  #include "minstrel.h"
  
- /* XXX: Use standard debug functions */
--#define	MINSTREL_DEBUG 10
-+#undef	MINSTREL_DEBUG
+-#define	MINSTREL_DEBUG 
++#undef	MINSTREL_DEBUG 
  #ifdef MINSTREL_DEBUG
  enum {
  	ATH_DEBUG_RATE		= 0x00000010	/* rate control */
@@ -104,16 +104,14 @@ diff -urN madwifi-ng-refcount-r2313-20070505.old/net80211/ieee80211_proto.h madw
 diff -urN madwifi-ng-refcount-r2313-20070505.old/net80211/ieee80211_var.h madwifi-ng-refcount-r2313-20070505.dev/net80211/ieee80211_var.h
 --- madwifi-ng-refcount-r2313-20070505.old/net80211/ieee80211_var.h	2007-05-13 18:17:56.107039472 +0200
 +++ madwifi-ng-refcount-r2313-20070505.dev/net80211/ieee80211_var.h	2007-05-13 18:17:56.461985512 +0200
-@@ -35,8 +35,8 @@
- #ifndef _NET80211_IEEE80211_VAR_H_
- #define _NET80211_IEEE80211_VAR_H_
- 
+@@ -37,7 +37,7 @@
+ /*
+  * Definitions for IEEE 802.11 drivers.
+  */
 -#define	IEEE80211_DEBUG
--#define	IEEE80211_DEBUG_REFCNT			/* Node reference count debugging */
 +#undef	IEEE80211_DEBUG
-+#undef	IEEE80211_DEBUG_REFCNT			/* Node reference count debugging */
+ #undef	IEEE80211_DEBUG_REFCNT			/* node refcnt stuff */
  
- /* Definitions for IEEE 802.11 drivers. */
  #include <net80211/ieee80211_linux.h>
 diff -urN madwifi-ng-refcount-r2313-20070505.old/tools/do_multi.c madwifi-ng-refcount-r2313-20070505.dev/tools/do_multi.c
 --- madwifi-ng-refcount-r2313-20070505.old/tools/do_multi.c	2007-05-13 18:17:55.192178552 +0200
