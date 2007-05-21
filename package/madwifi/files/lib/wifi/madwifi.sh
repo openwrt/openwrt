@@ -14,7 +14,7 @@ scan_atheros() {
 		
 		config_get mode "$vif" mode
 		case "$mode" in
-			adhoc|sta|ap)
+			adhoc|ahdemo|sta|ap)
 				append $mode "$vif"
 			;;
 			wds)
@@ -42,7 +42,7 @@ scan_atheros() {
 		*) echo "$device: Invalid mode combination in config"; return 1;;
 	esac
 
-	config_set "$device" vifs "${ap:+$ap }${adhoc:+$adhoc }${sta:+$sta }${wds:+$wds }"
+	config_set "$device" vifs "${ap:+$ap }${adhoc:+$adhoc }${ahdemo:+$ahdemo }${sta:+$sta }${wds:+$wds }"
 }
 
 
@@ -142,7 +142,7 @@ enable_atheros() {
 				config_get addr "$vif" bssid
 				iwpriv "$ifname" wds_add "$addr"
 			;;
-			adhoc)
+			adhoc|ahdemo)
 				config_get addr "$vif" bssid
 				[ -z "$addr" ] || { 
 					iwconfig "$ifname" ap "$addr"
