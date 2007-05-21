@@ -1,23 +1,13 @@
 diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
---- madwifi.old/ath/if_ath.c	2007-05-15 16:26:02.721036296 +0200
-+++ madwifi.dev/ath/if_ath.c	2007-05-20 21:33:53.269103736 +0200
-@@ -1711,6 +1711,7 @@
- 			} 
- #endif
- 			ATH_SCHEDULE_TQUEUE(&sc->sc_txtq, &needmark);
-+			sc->sc_tx_start = 0;
- 		}
- 		if (status & HAL_INT_BMISS) {
- 			sc->sc_stats.ast_bmiss++;
-@@ -2261,11 +2262,25 @@
+--- madwifi.old/ath/if_ath.c	2007-05-21 05:40:18.320301560 +0200
++++ madwifi.dev/ath/if_ath.c	2007-05-21 05:49:40.132893064 +0200
+@@ -2264,6 +2264,17 @@
  		txq->axq_link = &lastds->ds_link;
  		ath_hal_txstart(ah, txq->axq_qnum);
  		sc->sc_dev->trans_start = jiffies;
 +		if ((sc->sc_opmode == HAL_M_IBSS) || (sc->sc_opmode == HAL_M_HOSTAP)) {
-+			unsigned long last;
-+			last = sc->sc_tx_start;
-+			if (last) {
-+				if (jiffies > last + 2 * HZ) {
++			if (sc->sc_tx_start && (ath_hal_numtxpending(ah, txq->axq_num) > 2)) {
++				if (jiffies > sc->sc_tx_start + 2 * HZ) {
 +					printk("%s: Tx queue stuck. Resetting hardware...\n", sc->sc_dev->name);
 +					ath_reset(sc->sc_dev);
 +					sc->sc_tx_start = 0;
@@ -29,24 +19,17 @@ diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
  	}
  	ATH_TXQ_UNLOCK(txq);
  
- 	sc->sc_devstats.tx_packets++;
- 	sc->sc_devstats.tx_bytes += framelen;
-+	sc->sc_tx_start = 0;
- }
- 
- static int 
-@@ -7272,7 +7287,7 @@
- 		DPRINTF(sc, ATH_DEBUG_UAPSD, "%s: reaping U-APSD txq\n", __func__);
- 		uapsdq = 1;
- 	}
--
-+	
- 	for (;;) {
- 		if (uapsdq)
- 			ATH_TXQ_UAPSDQ_LOCK_IRQ(txq);
+@@ -7299,6 +7310,7 @@
+ #else
+ 		ds = bf->bf_desc;		/* NB: last descriptor */
+ #endif
++		sc->sc_tx_start = 0;
+ 		status = ath_hal_txprocdesc(ah, ds);
+ #ifdef AR_DEBUG
+ 		if (sc->sc_debug & ATH_DEBUG_XMIT_DESC)
 diff -ur madwifi.old/ath/if_athvar.h madwifi.dev/ath/if_athvar.h
 --- madwifi.old/ath/if_athvar.h	2007-05-04 23:09:29.000000000 +0200
-+++ madwifi.dev/ath/if_athvar.h	2007-05-15 16:26:28.911054808 +0200
++++ madwifi.dev/ath/if_athvar.h	2007-05-21 05:40:32.958076280 +0200
 @@ -689,6 +689,14 @@
  #endif
  	u_int sc_slottimeconf;			/* manual override for slottime */
