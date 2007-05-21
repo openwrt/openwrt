@@ -1,20 +1,20 @@
-diff -urN madwifi-ng-refcount-r2313-20070505.old/ath/if_ath.c madwifi-ng-refcount-r2313-20070505.dev/ath/if_ath.c
---- madwifi-ng-refcount-r2313-20070505.old/ath/if_ath.c	2007-05-13 18:17:55.691102704 +0200
-+++ madwifi-ng-refcount-r2313-20070505.dev/ath/if_ath.c	2007-05-13 18:17:55.783088720 +0200
-@@ -5704,7 +5704,8 @@
+diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
+--- madwifi.old/ath/if_ath.c	2007-05-21 07:33:42.392925296 +0200
++++ madwifi.dev/ath/if_ath.c	2007-05-21 07:35:51.933232176 +0200
+@@ -5660,7 +5660,8 @@
  		 * frame; it'll be dropped where it's not wanted.
  		 */
- 		if (ds->ds_rxstat.rs_keyix != HAL_RXKEYIX_INVALID &&
--		    (ni = sc->sc_keyixmap[ds->ds_rxstat.rs_keyix]) != NULL) {
-+		    (ni = sc->sc_keyixmap[ds->ds_rxstat.rs_keyix]) != NULL &&
-+		    ieee80211_check_rxnode(ni, (const struct ieee80211_frame_min *) skb->data)) {
+ 		if (rs->rs_keyix != HAL_RXKEYIX_INVALID &&
+-		    (ni = sc->sc_keyixmap[rs->rs_keyix]) != NULL) {
++		    ((ni = sc->sc_keyixmap[rs->rs_keyix]) != NULL) &&
++			ieee80211_check_rxnode(ni, (const struct ieee80211_frame_min *) skb->data)) {
  			struct ath_node *an;
  			/*
  			 * Fast path: node is present in the key map;
-diff -urN madwifi-ng-refcount-r2313-20070505.old/net80211/ieee80211_node.c madwifi-ng-refcount-r2313-20070505.dev/net80211/ieee80211_node.c
---- madwifi-ng-refcount-r2313-20070505.old/net80211/ieee80211_node.c	2007-05-13 18:17:55.773090240 +0200
-+++ madwifi-ng-refcount-r2313-20070505.dev/net80211/ieee80211_node.c	2007-05-13 18:17:55.784088568 +0200
-@@ -1268,8 +1268,6 @@
+diff -ur madwifi.old/net80211/ieee80211_node.c madwifi.dev/net80211/ieee80211_node.c
+--- madwifi.old/net80211/ieee80211_node.c	2007-05-21 07:33:42.371928488 +0200
++++ madwifi.dev/net80211/ieee80211_node.c	2007-05-21 07:34:13.689167544 +0200
+@@ -1272,8 +1272,6 @@
  	IEEE80211_NODE_TABLE_UNLOCK_IRQ(nt);
  
  	return ni;
@@ -23,7 +23,7 @@ diff -urN madwifi-ng-refcount-r2313-20070505.old/net80211/ieee80211_node.c madwi
  }
  #ifdef IEEE80211_DEBUG_REFCNT
  EXPORT_SYMBOL(ieee80211_find_rxnode_debug);
-@@ -1277,6 +1275,20 @@
+@@ -1281,6 +1279,20 @@
  EXPORT_SYMBOL(ieee80211_find_rxnode);
  #endif
  
@@ -44,10 +44,10 @@ diff -urN madwifi-ng-refcount-r2313-20070505.old/net80211/ieee80211_node.c madwi
  /*
   * Return a reference to the appropriate node for sending
   * a data frame.  This handles node discovery in adhoc networks.
-diff -urN madwifi-ng-refcount-r2313-20070505.old/net80211/ieee80211_node.h madwifi-ng-refcount-r2313-20070505.dev/net80211/ieee80211_node.h
---- madwifi-ng-refcount-r2313-20070505.old/net80211/ieee80211_node.h	2007-04-04 04:39:58.000000000 +0200
-+++ madwifi-ng-refcount-r2313-20070505.dev/net80211/ieee80211_node.h	2007-05-13 18:17:55.784088568 +0200
-@@ -318,6 +318,8 @@
+diff -ur madwifi.old/net80211/ieee80211_node.h madwifi.dev/net80211/ieee80211_node.h
+--- madwifi.old/net80211/ieee80211_node.h	2007-05-21 07:33:42.372928336 +0200
++++ madwifi.dev/net80211/ieee80211_node.h	2007-05-21 07:34:13.689167544 +0200
+@@ -317,6 +317,8 @@
  	*pni = NULL;			/* guard against use */
  }
  
