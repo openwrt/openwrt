@@ -148,10 +148,8 @@ enable_atheros() {
 					iwconfig "$ifname" ap "$addr"
 				}
 			;;
-			*)
-				config_get ssid "$vif" ssid
-			;;
 		esac
+		config_get ssid "$vif" ssid
 
 		[ "$mode" = "sta" ] && {
 			config_get_bool bgscan "$vif" bgscan 1
