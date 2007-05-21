@@ -66,7 +66,7 @@ diff -urN madwifi-ng-refcount-r2313-20070505.old/ath/if_ath.c madwifi-ng-refcoun
  	 * pass it on to the hardware.
  	 */
 -	ATH_TXQ_LOCK(txq);
-+	ATH_TXQ_LOCK_BH(txq);
++	ATH_TXQ_LOCK_IRQ(txq);
  	if (ni && ni->ni_vap && txq == &ATH_VAP(ni->ni_vap)->av_mcastq) {
  		/*
  		 * The CAB queue is started from the SWBA handler since
@@ -89,7 +89,7 @@ diff -urN madwifi-ng-refcount-r2313-20070505.old/ath/if_ath.c madwifi-ng-refcoun
  		}
  	}
 -	ATH_TXQ_UNLOCK(txq);
-+	ATH_TXQ_UNLOCK_BH(txq);
++	ATH_TXQ_UNLOCK_IRQ(txq);
  
  	sc->sc_devstats.tx_packets++;
  	sc->sc_devstats.tx_bytes += framelen;
