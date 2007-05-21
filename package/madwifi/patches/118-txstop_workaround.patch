@@ -6,7 +6,7 @@ diff -ur madwifi.old/ath/if_ath.c madwifi.dev/ath/if_ath.c
  		ath_hal_txstart(ah, txq->axq_qnum);
  		sc->sc_dev->trans_start = jiffies;
 +		if ((sc->sc_opmode == HAL_M_IBSS) || (sc->sc_opmode == HAL_M_HOSTAP)) {
-+			if (sc->sc_tx_start && (ath_hal_numtxpending(ah, txq->axq_num) > 2)) {
++			if (sc->sc_tx_start && (ath_hal_numtxpending(ah, txq->axq_qnum) > 2)) {
 +				if (jiffies > sc->sc_tx_start + 2 * HZ) {
 +					printk("%s: Tx queue stuck. Resetting hardware...\n", sc->sc_dev->name);
 +					ath_reset(sc->sc_dev);
