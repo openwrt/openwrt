@@ -1,0 +1,13 @@
+diff -ur madwifi.old/ath_rate/minstrel/minstrel.c madwifi.dev/ath_rate/minstrel/minstrel.c
+--- madwifi.old/ath_rate/minstrel/minstrel.c	2007-05-18 13:19:16.000000000 +0200
++++ madwifi.dev/ath_rate/minstrel/minstrel.c	2007-05-21 09:38:03.102725008 +0200
+@@ -388,6 +388,9 @@
+ 	int rc1, rc2, rc3;         /* Index into the rate table, so for example, it is  0..11 */
+ 	int rixc1, rixc2, rixc3;   /* The actual bit rate used */
+ 
++	if (sn->num_rates <= 0)
++		return;
++
+ 	if (sn->is_sampling) {
+ 		rc1 = sn->max_tp_rate;
+ 		sn->is_sampling = 0;
