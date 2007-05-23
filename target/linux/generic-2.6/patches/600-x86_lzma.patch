@@ -695,47 +695,136 @@ diff -Nur linux-2.6.21.1/arch/i386/boot/compressed/LzmaDecode.h linux-2.6.21.1-o
 diff -Nur linux-2.6.21.1/arch/i386/boot/compressed/lzma_misc.c linux-2.6.21.1-owrt/arch/i386/boot/compressed/lzma_misc.c
 --- linux-2.6.21.1/arch/i386/boot/compressed/lzma_misc.c	1970-01-01 01:00:00.000000000 +0100
 +++ linux-2.6.21.1-owrt/arch/i386/boot/compressed/lzma_misc.c	2007-05-14 11:55:38.000000000 +0200
-@@ -0,0 +1,412 @@
+@@ -0,0 +1,374 @@
 +/*
 + * lzma_misc.c
++ * 
++ * malloc by Hannu Savolainen 1993 and Matthias Urlichs 1994
++ * puts by Nick Holloway 1993, better puts by Martin Mares 1995
++ * High loaded stuff by Hans Lermen & Werner Almesberger, Feb. 1996
 + * 
 + * Decompress LZMA compressed vmlinuz 
 + * Version 0.9 Copyright (c) Ming-Ching Tiew mctiew@yahoo.com
 + * Program adapted from misc.c for 2.6 kernel
-+ * Date: 3 June 2005 
-+ * Source released under GPL
++ * Forward ported to latest 2.6 version of misc.c by
++ * Felix Fietkau <nbd@openwrt.org>
 + */
 +
++#undef CONFIG_PARAVIRT
 +#include <linux/linkage.h>
 +#include <linux/vmalloc.h>
-+#include <linux/tty.h>
 +#include <linux/screen_info.h>
 +#include <asm/io.h>
++#include <asm/page.h>
++#include <asm/boot.h>
++
++/* WARNING!!
++ * This code is compiled with -fPIC and it is relocated dynamically
++ * at run time, but no relocation processing is performed.
++ * This means that it is not safe to place pointers in static structures.
++ */
++
++/*
++ * Getting to provable safe in place decompression is hard.
++ * Worst case behaviours need to be analized.
++ * Background information:
++ *
++ * The file layout is:
++ *    magic[2]
++ *    method[1]
++ *    flags[1]
++ *    timestamp[4]
++ *    extraflags[1]
++ *    os[1]
++ *    compressed data blocks[N]
++ *    crc[4] orig_len[4]
++ *
++ * resulting in 18 bytes of non compressed data overhead.
++ *
++ * Files divided into blocks
++ * 1 bit (last block flag)
++ * 2 bits (block type)
++ *
++ * 1 block occurs every 32K -1 bytes or when there 50% compression has been achieved.
++ * The smallest block type encoding is always used.
++ *
++ * stored:
++ *    32 bits length in bytes.
++ *
++ * fixed:
++ *    magic fixed tree.
++ *    symbols.
++ *
++ * dynamic:
++ *    dynamic tree encoding.
++ *    symbols.
++ *
++ *
++ * The buffer for decompression in place is the length of the
++ * uncompressed data, plus a small amount extra to keep the algorithm safe.
++ * The compressed data is placed at the end of the buffer.  The output
++ * pointer is placed at the start of the buffer and the input pointer
++ * is placed where the compressed data starts.  Problems will occur
++ * when the output pointer overruns the input pointer.
++ *
++ * The output pointer can only overrun the input pointer if the input
++ * pointer is moving faster than the output pointer.  A condition only
++ * triggered by data whose compressed form is larger than the uncompressed
++ * form.
++ *
++ * The worst case at the block level is a growth of the compressed data
++ * of 5 bytes per 32767 bytes.
++ *
++ * The worst case internal to a compressed block is very hard to figure.
++ * The worst case can at least be boundined by having one bit that represents
++ * 32764 bytes and then all of the rest of the bytes representing the very
++ * very last byte.
++ *
++ * All of which is enough to compute an amount of extra data that is required
++ * to be safe.  To avoid problems at the block level allocating 5 extra bytes
++ * per 32767 bytes of data is sufficient.  To avoind problems internal to a block
++ * adding an extra 32767 bytes (the worst case uncompressed block size) is
++ * sufficient, to ensure that in the worst case the decompressed data for
++ * block will stop the byte before the compressed data for a block begins.
++ * To avoid problems with the compressed data's meta information an extra 18
++ * bytes are needed.  Leading to the formula:
++ *
++ * extra_bytes = (uncompressed_size >> 12) + 32768 + 18 + decompressor_size.
++ *
++ * Adding 8 bytes per 32K is a bit excessive but much easier to calculate.
++ * Adding 32768 instead of 32767 just makes for round numbers.
++ * Adding the decompressor_size is necessary as it musht live after all
++ * of the data as well.  Last I measured the decompressor is about 14K.
++ * 10K of actuall data and 4K of bss.
++ *
++ */
++
++/*
++ * gzip declarations
++ */
 +
 +#define OF(args)  args
 +#define STATIC static
 +
-+#undef memset
 +#undef memcpy
-+
-+/*
-+ * Why do we do this? Don't ask me..
-+ *
-+ * Incomprehensible are the ways of bootloaders.
-+ */
-+static void* memcpy(void *, __const void *, size_t);
 +
 +typedef unsigned char  uch;
 +typedef unsigned short ush;
 +typedef unsigned long  ulg;
 +
-+#define WSIZE 0x8000		/* Window size must be at least 32k, */
-+				/* and a power of two */
++#define WSIZE 0x80000000	/* Window size must be at least 32k,
++				 * and a power of two
++				 * We don't actually have a window just
++				 * a huge output buffer so I report
++				 * a 2G windows size, as that should
++				 * always be larger than our output buffer.
++				 */
 +
-+static uch *inbuf;	     /* input buffer */
++static uch *inbuf;	/* input buffer */
++static uch *window;	/* Sliding window buffer, (and final output buffer) */
 +
-+static unsigned insize = 0;  /* valid bytes in inbuf */
-+static unsigned inptr = 0;   /* index of next byte to be processed in inbuf */
++static unsigned insize;  /* valid bytes in inbuf */
++static unsigned inptr;   /* index of next byte to be processed in inbuf */
 +
 +#define get_byte()  (inptr < insize ? inbuf[inptr++] : fill_inbuf())
 +		
@@ -757,7 +846,6 @@ diff -Nur linux-2.6.21.1/arch/i386/boot/compressed/lzma_misc.c linux-2.6.21.1-ow
 +#endif
 +
 +static int  fill_inbuf(void);
-+static void error(char *m);
 +  
 +/*
 + * This is set up by the setup-routine at boot-time
@@ -770,30 +858,23 @@ diff -Nur linux-2.6.21.1/arch/i386/boot/compressed/lzma_misc.c linux-2.6.21.1-ow
 +#endif
 +#define RM_SCREEN_INFO (*(struct screen_info *)(real_mode+0))
 +
-+extern char input_data[];
++extern unsigned char input_data[];
 +extern int input_len;
 +
-+static long bytes_out = 0;
-+static uch *output_data;
++static void error(char *x);
++static void *memcpy(void *dest, const void *src, unsigned n);
 +
 +static void putstr(const char *);
-+
-+extern int _end;
-+static long free_mem_ptr = (long)&_end;
-+static long free_mem_end_ptr;
-+
-+#define INPLACE_MOVE_ROUTINE  0x1000
-+#define LOW_BUFFER_START      0x2000
-+#define LOW_BUFFER_MAX       0x90000
-+#define HEAP_SIZE             0x3000
-+static unsigned int low_buffer_end, low_buffer_size;
-+static int high_loaded =0;
-+static uch *high_buffer_start /* = (uch *)(((ulg)&_end) + HEAP_SIZE)*/;
 +
 +static char *vidmem = (char *)0xb8000;
 +static int vidport;
 +static int lines, cols;
 +
++#ifdef CONFIG_X86_NUMAQ
++void *xquad_portio;
++#endif
++
++ 
 +static void scroll(void)
 +{
 +	int i;
@@ -819,7 +900,7 @@ diff -Nur linux-2.6.21.1/arch/i386/boot/compressed/lzma_misc.c linux-2.6.21.1-ow
 +				y--;
 +			}
 +		} else {
-+			vidmem [ ( x + cols * y ) * 2 ] = c; 
++			vidmem [ ( x + cols * y ) * 2 ] = c;
 +			if ( ++x >= cols ) {
 +				x = 0;
 +				if ( ++y >= lines ) {
@@ -840,14 +921,13 @@ diff -Nur linux-2.6.21.1/arch/i386/boot/compressed/lzma_misc.c linux-2.6.21.1-ow
 +	outb_p(0xff & (pos >> 1), vidport+1);
 +}
 +
-+static void* memcpy(void* __dest, __const void* __src,
-+			    size_t __n)
++static void* memcpy(void* dest, const void* src, unsigned n)
 +{
 +	int i;
-+	char *d = (char *)__dest, *s = (char *)__src;
++	char *d = (char *)dest, *s = (char *)src;
 +
-+	for (i=0;i<__n;i++) d[i] = s[i];
-+	return __dest;
++	for (i=0;i<n;i++) d[i] = s[i];
++	return dest;
 +}
 +
 +/* ===========================================================================
@@ -856,85 +936,10 @@ diff -Nur linux-2.6.21.1/arch/i386/boot/compressed/lzma_misc.c linux-2.6.21.1-ow
 + */
 +static int fill_inbuf(void)
 +{
-+	if (insize != 0) {
-+		error("ran out of input data");
-+	}
-+
-+	inbuf = input_data;
-+	insize = input_len;
-+	inptr = 1;
-+	return inbuf[0];
++	error("ran out of input data");
++	return 0;
 +}
 +
-+static void error(char *x)
-+{
-+	putstr("\n\n");
-+	putstr(x);
-+	putstr("\n\n -- System halted");
-+
-+	while(1);	/* Halt */
-+}
-+
-+#define STACK_SIZE (4096)
-+
-+long user_stack [STACK_SIZE];
-+
-+struct {
-+	long * a;
-+	short b;
-+	} stack_start = { & user_stack [STACK_SIZE] , __BOOT_DS };
-+
-+static void setup_normal_output_buffer(void)
-+{
-+#ifdef STANDARD_MEMORY_BIOS_CALL
-+	if (RM_EXT_MEM_K < 1024) error("Less than 2MB of memory");
-+#else
-+	if ((RM_ALT_MEM_K > RM_EXT_MEM_K ? RM_ALT_MEM_K : RM_EXT_MEM_K) < 1024) error("Less than 2MB of memory");
-+#endif
-+	output_data = (char *)0x100000; /* Points to 1M */
-+	free_mem_end_ptr = (long)real_mode;
-+}
-+
-+struct moveparams {
-+	uch *low_buffer_start;  int lcount;
-+	uch *high_buffer_start; int hcount;
-+};
-+
-+static void setup_output_buffer_if_we_run_high(struct moveparams *mv)
-+{
-+	high_buffer_start = (uch *)(((ulg)&_end) + HEAP_SIZE);
-+#ifdef STANDARD_MEMORY_BIOS_CALL
-+	if (RM_EXT_MEM_K < (3*1024)) error("Less than 4MB of memory");
-+#else
-+	if ((RM_ALT_MEM_K > RM_EXT_MEM_K ? RM_ALT_MEM_K : RM_EXT_MEM_K) <
-+			(3*1024))
-+		error("Less than 4MB of memory");
-+#endif	
-+	mv->low_buffer_start = output_data = (char *)LOW_BUFFER_START;
-+	low_buffer_end = ((unsigned int)real_mode > LOW_BUFFER_MAX
-+	  ? LOW_BUFFER_MAX : (unsigned int)real_mode) & ~0xfff;
-+	low_buffer_size = low_buffer_end - LOW_BUFFER_START;
-+	high_loaded = 1;
-+	free_mem_end_ptr = (long)high_buffer_start;
-+	if ( (0x100000 + low_buffer_size) > ((ulg)high_buffer_start)) {
-+		high_buffer_start = (uch *)(0x100000 + low_buffer_size);
-+		mv->hcount = 0; /* say: we need not to move high_buffer */
-+	}
-+	else mv->hcount = -1;
-+	mv->high_buffer_start = high_buffer_start;
-+}
-+
-+static void close_output_buffer_if_we_run_high(struct moveparams *mv)
-+{
-+	if (bytes_out > low_buffer_size) {
-+		mv->lcount = low_buffer_size;
-+		if (mv->hcount)
-+			mv->hcount = bytes_out - low_buffer_size;
-+	} else {
-+		mv->lcount = bytes_out;
-+		mv->hcount = 0;
-+	}
-+}
 +
 +// When using LZMA in callback, the compressed length is not needed.
 +// Otherwise you need a special version of lzma compression program
@@ -956,16 +961,16 @@ diff -Nur linux-2.6.21.1/arch/i386/boot/compressed/lzma_misc.c linux-2.6.21.1-ow
 +{
 +
 +	unsigned int i;  /* temp value */
-+        unsigned int lc; /* literal context bits */
-+        unsigned int lp; /* literal pos state bits */
-+        unsigned int pb; /* pos state bits */
++	unsigned int lc; /* literal context bits */
++	unsigned int lp; /* literal pos state bits */
++	unsigned int pb; /* pos state bits */
 +	unsigned char* workspace;
 +	unsigned int uncompressedSize = 0;
 +	unsigned char* p;
-+        
++	
 +#ifdef  _LZMA_IN_CB
-+        ILzmaInCallback callback;
-+        callback.Read = read_byte;
++	ILzmaInCallback callback;
++	callback.Read = read_byte;
 +#else	
 +	unsigned char* inputbuf;
 +	unsigned int lzma_workspace_size;
@@ -975,95 +980,35 @@ diff -Nur linux-2.6.21.1/arch/i386/boot/compressed/lzma_misc.c linux-2.6.21.1-ow
 +	/* lzma args */
 +	i = get_byte();
 +	lc = i % 9, i = i / 9;
-+        lp = i % 5, pb = i / 5;
-+        
-+        /* skip dictionary size */
-+        for (i = 0; i < 4; i++) 
-+        	get_byte();
-+        // get uncompressedSize 	
-+        p= (char*)&uncompressedSize;	
-+        for (i = 0; i < 4; i++) 
-+            *p++ = get_byte();
-+            
-+        //get compressedSize 
++	lp = i % 5, pb = i / 5;
++	
++	/* skip dictionary size */
++	for (i = 0; i < 4; i++) 
++		get_byte();
++	// get uncompressedSize 	
++	p= (char*)&uncompressedSize;	
++	for (i = 0; i < 4; i++) 
++	    *p++ = get_byte();
++	    
++	//get compressedSize 
 +#ifdef  _LZMA_IN_CB
-+        for (i = 0; i < 4; i++) 
-+        	get_byte();
++	for (i = 0; i < 4; i++) 
++		get_byte();
 +#else
-+        p= (char*)&compressedSize;	
-+        for (i = 0; i < 4; i++) 
-+            *p++ = get_byte();
++	p= (char*)&compressedSize;	
++	for (i = 0; i < 4; i++) 
++	    *p++ = get_byte();
 +#endif
-+        
-+#if 0 
-+        if ( (lc == 5 ) && (lp == 0 ) && ( pb == 0 ))
-+        {
-+        	putstr("got prop!\n");
-+        }
-+        
-+#ifndef  _LZMA_IN_CB
-+        if( compressedSize == 496722 )
-+        {
-+           putstr( "got the right sizes\n");
-+        }
-+        else if ( compressedSize > 496722 )
-+        {
-+           putstr( "greater !\n");
-+        }
-+        else if ( compressedSize < 496722 )
-+           putstr( "smaller!\n");
-+       
-+#endif
-+        if ( uncompressedSize == 1187168 )
-+        {
-+           putstr( "got the right uncompressed size \n");
-+        }else if ( uncompressedSize > 1187168 )
-+        {
-+           putstr( "uncompressedSize greater!\n");
-+        }else
-+           putstr( "uncompressedSize smaller!|n");
-+#endif   
-+
-+        // point it beyond uncompresedSize
-+        workspace = high_buffer_start + uncompressedSize;
-+        //
-+#ifndef _LZMA_IN_CB
-+        lzma_workspace_size =  (LZMA_BASE_SIZE + (LZMA_LIT_SIZE << (lc + lp))) * sizeof(CProb);
-+        inputbuf = high_buffer_start + uncompressedSize + lzma_workspace_size;
-+        // read the compressed data
-+        for( i=0; i < compressedSize; i++)
-+        { 
-+            if ( i % ( 1024 * 10 ) == 0 )
-+               putstr(".");
-+            *inputbuf++ = get_byte();
-+        }
-+#endif 
-+        
++	
++	// point it beyond uncompresedSize
++	workspace = window + uncompressedSize;
++	
 +	/* decompress kernel */
-+#ifdef  _LZMA_IN_CB
-+	if (LzmaDecode(workspace, ~0, lc, lp, pb, 
-+	   &callback, 
-+#else
-+	if (LzmaDecode(workspace, lzma_workspace_size, lc, lp, pb, 
-+	   inputbuf - compressedSize, compressedSize,
-+#endif
-+	   (unsigned char*)high_buffer_start, uncompressedSize, &i) == LZMA_RESULT_OK)
-+	{
-+		if ( i != uncompressedSize )
-+		   error( "kernel corrupted!\n");
-+		//copy it back to low_buffer
-+	 	if( uncompressedSize > low_buffer_size )
-+	 	{
-+	 	    memcpy((char*)LOW_BUFFER_START, high_buffer_start, low_buffer_size);
-+	 	    memcpy(high_buffer_start, high_buffer_start+low_buffer_size, 
-+	 		uncompressedSize-low_buffer_size);	
-+	        }
-+	        else 		
-+	 	    memcpy((char*)LOW_BUFFER_START, high_buffer_start, uncompressedSize );
-+		bytes_out = i;
++	if (LzmaDecode(workspace, ~0, lc, lp, pb, &callback,
++		(unsigned char*)window, uncompressedSize, &i) == LZMA_RESULT_OK)
 +		return 0;
-+	}
-+	return 1;
++	else
++		return 1;
 +}
 +
 +
@@ -1075,13 +1020,23 @@ diff -Nur linux-2.6.21.1/arch/i386/boot/compressed/lzma_misc.c linux-2.6.21.1-ow
 +	*bufferSize = 1;
 +	val = get_byte();
 +	*buffer = &val;
-+        if ( i++ % ( 1024 * 50 ) == 0 )
-+               putstr(".");
++	if ( i++ % ( 1024 * 50 ) == 0 )
++	       putstr(".");
 +	return LZMA_RESULT_OK;
 +}	
 +#endif
 +
-+asmlinkage int decompress_kernel(struct moveparams *mv, void *rmode)
++static void error(char *x)
++{
++	putstr("\n\n");
++	putstr(x);
++	putstr("\n\n -- System halted");
++
++	while(1);	/* Halt */
++}
++
++asmlinkage void decompress_kernel(void *rmode, unsigned long end,
++			uch *input_data, unsigned long input_len, uch *output)
 +{
 +	real_mode = rmode;
 +
@@ -1096,22 +1051,29 @@ diff -Nur linux-2.6.21.1/arch/i386/boot/compressed/lzma_misc.c linux-2.6.21.1-ow
 +	lines = RM_SCREEN_INFO.orig_video_lines;
 +	cols = RM_SCREEN_INFO.orig_video_cols;
 +
-+	if (free_mem_ptr < 0x100000) setup_normal_output_buffer();
-+	else setup_output_buffer_if_we_run_high(mv);
++	window = output;
++	inbuf  = input_data;	/* Input buffer */
++	insize = input_len;
++	inptr  = 0;
 +
-+	putstr("LZMA vmlinuz: Ming-Ching Tiew <mctiew@yahoo.com> ...");
-+	if( lzma_unzip() != 0 )
-+	{
-+	   error("inflate error\n");
-+	}
++	if ((u32)output & (CONFIG_PHYSICAL_ALIGN -1))
++		error("Destination address not CONFIG_PHYSICAL_ALIGN aligned");
++	if (end > ((-__PAGE_OFFSET-(512 <<20)-1) & 0x7fffffff))
++		error("Destination address too large");
++#ifndef CONFIG_RELOCATABLE
++	if ((u32)output != LOAD_PHYSICAL_ADDR)
++		error("Wrong destination address");
++#endif
++
++	putstr("Uncompressing Linux... ");
++	lzma_unzip();
 +	putstr("Ok, booting the kernel.\n");
-+	if (high_loaded) close_output_buffer_if_we_run_high(mv);
-+	return high_loaded;
++	return;
 +}
 diff -Nur linux-2.6.21.1/arch/i386/boot/compressed/Makefile linux-2.6.21.1-owrt/arch/i386/boot/compressed/Makefile
 --- linux-2.6.21.1/arch/i386/boot/compressed/Makefile	2007-04-27 23:49:26.000000000 +0200
 +++ linux-2.6.21.1-owrt/arch/i386/boot/compressed/Makefile	2007-05-14 12:01:25.000000000 +0200
-@@ -4,7 +4,7 @@
+@@ -4,15 +4,15 @@
  # create a compressed vmlinux image from the original vmlinux
  #
  
@@ -1120,8 +1082,9 @@ diff -Nur linux-2.6.21.1/arch/i386/boot/compressed/Makefile linux-2.6.21.1-owrt/
  			vmlinux.bin.all vmlinux.relocs
  EXTRA_AFLAGS	:= -traditional
  
-@@ -12,7 +12,7 @@
- CFLAGS_misc.o += -fPIC
+ LDFLAGS_vmlinux := -T
+-CFLAGS_misc.o += -fPIC
++CFLAGS_lzma_misc.o += -fPIC
  hostprogs-y	:= relocs
  
 -$(obj)/vmlinux: $(src)/vmlinux.lds $(obj)/head.o $(obj)/misc.o $(obj)/piggy.o FORCE
