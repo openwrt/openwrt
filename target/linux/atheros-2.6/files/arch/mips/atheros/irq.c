@@ -74,7 +74,7 @@ asmlinkage void plat_irq_dispatch(void)
 void __init arch_init_irq(void)
 {
 	clear_c0_status(ST0_IM);
-	mips_cpu_irq_init(0);
+	mips_cpu_irq_init();
 
 	/* Initialize interrupt controllers */
 	DO_AR5312(ar5312_misc_intr_init(AR531X_MISC_IRQ_BASE);)

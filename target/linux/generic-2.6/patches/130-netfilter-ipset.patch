@@ -1,7 +1,7 @@
 diff -Nur linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set.h linux-2.6.21.1-owrt/include/linux/netfilter_ipv4/ip_set.h
 --- linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1-owrt/include/linux/netfilter_ipv4/ip_set.h	2007-05-14 11:44:19.000000000 +0200
-@@ -0,0 +1,489 @@
++++ linux-2.6.21.1-owrt/include/linux/netfilter_ipv4/ip_set.h	2007-05-23 23:04:36.000000000 +0200
+@@ -0,0 +1,498 @@
 +#ifndef _IP_SET_H
 +#define _IP_SET_H
 +
@@ -12,8 +12,12 @@ diff -Nur linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set.h linux-2.6.21.1-ow
 + *
 + * This program is free software; you can redistribute it and/or modify
 + * it under the terms of the GNU General Public License version 2 as
-+ * published by the Free Software Foundation.
++ * published by the Free Software Foundation.  
 + */
++
++#if 0
++#define IP_SET_DEBUG
++#endif
 +
 +/*
 + * A sockopt of such quality has hardly ever been seen before on the open
@@ -37,8 +41,8 @@ diff -Nur linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set.h linux-2.6.21.1-ow
 + * - in order to "deal with" backward compatibility, renamed to ipset
 + */
 +
-+/*
-+ * Used so that the kernel module and ipset-binary can match their versions
++/* 
++ * Used so that the kernel module and ipset-binary can match their versions 
 + */
 +#define IP_SET_PROTOCOL_VERSION 2
 +
@@ -49,7 +53,7 @@ diff -Nur linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set.h linux-2.6.21.1-ow
 + *
 + * The representation works in HOST byte order, because most set types
 + * will perform arithmetic operations and compare operations.
-+ *
++ * 
 + * For now the type is an uint32_t.
 + *
 + * Make sure to ONLY use the functions when translating and parsing
@@ -81,10 +85,12 @@ diff -Nur linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set.h linux-2.6.21.1-ow
 +#define IPSET_MATCH_INV		0x04	/* Inverse matching */
 +
 +/*
-+ * Set types (flavours)
++ * Set features
 + */
-+#define IPSET_TYPE_IP		0	/* IP address type of set */
-+#define IPSET_TYPE_PORT		1	/* Port type of set */
++#define IPSET_TYPE_IP		0x01	/* IP address type of set */
++#define IPSET_TYPE_PORT		0x02	/* Port type of set */
++#define IPSET_DATA_SINGLE	0x04	/* Single data storage */
++#define IPSET_DATA_DOUBLE	0x08	/* Double data storage */
 +
 +/* Reserved keywords */
 +#define IPSET_TOKEN_DEFAULT	":default:"
@@ -98,8 +104,8 @@ diff -Nur linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set.h linux-2.6.21.1-ow
 + *	200-299: list, save, restore
 + */
 +
-+/* Single shot operations:
-+ * version, create, destroy, flush, rename and swap
++/* Single shot operations: 
++ * version, create, destroy, flush, rename and swap 
 + *
 + * Sets are identified by name.
 + */
@@ -150,7 +156,7 @@ diff -Nur linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set.h linux-2.6.21.1-ow
 +	unsigned version;
 +};
 +
-+/* Double shots operations:
++/* Double shots operations: 
 + * add, del, test, bind and unbind.
 + *
 + * First we query the kernel to get the index and type of the target set,
@@ -192,7 +198,7 @@ diff -Nur linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set.h linux-2.6.21.1-ow
 +};
 +
 +#define IP_SET_OP_UNBIND_SET	0x00000105	/* Unbind an IP from a set */
-+/* Uses ip_set_req_bind, with type speficic addage
++/* Uses ip_set_req_bind, with type speficic addage 
 + * index = 0 means unbinding for all sets */
 +
 +#define IP_SET_OP_TEST_BIND_SET	0x00000106	/* Test binding an IP to a set */
@@ -238,7 +244,7 @@ diff -Nur linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set.h linux-2.6.21.1-ow
 +#define IP_SET_OP_LIST		0x00000203
 +struct ip_set_req_list {
 +	IP_SET_REQ_BYINDEX;
-+	/* sets number of struct ip_set_list in reply */
++	/* sets number of struct ip_set_list in reply */ 
 +};
 +
 +struct ip_set_list {
@@ -278,7 +284,7 @@ diff -Nur linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set.h linux-2.6.21.1-ow
 +/* The restore operation */
 +#define IP_SET_OP_RESTORE	0x00000205
 +/* Uses ip_set_req_setnames followed by ip_set_restore structures
-+ * plus a marker ip_set_restore, followed by ip_set_hash_save
++ * plus a marker ip_set_restore, followed by ip_set_hash_save 
 + * structures.
 + */
 +struct ip_set_restore {
@@ -339,9 +345,10 @@ diff -Nur linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set.h linux-2.6.21.1-ow
 +	 * return 0 if not in set, 1 if in set.
 +	 */
 +	int (*testip_kernel) (struct ip_set *set,
-+			      const struct sk_buff * skb,
-+			      u_int32_t flags,
-+			      ip_set_ip_t *ip);
++			      const struct sk_buff * skb, 
++			      ip_set_ip_t *ip,
++			      const u_int32_t *flags,
++			      unsigned char index);
 +
 +	/* test for IP in set (userspace: ipset -T set IP)
 +	 * return 0 if not in set, 1 if in set.
@@ -361,7 +368,7 @@ diff -Nur linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set.h linux-2.6.21.1-ow
 +	 * and -ERANGE if the address lies outside the set bounds.
 +	 * If the address was not already in the set, 0 is returned.
 +	 */
-+	int (*addip) (struct ip_set *set,
++	int (*addip) (struct ip_set *set, 
 +		      const void *data, size_t size,
 +		      ip_set_ip_t *ip);
 +
@@ -371,16 +378,17 @@ diff -Nur linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set.h linux-2.6.21.1-ow
 +	 * If the address was not already in the set, 0 is returned.
 +	 */
 +	int (*addip_kernel) (struct ip_set *set,
-+			     const struct sk_buff * skb,
-+			     u_int32_t flags,
-+			     ip_set_ip_t *ip);
++			     const struct sk_buff * skb, 
++			     ip_set_ip_t *ip,
++			     const u_int32_t *flags,
++			     unsigned char index);
 +
 +	/* remove IP from set (userspace: ipset -D set --entry x)
 +	 * Return -EEXIST if the address is NOT in the set,
 +	 * and -ERANGE if the address lies outside the set bounds.
 +	 * If the address really was in the set, 0 is returned.
 +	 */
-+	int (*delip) (struct ip_set *set,
++	int (*delip) (struct ip_set *set, 
 +		      const void *data, size_t size,
 +		      ip_set_ip_t *ip);
 +
@@ -390,9 +398,10 @@ diff -Nur linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set.h linux-2.6.21.1-ow
 +	 * If the address really was in the set, 0 is returned.
 +	 */
 +	int (*delip_kernel) (struct ip_set *set,
-+			     const struct sk_buff * skb,
-+			     u_int32_t flags,
-+			     ip_set_ip_t *ip);
++			     const struct sk_buff * skb, 
++			     ip_set_ip_t *ip,
++			     const u_int32_t *flags,
++			     unsigned char index);
 +
 +	/* new set creation - allocated type specific items
 +	 */
@@ -421,11 +430,11 @@ diff -Nur linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set.h linux-2.6.21.1-ow
 +	/* Listing: Get the header
 +	 *
 +	 * Fill in the information in "data".
-+	 * This function is always run after list_header_size() under a
-+	 * writelock on the set. Therefor is the length of "data" always
-+	 * correct.
++	 * This function is always run after list_header_size() under a 
++	 * writelock on the set. Therefor is the length of "data" always 
++	 * correct. 
 +	 */
-+	void (*list_header) (const struct ip_set *set,
++	void (*list_header) (const struct ip_set *set, 
 +			     void *data);
 +
 +	/* Listing: Get the size for the set members
@@ -435,15 +444,15 @@ diff -Nur linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set.h linux-2.6.21.1-ow
 +	/* Listing: Get the set members
 +	 *
 +	 * Fill in the information in "data".
-+	 * This function is always run after list_member_size() under a
-+	 * writelock on the set. Therefor is the length of "data" always
-+	 * correct.
++	 * This function is always run after list_member_size() under a 
++	 * writelock on the set. Therefor is the length of "data" always 
++	 * correct. 
 +	 */
 +	void (*list_members) (const struct ip_set *set,
 +			      void *data);
 +
 +	char typename[IP_SET_MAXNAMELEN];
-+	char typecode;
++	unsigned char features;
 +	int protocol_version;
 +
 +	/* Set this to THIS_MODULE if you are a module, otherwise NULL */
@@ -493,7 +502,7 @@ diff -Nur linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set.h linux-2.6.21.1-ow
 +#endif /*_IP_SET_H*/
 diff -Nur linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_iphash.h linux-2.6.21.1-owrt/include/linux/netfilter_ipv4/ip_set_iphash.h
 --- linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_iphash.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1-owrt/include/linux/netfilter_ipv4/ip_set_iphash.h	2007-05-14 11:44:19.000000000 +0200
++++ linux-2.6.21.1-owrt/include/linux/netfilter_ipv4/ip_set_iphash.h	2007-05-23 23:04:36.000000000 +0200
 @@ -0,0 +1,30 @@
 +#ifndef __IP_SET_IPHASH_H
 +#define __IP_SET_IPHASH_H
@@ -505,12 +514,12 @@ diff -Nur linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_iphash.h linux-2.6.
 +
 +struct ip_set_iphash {
 +	ip_set_ip_t *members;		/* the iphash proper */
-+	uint32_t initval;		/* initval for jhash_1word */
-+	uint32_t prime;			/* prime for double hashing */
++	uint32_t elements;		/* number of elements */
 +	uint32_t hashsize;		/* hash size */
 +	uint16_t probes;		/* max number of probes  */
 +	uint16_t resize;		/* resize factor in percent */
 +	ip_set_ip_t netmask;		/* netmask */
++	void *initval[0];		/* initvals for jhash_1word */
 +};
 +
 +struct ip_set_req_iphash_create {
@@ -527,7 +536,7 @@ diff -Nur linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_iphash.h linux-2.6.
 +#endif	/* __IP_SET_IPHASH_H */
 diff -Nur linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_ipmap.h linux-2.6.21.1-owrt/include/linux/netfilter_ipv4/ip_set_ipmap.h
 --- linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_ipmap.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1-owrt/include/linux/netfilter_ipv4/ip_set_ipmap.h	2007-05-14 11:44:19.000000000 +0200
++++ linux-2.6.21.1-owrt/include/linux/netfilter_ipv4/ip_set_ipmap.h	2007-05-23 23:04:36.000000000 +0200
 @@ -0,0 +1,56 @@
 +#ifndef __IP_SET_IPMAP_H
 +#define __IP_SET_IPMAP_H
@@ -543,7 +552,7 @@ diff -Nur linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_ipmap.h linux-2.6.2
 +	ip_set_ip_t last_ip;		/* host byte order, included in range */
 +	ip_set_ip_t netmask;		/* subnet netmask */
 +	ip_set_ip_t sizeid;		/* size of set in IPs */
-+	u_int16_t hosts;		/* number of hosts in a subnet */
++	ip_set_ip_t hosts;		/* number of hosts in a subnet */
 +};
 +
 +struct ip_set_req_ipmap_create {
@@ -561,14 +570,14 @@ diff -Nur linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_ipmap.h linux-2.6.2
 +{
 +	unsigned int bits = 32;
 +	ip_set_ip_t maskaddr;
-+
++	
 +	if (mask == 0xFFFFFFFF)
 +		return bits;
-+
++	
 +	maskaddr = 0xFFFFFFFE;
 +	while (--bits >= 0 && maskaddr != mask)
 +		maskaddr <<= 1;
-+
++	
 +	return bits;
 +}
 +
@@ -576,19 +585,57 @@ diff -Nur linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_ipmap.h linux-2.6.2
 +range_to_mask(ip_set_ip_t from, ip_set_ip_t to, unsigned int *bits)
 +{
 +	ip_set_ip_t mask = 0xFFFFFFFE;
-+
++	
 +	*bits = 32;
 +	while (--(*bits) >= 0 && mask && (to & mask) != from)
 +		mask <<= 1;
-+
++		
 +	return mask;
 +}
-+
++	
 +#endif /* __IP_SET_IPMAP_H */
+diff -Nur linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_ipporthash.h linux-2.6.21.1-owrt/include/linux/netfilter_ipv4/ip_set_ipporthash.h
+--- linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_ipporthash.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1-owrt/include/linux/netfilter_ipv4/ip_set_ipporthash.h	2007-05-23 23:04:36.000000000 +0200
+@@ -0,0 +1,34 @@
++#ifndef __IP_SET_IPPORTHASH_H
++#define __IP_SET_IPPORTHASH_H
++
++#include <linux/netfilter_ipv4/ip_set.h>
++
++#define SETTYPE_NAME "ipporthash"
++#define MAX_RANGE 0x0000FFFF
++#define INVALID_PORT	(MAX_RANGE + 1)
++
++struct ip_set_ipporthash {
++	ip_set_ip_t *members;		/* the ipporthash proper */
++	uint32_t elements;		/* number of elements */
++	uint32_t hashsize;		/* hash size */
++	uint16_t probes;		/* max number of probes  */
++	uint16_t resize;		/* resize factor in percent */
++	ip_set_ip_t first_ip;		/* host byte order, included in range */
++	ip_set_ip_t last_ip;		/* host byte order, included in range */
++	void *initval[0];		/* initvals for jhash_1word */
++};
++
++struct ip_set_req_ipporthash_create {
++	uint32_t hashsize;
++	uint16_t probes;
++	uint16_t resize;
++	ip_set_ip_t from;
++	ip_set_ip_t to;
++};
++
++struct ip_set_req_ipporthash {
++	ip_set_ip_t ip;
++	ip_set_ip_t port;
++};
++
++#endif	/* __IP_SET_IPPORTHASH_H */
 diff -Nur linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_iptree.h linux-2.6.21.1-owrt/include/linux/netfilter_ipv4/ip_set_iptree.h
 --- linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_iptree.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1-owrt/include/linux/netfilter_ipv4/ip_set_iptree.h	2007-05-14 11:44:19.000000000 +0200
-@@ -0,0 +1,39 @@
++++ linux-2.6.21.1-owrt/include/linux/netfilter_ipv4/ip_set_iptree.h	2007-05-23 23:04:36.000000000 +0200
+@@ -0,0 +1,40 @@
 +#ifndef __IP_SET_IPTREE_H
 +#define __IP_SET_IPTREE_H
 +
@@ -598,23 +645,24 @@ diff -Nur linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_iptree.h linux-2.6.
 +#define MAX_RANGE 0x0000FFFF
 +
 +struct ip_set_iptreed {
-+	unsigned long expires[255];	   	/* x.x.x.ADDR */
++	unsigned long expires[256];	   	/* x.x.x.ADDR */
 +};
 +
 +struct ip_set_iptreec {
-+	struct ip_set_iptreed *tree[255];	/* x.x.ADDR.* */
++	struct ip_set_iptreed *tree[256];	/* x.x.ADDR.* */
 +};
 +
 +struct ip_set_iptreeb {
-+	struct ip_set_iptreec *tree[255];	/* x.ADDR.*.* */
++	struct ip_set_iptreec *tree[256];	/* x.ADDR.*.* */
 +};
 +
 +struct ip_set_iptree {
 +	unsigned int timeout;
 +	unsigned int gc_interval;
 +#ifdef __KERNEL__
++	uint32_t elements;		/* number of elements */
 +	struct timer_list gc;
-+	struct ip_set_iptreeb *tree[255];	/* ADDR.*.*.* */
++	struct ip_set_iptreeb *tree[256];	/* ADDR.*.*.* */
 +#endif
 +};
 +
@@ -630,7 +678,7 @@ diff -Nur linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_iptree.h linux-2.6.
 +#endif	/* __IP_SET_IPTREE_H */
 diff -Nur linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_jhash.h linux-2.6.21.1-owrt/include/linux/netfilter_ipv4/ip_set_jhash.h
 --- linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_jhash.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1-owrt/include/linux/netfilter_ipv4/ip_set_jhash.h	2007-05-14 11:44:19.000000000 +0200
++++ linux-2.6.21.1-owrt/include/linux/netfilter_ipv4/ip_set_jhash.h	2007-05-23 23:04:36.000000000 +0200
 @@ -0,0 +1,148 @@
 +#ifndef _LINUX_IPSET_JHASH_H
 +#define _LINUX_IPSET_JHASH_H
@@ -782,7 +830,7 @@ diff -Nur linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_jhash.h linux-2.6.2
 +#endif /* _LINUX_IPSET_JHASH_H */
 diff -Nur linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_macipmap.h linux-2.6.21.1-owrt/include/linux/netfilter_ipv4/ip_set_macipmap.h
 --- linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_macipmap.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1-owrt/include/linux/netfilter_ipv4/ip_set_macipmap.h	2007-05-14 11:44:19.000000000 +0200
++++ linux-2.6.21.1-owrt/include/linux/netfilter_ipv4/ip_set_macipmap.h	2007-05-23 23:04:36.000000000 +0200
 @@ -0,0 +1,38 @@
 +#ifndef __IP_SET_MACIPMAP_H
 +#define __IP_SET_MACIPMAP_H
@@ -824,8 +872,8 @@ diff -Nur linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_macipmap.h linux-2.
 +#endif	/* __IP_SET_MACIPMAP_H */
 diff -Nur linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_malloc.h linux-2.6.21.1-owrt/include/linux/netfilter_ipv4/ip_set_malloc.h
 --- linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_malloc.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1-owrt/include/linux/netfilter_ipv4/ip_set_malloc.h	2007-05-14 11:44:19.000000000 +0200
-@@ -0,0 +1,42 @@
++++ linux-2.6.21.1-owrt/include/linux/netfilter_ipv4/ip_set_malloc.h	2007-05-23 23:04:36.000000000 +0200
+@@ -0,0 +1,116 @@
 +#ifndef _IP_SET_MALLOC_H
 +#define _IP_SET_MALLOC_H
 +
@@ -839,14 +887,6 @@ diff -Nur linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_malloc.h linux-2.6.
 +#define CACHE(x) max_malloc_size = x;
 +#include <linux/kmalloc_sizes.h>
 +#undef CACHE
-+}
-+
-+static inline void * ip_set_malloc_atomic(size_t bytes)
-+{
-+	if (bytes > max_malloc_size)
-+		return __vmalloc(bytes, GFP_ATOMIC, PAGE_KERNEL);
-+	else
-+		return kmalloc(bytes, GFP_ATOMIC);
 +}
 +
 +static inline void * ip_set_malloc(size_t bytes)
@@ -865,12 +905,94 @@ diff -Nur linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_malloc.h linux-2.6.
 +		kfree(data);
 +}
 +
++struct harray {
++	size_t max_elements;
++	void *arrays[0];
++};
++
++static inline void * 
++harray_malloc(size_t hashsize, size_t typesize, int flags)
++{
++	struct harray *harray;
++	size_t max_elements, size, i, j;
++
++	if (!max_malloc_size)
++		init_max_malloc_size();
++
++	if (typesize > max_malloc_size)
++		return NULL;
++
++	max_elements = max_malloc_size/typesize;
++	size = hashsize/max_elements;
++	if (hashsize % max_elements)
++		size++;
++	
++	/* Last pointer signals end of arrays */
++	harray = kmalloc(sizeof(struct harray) + (size + 1) * sizeof(void *),
++			 flags);
++
++	if (!harray)
++		return NULL;
++	
++	for (i = 0; i < size - 1; i++) {
++		harray->arrays[i] = kmalloc(max_elements * typesize, flags);
++		if (!harray->arrays[i])
++			goto undo;
++		memset(harray->arrays[i], 0, max_elements * typesize);
++	}
++	harray->arrays[i] = kmalloc((hashsize - i * max_elements) * typesize, 
++				    flags);
++	if (!harray->arrays[i])
++		goto undo;
++	memset(harray->arrays[i], 0, (hashsize - i * max_elements) * typesize);
++
++	harray->max_elements = max_elements;
++	harray->arrays[size] = NULL;
++	
++	return (void *)harray;
++
++    undo:
++    	for (j = 0; j < i; j++) {
++    		kfree(harray->arrays[j]);
++    	}
++    	kfree(harray);
++    	return NULL;
++}
++
++static inline void harray_free(void *h)
++{
++	struct harray *harray = (struct harray *) h;
++	size_t i;
++	
++    	for (i = 0; harray->arrays[i] != NULL; i++)
++    		kfree(harray->arrays[i]);
++    	kfree(harray);
++}
++
++static inline void harray_flush(void *h, size_t hashsize, size_t typesize)
++{
++	struct harray *harray = (struct harray *) h;
++	size_t i;
++	
++    	for (i = 0; harray->arrays[i+1] != NULL; i++)
++		memset(harray->arrays[i], 0, harray->max_elements * typesize);
++	memset(harray->arrays[i], 0, 
++	       (hashsize - i * harray->max_elements) * typesize);
++}
++
++#define HARRAY_ELEM(h, type, which)				\
++({								\
++	struct harray *__h = (struct harray *)(h);		\
++	((type)((__h)->arrays[(which)/(__h)->max_elements])	\
++		+ (which)%(__h)->max_elements);			\
++})
++
 +#endif				/* __KERNEL__ */
 +
 +#endif /*_IP_SET_MALLOC_H*/
 diff -Nur linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_nethash.h linux-2.6.21.1-owrt/include/linux/netfilter_ipv4/ip_set_nethash.h
 --- linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_nethash.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1-owrt/include/linux/netfilter_ipv4/ip_set_nethash.h	2007-05-14 11:44:19.000000000 +0200
++++ linux-2.6.21.1-owrt/include/linux/netfilter_ipv4/ip_set_nethash.h	2007-05-23 23:04:36.000000000 +0200
 @@ -0,0 +1,55 @@
 +#ifndef __IP_SET_NETHASH_H
 +#define __IP_SET_NETHASH_H
@@ -882,12 +1004,12 @@ diff -Nur linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_nethash.h linux-2.6
 +
 +struct ip_set_nethash {
 +	ip_set_ip_t *members;		/* the nethash proper */
-+	uint32_t initval;		/* initval for jhash_1word */
-+	uint32_t prime;			/* prime for double hashing */
++	uint32_t elements;		/* number of elements */
 +	uint32_t hashsize;		/* hash size */
 +	uint16_t probes;		/* max number of probes  */
 +	uint16_t resize;		/* resize factor in percent */
 +	unsigned char cidr[30];		/* CIDR sizes */
++	void *initval[0];		/* initvals for jhash_1word */
 +};
 +
 +struct ip_set_req_nethash_create {
@@ -903,7 +1025,7 @@ diff -Nur linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_nethash.h linux-2.6
 +
 +static unsigned char shifts[] = {255, 253, 249, 241, 225, 193, 129, 1};
 +
-+static inline ip_set_ip_t
++static inline ip_set_ip_t 
 +pack(ip_set_ip_t ip, unsigned char cidr)
 +{
 +	ip_set_ip_t addr, *paddr = &addr;
@@ -914,7 +1036,7 @@ diff -Nur linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_nethash.h linux-2.6
 +	DP("ip:%u.%u.%u.%u/%u", NIPQUAD(addr), cidr);
 +#endif
 +	n = cidr / 8;
-+	t = cidr % 8;
++	t = cidr % 8;	
 +	a = &((unsigned char *)paddr)[n];
 +	*a = *a /(1 << (8 - t)) + shifts[t];
 +#ifdef __KERNEL__
@@ -929,7 +1051,7 @@ diff -Nur linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_nethash.h linux-2.6
 +#endif	/* __IP_SET_NETHASH_H */
 diff -Nur linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_portmap.h linux-2.6.21.1-owrt/include/linux/netfilter_ipv4/ip_set_portmap.h
 --- linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_portmap.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1-owrt/include/linux/netfilter_ipv4/ip_set_portmap.h	2007-05-14 11:44:19.000000000 +0200
++++ linux-2.6.21.1-owrt/include/linux/netfilter_ipv4/ip_set_portmap.h	2007-05-23 23:04:36.000000000 +0200
 @@ -0,0 +1,25 @@
 +#ifndef __IP_SET_PORTMAP_H
 +#define __IP_SET_PORTMAP_H
@@ -956,47 +1078,9 @@ diff -Nur linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_portmap.h linux-2.6
 +};
 +
 +#endif /* __IP_SET_PORTMAP_H */
-diff -Nur linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_prime.h linux-2.6.21.1-owrt/include/linux/netfilter_ipv4/ip_set_prime.h
---- linux-2.6.21.1/include/linux/netfilter_ipv4/ip_set_prime.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1-owrt/include/linux/netfilter_ipv4/ip_set_prime.h	2007-05-14 11:44:19.000000000 +0200
-@@ -0,0 +1,34 @@
-+#ifndef __IP_SET_PRIME_H
-+#define __IP_SET_PRIME_H
-+
-+static inline unsigned make_prime_bound(unsigned nr)
-+{
-+	unsigned long long nr64 = nr;
-+	unsigned long long x = 1;
-+	nr = 1;
-+	while (x <= nr64) { x <<= 2; nr <<= 1; }
-+	return nr;
-+}
-+
-+static inline int make_prime_check(unsigned nr)
-+{
-+	unsigned x = 3;
-+	unsigned b = make_prime_bound(nr);
-+	while (x <= b) {
-+		if (0 == (nr % x)) return 0;
-+		x += 2;
-+	}
-+	return 1;
-+}
-+
-+static unsigned make_prime(unsigned nr)
-+{
-+	if (0 == (nr & 1)) nr--;
-+	while (nr > 1) {
-+		if (make_prime_check(nr)) return nr;
-+		nr -= 2;
-+	}
-+	return 2;
-+}
-+
-+#endif /* __IP_SET_PRIME_H */
 diff -Nur linux-2.6.21.1/include/linux/netfilter_ipv4/ipt_set.h linux-2.6.21.1-owrt/include/linux/netfilter_ipv4/ipt_set.h
 --- linux-2.6.21.1/include/linux/netfilter_ipv4/ipt_set.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1-owrt/include/linux/netfilter_ipv4/ipt_set.h	2007-05-14 11:44:19.000000000 +0200
++++ linux-2.6.21.1-owrt/include/linux/netfilter_ipv4/ipt_set.h	2007-05-23 23:04:36.000000000 +0200
 @@ -0,0 +1,21 @@
 +#ifndef _IPT_SET_H
 +#define _IPT_SET_H
@@ -1019,149 +1103,25 @@ diff -Nur linux-2.6.21.1/include/linux/netfilter_ipv4/ipt_set.h linux-2.6.21.1-o
 +};
 +
 +#endif /*_IPT_SET_H*/
-diff -Nur linux-2.6.21.1/include/linux/netfilter_ipv4/listhelp.h linux-2.6.21.1-owrt/include/linux/netfilter_ipv4/listhelp.h
---- linux-2.6.21.1/include/linux/netfilter_ipv4/listhelp.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1-owrt/include/linux/netfilter_ipv4/listhelp.h	2007-05-14 11:44:19.000000000 +0200
-@@ -0,0 +1,123 @@
-+#ifndef _LISTHELP_H
-+#define _LISTHELP_H
-+#include <linux/list.h>
-+
-+/* Header to do more comprehensive job than linux/list.h; assume list
-+   is first entry in structure. */
-+
-+/* Return pointer to first true entry, if any, or NULL.  A macro
-+   required to allow inlining of cmpfn. */
-+#define LIST_FIND(head, cmpfn, type, args...)		\
-+({							\
-+	const struct list_head *__i, *__j = NULL;	\
-+							\
-+	ASSERT_READ_LOCK(head);				\
-+	list_for_each(__i, (head))			\
-+		if (cmpfn((const type)__i , ## args)) {	\
-+			__j = __i;			\
-+			break;				\
-+		}					\
-+	(type)__j;					\
-+})
-+
-+#define LIST_FIND_W(head, cmpfn, type, args...)		\
-+({							\
-+	const struct list_head *__i, *__j = NULL;	\
-+							\
-+	ASSERT_WRITE_LOCK(head);			\
-+	list_for_each(__i, (head))			\
-+		if (cmpfn((type)__i , ## args)) {	\
-+			__j = __i;			\
-+			break;				\
-+		}					\
-+	(type)__j;					\
-+})
-+
-+/* Just like LIST_FIND but we search backwards */
-+#define LIST_FIND_B(head, cmpfn, type, args...)		\
-+({							\
-+	const struct list_head *__i, *__j = NULL;	\
-+							\
-+	ASSERT_READ_LOCK(head);				\
-+	list_for_each_prev(__i, (head))			\
-+		if (cmpfn((const type)__i , ## args)) {	\
-+			__j = __i;			\
-+			break;				\
-+		}					\
-+	(type)__j;					\
-+})
-+
-+static inline int
-+__list_cmp_same(const void *p1, const void *p2) { return p1 == p2; }
-+
-+/* Is this entry in the list? */
-+static inline int
-+list_inlist(struct list_head *head, const void *entry)
-+{
-+	return LIST_FIND(head, __list_cmp_same, void *, entry) != NULL;
-+}
-+
-+/* Delete from list. */
-+#ifdef CONFIG_NETFILTER_DEBUG
-+#define LIST_DELETE(head, oldentry)					\
-+do {									\
-+	ASSERT_WRITE_LOCK(head);					\
-+	if (!list_inlist(head, oldentry))				\
-+		printk("LIST_DELETE: %s:%u `%s'(%p) not in %s.\n",	\
-+		       __FILE__, __LINE__, #oldentry, oldentry, #head);	\
-+        else list_del((struct list_head *)oldentry);			\
-+} while(0)
-+#else
-+#define LIST_DELETE(head, oldentry) list_del((struct list_head *)oldentry)
-+#endif
-+
-+/* Append. */
-+static inline void
-+list_append(struct list_head *head, void *new)
-+{
-+	ASSERT_WRITE_LOCK(head);
-+	list_add((new), (head)->prev);
-+}
-+
-+/* Prepend. */
-+static inline void
-+list_prepend(struct list_head *head, void *new)
-+{
-+	ASSERT_WRITE_LOCK(head);
-+	list_add(new, head);
-+}
-+
-+/* Insert according to ordering function; insert before first true. */
-+#define LIST_INSERT(head, new, cmpfn)				\
-+do {								\
-+	struct list_head *__i;					\
-+	ASSERT_WRITE_LOCK(head);				\
-+	list_for_each(__i, (head))				\
-+		if ((new), (typeof (new))__i)			\
-+			break;					\
-+	list_add((struct list_head *)(new), __i->prev);		\
-+} while(0)
-+
-+/* If the field after the list_head is a nul-terminated string, you
-+   can use these functions. */
-+static inline int __list_cmp_name(const void *i, const char *name)
-+{
-+	return strcmp(name, i+sizeof(struct list_head)) == 0;
-+}
-+
-+/* Returns false if same name already in list, otherwise does insert. */
-+static inline int
-+list_named_insert(struct list_head *head, void *new)
-+{
-+	if (LIST_FIND(head, __list_cmp_name, void *,
-+		      new + sizeof(struct list_head)))
-+		return 0;
-+	list_prepend(head, new);
-+	return 1;
-+}
-+
-+/* Find this named element in the list. */
-+#define list_named_find(head, name)			\
-+LIST_FIND(head, __list_cmp_name, void *, name)
-+
-+#endif /*_LISTHELP_H*/
 diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv4/netfilter/ip_set.c
 --- linux-2.6.21.1/net/ipv4/netfilter/ip_set.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1-owrt/net/ipv4/netfilter/ip_set.c	2007-05-14 11:44:19.000000000 +0200
-@@ -0,0 +1,1989 @@
++++ linux-2.6.21.1-owrt/net/ipv4/netfilter/ip_set.c	2007-05-23 23:04:36.000000000 +0200
+@@ -0,0 +1,2001 @@
 +/* Copyright (C) 2000-2002 Joakim Axelsson <gozem@linux.nu>
 + *                         Patrick Schaaf <bof@bof.de>
 + * Copyright (C) 2003-2004 Jozsef Kadlecsik <kadlec@blackhole.kfki.hu>
 + *
 + * This program is free software; you can redistribute it and/or modify
 + * it under the terms of the GNU General Public License version 2 as
-+ * published by the Free Software Foundation.
++ * published by the Free Software Foundation.  
 + */
 +
 +/* Kernel module for IP set management */
 +
-+#include <linux/autoconf.h>
++#include <linux/version.h>
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19)
++#include <linux/config.h>
++#endif
 +#include <linux/module.h>
 +#include <linux/moduleparam.h>
 +#include <linux/kmod.h>
@@ -1177,9 +1137,8 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +#include <linux/spinlock.h>
 +#include <linux/vmalloc.h>
 +
-+#define ASSERT_READ_LOCK(x)	/* dont use that */
++#define ASSERT_READ_LOCK(x)
 +#define ASSERT_WRITE_LOCK(x)
-+#include <linux/netfilter_ipv4/listhelp.h>
 +#include <linux/netfilter_ipv4/ip_set.h>
 +
 +static struct list_head set_type_list;		/* all registered sets */
@@ -1193,12 +1152,12 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +
 +/*
 + * Sets are identified either by the index in ip_set_list or by id.
-+ * The id never changes and is used to find a key in the hash.
-+ * The index may change by swapping and used at all other places
++ * The id never changes and is used to find a key in the hash. 
++ * The index may change by swapping and used at all other places 
 + * (set/SET netfilter modules, binding value, etc.)
 + *
 + * Userspace requests are serialized by ip_set_mutex and sets can
-+ * be deleted only from userspace. Therefore ip_set_list locking
++ * be deleted only from userspace. Therefore ip_set_list locking 
 + * must obey the following rules:
 + *
 + * - kernel requests: read and write locking mandatory
@@ -1221,39 +1180,43 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 + * Binding routines
 + */
 +
-+static inline int
-+ip_hash_cmp(const struct ip_set_hash *set_hash,
-+	    ip_set_id_t id, ip_set_ip_t ip)
++static inline struct ip_set_hash *
++__ip_set_find(u_int32_t key, ip_set_id_t id, ip_set_ip_t ip)
 +{
-+	return set_hash->id == id && set_hash->ip == ip;
++	struct ip_set_hash *set_hash;
++
++	list_for_each_entry(set_hash, &ip_set_hash[key], list)
++		if (set_hash->id == id && set_hash->ip == ip)
++			return set_hash;
++			
++	return NULL;
 +}
 +
 +static ip_set_id_t
 +ip_set_find_in_hash(ip_set_id_t id, ip_set_ip_t ip)
 +{
-+	u_int32_t key = jhash_2words(id, ip, ip_set_hash_random)
++	u_int32_t key = jhash_2words(id, ip, ip_set_hash_random) 
 +				% ip_set_bindings_hash_size;
 +	struct ip_set_hash *set_hash;
 +
 +	ASSERT_READ_LOCK(&ip_set_lock);
 +	IP_SET_ASSERT(ip_set_list[id]);
-+	DP("set: %s, ip: %u.%u.%u.%u", ip_set_list[id]->name, HIPQUAD(ip));
-+
-+	set_hash = LIST_FIND(&ip_set_hash[key], ip_hash_cmp,
-+			     struct ip_set_hash *, id, ip);
-+
-+	DP("set: %s, ip: %u.%u.%u.%u, binding: %s", ip_set_list[id]->name,
++	DP("set: %s, ip: %u.%u.%u.%u", ip_set_list[id]->name, HIPQUAD(ip));	
++	
++	set_hash = __ip_set_find(key, id, ip);
++	
++	DP("set: %s, ip: %u.%u.%u.%u, binding: %s", ip_set_list[id]->name, 
 +	   HIPQUAD(ip),
 +	   set_hash != NULL ? ip_set_list[set_hash->binding]->name : "");
 +
 +	return (set_hash != NULL ? set_hash->binding : IP_SET_INVALID_ID);
 +}
 +
-+static inline void
++static inline void 
 +__set_hash_del(struct ip_set_hash *set_hash)
 +{
 +	ASSERT_WRITE_LOCK(&ip_set_lock);
-+	IP_SET_ASSERT(ip_set_list[set_hash->binding]);
++	IP_SET_ASSERT(ip_set_list[set_hash->binding]);	
 +
 +	__ip_set_put(set_hash->binding);
 +	list_del(&set_hash->list);
@@ -1266,12 +1229,11 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +	u_int32_t key = jhash_2words(id, ip, ip_set_hash_random)
 +				% ip_set_bindings_hash_size;
 +	struct ip_set_hash *set_hash;
-+
++	
 +	IP_SET_ASSERT(ip_set_list[id]);
-+	DP("set: %s, ip: %u.%u.%u.%u", ip_set_list[id]->name, HIPQUAD(ip));
++	DP("set: %s, ip: %u.%u.%u.%u", ip_set_list[id]->name, HIPQUAD(ip));	
 +	write_lock_bh(&ip_set_lock);
-+	set_hash = LIST_FIND(&ip_set_hash[key], ip_hash_cmp,
-+			     struct ip_set_hash *, id, ip);
++	set_hash = __ip_set_find(key, id, ip);
 +	DP("set: %s, ip: %u.%u.%u.%u, binding: %s", ip_set_list[id]->name,
 +	   HIPQUAD(ip),
 +	   set_hash != NULL ? ip_set_list[set_hash->binding]->name : "");
@@ -1282,23 +1244,22 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +	return 0;
 +}
 +
-+static int
++static int 
 +ip_set_hash_add(ip_set_id_t id, ip_set_ip_t ip, ip_set_id_t binding)
 +{
 +	u_int32_t key = jhash_2words(id, ip, ip_set_hash_random)
 +				% ip_set_bindings_hash_size;
 +	struct ip_set_hash *set_hash;
 +	int ret = 0;
-+
++	
 +	IP_SET_ASSERT(ip_set_list[id]);
 +	IP_SET_ASSERT(ip_set_list[binding]);
-+	DP("set: %s, ip: %u.%u.%u.%u, binding: %s", ip_set_list[id]->name,
++	DP("set: %s, ip: %u.%u.%u.%u, binding: %s", ip_set_list[id]->name, 
 +	   HIPQUAD(ip), ip_set_list[binding]->name);
 +	write_lock_bh(&ip_set_lock);
-+	set_hash = LIST_FIND(&ip_set_hash[key], ip_hash_cmp,
-+			     struct ip_set_hash *, id, ip);
++	set_hash = __ip_set_find(key, id, ip);
 +	if (!set_hash) {
-+		set_hash = kmalloc(sizeof(struct ip_set_hash), GFP_KERNEL);
++		set_hash = kmalloc(sizeof(struct ip_set_hash), GFP_ATOMIC);
 +		if (!set_hash) {
 +			ret = -ENOMEM;
 +			goto unlock;
@@ -1306,15 +1267,18 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +		INIT_LIST_HEAD(&set_hash->list);
 +		set_hash->id = id;
 +		set_hash->ip = ip;
-+		list_add(&ip_set_hash[key], &set_hash->list);
++		list_add(&set_hash->list, &ip_set_hash[key]);
 +	} else {
-+		IP_SET_ASSERT(ip_set_list[set_hash->binding]);
++		IP_SET_ASSERT(ip_set_list[set_hash->binding]);	
 +		DP("overwrite binding: %s",
 +		   ip_set_list[set_hash->binding]->name);
 +		__ip_set_put(set_hash->binding);
 +	}
 +	set_hash->binding = binding;
 +	__ip_set_get(set_hash->binding);
++	DP("stored: key %u, id %u (%s), ip %u.%u.%u.%u, binding %u (%s)",
++	   key, id, ip_set_list[id]->name,
++	   HIPQUAD(ip), binding, ip_set_list[binding]->name);
 +    unlock:
 +	write_unlock_bh(&ip_set_lock);
 +	return ret;
@@ -1356,8 +1320,9 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +{
 +	struct ip_set *set;
 +	ip_set_ip_t ip;
-+	int res, i = 0;
-+
++	int res;
++	unsigned char i = 0;
++	
 +	IP_SET_ASSERT(flags[i]);
 +	read_lock_bh(&ip_set_lock);
 +	do {
@@ -1365,10 +1330,11 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +		IP_SET_ASSERT(set);
 +		DP("set %s, index %u", set->name, index);
 +		read_lock_bh(&set->lock);
-+		res = set->type->testip_kernel(set, skb, flags[i], &ip);
++		res = set->type->testip_kernel(set, skb, &ip, flags, i++);
 +		read_unlock_bh(&set->lock);
-+	} while (res > 0
-+		 && flags[++i]
++		i += !!(set->type->features & IPSET_DATA_DOUBLE);
++	} while (res > 0 
++		 && flags[i] 
 +		 && follow_bindings(index, set, ip));
 +	read_unlock_bh(&ip_set_lock);
 +
@@ -1382,7 +1348,8 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +{
 +	struct ip_set *set;
 +	ip_set_ip_t ip;
-+	int res, i= 0;
++	int res;
++	unsigned char i = 0;
 +
 +	IP_SET_ASSERT(flags[i]);
 +   retry:
@@ -1392,10 +1359,11 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +		IP_SET_ASSERT(set);
 +		DP("set %s, index %u", set->name, index);
 +		write_lock_bh(&set->lock);
-+		res = set->type->addip_kernel(set, skb, flags[i], &ip);
++		res = set->type->addip_kernel(set, skb, &ip, flags, i++);
 +		write_unlock_bh(&set->lock);
++		i += !!(set->type->features & IPSET_DATA_DOUBLE);
 +	} while ((res == 0 || res == -EEXIST)
-+		 && flags[++i]
++		 && flags[i] 
 +		 && follow_bindings(index, set, ip));
 +	read_unlock_bh(&ip_set_lock);
 +
@@ -1412,7 +1380,8 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +{
 +	struct ip_set *set;
 +	ip_set_ip_t ip;
-+	int res, i = 0;
++	int res;
++	unsigned char i = 0;
 +
 +	IP_SET_ASSERT(flags[i]);
 +	read_lock_bh(&ip_set_lock);
@@ -1421,36 +1390,33 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +		IP_SET_ASSERT(set);
 +		DP("set %s, index %u", set->name, index);
 +		write_lock_bh(&set->lock);
-+		res = set->type->delip_kernel(set, skb, flags[i], &ip);
++		res = set->type->delip_kernel(set, skb, &ip, flags, i++);
 +		write_unlock_bh(&set->lock);
++		i += !!(set->type->features & IPSET_DATA_DOUBLE);
 +	} while ((res == 0 || res == -EEXIST)
-+		 && flags[++i]
++		 && flags[i] 
 +		 && follow_bindings(index, set, ip));
 +	read_unlock_bh(&ip_set_lock);
 +}
 +
 +/* Register and deregister settype */
 +
-+static inline int
-+set_type_equal(const struct ip_set_type *set_type, const char *str2)
-+{
-+	return !strncmp(set_type->typename, str2, IP_SET_MAXNAMELEN - 1);
-+}
-+
 +static inline struct ip_set_type *
 +find_set_type(const char *name)
 +{
-+	return LIST_FIND(&set_type_list,
-+			 set_type_equal,
-+			 struct ip_set_type *,
-+			 name);
++	struct ip_set_type *set_type;
++
++	list_for_each_entry(set_type, &set_type_list, list)
++		if (!strncmp(set_type->typename, name, IP_SET_MAXNAMELEN - 1))
++			return set_type;
++	return NULL;
 +}
 +
-+int
++int 
 +ip_set_register_set_type(struct ip_set_type *set_type)
 +{
 +	int ret = 0;
-+
++	
 +	if (set_type->protocol_version != IP_SET_PROTOCOL_VERSION) {
 +		ip_set_printk("'%s' uses wrong protocol version %u (want %u)",
 +			      set_type->typename,
@@ -1462,7 +1428,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +	write_lock_bh(&ip_set_lock);
 +	if (find_set_type(set_type->typename)) {
 +		/* Duplicate! */
-+		ip_set_printk("'%s' already registered!",
++		ip_set_printk("'%s' already registered!", 
 +			      set_type->typename);
 +		ret = -EINVAL;
 +		goto unlock;
@@ -1471,7 +1437,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +		ret = -EFAULT;
 +		goto unlock;
 +	}
-+	list_append(&set_type_list, set_type);
++	list_add(&set_type->list, &set_type_list);
 +	DP("'%s' registered.", set_type->typename);
 +   unlock:
 +	write_unlock_bh(&ip_set_lock);
@@ -1487,7 +1453,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +			      set_type->typename);
 +		goto unlock;
 +	}
-+	LIST_DELETE(&set_type_list, set_type);
++	list_del(&set_type->list);
 +	module_put(THIS_MODULE);
 +	DP("'%s' unregistered.", set_type->typename);
 +   unlock:
@@ -1508,7 +1474,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +ip_set_get_byname(const char *name)
 +{
 +	ip_set_id_t i, index = IP_SET_INVALID_ID;
-+
++	
 +	down(&ip_set_app_mutex);
 +	for (i = 0; i < ip_set_max; i++) {
 +		if (ip_set_list[i] != NULL
@@ -1534,12 +1500,12 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +
 +	if (index >= ip_set_max)
 +		return IP_SET_INVALID_ID;
-+
++	
 +	if (ip_set_list[index])
 +		__ip_set_get(index);
 +	else
 +		index = IP_SET_INVALID_ID;
-+
++		
 +	up(&ip_set_app_mutex);
 +	return index;
 +}
@@ -1562,7 +1528,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +ip_set_find_byname(const char *name)
 +{
 +	ip_set_id_t i, index = IP_SET_INVALID_ID;
-+
++	
 +	for (i = 0; i < ip_set_max; i++) {
 +		if (ip_set_list[i] != NULL
 +		    && strcmp(ip_set_list[i]->name, name) == 0) {
@@ -1578,7 +1544,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +{
 +	if (index >= ip_set_max || ip_set_list[index] == NULL)
 +		index = IP_SET_INVALID_ID;
-+
++	
 +	return index;
 +}
 +
@@ -1609,7 +1575,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +	struct ip_set *set = ip_set_list[index];
 +	ip_set_ip_t ip;
 +	int res;
-+
++	
 +	IP_SET_ASSERT(set);
 +	do {
 +		write_lock_bh(&set->lock);
@@ -1641,7 +1607,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +	struct ip_set *set = ip_set_list[index];
 +	ip_set_ip_t ip;
 +	int res;
-+
++	
 +	IP_SET_ASSERT(set);
 +	write_lock_bh(&set->lock);
 +	res = set->type->delip(set,
@@ -1685,18 +1651,18 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +	IP_SET_ASSERT(set);
 +	if (size < sizeof(struct ip_set_req_bind))
 +		return -EINVAL;
-+
++		
 +	req_bind = (struct ip_set_req_bind *) data;
 +	req_bind->binding[IP_SET_MAXNAMELEN - 1] = '\0';
 +
 +	if (strcmp(req_bind->binding, IPSET_TOKEN_DEFAULT) == 0) {
 +		/* Default binding of a set */
 +		char *binding_name;
-+
++		
 +		if (size != sizeof(struct ip_set_req_bind) + IP_SET_MAXNAMELEN)
 +			return -EINVAL;
 +
-+		binding_name = (char *)(data + sizeof(struct ip_set_req_bind));
++		binding_name = (char *)(data + sizeof(struct ip_set_req_bind));	
 +		binding_name[IP_SET_MAXNAMELEN - 1] = '\0';
 +
 +		binding = ip_set_find_byname(binding_name);
@@ -1723,7 +1689,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +			      &ip);
 +	DP("set %s, ip: %u.%u.%u.%u, binding %s",
 +	   set->name, HIPQUAD(ip), ip_set_list[binding]->name);
-+
++	
 +	if (res >= 0)
 +		res = ip_set_hash_add(set->id, ip, binding);
 +
@@ -1772,10 +1738,10 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +	DP("");
 +	if (size < sizeof(struct ip_set_req_bind))
 +		return -EINVAL;
-+
++		
 +	req_bind = (struct ip_set_req_bind *) data;
 +	req_bind->binding[IP_SET_MAXNAMELEN - 1] = '\0';
-+
++	
 +	DP("%u %s", index, req_bind->binding);
 +	if (index == IP_SET_INVALID_ID) {
 +		/* unbind :all: */
@@ -1795,7 +1761,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +		DP("unreachable reached!");
 +		return -EINVAL;
 +	}
-+
++	
 +	set = ip_set_list[index];
 +	IP_SET_ASSERT(set);
 +	if (strcmp(req_bind->binding, IPSET_TOKEN_DEFAULT) == 0) {
@@ -1804,7 +1770,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +
 +		if (binding == IP_SET_INVALID_ID)
 +			return -ENOENT;
-+
++			
 +		write_lock_bh(&ip_set_lock);
 +		/* Sets in hash values are referenced */
 +		__ip_set_put(set->binding);
@@ -1820,7 +1786,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +		write_unlock_bh(&ip_set_lock);
 +		return 0;
 +	}
-+
++	
 +	res = __ip_set_testip(set,
 +			      data + sizeof(struct ip_set_req_bind),
 +			      size - sizeof(struct ip_set_req_bind),
@@ -1847,24 +1813,24 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +	IP_SET_ASSERT(set);
 +	if (size < sizeof(struct ip_set_req_bind))
 +		return -EINVAL;
-+
++		
 +	req_bind = (struct ip_set_req_bind *) data;
 +	req_bind->binding[IP_SET_MAXNAMELEN - 1] = '\0';
 +
 +	if (strcmp(req_bind->binding, IPSET_TOKEN_DEFAULT) == 0) {
 +		/* Default binding of set */
 +		char *binding_name;
-+
++		
 +		if (size != sizeof(struct ip_set_req_bind) + IP_SET_MAXNAMELEN)
 +			return -EINVAL;
 +
-+		binding_name = (char *)(data + sizeof(struct ip_set_req_bind));
++		binding_name = (char *)(data + sizeof(struct ip_set_req_bind));	
 +		binding_name[IP_SET_MAXNAMELEN - 1] = '\0';
 +
 +		binding = ip_set_find_byname(binding_name);
 +		if (binding == IP_SET_INVALID_ID)
 +			return -ENOENT;
-+
++		
 +		res = (set->binding == binding) ? -EEXIST : 0;
 +
 +		return res;
@@ -1872,15 +1838,15 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +	binding = ip_set_find_byname(req_bind->binding);
 +	if (binding == IP_SET_INVALID_ID)
 +		return -ENOENT;
-+
-+
++		
++	
 +	res = __ip_set_testip(set,
 +			      data + sizeof(struct ip_set_req_bind),
 +			      size - sizeof(struct ip_set_req_bind),
 +			      &ip);
 +	DP("set %s, ip: %u.%u.%u.%u, binding %s",
 +	   set->name, HIPQUAD(ip), ip_set_list[binding]->name);
-+
++	   
 +	if (res >= 0)
 +		res = (ip_set_find_in_hash(set->id, ip) == binding)
 +			? -EEXIST : 0;
@@ -1892,7 +1858,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +find_set_type_rlock(const char *typename)
 +{
 +	struct ip_set_type *type;
-+
++	
 +	read_lock_bh(&ip_set_lock);
 +	type = find_set_type(typename);
 +	if (type == NULL)
@@ -1921,7 +1887,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +		/* No free slot remained */
 +		return -ERANGE;
 +	/* Check that index is usable as id (swapping) */
-+    check:
++    check:	
 +	for (i = 0;  i < ip_set_max; i++) {
 +		if (ip_set_list[i] != NULL
 +		    && ip_set_list[i]->id == *id) {
@@ -1943,7 +1909,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +	      size_t size)
 +{
 +	struct ip_set *set;
-+	ip_set_id_t index, id;
++	ip_set_id_t index = 0, id;
 +	int res = 0;
 +
 +	DP("setname: %s, typename: %s, id: %u", name, typename, restore);
@@ -2001,7 +1967,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +
 +	/*
 +	 * Here, we have a valid, constructed set. &ip_set_lock again,
-+	 * find free id/index and check that it is not already in
++	 * find free id/index and check that it is not already in 
 +	 * ip_set_list.
 +	 */
 +	write_lock_bh(&ip_set_lock);
@@ -2016,7 +1982,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +		res = -ERANGE;
 +		goto cleanup;
 +	}
-+
++	 
 +	/*
 +	 * Finally! Add our shiny new set to the list, and be done.
 +	 */
@@ -2025,7 +1991,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +	ip_set_list[index] = set;
 +	write_unlock_bh(&ip_set_lock);
 +	return res;
-+
++	
 +    cleanup:
 +	write_unlock_bh(&ip_set_lock);
 +	set->type->destroy(set);
@@ -2075,7 +2041,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +		ip_set_destroy_set(index);
 +	} else {
 +		for (i = 0; i < ip_set_max; i++) {
-+			if (ip_set_list[i] != NULL
++			if (ip_set_list[i] != NULL 
 +			    && (atomic_read(&ip_set_list[i]->ref)))
 +			    	return -EBUSY;
 +		}
@@ -2098,7 +2064,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +	write_unlock_bh(&set->lock);
 +}
 +
-+/*
++/* 
 + * Flush data in a set - or in all sets
 + */
 +static int
@@ -2125,7 +2091,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +	write_lock_bh(&ip_set_lock);
 +	for (i = 0; i < ip_set_max; i++) {
 +		if (ip_set_list[i] != NULL
-+		    && strncmp(ip_set_list[i]->name,
++		    && strncmp(ip_set_list[i]->name, 
 +			       name,
 +			       IP_SET_MAXNAMELEN - 1) == 0) {
 +			res = -EEXIST;
@@ -2151,11 +2117,11 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +	u_int32_t from_ref;
 +
 +	DP("set: %s to %s",  from->name, to->name);
-+	/* Type can't be changed. Artifical restriction. */
-+	if (from->type->typecode != to->type->typecode)
++	/* Features must not change. Artifical restriction. */
++	if (from->type->features != to->type->features)
 +		return -ENOEXEC;
 +
-+	/* No magic here: ref munging protected by the mutex */
++	/* No magic here: ref munging protected by the mutex */	
 +	write_lock_bh(&ip_set_lock);
 +	strncpy(from_name, from->name, IP_SET_MAXNAMELEN);
 +	from_ref = atomic_read(&from->ref);
@@ -2164,10 +2130,10 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +	atomic_set(&from->ref, atomic_read(&to->ref));
 +	strncpy(to->name, from_name, IP_SET_MAXNAMELEN);
 +	atomic_set(&to->ref, from_ref);
-+
++	
 +	ip_set_list[from_index] = to;
 +	ip_set_list[to_index] = from;
-+
++	
 +	write_unlock_bh(&ip_set_lock);
 +	return 0;
 +}
@@ -2197,7 +2163,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +		    ip_set_id_t id, void *data, int *used)
 +{
 +	if (set_hash->id == id) {
-+		struct ip_set_hash_list *hash_list =
++		struct ip_set_hash_list *hash_list = 
 +			(struct ip_set_hash_list *)(data + *used);
 +
 +		hash_list->ip = set_hash->ip;
@@ -2260,7 +2226,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +
 +	/* Fill in set spefific bindings data */
 +	FOREACH_HASH_DO(__set_hash_bindings, set->id, data, used);
-+
++	
 +	return 0;
 +
 +    unlock_set:
@@ -2290,7 +2256,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +	*used += sizeof(struct ip_set_save);
 +
 +	set = ip_set_list[index];
-+	DP("set: %s, used: %u(%u) %p %p", set->name, *used, len,
++	DP("set: %s, used: %u(%u) %p %p", set->name, *used, len, 
 +	   data, data + *used);
 +
 +	read_lock_bh(&set->lock);
@@ -2307,8 +2273,8 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +	set->type->list_header(set, data + *used);
 +	*used += set_save->header_size;
 +
-+	DP("set header filled: %s, used: %u %p %p", set->name, *used,
-+	   data, data + *used);
++	DP("set header filled: %s, used: %u(%u) %p %p", set->name, *used,
++	   set_save->header_size, data, data + *used);
 +	/* Get and ensure set specific members size */
 +	set_save->members_size = set->type->list_members_size(set);
 +	if (*used + set_save->members_size > len)
@@ -2318,8 +2284,8 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +	set->type->list_members(set, data + *used);
 +	*used += set_save->members_size;
 +	read_unlock_bh(&set->lock);
-+	DP("set members filled: %s, used: %u %p %p", set->name, *used,
-+	   data, data + *used);
++	DP("set members filled: %s, used: %u(%u) %p %p", set->name, *used,
++	   set_save->members_size, data, data + *used);
 +	return 0;
 +
 +    unlock_set:
@@ -2339,7 +2305,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +{
 +	if (*res == 0
 +	    && (id == IP_SET_INVALID_ID || set_hash->id == id)) {
-+		struct ip_set_hash_save *hash_save =
++		struct ip_set_hash_save *hash_save = 
 +			(struct ip_set_hash_save *)(data + *used);
 +		/* Ensure bindings size */
 +		if (*used + sizeof(struct ip_set_hash_save) > len) {
@@ -2369,6 +2335,8 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +	/* Marker */
 +	set_save = (struct ip_set_save *) (data + *used);
 +	set_save->index = IP_SET_INVALID_ID;
++	set_save->header_size = 0;
++	set_save->members_size = 0;
 +	*used += sizeof(struct ip_set_save);
 +
 +	DP("marker added used %u, len %u", *used, len);
@@ -2378,7 +2346,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +		index = ip_set_list[index]->id;
 +	FOREACH_HASH_DO(__set_hash_save_bindings, index, data, used, len, &res);
 +
-+	return res;
++	return res;	
 +}
 +
 +/*
@@ -2397,7 +2365,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +	/* Loop to restore sets */
 +	while (1) {
 +		line++;
-+
++		
 +		DP("%u %u %u", used, sizeof(struct ip_set_restore), len);
 +		/* Get and ensure header size */
 +		if (used + sizeof(struct ip_set_restore) > len)
@@ -2406,8 +2374,8 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +		used += sizeof(struct ip_set_restore);
 +
 +		/* Ensure data size */
-+		if (used
-+		    + set_restore->header_size
++		if (used 
++		    + set_restore->header_size 
 +		    + set_restore->members_size > len)
 +			return line;
 +
@@ -2416,7 +2384,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +			line--;
 +			goto bindings;
 +		}
-+
++		
 +		/* Try to create the set */
 +		DP("restore %s %s", set_restore->name, set_restore->typename);
 +		res = ip_set_create(set_restore->name,
@@ -2424,7 +2392,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +				    set_restore->index,
 +				    data + used,
 +				    set_restore->header_size);
-+
++		
 +		if (res != 0)
 +			return line;
 +		used += set_restore->header_size;
@@ -2445,7 +2413,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +			res = __ip_set_addip(index,
 +					   data + used + members_size,
 +					   set->type->reqsize);
-+			if (!(res == 0 || res == -EEXIST))
++			if (!(res == 0 || res == -EEXIST)) 
 +				return line;
 +			members_size += set->type->reqsize;
 +		}
@@ -2454,32 +2422,35 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +		   set_restore->members_size, members_size);
 +		if (members_size != set_restore->members_size)
 +			return line++;
-+		used += set_restore->members_size;
++		used += set_restore->members_size;		
 +	}
-+
++	
 +   bindings:
 +   	/* Loop to restore bindings */
 +   	while (used < len) {
 +		line++;
 +
-+		DP("restore binding, line %u", line);
++		DP("restore binding, line %u", line);		
 +		/* Get and ensure size */
 +		if (used + sizeof(struct ip_set_hash_save) > len)
 +			return line;
 +		hash_save = (struct ip_set_hash_save *) (data + used);
 +		used += sizeof(struct ip_set_hash_save);
-+
++		
 +		/* hash_save->id is used to store the index */
 +		index = ip_set_find_byindex(hash_save->id);
 +		DP("restore binding index %u, id %u, %u -> %u",
-+		   index, hash_save->id, hash_save->ip, hash_save->binding);
++		   index, hash_save->id, hash_save->ip, hash_save->binding);		
 +		if (index != hash_save->id)
 +			return line;
-+
++		if (ip_set_find_byindex(hash_save->binding) == IP_SET_INVALID_ID) {
++			DP("corrupt binding set index %u", hash_save->binding);
++			return line;
++		}
 +		set = ip_set_list[hash_save->id];
 +		/* Null valued IP means default binding */
 +		if (hash_save->ip)
-+			res = ip_set_hash_add(set->id,
++			res = ip_set_hash_add(set->id, 
 +					      hash_save->ip,
 +					      hash_save->binding);
 +		else {
@@ -2495,8 +2466,8 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +   	}
 +   	if (used != len)
 +   		return line;
-+
-+	return 0;
++   	
++	return 0;	
 +}
 +
 +static int
@@ -2543,7 +2514,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +
 +	op = (unsigned *)data;
 +	DP("op=%x", *op);
-+
++	
 +	if (*op < IP_SET_OP_VERSION) {
 +		/* Check the version at the beginning of operations */
 +		struct ip_set_req_version *req_version =
@@ -2558,9 +2529,9 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +	case IP_SET_OP_CREATE:{
 +		struct ip_set_req_create *req_create
 +			= (struct ip_set_req_create *) data;
-+
-+		if (len <= sizeof(struct ip_set_req_create)) {
-+			ip_set_printk("short CREATE data (want >%zu, got %u)",
++		
++		if (len < sizeof(struct ip_set_req_create)) {
++			ip_set_printk("short CREATE data (want >=%zu, got %u)",
 +				      sizeof(struct ip_set_req_create), len);
 +			res = -EINVAL;
 +			goto done;
@@ -2577,7 +2548,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +	case IP_SET_OP_DESTROY:{
 +		struct ip_set_req_std *req_destroy
 +			= (struct ip_set_req_std *) data;
-+
++		
 +		if (len != sizeof(struct ip_set_req_std)) {
 +			ip_set_printk("invalid DESTROY data (want %zu, got %u)",
 +				      sizeof(struct ip_set_req_std), len);
@@ -2596,7 +2567,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +				goto done;
 +			}
 +		}
-+
++			
 +		res = ip_set_destroy(index);
 +		goto done;
 +	}
@@ -2638,7 +2609,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +
 +		req_rename->name[IP_SET_MAXNAMELEN - 1] = '\0';
 +		req_rename->typename[IP_SET_MAXNAMELEN - 1] = '\0';
-+
++			
 +		index = ip_set_find_byname(req_rename->name);
 +		if (index == IP_SET_INVALID_ID) {
 +			res = -ENOENT;
@@ -2675,10 +2646,10 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +		res = ip_set_swap(index, to_index);
 +		goto done;
 +	}
-+	default:
++	default: 
 +		break;	/* Set identified by id */
 +	}
-+
++	
 +	/* There we may have add/del/test/bind/unbind/test_bind operations */
 +	if (*op < IP_SET_OP_ADD_IP || *op > IP_SET_OP_TEST_BIND_SET) {
 +		res = -EBADMSG;
@@ -2695,7 +2666,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +	req_adt = (struct ip_set_req_adt *) data;
 +
 +	/* -U :all: :all:|:default: uses IP_SET_INVALID_ID */
-+	if (!(*op == IP_SET_OP_UNBIND_SET
++	if (!(*op == IP_SET_OP_UNBIND_SET 
 +	      && req_adt->index == IP_SET_INVALID_ID)) {
 +		index = ip_set_find_byindex(req_adt->index);
 +		if (index == IP_SET_INVALID_ID) {
@@ -2714,7 +2685,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +	return res;
 +}
 +
-+static int
++static int 
 +ip_set_sockfn_get(struct sock *sk, int optval, void *user, int *len)
 +{
 +	int res = 0;
@@ -2849,7 +2820,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +			req_max_sets->set.index = IP_SET_INVALID_ID;
 +		} else {
 +			req_max_sets->set.name[IP_SET_MAXNAMELEN - 1] = '\0';
-+			req_max_sets->set.index =
++			req_max_sets->set.index = 
 +				ip_set_find_byname(req_max_sets->set.name);
 +			if (req_max_sets->set.index == IP_SET_INVALID_ID) {
 +				res = -ENOENT;
@@ -2864,7 +2835,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +		}
 +		goto copy;
 +	}
-+	case IP_SET_OP_LIST_SIZE:
++	case IP_SET_OP_LIST_SIZE: 
 +	case IP_SET_OP_SAVE_SIZE: {
 +		struct ip_set_req_setnames *req_setnames
 +			= (struct ip_set_req_setnames *) data;
@@ -2885,7 +2856,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +		for (i = 0; i < ip_set_max; i++) {
 +			if (ip_set_list[i] == NULL)
 +				continue;
-+			name_list = (struct ip_set_name_list *)
++			name_list = (struct ip_set_name_list *) 
 +				(data + used);
 +			used += sizeof(struct ip_set_name_list);
 +			if (used > copylen) {
@@ -2914,8 +2885,9 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +				req_setnames->size += sizeof(struct ip_set_list)
 +					+ set->type->header_size
 +					+ set->type->list_members_size(set);
-+				FOREACH_HASH_DO(__set_hash_bindings_size_list,
-+						i, &req_setnames->size);
++				/* Sets are identified by id in the hash */
++				FOREACH_HASH_DO(__set_hash_bindings_size_list, 
++						set->id, &req_setnames->size);
 +				break;
 +			}
 +			case IP_SET_OP_SAVE_SIZE: {
@@ -2923,7 +2895,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +					+ set->type->header_size
 +					+ set->type->list_members_size(set);
 +				FOREACH_HASH_DO(__set_hash_bindings_size_save,
-+						i, &req_setnames->size);
++						set->id, &req_setnames->size);
 +				break;
 +			}
 +			default:
@@ -3004,7 +2976,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +		}
 +		if (res == 0)
 +			res = ip_set_save_bindings(index, data, &used, *len);
-+
++			
 +		if (res != 0)
 +			goto done;
 +		else if (copylen != used) {
@@ -3046,11 +3018,8 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +   	             		 && ip_set_list[index]
 +   	             ? ip_set_list[index]->name
 +   	             : ":all:", copylen);
-+	if (res == 0)
-+		res = copy_to_user(user, data, copylen);
-+	else
-+		copy_to_user(user, data, copylen);
-+
++	res = copy_to_user(user, data, copylen);
++    	
 +    done:
 +	up(&ip_set_app_mutex);
 +	vfree(data);
@@ -3141,13 +3110,13 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set.c linux-2.6.21.1-owrt/net/ipv
 +module_exit(fini);
 diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_iphash.c linux-2.6.21.1-owrt/net/ipv4/netfilter/ip_set_iphash.c
 --- linux-2.6.21.1/net/ipv4/netfilter/ip_set_iphash.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1-owrt/net/ipv4/netfilter/ip_set_iphash.c	2007-05-14 11:44:19.000000000 +0200
-@@ -0,0 +1,379 @@
++++ linux-2.6.21.1-owrt/net/ipv4/netfilter/ip_set_iphash.c	2007-05-23 23:04:36.000000000 +0200
+@@ -0,0 +1,413 @@
 +/* Copyright (C) 2003-2004 Jozsef Kadlecsik <kadlec@blackhole.kfki.hu>
 + *
 + * This program is free software; you can redistribute it and/or modify
 + * it under the terms of the GNU General Public License version 2 as
-+ * published by the Free Software Foundation.
++ * published by the Free Software Foundation.  
 + */
 +
 +/* Kernel module implementing an ip hash set */
@@ -3169,37 +3138,32 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_iphash.c linux-2.6.21.1-owrt/
 +#include <linux/netfilter_ipv4/ip_set_malloc.h>
 +#include <linux/netfilter_ipv4/ip_set_iphash.h>
 +#include <linux/netfilter_ipv4/ip_set_jhash.h>
-+#include <linux/netfilter_ipv4/ip_set_prime.h>
++
++static int limit = MAX_RANGE;
 +
 +static inline __u32
-+jhash_ip(const struct ip_set_iphash *map, ip_set_ip_t ip)
++jhash_ip(const struct ip_set_iphash *map, uint16_t i, ip_set_ip_t ip)
 +{
-+	return jhash_1word(ip, map->initval);
-+}
-+
-+static inline __u32
-+randhash_ip(const struct ip_set_iphash *map, ip_set_ip_t ip)
-+{
-+	return (1 + ip % map->prime);
++	return jhash_1word(ip, *(((uint32_t *) map->initval) + i));
 +}
 +
 +static inline __u32
 +hash_id(struct ip_set *set, ip_set_ip_t ip, ip_set_ip_t *hash_ip)
 +{
 +	struct ip_set_iphash *map = (struct ip_set_iphash *) set->data;
-+	__u32 jhash, randhash, id;
++	__u32 id;
 +	u_int16_t i;
++	ip_set_ip_t *elem;
 +
 +	*hash_ip = ip & map->netmask;
-+	jhash = jhash_ip(map, *hash_ip);
-+	randhash = randhash_ip(map, *hash_ip);
 +	DP("set: %s, ip:%u.%u.%u.%u, %u.%u.%u.%u, %u.%u.%u.%u",
 +	   set->name, HIPQUAD(ip), HIPQUAD(*hash_ip), HIPQUAD(map->netmask));
-+
++	
 +	for (i = 0; i < map->probes; i++) {
-+		id = (jhash + i * randhash) % map->hashsize;
++		id = jhash_ip(map, i, *hash_ip) % map->hashsize;
 +		DP("hash key: %u", id);
-+		if (map->members[id] == *hash_ip)
++		elem = HARRAY_ELEM(map->members, ip_set_ip_t *, id);
++		if (*elem == *hash_ip)
 +			return id;
 +		/* No shortcut at testing - there can be deleted
 +		 * entries. */
@@ -3210,14 +3174,14 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_iphash.c linux-2.6.21.1-owrt/
 +static inline int
 +__testip(struct ip_set *set, ip_set_ip_t ip, ip_set_ip_t *hash_ip)
 +{
-+	return (hash_id(set, ip, hash_ip) != UINT_MAX);
++	return (ip && hash_id(set, ip, hash_ip) != UINT_MAX);
 +}
 +
 +static int
 +testip(struct ip_set *set, const void *data, size_t size,
 +       ip_set_ip_t *hash_ip)
 +{
-+	struct ip_set_req_iphash *req =
++	struct ip_set_req_iphash *req = 
 +	    (struct ip_set_req_iphash *) data;
 +
 +	if (size != sizeof(struct ip_set_req_iphash)) {
@@ -3230,31 +3194,39 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_iphash.c linux-2.6.21.1-owrt/
 +}
 +
 +static int
-+testip_kernel(struct ip_set *set, const struct sk_buff *skb,
-+		u_int32_t flags, ip_set_ip_t *hash_ip)
++testip_kernel(struct ip_set *set, 
++	      const struct sk_buff *skb,
++	      ip_set_ip_t *hash_ip,
++	      const u_int32_t *flags,
++	      unsigned char index)
 +{
 +	return __testip(set,
-+			ntohl(flags & IPSET_SRC ? skb->nh.iph->saddr
-+						: skb->nh.iph->daddr),
++			ntohl(flags[index] & IPSET_SRC 
++				? skb->nh.iph->saddr 
++				: skb->nh.iph->daddr),
 +			hash_ip);
 +}
 +
 +static inline int
 +__addip(struct ip_set_iphash *map, ip_set_ip_t ip, ip_set_ip_t *hash_ip)
 +{
-+	__u32 jhash, randhash, probe;
++	__u32 probe;
 +	u_int16_t i;
++	ip_set_ip_t *elem;
++	
++	if (!ip || map->elements > limit)
++		return -ERANGE;
 +
 +	*hash_ip = ip & map->netmask;
-+	jhash = jhash_ip(map, *hash_ip);
-+	randhash = randhash_ip(map, *hash_ip);
-+
++	
 +	for (i = 0; i < map->probes; i++) {
-+		probe = (jhash + i * randhash) % map->hashsize;
-+		if (map->members[probe] == *hash_ip)
++		probe = jhash_ip(map, i, *hash_ip) % map->hashsize;
++		elem = HARRAY_ELEM(map->members, ip_set_ip_t *, probe);
++		if (*elem == *hash_ip)
 +			return -EEXIST;
-+		if (!map->members[probe]) {
-+			map->members[probe] = *hash_ip;
++		if (!*elem) {
++			*elem = *hash_ip;
++			map->elements++;
 +			return 0;
 +		}
 +	}
@@ -3266,7 +3238,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_iphash.c linux-2.6.21.1-owrt/
 +addip(struct ip_set *set, const void *data, size_t size,
 +        ip_set_ip_t *hash_ip)
 +{
-+	struct ip_set_req_iphash *req =
++	struct ip_set_req_iphash *req = 
 +	    (struct ip_set_req_iphash *) data;
 +
 +	if (size != sizeof(struct ip_set_req_iphash)) {
@@ -3279,79 +3251,88 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_iphash.c linux-2.6.21.1-owrt/
 +}
 +
 +static int
-+addip_kernel(struct ip_set *set, const struct sk_buff *skb,
-+	     u_int32_t flags, ip_set_ip_t *hash_ip)
++addip_kernel(struct ip_set *set, 
++	     const struct sk_buff *skb,
++	     ip_set_ip_t *hash_ip,
++	     const u_int32_t *flags,
++	     unsigned char index)
 +{
 +	return __addip((struct ip_set_iphash *) set->data,
-+		       ntohl(flags & IPSET_SRC ? skb->nh.iph->saddr
-+					       : skb->nh.iph->daddr),
++		       ntohl(flags[index] & IPSET_SRC 
++		       		? skb->nh.iph->saddr 
++				: skb->nh.iph->daddr),
 +		       hash_ip);
 +}
 +
 +static int retry(struct ip_set *set)
 +{
 +	struct ip_set_iphash *map = (struct ip_set_iphash *) set->data;
-+	ip_set_ip_t hash_ip, *members;
-+	u_int32_t i, hashsize;
-+	unsigned newbytes;
++	ip_set_ip_t hash_ip, *elem;
++	void *members;
++	u_int32_t i, hashsize = map->hashsize;
 +	int res;
-+	struct ip_set_iphash tmp = {
-+		.hashsize = map->hashsize,
-+		.probes = map->probes,
-+		.resize = map->resize,
-+		.netmask = map->netmask,
-+	};
-+
++	struct ip_set_iphash *tmp;
++	
 +	if (map->resize == 0)
 +		return -ERANGE;
 +
 +    again:
 +    	res = 0;
-+
-+	/* Calculate new parameters */
-+	get_random_bytes(&tmp.initval, 4);
-+	hashsize = tmp.hashsize + (tmp.hashsize * map->resize)/100;
-+	if (hashsize == tmp.hashsize)
++    	
++	/* Calculate new hash size */
++	hashsize += (hashsize * map->resize)/100;
++	if (hashsize == map->hashsize)
 +		hashsize++;
-+	tmp.prime = make_prime(hashsize);
-+
++	
 +	ip_set_printk("rehashing of set %s triggered: "
 +		      "hashsize grows from %u to %u",
-+		      set->name, tmp.hashsize, hashsize);
-+	tmp.hashsize = hashsize;
++		      set->name, map->hashsize, hashsize);
 +
-+	newbytes = hashsize * sizeof(ip_set_ip_t);
-+	tmp.members = ip_set_malloc_atomic(newbytes);
-+	if (!tmp.members) {
-+		DP("out of memory for %d bytes", newbytes);
++	tmp = kmalloc(sizeof(struct ip_set_iphash) 
++		      + map->probes * sizeof(uint32_t), GFP_ATOMIC);
++	if (!tmp) {
++		DP("out of memory for %d bytes",
++		   sizeof(struct ip_set_iphash)
++		   + map->probes * sizeof(uint32_t));
 +		return -ENOMEM;
 +	}
-+	memset(tmp.members, 0, newbytes);
-+
++	tmp->members = harray_malloc(hashsize, sizeof(ip_set_ip_t), GFP_ATOMIC);
++	if (!tmp->members) {
++		DP("out of memory for %d bytes", hashsize * sizeof(ip_set_ip_t));
++		kfree(tmp);
++		return -ENOMEM;
++	}
++	tmp->hashsize = hashsize;
++	tmp->elements = 0;
++	tmp->probes = map->probes;
++	tmp->resize = map->resize;
++	tmp->netmask = map->netmask;
++	memcpy(tmp->initval, map->initval, map->probes * sizeof(uint32_t));
++	
 +	write_lock_bh(&set->lock);
 +	map = (struct ip_set_iphash *) set->data; /* Play safe */
 +	for (i = 0; i < map->hashsize && res == 0; i++) {
-+		if (map->members[i])
-+			res = __addip(&tmp, map->members[i], &hash_ip);
++		elem = HARRAY_ELEM(map->members, ip_set_ip_t *, i);	
++		if (*elem)
++			res = __addip(tmp, *elem, &hash_ip);
 +	}
 +	if (res) {
 +		/* Failure, try again */
 +		write_unlock_bh(&set->lock);
-+		ip_set_free(tmp.members, newbytes);
++		harray_free(tmp->members);
++		kfree(tmp);
 +		goto again;
 +	}
-+
++	
 +	/* Success at resizing! */
 +	members = map->members;
-+	hashsize = map->hashsize;
 +
-+	map->initval = tmp.initval;
-+	map->prime = tmp.prime;
-+	map->hashsize = tmp.hashsize;
-+	map->members = tmp.members;
++	map->hashsize = tmp->hashsize;
++	map->members = tmp->members;
 +	write_unlock_bh(&set->lock);
 +
-+	ip_set_free(members, hashsize * sizeof(ip_set_ip_t));
++	harray_free(members);
++	kfree(tmp);
 +
 +	return 0;
 +}
@@ -3360,12 +3341,19 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_iphash.c linux-2.6.21.1-owrt/
 +__delip(struct ip_set *set, ip_set_ip_t ip, ip_set_ip_t *hash_ip)
 +{
 +	struct ip_set_iphash *map = (struct ip_set_iphash *) set->data;
-+	ip_set_ip_t id = hash_id(set, ip, hash_ip);
++	ip_set_ip_t id, *elem;
 +
++	if (!ip)
++		return -ERANGE;
++
++	id = hash_id(set, ip, hash_ip);
 +	if (id == UINT_MAX)
 +		return -EEXIST;
++		
++	elem = HARRAY_ELEM(map->members, ip_set_ip_t *, id);
++	*elem = 0;
++	map->elements--;
 +
-+	map->members[id] = 0;
 +	return 0;
 +}
 +
@@ -3386,21 +3374,25 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_iphash.c linux-2.6.21.1-owrt/
 +}
 +
 +static int
-+delip_kernel(struct ip_set *set, const struct sk_buff *skb,
-+	       u_int32_t flags, ip_set_ip_t *hash_ip)
++delip_kernel(struct ip_set *set, 
++	     const struct sk_buff *skb,
++	     ip_set_ip_t *hash_ip,
++	     const u_int32_t *flags,
++	     unsigned char index)
 +{
 +	return __delip(set,
-+		       ntohl(flags & IPSET_SRC ? skb->nh.iph->saddr
-+					       : skb->nh.iph->daddr),
++		       ntohl(flags[index] & IPSET_SRC 
++				? skb->nh.iph->saddr 
++				: skb->nh.iph->daddr),
 +		       hash_ip);
 +}
 +
 +static int create(struct ip_set *set, const void *data, size_t size)
 +{
-+	unsigned newbytes;
 +	struct ip_set_req_iphash_create *req =
 +	    (struct ip_set_req_iphash_create *) data;
 +	struct ip_set_iphash *map;
++	uint16_t i;
 +
 +	if (size != sizeof(struct ip_set_req_iphash_create)) {
 +		ip_set_printk("data length wrong (want %zu, have %zu)",
@@ -3414,26 +3406,32 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_iphash.c linux-2.6.21.1-owrt/
 +		return -ENOEXEC;
 +	}
 +
-+	map = kmalloc(sizeof(struct ip_set_iphash), GFP_KERNEL);
++	if (req->probes < 1) {
++		ip_set_printk("probes too small");
++		return -ENOEXEC;
++	}
++
++	map = kmalloc(sizeof(struct ip_set_iphash) 
++		      + req->probes * sizeof(uint32_t), GFP_KERNEL);
 +	if (!map) {
 +		DP("out of memory for %d bytes",
-+		   sizeof(struct ip_set_iphash));
++		   sizeof(struct ip_set_iphash)
++		   + req->probes * sizeof(uint32_t));
 +		return -ENOMEM;
 +	}
-+	get_random_bytes(&map->initval, 4);
-+	map->prime = make_prime(req->hashsize);
++	for (i = 0; i < req->probes; i++)
++		get_random_bytes(((uint32_t *) map->initval)+i, 4);
++	map->elements = 0;
 +	map->hashsize = req->hashsize;
 +	map->probes = req->probes;
 +	map->resize = req->resize;
 +	map->netmask = req->netmask;
-+	newbytes = map->hashsize * sizeof(ip_set_ip_t);
-+	map->members = ip_set_malloc(newbytes);
++	map->members = harray_malloc(map->hashsize, sizeof(ip_set_ip_t), GFP_KERNEL);
 +	if (!map->members) {
-+		DP("out of memory for %d bytes", newbytes);
++		DP("out of memory for %d bytes", map->hashsize * sizeof(ip_set_ip_t));
 +		kfree(map);
 +		return -ENOMEM;
 +	}
-+	memset(map->members, 0, newbytes);
 +
 +	set->data = map;
 +	return 0;
@@ -3443,7 +3441,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_iphash.c linux-2.6.21.1-owrt/
 +{
 +	struct ip_set_iphash *map = (struct ip_set_iphash *) set->data;
 +
-+	ip_set_free(map->members, map->hashsize * sizeof(ip_set_ip_t));
++	harray_free(map->members);
 +	kfree(map);
 +
 +	set->data = NULL;
@@ -3452,7 +3450,8 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_iphash.c linux-2.6.21.1-owrt/
 +static void flush(struct ip_set *set)
 +{
 +	struct ip_set_iphash *map = (struct ip_set_iphash *) set->data;
-+	memset(map->members, 0, map->hashsize * sizeof(ip_set_ip_t));
++	harray_flush(map->members, map->hashsize, sizeof(ip_set_ip_t));
++	map->elements = 0;
 +}
 +
 +static void list_header(const struct ip_set *set, void *data)
@@ -3477,14 +3476,17 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_iphash.c linux-2.6.21.1-owrt/
 +static void list_members(const struct ip_set *set, void *data)
 +{
 +	struct ip_set_iphash *map = (struct ip_set_iphash *) set->data;
-+	int bytes = map->hashsize * sizeof(ip_set_ip_t);
++	ip_set_ip_t i, *elem;
 +
-+	memcpy(data, map->members, bytes);
++	for (i = 0; i < map->hashsize; i++) {
++		elem = HARRAY_ELEM(map->members, ip_set_ip_t *, i);	
++		((ip_set_ip_t *)data)[i] = *elem;
++	}
 +}
 +
 +static struct ip_set_type ip_set_iphash = {
 +	.typename		= SETTYPE_NAME,
-+	.typecode		= IPSET_TYPE_IP,
++	.features		= IPSET_TYPE_IP | IPSET_DATA_SINGLE,
 +	.protocol_version	= IP_SET_PROTOCOL_VERSION,
 +	.create			= &create,
 +	.destroy		= &destroy,
@@ -3507,10 +3509,11 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_iphash.c linux-2.6.21.1-owrt/
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Jozsef Kadlecsik <kadlec@blackhole.kfki.hu>");
 +MODULE_DESCRIPTION("iphash type of IP sets");
++module_param(limit, int, 0600);
++MODULE_PARM_DESC(limit, "maximal number of elements stored in the sets");
 +
 +static int __init init(void)
 +{
-+	init_max_malloc_size();
 +	return ip_set_register_set_type(&ip_set_iphash);
 +}
 +
@@ -3524,15 +3527,15 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_iphash.c linux-2.6.21.1-owrt/
 +module_exit(fini);
 diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_ipmap.c linux-2.6.21.1-owrt/net/ipv4/netfilter/ip_set_ipmap.c
 --- linux-2.6.21.1/net/ipv4/netfilter/ip_set_ipmap.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1-owrt/net/ipv4/netfilter/ip_set_ipmap.c	2007-05-14 11:44:19.000000000 +0200
-@@ -0,0 +1,313 @@
++++ linux-2.6.21.1-owrt/net/ipv4/netfilter/ip_set_ipmap.c	2007-05-23 23:04:36.000000000 +0200
+@@ -0,0 +1,327 @@
 +/* Copyright (C) 2000-2002 Joakim Axelsson <gozem@linux.nu>
 + *                         Patrick Schaaf <bof@bof.de>
 + * Copyright (C) 2003-2004 Jozsef Kadlecsik <kadlec@blackhole.kfki.hu>
 + *
 + * This program is free software; you can redistribute it and/or modify
 + * it under the terms of the GNU General Public License version 2 as
-+ * published by the Free Software Foundation.
++ * published by the Free Software Foundation.  
 + */
 +
 +/* Kernel module implementing an IP set type: the single bitmap type */
@@ -3559,7 +3562,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_ipmap.c linux-2.6.21.1-owrt/n
 +__testip(struct ip_set *set, ip_set_ip_t ip, ip_set_ip_t *hash_ip)
 +{
 +	struct ip_set_ipmap *map = (struct ip_set_ipmap *) set->data;
-+
++	
 +	if (ip < map->first_ip || ip > map->last_ip)
 +		return -ERANGE;
 +
@@ -3573,7 +3576,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_ipmap.c linux-2.6.21.1-owrt/n
 +testip(struct ip_set *set, const void *data, size_t size,
 +       ip_set_ip_t *hash_ip)
 +{
-+	struct ip_set_req_ipmap *req =
++	struct ip_set_req_ipmap *req = 
 +	    (struct ip_set_req_ipmap *) data;
 +
 +	if (size != sizeof(struct ip_set_req_ipmap)) {
@@ -3586,21 +3589,23 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_ipmap.c linux-2.6.21.1-owrt/n
 +}
 +
 +static int
-+testip_kernel(struct ip_set *set,
++testip_kernel(struct ip_set *set, 
 +	      const struct sk_buff *skb,
-+	      u_int32_t flags,
-+	      ip_set_ip_t *hash_ip)
++	      ip_set_ip_t *hash_ip,
++	      const u_int32_t *flags,
++	      unsigned char index)
 +{
 +	int res;
-+
++	
 +	DP("flag: %s src: %u.%u.%u.%u dst: %u.%u.%u.%u",
-+	   flags & IPSET_SRC ? "SRC" : "DST",
++	   flags[index] & IPSET_SRC ? "SRC" : "DST",
 +	   NIPQUAD(skb->nh.iph->saddr),
 +	   NIPQUAD(skb->nh.iph->daddr));
 +
 +	res =  __testip(set,
-+			ntohl(flags & IPSET_SRC ? skb->nh.iph->saddr
-+						: skb->nh.iph->daddr),
++			ntohl(flags[index] & IPSET_SRC 
++				? skb->nh.iph->saddr 
++				: skb->nh.iph->daddr),
 +			hash_ip);
 +	return (res < 0 ? 0 : res);
 +}
@@ -3625,7 +3630,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_ipmap.c linux-2.6.21.1-owrt/n
 +addip(struct ip_set *set, const void *data, size_t size,
 +      ip_set_ip_t *hash_ip)
 +{
-+	struct ip_set_req_ipmap *req =
++	struct ip_set_req_ipmap *req = 
 +	    (struct ip_set_req_ipmap *) data;
 +
 +	if (size != sizeof(struct ip_set_req_ipmap)) {
@@ -3639,16 +3644,20 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_ipmap.c linux-2.6.21.1-owrt/n
 +}
 +
 +static int
-+addip_kernel(struct ip_set *set, const struct sk_buff *skb,
-+	     u_int32_t flags, ip_set_ip_t *hash_ip)
++addip_kernel(struct ip_set *set, 
++	     const struct sk_buff *skb,
++	     ip_set_ip_t *hash_ip,
++	     const u_int32_t *flags,
++	     unsigned char index)
 +{
 +	return __addip(set,
-+		       ntohl(flags & IPSET_SRC ? skb->nh.iph->saddr
-+					       : skb->nh.iph->daddr),
++		       ntohl(flags[index] & IPSET_SRC 
++		       		? skb->nh.iph->saddr 
++				: skb->nh.iph->daddr),
 +		       hash_ip);
 +}
 +
-+static inline int
++static inline int 
 +__delip(struct ip_set *set, ip_set_ip_t ip, ip_set_ip_t *hash_ip)
 +{
 +	struct ip_set_ipmap *map = (struct ip_set_ipmap *) set->data;
@@ -3660,7 +3669,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_ipmap.c linux-2.6.21.1-owrt/n
 +	DP("%u.%u.%u.%u, %u.%u.%u.%u", HIPQUAD(ip), HIPQUAD(*hash_ip));
 +	if (!test_and_clear_bit(ip_to_id(map, *hash_ip), map->members))
 +		return -EEXIST;
-+
++	
 +	return 0;
 +}
 +
@@ -3681,12 +3690,16 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_ipmap.c linux-2.6.21.1-owrt/n
 +}
 +
 +static int
-+delip_kernel(struct ip_set *set, const struct sk_buff *skb,
-+	     u_int32_t flags, ip_set_ip_t *hash_ip)
++delip_kernel(struct ip_set *set,
++	     const struct sk_buff *skb,
++	     ip_set_ip_t *hash_ip,
++	     const u_int32_t *flags,
++	     unsigned char index)
 +{
 +	return __delip(set,
-+		       ntohl(flags & IPSET_SRC ? skb->nh.iph->saddr
-+					       : skb->nh.iph->daddr),
++		       ntohl(flags[index] & IPSET_SRC 
++				? skb->nh.iph->saddr 
++				: skb->nh.iph->daddr),
 +		       hash_ip);
 +}
 +
@@ -3712,12 +3725,6 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_ipmap.c linux-2.6.21.1-owrt/n
 +		return -ENOEXEC;
 +	}
 +
-+	if (req->to - req->from > MAX_RANGE) {
-+		ip_set_printk("range too big (max %d addresses)",
-+			       MAX_RANGE);
-+		return -ENOEXEC;
-+	}
-+
 +	map = kmalloc(sizeof(struct ip_set_ipmap), GFP_KERNEL);
 +	if (!map) {
 +		DP("out of memory for %d bytes",
@@ -3734,18 +3741,28 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_ipmap.c linux-2.6.21.1-owrt/n
 +	} else {
 +		unsigned int mask_bits, netmask_bits;
 +		ip_set_ip_t mask;
-+
++		
 +		map->first_ip &= map->netmask;	/* Should we better bark? */
-+
++		
 +		mask = range_to_mask(map->first_ip, map->last_ip, &mask_bits);
 +		netmask_bits = mask_to_bits(map->netmask);
-+
-+		if (!mask || netmask_bits <= mask_bits)
++		
++		if ((!mask && (map->first_ip || map->last_ip != 0xFFFFFFFF))
++		    || netmask_bits <= mask_bits)
 +			return -ENOEXEC;
 +
++		DP("mask_bits %u, netmask_bits %u",
++		   mask_bits, netmask_bits);
 +		map->hosts = 2 << (32 - netmask_bits - 1);
 +		map->sizeid = 2 << (netmask_bits - mask_bits - 1);
 +	}
++	if (map->sizeid > MAX_RANGE + 1) {
++		ip_set_printk("range too big (max %d addresses)",
++			       MAX_RANGE+1);
++		kfree(map);
++		return -ENOEXEC;
++	}
++	DP("hosts %u, sizeid %u", map->hosts, map->sizeid);
 +	newbytes = bitmap_bytes(0, map->sizeid - 1);
 +	map->members = kmalloc(newbytes, GFP_KERNEL);
 +	if (!map->members) {
@@ -3754,7 +3771,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_ipmap.c linux-2.6.21.1-owrt/n
 +		return -ENOMEM;
 +	}
 +	memset(map->members, 0, newbytes);
-+
++	
 +	set->data = map;
 +	return 0;
 +}
@@ -3762,10 +3779,10 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_ipmap.c linux-2.6.21.1-owrt/n
 +static void destroy(struct ip_set *set)
 +{
 +	struct ip_set_ipmap *map = (struct ip_set_ipmap *) set->data;
-+
++	
 +	kfree(map->members);
 +	kfree(map);
-+
++	
 +	set->data = NULL;
 +}
 +
@@ -3803,7 +3820,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_ipmap.c linux-2.6.21.1-owrt/n
 +
 +static struct ip_set_type ip_set_ipmap = {
 +	.typename		= SETTYPE_NAME,
-+	.typecode		= IPSET_TYPE_IP,
++	.features		= IPSET_TYPE_IP | IPSET_DATA_SINGLE,
 +	.protocol_version	= IP_SET_PROTOCOL_VERSION,
 +	.create			= &create,
 +	.destroy		= &destroy,
@@ -3839,15 +3856,554 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_ipmap.c linux-2.6.21.1-owrt/n
 +
 +module_init(init);
 +module_exit(fini);
+diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_ipporthash.c linux-2.6.21.1-owrt/net/ipv4/netfilter/ip_set_ipporthash.c
+--- linux-2.6.21.1/net/ipv4/netfilter/ip_set_ipporthash.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.21.1-owrt/net/ipv4/netfilter/ip_set_ipporthash.c	2007-05-23 23:04:36.000000000 +0200
+@@ -0,0 +1,535 @@
++/* Copyright (C) 2003-2004 Jozsef Kadlecsik <kadlec@blackhole.kfki.hu>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.  
++ */
++
++/* Kernel module implementing an ip+port hash set */
++
++#include <linux/module.h>
++#include <linux/ip.h>
++#include <linux/tcp.h>
++#include <linux/udp.h>
++#include <linux/skbuff.h>
++#include <linux/netfilter_ipv4/ip_tables.h>
++#include <linux/netfilter_ipv4/ip_set.h>
++#include <linux/errno.h>
++#include <asm/uaccess.h>
++#include <asm/bitops.h>
++#include <linux/spinlock.h>
++#include <linux/vmalloc.h>
++#include <linux/random.h>
++
++#include <net/ip.h>
++
++#include <linux/netfilter_ipv4/ip_set_malloc.h>
++#include <linux/netfilter_ipv4/ip_set_ipporthash.h>
++#include <linux/netfilter_ipv4/ip_set_jhash.h>
++
++static int limit = MAX_RANGE;
++
++/* We must handle non-linear skbs */
++static inline ip_set_ip_t
++get_port(const struct sk_buff *skb, u_int32_t flags)
++{
++	struct iphdr *iph = skb->nh.iph;
++	u_int16_t offset = ntohs(iph->frag_off) & IP_OFFSET;
++
++	switch (iph->protocol) {
++	case IPPROTO_TCP: {
++		struct tcphdr tcph;
++		
++		/* See comments at tcp_match in ip_tables.c */
++		if (offset)
++			return INVALID_PORT;
++
++		if (skb_copy_bits(skb, skb->nh.iph->ihl*4, &tcph, sizeof(tcph)) < 0)
++			/* No choice either */
++			return INVALID_PORT;
++	     	
++	     	return ntohs(flags & IPSET_SRC ?
++			     tcph.source : tcph.dest);
++	    }
++	case IPPROTO_UDP: {
++		struct udphdr udph;
++
++		if (offset)
++			return INVALID_PORT;
++
++		if (skb_copy_bits(skb, skb->nh.iph->ihl*4, &udph, sizeof(udph)) < 0)
++			/* No choice either */
++			return INVALID_PORT;
++	     	
++	     	return ntohs(flags & IPSET_SRC ?
++			     udph.source : udph.dest);
++	    }
++	default:
++		return INVALID_PORT;
++	}
++}
++
++static inline __u32
++jhash_ip(const struct ip_set_ipporthash *map, uint16_t i, ip_set_ip_t ip)
++{
++	return jhash_1word(ip, *(((uint32_t *) map->initval) + i));
++}
++
++#define HASH_IP(map, ip, port) (port + ((ip - ((map)->first_ip)) << 16))
++
++static inline __u32
++hash_id(struct ip_set *set, ip_set_ip_t ip, ip_set_ip_t port,
++	ip_set_ip_t *hash_ip)
++{
++	struct ip_set_ipporthash *map = 
++		(struct ip_set_ipporthash *) set->data;
++	__u32 id;
++	u_int16_t i;
++	ip_set_ip_t *elem;
++
++	*hash_ip = HASH_IP(map, ip, port);
++	DP("set: %s, ipport:%u.%u.%u.%u:%u, %u.%u.%u.%u",
++	   set->name, HIPQUAD(ip), port, HIPQUAD(*hash_ip));
++	
++	for (i = 0; i < map->probes; i++) {
++		id = jhash_ip(map, i, *hash_ip) % map->hashsize;
++		DP("hash key: %u", id);
++		elem = HARRAY_ELEM(map->members, ip_set_ip_t *, id);
++		if (*elem == *hash_ip)
++			return id;
++		/* No shortcut at testing - there can be deleted
++		 * entries. */
++	}
++	return UINT_MAX;
++}
++
++static inline int
++__testip(struct ip_set *set, ip_set_ip_t ip, ip_set_ip_t port,
++	 ip_set_ip_t *hash_ip)
++{
++	struct ip_set_ipporthash *map = (struct ip_set_ipporthash *) set->data;
++	
++	if (ip < map->first_ip || ip > map->last_ip)
++		return -ERANGE;
++
++	return (hash_id(set, ip, port, hash_ip) != UINT_MAX);
++}
++
++static int
++testip(struct ip_set *set, const void *data, size_t size,
++       ip_set_ip_t *hash_ip)
++{
++	struct ip_set_req_ipporthash *req = 
++	    (struct ip_set_req_ipporthash *) data;
++
++	if (size != sizeof(struct ip_set_req_ipporthash)) {
++		ip_set_printk("data length wrong (want %zu, have %zu)",
++			      sizeof(struct ip_set_req_ipporthash),
++			      size);
++		return -EINVAL;
++	}
++	return __testip(set, req->ip, req->port, hash_ip);
++}
++
++static int
++testip_kernel(struct ip_set *set, 
++	      const struct sk_buff *skb,
++	      ip_set_ip_t *hash_ip,
++	      const u_int32_t *flags,
++	      unsigned char index)
++{
++	ip_set_ip_t port;
++
++	if (flags[index+1] == 0)
++		return -EINVAL;
++		
++	port = get_port(skb, flags[index+1]);
++
++	DP("flag: %s src: %u.%u.%u.%u dst: %u.%u.%u.%u",
++	   flags[index] & IPSET_SRC ? "SRC" : "DST",
++	   NIPQUAD(skb->nh.iph->saddr),
++	   NIPQUAD(skb->nh.iph->daddr));
++	DP("flag %s port %u",
++	   flags[index+1] & IPSET_SRC ? "SRC" : "DST", 
++	   port);	
++	if (port == INVALID_PORT)
++		return 0;	
++
++	return __testip(set,
++			ntohl(flags[index] & IPSET_SRC 
++					? skb->nh.iph->saddr 
++					: skb->nh.iph->daddr),
++			port,
++			hash_ip);
++}
++
++static inline int
++__add_haship(struct ip_set_ipporthash *map, ip_set_ip_t hash_ip)
++{
++	__u32 probe;
++	u_int16_t i;
++	ip_set_ip_t *elem;
++
++	for (i = 0; i < map->probes; i++) {
++		probe = jhash_ip(map, i, hash_ip) % map->hashsize;
++		elem = HARRAY_ELEM(map->members, ip_set_ip_t *, probe);
++		if (*elem == hash_ip)
++			return -EEXIST;
++		if (!*elem) {
++			*elem = hash_ip;
++			map->elements++;
++			return 0;
++		}
++	}
++	/* Trigger rehashing */
++	return -EAGAIN;
++}
++
++static inline int
++__addip(struct ip_set_ipporthash *map, ip_set_ip_t ip, ip_set_ip_t port,
++	ip_set_ip_t *hash_ip)
++{
++	if (map->elements > limit)
++		return -ERANGE;
++	if (ip < map->first_ip || ip > map->last_ip)
++		return -ERANGE;
++
++	*hash_ip = HASH_IP(map, ip, port);
++	
++	return __add_haship(map, *hash_ip);
++}
++
++static int
++addip(struct ip_set *set, const void *data, size_t size,
++        ip_set_ip_t *hash_ip)
++{
++	struct ip_set_req_ipporthash *req = 
++	    (struct ip_set_req_ipporthash *) data;
++
++	if (size != sizeof(struct ip_set_req_ipporthash)) {
++		ip_set_printk("data length wrong (want %zu, have %zu)",
++			      sizeof(struct ip_set_req_ipporthash),
++			      size);
++		return -EINVAL;
++	}
++	return __addip((struct ip_set_ipporthash *) set->data, 
++			req->ip, req->port, hash_ip);
++}
++
++static int
++addip_kernel(struct ip_set *set, 
++	     const struct sk_buff *skb,
++	     ip_set_ip_t *hash_ip,
++	     const u_int32_t *flags,
++	     unsigned char index)
++{
++	ip_set_ip_t port;
++
++	if (flags[index+1] == 0)
++		return -EINVAL;
++		
++	port = get_port(skb, flags[index+1]);
++
++	DP("flag: %s src: %u.%u.%u.%u dst: %u.%u.%u.%u",
++	   flags[index] & IPSET_SRC ? "SRC" : "DST",
++	   NIPQUAD(skb->nh.iph->saddr),
++	   NIPQUAD(skb->nh.iph->daddr));
++	DP("flag %s port %u", 
++	   flags[index+1] & IPSET_SRC ? "SRC" : "DST", 
++	   port);	
++	if (port == INVALID_PORT)
++		return -EINVAL;	
++
++	return __addip((struct ip_set_ipporthash *) set->data,
++		       ntohl(flags[index] & IPSET_SRC 
++		       		? skb->nh.iph->saddr 
++				: skb->nh.iph->daddr),
++		       port,
++		       hash_ip);
++}
++
++static int retry(struct ip_set *set)
++{
++	struct ip_set_ipporthash *map = (struct ip_set_ipporthash *) set->data;
++	ip_set_ip_t *elem;
++	void *members;
++	u_int32_t i, hashsize = map->hashsize;
++	int res;
++	struct ip_set_ipporthash *tmp;
++	
++	if (map->resize == 0)
++		return -ERANGE;
++
++    again:
++    	res = 0;
++    	
++	/* Calculate new hash size */
++	hashsize += (hashsize * map->resize)/100;
++	if (hashsize == map->hashsize)
++		hashsize++;
++	
++	ip_set_printk("rehashing of set %s triggered: "
++		      "hashsize grows from %u to %u",
++		      set->name, map->hashsize, hashsize);
++
++	tmp = kmalloc(sizeof(struct ip_set_ipporthash) 
++		      + map->probes * sizeof(uint32_t), GFP_ATOMIC);
++	if (!tmp) {
++		DP("out of memory for %d bytes",
++		   sizeof(struct ip_set_ipporthash)
++		   + map->probes * sizeof(uint32_t));
++		return -ENOMEM;
++	}
++	tmp->members = harray_malloc(hashsize, sizeof(ip_set_ip_t), GFP_ATOMIC);
++	if (!tmp->members) {
++		DP("out of memory for %d bytes", hashsize * sizeof(ip_set_ip_t));
++		kfree(tmp);
++		return -ENOMEM;
++	}
++	tmp->hashsize = hashsize;
++	tmp->elements = 0;
++	tmp->probes = map->probes;
++	tmp->resize = map->resize;
++	tmp->first_ip = map->first_ip;
++	tmp->last_ip = map->last_ip;
++	memcpy(tmp->initval, map->initval, map->probes * sizeof(uint32_t));
++	
++	write_lock_bh(&set->lock);
++	map = (struct ip_set_ipporthash *) set->data; /* Play safe */
++	for (i = 0; i < map->hashsize && res == 0; i++) {
++		elem = HARRAY_ELEM(map->members, ip_set_ip_t *, i);	
++		if (*elem)
++			res = __add_haship(tmp, *elem);
++	}
++	if (res) {
++		/* Failure, try again */
++		write_unlock_bh(&set->lock);
++		harray_free(tmp->members);
++		kfree(tmp);
++		goto again;
++	}
++	
++	/* Success at resizing! */
++	members = map->members;
++
++	map->hashsize = tmp->hashsize;
++	map->members = tmp->members;
++	write_unlock_bh(&set->lock);
++
++	harray_free(members);
++	kfree(tmp);
++
++	return 0;
++}
++
++static inline int
++__delip(struct ip_set *set, ip_set_ip_t ip, ip_set_ip_t port,
++	ip_set_ip_t *hash_ip)
++{
++	struct ip_set_ipporthash *map = (struct ip_set_ipporthash *) set->data;
++	ip_set_ip_t id;
++	ip_set_ip_t *elem;
++
++	if (ip < map->first_ip || ip > map->last_ip)
++		return -ERANGE;
++
++	id = hash_id(set, ip, port, hash_ip);
++
++	if (id == UINT_MAX)
++		return -EEXIST;
++		
++	elem = HARRAY_ELEM(map->members, ip_set_ip_t *, id);
++	*elem = 0;
++	map->elements--;
++
++	return 0;
++}
++
++static int
++delip(struct ip_set *set, const void *data, size_t size,
++        ip_set_ip_t *hash_ip)
++{
++	struct ip_set_req_ipporthash *req =
++	    (struct ip_set_req_ipporthash *) data;
++
++	if (size != sizeof(struct ip_set_req_ipporthash)) {
++		ip_set_printk("data length wrong (want %zu, have %zu)",
++			      sizeof(struct ip_set_req_ipporthash),
++			      size);
++		return -EINVAL;
++	}
++	return __delip(set, req->ip, req->port, hash_ip);
++}
++
++static int
++delip_kernel(struct ip_set *set, 
++	     const struct sk_buff *skb,
++	     ip_set_ip_t *hash_ip,
++	     const u_int32_t *flags,
++	     unsigned char index)
++{
++	ip_set_ip_t port;
++
++	if (flags[index+1] == 0)
++		return -EINVAL;
++		
++	port = get_port(skb, flags[index+1]);
++
++	DP("flag: %s src: %u.%u.%u.%u dst: %u.%u.%u.%u",
++	   flags[index] & IPSET_SRC ? "SRC" : "DST",
++	   NIPQUAD(skb->nh.iph->saddr),
++	   NIPQUAD(skb->nh.iph->daddr));
++	DP("flag %s port %u",
++	   flags[index+1] & IPSET_SRC ? "SRC" : "DST", 
++	   port);	
++	if (port == INVALID_PORT)
++		return -EINVAL;	
++
++	return __delip(set,
++		       ntohl(flags[index] & IPSET_SRC 
++		       		? skb->nh.iph->saddr 
++				: skb->nh.iph->daddr),
++		       port,
++		       hash_ip);
++}
++
++static int create(struct ip_set *set, const void *data, size_t size)
++{
++	struct ip_set_req_ipporthash_create *req =
++	    (struct ip_set_req_ipporthash_create *) data;
++	struct ip_set_ipporthash *map;
++	uint16_t i;
++
++	if (size != sizeof(struct ip_set_req_ipporthash_create)) {
++		ip_set_printk("data length wrong (want %zu, have %zu)",
++			       sizeof(struct ip_set_req_ipporthash_create),
++			       size);
++		return -EINVAL;
++	}
++
++	if (req->hashsize < 1) {
++		ip_set_printk("hashsize too small");
++		return -ENOEXEC;
++	}
++
++	if (req->probes < 1) {
++		ip_set_printk("probes too small");
++		return -ENOEXEC;
++	}
++
++	map = kmalloc(sizeof(struct ip_set_ipporthash) 
++		      + req->probes * sizeof(uint32_t), GFP_KERNEL);
++	if (!map) {
++		DP("out of memory for %d bytes",
++		   sizeof(struct ip_set_ipporthash)
++		   + req->probes * sizeof(uint32_t));
++		return -ENOMEM;
++	}
++	for (i = 0; i < req->probes; i++)
++		get_random_bytes(((uint32_t *) map->initval)+i, 4);
++	map->elements = 0;
++	map->hashsize = req->hashsize;
++	map->probes = req->probes;
++	map->resize = req->resize;
++	map->first_ip = req->from;
++	map->last_ip = req->to;
++	map->members = harray_malloc(map->hashsize, sizeof(ip_set_ip_t), GFP_KERNEL);
++	if (!map->members) {
++		DP("out of memory for %d bytes", map->hashsize * sizeof(ip_set_ip_t));
++		kfree(map);
++		return -ENOMEM;
++	}
++
++	set->data = map;
++	return 0;
++}
++
++static void destroy(struct ip_set *set)
++{
++	struct ip_set_ipporthash *map = (struct ip_set_ipporthash *) set->data;
++
++	harray_free(map->members);
++	kfree(map);
++
++	set->data = NULL;
++}
++
++static void flush(struct ip_set *set)
++{
++	struct ip_set_ipporthash *map = (struct ip_set_ipporthash *) set->data;
++	harray_flush(map->members, map->hashsize, sizeof(ip_set_ip_t));
++	map->elements = 0;
++}
++
++static void list_header(const struct ip_set *set, void *data)
++{
++	struct ip_set_ipporthash *map = (struct ip_set_ipporthash *) set->data;
++	struct ip_set_req_ipporthash_create *header =
++	    (struct ip_set_req_ipporthash_create *) data;
++
++	header->hashsize = map->hashsize;
++	header->probes = map->probes;
++	header->resize = map->resize;
++	header->from = map->first_ip;
++	header->to = map->last_ip;
++}
++
++static int list_members_size(const struct ip_set *set)
++{
++	struct ip_set_ipporthash *map = (struct ip_set_ipporthash *) set->data;
++
++	return (map->hashsize * sizeof(ip_set_ip_t));
++}
++
++static void list_members(const struct ip_set *set, void *data)
++{
++	struct ip_set_ipporthash *map = (struct ip_set_ipporthash *) set->data;
++	ip_set_ip_t i, *elem;
++
++	for (i = 0; i < map->hashsize; i++) {
++		elem = HARRAY_ELEM(map->members, ip_set_ip_t *, i);	
++		((ip_set_ip_t *)data)[i] = *elem;
++	}
++}
++
++static struct ip_set_type ip_set_ipporthash = {
++	.typename		= SETTYPE_NAME,
++	.features		= IPSET_TYPE_IP | IPSET_TYPE_PORT | IPSET_DATA_DOUBLE,
++	.protocol_version	= IP_SET_PROTOCOL_VERSION,
++	.create			= &create,
++	.destroy		= &destroy,
++	.flush			= &flush,
++	.reqsize		= sizeof(struct ip_set_req_ipporthash),
++	.addip			= &addip,
++	.addip_kernel		= &addip_kernel,
++	.retry			= &retry,
++	.delip			= &delip,
++	.delip_kernel		= &delip_kernel,
++	.testip			= &testip,
++	.testip_kernel		= &testip_kernel,
++	.header_size		= sizeof(struct ip_set_req_ipporthash_create),
++	.list_header		= &list_header,
++	.list_members_size	= &list_members_size,
++	.list_members		= &list_members,
++	.me			= THIS_MODULE,
++};
++
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("Jozsef Kadlecsik <kadlec@blackhole.kfki.hu>");
++MODULE_DESCRIPTION("ipporthash type of IP sets");
++module_param(limit, int, 0600);
++MODULE_PARM_DESC(limit, "maximal number of elements stored in the sets");
++
++static int __init init(void)
++{
++	return ip_set_register_set_type(&ip_set_ipporthash);
++}
++
++static void __exit fini(void)
++{
++	/* FIXME: possible race with ip_set_create() */
++	ip_set_unregister_set_type(&ip_set_ipporthash);
++}
++
++module_init(init);
++module_exit(fini);
 diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_iptree.c linux-2.6.21.1-owrt/net/ipv4/netfilter/ip_set_iptree.c
 --- linux-2.6.21.1/net/ipv4/netfilter/ip_set_iptree.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1-owrt/net/ipv4/netfilter/ip_set_iptree.c	2007-05-14 11:44:19.000000000 +0200
-@@ -0,0 +1,510 @@
++++ linux-2.6.21.1-owrt/net/ipv4/netfilter/ip_set_iptree.c	2007-05-23 23:04:36.000000000 +0200
+@@ -0,0 +1,565 @@
 +/* Copyright (C) 2005 Jozsef Kadlecsik <kadlec@blackhole.kfki.hu>
 + *
 + * This program is free software; you can redistribute it and/or modify
 + * it under the terms of the GNU General Public License version 2 as
-+ * published by the Free Software Foundation.
++ * published by the Free Software Foundation.  
 + */
 +
 +/* Kernel module implementing an IP set type: the iptree type */
@@ -3864,16 +4420,23 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_iptree.c linux-2.6.21.1-owrt/
 +#include <asm/bitops.h>
 +#include <linux/spinlock.h>
 +
++/* Backward compatibility */
++#ifndef __nocast
++#define __nocast
++#endif
++
 +#include <linux/netfilter_ipv4/ip_set_iptree.h>
++
++static int limit = MAX_RANGE;
 +
 +/* Garbage collection interval in seconds: */
 +#define IPTREE_GC_TIME		5*60
-+/* Sleep so many milliseconds before trying again
-+ * to delete the gc timer at destroying a set */
++/* Sleep so many milliseconds before trying again 
++ * to delete the gc timer at destroying/flushing a set */ 
 +#define IPTREE_DESTROY_SLEEP	100
 +
-+static kmem_cache_t *branch_cachep;
-+static kmem_cache_t *leaf_cachep;
++static struct kmem_cache *branch_cachep;
++static struct kmem_cache *leaf_cachep;
 +
 +#define ABCD(a,b,c,d,addrp) do {		\
 +	a = ((unsigned char *)addrp)[3];	\
@@ -3898,6 +4461,9 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_iptree.c linux-2.6.21.1-owrt/
 +	struct ip_set_iptreed *dtree;
 +	unsigned char a,b,c,d;
 +
++	if (!ip)
++		return -ERANGE;
++	
 +	*hash_ip = ip;
 +	ABCD(a, b, c, d, hash_ip);
 +	DP("%u %u %u %u timeout %u", a, b, c, d, map->timeout);
@@ -3913,7 +4479,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_iptree.c linux-2.6.21.1-owrt/
 +testip(struct ip_set *set, const void *data, size_t size,
 +       ip_set_ip_t *hash_ip)
 +{
-+	struct ip_set_req_iptree *req =
++	struct ip_set_req_iptree *req = 
 +	    (struct ip_set_req_iptree *) data;
 +
 +	if (size != sizeof(struct ip_set_req_iptree)) {
@@ -3926,43 +4492,46 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_iptree.c linux-2.6.21.1-owrt/
 +}
 +
 +static int
-+testip_kernel(struct ip_set *set,
++testip_kernel(struct ip_set *set, 
 +	      const struct sk_buff *skb,
-+	      u_int32_t flags,
-+	      ip_set_ip_t *hash_ip)
++	      ip_set_ip_t *hash_ip,
++	      const u_int32_t *flags,
++	      unsigned char index)
 +{
 +	int res;
-+
++	
 +	DP("flag: %s src: %u.%u.%u.%u dst: %u.%u.%u.%u",
-+	   flags & IPSET_SRC ? "SRC" : "DST",
++	   flags[index] & IPSET_SRC ? "SRC" : "DST",
 +	   NIPQUAD(skb->nh.iph->saddr),
 +	   NIPQUAD(skb->nh.iph->daddr));
 +
 +	res =  __testip(set,
-+			ntohl(flags & IPSET_SRC ? skb->nh.iph->saddr
-+						: skb->nh.iph->daddr),
++			ntohl(flags[index] & IPSET_SRC 
++				? skb->nh.iph->saddr 
++				: skb->nh.iph->daddr),
 +			hash_ip);
 +	return (res < 0 ? 0 : res);
 +}
 +
-+#define ADDIP_WALK(map, elem, branch, type, cachep) do {	\
++#define ADDIP_WALK(map, elem, branch, type, cachep, flags) do {	\
 +	if ((map)->tree[elem]) {				\
 +		DP("found %u", elem);				\
 +		branch = (map)->tree[elem];			\
 +	} else {						\
 +		branch = (type *)				\
-+			kmem_cache_alloc(cachep, GFP_KERNEL);	\
++			kmem_cache_alloc(cachep, flags);	\
 +		if (branch == NULL)				\
 +			return -ENOMEM;				\
 +		memset(branch, 0, sizeof(*branch));		\
 +		(map)->tree[elem] = branch;			\
 +		DP("alloc %u", elem);				\
 +	}							\
-+} while (0)
++} while (0)	
 +
 +static inline int
 +__addip(struct ip_set *set, ip_set_ip_t ip, unsigned int timeout,
-+	ip_set_ip_t *hash_ip)
++	ip_set_ip_t *hash_ip,
++	unsigned int __nocast flags)
 +{
 +	struct ip_set_iptree *map = (struct ip_set_iptree *) set->data;
 +	struct ip_set_iptreeb *btree;
@@ -3970,18 +4539,28 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_iptree.c linux-2.6.21.1-owrt/
 +	struct ip_set_iptreed *dtree;
 +	unsigned char a,b,c,d;
 +	int ret = 0;
-+
++	
++	if (!ip || map->elements > limit)
++		/* We could call the garbage collector
++		 * but it's probably overkill */
++		return -ERANGE;
++	
 +	*hash_ip = ip;
 +	ABCD(a, b, c, d, hash_ip);
 +	DP("%u %u %u %u timeout %u", a, b, c, d, timeout);
-+	ADDIP_WALK(map, a, btree, struct ip_set_iptreeb, branch_cachep);
-+	ADDIP_WALK(btree, b, ctree, struct ip_set_iptreec, branch_cachep);
-+	ADDIP_WALK(ctree, c, dtree, struct ip_set_iptreed, leaf_cachep);
++	ADDIP_WALK(map, a, btree, struct ip_set_iptreeb, branch_cachep, flags);
++	ADDIP_WALK(btree, b, ctree, struct ip_set_iptreec, branch_cachep, flags);
++	ADDIP_WALK(ctree, c, dtree, struct ip_set_iptreed, leaf_cachep, flags);
 +	if (dtree->expires[d]
 +	    && (!map->timeout || time_after(dtree->expires[d], jiffies)))
 +	    	ret = -EEXIST;
 +	dtree->expires[d] = map->timeout ? (timeout * HZ + jiffies) : 1;
++	/* Lottery */
++	if (dtree->expires[d] == 0)
++		dtree->expires[d] = 1;
 +	DP("%u %lu", d, dtree->expires[d]);
++	if (ret == 0)
++		map->elements++;
 +	return ret;
 +}
 +
@@ -3990,7 +4569,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_iptree.c linux-2.6.21.1-owrt/
 +      ip_set_ip_t *hash_ip)
 +{
 +	struct ip_set_iptree *map = (struct ip_set_iptree *) set->data;
-+	struct ip_set_req_iptree *req =
++	struct ip_set_req_iptree *req = 
 +		(struct ip_set_req_iptree *) data;
 +
 +	if (size != sizeof(struct ip_set_req_iptree)) {
@@ -4002,20 +4581,26 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_iptree.c linux-2.6.21.1-owrt/
 +	DP("%u.%u.%u.%u %u", HIPQUAD(req->ip), req->timeout);
 +	return __addip(set, req->ip,
 +		       req->timeout ? req->timeout : map->timeout,
-+		       hash_ip);
++		       hash_ip,
++		       GFP_ATOMIC);
 +}
 +
 +static int
-+addip_kernel(struct ip_set *set, const struct sk_buff *skb,
-+	     u_int32_t flags, ip_set_ip_t *hash_ip)
++addip_kernel(struct ip_set *set, 
++	     const struct sk_buff *skb,
++	     ip_set_ip_t *hash_ip,
++	     const u_int32_t *flags,
++	     unsigned char index)
 +{
 +	struct ip_set_iptree *map = (struct ip_set_iptree *) set->data;
 +
 +	return __addip(set,
-+		       ntohl(flags & IPSET_SRC ? skb->nh.iph->saddr
-+					       : skb->nh.iph->daddr),
++		       ntohl(flags[index] & IPSET_SRC 
++		       		? skb->nh.iph->saddr 
++				: skb->nh.iph->daddr),
 +		       map->timeout,
-+		       hash_ip);
++		       hash_ip,
++		       GFP_ATOMIC);
 +}
 +
 +#define DELIP_WALK(map, elem, branch) do {	\
@@ -4025,7 +4610,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_iptree.c linux-2.6.21.1-owrt/
 +		return -EEXIST;			\
 +} while (0)
 +
-+static inline int
++static inline int 
 +__delip(struct ip_set *set, ip_set_ip_t ip, ip_set_ip_t *hash_ip)
 +{
 +	struct ip_set_iptree *map = (struct ip_set_iptree *) set->data;
@@ -4033,7 +4618,10 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_iptree.c linux-2.6.21.1-owrt/
 +	struct ip_set_iptreec *ctree;
 +	struct ip_set_iptreed *dtree;
 +	unsigned char a,b,c,d;
-+
++	
++	if (!ip)
++		return -ERANGE;
++		
 +	*hash_ip = ip;
 +	ABCD(a, b, c, d, hash_ip);
 +	DELIP_WALK(map, a, btree);
@@ -4042,6 +4630,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_iptree.c linux-2.6.21.1-owrt/
 +
 +	if (dtree->expires[d]) {
 +		dtree->expires[d] = 0;
++		map->elements--;
 +		return 0;
 +	}
 +	return -EEXIST;
@@ -4064,17 +4653,21 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_iptree.c linux-2.6.21.1-owrt/
 +}
 +
 +static int
-+delip_kernel(struct ip_set *set, const struct sk_buff *skb,
-+	     u_int32_t flags, ip_set_ip_t *hash_ip)
++delip_kernel(struct ip_set *set, 
++	     const struct sk_buff *skb,
++	     ip_set_ip_t *hash_ip,
++	     const u_int32_t *flags,
++	     unsigned char index)
 +{
 +	return __delip(set,
-+		       ntohl(flags & IPSET_SRC ? skb->nh.iph->saddr
-+					       : skb->nh.iph->daddr),
++		       ntohl(flags[index] & IPSET_SRC 
++		       		? skb->nh.iph->saddr 
++				: skb->nh.iph->daddr),
 +		       hash_ip);
 +}
 +
 +#define LOOP_WALK_BEGIN(map, i, branch) \
-+	for (i = 0; i < 255; i++) {	\
++	for (i = 0; i < 256; i++) {	\
 +		if (!(map)->tree[i])	\
 +			continue;	\
 +		branch = (map)->tree[i]
@@ -4088,7 +4681,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_iptree.c linux-2.6.21.1-owrt/
 +	struct ip_set_iptreeb *btree;
 +	struct ip_set_iptreec *ctree;
 +	struct ip_set_iptreed *dtree;
-+	unsigned char a,b,c,d;
++	unsigned int a,b,c,d;
 +	unsigned char i,j,k;
 +
 +	i = j = k = 0;
@@ -4097,15 +4690,16 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_iptree.c linux-2.6.21.1-owrt/
 +	LOOP_WALK_BEGIN(map, a, btree);
 +	LOOP_WALK_BEGIN(btree, b, ctree);
 +	LOOP_WALK_BEGIN(ctree, c, dtree);
-+	for (d = 0; d < 255; d++) {
++	for (d = 0; d < 256; d++) {
 +		if (dtree->expires[d]) {
 +			DP("gc: %u %u %u %u: expires %lu jiffies %lu",
 +			    a, b, c, d,
 +			    dtree->expires[d], jiffies);
 +			if (map->timeout
-+			    && time_before(dtree->expires[d], jiffies))
++			    && time_before(dtree->expires[d], jiffies)) {
 +			    	dtree->expires[d] = 0;
-+			else
++			    	map->elements--;
++			} else
 +				k = 1;
 +		}
 +	}
@@ -4145,7 +4739,22 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_iptree.c linux-2.6.21.1-owrt/
 +	}
 +	LOOP_WALK_END;
 +	write_unlock_bh(&set->lock);
++	
++	map->gc.expires = jiffies + map->gc_interval * HZ;
++	add_timer(&map->gc);
++}
 +
++static inline void init_gc_timer(struct ip_set *set)
++{
++	struct ip_set_iptree *map = (struct ip_set_iptree *) set->data;
++
++	/* Even if there is no timeout for the entries,
++	 * we still have to call gc because delete
++	 * do not clean up empty branches */
++	map->gc_interval = IPTREE_GC_TIME;
++	init_timer(&map->gc);
++	map->gc.data = (unsigned long) set;
++	map->gc.function = ip_tree_gc;
 +	map->gc.expires = jiffies + map->gc_interval * HZ;
 +	add_timer(&map->gc);
 +}
@@ -4171,17 +4780,10 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_iptree.c linux-2.6.21.1-owrt/
 +	}
 +	memset(map, 0, sizeof(*map));
 +	map->timeout = req->timeout;
++	map->elements = 0;
 +	set->data = map;
 +
-+	/* If there is no timeout for the entries,
-+	 * we still have to call gc because delete
-+	 * do not clean up empty branches */
-+	map->gc_interval = IPTREE_GC_TIME;
-+	init_timer(&map->gc);
-+	map->gc.data = (unsigned long) set;
-+	map->gc.function = ip_tree_gc;
-+	map->gc.expires = jiffies + map->gc_interval * HZ;
-+	add_timer(&map->gc);
++	init_gc_timer(set);
 +
 +	return 0;
 +}
@@ -4202,12 +4804,14 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_iptree.c linux-2.6.21.1-owrt/
 +	LOOP_WALK_END;
 +	kmem_cache_free(branch_cachep, btree);
 +	LOOP_WALK_END;
++	map->elements = 0;
 +}
 +
 +static void destroy(struct ip_set *set)
 +{
 +	struct ip_set_iptree *map = (struct ip_set_iptree *) set->data;
 +
++	/* gc might be running */
 +	while (!del_timer(&map->gc))
 +		msleep(IPTREE_DESTROY_SLEEP);
 +	__flush(map);
@@ -4219,10 +4823,15 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_iptree.c linux-2.6.21.1-owrt/
 +{
 +	struct ip_set_iptree *map = (struct ip_set_iptree *) set->data;
 +	unsigned int timeout = map->timeout;
-+
++	
++	/* gc might be running */
++	while (!del_timer(&map->gc))
++		msleep(IPTREE_DESTROY_SLEEP);
 +	__flush(map);
 +	memset(map, 0, sizeof(*map));
 +	map->timeout = timeout;
++
++	init_gc_timer(set);
 +}
 +
 +static void list_header(const struct ip_set *set, void *data)
@@ -4240,13 +4849,13 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_iptree.c linux-2.6.21.1-owrt/
 +	struct ip_set_iptreeb *btree;
 +	struct ip_set_iptreec *ctree;
 +	struct ip_set_iptreed *dtree;
-+	unsigned char a,b,c,d;
++	unsigned int a,b,c,d;
 +	unsigned int count = 0;
 +
 +	LOOP_WALK_BEGIN(map, a, btree);
 +	LOOP_WALK_BEGIN(btree, b, ctree);
 +	LOOP_WALK_BEGIN(ctree, c, dtree);
-+	for (d = 0; d < 255; d++) {
++	for (d = 0; d < 256; d++) {
 +		if (dtree->expires[d]
 +		    && (!map->timeout || time_after(dtree->expires[d], jiffies)))
 +		    	count++;
@@ -4265,19 +4874,19 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_iptree.c linux-2.6.21.1-owrt/
 +	struct ip_set_iptreeb *btree;
 +	struct ip_set_iptreec *ctree;
 +	struct ip_set_iptreed *dtree;
-+	unsigned char a,b,c,d;
++	unsigned int a,b,c,d;
 +	size_t offset = 0;
 +	struct ip_set_req_iptree *entry;
 +
 +	LOOP_WALK_BEGIN(map, a, btree);
 +	LOOP_WALK_BEGIN(btree, b, ctree);
 +	LOOP_WALK_BEGIN(ctree, c, dtree);
-+	for (d = 0; d < 255; d++) {
++	for (d = 0; d < 256; d++) {
 +		if (dtree->expires[d]
 +		    && (!map->timeout || time_after(dtree->expires[d], jiffies))) {
 +		    	entry = (struct ip_set_req_iptree *)(data + offset);
 +		    	entry->ip = ((a << 24) | (b << 16) | (c << 8) | d);
-+		    	entry->timeout = !map->timeout ? 0
++		    	entry->timeout = !map->timeout ? 0 
 +				: (dtree->expires[d] - jiffies)/HZ;
 +			offset += sizeof(struct ip_set_req_iptree);
 +		}
@@ -4289,7 +4898,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_iptree.c linux-2.6.21.1-owrt/
 +
 +static struct ip_set_type ip_set_iptree = {
 +	.typename		= SETTYPE_NAME,
-+	.typecode		= IPSET_TYPE_IP,
++	.features		= IPSET_TYPE_IP | IPSET_DATA_SINGLE,
 +	.protocol_version	= IP_SET_PROTOCOL_VERSION,
 +	.create			= &create,
 +	.destroy		= &destroy,
@@ -4311,11 +4920,13 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_iptree.c linux-2.6.21.1-owrt/
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Jozsef Kadlecsik <kadlec@blackhole.kfki.hu>");
 +MODULE_DESCRIPTION("iptree type of IP sets");
++module_param(limit, int, 0600);
++MODULE_PARM_DESC(limit, "maximal number of elements stored in the sets");
 +
 +static int __init init(void)
 +{
 +	int ret;
-+
++	
 +	branch_cachep = kmem_cache_create("ip_set_iptreeb",
 +				sizeof(struct ip_set_iptreeb),
 +				0, 0, NULL, NULL);
@@ -4337,7 +4948,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_iptree.c linux-2.6.21.1-owrt/
 +		goto out;
 +
 +	kmem_cache_destroy(leaf_cachep);
-+    free_branch:
++    free_branch:	
 +	kmem_cache_destroy(branch_cachep);
 +    out:
 +	return ret;
@@ -4355,8 +4966,8 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_iptree.c linux-2.6.21.1-owrt/
 +module_exit(fini);
 diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_macipmap.c linux-2.6.21.1-owrt/net/ipv4/netfilter/ip_set_macipmap.c
 --- linux-2.6.21.1/net/ipv4/netfilter/ip_set_macipmap.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1-owrt/net/ipv4/netfilter/ip_set_macipmap.c	2007-05-14 11:44:19.000000000 +0200
-@@ -0,0 +1,338 @@
++++ linux-2.6.21.1-owrt/net/ipv4/netfilter/ip_set_macipmap.c	2007-05-23 23:04:36.000000000 +0200
+@@ -0,0 +1,353 @@
 +/* Copyright (C) 2000-2002 Joakim Axelsson <gozem@linux.nu>
 + *                         Patrick Schaaf <bof@bof.de>
 + *                         Martin Josefsson <gandalf@wlug.westbo.se>
@@ -4364,7 +4975,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_macipmap.c linux-2.6.21.1-owr
 + *
 + * This program is free software; you can redistribute it and/or modify
 + * it under the terms of the GNU General Public License version 2 as
-+ * published by the Free Software Foundation.
++ * published by the Free Software Foundation.  
 + */
 +
 +/* Kernel module implementing an IP set type: the macipmap type */
@@ -4388,7 +4999,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_macipmap.c linux-2.6.21.1-owr
 +testip(struct ip_set *set, const void *data, size_t size, ip_set_ip_t *hash_ip)
 +{
 +	struct ip_set_macipmap *map = (struct ip_set_macipmap *) set->data;
-+	struct ip_set_macip *table = (struct ip_set_macip *) map->members;
++	struct ip_set_macip *table = (struct ip_set_macip *) map->members;	
 +	struct ip_set_req_macipmap *req = (struct ip_set_req_macipmap *) data;
 +
 +	if (size != sizeof(struct ip_set_req_macipmap)) {
@@ -4403,7 +5014,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_macipmap.c linux-2.6.21.1-owr
 +
 +	*hash_ip = req->ip;
 +	DP("set: %s, ip:%u.%u.%u.%u, %u.%u.%u.%u",
-+	   set->name, HIPQUAD(req->ip), HIPQUAD(*hash_ip));
++	   set->name, HIPQUAD(req->ip), HIPQUAD(*hash_ip));		
 +	if (test_bit(IPSET_MACIP_ISSET,
 +		     (void *) &table[req->ip - map->first_ip].flags)) {
 +		return (memcmp(req->ethernet,
@@ -4415,28 +5026,32 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_macipmap.c linux-2.6.21.1-owr
 +}
 +
 +static int
-+testip_kernel(struct ip_set *set, const struct sk_buff *skb,
-+	      u_int32_t flags, ip_set_ip_t *hash_ip)
++testip_kernel(struct ip_set *set, 
++	      const struct sk_buff *skb,
++	      ip_set_ip_t *hash_ip,
++	      const u_int32_t *flags,
++	      unsigned char index)
 +{
 +	struct ip_set_macipmap *map =
 +	    (struct ip_set_macipmap *) set->data;
 +	struct ip_set_macip *table =
 +	    (struct ip_set_macip *) map->members;
 +	ip_set_ip_t ip;
-+
-+	ip = ntohl(flags & IPSET_SRC ? skb->nh.iph->saddr
-+				     : skb->nh.iph->daddr);
++	
++	ip = ntohl(flags[index] & IPSET_SRC
++			? skb->nh.iph->saddr
++			: skb->nh.iph->daddr);
 +	DP("flag: %s src: %u.%u.%u.%u dst: %u.%u.%u.%u",
-+	   flags & IPSET_SRC ? "SRC" : "DST",
++	   flags[index] & IPSET_SRC ? "SRC" : "DST",
 +	   NIPQUAD(skb->nh.iph->saddr),
 +	   NIPQUAD(skb->nh.iph->daddr));
 +
 +	if (ip < map->first_ip || ip > map->last_ip)
 +		return 0;
 +
-+	*hash_ip = ip;
++	*hash_ip = ip;	
 +	DP("set: %s, ip:%u.%u.%u.%u, %u.%u.%u.%u",
-+	   set->name, HIPQUAD(ip), HIPQUAD(*hash_ip));
++	   set->name, HIPQUAD(ip), HIPQUAD(*hash_ip));		
 +	if (test_bit(IPSET_MACIP_ISSET,
 +	    (void *) &table[ip - map->first_ip].flags)) {
 +		/* Is mac pointer valid?
@@ -4453,7 +5068,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_macipmap.c linux-2.6.21.1-owr
 +
 +/* returns 0 on success */
 +static inline int
-+__addip(struct ip_set *set,
++__addip(struct ip_set *set, 
 +	ip_set_ip_t ip, unsigned char *ethernet, ip_set_ip_t *hash_ip)
 +{
 +	struct ip_set_macipmap *map =
@@ -4463,7 +5078,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_macipmap.c linux-2.6.21.1-owr
 +
 +	if (ip < map->first_ip || ip > map->last_ip)
 +		return -ERANGE;
-+	if (test_and_set_bit(IPSET_MACIP_ISSET,
++	if (test_and_set_bit(IPSET_MACIP_ISSET, 
 +			     (void *) &table[ip - map->first_ip].flags))
 +		return -EEXIST;
 +
@@ -4490,13 +5105,17 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_macipmap.c linux-2.6.21.1-owr
 +}
 +
 +static int
-+addip_kernel(struct ip_set *set, const struct sk_buff *skb,
-+	     u_int32_t flags, ip_set_ip_t *hash_ip)
++addip_kernel(struct ip_set *set, 
++	     const struct sk_buff *skb,
++	     ip_set_ip_t *hash_ip,
++	     const u_int32_t *flags,
++	     unsigned char index)
 +{
 +	ip_set_ip_t ip;
-+
-+	ip = ntohl(flags & IPSET_SRC ? skb->nh.iph->saddr
-+				     : skb->nh.iph->daddr);
++	
++	ip = ntohl(flags[index] & IPSET_SRC
++			? skb->nh.iph->saddr
++			: skb->nh.iph->daddr);
 +
 +	if (!(skb->mac.raw >= skb->head
 +	      && (skb->mac.raw + ETH_HLEN) <= skb->data))
@@ -4515,7 +5134,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_macipmap.c linux-2.6.21.1-owr
 +
 +	if (ip < map->first_ip || ip > map->last_ip)
 +		return -ERANGE;
-+	if (!test_and_clear_bit(IPSET_MACIP_ISSET,
++	if (!test_and_clear_bit(IPSET_MACIP_ISSET, 
 +				(void *)&table[ip - map->first_ip].flags))
 +		return -EEXIST;
 +
@@ -4541,12 +5160,16 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_macipmap.c linux-2.6.21.1-owr
 +}
 +
 +static int
-+delip_kernel(struct ip_set *set, const struct sk_buff *skb,
-+	     u_int32_t flags, ip_set_ip_t *hash_ip)
++delip_kernel(struct ip_set *set,
++	     const struct sk_buff *skb,
++	     ip_set_ip_t *hash_ip,
++	     const u_int32_t *flags,
++	     unsigned char index)
 +{
 +	return __delip(set,
-+		       ntohl(flags & IPSET_SRC ? skb->nh.iph->saddr
-+					       : skb->nh.iph->daddr),
++		       ntohl(flags[index] & IPSET_SRC 
++		       		? skb->nh.iph->saddr 
++				: skb->nh.iph->daddr),
 +		       hash_ip);
 +}
 +
@@ -4579,7 +5202,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_macipmap.c linux-2.6.21.1-owr
 +
 +	if (req->to - req->from > MAX_RANGE) {
 +		ip_set_printk("range too big (max %d addresses)",
-+			       MAX_RANGE);
++			       MAX_RANGE+1);
 +		return -ENOEXEC;
 +	}
 +
@@ -4594,13 +5217,14 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_macipmap.c linux-2.6.21.1-owr
 +	map->last_ip = req->to;
 +	newbytes = members_size(map->first_ip, map->last_ip);
 +	map->members = ip_set_malloc(newbytes);
++	DP("members: %u %p", newbytes, map->members);
 +	if (!map->members) {
 +		DP("out of memory for %d bytes", newbytes);
 +		kfree(map);
 +		return -ENOMEM;
 +	}
 +	memset(map->members, 0, newbytes);
-+
++	
 +	set->data = map;
 +	return 0;
 +}
@@ -4643,6 +5267,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_macipmap.c linux-2.6.21.1-owr
 +	struct ip_set_macipmap *map =
 +	    (struct ip_set_macipmap *) set->data;
 +
++	DP("%u", members_size(map->first_ip, map->last_ip));
 +	return members_size(map->first_ip, map->last_ip);
 +}
 +
@@ -4653,12 +5278,13 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_macipmap.c linux-2.6.21.1-owr
 +
 +	int bytes = members_size(map->first_ip, map->last_ip);
 +
++	DP("members: %u %p", bytes, map->members);
 +	memcpy(data, map->members, bytes);
 +}
 +
 +static struct ip_set_type ip_set_macipmap = {
 +	.typename		= SETTYPE_NAME,
-+	.typecode		= IPSET_TYPE_IP,
++	.features		= IPSET_TYPE_IP | IPSET_DATA_SINGLE,
 +	.protocol_version	= IP_SET_PROTOCOL_VERSION,
 +	.create			= &create,
 +	.destroy		= &destroy,
@@ -4697,13 +5323,13 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_macipmap.c linux-2.6.21.1-owr
 +module_exit(fini);
 diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_nethash.c linux-2.6.21.1-owrt/net/ipv4/netfilter/ip_set_nethash.c
 --- linux-2.6.21.1/net/ipv4/netfilter/ip_set_nethash.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1-owrt/net/ipv4/netfilter/ip_set_nethash.c	2007-05-14 11:44:19.000000000 +0200
-@@ -0,0 +1,449 @@
++++ linux-2.6.21.1-owrt/net/ipv4/netfilter/ip_set_nethash.c	2007-05-23 23:04:36.000000000 +0200
+@@ -0,0 +1,481 @@
 +/* Copyright (C) 2003-2004 Jozsef Kadlecsik <kadlec@blackhole.kfki.hu>
 + *
 + * This program is free software; you can redistribute it and/or modify
 + * it under the terms of the GNU General Public License version 2 as
-+ * published by the Free Software Foundation.
++ * published by the Free Software Foundation.  
 + */
 +
 +/* Kernel module implementing a cidr nethash set */
@@ -4725,18 +5351,13 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_nethash.c linux-2.6.21.1-owrt
 +#include <linux/netfilter_ipv4/ip_set_malloc.h>
 +#include <linux/netfilter_ipv4/ip_set_nethash.h>
 +#include <linux/netfilter_ipv4/ip_set_jhash.h>
-+#include <linux/netfilter_ipv4/ip_set_prime.h>
++
++static int limit = MAX_RANGE;
 +
 +static inline __u32
-+jhash_ip(const struct ip_set_nethash *map, ip_set_ip_t ip)
++jhash_ip(const struct ip_set_nethash *map, uint16_t i, ip_set_ip_t ip)
 +{
-+	return jhash_1word(ip, map->initval);
-+}
-+
-+static inline __u32
-+randhash_ip(const struct ip_set_nethash *map, ip_set_ip_t ip)
-+{
-+	return (1 + ip % map->prime);
++	return jhash_1word(ip, *(((uint32_t *) map->initval) + i));
 +}
 +
 +static inline __u32
@@ -4745,17 +5366,17 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_nethash.c linux-2.6.21.1-owrt
 +	     unsigned char cidr,
 +	     ip_set_ip_t *hash_ip)
 +{
-+	__u32 jhash, randhash, id;
++	__u32 id;
 +	u_int16_t i;
++	ip_set_ip_t *elem;
 +
 +	*hash_ip = pack(ip, cidr);
-+	jhash = jhash_ip(map, *hash_ip);
-+	randhash = randhash_ip(map, *hash_ip);
-+
++	
 +	for (i = 0; i < map->probes; i++) {
-+		id = (jhash + i * randhash) % map->hashsize;
++		id = jhash_ip(map, i, *hash_ip) % map->hashsize;
 +	   	DP("hash key: %u", id);
-+	   	if (map->members[id] == *hash_ip)
++		elem = HARRAY_ELEM(map->members, ip_set_ip_t *, id);
++	   	if (*elem == *hash_ip)
 +			return id;
 +	}
 +	return UINT_MAX;
@@ -4782,20 +5403,20 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_nethash.c linux-2.6.21.1-owrt
 +{
 +	struct ip_set_nethash *map = (struct ip_set_nethash *) set->data;
 +
-+	return (hash_id_cidr(map, ip, cidr, hash_ip) != UINT_MAX);
++	return (ip && hash_id_cidr(map, ip, cidr, hash_ip) != UINT_MAX);
 +}
 +
 +static inline int
 +__testip(struct ip_set *set, ip_set_ip_t ip, ip_set_ip_t *hash_ip)
 +{
-+	return (hash_id(set, ip, hash_ip) != UINT_MAX);
++	return (ip && hash_id(set, ip, hash_ip) != UINT_MAX);
 +}
 +
 +static int
 +testip(struct ip_set *set, const void *data, size_t size,
 +       ip_set_ip_t *hash_ip)
 +{
-+	struct ip_set_req_nethash *req =
++	struct ip_set_req_nethash *req = 
 +	    (struct ip_set_req_nethash *) data;
 +
 +	if (size != sizeof(struct ip_set_req_nethash)) {
@@ -4809,30 +5430,34 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_nethash.c linux-2.6.21.1-owrt
 +}
 +
 +static int
-+testip_kernel(struct ip_set *set, const struct sk_buff *skb,
-+		u_int32_t flags, ip_set_ip_t *hash_ip)
++testip_kernel(struct ip_set *set, 
++	      const struct sk_buff *skb,
++	      ip_set_ip_t *hash_ip,
++	      const u_int32_t *flags,
++	      unsigned char index)
 +{
 +	return __testip(set,
-+			ntohl(flags & IPSET_SRC ? skb->nh.iph->saddr
-+						: skb->nh.iph->daddr),
++			ntohl(flags[index] & IPSET_SRC 
++				? skb->nh.iph->saddr 
++				: skb->nh.iph->daddr),
 +			hash_ip);
 +}
 +
 +static inline int
 +__addip_base(struct ip_set_nethash *map, ip_set_ip_t ip)
 +{
-+	__u32 jhash, randhash, probe;
++	__u32 probe;
 +	u_int16_t i;
-+
-+	jhash = jhash_ip(map, ip);
-+	randhash = randhash_ip(map, ip);
-+
++	ip_set_ip_t *elem;
++	
 +	for (i = 0; i < map->probes; i++) {
-+		probe = (jhash + i * randhash) % map->hashsize;
-+		if (map->members[probe] == ip)
++		probe = jhash_ip(map, i, ip) % map->hashsize;
++		elem = HARRAY_ELEM(map->members, ip_set_ip_t *, probe);
++		if (*elem == ip)
 +			return -EEXIST;
-+		if (!map->members[probe]) {
-+			map->members[probe] = ip;
++		if (!*elem) {
++			*elem = ip;
++			map->elements++;
 +			return 0;
 +		}
 +	}
@@ -4844,9 +5469,12 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_nethash.c linux-2.6.21.1-owrt
 +__addip(struct ip_set_nethash *map, ip_set_ip_t ip, unsigned char cidr,
 +	ip_set_ip_t *hash_ip)
 +{
++	if (!ip || map->elements > limit)
++		return -ERANGE;
++	
 +	*hash_ip = pack(ip, cidr);
 +	DP("%u.%u.%u.%u/%u, %u.%u.%u.%u", HIPQUAD(ip), cidr, HIPQUAD(*hash_ip));
-+
++	
 +	return __addip_base(map, *hash_ip);
 +}
 +
@@ -4855,7 +5483,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_nethash.c linux-2.6.21.1-owrt
 +{
 +	unsigned char next;
 +	int i;
-+
++	
 +	for (i = 0; i < 30 && map->cidr[i]; i++) {
 +		if (map->cidr[i] == cidr) {
 +			return;
@@ -4873,7 +5501,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_nethash.c linux-2.6.21.1-owrt
 +addip(struct ip_set *set, const void *data, size_t size,
 +        ip_set_ip_t *hash_ip)
 +{
-+	struct ip_set_req_nethash *req =
++	struct ip_set_req_nethash *req = 
 +	    (struct ip_set_req_nethash *) data;
 +	int ret;
 +
@@ -4883,95 +5511,104 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_nethash.c linux-2.6.21.1-owrt
 +			      size);
 +		return -EINVAL;
 +	}
-+	ret = __addip((struct ip_set_nethash *) set->data,
++	ret = __addip((struct ip_set_nethash *) set->data, 
 +		      req->ip, req->cidr, hash_ip);
-+
++	
 +	if (ret == 0)
 +		update_cidr_sizes((struct ip_set_nethash *) set->data,
 +				  req->cidr);
-+
++	
 +	return ret;
 +}
 +
 +static int
-+addip_kernel(struct ip_set *set, const struct sk_buff *skb,
-+	     u_int32_t flags, ip_set_ip_t *hash_ip)
++addip_kernel(struct ip_set *set, 
++	     const struct sk_buff *skb,
++	     ip_set_ip_t *hash_ip,
++	     const u_int32_t *flags,
++	     unsigned char index)
 +{
 +	struct ip_set_nethash *map = (struct ip_set_nethash *) set->data;
 +	int ret = -ERANGE;
-+	ip_set_ip_t ip = ntohl(flags & IPSET_SRC ? skb->nh.iph->saddr
-+						 : skb->nh.iph->daddr);
-+
++	ip_set_ip_t ip = ntohl(flags[index] & IPSET_SRC 
++					? skb->nh.iph->saddr
++					: skb->nh.iph->daddr);
++	
 +	if (map->cidr[0])
 +		ret = __addip(map, ip, map->cidr[0], hash_ip);
-+
++		
 +	return ret;
 +}
 +
 +static int retry(struct ip_set *set)
 +{
 +	struct ip_set_nethash *map = (struct ip_set_nethash *) set->data;
-+	ip_set_ip_t *members;
-+	u_int32_t i, hashsize;
-+	unsigned newbytes;
++	ip_set_ip_t *elem;
++	void *members;
++	u_int32_t i, hashsize = map->hashsize;
 +	int res;
-+	struct ip_set_nethash tmp = {
-+		.hashsize = map->hashsize,
-+		.probes = map->probes,
-+		.resize = map->resize
-+	};
-+
++	struct ip_set_nethash *tmp;
++	
 +	if (map->resize == 0)
 +		return -ERANGE;
 +
-+	memcpy(tmp.cidr, map->cidr, 30 * sizeof(unsigned char));
 +    again:
 +    	res = 0;
-+
++    	
 +	/* Calculate new parameters */
-+	get_random_bytes(&tmp.initval, 4);
-+	hashsize = tmp.hashsize + (tmp.hashsize * map->resize)/100;
-+	if (hashsize == tmp.hashsize)
++	hashsize += (hashsize * map->resize)/100;
++	if (hashsize == map->hashsize)
 +		hashsize++;
-+	tmp.prime = make_prime(hashsize);
-+
++	
 +	ip_set_printk("rehashing of set %s triggered: "
 +		      "hashsize grows from %u to %u",
-+		      set->name, tmp.hashsize, hashsize);
-+	tmp.hashsize = hashsize;
++		      set->name, map->hashsize, hashsize);
 +
-+	newbytes = hashsize * sizeof(ip_set_ip_t);
-+	tmp.members = ip_set_malloc_atomic(newbytes);
-+	if (!tmp.members) {
-+		DP("out of memory for %d bytes", newbytes);
++	tmp = kmalloc(sizeof(struct ip_set_nethash) 
++		      + map->probes * sizeof(uint32_t), GFP_ATOMIC);
++	if (!tmp) {
++		DP("out of memory for %d bytes",
++		   sizeof(struct ip_set_nethash)
++		   + map->probes * sizeof(uint32_t));
 +		return -ENOMEM;
 +	}
-+	memset(tmp.members, 0, newbytes);
-+
++	tmp->members = harray_malloc(hashsize, sizeof(ip_set_ip_t), GFP_ATOMIC);
++	if (!tmp->members) {
++		DP("out of memory for %d bytes", hashsize * sizeof(ip_set_ip_t));
++		kfree(tmp);
++		return -ENOMEM;
++	}
++	tmp->hashsize = hashsize;
++	tmp->elements = 0;
++	tmp->probes = map->probes;
++	tmp->resize = map->resize;
++	memcpy(tmp->initval, map->initval, map->probes * sizeof(uint32_t));
++	memcpy(tmp->cidr, map->cidr, 30 * sizeof(unsigned char));
++	
 +	write_lock_bh(&set->lock);
 +	map = (struct ip_set_nethash *) set->data; /* Play safe */
 +	for (i = 0; i < map->hashsize && res == 0; i++) {
-+		if (map->members[i])
-+			res = __addip_base(&tmp, map->members[i]);
++		elem = HARRAY_ELEM(map->members, ip_set_ip_t *, i);	
++		if (*elem)
++			res = __addip_base(tmp, *elem);
 +	}
 +	if (res) {
 +		/* Failure, try again */
 +		write_unlock_bh(&set->lock);
-+		ip_set_free(tmp.members, newbytes);
++		harray_free(tmp->members);
++		kfree(tmp);
 +		goto again;
 +	}
-+
++	
 +	/* Success at resizing! */
 +	members = map->members;
-+	hashsize = map->hashsize;
-+
-+	map->initval = tmp.initval;
-+	map->prime = tmp.prime;
-+	map->hashsize = tmp.hashsize;
-+	map->members = tmp.members;
++	
++	map->hashsize = tmp->hashsize;
++	map->members = tmp->members;
 +	write_unlock_bh(&set->lock);
 +
-+	ip_set_free(members, hashsize * sizeof(ip_set_ip_t));
++	harray_free(members);
++	kfree(tmp);
 +
 +	return 0;
 +}
@@ -4980,12 +5617,18 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_nethash.c linux-2.6.21.1-owrt
 +__delip(struct ip_set_nethash *map, ip_set_ip_t ip, unsigned char cidr,
 +	ip_set_ip_t *hash_ip)
 +{
-+	ip_set_ip_t id = hash_id_cidr(map, ip, cidr, hash_ip);
++	ip_set_ip_t id, *elem;
 +
++	if (!ip)
++		return -ERANGE;
++	
++	id = hash_id_cidr(map, ip, cidr, hash_ip);
 +	if (id == UINT_MAX)
 +		return -EEXIST;
-+
-+	map->members[id] = 0;
++		
++	elem = HARRAY_ELEM(map->members, ip_set_ip_t *, id);
++	*elem = 0;
++	map->elements--;
 +	return 0;
 +}
 +
@@ -5002,32 +5645,36 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_nethash.c linux-2.6.21.1-owrt
 +			      size);
 +		return -EINVAL;
 +	}
-+	/* TODO: no garbage collection in map->cidr */
-+	return __delip((struct ip_set_nethash *) set->data,
++	/* TODO: no garbage collection in map->cidr */		
++	return __delip((struct ip_set_nethash *) set->data, 
 +		       req->ip, req->cidr, hash_ip);
 +}
 +
 +static int
-+delip_kernel(struct ip_set *set, const struct sk_buff *skb,
-+	       u_int32_t flags, ip_set_ip_t *hash_ip)
++delip_kernel(struct ip_set *set, 
++	     const struct sk_buff *skb,
++	     ip_set_ip_t *hash_ip,
++	     const u_int32_t *flags,
++	     unsigned char index)
 +{
 +	struct ip_set_nethash *map = (struct ip_set_nethash *) set->data;
 +	int ret = -ERANGE;
-+	ip_set_ip_t ip = ntohl(flags & IPSET_SRC ? skb->nh.iph->saddr
-+						 : skb->nh.iph->daddr);
-+
++	ip_set_ip_t ip = ntohl(flags[index] & IPSET_SRC 
++					? skb->nh.iph->saddr
++					: skb->nh.iph->daddr);
++	
 +	if (map->cidr[0])
 +		ret = __delip(map, ip, map->cidr[0], hash_ip);
-+
++	
 +	return ret;
 +}
 +
 +static int create(struct ip_set *set, const void *data, size_t size)
 +{
-+	unsigned newbytes;
 +	struct ip_set_req_nethash_create *req =
 +	    (struct ip_set_req_nethash_create *) data;
 +	struct ip_set_nethash *map;
++	uint16_t i;
 +
 +	if (size != sizeof(struct ip_set_req_nethash_create)) {
 +		ip_set_printk("data length wrong (want %zu, have %zu)",
@@ -5040,28 +5687,33 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_nethash.c linux-2.6.21.1-owrt
 +		ip_set_printk("hashsize too small");
 +		return -ENOEXEC;
 +	}
++	if (req->probes < 1) {
++		ip_set_printk("probes too small");
++		return -ENOEXEC;
++	}
 +
-+	map = kmalloc(sizeof(struct ip_set_nethash), GFP_KERNEL);
++	map = kmalloc(sizeof(struct ip_set_nethash)
++		      + req->probes * sizeof(uint32_t), GFP_KERNEL);
 +	if (!map) {
 +		DP("out of memory for %d bytes",
-+		   sizeof(struct ip_set_nethash));
++		   sizeof(struct ip_set_nethash)
++		   + req->probes * sizeof(uint32_t));
 +		return -ENOMEM;
 +	}
-+	get_random_bytes(&map->initval, 4);
-+	map->prime = make_prime(req->hashsize);
++	for (i = 0; i < req->probes; i++)
++		get_random_bytes(((uint32_t *) map->initval)+i, 4);
++	map->elements = 0;
 +	map->hashsize = req->hashsize;
 +	map->probes = req->probes;
 +	map->resize = req->resize;
 +	memset(map->cidr, 0, 30 * sizeof(unsigned char));
-+	newbytes = map->hashsize * sizeof(ip_set_ip_t);
-+	map->members = ip_set_malloc(newbytes);
++	map->members = harray_malloc(map->hashsize, sizeof(ip_set_ip_t), GFP_KERNEL);
 +	if (!map->members) {
-+		DP("out of memory for %d bytes", newbytes);
++		DP("out of memory for %d bytes", map->hashsize * sizeof(ip_set_ip_t));
 +		kfree(map);
 +		return -ENOMEM;
 +	}
-+	memset(map->members, 0, newbytes);
-+
++	
 +	set->data = map;
 +	return 0;
 +}
@@ -5070,7 +5722,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_nethash.c linux-2.6.21.1-owrt
 +{
 +	struct ip_set_nethash *map = (struct ip_set_nethash *) set->data;
 +
-+	ip_set_free(map->members, map->hashsize * sizeof(ip_set_ip_t));
++	harray_free(map->members);
 +	kfree(map);
 +
 +	set->data = NULL;
@@ -5079,8 +5731,9 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_nethash.c linux-2.6.21.1-owrt
 +static void flush(struct ip_set *set)
 +{
 +	struct ip_set_nethash *map = (struct ip_set_nethash *) set->data;
-+	memset(map->members, 0, map->hashsize * sizeof(ip_set_ip_t));
++	harray_flush(map->members, map->hashsize, sizeof(ip_set_ip_t));
 +	memset(map->cidr, 0, 30 * sizeof(unsigned char));
++	map->elements = 0;
 +}
 +
 +static void list_header(const struct ip_set *set, void *data)
@@ -5104,14 +5757,17 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_nethash.c linux-2.6.21.1-owrt
 +static void list_members(const struct ip_set *set, void *data)
 +{
 +	struct ip_set_nethash *map = (struct ip_set_nethash *) set->data;
-+	int bytes = map->hashsize * sizeof(ip_set_ip_t);
++	ip_set_ip_t i, *elem;
 +
-+	memcpy(data, map->members, bytes);
++	for (i = 0; i < map->hashsize; i++) {
++		elem = HARRAY_ELEM(map->members, ip_set_ip_t *, i);	
++		((ip_set_ip_t *)data)[i] = *elem;
++	}
 +}
 +
 +static struct ip_set_type ip_set_nethash = {
 +	.typename		= SETTYPE_NAME,
-+	.typecode		= IPSET_TYPE_IP,
++	.features		= IPSET_TYPE_IP | IPSET_DATA_SINGLE,
 +	.protocol_version	= IP_SET_PROTOCOL_VERSION,
 +	.create			= &create,
 +	.destroy		= &destroy,
@@ -5134,6 +5790,8 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_nethash.c linux-2.6.21.1-owrt
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Jozsef Kadlecsik <kadlec@blackhole.kfki.hu>");
 +MODULE_DESCRIPTION("nethash type of IP sets");
++module_param(limit, int, 0600);
++MODULE_PARM_DESC(limit, "maximal number of elements stored in the sets");
 +
 +static int __init init(void)
 +{
@@ -5150,13 +5808,13 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_nethash.c linux-2.6.21.1-owrt
 +module_exit(fini);
 diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_portmap.c linux-2.6.21.1-owrt/net/ipv4/netfilter/ip_set_portmap.c
 --- linux-2.6.21.1/net/ipv4/netfilter/ip_set_portmap.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1-owrt/net/ipv4/netfilter/ip_set_portmap.c	2007-05-14 11:44:19.000000000 +0200
-@@ -0,0 +1,325 @@
++++ linux-2.6.21.1-owrt/net/ipv4/netfilter/ip_set_portmap.c	2007-05-23 23:04:36.000000000 +0200
+@@ -0,0 +1,334 @@
 +/* Copyright (C) 2003-2004 Jozsef Kadlecsik <kadlec@blackhole.kfki.hu>
 + *
 + * This program is free software; you can redistribute it and/or modify
 + * it under the terms of the GNU General Public License version 2 as
-+ * published by the Free Software Foundation.
++ * published by the Free Software Foundation.  
 + */
 +
 +/* Kernel module implementing a port set type as a bitmap */
@@ -5187,7 +5845,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_portmap.c linux-2.6.21.1-owrt
 +	switch (iph->protocol) {
 +	case IPPROTO_TCP: {
 +		struct tcphdr tcph;
-+
++		
 +		/* See comments at tcp_match in ip_tables.c */
 +		if (offset)
 +			return INVALID_PORT;
@@ -5195,7 +5853,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_portmap.c linux-2.6.21.1-owrt
 +		if (skb_copy_bits(skb, skb->nh.iph->ihl*4, &tcph, sizeof(tcph)) < 0)
 +			/* No choice either */
 +			return INVALID_PORT;
-+
++	     	
 +	     	return ntohs(flags & IPSET_SRC ?
 +			     tcph.source : tcph.dest);
 +	    }
@@ -5208,7 +5866,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_portmap.c linux-2.6.21.1-owrt
 +		if (skb_copy_bits(skb, skb->nh.iph->ihl*4, &udph, sizeof(udph)) < 0)
 +			/* No choice either */
 +			return INVALID_PORT;
-+
++	     	
 +	     	return ntohs(flags & IPSET_SRC ?
 +			     udph.source : udph.dest);
 +	    }
@@ -5224,7 +5882,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_portmap.c linux-2.6.21.1-owrt
 +
 +	if (port < map->first_port || port > map->last_port)
 +		return -ERANGE;
-+
++		
 +	*hash_port = port;
 +	DP("set: %s, port:%u, %u", set->name, port, *hash_port);
 +	return !!test_bit(port - map->first_port, map->members);
@@ -5234,7 +5892,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_portmap.c linux-2.6.21.1-owrt
 +testport(struct ip_set *set, const void *data, size_t size,
 +         ip_set_ip_t *hash_port)
 +{
-+	struct ip_set_req_portmap *req =
++	struct ip_set_req_portmap *req = 
 +	    (struct ip_set_req_portmap *) data;
 +
 +	if (size != sizeof(struct ip_set_req_portmap)) {
@@ -5247,18 +5905,21 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_portmap.c linux-2.6.21.1-owrt
 +}
 +
 +static int
-+testport_kernel(struct ip_set *set, const struct sk_buff *skb,
-+		u_int32_t flags, ip_set_ip_t *hash_port)
++testport_kernel(struct ip_set *set, 
++	        const struct sk_buff *skb,
++	        ip_set_ip_t *hash_port,
++	        const u_int32_t *flags,
++	        unsigned char index)
 +{
 +	int res;
-+	ip_set_ip_t port = get_port(skb, flags);
++	ip_set_ip_t port = get_port(skb, flags[index]);
 +
-+	DP("flag %s port %u", flags & IPSET_SRC ? "SRC" : "DST", port);
++	DP("flag %s port %u", flags[index] & IPSET_SRC ? "SRC" : "DST", port);	
 +	if (port == INVALID_PORT)
-+		return 0;
++		return 0;	
 +
 +	res =  __testport(set, port, hash_port);
-+
++	
 +	return (res < 0 ? 0 : res);
 +}
 +
@@ -5271,7 +5932,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_portmap.c linux-2.6.21.1-owrt
 +		return -ERANGE;
 +	if (test_and_set_bit(port - map->first_port, map->members))
 +		return -EEXIST;
-+
++		
 +	*hash_port = port;
 +	DP("port %u", port);
 +	return 0;
@@ -5281,7 +5942,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_portmap.c linux-2.6.21.1-owrt
 +addport(struct ip_set *set, const void *data, size_t size,
 +        ip_set_ip_t *hash_port)
 +{
-+	struct ip_set_req_portmap *req =
++	struct ip_set_req_portmap *req = 
 +	    (struct ip_set_req_portmap *) data;
 +
 +	if (size != sizeof(struct ip_set_req_portmap)) {
@@ -5294,11 +5955,14 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_portmap.c linux-2.6.21.1-owrt
 +}
 +
 +static int
-+addport_kernel(struct ip_set *set, const struct sk_buff *skb,
-+	       u_int32_t flags, ip_set_ip_t *hash_port)
++addport_kernel(struct ip_set *set, 
++	       const struct sk_buff *skb,
++	       ip_set_ip_t *hash_port,
++	       const u_int32_t *flags,
++	       unsigned char index)
 +{
-+	ip_set_ip_t port = get_port(skb, flags);
-+
++	ip_set_ip_t port = get_port(skb, flags[index]);
++	
 +	if (port == INVALID_PORT)
 +		return -EINVAL;
 +
@@ -5314,7 +5978,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_portmap.c linux-2.6.21.1-owrt
 +		return -ERANGE;
 +	if (!test_and_clear_bit(port - map->first_port, map->members))
 +		return -EEXIST;
-+
++		
 +	*hash_port = port;
 +	DP("port %u", port);
 +	return 0;
@@ -5337,11 +6001,14 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_portmap.c linux-2.6.21.1-owrt
 +}
 +
 +static int
-+delport_kernel(struct ip_set *set, const struct sk_buff *skb,
-+	       u_int32_t flags, ip_set_ip_t *hash_port)
++delport_kernel(struct ip_set *set, 
++	       const struct sk_buff *skb,
++	       ip_set_ip_t *hash_port,
++	       const u_int32_t *flags,
++	       unsigned char index)
 +{
-+	ip_set_ip_t port = get_port(skb, flags);
-+
++	ip_set_ip_t port = get_port(skb, flags[index]);
++	
 +	if (port == INVALID_PORT)
 +		return -EINVAL;
 +
@@ -5371,7 +6038,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_portmap.c linux-2.6.21.1-owrt
 +
 +	if (req->to - req->from > MAX_RANGE) {
 +		ip_set_printk("range too big (max %d ports)",
-+			       MAX_RANGE);
++			       MAX_RANGE+1);
 +		return -ENOEXEC;
 +	}
 +
@@ -5441,7 +6108,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_portmap.c linux-2.6.21.1-owrt
 +
 +static struct ip_set_type ip_set_portmap = {
 +	.typename		= SETTYPE_NAME,
-+	.typecode		= IPSET_TYPE_PORT,
++	.features		= IPSET_TYPE_PORT | IPSET_DATA_SINGLE,
 +	.protocol_version	= IP_SET_PROTOCOL_VERSION,
 +	.create			= &create,
 +	.destroy		= &destroy,
@@ -5479,8 +6146,8 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ip_set_portmap.c linux-2.6.21.1-owrt
 +module_exit(fini);
 diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ipt_set.c linux-2.6.21.1-owrt/net/ipv4/netfilter/ipt_set.c
 --- linux-2.6.21.1/net/ipv4/netfilter/ipt_set.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1-owrt/net/ipv4/netfilter/ipt_set.c	2007-05-14 11:44:19.000000000 +0200
-@@ -0,0 +1,105 @@
++++ linux-2.6.21.1-owrt/net/ipv4/netfilter/ipt_set.c	2007-05-23 23:04:36.000000000 +0200
+@@ -0,0 +1,142 @@
 +/* Copyright (C) 2000-2002 Joakim Axelsson <gozem@linux.nu>
 + *                         Patrick Schaaf <bof@bof.de>
 + *                         Martin Josefsson <gandalf@wlug.westbo.se>
@@ -5488,7 +6155,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ipt_set.c linux-2.6.21.1-owrt/net/ip
 + *
 + * This program is free software; you can redistribute it and/or modify
 + * it under the terms of the GNU General Public License version 2 as
-+ * published by the Free Software Foundation.
++ * published by the Free Software Foundation.  
 + */
 +
 +/* Kernel module to match an IP set. */
@@ -5496,6 +6163,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ipt_set.c linux-2.6.21.1-owrt/net/ip
 +#include <linux/module.h>
 +#include <linux/ip.h>
 +#include <linux/skbuff.h>
++#include <linux/version.h>
 +
 +#include <linux/netfilter_ipv4/ip_tables.h>
 +#include <linux/netfilter_ipv4/ip_set.h>
@@ -5505,7 +6173,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ipt_set.c linux-2.6.21.1-owrt/net/ip
 +match_set(const struct ipt_set_info *info,
 +	  const struct sk_buff *skb,
 +	  int inv)
-+{
++{	
 +	if (ip_set_testip_kernel(info->index, skb, info->flags))
 +		inv = !inv;
 +	return inv;
@@ -5515,14 +6183,18 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ipt_set.c linux-2.6.21.1-owrt/net/ip
 +match(const struct sk_buff *skb,
 +      const struct net_device *in,
 +      const struct net_device *out,
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,17)
 +      const struct xt_match *match,
++#endif
 +      const void *matchinfo,
-+      int offset,
-+      unsigned int protoff,
-+      int *hotdrop)
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
++      int offset, unsigned int protoff, int *hotdrop)
++#else
++      int offset, int *hotdrop)
++#endif
 +{
 +	const struct ipt_set_info_match *info = matchinfo;
-+
++		
 +	return match_set(&info->match_set,
 +			 skb,
 +			 info->match_set.flags[0] & IPSET_MATCH_INV);
@@ -5530,17 +6202,33 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ipt_set.c linux-2.6.21.1-owrt/net/ip
 +
 +static int
 +checkentry(const char *tablename,
-+	   const void *ip,
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
++	   const void *inf,
++#else
++	   const struct ipt_ip *ip,
++#endif
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,17)
 +	   const struct xt_match *match,
++#endif
 +	   void *matchinfo,
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19)
++	   unsigned int matchsize,
++#endif
 +	   unsigned int hook_mask)
 +{
-+	struct ipt_set_info_match *info =
++	struct ipt_set_info_match *info = 
 +		(struct ipt_set_info_match *) matchinfo;
 +	ip_set_id_t index;
 +
-+	index = ip_set_get_byindex(info->match_set.index);
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19)
++	if (matchsize != IPT_ALIGN(sizeof(struct ipt_set_info_match))) {
++		ip_set_printk("invalid matchsize %d", matchsize);
++		return 0;
++	}
++#endif
 +
++	index = ip_set_get_byindex(info->match_set.index);
++		
 +	if (index == IP_SET_INVALID_ID) {
 +		ip_set_printk("Cannot find set indentified by id %u to match",
 +			      info->match_set.index);
@@ -5554,17 +6242,33 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ipt_set.c linux-2.6.21.1-owrt/net/ip
 +	return 1;
 +}
 +
-+static void destroy(const struct xt_match *match, void *matchinfo)
++static void destroy(
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,17)
++		    const struct xt_match *match,
++#endif
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19)
++		    void *matchinfo, unsigned int matchsize)
++#else
++		    void *matchinfo)
++#endif
 +{
 +	struct ipt_set_info_match *info = matchinfo;
 +
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19)
++	if (matchsize != IPT_ALIGN(sizeof(struct ipt_set_info_match))) {
++		ip_set_printk("invalid matchsize %d", matchsize);
++		return;
++	}
++#endif
 +	ip_set_put(info->match_set.index);
 +}
 +
 +static struct ipt_match set_match = {
 +	.name		= "set",
 +	.match		= &match,
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,17)
 +	.matchsize	= sizeof(struct ipt_set_info_match),
++#endif
 +	.checkentry	= &checkentry,
 +	.destroy	= &destroy,
 +	.me		= THIS_MODULE
@@ -5574,22 +6278,22 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ipt_set.c linux-2.6.21.1-owrt/net/ip
 +MODULE_AUTHOR("Jozsef Kadlecsik <kadlec@blackhole.kfki.hu>");
 +MODULE_DESCRIPTION("iptables IP set match module");
 +
-+static int __init init(void)
++static int __init ipt_ipset_init(void)
 +{
-+	return ipt_register_match(&set_match);
++	return xt_register_match(&set_match);
 +}
 +
-+static void __exit fini(void)
++static void __exit ipt_ipset_fini(void)
 +{
-+	ipt_unregister_match(&set_match);
++	xt_unregister_match(&set_match);
 +}
 +
-+module_init(init);
-+module_exit(fini);
++module_init(ipt_ipset_init);
++module_exit(ipt_ipset_fini);
 diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ipt_SET.c linux-2.6.21.1-owrt/net/ipv4/netfilter/ipt_SET.c
 --- linux-2.6.21.1/net/ipv4/netfilter/ipt_SET.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.21.1-owrt/net/ipv4/netfilter/ipt_SET.c	2007-05-14 11:44:19.000000000 +0200
-@@ -0,0 +1,120 @@
++++ linux-2.6.21.1-owrt/net/ipv4/netfilter/ipt_SET.c	2007-05-23 23:04:36.000000000 +0200
+@@ -0,0 +1,160 @@
 +/* Copyright (C) 2000-2002 Joakim Axelsson <gozem@linux.nu>
 + *                         Patrick Schaaf <bof@bof.de>
 + *                         Martin Josefsson <gandalf@wlug.westbo.se>
@@ -5597,7 +6301,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ipt_SET.c linux-2.6.21.1-owrt/net/ip
 + *
 + * This program is free software; you can redistribute it and/or modify
 + * it under the terms of the GNU General Public License version 2 as
-+ * published by the Free Software Foundation.
++ * published by the Free Software Foundation.  
 + */
 +
 +/* ipt_SET.c - netfilter target to manipulate IP sets */
@@ -5610,6 +6314,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ipt_SET.c linux-2.6.21.1-owrt/net/ip
 +#include <linux/netdevice.h>
 +#include <linux/if.h>
 +#include <linux/inetdevice.h>
++#include <linux/version.h>
 +#include <net/protocol.h>
 +#include <net/checksum.h>
 +#include <linux/netfilter_ipv4.h>
@@ -5621,11 +6326,18 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ipt_SET.c linux-2.6.21.1-owrt/net/ip
 +       const struct net_device *in,
 +       const struct net_device *out,
 +       unsigned int hooknum,
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,17)
 +       const struct xt_target *target,
++#endif
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19)
++       const void *targinfo,
++       void *userinfo)
++#else
 +       const void *targinfo)
++#endif
 +{
 +	const struct ipt_set_info_target *info = targinfo;
-+
++	
 +	if (info->add_set.index != IP_SET_INVALID_ID)
 +		ip_set_addip_kernel(info->add_set.index,
 +				    *pskb,
@@ -5640,14 +6352,30 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ipt_SET.c linux-2.6.21.1-owrt/net/ip
 +
 +static int
 +checkentry(const char *tablename,
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
 +	   const void *e,
++#else
++	   const struct ipt_entry *e,
++#endif
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,17)
 +	   const struct xt_target *target,
++#endif
 +	   void *targinfo,
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19)
++	   unsigned int targinfosize, 
++#endif
 +	   unsigned int hook_mask)
 +{
-+	struct ipt_set_info_target *info =
++	struct ipt_set_info_target *info = 
 +		(struct ipt_set_info_target *) targinfo;
 +	ip_set_id_t index;
++
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19)
++	if (targinfosize != IPT_ALIGN(sizeof(*info))) {
++		DP("bad target info size %u", targinfosize);
++		return 0;
++	}
++#endif
 +
 +	if (info->add_set.index != IP_SET_INVALID_ID) {
 +		index = ip_set_get_byindex(info->add_set.index);
@@ -5675,10 +6403,24 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ipt_SET.c linux-2.6.21.1-owrt/net/ip
 +	return 1;
 +}
 +
-+static void destroy(const struct xt_target *target, void *targetinfo)
++static void destroy(
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,17)
++		    const struct xt_target *target,
++#endif
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19)
++		    void *targetinfo, unsigned int targetsize)
++#else
++		    void *targetinfo)
++#endif
 +{
 +	struct ipt_set_info_target *info = targetinfo;
 +
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19)
++	if (targetsize != IPT_ALIGN(sizeof(struct ipt_set_info_target))) {
++		ip_set_printk("invalid targetsize %d", targetsize);
++		return;
++	}
++#endif
 +	if (info->add_set.index != IP_SET_INVALID_ID)
 +		ip_set_put(info->add_set.index);
 +	if (info->del_set.index != IP_SET_INVALID_ID)
@@ -5688,7 +6430,9 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ipt_SET.c linux-2.6.21.1-owrt/net/ip
 +static struct ipt_target SET_target = {
 +	.name 		= "SET",
 +	.target 	= target,
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,17)
 +	.targetsize	= sizeof(struct ipt_set_info_target),
++#endif
 +	.checkentry 	= checkentry,
 +	.destroy 	= destroy,
 +	.me 		= THIS_MODULE
@@ -5698,24 +6442,24 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/ipt_SET.c linux-2.6.21.1-owrt/net/ip
 +MODULE_AUTHOR("Jozsef Kadlecsik <kadlec@blackhole.kfki.hu>");
 +MODULE_DESCRIPTION("iptables IP set target module");
 +
-+static int __init init(void)
++static int __init ipt_SET_init(void)
 +{
 +	return xt_register_target(&SET_target);
 +}
 +
-+static void __exit fini(void)
++static void __exit ipt_SET_fini(void)
 +{
-+	ipt_unregister_target(&SET_target);
++	xt_unregister_target(&SET_target);
 +}
 +
-+module_init(init);
-+module_exit(fini);
++module_init(ipt_SET_init);
++module_exit(ipt_SET_fini);
 diff -Nur linux-2.6.21.1/net/ipv4/netfilter/Kconfig linux-2.6.21.1-owrt/net/ipv4/netfilter/Kconfig
---- linux-2.6.21.1/net/ipv4/netfilter/Kconfig	2007-05-14 11:24:57.000000000 +0200
-+++ linux-2.6.21.1-owrt/net/ipv4/netfilter/Kconfig	2007-05-14 11:44:19.000000000 +0200
-@@ -681,5 +681,106 @@
- 	  Allows altering the ARP packet payload: source and destination
- 	  hardware and network addresses.
+--- linux-2.6.21.1/net/ipv4/netfilter/Kconfig	2007-05-23 20:34:11.000000000 +0200
++++ linux-2.6.21.1-owrt/net/ipv4/netfilter/Kconfig	2007-05-23 23:04:36.000000000 +0200
+@@ -674,5 +674,114 @@
+ 	  Documentation/modules.txt.  The module will be called ipt_ROUTE.o.
+ 	  If unsure, say `N'.
  
 +config IP_NF_SET
 +	tristate "IP set support"
@@ -5733,7 +6477,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/Kconfig linux-2.6.21.1-owrt/net/ipv4
 +	range 2 65534
 +	depends on IP_NF_SET
 +	help
-+	  You can define here default value of the maximum number
++	  You can define here default value of the maximum number 
 +	  of IP sets for the kernel.
 +
 +	  The value can be overriden by the 'max_sets' module
@@ -5790,6 +6534,14 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/Kconfig linux-2.6.21.1-owrt/net/ipv4
 +
 +	  To compile it as a module, choose M here.  If unsure, say N.
 +
++config IP_NF_SET_IPPORTHASH
++	tristate "ipporthash set support"
++	depends on IP_NF_SET
++	help
++	  This option adds the ipporthash set type support.
++
++	  To compile it as a module, choose M here.  If unsure, say N.
++
 +config IP_NF_SET_IPTREE
 +	tristate "iptree set support"
 +	depends on IP_NF_SET
@@ -5821,17 +6573,17 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/Kconfig linux-2.6.21.1-owrt/net/ipv4
  endmenu
  
 diff -Nur linux-2.6.21.1/net/ipv4/netfilter/Makefile linux-2.6.21.1-owrt/net/ipv4/netfilter/Makefile
---- linux-2.6.21.1/net/ipv4/netfilter/Makefile	2007-05-14 11:24:57.000000000 +0200
-+++ linux-2.6.21.1-owrt/net/ipv4/netfilter/Makefile	2007-05-14 11:47:22.000000000 +0200
-@@ -83,6 +83,7 @@
- obj-$(CONFIG_IP_NF_RAW) += iptable_raw.o
- 
- # matches
+--- linux-2.6.21.1/net/ipv4/netfilter/Makefile	2007-05-23 20:34:11.000000000 +0200
++++ linux-2.6.21.1-owrt/net/ipv4/netfilter/Makefile	2007-05-23 23:04:36.000000000 +0200
+@@ -90,6 +90,7 @@
+ obj-$(CONFIG_IP_NF_MATCH_ECN) += ipt_ecn.o
+ obj-$(CONFIG_IP_NF_MATCH_AH) += ipt_ah.o
+ obj-$(CONFIG_IP_NF_MATCH_TTL) += ipt_ttl.o
 +obj-$(CONFIG_IP_NF_MATCH_SET) += ipt_set.o
- obj-$(CONFIG_IP_NF_MATCH_IPRANGE) += ipt_iprange.o
- obj-$(CONFIG_IP_NF_MATCH_OWNER) += ipt_owner.o
- obj-$(CONFIG_IP_NF_MATCH_TOS) += ipt_tos.o
-@@ -107,6 +108,16 @@
+ obj-$(CONFIG_IP_NF_MATCH_ADDRTYPE) += ipt_addrtype.o
+ 
+ # targets
+@@ -106,6 +107,17 @@
  obj-$(CONFIG_IP_NF_TARGET_ULOG) += ipt_ULOG.o
  obj-$(CONFIG_IP_NF_TARGET_CLUSTERIP) += ipt_CLUSTERIP.o
  obj-$(CONFIG_IP_NF_TARGET_TTL) += ipt_TTL.o
@@ -5844,6 +6596,7 @@ diff -Nur linux-2.6.21.1/net/ipv4/netfilter/Makefile linux-2.6.21.1-owrt/net/ipv
 +obj-$(CONFIG_IP_NF_SET_MACIPMAP) += ip_set_macipmap.o
 +obj-$(CONFIG_IP_NF_SET_IPHASH) += ip_set_iphash.o
 +obj-$(CONFIG_IP_NF_SET_NETHASH) += ip_set_nethash.o
++obj-$(CONFIG_IP_NF_SET_IPPORTHASH) += ip_set_ipporthash.o
 +obj-$(CONFIG_IP_NF_SET_IPTREE) += ip_set_iptree.o
  
  # generic ARP tables
