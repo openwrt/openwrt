@@ -1,4 +1,4 @@
-diff -purN bb.old/editors/awk.c bb.dev/editors/awk.c
+diff -urN bb.old/editors/awk.c bb.dev/editors/awk.c
 --- bb.old/editors/awk.c	2007-05-20 04:17:05.002197784 +0200
 +++ bb.dev/editors/awk.c	2007-05-20 22:40:48.183743936 +0200
 @@ -30,6 +30,11 @@
@@ -13,7 +13,7 @@ diff -purN bb.old/editors/awk.c bb.dev/editors/awk.c
  /* Variable */
  typedef struct var_s {
  	unsigned short type;		/* flags */
-@@ -50,10 +55,15 @@ typedef struct chain_s {
+@@ -50,10 +55,15 @@
  	char *programname;
  } chain;
  
@@ -30,7 +30,7 @@ diff -purN bb.old/editors/awk.c bb.dev/editors/awk.c
  } func;
  
  /* I/O stream */
-@@ -1312,7 +1322,8 @@ static void parse_program(char *p)
+@@ -1312,7 +1322,8 @@
  			next_token(TC_FUNCTION);
  			pos++;
  			f = newfunc(t.string);
@@ -40,7 +40,7 @@ diff -purN bb.old/editors/awk.c bb.dev/editors/awk.c
  			f->nargs = 0;
  			while (next_token(TC_VARIABLE | TC_SEQTERM) & TC_VARIABLE) {
  				v = findvar(ahash, t.string);
-@@ -1321,7 +1332,7 @@ static void parse_program(char *p)
+@@ -1321,7 +1332,7 @@
  				if (next_token(TC_COMMA | TC_SEQTERM) & TC_SEQTERM)
  					break;
  			}
@@ -49,7 +49,7 @@ diff -purN bb.old/editors/awk.c bb.dev/editors/awk.c
  			chain_group();
  			clear_array(ahash);
  
-@@ -2260,7 +2271,8 @@ static var *evaluate(node *op, var *res)
+@@ -2260,7 +2271,8 @@
  			break;
  
  		case XC( OC_FUNC ):
@@ -59,7 +59,7 @@ diff -purN bb.old/editors/awk.c bb.dev/editors/awk.c
  				runtime_error(EMSG_UNDEF_FUNC);
  
  			X.v = R.v = nvalloc(op->r.f->nargs+1);
-@@ -2277,7 +2289,11 @@ static var *evaluate(node *op, var *res)
+@@ -2277,7 +2289,11 @@
  			fnargs = X.v;
  
  			L.s = programname;
@@ -72,7 +72,7 @@ diff -purN bb.old/editors/awk.c bb.dev/editors/awk.c
  			programname = L.s;
  
  			nvfree(fnargs);
-@@ -2637,6 +2653,11 @@ static rstream *next_input_file(void)
+@@ -2637,6 +2653,11 @@
  	return &rsm;
  }
  
@@ -84,7 +84,7 @@ diff -purN bb.old/editors/awk.c bb.dev/editors/awk.c
  int awk_main(int argc, char **argv)
  {
  	int i, j, flen;
-@@ -2693,6 +2714,10 @@ int awk_main(int argc, char **argv)
+@@ -2693,6 +2714,10 @@
  		free(s);
  	}
  
@@ -95,10 +95,10 @@ diff -purN bb.old/editors/awk.c bb.dev/editors/awk.c
  	programname = NULL;
  	while((c = getopt(argc, argv, "F:v:f:W:")) != EOF) {
  		switch (c) {
-diff -purN bb.old/editors/awx.c bb.dev/editors/awx.c
+diff -urN bb.old/editors/awx.c bb.dev/editors/awx.c
 --- bb.old/editors/awx.c	1970-01-01 01:00:00.000000000 +0100
-+++ bb.dev/editors/awx.c	2007-05-20 23:07:21.338547592 +0200
-@@ -0,0 +1,628 @@
++++ bb.dev/editors/awx.c	2007-05-23 19:13:40.459655704 +0200
+@@ -0,0 +1,632 @@
 +/*
 + * awk web extension
 + *
@@ -150,7 +150,7 @@ diff -purN bb.old/editors/awx.c bb.dev/editors/awx.c
 +static char *translate_line(char *line)
 +{
 +	char *tok[MAX_TR * 3];
-+	char *l, *p, *p2, *res;
++	char *l, *p, *p2 = NULL, *res;
 +	int len = 0, _pos = 0, i, tr_abort = 0;
 +	static char *backlog = NULL;
 +
@@ -170,10 +170,7 @@ diff -purN bb.old/editors/awx.c bb.dev/editors/awx.c
 +
 +		p2 = strstr(p, TR_END);
 +		if (p2 == NULL) {
-+			p2 = backlog;
-+			backlog = xstrdup(l);
-+			if (p2)
-+				free(p2);
++			p2 = xstrdup(p);
 +			tr_abort = 1;
 +			break;
 +		}
@@ -195,9 +192,10 @@ diff -purN bb.old/editors/awx.c bb.dev/editors/awx.c
 +		strcat(p, tok[i]);
 +		p += strlen(tok[i]);
 +	}
-+	if (!tr_abort && backlog) {
-+		free(backlog);
-+		backlog = NULL;
++	if (tr_abort && p2) {
++		if (backlog)
++			free(backlog);
++		p2 = backlog;
 +	}
 +	
 +	return res;
@@ -458,21 +456,24 @@ diff -purN bb.old/editors/awx.c bb.dev/editors/awx.c
 +	lineno = e->line;
 +	switch (e->t) {
 +		case T_TEXT:
-+			s = strdup(e->var);
++			s = malloc(strlen(e->var) + 2);
++			strcpy(s, e->var);
 +			print_translate(s);
 +			free(s);
 +			break;
 +		case T_CODE:
-+			s = strdup(e->var);
++			s = malloc(strlen(e->var) + 2);
++			strcpy(s, e->var);
 +			v = nvalloc(1);
 +			s2 = strdup(getvar_s(parse_awk(s, v)));
 +			nvfree(v);
-+			print_translate(s);
++			print_translate(s2);
 +			free(s);
 +			free(s2);
 +			break;
 +		case T_IF:
-+			s = strdup(e->var);
++			s = malloc(strlen(e->var) + 2);
++			strcpy(s, e->var);
 +			v = nvalloc(1);
 +			i = istrue(parse_awk(s, v));
 +			nvfree(v);
@@ -506,10 +507,13 @@ diff -purN bb.old/editors/awx.c bb.dev/editors/awx.c
 +	char *oldprg;
 +	int oldlnr;
 +	
++	if (!filename)
++		return;
++
 +	oldlnr = lineno;
 +	oldprg = programname;
 +	programname = filename;
-+			
++
 +	f = fopen(filename, "r");
 +	if (!f)
 +		return;
@@ -727,7 +731,7 @@ diff -purN bb.old/editors/awx.c bb.dev/editors/awx.c
 +	return awk_main(argc, argv);
 +}
 +
-diff -purN bb.old/editors/awx_parser.h bb.dev/editors/awx_parser.h
+diff -urN bb.old/editors/awx_parser.h bb.dev/editors/awx_parser.h
 --- bb.old/editors/awx_parser.h	1970-01-01 01:00:00.000000000 +0100
 +++ bb.dev/editors/awx_parser.h	2007-05-20 22:30:31.380512280 +0200
 @@ -0,0 +1,38 @@
@@ -769,9 +773,9 @@ diff -purN bb.old/editors/awx_parser.h bb.dev/editors/awx_parser.h
 +void free_template(struct template_cb *cb, struct template_element *e);
 +
 +#endif
-diff -purN bb.old/editors/awx_parser.l bb.dev/editors/awx_parser.l
+diff -urN bb.old/editors/awx_parser.l bb.dev/editors/awx_parser.l
 --- bb.old/editors/awx_parser.l	1970-01-01 01:00:00.000000000 +0100
-+++ bb.dev/editors/awx_parser.l	2007-05-20 22:30:31.380512280 +0200
++++ bb.dev/editors/awx_parser.l	2007-05-23 19:13:40.459655704 +0200
 @@ -0,0 +1,302 @@
 +%{
 +#include <stdio.h>
@@ -837,7 +841,7 @@ diff -purN bb.old/editors/awx_parser.l bb.dev/editors/awx_parser.l
 +{
 +	struct template_element *ptr;
 +	
-+	ptr = xzalloc(sizeof(*ptr));
++	ptr = xzalloc(sizeof(struct template_element));
 +	ptr->parent = parent;
 +	return ptr;
 +}
@@ -1037,7 +1041,7 @@ diff -purN bb.old/editors/awx_parser.l bb.dev/editors/awx_parser.l
 +	buflen = 4096;
 +	textbuf = xzalloc(buflen);
 +
-+	head = xzalloc(sizeof(*head));
++	head = xzalloc(sizeof(struct template_element));
 +	head->t = T_TEXT;
 +	cur = head;
 +
@@ -1050,7 +1054,7 @@ diff -purN bb.old/editors/awx_parser.l bb.dev/editors/awx_parser.l
 +void free_template(struct template_cb *cb, struct template_element *e)
 +{
 +	struct template_element *next;
-+
++	return;
 +	if (!e)
 +		return;
 +		
@@ -1075,10 +1079,10 @@ diff -purN bb.old/editors/awx_parser.l bb.dev/editors/awx_parser.l
 +	free(e);
 +	return free_template(cb, next);
 +}
-diff -purN bb.old/editors/Config.in bb.dev/editors/Config.in
+diff -urN bb.old/editors/Config.in bb.dev/editors/Config.in
 --- bb.old/editors/Config.in	2007-05-20 04:17:05.003197632 +0200
 +++ bb.dev/editors/Config.in	2007-05-20 22:30:31.380512280 +0200
-@@ -12,6 +12,13 @@ config AWK
+@@ -12,6 +12,13 @@
  	  Awk is used as a pattern scanning and processing language.  This is
  	  the BusyBox implementation of that programming language.
  
@@ -1092,10 +1096,10 @@ diff -purN bb.old/editors/Config.in bb.dev/editors/Config.in
  config FEATURE_AWK_MATH
  	bool "Enable math functions (requires libm)"
  	default y
-diff -purN bb.old/editors/Kbuild bb.dev/editors/Kbuild
+diff -urN bb.old/editors/Kbuild bb.dev/editors/Kbuild
 --- bb.old/editors/Kbuild	2007-03-18 17:59:37.000000000 +0100
 +++ bb.dev/editors/Kbuild	2007-05-20 22:30:31.381512128 +0200
-@@ -10,3 +10,12 @@ lib-$(CONFIG_ED)        += ed.o
+@@ -10,3 +10,12 @@
  lib-$(CONFIG_PATCH)     += patch.o
  lib-$(CONFIG_SED)       += sed.o
  lib-$(CONFIG_VI)        += vi.o
@@ -1108,10 +1112,10 @@ diff -purN bb.old/editors/Kbuild bb.dev/editors/Kbuild
 +editors/awx_parser.o: editors/awx_parser.c FORCE
 +	$(call cmd,force_checksrc)
 +	$(call if_changed_rule,cc_o_c)
-diff -purN bb.old/include/applets.h bb.dev/include/applets.h
+diff -urN bb.old/include/applets.h bb.dev/include/applets.h
 --- bb.old/include/applets.h	2007-05-20 04:17:05.003197632 +0200
 +++ bb.dev/include/applets.h	2007-05-20 22:30:31.381512128 +0200
-@@ -60,6 +60,7 @@ USE_ARP(APPLET(arp, _BB_DIR_SBIN, _BB_SU
+@@ -60,6 +60,7 @@
  USE_ARPING(APPLET(arping, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
  USE_ASH(APPLET_NOUSAGE(ash, ash, _BB_DIR_BIN, _BB_SUID_NEVER))
  USE_AWK(APPLET(awk, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
@@ -1119,7 +1123,7 @@ diff -purN bb.old/include/applets.h bb.dev/include/applets.h
  USE_BASENAME(APPLET(basename, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
  USE_BBCONFIG(APPLET(bbconfig, _BB_DIR_BIN, _BB_SUID_NEVER))
  //USE_BBSH(APPLET(bbsh, _BB_DIR_BIN, _BB_SUID_NEVER))
-diff -purN bb.old/include/cgi.h bb.dev/include/cgi.h
+diff -urN bb.old/include/cgi.h bb.dev/include/cgi.h
 --- bb.old/include/cgi.h	1970-01-01 01:00:00.000000000 +0100
 +++ bb.dev/include/cgi.h	2007-05-20 22:30:31.381512128 +0200
 @@ -0,0 +1,8 @@
@@ -1131,7 +1135,7 @@ diff -purN bb.old/include/cgi.h bb.dev/include/cgi.h
 +int cgi_init(var_handler);
 +
 +#endif
-diff -purN bb.old/libbb/cgi.c bb.dev/libbb/cgi.c
+diff -urN bb.old/libbb/cgi.c bb.dev/libbb/cgi.c
 --- bb.old/libbb/cgi.c	1970-01-01 01:00:00.000000000 +0100
 +++ bb.dev/libbb/cgi.c	2007-05-20 22:30:31.382511976 +0200
 @@ -0,0 +1,457 @@
@@ -1592,10 +1596,10 @@ diff -purN bb.old/libbb/cgi.c bb.dev/libbb/cgi.c
 +
 +	return retval;
 +} 
-diff -purN bb.old/libbb/Kbuild bb.dev/libbb/Kbuild
+diff -urN bb.old/libbb/Kbuild bb.dev/libbb/Kbuild
 --- bb.old/libbb/Kbuild	2007-05-20 04:17:05.004197480 +0200
 +++ bb.dev/libbb/Kbuild	2007-05-20 22:30:31.382511976 +0200
-@@ -118,3 +118,6 @@ lib-$(CONFIG_GREP) += xregcomp.o
+@@ -118,3 +118,6 @@
  lib-$(CONFIG_MDEV) += xregcomp.o
  lib-$(CONFIG_LESS) += xregcomp.o
  lib-$(CONFIG_DEVFSD) += xregcomp.o
