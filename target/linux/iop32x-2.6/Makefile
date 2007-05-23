@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=arm
 BOARD:=iop32x
 BOARDNAME:=Intel XScale IOP32x
-FEATURES:=squashfs jffs2 broken
+FEATURES:=squashfs jffs2
 
 define Target/Description
 endef
