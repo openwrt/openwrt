@@ -22,10 +22,11 @@ cyl=$(( ($KERNELSIZE + $ROOTFSSIZE) * 1024 * 1024 / ($head * $sect * 512)))
 set `ptgen -o "$OUTPUT" -h $head -s $sect -p ${KERNELSIZE}m -p ${ROOTFSSIZE}m`
 
 KERNELOFFSET="$(($1 / 512))"
-ROOTFSOFFSET="$(($2 / 512))"
-ROOTFSSIZE="$(( ($3 - $2) / 512))"
+KERNELSIZE="$(($2 / 512))"
+ROOTFSOFFSET="$(($3 / 512))"
+ROOTFSSIZE="$(($4 / 512))"
 
-BLOCKS="$((($ROOTFSOFFSET - $KERNELOFFSET) / 2 - 1))"
+BLOCKS="$((($KERNELSIZE / 2) - 1))"
 
 genext2fs -d "$KERNELDIR" -b "$BLOCKS" "$OUTPUT.kernel"
 dd if="$OUTPUT.kernel" of="$OUTPUT" bs=512 seek="$KERNELOFFSET" conv=notrunc
